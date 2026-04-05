@@ -2,12 +2,12 @@ name = "CerberusLean"
 defaultTargets = ["CerberusLean"]
 moreLeanArgs = ["-DautoImplicit=false"]
 
-# LemLib is the Lem runtime library for Lean, from the septract/lem-lean fork
-# (branch mdd/lean-backend). Set LEMLIB in the Makefile or create the .lemlib symlink
-# pointing to the built lean-lib directory.
+# LemLib is the Lem runtime library for Lean, from the septract/lem-lean fork.
 [[require]]
 name = "LemLib"
-path = ".lemlib"
+git = "https://github.com/septract/lem-lean"
+rev = "mdd/lean-backend"
+subDir = "lean-lib"
 
 [[lean_lib]]
 name = "CerberusLean"
@@ -91,4 +91,6 @@ roots = [
   "Undefined", "Undefined_auxiliary",
   "Utils", "Utils_auxiliary",
   "CerberusImpl",
+  "CerbLocation",
+  "CerberusFresh",
 ]

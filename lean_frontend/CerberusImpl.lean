@@ -10,7 +10,6 @@
 
 import IntegerType
 import Ctype
-import Symbol
 
 namespace CerberusImpl
 
@@ -109,12 +108,14 @@ This matches the common case and can be refined later.
 -/
 
 /-- Register an enum type. Returns true if all values fit in int.
-    Corresponds to: DefaultImpl.register_enum in ocaml_implementation.ml -/
-def register_enum (_ : sym) (_ : List Int) : Bool := true
+    Corresponds to: DefaultImpl.register_enum in ocaml_implementation.ml
+    Polymorphic in sym to avoid circular imports. -/
+def register_enum {α : Type} (_ : α) (_ : List Int) : Bool := true
 
 /-- Get the integer type for an enum.
-    Corresponds to: DefaultImpl.typeof_enum in ocaml_implementation.ml -/
-def typeof_enum (_ : sym) : integerType := .Signed .Int_
+    Corresponds to: DefaultImpl.typeof_enum in ocaml_implementation.ml
+    Polymorphic in sym to avoid circular imports. -/
+def typeof_enum {α : Type} (_ : α) : integerType := .Signed .Int_
 
 /-! ## Type Normalisation -/
 

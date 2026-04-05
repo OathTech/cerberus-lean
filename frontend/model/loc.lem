@@ -7,25 +7,27 @@ declare ocaml target_rep type t = `Cerb_location.t`
 
 val unknown: t
 declare ocaml target_rep function unknown = `Cerb_location.unknown`
+declare lean target_rep function unknown = `CerbLocation.unknown`
 
 val other: string -> t
 declare ocaml target_rep function other = `Cerb_location.other`
+declare lean target_rep function other = `CerbLocation.other`
 
 val with_regions_and_cursor: list t -> maybe t -> t
 declare ocaml target_rep function with_regions_and_cursor = `Cerb_location.with_regions_and_cursor`
-declare lean target_rep function with_regions_and_cursor = `sorry`
+declare lean target_rep function with_regions_and_cursor = `CerbLocation.withRegionsAndCursor`
 
 val with_cursor: t -> t
 declare ocaml target_rep function with_cursor = `Cerb_location.with_cursor`
-declare lean target_rep function with_cursor = `sorry`
+declare lean target_rep function with_cursor = `CerbLocation.withCursor`
 
 val with_cursor_from: t -> t -> t
 declare ocaml target_rep function with_cursor_from = `Cerb_location.with_cursor_from`
-declare lean target_rep function with_cursor_from = `sorry`
+declare lean target_rep function with_cursor_from = `CerbLocation.withCursorFrom`
 
 val bbox_location: list t -> t
 declare ocaml target_rep function bbox_location = `Cerb_location.bbox_location`
-declare lean target_rep function bbox_location = `sorry`
+declare lean target_rep function bbox_location = `CerbLocation.bboxLocation`
 
 class (Located 'a)
   val locOf: 'a -> t
@@ -36,21 +38,20 @@ declare ocaml target_rep function stringFromLocation = `Cerb_location.location_t
 
 val get_filename: t -> maybe string
 declare ocaml target_rep function get_filename = `Cerb_location.get_filename`
-declare lean target_rep function get_filename = `sorry`
+declare lean target_rep function get_filename = `CerbLocation.getFilename`
 
 val is_library_location: t -> bool
 declare ocaml target_rep function is_library_location = `Cerb_location.is_library_location`
-declare lean target_rep function is_library_location = `sorry`
+declare lean target_rep function is_library_location = `CerbLocation.isLibraryLocation`
 
 
 (* Mapping this to unit for the theorem provers *)
 declare hol target_rep type t = `unit`
 declare hol target_rep function unknown = `()`
-declare lean target_rep function unknown = `sorry`
 declare hol target_rep function other = `()`
-declare lean target_rep function other = `sorry`
 declare hol target_rep function stringFromLocation u = ""
-declare lean target_rep function stringFromLocation = `sorry`
+
+declare lean target_rep function stringFromLocation = `CerbLocation.stringFromLocation`
 
 declare coq target_rep type t = `unit`
 declare coq target_rep function unknown = `tt`

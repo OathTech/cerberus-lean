@@ -39,18 +39,19 @@ end
 
 type digest
 declare ocaml target_rep type digest = `Digest.t`
+declare lean target_rep type digest = `String`
 
 val digest: unit -> digest
 declare ocaml target_rep function digest = `Cerb_fresh.digest`
-declare lean target_rep function digest = `sorry`
+declare lean target_rep function digest = `CerberusFresh.digest`
 
 val digest_compare: digest -> digest ->int
 declare ocaml target_rep function digest_compare = `Digest.compare`
-declare lean target_rep function digest_compare x y = (0 : int)
+declare lean target_rep function digest_compare = `CerberusFresh.digest_compare`
 
 val string_of_digest: digest -> string
 declare ocaml target_rep function string_of_digest = `Digest.to_hex`
-declare lean target_rep function string_of_digest x = ""
+declare lean target_rep function string_of_digest = `CerberusFresh.string_of_digest`
 
 instance (Eq digest)
   let (=) x y = digest_compare x y = 0
@@ -226,7 +227,7 @@ type prefix =
 (* TODO: "nat", "int" *)
 val fresh_int: unit -> nat
 declare ocaml target_rep function fresh_int = `Cerb_fresh.int`
-declare lean target_rep function fresh_int u = (0 : nat)
+declare lean target_rep function fresh_int = `CerberusFresh.fresh_int`
 
 val digest_of_sym: sym -> digest
 let digest_of_sym (Symbol dig _ _) = dig

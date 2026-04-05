@@ -1,12 +1,15 @@
 {"version": "1.1.0",
  "packagesDir": ".lake/packages",
  "packages":
- [{"type": "path",
+ [{"url": "https://github.com/septract/lem-lean",
+   "type": "git",
+   "subDir": "lean-lib",
    "scope": "",
+   "rev": "980474a1ce62a57aeb0f5f54c043e635b4c17f00",
    "name": "LemLib",
    "manifestFile": "lake-manifest.json",
+   "inputRev": "mdd/lean-backend",
    "inherited": false,
-   "dir": ".lemlib",
    "configFile": "lakefile.lean"}],
  "name": "CerberusLean",
  "lakeDir": ".lake"}

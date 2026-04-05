@@ -286,13 +286,9 @@ clean-sibylfs-src:
 #### Lean frontend (generated from the same LEM_SRC as the OCaml frontend)
 LEAN_SRC_DIR = lean_frontend/generated
 
-# LEMLIB should point to the built lean-lib directory from septract/lem-lean.
-# Default assumes lem-lean is a sibling checkout at ../../../lem-lean.
-LEMLIB ?= $(abspath ../../../lem-lean/lem-upstream/lean-lib)
-
 # Hand-written Lean files that are symlinked into generated/ and patched
 # into generated imports. Mirrors the OCaml sed patches in prelude-src.
-LEAN_HANDWRITTEN = CerberusImpl.lean
+LEAN_HANDWRITTEN = CerberusImpl.lean CerbLocation.lean CerberusFresh.lean
 
 .PHONY: lean-prelude-src
 lean-prelude-src: $(LEM_SRC)
@@ -303,15 +299,20 @@ lean-prelude-src: $(LEM_SRC)
     -outdir $(LEAN_SRC_DIR) -cerberus_pp -lean \
     $(LEM_SRC) 2> lean_frontend/lem.log || (>&2 cat lean_frontend/lem.log; exit 1)
 	@echo "[SYMLINK] hand-written Lean files into [$(LEAN_SRC_DIR)]"
-	$(Q)ln -sf ../$(LEAN_HANDWRITTEN) $(LEAN_SRC_DIR)/
-	@echo "[PATCH] adding imports for hand-written modules"
+	$(Q)cd $(LEAN_SRC_DIR) && ln -sf $(addprefix ../,$(LEAN_HANDWRITTEN)) .
+	@echo "[PATCH] adding imports and fixing up generated files"
 	$(Q){ echo 'import CerberusImpl'; cat $(LEAN_SRC_DIR)/Implementation.lean; } > $(LEAN_SRC_DIR)/Implementation.lean.tmp
 	$(Q)mv $(LEAN_SRC_DIR)/Implementation.lean.tmp $(LEAN_SRC_DIR)/Implementation.lean
+	$(Q){ echo 'import CerberusFresh'; cat $(LEAN_SRC_DIR)/Symbol.lean; } > $(LEAN_SRC_DIR)/Symbol.lean.tmp
+	$(Q)mv $(LEAN_SRC_DIR)/Symbol.lean.tmp $(LEAN_SRC_DIR)/Symbol.lean
+	$(Q)$(SEDI) -e 's/^inductive  t : Type where$$/abbrev t := CerbLocation.Loc/' $(LEAN_SRC_DIR)/Loc.lean
+	$(Q)$(SEDI) -e 's/^open t$$/open CerbLocation/' $(LEAN_SRC_DIR)/Loc.lean $(LEAN_SRC_DIR)/Loc_auxiliary.lean
+	$(Q)$(SEDI) -e '/^open digest$$/d' $(LEAN_SRC_DIR)/Symbol.lean $(LEAN_SRC_DIR)/Symbol_auxiliary.lean
+	$(Q){ echo 'import CerbLocation'; cat $(LEAN_SRC_DIR)/Loc.lean; } > $(LEAN_SRC_DIR)/Loc.lean.tmp
+	$(Q)mv $(LEAN_SRC_DIR)/Loc.lean.tmp $(LEAN_SRC_DIR)/Loc.lean
 
 .PHONY: lean-build
 lean-build: lean-prelude-src
-	@echo "[SYMLINK] lean_frontend/.lemlib -> $(LEMLIB)"
-	$(Q)ln -sfn $(LEMLIB) lean_frontend/.lemlib
 	@echo "[LAKE] building CerberusLean"
 	$(Q)cd lean_frontend && lake build
 
