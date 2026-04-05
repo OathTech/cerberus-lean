@@ -288,7 +288,7 @@ LEAN_SRC_DIR = lean_frontend/generated
 
 # Hand-written Lean files that are symlinked into generated/ and patched
 # into generated imports. Mirrors the OCaml sed patches in prelude-src.
-LEAN_HANDWRITTEN = CerberusImpl.lean CerbLocation.lean CerberusFresh.lean
+LEAN_HANDWRITTEN = CerberusImpl.lean CerbLocation.lean CerberusFresh.lean CerbGlobal.lean
 
 .PHONY: lean-prelude-src
 lean-prelude-src: $(LEM_SRC)
@@ -310,6 +310,18 @@ lean-prelude-src: $(LEM_SRC)
 	$(Q)$(SEDI) -e '/^open digest$$/d' $(LEAN_SRC_DIR)/Symbol.lean $(LEAN_SRC_DIR)/Symbol_auxiliary.lean
 	$(Q){ echo 'import CerbLocation'; cat $(LEAN_SRC_DIR)/Loc.lean; } > $(LEAN_SRC_DIR)/Loc.lean.tmp
 	$(Q)mv $(LEAN_SRC_DIR)/Loc.lean.tmp $(LEAN_SRC_DIR)/Loc.lean
+	$(Q){ echo 'import CerbGlobal'; cat $(LEAN_SRC_DIR)/Global.lean; } > $(LEAN_SRC_DIR)/Global.lean.tmp
+	$(Q)mv $(LEAN_SRC_DIR)/Global.lean.tmp $(LEAN_SRC_DIR)/Global.lean
+	$(Q)$(SEDI) -e 's/^inductive  execution_mode.*$$/abbrev execution_mode := CerbGlobal.ExecutionMode/' $(LEAN_SRC_DIR)/Global.lean
+	$(Q)$(SEDI) -e 's/^inductive  cerb_switch.*$$/abbrev cerb_switch := CerbGlobal.CerbSwitch/' $(LEAN_SRC_DIR)/Global.lean
+	$(Q)$(SEDI) -e '/^  |  Interactive/d' -e '/^  |  Exhaustive/d' -e '/^  |  Random/d' $(LEAN_SRC_DIR)/Global.lean
+	$(Q)$(SEDI) -e '/^  |  SW_strict_reads/d' -e '/^  |  SW_forbid_nullptr_free/d' -e '/^  |  SW_zap_dead_pointers/d' $(LEAN_SRC_DIR)/Global.lean
+	$(Q)$(SEDI) -e '/^  |  SW_inner_arg_temps/d' -e '/^  |  SW_permissive_printf/d' -e '/^  |  SW_no_integer_provenance/d' -e '/^  |  SW_CHERI/d' $(LEAN_SRC_DIR)/Global.lean
+	$(Q)$(SEDI) -e '/^  deriving BEq, Ord$$/d' $(LEAN_SRC_DIR)/Global.lean
+	$(Q)$(SEDI) -e '/^export execution_mode/d' -e '/^export cerb_switch/d' $(LEAN_SRC_DIR)/Global.lean
+	$(Q)$(SEDI) -e 's/default := Interactive/default := CerbGlobal.ExecutionMode.exhaustive/' $(LEAN_SRC_DIR)/Global.lean
+	$(Q)$(SEDI) -e 's/default := SW_strict_reads/default := CerbGlobal.CerbSwitch.strict_reads/' $(LEAN_SRC_DIR)/Global.lean
+	$(Q)$(SEDI) -e '/^open cerb_switch$$/d' -e '/^open execution_mode$$/d' $(LEAN_SRC_DIR)/Global.lean $(LEAN_SRC_DIR)/Global_auxiliary.lean
 
 .PHONY: lean-build
 lean-build: lean-prelude-src

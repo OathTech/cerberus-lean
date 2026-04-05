@@ -93,4 +93,5 @@ roots = [
   "CerberusImpl",
   "CerbLocation",
   "CerberusFresh",
+  "CerbGlobal",
 ]
