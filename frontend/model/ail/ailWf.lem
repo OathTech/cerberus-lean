@@ -12,12 +12,12 @@ let is_adjusted ty =
 val stringFromCtype: ctype -> string
 declare ocaml target_rep function stringFromCtype = `String_ail.string_of_ctype_raw`
 declare hol   target_rep function stringFromCtype = `pp_core$pp_core_ctype`
-declare lean target_rep function stringFromCtype = `sorry`
+declare lean target_rep function stringFromCtype = `CerbPP.stringFromCtype`
 
 val stringFromQualifiers: qualifiers -> string
 declare ocaml target_rep function stringFromQualifiers = `String_ail.string_of_qualifiers_human`
 declare hol   target_rep function stringFromQualifiers = `pp_ail$pp_qualifiers`
-declare lean target_rep function stringFromQualifiers = `sorry`
+declare lean target_rep function stringFromQualifiers = `CerbPP.stringFromQualifiers`
 
 
 val wf_lvalue_aux: qualifiers -> ctype -> errorM unit

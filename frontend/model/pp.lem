@@ -9,20 +9,20 @@ val stringFromSymbol_prefix: Symbol.prefix -> string
 
 declare ocaml target_rep function stringFromSymbol_prefix = `String_symbol.string_of_prefix`
 declare hol   target_rep function stringFromSymbol_prefix = `pp_core$pp_prefix`
-declare lean target_rep function stringFromSymbol_prefix = `sorry`
+declare lean target_rep function stringFromSymbol_prefix = `CerbPP.stringFromSymbol_prefix`
 
 
 val stringFromCabs_type_specifier: Cabs.cabs_type_specifier -> string
 declare ocaml target_rep function stringFromCabs_type_specifier = `String_cabs.string_of_cabs_type_specifier`
-declare lean target_rep function stringFromCabs_type_specifier = `sorry`
+declare lean target_rep function stringFromCabs_type_specifier = `CerbPP.stringFromCabs_type_specifier`
 
 val stringFromCabs_pointer_declarator: Cabs.pointer_declarator -> string
 declare ocaml target_rep function stringFromCabs_pointer_declarator = `String_cabs.string_of_pointer_declarator`
-declare lean target_rep function stringFromCabs_pointer_declarator = `sorry`
+declare lean target_rep function stringFromCabs_pointer_declarator = `CerbPP.stringFromCabs_pointer_declarator`
 
 val stringFromCabs_declarator: Cabs.declarator -> string
 declare ocaml target_rep function stringFromCabs_declarator = `String_cabs.string_of_declarator`
-declare lean target_rep function stringFromCabs_declarator = `sorry`
+declare lean target_rep function stringFromCabs_declarator = `CerbPP.stringFromCabs_declarator`
 
 
 
@@ -38,22 +38,22 @@ val stringFromAil_statement: forall 'a. AilSyntax.statement 'a -> string
 declare ocaml target_rep function stringFromAil_qualifiers = `String_ail.string_of_qualifiers_human`
 declare ocaml target_rep function stringFromAil_ctype = `String_ail.string_of_ctype_human`
 declare ocaml target_rep function stringFromAil_genType = `String_ail.string_of_genType`
-declare lean target_rep function stringFromAil_genType = `sorry`
+declare lean target_rep function stringFromAil_genType = `CerbPP.stringFromAil_genType`
 declare ocaml target_rep function stringFromAil_expression = `String_ail.string_of_expression`
 declare ocaml target_rep function stringFromAil_statement = `String_ail.string_of_statement`
-declare lean target_rep function stringFromAil_statement = `sorry`
+declare lean target_rep function stringFromAil_statement = `CerbPP.stringFromAil_statement`
 declare hol   target_rep function stringFromAil_qualifiers =
-declare lean target_rep function stringFromAil_qualifiers = `sorry`
+declare lean target_rep function stringFromAil_qualifiers = `CerbPP.stringFromAil_qualifiers`
                                   `pp_ail$pp_qualifiers`
 declare hol   target_rep function stringFromAil_ctype = `pp_ail$pp_ail_ctype`
-declare lean target_rep function stringFromAil_ctype = `sorry`
+declare lean target_rep function stringFromAil_ctype = `CerbPP.stringFromAil_ctype`
 declare hol   target_rep function stringFromAil_expression =
-declare lean target_rep function stringFromAil_expression = `sorry`
+declare lean target_rep function stringFromAil_expression = `CerbPP.stringFromAil_expression`
                                   `pp_ail$pp_expression`
 
 val stringFromAil_human_ctype: Ctype.qualifiers -> Ctype.ctype -> string
 declare ocaml target_rep function stringFromAil_human_ctype = `String_ail.string_of_ctype_human`
-declare lean target_rep function stringFromAil_human_ctype = `sorry`
+declare lean target_rep function stringFromAil_human_ctype = `CerbPP.stringFromAil_human_ctype`
 
 
 val stringFromCore_ctype:  Ctype.ctype -> string
@@ -71,26 +71,26 @@ declare ocaml target_rep function stringFromCore_core_base_type  = `String_core.
 declare ocaml target_rep function stringFromCore_value  = `String_core.string_of_value`
 declare ocaml target_rep function stringFromCore_pexpr  = `String_core.string_of_pexpr`
 declare ocaml target_rep function stringFromCore_action  = `String_core.string_of_action`
-declare lean target_rep function stringFromCore_action = `sorry`
+declare lean target_rep function stringFromCore_action = `CerbPP.stringFromCore_action`
 declare ocaml target_rep function stringFromCore_expr   = `String_core.string_of_expr`
 declare ocaml target_rep function stringFromCore_params = `String_core.string_of_params`
 declare ocaml target_rep function stringFromCore_file   = `String_core.string_of_file`
 (*declare ocaml target_rep function stringFromCore_stack  = `String_core.string_of_stack`*)
 
 declare hol target_rep function stringFromCore_ctype  = `pp_core$pp_core_ctype`
-declare lean target_rep function stringFromCore_ctype = `sorry`
+declare lean target_rep function stringFromCore_ctype = `CerbPP.stringFromCore_ctype`
 declare hol target_rep function stringFromCore_core_base_type  = `pp_core.pp_core_base_type`
-declare lean target_rep function stringFromCore_core_base_type = `sorry`
+declare lean target_rep function stringFromCore_core_base_type = `CerbPP.stringFromCore_core_base_type`
 declare hol target_rep function stringFromCore_value  = `pp_core$pp_core_value`
-declare lean target_rep function stringFromCore_value = `sorry`
+declare lean target_rep function stringFromCore_value = `CerbPP.stringFromCore_value`
 declare hol target_rep function stringFromCore_pexpr  = `pp_core$pp_core_pexpr`
-declare lean target_rep function stringFromCore_pexpr = `sorry`
+declare lean target_rep function stringFromCore_pexpr = `CerbPP.stringFromCore_pexpr`
 declare hol target_rep function stringFromCore_expr   = `pp_core$pp_core_expr`
-declare lean target_rep function stringFromCore_expr = `sorry`
+declare lean target_rep function stringFromCore_expr = `CerbPP.stringFromCore_expr`
 declare hol target_rep function stringFromCore_params = `pp_core$pp_core_params`
-declare lean target_rep function stringFromCore_params = `sorry`
+declare lean target_rep function stringFromCore_params = `CerbPP.stringFromCore_params`
 declare hol target_rep function stringFromCore_file   = `pp_core$pp_core_file`
-declare lean target_rep function stringFromCore_file = `sorry`
+declare lean target_rep function stringFromCore_file = `CerbPP.stringFromCore_file`
 (*declare hol target_rep function stringFromCore_stack  = `pp_core$pp_core_stack`*)
 
 
@@ -101,24 +101,24 @@ declare ocaml target_rep function stringFromMem_mem_value = `String_mem.string_o
 declare ocaml target_rep function pretty_stringFromMem_mem_value = `String_mem.string_pretty_of_mem_value_decimal`
 
 declare hol target_rep function stringFromMem_mem_value = `pp_mem$pp_mem_value`
-declare lean target_rep function stringFromMem_mem_value = `sorry`
+declare lean target_rep function stringFromMem_mem_value = `CerbPP.stringFromMem_mem_value`
 declare hol target_rep function pretty_stringFromMem_mem_value = `pp_mem$pp_mem_value`
-declare lean target_rep function pretty_stringFromMem_mem_value = `sorry`
+declare lean target_rep function pretty_stringFromMem_mem_value = `CerbPP.pretty_stringFromMem_mem_value`
 
 
 (* DEBUG *)
 val stringFromCmm_op_symState: Cmm_op.symState -> string
 declare ocaml target_rep function stringFromCmm_op_symState = `Pp_cmm.string_of_exeState`
 declare hol   target_rep function stringFromCmm_op_symState = `util$emptyString`
-declare lean target_rep function stringFromCmm_op_symState = `sorry`
+declare lean target_rep function stringFromCmm_op_symState = `CerbPP.stringFromCmm_op_symState`
 
 
 (*
 val stringFromSequenceGraph: list (nat * nat) -> string
 declare ocaml target_rep function stringFromSequenceGraph = `Pp_cmm.stringFromSequenceGraph`
-declare lean target_rep function stringFromSequenceGraph = `sorry`
+declare lean target_rep function stringFromSequenceGraph = `CerbPP.stringFromSequenceGraph`
 *)
 
 val stringFromMem_iv_mem_constraint: Mem.mem_iv_constraint -> string
 declare ocaml target_rep function stringFromMem_iv_mem_constraint = `String_mem.string_of_iv_memory_constraint`
-declare lean target_rep function stringFromMem_iv_mem_constraint = `sorry`
+declare lean target_rep function stringFromMem_iv_mem_constraint = `CerbPP.stringFromMem_iv_mem_constraint`

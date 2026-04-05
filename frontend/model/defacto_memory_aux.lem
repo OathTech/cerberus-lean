@@ -60,18 +60,18 @@ val stringFromCore_ctype:  ctype -> string
 declare ocaml target_rep function stringFromPointer_value = `String_defacto_memory.string_of_pointer_value`
 declare ocaml target_rep function stringFromMem_value = `String_defacto_memory.string_of_mem_value`
 declare ocaml target_rep function stringFromInteger_value = `String_defacto_memory.string_of_integer_value`
-declare lean target_rep function stringFromInteger_value = `sorry`
+declare lean target_rep function stringFromInteger_value = `CerbPP.stringFromInteger_value`
 declare ocaml target_rep function stringFromShift_path = `String_defacto_memory.string_of_shift_path` (* DEBUG *)
 declare ocaml target_rep function stringFromCore_ctype  = `String_core_ctype.string_of_ctype`
-declare lean target_rep function stringFromCore_ctype = `sorry`
+declare lean target_rep function stringFromCore_ctype = `CerbPP.stringFromCore_ctype`
 
 (* TODO: HOL hack *)
 declare hol target_rep function stringFromPointer_value p = "??NOT IMPLEMENTED??"
-declare lean target_rep function stringFromPointer_value = `sorry`
+declare lean target_rep function stringFromPointer_value = `CerbPP.stringFromPointer_value`
 declare hol target_rep function stringFromMem_value p = "??NOT IMPLEMENTED??"
-declare lean target_rep function stringFromMem_value = `sorry`
+declare lean target_rep function stringFromMem_value = `CerbPP.stringFromMem_value`
 declare hol target_rep function stringFromShift_path p = "??NOT IMPLEMENTED??"
-declare lean target_rep function stringFromShift_path = `sorry`
+declare lean target_rep function stringFromShift_path = `CerbPP.stringFromShift_path`
 (* END debug ==================================================================================== *)
 
 

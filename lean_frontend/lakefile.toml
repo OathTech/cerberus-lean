@@ -94,4 +94,7 @@ roots = [
   "CerbLocation",
   "CerberusFresh",
   "CerbGlobal",
+  "CerbFloat",
+  "CerbUtils",
+  "CerbPP",
 ]

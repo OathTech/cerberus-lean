@@ -22,4 +22,4 @@ declare lean target_rep function escaped_char c = ""
 val encode_character_constant: integer -> char
 declare ocaml target_rep function encode_character_constant = `Decode.encode_character_constant`
 declare hol   target_rep function encode_character_constant = `pp_ail$encode_char`
-declare lean target_rep function encode_character_constant = `sorry`
+declare lean target_rep function encode_character_constant = `CerbUtils.encode_character_constant`

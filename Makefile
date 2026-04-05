@@ -288,7 +288,7 @@ LEAN_SRC_DIR = lean_frontend/generated
 
 # Hand-written Lean files that are symlinked into generated/ and patched
 # into generated imports. Mirrors the OCaml sed patches in prelude-src.
-LEAN_HANDWRITTEN = CerberusImpl.lean CerbLocation.lean CerberusFresh.lean CerbGlobal.lean
+LEAN_HANDWRITTEN = CerberusImpl.lean CerbLocation.lean CerberusFresh.lean CerbGlobal.lean CerbFloat.lean CerbUtils.lean CerbPP.lean
 
 .PHONY: lean-prelude-src
 lean-prelude-src: $(LEM_SRC)
@@ -322,6 +322,34 @@ lean-prelude-src: $(LEM_SRC)
 	$(Q)$(SEDI) -e 's/default := Interactive/default := CerbGlobal.ExecutionMode.exhaustive/' $(LEAN_SRC_DIR)/Global.lean
 	$(Q)$(SEDI) -e 's/default := SW_strict_reads/default := CerbGlobal.CerbSwitch.strict_reads/' $(LEAN_SRC_DIR)/Global.lean
 	$(Q)$(SEDI) -e '/^open cerb_switch$$/d' -e '/^open execution_mode$$/d' $(LEAN_SRC_DIR)/Global.lean $(LEAN_SRC_DIR)/Global_auxiliary.lean
+	$(Q)$(SEDI) -e 's/^inductive  float : Type where$$/abbrev float := Float/' $(LEAN_SRC_DIR)/Float.lean
+	$(Q)$(SEDI) -e '/^open float$$/d' $(LEAN_SRC_DIR)/Float.lean $(LEAN_SRC_DIR)/Float_auxiliary.lean
+	$(Q){ echo 'import CerbFloat'; cat $(LEAN_SRC_DIR)/Float.lean; } > $(LEAN_SRC_DIR)/Float.lean.tmp
+	$(Q)mv $(LEAN_SRC_DIR)/Float.lean.tmp $(LEAN_SRC_DIR)/Float.lean
+	$(Q){ echo 'import CerbUtils'; cat $(LEAN_SRC_DIR)/Boot.lean; } > $(LEAN_SRC_DIR)/Boot.lean.tmp
+	$(Q)mv $(LEAN_SRC_DIR)/Boot.lean.tmp $(LEAN_SRC_DIR)/Boot.lean
+	$(Q){ echo 'import CerbUtils'; cat $(LEAN_SRC_DIR)/Std.lean; } > $(LEAN_SRC_DIR)/Std.lean.tmp
+	$(Q)mv $(LEAN_SRC_DIR)/Std.lean.tmp $(LEAN_SRC_DIR)/Std.lean
+	$(Q){ echo 'import CerbUtils'; cat $(LEAN_SRC_DIR)/Core_linking.lean; } > $(LEAN_SRC_DIR)/Core_linking.lean.tmp
+	$(Q)mv $(LEAN_SRC_DIR)/Core_linking.lean.tmp $(LEAN_SRC_DIR)/Core_linking.lean
+	$(Q){ echo 'import CerbUtils'; cat $(LEAN_SRC_DIR)/Any.lean; } > $(LEAN_SRC_DIR)/Any.lean.tmp
+	$(Q)mv $(LEAN_SRC_DIR)/Any.lean.tmp $(LEAN_SRC_DIR)/Any.lean
+	$(Q){ echo 'import CerbUtils'; cat $(LEAN_SRC_DIR)/Decode.lean; } > $(LEAN_SRC_DIR)/Decode.lean.tmp
+	$(Q)mv $(LEAN_SRC_DIR)/Decode.lean.tmp $(LEAN_SRC_DIR)/Decode.lean
+	$(Q){ echo 'import CerbPP'; cat $(LEAN_SRC_DIR)/Pp.lean; } > $(LEAN_SRC_DIR)/Pp.lean.tmp
+	$(Q)mv $(LEAN_SRC_DIR)/Pp.lean.tmp $(LEAN_SRC_DIR)/Pp.lean
+	$(Q){ echo 'import CerbPP'; cat $(LEAN_SRC_DIR)/Driver.lean; } > $(LEAN_SRC_DIR)/Driver.lean.tmp
+	$(Q)mv $(LEAN_SRC_DIR)/Driver.lean.tmp $(LEAN_SRC_DIR)/Driver.lean
+	$(Q){ echo 'import CerbPP'; cat $(LEAN_SRC_DIR)/Core_rewrite.lean; } > $(LEAN_SRC_DIR)/Core_rewrite.lean.tmp
+	$(Q)mv $(LEAN_SRC_DIR)/Core_rewrite.lean.tmp $(LEAN_SRC_DIR)/Core_rewrite.lean
+	$(Q){ echo 'import CerbPP'; cat $(LEAN_SRC_DIR)/Defacto_memory.lean; } > $(LEAN_SRC_DIR)/Defacto_memory.lean.tmp
+	$(Q)mv $(LEAN_SRC_DIR)/Defacto_memory.lean.tmp $(LEAN_SRC_DIR)/Defacto_memory.lean
+	$(Q){ echo 'import CerbPP'; cat $(LEAN_SRC_DIR)/Defacto_memory_aux.lean; } > $(LEAN_SRC_DIR)/Defacto_memory_aux.lean.tmp
+	$(Q)mv $(LEAN_SRC_DIR)/Defacto_memory_aux.lean.tmp $(LEAN_SRC_DIR)/Defacto_memory_aux.lean
+	$(Q){ echo 'import CerbPP'; cat $(LEAN_SRC_DIR)/Formatted.lean; } > $(LEAN_SRC_DIR)/Formatted.lean.tmp
+	$(Q)mv $(LEAN_SRC_DIR)/Formatted.lean.tmp $(LEAN_SRC_DIR)/Formatted.lean
+	$(Q){ echo 'import CerbPP'; cat $(LEAN_SRC_DIR)/AilWf.lean; } > $(LEAN_SRC_DIR)/AilWf.lean.tmp
+	$(Q)mv $(LEAN_SRC_DIR)/AilWf.lean.tmp $(LEAN_SRC_DIR)/AilWf.lean
 
 .PHONY: lean-build
 lean-build: lean-prelude-src

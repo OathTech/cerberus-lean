@@ -2,12 +2,13 @@ open import Bool Basic_classes Num
 
 type float
 declare ocaml target_rep type float = `float`
+declare lean target_rep type float = `Float`
 
 (* Relational operations *)
 
 val floatEq : float -> float -> bool
 declare ocaml target_rep function floatEq = infix `=`
-declare lean target_rep function floatEq = `sorry`
+declare lean target_rep function floatEq = `CerbFloat.floatEq`
 
 instance (Eq float)
   let (=) = floatEq
@@ -16,11 +17,11 @@ end
 
 val floatLt : float -> float -> bool
 declare ocaml target_rep function floatLt = infix `<`
-declare lean target_rep function floatLt = `sorry`
+declare lean target_rep function floatLt = `CerbFloat.floatLt`
 
 val floatLe : float -> float -> bool
 declare ocaml target_rep function floatLe = infix `<=`
-declare lean target_rep function floatLe = `sorry`
+declare lean target_rep function floatLe = `CerbFloat.floatLe`
 
 val floatCompare : float -> float -> ordering
 let inline floatCompare = defaultCompare
@@ -37,19 +38,19 @@ end
 
 val floatAdd : float -> float -> float
 declare ocaml target_rep function floatAdd = `Cerb_floating.add`
-declare lean target_rep function floatAdd = `sorry`
+declare lean target_rep function floatAdd = `CerbFloat.floatAdd`
 
 val floatSub : float -> float -> float
 declare ocaml target_rep function floatSub = `Cerb_floating.sub`
-declare lean target_rep function floatSub = `sorry`
+declare lean target_rep function floatSub = `CerbFloat.floatSub`
 
 val floatMul : float -> float -> float
 declare ocaml target_rep function floatMul = `Cerb_floating.mul`
-declare lean target_rep function floatMul = `sorry`
+declare lean target_rep function floatMul = `CerbFloat.floatMul`
 
 val floatDiv : float -> float -> float
 declare ocaml target_rep function floatDiv = `Cerb_floating.div`
-declare lean target_rep function floatDiv = `sorry`
+declare lean target_rep function floatDiv = `CerbFloat.floatDiv`
 
 instance (NumAdd float)
   let (+) = floatAdd
@@ -71,22 +72,22 @@ end
 
 val of_int : int -> float
 declare ocaml target_rep function of_int = `float_of_int`
-declare lean target_rep function of_int = `sorry`
+declare lean target_rep function of_int = `CerbFloat.of_int`
 
 val of_integer : integer -> float
 let of_integer x = of_int (Num.intFromInteger x)
 
 val of_string : string -> float
 declare ocaml target_rep function of_string = `Cerb_floating.of_string`
-declare lean target_rep function of_string = `sorry`
+declare lean target_rep function of_string = `CerbFloat.of_string`
 
 val string_of_float : float -> string
 declare ocaml target_rep function string_of_float = `string_of_float`
-declare lean target_rep function string_of_float = `sorry`
+declare lean target_rep function string_of_float = `CerbFloat.string_of_float`
 
 val to_int : float -> int
 declare ocaml target_rep function to_int = `int_of_float`
-declare lean target_rep function to_int = `sorry`
+declare lean target_rep function to_int = `CerbFloat.to_int`
 
 val to_integer : float -> integer
 let to_integer x = Num.integerFromInt (to_int x)
