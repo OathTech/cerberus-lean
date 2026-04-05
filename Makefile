@@ -290,6 +290,10 @@ LEAN_SRC_DIR = lean_frontend/generated
 # Default assumes lem-lean is a sibling checkout at ../../../lem-lean.
 LEMLIB ?= $(abspath ../../../lem-lean/lem-upstream/lean-lib)
 
+# Hand-written Lean files that are symlinked into generated/ and patched
+# into generated imports. Mirrors the OCaml sed patches in prelude-src.
+LEAN_HANDWRITTEN = CerberusImpl.lean
+
 .PHONY: lean-prelude-src
 lean-prelude-src: $(LEM_SRC)
 	@echo "[MKDIR] $(LEAN_SRC_DIR)"
@@ -298,6 +302,11 @@ lean-prelude-src: $(LEM_SRC)
 	$(Q)lem -wl ign -wl_rename warn -wl_pat_red err -wl_pat_exh warn \
     -outdir $(LEAN_SRC_DIR) -cerberus_pp -lean \
     $(LEM_SRC) 2> lean_frontend/lem.log || (>&2 cat lean_frontend/lem.log; exit 1)
+	@echo "[SYMLINK] hand-written Lean files into [$(LEAN_SRC_DIR)]"
+	$(Q)ln -sf ../$(LEAN_HANDWRITTEN) $(LEAN_SRC_DIR)/
+	@echo "[PATCH] adding imports for hand-written modules"
+	$(Q){ echo 'import CerberusImpl'; cat $(LEAN_SRC_DIR)/Implementation.lean; } > $(LEAN_SRC_DIR)/Implementation.lean.tmp
+	$(Q)mv $(LEAN_SRC_DIR)/Implementation.lean.tmp $(LEAN_SRC_DIR)/Implementation.lean
 
 .PHONY: lean-build
 lean-build: lean-prelude-src

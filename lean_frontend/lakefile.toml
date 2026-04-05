@@ -90,4 +90,5 @@ roots = [
   "TypingError", "TypingError_auxiliary",
   "Undefined", "Undefined_auxiliary",
   "Utils", "Utils_auxiliary",
+  "CerberusImpl",
 ]
