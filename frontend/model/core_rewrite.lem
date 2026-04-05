@@ -9,6 +9,7 @@ module Caux = Core_aux
 
 val pp_pexpr: pexpr -> string
 declare ocaml target_rep function pp_pexpr = `String_core.string_of_pexpr`
+declare lean target_rep function pp_pexpr = `sorry`
 
 
 (*

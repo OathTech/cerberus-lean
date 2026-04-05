@@ -20,6 +20,7 @@ declare ocaml target_rep function stringFromCtype = `String_core_ctype.string_of
 
 (* TODO: HOL hack *)
 declare hol target_rep function stringFromCtype c = ""
+declare lean target_rep function stringFromCtype = `sorry`
 
 (* Semantic switches *)
 type mode =
@@ -2295,6 +2296,7 @@ let rec easy_update_mem_value_aux loc is_strong write_ty sh write_mval current_m
 
 (* TODO: bug HOL -- "failure in internal translation to tupled format" *)
 declare hol target_rep function easy_update_mem_value_aux =
+declare lean target_rep function easy_update_mem_value_aux = `sorry`
                                 `tags$easy_update_mem_value_aux`
 
 

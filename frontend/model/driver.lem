@@ -44,6 +44,7 @@ import Global
 (* DEBUG *)
 val stringFromCore_core_state: forall 'a. Core_run.core_state -> string
 declare ocaml target_rep function stringFromCore_core_state = `String_core_run.string_of_core_state`
+declare lean target_rep function stringFromCore_core_state = `sorry`
 
 
 type driver_error =
@@ -1621,6 +1622,7 @@ let driver_globals with_concurrency file =
 
 val pp_exeState: Cmm_op.symState -> string
 declare ocaml target_rep function pp_exeState = `Pp_cmm.pp_execState`
+declare lean target_rep function pp_exeState = `sorry`
 
 
 

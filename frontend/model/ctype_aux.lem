@@ -14,8 +14,11 @@ declare ocaml target_rep function set_tagDefs = `Tags.set_tagDefs`
 declare ocaml target_rep function with_tagDefs = `Tags.with_tagDefs`
 
 declare hol target_rep function tagDefs = `tagDefs`
+declare lean target_rep function tagDefs u = (Map.empty : map Symbol.sym (Loc.t * tag_definition))
 declare hol target_rep function set_tagDefs = `set_tagDefs`
+declare lean target_rep function set_tagDefs m = ()
 declare hol target_rep function with_tagDefs = `with_tagDefs`
+declare lean target_rep function with_tagDefs m f = f ()
 
 val get_membersDefs: Symbol.sym -> tag_definition
 let get_membersDefs tag_sym =
@@ -61,6 +64,7 @@ let get_unionDef tag_sym =
 
 val reset_tagDefs: unit -> unit
 declare ocaml target_rep function reset_tagDefs = `Tags.reset_tagDefs`
+declare lean target_rep function reset_tagDefs u = ()
 
 
 

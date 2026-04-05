@@ -163,14 +163,14 @@ let adjacent_less_than_such_that pred ord s x y =
     pred x && (x,y) IN ord && not (exists (z IN s). pred z && (x,z) IN ord && (z,y) IN ord)
 
 val finite_prefixes : forall 'a. SetType 'a, Eq 'a => set ('a * 'a) -> set 'a -> bool
-let ~{ ocaml;coq} finite_prefixes r s =
+let ~{ ocaml;coq;lean} finite_prefixes r s =
       forall (b IN s). finite { a | forall a | (a,b) IN r}
-let {ocaml; coq} finite_prefixes r s = true
+let {ocaml; coq; lean} finite_prefixes r s = true
 declare hol target_rep function finite_prefixes = `finite_prefixes`
 
 
 val minimal_elements: forall 'a. set 'a -> set ('a * 'a) -> set 'a
-let {ocaml; coq; isabelle; tex} minimal_elements s r = s
+let {ocaml; coq; isabelle; tex; lean} minimal_elements s r = s
 declare hol target_rep function minimal_elements = `minimal_elements`
 
 
@@ -272,7 +272,7 @@ let aid_of a =
     end
 
 val action_equality: action -> action -> bool
-let {ocaml} action_equality a1 a2 = 
+let {ocaml; lean} action_equality a1 a2 = 
   aid_of a1 = aid_of a2
 let inline ~{ocaml} action_equality a1 a2 = 
   unsafe_structural_equality a1 a2
@@ -394,7 +394,7 @@ let pre_execution_setElemCompare cmpa cmpb cmpc x y =
 
 
 val pre_execution_equal: pre_execution -> pre_execution -> bool (* CSEM *)
-let {ocaml} pre_execution_equal pre1 pre2 =                     (* CSEM *)
+let {ocaml; lean} pre_execution_equal pre1 pre2 =                     (* CSEM *)
   Set.setEqual pre1.actions pre2.actions &&                     (* CSEM *)
   Set.setEqual pre1.threads pre2.threads &&                     (* CSEM *)
   (*  Set.setEqual pre1.lk pre2.lk && *) (* TODO *)             (* CSEM *)
@@ -462,7 +462,7 @@ end                                   (* CSEM *)
 
 
 val execution_witness_equal: execution_witness -> execution_witness -> bool (* CSEM *)
-let {ocaml} execution_witness_equal wit1 wit2 =                             (* CSEM *)
+let {ocaml; lean} execution_witness_equal wit1 wit2 =                             (* CSEM *)
   Set.setEqual wit1.rf wit2.rf &&                                           (* CSEM *)
   Set.setEqual wit1.mo wit2.mo &&                                           (* CSEM *)
   Set.setEqual wit1.sc wit2.sc &&                                           (* CSEM *)
@@ -652,6 +652,7 @@ let each_empty faults_list X =
 
 
 val statically_satisfied : forall. condition_t -> opsem_t -> program -> bool
+declare lean target_rep function statically_satisfied = `sorry`
 let {hol; isabelle; tex} statically_satisfied condition opsem (p : program) =
   let Xs = {(Xo,Xw,rl) | opsem p Xo} in
   condition Xs
@@ -659,9 +660,11 @@ let {hol; isabelle; tex} statically_satisfied condition opsem (p : program) =
 
 
 val observable_filter : forall. set (candidate_execution) -> set (observable_execution)
+declare lean target_rep function observable_filter = `sorry`
 let {hol; isabelle; tex} observable_filter X = {(Xo,Xw) | exists rl. (Xo,Xw,rl) IN X}
 
 val behaviour : forall. memory_model -> condition_t -> opsem_t -> program -> program_behaviours
+declare lean target_rep function behaviour = `sorry`
 let {hol; isabelle; tex} behaviour M condition opsem (p : program) =
   let consistent_executions =
     { (Xo,Xw,rl) |
@@ -676,10 +679,12 @@ let {hol; isabelle; tex} behaviour M condition opsem (p : program) =
 
 
 val rf_observable_filter : forall. set (candidate_execution) -> set (rf_observable_execution)
+declare lean target_rep function rf_observable_filter = `sorry`
 let {hol; isabelle; tex} rf_observable_filter X = {(Xo,Xw.rf) | exists rl. (Xo,Xw,rl) IN X}
 
 
 val rf_behaviour : forall. memory_model -> condition_t -> opsem_t -> program -> rf_program_behaviours
+declare lean target_rep function rf_behaviour = `sorry`
 let {hol; isabelle; tex} rf_behaviour M condition opsem (p : program) =
   let consistent_executions =
     { (Xo,Xw,rl) |
@@ -1069,7 +1074,7 @@ let replace_read_value a v =
 val downclosed : forall . set (action) -> set (action * action) -> bool
 let {hol; isabelle; tex}
     downclosed A R = forall a b. b IN A && (a,b) IN R --> a IN A
-let {ocaml}
+let {ocaml; lean}
     downclosed A R = true
 
 let is_prefix opsem p Xo A =
@@ -1088,7 +1093,7 @@ let {hol; isabelle; tex}
             ((x,a) IN R && (x <> a) && (y = a')) ||
             ((a,a) IN R && (x = a') && (y = a'))
   }
-let {ocaml}
+let {ocaml; lean}
     relation_plug R a a' = {}
 
 
@@ -1113,7 +1118,7 @@ let same_prefix Xo1 Xo2 A =
 
 (* For all subsets of actions in a pre_execution, If there is an sb minimal read, just outside the set, then we can rewrite its value if it is a read, and then find another pre_execution containing the set of actions, with the modified read still minimal and in the same thread. *)
 val receptiveness : forall. (program -> pre_execution -> bool) -> bool
-let {ocaml}
+let {ocaml; lean}
     receptiveness opsem = true
 let {hol; isabelle; tex}
     receptiveness opsem =
@@ -1141,7 +1146,7 @@ let holds_over_prefix opsem p Xo A P =
 
 
 val extends_prefix : forall. pre_execution -> set (action) -> set (action) -> bool
-let {ocaml}
+let {ocaml; lean}
     extends_prefix Xo A A' = true
 let {hol; isabelle; tex}
     extends_prefix Xo A A' =
@@ -1160,7 +1165,7 @@ The above requires the fringe_set to be finite for tot_consistency and for induc
 *)
 
 val produce_well_formed_threads : forall. opsem_t -> bool
-let {ocaml}
+let {ocaml; lean}
     produce_well_formed_threads opsem = true
 let {hol; isabelle; tex}
     produce_well_formed_threads (opsem:opsem_t) =
@@ -1294,6 +1299,7 @@ let single_thread_memory_model =
 
 
 val single_thread_behaviour : forall. opsem_t -> program -> program_behaviours
+declare lean target_rep function single_thread_behaviour = `sorry`
 let {hol; isabelle; tex} single_thread_behaviour opsem (p : program) =
   behaviour single_thread_memory_model single_thread_condition opsem p
 
@@ -1489,6 +1495,7 @@ let locks_only_memory_model =
   |>
 
 val locks_only_behaviour : forall . opsem_t -> program -> program_behaviours
+declare lean target_rep function locks_only_behaviour = `sorry`
 let {hol; isabelle; tex} locks_only_behaviour opsem (p : program) =
   behaviour locks_only_memory_model locks_only_condition opsem p
 
@@ -1590,6 +1597,7 @@ let relaxed_only_memory_model =
 
 
 val relaxed_only_behaviour : forall. opsem_t -> program -> program_behaviours
+declare lean target_rep function relaxed_only_behaviour = `sorry`
 let {hol; isabelle; tex} relaxed_only_behaviour opsem (p : program) =
   behaviour relaxed_only_memory_model relaxed_only_condition opsem p
 
@@ -1651,36 +1659,36 @@ let release_acquire_synchronizes_with_set actions sb asw rf lo =
        release_acquire_synchronizes_with actions sb asw rf lo a b}
 
 val sw_asw: pre_execution -> set (action * action)
-let ~{ocaml} sw_asw Xo =
+let ~{ocaml;lean} sw_asw Xo =
   {(a, b) | forall a b | a IN Xo.actions && 
                          b IN Xo.actions &&
                          tid_of a <> tid_of b &&
                          (a, b) IN Xo.asw}
 
 val sw_lock: pre_execution -> execution_witness -> set (action * action)
-let ~{ocaml} sw_lock Xo Xw =
+let ~{ocaml;lean} sw_lock Xo Xw =
   {(a, b) | forall a b | a IN Xo.actions && 
                          b IN Xo.actions &&
                          tid_of a <> tid_of b &&
                          is_unlock a && is_lock b && (a,b) IN Xw.lo}
 
 val sw_rel_acq: pre_execution -> execution_witness -> set (action * action)
-let ~{ocaml} sw_rel_acq Xo Xw =
+let ~{ocaml;lean} sw_rel_acq Xo Xw =
   {(a, b) | forall a b | a IN Xo.actions && 
                          b IN Xo.actions &&
                          tid_of a <> tid_of b &&
                          is_release a && is_acquire b && (a,b) IN Xw.rf}
 
 val release_acquire_synchronizes_with_set_alt: pre_execution -> execution_witness -> set (action * action)
-let ~{ocaml} release_acquire_synchronizes_with_set_alt Xo Xw =
+let ~{ocaml;lean} release_acquire_synchronizes_with_set_alt Xo Xw =
   (sw_asw Xo) union (sw_lock Xo Xw) union (sw_rel_acq Xo Xw)
 
 val release_acquire_hb: pre_execution -> execution_witness -> set (action * action)
-let ~{ocaml} release_acquire_hb Xo Xw =
+let ~{ocaml;lean} release_acquire_hb Xo Xw =
   no_consume_hb Xo.sb (release_acquire_synchronizes_with_set_alt Xo Xw)
 
 val release_acquire_vse: pre_execution -> execution_witness -> set (action * action)
-let ~{ocaml} release_acquire_vse Xo Xw =
+let ~{ocaml;lean} release_acquire_vse Xo Xw =
   visible_side_effect_set Xo.actions (release_acquire_hb Xo Xw)
 
 let release_acquire_relations Xo Xw =
@@ -1696,7 +1704,7 @@ let release_acquire_relations Xo Xw =
    less efficient to compute, but easier to work with in proofs. *)
 
 val release_acquire_relations_alt: pre_execution -> execution_witness -> relation_list
-let ~{ocaml} release_acquire_relations_alt Xo Xw =
+let ~{ocaml;lean} release_acquire_relations_alt Xo Xw =
     [ ("hb", release_acquire_hb Xo Xw);
       ("vse", release_acquire_vse Xo Xw);
       ("sw", release_acquire_synchronizes_with_set_alt Xo Xw) ]
@@ -1738,6 +1746,7 @@ let release_acquire_memory_model =
 
 
 val release_acquire_behaviour : forall. opsem_t -> program -> program_behaviours
+declare lean target_rep function release_acquire_behaviour = `sorry`
 let {hol; isabelle; tex} release_acquire_behaviour opsem (p : program) =
   behaviour release_acquire_memory_model release_acquire_condition opsem p
 
@@ -1798,7 +1807,7 @@ let release_sequence_set_alt Xo Xw =
   release_sequence_set Xo.actions Xo.lk Xw.mo
 
 val sw_rel_acq_rs: pre_execution -> execution_witness -> set (action * action)
-let ~{ocaml} sw_rel_acq_rs Xo Xw =
+let ~{ocaml;lean} sw_rel_acq_rs Xo Xw =
   {(a, b) | forall a b | a IN Xo.actions && 
                          b IN Xo.actions &&
                          tid_of a <> tid_of b &&
@@ -1807,15 +1816,15 @@ let ~{ocaml} sw_rel_acq_rs Xo Xw =
                                                     (c,b) IN Xw.rf)}
 
 val release_acquire_relaxed_synchronizes_with_set_alt: pre_execution -> execution_witness -> set (action * action)
-let ~{ocaml} release_acquire_relaxed_synchronizes_with_set_alt Xo Xw =
+let ~{ocaml;lean} release_acquire_relaxed_synchronizes_with_set_alt Xo Xw =
   (sw_asw Xo) union (sw_lock Xo Xw) union (sw_rel_acq_rs Xo Xw)
 
 val release_acquire_relaxed_hb: pre_execution -> execution_witness -> set (action * action)
-let ~{ocaml} release_acquire_relaxed_hb Xo Xw =
+let ~{ocaml;lean} release_acquire_relaxed_hb Xo Xw =
   no_consume_hb Xo.sb (release_acquire_relaxed_synchronizes_with_set_alt Xo Xw)
 
 val release_acquire_relaxed_vse: pre_execution -> execution_witness -> set (action * action)
-let ~{ocaml} release_acquire_relaxed_vse Xo Xw =
+let ~{ocaml;lean} release_acquire_relaxed_vse Xo Xw =
   visible_side_effect_set Xo.actions (release_acquire_relaxed_hb Xo Xw)
 
 let release_acquire_relaxed_relations Xo Xw =
@@ -1832,7 +1841,7 @@ let release_acquire_relaxed_relations Xo Xw =
    less efficient to compute, but easier to work with in proofs. *)
 
 val release_acquire_relaxed_relations_alt: pre_execution -> execution_witness -> relation_list
-let ~{ocaml} release_acquire_relaxed_relations_alt Xo Xw =
+let ~{ocaml;lean} release_acquire_relaxed_relations_alt Xo Xw =
     [ ("hb", release_acquire_relaxed_hb Xo Xw);
       ("vse", release_acquire_relaxed_vse Xo Xw);
       ("sw", release_acquire_relaxed_synchronizes_with_set_alt Xo Xw);
@@ -1856,6 +1865,7 @@ let release_acquire_relaxed_memory_model =
 
 
 val release_acquire_relaxed_behaviour : forall. opsem_t -> program -> program_behaviours
+declare lean target_rep function release_acquire_relaxed_behaviour = `sorry`
 let {hol; isabelle; tex} release_acquire_relaxed_behaviour opsem (p : program) =
   behaviour release_acquire_relaxed_memory_model release_acquire_relaxed_condition opsem p
 
@@ -1923,7 +1933,7 @@ let hypothetical_release_sequence_set_alt Xo Xw =
   hypothetical_release_sequence_set Xo.actions Xo.lk Xw.mo
 
 val sw_fence_sb_hrs_rf_sb: pre_execution -> execution_witness -> set (action * action)
-let ~{ocaml} sw_fence_sb_hrs_rf_sb Xo Xw =
+let ~{ocaml;lean} sw_fence_sb_hrs_rf_sb Xo Xw =
   {(a, b) | forall a b | a IN Xo.actions && 
                          b IN Xo.actions &&
                          tid_of a <> tid_of b &&
@@ -1935,7 +1945,7 @@ let ~{ocaml} sw_fence_sb_hrs_rf_sb Xo Xw =
                            (z,b) IN Xo.sb)}
 
 val sw_fence_sb_hrs_rf: pre_execution -> execution_witness -> set (action * action)
-let ~{ocaml} sw_fence_sb_hrs_rf Xo Xw =
+let ~{ocaml;lean} sw_fence_sb_hrs_rf Xo Xw =
   {(a, b) | forall a b | a IN Xo.actions && 
                          b IN Xo.actions &&
                          tid_of a <> tid_of b &&
@@ -1946,7 +1956,7 @@ let ~{ocaml} sw_fence_sb_hrs_rf Xo Xw =
                            (y,b) IN Xw.rf)}
 
 val sw_fence_rs_rf_sb: pre_execution -> execution_witness -> set (action * action)
-let ~{ocaml} sw_fence_rs_rf_sb Xo Xw =
+let ~{ocaml;lean} sw_fence_rs_rf_sb Xo Xw =
   {(a, b) | forall a b | a IN Xo.actions && 
                          b IN Xo.actions &&
                          tid_of a <> tid_of b &&
@@ -1957,16 +1967,16 @@ let ~{ocaml} sw_fence_rs_rf_sb Xo Xw =
                            (y,b) IN Xo.sb)}
 
 val release_acquire_fenced_synchronizes_with_set_alt: pre_execution -> execution_witness -> set (action * action)
-let ~{ocaml} release_acquire_fenced_synchronizes_with_set_alt Xo Xw =
+let ~{ocaml;lean} release_acquire_fenced_synchronizes_with_set_alt Xo Xw =
   (sw_asw Xo) union (sw_lock Xo Xw) union (sw_rel_acq_rs Xo Xw) union
   (sw_fence_sb_hrs_rf_sb Xo Xw) union (sw_fence_sb_hrs_rf Xo Xw) union (sw_fence_rs_rf_sb Xo Xw)
 
 val release_acquire_fenced_hb: pre_execution -> execution_witness -> set (action * action)
-let ~{ocaml} release_acquire_fenced_hb Xo Xw =
+let ~{ocaml;lean} release_acquire_fenced_hb Xo Xw =
   no_consume_hb Xo.sb (release_acquire_fenced_synchronizes_with_set_alt Xo Xw)
 
 val release_acquire_fenced_vse: pre_execution -> execution_witness -> set (action * action)
-let ~{ocaml} release_acquire_fenced_vse Xo Xw =
+let ~{ocaml;lean} release_acquire_fenced_vse Xo Xw =
   visible_side_effect_set Xo.actions (release_acquire_fenced_hb Xo Xw)
 
 val release_acquire_fenced_relations: pre_execution -> execution_witness -> relation_list
@@ -1986,7 +1996,7 @@ let release_acquire_fenced_relations Xo Xw =
    less efficient to compute, but easier to work with in proofs. *)
 
 val release_acquire_fenced_relations_alt: pre_execution -> execution_witness -> relation_list
-let ~{ocaml} release_acquire_fenced_relations_alt Xo Xw =
+let ~{ocaml;lean} release_acquire_fenced_relations_alt Xo Xw =
     [ ("hb", release_acquire_fenced_hb Xo Xw);
       ("vse", release_acquire_fenced_vse Xo Xw);
       ("sw", release_acquire_fenced_synchronizes_with_set_alt Xo Xw);
@@ -2011,6 +2021,7 @@ let release_acquire_fenced_memory_model =
 
 
 val release_acquire_fenced_behaviour : forall. opsem_t -> program -> program_behaviours
+declare lean target_rep function release_acquire_fenced_behaviour = `sorry`
 let {hol; isabelle; tex} release_acquire_fenced_behaviour opsem (p : program) =
   behaviour release_acquire_fenced_memory_model release_acquire_fenced_condition opsem p
 
@@ -2099,6 +2110,7 @@ let sc_accesses_memory_model =
 
 
 val sc_accesses_behaviour : forall. opsem_t -> program -> program_behaviours
+declare lean target_rep function sc_accesses_behaviour = `sorry`
 let {hol; isabelle; tex} sc_accesses_behaviour opsem (p : program) =
   behaviour sc_accesses_memory_model sc_accesses_condition opsem p
 
@@ -2198,6 +2210,7 @@ let sc_fenced_memory_model =
 
 
 val sc_fenced_behaviour : forall. opsem_t -> program -> program_behaviours
+declare lean target_rep function sc_fenced_behaviour = `sorry`
 let {hol; isabelle; tex} sc_fenced_behaviour opsem (p : program) =
   behaviour sc_fenced_memory_model sc_fenced_condition opsem p
 
@@ -2231,7 +2244,7 @@ let with_consume_condition (Xs:set candidate_execution) = (* CSEM *)
 let with_consume_cad_set actions sb dd rf = transitiveClosure ( (rf inter sb) union dd )
 
 val with_consume_cad_set_alt: pre_execution -> execution_witness -> set (action * action)
-let ~{ocaml} with_consume_cad_set_alt Xo Xw =
+let ~{ocaml;lean} with_consume_cad_set_alt Xo Xw =
   with_consume_cad_set Xo.actions Xo.sb Xo.dd Xw.rf
 
 let with_consume_dob actions rf rs cad w a =
@@ -2254,7 +2267,7 @@ let with_consume_dob_set actions rf rs cad =
        dependency_ordered_before actions rf rs cad a b}
 
 val with_consume_dob_set_alt: pre_execution -> execution_witness -> set (action * action)
-let ~{ocaml} with_consume_dob_set_alt Xo Xw =
+let ~{ocaml;lean} with_consume_dob_set_alt Xo Xw =
   with_consume_dob_set Xo.actions 
                        Xw.rf 
                        (release_sequence_set_alt Xo Xw) 
@@ -2270,28 +2283,28 @@ let inter_thread_happens_before actions sb sw dob =
       transitiveClosure (r union (compose sb r))
 
 val inter_thread_happens_before_r: pre_execution -> execution_witness -> set (action * action)
-let ~{ocaml} inter_thread_happens_before_r Xo Xw =
+let ~{ocaml;lean} inter_thread_happens_before_r Xo Xw =
         (release_acquire_fenced_synchronizes_with_set_alt Xo Xw) 
   union (with_consume_dob_set_alt Xo Xw)
   union (compose (release_acquire_fenced_synchronizes_with_set_alt Xo Xw) (Xo.sb))
 
 val inter_thread_happens_before_step: pre_execution -> execution_witness -> set (action * action)
-let ~{ocaml} inter_thread_happens_before_step Xo Xw =
+let ~{ocaml;lean} inter_thread_happens_before_step Xo Xw =
   (inter_thread_happens_before_r Xo Xw) union (compose Xo.sb (inter_thread_happens_before_r Xo Xw))
 
 val inter_thread_happens_before_alt: pre_execution -> execution_witness -> set (action * action)
-let ~{ocaml} inter_thread_happens_before_alt Xo Xw =
+let ~{ocaml;lean} inter_thread_happens_before_alt Xo Xw =
   transitiveClosure (inter_thread_happens_before_step Xo Xw)
 
 let happens_before actions sb ithb =
     sb union ithb
 
 val with_consume_hb: pre_execution -> execution_witness -> set (action * action)
-let ~{ocaml} with_consume_hb Xo Xw =
+let ~{ocaml;lean} with_consume_hb Xo Xw =
   happens_before Xo.actions Xo.sb (inter_thread_happens_before_alt Xo Xw)
 
 val with_consume_vse: pre_execution -> execution_witness -> set (action * action)
-let ~{ocaml} with_consume_vse Xo Xw =
+let ~{ocaml;lean} with_consume_vse Xo Xw =
   visible_side_effect_set Xo.actions (with_consume_hb Xo Xw)
 
 val with_consume_relations: pre_execution -> execution_witness -> relation_list
@@ -2317,7 +2330,7 @@ let with_consume_relations Xo Xw =
    less efficient to compute, but easier to work with in proofs. *)
 
 val with_consume_relations_alt: pre_execution -> execution_witness -> relation_list
-let ~{ocaml} with_consume_relations_alt Xo Xw =
+let ~{ocaml;lean} with_consume_relations_alt Xo Xw =
     [ ("hb", with_consume_hb Xo Xw);
       ("vse", with_consume_vse Xo Xw);
       ("ithb", inter_thread_happens_before_alt Xo Xw);
@@ -2364,6 +2377,7 @@ let with_consume_memory_model =
 
 
 val with_consume_behaviour : forall. opsem_t -> program -> program_behaviours
+declare lean target_rep function with_consume_behaviour = `sorry`
 let {hol; isabelle; tex} with_consume_behaviour opsem (p : program) =
   behaviour with_consume_memory_model with_consume_condition opsem p
 
@@ -2392,7 +2406,7 @@ let standard_vsses actions lk mo hb vse =
   }
 
 val standard_vsses_alt: pre_execution -> execution_witness -> set (action * action)
-let ~{ocaml} standard_vsses_alt Xo Xw =
+let ~{ocaml;lean} standard_vsses_alt Xo Xw =
   standard_vsses Xo.actions 
                  Xo.lk 
                  Xw.mo 
@@ -2423,7 +2437,7 @@ let standard_relations Xo Xw =
    less efficient to compute, but easier to work with in proofs. *)
 
 val standard_relations_alt: pre_execution -> execution_witness -> relation_list
-let ~{ocaml} standard_relations_alt Xo Xw =
+let ~{ocaml;lean} standard_relations_alt Xo Xw =
     [ ("hb", with_consume_hb Xo Xw);
       ("vse", with_consume_vse Xo Xw);
       ("ithb", inter_thread_happens_before_alt Xo Xw);
@@ -2479,6 +2493,7 @@ let standard_memory_model =
   |>
 
 val standard_behaviour : forall. opsem_t -> program -> program_behaviours
+declare lean target_rep function standard_behaviour = `sorry`
 let {hol; isabelle; tex} standard_behaviour opsem (p : program) =
   behaviour standard_memory_model with_consume_condition opsem p
 
@@ -2528,11 +2543,13 @@ let release_acquire_SC_memory_model =
 
 
 val release_acquire_SC_behaviour : forall. opsem_t -> program -> program_behaviours
+declare lean target_rep function release_acquire_SC_behaviour = `sorry`
 let {hol; isabelle; tex} release_acquire_SC_behaviour opsem (p : program) =
   behaviour release_acquire_SC_memory_model release_acquire_SC_condition opsem p
 
 
 val release_acquire_SC_rf_behaviour : forall. opsem_t -> program -> rf_program_behaviours
+declare lean target_rep function release_acquire_SC_rf_behaviour = `sorry`
 let {hol; isabelle; tex} release_acquire_SC_rf_behaviour opsem (p : program) =
   rf_behaviour release_acquire_SC_memory_model release_acquire_SC_condition opsem p
 
@@ -2578,6 +2595,7 @@ let SC_memory_model =
 
 
 val SC_behaviour : forall. opsem_t -> program -> program_behaviours
+declare lean target_rep function SC_behaviour = `sorry`
 let {hol; isabelle; tex} SC_behaviour opsem (p : program) =
   behaviour SC_memory_model SC_condition opsem p
 
@@ -2595,7 +2613,7 @@ let atomic_initialisation_before_all (Xo,_,_) =
 
 
 val bounded_executions : forall. set candidate_execution -> bool
-let {ocaml}
+let {ocaml; lean}
     bounded_executions Xs = true
 let {hol; isabelle; tex} bounded_executions (Xs:set candidate_execution) =
   exists N. forall ((Xo,Xw,rl) IN Xs).
@@ -2726,10 +2744,12 @@ let tot_memory_model =
 
 
 val tot_behaviour : forall. opsem_t -> program -> program_behaviours
+declare lean target_rep function tot_behaviour = `sorry`
 let {hol; isabelle; tex} tot_behaviour opsem (p : program) =
   behaviour tot_memory_model tot_condition opsem p
 
 val tot_rf_behaviour : forall. opsem_t -> program -> rf_program_behaviours
+declare lean target_rep function tot_rf_behaviour = `sorry`
 let {hol; isabelle; tex} tot_rf_behaviour opsem (p : program) =
   rf_behaviour tot_memory_model tot_condition opsem p
 
@@ -3013,6 +3033,7 @@ let release_acquire_no_locks_memory_model =
 
 
 val release_acquire_no_locks_behaviour : forall. opsem_t -> program -> program_behaviours
+declare lean target_rep function release_acquire_no_locks_behaviour = `sorry`
 let {hol; isabelle; tex} release_acquire_no_locks_behaviour opsem (p : program) =
   behaviour release_acquire_no_locks_memory_model release_acquire_no_locks_condition opsem p
 
@@ -3256,9 +3277,11 @@ type program_behaviours_fp =
   | Undefined_fp
 
 val observable_filter_fp : forall. set (candidate_execution_fp) -> set (observable_execution_fp)
+declare lean target_rep function observable_filter_fp = `sorry`
 let {hol; isabelle; tex} observable_filter_fp X = {(Xo,Xw) | exists rl. (Xo,Xw,rl) IN X}
 
 val behaviour_fp : forall. memory_model_fp -> condition_t -> opsem_t -> program -> program_behaviours_fp
+declare lean target_rep function behaviour_fp = `sorry`
 let {hol; isabelle; tex} behaviour_fp M condition opsem (p : program) =
   let consistent_executions_fp =
     { (Xo,Xw,rl) |
@@ -3392,5 +3415,6 @@ let overlap_memory_model =
   |>
 
 val overlap_behaviour: opsem_t -> program -> program_behaviours_fp
+declare lean target_rep function overlap_behaviour = `sorry`
 let {hol; isabelle; tex} overlap_behaviour opsem p =
   behaviour_fp overlap_memory_model sc_fenced_condition opsem p

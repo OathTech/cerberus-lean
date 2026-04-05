@@ -20,29 +20,34 @@ declare ocaml target_rep type domain = `Cerb_debug.domain`
 val get_level: unit -> nat
 declare ocaml target_rep function get_level   = `Cerb_debug.get_debug_level`
 declare hol   target_rep function get_level u = 0 (* TODO: HOL hack *)
+declare lean target_rep function get_level u = (0 : nat)
 
 
 val output_string: string -> unit
 declare ocaml target_rep function output_string = `Cerb_debug.output_string2`
 declare hol   target_rep function output_string = `util$output_string`
+declare lean target_rep function output_string s = ()
 
 val print_debug: nat -> list domain -> (unit -> string) -> unit
 declare ocaml target_rep function print_debug = `Cerb_debug.print_debug`
 declare hol   target_rep function print_debug = `util$print_debug`
+declare lean target_rep function print_debug n ds f = ()
 
 val print_debug_located: nat -> list domain -> Loc.t -> (unit -> string) -> unit
 declare ocaml target_rep function print_debug_located = `Cerb_debug.print_debug_located`
-declare hol   target_rep function print_debug_located =
-                                  `util$print_debug_located`
+declare hol   target_rep function print_debug_located = `util$print_debug_located`
+declare lean target_rep function print_debug_located n ds l f = ()
 
 val print_unsupported: string -> unit
 declare ocaml target_rep function print_unsupported = `Cerb_debug.print_unsupported`
 declare hol   target_rep function print_unsupported = `util$output_string`
+declare lean target_rep function print_unsupported s = ()
 
 
 val warn: list domain -> (unit -> string) -> unit
 declare ocaml target_rep function warn = `Cerb_debug.warn`
 declare hol   target_rep function warn = `util$output_string`
+declare lean target_rep function warn ds f = ()
 
 
 (*

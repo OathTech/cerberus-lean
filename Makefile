@@ -1,6 +1,15 @@
 # Checking for required tools.
+# Lean-only targets don't require dune.
+LEAN_TARGETS := lean-prelude-src lean-build clean-lean
+ifneq ($(MAKECMDGOALS),)
+ifeq ($(filter-out $(LEAN_TARGETS),$(MAKECMDGOALS)),)
+_SKIP_DUNE_CHECK := 1
+endif
+endif
+ifndef _SKIP_DUNE_CHECK
 ifeq (,$(shell command -v dune 2> /dev/null))
 $(error "Compilation requires [dune].")
+endif
 endif
 ifeq (,$(shell command -v lem 2> /dev/null))
 $(error "Compilation requires [lem].")
@@ -274,6 +283,35 @@ clean-sibylfs-src:
 	$(Q)rm -rf $(SIBYLFS_SRC_DIR)
 	$(Q)rm -f sibylfs/lem.log
 
+#### Lean frontend (generated from the same LEM_SRC as the OCaml frontend)
+LEAN_SRC_DIR = lean_frontend/generated
+
+# LEMLIB should point to the built lean-lib directory from septract/lem-lean.
+# Default assumes lem-lean is a sibling checkout at ../../../lem-lean.
+LEMLIB ?= $(abspath ../../../lem-lean/lem-upstream/lean-lib)
+
+.PHONY: lean-prelude-src
+lean-prelude-src: $(LEM_SRC)
+	@echo "[MKDIR] $(LEAN_SRC_DIR)"
+	$(Q)mkdir -p $(LEAN_SRC_DIR)
+	@echo "[LEM] generating Lean files in [$(LEAN_SRC_DIR)] (log in [lean_frontend/lem.log])"
+	$(Q)lem -wl ign -wl_rename warn -wl_pat_red err -wl_pat_exh warn \
+    -outdir $(LEAN_SRC_DIR) -cerberus_pp -lean \
+    $(LEM_SRC) 2> lean_frontend/lem.log || (>&2 cat lean_frontend/lem.log; exit 1)
+
+.PHONY: lean-build
+lean-build: lean-prelude-src
+	@echo "[SYMLINK] lean_frontend/.lemlib -> $(LEMLIB)"
+	$(Q)ln -sfn $(LEMLIB) lean_frontend/.lemlib
+	@echo "[LAKE] building CerberusLean"
+	$(Q)cd lean_frontend && lake build
+
+.PHONY: clean-lean
+clean-lean:
+	$(Q)rm -rf $(LEAN_SRC_DIR)
+	$(Q)rm -f lean_frontend/lem.log
+####
+
 .PHONY: clean-web distclean-web
 clean-web:
 	$(Q)rm -f webcerb.concrete webcerb.symbolic webcerb.vip cerberus-webserver
@@ -290,7 +328,7 @@ clean: clean-web
 	$(Q)rm -rf _build/
 
 .PHONY: distclean
-distclean: clean clean-prelude-src clean-sibylfs-src distclean-web
+distclean: clean clean-prelude-src clean-sibylfs-src clean-lean distclean-web
 
 .PHONY: cerberus-lib
 cerberus-lib:

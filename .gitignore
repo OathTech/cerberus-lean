@@ -15,6 +15,10 @@ ocaml_frontend/lem.log
 sibylfs/lem.log
 ocaml_frontend/generated
 sibylfs/generated
+lean_frontend/generated
+lean_frontend/lem.log
+lean_frontend/.lake/
+lean_frontend/.lemlib
 
 # Elaboration PP tex generation
 generated_tex/
@@ -60,6 +64,9 @@ cerberus.code-workspace
 .vscode/tasks.json
 .cursorignore
 cerb_times.csv
+
+# Claude Code
+.claude/
 
 # macOS
 .DS_Store

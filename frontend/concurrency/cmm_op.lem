@@ -14,6 +14,7 @@ open import {hol} `pp_memTheory` `utilTheory`
 val pretty_stringFromMem_mem_value: forall 'a. 'a -> string
 declare ocaml target_rep function pretty_stringFromMem_mem_value = `String_mem.string_pretty_of_mem_value_decimal`
 declare hol  target_rep function pretty_stringFromMem_mem_value =
+declare lean target_rep function pretty_stringFromMem_mem_value = `sorry`
                                  `util$emptyString`
 
 import Loc (* Somebody is going to hate me for this *)
@@ -101,7 +102,7 @@ let axsimpMemoryModel =
   |>
 
 val axsimpBehaviour: opsem_t -> program -> program_behaviours
-let ~{ocaml} axsimpBehaviour opsem_t p =
+let ~{ocaml;lean} axsimpBehaviour opsem_t p =
   behaviour axsimpMemoryModel sublanguage opsem_t p
 
 
@@ -136,11 +137,11 @@ let incWitRestrict wit actions =
    in a certain order, which we define here. *)
 
 val pre_hb: pre_execution -> set (action * action)
-let ~{ocaml} pre_hb pre = 
+let ~{ocaml;lean} pre_hb pre = 
   pre.sb union (sw_asw pre)
 
 val wit_hb: pre_execution -> execution_witness -> set (action * action)
-let ~{ocaml} wit_hb pre wit = 
+let ~{ocaml;lean} wit_hb pre wit = 
         (sw_lock pre wit)
   union (sw_rel_acq_rs pre wit) 
   union (sw_fence_sb_hrs_rf_sb pre wit)
@@ -268,7 +269,7 @@ incStep: forall pre x y z a.
 
 val consistencyFromTrace: (pre_execution -> incState -> incState -> bool) ->
                           candidate_execution -> bool
-let ~{ocaml} consistencyFromTrace trace (pre, wit, rel) =
+let ~{ocaml;lean} consistencyFromTrace trace (pre, wit, rel) =
   rel = getRelations pre wit &&
   exists s. 
   trace pre (incInitialState pre) s &&
@@ -276,7 +277,7 @@ let ~{ocaml} consistencyFromTrace trace (pre, wit, rel) =
   (incCommittedSet s = pre.actions)
 
 val incConsistent: candidate_execution -> bool
-let ~{ocaml} incConsistent =
+let ~{ocaml;lean} incConsistent =
   consistencyFromTrace incTrace
 
 
@@ -571,7 +572,7 @@ monStep: forall pre x y z a.
   monTrace pre x z
 
 val monConsistent: candidate_execution -> bool
-let ~{ocaml} monConsistent =
+let ~{ocaml;lean} monConsistent =
   consistencyFromTrace monTrace
 
 

@@ -7,6 +7,7 @@ declare ocaml target_rep type float = `float`
 
 val floatEq : float -> float -> bool
 declare ocaml target_rep function floatEq = infix `=`
+declare lean target_rep function floatEq = `sorry`
 
 instance (Eq float)
   let (=) = floatEq
@@ -15,9 +16,11 @@ end
 
 val floatLt : float -> float -> bool
 declare ocaml target_rep function floatLt = infix `<`
+declare lean target_rep function floatLt = `sorry`
 
 val floatLe : float -> float -> bool
 declare ocaml target_rep function floatLe = infix `<=`
+declare lean target_rep function floatLe = `sorry`
 
 val floatCompare : float -> float -> ordering
 let inline floatCompare = defaultCompare
@@ -34,15 +37,19 @@ end
 
 val floatAdd : float -> float -> float
 declare ocaml target_rep function floatAdd = `Cerb_floating.add`
+declare lean target_rep function floatAdd = `sorry`
 
 val floatSub : float -> float -> float
 declare ocaml target_rep function floatSub = `Cerb_floating.sub`
+declare lean target_rep function floatSub = `sorry`
 
 val floatMul : float -> float -> float
 declare ocaml target_rep function floatMul = `Cerb_floating.mul`
+declare lean target_rep function floatMul = `sorry`
 
 val floatDiv : float -> float -> float
 declare ocaml target_rep function floatDiv = `Cerb_floating.div`
+declare lean target_rep function floatDiv = `sorry`
 
 instance (NumAdd float)
   let (+) = floatAdd
@@ -64,18 +71,22 @@ end
 
 val of_int : int -> float
 declare ocaml target_rep function of_int = `float_of_int`
+declare lean target_rep function of_int = `sorry`
 
 val of_integer : integer -> float
 let of_integer x = of_int (Num.intFromInteger x)
 
 val of_string : string -> float
 declare ocaml target_rep function of_string = `Cerb_floating.of_string`
+declare lean target_rep function of_string = `sorry`
 
 val string_of_float : float -> string
 declare ocaml target_rep function string_of_float = `string_of_float`
+declare lean target_rep function string_of_float = `sorry`
 
 val to_int : float -> int
 declare ocaml target_rep function to_int = `int_of_float`
+declare lean target_rep function to_int = `sorry`
 
 val to_integer : float -> integer
 let to_integer x = Num.integerFromInt (to_int x)

@@ -56,9 +56,11 @@ let link_main opt_m1 opt_m2 =
 
 val list_remove_assoc: forall 'a 'b. 'a -> list ('a * 'b) -> list ('a * 'b)
 declare ocaml target_rep function list_remove_assoc = `List.remove_assoc`
+declare lean target_rep function list_remove_assoc = `sorry`
 
 val set_fold: forall 'a 'b. ('a -> 'b -> 'b) -> set 'a -> 'b -> 'b
 declare ocaml target_rep function set_fold = `Pset.fold`
+declare lean target_rep function set_fold = `sorry`
 
 let rec symbols_in_pattern acc (Pattern _ pat) =
   match pat with

@@ -129,6 +129,7 @@ and impl_mem_value =
 
 and shift_path = list shift_path_element
 
+declare lean target_rep type shift_path = `List shift_path_element`
 
 (*
 type allocation =

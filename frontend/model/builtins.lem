@@ -505,14 +505,19 @@ end
 (* Some GCC builtins *)
 val gcc_builtin_generic_ffs: integer -> integer
 declare ocaml target_rep function gcc_builtin_generic_ffs = `Ocaml_gcc_builtins.generic_ffs`
+declare lean target_rep function gcc_builtin_generic_ffs = `sorry`
 
 val gcc_builtin_ctz: integer -> integer
 declare ocaml target_rep function gcc_builtin_ctz = `Ocaml_gcc_builtins.ctz`
+declare lean target_rep function gcc_builtin_ctz = `sorry`
 
 val gcc_builtin_bswap16: integer -> integer
 val gcc_builtin_bswap32: integer -> integer
 val gcc_builtin_bswap64: integer -> integer
 
 declare ocaml target_rep function gcc_builtin_bswap16 = `Ocaml_gcc_builtins.bswap16`
+declare lean target_rep function gcc_builtin_bswap16 = `sorry`
 declare ocaml target_rep function gcc_builtin_bswap32 = `Ocaml_gcc_builtins.bswap32`
+declare lean target_rep function gcc_builtin_bswap32 = `sorry`
 declare ocaml target_rep function gcc_builtin_bswap64 = `Ocaml_gcc_builtins.bswap64`
+declare lean target_rep function gcc_builtin_bswap64 = `sorry`

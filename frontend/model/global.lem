@@ -19,32 +19,42 @@ declare ocaml target_rep function Random         = `Cerb_global.Random`
 
 declare hol target_rep type     execution_mode = `util$execution_mode`
 declare hol target_rep function Interactive    = `util$Interactive`
+declare lean target_rep function Interactive = `sorry`
 declare hol target_rep function Exhaustive     = `util$Exhaustive`
+declare lean target_rep function Exhaustive = `sorry`
 declare hol target_rep function Random         = `util$Random`
+declare lean target_rep function Random = `sorry`
 
 val current_execution_mode: unit -> maybe execution_mode
 declare ocaml target_rep function current_execution_mode = `Cerb_global.current_execution_mode`
 declare hol   target_rep function current_execution_mode = `util$current_execution_mode`
+declare lean target_rep function current_execution_mode = `sorry`
 
 val backend_name: unit -> string
 declare ocaml target_rep function backend_name = `Cerb_global.backend_name`
+declare lean target_rep function backend_name = `sorry`
 
 val using_concurrency: unit -> bool
 declare ocaml target_rep function using_concurrency = `Cerb_global.concurrency_mode`
 declare hol  target_rep function using_concurrency u = false
+declare lean target_rep function using_concurrency u = false
 
 
 val isDefacto: unit -> bool
 declare ocaml target_rep function isDefacto = `Cerb_global.isDefacto`
+declare lean target_rep function isDefacto u = false
 
 val isPermissive: unit -> bool
 declare ocaml target_rep function isPermissive = `Cerb_global.isPermissive`
+declare lean target_rep function isPermissive u = false
 
 val isAgnostic: unit -> bool
 declare ocaml target_rep function isAgnostic = `Cerb_global.isAgnostic`
+declare lean target_rep function isAgnostic u = false
 
 val isIgnoreBitfields: unit -> bool
 declare ocaml target_rep function isIgnoreBitfields = `Cerb_global.isIgnoreBitfields`
+declare lean target_rep function isIgnoreBitfields u = false
 
 type cerb_switch =
   | SW_strict_reads
@@ -56,26 +66,37 @@ type cerb_switch =
   | SW_CHERI
 
 declare ocaml target_rep function SW_strict_reads = `Switches.SW_strict_reads`
+declare lean target_rep function SW_strict_reads = `sorry`
 declare ocaml target_rep function SW_forbid_nullptr_free = `Switches.SW_forbid_nullptr_free`
+declare lean target_rep function SW_forbid_nullptr_free = `sorry`
 declare ocaml target_rep function SW_zap_dead_pointers = `Switches.SW_zap_dead_pointers`
+declare lean target_rep function SW_zap_dead_pointers = `sorry`
 declare ocaml target_rep function SW_inner_arg_temps = `Switches.SW_inner_arg_temps`
+declare lean target_rep function SW_inner_arg_temps = `sorry`
 declare ocaml target_rep function SW_permissive_printf = `Switches.SW_permissive_printf`
+declare lean target_rep function SW_permissive_printf = `sorry`
 declare ocaml target_rep function SW_no_integer_provenance = `Switches.SW_no_integer_provenance`
+declare lean target_rep function SW_no_integer_provenance = `sorry`
 declare ocaml target_rep function SW_CHERI = `Switches.SW_CHERI`
+declare lean target_rep function SW_CHERI = `sorry`
 
 
 val is_CHERI: unit -> bool
 declare ocaml target_rep function is_CHERI = `Switches.is_CHERI`
+declare lean target_rep function is_CHERI u = false
 
 val is_PNVI: unit -> bool
 declare ocaml target_rep function is_PNVI = `Switches.is_PNVI`
+declare lean target_rep function is_PNVI u = false
 
 val has_strict_pointer_arith: unit -> bool
 declare ocaml target_rep function has_strict_pointer_arith = `Switches.has_strict_pointer_arith`
+declare lean target_rep function has_strict_pointer_arith u = false
 
 
 val has_switch: cerb_switch -> bool
 declare ocaml target_rep function has_switch = `Switches.has_switch`
+declare lean target_rep function has_switch s = false
 
 
 

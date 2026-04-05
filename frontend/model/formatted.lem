@@ -334,15 +334,18 @@ let inline (>>=) = Mem.bind
 val stringFromMemValue: Mem.mem_value -> string
 declare ocaml target_rep function stringFromMemValue = `String_mem.string_of_mem_value`
 declare hol   target_rep function stringFromMemValue = `pp$stringFromMemValue`
+declare lean target_rep function stringFromMemValue = `sorry`
 
 val stringFromPointerValue: bool -> Mem.pointer_value -> string
 declare ocaml target_rep function stringFromPointerValue = `String_mem.string_of_pointer_value`
 declare hol   target_rep function stringFromPointerValue =
+declare lean target_rep function stringFromPointerValue = `sorry`
                                   `pp$stringFromPointerValue`
 
 val stringFromCtype: Ctype.ctype -> string
 declare ocaml target_rep function stringFromCtype = `String_core_ctype.string_of_ctype`
 declare hol   target_rep function stringFromCtype = `pp$stringFromCtype`
+declare lean target_rep function stringFromCtype = `sorry`
 
 
 (* the third argument specify have many characters to load at most *)
@@ -396,6 +399,7 @@ let load_character_array elem_ty ptrval prec_n_opt =
 
 val format_string_of_float: nat -> Float.float -> string
 declare ocaml target_rep function format_string_of_float = `Decode.format_string_of_float`
+declare lean target_rep function format_string_of_float = `sorry`
 
 let is_illtyped_conversion expected_ty arg_ty =
   let arg_ty' = Implementation.normalise_ctype arg_ty in

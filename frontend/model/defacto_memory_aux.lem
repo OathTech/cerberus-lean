@@ -60,13 +60,18 @@ val stringFromCore_ctype:  ctype -> string
 declare ocaml target_rep function stringFromPointer_value = `String_defacto_memory.string_of_pointer_value`
 declare ocaml target_rep function stringFromMem_value = `String_defacto_memory.string_of_mem_value`
 declare ocaml target_rep function stringFromInteger_value = `String_defacto_memory.string_of_integer_value`
+declare lean target_rep function stringFromInteger_value = `sorry`
 declare ocaml target_rep function stringFromShift_path = `String_defacto_memory.string_of_shift_path` (* DEBUG *)
 declare ocaml target_rep function stringFromCore_ctype  = `String_core_ctype.string_of_ctype`
+declare lean target_rep function stringFromCore_ctype = `sorry`
 
 (* TODO: HOL hack *)
 declare hol target_rep function stringFromPointer_value p = "??NOT IMPLEMENTED??"
+declare lean target_rep function stringFromPointer_value = `sorry`
 declare hol target_rep function stringFromMem_value p = "??NOT IMPLEMENTED??"
+declare lean target_rep function stringFromMem_value = `sorry`
 declare hol target_rep function stringFromShift_path p = "??NOT IMPLEMENTED??"
+declare lean target_rep function stringFromShift_path = `sorry`
 (* END debug ==================================================================================== *)
 
 
