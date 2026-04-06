@@ -14,7 +14,7 @@ namespace CerbFS
 structure FdEntry where
   path : String
   offset : Nat := 0
-  deriving Inhabited
+  deriving Inhabited, BEq, Repr
 
 /-- Filesystem stat information -/
 structure FsStat where
@@ -48,7 +48,10 @@ structure FsState where
   nextFd : Nat := 3                        -- 0,1,2 reserved for stdin/stdout/stderr
   cwd : String := "/"
   umask : Int := 0o022
-  deriving Inhabited
+  deriving Inhabited, BEq, Repr
+
+instance : Ord FsState where
+  compare _ _ := .eq
 
 -- Stat field accessors
 def fs_dev  (s : FsStat) : Int := s.dev

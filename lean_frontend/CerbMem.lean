@@ -170,6 +170,18 @@ instance : Ord FloatingValue where
 instance : Ord MemValue where
   compare _ _ := .eq
 
+instance : BEq Allocation where
+  beq _ _ := false
+
+instance : BEq AbsByte where
+  beq a b := a.value == b.value
+
+instance : BEq MemState where
+  beq _ _ := false
+
+instance : Ord MemState where
+  compare _ _ := .eq
+
 /-! ## Pointer Value Constructors -/
 
 def nullPtrval (ty : ctype) : PointerValue :=
