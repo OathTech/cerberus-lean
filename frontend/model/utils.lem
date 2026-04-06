@@ -19,7 +19,7 @@ declare lean target_rep function error = `failwith`
 
 val list_init : forall 'a. nat -> (nat -> 'a) -> list 'a
 declare ocaml target_rep function list_init = `List.init` 
-declare lean target_rep function list_init = `sorry`
+declare lean target_rep function list_init = `CerbUtils.list_init`
 
 val mkListN: integer -> list integer
 let rec mkListN_aux n (i: integer) acc =
@@ -321,4 +321,4 @@ let product_list xs ys =
 
 val is_power_of_two: integer -> bool
 declare ocaml target_rep function is_power_of_two = `Cerb_util.is_power_of_two`
-declare lean target_rep function is_power_of_two = `sorry`
+declare lean target_rep function is_power_of_two = `CerbUtils.is_power_of_two`

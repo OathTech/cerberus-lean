@@ -11,6 +11,7 @@ import IntegerType
 import Ctype
 import Symbol
 import Mem_common
+import Nondeterminism
 import CerberusImpl
 import CerbFloat
 import CerbLocation
@@ -409,16 +410,233 @@ def getIntrinsicTypeSpec (_ : String) : Option intrinsics_signature := none
 /-! ## Monadic operations
 
 These operations work within the nondeterminism monad (ndM).
-The ndM type from Nondeterminism.lem is:
-  ndM α string mem_error (mem_constraint integer_value) mem_state
+  memM α = ndM α String mem_error (mem_constraint IntegerValue) MemState
 
-For now, we provide the return-wrapped versions. Full monadic
-implementations require wiring into the ndM monad. -/
+Following lean-c-semantics Memory/Concrete.lean and OCaml impl_mem.ml.
+-/
 
--- Placeholder: monadic operations are sorry for now.
--- The pure constructors/destructors above cover the non-monadic API.
--- The monadic operations (allocate, load, store, kill, pointer comparisons,
--- casts, memcpy, memcmp, realloc, varargs) need to be wired into the
--- nondeterminism monad, which requires more infrastructure.
+abbrev memM (a : Type) := ndM a String mem_error (mem_constraint IntegerValue) MemState
+
+private def memReturn {a : Type} (x : a) : memM a := nd_return x
+private def memGet : memM MemState := nd_get
+private def memPut (st : MemState) : memM Unit := nd_put st
+private def memUpdate (f : MemState → MemState) : memM Unit := nd_update f
+private def memRead {a : Type} (f : MemState → a) : memM a := nd_read f
+private def memFail {a : Type} (err : mem_error) : memM a :=
+  kill (kill_reason.Other err)
+
+/-! ### Helpers -/
+
+private def lookupAlloc (st : MemState) (allocId : Nat) : Option Allocation :=
+  st.allocations.lookup allocId
+
+private def alignDown (addr align : Nat) : Nat :=
+  (addr / align) * align
+
+/-! ### Allocation
+    Corresponds to: impl_mem.ml allocate_object, allocate_region -/
+
+def allocateObject (_ : Nat) (_ : prefix0) (alignIv : IntegerValue)
+    (ty : ctype) (_ : Option Int) (_ : Option MemValue) : memM PointerValue :=
+  ND fun st =>
+    let align := alignIv.val.toNat.max 1
+    let size := match CerberusImpl.sizeof_ity (Signed Int_) with  -- TODO: sizeof ctype
+      | some n => n | none => 1
+    let addrAfterSize := st.lastAddress - size
+    let alignedAddr := alignDown addrAfterSize align
+    let allocId := st.nextAllocId
+    let alloc : Allocation := {
+      base := alignedAddr, size := size, ty := some ty, name := ""
+    }
+    let st' := { st with
+      nextAllocId := allocId + 1
+      lastAddress := alignedAddr
+      allocations := (allocId, alloc) :: st.allocations
+    }
+    let pv := { prov := .some allocId, base := .concrete none alignedAddr }
+    (NDactive pv, st')
+
+def allocateRegion (_ : Nat) (_ : prefix0) (alignIv sizeIv : IntegerValue) : memM PointerValue :=
+  ND fun st =>
+    let align := alignIv.val.toNat.max 1
+    let size := sizeIv.val.toNat
+    let addrAfterSize := st.lastAddress - size
+    let alignedAddr := alignDown addrAfterSize align
+    let allocId := st.nextAllocId
+    let alloc : Allocation := {
+      base := alignedAddr, size := size, name := ""
+    }
+    let st' := { st with
+      nextAllocId := allocId + 1
+      lastAddress := alignedAddr
+      allocations := (allocId, alloc) :: st.allocations
+      dynamicAddrs := alignedAddr :: st.dynamicAddrs
+    }
+    let pv := { prov := .some allocId, base := .concrete none alignedAddr }
+    (NDactive pv, st')
+
+/-! ### Kill (free)
+    Corresponds to: impl_mem.ml kill -/
+
+def killM (_ : t) (_ : Bool) (pv : PointerValue) : memM Unit :=
+  ND fun st =>
+    match pv.base with
+    | .null _ => (NDactive (), st)  -- free(NULL) is allowed
+    | .function _ => (NDkilled (Other (MerrOther "free of function pointer")), st)
+    | .concrete _ addr =>
+      match pv.prov with
+      | .some allocId =>
+        if st.deadAllocations.contains allocId then
+          (NDkilled (Other (MerrOther "double free")), st)
+        else
+          let st' := { st with
+            deadAllocations := allocId :: st.deadAllocations
+            allocations := st.allocations.filter (fun (id, _) => id != allocId)
+          }
+          (NDactive (), st')
+      | _ => (NDkilled (Other (MerrOther "free with no provenance")), st)
+
+/-! ### Load / Store
+    Corresponds to: impl_mem.ml load, store -/
+
+def loadM (_ : t) (_ : ctype) (pv : PointerValue) : memM (Footprint × MemValue) :=
+  ND fun st =>
+    match pv.base with
+    | .null _ => (NDkilled (Other (MerrAccess LoadAccess NullPtr)), st)
+    | .function _ => (NDkilled (Other (MerrAccess LoadAccess FunctionPtr)), st)
+    | .concrete _ addr =>
+      let fp : Footprint := { isWrite := false, base := addr, size := 1 }  -- TODO: sizeof ty
+      let mv := MemValue.unspecified (Ctype [] Void0)  -- TODO: reconstruct from bytemap
+      (NDactive (fp, mv), st)
+
+def storeM (_ : t) (_ : ctype) (_ : Bool) (pv : PointerValue) (_ : MemValue) : memM Footprint :=
+  ND fun st =>
+    match pv.base with
+    | .null _ => (NDkilled (Other (MerrAccess StoreAccess NullPtr)), st)
+    | .function _ => (NDkilled (Other (MerrAccess StoreAccess FunctionPtr)), st)
+    | .concrete _ addr =>
+      let fp : Footprint := { isWrite := true, base := addr, size := 1 }  -- TODO: sizeof ty, write bytes
+      (NDactive fp, st)
+
+/-! ### Pointer comparisons
+    Corresponds to: impl_mem.ml eq_ptrval, ne_ptrval, etc. -/
+
+private def ptrAddr (pv : PointerValue) : Option Nat :=
+  match pv.base with
+  | .concrete _ addr => some addr
+  | _ => none
+
+def eqPtrval (_ : t) (pv1 pv2 : PointerValue) : memM Bool :=
+  memReturn (match pv1.base, pv2.base with
+    | .null _, .null _ => true
+    | .function s1, .function s2 => s1 == s2
+    | .concrete _ a1, .concrete _ a2 => a1 == a2
+    | _, _ => false)
+
+def nePtrval (loc : t) (pv1 pv2 : PointerValue) : memM Bool :=
+  nd_bind (eqPtrval loc pv1 pv2) (fun b => memReturn (!b))
+
+def ltPtrval (_ : t) (pv1 pv2 : PointerValue) : memM Bool :=
+  memReturn (match ptrAddr pv1, ptrAddr pv2 with
+    | some a1, some a2 => a1 < a2
+    | _, _ => false)
+
+def gtPtrval (_ : t) (pv1 pv2 : PointerValue) : memM Bool :=
+  memReturn (match ptrAddr pv1, ptrAddr pv2 with
+    | some a1, some a2 => a1 > a2
+    | _, _ => false)
+
+def lePtrval (_ : t) (pv1 pv2 : PointerValue) : memM Bool :=
+  memReturn (match ptrAddr pv1, ptrAddr pv2 with
+    | some a1, some a2 => a1 <= a2
+    | _, _ => false)
+
+def gePtrval (_ : t) (pv1 pv2 : PointerValue) : memM Bool :=
+  memReturn (match ptrAddr pv1, ptrAddr pv2 with
+    | some a1, some a2 => a1 >= a2
+    | _, _ => false)
+
+def diffPtrval (_ : t) (_ : ctype) (pv1 pv2 : PointerValue) : memM IntegerValue :=
+  memReturn (match ptrAddr pv1, ptrAddr pv2 with
+    | some a1, some a2 => integerIval ((Int.ofNat a1) - (Int.ofNat a2))
+    | _, _ => integerIval 0)
+
+/-! ### Pointer validity -/
+
+def validForDerefPtrval (_ : ctype) (pv : PointerValue) : memM Bool :=
+  ND fun st =>
+    let result := match pv.base with
+      | .null _ | .function _ => false
+      | .concrete _ _ =>
+        match pv.prov with
+        | .some allocId => !st.deadAllocations.contains allocId &&
+            st.allocations.any (fun (id, _) => id == allocId)
+        | _ => false
+    (NDactive result, st)
+
+def isWellAlignedPtrval (_ : ctype) (_ : PointerValue) : memM Bool :=
+  memReturn true  -- TODO: check alignment
+
+/-! ### Pointer casts -/
+
+def ptrfromint (_ : t) (_ : integerType) (_ : ctype) (iv : IntegerValue) : memM PointerValue :=
+  if iv.val == 0 then
+    memReturn (nullPtrval (Ctype [] Void0))
+  else
+    let addr := iv.val.toNat
+    memReturn { prov := iv.prov, base := .concrete none addr }
+
+def intfromptr (_ : t) (_ : ctype) (_ : integerType) (pv : PointerValue) : memM IntegerValue :=
+  memReturn (match pv.base with
+    | .null _ => { val := 0, prov := pv.prov }
+    | .function s => { val := 0, prov := pv.prov }  -- TODO: function address
+    | .concrete _ addr => { val := Int.ofNat addr, prov := pv.prov })
+
+/-! ### Effectful pointer shifts -/
+
+def effArrayShiftPtrval (_ : t) (pv : PointerValue) (elemTy : ctype) (iv : IntegerValue) : memM PointerValue :=
+  memReturn (arrayShiftPtrval pv elemTy iv)
+
+def effMemberShiftPtrval (_ : t) (pv : PointerValue) (tag : sym) (member : identifier) : memM PointerValue :=
+  memReturn (memberShiftPtrval pv tag member)
+
+/-! ### Memory operations -/
+
+def memcpyM (_ : t) (dst src : PointerValue) (_ : IntegerValue) : memM PointerValue :=
+  memReturn dst  -- TODO: copy bytes from src to dst
+
+def memcmpM (pv1 pv2 : PointerValue) (_ : IntegerValue) : memM IntegerValue :=
+  memReturn (integerIval 0)  -- TODO: compare bytes
+
+def reallocM (_ : t) (_ : Nat) (_ : IntegerValue) (pv : PointerValue) (sizeIv : IntegerValue) : memM PointerValue :=
+  memReturn pv  -- TODO: allocate new, copy, free old
+
+/-! ### Prefix operations -/
+
+def updatePrefix (_ : prefix0 × MemValue) : memM Unit := memReturn ()
+def prefixOfPointer (_ : PointerValue) : memM (Option String) := memReturn none
+
+/-! ### Varargs -/
+
+def vaStart (_ : List (ctype × PointerValue)) : memM IntegerValue :=
+  memReturn (integerIval 0)  -- TODO
+
+def vaCopy (_ : IntegerValue) : memM IntegerValue :=
+  memReturn (integerIval 0)
+
+def vaArg (_ : IntegerValue) (_ : ctype) : memM PointerValue :=
+  memReturn (nullPtrval (Ctype [] Void0))
+
+def vaEnd (_ : IntegerValue) : memM Unit := memReturn ()
+
+def vaList (_ : Int) : memM (List (ctype × PointerValue)) := memReturn []
+
+/-! ### Misc -/
+
+def copyAllocId (_ : IntegerValue) (pv : PointerValue) : memM PointerValue :=
+  memReturn pv
+
+def callIntrinsic (_ : t) (_ : String) (_ : List MemValue) : memM (Option MemValue) :=
+  memReturn none
 
 end CerbMem

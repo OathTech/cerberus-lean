@@ -77,15 +77,15 @@ val load: Loc.t -> Ctype.ctype -> pointer_value -> memM (footprint * mem_value)
 val store: Loc.t -> Ctype.ctype -> (* is_locking *)bool -> pointer_value -> mem_value -> memM footprint
 
 declare ocaml target_rep function allocate_object = `Impl_mem.allocate_object`
-declare lean target_rep function allocate_object = `sorry`
+declare lean target_rep function allocate_object = `CerbMem.allocateObject`
 declare ocaml target_rep function allocate_region = `Impl_mem.allocate_region`
-declare lean target_rep function allocate_region = `sorry`
+declare lean target_rep function allocate_region = `CerbMem.allocateRegion`
 declare ocaml target_rep function kill = `Impl_mem.kill`
-declare lean target_rep function kill = `sorry`
+declare lean target_rep function kill = `CerbMem.killM`
 declare ocaml target_rep function load = `Impl_mem.load`
-declare lean target_rep function load = `sorry`
+declare lean target_rep function load = `CerbMem.loadM`
 declare ocaml target_rep function store = `Impl_mem.store`
-declare lean target_rep function store = `sorry`
+declare lean target_rep function store = `CerbMem.storeM`
 
 
 (* Pointer value constructors *)
@@ -120,34 +120,34 @@ val le_ptrval: Loc.t -> pointer_value -> pointer_value -> memM bool
 val ge_ptrval: Loc.t -> pointer_value -> pointer_value -> memM bool
 val diff_ptrval: Loc.t -> Ctype.ctype -> pointer_value -> pointer_value -> memM integer_value
 declare ocaml target_rep function eq_ptrval = `Impl_mem.eq_ptrval`
-declare lean target_rep function eq_ptrval = `sorry`
+declare lean target_rep function eq_ptrval = `CerbMem.eqPtrval`
 declare ocaml target_rep function ne_ptrval = `Impl_mem.ne_ptrval`
-declare lean target_rep function ne_ptrval = `sorry`
+declare lean target_rep function ne_ptrval = `CerbMem.nePtrval`
 declare ocaml target_rep function lt_ptrval = `Impl_mem.lt_ptrval`
-declare lean target_rep function lt_ptrval = `sorry`
+declare lean target_rep function lt_ptrval = `CerbMem.ltPtrval`
 declare ocaml target_rep function gt_ptrval = `Impl_mem.gt_ptrval`
-declare lean target_rep function gt_ptrval = `sorry`
+declare lean target_rep function gt_ptrval = `CerbMem.gtPtrval`
 declare ocaml target_rep function le_ptrval = `Impl_mem.le_ptrval`
-declare lean target_rep function le_ptrval = `sorry`
+declare lean target_rep function le_ptrval = `CerbMem.lePtrval`
 declare ocaml target_rep function ge_ptrval = `Impl_mem.ge_ptrval`
-declare lean target_rep function ge_ptrval = `sorry`
+declare lean target_rep function ge_ptrval = `CerbMem.gePtrval`
 declare ocaml target_rep function diff_ptrval = `Impl_mem.diff_ptrval`
-declare lean target_rep function diff_ptrval = `sorry`
+declare lean target_rep function diff_ptrval = `CerbMem.diffPtrval`
 
 val update_prefix: (Symbol.prefix * mem_value) -> memM unit
 val prefix_of_pointer: pointer_value -> memM (maybe string)
 declare ocaml target_rep function update_prefix = `Impl_mem.update_prefix`
-declare lean target_rep function update_prefix = `sorry`
+declare lean target_rep function update_prefix = `CerbMem.updatePrefix`
 declare ocaml target_rep function prefix_of_pointer = `Impl_mem.prefix_of_pointer`
-declare lean target_rep function prefix_of_pointer = `sorry`
+declare lean target_rep function prefix_of_pointer = `CerbMem.prefixOfPointer`
 
 val validForDeref_ptrval: Ctype.ctype -> pointer_value -> memM bool
 declare ocaml target_rep function validForDeref_ptrval = `Impl_mem.validForDeref_ptrval`
-declare lean target_rep function validForDeref_ptrval = `sorry`
+declare lean target_rep function validForDeref_ptrval = `CerbMem.validForDerefPtrval`
 
 val isWellAligned_ptrval: Ctype.ctype -> pointer_value -> memM bool
 declare ocaml target_rep function isWellAligned_ptrval = `Impl_mem.isWellAligned_ptrval`
-declare lean target_rep function isWellAligned_ptrval = `sorry`
+declare lean target_rep function isWellAligned_ptrval = `CerbMem.isWellAlignedPtrval`
 
 (* Casting operations *)
 (* the first ctype is the original integer type, the second is the target referenced type *)
@@ -155,9 +155,9 @@ val ptrfromint: Loc.t -> Ctype.integerType -> Ctype.ctype -> integer_value -> me
 (* the first ctype is the original referenced type, the integerType is the target integer type *)
 val intfromptr: Loc.t -> Ctype.ctype -> Ctype.integerType -> pointer_value -> memM integer_value
 declare ocaml target_rep function ptrfromint = `Impl_mem.ptrfromint`
-declare lean target_rep function ptrfromint = `sorry`
+declare lean target_rep function ptrfromint = `CerbMem.ptrfromint`
 declare ocaml target_rep function intfromptr = `Impl_mem.intfromptr`
-declare lean target_rep function intfromptr = `sorry`
+declare lean target_rep function intfromptr = `CerbMem.intfromptr`
 
 val derive_cap : bool(* is_signed *) -> Mem_common.derivecap_op -> integer_value -> integer_value -> integer_value
 val cap_assign_value: Loc.t -> integer_value -> integer_value -> integer_value
@@ -184,9 +184,9 @@ declare lean target_rep function member_shift_ptrval = `CerbMem.memberShiftPtrva
 val eff_array_shift_ptrval: Loc.t -> pointer_value -> Ctype.ctype -> integer_value -> memM pointer_value
 val eff_member_shift_ptrval: Loc.t -> pointer_value -> Symbol.sym -> Symbol.identifier -> memM pointer_value
 declare ocaml target_rep function eff_array_shift_ptrval = `Impl_mem.eff_array_shift_ptrval`
-declare lean target_rep function eff_array_shift_ptrval = `sorry`
+declare lean target_rep function eff_array_shift_ptrval = `CerbMem.effArrayShiftPtrval`
 declare ocaml target_rep function eff_member_shift_ptrval = `Impl_mem.eff_member_shift_ptrval`
-declare lean target_rep function eff_member_shift_ptrval = `sorry`
+declare lean target_rep function eff_member_shift_ptrval = `CerbMem.effMemberShiftPtrval`
 
 
 val memcpy: Loc.t -> pointer_value -> pointer_value -> integer_value -> memM pointer_value
@@ -194,11 +194,11 @@ val memcmp: pointer_value -> pointer_value -> integer_value -> memM integer_valu
 val realloc: Loc.t -> Mem_common.thread_id -> integer_value -> pointer_value -> integer_value -> memM pointer_value
 
 declare ocaml target_rep function memcpy = `Impl_mem.memcpy`
-declare lean target_rep function memcpy = `sorry`
+declare lean target_rep function memcpy = `CerbMem.memcpyM`
 declare ocaml target_rep function memcmp = `Impl_mem.memcmp`
-declare lean target_rep function memcmp = `sorry`
+declare lean target_rep function memcmp = `CerbMem.memcmpM`
 declare ocaml target_rep function realloc = `Impl_mem.realloc`
-declare lean target_rep function realloc = `sorry`
+declare lean target_rep function realloc = `CerbMem.reallocM`
 
 val va_start: list (Ctype.ctype * pointer_value) -> memM integer_value
 val va_copy: integer_value -> memM integer_value
@@ -207,20 +207,20 @@ val va_end: integer_value -> memM unit
 val va_list: integer -> memM (list (Ctype.ctype * pointer_value))
 
 declare ocaml target_rep function va_start = `Impl_mem.va_start`
-declare lean target_rep function va_start = `sorry`
+declare lean target_rep function va_start = `CerbMem.vaStart`
 declare ocaml target_rep function va_copy = `Impl_mem.va_copy`
-declare lean target_rep function va_copy = `sorry`
+declare lean target_rep function va_copy = `CerbMem.vaCopy`
 declare ocaml target_rep function va_arg = `Impl_mem.va_arg`
-declare lean target_rep function va_arg = `sorry`
+declare lean target_rep function va_arg = `CerbMem.vaArg`
 declare ocaml target_rep function va_end = `Impl_mem.va_end`
-declare lean target_rep function va_end = `sorry`
+declare lean target_rep function va_end = `CerbMem.vaEnd`
 declare ocaml target_rep function va_list = `Impl_mem.va_list`
-declare lean target_rep function va_list = `sorry`
+declare lean target_rep function va_list = `CerbMem.vaList`
 
 (* only implemented by the VIP memory model *)
 val copy_alloc_id: integer_value -> pointer_value -> memM pointer_value
 declare ocaml target_rep function copy_alloc_id = `Impl_mem.copy_alloc_id`
-declare lean target_rep function copy_alloc_id = `sorry`
+declare lean target_rep function copy_alloc_id = `CerbMem.copyAllocId`
 
 (* Byte casting operations *)
 val bytefromint: integer_value -> integer_value
@@ -398,7 +398,7 @@ declare lean target_rep function get_intrinsic_type_spec = `CerbMem.getIntrinsic
 
 val call_intrinsic: Loc.t -> string -> list mem_value -> memM (maybe mem_value)
 declare ocaml target_rep function call_intrinsic = `Impl_mem.call_intrinsic`
-declare lean target_rep function call_intrinsic = `sorry`
+declare lean target_rep function call_intrinsic = `CerbMem.callIntrinsic`
 
 
 
