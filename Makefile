@@ -288,7 +288,7 @@ LEAN_SRC_DIR = lean_frontend/generated
 
 # Hand-written Lean files that are symlinked into generated/ and patched
 # into generated imports. Mirrors the OCaml sed patches in prelude-src.
-LEAN_HANDWRITTEN = CerberusImpl.lean CerbLocation.lean CerberusFresh.lean CerbGlobal.lean CerbFloat.lean CerbUtils.lean CerbPP.lean CerbMem.lean
+LEAN_HANDWRITTEN = CerberusImpl.lean CerbLocation.lean CerberusFresh.lean CerbGlobal.lean CerbFloat.lean CerbUtils.lean CerbPP.lean CerbMem.lean CerbFS.lean CerbConcurrency.lean
 
 .PHONY: lean-prelude-src
 lean-prelude-src: $(LEM_SRC)
@@ -322,6 +322,14 @@ lean-prelude-src: $(LEM_SRC)
 	$(Q)$(SEDI) -e 's/default := Interactive/default := CerbGlobal.ExecutionMode.exhaustive/' $(LEAN_SRC_DIR)/Global.lean
 	$(Q)$(SEDI) -e 's/default := SW_strict_reads/default := CerbGlobal.CerbSwitch.strict_reads/' $(LEAN_SRC_DIR)/Global.lean
 	$(Q)$(SEDI) -e '/^open cerb_switch$$/d' -e '/^open execution_mode$$/d' $(LEAN_SRC_DIR)/Global.lean $(LEAN_SRC_DIR)/Global_auxiliary.lean
+	$(Q){ echo 'import CerbFS'; cat $(LEAN_SRC_DIR)/Fs.lean; } > $(LEAN_SRC_DIR)/Fs.lean.tmp
+	$(Q)mv $(LEAN_SRC_DIR)/Fs.lean.tmp $(LEAN_SRC_DIR)/Fs.lean
+	$(Q)$(SEDI) -e 's/^inductive  fs_stat : Type where$$/abbrev fs_stat := CerbFS.FsStat/' $(LEAN_SRC_DIR)/Fs.lean
+	$(Q)$(SEDI) -e 's/^inductive  fs_error : Type where$$/abbrev fs_error := CerbFS.FsError/' $(LEAN_SRC_DIR)/Fs.lean
+	$(Q)$(SEDI) -e 's/^inductive  fs_state : Type where$$/abbrev fs_state := CerbFS.FsState/' $(LEAN_SRC_DIR)/Fs.lean
+	$(Q)$(SEDI) -e '/^open fs_stat$$/d' -e '/^open fs_error$$/d' -e '/^open fs_state$$/d' $(LEAN_SRC_DIR)/Fs.lean $(LEAN_SRC_DIR)/Fs_auxiliary.lean
+	$(Q){ echo 'import CerbConcurrency'; cat $(LEAN_SRC_DIR)/Cmm_csem.lean; } > $(LEAN_SRC_DIR)/Cmm_csem.lean.tmp
+	$(Q)mv $(LEAN_SRC_DIR)/Cmm_csem.lean.tmp $(LEAN_SRC_DIR)/Cmm_csem.lean
 	$(Q)$(SEDI) -e '/^import Operators$$/d' $(LEAN_SRC_DIR)/Core_run.lean
 	$(Q)$(SEDI) -e 's/^inductive  float : Type where$$/abbrev float := Float/' $(LEAN_SRC_DIR)/Float.lean
 	$(Q)$(SEDI) -e '/^open float$$/d' $(LEAN_SRC_DIR)/Float.lean $(LEAN_SRC_DIR)/Float_auxiliary.lean

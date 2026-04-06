@@ -3,165 +3,169 @@ open import Num Maybe Either
 
 type fs_stat
 declare ocaml target_rep type fs_stat = `Sibylfs.fs_stat`
+declare lean target_rep type fs_stat = `CerbFS.FsStat`
 
 val fs_dev: fs_stat -> integer
 declare ocaml target_rep function fs_dev = `Sibylfs.fs_dev`
-declare lean target_rep function fs_dev = `sorry`
+declare lean target_rep function fs_dev = `CerbFS.fs_dev`
 
 val fs_ino: fs_stat -> integer
 declare ocaml target_rep function fs_ino = `Sibylfs.fs_ino`
-declare lean target_rep function fs_ino = `sorry`
+declare lean target_rep function fs_ino = `CerbFS.fs_ino`
 
 val fs_mode: fs_stat -> integer
 declare ocaml target_rep function fs_mode = `Sibylfs.fs_mode`
-declare lean target_rep function fs_mode = `sorry`
+declare lean target_rep function fs_mode = `CerbFS.fs_mode`
 
 val fs_nlink: fs_stat -> integer
 declare ocaml target_rep function fs_nlink = `Sibylfs.fs_nlink`
-declare lean target_rep function fs_nlink = `sorry`
+declare lean target_rep function fs_nlink = `CerbFS.fs_nlink`
 
 val fs_uid: fs_stat -> integer
 declare ocaml target_rep function fs_uid = `Sibylfs.fs_uid`
-declare lean target_rep function fs_uid = `sorry`
+declare lean target_rep function fs_uid = `CerbFS.fs_uid`
 
 val fs_gid: fs_stat -> integer
 declare ocaml target_rep function fs_gid = `Sibylfs.fs_gid`
-declare lean target_rep function fs_gid = `sorry`
+declare lean target_rep function fs_gid = `CerbFS.fs_gid`
 
 val fs_rdev: fs_stat -> integer
 declare ocaml target_rep function fs_rdev = `Sibylfs.fs_rdev`
-declare lean target_rep function fs_rdev = `sorry`
+declare lean target_rep function fs_rdev = `CerbFS.fs_rdev`
 
 val fs_size: fs_stat -> integer
 declare ocaml target_rep function fs_size = `Sibylfs.fs_size`
-declare lean target_rep function fs_size = `sorry`
+declare lean target_rep function fs_size = `CerbFS.fs_size`
 
 val fs_atime: fs_stat -> integer
 declare ocaml target_rep function fs_atime = `Sibylfs.fs_atime`
-declare lean target_rep function fs_atime = `sorry`
+declare lean target_rep function fs_atime = `CerbFS.fs_atime`
 
 val fs_mtime: fs_stat -> integer
 declare ocaml target_rep function fs_mtime = `Sibylfs.fs_mtime`
-declare lean target_rep function fs_mtime = `sorry`
+declare lean target_rep function fs_mtime = `CerbFS.fs_mtime`
 
 val fs_ctime: fs_stat -> integer
 declare ocaml target_rep function fs_ctime = `Sibylfs.fs_ctime`
-declare lean target_rep function fs_ctime = `sorry`
+declare lean target_rep function fs_ctime = `CerbFS.fs_ctime`
 
 type fs_error
 declare ocaml target_rep type fs_error = `Sibylfs.fs_error`
+declare lean target_rep type fs_error = `CerbFS.FsError`
 
 val fs_string_of_error: fs_error -> string
 declare ocaml target_rep function fs_string_of_error = `Sexplib.Sexp.to_string @@ Fs_spec.Fs_types.sexp_of_error`
-declare lean target_rep function fs_string_of_error = `sorry`
+declare lean target_rep function fs_string_of_error = `CerbFS.fs_string_of_error`
 
 type fs_state
 declare ocaml target_rep type fs_state = `Sibylfs.fs_state`
+declare lean target_rep type fs_stat = `CerbFS.FsStat`
+declare lean target_rep type fs_state = `CerbFS.FsState`
 
 val fs_initial_state: fs_state
 declare ocaml target_rep function fs_initial_state = `Sibylfs.fs_initial_state`
-declare lean target_rep function fs_initial_state = `sorry`
+declare lean target_rep function fs_initial_state = `CerbFS.fs_initial_state`
 
 val string_of_fs_state: fs_state -> string
 declare ocaml target_rep function string_of_fs_state = `Sexplib.Sexp.to_string_hum @@ Sibylfs.sexp_of_fs_state`
-declare lean target_rep function string_of_fs_state = `sorry`
+declare lean target_rep function string_of_fs_state = `CerbFS.string_of_fs_state`
 
 val fs_mkdir: fs_state -> string -> integer -> fs_state * (either fs_error nat)
 declare ocaml target_rep function fs_mkdir = `Sibylfs.run_mkdir`
-declare lean target_rep function fs_mkdir = `sorry`
+declare lean target_rep function fs_mkdir = `CerbFS.fs_mkdir`
 
 val fs_open: fs_state -> string -> integer -> maybe integer -> fs_state * (either fs_error nat)
 declare ocaml target_rep function fs_open = `Sibylfs.run_open`
-declare lean target_rep function fs_open = `sorry`
+declare lean target_rep function fs_open = `CerbFS.fs_open`
 
 val fs_close: fs_state -> integer -> fs_state * (either fs_error nat)
 declare ocaml target_rep function fs_close = `Sibylfs.run_close`
-declare lean target_rep function fs_close = `sorry`
+declare lean target_rep function fs_close = `CerbFS.fs_close`
 
 val fs_write: fs_state -> integer -> list char -> integer -> fs_state * (either fs_error nat)
 declare ocaml target_rep function fs_write = `Sibylfs.run_write`
-declare lean target_rep function fs_write = `sorry`
+declare lean target_rep function fs_write = `CerbFS.fs_write`
 
 val fs_read: fs_state -> integer -> integer -> fs_state * (either fs_error (list char))
 declare ocaml target_rep function fs_read = `Sibylfs.run_read`
-declare lean target_rep function fs_read = `sorry`
+declare lean target_rep function fs_read = `CerbFS.fs_read`
 
 val fs_pwrite: fs_state -> integer -> list char -> integer -> integer -> fs_state * (either fs_error nat)
 declare ocaml target_rep function fs_pwrite = `Sibylfs.run_pwrite`
-declare lean target_rep function fs_pwrite = `sorry`
+declare lean target_rep function fs_pwrite = `CerbFS.fs_pwrite`
 
 val fs_pread: fs_state -> integer -> integer -> integer -> fs_state * (either fs_error (list char))
 declare ocaml target_rep function fs_pread = `Sibylfs.run_pread`
-declare lean target_rep function fs_pread = `sorry`
+declare lean target_rep function fs_pread = `CerbFS.fs_pread`
 
 val fs_rename: fs_state -> string -> string -> fs_state * (either fs_error nat)
 declare ocaml target_rep function fs_rename = `Sibylfs.run_rename`
-declare lean target_rep function fs_rename = `sorry`
+declare lean target_rep function fs_rename = `CerbFS.fs_rename`
 
 val fs_umask: fs_state -> integer -> fs_state * (either fs_error nat)
 declare ocaml target_rep function fs_umask = `Sibylfs.run_umask`
-declare lean target_rep function fs_umask = `sorry`
+declare lean target_rep function fs_umask = `CerbFS.fs_umask`
 
 val fs_chmod: fs_state -> string -> integer -> fs_state * (either fs_error nat)
 declare ocaml target_rep function fs_chmod = `Sibylfs.run_chmod`
-declare lean target_rep function fs_chmod = `sorry`
+declare lean target_rep function fs_chmod = `CerbFS.fs_chmod`
 
 val fs_chdir: fs_state -> string -> fs_state * (either fs_error nat)
 declare ocaml target_rep function fs_chdir = `Sibylfs.run_chdir`
-declare lean target_rep function fs_chdir = `sorry`
+declare lean target_rep function fs_chdir = `CerbFS.fs_chdir`
 
 val fs_chown: fs_state -> string -> integer -> integer -> fs_state * (either fs_error nat)
 declare ocaml target_rep function fs_chown = `Sibylfs.run_chown`
-declare lean target_rep function fs_chown = `sorry`
+declare lean target_rep function fs_chown = `CerbFS.fs_chown`
 
 val fs_link: fs_state -> string -> string -> fs_state * (either fs_error nat)
 declare ocaml target_rep function fs_link = `Sibylfs.run_link`
-declare lean target_rep function fs_link = `sorry`
+declare lean target_rep function fs_link = `CerbFS.fs_link`
 
 val fs_readlink: fs_state -> string -> fs_state * (either fs_error (list char))
 declare ocaml target_rep function fs_readlink = `Sibylfs.run_readlink`
-declare lean target_rep function fs_readlink = `sorry`
+declare lean target_rep function fs_readlink = `CerbFS.fs_readlink`
 
 val fs_symlink: fs_state -> string -> string -> fs_state * (either fs_error nat)
 declare ocaml target_rep function fs_symlink = `Sibylfs.run_symlink`
-declare lean target_rep function fs_symlink = `sorry`
+declare lean target_rep function fs_symlink = `CerbFS.fs_symlink`
 
 val fs_rmdir: fs_state -> string -> fs_state * (either fs_error nat)
 declare ocaml target_rep function fs_rmdir = `Sibylfs.run_rmdir`
-declare lean target_rep function fs_rmdir = `sorry`
+declare lean target_rep function fs_rmdir = `CerbFS.fs_rmdir`
 
 val fs_truncate: fs_state -> string -> integer -> fs_state * (either fs_error nat)
 declare ocaml target_rep function fs_truncate = `Sibylfs.run_truncate`
-declare lean target_rep function fs_truncate = `sorry`
+declare lean target_rep function fs_truncate = `CerbFS.fs_truncate`
 
 val fs_unlink: fs_state -> string -> fs_state * (either fs_error nat)
 declare ocaml target_rep function fs_unlink = `Sibylfs.run_unlink`
-declare lean target_rep function fs_unlink = `sorry`
+declare lean target_rep function fs_unlink = `CerbFS.fs_unlink`
 
 val fs_lseek: fs_state -> integer -> integer -> integer -> fs_state * (either fs_error nat)
 declare ocaml target_rep function fs_lseek = `Sibylfs.run_lseek`
-declare lean target_rep function fs_lseek = `sorry`
+declare lean target_rep function fs_lseek = `CerbFS.fs_lseek`
 
 val fs_stat: fs_state -> string -> fs_state * (either fs_error fs_stat)
 declare ocaml target_rep function fs_stat = `Sibylfs.run_stat`
-declare lean target_rep function fs_stat = `sorry`
+declare lean target_rep function fs_stat = `CerbFS.fs_stat`
 
 val fs_lstat: fs_state -> string -> fs_state * (either fs_error fs_stat)
 declare ocaml target_rep function fs_lstat = `Sibylfs.run_lstat`
-declare lean target_rep function fs_lstat = `sorry`
+declare lean target_rep function fs_lstat = `CerbFS.fs_lstat`
 
 val fs_opendir: fs_state -> string -> fs_state * (either fs_error nat)
 declare ocaml target_rep function fs_opendir = `Sibylfs.run_opendir`
-declare lean target_rep function fs_opendir = `sorry`
+declare lean target_rep function fs_opendir = `CerbFS.fs_opendir`
 
 val fs_readdir: fs_state -> integer -> fs_state * (either fs_error (list char))
 declare ocaml target_rep function fs_readdir = `Sibylfs.run_readdir`
-declare lean target_rep function fs_readdir = `sorry`
+declare lean target_rep function fs_readdir = `CerbFS.fs_readdir`
 
 val fs_rewinddir: fs_state -> integer -> fs_state
 declare ocaml target_rep function fs_rewinddir = `Sibylfs.run_rewinddir`
-declare lean target_rep function fs_rewinddir = `sorry`
+declare lean target_rep function fs_rewinddir = `CerbFS.fs_rewinddir`
 
 val fs_closedir: fs_state -> integer -> fs_state * (either fs_error nat)
 declare ocaml target_rep function fs_closedir = `Sibylfs.run_closedir`
-declare lean target_rep function fs_closedir = `sorry`
+declare lean target_rep function fs_closedir = `CerbFS.fs_closedir`

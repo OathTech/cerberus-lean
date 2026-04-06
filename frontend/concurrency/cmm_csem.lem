@@ -652,7 +652,7 @@ let each_empty faults_list X =
 
 
 val statically_satisfied : forall. condition_t -> opsem_t -> program -> bool
-declare lean target_rep function statically_satisfied = `sorry`
+declare lean target_rep function statically_satisfied = `CerbConcurrency.statically_satisfied`
 let {hol; isabelle; tex} statically_satisfied condition opsem (p : program) =
   let Xs = {(Xo,Xw,rl) | opsem p Xo} in
   condition Xs

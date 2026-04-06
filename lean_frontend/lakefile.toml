@@ -98,4 +98,6 @@ roots = [
   "CerbUtils",
   "CerbPP",
   "CerbMem",
+  "CerbFS",
+  "CerbConcurrency",
 ]
