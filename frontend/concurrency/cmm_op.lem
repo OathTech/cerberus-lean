@@ -13,9 +13,8 @@ open import {hol} `pp_memTheory` `utilTheory`
 (* TODO: It was not type checking with Mem.mem_value *)
 val pretty_stringFromMem_mem_value: forall 'a. 'a -> string
 declare ocaml target_rep function pretty_stringFromMem_mem_value = `String_mem.string_pretty_of_mem_value_decimal`
-declare hol  target_rep function pretty_stringFromMem_mem_value =
+declare hol  target_rep function pretty_stringFromMem_mem_value = `util$emptyString`
 declare lean target_rep function pretty_stringFromMem_mem_value = `sorry`
-                                 `util$emptyString`
 
 import Loc (* Somebody is going to hate me for this *)
 

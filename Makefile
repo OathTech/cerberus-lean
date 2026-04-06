@@ -288,7 +288,7 @@ LEAN_SRC_DIR = lean_frontend/generated
 
 # Hand-written Lean files that are symlinked into generated/ and patched
 # into generated imports. Mirrors the OCaml sed patches in prelude-src.
-LEAN_HANDWRITTEN = CerberusImpl.lean CerbLocation.lean CerberusFresh.lean CerbGlobal.lean CerbFloat.lean CerbUtils.lean CerbPP.lean
+LEAN_HANDWRITTEN = CerberusImpl.lean CerbLocation.lean CerberusFresh.lean CerbGlobal.lean CerbFloat.lean CerbUtils.lean CerbPP.lean CerbMem.lean
 
 .PHONY: lean-prelude-src
 lean-prelude-src: $(LEM_SRC)
@@ -322,6 +322,7 @@ lean-prelude-src: $(LEM_SRC)
 	$(Q)$(SEDI) -e 's/default := Interactive/default := CerbGlobal.ExecutionMode.exhaustive/' $(LEAN_SRC_DIR)/Global.lean
 	$(Q)$(SEDI) -e 's/default := SW_strict_reads/default := CerbGlobal.CerbSwitch.strict_reads/' $(LEAN_SRC_DIR)/Global.lean
 	$(Q)$(SEDI) -e '/^open cerb_switch$$/d' -e '/^open execution_mode$$/d' $(LEAN_SRC_DIR)/Global.lean $(LEAN_SRC_DIR)/Global_auxiliary.lean
+	$(Q)$(SEDI) -e '/^import Operators$$/d' $(LEAN_SRC_DIR)/Core_run.lean
 	$(Q)$(SEDI) -e 's/^inductive  float : Type where$$/abbrev float := Float/' $(LEAN_SRC_DIR)/Float.lean
 	$(Q)$(SEDI) -e '/^open float$$/d' $(LEAN_SRC_DIR)/Float.lean $(LEAN_SRC_DIR)/Float_auxiliary.lean
 	$(Q){ echo 'import CerbFloat'; cat $(LEAN_SRC_DIR)/Float.lean; } > $(LEAN_SRC_DIR)/Float.lean.tmp
@@ -350,6 +351,15 @@ lean-prelude-src: $(LEM_SRC)
 	$(Q)mv $(LEAN_SRC_DIR)/Formatted.lean.tmp $(LEAN_SRC_DIR)/Formatted.lean
 	$(Q){ echo 'import CerbPP'; cat $(LEAN_SRC_DIR)/AilWf.lean; } > $(LEAN_SRC_DIR)/AilWf.lean.tmp
 	$(Q)mv $(LEAN_SRC_DIR)/AilWf.lean.tmp $(LEAN_SRC_DIR)/AilWf.lean
+	$(Q){ echo 'import CerbMem'; cat $(LEAN_SRC_DIR)/Mem.lean; } > $(LEAN_SRC_DIR)/Mem.lean.tmp
+	$(Q)mv $(LEAN_SRC_DIR)/Mem.lean.tmp $(LEAN_SRC_DIR)/Mem.lean
+	$(Q)$(SEDI) -e 's/^inductive  pointer_value : Type where$$/abbrev pointer_value := CerbMem.PointerValue/' $(LEAN_SRC_DIR)/Mem.lean
+	$(Q)$(SEDI) -e 's/^inductive  integer_value : Type where$$/abbrev integer_value := CerbMem.IntegerValue/' $(LEAN_SRC_DIR)/Mem.lean
+	$(Q)$(SEDI) -e 's/^inductive  floating_value : Type where$$/abbrev floating_value := CerbMem.FloatingValue/' $(LEAN_SRC_DIR)/Mem.lean
+	$(Q)$(SEDI) -e 's/^inductive  mem_value : Type where$$/abbrev mem_value := CerbMem.MemValue/' $(LEAN_SRC_DIR)/Mem.lean
+	$(Q)$(SEDI) -e 's/^inductive  footprint : Type where$$/abbrev footprint := CerbMem.Footprint/' $(LEAN_SRC_DIR)/Mem.lean
+	$(Q)$(SEDI) -e 's/^inductive  mem_state : Type where$$/abbrev mem_state := CerbMem.MemState/' $(LEAN_SRC_DIR)/Mem.lean
+	$(Q)$(SEDI) -e '/^open pointer_value$$/d' -e '/^open integer_value$$/d' -e '/^open floating_value$$/d' -e '/^open mem_value$$/d' -e '/^open footprint$$/d' -e '/^open mem_state$$/d' $(LEAN_SRC_DIR)/Mem.lean $(LEAN_SRC_DIR)/Mem_auxiliary.lean
 
 .PHONY: lean-build
 lean-build: lean-prelude-src

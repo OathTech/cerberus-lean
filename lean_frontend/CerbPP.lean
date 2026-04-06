@@ -30,9 +30,9 @@ def stringFromCabs_declarator {α : Type} (_ : α) : String := "<declarator>"
 def stringFromAil_genType {α : Type} (_ : α) : String := "<ail_genType>"
 def stringFromAil_statement {α : Type} (_ : α) : String := "<ail_statement>"
 def stringFromAil_qualifiers {α : Type} (_ : α) : String := "<ail_qualifiers>"
-def stringFromAil_ctype {α : Type} (_ : α) : String := "<ail_ctype>"
+def stringFromAil_ctype {α β : Type} (_ : α) (_ : β) : String := "<ail_ctype>"
 def stringFromAil_expression {α : Type} (_ : α) : String := "<ail_expression>"
-def stringFromAil_human_ctype {α : Type} (_ : α) : String := "<ail_human_ctype>"
+def stringFromAil_human_ctype {α β : Type} (_ : α) (_ : β) : String := "<ail_human_ctype>"
 
 /-! ## Core IR pretty-printing -/
 def stringFromCore_action {α : Type} (_ : α) : String := "<core_action>"
@@ -58,8 +58,8 @@ def stringFromPointer_value {α : Type} (_ : α) : String := "<pointer_value>"
 def stringFromMem_value {α : Type} (_ : α) : String := "<mem_value>"
 def stringFromShift_path {α : Type} (_ : α) : String := "<shift_path>"
 def stringFromMemValue {α : Type} (_ : α) : String := "<mem_value>"
-def stringFromPointerValue {α : Type} (_ : α) : String := "<pointer_value>"
-def format_string_of_float {α : Type} (_ : α) : String := "<float>"
+def stringFromPointerValue {α β : Type} (_ : α) (_ : β) : String := "<pointer_value>"
+def format_string_of_float {α β : Type} (_ : α) (_ : β) : String := "<float>"
 
 /-! ## Concurrency model pretty-printing -/
 def stringFromCmm_op_symState {α : Type} (_ : α) : String := "<cmm_symState>"

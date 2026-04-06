@@ -42,14 +42,12 @@ declare lean target_rep function stringFromAil_genType = `CerbPP.stringFromAil_g
 declare ocaml target_rep function stringFromAil_expression = `String_ail.string_of_expression`
 declare ocaml target_rep function stringFromAil_statement = `String_ail.string_of_statement`
 declare lean target_rep function stringFromAil_statement = `CerbPP.stringFromAil_statement`
-declare hol   target_rep function stringFromAil_qualifiers =
+declare hol   target_rep function stringFromAil_qualifiers = `pp_ail$pp_qualifiers`
 declare lean target_rep function stringFromAil_qualifiers = `CerbPP.stringFromAil_qualifiers`
-                                  `pp_ail$pp_qualifiers`
 declare hol   target_rep function stringFromAil_ctype = `pp_ail$pp_ail_ctype`
 declare lean target_rep function stringFromAil_ctype = `CerbPP.stringFromAil_ctype`
-declare hol   target_rep function stringFromAil_expression =
+declare hol   target_rep function stringFromAil_expression = `pp_ail$pp_expression`
 declare lean target_rep function stringFromAil_expression = `CerbPP.stringFromAil_expression`
-                                  `pp_ail$pp_expression`
 
 val stringFromAil_human_ctype: Ctype.qualifiers -> Ctype.ctype -> string
 declare ocaml target_rep function stringFromAil_human_ctype = `String_ail.string_of_ctype_human`

@@ -97,4 +97,5 @@ roots = [
   "CerbFloat",
   "CerbUtils",
   "CerbPP",
+  "CerbMem",
 ]

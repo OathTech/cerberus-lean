@@ -2295,9 +2295,8 @@ let rec easy_update_mem_value_aux loc is_strong write_ty sh write_mval current_m
   end
 
 (* TODO: bug HOL -- "failure in internal translation to tupled format" *)
-declare hol target_rep function easy_update_mem_value_aux =
+declare hol target_rep function easy_update_mem_value_aux = `tags$easy_update_mem_value_aux`
 declare lean target_rep function easy_update_mem_value_aux = `sorry`
-                                `tags$easy_update_mem_value_aux`
 
 
 val easy_update_mem_value: bool -> write_event -> impl_mem_value -> impl_memM impl_mem_value
