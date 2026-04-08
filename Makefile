@@ -286,9 +286,11 @@ clean-sibylfs-src:
 #### Lean frontend (generated from the same LEM_SRC as the OCaml frontend)
 LEAN_SRC_DIR = lean_frontend/generated
 
-# Hand-written Lean files that are symlinked into generated/ and patched
-# into generated imports. Mirrors the OCaml sed patches in prelude-src.
-LEAN_HANDWRITTEN = CerberusImpl.lean CerbLocation.lean CerberusFresh.lean CerbGlobal.lean CerbFloat.lean CerbUtils.lean CerbPP.lean CerbMem.lean CerbFS.lean CerbConcurrency.lean
+# Hand-written Lean files symlinked into generated/ so they're importable
+# by the generated code (which references them via declare lean target_rep).
+LEAN_HANDWRITTEN = CerberusImpl.lean CerbLocation.lean CerberusFresh.lean \
+    CerbGlobal.lean CerbFloat.lean CerbUtils.lean CerbPP.lean CerbMem.lean \
+    CerbFS.lean CerbConcurrency.lean
 
 .PHONY: lean-prelude-src
 lean-prelude-src: $(LEM_SRC)
@@ -300,74 +302,6 @@ lean-prelude-src: $(LEM_SRC)
     $(LEM_SRC) 2> lean_frontend/lem.log || (>&2 cat lean_frontend/lem.log; exit 1)
 	@echo "[SYMLINK] hand-written Lean files into [$(LEAN_SRC_DIR)]"
 	$(Q)cd $(LEAN_SRC_DIR) && ln -sf $(addprefix ../,$(LEAN_HANDWRITTEN)) .
-	@echo "[PATCH] adding imports and fixing up generated files"
-	$(Q){ echo 'import CerberusImpl'; cat $(LEAN_SRC_DIR)/Implementation.lean; } > $(LEAN_SRC_DIR)/Implementation.lean.tmp
-	$(Q)mv $(LEAN_SRC_DIR)/Implementation.lean.tmp $(LEAN_SRC_DIR)/Implementation.lean
-	$(Q){ echo 'import CerberusFresh'; cat $(LEAN_SRC_DIR)/Symbol.lean; } > $(LEAN_SRC_DIR)/Symbol.lean.tmp
-	$(Q)mv $(LEAN_SRC_DIR)/Symbol.lean.tmp $(LEAN_SRC_DIR)/Symbol.lean
-	$(Q)$(SEDI) -e 's/^inductive  t : Type where$$/abbrev t := CerbLocation.Loc/' $(LEAN_SRC_DIR)/Loc.lean
-	$(Q)$(SEDI) -e 's/^open t$$/open CerbLocation/' $(LEAN_SRC_DIR)/Loc.lean $(LEAN_SRC_DIR)/Loc_auxiliary.lean
-	$(Q)$(SEDI) -e '/^open digest$$/d' $(LEAN_SRC_DIR)/Symbol.lean $(LEAN_SRC_DIR)/Symbol_auxiliary.lean
-	$(Q){ echo 'import CerbLocation'; cat $(LEAN_SRC_DIR)/Loc.lean; } > $(LEAN_SRC_DIR)/Loc.lean.tmp
-	$(Q)mv $(LEAN_SRC_DIR)/Loc.lean.tmp $(LEAN_SRC_DIR)/Loc.lean
-	$(Q){ echo 'import CerbGlobal'; cat $(LEAN_SRC_DIR)/Global.lean; } > $(LEAN_SRC_DIR)/Global.lean.tmp
-	$(Q)mv $(LEAN_SRC_DIR)/Global.lean.tmp $(LEAN_SRC_DIR)/Global.lean
-	$(Q)$(SEDI) -e 's/^inductive  execution_mode.*$$/abbrev execution_mode := CerbGlobal.ExecutionMode/' $(LEAN_SRC_DIR)/Global.lean
-	$(Q)$(SEDI) -e 's/^inductive  cerb_switch.*$$/abbrev cerb_switch := CerbGlobal.CerbSwitch/' $(LEAN_SRC_DIR)/Global.lean
-	$(Q)$(SEDI) -e '/^  |  Interactive/d' -e '/^  |  Exhaustive/d' -e '/^  |  Random/d' $(LEAN_SRC_DIR)/Global.lean
-	$(Q)$(SEDI) -e '/^  |  SW_strict_reads/d' -e '/^  |  SW_forbid_nullptr_free/d' -e '/^  |  SW_zap_dead_pointers/d' $(LEAN_SRC_DIR)/Global.lean
-	$(Q)$(SEDI) -e '/^  |  SW_inner_arg_temps/d' -e '/^  |  SW_permissive_printf/d' -e '/^  |  SW_no_integer_provenance/d' -e '/^  |  SW_CHERI/d' $(LEAN_SRC_DIR)/Global.lean
-	$(Q)$(SEDI) -e '/^  deriving BEq, Ord$$/d' $(LEAN_SRC_DIR)/Global.lean
-	$(Q)$(SEDI) -e '/^export execution_mode/d' -e '/^export cerb_switch/d' $(LEAN_SRC_DIR)/Global.lean
-	$(Q)$(SEDI) -e 's/default := Interactive/default := CerbGlobal.ExecutionMode.exhaustive/' $(LEAN_SRC_DIR)/Global.lean
-	$(Q)$(SEDI) -e 's/default := SW_strict_reads/default := CerbGlobal.CerbSwitch.strict_reads/' $(LEAN_SRC_DIR)/Global.lean
-	$(Q)$(SEDI) -e '/^open cerb_switch$$/d' -e '/^open execution_mode$$/d' $(LEAN_SRC_DIR)/Global.lean $(LEAN_SRC_DIR)/Global_auxiliary.lean
-	$(Q){ echo 'import CerbFS'; cat $(LEAN_SRC_DIR)/Fs.lean; } > $(LEAN_SRC_DIR)/Fs.lean.tmp
-	$(Q)mv $(LEAN_SRC_DIR)/Fs.lean.tmp $(LEAN_SRC_DIR)/Fs.lean
-	$(Q)$(SEDI) -e 's/^inductive  fs_stat : Type where$$/abbrev fs_stat := CerbFS.FsStat/' $(LEAN_SRC_DIR)/Fs.lean
-	$(Q)$(SEDI) -e 's/^inductive  fs_error : Type where$$/abbrev fs_error := CerbFS.FsError/' $(LEAN_SRC_DIR)/Fs.lean
-	$(Q)$(SEDI) -e 's/^inductive  fs_state : Type where$$/abbrev fs_state := CerbFS.FsState/' $(LEAN_SRC_DIR)/Fs.lean
-	$(Q)$(SEDI) -e '/^open fs_stat$$/d' -e '/^open fs_error$$/d' -e '/^open fs_state$$/d' $(LEAN_SRC_DIR)/Fs.lean $(LEAN_SRC_DIR)/Fs_auxiliary.lean
-	$(Q){ echo 'import CerbConcurrency'; cat $(LEAN_SRC_DIR)/Cmm_csem.lean; } > $(LEAN_SRC_DIR)/Cmm_csem.lean.tmp
-	$(Q)mv $(LEAN_SRC_DIR)/Cmm_csem.lean.tmp $(LEAN_SRC_DIR)/Cmm_csem.lean
-	$(Q)$(SEDI) -e '/^import Operators$$/d' $(LEAN_SRC_DIR)/Core_run.lean
-	$(Q)$(SEDI) -e 's/^inductive  float : Type where$$/abbrev float := Float/' $(LEAN_SRC_DIR)/Float.lean
-	$(Q)$(SEDI) -e '/^open float$$/d' $(LEAN_SRC_DIR)/Float.lean $(LEAN_SRC_DIR)/Float_auxiliary.lean
-	$(Q){ echo 'import CerbFloat'; cat $(LEAN_SRC_DIR)/Float.lean; } > $(LEAN_SRC_DIR)/Float.lean.tmp
-	$(Q)mv $(LEAN_SRC_DIR)/Float.lean.tmp $(LEAN_SRC_DIR)/Float.lean
-	$(Q){ echo 'import CerbUtils'; cat $(LEAN_SRC_DIR)/Boot.lean; } > $(LEAN_SRC_DIR)/Boot.lean.tmp
-	$(Q)mv $(LEAN_SRC_DIR)/Boot.lean.tmp $(LEAN_SRC_DIR)/Boot.lean
-	$(Q){ echo 'import CerbUtils'; cat $(LEAN_SRC_DIR)/Std.lean; } > $(LEAN_SRC_DIR)/Std.lean.tmp
-	$(Q)mv $(LEAN_SRC_DIR)/Std.lean.tmp $(LEAN_SRC_DIR)/Std.lean
-	$(Q){ echo 'import CerbUtils'; cat $(LEAN_SRC_DIR)/Core_linking.lean; } > $(LEAN_SRC_DIR)/Core_linking.lean.tmp
-	$(Q)mv $(LEAN_SRC_DIR)/Core_linking.lean.tmp $(LEAN_SRC_DIR)/Core_linking.lean
-	$(Q){ echo 'import CerbUtils'; cat $(LEAN_SRC_DIR)/Any.lean; } > $(LEAN_SRC_DIR)/Any.lean.tmp
-	$(Q)mv $(LEAN_SRC_DIR)/Any.lean.tmp $(LEAN_SRC_DIR)/Any.lean
-	$(Q){ echo 'import CerbUtils'; cat $(LEAN_SRC_DIR)/Decode.lean; } > $(LEAN_SRC_DIR)/Decode.lean.tmp
-	$(Q)mv $(LEAN_SRC_DIR)/Decode.lean.tmp $(LEAN_SRC_DIR)/Decode.lean
-	$(Q){ echo 'import CerbPP'; cat $(LEAN_SRC_DIR)/Pp.lean; } > $(LEAN_SRC_DIR)/Pp.lean.tmp
-	$(Q)mv $(LEAN_SRC_DIR)/Pp.lean.tmp $(LEAN_SRC_DIR)/Pp.lean
-	$(Q){ echo 'import CerbPP'; cat $(LEAN_SRC_DIR)/Driver.lean; } > $(LEAN_SRC_DIR)/Driver.lean.tmp
-	$(Q)mv $(LEAN_SRC_DIR)/Driver.lean.tmp $(LEAN_SRC_DIR)/Driver.lean
-	$(Q){ echo 'import CerbPP'; cat $(LEAN_SRC_DIR)/Core_rewrite.lean; } > $(LEAN_SRC_DIR)/Core_rewrite.lean.tmp
-	$(Q)mv $(LEAN_SRC_DIR)/Core_rewrite.lean.tmp $(LEAN_SRC_DIR)/Core_rewrite.lean
-	$(Q){ echo 'import CerbPP'; cat $(LEAN_SRC_DIR)/Defacto_memory.lean; } > $(LEAN_SRC_DIR)/Defacto_memory.lean.tmp
-	$(Q)mv $(LEAN_SRC_DIR)/Defacto_memory.lean.tmp $(LEAN_SRC_DIR)/Defacto_memory.lean
-	$(Q){ echo 'import CerbPP'; cat $(LEAN_SRC_DIR)/Defacto_memory_aux.lean; } > $(LEAN_SRC_DIR)/Defacto_memory_aux.lean.tmp
-	$(Q)mv $(LEAN_SRC_DIR)/Defacto_memory_aux.lean.tmp $(LEAN_SRC_DIR)/Defacto_memory_aux.lean
-	$(Q){ echo 'import CerbPP'; cat $(LEAN_SRC_DIR)/Formatted.lean; } > $(LEAN_SRC_DIR)/Formatted.lean.tmp
-	$(Q)mv $(LEAN_SRC_DIR)/Formatted.lean.tmp $(LEAN_SRC_DIR)/Formatted.lean
-	$(Q){ echo 'import CerbPP'; cat $(LEAN_SRC_DIR)/AilWf.lean; } > $(LEAN_SRC_DIR)/AilWf.lean.tmp
-	$(Q)mv $(LEAN_SRC_DIR)/AilWf.lean.tmp $(LEAN_SRC_DIR)/AilWf.lean
-	$(Q){ echo 'import CerbMem'; cat $(LEAN_SRC_DIR)/Mem.lean; } > $(LEAN_SRC_DIR)/Mem.lean.tmp
-	$(Q)mv $(LEAN_SRC_DIR)/Mem.lean.tmp $(LEAN_SRC_DIR)/Mem.lean
-	$(Q)$(SEDI) -e 's/^inductive  pointer_value : Type where$$/abbrev pointer_value := CerbMem.PointerValue/' $(LEAN_SRC_DIR)/Mem.lean
-	$(Q)$(SEDI) -e 's/^inductive  integer_value : Type where$$/abbrev integer_value := CerbMem.IntegerValue/' $(LEAN_SRC_DIR)/Mem.lean
-	$(Q)$(SEDI) -e 's/^inductive  floating_value : Type where$$/abbrev floating_value := CerbMem.FloatingValue/' $(LEAN_SRC_DIR)/Mem.lean
-	$(Q)$(SEDI) -e 's/^inductive  mem_value : Type where$$/abbrev mem_value := CerbMem.MemValue/' $(LEAN_SRC_DIR)/Mem.lean
-	$(Q)$(SEDI) -e 's/^inductive  footprint : Type where$$/abbrev footprint := CerbMem.Footprint/' $(LEAN_SRC_DIR)/Mem.lean
-	$(Q)$(SEDI) -e 's/^inductive  mem_state : Type where$$/abbrev mem_state := CerbMem.MemState/' $(LEAN_SRC_DIR)/Mem.lean
-	$(Q)$(SEDI) -e '/^open pointer_value$$/d' -e '/^open integer_value$$/d' -e '/^open floating_value$$/d' -e '/^open mem_value$$/d' -e '/^open footprint$$/d' -e '/^open mem_state$$/d' $(LEAN_SRC_DIR)/Mem.lean $(LEAN_SRC_DIR)/Mem_auxiliary.lean
 
 .PHONY: lean-build
 lean-build: lean-prelude-src

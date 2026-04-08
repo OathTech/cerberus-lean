@@ -13,6 +13,7 @@ instance (Eq execution_mode)
 end
 
 declare ocaml target_rep type     execution_mode = `Cerb_global.execution_mode`
+declare lean target_rep type      execution_mode = `CerbGlobal.ExecutionMode`
 declare ocaml target_rep function Interactive    = `Cerb_global.Interactive`
 declare ocaml target_rep function Exhaustive     = `Cerb_global.Exhaustive`
 declare ocaml target_rep function Random         = `Cerb_global.Random`
@@ -64,6 +65,8 @@ type cerb_switch =
   | SW_permissive_printf
   | SW_no_integer_provenance
   | SW_CHERI
+
+declare lean target_rep type cerb_switch = `CerbGlobal.CerbSwitch`
 
 declare ocaml target_rep function SW_strict_reads = `Switches.SW_strict_reads`
 declare lean target_rep function SW_strict_reads = `CerbGlobal.CerbSwitch.strict_reads`

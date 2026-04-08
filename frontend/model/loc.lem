@@ -4,6 +4,7 @@ declare {ocaml} rename module = Lem_loc
 
 type t
 declare ocaml target_rep type t = `Cerb_location.t`
+declare lean target_rep type t = `CerbLocation.Loc`
 
 val unknown: t
 declare ocaml target_rep function unknown = `Cerb_location.unknown`

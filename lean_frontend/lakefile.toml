@@ -1,5 +1,5 @@
 name = "CerberusLean"
-defaultTargets = ["CerberusLean"]
+defaultTargets = ["CerberusLean", "cerberus-lean"]
 moreLeanArgs = ["-DautoImplicit=false"]
 
 # LemLib is the Lem runtime library for Lean, from the septract/lem-lean fork.
@@ -101,3 +101,7 @@ roots = [
   "CerbFS",
   "CerbConcurrency",
 ]
+
+[[lean_exe]]
+name = "cerberus-lean"
+root = "Main"

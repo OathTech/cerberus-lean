@@ -3,7 +3,7 @@
  (public_name cerberus)
  (package cerberus)
  (modules main)
- (libraries result cmdliner str unix mem_concrete cerberus-lib.backend_common))
+ (libraries result cmdliner str unix mem_concrete cerberus-lib.backend_common lean_export))
 
 ;(executable
 ; (name main_symbolic)
@@ -22,7 +22,7 @@
  (public_name cerberus-vip)
  (package cerberus)
  (modules main_vip)
- (libraries result cmdliner str unix mem_vip cerberus-lib.backend_common))
+ (libraries result cmdliner str unix mem_vip cerberus-lib.backend_common lean_export))
 
 (rule
  (target main_vip.ml)
@@ -34,7 +34,7 @@
  (public_name cerberus-cheri)
  (package cerberus-cheri)
  (modules main_cheri_coq)
- (libraries result cmdliner str unix mem_cheri_coq cerberus-lib.backend_common)
+ (libraries result cmdliner str unix mem_cheri_coq cerberus-lib.backend_common lean_export)
  (instrumentation (backend landmarks))
 )
 
