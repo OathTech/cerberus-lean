@@ -245,7 +245,7 @@ let cerberus debug_level progress core_obj
         Exception.except_mapM (fun filename ->
           c_frontend (conf, io) core_std ~filename >>= fun (cabs_tunit, _) ->
           let json = Lean_export.Cabs_json.to_json cabs_tunit in
-          print_string (Yojson.Safe.pretty_to_string json);
+          print_string (Yojson.pretty_to_string ~std:true (json :> Yojson.t));
           print_newline ();
           return ()
         ) files >>= fun _ ->

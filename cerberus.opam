@@ -26,7 +26,7 @@ depends: [
   "ppx_sexp_conv" {>= "v0.14.3" }
   "sexplib" {>= "v0.14.0"}
   "cmdliner" {>= "1.1.0"}
-  "yojson" {>= "2.0.0"}
+  "yojson" {>= "3.0.0"}
   "lem" {>= "2020-06-03"}
   "menhir" {>= "20211230"}
   "result" {>= "1.5"}
