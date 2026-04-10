@@ -2,6 +2,11 @@ name = "CerberusLean"
 defaultTargets = ["CerberusLean", "cerberus-lean"]
 moreLeanArgs = ["-DautoImplicit=false"]
 
+[[require]]
+name = "batteries"
+scope = "leanprover-community"
+rev = "v4.29.0"
+
 # LemLib is the Lem runtime library for Lean, from the septract/lem-lean fork.
 [[require]]
 name = "LemLib"
@@ -82,7 +87,7 @@ roots = [
   "State", "State_auxiliary",
   "State_exception", "State_exception_auxiliary",
   "State_exception_undefined", "State_exception_undefined_auxiliary",
-  "Std", "Std_auxiliary",
+  "Lem_Std", "Lem_Std_auxiliary",
   "Symbol", "Symbol_auxiliary",
   "Trace_event", "Trace_event_auxiliary",
   "Translation", "Translation_aux", "Translation_aux_auxiliary", "Translation_auxiliary",

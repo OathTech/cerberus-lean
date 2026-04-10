@@ -65,6 +65,9 @@ cerberus.code-workspace
 .cursorignore
 cerb_times.csv
 
+# Temporary files (scripts, reproducers)
+.tmp/
+
 # Claude Code
 .claude/
 

@@ -1,3 +1,5 @@
+declare {lean} rename module = Lem_Std
+
 val STD_: forall 'a. string -> 'a -> 'a
 declare ocaml target_rep function STD_ = `Cerb_logging.log_standard`
 declare hol   target_rep function STD_ s x = x

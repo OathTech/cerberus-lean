@@ -314,8 +314,8 @@ lean-prelude-src: $(LEM_SRC)
     $(LEM_SRC) 2> lean_frontend/lem.log || (>&2 cat lean_frontend/lem.log; exit 1)
 	@# Workaround: Lem generates bogus `import Operators` from `open SEU.Operators` in core_run.lem
 	$(Q)sed -i'' -e '/^import Operators$$/d' $(LEAN_SRC_DIR)/Core_run.lean
-	@echo "[SYMLINK] hand-written Lean files into [$(LEAN_SRC_DIR)]"
-	$(Q)cd $(LEAN_SRC_DIR) && ln -sf $(addprefix ../,$(LEAN_HANDWRITTEN)) .
+	@echo "[COPY] hand-written Lean files into [$(LEAN_SRC_DIR)]"
+	$(Q)cp $(addprefix lean_frontend/,$(LEAN_HANDWRITTEN)) $(LEAN_SRC_DIR)/
 
 .PHONY: lean-build
 lean-build: lean-prelude-src
