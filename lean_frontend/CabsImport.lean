@@ -355,14 +355,14 @@ partial def jsonToTypeSpecifier_ (j : Json) : Except String cabs_type_specifier_
   | "TSpec_Atomic" => .ok (.TSpec_Atomic (← jsonToTypeName (← getField j "type")))
   | "TSpec_struct" => .ok (.TSpec_struct
       (← jsonToAttributes (← getField j "attrs"))
-      (← getOption jsonToIdentifier (← getField j "name"))
+      (← getOption jsonToIdentifier (← getField j "id"))
       (← getOption (getList jsonToStructDecl) (← getField j "members")))
   | "TSpec_union" => .ok (.TSpec_union
       (← jsonToAttributes (← getField j "attrs"))
-      (← getOption jsonToIdentifier (← getField j "name"))
+      (← getOption jsonToIdentifier (← getField j "id"))
       (← getOption (getList jsonToStructDecl) (← getField j "members")))
   | "TSpec_enum" => .ok (.TSpec_enum
-      (← getOption jsonToIdentifier (← getField j "name"))
+      (← getOption jsonToIdentifier (← getField j "id"))
       (← getOption (getList jsonToEnumerator) (← getField j "enumerators")))
   | "TSpec_name" => .ok (.TSpec_name (← jsonToIdentifier (← getField j "id")))
   | "TSpec_typeof_expr" => .ok (.TSpec_typeof_expr (← jsonToExpression (← getField j "expr")))
@@ -380,33 +380,36 @@ partial def jsonToStructDecl (j : Json) : Except String struct_declaration := do
   match ← getTag j with
   | "Struct_declaration" => .ok (.Struct_declaration
       (← jsonToAttributes (← getField j "attrs"))
-      (← getList jsonToTypeSpecifier (← getField j "specs"))
-      (← getList jsonToTypeQualifier (← getField j "quals"))
-      (← getList jsonToAlignmentSpecifier (← getField j "aligns"))
-      (← getList jsonToStructDeclarator (← getField j "decls")))
+      (← getList jsonToTypeSpecifier (← getField j "type_specifiers"))
+      (← getList jsonToTypeQualifier (← getField j "type_qualifiers"))
+      (← getList jsonToAlignmentSpecifier (← getField j "alignment_specifiers"))
+      (← getList jsonToStructDeclarator (← getField j "declarators")))
   | "Struct_assert" => .ok (.Struct_assert (← jsonToStaticAssert (← getField j "assert")))
   | t => err "jsonToStructDecl" s!"unknown tag: {t}"
 
 -- Struct declarator
 partial def jsonToStructDeclarator (j : Json) : Except String struct_declarator := do
   match ← getTag j with
-  | "SDecl_simple" => .ok (.SDecl_simple (← jsonToDeclarator (← getField j "decl")))
+  | "SDecl_simple" => .ok (.SDecl_simple (← jsonToDeclarator (← getField j "declarator")))
   | "SDecl_bitfield" => .ok (.SDecl_bitfield
-      (← getOption jsonToDeclarator (← getField j "decl"))
+      (← getOption jsonToDeclarator (← getField j "declarator"))
       (← jsonToExpression (← getField j "width")))
   | t => err "jsonToStructDeclarator" s!"unknown tag: {t}"
 
 -- Enumerator
 partial def jsonToEnumerator (j : Json) : Except String (identifier × Option cabs_expression) := do
-  let id ← jsonToIdentifier (← getField j "id")
-  let expr ← getOption jsonToExpression (← getField j "val")
-  .ok (id, expr)
+  let arr ← getArr j
+  if h : arr.size = 2 then
+    let id ← jsonToIdentifier arr[0]
+    let expr ← getOption jsonToExpression arr[1]
+    .ok (id, expr)
+  else err "jsonToEnumerator" "expected 2-element array"
 
 -- Pointer declarator
 partial def jsonToPointerDecl (j : Json) : Except String pointer_declarator := do
   let loc ← jsonToLoc (← getField j "loc")
-  let quals ← getList jsonToTypeQualifier (← getField j "quals")
-  let inner ← getOption jsonToPointerDecl (← getField j "inner")
+  let quals ← getList jsonToTypeQualifier (← getField j "type_qualifiers")
+  let inner ← getOption jsonToPointerDecl (← getField j "pointer")
   .ok (PDecl loc quals inner)
 
 -- Array declarator size
@@ -419,26 +422,26 @@ partial def jsonToArrayDeclSize (j : Json) : Except String array_declarator_size
 -- Array declarator
 partial def jsonToArrayDecl (j : Json) : Except String array_declarator := do
   let loc ← jsonToLoc (← getField j "loc")
-  let quals ← getList jsonToTypeQualifier (← getField j "quals")
-  let isStatic ← getBool (← getField j "static")
+  let quals ← getList jsonToTypeQualifier (← getField j "type_qualifiers")
+  let isStatic ← getBool (← getField j "is_static")
   let size ← getOption jsonToArrayDeclSize (← getField j "size")
   .ok (ADecl loc quals isStatic size)
 
 -- Parameter type list
 partial def jsonToParamTypeList (j : Json) : Except String parameter_type_list := do
   let params ← getList jsonToParamDecl (← getField j "params")
-  let variadic ← getBool (← getField j "variadic")
+  let variadic ← getBool (← getField j "is_variadic")
   .ok (Params params variadic)
 
 -- Parameter declaration
 partial def jsonToParamDecl (j : Json) : Except String parameter_declaration := do
   match ← getTag j with
   | "PDeclaration_decl" => .ok (.PDeclaration_decl
-      (← jsonToSpecifiers (← getField j "specs"))
-      (← jsonToDeclarator (← getField j "decl")))
+      (← jsonToSpecifiers (← getField j "specifiers"))
+      (← jsonToDeclarator (← getField j "declarator")))
   | "PDeclaration_abs_decl" => .ok (.PDeclaration_abs_decl
-      (← jsonToSpecifiers (← getField j "specs"))
-      (← getOption jsonToAbstractDeclarator (← getField j "decl")))
+      (← jsonToSpecifiers (← getField j "specifiers"))
+      (← getOption jsonToAbstractDeclarator (← getField j "abstract_declarator")))
   | t => err "jsonToParamDecl" s!"unknown tag: {t}"
 
 -- Direct declarator
@@ -447,27 +450,27 @@ partial def jsonToDirectDecl (j : Json) : Except String direct_declarator := do
   | "DDecl_identifier" => .ok (.DDecl_identifier
       (← jsonToAttributes (← getField j "attrs"))
       (← jsonToIdentifier (← getField j "id")))
-  | "DDecl_declarator" => .ok (.DDecl_declarator (← jsonToDeclarator (← getField j "decl")))
+  | "DDecl_declarator" => .ok (.DDecl_declarator (← jsonToDeclarator (← getField j "declarator")))
   | "DDecl_array" => .ok (.DDecl_array
-      (← jsonToDirectDecl (← getField j "decl"))
-      (← jsonToArrayDecl (← getField j "arr")))
+      (← jsonToDirectDecl (← getField j "direct"))
+      (← jsonToArrayDecl (← getField j "array")))
   | "DDecl_function" => .ok (.DDecl_function
-      (← jsonToDirectDecl (← getField j "decl"))
+      (← jsonToDirectDecl (← getField j "direct"))
       (← jsonToParamTypeList (← getField j "params")))
   | t => err "jsonToDirectDecl" s!"unknown tag: {t}"
 
 -- Declarator
 partial def jsonToDeclarator (j : Json) : Except String declarator := do
-  let ptr ← getOption jsonToPointerDecl (← getField j "ptr")
+  let ptr ← getOption jsonToPointerDecl (← getField j "pointer")
   let direct ← jsonToDirectDecl (← getField j "direct")
   .ok (Declarator ptr direct)
 
 -- Abstract declarator
 partial def jsonToAbstractDeclarator (j : Json) : Except String abstract_declarator := do
   match ← getTag j with
-  | "AbsDecl_pointer" => .ok (.AbsDecl_pointer (← jsonToPointerDecl (← getField j "ptr")))
+  | "AbsDecl_pointer" => .ok (.AbsDecl_pointer (← jsonToPointerDecl (← getField j "pointer")))
   | "AbsDecl_direct" => .ok (.AbsDecl_direct
-      (← getOption jsonToPointerDecl (← getField j "ptr"))
+      (← getOption jsonToPointerDecl (← getField j "pointer"))
       (← jsonToDirectAbstractDecl (← getField j "direct")))
   | t => err "jsonToAbstractDeclarator" s!"unknown tag: {t}"
 
@@ -475,28 +478,28 @@ partial def jsonToAbstractDeclarator (j : Json) : Except String abstract_declara
 partial def jsonToDirectAbstractDecl (j : Json) : Except String direct_abstract_declarator := do
   match ← getTag j with
   | "DAbs_abs_declarator" => .ok (.DAbs_abs_declarator
-      (← jsonToAbstractDeclarator (← getField j "decl")))
+      (← jsonToAbstractDeclarator (← getField j "abstract_declarator")))
   | "DAbs_array" => .ok (.DAbs_array
-      (← getOption jsonToDirectAbstractDecl (← getField j "decl"))
-      (← jsonToArrayDecl (← getField j "arr")))
+      (← getOption jsonToDirectAbstractDecl (← getField j "direct"))
+      (← jsonToArrayDecl (← getField j "array")))
   | "DAbs_function" => .ok (.DAbs_function
-      (← getOption jsonToDirectAbstractDecl (← getField j "decl"))
+      (← getOption jsonToDirectAbstractDecl (← getField j "direct"))
       (← jsonToParamTypeList (← getField j "params")))
   | t => err "jsonToDirectAbstractDecl" s!"unknown tag: {t}"
 
 -- Type name
 partial def jsonToTypeName (j : Json) : Except String type_name := do
-  let specs ← getList jsonToTypeSpecifier (← getField j "specs")
-  let quals ← getList jsonToTypeQualifier (← getField j "quals")
-  let aligns ← getList jsonToAlignmentSpecifier (← getField j "aligns")
-  let absDecl ← getOption jsonToAbstractDeclarator (← getField j "abs_decl")
+  let specs ← getList jsonToTypeSpecifier (← getField j "type_specifiers")
+  let quals ← getList jsonToTypeQualifier (← getField j "type_qualifiers")
+  let aligns ← getList jsonToAlignmentSpecifier (← getField j "alignment_specifiers")
+  let absDecl ← getOption jsonToAbstractDeclarator (← getField j "abstract_declarator")
   .ok (Type_name specs quals aligns absDecl)
 
 -- Designator
 partial def jsonToDesignator (j : Json) : Except String designator := do
   match ← getTag j with
   | "Desig_array" => .ok (.Desig_array (← jsonToExpression (← getField j "expr")))
-  | "Desig_member" => .ok (.Desig_member (← jsonToIdentifier (← getField j "id")))
+  | "Desig_member" => .ok (.Desig_member (← jsonToIdentifier (← getField j "member")))
   | t => err "jsonToDesignator" s!"unknown tag: {t}"
 
 -- Initializer
@@ -557,11 +560,11 @@ partial def jsonToAttribute (j : Json) : Except String attribute0 := do
 -- Specifiers
 partial def jsonToSpecifiers (j : Json) : Except String specifiers := do
   .ok (specifiers.mk
-    (← getList jsonToStorageClass (← getField j "storage"))
-    (← getList jsonToTypeSpecifier (← getField j "type_specs"))
-    (← getList jsonToTypeQualifier (← getField j "type_quals"))
-    (← getList jsonToFunctionSpecifier (← getField j "func_specs"))
-    (← getList jsonToAlignmentSpecifier (← getField j "align_specs")))
+    (← getList jsonToStorageClass (← getField j "storage_classes"))
+    (← getList jsonToTypeSpecifier (← getField j "type_specifiers"))
+    (← getList jsonToTypeQualifier (← getField j "type_qualifiers"))
+    (← getList jsonToFunctionSpecifier (← getField j "function_specifiers"))
+    (← getList jsonToAlignmentSpecifier (← getField j "alignment_specifiers")))
 
 -- Static assert
 partial def jsonToStaticAssert (j : Json) : Except String static_assert_declaration := do
@@ -572,8 +575,8 @@ partial def jsonToStaticAssert (j : Json) : Except String static_assert_declarat
 -- Init declarator
 partial def jsonToInitDecl (j : Json) : Except String init_declarator := do
   let loc ← jsonToLoc (← getField j "loc")
-  let decl ← jsonToDeclarator (← getField j "decl")
-  let init ← getOption jsonToInitializer (← getField j "init")
+  let decl ← jsonToDeclarator (← getField j "declarator")
+  let init ← getOption jsonToInitializer (← getField j "initializer")
   .ok (InitDecl loc decl init)
 
 -- Declaration
@@ -581,8 +584,8 @@ partial def jsonToDeclaration (j : Json) : Except String cabs_declaration := do
   match ← getTag j with
   | "Declaration_base" => .ok (.Declaration_base
       (← jsonToAttributes (← getField j "attrs"))
-      (← jsonToSpecifiers (← getField j "specs"))
-      (← getList jsonToInitDecl (← getField j "decls")))
+      (← jsonToSpecifiers (← getField j "specifiers"))
+      (← getList jsonToInitDecl (← getField j "init_declarators")))
   | "Declaration_static_assert" => .ok (.Declaration_static_assert
       (← jsonToStaticAssert (← getField j "assert")))
   | t => err "jsonToDeclaration" s!"unknown tag: {t}"
@@ -616,7 +619,7 @@ partial def jsonToStatement_ (j : Json) : Except String cabs_statement_ := do
       (← getOption jsonToStatement (← getField j "else_")))
   | "CabsSswitch" => .ok (.CabsSswitch
       (← jsonToExpression (← getField j "expr"))
-      (← jsonToStatement (← getField j "body")))
+      (← jsonToStatement (← getField j "stmt")))
   | "CabsSwhile" => .ok (.CabsSwhile
       (← jsonToExpression (← getField j "cond"))
       (← jsonToStatement (← getField j "body")))
@@ -634,8 +637,8 @@ partial def jsonToStatement_ (j : Json) : Except String cabs_statement_ := do
   | "CabsSreturn" => .ok (.CabsSreturn (← getOption jsonToExpression (← getField j "expr")))
   | "CabsSpar" => .ok (.CabsSpar (← getList jsonToStatement (← getField j "stmts")))
   | "CabsSasm" => .ok (.CabsSasm
-      (← getBool (← getField j "volatile"))
-      (← getBool (← getField j "inline"))
+      (← getBool (← getField j "is_volatile"))
+      (← getBool (← getField j "is_inline"))
       (← getList (fun partJ => do
         let arr ← getArr partJ
         if h : arr.size = 2 then
@@ -663,8 +666,8 @@ partial def jsonToFunctionDef (j : Json) : Except String function_definition := 
   .ok (FunDef
     (← jsonToLoc (← getField j "loc"))
     (← jsonToAttributes (← getField j "attrs"))
-    (← jsonToSpecifiers (← getField j "specs"))
-    (← jsonToDeclarator (← getField j "decl"))
+    (← jsonToSpecifiers (← getField j "specifiers"))
+    (← jsonToDeclarator (← getField j "declarator"))
     (← jsonToStatement (← getField j "body")))
 
 -- External declaration
