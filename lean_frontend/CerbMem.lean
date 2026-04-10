@@ -382,7 +382,7 @@ def opIval (op : integer_operator) (v1 v2 : IntegerValue) : IntegerValue :=
     | .IntExp => v1.val  -- TODO: exponentiation
   { val := result, prov := v1.prov }
 
-def offsetofIval (_ : List (sym × (t × tag_definition))) (_ : sym) (_ : identifier) : IntegerValue :=
+def offsetofIval (_ : List (sym × (CerbLocation.Loc × tag_definition))) (_ : sym) (_ : identifier) : IntegerValue :=
   integerIval 0  -- TODO: requires struct layout from tag definitions
 
 /-! ## Bitwise operations — proper two's complement handling -/
@@ -515,7 +515,7 @@ def stringFromPointerValue (_ : PointerValue) : String := "<pointer_value>"
 def stringFromIntegerValue (_ : IntegerValue) : String := "<integer_value>"
 
 def deriveCap (_ : Bool) (_ : derivecap_op) (v1 v2 : IntegerValue) : IntegerValue := v1
-def capAssignValue (_ : t) (_ v : IntegerValue) : IntegerValue := v
+def capAssignValue (_ : CerbLocation.Loc) (_ v : IntegerValue) : IntegerValue := v
 def nullCap (_ : Bool) : IntegerValue := integerIval 0
 def ptrTIntValue (iv : IntegerValue) : IntegerValue := iv
 def cheriPointerHashPrintf (_ : Bool) (_ : PointerValue) : String := ""
@@ -598,7 +598,7 @@ def allocateRegion (_ : Nat) (_ : prefix0) (alignIv sizeIv : IntegerValue) : mem
 
 /-! ### Kill -/
 
-def killM (_ : t) (isDynamic : Bool) (pv : PointerValue) : memM Unit :=
+def killM (_ : CerbLocation.Loc) (isDynamic : Bool) (pv : PointerValue) : memM Unit :=
   ND fun st =>
     match pv.base with
     | .null _ =>
@@ -626,7 +626,7 @@ def killM (_ : t) (isDynamic : Bool) (pv : PointerValue) : memM Unit :=
 
 /-! ### Load / Store -/
 
-def loadM (_ : t) (ty : ctype) (pv : PointerValue) : memM (Footprint × MemValue) :=
+def loadM (_ : CerbLocation.Loc) (ty : ctype) (pv : PointerValue) : memM (Footprint × MemValue) :=
   ND fun st =>
     match pv.base with
     | .null _ => (NDkilled (Other (MerrAccess LoadAccess NullPtr)), st)
@@ -653,7 +653,7 @@ def loadM (_ : t) (ty : ctype) (pv : PointerValue) : memM (Footprint × MemValue
           else
             (NDactive (fp, mv), st)
 
-def storeM (_ : t) (ty : ctype) (isLocking : Bool) (pv : PointerValue) (mv : MemValue) : memM Footprint :=
+def storeM (_ : CerbLocation.Loc) (ty : ctype) (isLocking : Bool) (pv : PointerValue) (mv : MemValue) : memM Footprint :=
   ND fun st =>
     match pv.base with
     | .null _ => (NDkilled (Other (MerrAccess StoreAccess NullPtr)), st)
@@ -693,30 +693,30 @@ def storeM (_ : t) (ty : ctype) (isLocking : Bool) (pv : PointerValue) (mv : Mem
 private def ptrAddr (pv : PointerValue) : Option Nat :=
   match pv.base with | .concrete _ addr => some addr | _ => none
 
-def eqPtrval (_ : t) (pv1 pv2 : PointerValue) : memM Bool :=
+def eqPtrval (_ : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
   memReturn (match pv1.base, pv2.base with
     | .null _, .null _ => true
     | .function s1, .function s2 => s1 == s2
     | .concrete _ a1, .concrete _ a2 => pv1.prov == pv2.prov && a1 == a2
     | _, _ => false)
 
-def nePtrval (loc : t) (pv1 pv2 : PointerValue) : memM Bool :=
+def nePtrval (loc : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
   nd_bind (eqPtrval loc pv1 pv2) (fun b => memReturn (!b))
 
-def ltPtrval (_ : t) (pv1 pv2 : PointerValue) : memM Bool :=
+def ltPtrval (_ : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
   memReturn (match ptrAddr pv1, ptrAddr pv2 with
     | some a1, some a2 => a1 < a2 | _, _ => false)
-def gtPtrval (_ : t) (pv1 pv2 : PointerValue) : memM Bool :=
+def gtPtrval (_ : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
   memReturn (match ptrAddr pv1, ptrAddr pv2 with
     | some a1, some a2 => a1 > a2 | _, _ => false)
-def lePtrval (_ : t) (pv1 pv2 : PointerValue) : memM Bool :=
+def lePtrval (_ : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
   memReturn (match ptrAddr pv1, ptrAddr pv2 with
     | some a1, some a2 => a1 <= a2 | _, _ => false)
-def gePtrval (_ : t) (pv1 pv2 : PointerValue) : memM Bool :=
+def gePtrval (_ : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
   memReturn (match ptrAddr pv1, ptrAddr pv2 with
     | some a1, some a2 => a1 >= a2 | _, _ => false)
 
-def diffPtrval (_ : t) (elemTy : ctype) (pv1 pv2 : PointerValue) : memM IntegerValue :=
+def diffPtrval (_ : CerbLocation.Loc) (elemTy : ctype) (pv1 pv2 : PointerValue) : memM IntegerValue :=
   memReturn (match ptrAddr pv1, ptrAddr pv2 with
     | some a1, some a2 =>
       let elemSize := (sizeofCtype elemTy).max 1
@@ -739,11 +739,11 @@ def isWellAlignedPtrval (ty : ctype) (pv : PointerValue) : memM Bool :=
 
 /-! ### Pointer casts -/
 
-def ptrfromint (_ : t) (_ : integerType) (_ : ctype) (iv : IntegerValue) : memM PointerValue :=
+def ptrfromint (_ : CerbLocation.Loc) (_ : integerType) (_ : ctype) (iv : IntegerValue) : memM PointerValue :=
   if iv.val == 0 then memReturn (nullPtrval (mkCtype Void0))
   else memReturn { prov := iv.prov, base := .concrete none iv.val.toNat }
 
-def intfromptr (_ : t) (_ : ctype) (_ : integerType) (pv : PointerValue) : memM IntegerValue :=
+def intfromptr (_ : CerbLocation.Loc) (_ : ctype) (_ : integerType) (pv : PointerValue) : memM IntegerValue :=
   memReturn (match pv.base with
     | .null _ => { val := 0, prov := pv.prov }
     | .function _ => { val := 0, prov := pv.prov }
@@ -751,15 +751,15 @@ def intfromptr (_ : t) (_ : ctype) (_ : integerType) (pv : PointerValue) : memM 
 
 /-! ### Effectful pointer shifts -/
 
-def effArrayShiftPtrval (_ : t) (pv : PointerValue) (elemTy : ctype) (iv : IntegerValue) : memM PointerValue :=
+def effArrayShiftPtrval (_ : CerbLocation.Loc) (pv : PointerValue) (elemTy : ctype) (iv : IntegerValue) : memM PointerValue :=
   memReturn (arrayShiftPtrval pv elemTy iv)
 
-def effMemberShiftPtrval (_ : t) (pv : PointerValue) (tag : sym) (member : identifier) : memM PointerValue :=
+def effMemberShiftPtrval (_ : CerbLocation.Loc) (pv : PointerValue) (tag : sym) (member : identifier) : memM PointerValue :=
   memReturn (memberShiftPtrval pv tag member)
 
 /-! ### Memory operations -/
 
-def memcpyM (_ : t) (dst src : PointerValue) (sizeIv : IntegerValue) : memM PointerValue :=
+def memcpyM (_ : CerbLocation.Loc) (dst src : PointerValue) (sizeIv : IntegerValue) : memM PointerValue :=
   ND fun st =>
     match dst.base, src.base with
     | .concrete _ dstAddr, .concrete _ srcAddr =>
@@ -785,7 +785,7 @@ def memcmpM (pv1 pv2 : PointerValue) (sizeIv : IntegerValue) : memM IntegerValue
       (NDactive (integerIval cmp), st)
     | _, _ => (NDactive (integerIval 0), st)
 
-def reallocM (_ : t) (tid : Nat) (alignIv : IntegerValue) (pv : PointerValue) (sizeIv : IntegerValue) : memM PointerValue :=
+def reallocM (_ : CerbLocation.Loc) (tid : Nat) (alignIv : IntegerValue) (pv : PointerValue) (sizeIv : IntegerValue) : memM PointerValue :=
   memReturn pv  -- TODO: allocate new, copy, free old
 
 /-! ### Prefix operations -/
@@ -804,6 +804,6 @@ def vaList (_ : Int) : memM (List (ctype × PointerValue)) := memReturn []
 /-! ### Misc -/
 
 def copyAllocId (_ : IntegerValue) (pv : PointerValue) : memM PointerValue := memReturn pv
-def callIntrinsic (_ : t) (_ : String) (_ : List MemValue) : memM (Option MemValue) := memReturn none
+def callIntrinsic (_ : CerbLocation.Loc) (_ : String) (_ : List MemValue) : memM (Option MemValue) := memReturn none
 
 end CerbMem

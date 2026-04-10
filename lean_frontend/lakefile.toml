@@ -100,8 +100,17 @@ roots = [
   "CerbMem",
   "CerbFS",
   "CerbConcurrency",
+  "CerbCtypeInstances",
+  "CerbInhabitedInstances",
+  "CerbTags",
+  "CerbDebug",
+  "CerbDecode",
 ]
 
 [[lean_exe]]
 name = "cerberus-lean"
 root = "Main"
+
+[[lean_exe]]
+name = "sorry-repro"
+root = "SorryRepro"

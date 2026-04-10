@@ -1,6 +1,6 @@
 # Checking for required tools.
 # Lean-only targets don't require dune.
-LEAN_TARGETS := lean-prelude-src lean-build clean-lean
+LEAN_TARGETS := lean-prelude-src lean-build clean-lean rebuild-lem
 ifneq ($(MAKECMDGOALS),)
 ifeq ($(filter-out $(LEAN_TARGETS),$(MAKECMDGOALS)),)
 _SKIP_DUNE_CHECK := 1
@@ -290,7 +290,21 @@ LEAN_SRC_DIR = lean_frontend/generated
 # by the generated code (which references them via declare lean target_rep).
 LEAN_HANDWRITTEN = CerberusImpl.lean CerbLocation.lean CerberusFresh.lean \
     CerbGlobal.lean CerbFloat.lean CerbUtils.lean CerbPP.lean CerbMem.lean \
-    CerbFS.lean CerbConcurrency.lean
+    CerbFS.lean CerbConcurrency.lean CerbCtypeInstances.lean CerbInhabitedInstances.lean \
+    CerbTags.lean CerbDebug.lean CerbDecode.lean
+
+# Rebuild lem from the opam switch source.  Nukes ocamlbuild's _build
+# cache first — without this, stale .cmx files survive `make clean` because
+# lem's Makefile runs `ocamlbuild -clean` which silently fails when
+# ocamlbuild isn't on PATH outside the switch env.
+LEM_SWITCH_SRC = _opam/.opam-switch/sources/lem
+.PHONY: rebuild-lem
+rebuild-lem:
+	@echo "[LEM] rebuilding lem from $(LEM_SWITCH_SRC)"
+	$(Q)rm -rf $(LEM_SWITCH_SRC)/src/_build
+	$(Q)$(MAKE) -C $(LEM_SWITCH_SRC) bin/lem
+	$(Q)cp $(LEM_SWITCH_SRC)/bin/lem _opam/bin/lem
+	@echo "[LEM] installed $$(lem -v 2>&1)"
 
 .PHONY: lean-prelude-src
 lean-prelude-src: $(LEM_SRC)
@@ -300,6 +314,8 @@ lean-prelude-src: $(LEM_SRC)
 	$(Q)lem -wl ign -wl_rename warn -wl_pat_red err -wl_pat_exh warn \
     -outdir $(LEAN_SRC_DIR) -cerberus_pp -lean \
     $(LEM_SRC) 2> lean_frontend/lem.log || (>&2 cat lean_frontend/lem.log; exit 1)
+	@# Workaround: Lem generates bogus `import Operators` from `open SEU.Operators` in core_run.lem
+	$(Q)sed -i'' -e '/^import Operators$$/d' $(LEAN_SRC_DIR)/Core_run.lean
 	@echo "[SYMLINK] hand-written Lean files into [$(LEAN_SRC_DIR)]"
 	$(Q)cd $(LEAN_SRC_DIR) && ln -sf $(addprefix ../,$(LEAN_HANDWRITTEN)) .
 

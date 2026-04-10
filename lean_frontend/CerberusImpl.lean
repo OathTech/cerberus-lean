@@ -100,6 +100,43 @@ def alignof_fty : floatingType → Option Nat
   | .RealFloating .Double => some 8
   | .RealFloating .LongDouble => some 16
 
+/-- Alignment of a full ctype, including struct/union via tag definitions.
+    Corresponds to: Ocaml_implementation.alignof_proxy in ocaml_implementation.ml
+    The tagDefs maps ail_identifier (= sym) to member lists. -/
+partial def alignof_ty
+    (tagDefs : Fmap sym (List (Option alignment × ctype)))
+    (ty : ctype) : Option Nat :=
+  let lookupTag (tag : sym) : Option (List (Option alignment × ctype)) :=
+    tagDefs.find? (fun (k, _) => k == tag) |>.map Prod.snd
+  let foldMembers (members : List (Option alignment × ctype)) : Option Nat :=
+    members.foldl (fun acc_opt (align_opt, mty) =>
+      let al_opt := match align_opt with
+        | none => alignof_ty tagDefs mty
+        | some (AlignInteger n) => some n.toNat
+        | some (AlignType al_ty) => alignof_ty tagDefs al_ty
+      match acc_opt, al_opt with
+      | some acc, some al => some (max al acc)
+      | _, _ => none
+    ) (some 1)
+  match ty with
+  | Ctype _ Void0 => none
+  | Ctype _ (Basic (Integer ity)) => alignof_ity ity
+  | Ctype _ (Basic (Floating fty)) => alignof_fty fty
+  | Ctype _ (Array0 elem_ty _) => alignof_ty tagDefs elem_ty
+  | Ctype _ (Function _ _ _) => none
+  | Ctype _ (FunctionNoParams _) => none
+  | Ctype _ (Pointer _ _) => some 8  -- pointer alignment on LP64
+  | Ctype _ (Atomic atom_ty) => alignof_ty tagDefs atom_ty
+  | Ctype _ (Struct tag_sym) =>
+    match lookupTag tag_sym with
+    | some members => foldMembers members
+    | none => none
+  | Ctype _ (Union0 tag_sym) =>
+    match lookupTag tag_sym with
+    | some members => foldMembers members
+    | none => none
+  | Ctype _ Byte => some 1
+
 /-! ## Enum Registration
 
 In OCaml Cerberus, enum registration uses a mutable ref cell. For the Lean

@@ -8,16 +8,16 @@ open import {hol} `pp_ailTheory`
 val decode_integer_constant: forall 'a. string -> AilSyntax.basis * integer
 declare ocaml target_rep function decode_integer_constant = `Decode.decode_integer_constant`
 declare hol   target_rep function decode_integer_constant = `pp_ail$decode_num`
-declare lean target_rep function decode_integer_constant = `sorry`
+declare lean target_rep function decode_integer_constant = `CerbDecode.decode_integer_constant`
 
 val decode_character_constant: string -> integer
 declare ocaml target_rep function decode_character_constant = `Decode.decode_character_constant`
 declare hol   target_rep function decode_character_constant = `pp_ail$decode_char`
-declare lean target_rep function decode_character_constant = `sorry`
+declare lean target_rep function decode_character_constant = `CerbDecode.decode_character_constant`
 
 val escaped_char: char -> string
 declare ocaml target_rep function escaped_char = `Decode.escaped_char`
-declare lean target_rep function escaped_char = `sorry`
+declare lean target_rep function escaped_char = `CerbDecode.escaped_char`
 
 val encode_character_constant: integer -> char
 declare ocaml target_rep function encode_character_constant = `Decode.encode_character_constant`

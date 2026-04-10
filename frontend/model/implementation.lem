@@ -36,7 +36,7 @@ declare lean target_rep function normalise_integerType = `CerberusImpl.normalise
 
 val alignof_ty: map AilSyntax.ail_identifier (list (maybe Ctype.alignment * Ctype.ctype)) ->  Ctype.ctype -> maybe nat
 declare ocaml target_rep function alignof_ty = `Ocaml_implementation.alignof_proxy`
-declare lean target_rep function alignof_ty = `sorry`
+declare lean target_rep function alignof_ty = `CerberusImpl.alignof_ty`
 
 val integerImpl: unit -> IntegerImpl.implementation
 let integerImpl () =

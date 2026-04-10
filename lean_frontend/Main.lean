@@ -1,5 +1,7 @@
 import CerberusImpl
 import CerbMem
+import CerbCtypeInstances
+import CerbInhabitedInstances
 
 def main : IO Unit := do
   IO.println "cerberus-lean: loaded"
@@ -8,6 +10,8 @@ def main : IO Unit := do
   | none => IO.println "  sizeof(int) = unknown"
   let maxInt := CerbMem.maxIval (Signed Int_)
   IO.println s!"  max(signed int) = {maxInt.val}"
+  let minInt := CerbMem.minIval (Signed Int_)
+  IO.println s!"  min(signed int) = {minInt.val}"
   let bytes := CerbMem.intToBytes 42 4
   let byteStrs := bytes.map fun b => match b with
     | some v => toString v.toNat | none => "?"
