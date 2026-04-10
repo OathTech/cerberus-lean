@@ -105,6 +105,7 @@ roots = [
   "CerbTags",
   "CerbDebug",
   "CerbDecode",
+  "CabsImport",
 ]
 
 [[lean_exe]]
