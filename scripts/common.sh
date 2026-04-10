@@ -94,3 +94,12 @@ run_cerberus() {
 run_cerberus_lean() {
     "$CERBERUS_LEAN_BIN" "$@"
 }
+
+# Produce an 8-character hash of a string (works on both macOS and Linux)
+portable_hash() {
+    if command -v md5sum &>/dev/null; then
+        printf '%s' "$1" | md5sum | cut -c1-8
+    else
+        printf '%s' "$1" | md5 | cut -c1-8
+    fi
+}
