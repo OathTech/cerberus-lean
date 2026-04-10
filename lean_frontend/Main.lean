@@ -73,7 +73,7 @@ def main (args : List String) : IO Unit := do
   if args.head? == some "--parse-core" then
     for file in args.drop 1 do
       let input ← IO.FS.readFile file
-      match CoreParser.parseFile input with
+      match CoreParser.parseFileSummary input with
       | .ok summary => IO.println s!"{file}: {summary}"
       | .error e => IO.println s!"{file}: ERROR: {e}"
     return

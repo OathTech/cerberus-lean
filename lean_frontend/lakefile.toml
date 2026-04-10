@@ -119,5 +119,5 @@ name = "cerberus-lean"
 root = "Main"
 
 [[lean_exe]]
-name = "sorry-repro"
-root = "SorryRepro"
+name = "core-parser-test"
+root = "CoreParserTest"
