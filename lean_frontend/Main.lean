@@ -3,6 +3,7 @@ import CerbMem
 import CerbCtypeInstances
 import CerbInhabitedInstances
 import CabsImport
+import CoreParser
 import Cabs_to_ail
 import Cn_desugaring
 
@@ -66,6 +67,15 @@ def runPipeline (tunit : translation_unit) : IO Unit := do
 def main (args : List String) : IO Unit := do
   if args.length == 0 then
     selfTest
+    return
+
+  -- --parse-core: test the Core text parser
+  if args.head? == some "--parse-core" then
+    for file in args.drop 1 do
+      let input ← IO.FS.readFile file
+      match CoreParser.parseFile input with
+      | .ok summary => IO.println s!"{file}: {summary}"
+      | .error e => IO.println s!"{file}: ERROR: {e}"
     return
 
   let input ← readInput args

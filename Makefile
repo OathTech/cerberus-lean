@@ -291,7 +291,7 @@ LEAN_SRC_DIR = lean_frontend/generated
 LEAN_HANDWRITTEN = CerberusImpl.lean CerbLocation.lean CerberusFresh.lean \
     CerbGlobal.lean CerbFloat.lean CerbUtils.lean CerbPP.lean CerbMem.lean \
     CerbFS.lean CerbConcurrency.lean CerbCtypeInstances.lean CerbInhabitedInstances.lean \
-    CerbTags.lean CerbDebug.lean CerbDecode.lean CabsImport.lean
+    CerbTags.lean CerbDebug.lean CerbDecode.lean CabsImport.lean CoreParser.lean
 
 # Update and reinstall lem via opam.  Lem is pinned to
 # https://github.com/septract/lem-lean#mdd/lean-backend via `opam pin`.
