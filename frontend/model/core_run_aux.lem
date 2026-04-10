@@ -230,6 +230,12 @@ type core_state = <|
   io: io_state;
 |>
 
+(* These types transitively contain noncomputable Inhabited types
+   (generic_expr via arena, dlist via stdout/stderr).
+   skip_instances prevents compile errors from the cascade. *)
+declare {lean} skip_instances type thread_state
+declare {lean} skip_instances type io_state
+declare {lean} skip_instances type core_state
 
 (* State of Core evaluator *)
 type core_run_state = <|

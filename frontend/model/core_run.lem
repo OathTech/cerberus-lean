@@ -218,6 +218,9 @@ type action_request =
   | KillRequest of Loc.t * set Cmm.aid * set Cmm.aid * set Cmm.aid *
                    Cmm.aid * Mem_common.thread_id * (* is_dynamic *) bool * Mem.pointer_value * thread_state
 
+(* cascade from thread_state (noncomputable Inhabited) *)
+declare {lean} skip_instances type action_request
+
 type fs_oper =
   | FS_MKDIR of string * integer (* path * mode_t *)
   | FS_RMDIR of string (* path *)

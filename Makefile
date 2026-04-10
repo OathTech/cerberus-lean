@@ -293,17 +293,15 @@ LEAN_HANDWRITTEN = CerberusImpl.lean CerbLocation.lean CerberusFresh.lean \
     CerbFS.lean CerbConcurrency.lean CerbCtypeInstances.lean CerbInhabitedInstances.lean \
     CerbTags.lean CerbDebug.lean CerbDecode.lean
 
-# Rebuild lem from the opam switch source.  Nukes ocamlbuild's _build
-# cache first — without this, stale .cmx files survive `make clean` because
-# lem's Makefile runs `ocamlbuild -clean` which silently fails when
-# ocamlbuild isn't on PATH outside the switch env.
-LEM_SWITCH_SRC = _opam/.opam-switch/sources/lem
+# Update and reinstall lem via opam.  Lem is pinned to
+# https://github.com/septract/lem-lean#mdd/lean-backend via `opam pin`.
+# `opam update lem` fetches the latest from the pinned branch;
+# `opam upgrade lem` rebuilds and installs if the source changed.
 .PHONY: rebuild-lem
 rebuild-lem:
-	@echo "[LEM] rebuilding lem from $(LEM_SWITCH_SRC)"
-	$(Q)rm -rf $(LEM_SWITCH_SRC)/src/_build
-	$(Q)$(MAKE) -C $(LEM_SWITCH_SRC) bin/lem
-	$(Q)cp $(LEM_SWITCH_SRC)/bin/lem _opam/bin/lem
+	@echo "[LEM] updating lem from pinned branch"
+	$(Q)opam update lem
+	$(Q)opam upgrade lem -y
 	@echo "[LEM] installed $$(lem -v 2>&1)"
 
 .PHONY: lean-prelude-src

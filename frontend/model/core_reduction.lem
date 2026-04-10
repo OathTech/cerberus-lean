@@ -618,6 +618,9 @@ type action_step =
   | ACTION_EVAL of string * core_runM (Core.action core_run_annotation)
   | ACTION_ILLTYPED of string
 
+(* cascade from action_request2 and core_runM (noncomputable Inhabited) *)
+declare {lean} skip_instances type action_step
+
 val step_action:
     list Annot.annot ->
     (Core.pexpr -> core_runM Core.value) -> maybe nat -> Core.action core_run_annotation -> action_step

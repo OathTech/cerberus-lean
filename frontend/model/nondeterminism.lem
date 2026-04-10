@@ -46,8 +46,6 @@ type nd_action 'a 'info 'err 'cs 'st =
 and ndM 'a 'info 'err 'cs 'st =
   ND of ('st -> (nd_action 'a 'info 'err 'cs 'st * 'st))
 
-
-
 (* Monadic operations *)
 val return: forall 'a 'err 'info 'cs 'st. 'a -> ndM 'a 'info 'err 'cs 'st
 val bind:   forall 'a 'b 'info 'err 'cs 'st. ndM 'a 'info 'err 'cs 'st -> ('a -> ndM 'b 'info 'err 'cs 'st) -> ndM 'b 'info 'err 'cs 'st

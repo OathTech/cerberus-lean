@@ -62,6 +62,7 @@ type ctype_ (*[name = "^\\([a-z A-Z]*_\\)?ty[0-9]*'?$"]*) =
 and ctype =
   Ctype of list Annot.annot * ctype_
 
+
 type struct_tag = Symbol.sym
 type union_tag  = Symbol.sym
 type member_id  = Symbol.sym

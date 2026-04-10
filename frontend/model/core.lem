@@ -217,7 +217,7 @@ type ctor =  (* data constructors *)
  | CivNULLcap of bool (* CHERI: null capability *)
 
 
-type generic_pattern_ 'sym = 
+type generic_pattern_ 'sym =
  | CaseBase of (maybe 'sym * core_base_type)
  | CaseCtor of ctor * list (generic_pattern 'sym)
 
@@ -339,8 +339,9 @@ type generic_expr_ 'a 'bty 'sym =  (* (effectful) expression *)
  | Eannot of list dyn_annotation * generic_expr 'a 'bty 'sym
  | Eexcluded of nat * generic_action 'a 'bty 'sym
 
-and generic_expr 'a 'bty 'sym = 
+and generic_expr 'a 'bty 'sym =
  | Expr of list annot * (generic_expr_ 'a 'bty 'sym)
+
 
 type generic_impl_decl 'bty =
   | Def of core_base_type * generic_pexpr 'bty Symbol.sym
