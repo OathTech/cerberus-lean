@@ -3,7 +3,7 @@
    Schema: every constructor becomes {"tag": "Name", "args": [...]}
    Atoms: strings -> JSON strings, integers -> JSON strings (arbitrary precision),
    bools -> JSON bools, options -> null or value, lists -> JSON arrays,
-   tuples -> JSON arrays, locations -> Cerb_location.to_json.
+   tuples -> JSON arrays, locations -> lossless tagged format (see below).
 
    This is a mechanical translation of the Cabs type definitions. *)
 
@@ -13,9 +13,49 @@ open Cabs
 let tag name args = `Assoc (("tag", `String name) :: args)
 let tag0 name = `String name  (* nullary constructor *)
 
-(* === Locations === *)
+(* === Positions and locations (lossless) ===
 
-let json_of_loc = Cerb_location.to_json
+   Unlike Cerb_location.to_json (which drops filename, cursor, region lists,
+   and the Loc_point/Loc_other distinction), this serializes the full location
+   tree so the Lean parser can reconstruct it exactly.
+
+   Positions: {"file": S, "line": N, "col": N}  (1-indexed, matching Cerb_position accessors)
+   Cursors:   "NoCursor" | {"tag": "PointCursor", ...} | {"tag": "RegionCursor", ...}
+   Locations: "Loc_unknown" | {"tag": "Loc_other", ...} | {"tag": "Loc_point", ...}
+            | {"tag": "Loc_region", ...} | {"tag": "Loc_regions", ...}
+*)
+
+let json_of_pos p =
+  `Assoc [
+    ("file", `String (Cerb_position.file p));
+    ("line", `Int (Cerb_position.line p));
+    ("col", `Int (Cerb_position.column p))
+  ]
+
+let json_of_cursor = function
+  | Cerb_location.NoCursor -> tag0 "NoCursor"
+  | Cerb_location.PointCursor p ->
+    tag "PointCursor" [("pos", json_of_pos p)]
+  | Cerb_location.RegionCursor (p1, p2) ->
+    tag "RegionCursor" [("begin", json_of_pos p1); ("end", json_of_pos p2)]
+
+let json_of_loc = function
+  | Cerb_location.Loc_unknown -> tag0 "Loc_unknown"
+  | Cerb_location.Loc_other s -> tag "Loc_other" [("str", `String s)]
+  | Cerb_location.Loc_point p -> tag "Loc_point" [("pos", json_of_pos p)]
+  | Cerb_location.Loc_region (p1, p2, cursor) ->
+    tag "Loc_region" [
+      ("begin", json_of_pos p1);
+      ("end", json_of_pos p2);
+      ("cursor", json_of_cursor cursor)
+    ]
+  | Cerb_location.Loc_regions (regions, cursor) ->
+    tag "Loc_regions" [
+      ("regions", `List (List.map (fun (p1, p2) ->
+        `List [json_of_pos p1; json_of_pos p2]
+      ) regions));
+      ("cursor", json_of_cursor cursor)
+    ]
 
 (* === Identifiers === *)
 
@@ -582,22 +622,22 @@ and json_of_function_definition (FunDef (loc, attrs, specs, decl, body)) =
 
 (* === Top-level === *)
 
+(* CN backend declarations have no C semantics and carry types from a
+   separate module that we don't serialize.  Filter them out here so the
+   Lean parser never encounters unrecognised / data-less tags. *)
 let json_of_external_declaration = function
   | EDecl_func fdef ->
-    tag "EDecl_func" [("def", json_of_function_definition fdef)]
+    Some (tag "EDecl_func" [("def", json_of_function_definition fdef)])
   | EDecl_decl decl ->
-    tag "EDecl_decl" [("decl", json_of_cabs_declaration decl)]
+    Some (tag "EDecl_decl" [("decl", json_of_cabs_declaration decl)])
   | EDecl_magic (loc, s) ->
-    tag "EDecl_magic" [("loc", json_of_loc loc); ("str", json_of_string s)]
-  | EDecl_funcCN _ -> tag0 "EDecl_funcCN"
-  | EDecl_lemmaCN _ -> tag0 "EDecl_lemmaCN"
-  | EDecl_predCN _ -> tag0 "EDecl_predCN"
-  | EDecl_datatypeCN _ -> tag0 "EDecl_datatypeCN"
-  | EDecl_type_synCN _ -> tag0 "EDecl_type_synCN"
-  | EDecl_fun_specCN _ -> tag0 "EDecl_fun_specCN"
+    Some (tag "EDecl_magic" [("loc", json_of_loc loc); ("str", json_of_string s)])
+  | EDecl_funcCN _ | EDecl_lemmaCN _ | EDecl_predCN _
+  | EDecl_datatypeCN _ | EDecl_type_synCN _ | EDecl_fun_specCN _ ->
+    None
 
 let json_of_translation_unit (TUnit decls) =
-  tag "TUnit" [("decls", json_of_list json_of_external_declaration decls)]
+  tag "TUnit" [("decls", `List (List.filter_map json_of_external_declaration decls))]
 
 (* Entry point *)
 let to_json = json_of_translation_unit

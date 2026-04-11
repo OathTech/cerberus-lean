@@ -1,6 +1,9 @@
 /-
   Cabs JSON deserializer: converts JSON (from cerberus --cabs-json) to Cabs types.
 
+  **Strict parser**: every unrecognised tag, missing field, or structural mismatch
+  is a hard error with context.  Nothing is silently skipped or dropped.
+
   Schema (matching backend/lean_export/cabs_json.ml):
   - Nullary constructors: JSON string "Name"
   - Non-nullary constructors: {"tag": "Name", "field1": val, ...}
@@ -10,7 +13,10 @@
   - Strings: JSON strings
   - Integers: JSON strings (arbitrary precision)
   - Bools: JSON bools
-  - Locations: Cerb_location.to_json format
+  - Positions: {"file": S, "line": N, "col": N}  (1-indexed)
+  - Locations: tagged (Loc_unknown/Loc_other/Loc_point/Loc_region/Loc_regions)
+  - Cursors: tagged (NoCursor/PointCursor/RegionCursor)
+  - CN declarations: filtered out by OCaml serializer (never appear in JSON)
 -/
 
 import Lean.Data.Json
@@ -54,17 +60,12 @@ def getStr (j : Json) : Except String String :=
   | .str s => .ok s
   | _ => err "getStr" s!"expected string, got {j}"
 
-def getInt (j : Json) : Except String Int :=
-  match j with
-  | .str s => match s.toInt? with
-    | some n => .ok n
-    | none => err "getInt" s!"invalid integer string: {s}"
-  | .num n => .ok n.toFloat.toUInt64.toNat  -- fallback for small ints
-  | _ => err "getInt" s!"expected integer string, got {j}"
-
 def getNat (j : Json) : Except String Nat :=
   match j with
-  | .num n => .ok n.toFloat.toUInt64.toNat
+  | .num n =>
+    if n.mantissa < 0 then err "getNat" s!"negative number: {j}"
+    else if n.exponent != 0 then err "getNat" s!"non-integer number: {j}"
+    else .ok n.mantissa.toNat
   | .str s => match s.toNat? with
     | some n => .ok n
     | none => err "getNat" s!"invalid nat string: {s}"
@@ -88,12 +89,49 @@ def getOption (f : Json → Except String α) (j : Json) : Except String (Option
 def getList (f : Json → Except String α) (j : Json) : Except String (List α) :=
   do let arr ← getArr j; arr.toList.mapM f
 
-/-! ## Location deserialization -/
+/-! ## Location deserialization (lossless)
 
--- Match Cerb_location.to_json format
-def jsonToLoc (j : Json) : Except String CerbLocation.Loc :=
-  -- For now, use unknown — proper location parsing can be added later
-  .ok CerbLocation.unknown
+   Matches the lossless format from cabs_json.ml, which preserves filenames,
+   cursor info, Loc_other strings, and region lists.
+
+   Positions: {"file": S, "line": N, "col": N}  (1-indexed)
+   Cursors:   "NoCursor" | {"tag": "PointCursor", ...} | {"tag": "RegionCursor", ...}
+   Locations: "Loc_unknown" | {"tag": "Loc_other/Loc_point/Loc_region/Loc_regions", ...}
+-/
+
+def jsonToPos (j : Json) : Except String CerbLocation.Pos := do
+  let file ← getStr (← getField j "file")
+  let line ← getNat (← getField j "line")
+  let col ← getNat (← getField j "col")
+  .ok { file, line, col }
+
+def jsonToCursor (j : Json) : Except String CerbLocation.Cursor := do
+  match ← getTag j with
+  | "NoCursor" => .ok .noCursor
+  | "PointCursor" => .ok (.pointCursor (← jsonToPos (← getField j "pos")))
+  | "RegionCursor" => .ok (.regionCursor
+      (← jsonToPos (← getField j "begin"))
+      (← jsonToPos (← getField j "end")))
+  | t => err "jsonToCursor" s!"unknown tag '{t}' in {j}"
+
+def jsonToLoc (j : Json) : Except String CerbLocation.Loc := do
+  match ← getTag j with
+  | "Loc_unknown" => .ok .unknown
+  | "Loc_other" => .ok (.other (← getStr (← getField j "str")))
+  | "Loc_point" => .ok (.point (← jsonToPos (← getField j "pos")))
+  | "Loc_region" => .ok (.region
+      (← jsonToPos (← getField j "begin"))
+      (← jsonToPos (← getField j "end"))
+      (← jsonToCursor (← getField j "cursor")))
+  | "Loc_regions" => .ok (.regions
+      (← getList (fun rj => do
+        let arr ← getArr rj
+        if h : arr.size = 2 then
+          .ok ((← jsonToPos arr[0]), (← jsonToPos arr[1]))
+        else err "Loc_regions" "expected 2-element region pair"
+      ) (← getField j "regions"))
+      (← jsonToCursor (← getField j "cursor")))
+  | t => err "jsonToLoc" s!"unknown tag '{t}' in {j}"
 
 /-! ## Identifier -/
 
@@ -111,20 +149,20 @@ def jsonToIntegerSuffix (j : Json) : Except String cabs_integer_suffix := do
   | "CabsSuffix_ULL" => .ok .CabsSuffix_ULL
   | "CabsSuffix_L" => .ok .CabsSuffix_L
   | "CabsSuffix_LL" => .ok .CabsSuffix_LL
-  | t => err "jsonToIntegerSuffix" s!"unknown tag: {t}"
+  | t => err "jsonToIntegerSuffix" s!"unknown tag '{t}' in {j}"
 
 def jsonToFloatingSuffix (j : Json) : Except String cabs_floating_suffix := do
   match ← getTag j with
   | "CabsFloatingSuffix_F" => .ok .CabsFloatingSuffix_F
   | "CabsFloatingSuffix_L" => .ok .CabsFloatingSuffix_L
-  | t => err "jsonToFloatingSuffix" s!"unknown tag: {t}"
+  | t => err "jsonToFloatingSuffix" s!"unknown tag '{t}' in {j}"
 
 def jsonToCharacterPrefix (j : Json) : Except String cabs_character_prefix := do
   match ← getTag j with
   | "CabsPrefix_L" => .ok .CabsPrefix_L
   | "CabsPrefix_u" => .ok .CabsPrefix_u
   | "CabsPrefix_U" => .ok .CabsPrefix_U
-  | t => err "jsonToCharacterPrefix" s!"unknown tag: {t}"
+  | t => err "jsonToCharacterPrefix" s!"unknown tag '{t}' in {j}"
 
 def jsonToEncodingPrefix (j : Json) : Except String cabs_encoding_prefix := do
   match ← getTag j with
@@ -132,7 +170,7 @@ def jsonToEncodingPrefix (j : Json) : Except String cabs_encoding_prefix := do
   | "CabsEncPrefix_u" => .ok .CabsEncPrefix_u
   | "CabsEncPrefix_U" => .ok .CabsEncPrefix_U
   | "CabsEncPrefix_L" => .ok .CabsEncPrefix_L
-  | t => err "jsonToEncodingPrefix" s!"unknown tag: {t}"
+  | t => err "jsonToEncodingPrefix" s!"unknown tag '{t}' in {j}"
 
 /-! ## Constants -/
 
@@ -165,7 +203,7 @@ def jsonToConstant (j : Json) : Except String cabs_constant := do
   | "CabsInteger_const" => .ok (.CabsInteger_const (← jsonToIntegerConstant (← getField j "val")))
   | "CabsFloating_const" => .ok (.CabsFloating_const (← jsonToFloatingConstant (← getField j "val")))
   | "CabsCharacter_const" => .ok (.CabsCharacter_const (← jsonToCharacterConstant (← getField j "val")))
-  | t => err "jsonToConstant" s!"unknown tag: {t}"
+  | t => err "jsonToConstant" s!"unknown tag '{t}' in {j}"
 
 def jsonToStringLiteral (j : Json) : Except String cabs_string_literal := do
   let arr ← getArr j
@@ -192,7 +230,7 @@ def jsonToUnaryOp (j : Json) : Except String cabs_unary_operator := do
   | "CabsMinus" => .ok .CabsMinus
   | "CabsBnot" => .ok .CabsBnot
   | "CabsNot" => .ok .CabsNot
-  | t => err "jsonToUnaryOp" s!"unknown tag: {t}"
+  | t => err "jsonToUnaryOp" s!"unknown tag '{t}' in {j}"
 
 def jsonToBinaryOp (j : Json) : Except String cabs_binary_operator := do
   match ← getTag j with
@@ -204,7 +242,7 @@ def jsonToBinaryOp (j : Json) : Except String cabs_binary_operator := do
   | "CabsEq" => .ok .CabsEq | "CabsNe" => .ok .CabsNe
   | "CabsBand" => .ok .CabsBand | "CabsBxor" => .ok .CabsBxor | "CabsBor" => .ok .CabsBor
   | "CabsAnd" => .ok .CabsAnd | "CabsOr" => .ok .CabsOr
-  | t => err "jsonToBinaryOp" s!"unknown tag: {t}"
+  | t => err "jsonToBinaryOp" s!"unknown tag '{t}' in {j}"
 
 def jsonToAssignmentOp (j : Json) : Except String cabs_assignment_operator := do
   match ← getTag j with
@@ -214,7 +252,7 @@ def jsonToAssignmentOp (j : Json) : Except String cabs_assignment_operator := do
   | "Assign_Sub" => .ok .Assign_Sub | "Assign_Shl" => .ok .Assign_Shl
   | "Assign_Shr" => .ok .Assign_Shr | "Assign_Band" => .ok .Assign_Band
   | "Assign_Bxor" => .ok .Assign_Bxor | "Assign_Bor" => .ok .Assign_Bor
-  | t => err "jsonToAssignmentOp" s!"unknown tag: {t}"
+  | t => err "jsonToAssignmentOp" s!"unknown tag '{t}' in {j}"
 
 /-! ## All Cabs types (mutually recursive) -/
 
@@ -305,7 +343,7 @@ partial def jsonToExpression_ (j : Json) : Except String cabs_expression_ := do
       (← jsonToExpression (← getField j "cond"))
       (← jsonToExpression (← getField j "else_")))
   | "CabsEbuiltinGNU" => .ok (.CabsEbuiltinGNU (← jsonToGnuBuiltin (← getField j "builtin")))
-  | t => err "jsonToExpression_" s!"unknown tag: {t}"
+  | t => err "jsonToExpression_" s!"unknown tag '{t}' in {j}"
 
 partial def jsonToGenericAssoc (j : Json) : Except String cabs_generic_association := do
   match ← getTag j with
@@ -313,7 +351,7 @@ partial def jsonToGenericAssoc (j : Json) : Except String cabs_generic_associati
       (← jsonToTypeName (← getField j "type"))
       (← jsonToExpression (← getField j "expr")))
   | "GA_default" => .ok (.GA_default (← jsonToExpression (← getField j "expr")))
-  | t => err "jsonToGenericAssoc" s!"unknown tag: {t}"
+  | t => err "jsonToGenericAssoc" s!"unknown tag '{t}' in {j}"
 
 -- Storage class specifiers
 partial def jsonToStorageClass (j : Json) : Except String storage_class_specifier := do
@@ -321,27 +359,27 @@ partial def jsonToStorageClass (j : Json) : Except String storage_class_specifie
   | "SC_typedef" => .ok .SC_typedef | "SC_extern" => .ok .SC_extern
   | "SC_static" => .ok .SC_static | "SC_Thread_local" => .ok .SC_Thread_local
   | "SC_auto" => .ok .SC_auto | "SC_register" => .ok .SC_register
-  | t => err "jsonToStorageClass" s!"unknown tag: {t}"
+  | t => err "jsonToStorageClass" s!"unknown tag '{t}' in {j}"
 
 -- Type qualifiers
 partial def jsonToTypeQualifier (j : Json) : Except String cabs_type_qualifier := do
   match ← getTag j with
   | "Q_const" => .ok .Q_const | "Q_restrict" => .ok .Q_restrict
   | "Q_volatile" => .ok .Q_volatile | "Q_Atomic" => .ok .Q_Atomic
-  | t => err "jsonToTypeQualifier" s!"unknown tag: {t}"
+  | t => err "jsonToTypeQualifier" s!"unknown tag '{t}' in {j}"
 
 -- Function specifiers
 partial def jsonToFunctionSpecifier (j : Json) : Except String function_specifier := do
   match ← getTag j with
   | "FS_inline" => .ok .FS_inline | "FS_Noreturn" => .ok .FS_Noreturn
-  | t => err "jsonToFunctionSpecifier" s!"unknown tag: {t}"
+  | t => err "jsonToFunctionSpecifier" s!"unknown tag '{t}' in {j}"
 
 -- Alignment specifiers
 partial def jsonToAlignmentSpecifier (j : Json) : Except String alignment_specifier := do
   match ← getTag j with
   | "AS_type" => .ok (.AS_type (← jsonToTypeName (← getField j "type")))
   | "AS_expr" => .ok (.AS_expr (← jsonToExpression (← getField j "expr")))
-  | t => err "jsonToAlignmentSpecifier" s!"unknown tag: {t}"
+  | t => err "jsonToAlignmentSpecifier" s!"unknown tag '{t}' in {j}"
 
 -- Type specifier (inner)
 partial def jsonToTypeSpecifier_ (j : Json) : Except String cabs_type_specifier_ := do
@@ -367,7 +405,7 @@ partial def jsonToTypeSpecifier_ (j : Json) : Except String cabs_type_specifier_
   | "TSpec_name" => .ok (.TSpec_name (← jsonToIdentifier (← getField j "id")))
   | "TSpec_typeof_expr" => .ok (.TSpec_typeof_expr (← jsonToExpression (← getField j "expr")))
   | "TSpec_typeof_type" => .ok (.TSpec_typeof_type (← jsonToTypeName (← getField j "type")))
-  | t => err "jsonToTypeSpecifier_" s!"unknown tag: {t}"
+  | t => err "jsonToTypeSpecifier_" s!"unknown tag '{t}' in {j}"
 
 -- Type specifier (with location)
 partial def jsonToTypeSpecifier (j : Json) : Except String cabs_type_specifier := do
@@ -385,7 +423,7 @@ partial def jsonToStructDecl (j : Json) : Except String struct_declaration := do
       (← getList jsonToAlignmentSpecifier (← getField j "alignment_specifiers"))
       (← getList jsonToStructDeclarator (← getField j "declarators")))
   | "Struct_assert" => .ok (.Struct_assert (← jsonToStaticAssert (← getField j "assert")))
-  | t => err "jsonToStructDecl" s!"unknown tag: {t}"
+  | t => err "jsonToStructDecl" s!"unknown tag '{t}' in {j}"
 
 -- Struct declarator
 partial def jsonToStructDeclarator (j : Json) : Except String struct_declarator := do
@@ -394,7 +432,7 @@ partial def jsonToStructDeclarator (j : Json) : Except String struct_declarator 
   | "SDecl_bitfield" => .ok (.SDecl_bitfield
       (← getOption jsonToDeclarator (← getField j "declarator"))
       (← jsonToExpression (← getField j "width")))
-  | t => err "jsonToStructDeclarator" s!"unknown tag: {t}"
+  | t => err "jsonToStructDeclarator" s!"unknown tag '{t}' in {j}"
 
 -- Enumerator
 partial def jsonToEnumerator (j : Json) : Except String (identifier × Option cabs_expression) := do
@@ -417,7 +455,7 @@ partial def jsonToArrayDeclSize (j : Json) : Except String array_declarator_size
   match ← getTag j with
   | "ADeclSize_expression" => .ok (.ADeclSize_expression (← jsonToExpression (← getField j "expr")))
   | "ADeclSize_asterisk" => .ok .ADeclSize_asterisk
-  | t => err "jsonToArrayDeclSize" s!"unknown tag: {t}"
+  | t => err "jsonToArrayDeclSize" s!"unknown tag '{t}' in {j}"
 
 -- Array declarator
 partial def jsonToArrayDecl (j : Json) : Except String array_declarator := do
@@ -442,7 +480,7 @@ partial def jsonToParamDecl (j : Json) : Except String parameter_declaration := 
   | "PDeclaration_abs_decl" => .ok (.PDeclaration_abs_decl
       (← jsonToSpecifiers (← getField j "specifiers"))
       (← getOption jsonToAbstractDeclarator (← getField j "abstract_declarator")))
-  | t => err "jsonToParamDecl" s!"unknown tag: {t}"
+  | t => err "jsonToParamDecl" s!"unknown tag '{t}' in {j}"
 
 -- Direct declarator
 partial def jsonToDirectDecl (j : Json) : Except String direct_declarator := do
@@ -457,7 +495,7 @@ partial def jsonToDirectDecl (j : Json) : Except String direct_declarator := do
   | "DDecl_function" => .ok (.DDecl_function
       (← jsonToDirectDecl (← getField j "direct"))
       (← jsonToParamTypeList (← getField j "params")))
-  | t => err "jsonToDirectDecl" s!"unknown tag: {t}"
+  | t => err "jsonToDirectDecl" s!"unknown tag '{t}' in {j}"
 
 -- Declarator
 partial def jsonToDeclarator (j : Json) : Except String declarator := do
@@ -472,7 +510,7 @@ partial def jsonToAbstractDeclarator (j : Json) : Except String abstract_declara
   | "AbsDecl_direct" => .ok (.AbsDecl_direct
       (← getOption jsonToPointerDecl (← getField j "pointer"))
       (← jsonToDirectAbstractDecl (← getField j "direct")))
-  | t => err "jsonToAbstractDeclarator" s!"unknown tag: {t}"
+  | t => err "jsonToAbstractDeclarator" s!"unknown tag '{t}' in {j}"
 
 -- Direct abstract declarator
 partial def jsonToDirectAbstractDecl (j : Json) : Except String direct_abstract_declarator := do
@@ -485,7 +523,7 @@ partial def jsonToDirectAbstractDecl (j : Json) : Except String direct_abstract_
   | "DAbs_function" => .ok (.DAbs_function
       (← getOption jsonToDirectAbstractDecl (← getField j "direct"))
       (← jsonToParamTypeList (← getField j "params")))
-  | t => err "jsonToDirectAbstractDecl" s!"unknown tag: {t}"
+  | t => err "jsonToDirectAbstractDecl" s!"unknown tag '{t}' in {j}"
 
 -- Type name
 partial def jsonToTypeName (j : Json) : Except String type_name := do
@@ -500,7 +538,7 @@ partial def jsonToDesignator (j : Json) : Except String designator := do
   match ← getTag j with
   | "Desig_array" => .ok (.Desig_array (← jsonToExpression (← getField j "expr")))
   | "Desig_member" => .ok (.Desig_member (← jsonToIdentifier (← getField j "member")))
-  | t => err "jsonToDesignator" s!"unknown tag: {t}"
+  | t => err "jsonToDesignator" s!"unknown tag '{t}' in {j}"
 
 -- Initializer
 partial def jsonToInitializer (j : Json) : Except String initializer_ := do
@@ -516,7 +554,7 @@ partial def jsonToInitializer (j : Json) : Except String initializer_ := do
           .ok (desigs, init)
         else err "Init_list" "expected 2-element init pair"
       ) (← getField j "inits")))
-  | t => err "jsonToInitializer" s!"unknown tag: {t}"
+  | t => err "jsonToInitializer" s!"unknown tag '{t}' in {j}"
 
 -- GNU builtins
 partial def jsonToGnuBuiltin (j : Json) : Except String gnu_builtin_function := do
@@ -528,13 +566,13 @@ partial def jsonToGnuBuiltin (j : Json) : Except String gnu_builtin_function := 
       (← jsonToExpression (← getField j "cond"))
       (← jsonToExpression (← getField j "then_"))
       (← jsonToExpression (← getField j "else_")))
-  | t => err "jsonToGnuBuiltin" s!"unknown tag: {t}"
+  | t => err "jsonToGnuBuiltin" s!"unknown tag '{t}' in {j}"
 
 -- Attributes
 partial def jsonToAttributes (j : Json) : Except String attributes := do
   match ← getTag j with
   | "Attrs" => .ok (.Attrs (← getList jsonToAttribute (← getField j "attrs")))
-  | t => err "jsonToAttributes" s!"unknown tag: {t}"
+  | t => err "jsonToAttributes" s!"unknown tag '{t}' in {j}"
 
 partial def jsonToAttribute (j : Json) : Except String attribute0 := do
   .ok (attribute0.mk
@@ -588,7 +626,7 @@ partial def jsonToDeclaration (j : Json) : Except String cabs_declaration := do
       (← getList jsonToInitDecl (← getField j "init_declarators")))
   | "Declaration_static_assert" => .ok (.Declaration_static_assert
       (← jsonToStaticAssert (← getField j "assert")))
-  | t => err "jsonToDeclaration" s!"unknown tag: {t}"
+  | t => err "jsonToDeclaration" s!"unknown tag '{t}' in {j}"
 
 -- For clause
 partial def jsonToForClause (j : Json) : Except String for_clause := do
@@ -597,7 +635,7 @@ partial def jsonToForClause (j : Json) : Except String for_clause := do
   | "FC_decl" => .ok (.FC_decl
       (← jsonToLoc (← getField j "loc"))
       (← jsonToDeclaration (← getField j "decl")))
-  | t => err "jsonToForClause" s!"unknown tag: {t}"
+  | t => err "jsonToForClause" s!"unknown tag '{t}' in {j}"
 
 -- Statement (inner)
 partial def jsonToStatement_ (j : Json) : Except String cabs_statement_ := do
@@ -652,7 +690,7 @@ partial def jsonToStatement_ (j : Json) : Except String cabs_statement_ := do
       (← jsonToExpression (← getField j "hi"))
       (← jsonToStatement (← getField j "stmt")))
   | "CabsSmarker" => .ok (.CabsSmarker (← jsonToStatement (← getField j "stmt")))
-  | t => err "jsonToStatement_" s!"unknown tag: {t}"
+  | t => err "jsonToStatement_" s!"unknown tag '{t}' in {j}"
 
 -- Statement (with location and attributes)
 partial def jsonToStatement (j : Json) : Except String cabs_statement := do
@@ -670,7 +708,7 @@ partial def jsonToFunctionDef (j : Json) : Except String function_definition := 
     (← jsonToDeclarator (← getField j "declarator"))
     (← jsonToStatement (← getField j "body")))
 
--- External declaration
+-- External declaration (strict: errors on any unrecognised tag)
 partial def jsonToExternalDeclaration (j : Json) : Except String external_declaration := do
   match ← getTag j with
   | "EDecl_func" => .ok (.EDecl_func (← jsonToFunctionDef (← getField j "def")))
@@ -679,7 +717,7 @@ partial def jsonToExternalDeclaration (j : Json) : Except String external_declar
     let loc ← jsonToLoc (← getField j "loc")
     let s ← getStr (← getField j "str")
     .ok (.EDecl_magic (loc, s))
-  | t => err "jsonToExternalDeclaration" s!"unknown tag: {t}"
+  | t => err "jsonToExternalDeclaration" s!"unknown tag '{t}' in {j}"
 
 -- Translation unit
 partial def jsonToTranslationUnit (j : Json) : Except String translation_unit := do
@@ -687,7 +725,7 @@ partial def jsonToTranslationUnit (j : Json) : Except String translation_unit :=
   | "TUnit" =>
     let decls ← getList jsonToExternalDeclaration (← getField j "decls")
     .ok (TUnit decls)
-  | t => err "jsonToTranslationUnit" s!"unknown tag: {t}"
+  | t => err "jsonToTranslationUnit" s!"unknown tag '{t}' in {j}"
 
 end
 
