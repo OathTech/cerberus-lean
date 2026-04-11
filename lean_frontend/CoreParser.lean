@@ -23,7 +23,7 @@ open Std.Internal.Parsec Std.Internal.Parsec.String
 section Lexer
 
 private def isIdentStart (c : Char) : Bool := c.isAlpha || c == '_'
-private def isIdentCont (c : Char) : Bool := c.isAlphanum || c == '_' || c == '\''
+private def isIdentCont (c : Char) : Bool := c.isAlphanum || c == '_'
 
 /-- Skip line comment (-- to end of line) -/
 partial def skipLineComment : P Unit := do
@@ -31,15 +31,12 @@ partial def skipLineComment : P Unit := do
   | some '\n' | none => return
   | _ => skip; skipLineComment
 
-/-- Skip block comment ({- ... -}) with nesting -/
+/-- Skip block comment ({- ... -}), no nesting (matches OCaml lexer) -/
 partial def skipBlockComment : P Unit := do
   match ← peek? with
   | none => fail "unterminated block comment"
   | some '-' => skip; match ← peek? with
     | some '}' => skip
-    | _ => skipBlockComment
-  | some '{' => skip; match ← peek? with
-    | some '-' => skip; skipBlockComment; skipBlockComment
     | _ => skipBlockComment
   | _ => skip; skipBlockComment
 
@@ -173,7 +170,7 @@ private def mkListPat (bTy : core_base_type) : List (generic_pattern sym) → ge
   | p :: ps => Pattern [] (CaseCtor Ccons [p, mkListPat bTy ps])
 
 /-- Map an impl constant name string to implementation_constant. -/
-private def pImplConstant (s : String) : implementation_constant :=
+def pImplConstant (s : String) : implementation_constant :=
   if s == "Sizeof" then Sizeof
   else if s == "Alignof" then Alignof
   else if s == "Ctype_min" then Ctype_min
@@ -216,13 +213,11 @@ private def strContains (haystack needle : String) : Bool :=
 
 /-- Helper: parse iop from wrapI/catch token suffix. -/
 private def pIopFromStr (s : String) : iop :=
-  if strContains s "Add" then IOpAdd
-  else if strContains s "Sub" then IOpSub
-  else if strContains s "Mul" then IOpMul
-  else if strContains s "Shl" then IOpShl
-  else if strContains s "Shr" then IOpShr
-  else if strContains s "Div" then IOpDiv
-  else if strContains s "Rem" then IOpRem_t
+  if strContains s "_add" then IOpAdd
+  else if strContains s "_sub" then IOpSub
+  else if strContains s "_mul" then IOpMul
+  else if strContains s "_shl" then IOpShl
+  else if strContains s "_shr" then IOpShr
   else IOpAdd
 
 -- Type abbreviations for readability
@@ -302,7 +297,7 @@ partial def pCtypeAtom : P ctype :=
         lexSym "*"
         return (Ctype [] (Pointer { const := true, restrict := false, volatile := false } ty))))
   <|> (attempt (do
-        lexKw "atomic"
+        lexKw "_Atomic"
         lexSym "("
         let ty ← pCtype
         lexSym ")"
@@ -310,11 +305,11 @@ partial def pCtypeAtom : P ctype :=
   <|> (attempt (do
         lexKw "struct"
         let tag ← lexIdent
-        return (Ctype [] (Struct (Symbol "" 0 (SD_Id tag))))))
+        return (Ctype [] (Struct (Symbol "" (-1) (SD_Id tag))))))
   <|> (attempt (do
         lexKw "union"
         let tag ← lexIdent
-        return (Ctype [] (Union0 (Symbol "" 0 (SD_Id tag))))))
+        return (Ctype [] (Union0 (Symbol "" (-1) (SD_Id tag))))))
   <|> (attempt (do
         let bty ← pBasicType
         return (Ctype [] (Basic bty))))
@@ -457,6 +452,19 @@ private def pCabsId : P identifier := do
   return (Identifier loc0 name)
 
 /-! ## Binary Operator Parser -/
+
+/-- Get (precedence, nextMinPrec) for a binop.
+    Precedence matches OCaml Menhir (higher = tighter binding):
+    \/ (1,right) /\ (2,right) =><>=<= (3,left) +- (4,left) :: (5,right) */rem (6,left) ^ (7,nonassoc) -/
+private def opPrecInfo : binop → Nat × Nat
+  | OpOr => (1, 1)              -- right-assoc: nextMin = prec
+  | OpAnd => (2, 2)             -- right-assoc
+  | OpEq | OpGt | OpLt
+  | OpGe | OpLe => (3, 4)       -- left-assoc: nextMin = prec + 1
+  | OpAdd | OpSub => (4, 5)     -- left-assoc
+  | OpMul | OpDiv
+  | OpRem_t | OpRem_f => (6, 7) -- left-assoc
+  | OpExp => (7, 8)             -- nonassoc: nextMin = prec + 1
 
 /-- Parse a binary operator token. -/
 private def pBinop : P binop :=
@@ -620,12 +628,6 @@ private partial def pPatternListEmpty : P Pat := do
   let innerBTy := ensureListBTy bTy
   return (Pattern annots0 (CaseCtor (Cnil innerBTy) []))
 
-private partial def pPatternListCons : P Pat := do
-  let p1 ← pPatternNamed <|> pPatternWildcard
-  lexSym "::"
-  let p2 ← pPattern
-  return (Pattern annots0 (CaseCtor Ccons [p1, p2]))
-
 private partial def pPatternListLiteral : P Pat := do
   lexSym "["
   let pats ← sepByComma pPattern
@@ -635,15 +637,23 @@ private partial def pPatternListLiteral : P Pat := do
   let innerBTy := ensureListBTy bTy
   return (mkListPat innerBTy pats)
 
-/-- Parse a pattern. -/
-partial def pPattern : P Pat :=
+/-- Parse a pattern atom (everything except ::). -/
+private partial def pPatternAtom : P Pat :=
       (attempt pPatternTuple)
   <|> (attempt pPatternCtor)
   <|> (attempt pPatternListLiteral)
-  <|> (attempt pPatternListCons)
   <|> (attempt pPatternListEmpty)
   <|> (attempt pPatternNamed)
   <|> pPatternWildcard
+
+/-- Parse a pattern. Handles right-associative :: cons. -/
+partial def pPattern : P Pat := do
+  let p1 ← pPatternAtom
+  match ← attempt (some <$> lexSym "::") <|> pure none with
+  | some _ =>
+    let p2 ← pPattern
+    return (Pattern annots0 (CaseCtor Ccons [p1, p2]))
+  | none => return p1
 
 end
 
@@ -651,7 +661,7 @@ end
 
 mutual
 
--- Pexpr helpers
+-- Pexpr helpers (only those called from pPexprAtom dispatch)
 
 private partial def pPexprParen : P PE := do
   lexSym "("
@@ -659,182 +669,10 @@ private partial def pPexprParen : P PE := do
   lexSym ")"
   return pe
 
-private partial def pPexprUndef : P PE := do
-  lexKw "undef"
-  lexSym "("
-  -- Parse UB as a string identifier for now
-  let ubStr ← lexIdent
-  let _ := ubStr
-  lexSym ")"
-  return (mkPE (PEundef loc0 (DUMMY "parsed_ub")))
-
-private partial def pPexprError : P PE := do
-  lexKw "error"
-  lexSym "("
-  let str ← lexStr
-  lexSym ","
-  let pe ← pPexpr
-  lexSym ")"
-  return (mkPE (PEerror str pe))
-
-private partial def pPexprNot : P PE := do
-  lexKw "not"
-  lexSym "("
-  let pe ← pPexpr
-  lexSym ")"
-  return (mkPE (PEnot pe))
-
 private partial def pPexprMinus : P PE := do
   lexSym "-"
   let pe ← pPexprAtom
   return (mkPE (PEop OpSub (mkPE (PEval (Vobject (OVinteger (CerbMem.integerIval 0))))) pe))
-
-private partial def pPexprCfunction : P PE := do
-  lexKw "cfunction"
-  lexSym "("
-  let pe ← pPexpr
-  lexSym ")"
-  return (mkPE (PEcfunction pe))
-
-private partial def pPexprConvInt : P PE := do
-  lexKw "conv_int"
-  lexSym "("
-  let ity ← pCoreIntegerType
-  lexSym ","
-  let pe ← pPexpr
-  lexSym ")"
-  return (mkPE (PEconv_int ity pe))
-
-private partial def pPexprWrapI : P PE := do
-  let iop' ← attempt (do
-    let id ← lexIdent
-    if id.startsWith "wrapI" then
-      return pIopFromStr id
-    else
-      fail s!"expected wrapI, got '{id}'")
-  lexSym "("
-  let ity ← pCoreIntegerType
-  lexSym ","
-  let pe1 ← pPexpr
-  lexSym ","
-  let pe2 ← pPexpr
-  lexSym ")"
-  return (mkPE (PEwrapI ity iop' pe1 pe2))
-
-private partial def pPexprCatchExceptional : P PE := do
-  let iop' ← attempt (do
-    let id ← lexIdent
-    if id.startsWith "catch_exceptional_condition" then
-      return pIopFromStr id
-    else
-      fail s!"expected catch_exceptional_condition, got '{id}'")
-  lexSym "("
-  let ity ← pCoreIntegerType
-  lexSym ","
-  let pe1 ← pPexpr
-  lexSym ","
-  let pe2 ← pPexpr
-  lexSym ")"
-  return (mkPE (PEcatch_exceptional_condition ity iop' pe1 pe2))
-
-private partial def pPexprPureMemop : P PE := do
-  lexKw "memop"
-  lexSym "("
-  let memop ← pPureMemop
-  lexSym ","
-  let pes ← sepByComma pPexpr
-  lexSym ")"
-  return (mkPE (PEmemop memop pes))
-
-private partial def pPexprArrayShift : P PE := do
-  lexKw "array_shift"
-  lexSym "("
-  let pe1 ← pPexpr
-  lexSym ","
-  let ty ← pCoreCtype
-  lexSym ","
-  let pe2 ← pPexpr
-  lexSym ")"
-  return (mkPE (PEarray_shift pe1 ty pe2))
-
-private partial def pPexprMemberShift : P PE := do
-  lexKw "member_shift"
-  lexSym "("
-  let pe1 ← pPexpr
-  lexSym ","
-  let s ← lexSymId
-  lexSym ","
-  lexSym "."
-  let cid ← pCabsId
-  lexSym ")"
-  return (mkPE (PEmember_shift pe1 s cid))
-
-private partial def pPexprIsScalar : P PE := do
-  lexKw "is_scalar"
-  lexSym "("
-  let pe ← pPexpr
-  lexSym ")"
-  return (mkPE (PEis_scalar pe))
-
-private partial def pPexprIsInteger : P PE := do
-  lexKw "is_integer"
-  lexSym "("
-  let pe ← pPexpr
-  lexSym ")"
-  return (mkPE (PEis_integer pe))
-
-private partial def pPexprIsSigned : P PE := do
-  lexKw "is_signed"
-  lexSym "("
-  let pe ← pPexpr
-  lexSym ")"
-  return (mkPE (PEis_signed pe))
-
-private partial def pPexprIsUnsigned : P PE := do
-  lexKw "is_unsigned"
-  lexSym "("
-  let pe ← pPexpr
-  lexSym ")"
-  return (mkPE (PEis_unsigned pe))
-
-private partial def pPexprAreCompatible : P PE := do
-  lexKw "are_compatible"
-  lexSym "("
-  let pe1 ← pPexpr
-  lexSym ","
-  let pe2 ← pPexpr
-  lexSym ")"
-  return (mkPE (PEare_compatible pe1 pe2))
-
-private partial def pPexprLet : P PE := do
-  lexKw "let"
-  let pat ← pPattern
-  lexSym "="
-  let pe1 ← pPexpr
-  lexKw "in"
-  let pe2 ← pPexpr
-  return (mkPE (PElet pat pe1 pe2))
-
-private partial def pPexprIf : P PE := do
-  lexKw "if"
-  let pe1 ← pPexpr
-  lexKw "then"
-  let pe2 ← pPexpr
-  lexKw "else"
-  let pe3 ← pPexpr
-  return (mkPE (PEif pe1 pe2 pe3))
-
-private partial def pPexprCase : P PE := do
-  lexKw "case"
-  let pe ← pPexpr
-  lexKw "of"
-  let mut pairs := #[]
-  while true do
-    match ← attempt (some <$> pPatternPair pPexpr pPattern) <|> pure none with
-    | some p => pairs := pairs.push p
-    | none => break
-  lexKw "end"
-  return (mkPE (PEcase pe pairs.toList))
 
 private partial def pPexprStruct : P PE := do
   lexSym "("
@@ -871,12 +709,6 @@ private partial def pPexprListEmpty : P PE := do
   let innerBTy := ensureListBTy bTy
   return (mkPE (PEctor (Cnil innerBTy) []))
 
-private partial def pPexprListCons : P PE := do
-  let pe1 ← pPexprAtom
-  lexSym "::"
-  let pe2 ← pPexpr
-  return (mkPE (PEctor Ccons [pe1, pe2]))
-
 private partial def pPexprListLiteral : P PE := do
   lexSym "["
   let pes ← sepByComma pPexpr
@@ -893,32 +725,6 @@ private partial def pPexprTuple : P PE := do
   let rest ← sepByComma1 pPexpr
   lexSym ")"
   return (mkPE (PEctor Ctuple (first :: rest)))
-
-private partial def pPexprCtor : P PE := do
-  let c ← pCtorKw
-  lexSym "("
-  let pes ← sepByComma pPexpr
-  lexSym ")"
-  return (mkPE (PEctor c pes))
-
-private partial def pPexprCall : P PE := do
-  let nm ← pName
-  lexSym "("
-  let pes ← sepByComma pPexpr
-  lexSym ")"
-  return (mkPE (PEcall nm pes))
-
-private partial def pPexprImpl : P PE := do
-  let iCst ← lexImpl
-  return (mkPE (PEimpl (pImplConstant iCst)))
-
-private partial def pPexprValue : P PE := do
-  let v ← pValue
-  return (mkPE (PEval v))
-
-private partial def pPexprSym : P PE := do
-  let s ← lexSymId
-  return (mkPE (PEsym s))
 
 partial def pPexprAtom : P PE := do
   -- Dispatch on first character to avoid trying all alternatives
@@ -945,10 +751,9 @@ partial def pPexprAtom : P PE := do
     match id with
     | some "undef" =>
       lexSym "("
-      let ubStr ← lexIdent
-      let _ := ubStr
+      let ubStr ← lexDoubleAngle
       lexSym ")"
-      return (mkPE (PEundef loc0 (DUMMY "parsed_ub")))
+      return (mkPE (PEundef loc0 (DUMMY ubStr)))
     | some "error" =>
       lexSym "("
       let msg ← lexTripleAngle
@@ -1041,6 +846,7 @@ partial def pPexprAtom : P PE := do
     | some "True" => return (mkPE (PEval Vtrue))
     | some "False" => return (mkPE (PEval Vfalse))
     | some "Unit" => return (mkPE (PEval Vunit))
+    -- Constructor keywords (must match OCaml lexer keywords exactly)
     | some "Specified" =>
       lexSym "("
       let pes ← sepByComma pPexpr
@@ -1061,29 +867,82 @@ partial def pPexprAtom : P PE := do
       let pes ← sepByComma pPexpr
       lexSym ")"
       return (mkPE (PEctor Civmin pes))
-    | some "Sizeof" =>
+    | some "Ivsizeof" =>
       lexSym "("
       let pes ← sepByComma pPexpr
       lexSym ")"
       return (mkPE (PEctor Civsizeof pes))
-    | some "Alignof" =>
+    | some "Ivalignof" =>
       lexSym "("
       let pes ← sepByComma pPexpr
       lexSym ")"
       return (mkPE (PEctor Civalignof pes))
+    | some "IvCOMPL" =>
+      lexSym "("
+      let pes ← sepByComma pPexpr
+      lexSym ")"
+      return (mkPE (PEctor CivCOMPL pes))
+    | some "IvAND" =>
+      lexSym "("
+      let pes ← sepByComma pPexpr
+      lexSym ")"
+      return (mkPE (PEctor CivAND pes))
+    | some "IvOR" =>
+      lexSym "("
+      let pes ← sepByComma pPexpr
+      lexSym ")"
+      return (mkPE (PEctor CivOR pes))
+    | some "IvXOR" =>
+      lexSym "("
+      let pes ← sepByComma pPexpr
+      lexSym ")"
+      return (mkPE (PEctor CivXOR pes))
+    | some "Fvfromint" =>
+      lexSym "("
+      let pes ← sepByComma pPexpr
+      lexSym ")"
+      return (mkPE (PEctor Cfvfromint pes))
+    | some "Ivfromfloat" =>
+      lexSym "("
+      let pes ← sepByComma pPexpr
+      lexSym ")"
+      return (mkPE (PEctor Civfromfloat pes))
     | some "Array" =>
       lexSym "("
       let pes ← sepByComma pPexpr
       lexSym ")"
       return (mkPE (PEctor Carray pes))
+    -- Value keywords
     | some "NULL" =>
       lexSym "("
       let ty ← pCtype
       lexSym ")"
       return (mkPE (PEval (Vobject (OVpointer (CerbMem.nullPtrval ty)))))
+    | some "Cfunction" =>
+      lexSym "("
+      let _ ← pName
+      lexSym ")"
+      -- TODO: proper Cfunction handling (OCaml also punts with null_ptrval)
+      return (mkPE (PEval (Vobject (OVpointer (CerbMem.nullPtrval (Ctype [] Void0))))))
+    | some "IvMaxAlignment" =>
+      return (mkPE (PEval (Vobject (OVinteger (CerbMem.integerIval 16)))))
+    -- Expression keywords
+    | some "cfunction" =>
+      lexSym "("
+      let pe ← pPexpr
+      lexSym ")"
+      return (mkPE (PEcfunction pe))
     | some id =>
+      -- Handle __conv_int__
+      if id == "__conv_int__" then
+        lexSym "("
+        let ity ← pCoreIntegerType
+        lexSym ","
+        let pe ← pPexpr
+        lexSym ")"
+        return (mkPE (PEconv_int ity pe))
       -- Handle wrapI_* and catch_exceptional_condition_* variants
-      if id.startsWith "wrapI_" then
+      else if id.startsWith "wrapI_" then
         let iop' := pIopFromStr id
         lexSym "("
         let ity ← pCoreIntegerType
@@ -1118,18 +977,35 @@ partial def pPexprAtom : P PE := do
       let n ← lexInt
       return (mkPE (PEval (Vobject (OVinteger (CerbMem.integerIval n)))))
 
--- Handle left-associative binary operators
-private partial def pPexprBinopRHS (lhs : PE) : P PE := do
-  match ← attempt (some <$> pBinop) <|> pure none with
-  | none => return lhs
-  | some op =>
-    let rhs ← pPexprAtom
-    pPexprBinopRHS (mkPE (PEop op lhs rhs))
+/-- Precedence climbing parser for binary operators and :: cons. -/
+private partial def pPexprPrec (minPrec : Nat) : P PE := do
+  let mut lhs ← pPexprAtom
+  while true do
+    -- Phase 1: try to match operator with sufficient precedence (with backtracking)
+    let opOpt ← attempt (some <$> do
+      -- Try :: first (precedence 5, right-associative)
+      let isConsOp ← (attempt (lexSym "::" *> pure true)) <|> pure false
+      if isConsOp then
+        if 5 < minPrec then fail "prec"
+        return (none, 5)  -- (none = cons op, nextMin = 5 for right-assoc)
+      else
+        let op ← pBinop
+        let (prec, nextMin) := opPrecInfo op
+        if prec < minPrec then fail "prec"
+        return (some op, nextMin)
+    ) <|> pure none
+    -- Phase 2: parse RHS (committed) or break
+    match opOpt with
+    | none => break
+    | some (opOpt, nextMin) =>
+      let rhs ← pPexprPrec nextMin
+      match opOpt with
+      | none => lhs := mkPE (PEctor Ccons [lhs, rhs])
+      | some op => lhs := mkPE (PEop op lhs rhs)
+  return lhs
 
-/-- Parse a pure expression. Uses explicit precedence climbing for binary ops. -/
-partial def pPexpr : P PE := do
-  let lhs ← pPexprAtom
-  pPexprBinopRHS lhs
+/-- Parse a pure expression with full operator precedence. -/
+partial def pPexpr : P PE := pPexprPrec 0
 
 end
 
@@ -1320,12 +1196,6 @@ private partial def pExprMemop : P Expr' := do
 
 private partial def pExprLet : P Expr' := do
   lexKw "let"
-  -- Make sure this is not "let weak" or "let strong"
-  let c? ← peek?
-  match c? with
-  | some 'w' => fail "not a plain let"
-  | some 's' => fail "not a plain let"
-  | _ => pure ()
   let pat ← pPattern
   lexSym "="
   let pe ← pPexpr
@@ -1617,14 +1487,12 @@ private partial def pGlobDecl : P Decl := do
   let s ← lexSymId
   lexSym ":"
   let bTy ← pCoreType
-  -- Parse optional [ailctype = 'ctype'] attribute
-  let ct ← (attempt (do
-    lexSym "["
-    lexKw "ailctype"
-    lexSym "="
-    let ct ← pCoreCtype
-    lexSym "]"
-    return ct)) <|> pure (Ctype [] Void0)
+  -- Parse required [ailctype = 'ctype'] attribute
+  lexSym "["
+  lexKw "ail_ctype"
+  lexSym "="
+  let ct ← pCoreCtype
+  lexSym "]"
   lexSym ":="
   let body ← pExpr
   return (Decl.globDecl s (GlobalDef (bTy, ct) body))
