@@ -142,7 +142,16 @@ def runPipeline (runtimeDir : String) (tunit : translation_unit) : IO Unit := do
     IO.println s!"    at: {CerbLocation.stringFromLocation loc}"
     -- Print cause details
     match cause with
-    | .DESUGAR d => IO.println s!"    cause: DESUGAR"
+    | .DESUGAR (.Desugar_ConstraintViolation v) => IO.println s!"    cause: DESUGAR ConstraintViolation"
+    | .DESUGAR (.Desugar_UndefinedBehaviour ub) =>
+      IO.println s!"    cause: DESUGAR UndefinedBehaviour: {stringFromUndefined_behaviour ub}"
+    | .DESUGAR (.Desugar_MiscViolation _) => IO.println s!"    cause: DESUGAR MiscViolation"
+    | .DESUGAR (.Desugar_NotYetSupported s) => IO.println s!"    cause: DESUGAR NotYetSupported: {s}"
+    | .DESUGAR (.Desugar_NeverSupported s) => IO.println s!"    cause: DESUGAR NeverSupported: {s}"
+    | .DESUGAR (.Desugar_agnosticFailure s) => IO.println s!"    cause: DESUGAR agnosticFailure: {s}"
+    | .DESUGAR .Desugar_illtypedIntegerConstant => IO.println s!"    cause: DESUGAR illtypedIntegerConstant"
+    | .DESUGAR (.Desugar_TODO s) => IO.println s!"    cause: DESUGAR TODO: {s}"
+    | .DESUGAR _ => IO.println s!"    cause: DESUGAR (other)"
     | .AIL_TYPING _ => IO.println s!"    cause: AIL_TYPING"
     | .CPP _ => IO.println s!"    cause: CPP"
     | _ => IO.println s!"    cause: (other)"
