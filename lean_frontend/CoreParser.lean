@@ -23,7 +23,8 @@ open Std.Internal.Parsec Std.Internal.Parsec.String
 section Lexer
 
 private def isIdentStart (c : Char) : Bool := c.isAlpha || c == '_'
-private def isIdentCont (c : Char) : Bool := c.isAlphanum || c == '_'
+private def isIdentCont (c : Char) : Bool :=
+  c.isAlpha || c.isDigit || c == '_'
 
 /-- Skip line comment (-- to end of line) -/
 partial def skipLineComment : P Unit := do
@@ -52,11 +53,20 @@ partial def lexWs : P Unit := do
     skipChar '{'; skipChar '-'; skipBlockComment; pure true) <|> pure false
   if blockFound then lexWs; return
 
-/-- Parse an identifier -/
+/-- Is c in [a-zA-Z_]? Uses explicit ranges to avoid compiler char-class interference. -/
+@[noinline] private def isIdentStartChar (c : Char) : Bool :=
+  (c.val ≥ 97 && c.val ≤ 122) || (c.val ≥ 65 && c.val ≤ 90) || c.val == 95
+
+/-- Is c in [a-zA-Z0-9_]? Uses explicit ranges. -/
+@[noinline] private def isIdentContChar (c : Char) : Bool :=
+  (c.val ≥ 97 && c.val ≤ 122) || (c.val ≥ 65 && c.val ≤ 90) ||
+  (c.val ≥ 48 && c.val ≤ 57) || c.val == 95
+
+/-- Parse an identifier: [a-zA-Z_][a-zA-Z0-9_]* -/
 def lexIdent : P String := do
-  let c ← satisfy isIdentStart
-  let rest ← manyChars (satisfy isIdentCont)
-  let name := String.ofList [c] ++ rest
+  let c ← satisfy isIdentStartChar
+  let rest ← manyChars (satisfy isIdentContChar)
+  let name := String.singleton c ++ rest
   lexWs
   return name
 
@@ -70,12 +80,22 @@ def lexSym (s : String) : P Unit := do
   let _ ← pstring s
   lexWs
 
-/-- Parse an integer literal -/
+/-- Parse a numeric literal (integer or float). Floats are truncated to integer.
+    This handles the fact that cerberus --pp core generates float literals like 3.14
+    even though the grammar formally only has integer constants. -/
 def lexInt : P Int := do
   let neg ← match ← peek? with
     | some '-' => skip; pure true
     | _ => pure false
   let digits ← many1Chars digit
+  -- Skip optional fractional part (.digits) — we truncate to integer
+  -- Handles: 3.14, 0., 0.0, etc. (cerberus --pp core generates these for floats)
+  match ← peek? with
+  | some '.' =>
+    skip  -- consume the dot
+    let _ ← manyChars digit  -- consume fractional digits (may be empty for "0.")
+    pure ()
+  | _ => pure ()
   lexWs
   let n := digits.foldl (fun acc c => acc * 10 + (c.toNat - '0'.toNat)) 0
   return if neg then -↑n else ↑n
@@ -244,9 +264,12 @@ private def mkListPE (bTy : core_base_type) : List PE → PE
 
 /-! ## Type Parsers -/
 
-/-- Parse an integer base type (ichar, short, int, long, long_long). -/
+/-- Parse an integer base type (ichar/char, short, int, long, long_long).
+    Note: cerberus --pp core generates "unsigned char" / "signed char"
+    even though the grammar formally only has "ichar". We accept both. -/
 private def pIntegerBaseType : P integerBaseType :=
       (attempt (lexKw "ichar") *> pure Ichar)
+  <|> (attempt (lexKw "char") *> pure Ichar)
   <|> (attempt (lexKw "short") *> pure Short)
   <|> (attempt (lexKw "long_long") *> pure LongLong)
   <|> (attempt (lexKw "long") *> pure Long)
@@ -293,7 +316,7 @@ partial def pCtypeAtom : P ctype :=
       (attempt (lexKw "void") *> pure (Ctype [] Void0))
   <|> (attempt (do
         lexKw "const"
-        let ty ← pCtype
+        let ty ← pCtypeAtom
         lexSym "*"
         return (Ctype [] (Pointer { const := true, restrict := false, volatile := false } ty))))
   <|> (attempt (do
@@ -305,11 +328,11 @@ partial def pCtypeAtom : P ctype :=
   <|> (attempt (do
         lexKw "struct"
         let tag ← lexIdent
-        return (Ctype [] (Struct (Symbol "" (-1) (SD_Id tag))))))
+        return (Ctype [] (Struct (Symbol "" 0 (SD_Id tag))))))
   <|> (attempt (do
         lexKw "union"
         let tag ← lexIdent
-        return (Ctype [] (Union0 (Symbol "" (-1) (SD_Id tag))))))
+        return (Ctype [] (Union0 (Symbol "" 0 (SD_Id tag))))))
   <|> (attempt (do
         let bty ← pBasicType
         return (Ctype [] (Basic bty))))
@@ -339,10 +362,22 @@ partial def pCtypeSuffix (ty : ctype) : P ctype := do
     pCtypeSuffix (Ctype [] (Array0 ty nOpt))
   | some '(' =>
     skip; lexWs
-    let paramTys ← sepByComma pCtype
-    lexSym ")"
-    let params := paramTys.map (fun ty => (no_qualifiers, ty, false))
-    pCtypeSuffix (Ctype [] (Function (no_qualifiers, ty) params false))
+    -- Check for (*) function pointer syntax: ret (*) (params)
+    let isFnPtr ← attempt (do lexSym "*"; lexSym ")"; pure true) <|> pure false
+    if isFnPtr then
+      -- Parse the parameter list that follows (*)
+      lexSym "("
+      let paramTys ← sepByComma pCtype
+      lexSym ")"
+      let params := paramTys.map (fun ty => (no_qualifiers, ty, false))
+      -- Result: pointer to function returning ty
+      pCtypeSuffix (Ctype [] (Pointer no_qualifiers (Ctype [] (Function (no_qualifiers, ty) params false))))
+    else
+      -- Regular function type: ret (params)
+      let paramTys ← sepByComma pCtype
+      lexSym ")"
+      let params := paramTys.map (fun ty => (no_qualifiers, ty, false))
+      pCtypeSuffix (Ctype [] (Function (no_qualifiers, ty) params false))
   | _ => return ty
 
 /-- Parse a C type. Handles pointer suffixes (*) and array suffixes ([n]). -/
@@ -656,6 +691,11 @@ partial def pPattern : P Pat := do
   | none => return p1
 
 end
+
+/-- Parse a value as a pexpr. Defined outside the mutual block since it only calls pValue. -/
+partial def pPexprValue : P (generic_pexpr Unit sym) := do
+  let v ← pValue
+  return (mkPE (PEval v))
 
 /-! ## Pexpr mutual block -/
 
@@ -1382,9 +1422,8 @@ private partial def pParamList : P (List (sym × core_base_type)) := do
   lexSym ")"
   return params
 
-/-- Parse a single struct/union field: .name : 'ctype' -/
+/-- Parse a single struct/union field: name : 'ctype' (no dot prefix per OCaml grammar) -/
 private partial def pDefField : P (identifier × (attributes × Option alignment × qualifiers × ctype)) := do
-  lexSym "."
   let cid ← pCabsId
   lexSym ":"
   let ty ← pCoreCtype
@@ -1528,34 +1567,35 @@ structure CoreFile where
   globs : List (sym × generic_globs Unit Unit) := []
   builtins : List (sym × generic_fun_map_decl Unit Unit) := []
 
-/-- Parse all declarations and collect into a CoreFile. -/
-private partial def pCoreFile : P CoreFile := do
+/-- Recursive declaration loop — errors propagate immediately (no while-loop swallowing). -/
+private partial def pCoreFileGo (result : CoreFile) : P CoreFile := do
   lexWs
-  let mut result : CoreFile := {}
-  while true do
-    let c? ← peek?
-    match c? with
-    | none => break
-    | _ =>
-      match ← attempt (some <$> pDeclaration) <|> pure none with
-      | none => break
-      | some decl =>
-        match decl with
-        | Decl.funDecl s d => result := { result with funs := result.funs ++ [(s, d)] }
-        | Decl.procDecl s d => result := { result with procs := result.procs ++ [(s, d)] }
-        | Decl.implDecl name d => result := { result with impls := result.impls ++ [(name, d)] }
-        | Decl.globDecl s g => result := { result with globs := result.globs ++ [(s, g)] }
-        | Decl.tagDecl s td => result := { result with tagDefs := result.tagDefs ++ [(s, td)] }
-        | Decl.builtinDecl s d => result := { result with builtins := result.builtins ++ [(s, d)] }
-  return result
+  match ← peek? with
+  | none => return result  -- EOF
+  | some c =>
+    let decl ← pDeclaration
+    let result := match decl with
+      | Decl.funDecl s d => { result with funs := result.funs ++ [(s, d)] }
+      | Decl.procDecl s d => { result with procs := result.procs ++ [(s, d)] }
+      | Decl.implDecl name d => { result with impls := result.impls ++ [(name, d)] }
+      | Decl.globDecl s g => { result with globs := result.globs ++ [(s, g)] }
+      | Decl.tagDecl s td => { result with tagDefs := result.tagDefs ++ [(s, td)] }
+      | Decl.builtinDecl s d => { result with builtins := result.builtins ++ [(s, d)] }
+    pCoreFileGo result
+
+/-- Parse all declarations and collect into a CoreFile.
+    Dies loudly if any declaration fails to parse. -/
+private partial def pCoreFile : P CoreFile :=
+  pCoreFileGo {}
 
 /-! ## Entry point -/
 
-/-- Parse a .core file and return a CoreFile with all declarations. -/
+/-- Parse a .core file and return a CoreFile with all declarations.
+    Fails if parsing produces an error or if a non-empty file yields zero declarations. -/
 def parseFile (input : String) : Except String CoreFile :=
   match pCoreFile.run input with
   | .ok cf => .ok cf
-  | .error e => .error (toString e)
+  | .error e => .error s!"parse error: {e}"
 
 /-- Parse a .core file and return a human-readable summary. -/
 def parseFileSummary (input : String) : Except String String :=

@@ -61,6 +61,22 @@ cerberus --cabs-json test.c > test.json
 cd lean_frontend && .lake/build/bin/cerberus-lean ../test.json
 ```
 
+## IMPORTANT: Hand-written files must be copied to `generated/`
+
+Lake compiles from `generated/` (set via `srcDir = "generated"` in `lakefile.toml`), NOT from `lean_frontend/` directly. Hand-written files live in `lean_frontend/` and are copied into `generated/` by the Makefile.
+
+**After editing any hand-written file, you MUST copy it:**
+```bash
+cp CoreParser.lean generated/CoreParser.lean   # or whichever file you changed
+```
+
+Or copy all hand-written files at once:
+```bash
+make lean-prelude-src   # from project root
+```
+
+If you skip this step, Lake will compile the stale `generated/` copy and your changes will have no effect. Do NOT use symlinks — they break `lake update`.
+
 ## Key files
 
 ### Hand-written Lean (in `lean_frontend/`, copied to `generated/` by Makefile)
