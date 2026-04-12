@@ -10,6 +10,8 @@ import Cn_desugaring
 import Implementation
 import GenTyping
 import Translation
+import Core_run_aux
+import Driver
 
 set_option autoImplicit true
 
@@ -160,6 +162,14 @@ def runPipeline (runtimeDir : String) (tunit : translation_unit) : IO Unit := do
       IO.println s!"    main: {match coreFile.main with | some _ => "found" | none => "not found"}"
       IO.println s!"    funs: {List.length coreFile.funs}"
       IO.println s!"    globs: {List.length coreFile.globs}"
+
+      -- Step 4: Prepare for execution (mirrors driver_ocaml.ml)
+      IO.println "  preparing for execution..."
+      let runFile := convert_file coreFile
+      let _ := CerbTags.set_tagDefs runFile.tagDefs
+      let fsState := CerbFS.fs_initial_state
+      let drSt := initial_driver_state runFile fsState
+      IO.println s!"  driver state initialized — pipeline complete!"
   | .Exception (loc, cause) =>
     IO.println s!"  desugaring failed!"
     IO.println s!"    at: {CerbLocation.stringFromLocation loc}"
