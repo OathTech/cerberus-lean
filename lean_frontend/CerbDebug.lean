@@ -27,7 +27,8 @@ opaque set_level : Nat → Unit
 
 def output_string (_ : String) : Unit := ()
 
-def print_debug (_ : Nat) (_ : List d) (_ : Unit → String) : Unit := ()
+def print_debug (level : Nat) (_ : List d) (msg : Unit → String) : Unit :=
+  if level ≤ get_level () then dbg_trace (msg ()); () else ()
 
 def print_debug_located (_ : Nat) (_ : List d) (_ : CerbLocation.Loc) (_ : Unit → String) : Unit := ()
 

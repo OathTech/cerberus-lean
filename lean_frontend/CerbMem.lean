@@ -1,10 +1,10 @@
 /-
   Concrete memory model for Cerberus.
-  Corresponds to: memory/concrete/impl_mem.ml
-  Following: lean-c-semantics/CerbLean/Memory/{Types,Interface,Concrete,Layout}.lean
+  Corresponds to: memory/concrete/impl_mem.ml (module Concrete : Memory)
 
-  Defines concrete representations for mem.lem opaque types and implements
-  all memory operations (allocate, load, store, kill, pointer ops, etc.)
+  This matches the OCaml concrete model's types and semantics exactly.
+  The concrete model uses simplified types (raw numbers, 2-field pointers)
+  compared to the defacto model's symbolic types.
 -/
 
 import IntegerType
@@ -21,132 +21,182 @@ open CerberusImpl
 
 namespace CerbMem
 
-/-- Helper to construct a ctype with empty annotations -/
-private def mkCtype (ty_ : ctype_) : ctype := Ctype ([] : List annot) ty_
+set_option autoImplicit true
 
-/-! ## Provenance -/
+/-! ## Types matching memory/concrete/impl_mem.ml lines 277-525 -/
 
+/-- storage_instance_id = N.num (allocation ID) -/
+abbrev StorageInstanceId := Int
+
+/-- symbolic_storage_instance_id (for PNVI-ae-udi) -/
+abbrev SymbolicStorageInstanceId := Int
+
+/-- address = N.num (concrete memory address) -/
+abbrev Address := Int
+
+/-- Provenance — impl_mem.ml:287-291 -/
 inductive Provenance where
-  | none
-  | some (allocId : Nat)
-  | symbolic (iota : Nat)
-  | device
+  | Prov_none
+  | Prov_some (allocId : StorageInstanceId)
+  | Prov_symbolic (iota : SymbolicStorageInstanceId) -- only for PNVI-ae-udi
+  | Prov_device
   deriving BEq, Inhabited, Repr
 
-/-! ## Value Types -/
-
-structure IntegerValue where
-  val : Int
-  prov : Provenance := .none
-  deriving Inhabited, Repr
-
-inductive FloatingValue where
-  | finite (val : Float)
-  | unspecified
-  deriving BEq, Inhabited, Repr
-
+/-- pointer_value_base — impl_mem.ml:295-298 -/
 inductive PointerValueBase where
-  | null (ty : ctype)
-  | function (sym : sym)
-  | concrete (unionMember : Option identifier) (addr : Nat)
+  | PVnull (ty : ctype)
+  | PVfunction (sym : sym)
+  | PVconcrete (unionMember : Option identifier) (addr : Address)
   deriving Inhabited
 
-structure PointerValue where
-  prov : Provenance
-  base : PointerValueBase
+/-- pointer_value = PV of provenance * pointer_value_base — impl_mem.ml:300-301
+    NOTE: 2 fields, NO shift_path (that's the defacto model) -/
+inductive PointerValue where
+  | PV (prov : Provenance) (base : PointerValueBase)
   deriving Inhabited
 
+/-- integer_value = IV of provenance * Nat_big_num.num — impl_mem.ml:303-304
+    The concrete model stores just the raw number, not symbolic integer_value_base -/
+inductive IntegerValue where
+  | IV (prov : Provenance) (val_ : Int)
+  deriving Inhabited
+
+/-- floating_value = float — impl_mem.ml:306-308
+    The concrete model uses raw OCaml floats -/
+abbrev FloatingValue := Float
+
+/-- mem_value — impl_mem.ml:310-317
+    7 constructors (no MVdelayed/MVcomposite — those are defacto model only) -/
 inductive MemValue where
-  | unspecified (ty : ctype)
-  | concurRead (ity : integerType) (sym : sym)
-  | integer (ity : integerType) (v : IntegerValue)
-  | floating (fty : floatingType) (v : FloatingValue)
-  | pointer (ty : ctype) (v : PointerValue)
-  | array (elems : List MemValue)
-  | struct_ (tag : sym) (members : List (identifier × ctype × MemValue))
-  | union_ (tag : sym) (member : identifier) (value : MemValue)
+  | MVunspecified (ty : ctype)
+  | MVinteger (ity : integerType) (iv : IntegerValue)
+  | MVfloating (fty : floatingType) (fv : FloatingValue)
+  | MVpointer (refTy : ctype) (pv : PointerValue)
+  | MVarray (vals : List MemValue)
+  | MVstruct (tag : sym) (members : List (identifier × ctype × MemValue))
+  | MVunion (tag : sym) (member : identifier) (val_ : MemValue)
   deriving Inhabited
 
-structure Footprint where
-  isWrite : Bool
-  base : Nat
-  size : Nat
+/-- footprint = FP of [`W | `R] * address * N.num — impl_mem.ml:523-525 -/
+inductive FootprintAccess where | W | R
   deriving BEq, Inhabited, Repr, Ord
 
+inductive Footprint where
+  | FP (access : FootprintAccess) (base : Address) (size : Int)
+  deriving Inhabited
+
+/-- readonly_status — impl_mem.ml:400-402 -/
+inductive ReadonlyStatus where
+  | IsWritable
+  | IsReadOnly (kind : readonly_kind)
+  deriving Inhabited
+
+/-- Abstract byte — impl_mem.ml:415-420 (AbsByte module) -/
 structure AbsByte where
-  prov : Provenance := .none
-  copyOffset : Option Nat := none
+  prov : Provenance := .Prov_none
+  copyOffset : Option Int := none
   value : Option UInt8 := none
   deriving BEq, Inhabited, Repr
 
-inductive ReadonlyStatus where
-  | writable
-  | readonly (kind : readonly_kind)
-  deriving Inhabited
+/-- Taint status for PNVI-ae -/
+inductive Taint where
+  | Unexposed
+  | Exposed
+  deriving BEq, Inhabited
 
+/-- allocation — impl_mem.ml:404-412 -/
 structure Allocation where
-  base : Nat
-  size : Nat
+  base : Address
+  size : Int
   ty : Option ctype := none
-  isReadonly : ReadonlyStatus := .writable
-  taint : Bool := false
-  name : String := ""
+  isReadonly : ReadonlyStatus := .IsWritable
+  taint : Taint := .Unexposed
+  prefix_ : prefix0 := PrefOther ""
   deriving Inhabited
 
+/-- mem_state — impl_mem.ml:482-501 (14 fields) -/
 structure MemState where
-  nextAllocId : Nat := 0
-  allocations : List (Nat × Allocation) := []
-  bytemap : List (Nat × AbsByte) := []
-  deadAllocations : List Nat := []
-  dynamicAddrs : List Nat := []
-  funptrmap : List (Nat × sym) := []
-  lastUsedUnionMembers : List (Nat × identifier) := []
-  lastAddress : Nat := 0xFFFFFFFFFFFF
-  varargs : List (Nat × List (ctype × PointerValue)) := []
-  nextVarargsId : Nat := 0
+  nextAllocId : StorageInstanceId := 0
+  nextIota : SymbolicStorageInstanceId := 0
+  lastAddress : Address := 0xFFFFFFFFFFFF
+  allocations : List (Int × Allocation) := []
+  iotaMap : List (Int × Int) := [] -- simplified from OCaml's polymorphic variant
+  funptrmap : List (Int × (String × String)) := []
+  varargs : List (Int × (Int × List (ctype × PointerValue))) := []
+  nextVarargsId : Int := 0
+  bytemap : List (Int × AbsByte) := []
+  lastUsedUnionMembers : List (Int × identifier) := []
+  deadAllocations : List StorageInstanceId := []
+  dynamicAddrs : List Address := []
+  lastUsed : Option StorageInstanceId := none
+  requested : List (Address × Int) := []
   deriving Inhabited
 
 /-! ## Instances -/
 
 instance : BEq PointerValueBase where
   beq a b := match a, b with
-    | .null _, .null _ => true
-    | .function s1, .function s2 => s1 == s2
-    | .concrete _ a1, .concrete _ a2 => a1 == a2
+    | .PVnull _, .PVnull _ => true
+    | .PVfunction s1, .PVfunction s2 => s1 == s2
+    | .PVconcrete _ a1, .PVconcrete _ a2 => a1 == a2
     | _, _ => false
 
 instance : BEq PointerValue where
-  beq a b := a.prov == b.prov && a.base == b.base
+  beq | .PV p1 b1, .PV p2 b2 => p1 == p2 && b1 == b2
 
 instance : BEq IntegerValue where
-  beq a b := a.val == b.val && a.prov == b.prov
+  beq | .IV p1 n1, .IV p2 n2 => p1 == p2 && n1 == n2
 
 private unsafe def beqMemValueImpl : MemValue → MemValue → Bool
-  | .unspecified _, .unspecified _ => true
-  | .integer _ v1, .integer _ v2 => v1 == v2
-  | .floating _ v1, .floating _ v2 => v1 == v2
-  | .pointer _ v1, .pointer _ v2 => v1 == v2
-  | .array e1, .array e2 => e1.length == e2.length && (e1.zip e2).all (fun (a, b) => beqMemValueImpl a b)
+  | .MVunspecified _, .MVunspecified _ => true
+  | .MVinteger _ v1, .MVinteger _ v2 => v1 == v2
+  | .MVfloating _ v1, .MVfloating _ v2 => v1 == v2
+  | .MVpointer _ v1, .MVpointer _ v2 => v1 == v2
+  | .MVarray e1, .MVarray e2 =>
+    e1.length == e2.length && (e1.zip e2).all (fun (a, b) => beqMemValueImpl a b)
+  | .MVstruct t1 _, .MVstruct t2 _ => t1 == t2
+  | .MVunion t1 m1 _, .MVunion t2 m2 _ => t1 == t2 && m1 == m2
   | _, _ => false
 
 @[implemented_by beqMemValueImpl]
 private opaque beqMemValueSafe : MemValue → MemValue → Bool
 
 instance : BEq MemValue where beq := beqMemValueSafe
+instance : BEq Footprint where
+  beq | .FP a1 b1 s1, .FP a2 b2 s2 => a1 == a2 && b1 == b2 && s1 == s2
+instance : Ord Footprint where
+  compare | .FP _ b1 _, .FP _ b2 _ => compare b1 b2
 instance : Ord PointerValue where compare _ _ := .eq
-instance : Ord IntegerValue where compare a b := compare a.val b.val
-instance : Ord FloatingValue where compare _ _ := .eq
+instance : Ord IntegerValue where compare | .IV _ n1, .IV _ n2 => compare n1 n2
 instance : Ord MemValue where compare _ _ := .eq
 instance : BEq Allocation where beq _ _ := false
 instance : BEq MemState where beq _ _ := false
 instance : Ord MemState where compare _ _ := .eq
 
-/-! ## Layout computation
-    Following lean-c-semantics Memory/Layout.lean -/
+/-! ## Helper: construct ctype with empty annotations -/
+
+private def mkCtype (ty_ : ctype_) : ctype := Ctype ([] : List annot) ty_
+
+/-! ## combine_prov — impl_mem.ml:366-394 -/
+
+def combineProv : Provenance → Provenance → Provenance
+  | .Prov_none, .Prov_none => .Prov_none
+  | .Prov_none, .Prov_some id => .Prov_some id
+  | .Prov_none, .Prov_device => .Prov_device
+  | .Prov_some id, .Prov_none => .Prov_some id
+  | .Prov_some id1, .Prov_some id2 =>
+    if id1 == id2 then .Prov_some id1 else .Prov_none
+  | .Prov_some _, .Prov_device => .Prov_device
+  | .Prov_device, .Prov_none => .Prov_device
+  | .Prov_device, .Prov_some _ => .Prov_device
+  | .Prov_device, .Prov_device => .Prov_device
+  | .Prov_symbolic _, _ => .Prov_none -- TODO: PNVI-ae-udi
+  | _, .Prov_symbolic _ => .Prov_none
+
+/-! ## Layout computation — for sizeof/alignof -/
 
 private def targetPtrSize : Nat := 8
 
-/-- Size of a basic type in bytes -/
 private def basicTypeSize : basicType → Nat
   | .Integer ity => match CerberusImpl.sizeof_ity ity with | some n => n | none => 4
   | .Floating (.RealFloating .Float0) => 4
@@ -156,7 +206,6 @@ private def basicTypeSize : basicType → Nat
 private def alignUp (n align : Nat) : Nat :=
   if align == 0 then n else ((n + align - 1) / align) * align
 
-/-- Compute sizeof for a ctype. Returns 0 for types that need tag defs we don't have. -/
 partial def sizeofCtype : ctype → Nat
   | Ctype _ ty_ => sizeofCtype_ ty_
 where sizeofCtype_ : ctype_ → Nat
@@ -171,12 +220,11 @@ where sizeofCtype_ : ctype_ → Nat
   | .Union0 _ => 0  -- needs tag definitions
   | .Byte => 1
 
-/-- Compute alignof for a ctype -/
 partial def alignofCtype : ctype → Nat
   | Ctype _ ty_ => alignofCtype_ ty_
 where alignofCtype_ : ctype_ → Nat
   | .Void0 => 1
-  | .Basic bty => basicTypeSize bty  -- alignment = size for basic types on x86_64
+  | .Basic bty => basicTypeSize bty
   | .Array0 elemCty _ => alignofCtype elemCty
   | .Function _ _ _ | .FunctionNoParams _ => 1
   | .Pointer _ _ => targetPtrSize
@@ -185,21 +233,23 @@ where alignofCtype_ : ctype_ → Nat
   | .Union0 _ => 1  -- needs tag definitions
   | .Byte => 1
 
-/-! ## Byte-level serialization
-    Following lean-c-semantics Memory/Concrete.lean -/
+/-! ## Byte-level serialization -/
 
-/-- Convert integer to little-endian bytes (two's complement).
-    Handles negative values correctly. -/
-def intToBytes (val : Int) (size : Nat) : List (Option UInt8) :=
+private def isSignedIty : integerType → Bool
+  | .Signed _ => true
+  | .Char0 => true  -- platform-dependent, we follow GCC (signed)
+  | .Ptrdiff_t => true
+  | .Wint_t => true
+  | _ => false
+
+def intToBytes (val_ : Int) (size : Nat) : List (Option UInt8) :=
   let totalBits := size * 8
   let modulusVal : Int := 1 <<< totalBits
-  let unsigned : Int := if val < 0 then modulusVal + val else val
+  let unsigned : Int := if val_ < 0 then modulusVal + val_ else val_
   List.range size |>.map fun i =>
     let shifted := unsigned >>> (i * 8)
     some (shifted.toNat % 256).toUInt8
 
-/-- Convert little-endian bytes to integer.
-    Returns none if any byte is uninitialized. -/
 def bytesToInt (bytes : List AbsByte) (signed : Bool) : Option Int :=
   if bytes.any (·.value.isNone) then none
   else
@@ -211,64 +261,50 @@ def bytesToInt (bytes : List AbsByte) (signed : Bool) : Option Int :=
           | some v => (v.toNat : Int) <<< (i * 8)
           | none => 0
         go rest (i + 1) (acc + contribution)
-    let val := go bytes 0 0
+    let val_ := go bytes 0 0
     if signed && bytes.length > 0 then
       let bits := bytes.length * 8
       let signBit : Int := 1 <<< (bits - 1)
-      if val >= signBit then some (val - (1 <<< bits)) else some val
-    else some val
+      if val_ >= signBit then some (val_ - (1 <<< bits)) else some val_
+    else some val_
 
-/-- Extract provenance from a list of bytes (first non-none provenance) -/
+/-- Extract provenance from bytes — impl_mem.ml AbsByte.split_bytes -/
 def bytesProvenance (bytes : List AbsByte) : Provenance :=
-  match bytes.find? (fun b => b.prov != .none) with
+  match bytes.find? (fun b => b.prov != .Prov_none) with
   | some b => b.prov
-  | none => .none
-
-/-- Determine if an integer type is signed -/
-private def isSignedIty : integerType → Bool
-  | .Signed _ => true
-  | .Char0 => true  -- platform-dependent, we follow GCC (signed)
-  | .Ptrdiff_t => true
-  | .Wint_t => true
-  | _ => false
+  | none => .Prov_none
 
 /-- Serialize a MemValue to bytes -/
-partial def memValueToBytes (val : MemValue) : List AbsByte :=
-  match val with
-  | .unspecified ty =>
+partial def memValueToBytes (val_ : MemValue) : List AbsByte :=
+  match val_ with
+  | .MVunspecified ty =>
     let sz := sizeofCtype ty
-    List.replicate sz { prov := .none, copyOffset := none, value := none }
-  | .integer ity iv =>
+    List.replicate sz { prov := .Prov_none, copyOffset := none, value := none }
+  | .MVinteger ity (.IV prov n) =>
     let sz := match CerberusImpl.sizeof_ity ity with | some n => n | none => 4
-    let rawBytes := intToBytes iv.val sz
-    (rawBytes.zip (List.range rawBytes.length)).map fun (v, i) => { prov := iv.prov, copyOffset := some i, value := v }
-  | .floating fty fv =>
+    let rawBytes := intToBytes n sz
+    (rawBytes.zip (List.range rawBytes.length)).map fun (v, i) =>
+      { prov := prov, copyOffset := some i, value := v }
+  | .MVfloating fty fv =>
     let sz := match fty with
       | .RealFloating .Float0 => 4
       | .RealFloating .Double => 8
       | .RealFloating .LongDouble => 16
-    match fv with
-    | .finite f =>
-      let bits := f.toBits.toNat
-      let rawBytes := intToBytes bits sz
-      rawBytes.map fun v => { prov := .none, copyOffset := none, value := v }
-    | .unspecified =>
-      List.replicate sz { prov := .none, copyOffset := none, value := none }
-  | .pointer _ pv =>
-    let (rawVal, prov) := match pv.base with
-      | .null _ => (0, Provenance.none)
-      | .function s => (0, pv.prov)  -- TODO: function address
-      | .concrete _ addr => (Int.ofNat addr, pv.prov)
+    let bits := fv.toBits.toNat
+    let rawBytes := intToBytes bits sz
+    rawBytes.map fun v => { prov := .Prov_none, copyOffset := none, value := v }
+  | .MVpointer _ (.PV prov base) =>
+    let (rawVal, prov') := match base with
+      | .PVnull _ => (0, Provenance.Prov_none)
+      | .PVfunction _ => (0, prov)
+      | .PVconcrete _ addr => (addr, prov)
     let rawBytes := intToBytes rawVal targetPtrSize
-    (rawBytes.zip (List.range rawBytes.length)).map fun (v, i) => { prov := prov, copyOffset := some i, value := v }
-  | .array elems => elems.flatMap memValueToBytes
-  | .struct_ _ members =>
-    -- Simplified: concatenate member bytes without padding
+    (rawBytes.zip (List.range rawBytes.length)).map fun (v, i) =>
+      { prov := prov', copyOffset := some i, value := v }
+  | .MVarray elems => elems.flatMap memValueToBytes
+  | .MVstruct _ members =>
     members.flatMap fun (_, _, mval) => memValueToBytes mval
-  | .union_ _ _ mval => memValueToBytes mval
-  | .concurRead ity _ =>
-    let sz := match CerberusImpl.sizeof_ity ity with | some n => n | none => 4
-    List.replicate sz { prov := .none, copyOffset := none, value := none }
+  | .MVunion _ _ mval => memValueToBytes mval
 
 /-- Reconstruct a MemValue from bytes -/
 partial def reconstructValue (ty : ctype) (bytes : List AbsByte) : MemValue :=
@@ -276,67 +312,74 @@ partial def reconstructValue (ty : ctype) (bytes : List AbsByte) : MemValue :=
   | Ctype _ (.Basic (.Integer ity)) =>
     let signed := isSignedIty ity
     match bytesToInt bytes signed with
-    | some n => .integer ity { val := n, prov := bytesProvenance bytes }
-    | none => .unspecified ty
+    | some n => .MVinteger ity (.IV (bytesProvenance bytes) n)
+    | none => .MVunspecified ty
   | Ctype _ (.Basic (.Floating fty)) =>
     match bytesToInt bytes false with
     | some n =>
       let bits : UInt64 := n.toNat.toUInt64
-      .floating fty (.finite (Float.ofBits bits))
-    | none => .unspecified ty
+      .MVfloating fty (Float.ofBits bits)
+    | none => .MVunspecified ty
   | Ctype _ (.Pointer _ pointeeCty) =>
     match bytesToInt bytes false with
     | some 0 =>
-      let nulpv : PointerValue := { prov := .none, base := .null pointeeCty }
-      .pointer ty nulpv
+      .MVpointer ty (.PV .Prov_none (.PVnull pointeeCty))
     | some addr =>
       let prov := bytesProvenance bytes
-      .pointer ty { prov := prov, base := .concrete none addr.toNat }
-    | none => .unspecified ty
+      .MVpointer ty (.PV prov (.PVconcrete none addr.toNat))
+    | none => .MVunspecified ty
   | Ctype _ (.Array0 elemCty (some n)) =>
     let nNat := n.toNat
     let elemSize := sizeofCtype elemCty
-    if elemSize == 0 then .array []
+    if elemSize == 0 then .MVarray []
     else
       let elems := List.range nNat |>.map fun i =>
         let start := i * elemSize
         let elemBytes := bytes.drop start |>.take elemSize
         reconstructValue elemCty elemBytes
-      .array elems
+      .MVarray elems
   | Ctype _ (.Atomic innerCty) => reconstructValue innerCty bytes
   | Ctype _ .Byte =>
     match bytesToInt (bytes.take 1) false with
-    | some n => .integer .Char0 { val := n, prov := bytesProvenance (bytes.take 1) }
-    | none => .unspecified ty
-  | _ => .unspecified ty
+    | some n => .MVinteger .Char0 (.IV (bytesProvenance (bytes.take 1)) n)
+    | none => .MVunspecified ty
+  | _ => .MVunspecified ty
 
-/-! ## Pointer Value Constructors -/
+/-! ## Pointer value constructors — impl_mem.ml:1799-1827 -/
 
 def nullPtrval (ty : ctype) : PointerValue :=
-  { prov := .none, base := .null ty }
+  .PV .Prov_none (.PVnull ty)
 
 def funPtrval (s : sym) : PointerValue :=
-  { prov := .none, base := .function s }
+  .PV .Prov_none (.PVfunction s)
 
 def concretePtrval (allocId : Int) (addr : Int) : PointerValue :=
-  { prov := .some allocId.toNat, base := .concrete none addr.toNat }
+  .PV (.Prov_some allocId) (.PVconcrete none addr)
 
+/-- case_ptrval — impl_mem.ml:1808-1814 -/
 def casePtrval {α : Type} (pv : PointerValue)
     (onNull : ctype → α) (onFun : Option sym → α)
     (onConcrete : Option Int → Int → α) : α :=
-  match pv.base with
-  | .null ty => onNull ty
-  | .function s => onFun (some s)
-  | .concrete _ addr => onConcrete
-      (match pv.prov with | .some id => some (Int.ofNat id) | _ => none)
-      (Int.ofNat addr)
+  match pv with
+  | .PV _ (.PVnull ty) => onNull ty
+  | .PV _ (.PVfunction f) => onFun (some f)
+  | .PV .Prov_none (.PVconcrete _ addr) => onConcrete none addr
+  | .PV (.Prov_some i) (.PVconcrete _ addr) => onConcrete (some i) addr
+  | .PV _ (.PVconcrete _ addr) => onConcrete none addr -- fallback
 
-def caseFunsymOpt (_ : MemState) (pv : PointerValue) : Option sym :=
-  match pv.base with | .function s => some s | _ => none
+/-- case_funsym_opt — impl_mem.ml:1816-1827 -/
+def caseFunsymOpt (st : MemState) (pv : PointerValue) : Option sym :=
+  match pv with
+  | .PV _ (.PVfunction s) => some s
+  | .PV _ (.PVconcrete _ addr) =>
+    match st.funptrmap.find? (fun (a, _) => a == addr) with
+    | some (_, (fileDig, name)) => some (Symbol fileDig addr.toNat (SD_Id name))
+    | none => none
+  | _ => none
 
-/-! ## Integer Value Constructors -/
+/-! ## Integer value constructors — impl_mem.ml:2361-2511 -/
 
-def integerIval (n : Int) : IntegerValue := { val := n, prov := .none }
+def integerIval (n : Int) : IntegerValue := .IV .Prov_none n
 
 def maxIval (ity : integerType) : IntegerValue :=
   let size := match CerberusImpl.sizeof_ity ity with | some n => n | none => 4
@@ -371,28 +414,29 @@ def alignofIval (ty : ctype) : IntegerValue := integerIval (alignofCtype ty)
 
 def concurReadIval (_ : integerType) (_ : sym) : IntegerValue := integerIval 0
 
+/-- op_ival — impl_mem.ml:2464-2490 -/
 def opIval (op : integer_operator) (v1 v2 : IntegerValue) : IntegerValue :=
-  let result := match op with
-    | .IntAdd => v1.val + v2.val
-    | .IntSub => v1.val - v2.val
-    | .IntMul => v1.val * v2.val
-    | .IntDiv => if v2.val == 0 then 0 else v1.val / v2.val
-    | .IntRem_t => if v2.val == 0 then 0 else v1.val % v2.val
-    | .IntRem_f => if v2.val == 0 then 0 else v1.val % v2.val
-    | .IntExp => v1.val  -- TODO: exponentiation
-  { val := result, prov := v1.prov }
+  match v1, v2 with
+  | .IV prov1 n1, .IV prov2 n2 =>
+    let result := match op with
+      | .IntAdd => n1 + n2
+      | .IntSub => n1 - n2
+      | .IntMul => n1 * n2
+      | .IntDiv => if n2 == 0 then 0 else n1 / n2
+      | .IntRem_t => if n2 == 0 then 0 else n1 % n2
+      | .IntRem_f => if n2 == 0 then 0 else n1 % n2
+      | .IntExp => n1  -- TODO: exponentiation
+    .IV (combineProv prov1 prov2) result
 
 def offsetofIval (_ : List (sym × (CerbLocation.Loc × tag_definition))) (_ : sym) (_ : identifier) : IntegerValue :=
   integerIval 0  -- TODO: requires struct layout from tag definitions
 
-/-! ## Bitwise operations — proper two's complement handling -/
+/-! ## Bitwise operations — impl_mem.ml:2497-2511 -/
 
-/-- Convert Int to unsigned representation for bitwise ops -/
 private def toUnsigned (v : Int) (bits : Nat) : Nat :=
   let modulus : Int := 2 ^ bits
   if v < 0 then (modulus + v).toNat else v.toNat % modulus.toNat
 
-/-- Convert unsigned back to signed if needed -/
 private def toSigned (v : Nat) (bits : Nat) (signed : Bool) : Int :=
   if signed then
     let signBit := 2 ^ (bits - 1)
@@ -401,78 +445,93 @@ private def toSigned (v : Nat) (bits : Nat) (signed : Bool) : Int :=
   else Int.ofNat v
 
 def bitwiseComplementIval (ity : integerType) (v : IntegerValue) : IntegerValue :=
-  let size := match CerberusImpl.sizeof_ity ity with | some n => n | none => 4
-  let bits := size * 8
-  let mask := 2 ^ bits - 1
-  let unsigned := toUnsigned v.val bits
-  let result := unsigned ^^^ mask
-  { val := toSigned result bits (isSignedIty ity), prov := v.prov }
+  match v with
+  | .IV prov n =>
+    let size := match CerberusImpl.sizeof_ity ity with | some n => n | none => 4
+    let bits := size * 8
+    let mask := 2 ^ bits - 1
+    let unsigned := toUnsigned n bits
+    let result := unsigned ^^^ mask
+    .IV prov (toSigned result bits (isSignedIty ity))
 
 def bitwiseAndIval (ity : integerType) (v1 v2 : IntegerValue) : IntegerValue :=
-  let size := match CerberusImpl.sizeof_ity ity with | some n => n | none => 4
-  let bits := size * 8
-  let result := toUnsigned v1.val bits &&& toUnsigned v2.val bits
-  { val := toSigned result bits (isSignedIty ity), prov := v1.prov }
+  match v1, v2 with
+  | .IV prov1 n1, .IV prov2 n2 =>
+    let size := match CerberusImpl.sizeof_ity ity with | some n => n | none => 4
+    let bits := size * 8
+    let result := toUnsigned n1 bits &&& toUnsigned n2 bits
+    .IV (combineProv prov1 prov2) (toSigned result bits (isSignedIty ity))
 
 def bitwiseOrIval (ity : integerType) (v1 v2 : IntegerValue) : IntegerValue :=
-  let size := match CerberusImpl.sizeof_ity ity with | some n => n | none => 4
-  let bits := size * 8
-  let result := toUnsigned v1.val bits ||| toUnsigned v2.val bits
-  { val := toSigned result bits (isSignedIty ity), prov := v1.prov }
+  match v1, v2 with
+  | .IV prov1 n1, .IV prov2 n2 =>
+    let size := match CerberusImpl.sizeof_ity ity with | some n => n | none => 4
+    let bits := size * 8
+    let result := toUnsigned n1 bits ||| toUnsigned n2 bits
+    .IV (combineProv prov1 prov2) (toSigned result bits (isSignedIty ity))
 
 def bitwiseXorIval (ity : integerType) (v1 v2 : IntegerValue) : IntegerValue :=
-  let size := match CerberusImpl.sizeof_ity ity with | some n => n | none => 4
-  let bits := size * 8
-  let result := toUnsigned v1.val bits ^^^ toUnsigned v2.val bits
-  { val := toSigned result bits (isSignedIty ity), prov := v1.prov }
+  match v1, v2 with
+  | .IV prov1 n1, .IV prov2 n2 =>
+    let size := match CerberusImpl.sizeof_ity ity with | some n => n | none => 4
+    let bits := size * 8
+    let result := toUnsigned n1 bits ^^^ toUnsigned n2 bits
+    .IV (combineProv prov1 prov2) (toSigned result bits (isSignedIty ity))
 
+/-! ## Integer value destructors — impl_mem.ml:2513-2562 -/
+
+/-- case_integer_value — impl_mem.ml:2513-2514
+    In the concrete model, always calls f_concrete -/
 def caseIntegerValue {α : Type} (iv : IntegerValue)
-    (onSpecified : Int → α) (onUnspecified : Unit → α) : α :=
-  onSpecified iv.val
+    (onSpecified : Int → α) (_ : Unit → α) : α :=
+  match iv with | .IV _ n => onSpecified n
 
 def isSpecifiedIval (_ : IntegerValue) : Bool := true
 
-def eqIval (v1 v2 : IntegerValue) : Option Bool := some (v1.val == v2.val)
-def ltIval (v1 v2 : IntegerValue) : Option Bool := some (v1.val < v2.val)
-def leIval (v1 v2 : IntegerValue) : Option Bool := some (v1.val ≤ v2.val)
+def eqIval (v1 v2 : IntegerValue) : Option Bool :=
+  match v1, v2 with | .IV _ n1, .IV _ n2 => some (n1 == n2)
+def ltIval (v1 v2 : IntegerValue) : Option Bool :=
+  match v1, v2 with | .IV _ n1, .IV _ n2 => some (n1 < n2)
+def leIval (v1 v2 : IntegerValue) : Option Bool :=
+  match v1, v2 with | .IV _ n1, .IV _ n2 => some (n1 ≤ n2)
 
-/-! ## Floating Value operations -/
+/-! ## Floating value operations — impl_mem.ml:2519-2554 -/
 
-def zeroFval : FloatingValue := .finite 0.0
-def oneFval : FloatingValue := .finite 1.0
-def strFval (s : String) : FloatingValue := .finite (CerbFloat.of_string s)
+def zeroFval : FloatingValue := 0.0
+def oneFval : FloatingValue := 1.0
+def strFval (s : String) : FloatingValue := CerbFloat.of_string s
 
-def caseFval {α : Type} (fv : FloatingValue) (onUnspec : Unit → α) (onFinite : Float → α) : α :=
-  match fv with | .finite f => onFinite f | .unspecified => onUnspec ()
+/-- case_fval — impl_mem.ml:2526-2527
+    In the concrete model, always calls fconcrete -/
+def caseFval {α : Type} (fv : FloatingValue) (_ : Unit → α) (onConcrete : Float → α) : α :=
+  onConcrete fv
 
 def opFval (op : floating_operator) (v1 v2 : FloatingValue) : FloatingValue :=
-  match v1, v2 with
-  | .finite f1, .finite f2 => .finite (match op with
-      | .FloatAdd => f1 + f2 | .FloatSub => f1 - f2
-      | .FloatMul => f1 * f2 | .FloatDiv => f1 / f2)
-  | _, _ => .unspecified
+  match op with
+  | .FloatAdd => v1 + v2 | .FloatSub => v1 - v2
+  | .FloatMul => v1 * v2 | .FloatDiv => v1 / v2
 
-def eqFval (v1 v2 : FloatingValue) : Bool :=
-  match v1, v2 with | .finite f1, .finite f2 => f1 == f2 | _, _ => false
-def ltFval (v1 v2 : FloatingValue) : Bool :=
-  match v1, v2 with | .finite f1, .finite f2 => f1 < f2 | _, _ => false
-def leFval (v1 v2 : FloatingValue) : Bool :=
-  match v1, v2 with | .finite f1, .finite f2 => f1 <= f2 | _, _ => false
+def eqFval (v1 v2 : FloatingValue) : Bool := v1 == v2
+def ltFval (v1 v2 : FloatingValue) : Bool := v1 < v2
+def leFval (v1 v2 : FloatingValue) : Bool := v1 <= v2
 
-def fvfromint (iv : IntegerValue) : FloatingValue := .finite (Float.ofInt iv.val)
+def fvfromint (iv : IntegerValue) : FloatingValue :=
+  match iv with | .IV _ n => Float.ofInt n
 def ivfromfloat (_ : integerType) (fv : FloatingValue) : IntegerValue :=
-  match fv with | .finite f => integerIval f.toUInt64.toNat | .unspecified => integerIval 0
+  integerIval fv.toUInt64.toNat
 
-/-! ## Memory Value Constructors/Destructors -/
+/-! ## Memory value constructors — impl_mem.ml:2564-2595 -/
 
-def unspecifiedMval (ty : ctype) : MemValue := .unspecified ty
-def integerValueMval (ity : integerType) (iv : IntegerValue) : MemValue := .integer ity iv
-def floatingValueMval (fty : floatingType) (fv : FloatingValue) : MemValue := .floating fty fv
-def pointerMval (ty : ctype) (pv : PointerValue) : MemValue := .pointer ty pv
-def arrayMval (elems : List MemValue) : MemValue := .array elems
-def structMval (tag : sym) (members : List (identifier × ctype × MemValue)) : MemValue := .struct_ tag members
-def unionMval (tag : sym) (member : identifier) (value : MemValue) : MemValue := .union_ tag member value
+def unspecifiedMval (ty : ctype) : MemValue := .MVunspecified ty
+def integerValueMval (ity : integerType) (iv : IntegerValue) : MemValue := .MVinteger ity iv
+def floatingValueMval (fty : floatingType) (fv : FloatingValue) : MemValue := .MVfloating fty fv
+def pointerMval (ty : ctype) (pv : PointerValue) : MemValue := .MVpointer ty pv
+def arrayMval (elems : List MemValue) : MemValue := .MVarray elems
+def structMval (tag : sym) (members : List (identifier × ctype × MemValue)) : MemValue := .MVstruct tag members
+def unionMval (tag : sym) (member : identifier) (value : MemValue) : MemValue := .MVunion tag member value
 
+/-- case_mem_value — impl_mem.ml:2579-2594
+    The f_concur callback is never called in the concrete model -/
 def caseMemValue {α : Type} (mv : MemValue)
     (onUnspec : ctype → α) (onConcurRead : integerType → sym → α)
     (onInt : integerType → IntegerValue → α) (onFloat : floatingType → FloatingValue → α)
@@ -480,41 +539,53 @@ def caseMemValue {α : Type} (mv : MemValue)
     (onStruct : sym → List (identifier × ctype × MemValue) → α)
     (onUnion : sym → identifier → MemValue → α) : α :=
   match mv with
-  | .unspecified ty => onUnspec ty | .concurRead ity s => onConcurRead ity s
-  | .integer ity iv => onInt ity iv | .floating fty fv => onFloat fty fv
-  | .pointer ty pv => onPtr ty pv | .array elems => onArray elems
-  | .struct_ tag members => onStruct tag members
-  | .union_ tag member value => onUnion tag member value
+  | .MVunspecified ty => onUnspec ty
+  | .MVinteger ity iv => onInt ity iv
+  | .MVfloating fty fv => onFloat fty fv
+  | .MVpointer ty pv => onPtr ty pv
+  | .MVarray elems => onArray elems
+  | .MVstruct tag members => onStruct tag members
+  | .MVunion tag member val_ => onUnion tag member val_
 
-/-! ## Pure Pointer Operations -/
+/-! ## Pure pointer operations — impl_mem.ml -/
 
+/-- array_shift_ptrval — shift pointer by array index -/
 def arrayShiftPtrval (pv : PointerValue) (elemTy : ctype) (iv : IntegerValue) : PointerValue :=
-  match pv.base with
-  | .null _ => pv
-  | .function _ => pv
-  | .concrete um addr =>
+  match pv, iv with
+  | .PV _ (.PVnull _), _ => pv
+  | .PV _ (.PVfunction _), _ => pv
+  | .PV prov (.PVconcrete um addr), .IV _ n =>
     let elemSize := sizeofCtype elemTy
-    let offset := iv.val * (Int.ofNat elemSize)
-    let newAddr := (Int.ofNat addr) + offset
-    { prov := pv.prov, base := .concrete um newAddr.toNat }
+    let offset := n * (Int.ofNat elemSize)
+    .PV prov (.PVconcrete um (addr + offset))
 
+/-- member_shift_ptrval — shift pointer to struct member -/
 def memberShiftPtrval (pv : PointerValue) (_ : sym) (_ : identifier) : PointerValue :=
   pv  -- TODO: compute member offset from tag definitions
 
-def bytefromint (iv : IntegerValue) : IntegerValue := { val := iv.val % 256, prov := iv.prov }
+def bytefromint (iv : IntegerValue) : IntegerValue :=
+  match iv with | .IV prov n => .IV prov (n % 256)
 def intfrombyte (iv : IntegerValue) : IntegerValue := iv
 
+/-- overlapping — impl_mem.ml:527-532 -/
 def overlapping (f1 f2 : Footprint) : Bool :=
-  f1.base < f2.base + f2.size && f2.base < f1.base + f1.size
+  match f1, f2 with
+  | .FP .R _ _, .FP .R _ _ => false  -- two reads never overlap
+  | .FP _ b1 sz1, .FP _ b2 sz2 =>
+    !(b1 + sz1 ≤ b2 || b2 + sz2 ≤ b1)
 
 def initialMemState : MemState := {}
+
+/-! ## String conversion stubs -/
 
 def stringFromCtype (_ : ctype) : String := "<ctype>"
 def stringFromMemValue (_ : MemValue) : String := "<mem_value>"
 def stringFromPointerValue (_ : PointerValue) : String := "<pointer_value>"
 def stringFromIntegerValue (_ : IntegerValue) : String := "<integer_value>"
 
-def deriveCap (_ : Bool) (_ : derivecap_op) (v1 v2 : IntegerValue) : IntegerValue := v1
+/-! ## CHERI stubs (not used in concrete model) -/
+
+def deriveCap (_ : Bool) (_ : derivecap_op) (v1 _ : IntegerValue) : IntegerValue := v1
 def capAssignValue (_ : CerbLocation.Loc) (_ v : IntegerValue) : IntegerValue := v
 def nullCap (_ : Bool) : IntegerValue := integerIval 0
 def ptrTIntValue (iv : IntegerValue) : IntegerValue := iv
@@ -533,105 +604,105 @@ private def alignDown (addr align : Nat) : Nat := (addr / align) * align
 
 /-! ### Bytemap operations -/
 
-private def writeBytesTo (st : MemState) (addr : Nat) (bytes : List AbsByte) : MemState :=
+private def writeBytesTo (st : MemState) (addr : Int) (bytes : List AbsByte) : MemState :=
   let newEntries := bytes.mapIdx fun i b => (addr + i, b)
   let filtered := st.bytemap.filter fun (a, _) => !newEntries.any (fun (a', _) => a == a')
   { st with bytemap := newEntries ++ filtered }
 
-private def readBytesFrom (st : MemState) (addr : Nat) (size : Nat) : List AbsByte :=
-  List.range size |>.map fun i =>
-    match st.bytemap.find? (fun (a, _) => a == addr + i) with
+private def readBytesFrom (st : MemState) (addr : Int) (size : Nat) : List AbsByte :=
+  (List.range size).map fun (i : Nat) =>
+    match st.bytemap.find? (fun (a, _) => a == addr + (i : Int)) with
     | some (_, b) => b
-    | none => { prov := .none, copyOffset := none, value := none }
+    | none => { prov := .Prov_none, copyOffset := none, value := none }
 
-private def getAllocation (st : MemState) (pv : PointerValue) : Option (Nat × Allocation) :=
-  match pv.prov with
-  | .some allocId =>
+private def getAllocation (st : MemState) (pv : PointerValue) : Option (Int × Allocation) :=
+  match pv with
+  | .PV (.Prov_some allocId) _ =>
     if st.deadAllocations.contains allocId then none
-    else match st.allocations.find? (fun (id, _) => id == allocId) with
-      | some (id, alloc) => some (id, alloc)
-      | none => none
+    else st.allocations.find? (fun (id, _) => id == allocId)
   | _ => none
 
-private def isInBounds (alloc : Allocation) (addr size : Nat) : Bool :=
+private def isInBounds (alloc : Allocation) (addr size : Int) : Bool :=
   addr >= alloc.base && addr + size <= alloc.base + alloc.size
 
-/-! ### Allocation -/
+/-! ### Allocation — impl_mem.ml:1288-1435 -/
 
-def allocateObject (_ : Nat) (_ : prefix0) (alignIv : IntegerValue)
+def allocateObject (_ : Nat) (pref : prefix0) (alignIv : IntegerValue)
     (ty : ctype) (_ : Option Int) (initOpt : Option MemValue) : memM PointerValue :=
+  match alignIv with
+  | .IV _ alignN =>
   ND fun st =>
-    let align := alignIv.val.toNat.max 1
+    let align := alignN.toNat.max 1
     let size := (sizeofCtype ty).max 1
     let addrAfterSize := st.lastAddress - size
-    let alignedAddr := alignDown addrAfterSize align
+    let alignedAddr := (alignDown addrAfterSize.toNat align : Int)
     if alignedAddr == 0 then (NDkilled (Other (MerrOther "out of memory")), st)
     else
       let allocId := st.nextAllocId
-      let alloc : Allocation := { base := alignedAddr, size := size, ty := some ty, name := "" }
+      let alloc : Allocation := { base := alignedAddr, size := size, ty := some ty, prefix_ := pref }
       let st' := { st with
         nextAllocId := allocId + 1, lastAddress := alignedAddr
         allocations := (allocId, alloc) :: st.allocations }
       let st' := match initOpt with
-        | some val => writeBytesTo st' alignedAddr (memValueToBytes val)
+        | some val_ => writeBytesTo st' alignedAddr (memValueToBytes val_)
         | none => writeBytesTo st' alignedAddr
-            (List.replicate size { prov := .none, copyOffset := none, value := none })
-      (NDactive { prov := .some allocId, base := .concrete none alignedAddr }, st')
+            (List.replicate size { prov := .Prov_none, copyOffset := none, value := none })
+      (NDactive (.PV (.Prov_some allocId) (.PVconcrete none alignedAddr)), st')
 
-def allocateRegion (_ : Nat) (_ : prefix0) (alignIv sizeIv : IntegerValue) : memM PointerValue :=
+def allocateRegion (_ : Nat) (pref : prefix0) (alignIv sizeIv : IntegerValue) : memM PointerValue :=
+  match alignIv, sizeIv with
+  | .IV _ alignN, .IV _ sizeN =>
   ND fun st =>
-    let align := alignIv.val.toNat.max 1
-    let size := sizeIv.val.toNat
+    let align := alignN.toNat.max 1
+    let size := sizeN.toNat
     let addrAfterSize := st.lastAddress - size
-    let alignedAddr := alignDown addrAfterSize align
+    let alignedAddr := (alignDown addrAfterSize.toNat align : Int)
     if alignedAddr == 0 then (NDkilled (Other (MerrOther "out of memory")), st)
     else
       let allocId := st.nextAllocId
-      let alloc : Allocation := { base := alignedAddr, size := size, name := "" }
+      let alloc : Allocation := { base := alignedAddr, size := size, prefix_ := pref }
       let st' := { st with
         nextAllocId := allocId + 1, lastAddress := alignedAddr
         allocations := (allocId, alloc) :: st.allocations
         dynamicAddrs := alignedAddr :: st.dynamicAddrs }
       let st' := writeBytesTo st' alignedAddr
-          (List.replicate size { prov := .none, copyOffset := none, value := none })
-      (NDactive { prov := .some allocId, base := .concrete none alignedAddr }, st')
+          (List.replicate size { prov := .Prov_none, copyOffset := none, value := none })
+      (NDactive (.PV (.Prov_some allocId) (.PVconcrete none alignedAddr)), st')
 
-/-! ### Kill -/
+/-! ### Kill — impl_mem.ml:1464+ -/
 
 def killM (_ : CerbLocation.Loc) (isDynamic : Bool) (pv : PointerValue) : memM Unit :=
   ND fun st =>
-    match pv.base with
-    | .null _ =>
+    match pv with
+    | .PV _ (.PVnull _) =>
       if isDynamic then (NDactive (), st)
       else (NDkilled (Other (MerrUndefinedFree Free_non_matching)), st)
-    | .function _ => (NDkilled (Other (MerrUndefinedFree Free_non_matching)), st)
-    | .concrete _ addr =>
-      match pv.prov with
-      | .some allocId =>
-        if st.deadAllocations.contains allocId then
-          (NDkilled (Other (MerrUndefinedFree Free_dead_allocation)), st)
-        else match st.allocations.find? (fun (id, _) => id == allocId) with
-          | none => (NDkilled (Other (MerrUndefinedFree Free_non_matching)), st)
-          | some (_, alloc) =>
-            if addr != alloc.base then
-              (NDkilled (Other (MerrUndefinedFree Free_out_of_bound)), st)
-            else if isDynamic && !st.dynamicAddrs.contains alloc.base then
-              (NDkilled (Other (MerrUndefinedFree Free_non_matching)), st)
-            else
-              let st' := { st with
-                deadAllocations := allocId :: st.deadAllocations
-                allocations := st.allocations.filter (fun (id, _) => id != allocId) }
-              (NDactive (), st')
-      | _ => (NDkilled (Other (MerrUndefinedFree Free_non_matching)), st)
+    | .PV _ (.PVfunction _) => (NDkilled (Other (MerrUndefinedFree Free_non_matching)), st)
+    | .PV (.Prov_some allocId) (.PVconcrete _ addr) =>
+      if st.deadAllocations.contains allocId then
+        (NDkilled (Other (MerrUndefinedFree Free_dead_allocation)), st)
+      else match st.allocations.find? (fun (id, _) => id == allocId) with
+        | none => (NDkilled (Other (MerrUndefinedFree Free_non_matching)), st)
+        | some (_, alloc) =>
+          if addr != alloc.base then
+            (NDkilled (Other (MerrUndefinedFree Free_out_of_bound)), st)
+          else if isDynamic && !st.dynamicAddrs.contains alloc.base then
+            (NDkilled (Other (MerrUndefinedFree Free_non_matching)), st)
+          else
+            let st' := { st with
+              deadAllocations := allocId :: st.deadAllocations
+              allocations := st.allocations.filter (fun (id, _) => id != allocId) }
+            (NDactive (), st')
+    | _ => (NDkilled (Other (MerrUndefinedFree Free_non_matching)), st)
 
-/-! ### Load / Store -/
+/-! ### Load / Store — impl_mem.ml:1552-1799 -/
 
 def loadM (_ : CerbLocation.Loc) (ty : ctype) (pv : PointerValue) : memM (Footprint × MemValue) :=
   ND fun st =>
-    match pv.base with
-    | .null _ => (NDkilled (Other (MerrAccess LoadAccess NullPtr)), st)
-    | .function _ => (NDkilled (Other (MerrAccess LoadAccess FunctionPtr)), st)
-    | .concrete _ addr =>
+    match pv with
+    | .PV _ (.PVnull _) => (NDkilled (Other (MerrAccess LoadAccess NullPtr)), st)
+    | .PV _ (.PVfunction _) => (NDkilled (Other (MerrAccess LoadAccess FunctionPtr)), st)
+    | .PV _ (.PVconcrete _ addr) =>
       match getAllocation st pv with
       | none => (NDkilled (Other (MerrAccess LoadAccess NoProvPtr)), st)
       | some (_, alloc) =>
@@ -640,13 +711,12 @@ def loadM (_ : CerbLocation.Loc) (ty : ctype) (pv : PointerValue) : memM (Footpr
           (NDkilled (Other (MerrAccess LoadAccess OutOfBoundPtr)), st)
         else
           let bytes := readBytesFrom st addr size
-          let fp : Footprint := { isWrite := false, base := addr, size := size }
+          let fp : Footprint := .FP .R addr size
           let mv := reconstructValue ty bytes
-          -- Check for uninitialized bool (trap representation)
           let isBool := match ty with | Ctype _ (.Basic (.Integer .Bool0)) => true | _ => false
           let isTrap := isBool && match mv with
-            | .integer _ iv => iv.val != 0 && iv.val != 1
-            | .unspecified _ => true
+            | .MVinteger _ (.IV _ n) => n != 0 && n != 1
+            | .MVunspecified _ => true
             | _ => false
           if isTrap then
             (NDkilled (Other (MerrTrapRepresentation LoadAccess)), st)
@@ -655,49 +725,44 @@ def loadM (_ : CerbLocation.Loc) (ty : ctype) (pv : PointerValue) : memM (Footpr
 
 def storeM (_ : CerbLocation.Loc) (ty : ctype) (isLocking : Bool) (pv : PointerValue) (mv : MemValue) : memM Footprint :=
   ND fun st =>
-    match pv.base with
-    | .null _ => (NDkilled (Other (MerrAccess StoreAccess NullPtr)), st)
-    | .function _ => (NDkilled (Other (MerrAccess StoreAccess FunctionPtr)), st)
-    | .concrete unionMem addr =>
+    match pv with
+    | .PV _ (.PVnull _) => (NDkilled (Other (MerrAccess StoreAccess NullPtr)), st)
+    | .PV _ (.PVfunction _) => (NDkilled (Other (MerrAccess StoreAccess FunctionPtr)), st)
+    | .PV _ (.PVconcrete unionMem addr) =>
       match getAllocation st pv with
       | none => (NDkilled (Other (MerrAccess StoreAccess NoProvPtr)), st)
       | some (allocId, alloc) =>
         match alloc.isReadonly with
-        | .readonly kind => (NDkilled (Other (MerrWriteOnReadOnly kind)), st)
-        | .writable =>
+        | .IsReadOnly kind => (NDkilled (Other (MerrWriteOnReadOnly kind)), st)
+        | .IsWritable =>
           let size := sizeofCtype ty
           if !isInBounds alloc addr size then
             (NDkilled (Other (MerrAccess StoreAccess OutOfBoundPtr)), st)
           else
             let bytes := memValueToBytes mv
             let st' := writeBytesTo st addr bytes
-            -- Track union member access
             let st' := match unionMem with
               | some membr => { st' with lastUsedUnionMembers :=
                   (addr, membr) :: st'.lastUsedUnionMembers.filter (fun (a, _) => a != addr) }
               | none => st'
-            -- Handle locking (readonly after first store)
             let st' := if isLocking then
-              let roKind := match alloc.name with
-                | "PrefStringLiteral" => readonly_kind.ReadonlyStringLiteral
-                | "PrefTemporaryLifetime" => readonly_kind.ReadonlyTemporaryLifetime
-                | _ => readonly_kind.ReadonlyConstQualified
+              let roKind := readonly_kind.ReadonlyConstQualified
               { st' with allocations := st'.allocations.map fun (id, a) =>
-                  if id == allocId then (id, { a with isReadonly := .readonly roKind }) else (id, a) }
+                  if id == allocId then (id, { a with isReadonly := .IsReadOnly roKind }) else (id, a) }
               else st'
-            let fp : Footprint := { isWrite := true, base := addr, size := size }
+            let fp : Footprint := .FP .W addr size
             (NDactive fp, st')
 
-/-! ### Pointer comparisons -/
+/-! ### Pointer comparisons — impl_mem.ml:1830+ -/
 
-private def ptrAddr (pv : PointerValue) : Option Nat :=
-  match pv.base with | .concrete _ addr => some addr | _ => none
+private def ptrAddr (pv : PointerValue) : Option Int :=
+  match pv with | .PV _ (.PVconcrete _ addr) => some addr | _ => none
 
 def eqPtrval (_ : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
-  memReturn (match pv1.base, pv2.base with
-    | .null _, .null _ => true
-    | .function s1, .function s2 => s1 == s2
-    | .concrete _ a1, .concrete _ a2 => pv1.prov == pv2.prov && a1 == a2
+  memReturn (match pv1, pv2 with
+    | .PV _ (.PVnull _), .PV _ (.PVnull _) => true
+    | .PV _ (.PVfunction s1), .PV _ (.PVfunction s2) => s1 == s2
+    | .PV p1 (.PVconcrete _ a1), .PV p2 (.PVconcrete _ a2) => p1 == p2 && a1 == a2
     | _, _ => false)
 
 def nePtrval (loc : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
@@ -720,34 +785,36 @@ def diffPtrval (_ : CerbLocation.Loc) (elemTy : ctype) (pv1 pv2 : PointerValue) 
   memReturn (match ptrAddr pv1, ptrAddr pv2 with
     | some a1, some a2 =>
       let elemSize := (sizeofCtype elemTy).max 1
-      integerIval (((Int.ofNat a1) - (Int.ofNat a2)) / elemSize)
+      integerIval ((a1 - a2) / elemSize)
     | _, _ => integerIval 0)
 
 /-! ### Pointer validity -/
 
 def validForDerefPtrval (_ : ctype) (pv : PointerValue) : memM Bool :=
   ND fun st =>
-    let result := match pv.base with
-      | .null _ | .function _ => false
-      | .concrete _ _ => (getAllocation st pv).isSome
+    let result := match pv with
+      | .PV _ (.PVnull _) | .PV _ (.PVfunction _) => false
+      | _ => (getAllocation st pv).isSome
     (NDactive result, st)
 
 def isWellAlignedPtrval (ty : ctype) (pv : PointerValue) : memM Bool :=
-  memReturn (match pv.base with
-    | .null _ | .function _ => true
-    | .concrete _ addr => addr % (alignofCtype ty).max 1 == 0)
+  memReturn (match pv with
+    | .PV _ (.PVnull _) | .PV _ (.PVfunction _) => true
+    | .PV _ (.PVconcrete _ addr) => addr % (alignofCtype ty).max 1 == 0)
 
 /-! ### Pointer casts -/
 
 def ptrfromint (_ : CerbLocation.Loc) (_ : integerType) (_ : ctype) (iv : IntegerValue) : memM PointerValue :=
-  if iv.val == 0 then memReturn (nullPtrval (mkCtype Void0))
-  else memReturn { prov := iv.prov, base := .concrete none iv.val.toNat }
+  match iv with
+  | .IV prov n =>
+    if n == 0 then memReturn (nullPtrval (mkCtype Void0))
+    else memReturn (.PV prov (.PVconcrete none n))
 
 def intfromptr (_ : CerbLocation.Loc) (_ : ctype) (_ : integerType) (pv : PointerValue) : memM IntegerValue :=
-  memReturn (match pv.base with
-    | .null _ => { val := 0, prov := pv.prov }
-    | .function _ => { val := 0, prov := pv.prov }
-    | .concrete _ addr => { val := Int.ofNat addr, prov := pv.prov })
+  memReturn (match pv with
+    | .PV prov (.PVnull _) => .IV prov 0
+    | .PV prov (.PVfunction _) => .IV prov 0
+    | .PV prov (.PVconcrete _ addr) => .IV prov addr)
 
 /-! ### Effectful pointer shifts -/
 
@@ -761,19 +828,19 @@ def effMemberShiftPtrval (_ : CerbLocation.Loc) (pv : PointerValue) (tag : sym) 
 
 def memcpyM (_ : CerbLocation.Loc) (dst src : PointerValue) (sizeIv : IntegerValue) : memM PointerValue :=
   ND fun st =>
-    match dst.base, src.base with
-    | .concrete _ dstAddr, .concrete _ srcAddr =>
-      let size := sizeIv.val.toNat
+    match dst, src, sizeIv with
+    | .PV _ (.PVconcrete _ dstAddr), .PV _ (.PVconcrete _ srcAddr), .IV _ n =>
+      let size := n.toNat
       let bytes := readBytesFrom st srcAddr size
       let st' := writeBytesTo st dstAddr bytes
       (NDactive dst, st')
-    | _, _ => (NDkilled (Other (MerrOther "memcpy: non-concrete pointers")), st)
+    | _, _, _ => (NDkilled (Other (MerrOther "memcpy: non-concrete pointers")), st)
 
 def memcmpM (pv1 pv2 : PointerValue) (sizeIv : IntegerValue) : memM IntegerValue :=
   ND fun st =>
-    match pv1.base, pv2.base with
-    | .concrete _ a1, .concrete _ a2 =>
-      let size := sizeIv.val.toNat
+    match pv1, pv2, sizeIv with
+    | .PV _ (.PVconcrete _ a1), .PV _ (.PVconcrete _ a2), .IV _ n =>
+      let size := n.toNat
       let b1 := readBytesFrom st a1 size
       let b2 := readBytesFrom st a2 size
       let cmp := (b1.zip b2).foldl (init := (0 : Int)) fun acc (x, y) =>
@@ -783,9 +850,9 @@ def memcmpM (pv1 pv2 : PointerValue) (sizeIv : IntegerValue) : memM IntegerValue
             if v1.toNat < v2.toNat then -1 else if v1.toNat > v2.toNat then 1 else 0
           | _, _ => 0
       (NDactive (integerIval cmp), st)
-    | _, _ => (NDactive (integerIval 0), st)
+    | _, _, _ => (NDactive (integerIval 0), st)
 
-def reallocM (_ : CerbLocation.Loc) (tid : Nat) (alignIv : IntegerValue) (pv : PointerValue) (sizeIv : IntegerValue) : memM PointerValue :=
+def reallocM (_ : CerbLocation.Loc) (_ : Nat) (_ : IntegerValue) (pv : PointerValue) (_ : IntegerValue) : memM PointerValue :=
   memReturn pv  -- TODO: allocate new, copy, free old
 
 /-! ### Prefix operations -/

@@ -76,9 +76,11 @@ def selfTest : IO Unit := do
   | some n => IO.println s!"  sizeof(int) = {n}"
   | none => IO.println "  sizeof(int) = unknown"
   let maxInt := CerbMem.maxIval (Signed Int_)
-  IO.println s!"  max(signed int) = {maxInt.val}"
+  let (.IV _ maxN) := maxInt
+  IO.println s!"  max(signed int) = {maxN}"
   let minInt := CerbMem.minIval (Signed Int_)
-  IO.println s!"  min(signed int) = {minInt.val}"
+  let (.IV _ minN) := minInt
+  IO.println s!"  min(signed int) = {minN}"
   let bytes := CerbMem.intToBytes 42 4
   let byteStrs := bytes.map fun b => match b with
     | some v => toString v.toNat | none => "?"
@@ -228,6 +230,8 @@ def runPipeline (runtimeDir : String) (tunit : translation_unit) : IO Unit := do
 /-! ## Entry point -/
 
 def main (args : List String) : IO Unit := do
+  -- Set debug level for Core evaluation tracing (0=off, 2=basic, 5=verbose)
+  let _ := CerbDebug.set_level 2
   if args.length == 0 then
     selfTest
     return

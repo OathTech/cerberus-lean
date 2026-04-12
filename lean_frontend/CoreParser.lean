@@ -635,7 +635,7 @@ partial def pValue : P value :=
   <|> (do
         match ← attempt lexNumLit with
         | .int n => return (Vobject (OVinteger (CerbMem.integerIval n)))
-        | .float f => return (Vobject (OVfloating (CerbMem.FloatingValue.finite f))))
+        | .float f => return (Vobject (OVfloating (f))))
 
 /-! ## Pattern pair helper -/
 
@@ -1044,7 +1044,7 @@ partial def pPexprAtom : P PE := do
       -- Try numeric literal (integer or float)
       match ← lexNumLit with
       | .int n => return (mkPE (PEval (Vobject (OVinteger (CerbMem.integerIval n)))))
-      | .float f => return (mkPE (PEval (Vobject (OVfloating (CerbMem.FloatingValue.finite f)))))
+      | .float f => return (mkPE (PEval (Vobject (OVfloating (f)))))
 
 /-- Precedence climbing parser for binary operators and :: cons. -/
 private partial def pPexprPrec (minPrec : Nat) : P PE := do
