@@ -113,6 +113,7 @@ roots = [
   "CerbDecode",
   "CabsImport",
   "CoreParser",
+  "CerbND",
 ]
 
 [[lean_exe]]

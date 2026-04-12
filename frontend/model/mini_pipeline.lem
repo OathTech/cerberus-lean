@@ -31,7 +31,7 @@ val runND_proxy:
 
 
 declare ocaml target_rep function runND_proxy = `Smt2.runND Exhaustive Impl_mem.cs_module`
-declare lean target_rep function runND_proxy = `sorry`
+declare lean target_rep function runND_proxy = `CerbND.runND`
 
 val empty_sigma: forall 'a. A.sigma 'a
 let empty_sigma = <|

@@ -12,6 +12,7 @@ import GenTyping
 import Translation
 import Core_run_aux
 import Driver
+import CerbND
 
 set_option autoImplicit true
 
@@ -169,7 +170,36 @@ def runPipeline (runtimeDir : String) (tunit : translation_unit) : IO Unit := do
       let _ := CerbTags.set_tagDefs runFile.tagDefs
       let fsState := CerbFS.fs_initial_state
       let drSt := initial_driver_state runFile fsState
-      IO.println s!"  driver state initialized — pipeline complete!"
+      IO.println s!"  executing Core..."
+      let driverAction := drive false runFile ["cmdname"]
+      let execs := CerbND.runND driverAction drSt
+      IO.println s!"  executions: {execs.length}"
+      for (status, _trace, _finalSt) in execs do
+        match status with
+        | .Active result =>
+          IO.println s!"  result: Active"
+          match result.dres_core_value with
+          | Vloaded (LVspecified (OVinteger ival)) =>
+            match eval_integer_value ival with
+            | some n => IO.println s!"  return value: {n}"
+            | none => IO.println s!"  return value: (could not evaluate)"
+          | v => IO.println s!"  return value: (non-integer)"
+        | .Killed _st reason =>
+          match reason with
+          | .Undef0 loc ubs =>
+            IO.println s!"  result: Killed (undefined behaviour)"
+            IO.println s!"    at: {CerbLocation.stringFromLocation loc}"
+            for ub in ubs do
+              IO.println s!"    ub: {stringFromUndefined_behaviour ub}"
+          | .Error0 loc msg =>
+            IO.println s!"  result: Killed (error: {msg})"
+            IO.println s!"    at: {CerbLocation.stringFromLocation loc}"
+          | .Other err =>
+            match err with
+            | .DErr_core_run _ => IO.println s!"  result: Killed (core_run error)"
+            | .DErr_memory _ => IO.println s!"  result: Killed (memory error)"
+            | .DErr_concurrency s => IO.println s!"  result: Killed (concurrency: {s})"
+            | .DErr_other s => IO.println s!"  result: Killed (other: {s})"
   | .Exception (loc, cause) =>
     IO.println s!"  desugaring failed!"
     IO.println s!"    at: {CerbLocation.stringFromLocation loc}"
