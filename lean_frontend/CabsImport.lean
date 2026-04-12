@@ -42,8 +42,8 @@ def getField (j : Json) (field : String) : Except String Json :=
       | (k, v) :: rest => if k == field then some v else findKey rest
     match findKey m.toList with
     | some v => .ok v
-    | none => err "getField" s!"missing field '{field}'"
-  | _ => err "getField" "expected object"
+    | none => err "getField" s!"missing field '{field}' in {j}"
+  | _ => err "getField" s!"expected object for field '{field}', got {j}"
 
 def getTag (j : Json) : Except String String :=
   match j with
@@ -54,6 +54,11 @@ def getTag (j : Json) : Except String String :=
     | .str s => .ok s
     | _ => err "getTag" "tag field is not a string"
   | _ => err "getTag" s!"expected string or object, got {j}"
+
+def expectTag (ctx : String) (j : Json) (expected : String) : Except String Unit := do
+  let actual ← getTag j
+  if actual == expected then .ok ()
+  else err ctx s!"expected tag '{expected}', got '{actual}' in {j}"
 
 def getStr (j : Json) : Except String String :=
   match j with
@@ -258,6 +263,7 @@ def jsonToAssignmentOp (j : Json) : Except String cabs_assignment_operator := do
 
 mutual
 partial def jsonToExpression (j : Json) : Except String cabs_expression := do
+  expectTag "CabsExpression" j "CabsExpression"
   let loc ← jsonToLoc (← getField j "loc")
   let expr ← jsonToExpression_ (← getField j "expr")
   .ok (CabsExpression loc expr)
@@ -409,6 +415,7 @@ partial def jsonToTypeSpecifier_ (j : Json) : Except String cabs_type_specifier_
 
 -- Type specifier (with location)
 partial def jsonToTypeSpecifier (j : Json) : Except String cabs_type_specifier := do
+  expectTag "TSpec" j "TSpec"
   let loc ← jsonToLoc (← getField j "loc")
   let spec ← jsonToTypeSpecifier_ (← getField j "spec")
   .ok (TSpec loc spec)
@@ -445,6 +452,7 @@ partial def jsonToEnumerator (j : Json) : Except String (identifier × Option ca
 
 -- Pointer declarator
 partial def jsonToPointerDecl (j : Json) : Except String pointer_declarator := do
+  expectTag "PDecl" j "PDecl"
   let loc ← jsonToLoc (← getField j "loc")
   let quals ← getList jsonToTypeQualifier (← getField j "type_qualifiers")
   let inner ← getOption jsonToPointerDecl (← getField j "pointer")
@@ -459,6 +467,7 @@ partial def jsonToArrayDeclSize (j : Json) : Except String array_declarator_size
 
 -- Array declarator
 partial def jsonToArrayDecl (j : Json) : Except String array_declarator := do
+  expectTag "ADecl" j "ADecl"
   let loc ← jsonToLoc (← getField j "loc")
   let quals ← getList jsonToTypeQualifier (← getField j "type_qualifiers")
   let isStatic ← getBool (← getField j "is_static")
@@ -467,6 +476,7 @@ partial def jsonToArrayDecl (j : Json) : Except String array_declarator := do
 
 -- Parameter type list
 partial def jsonToParamTypeList (j : Json) : Except String parameter_type_list := do
+  expectTag "Params" j "Params"
   let params ← getList jsonToParamDecl (← getField j "params")
   let variadic ← getBool (← getField j "is_variadic")
   .ok (Params params variadic)
@@ -499,6 +509,7 @@ partial def jsonToDirectDecl (j : Json) : Except String direct_declarator := do
 
 -- Declarator
 partial def jsonToDeclarator (j : Json) : Except String declarator := do
+  expectTag "Declarator" j "Declarator"
   let ptr ← getOption jsonToPointerDecl (← getField j "pointer")
   let direct ← jsonToDirectDecl (← getField j "direct")
   .ok (Declarator ptr direct)
@@ -527,6 +538,7 @@ partial def jsonToDirectAbstractDecl (j : Json) : Except String direct_abstract_
 
 -- Type name
 partial def jsonToTypeName (j : Json) : Except String type_name := do
+  expectTag "Type_name" j "Type_name"
   let specs ← getList jsonToTypeSpecifier (← getField j "type_specifiers")
   let quals ← getList jsonToTypeQualifier (← getField j "type_qualifiers")
   let aligns ← getList jsonToAlignmentSpecifier (← getField j "alignment_specifiers")
@@ -597,6 +609,7 @@ partial def jsonToAttribute (j : Json) : Except String attribute0 := do
 
 -- Specifiers
 partial def jsonToSpecifiers (j : Json) : Except String specifiers := do
+  expectTag "Specifiers" j "Specifiers"
   .ok (specifiers.mk
     (← getList jsonToStorageClass (← getField j "storage_classes"))
     (← getList jsonToTypeSpecifier (← getField j "type_specifiers"))
@@ -606,12 +619,14 @@ partial def jsonToSpecifiers (j : Json) : Except String specifiers := do
 
 -- Static assert
 partial def jsonToStaticAssert (j : Json) : Except String static_assert_declaration := do
+  expectTag "Static_assert" j "Static_assert"
   .ok (.Static_assert
     (← jsonToExpression (← getField j "expr"))
     (← jsonToStringLiteral (← getField j "msg")))
 
 -- Init declarator
 partial def jsonToInitDecl (j : Json) : Except String init_declarator := do
+  expectTag "InitDecl" j "InitDecl"
   let loc ← jsonToLoc (← getField j "loc")
   let decl ← jsonToDeclarator (← getField j "declarator")
   let init ← getOption jsonToInitializer (← getField j "initializer")
@@ -694,6 +709,7 @@ partial def jsonToStatement_ (j : Json) : Except String cabs_statement_ := do
 
 -- Statement (with location and attributes)
 partial def jsonToStatement (j : Json) : Except String cabs_statement := do
+  expectTag "CabsStatement" j "CabsStatement"
   let loc ← jsonToLoc (← getField j "loc")
   let attrs ← jsonToAttributes (← getField j "attrs")
   let stmt ← jsonToStatement_ (← getField j "stmt")
@@ -701,6 +717,7 @@ partial def jsonToStatement (j : Json) : Except String cabs_statement := do
 
 -- Function definition
 partial def jsonToFunctionDef (j : Json) : Except String function_definition := do
+  expectTag "FunDef" j "FunDef"
   .ok (FunDef
     (← jsonToLoc (← getField j "loc"))
     (← jsonToAttributes (← getField j "attrs"))

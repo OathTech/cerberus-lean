@@ -72,11 +72,7 @@ let json_of_list f xs = `List (List.map f xs)
 
 let json_of_string s = `String s
 
-let json_of_integer n = `String (Nat_big_num.to_string n)
-
 let json_of_bool b = `Bool b
-
-let json_of_nat n = `Int n
 
 (* === Cabs types === *)
 
