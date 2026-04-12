@@ -8,6 +8,8 @@ import CoreParser
 import Cabs_to_ail
 import Cn_desugaring
 import Implementation
+import GenTyping
+import Translation
 
 set_option autoImplicit true
 
@@ -137,6 +139,27 @@ def runPipeline (runtimeDir : String) (tunit : translation_unit) : IO Unit := do
     IO.println s!"    declarations: {List.length ailProg.declarations}"
     IO.println s!"    function defs: {List.length ailProg.function_definitions}"
     IO.println s!"    tag defs: {List.length ailProg.tag_definitions}"
+
+    -- Step 2: Typecheck AIL (mirrors pipeline.ml:217-219)
+    IO.println "  typechecking AIL..."
+    let ailInput := (mainSym, ailProg)
+    match to_exception (fun (p : CerbLocation.Loc × typing_error) => (p.1, AIL_TYPING p.2))
+            (annotate_program ailInput) with
+    | .Exception (loc, cause) =>
+      IO.println s!"  typechecking failed!"
+      IO.println s!"    at: {CerbLocation.stringFromLocation loc}"
+    | .Result (typedProg, _annots) =>
+      IO.println s!"  typechecking succeeded!"
+
+      -- Step 3: Translate AIL → Core
+      IO.println "  translating AIL → Core..."
+      let _ := CerbTags.reset_tagDefs ()
+      let callconv := Normal_callconv
+      let coreFile := translate (ailnames, stdFunMap) callconv coreImpl typedProg
+      IO.println s!"  translation succeeded!"
+      IO.println s!"    main: {match coreFile.main with | some _ => "found" | none => "not found"}"
+      IO.println s!"    funs: {List.length coreFile.funs}"
+      IO.println s!"    globs: {List.length coreFile.globs}"
   | .Exception (loc, cause) =>
     IO.println s!"  desugaring failed!"
     IO.println s!"    at: {CerbLocation.stringFromLocation loc}"

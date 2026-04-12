@@ -1,6 +1,9 @@
 open import Pervasives Utils Cabs Std Show Show_extra Set
 import Global Debug Pp Loc Errors Scope_table State_exception Symbol
 
+declare {lean} extra_import `CerbCtypeInstances`
+declare {lean} extra_import `CerbCabsInstances`
+
 open import Cabs_to_ail_aux
 
 import AilSyntax AilTypesAux

@@ -1,6 +1,8 @@
 open import Pervasives Utils AilSyntax ErrorMonad TypingError Annot Ctype
 import Global Implementation IntegerImpl Loc Debug
 
+declare {lean} extra_import `CerbCtypeInstances`
+
 (* == Predicates on qualifiers ================================================ *)
 val is_unqualified: qualifiers -> bool
 let is_unqualified = function

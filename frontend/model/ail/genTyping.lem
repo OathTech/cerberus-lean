@@ -3,6 +3,8 @@ import Constraint Undefined Builtins Debug Pp Cmm_csem Global
 
 import Implementation
 
+declare {lean} extra_import `CerbCtypeInstances`
+
 module Cty = Ctype
 module AAux = AilTypesAux
 module GAux = GenTypesAux
