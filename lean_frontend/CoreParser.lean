@@ -80,25 +80,52 @@ def lexSym (s : String) : P Unit := do
   let _ ← pstring s
   lexWs
 
-/-- Parse a numeric literal (integer or float). Floats are truncated to integer.
-    This handles the fact that cerberus --pp core generates float literals like 3.14
-    even though the grammar formally only has integer constants. -/
-def lexInt : P Int := do
+/-- Result of parsing a numeric literal: either integer or floating-point. -/
+inductive NumLit where
+  | int : Int → NumLit
+  | float : Float → NumLit
+
+/-- Parse a numeric literal (integer or float).
+    Integer: [0-9]+
+    Float: [0-9]+.[0-9]* or [0-9]+[eE][+-]?[0-9]+ or [0-9]+.[0-9]*[eE][+-]?[0-9]+
+    Matches what OCaml's string_of_float produces: 0., 3.14, 1e-06, 1e+308, etc. -/
+partial def lexNumLit : P NumLit := do
   let neg ← match ← peek? with
     | some '-' => skip; pure true
     | _ => pure false
-  let digits ← many1Chars digit
-  -- Skip optional fractional part (.digits) — we truncate to integer
-  -- Handles: 3.14, 0., 0.0, etc. (cerberus --pp core generates these for floats)
+  let intPart ← many1Chars digit
+  -- Check for fractional part or exponent (makes it a float)
+  let mut isFloat := false
+  let mut acc := intPart
   match ← peek? with
   | some '.' =>
-    skip  -- consume the dot
-    let _ ← manyChars digit  -- consume fractional digits (may be empty for "0.")
-    pure ()
+    skip; isFloat := true
+    let fracPart ← manyChars digit
+    acc := acc ++ "." ++ fracPart
+  | _ => pure ()
+  match ← peek? with
+  | some 'e' | some 'E' =>
+    skip; isFloat := true
+    let sign ← match ← peek? with
+      | some '+' => skip; pure "+"
+      | some '-' => skip; pure "-"
+      | _ => pure ""
+    let expPart ← manyChars digit
+    acc := acc ++ "e" ++ sign ++ expPart
   | _ => pure ()
   lexWs
-  let n := digits.foldl (fun acc c => acc * 10 + (c.toNat - '0'.toNat)) 0
-  return if neg then -↑n else ↑n
+  if isFloat then
+    let s := if neg then "-" ++ acc else acc
+    return .float (CerbFloat.of_string s)
+  else
+    let n := intPart.foldl (fun acc c => acc * 10 + (c.toNat - '0'.toNat)) 0
+    return .int (if neg then -↑n else ↑n)
+
+/-- Parse an integer literal. Fails on float literals. -/
+def lexInt : P Int := do
+  match ← lexNumLit with
+  | .int n => return n
+  | .float _ => fail "expected integer, got float"
 
 /-- Helper for lexStr: parse string body after opening quote -/
 private partial def lexStrGo (acc : String) : P String := do
@@ -606,8 +633,9 @@ partial def pValue : P value :=
         let ty ← pCoreCtype
         return (Vctype ty)))
   <|> (do
-        let n ← attempt lexInt
-        return (Vobject (OVinteger (CerbMem.integerIval n))))
+        match ← attempt lexNumLit with
+        | .int n => return (Vobject (OVinteger (CerbMem.integerIval n)))
+        | .float f => return (Vobject (OVfloating (CerbMem.FloatingValue.finite f))))
 
 /-! ## Pattern pair helper -/
 
@@ -1013,9 +1041,10 @@ partial def pPexprAtom : P PE := do
           return (mkPE (PEcall (Sym s) args))
         | _ => return (mkPE (PEsym s))  -- just a variable
     | none =>
-      -- Try integer literal
-      let n ← lexInt
-      return (mkPE (PEval (Vobject (OVinteger (CerbMem.integerIval n)))))
+      -- Try numeric literal (integer or float)
+      match ← lexNumLit with
+      | .int n => return (mkPE (PEval (Vobject (OVinteger (CerbMem.integerIval n)))))
+      | .float f => return (mkPE (PEval (Vobject (OVfloating (CerbMem.FloatingValue.finite f)))))
 
 /-- Precedence climbing parser for binary operators and :: cons. -/
 private partial def pPexprPrec (minPrec : Nat) : P PE := do
