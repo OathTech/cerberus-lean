@@ -507,7 +507,7 @@ def intfrombyte (iv : IntegerValue) : IntegerValue := iv
 def overlapping (f1 f2 : Footprint) : Bool :=
   f1.base < f2.base + f2.size && f2.base < f1.base + f1.size
 
-def initialMemState : MemState := default
+def initialMemState : MemState := {}
 
 def stringFromCtype (_ : ctype) : String := "<ctype>"
 def stringFromMemValue (_ : MemValue) : String := "<mem_value>"

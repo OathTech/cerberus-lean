@@ -197,7 +197,13 @@ def runPipeline (runtimeDir : String) (tunit : translation_unit) : IO Unit := do
           | .Other err =>
             match err with
             | .DErr_core_run _ => IO.println s!"  result: Killed (core_run error)"
-            | .DErr_memory _ => IO.println s!"  result: Killed (memory error)"
+            | .DErr_memory merr =>
+              match merr with
+              | .MerrInternal s => IO.println s!"  result: Killed (memory internal: {s})"
+              | .MerrOther s => IO.println s!"  result: Killed (memory other: {s})"
+              | .MerrOutsideLifetime s => IO.println s!"  result: Killed (outside lifetime: {s})"
+              | .MerrAccess _ _ => IO.println s!"  result: Killed (memory access error)"
+              | _ => IO.println s!"  result: Killed (memory error)"
             | .DErr_concurrency s => IO.println s!"  result: Killed (concurrency: {s})"
             | .DErr_other s => IO.println s!"  result: Killed (other: {s})"
   | .Exception (loc, cause) =>
