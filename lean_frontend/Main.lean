@@ -137,9 +137,15 @@ def runPipeline (runtimeDir : String) (tunit : translation_unit) : IO Unit := do
     IO.println s!"    declarations: {List.length ailProg.declarations}"
     IO.println s!"    function defs: {List.length ailProg.function_definitions}"
     IO.println s!"    tag defs: {List.length ailProg.tag_definitions}"
-  | .Exception (loc, _cause) =>
+  | .Exception (loc, cause) =>
     IO.println s!"  desugaring failed!"
     IO.println s!"    at: {CerbLocation.stringFromLocation loc}"
+    -- Print cause details
+    match cause with
+    | .DESUGAR d => IO.println s!"    cause: DESUGAR"
+    | .AIL_TYPING _ => IO.println s!"    cause: AIL_TYPING"
+    | .CPP _ => IO.println s!"    cause: CPP"
+    | _ => IO.println s!"    cause: (other)"
 
 /-! ## Entry point -/
 
