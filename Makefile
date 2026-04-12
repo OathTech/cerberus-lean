@@ -290,7 +290,7 @@ LEAN_SRC_DIR = lean_frontend/generated
 # by the generated code (which references them via declare lean target_rep).
 LEAN_HANDWRITTEN = CerberusImpl.lean CerbLocation.lean CerberusFresh.lean \
     CerbGlobal.lean CerbFloat.lean CerbUtils.lean CerbPP.lean CerbMem.lean \
-    CerbFS.lean CerbConcurrency.lean CerbCtypeInstances.lean CerbInhabitedInstances.lean \
+    CerbFS.lean CerbConcurrency.lean CerbCtypeInstances.lean CerbCabsInstances.lean CerbInhabitedInstances.lean \
     CerbTags.lean CerbDebug.lean CerbDecode.lean CabsImport.lean CoreParser.lean
 
 # Update and reinstall lem via opam.  Lem is pinned to

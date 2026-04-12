@@ -18,14 +18,19 @@ set_option autoImplicit true
 def loadCoreStdlib (stdFile : CoreParser.CoreFile) :
     Fmap String sym × fun_map Unit :=
   let allDecls := stdFile.funs ++ stdFile.procs ++ stdFile.builtins
+  -- Assign unique symbol numbers (parser's fresh_int doesn't work in pure context)
+  let numberedDecls := (List.range allDecls.length).zip allDecls |>.map (fun (i, (s, d)) =>
+    let s' := match s with
+      | Symbol dig _ desc => Symbol dig (i + 1) desc
+    (s', d))
   -- Build the ailnames map: function name string → symbol
-  let ailnamesList := allDecls.filterMap (fun (s, _) =>
+  let ailnamesList := numberedDecls.filterMap (fun (s, _) =>
     match s with
     | Symbol _ _ (SD_Id name) => some (name, s)
     | _ => none)
   let ailnames : Fmap String sym := Lem_Map.fromList ailnamesList
   -- Build the function map: symbol → fun_map_decl
-  let funMap : fun_map Unit := Lem_Map.fromList allDecls
+  let funMap : fun_map Unit := Lem_Map.fromList numberedDecls
   (ailnames, funMap)
 
 /-- Convert impl declarations from a CoreParser.CoreFile into an impl map. -/
@@ -101,6 +106,9 @@ def runPipeline (runtimeDir : String) (tunit : translation_unit) : IO Unit := do
   let stdFile ← match CoreParser.parseFile stdContent with
     | .ok f => pure f
     | .error e => throw (IO.Error.userError s!"failed to parse std.core: {e}")
+  let allStdDecls := stdFile.funs ++ stdFile.procs ++ stdFile.builtins
+  IO.println s!"    raw: {stdFile.funs.length} fun, {stdFile.procs.length} proc, {stdFile.builtins.length} builtin = {allStdDecls.length} total"
+  let allStd := stdFile.funs ++ stdFile.procs ++ stdFile.builtins
   let (ailnames, stdFunMap) := loadCoreStdlib stdFile
   IO.println s!"    ailnames: {List.length ailnames} entries"
   IO.println s!"    stdlib funs: {List.length stdFunMap} entries"

@@ -5,7 +5,7 @@
    "type": "git",
    "subDir": "lean-lib",
    "scope": "",
-   "rev": "86484116aa134a26ce2f6aabb4ea0e7a50041627",
+   "rev": "dff20627a86be0d0dfe18c6fe585915082ffd698",
    "name": "LemLib",
    "manifestFile": "lake-manifest.json",
    "inputRev": "mdd/lean-backend",
