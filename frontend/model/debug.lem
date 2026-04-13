@@ -1,6 +1,7 @@
 import Loc
 
 declare {ocaml} rename module = Lem_debug
+declare {lean} extra_import `CerbDebug`
 
 type domain =
   | DB_clexer
@@ -20,7 +21,8 @@ declare ocaml target_rep type domain = `Cerb_debug.domain`
 val get_level: unit -> nat
 declare ocaml target_rep function get_level   = `Cerb_debug.get_debug_level`
 declare hol   target_rep function get_level u = 0 (* TODO: HOL hack *)
-declare lean target_rep function get_level = `CerbDebug.get_level`
+declare lean target_rep function get_level u = `CerbDebug.getLevelIO` u
+declare {lean} effectful val get_level
 
 
 val output_string: string -> unit
@@ -31,7 +33,8 @@ declare lean target_rep function output_string = `CerbDebug.output_string`
 val print_debug: nat -> list domain -> (unit -> string) -> unit
 declare ocaml target_rep function print_debug = `Cerb_debug.print_debug`
 declare hol   target_rep function print_debug = `util$print_debug`
-declare lean target_rep function print_debug = `CerbDebug.print_debug`
+declare lean target_rep function print_debug n ds msg = `CerbDebug.printDebugIO` n ds msg
+declare {lean} effectful val print_debug
 
 val print_debug_located: nat -> list domain -> Loc.t -> (unit -> string) -> unit
 declare ocaml target_rep function print_debug_located = `Cerb_debug.print_debug_located`

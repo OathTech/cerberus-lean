@@ -87,7 +87,7 @@ build_lean() {
 # Run cerberus with correct opam switch and runtime path
 run_cerberus() {
     opam exec --switch="$PROJECT_ROOT" -- \
-        "$CERBERUS_BIN" "$@"
+        "$CERBERUS_BIN" --runtime="$PROJECT_ROOT/_build/install/default" "$@"
 }
 
 # Run cerberus-lean

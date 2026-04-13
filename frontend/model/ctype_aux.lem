@@ -4,6 +4,8 @@ import Symbol AilTypesAux
 open import Utils Ctype
 import Map_extra
 
+declare {lean} extra_import `CerbTags`
+
 (* SEE src/tags.mli for the documentation *)
 val tagDefs: unit -> map Symbol.sym (Loc.t * tag_definition)
 val set_tagDefs: map Symbol.sym (Loc.t * tag_definition) -> unit
@@ -14,9 +16,11 @@ declare ocaml target_rep function set_tagDefs = `Tags.set_tagDefs`
 declare ocaml target_rep function with_tagDefs = `Tags.with_tagDefs`
 
 declare hol target_rep function tagDefs = `tagDefs`
-declare lean target_rep function tagDefs = `CerbTags.tagDefs`
+declare lean target_rep function tagDefs u = `CerbTags.tagDefsIO` u
+declare {lean} effectful val tagDefs
 declare hol target_rep function set_tagDefs = `set_tagDefs`
-declare lean target_rep function set_tagDefs = `CerbTags.set_tagDefs`
+declare lean target_rep function set_tagDefs tds = `CerbTags.setTagDefsIO` tds
+declare {lean} effectful val set_tagDefs
 declare hol target_rep function with_tagDefs = `with_tagDefs`
 declare lean target_rep function with_tagDefs = `CerbTags.with_tagDefs`
 
@@ -64,7 +68,8 @@ let get_unionDef tag_sym =
 
 val reset_tagDefs: unit -> unit
 declare ocaml target_rep function reset_tagDefs = `Tags.reset_tagDefs`
-declare lean target_rep function reset_tagDefs = `CerbTags.reset_tagDefs`
+declare lean target_rep function reset_tagDefs u = `CerbTags.resetTagDefsIO` u
+declare {lean} effectful val reset_tagDefs
 
 
 

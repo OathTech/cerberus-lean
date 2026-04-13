@@ -171,7 +171,7 @@ end Lexer
 
 /-- Construct a symbol from a parsed identifier string. -/
 private def mkSym (name : String) : sym :=
-  Symbol "" (CerberusFresh.fresh_int ()) (SD_Id name)
+  Symbol "" (runEffectful (fun () => CerberusFresh.freshIntIO ())) (SD_Id name)
 
 /-- The unknown location placeholder. -/
 private def loc0 : CerbLocation.Loc := CerbLocation.unknown

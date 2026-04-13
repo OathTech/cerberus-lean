@@ -1,7 +1,6 @@
 /-
   Debug output and debug level.
   Corresponds to: util/cerb_debug.ml
-  Reference: lean-c-semantics doesn't have an equivalent (no debug output).
 -/
 
 import CerbLocation
@@ -10,24 +9,39 @@ set_option autoImplicit true
 
 namespace CerbDebug
 
-private unsafe def debugLevelRef : IO.Ref Nat :=
-  unsafeBaseIO (IO.mkRef 0)
+/-- Debug level stored in a C global to avoid Lean's CSE on pure functions. -/
+@[extern "cerb_debug_get_level"]
+opaque getLevelIO : @& Unit → BaseIO Nat
 
-private unsafe def getLevel_impl (_ : Unit) : Nat :=
-  unsafeBaseIO debugLevelRef.get
+@[extern "cerb_debug_set_level"]
+opaque setLevelIO : @& Nat → BaseIO Unit
 
-private unsafe def setLevel_impl (n : Nat) : Unit :=
-  unsafeBaseIO (debugLevelRef.set n)
+/-- Pure wrappers used by hand-written code (Main.lean etc.).
+    Generated code uses the IO versions via effectful target_rep. -/
+private unsafe def get_level_impl (_ : Unit) : Nat :=
+  unsafeBaseIO (getLevelIO ())
 
-@[implemented_by getLevel_impl]
+private unsafe def set_level_impl (n : Nat) : Unit :=
+  unsafeBaseIO (setLevelIO n)
+
+@[implemented_by get_level_impl]
 opaque get_level : Unit → Nat
 
-@[implemented_by setLevel_impl]
+@[implemented_by set_level_impl]
 opaque set_level : Nat → Unit
 
 def output_string (_ : String) : Unit := ()
 
-def print_debug (level : Nat) (_ : List d) (msg : Unit → String) : Unit :=
+/-- print_debug — effectful version for generated code.
+    Returns BaseIO Unit so runEffectful wrapping prevents CSE. -/
+def printDebugIO (level : Nat) (_ : List d) (msg : Unit → String) : BaseIO Unit := do
+  let n ← getLevelIO ()
+  if level ≤ n then
+    dbg_trace (msg ()); pure ()
+  else
+    pure ()
+
+def print_debug (level : Nat) (ds : List d) (msg : Unit → String) : Unit :=
   if level ≤ get_level () then dbg_trace (msg ()); () else ()
 
 def print_debug_located (_ : Nat) (_ : List d) (_ : CerbLocation.Loc) (_ : Unit → String) : Unit := ()

@@ -227,7 +227,8 @@ type prefix =
 (* TODO: "nat", "int" *)
 val fresh_int: unit -> nat
 declare ocaml target_rep function fresh_int = `Cerb_fresh.int`
-declare lean target_rep function fresh_int = `CerberusFresh.fresh_int`
+declare lean target_rep function fresh_int u = `CerberusFresh.freshIntIO` u
+declare {lean} effectful val fresh_int
 
 val digest_of_sym: sym -> digest
 let digest_of_sym (Symbol dig _ _) = dig

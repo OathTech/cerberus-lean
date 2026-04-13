@@ -1,0 +1,16 @@
+#!/bin/bash
+# Wrapper to run Cerberus using the local build
+# Usage: ./scripts/cerberus [args...]
+
+source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
+set -euo pipefail
+
+require_cerberus
+
+if [[ ! -x "$CERBERUS_BIN" ]]; then
+    echo "Error: Cerberus binary not found at $CERBERUS_BIN" >&2
+    echo "Run 'make cerberus' first" >&2
+    exit 1
+fi
+
+run_cerberus "$@"

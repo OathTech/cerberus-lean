@@ -1,10 +1,9 @@
 /-
   Global mutable tag definitions state.
   Corresponds to: ocaml_frontend/tags.ml
-  Reference: lean-c-semantics uses explicit TypeEnv parameter instead.
 
-  Uses unsafe mutable IO.Ref + axiom + @[implemented_by],
-  same pattern as CerbGlobal.
+  Uses C extern functions returning BaseIO to prevent Lean's CSE.
+  The Lem `effectful` annotation wraps call sites in `runEffectful`.
 -/
 
 import Ctype
@@ -13,27 +12,33 @@ namespace CerbTags
 
 abbrev TagDefsMap := Fmap sym (CerbLocation.Loc × tag_definition)
 
-private unsafe def tagDefsRef : IO.Ref (Bool × Option TagDefsMap) :=
-  unsafeBaseIO (IO.mkRef (false, none))
+/-- IO-returning versions used by generated code via effectful target_rep -/
+@[extern "cerb_tags_get"]
+opaque tagDefsIO : @& Unit → BaseIO TagDefsMap
 
+@[extern "cerb_tags_set"]
+opaque setTagDefsIO : @& TagDefsMap → BaseIO Unit
+
+@[extern "cerb_tags_reset"]
+opaque resetTagDefsIO : @& Unit → BaseIO Unit
+
+/-- Pure wrappers used by hand-written code (Main.lean etc.) -/
 private unsafe def tagDefs_impl (_ : Unit) : TagDefsMap :=
-  match unsafeBaseIO tagDefsRef.get with
-  | (_, some v) => v
-  | (_, none) => fmapEmpty  -- empty rather than panic, for init safety
+  unsafeBaseIO (tagDefsIO ())
 
 private unsafe def set_tagDefs_impl (v : TagDefsMap) : Unit :=
-  unsafeBaseIO (tagDefsRef.set (true, some v))
+  unsafeBaseIO (setTagDefsIO v)
 
 set_option autoImplicit true in
 private unsafe def with_tagDefs_impl (td : TagDefsMap) (f : Unit → b) : b :=
-  let saved := unsafeBaseIO tagDefsRef.get
-  let _ := unsafeBaseIO (tagDefsRef.set (true, some td))
+  let saved := unsafeBaseIO (tagDefsIO ())
+  let _ := unsafeBaseIO (setTagDefsIO td)
   let ret := f ()
-  let _ := unsafeBaseIO (tagDefsRef.set saved)
+  let _ := unsafeBaseIO (setTagDefsIO saved)
   ret
 
 private unsafe def reset_tagDefs_impl (_ : Unit) : Unit :=
-  unsafeBaseIO (tagDefsRef.set (false, none))
+  unsafeBaseIO (resetTagDefsIO ())
 
 @[implemented_by tagDefs_impl]
 opaque tagDefs : Unit → TagDefsMap

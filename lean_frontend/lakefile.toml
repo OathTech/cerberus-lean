@@ -119,7 +119,9 @@ roots = [
 [[lean_exe]]
 name = "cerberus-lean"
 root = "Main"
+moreLinkArgs = ["native/fresh_int.o", "native/debug.o", "native/tags.o"]
 
 [[lean_exe]]
 name = "core-parser-test"
 root = "CoreParserTest"
+moreLinkArgs = ["native/fresh_int.o", "native/debug.o", "native/tags.o"]

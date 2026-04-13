@@ -6,6 +6,8 @@
   avoiding circular dependencies in the build.
 -/
 
+set_option autoImplicit true
+
 namespace CerberusFresh
 
 /-- Compare two digests (strings). Returns negative, zero, or positive.
@@ -21,18 +23,11 @@ def string_of_digest (x : String) : String := x
     Corresponds to: Cerb_fresh.digest -/
 def digest (_ : Unit) : String := ""
 
-/-- Fresh integer counter using unsafe mutable state.
-    Corresponds to: Cerb_fresh.int (uses a mutable ref cell in OCaml). -/
-private unsafe def freshRef : IO.Ref Nat :=
-  unsafeBaseIO (IO.mkRef 0)
-
-private unsafe def freshIntUnsafe (_ : Unit) : Nat :=
-  unsafeBaseIO do
-    let n ← freshRef.get
-    freshRef.set (n + 1)
-    return n
-
-@[implemented_by freshIntUnsafe]
-opaque fresh_int : Unit → Nat
+/-- Fresh integer counter.
+    Corresponds to: Cerb_fresh.int (uses a mutable ref cell in OCaml).
+    Returns BaseIO Nat (effectful). The Lem `effectful` annotation wraps
+    each call site in `runEffectful(...)` to prevent Lean's CSE. -/
+@[extern "cerb_fresh_int_io"]
+opaque freshIntIO : @& Unit → BaseIO Nat
 
 end CerberusFresh
