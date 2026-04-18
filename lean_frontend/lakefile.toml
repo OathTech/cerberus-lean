@@ -121,7 +121,21 @@ name = "cerberus-lean"
 root = "Main"
 moreLinkArgs = ["native/fresh_int.o", "native/debug.o", "native/tags.o"]
 
+# Test library: tests live under lean_frontend/test/ and import from
+# the main CerberusLean lib. Each test exe has root "Unit.<Name>Test".
+[[lean_lib]]
+name = "CerberusLeanTest"
+srcDir = "test"
+globs = ["Unit.+"]
+
 [[lean_exe]]
 name = "core-parser-test"
-root = "CoreParserTest"
+srcDir = "test"
+root = "Unit.CoreParserTest"
+moreLinkArgs = ["native/fresh_int.o", "native/debug.o", "native/tags.o"]
+
+[[lean_exe]]
+name = "fresh-int-test"
+srcDir = "test"
+root = "Unit.FreshIntTest"
 moreLinkArgs = ["native/fresh_int.o", "native/debug.o", "native/tags.o"]

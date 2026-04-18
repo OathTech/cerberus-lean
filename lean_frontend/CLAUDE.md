@@ -41,23 +41,55 @@ make rebuild-lem
 
 ## Testing
 
+Tests are organized into three categories:
+
+### Unit tests (fast, hermetic, no OCaml)
+
+Hand-written Lean tests under `lean_frontend/test/Unit/<Name>Test.lean`.
+Each is a `[[lean_exe]]` in `lakefile.toml` that exits 0 on pass.
+
+```bash
+./scripts/test_unit.sh                  # run all unit tests
+./scripts/test_unit.sh fresh-int-test   # run one specific test
+```
+
+Current unit tests:
+- `core-parser-test` — 240 tests for `CoreParser.lean`
+- `fresh-int-test` — verifies `fresh_int`/`Symbol.fresh` generate unique values
+
+### Integration tests (C → JSON → Lean, per parser)
+
 ```bash
 # Cabs JSON bridge: C → OCaml → JSON → Lean (233 tests, 100%)
 ./scripts/test_parse.sh              # tests/minimal (105 tests)
 ./scripts/test_parse.sh tests/ci     # upstream CI (128 tests)
 
-# Core text parser unit tests (68 tests)
-cd lean_frontend && lake build core-parser-test && .lake/build/bin/core-parser-test
-
-# Core text parser integration tests: C → cerberus --pp core → Lean CoreParser
+# Core text parser integration: C → cerberus --pp core → Lean CoreParser
 ./scripts/test_core.sh              # tests/minimal (105 tests)
 ./scripts/test_core.sh tests/ci     # upstream CI (128 tests)
+```
 
-# Self-test (sizeof, memory model)
-cd lean_frontend && .lake/build/bin/cerberus-lean
+### Golden tests (full pipeline, per stage)
 
-# End-to-end pipeline test
-cerberus --cabs-json test.c > test.json
+Golden fixtures live under `tests/fixtures/<name>/`:
+- `source.c` — the C input
+- `expected.txt` — expected final return value
+- (intermediate goldens for each stage as they come online)
+
+```bash
+./scripts/test_golden.sh return42   # run the return42 fixture
+```
+
+### Self-test
+
+```bash
+cd lean_frontend && .lake/build/bin/cerberus-lean  # sizeof, memory model
+```
+
+### End-to-end pipeline test
+
+```bash
+./scripts/cerberus --cabs-json test.c > test.json
 cd lean_frontend && .lake/build/bin/cerberus-lean ../test.json
 ```
 
