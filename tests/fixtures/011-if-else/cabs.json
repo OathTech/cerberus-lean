@@ -2002,14 +2002,14 @@
         "loc": {
           "tag": "Loc_region",
           "begin": {
-            "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/fixtures/return42/source.c",
-            "line": 1,
+            "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/011-if-else.c",
+            "line": 2,
             "col": 1
           },
           "end": {
-            "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/fixtures/return42/source.c",
-            "line": 1,
-            "col": 30
+            "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/011-if-else.c",
+            "line": 9,
+            "col": 2
           },
           "cursor": "NoCursor"
         },
@@ -2023,13 +2023,13 @@
               "loc": {
                 "tag": "Loc_region",
                 "begin": {
-                  "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/fixtures/return42/source.c",
-                  "line": 1,
+                  "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/011-if-else.c",
+                  "line": 2,
                   "col": 1
                 },
                 "end": {
-                  "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/fixtures/return42/source.c",
-                  "line": 1,
+                  "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/011-if-else.c",
+                  "line": 2,
                   "col": 4
                 },
                 "cursor": "NoCursor"
@@ -2053,13 +2053,13 @@
                 "loc": {
                   "tag": "Loc_region",
                   "begin": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/fixtures/return42/source.c",
-                    "line": 1,
+                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/011-if-else.c",
+                    "line": 2,
                     "col": 5
                   },
                   "end": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/fixtures/return42/source.c",
-                    "line": 1,
+                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/011-if-else.c",
+                    "line": 2,
                     "col": 9
                   },
                   "cursor": "NoCursor"
@@ -2081,13 +2081,13 @@
                         "loc": {
                           "tag": "Loc_region",
                           "begin": {
-                            "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/fixtures/return42/source.c",
-                            "line": 1,
+                            "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/011-if-else.c",
+                            "line": 2,
                             "col": 10
                           },
                           "end": {
-                            "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/fixtures/return42/source.c",
-                            "line": 1,
+                            "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/011-if-else.c",
+                            "line": 2,
                             "col": 14
                           },
                           "cursor": "NoCursor"
@@ -2111,14 +2111,14 @@
           "loc": {
             "tag": "Loc_region",
             "begin": {
-              "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/fixtures/return42/source.c",
-              "line": 1,
+              "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/011-if-else.c",
+              "line": 2,
               "col": 16
             },
             "end": {
-              "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/fixtures/return42/source.c",
-              "line": 1,
-              "col": 30
+              "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/011-if-else.c",
+              "line": 9,
+              "col": 2
             },
             "cursor": "NoCursor"
           },
@@ -2131,42 +2131,360 @@
                 "loc": {
                   "tag": "Loc_region",
                   "begin": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/fixtures/return42/source.c",
-                    "line": 1,
-                    "col": 18
+                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/011-if-else.c",
+                    "line": 3,
+                    "col": 3
                   },
                   "end": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/fixtures/return42/source.c",
-                    "line": 1,
-                    "col": 28
+                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/011-if-else.c",
+                    "line": 3,
+                    "col": 13
                   },
                   "cursor": "NoCursor"
                 },
                 "attrs": { "tag": "Attrs", "attrs": [] },
                 "stmt": {
-                  "tag": "CabsSreturn",
-                  "expr": {
+                  "tag": "CabsSdecl",
+                  "decl": {
+                    "tag": "Declaration_base",
+                    "attrs": { "tag": "Attrs", "attrs": [] },
+                    "specifiers": {
+                      "tag": "Specifiers",
+                      "storage_classes": [],
+                      "type_specifiers": [
+                        {
+                          "tag": "TSpec",
+                          "loc": {
+                            "tag": "Loc_region",
+                            "begin": {
+                              "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/011-if-else.c",
+                              "line": 3,
+                              "col": 3
+                            },
+                            "end": {
+                              "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/011-if-else.c",
+                              "line": 3,
+                              "col": 6
+                            },
+                            "cursor": "NoCursor"
+                          },
+                          "spec": "TSpec_int"
+                        }
+                      ],
+                      "type_qualifiers": [],
+                      "function_specifiers": [],
+                      "alignment_specifiers": []
+                    },
+                    "init_declarators": [
+                      {
+                        "tag": "InitDecl",
+                        "loc": {
+                          "tag": "Loc_region",
+                          "begin": {
+                            "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/011-if-else.c",
+                            "line": 3,
+                            "col": 7
+                          },
+                          "end": {
+                            "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/011-if-else.c",
+                            "line": 3,
+                            "col": 12
+                          },
+                          "cursor": "NoCursor"
+                        },
+                        "declarator": {
+                          "tag": "Declarator",
+                          "pointer": null,
+                          "direct": {
+                            "tag": "DDecl_identifier",
+                            "attrs": { "tag": "Attrs", "attrs": [] },
+                            "id": {
+                              "loc": {
+                                "tag": "Loc_region",
+                                "begin": {
+                                  "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/011-if-else.c",
+                                  "line": 3,
+                                  "col": 7
+                                },
+                                "end": {
+                                  "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/011-if-else.c",
+                                  "line": 3,
+                                  "col": 8
+                                },
+                                "cursor": "NoCursor"
+                              },
+                              "name": "x"
+                            }
+                          }
+                        },
+                        "initializer": {
+                          "tag": "Init_expr",
+                          "expr": {
+                            "tag": "CabsExpression",
+                            "loc": {
+                              "tag": "Loc_region",
+                              "begin": {
+                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/011-if-else.c",
+                                "line": 3,
+                                "col": 11
+                              },
+                              "end": {
+                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/011-if-else.c",
+                                "line": 3,
+                                "col": 12
+                              },
+                              "cursor": "NoCursor"
+                            },
+                            "expr": {
+                              "tag": "CabsEconst",
+                              "val": {
+                                "tag": "CabsInteger_const",
+                                "val": [ "5", null ]
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "tag": "CabsStatement",
+                "loc": {
+                  "tag": "Loc_region",
+                  "begin": {
+                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/011-if-else.c",
+                    "line": 4,
+                    "col": 3
+                  },
+                  "end": {
+                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/011-if-else.c",
+                    "line": 8,
+                    "col": 4
+                  },
+                  "cursor": "NoCursor"
+                },
+                "attrs": { "tag": "Attrs", "attrs": [] },
+                "stmt": {
+                  "tag": "CabsSif",
+                  "cond": {
                     "tag": "CabsExpression",
                     "loc": {
                       "tag": "Loc_region",
                       "begin": {
-                        "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/fixtures/return42/source.c",
-                        "line": 1,
-                        "col": 25
+                        "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/011-if-else.c",
+                        "line": 4,
+                        "col": 7
                       },
                       "end": {
-                        "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/fixtures/return42/source.c",
-                        "line": 1,
-                        "col": 27
+                        "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/011-if-else.c",
+                        "line": 4,
+                        "col": 12
+                      },
+                      "cursor": {
+                        "tag": "PointCursor",
+                        "pos": {
+                          "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/011-if-else.c",
+                          "line": 4,
+                          "col": 9
+                        }
+                      }
+                    },
+                    "expr": {
+                      "tag": "CabsEbinary",
+                      "op": "CabsGt",
+                      "lhs": {
+                        "tag": "CabsExpression",
+                        "loc": {
+                          "tag": "Loc_region",
+                          "begin": {
+                            "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/011-if-else.c",
+                            "line": 4,
+                            "col": 7
+                          },
+                          "end": {
+                            "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/011-if-else.c",
+                            "line": 4,
+                            "col": 8
+                          },
+                          "cursor": "NoCursor"
+                        },
+                        "expr": {
+                          "tag": "CabsEident",
+                          "id": {
+                            "loc": {
+                              "tag": "Loc_point",
+                              "pos": {
+                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/011-if-else.c",
+                                "line": 4,
+                                "col": 7
+                              }
+                            },
+                            "name": "x"
+                          }
+                        }
+                      },
+                      "rhs": {
+                        "tag": "CabsExpression",
+                        "loc": {
+                          "tag": "Loc_region",
+                          "begin": {
+                            "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/011-if-else.c",
+                            "line": 4,
+                            "col": 11
+                          },
+                          "end": {
+                            "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/011-if-else.c",
+                            "line": 4,
+                            "col": 12
+                          },
+                          "cursor": "NoCursor"
+                        },
+                        "expr": {
+                          "tag": "CabsEconst",
+                          "val": {
+                            "tag": "CabsInteger_const",
+                            "val": [ "3", null ]
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "then_": {
+                    "tag": "CabsStatement",
+                    "loc": {
+                      "tag": "Loc_region",
+                      "begin": {
+                        "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/011-if-else.c",
+                        "line": 4,
+                        "col": 14
+                      },
+                      "end": {
+                        "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/011-if-else.c",
+                        "line": 6,
+                        "col": 4
                       },
                       "cursor": "NoCursor"
                     },
-                    "expr": {
-                      "tag": "CabsEconst",
-                      "val": {
-                        "tag": "CabsInteger_const",
-                        "val": [ "42", null ]
-                      }
+                    "attrs": { "tag": "Attrs", "attrs": [] },
+                    "stmt": {
+                      "tag": "CabsSblock",
+                      "stmts": [
+                        {
+                          "tag": "CabsStatement",
+                          "loc": {
+                            "tag": "Loc_region",
+                            "begin": {
+                              "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/011-if-else.c",
+                              "line": 5,
+                              "col": 5
+                            },
+                            "end": {
+                              "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/011-if-else.c",
+                              "line": 5,
+                              "col": 14
+                            },
+                            "cursor": "NoCursor"
+                          },
+                          "attrs": { "tag": "Attrs", "attrs": [] },
+                          "stmt": {
+                            "tag": "CabsSreturn",
+                            "expr": {
+                              "tag": "CabsExpression",
+                              "loc": {
+                                "tag": "Loc_region",
+                                "begin": {
+                                  "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/011-if-else.c",
+                                  "line": 5,
+                                  "col": 12
+                                },
+                                "end": {
+                                  "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/011-if-else.c",
+                                  "line": 5,
+                                  "col": 13
+                                },
+                                "cursor": "NoCursor"
+                              },
+                              "expr": {
+                                "tag": "CabsEconst",
+                                "val": {
+                                  "tag": "CabsInteger_const",
+                                  "val": [ "1", null ]
+                                }
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "else_": {
+                    "tag": "CabsStatement",
+                    "loc": {
+                      "tag": "Loc_region",
+                      "begin": {
+                        "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/011-if-else.c",
+                        "line": 6,
+                        "col": 10
+                      },
+                      "end": {
+                        "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/011-if-else.c",
+                        "line": 8,
+                        "col": 4
+                      },
+                      "cursor": "NoCursor"
+                    },
+                    "attrs": { "tag": "Attrs", "attrs": [] },
+                    "stmt": {
+                      "tag": "CabsSblock",
+                      "stmts": [
+                        {
+                          "tag": "CabsStatement",
+                          "loc": {
+                            "tag": "Loc_region",
+                            "begin": {
+                              "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/011-if-else.c",
+                              "line": 7,
+                              "col": 5
+                            },
+                            "end": {
+                              "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/011-if-else.c",
+                              "line": 7,
+                              "col": 14
+                            },
+                            "cursor": "NoCursor"
+                          },
+                          "attrs": { "tag": "Attrs", "attrs": [] },
+                          "stmt": {
+                            "tag": "CabsSreturn",
+                            "expr": {
+                              "tag": "CabsExpression",
+                              "loc": {
+                                "tag": "Loc_region",
+                                "begin": {
+                                  "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/011-if-else.c",
+                                  "line": 7,
+                                  "col": 12
+                                },
+                                "end": {
+                                  "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/011-if-else.c",
+                                  "line": 7,
+                                  "col": 13
+                                },
+                                "cursor": "NoCursor"
+                              },
+                              "expr": {
+                                "tag": "CabsEconst",
+                                "val": {
+                                  "tag": "CabsInteger_const",
+                                  "val": [ "0", null ]
+                                }
+                              }
+                            }
+                          }
+                        }
+                      ]
                     }
                   }
                 }

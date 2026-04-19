@@ -1,0 +1,14 @@
+struct Point {
+  signed int x;
+  signed int y;
+};
+
+
+// declare main as function () returning signed int
+signed int main()
+{
+  struct Point p;
+  p.x = 10;
+  p.y = 20;
+  return rvalue(p.x) + rvalue(p.y);
+}

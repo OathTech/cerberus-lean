@@ -1,0 +1,54 @@
+proc main (): eff loaded integer :=
+  let strong arr: pointer =
+    create(Ivalignof('signed int[3]'), 'signed int[3]') in
+  let strong a_509: loaded array(integer) =
+    bound(
+      let weak (a_512: loaded integer, a_511: loaded integer,
+      a_510: loaded integer) =
+        unseq(pure(Specified(30)), pure(Specified(20)), pure(Specified(10))) in
+      pure(
+        Specified(Array(conv_loaded_int('signed int', a_510),
+        conv_loaded_int('signed int', a_511),
+        conv_loaded_int('signed int', a_512)))
+      )
+    ) in
+  store('signed int[3]', arr, a_509) ;
+  let strong a_524: loaded integer =
+    bound(
+      let weak a_523: pointer =
+        let weak a_513: loaded pointer =
+          let weak (a_516: loaded pointer, a_518: loaded integer) =
+            unseq(
+              let weak a_521: pointer = pure(arr) in
+              pure(Specified(array_shift(a_521, 'signed int', 0)))
+            ,
+              pure(Specified(1))
+            ) in
+          case (a_516, a_518) of
+            | (Specified(a_517: pointer), Specified(a_519: integer)) =>
+                pure(Specified(array_shift(a_517, 'signed int', a_519)))
+            | _: (loaded pointer,loaded integer) =>
+                pure(undef(<<UB_CERB004_unspecified__pointer_add>>))
+          end in
+        case a_513 of
+          | Specified(a_514: pointer) =>
+              let weak a_515: boolean =
+                memop(PtrValidForDeref, 'signed int', a_514) in
+              pure(
+                if a_515 then
+                  a_514
+                else
+                  undef(<<UB043_indirection_invalid_value>>)
+              )
+          | Unspecified(_: ctype) =>
+              pure(undef(<<UB043_indirection_invalid_value>>))
+        end in
+      load('signed int', a_523)
+    ) in
+  kill('signed int[3]', arr) ;
+  run ret_508(conv_loaded_int('signed int', a_524)) ;
+  kill('signed int[3]', arr) ;
+  pure(Unit) ;
+  save ret_508: loaded integer (a_525: loaded integer:= Specified(0)) in
+    pure(a_525)
+

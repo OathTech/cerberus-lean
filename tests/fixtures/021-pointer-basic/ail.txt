@@ -1,0 +1,7 @@
+// declare main as function () returning signed int
+signed int main()
+{
+  signed int x = 10;
+  signed int* p = &x;
+  return rvalue(*rvalue(p));
+}

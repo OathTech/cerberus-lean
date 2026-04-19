@@ -1,0 +1,11 @@
+// declare add as function (signed int, signed int) returning signed int
+signed int add(signed int a, signed int b)
+{
+  return rvalue(a) + rvalue(b);
+}
+
+// declare main as function () returning signed int
+signed int main()
+{
+  return function_decay(add)(3, 4);
+}

@@ -1,0 +1,16 @@
+proc main (): eff loaded integer :=
+  let strong x: pointer = create(Ivalignof('signed int'), 'signed int') in
+  let strong a_507: loaded integer = bound(pure(Specified(5))) in
+  store('signed int', x, conv_loaded_int('signed int', a_507)) ;
+  let strong a_509: loaded integer =
+    bound(
+      let weak a_508: pointer = pure(x) in
+      load('signed int', a_508)
+    ) in
+  kill('signed int', x) ;
+  run ret_506(conv_loaded_int('signed int', a_509)) ;
+  kill('signed int', x) ;
+  pure(Unit) ;
+  save ret_506: loaded integer (a_510: loaded integer:= Specified(0)) in
+    pure(a_510)
+

@@ -1,0 +1,9 @@
+// declare main as function () returning signed int
+signed int main()
+{
+  signed int i = 0;
+  while (rvalue(i) < 5) {
+    i = rvalue(i) + 1;
+  }
+  return rvalue(i);
+}

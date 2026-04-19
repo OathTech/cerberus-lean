@@ -1,0 +1,6 @@
+// declare main as function () returning signed int
+signed int main()
+{
+  signed int arr[3] = {[0]= 10, [1]= 20, [2]= 30};
+  return rvalue(*(array_decay(arr) + 1));
+}

@@ -1,0 +1,7 @@
+// declare main as function () returning signed int
+signed int main()
+{
+  unsigned char uc = (unsigned char) -1;
+  unsigned char uc2 = (unsigned char) 300;
+  return (signed int) rvalue(uc) + (signed int) rvalue(uc2);
+}

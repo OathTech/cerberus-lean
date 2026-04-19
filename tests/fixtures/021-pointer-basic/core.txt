@@ -1,0 +1,41 @@
+proc main (): eff loaded integer :=
+  let strong x: pointer = create(Ivalignof('signed int'), 'signed int') in
+  let strong p: pointer = create(Ivalignof('signed int*'), 'signed int*') in
+  let strong a_508: loaded integer = bound(pure(Specified(10))) in
+  store('signed int', x, conv_loaded_int('signed int', a_508)) ;
+  let strong a_509: loaded pointer =
+    bound(
+      let weak a_510: pointer = pure(x) in
+      pure(Specified(a_510))
+    ) in
+  store('signed int*', p, a_509) ;
+  let strong a_516: loaded integer =
+    bound(
+      let weak a_515: pointer =
+        let weak a_511: loaded pointer =
+          let weak a_514: pointer = pure(p) in
+          load('signed int*', a_514) in
+        case a_511 of
+          | Specified(a_512: pointer) =>
+              let weak a_513: boolean =
+                memop(PtrValidForDeref, 'signed int', a_512) in
+              pure(
+                if a_513 then
+                  a_512
+                else
+                  undef(<<UB043_indirection_invalid_value>>)
+              )
+          | Unspecified(_: ctype) =>
+              pure(undef(<<UB043_indirection_invalid_value>>))
+        end in
+      load('signed int', a_515)
+    ) in
+  kill('signed int', x) ;
+  kill('signed int*', p) ;
+  run ret_507(conv_loaded_int('signed int', a_516)) ;
+  kill('signed int', x) ;
+  kill('signed int*', p) ;
+  pure(Unit) ;
+  save ret_507: loaded integer (a_517: loaded integer:= Specified(0)) in
+    pure(a_517)
+

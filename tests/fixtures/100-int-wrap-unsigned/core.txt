@@ -1,0 +1,59 @@
+proc main (): eff loaded integer :=
+  let strong uc: pointer =
+    create(Ivalignof('unsigned char'), 'unsigned char') in
+  let strong uc2: pointer =
+    create(Ivalignof('unsigned char'), 'unsigned char') in
+  let strong a_508: loaded integer =
+    bound(
+      let weak a_509: loaded integer =
+        let weak a_512: loaded integer = pure(Specified(1)) in
+        pure(
+          case a_512 of
+            | Specified(a_511: integer) =>
+                Specified(catch_exceptional_condition_sub('signed int', 0, conv_int('signed int',
+                a_511)))
+            | Unspecified(_: ctype) =>
+                Unspecified('signed int')
+          end
+        ) in
+      pure(conv_loaded_int('unsigned char', a_509))
+    ) in
+  store('unsigned char', uc, conv_loaded_int('unsigned char', a_508)) ;
+  let strong a_514: loaded integer =
+    bound(
+      let weak a_515: loaded integer = pure(Specified(300)) in
+      pure(conv_loaded_int('unsigned char', a_515))
+    ) in
+  store('unsigned char', uc2, conv_loaded_int('unsigned char', a_514)) ;
+  let strong a_531: loaded integer =
+    bound(
+      let weak (a_518: loaded integer, a_519: loaded integer) =
+        unseq(
+          let weak a_523: loaded integer =
+            let weak a_525: pointer = pure(uc) in
+            load('unsigned char', a_525) in
+          pure(conv_loaded_int('signed int', a_523))
+        ,
+          let weak a_527: loaded integer =
+            let weak a_529: pointer = pure(uc2) in
+            load('unsigned char', a_529) in
+          pure(conv_loaded_int('signed int', a_527))
+        ) in
+      pure(
+        case (a_518, a_519) of
+          | (Specified(a_520: integer), Specified(a_521: integer)) =>
+              Specified(catch_exceptional_condition_add('signed int', __conv_int__('signed int', a_520), __conv_int__('signed int', a_521)))
+          | _: (loaded integer,loaded integer) =>
+              undef(<<UB036_exceptional_condition>>)
+        end
+      )
+    ) in
+  kill('unsigned ichar', uc) ;
+  kill('unsigned ichar', uc2) ;
+  run ret_507(conv_loaded_int('signed int', a_531)) ;
+  kill('unsigned ichar', uc) ;
+  kill('unsigned ichar', uc2) ;
+  pure(Unit) ;
+  save ret_507: loaded integer (a_532: loaded integer:= Specified(0)) in
+    pure(a_532)
+

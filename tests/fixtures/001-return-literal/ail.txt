@@ -1,0 +1,5 @@
+// declare main as function () returning signed int
+signed int main()
+{
+  return 42;
+}
