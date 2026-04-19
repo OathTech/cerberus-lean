@@ -12,6 +12,7 @@ import Ctype
 import Symbol
 import Mem_common
 import Nondeterminism
+import CerbTags
 import CerberusImpl
 import CerbFloat
 import CerbLocation
@@ -425,11 +426,38 @@ def opIval (op : integer_operator) (v1 v2 : IntegerValue) : IntegerValue :=
       | .IntDiv => if n2 == 0 then 0 else n1 / n2
       | .IntRem_t => if n2 == 0 then 0 else n1 % n2
       | .IntRem_f => if n2 == 0 then 0 else n1 % n2
-      | .IntExp => n1  -- TODO: exponentiation
+      | .IntExp => n1 ^ n2.toNat
     .IV (combineProv prov1 prov2) result
 
-def offsetofIval (_ : List (sym × (CerbLocation.Loc × tag_definition))) (_ : sym) (_ : identifier) : IntegerValue :=
-  integerIval 0  -- TODO: requires struct layout from tag definitions
+/-- Compute offsets of struct members, following impl_mem.ml:98-129 (offsetsof).
+    Returns a list of (member ident, ctype, offset).
+    For unions: all members at offset 0.
+    For structs: each member padded to its alignment. -/
+partial def offsetsofMembers (members : List (identifier × ctype))
+    : List (identifier × ctype × Nat) :=
+  let (xs, _) := members.foldl (init := ([], 0))
+    (fun (acc : List (identifier × ctype × Nat) × Nat) (memb : identifier × ctype) =>
+      let (xs, lastOffset) := acc
+      let (ident, ty) := memb
+      let size := sizeofCtype ty
+      let align := (alignofCtype ty).max 1
+      let rem := lastOffset % align
+      let pad := if rem == 0 then 0 else align - rem
+      let offset := lastOffset + pad
+      ((ident, ty, offset) :: xs, offset + size))
+  xs.reverse
+
+def offsetofIval (tagDefs : List (sym × (CerbLocation.Loc × tag_definition)))
+    (tag : sym) (memb : identifier) : IntegerValue :=
+  match tagDefs.find? (fun (s, _) => s == tag) with
+  | some (_, (_, StructDef members _)) =>
+    let mems := members.map (fun (ident, (_, _, _, ty)) => (ident, ty))
+    let offs := offsetsofMembers mems
+    match offs.find? (fun (ident, _, _) => ident == memb) with
+    | some (_, _, off) => integerIval off
+    | none => integerIval 0
+  | some (_, (_, UnionDef _)) => integerIval 0  -- all union members at offset 0
+  | none => integerIval 0  -- tag not found; caller error
 
 /-! ## Bitwise operations — impl_mem.ml:2497-2511 -/
 
@@ -559,9 +587,25 @@ def arrayShiftPtrval (pv : PointerValue) (elemTy : ctype) (iv : IntegerValue) : 
     let offset := n * (Int.ofNat elemSize)
     .PV prov (.PVconcrete um (addr + offset))
 
-/-- member_shift_ptrval — shift pointer to struct member -/
-def memberShiftPtrval (pv : PointerValue) (_ : sym) (_ : identifier) : PointerValue :=
-  pv  -- TODO: compute member offset from tag definitions
+/-- member_shift_ptrval — impl_mem.ml:2223-2242.
+    Shift pointer to struct/union member. Uses CerbTags.tagDefs () to look up
+    the struct layout. For unions, all members are at offset 0 but we record
+    which member we're pointing to (in PVconcrete's unionMember field). -/
+def memberShiftPtrval (pv : PointerValue) (tag : sym) (memb : identifier) : PointerValue :=
+  let tagDefsAsList : List (sym × (CerbLocation.Loc × tag_definition)) :=
+    CerbTags.tagDefs ()
+  let (.IV _ offsetVal) := offsetofIval tagDefsAsList tag memb
+  let isUnion := match tagDefsAsList.find? (fun (s, _) => s == tag) with
+    | some (_, (_, UnionDef _)) => true
+    | _ => false
+  let unionMem := if isUnion then some memb else none
+  match pv with
+  | .PV prov (.PVnull ty) =>
+    if offsetVal == 0 then .PV prov (.PVnull ty)
+    else .PV prov (.PVconcrete unionMem offsetVal)
+  | .PV _ (.PVfunction _) => pv  -- undefined per OCaml, but return unchanged
+  | .PV prov (.PVconcrete _ addr) =>
+    .PV prov (.PVconcrete unionMem (addr + offsetVal))
 
 def bytefromint (iv : IntegerValue) : IntegerValue :=
   match iv with | .IV prov n => .IV prov (n % 256)
@@ -852,8 +896,51 @@ def memcmpM (pv1 pv2 : PointerValue) (sizeIv : IntegerValue) : memM IntegerValue
       (NDactive (integerIval cmp), st)
     | _, _, _ => (NDactive (integerIval 0), st)
 
-def reallocM (_ : CerbLocation.Loc) (_ : Nat) (_ : IntegerValue) (pv : PointerValue) (_ : IntegerValue) : memM PointerValue :=
-  memReturn pv  -- TODO: allocate new, copy, free old
+/-- realloc — impl_mem.ml:2668-2696.
+    null → allocate_region (fresh)
+    concrete + dynamic + live + base → allocate new, memcpy, kill old
+    everything else → MerrWIP failure -/
+def reallocM (loc : CerbLocation.Loc) (tid : Nat) (align : IntegerValue)
+    (ptr : PointerValue) (size : IntegerValue) : memM PointerValue :=
+  match ptr with
+  | .PV .Prov_none (.PVnull _) =>
+    allocateRegion tid (PrefOther "realloc") align size
+  | .PV .Prov_none _ =>
+    memFail (MerrOther "realloc no provenance")
+  | .PV (.Prov_some allocId) (.PVconcrete _ addr) =>
+    ND fun st =>
+      let isDynamic := st.dynamicAddrs.contains addr
+      let isDead := st.deadAllocations.contains allocId
+      if !isDynamic then
+        (NDkilled (Other (MerrUndefinedFree Free_non_matching)), st)
+      else if isDead then
+        (NDkilled (Other (MerrUndefinedFree Free_dead_allocation)), st)
+      else match st.allocations.find? (fun (id, _) => id == allocId) with
+        | none => (NDkilled (Other (MerrOther "realloc: allocation missing")), st)
+        | some (_, alloc) =>
+          if alloc.base != addr then
+            (NDkilled (Other (MerrOther "realloc: invalid pointer (not at base)")), st)
+          else
+            -- Allocate new region, copy bytes, free old
+            let (newPtrStatus, st1) :=
+              match allocateRegion tid (PrefOther "realloc") align size with
+              | ND f => f st
+            match newPtrStatus with
+            | NDactive newPtr =>
+              match newPtr with
+              | .PV _ (.PVconcrete _ newAddr) =>
+                let copySize := match size with
+                  | .IV _ n => Nat.min alloc.size.toNat n.toNat
+                let bytes := readBytesFrom st1 addr copySize
+                let st2 := writeBytesTo st1 newAddr bytes
+                -- Kill old
+                let st3 := { st2 with
+                  deadAllocations := allocId :: st2.deadAllocations
+                  allocations := st2.allocations.filter (fun (id, _) => id != allocId) }
+                (NDactive newPtr, st3)
+              | _ => (NDactive newPtr, st1)
+            | other => (other, st1)
+  | _ => memFail (MerrOther "realloc: invalid pointer")
 
 /-! ### Prefix operations -/
 
