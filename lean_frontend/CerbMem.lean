@@ -191,8 +191,9 @@ def combineProv : Provenance → Provenance → Provenance
   | .Prov_device, .Prov_none => .Prov_device
   | .Prov_device, .Prov_some _ => .Prov_device
   | .Prov_device, .Prov_device => .Prov_device
-  | .Prov_symbolic _, _ => .Prov_none -- TODO: PNVI-ae-udi
-  | _, .Prov_symbolic _ => .Prov_none
+  -- PNVI-ae-udi only; concrete model doesn't use Prov_symbolic (impl_mem.ml:390-394)
+  | .Prov_symbolic _, _ => panic! "Concrete.combine_prov: found a Prov_symbolic"
+  | _, .Prov_symbolic _ => panic! "Concrete.combine_prov: found a Prov_symbolic"
 
 /-! ## Layout computation — for sizeof/alignof -/
 

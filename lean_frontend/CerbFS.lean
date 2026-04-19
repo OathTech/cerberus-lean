@@ -180,8 +180,26 @@ def fs_unlink (st : FsState) (path : String) : FsState × (Sum FsError Nat) :=
   let files' := st.files.filter (fun (p, _) => p != path)
   ({ st with files := files' }, .inr 0)
 
-def fs_lseek (st : FsState) (_ _ _ : Int) : FsState × (Sum FsError Nat) :=
-  (st, .inr 0)  -- TODO: update fd offset
+/-- lseek(fd, offset, whence) — update the fd's offset.
+    whence: 0 = SEEK_SET (absolute), 1 = SEEK_CUR (relative), 2 = SEEK_END. -/
+def fs_lseek (st : FsState) (fd offset whence : Int) : FsState × (Sum FsError Nat) :=
+  match st.fds.find? (fun (f, _) => f == fd.toNat) with
+  | none => (st, .inl .ebadf)
+  | some (_, entry) =>
+    let newOffset : Int := match whence with
+      | 0 => offset
+      | 1 => (entry.offset : Int) + offset
+      | 2 =>
+        match st.files.find? (fun (p, _) => p == entry.path) with
+        | some (_, contents) => (contents.length : Int) + offset
+        | none => (entry.offset : Int) + offset
+      | _ => entry.offset
+    if newOffset < 0 then (st, .inl (.other "EINVAL"))
+    else
+      let entry' := { entry with offset := newOffset.toNat }
+      let fds' := st.fds.map (fun (f, e) =>
+        if f == fd.toNat then (f, entry') else (f, e))
+      ({ st with fds := fds' }, .inr newOffset.toNat)
 
 def fs_stat (st : FsState) (path : String) : FsState × (Sum FsError FsStat) :=
   match lookupFile st path with

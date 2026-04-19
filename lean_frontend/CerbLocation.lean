@@ -130,7 +130,16 @@ def getFilename : Loc → Option String
   | .other _ => some "<internal>"
   | .point pos | .region pos _ _ | .regions ((pos, _) :: _) _ => some pos.file
 
-def isLibraryLocation (_ : Loc) : Bool := false  -- TODO: needs runtime path info
+/-- Match OCaml is_library_location (cerb_location.ml:512-522): location is
+    "library" iff the file's directory is runtime/libc/include, runtime/libcore,
+    or runtime/libcore/impls. We don't have the runtime root at this point, so
+    approximate by checking if the path contains those path fragments. -/
+def isLibraryLocation (loc : Loc) : Bool :=
+  match getFilename loc with
+  | none => false
+  | some path =>
+    path.splitOn "/" |>.any (fun seg =>
+      seg == "libcore" || seg == "include" || seg == "impls")
 
 /-! ## String conversion
     Corresponds to: cerb_location.ml:188-237 -/
