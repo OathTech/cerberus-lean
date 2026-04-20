@@ -2,13 +2,13 @@
   Pretty-printing functions for Cerberus types.
   Corresponds to: ocaml_frontend/pprinters/ (pp_core.ml, pp_ail.ml, etc.)
 
-  These are stub implementations that use Lean's Repr/ToString where available.
-  Full pretty-printing matching Cerberus output format can be implemented later
-  following lean-c-semantics/CerbLean/PrettyPrint.lean as a model.
-
-  This is a leaf module — no imports from generated code to avoid cycles.
-  Functions accept polymorphic arguments and use Repr when available.
+  Most functions are still stubs matching the Lem polymorphic target_rep
+  signatures, but a few key ones (notably stringFromCore_value) have real
+  implementations so diagnostics like "PEcase, mismatched" can show what
+  value was actually seen.
 -/
+
+import Core
 
 namespace CerbPP
 
@@ -38,7 +38,20 @@ def stringFromAil_human_ctype {α β : Type} (_ : α) (_ : β) : String := "<ail
 def stringFromCore_action {α : Type} (_ : α) : String := "<core_action>"
 def stringFromCore_ctype {α : Type} (_ : α) : String := "<core_ctype>"
 def stringFromCore_core_base_type {α : Type} (_ : α) : String := "<core_base_type>"
-def stringFromCore_value {α : Type} (_ : α) : String := "<core_value>"
+/-- Minimal pretty-printer for Core values. Surfaces just enough structure
+    to diagnose evaluator errors (e.g. PEcase pattern mismatches). -/
+partial def stringFromCore_value : value → String
+  | .Vunit => "Unit"
+  | .Vtrue => "True"
+  | .Vfalse => "False"
+  | .Vobject _ => "<Vobject>"
+  | .Vloaded lv =>
+    match lv with
+    | .LVspecified _ => "Vloaded(Specified(<ov>))"
+    | .LVunspecified _ => "Vloaded(Unspecified(<ty>))"
+  | .Vctype _ => "<Vctype>"
+  | .Vlist _ vs => "Vlist[" ++ (vs.map stringFromCore_value).foldl (fun a b => a ++ ", " ++ b) "" ++ "]"
+  | .Vtuple vs => "Vtuple(" ++ (vs.map stringFromCore_value).foldl (fun a b => a ++ ", " ++ b) "" ++ ")"
 def stringFromCore_pexpr {α : Type} (_ : α) : String := "<core_pexpr>"
 def stringFromCore_expr {α : Type} (_ : α) : String := "<core_expr>"
 def stringFromCore_params {α : Type} (_ : α) : String := "<core_params>"

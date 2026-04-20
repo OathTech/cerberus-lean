@@ -624,9 +624,27 @@ def initialMemState : MemState := {}
 /-! ## String conversion stubs -/
 
 def stringFromCtype (_ : ctype) : String := "<ctype>"
-def stringFromMemValue (_ : MemValue) : String := "<mem_value>"
-def stringFromPointerValue (_ : PointerValue) : String := "<pointer_value>"
-def stringFromIntegerValue (_ : IntegerValue) : String := "<integer_value>"
+/-- Minimal pretty-printer for diagnostics. Not a full impl of
+    Impl_mem.string_of_mem_value. -/
+partial def stringFromMemValue : MemValue → String
+  | .MVunspecified _ => "MVunspecified"
+  | .MVinteger _ (.IV _ n) => s!"MVinteger({n})"
+  | .MVfloating _ f => s!"MVfloating({f})"
+  | .MVpointer _ (.PV _ b) => s!"MVpointer({match b with
+      | .PVnull _ => "null"
+      | .PVfunction _ => "fun"
+      | .PVconcrete _ addr => s!"@{addr}"})"
+  | .MVarray vs => "MVarray[" ++ (vs.map stringFromMemValue).foldl (fun a b => a ++ ", " ++ b) "" ++ "]"
+  | .MVstruct _ _ => "MVstruct(<tag>)"
+  | .MVunion _ _ _ => "MVunion(<tag>)"
+
+def stringFromPointerValue : PointerValue → String
+  | .PV _ (.PVnull _) => "null"
+  | .PV _ (.PVfunction _) => "<funptr>"
+  | .PV _ (.PVconcrete _ addr) => s!"@{addr}"
+
+def stringFromIntegerValue : IntegerValue → String
+  | .IV _ n => toString n
 
 /-! ## CHERI stubs (not used in concrete model) -/
 
