@@ -578,14 +578,21 @@ def caseMemValue {α : Type} (mv : MemValue)
 
 /-! ## Pure pointer operations — impl_mem.ml -/
 
-/-- array_shift_ptrval — shift pointer by array index -/
+/-- array_shift_ptrval — shift pointer by array index.
+    Matches impl_mem.ml:2203-2221: GNU extension lets void be byte-granular;
+    null/function pointer arithmetic panics (per OCaml, UB in ISO C). -/
 def arrayShiftPtrval (pv : PointerValue) (elemTy : ctype) (iv : IntegerValue) : PointerValue :=
   match pv, iv with
-  | .PV _ (.PVnull _), _ => pv
-  | .PV _ (.PVfunction _), _ => pv
+  | .PV _ (.PVnull _), _ =>
+    panic! "array_shift_ptrval: shift on null pointer is UB"
+  | .PV _ (.PVfunction _), _ =>
+    panic! "array_shift_ptrval: PVfunction"
   | .PV prov (.PVconcrete um addr), .IV _ n =>
-    let elemSize := sizeofCtype elemTy
-    let offset := n * (Int.ofNat elemSize)
+    -- GNU extension: void element type → byte-granular shift (sz = 1)
+    let elemSize : Int := match elemTy with
+      | Ctype _ .Void0 => 1
+      | _ => Int.ofNat (sizeofCtype elemTy)
+    let offset := n * elemSize
     .PV prov (.PVconcrete um (addr + offset))
 
 /-- member_shift_ptrval — impl_mem.ml:2223-2242.
@@ -853,31 +860,91 @@ def diffPtrval (_ : CerbLocation.Loc) (elemTy : ctype) (pv1 pv2 : PointerValue) 
 
 /-! ### Pointer validity -/
 
-def validForDerefPtrval (_ : ctype) (pv : PointerValue) : memM Bool :=
-  ND fun st =>
-    let result := match pv with
-      | .PV _ (.PVnull _) | .PV _ (.PVfunction _) => false
-      | _ => (getAllocation st pv).isSome
-    (NDactive result, st)
+/-- Strip Atomic wrapper — mirrors OCaml unatomic_. -/
+private def unatomic_ : ctype → ctype_
+  | Ctype _ (.Atomic inner) => match inner with | Ctype _ t => t
+  | Ctype _ t => t
 
+/-- isWellAligned_ptrval — impl_mem.ml:2065-2083.
+    Fails on void or function ref_ty. Fails on function pointers.
+    True for null pointers. For concrete: checks addr % alignof == 0. -/
 def isWellAlignedPtrval (ty : ctype) (pv : PointerValue) : memM Bool :=
-  memReturn (match pv with
-    | .PV _ (.PVnull _) | .PV _ (.PVfunction _) => true
-    | .PV _ (.PVconcrete _ addr) => addr % (alignofCtype ty).max 1 == 0)
+  match unatomic_ ty with
+  | .Void0 =>
+    memFail (MerrOther "called isWellAligned_ptrval on void")
+  | .Function _ _ _ | .FunctionNoParams _ =>
+    memFail (MerrOther "called isWellAligned_ptrval on a function type")
+  | _ =>
+    match pv with
+    | .PV _ (.PVnull _) => memReturn true
+    | .PV _ (.PVfunction _) =>
+      memFail (MerrOther "called isWellAligned_ptrval on function pointer")
+    | .PV _ (.PVconcrete _ addr) =>
+      memReturn (addr % (alignofCtype ty).max 1 == 0)
+
+/-- validForDeref_ptrval — impl_mem.ml:2086-2123 (§6.5.3.3 footnote 102).
+    Null/function pointer → false.
+    Prov_none → false.
+    Prov_device → checks alignment.
+    Prov_some → checks !is_dead && well-aligned. -/
+def validForDerefPtrval (ty : ctype) (pv : PointerValue) : memM Bool :=
+  ND fun st =>
+    match pv with
+    | .PV _ (.PVnull _) | .PV _ (.PVfunction _) =>
+      (NDactive false, st)
+    | .PV .Prov_none _ =>
+      (NDactive false, st)
+    | .PV .Prov_device _ =>
+      -- Device pointer: only check alignment (no liveness tracking)
+      match isWellAlignedPtrval ty pv with
+      | ND f => f st
+    | .PV (.Prov_some allocId) _ =>
+      if st.deadAllocations.contains allocId then
+        (NDactive false, st)
+      else
+        match isWellAlignedPtrval ty pv with
+        | ND f => f st
+    | .PV (.Prov_symbolic _) _ =>
+      -- PNVI-ae-udi: concrete model shouldn't see this; fail loudly
+      (NDkilled (Other (MerrOther "validForDerefPtrval: Prov_symbolic in concrete model")), st)
 
 /-! ### Pointer casts -/
 
-def ptrfromint (_ : CerbLocation.Loc) (_ : integerType) (_ : ctype) (iv : IntegerValue) : memM PointerValue :=
+/-- wrapI: wrap `n` into range [min, max] per C's unsigned conversion. -/
+private def wrapI (n : Int) (lo hi : Int) : Int :=
+  let dlt := hi - lo + 1
+  let r := n % dlt
+  let r := if r < 0 then r + dlt else r
+  if r <= hi then r else r - dlt
+
+/-- ptrfromint — impl_mem.ml:2126-2173.
+    Wrap to pointer range, preserve provenance. n==0 → null pointer.
+    (Skips the PNVI allocation-finding — concrete model uses PVI.) -/
+def ptrfromint (_ : CerbLocation.Loc) (_ : integerType) (refTy : ctype)
+    (iv : IntegerValue) : memM PointerValue :=
   match iv with
-  | .IV prov n =>
-    if n == 0 then memReturn (nullPtrval (mkCtype Void0))
+  | .IV prov nRaw =>
+    -- Wrap to [0, 2^(8*ptrSize) - 1]
+    let hi : Int := (2 : Int) ^ (targetPtrSize * 8) - 1
+    let n := wrapI nRaw 0 hi
+    if n == 0 then memReturn (.PV .Prov_none (.PVnull refTy))
     else memReturn (.PV prov (.PVconcrete none n))
 
-def intfromptr (_ : CerbLocation.Loc) (_ : ctype) (_ : integerType) (pv : PointerValue) : memM IntegerValue :=
-  memReturn (match pv with
-    | .PV prov (.PVnull _) => .IV prov 0
-    | .PV prov (.PVfunction _) => .IV prov 0
-    | .PV prov (.PVconcrete _ addr) => .IV prov addr)
+/-- intfromptr — impl_mem.ml:2439-2461.
+    For concrete pointer: validate address fits in target integer type,
+    fail with MerrIntFromPtr on overflow. -/
+def intfromptr (loc : CerbLocation.Loc) (_ : ctype) (ity : integerType)
+    (pv : PointerValue) : memM IntegerValue :=
+  match pv with
+  | .PV prov (.PVnull _) => memReturn (.IV prov 0)
+  | .PV prov (.PVfunction (Symbol _ n _)) => memReturn (.IV prov n)
+  | .PV prov (.PVconcrete _ addr) =>
+    let (.IV _ ityMin) := minIval ity
+    let (.IV _ ityMax) := maxIval ity
+    if addr < ityMin || ityMax < addr then
+      memFail (MerrIntFromPtr)
+    else
+      memReturn (.IV prov addr)
 
 /-! ### Effectful pointer shifts -/
 
