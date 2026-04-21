@@ -3799,7 +3799,7 @@ and desugar_statement_aux ctx (CabsStatement loc attrs stmt_) =
               (desugar_statement_aux ctx' s) >>= fun d_s ->
             E.return (d_e, d_s)
           end >>= fun (d_e, d_s) ->
-          let loop_id = Symbol.fresh_int () in
+          E.fresh_sym_int () >>= fun loop_id ->
           E.record_loop_attribute loop_id attrs (Loc.locOf e) loc >>= fun () ->
           if has_continue s then
             (* while (E) S  ==>  while (E) { S; cont: ;} *)
@@ -3831,7 +3831,7 @@ and desugar_statement_aux ctx (CabsStatement loc attrs stmt_) =
             desugar_expression e >>= fun d_e ->
             E.return (d_e, d_s)
           end >>= fun (d_e, d_s) ->
-          let loop_id = Symbol.fresh_int () in
+          E.fresh_sym_int () >>= fun loop_id ->
           E.record_loop_attribute loop_id attrs (Loc.locOf e) loc >>= fun () ->
           if has_continue s then
             (* do S (E)  ==>  do { S; cont: ;} (E) *)
@@ -3862,7 +3862,7 @@ and desugar_statement_aux ctx (CabsStatement loc attrs stmt_) =
               check_storage_class_specifiers loc Object_decl_context specifs.storage_classes >>= fun () ->
               desugar_init_declarator attrs isAtomic (specifs.alignment_specifiers <> []) base_qs base_ty specifs.storage_classes init
             ) idecltors  >>= fun xs ->
-            let loop_id = Symbol.fresh_int () in
+            E.fresh_sym_int () >>= fun loop_id ->
             E.record_loop_attribute loop_id attrs_outer (match e2_opt with Just e2 -> Loc.locOf e2 | Nothing -> Loc.unknown end) loc >> 
             (* for each [init_declarator] *)
             E.foldrM (fun opt (acc1, acc2) ->
@@ -3961,7 +3961,7 @@ and desugar_statement_aux ctx (CabsStatement loc attrs stmt_) =
           E.freshify (Symbol.Identifier loc "__cerb_continue") >>= fun cont_ident ->
           E.register_label cont_ident >>
           E.resolve_label cont_ident >>= fun cont_sym ->
-          let loop_id = Symbol.fresh_int () in
+          E.fresh_sym_int () >>= fun loop_id ->
           E.record_loop_attribute loop_id attrs (match e2_opt with Just e2 -> Loc.locOf e2 | Nothing -> Loc.unknown end) loc >>
           let ctx' =
             <| cont_ident_opt= Just cont_ident |> in

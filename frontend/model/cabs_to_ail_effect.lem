@@ -225,6 +225,11 @@ type state = <|
   (* Counter used to generate fresh cabs label names (see the desugaring of do-while statements) *)
   aux_supply: nat;
   scope_id_supply: nat;
+  (* Counter for fresh Symbol.sym values. Threaded through desugM to avoid
+     relying on Symbol.fresh_int's hidden mutable state (which Lean's CSE
+     collapses). OCaml-side target_reps can still use Cerb_fresh.int via the
+     old API; this field gives the Lean backend a deterministic counter. *)
+  fresh_sym_supply: nat;
   (* table (with stacked scopes) associating C identifiers to symbols *)
   
   registered_external_identifiers: map (Symbol.identifier * namespace) (scope * (A.ail_identifier * identifier_kind * maybe linkage));
@@ -560,6 +565,7 @@ let initial_state core_eval_stuff cn_eval_stuff = <|
   inner= <|
     aux_supply=      0;
     scope_id_supply= 0;
+    fresh_sym_supply= 0;
     
     registered_external_identifiers= Map.empty;
     registered_identifiers=      Scope_table.empty;
@@ -604,9 +610,47 @@ let initial_state core_eval_stuff cn_eval_stuff = <|
 (*   let cn_state = Cn_desugaring.set_c_identifier_env env st.inner.cn_state in *)
 (*   <| st with inner= <| st.inner with cn_state = cn_state |> |> *)
 
+(* State-threaded fresh-symbol helpers.  These bump fresh_sym_supply and
+   return a new Symbol.sym, making the effect explicit in the desugM monad.
+   Callers that currently use Symbol.fresh/fresh_pretty/etc. directly should
+   migrate to these — otherwise Lean's CSE on the pure Symbol.fresh* will
+   produce duplicate IDs and trigger UB015. *)
+val fresh_sym_int: unit -> desugM nat
+let fresh_sym_int () =
+  modify_inner (fun st ->
+    let n = st.fresh_sym_supply in
+    (n, <| st with fresh_sym_supply= n+1 |>)
+  )
+
+val fresh_sym: unit -> desugM Symbol.sym
+let fresh_sym () =
+  fresh_sym_int () >>= fun n ->
+  State_exception.return (Symbol.Symbol (Symbol.digest ()) n Symbol.SD_None)
+
+val fresh_sym_pretty: string -> desugM Symbol.sym
+let fresh_sym_pretty str =
+  fresh_sym_int () >>= fun n ->
+  State_exception.return (Symbol.Symbol (Symbol.digest ()) n (Symbol.SD_Id str))
+
+val fresh_sym_cn: string -> desugM Symbol.sym
+let fresh_sym_cn str =
+  fresh_sym_int () >>= fun n ->
+  State_exception.return (Symbol.Symbol (Symbol.digest ()) n (Symbol.SD_CN_Id str))
+
+val fresh_sym_object_address: string -> desugM Symbol.sym
+let fresh_sym_object_address str =
+  fresh_sym_int () >>= fun n ->
+  State_exception.return (Symbol.Symbol (Symbol.digest ()) n (Symbol.SD_ObjectAddress str))
+
+val fresh_sym_description: Symbol.symbol_description -> desugM Symbol.sym
+let fresh_sym_description sd =
+  fresh_sym_int () >>= fun n ->
+  State_exception.return (Symbol.Symbol (Symbol.digest ()) n sd)
+
+
 val record_marker: unit -> desugM nat
 let record_marker () =
-  let id = Symbol.fresh_int () in
+  fresh_sym_int () >>= fun id ->
   begin if Global.backend_name () = "Cn" then
     get_inner >>= fun inner ->
     State_exception.update (fun old_state -> <| old_state with markers_env= Map.insert id inner old_state.markers_env |>)
@@ -707,13 +751,12 @@ let internal_register_identifier if_found ident namespace kind link_opt =
         error (Loc.stringFromLocation (Loc.locOf ident) ^ "cabs_to_ail_effect.internal_register_identifier")
   end >>
   let do_fresh () =
-    (* generates a fresh symbol *)
-    let Symbol.Identifier loc str = ident in
-    let sym = match kind with
-      | Kind_ordinary (OK_object _) ->
-         Symbol.fresh_object_address str
-      | _ -> Symbol.fresh_pretty str 
-    end in
+    (* generates a fresh symbol (state-threaded so Lean's CSE doesn't collapse IDs) *)
+    let Symbol.Identifier _ str = ident in
+    (match kind with
+      | Kind_ordinary (OK_object _) -> fresh_sym_object_address str
+      | _ -> fresh_sym_pretty str
+    end) >>= fun sym ->
     (* associates it to the identifier *)
     update_inner (fun st ->
       match link_opt with
@@ -1113,7 +1156,7 @@ let register_cn_ident ns ((Symbol.Identifier loc str) as ident) =
   | Just (s, kind) ->
      fail (Loc.locOf ident) (Errors.Desugar_CN (CNErr_redeclaration ns))
   | Nothing ->
-    let sym = Symbol.fresh_cn str in
+    fresh_sym_cn str >>= fun sym ->
     let () = Debug.print_debug 4 [] (fun () ->
         "adding a CN identifier: " ^ str ^ "(" ^ show ns ^ ")") in
     check_cn_ident ns ident >>= function
@@ -1666,7 +1709,7 @@ val register_tag: Loc.t -> tag_kind -> maybe Symbol.identifier -> desugM A.ail_i
 let register_tag loc kind = function
   | Nothing ->
       (* unnamed struct/union *)
-      return (Symbol.fresh_description (Symbol.SD_unnamed_tag loc))
+      fresh_sym_description (Symbol.SD_unnamed_tag loc)
   | Just tag_ident ->
       internal_register_identifier (fun (scope, (sym, prev_kind, _)) do_fresh ->
         current_scope_is scope >>= function
