@@ -23,19 +23,16 @@ set_option autoImplicit true
 def loadCoreStdlib (stdFile : CoreParser.CoreFile) :
     Fmap String sym × fun_map Unit :=
   let allDecls := stdFile.funs ++ stdFile.procs ++ stdFile.builtins
-  -- Assign unique symbol numbers (parser's fresh_int doesn't work in pure context)
-  let numberedDecls := (List.range allDecls.length).zip allDecls |>.map (fun (i, (s, d)) =>
-    let s' := match s with
-      | Symbol dig _ desc => Symbol dig (i + 1) desc
-    (s', d))
-  -- Build the ailnames map: function name string → symbol
-  let ailnamesList := numberedDecls.filterMap (fun (s, _) =>
+  -- CoreParser.mkSym now assigns hash-based IDs per string, so all calls
+  -- to the same-named function end up with the same symbol. No renumbering
+  -- needed — and indeed renumbering would break call sites inside function
+  -- bodies that were parsed with the original hash-based IDs.
+  let ailnamesList := allDecls.filterMap (fun (s, _) =>
     match s with
     | Symbol _ _ (SD_Id name) => some (name, s)
     | _ => none)
   let ailnames : Fmap String sym := Lem_Map.fromList ailnamesList
-  -- Build the function map: symbol → fun_map_decl
-  let funMap : fun_map Unit := Lem_Map.fromList numberedDecls
+  let funMap : fun_map Unit := Lem_Map.fromList allDecls
   (ailnames, funMap)
 
 /-- Convert impl declarations from a CoreParser.CoreFile into an impl map. -/
@@ -198,7 +195,15 @@ def runPipeline (runtimeDir : String) (tunit : translation_unit) : IO Unit := do
             IO.println s!"    at: {CerbLocation.stringFromLocation loc}"
           | .Other err =>
             match err with
-            | .DErr_core_run _ => IO.println s!"  result: Killed (core_run error)"
+            | .DErr_core_run cause =>
+              let causeStr := match cause with
+                | .Illformed_program s => s!"Illformed_program: {s}"
+                | .Found_empty_stack s => s!"Found_empty_stack: {s}"
+                | .Reached_end_of_proc => "Reached_end_of_proc"
+                | .Unknown_impl => "Unknown_impl"
+                | .Unresolved_symbol loc (Symbol _ n _) =>
+                  s!"Unresolved_symbol: Symbol(_, {n}, _) at {CerbLocation.stringFromLocation loc}"
+              IO.println s!"  result: Killed (core_run error: {causeStr})"
             | .DErr_memory merr =>
               match merr with
               | .MerrInternal s => IO.println s!"  result: Killed (memory internal: {s})"

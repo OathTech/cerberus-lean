@@ -169,9 +169,12 @@ end Lexer
 
 /-! ## Helper utilities -/
 
-/-- Construct a symbol from a parsed identifier string. -/
+/-- Construct a symbol from a parsed identifier string.
+    Uses the string's hash as the number so distinct names get distinct
+    IDs (symbol equality ignores the description — see symbolEqual in
+    symbol.lem).  This sidesteps Lean's CSE of pure `Unit → Nat` calls. -/
 private def mkSym (name : String) : sym :=
-  Symbol "" (runEffectful (fun () => CerberusFresh.freshIntIO ())) (SD_Id name)
+  Symbol "" name.hash.toNat (SD_Id name)
 
 /-- The unknown location placeholder. -/
 private def loc0 : CerbLocation.Loc := CerbLocation.unknown
