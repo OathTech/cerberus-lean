@@ -231,3 +231,34 @@ already has. Two alternatives considered and rejected:
    support files (no lem change, more drift risk)?
 4. Exemplar swap per §6 (recommended) or keep fresh_int as chartered?
 5. Fuel declare naming/shape — bless the strawman or iterate at slice 2?
+
+## 9. Scale plan (slice 3, 2026-08-18)
+
+**Effects: the goal-2 path is already converted.** After the exemplar, the
+13 remaining runEffectful sites are all translator-stage (fresh + tagDefs
+writes), which the O-B ruling leaves on the scaffold indefinitely. No
+further effects work is needed for the fuel-opsem TCB. Deferred, with
+recorded designs: fresh → consumed-stream state threading (§7c, a
+'declare {lean} state val' sibling) when a verified-translation arc wants
+it.
+
+**Totality: one mechanical arc remains for the exec slice.** ~90 of the
+306 lem-generated partials are execution-slice (Core_aux 37,
+Defacto_memory 15, Core_reduction 11, Core_eval/Core_run/Core_typing ~20).
+Strategy per the exemplar: batch `termination_argument = automatic`
+declares, let Lean's checker adjudicate, fuel the rejects (the driver/
+core_run step loops return ndM — honest error-channel sentinels exist).
+Proposed as the next arc (**arc 2: totalize-exec-slice**), mechanical
+enough for batched work, exit = zero partials in the exec-slice modules +
+the proof test extended per converted family. Translator-stage partials
+(Cabs_to_ail 50 etc.) can wait for their pipeline arcs.
+
+**Known hazards carried forward** (all recorded above): instance-method
+reader gap (fail-closed will fire visibly if pipeline work puts a lifted
+call in an instance); with_tagDefs rebinding in mini_pipeline (Phase-2
+desugar obligation); fuel wrappers restart the budget per external call
+(right for depth-bounding; revisit if a cross-call budget is ever needed).
+
+**Lem feature census for upstreaming** (Phase 4 input): effectful (fixed),
+reader, fuel, termination_argument (pre-existing), extra_import,
+skip_instances — all declare-scoped, no .lem model restructuring anywhere.
