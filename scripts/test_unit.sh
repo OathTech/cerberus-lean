@@ -46,3 +46,6 @@ echo "Total: $total_pass passed, $total_fail failed"
 if [[ $total_fail -gt 0 ]]; then
     exit 1
 fi
+
+# Purity gate for the execution slice (arc 2; reporting mode until S2).
+"$(dirname "${BASH_SOURCE[0]}")/check_exec_purity.sh"
