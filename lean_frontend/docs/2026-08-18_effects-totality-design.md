@@ -559,3 +559,27 @@ Gates: unit 3/3 (proof test green through fromJustI), parse ALL, core
 Placement lesson re-learned twice: declares FOLLOW their binding.
 Remaining in S5: S5d — the six hand-written _default_safe axioms in
 CerbInhabitedInstances.lean.
+
+## 18. S6 LANDED — the with_tagDefs divergence closed (2026-08-18)
+
+Mechanism: 'declare {lean} reader_seed val f' (lem) — a def whose FIRST
+argument is the injection value for reader-lifted callees in its body
+(lexical seeding, the static complement to the by-design-unsupported
+dynamic rebinding). mini_pipeline restructured target-neutrally:
+run_const_expr_driver tds dr_st BUILDS the driver action (driver2 binds
+its tagDefs source at construction — the audit's key mechanism insight)
+and runs it under with_tagDefs tds, so hand-written memory reads (the
+scaffold global) and generated reads (the seed) BOTH equal tds: the
+split-read divergence is closed by construction. Verified in emission:
+'(driver2 tds)'.
+
+Cascade bonus: the desugar chain's ONLY tagDefs consumer was this
+driver, so Cabs_to_ail/evalConstantExpressionAux/desugar dropped out of
+the lifted set entirely — Main's desugar seed (and its §7a staleness
+argument) is DELETED, not defended. Exactly one reader entry seed
+remains (drive, post-registration — unconditionally correct) plus the
+lexical seed with the translated definitions.
+
+Phase-2 obligation retained: an end-to-end test of the repro class
+(int a[sizeof(struct S)]) when the desugar pipeline completes.
+Gates: 3/3 unit, purity CLEAN, axiom gate OK, parse ALL, core baseline.

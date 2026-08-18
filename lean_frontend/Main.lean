@@ -134,10 +134,11 @@ def runPipeline (runtimeDir : String) (tunit : translation_unit) : IO Unit := do
   -- Desugar Cabs → AIL
   IO.println "  desugaring Cabs → AIL..."
   let cnInit := empty_init
-  -- Reader seed: desugar is reader-lifted for tagDefs (arc-1); seed with the
-  -- live global at entry, which matches the OCaml behavior (the global is
-  -- unset during desugaring — desugar threads tag defs in its own state).
-  match desugar (CerbTags.tagDefs ()) coreEvalStuff cnInit "main" tunit with
+  -- arc-2 S6: desugar is no longer reader-lifted — the constant-expression
+  -- driver (its only tagDefs consumer) now seeds itself lexically with the
+  -- translated definitions inside Mini_pipeline.run_const_expr_driver, so
+  -- the desugar chain takes no reader parameter at all.
+  match desugar coreEvalStuff cnInit "main" tunit with
   | .Result (_, (mainSym, ailProg)) =>
     IO.println s!"  desugaring succeeded!"
     IO.println s!"    main symbol: {match mainSym with | some _ => "found" | none => "not found"}"

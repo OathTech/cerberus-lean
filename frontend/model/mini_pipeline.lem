@@ -57,6 +57,26 @@ module Eff = Exception
 let inline (>>=) = Eff.bind
 
 
+(* Build and run the constant-expression driver action with [tds] as the
+   tag definitions (arc-2 S6, replacing the former inline with_tagDefs
+   extent). The action must be BUILT here: under the Lean reader lifting,
+   driver2 binds its tagDefs source at construction. On the Lean target
+   this function is reader_seed — its first argument is the injection
+   value for every lifted callee in the body — and with_tagDefs
+   additionally sets the ambient global for the run's extent so
+   hand-written memory-model reads agree with the seed (the split-read
+   divergence found by the pre-merge audit is closed: both sides = tds).
+   On OCaml this is semantically identical to the previous inline code. *)
+let run_const_expr_driver tds dr_st =
+  let driver_action =
+    ND.bind (Driver.driver2 false) (fun () ->
+      ND.bind ND.get (fun dr_st' ->
+        ND.return (Driver.finalize "Mini_pipeline" dr_st')
+      )
+    ) in
+  Ctype_aux.with_tagDefs tds (fun () -> runND_proxy driver_action dr_st)
+declare {lean} reader_seed val run_const_expr_driver
+
 val evalConstantExpressionAux:
   Loc.t -> (map string Symbol.sym) * C.fun_map unit * C.impl ->
   A.sigma unit ->
@@ -146,16 +166,12 @@ let evalConstantExpressionAux loc (*TODO*)(ailnames, stdlib_fun_map, impl) sigm 
            Driver.core_state= core_st;
            Driver.core_run_state= run_st |> in
         
-        (* run the evaluator *)
-        let driver_action =
-          ND.bind (Driver.driver2 false) (fun () ->
-            ND.bind ND.get (fun dr_st' ->
-              ND.return (Driver.finalize "Mini_pipeline" dr_st')
-            )
-          ) in
-        let execs = Ctype_aux.with_tagDefs (Translation.translate_tag_definitions sigm.A.tag_definitions) begin
-          fun () -> runND_proxy driver_action dr_st
-        end in
+        (* run the evaluator (arc-2 S6: built AND run inside
+           run_const_expr_driver so the Lean reader seeding covers the
+           action's construction — see that function's comment) *)
+        let execs = run_const_expr_driver
+                      (Translation.translate_tag_definitions sigm.A.tag_definitions)
+                      dr_st in
         match execs with
           | [(ND.Active dres, _, _ )] ->
               Eff.return dres.Driver.dres_core_value
