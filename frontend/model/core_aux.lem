@@ -2501,3 +2501,47 @@ let rec lookup_env sym = function
       end
 end
 
+
+
+(* === Totality declares (arc 3 sweep, 2026-08-18): Lean-target only.
+   Structural recursions -> termination_argument automatic.
+   Fuel cases (fuelExhausted witness panics at runtime, typing only):
+   substitution family recurses under List.map/foldr over pair lists
+   (Ecase/Ctuple/zip shapes) -> witness the expression/env input;
+   loadedValueFromMemValue recurses via the caseMemValue eliminator and
+   memValueFromValue under a foldr; to_pure/to_pures are a cyclic mutual
+   pair (fuel both) and to_pure recurses on subst_pattern output;
+   collect_saves_aux/m_collect_saves_aux pass themselves point-free to
+   List.foldl -> witness the accumulator st.
+   find_labeled_continuation / update_env_aux: pair-list recursion under
+   foldl / foldr-over-zip (automatic rejected) -> fuel; both carry class
+   constraints ([Eq0 'a] / [MapKeyType 'a]), which the fuel wrapper
+   re-emits since the arc-3 batch-D backend fix. === *)
+declare {lean} termination_argument mk_list_pat = automatic
+declare {lean} termination_argument mk_list_pe = automatic
+declare {lean} termination_argument mk_sseqs = automatic
+declare {lean} termination_argument mk_unit_sseq = automatic
+declare {lean} termination_argument mk_bTy_sseqs = automatic
+declare {lean} termination_argument concat_sseq = automatic
+declare {lean} termination_argument select_case = automatic
+declare {lean} termination_argument lookup_env = automatic
+declare {lean} termination_argument collect_labeled_continuations = automatic
+declare {lean} fuel val in_pattern = `fuelExhausted false`
+declare {lean} fuel val subst_wait = `fuelExhausted g`
+declare {lean} fuel val find_labeled_continuation2_aux = `fuelExhausted acc`
+declare {lean} fuel val loadedValueFromMemValue = `fuelExhausted (OTy_integer, LVunspecified (Ctype [] Void0))`
+declare {lean} fuel val memValueFromValue = `fuelExhausted none`
+declare {lean} fuel val subst_sym_pexpr = `fuelExhausted g`
+declare {lean} fuel val subst_sym_expr = `fuelExhausted g`
+declare {lean} fuel val subst_pattern_val = `fuelExhausted expr1`
+declare {lean} fuel val unsafe_subst_sym_pexpr = `fuelExhausted g0`
+declare {lean} fuel val unsafe_subst_sym_expr = `fuelExhausted g`
+declare {lean} fuel val unsafe_subst_pattern = `fuelExhausted expr1`
+declare {lean} fuel val subst_pattern = `fuelExhausted none`
+declare {lean} fuel val match_pattern = `fuelExhausted none`
+declare {lean} fuel val to_pure = `fuelExhausted none`
+declare {lean} fuel val to_pures = `fuelExhausted none`
+declare {lean} fuel val collect_saves_aux = `fuelExhausted st`
+declare {lean} fuel val m_collect_saves_aux = `fuelExhausted st`
+declare {lean} fuel val find_labeled_continuation = `fuelExhausted none`
+declare {lean} fuel val update_env_aux = `fuelExhausted env1`
