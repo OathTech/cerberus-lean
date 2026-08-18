@@ -238,8 +238,14 @@ type core_run_state = <|
   (* Symbol-id supply for symbols created DURING execution (arc-2 S1):
      threaded like the other supplies instead of the ambient
      Symbol.fresh counter, so the run relation is a pure function of its
-     state. Seeded below from the ambient counter (one read at init) so
-     run-phase ids cannot collide with translation-phase ids. *)
+     state. Seeded below from the ambient counter (one read at init).
+     PRECISE invariant (audit-corrected): ids are unique WITHIN a driver
+     run, and distinct from all ambient ids drawn BEFORE that run's
+     init. A run's threaded range can overlap ambient ids drawn AFTER
+     init (e.g. desugaring resuming past a mid-desugar const-expr run) —
+     latent-safe because run-created symbols do not escape their run
+     (they appear only as arena binders and Load value names); a
+     Phase-2 differential obligation asserts non-escape. *)
   sym_supply:      nat;
   
   (* Pre-calculated map of labeled continuations (aka. save()).

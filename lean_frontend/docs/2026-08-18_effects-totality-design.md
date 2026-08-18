@@ -583,3 +583,50 @@ lexical seed with the translated definitions.
 Phase-2 obligation retained: an end-to-end test of the repro class
 (int a[sizeof(struct S)]) when the desugar pipeline completes.
 Gates: 3/3 unit, purity CLEAN, axiom gate OK, parse ALL, core baseline.
+
+## 19. Arc-2 S7 audit results and dispositions (2026-08-18)
+
+Two adversarial auditors (model patches + OCaml preservation; the four
+backend mechanisms). Dispositions:
+
+FIXED on the branches:
+- [HIGH] S5d regression: the edit DELETED the real kill_reason instance,
+  so nd_action/ndM/nd_status defaults bottomed out in DAEMON again
+  (probe-proven by the audit). Restored; probes now show empty cones for
+  all three WITH CerbInhabitedInstances in scope.
+- [HIGH-latent] reader_seed multi-reader conflation + mutual-block
+  acceptance: two fail-closed guards added (lem side).
+- [MEDIUM] core_run_aux.lem's uniqueness comment overclaimed: corrected
+  to the precise invariant (unique within a run; distinct from ambient
+  ids drawn BEFORE init; ranges may overlap ambient ids drawn AFTER a
+  mid-desugar run — latent-safe: run symbols do not escape their run;
+  Phase-2 differential obligation records the non-escape assertion).
+
+CORRECTED CLAIMS (this note is the record):
+- §17's "232 sites axiom-free" overclaims: failwithI itself is
+  axiom-free, but each site consumes an Inhabited instance, and for
+  generated inductives inside generated modules that instance is the
+  low-priority DAEMON fallback — CerbInhabitedInstances is an import
+  LEAF (circularity prevents generated modules importing it), so its
+  real instances serve only importers (Main, tests, and all four
+  gate-pinned exemplar cones — which is what the merge bar requires).
+  Eliminating generated-fallback DAEMON = real derived defaults in the
+  backend: C-tier, future arc, with the April-churn record as its map.
+
+RECORDED, accepted:
+- Panic-continuation shape: real defaults mean a panic inside a partial
+  def now yields a well-formed error value downstream instead of
+  unsafeCast garbage; fail-loud hardening deferred.
+- fromJustI ground sites panic with the raw debug_str (OCaml wraps it in
+  "Global.fromJust(...)") — failure-path text only.
+- canonicalize_ids matches any name_digits token (e.g. x86_64) —
+  acceptable for both-sides application; purity-gate allowlist is
+  line-granular — acceptable, entries stay few and justified.
+- Over-applied failwith emits uncompilable Lean (pre-existing, visible).
+- Fuel sentinel text is invisible to attribute scanning (theoretical;
+  sole sentinel is a plain panic def).
+
+MERGE-MANDATORY (folded into the merge steps): bump deps/lem-pinned
+(opam pin, branch cerberus-pin) to the merged lem commit — the installed
+lem predates ground_rep/reader_seed and cannot parse the model otherwise
+— and refresh the container CLAUDE.md's pin references.

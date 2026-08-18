@@ -41,6 +41,9 @@ instance {a : Type} : Inhabited (parserM a) where
 -- partial defs actually use; a failure to resolve is a visible compile
 -- error at the def, never a hidden inconsistency.
 
+instance {err : Type} : Inhabited (kill_reason err) where
+  default := Undef0 default default
+
 instance {a : Type} {msg : Type} [Inhabited msg] : Inhabited (exceptM a msg) where
   default := Exception default
 
