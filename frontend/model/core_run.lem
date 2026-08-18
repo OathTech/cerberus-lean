@@ -112,6 +112,13 @@ let fresh_action_id' =
     (aid, <| run_st with aid_supply= aid+1 |>)
   )
 
+val fresh_symbol': State.stateM Symbol.sym core_run_state
+let fresh_symbol' =
+  State.modify (fun run_st ->
+    let n = run_st.sym_supply in
+    (Symbol.fresh_given_int n, <| run_st with sym_supply= n+1 |>)
+  )
+
 
 
 
@@ -182,6 +189,9 @@ module E = struct
   
   let fresh_action_id =
     SEU.runS fresh_action_id'
+  
+  let fresh_symbol =
+    SEU.runS fresh_symbol'
 end
 open SEU.Operators
 
@@ -582,7 +592,7 @@ KKK
           | (Just (Vctype ty), Just (Vobject (OVpointer ptr_val))) ->
               Step_action_request "LoadRequest" (
                 E.fresh_action_id >>= fun load_aid ->
-                let val_sym = Symbol.fresh () in
+                E.fresh_symbol >>= fun val_sym ->
                 E.return (
                   LoadRequest loc sb_before dd_before asw_before
                     load_aid current_tid mo ty ptr_val val_sym

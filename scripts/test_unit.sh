@@ -6,6 +6,8 @@
 #   With no args, runs all tests.
 #   With a name, runs just that test (e.g. fresh-int-test).
 
+# Resolved before any cd (used by the exec-purity gate at the end).
+PURITY_SH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/check_exec_purity.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 set -euo pipefail
 
@@ -47,5 +49,10 @@ if [[ $total_fail -gt 0 ]]; then
     exit 1
 fi
 
-# Purity gate for the execution slice (arc 2; reporting mode until S2).
-"$(dirname "${BASH_SOURCE[0]}")/check_exec_purity.sh"
+# Purity gate for the execution slice (arc 2; ENFORCING since S2).
+# Absolute path resolved up front (the test loop cd's around), and the
+# hook FAILS CLOSED: a missing or failing script fails the suite.
+if ! "$PURITY_SH"; then
+    echo "test_unit: exec-purity gate FAILED"
+    exit 1
+fi

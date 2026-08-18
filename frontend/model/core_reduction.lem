@@ -32,6 +32,9 @@ module E = struct
     (n, <| run_st with excluded_supply= n+1 |>)
   )
   
+  let fresh_symbol =
+    SEU.runS Core_run.fresh_symbol'
+  
   let eval_pexpr2 th_st core_extern mem_st file pe =
     let current_call_loc_opt =
       match th_st.exec_loc with
@@ -1221,6 +1224,10 @@ let step_ctx mem_st file core_extern current_tid (parent_tid_opt, th_st) =
                   match (cval1, cval2) with
                     | (Vctype ty, Vobject (OVpointer ptrval)) ->
                         E.fresh_excluded_id >>= fun n ->
+                        (* hoisted from the pure result-callback below (arc-2
+                           S1): the callback runs outside the monad, so the
+                           fresh symbol is drawn here and captured *)
+                        E.fresh_symbol >>= fun rmw_sym ->
                         E.return begin
                           SeqRMWRequest2 ty ptrval (fun mval ->
                             let th_st_tmp =
@@ -1248,7 +1255,7 @@ let step_ctx mem_st file core_extern current_tid (parent_tid_opt, th_st) =
                                     error "TODO: NO_BOUND (SeqRMW)"
                                 | BOUND_NO_SSEQ ctx_bound ctxA ->
                                     let ctxA' = add_exclusion n ctxA in
-                                    let sym = Symbol.fresh () in
+                                    let sym = rmw_sym in
                                     let expr' =
                                       Caux.mk_wseq_e (Caux.mk_tuple_pat [ Caux.mk_empty_pat BTy_unit(*TODO:HACKHACK*)
                                                                         ; Caux.mk_sym_pat sym BTy_unit(*TODO:HACKHACK*) ])
@@ -1291,7 +1298,7 @@ let step_ctx mem_st file core_extern current_tid (parent_tid_opt, th_st) =
                           Step_with_runstate2 (RSK_tau debug_str Core_run.TSK_Misc) begin
                             E.fresh_excluded_id >>= fun n ->
                             let ctxA' = add_exclusion n ctxA in
-                            let sym = Symbol.fresh () in
+                            E.fresh_symbol >>= fun sym ->
                             let expr' =
                               Caux.mk_wseq_e (Caux.mk_tuple_pat [ Caux.mk_empty_pat BTy_unit(*TODO:HACKHACK*)
                                                                 ; Caux.mk_sym_pat sym BTy_unit(*TODO:HACKHACK*) ])

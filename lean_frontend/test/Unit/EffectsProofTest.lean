@@ -14,6 +14,7 @@ import Core_aux
 import Ctype_aux
 import Ctype
 import Symbol
+import Core_run
 
 set_option autoImplicit true
 
@@ -59,9 +60,29 @@ example (f : Nat) (td : Fmap sym (a × tag_definition)) (an : List annot)
     zeros_aux_lemFuel (Nat.succ f) td (Ctype an (Basic (Integer ity)))
       = CerbMem.integerValueMval ity (CerbMem.integerIval 0) := rfl
 
+/-! ### Threaded symbol supply (arc-2 S1/S2): fresh_symbol' is a pure
+    function of the run state — the theorems the ambient counter could
+    never support. Kernel-only proofs, symbolic in the whole state. -/
+
+private def symId : sym → Nat | .Symbol _ n _ => n
+
+/-- The drawn symbol's id IS the supply. -/
+example (s : core_run_state) : symId (fresh_symbol' s).1 = s.sym_supply := rfl
+
+/-- Drawing advances the supply by exactly one. -/
+example (s : core_run_state) :
+    ((fresh_symbol' s).2).sym_supply = s.sym_supply + 1 := rfl
+
+/-- Two successive draws are distinct — the uniqueness fact the opsem
+    needs, now PROVABLE because the supply is threaded state. -/
+example (s : core_run_state) :
+    (fresh_symbol' s).1 ≠ (fresh_symbol' (fresh_symbol' s).2).1 := fun h =>
+  Nat.succ_ne_self s.sym_supply (congrArg symId h).symm
+
 def main : IO UInt32 := do
   IO.println "effects-proof-test: all theorems checked at compile time"
   IO.println "  total core_object_type_of_ctype: 3 symbolic rfl theorems"
   IO.println "  reader-lifted get_membersDefs: 1 concrete lookup theorem"
   IO.println "  fuel-threaded zeros_aux: wrapper defeq + symbolic integer case"
+  IO.println "  threaded sym_supply: id/advance/distinctness, symbolic in the state"
   return 0

@@ -30,13 +30,16 @@ FORBIDDEN='runEffectful|[^_[:alnum:]]fresh[[:space:]]*\(|fresh_pretty|fresh_cn[^
 
 # ALLOWLIST: exact substrings that are sanctioned exceptions. Each entry
 # must cite its justification here.
-#   initial_sym_supply — the ONE seeding read at core-run-state init
-#     (arc-2 charter S1: OCaml reads Cerb_fresh.int once; Lean reads the
-#     scaffold counter once at the hand-written seam). Everything past
-#     init is threaded through sym_supply.
-ALLOWLIST=(initial_sym_supply)
+#   initial_core_run_state — contains the ONE ambient read
+#     (Symbol.fresh_int at sym_supply init; arc-2 S1): seeds the threaded
+#     supply from the translation-phase counter so run-phase symbol ids
+#     cannot collide with translation-phase ids. Everything past init is
+#     threaded. The def carries @[never_extract, noinline] (effectful
+#     emission), so the seed reads at call time, never cached.
+ALLOWLIST=(initial_core_run_state)
 
-ENFORCE="${CERB_PURITY_ENFORCE:-0}"
+# Enforcing by default since S2 (arc-2 charter).
+ENFORCE="${CERB_PURITY_ENFORCE:-1}"
 
 findings=0
 for m in "${EXEC_MODULES[@]}"; do

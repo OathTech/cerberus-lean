@@ -256,6 +256,13 @@ let fresh_fancy = function
   | Nothing  -> fresh ()
 end
 
+(* Build a symbol from an EXPLICITLY SUPPLIED id (arc-2 S1): the pure
+   counterpart of fresh, for callers that thread their own supply (see
+   core_run_state.sym_supply). *)
+val fresh_given_int: nat -> sym
+let fresh_given_int n =
+  Symbol (digest()) n SD_None
+
 let fresh_object_address name =
   Symbol (digest()) (fresh_int ()) (SD_ObjectAddress name)
 

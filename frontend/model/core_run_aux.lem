@@ -235,6 +235,12 @@ type core_run_state = <|
   tid_supply:      Mem_common.thread_id;
   aid_supply:      Cmm_csem.aid;
   excluded_supply: nat;
+  (* Symbol-id supply for symbols created DURING execution (arc-2 S1):
+     threaded like the other supplies instead of the ambient
+     Symbol.fresh counter, so the run relation is a pure function of its
+     state. Seeded below from the ambient counter (one read at init) so
+     run-phase ids cannot collide with translation-phase ids. *)
+  sym_supply:      nat;
   
   (* Pre-calculated map of labeled continuations (aka. save()).
      the map is over procedure symbols (NOTE: read-only) *)
@@ -271,6 +277,8 @@ let initial_core_run_state xs = <|
   tid_supply=      0;
   aid_supply=      0;
   excluded_supply= 0;
+  (* the ONE ambient read: everything after init is threaded *)
+  sym_supply=      Symbol.fresh_int ();
   
   (*env=     [Map.empty];*)
   labeled= xs;
