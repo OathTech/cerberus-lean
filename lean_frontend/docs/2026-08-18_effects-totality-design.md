@@ -335,3 +335,29 @@ Also required regardless of choice: DAEMON repair (Phase 1, promoted) and
 mini_pipeline restructuring (port-local, unprotected). The requirement
 set is NOT unsatisfiable on current evidence — but it requires choosing
 R1 or R2, and that choice is the user's.
+
+## 12. §11 resolution direction (discussion, 2026-08-18): R1 + id-insensitive differential
+
+Measurement collapsed the R1 cost: the exec-slice fresh closure is FIVE
+defs (step_ctx, core_action_step + 3 transitive callers in Core_run /
+Core_reduction / Driver). And the user's observation — make the
+differential id-insensitive — removes R1's one brittle invariant:
+
+- Verdict-level differential is already id-insensitive (symbol numbers
+  never flow into values). Trace/golden comparison gets a first-occurrence
+  alpha-canonicalization normalizer (both sides; also thread ids). This
+  forgives sequence offsets without masking structural divergence.
+- The remaining requirement is within-Lean uniqueness only (exec-phase
+  numbers must not collide with translation-phase numbers —
+  symbolEquality discriminates on n): one seed line at the drive seam
+  (threaded counter starts at the scaffold counter's value), locally
+  auditable, and eventually provable (counter monotonicity lemma over the
+  threaded state).
+- R2 (model-level threading) is retired as the near-term plan but remains
+  the principled endgame if upstream cerberus wants explicit threading;
+  R1 does not foreclose it (the .lem stays pristine).
+
+Mechanism for arc 2: 'declare {lean} state val' — deliberately
+restricted (first-order, non-mutual, fail-closed on everything exotic),
+threading (counter →) and (× counter) through the five-def chain,
+terminating at the hand-written driver-state seam. AWAITING USER RULING.
