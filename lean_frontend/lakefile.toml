@@ -11,7 +11,9 @@ rev = "v4.29.0"
 [[require]]
 name = "LemLib"
 git = "https://github.com/septract/lem-lean"
-rev = "mdd/lean-backend"
+# Arc pin (charter pin-dance): tracks the lem arc branch during
+# arc/effects-totality; moves to the merged mdd/lean-backend commit at close.
+rev = "arc/effects-totality"
 subDir = "lean-lib"
 
 [[lean_lib]]

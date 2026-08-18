@@ -603,9 +603,12 @@ let rec zeros_aux tagDefs (Ctype _ ty) =
 
 (* Arc-1 totality: zeros_aux is NOT structurally recursive — the Struct/Union
    cases recurse on member types fetched from tagDefs (env-mediated, the
-   golean '.defined through the environment' class). Lean's checker rejects
-   it (verified 2026-08-18); it stays 'partial' pending the fuel mechanism,
-   for which it is the designated first candidate. *)
+   golean '.defined-through-the-environment' class; Lean's checker rejects
+   it, verified 2026-08-18). Fuel-threaded instead: the worker is total,
+   fuel bounds type-nesting depth only, and exhaustion panics like the
+   existing failwith invariant branches (a well-formed program never
+   reaches it). *)
+declare {lean} fuel val zeros_aux = `CerbMem.zerosFuelExhausted ()`
 
 val zeros: core_tag_definitions -> ctype -> pexpr
 let zeros tagDefs ty =

@@ -185,6 +185,21 @@ slice-2 iteration.
   (impossible over the extern scaffold — the state was invisible). Plain
   `rfl`, no native_decide, no axioms beyond the kernel.
 
+## 7d. Slice-2d findings — the fuel declare (implemented)
+
+`declare {lean} fuel val f = \`sentinel\`` landed in lem (64fa622): total
+worker (structural on an explicit Nat), self-calls rewritten to the
+decremented binder, point-free wrapper at LemLib.lemDefaultFuel so call
+sites are unchanged and proofs unfold wrapper → worker definitionally.
+Fail-closed on multi-clause/mutual/instances/reader-combination. Applied
+to `zeros_aux` with sentinel `CerbMem.zerosFuelExhausted ()` (a hand-
+written panic helper — lem's backtick strings cannot contain double
+quotes, so string-literal sentinels are expressed via helpers). Lake pin
+moved to the lem arc branch per the charter pin-dance. Proof test grew a
+wrapper-defeq theorem and a fuel-symbolic integer-case theorem, both rfl.
+The exemplar chartered for slice 2 is now COMPLETE: reader + structural
+totality + fuel + theorems, all gated.
+
 ## 7c. fresh as an explicit choice-stream input (user question, 2026-08-18)
 
 Ruled direction for the eventual honest treatment of `fresh` (parked until

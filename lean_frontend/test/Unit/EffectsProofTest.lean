@@ -46,8 +46,22 @@ example :
       (Symbol "" 0 SD_None)
     = UnionDef [] := rfl
 
+/-! ### Fuel threading: `zeros_aux` is total with explicit fuel -/
+
+/-- The wrapper is definitionally the worker at the default fuel. -/
+example : @zeros_aux a = @zeros_aux_lemFuel a lemDefaultFuel := rfl
+
+/-- At any nonzero fuel, the integer case computes — SYMBOLIC in the fuel,
+    the tagDefs map, the annotations, and the integer type. Impossible over
+    the former `partial def` (no equations). -/
+example (f : Nat) (td : Fmap sym (a × tag_definition)) (an : List annot)
+    (ity : integerType) :
+    zeros_aux_lemFuel (Nat.succ f) td (Ctype an (Basic (Integer ity)))
+      = CerbMem.integerValueMval ity (CerbMem.integerIval 0) := rfl
+
 def main : IO UInt32 := do
   IO.println "effects-proof-test: all theorems checked at compile time"
   IO.println "  total core_object_type_of_ctype: 3 symbolic rfl theorems"
   IO.println "  reader-lifted get_membersDefs: 1 concrete lookup theorem"
+  IO.println "  fuel-threaded zeros_aux: wrapper defeq + symbolic integer case"
   return 0

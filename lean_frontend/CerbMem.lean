@@ -1046,4 +1046,11 @@ def vaList (_ : Int) : memM (List (ctype × PointerValue)) := memReturn []
 def copyAllocId (_ : IntegerValue) (pv : PointerValue) : memM PointerValue := memReturn pv
 def callIntrinsic (_ : CerbLocation.Loc) (_ : String) (_ : List MemValue) : memM (Option MemValue) := memReturn none
 
+/-- Fuel-exhaustion sentinel for the fuel-threaded `Core_aux.zeros_aux`
+    (arc-1): reached only past the default fuel's type-nesting depth, i.e.
+    never for well-formed programs — same failure class as the existing
+    failwith invariant branches. -/
+def zerosFuelExhausted (_ : Unit) : MemValue :=
+  panic! "Core_aux.zeros_aux: fuel exhausted"
+
 end CerbMem
