@@ -508,3 +508,32 @@ sources: lem-lean doc/notes/2026-04-09_inhabited_design.md and commits
    Global DAEMON elimination stays C-tier cleanup (future arc).
 
 AWAITING S5 RULING on the revised design.
+
+## 16. S5 derisk frame (the eye-of-the-needle answer, 2026-08-18)
+
+How we know the failwith split cannot repeat the April blow-ups — each
+recorded killer mapped to a STRUCTURAL absence, not an assurance:
+init-panic (da293cd) → failwithI is opaque, nothing init-evaluates;
+constraint propagation (aaf7a64) → classification is syntactic and total
+(failwithI ONLY at sites with zero free type variables; `a × Nat` counts
+as variable), so no signature can change by construction; noncomputable
+cascade (e8dadf7) + partial-def killer (8648411) → opaque+implemented_by
+is computable and instances are untouched; defaults-leak (808cb3e1b) →
+opaque has no equations: strictly FEWER provable facts than today,
+byte-identical runtime.
+
+Residual named risk: a GROUND-typed failwith site whose type has no
+Inhabited instance at all (skip_instances class) → per-site Lean compile
+error, remedied by classifying that site back to legacy. Bounded,
+enumerable, fail-closed.
+
+Sequencing: (S5a, DONE) axiom-cone tripwire `check_theorem_axioms.sh` in
+the unit gate, pinning the current cones (EXPECT=daemon; flip to clean is
+a deliberate commit) — bonus evidence: fresh_symbol' is ALREADY
+zero-axiom. (S5b) probes in lem's comprehensive suite covering every
+classification edge (ground / tyvar / ground-in-partial-def /
+ground-in-mutual / msum-shaped polymorphic) BEFORE touching cerberus.
+(S5c) backend emission + LemLib failwithI; regen; mechanized
+classification census (counts recorded, no hand greps); flip the gate to
+clean. (S5d) the six hand axioms, each with its own bound or an honest
+documented exclusion. Rollback at every stage: one commit per repo.

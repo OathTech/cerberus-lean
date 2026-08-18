@@ -56,3 +56,10 @@ if ! "$PURITY_SH"; then
     echo "test_unit: exec-purity gate FAILED"
     exit 1
 fi
+
+# Axiom-cone gate (arc 2 S5a): fails closed like the purity gate.
+AXIOM_SH="$(dirname "$PURITY_SH")/check_theorem_axioms.sh"
+if ! "$AXIOM_SH"; then
+    echo "test_unit: axiom-cone gate FAILED"
+    exit 1
+fi
