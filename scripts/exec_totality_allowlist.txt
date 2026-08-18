@@ -1,0 +1,2 @@
+# Arc-3 exec-slice totality allowlist. Format: Module.def_name  # justification
+# Every entry needs a justification recorded in the arc-3 design appendix.
