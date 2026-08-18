@@ -2648,3 +2648,30 @@ let impl_memcmp ptr_val1 ptr_val2 size_ival =
     | _ ->
         error ("Mem.impl_memcmp 3 ==> " ^ stringFromInteger_value size_ival)
   end
+
+
+(* === Totality declares (arc 3 sweep, 2026-08-18): Lean-target only.
+   Structural recursions -> termination_argument automatic (the
+   explicitAllocationId pair is a mutual structural pair: both flipped).
+   Fuel cases (fuelExhausted witness panics at runtime, typing only):
+   mkUnspec recurses through tagDefs struct/union member lookups (not a
+   subterm); has_concurRead recurses point-free via List.any (automatic
+   rejected the unapplied recursive occurrence); find_array_index counts
+   i up to size and memcmp_load_aux counts offset up to max_offset
+   (Int-measure recursions automatic cannot infer) -> ND killed witness.
+   easy_update_mem_value_aux intentionally omitted: sorry-target_rep'd,
+   its generated partial def sits inside a block comment (gate ignores it). === *)
+declare {lean} termination_argument explicitAllocationIdFromPointer_value_aux = automatic
+declare {lean} termination_argument explicitAllocationIdFromInteger_value_aux = automatic
+declare {lean} termination_argument get_allocation_id = automatic
+declare {lean} termination_argument fetch_first_write_event_aux = automatic
+declare {lean} termination_argument impl_sizeof_ival_aux = automatic
+declare {lean} termination_argument isBeginningShift = automatic
+declare {lean} termination_argument silly_sh_eq = automatic
+declare {lean} fuel val has_concurRead = `fuelExhausted false`
+declare {lean} termination_argument anyM = automatic
+declare {lean} termination_argument fold_memcmp_compare = automatic
+declare {lean} fuel val find_array_index = `fuelExhausted (ND (fun st => (NDkilled (Undef0 CerbLocation.Loc.unknown []), st)))`
+declare {lean} fuel val memcmp_load_aux = `fuelExhausted (ND (fun st => (NDkilled (Undef0 CerbLocation.Loc.unknown []), st)))`
+declare {lean} termination_argument memcmp_compare = automatic
+declare {lean} fuel val mkUnspec = `fuelExhausted (MVarray [])`

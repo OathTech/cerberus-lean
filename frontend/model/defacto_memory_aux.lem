@@ -452,3 +452,18 @@ let eval_integer_value_base ival_ =
 val lifted_simplify_integer_value_base: integer_value_base -> integer_value_base
 let lifted_simplify_integer_value_base ival_ =
   either (fun n -> IVconcrete n) (fun z -> z) (simplify_integer_value_base ival_)
+
+
+(* === Totality declares (arc 3 sweep, 2026-08-18): Lean-target only.
+   tmp_*_aux recurse on nbits - 1 under a Bool nbits = 0 guard ->
+   automatic rejected them (Bool-guarded Nat subtraction) -> fuel
+   (witness = a literal Int; fuelExhausted panics at runtime, typing only).
+   fake_mem_value_eq recurses via zip/uncurry under List.all -> fuel.
+   simplify_integer_value_base: SOFT sentinel — on fuel exhaustion it
+   returns its input unsimplified (Sum.inr ival_), semantically clean. === *)
+declare {lean} fuel val tmp_compl_aux = `fuelExhausted ((0 : Int))`
+declare {lean} fuel val tmp_AND_aux = `fuelExhausted ((0 : Int))`
+declare {lean} fuel val tmp_OR_aux = `fuelExhausted ((0 : Int))`
+declare {lean} fuel val tmp_XOR_aux = `fuelExhausted ((0 : Int))`
+declare {lean} fuel val fake_mem_value_eq = `fuelExhausted false`
+declare {lean} fuel val simplify_integer_value_base = `Sum.inr ival_`
