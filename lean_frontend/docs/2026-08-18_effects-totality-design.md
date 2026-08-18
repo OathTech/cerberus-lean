@@ -185,6 +185,24 @@ slice-2 iteration.
   (impossible over the extern scaffold — the state was invisible). Plain
   `rfl`, no native_decide, no axioms beyond the kernel.
 
+## 7c. fresh as an explicit choice-stream input (user question, 2026-08-18)
+
+Ruled direction for the eventual honest treatment of `fresh` (parked until
+a verified-translation arc needs it): an explicit CONSUMED stream/counter
+input — i.e. state threading, not reader (consumption must advance, which
+is exactly what reader cannot express). With the canonical stream 0,1,2,…
+this is extensionally identical to OCaml's `Cerb_fresh.int`, preserving
+symbol numbering and hence stage-by-stage differential comparability.
+Mechanism when needed: a `declare {lean} state val` sibling of the reader
+declare, threading through the desugar/translation monads the model
+already has. Two alternatives considered and rejected:
+- splittable supply (UniqSupply-style, reader-shaped): keeps the cheap
+  transform but numbering diverges from OCaml — breaks the differential
+  instrument for exactly the stages it would serve;
+- ND choice stream (oracle sense): over-general — fresh is deterministic
+  bookkeeping, not latitude; supply-quantified theorems would pay a
+  permanent tax for envelope width the OCaml semantics does not have.
+
 ## 8. Open questions as posed (for the record)
 
 1. O-B (stratified) vs O-A (full lifting) — is execution-slice honesty +
