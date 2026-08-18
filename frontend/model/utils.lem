@@ -84,6 +84,11 @@ let fromJust debug_str = function
       error ("Global.fromJust(" ^ debug_str ^ ")")
 end
 
+(* Lean: ground-typed call sites emit the [Inhabited]-bounded
+   fromJustI (axiom-free failure leaf, success equation by rfl);
+   type-variable sites keep this generated def (arc-2 S5). *)
+declare {lean} ground_rep val fromJust = `fromJustI`
+
 let fromLeft = function
   | Left z ->
       z

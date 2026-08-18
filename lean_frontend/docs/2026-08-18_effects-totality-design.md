@@ -537,3 +537,25 @@ ground-in-mutual / msum-shaped polymorphic) BEFORE touching cerberus.
 classification census (counts recorded, no hand greps); flip the gate to
 clean. (S5d) the six hand axioms, each with its own bound or an honest
 documented exclusion. Rollback at every stage: one commit per repo.
+
+## 17. S5c LANDED (2026-08-18) — theorem cones DAEMON-clean
+
+Mechanized census after the change: **232 failure sites → failwithI**
+(ground-typed, axiom-free), **50 legacy** (type-variable class, per the
+classification rule). The one residual-risk firing was `Inhabited
+(Int ⊕ integer_value_base)` — Lean core lacks Sum instances; added to
+LemLib (left-biased + low-priority right). fromJust cleaned via the new
+general `declare {lean} ground_rep` (fromJustI: real success equation,
+opaque failure leaf — the lookup theorem still proves by rfl).
+
+Axiom cones (gate-enforced, default EXPECT=clean):
+- core_object_type_of_ctype: NO axioms
+- fresh_symbol': NO axioms
+- zeros_aux, get_membersDefs: propext/Classical.choice/Quot.sound only
+  (the standard consistent trio)
+
+Gates: unit 3/3 (proof test green through fromJustI), parse ALL, core
+104/105 baseline, purity CLEAN enforcing, axiom gate OK at clean.
+Placement lesson re-learned twice: declares FOLLOW their binding.
+Remaining in S5: S5d — the six hand-written _default_safe axioms in
+CerbInhabitedInstances.lean.

@@ -11,9 +11,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/.."
 
-# EXPECT: 'daemon' (pre-S5 pinned state) or 'clean' (post-S5 bar:
-# the theorem cones mention no DAEMON).
-EXPECT="${CERB_AXIOM_EXPECT:-daemon}"
+# EXPECT: default 'clean' since S5c landed (the merge-bar condition);
+# 'daemon' documented the pre-S5 pinned state.
+EXPECT="${CERB_AXIOM_EXPECT:-clean}"
 
 PROBE=lean_frontend/.axiom-probe.lean
 cat > "$PROBE" <<'EOF'
