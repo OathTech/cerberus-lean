@@ -134,7 +134,10 @@ def runPipeline (runtimeDir : String) (tunit : translation_unit) : IO Unit := do
   -- Desugar Cabs → AIL
   IO.println "  desugaring Cabs → AIL..."
   let cnInit := empty_init
-  match desugar coreEvalStuff cnInit "main" tunit with
+  -- Reader seed: desugar is reader-lifted for tagDefs (arc-1); seed with the
+  -- live global at entry, which matches the OCaml behavior (the global is
+  -- unset during desugaring — desugar threads tag defs in its own state).
+  match desugar (CerbTags.tagDefs ()) coreEvalStuff cnInit "main" tunit with
   | .Result (_, (mainSym, ailProg)) =>
     IO.println s!"  desugaring succeeded!"
     IO.println s!"    main symbol: {match mainSym with | some _ => "found" | none => "not found"}"
@@ -170,7 +173,9 @@ def runPipeline (runtimeDir : String) (tunit : translation_unit) : IO Unit := do
       let fsState := CerbFS.fs_initial_state
       let drSt := initial_driver_state runFile fsState
       IO.println s!"  executing Core..."
-      let driverAction := drive false runFile ["cmdname"]
+      -- Reader seed: execution-slice entry; tagDefs are fully registered by now
+      -- (core_unstruct set them), so the live global is the correct value.
+      let driverAction := drive (CerbTags.tagDefs ()) false runFile ["cmdname"]
       let execs := CerbND.runND driverAction drSt
       IO.println s!"  executions: {execs.length}"
       for (status, _trace, _finalSt) in execs do

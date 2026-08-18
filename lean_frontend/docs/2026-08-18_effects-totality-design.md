@@ -139,6 +139,30 @@ translator stages, its honest treatment deferred to a possible future
 verified-translation arc). Q5 (fuel declare shape) deliberately left to
 slice-2 iteration.
 
+## 7a. Slice-2 findings (implementation, 2026-08-18)
+
+- Debug stubs (2a): 315 → 16 runEffectful sites; gate at baseline.
+- Reader lifting (2b): implemented in lem (`declare {lean} reader val`,
+  lem-lean `b51ef11`) — fixpoint pre-pass per module (emission renders
+  last-to-first, so in-order registration was unsound; caught by the
+  transitivity test), parameter injection at the bare-Constant rendering
+  (exactly once), fail-closed on instance methods. Applied to `tagDefs`:
+  full cerberus build green with only **two hand-written seed sites**
+  (`desugar`, `drive` in Main.lean), both seeded from the live global via
+  the hardened accessor (`CerbTags.tagDefs`, now `never_extract`).
+- Debug stubs NARROWED the reader closure sharply: GenTyping/AilTypesAux
+  no longer lift at all (their effect use was debug-only); the tagDefs
+  read closure is desugar-init + Defacto_memory + Core_run/Driver.
+- **Seed-freshness argument**: OCaml's global is also unset during
+  desugaring (desugar threads tag defs in its own monad state; only later
+  stages call set_tagDefs), so entry seeding ≡ OCaml behavior — EXCEPT
+  across mid-phase writes: the single `with_tagDefs` rebinding site
+  (mini_pipeline, WIP translator glue) and any set-then-read within one
+  lifted region (Core_unstruct — audit when the pipeline reaches it).
+  Recorded as a correctness obligation for the Phase-2 desugar arc, not a
+  blocker: the execution slice seeds at `drive` AFTER registration, which
+  is unconditionally correct.
+
 ## 8. Open questions as posed (for the record)
 
 1. O-B (stratified) vs O-A (full lifting) — is execution-slice honesty +

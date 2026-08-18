@@ -8,7 +8,7 @@ _build
 .merlin
 
 # Local OPAM switch
-_opam/
+_opam
 
 # Lem generation stuff
 ocaml_frontend/lem.log

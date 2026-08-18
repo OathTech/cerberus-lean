@@ -16,8 +16,14 @@ declare ocaml target_rep function set_tagDefs = `Tags.set_tagDefs`
 declare ocaml target_rep function with_tagDefs = `Tags.with_tagDefs`
 
 declare hol target_rep function tagDefs = `tagDefs`
+(* Lean: tagDefs is an ambient READER (arc-1 ruling 2026-08-18, see
+   lean_frontend/docs/2026-08-18_effects-totality-design.md): every def that
+   transitively reads it takes '_lemReader_tagDefs' as a leading parameter,
+   seeded by the hand-written entry points. The target_rep below satisfies
+   lem's target-coverage check but is never emitted at applied call sites.
+   Writes (set_tagDefs/reset_tagDefs) remain execution-only scaffold. *)
 declare lean target_rep function tagDefs u = `CerbTags.tagDefsIO` u
-declare {lean} effectful val tagDefs
+declare {lean} reader val tagDefs
 declare hol target_rep function set_tagDefs = `set_tagDefs`
 declare lean target_rep function set_tagDefs tds = `CerbTags.setTagDefsIO` tds
 declare {lean} effectful val set_tagDefs
