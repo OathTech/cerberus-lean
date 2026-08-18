@@ -361,3 +361,66 @@ Mechanism for arc 2: 'declare {lean} state val' — deliberately
 restricted (first-order, non-mutual, fail-closed on everything exotic),
 threading (counter →) and (× counter) through the five-def chain,
 terminating at the hand-written driver-state seam. AWAITING USER RULING.
+
+## 13. THE NEEDLE-THREADING PLAN (arc 2 effects, derisked — 2026-08-18)
+
+Structural evidence gathered after §12 kills R1 and shrinks R2 below what
+either option assumed:
+
+- **R1 is structurally dead**: the three fresh sites sit inside E-monad
+  bind continuations (core_run.lem:585 under `E.fresh_action_id >>= fun
+  load_aid -> …`; core_reduction.lem:1251,1294 under
+  `E.fresh_excluded_id >>= …`). Def-level first-order state threading
+  cannot reach them; only monad-aware lifting could — the genuinely hard
+  transform. The §12 five-def closure was def-granular and misleading.
+  The 'declare {lean} state val' feature is CANCELLED: not needed.
+- **The model already owns the idiom**: core_run_state threads
+  tid_supply / aid_supply / excluded_supply, with
+  `fresh_action_id' = State.modify (bump)` (core_run.lem:108-113). The
+  three `Symbol.fresh ()` calls are anomalies one line away from the
+  house pattern.
+
+**The patch (R2-micro)** — smaller than either §11 option:
+1. `core_run_aux.lem`: add `sym_supply : nat` to core_run_state;
+   `initial_core_run_state` gains a seed parameter for it.
+2. `core_run.lem`: add `fresh_symbol'` mirroring `fresh_action_id'`
+   (build `Symbol (digest()) n SD_None` from the supply) + `E.fresh_symbol`
+   via `SEU.runS`; mirror in core_reduction's E.
+3. Three call sites: `let sym = Symbol.fresh () in` becomes
+   `E.fresh_symbol >>= fun sym ->` — the idiom already on adjacent lines.
+4. Seeding: OCaml init passes one `Cerb_fresh.int ()` read (behavior ≈
+   today: numbers continue after translation); Lean's hand-written driver
+   seam passes the scaffold counter (uniqueness vs translation-phase
+   numbers by construction). Trace-level numbering drift is covered by
+   the id-insensitive differential (§12).
+
+**Stages, each independently green and revertible:**
+- **S0 — mechanize the census that failed**: `scripts/check_exec_purity.sh`
+  in the gate — whitespace-robust greps asserting no runEffectful /
+  `fresh ()` / unsafe reads in generated exec-slice modules. Starts in
+  REPORTING mode (documents the 3 known sites); flips to ENFORCING at S2.
+  This is the anti-recurrence fix for the §10 census failure.
+- **S1 — the .lem patch**, validated OCaml-first: full OCaml build +
+  existing suites. HONEST LIMIT: OCaml run-phase behavior has no
+  end-to-end differential until Phase 2; mitigations are the patch's
+  shape-preservation (supply idiom), S5's targeted audit, and the S0
+  script. Single commit; revert = git revert, no mechanism coupling.
+- **S2 — Lean regen falls out for free** (ordinary state-monad lem code —
+  no lem backend change). S0 script flips to enforcing; proof test gains
+  a fresh_symbol' distinctness/sequence lemma — now PROVABLE (threaded).
+- **S3 — seed wiring** both sides + uniqueness invariant recorded +
+  monotonicity lemma stub over the threaded supply.
+- **S4 — id-canonicalizer** utility (first-occurrence renumbering of
+  symbol/thread ids) with its own unit test; wired into trace/golden
+  diffs when Phase 2 produces them.
+- **S5 — focused 1-agent audit of the .lem diff** (semantic preservation
+  vs OCaml), then the standard merge dance.
+
+Also in arc 2, unchanged: DAEMON repair (independent workstream) and
+mini_pipeline restructure (port-local). Both out of this needle.
+
+Net derisk vs the §12 plan: the delicate compiler transform is
+ELIMINATED rather than restricted; the .lem diff is ~15 lines in
+established house style with an upstreamable story ("thread symbol
+freshness like every other supply; remove a hidden global"); the
+failure mode that caused §10 (unverifiable census) becomes a gate check.
