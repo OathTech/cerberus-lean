@@ -46,6 +46,11 @@ def print_debug (level : Nat) (ds : List d) (msg : Unit → String) : Unit :=
 
 def print_debug_located (_ : Nat) (_ : List d) (_ : CerbLocation.Loc) (_ : Unit → String) : Unit := ()
 
+
+/-- Pure no-op replacement for the debug print path (arc-1 ruling 2026-08-18:
+    debug is stubbed everywhere; the proof path must not see IO). -/
+def print_debug_pure (_ : Nat) (_ : List d) (_ : Unit → String) : Unit := ()
+
 def print_unsupported (_ : String) : Unit := ()
 
 def warn (_ : List d) (_ : Unit → String) : Unit := ()

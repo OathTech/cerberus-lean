@@ -129,7 +129,17 @@ NOT on the proof path; the representative exemplar is:
   lookup lemma, or determinism of the fuel'd step on a trivial program) —
   the reasoning smoke test the scaffold cannot pass.
 
-## 7. Open questions for the ruling
+## 7. CHECKPOINT RULINGS (user, 2026-08-18 — slice 1)
+
+All four recommendations ruled as recommended: **O-B stratified honesty**;
+**debug stubbed everywhere** (revisit on pain); **reader lifting as a lem
+declare class** (upstreamable); **exemplar swapped to tagDefs+fuel** (the
+charter's fresh_int exemplar is superseded — fresh stays scaffold-only in
+translator stages, its honest treatment deferred to a possible future
+verified-translation arc). Q5 (fuel declare shape) deliberately left to
+slice-2 iteration.
+
+## 8. Open questions as posed (for the record)
 
 1. O-B (stratified) vs O-A (full lifting) — is execution-slice honesty +
    translators-in-TCB acceptable as the goal-2 stance? (Recommended: yes;
