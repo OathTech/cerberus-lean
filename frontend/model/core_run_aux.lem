@@ -718,3 +718,23 @@ let convert_file file =
   visible_objects_env= file.visible_objects_env;
  |>
 (* END silly *)
+
+(* === Totality declares (arc 3 sweep, 2026-08-18): Lean-target only.
+   Each names a definition above; 'automatic' lets Lean derive
+   structural/well-founded termination. === *)
+declare {lean} termination_argument stringFromContext = automatic
+declare {lean} termination_argument subst_wait_stack = automatic
+(* pair-list (Ecase) recursion is beyond Lean's automatic derivation
+   (arc-3 design note): fuel with the input expression as witness. *)
+declare {lean} fuel val add_to_sb = `fuelExhausted g`
+declare {lean} termination_argument add_to_sb_continuation = automatic
+declare {lean} termination_argument add_to_sb_stack = automatic
+declare {lean} fuel val add_to_asw = `fuelExhausted g`
+declare {lean} termination_argument add_to_asw_continuation = automatic
+declare {lean} termination_argument add_to_asw_stack = automatic
+declare {lean} termination_argument comma_list = automatic
+declare {lean} fuel val convert_pexpr = `fuelExhausted (Pexpr [] () (PEval Vunit))`
+declare {lean} fuel val convert_expr = `fuelExhausted (Expr [] (Epure (Pexpr [] () (PEval Vunit))))`
+declare {lean} termination_argument convert_action_ = automatic
+declare {lean} termination_argument convert_action = automatic
+declare {lean} termination_argument convert_paction = automatic

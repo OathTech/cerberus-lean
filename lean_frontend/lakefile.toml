@@ -11,7 +11,7 @@ rev = "v4.29.0"
 [[require]]
 name = "LemLib"
 git = "https://github.com/septract/lem-lean"
-rev = "mdd/lean-backend"
+rev = "arc/totality-sweep"
 subDir = "lean-lib"
 
 [[lean_lib]]
