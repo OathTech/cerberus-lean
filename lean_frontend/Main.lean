@@ -174,7 +174,8 @@ def runPipeline (runtimeDir : String) (tunit : translation_unit) : IO Unit := do
       let drSt := initial_driver_state runFile fsState
       IO.println s!"  executing Core..."
       -- Reader seed: execution-slice entry; tagDefs are fully registered by now
-      -- (core_unstruct set them), so the live global is the correct value.
+      -- (Main itself set them above via CerbTags.set_tagDefs), so the live
+      -- global is the correct value.
       let driverAction := drive (CerbTags.tagDefs ()) false runFile ["cmdname"]
       let execs := CerbND.runND driverAction drSt
       IO.println s!"  executions: {execs.length}"

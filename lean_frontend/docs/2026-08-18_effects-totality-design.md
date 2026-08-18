@@ -262,3 +262,76 @@ desugar obligation); fuel wrappers restart the budget per external call
 **Lem feature census for upstreaming** (Phase 4 input): effectful (fixed),
 reader, fuel, termination_argument (pre-existing), extra_import,
 skip_instances — all declare-scoped, no .lem model restructuring anywhere.
+
+## 10. PRE-MERGE AUDIT RESULTS (2 adversarial agents, 2026-08-18) — CORRECTIONS
+
+The audit refuted several of this note's claims. Corrections, binding over
+anything above:
+
+- **§1/§5/§9 are WRONG that the execution slice is fresh-free.**
+  `Symbol.fresh` is called from `core_run.lem:585` (the Load action) and
+  `core_reduction.lem:1251,1294` (SeqRMW/Neg) — so `runEffectful` + the
+  unsafe extern counter ARE reachable from the opsem. The census grep was
+  defeated by generated-code whitespace (`fresh  ()` vs pattern `fresh (`)
+  and by counting where runEffectful SITES live instead of which stages
+  CALL them. Honest fresh treatment is therefore ON the goal-2 critical
+  path (see §11 options). Corollary: the never_extract protection being
+  one-level-deep (audit) means closed applications of step functions are
+  in the hazard class until this is fixed.
+- **§7b's "no axioms beyond the kernel" is WRONG.** All six theorems
+  depend on the DAEMON axiom (∀ {α : Type}, α — False-implying, hence the
+  axiom environment is inconsistent for external checkers). The theorems
+  remain non-vacuous as rfl-proofs (deletion-tested by the audit), but
+  they certify nothing to a consumer until DAEMON is repaired. DAEMON
+  repair (real Inhabited derivation or Nonempty-bounded axiom) is promoted
+  to a top Phase-1 priority.
+- **§5's axiom boundary list was incomplete**: besides DAEMON, sorryAx is
+  on the exec slice (`easy_update_mem_value` target_rep in Defacto_memory
+  — a known Phase-1 item — plus ~76 instance-fallback sorries in exec
+  modules), and runEffectful (via fresh, above).
+- **§7a's seed-freshness argument fails for the desugar seed TODAY**, not
+  just in a future arc: `Cabs_to_ail` → `evalIntegerConstantExpression` →
+  mini_pipeline's `with_tagDefs` extent runs the driver on the STALE entry
+  seed (e.g. `int a[sizeof(struct S)]`), and worse, reads are SPLIT within
+  that extent: hand-written CerbMem reads the swapped global while
+  generated code reads the stale parameter. The `drive` seed remains
+  correct. Note mini_pipeline.lem is port-local glue, not upstream model —
+  it can be restructured freely (objective 3 does not protect it).
+- **§4 deviations reconciled**: fuel decrements on ALL self-calls of a
+  fuel'd def (whole-def fuel), not only non-structural ones; and the
+  zeros_aux sentinel is a panic-returning-default, not an error-channel
+  value. Both intended for the exemplar; §4's stronger phrasing withdrawn.
+- Lem-side mechanism fixes landed in response (lem arc a15696b): pre-pass
+  Val_def granularity (class-method poisoning), fuel-wrapper attributes,
+  honest one-level-deep comment, infix-gap documentation.
+- Theorem-strength notes accepted: wrapper-defeq certifies shape only;
+  fuel recursion is not yet exercised by any theorem.
+
+## 11. Replanning input: is the requirement set satisfiable? (2026-08-18)
+
+The audit sharpened a real three-way tension at exec-slice fresh:
+(a) honesty (no hidden state under theorems), (b) objective 3 (declares
+only, no .lem restructuring), (c) OCaml-identical observable behavior.
+Pick any two cleanly; all three need one of these relaxations:
+
+- **R1 — backend monadification, scoped**: a `declare {lean} state val`
+  that threads a counter through the fresh closure on the exec slice
+  (step_ctx/core_action_step and callers), Lean-output-only. Keeps (b)
+  and (c); costs the O-A machinery we hoped to avoid (bends objective 4's
+  "keep lem reasonable" — this is a real compiler feature, upstream
+  review risk).
+- **R2 — small upstreamable .lem patch**: thread the fresh counter
+  through the EXISTING core-run thread state (the model already threads
+  state everywhere else; OCaml upstream might well accept explicit
+  threading as an improvement). Bends (b)'s letter, arguably keeps its
+  spirit ("mergeable with upstream").
+- **R3 — relax numbering parity for exec-slice bookkeeping symbols**:
+  derive names deterministically from data already in scope. Bends (c)
+  for traces/goldens (final verdicts likely unaffected); requires R1- or
+  R2-style plumbing anyway to get the in-scope data — so R3 alone does
+  not close the gap.
+
+Also required regardless of choice: DAEMON repair (Phase 1, promoted) and
+mini_pipeline restructuring (port-local, unprotected). The requirement
+set is NOT unsatisfiable on current evidence — but it requires choosing
+R1 or R2, and that choice is the user's.
