@@ -1,5 +1,16 @@
 # Arc 3 charter: totalize the execution slice ("totality sweep")
 
+> **STATUS: EXECUTED IN FULL — 2026-08-18.** All slices S0–S4 complete;
+> every success condition met or beaten (allowlist target ≤5 → actual 0;
+> census was 97, not the estimated ~41 — see decision log D2). Results:
+> `2026-08-18_arc3-totality-sweep-results.md`. Decisions: D1–D11 in
+> `2026-08-18_arc3-decision-log.md`. Audit: 2 adversarial agents, all
+> audited claims HOLD, findings fixed-or-recorded (D11). End state:
+> `check_exec_totality: CLEAN (11 modules, 0 allowlisted)` ENFORCING in
+> the unit gate; 60 kernel proofs; pins aligned at lem `574e326`; both
+> arc branches gate-green. Per §S4 the arc STOPS unmerged —
+> `2026-08-18_arc3-merge-checklist.md` awaits operator sign-off.
+
 Date: 2026-08-18. Mode: **long-cycle autonomous** — the agent orchestrates,
 makes judgement calls, logs them, and does not pause for feedback except for
 the emergency exit defined below. Merge to mainline requires explicit user
