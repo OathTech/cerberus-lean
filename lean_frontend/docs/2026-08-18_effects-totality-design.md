@@ -301,7 +301,7 @@ anything above:
   fuel'd def (whole-def fuel), not only non-structural ones; and the
   zeros_aux sentinel is a panic-returning-default, not an error-channel
   value. Both intended for the exemplar; §4's stronger phrasing withdrawn.
-- Lem-side mechanism fixes landed in response (lem arc a15696b): pre-pass
+- Lem-side mechanism fixes landed in response (lem arc 1033246): pre-pass
   Val_def granularity (class-method poisoning), fuel-wrapper attributes,
   honest one-level-deep comment, infix-gap documentation.
 - Theorem-strength notes accepted: wrapper-defeq certifies shape only;
