@@ -163,6 +163,28 @@ slice-2 iteration.
   blocker: the execution slice seeds at `drive` AFTER registration, which
   is unconditionally correct.
 
+## 7b. Slice-2c findings — totality exemplar + reasoning smoke test
+
+- The existing lem hook works unchanged for the structural case:
+  `declare {lean} termination_argument f = automatic` (placed AFTER the
+  definition) flips emission from `partial def` to `def`, and Lean's
+  equation compiler accepts `core_object_type_of_ctype` (ctype-structural).
+  No new lem feature needed for this class — the totality work for the
+  ~306 generated partials is a declare-audit sweep plus fixes for
+  whatever the checker rejects.
+- `zeros_aux` REJECTED as expected: its Struct/Union cases recurse on
+  member types fetched from tagDefs — env-mediated recursion, golean's
+  `.defined` class exactly. Reverted to `partial`, designated the first
+  fuel candidate. The fuel declare (Q5) remains the one unimplemented
+  mechanism; its design should carry a sentinel expression per declare
+  (generic honest fuel-out values don't exist without type knowledge).
+- **Reasoning smoke test green** (`effects-proof-test`, in the unit
+  gate): three SYMBOLIC `rfl` theorems over the now-total
+  `core_object_type_of_ctype` (impossible over `partial def` — no
+  equations) and a lookup theorem over reader-lifted `get_membersDefs`
+  (impossible over the extern scaffold — the state was invisible). Plain
+  `rfl`, no native_decide, no axioms beyond the kernel.
+
 ## 8. Open questions as posed (for the record)
 
 1. O-B (stratified) vs O-A (full lifting) — is execution-slice honesty +

@@ -135,6 +135,12 @@ root = "Unit.CoreParserTest"
 moreLinkArgs = ["native/fresh_int.o", "native/debug.o", "native/tags.o"]
 
 [[lean_exe]]
+name = "effects-proof-test"
+srcDir = "test"
+root = "Unit.EffectsProofTest"
+moreLinkArgs = ["native/fresh_int.o", "native/debug.o", "native/tags.o"]
+
+[[lean_exe]]
 name = "fresh-int-test"
 srcDir = "test"
 root = "Unit.FreshIntTest"

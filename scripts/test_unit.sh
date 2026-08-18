@@ -11,6 +11,7 @@ set -euo pipefail
 
 # List of unit test executables (must match [[lean_exe]] names in lakefile.toml)
 UNIT_TESTS=(
+    "effects-proof-test"
     "core-parser-test"
     "fresh-int-test"
 )

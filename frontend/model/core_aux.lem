@@ -20,6 +20,9 @@ let strip_expr (Expr _ expr_) =
 
 
 val     core_object_type_of_ctype: ctype -> maybe core_object_type
+(* Arc-1 totality: structural recursion on the ctype — let Lean's equation
+   compiler prove termination instead of emitting 'partial def'. *)
+declare {lean} termination_argument core_object_type_of_ctype = automatic
 let rec core_object_type_of_ctype (Ctype _ ty) =
   match ty with
    | Void ->
@@ -597,6 +600,12 @@ let rec zeros_aux tagDefs (Ctype _ ty) =
    | _ ->
        error "Core_aux.zeros should only be called on complete types"
   end
+
+(* Arc-1 totality: zeros_aux is NOT structurally recursive — the Struct/Union
+   cases recurse on member types fetched from tagDefs (env-mediated, the
+   golean '.defined through the environment' class). Lean's checker rejects
+   it (verified 2026-08-18); it stays 'partial' pending the fuel mechanism,
+   for which it is the designated first candidate. *)
 
 val zeros: core_tag_definitions -> ctype -> pexpr
 let zeros tagDefs ty =
