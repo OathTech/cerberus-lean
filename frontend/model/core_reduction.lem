@@ -1476,3 +1476,34 @@ let step_ctx mem_st file core_extern current_tid (parent_tid_opt, th_st) =
               end
         end
   end) (get_ctx th_st.arena)
+
+
+(* === Totality declares (arc 3 sweep, 2026-08-18, final batch): Lean-target only.
+   Structural recursions -> termination_argument automatic (context walkers).
+   Fuel cases (fuelExhausted witness panics at runtime, typing only):
+   one_step_unseq_aux recurses on a curried list arg under a tuple match
+   (automatic rejected: no brecOn on the pair param) -> curried witness
+   fun _ => none; has_ccall recurses via List.any closures (automatic
+   rejected, like in_pattern) -> witness false; get_ctx/get_ctx_unseq_aux
+   is a genuinely mutual pair over expr/list with an accumulator (automatic
+   rejected) -> fuel BOTH: get_ctx witnesses the empty context list,
+   get_ctx_unseq_aux (curried trailing list arg) witnesses fun _ => acc.
+   PARKED (still partial): full_eval_pexpr -- step-until-value loop, needs
+   fuel, but the backend's fuel wrapper mis-lays-out bodies whose lem source
+   starts with `e >>= ...` on a fresh line (the infix->prefix rewrite leaves
+   the bind head alone on its line and the argument lines at column 3, which
+   escapes the `| Nat.succ lemFuel =>` match arm: Lean errors `Type mismatch
+   stExceptUndef_bind ... expected ...` + `unexpected token '('`). Needs a
+   lem-lane fix (parenthesize the succ-arm body) before it can be fueled. === *)
+declare {lean} fuel val one_step_unseq_aux = `fuelExhausted (fun _ => none)`
+declare {lean} fuel val has_ccall = `fuelExhausted false`
+declare {lean} termination_argument is_unseq_with_ccall_aux = automatic
+declare {lean} fuel val get_ctx = `fuelExhausted []`
+declare {lean} fuel val get_ctx_unseq_aux = `fuelExhausted (fun _ => acc)`
+declare {lean} termination_argument apply_ctx = automatic
+declare {lean} termination_argument break_at_sseq = automatic
+declare {lean} termination_argument break_at_bound_and_sseq = automatic
+declare {lean} termination_argument pull_dyn_annotations = automatic
+declare {lean} termination_argument add_exclusion = automatic
+(* un-parked after the lem succ-arm parenthesization fix (arc-3 batch E) *)
+declare {lean} fuel val full_eval_pexpr = `fuelExhausted (fun st => Result (Undef CerbLocation.Loc.unknown [], st))`

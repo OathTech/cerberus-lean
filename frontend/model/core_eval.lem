@@ -1198,3 +1198,25 @@ let eval_pexpr loc current_call_loc_opt core_extern env mem_st_opt file pe =
     | Exception.Exception err ->
         Left (loc, Errors.CORE_RUN err)
   end
+
+
+(* === Totality declares (arc 3 sweep, 2026-08-18, final batch): Lean-target only.
+   Fuel cases (fuelExhausted witness panics at runtime, typing only):
+   pull_constrained recurses with n+1 through the self/wrap closures --
+   automatic rejected (no decreasing measure) -> witness the input pexpr g;
+   step_eval_pexpr recurses with a rewritten pexpr (PElet/PEcase steps) and
+   under mapM helpers -- automatic rejected (no decreasing measure);
+   eval_pexpr_aux2 is a step-until-value loop on rewritten pexprs ->
+   witness Result (Undef ...).
+   PARKED (still partial): eval_pexpr_aux_broken -- same loop shape, needs
+   fuel, but its lem body starts with `step_eval_pexpr ... >>= ...` on a
+   fresh line and the backend's fuel wrapper leaves the rewritten bind head
+   alone on its line with argument lines at column 3, escaping the
+   `| Nat.succ lemFuel =>` match arm (Lean: `Type mismatch
+   exception_undef_bind ...` + `unexpected token '('`). Needs a lem-lane
+   fix (parenthesize the succ-arm body) before it can be fueled. === *)
+declare {lean} fuel val pull_constrained = `fuelExhausted g`
+declare {lean} fuel val step_eval_pexpr = `fuelExhausted (Result (Undef CerbLocation.Loc.unknown []))`
+declare {lean} fuel val eval_pexpr_aux2 = `fuelExhausted (Result (Undef CerbLocation.Loc.unknown []))`
+(* un-parked after the lem succ-arm parenthesization fix (arc-3 batch E) *)
+declare {lean} fuel val eval_pexpr_aux_broken = `fuelExhausted (Result (Undef CerbLocation.Loc.unknown []))`

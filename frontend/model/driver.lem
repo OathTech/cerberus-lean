@@ -1868,3 +1868,17 @@ let drive (with_concurrency: bool) file (arg_strs: list string) =
           ND.get >>= fun dr_st' ->
           ND.return (finalize "drive (without concur)" dr_st')
 end
+
+
+(* === Totality declares (arc 3 sweep, 2026-08-18, final batch): Lean-target only.
+   find_can_advance: structural list recursion -> automatic.
+   Fuel cases (fuelExhausted witness panics at runtime, typing only):
+   print_eval_conv_aux / driver2 are driver loops returning ndM -> ND-killed
+   witness; drive_nonmemory_steps_aux2 has a trailing curried list arg, so
+   the witness is a lambda to the ND-killed value; hack is a step-until-value
+   loop returning a bare value -> witness Vunit. === *)
+declare {lean} termination_argument find_can_advance = automatic
+declare {lean} fuel val print_eval_conv_aux = `fuelExhausted (ND (fun st => (NDkilled (Undef0 CerbLocation.Loc.unknown []), st)))`
+declare {lean} fuel val drive_nonmemory_steps_aux2 = `fuelExhausted (fun _ => ND (fun st => (NDkilled (Undef0 CerbLocation.Loc.unknown []), st)))`
+declare {lean} fuel val driver2 = `fuelExhausted (ND (fun st => (NDkilled (Undef0 CerbLocation.Loc.unknown []), st)))`
+declare {lean} fuel val hack = `fuelExhausted Vunit`
