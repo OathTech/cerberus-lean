@@ -32,50 +32,32 @@ instance {a : Type} : Inhabited (dlist a) where
 instance {a : Type} : Inhabited (parserM a) where
   default := ParserM (fun _ => [])
 
--- Monadic types — needed computable for partial def
--- exceptM: need unconditional computable Inhabited for partial def.
--- DAEMON (noncomputable) breaks partial def compilation.
--- Result/Exception both need their type param to be Inhabited, so we
--- use an axiom-backed instance that's safe (never evaluated at runtime).
-private unsafe def exceptM_default {a : Type} {msg : Type} : exceptM a msg := unsafeCast ()
-@[implemented_by exceptM_default]
-private axiom exceptM_default_safe {a : Type} {msg : Type} : exceptM a msg
-instance {a : Type} {msg : Type} : Inhabited (exceptM a msg) where
-  default := exceptM_default_safe
+-- Monadic types — needed computable for partial def.
+-- Arc-2 S5d: the former axiom-backed instances (six unconditional axioms,
+-- each False-implying for empty parameters — flagged by the pre-merge
+-- audit) are replaced by REAL values wherever a constructor with
+-- concrete-typed arguments exists, and by [Inhabited]-bounded instances
+-- otherwise. Bounded instances resolve at the concrete instantiations
+-- partial defs actually use; a failure to resolve is a visible compile
+-- error at the def, never a hidden inconsistency.
 
--- Same pattern for other monadic types used in partial def
-private unsafe def errorM_default {a : Type} : errorM a := unsafeCast ()
-@[implemented_by errorM_default]
-private axiom errorM_default_safe {a : Type} : errorM a
+instance {a : Type} {msg : Type} [Inhabited msg] : Inhabited (exceptM a msg) where
+  default := Exception default
+
 instance {a : Type} : Inhabited (errorM a) where
-  default := errorM_default_safe
+  default := ErrorM (fun _ => Sum.inl default)
 
-private unsafe def t0_default {a : Type} : t0 a := unsafeCast ()
-@[implemented_by t0_default]
-private axiom t0_default_safe {a : Type} : t0 a
 instance {a : Type} : Inhabited (t0 a) where
-  default := t0_default_safe
+  default := Undef default []
 
-instance {err : Type} : Inhabited (kill_reason err) where
-  default := Undef0 default default
+instance {a : Type} {err : Type} {st : Type} [Inhabited st] : Inhabited (nd_status a err st) where
+  default := Killed default default
 
-private unsafe def nd_status_default {a : Type} {err : Type} {st : Type} : nd_status a err st := unsafeCast ()
-@[implemented_by nd_status_default]
-private axiom nd_status_default_safe {a : Type} {err : Type} {st : Type} : nd_status a err st
-instance {a : Type} {err : Type} {st : Type} : Inhabited (nd_status a err st) where
-  default := nd_status_default_safe
-
-private unsafe def nd_action_default {a : Type} {info : Type} {err : Type} {cs : Type} {st : Type} : nd_action a info err cs st := unsafeCast ()
-@[implemented_by nd_action_default]
-private axiom nd_action_default_safe {a : Type} {info : Type} {err : Type} {cs : Type} {st : Type} : nd_action a info err cs st
 instance {a : Type} {info : Type} {err : Type} {cs : Type} {st : Type} : Inhabited (nd_action a info err cs st) where
-  default := nd_action_default_safe
+  default := NDkilled default
 
-private unsafe def ndM_default {a : Type} {info : Type} {err : Type} {cs : Type} {st : Type} : ndM a info err cs st := unsafeCast ()
-@[implemented_by ndM_default]
-private axiom ndM_default_safe {a : Type} {info : Type} {err : Type} {cs : Type} {st : Type} : ndM a info err cs st
 instance {a : Type} {info : Type} {err : Type} {cs : Type} {st : Type} : Inhabited (ndM a info err cs st) where
-  default := ndM_default_safe
+  default := ND (fun st => (NDkilled default, st))
 
 -- AilSyntax sigma — the program record, used as initial empty state
 instance {a : Type} : Inhabited (sigma a) where
