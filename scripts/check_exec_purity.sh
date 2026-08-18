@@ -44,7 +44,9 @@ ENFORCE="${CERB_PURITY_ENFORCE:-1}"
 findings=0
 for m in "${EXEC_MODULES[@]}"; do
   f="$GEN/$m.lean"
-  [[ -f "$f" ]] || continue
+  # missing module = finding, not skip (fail-closed; arc-3 audit note —
+  # the totality gate already counts MISSING and the two must agree)
+  [[ -f "$f" ]] || { echo "check_exec_purity: MISSING $f"; findings=$((findings+1)); continue; }
   while IFS= read -r line; do
     allowed=0
     for a in "${ALLOWLIST[@]}"; do

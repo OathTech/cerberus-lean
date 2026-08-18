@@ -1050,7 +1050,11 @@ def callIntrinsic (_ : CerbLocation.Loc) (_ : String) (_ : List MemValue) : memM
     (arc-1): reached only past the default fuel's type-nesting depth, i.e.
     never for well-formed programs — same failure class as the existing
     failwith invariant branches. -/
+/- Routed through the opaque fuelExhaustedWith (arc-3 audit F9): a plain
+   `panic!` body is kernel-visible, making the fuel-exhausted branch
+   provably equal to `default` — semantically false. Opaque core ⇒ no
+   equations; still panics at runtime. -/
 def zerosFuelExhausted (_ : Unit) : MemValue :=
-  panic! "Core_aux.zeros_aux: fuel exhausted"
+  fuelExhaustedWith "Core_aux.zeros_aux: fuel exhausted" (MemValue.MVarray [])
 
 end CerbMem

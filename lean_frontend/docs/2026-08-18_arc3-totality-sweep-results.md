@@ -19,9 +19,9 @@ and recorded as pre-existing C-tier debt.
 | disposition | count | note |
 |---|---|---|
 | structural/WF flip (`termination_argument = automatic`) | 39 | incl. two mutual structural pairs |
-| de-mutualized to plain defs (backend, no declare needed) | ~11 | DAG rec-and members that were never recursive |
-| fuel (`fuel val` + witness sentinel) | 45 | incl. 3 fuel'd mutual families (B2) and the reader-lifted spine (B1) |
+| fuel (`fuel val` + `fuelExhausted` witness sentinel) | 51 new + 1 pre-existing | incl. 3 fuel'd mutual families (B2) and the reader-lifted spine (B1); some census entries totalized as part of a family, so declares ≠ census rows 1:1 (audit F11) |
 | soft sentinel | 1 | `simplify_integer_value_base` returns its input unsimplified |
+| de-mutualized to plain defs (backend, no declare needed) | ~11 | DAG rec-and members that were never recursive |
 | excluded (block-commented sorry stub) | 1 | `easy_update_mem_value_aux` |
 
 Fuel-vs-flip is decided by Lean's checker, not by hand: `automatic` was
@@ -73,6 +73,34 @@ extend the clean-cone exemplar list downward into the spine.
   build + suites verified green per batch. The .lem files still parse
   with the pre-arc lem (d25f982): arc 3 added no new declare grammar.
 - Runtime: `lemDefaultFuel = 1000000` per fuel'd function (not global);
-  `test_core.sh` stayed at the 104/105 baseline throughout — no
-  fuel-exhaustion regressions. Fuel exhaustion is honest-loud (opaque
-  panic) except the one soft sentinel noted above.
+  `test_core.sh` stayed at the 104/105 baseline throughout. Caveat
+  (audit): that differential is parse-only today, so runtime fuel
+  behavior is exercised by no gate yet. Fuel exhaustion is honest-loud
+  (opaque panic) except the one soft sentinel noted above; since a Lean
+  `panic!` prints-and-continues by default, the harness now sets
+  `LEAN_ABORT_ON_PANIC=1` (scripts/common.sh) so sentinel panics are
+  fail-stop (audit F10).
+
+## Audit (2 agents, adversarial) — dispositions
+
+Full reports in the arc transcript; every finding fixed or recorded:
+- FIXED: gate scanner rewritten lexer-grade (strings, `--` comments,
+  nested blocks, split `partial\ndef`, `protected`, multi-attribute) and
+  fail-closed on scanner failure (F1-F5); purity gate's missing-module
+  skip made fail-closed (consistency); `zeros_aux`'s sentinel routed
+  through the opaque `fuelExhaustedWith` — its exhausted branch was
+  kernel-provably `= default` (F9, verified unprovable after the fix);
+  `LEAN_ABORT_ON_PANIC=1` in the harness (F10); stale PARKED comments
+  reworded; reader_seed×fuel negative probe added (audit-2 n.5).
+- RECORDED, next-arc candidates: the 11-module slice boundary excludes
+  ≥13 partial defs in 10 non-slice modules that ARE on the exec spine's
+  call path (Ctype.ctypeEqual, State_exception_undefined monad plumbing,
+  Annot.get_loc, Utils.assoc_*, ...) — the headline above is true of the
+  DECLARED slice, and extending the slice (or totalizing the call-graph
+  closure) is the natural sequel (F8). Allowlist keys are
+  `Module.basename`, not namespace-qualified (latent while empty, F6).
+  De-mutualized fuel'd cross-calls run on the caller's fuel (lem design
+  note, post-audit section). The generated-OCaml byte caveat: two
+  whitespace/comment drops in gitignored build output; token-identical
+  otherwise (audit-2 n.1). Gates audit build outputs — regeneration
+  discipline is assumed, same as the purity gate (audit-2 n.6).

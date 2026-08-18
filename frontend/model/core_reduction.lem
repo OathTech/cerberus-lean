@@ -1488,7 +1488,7 @@ let step_ctx mem_st file core_extern current_tid (parent_tid_opt, th_st) =
    is a genuinely mutual pair over expr/list with an accumulator (automatic
    rejected) -> fuel BOTH: get_ctx witnesses the empty context list,
    get_ctx_unseq_aux (curried trailing list arg) witnesses fun _ => acc.
-   PARKED (still partial): full_eval_pexpr -- step-until-value loop, needs
+   Previously parked (resolved below): full_eval_pexpr -- step-until-value loop, needs
    fuel, but the backend's fuel wrapper mis-lays-out bodies whose lem source
    starts with `e >>= ...` on a fresh line (the infix->prefix rewrite leaves
    the bind head alone on its line and the argument lines at column 3, which

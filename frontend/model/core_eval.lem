@@ -1208,7 +1208,7 @@ let eval_pexpr loc current_call_loc_opt core_extern env mem_st_opt file pe =
    under mapM helpers -- automatic rejected (no decreasing measure);
    eval_pexpr_aux2 is a step-until-value loop on rewritten pexprs ->
    witness Result (Undef ...).
-   PARKED (still partial): eval_pexpr_aux_broken -- same loop shape, needs
+   Previously parked (resolved below): eval_pexpr_aux_broken -- same loop shape, needs
    fuel, but its lem body starts with `step_eval_pexpr ... >>= ...` on a
    fresh line and the backend's fuel wrapper leaves the rewritten bind head
    alone on its line with argument lines at column 3, escaping the

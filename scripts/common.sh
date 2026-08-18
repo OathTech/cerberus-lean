@@ -90,9 +90,12 @@ run_cerberus() {
         "$CERBERUS_BIN" --runtime="$PROJECT_ROOT/_build/install/default" "$@"
 }
 
-# Run cerberus-lean
+# Run cerberus-lean. LEAN_ABORT_ON_PANIC: a Lean `panic!` PRINTS and
+# CONTINUES by default — a fuel-exhaustion sentinel would degrade to
+# soft-with-stderr and a harness comparing stdout could miss it (arc-3
+# audit F10). Abort makes sentinel panics fail-stop.
 run_cerberus_lean() {
-    "$CERBERUS_LEAN_BIN" "$@"
+    LEAN_ABORT_ON_PANIC=1 "$CERBERUS_LEAN_BIN" "$@"
 }
 
 # Produce an 8-character hash of a string (works on both macOS and Linux)

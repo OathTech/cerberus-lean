@@ -70,3 +70,18 @@ test/Unit/TotalityProofTest.lean, wired as a lean_exe into test_unit.sh;
 check_exec_totality flipped to ENFORCE=1 inside test_unit.sh (fail-closed,
 empty allowlist). Lem classes live in Lem_Basic_classes/Lem_Map namespaces
 (the test opens them).
+
+**D11** — Audit dispositions (2 adversarial agents; both audited claims
+HOLD, zero blockers). Fixed: lexer-grade gate scanner + fail-closed
+scanner path (F1-F5), purity-gate missing-module fail-closed, zeros_aux
+sentinel opacity (F9 — was kernel-provably `= default`; now routed
+through fuelExhaustedWith, unprovability verified), LEAN_ABORT_ON_PANIC=1
+in the harness (F10), stale PARKED comments, reader_seed×fuel negative
+probe. Recorded (results doc, next-arc candidates): slice-boundary
+call-graph escape (F8, ≥13 partials in 10 non-slice modules),
+non-namespace-qualified allowlist keys (F6), caller's-fuel cross-calls in
+de-mutualized blocks, parse-only differential caveat, generated-OCaml
+whitespace caveat, regeneration-discipline assumption. Why record-not-fix
+for F8: extending the slice is a scope decision of the same magnitude as
+this arc's charter — it belongs to the next charter, not a close-out
+patch.

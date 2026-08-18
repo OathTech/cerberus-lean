@@ -5,7 +5,7 @@
    "type": "git",
    "subDir": "lean-lib",
    "scope": "",
-   "rev": "60932e88a6590c93ef66f4d4c70682e39aacbed0",
+   "rev": "574e326ff694069bf37e0d51cd06bef1b69a63e7",
    "name": "LemLib",
    "manifestFile": "lake-manifest.json",
    "inputRev": "arc/totality-sweep",

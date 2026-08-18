@@ -34,40 +34,71 @@ findings=0
 for m in "${EXEC_MODULES[@]}"; do
   f="$GEN/$m.lean"
   [[ -f "$f" ]] || { echo "check_exec_totality: MISSING $f"; findings=$((findings+1)); continue; }
+  # Lexer-grade scan (arc-3 audit F1-F5): strings, char literals, `--` line
+  # comments, and nested /- -/ block comments are stripped BEFORE matching,
+  # and the match is a word-level `partial` followed by `def`/`instance`
+  # across any whitespace (catches split lines, `protected`, multi-attribute
+  # prefixes). The scan MUST succeed — a scanner failure fails the gate
+  # (fail-closed), it does not silently report CLEAN.
+  scan_out=$(python3 - "$f" <<'PYEOF'
+import re, sys
+src = open(sys.argv[1]).read()
+cur = []
+depth = 0
+i = 0
+n = len(src)
+while i < n:
+    two = src[i:i+2]
+    if depth > 0:
+        if two == '/-': depth += 1; i += 2; continue
+        if two == '-/': depth -= 1; i += 2; continue
+        if src[i] == '\n': cur.append('\n')
+        i += 1; continue
+    if two == '/-':
+        depth += 1; i += 2; continue
+    if two == '--':
+        j = src.find('\n', i)
+        i = n if j == -1 else j
+        continue
+    c = src[i]
+    if c == '"':
+        cur.append(' '); i += 1
+        while i < n:
+            if src[i] == '\\': i += 2; continue
+            if src[i] == '"': i += 1; break
+            if src[i] == '\n': cur.append('\n')
+            i += 1
+        continue
+    if c == '\'' and i + 1 < n and (src[i+1] == '\\' or (i + 2 < n and src[i+2] == '\'')):
+        # char literal 'x' or '\n'
+        j = src.find('\'', i + 2 if src[i+1] != '\\' else i + 3)
+        i = (j + 1) if j != -1 else n
+        cur.append(' ')
+        continue
+    cur.append(c); i += 1
+clean = ''.join(cur)
+for m in re.finditer(r'\bpartial\s+(def|instance)\s+([A-Za-z_0-9α-ω.\']*)', clean):
+    line = clean.count('\n', 0, m.start()) + 1
+    print(f"{line}:{m.group(2) or '<anonymous>'}")
+PYEOF
+)
+  scan_rc=$?
+  if [[ $scan_rc -ne 0 ]]; then
+    echo "check_exec_totality: SCANNER FAILED on $f (rc=$scan_rc)"
+    echo "check_exec_totality: FAIL (fail-closed)"
+    exit 1
+  fi
   while IFS= read -r hit; do
-    name=$(sed -E 's/^[0-9]+:[[:space:]]*(@\[[^]]*\][[:space:]]*)?(private[[:space:]]+)?partial[[:space:]]+(def|instance)[[:space:]]+([A-Za-z_0-9'\''.]+).*/\4/' <<<"$hit")
+    [[ -z "$hit" ]] && continue
+    name="${hit#*:}"
     key="$m.$name"
     if [[ -n "${allowed[$key]+x}" ]]; then
       allowed["$key"]=1
     else
-      echo "  PARTIAL $key  (${hit%%:*})"
+      echo "  PARTIAL $key  (line ${hit%%:*})"
       findings=$((findings+1))
     fi
-  done < <(python3 - "$f" <<'PYEOF'
-# Blank out nested /- -/ block comments, then emit lines that declare a
-# partial def/instance (a sorry-target_rep'd def can be a whole partial def
-# inside a block comment — arc-3 S0 false positive, easy_update_mem_value_aux).
-import re, sys
-src = open(sys.argv[1]).read()
-out, depth, i, cur = [], 0, 0, []
-while i < len(src):
-    two = src[i:i+2]
-    if two == '/-':
-        depth += 1; i += 2; continue
-    if two == '-/' and depth > 0:
-        depth -= 1; i += 2; continue
-    ch = src[i]
-    if depth == 0:
-        cur.append(ch)
-    elif ch == '\n':
-        cur.append('\n')
-    i += 1
-pat = re.compile(r'^[ \t]*(@\[[^\]]*\][ \t]*)?(private[ \t]+)?partial[ \t]+(def|instance)[ \t]')
-for n, line in enumerate(''.join(cur).split('\n'), 1):
-    if pat.match(line):
-        print(f"{n}:{line}")
-PYEOF
-)
+  done <<< "$scan_out"
 done
 
 stale=0
