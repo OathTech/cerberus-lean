@@ -457,3 +457,54 @@ RECOMMENDATION: A + B' in this arc (both small; merge-bar condition
 "proof-test theorems DAEMON-clean" is met by A alone for the current
 six theorems, with B' making any residual taint harmless); C deferred.
 AWAITING S5 RULING.
+
+## 15. S5 REVISED after design archaeology (2026-08-18) — §14's A+B' is withdrawn
+
+A history agent reconstructed the Apr-2026 inhabitation churn (six
+approaches in ~48h; full narrative with shas in its report; primary
+sources: lem-lean doc/notes/2026-04-09_inhabited_design.md and commits
+9e4f4eb→8648411). Decisive findings against §14:
+
+- **A re-enters the abandoned mechanism.** [Inhabited a] constraint
+  propagation through generated signatures was built and deliberately
+  deleted (aaf7a64), and "does not require [Inhabited a] typeclass
+  constraints" is a WRITTEN requirement of the converged design
+  (2026-04-09 note line 8). Concrete first casualty under A:
+  Nondeterminism.msum/pick — polymorphic failwith at ndM types with no
+  constraints; closing their compile errors means re-implementing the
+  deleted machinery.
+- **B''s "consistent everywhere" is unmet as scoped**: six hand-written
+  UNCONDITIONAL axioms in CerbInhabitedInstances.lean:42-76
+  (exceptM/errorM/t0/nd_status/nd_action/ndM _default_safe) are
+  False-implying for empty parameters and were missed by §14's census —
+  the same census failure-class as §10, again.
+- **§14's deriving-Nonempty claim was unevidenced**: untested on function
+  fields, generated mutual blocks, and Type-1 indexed blocks.
+- **A's ':= default' body is proof-theoretically WORSE than DAEMON**:
+  error branches become provably equal to legitimate defaults (cf. the
+  808cb3e1b defaults-leak lesson); DAEMON's opacity was accidentally a
+  claim-strength feature.
+- Also: lean_frontend/CLAUDE.md references lembugs/ which has never
+  existed on any branch (doc rot, fix in passing); the 2026-04-09 note
+  and backend manual still describe the pre-8648411 noncomputable design
+  (stale, fix in passing).
+
+**REVISED S5 design ("site-typed failwith split"):**
+1. New `opaque failwithI {α} [Inhabited α] (msg : String) : α` in LemLib
+   with `@[implemented_by]` panic. Opaque + bounded ⇒ NO axiom,
+   consistent, computable at runtime, and UNPROVABLE-equal to anything
+   (stronger claim hygiene than both DAEMON and `:= default`).
+2. The lem backend emits `failwithI` at call sites whose type is
+   SYNTACTICALLY CONCRETE (the overwhelming majority, incl. every
+   exec-slice site) and keeps legacy `failwith` (DAEMON) at
+   type-variable-typed sites (msum/pick class) — zero constraint
+   propagation, zero signature changes: the Apr-9 requirement holds.
+3. Gate: `#print axioms` check on the proof-test theorems added to the
+   unit gate (DAEMON-clean cones = the merge-bar condition), rather than
+   claiming global consistency.
+4. The six hand-written _default_safe axioms: repaired in the same slice
+   (opaque + appropriate bounds at their monadic types) — they are ours.
+5. deriving Nonempty: NOT USED — the untested claim is dodged entirely.
+   Global DAEMON elimination stays C-tier cleanup (future arc).
+
+AWAITING S5 RULING on the revised design.
