@@ -318,8 +318,21 @@ lean-prelude-src: $(LEM_SRC)
 	@echo "[COPY] hand-written Lean files into [$(LEAN_SRC_DIR)]"
 	$(Q)cp $(addprefix lean_frontend/,$(LEAN_HANDWRITTEN)) $(LEAN_SRC_DIR)/
 
+# Native C objects linked into lean_frontend executables (lakefile.toml
+# moreLinkArgs). Compiled with the toolchain's leanc (hermetic clang).
+# Lake does NOT track these .o files as link inputs, so after recompiling we
+# delete the linked executables to force a relink on the next lake build.
+LEAN_NATIVE = fresh_int debug tags
+.PHONY: lean-native-obj
+lean-native-obj:
+	@echo "[LEANC] compiling lean_frontend/native objects"
+	$(Q)cd lean_frontend && SYSROOT=$$(lake env printenv LEAN_SYSROOT) && \
+	  for f in $(LEAN_NATIVE); do \
+	    "$$SYSROOT/bin/leanc" -c -O2 native/$$f.c -o native/$$f.o || exit 1; \
+	  done && rm -f .lake/build/bin/*
+
 .PHONY: lean-build
-lean-build: lean-prelude-src
+lean-build: lean-prelude-src lean-native-obj
 	@echo "[LAKE] building CerberusLean"
 	$(Q)cd lean_frontend && lake build
 
