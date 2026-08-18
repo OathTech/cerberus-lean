@@ -43,7 +43,31 @@ for m in "${EXEC_MODULES[@]}"; do
       echo "  PARTIAL $key  (${hit%%:*})"
       findings=$((findings+1))
     fi
-  done < <(grep -nE '^[[:space:]]*(@\[[^]]*\][[:space:]]*)?(private[[:space:]]+)?partial[[:space:]]+(def|instance)[[:space:]]' "$f")
+  done < <(python3 - "$f" <<'PYEOF'
+# Blank out nested /- -/ block comments, then emit lines that declare a
+# partial def/instance (a sorry-target_rep'd def can be a whole partial def
+# inside a block comment — arc-3 S0 false positive, easy_update_mem_value_aux).
+import re, sys
+src = open(sys.argv[1]).read()
+out, depth, i, cur = [], 0, 0, []
+while i < len(src):
+    two = src[i:i+2]
+    if two == '/-':
+        depth += 1; i += 2; continue
+    if two == '-/' and depth > 0:
+        depth -= 1; i += 2; continue
+    ch = src[i]
+    if depth == 0:
+        cur.append(ch)
+    elif ch == '\n':
+        cur.append('\n')
+    i += 1
+pat = re.compile(r'^[ \t]*(@\[[^\]]*\][ \t]*)?(private[ \t]+)?partial[ \t]+(def|instance)[ \t]')
+for n, line in enumerate(''.join(cur).split('\n'), 1):
+    if pat.match(line):
+        print(f"{n}:{line}")
+PYEOF
+)
 done
 
 stale=0

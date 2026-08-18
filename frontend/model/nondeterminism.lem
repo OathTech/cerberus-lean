@@ -543,3 +543,16 @@ let liftND get put liftErr (ND m) =
 type nd_status 'a 'err 'st =
   | Active of 'a
   | Killed of 'st * kill_reason 'err
+
+(* === Totality declares (arc 3 sweep, 2026-08-18): Lean-target only.
+   nd_bind: recursion on the result of applying a stored function
+   (m_act st), not a subterm -> fuel; witness is a minimal killed
+   computation (fuelExhausted panics at runtime, the witness only
+   discharges typing).
+   nd_foldlM: structural on its list argument -> automatic.
+   liftND/liftAction: genuinely cyclic mutual pair, recursion through
+   stored-function application -> fuel both (all-or-none). === *)
+declare {lean} fuel val nd_bind = `fuelExhausted (ND (fun st => (NDkilled (Undef0 CerbLocation.Loc.unknown []), st)))`
+declare {lean} termination_argument nd_foldlM = automatic
+declare {lean} fuel val liftND = `fuelExhausted (ND (fun st => (NDkilled (Undef0 CerbLocation.Loc.unknown []), st)))`
+declare {lean} fuel val liftAction = `fuelExhausted (fun _ => NDkilled (Undef0 CerbLocation.Loc.unknown []))`

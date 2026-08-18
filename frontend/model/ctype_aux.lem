@@ -268,3 +268,14 @@ let match_integer_ctype (Ctype _ ty_) =
     | _ ->
         NotMatchedIty
   end
+
+(* === Totality declares (arc 3 sweep, 2026-08-18): Lean-target only.
+   are_compatible_aux / are_compatible_params_aux / are_compatible_params
+   form a genuinely cyclic mutual family whose recursion goes through
+   tagDefs map lookups (member types fetched from the environment), not
+   subterms -> fuel all three (all-or-none for mutual blocks). Return
+   type is bool: the witness only discharges typing; honesty lives in
+   the fuelExhausted runtime panic. === *)
+declare {lean} fuel val are_compatible_aux = `fuelExhausted false`
+declare {lean} fuel val are_compatible_params_aux = `fuelExhausted (fun _ => false)`
+declare {lean} fuel val are_compatible_params = `fuelExhausted false`
