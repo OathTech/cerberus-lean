@@ -20,10 +20,16 @@ cat > "$PROBE" <<'EOF'
 import Core_aux
 import Ctype_aux
 import Core_run
+import Core_run_aux
+import Nondeterminism
 #print axioms core_object_type_of_ctype
 #print axioms get_membersDefs
 #print axioms zeros_aux
 #print axioms fresh_symbol'
+#print axioms match_pattern
+#print axioms convert_pexpr
+#print axioms nd_bind
+#print axioms subst_sym_pexpr
 EOF
 OUT=$(cd lean_frontend && lake env lean .axiom-probe.lean 2>&1 | grep -v -i warning || true)
 rm -f "$PROBE"

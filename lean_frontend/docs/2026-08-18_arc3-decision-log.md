@@ -49,3 +49,24 @@ the input) only where string-free and semantically clean.
 **D7** — Batch cadence: per-batch gates = OCaml prelude+dune build, full
 lake build, test_unit (purity+axioms), test_parse, test_core at 104/105
 baseline. Batch A (Core_run_aux) green on all.
+
+**D8** — Batch D exposed a wrapper gap (class-constraint binders dropped)
+and batch E a succ-arm parenthesization bug; both fixed lem-side with
+probes (sections 12c, and the batch-E shape covered by regen), and the
+four parked defs un-parked. The sweep ends with an EMPTY allowlist.
+
+**D9** — Cone visibility, recorded not gated: now that the deep spine is
+total it HAS inspectable cones — step_eval_pexpr carries DAEMON (legacy
+failwith at poly sites / instance fallbacks, the known C-tier debt) and
+driver2 carries DAEMON + sorryAx (via the sorry-target_rep'd
+easy_update_mem_value_aux and BEq sorry stubs). These are pre-existing,
+newly-visible, and are NEXT-ARC candidates. The axiom gate's exemplar
+list gains the four CLEAN new cones (match_pattern, convert_pexpr,
+nd_bind, subst_sym_pexpr) — the clean set only grows monotonically.
+
+**D10** — S3 shape: 52 generated wrapper-defeq examples (one per fuel'd
+def, zeros_aux already covered) + 8 symbolic execution theorems in
+test/Unit/TotalityProofTest.lean, wired as a lean_exe into test_unit.sh;
+check_exec_totality flipped to ENFORCE=1 inside test_unit.sh (fail-closed,
+empty allowlist). Lem classes live in Lem_Basic_classes/Lem_Map namespaces
+(the test opens them).

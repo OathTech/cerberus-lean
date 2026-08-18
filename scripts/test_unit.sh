@@ -14,6 +14,7 @@ set -euo pipefail
 # List of unit test executables (must match [[lean_exe]] names in lakefile.toml)
 UNIT_TESTS=(
     "effects-proof-test"
+    "totality-proof-test"
     "core-parser-test"
     "fresh-int-test"
 )
@@ -61,5 +62,13 @@ fi
 AXIOM_SH="$(dirname "$PURITY_SH")/check_theorem_axioms.sh"
 if ! "$AXIOM_SH"; then
     echo "test_unit: axiom-cone gate FAILED"
+    exit 1
+fi
+
+# Totality gate (arc 3): the exec slice is partial-free (empty allowlist).
+# ENFORCING and fail-closed like the gates above.
+TOTALITY_SH="$(dirname "$PURITY_SH")/check_exec_totality.sh"
+if ! ENFORCE=1 "$TOTALITY_SH"; then
+    echo "test_unit: exec-totality gate FAILED"
     exit 1
 fi

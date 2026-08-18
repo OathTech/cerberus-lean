@@ -141,6 +141,12 @@ root = "Unit.EffectsProofTest"
 moreLinkArgs = ["native/fresh_int.o", "native/debug.o", "native/tags.o"]
 
 [[lean_exe]]
+name = "totality-proof-test"
+srcDir = "test"
+root = "Unit.TotalityProofTest"
+moreLinkArgs = ["native/fresh_int.o", "native/debug.o", "native/tags.o"]
+
+[[lean_exe]]
 name = "fresh-int-test"
 srcDir = "test"
 root = "Unit.FreshIntTest"
