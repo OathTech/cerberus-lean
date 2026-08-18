@@ -424,3 +424,36 @@ ELIMINATED rather than restricted; the .lem diff is ~15 lines in
 established house style with an upstreamable story ("thread symbol
 freshness like every other supply; remove a hidden global"); the
 failure mode that caused §10 (unverifiable census) becomes a gate check.
+
+## 14. S5 DAEMON repair — investigation + options (checkpoint packet)
+
+Root cause localized: `LemLib.failwith`'s REFERENCE body is `DAEMON`
+(`def failwith {α} (_msg) : α := DAEMON`), so every def with an error
+branch transitively depends on the False-implying axiom — that is why the
+exemplar theorems are tainted. Fallback-instance surface: 55
+`default := DAEMON` Inhabited instances across generated code (Cn 20,
+Core 14, AilSyntax 5, Nondeterminism 4, Core_aux 2, singles); the exec
+slice touches ~7.
+
+- **A — de-axiomatize failwith** (small): `failwith [Inhabited α] :=
+  default`. Call sites unchanged (implicit instance); every failwith at a
+  really-Inhabited type (all Option-returning defs, incl.
+  core_object_type_of_ctype) becomes DAEMON-free immediately; gaps
+  surface as compile errors (fail-closed) and resolve via the fallback
+  instances where they exist.
+- **B' — make DAEMON consistent** (small): bound it —
+  `DAEMON {α} [Nonempty α] : α` (an axiom with models: choice), keep the
+  unsafe implemented_by for execution. Fallback instances then need
+  `Nonempty T`: backend emits `deriving Nonempty` on generated inductives
+  (Lean derives it even for recursive/parametric types — no computation
+  needed). Axiom set becomes CONSISTENT everywhere; #print axioms shows
+  [DAEMON] only where genuinely stuck, and DAEMON no longer implies False.
+- **C — kill the fallbacks** (larger, later): real derived Inhabited in
+  the backend + hand instances for stragglers (CerbInhabitedInstances
+  exists for this); delete DAEMON entirely. Cleanup, not required for
+  "theorems certify".
+
+RECOMMENDATION: A + B' in this arc (both small; merge-bar condition
+"proof-test theorems DAEMON-clean" is met by A alone for the current
+six theorems, with B' making any residual taint harmless); C deferred.
+AWAITING S5 RULING.
