@@ -17,3 +17,55 @@ charter's S3-adjacent note (operator correction, 2026-08-19).
 `worktrees/cerberus-lean-arc/libc-load`; charter DRAFT marker removed on
 launch. No lem-lean worktree unless a backend need emerges (none
 expected; any lem change triggers the full pin dance per charter).
+
+**D3 [USER]** — Decision PRINCIPLE for the libc-ingestion path choice
+(operator, mid-S0): choose to MINIMIZE THE TCB. The operator's framing
+of the tension, near-verbatim: writing our own loading implementation
+adds new code; leaning on Cerberus grows the surface that cannot be
+reasoned about; a lot depends on what exactly Cerberus already offers.
+Relayed to the S0 worker mid-flight with an [AGENT] analytical frame
+attached (recorded here so the provenance split is exact): the frame —
+that Lean-side linking via the GENERATED (lem-derived) Core_linking sits
+inside the reasoned-about surface, that CoreParser is an existing trust
+surface whose usage rather than mechanism would grow, and that a
+post-link dump oracle-trusts a SEMANTIC transformation unlike the thin
+cabs-json syntax boundary — is the orchestrator's analysis in service of
+the operator's principle, not an operator statement. S0's survey must
+carry a per-path TCB accounting; the unlinked-text-dump feasibility
+answer likely decides the path under this principle.
+
+**D4 [USER-initiated / AGENT-scoped]** — Parallel stream opened at the
+operator's suggestion ("could we run an iris-lean spike vs the draft
+semantics in parallel?"): spike/relsem worktree, SPIKE grade (design +
+skeleton deliverable, reporting only, no merge bar this arc). [AGENT]
+scoping: iris-lean does not build offline (4.32.2 + Qq — network-window
+items), but Layer-2's relational semantics is BY ARCHITECTURE a
+definition over our fuel opsem needing no Iris import — so the spike
+drafts real 4.29 Lean (step relation over Core configs, fuel-erasure
+statement skeletons, ND/oracle parameterization) + a paper design for
+the Iris coupling/adequacy, sourced from deps/golean + deps/iris-lean
+(read-only). Write surfaces disjoint from arc 6 except one [[lean_lib]]
+lakefile line (accepted rebase point; merges serialize per doctrine).
+
+**D5 [AGENT]** — S0 boundary passed (survey-only commit verified). Path
+DECISION per the operator's TCB principle (D3 [USER]): **path (i)** —
+oracle-produced UNLINKED libc text dump (stock `--pp=core` on libc.co,
+no OCaml patching, 4.2MB once vs the prototype's 365MB per test),
+ingested by our existing CoreParser (mechanism unchanged, usage grows:
+needs `glob` production + restrict/varargs-ctype — 68/191 decls fail
+today) and linked by the GENERATED Core_linking. The link step stays
+inside the reasoned-about surface; the dump is pinned + drift-checked
+oracle input (cabs-json trust class). Caveat owned: stock pp omits
+extern/funinfo/main — Lean-side synthesis is S1's real work, cited
+against what OCaml's loader reconstructs.
+
+**D6 [AGENT]** — S3 perf RESHAPED per S0 profile: dominant cost is
+LemLib Fmap (assoc list, O(n) ops) at every generated-map seam — the
+fix is a representation change in lem-lean's lean-lib (opens the
+two-repo lane + pin dance at close; behavioral-equivalence argument
+required: key-order folds then MATCH the oracle = parity improvement,
+not regression risk). CerbMem bytemap secondary. NEW register defect:
+stack ceiling (SIGABRT at ~2k-8k-iteration loops) — recorded; S3
+addresses it only if the Fmap fix exposes it as next-binding. Park
+clause retained. Slice order: S1 libc → S2 varargs → S3 perf
+(worktree-sequenced; S3 opens the lem-lean worktree).
