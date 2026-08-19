@@ -596,6 +596,174 @@ def testDeclarations : TestM Unit := do
       "proc [ailname = \"__builtin_ffs\"] ffs_proxy (): eff integer := pure(42)\n"))
     [("__builtin_ffs", "ffs_proxy")]
 
+/-! ## Arc-6 S1: libc dump grammar (each production cited at its
+    implementation site in CoreParser.lean) -/
+
+def testLibcProductions : TestM Unit := do
+  IO.println "=== libc dump productions (arc-6 S1) ==="
+
+  -- Bodyless ProcDecl (pp_core.ml:783-785; pp-only form, no mly production)
+  assertCounts "procdecl bodyless" "proc __builtin_exit (pointer)\n" (0, 1, 0, 0, 0, 0)
+  assertCounts "procdecl multi" "proc __builtin_vsnprintf (pointer, pointer, pointer, pointer)\n" (0, 1, 0, 0, 0, 0)
+  match CoreParser.parseFile "proc __builtin_exit (pointer)\n" with
+  | .ok cf =>
+    match cf.procs with
+    | [(_, ProcDecl _ _ [BTy_object OTy_pointer])] => pass "procdecl AST is ProcDecl"
+    | _ => fail_ "procdecl AST is ProcDecl" "unexpected shape"
+  | .error e => fail_ "procdecl AST is ProcDecl" e
+  -- a zero-arg FULL proc must still parse as Proc (colon lookahead)
+  match CoreParser.parseFile "proc tmpfile (): eff loaded pointer := pure(Specified(NULL(void*)))\n" with
+  | .ok cf =>
+    match cf.procs with
+    | [(_, Proc _ _ _ _ _)] => pass "zero-arg full proc still Proc"
+    | _ => fail_ "zero-arg full proc still Proc" "unexpected shape"
+  | .error e => fail_ "zero-arg full proc still Proc" e
+
+  -- glob with function-pointer-array ail_ctype (the sighandler/funcs globs)
+  assertCounts "glob fn-ptr array ail_ctype"
+    "glob sighandler: pointer [ail_ctype = 'void (signed int)*[8]'] := pure(Unit)\n" (0, 0, 0, 0, 1, 0)
+  assertCounts "glob empty-params fn ail_ctype"
+    "glob funcs: pointer [ail_ctype = 'void ()*[32]'] := pure(Unit)\n" (0, 0, 0, 0, 1, 0)
+
+  -- AIL-dialect ctype literals (Pp_ail.pp_ctype, pp_core.ml:332):
+  -- space spellings, post-star qualifiers, (*)/(*[N]) declarators, `...`
+  let pexprOf (cf : CoreParser.CoreFile) : Option (generic_pexpr Unit sym) :=
+    match cf.procs with
+    | [(_, Proc _ _ _ _ (Expr _ (Epure pe)))] => some pe
+    | _ => none
+  let parseCtypeVal (name lit : String) (check : ctype → Bool) : TestM Unit :=
+    match CoreParser.parseFile s!"proc f (): eff ctype := pure({lit})\n" with
+    | .ok cf =>
+      match pexprOf cf with
+      | some (Pexpr _ _ (PEval (Vctype ty))) =>
+        if check ty then pass name else fail_ name "ctype AST shape mismatch"
+      | _ => fail_ name "not a Vctype pexpr"
+    | .error e => fail_ name e
+  parseCtypeVal "space long long" "'signed long long'"
+    (fun ty => match ty with
+      | Ctype _ (Basic (Integer (Signed LongLong))) => true | _ => false)
+  parseCtypeVal "space long double" "'long double'"
+    (fun ty => match ty with
+      | Ctype _ (Basic (Floating (RealFloating LongDouble))) => true | _ => false)
+  -- restrict lands in the parameter TRIPLE of the function type
+  -- (pp_ail.ml Pointer case prints star ^^ pp_qualifiers of the
+  -- parameter's qualifiers), `...` sets the variadic flag, and the
+  -- pointee `const` lands in Pointer's own qualifiers
+  parseCtypeVal "fn-ptr restrict + variadic"
+    "'signed int (*) (const char*restrict , ...)'"
+    (fun ty => match ty with
+      | Ctype _ (Pointer _ (Ctype _ (Function _ [(qs, Ctype _ (Pointer pqs (Ctype _ (Basic (Integer Char0)))), _)] true))) =>
+        qs.restrict && !qs.const && pqs.const
+      | _ => false)
+  -- (void) is an EMPTY prototype (pp_ail.ml:268-270)
+  parseCtypeVal "(void) empty prototype" "'void (*) (void)'"
+    (fun ty => match ty with
+      | Ctype _ (Pointer _ (Ctype _ (Function _ [] false))) => true | _ => false)
+  -- (*[N]): array of function pointers
+  parseCtypeVal "(*[32]) array of fn ptrs" "'void (*[32]) (void)'"
+    (fun ty => match ty with
+      | Ctype _ (Array0 (Ctype _ (Pointer _ (Ctype _ (Function _ [] false)))) (some 32)) => true
+      | _ => false)
+  -- char*const *: pointer to const-qualified pointer to char
+  parseCtypeVal "char*const *" "'char*const *'"
+    (fun ty => match ty with
+      | Ctype _ (Pointer qs (Ctype _ (Pointer _ (Ctype _ (Basic (Integer Char0)))))) => qs.const
+      | _ => false)
+  -- CORE-dialect empty parens = Function [] (prototyped; see the
+  -- pp_core_ctype ambiguity note in CoreParser)
+  match CoreParser.parseFile "proc f (x: pointer): eff unit := kill('void ()*', x)\n" with
+  | .ok _ => pass "CORE-dialect 'void ()*'"
+  | .error e => fail_ "CORE-dialect 'void ()*'" e
+
+  -- OTy_struct raw-symbol suffix strip (Pp_symbol.to_string,
+  -- pp_symbol.ml:5-10 via pp_core.ml:186-189): `struct fl_331` interns
+  -- to the same tag symbol as ctype-position `struct fl`
+  match CoreParser.parseFile
+      "proc f (): eff loaded struct fl_331 := pure(Specified(Ivsizeof('struct fl')))\n" with
+  | .ok cf =>
+    match cf.procs with
+    | [(_, Proc _ _ (BTy_loaded (OTy_struct tagSym)) _ _)] =>
+      if tagSym == CoreParser.internSym "fl" then pass "OTy strip _<num> suffix"
+      else fail_ "OTy strip _<num> suffix" "tag symbol differs from interned 'fl'"
+    | _ => fail_ "OTy strip _<num> suffix" "unexpected shape"
+  | .error e => fail_ "OTy strip _<num> suffix" e
+
+  -- Cfunction(sym) is a real function pointer value (impl_mem.ml:567-568),
+  -- not the old null punt
+  match CoreParser.parseFile "proc f (): eff loaded pointer := pure(Specified(Cfunction(exit_proxy)))\n" with
+  | .ok cf =>
+    match pexprOf cf with
+    | some (Pexpr _ _ (PEctor Cspecified [Pexpr _ _ (PEval (Vobject (OVpointer pv)))])) =>
+      -- PVfunction carries the interned sym
+      match pv with
+      | .PV _ (.PVfunction s) =>
+        if s == CoreParser.internSym "exit_proxy" then pass "Cfunction → PVfunction"
+        else fail_ "Cfunction → PVfunction" "wrong symbol"
+      | _ => fail_ "Cfunction → PVfunction" "not a PVfunction"
+    | _ => fail_ "Cfunction → PVfunction" "unexpected pexpr shape"
+  | .error e => fail_ "Cfunction → PVfunction" e
+
+  -- unannotated Vlist literal (pp_core.ml:327-329 — no `: type` suffix)
+  assertCounts "unannotated list literal"
+    "proc f (x: pointer): eff unit := ccall('void (*) (signed int, ...)', x, x, [('signed int', x)])\n"
+    (0, 1, 0, 0, 0, 0)
+
+  -- error("...", pe): dquoted string form (pp_core.ml:444-445 / mly:1572)
+  assertCounts "error dquoted"
+    "fun f (): unit := error(\"assert() failure\", Unit)\n" (1, 0, 0, 0, 0, 0)
+
+  -- PEif reparse ambiguity (see CoreParser's note): binop-RHS if is
+  -- operand-bounded, so `a = if …` keeps the comparison at the top
+  match CoreParser.parseFile
+      ("fun f (a: integer, b: integer): integer :=\n" ++
+       "  if conv_int('signed int', a) = if all_values_representable_in('size_t', 'signed int') then conv_int('signed int', b) else conv_int('unsigned int', b) then 1 else 0\n") with
+  | .ok cf =>
+    match cf.funs with
+    | [(_, Fun _ _ (Pexpr _ _ (PEif (Pexpr _ _ (PEop OpEq _ (Pexpr _ _ (PEif _ _ _)))) _ _)))] =>
+      pass "bounded if as binop RHS"
+    | _ => fail_ "bounded if as binop RHS" "unexpected AST shape"
+  | .error e => fail_ "bounded if as binop RHS" e
+  -- …and hand-written-style greedy branches still work (std.core:143)
+  match CoreParser.parseFile
+      "fun f (n: integer, width: integer): integer := if n = 0 then n else 2^width + n\n" with
+  | .ok cf =>
+    match cf.funs with
+    | [(_, Fun _ _ (Pexpr _ _ (PEif _ _ (Pexpr _ _ (PEop OpAdd _ _)))))] =>
+      pass "greedy else keeps binop branch"
+    | _ => fail_ "greedy else keeps binop branch" "unexpected AST shape"
+  | .error e => fail_ "greedy else keeps binop branch" e
+
+  -- layout-sensitive `;` (see CoreParser's pExprSeq note): an outdented
+  -- sequel after an if belongs to the enclosing sequence, not the else
+  match CoreParser.parseFile
+      ("proc f (x: pointer): eff loaded integer :=\n" ++
+       "  if True then\n" ++
+       "    kill('signed int', x) ;\n" ++
+       "    run ret_1(Specified(0))\n" ++
+       "  else\n" ++
+       "    pure(Unit) ;\n" ++
+       "  pure(Specified(1))\n") with
+  | .ok cf =>
+    match cf.procs with
+    | [(_, Proc _ _ _ _ (Expr _ (Esseq _ (Expr _ (Eif _ _ (Expr _ (Epure _)))) _)))] =>
+      pass "outdented ;-sequel attaches to sequence"
+    | _ => fail_ "outdented ;-sequel attaches to sequence" "unexpected AST shape"
+  | .error e => fail_ "outdented ;-sequel attaches to sequence" e
+  -- …while an INDENTED sequel stays inside the branch
+  match CoreParser.parseFile
+      ("proc f (x: pointer): eff unit :=\n" ++
+       "  if True then\n" ++
+       "    pure(Unit)\n" ++
+       "  else\n" ++
+       "    kill('signed int', x) ;\n" ++
+       "    pure(Unit)\n") with
+  | .ok cf =>
+    match cf.procs with
+    | [(_, Proc _ _ _ _ (Expr _ (Eif _ _ (Expr _ (Esseq _ _ _)))))] =>
+      pass "indented ;-sequel stays in branch"
+    | _ => fail_ "indented ;-sequel stays in branch" "unexpected AST shape"
+  | .error e => fail_ "indented ;-sequel stays in branch" e
+
 def testFiles : TestM Unit := do
   IO.println "=== Runtime files ==="
 
@@ -648,6 +816,71 @@ def testFiles : TestM Unit := do
   else
     IO.println "  (skipping file tests — runtime not found)"
 
+  -- Arc-6 S1 parse bar: the ENTIRE pinned libc dump parses, with the
+  -- exact declaration census (191 proc — 188 unique names + the
+  -- __procfdname duplicate and the __strtox/__strtoxd decl+def pairs —
+  -- 68 globs, 1 surviving tagDef `fl`; see scripts/libc_prep.sh).
+  let libcPath := "../tests/libc/libc.core"
+  if ← System.FilePath.pathExists libcPath then
+    let content ← IO.FS.readFile libcPath
+    match CoreParser.parseFile content with
+    | .ok cf =>
+      if cf.procs.length == 191 then pass "libc.core 191 procs"
+      else fail_ "libc.core 191 procs" s!"got {cf.procs.length}"
+      if cf.globs.length == 68 then pass "libc.core 68 globs"
+      else fail_ "libc.core 68 globs" s!"got {cf.globs.length}"
+      if cf.tagDefs.length == 1 then pass "libc.core 1 tagDef (fl)"
+      else fail_ "libc.core 1 tagDef (fl)" s!"got {cf.tagDefs.length}"
+      if cf.funs.length == 0 && cf.builtins.length == 0 && cf.impls.length == 0 then
+        pass "libc.core no fun/builtin/impl decls"
+      else fail_ "libc.core no fun/builtin/impl decls" "unexpected extra decls"
+      -- symbol-invariant re-verification (arc-5 note; charter risk item):
+      -- every top-level libc symbol id must stay ≥ 2^20 (above the
+      -- desugar-threaded id band) and the name-hash interning must be
+      -- collision-free across libc ∪ std.core top-level names
+      let stdPath := "../runtime/libcore/std.core"
+      let stdNames ← do
+        if ← System.FilePath.pathExists stdPath then
+          match CoreParser.parseFile (← IO.FS.readFile stdPath) with
+          | .ok scf => pure ((scf.funs ++ scf.procs ++ scf.builtins).map (·.1))
+          | .error _ => pure []
+        else pure []
+      let allSyms := (cf.procs.map (·.1)) ++ (cf.globs.map (·.1)) ++ stdNames
+      let mut belowFloor := 0
+      let mut collisions := 0
+      let mut seen : List (Nat × String) := []
+      for s in allSyms do
+        match s with
+        | Symbol _ n (SD_Id name) =>
+          if n < (1 <<< 20) then belowFloor := belowFloor + 1
+          match seen.find? (fun p => p.1 == n) with
+          | some (_, other) =>
+            if other != name then collisions := collisions + 1
+          | none => seen := (n, name) :: seen
+        | _ => pure ()
+      if belowFloor == 0 then pass "libc∪std sym ids ≥ 2^20 (arc-5 invariant)"
+      else fail_ "libc∪std sym ids ≥ 2^20 (arc-5 invariant)" s!"{belowFloor} below floor"
+      if collisions == 0 then pass "libc∪std name-hash collision-free"
+      else fail_ "libc∪std name-hash collision-free" s!"{collisions} collisions"
+      -- the strip-rule precondition: no top-level name ends in _<digits>
+      -- that would alias another name after stripping (OTy positions)
+      let stripped := fun (s : String) =>
+        let cs := s.toList.reverse
+        let ds := cs.takeWhile (·.isDigit)
+        if ds.isEmpty then none
+        else match cs.drop ds.length with
+          | '_' :: rest => if rest.isEmpty then none else some (String.ofList rest.reverse)
+          | _ => none
+      let names := allSyms.filterMap (fun s => match s with
+        | Symbol _ _ (SD_Id n) => some n | _ => none)
+      let aliased := names.filter (fun n => (stripped n).isSome &&
+        names.contains ((stripped n).getD ""))
+      if aliased.isEmpty then pass "no top-level name aliases under _<num> strip"
+      else fail_ "no top-level name aliases under _<num> strip" s!"{aliased}"
+    | .error e => fail_ "libc.core parses" e
+  else
+    IO.println "  (skipping libc.core tests — pin not found)"
+
 end CoreParserTest
 
 def runTests : CoreParserTest.TestM Unit := do
@@ -662,6 +895,7 @@ def runTests : CoreParserTest.TestM Unit := do
   CoreParserTest.testExprCompound
   CoreParserTest.testFullPrograms
   CoreParserTest.testDeclarations
+  CoreParserTest.testLibcProductions
   CoreParserTest.testFiles
 
 def main : IO Unit := do

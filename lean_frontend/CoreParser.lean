@@ -169,12 +169,32 @@ end Lexer
 
 /-! ## Helper utilities -/
 
+/-- Column (0-based, in characters) of raw position `p` within `s`
+    (layout-sensitive `;` sequencing — see the note above pExprSeq). -/
+private partial def colOfAux (s : String) (p : _root_.String.Pos.Raw) (n : Nat) : Nat :=
+  if p.byteIdx == 0 then n
+  else
+    let p' := s.prev p
+    if s.get p' == '\n' then n else colOfAux s p' (n + 1)
+
+/-- Current column (whitespace/comments already consumed by the previous
+    token's trailing lexWs, so this is the next token's column). The
+    parser state is `Sigma String.Pos` (Std.Internal.Parsec.String). -/
+private def getCol : P Nat := fun it =>
+  .success it (colOfAux it.1 it.2.offset 0)
+
 /-- Construct a symbol from a parsed identifier string.
     Uses the string's hash as the number so distinct names get distinct
     IDs (symbol equality ignores the description — see symbolEqual in
     symbol.lem).  This sidesteps Lean's CSE of pure `Unit → Nat` calls. -/
 private def mkSym (name : String) : sym :=
   Symbol "" name.hash.toNat (SD_Id name)
+
+/-- Public name-interning entry: the symbol a given name parses to
+    anywhere in a CoreParser-parsed file. Used by the libc loader
+    (Main.loadLibc, arc-6 S1) to rekey oracle-side metadata onto the
+    symbols the parsed libc bodies reference. -/
+def internSym (name : String) : sym := mkSym name
 
 /-- The unknown location placeholder. -/
 private def loc0 : CerbLocation.Loc := CerbLocation.unknown
@@ -318,13 +338,21 @@ private def mkListPE (bTy : core_base_type) : List PE → PE
 
 /-- Parse an integer base type (ichar/char, short, int, long, long_long).
     Note: cerberus --pp core generates "unsigned char" / "signed char"
-    even though the grammar formally only has "ichar". We accept both. -/
+    even though the grammar formally only has "ichar". We accept both.
+
+    TWO printer dialects feed this parser (arc-6 S1): ctypes embedded in
+    the Core AST print via Pp_core_ctype.pp_ctype ("long_long",
+    pp_core_ctype.ml:24), but ctype VALUES (Vctype) print via
+    Pp_ail.pp_ctype ("long long" with a space,
+    pp_ail.ml string_of_integerBaseType). We accept the union: after
+    "long", a second "long" token upgrades to LongLong. -/
 private def pIntegerBaseType : P integerBaseType :=
       (attempt (lexKw "ichar") *> pure Ichar)
   <|> (attempt (lexKw "char") *> pure Ichar)
   <|> (attempt (lexKw "short") *> pure Short)
   <|> (attempt (lexKw "long_long") *> pure LongLong)
-  <|> (attempt (lexKw "long") *> pure Long)
+  <|> (attempt (do lexKw "long"
+                   (attempt (lexKw "long") *> pure LongLong) <|> pure Long))
   <|> (attempt (lexKw "int") *> pure Int_)
 
 /-- Parse an integer type. -/
@@ -348,9 +376,12 @@ private def pIntegerType : P integerType :=
   <|> (attempt (do lexKw "signed"; let ibty ← pIntegerBaseType; return (Signed ibty)))
   <|> (attempt (do lexKw "unsigned"; let ibty ← pIntegerBaseType; return (Unsigned ibty)))
 
-/-- Parse a floating type. -/
+/-- Parse a floating type. "long_double" is the Pp_core_ctype spelling
+    (pp_core_ctype.ml:57); "long double" (space) is the Pp_ail spelling
+    (pp_ail.ml pp_realFloatingType) appearing in Vctype literals. -/
 private def pFloatingType : P floatingType :=
       (attempt (lexKw "long_double") *> pure (RealFloating LongDouble))
+  <|> (attempt (do lexKw "long"; lexKw "double"; pure (RealFloating LongDouble)))
   <|> (attempt (lexKw "float") *> pure (RealFloating Float0))
   <|> (attempt (lexKw "double") *> pure (RealFloating Double))
 
@@ -359,32 +390,90 @@ private def pBasicType : P basicType :=
       (attempt (Floating <$> pFloatingType))
   <|> (Integer <$> pIntegerType)
 
-/-! ## Ctype Parser (mutual block for self-recursion) -/
+/-! ## Ctype Parser (mutual block for self-recursion)
+
+TWO ctype printer dialects appear in `--pp core` output (arc-6 S1):
+
+* CORE dialect — `Pp_core_ctype.pp_ctype` (pp_core.ml:227-228): ctypes
+  embedded in the Core AST (kill/array_shift/Unspecified/NULL(...)
+  [impl_mem.ml:565-566], struct/union def fields [pp_core.ml:760-762],
+  ail_ctype glob attributes [pp_core.ml:837]). Spellings: `long_long`,
+  `long_double`, `ichar`; qualifiers are NEVER printed
+  (pp_core_ctype.ml — the qs TODOs); function types print POSTFIX
+  (`ret (params)` then suffixes, pp_core_ctype.ml:73-84); an empty
+  parameter list prints `()` for both `Function _ [] _` and
+  `FunctionNoParams _` (irreducible ambiguity — we choose
+  `Function [] false`, the only form C11-prototyped libc code produces).
+
+* AIL dialect — `Pp_ail.pp_ctype no_qualifiers` (pp_core.ml:332): ctype
+  VALUES (`Vctype`) inside pexprs, i.e. every quoted type in
+  create/store/ccall/are_compatible argument position. C-declarator
+  style (pp_ail.ml:238-317): `long long` / `long double` (spaces),
+  `char` for Ichar, pointer-to-function prints `ret (*) (params)`,
+  array-of-pointer-to-function prints `ret (*[N]) (params)`, a BARE
+  function type prints `ret () (params)` (the empty declarator parens),
+  empty parameter lists print `(void)` (pp_ail.ml:268-270), variadic
+  prints `, ...`, and pointer qualifiers print AFTER the star
+  (`char*restrict` — pp_ail.ml Pointer case: star ^^ pp_qualifiers qs,
+  order const/restrict/volatile per pp_qualifiers, pp_ail.ml:119-124).
+  `()` (empty params, no following parens) = `FunctionNoParams`
+  (pp_ail.ml FunctionNoParams case).
+
+The grammar below accepts the UNION of both dialects; the `ail` flag
+forks only the genuinely ambiguous empty-parens case. Struct/union tags
+are interned by NAME HASH (`mkSym`), mirroring OCaml's symbolify_ctype
+which resolves a tag name to the single registered tag symbol
+(core_parser.mly symbolify paths); `--pp core` prints tags in ctype
+position via Pp_symbol.to_string_pretty (plain name, pp_core_ctype.ml:15).
+
+Pointer-qualifier representation (mirrors Ctype.Pointer (qs, ty) where
+qs are the qualifiers OF THE POINTED-TO type, and function-parameter
+triples (qs, ty, _) where qs are the parameter's own qualifiers —
+pp_ail.ml:266-292): the suffix loop carries `pend`, the qualifiers seen
+since the last completed type; a following `*` makes them the new
+pointer's pointee qualifiers; if the type ends inside a parameter list
+they become the parameter-triple qualifiers; at top level they are
+dropped (OCaml top-level positions always print with no_qualifiers, so
+well-formed dump text never has them). -/
+
+/-- Parse zero or more qualifier keywords (const/restrict/volatile) into
+    a qualifiers record; backtracks on a non-qualifier identifier.
+    Print order is const,restrict,volatile (pp_ail.ml:119-124) but we
+    accept any order. -/
+private partial def pCtypeQualsOpt : P qualifiers := do
+  let mut qs : qualifiers := no_qualifiers
+  while true do
+    let q ← (attempt (do lexKw "const"; pure (some "c")))
+        <|> (attempt (do lexKw "restrict"; pure (some "r")))
+        <|> (attempt (do lexKw "volatile"; pure (some "v")))
+        <|> pure none
+    match q with
+    | some "c" => qs := { qs with const := true }
+    | some "r" => qs := { qs with restrict := true }
+    | some "v" => qs := { qs with volatile := true }
+    | _ => break
+  return qs
 
 mutual
 
-/-- Parse a ctype atom (base case). -/
-partial def pCtypeAtom : P ctype :=
+/-- Parse a ctype atom (base case). Leading qualifiers are handled by
+    the caller (pCtypeQ). -/
+partial def pCtypeAtom (ail : Bool) : P ctype :=
       (attempt (lexKw "void") *> pure (Ctype [] Void0))
-  <|> (attempt (do
-        lexKw "const"
-        let ty ← pCtypeAtom
-        lexSym "*"
-        return (Ctype [] (Pointer { const := true, restrict := false, volatile := false } ty))))
   <|> (attempt (do
         lexKw "_Atomic"
         lexSym "("
-        let ty ← pCtype
+        let ty ← pCtypeD ail
         lexSym ")"
         return (Ctype [] (Atomic ty))))
   <|> (attempt (do
         lexKw "struct"
         let tag ← lexIdent
-        return (Ctype [] (Struct (Symbol "" 0 (SD_Id tag))))))
+        return (Ctype [] (Struct (mkSym tag)))))
   <|> (attempt (do
         lexKw "union"
         let tag ← lexIdent
-        return (Ctype [] (Union0 (Symbol "" 0 (SD_Id tag))))))
+        return (Ctype [] (Union0 (mkSym tag)))))
   <|> (attempt (do
         let bty ← pBasicType
         return (Ctype [] (Basic bty))))
@@ -392,13 +481,51 @@ partial def pCtypeAtom : P ctype :=
         let name ← attempt lexIdent
         fail s!"unknown ctype '{name}'")
 
-/-- Parse ctype suffixes: pointer (*), array ([n]), function ((params)). -/
-partial def pCtypeSuffix (ty : ctype) : P ctype := do
+/-- Parse a function parameter list body after the opening paren:
+    comma-separated (qualified) ctypes, optionally terminated by `, ...`
+    (variadic — pp_ail.ml:270-272 / pp_core_ctype.ml:78-80), closing
+    paren consumed. `(void)` (single bare void, AIL spelling of an empty
+    prototype, pp_ail.ml:268-269) yields ([], false). -/
+partial def pCtypeParams (ail : Bool) :
+    P (List (qualifiers × ctype × Bool) × Bool) := do
+  -- empty list?
+  match ← attempt (some <$> lexSym ")") <|> pure none with
+  | some _ => return ([], false)
+  | none =>
+  let mut params : List (qualifiers × ctype × Bool) := []
+  let mut variadic := false
+  while true do
+    -- `...` (only valid as the last element)
+    match ← attempt (some <$> lexSym "...") <|> pure none with
+    | some _ => variadic := true; break
+    | none => pure ()
+    let (qs, ty) ← pCtypeQ ail
+    params := params ++ [(qs, ty, false)]
+    match ← attempt (some <$> lexSym ",") <|> pure none with
+    | some _ => pure ()
+    | none => break
+  lexSym ")"
+  -- `(void)`: an empty prototype, not a void parameter
+  match params, variadic with
+  | [(_, Ctype _ Void0, _)], false => return ([], false)
+  | _, _ => return (params, variadic)
+
+/-- Parse ctype suffixes: pointer (*), post-star qualifiers, array ([n]),
+    function ((params)), fn-pointer declarators ((*) / (*[N]) / ()).
+    `pend` carries qualifiers seen since the last completed type (see
+    module note). Returns the type and any still-pending qualifiers. -/
+partial def pCtypeSuffix (ail : Bool) (ty : ctype) (pend : qualifiers) :
+    P (ctype × qualifiers) := do
   let c? ← peek?
   match c? with
   | some '*' =>
     skip; lexWs
-    pCtypeSuffix (Ctype [] (Pointer no_qualifiers ty))
+    -- post-star qualifiers belong to THIS pointer (pp_ail.ml Pointer
+    -- case prints star ^^ pp_qualifiers qs); they become `pend` and are
+    -- consumed by the NEXT star (as its pointee qualifiers), the
+    -- enclosing parameter triple, or dropped at top level.
+    let qs ← pCtypeQualsOpt
+    pCtypeSuffix ail (Ctype [] (Pointer pend ty)) qs
   | some '[' =>
     skip; lexWs
     let c2? ← peek?
@@ -411,38 +538,89 @@ partial def pCtypeSuffix (ty : ctype) : P ctype := do
           pure none
       | none => pure none
     lexSym "]"
-    pCtypeSuffix (Ctype [] (Array0 ty nOpt))
+    pCtypeSuffix ail (Ctype [] (Array0 ty nOpt)) pend
   | some '(' =>
     skip; lexWs
-    -- Check for (*) function pointer syntax: ret (*) (params)
-    let isFnPtr ← attempt (do lexSym "*"; lexSym ")"; pure true) <|> pure false
-    if isFnPtr then
-      -- Parse the parameter list that follows (*)
+    -- (*) or (*[N]) fn-pointer declarator (AIL dialect,
+    -- pp_ail.ml:283-289: Pointer-to-Function prints
+    -- `ret (* k) (params)` where k is the enclosing declarator — an
+    -- array bound for array-of-fn-pointer)
+    let fnPtr ← attempt (do
+        lexSym "*"
+        let arr ← (attempt (do
+            lexSym "["
+            let n ← lexInt
+            lexSym "]"
+            pure (some n))) <|> pure none
+        lexSym ")"
+        pure (some arr)) <|> pure none
+    match fnPtr with
+    | some arrOpt =>
       lexSym "("
-      let paramTys ← sepByComma pCtype
-      lexSym ")"
-      let params := paramTys.map (fun ty => (no_qualifiers, ty, false))
-      -- Result: pointer to function returning ty
-      pCtypeSuffix (Ctype [] (Pointer no_qualifiers (Ctype [] (Function (no_qualifiers, ty) params false))))
-    else
-      -- Regular function type: ret (params)
-      let paramTys ← sepByComma pCtype
-      lexSym ")"
-      let params := paramTys.map (fun ty => (no_qualifiers, ty, false))
-      pCtypeSuffix (Ctype [] (Function (no_qualifiers, ty) params false))
-  | _ => return ty
+      let (params, variadic) ← pCtypeParams ail
+      let fnTy := Ctype [] (Function (no_qualifiers, ty) params variadic)
+      let ptrTy := Ctype [] (Pointer no_qualifiers fnTy)
+      let ty' := match arrOpt with
+        | some n => Ctype [] (Array0 ptrTy (some n))
+        | none => ptrTy
+      pCtypeSuffix ail ty' no_qualifiers
+    | none =>
+      -- `ret () (params)`: AIL print of a BARE function type — the first
+      -- () is the empty declarator (pp_ail.ml Function case:
+      -- `aux ret ^^^ P.parens k ^^ P.parens (params)` with k empty)
+      let bareFn ← if ail then
+          attempt (do lexSym ")"; lexSym "("; pure true) <|> pure false
+        else pure false
+      if bareFn then
+        let (params, variadic) ← pCtypeParams ail
+        pCtypeSuffix ail (Ctype [] (Function (no_qualifiers, ty) params variadic)) no_qualifiers
+      else
+        let (params, variadic) ← pCtypeParams ail
+        -- empty parens: AIL = FunctionNoParams (pp_ail.ml
+        -- FunctionNoParams case); CORE = Function [] false (see module
+        -- note on the pp_core_ctype ambiguity)
+        let ty' := if ail && params.isEmpty && !variadic then
+            Ctype [] (FunctionNoParams (no_qualifiers, ty))
+          else
+            Ctype [] (Function (no_qualifiers, ty) params variadic)
+        pCtypeSuffix ail ty' pend
+  | _ => return (ty, pend)
 
-/-- Parse a C type. Handles pointer suffixes (*) and array suffixes ([n]). -/
-partial def pCtype : P ctype := do
-  let base ← pCtypeAtom
-  pCtypeSuffix base
+/-- Parse a C type with pending-qualifier result (parameter position). -/
+partial def pCtypeQ (ail : Bool) : P (qualifiers × ctype) := do
+  let lead ← pCtypeQualsOpt
+  let base ← pCtypeAtom ail
+  let (ty, pend) ← pCtypeSuffix ail base lead
+  return (pend, ty)
+
+/-- Parse a C type in the given dialect, dropping trailing qualifiers
+    (top-level positions always print with no_qualifiers). -/
+partial def pCtypeD (ail : Bool) : P ctype := do
+  let (_, ty) ← pCtypeQ ail
+  return ty
 
 end
 
-/-- Parse a ctype enclosed in single quotes: 'ctype' -/
+/-- Parse a C type (CORE dialect — embedded AST ctypes). -/
+partial def pCtype : P ctype := pCtypeD false
+
+/-- Parse a ctype enclosed in single quotes: 'ctype' (CORE dialect —
+    kill/array_shift/struct-field/ail_ctype positions, printed by
+    Pp_core_ctype via pp_core.ml:227-228). -/
 private partial def pCoreCtype : P ctype := do
   lexSym "'"
   let ty ← pCtype
+  lexSym "'"
+  return ty
+
+/-- Parse a ctype enclosed in single quotes at ctype-VALUE (Vctype)
+    position (AIL dialect — printed by Pp_ail.pp_ctype via
+    pp_core.ml:332). The grammar accepts the spelling union of both
+    dialects (Unspecified(...) values embed a Pp_core_ctype-printed type,
+    pp_core.ml:308); the flag only resolves empty-parens ambiguity. -/
+private partial def pCoreCtypeAil : P ctype := do
+  lexSym "'"
+  let ty ← pCtypeD true
   lexSym "'"
   return ty
 
@@ -452,6 +630,24 @@ private partial def pCoreIntegerType : P integerType := do
   let ity ← pIntegerType
   lexSym "'"
   return ity
+
+/-- Strip the `_<num>` suffix from a raw-printed symbol name.
+    OTy_struct/OTy_union tags print via Pp_symbol.to_string
+    (pp_core.ml:186-189), which is `name ^ "_" ^ string_of_int n`
+    (pp_symbol.ml:5-10) — unlike every other symbol position, which
+    prints to_string_pretty (plain name). Stripping one trailing
+    `_[0-9]+` group recovers the name so the tag interns to the SAME
+    name-hash symbol as its ctype-position occurrences (`struct
+    _IO_FILE_331` ≡ `'struct _IO_FILE'`). A tag whose source name itself
+    ends in `_<digits>` would be mis-stripped — none exist in the
+    shipped std.core/libc corpus (asserted by the libc unit test). -/
+private def stripRawSymSuffix (s : String) : String :=
+  let cs := s.toList.reverse
+  let digits := cs.takeWhile (·.isDigit)
+  if digits.isEmpty then s
+  else match cs.drop digits.length with
+    | '_' :: rest => if rest.isEmpty then s else String.mk rest.reverse
+    | _ => s
 
 /-- Parse a core object type. -/
 partial def pCoreObjectType : P core_object_type :=
@@ -467,11 +663,11 @@ partial def pCoreObjectType : P core_object_type :=
   <|> (attempt (do
         lexKw "struct"
         let tag ← lexIdent
-        return (OTy_struct (Symbol "" 0 (SD_Id tag)))))
+        return (OTy_struct (mkSym (stripRawSymSuffix tag)))))
   <|> (attempt (do
         lexKw "union"
         let tag ← lexIdent
-        return (OTy_union (Symbol "" 0 (SD_Id tag)))))
+        return (OTy_union (mkSym (stripRawSymSuffix tag)))))
 
 /-- Parse a core base type. -/
 partial def pCoreBaseType : P core_base_type :=
@@ -647,15 +843,21 @@ partial def pValue : P value :=
   <|> (attempt (do
         lexKw "Cfunction_value"
         lexSym "("
-        let _ ← pName
+        let nm ← pName
         lexSym ")"
-        -- TODO: proper Cfunction handling
-        return (Vobject (OVpointer (CerbMem.nullPtrval (Ctype [] Void0))))))
+        -- grammar-form function pointer value (core_parser.mly:1540);
+        -- note upstream's own semantic action punts to null_ptrval
+        -- (mly:1541 TODO) — we build the real PVfunction instead, since
+        -- exec depends on it (arc-6 S1)
+        match nm with
+        | generic_name.Sym s =>
+          return (Vobject (OVpointer (CerbMem.funPtrval s)))
+        | Impl _ => fail "Cfunction_value of an impl constant"))
   <|> (attempt (do
         lexKw "Ivmax_alignment"
         return (Vobject (OVinteger (CerbMem.integerIval 16)))))
   <|> (attempt (do
-        let ty ← pCoreCtype
+        let ty ← pCoreCtypeAil
         return (Vctype ty)))
   <|> (do
         match ← attempt lexNumLit with
@@ -819,12 +1021,26 @@ private partial def pPexprTuple : P PE := do
   lexSym ")"
   return (mkPE (PEctor Ctuple (first :: rest)))
 
-partial def pPexprAtom : P PE := do
+/-- List literal WITHOUT a `: type` annotation. pp_value prints Vlist as
+    bare brackets (pp_core.ml:327-329 — no type annotation), unlike the
+    grammar's annotated list form (which the two parsers above handle);
+    this occurs for variadic argument lists in `--pp core` output of
+    elaborated code (`[('signed int', a_9552)]`). The element base type
+    is not recoverable from the text; we record BTy_unit in the Cnil —
+    consumers never read it (match_pattern ignores the Cnil/Vlist type
+    arguments, core_aux.lem:2028-2035, 2426-2429). -/
+private partial def pPexprListNoAnnot : P PE := do
+  lexSym "["
+  let pes ← sepByComma pPexpr
+  lexSym "]"
+  return (mkListPE BTy_unit pes)
+
+partial def pPexprAtom (minPrec : Nat := 0) : P PE := do
   -- Dispatch on first character to avoid trying all alternatives
   let c ← peek?
   match c with
   | some '(' => (attempt pPexprParen) <|> (attempt pPexprTuple) <|> (attempt pPexprStruct) <|> pPexprUnion
-  | some '[' => (attempt pPexprListLiteral) <|> pPexprListEmpty
+  | some '[' => (attempt pPexprListLiteral) <|> (attempt pPexprListEmpty) <|> pPexprListNoAnnot
   | some '-' => pPexprMinus
   | some '<' =>
       -- Fix 4: impl constant or impl function call <name>(args)
@@ -849,7 +1065,12 @@ partial def pPexprAtom : P PE := do
       return (mkPE (PEundef loc0 (DUMMY ubStr)))
     | some "error" =>
       lexSym "("
-      let msg ← lexTripleAngle
+      -- PEerror's string prints DQUOTED (pp_core.ml:444-445, matching the
+      -- grammar's STRING token, core_parser.mly:1572); the <<<...>>> form
+      -- is the hand-written std.core spelling. Accept both.
+      let msg ← match ← peek? with
+        | some '"' => lexStr
+        | _ => lexTripleAngle
       lexSym ","
       let pe ← pPexpr
       lexSym ")"
@@ -920,12 +1141,7 @@ partial def pPexprAtom : P PE := do
       let pe2 ← pPexpr
       return (mkPE (PElet pat pe1 pe2))
     | some "if" =>
-      let pe1 ← pPexpr
-      lexKw "then"
-      let pe2 ← pPexpr
-      lexKw "else"
-      let pe3 ← pPexpr
-      return (mkPE (PEif pe1 pe2 pe3))
+      pPexprIfTail (minPrec > 0)
     | some "case" =>
       let pe ← pPexpr
       lexKw "of"
@@ -1013,10 +1229,18 @@ partial def pPexprAtom : P PE := do
       return (mkPE (PEval (Vobject (OVpointer (CerbMem.nullPtrval ty)))))
     | some "Cfunction" =>
       lexSym "("
-      let _ ← pName
+      let nm ← pName
       lexSym ")"
-      -- TODO: proper Cfunction handling (OCaml also punts with null_ptrval)
-      return (mkPE (PEval (Vobject (OVpointer (CerbMem.nullPtrval (Ctype [] Void0))))))
+      -- `Cfunction(sym)` is the pp of a PVfunction pointer value
+      -- (impl_mem.ml:567-568 pp_pointer_value) — a pp-only form (the
+      -- OCaml core grammar has no production for it). Parse it to the
+      -- real function pointer; exec resolves it via funinfo/call_proc
+      -- (arc-6 S1; the previous null_ptrval punt made every libc-internal
+      -- call die with "null function pointer").
+      match nm with
+      | generic_name.Sym s =>
+        return (mkPE (PEval (Vobject (OVpointer (CerbMem.funPtrval s)))))
+      | Impl _ => fail "Cfunction of an impl constant"
     | some "IvMaxAlignment" =>
       return (mkPE (PEval (Vobject (OVinteger (CerbMem.integerIval 16)))))
     -- Expression keywords
@@ -1071,9 +1295,44 @@ partial def pPexprAtom : P PE := do
       | .int n => return (mkPE (PEval (Vobject (OVinteger (CerbMem.integerIval n)))))
       | .float f => return (mkPE (PEval (Vobject (OVfloating (f)))))
 
-/-- Precedence climbing parser for binary operators and :: cons. -/
-private partial def pPexprPrec (minPrec : Nat) : P PE := do
-  let mut lhs ← pPexprAtom
+/- ### The PEif reparse ambiguity (arc-6 S1)
+
+`--pp core` NEVER parenthesizes a PEif: precedence_pexpr gives PEif
+`None` (pp_core.ml:69-98) and `compare_precedence None _ = true`
+(pp_core.ml:161-164), so `PEop(op, PEif …, rhs)` prints exactly like
+`PEif(…, else-branch = PEop(op, …, rhs))`. The ONLY generator of
+PEif-as-binop-operand in our corpora is the elaborator's integer
+promotion wrapper `if all_values_representable_in(T1,T2) then
+conv_int(…) else conv_int(…)` (its branches are always calls — atoms),
+appearing either as a binop RHS (`conv_int(…) < if …`) or as the FIRST
+atom of an if condition (`if if …`, 39 sites in the pinned libc dump).
+Hand-written std.core has NEITHER shape (verified: no binop-then-`if`
+and no `if if`), but DOES have if-branches that are binop expressions
+(`else 2^width + n`, std.core:143), so if-branches must stay greedy by
+default. Resolution: an `if` parsed as a binop operand (minPrec > 0) or
+as the leading atom of an if-CONDITION gets ATOM-BOUNDED branches
+(pPexprPrec 8 — no binops, no cons); all other ifs parse greedily. -/
+
+/-- Parse `cond then e1 else e2` after the `if` keyword; `bounded`
+    restricts the branches to atoms (see the ambiguity note above). -/
+private partial def pPexprIfTail (bounded : Bool) : P PE := do
+  let pe1 ← pPexprCondChain
+  lexKw "then"
+  let pe2 ← if bounded then pPexprPrec 8 else pPexpr
+  lexKw "else"
+  let pe3 ← if bounded then pPexprPrec 8 else pPexpr
+  return (mkPE (PEif pe1 pe2 pe3))
+
+/-- Parse an if-condition: a leading `if` atom is the promotion wrapper
+    (operand-bounded), continued by the ordinary binop chain. -/
+private partial def pPexprCondChain : P PE := do
+  match ← attempt (some <$> (do lexKw "if"; pPexprIfTail true)) <|> pure none with
+  | some lhs => pPexprBinopLoop lhs 0
+  | none => pPexpr
+
+/-- Binop / cons precedence-climbing loop continuing from a parsed lhs. -/
+private partial def pPexprBinopLoop (lhs0 : PE) (minPrec : Nat) : P PE := do
+  let mut lhs := lhs0
   while true do
     -- Phase 1: try to match operator with sufficient precedence (with backtracking)
     let opOpt ← attempt (some <$> do
@@ -1097,6 +1356,11 @@ private partial def pPexprPrec (minPrec : Nat) : P PE := do
       | none => lhs := mkPE (PEctor Ccons [lhs, rhs])
       | some op => lhs := mkPE (PEop op lhs rhs)
   return lhs
+
+/-- Precedence climbing parser for binary operators and :: cons. -/
+private partial def pPexprPrec (minPrec : Nat) : P PE := do
+  let lhs ← pPexprAtom minPrec
+  pPexprBinopLoop lhs minPrec
 
 /-- Parse a pure expression with full operator precedence. -/
 partial def pPexpr : P PE := pPexprPrec 0
@@ -1439,18 +1703,50 @@ private partial def pExprAtom : P Expr' := do
   | some 'n' => (attempt pExprNeg) <|> (attempt pExprNd) <|> pExprAction
   | _ => pExprAction
 
--- Handle semicolon sequencing: e1 ; e2
-private partial def pExprSeq (lhs : Expr') : P Expr' := do
-  match ← attempt (some <$> lexSym ";") <|> pure none with
-  | none => return lhs
-  | some _ =>
+/- ### Layout-sensitive `;` sequencing (arc-6 S1)
+
+pp_expr prints unit-pattern Esseq as `(pp e1 ^^^ P.semi) ^^ P.hardline
+^^ pp e2` (pp_core.ml:648-649) with NO parentheses ever placed around
+e1, while Eif/Esave branch bodies are printed under `P.nest 2`
+(pp_if/pp_let, pp_core.ml:655-664/619-629). The token stream alone is
+therefore ambiguous: in
+
+    if c then
+      kill(…) ;
+      run l(…)
+    else
+      pure(Unit) ;
+    rest
+
+the `; rest` sequel belongs to the SEQUENCE CONTAINING THE IF, not to
+the else branch — distinguishable only by layout: hardline puts every
+Esseq sequel on a new line at the SEQUENCE's own indentation, whereas
+branch bodies sit strictly deeper (and one-lined groups keep the sequel
+on the next line at the outer indent, since hardline never flattens).
+A greedy `;` would silently re-associate the rest of a procedure body
+into the else branch — wrong AST, wrong execution (found via the libc
+fwrite path, arc-6 S1). RULE: a `;`-sequel is consumed only if its
+first token's column is ≥ the column at which the current sequence's
+first expression started; otherwise the `;` is left for the enclosing
+(shallower) sequence. -/
+
+-- Handle semicolon sequencing: e1 ; e2 (layout rule above)
+private partial def pExprSeq (startCol : Nat) (lhs : Expr') : P Expr' := do
+  let seq ← attempt (do
+      lexSym ";"
+      let c ← getCol
+      if c < startCol then fail "outdented ;-sequel belongs to an enclosing sequence"
+      pure true) <|> pure false
+  if seq then
     let rhs ← pExpr
     return (mkE (Esseq (Pattern [] (CaseBase (none, BTy_unit))) lhs rhs))
+  else return lhs
 
 /-- Parse an effectful expression. -/
 partial def pExpr : P Expr' := do
+  let col ← getCol
   let lhs ← pExprAtom
-  pExprSeq lhs
+  pExprSeq col lhs
 
 end
 
@@ -1548,6 +1844,29 @@ private partial def pProcDecl : P Decl := do
     lexSym "]"
     return pairs)) <|> pure []
   let s ← lexSymId
+  -- Bodyless declaration form: `proc name (bTy, ...)` with UNNAMED
+  -- parameter types, no return type, no body. This is how pp_core prints
+  -- a ProcDecl fun-map entry (pp_core.ml:783-785: symbol + parens'd
+  -- comma-list of core_base_types only) — a PP-ONLY form:
+  -- core_parser.mly has NO production for it (proc_declaration
+  -- :1803-1809 requires named params, `: eff bTy` and a body). The
+  -- declared return base type is NOT printed and hence unrecoverable
+  -- from text; we record BTy_unit. Consumers never read it: a decl-only
+  -- symbol reaching call_proc yields Nothing (core_run.lem:46-51,
+  -- ProcDecl is not a Proc), and for def+decl duplicate names
+  -- (__strtox/__strtoxd) the loader's fun-map construction lets the
+  -- Proc definition win (see Main.loadLibc).
+  match ← attempt (some <$> (do
+      lexSym "("
+      let tys ← sepByComma pCoreBaseType
+      lexSym ")"
+      -- a following ':' would mean this was really a zero-arg full proc
+      match ← peek? with
+      | some ':' => fail "full proc, not a decl"
+      | _ => pure tys)) <|> pure none with
+  | some tys =>
+    return (Decl.procDecl s attrs.head? (ProcDecl loc0 BTy_unit tys))
+  | none =>
   let params ← pParamList
   lexSym ":"
   lexKw "eff"
