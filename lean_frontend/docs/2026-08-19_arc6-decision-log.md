@@ -177,3 +177,19 @@ baseline is trusted as a scoreboard. Register promotion: finding 11
 (read-only allocations) is now CORPUS-FORCED (ci 0086 semantic DIFF) —
 top of next-arc queue. Prototype ci head-to-head: ours 4 (1 semantic)
 vs ~13 historical, base caveat recorded.
+
+**D14 [USER]** — Ban (operator, near-verbatim): "ban bv_decide and other
+non-kernel-checked proof methods completely", citing golean's policy in
+action. [AGENT] verified golean's mechanism (deps/golean
+proofs/Audit.lean): in-build transitive-axiom audit, allowlist =
+classical trio, build-failing — catches sorryAx, ofReduceBool
+(native_decide/bv_decide), and rogue axioms uniformly, coverage by
+import-closure construction. Codified in container CLAUDE.md.
+Enforcement rollout: (1) THIS ARC's audit-fix batch — extend
+check_theorem_axioms.sh: ofReduceBool/ofReduceNat always-fatal in every
+probed cone (alongside sorryAx); grep-ban native_decide/bv_decide in
+hand-written proof files (test/Unit, lem-side LemLibTest); (2) ARC 7 —
+adopt the golean Audit.lean in-build pattern for RelSem and proof libs
+(exact-axiom-set assertions). Coincidence noted: audit-2 F1 (the #guard
+"kernel-evaluated" mislabel) is the same trust-class boundary this ban
+patrols — corrected language rides in the same batch.
