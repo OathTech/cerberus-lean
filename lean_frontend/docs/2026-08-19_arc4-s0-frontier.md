@@ -501,3 +501,132 @@ Gates at S3b close: lake build green; test_unit.sh all green (purity
 CLEAN, cones OK, totality CLEAN); test_parse.sh ALL; test_core.sh
 104/105 (known 078 Core-text-parser red only — its EXEC differential now
 MATCHes); test_exec.sh baseline OK (0 regressions).
+
+## Post-S3c frontier (2026-08-19, seam-survey cheap batch + remaining fixables)
+
+S3c scope (survey findings 5-7, 10, 12, 18, 20, 26, 28 + closure of 066/
+098/072/077/056; decision log D9). Every fix mirrors its OCaml source with
+file:line citations in-code; deliberate divergences are documented at the
+divergence site.
+
+**Fixes, by root cause:**
+
+1. **Float parsing + truncation (findings 5-6 → 066).**
+   `CerbFloat.of_string` now actually parses C floating literals
+   (decimal + exponent and hex-float forms, sign, one trailing
+   f/F/l/L suffix), mirroring Cerb_floating.of_string
+   (util/cerb_floating.ml:8-16) → float_of_string; the old
+   `toNat?.getD 0` path turned every real literal into 0.0. New
+   `CerbFloat.truncToInt` mirrors zarith's `Z.of_float` bit-exactly from
+   the IEEE 754 representation — truncation toward ZERO with sign
+   (verified: `Z.of_float (-2.9) = -2`); `ivfromfloat`
+   (impl_mem.ml:2553-2554) and `to_int` now use it (the old
+   `Float.toUInt64` clamped all negatives to 0). NaN/inf panic, mirroring
+   zarith's uncaught Z.Overflow. Precision limits documented in-file.
+
+2. **Integer division/remainder (finding 7).** `opIval`
+   (impl_mem.ml:2464-2490) now uses TRUNCATING division and the two
+   distinct remainders, with the zarith semantics established
+   empirically and cited in-code (impl_mem.ml:7-13):
+   `integerDiv_t` = Z.div = Int.tdiv; `integerRem_t` = Z.rem = Int.tmod
+   (sign of dividend); `integerRem_f` = Big_int_Z.mod_big_int = Int.emod
+   (EUCLIDEAN — always non-negative, NOT flooring:
+   `mod_big_int (-7) (-2) = 1`). Previously all three were Lean's
+   ediv/emod (`-7/2`: OCaml -3, old Lean -4). Also mirrored: IntSub's
+   provenance special case (impl_mem.ml:2469-2475) and IntExp's
+   Prov_none (impl_mem.ml:2485-2490).
+
+3. **max_ival/min_ival (finding 18a).** Rewritten against
+   impl_mem.ml:2367-2434: Bool max = 255 (OCaml's own TODO behavior),
+   Enum normalized through typeof_enum first, Char via
+   is_signed_ity, the Wint_t signed-max/unsigned-min asymmetry
+   mirrored as-is. **Finding 18b (enum registry) stays a stub** —
+   `CerberusImpl.typeof_enum` returns Signed Int_; nothing in
+   tests/minimal declares an enum with a different underlying type;
+   divergence note at the stub.
+
+4. **diff_ptrval (finding 10 → 098).** Real port of
+   impl_mem.ml:1954-1984: same-Prov_some-allocation-id requirement, both
+   addresses within [base, base+size] (precond), one Array layer
+   stripped off diff_ty, truncating division; everything else
+   MerrPtrdiff → UB048_disjoint_array_pointers_subtraction. The
+   PERMISSIVE-switch branch and the Prov_symbolic iota arms are
+   documented non-ports (unreachable in this pipeline).
+
+5. **mem_error → UB fail mapping (072/077 + the whole class).** The
+   concrete model's `fail` (impl_mem.ml:540-546) routes every mem_error
+   through `undefinedFromMem_error` (mem_common.lem:248+, lem-shared):
+   UB-classed errors kill with `Undef0 (loc, [ub])`, others with
+   `Other err`. CerbMem previously built `Other` directly everywhere, so
+   UB-classed memory errors surfaced as generic batch Errors. New
+   `failReason`/`memFail` implement the mapping; all CerbMem fail sites
+   (load/store/kill/realloc/diff/intfromptr) route through it. 072 now
+   reports UB_CERB002a_out_of_bound_load, 077
+   UB012_lvalue_read_trap_representation — byte-identical UB codes to
+   OCaml --batch.
+
+6. **Load/store provenance split (finding 12).** loadM/storeM
+   restructured to OCaml's match shape (impl_mem.ml:1605-1666 /
+   1710-1789): Prov_none → OutOfBoundPtr (the model never emits
+   NoProvPtr — that constructor is gone from CerbMem); load checks
+   is_dead FIRST (DeadPtr) then bounds; store has NO dead check — a
+   dead/missing allocation fails via get_allocation's
+   MerrOutsideLifetime (impl_mem.ml:669-675), and bounds are checked
+   BEFORE readonly. is_atomic_member_access (impl_mem.ml:689-706)
+   ported, including OCaml's LoadAccess-on-the-store-path quirk
+   (impl_mem.ml:1777-1779, mirrored with a note). is_locking now
+   selects the readonly kind from the allocation prefix
+   (select_ro_kind, impl_mem.ml:1712-1718).
+
+7. **Function pointers (finding 20 → 056).** `memValueToBytes` is now
+   repr-shaped (impl_mem.ml:1139-1220): it threads the funptrmap;
+   storing `PVfunction (Symbol dig n (SD_Id name))` registers
+   n ↦ (dig, name) and writes the symbol's nat as the pointer bytes
+   (previously 0). `reconstructValue` takes the funptrmap and rebuilds
+   `PVfunction` for pointer-to-Function loads (impl_mem.ml:996-1016);
+   unknown address panics like OCaml's failwith. allocateObject/storeM
+   thread the map into MemState (impl_mem.ml:1336-1344, 1685-1692).
+   MemState.funptrmap already existed (caseFunsymOpt read it); it is now
+   actually populated.
+
+8. **Character constants (findings 26/28).**
+   `CerbDecode.decode_character_constant` applies the final wrapI into
+   signed char's [-128, 127] (decode.ml:201-219; euclidean rem — so
+   '\xFF' → -1). `CerbUtils.encode_character_constant` takes the low 8
+   bits (`land 0xff` = euclidean mod 256, decode.ml:223-225) instead of
+   the old `% 128` clamp.
+
+`./scripts/test_exec.sh` vs the post-S3b baseline
+(match=82 ub_match=15 mismatch=2 fail=3 crash=0 cerb_skip=3):
+
+```
+SUMMARY: total=105 match=84 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 timeout=0 cerb_skip=3
+```
+
+`--check-baseline` vs the OLD baseline: **0 regressions, 5
+improvements**; baseline regenerated, rc 0 against the new file.
+
+Per-file delta:
+
+| file | before | after |
+|---|---|---|
+| 056-func-ptr | FAIL (Illformed: null function pointer) | MATCH 30 |
+| 066-cast-float | MISMATCH (Lean=0, OCaml=3) | MATCH 3 |
+| 072-out-of-bounds.undef | FAIL (generic memory access error) | UB_MATCH UB_CERB002a |
+| 077-bool-trap.undef | FAIL (generic memory error) | UB_MATCH UB012 |
+| 098-cross-alloc-ptrdiff.undef | DIFF (Lean=1, OCaml UB048) | UB_MATCH UB048 |
+
+Remaining non-MATCH population: **only the 3 CERB_SKIPs** (073/074 .libc,
+097 OCaml-side skip) — every Lean-side fixable on tests/minimal is closed.
+Match rate 102/105 (84 value + 18 UB), 100% of comparable.
+
+Defect-register status (survey findings): 5, 6, 7, 10, 12, 18a, 20, 26,
+28 **FIXED** (with citations); 18b documented-deliberate stub (enum
+registry — not corpus-forced); still OPEN (backlog, next arc): 8, 9
+(eqPtrval msum / lt-le UB), 11 (read-only prefixes), 13-16 (store-order /
+memcpy checks / varargs / eff arrayShift), 19, 21, 23 (constraint
+pruning), 24-25, 27, 29-30.
+
+Gates at S3c close: lake build green; test_unit.sh 4/4 (purity CLEAN,
+cones OK, totality CLEAN); test_parse.sh ALL; test_core.sh 104/105
+(known 078 Core-text red only); test_exec.sh baseline OK (0 regressions).
