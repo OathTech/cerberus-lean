@@ -391,11 +391,37 @@ def bytesToInt (bytes : List AbsByte) (signed : Bool) : Option Int :=
       if val_ >= signBit then some (val_ - (1 <<< bits)) else some val_
     else some val_
 
-/-- Extract provenance from bytes — impl_mem.ml AbsByte.split_bytes -/
-def bytesProvenance (bytes : List AbsByte) : Provenance :=
-  match bytes.find? (fun b => b.prov != .Prov_none) with
-  | some b => b.prov
-  | none => .Prov_none
+/-- INTEGER-load provenance policy — AbsByte.pvi_split_bytes,
+    impl_mem.ml:455-460: fold combine_prov over the bytes' provenances
+    starting from Prov_none, in OCaml's exact argument order
+    (`combine_prov b.prov prov_acc`) — the order matters: e.g.
+    [some 1, some 2, some 2] folds to Prov_some 2, not Prov_none.
+    Used by the Basic-Integer (impl_mem.ml:949-960) and Byte
+    (impl_mem.ml:961-973) arms of abst. -/
+def provFromIntegerBytes (bytes : List AbsByte) : Provenance :=
+  bytes.foldl (fun acc b => combineProv b.prov acc) .Prov_none
+
+/-- POINTER-load provenance policy — AbsByte.split_bytes,
+    impl_mem.ml:432-453: the provenance is the bytes' SHARED provenance
+    (`VALID p1, p2 when p1 = p2` fold) — any two differing provenances
+    (including Prov_none vs Prov_some) collapse to Prov_none. Returns the
+    ValidPtrProv status too (all copy_offsets consecutive from 0,
+    impl_mem.ml:443-447): OCaml consults it ONLY under is_PNVI ()
+    (impl_mem.ml:1021-1053), which this pipeline never enables (no SW_PNVI
+    switch is ever set; the differential OCaml side runs with default
+    switches), so the pointer arm of reconstructValue uses .1
+    unconditionally, mirroring the non-PNVI use site (impl_mem.ml:1052-1054).
+    Empty byte list: OCaml failwith (impl_mem.ml:433-434) — mirrored. -/
+def splitBytesProv (bytes : List AbsByte) : Provenance × Bool :=
+  match bytes with
+  | [] => panic! "Concrete.AbsByte.split_bytes: called on an empty list"
+  | b :: _ =>
+    let prov := if bytes.all (fun b' => b'.prov == b.prov) then b.prov else .Prov_none
+    let validPtr := (bytes.zipIdx.all fun (b', i) =>
+      match b'.copyOffset with
+      | some off => off == (i : Int)
+      | none => false)
+    (prov, validPtr)
 
 /-- An unspecified padding byte — OCaml's `padding_byte` / `AbsByte.v
     Prov_none None` (impl_mem.ml:1200). -/
@@ -419,13 +445,17 @@ partial def memValueToBytes (funptrmap : Funptrmap) (val_ : MemValue) :
     let sz := sizeofCtype ty
     (funptrmap, List.replicate sz paddingByte)
   | .MVinteger ity (.IV prov n) =>
-    -- impl_mem.ml:1145-1150 (size = sizeof (Basic (Integer ity)))
+    -- impl_mem.ml:1145-1150 (size = sizeof (Basic (Integer ity)));
+    -- `List.map (AbsByte.v prov)` — AbsByte.v's copy_offset DEFAULTS to
+    -- None (impl_mem.ml:422-423): integer bytes carry NO copy_offset
+    -- (audit-2 F8; previously `some i` here, which only pointer bytes
+    -- get, impl_mem.ml:1186-1191)
     let sz := match CerberusImpl.sizeof_ity ity with
       | some n => n
       | none => panic! "the concrete memory model requires a complete implementation sizeof INTEGER"
     let rawBytes := intToBytes n sz
-    (funptrmap, (rawBytes.zip (List.range rawBytes.length)).map fun (v, i) =>
-      { prov := prov, copyOffset := some i, value := v })
+    (funptrmap, rawBytes.map fun v =>
+      { prov := prov, copyOffset := none, value := v })
   | .MVfloating fty fv =>
     -- impl_mem.ml:1151-1156: Int64.bits_of_float over sizeof(fty) bytes
     -- (= 8 for all real floating types, DefaultImpl 8/8/8 hack — see
@@ -511,10 +541,13 @@ partial def reconstructValue (unionmap : List (Int × identifier))
   match ty with
   | Ctype _ (.Basic (.Integer ity)) =>
     -- impl_mem.ml:949-960 (signedness via the implementation, as
-    -- AilTypesAux.is_signed_ity does there)
+    -- AilTypesAux.is_signed_ity does there); provenance via the INTEGER
+    -- policy — pvi_split_bytes' combine_prov fold (impl_mem.ml:951,
+    -- :455-460). mk_ival (impl_mem.ml:637-644) is the non-PNVI branch:
+    -- IV (prov, n) as-is.
     let signed := CerberusImpl.is_signed_ity ity
     match bytesToInt bytes signed with
-    | some n => .MVinteger ity (.IV (bytesProvenance bytes) n)
+    | some n => .MVinteger ity (.IV (provFromIntegerBytes bytes) n)
     | none => .MVunspecified ty
   | Ctype _ (.Basic (.Floating fty)) =>
     -- impl_mem.ml:974-985
@@ -524,28 +557,36 @@ partial def reconstructValue (unionmap : List (Int × identifier))
       .MVfloating fty (Float.ofBits bits)
     | none => .MVunspecified ty
   | Ctype _ (.Pointer _ pointeeCty) =>
-    -- impl_mem.ml:996-1057 (PNVI prov_status refinement not ported —
-    -- concrete model runs PVI here)
+    -- impl_mem.ml:995-1058. MVpointer stores the POINTEE type: every
+    -- OCaml arm builds `MVpointer (ref_ty, ...)` (impl_mem.ml:1007,
+    -- 1012, 1019, 1054) — matching `typeof` (impl_mem.ml:1123-1124:
+    -- MVpointer (ref_ty, _) → Pointer (no_qualifiers, ref_ty)) and our
+    -- own pointerMval/MVpointer.refTy. (Audit-2 C1: this previously
+    -- stored the full pointer type `ty` — one indirection too many.)
+    -- Provenance via the POINTER policy — AbsByte.split_bytes
+    -- (impl_mem.ml:998, :432-453); the ValidPtrProv component is
+    -- consulted only under is_PNVI (impl_mem.ml:1021-1053), never
+    -- enabled here — see splitBytesProv.
     match bytesToInt bytes false with
     | some 0 =>
       -- both the Function and the object branch map 0 to PVnull
-      -- (impl_mem.ml:1005-1007, 1018-1020)
-      .MVpointer ty (.PV .Prov_none (.PVnull pointeeCty))
+      -- (impl_mem.ml:1005-1007, 1017-1019)
+      .MVpointer pointeeCty (.PV .Prov_none (.PVnull pointeeCty))
     | some ptrAddr =>
-      let prov := bytesProvenance bytes
+      let (prov, _validPtrProv) := splitBytesProv bytes
       match pointeeCty with
       | Ctype _ (.Function _ _ _) =>
-        -- impl_mem.ml:1004-1016: a pointer-to-function is rebuilt from
+        -- impl_mem.ml:1004-1015: a pointer-to-function is rebuilt from
         -- the funptrmap entry registered at store time (repr,
         -- impl_mem.ml:1168-1185); the address IS the function symbol's
         -- nat. Unknown address: OCaml failwith — panic. (OCaml's own
         -- FIXME about same-id symbols across files applies unchanged.)
         match funptrmap.find? (fun (a, _) => a == ptrAddr) with
         | some (_, (fileDig, name)) =>
-          .MVpointer ty (.PV prov (.PVfunction (Symbol fileDig ptrAddr.toNat (SD_Id name))))
+          .MVpointer pointeeCty (.PV prov (.PVfunction (Symbol fileDig ptrAddr.toNat (SD_Id name))))
         | none => panic! s!"unknown function pointer: {ptrAddr}"
       | _ =>
-        .MVpointer ty (.PV prov (.PVconcrete none ptrAddr.toNat))
+        .MVpointer pointeeCty (.PV prov (.PVconcrete none ptrAddr.toNat))
     | none => .MVunspecified ty
   | Ctype _ (.Array0 elemCty (some n)) =>
     -- impl_mem.ml:986-994; NOTE OCaml's `self elem_ty cs` does NOT
@@ -564,9 +605,10 @@ partial def reconstructValue (unionmap : List (Int × identifier))
     -- impl_mem.ml:1058-1060 (same repr as the non-atomic version)
     reconstructValue unionmap funptrmap addr innerCty bytes
   | Ctype _ .Byte =>
-    -- impl_mem.ml:961-973
+    -- impl_mem.ml:961-973 ("handled similarly to integers": provenance
+    -- via pvi_split_bytes' combine_prov fold, impl_mem.ml:964)
     match bytesToInt (bytes.take 1) false with
-    | some n => .MVinteger .Char0 (.IV (bytesProvenance (bytes.take 1)) n)
+    | some n => .MVinteger .Char0 (.IV (provFromIntegerBytes (bytes.take 1)) n)
     | none => .MVunspecified ty
   | Ctype _ (.Struct tagSym) =>
     -- impl_mem.ml:1061-1073: member-wise reconstruct at the offsetsof
@@ -609,6 +651,50 @@ partial def reconstructValue (unionmap : List (Int × identifier))
         .MVunion tagSym membIdent mval
     | _ => panic! "CerbMem.reconstructValue: Union tag not a UnionDef (OCaml: assert false)"
   | _ => .MVunspecified ty
+
+/-! ## Memory-value typing — the store guard's helpers (audit-2 C3) -/
+
+/-- typeof — impl_mem.ml:1115-1136. The ctype a mem_value inhabits;
+    MVpointer's first component is the POINTEE type (impl_mem.ml:1123-1124).
+    MVarray []: OCaml `assert false` ("ill-formed value",
+    impl_mem.ml:1125-1127) — panic. Array element type from the FIRST
+    element only (OCaml's own TODO shrug, impl_mem.ml:1128-1131). -/
+partial def typeofMval : MemValue → ctype
+  | .MVunspecified (Ctype _ ty) => mkCtype ty
+  | .MVinteger ity _ => mkCtype (.Basic (.Integer ity))
+  | .MVfloating fty _ => mkCtype (.Basic (.Floating fty))
+  | .MVpointer refTy _ => mkCtype (.Pointer no_qualifiers refTy)
+  | .MVarray [] => panic! "CerbMem.typeofMval: MVarray [] (OCaml: assert false, ill-formed value)"
+  | .MVarray (mval :: rest) =>
+    mkCtype (.Array0 (typeofMval mval) (some ((rest.length + 1 : Nat) : Int)))
+  | .MVstruct tagSym _ => mkCtype (.Struct tagSym)
+  | .MVunion tagSym _ _ => mkCtype (.Union0 tagSym)
+
+/-- ctype_mem_compatible — impl_mem.ml:23-49: structural ctype equality
+    after recursively erasing qualifiers, annotations and Atomic wrappers;
+    Byte compares as unsigned char (impl_mem.ml:30-32); function-parameter
+    is_register flags are dropped to false (impl_mem.ml:33-38, the
+    `(_, ty, _) -> (..., false)` map). Used ONLY by the store guard. -/
+private partial def unqualifyAndUnatomic : ctype → ctype_
+  | Ctype _ ty =>
+    match ty with
+    | .Void0 | .Basic _ | .Struct _ | .Union0 _ => ty
+    | .Byte => .Basic (.Integer (.Unsigned .Ichar))
+    | .Function (_, retTy) params variadic =>
+      .Function (no_qualifiers, Ctype [] (unqualifyAndUnatomic retTy))
+        (params.map fun (p : qualifiers × ctype × Bool) =>
+          (no_qualifiers, Ctype [] (unqualifyAndUnatomic p.2.1), false))
+        variadic
+    | .FunctionNoParams (_, retTy) =>
+      .FunctionNoParams (no_qualifiers, Ctype [] (unqualifyAndUnatomic retTy))
+    | .Array0 elemTy nOpt =>
+      .Array0 (Ctype [] (unqualifyAndUnatomic elemTy)) nOpt
+    | .Pointer _ refTy =>
+      .Pointer no_qualifiers (Ctype [] (unqualifyAndUnatomic refTy))
+    | .Atomic atomTy => unqualifyAndUnatomic atomTy
+
+def ctypeMemCompatible (ty1 ty2 : ctype) : Bool :=
+  ctypeEqual (Ctype [] (unqualifyAndUnatomic ty1)) (Ctype [] (unqualifyAndUnatomic ty2))
 
 /-! ## Pointer value constructors — impl_mem.ml:1799-1827 -/
 
@@ -1103,20 +1189,20 @@ def killM (loc : CerbLocation.Loc) (isDynamic : Bool) (pv : PointerValue) : memM
             (NDactive (), st')
     | _ => fail_ (MerrUndefinedFree Free_non_matching)
 
-/-! ### Load / Store — impl_mem.ml:1552-1799
+/-! ### Load / Store — impl_mem.ml:1552-1789
 
     The provenance case split mirrors OCaml's load/store matches
-    (impl_mem.ml:1605-1666 / 1710-1789). Notably (survey finding 12) the
+    (impl_mem.ml:1604-1664 / 1711-1789). Notably (survey finding 12) the
     OCaml concrete model NEVER emits the NoProvPtr constructor — the
     three distinct outcomes are:
       Prov_none            → MerrAccess _ OutOfBoundPtr
-                             (impl_mem.ml:1610-1611 / 1719-1720)
+                             (impl_mem.ml:1609-1610 / 1716-1717)
       Prov_some + dead     → load: MerrAccess LoadAccess DeadPtr
-                             (explicit is_dead check, impl_mem.ml:1647-1652);
+                             (explicit is_dead check, impl_mem.ml:1645-1650);
                              store: NO dead check — is_within_bound's
                              get_allocation on a discarded allocation
                              fails MerrOutsideLifetime
-                             (impl_mem.ml:1770 → :669-675)
+                             (impl_mem.ml:1763 → :669-675)
       Prov_some + missing  → MerrOutsideLifetime (get_allocation,
                              impl_mem.ml:669-675)
     Every failure goes through the fail mapping (failReason,
@@ -1145,7 +1231,7 @@ private def isAtomicMemberAccess (alloc : Allocation) (lvalueTy : ctype) (addr :
 def loadM (loc : CerbLocation.Loc) (ty : ctype) (pv : PointerValue) : memM (Footprint × MemValue) :=
   ND fun st =>
     let fail_ (err : mem_error) := (NDkilled (failReason err loc), st)
-    -- do_load — impl_mem.ml:1556-1604 (PNVI expose/last_used bookkeeping
+    -- do_load — impl_mem.ml:1556-1603 (PNVI expose/last_used bookkeeping
     -- not ported; SW_strict_reads never set here)
     let doLoad (addr : Int) :=
       let size := sizeofCtype ty
@@ -1163,43 +1249,44 @@ def loadM (loc : CerbLocation.Loc) (ty : ctype) (pv : PointerValue) : memM (Foot
       if isTrap then fail_ (MerrTrapRepresentation LoadAccess)
       else (NDactive (fp, mv), st)
     match pv with
-    | .PV _ (.PVnull _) => fail_ (MerrAccess LoadAccess NullPtr)          -- impl_mem.ml:1606-1607
-    | .PV _ (.PVfunction _) => fail_ (MerrAccess LoadAccess FunctionPtr)  -- impl_mem.ml:1608-1609
-    | .PV .Prov_none _ => fail_ (MerrAccess LoadAccess OutOfBoundPtr)     -- impl_mem.ml:1610-1611
+    | .PV _ (.PVnull _) => fail_ (MerrAccess LoadAccess NullPtr)          -- impl_mem.ml:1605-1606
+    | .PV _ (.PVfunction _) => fail_ (MerrAccess LoadAccess FunctionPtr)  -- impl_mem.ml:1607-1608
+    | .PV .Prov_none _ => fail_ (MerrAccess LoadAccess OutOfBoundPtr)     -- impl_mem.ml:1609-1610
     | .PV .Prov_device (.PVconcrete _ _) =>
-      -- impl_mem.ml:1612-1618: is_within_device over the (empty) device
+      -- impl_mem.ml:1611-1617: is_within_device over the (empty) device
       -- ranges → always false here
       fail_ (MerrAccess LoadAccess OutOfBoundPtr)
     | .PV (.Prov_symbolic _) _ =>
       (NDkilled (kill_reason.Other
         (MerrOther "loadM: Prov_symbolic in concrete model")), st)
     | .PV (.Prov_some allocId) (.PVconcrete _ addr) =>
-      -- impl_mem.ml:1646-1666
+      -- impl_mem.ml:1644-1664
       if st.deadAllocations.contains allocId then
-        fail_ (MerrAccess LoadAccess DeadPtr)                             -- impl_mem.ml:1647-1652
+        fail_ (MerrAccess LoadAccess DeadPtr)                             -- impl_mem.ml:1645-1650
       else match st.allocations.find? (fun (id, _) => id == allocId) with
         | none =>
           -- get_allocation (via is_within_bound) — impl_mem.ml:669-675
           fail_ (MerrOutsideLifetime s!"Concrete.get_allocation, alloc_id={allocId}")
         | some (_, alloc) =>
           if !isInBounds alloc addr (sizeofCtype ty) then
-            fail_ (MerrAccess LoadAccess OutOfBoundPtr)                   -- impl_mem.ml:1654-1659
+            fail_ (MerrAccess LoadAccess OutOfBoundPtr)                   -- impl_mem.ml:1651-1656
           else if isAtomicMemberAccess alloc ty addr then
-            fail_ (MerrAccess LoadAccess AtomicMemberof)                  -- impl_mem.ml:1660-1663
+            fail_ (MerrAccess LoadAccess AtomicMemberof)                  -- impl_mem.ml:1658-1660
           else doLoad addr
 
 def storeM (loc : CerbLocation.Loc) (ty : ctype) (isLocking : Bool) (pv : PointerValue) (mv : MemValue) : memM Footprint :=
   ND fun st =>
     let fail_ (err : mem_error) := (NDkilled (failReason err loc), st)
-    -- select_ro_kind — impl_mem.ml:1712-1718
+    -- select_ro_kind — impl_mem.ml:1704-1710
     let selectRoKind : prefix0 → readonly_kind := fun pref =>
       match pref with
       | PrefTemporaryLifetime _ _ => readonly_kind.ReadonlyTemporaryLifetime
       | PrefStringLiteral _ _ => readonly_kind.ReadonlyStringLiteral
       | _ => readonly_kind.ReadonlyConstQualified
-    -- do_store — impl_mem.ml:1685-1710: bytemap write threads the
+    -- do_store — impl_mem.ml:1683-1703: bytemap write threads the
     -- funptrmap from repr; then the last_used_union_members update iff
-    -- the pointer is PVconcrete (Some membr, _) (union member_shift)
+    -- the pointer is PVconcrete (Some membr, _) (union member_shift,
+    -- impl_mem.ml:1694-1701)
     let doStore (allocId : Int) (alloc : Allocation) (unionMem : Option identifier) (addr : Int) :=
       let (fpm, bytes) := memValueToBytes st.funptrmap mv
       let st' := writeBytesTo { st with funptrmap := fpm } addr bytes
@@ -1207,7 +1294,7 @@ def storeM (loc : CerbLocation.Loc) (ty : ctype) (isLocking : Bool) (pv : Pointe
         | some membr => { st' with lastUsedUnionMembers :=
             (addr, membr) :: st'.lastUsedUnionMembers.filter (fun (a, _) => a != addr) }
         | none => st'
-      -- is_locking — impl_mem.ml:1774-1787: readonly kind from the
+      -- is_locking — impl_mem.ml:1776-1787: readonly kind from the
       -- allocation's prefix
       let st' := if isLocking then
         { st' with allocations := st'.allocations.map fun (id, a) =>
@@ -1217,18 +1304,25 @@ def storeM (loc : CerbLocation.Loc) (ty : ctype) (isLocking : Bool) (pv : Pointe
         else st'
       let fp : Footprint := .FP .W addr (sizeofCtype ty)
       (NDactive fp, st')
+    -- ill-typed-store guard — impl_mem.ml:1673-1681: checked BEFORE the
+    -- provenance/pointer-kind match (so it wins over NullPtr etc.);
+    -- OCaml's diagnostic printfs (:1674-1680) are not mirrored, the
+    -- failure is (MerrOther, non-UB → Other kill, batch Error line).
+    if !(ctypeMemCompatible ty (typeofMval mv)) then
+      fail_ (MerrOther "store with an ill-typed memory value")
+    else
     match pv with
-    | .PV _ (.PVnull _) => fail_ (MerrAccess StoreAccess NullPtr)          -- impl_mem.ml:1721-1722 (order per :1719-1726)
-    | .PV _ (.PVfunction _) => fail_ (MerrAccess StoreAccess FunctionPtr)
-    | .PV .Prov_none _ => fail_ (MerrAccess StoreAccess OutOfBoundPtr)     -- impl_mem.ml:1727-1728
+    | .PV _ (.PVnull _) => fail_ (MerrAccess StoreAccess NullPtr)          -- impl_mem.ml:1712-1713 (order per :1711-1717)
+    | .PV _ (.PVfunction _) => fail_ (MerrAccess StoreAccess FunctionPtr)  -- impl_mem.ml:1714-1715
+    | .PV .Prov_none _ => fail_ (MerrAccess StoreAccess OutOfBoundPtr)     -- impl_mem.ml:1716-1717
     | .PV .Prov_device (.PVconcrete _ _) =>
-      -- impl_mem.ml:1729-1735: empty device ranges → always out of bounds
+      -- impl_mem.ml:1718-1724: empty device ranges → always out of bounds
       fail_ (MerrAccess StoreAccess OutOfBoundPtr)
     | .PV (.Prov_symbolic _) _ =>
       (NDkilled (kill_reason.Other
         (MerrOther "storeM: Prov_symbolic in concrete model")), st)
     | .PV (.Prov_some allocId) (.PVconcrete unionMem addr) =>
-      -- impl_mem.ml:1768-1789: NO is_dead check on the store path — a
+      -- impl_mem.ml:1762-1789: NO is_dead check on the store path — a
       -- dead allocation is caught by is_within_bound's get_allocation
       -- (MerrOutsideLifetime); bounds are checked BEFORE readonly
       match st.allocations.find? (fun (id, _) => id == allocId) with
@@ -1236,12 +1330,12 @@ def storeM (loc : CerbLocation.Loc) (ty : ctype) (isLocking : Bool) (pv : Pointe
         fail_ (MerrOutsideLifetime s!"Concrete.get_allocation, alloc_id={allocId}")
       | some (_, alloc) =>
         if !isInBounds alloc addr (sizeofCtype ty) then
-          fail_ (MerrAccess StoreAccess OutOfBoundPtr)                     -- impl_mem.ml:1769-1771
+          fail_ (MerrAccess StoreAccess OutOfBoundPtr)                     -- impl_mem.ml:1763-1765
         else match alloc.isReadonly with
-          | .IsReadOnly kind => fail_ (MerrWriteOnReadOnly kind)           -- impl_mem.ml:1773-1775
+          | .IsReadOnly kind => fail_ (MerrWriteOnReadOnly kind)           -- impl_mem.ml:1768-1770
           | .IsWritable =>
             if isAtomicMemberAccess alloc ty addr then
-              -- NOTE: OCaml reports LoadAccess here (impl_mem.ml:1777-1779
+              -- NOTE: OCaml reports LoadAccess here (impl_mem.ml:1772-1774
               -- — looks like an upstream copy-paste; mirrored as-is)
               fail_ (MerrAccess LoadAccess AtomicMemberof)
             else doStore allocId alloc unionMem addr

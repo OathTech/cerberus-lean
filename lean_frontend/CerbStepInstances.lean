@@ -6,10 +6,14 @@
   and closure-carrying thread_states, so the Lem Lean backend emitted
   sorry-fallback BEq/Ord/SetType/Eq0/Ord0 instances. The sorry BEq fired at
   runtime from driver2's blocked-thread filter
-  (`step_opt <> Just Step_blocked2`, driver.lem:1405, rendered as
+  (`step_opt <> Just Step_blocked2`, driver.lem:1410, rendered as
   `maybeEqualBy (fun x y => x == y) step_opt (some Step_blocked2)`) — the
   first crash for 77/105 tests/minimal files (S0 frontier,
-  docs/2026-08-19_arc4-s0-frontier.md).
+  docs/2026-08-19_arc4-s0-frontier.md). A SECOND equality site exists at
+  driver.lem:1376 (`List.any (fun step -> step <> Step_blocked2)` in
+  _non_blocked_th_sts): also inside Driver.lean's import closure, so it
+  gets these instances too; like :1410 it only ever compares against the
+  nullary Step_blocked2.
 
   Semantics: OCAML POLYMORPHIC-EQUALITY PARITY. OCaml's (=)/compare walk
   the representation, comparing constructor tags first, and raise
@@ -75,7 +79,19 @@ import CerbCtypeInstances
    (transitively sorry) `deriving BEq` on `value`. Leaf comparisons use
    real instances: CerbMem.IntegerValue/PointerValue/MemValue (hand-written
    in CerbMem.lean), Float (IEEE ==, matching OCaml (=) incl. nan, -0.0),
-   sym/identifier/core_base_type (derived), ctype (CerbCtypeInstances). -/
+   sym/identifier/core_base_type (derived), ctype (CerbCtypeInstances).
+
+   LEAF-PARITY CAVEAT (audit-2, stated not fixed): two CerbMem leaf
+   instances are COARSER than OCaml polymorphic (=) —
+     * BEq PointerValueBase treats any two PVnull as equal, ignoring the
+       carried ctype (CerbMem.lean; OCaml (=) compares the ctype);
+     * beqMemValueImpl compares MVstruct by tag only, ignoring members
+       (likewise: MVunion ignores the member value, MVinteger the ity,
+       MVfloating the fty, MVunspecified/MVpointer the carried ctype).
+   Unreachable from the LIVE sites: both driver.lem sites (:1376, :1410)
+   only test against the nullary Step_blocked2, so the structural arms
+   (and hence these leaves) never decide a comparison today. Any new
+   equality use of core_step2 values must re-audit this caveat. -/
 mutual
 
 private def beqObjectValue : object_value → object_value → Bool
