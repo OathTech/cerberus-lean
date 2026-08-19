@@ -41,6 +41,13 @@ set_option autoImplicit true
 def loadCoreStdlib (stdFile : CoreParser.CoreFile) :
     Fmap String sym × fun_map Unit :=
   let allDecls := stdFile.funs ++ stdFile.procs ++ stdFile.builtins
+  -- Duplicate-key divergence (arc-5 audit 2, F4, documented-deliberate):
+  -- Lem_Map.fromList is a foldl of fmapAdd, so on duplicate ailnames the
+  -- LAST-in-file entry wins; OCaml's foldrM registration
+  -- (core_parser.mly:135-137 + register_ailname :157-159) makes the
+  -- FIRST-in-file entry win. std.core is ailname-duplicate-free
+  -- (verified), so this is unreachable today — see the capture-site note
+  -- in CoreParser.pCoreFileGo.
   let ailnames : Fmap String sym := Lem_Map.fromList stdFile.ailnames
   let funMap : fun_map Unit := Lem_Map.fromList allDecls
   (ailnames, funMap)

@@ -12,7 +12,7 @@
     * equality: hex is injective on raw digests — `digest_compare = 0`
       agrees exactly with OCaml `Digest.compare = 0` (the only digest
       property the model consumes: symbolEquality/symbol_compare
-      (symbol.lem:255-270 via Eq/Ord instances) and
+      (symbol.lem:153-162 via Eq/Ord instances) and
       from_same_translation_unit (symbol.lem:286-288)).
     * ordering: lowercase hex is byte-wise order-isomorphic to the raw
       bytes ('0'..'9','a'..'f' ASCII order = nibble order), so

@@ -12,13 +12,24 @@
 #
 #   OCaml : cerberus --nolibc --exec --batch  <slice>.c chvalid.c
 #           (default --mode=random: ONE trace — smt2.ml:23-31 picks branches
-#           with OCaml's default-seeded PRNG, deterministic across runs.
+#           with OCaml's PRNG, which is TIME-SEEDED PER RUN [corrected per
+#           arc-5 audits]: util/cerb_any.ml:1 self_inits at module load
+#           (Cerb_any.bounded_integer linked in via generated
+#           core_run.ml:1099) and driver_ocaml.ml:153/190 self_init again
+#           in batch_drive/drive — NOT deterministic across runs.
 #           Exhaustive mode is combinatorially infeasible at this program
 #           size: measured 175 executions for a 2-call program.)
 #   Lean  : cerberus-lean --batch --first  <slice>.json chvalid.json
 #           (single-trace runner CerbND.runND1; the trace-selection
-#           divergence vs OCaml's PRNG is recorded there. Sound here because
-#           the battery is pure: its verdict is trace-independent.)
+#           divergence vs OCaml's PRNG is recorded there. --first returns
+#           branch-index-0's trace, which equals the LAST execution of the
+#           exhaustive list — exhaustive mirrors OCaml's prepend order —
+#           NOT exhaustive's execution 0. Sound here because the battery is
+#           pure: its verdict is trace-independent — empirically all 175
+#           exhaustive executions of the probe program agreed. A
+#           trace-sensitive battery would FLAKE (the OCaml side's trace
+#           varies run to run), not deterministically fail, and is
+#           therefore FORBIDDEN in this gate absent a seed-pinning story.)
 #
 # Comparison is the multi_tu form (test_multi_tu.sh), tightened per slice:
 # the single batch verdict LINE must be byte-identical (checksum value +

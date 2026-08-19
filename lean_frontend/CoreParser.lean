@@ -250,6 +250,18 @@ def pImplConstant (s : String) : implementation_constant :=
   -- "generic_ffs"/..., core_reduction_aux.lem:8-42 is_fs_function
   -- "printf"/...); an unstripped "builtin_printf" matches nothing and
   -- falls into the process_impl_proc catch-all error.
+  --
+  -- PRECISE DIVERGENCE SCOPE (arc-5 audit 1, F3): the final fallback
+  -- below FAILS OPEN — any unknown non-builtin name parses as
+  -- `BuiltinFunction s`, where OCaml's scan_impl RAISES
+  -- (Core_lexer_invalid_implname, core_lexer.mll:209-219). Moreover the
+  -- OCaml impl_map keys beyond the ones matched above — `<sizeof>`,
+  -- `<alignof>`, `<Ctype.min>`/`<Ctype.max>`, the dotted
+  -- `<Characters.*>` forms, `<Environment.*>`, `<Bitfield_other_types>`,
+  -- `<Atomic_bitfield_permitted>` (implementation.lem:306-337) — hit
+  -- that fallback and parse to the WRONG constructor. All confirmed
+  -- unreachable from the shipped std.core + gcc impl by exhaustive
+  -- enumeration of the `<...>` tokens they contain (arc-5 audit 1).
   else if s.startsWith "builtin_" then
     BuiltinFunction (s.drop "builtin_".length).toString
   else BuiltinFunction s
@@ -1643,7 +1655,16 @@ private partial def pCoreFileGo (result : CoreFile) : P CoreFile := do
       | Decl.funDecl s d => { result with funs := result.funs ++ [(s, d)] }
       | Decl.procDecl s ailname? d =>
         -- register_ailname (core_parser.mly:157-159, called :1037-1041):
-        -- only attribute-carrying procs land in ailnames
+        -- only attribute-carrying procs land in ailnames.
+        -- DUPLICATE-ailname divergence (arc-5 audit 2, F4,
+        -- documented-deliberate): OCaml registers declarations via foldrM
+        -- (core_parser.mly:135-137) — the list is folded from the RIGHT,
+        -- so on duplicate ailnames the FIRST-in-file registration is
+        -- Pmap.add'ed last and WINS. We collect in file order here and
+        -- Main.lean builds the map with a foldl fromList, so LAST-in-file
+        -- wins. std.core is ailname-duplicate-free (verified), so the
+        -- divergence is unreachable today; align only if a real need
+        -- appears.
         { result with
           procs := result.procs ++ [(s, d)],
           ailnames := match ailname? with

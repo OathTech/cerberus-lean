@@ -86,6 +86,28 @@ def parse_ranges_inc(text):
     """Return (intervals, pubid_tab). intervals = list of (low, high)."""
     intervals = []
 
+    # --- hardening (arc-5 audit 1, F4): the set of xmlCh[SL]Range table
+    # declarations FOUND in ranges.inc must equal the set CONSUMED below.
+    # A new/unknown table would otherwise be silently excluded from the
+    # boundary point set — fail hard instead.
+    found_tables = set(re.findall(r"xmlCh[SL]Range\s+([A-Za-z0-9_]+)\s*\[\]", text))
+    consumed_tables = set(
+        ["%s_srng" % n for n in EXPECTED_SRNG]
+        + ["%s_lrng" % n for n in EXPECTED_LRNG]
+    )
+    if found_tables != consumed_tables:
+        die(
+            "ranges.inc table set drift: found %s, consumed %s "
+            "(extra: %s; missing: %s) — a new/unknown table requires a "
+            "deliberate generator + EXPECTED_* update and re-baseline"
+            % (
+                sorted(found_tables),
+                sorted(consumed_tables),
+                sorted(found_tables - consumed_tables) or "none",
+                sorted(consumed_tables - found_tables) or "none",
+            )
+        )
+
     # --- the six range tables -----------------------------------------
     for name, kind, expected in (
         [(n, "srng", c) for n, c in sorted(EXPECTED_SRNG.items())]

@@ -7,21 +7,49 @@
 # starts by pinning the CURRENT known-tainted state; S5 flips EXPECT below
 # to the clean state and the gate then enforces it forever.
 #
-# BOUNDARY HONESTY (arc-4 S5f, audit G3): the probes below measure
-# GENERATED exemplar cones + driver2 ONLY. Hand-written seams are outside
-# every probe here. In particular one hand-written AXIOM exists on the
-# pipeline and is part of the DECLARED boundary, not a finding:
-# CerbTags.with_tagDefs (CerbTags.lean:70) — an `axiom` with
-# @[implemented_by] binding the C-side set/restore extent (native/tags.c
-# cerb_tags_with; the axiom form survives the DCE that erased the opaque
-# form, arc-4 S1r). It sits in the Mini_pipeline (const-expr mini-run)
-# cone, which no probe below covers — this gate does NOT measure it.
-# sorryAx remains forbidden everywhere probed. Declared-boundary record:
-# 2026-08-19_arc4-results.md.
+# BOUNDARY HONESTY (arc-4 S5f, audit G3; updated arc-5 audit 2, F3): the
+# probes below measure GENERATED exemplar cones + driver2 ONLY.
+# Hand-written seams are outside every probe here. TWO hand-written
+# AXIOMS exist on the pipeline and are part of the DECLARED boundary, not
+# findings:
+#   1. CerbTags.with_tagDefs (CerbTags.lean:70) — an `axiom` with
+#      @[implemented_by] binding the C-side set/restore extent
+#      (native/tags.c cerb_tags_with; the axiom form survives the DCE
+#      that erased the opaque form, arc-4 S1r). Sits in the
+#      Mini_pipeline (const-expr mini-run) cone, which no probe below
+#      covers.
+#   2. CerberusFresh.forceIO (CerberusFresh.lean:113) — an `axiom` with
+#      @[implemented_by] pinning thunk evaluation to an IO position
+#      (native/md5.c cerb_force_thunk; arc-5 S2 digest/fresh barrier).
+#      Used from Main.lean and the unit tests — also outside every probe
+#      below.
+# A cheap CENSUS below counts '^axiom' across the hand-written .lean
+# files and fails if the count differs from 2 (fail-closed: a third
+# axiom must be consciously registered here). sorryAx remains forbidden
+# everywhere probed. Declared-boundary records: 2026-08-19_arc4-results.md,
+# 2026-08-19_arc5-results.md.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/.."
+
+# Hand-written axiom census (arc-5 audit 2, F3): everything under
+# lean_frontend/ EXCEPT generated/ and the build dir is hand-written.
+# Exactly the two declared-boundary axioms may exist; any drift (third
+# axiom, or a removal) fails until this gate is deliberately updated.
+AXIOM_COUNT=$(find lean_frontend -name '*.lean' \
+                -not -path 'lean_frontend/generated/*' \
+                -not -path 'lean_frontend/.lake/*' -print0 \
+              | xargs -0 grep -h '^axiom' | wc -l || true)
+if [[ "$AXIOM_COUNT" -ne 2 ]]; then
+  echo "check_theorem_axioms: FAIL — hand-written axiom census: found $AXIOM_COUNT '^axiom' declarations, expected exactly 2 (CerbTags.with_tagDefs, CerberusFresh.forceIO). Register any new axiom in the BOUNDARY HONESTY header deliberately."
+  find lean_frontend -name '*.lean' \
+    -not -path 'lean_frontend/generated/*' \
+    -not -path 'lean_frontend/.lake/*' -print0 \
+    | xargs -0 grep -n '^axiom' || true
+  exit 1
+fi
+echo "check_theorem_axioms: hand-written axiom census OK (2 declared-boundary axioms)"
 
 # EXPECT: default 'clean' since S5c landed (the merge-bar condition);
 # 'daemon' documented the pre-S5 pinned state.

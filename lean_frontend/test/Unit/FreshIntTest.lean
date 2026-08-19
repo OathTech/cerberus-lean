@@ -78,15 +78,26 @@ def testMd5Hex : IO Bool := do
   let ok3 ← assertEqual "md5(fox)"
               (CerberusFresh.md5Hex "The quick brown fox jumps over the lazy dog")
               "9e107d9d372bb6826bd81d3542a419d6"
-  -- multi-block coverage: 56-byte and >64-byte inputs exercise the
-  -- two-block padding path (tail_len = 128 in native/md5.c);
-  -- RFC 1321 A.5: alphabet and A-Za-z0-9 vectors
+  -- padding/block coverage (comment corrected per arc-5 audit 2, F5):
+  --   a-z is 26 bytes — single padded block (tail_len = 64 in
+  --     native/md5.c:111);
+  --   A-Za-z0-9 is 62 bytes — < 64 so it never enters the main block
+  --     loop, but its remainder ≥ 56 forces the TWO-block padding path
+  --     (tail_len = 128, md5.c:111/116-117);
+  --   the 80-byte digits vector (RFC 1321 A.5) is the only one that
+  --     exercises the ≥64-byte MAIN loop (`while (n >= 64)`,
+  --     md5.c:102-105) — one full block plus a 16-byte tail.
+  -- RFC 1321 A.5: alphabet, A-Za-z0-9, and digits-x8 vectors
   let ok4 ← assertEqual "md5(a-z)" (CerberusFresh.md5Hex "abcdefghijklmnopqrstuvwxyz")
               "c3fcd3d76192e4007dfb496cca67e13b"
   let ok5 ← assertEqual "md5(A-Za-z0-9)"
               (CerberusFresh.md5Hex "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789")
               "d174ab98d277d9f5a5611c2c9f419d9f"
-  if ok1 && ok2 && ok3 && ok4 && ok5 then
+  let ok6 ← assertEqual "md5(digits x8)"
+              (CerberusFresh.md5Hex
+                "12345678901234567890123456789012345678901234567890123456789012345678901234567890")
+              "57edf4a22be3c955ac49da2e2107b67a"
+  if ok1 && ok2 && ok3 && ok4 && ok5 && ok6 then
     IO.println "  ✓ PASS"
     return true
   else

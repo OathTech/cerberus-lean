@@ -78,20 +78,31 @@ partial def runND
 
     OCaml counterpart: `Smt2.runND Random` (smt2.ml:23-31 `with_backtracking`
     + the Random cases at smt2.ml:67-68/108-115), which picks ONE branch via
-    `Random.int` — OCaml's stdlib PRNG with its DEFAULT seed (no
-    `Random.self_init` anywhere in the driver), so a fixed but arbitrary
-    branch per ND point.
+    `Random.int` — and that PRNG is TIME-SEEDED PER RUN, not default-seeded
+    [corrected per arc-5 audits]: util/cerb_any.ml:1 runs `Random.self_init`
+    at module load (`Cerb_any.bounded_integer` is linked into the driver via
+    generated core_run.ml:1099), and driver_ocaml.ml:153/190 call
+    `Random.self_init` again in batch_drive/drive. The OCaml oracle's branch
+    choices may therefore differ from run to run.
 
     DELIBERATE DIVERGENCE (trace selection only): we always pick branch
     INDEX 0 (and the left/positive side of NDbranch) instead of mirroring
     OCaml's PRNG stream. Both selections are members of the same exhaustive
     trace set explored by `runND` above; a differential harness comparing a
     single-trace run against OCaml `--mode=random` is therefore comparing
-    two (possibly different) traces of the same program — sound only for
-    programs whose observable verdict is trace-independent (e.g. the pure
-    chvalid battery, scripts/test_libxml2.sh). Any disagreement is a real
-    signal: either a semantic defect or observable trace-sensitivity, both
-    of which require classification.
+    two (possibly different, and on the OCaml side run-varying) traces of
+    the same program — sound only for programs whose observable verdict is
+    trace-independent (e.g. the chvalid battery of scripts/test_libxml2.sh,
+    which is PURE: empirically all 175 exhaustive executions of the probe
+    program produced identical verdicts). The differential is sound because
+    the battery is pure, NOT because the oracle is deterministic. Any
+    disagreement is a real signal: either a semantic defect or observable
+    trace-sensitivity, both of which require classification.
+
+    `--first` naming note: this runner (surfaced as `cerberus-lean --first`)
+    returns branch-index-0's trace, which equals the LAST execution of the
+    exhaustive list (`runND` mirrors OCaml's PREPEND accumulation order) —
+    it is NOT exhaustive's EXECUTION 0.
 
     Same no-constraint-pruning divergence as `runND` (survey finding 23):
     NDguard always continues, NDbranch takes the positive side without a

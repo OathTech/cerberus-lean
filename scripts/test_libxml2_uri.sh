@@ -14,6 +14,10 @@
 #                   needs memset (via the libc .core), which --nolibc
 #                   excludes. This is the surface the Lean pipeline mirrors.
 #   LEAN          : cerberus-lean --batch --first over the 5 cabs-jsons.
+#                   (--first returns branch-index-0's trace, which equals
+#                   the LAST execution of the exhaustive list — exhaustive
+#                   mirrors OCaml's prepend order — NOT exhaustive's
+#                   execution 0; see CerbND.runND1.)
 #                   The Lean pipeline links no C library (only the core
 #                   stdlib — test_exec.sh parity choice), so the EXPECTED
 #                   2026-08-19 state is exec failure on the SAME unknown

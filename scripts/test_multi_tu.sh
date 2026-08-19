@@ -19,6 +19,15 @@
 #           (per-file cabs-json via `cerberus --cabs-json <file>` — one
 #            run per file: the OCaml driver prints one json per input)
 #
+# Comparison scope (arc-5 audit 2, F9): this harness compares VERDICT
+# SEQUENCES (the value/ub fields extracted per execution), NOT
+# stdout/stderr — the libxml2 gate (test_libxml2.sh) is the stricter one
+# (byte-identical batch verdict line incl. stdout/stderr/blocked).
+# Rationale: the corpus here runs --mode=exhaustive, where per-execution
+# stdout interleaving/ordering is not a stable comparable, while the
+# verdict sequence is; deep-observation coverage is delegated to the
+# single-trace libxml2 gate.
+#
 # Fail-closed: any MISMATCH/DIFF/FAIL/CRASH/TIMEOUT/empty-corpus exits 1.
 set -uo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
