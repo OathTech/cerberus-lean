@@ -51,3 +51,21 @@ port + S4b smoke run; creduce still absent → networked window). S3
 batches will work the 29 fixable non-matches by class:
 S3a=ACTION_ILLTYPED(15), S3b=memory FAILs(7)+Illformed(2),
 S3c=SeqRMW(2)+individual mismatches 052/066/098.
+
+**D6** — S3a boundary passed (91/105, +18, zero crashes, one-line C fix
+mirroring the OCaml parser-offset invariant; fragility of the OCaml
+invariant itself recorded — upstream-reportable). Seam survey (read-only
+Opus worker, operator-requested) delivered 30 live-bug suspects; extract
+committed as 2026-08-19_arc4-seam-survey.md.
+
+**D7** — Reprioritization on the survey (operator asked; orchestrator
+call): bar unchanged (≥95). Route changes: (a) ND accumulation-order fix
+(finding 22) PROMOTED into S3b step 0 — it permutes multi-execution
+first-verdicts and could make correct fixes read as baseline regressions;
+instrument integrity precedes measurement. (b) S3b = struct/union memory
+model to the survey spec (findings 1-4, 17). (c) S3c = survey-driven
+cheap batch (5-7, 12, 18, 26, 28 + 066/098 closure). (d) ~20 remaining
+findings = recorded backlog, explicitly OUT of this arc's bar; S4b's
+coverage-corpus baseline measures which latents are live; next arc claims
+them. (e) S5 audit scope += "seam fixes cite and match the OCaml lines
+they claim to mirror".
