@@ -383,3 +383,22 @@ old-vs-new transient check is optional. This amendment is an arc-7
 charter input: "totalize CerbND" becomes a Layer-2 prerequisite slice,
 and the totality-gate boundary can then extend to CerbND (arc-4 G3
 next-arc item, partially discharged).
+
+## Forward-design constraint: concurrency (operator refinement, 2026-08-19)
+
+**[USER]** Temporal boundary entries must not be entrenched by design:
+"we should design so we can eventually support concurrency." **[AGENT]**
+Layer-2/3 consequences, recorded as arc-7 charter constraints: (1) the
+Config/Step design already carries the driver's thread pool
+(Step_spawn_threads2/Step_tau2/schedPick are in the generated types the
+spike builds on) — keep it that way; do NOT specialize Config to a
+single-thread projection for convenience. (2) The cmm stub sits at the
+MEMORY-MODEL seam, not the scheduler: the Iris coupling's StateInterp
+must be parameterized so a future cmm instantiation replaces the
+state-interpretation without reshaping the language instance (iris-lean
+supports per-language state interps — the spike's gen_heap choice is the
+SC instantiation of a slot, not the slot itself; say so in the
+instance's docstring when built). (3) Adequacy statements should
+quantify over scheduler behaviors the way the exhaustive driver already
+does, so weak-memory ND arrives as MORE behaviors in the same shape,
+not a new statement form.
