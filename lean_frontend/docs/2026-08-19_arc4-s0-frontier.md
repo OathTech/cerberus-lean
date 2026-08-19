@@ -384,3 +384,120 @@ symbols are minted as `Symbol "" 0 (SD_Id tag)` (CoreParser.lean:361/365/
 on the exec path; (b) hash-based stdlib ids live in the full 64-bit space,
 so a hash landing inside [2^20, 2^20 + #ambient draws) is theoretically
 possible, exactly as a hash landing in [0, N) was before this fix.
+
+## Post-S3b frontier (2026-08-19, struct/union memory model + ND-order fix)
+
+S3b scope (survey findings 1-4, 17, 22): step-0 ND accumulation-order fix,
+then the struct/union concrete-memory port mirroring impl_mem.ml.
+
+**Step 0 — CerbND.runND accumulation order** (finding 22): NDnd/NDstep
+results were accumulated `acc ++ branch` (R_1++...++R_n); OCaml's
+exhaustive runner folds `return (z @ acc)` (smt2.ml:75-82), i.e.
+R_n++...++R_1, NDstep delegating to the NDnd case (smt2.ml:134-138).
+Mirrored exactly; NDbranch (`xs1 @ xs2`, smt2.ml:117-132) already
+matched. The header's "constraints are trivially SAT" claim was false —
+the concrete cs_module (impl_mem.ml:321-361) concretely evaluates
+constraints and check_sat can report UNSAT; the missing pruning is now
+recorded as an explicit divergence (finding 23), not implemented this
+slice. **Baseline delta from step 0 alone: none** (every tests/minimal
+program collapses to a single distinct batch verdict, so the order fix
+has no observable effect on this corpus; it protects any future
+multi-verdict program). Committed separately (26c05aebd).
+
+**Main batch — three root causes fixed together:**
+
+1. **Layout port** (findings 1-4): sizeof/alignof/offsetsof now mirror
+   impl_mem.ml:98-273 — struct = offsetsofMembers fold (member padded up
+   to its `align_opt`/_Alignas-overridden alignment, impl_mem.ml:112-127)
+   plus trailing padding to alignof(struct); union = max member size
+   padded to max member alignment; struct alignment seeded with the
+   flexible-array-member's array alignment (mirrored literally incl. the
+   FAM-appended-as-ordinary-member shape of offsetsof, impl_mem.ml:104-108
+   — nothing in tests/minimal exercises FAMs; recorded, not corpus-driven).
+   `reconstructValue` (abst, impl_mem.ml:916-1095) gained Struct
+   (member-wise at offsetsof offsets, incl. OCaml's advance-addr-by-pad
+   quirk) and Union arms (member selected via
+   MemState.lastUsedUnionMembers at the address, defaulting to the first
+   declared member — impl_mem.ml:1074-1095); it now takes
+   (unionmap, addr) like abst's (~addr, unionmap). `memValueToBytes`
+   (repr, impl_mem.ml:1139-1220) writes inter-member and trailing struct
+   padding as unspecified bytes and pads a union's active member out to
+   sizeof(union). storeM's lastUsedUnionMembers update already sat
+   exactly where OCaml's do_store puts it (impl_mem.ml:1694-1701); it is
+   now actually reachable (see 2/3) and is read by loads. Float sizes:
+   CerberusImpl.sizeof_fty/alignof_fty are now 8/8/8, mirroring
+   DefaultImpl's TODO:hack (ocaml_implementation.ml:206-212/:247-253);
+   CerbMem's duplicate 4/8/16 constants (basicTypeSize + the MVfloating
+   local match) are deleted — all leaf sizes route through CerberusImpl.
+   isSignedIty dedup (finding 17): CerbMem.isSignedIty deleted; all call
+   sites use CerberusImpl.is_signed_ity, which now mirrors
+   Common.is_signed_ity (ocaml_implementation.ml:79-107, char_is_signed =
+   true per :257) including routing Enum through typeof_enum (still the
+   Signed Int_ stub — the registry is finding 18, S3c).
+
+2. **Dead-code-eliminated global set (NEW ROOT CAUSE, found by the layout
+   work):** Main.lean's `let _ := CerbTags.set_tagDefs runFile.tagDefs`
+   (and the sibling reset) discarded the result of a PURE opaque call, so
+   the Lean compiler eliminated it — the CerbTags global was EMPTY for
+   the whole execution phase. Nothing noticed before S3b because the
+   generated exec path threads tagDefs as a lem reader and the only
+   global readers (memberShiftPtrval/offsetofIval) silently fell back to
+   offset 0. Fixed by calling the BaseIO variants
+   (`CerbTags.setTagDefsIO`/`resetTagDefsIO`) from Main's IO context.
+   Same hazard class as the arc-1 effectful/CSE gotchas (container
+   CLAUDE.md "Effectful/extern gotchas"): a discarded pure-wrapper call
+   IS dead code to the compiler — mutate globals from IO via the BaseIO
+   externs.
+
+3. **Description-sensitive tag lookups:** CerbMem's tag lookups used the
+   derived `BEq sym` (compares the symbol description too); OCaml keys
+   Pmap on symbol_compare (digest+nat only). All CerbMem tag lookups now
+   use `symbolEquality`; member-identifier lookups use `idEqual`
+   (name-only, OCaml's Eq Symbol.identifier) instead of the
+   location-sensitive derived BEq — offsetofIval's silent
+   `integerIval 0` fallbacks are gone (OCaml failwith ⇒ panic).
+
+`./scripts/test_exec.sh` vs the post-S3a baseline
+(match=76 ub_match=15 mismatch=3 fail=8 crash=0 cerb_skip=3):
+
+```
+SUMMARY: total=105 match=82 ub_match=15 ub_diff=0 mismatch=2 fail=3 crash=0 timeout=0 cerb_skip=3
+```
+
+`--check-baseline` vs the OLD baseline: **0 regressions, 6
+improvements**; baseline regenerated, rc 0 against the new file.
+
+Per-file delta:
+
+| file | before | after |
+|---|---|---|
+| 025-struct-basic | FAIL (memory access error) | MATCH |
+| 052-sizeof-expr | MISMATCH | MATCH |
+| 058-struct-value | FAIL (memory access error) | MATCH |
+| 059-union-basic | FAIL (memory access error) | MATCH |
+| 078-float-special | FAIL (memory access error) | MATCH |
+| 103-union-store-load | FAIL (memory access error) | MATCH |
+
+Remaining non-MATCH population (all pre-existing, none moved by S3b),
+classified:
+
+- 056-func-ptr FAIL (`Illformed_program: null function pointer`) —
+  function-pointer byte reconstruction not ported (funptrmap; survey
+  finding 20, backlog/S3c).
+- 072-out-of-bounds.undef FAIL (Lean `Error: memory access error`,
+  OCaml `UB_CERB002a_out_of_bound_load`) and 077-bool-trap.undef FAIL
+  (Lean `Error: memory error`, OCaml `UB012_lvalue_read_trap_
+  representation`) — the mem_error → UndefinedBehaviour mapping on the
+  driver/batch reporting path is missing (MerrAccess/
+  MerrTrapRepresentation surface as generic errors instead of UB);
+  S3c material, same neighborhood as finding 12.
+- 066-cast-float MISMATCH (Lean=0, OCaml=3) — CerbFloat.of_string
+  (finding 5, S3c).
+- 098-cross-alloc-ptrdiff.undef DIFF (Lean=1, OCaml UB048) — diffPtrval
+  same-allocation checks (finding 10, S3c/backlog).
+- 073/074 (.libc) + 097 CERB_SKIP — OCaml-side skips, unchanged.
+
+Gates at S3b close: lake build green; test_unit.sh all green (purity
+CLEAN, cones OK, totality CLEAN); test_parse.sh ALL; test_core.sh
+104/105 (known 078 Core-text-parser red only — its EXEC differential now
+MATCHes); test_exec.sh baseline OK (0 regressions).

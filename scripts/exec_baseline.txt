@@ -24,7 +24,7 @@
 022-pointer-write.c MATCH
 023-array-read.c MATCH
 024-array-write.c MATCH
-025-struct-basic.c FAIL
+025-struct-basic.c MATCH
 026-ternary.c MATCH
 027-for-loop.c MATCH
 028-break.c MATCH
@@ -51,14 +51,14 @@
 049-scope-shadow.c MATCH
 050-modulo.c MATCH
 051-sizeof-type.c MATCH
-052-sizeof-expr.c MISMATCH
+052-sizeof-expr.c MATCH
 053-static-local.c MATCH
 054-string-literal.c MATCH
 055-char-array-init.c MATCH
 056-func-ptr.c FAIL
 057-void-ptr.c MATCH
-058-struct-value.c FAIL
-059-union-basic.c FAIL
+058-struct-value.c MATCH
+059-union-basic.c MATCH
 060-switch-fallthrough.c MATCH
 061-goto.c MATCH
 062-multidim-array.c MATCH
@@ -77,7 +77,7 @@
 075-main-argc-argv.c MATCH
 076-main-argv-access.c MATCH
 077-bool-trap.undef.c FAIL
-078-float-special.c FAIL
+078-float-special.c MATCH
 079-unseq-simple.c MATCH
 080-unseq-reads-only.c MATCH
 081-unseq-diff-locations.c MATCH
@@ -102,6 +102,6 @@
 100-int-wrap-unsigned.c MATCH
 101-signed-overflow.undef.c UB_MATCH
 102-bool-implicit-conv.c MATCH
-103-union-store-load.c FAIL
+103-union-store-load.c MATCH
 104-unsigned-wrap-arith.c MATCH
 105-bitwise-ops.c MATCH

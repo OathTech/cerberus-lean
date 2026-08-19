@@ -237,7 +237,11 @@ def runPipeline (runtimeDir : String) (batch : Bool) (tunit : translation_unit) 
 
       -- Step 3: Translate AIL → Core
       say "  translating AIL → Core..."
-      let _ := CerbTags.reset_tagDefs ()
+      -- NOTE: must use the BaseIO variant here: the pure wrapper's result is
+      -- unused, and `let _ := CerbTags.reset_tagDefs ()` gets dead-code
+      -- eliminated (found in arc-4 S3b: the sibling set_tagDefs below was
+      -- being dropped, leaving the global EMPTY throughout execution).
+      let _ ← (CerbTags.resetTagDefsIO () : BaseIO Unit)
       let callconv := Normal_callconv
       let coreFile := translate (ailnames, stdFunMap) callconv coreImpl typedProg
       say s!"  translation succeeded!"
@@ -248,12 +252,15 @@ def runPipeline (runtimeDir : String) (batch : Bool) (tunit : translation_unit) 
       -- Step 4: Prepare for execution (mirrors driver_ocaml.ml)
       say "  preparing for execution..."
       let runFile := convert_file coreFile
-      let _ := CerbTags.set_tagDefs runFile.tagDefs
+      -- BaseIO variant — a discarded pure `set_tagDefs` call is dead-code
+      -- eliminated (see reset above); CerbMem's struct/union layout
+      -- (sizeof/alignof/offsetsof) reads this global during execution.
+      let _ ← (CerbTags.setTagDefsIO runFile.tagDefs : BaseIO Unit)
       let fsState := CerbFS.fs_initial_state
       let drSt := initial_driver_state runFile fsState
       say s!"  executing Core..."
       -- Reader seed: execution-slice entry; tagDefs are fully registered by now
-      -- (Main itself set them above via CerbTags.set_tagDefs), so the live
+      -- (Main itself set them above via CerbTags.setTagDefsIO), so the live
       -- global is the correct value.
       let driverAction := drive (CerbTags.tagDefs ()) false runFile ["cmdname"]
       let execs := CerbND.runND driverAction drSt

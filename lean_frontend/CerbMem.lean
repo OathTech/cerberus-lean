@@ -195,54 +195,175 @@ def combineProv : Provenance → Provenance → Provenance
   | .Prov_symbolic _, _ => panic! "Concrete.combine_prov: found a Prov_symbolic"
   | _, .Prov_symbolic _ => panic! "Concrete.combine_prov: found a Prov_symbolic"
 
-/-! ## Layout computation — for sizeof/alignof -/
+/-! ## Layout computation — impl_mem.ml:98-273 (offsetsof / sizeof / alignof)
 
-private def targetPtrSize : Nat := 8
+    OCaml's offsetsof/sizeof/alignof take `?(tagDefs= Tags.tagDefs ())` and
+    every call site in impl_mem.ml uses the default, so the Lean versions
+    read `CerbTags.tagDefs ()` at their struct/union arms (the same ambient
+    tag-state pattern already used by memberShiftPtrval below).
 
-private def basicTypeSize : basicType → Nat
-  | .Integer ity => match CerberusImpl.sizeof_ity ity with | some n => n | none => 4
-  | .Floating (.RealFloating .Float0) => 4
-  | .Floating (.RealFloating .Double) => 8
-  | .Floating (.RealFloating .LongDouble) => 16
+    Integer/float leaf sizes come from CerberusImpl (the DefaultImpl port),
+    exactly like OCaml routes them through `(Ocaml_implementation.get ())`
+    — no local size constants are kept here. -/
 
-private def alignUp (n align : Nat) : Nat :=
-  if align == 0 then n else ((n + align - 1) / align) * align
+private def targetPtrSize : Nat := 8  -- DefaultImpl.sizeof_pointer/alignof_pointer = Some 8
 
-partial def sizeofCtype : ctype → Nat
-  | Ctype _ ty_ => sizeofCtype_ ty_
-where sizeofCtype_ : ctype_ → Nat
-  | .Void0 => 0
-  | .Basic bty => basicTypeSize bty
-  | .Array0 elemCty (some n) => n.toNat * sizeofCtype elemCty
-  | .Array0 _ none => 0
-  | .Function _ _ _ | .FunctionNoParams _ => 0
-  | .Pointer _ _ => targetPtrSize
-  | .Atomic innerCty => sizeofCtype innerCty
-  | .Struct _ => 0  -- needs tag definitions
-  | .Union0 _ => 0  -- needs tag definitions
-  | .Byte => 1
+private abbrev TagDefs := List (sym × (CerbLocation.Loc × tag_definition))
 
-partial def alignofCtype : ctype → Nat
-  | Ctype _ ty_ => alignofCtype_ ty_
-where alignofCtype_ : ctype_ → Nat
-  | .Void0 => 1
-  | .Basic bty => basicTypeSize bty
-  | .Array0 elemCty _ => alignofCtype elemCty
-  | .Function _ _ _ | .FunctionNoParams _ => 1
-  | .Pointer _ _ => targetPtrSize
-  | .Atomic innerCty => alignofCtype innerCty
-  | .Struct _ => 1  -- needs tag definitions
-  | .Union0 _ => 1  -- needs tag definitions
-  | .Byte => 1
+mutual
 
-/-! ## Byte-level serialization -/
+/-- Member alignment with the `align_opt` (_Alignas) override —
+    impl_mem.ml:115-122 (the align_opt match inside offsetsof; the same
+    three-way match is repeated verbatim at impl_mem.ml:179-186 for union
+    sizeof and inside the struct/union alignof folds). -/
+partial def memberAlign (alignOpt : Option alignment) (ty : ctype) : Nat :=
+  match alignOpt with
+  | none => alignofCtype ty
+  | some (AlignInteger al_n) => al_n.toNat
+  | some (AlignType al_ty) => alignofCtype al_ty
 
-private def isSignedIty : integerType → Bool
-  | .Signed _ => true
-  | .Char0 => true  -- platform-dependent, we follow GCC (signed)
-  | .Ptrdiff_t => true
-  | .Wint_t => true
-  | _ => false
+/-- THE struct-layout oracle: fold over the raw member quadruples,
+    padding each member up to its (possibly _Alignas-overridden)
+    alignment. Mirrors the fold at impl_mem.ml:112-127. Returns
+    ([(ident, ty, offset)], last_offset) where last_offset is the end of
+    the last member BEFORE trailing padding — exactly OCaml's `maxoffset`.
+    (Alignment 0 is impossible for valid C members; Lean's `% 0 = id` +
+    truncated subtraction make it degrade to pad = 0 instead of OCaml's
+    Division_by_zero.) -/
+partial def offsetsofMembers
+    (members : List (identifier × (attributes × Option alignment × qualifiers × ctype)))
+    : List (identifier × ctype × Nat) × Nat :=
+  let (xs, maxoffset) := members.foldl (init := (([] : List (identifier × ctype × Nat)), 0))
+    fun (acc : List (identifier × ctype × Nat) × Nat) memb =>
+      let (xs, lastOffset) := acc
+      let (ident, (_, alignOpt, _, ty)) := memb
+      let size := sizeofCtype ty                    -- impl_mem.ml:114
+      let align := memberAlign alignOpt ty          -- impl_mem.ml:115-122
+      let x := lastOffset % align                   -- impl_mem.ml:123
+      let pad := if x == 0 then 0 else align - x    -- impl_mem.ml:124
+      ((ident, ty, lastOffset + pad) :: xs, lastOffset + pad + size)  -- impl_mem.ml:125
+  (xs.reverse, maxoffset)
+
+/-- offsetsof — impl_mem.ml:98-129. Struct: offsetsofMembers over the
+    member list, with the flexible array member appended as an ordinary
+    member (its stored element ctype, verbatim per impl_mem.ml:104-108)
+    unless `ignoreFlexible`. Union: every member at offset 0, last_offset
+    0 (impl_mem.ml:128-129). Missing tag: OCaml's Pmap.find raises
+    Not_found — panic here.
+    Tag lookup uses symbolEquality (digest+nat, description-INSENSITIVE
+    — OCaml's symbol_compare/Pmap key order, symbol.lem), NOT the derived
+    BEq which also compares the description. Same for every tag lookup in
+    this file. -/
+partial def offsetsof (tagDefs : TagDefs) (tagSym : sym)
+    (ignoreFlexible : Bool := false) : List (identifier × ctype × Nat) × Nat :=
+  match tagDefs.find? (fun (s, _) => symbolEquality s tagSym) with
+  | none => panic! "CerbMem.offsetsof: unknown tag (OCaml: Pmap.find Not_found)"
+  | some (_, (_, StructDef membrs_ flexibleOpt)) =>
+    let membrs := match flexibleOpt with
+      | none => membrs_
+      | some (FlexibleArrayMember attrs ident qs ty) =>
+        if ignoreFlexible then membrs_
+        else membrs_ ++ [(ident, (attrs, none, qs, ty))]  -- impl_mem.ml:107-108 (raw stored ctype)
+    offsetsofMembers membrs
+  | some (_, (_, UnionDef membrs)) =>
+    (membrs.map (fun (ident, (_, _, _, ty)) => (ident, ty, 0)), 0)
+
+/-- sizeof — impl_mem.ml:131-194.
+    Struct (impl_mem.ml:162-171): offsetsof last_offset (ignore_flexible —
+    the flexible member is uncounted except through alignof's trailing
+    padding), padded up to alignof(struct).
+    Union (impl_mem.ml:172-192): max member size padded up to max member
+    alignment (align_opt honored).
+    Divergence kept from the pre-existing code: Void/incomplete-Array/
+    Function return 0 where OCaml `assert false` (impl_mem.ml:133-135). -/
+partial def sizeofCtype (cty : ctype) : Nat :=
+  match cty with
+  | Ctype _ ty_ =>
+    match ty_ with
+    | .Void0 => 0                                 -- OCaml: assert false
+    | .Array0 _ none => 0                         -- OCaml: assert false
+    | .Function _ _ _ | .FunctionNoParams _ => 0  -- OCaml: assert false
+    | .Basic (.Integer ity) =>
+      match CerberusImpl.sizeof_ity ity with      -- impl_mem.ml:136-141
+      | some n => n
+      | none => panic! "the concrete memory model requires a complete implementation sizeof INTEGER"
+    | .Basic (.Floating fty) =>
+      match CerberusImpl.sizeof_fty fty with      -- impl_mem.ml:143-148
+      | some n => n
+      | none => panic! "the concrete memory model requires a complete implementation sizeof FLOAT"
+    | .Array0 elemCty (some n) => n.toNat * sizeofCtype elemCty  -- impl_mem.ml:150-151
+    | .Pointer _ _ => targetPtrSize               -- impl_mem.ml:153-158
+    | .Atomic innerCty => sizeofCtype innerCty    -- impl_mem.ml:160-161
+    | .Struct tagSym =>                           -- impl_mem.ml:162-171
+      let (_, maxOffset) := offsetsof (CerbTags.tagDefs ()) tagSym (ignoreFlexible := true)
+      let align := alignofCtype cty
+      let x := maxOffset % align
+      if x == 0 then maxOffset else maxOffset + (align - x)
+    | .Union0 tagSym =>                           -- impl_mem.ml:172-192
+      match (CerbTags.tagDefs ()).find? (fun (s, _) => symbolEquality s tagSym) with
+      | some (_, (_, UnionDef membrs)) =>
+        let (maxSize, maxAlign) := membrs.foldl (init := ((0 : Nat), (0 : Nat)))
+          fun (acc : Nat × Nat) memb =>
+            let (accSize, accAlign) := acc
+            let (_, (_, alignOpt, _, ty)) := memb
+            (max accSize (sizeofCtype ty), max accAlign (memberAlign alignOpt ty))
+        -- trailing padding up to the max alignment — impl_mem.ml:189-191
+        let x := maxSize % maxAlign
+        if x == 0 then maxSize else maxSize + (maxAlign - x)
+      | _ => panic! "CerbMem.sizeofCtype: Union tag not a UnionDef (OCaml: assert false / Not_found)"
+    | .Byte => 1                                  -- impl_mem.ml:193-194
+
+/-- alignof — impl_mem.ml:196-273.
+    Struct (impl_mem.ml:228-252): max member alignment (align_opt
+    honored), the fold seeded with the flexible array member's
+    array-of-element alignment when present (else 0).
+    Union (impl_mem.ml:253-271): max member alignment, seed 0.
+    Divergence kept from the pre-existing code: Void/Function return 1
+    where OCaml `assert false`. -/
+partial def alignofCtype (cty : ctype) : Nat :=
+  match cty with
+  | Ctype _ ty_ =>
+    match ty_ with
+    | .Void0 => 1                                 -- OCaml: assert false
+    | .Function _ _ _ | .FunctionNoParams _ => 1  -- OCaml: assert false
+    | .Basic (.Integer ity) =>
+      match CerberusImpl.alignof_ity ity with     -- impl_mem.ml:200-206
+      | some n => n
+      | none => panic! "the concrete memory model requires a complete implementation alignof INTEGER"
+    | .Basic (.Floating fty) =>
+      match CerberusImpl.alignof_fty fty with     -- impl_mem.ml:207-213
+      | some n => n
+      | none => panic! "the concrete memory model requires a complete implementation alignof FLOATING"
+    | .Array0 elemCty _ => alignofCtype elemCty   -- impl_mem.ml:214-215
+    | .Pointer _ _ => targetPtrSize               -- impl_mem.ml:219-225
+    | .Atomic innerCty => alignofCtype innerCty   -- impl_mem.ml:226-227
+    | .Struct tagSym =>                           -- impl_mem.ml:228-252
+      match (CerbTags.tagDefs ()).find? (fun (s, _) => symbolEquality s tagSym) with
+      | some (_, (_, StructDef membrs flexibleOpt)) =>
+        let init := match flexibleOpt with        -- impl_mem.ml:234-239
+          | none => 0
+          | some (FlexibleArrayMember _ _ _ elemTy) =>
+            alignofCtype (mkCtype (.Array0 elemTy none))
+        membrs.foldl (init := init) fun acc memb =>
+          let (_, (_, alignOpt, _, ty)) := memb
+          max (memberAlign alignOpt ty) acc       -- impl_mem.ml:242-251
+      | _ => panic! "CerbMem.alignofCtype: Struct tag not a StructDef (OCaml: assert false / Not_found)"
+    | .Union0 tagSym =>                           -- impl_mem.ml:253-271
+      match (CerbTags.tagDefs ()).find? (fun (s, _) => symbolEquality s tagSym) with
+      | some (_, (_, UnionDef membrs)) =>
+        membrs.foldl (init := (0 : Nat)) fun acc memb =>
+          let (_, (_, alignOpt, _, ty)) := memb
+          max (memberAlign alignOpt ty) acc
+      | _ => panic! "CerbMem.alignofCtype: Union tag not a UnionDef (OCaml: assert false / Not_found)"
+    | .Byte => 1                                  -- impl_mem.ml:272-273
+
+end
+
+/-! ## Byte-level serialization
+
+    Integer signedness comes from CerberusImpl.is_signed_ity (the
+    DefaultImpl port) — the local isSignedIty duplicate that disagreed on
+    Wchar_t/Enum is deleted (survey finding 17). -/
 
 def intToBytes (val_ : Int) (size : Nat) : List (Option UInt8) :=
   let totalBits := size * 8
@@ -276,26 +397,40 @@ def bytesProvenance (bytes : List AbsByte) : Provenance :=
   | some b => b.prov
   | none => .Prov_none
 
-/-- Serialize a MemValue to bytes -/
+/-- An unspecified padding byte — OCaml's `padding_byte` / `AbsByte.v
+    Prov_none None` (impl_mem.ml:1200). -/
+private def paddingByte : AbsByte :=
+  { prov := .Prov_none, copyOffset := none, value := none }
+
+/-- Serialize a MemValue to bytes — repr, impl_mem.ml:1139-1220.
+    (funptrmap threading is not ported — function-pointer byte
+    reconstruction is survey finding 20, backlog.) -/
 partial def memValueToBytes (val_ : MemValue) : List AbsByte :=
   match val_ with
   | .MVunspecified ty =>
+    -- impl_mem.ml:1142-1144
     let sz := sizeofCtype ty
-    List.replicate sz { prov := .Prov_none, copyOffset := none, value := none }
+    List.replicate sz paddingByte
   | .MVinteger ity (.IV prov n) =>
-    let sz := match CerberusImpl.sizeof_ity ity with | some n => n | none => 4
+    -- impl_mem.ml:1145-1150 (size = sizeof (Basic (Integer ity)))
+    let sz := match CerberusImpl.sizeof_ity ity with
+      | some n => n
+      | none => panic! "the concrete memory model requires a complete implementation sizeof INTEGER"
     let rawBytes := intToBytes n sz
     (rawBytes.zip (List.range rawBytes.length)).map fun (v, i) =>
       { prov := prov, copyOffset := some i, value := v }
   | .MVfloating fty fv =>
-    let sz := match fty with
-      | .RealFloating .Float0 => 4
-      | .RealFloating .Double => 8
-      | .RealFloating .LongDouble => 16
+    -- impl_mem.ml:1151-1156: Int64.bits_of_float over sizeof(fty) bytes
+    -- (= 8 for all real floating types, DefaultImpl 8/8/8 hack — see
+    -- CerberusImpl.sizeof_fty)
+    let sz := match CerberusImpl.sizeof_fty fty with
+      | some n => n
+      | none => panic! "the concrete memory model requires a complete implementation sizeof FLOAT"
     let bits := fv.toBits.toNat
     let rawBytes := intToBytes bits sz
     rawBytes.map fun v => { prov := .Prov_none, copyOffset := none, value := v }
   | .MVpointer _ (.PV prov base) =>
+    -- impl_mem.ml:1157-1196
     let (rawVal, prov') := match base with
       | .PVnull _ => (0, Provenance.Prov_none)
       | .PVfunction _ => (0, prov)
@@ -303,34 +438,68 @@ partial def memValueToBytes (val_ : MemValue) : List AbsByte :=
     let rawBytes := intToBytes rawVal targetPtrSize
     (rawBytes.zip (List.range rawBytes.length)).map fun (v, i) =>
       { prov := prov', copyOffset := some i, value := v }
-  | .MVarray elems => elems.flatMap memValueToBytes
-  | .MVstruct _ members =>
-    members.flatMap fun (_, _, mval) => memValueToBytes mval
-  | .MVunion _ _ mval => memValueToBytes mval
+  | .MVarray elems => elems.flatMap memValueToBytes  -- impl_mem.ml:1197-1205 (concat of each repr)
+  | .MVstruct tagSym members =>
+    -- impl_mem.ml:1199-1212: pad from the previous member's end up to
+    -- each member's offsetsof offset (unspecified bytes), then the
+    -- member's bytes; then trailing padding out to sizeof(struct).
+    let (offs, lastOff) := offsetsof (CerbTags.tagDefs ()) tagSym (ignoreFlexible := true)
+    let finalPad := sizeofCtype (mkCtype (.Struct tagSym)) - lastOff  -- impl_mem.ml:1202
+    -- fold2 over layout and members (impl_mem.ml:1204-1209); lengths
+    -- coincide for well-typed values (OCaml fold_left2 would raise
+    -- Invalid_argument otherwise — zip truncates instead)
+    let (_, bs) := (offs.zip members).foldl (init := ((0 : Nat), ([] : List AbsByte)))
+      fun (acc : Nat × List AbsByte) (p : (identifier × ctype × Nat) × (identifier × ctype × MemValue)) =>
+        let (lastOff, accBs) := acc
+        let ((_, ty, off), (_, _, mval)) := p
+        let pad := off - lastOff
+        (off + sizeofCtype ty, accBs ++ List.replicate pad paddingByte ++ memValueToBytes mval)
+    bs ++ List.replicate finalPad paddingByte  -- impl_mem.ml:1211
+  | .MVunion tagSym _ mval =>
+    -- impl_mem.ml:1213-1220: the active member's bytes, padded out with
+    -- unspecified bytes to sizeof(union).
+    let size := sizeofCtype (mkCtype (.Union0 tagSym))
+    let bs := memValueToBytes mval
+    bs ++ List.replicate (size - bs.length) paddingByte
 
-/-- Reconstruct a MemValue from bytes -/
-partial def reconstructValue (ty : ctype) (bytes : List AbsByte) : MemValue :=
+/-- Reconstruct a MemValue from bytes — abst, impl_mem.ml:916-1095.
+    INVARIANT (differs from OCaml's consume-and-return-rest shape):
+    `bytes` is exactly the sizeof(ty) slice for this value; recursive
+    calls re-slice. `unionmap` is mem_state.last_used_union_members and
+    `addr` the value's address — consulted ONLY by the Union arm
+    (impl_mem.ml:1080-1087), exactly as in OCaml's abst (~addr/unionmap).
+    Not ported: taint tracking (PNVI), is_zap, funptrmap-based function
+    pointer reconstruction (finding 20, backlog). -/
+partial def reconstructValue (unionmap : List (Int × identifier)) (addr : Int)
+    (ty : ctype) (bytes : List AbsByte) : MemValue :=
   match ty with
   | Ctype _ (.Basic (.Integer ity)) =>
-    let signed := isSignedIty ity
+    -- impl_mem.ml:949-960 (signedness via the implementation, as
+    -- AilTypesAux.is_signed_ity does there)
+    let signed := CerberusImpl.is_signed_ity ity
     match bytesToInt bytes signed with
     | some n => .MVinteger ity (.IV (bytesProvenance bytes) n)
     | none => .MVunspecified ty
   | Ctype _ (.Basic (.Floating fty)) =>
+    -- impl_mem.ml:974-985
     match bytesToInt bytes false with
     | some n =>
       let bits : UInt64 := n.toNat.toUInt64
       .MVfloating fty (Float.ofBits bits)
     | none => .MVunspecified ty
   | Ctype _ (.Pointer _ pointeeCty) =>
+    -- impl_mem.ml:996-1057 (PNVI prov_status refinement not ported)
     match bytesToInt bytes false with
     | some 0 =>
       .MVpointer ty (.PV .Prov_none (.PVnull pointeeCty))
-    | some addr =>
+    | some ptrAddr =>
       let prov := bytesProvenance bytes
-      .MVpointer ty (.PV prov (.PVconcrete none addr.toNat))
+      .MVpointer ty (.PV prov (.PVconcrete none ptrAddr.toNat))
     | none => .MVunspecified ty
   | Ctype _ (.Array0 elemCty (some n)) =>
+    -- impl_mem.ml:986-994; NOTE OCaml's `self elem_ty cs` does NOT
+    -- advance ~addr per element — every element sees the array's addr
+    -- (mirrored: nested-union lookups use the array base address).
     let nNat := n.toNat
     let elemSize := sizeofCtype elemCty
     if elemSize == 0 then .MVarray []
@@ -338,13 +507,56 @@ partial def reconstructValue (ty : ctype) (bytes : List AbsByte) : MemValue :=
       let elems := List.range nNat |>.map fun i =>
         let start := i * elemSize
         let elemBytes := bytes.drop start |>.take elemSize
-        reconstructValue elemCty elemBytes
+        reconstructValue unionmap addr elemCty elemBytes
       .MVarray elems
-  | Ctype _ (.Atomic innerCty) => reconstructValue innerCty bytes
+  | Ctype _ (.Atomic innerCty) =>
+    -- impl_mem.ml:1058-1060 (same repr as the non-atomic version)
+    reconstructValue unionmap addr innerCty bytes
   | Ctype _ .Byte =>
+    -- impl_mem.ml:961-973
     match bytesToInt (bytes.take 1) false with
     | some n => .MVinteger .Char0 (.IV (bytesProvenance (bytes.take 1)) n)
     | none => .MVunspecified ty
+  | Ctype _ (.Struct tagSym) =>
+    -- impl_mem.ml:1061-1073: member-wise reconstruct at the offsetsof
+    -- offsets (ignore_flexible=true), skipping inter-member padding.
+    -- NOTE OCaml's `self ~offset:pad` advances the member addr by the
+    -- PADDING before the member only, not by the member offset
+    -- (impl_mem.ml:1063-1067) — mirrored quirk; addr is only consulted
+    -- by nested union lookups.
+    let (offs, _) := offsetsof (CerbTags.tagDefs ()) tagSym (ignoreFlexible := true)
+    let (revXs, _) := offs.foldl
+      (init := (([] : List (identifier × ctype × MemValue)), (0 : Nat)))
+      fun (acc : List (identifier × ctype × MemValue) × Nat) (memb : identifier × ctype × Nat) =>
+        let (revXs, prevEnd) := acc
+        let (ident, membTy, off) := memb
+        let pad := off - prevEnd
+        let membBytes := bytes.drop off |>.take (sizeofCtype membTy)
+        let mval := reconstructValue unionmap (addr + (pad : Int)) membTy membBytes
+        ((ident, membTy, mval) :: revXs, off + sizeofCtype membTy)
+    .MVstruct tagSym revXs.reverse
+  | Ctype _ (.Union0 tagSym) =>
+    -- impl_mem.ml:1074-1095: select the member recorded in
+    -- last_used_union_members at this address; default to the FIRST
+    -- declared member when absent (impl_mem.ml:1080-1083).
+    match (CerbTags.tagDefs ()).find? (fun (s, _) => symbolEquality s tagSym) with
+    | some (_, (_, UnionDef membrs)) =>
+      match membrs with
+      | [] => panic! "CerbMem.reconstructValue: empty UnionDef (OCaml: match failure)"
+      | (firstIdent, (_, _, _, firstTy)) :: _ =>
+        let (membIdent, membTy) :=
+          match unionmap.find? (fun (a, _) => a == addr) with
+          | none => (firstIdent, firstTy)
+          | some (_, membr) =>
+            -- ident comparison is by NAME (idEqual), as OCaml's
+            -- Eq Symbol.identifier instance does (impl_mem.ml:1085-1090)
+            match membrs.find? (fun (i, _) => idEqual i membr) with
+            | some (i, (_, _, _, t)) => (i, t)
+            | none => panic! "CerbMem.reconstructValue: recorded union member not in UnionDef (OCaml: assert false)"
+        let mval := reconstructValue unionmap addr membTy
+          (bytes.take (sizeofCtype membTy))  -- self membr_ty bs1 — impl_mem.ml:1091
+        .MVunion tagSym membIdent mval
+    | _ => panic! "CerbMem.reconstructValue: Union tag not a UnionDef (OCaml: assert false)"
   | _ => .MVunspecified ty
 
 /-! ## Pointer value constructors — impl_mem.ml:1799-1827 -/
@@ -430,35 +642,17 @@ def opIval (op : integer_operator) (v1 v2 : IntegerValue) : IntegerValue :=
       | .IntExp => n1 ^ n2.toNat
     .IV (combineProv prov1 prov2) result
 
-/-- Compute offsets of struct members, following impl_mem.ml:98-129 (offsetsof).
-    Returns a list of (member ident, ctype, offset).
-    For unions: all members at offset 0.
-    For structs: each member padded to its alignment. -/
-partial def offsetsofMembers (members : List (identifier × ctype))
-    : List (identifier × ctype × Nat) :=
-  let (xs, _) := members.foldl (init := ([], 0))
-    (fun (acc : List (identifier × ctype × Nat) × Nat) (memb : identifier × ctype) =>
-      let (xs, lastOffset) := acc
-      let (ident, ty) := memb
-      let size := sizeofCtype ty
-      let align := (alignofCtype ty).max 1
-      let rem := lastOffset % align
-      let pad := if rem == 0 then 0 else align - rem
-      let offset := lastOffset + pad
-      ((ident, ty, offset) :: xs, offset + size))
-  xs.reverse
-
-def offsetofIval (tagDefs : List (sym × (CerbLocation.Loc × tag_definition)))
-    (tag : sym) (memb : identifier) : IntegerValue :=
-  match tagDefs.find? (fun (s, _) => s == tag) with
-  | some (_, (_, StructDef members _)) =>
-    let mems := members.map (fun (ident, (_, _, _, ty)) => (ident, ty))
-    let offs := offsetsofMembers mems
-    match offs.find? (fun (ident, _, _) => ident == memb) with
-    | some (_, _, off) => integerIval off
-    | none => integerIval 0
-  | some (_, (_, UnionDef _)) => integerIval 0  -- all union members at offset 0
-  | none => integerIval 0  -- tag not found; caller error
+/-- offsetof_ival — impl_mem.ml:2193-2201: offsetsof (WITHOUT
+    ignore_flexible — OCaml uses the default there), member found by NAME
+    (ident_equal = idEqual); union members are all at offset 0 via
+    offsetsof's union arm. Missing member: OCaml failwith — panic here
+    (the previous code silently returned 0 and compared identifiers
+    location-sensitively with BEq). -/
+def offsetofIval (tagDefs : TagDefs) (tag : sym) (memb : identifier) : IntegerValue :=
+  let (xs, _) := offsetsof tagDefs tag
+  match xs.find? (fun (ident, _, _) => idEqual ident memb) with
+  | some (_, _, off) => integerIval off
+  | none => panic! "Concrete.offsetof_ival: invalid memb_ident"
 
 /-! ## Bitwise operations — impl_mem.ml:2497-2511 -/
 
@@ -481,7 +675,7 @@ def bitwiseComplementIval (ity : integerType) (v : IntegerValue) : IntegerValue 
     let mask := 2 ^ bits - 1
     let unsigned := toUnsigned n bits
     let result := unsigned ^^^ mask
-    .IV prov (toSigned result bits (isSignedIty ity))
+    .IV prov (toSigned result bits (CerberusImpl.is_signed_ity ity))
 
 def bitwiseAndIval (ity : integerType) (v1 v2 : IntegerValue) : IntegerValue :=
   match v1, v2 with
@@ -489,7 +683,7 @@ def bitwiseAndIval (ity : integerType) (v1 v2 : IntegerValue) : IntegerValue :=
     let size := match CerberusImpl.sizeof_ity ity with | some n => n | none => 4
     let bits := size * 8
     let result := toUnsigned n1 bits &&& toUnsigned n2 bits
-    .IV (combineProv prov1 prov2) (toSigned result bits (isSignedIty ity))
+    .IV (combineProv prov1 prov2) (toSigned result bits (CerberusImpl.is_signed_ity ity))
 
 def bitwiseOrIval (ity : integerType) (v1 v2 : IntegerValue) : IntegerValue :=
   match v1, v2 with
@@ -497,7 +691,7 @@ def bitwiseOrIval (ity : integerType) (v1 v2 : IntegerValue) : IntegerValue :=
     let size := match CerberusImpl.sizeof_ity ity with | some n => n | none => 4
     let bits := size * 8
     let result := toUnsigned n1 bits ||| toUnsigned n2 bits
-    .IV (combineProv prov1 prov2) (toSigned result bits (isSignedIty ity))
+    .IV (combineProv prov1 prov2) (toSigned result bits (CerberusImpl.is_signed_ity ity))
 
 def bitwiseXorIval (ity : integerType) (v1 v2 : IntegerValue) : IntegerValue :=
   match v1, v2 with
@@ -505,7 +699,7 @@ def bitwiseXorIval (ity : integerType) (v1 v2 : IntegerValue) : IntegerValue :=
     let size := match CerberusImpl.sizeof_ity ity with | some n => n | none => 4
     let bits := size * 8
     let result := toUnsigned n1 bits ^^^ toUnsigned n2 bits
-    .IV (combineProv prov1 prov2) (toSigned result bits (isSignedIty ity))
+    .IV (combineProv prov1 prov2) (toSigned result bits (CerberusImpl.is_signed_ity ity))
 
 /-! ## Integer value destructors — impl_mem.ml:2513-2562 -/
 
@@ -603,7 +797,7 @@ def memberShiftPtrval (pv : PointerValue) (tag : sym) (memb : identifier) : Poin
   let tagDefsAsList : List (sym × (CerbLocation.Loc × tag_definition)) :=
     CerbTags.tagDefs ()
   let (.IV _ offsetVal) := offsetofIval tagDefsAsList tag memb
-  let isUnion := match tagDefsAsList.find? (fun (s, _) => s == tag) with
+  let isUnion := match tagDefsAsList.find? (fun (s, _) => symbolEquality s tag) with
     | some (_, (_, UnionDef _)) => true
     | _ => false
   let unionMem := if isUnion then some memb else none
@@ -782,7 +976,9 @@ def loadM (_ : CerbLocation.Loc) (ty : ctype) (pv : PointerValue) : memM (Footpr
         else
           let bytes := readBytesFrom st addr size
           let fp : Footprint := .FP .R addr size
-          let mv := reconstructValue ty bytes
+          -- abst at the load address with last_used_union_members —
+          -- impl_mem.ml:1560 (do_load)
+          let mv := reconstructValue st.lastUsedUnionMembers addr ty bytes
           let isBool := match ty with | Ctype _ (.Basic (.Integer .Bool0)) => true | _ => false
           let isTrap := isBool && match mv with
             | .MVinteger _ (.IV _ n) => n != 0 && n != 1
@@ -811,6 +1007,11 @@ def storeM (_ : CerbLocation.Loc) (ty : ctype) (isLocking : Bool) (pv : PointerV
           else
             let bytes := memValueToBytes mv
             let st' := writeBytesTo st addr bytes
+            -- last_used_union_members update — impl_mem.ml:1694-1701
+            -- (do_store): after the byte write, iff the pointer is
+            -- PVconcrete (Some membr, _) (i.e. was derived by a union
+            -- member_shift), record membr at addr (IntMap.add =
+            -- replace-or-insert, mirrored by filter + cons).
             let st' := match unionMem with
               | some membr => { st' with lastUsedUnionMembers :=
                   (addr, membr) :: st'.lastUsedUnionMembers.filter (fun (a, _) => a != addr) }

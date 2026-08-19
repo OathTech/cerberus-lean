@@ -21,20 +21,38 @@ def max_alignment : Nat := 8
 
 /-! ## Integer Type Properties -/
 
+/-- Get the integer type for an enum.
+    Corresponds to: DefaultImpl.typeof_enum in ocaml_implementation.ml:144-150.
+    OCaml looks the tag up in the mutable `registered_enums` registry
+    (populated by register_enum: Signed Int_ if any negative enumerator,
+    else Unsigned Int_) and fails if unregistered. The Lean registry is
+    NOT ported yet (survey finding 18, S3c): this stub returns the
+    all-negative-enumerators answer `Signed Int_` for every tag.
+    Polymorphic in sym to avoid circular imports. -/
+def typeof_enum {α : Type} (_ : α) : integerType := .Signed .Int_
+
 /-- Whether an integer type is signed.
-    Corresponds to: Common.is_signed_ity in ocaml_implementation.ml
-    Note: char is signed on this target (char_is_signed = true). -/
-def is_signed_ity : integerType → Bool
-  | .Char0 => true  -- char_is_signed = true for DefaultImpl
+    Corresponds to: Common.is_signed_ity in ocaml_implementation.ml:79-107,
+    instantiated with ~typeof_enum ~char_is_signed:true as DefaultImpl does
+    (ocaml_implementation.ml:257). OCaml first resolves Enum through
+    typeof_enum, then matches; we mirror that shape exactly (the Enum arm
+    of the second match is `assert false` there — unreachable because
+    typeof_enum never returns an Enum). -/
+def is_signed_ity (ity : integerType) : Bool :=
+  let ity' := match ity with
+    | .Enum0 tag_sym => typeof_enum tag_sym
+    | _ => ity
+  match ity' with
+  | .Char0 => true      -- char_is_signed = true for DefaultImpl
   | .Bool0 => false
   | .Signed _ => true
   | .Unsigned _ => false
-  | .Enum0 _ => true  -- enums are signed int by default
-  | .Wchar_t => true  -- wchar_t aliases to int (signed)
-  | .Wint_t => true   -- wint_t aliases to int (signed)
-  | .Size_t => false   -- size_t is unsigned (§7.19#2)
-  | .Ptrdiff_t => true -- ptrdiff_t is signed (§7.19#2)
-  | .Ptraddr_t => false -- ptraddr_t is unsigned
+  | .Enum0 _ => false   -- unreachable (OCaml: assert false); typeof_enum is total
+  | .Size_t => false    -- STD §7.19#2
+  | .Wchar_t => true
+  | .Wint_t => true
+  | .Ptrdiff_t => true  -- STD §7.19#2
+  | .Ptraddr_t => false
 
 /-- Size of an integer base type in bytes (LP64).
     Corresponds to: DefaultImpl.sizeof_ity in ocaml_implementation.ml -/
@@ -81,11 +99,17 @@ def precision_ity (ity : integerType) : Option Nat :=
   | none => none
 
 /-- Size of a floating type in bytes.
-    Corresponds to: DefaultImpl.sizeof_fty in ocaml_implementation.ml -/
+    Corresponds to: DefaultImpl.sizeof_fty in ocaml_implementation.ml:206-212,
+    which returns 8 for ALL three real floating types — including its
+    literal `(* TODO:hack ==> 4 *)` on Float and `(* TODO:hack ==> 16 *)`
+    on LongDouble (OCaml's float IS 64-bit, so every floating_value is
+    represented in 8 bytes; the natural 4/16 sizes are explicitly hacked
+    to 8 there). We mirror the BEHAVIOR, hack included, for byte-level
+    parity with the OCaml concrete memory model. -/
 def sizeof_fty : floatingType → Option Nat
-  | .RealFloating .Float0 => some 4
+  | .RealFloating .Float0 => some 8      -- OCaml: Some 8 (* TODO:hack ==> 4 *)
   | .RealFloating .Double => some 8
-  | .RealFloating .LongDouble => some 16
+  | .RealFloating .LongDouble => some 8  -- OCaml: Some 8 (* TODO:hack ==> 16 *)
 
 /-- Alignment of an integer type in bytes.
     Corresponds to: DefaultImpl.alignof_ity in ocaml_implementation.ml
@@ -94,11 +118,13 @@ def alignof_ity : integerType → Option Nat
   := sizeof_ity  -- alignment == size on x86_64
 
 /-- Alignment of a floating type in bytes.
-    Corresponds to: DefaultImpl.alignof_fty in ocaml_implementation.ml -/
+    Corresponds to: DefaultImpl.alignof_fty in ocaml_implementation.ml:247-253
+    — 8 for all three real floating types, same TODO:hack comments as
+    sizeof_fty (see above); behavior mirrored, hack included. -/
 def alignof_fty : floatingType → Option Nat
-  | .RealFloating .Float0 => some 4
+  | .RealFloating .Float0 => some 8      -- OCaml: Some 8 (* TODO:hack ==> 4 *)
   | .RealFloating .Double => some 8
-  | .RealFloating .LongDouble => some 16
+  | .RealFloating .LongDouble => some 8  -- OCaml: Some 8 (* TODO:hack ==> 16 *)
 
 /-- Alignment of a full ctype, including struct/union via tag definitions.
     Corresponds to: Ocaml_implementation.alignof_proxy in ocaml_implementation.ml
@@ -146,13 +172,9 @@ This matches the common case and can be refined later.
 
 /-- Register an enum type. Returns true if all values fit in int.
     Corresponds to: DefaultImpl.register_enum in ocaml_implementation.ml
-    Polymorphic in sym to avoid circular imports. -/
+    Polymorphic in sym to avoid circular imports.
+    (typeof_enum lives above is_signed_ity, which routes Enum through it.) -/
 def register_enum {α : Type} (_ : α) (_ : List Int) : Bool := true
-
-/-- Get the integer type for an enum.
-    Corresponds to: DefaultImpl.typeof_enum in ocaml_implementation.ml
-    Polymorphic in sym to avoid circular imports. -/
-def typeof_enum {α : Type} (_ : α) : integerType := .Signed .Int_
 
 /-! ## Type Normalisation -/
 
