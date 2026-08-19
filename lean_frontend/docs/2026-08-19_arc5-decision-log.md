@@ -39,3 +39,17 @@ pre-priced register set: 5 varargs (reg 15), mem3-004 (pp placeholder),
 2 provenance-fork (defect 8). Audit flag carried: pImplConstant's
 lenient unknown-name fallback (OCaml raises; unreachable on
 OCaml-produced .core) — S5 audit item.
+
+**D4** — S2 boundary passed (verified: multi_tu 2/2, minimal baseline
+rc 0, unit 4/4 + sync). Real linking via generated Core_linking; per-TU
+MD5 digests proven hex-exact vs OCaml Digest; single-TU corpora unmoved
+by ""→real digests (nothing depended on the vacuous
+from_same_translation_unit). EFFECT-ERASURE BITE #4 caught pre-ship by
+the digest unit test: Lean let-sinks pure stage calls to first use, so
+consecutive setDigestIO/stage pairs observed the wrong digest — fixed
+via whole-extent-in-C forceIO per the with_tagDefs precedent. The
+pattern is now 4-for-4 caught-by-discipline; S5 audit gets forceIO's
+axiom added to the boundary-list check and the pattern gets a standing
+name in the register. Sync-gate count note: 22 hand-written files after
+this slice (gate says 21 — worker updated? verify at S5; if the gate
+list is Makefile-driven it self-updates).
