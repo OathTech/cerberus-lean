@@ -68,3 +68,20 @@ allocation retention; a future perf arc's headline). Stretch landed:
 5-TU uri closure fails on IDENTICAL memset symbols both sides under
 --nolibc — exact parity; arc-6 delta priced as "C-libc (.core libc)
 loading, first symbol memset".
+
+**D6** — Audit 2 landed (claims C and D HOLD with qualifications; zero
+blockers). Dispositions, phase 1 (non-colliding fixes while audit 1 runs):
+results-doc coverage arithmetic corrected (true improvement 154→178, +24
+— LARGER than the erroneous 182 claim); lean_frontend/CLAUDE.md
+key-files table de-staled (CerbND/CerbStepInstances added,
+moved CoreParserTest removed — resolves D4's 21-vs-22 question: 21 is
+correct and Makefile-driven, coverage complete per audit). Phase 2
+(after audit 1 releases the files it is probing): PRNG-determinism claim
+correction in 4 artifacts (OCaml batch_drive calls Random.self_init —
+reproducibility rests on battery purity, not oracle determinism);
+forceIO added to check_theorem_axioms.sh's boundary header (D4 promise);
+duplicate-ailname winner divergence documented at the seam (latent —
+OCaml first-in-file via foldrM, Lean last-in-file via foldl; std.core
+duplicate-free today); MD5 test vector ≥64 bytes added (RFC A.5) +
+comment fix; CerberusFresh symbol.lem citation line fix; multi_tu
+harness observable note.

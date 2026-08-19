@@ -10,9 +10,13 @@ OCaml Cerberus.** The chvalid differential — 1354 boundary code points ×
 22 observations across 28 two-TU linked slices — is byte-identical on
 verdicts, stdout, stderr, and exit codes, gated by `test_libxml2.sh`
 with pinned reproducible config. En route: the coverage corpus jumped
-from 178/199 to **182/199 comparable** (167 MATCH + 11 UB_MATCH + 4
-newly un-marked io files passing with byte-identical printf output);
-all 20 procedure-linking FAILs closed (bar was ≥18, target 20 — hit 20).
+from **154/199 to 178/199 comparable** (pre-arc baseline: 147 MATCH +
+7 UB_MATCH; post-arc: 167 MATCH + 11 UB_MATCH — a +24 improvement; the
+4 newly un-marked io files are counted inside the 167, with
+byte-identical printf output); all 20 procedure-linking FAILs closed
+(bar was ≥18, target 20 — hit 20). [Corrected per audit-2 finding 2:
+an earlier draft of this paragraph both double-counted the io files and
+used the post-S1 figure as the pre-arc baseline.]
 
 ## What landed (per slice)
 
@@ -28,7 +32,7 @@ all 20 procedure-linking FAILs closed (bar was ≥18, target 20 — hit 20).
 1. tests/minimal ≥103/106 maintained at every commit ✓ (103/106,
    baseline rc 0 throughout).
 2. ≥18 of 20 linking FAILs closed ✓ (20/20); coverage strictly improved
-   (178→182 comparable); every residual classified (5 varargs = register
+   (154→178 comparable, +24); every residual classified (5 varargs = register
    15, mem3-004 = pp placeholder, 2 provenance-fork = defect 8).
 3. chvalid 100% on the committed battery ✓ (28/28).
 4. Multi-TU landed and exercised ✓ (real Core_linking; real MD5 digests;

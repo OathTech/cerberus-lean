@@ -132,7 +132,8 @@ If you skip this step, Lake will compile the stale `generated/` copy and your ch
 | `CerbInhabitedInstances.lean` | Computable Inhabited for monadic types |
 | `CabsImport.lean` | JSON → Cabs AST deserializer |
 | `CoreParser.lean` | Core text parser (Parsec) |
-| `CoreParserTest.lean` | Core parser unit tests |
+| `CerbND.lean` | Exhaustive ND runner (+ runND1 single-trace, arc-5 `--first`) |
+| `CerbStepInstances.lean` | OCaml-poly-eq-parity instances for core_step2 (arc 4) |
 | `CerbLocation.lean` | Source location type |
 | `CerberusFresh.lean` | Fresh symbol/digest generation |
 | `Main.lean` | Driver: self-test, parse, desugar pipeline |
