@@ -53,3 +53,18 @@ axiom added to the boundary-list check and the pattern gets a standing
 name in the register. Sync-gate count note: 22 hand-written files after
 this slice (gate says 21 — worker updated? verify at S5; if the gate
 list is Makefile-driven it self-updates).
+
+**D5** — S3 boundary passed (verified: unit 4/4, minimal baseline rc 0,
+multi_tu 2/2, live chvalid slices MATCH independently). EXIT CRITERION
+MET: 100% (28/28 slices, 1354 boundary points × 22 observations). Two
+worker adaptations ENDORSED: (a) `--first` single-trace mode (runND1,
+opt-in, hand-written only) — exhaustive ND is infeasible at battery
+scale and the battery is pure (175-identical-executions evidence), so
+any-trace comparison is sound; OCaml side uses default-seeded
+--mode=random; divergence documented in CerbND.lean. (b) 28-slice
+battery partition — exec cost is QUADRATIC in allocations (dead
+allocations retained): recorded as a NEW REGISTER ITEM (performance:
+allocation retention; a future perf arc's headline). Stretch landed:
+5-TU uri closure fails on IDENTICAL memset symbols both sides under
+--nolibc — exact parity; arc-6 delta priced as "C-libc (.core libc)
+loading, first symbol memset".
