@@ -173,3 +173,14 @@ axiom-gate header, with_tagDefs axiom added to the declared-boundary
 list in the results doc. Gate-list expansion remains next-arc, priced.
 Register after S5f: 16 fixed / 3 documented-deliberate / 13 open (of
 30 findings, 18a/b split).
+
+**D14** — S5f boundary passed (verified: 103/106 at sequence granularity,
+sync gate live over 21 files, all gates green, tree clean). Both flagged
+worker judgment calls ENDORSED by the orchestrator: (1) H2's
+exit-derived-from-verdict consistency check — the literal "any nonzero
+exit fatal" reading was unsatisfiable (both binaries follow OCaml runM:
+Undefined → exit 1); the implemented check closes the actual audited
+hole (unexplained exits masking errors). (2) ptr3-006 MATCH→MISMATCH in
+the non-gating coverage scoreboard — the sharper instrument unmasked
+open defect 8; scoreboard reflects reality, register unchanged. Arc
+complete pending merge checklist + charter status.

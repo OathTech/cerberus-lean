@@ -1,5 +1,16 @@
 # Arc 4 charter: first differential execution ("exec pipeline")
 
+> **STATUS: EXECUTED IN FULL — 2026-08-19.** All slices S0–S5 complete;
+> every success condition met or exceeded (bar ≥95/105 → achieved
+> 103/106 at sequence-level granularity, zero open mismatches; driver2
+> sorryAx-free and GATED; zero exec-path sorry target_reps; declares-only
+> verified; harness+corpora+csmith kit landed; defect register 16 fixed /
+> 3 documented / 13 open). Results: 2026-08-19_arc4-results.md. Decisions
+> D1–D14. Audits: 2 adversarial, zero blockers, all findings
+> fixed-or-recorded. Per S5 the arc STOPS unmerged —
+> 2026-08-19_arc4-merge-checklist.md awaits operator sign-off.
+
+
 Date: 2026-08-19. Mode: **long-cycle autonomous** — agent orchestrates,
 makes and logs judgement calls, does not pause except for the emergency
 exit defined below. Merge requires explicit operator sign-off and is NOT
