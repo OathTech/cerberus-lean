@@ -101,3 +101,16 @@ form). Current temporal inventory: cmm stubs (mover: future concurrency
 arc), DAEMON fallbacks (mover: C-tier lem fix), upstream-bug mirrors
 (mover: upstream reports/fixes — float sizes, 097), pp placeholders
 (mover: pretty-printer arc).
+
+**D9 [USER]** — Incoming external artifact: the operator has tasked a
+SEPARATE agent (outside this session) to write a weak-memory+Iris
+survey, to be dropped in "lean_backend/docs" (operator's phrasing —
+likely lean_frontend/docs in cerberus-lean or doc/notes in lem-lean;
+watch both), possibly with gitignored papers alongside. Consequences:
+(1) an externally-authored file appearing in a docs dir is EXPECTED, not
+contamination — audits and workers must not flag it as a foreign-file
+finding (this entry is the provenance record); (2) the spike doc's
+[AGENT] prior-art anchor list is superseded by that survey on arrival;
+(3) the survey is operator-commissioned INPUT — it gets read at arc-7
+charter time, not auto-committed by us (the other agent owns its own
+commit/untracked decision).
