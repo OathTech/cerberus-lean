@@ -1,0 +1,225 @@
+# exec differential baseline — written by test_exec.sh --write-baseline
+# format: <file.c> <STATUS>   (see test_exec.sh header for the taxonomy)
+# corpus: tests/coverage (ported verbatim from cerberus-lean-prototype, arc-4 S4b)
+# REPORTING baseline — obj-2 parity scoreboard; does NOT gate this arc.
+# Per-category summary (regenerate via docs/2026-08-19_arc4-s4b-corpus-scoreboard.md recipe):
+#   arith3     n=6   MATCH=6
+#   builtin    n=6   CERB_SKIP=1 FAIL=5
+#   compound   n=12  MATCH=12
+#   conv       n=18  MATCH=17 UB_MATCH=1
+#   ctrl       n=12  MATCH=12
+#   ctrl2      n=3   FAIL=1 MATCH=2
+#   ctrl3      n=5   CERB_SKIP=1 FAIL=1 MATCH=1 UB_MATCH=2
+#   eval2      n=15  MATCH=15
+#   expr       n=12  CERB_SKIP=1 MATCH=9 UB_MATCH=2
+#   io         n=5   CERB_SKIP=1 UNSUPPORTED=4
+#   libc       n=14  CERB_SKIP=3 FAIL=11
+#   mem        n=10  CERB_SKIP=1 MATCH=7 MISMATCH=1 UB_MATCH=1
+#   mem3       n=8   DIFF=1 FAIL=1 MATCH=6
+#   misc       n=11  CERB_SKIP=1 MATCH=10
+#   ptr        n=12  MATCH=12
+#   ptr2       n=15  FAIL=1 MATCH=14
+#   ptr3       n=8   CERB_SKIP=2 MATCH=5 UB_MATCH=1
+#   store2     n=5   MATCH=5
+#   struct     n=10  MATCH=10
+#   union3     n=7   CERB_SKIP=2 MATCH=5
+#   varargs    n=5   DIFF=5
+arith3-001-unsigned-div.c MATCH
+arith3-002-unsigned-mod.c MATCH
+arith3-003-unsigned-shl.c MATCH
+arith3-004-unsigned-shr.c MATCH
+arith3-005-bool-conv.c MATCH
+arith3-006-wrap-unsigned-char.c MATCH
+builtin-001-ffs.c FAIL
+builtin-002-ctz.c FAIL
+builtin-003-bswap16.c FAIL
+builtin-004-bswap32.c FAIL
+builtin-005-bswap64.c FAIL
+builtin-006-exit.libc.c CERB_SKIP
+compound-001-add-assign.c MATCH
+compound-002-sub-assign.c MATCH
+compound-003-mul-assign.c MATCH
+compound-004-div-assign.c MATCH
+compound-005-mod-assign.c MATCH
+compound-006-shl-assign.c MATCH
+compound-007-shr-assign.c MATCH
+compound-008-and-assign.c MATCH
+compound-009-or-assign.c MATCH
+compound-010-xor-assign.c MATCH
+compound-011-assert-true.libc.c MATCH
+compound-012-assert-expr.libc.c MATCH
+conv-001-signed-to-unsigned.c MATCH
+conv-002-unsigned-to-signed.c MATCH
+conv-003-narrow-int.c MATCH
+conv-004-widen-char.c MATCH
+conv-005-unsigned-char-widen.c MATCH
+conv-006-long-to-int.c MATCH
+conv-007-int-to-long.c MATCH
+conv-008-bool-from-int.c MATCH
+conv-009-bool-from-ptr.c MATCH
+conv-010-enum-underlying.c MATCH
+conv-011-implicit-arith.c MATCH
+conv-012-unsigned-overflow.c MATCH
+conv-013-signed-overflow.undef.c UB_MATCH
+conv-014-cast-chain.c MATCH
+conv-015-float-to-int-trunc.c MATCH
+conv-016-int-to-float-round.c MATCH
+conv-017-double-to-float.c MATCH
+conv-018-float-to-unsigned.c MATCH
+ctrl-001-nested-switch.c MATCH
+ctrl-002-switch-many-cases.c MATCH
+ctrl-003-goto-forward.c MATCH
+ctrl-004-goto-backward.c MATCH
+ctrl-005-goto-nested.c MATCH
+ctrl-006-nested-if-deep.c MATCH
+ctrl-007-loop-break-continue.c MATCH
+ctrl-008-do-while-zero.c MATCH
+ctrl-009-for-empty-parts.c MATCH
+ctrl-010-early-return.c MATCH
+ctrl-011-nested-scope-vars.c MATCH
+ctrl-012-multi-decl.c MATCH
+ctrl2-001-seqrmw-sseq.c MATCH
+ctrl2-002-postinc-complex.c MATCH
+ctrl2-003-errno.libc.c FAIL
+ctrl3-001-malloc-computed-size.libc.c FAIL
+ctrl3-002-null-funcptr-call.c CERB_SKIP
+ctrl3-003-funcptr-void-cast.c MATCH
+ctrl3-004-falloff-nonvoid.c UB_MATCH
+ctrl3-005-unseq-neg-pos.c UB_MATCH
+eval2-001-struct-member-value.c MATCH
+eval2-002-union-member-value.c MATCH
+eval2-003-nested-member-value.c MATCH
+eval2-004-compound-literal-member.c MATCH
+eval2-005-float-compare-eq.c MATCH
+eval2-006-float-compare-lt.c MATCH
+eval2-007-float-compare-le.c MATCH
+eval2-008-float-compare-gt.c MATCH
+eval2-009-float-compare-ge.c MATCH
+eval2-010-float-arith-pure.c MATCH
+eval2-011-float-sub-mul-div.c MATCH
+eval2-012-bool-and-ff.c MATCH
+eval2-013-bool-or-variants.c MATCH
+eval2-014-generic-expr.c MATCH
+eval2-015-generic-types.c MATCH
+expr-001-compound-literal.c MATCH
+expr-002-designated-init.c MATCH
+expr-003-nested-ternary.c MATCH
+expr-004-comma-complex.c MATCH
+expr-005-sizeof-expr.c MATCH
+expr-006-cast-in-expr.c MATCH
+expr-007-bitfield-ops.c CERB_SKIP
+expr-008-enum-arith.c MATCH
+expr-009-negative-shift.c UB_MATCH
+expr-010-large-shift.c UB_MATCH
+expr-011-sequence-point.c MATCH
+expr-012-logical-shortcircuit.c MATCH
+io-001-printf-basic.libc.unsupported.c UNSUPPORTED
+io-002-printf-int.libc.unsupported.c UNSUPPORTED
+io-003-printf-string.libc.unsupported.c UNSUPPORTED
+io-004-puts.libc.unsupported.c CERB_SKIP
+io-005-printf-multi.libc.unsupported.c UNSUPPORTED
+libc-001-malloc-free.c FAIL
+libc-002-calloc.c CERB_SKIP
+libc-003-realloc.c FAIL
+libc-004-free-null.c FAIL
+libc-005-double-free.c FAIL
+libc-006-use-after-free.c FAIL
+libc-007-free-stack.c FAIL
+libc-008-memcpy-basic.c FAIL
+libc-009-memcpy-struct.c FAIL
+libc-010-memcmp.c FAIL
+libc-011-memset.c CERB_SKIP
+libc-012-strlen.c CERB_SKIP
+libc-013-malloc-large.c FAIL
+libc-014-write-after-free.c FAIL
+mem-001-store-load-char.c MATCH
+mem-002-store-load-short.c MATCH
+mem-003-type-pun-char.c MATCH
+mem-004-type-pun-write.c MATCH
+mem-005-readonly-const.c UB_MATCH
+mem-006-uninitialized-read.c MISMATCH
+mem-007-zero-size-array.c CERB_SKIP
+mem-008-large-struct.c MATCH
+mem-009-packed-access.c MATCH
+mem-010-flexible-array.c MATCH
+mem3-001-bool-load.c MATCH
+mem3-002-bool-trap.c MATCH
+mem3-003-const-compound-literal.c MATCH
+mem3-004-string-write-attempt.c DIFF
+mem3-005-struct-multi-ptr.c MATCH
+mem3-006-array-of-ptrs.c MATCH
+mem3-007-realloc-null.libc.c FAIL
+mem3-008-eff-member-shift.c MATCH
+misc-001-void-ptr-arith.c CERB_SKIP
+misc-002-offsetof.c MATCH
+misc-003-array-of-struct-shift.c MATCH
+misc-004-void-return.c MATCH
+misc-005-signed-div-mod-shift.c MATCH
+misc-006-ptr-compare-true.c MATCH
+misc-007-float-compare-branches.c MATCH
+misc-008-null-ptr-literal.c MATCH
+misc-009-const-global.c MATCH
+misc-010-int-min.libc.c MATCH
+misc-011-member-shift-ptr.c MATCH
+ptr-001-subtract-same-array.c MATCH
+ptr-002-compare-same-array.c MATCH
+ptr-003-compare-equality.c MATCH
+ptr-004-null-compare.c MATCH
+ptr-005-one-past-end-compare.c MATCH
+ptr-006-void-ptr-cast.c MATCH
+ptr-007-func-ptr-compare.c MATCH
+ptr-008-cross-alloc-compare.c MATCH
+ptr-009-ptr-to-int-roundtrip.c MATCH
+ptr-010-null-ptr-to-int.c MATCH
+ptr-011-array-decay.c MATCH
+ptr-012-multidim-ptr.c MATCH
+ptr2-001-le-same-array.c MATCH
+ptr2-002-ge-same-array.c MATCH
+ptr2-003-gt-same-array.c MATCH
+ptr2-004-le-equal.c MATCH
+ptr2-005-ge-equal.c MATCH
+ptr2-006-eff-array-shift.c MATCH
+ptr2-007-eff-negative-shift.c MATCH
+ptr2-008-eff-one-past-end.c MATCH
+ptr2-009-eff-malloc-shift.libc.c FAIL
+ptr2-010-eff-zero-shift.c MATCH
+ptr2-011-funcptr-eq.c MATCH
+ptr2-012-funcptr-ne.c MATCH
+ptr2-013-funcptr-call.c MATCH
+ptr2-014-funcptr-array.c MATCH
+ptr2-015-funcptr-param.c MATCH
+ptr3-001-funcptr-to-int.libc.c MATCH
+ptr3-002-int-to-ptr-null.libc.c MATCH
+ptr3-003-int-to-ptr-roundtrip.libc.c MATCH
+ptr3-004-ptrdiff-array.c MATCH
+ptr3-005-ptrdiff-cross-alloc.c UB_MATCH
+ptr3-006-eq-one-past-end.c MATCH
+ptr3-007-null-lt-null.c CERB_SKIP
+ptr3-008-null-le-null.c CERB_SKIP
+store2-001-string-literal.c MATCH
+store2-002-compound-literal.c MATCH
+store2-003-const-compound.c MATCH
+store2-004-string-compare.c MATCH
+store2-005-string-index.c MATCH
+struct-001-nested-struct.c MATCH
+struct-002-nested-access.c MATCH
+struct-003-struct-array-member.c MATCH
+struct-004-union-type-pun.c MATCH
+struct-005-struct-copy.c MATCH
+struct-006-struct-return.c MATCH
+struct-007-struct-param.c MATCH
+struct-008-anon-struct.c MATCH
+struct-009-init-partial.c MATCH
+struct-010-union-in-struct.c MATCH
+union3-001-basic-store-load.c MATCH
+union3-002-type-pun-int-float.c MATCH
+union3-003-union-init.c MATCH
+union3-004-union-copy.c CERB_SKIP
+union3-005-union-return.c CERB_SKIP
+union3-006-union-memberof.c MATCH
+union3-007-nested-union.c MATCH
+varargs-001-va-copy.libc.c DIFF
+varargs-002-va-end.libc.c DIFF
+varargs-003-va-multiple-types.libc.c DIFF
+varargs-004-va-pass-through.libc.c DIFF
+varargs-005-va-sum.libc.c DIFF

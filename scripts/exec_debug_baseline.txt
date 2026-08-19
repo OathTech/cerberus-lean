@@ -1,0 +1,110 @@
+# exec differential baseline — written by test_exec.sh --write-baseline
+# format: <file.c> <STATUS>   (see test_exec.sh header for the taxonomy)
+# corpus: tests/debug (ported verbatim from cerberus-lean-prototype, arc-4 S4b)
+# REPORTING baseline — obj-2 parity scoreboard; does NOT gate this arc.
+# Per-category summary (regenerate via docs/2026-08-19_arc4-s4b-corpus-scoreboard.md recipe):
+#   alias      n=3   MATCH=1 UB_MATCH=2
+#   align      n=4   MATCH=4
+#   compat     n=4   DIFF=1 MATCH=3
+#   conv       n=9   MATCH=9
+#   div        n=3   MATCH=3
+#   float      n=7   MATCH=7
+#   intfromptr n=10  MATCH=8 UB_MATCH=2
+#   libc       n=2   CERB_SKIP=2
+#   ptr        n=9   MATCH=9
+#   rec        n=6   MATCH=6
+#   struct     n=8   MATCH=8
+#   ub         n=3   CERB_INCONSISTENT=1 CERB_SKIP=1 UB_MATCH=1
+#   unseq      n=16  MATCH=5 UB_MATCH=11
+#   valid      n=5   CERB_SKIP=1 MATCH=2 UB_MATCH=2
+#   varargs    n=1   DIFF=1
+alias-01-int-to-struct.c UB_MATCH
+alias-02-simple-cast.c UB_MATCH
+alias-03-forced-misalign.c MATCH
+align-01-char-array-addr.c MATCH
+align-02-print-addr.c MATCH
+align-03-single-global.c MATCH
+align-04-no-globals.c MATCH
+compat-01-funcall-types.c MATCH
+compat-02-size-t.c MATCH
+compat-03-enum-int.c MATCH
+compat-04-funcptr-enum-int.c DIFF
+conv-01-neg-to-unsigned.c MATCH
+conv-02-unsigned-cmp-self.c MATCH
+conv-03-neg-cmp-umax.c MATCH
+conv-04-signed-cmp.c MATCH
+conv-05-simple-conv.c MATCH
+conv-06-conv-preserves.c MATCH
+conv-07-if-conv-cmp.c MATCH
+conv-08-explicit-vars.c MATCH
+conv-09-inline-cmp.c MATCH
+div-01-neg-divide.c MATCH
+div-11-neg1-over-10.c MATCH
+div-12-neg1-over-10-ret.c MATCH
+float-01-infinity-literal.c MATCH
+float-13-multi-param.c MATCH
+float-17-compare-first.c MATCH
+float-20-bool-conv.c MATCH
+float-20-neg-to-long.c MATCH
+float-21-simple-neg.c MATCH
+float-22-compare.c MATCH
+intfromptr-01-null.c MATCH
+intfromptr-02-small-addr.c MATCH
+intfromptr-03-local-to-int.c UB_MATCH
+intfromptr-04-to-unsigned.c UB_MATCH
+intfromptr-05-to-long.c MATCH
+intfromptr-06-sizeof.c MATCH
+intfromptr-07-check-addr.c MATCH
+intfromptr-08-full-addr.c MATCH
+intfromptr-09-first-alloc.c MATCH
+intfromptr-10-minimal.c MATCH
+libc-01-memset.libc.c CERB_SKIP
+libc-02-strlen.libc.c CERB_SKIP
+ptr-01-one-past-end.c MATCH
+ptr-02-simple-decr.c MATCH
+ptr-03-no-decr.c MATCH
+ptr-04-int-decr.c MATCH
+ptr-05-store-load-ptr.c MATCH
+ptr-06-explicit-sub.c MATCH
+ptr-07-reassign.c MATCH
+ptr-10-neg-one.c MATCH
+ptr-11-neg-one-simple.c MATCH
+rec-01-simplest.c MATCH
+rec-02-call-twice.c MATCH
+rec-03-one-recursive-call.c MATCH
+rec-04-add-one.c MATCH
+rec-05-multiply.c MATCH
+rec-06-factorial-small.c MATCH
+struct-00-membershift.c MATCH
+struct-01-init.c MATCH
+struct-02-pass-by-value.c MATCH
+struct-03-pass-simple.c MATCH
+struct-04-array-member.c MATCH
+struct-05-array-direct.c MATCH
+struct-06-local-struct-array.c MATCH
+struct-07-pass-int-array.c MATCH
+ub-inconsistent.c CERB_INCONSISTENT
+ub-runtime-detect.c UB_MATCH
+ub-static-reject.c CERB_SKIP
+unseq-01-exact-0301.c UB_MATCH
+unseq-02-simple-double-write.c UB_MATCH
+unseq-03-write-then-read.c UB_MATCH
+unseq-04-nested-write-outer.c UB_MATCH
+unseq-05-nested-write-inner.c MATCH
+unseq-06-sequenced-comma.c MATCH
+unseq-07-read-then-write-comma.c MATCH
+unseq-08-compound-lhs.c UB_MATCH
+unseq-09-increment.c UB_MATCH
+unseq-10-func-arg.c UB_MATCH
+unseq-11-both-in-unseq.c UB_MATCH
+unseq-12-outer-after-unseq.c UB_MATCH
+unseq-13-read-in-unseq-write-after.c MATCH
+unseq-14-different-vars.c MATCH
+unseq-15-nested-same-unseq.c UB_MATCH
+unseq-16-triple-nested.c UB_MATCH
+valid-01-oob-no-deref.c MATCH
+valid-02-oob-deref.c UB_MATCH
+valid-03-oob-store.c UB_MATCH
+valid-04-exit-before-oob.c CERB_SKIP
+valid-05-ptr-validity-check.c MATCH
+varargs-01-ptr-valist.c DIFF
