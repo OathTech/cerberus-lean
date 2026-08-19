@@ -119,6 +119,12 @@ roots = [
   "CerbND",
 ]
 
+# Relational-semantics spike (spike/relsem): Layer-2 skeleton over the
+# generated opsem. Not in defaultTargets; build with `lake build RelSem`.
+[[lean_lib]]
+name = "RelSem"
+srcDir = "relsem"
+
 [[lean_exe]]
 name = "cerberus-lean"
 root = "Main"
