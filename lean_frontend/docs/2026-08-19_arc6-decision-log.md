@@ -146,3 +146,20 @@ the cited OCaml is. Remaining coverage non-matches: 3 mismatch
 (mem3-004 pp placeholder, 2 provenance-fork defect-8) + 13 skips.
 Next: S3 perf (opens lem-lean lane — Fmap representation + PROVED
 equivalence lemmas per D7 doctrine upgrade; pin dance at close).
+
+**D12 [AGENT]** — S3 boundary passed (verified both repos: lem 40d063e,
+cerberus 3d7dc5bdd; unit 4/4, minimal baseline rc 0, battery slice
+MATCH at ~96s, uri baseline clean). Bar met: 28→4 slices, ratio 1.7×
+flat, ZERO movement everywhere; lookup_equiv kernel-checked with the
+retired implementation as test-only reference (D7 doctrine satisfied;
+the general order theorem documented-deliberate with bounded-exhaustive
+kernel-evaluated #guards). Endorsed [AGENT:S3] subtlety: legacy Fmap's
+BEq-insert/cmp-lookup mixed semantics for sym/identifier reproduced via
+buckets — the zero-movement bar caught what a naive key-map would have
+silently changed. NEW REGISTER ITEMS: stack ceiling re-probed (~1.4k
+iterations; QUIET EXIT-0 failure mode is the concerning half — harness
+sees missing verdict, but silent-success-shaped death needs a guard some
+arc); lem tests/backends leantests pre-existing srcDir breakage;
+oracle-key-order folds as possible future parity alignment. REGEN NOTE
+until close-out: arc lem required (PATH+LEMLIB) — opam lem still emits
+retired names; pin dance at close.
