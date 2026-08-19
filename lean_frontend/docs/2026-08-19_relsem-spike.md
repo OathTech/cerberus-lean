@@ -480,3 +480,20 @@ ones). Watch-list adopted: iris-lean maintainers, completeness
 collaboration, ISTA multi-language, REMS/ArchSem (also its WARNING re
 partial executions/UB soundness — our §7-obligations analogue), KAIST
 OMO line, VerCors-relaxed.
+
+### Model-parametricity principle (operator, 2026-08-19)
+
+**[USER]** The memory/concurrency model is to be kept as parametric as
+feasible — the community legitimately disagrees; semantics and reasoning
+must stay cleanly factored to admit multiple models with very different
+approaches. **[AGENT]** Arc-7+ consequences, strengthening forward
+constraint (2): the Layer-2/3 stack is built against a MODEL INTERFACE
+(candidate-execution/event level — ArchSem is the architectural
+precedent), with adequacy plumbing model-generic and surface rules
+per-model. Concretely for the sequential arc-7 work: state the adequacy
+skeleton over an abstract observable-behavior function rather than
+CerbND-shaped outcomes directly, so the concurrency instantiation (and a
+future RC11-style one) is a parameter fill, not a rebuild. Honesty note:
+interface-level parametricity is achievable; RULE-level uniformity
+across models is not promised (per-model rule libraries under the
+bespoke-logic stance).
