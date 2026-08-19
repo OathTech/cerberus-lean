@@ -422,3 +422,21 @@ model's cmm_csem/cmm_op modules — the operational-vs-axiomatic bridge
 these logics build (promising/operational RC11 presentations) is
 exactly the seam where our Step-relation parameterization (forward
 constraint 2/3 above) must eventually plug in.
+
+### Superseded by the commissioned survey (2026-08-19)
+
+**[USER]** The operator-commissioned weak-memory survey landed:
+`2026-08-19_iris-concurrency-weak-memory-survey.md` (mainline docs). It
+SUPERSEDES the anchor list above and REVISES forward constraint (2):
+**[AGENT]** the cmm move is not only a StateInterp swap — the mature
+stack needs view-indexed propositions (vProp), the subjective/objective
+split, and objective-only invariants, so the surface logic must not bake
+in view-independence of all propositions. Constraint (2) is amended to:
+keep the base coupling swappable AND keep the surface-logic proposition
+type abstractable (Cosmo's two-level pattern). Constraint (3) stands.
+New arc-7+ inputs adopted from the survey: RA+NA finite submodel as the
+first concurrency slice (already named in cmm_csem); the two-route
+Stage-2 bake-off (cmm_op commitment machine vs AxSL-style opax) as the
+selection method; the §7.7 statement discipline (adequacy quantifies
+behaviors, never enumerator output, absent a proved completeness);
+model-change decisions (e.g. RC11 adoption) are [USER]-only forks.
