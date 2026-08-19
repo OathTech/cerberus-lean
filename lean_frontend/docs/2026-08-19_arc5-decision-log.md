@@ -25,3 +25,17 @@ concatenation REJECTED on probed static-merging semantics. (e) exit/
 abort: OCaml itself fails them under --nolibc — parity already holds,
 no work. Prototype negative knowledge recorded: its name-keyed
 exit/abort Eccall hacks are flagged do-not-import.
+
+**D3** — S1 boundary passed (verified: minimal 103/106 held, coverage
+167+11=178/199 comparable, unit 4/4). 20/20 linking FAILs flipped
+(target 20, bar ≥18); success condition 2 EXCEEDED. Second in-seam
+defect (builtin_ prefix not stripped per core_lexer.mll:209-219) was
+masked by the ailnames miss — found because the worker validated the
+full proxy dispatch chain, not just the first symptom class. Four io
+files un-marked with byte-identical printf stdout (generated
+Formatted.lean — no format-interpreter work needed, confirming S0's
+prototype-hole analysis). Residual coverage non-matches now EXACTLY the
+pre-priced register set: 5 varargs (reg 15), mem3-004 (pp placeholder),
+2 provenance-fork (defect 8). Audit flag carried: pImplConstant's
+lenient unknown-name fallback (OCaml raises; unreachable on
+OCaml-produced .core) — S5 audit item.
