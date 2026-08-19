@@ -326,7 +326,7 @@ lean-prelude-src: $(LEM_SRC)
 # moreLinkArgs). Compiled with the toolchain's leanc (hermetic clang).
 # Lake does NOT track these .o files as link inputs, so after recompiling we
 # delete the linked executables to force a relink on the next lake build.
-LEAN_NATIVE = fresh_int debug tags
+LEAN_NATIVE = fresh_int debug tags md5
 .PHONY: lean-native-obj
 lean-native-obj:
 	@echo "[LEANC] compiling lean_frontend/native objects"

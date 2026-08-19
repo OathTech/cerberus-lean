@@ -517,6 +517,14 @@ def main (args : List String) : IO Unit := do
   -- Default: parse Cabs JSON and run pipeline
   let runtimeDir ← findRuntimeDir
   let input ← readInput restArgs
+  -- Per-TU digest, set before the TU is parsed/desugared — mirror of
+  -- `Cerb_fresh.set_digest filename` at the top of the OCaml c_frontend
+  -- (backend/common/pipeline.ml:181; ref cell util/cerb_fresh.ml:7-10).
+  -- We digest the cabs-json content we were handed (the Lean pipeline
+  -- never sees the .c file — divergence recorded in CerberusFresh.lean).
+  -- BaseIO variant: a discarded pure call is dead-code-eliminated
+  -- (CerbTags set/reset pattern, arc-4 S3b).
+  let _ ← (CerberusFresh.setDigestIO (CerberusFresh.md5Hex input) : BaseIO Unit)
   match CabsImport.parseJson input with
   | .error e =>
     if batchMode then

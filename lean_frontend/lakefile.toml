@@ -120,7 +120,7 @@ roots = [
 [[lean_exe]]
 name = "cerberus-lean"
 root = "Main"
-moreLinkArgs = ["native/fresh_int.o", "native/debug.o", "native/tags.o"]
+moreLinkArgs = ["native/fresh_int.o", "native/debug.o", "native/tags.o", "native/md5.o"]
 
 # Test library: tests live under lean_frontend/test/ and import from
 # the main CerberusLean lib. Each test exe has root "Unit.<Name>Test".
@@ -133,22 +133,22 @@ globs = ["Unit.+"]
 name = "core-parser-test"
 srcDir = "test"
 root = "Unit.CoreParserTest"
-moreLinkArgs = ["native/fresh_int.o", "native/debug.o", "native/tags.o"]
+moreLinkArgs = ["native/fresh_int.o", "native/debug.o", "native/tags.o", "native/md5.o"]
 
 [[lean_exe]]
 name = "effects-proof-test"
 srcDir = "test"
 root = "Unit.EffectsProofTest"
-moreLinkArgs = ["native/fresh_int.o", "native/debug.o", "native/tags.o"]
+moreLinkArgs = ["native/fresh_int.o", "native/debug.o", "native/tags.o", "native/md5.o"]
 
 [[lean_exe]]
 name = "totality-proof-test"
 srcDir = "test"
 root = "Unit.TotalityProofTest"
-moreLinkArgs = ["native/fresh_int.o", "native/debug.o", "native/tags.o"]
+moreLinkArgs = ["native/fresh_int.o", "native/debug.o", "native/tags.o", "native/md5.o"]
 
 [[lean_exe]]
 name = "fresh-int-test"
 srcDir = "test"
 root = "Unit.FreshIntTest"
-moreLinkArgs = ["native/fresh_int.o", "native/debug.o", "native/tags.o"]
+moreLinkArgs = ["native/fresh_int.o", "native/debug.o", "native/tags.o", "native/md5.o"]
