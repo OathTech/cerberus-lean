@@ -86,3 +86,18 @@ ran push/4.32.2/iris-vendor/mirrors/creduce, all verified (iris-lean now
 builds offline — arc-7 prerequisite cleared). Arc-7 charter inputs
 queued: totalize CerbND (Layer-2 prereq), extend totality gate to
 CerbND, spike Q2-Q4 recommendations for operator review.
+
+**D8 [USER]** — Doctrine refinement (operator, near-verbatim): "some of
+these objects will eventually be moved (eg. we should design so we can
+eventually support concurrency)." Codified in container CLAUDE.md:
+boundary entries now classified PERMANENT vs TEMPORAL; temporal entries
+require an expected MOVER and impose a FORWARD-DESIGN constraint
+(nothing built today may make the move harder). [AGENT] applications:
+concurrency constraints appended to the relsem spike doc (Config keeps
+the thread pool; StateInterp parameterized so cmm replaces gen_heap
+without reshaping the language instance; adequacy quantifies scheduler
+behaviors so weak memory arrives as more behaviors, not a new statement
+form). Current temporal inventory: cmm stubs (mover: future concurrency
+arc), DAEMON fallbacks (mover: C-tier lem fix), upstream-bug mirrors
+(mover: upstream reports/fixes — float sizes, 097), pp placeholders
+(mover: pretty-printer arc).
