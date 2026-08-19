@@ -127,7 +127,6 @@ If you skip this step, Lake will compile the stale `generated/` copy and your ch
 | `CerbFS.lean` | In-memory filesystem model |
 | `CerbConcurrency.lean` | Concurrency stubs |
 | `CerbCtypeInstances.lean` | BEq/Ord for mutual ctype types |
-| `CerbStepInstances.lean` | OCaml-parity BEq/Ord for core_step2 (closure-carrying) |
 | `CerbCabsInstances.lean` | BEq for Cabs enum types |
 | `CerbInhabitedInstances.lean` | Computable Inhabited for monadic types |
 | `CabsImport.lean` | JSON → Cabs AST deserializer |

@@ -85,3 +85,12 @@ OCaml first-in-file via foldrM, Lean last-in-file via foldl; std.core
 duplicate-free today); MD5 test vector ≥64 bytes added (RFC A.5) +
 comment fix; CerberusFresh symbol.lem citation line fix; multi_tu
 harness observable note.
+
+**D7** — S4f boundary passed (verified: unit 4/4 incl. new axiom census
+"2 declared-boundary axioms", sync 21 files, baselines rc 0). Audit
+dispositions complete: audit-1 F1/F3 and audit-2 F1-F9 all
+fixed-or-recorded; --first flag kept (rename churn > value; semantics
+now documented at every use site: branch-index-0 = exhaustive's LAST
+execution). Arc closed: charter EXECUTED IN FULL; merge checklist
+written; STOP per charter. Zero .lem and zero lem-lean changes all arc
+(audit-verified) — pins untouched at 574e326.

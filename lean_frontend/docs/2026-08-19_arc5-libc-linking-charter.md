@@ -1,5 +1,17 @@
 # Arc 5 charter: libc/builtin linking + multi-TU ("link & libc")
 
+> **STATUS: EXECUTED IN FULL — 2026-08-19.** Slices S0–S4 complete; every
+> success condition met or exceeded (linking FAILs 20/20 vs bar ≥18;
+> chvalid EXIT CRITERION 100% — 28/28 slices, 1354 boundary points;
+> real multi-TU + MD5 digests, single-TU behavior proven unmoved;
+> dual-lineage discipline audit-verified; coverage 154→178 comparable).
+> Results: 2026-08-19_arc5-results.md. Decisions D1–D7. Audits: 2
+> adversarial, zero blockers, all findings fixed-or-recorded. Stretch
+> landed: uri 5-TU closure at exact --nolibc failure parity — arc-6
+> priced as C-libc loading (first symbol memset). Per S4 the arc STOPS
+> unmerged — 2026-08-19_arc5-merge-checklist.md awaits operator sign-off.
+
+
 Date: 2026-08-19. Mode: long-cycle autonomous under the orchestrator/
 worker doctrine (container CLAUDE.md): orchestrator scopes and verifies,
 workers commit (green gates only), merge is the operator's. DRAFT until
