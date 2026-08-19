@@ -129,6 +129,17 @@ type core_step2 =
   | Step_fs2 of Mem_common.thread_id * thread_state * core_runM fs_oper_or_done
   | Step_nd2 of list thread_state
 
+(* Lean: core_step2 carries core_runM continuations and closure-carrying
+   thread_states, so the auto-generated BEq/Ord/... instances are
+   sorry-fallbacks (priority := low); the BEq one fired at runtime (arc-4
+   S0: first crash for 77/105 tests/minimal). Hand-written
+   OCaml-polymorphic-equality-parity instances live in
+   lean_frontend/CerbStepInstances.lean, imported via driver.lem (the only
+   use site); they override the low-priority fallbacks there.
+   NOTE (arc-4 S1a): `declare {lean} skip_instances type core_step2` is NOT
+   usable here -- it also suppresses the needed Inhabited instance, which
+   this module itself requires (failwithI sites) and which a downstream
+   hand-written file cannot provide (import cycle). *)
 
 instance (Show core_step2)
   let show step =

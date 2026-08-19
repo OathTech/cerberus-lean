@@ -106,6 +106,7 @@ roots = [
   "CerbFS",
   "CerbConcurrency",
   "CerbCtypeInstances",
+  "CerbStepInstances",
   "CerbCabsInstances",
   "CerbInhabitedInstances",
   "CerbTags",

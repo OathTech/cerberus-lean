@@ -9,6 +9,11 @@ import Cmm_op Cmm_csem
 
 import Core_eval Core_run Core_reduction
 
+(* Lean: hand-written OCaml-parity instances for Core_reduction.core_step2
+   (BEq etc.), used by driver2's blocked-thread filters below. The
+   auto-generated fallback instances were sorry-bodied (core_step2 carries
+   core_runM closures) and crashed at runtime -- arc-4 S0/S1a. *)
+declare {lean} extra_import `CerbStepInstances`
 
 import Translation_aux
 import Enum State_exception_undefined Exception Undefined Nondeterminism Dlist

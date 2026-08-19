@@ -127,6 +127,7 @@ If you skip this step, Lake will compile the stale `generated/` copy and your ch
 | `CerbFS.lean` | In-memory filesystem model |
 | `CerbConcurrency.lean` | Concurrency stubs |
 | `CerbCtypeInstances.lean` | BEq/Ord for mutual ctype types |
+| `CerbStepInstances.lean` | OCaml-parity BEq/Ord for core_step2 (closure-carrying) |
 | `CerbCabsInstances.lean` | BEq for Cabs enum types |
 | `CerbInhabitedInstances.lean` | Computable Inhabited for monadic types |
 | `CabsImport.lean` | JSON → Cabs AST deserializer |
@@ -179,20 +180,20 @@ Lem is pinned to `https://github.com/septract/lem-lean#mdd/lean-backend`.
 - `defacto_memory.lem`: `easy_update_mem_value_aux`
 - (`runND_proxy` is implemented — hand-written `CerbND.runND`)
 
-### Pipeline status (2026-08-19, arc-4 S0 frontier — see
-`docs/2026-08-19_arc4-s0-frontier.md`)
+### Pipeline status (2026-08-19, arc-4 post-S1a — see
+`docs/2026-08-19_arc4-s0-frontier.md`, "Post-S1a frontier")
 - ✅ C → Cabs JSON (OCaml parser, 100%)
 - ✅ JSON → Lean Cabs types (CabsImport, 100%)
 - ✅ Core text parser (std.core + impl files)
 - ✅ Core stdlib loading
-- ✅ Desugar (95/105 tests/minimal; the 10 crashes are the const-expr
-  driver hitting the sorry'd `BEq core_step2`, not desugar itself)
-- ✅ Typecheck (GenTyping.annotate_program — 95/95 that reach it)
-- ✅ Translation (Translation.translate — 95/95 that reach it)
-- 🔧 Execution (Driver.drive): reaches `CerbND.runND`/`driver2`, then
-  panics on the sorry'd fallback `BEq core_step2` in driver2's
-  blocked-thread filter (first crash for 77/105 files; 14 complete with
-  Killed results, 0 Active yet)
+- ✅ Desugar (105/105 tests/minimal — const-expr driver unblocked by S1a)
+- ✅ Typecheck (GenTyping.annotate_program — 105/105)
+- ✅ Translation (Translation.translate — 105/105)
+- 🔧 Execution (Driver.drive): the sorry'd `BEq core_step2` is fixed
+  (S1a: `CerbStepInstances.lean`, OCaml-parity, imported via driver.lem);
+  88/105 complete runND (62 Active with return values, 26 Killed);
+  remaining 17 crash on `can_advance ACTION_ILLTYPED` (15) and
+  `illtyped SeqRMW` (2) — S1 queue items 2/5
 
 ## Conventions
 

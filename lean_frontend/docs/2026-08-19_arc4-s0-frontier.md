@@ -223,10 +223,68 @@ desugaring, all other desugar/typecheck/translate outcomes succeeded):
 | 104-unsigned-wrap-arith | execute-crash | rc=1; PANIC LemLib failwithI: can_advance: Step_error2 ==> Kill |
 | 105-bitwise-ops | execute-crash | rc=1; PANIC LemLib failwithI: can_advance: Step_error2 ==> Store |
 
+## Post-S1a frontier (2026-08-19, after eliminating the `BEq core_step2` sorry)
+
+S1a fix: hand-written OCaml-polymorphic-equality-parity instances for
+`core_step2` in `lean_frontend/CerbStepInstances.lean`, imported into
+`Driver.lean` via `declare {lean} extra_import` in driver.lem (the only
+module that uses equality on `core_step2`). The generated sorry fallbacks
+remain in `Core_reduction.lean` at `(priority := low)` but are overridden
+at every use site. (`declare {lean} skip_instances type core_step2` was
+probed and does NOT work: it also suppresses the needed real Inhabited
+instance, which Core_reduction.lean itself requires at its
+`failwithI : core_step2` sites and which a downstream hand-written file
+cannot provide — import cycle. Same mechanism as CerbCtypeInstances.)
+
+Sweep rerun with the S0 methodology (per file: `--cabs-json`, then the
+pipeline binary, 30 s timeout, stdout/stderr separate). Histogram:
+
+| Count | Stage / class |
+|---:|---|
+| 62 | execute-result / **Active with a return value** (was 0 — first Active results ever) |
+| 26 | execute-result / Killed: 15 UB (all .undef), 7 memory access/memory error, 4 Illformed_program |
+| 15 | execute-crash / `can_advance: Step_error2 ==> Store\|Load\|Kill` (4+5+6) — ACTION_ILLTYPED, S1 queue item 2 |
+| 2 | execute-crash / `TODO(use the error the monad) illtyped SeqRMW` (042, 076) |
+| 0 | desugar (crash) — const-expr driver fully unblocked |
+| 0 | `executed 'sorry'` panics |
+| 0 | timeouts |
+
+Summary: 105/105 through desugar+typecheck+translate (was 95), 88/105
+complete runND (was 14), 62/105 Active (was 0).
+
+Delta for the 77 previous BEq-sorry crashers:
+
+- 61 → execute-result **Active** (incl. return-42 twin 001 and most of the
+  arithmetic/control-flow corpus);
+- 12 → execute-result Killed: 8 .undef files now Killed (undefined
+  behaviour) — plausibly correct; 058-struct-value + 072-out-of-bounds
+  Killed (memory access error); 073/074 (.libc) Killed
+  `Illformed_program: calling an unknown procedure exit/abort` — NEW
+  finding class (libc procs not linked), S2/S3 material;
+- 3 → the pre-existing `can_advance ACTION_ILLTYPED` class (017 Load,
+  045 Kill, 102 Kill), growing it 12 → 15;
+- 1 → the `illtyped SeqRMW` class (076, joining 042).
+
+Other movements and notes:
+
+- 097-null-ptr-arith.undef: previously `CerbMem.arrayShiftPtrval` panic,
+  now completes as **Active rv=0** — OCaml says UB, so this is now a
+  *wrong result*, not a crash (differential suspect for S2/S3; the panic
+  no longer fires on this input path).
+- 098-cross-alloc-ptrdiff.undef: Active rv=1 — likewise a differential
+  suspect (.undef completing as Active).
+- The `can_advance`/`SeqRMW` failwithI panics now exit rc=139 (SIGSEGV
+  shortly after the PANIC message on stderr) instead of rc=1: the panic
+  default value now flows further into an execution that no longer stops
+  at the BEq sorry. Same first-crash class, louder exit mode; stdout is
+  lost (block-buffered), classify by stderr line 1.
+- 14 previous execute-result completers: unchanged results.
+
 ## S1 queue implied by this map (in expected unblocking order)
 
-1. `BEq core_step2` sorry (driver2 blocked filter + const-expr driver) —
-   first crash for 77 files.
+1. ~~`BEq core_step2` sorry (driver2 blocked filter + const-expr driver) —
+   first crash for 77 files.~~ **DONE (S1a, 2026-08-19)** — see
+   "Post-S1a frontier" above.
 2. `ACTION_ILLTYPED Store/Load/Kill` → `Step_error2` → failwithI panic
    (12 files): action operands are values but not the expected shapes;
    likely a value-representation mismatch on the Lean side. (Behind it,
