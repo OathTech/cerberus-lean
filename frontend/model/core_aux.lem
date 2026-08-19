@@ -9,6 +9,14 @@ import Debug Pp
 import Nondeterminism
 module ND = Nondeterminism
 
+(* Arc-7 S2 sorryAx eviction (D3): collect_labeled_continuations_NEW's
+   Map_extra.fold demands SetType (generic_fun_map_decl _ _) — a phantom
+   requirement (never applied) that resolved to the backend's sorried
+   low-priority instance and put sorryAx in initial_driver_state's cone.
+   The hand-written default-priority instance evicts it (arc-4 S1a
+   precedent; see lean_frontend/CerbFunMapInstances.lean). *)
+declare {lean} extra_import `CerbFunMapInstances`
+
 
 val strip: forall 'ty 'sym. generic_pexpr 'ty 'sym -> generic_pexpr_ 'ty 'sym
 let strip (Pexpr _ _ pexpr_) =

@@ -118,6 +118,7 @@ roots = [
   "CerbConcurrency",
   "CerbCtypeInstances",
   "CerbStepInstances",
+  "CerbFunMapInstances",
   "CerbCabsInstances",
   "CerbInhabitedInstances",
   "CerbTags",

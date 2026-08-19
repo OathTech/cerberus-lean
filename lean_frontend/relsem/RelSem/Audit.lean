@@ -57,22 +57,20 @@
   the curated pins are what keep "DAEMON allowed in principle" from
   becoming "DAEMON everywhere".
 
-  REGISTERED FINDING (arc-7 S1, real and load-bearing for the exit
-  criterion): `sorryAx` sits in the cone of `initial_driver_state`
+  FINDING CLOSED (arc-7 S2 — was: REGISTERED FINDING, arc-7 S1/D3,
+  arc-blocking): `sorryAx` sat in the cone of `initial_driver_state`
   (generated Driver) via
     initial_driver_state → collect_labeled_continuations_NEW
       → instSetTypeGeneric_fun_map_decl → sorryAx
-  (a sorried generated Set-instance; cf. the `declaration uses sorry`
-  warnings in generated/Nondeterminism.lean &c.). Every RelSem DEF that
-  mentions `initConfig` therefore carries sorryAx TODAY. These are
-  statement-infrastructure defs, not proofs — no RelSem THEOREM carries
-  sorryAx (enforced below) — but the charter's exit theorem will mention
-  `initConfig`, so this sorry must be evicted from
-  `initial_driver_state`'s cone before S5 (S2/S3 work item). The
-  exception list below is EXACT and fail-closed in both directions:
-  a listed constant that is a theorem, that stops carrying sorryAx, or
-  that grows any axiom outside allowlist∪{sorryAx} fails the build; an
-  unlisted constant that picks up sorryAx fails the build.
+  (the backend's sorried low-priority `SetType (generic_fun_map_decl)`
+  instance, demanded — but never applied — by `Lem_Map_extra.fold`'s
+  signature). EVICTED by the arc-4 S1a priority-override mechanism: the
+  hand-written default-priority instance in CerbFunMapInstances.lean,
+  imported into Core_aux via `declare {lean} extra_import` in
+  core_aux.lem. `initConfig`'s cone is sorryAx-free; the exception list
+  below is EMPTY and stays fail-closed in both directions: any constant
+  that picks up sorryAx fails the build, and a re-grown list entry that
+  stops carrying sorryAx fails the build until removed deliberately.
 
   SCOPE ([AGENT:S1S0]): RelSem.* modules only. The proof-test modules
   (Unit.EffectsProofTest, Unit.TotalityProofTest) CANNOT join this
@@ -102,15 +100,10 @@ def allowedAxioms : List Name :=
    `DAEMON, `runEffectful, `CerbTags.with_tagDefs, `CerberusFresh.forceIO]
 
 /-- Non-theorem constants allowed to carry `sorryAx` IN ADDITION to the
-    boundary — exactly the defs whose values mention
-    `initial_driver_state` (the registered finding above). Exact,
-    fail-closed both ways. -/
-def sorryExceptions : List Name :=
-  [`RelSem.Cerb.initConfig,
-   `RelSem.Cerb.DriveReaches,
-   `RelSem.Cerb.HarnessAdequate,
-   `RelSem.Cerb.HarnessAdequateM,
-   `RelSem.Cerb.HarnessUBFree]
+    boundary. EMPTY since the arc-7 S2 eviction (finding-closed note in
+    the header); the machinery stays, exact and fail-closed both ways,
+    so any future sorryAx entry is a deliberate re-baseline here. -/
+def sorryExceptions : List Name := []
 
 /-! ## Curated pins — exact axiom sets of the load-bearing theorems.
     Re-baseline only deliberately, in the same commit, with the reason. -/
