@@ -134,3 +134,15 @@ deliberate baseline drift. Register additions from S1: survey erratum
 spot (parses ≠ parses-correctly — the PEif/;-layout fixes show textual
 round-trip gaps; candidate future gate: pp-roundtrip comparison);
 has_proto verified-dead finding (upstream-reportable oddity).
+
+**D11 [AGENT]** — S2 boundary passed (verified: coverage now 183/199
+comparable — 172+11, exactly the 5 predicted moves; libc_exec 7/7; unit
+4/4). Register 15 FIXED with dual-lineage citations. Worker [AGENT:S2]
+call specially endorsed: the orchestrator's brief specified a va_arg
+ctype check that DOES NOT EXIST in the oracle (impl_mem.ml:2731 is a
+TODO comment) — worker refused to add it per the mirror doctrine.
+Doctrine works in both directions: worker briefs are not ground truth,
+the cited OCaml is. Remaining coverage non-matches: 3 mismatch
+(mem3-004 pp placeholder, 2 provenance-fork defect-8) + 13 skips.
+Next: S3 perf (opens lem-lean lane — Fmap representation + PROVED
+equivalence lemmas per D7 doctrine upgrade; pin dance at close).
