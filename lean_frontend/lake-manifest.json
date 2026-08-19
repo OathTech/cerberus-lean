@@ -5,7 +5,7 @@
    "type": "git",
    "subDir": "lean-lib",
    "scope": "",
-   "rev": "40d063e2f9591065c79ac38d83cf1938ebc14f8e",
+   "rev": "bd7e2ebeaf5d24bc643c59cdac7b31549afd2f2f",
    "name": "LemLib",
    "manifestFile": "lake-manifest.json",
    "inputRev": "arc/libc-load",
