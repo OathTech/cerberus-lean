@@ -40,3 +40,20 @@ initConfig, which the exit theorem mentions); pinned as a fail-closed
 exception list; EVICTION is a mandatory S2 item (arc-4 S1a
 priority-override precedent). Audit-file lesson encoded: declarations
 after the sweep are unswept — sweep is the file's last element.
+
+**D4 [AGENT]** — S2 boundary passed (verified: totality gate "CLEAN (11
+generated modules + hand-written CerbND, 0 allowlisted)", unit 4/4,
+minimal baseline rc 0). Endorsed [AGENT:S2] calls: (a) runNDT DELETED —
+the executable IS the proof object (Q1 AMENDED's whole point); spike
+history preserves the prototype. (b) The exhaustion-marker TRANSPARENCY
+asymmetry, endorsed as principled and recorded so audits don't flag an
+inconsistency with fuelExhaustedWith's OPACITY doctrine: sentinel
+VALUES that could be mistaken for answers must be opaque (a fake value
+provable equal to something is a lie); an exhausted runner yielding the
+EMPTY BEHAVIOR SET is safe transparent — [] claims nothing, soundness
+is vacuous there, completeness is never asserted (fuel discipline), and
+the runtime panic keeps it loud. Two different honesty mechanisms for
+two different failure shapes. (c) Bonus: arc-2's declared
+RunNDActiveSound seam is now PROVED — a standing IOU closed.
+Register: arc-4 G3 results-language update due at close (CerbND left
+the declared boundary).
