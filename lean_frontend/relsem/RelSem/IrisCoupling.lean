@@ -25,6 +25,15 @@
         extends PrimStep Expr State (List Obs), ToVal Expr Val where
       val_stuck : (e, σ) -<obs>-> (e', σ', eₜ) → toVal e = none
 
+  MODEL-PARAMETRIC ENTRY (continuation, 2026-08-19): the coupling now
+  consumes the abstract interface `M : RelSem.ExecModel`
+  (RelSem/ExecModel.lean) rather than driver-shaped types directly —
+  `Expr × State` decompose `M.Config`, `primStep` wraps `M.Step`, and the
+  adequacy exit lands in `M.Adequate`/`M.UBFree` via `M.behavior`. The
+  concrete instantiation below is `M := RelSem.Cerb.seqModel` (THE
+  sequential instance); a concurrency instance swaps behavior extraction
+  + state interpretation, not the statement forms.
+
   INTENDED INSTANTIATION (the ND-machine language, sequential — the
   driver's thread interleaving is already reified INSIDE the ndM tree by
   the generated scheduler, so the Iris thread-pool stays singleton, like
@@ -77,17 +86,25 @@
     predicates or a second ghost map keyed by allocation id.
 
   ADEQUACY PIPE (Iris/ProgramLogic/Adequacy.lean:300 wp_adequacy →
-  :236 adequate; golean's exit shape SurfaceExit.lean:96 goSpec_of_wp):
+  :236 adequate; golean's exit shape SurfaceExit.lean:96 goSpec_of_wp),
+  now THROUGH the model interface:
 
     WP (initConfig …).expr {{ o, ⌜∃ r, o = .value r ∧ spec r⌝ }}
-      ⇒ adequate .NotStuck … (wp_adequacy)
+      ⇒ adequate .NotStuck … (wp_adequacy, over primStep = M.Step)
       ⇒ ∀ relational trace to a value: spec holds  (adequate_result)
-      ⇒ RelSem.Cerb.HarnessAdequate …              (via RunNDActiveSound)
+      ⇒ seqModel.Adequate (initConfig …) spec
+        = RelSem.Cerb.HarnessAdequateM …
+        (via seqModel_adequate_of_reach — PROVED at 4.29: behaviors are
+         Steps-reachable, so per-trace facts cover all behaviors)
+      ⇒ RelSem.Cerb.HarnessAdequate …  (CerbND-shaped headline; this last
+        arrow is the arc-7 "totalize CerbND" slice — runND = runNDT at
+        sufficient fuel — closing RunNDActiveSound)
 
-  the final statement being fuel-opsem-only (runND over drive), with the
-  reference function `spec` (e.g. the pure URI parser for the libxml2
-  xmlParseURISafe harness) appearing in the statement as specification —
-  never as the proof method.
+  the middle statement being model-parametric (quantifies M.behavior,
+  never enumerator output — survey §7.7 discipline), the final statement
+  fuel-opsem-only (runND over drive), with the reference function `spec`
+  (e.g. the pure URI parser for the libxml2 xmlParseURISafe harness)
+  appearing in the statement as specification — never as proof method.
 
   STUCKNESS HONESTY (mirrors go_adequacy's scope note,
   deps/golean/proofs/GoLeanProofs/Adequacy.lean:63-82): `done (.killed r)`
