@@ -1,5 +1,16 @@
 # Arc 6 charter: C-libc loading + varargs + perf ("libc & speed")
 
+> **STATUS: EXECUTED IN FULL — 2026-08-19.** S0–S5 complete; every
+> success condition met or exceeded (uri gate GATING 16/16 vs bar 10/10;
+> varargs register-15 FIXED; perf bar met at 4 slices with zero
+> movement + kernel-checked equivalence; ci scoreboard landed 110/114;
+> standing corpora held throughout; dual-lineage audit-verified; zero
+> model .lem changes). Results: 2026-08-19_arc6-results.md. Decisions
+> D1–D15, provenance-tagged. Audits: 2 adversarial, zero blockers, all
+> findings fixed-or-recorded incl. one record-integrity correction.
+> Pins aligned at lem `bd7e2eb`. Per S5 the arc STOPS unmerged —
+> 2026-08-19_arc6-merge-checklist.md awaits operator sign-off.
+
 Date: 2026-08-19. Mode: long-cycle autonomous under the orchestrator/
 worker doctrine; dual-lineage discipline (OCaml = what, cited; prototype
 = how, attributed) throughout. DRAFT until operator-blessed. Fully
