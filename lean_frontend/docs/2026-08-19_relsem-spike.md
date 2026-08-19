@@ -440,3 +440,24 @@ Stage-2 bake-off (cmm_op commitment machine vs AxSL-style opax) as the
 selection method; the §7.7 statement discipline (adequacy quantifies
 behaviors, never enumerator output, absent a proved completeness);
 model-change decisions (e.g. RC11 adoption) are [USER]-only forks.
+
+### Bespoke-logic stance (operator, 2026-08-19)
+
+**[USER]** Near-verbatim: we may need to roll our own logic / reasoning
+tactics which roll in existing structures but go beyond them — "we
+basically want to have it all" — attainable at least for TARGETED
+examples where we aren't building a general logic, just grinding out a
+result. **[AGENT]** Consequences for arc 7+: (1) Layer 3 is a MINIMAL
+sound base (the survey's Stage-3 primitive rules + adequacy), not an
+iRC11 port — general-logic completeness is explicitly NOT a goal; (2)
+above the base, per-target derived rules, bespoke tactics, and even
+untrusted proof-search/invariant-generation are unconstrained BY DESIGN:
+the certificate architecture (survey §1.4 = the no-internal-trust-gaps
+doctrine applied) means a bad tactic causes REJECTION, never
+unsoundness — soundness is paid once per primitive rule via adequacy,
+after which hackery is free; (3) the survey's OMO/Diaframe evidence
+(automation is its own multi-year project) supports targeted-first:
+build what xmlParseURI/chvalid-class targets need, generalize only what
+recurs; (4) "roll in existing structures" = steal iGPS/iRC11/Cosmo RULE
+SHAPES (views, protocols, objective invariants) as derived-rule designs
+over OUR base, not as imported developments.
