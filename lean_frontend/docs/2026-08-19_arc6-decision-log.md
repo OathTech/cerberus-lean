@@ -69,3 +69,20 @@ stack ceiling (SIGABRT at ~2k-8k-iteration loops) — recorded; S3
 addresses it only if the Fmap fix exposes it as next-binding. Park
 clause retained. Slice order: S1 libc → S2 varargs → S3 perf
 (worktree-sequenced; S3 opens the lem-lean worktree).
+
+**D7 [USER]** — Doctrine (operator, near-verbatim): "we should not
+permit any internal trust gaps unless they are truly forced on us by
+immovable objects." Codified in container CLAUDE.md (no-internal-trust-
+gaps doctrine): in-Lean agreement is a theorem, not a test; kernel-
+opaque artifacts are eliminated or sit on the declared boundary list
+with an immovable-object justification; internal differentials are
+transient migration checks only. Prompted by the operator's Q1 challenge
+on the relsem spike (runND bridge → totalize instead, recorded on the
+spike branch). [AGENT] immediate applications in THIS arc: S3's Fmap
+representation swap must carry PROVED equivalence lemmas for the swapped
+operations where feasible (upgrade from the charter's
+"behavioral-equivalence argument"); the network-window record: operator
+ran push/4.32.2/iris-vendor/mirrors/creduce, all verified (iris-lean now
+builds offline — arc-7 prerequisite cleared). Arc-7 charter inputs
+queued: totalize CerbND (Layer-2 prereq), extend totality gate to
+CerbND, spike Q2-Q4 recommendations for operator review.
