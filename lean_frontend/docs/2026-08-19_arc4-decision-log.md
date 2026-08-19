@@ -103,3 +103,17 @@ discipline caught what intuition would have "fixed" into a bug. Register:
 Remaining arc work: S4 (test_elab reporting), S4b (coverage/debug corpora
 baselines + csmith smoke), easy_update elimination → driver2 cone
 sorryAx-free (success condition 2), arc-2 obligations, S5 close-out.
+
+**D11** — S4/S4b boundary passed (all verified independently: minimal
+102/105 untouched with baseline rc 0; elab 102/105 SAME at signature
+granularity, 3 DIFFs = one explained pp-visibility class; coverage 95.7%,
+debug 97.6%, csmith smoke 3/3 MATCH with exact failure parity on oracle
+non-yields). Next-arc pricing now data-backed: (1) libc/builtin proc
+linking — 20 coverage FAILs, single largest parity item; (2) varargs
+(register 15); (3) enum registry (18b — now shown to be a UB-soundness
+miss, debug compat-04); (4) real Core/ctype pretty-printer (unlocks
+body-level elab diff + fixes the Unspecified(<ctype>) textual class);
+(5) csmith oracle yield 12% — scale-fuzz bottleneck is upstream cerberus
+strictness on csmith output, not our side. Remaining this arc: cone
+worker (easy_update + driver2 sorryAx-free + arc-2 obligations), S5
+close-out + audits.
