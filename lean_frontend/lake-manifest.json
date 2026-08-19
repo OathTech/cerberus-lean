@@ -1,4 +1,4 @@
-{"version": "1.1.0",
+{"version": "1.2.0",
  "packagesDir": ".lake/packages",
  "packages":
  [{"url": "https://github.com/septract/lem-lean",
@@ -14,12 +14,13 @@
   {"url": "https://github.com/leanprover-community/batteries",
    "type": "git",
    "subDir": null,
-   "scope": "leanprover-community",
-   "rev": "756e3321fd3b02a85ffda19fef789916223e578c",
+   "scope": "",
+   "rev": "023ce7d62a0531e22a5331e20b587817a80d49ff",
    "name": "batteries",
    "manifestFile": "lake-manifest.json",
-   "inputRev": "v4.29.0",
+   "inputRev": "v4.32.0",
    "inherited": false,
    "configFile": "lakefile.toml"}],
  "name": "CerberusLean",
- "lakeDir": ".lake"}
+ "lakeDir": ".lake",
+ "fixedToolchain": false}

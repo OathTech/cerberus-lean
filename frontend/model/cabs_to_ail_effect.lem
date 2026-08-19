@@ -2094,14 +2094,14 @@ let register_function_declaration loc attrs sym is_proto decl =
     Pp.stringFromAil_ctype Ctype.no_qualifiers fun_ty ^
     (if Maybe.isNothing params_opt && isVariadic then " WARNING: isVariadic when NOPARAMS" else "")
   in
-(*
-    Pp.stringFromAil_ctype ret_qs ret_ty ^ "(" ^ stringFromList (
-      fun (qs, ty, isRegister) ->
-        (if isRegister then "register " else "") ^ Pp.stringFromAil_ctype qs ty
-    ) params ^ ")" in
-*)
+  (*
+      Pp.stringFromAil_ctype ret_qs ret_ty ^ "(" ^ stringFromList (
+        fun (qs, ty, isRegister) ->
+          (if isRegister then "register " else "") ^ Pp.stringFromAil_ctype qs ty
+      ) params ^ ")" in
+  *)
   
-read_inner (fun st ->
+  read_inner (fun st ->
     Map.lookup sym st.function_declarations
   ) >>= function
     | Just (prev_has_proto, prev_loc, prev_attrs, prev_decl) ->

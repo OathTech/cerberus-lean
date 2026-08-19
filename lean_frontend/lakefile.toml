@@ -5,10 +5,16 @@ name = "CerberusLean"
 defaultTargets = ["CerberusLean", "RelSem", "cerberus-lean"]
 moreLeanArgs = ["-DautoImplicit=false"]
 
+# arc-7 S0 toolchain bump: batteries as a plain git require (the scoped
+# Reservoir form needs network to resolve; the git URL is redirected to
+# deps/mirrors/batteries.git by deps/gitconfig). Pinned at v4.32.0 =
+# 023ce7d62a0531e22a5331e20b587817a80d49ff — the exact rev iris-lean's
+# 4.32.2 build vendored (deps/iris-lean/Iris/lake-manifest.json), so the
+# S4 iris-lean require will inherit a matching batteries.
 [[require]]
 name = "batteries"
-scope = "leanprover-community"
-rev = "v4.29.0"
+git = "https://github.com/leanprover-community/batteries"
+rev = "v4.32.0"
 
 # LemLib is the Lem runtime library for Lean, from the septract/lem-lean fork.
 # arc-6 S3: pinned to the arc/libc-load branch pair (Fmap representation);
