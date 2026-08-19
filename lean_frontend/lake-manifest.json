@@ -8,7 +8,7 @@
    "rev": "574e326ff694069bf37e0d51cd06bef1b69a63e7",
    "name": "LemLib",
    "manifestFile": "lake-manifest.json",
-   "inputRev": "arc/totality-sweep",
+   "inputRev": "mdd/lean-backend",
    "inherited": false,
    "configFile": "lakefile.lean"},
   {"url": "https://github.com/leanprover-community/batteries",
