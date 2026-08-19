@@ -33,7 +33,10 @@
 #     ptr2-009-eff-malloc-shift.libc FAIL → MATCH
 #   io-001/002/003/005 UNSUPPORTED → UNSUPPORTED_PASS: printf now works
 #   end-to-end (printf_proxy → FS_PRINTF → Formatted.printf, all
-#   generated); un-marking is a separate instrument commit.
+#   generated); un-marked (instrument commit): .unsupported stripped,
+#   now plain MATCH rows. io-004-puts stays .unsupported/CERB_SKIP —
+#   puts has no std.core proxy; OCaml --nolibc fails it too (same class
+#   as builtin-006-exit, survey §"the failing surface").
 # Per-category summary (regenerate via docs/2026-08-19_arc4-s4b-corpus-scoreboard.md recipe):
 #   arith3     n=6   MATCH=6
 #   builtin    n=6   CERB_SKIP=1 MATCH=5
@@ -44,7 +47,7 @@
 #   ctrl3      n=5   CERB_SKIP=1 MATCH=2 UB_MATCH=2
 #   eval2      n=15  MATCH=15
 #   expr       n=12  CERB_SKIP=1 MATCH=9 UB_MATCH=2
-#   io         n=5   CERB_SKIP=1 UNSUPPORTED_PASS=4
+#   io         n=5   CERB_SKIP=1 MATCH=4
 #   libc       n=14  CERB_SKIP=3 MATCH=7 UB_MATCH=4
 #   mem        n=10  CERB_SKIP=1 MATCH=7 MISMATCH=1 UB_MATCH=1
 #   mem3       n=8   DIFF=1 MATCH=7
@@ -145,11 +148,11 @@ expr-009-negative-shift.c UB_MATCH
 expr-010-large-shift.c UB_MATCH
 expr-011-sequence-point.c MATCH
 expr-012-logical-shortcircuit.c MATCH
-io-001-printf-basic.libc.unsupported.c UNSUPPORTED_PASS
-io-002-printf-int.libc.unsupported.c UNSUPPORTED_PASS
-io-003-printf-string.libc.unsupported.c UNSUPPORTED_PASS
+io-001-printf-basic.libc.c MATCH
+io-002-printf-int.libc.c MATCH
+io-003-printf-string.libc.c MATCH
 io-004-puts.libc.unsupported.c CERB_SKIP
-io-005-printf-multi.libc.unsupported.c UNSUPPORTED_PASS
+io-005-printf-multi.libc.c MATCH
 libc-001-malloc-free.c MATCH
 libc-002-calloc.c CERB_SKIP
 libc-003-realloc.c MATCH
