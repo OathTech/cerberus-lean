@@ -186,20 +186,18 @@ Lem is pinned to `https://github.com/septract/lem-lean#mdd/lean-backend`.
   `runND_proxy` is implemented — hand-written `CerbND.runND`).
   Concurrency stubs remain the declared boundary.
 
-### Pipeline status (2026-08-19, arc-4 post-S1a — see
-`docs/2026-08-19_arc4-s0-frontier.md`, "Post-S1a frontier")
-- ✅ C → Cabs JSON (OCaml parser, 100%)
-- ✅ JSON → Lean Cabs types (CabsImport, 100%)
-- ✅ Core text parser (std.core + impl files)
-- ✅ Core stdlib loading
-- ✅ Desugar (105/105 tests/minimal — const-expr driver unblocked by S1a)
-- ✅ Typecheck (GenTyping.annotate_program — 105/105)
-- ✅ Translation (Translation.translate — 105/105)
-- 🔧 Execution (Driver.drive): the sorry'd `BEq core_step2` is fixed
-  (S1a: `CerbStepInstances.lean`, OCaml-parity, imported via driver.lem);
-  88/105 complete runND (62 Active with return values, 26 Killed);
-  remaining 17 crash on `can_advance ACTION_ILLTYPED` (15) and
-  `illtyped SeqRMW` (2) — S1 queue items 2/5
+### Pipeline status (2026-08-19, post arc-5 — see arc-4/5 results docs)
+- ✅ C → Cabs JSON → Cabs types (100%)
+- ✅ Core text parser + stdlib loading (incl. ailname attribute capture, arc 5)
+- ✅ Desugar / Typecheck / Translation (all 106/106 tests/minimal)
+- ✅ Execution, differentially validated vs OCaml: tests/minimal 103/106
+  (3 oracle-side skips), coverage 178/199 comparable, debug corpus green
+- ✅ libc/builtin procedure linking (arc 5: 20/20 coverage FAILs closed)
+- ✅ Multi-TU: real Core_linking + per-TU MD5 digests (arc 5)
+- ✅ libxml2 chvalid through the full pipeline: 100% differential
+  (28 slices, 1354 boundary points — `test_libxml2.sh`)
+- Open (priced): C-libc (.core) loading (uri closure blocks on memset),
+  varargs execution (register 15), perf: quadratic allocation retention
 
 ## Conventions
 
