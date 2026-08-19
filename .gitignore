@@ -68,6 +68,9 @@ cerb_times.csv
 # Temporary files (scripts, reproducers)
 .tmp/
 
+# Local copies of research papers used while writing Lean frontend notes
+/lean_frontend/docs/papers/
+
 # Claude Code
 .claude/
 
