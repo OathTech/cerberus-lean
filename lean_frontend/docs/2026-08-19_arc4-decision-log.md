@@ -69,3 +69,24 @@ findings = recorded backlog, explicitly OUT of this arc's bar; S4b's
 coverage-corpus baseline measures which latents are live; next arc claims
 them. (e) S5 audit scope += "seam fixes cite and match the OCaml lines
 they claim to mirror".
+
+**D8** — Operator doctrine (2026-08-19, codified in container CLAUDE.md +
+ROADMAP obj 2): gratuitous Lean↔OCaml divergence in hand-written seams is
+a DEFECT AS SUCH — differential failures raise priority, never define
+defect status. Divergences: mirror-with-citation or document-deliberate;
+undocumented = defect. Consequence for this arc: the seam-survey extract
+is a DEFECT REGISTER; close-out reports fixed / documented-deliberate /
+open counts; S5 audit verifies citations against cited OCaml code.
+
+**D9** — S3b boundary passed: 97/105 (crossed the ≥95 bar), 0
+regressions, independently reproduced. ND-order fix landed with ZERO
+baseline delta (corpus is single-verdict — the fix protects future
+multi-verdict programs; instrument-integrity rationale stands). Two
+unplanned root causes endorsed: set_tagDefs dead-code-eliminated (pure
+opaque, discarded result — fixed via BaseIO externs; classic arc-1/2
+effect-erasure class, now on the survey register pattern list) and
+description-sensitive symbol equality in tag lookups (symbolEquality /
+idEqual now, OCaml-parity). S3c targets the 5 remaining fixables: 066
+(float of_string), 098 (diffPtrval), 072/077 (mem_error→UB reporting
+map), 056 (funptrmap) + survey cheap batch (ediv/emod, ivfromfloat,
+NoProvPtr, decode 26/28, Bool0 max; enum registry only if corpus-forced).
