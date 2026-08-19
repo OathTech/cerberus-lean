@@ -20,22 +20,56 @@
 #       --mode=MODE      (both sides are always exhaustive: CerbND.runND is
 #                         an exhaustive runner; OCaml gets --mode=exhaustive)
 #       --sequentialise  (no sequentialise wiring in the Lean pipeline)
-#   * Lean value/UB extraction takes the FIRST match (head -1), same as the
-#     prototype's cerberus side; the prototype's Lean side had no head -1
-#     only because its interpreter printed exactly one line. Our --batch
-#     mirrors OCaml's multi-execution EXECUTION-block format.
+#   * FULL-SEQUENCE comparison (arc-4 S5f audit hardening, replaces the
+#     prototype-inherited head -1): BOTH sides' outputs are reduced to the
+#     ordered sequence of per-execution verdict tokens (UB:<code> for each
+#     Undefined line, VAL:<value> for each Defined line — Specified and
+#     Unspecified alike) and the sequences are compared in full. Identical
+#     sequences → MATCH (no UB token) / UB_MATCH (any UB token); sequences
+#     that differ ONLY in UB codes (same length, same UB positions, equal
+#     values) → UB_DIFF; one-sided UB presence → DIFF; anything else
+#     (value diff, length diff, shape diff) → MISMATCH.
 #   * New status LEAN_CRASH (exit >= 128: SIGABRT under
 #     LEAN_ABORT_ON_PANIC=1, SIGSEGV, ...) — the prototype's interpreter
 #     did not crash so it had no such class. Counted as a Lean failure.
-#   * Lean TIMEOUT and LEAN_CRASH are fatal in default mode (the prototype
-#     only counted timeouts). Fail-closed house rule.
+#   * Exit-code/verdict consistency (arc-4 S5f audit hardening): both
+#     binaries follow OCaml main.ml runM's convention — single Defined →
+#     exit 0, single Undefined/Error → exit 1, multiple executions →
+#     exit 0 — so a bare "any nonzero exit is fatal" rule would flag the
+#     entire single-UB corpus. Instead the EXPECTED exit is derived from
+#     the parsed output and any deviation is flagged even when the output
+#     parses (closes the print-then-crash / laundering hole):
+#       Lean side   → LEAN_ERROR  (fatal in default mode)
+#       OCaml side  → CERB_INCONSISTENT (non-fatal, counted, visible;
+#                     timeouts/signals 124/134/137/139 stay CERB_SKIP)
+#   * Lean TIMEOUT, LEAN_CRASH and LEAN_ERROR are fatal in default mode
+#     (the prototype only counted timeouts). Fail-closed house rule.
+#   * Default mode with ZERO comparisons (all files skipped) is a FAILURE,
+#     not a vacuous pass.
 #   * Baseline tracking: --write-baseline / --check-baseline against
 #     scripts/exec_baseline.txt (test_core.sh-style: regression vs the
 #     committed baseline fails the gate even mid-arc; improvements are
-#     reported, not fatal).
+#     reported, not fatal). A file NOT in the baseline whose current
+#     status is MISMATCH/DIFF/FAIL/LEAN_CRASH/LEAN_ERROR/TIMEOUT is FATAL
+#     (a deleted baseline line must not launder a failing file); new
+#     files with any other status are reported, non-fatal.
+#
+# Recorded caveats (audit-2, deliberate residual holes):
+#   * Both-sides-timeout invisibility: the OCaml side runs FIRST; if it
+#     times out the file is CERB_SKIP and the Lean side is never sampled,
+#     so a Lean-side hang on the same file is invisible. A file must be
+#     OCaml-terminating for its Lean behavior to be observed.
+#   * stdout-text spoofing: verdict tokens are extracted textually from
+#     the merged output; a test program that printed a crafted
+#     "Undefined {ub: ..." / "Defined {value: ..." line could in
+#     principle forge tokens. Unreachable today: the harness links no
+#     libc (--nolibc / no Lean-side C library), so test programs cannot
+#     write to stdout at all, and captured program stdout is embedded
+#     quote-ESCAPED inside the Defined line where the token patterns
+#     cannot match. Recorded, not defended further.
 #
 # Per-file statuses (baseline taxonomy):
-#   MATCH UB_MATCH UB_DIFF MISMATCH DIFF FAIL TIMEOUT LEAN_CRASH
+#   MATCH UB_MATCH UB_DIFF MISMATCH DIFF FAIL TIMEOUT LEAN_CRASH LEAN_ERROR
 #   CERB_SKIP CERB_INCONSISTENT UNSUPPORTED UNSUPPORTED_PASS
 #
 # NOTE: this script intentionally does NOT use `set -e` — it captures
@@ -256,6 +290,39 @@ run_lean_batch() {  # <file.json>
 }
 
 # ---------------------------------------------------------------------------
+# Verdict-sequence extraction + exit-code expectation (S5f hardening)
+# ---------------------------------------------------------------------------
+# One canonical token per per-execution verdict line, in output order:
+#   Undefined {ub: "X", ...}   -> UB:X
+#   Defined {value: "V", ...}  -> VAL:V   (V = Specified(n)/Unspecified(t)/...)
+# Anchored on the line-leading 'Undefined {'/'Defined {' markers, so the
+# quote-escaped stdout/stderr fields inside a Defined line cannot yield
+# tokens (see the spoofing caveat in the header).
+extract_verdict_seq() {   # <output>  → token lines on stdout
+    printf '%s\n' "$1" \
+        | grep -oE 'Undefined \{ub: "[^"]*"|Defined \{value: "[^"]*"' \
+        | sed -e 's/^Undefined {ub: "\(.*\)"$/UB:\1/' \
+              -e 's/^Defined {value: "\(.*\)"$/VAL:\1/'
+    return 0
+}
+
+# Expected exit code per OCaml main.ml runM (mirrored by Main.lean):
+# multiple executions → 0; single Undefined/Error → 1; single Defined → 0.
+expected_exit_for() {   # <output>  → echoes 0 or 1
+    if [[ "$1" == *'EXECUTION '* ]]; then
+        echo 0
+    elif [[ "$1" == *'Undefined {'* || "$1" == *'Error {'* ]]; then
+        echo 1
+    else
+        echo 0
+    fi
+}
+
+join_seq() {   # <token-lines>  → single line joined with '|'
+    printf '%s' "$1" | tr '\n' '|'
+}
+
+# ---------------------------------------------------------------------------
 # Counters (prototype set) + new crash counter
 # ---------------------------------------------------------------------------
 CERBERUS_OK=0
@@ -264,6 +331,8 @@ LEAN_OK=0
 LEAN_FAIL=0
 LEAN_TIMEOUT_COUNT=0
 LEAN_CRASH_COUNT=0
+LEAN_ERROR_COUNT=0
+CERB_INCONSISTENT_COUNT=0
 MATCH=0
 MISMATCH=0
 UB_MATCH=0
@@ -314,16 +383,13 @@ for c_file in "${TEST_FILES[@]}"; do
     # echo | grep -q — large outputs + pipefail turn early-exit SIGPIPEs
     # into spurious non-zero results.
     cerberus_has_ub=false
-    cerberus_ret=""
-    cerberus_ub_code=""
+    cerb_seq=""
     if [[ "$cerberus_output" == *'Undefined {'* ]]; then
         cerberus_has_ub=true
-        cerberus_ub_code=$(echo "$cerberus_output" | grep -o 'ub: "[^"]*"' | head -1 | sed 's/ub: "\([^"]*\)"/\1/')
-        cerberus_ret="UB"
-    elif [[ "$cerberus_output" == *'value: "Specified'* ]]; then
-        cerberus_ret=$(echo "$cerberus_output" | grep -o 'value: "Specified([^)]*)"' | head -1 | sed 's/value: "Specified(\([^)]*\))"/\1/')
-    elif [[ "$cerberus_output" == *'value: "Unspecified'* ]]; then
-        cerberus_ret=$(echo "$cerberus_output" | grep -o 'value: "[^"]*"' | head -1 | sed 's/value: "\([^"]*\)"/\1/')
+        cerb_seq=$(extract_verdict_seq "$cerberus_output")
+    elif [[ "$cerberus_output" == *'value: "Specified'* ]] \
+      || [[ "$cerberus_output" == *'value: "Unspecified'* ]]; then
+        cerb_seq=$(extract_verdict_seq "$cerberus_output")
     elif [[ "$cerberus_output" == *'Error {'* ]]; then
         CERBERUS_FAIL=$((CERBERUS_FAIL + 1))
         error_msg=$(echo "$cerberus_output" | grep -o 'msg: "[^"]*"' | head -1 | sed 's/msg: "\([^"]*\)"/\1/')
@@ -341,12 +407,29 @@ for c_file in "${TEST_FILES[@]}"; do
         record_status "$base_c" CERB_SKIP
         continue
     fi
+    if [[ -z "$cerb_seq" ]]; then
+        echo "HARNESS ERROR: cerberus verdict pattern matched but no tokens extracted for $filename" >&2
+        exit 1
+    fi
+
+    # S5f H2: exit-code/verdict consistency (see header). Any deviation
+    # from the runM-convention expected exit — even with parseable output —
+    # is CERB_INCONSISTENT (non-fatal, counted, visible).
+    cerb_expected_exit=$(expected_exit_for "$cerberus_output")
+    if [[ $cerberus_shell_exit -ne $cerb_expected_exit ]]; then
+        CERB_INCONSISTENT_COUNT=$((CERB_INCONSISTENT_COUNT + 1))
+        CERBERUS_FAIL=$((CERBERUS_FAIL + 1))
+        echo "[$file_num/$total_to_test] CERB_INCONSISTENT $filename: output parsed ($(join_seq "$cerb_seq")) but exit=$cerberus_shell_exit (expected $cerb_expected_exit)"
+        record_status "$base_c" CERB_INCONSISTENT
+        continue
+    fi
     CERBERUS_OK=$((CERBERUS_OK + 1))
 
     # --- Cabs JSON for the Lean pipeline -----------------------------------
     json_file="$OUTPUT_DIR/$filename.json"
     if ! run_cabs_json "$c_file" "$json_file"; then
         CERBERUS_FAIL=$((CERBERUS_FAIL + 1))
+        CERB_INCONSISTENT_COUNT=$((CERB_INCONSISTENT_COUNT + 1))
         echo "[$file_num/$total_to_test] CERB_INCONSISTENT $filename: exec succeeded but cabs-json failed"
         record_status "$base_c" CERB_INCONSISTENT
         continue
@@ -386,21 +469,14 @@ for c_file in "${TEST_FILES[@]}"; do
         continue
     fi
 
-    # Extract Lean verdict (same patterns as the prototype; head -1 added —
-    # see header note on multi-execution output).
-    lean_ret=""
+    # Extract Lean verdict sequence (S5f H1: full sequence, not head -1).
     lean_has_ub=false
-    lean_ub_code=""
+    lean_seq=""
     if [[ "$lean_output" == *'Undefined {'* ]]; then
         lean_has_ub=true
-        lean_ub_code=$(echo "$lean_output" | grep -o 'ub: "[^"]*"' | head -1 | sed 's/ub: "\([^"]*\)"/\1/')
-        lean_ret="UB"
+        lean_seq=$(extract_verdict_seq "$lean_output")
     elif [[ "$lean_output" == *'Defined {'* ]]; then
-        if [[ "$lean_output" == *'value: "Specified'* ]]; then
-            lean_ret=$(echo "$lean_output" | grep -o 'value: "Specified([^)]*)"' | head -1 | sed 's/value: "Specified(\([^)]*\))"/\1/')
-        else
-            lean_ret=$(echo "$lean_output" | grep -o 'value: "[^"]*"' | head -1 | sed 's/value: "\([^"]*\)"/\1/')
-        fi
+        lean_seq=$(extract_verdict_seq "$lean_output")
     elif [[ "$lean_output" == *'Error {'* ]]; then
         error_msg=$(echo "$lean_output" | grep -o 'msg: "[^"]*"' | head -1 | sed 's/msg: "\([^"]*\)"/\1/')
         if $expect_unsupported; then
@@ -426,65 +502,88 @@ for c_file in "${TEST_FILES[@]}"; do
         continue
     fi
 
-    # --- Comparison (prototype semantics, verbatim) ------------------------
-    if $lean_has_ub && $cerberus_has_ub; then
-        LEAN_OK=$((LEAN_OK + 1))
-        if [[ "$lean_ub_code" == "$cerberus_ub_code" ]]; then
-            UB_MATCH=$((UB_MATCH + 1))
-            echo "[$file_num/$total_to_test] UB_MATCH $filename: $lean_ub_code"
-            record_status "$base_c" UB_MATCH
+    if [[ -z "$lean_seq" ]]; then
+        echo "HARNESS ERROR: Lean verdict pattern matched but no tokens extracted for $filename" >&2
+        exit 1
+    fi
+
+    # S5f H2: exit-code/verdict consistency, Lean side (see header). A
+    # nonzero-vs-expected exit is fatal in default mode even though the
+    # output parsed (print-then-crash / laundering hole).
+    lean_expected_exit=$(expected_exit_for "$lean_output")
+    if [[ $lean_exit -ne $lean_expected_exit ]]; then
+        if $expect_unsupported; then
+            UNSUPPORTED_EXPECTED=$((UNSUPPORTED_EXPECTED + 1))
+            echo "[$file_num/$total_to_test] UNSUPPORTED $filename (exit $lean_exit vs expected $lean_expected_exit, expected-unsupported)"
+            record_status "$base_c" UNSUPPORTED
         else
-            UB_CODE_DIFF=$((UB_CODE_DIFF + 1))
-            echo "[$file_num/$total_to_test] UB_DIFF $filename: Lean=$lean_ub_code Cerberus=$cerberus_ub_code"
-            record_status "$base_c" UB_DIFF
+            LEAN_ERROR_COUNT=$((LEAN_ERROR_COUNT + 1))
+            echo "[$file_num/$total_to_test] LEAN_ERROR $filename: output parsed ($(join_seq "$lean_seq")) but exit=$lean_exit (expected $lean_expected_exit)"
+            record_status "$base_c" LEAN_ERROR
         fi
         continue
     fi
 
-    if $lean_has_ub || $cerberus_has_ub; then
-        if $expect_unsupported; then
-            UNSUPPORTED_EXPECTED=$((UNSUPPORTED_EXPECTED + 1))
-            if $lean_has_ub; then
-                echo "[$file_num/$total_to_test] UNSUPPORTED $filename: Lean=UB($lean_ub_code) Cerberus=$cerberus_ret"
+    # --- Comparison (S5f H1: full verdict sequences, both sides) -----------
+    # Display strings: full joined sequences (single-verdict files look as
+    # they always did modulo the token prefix).
+    lean_disp=$(join_seq "$lean_seq")
+    cerb_disp=$(join_seq "$cerb_seq")
+    # Shape = the sequence with UB codes erased (UB positions + all values).
+    lean_shape=$(printf '%s\n' "$lean_seq" | sed 's/^UB:.*/UB/')
+    cerb_shape=$(printf '%s\n' "$cerb_seq" | sed 's/^UB:.*/UB/')
+
+    if [[ "$lean_seq" == "$cerb_seq" ]]; then
+        LEAN_OK=$((LEAN_OK + 1))
+        if $lean_has_ub; then
+            if $expect_unsupported; then
+                UNSUPPORTED_EXPECTED=$((UNSUPPORTED_EXPECTED + 1))
+                echo "[$file_num/$total_to_test] UNSUPPORTED $filename: $lean_disp (UB both sides)"
+                record_status "$base_c" UNSUPPORTED
             else
-                echo "[$file_num/$total_to_test] UNSUPPORTED $filename: Lean=$lean_ret Cerberus=UB($cerberus_ub_code)"
+                UB_MATCH=$((UB_MATCH + 1))
+                echo "[$file_num/$total_to_test] UB_MATCH $filename: $lean_disp"
+                record_status "$base_c" UB_MATCH
             fi
-            record_status "$base_c" UNSUPPORTED
         else
-            LEAN_OK=$((LEAN_OK + 1))
-            MISMATCH=$((MISMATCH + 1))
-            if $lean_has_ub; then
-                echo "[$file_num/$total_to_test] DIFF $filename: Lean=UB($lean_ub_code) Cerberus=$cerberus_ret"
+            if $expect_unsupported; then
+                UNSUPPORTED_UNEXPECTED=$((UNSUPPORTED_UNEXPECTED + 1))
+                echo "[$file_num/$total_to_test] UNSUPPORTED_PASS $filename: $lean_disp (expected failure but passed!)"
+                record_status "$base_c" UNSUPPORTED_PASS
             else
-                echo "[$file_num/$total_to_test] DIFF $filename: Lean=$lean_ret Cerberus=UB($cerberus_ub_code)"
+                MATCH=$((MATCH + 1))
+                echo "[$file_num/$total_to_test] MATCH $filename: $lean_disp"
+                record_status "$base_c" MATCH
             fi
-            record_status "$base_c" DIFF
         fi
+        continue
+    fi
+
+    # Sequences differ. Expected-unsupported files: any difference is the
+    # expected failure.
+    if $expect_unsupported; then
+        UNSUPPORTED_EXPECTED=$((UNSUPPORTED_EXPECTED + 1))
+        echo "[$file_num/$total_to_test] UNSUPPORTED $filename: Lean=$lean_disp Cerberus=$cerb_disp"
+        record_status "$base_c" UNSUPPORTED
         continue
     fi
 
     LEAN_OK=$((LEAN_OK + 1))
-
-    if [[ "$lean_ret" == "$cerberus_ret" ]]; then
-        if $expect_unsupported; then
-            UNSUPPORTED_UNEXPECTED=$((UNSUPPORTED_UNEXPECTED + 1))
-            echo "[$file_num/$total_to_test] UNSUPPORTED_PASS $filename: $lean_ret (expected failure but passed!)"
-            record_status "$base_c" UNSUPPORTED_PASS
-        else
-            MATCH=$((MATCH + 1))
-            echo "[$file_num/$total_to_test] MATCH $filename: $lean_ret"
-            record_status "$base_c" MATCH
-        fi
+    if [[ "$lean_shape" == "$cerb_shape" ]]; then
+        # Same length, same UB positions, identical values — only UB codes
+        # differ (both detected UB at the same points).
+        UB_CODE_DIFF=$((UB_CODE_DIFF + 1))
+        echo "[$file_num/$total_to_test] UB_DIFF $filename: Lean=$lean_disp Cerberus=$cerb_disp"
+        record_status "$base_c" UB_DIFF
+    elif [[ "$lean_has_ub" != "$cerberus_has_ub" ]]; then
+        # One-sided UB (prototype DIFF class, now at sequence granularity)
+        MISMATCH=$((MISMATCH + 1))
+        echo "[$file_num/$total_to_test] DIFF $filename: Lean=$lean_disp Cerberus=$cerb_disp"
+        record_status "$base_c" DIFF
     else
-        if $expect_unsupported; then
-            UNSUPPORTED_EXPECTED=$((UNSUPPORTED_EXPECTED + 1))
-            echo "[$file_num/$total_to_test] UNSUPPORTED $filename: Lean=$lean_ret Cerberus=$cerberus_ret"
-            record_status "$base_c" UNSUPPORTED
-        else
-            MISMATCH=$((MISMATCH + 1))
-            echo "[$file_num/$total_to_test] MISMATCH $filename: Lean=$lean_ret Cerberus=$cerberus_ret"
-            record_status "$base_c" MISMATCH
-        fi
+        MISMATCH=$((MISMATCH + 1))
+        echo "[$file_num/$total_to_test] MISMATCH $filename: Lean=$lean_disp Cerberus=$cerb_disp"
+        record_status "$base_c" MISMATCH
     fi
 done
 
@@ -511,7 +610,11 @@ echo "Lean pipeline (of Cerberus successes):"
 echo "  Compared:   $LEAN_OK"
 echo "  Failed:     $LEAN_FAIL"
 echo "  Crashed:    $LEAN_CRASH_COUNT"
+echo "  ExitErr:    $LEAN_ERROR_COUNT (exit code inconsistent with parsed verdict)"
 echo "  Timeout:    $LEAN_TIMEOUT_COUNT"
+if [[ $CERB_INCONSISTENT_COUNT -gt 0 ]]; then
+    echo "  CerbIncons: $CERB_INCONSISTENT_COUNT (OCaml-side exit/verdict inconsistency — non-fatal, visible)"
+fi
 echo ""
 echo "Comparison (of both successes):"
 echo "  Match:      $MATCH"
@@ -540,7 +643,7 @@ fi
 
 # One-line machine-grepable summary
 echo ""
-echo "SUMMARY: total=$file_num match=$MATCH ub_match=$UB_MATCH ub_diff=$UB_CODE_DIFF mismatch=$MISMATCH fail=$LEAN_FAIL crash=$LEAN_CRASH_COUNT timeout=$LEAN_TIMEOUT_COUNT cerb_skip=$((CERBERUS_FAIL))"
+echo "SUMMARY: total=$file_num match=$MATCH ub_match=$UB_MATCH ub_diff=$UB_CODE_DIFF mismatch=$MISMATCH fail=$LEAN_FAIL crash=$LEAN_CRASH_COUNT lean_error=$LEAN_ERROR_COUNT timeout=$LEAN_TIMEOUT_COUNT cerb_skip=$((CERBERUS_FAIL)) cerb_inconsistent=$CERB_INCONSISTENT_COUNT"
 
 # ---------------------------------------------------------------------------
 # Baseline write / check
@@ -550,7 +653,7 @@ status_rank() {   # rank per status; unknown status = harness error
         MATCH|UB_MATCH|UNSUPPORTED_PASS) echo 3 ;;
         UB_DIFF) echo 2 ;;
         MISMATCH|DIFF|UNSUPPORTED) echo 1 ;;
-        FAIL|TIMEOUT|LEAN_CRASH|CERB_SKIP|CERB_INCONSISTENT) echo 0 ;;
+        FAIL|TIMEOUT|LEAN_CRASH|LEAN_ERROR|CERB_SKIP|CERB_INCONSISTENT) echo 0 ;;
         *) echo "HARNESS ERROR: unknown status '$1'" >&2; exit 1 ;;
     esac
 }
@@ -618,9 +721,20 @@ if [[ -n "$CHECK_BASELINE" ]]; then
             echo "changed (same rank, non-regressing): $f baseline=$b current=$c"
         fi
     done
+    # S5f H3: a file ABSENT from the baseline must not launder a failing
+    # status (deleting a baseline line would otherwise hide a regression).
+    # Failing statuses on new files are FATAL; anything else is reported.
     for f in "${!cur_map[@]}"; do
         if [[ -z "${base_map[$f]+x}" ]]; then
-            echo "new file (not in baseline, not fatal): $f ${cur_map[$f]}"
+            case "${cur_map[$f]}" in
+                MISMATCH|DIFF|FAIL|LEAN_CRASH|LEAN_ERROR|TIMEOUT)
+                    echo "REGRESSION: new file (not in baseline) with failing status: $f ${cur_map[$f]}"
+                    regressions=$((regressions + 1))
+                    ;;
+                *)
+                    echo "new file (not in baseline, not fatal): $f ${cur_map[$f]}"
+                    ;;
+            esac
         fi
     done
 
@@ -648,6 +762,11 @@ if [[ $LEAN_CRASH_COUNT -gt 0 ]]; then
     echo -e "${RED}FAILED: $LEAN_CRASH_COUNT Lean crash(es)${NC}"
     FATAL=1
 fi
+if [[ $LEAN_ERROR_COUNT -gt 0 ]]; then
+    echo ""
+    echo -e "${RED}FAILED: $LEAN_ERROR_COUNT Lean exit/verdict inconsistenc(ies)${NC}"
+    FATAL=1
+fi
 if [[ $LEAN_TIMEOUT_COUNT -gt 0 ]]; then
     echo ""
     echo -e "${RED}FAILED: $LEAN_TIMEOUT_COUNT Lean timeout(s)${NC}"
@@ -656,6 +775,13 @@ fi
 if [[ $MISMATCH -gt 0 ]]; then
     echo ""
     echo -e "${RED}FAILED: $MISMATCH mismatch(es) with Cerberus${NC}"
+    FATAL=1
+fi
+# S5f H4: zero comparisons (every file skipped) is a failure, not a
+# vacuous pass.
+if [[ $TOTAL_COMPARE -eq 0 ]]; then
+    echo ""
+    echo -e "${RED}FAILED: zero comparisons happened (all files skipped) — vacuous run${NC}"
     FATAL=1
 fi
 exit $FATAL
