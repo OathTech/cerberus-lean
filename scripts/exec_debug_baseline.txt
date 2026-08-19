@@ -2,6 +2,10 @@
 # format: <file.c> <STATUS>   (see test_exec.sh header for the taxonomy)
 # corpus: tests/debug (ported verbatim from cerberus-lean-prototype, arc-4 S4b)
 # REPORTING baseline — obj-2 parity scoreboard; does NOT gate this arc.
+# 2026-08-19 arc-6 S2: varargs-01-ptr-valist.c DIFF → MATCH — same root
+#   cause and fix as the 5 coverage varargs files (CerbMem varargs memops
+#   were stubs; now mirror impl_mem.ml:2698-2764, prototype port
+#   Step.lean:1441-1513 attributed; see exec_coverage_baseline.txt note).
 # Per-category summary (regenerate via docs/2026-08-19_arc4-s4b-corpus-scoreboard.md recipe):
 #   alias      n=3   MATCH=1 UB_MATCH=2
 #   align      n=4   MATCH=4
@@ -17,7 +21,7 @@
 #   ub         n=3   CERB_INCONSISTENT=1 CERB_SKIP=1 UB_MATCH=1
 #   unseq      n=16  MATCH=5 UB_MATCH=11
 #   valid      n=5   CERB_SKIP=1 MATCH=2 UB_MATCH=2
-#   varargs    n=1   DIFF=1
+#   varargs    n=1   MATCH=1
 alias-01-int-to-struct.c UB_MATCH
 alias-02-simple-cast.c UB_MATCH
 alias-03-forced-misalign.c MATCH
@@ -107,4 +111,4 @@ valid-02-oob-deref.c UB_MATCH
 valid-03-oob-store.c UB_MATCH
 valid-04-exit-before-oob.c CERB_SKIP
 valid-05-ptr-validity-check.c MATCH
-varargs-01-ptr-valist.c DIFF
+varargs-01-ptr-valist.c MATCH

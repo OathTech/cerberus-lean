@@ -3,4 +3,5 @@
 003-calloc MATCH
 004-memset MATCH
 005-strlen MATCH
-006-strlen-snprintf DIFF
+006-strlen-snprintf MATCH
+007-va-user-vsnprintf MATCH

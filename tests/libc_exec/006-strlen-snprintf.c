@@ -1,11 +1,11 @@
 /* snprintf + strlen through libc (arc-6 S1).
-   RECORDED DIFF — varargs-classified, S2 scope: libc's snprintf does
+   S1 recorded this as DIFF — varargs-classified: libc's snprintf does
    va_start and hands the va_list id to the builtin vsnprintf, whose
-   formatted.lem:797 `Mem.va_list ap_idx` hits the CerbMem
-   vaStart/vaList STUBS (CerbMem.lean:1587-1591, register 15). The
-   Lean side panics "TODO: snprintf()" (formatted.lem:806) because the
-   stubbed va_list yields no arguments. Oracle: Specified(18).
-   Expected to flip to MATCH when S2 lands the varargs memops. */
+   formatted.lem:797 `Mem.va_list ap_idx` hit the CerbMem
+   vaStart/vaList STUBS (register 15); the Lean side panicked
+   "TODO: snprintf()" (formatted.lem:806) because the stubbed va_list
+   yielded no arguments. Arc-6 S2 implemented the varargs memops
+   (impl_mem.ml:2698-2764 mirror) — now MATCH: Specified(18). */
 #include <stdio.h>
 #include <string.h>
 int main(void) {

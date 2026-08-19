@@ -20,11 +20,15 @@
 # tests/libc_exec/baseline.txt (fail-closed both directions, the
 # uri-baseline pattern).
 #
-# KNOWN RECORDED DIFF (S1): 006-strlen-snprintf — varargs-classified
-# (libc snprintf va_start → builtin vsnprintf → formatted.lem:797
-# Mem.va_list → CerbMem vaStart/vaList stubs, register 15). Expected to
-# flip to MATCH in S2; the baseline records the DIFF so the flip shows
-# up as (deliberate) drift.
+# S1 KNOWN DIFF, CLOSED IN S2: 006-strlen-snprintf was the recorded
+# varargs frontier (libc snprintf va_start → builtin vsnprintf →
+# formatted.lem:797 Mem.va_list → CerbMem stubs, register 15). Arc-6 S2
+# implemented the five varargs memops in CerbMem mirroring
+# impl_mem.ml:2698-2764 (prototype port Step.lean:1441-1513 attributed);
+# 006 now MATCHes (Specified(18), the D10-predicted deliberate drift) —
+# baseline re-recorded 6/6 MATCH. 007-va-user-vsnprintf added in S2:
+# a USER variadic wrapper (va_start → va_list-as-value → libc vsnprintf)
+# composing memop-varargs with the Formatted path in one trace.
 #
 # Usage: ./scripts/test_libc_exec.sh [--record-baseline]
 set -uo pipefail

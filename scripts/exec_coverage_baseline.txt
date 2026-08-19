@@ -37,6 +37,24 @@
 #   now plain MATCH rows. io-004-puts stays .unsupported/CERB_SKIP —
 #   puts has no std.core proxy; OCaml --nolibc fails it too (same class
 #   as builtin-006-exit, survey §"the failing surface").
+# 2026-08-19 arc-6 S2 (varargs execution, register 15 FIXED): all 5
+#   varargs DIFF → MATCH (VAL:Specified(0) both sides, full sequence).
+#   Cause of the old DIFF: CerbMem vaStart/vaCopy/vaArg/vaEnd/vaList were
+#   stubs (vaArg returned a null pointer → Lean-side
+#   UB019_lvalue_not_an_object on the load, vs OCaml Specified). Now
+#   implemented on the MemState varargs/nextVarargsId fields, mirroring
+#   impl_mem.ml:2698-2764 (case structure per the prototype port,
+#   cerberus-lean-prototype Step.lean:1441-1513; MerrWIP strings per
+#   OCaml). Per-file:
+#     varargs-001-va-copy       DIFF → MATCH (va_copy fresh-id duplicate;
+#       copy's index advances independently of the original)
+#     varargs-002-va-end        DIFF → MATCH (va_end IntMap.remove mirror)
+#     varargs-003-va-multiple-types DIFF → MATCH (mixed int/long va_arg;
+#       no ctype check, mirroring OCaml's TODO at impl_mem.ml:2731)
+#     varargs-004-va-pass-through DIFF → MATCH (va_list id crosses a call
+#       boundary as a plain Prov_none integer value)
+#     varargs-005-va-sum        DIFF → MATCH (canonical start/arg-loop/end
+#       at three call sites; per-call fresh ids)
 # Per-category summary (regenerate via docs/2026-08-19_arc4-s4b-corpus-scoreboard.md recipe):
 #   arith3     n=6   MATCH=6
 #   builtin    n=6   CERB_SKIP=1 MATCH=5
@@ -58,7 +76,7 @@
 #   store2     n=5   MATCH=5
 #   struct     n=10  MATCH=10
 #   union3     n=7   CERB_SKIP=2 MATCH=5
-#   varargs    n=5   DIFF=5
+#   varargs    n=5   MATCH=5
 arith3-001-unsigned-div.c MATCH
 arith3-002-unsigned-mod.c MATCH
 arith3-003-unsigned-shl.c MATCH
@@ -253,8 +271,8 @@ union3-004-union-copy.c CERB_SKIP
 union3-005-union-return.c CERB_SKIP
 union3-006-union-memberof.c MATCH
 union3-007-nested-union.c MATCH
-varargs-001-va-copy.libc.c DIFF
-varargs-002-va-end.libc.c DIFF
-varargs-003-va-multiple-types.libc.c DIFF
-varargs-004-va-pass-through.libc.c DIFF
-varargs-005-va-sum.libc.c DIFF
+varargs-001-va-copy.libc.c MATCH
+varargs-002-va-end.libc.c MATCH
+varargs-003-va-multiple-types.libc.c MATCH
+varargs-004-va-pass-through.libc.c MATCH
+varargs-005-va-sum.libc.c MATCH

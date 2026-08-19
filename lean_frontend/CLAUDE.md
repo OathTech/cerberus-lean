@@ -203,9 +203,12 @@ Lem is pinned to `https://github.com/septract/lem-lean#mdd/lean-backend`.
   (`--libc`/`--libc-tu`, Main.loadLibc). uri corpus 10/10 vs oracle;
   test_core known-red 078-float-special FIXED (bodyless ProcDecl form)
   — tests/minimal test_core now 106/106.
-- Open (priced): varargs execution (register 15; recorded frontier:
-  tests/libc_exec/006-strlen-snprintf → formatted.lem:797 va_list →
-  CerbMem stubs), perf: quadratic allocation retention + LemLib Fmap
+- ✅ Varargs execution (arc-6 S2, register 15 FIXED): CerbMem
+  vaStart/vaCopy/vaArg/vaEnd/vaList mirror impl_mem.ml:2698-2764
+  (prototype port Step.lean:1441-1513 attributed) — 5 coverage varargs
+  DIFFs → MATCH, debug varargs-01 → MATCH, libc_exec 006 snprintf →
+  MATCH, new 007 va_*×Formatted interplay MATCH
+- Open (priced): perf: quadratic allocation retention + LemLib Fmap
   (arc-6 D6)
 
 ## Conventions

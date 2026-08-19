@@ -1582,13 +1582,109 @@ def reallocM (loc : CerbLocation.Loc) (tid : Nat) (align : IntegerValue)
 def updatePrefix (_ : prefix0 × MemValue) : memM Unit := memReturn ()
 def prefixOfPointer (_ : PointerValue) : memM (Option String) := memReturn none
 
-/-! ### Varargs -/
+/-! ### Varargs
 
-def vaStart (_ : List (ctype × PointerValue)) : memM IntegerValue := memReturn (integerIval 0)
-def vaCopy (_ : IntegerValue) : memM IntegerValue := memReturn (integerIval 0)
-def vaArg (_ : IntegerValue) (_ : ctype) : memM PointerValue := memReturn (nullPtrval (mkCtype Void0))
-def vaEnd (_ : IntegerValue) : memM Unit := memReturn ()
-def vaList (_ : Int) : memM (List (ctype × PointerValue)) := memReturn []
+Mirrors impl_mem.ml:2698-2764 (va_start/va_copy/va_arg/va_end/va_list) on
+the assoc-list `varargs` / `nextVarargsId` MemState fields (the faithful
+mirror of OCaml's `varargs: (int * (ctype * pointer_value) list) IntMap.t`
++ `next_varargs_id`, impl_mem.ml:490-491).
+
+PROTOTYPE PROVENANCE: the case structure follows the prototype's port
+(cerberus-lean-prototype/lean/CerbLean/Semantics/Step.lean:1441-1513, which
+carries the same impl_mem cites). Divergences from the prototype, resolved
+OCaml-ward:
+  * failures are `MerrWIP` mem_errors with OCaml's exact strings —
+    including the "not initiliased" (sic) spelling — via the shared
+    Concrete.fail path (impl_mem.ml:540-546 → failReason); the prototype
+    threw its own `typeError` strings.
+  * the map stays the MemState assoc list (keyed lookup only, iteration
+    never observed); the prototype used Std.HashMap in its own state.
+Like OCaml (impl_mem.ml:2731 `(* TODO: check type is compatible *)`) and
+the prototype alike, va_arg does NOT check the requested ctype against the
+stored one — adding a check would diverge from the oracle.
+
+The `IntMap.add`-on-existing-key updates (va_arg's index bump) are
+replace-in-place on the assoc list; fresh-id inserts (va_start/va_copy)
+are conses. -/
+
+/-- IntMap.add on the varargs assoc list: replace any existing binding for
+    `id`, else cons. -/
+private def varargsAdd (id : Int) (v : Int × List (ctype × PointerValue))
+    (m : List (Int × (Int × List (ctype × PointerValue)))) :
+    List (Int × (Int × List (ctype × PointerValue))) :=
+  if m.any (fun e => e.1 == id) then
+    m.map (fun e => if e.1 == id then (id, v) else e)
+  else
+    (id, v) :: m
+
+/-- va_start — impl_mem.ml:2698-2704: fresh id bound to (index 0, args),
+    next_varargs_id bumped, returns `IV (Prov_none, id)`. -/
+def vaStart (args : List (ctype × PointerValue)) : memM IntegerValue :=
+  ND fun st =>
+    let id := st.nextVarargsId
+    (NDactive (.IV .Prov_none id),
+     { st with varargs := varargsAdd id (0, args) st.varargs
+               nextVarargsId := st.nextVarargsId + 1 })
+
+/-- va_copy — impl_mem.ml:2706-2721: duplicate the (index, args) entry
+    under a fresh id (the copy's index advances independently). Only a
+    `Prov_none` integer is a valid va_list value. -/
+def vaCopy (va : IntegerValue) : memM IntegerValue :=
+  match va with
+  | .IV .Prov_none id =>
+    ND fun st =>
+      match st.varargs.find? (fun e => e.1 == id) with
+      | some (_, entry) =>
+        let id' := st.nextVarargsId
+        (NDactive (.IV .Prov_none id'),
+         { st with varargs := varargsAdd id' entry st.varargs
+                   nextVarargsId := st.nextVarargsId + 1 })
+      | none => (NDkilled (failReason (MerrWIP "va_copy: not initiliased")), st)
+  | _ => memFail (MerrWIP "va_copy: invalid va_list")
+
+/-- va_arg — impl_mem.ml:2723-2741: read the pointer at the current index
+    and ADVANCE the index (IntMap.add on the existing id). No ctype
+    compatibility check, mirroring OCaml's TODO at :2731. -/
+def vaArg (va : IntegerValue) (_ : ctype) : memM PointerValue :=
+  match va with
+  | .IV .Prov_none id =>
+    ND fun st =>
+      match st.varargs.find? (fun e => e.1 == id) with
+      | some (_, (i, args)) =>
+        match args[i.toNat]? with
+        | some (_, ptr) =>
+          (NDactive ptr,
+           { st with varargs := varargsAdd id (i + 1, args) st.varargs })
+        | none =>
+          (NDkilled (failReason (MerrWIP "va_arg: invalid number of arguments")), st)
+      | none => (NDkilled (failReason (MerrWIP "va_arg: not initiliased")), st)
+  | _ => memFail (MerrWIP "va_arg: invalid va_list")
+
+/-- va_end — impl_mem.ml:2743-2754: IntMap.remove of an initialised id. -/
+def vaEnd (va : IntegerValue) : memM Unit :=
+  match va with
+  | .IV .Prov_none id =>
+    ND fun st =>
+      if st.varargs.any (fun e => e.1 == id) then
+        (NDactive (), { st with varargs := st.varargs.filter (fun e => e.1 != id) })
+      else
+        (NDkilled (failReason (MerrWIP "va_end: not initiliased")), st)
+  | _ => memFail (MerrWIP "va_end: invalid va_list")
+
+/-- va_list — impl_mem.ml:2756-2764: retrieve the argument list for an id
+    (the variadic-call consumer, formatted.lem:797 vsnprintf). OCaml
+    `assert (n = 0)` ("not sure what happens with n <> 0"): the assert is
+    an oracle-side hard crash on a branch unreachable from generated code
+    (va_list is only applied to a fresh va_start id) — mirrored as a
+    MerrOther kill rather than a panic (same observable on the reachable
+    surface: none). -/
+def vaList (vaIdx : Int) : memM (List (ctype × PointerValue)) :=
+  ND fun st =>
+    match st.varargs.find? (fun e => e.1 == vaIdx) with
+    | some (_, (n, args)) =>
+      if n == 0 then (NDactive args, st)
+      else (NDkilled (Other (MerrOther "va_list: index <> 0 (OCaml assert, impl_mem.ml:2760)")), st)
+    | none => (NDkilled (failReason (MerrWIP "va_list")), st)
 
 /-! ### Misc -/
 
