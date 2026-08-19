@@ -461,3 +461,22 @@ build what xmlParseURI/chvalid-class targets need, generalize only what
 recurs; (4) "roll in existing structures" = steal iGPS/iRC11/Cosmo RULE
 SHAPES (views, protocols, objective invariants) as derived-rule designs
 over OUR base, not as imported developments.
+
+### Survey v2 (§4 public-pipeline snapshot) — adopted conclusions
+
+**[USER]** Operator: v2 "supports our strategy". **[AGENT]** Adopted into
+arc-7+ planning: (1) do NOT wait for any public Cerberus/iRC11
+integration — none exists; the adequacy bridge from the Lean Iris
+judgment to Cerberus behavior propositions is ours and is the program's
+novel contribution; (2) REUSE iris-lean (active, program_logic advanced)
+— already our bet; flagged dependency: atomic updates/triples not yet
+ported (matters for Compass/OMO-later, not for the Stage-3 base); (3)
+outside automation as PROOF PRODUCER (untrusted search + checked
+reconstruction) is both our doctrine and the field's direction
+(ICFP26 completeness line, ITP26 lazy automation for iris-lean); (4)
+bespoke targeted rules over our base is the only available route for
+SC/consume/full-C11 coverage (§4.6: formalization gaps, not semantic
+ones). Watch-list adopted: iris-lean maintainers, completeness
+collaboration, ISTA multi-language, REMS/ArchSem (also its WARNING re
+partial executions/UB soundness — our §7-obligations analogue), KAIST
+OMO line, VerCors-relaxed.
