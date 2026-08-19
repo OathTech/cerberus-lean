@@ -117,3 +117,17 @@ body-level elab diff + fixes the Unspecified(<ctype>) textual class);
 strictness on csmith output, not our side. Remaining this arc: cone
 worker (easy_update + driver2 sorryAx-free + arc-2 obligations), S5
 close-out + audits.
+
+**D12** — S1r boundary passed (verified: 103/106, zero mismatches, all
+gates green incl. the new driver2-sorryAx assertion; defacto_memory.lem
+has zero sorry target_reps). driver2 was ALREADY sorryAx-free — arc-3
+D9's observation predated the S1a BEq fix; the gate now locks it. The
+obligation test exposed effect-erasure instance #3 (with_tagDefs set/
+restore DCE'd; fixed by binding the pre-existing C-side atomic shim) —
+the pattern (runEffectful arc-1, set_tagDefs S3b, with_tagDefs S1r) goes
+to the S5 audit as a named checklist item: EVERY effectful Lean-side seam
+must be armored or natively sequenced, and "it built and ran" is proven
+insufficient three times now. Residue recorded, not gated:
+flexible_array_member's derived BEq elaborates against ctype sorry stubs
+(import-leaf limitation, §19) — inside easy_update's cone, OFF driver2's;
+C-tier backend item, next arc.

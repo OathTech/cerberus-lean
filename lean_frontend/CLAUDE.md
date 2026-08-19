@@ -177,8 +177,9 @@ Lem is pinned to `https://github.com/septract/lem-lean#mdd/lean-backend`.
 ## Remaining work
 
 ### Sorry target_reps (non-concurrency)
-- `defacto_memory.lem`: `easy_update_mem_value_aux`
-- (`runND_proxy` is implemented — hand-written `CerbND.runND`)
+- NONE (arc 4: `easy_update_mem_value_aux` un-sorried via a fuel declare;
+  `runND_proxy` is implemented — hand-written `CerbND.runND`).
+  Concurrency stubs remain the declared boundary.
 
 ### Pipeline status (2026-08-19, arc-4 post-S1a — see
 `docs/2026-08-19_arc4-s0-frontier.md`, "Post-S1a frontier")
