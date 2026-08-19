@@ -61,8 +61,13 @@ echo "libc exec differential (arc-6 S1: both sides load the C library)"
 echo "=================================================="
 
 # Pin drift-check + the 12 metadata cabs-jsons (libc_prep.sh fail-closed)
-mapfile -t LIBC_JSONS < <("$PROJECT_ROOT/scripts/libc_prep.sh" --jsons "$OUTPUT_DIR/libcjson") \
+# NOTE: not `mapfile -t X < <(cmd) || fail` — mapfile succeeds even when
+# the process-substituted cmd fails, so that guard is dead (arc-6 S5f
+# audit fix; S2-arc-5 pattern: capture rc explicitly, then split).
+libc_jsons_out=$("$PROJECT_ROOT/scripts/libc_prep.sh" --jsons "$OUTPUT_DIR/libcjson") \
     || fail "libc_prep.sh --jsons failed (pin drift or oracle missing)"
+[[ -n "$libc_jsons_out" ]] || fail "libc_prep.sh --jsons emitted no paths"
+mapfile -t LIBC_JSONS <<< "$libc_jsons_out"
 [[ ${#LIBC_JSONS[@]} -eq 12 ]] || fail "expected 12 libc metadata jsons, got ${#LIBC_JSONS[@]}"
 LIBC_ARGS=(--libc "$PROJECT_ROOT/tests/libc/libc.core")
 for j in "${LIBC_JSONS[@]}"; do LIBC_ARGS+=(--libc-tu "$j"); done

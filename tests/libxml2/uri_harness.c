@@ -29,7 +29,9 @@ static const char *tests[] = {
     "http://%zz/",                               /* invalid pct-escape in host */
     /* --- arc-6 S4 additions (RFC 3986 edge classes) ------------------- */
     "http://[::1]:8080/v6",                      /* IP-literal host (IPv6, §3.2.2) + port */
-    "http://@example.com:/x",                    /* empty userinfo + empty port (both legal-empty) */
+    "http://@example.com:/x",                    /* empty userinfo + empty port: RFC-3986-valid class,
+                                                    but libxml2's xmlParse3986Port requires >=1 digit
+                                                    (deps/libxml2/uri.c:341-365) — expected rc=1 both sides */
     "s:",                                        /* minimal scheme, empty path */
     "#",                                         /* lone empty fragment */
     "/a%2Fb%2fc",                                /* pct-encoded reserved '/', upper+lower hex */

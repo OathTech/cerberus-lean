@@ -324,9 +324,16 @@ join_seq() {   # <token-lines>  → single line joined with '|'
 
 # ---------------------------------------------------------------------------
 # Counters (prototype set) + new crash counter
+#
+# DISJOINT (arc-6 S5f audit fix): every processed file increments exactly
+# one status counter; in particular CERB_SKIP_COUNT counts only files
+# recorded CERB_SKIP, and CERB_INCONSISTENT_COUNT only files recorded
+# CERB_INCONSISTENT (pre-fix, CERB_INCONSISTENT files were double-counted
+# into the skip counter, so SUMMARY cerb_skip overstated by
+# cerb_inconsistent). The SUMMARY fields therefore sum to total.
 # ---------------------------------------------------------------------------
 CERBERUS_OK=0
-CERBERUS_FAIL=0
+CERB_SKIP_COUNT=0
 LEAN_OK=0
 LEAN_FAIL=0
 LEAN_TIMEOUT_COUNT=0
@@ -366,13 +373,13 @@ for c_file in "${TEST_FILES[@]}"; do
     cerberus_output=$(run_ocaml_exec "$c_file") || cerberus_shell_exit=$?
 
     if [[ $cerberus_shell_exit -eq 124 ]]; then
-        CERBERUS_FAIL=$((CERBERUS_FAIL + 1))
+        CERB_SKIP_COUNT=$((CERB_SKIP_COUNT + 1))
         echo "[$file_num/$total_to_test] CERB_SKIP $filename (Cerberus timeout)"
         record_status "$base_c" CERB_SKIP
         continue
     fi
     if [[ $cerberus_shell_exit -eq 139 ]] || [[ $cerberus_shell_exit -eq 134 ]] || [[ $cerberus_shell_exit -eq 137 ]]; then
-        CERBERUS_FAIL=$((CERBERUS_FAIL + 1))
+        CERB_SKIP_COUNT=$((CERB_SKIP_COUNT + 1))
         echo "[$file_num/$total_to_test] CERB_SKIP $filename (Cerberus crashed: $cerberus_shell_exit)"
         record_status "$base_c" CERB_SKIP
         continue
@@ -391,18 +398,18 @@ for c_file in "${TEST_FILES[@]}"; do
       || [[ "$cerberus_output" == *'value: "Unspecified'* ]]; then
         cerb_seq=$(extract_verdict_seq "$cerberus_output")
     elif [[ "$cerberus_output" == *'Error {'* ]]; then
-        CERBERUS_FAIL=$((CERBERUS_FAIL + 1))
+        CERB_SKIP_COUNT=$((CERB_SKIP_COUNT + 1))
         error_msg=$(echo "$cerberus_output" | grep -o 'msg: "[^"]*"' | head -1 | sed 's/msg: "\([^"]*\)"/\1/')
         echo "[$file_num/$total_to_test] CERB_SKIP $filename (error: $error_msg)"
         record_status "$base_c" CERB_SKIP
         continue
     elif [[ $cerberus_shell_exit -ne 0 ]]; then
-        CERBERUS_FAIL=$((CERBERUS_FAIL + 1))
+        CERB_SKIP_COUNT=$((CERB_SKIP_COUNT + 1))
         echo "[$file_num/$total_to_test] CERB_SKIP $filename (exit $cerberus_shell_exit)"
         record_status "$base_c" CERB_SKIP
         continue
     else
-        CERBERUS_FAIL=$((CERBERUS_FAIL + 1))
+        CERB_SKIP_COUNT=$((CERB_SKIP_COUNT + 1))
         echo "[$file_num/$total_to_test] CERB_SKIP $filename (could not extract return value)"
         record_status "$base_c" CERB_SKIP
         continue
@@ -418,7 +425,6 @@ for c_file in "${TEST_FILES[@]}"; do
     cerb_expected_exit=$(expected_exit_for "$cerberus_output")
     if [[ $cerberus_shell_exit -ne $cerb_expected_exit ]]; then
         CERB_INCONSISTENT_COUNT=$((CERB_INCONSISTENT_COUNT + 1))
-        CERBERUS_FAIL=$((CERBERUS_FAIL + 1))
         echo "[$file_num/$total_to_test] CERB_INCONSISTENT $filename: output parsed ($(join_seq "$cerb_seq")) but exit=$cerberus_shell_exit (expected $cerb_expected_exit)"
         record_status "$base_c" CERB_INCONSISTENT
         continue
@@ -428,7 +434,6 @@ for c_file in "${TEST_FILES[@]}"; do
     # --- Cabs JSON for the Lean pipeline -----------------------------------
     json_file="$OUTPUT_DIR/$filename.json"
     if ! run_cabs_json "$c_file" "$json_file"; then
-        CERBERUS_FAIL=$((CERBERUS_FAIL + 1))
         CERB_INCONSISTENT_COUNT=$((CERB_INCONSISTENT_COUNT + 1))
         echo "[$file_num/$total_to_test] CERB_INCONSISTENT $filename: exec succeeded but cabs-json failed"
         record_status "$base_c" CERB_INCONSISTENT
@@ -604,7 +609,10 @@ echo "============================================"
 echo ""
 echo "Cerberus execution:"
 echo "  Success:    $CERBERUS_OK"
-echo "  Skipped:    $CERBERUS_FAIL"
+echo "  Skipped:    $CERB_SKIP_COUNT"
+if [[ $CERB_INCONSISTENT_COUNT -gt 0 ]]; then
+    echo "  Inconsist:  $CERB_INCONSISTENT_COUNT (OCaml-side exit/verdict or cabs-json inconsistency — non-fatal, visible; DISJOINT from Skipped)"
+fi
 echo ""
 echo "Lean pipeline (of Cerberus successes):"
 echo "  Compared:   $LEAN_OK"
@@ -612,9 +620,6 @@ echo "  Failed:     $LEAN_FAIL"
 echo "  Crashed:    $LEAN_CRASH_COUNT"
 echo "  ExitErr:    $LEAN_ERROR_COUNT (exit code inconsistent with parsed verdict)"
 echo "  Timeout:    $LEAN_TIMEOUT_COUNT"
-if [[ $CERB_INCONSISTENT_COUNT -gt 0 ]]; then
-    echo "  CerbIncons: $CERB_INCONSISTENT_COUNT (OCaml-side exit/verdict inconsistency — non-fatal, visible)"
-fi
 echo ""
 echo "Comparison (of both successes):"
 echo "  Match:      $MATCH"
@@ -643,7 +648,7 @@ fi
 
 # One-line machine-grepable summary
 echo ""
-echo "SUMMARY: total=$file_num match=$MATCH ub_match=$UB_MATCH ub_diff=$UB_CODE_DIFF mismatch=$MISMATCH fail=$LEAN_FAIL crash=$LEAN_CRASH_COUNT lean_error=$LEAN_ERROR_COUNT timeout=$LEAN_TIMEOUT_COUNT cerb_skip=$((CERBERUS_FAIL)) cerb_inconsistent=$CERB_INCONSISTENT_COUNT"
+echo "SUMMARY: total=$file_num match=$MATCH ub_match=$UB_MATCH ub_diff=$UB_CODE_DIFF mismatch=$MISMATCH fail=$LEAN_FAIL crash=$LEAN_CRASH_COUNT lean_error=$LEAN_ERROR_COUNT timeout=$LEAN_TIMEOUT_COUNT cerb_skip=$CERB_SKIP_COUNT cerb_inconsistent=$CERB_INCONSISTENT_COUNT"
 
 # ---------------------------------------------------------------------------
 # Baseline write / check

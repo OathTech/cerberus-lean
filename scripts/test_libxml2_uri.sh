@@ -84,8 +84,13 @@ echo ""
 echo "libxml2 uri 5-TU harness (arc-6 S4 GATE, $N_URIS-URI corpus)"
 echo "=================================================="
 
-mapfile -t PREP < <("$PROJECT_ROOT/scripts/libxml2_prep.sh" uri.c) \
+# NOTE: not `mapfile -t X < <(cmd) || fail` — mapfile succeeds even when
+# the process-substituted cmd fails, so that guard is dead (arc-6 S5f
+# audit fix; S2-arc-5 pattern: capture rc explicitly, then split).
+prep_out=$("$PROJECT_ROOT/scripts/libxml2_prep.sh" uri.c) \
     || fail "libxml2_prep.sh failed"
+[[ -n "$prep_out" ]] || fail "libxml2_prep.sh emitted no args"
+mapfile -t PREP <<< "$prep_out"
 URI_TU="${PREP[${#PREP[@]}-1]}"
 FLAGS=("${PREP[@]:0:${#PREP[@]}-1}")
 LIBXML2_ROOT="$(dirname "$URI_TU")"
@@ -168,8 +173,12 @@ lean_nolibc_line=$(head -1 "$OUTPUT_DIR/lean.out")
 # The pinned libc dump (drift-checked by libc_prep.sh) + the 12 metadata
 # TU cabs-jsons, linked BEFORE the user TUs (Main.loadLibc / runPipeline;
 # mirrors main.ml:150-156 core_libraries-first order).
-mapfile -t LIBC_JSONS < <("$PROJECT_ROOT/scripts/libc_prep.sh" --jsons "$OUTPUT_DIR/libcjson") \
+# (rc captured explicitly — see the prep_out note above; a dead
+# `mapfile < <(cmd) || fail` guard never sees cmd's failure)
+libc_jsons_out=$("$PROJECT_ROOT/scripts/libc_prep.sh" --jsons "$OUTPUT_DIR/libcjson") \
     || fail "libc_prep.sh --jsons failed (pin drift or oracle missing)"
+[[ -n "$libc_jsons_out" ]] || fail "libc_prep.sh --jsons emitted no paths"
+mapfile -t LIBC_JSONS <<< "$libc_jsons_out"
 [[ ${#LIBC_JSONS[@]} -eq 12 ]] || fail "expected 12 libc metadata jsons, got ${#LIBC_JSONS[@]}"
 LIBC_ARGS=(--libc "$PROJECT_ROOT/tests/libc/libc.core")
 for j in "${LIBC_JSONS[@]}"; do LIBC_ARGS+=(--libc-tu "$j"); done

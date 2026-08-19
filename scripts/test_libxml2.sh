@@ -102,8 +102,13 @@ echo "libxml2 chvalid differential (arc-5 S3 exit criterion)"
 echo "=================================================="
 
 # --- 1. pins + prep args (fail-closed inside libxml2_prep.sh) ---------------
-mapfile -t PREP < <("$PROJECT_ROOT/scripts/libxml2_prep.sh" chvalid.c) \
+# NOTE: not `mapfile -t X < <(cmd) || fail` — mapfile succeeds even when
+# the process-substituted cmd fails, so that guard is dead (arc-6 S5f
+# audit fix; S2-arc-5 pattern: capture rc explicitly, then split).
+prep_out=$("$PROJECT_ROOT/scripts/libxml2_prep.sh" chvalid.c) \
     || fail "libxml2_prep.sh failed (pin drift or missing source)"
+[[ -n "$prep_out" ]] || fail "libxml2_prep.sh emitted no args"
+mapfile -t PREP <<< "$prep_out"
 [[ ${#PREP[@]} -ge 2 ]] || fail "libxml2_prep.sh emitted no args"
 CHVALID_TU="${PREP[${#PREP[@]}-1]}"
 FLAGS=("${PREP[@]:0:${#PREP[@]}-1}")
