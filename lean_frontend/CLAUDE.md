@@ -156,6 +156,7 @@ If you skip this step, Lake will compile the stale `generated/` copy and your ch
 | `scripts/common.sh` | Shared helpers (build, run, paths) |
 | `scripts/test_parse.sh` | Test Cabs JSON bridge on .c files |
 | `scripts/test_core.sh` | Test Core text parser: C → --pp core → Lean |
+| `scripts/test_multi_tu.sh` | Differential multi-TU linking: N .c linked by OCaml vs N cabs-jsons linked by the Lean pipeline (corpus: `tests/multi_tu/<name>/`) |
 | `scripts/test_cabs_json.sh` | Quick smoke test |
 
 ## Lem backend interaction

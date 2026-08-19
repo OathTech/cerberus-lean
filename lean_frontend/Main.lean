@@ -55,7 +55,11 @@ def loadCoreImpl (implFile : CoreParser.CoreFile) : impl :=
 
 /-! ## Helpers -/
 
-def readInput (args : List String) : IO String := do
+/-- Read all input files' contents. Multi-TU: one cabs-json per
+    translation unit, in command-line order — mirroring the OCaml
+    driver's `files` list (backend/driver/main.ml:153-156, the per-file
+    frontend fold). `--stdin` remains single-TU. -/
+def readInputs (args : List String) : IO (List String) := do
   match args with
   | ["--stdin"] => do
     let mut buf := ""
@@ -64,9 +68,13 @@ def readInput (args : List String) : IO String := do
       let line ← (← IO.getStdin).getLine
       if line.isEmpty then done_ := true
       else buf := buf ++ line
-    return buf
-  | [file] => IO.FS.readFile file
-  | _ => throw (IO.Error.userError "usage: cerberus-lean [--batch] [--stdin | FILE.json]")
+    return [buf]
+  | [] => throw (IO.Error.userError "usage: cerberus-lean [--batch] [--stdin | FILE.json ...]")
+  | files =>
+    if files.contains "--stdin" then
+      throw (IO.Error.userError "--stdin cannot be combined with file arguments")
+    else
+      files.mapM (fun f => IO.FS.readFile ⟨f⟩)
 
 def countDecls : List external_declaration → Nat × Nat × Nat
   | [] => (0, 0, 0)
@@ -235,21 +243,144 @@ def findRuntimeDir : IO String := do
       return dir
   throw (IO.Error.userError "cannot find runtime/libcore/std.core — set working directory to project root")
 
-/-- Run the pipeline. `batch` selects machine-parseable output (see above);
-    `ppCore` stops after translation and dumps the signature-level Core
-    summary (see `ppCoreSignature`); the default human-readable mode is
-    unchanged (and keeps its historical exit-code behavior: 0 even on
-    semantic stage failures). -/
-def runPipeline (runtimeDir : String) (batch : Bool) (ppCore : Bool) (tunit : translation_unit) : IO UInt8 := do
+/-- Per-TU frontend: desugar → typecheck → translate, under the TU's own
+    digest (set by the caller). Mirror of the OCaml per-file frontend
+    (`c_frontend` pipeline.ml:180-247 + `c_frontend_and_elaboration`
+    pipeline.ml:249-260), factored out of `runPipeline` for the multi-TU
+    loop (arc-5 S2). Returns `.error exitCode` on a stage failure (the
+    historical exit-code behavior of each failure branch is preserved:
+    batch mode 1, human mode 0).
+
+    EVALUATION ORDER: every pure stage call goes through
+    `CerberusFresh.forceIO` — the stages read the per-TU digest global
+    internally (Symbol.fresh → `digest ()`), and a plain pure `let` here
+    would be let-SUNK past the NEXT TU's `setDigestIO`, stamping this
+    TU's symbols with the wrong digest (see CerberusFresh.forceIO and
+    test/Unit/FreshIntTest.lean testDigestGlobal). -/
+def frontendTU (quiet : Bool)
+    (coreEvalStuff : Fmap String sym × fun_map Unit × impl)
+    (ailnames : Fmap String sym) (stdFunMap : fun_map Unit) (coreImpl : impl)
+    (tunit : translation_unit) : IO (Except UInt8 (file Unit)) := do
+  let say (s : String) : IO Unit := unless quiet do IO.println s
+  -- Desugar Cabs → AIL
+  say "  desugaring Cabs → AIL..."
+  let cnInit := empty_init
+  -- arc-2 S6: desugar is no longer reader-lifted — the constant-expression
+  -- driver (its only tagDefs consumer) now seeds itself lexically with the
+  -- translated definitions inside Mini_pipeline.run_const_expr_driver, so
+  -- the desugar chain takes no reader parameter at all.
+  let desugRes ← (CerberusFresh.forceIO
+    (fun () => desugar coreEvalStuff cnInit "main" tunit) : BaseIO _)
+  match desugRes with
+  | .Result (_, (mainSym, ailProg)) =>
+    say s!"  desugaring succeeded!"
+    say s!"    main symbol: {match mainSym with | some _ => "found" | none => "not found"}"
+    say s!"    declarations: {List.length ailProg.declarations}"
+    say s!"    function defs: {List.length ailProg.function_definitions}"
+    say s!"    tag defs: {List.length ailProg.tag_definitions}"
+
+    -- Step 2: Typecheck AIL (mirrors pipeline.ml:217-219)
+    say "  typechecking AIL..."
+    let ailInput := (mainSym, ailProg)
+    let tyRes ← (CerberusFresh.forceIO (fun () =>
+      to_exception (fun (p : CerbLocation.Loc × typing_error) => (p.1, AIL_TYPING p.2))
+        (annotate_program ailInput)) : BaseIO _)
+    match tyRes with
+    | .Exception (loc, cause) =>
+      if quiet then
+        -- OCaml parity: typing-level UB gets a batch Undefined line (main.ml runM)
+        match cause with
+        | .AIL_TYPING (.TError_UndefinedBehaviour ub) =>
+          IO.println s!"Undefined \{ub: \"{stringFromUndefined_behaviour ub}\", stderr: \"\", loc: \"{CerbLocation.stringFromLocation loc}\"}"
+        | _ =>
+          IO.println s!"Error \{msg: \"typechecking failed at {CerbLocation.stringFromLocation loc}\"}"
+        return .error 1
+      else
+        IO.println s!"  typechecking failed!"
+        IO.println s!"    at: {CerbLocation.stringFromLocation loc}"
+        return .error 0
+    | .Result (typedProg, _annots) =>
+      say s!"  typechecking succeeded!"
+
+      -- Step 3: Translate AIL → Core
+      say "  translating AIL → Core..."
+      -- Per-TU tag reset: pipeline.ml:253 ("the elaboration sets the
+      -- struct/union tag definitions, so to allow the frontend to be
+      -- used more than once, we need to do reset here").
+      -- NOTE: must use the BaseIO variant here: the pure wrapper's result is
+      -- unused, and `let _ := CerbTags.reset_tagDefs ()` gets dead-code
+      -- eliminated (found in arc-4 S3b: the sibling set_tagDefs below was
+      -- being dropped, leaving the global EMPTY throughout execution).
+      let _ ← (CerbTags.resetTagDefsIO () : BaseIO Unit)
+      let callconv := Normal_callconv
+      let coreFile ← (CerberusFresh.forceIO (fun () =>
+        translate (ailnames, stdFunMap) callconv coreImpl typedProg) : BaseIO _)
+      say s!"  translation succeeded!"
+      say s!"    main: {match coreFile.main with | some _ => "found" | none => "not found"}"
+      say s!"    funs: {List.length coreFile.funs}"
+      say s!"    globs: {List.length coreFile.globs}"
+      return .ok coreFile
+  | .Exception (loc, cause) =>
+    if quiet then
+      -- OCaml parity (main.ml runM): desugar-level UB gets a batch Undefined line
+      match cause with
+      | .DESUGAR (.Desugar_UndefinedBehaviour ub) =>
+        IO.println s!"Undefined \{ub: \"{stringFromUndefined_behaviour ub}\", stderr: \"\", loc: \"{CerbLocation.stringFromLocation loc}\"}"
+      | _ =>
+        IO.println s!"Error \{msg: \"desugaring failed at {CerbLocation.stringFromLocation loc}\"}"
+      return .error 1
+    else
+      IO.println s!"  desugaring failed!"
+      IO.println s!"    at: {CerbLocation.stringFromLocation loc}"
+      -- Print cause details
+      match cause with
+      | .DESUGAR (.Desugar_ConstraintViolation v) => IO.println s!"    cause: DESUGAR ConstraintViolation"
+      | .DESUGAR (.Desugar_UndefinedBehaviour ub) =>
+        IO.println s!"    cause: DESUGAR UndefinedBehaviour: {stringFromUndefined_behaviour ub}"
+      | .DESUGAR (.Desugar_MiscViolation _) => IO.println s!"    cause: DESUGAR MiscViolation"
+      | .DESUGAR (.Desugar_NotYetSupported s) => IO.println s!"    cause: DESUGAR NotYetSupported: {s}"
+      | .DESUGAR (.Desugar_NeverSupported s) => IO.println s!"    cause: DESUGAR NeverSupported: {s}"
+      | .DESUGAR (.Desugar_agnosticFailure s) => IO.println s!"    cause: DESUGAR agnosticFailure: {s}"
+      | .DESUGAR .Desugar_illtypedIntegerConstant => IO.println s!"    cause: DESUGAR illtypedIntegerConstant"
+      | .DESUGAR (.Desugar_TODO s) => IO.println s!"    cause: DESUGAR TODO: {s}"
+      | .DESUGAR _ => IO.println s!"    cause: DESUGAR (other)"
+      | .AIL_TYPING _ => IO.println s!"    cause: AIL_TYPING"
+      | .CPP _ => IO.println s!"    cause: CPP"
+      | _ => IO.println s!"    cause: (other)"
+      return .error 0
+
+/-- Run the pipeline over one or more translation units (multi-TU, arc-5
+    S2). `tunits` carries (cabs-json content, parsed Cabs) per TU in
+    command-line order. Per TU: set the TU digest, then
+    desugar→typecheck→translate (`frontendTU`); the resulting Core files
+    are linked with the generated `Core_linking.link` exactly as the
+    OCaml driver does (backend/driver/main.ml:278-281), tag definitions
+    are taken from the LINKED file (main.ml:284-285), and execution
+    proceeds as before. Single-TU behavior is byte-identical: the chatter
+    order is preserved and `link [f]` folds over the empty tail,
+    returning `f` unchanged (core_linking.lem:309-316).
+
+    `batch` selects machine-parseable output (see above); `ppCore` stops
+    after linking and dumps the signature-level Core summary (see
+    `ppCoreSignature`); the default human-readable mode is unchanged (and
+    keeps its historical exit-code behavior: 0 even on semantic stage
+    failures). -/
+def runPipeline (runtimeDir : String) (batch : Bool) (ppCore : Bool)
+    (tunits : List (String × translation_unit)) : IO UInt8 := do
   -- Progress chatter: human mode only (batch and pp-core keep stdout clean)
   let quiet := batch || ppCore
   let say (s : String) : IO Unit := unless quiet do IO.println s
-  let (TUnit decls) := tunit
-  let (funcs, declCount, other) := countDecls decls
-  say s!"cerberus-lean: parsed {List.length decls} external declarations"
-  say s!"  functions: {funcs}, declarations: {declCount}, other: {other}"
+  -- Per-TU parse summary — kept ABOVE the stdlib load so single-TU chatter
+  -- stays byte-identical to the pre-multi-TU driver
+  for (_, tunit) in tunits do
+    let (TUnit decls) := tunit
+    let (funcs, declCount, other) := countDecls decls
+    say s!"cerberus-lean: parsed {List.length decls} external declarations"
+    say s!"  functions: {funcs}, declarations: {declCount}, other: {other}"
 
-  -- Load core stdlib
+  -- Load core stdlib (once, before any TU digest is set — std.core symbols
+  -- are interned with digest "" by CoreParser.mkSym, matching OCaml where
+  -- the prelude parse happens before any Cerb_fresh.set_digest)
   say "  loading core stdlib..."
   let stdContent ← IO.FS.readFile (runtimeDir ++ "/std.core")
   let stdFile ← match CoreParser.parseFile stdContent with
@@ -276,178 +407,165 @@ def runPipeline (runtimeDir : String) (batch : Bool) (ppCore : Bool) (tunit : tr
   let coreEvalStuff : Fmap String sym × fun_map Unit × impl :=
     (ailnames, stdFunMap, coreImpl)
 
-  -- Desugar Cabs → AIL
-  say "  desugaring Cabs → AIL..."
-  let cnInit := empty_init
-  -- arc-2 S6: desugar is no longer reader-lifted — the constant-expression
-  -- driver (its only tagDefs consumer) now seeds itself lexically with the
-  -- translated definitions inside Mini_pipeline.run_const_expr_driver, so
-  -- the desugar chain takes no reader parameter at all.
-  match desugar coreEvalStuff cnInit "main" tunit with
-  | .Result (_, (mainSym, ailProg)) =>
-    say s!"  desugaring succeeded!"
-    say s!"    main symbol: {match mainSym with | some _ => "found" | none => "not found"}"
-    say s!"    declarations: {List.length ailProg.declarations}"
-    say s!"    function defs: {List.length ailProg.function_definitions}"
-    say s!"    tag defs: {List.length ailProg.tag_definitions}"
+  -- Per-TU frontend fold — mirror of backend/driver/main.ml:153-156:
+  --   except_foldlM (fun core_files (is_lib, file) ->
+  --     frontend ... file core_std >>= fun core_file ->
+  --     return (core_file::core_files)) [] ... files
+  -- The accumulator is REVERSE-consed (first file ends up LAST) and is
+  -- handed to Core_linking.link as-is — mirrored exactly here. Failures
+  -- short-circuit in file order, like except_foldlM.
+  let mut coreFiles : List (file Unit) := []
+  for (content, tunit) in tunits do
+    -- Per-TU digest, before the TU's frontend stages — mirror of
+    -- `Cerb_fresh.set_digest filename` at the top of the OCaml c_frontend
+    -- (backend/common/pipeline.ml:181; ref cell util/cerb_fresh.ml:7-10).
+    -- We digest the cabs-json content we were handed (the Lean pipeline
+    -- never sees the .c file — divergence recorded in CerberusFresh.lean).
+    -- Placement note: OCaml sets the digest before its C PARSE; our Cabs
+    -- deserialization already happened in main — harmless, Cabs carries
+    -- no Symbol.sym, so no symbol is created before the set.
+    -- BaseIO variant: a discarded pure call is dead-code-eliminated
+    -- (CerbTags set/reset pattern, arc-4 S3b).
+    let _ ← (CerberusFresh.setDigestIO (CerberusFresh.md5Hex content) : BaseIO Unit)
+    match ← frontendTU quiet coreEvalStuff ailnames stdFunMap coreImpl tunit with
+    | .error code => return code
+    | .ok coreFile => coreFiles := coreFile :: coreFiles
 
-    -- Step 2: Typecheck AIL (mirrors pipeline.ml:217-219)
-    say "  typechecking AIL..."
-    let ailInput := (mainSym, ailProg)
-    match to_exception (fun (p : CerbLocation.Loc × typing_error) => (p.1, AIL_TYPING p.2))
-            (annotate_program ailInput) with
-    | .Exception (loc, cause) =>
-      if quiet then
-        -- OCaml parity: typing-level UB gets a batch Undefined line (main.ml runM)
-        match cause with
-        | .AIL_TYPING (.TError_UndefinedBehaviour ub) =>
-          IO.println s!"Undefined \{ub: \"{stringFromUndefined_behaviour ub}\", stderr: \"\", loc: \"{CerbLocation.stringFromLocation loc}\"}"
-        | _ =>
-          IO.println s!"Error \{msg: \"typechecking failed at {CerbLocation.stringFromLocation loc}\"}"
-        return 1
-      else
-        IO.println s!"  typechecking failed!"
-        IO.println s!"    at: {CerbLocation.stringFromLocation loc}"
-        return 0
-    | .Result (typedProg, _annots) =>
-      say s!"  typechecking succeeded!"
-
-      -- Step 3: Translate AIL → Core
-      say "  translating AIL → Core..."
-      -- NOTE: must use the BaseIO variant here: the pure wrapper's result is
-      -- unused, and `let _ := CerbTags.reset_tagDefs ()` gets dead-code
-      -- eliminated (found in arc-4 S3b: the sibling set_tagDefs below was
-      -- being dropped, leaving the global EMPTY throughout execution).
-      let _ ← (CerbTags.resetTagDefsIO () : BaseIO Unit)
-      let callconv := Normal_callconv
-      let coreFile := translate (ailnames, stdFunMap) callconv coreImpl typedProg
-      say s!"  translation succeeded!"
-      say s!"    main: {match coreFile.main with | some _ => "found" | none => "not found"}"
-      say s!"    funs: {List.length coreFile.funs}"
-      say s!"    globs: {List.length coreFile.globs}"
-
-      -- --pp-core: signature-level dump of the translated Core, then stop
-      -- (no execution). See the ppCoreSignature module note for the
-      -- granularity limitation.
-      if ppCore then
-        ppCoreSignature coreFile
-        return 0
-
-      -- Step 4: Prepare for execution (mirrors driver_ocaml.ml)
-      say "  preparing for execution..."
-      let runFile := convert_file coreFile
-      -- BaseIO variant — a discarded pure `set_tagDefs` call is dead-code
-      -- eliminated (see reset above); CerbMem's struct/union layout
-      -- (sizeof/alignof/offsetsof) reads this global during execution.
-      let _ ← (CerbTags.setTagDefsIO runFile.tagDefs : BaseIO Unit)
-      let fsState := CerbFS.fs_initial_state
-      let drSt := initial_driver_state runFile fsState
-      say s!"  executing Core..."
-      -- Reader seed: execution-slice entry; tagDefs are fully registered by now
-      -- (Main itself set them above via CerbTags.setTagDefsIO), so the live
-      -- global is the correct value.
-      let driverAction := drive (CerbTags.tagDefs ()) false runFile ["cmdname"]
-      let execs := CerbND.runND driverAction drSt
-      if batch then
-        if execs.length == 0 then
-          IO.println "Error {msg: \"cerberus-lean: runND returned no executions\"}"
-          return 1
-        let multiple := execs.length > 1
-        let mut idx := 0
-        for (status, _trace, _finalSt) in execs do
-          if multiple then IO.println s!"EXECUTION {idx}:"
-          match status with
-          | .Active result =>
-            IO.println s!"Defined \{value: \"{batchExitValue result.dres_core_value}\", stdout: \"{batchEscape result.dres_stdout}\", stderr: \"{batchEscape result.dres_stderr}\", blocked: \"{if result.dres_blocked then "true" else "false"}\"}"
-          | .Killed _st reason =>
-            match reason with
-            | .Undef0 _loc [] =>
-              -- OCaml batch_drive parity: empty UB list is an Error
-              IO.println "Error {msg: \"[empty UB, probably a cerberus BUG]\"}"
-            | .Undef0 loc (ub :: _) =>
-              -- OCaml batch_drive parity: first UB only
-              IO.println s!"Undefined \{ub: \"{stringFromUndefined_behaviour ub}\", stderr: \"\", loc: \"{CerbLocation.stringFromLocation loc}\"}"
-            | .Error0 _loc msg =>
-              IO.println s!"Error \{msg: \"{msg}\"}"
-            | .Other err =>
-              IO.println s!"Error \{msg: \"{driverErrorBatchMsg err}\"}"
-          idx := idx + 1
-        -- Exit code per OCaml main.ml runM: single Defined → 0,
-        -- single Undefined/Error → 1, multiple executions → 0.
-        match execs with
-        | [(.Active _, _, _)] => return 0
-        | [(.Killed _ _, _, _)] => return 1
-        | _ => return 0
-      else
-        IO.println s!"  executions: {execs.length}"
-        for (status, _trace, _finalSt) in execs do
-          match status with
-          | .Active result =>
-            IO.println s!"  result: Active"
-            match result.dres_core_value with
-            | Vloaded (LVspecified (OVinteger ival)) =>
-              match eval_integer_value ival with
-              | some n => IO.println s!"  return value: {n}"
-              | none => IO.println s!"  return value: (could not evaluate)"
-            | v => IO.println s!"  return value: (non-integer)"
-          | .Killed _st reason =>
-            match reason with
-            | .Undef0 loc ubs =>
-              IO.println s!"  result: Killed (undefined behaviour)"
-              IO.println s!"    at: {CerbLocation.stringFromLocation loc}"
-              for ub in ubs do
-                IO.println s!"    ub: {stringFromUndefined_behaviour ub}"
-            | .Error0 loc msg =>
-              IO.println s!"  result: Killed (error: {msg})"
-              IO.println s!"    at: {CerbLocation.stringFromLocation loc}"
-            | .Other err =>
-              match err with
-              | .DErr_core_run cause =>
-                let causeStr := match cause with
-                  | .Illformed_program s => s!"Illformed_program: {s}"
-                  | .Found_empty_stack s => s!"Found_empty_stack: {s}"
-                  | .Reached_end_of_proc => "Reached_end_of_proc"
-                  | .Unknown_impl => "Unknown_impl"
-                  | .Unresolved_symbol loc (Symbol _ n _) =>
-                    s!"Unresolved_symbol: Symbol(_, {n}, _) at {CerbLocation.stringFromLocation loc}"
-                IO.println s!"  result: Killed (core_run error: {causeStr})"
-              | .DErr_memory merr =>
-                match merr with
-                | .MerrInternal s => IO.println s!"  result: Killed (memory internal: {s})"
-                | .MerrOther s => IO.println s!"  result: Killed (memory other: {s})"
-                | .MerrOutsideLifetime s => IO.println s!"  result: Killed (outside lifetime: {s})"
-                | .MerrAccess _ _ => IO.println s!"  result: Killed (memory access error)"
-                | _ => IO.println s!"  result: Killed (memory error)"
-              | .DErr_concurrency s => IO.println s!"  result: Killed (concurrency: {s})"
-              | .DErr_other s => IO.println s!"  result: Killed (other: {s})"
-        return 0
+  -- Link the translated Core files — main.ml:278-281:
+  --   prelude >>= main >>= begin function
+  --     | [] -> assert false | f::fs -> Core_linking.link (f::fs) end
+  -- link = List.foldl (link_aux) over the reverse-consed list
+  -- (core_linking.lem:309-316; extern-map merge by identifier with
+  -- tentative-definition resolution, link_extern core_linking.lem:10-46).
+  -- The run-time cross-TU call remap `core_extern =
+  -- Core_linking.create_extern_symmap file` (core_linking.lem:319-328) is
+  -- already live in the generated driver (driver.lem:1512).
+  match link coreFiles with
   | .Exception (loc, cause) =>
+    let msg := match cause with
+      | CORE_LINKING (DuplicateExternalName (Identifier _ str)) =>
+        s!"linking failed: duplicate external name: {str}"
+      | CORE_LINKING DuplicateMain => "linking failed: duplicate main"
+      | CORE_LINKING IncompatibleCallingConvention =>
+        "linking failed: incompatible calling convention"
+      | _ => "linking failed"
     if quiet then
-      -- OCaml parity (main.ml runM): desugar-level UB gets a batch Undefined line
-      match cause with
-      | .DESUGAR (.Desugar_UndefinedBehaviour ub) =>
-        IO.println s!"Undefined \{ub: \"{stringFromUndefined_behaviour ub}\", stderr: \"\", loc: \"{CerbLocation.stringFromLocation loc}\"}"
-      | _ =>
-        IO.println s!"Error \{msg: \"desugaring failed at {CerbLocation.stringFromLocation loc}\"}"
+      -- deviation note (as for other frontend failures): OCaml prints
+      -- linking errors via Pp_errors on stderr only (main.ml runM
+      -- Exception branch); we emit a batch Error line on stdout —
+      -- fail-closed either way, exit 1 both sides
+      IO.println s!"Error \{msg: \"{msg} at {CerbLocation.stringFromLocation loc}\"}"
       return 1
     else
-      IO.println s!"  desugaring failed!"
+      IO.println s!"  linking failed!"
       IO.println s!"    at: {CerbLocation.stringFromLocation loc}"
-      -- Print cause details
-      match cause with
-      | .DESUGAR (.Desugar_ConstraintViolation v) => IO.println s!"    cause: DESUGAR ConstraintViolation"
-      | .DESUGAR (.Desugar_UndefinedBehaviour ub) =>
-        IO.println s!"    cause: DESUGAR UndefinedBehaviour: {stringFromUndefined_behaviour ub}"
-      | .DESUGAR (.Desugar_MiscViolation _) => IO.println s!"    cause: DESUGAR MiscViolation"
-      | .DESUGAR (.Desugar_NotYetSupported s) => IO.println s!"    cause: DESUGAR NotYetSupported: {s}"
-      | .DESUGAR (.Desugar_NeverSupported s) => IO.println s!"    cause: DESUGAR NeverSupported: {s}"
-      | .DESUGAR (.Desugar_agnosticFailure s) => IO.println s!"    cause: DESUGAR agnosticFailure: {s}"
-      | .DESUGAR .Desugar_illtypedIntegerConstant => IO.println s!"    cause: DESUGAR illtypedIntegerConstant"
-      | .DESUGAR (.Desugar_TODO s) => IO.println s!"    cause: DESUGAR TODO: {s}"
-      | .DESUGAR _ => IO.println s!"    cause: DESUGAR (other)"
-      | .AIL_TYPING _ => IO.println s!"    cause: AIL_TYPING"
-      | .CPP _ => IO.println s!"    cause: CPP"
-      | _ => IO.println s!"    cause: (other)"
+      IO.println s!"    cause: {msg}"
+      return 0
+  | .Result coreFile =>
+    -- chatter only for a real multi-TU link: single-file human-mode
+    -- output stays byte-identical to the pre-multi-TU driver
+    if tunits.length != 1 then
+      say s!"  linking succeeded! ({tunits.length} translation units)"
+    -- Tag definitions from the LINKED file — main.ml:284-285:
+    --   let () = Tags.reset_tagDefs () in
+    --   let () = Tags.set_tagDefs core_file.tagDefs in
+    let _ ← (CerbTags.resetTagDefsIO () : BaseIO Unit)
+    let _ ← (CerbTags.setTagDefsIO coreFile.tagDefs : BaseIO Unit)
+
+    -- --pp-core: signature-level dump of the (linked) Core, then stop
+    -- (no execution). See the ppCoreSignature module note for the
+    -- granularity limitation.
+    if ppCore then
+      ppCoreSignature coreFile
+      return 0
+
+    -- Step 4: Prepare for execution (mirrors driver_ocaml.ml)
+    say "  preparing for execution..."
+    let runFile := convert_file coreFile
+    -- BaseIO variant — a discarded pure `set_tagDefs` call is dead-code
+    -- eliminated (see reset above); CerbMem's struct/union layout
+    -- (sizeof/alignof/offsetsof) reads this global during execution.
+    let _ ← (CerbTags.setTagDefsIO runFile.tagDefs : BaseIO Unit)
+    let fsState := CerbFS.fs_initial_state
+    let drSt := initial_driver_state runFile fsState
+    say s!"  executing Core..."
+    -- Reader seed: execution-slice entry; tagDefs are fully registered by now
+    -- (Main itself set them above via CerbTags.setTagDefsIO), so the live
+    -- global is the correct value.
+    let driverAction := drive (CerbTags.tagDefs ()) false runFile ["cmdname"]
+    let execs := CerbND.runND driverAction drSt
+    if batch then
+      if execs.length == 0 then
+        IO.println "Error {msg: \"cerberus-lean: runND returned no executions\"}"
+        return 1
+      let multiple := execs.length > 1
+      let mut idx := 0
+      for (status, _trace, _finalSt) in execs do
+        if multiple then IO.println s!"EXECUTION {idx}:"
+        match status with
+        | .Active result =>
+          IO.println s!"Defined \{value: \"{batchExitValue result.dres_core_value}\", stdout: \"{batchEscape result.dres_stdout}\", stderr: \"{batchEscape result.dres_stderr}\", blocked: \"{if result.dres_blocked then "true" else "false"}\"}"
+        | .Killed _st reason =>
+          match reason with
+          | .Undef0 _loc [] =>
+            -- OCaml batch_drive parity: empty UB list is an Error
+            IO.println "Error {msg: \"[empty UB, probably a cerberus BUG]\"}"
+          | .Undef0 loc (ub :: _) =>
+            -- OCaml batch_drive parity: first UB only
+            IO.println s!"Undefined \{ub: \"{stringFromUndefined_behaviour ub}\", stderr: \"\", loc: \"{CerbLocation.stringFromLocation loc}\"}"
+          | .Error0 _loc msg =>
+            IO.println s!"Error \{msg: \"{msg}\"}"
+          | .Other err =>
+            IO.println s!"Error \{msg: \"{driverErrorBatchMsg err}\"}"
+        idx := idx + 1
+      -- Exit code per OCaml main.ml runM: single Defined → 0,
+      -- single Undefined/Error → 1, multiple executions → 0.
+      match execs with
+      | [(.Active _, _, _)] => return 0
+      | [(.Killed _ _, _, _)] => return 1
+      | _ => return 0
+    else
+      IO.println s!"  executions: {execs.length}"
+      for (status, _trace, _finalSt) in execs do
+        match status with
+        | .Active result =>
+          IO.println s!"  result: Active"
+          match result.dres_core_value with
+          | Vloaded (LVspecified (OVinteger ival)) =>
+            match eval_integer_value ival with
+            | some n => IO.println s!"  return value: {n}"
+            | none => IO.println s!"  return value: (could not evaluate)"
+          | v => IO.println s!"  return value: (non-integer)"
+        | .Killed _st reason =>
+          match reason with
+          | .Undef0 loc ubs =>
+            IO.println s!"  result: Killed (undefined behaviour)"
+            IO.println s!"    at: {CerbLocation.stringFromLocation loc}"
+            for ub in ubs do
+              IO.println s!"    ub: {stringFromUndefined_behaviour ub}"
+          | .Error0 loc msg =>
+            IO.println s!"  result: Killed (error: {msg})"
+            IO.println s!"    at: {CerbLocation.stringFromLocation loc}"
+          | .Other err =>
+            match err with
+            | .DErr_core_run cause =>
+              let causeStr := match cause with
+                | .Illformed_program s => s!"Illformed_program: {s}"
+                | .Found_empty_stack s => s!"Found_empty_stack: {s}"
+                | .Reached_end_of_proc => "Reached_end_of_proc"
+                | .Unknown_impl => "Unknown_impl"
+                | .Unresolved_symbol loc (Symbol _ n _) =>
+                  s!"Unresolved_symbol: Symbol(_, {n}, _) at {CerbLocation.stringFromLocation loc}"
+              IO.println s!"  result: Killed (core_run error: {causeStr})"
+            | .DErr_memory merr =>
+              match merr with
+              | .MerrInternal s => IO.println s!"  result: Killed (memory internal: {s})"
+              | .MerrOther s => IO.println s!"  result: Killed (memory other: {s})"
+              | .MerrOutsideLifetime s => IO.println s!"  result: Killed (outside lifetime: {s})"
+              | .MerrAccess _ _ => IO.println s!"  result: Killed (memory access error)"
+              | _ => IO.println s!"  result: Killed (memory error)"
+            | .DErr_concurrency s => IO.println s!"  result: Killed (concurrency: {s})"
+            | .DErr_other s => IO.println s!"  result: Killed (other: {s})"
       return 0
 
 /-! ## Entry point -/
@@ -511,27 +629,28 @@ def main (args : List String) : IO Unit := do
     return
 
   if (batchMode || ppCoreMode) && restArgs.isEmpty then
-    IO.eprintln "usage: cerberus-lean [--batch|--pp-core] FILE.json"
+    IO.eprintln "usage: cerberus-lean [--batch|--pp-core] FILE.json [FILE2.json ...]"
     IO.Process.exit 1
 
-  -- Default: parse Cabs JSON and run pipeline
+  -- Default: parse Cabs JSON (one per translation unit) and run pipeline.
+  -- All cabs-jsons are deserialized up front (fail-fast on any parse
+  -- error); the OCaml driver's per-file C PARSE is interleaved with its
+  -- frontend fold (main.ml:153-156), but our deserialization is the
+  -- Lean-side half of the --cabs-json bridge, not the C parse — its
+  -- placement is an artifact of the split and carries no symbol state
+  -- (Cabs has no Symbol.sym). Per-TU digests are set inside
+  -- runPipeline's frontend loop (pipeline.ml:181 mirror).
   let runtimeDir ← findRuntimeDir
-  let input ← readInput restArgs
-  -- Per-TU digest, set before the TU is parsed/desugared — mirror of
-  -- `Cerb_fresh.set_digest filename` at the top of the OCaml c_frontend
-  -- (backend/common/pipeline.ml:181; ref cell util/cerb_fresh.ml:7-10).
-  -- We digest the cabs-json content we were handed (the Lean pipeline
-  -- never sees the .c file — divergence recorded in CerberusFresh.lean).
-  -- BaseIO variant: a discarded pure call is dead-code-eliminated
-  -- (CerbTags set/reset pattern, arc-4 S3b).
-  let _ ← (CerberusFresh.setDigestIO (CerberusFresh.md5Hex input) : BaseIO Unit)
-  match CabsImport.parseJson input with
-  | .error e =>
-    if batchMode then
-      IO.println s!"Error \{msg: \"cabs-json parse error: {batchEscape e}\"}"
-    IO.eprintln s!"cerberus-lean: parse error: {e}"
-    IO.Process.exit 1
-  | .ok tunit =>
-    let code ← runPipeline runtimeDir batchMode ppCoreMode tunit
-    if code != 0 then
-      IO.Process.exit code
+  let contents ← readInputs restArgs
+  let mut tunits : List (String × translation_unit) := []
+  for content in contents do
+    match CabsImport.parseJson content with
+    | .error e =>
+      if batchMode then
+        IO.println s!"Error \{msg: \"cabs-json parse error: {batchEscape e}\"}"
+      IO.eprintln s!"cerberus-lean: parse error: {e}"
+      IO.Process.exit 1
+    | .ok tunit => tunits := tunits ++ [(content, tunit)]
+  let code ← runPipeline runtimeDir batchMode ppCoreMode tunits
+  if code != 0 then
+    IO.Process.exit code

@@ -430,3 +430,69 @@ Probes used `scratch-s0/` in the worktree (cabs-json dumps, 2-TU
 probe .c files); deleted before commit per doctrine. test_unit.sh run
 on the untouched tree before commit: 4/4 green (purity/cones/totality
 clean).
+
+## S2 addendum — multi-TU symbol-identity invariant (as built, 2026-08-19)
+
+Written per the S2 charter after landing real digests (native/md5.c +
+CerberusFresh) and real linking (Main.lean per-TU loop +
+`Core_linking.link`). Symbol identity is the pair `(digest, nat)` —
+`symbolEquality`/`symbol_compare` ignore the description
+(symbol.lem:255-270). Three id streams exist, and the invariant is that
+their `(digest, nat)` domains never collide:
+
+| stream | digest | nat range | restart behavior |
+|---|---|---|---|
+| desugar-threaded (`desugM` supply, cabs_to_ail_effect fresh_sym_supply) | current TU's MD5 | 0 .. ~n (restarts at 0 PER TU) | per-TU |
+| ambient (`Symbol.fresh` → `Cerb_fresh.int`) | current TU's MD5 at draw time (exec-time draws: LAST TU's, = OCaml) | ≥ 2^20, process-global monotonic (arc-4 S3a floor, native/fresh_int.c) | never |
+| stdlib interning (CoreParser.mkSym) | `""` (std.core parsed before any set_digest — both sides) | 64-bit name hash | n/a (deterministic) |
+
+- **Same-TU disjointness** (unchanged from arc-4 S3a): desugar ids
+  < 2^20 ≤ ambient ids; enforced by the fail-stop floor probe
+  (Main.lean) + native/fresh_int.c `__builtin_trap`.
+- **Cross-TU desugar collisions are REAL and digest-separated** —
+  this is exactly why digests are correctness, not cosmetics: every
+  TU's desugar supply restarts at 0, so TU1 and TU2 both mint nats
+  0,1,2,…; with the pre-S2 permanent `""` digest those were EQUAL
+  symbols (env clobbering across TUs); with per-TU MD5s they differ in
+  the digest component. OCaml has the same structure (per-TU 0-based
+  desugar supply, digest from `Cerb_fresh.set_digest` per file,
+  pipeline.ml:181) — mirrored exactly.
+- **Cross-TU ambient ids are doubly distinct**: monotonic nat
+  (never restarts) AND per-TU digest.
+- **Stdlib domain**: `""` ≠ any 32-char MD5 hex, so stdlib symbols can
+  never collide with user symbols; and every TU's translation
+  substitutes the SAME interned proxy symbols (mkSym is deterministic
+  by name), so the linked file's single `stdlib` map (link_aux keeps
+  `f1.stdlib`, core_linking.lem:293) is consistent with all TUs' call
+  sites. Matches OCaml, where std.core symbols are drawn under the
+  initial `""` digest (prelude before any set_digest).
+- **Degenerate case, identical-content TUs**: both get the same MD5 on
+  both pipelines (OCaml `Digest.file` of identical bytes; we digest
+  identical cabs-json), so both pipelines conflate them identically —
+  in practice `link_extern` rejects the duplicate external definitions
+  (`DuplicateExternalName`) before any symbol aliasing can matter.
+  Digest-VALUE divergence (we hash the cabs-json, not the .c) is
+  recorded in CerberusFresh.lean; equality/ordering semantics are
+  isomorphic.
+- **`from_same_translation_unit` now does real work**: cross-TU struct
+  tags take the name+member structural-compatibility path
+  (ctype_aux.lem:113/155) — exercised by `tests/multi_tu/basic`
+  (struct passed by value across the TU boundary, differential 42).
+
+Empirical anchors: `test/Unit/FreshIntTest.lean` (md5 vectors vs OCaml
+Digest.to_hex; per-TU digest pickup by `Symbol.fresh`;
+from_same_translation_unit positive/negative), `scripts/test_multi_tu.sh`
+(basic: cross-TU extern call + shared struct + same-named statics at
+file/function/local scope, 31/31 executions match; tentative:
+LK_tentative → LK_normal extern resolution, match).
+
+**Evaluation-order hazard found while landing this (4th bite of the
+effect-erasure pattern)**: the Lean compiler let-SINKS pure stage calls
+to their first use, so a `let coreFile := translate …` in the per-TU
+loop could evaluate after a LATER TU's `setDigestIO` and stamp wrong
+digests. Fix: `CerberusFresh.forceIO` (native cerb_force_thunk) — an
+IO-positioned evaluation barrier applying the thunk inside an extern
+BaseIO call; every per-TU stage call in Main.lean goes through it.
+Caught by test/Unit/FreshIntTest.lean testDigestGlobal, which failed
+exactly this way on its first build (both `fresh ()` draws saw the
+second digest).
