@@ -117,3 +117,20 @@ commit/untracked decision).
 
 **D9a [USER]** — Location confirmed by the operator: the external
 weak-memory survey lands in `lean_frontend/docs` (cerberus-lean).
+
+**D10 [AGENT]** — S1 boundary passed (verified: unit 4/4 w/ 280 parser
+tests, minimal/coverage/debug baselines rc 0, test_core minimal 100% —
+THE KNOWN-RED 078 IS GREEN (pp-only ProcDecl form was its cause; the
+"known red" baseline language in mainline docs must be updated at merge),
+libc_exec + uri baselines clean, uri 10/10 BYTE-FOR-BYTE with libc).
+Worker [AGENT:S1] calls endorsed, esp.: (a) libc metadata reconstructed
+by frontending the same 12 TUs through OUR OWN pipeline — the identical
+lem code that produced libc.co's metadata; TCB-consistent with D3 (no
+new oracle trust beyond the pinned body dump); (b) explicit --libc flags
+(standing corpora untouched by construction); (c) 006-snprintf recorded
+as varargs-classified DIFF, not stubbed — the S2 flip will surface as
+deliberate baseline drift. Register additions from S1: survey erratum
+(68 globs); silent-misparse class + test_core's parse-success-only blind
+spot (parses ≠ parses-correctly — the PEif/;-layout fixes show textual
+round-trip gaps; candidate future gate: pp-roundtrip comparison);
+has_proto verified-dead finding (upstream-reportable oddity).
