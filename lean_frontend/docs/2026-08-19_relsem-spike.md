@@ -402,3 +402,23 @@ instance's docstring when built). (3) Adequacy statements should
 quantify over scheduler behaviors the way the exhaustive driver already
 does, so weak-memory ND arrives as MORE behaviors in the same shape,
 not a new statement form.
+
+### Prior art for the eventual cmm move (operator pointer, 2026-08-19)
+
+**[USER]** "There's a lot of weak memory + Iris work we can steal from
+when we get to the point of use." **[AGENT]** Named anchors to start
+from when the concurrency arc opens (references to chase, not
+commitments): FSL/FSL++ (Doko & Vafeiadis — fenced separation logic for
+C11 atomics, closest in spirit to cerberus's cmm since both target the
+Batty et al. C11 model); iRC11 / "RustBelt meets relaxed memory" (Dang
+et al. — Iris for the RC11 fragment, the most complete
+Iris-on-relaxed-memory stack); GPS (Turon et al. — protocols over
+release/acquire); Cosmo (Mével/Jourdan/Pottier — Iris for the Multicore
+OCaml model; methodologically useful for how a StateInterp swap looks
+in practice); Simuliris and Islaris (relation/simulation machinery and
+ISA-level Iris respectively — pattern sources for coupling shapes).
+Fit note: cerberus's cmm is the C11 axiomatic model reified in the
+model's cmm_csem/cmm_op modules — the operational-vs-axiomatic bridge
+these logics build (promising/operational RC11 presentations) is
+exactly the seam where our Step-relation parameterization (forward
+constraint 2/3 above) must eventually plug in.
