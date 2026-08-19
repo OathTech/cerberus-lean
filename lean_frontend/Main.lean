@@ -60,6 +60,207 @@ def loadCoreImpl (implFile : CoreParser.CoreFile) : impl :=
       fmapAdd ic d acc)
     fmapEmpty
 
+/-! ## C-libc loading (`--libc`, arc-6 S1)
+
+The oracle loads `runtime/libc/libc.co` — an OCaml-marshalled `core_dump`
+record carrying main / calling_convention / tagDefs / globs / funs /
+extern / funinfo (backend/common/pipeline.ml:621-630; reader
+`read_core_object` :648-672) — as a LIBRARY, FIRST, before the user TUs
+(backend/driver/main.ml:150-156: `core_libraries … @ files`, lib "c"
+resolved at :54-77 to plain libc.co, i.e. Normal calling convention).
+
+The Lean pipeline cannot read OCaml Marshal. Its libc artifact is split
+in two (decision log D5; scripts/libc_prep.sh):
+
+* BODIES (funs and globs, in file order) come from the PINNED text dump
+  `tests/libc/libc.core` — the stock pretty-print of libc.co
+  (`cerberus --nolibc --pp=core --pp_core_out=… libc.co`, S0 survey
+  §a.1), i.e. the oracle's sequentialised+rewritten libc Core, parsed by
+  CoreParser. This is ORACLE-PRODUCED INPUT in the cabs-json trust
+  class: pinned and drift-checked fail-closed by libc_prep.sh.
+
+* METADATA (extern, funinfo, tagDefs, calling convention) is NOT in the
+  text dump: the stock pp omits extern/funinfo/main entirely
+  (pp_extern_symmap and pp_funinfo are unreachable from the CLI,
+  pp_core.ml:811-829 + pipeline.ml:536-549) and drops every tagDef whose
+  definition site is an #include'd header (pp_cond, pp_core.ml:745-746,
+  show_include=false — only `struct fl` survives in the dump). The
+  metadata is reconstructed by frontending the SAME 12 libc source TUs
+  (runtime/libc/dune:132-141, same order, same include flags) through
+  our own desugar/typecheck/translate and linking them with the
+  generated Core_linking — the very pipeline that produced libc.co's
+  metadata on the OCaml side (extern: `translate_extern_map`,
+  translation.lem:4505-4511; funinfo/tagDefs assembly:
+  translation.lem:4521-4540; link merge: link_aux/link_extern,
+  core_linking.lem:10-46,286-316). `--sequentialise --rewrite` (which
+  the oracle's libc.co build additionally applies) are Core-to-Core BODY
+  passes; they do not alter extern/funinfo/tagDefs, so the
+  reconstruction is exact up to symbol identity.
+
+* THE STITCH: metadata symbols (per-TU-digested frontend syms) are
+  rekeyed BY NAME onto CoreParser's name-hash interned symbols — the
+  symbols the parsed dump bodies reference (CoreParser.internSym).
+  std.core proxy symbols (exit_proxy, vprintf_proxy, … — present in
+  funinfo because ailname substitution happens at elaboration,
+  translation.lem:244-251) are already CoreParser-interned, so rekeying
+  is the identity on them. Name collisions (the static `__procfdname`,
+  defined in two libc TUs; our interning conflates the two
+  alpha-equivalent definitions) are checked for structural agreement and
+  fail closed otherwise.
+
+Assembly mirrors `read_core_object` (pipeline.ml:655-663): stdlib/impl
+come from the load context (:657-660), loop_attributes and
+visible_objects_env are EMPTY (:661-663; empty visible_objects_env also
+preserves safe_map_union's disjointness requirement at link,
+core_linking.lem safe_map_union), and main = none — libc.co is a
+main-less library; link_main tolerates it (core_linking.lem:50-57).
+
+Documented divergences from the oracle's in-memory libc file:
+* funinfo parameter-name symbols are dropped (kept as `none`): the
+  runtime reads only the parameter CTYPES (Eccall conversion
+  core_run.lem:952-967 uses `List.map snd`; cfunction core_eval.lem
+  returns `snd`), and the oracle's name syms are unreconstructable
+  digested frontend symbols.
+* ProcDecl return base types parse as BTy_unit (not printed by the pp,
+  pp_core.ml:783-785) — unread for declaration-only symbols.
+* Same-named static functions conflate to one symbol (name-hash
+  interning); fail-closed structural checks make this observable-
+  behavior-preserving for the pinned dump.
+-/
+
+/-- symbolEqual (symbol.lem): digest+number, description ignored. -/
+private def libcSymEq : sym → sym → Bool
+  | Symbol d1 n1 _, Symbol d2 n2 _ => d1 == d2 && n1 == n2
+
+private def libcSymName : sym → String
+  | Symbol _ n sd =>
+    match sd with
+    | .SD_Id s | .SD_ObjectAddress s | .SD_FunArgValue s => s
+    | .SD_None => s!"<SD_None sym {n}>"
+    | _ => s!"<unnamed sym {n}>"
+
+/-- Rekey a metadata symbol by name onto the CoreParser-interned symbol.
+    Accepts exactly the descriptions `--pp core` prints as a plain name
+    (Pp_symbol.to_string_pretty, pp_symbol.ml:20-24: SD_Id,
+    SD_ObjectAddress, SD_FunArgValue) — the parsed dump interns those
+    names, so the name-join is faithful to the pp. -/
+private def libcRekeySym : sym → Except String sym
+  | Symbol _ _ (SD_Id name)
+  | Symbol _ _ (SD_ObjectAddress name)
+  | Symbol _ _ (SD_FunArgValue name) => .ok (CoreParser.internSym name)
+  | s => .error s!"libc metadata symbol without a printable name: {libcSymName s} (cannot name-join)"
+
+/-- Rekey every struct/union tag symbol inside a ctype. -/
+private partial def libcRekeyCtype : ctype → Except String ctype
+  | Ctype annots ty => do
+    let ty' ← match ty with
+      | Void0 => pure Void0
+      | Basic b => pure (Basic b)
+      | Byte => pure Byte
+      | Array0 t n => do pure (Array0 (← libcRekeyCtype t) n)
+      | Function (qs, ret) params var => do
+        let ret' ← libcRekeyCtype ret
+        let params' ← params.mapM (fun (q, t, b) => do pure (q, ← libcRekeyCtype t, b))
+        pure (Function (qs, ret') params' var)
+      | FunctionNoParams (qs, ret) => do
+        pure (FunctionNoParams (qs, ← libcRekeyCtype ret))
+      | Pointer qs t => do pure (Pointer qs (← libcRekeyCtype t))
+      | Atomic t => do pure (Atomic (← libcRekeyCtype t))
+      | Struct s => do pure (Struct (← libcRekeySym s))
+      | Union0 s => do pure (Union0 (← libcRekeySym s))
+    pure (Ctype annots ty')
+
+private def libcRekeyMember :
+    identifier × (attributes × Option alignment × qualifiers × ctype) →
+    Except String (identifier × (attributes × Option alignment × qualifiers × ctype))
+  | (i, (attrs, al, qs, ty)) => do
+    let al' ← match al with
+      | some (AlignType t) => do pure (some (AlignType (← libcRekeyCtype t)))
+      | x => pure x
+    pure (i, (attrs, al', qs, ← libcRekeyCtype ty))
+
+private def libcRekeyTagDef : tag_definition → Except String tag_definition
+  | StructDef membrs flexOpt => do
+    let membrs' ← membrs.mapM libcRekeyMember
+    let flexOpt' ← match flexOpt with
+      | some (FlexibleArrayMember a i q t) => do
+        pure (some (FlexibleArrayMember a i q (← libcRekeyCtype t)))
+      | none => pure none
+    pure (StructDef membrs' flexOpt')
+  | UnionDef membrs => do pure (UnionDef (← membrs.mapM libcRekeyMember))
+
+private def identName : identifier → String
+  | Identifier _ s => s
+
+/-- Structural agreement for deduplicating same-name tag definitions
+    from different TUs (same headers ⇒ identical layouts). Member names,
+    qualifiers and ctypes are compared; attributes/alignment are not
+    (no_attributes/none throughout the libc headers). -/
+private def libcMemberEq
+    (m1 m2 : identifier × (attributes × Option alignment × qualifiers × ctype)) : Bool :=
+  identName m1.1 == identName m2.1 &&
+  qualifiersEqual m1.2.2.2.1 m2.2.2.2.1 &&
+  ctypeEqual m1.2.2.2.2 m2.2.2.2.2
+
+private def libcTagDefEq : tag_definition → tag_definition → Bool
+  | StructDef xs1 f1, StructDef xs2 f2 =>
+    xs1.length == xs2.length &&
+    (List.zip xs1 xs2).all (fun (a, b) => libcMemberEq a b) &&
+    (match f1, f2 with
+     | none, none => true
+     | some (FlexibleArrayMember _ i1 q1 t1), some (FlexibleArrayMember _ i2 q2 t2) =>
+       identName i1 == identName i2 && qualifiersEqual q1 q2 && ctypeEqual t1 t2
+     | _, _ => false)
+  | UnionDef xs1, UnionDef xs2 =>
+    xs1.length == xs2.length &&
+    (List.zip xs1 xs2).all (fun (a, b) => libcMemberEq a b)
+  | _, _ => false
+
+/-- Minimal diagnostic ctype printer (loader error messages only). -/
+private partial def libcShowCtype : ctype → String
+  | Ctype _ ty =>
+    match ty with
+    | Void0 => "void"
+    | Basic (Integer _) => "<int-ty>"
+    | Basic (Floating _) => "<float-ty>"
+    | Byte => "byte"
+    | Array0 t n => s!"{libcShowCtype t}[{n.getD (-1)}]"
+    | Function (_, ret) params var =>
+      s!"{libcShowCtype ret} ({String.intercalate ", " (params.map (fun p => libcShowCtype p.2.1))}{if var then ", ..." else ""})"
+    | FunctionNoParams (_, ret) => s!"{libcShowCtype ret} <noproto>()"
+    | Pointer _ t => s!"{libcShowCtype t}*"
+    | Atomic t => s!"_Atomic({libcShowCtype t})"
+    | Struct s => s!"struct {libcSymName s}"
+    | Union0 s => s!"union {libcSymName s}"
+
+/-- Funinfo agreement modulo location/attributes/param names — and
+    modulo has_proto: the per-TU entries for a name declared in one TU
+    and defined in another can disagree on has_proto (observed:
+    __strtox/__strtoxd, declaration-TU true vs definition-TU false); in
+    the oracle both entries coexist under distinct symbols, but our
+    name-join must pick one. has_proto is verified UNREAD by the pinned
+    libc bodies (all 221 cfunction 4-tuple binders bind it to a variable
+    that never occurs again — checked mechanically over
+    tests/libc/libc.core), so the first-inserted value stands. -/
+private def libcFuninfoEq
+    (f1 f2 : CerbLocation.Loc × attributes × ctype × List (Option sym × ctype) × Bool × Bool) : Bool :=
+  let (_, _, ret1, ps1, v1, _) := f1
+  let (_, _, ret2, ps2, v2, _) := f2
+  ctypeEqual ret1 ret2 && ps1.length == ps2.length &&
+  (List.zip ps1 ps2).all (fun (a, b) => ctypeEqual a.2 b.2) &&
+  v1 == v2
+
+/-- Checked insert into an Fmap-as-assoc-list: duplicate keys must agree
+    structurally (fail-closed name-join). -/
+private def libcInsertChecked {β : Type} (what : String) (eqv : β → β → Bool)
+    (m : Fmap sym β) (k : sym) (v : β)
+    (dbg : β → β → String := fun _ _ => "") : Except String (Fmap sym β) :=
+  match m.find? (fun kv => libcSymEq kv.1 k) with
+  | none => .ok (m ++ [(k, v)])
+  | some (_, v') =>
+    if eqv v' v then .ok m
+    else .error s!"libc metadata name-join collision with disagreeing content: {what} '{libcSymName k}'{dbg v' v}"
+
 /-! ## Helpers -/
 
 /-- Read all input files' contents. Multi-TU: one cabs-json per
@@ -356,6 +557,118 @@ def frontendTU (quiet : Bool)
       | _ => IO.println s!"    cause: (other)"
       return .error 0
 
+/-- Load and assemble the libc library Core file (see the module note at
+    "C-libc loading" above). -/
+def loadLibc (quiet : Bool)
+    (coreEvalStuff : Fmap String sym × fun_map Unit × impl)
+    (ailnames : Fmap String sym) (stdFunMap : fun_map Unit) (coreImpl : impl)
+    (libcCorePath : String) (libcTuJsons : List String) :
+    IO (Except UInt8 (file Unit)) := do
+  let say (s : String) : IO Unit := unless quiet do IO.println s
+  let bail (msg : String) : IO (Except UInt8 (file Unit)) := do
+    if quiet then IO.println s!"Error \{msg: \"libc load failed: {batchEscape msg}\"}"
+    else IO.println s!"  libc load failed: {msg}"
+    return .error 1
+  -- 1. Parse the pinned dump (bodies). The TU digest is the real MD5 of
+  --    the pinned file (arc-5 per-TU digest machinery; CoreParser's
+  --    interning is digest-independent, so this is provenance-recording).
+  say s!"  loading libc bodies from {libcCorePath}..."
+  let dumpContent ← IO.FS.readFile ⟨libcCorePath⟩
+  let _ ← (CerberusFresh.setDigestIO (CerberusFresh.md5Hex dumpContent) : BaseIO Unit)
+  let parsed ← match CoreParser.parseFile dumpContent with
+    | .ok f => pure f
+    | .error e => return (← bail s!"parsing {libcCorePath}: {e}")
+  say s!"    {parsed.procs.length} proc, {parsed.funs.length} fun, {parsed.globs.length} glob"
+  -- 2. Frontend the 12 metadata TUs (same order as runtime/libc/dune's
+  --    libc.co link; reverse-consed accumulator exactly as the OCaml
+  --    driver fold, main.ml:153-156) and link them.
+  say s!"  loading libc metadata from {libcTuJsons.length} TUs..."
+  let mut metaFiles : List (file Unit) := []
+  for j in libcTuJsons do
+    let content ← IO.FS.readFile ⟨j⟩
+    let tunit ← match CabsImport.parseJson content with
+      | .ok t => pure t
+      | .error e => return (← bail s!"cabs-json parse error in {j}: {e}")
+    let _ ← (CerberusFresh.setDigestIO (CerberusFresh.md5Hex content) : BaseIO Unit)
+    match ← frontendTU true coreEvalStuff ailnames stdFunMap coreImpl tunit with
+    | .error _ => return (← bail s!"frontend failed for libc metadata TU {j}")
+    | .ok f => metaFiles := f :: metaFiles
+  let metaFile ← match link metaFiles with
+    | .Result f => pure f
+    | .Exception (_, _) => return (← bail "linking the libc metadata TUs failed")
+  -- 3. Rekey the metadata by name (fail-closed).
+  let rekeyed : Except String (core_tag_definitions × extern_map ×
+      Fmap sym (CerbLocation.Loc × attributes × ctype × List (Option sym × ctype) × Bool × Bool)) := do
+    let mut tagDefs : core_tag_definitions := []
+    for (s, (loc, td)) in metaFile.tagDefs do
+      let k ← libcRekeySym s
+      let td' ← libcRekeyTagDef td
+      tagDefs ← libcInsertChecked "tagDef" (fun a b => libcTagDefEq a.2 b.2) tagDefs k (loc, td')
+    let mut ext : extern_map := []
+    for (ident, (ds, lk)) in metaFile.extern do
+      let ds' ← ds.mapM libcRekeySym
+      let ds'' := ds'.foldl (fun acc s => if acc.any (libcSymEq s) then acc else acc ++ [s]) []
+      let lk' ← match lk with
+        | LK_none => pure LK_none
+        | LK_tentative s => do pure (LK_tentative (← libcRekeySym s))
+        | LK_normal s => do pure (LK_normal (← libcRekeySym s))
+      ext := ext ++ [(ident, (ds'', lk'))]
+    let mut funinfo : Fmap sym (CerbLocation.Loc × attributes × ctype × List (Option sym × ctype) × Bool × Bool) := []
+    for (s, (loc, attrs, ret, params, var, proto)) in metaFile.funinfo do
+      let k ← libcRekeySym s
+      let ret' ← libcRekeyCtype ret
+      let params' ← params.mapM (fun (_, t) => do
+        pure ((none : Option sym), ← libcRekeyCtype t))
+      funinfo ← libcInsertChecked "funinfo" libcFuninfoEq funinfo k (loc, attrs, ret', params', var, proto)
+        (fun a b =>
+          let show1 := fun (fi : CerbLocation.Loc × attributes × ctype × List (Option sym × ctype) × Bool × Bool) =>
+            let (_, _, ret, ps, v, p) := fi
+            s!"(ret={libcShowCtype ret}, params=[{String.intercalate ", " (ps.map (fun (q : Option sym × ctype) => libcShowCtype q.2))}], variadic={v}, proto={p})"
+          s!"\n  existing: {show1 a}\n  new:      {show1 b}")
+    -- the dump's surviving tagDefs (struct fl) must agree with the
+    -- metadata's — fail-closed consistency check between the two halves
+    for (s, (_, td)) in parsed.tagDefs do
+      match tagDefs.find? (fun kv => libcSymEq kv.1 s) with
+      | none => throw s!"dump tagDef '{libcSymName s}' missing from metadata"
+      | some (_, (_, td')) =>
+        unless libcTagDefEq td td' do
+          throw s!"dump tagDef '{libcSymName s}' disagrees with metadata"
+    pure (tagDefs, ext, funinfo)
+  let (tagDefs, ext, funinfo) ← match rekeyed with
+    | .ok x => pure x
+    | .error e => return (← bail e)
+  -- 4. Fun map from the parsed dump. Proc definitions win over ProcDecl
+  --    entries for the same symbol (the pp emits both for names declared
+  --    in one TU and defined in another — __strtox/__strtoxd; only a
+  --    Proc body satisfies call_proc, core_run.lem:46-51). Duplicate
+  --    Proc definitions (static __procfdname in two TUs) keep the first.
+  let mut funs : fun_map Unit := []
+  for (s, d) in parsed.funs ++ parsed.procs ++ parsed.builtins do
+    match funs.find? (fun kv => libcSymEq kv.1 s) with
+    | none => funs := funs ++ [(s, d)]
+    | some (_, existing) =>
+      match existing, d with
+      | ProcDecl _ _ _, Proc _ _ _ _ _ =>
+        funs := funs.map (fun kv => if libcSymEq kv.1 s then (kv.1, d) else kv)
+      | _, _ => pure ()
+  say s!"    metadata: {tagDefs.length} tagDefs, {ext.length} extern, {funinfo.length} funinfo"
+  -- 5. Assemble (read_core_object mirror, pipeline.ml:655-663).
+  return .ok {
+    main := none
+    calling_convention0 := metaFile.calling_convention0
+    tagDefs := tagDefs
+    stdlib := stdFunMap
+    impl0 := coreImpl
+    globs := parsed.globs
+    funs := funs
+    extern := ext
+    funinfo := funinfo
+    loop_attributes1 := []
+    visible_objects_env0 := []
+  }
+
+
+
 /-- Run the pipeline over one or more translation units (multi-TU, arc-5
     S2). `tunits` carries (cabs-json content, parsed Cabs) per TU in
     command-line order. Per TU: set the TU digest, then
@@ -374,6 +687,7 @@ def frontendTU (quiet : Bool)
     failures). -/
 def runPipeline (runtimeDir : String) (batch : Bool) (ppCore : Bool)
     (firstTrace : Bool)
+    (libc : Option (String × List String))
     (tunits : List (String × translation_unit)) : IO UInt8 := do
   -- Progress chatter: human mode only (batch and pp-core keep stdout clean)
   let quiet := batch || ppCore
@@ -422,7 +736,18 @@ def runPipeline (runtimeDir : String) (batch : Bool) (ppCore : Bool)
   -- The accumulator is REVERSE-consed (first file ends up LAST) and is
   -- handed to Core_linking.link as-is — mirrored exactly here. Failures
   -- short-circuit in file order, like except_foldlM.
+  --
+  -- --libc: the libc library file is processed FIRST, before the user
+  -- TUs, exactly as the OCaml driver folds `core_libraries … @ files`
+  -- (main.ml:150-156) — so it ends up LAST in the reverse-consed list
+  -- handed to Core_linking.link, mirroring the oracle's link order.
   let mut coreFiles : List (file Unit) := []
+  match libc with
+  | some (libcCore, libcTus) =>
+    match ← loadLibc quiet coreEvalStuff ailnames stdFunMap coreImpl libcCore libcTus with
+    | .error code => return code
+    | .ok libcFile => coreFiles := [libcFile]
+  | none => pure ()
   for (content, tunit) in tunits do
     -- Per-TU digest, before the TU's frontend stages — mirror of
     -- `Cerb_fresh.set_digest filename` at the top of the OCaml c_frontend
@@ -592,7 +917,38 @@ def main (args : List String) : IO Unit := do
   -- the Lean-side analogue of OCaml `--mode=random` (one trace instead of
   -- the exhaustive set). See CerbND.runND1 (arc-5 S3 seam).
   let firstTrace := rest0.head? == some "--first"
-  let restArgs := if firstTrace then rest0.drop 1 else rest0
+  let rest1 := if firstTrace then rest0.drop 1 else rest0
+  -- --libc <pinned.core> --libc-tu <json> … (arc-6 S1): additive libc
+  -- mode — load the pinned libc Core text dump plus the 12 metadata TU
+  -- cabs-jsons (scripts/libc_prep.sh --jsons) and link the resulting
+  -- library file BEFORE the user TUs (see loadLibc / runPipeline).
+  -- [AGENT:S1] explicit flags (not an auto-load convention): libc-enabled
+  -- runs are NEW harness modes per the arc-6 charter; standing corpora
+  -- must be byte-for-byte unaffected, which an auto-load could silently
+  -- break.
+  let mut libcCore : Option String := none
+  let mut libcTus : List String := []
+  let mut restArgs : List String := []
+  let mut pending := rest1
+  while true do
+    match pending with
+    | [] => break
+    | "--libc" :: v :: rest => libcCore := some v; pending := rest
+    | "--libc-tu" :: v :: rest => libcTus := libcTus ++ [v]; pending := rest
+    | ["--libc"] | ["--libc-tu"] =>
+      IO.eprintln "cerberus-lean: --libc/--libc-tu require an argument"
+      IO.Process.exit 1
+    | a :: rest => restArgs := restArgs ++ [a]; pending := rest
+  let libc : Option (String × List String) ← match libcCore, libcTus with
+    | some c, tus =>
+      if tus.isEmpty then do
+        IO.eprintln "cerberus-lean: --libc requires at least one --libc-tu (metadata TU cabs-json)"
+        IO.Process.exit 1
+      else pure (some (c, tus))
+    | none, [] => pure none
+    | none, _ :: _ => do
+      IO.eprintln "cerberus-lean: --libc-tu without --libc"
+      IO.Process.exit 1
   -- Set debug level for Core evaluation tracing (0=off, 2=basic, 5=verbose).
   -- Batch/pp-core modes match the OCaml driver default (0): keeps stderr
   -- clean for the harness's crash classification.
@@ -668,6 +1024,6 @@ def main (args : List String) : IO Unit := do
       IO.eprintln s!"cerberus-lean: parse error: {e}"
       IO.Process.exit 1
     | .ok tunit => tunits := tunits ++ [(content, tunit)]
-  let code ← runPipeline runtimeDir batchMode ppCoreMode firstTrace tunits
+  let code ← runPipeline runtimeDir batchMode ppCoreMode firstTrace libc tunits
   if code != 0 then
     IO.Process.exit code
