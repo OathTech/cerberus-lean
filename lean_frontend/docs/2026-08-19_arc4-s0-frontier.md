@@ -630,3 +630,92 @@ pruning), 24-25, 27, 29-30.
 Gates at S3c close: lake build green; test_unit.sh 4/4 (purity CLEAN,
 cones OK, totality CLEAN); test_parse.sh ALL; test_core.sh 104/105
 (known 078 Core-text red only); test_exec.sh baseline OK (0 regressions).
+
+## Addendum (arc-4 S5 close-out worker, 2026-08-19): arc-2 Phase-2 obligations + driver2 kernel cone
+
+### Sym non-escape obligation (arc-2 §19 / core_run_aux.lem invariant comment)
+
+The obligation as recorded (effects-totality-design §19, core_run_aux.lem
+~line 242): run-created symbols (threaded `sym_supply`, seeded from ONE
+ambient read at init) must not escape their run, because a run's threaded
+range may overlap ambient ids drawn AFTER init.
+
+**CURRENT invariant (post arc-4 S3a, supersedes the arc-2 phrasing):**
+
+- desugar-threaded ids (cabs_to_ail_effect `fresh_sym_supply`): 0-based,
+  **< 2^20** in practice (any realistic translation unit);
+- ambient ids (`CerberusFresh.freshIntIO`, native/fresh_int.c
+  `CERB_FRESH_BASE`): start at **2^20 = 1048576**, strictly increasing;
+- std.core stdlib symbols: interned by 64-bit name hash
+  (CoreParser.mkSym), drawn from NEITHER stream;
+- mini-run (const-expr driver) `sym_supply` is seeded from the ambient
+  counter, so its threaded range also sits ≥ 2^20 — disjoint from the
+  desugar stream it is embedded in, which is the collision that S3a
+  actually observed (symbolEqual is description-insensitive).
+
+**Checks added (cheapest meaningful):**
+- Main.lean startup assertion: draws one ambient id, fail-stops (IO
+  error, harness-visible) if it is < 2^20 — catches a regressed/stale
+  `CERB_FRESH_BASE` in every pipeline invocation.
+- native/fresh_int.c: per-draw floor check (`__builtin_trap()` below
+  `CERB_FRESH_BASE`) — catches corruption/re-init.
+
+**Deferred (recorded per the obligation's "model-level assertion"
+reading):** a post-run sweep asserting no run-created id occurs in
+post-run desugar/translation state (true non-ESCAPE, not just
+non-collision-by-ranges) needs a symbol-collection pass over sigma/Core
+files keyed on the run's seeded range; priced at a full traversal per
+mini-run. Deferred to the next arc's differential-hardening backlog
+alongside the seam-survey OPEN items; the range-disjointness invariant
+above makes an escape observable only as an id ≥ 2^20 inside desugar
+output, which the canonicalizer would surface as a diff in the elab
+differential.
+
+### 106-sizeof-struct-array.c (arc-2 charter S7 §10 repro class)
+
+The `int a[sizeof(struct S)]` const-expr test is now
+tests/minimal/106-sizeof-struct-array.c (corpus is directory-globbed in
+all four harnesses; exec baseline regenerated: **106 entries, 103/106
+matching** — 85 value + 18 UB + 3 CERB_SKIP, zero regressions).
+
+It failed on first run — a REAL bug, the S3b effect-erasure class one
+level up: `CerbTags.with_tagDefs_impl`'s Lean-side
+`let _ := unsafeBaseIO (setTagDefsIO …)` set/restore pair was dead-code
+eliminated by the compiler, so the mini-run's const-expr driver executed
+with EMPTY ambient tagDefs (CerbMem.offsetsof: unknown tag → panic →
+degraded into a bogus `DESUGAR ConstraintViolation`). Empirically
+confirmed by native-side tracing (cerb_tags_set never fired; gets
+returned NULL). Generated (reader-seeded) code was unaffected — only the
+hand-written concrete memory model's ambient reads saw the stale global,
+which is why nothing before this test (first struct layout use INSIDE a
+mini-run extent) ever noticed. Fix: `with_tagDefs` now binds the
+already-present C-side `cerb_tags_with` (native/tags.c) — save/set/apply
+/restore sequenced in C, out of the Lean compiler's reach. The
+arc-2 §18 "with_tagDefs divergence closed" claim was correct at the
+model/reader level but NOT at the ambient-global level; this closes it
+for real. Register pattern list: effect-erasure now has three instances
+(arc-1/2 runEffectful, arc-4 S3b set_tagDefs, this).
+
+### driver2 kernel cone (success condition 2)
+
+`#print axioms driver2` BEFORE this worker: `[DAEMON, propext,
+Classical.choice, Quot.sound]` — already sorryAx-free (arc-3 D9's
+sorryAx observation predates the S1a BEq fix; defacto easy_update is off
+the concrete-memory driver cone, arc-4 D4). AFTER: identical, now
+ENFORCED by a dedicated probe in check_theorem_axioms.sh (sorryAx in
+driver2's cone fails; DAEMON allowed — driver2 is NOT in the DAEMON-clean
+exemplar set, per arc-3 D9; fail-closed, negative-tested).
+
+`easy_update_mem_value_aux`'s sorry target_rep is REMOVED
+(declares-only + fuel declare, same ndM NDkilled witness as
+find_array_index); the real definition generates with the predicted
+fuel'd self-shadow shape and the totality gate stays CLEAN. frontend/
+model/ now has zero sorry target_reps (concurrency stubs remain the
+declared boundary). Residue, recorded not gated: easy_update's OWN cone
+still carries sorryAx via `instBEqFlexible_array_member.beq →
+instSetTypeCtype` — the `deriving BEq` on flexible_array_member inside
+generated Ctype.lean elaborates against the low-priority sorry stubs
+(CerbCtypeInstances is an import LEAF; generated modules cannot import
+it — the arc-2 §19 corrected-claim limitation). Off driver2's cone;
+eliminating it = real derived defaults in the lem backend (C-tier,
+next-arc candidate list).

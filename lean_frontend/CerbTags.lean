@@ -22,6 +22,19 @@ opaque setTagDefsIO : @& TagDefsMap → BaseIO Unit
 @[extern "cerb_tags_reset"]
 opaque resetTagDefsIO : @& Unit → BaseIO Unit
 
+/-- Whole with-extent (save → set td → apply f → restore) done in C
+    (native/tags.c cerb_tags_with), so the set/restore CANNOT be
+    dead-code-eliminated by the Lean compiler. The former Lean-side
+    implementation (`let _ := unsafeBaseIO (setTagDefsIO td)` around a
+    pure `f ()`) had exactly the arc-4 S3b effect-erasure failure: the
+    discarded-result lets were DCE'd, so the mini-run's const-expr driver
+    saw EMPTY ambient tags (CerbMem.offsetsof: unknown tag on
+    `int a[sizeof(struct S)]`; found by the arc-2 Phase-2 obligation
+    test 106-sizeof-struct-array.c, empirically confirmed by native-side
+    tracing: cerb_tags_set never fired). -/
+@[extern "cerb_tags_with"]
+unsafe opaque withTagDefsIO {b : Type} : @& TagDefsMap → (@& (Unit → b)) → BaseIO b
+
 /-- Pure wrappers used by hand-written code (Main.lean etc.).
     @[never_extract, noinline] on every impl: without them the compiler may
     cache a closed application (e.g. a reader SEED like 'tagDefs ()' at a
@@ -35,14 +48,9 @@ private unsafe def tagDefs_impl (_ : Unit) : TagDefsMap :=
 private unsafe def set_tagDefs_impl (v : TagDefsMap) : Unit :=
   unsafeBaseIO (setTagDefsIO v)
 
-set_option autoImplicit true in
 @[never_extract, noinline]
-private unsafe def with_tagDefs_impl (td : TagDefsMap) (f : Unit → b) : b :=
-  let saved := unsafeBaseIO (tagDefsIO ())
-  let _ := unsafeBaseIO (setTagDefsIO td)
-  let ret := f ()
-  let _ := unsafeBaseIO (setTagDefsIO saved)
-  ret
+private unsafe def with_tagDefs_impl {b : Type} (td : TagDefsMap) (f : Unit → b) : b :=
+  unsafeBaseIO (withTagDefsIO td f)
 
 @[never_extract, noinline]
 private unsafe def reset_tagDefs_impl (_ : Unit) : Unit :=
@@ -55,9 +63,11 @@ attribute [never_extract] tagDefs
 @[implemented_by set_tagDefs_impl]
 opaque set_tagDefs : TagDefsMap → Unit
 
-set_option autoImplicit true in
+/- `b` pinned to Type (was universe-polymorphic via autoImplicit): the C
+   with-extent binding goes through BaseIO, which lives in Type. The lem
+   val is `forall 'a` over lem types, which all land in Type. -/
 @[implemented_by with_tagDefs_impl]
-axiom with_tagDefs : TagDefsMap → (Unit → b) → b
+axiom with_tagDefs {b : Type} : TagDefsMap → (Unit → b) → b
 
 @[implemented_by reset_tagDefs_impl]
 opaque reset_tagDefs : Unit → Unit

@@ -105,3 +105,4 @@
 103-union-store-load.c MATCH
 104-unsigned-wrap-arith.c MATCH
 105-bitwise-ops.c MATCH
+106-sizeof-struct-array.c MATCH

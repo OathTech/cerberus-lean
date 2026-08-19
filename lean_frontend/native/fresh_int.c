@@ -32,6 +32,13 @@ static size_t cerb_fresh_counter = CERB_FRESH_BASE;
 
 LEAN_EXPORT lean_obj_res cerb_fresh_int_io(b_lean_obj_arg unit) {
     size_t n = cerb_fresh_counter++;
+    /* Floor invariant (arc-2 Phase-2 non-escape obligation): the ambient
+       stream must stay at or above CERB_FRESH_BASE — below it, ambient ids
+       could collide with the 0-based desugar-threaded supply (see the BASE
+       comment above). A violation here means corruption or a bad re-init;
+       fail-stop rather than hand out a colliding id. */
+    if (n < CERB_FRESH_BASE)
+        __builtin_trap();
     if (n <= LEAN_MAX_SMALL_NAT)
         return lean_box(n);
     return lean_usize_to_nat(n);

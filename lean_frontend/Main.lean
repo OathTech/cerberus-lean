@@ -452,6 +452,18 @@ def main (args : List String) : IO Unit := do
   -- Batch/pp-core modes match the OCaml driver default (0): keeps stderr
   -- clean for the harness's crash classification.
   let _ := CerbDebug.set_level (if batchMode || ppCoreMode then 0 else 2)
+  -- Sym non-escape floor assertion (arc-2 Phase-2 obligation, closed arc-4
+  -- S5; invariant record: docs/2026-08-19_arc4-s0-frontier.md addendum).
+  -- CURRENT invariant (post arc-4 S3a): desugar-threaded ids < 2^20 ≤
+  -- ambient (translation/exec) ids; std.core symbols are interned by name
+  -- hash (CoreParser.mkSym), not drawn from the counter. This probe draws
+  -- ONE ambient id and fail-stops if the floor regressed (e.g. a stale
+  -- native/fresh_int.o with a different CERB_FRESH_BASE). Downstream id
+  -- streams are insensitive to the one consumed id (id-canonicalized
+  -- differentials; ids are compared only for equality within a run).
+  let floorProbe ← CerberusFresh.freshIntIO ()
+  if floorProbe < (1 <<< 20) then
+    throw (IO.userError s!"FATAL: ambient fresh-id floor violated: first draw {floorProbe} < 2^20; desugar/ambient sym streams may collide (native/fresh_int.c CERB_FRESH_BASE, arc-4 S3a invariant)")
   if args.length == 0 then
     selfTest
     return
