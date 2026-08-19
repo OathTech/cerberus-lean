@@ -25,7 +25,7 @@ import Driver
 import Core_eval
 import CerbND
 import RelSem.Machine
-import RelSem.RunNDT
+import RelSem.RunND
 import RelSem.ExecModel
 
 set_option autoImplicit false
@@ -206,17 +206,23 @@ theorem pexprStep_val
     golean's `stepFn_sound`/`execStmt_sound_normal`,
     deps/golean/GoLean/GoCore/MachineSound.lean:44/529): every `Active`
     verdict enumerated by the exhaustive runner is reachable in the
-    relation. NOTE `CerbND.runND` is `partial` (opaque to the logic), so
-    THIS statement is the bridge obligation as stated against the
-    executable; the proof route is a total fuel'd/structural mirror of
-    the runner proved equal-by-cases against `Step` (open question Q1 in
-    the spike doc). -/
+    relation. HISTORY: while `CerbND.runND` was a `partial def` (through
+    arc-7 S1) this was the DECLARED SEAM — stated, unprovable (no kernel
+    equations). The Q1 AMENDED ruling totalized the runner (arc-7 S2),
+    and the seam is now CLOSED by `runNDActiveSound` below. -/
 def RunNDActiveSound : Prop :=
   ∀ (m : ndM driver_result step_kind driver_error mem_iv_constraint
         driver_state)
     (st st' : driver_state) (r : driver_result) (tr : List String),
     (Active r, tr, st') ∈ CerbND.runND m st →
     DSteps ⟨.running m, st⟩ ⟨.done (.value r), st'⟩
+
+/-- The former declared seam, PROVED against the production runner
+    (arc-7 S2, the Q1 AMENDED ruling executed): direct corollary of
+    `runND_sound` — `Outcome.ofStatus (Active r) = .value r` by rfl and
+    `γexh` IS the exhaustive discipline. -/
+theorem runNDActiveSound : RunNDActiveSound :=
+  fun m st st' r tr h => runND_sound m st (Active r) tr st' h
 
 /-- Whole-program reachability of a result, RELATION-quantified (proof
     infrastructure — never a headline statement, per the golean
@@ -252,15 +258,17 @@ def HarnessAdequate (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
     interface (RelSem/ExecModel.lean); `seqModel` below is THE current
     instance — sequential driver-level machine, observable behaviors =
     (outcome, final state) pairs extracted by the fuel-erased TOTAL
-    runner (RelSem/RunNDT.lean), UB = an `Undef0` kill. A concurrency
+    runner (CerbND.runNDFuel, soundness in RelSem/RunND.lean), UB = an
+    `Undef0` kill. A concurrency
     instance (candidate-execution behaviors per the cmm direction) or an
     RC11-style instance replaces the `behavior`/`isUB` fields without
     reshaping any `Adequate`-formed statement (fields-only sketch in the
     spike doc's continuation section). `HarnessAdequate` above remains
-    the CerbND-shaped HEADLINE form against the production runner; the
-    parametric form and it meet at the arc-7 "totalize CerbND" slice
-    (runND = runNDT at sufficient fuel), after which the headline is the
-    instance's `Adequate` unfolded. -/
+    the CerbND-shaped HEADLINE form against the production runner; since
+    the arc-7 S2 totalization the two speak about the same function
+    (`CerbND.runND = CerbND.runNDFuel ndDefaultFuel` by rfl,
+    `runND_wrapper_defeq`), and the headline is the instance's
+    `Adequate` unfolded at the default budget. -/
 
 /-- Observable behavior of a sequential driver run: terminal outcome +
     final driver state. (Traces are not observable: the runner never
@@ -280,11 +288,12 @@ def seqModel : ExecModel where
   behavior c b :=
     match c.expr with
     | .done o => b = (o, c.st)
-    | .running m => ∃ fuel x, x ∈ runNDT fuel m c.st ∧ b = behaviorOfRun x
+    | .running m => ∃ fuel x,
+        x ∈ CerbND.runNDFuel fuel m c.st ∧ b = behaviorOfRun x
   isUB b := ∃ loc ubs, b.1 = Outcome.killed (Undef0 loc ubs)
 
 /-- PROVED coherence of the instance: every behavior the model extracts
-    is reachable in the Layer-2 relation (via `runNDT_sound`). This is
+    is reachable in the Layer-2 relation (via `runNDFuel_sound`). This is
     the instance-level fact the Layer-3 adequacy discharge consumes. -/
 theorem seqModel_behavior_sound {c : DriveConfig} {b : DriveBehavior}
     (h : seqModel.behavior c b) : DSteps c ⟨.done b.1, b.2⟩ := by
@@ -306,7 +315,7 @@ theorem seqModel_behavior_sound {c : DriveConfig} {b : DriveBehavior}
             | mk tr st' =>
               have hb := h.2
               subst hb
-              exact runNDT_sound fuel m st out tr st' h.1
+              exact runNDFuel_sound fuel m st out tr st' h.1
 
 /-- Layer-2 → adequacy discharge (proved): a relational proof covering
     every `Steps`-reachable terminal configuration discharges into the

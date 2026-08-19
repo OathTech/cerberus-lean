@@ -6,7 +6,7 @@
 
 import RelSem.ExecModel
 import RelSem.Machine
-import RelSem.RunNDT
+import RelSem.RunND
 import RelSem.Cerberus
 import RelSem.IrisCoupling
 -- arc-7 S1: the in-build axiom audit (golean pattern) — a lib member,

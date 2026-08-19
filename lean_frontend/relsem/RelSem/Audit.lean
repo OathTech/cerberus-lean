@@ -16,7 +16,9 @@
      file being elaborated (no module index yet). Each constant's
      TRANSITIVE axioms (`collectAxioms`) must lie inside the declared
      boundary below; `sorryAx` / `ofReduceBool` / `ofReduceNat` (the D14
-     non-kernel-method axioms) are never in it.
+     non-kernel-method axioms) are never in it. (Header line "DAEMON
+     entering `runNDT_sound`" reads `runNDFuel_sound` since the arc-7 S2
+     totalize-CerbND transfer.)
 
   2. CURATED PINS — `#guard_msgs in #print axioms` on the load-bearing
      proved theorems, asserting their EXACT axiom sets, so growth (e.g.
@@ -49,7 +51,7 @@
   relsem/ source names DAEMON (the hand-written axiom census and the D14
   grep cover relsem/), so the only entry vector is the generated code.
   The layer-boundary theorems that do NOT mention the fuel'd substrate
-  (`runNDT_sound`, `runNDT_mono`, `behaviors_sound`,
+  (`runNDFuel_sound`, `runND_sound`, `runNDFuel_mono`, `behaviors_sound`,
   `seqModel_behavior_sound`, `seqModel_adequate_of_reach`,
   `pointsToByte_functional`) are DAEMON-FREE and pinned exactly below —
   the curated pins are what keep "DAEMON allowed in principle" from
@@ -86,7 +88,7 @@
 import Lean
 import RelSem.ExecModel
 import RelSem.Machine
-import RelSem.RunNDT
+import RelSem.RunND
 import RelSem.Cerberus
 import RelSem.IrisCoupling
 
@@ -113,10 +115,14 @@ def sorryExceptions : List Name :=
 /-! ## Curated pins — exact axiom sets of the load-bearing theorems.
     Re-baseline only deliberately, in the same commit, with the reason. -/
 
-/-- info: 'RelSem.runNDT_sound' depends on axioms: [propext, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.runNDT_sound
-/-- info: 'RelSem.runNDT_mono' depends on axioms: [propext, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.runNDT_mono
+/-- info: 'RelSem.runNDFuel_sound' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.runNDFuel_sound
+/-- info: 'RelSem.runND_sound' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.runND_sound
+/-- info: 'RelSem.runNDFuel_mono' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.runNDFuel_mono
+/-- info: 'RelSem.Cerb.runNDActiveSound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.runNDActiveSound
 /-- info: 'RelSem.behaviors_sound' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.behaviors_sound
 /-- info: 'RelSem.Cerb.seqModel_behavior_sound' depends on axioms: [propext, Classical.choice, Quot.sound] -/

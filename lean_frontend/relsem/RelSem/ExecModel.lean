@@ -32,7 +32,8 @@ namespace RelSem
     * `Behavior`/`behavior` — the observable-behavior extraction: which
       observable behaviors a configuration admits. For the sequential
       instance this is (outcome, final state) via the fuel-erased total
-      runner (`∃ fuel, · ∈ runNDT fuel …`); for a concurrency instance it
+      runner (`∃ fuel, · ∈ CerbND.runNDFuel fuel …`); for a concurrency
+      instance it
       would be consistent candidate executions. Adequacy statements
       quantify over `behavior`, so "more nondeterminism" (weak memory,
       schedulers) arrives as MORE behaviors in the SAME statement form

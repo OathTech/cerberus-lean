@@ -97,8 +97,9 @@
         (via seqModel_adequate_of_reach — PROVED at 4.29: behaviors are
          Steps-reachable, so per-trace facts cover all behaviors)
       ⇒ RelSem.Cerb.HarnessAdequate …  (CerbND-shaped headline; this last
-        arrow is the arc-7 "totalize CerbND" slice — runND = runNDT at
-        sufficient fuel — closing RunNDActiveSound)
+        arrow is CLOSED since arc-7 S2: the runner is totalized, runND =
+        runNDFuel ndDefaultFuel by rfl, and RunNDActiveSound is proved —
+        `runNDActiveSound`)
 
   the middle statement being model-parametric (quantifies M.behavior,
   never enumerator output — survey §7.7 discipline), the final statement
