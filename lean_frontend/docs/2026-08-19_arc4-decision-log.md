@@ -39,3 +39,15 @@ path uses the CONCRETE memory model (CerbMem) — easy_update (defacto)
 is likely OFF the runtime path (which is why 62 programs store happily);
 its elimination matters for driver2's KERNEL CONE (success condition 2)
 and gets a dedicated later worker.
+
+**D5** — S2 boundary passed: first differential baseline 73/105 matching
+(58 value + 15 UB), independently reproduced by the orchestrator.
+Notable worker calls, endorsed: zero-execution runND emits Error + rc 1
+where OCaml silently exits 0 (honesty over byte-parity — the OCaml
+behavior is arguably a bug); 097's oracle-side crash recorded as
+CERB_SKIP (the OCaml TODO-failure is upstream-reportable). Operator
+installed csmith 2.3.0 mid-slice; disposition updated live (fuzz kit:
+port + S4b smoke run; creduce still absent → networked window). S3
+batches will work the 29 fixable non-matches by class:
+S3a=ACTION_ILLTYPED(15), S3b=memory FAILs(7)+Illformed(2),
+S3c=SeqRMW(2)+individual mismatches 052/066/098.
