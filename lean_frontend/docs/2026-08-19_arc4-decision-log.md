@@ -131,3 +131,45 @@ insufficient three times now. Residue recorded, not gated:
 flexible_array_member's derived BEq elaborates against ctype sorry stubs
 (import-leaf limitation, §19) — inside easy_update's cone, OFF driver2's;
 C-tier backend item, next arc.
+
+**D13** — Audit outcomes + S5f fix batch (2026-08-19). Two adversarial
+audits of the S5 close-out produced a fix list, implemented in full
+(S5f worker, three commits: harness hardening / seam fixes / gates+docs).
+Harness (H1-H4): full verdict-SEQUENCE comparison replaces head-1;
+exit-code/verdict-consistency enforcement (LEAN_ERROR fatal Lean-side,
+CERB_INCONSISTENT visible OCaml-side — NOTE: the audit's literal "any
+nonzero Lean exit is fatal" was implemented as
+consistency-with-the-runM-convention, since both binaries deliberately
+exit 1 on single-UB and the literal rule would have flagged the entire
+UB corpus); not-in-baseline files with failing statuses now FATAL in
+--check-baseline; zero-comparison default runs fail; the two residual
+caveats (both-sides-timeout invisibility, stdout spoofing) recorded in
+the harness header. The tightening moved exactly ONE file:
+coverage ptr3-006 MATCH→MISMATCH — head-1 had masked open defect 8
+(OCaml eq_ptrval provenance-fork msum → 2 executions vs Lean's 1);
+reporting baseline updated with that diagnosis, defect 8 stays open.
+Seams (C1-C5): reconstructValue now stores the POINTEE type in MVpointer
+(impl_mem.ml:1007/1012/1019/1054); byte-provenance policies implemented
+per the actual OCaml split (pointer loads = split_bytes shared-prov,
+integer/Byte loads = pvi_split_bytes combine_prov fold; the ValidPtrProv
+copy-offset status is computed but — like OCaml under non-PNVI — not
+consulted); integer repr bytes carry NO copy_offset (F8); storeM gained
+OCaml's ill-typed-store guard (ctype_mem_compatible/typeof ports,
+impl_mem.ml:23-49/1115-1136/1673-1681); load/store citation line numbers
+re-derived against the actual file; float-mul upstream bug recorded
+(lembugs/2026-08-19_upstream-float-mul.md — Cerb_floating.mul is (+.);
+Lean implements real multiplication, documented-deliberate); tags.c
+set-overwrite and get-on-unset divergences documented-deliberate with
+reasons (not mirrored — would add crash surface on no live path).
+DIFFERENTIAL MOVEMENT FROM SEAM FIXES: ZERO on all three corpora
+(minimal 103/106 BASELINE OK; coverage identical per-file pre/post;
+debug 0 regressions). Gates (G1-G3): exemplar axiom probe fail-closed
+(negative-tested: bogus name → FAIL); hand-written/generated sync gate
+in test_unit.sh (negative-tested: drifted file → FAIL) — which caught a
+REAL laundering instance: generated/Main.lean was stale, so the shipped
+binary LACKED the S1r floor probe (Main.lean now in LEAN_HANDWRITTEN,
+regenerated); boundary honesty stated in both gate headers + the
+axiom-gate header, with_tagDefs axiom added to the declared-boundary
+list in the results doc. Gate-list expansion remains next-arc, priced.
+Register after S5f: 16 fixed / 3 documented-deliberate / 13 open (of
+30 findings, 18a/b split).

@@ -11,6 +11,15 @@
 #   reporting (default until S2): print findings, exit 0.
 #   enforcing (CERB_PURITY_ENFORCE=1, default after S2 flips it below):
 #     any non-allowlisted finding fails the gate.
+#
+# BOUNDARY HONESTY (arc-4 S5f, audit G3): the 11-module list below covers
+# GENERATED modules only. The hand-written seams those modules call into
+# (CerbMem.lean — partial defs and panic! sites; CerbND.lean — partial
+# runND; CerbTags.lean — the with_tagDefs AXIOM + BaseIO externs;
+# CerbFloat/CerbUtils/...) are OUTSIDE this gate's scan: nothing here
+# inspects them. They are covered only by the declared-boundary list in
+# the arc results doc (2026-08-19_arc4-results.md). Expanding the gate
+# to the hand-written seams is a priced next-arc item, NOT done this arc.
 set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."

@@ -292,7 +292,11 @@ LEAN_HANDWRITTEN = CerberusImpl.lean CerbLocation.lean CerberusFresh.lean \
     CerbGlobal.lean CerbFloat.lean CerbUtils.lean CerbPP.lean CerbMem.lean \
     CerbFS.lean CerbConcurrency.lean CerbCtypeInstances.lean CerbStepInstances.lean CerbCabsInstances.lean CerbInhabitedInstances.lean \
     CerbTags.lean CerbDebug.lean CerbDecode.lean CabsImport.lean CoreParser.lean \
-    CerbND.lean
+    CerbND.lean Main.lean
+# Main.lean is in the list since arc-4 S5f: it was previously copied only
+# by hand, and a stale generated/Main.lean silently dropped the S1r floor
+# probe from the built binary (audit-2 G2). test_unit.sh's sync gate now
+# asserts byte-identity of every file above against its generated/ copy.
 
 # Update and reinstall lem via opam.  Lem is pinned to
 # https://github.com/septract/lem-lean#mdd/lean-backend via `opam pin`.

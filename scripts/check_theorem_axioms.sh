@@ -6,6 +6,18 @@
 # not narrated. Installed BEFORE the S5 failwith change (guardrail-first):
 # starts by pinning the CURRENT known-tainted state; S5 flips EXPECT below
 # to the clean state and the gate then enforces it forever.
+#
+# BOUNDARY HONESTY (arc-4 S5f, audit G3): the probes below measure
+# GENERATED exemplar cones + driver2 ONLY. Hand-written seams are outside
+# every probe here. In particular one hand-written AXIOM exists on the
+# pipeline and is part of the DECLARED boundary, not a finding:
+# CerbTags.with_tagDefs (CerbTags.lean:70) — an `axiom` with
+# @[implemented_by] binding the C-side set/restore extent (native/tags.c
+# cerb_tags_with; the axiom form survives the DCE that erased the opaque
+# form, arc-4 S1r). It sits in the Mini_pipeline (const-expr mini-run)
+# cone, which no probe below covers — this gate does NOT measure it.
+# sorryAx remains forbidden everywhere probed. Declared-boundary record:
+# 2026-08-19_arc4-results.md.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -16,24 +28,38 @@ cd "$SCRIPT_DIR/.."
 EXPECT="${CERB_AXIOM_EXPECT:-clean}"
 
 PROBE=lean_frontend/.axiom-probe.lean
-cat > "$PROBE" <<'EOF'
+EXEMPLARS=(core_object_type_of_ctype get_membersDefs zeros_aux
+           "fresh_symbol'" match_pattern convert_pexpr nd_bind
+           subst_sym_pexpr)
+{
+  cat <<'EOF'
 import Core_aux
 import Ctype_aux
 import Core_run
 import Core_run_aux
 import Nondeterminism
-#print axioms core_object_type_of_ctype
-#print axioms get_membersDefs
-#print axioms zeros_aux
-#print axioms fresh_symbol'
-#print axioms match_pattern
-#print axioms convert_pexpr
-#print axioms nd_bind
-#print axioms subst_sym_pexpr
 EOF
+  for name in "${EXEMPLARS[@]}"; do
+    echo "#print axioms $name"
+  done
+} > "$PROBE"
 OUT=$(cd lean_frontend && lake env lean .axiom-probe.lean 2>&1 | grep -v -i warning || true)
 rm -f "$PROBE"
 echo "$OUT"
+
+# Fail-closed (arc-4 S5f, audit G1 — same shape as the driver2 probe
+# below): every probed exemplar must produce exactly one
+# "depends on axioms"/"does not depend" line. A probe error (unknown
+# constant, import failure, elaboration error) produces no such line for
+# the name and FAILS the gate rather than silently passing the
+# daemon/sorry greps against partial output.
+for name in "${EXEMPLARS[@]}"; do
+  n=$(grep -cE "'([A-Za-z0-9_.']*\.)?${name}' (depends on axioms|does not depend on any axioms)" <<<"$OUT" || true)
+  if [[ "$n" -ne 1 ]]; then
+    echo "check_theorem_axioms: FAIL — exemplar probe for '$name' did not run cleanly (matched $n lines; fail-closed)"
+    exit 1
+  fi
+done
 
 has_daemon=0
 grep -q "DAEMON" <<<"$OUT" && has_daemon=1

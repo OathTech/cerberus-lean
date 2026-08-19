@@ -11,6 +11,16 @@
 #   default    — report findings, always exit 0 (sweep-in-progress mode)
 #   ENFORCE=1  — exit 1 on any non-allowlisted finding OR any stale
 #                allowlist entry (fail-closed in both directions)
+#
+# BOUNDARY HONESTY (arc-4 S5f, audit G3): the 11-module list below covers
+# GENERATED modules only. The hand-written seams those modules call into
+# are OUTSIDE this gate and are NOT partial-free: CerbMem.lean carries
+# partial defs (memberAlign/offsetsofMembers/offsetsof/sizeofCtype/
+# alignofCtype/memValueToBytes/reconstructValue/typeofMval/
+# unqualifyAndUnatomic/stringFromMemValue) and panic! sites; CerbND.lean
+# has partial runND; CerbTags.lean carries the with_tagDefs axiom.
+# Declared-boundary record: 2026-08-19_arc4-results.md. Expanding the
+# gate to the hand-written seams is a priced next-arc item.
 set -u
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 GEN="$SCRIPT_DIR/../lean_frontend/generated"
