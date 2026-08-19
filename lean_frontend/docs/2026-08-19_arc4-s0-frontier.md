@@ -294,3 +294,93 @@ Other movements and notes:
    currently "completing" with wrong Killed results).
 4. `CerbMem.arrayShiftPtrval` panics where OCaml reports UB (097).
 5. 042-nested-loop: `illtyped SeqRMW` panic + SIGSEGV during desugar.
+
+## Post-S3a frontier (2026-08-19, after fixing the ACTION_ILLTYPED crash class)
+
+Root cause (S3a): **one symbol-id collision between two id streams**, not a
+value-representation bug per se. Desugar mints symbols from the desugM
+threaded counter (`cabs_to_ail_effect.lem` `fresh_sym_supply`, 0-based,
+commit 8923d6436); translation mints its `a_NNN` temporaries from the
+ambient counter (`Symbol.fresh` → `CerberusFresh.freshIntIO`, native
+`lean_frontend/native/fresh_int.c`). In OCaml the ambient counter has been
+advanced past every std.core symbol registration by the Core parser
+(`parsers/core/core_parser.mly:184` `register_sym`, `:220` `register_label`,
+one `Cerb_fresh.int()` each — ~488 for the current std.core) before the .c
+unit is processed, so the two streams are disjoint. The Lean CoreParser
+interns std.core symbols by name hash (`CoreParser.mkSym`) without touching
+the counter, so both streams started at 0 and overlapped. Since
+`symbolEqual`/`symbol_compare` (symbol.lem) ignore the description and all
+Lean digests are `""`, a translation temp with the same nat as a desugar
+object symbol is THE SAME key to `update_env`/`lookup_env` — a later
+`Esseq`/`Elet` binding of the temp clobbered the object pointer's env
+binding, and the Store/Load/Kill action then saw a loaded int (or even
+`Vtrue`, 064) where `Vobject (OVpointer _)` was expected →
+`ACTION_ILLTYPED` → `Step_error2` → `can_advance` failwithI panic.
+The instrumented operand dump that pinned this:
+`Store Vctype | Vloaded(LVspecified(OVinteger)) | ...` on all Store crashers,
+plus duplicate nat 21 as both `SD_None` (translation temp) and
+`SD_ObjectAddress i` (desugar) in the same arena.
+
+Fix (at the mint, hand-written seam): `lean_frontend/native/fresh_int.c`
+starts the ambient counter at `2^20`, reproducing the OCaml invariant
+(ambient/translation ids strictly above the per-unit 0-based desugar range)
+with a larger margin than OCaml's ~488. No .lem change; no generated-code
+change. Note the OCaml invariant itself is fragile for units with more
+desugar draws than the std.core offset — in OCaml the margin is ~488, here
+2^20; a unit where OCaml itself collides would now show up as a differential
+mismatch attributable to the OCaml side.
+
+`./scripts/test_exec.sh` after the fix (vs the S2 baseline
+`match=58 ub_match=15 mismatch=3 fail=9 crash=17`):
+
+```
+SUMMARY: total=105 match=76 ub_match=15 ub_diff=0 mismatch=3 fail=8 crash=0 timeout=0 cerb_skip=3
+```
+
+`--check-baseline` against the OLD baseline: **0 regressions, 18
+improvements**; baseline regenerated, `--check-baseline` rc 0 against the
+new file.
+
+Per-file delta — the 15 in-scope ACTION_ILLTYPED crashers, all now MATCH
+(Lean return value = OCaml, shown):
+
+| file | before | after |
+|---|---|---|
+| 014-while-simple | LEAN_CRASH (Store) | MATCH 5 |
+| 015-while-sum | LEAN_CRASH (Store) | MATCH 15 |
+| 017-func-recursive | LEAN_CRASH (Load) | MATCH 120 |
+| 027-for-loop | LEAN_CRASH (Store) | MATCH 15 |
+| 029-continue | LEAN_CRASH (Load) | MATCH 12 |
+| 039-compound-assign | LEAN_CRASH (Load) | MATCH 30 |
+| 040-do-while | LEAN_CRASH (Load) | MATCH 5 |
+| 045-ptr-arith | LEAN_CRASH (Kill) | MATCH 20 |
+| 048-pre-post-inc | LEAN_CRASH (Kill) | MATCH 12 |
+| 064-precedence-ptr | LEAN_CRASH (Load) | MATCH 30 |
+| 094-bool-conversion | LEAN_CRASH (Kill) | MATCH 4 |
+| 099-negative-right-shift | LEAN_CRASH (Kill) | MATCH 6 |
+| 102-bool-implicit-conv | LEAN_CRASH (Kill) | MATCH 3 |
+| 104-unsigned-wrap-arith | LEAN_CRASH (Kill) | MATCH 259 |
+| 105-bitwise-ops | LEAN_CRASH (Store) | MATCH 270 |
+
+Out-of-scope files moved by the same root cause (recorded, not chased):
+
+| file | before | after |
+|---|---|---|
+| 042-nested-loop | LEAN_CRASH (illtyped SeqRMW + SIGSEGV) | MATCH 6 |
+| 076-main-argv-access | LEAN_CRASH (illtyped SeqRMW) | MATCH 17 |
+| 055-char-array-init | FAIL (Illformed_program PEarray_shift) | MATCH 90 |
+
+(The "SeqRMW" and 055 Illformed classes were the same env-clobbering with a
+different downstream symptom; both classes are now empty.)
+
+Remaining non-MATCH population (unchanged by S3a, next queue): 8 FAIL
+(025/056/058/059/072/077/078/103 — memory/func-ptr classes), 3 MISMATCH
+(052-sizeof-expr, 066-cast-float, 098-cross-alloc-ptrdiff.undef DIFF),
+3 CERB_SKIP (073/074 .libc, 097 OCaml-side), 0 crashes, 0 timeouts.
+
+Latent items recorded for later slices: (a) `CoreParser` struct/union tag
+symbols are minted as `Symbol "" 0 (SD_Id tag)` (CoreParser.lean:361/365/
+448/452) — nat 0 can collide with desugar sym 0 if those paths are ever hit
+on the exec path; (b) hash-based stdlib ids live in the full 64-bit space,
+so a hash landing inside [2^20, 2^20 + #ambient draws) is theoretically
+possible, exactly as a hash landing in [0, N) was before this fix.
