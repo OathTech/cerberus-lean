@@ -1,12 +1,17 @@
-/* uri_harness.c — arc-5 S3 STRETCH: differential harness over libxml2's
- * xmlParseURISafe (uri.c recursive-descent RFC 3986 parser), linked as
- * 5 TUs: uri_harness.c + uri.c + xmlstring.c + xmlmemory.c + globals.c
- * (globals.c: xmlMalloc & co. are global function-pointer VARIABLES defined
- * there — probe report, execution datapoint). Corpus: valid / invalid /
- * edge-case URIs; per-URI observation line + accumulated checksum, exactly
- * the chvalid battery convention. Whatever fraction of this runs through
- * the LEAN pipeline is recorded as the arc-6 baseline
- * (tests/libxml2/uri_baseline.txt) — reporting, not a pass/fail bar.
+/* uri_harness.c — arc-5 S3 STRETCH / arc-6 S4 GATE: differential harness
+ * over libxml2's xmlParseURISafe (uri.c recursive-descent RFC 3986 parser),
+ * linked as 5 TUs: uri_harness.c + uri.c + xmlstring.c + xmlmemory.c +
+ * globals.c (globals.c: xmlMalloc & co. are global function-pointer
+ * VARIABLES defined there — probe report, execution datapoint). Corpus:
+ * valid / invalid / edge-case URIs; per-URI observation line + accumulated
+ * checksum, exactly the chvalid battery convention.
+ *
+ * Arc-6 S4: corpus grown 10 → 16 (indices 10-15, RFC 3986 edge classes:
+ * IPv6 literal, empty components, scheme-only, lone fragment,
+ * percent-encoded reserved chars with mixed hex case, empty authority) and
+ * the harness is GATING: test_libxml2_uri.sh pins every lane's expectation
+ * against tests/libxml2/uri_baseline.txt fail-closed, and LEAN_LIBC must
+ * agree with ORACLE_LIBC byte-for-byte (16/16).
  */
 #include <libxml/uri.h>
 #include <stdio.h>
@@ -22,6 +27,13 @@ static const char *tests[] = {
     "urn:example:animal:ferret:nose",            /* urn scheme */
     "?query#frag",                               /* query+fragment only */
     "http://%zz/",                               /* invalid pct-escape in host */
+    /* --- arc-6 S4 additions (RFC 3986 edge classes) ------------------- */
+    "http://[::1]:8080/v6",                      /* IP-literal host (IPv6, §3.2.2) + port */
+    "http://@example.com:/x",                    /* empty userinfo + empty port (both legal-empty) */
+    "s:",                                        /* minimal scheme, empty path */
+    "#",                                         /* lone empty fragment */
+    "/a%2Fb%2fc",                                /* pct-encoded reserved '/', upper+lower hex */
+    "//",                                        /* network-path ref, empty authority */
 };
 
 #define NTESTS (sizeof(tests) / sizeof(tests[0]))

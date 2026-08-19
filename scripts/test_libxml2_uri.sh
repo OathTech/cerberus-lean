@@ -1,11 +1,14 @@
 #!/bin/bash
-# test_libxml2_uri.sh — arc-5 S3 STRETCH harness / arc-6 REPORTING baseline.
+# test_libxml2_uri.sh — arc-6 S4 GATE (charter success condition 1;
+# formerly the arc-5 S3 stretch harness / arc-6 S1 reporting baseline).
 #
 # The probe's 4-TU xmlParseURISafe execution datapoint
 # (notes/2026-08-19_libxml2-probe.md, "Execution datapoint"), extended to a
-# 10-URI corpus (tests/libxml2/uri_harness.c: valid / invalid / edge cases)
-# and run against THREE configurations, each recorded in the committed
-# baseline (tests/libxml2/uri_baseline.txt):
+# 16-URI corpus (tests/libxml2/uri_harness.c: valid / invalid / edge cases;
+# arc-6 S4 grew it 10 → 16 with RFC 3986 edge classes — IPv6 literal,
+# empty components, scheme-only, lone fragment, pct-encoded reserved chars,
+# empty authority) and run against FOUR lanes, each recorded in the
+# committed baseline (tests/libxml2/uri_baseline.txt):
 #
 #   ORACLE_LIBC   : OCaml cerberus WITH its C libc (the probe's invocation;
 #                   no --nolibc). Executes the full corpus — the hard
@@ -25,15 +28,26 @@
 #                   + the 12 metadata TU cabs-jsons from
 #                   libc_prep.sh --jsons; see Main.loadLibc for the
 #                   bodies/metadata split and citations). Differential
-#                   against ORACLE_LIBC: the arc-6 exit criterion is
-#                   10/10 agreement here (S1 measured: exact match,
-#                   value h=546321043 + full stdout).
+#                   against ORACLE_LIBC: byte-for-byte agreement on the
+#                   full N-URI corpus is the arc-6 exit criterion.
 #
-# This is a REPORTING baseline, not a pass/fail capability bar (the S4
-# slice flips it to gating): the gate fails only if reality DRIFTS from
-# the recorded baseline (fail-closed both directions — a regression or an
-# unrecorded improvement both demand a baseline update with
-# justification).
+# GATING (arc-6 S4, charter success condition 1) — fail-closed, exit 1 on
+# ANY of:
+#   * lane-expectation violation (each lane's expectation is PINNED in
+#     this script, independent of the baseline file):
+#       ORACLE_LIBC   exit 0, Defined/Specified verdict, corpus-size pin
+#                     ("uri_harness n=16 h=" in its stdout)
+#       OCAML_NOLIBC  exit 1, unknown-procedure memset failure
+#       LEAN_NOLIBC   exit 1, unknown-procedure memset failure (the
+#                     mirrored-failure pair: both --nolibc surfaces must
+#                     KEEP agreeing that memset is the missing symbol)
+#       LEAN_LIBC     exit 0 AND verdict line byte-identical to
+#                     ORACLE_LIBC (the 16/16 differential bar)
+#   * drift from the committed baseline in EITHER direction (a regression
+#     or an unrecorded improvement both demand a baseline update with
+#     justification).
+#   The lane expectations are enforced in --record-baseline mode too — a
+#   re-record cannot launder a broken lane.
 #
 # Usage: ./scripts/test_libxml2_uri.sh [--record-baseline]
 # Environment: TIMEOUT_SECS (default 300), LIBXML2_DIR (see libxml2_prep.sh)
@@ -42,6 +56,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
 TIMEOUT_SECS="${TIMEOUT_SECS:-300}"
 ULIMIT_KB=4000000
+N_URIS=16   # corpus-size pin: must match NTESTS in tests/libxml2/uri_harness.c
 
 RECORD_BASELINE=false
 [[ "${1:-}" == "--record-baseline" ]] && RECORD_BASELINE=true
@@ -66,7 +81,7 @@ register_cleanup "$OUTPUT_DIR"
 cd "$PROJECT_ROOT" || fail "cannot cd to $PROJECT_ROOT"
 
 echo ""
-echo "libxml2 uri 5-TU stretch harness (arc-6 reporting baseline)"
+echo "libxml2 uri 5-TU harness (arc-6 S4 GATE, $N_URIS-URI corpus)"
 echo "=================================================="
 
 mapfile -t PREP < <("$PROJECT_ROOT/scripts/libxml2_prep.sh" uri.c) \
@@ -98,6 +113,14 @@ run_capped "$OUTPUT_DIR/oracle.out" "$OUTPUT_DIR/oracle.err" \
 record "ORACLE_LIBC exit" "$rc"
 record "ORACLE_LIBC" "$(head -1 "$OUTPUT_DIR/oracle.out")"
 echo "[oracle+libc] exit=$rc wall=$(grep -oE 'Elapsed.*' "$OUTPUT_DIR/oracle.err" | awk '{print $NF}') maxRSS=$(grep 'Maximum resident' "$OUTPUT_DIR/oracle.err" | awk '{print $NF}')kB"
+# Lane expectation (pinned): successful Defined/Specified run over the full
+# pinned corpus size.
+oracle_line=$(head -1 "$OUTPUT_DIR/oracle.out")
+[[ $rc -eq 0 ]] || fail "GATE: ORACLE_LIBC expected exit 0, got $rc"
+[[ "$oracle_line" == 'Defined {value: "Specified('* ]] \
+    || fail "GATE: ORACLE_LIBC verdict is not Defined/Specified: ${oracle_line:0:120}"
+[[ "$oracle_line" == *"uri_harness n=$N_URIS h="* ]] \
+    || fail "GATE: ORACLE_LIBC corpus-size pin violated (expected uri_harness n=$N_URIS in stdout)"
 
 # --- OCAML_NOLIBC -----------------------------------------------------------
 rc=0
@@ -108,6 +131,12 @@ run_capped "$OUTPUT_DIR/nolibc.out" "$OUTPUT_DIR/nolibc.err" \
 record "OCAML_NOLIBC exit" "$rc"
 record "OCAML_NOLIBC" "$(head -1 "$OUTPUT_DIR/nolibc.out")"
 echo "[ocaml-nolibc] exit=$rc: $(head -c 100 "$OUTPUT_DIR/nolibc.out")"
+# Lane expectation (pinned): the recorded --nolibc failure mode — memset is
+# the closure's missing symbol.
+ocaml_nolibc_line=$(head -1 "$OUTPUT_DIR/nolibc.out")
+[[ $rc -eq 1 ]] || fail "GATE: OCAML_NOLIBC expected exit 1, got $rc"
+[[ "$ocaml_nolibc_line" == *'unknown procedure'* && "$ocaml_nolibc_line" == *'memset'* ]] \
+    || fail "GATE: OCAML_NOLIBC expected unknown-procedure memset failure, got: ${ocaml_nolibc_line:0:120}"
 
 # --- LEAN_NOLIBC ------------------------------------------------------------
 declare -a JSONS=()
@@ -127,6 +156,13 @@ run_capped "$OUTPUT_DIR/lean.out" "$OUTPUT_DIR/lean.err" \
 record "LEAN_NOLIBC exit" "$rc"
 record "LEAN_NOLIBC" "$(head -1 "$OUTPUT_DIR/lean.out")"
 echo "[lean-nolibc] exit=$rc wall=$(grep -oE 'Elapsed.*' "$OUTPUT_DIR/lean.err" | awk '{print $NF}') maxRSS=$(grep 'Maximum resident' "$OUTPUT_DIR/lean.err" | awk '{print $NF}')kB: $(head -c 100 "$OUTPUT_DIR/lean.out")"
+# Lane expectation (pinned): the MIRRORED-FAILURE PAIR — the Lean --nolibc
+# surface must keep agreeing with OCAML_NOLIBC that memset is the missing
+# symbol.
+lean_nolibc_line=$(head -1 "$OUTPUT_DIR/lean.out")
+[[ $rc -eq 1 ]] || fail "GATE: LEAN_NOLIBC expected exit 1, got $rc"
+[[ "$lean_nolibc_line" == *'unknown procedure'* && "$lean_nolibc_line" == *'memset'* ]] \
+    || fail "GATE: LEAN_NOLIBC expected unknown-procedure memset failure (mirroring OCAML_NOLIBC), got: ${lean_nolibc_line:0:120}"
 
 # --- LEAN_LIBC (arc-6 S1) ---------------------------------------------------
 # The pinned libc dump (drift-checked by libc_prep.sh) + the 12 metadata
@@ -144,13 +180,22 @@ run_capped "$OUTPUT_DIR/lean_libc.out" "$OUTPUT_DIR/lean_libc.err" \
 record "LEAN_LIBC exit" "$rc"
 record "LEAN_LIBC" "$(head -1 "$OUTPUT_DIR/lean_libc.out")"
 echo "[lean+libc] exit=$rc wall=$(grep -oE 'Elapsed.*' "$OUTPUT_DIR/lean_libc.err" | awk '{print $NF}') maxRSS=$(grep 'Maximum resident' "$OUTPUT_DIR/lean_libc.err" | awk '{print $NF}')kB: $(head -c 100 "$OUTPUT_DIR/lean_libc.out")"
-if [[ "$(head -1 "$OUTPUT_DIR/lean_libc.out")" == "$(head -1 "$OUTPUT_DIR/oracle.out")" ]]; then
-    echo "[lean+libc] EXACT MATCH with ORACLE_LIBC (10/10 URI corpus)"
+# Lane expectation (pinned): THE GATE — byte-identical verdict line vs
+# ORACLE_LIBC over the full corpus (charter success condition 1).
+lean_libc_line=$(head -1 "$OUTPUT_DIR/lean_libc.out")
+[[ $rc -eq 0 ]] || fail "GATE: LEAN_LIBC expected exit 0, got $rc"
+if [[ "$lean_libc_line" == "$oracle_line" ]]; then
+    echo "[lean+libc] EXACT MATCH with ORACLE_LIBC ($N_URIS/$N_URIS URI corpus)"
 else
-    echo "[lean+libc] MISMATCH with ORACLE_LIBC"
+    echo "[lean+libc] MISMATCH with ORACLE_LIBC:" >&2
+    echo "  oracle: ${oracle_line:0:200}" >&2
+    echo "  lean:   ${lean_libc_line:0:200}" >&2
+    fail "GATE: LEAN_LIBC differential mismatch vs ORACLE_LIBC"
 fi
 
-# --- compare against the reporting baseline ---------------------------------
+# --- compare against the committed baseline (gate leg 2: drift) -------------
+# All pinned lane expectations passed above (they run in --record-baseline
+# mode too — a re-record cannot launder a broken lane).
 echo ""
 if $RECORD_BASELINE; then
     mv "$OUTPUT_DIR/baseline.new" "$BASELINE"
@@ -160,10 +205,10 @@ if $RECORD_BASELINE; then
 fi
 if diff -u "$BASELINE" "$OUTPUT_DIR/baseline.new" > "$OUTPUT_DIR/baseline.diff"; then
     echo "=================================================="
-    echo "ALL MATCH RECORDED BASELINE (arc-6 reporting state unchanged)"
+    echo "GATE PASS: all lane expectations pinned-green + baseline unchanged ($N_URIS/$N_URIS)"
     exit 0
 else
-    echo "DRIFT from recorded baseline (regression OR unrecorded improvement):"
+    echo "GATE FAIL: drift from committed baseline (regression OR unrecorded improvement):"
     cat "$OUTPUT_DIR/baseline.diff"
     exit 1
 fi
