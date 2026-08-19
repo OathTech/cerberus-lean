@@ -13,7 +13,7 @@ rev = "v4.29.0"
 [[require]]
 name = "LemLib"
 git = "https://github.com/septract/lem-lean"
-rev = "arc/libc-load"
+rev = "mdd/lean-backend"
 subDir = "lean-lib"
 
 [[lean_lib]]

@@ -8,7 +8,7 @@
    "rev": "bd7e2ebeaf5d24bc643c59cdac7b31549afd2f2f",
    "name": "LemLib",
    "manifestFile": "lake-manifest.json",
-   "inputRev": "arc/libc-load",
+   "inputRev": "mdd/lean-backend",
    "inherited": false,
    "configFile": "lakefile.lean"},
   {"url": "https://github.com/leanprover-community/batteries",
