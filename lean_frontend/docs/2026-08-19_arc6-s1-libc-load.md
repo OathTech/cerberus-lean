@@ -159,8 +159,14 @@ sources.** `Main.loadLibc` splits the library file:
     **has_proto is excluded** — declaration-TU vs definition-TU entries
     disagree on it (__strtox/__strtoxd), the oracle keeps both under
     distinct syms, and has_proto is verified UNREAD by the pinned
-    bodies (all 221 cfunction 4-tuple binders bind it to a dead
+    bodies (all 339 cfunction 4-tuple binders bind it to a dead
     variable — checked mechanically);
+    **CORRECTION (2026-08-19, arc-6 S5f, per audit-2):** the binder
+    count above originally read 221 (a whitespace-brittle grep);
+    audit-2's whitespace-tolerant recount over tests/libc/libc.core
+    gives 339 binders, all 339 binding has_proto to a dead variable —
+    the UNREAD conclusion is unchanged. Same correction applied to
+    Main.lean's module note.
   - fun map: Proc definitions win over ProcDecl entries per symbol;
     duplicate Proc definitions (static __procfdname in two TUs,
     alpha-equivalent bodies, conflated by name interning) keep the

@@ -239,9 +239,12 @@ private partial def libcShowCtype : ctype → String
     __strtox/__strtoxd, declaration-TU true vs definition-TU false); in
     the oracle both entries coexist under distinct symbols, but our
     name-join must pick one. has_proto is verified UNREAD by the pinned
-    libc bodies (all 221 cfunction 4-tuple binders bind it to a variable
+    libc bodies (all 339 cfunction 4-tuple binders bind it to a variable
     that never occurs again — checked mechanically over
-    tests/libc/libc.core), so the first-inserted value stands. -/
+    tests/libc/libc.core; the count was originally misstated as 221, a
+    whitespace-brittle grep — corrected per audit-2's whitespace-tolerant
+    recount, arc-6 S5f; all 339 dead, conclusion unchanged), so the
+    first-inserted value stands. -/
 private def libcFuninfoEq
     (f1 f2 : CerbLocation.Loc × attributes × ctype × List (Option sym × ctype) × Bool × Bool) : Bool :=
   let (_, _, ret1, ps1, v1, _) := f1

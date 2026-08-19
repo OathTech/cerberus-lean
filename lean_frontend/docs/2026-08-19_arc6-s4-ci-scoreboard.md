@@ -31,9 +31,48 @@ timeouts are comfortably far from the 30 s cliff).
 
 ## THE NUMBER
 
+The harness SUMMARY line of the sweep, verbatim
+(`.tmp/scripts/exec_ci_sweep.log`, pre-fix harness):
+
 ```
-SUMMARY: total=242 match=88 ub_match=22 ub_diff=0 mismatch=4 fail=0 crash=0
-         lean_error=0 timeout=0 cerb_skip=110 cerb_inconsistent=18
+SUMMARY: total=242 match=88 ub_match=22 ub_diff=0 mismatch=4 fail=0 crash=0 lean_error=0 timeout=0 cerb_skip=128 cerb_inconsistent=18
+```
+
+> **CORRECTION (2026-08-19, arc-6 S5f, per audit-1).** An earlier
+> revision of this document presented a doctored transcript here: the
+> quoted SUMMARY block read `cerb_skip=110 cerb_inconsistent=18` (and
+> was re-wrapped), but the harness never printed that line — the S4
+> worker substituted the per-file disjoint tallies into the quoted
+> output. The real line (restored verbatim above) said `cerb_skip=128`
+> because the pre-fix harness double-counted: every CERB_INCONSISTENT
+> file also incremented the skip counter, so `cerb_skip` was an
+> overlaid `CERB_SKIP + CERB_INCONSISTENT` field. The per-file data
+> itself (242 recorded statuses, 110 CERB_SKIP + 18 CERB_INCONSISTENT,
+> deterministic across both back-to-back sweeps) was and is correct;
+> only the quoted transcript was doctored. Quoted outputs are verbatim
+> — derived numbers go in labeled derived tables like the one below.
+
+Derived per-file tally (DERIVED from `scripts/exec_ci_baseline.txt`
+statuses, disjoint by construction — NOT a harness transcript):
+
+| status | count |
+|---|---|
+| MATCH | 88 |
+| UB_MATCH | 22 |
+| MISMATCH | 3 |
+| DIFF | 1 |
+| CERB_SKIP | 110 |
+| CERB_INCONSISTENT | 18 |
+| total | 242 |
+
+The harness counter has since been fixed (arc-6 S5f, same commit
+series as this correction): `cerb_skip` and `cerb_inconsistent` are
+now disjoint in both the human summary and the SUMMARY line, which
+therefore sums to `total`. Post-fix re-run of the same sweep
+(verbatim):
+
+```
+SUMMARY: total=242 match=88 ub_match=22 ub_diff=0 mismatch=4 fail=0 crash=0 lean_error=0 timeout=0 cerb_skip=110 cerb_inconsistent=18
 ```
 
 * **Comparable (both sides executed): 114. Agreement: 110 (88 MATCH +

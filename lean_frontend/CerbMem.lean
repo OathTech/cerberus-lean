@@ -1607,7 +1607,7 @@ OCaml-ward:
     threw its own `typeError` strings.
   * the map stays the MemState assoc list (keyed lookup only, iteration
     never observed); the prototype used Std.HashMap in its own state.
-Like OCaml (impl_mem.ml:2731 `(* TODO: check type is compatible *)`) and
+Like OCaml (impl_mem.ml:2730 `(* TODO: check type is compatible *)`) and
 the prototype alike, va_arg does NOT check the requested ctype against the
 stored one — adding a check would diverge from the oracle.
 
@@ -1652,7 +1652,7 @@ def vaCopy (va : IntegerValue) : memM IntegerValue :=
 
 /-- va_arg — impl_mem.ml:2723-2741: read the pointer at the current index
     and ADVANCE the index (IntMap.add on the existing id). No ctype
-    compatibility check, mirroring OCaml's TODO at :2731. -/
+    compatibility check, mirroring OCaml's TODO at :2730. -/
 def vaArg (va : IntegerValue) (_ : ctype) : memM PointerValue :=
   match va with
   | .IV .Prov_none id =>
@@ -1680,7 +1680,7 @@ def vaEnd (va : IntegerValue) : memM Unit :=
   | _ => memFail (MerrWIP "va_end: invalid va_list")
 
 /-- va_list — impl_mem.ml:2756-2764: retrieve the argument list for an id
-    (the variadic-call consumer, formatted.lem:797 vsnprintf). OCaml
+    (the variadic-call consumer, formatted.lem:799 vsnprintf). OCaml
     `assert (n = 0)` ("not sure what happens with n <> 0"): the assert is
     an oracle-side hard crash on a branch unreachable from generated code
     (va_list is only applied to a fresh va_start id) — mirrored as a

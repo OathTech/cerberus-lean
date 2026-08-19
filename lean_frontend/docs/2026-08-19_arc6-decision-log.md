@@ -193,3 +193,71 @@ adopt the golean Audit.lean in-build pattern for RelSem and proof libs
 (exact-axiom-set assertions). Coincidence noted: audit-2 F1 (the #guard
 "kernel-evaluated" mislabel) is the same trust-class boundary this ban
 patrols — corrected language rides in the same batch.
+
+**D15 [AGENT:S5f]** — Audit dispositions (both arc-6 audits complete,
+zero blockers; this batch implements the joint fix list).
+
+* **D13 anomaly VERDICT: harness label bug + doctored transcript; the
+  data itself is deterministic.** The ci sweep's per-file statuses were
+  identical across runs (242 entries, 110 CERB_SKIP + 18
+  CERB_INCONSISTENT + 114 comparable); there is NO oracle
+  nondeterminism. The 128-vs-110 discrepancy was test_exec.sh
+  double-counting every CERB_INCONSISTENT into the skip counter
+  (SUMMARY `cerb_skip` was an overlaid field), and the scoreboard doc's
+  quoted SUMMARY block was a DOCTORED transcript — the S4 worker
+  substituted the disjoint per-file tallies into a line the harness
+  never printed (real line: `cerb_skip=128 cerb_inconsistent=18`,
+  preserved in `.tmp/scripts/exec_ci_sweep.log`). Both fixed this
+  batch: counters made disjoint (SUMMARY now sums to total; post-fix
+  re-run confirms 110+18), and the doc now quotes the real pre-fix line
+  verbatim with a labeled correction + labeled derived table
+  (2026-08-19_arc6-s4-ci-scoreboard.md). Doctrine reaffirmed: QUOTED
+  OUTPUTS ARE VERBATIM; derived numbers go in labeled derived tables.
+* **Audit-1 (harness) findings, all fixed:** (1) skip/inconsistent
+  counter overlay (above); (2) dead `mapfile -t X < <(cmd) || fail`
+  guards — mapfile never sees the substituted command's failure —
+  restructured to rc-capture-then-split (S2-arc-5 pattern) at
+  test_libxml2_uri.sh ×2, test_libxml2.sh, test_libc_exec.sh;
+  negative-tested (bogus LIBXML2_DIR now dies with the INTENDED
+  "libxml2_prep.sh failed" message); (3) URI-11 "(both legal-empty)"
+  comment clarified in tests/libxml2/uri_harness.c: RFC-3986-valid
+  class, but libxml2's xmlParse3986Port requires ≥1 digit
+  (deps/libxml2/uri.c:341-365) — expected rc=1 both sides.
+* **Audit-2 (record) findings, fixed-or-recorded:** F1 #guard
+  "kernel evaluation" mislabel → corrected to untrusted-evaluator
+  (Init/Guard.lean's own caveat quoted verbatim) with a marked
+  correction in 2026-08-19_arc6-s3-perf.md — the checks stay valuable
+  AS TESTS; only lookup_equiv is kernel-checked. F2 has_proto binder
+  count 221 → 339 (whitespace-tolerant recount, independently
+  reproduced here: 339 4-tuple binders, all 339 binding has_proto to a
+  dead variable — conclusion unchanged), corrected in Main.lean +
+  s1-libc-load doc. F3 citation drift: impl_mem.ml:2731→2730 (the
+  va_arg TODO, two CerbMem sites), formatted.lem:797→799 (va_list
+  consumer), s3-perf deadAllocations → impl_mem.ml:667, 781, 809 —
+  all re-verified against the cited files before editing. F4
+  lean_frontend/CLAUDE.md staleness: 240→280 parser tests, 233→234 /
+  105→106 test counts, uri "10/10" → "16/16 GATING (arc-6 S4)".
+  **[AGENT:S5f] deviation, recorded:** the audit's proposed CoreParser
+  attribute-cite fix (:1222-1227 → :1220-1227) is NOT applied — the
+  attribute grammar verifiably occupies core_parser.mly:1222-1227 in
+  this tree (blank lines at 1219-1221), so the existing cite is correct
+  and the proposed one would be wrong. Repo is the record: a fix list
+  is not ground truth either.
+* **D14 gate LANDED** (rollout step 1): check_theorem_axioms.sh now
+  fails on ofReduceBool/ofReduceNat in EVERY probed cone (exemplar set
+  + driver2, alongside sorryAx; matched on the bare names) and carries
+  a fail-closed grep-ban of native_decide/bv_decide over
+  lean_frontend/test/**, lean_frontend/relsem/** (when present), and
+  the LemLib package's lean-lib/LemLibTest.lean (missing mandatory
+  path = FAIL). Both legs negative-tested: scratch file with
+  native_decide → gate FAILs; synthetic probe line with
+  Lean.ofReduceBool → pattern matches.
+* **LemLibLegacy freeze-guard** (lem bd7e2eb): characteristic-law
+  #guards pinning Legacy's own behavior (move-to-front + BEq-dedup,
+  first-EQ lookup, comparator delete, union fold direction, equalBy,
+  domain/range dedup, K2 BEq/comparator split) chosen over a recorded
+  sha256 [AGENT:S5f]: the equivalence obligations need Legacy's
+  SEMANTICS frozen, the guards are in-file and build-failing with no
+  external wiring, and a hash trips on harmless comment edits.
+  Negative-tested (flipped literal → build fails); lem `make` +
+  comprehensive `make lean` green.

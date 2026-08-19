@@ -54,18 +54,18 @@ Each is a `[[lean_exe]]` in `lakefile.toml` that exits 0 on pass.
 ```
 
 Current unit tests:
-- `core-parser-test` — 240 tests for `CoreParser.lean`
+- `core-parser-test` — 280 tests for `CoreParser.lean`
 - `fresh-int-test` — verifies `fresh_int`/`Symbol.fresh` generate unique values
 
 ### Integration tests (C → JSON → Lean, per parser)
 
 ```bash
-# Cabs JSON bridge: C → OCaml → JSON → Lean (233 tests, 100%)
-./scripts/test_parse.sh              # tests/minimal (105 tests)
+# Cabs JSON bridge: C → OCaml → JSON → Lean (234 tests, 100%)
+./scripts/test_parse.sh              # tests/minimal (106 tests)
 ./scripts/test_parse.sh tests/ci     # upstream CI (128 tests)
 
 # Core text parser integration: C → cerberus --pp core → Lean CoreParser
-./scripts/test_core.sh              # tests/minimal (105 tests)
+./scripts/test_core.sh              # tests/minimal (106 tests)
 ./scripts/test_core.sh tests/ci     # upstream CI (128 tests)
 ```
 
@@ -202,7 +202,7 @@ Lem is pinned to `https://github.com/septract/lem-lean#mdd/lean-backend`.
 - ✅ C-libc loading (arc-6 S1): pinned libc Core dump (`tests/libc/`)
   parsed by CoreParser + metadata (extern/funinfo/tagDefs) from our own
   elaboration of the 12 libc TUs, linked via Core_linking
-  (`--libc`/`--libc-tu`, Main.loadLibc). uri corpus 10/10 vs oracle;
+  (`--libc`/`--libc-tu`, Main.loadLibc). uri corpus 16/16 vs oracle, GATING (arc-6 S4);
   test_core known-red 078-float-special FIXED (bodyless ProcDecl form)
   — tests/minimal test_core now 106/106.
 - ✅ Varargs execution (arc-6 S2, register 15 FIXED): CerbMem
