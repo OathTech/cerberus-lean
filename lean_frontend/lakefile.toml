@@ -1,5 +1,8 @@
 name = "CerberusLean"
-defaultTargets = ["CerberusLean", "cerberus-lean"]
+# RelSem in defaultTargets since arc-7 S1: `lake build` elaborates
+# relsem/RelSem/Audit.lean (the in-build axiom audit), so plain builds
+# carry the gate (golean in-build audit property).
+defaultTargets = ["CerberusLean", "RelSem", "cerberus-lean"]
 moreLeanArgs = ["-DautoImplicit=false"]
 
 [[require]]
@@ -119,8 +122,9 @@ roots = [
   "CerbND",
 ]
 
-# Relational-semantics spike (spike/relsem): Layer-2 skeleton over the
-# generated opsem. Not in defaultTargets; build with `lake build RelSem`.
+# Relational semantics (arc 7, load-bearing since S1): Layer-2 skeleton
+# over the generated opsem + the in-build axiom audit (RelSem/Audit.lean).
+# A default target — `lake build` elaborates the audit.
 [[lean_lib]]
 name = "RelSem"
 srcDir = "relsem"

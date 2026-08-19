@@ -338,13 +338,14 @@ def HarnessUBFree
 
 /-! ## Memory: the points-to base over CerbMem.MemState -/
 
-/-- Leftmost-wins denotation of the associative bytemap
-    (CerbMem.lean:119-134; stores prepend fresh entries and filter stale
-    ones, CerbMem.lean:1097, loads use the first match). This finite-map
-    denotation is the carrier the Iris `gen_heap` points-to will sit on
-    (paper design in RelSem/IrisCoupling.lean). -/
+/-- Denotation of the bytemap as a partial function. Since arc-6 S3 the
+    bytemap is a `Std.TreeMap Int AbsByte` (keyed lookup replaces the
+    spike-era leftmost-wins assoc-list denotation — graft fix on
+    arc/layer2, 2026-08-19). This finite-map denotation is the carrier
+    the Iris `gen_heap` points-to will sit on (paper design in
+    RelSem/IrisCoupling.lean). -/
 def heapOf (st : CerbMem.MemState) (a : Int) : Option CerbMem.AbsByte :=
-  (st.bytemap.find? (fun p => p.1 == a)).map (·.2)
+  st.bytemap.get? a
 
 /-- Assertion-level byte points-to (the model-level shadow of the Iris
     `a ↦ b` resource): address `a` holds abstract byte `b`. -/
@@ -353,7 +354,7 @@ def PointsToByte (a : Int) (b : CerbMem.AbsByte)
   heapOf st a = some b
 
 /-- The points-to base is functional — the separation-logic heap is a
-    genuine partial function despite the assoc-list representation. -/
+    genuine partial function of the address. -/
 theorem pointsToByte_functional {a : Int} {b b' : CerbMem.AbsByte}
     {st : CerbMem.MemState}
     (h : PointsToByte a b st) (h' : PointsToByte a b' st) : b = b' := by
@@ -364,7 +365,7 @@ theorem pointsToByte_functional {a : Int} {b b' : CerbMem.AbsByte}
     question Q3): allocation id `aid` is live with block `alloc`. -/
 def OwnsAlloc (aid : Int) (alloc : CerbMem.Allocation)
     (st : CerbMem.MemState) : Prop :=
-  (st.allocations.find? (fun p => p.1 == aid)).map (·.2) = some alloc
+  st.allocations.get? aid = some alloc
     ∧ aid ∉ st.deadAllocations
 
 end Cerb
