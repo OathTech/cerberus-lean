@@ -242,6 +242,16 @@ def pImplConstant (s : String) : implementation_constant :=
   else if s == "bits_in_byte" then Characters__bits_in_byte
   else if s == "plain_char_is_signed" then Characters__plain_char_is_signed
   else if s == "Plain_bitfield_sign" then Plain_bitfield_sign
+  -- OCaml scan_impl (parsers/core/core_lexer.mll:209-219): names not in
+  -- Implementation.impl_map must carry a `builtin_` prefix, which is
+  -- STRIPPED (`remove_prefix ~prefix:"<builtin_"`) — `<builtin_printf>`
+  -- lexes to `Impl (BuiltinFunction "printf")`. The run-time dispatchers
+  -- match the STRIPPED name (core_reduction.lem:963-1084 "errno"/
+  -- "generic_ffs"/..., core_reduction_aux.lem:8-42 is_fs_function
+  -- "printf"/...); an unstripped "builtin_printf" matches nothing and
+  -- falls into the process_impl_proc catch-all error.
+  else if s.startsWith "builtin_" then
+    BuiltinFunction (s.drop "builtin_".length).toString
   else BuiltinFunction s
 
 /-- Helper for strContains: check substring match -/
@@ -1434,10 +1444,16 @@ end
 
 /-! ## Top-level Declaration Parsers -/
 
-/-- Result of parsing a single declaration. -/
+/-- Result of parsing a single declaration.
+
+    `procDecl` carries the optional `[ailname = "..."]` attribute string:
+    OCaml's core parser attaches the attribute list to `Proc_decl`
+    (core_parser.mly:39, grammar :1804) and registers it in the
+    StdMode ailnames map at symbolification (core_parser.mly:1037-1041 →
+    `register_ailname`, :157-159). -/
 inductive Decl where
   | funDecl : sym → generic_fun_map_decl Unit Unit → Decl
-  | procDecl : sym → generic_fun_map_decl Unit Unit → Decl
+  | procDecl : sym → Option String → generic_fun_map_decl Unit Unit → Decl
   | implDecl : String → generic_impl_decl Unit → Decl
   | globDecl : sym → generic_globs Unit Unit → Decl
   | tagDecl : sym → (CerbLocation.Loc × tag_definition) → Decl
@@ -1498,11 +1514,19 @@ private partial def pFunDecl : P Decl := do
     let body ← pPexpr
     return (Decl.funDecl s (Fun bTy params body))
 
-/-- Parse a proc declaration. -/
+/-- Parse a proc declaration.
+
+    The optional `[ailname = "..."]` attribute is CAPTURED, not discarded:
+    it binds a C name to this proc symbol for the stdlib ailnames map
+    (OCaml: grammar core_parser.mly:1804 `PROC attrs_opt= attribute?`,
+    attribute :1222-1227 = bracketed comma-separated `ailname = "str"`
+    pairs; consumed by `hasAilname` :48-52, which takes the HEAD attribute,
+    at Proc_decl symbolification :1037-1041). Spacing like `ailname= "x"`
+    (std.core:398) is tolerated because lexing skips whitespace. -/
 private partial def pProcDecl : P Decl := do
   lexKw "proc"
   -- optional attributes
-  let _attrs ← (attempt (do
+  let attrs ← (attempt (do
     lexSym "["
     let pairs ← sepByComma (do
       lexKw "ailname"
@@ -1518,7 +1542,8 @@ private partial def pProcDecl : P Decl := do
   let bTy ← pCoreBaseType
   lexSym ":="
   let body ← pExpr
-  return (Decl.procDecl s (Proc loc0 none bTy params body))
+  -- hasAilname (core_parser.mly:48-52): first attribute wins
+  return (Decl.procDecl s attrs.head? (Proc loc0 none bTy params body))
 
 /-- Parse a struct definition: def struct name := fields -/
 private partial def pDefStruct : P Decl := do
@@ -1590,7 +1615,14 @@ private partial def pDeclaration : P Decl :=
 
 /-! ## CoreFile output structure -/
 
-/-- The parsed Core file result. -/
+/-- The parsed Core file result.
+
+    `ailnames` mirrors the StdMode symbolify state's ailnames map
+    (core_parser.mly:77, returned as `Rstd (st.ailnames, fun_map)`
+    :1076-1080): C-name → proc symbol, populated ONLY from `[ailname]`
+    attributes on proc declarations (`register_ailname`,
+    core_parser.mly:157-159, invoked at :1037-1041). `fun`/`builtin`
+    declaration names are never registered. -/
 structure CoreFile where
   funs : List (sym × generic_fun_map_decl Unit Unit) := []
   procs : List (sym × generic_fun_map_decl Unit Unit) := []
@@ -1598,6 +1630,7 @@ structure CoreFile where
   tagDefs : List (sym × (CerbLocation.Loc × tag_definition)) := []
   globs : List (sym × generic_globs Unit Unit) := []
   builtins : List (sym × generic_fun_map_decl Unit Unit) := []
+  ailnames : List (String × sym) := []
 
 /-- Recursive declaration loop — errors propagate immediately (no while-loop swallowing). -/
 private partial def pCoreFileGo (result : CoreFile) : P CoreFile := do
@@ -1608,7 +1641,14 @@ private partial def pCoreFileGo (result : CoreFile) : P CoreFile := do
     let decl ← pDeclaration
     let result := match decl with
       | Decl.funDecl s d => { result with funs := result.funs ++ [(s, d)] }
-      | Decl.procDecl s d => { result with procs := result.procs ++ [(s, d)] }
+      | Decl.procDecl s ailname? d =>
+        -- register_ailname (core_parser.mly:157-159, called :1037-1041):
+        -- only attribute-carrying procs land in ailnames
+        { result with
+          procs := result.procs ++ [(s, d)],
+          ailnames := match ailname? with
+            | some str => result.ailnames ++ [(str, s)]
+            | none => result.ailnames }
       | Decl.implDecl name d => { result with impls := result.impls ++ [(name, d)] }
       | Decl.globDecl s g => { result with globs := result.globs ++ [(s, g)] }
       | Decl.tagDecl s td => { result with tagDefs := result.tagDefs ++ [(s, td)] }

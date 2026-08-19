@@ -19,19 +19,29 @@ set_option autoImplicit true
 /-! ## Core stdlib loading -/
 
 /-- Convert a CoreParser.CoreFile from std.core into the tuple the
-    desugarer expects: (ailnames, stdlib_fun_map, impl). -/
+    desugarer expects: (ailnames, stdlib_fun_map, impl).
+
+    Mirrors `load_core_stdlib` (backend/common/pipeline.ml:32-44) returning
+    `Rstd (ailnames, std_funs)` from the StdMode core parser
+    (core_parser.mly:1076-1080): the ailnames map is C-name → proxy symbol,
+    built EXCLUSIVELY from `[ailname = "..."]` attributes on proc
+    declarations (`register_ailname`, core_parser.mly:157-159, invoked only
+    at Proc_decl symbolification :1037-1041) — 46 entries for the shipped
+    std.core. Declaration names must NOT be keys: translation looks up the
+    C identifier (e.g. "malloc", "__builtin_ffs") in this map and
+    substitutes the proxy symbol at the call site
+    (translation.lem:244-251); keying by declaration name both misses
+    every C name AND mis-binds "printf" to the `builtin printf`
+    declaration (std.core:283) instead of `printf_proxy` (std.core:289).
+
+    The fun_map keeps ALL declarations (fun + proc + builtin), matching
+    symbolify_std (core_parser.mly:1010-1046: Fun/Proc/BuiltinDecl entries).
+    CoreParser.mkSym assigns hash-based IDs per string, so all calls to the
+    same-named function end up with the same symbol — no renumbering. -/
 def loadCoreStdlib (stdFile : CoreParser.CoreFile) :
     Fmap String sym × fun_map Unit :=
   let allDecls := stdFile.funs ++ stdFile.procs ++ stdFile.builtins
-  -- CoreParser.mkSym now assigns hash-based IDs per string, so all calls
-  -- to the same-named function end up with the same symbol. No renumbering
-  -- needed — and indeed renumbering would break call sites inside function
-  -- bodies that were parsed with the original hash-based IDs.
-  let ailnamesList := allDecls.filterMap (fun (s, _) =>
-    match s with
-    | Symbol _ _ (SD_Id name) => some (name, s)
-    | _ => none)
-  let ailnames : Fmap String sym := Lem_Map.fromList ailnamesList
+  let ailnames : Fmap String sym := Lem_Map.fromList stdFile.ailnames
   let funMap : fun_map Unit := Lem_Map.fromList allDecls
   (ailnames, funMap)
 

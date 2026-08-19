@@ -62,6 +62,16 @@ def assertCounts (name : String) (input : String) (expected : Nat × Nat × Nat 
     else fail_ name s!"counts {counts} ≠ expected {expected}"
   | .error e => fail_ name e
 
+/-- Run parseFile and return the captured ailnames as
+    (attribute-string, declared-symbol-name) pairs. -/
+def parseAilnames (input : String) : Except String (List (String × String)) :=
+  match CoreParser.parseFile input with
+  | .ok cf => .ok (cf.ailnames.map (fun (name, s) =>
+      match s with
+      | Symbol _ _ (SD_Id declName) => (name, declName)
+      | _ => (name, "<no-SD_Id>")))
+  | .error e => .error e
+
 /-- Assert parseFile succeeds with at least one declaration. -/
 def assertSomeDecls (name : String) (input : String) : TestM Unit :=
   match parseCounts input with
@@ -553,6 +563,39 @@ def testDeclarations : TestM Unit := do
   -- Multiple declarations
   assertCounts "fun+proc" "fun f (n: integer): integer := n\nproc g (): eff integer := pure(42)\n" (1, 1, 0, 0, 0, 0)
 
+  -- <builtin_X> impl tokens strip the prefix (OCaml scan_impl,
+  -- core_lexer.mll:209-219): run-time dispatch matches the stripped name
+  match CoreParser.pImplConstant "builtin_printf" with
+  | BuiltinFunction "printf" => pass "impl builtin_ prefix stripped"
+  | _ => fail_ "impl builtin_ prefix stripped" "unexpected constant"
+  match CoreParser.pImplConstant "builtin_generic_ffs" with
+  | BuiltinFunction "generic_ffs" => pass "impl builtin_generic_ffs"
+  | _ => fail_ "impl builtin_generic_ffs" "unexpected constant"
+  -- named impl-map constants unaffected
+  match CoreParser.pImplConstant "Sizeof" with
+  | Sizeof => pass "impl Sizeof unaffected"
+  | _ => fail_ "impl Sizeof unaffected" "unexpected constant"
+
+  -- [ailname = "..."] attribute capture (OCaml: core_parser.mly:157-159,
+  -- :1037-1041 — attribute string ↦ proc symbol, procs only)
+  assertEq "ailname captured"
+    (parseAilnames "proc [ailname = \"malloc\"] malloc_proxy (): eff integer := pure(42)\n")
+    [("malloc", "malloc_proxy")]
+  -- std.core:398 spacing variant `ailname= "..."`
+  assertEq "ailname tight spacing"
+    (parseAilnames "proc [ailname= \"memcpy\"] memcpy_proxy (): eff integer := pure(42)\n")
+    [("memcpy", "memcpy_proxy")]
+  -- plain proc registers nothing
+  assertEq "no ailname, no entry"
+    (parseAilnames "proc f (): eff integer := pure(42)\n") []
+  -- builtin declarations never register ailnames (core_parser.mly:1020-1026
+  -- adds only a BuiltinDecl fun_map entry); fun declarations neither
+  assertEq "builtin/fun register no ailname"
+    (parseAilnames ("builtin printf ([integer], [(ctype, pointer)]): eff loaded integer\n" ++
+      "fun f (n: integer): integer := n\n" ++
+      "proc [ailname = \"__builtin_ffs\"] ffs_proxy (): eff integer := pure(42)\n"))
+    [("__builtin_ffs", "ffs_proxy")]
+
 def testFiles : TestM Unit := do
   IO.println "=== Runtime files ==="
 
@@ -587,6 +630,21 @@ def testFiles : TestM Unit := do
         assertOk name (CoreParser.parseFileSummary content)
       else
         IO.println s!"  (skipping {name} — not found)"
+    -- std.core ailname surface: 46 attribute-tagged proxies (grep-verified),
+    -- keyed by C name, mapped to the proxy symbol — incl. printf ↦
+    -- printf_proxy (std.core:289), NOT the `builtin printf` decl (:283)
+    let stdPath := "../runtime/libcore/std.core"
+    if ← System.FilePath.pathExists stdPath then
+      let stdContent ← IO.FS.readFile stdPath
+      match parseAilnames stdContent with
+      | .ok pairs =>
+        if pairs.length == 46 then pass "std.core ailnames count 46"
+        else fail_ "std.core ailnames count 46" s!"got {pairs.length}"
+        for (c, p) in [("malloc", "malloc_proxy"), ("printf", "printf_proxy"),
+                       ("__builtin_errno", "errno_proxy"), ("memcpy", "memcpy_proxy")] do
+          if pairs.contains (c, p) then pass s!"std.core ailname {c} ↦ {p}"
+          else fail_ s!"std.core ailname {c} ↦ {p}" s!"missing (have: {pairs.lookup c})"
+      | .error e => fail_ "std.core ailnames" e
   else
     IO.println "  (skipping file tests — runtime not found)"
 

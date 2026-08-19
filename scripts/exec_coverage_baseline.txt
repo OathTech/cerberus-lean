@@ -9,23 +9,48 @@
 #   both Specified(0)); Lean eqPtrval does not fork (1 execution,
 #   Specified(0)). head -1 hid the count difference. Next-arc register
 #   item (survey finding 8).
+# 2026-08-19 arc-5 S1 (fix [A], ailnames repair): all 20 linking FAILs →
+#   MATCH/UB_MATCH. Root cause per the S0 survey
+#   (docs/2026-08-19_arc5-s0-linking-survey.md §a): CoreParser discarded
+#   the [ailname = "..."] attribute and Main.loadCoreStdlib keyed the
+#   ailnames map by DECLARATION name, so translation.lem:244-251 never
+#   substituted the std.core proxy symbols. Fixed: CoreParser captures the
+#   attribute (mirror core_parser.mly:157-159, :1037-1041) and the map is
+#   built from attributes only (46 entries). Second in-seam defect fixed:
+#   pImplConstant kept the `builtin_` prefix on <builtin_X> impl tokens
+#   (OCaml strips it, core_lexer.mll scan_impl :209-219), so run-time
+#   builtin dispatch (core_reduction.lem:963-1084, is_fs_function
+#   core_reduction_aux.lem:8-42) matched nothing. Per-file movements:
+#     builtin-001..005            FAIL → MATCH      (ffs/ctz/bswap via
+#       <builtin_generic_ffs>/ctz/bswap dispatch, now reached)
+#     ctrl2-003-errno.libc        FAIL → MATCH      (errno proxy + errno obj)
+#     ctrl3-001-malloc-computed-size.libc FAIL → MATCH (malloc_proxy alloc)
+#     libc-001/003/004/008/009/010/013    FAIL → MATCH (malloc/free/realloc/
+#       memcpy/memcmp proxies → alloc/kill/memop, defined outcomes agree)
+#     libc-005/006/007/014        FAIL → UB_MATCH   (double-free /
+#       use-after-free / free-of-stack / write-after-free UB codes agree)
+#     mem3-007-realloc-null.libc  FAIL → MATCH      (realloc(NULL) path)
+#     ptr2-009-eff-malloc-shift.libc FAIL → MATCH
+#   io-001/002/003/005 UNSUPPORTED → UNSUPPORTED_PASS: printf now works
+#   end-to-end (printf_proxy → FS_PRINTF → Formatted.printf, all
+#   generated); un-marking is a separate instrument commit.
 # Per-category summary (regenerate via docs/2026-08-19_arc4-s4b-corpus-scoreboard.md recipe):
 #   arith3     n=6   MATCH=6
-#   builtin    n=6   CERB_SKIP=1 FAIL=5
+#   builtin    n=6   CERB_SKIP=1 MATCH=5
 #   compound   n=12  MATCH=12
 #   conv       n=18  MATCH=17 UB_MATCH=1
 #   ctrl       n=12  MATCH=12
-#   ctrl2      n=3   FAIL=1 MATCH=2
-#   ctrl3      n=5   CERB_SKIP=1 FAIL=1 MATCH=1 UB_MATCH=2
+#   ctrl2      n=3   MATCH=3
+#   ctrl3      n=5   CERB_SKIP=1 MATCH=2 UB_MATCH=2
 #   eval2      n=15  MATCH=15
 #   expr       n=12  CERB_SKIP=1 MATCH=9 UB_MATCH=2
-#   io         n=5   CERB_SKIP=1 UNSUPPORTED=4
-#   libc       n=14  CERB_SKIP=3 FAIL=11
+#   io         n=5   CERB_SKIP=1 UNSUPPORTED_PASS=4
+#   libc       n=14  CERB_SKIP=3 MATCH=7 UB_MATCH=4
 #   mem        n=10  CERB_SKIP=1 MATCH=7 MISMATCH=1 UB_MATCH=1
-#   mem3       n=8   DIFF=1 FAIL=1 MATCH=6
+#   mem3       n=8   DIFF=1 MATCH=7
 #   misc       n=11  CERB_SKIP=1 MATCH=10
 #   ptr        n=12  MATCH=12
-#   ptr2       n=15  FAIL=1 MATCH=14
+#   ptr2       n=15  MATCH=15
 #   ptr3       n=8   CERB_SKIP=2 MATCH=4 MISMATCH=1 UB_MATCH=1
 #   store2     n=5   MATCH=5
 #   struct     n=10  MATCH=10
@@ -37,11 +62,11 @@ arith3-003-unsigned-shl.c MATCH
 arith3-004-unsigned-shr.c MATCH
 arith3-005-bool-conv.c MATCH
 arith3-006-wrap-unsigned-char.c MATCH
-builtin-001-ffs.c FAIL
-builtin-002-ctz.c FAIL
-builtin-003-bswap16.c FAIL
-builtin-004-bswap32.c FAIL
-builtin-005-bswap64.c FAIL
+builtin-001-ffs.c MATCH
+builtin-002-ctz.c MATCH
+builtin-003-bswap16.c MATCH
+builtin-004-bswap32.c MATCH
+builtin-005-bswap64.c MATCH
 builtin-006-exit.libc.c CERB_SKIP
 compound-001-add-assign.c MATCH
 compound-002-sub-assign.c MATCH
@@ -87,8 +112,8 @@ ctrl-011-nested-scope-vars.c MATCH
 ctrl-012-multi-decl.c MATCH
 ctrl2-001-seqrmw-sseq.c MATCH
 ctrl2-002-postinc-complex.c MATCH
-ctrl2-003-errno.libc.c FAIL
-ctrl3-001-malloc-computed-size.libc.c FAIL
+ctrl2-003-errno.libc.c MATCH
+ctrl3-001-malloc-computed-size.libc.c MATCH
 ctrl3-002-null-funcptr-call.c CERB_SKIP
 ctrl3-003-funcptr-void-cast.c MATCH
 ctrl3-004-falloff-nonvoid.c UB_MATCH
@@ -120,25 +145,25 @@ expr-009-negative-shift.c UB_MATCH
 expr-010-large-shift.c UB_MATCH
 expr-011-sequence-point.c MATCH
 expr-012-logical-shortcircuit.c MATCH
-io-001-printf-basic.libc.unsupported.c UNSUPPORTED
-io-002-printf-int.libc.unsupported.c UNSUPPORTED
-io-003-printf-string.libc.unsupported.c UNSUPPORTED
+io-001-printf-basic.libc.unsupported.c UNSUPPORTED_PASS
+io-002-printf-int.libc.unsupported.c UNSUPPORTED_PASS
+io-003-printf-string.libc.unsupported.c UNSUPPORTED_PASS
 io-004-puts.libc.unsupported.c CERB_SKIP
-io-005-printf-multi.libc.unsupported.c UNSUPPORTED
-libc-001-malloc-free.c FAIL
+io-005-printf-multi.libc.unsupported.c UNSUPPORTED_PASS
+libc-001-malloc-free.c MATCH
 libc-002-calloc.c CERB_SKIP
-libc-003-realloc.c FAIL
-libc-004-free-null.c FAIL
-libc-005-double-free.c FAIL
-libc-006-use-after-free.c FAIL
-libc-007-free-stack.c FAIL
-libc-008-memcpy-basic.c FAIL
-libc-009-memcpy-struct.c FAIL
-libc-010-memcmp.c FAIL
+libc-003-realloc.c MATCH
+libc-004-free-null.c MATCH
+libc-005-double-free.c UB_MATCH
+libc-006-use-after-free.c UB_MATCH
+libc-007-free-stack.c UB_MATCH
+libc-008-memcpy-basic.c MATCH
+libc-009-memcpy-struct.c MATCH
+libc-010-memcmp.c MATCH
 libc-011-memset.c CERB_SKIP
 libc-012-strlen.c CERB_SKIP
-libc-013-malloc-large.c FAIL
-libc-014-write-after-free.c FAIL
+libc-013-malloc-large.c MATCH
+libc-014-write-after-free.c UB_MATCH
 mem-001-store-load-char.c MATCH
 mem-002-store-load-short.c MATCH
 mem-003-type-pun-char.c MATCH
@@ -155,7 +180,7 @@ mem3-003-const-compound-literal.c MATCH
 mem3-004-string-write-attempt.c DIFF
 mem3-005-struct-multi-ptr.c MATCH
 mem3-006-array-of-ptrs.c MATCH
-mem3-007-realloc-null.libc.c FAIL
+mem3-007-realloc-null.libc.c MATCH
 mem3-008-eff-member-shift.c MATCH
 misc-001-void-ptr-arith.c CERB_SKIP
 misc-002-offsetof.c MATCH
@@ -188,7 +213,7 @@ ptr2-005-ge-equal.c MATCH
 ptr2-006-eff-array-shift.c MATCH
 ptr2-007-eff-negative-shift.c MATCH
 ptr2-008-eff-one-past-end.c MATCH
-ptr2-009-eff-malloc-shift.libc.c FAIL
+ptr2-009-eff-malloc-shift.libc.c MATCH
 ptr2-010-eff-zero-shift.c MATCH
 ptr2-011-funcptr-eq.c MATCH
 ptr2-012-funcptr-ne.c MATCH
