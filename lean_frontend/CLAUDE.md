@@ -158,7 +158,7 @@ If you skip this step, Lake will compile the stale `generated/` copy and your ch
 | `scripts/test_core.sh` | Test Core text parser: C → --pp core → Lean |
 | `scripts/test_multi_tu.sh` | Differential multi-TU linking: N .c linked by OCaml vs N cabs-jsons linked by the Lean pipeline (corpus: `tests/multi_tu/<name>/`) |
 | `scripts/libxml2_prep.sh` | libxml2 no-autogen prep: pinned config (`tests/libxml2/config/`) + cerberus args per TU (probe recipe) |
-| `scripts/test_libxml2.sh` | Arc-5 exit-criterion differential: chvalid.c + generated boundary battery (28 slices, 1354 points), single-trace both sides (~35 min; not in the fast ladder) |
+| `scripts/test_libxml2.sh` | Arc-5 exit-criterion differential: chvalid.c + generated boundary battery (4 slices since arc-6 S3, 1354 points), single-trace both sides (~8 min; not in the fast ladder) |
 | `scripts/test_libxml2_uri.sh` | Arc-6 REPORTING baseline: 5-TU xmlParseURISafe corpus, 4 lanes (oracle+libc / ocaml-nolibc / lean-nolibc / lean+libc — 10/10 exact match since arc-6 S1) |
 | `scripts/libc_prep.sh` | Arc-6 S1: pins + drift-checks `tests/libc/libc.core` (the oracle's unlinked libc Core text dump) and emits the 12 libc metadata TU cabs-jsons (see Main.loadLibc) |
 | `scripts/test_libc_exec.sh` | Arc-6 S1 differential: C-with-libc programs, both sides load the C library (`tests/libc_exec/`, own baseline; NEW mode — standing corpora stay --nolibc) |
@@ -196,7 +196,8 @@ Lem is pinned to `https://github.com/septract/lem-lean#mdd/lean-backend`.
 - ✅ libc/builtin procedure linking (arc 5: 20/20 coverage FAILs closed)
 - ✅ Multi-TU: real Core_linking + per-TU MD5 digests (arc 5)
 - ✅ libxml2 chvalid through the full pipeline: 100% differential
-  (28 slices, 1354 boundary points — `test_libxml2.sh`)
+  (4 slices, 1354 boundary points — `test_libxml2.sh`; consolidated from
+  28 by the arc-6 S3 map-representation speedups)
 - ✅ C-libc loading (arc-6 S1): pinned libc Core dump (`tests/libc/`)
   parsed by CoreParser + metadata (extern/funinfo/tagDefs) from our own
   elaboration of the 12 libc TUs, linked via Core_linking
@@ -208,8 +209,12 @@ Lem is pinned to `https://github.com/septract/lem-lean#mdd/lean-backend`.
   (prototype port Step.lean:1441-1513 attributed) — 5 coverage varargs
   DIFFs → MATCH, debug varargs-01 → MATCH, libc_exec 006 snprintf →
   MATCH, new 007 va_*×Formatted interplay MATCH
-- Open (priced): perf: quadratic allocation retention + LemLib Fmap
-  (arc-6 D6)
+- ✅ Perf (arc-6 S3): LemLib Fmap -> comparator-keyed Std.TreeMap indexes
+  (lem-lean arc/libc-load, proved/tested equivalence in LemLibTest.lean) +
+  CerbMem bytemap/allocations -> Std.TreeMap Int; chvalid battery now 4
+  slices (339 pts ~100 s Lean vs old 50-pt ~35 s each). Known residual:
+  step-runner stack ceiling (S0 register; onset ~1.5k plain loop
+  iterations, bimodal quiet-death/hang — not corpus-binding)
 
 ## Conventions
 

@@ -37,13 +37,15 @@ example (a a' : List annot) (i : integerType) :
 
 /-! ### Reader lifting: `get_membersDefs` is a function of its tagDefs input -/
 
-/-- With an explicitly passed singleton tagDefs map (Fmap is an association
-    list), the lookup returns the stored definition. No extern, no axiom:
-    the reader parameter IS the state. (Concrete instance — evaluation; the
-    symbolic lookup lemmas belong to the Fmap library, a later arc.) -/
+/-- With an explicitly passed singleton tagDefs map (arc-6 S3: built with
+    `fmapAddBy`, keyed by `symbol_compare` like every generated sym map),
+    the lookup returns the stored definition. No extern, no axiom: the
+    reader parameter IS the state. (Concrete instance — evaluation; the
+    symbolic lookup lemmas live in lem-lean's LemLibTest.) -/
 example :
     get_membersDefs
-      [(Symbol "" 0 SD_None, (CerbLocation.unknown, UnionDef []))]
+      (fmapAddBy symbol_compare (Symbol "" 0 SD_None)
+        (CerbLocation.unknown, UnionDef []) fmapEmpty)
       (Symbol "" 0 SD_None)
     = UnionDef [] := rfl
 

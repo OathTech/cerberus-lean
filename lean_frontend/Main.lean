@@ -57,7 +57,7 @@ def loadCoreImpl (implFile : CoreParser.CoreFile) : impl :=
   implFile.impls.foldl
     (fun acc (name, d) =>
       let ic := CoreParser.pImplConstant name
-      fmapAdd ic d acc)
+      fmapAddBy implementation_constant_compare ic d acc)
     fmapEmpty
 
 /-! ## C-libc loading (`--libc`, arc-6 S1)
@@ -250,16 +250,28 @@ private def libcFuninfoEq
   (List.zip ps1 ps2).all (fun (a, b) => ctypeEqual a.2 b.2) &&
   v1 == v2
 
-/-- Checked insert into an Fmap-as-assoc-list: duplicate keys must agree
-    structurally (fail-closed name-join). -/
+/-- Checked insert into an assoc list (converted to an Fmap once assembly is
+    complete — arc-6 S3: Fmap is no longer the raw list): duplicate keys must
+    agree structurally (fail-closed name-join). -/
 private def libcInsertChecked {β : Type} (what : String) (eqv : β → β → Bool)
-    (m : Fmap sym β) (k : sym) (v : β)
-    (dbg : β → β → String := fun _ _ => "") : Except String (Fmap sym β) :=
+    (m : List (sym × β)) (k : sym) (v : β)
+    (dbg : β → β → String := fun _ _ => "") : Except String (List (sym × β)) :=
   match m.find? (fun kv => libcSymEq kv.1 k) with
   | none => .ok (m ++ [(k, v)])
   | some (_, v') =>
     if eqv v' v then .ok m
     else .error s!"libc metadata name-join collision with disagreeing content: {what} '{libcSymName k}'{dbg v' v}"
+
+/-- Comparators the generated lem code keys these maps with (arc-6 S3: the
+    Fmap representation captures the comparator at build time). sym-keyed
+    maps: `symbol_compare` (the Ord0 sym instance every generated
+    `Map.lookup`/`insert` on syms inlines); identifier-keyed maps: the
+    string-only SetType identifier instance (exactly Core_linking's
+    comparator). -/
+private def libcSymMapCmp : sym → sym → LemOrdering := symbol_compare
+private def libcIdentMapCmp : identifier → identifier → LemOrdering := fun i1 i2 =>
+  match i1, i2 with
+  | Identifier _ s1, Identifier _ s2 => defaultCompare s1 s2
 
 /-! ## Helpers -/
 
@@ -415,7 +427,7 @@ def ppSymbolPretty : sym → String
 def ppCoreSignature (coreFile : file Unit) : IO Unit := do
   let identName : identifier → String
     | Identifier _ s => s
-  for (s, (_loc, td)) in coreFile.tagDefs do
+  for (s, (_loc, td)) in fmapElements coreFile.tagDefs do
     match td with
     | StructDef membrs flexOpt =>
       let names := membrs.map (fun (i, _) => identName i)
@@ -430,7 +442,7 @@ def ppCoreSignature (coreFile : file Unit) : IO Unit := do
     match g with
     | GlobalDef _ _ => IO.println s!"glob {ppSymbolPretty s}"
     | GlobalDecl _ => pure ()   -- OCaml pp_globs prints nothing for these
-  for (s, d) in coreFile.funs do
+  for (s, d) in fmapElements coreFile.funs do
     match d with
     | Fun _ params _ => IO.println s!"fun {ppSymbolPretty s} arity={params.length}"
     | Proc _ _ _ params _ => IO.println s!"proc {ppSymbolPretty s} arity={params.length}"
@@ -525,7 +537,7 @@ def frontendTU (quiet : Bool)
         translate (ailnames, stdFunMap) callconv coreImpl typedProg) : BaseIO _)
       say s!"  translation succeeded!"
       say s!"    main: {match coreFile.main with | some _ => "found" | none => "not found"}"
-      say s!"    funs: {List.length coreFile.funs}"
+      say s!"    funs: {List.length (fmapElements coreFile.funs)}"
       say s!"    globs: {List.length coreFile.globs}"
       return .ok coreFile
   | .Exception (loc, cause) =>
@@ -597,15 +609,16 @@ def loadLibc (quiet : Bool)
     | .Result f => pure f
     | .Exception (_, _) => return (← bail "linking the libc metadata TUs failed")
   -- 3. Rekey the metadata by name (fail-closed).
-  let rekeyed : Except String (core_tag_definitions × extern_map ×
-      Fmap sym (CerbLocation.Loc × attributes × ctype × List (Option sym × ctype) × Bool × Bool)) := do
-    let mut tagDefs : core_tag_definitions := []
-    for (s, (loc, td)) in metaFile.tagDefs do
+  let rekeyed : Except String (List (sym × (CerbLocation.Loc × tag_definition)) ×
+      List (identifier × (List sym × linking_kind)) ×
+      List (sym × (CerbLocation.Loc × attributes × ctype × List (Option sym × ctype) × Bool × Bool))) := do
+    let mut tagDefs : List (sym × (CerbLocation.Loc × tag_definition)) := []
+    for (s, (loc, td)) in fmapElements metaFile.tagDefs do
       let k ← libcRekeySym s
       let td' ← libcRekeyTagDef td
       tagDefs ← libcInsertChecked "tagDef" (fun a b => libcTagDefEq a.2 b.2) tagDefs k (loc, td')
-    let mut ext : extern_map := []
-    for (ident, (ds, lk)) in metaFile.extern do
+    let mut ext : List (identifier × (List sym × linking_kind)) := []
+    for (ident, (ds, lk)) in fmapElements metaFile.extern do
       let ds' ← ds.mapM libcRekeySym
       let ds'' := ds'.foldl (fun acc s => if acc.any (libcSymEq s) then acc else acc ++ [s]) []
       let lk' ← match lk with
@@ -613,8 +626,8 @@ def loadLibc (quiet : Bool)
         | LK_tentative s => do pure (LK_tentative (← libcRekeySym s))
         | LK_normal s => do pure (LK_normal (← libcRekeySym s))
       ext := ext ++ [(ident, (ds'', lk'))]
-    let mut funinfo : Fmap sym (CerbLocation.Loc × attributes × ctype × List (Option sym × ctype) × Bool × Bool) := []
-    for (s, (loc, attrs, ret, params, var, proto)) in metaFile.funinfo do
+    let mut funinfo : List (sym × (CerbLocation.Loc × attributes × ctype × List (Option sym × ctype) × Bool × Bool)) := []
+    for (s, (loc, attrs, ret, params, var, proto)) in fmapElements metaFile.funinfo do
       let k ← libcRekeySym s
       let ret' ← libcRekeyCtype ret
       let params' ← params.mapM (fun (_, t) => do
@@ -642,7 +655,7 @@ def loadLibc (quiet : Bool)
   --    in one TU and defined in another — __strtox/__strtoxd; only a
   --    Proc body satisfies call_proc, core_run.lem:46-51). Duplicate
   --    Proc definitions (static __procfdname in two TUs) keep the first.
-  let mut funs : fun_map Unit := []
+  let mut funs : List (sym × generic_fun_map_decl Unit Unit) := []
   for (s, d) in parsed.funs ++ parsed.procs ++ parsed.builtins do
     match funs.find? (fun kv => libcSymEq kv.1 s) with
     | none => funs := funs ++ [(s, d)]
@@ -656,15 +669,15 @@ def loadLibc (quiet : Bool)
   return .ok {
     main := none
     calling_convention0 := metaFile.calling_convention0
-    tagDefs := tagDefs
+    tagDefs := fmapOfSpine libcSymMapCmp tagDefs
     stdlib := stdFunMap
     impl0 := coreImpl
     globs := parsed.globs
-    funs := funs
-    extern := ext
-    funinfo := funinfo
-    loop_attributes1 := []
-    visible_objects_env0 := []
+    funs := fmapOfSpine libcSymMapCmp funs
+    extern := fmapOfSpine libcIdentMapCmp ext
+    funinfo := fmapOfSpine libcSymMapCmp funinfo
+    loop_attributes1 := fmapEmpty
+    visible_objects_env0 := fmapEmpty
   }
 
 
@@ -712,8 +725,8 @@ def runPipeline (runtimeDir : String) (batch : Bool) (ppCore : Bool)
   say s!"    raw: {stdFile.funs.length} fun, {stdFile.procs.length} proc, {stdFile.builtins.length} builtin = {allStdDecls.length} total"
   let allStd := stdFile.funs ++ stdFile.procs ++ stdFile.builtins
   let (ailnames, stdFunMap) := loadCoreStdlib stdFile
-  say s!"    ailnames: {List.length ailnames} entries"
-  say s!"    stdlib funs: {List.length stdFunMap} entries"
+  say s!"    ailnames: {List.length (fmapElements ailnames)} entries"
+  say s!"    stdlib funs: {List.length (fmapElements stdFunMap)} entries"
 
   -- Load implementation file
   say "  loading implementation..."
@@ -722,7 +735,7 @@ def runPipeline (runtimeDir : String) (batch : Bool) (ppCore : Bool)
     | .ok f => pure f
     | .error e => throw (IO.Error.userError s!"failed to parse impl file: {e}")
   let coreImpl := loadCoreImpl implFile
-  say s!"    impl constants: {List.length coreImpl} entries"
+  say s!"    impl constants: {List.length (fmapElements coreImpl)} entries"
 
   -- Build the implementation
   say "  building implementation..."

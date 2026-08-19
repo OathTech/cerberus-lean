@@ -133,7 +133,9 @@ partial def alignof_ty
     (tagDefs : Fmap sym (List (Option alignment × ctype)))
     (ty : ctype) : Option Nat :=
   let lookupTag (tag : sym) : Option (List (Option alignment × ctype)) :=
-    tagDefs.find? (fun (k, _) => k == tag) |>.map Prod.snd
+    -- arc-6 S3: Fmap is no longer a raw assoc list; scan the enumerated
+    -- spine with the SAME BEq predicate as before (bit-identical result).
+    (fmapElements tagDefs).find? (fun (k, _) => k == tag) |>.map Prod.snd
   let foldMembers (members : List (Option alignment × ctype)) : Option Nat :=
     members.foldl (fun acc_opt (align_opt, mty) =>
       let al_opt := match align_opt with

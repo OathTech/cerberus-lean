@@ -120,12 +120,16 @@ structure MemState where
   nextAllocId : StorageInstanceId := 0
   nextIota : SymbolicStorageInstanceId := 0
   lastAddress : Address := 0xFFFFFFFFFFFF
-  allocations : List (Int × Allocation) := []
+  -- arc-6 S3: Std.TreeMap Int (OCaml: IntMap = Map.Make(Z), impl_mem.ml:93);
+  -- never enumerated (order-unobserved), keys unique -> results identical to
+  -- the previous assoc list at O(log n)
+  allocations : Std.TreeMap Int Allocation := Std.TreeMap.empty
   iotaMap : List (Int × Int) := [] -- simplified from OCaml's polymorphic variant
   funptrmap : List (Int × (String × String)) := []
   varargs : List (Int × (Int × List (ctype × PointerValue))) := []
   nextVarargsId : Int := 0
-  bytemap : List (Int × AbsByte) := []
+  -- arc-6 S3: same treatment (the S0-profiled secondary hot seam)
+  bytemap : Std.TreeMap Int AbsByte := Std.TreeMap.empty
   lastUsedUnionMembers : List (Int × identifier) := []
   deadAllocations : List StorageInstanceId := []
   dynamicAddrs : List Address := []
@@ -295,12 +299,12 @@ partial def sizeofCtype (cty : ctype) : Nat :=
     | .Pointer _ _ => targetPtrSize               -- impl_mem.ml:153-158
     | .Atomic innerCty => sizeofCtype innerCty    -- impl_mem.ml:160-161
     | .Struct tagSym =>                           -- impl_mem.ml:162-171
-      let (_, maxOffset) := offsetsof (CerbTags.tagDefs ()) tagSym (ignoreFlexible := true)
+      let (_, maxOffset) := offsetsof (fmapElements (CerbTags.tagDefs ())) tagSym (ignoreFlexible := true)
       let align := alignofCtype cty
       let x := maxOffset % align
       if x == 0 then maxOffset else maxOffset + (align - x)
     | .Union0 tagSym =>                           -- impl_mem.ml:172-192
-      match (CerbTags.tagDefs ()).find? (fun (s, _) => symbolEquality s tagSym) with
+      match (fmapElements (CerbTags.tagDefs ())).find? (fun (s, _) => symbolEquality s tagSym) with
       | some (_, (_, UnionDef membrs)) =>
         let (maxSize, maxAlign) := membrs.foldl (init := ((0 : Nat), (0 : Nat)))
           fun (acc : Nat × Nat) memb =>
@@ -338,7 +342,7 @@ partial def alignofCtype (cty : ctype) : Nat :=
     | .Pointer _ _ => targetPtrSize               -- impl_mem.ml:219-225
     | .Atomic innerCty => alignofCtype innerCty   -- impl_mem.ml:226-227
     | .Struct tagSym =>                           -- impl_mem.ml:228-252
-      match (CerbTags.tagDefs ()).find? (fun (s, _) => symbolEquality s tagSym) with
+      match (fmapElements (CerbTags.tagDefs ())).find? (fun (s, _) => symbolEquality s tagSym) with
       | some (_, (_, StructDef membrs flexibleOpt)) =>
         let init := match flexibleOpt with        -- impl_mem.ml:234-239
           | none => 0
@@ -349,7 +353,7 @@ partial def alignofCtype (cty : ctype) : Nat :=
           max (memberAlign alignOpt ty) acc       -- impl_mem.ml:242-251
       | _ => panic! "CerbMem.alignofCtype: Struct tag not a StructDef (OCaml: assert false / Not_found)"
     | .Union0 tagSym =>                           -- impl_mem.ml:253-271
-      match (CerbTags.tagDefs ()).find? (fun (s, _) => symbolEquality s tagSym) with
+      match (fmapElements (CerbTags.tagDefs ())).find? (fun (s, _) => symbolEquality s tagSym) with
       | some (_, (_, UnionDef membrs)) =>
         membrs.foldl (init := (0 : Nat)) fun acc memb =>
           let (_, (_, alignOpt, _, ty)) := memb
@@ -504,7 +508,7 @@ partial def memValueToBytes (funptrmap : Funptrmap) (val_ : MemValue) :
     -- impl_mem.ml:1202-1214: pad from the previous member's end up to
     -- each member's offsetsof offset (unspecified bytes), then the
     -- member's bytes; then trailing padding out to sizeof(struct).
-    let (offs, lastOff) := offsetsof (CerbTags.tagDefs ()) tagSym (ignoreFlexible := true)
+    let (offs, lastOff) := offsetsof (fmapElements (CerbTags.tagDefs ())) tagSym (ignoreFlexible := true)
     let finalPad := sizeofCtype (mkCtype (.Struct tagSym)) - lastOff  -- impl_mem.ml:1205
     -- fold2 over layout and members (impl_mem.ml:1207-1212); lengths
     -- coincide for well-typed values (OCaml fold_left2 would raise
@@ -617,7 +621,7 @@ partial def reconstructValue (unionmap : List (Int × identifier))
     -- PADDING before the member only, not by the member offset
     -- (impl_mem.ml:1063-1067) — mirrored quirk; addr is only consulted
     -- by nested union lookups.
-    let (offs, _) := offsetsof (CerbTags.tagDefs ()) tagSym (ignoreFlexible := true)
+    let (offs, _) := offsetsof (fmapElements (CerbTags.tagDefs ())) tagSym (ignoreFlexible := true)
     let (revXs, _) := offs.foldl
       (init := (([] : List (identifier × ctype × MemValue)), (0 : Nat)))
       fun (acc : List (identifier × ctype × MemValue) × Nat) (memb : identifier × ctype × Nat) =>
@@ -632,7 +636,7 @@ partial def reconstructValue (unionmap : List (Int × identifier))
     -- impl_mem.ml:1074-1095: select the member recorded in
     -- last_used_union_members at this address; default to the FIRST
     -- declared member when absent (impl_mem.ml:1080-1083).
-    match (CerbTags.tagDefs ()).find? (fun (s, _) => symbolEquality s tagSym) with
+    match (fmapElements (CerbTags.tagDefs ())).find? (fun (s, _) => symbolEquality s tagSym) with
     | some (_, (_, UnionDef membrs)) =>
       match membrs with
       | [] => panic! "CerbMem.reconstructValue: empty UnionDef (OCaml: match failure)"
@@ -850,8 +854,10 @@ def opIval (op : integer_operator) (v1 v2 : IntegerValue) : IntegerValue :=
     offsetsof's union arm. Missing member: OCaml failwith — panic here
     (the previous code silently returned 0 and compared identifiers
     location-sensitively with BEq). -/
-def offsetofIval (tagDefs : TagDefs) (tag : sym) (memb : identifier) : IntegerValue :=
-  let (xs, _) := offsetsof tagDefs tag
+def offsetofIval (tagDefsMap : CerbTags.TagDefsMap) (tag : sym) (memb : identifier) : IntegerValue :=
+  -- target_rep for lem offsetof_ival (mem.lem:257): the lem-side argument is
+  -- the tag map; scan its enumeration spine (arc-6 S3 — same list as before)
+  let (xs, _) := offsetsof (fmapElements tagDefsMap) tag
   match xs.find? (fun (ident, _, _) => idEqual ident memb) with
   | some (_, _, off) => integerIval off
   | none => panic! "Concrete.offsetof_ival: invalid memb_ident"
@@ -1003,8 +1009,8 @@ def arrayShiftPtrval (pv : PointerValue) (elemTy : ctype) (iv : IntegerValue) : 
     which member we're pointing to (in PVconcrete's unionMember field). -/
 def memberShiftPtrval (pv : PointerValue) (tag : sym) (memb : identifier) : PointerValue :=
   let tagDefsAsList : List (sym × (CerbLocation.Loc × tag_definition)) :=
-    CerbTags.tagDefs ()
-  let (.IV _ offsetVal) := offsetofIval tagDefsAsList tag memb
+    fmapElements (CerbTags.tagDefs ())
+  let (.IV _ offsetVal) := offsetofIval (CerbTags.tagDefs ()) tag memb
   let isUnion := match tagDefsAsList.find? (fun (s, _) => symbolEquality s tag) with
     | some (_, (_, UnionDef _)) => true
     | _ => false
@@ -1093,21 +1099,23 @@ private def alignDown (addr align : Nat) : Nat := (addr / align) * align
 /-! ### Bytemap operations -/
 
 private def writeBytesTo (st : MemState) (addr : Int) (bytes : List AbsByte) : MemState :=
-  let newEntries := bytes.mapIdx fun i b => (addr + i, b)
-  let filtered := st.bytemap.filter fun (a, _) => !newEntries.any (fun (a', _) => a == a')
-  { st with bytemap := newEntries ++ filtered }
+  -- insert-or-replace per byte (was: prepend + filter of the whole map)
+  let bm := (bytes.foldl
+    (fun (acc : Std.TreeMap Int AbsByte × Int) b => (acc.1.insert acc.2 b, acc.2 + 1))
+    (st.bytemap, addr)).1
+  { st with bytemap := bm }
 
 private def readBytesFrom (st : MemState) (addr : Int) (size : Nat) : List AbsByte :=
   (List.range size).map fun (i : Nat) =>
-    match st.bytemap.find? (fun (a, _) => a == addr + (i : Int)) with
-    | some (_, b) => b
+    match st.bytemap.get? (addr + (i : Int)) with
+    | some b => b
     | none => { prov := .Prov_none, copyOffset := none, value := none }
 
 private def getAllocation (st : MemState) (pv : PointerValue) : Option (Int × Allocation) :=
   match pv with
   | .PV (.Prov_some allocId) _ =>
     if st.deadAllocations.contains allocId then none
-    else st.allocations.find? (fun (id, _) => id == allocId)
+    else (st.allocations.get? allocId).map (fun a => (allocId, a))
   | _ => none
 
 private def isInBounds (alloc : Allocation) (addr size : Int) : Bool :=
@@ -1130,7 +1138,7 @@ def allocateObject (_ : Nat) (pref : prefix0) (alignIv : IntegerValue)
       let alloc : Allocation := { base := alignedAddr, size := size, ty := some ty, prefix_ := pref }
       let st' := { st with
         nextAllocId := allocId + 1, lastAddress := alignedAddr
-        allocations := (allocId, alloc) :: st.allocations }
+        allocations := st.allocations.insert allocId alloc }
       let st' := match initOpt with
         | some val_ =>
           -- repr threads the funptrmap into the state — impl_mem.ml:1336-1344
@@ -1154,7 +1162,7 @@ def allocateRegion (_ : Nat) (pref : prefix0) (alignIv sizeIv : IntegerValue) : 
       let alloc : Allocation := { base := alignedAddr, size := size, prefix_ := pref }
       let st' := { st with
         nextAllocId := allocId + 1, lastAddress := alignedAddr
-        allocations := (allocId, alloc) :: st.allocations
+        allocations := st.allocations.insert allocId alloc
         dynamicAddrs := alignedAddr :: st.dynamicAddrs }
       let st' := writeBytesTo st' alignedAddr
           (List.replicate size { prov := .Prov_none, copyOffset := none, value := none })
@@ -1175,9 +1183,9 @@ def killM (loc : CerbLocation.Loc) (isDynamic : Bool) (pv : PointerValue) : memM
     | .PV (.Prov_some allocId) (.PVconcrete _ addr) =>
       if st.deadAllocations.contains allocId then
         fail_ (MerrUndefinedFree Free_dead_allocation)
-      else match st.allocations.find? (fun (id, _) => id == allocId) with
+      else match st.allocations.get? allocId with
         | none => fail_ (MerrUndefinedFree Free_non_matching)
-        | some (_, alloc) =>
+        | some alloc =>
           if addr != alloc.base then
             fail_ (MerrUndefinedFree Free_out_of_bound)
           else if isDynamic && !st.dynamicAddrs.contains alloc.base then
@@ -1185,7 +1193,7 @@ def killM (loc : CerbLocation.Loc) (isDynamic : Bool) (pv : PointerValue) : memM
           else
             let st' := { st with
               deadAllocations := allocId :: st.deadAllocations
-              allocations := st.allocations.filter (fun (id, _) => id != allocId) }
+              allocations := st.allocations.erase allocId }
             (NDactive (), st')
     | _ => fail_ (MerrUndefinedFree Free_non_matching)
 
@@ -1263,11 +1271,11 @@ def loadM (loc : CerbLocation.Loc) (ty : ctype) (pv : PointerValue) : memM (Foot
       -- impl_mem.ml:1644-1664
       if st.deadAllocations.contains allocId then
         fail_ (MerrAccess LoadAccess DeadPtr)                             -- impl_mem.ml:1645-1650
-      else match st.allocations.find? (fun (id, _) => id == allocId) with
+      else match st.allocations.get? allocId with
         | none =>
           -- get_allocation (via is_within_bound) — impl_mem.ml:669-675
           fail_ (MerrOutsideLifetime s!"Concrete.get_allocation, alloc_id={allocId}")
-        | some (_, alloc) =>
+        | some alloc =>
           if !isInBounds alloc addr (sizeofCtype ty) then
             fail_ (MerrAccess LoadAccess OutOfBoundPtr)                   -- impl_mem.ml:1651-1656
           else if isAtomicMemberAccess alloc ty addr then
@@ -1297,10 +1305,10 @@ def storeM (loc : CerbLocation.Loc) (ty : ctype) (isLocking : Bool) (pv : Pointe
       -- is_locking — impl_mem.ml:1776-1787: readonly kind from the
       -- allocation's prefix
       let st' := if isLocking then
-        { st' with allocations := st'.allocations.map fun (id, a) =>
+        { st' with allocations := st'.allocations.map fun id a =>
             if id == allocId then
-              (id, { a with isReadonly := .IsReadOnly (selectRoKind alloc.prefix_) })
-            else (id, a) }
+              { a with isReadonly := .IsReadOnly (selectRoKind alloc.prefix_) }
+            else a }
         else st'
       let fp : Footprint := .FP .W addr (sizeofCtype ty)
       (NDactive fp, st')
@@ -1325,10 +1333,10 @@ def storeM (loc : CerbLocation.Loc) (ty : ctype) (isLocking : Bool) (pv : Pointe
       -- impl_mem.ml:1762-1789: NO is_dead check on the store path — a
       -- dead allocation is caught by is_within_bound's get_allocation
       -- (MerrOutsideLifetime); bounds are checked BEFORE readonly
-      match st.allocations.find? (fun (id, _) => id == allocId) with
+      match st.allocations.get? allocId with
       | none =>
         fail_ (MerrOutsideLifetime s!"Concrete.get_allocation, alloc_id={allocId}")
-      | some (_, alloc) =>
+      | some alloc =>
         if !isInBounds alloc addr (sizeofCtype ty) then
           fail_ (MerrAccess StoreAccess OutOfBoundPtr)                     -- impl_mem.ml:1763-1765
         else match alloc.isReadonly with
@@ -1387,12 +1395,12 @@ def diffPtrval (loc : CerbLocation.Loc) (diffTy : ctype) (pv1 pv2 : PointerValue
     | .PV (.Prov_some allocId1) (.PVconcrete _ addr1),
       .PV (.Prov_some allocId2) (.PVconcrete _ addr2) =>
       if allocId1 == allocId2 then
-        match st.allocations.find? (fun (id, _) => id == allocId1) with
+        match st.allocations.get? allocId1 with
         | none =>
           -- get_allocation ~loc alloc_id1 — impl_mem.ml:669-675
           (NDkilled (failReason (MerrOutsideLifetime
             s!"Concrete.get_allocation, alloc_id={allocId1}") loc), st)
-        | some (_, alloc) =>
+        | some alloc =>
           let precond :=  -- impl_mem.ml:1955-1959
             alloc.base ≤ addr1 && addr1 ≤ alloc.base + alloc.size &&
             alloc.base ≤ addr2 && addr2 ≤ alloc.base + alloc.size
@@ -1550,9 +1558,9 @@ def reallocM (loc : CerbLocation.Loc) (tid : Nat) (align : IntegerValue)
         (NDkilled (failReason (MerrUndefinedFree Free_non_matching) loc), st)
       else if isDead then
         (NDkilled (failReason (MerrUndefinedFree Free_dead_allocation) loc), st)
-      else match st.allocations.find? (fun (id, _) => id == allocId) with
+      else match st.allocations.get? allocId with
         | none => (NDkilled (Other (MerrOther "realloc: allocation missing")), st)
-        | some (_, alloc) =>
+        | some alloc =>
           if alloc.base != addr then
             (NDkilled (Other (MerrOther "realloc: invalid pointer (not at base)")), st)
           else
@@ -1571,7 +1579,7 @@ def reallocM (loc : CerbLocation.Loc) (tid : Nat) (align : IntegerValue)
                 -- Kill old
                 let st3 := { st2 with
                   deadAllocations := allocId :: st2.deadAllocations
-                  allocations := st2.allocations.filter (fun (id, _) => id != allocId) }
+                  allocations := st2.allocations.erase allocId }
                 (NDactive newPtr, st3)
               | _ => (NDactive newPtr, st1)
             | other => (other, st1)

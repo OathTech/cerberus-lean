@@ -8,10 +8,12 @@ scope = "leanprover-community"
 rev = "v4.29.0"
 
 # LemLib is the Lem runtime library for Lean, from the septract/lem-lean fork.
+# arc-6 S3: pinned to the arc/libc-load branch pair (Fmap representation);
+# re-pin to mdd/lean-backend at arc close per the two-repo pin dance.
 [[require]]
 name = "LemLib"
 git = "https://github.com/septract/lem-lean"
-rev = "mdd/lean-backend"
+rev = "arc/libc-load"
 subDir = "lean-lib"
 
 [[lean_lib]]

@@ -21,23 +21,27 @@ by chvalid.c) and emits a differential test battery:
     and returns (int)(h % 1000000007u) — one differential run covers the
     whole battery via verdict value + stdout.
 
-The battery is emitted as SLICES (default 50 points per .c file): the
-Cerberus concrete-memory interpreters (both sides) retain dead allocations,
-so exec cost grows QUADRATICALLY in battery length — one 1354-point program
-blows the 300 s per-invocation resource cap on BOTH sides (measured, OCaml:
-100 pts 4 s, 200 pts 16 s, 400 pts 66 s, 1354 pts > 300 s; Lean --first:
-100 pts 139 s, extrapolated 200 pts ~560 s). 50-point slices run in ~1 s
-(OCaml) / ~35 s (Lean), comfortably inside the caps, and smaller slices
-also minimize TOTAL harness time under the quadratic. The slices partition
-the same point set; each slice accumulates its own checksum, so the union
-of slice verdicts covers the full battery.
+The battery is emitted as SLICES (default 339 points per .c file = 4
+slices; arc-6 S3 consolidation). History: both concrete-memory
+interpreters retain dead allocations, and with the pre-arc-6 assoc-list
+map representations the Lean side's exec cost grew QUADRATICALLY in
+battery length (arc-5 measured, Lean --first: 100 pts 139 s), forcing
+50-point slices (28 of them). After the arc-6 S3 representation changes
+(LemLib Fmap + CerbMem bytemap/allocations -> tree maps; lem-lean
+arc/libc-load), a 339-point slice runs in ~100 s / ~205 MB on the Lean
+side (OCaml oracle ~15 s), comfortably inside the standing caps
+(300 s / ulimit -v 4000000). The slices partition the same 1354-point
+set; each slice accumulates its own checksum, so the union of slice
+verdicts covers the full battery. NOTE the per-slice checksums differ
+from the 28-slice partition's — the baseline was re-recorded at the
+consolidation (instrument change, justified in the arc-6 S3 record).
 
 Usage:
   gen_chvalid_battery.py RANGES_INC --out-dir DIR [--slice-size N]
   gen_chvalid_battery.py RANGES_INC [-o OUT.c] [--slice A:B] [--verbose-point 0xN]
 
   --out-dir DIR      emit chvalid_battery_NN.c slice files into DIR
-  --slice-size N     points per slice file (default 50)
+  --slice-size N     points per slice file (default 339)
   --slice A:B        emit only points[A:B] as a single file (minimization)
   --verbose-point C  emit a battery for the single code point C that prints
                      each of the 22 observations on its own line (for
@@ -248,7 +252,7 @@ def main():
     ap.add_argument("-o", "--output", default="-")
     ap.add_argument("--out-dir", default=None,
                     help="emit chvalid_battery_NN.c slice files into DIR")
-    ap.add_argument("--slice-size", type=int, default=50)
+    ap.add_argument("--slice-size", type=int, default=339)
     ap.add_argument("--slice", default=None, help="A:B — emit only points[A:B]")
     ap.add_argument("--verbose-point", default=None,
                     help="single code point; print all 22 observations")
