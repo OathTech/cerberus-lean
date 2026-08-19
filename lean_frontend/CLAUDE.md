@@ -157,6 +157,9 @@ If you skip this step, Lake will compile the stale `generated/` copy and your ch
 | `scripts/test_parse.sh` | Test Cabs JSON bridge on .c files |
 | `scripts/test_core.sh` | Test Core text parser: C → --pp core → Lean |
 | `scripts/test_multi_tu.sh` | Differential multi-TU linking: N .c linked by OCaml vs N cabs-jsons linked by the Lean pipeline (corpus: `tests/multi_tu/<name>/`) |
+| `scripts/libxml2_prep.sh` | libxml2 no-autogen prep: pinned config (`tests/libxml2/config/`) + cerberus args per TU (probe recipe) |
+| `scripts/test_libxml2.sh` | Arc-5 exit-criterion differential: chvalid.c + generated boundary battery (28 slices, 1354 points), single-trace both sides (~35 min; not in the fast ladder) |
+| `scripts/test_libxml2_uri.sh` | Arc-6 REPORTING baseline: 5-TU xmlParseURISafe corpus (oracle+libc vs --nolibc vs Lean) |
 | `scripts/test_cabs_json.sh` | Quick smoke test |
 
 ## Lem backend interaction

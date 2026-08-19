@@ -1,0 +1,6 @@
+ORACLE_LIBC exit: 0
+ORACLE_LIBC: Defined {value: "Specified(546321043)", stdout: "uri 0 rc=0 scheme=http server=example.com port=8080 path=/a/b query_raw=q=1 fragment=frag\nuri 1 rc=1\nuri 2 rc=0 scheme=- server=host port=0 path=/a/b query_raw=- fragment=-\nuri 3 rc=0 scheme=mailto server=- port=0 path=someone@example.com query_raw=- fragment=-\nuri 4 rc=0 scheme=- server=- port=0 path=a/b/../c query_raw=x=%41 fragment=-\nuri 5 rc=0 scheme=- server=- port=0 path=- query_raw=- fragment=-\nuri 6 rc=1\nuri 7 rc=0 scheme=urn server=- port=0 path=example:animal:ferret:nose query_raw=- fragment=-\nuri 8 rc=0 scheme=- server=- port=0 path=- query_raw=query fragment=frag\nuri 9 rc=1\nuri_harness n=10 h=546321043\n", stderr: "", blocked: "false"}
+OCAML_NOLIBC exit: 1
+OCAML_NOLIBC: Error {msg: "ill-formed program: `calling an unknown procedure: Symbol(118, SD_Id("memset"))'"}
+LEAN exit: 1
+LEAN: Error {msg: "Illformed_program: calling an unknown procedure: Symbol(118, SD_Id("memset"))"}
