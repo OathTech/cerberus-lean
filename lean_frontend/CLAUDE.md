@@ -177,17 +177,22 @@ Lem is pinned to `https://github.com/septract/lem-lean#mdd/lean-backend`.
 
 ### Sorry target_reps (non-concurrency)
 - `defacto_memory.lem`: `easy_update_mem_value_aux`
-- `mini_pipeline.lem`: `runND_proxy`
+- (`runND_proxy` is implemented — hand-written `CerbND.runND`)
 
-### Pipeline status
+### Pipeline status (2026-08-19, arc-4 S0 frontier — see
+`docs/2026-08-19_arc4-s0-frontier.md`)
 - ✅ C → Cabs JSON (OCaml parser, 100%)
 - ✅ JSON → Lean Cabs types (CabsImport, 100%)
 - ✅ Core text parser (std.core + impl files)
 - ✅ Core stdlib loading
-- 🔧 Desugarer enters, fails on missing stdlib entries (parser → Fmap conversion issue)
-- ⬜ Typecheck (GenTyping.annotate_program)
-- ⬜ Translation (Translation.translate)
-- ⬜ Execution (Driver.drive)
+- ✅ Desugar (95/105 tests/minimal; the 10 crashes are the const-expr
+  driver hitting the sorry'd `BEq core_step2`, not desugar itself)
+- ✅ Typecheck (GenTyping.annotate_program — 95/95 that reach it)
+- ✅ Translation (Translation.translate — 95/95 that reach it)
+- 🔧 Execution (Driver.drive): reaches `CerbND.runND`/`driver2`, then
+  panics on the sorry'd fallback `BEq core_step2` in driver2's
+  blocked-thread filter (first crash for 77/105 files; 14 complete with
+  Killed results, 0 Active yet)
 
 ## Conventions
 
