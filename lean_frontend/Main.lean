@@ -147,6 +147,70 @@ def driverErrorBatchMsg : driver_error → String
   | .DErr_concurrency s => s!"Concurrency error: {s}"
   | .DErr_other s => s
 
+/-! ## Elaborated-Core signature dump (`--pp-core`, arc-4 S4)
+
+LIMITATION — SIGNATURE-LEVEL ONLY, deliberately. The Lean pipeline has no
+real Core pretty-printer (CerbPP is placeholders; the generated Pp.lean is
+a stub), and building one is explicitly out of scope for this slice
+(charter S4: stage differential at whatever granularity is available
+WITHOUT building a printer). So `--pp-core` emits a canonical
+SIGNATURE-level dump of the translated Core file:
+
+  tagdef struct <name> members=<m1,m2,...>
+  tagdef union <name> members=<...>
+  glob <name>                      (GlobalDef only — OCaml pp skips GlobalDecl)
+  fun <name> arity=<n>
+  proc <name> arity=<n>
+  procdecl <name> arity=<n>
+  builtin <name> arity=<n>
+
+`scripts/test_elab.sh` extracts the same facts from OCaml
+`cerberus --nolibc --pp core` output and diffs the two through
+`canonicalize_ids.py`. Function/glob BODIES are NOT compared — a
+body-level Core differential needs a Lean Core pretty-printer (recorded
+as a next-arc item in the S4b scoreboard doc). -/
+
+/-- Mirror of OCaml `Pp_symbol.to_string_pretty` at debug level ≤ 4
+    (ocaml_frontend/pprinters/pp_symbol.ml:12-35), which is what
+    `--pp core` uses for every symbol we dump. -/
+def ppSymbolPretty : sym → String
+  | Symbol _ n sd =>
+    match sd with
+    | .SD_Id str | .SD_ObjectAddress str | .SD_FunArgValue str => str
+    | .SD_unnamed_tag _ => s!"__cerbty_unnamed_tag_{n}"
+    | .SD_CN_Id str => str
+    | _ => s!"a_{n}"
+
+/-- Signature-level dump of the translated Core file (see module note
+    above). Mirrors WHAT OCaml `pp_core.pp_file` prints (incl. appending
+    a flexible array member as an ordinary member,
+    pp_core.ml:755-760, and skipping GlobalDecl, pp_core.ml:832-841) but
+    at declaration granularity only. -/
+def ppCoreSignature (coreFile : file Unit) : IO Unit := do
+  let identName : identifier → String
+    | Identifier _ s => s
+  for (s, (_loc, td)) in coreFile.tagDefs do
+    match td with
+    | StructDef membrs flexOpt =>
+      let names := membrs.map (fun (i, _) => identName i)
+      let names := match flexOpt with
+        | some (FlexibleArrayMember _ i _ _) => names ++ [identName i]
+        | none => names
+      IO.println s!"tagdef struct {ppSymbolPretty s} members={String.intercalate "," names}"
+    | UnionDef membrs =>
+      let names := membrs.map (fun (i, _) => identName i)
+      IO.println s!"tagdef union {ppSymbolPretty s} members={String.intercalate "," names}"
+  for (s, g) in coreFile.globs do
+    match g with
+    | GlobalDef _ _ => IO.println s!"glob {ppSymbolPretty s}"
+    | GlobalDecl _ => pure ()   -- OCaml pp_globs prints nothing for these
+  for (s, d) in coreFile.funs do
+    match d with
+    | Fun _ params _ => IO.println s!"fun {ppSymbolPretty s} arity={params.length}"
+    | Proc _ _ _ params _ => IO.println s!"proc {ppSymbolPretty s} arity={params.length}"
+    | ProcDecl _ _ tys => IO.println s!"procdecl {ppSymbolPretty s} arity={tys.length}"
+    | BuiltinDecl _ _ tys => IO.println s!"builtin {ppSymbolPretty s} arity={tys.length}"
+
 /-! ## Pipeline -/
 
 def findRuntimeDir : IO String := do
@@ -162,11 +226,14 @@ def findRuntimeDir : IO String := do
   throw (IO.Error.userError "cannot find runtime/libcore/std.core — set working directory to project root")
 
 /-- Run the pipeline. `batch` selects machine-parseable output (see above);
-    the default human-readable mode is unchanged (and keeps its historical
-    exit-code behavior: 0 even on semantic stage failures). -/
-def runPipeline (runtimeDir : String) (batch : Bool) (tunit : translation_unit) : IO UInt8 := do
-  -- Progress chatter: human mode only
-  let say (s : String) : IO Unit := unless batch do IO.println s
+    `ppCore` stops after translation and dumps the signature-level Core
+    summary (see `ppCoreSignature`); the default human-readable mode is
+    unchanged (and keeps its historical exit-code behavior: 0 even on
+    semantic stage failures). -/
+def runPipeline (runtimeDir : String) (batch : Bool) (ppCore : Bool) (tunit : translation_unit) : IO UInt8 := do
+  -- Progress chatter: human mode only (batch and pp-core keep stdout clean)
+  let quiet := batch || ppCore
+  let say (s : String) : IO Unit := unless quiet do IO.println s
   let (TUnit decls) := tunit
   let (funcs, declCount, other) := countDecls decls
   say s!"cerberus-lean: parsed {List.length decls} external declarations"
@@ -220,7 +287,7 @@ def runPipeline (runtimeDir : String) (batch : Bool) (tunit : translation_unit) 
     match to_exception (fun (p : CerbLocation.Loc × typing_error) => (p.1, AIL_TYPING p.2))
             (annotate_program ailInput) with
     | .Exception (loc, cause) =>
-      if batch then
+      if quiet then
         -- OCaml parity: typing-level UB gets a batch Undefined line (main.ml runM)
         match cause with
         | .AIL_TYPING (.TError_UndefinedBehaviour ub) =>
@@ -248,6 +315,13 @@ def runPipeline (runtimeDir : String) (batch : Bool) (tunit : translation_unit) 
       say s!"    main: {match coreFile.main with | some _ => "found" | none => "not found"}"
       say s!"    funs: {List.length coreFile.funs}"
       say s!"    globs: {List.length coreFile.globs}"
+
+      -- --pp-core: signature-level dump of the translated Core, then stop
+      -- (no execution). See the ppCoreSignature module note for the
+      -- granularity limitation.
+      if ppCore then
+        ppCoreSignature coreFile
+        return 0
 
       -- Step 4: Prepare for execution (mirrors driver_ocaml.ml)
       say "  preparing for execution..."
@@ -338,7 +412,7 @@ def runPipeline (runtimeDir : String) (batch : Bool) (tunit : translation_unit) 
               | .DErr_other s => IO.println s!"  result: Killed (other: {s})"
         return 0
   | .Exception (loc, cause) =>
-    if batch then
+    if quiet then
       -- OCaml parity (main.ml runM): desugar-level UB gets a batch Undefined line
       match cause with
       | .DESUGAR (.Desugar_UndefinedBehaviour ub) =>
@@ -370,12 +444,14 @@ def runPipeline (runtimeDir : String) (batch : Bool) (tunit : translation_unit) 
 
 def main (args : List String) : IO Unit := do
   -- --batch: machine-parseable output for the differential harness
+  -- --pp-core: signature-level elaborated-Core dump (test_elab.sh)
   let batchMode := args.head? == some "--batch"
-  let restArgs := if batchMode then args.drop 1 else args
+  let ppCoreMode := args.head? == some "--pp-core"
+  let restArgs := if batchMode || ppCoreMode then args.drop 1 else args
   -- Set debug level for Core evaluation tracing (0=off, 2=basic, 5=verbose).
-  -- Batch mode matches the OCaml driver default (0): keeps stderr clean for
-  -- the harness's crash classification.
-  let _ := CerbDebug.set_level (if batchMode then 0 else 2)
+  -- Batch/pp-core modes match the OCaml driver default (0): keeps stderr
+  -- clean for the harness's crash classification.
+  let _ := CerbDebug.set_level (if batchMode || ppCoreMode then 0 else 2)
   if args.length == 0 then
     selfTest
     return
@@ -412,8 +488,8 @@ def main (args : List String) : IO Unit := do
       IO.Process.exit 1
     return
 
-  if batchMode && restArgs.isEmpty then
-    IO.eprintln "usage: cerberus-lean --batch FILE.json"
+  if (batchMode || ppCoreMode) && restArgs.isEmpty then
+    IO.eprintln "usage: cerberus-lean [--batch|--pp-core] FILE.json"
     IO.Process.exit 1
 
   -- Default: parse Cabs JSON and run pipeline
@@ -426,6 +502,6 @@ def main (args : List String) : IO Unit := do
     IO.eprintln s!"cerberus-lean: parse error: {e}"
     IO.Process.exit 1
   | .ok tunit =>
-    let code ← runPipeline runtimeDir batchMode tunit
+    let code ← runPipeline runtimeDir batchMode ppCoreMode tunit
     if code != 0 then
       IO.Process.exit code
