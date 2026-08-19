@@ -362,3 +362,24 @@ state-function field), the RelSem machine, and the full
 (`val_stuck` by `cases … <;> rfl`, exactly as the Machine.lean proof
 predicts) and the `adequate` record stateable over the instance. The
 coupling design is not speculative.
+
+## Q1 AMENDED (operator-prompted, 2026-08-19)
+
+**[USER]** The operator challenged Q1's differential-bridge recommendation:
+"why would we need to differentially test vs runND — why can't we prove
+it?" **[AGENT]** Resolution, superseding the original recommendation: the
+mirror-vs-runND link is unprovable ONLY because runND is a `partial def`
+(no kernel equations — the arc-3 pathology, surviving at the top of the
+stack because CerbND is hand-written, outside the totality-gate boundary
+per arc-4 G3). The correct move is therefore NOT a bridge but
+elimination: fuel-totalize runND itself (arc-3 pattern; tree-walk, fuel
+on depth, honest sentinel), make the TOTAL runner the production runner,
+and prove Step-soundness directly against it. The executable and the
+proof object become the same artifact at every level of the stack; the
+only remaining differential is the epistemically necessary one (vs
+OCaml). Migration safety = the standing OCaml differential corpora
+staying green through the swap (the arc-5 seam-change pattern); an
+old-vs-new transient check is optional. This amendment is an arc-7
+charter input: "totalize CerbND" becomes a Layer-2 prerequisite slice,
+and the totality-gate boundary can then extend to CerbND (arc-4 G3
+next-arc item, partially discharged).
