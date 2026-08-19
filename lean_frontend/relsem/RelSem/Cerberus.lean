@@ -25,6 +25,8 @@ import Driver
 import Core_eval
 import CerbND
 import RelSem.Machine
+import RelSem.RunNDT
+import RelSem.ExecModel
 
 set_option autoImplicit false
 
@@ -93,6 +95,33 @@ theorem pick_steps_second {A : Type} (info : step_kind) (x y : A)
   Step.nd (i := info) (j := info) rfl (List.Mem.tail _ (by
     -- second element of (info, nd_return x) :: List.map ... (y :: xs)
     exact List.Mem.head _))
+
+/-- MEMORY-OP STEP (continuation, 2026-08-19): a memory-model action with
+    an active head, lifted into the driver through the real `liftMem`
+    lens (Driver.lean:218), is one driver-level relational step that ends
+    `done` with the action's value and writes the new memory state back
+    into `layout_state` — the other driver fields untouched. This is the
+    node-granularity memory step of the spike design (§2 "granularity"):
+    whatever `m` computed inside the memory model (a store, a load, an
+    allocation) is one step; its state effect is exactly the
+    `layout_state` update. Instantiating `m` with a concrete
+    `CerbMem.storeM`/`allocateObject` composition is a `Step`-existence
+    fact whenever its `app` equation is established. -/
+theorem liftMem_step_active {A : Type}
+    {m : ndM A String mem_error (mem_constraint CerbMem.IntegerValue)
+        CerbMem.MemState}
+    {dr : driver_state} {v : A} {mem' : CerbMem.MemState}
+    (h : app m dr.layout_state = (NDactive v, mem')) :
+    Step γexh
+      (⟨.running (liftMem m), dr⟩ :
+        Config A step_kind driver_error mem_iv_constraint driver_state)
+      ⟨.done (.value v), { dr with layout_state := mem' }⟩ :=
+  Step.active
+    (app_liftND_active (fun (dr_st : driver_state) => dr_st.layout_state)
+      (fun (dr_st : driver_state) (mem_st : CerbMem.MemState) =>
+        { dr_st with layout_state := mem_st })
+      (fun (err_str : String) => SK_misc ["memory", err_str])
+      (fun (mem_err : mem_error) => DErr_memory mem_err) h)
 
 /-! ## The pure-expression step (Core_eval), fuel-erased -/
 
@@ -215,6 +244,97 @@ def HarnessAdequate (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
       CerbND.runND (drive tagDefs false file1 args)
         (initial_driver_state file1 fs) →
     ∃ r : driver_result, out = Active r ∧ spec r
+
+/-! ## The parametric adequacy interface, instantiated
+    (continuation, 2026-08-19 — the MODEL-PARAMETRICITY principle).
+
+    The adequacy plumbing is stated over the abstract `ExecModel`
+    interface (RelSem/ExecModel.lean); `seqModel` below is THE current
+    instance — sequential driver-level machine, observable behaviors =
+    (outcome, final state) pairs extracted by the fuel-erased TOTAL
+    runner (RelSem/RunNDT.lean), UB = an `Undef0` kill. A concurrency
+    instance (candidate-execution behaviors per the cmm direction) or an
+    RC11-style instance replaces the `behavior`/`isUB` fields without
+    reshaping any `Adequate`-formed statement (fields-only sketch in the
+    spike doc's continuation section). `HarnessAdequate` above remains
+    the CerbND-shaped HEADLINE form against the production runner; the
+    parametric form and it meet at the arc-7 "totalize CerbND" slice
+    (runND = runNDT at sufficient fuel), after which the headline is the
+    instance's `Adequate` unfolded. -/
+
+/-- Observable behavior of a sequential driver run: terminal outcome +
+    final driver state. (Traces are not observable: the runner never
+    populates them.) -/
+abbrev DriveBehavior := Outcome driver_result driver_error × driver_state
+
+/-- Behavior extraction from one enumerated execution triple. -/
+def behaviorOfRun :
+    RunResult driver_result driver_error driver_state → DriveBehavior
+  | (out, _, st') => (Outcome.ofStatus out, st')
+
+/-- THE sequential instance of the model interface. -/
+def seqModel : ExecModel where
+  Config := DriveConfig
+  Step := DStep
+  Behavior := DriveBehavior
+  behavior c b :=
+    match c.expr with
+    | .done o => b = (o, c.st)
+    | .running m => ∃ fuel x, x ∈ runNDT fuel m c.st ∧ b = behaviorOfRun x
+  isUB b := ∃ loc ubs, b.1 = Outcome.killed (Undef0 loc ubs)
+
+/-- PROVED coherence of the instance: every behavior the model extracts
+    is reachable in the Layer-2 relation (via `runNDT_sound`). This is
+    the instance-level fact the Layer-3 adequacy discharge consumes. -/
+theorem seqModel_behavior_sound {c : DriveConfig} {b : DriveBehavior}
+    (h : seqModel.behavior c b) : DSteps c ⟨.done b.1, b.2⟩ := by
+  cases c with
+  | mk e st =>
+    cases e with
+    | done o =>
+      have hb : b = (o, st) := h
+      subst hb
+      exact Steps.refl
+    | running m =>
+      cases h with
+      | intro fuel h =>
+        cases h with
+        | intro x h =>
+          cases x with
+          | mk out p =>
+            cases p with
+            | mk tr st' =>
+              have hb := h.2
+              subst hb
+              exact runNDT_sound fuel m st out tr st' h.1
+
+/-- Layer-2 → adequacy discharge (proved): a relational proof covering
+    every `Steps`-reachable terminal configuration discharges into the
+    model-parametric adequacy statement. This is the plumbing an Iris
+    proof exits through (WP ⇒ iris `adequate` ⇒ per-trace fact ⇒ this). -/
+theorem seqModel_adequate_of_reach
+    (c : DriveConfig) (spec : DriveBehavior → Prop)
+    (h : ∀ b : DriveBehavior, DSteps c ⟨.done b.1, b.2⟩ → spec b) :
+    seqModel.Adequate c spec :=
+  fun b hb => h b (seqModel_behavior_sound hb)
+
+/-- Model-parametric harness adequacy (the `HarnessAdequate` shape, said
+    through the interface): every observable behavior of the initial
+    configuration satisfies `spec`. Statement-TCB note: this quantifies
+    BEHAVIORS (per the survey §7.7 discipline), not enumerator output;
+    the CerbND-shaped headline is recovered per-instance. -/
+def HarnessAdequateM
+    (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
+    (file1 : file core_run_annotation) (args : List String)
+    (fs : CerbFS.FsState) (spec : DriveBehavior → Prop) : Prop :=
+  seqModel.Adequate (initConfig tagDefs file1 args fs) spec
+
+/-- Model-parametric UB-freedom of a harness. -/
+def HarnessUBFree
+    (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
+    (file1 : file core_run_annotation) (args : List String)
+    (fs : CerbFS.FsState) : Prop :=
+  seqModel.UBFree (initConfig tagDefs file1 args fs)
 
 /-! ## Memory: the points-to base over CerbMem.MemState -/
 

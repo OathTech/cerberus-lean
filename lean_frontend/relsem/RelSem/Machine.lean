@@ -111,6 +111,17 @@ structure CsSem (C S : Type) where
 def CsSem.exhaustive (C S : Type) : CsSem C S :=
   { sat := fun _ _ => True, nsat := fun _ _ => True }
 
+/-- Discipline induced by a boolean constraint evaluator (the shape of the
+    OCaml concrete model's `eval_cs`, impl_mem.ml:321-361): the positive
+    arm is enabled exactly when the evaluator says `true`, the negative
+    arm exactly when it says `false`. Under this discipline the two arms
+    of an `NDbranch` are mutually exclusive (see `step_ifM_inv` below +
+    `Bool` disjointness) — the relational content of constraint PRUNING,
+    which the executable runner does not implement yet (recorded
+    divergence, survey finding 23). -/
+def CsSem.ofEval {C S : Type} (ev : C → S → Bool) : CsSem C S :=
+  { sat := fun c s => ev c s = true, nsat := fun c s => ev c s = false }
+
 /-- Small-step relation of the ND machine. Each rule unfolds the tree once
     at the current state and commits to one offered successor; ND is the
     relational branching across rules `nd`/`step`/`branchL`/`branchR`.
@@ -159,6 +170,12 @@ theorem Steps.trans {γ : CsSem C S} {a b c : Config A I E C S}
   | refl => exact h₁
   | tail _ hs ih => exact .tail ih hs
 
+/-- Head-cons for the closure (the shape the runner-soundness induction
+    produces: one node-step, then the recursive trace). -/
+theorem Steps.head {γ : CsSem C S} {a b c : Config A I E C S}
+    (h : Step γ a b) (hs : Steps γ b c) : Steps γ a c :=
+  (Steps.single h).trans hs
+
 /-! ## Proved micro-lemmas (spike-scale existence proofs) -/
 
 /-- `nd_return v` (Nondeterminism.lean:163) is one `active` step from any
@@ -188,6 +205,168 @@ theorem done_irreducible {γ : CsSem C S} {o : Outcome A E} {st : S}
     ¬ Step γ ⟨.done o, st⟩ c' := by
   intro h; cases h
 
+/-! ## Constraint-arm micro-lemmas: the CsSem discipline exercised
+    (continuation, 2026-08-19). `ifM`/`addConstraints` are the generated
+    combinators that BUILD the `NDbranch`/`NDguard` nodes
+    (Nondeterminism.lean:265/281); these lemmas show the relation's
+    constraint arms compute on them under an arbitrary discipline. -/
+
+/-- `app`-computation on `ifM`: one `NDbranch` node, state untouched. -/
+theorem app_ifM (i : I) (c : C) (mT mE : ndM A I E C S) (st : S) :
+    app (ifM i c mT mE) st = (NDbranch i c mT mE, st) := rfl
+
+/-- `app`-computation on `addConstraints`: one `NDguard` node whose
+    continuation is `nd_return ()`. -/
+theorem app_addConstraints (i : I) (c : C) (st : S) :
+    app (addConstraints i c : ndM Unit I E C S) st
+      = (NDguard i c (nd_return ()), st) := rfl
+
+/-- Positive arm of `ifM` under any discipline: a step when sat. -/
+theorem step_ifM_then (γ : CsSem C S) {i : I} {c : C}
+    (mT mE : ndM A I E C S) {st : S} (h : γ.sat c st) :
+    Step γ (⟨.running (ifM i c mT mE), st⟩ : Config A I E C S)
+           ⟨.running mT, st⟩ :=
+  .branchL (app_ifM i c mT mE st) h
+
+/-- Negative arm of `ifM` under any discipline: a step when nsat. -/
+theorem step_ifM_else (γ : CsSem C S) {i : I} {c : C}
+    (mT mE : ndM A I E C S) {st : S} (h : γ.nsat c st) :
+    Step γ (⟨.running (ifM i c mT mE), st⟩ : Config A I E C S)
+           ⟨.running mE, st⟩ :=
+  .branchR (app_ifM i c mT mE st) h
+
+/-- Crossing a constraint node (`addConstraints`) under any discipline:
+    a step to the unit continuation when sat. Under `CsSem.exhaustive`
+    the premise is trivial (the executable's no-pruning behavior); under
+    `CsSem.ofEval` it is a real evaluator verdict — the same rule, two
+    disciplines, no change to the relation. -/
+theorem step_addConstraints (γ : CsSem C S) {i : I} {c : C} {st : S}
+    (h : γ.sat c st) :
+    Step γ (⟨.running (addConstraints i c), st⟩ : Config Unit I E C S)
+           ⟨.running (nd_return ()), st⟩ :=
+  .guard (app_addConstraints i c st) h
+
+/-- INVERSION at an `ifM` node: any step out of it is one of the two
+    arms, with the discipline's verdict attached and the state unchanged.
+    With `γ := CsSem.ofEval ev` the two disjuncts are mutually exclusive
+    (`ev c st` cannot be both `true` and `false`) — branch pruning as a
+    relational fact. -/
+theorem step_ifM_inv {γ : CsSem C S} {i : I} {c : C}
+    {mT mE : ndM A I E C S} {st : S} {c' : Config A I E C S}
+    (h : Step γ ⟨.running (ifM i c mT mE), st⟩ c') :
+    (γ.sat c st ∧ c' = ⟨.running mT, st⟩) ∨
+    (γ.nsat c st ∧ c' = ⟨.running mE, st⟩) := by
+  cases h with
+  | active happ =>
+    rw [app_ifM] at happ
+    injection happ with h1 _; injection h1
+  | killed happ =>
+    rw [app_ifM] at happ
+    injection happ with h1 _; injection h1
+  | nd happ _ =>
+    rw [app_ifM] at happ
+    injection happ with h1 _; injection h1
+  | step happ _ =>
+    rw [app_ifM] at happ
+    injection happ with h1 _; injection h1
+  | guard happ _ =>
+    rw [app_ifM] at happ
+    injection happ with h1 _; injection h1
+  | branchL happ hsat =>
+    rw [app_ifM] at happ
+    injection happ with h1 h2
+    injection h1 with hi hc hl hr
+    subst hi; subst hc; subst hl; subst hr; subst h2
+    exact Or.inl ⟨hsat, rfl⟩
+  | branchR happ hnsat =>
+    rw [app_ifM] at happ
+    injection happ with h1 h2
+    injection h1 with hi hc hl hr
+    subst hi; subst hc; subst hl; subst hr; subst h2
+    exact Or.inr ⟨hnsat, rfl⟩
+
 end Step
+
+/-! ## Bind congruence (continuation, 2026-08-19): sequential composition
+    meets the relation. `nd_bind` is fuel'd (Nondeterminism.lean:167);
+    the lemmas are proved at generic positive fuel and instantiated at
+    the default via the arc-3 wrapper-defeq move
+    (`lemDefaultFuel ≡ 999999 + 1`, kernel literal arithmetic). Only the
+    ACTIVE case is needed at spike scale: an `NDactive` head of `m` makes
+    `nd_bind m f` behave exactly like `f v` at the post-state — the
+    workhorse for walking the generated driver code, which is all binds. -/
+
+section Bind
+variable {A B I E C S : Type}
+
+theorem app_bindFuel_active (fuel : Nat) {m : ndM A I E C S}
+    {f : A → ndM B I E C S} {st st' : S} {v : A}
+    (h : app m st = (NDactive v, st')) :
+    app (nd_bind_lemFuel (fuel + 1) m f) st = app (f v) st' := by
+  cases m with
+  | ND g =>
+    cases hfv : f v with
+    | ND g' =>
+      have hg : g st = (NDactive v, st') := h
+      simp only [nd_bind_lemFuel, app, hg, hfv]
+
+/-- The default-fuel wrapper form (the executable's own `nd_bind`). -/
+theorem app_bind_active {m : ndM A I E C S} {f : A → ndM B I E C S}
+    {st st' : S} {v : A} (h : app m st = (NDactive v, st')) :
+    app (nd_bind m f) st = app (f v) st' :=
+  app_bindFuel_active 999999 h
+
+/-- Step transfer across a bind with an active head: whatever step the
+    continuation takes at the post-state, the bound computation takes
+    from the pre-state. -/
+theorem step_bind_active {γ : CsSem C S} {m : ndM A I E C S}
+    {f : A → ndM B I E C S} {st st' : S} {v : A}
+    {c' : Config B I E C S}
+    (h : app m st = (NDactive v, st'))
+    (hs : Step γ ⟨.running (f v), st'⟩ c') :
+    Step γ ⟨.running (nd_bind m f), st⟩ c' := by
+  have happ := app_bind_active (f := f) h
+  cases hs with
+  | active h2 => exact .active (happ.trans h2)
+  | killed h2 => exact .killed (happ.trans h2)
+  | nd h2 hm => exact .nd (happ.trans h2) hm
+  | step h2 hm => exact .step (happ.trans h2) hm
+  | guard h2 hg => exact .guard (happ.trans h2) hg
+  | branchL h2 hg => exact .branchL (happ.trans h2) hg
+  | branchR h2 hg => exact .branchR (happ.trans h2) hg
+
+end Bind
+
+/-! ## State-lens lifting (continuation, 2026-08-19): `liftND`
+    (Nondeterminism.lean:289) re-bases a computation through a get/put
+    lens on the state — the combinator behind the driver's memory-op
+    seam `liftMem` (Driver.lean:218). Active case only, same fuel
+    discipline as the bind lemmas (`lemDefaultFuel ≡ 999998 + 2`). -/
+
+section Lift
+variable {A C E₁ E₂ I₁ I₂ S₁ S₂ : Type}
+
+theorem app_liftFuel_active (fuel : Nat)
+    (get2 : S₂ → S₁) (put1 : S₂ → S₁ → S₂)
+    (li : I₁ → I₂) (le : E₁ → E₂)
+    {m : ndM A I₁ E₁ C S₁} {st2 : S₂} {st1' : S₁} {v : A}
+    (h : app m (get2 st2) = (NDactive v, st1')) :
+    app (liftND_lemFuel (fuel + 2) get2 put1 li le m) st2
+      = (NDactive v, put1 st2 st1') := by
+  cases m with
+  | ND g =>
+    have hg : g (get2 st2) = (NDactive v, st1') := h
+    simp only [liftND_lemFuel, liftAction_lemFuel, app, hg]
+
+/-- The default-fuel wrapper form (the generated `liftND` itself). -/
+theorem app_liftND_active
+    (get2 : S₂ → S₁) (put1 : S₂ → S₁ → S₂)
+    (li : I₁ → I₂) (le : E₁ → E₂)
+    {m : ndM A I₁ E₁ C S₁} {st2 : S₂} {st1' : S₁} {v : A}
+    (h : app m (get2 st2) = (NDactive v, st1')) :
+    app (liftND get2 put1 li le m) st2 = (NDactive v, put1 st2 st1') :=
+  app_liftFuel_active 999998 get2 put1 li le h
+
+end Lift
 
 end RelSem

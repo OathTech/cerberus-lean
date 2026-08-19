@@ -497,3 +497,145 @@ future RC11-style one) is a parameter fill, not a rebuild. Honesty note:
 interface-level parametricity is achievable; RULE-level uniformity
 across models is not promised (per-model rule libraries under the
 bespoke-logic stance).
+
+## Continuation pass (2026-08-19, second spike worker)
+
+What now COMPILES (all on 4.29, no Iris imports, zero sorry, zero new
+axioms; §3's file list is superseded by this section where they differ).
+Axiom cones of every theorem named below: `propext`/`Quot.sound` only
+(checked with `#print axioms`; no sorryAx, no DAEMON in these cones —
+strictly cleaner than the declared boundary).
+
+### C1. Parametric adequacy skeleton (the model-parametricity principle, realized)
+
+New `relsem/RelSem/ExecModel.lean` — dependency-FREE (imports nothing,
+not even the generated code): the adequacy plumbing's abstract interface.
+
+```
+structure ExecModel : Type 1 where
+  Config   : Type                        -- Layer-2 carrier
+  Step     : Config → Config → Prop      -- what Layer 3 couples to
+  Behavior : Type                        -- observable behaviors
+  behavior : Config → Behavior → Prop    -- observable-behavior extraction
+  isUB     : Behavior → Prop             -- UB classification (a VALUE, not stuckness)
+```
+
+Derived, model-generic (proved): `Adequate M c spec := ∀ b, behavior c b
+→ spec b`; `UBFree`; `Adequate.mono` (consequence rule at the adequacy
+boundary); `Adequate.and`. Adequacy statements quantify `behavior` —
+never enumerator output (survey §7.7) — so more nondeterminism arrives
+as more behaviors in the same statement form (forward constraint 3).
+
+THE instance (`RelSem/Cerberus.lean`): `seqModel` with `Config :=
+DriveConfig`, `Step := DStep`, `Behavior := Outcome × driver_state`,
+`behavior` = ∃-fuel membership in the TOTAL runner's enumeration
+(`runNDT`, C2 below; `done` configs are their own behavior), `isUB` =
+`Outcome.killed (Undef0 …)`. Proved instance coherence:
+`seqModel_behavior_sound` (every behavior is `DSteps`-reachable) and
+`seqModel_adequate_of_reach` (a relational proof covering all
+Steps-reachable terminals discharges into `seqModel.Adequate`) — the
+exact plumbing the Layer-3 exit consumes. Adequacy-shaped statements
+restated through the interface: `HarnessAdequateM`, `HarnessUBFree`.
+The CerbND-shaped `HarnessAdequate` REMAINS as the headline form; the
+two meet at the arc-7 totalize-CerbND slice (C2). IrisCoupling.lean's
+paper design updated: `Expr × State` decompose `M.Config`, `primStep`
+wraps `M.Step`, adequacy exits through `M.Adequate`.
+
+**What a SECOND instance (concurrency, cmm/candidate-execution
+direction) would have to provide — fields only, no implementation:**
+
+- `Config`  := pre-execution builder state paired with the (unchanged)
+  driver thread-pool configuration — the cmm seam, not a scheduler
+  change (forward constraint 1/2).
+- `Step`    := the same driver-node relation extended with the
+  Step_spawn_threads2/Step_tau2 arms (already in the generated types),
+  or — Stage-2 route B — a candidate-enumeration relation (cmm_op
+  commitment machine vs AxSL-style opax; bake-off per survey).
+- `Behavior` := consistent candidate executions: (witness relations
+  rf/mo/sc over the event set, outcome, final state projection).
+- `behavior` := "the run generates pre-execution X ∧ X + witness passes
+  the cmm consistency predicate" (cmm_csem's consistent-execution
+  judgment on the RA+NA submodel first).
+- `isUB`    := cmm-level UB: racy NA access / unsequenced races /
+  `Undef0` kills lifted from the sequential arm.
+
+`[AGENT:spike]` The interface needed NO change to accommodate this
+sketch — behavior extraction absorbs the axiomatic-model shape; that is
+the parametricity the principle asked for. Rule-level uniformity remains
+explicitly not promised (bespoke-logic stance).
+
+### C2. Total-runner prototype `runNDT` (Q1 amendment, dress rehearsal)
+
+New `relsem/RelSem/RunNDT.lean`, RelSem-LOCAL (CerbND.lean untouched):
+
+- `runNDT : Nat → ndM A I E C S → S → List (nd_status × List String × S)`
+  — fuel-totalized mirror of `CerbND.runND`, branch order IDENTICAL
+  (NDnd/NDstep prepend-fold `R_n ++ … ++ R_1`, NDbranch `left ++ right`,
+  NDguard no pruning). Fuel counts tree depth; exhaustion yields `[]`.
+- PROVED `runNDT_sound`: every element (head included) of
+  `runNDT fuel m st` is a `Steps (CsSem.exhaustive) ⟨running m, st⟩
+  ⟨done outcome, st'⟩` trace. Full structural proof over all six node
+  kinds — the golean `stepFn_sound` analogue with NO `partial` opacity;
+  this is the proof `RunNDActiveSound` wanted and couldn't have against
+  the partial runner. Order bookkeeping isolated in one membership
+  lemma (`mem_foldl_prepend`).
+- PROVED `runNDT_mono` (the Q2(a) lemma): membership is monotone in
+  fuel, so the fuel-indexed enumerations form an increasing chain and
+  `Behaviors := ∃ fuel, · ∈ runNDT fuel` is their honest union;
+  `behaviors_sound` is the ∃-fuel soundness corollary (feeds `seqModel`).
+- NOT claimed: completeness (relation ⇒ membership) — per-node trivial,
+  run-level unneeded (golean precedent, recorded in §2).
+
+**Transferring this to CerbND (arc-7 charter input):** (1) replace
+`partial def runND` by the fuel'd definition + default-fuel wrapper
+(arc-3 pattern) — the definition above IS the code, only the fuel-0
+sentinel needs an arc-level decision: `[]` (this prototype) silently
+conflates "no executions" with "fuel out"; the production runner should
+return an explicit exhaustion marker (or `fuelExhaustedWith`) so
+harnesses stay honest. (2) `runND1` (single-trace, `--first`) totalizes
+the same way. (3) Migration safety = the standing OCaml differential
+corpora green through the swap (arc-5 seam-change pattern). (4) The
+totality-gate boundary then extends over CerbND (arc-4 G3 item), and
+`RunNDActiveSound` closes by `runNDT_sound` + "runND = runNDT at
+sufficient fuel" (a definitional-equality-by-cases lemma once both are
+total). `[AGENT:spike]` recommend the explicit-sentinel variant.
+
+### C3. Step-coverage expansion (driver-level completeness direction)
+
+Machine.lean gains, all proved:
+
+- **Constraint arm exercised** (a real discipline, not just exhaustive):
+  `CsSem.ofEval (ev : C → S → Bool)` — the `eval_cs` shape of the OCaml
+  concrete model. Micro-lemmas: `app_ifM`/`app_addConstraints` (the
+  generated combinators really build NDbranch/NDguard nodes; by rfl),
+  `step_ifM_then`/`step_ifM_else`/`step_addConstraints` (arm steps under
+  any discipline), and the INVERSION lemma `step_ifM_inv`: any step out
+  of an `ifM` node is one of the two arms with the discipline's verdict
+  attached — under `ofEval` the arms are mutually exclusive: constraint
+  PRUNING as a relational fact, with no change to the relation.
+- **Bind congruence** (the driver is all binds): `app_bindFuel_active` /
+  `app_bind_active` (`nd_bind m f` at an NDactive head of `m` behaves as
+  `f v` at the post-state; proved at generic positive fuel, instantiated
+  at the default by the arc-3 wrapper-defeq move `lemDefaultFuel ≡
+  999999+1`), and `step_bind_active` (step transfer across a bind).
+- **State-lens lifting**: `app_liftFuel_active`/`app_liftND_active`
+  (`liftND` through a get/put lens preserves an active verdict, placing
+  the put-back state).
+
+Cerberus.lean gains the driver-level MEMORY-OP STEP on top:
+`liftMem_step_active` — a memory-model action with an active head,
+lifted through the REAL `liftMem` lens (Driver.lean:218), is one
+driver-level step ending `done (value v)` with exactly `layout_state :=
+mem'` written back and every other driver_state field untouched. This is
+the §2 node-granularity memory step made concrete.
+
+### C4. Continuation changelog
+
+- `relsem/RelSem/ExecModel.lean` NEW (interface + generic adequacy).
+- `relsem/RelSem/RunNDT.lean` NEW (total runner + soundness + mono).
+- `relsem/RelSem/Machine.lean` extended (`Steps.head`, `CsSem.ofEval`,
+  constraint-arm/bind/lift micro-lemma sections).
+- `relsem/RelSem/Cerberus.lean` extended (`liftMem_step_active`,
+  `seqModel` + coherence theorems, `HarnessAdequateM`/`HarnessUBFree`).
+- `relsem/RelSem/IrisCoupling.lean` comments re-pointed at the interface.
+- No existing non-relsem file touched; CerbND.lean untouched by design.
