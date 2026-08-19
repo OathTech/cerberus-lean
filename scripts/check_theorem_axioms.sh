@@ -51,6 +51,43 @@ if [[ "$AXIOM_COUNT" -ne 2 ]]; then
 fi
 echo "check_theorem_axioms: hand-written axiom census OK (2 declared-boundary axioms)"
 
+# ---------------------------------------------------------------------------
+# D14 ban (arc-6): non-kernel proof methods (native_decide / bv_decide).
+# Two legs, both fail-closed:
+#   * grep leg (here): the banned tactics may not occur in the test/proof
+#     sources — lean_frontend/test/**, lean_frontend/relsem/** (if that
+#     tree exists on this branch), and the LemLib package's
+#     lean-lib/LemLibTest.lean (the copy the build actually compiles).
+#     Mandatory paths missing = FAIL, not skip.
+#   * axiom leg (with the cone probes below): Lean.ofReduceBool /
+#     Lean.ofReduceNat — the axioms those tactics introduce — are
+#     ALWAYS-FATAL in every probed cone, alongside sorryAx.
+# ---------------------------------------------------------------------------
+D14_ROOT="$(pwd)"
+D14_SCAN_PATHS=()
+if [[ ! -d "$D14_ROOT/lean_frontend/test" ]]; then
+  echo "check_theorem_axioms: FAIL — D14 grep-ban: $D14_ROOT/lean_frontend/test missing (fail-closed)"
+  exit 1
+fi
+D14_SCAN_PATHS+=("$D14_ROOT/lean_frontend/test")
+# relsem/ is optional per-branch; scan it iff present (absence is not a skip
+# of a mandatory path — the tree simply doesn't exist on this branch).
+if [[ -d "$D14_ROOT/lean_frontend/relsem" ]]; then
+  D14_SCAN_PATHS+=("$D14_ROOT/lean_frontend/relsem")
+fi
+D14_LEMLIB_TEST="$D14_ROOT/lean_frontend/.lake/packages/LemLib/lean-lib/LemLibTest.lean"
+if [[ ! -f "$D14_LEMLIB_TEST" ]]; then
+  echo "check_theorem_axioms: FAIL — D14 grep-ban: $D14_LEMLIB_TEST missing (fail-closed)"
+  exit 1
+fi
+D14_HITS=$(grep -rnE 'native_decide|bv_decide' "${D14_SCAN_PATHS[@]}" "$D14_LEMLIB_TEST" || true)
+if [[ -n "$D14_HITS" ]]; then
+  echo "check_theorem_axioms: FAIL — D14 ban: native_decide/bv_decide found in test/proof sources:"
+  echo "$D14_HITS"
+  exit 1
+fi
+echo "check_theorem_axioms: D14 grep-ban OK (no native_decide/bv_decide in ${#D14_SCAN_PATHS[@]} tree(s) + LemLibTest.lean)"
+
 # EXPECT: default 'clean' since S5c landed (the merge-bar condition);
 # 'daemon' documented the pre-S5 pinned state.
 EXPECT="${CERB_AXIOM_EXPECT:-clean}"
@@ -97,6 +134,14 @@ if grep -q "sorryAx" <<<"$OUT"; then
   echo "check_theorem_axioms: FAIL — sorryAx in an exemplar cone"
   exit 1
 fi
+# D14 axiom leg: Lean.ofReduceBool / Lean.ofReduceNat (native_decide's
+# axioms) are always fatal in every probed cone. Matched on the bare
+# names so both qualified ('Lean.ofReduceBool') and unqualified probe
+# spellings are caught.
+if grep -qE 'ofReduce(Bool|Nat)' <<<"$OUT"; then
+  echo "check_theorem_axioms: FAIL — ofReduceBool/ofReduceNat in an exemplar cone (D14 non-kernel proof-method ban)"
+  exit 1
+fi
 
 # driver2 kernel-cone probe (arc 4, success condition 2): the execution
 # driver's cone must be sorryAx-FREE. DAEMON is ALLOWED here (driver2 is
@@ -121,7 +166,12 @@ if grep -q "sorryAx" <<<"$OUT2"; then
   echo "check_theorem_axioms: FAIL — sorryAx in driver2's kernel cone (arc-4 success condition 2)"
   exit 1
 fi
-echo "check_theorem_axioms: driver2 cone sorryAx-free (DAEMON allowed there, per arc-3 D9)"
+# D14 axiom leg, driver2 cone: same always-fatal ban as the exemplar set.
+if grep -qE 'ofReduce(Bool|Nat)' <<<"$OUT2"; then
+  echo "check_theorem_axioms: FAIL — ofReduceBool/ofReduceNat in driver2's kernel cone (D14 non-kernel proof-method ban)"
+  exit 1
+fi
+echo "check_theorem_axioms: driver2 cone sorryAx-free + ofReduce*-free (DAEMON allowed there, per arc-3 D9)"
 
 case "$EXPECT" in
   daemon)
