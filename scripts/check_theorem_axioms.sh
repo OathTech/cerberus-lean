@@ -44,6 +44,31 @@ if grep -q "sorryAx" <<<"$OUT"; then
   exit 1
 fi
 
+# driver2 kernel-cone probe (arc 4, success condition 2): the execution
+# driver's cone must be sorryAx-FREE. DAEMON is ALLOWED here (driver2 is
+# NOT part of the DAEMON-clean exemplar set above — recorded per arc-3 D9);
+# only sorry taints fail. Separate probe so driver2's DAEMON cannot leak
+# into the clean-set check. Fails closed: a probe error (e.g. unknown
+# constant) produces no "depends on axioms"/"does not depend" line and
+# fails the assertion below.
+PROBE2=lean_frontend/.axiom-probe-driver2.lean
+cat > "$PROBE2" <<'EOF'
+import Driver
+#print axioms driver2
+EOF
+OUT2=$(cd lean_frontend && lake env lean .axiom-probe-driver2.lean 2>&1 | grep -v -i warning || true)
+rm -f "$PROBE2"
+echo "$OUT2"
+if ! grep -q "'driver2' \(depends on axioms\|does not depend on any axioms\)" <<<"$OUT2"; then
+  echo "check_theorem_axioms: FAIL — driver2 probe did not run (fail-closed)"
+  exit 1
+fi
+if grep -q "sorryAx" <<<"$OUT2"; then
+  echo "check_theorem_axioms: FAIL — sorryAx in driver2's kernel cone (arc-4 success condition 2)"
+  exit 1
+fi
+echo "check_theorem_axioms: driver2 cone sorryAx-free (DAEMON allowed there, per arc-3 D9)"
+
 case "$EXPECT" in
   daemon)
     if [[ $has_daemon -eq 1 ]]; then

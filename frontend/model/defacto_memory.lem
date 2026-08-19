@@ -2296,7 +2296,6 @@ let rec easy_update_mem_value_aux loc is_strong write_ty sh write_mval current_m
 
 (* TODO: bug HOL -- "failure in internal translation to tupled format" *)
 declare hol target_rep function easy_update_mem_value_aux = `tags$easy_update_mem_value_aux`
-declare lean target_rep function easy_update_mem_value_aux = `sorry`
 
 
 val easy_update_mem_value: bool -> write_event -> impl_mem_value -> impl_memM impl_mem_value
@@ -2659,8 +2658,9 @@ let impl_memcmp ptr_val1 ptr_val2 size_ival =
    rejected the unapplied recursive occurrence); find_array_index counts
    i up to size and memcmp_load_aux counts offset up to max_offset
    (Int-measure recursions automatic cannot infer) -> ND killed witness.
-   easy_update_mem_value_aux intentionally omitted: sorry-target_rep'd,
-   its generated partial def sits inside a block comment (gate ignores it). === *)
+   easy_update_mem_value_aux recurses through shift-path/mem-value pairs
+   that are not structural subterms (arc 4: sorry target_rep removed,
+   fuel'd like find_array_index; same ndM killed witness). === *)
 declare {lean} termination_argument explicitAllocationIdFromPointer_value_aux = automatic
 declare {lean} termination_argument explicitAllocationIdFromInteger_value_aux = automatic
 declare {lean} termination_argument get_allocation_id = automatic
@@ -2672,6 +2672,7 @@ declare {lean} fuel val has_concurRead = `fuelExhausted false`
 declare {lean} termination_argument anyM = automatic
 declare {lean} termination_argument fold_memcmp_compare = automatic
 declare {lean} fuel val find_array_index = `fuelExhausted (ND (fun st => (NDkilled (Undef0 CerbLocation.Loc.unknown []), st)))`
+declare {lean} fuel val easy_update_mem_value_aux = `fuelExhausted (ND (fun st => (NDkilled (Undef0 CerbLocation.Loc.unknown []), st)))`
 declare {lean} fuel val memcmp_load_aux = `fuelExhausted (ND (fun st => (NDkilled (Undef0 CerbLocation.Loc.unknown []), st)))`
 declare {lean} termination_argument memcmp_compare = automatic
 declare {lean} fuel val mkUnspec = `fuelExhausted (MVarray [])`
