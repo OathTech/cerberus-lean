@@ -12,24 +12,28 @@
 #                   ceiling. Single-trace default --mode=random.
 #   OCAML_NOLIBC  : OCaml cerberus --nolibc. Fails at exec: uri.c's closure
 #                   needs memset (via the libc .core), which --nolibc
-#                   excludes. This is the surface the Lean pipeline mirrors.
-#   LEAN          : cerberus-lean --batch --first over the 5 cabs-jsons.
-#                   (--first returns branch-index-0's trace, which equals
-#                   the LAST execution of the exhaustive list — exhaustive
-#                   mirrors OCaml's prepend order — NOT exhaustive's
-#                   execution 0; see CerbND.runND1.)
-#                   The Lean pipeline links no C library (only the core
-#                   stdlib — test_exec.sh parity choice), so the EXPECTED
-#                   2026-08-19 state is exec failure on the SAME unknown
-#                   procedure symbol as OCAML_NOLIBC (measured: identical
-#                   Symbol(118, SD_Id("memset")) both sides — the 5-TU
-#                   frontend+link itself succeeds on the Lean side in ~2 s).
+#                   excludes.
+#   LEAN_NOLIBC   : cerberus-lean --batch --first over the 5 cabs-jsons,
+#                   no C library (only the core stdlib). Mirrors
+#                   OCAML_NOLIBC: identical Symbol(118, SD_Id("memset"))
+#                   unknown-procedure failure — kept as the recorded
+#                   mirrored-failure pair documenting that the --nolibc
+#                   surfaces still agree. (--first returns
+#                   branch-index-0's trace; see CerbND.runND1.)
+#   LEAN_LIBC     : arc-6 S1 — cerberus-lean --batch --first with the C
+#                   library loaded (--libc <pinned tests/libc/libc.core>
+#                   + the 12 metadata TU cabs-jsons from
+#                   libc_prep.sh --jsons; see Main.loadLibc for the
+#                   bodies/metadata split and citations). Differential
+#                   against ORACLE_LIBC: the arc-6 exit criterion is
+#                   10/10 agreement here (S1 measured: exact match,
+#                   value h=546321043 + full stdout).
 #
-# This is a REPORTING baseline, not a pass/fail capability bar: the gate
-# fails only if reality DRIFTS from the recorded baseline (fail-closed both
-# directions — a regression or an unrecorded improvement both demand a
-# baseline update with justification). When arc 6 lands C-libc loading in
-# the Lean pipeline, LEAN/OCAML_NOLIBC advance and this baseline is updated.
+# This is a REPORTING baseline, not a pass/fail capability bar (the S4
+# slice flips it to gating): the gate fails only if reality DRIFTS from
+# the recorded baseline (fail-closed both directions — a regression or an
+# unrecorded improvement both demand a baseline update with
+# justification).
 #
 # Usage: ./scripts/test_libxml2_uri.sh [--record-baseline]
 # Environment: TIMEOUT_SECS (default 300), LIBXML2_DIR (see libxml2_prep.sh)
@@ -105,7 +109,7 @@ record "OCAML_NOLIBC exit" "$rc"
 record "OCAML_NOLIBC" "$(head -1 "$OUTPUT_DIR/nolibc.out")"
 echo "[ocaml-nolibc] exit=$rc: $(head -c 100 "$OUTPUT_DIR/nolibc.out")"
 
-# --- LEAN -------------------------------------------------------------------
+# --- LEAN_NOLIBC ------------------------------------------------------------
 declare -a JSONS=()
 for t in "${TUS[@]}"; do
     j="$OUTPUT_DIR/$(basename "$t" .c).json"
@@ -119,10 +123,32 @@ done
 rc=0
 run_capped "$OUTPUT_DIR/lean.out" "$OUTPUT_DIR/lean.err" \
     env LEAN_ABORT_ON_PANIC=1 "$CERBERUS_LEAN_BIN" --batch --first "${JSONS[@]}" || rc=$?
-[[ $rc -lt 124 ]] || fail "LEAN timeout/crash (exit $rc): $(tail -2 "$OUTPUT_DIR/lean.err" | tr '\n' ' ')"
-record "LEAN exit" "$rc"
-record "LEAN" "$(head -1 "$OUTPUT_DIR/lean.out")"
-echo "[lean] exit=$rc wall=$(grep -oE 'Elapsed.*' "$OUTPUT_DIR/lean.err" | awk '{print $NF}') maxRSS=$(grep 'Maximum resident' "$OUTPUT_DIR/lean.err" | awk '{print $NF}')kB: $(head -c 100 "$OUTPUT_DIR/lean.out")"
+[[ $rc -lt 124 ]] || fail "LEAN_NOLIBC timeout/crash (exit $rc): $(tail -2 "$OUTPUT_DIR/lean.err" | tr '\n' ' ')"
+record "LEAN_NOLIBC exit" "$rc"
+record "LEAN_NOLIBC" "$(head -1 "$OUTPUT_DIR/lean.out")"
+echo "[lean-nolibc] exit=$rc wall=$(grep -oE 'Elapsed.*' "$OUTPUT_DIR/lean.err" | awk '{print $NF}') maxRSS=$(grep 'Maximum resident' "$OUTPUT_DIR/lean.err" | awk '{print $NF}')kB: $(head -c 100 "$OUTPUT_DIR/lean.out")"
+
+# --- LEAN_LIBC (arc-6 S1) ---------------------------------------------------
+# The pinned libc dump (drift-checked by libc_prep.sh) + the 12 metadata
+# TU cabs-jsons, linked BEFORE the user TUs (Main.loadLibc / runPipeline;
+# mirrors main.ml:150-156 core_libraries-first order).
+mapfile -t LIBC_JSONS < <("$PROJECT_ROOT/scripts/libc_prep.sh" --jsons "$OUTPUT_DIR/libcjson") \
+    || fail "libc_prep.sh --jsons failed (pin drift or oracle missing)"
+[[ ${#LIBC_JSONS[@]} -eq 12 ]] || fail "expected 12 libc metadata jsons, got ${#LIBC_JSONS[@]}"
+LIBC_ARGS=(--libc "$PROJECT_ROOT/tests/libc/libc.core")
+for j in "${LIBC_JSONS[@]}"; do LIBC_ARGS+=(--libc-tu "$j"); done
+rc=0
+run_capped "$OUTPUT_DIR/lean_libc.out" "$OUTPUT_DIR/lean_libc.err" \
+    env LEAN_ABORT_ON_PANIC=1 "$CERBERUS_LEAN_BIN" --batch --first "${LIBC_ARGS[@]}" "${JSONS[@]}" || rc=$?
+[[ $rc -lt 124 ]] || fail "LEAN_LIBC timeout/crash (exit $rc): $(tail -2 "$OUTPUT_DIR/lean_libc.err" | tr '\n' ' ')"
+record "LEAN_LIBC exit" "$rc"
+record "LEAN_LIBC" "$(head -1 "$OUTPUT_DIR/lean_libc.out")"
+echo "[lean+libc] exit=$rc wall=$(grep -oE 'Elapsed.*' "$OUTPUT_DIR/lean_libc.err" | awk '{print $NF}') maxRSS=$(grep 'Maximum resident' "$OUTPUT_DIR/lean_libc.err" | awk '{print $NF}')kB: $(head -c 100 "$OUTPUT_DIR/lean_libc.out")"
+if [[ "$(head -1 "$OUTPUT_DIR/lean_libc.out")" == "$(head -1 "$OUTPUT_DIR/oracle.out")" ]]; then
+    echo "[lean+libc] EXACT MATCH with ORACLE_LIBC (10/10 URI corpus)"
+else
+    echo "[lean+libc] MISMATCH with ORACLE_LIBC"
+fi
 
 # --- compare against the reporting baseline ---------------------------------
 echo ""

@@ -1,0 +1,6 @@
+001-exit MATCH
+002-puts MATCH
+003-calloc MATCH
+004-memset MATCH
+005-strlen MATCH
+006-strlen-snprintf DIFF

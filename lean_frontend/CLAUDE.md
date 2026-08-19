@@ -159,7 +159,9 @@ If you skip this step, Lake will compile the stale `generated/` copy and your ch
 | `scripts/test_multi_tu.sh` | Differential multi-TU linking: N .c linked by OCaml vs N cabs-jsons linked by the Lean pipeline (corpus: `tests/multi_tu/<name>/`) |
 | `scripts/libxml2_prep.sh` | libxml2 no-autogen prep: pinned config (`tests/libxml2/config/`) + cerberus args per TU (probe recipe) |
 | `scripts/test_libxml2.sh` | Arc-5 exit-criterion differential: chvalid.c + generated boundary battery (28 slices, 1354 points), single-trace both sides (~35 min; not in the fast ladder) |
-| `scripts/test_libxml2_uri.sh` | Arc-6 REPORTING baseline: 5-TU xmlParseURISafe corpus (oracle+libc vs --nolibc vs Lean) |
+| `scripts/test_libxml2_uri.sh` | Arc-6 REPORTING baseline: 5-TU xmlParseURISafe corpus, 4 lanes (oracle+libc / ocaml-nolibc / lean-nolibc / lean+libc — 10/10 exact match since arc-6 S1) |
+| `scripts/libc_prep.sh` | Arc-6 S1: pins + drift-checks `tests/libc/libc.core` (the oracle's unlinked libc Core text dump) and emits the 12 libc metadata TU cabs-jsons (see Main.loadLibc) |
+| `scripts/test_libc_exec.sh` | Arc-6 S1 differential: C-with-libc programs, both sides load the C library (`tests/libc_exec/`, own baseline; NEW mode — standing corpora stay --nolibc) |
 | `scripts/test_cabs_json.sh` | Quick smoke test |
 
 ## Lem backend interaction
@@ -195,8 +197,16 @@ Lem is pinned to `https://github.com/septract/lem-lean#mdd/lean-backend`.
 - ✅ Multi-TU: real Core_linking + per-TU MD5 digests (arc 5)
 - ✅ libxml2 chvalid through the full pipeline: 100% differential
   (28 slices, 1354 boundary points — `test_libxml2.sh`)
-- Open (priced): C-libc (.core) loading (uri closure blocks on memset),
-  varargs execution (register 15), perf: quadratic allocation retention
+- ✅ C-libc loading (arc-6 S1): pinned libc Core dump (`tests/libc/`)
+  parsed by CoreParser + metadata (extern/funinfo/tagDefs) from our own
+  elaboration of the 12 libc TUs, linked via Core_linking
+  (`--libc`/`--libc-tu`, Main.loadLibc). uri corpus 10/10 vs oracle;
+  test_core known-red 078-float-special FIXED (bodyless ProcDecl form)
+  — tests/minimal test_core now 106/106.
+- Open (priced): varargs execution (register 15; recorded frontier:
+  tests/libc_exec/006-strlen-snprintf → formatted.lem:797 va_list →
+  CerbMem stubs), perf: quadratic allocation retention + LemLib Fmap
+  (arc-6 D6)
 
 ## Conventions
 
