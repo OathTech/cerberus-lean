@@ -90,3 +90,16 @@ idEqual now, OCaml-parity). S3c targets the 5 remaining fixables: 066
 (float of_string), 098 (diffPtrval), 072/077 (mem_error→UB reporting
 map), 056 (funptrmap) + survey cheap batch (ediv/emod, ivfromfloat,
 NoProvPtr, decode 26/28, Bool0 max; enum registry only if corpus-forced).
+
+**D10** — S3c boundary passed: 102/105 independently reproduced, harness
+default mode rc=0 (zero mismatches — every Lean-side fixable closed; the
+3 CERB_SKIPs are OCaml-side: 097 upstream TODO-crash, 073/074 prototype
+skip-on-cerberus-Error semantics where both sides in fact agree). Success
+condition 1 MET (bar ≥95, achieved 102, all non-matches classified).
+Notable: worker empirically established OCaml integerRem_f is Euclidean
+(mod_big_int) — Lean's emod was already correct there; the citation
+discipline caught what intuition would have "fixed" into a bug. Register:
+9 findings FIXED, 1 documented-deliberate, rest OPEN for next arc.
+Remaining arc work: S4 (test_elab reporting), S4b (coverage/debug corpora
+baselines + csmith smoke), easy_update elimination → driver2 cone
+sorryAx-free (success condition 2), arc-2 obligations, S5 close-out.
