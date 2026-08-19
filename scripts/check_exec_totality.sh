@@ -12,15 +12,21 @@
 #   ENFORCE=1  — exit 1 on any non-allowlisted finding OR any stale
 #                allowlist entry (fail-closed in both directions)
 #
-# BOUNDARY HONESTY (arc-4 S5f, audit G3): the 11-module list below covers
-# GENERATED modules only. The hand-written seams those modules call into
-# are OUTSIDE this gate and are NOT partial-free: CerbMem.lean carries
-# partial defs (memberAlign/offsetsofMembers/offsetsof/sizeofCtype/
+# BOUNDARY HONESTY (arc-4 S5f, audit G3; amended arc-7 S2): the 11-module
+# list below covers GENERATED modules; since arc-7 S2 the gate ALSO scans
+# the hand-written runner CerbND.lean (totalized by the operator's Q1
+# AMENDED ruling — partial runND/runND1 are gone and may not return: the
+# runner-soundness theorems in lean_frontend/relsem/RelSem/RunND.lean are
+# stated against it, and `partial` would silently re-opacify them).
+# CerbND thereby LEAVES the arc-4 G3 declared boundary. Still OUTSIDE the
+# gate and NOT partial-free: CerbMem.lean carries partial defs
+# (memberAlign/offsetsofMembers/offsetsof/sizeofCtype/
 # alignofCtype/memValueToBytes/reconstructValue/typeofMval/
-# unqualifyAndUnatomic/stringFromMemValue) and panic! sites; CerbND.lean
-# has partial runND; CerbTags.lean carries the with_tagDefs axiom.
-# Declared-boundary record: 2026-08-19_arc4-results.md. Expanding the
-# gate to the hand-written seams is a priced next-arc item.
+# unqualifyAndUnatomic/stringFromMemValue) and panic! sites;
+# CerbTags.lean carries the with_tagDefs axiom.
+# Declared-boundary record: 2026-08-19_arc4-results.md (CerbND exit to be
+# recorded in the arc-7 results doc at close). Expanding the gate to the
+# remaining hand-written seams is a priced next-arc item.
 set -u
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 GEN="$SCRIPT_DIR/../lean_frontend/generated"
@@ -41,15 +47,19 @@ if [[ -f "$ALLOW" ]]; then
 fi
 
 findings=0
-for m in "${EXEC_MODULES[@]}"; do
-  f="$GEN/$m.lean"
-  [[ -f "$f" ]] || { echo "check_exec_totality: MISSING $f"; findings=$((findings+1)); continue; }
+
+# scan_one <file> <module-key>: lexer-grade scan of one file, appending to
+# the global findings/allowed bookkeeping under <module-key>.
+scan_one() {
+  local f="$1" m="$2"
+  [[ -f "$f" ]] || { echo "check_exec_totality: MISSING $f"; findings=$((findings+1)); return; }
   # Lexer-grade scan (arc-3 audit F1-F5): strings, char literals, `--` line
   # comments, and nested /- -/ block comments are stripped BEFORE matching,
   # and the match is a word-level `partial` followed by `def`/`instance`
   # across any whitespace (catches split lines, `protected`, multi-attribute
   # prefixes). The scan MUST succeed — a scanner failure fails the gate
   # (fail-closed), it does not silently report CLEAN.
+  local scan_out scan_rc
   scan_out=$(python3 - "$f" <<'PYEOF'
 import re, sys
 src = open(sys.argv[1]).read()
@@ -98,6 +108,7 @@ PYEOF
     echo "check_exec_totality: FAIL (fail-closed)"
     exit 1
   fi
+  local hit name key
   while IFS= read -r hit; do
     [[ -z "$hit" ]] && continue
     name="${hit#*:}"
@@ -109,7 +120,20 @@ PYEOF
       findings=$((findings+1))
     fi
   done <<< "$scan_out"
+}
+
+for m in "${EXEC_MODULES[@]}"; do
+  scan_one "$GEN/$m.lean" "$m"
 done
+
+# Arc-7 S2 (arc-4 G3 item, CerbND leg discharged): the HAND-WRITTEN runner
+# joins the boundary — no `partial def` allowed in CerbND.lean anymore
+# (header). Both the authoritative hand-written source and the build copy
+# in generated/ are scanned: the sync gate keeps them byte-identical, and
+# scanning both keeps THIS gate fail-closed against a stale copy.
+HAND="$SCRIPT_DIR/../lean_frontend"
+scan_one "$HAND/CerbND.lean" "CerbND"
+scan_one "$GEN/CerbND.lean" "CerbND"
 
 stale=0
 for k in "${!allowed[@]}"; do
@@ -120,7 +144,7 @@ for k in "${!allowed[@]}"; do
 done
 
 if [[ $findings -eq 0 && $stale -eq 0 ]]; then
-  echo "check_exec_totality: CLEAN (${#EXEC_MODULES[@]} modules, ${#allowed[@]} allowlisted)"
+  echo "check_exec_totality: CLEAN (${#EXEC_MODULES[@]} generated modules + hand-written CerbND, ${#allowed[@]} allowlisted)"
   exit 0
 fi
 echo "check_exec_totality: $findings non-allowlisted partial(s), $stale stale allowlist entr(ies)"

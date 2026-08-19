@@ -12,10 +12,12 @@
 #   enforcing (CERB_PURITY_ENFORCE=1, default after S2 flips it below):
 #     any non-allowlisted finding fails the gate.
 #
-# BOUNDARY HONESTY (arc-4 S5f, audit G3): the 11-module list below covers
-# GENERATED modules only. The hand-written seams those modules call into
-# (CerbMem.lean — partial defs and panic! sites; CerbND.lean — partial
-# runND; CerbTags.lean — the with_tagDefs AXIOM + BaseIO externs;
+# BOUNDARY HONESTY (arc-4 S5f, audit G3; amended arc-7 S2): the 11-module
+# list below covers GENERATED modules only. The hand-written seams those
+# modules call into (CerbMem.lean — partial defs and panic! sites;
+# CerbND.lean — TOTALIZED in arc-7 S2, partial-free and covered by
+# check_exec_totality.sh's hand-written clause, though still outside THIS
+# purity scan; CerbTags.lean — the with_tagDefs AXIOM + BaseIO externs;
 # CerbFloat/CerbUtils/...) are OUTSIDE this gate's scan: nothing here
 # inspects them. They are covered only by the declared-boundary list in
 # the arc results doc (2026-08-19_arc4-results.md). Expanding the gate
