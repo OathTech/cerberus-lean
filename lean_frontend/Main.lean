@@ -366,6 +366,7 @@ def frontendTU (quiet : Bool)
     keeps its historical exit-code behavior: 0 even on semantic stage
     failures). -/
 def runPipeline (runtimeDir : String) (batch : Bool) (ppCore : Bool)
+    (firstTrace : Bool)
     (tunits : List (String × translation_unit)) : IO UInt8 := do
   -- Progress chatter: human mode only (batch and pp-core keep stdout clean)
   let quiet := batch || ppCore
@@ -493,7 +494,11 @@ def runPipeline (runtimeDir : String) (batch : Bool) (ppCore : Bool)
     -- (Main itself set them above via CerbTags.setTagDefsIO), so the live
     -- global is the correct value.
     let driverAction := drive (CerbTags.tagDefs ()) false runFile ["cmdname"]
-    let execs := CerbND.runND driverAction drSt
+    -- --first (arc-5 S3): single-trace runner for programs whose exhaustive
+    -- trace set is combinatorially large (libxml2-scale differentials);
+    -- see CerbND.runND1 for the OCaml counterpart + divergence record.
+    let execs := if firstTrace then CerbND.runND1 driverAction drSt
+                 else CerbND.runND driverAction drSt
     if batch then
       if execs.length == 0 then
         IO.println "Error {msg: \"cerberus-lean: runND returned no executions\"}"
@@ -575,7 +580,12 @@ def main (args : List String) : IO Unit := do
   -- --pp-core: signature-level elaborated-Core dump (test_elab.sh)
   let batchMode := args.head? == some "--batch"
   let ppCoreMode := args.head? == some "--pp-core"
-  let restArgs := if batchMode || ppCoreMode then args.drop 1 else args
+  let rest0 := if batchMode || ppCoreMode then args.drop 1 else args
+  -- --first (optional, after --batch/--pp-core): single-trace execution —
+  -- the Lean-side analogue of OCaml `--mode=random` (one trace instead of
+  -- the exhaustive set). See CerbND.runND1 (arc-5 S3 seam).
+  let firstTrace := rest0.head? == some "--first"
+  let restArgs := if firstTrace then rest0.drop 1 else rest0
   -- Set debug level for Core evaluation tracing (0=off, 2=basic, 5=verbose).
   -- Batch/pp-core modes match the OCaml driver default (0): keeps stderr
   -- clean for the harness's crash classification.
@@ -629,7 +639,7 @@ def main (args : List String) : IO Unit := do
     return
 
   if (batchMode || ppCoreMode) && restArgs.isEmpty then
-    IO.eprintln "usage: cerberus-lean [--batch|--pp-core] FILE.json [FILE2.json ...]"
+    IO.eprintln "usage: cerberus-lean [--batch|--pp-core] [--first] FILE.json [FILE2.json ...]"
     IO.Process.exit 1
 
   -- Default: parse Cabs JSON (one per translation unit) and run pipeline.
@@ -651,6 +661,6 @@ def main (args : List String) : IO Unit := do
       IO.eprintln s!"cerberus-lean: parse error: {e}"
       IO.Process.exit 1
     | .ok tunit => tunits := tunits ++ [(content, tunit)]
-  let code ← runPipeline runtimeDir batchMode ppCoreMode tunits
+  let code ← runPipeline runtimeDir batchMode ppCoreMode firstTrace tunits
   if code != 0 then
     IO.Process.exit code
