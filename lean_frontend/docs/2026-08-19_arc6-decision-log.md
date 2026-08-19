@@ -163,3 +163,17 @@ arc); lem tests/backends leantests pre-existing srcDir breakage;
 oracle-key-order folds as possible future parity alignment. REGEN NOTE
 until close-out: arc lem required (PATH+LEMLIB) — opam lem still emits
 retired names; pin dance at close.
+
+**D13 [AGENT]** — S4 + relsem-continuation boundaries passed (verified:
+uri GATE PASS 16/16; ci sweep agreement 110/114 stable across my re-run;
+ladder tiers live; spike commit 7bd884ad3 with runNDT_sound proved and
+ExecModel absorbing the concurrency instance as fields-only). ANOMALY
+for the audit: my ci re-run split skip/inconsistent differently than the
+worker's recorded baseline (128+18-overlaid vs 110+18-disjoint; the 114
+comparable and 110 agreements are IDENTICAL) — the oracle cabs-json
+bridge classification appears run-sensitive; audit must characterize
+(harness counting bug vs genuine oracle nondeterminism) before the ci
+baseline is trusted as a scoreboard. Register promotion: finding 11
+(read-only allocations) is now CORPUS-FORCED (ci 0086 semantic DIFF) —
+top of next-arc queue. Prototype ci head-to-head: ours 4 (1 semantic)
+vs ~13 historical, base caveat recorded.
