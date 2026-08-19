@@ -114,3 +114,6 @@ finding (this entry is the provenance record); (2) the spike doc's
 (3) the survey is operator-commissioned INPUT — it gets read at arc-7
 charter time, not auto-committed by us (the other agent owns its own
 commit/untracked decision).
+
+**D9a [USER]** — Location confirmed by the operator: the external
+weak-memory survey lands in `lean_frontend/docs` (cerberus-lean).
