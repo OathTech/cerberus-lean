@@ -27,9 +27,23 @@ def decode_integer_constant (str : String) : basis × Int :=
   let val := digits.foldl (fun acc c => acc * basisN + readDigit c) 0
   (b, Int.ofNat val)
 
-/-- Decode a C character constant string to its integer value (ASCII).
-    Corresponds to: Decode.decode_character_constant in decode.ml -/
-def decode_character_constant (str : String) : Int :=
+/-- Final wrap of a decoded character constant into char's value range —
+    decode.ml:201-218: with signed char (DefaultImpl char_is_signed =
+    true, ocaml_implementation.ml:257) the range is [min,max] =
+    [-2^7, 2^7-1]; wrapI computes r = integerRem_f n (max-min+1) — where
+    decode.ml:3 `integerRem_f = Big_int_Z.mod_big_int` is the EUCLIDEAN
+    (always non-negative) remainder, = Lean's Int.emod — then subtracts
+    the modulus when r > max. E.g. '\xFF' → 255 → -1 (survey finding 26;
+    previously the wrap was missing entirely). -/
+private def wrapChar (n : Int) : Int :=
+  let min : Int := -(2 ^ (8 - 1))          -- decode.ml:208
+  let max : Int := (2 ^ (8 - 1)) - 1
+  let dlt := max - min + 1                 -- decode.ml:211
+  let r := Int.emod n dlt                  -- decode.ml:212 (mod_big_int)
+  if r ≤ max then r else r - dlt           -- decode.ml:213-217
+
+/-- The pre-wrap decode — decode.ml's decode_character_constant_aux. -/
+private def decode_character_constant_aux (str : String) : Int :=
   -- Simple escape sequences
   match str with
   | "\\a" => 7
@@ -60,6 +74,12 @@ def decode_character_constant (str : String) : Int :=
       Int.ofNat str.front.toNat
     else
       0  -- empty string
+
+/-- Decode a C character constant string to its integer value (ASCII).
+    Corresponds to: Decode.decode_character_constant in decode.ml:201-219
+    — the aux decode followed by the final wrapI (decode.ml:219). -/
+def decode_character_constant (str : String) : Int :=
+  wrapChar (decode_character_constant_aux str)
 
 /-- Escape a character for display.
     Corresponds to: Decode.escaped_char (= Char.escaped in OCaml) -/

@@ -67,11 +67,15 @@ private unsafe def boundedIntegerImpl (lo hi : Int) : Int :=
 opaque bounded_integer : Int → Int → Int
 
 /-! ## Character encoding
-    Corresponds to: Decode.encode_character_constant in decode.ml
-    OCaml: Char.chr (Nat_big_num.to_int n land 0xff) -/
+    Corresponds to: Decode.encode_character_constant in decode.ml:223-225:
+    `Char.chr (Z.to_int n land 0xff)` — the LOW 8 BITS of the two's
+    complement value, i.e. the euclidean n mod 256 (so e.g. -1 → 255,
+    200 → 200; the previous `% 128` clamp was survey finding 28). Lean's
+    Int.emod is euclidean (non-negative for a positive modulus), and
+    codepoints 0-255 are all valid Chars. -/
 
 def encode_character_constant (n : Int) : Char :=
-  Char.ofNat (n.toNat % 128)  -- ASCII range, always valid
+  Char.ofNat (Int.emod n 256).toNat
 
 /-! ## List utilities -/
 
