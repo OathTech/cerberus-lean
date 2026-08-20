@@ -88,6 +88,7 @@ import RelSem.ExecModel
 import RelSem.Machine
 import RelSem.RunND
 import RelSem.Cerberus
+import RelSem.Call
 import RelSem.IrisCoupling
 
 namespace RelSem.Audit
@@ -133,6 +134,30 @@ def sorryExceptions : List Name := []
 #guard_msgs in #print axioms RelSem.Cerb.pexprStep_val
 /-- info: 'RelSem.Cerb.driver2_wrapper_defeq' depends on axioms: [DAEMON, propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Cerb.driver2_wrapper_defeq
+-- arc-7 S3: the symbolic-argument harness (RelSem/Call.lean). Every
+-- theorem below MENTIONS the harness computation `callND` (drive-path
+-- generated substrate), so DAEMON and runEffectful enter through the
+-- quoted bodies exactly as for the D3-disposed substrate theorems
+-- above (initial_driver_state carries runEffectful; the driver code
+-- carries DAEMON). Pinned exactly — growth (sorryAx above all) fails
+-- the build. `ofStatus_value_inv` is the harness's one pure lemma and
+-- is pinned axiom-FREE.
+/-- info: 'RelSem.Cerb.callReaches' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.callReaches
+/-- info: 'RelSem.Cerb.callOutcomes_sound' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.callOutcomes_sound
+/-- info: 'RelSem.Cerb.callAdequate_of_reach' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.callAdequate_of_reach
+/-- info: 'RelSem.Cerb.ofStatus_value_inv' does not depend on any axioms -/
+#guard_msgs in #print axioms RelSem.Cerb.ofStatus_value_inv
+/--
+info: 'RelSem.Cerb.callHarnessAdequate_of_adequate' depends on axioms: [DAEMON,
+ propext,
+ runEffectful,
+ Classical.choice,
+ Quot.sound]
+-/
+#guard_msgs in #print axioms RelSem.Cerb.callHarnessAdequate_of_adequate
 
 /-! ## The exhaustive sweep — LAST in the file by design: a constant
     declared after this point would dodge it (negative-test lesson,

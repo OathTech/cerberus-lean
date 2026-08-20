@@ -215,4 +215,57 @@ def runND1 (m : ndM a info err cs st) (st0 : st) :
     List (nd_status a err st × List String × st) :=
   runND1Fuel ndDefaultFuel m st0
 
+/-- Node-kind trace runner (arc-7 S3 instrumentation; surfaced as
+    `cerberus-lean --trace-nodes`): follows exactly the branch-0 trace of
+    `runND1Fuel` above, additionally returning the LABEL of every ND-tree
+    node crossed — constructor kind, `info` (via the caller's printer,
+    the runner is `info`-generic), and branch count where applicable.
+    Instrumentation only, never a proof object and never on a harness's
+    verdict path: its role is the Step-coverage-BY-NEED evidence (which
+    node kinds a given fixture's driver-level execution traverses).
+    Same fuel discipline and exhaustion marker as the production
+    runners. -/
+def runND1TraceFuel (showInfo : info → String) (fuel : Nat)
+    (m : ndM a info err cs st) (st0 : st) :
+    List String × List (nd_status a err st × List String × st) :=
+  match fuel with
+  | 0 =>
+    panic! "CerbND.runND1TraceFuel: ND-tree depth budget exhausted — this \
+            is FUEL EXHAUSTION, not an empty behavior set (see CerbND.lean \
+            header; budget: ndDefaultFuel)"
+  | fuel + 1 =>
+    match m with
+    | ND m_act =>
+      match m_act st0 with
+      | (NDactive result, st') =>
+        (["NDactive"], [(Active result, [], st')])
+      | (NDkilled _reason, st') =>
+        (["NDkilled"], [(Killed st' _reason, [], st')])
+      | (NDnd info branches, st') =>
+        let label := s!"NDnd[{showInfo info}] |branches|={branches.length}"
+        match branches with
+        | [] => ([label], [])
+        | (_, branch) :: _ =>
+          let (labels, execs) := runND1TraceFuel showInfo fuel branch st'
+          (label :: labels, execs)
+      | (NDguard info _constraint continuation, st') =>
+        let (labels, execs) := runND1TraceFuel showInfo fuel continuation st'
+        (s!"NDguard[{showInfo info}]" :: labels, execs)
+      | (NDbranch info _constraint left _right, st') =>
+        let (labels, execs) := runND1TraceFuel showInfo fuel left st'
+        (s!"NDbranch[{showInfo info}]" :: labels, execs)
+      | (NDstep info branches, st') =>
+        let label := s!"NDstep[{showInfo info}] |branches|={branches.length}"
+        match branches with
+        | [] => ([label], [])
+        | (_, branch) :: _ =>
+          let (labels, execs) := runND1TraceFuel showInfo fuel branch st'
+          (label :: labels, execs)
+
+/-- Trace-runner wrapper at the default budget. -/
+def runND1Trace (showInfo : info → String) (m : ndM a info err cs st)
+    (st0 : st) :
+    List String × List (nd_status a err st × List String × st) :=
+  runND1TraceFuel showInfo ndDefaultFuel m st0
+
 end CerbND

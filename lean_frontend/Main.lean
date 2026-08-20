@@ -13,6 +13,10 @@ import Translation
 import Core_run_aux
 import Driver
 import CerbND
+-- arc-7 S3: the symbolic-argument harness (RelSem.Cerb.callND) — the
+-- `--call` mode runs THE SAME artifact the slate theorems quantify
+-- over (one-artifact doctrine; RelSem is a sibling lib of this package)
+import RelSem.Call
 
 set_option autoImplicit true
 
@@ -703,6 +707,7 @@ def loadLibc (quiet : Bool)
     failures). -/
 def runPipeline (runtimeDir : String) (batch : Bool) (ppCore : Bool)
     (firstTrace : Bool)
+    (callFn : Option (String × List Int)) (traceNodes : Bool)
     (libc : Option (String × List String))
     (tunits : List (String × translation_unit)) : IO UInt8 := do
   -- Progress chatter: human mode only (batch and pp-core keep stdout clean)
@@ -841,12 +846,29 @@ def runPipeline (runtimeDir : String) (batch : Bool) (ppCore : Bool)
     -- Reader seed: execution-slice entry; tagDefs are fully registered by now
     -- (Main itself set them above via CerbTags.setTagDefsIO), so the live
     -- global is the correct value.
-    let driverAction := drive (CerbTags.tagDefs ()) false runFile ["cmdname"]
+    -- --call (arc-7 S3): the symbolic-argument harness entry — run the
+    -- designated function on the injected argument values via
+    -- RelSem.Cerb.callND (the drive-generalization the slate theorems
+    -- quantify over) instead of drive's main-startup path.
+    let driverAction := match callFn with
+      | none => drive (CerbTags.tagDefs ()) false runFile ["cmdname"]
+      | some (fname, argInts) =>
+        RelSem.Cerb.callND (CerbTags.tagDefs ()) runFile fname
+          (argInts.map RelSem.Cerb.intValue)
     -- --first (arc-5 S3): single-trace runner for programs whose exhaustive
     -- trace set is combinatorially large (libxml2-scale differentials);
     -- see CerbND.runND1 for the OCaml counterpart + divergence record.
-    let execs := if firstTrace then CerbND.runND1 driverAction drSt
-                 else CerbND.runND driverAction drSt
+    -- --trace-nodes (arc-7 S3): branch-0 single trace + ND-node labels on
+    -- stdout (Step-coverage evidence instrument; see CerbND.runND1Trace).
+    let (nodeLabels, execs) :=
+      if traceNodes then
+        CerbND.runND1Trace (fun (k : step_kind) => Lem_Show.show0 k)
+          driverAction drSt
+      else
+        ([], if firstTrace then CerbND.runND1 driverAction drSt
+             else CerbND.runND driverAction drSt)
+    for l in nodeLabels do
+      IO.println s!"NODE {l}"
     if batch then
       if execs.length == 0 then
         IO.println "Error {msg: \"cerberus-lean: runND returned no executions\"}"
@@ -942,8 +964,17 @@ def main (args : List String) : IO Unit := do
   -- runs are NEW harness modes per the arc-6 charter; standing corpora
   -- must be byte-for-byte unaffected, which an auto-load could silently
   -- break.
+  -- --call <fname> [--call-args <int,int,…>] (arc-7 S3): the symbolic-
+  -- argument harness mode — execute the designated function on the given
+  -- integer arguments (injected as Core values via RelSem.Cerb.callND)
+  -- instead of drive's main-startup path. --trace-nodes additionally
+  -- prints the branch-0 ND-node labels (Step-coverage evidence; works in
+  -- the main-startup mode too).
   let mut libcCore : Option String := none
   let mut libcTus : List String := []
+  let mut callName : Option String := none
+  let mut callArgsStr : Option String := none
+  let mut traceNodes : Bool := false
   let mut restArgs : List String := []
   let mut pending := rest1
   while true do
@@ -951,10 +982,32 @@ def main (args : List String) : IO Unit := do
     | [] => break
     | "--libc" :: v :: rest => libcCore := some v; pending := rest
     | "--libc-tu" :: v :: rest => libcTus := libcTus ++ [v]; pending := rest
-    | ["--libc"] | ["--libc-tu"] =>
-      IO.eprintln "cerberus-lean: --libc/--libc-tu require an argument"
+    | "--call" :: v :: rest => callName := some v; pending := rest
+    | "--call-args" :: v :: rest => callArgsStr := some v; pending := rest
+    | "--trace-nodes" :: rest => traceNodes := true; pending := rest
+    | ["--libc"] | ["--libc-tu"] | ["--call"] | ["--call-args"] =>
+      IO.eprintln "cerberus-lean: --libc/--libc-tu/--call/--call-args \
+        require an argument"
       IO.Process.exit 1
     | a :: rest => restArgs := restArgs ++ [a]; pending := rest
+  let callFn : Option (String × List Int) ← match callName, callArgsStr with
+    | none, none => pure none
+    | none, some _ => do
+      IO.eprintln "cerberus-lean: --call-args without --call"
+      IO.Process.exit 1
+    | some n, argStr => do
+      let parts := match argStr with
+        | none => []
+        | some "" => []
+        | some s => s.splitOn ","
+      let mut vals : List Int := []
+      for p in parts do
+        match p.trim.toInt? with
+        | some v => vals := vals ++ [v]
+        | none => do
+          IO.eprintln s!"cerberus-lean: --call-args: not an integer: {p}"
+          IO.Process.exit 1
+      pure (some (n, vals))
   let libc : Option (String × List String) ← match libcCore, libcTus with
     | some c, tus =>
       if tus.isEmpty then do
@@ -1040,6 +1093,7 @@ def main (args : List String) : IO Unit := do
       IO.eprintln s!"cerberus-lean: parse error: {e}"
       IO.Process.exit 1
     | .ok tunit => tunits := tunits ++ [(content, tunit)]
-  let code ← runPipeline runtimeDir batchMode ppCoreMode firstTrace libc tunits
+  let code ← runPipeline runtimeDir batchMode ppCoreMode firstTrace
+    callFn traceNodes libc tunits
   if code != 0 then
     IO.Process.exit code
