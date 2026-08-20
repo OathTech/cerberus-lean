@@ -91,6 +91,11 @@ import RelSem.Cerberus
 import RelSem.Call
 import RelSem.FuelHooks
 import RelSem.IrisCoupling
+-- arc-7 S4: the iris-lean coupling modules join the sweep + pins.
+import RelSem.IrisLang
+import RelSem.IrisState
+import RelSem.IrisRules
+import RelSem.IrisAdequacy
 
 namespace RelSem.Audit
 
@@ -216,6 +221,42 @@ info: 'RelSem.Cerb.callHarnessAdequate_of_app_active' depends on axioms: [DAEMON
 #guard_msgs in #print axioms RelSem.Cerb.callHarnessAdequate_of_app_active
 /-- info: 'RelSem.FuelHooks.nd_bind_wrapper_defeq' does not depend on any axioms -/
 #guard_msgs in #print axioms RelSem.FuelHooks.nd_bind_wrapper_defeq
+-- arc-7 S4: the iris-lean coupling (RelSem/Iris{Lang,State,Rules,
+-- Adequacy}.lean). iris-lean itself contributes NO axioms beyond the
+-- classical trio (verified: every pure-coupling theorem below is
+-- trio-only); the harness-mentioning theorems (wp_callND, the adequacy
+-- chain) quote `callND`/`initial_driver_state` and inherit
+-- DAEMON + runEffectful through the substrate, exactly the standing D3
+-- disposition. Pinned exactly — growth (sorryAx above all) fails the
+-- build. The terminal-head determinism lemmas are axiom-FREE.
+/-- info: 'RelSem.step_running_active_inv' does not depend on any axioms -/
+#guard_msgs in #print axioms RelSem.step_running_active_inv
+/-- info: 'RelSem.step_running_killed_inv' does not depend on any axioms -/
+#guard_msgs in #print axioms RelSem.step_running_killed_inv
+/-- info: 'RelSem.Cerb.instLanguageDrive' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.instLanguageDrive
+/-- info: 'RelSem.Cerb.steps_erased' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.steps_erased
+/-- info: 'RelSem.Cerb.stateIs_agree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.stateIs_agree
+/-- info: 'RelSem.Cerb.stateIs_update' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.stateIs_update
+/-- info: 'RelSem.Cerb.instCerbGpreS_CerbS' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.instCerbGpreS_CerbS
+/-- info: 'RelSem.Cerb.wp_app_active' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.wp_app_active
+/-- info: 'RelSem.Cerb.wp_app_killed' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.wp_app_killed
+/-- info: 'RelSem.Cerb.wp_done' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.wp_done
+/-- info: 'RelSem.Cerb.wp_callND' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.wp_callND
+/-- info: 'RelSem.Cerb.callAdequate_of_wp' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.callAdequate_of_wp
+/-- info: 'RelSem.Cerb.callHarnessAdequate_of_wp' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.callHarnessAdequate_of_wp
+/-- info: 'RelSem.Cerb.callUBFree_of_wp' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.callUBFree_of_wp
 
 /-! ## The exhaustive sweep — LAST in the file by design: a constant
     declared after this point would dodge it (negative-test lesson,
