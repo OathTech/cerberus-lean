@@ -549,6 +549,53 @@ theorem step_done_killed_inv {γ : CsSem C S} {m : ndM A I E C S}
   cases h with
   | killed happ => exact happ
 
+/-! ### Terminal-head step DETERMINISM (arc-7 S4): a node whose one
+    `app` unfolding is terminal steps to exactly its `done` — every
+    other arm's `app` equation contradicts the head by constructor
+    disjointness. This is the inversion the Iris lifting rule consumes
+    (the postcondition of the one step is DETERMINED by the head
+    equation; see RelSem/IrisRules.lean). -/
+
+/-- Active head ⇒ the only step is to `done (.value v)` at the
+    post-state. -/
+theorem step_running_active_inv {γ : CsSem C S} {m : ndM A I E C S}
+    {st st' : S} {v : A} {c' : Config A I E C S}
+    (h : app m st = (NDactive v, st'))
+    (hs : Step γ ⟨.running m, st⟩ c') :
+    c' = ⟨.done (.value v), st'⟩ := by
+  cases hs with
+  | active happ =>
+    rw [h] at happ
+    injection happ with h1 h2
+    injection h1 with h1
+    subst h1; subst h2; rfl
+  | killed happ => rw [h] at happ; injection happ with h1 _; injection h1
+  | nd happ _ => rw [h] at happ; injection happ with h1 _; injection h1
+  | step happ _ => rw [h] at happ; injection happ with h1 _; injection h1
+  | guard happ _ => rw [h] at happ; injection happ with h1 _; injection h1
+  | branchL happ _ => rw [h] at happ; injection happ with h1 _; injection h1
+  | branchR happ _ => rw [h] at happ; injection happ with h1 _; injection h1
+
+/-- Killed head ⇒ the only step is to `done (.killed r)` at the
+    post-state. -/
+theorem step_running_killed_inv {γ : CsSem C S} {m : ndM A I E C S}
+    {st st' : S} {r : kill_reason E} {c' : Config A I E C S}
+    (h : app m st = (NDkilled r, st'))
+    (hs : Step γ ⟨.running m, st⟩ c') :
+    c' = ⟨.done (.killed r), st'⟩ := by
+  cases hs with
+  | active happ => rw [h] at happ; injection happ with h1 _; injection h1
+  | killed happ =>
+    rw [h] at happ
+    injection happ with h1 h2
+    injection h1 with h1
+    subst h1; subst h2; rfl
+  | nd happ _ => rw [h] at happ; injection happ with h1 _; injection h1
+  | step happ _ => rw [h] at happ; injection happ with h1 _; injection h1
+  | guard happ _ => rw [h] at happ; injection happ with h1 _; injection h1
+  | branchL happ _ => rw [h] at happ; injection happ with h1 _; injection h1
+  | branchR happ _ => rw [h] at happ; injection happ with h1 _; injection h1
+
 end DoneInversion
 
 end RelSem
