@@ -13,6 +13,15 @@ import RelSem.FuelHooks
 import RelSem.IrisCoupling
 -- arc-7 S4: the iris-lean coupling (language instance, SC state
 -- interpretation, WP rules, THE adequacy theorem).
+-- arc-9 S2: the WP-workbench layers (L1 kits + L2 walker) + their
+-- exactness pins (Kit/Audit, enforced in-build via RelSem.Audit).
+import RelSem.Tactics.AppEqAttr
+import RelSem.Tactics.AppWalk
+import RelSem.Kit.AppEq
+import RelSem.Kit.Eval
+import RelSem.Kit.Round
+import RelSem.Kit.Loop
+import RelSem.Kit.Audit
 import RelSem.IrisLang
 import RelSem.IrisState
 import RelSem.IrisRules

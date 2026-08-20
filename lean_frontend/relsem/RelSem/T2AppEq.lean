@@ -34,10 +34,12 @@ namespace RelSem.T2
 
 open RelSem RelSem.Cerb RelSem.Slate
 open RelSem.T1 (aU intCty loadedV xIntV mkByte roundtrip_arith zeroByte
-  uninitByte patUnit loadE RExpr eubind_defined stub_defined eumapM_one
-  liftCore_run_defined aux2_step aux2_done perform_unfold ars_load_unfold
+  uninitByte patUnit loadE RExpr
   sizeof_int_eq alignof_int_eq sizeof_intCty_eq z0 z1 z2 z3 z4
   convLoadedIntSym convIntSym isReprIntegerSym errStore_bytes_fact)
+-- (arc-9 S2: the generic eval/round crossings moved to the Kit)
+open RelSem.Kit (eubind_defined stub_defined eumapM_one
+  liftCore_run_defined aux2_step aux2_done perform_unfold ars_load_unfold)
 
 /-! ## Pinned symbols (from the pinned t2 Core program) -/
 

@@ -28,12 +28,16 @@ import RelSem.T1File
 import RelSem.Machine
 import RelSem.Cerberus
 import RelSem.Call
+import RelSem.Kit.Eval
+import RelSem.Kit.Round
+import RelSem.Kit.AppEq
+import RelSem.Tactics.AppWalk
 
 set_option autoImplicit false
 
 namespace RelSem.T1
 
-open RelSem RelSem.Cerb
+open RelSem RelSem.Cerb RelSem.Kit
 
 /-! ## Shared pinned terms (from the pinned Core program + the caller
     protocol; addresses are the deterministic first/second allocations
@@ -109,22 +113,6 @@ def arena0 : RExpr :=
              (Pexpr aU () (PEsym symA499)))))))
     bodyTail)
 
-/-- Arena after R0 (PEsym x evaluated to the pointer value). -/
-def arena1 : RExpr :=
-  Expr aU (Esseq patA500
-    (Expr aU (Ebound (Expr aU (Ewseq patA499
-      (Expr aU (Epure (Pexpr [] () (PEval xPtrV))))
-      (loadE (Pexpr aU () (PEval (Vctype intCty)))
-             (Pexpr aU () (PEsym symA499)))))))
-    bodyTail)
-
-/-- Arena after R1 (Ewseq bound: a_499 in env, Ewseq collapsed). -/
-def arena2 : RExpr :=
-  Expr aU (Esseq patA500
-    (Expr aU (Ebound (loadE (Pexpr aU () (PEval (Vctype intCty)))
-                            (Pexpr aU () (PEsym symA499)))))
-    bodyTail)
-
 /-- Arena after R2 (Load operands evaluated). -/
 def arena3 : RExpr :=
   Expr aU (Esseq patA500
@@ -138,12 +126,6 @@ def arena4 (v : Int) : RExpr :=
     (Expr aU (Ebound (Expr [] (Eannot
       [DA_pos [] (CerbMem.Footprint.FP .R xAddr 4)]
       (Expr [] (Epure (Pexpr [] () (PEval (loadedV v)))))))))
-    bodyTail)
-
-/-- Arena after R4 (Ebound/Eannot stripped). -/
-def arena5 (v : Int) : RExpr :=
-  Expr aU (Esseq patA500
-    (Expr [] (Epure (Pexpr [] () (PEval (loadedV v)))))
     bodyTail)
 
 -- (Arena after R5 = bodyTail; a_500 bound in env.)
@@ -189,11 +171,8 @@ def mkTh (arena : RExpr) (env : List (Fmap sym value)) : thread_state :=
 /-- Thread at R0 entry: current_loc is still the callND marker. -/
 def th0 : thread_state :=
   { mkTh arena0 env0 with current_loc := CerbLocation.other "RelSem.callND" }
-def th1 : thread_state := mkTh arena1 env0
-def th2 : thread_state := mkTh arena2 env2
 def th3 : thread_state := mkTh arena3 env2
 def th4 (v : Int) : thread_state := mkTh (arena4 v) env2
-def th5 (v : Int) : thread_state := mkTh (arena5 v) env2
 def th6 (v : Int) : thread_state := mkTh bodyTail (env5 v)
 def th7 (v : Int) : thread_state := mkTh arena7 (env7 v)
 def th8 (v : Int) : thread_state := mkTh (arena8 v) (env7 v)
@@ -510,95 +489,6 @@ theorem prefix_walk (x : Int) :
   (prefix_a x).trans (prefix_b x)
 
 
-/-- R0: evaluate `Epure (PEsym x)` inside the Ewseq (frame-parametric). -/
-theorem round0 (fuel : Nat) (mem : CerbMem.MemState) (rs : core_run_state)
-    (tr : List trace_event) (n : Nat) :
-    app (dnms (fuel+1) fmapEmpty [0]) (mkDr th0 mem rs tr n)
-      = app (dnms fuel fmapEmpty [0]) (mkDr th1 mem rs tr (n+1)) := by
-  refine (app_bind_active rfl).trans ?_
-  refine (app_bind_active rfl).trans ?_
-  rfl
-
-/-- R1: the Ewseq tau — a_499 bound, Ewseq collapsed. -/
-theorem round1 (fuel : Nat) (mem : CerbMem.MemState) (rs : core_run_state)
-    (tr : List trace_event) (n : Nat) :
-    app (dnms (fuel+1) fmapEmpty [0]) (mkDr th1 mem rs tr n)
-      = app (dnms fuel fmapEmpty [0]) (mkDr th2 mem rs tr (n+1)) := by
-  refine (app_bind_active rfl).trans ?_
-  refine (app_bind_active rfl).trans ?_
-  rfl
-
-/-- R2: evaluate the Load operands. -/
-theorem round2 (fuel : Nat) (mem : CerbMem.MemState) (rs : core_run_state)
-    (tr : List trace_event) (n : Nat) :
-    app (dnms (fuel+1) fmapEmpty [0]) (mkDr th2 mem rs tr n)
-      = app (dnms fuel fmapEmpty [0]) (mkDr th3 mem rs tr (n+1)) := by
-  refine (app_bind_active rfl).trans ?_
-  refine (app_bind_active rfl).trans ?_
-  rfl
-
-/-- R4: strip the Ebound/Eannot context around the loaded value
-    (v rides opaquely — ∀ v, not just in-range). -/
-theorem round4 (v : Int) (fuel : Nat) (mem : CerbMem.MemState)
-    (rs : core_run_state) (tr : List trace_event) (n : Nat) :
-    app (dnms (fuel+1) fmapEmpty [0]) (mkDr (th4 v) mem rs tr n)
-      = app (dnms fuel fmapEmpty [0]) (mkDr (th5 v) mem rs tr (n+1)) := by
-  refine (app_bind_active rfl).trans ?_
-  refine (app_bind_active rfl).trans ?_
-  rfl
-
-/-- R5: the Esseq tau — a_500 bound. -/
-theorem round5 (v : Int) (fuel : Nat) (mem : CerbMem.MemState)
-    (rs : core_run_state) (tr : List trace_event) (n : Nat) :
-    app (dnms (fuel+1) fmapEmpty [0]) (mkDr (th5 v) mem rs tr n)
-      = app (dnms fuel fmapEmpty [0]) (mkDr (th6 v) mem rs tr (n+1)) := by
-  refine (app_bind_active rfl).trans ?_
-  refine (app_bind_active rfl).trans ?_
-  rfl
-
-/-- R7: evaluate `Epure (PEsym a_501)`. -/
-theorem round7 (v : Int) (fuel : Nat) (mem : CerbMem.MemState)
-    (rs : core_run_state) (tr : List trace_event) (n : Nat) :
-    app (dnms (fuel+1) fmapEmpty [0]) (mkDr (th7 v) mem rs tr n)
-      = app (dnms fuel fmapEmpty [0]) (mkDr (th8 v) mem rs tr (n+1)) := by
-  refine (app_bind_active rfl).trans ?_
-  refine (app_bind_active rfl).trans ?_
-  rfl
-
-/-- R8 (terminal): thread 0 offers only `Step_done2` — no can-advance;
-    dnms returns the accumulated steps map, state untouched. -/
-theorem round8 (v : Int) (fuel : Nat) (mem : CerbMem.MemState)
-    (rs : core_run_state) (tr : List trace_event) (n : Nat) :
-    app (dnms (fuel+2) fmapEmpty [0]) (mkDr (th8 v) mem rs tr n)
-      = (NDactive (accDone v), mkDr (th8 v) mem rs tr n) := by
-  refine (app_bind_active rfl).trans ?_
-  rfl
-
-/-- perform_action_request2's sequential unfolding (generic; the
-    opaque execution-mode read zeta-drops). -/
-theorem perform_unfold (loc : CerbLocation.Loc) (tid : Nat)
-    (req : action_request2 thread_state) :
-    perform_action_request2 false loc tid req
-      = nd_bind (liftCore_run (runS fresh_action_id'))
-          (fun aid1 => action_request_sequential2 loc tid aid1 req) := rfl
-
-/-- action_request_sequential2's LoadRequest2 arm (generic; the debug
-    print is a Unit match, dropped by eta). -/
-theorem ars_load_unfold (loc : CerbLocation.Loc) (tid aid : Nat)
-    (mo : memory_order) (ty : ctype) (ptr : CerbMem.PointerValue)
-    (mk : Nat → CerbMem.Footprint → CerbMem.MemValue → thread_state) :
-    action_request_sequential2 loc tid aid (LoadRequest2 mo ty ptr mk)
-      = nd_bind (liftMem (CerbMem.loadM loc ty ptr))
-          (fun (p : CerbMem.Footprint × CerbMem.MemValue) =>
-            match p with
-            | (fp, mval) => nd_bind (liftMem (CerbMem.prefixOfPointer ptr))
-                (fun (pref : Option String) =>
-                  nd_update (fun (dr_st : driver_state) =>
-                    { dr_st with
-                      trace := ME_load loc pref ty ptr mval :: dr_st.trace,
-                      core_state0 := update_thread_state tid (mk aid fp mval)
-                        dr_st.core_state0 }))) := rfl
-
 /-- R3's trace event: the load of x's object. -/
 def meLoad (x : Int) : trace_event :=
   ME_load CerbLocation.Loc.unknown none intCty xPtr
@@ -644,16 +534,6 @@ def convPE : generic_pexpr Unit sym :=
 /-! ### Eval-monad crossing lemmas (the `app_bind_active` pattern at the
     exception/state-exception monads — generic, proved once) -/
 
-theorem eubind_defined {A B C : Type} {m : exceptM (t0 C) B}
-    {f : C → exceptM (t0 A) B} {z : C}
-    (h : m = Result (Defined z)) : exception_undef_bind m f = f z := by
-  simp only [exception_undef_bind, h]
-
-theorem stub_defined {A B C D E : Type} {m : E → exceptM (t0 D × A) C}
-    {f : D → A → exceptM (t0 B × A) C} {st : E} {z : D} {st' : A}
-    (h : m st = Result (Defined z, st')) :
-    stExceptUndef_bind m f st = f z st' := by
-  simp only [stExceptUndef_bind, h]
 
 /-! The aux2 loop's residuals for the conv chain (probe-discovered;
     each crossing's payload is supplied EXPLICITLY in this small normal
@@ -713,47 +593,6 @@ def z3 (x : Int) : generic_pexpr Unit sym :=
 def z4 (x : Int) : generic_pexpr Unit sym :=
   Pexpr [] () (PEval (loadedV x))
 
-/-- One iteration of the eval_pexpr_aux2 loop (generic; the debug print
-    is a Unit match). -/
-theorem aux2_step (fuel : Nat)
-    (tag : Fmap sym (CerbLocation.Loc × tag_definition))
-    (loc : CerbLocation.Loc) (cloc : Option CerbLocation.Loc)
-    (ext : Fmap sym sym) (env : List (Fmap sym value))
-    (memo : Option CerbMem.MemState) (file1 : file core_run_annotation)
-    {pe peP pe' : generic_pexpr Unit sym}
-    (hpull : pull_constrained 0 pe = peP)
-    (hnc : ∀ (a : List annot) (xs : List (mem_iv_constraint × generic_pexpr Unit sym)), peP ≠ Pexpr a () (PEconstrained xs))
-    (hstep : step_eval_pexpr tag 0 loc cloc ext env memo file1 false peP
-      = Result (Defined pe'))
-    (hnv : valueFromPexpr pe' = none) :
-    eval_pexpr_aux2_lemFuel (fuel+1) tag loc cloc ext env memo file1 pe
-      = eval_pexpr_aux2_lemFuel fuel tag loc cloc ext env memo file1 pe' := by
-  rw [eval_pexpr_aux2_lemFuel]
-  simp only [hpull, hstep, hnv, eubind_defined hstep,
-    eubind_defined (rfl : (Result (Defined pe') :
-      exceptM (t0 (generic_pexpr Unit sym)) core_run_cause)
-        = Result (Defined pe'))]
-
-/-- Loop exit: the step produced a value. -/
-theorem aux2_done (fuel : Nat)
-    (tag : Fmap sym (CerbLocation.Loc × tag_definition))
-    (loc : CerbLocation.Loc) (cloc : Option CerbLocation.Loc)
-    (ext : Fmap sym sym) (env : List (Fmap sym value))
-    (memo : Option CerbMem.MemState) (file1 : file core_run_annotation)
-    {pe peP pe' : generic_pexpr Unit sym} {v : value}
-    (hpull : pull_constrained 0 pe = peP)
-    (hnc : ∀ (a : List annot) (xs : List (mem_iv_constraint × generic_pexpr Unit sym)), peP ≠ Pexpr a () (PEconstrained xs))
-    (hstep : step_eval_pexpr tag 0 loc cloc ext env memo file1 false peP
-      = Result (Defined pe'))
-    (hv : valueFromPexpr pe' = some v) :
-    eval_pexpr_aux2_lemFuel (fuel+1) tag loc cloc ext env memo file1 pe
-      = Result (Defined (Sum.inr v)) := by
-  rw [eval_pexpr_aux2_lemFuel]
-  simp only [hpull, hstep, hv, eubind_defined hstep,
-    eubind_defined (rfl : (Result (Defined pe') :
-      exceptM (t0 (generic_pexpr Unit sym)) core_run_cause)
-        = Result (Defined pe'))]
-  rfl
 
 /-- convPE in pull-normal form (top annots stripped). -/
 def convPE_p : generic_pexpr Unit sym :=
@@ -788,12 +627,6 @@ theorem s3_eq (x : Int) (mem : CerbMem.MemState) :
       (some (CerbLocation.other "RelSem.callND")) (create_extern_symmap t1File)
       (env5 x) (some mem) t1File false (z2 x) = Result (Defined (z3 x)) := rfl
 
-/-- mapM on a singleton (generic). -/
-theorem eumapM_one {A C M : Type} {f : C → exceptM (t0 A) M} {a : C} {b : A}
-    (h : f a = Result (Defined b)) :
-    exception_undef_mapM f [a] = Result (Defined [b]) := by
-  simp [exception_undef_mapM, except_mapM, except_bind, except_return, h,
-    mapM1, except_sequence, sequence0, bind2, return1]
 
 /-- s4: the range check (hx enters). -/
 theorem s4_eq (x : Int) (h1 : -2147483648 ≤ x) (h2 : x ≤ 2147483647)
@@ -892,16 +725,6 @@ theorem convStep_eq (x : Int) (h1 : -2147483648 ≤ x) (h2 : x ≤ 2147483647)
   rw [convCore_eq x h1 h2 mem]
   rfl
 
-/-- Crossing lemma for `liftCore_run` at a Defined verdict (generic). -/
-theorem liftCore_run_defined {A : Type}
-    {m : core_run_state → exceptM (t0 A × core_run_state) core_run_cause}
-    {dr : driver_state} {z : A} {rs' : core_run_state}
-    (h : m dr.core_run_state0 = Result (Defined z, rs')) :
-    app (liftCore_run m) dr
-      = (NDactive z, { dr with core_run_state0 := rs' }) := by
-  refine (app_bind_active (app_nd_get dr)).trans ?_
-  simp only [stExceptUndef_run, h]
-  rfl
 
 /-- full_eval on the conv pexpr (the aux2 loop's verdict lifted into the
     state monad; rs generic — nothing on this path reads it). -/
@@ -955,19 +778,20 @@ theorem round6 (x : Int) (h1 : -2147483648 ≤ x) (h2 : x ≤ 2147483647)
 /-- The run-state after the load's action-id draw. -/
 def rsR6 : core_run_state := { rsD3 with aid_supply := rsD3.aid_supply + 1 }
 
-/-- The full dnms run at the default budget: nine rounds. -/
+/-- The full dnms run at the default budget: nine rounds — the
+    mechanical seven through `app_walk` (arc-9 S2 calibration; the
+    round0-2/4-5/7-8 hand lemmas and the arena1/2/5–th1/2/5
+    intermediate transcriptions are DELETED), the two semantic rounds
+    (R3 load, R6 conv-chain) as explicit `app_walk_step`s. Statement
+    and axiom cone IDENTICAL to the arc-7 hand chain. -/
 theorem dnms_chain (x : Int) (h1 : -2147483648 ≤ x) (h2 : x ≤ 2147483647) :
     app (dnms lemDefaultFuel fmapEmpty [0]) (mkDr th0 (memD3 x) rsD3 [] 0)
-      = (NDactive (accDone x), mkDr (th8 x) (memD3 x) rsR6 [meLoad x] 7) :=
-  (round0 999999 (memD3 x) rsD3 [] 0).trans
-  ((round1 999998 (memD3 x) rsD3 [] 1).trans
-  ((round2 999997 (memD3 x) rsD3 [] 2).trans
-  ((round3 x h1 h2 999996 rsD3 [] 3).trans
-  ((round4 x 999995 (memD3 x) rsR6 [meLoad x] 3).trans
-  ((round5 x 999994 (memD3 x) rsR6 [meLoad x] 4).trans
-  ((round6 x h1 h2 999993 (memD3 x) [meLoad x] 5).trans
-  ((round7 x 999992 (memD3 x) rsR6 [meLoad x] 6).trans
-  (round8 x 999990 (memD3 x) rsR6 [meLoad x] 7))))))))
+      = (NDactive (accDone x), mkDr (th8 x) (memD3 x) rsR6 [meLoad x] 7) := by
+  app_walk
+  app_walk_step (round3 x h1 h2 999996 rsD3 [] 3)
+  app_walk
+  app_walk_step (round6 x h1 h2 999993 (memD3 x) [meLoad x] 5)
+  app_walk
 
 /-- The scheduler sees exactly the done step. -/
 theorem ndct_eq (x : Int) (h1 : -2147483648 ≤ x) (h2 : x ≤ 2147483647) :

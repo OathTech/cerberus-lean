@@ -1,0 +1,109 @@
+#!/bin/bash
+# check_proof_size.sh — arc-9 S2 (2026-08-20): THE PROOF-SIZE GATE
+# (design docs/2026-08-20_arc9-s1-design.md §4; Tier A, fail-closed).
+#
+# Per registered slate proof file T<n>.lean (the COUNTED file: statement
+# + spec + invariant family + side conditions + proof; the fixture file
+# T<n>Fixture/T<n>File is NOT counted but IS checked fixture-clean rules
+# below):
+#   * total lines ≤ 250
+#   * manual proof steps ≤ 40 — a manual step = any tactic line inside a
+#     by-block that is not an `app_walk`/`app_walk_finish` invocation
+#     (app_walk_step, refine, omega, simp, case splits ... all count).
+# Line counts are ADVISORY per golean (a breach is a MISSING-RULE
+# FINDING triggering stop-extract-redo), but the gate FAILS so the
+# breach is never silent.
+#
+# Additionally FAIL (unconditional):
+#   * `app_walk?` in ANY committed relsem file (debug-only tactic);
+#   * fixture-symbol references inside Kit/*.lean — the MEGA-LEMMA
+#     COUNTER: a "kit lemma" that names a fixture is bar-gaming by
+#     construction.
+#
+# Tallies print verbatim (the results doc quotes them).
+
+set -uo pipefail
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+RELSEM="$SCRIPT_DIR/../lean_frontend/relsem/RelSem"
+
+MAX_LINES=250
+MAX_STEPS=40
+
+# The registered slate proof files (extend per example; T1-T4 predate
+# the bar and are measured by the arc records, not this gate).
+SLATE_FILES=(
+    "T5.lean"
+)
+
+fail=0
+
+# --- the mega-lemma counter: Kit files must be fixture-free ----------
+# fixture symbol classes: t<n>File / t<n>Fs / T<n>-namespaces / pinned
+# fixture def names.
+kit_hits=$(grep -nE 't[0-9]+File|t[0-9]+Fs|RelSem\.T[0-9]+\.|T[0-9]+Core' \
+    "$RELSEM"/Kit/*.lean 2>/dev/null | grep -v 'Kit/Audit.lean' || true)
+if [[ -n "$kit_hits" ]]; then
+    echo "check_proof_size: FAIL — Kit files reference fixture symbols (mega-lemma counter):"
+    echo "$kit_hits"
+    fail=1
+else
+    echo "check_proof_size: Kit files fixture-free OK ($(ls "$RELSEM"/Kit/*.lean | wc -l | tr -d ' ') files)"
+fi
+
+# --- app_walk? ban in committed proofs -------------------------------
+dbg_hits=$(grep -rnE '^[^-]*\bapp_walk\?' "$RELSEM"/*.lean "$RELSEM"/Kit/*.lean 2>/dev/null \
+    | grep -v 'Tactics/' || true)
+if [[ -n "$dbg_hits" ]]; then
+    echo "check_proof_size: FAIL — app_walk? (debug-only) in committed files:"
+    echo "$dbg_hits"
+    fail=1
+else
+    echo "check_proof_size: app_walk? ban OK"
+fi
+
+# --- per-slate-file line + manual-step tallies ------------------------
+for f in "${SLATE_FILES[@]}"; do
+    path="$RELSEM/$f"
+    if [[ ! -f "$path" ]]; then
+        echo "check_proof_size: $f — not present yet (registered, pending)"
+        continue
+    fi
+    lines=$(wc -l < "$path" | tr -d ' ')
+    # manual steps: tactic lines inside by-blocks that are not pure
+    # walker invocations. Heuristic (the S4 audit reads the lines
+    # themselves): count non-comment, non-blank lines that start with a
+    # tactic-ish token after the first `by` of each declaration, minus
+    # app_walk/app_walk_finish lines. We approximate by counting lines
+    # whose stripped form begins with a known tactic head or a `·`/case
+    # bullet, within the file.
+    steps=$(awk '
+        /^[[:space:]]*--/ { next }
+        /^[[:space:]]*$/ { next }
+        {
+            line=$0
+            sub(/^[[:space:]]+/, "", line)
+            # walker invocations do not count as manual steps
+            if (line ~ /^app_walk([[:space:]]|$)/) next
+            if (line ~ /^app_walk_finish[[:space:]]/) next
+            # tactic-looking lines
+            if (line ~ /^(app_walk_step|refine|exact|apply|rw|simp|dsimp|omega|decide|constructor|cases|rcases|obtain|intro|have|show|subst|change|unfold|calc|conv|first|·|\.|case[[:space:]])/) {
+                count++
+            }
+        }
+        END { print count+0 }
+    ' "$path")
+    echo "check_proof_size: $f — $lines lines (bar $MAX_LINES), $steps manual steps (bar $MAX_STEPS)"
+    if (( lines > MAX_LINES )); then
+        echo "check_proof_size: FAIL — $f exceeds the line bar ($lines > $MAX_LINES): missing-rule finding, stop-extract-redo"
+        fail=1
+    fi
+    if (( steps > MAX_STEPS )); then
+        echo "check_proof_size: FAIL — $f exceeds the manual-step bar ($steps > $MAX_STEPS): missing-rule finding, stop-extract-redo"
+        fail=1
+    fi
+done
+
+if (( fail )); then
+    exit 1
+fi
+echo "check_proof_size: OK"

@@ -38,10 +38,13 @@ namespace RelSem.T3
 
 open RelSem RelSem.Cerb RelSem.Slate
 open RelSem.T1 (aU intCty loadedV xIntV mkByte roundtrip_arith zeroByte
-  uninitByte patUnit loadE RExpr eubind_defined stub_defined eumapM_one
-  liftCore_run_defined aux2_step aux2_done perform_unfold ars_load_unfold
+  uninitByte patUnit loadE RExpr
   sizeof_int_eq alignof_int_eq sizeof_intCty_eq z0 z1 z2 z3 z4
   convLoadedIntSym convIntSym isReprIntegerSym errStore_bytes_fact)
+-- (arc-9 S2: the generic eval/round crossings moved to the Kit)
+open RelSem.Kit (eubind_defined stub_defined eumapM_one
+  liftCore_run_defined aux2_step aux2_done perform_unfold ars_load_unfold
+  ars_create_unfold ars_store_unfold ars_kill_unfold)
 open RelSem.T2 (storeArg_bytes_fact)
 
 /-! ## Pinned symbols (from the pinned t3 Core program) -/
@@ -548,51 +551,6 @@ theorem killX_eq (x : Int) :
   rfl
 
 /-! ## Generic request-arm unfolds (the ars_load_unfold pattern) -/
-
-theorem ars_create_unfold (loc : CerbLocation.Loc) (tid aid : Nat)
-    (pref : prefix0) (align : CerbMem.IntegerValue) (ty : ctype)
-    (addrOpt : Option Int) (initOpt : Option CerbMem.MemValue)
-    (mk : Nat → CerbMem.PointerValue → thread_state) :
-    action_request_sequential2 loc tid aid
-      (CreateRequest2 pref align ty addrOpt initOpt mk)
-      = nd_bind (liftMem (CerbMem.allocateObject tid pref align ty
-          addrOpt initOpt))
-        (fun (ptrval : CerbMem.PointerValue) =>
-          nd_update (fun (dr_st : driver_state) =>
-            { dr_st with
-              trace := ME_allocate_object tid pref align ty initOpt ptrval
-                :: dr_st.trace,
-              core_state0 := update_thread_state tid (mk aid ptrval)
-                dr_st.core_state0 })) := rfl
-
-theorem ars_store_unfold (loc : CerbLocation.Loc) (tid aid : Nat)
-    (mo : memory_order) (ty : ctype) (isLocking : Bool)
-    (ptr : CerbMem.PointerValue) (mval : CerbMem.MemValue)
-    (mk : Nat → CerbMem.Footprint → thread_state) :
-    action_request_sequential2 loc tid aid
-      (StoreRequest2 mo ty isLocking ptr mval mk)
-      = nd_bind (liftMem (CerbMem.storeM loc ty isLocking ptr mval))
-        (fun (fp : CerbMem.Footprint) => nd_bind
-          (liftMem (CerbMem.prefixOfPointer ptr))
-          (fun (pref : Option String) =>
-            nd_update (fun (dr_st : driver_state) =>
-              { dr_st with
-                trace := ME_store loc pref ty isLocking ptr mval
-                  :: dr_st.trace,
-                core_state0 := update_thread_state tid (mk aid fp)
-                  dr_st.core_state0 }))) := rfl
-
-theorem ars_kill_unfold (loc : CerbLocation.Loc) (tid aid : Nat)
-    (isDyn : Bool) (ptr : CerbMem.PointerValue)
-    (mk : Nat → thread_state) :
-    action_request_sequential2 loc tid aid (KillRequest2 isDyn ptr mk)
-      = nd_bind (liftMem (CerbMem.killM loc isDyn ptr))
-        (fun (_ : Unit) =>
-          nd_update (fun (dr_st : driver_state) =>
-            { dr_st with
-              trace := ME_kill loc isDyn ptr :: dr_st.trace,
-              core_state0 := update_thread_state tid (mk aid)
-                dr_st.core_state0 })) := rfl
 
 /-! ## Trace events -/
 

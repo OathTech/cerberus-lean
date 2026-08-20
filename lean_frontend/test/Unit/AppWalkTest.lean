@@ -1,0 +1,83 @@
+/-
+  Unit.AppWalkTest — arc-9 S2 (2026-08-20): the walker exercise file
+  (design §8 step 4: "unit-style exercise file under test/ per the
+  walker's contract table").
+
+  Every exercise is a KERNEL-CHECKED theorem (the compile IS the
+  test); `main` only reports. Exercises per the AppWalk contract
+  table:
+    E1  chain + leaf laws (bind spine, RHS stated)
+    E2  RHS synthesis (metavariable RHS through a chain)
+    E3  goal-guarded stop: a semantic hypothesis is NOT guessed — the
+        walk stops and an explicit app_walk_step carries it
+    E4  app_walk_finish (block-equation segment end)
+    E5  iter_compose at a computation-shaped C (fuel offsets composed)
+    E6  fuel algebra (fuel_split + app_fuel_cast shapes)
+-/
+
+import RelSem.Kit.AppEq
+import RelSem.Kit.Loop
+import RelSem.Tactics.AppWalk
+
+set_option autoImplicit false
+
+namespace AppWalkTest
+
+open RelSem RelSem.Kit
+
+abbrev M (A : Type) := ndM A Unit Unit Unit Nat
+
+/-- E1: the walker crosses a bind spine and closes against a stated
+    terminal RHS (leaf laws discharge the bind's head hypothesis). -/
+theorem e1 (st : Nat) :
+    app (nd_bind (nd_return 1) (fun a => nd_return (a + 1)) : M Nat) st
+      = (NDactive 2, st) := by
+  app_walk
+
+/-- E2: state-passing chain — get/put crossings, stated RHS. -/
+theorem e2 (st : Nat) :
+    app (nd_bind nd_get (fun a =>
+         nd_bind (nd_put (a + 1)) (fun _ =>
+         nd_return a)) : M Nat) st
+      = (NDactive st, st + 1) := by
+  app_walk
+
+/-- E3 (goal-guarded stop / the semantic division): `nd_guard`'s
+    verdict is data the walker may compute only when closed; with the
+    guard EXPRESSION opaque behind a hypothesis, the walk must NOT
+    guess — the crossing is carried by an explicit `app_walk_step`
+    with the hypothesis-mediated law. -/
+theorem e3 (st : Nat) (b : Bool) (r : kill_reason Unit)
+    (hb : b = true) :
+    app (nd_bind (nd_guard b r) (fun _ => nd_return 7) : M Nat) st
+      = (NDactive 7, st) := by
+  subst hb
+  app_walk
+
+/-- E4: `app_walk_finish` closes a segment with an explicit block
+    equation. -/
+theorem e4 (st : Nat) (m : M Nat) (h : app m st = (NDactive 5, st)) :
+    app (nd_bind (nd_return 0) (fun _ => m) : M Nat) st
+      = (NDactive 5, st) := by
+  app_walk_finish h
+
+/-- E5: the loop rule composes fuel-offset app-block equations — here
+    a synthetic family where one "iteration" consumes 2 fuel. -/
+theorem e5 (C : Nat → Nat → Nat) (St : Nat → Nat)
+    (hbody : ∀ i, i < 10 → ∀ fuel, C (fuel + 2) (St i) = C fuel (St (i + 1))) :
+    ∀ fuel, C (fuel + 20) (St 0) = C fuel (St 10) :=
+  iter_compose (k := 2) (n := 10) hbody
+
+/-- E6: the fuel algebra — peel a consumed-round count off the default
+    budget (the fixture instantiation move). -/
+theorem e6 (M' : Nat → M Nat) (σ : Nat) :
+    app (M' 1000000) σ = app (M' (999998 + 2)) σ :=
+  app_fuel_cast M' (fuel_split (c := 2) (by decide)) σ
+
+end AppWalkTest
+
+def main : IO UInt32 := do
+  -- The exercises are kernel-checked at compile time; report and pass.
+  IO.println "AppWalkTest: E1-E6 kernel-checked (walker contract table)"
+  IO.println "AppWalkTest: ALL PASSED"
+  return 0

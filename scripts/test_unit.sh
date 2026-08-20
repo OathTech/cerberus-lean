@@ -19,6 +19,8 @@ UNIT_TESTS=(
     "fresh-int-test"
     # arc-10 S3: pretty-printer mirrors vs recorded oracle outputs
     "pp-test"
+    # arc-9 S2: the app_walk walker contract-table exercises.
+    "app-walk-test"
     # arc-7 S4: T1 program-term drift gate (emit-lean-core byte-identity
     # against relsem/RelSem/T1Core.lean) + concrete differential of the
     # assembled theorem object (RelSem.T1.t1File) through callND.
@@ -147,5 +149,14 @@ fi
 DRIFT_SH="$(dirname "$PURITY_SH")/check_fork_drift.sh"
 if ! "$DRIFT_SH"; then
     echo "test_unit: fork-drift gate FAILED"
+    exit 1
+fi
+
+# Proof-size gate (arc-9 S2, design §4): slate proof files within the
+# 250-line/40-step bar; Kit files fixture-free; app_walk? banned.
+# ENFORCING and fail-closed like the gates above.
+PROOFSIZE_SH="$(dirname "$PURITY_SH")/check_proof_size.sh"
+if ! "$PROOFSIZE_SH"; then
+    echo "test_unit: proof-size gate FAILED"
     exit 1
 fi
