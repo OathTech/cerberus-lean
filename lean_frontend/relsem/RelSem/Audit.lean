@@ -52,10 +52,17 @@
   modulo only the declared boundary above.
   FAIL-CLOSED ABSENCE GATE (below, replacing the old census walk): the
   build FAILS if any constant named `DAEMON` or `DAEMON1` exists
-  ANYWHERE in the elaboration environment (LemLib, the full generated
-  tree, relsem — the whole import closure), or if either name is ever
-  allowlisted. Reintroduction under any guise is a build failure, not
-  a re-baseline; there is no sanctioned path back.
+  anywhere in THIS MODULE'S elaboration environment — the import
+  closure of the audited roots (LemLib, every generated module that
+  closure reaches, relsem) — or if either name is ever allowlisted.
+  SCOPE HONESTY (arc-8 audit, auditor B F1): generated files OUTSIDE
+  this import closure (e.g. Core_indet.lean) are NOT seen by this
+  gate; full-tree absence over lean_frontend/generated/ is enforced by
+  the name-independent tree-wide axiom census in
+  scripts/check_theorem_axioms.sh (allowlist: the two declared
+  boundary axioms only; unsafeCast banned outright). Reintroduction
+  under any guise is a build failure, not a re-baseline; there is no
+  sanctioned path back.
 
   FINDING CLOSED (arc-7 S2 — was: REGISTERED FINDING, arc-7 S1/D3,
   arc-blocking): `sorryAx` sat in the cone of `initial_driver_state`
@@ -123,11 +130,14 @@ def allowedAxioms : List Name :=
 -- THE DAEMON ABSENCE GATE (arc-8 S3, durability requirement 3 —
 -- replaces the arc-7 S5c DAEMON1 tripwire and the entry-vector census
 -- walk). FAIL-CLOSED: the build fails if a constant named `DAEMON` or
--- `DAEMON1` exists ANYWHERE in the environment (the full import
--- closure: LemLib, every generated module, relsem), or if either name
--- is allowlisted. The deleted axiom was logically INCONSISTENT
--- (header history); reintroduction is a build failure forever after —
--- never a re-baseline.
+-- `DAEMON1` exists anywhere in this module's environment (the import
+-- closure of the audited roots: LemLib, the generated modules that
+-- closure reaches, relsem), or if either name is allowlisted. Scope
+-- honesty (arc-8 audit, auditor B F1): generated files outside the
+-- closure are covered by the tree-wide script census in
+-- scripts/check_theorem_axioms.sh, not here. The deleted axiom was
+-- logically INCONSISTENT (header history); reintroduction is a build
+-- failure forever after — never a re-baseline.
 open Lean in
 #eval show CoreM Unit from do
   let env ← getEnv
@@ -379,9 +389,10 @@ def sorryExceptions : List Name := []
     `instInhabitedAction_request2` as the exactly-two DAEMON
     referencers on the slate cones) lived here while DAEMON existed.
     The axiom family is now DELETED from LemLib and the census is
-    superseded by the stronger fail-closed ABSENCE GATE above (no
-    constant named DAEMON/DAEMON1 may exist anywhere in the
-    environment) together with the DAEMON-free curated pins. -/
+    superseded by the fail-closed ABSENCE GATE above (no constant
+    named DAEMON/DAEMON1 may exist anywhere in this module's import
+    closure; full generated-tree absence is the script census's job)
+    together with the DAEMON-free curated pins. -/
 
 /-! ## THE STATEMENT-TCB GATE (arc-7 S5a Task 4; REBUILT arc-7 S5c,
     audit-1 F2): a slate theorem's STATEMENT may mention only

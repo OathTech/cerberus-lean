@@ -119,7 +119,10 @@ re-verified unit rc 0 (driver2 DAEMON-free pre-deletion), exec rc 0
 byte-identical, LEM commit coherent.
 
 **Census-errata story (D6, "pass right, census wrong"):** S2's computed
-binder set = all 16 S0 Class-T defs + 6 library defs + 13 extra
+binder set = all 16 S0 Class-T defs + 7 library defs (CORRECTED from
+"6" per auditor B F2 — the full set: Assert_extra.fail,
+List_extra.head, List_extra.foldl1, List_extra.foldr1,
+List_extra.findNonPure, Map_extra.find0, Maybe_extra.fromJust) + 13 extra
 cerberus defs the census had classified M or missed. Root causes,
 each recorded in the design-note S2 record: ndM's actual S1 instance
 is `[Inhabited st]`-bounded (leg (a) had probed a hand-written
@@ -141,8 +144,10 @@ fully regenerates. RelSem/Audit.lean: DAEMON dropped from
 allowedAxioms; the arc-7 DAEMON1 tripwire + entry-vector census walk
 replaced by the fail-closed ABSENCE GATE (build fails if any constant
 named DAEMON/DAEMON1 exists anywhere in the environment or is
-allowlisted); all 83 curated pins re-baselined VERBATIM from a fresh
-probe. check_theorem_axioms.sh: the arc-3 D9 "DAEMON allowed in
+allowlisted — scope note: "the environment" = the audit module's
+import closure, per the auditor-B-F1 correction under durability req 3
+below); all 84 curated pins (DERIVED count, corrected from "83"
+per auditor B F3) re-baselined VERBATIM from a fresh probe. check_theorem_axioms.sh: the arc-3 D9 "DAEMON allowed in
 driver2" allowance REMOVED — DAEMON unconditionally fatal in every
 probed cone. Hand instance files retired to shells (fully removed in
 S4, below). Verbatim from the S3 commit (all zero movement):
@@ -172,8 +177,14 @@ S3 commit message; one row per gate):
 | test_libxml2.sh slice 00 | `total=1 match=1 fail=0 (points: 1354)` |
 
 ZERO movement everywhere — the behavior-neutrality bar (charter S3)
-holds: failwithI panics identically to failwith, and no derived
-default is observable in any differential. Orchestrator boundary (D7):
+holds. Panic semantics, stated accurately (wording corrected per
+auditor A N2): failwithI IS a Lean `panic!` — under the harness
+discipline (LEAN_ABORT_ON_PANIC=1, scripts/common.sh) it aborts; as a
+plain library call it prints the panic message and continues with the
+Inhabited default. Derived defaults are observable only post-panic —
+or were, silently, at the L_undefined sites auditor A F1 found (now
+fixed; see "Adversarial audits" below). No derived default is
+observable in any differential. Orchestrator boundary (D7):
 independently re-ran capped default build rc 0 (597 jobs, absence gate
 + audit sweep green), unit 5/5, verify 29/29, exec byte-identical;
 LEM/CERB commits coherent, worktrees clean.
@@ -250,10 +261,21 @@ covers the resulting head-vs-pin delta).
    can no longer emit sorry or any axiom-valued inhabitant anywhere
    (D4). Underivable-type failures are never silent and never deferred
    to Lean elaboration of downstream consumers.
-3. **Permanent absence gates:** in-build (Audit.lean environment scan,
-   fail-closed, covers allowlist regressions) + script-level
-   (check_theorem_axioms.sh, every probed cone). Reintroduction =
-   build failure.
+3. **Permanent absence gates** (scope statement corrected per auditor
+   B F1 — the original "environment scan" wording overstated the
+   in-build gate's reach): in-build (Audit.lean, fail-closed, covers
+   allowlist regressions) scans the IMPORT CLOSURE of the audited
+   roots plus the probed cones — NOT every generated file; full-tree
+   absence over lean_frontend/generated/ is enforced by the
+   NAME-INDEPENDENT tree-wide axiom census added to
+   check_theorem_axioms.sh (this audit-fix commit): every
+   generated/*.lean is lexer-scanned for `axiom` declarations
+   (allowlist exactly the two declared boundary axioms
+   CerbTags.with_tagDefs / CerberusFresh.forceIO, each required
+   present exactly once) and for `unsafeCast` (banned outright, no
+   allowlist); missing dir / empty scan = FAIL. Script-level cone
+   probes (check_theorem_axioms.sh) unchanged. Reintroduction =
+   build/gate failure.
 
 ## Register items (dispositions at close)
 
@@ -278,8 +300,77 @@ covers the resulting head-vs-pin delta).
   merge preserves the hash; comment-only update).
 - **T5 (stretch):** NOT taken — parked again per the charter's
   park-clause (pricing stands in the arc-7 results doc).
+- **Mirror-doctrine register — L_undefined rendering divergence
+  (auditor A F1): CLOSED-BY-FIX.** The Lean backend rendered the
+  L_undefined literal (pattern compiler's incomplete-match arm) as a
+  silent bare `default`, diverging from the OCaml backend's raise —
+  `failwith m` (src/backend.ml:864, `const_undefined` in module Ocaml
+  at src/backend.ml:830). Undocumented divergence = defect as such
+  (no differential failure required). FIXED in lem-lean `237867b`:
+  L_undefined now emits an ascribed
+  `(failwithI "<Incomplete Pattern at ...>" : tau)` with the same
+  message OCaml raises; OCaml file:line citations in-code; panic-path
+  pinned in tests/comprehensive (`lean-panic` target). 16 generated
+  lines (15 Cmm_csem.lean, 1 Cmm_op.lean; 39 arm occurrences — all in
+  today-unreachable concurrency modules) regenerated; zero
+  differential movement (see "Adversarial audits" below).
 
-## Success conditions (charter) — status
+## Adversarial audits (2026-08-20, post-close; dispositions executed in the audit-fix commits)
+
+Two adversarial audits ran against the closed arc. Findings and
+dispositions (evidence quotes summarized — DERIVED, not verbatim,
+except where marked):
+
+- **F1 (auditor A, MAJOR) — L_undefined emits silent `default`:
+  FIXED** in lem-lean `237867b` (backend rendering → failwithI with
+  the OCaml-mirrored message + comprehensive panic-path pin; the
+  threading pre-pass was verified renderer-independent, so binder
+  demand is unchanged) and validated at cerberus scale in this
+  commit's regeneration: former bare-default incomplete-pattern
+  sites 16 lines/39 arms → failwithI (grep: 0 `default /- Incomplete`
+  remain), capped exe + default-target builds rc 0, test_unit 5/5,
+  exec minimal SUMMARY byte-identical (zero movement), test_verify
+  29/29. Register entry above (CLOSED-BY-FIX). Note the sites are in
+  concurrency modules unreachable today — the fix is
+  doctrine-driven, not differential-driven.
+- **F1 (auditor B, MAJOR) — the in-build absence gate does not cover
+  the full generated tree** (its "ANYWHERE in the environment"
+  docstring overstated scope: the elaboration environment = the
+  audit module's import closure; a generated file outside it, e.g.
+  Core_indet.lean, was gate-invisible): **FIXED** in this commit —
+  (1) NAME-INDEPENDENT tree-wide axiom census + unsafeCast ban over
+  ALL of lean_frontend/generated/ added to check_theorem_axioms.sh
+  (fail-closed; allowlist exactly with_tagDefs + forceIO, each
+  required exactly once), negative-tested by planting
+  `axiom SNEAKY : ∀ {α : Type}, α` in generated/Core_indet.lean
+  (auditor B's exact vector) and an `unsafeCast` def — both runs
+  FAILED (rc 1) with the planted lines named, plants reverted
+  content-verified (md5), gate re-run green (verbatim outputs in
+  this commit's message); (2) the overstated wording corrected in
+  Audit.lean's docstring/comments and in durability req 3 above.
+- **F2 (auditor B) — library binder set is 7 defs, not 6:**
+  CORRECTED in the S2 census-errata paragraph above and in the
+  lem-lean design note (full enumeration in both).
+- **F3 (auditor B) — curated pin count is 84, not 83:** CORRECTED
+  above (labeled DERIVED).
+- **F4 (auditor B):** record-only — the merge checklist already
+  flags the fallback in question as a deviation; no further action.
+- **N2 (auditor A) — loose wording "failwithI panics before any
+  default value escapes":** CORRECTED here (S3 behavior-neutrality
+  paragraph) and in the design note: failwithI = Lean `panic!` —
+  aborts under LEAN_ABORT_ON_PANIC=1; prints and continues with
+  default as a plain library call; derived defaults observable only
+  post-panic or at the (now-fixed) L_undefined sites.
+- **N3 (auditor A):** PARTIALLY MITIGATED by the new
+  name-independent generated-tree census (any `axiom` declaration in
+  any generated file now fails the gate regardless of its name);
+  residual: the in-build DAEMON/DAEMON1 leg remains name-based
+  within its closure, and axioms living outside generated/,
+  lean_frontend hand files, and every probed/audited cone (e.g. a
+  hypothetical unused declaration inside the LemLib package) are
+  still only caught when they enter a cone. Noted, not gated.
+- **N4 (auditor A):** no action — already documented in-code and in
+  the design note.
 
 1. DAEMON/DAEMON1 absent from LemLib + generated tree, absence gates
    negative-tested; hand-axiom census exactly 2 — **MET**.

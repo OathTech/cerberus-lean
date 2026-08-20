@@ -62,6 +62,120 @@ fi
 echo "check_theorem_axioms: hand-written axiom census OK (2 declared-boundary axioms)"
 
 # ---------------------------------------------------------------------------
+# Tree-wide generated/ axiom census (arc-8 audit fix, auditor B F1).
+# NAME-INDEPENDENT and file-complete: the in-build Audit.lean sweep sees
+# the import closure of the audited roots + the probed cones above, but a
+# generated file OUTSIDE that closure (e.g. Core_indet.lean) could carry
+# an axiom no other gate would meet. This census scans EVERY
+# lean_frontend/generated/*.lean with a lexer-grade scanner (same
+# stripping discipline as check_exec_totality.sh: strings, char
+# literals, `--` line comments, nested /- -/ block comments removed
+# before matching) for:
+#   * `axiom` declarations — the complete allowlist is exactly the two
+#     declared hand-written boundary axioms in their build copies:
+#       CerbTags.lean       axiom with_tagDefs
+#       CerberusFresh.lean  axiom forceIO
+#     Any OTHER axiom in ANY generated file = FAIL. The two allowlisted
+#     axioms must each be found exactly once (their absence means the
+#     copy pipeline or the scanner broke — fail-closed both ways).
+#   * `unsafeCast` — banned outright in generated code (no allowlist;
+#     count is 0 as of the arc-8 audits).
+# Missing directory or an empty scan = FAIL (fail-closed).
+# ---------------------------------------------------------------------------
+GEN_DIR=lean_frontend/generated
+if [[ ! -d "$GEN_DIR" ]]; then
+  echo "check_theorem_axioms: FAIL — generated-tree census: $GEN_DIR missing (fail-closed)"
+  exit 1
+fi
+GEN_CENSUS=$(python3 - "$GEN_DIR" <<'PYEOF'
+import glob, os, re, sys
+gen_dir = sys.argv[1]
+files = sorted(glob.glob(os.path.join(gen_dir, '*.lean')))
+if not files:
+    print("SCANEMPTY")
+    sys.exit(0)
+print(f"SCANNED {len(files)}")
+for path in files:
+    src = open(path).read()
+    cur = []
+    depth = 0
+    i = 0
+    n = len(src)
+    while i < n:
+        two = src[i:i+2]
+        if depth > 0:
+            if two == '/-': depth += 1; i += 2; continue
+            if two == '-/': depth -= 1; i += 2; continue
+            if src[i] == '\n': cur.append('\n')
+            i += 1; continue
+        if two == '/-':
+            depth += 1; i += 2; continue
+        if two == '--':
+            j = src.find('\n', i)
+            i = n if j == -1 else j
+            continue
+        c = src[i]
+        if c == '"':
+            cur.append(' '); i += 1
+            while i < n:
+                if src[i] == '\\': i += 2; continue
+                if src[i] == '"': i += 1; break
+                if src[i] == '\n': cur.append('\n')
+                i += 1
+            continue
+        if c == '\'' and i + 1 < n and (src[i+1] == '\\' or (i + 2 < n and src[i+2] == '\'')):
+            # char literal 'x' or '\n'
+            j = src.find('\'', i + 2 if src[i+1] != '\\' else i + 3)
+            i = (j + 1) if j != -1 else n
+            cur.append(' ')
+            continue
+        cur.append(c); i += 1
+    clean = ''.join(cur)
+    base = os.path.basename(path)
+    for m in re.finditer(r'\baxiom\s+([A-Za-z_0-9α-ω.\']+)', clean):
+        line = clean.count('\n', 0, m.start()) + 1
+        print(f"AXIOM {base}:{line}:{m.group(1)}")
+    for m in re.finditer(r'\bunsafeCast\b', clean):
+        line = clean.count('\n', 0, m.start()) + 1
+        print(f"UNSAFECAST {base}:{line}")
+PYEOF
+) || {
+  echo "check_theorem_axioms: FAIL — generated-tree census: scanner failed (fail-closed)"
+  exit 1
+}
+if grep -q '^SCANEMPTY$' <<<"$GEN_CENSUS"; then
+  echo "check_theorem_axioms: FAIL — generated-tree census: no .lean files under $GEN_DIR (fail-closed)"
+  exit 1
+fi
+if ! grep -q '^SCANNED ' <<<"$GEN_CENSUS"; then
+  echo "check_theorem_axioms: FAIL — generated-tree census: scanner produced no SCANNED marker (fail-closed)"
+  exit 1
+fi
+GEN_SCANNED=$(grep '^SCANNED ' <<<"$GEN_CENSUS" | awk '{print $2}')
+GEN_AXIOMS=$(grep '^AXIOM ' <<<"$GEN_CENSUS" || true)
+GEN_UNSAFE=$(grep '^UNSAFECAST ' <<<"$GEN_CENSUS" || true)
+GEN_BAD=$(grep -vE '^AXIOM (CerbTags\.lean:[0-9]+:with_tagDefs|CerberusFresh\.lean:[0-9]+:forceIO)$' <<<"$GEN_AXIOMS" | grep '^AXIOM ' || true)
+if [[ -n "$GEN_BAD" ]]; then
+  echo "check_theorem_axioms: FAIL — generated-tree census: axiom declaration(s) outside the declared boundary (allowlist: CerbTags.with_tagDefs, CerberusFresh.forceIO):"
+  echo "$GEN_BAD"
+  exit 1
+fi
+for want in 'CerbTags\.lean:[0-9]+:with_tagDefs' 'CerberusFresh\.lean:[0-9]+:forceIO'; do
+  cnt=$(grep -cE "^AXIOM ${want}$" <<<"$GEN_AXIOMS" || true)
+  if [[ "$cnt" -ne 1 ]]; then
+    echo "check_theorem_axioms: FAIL — generated-tree census: declared-boundary axiom /${want}/ found $cnt times, expected exactly 1 (copy pipeline or scanner drift; fail-closed)"
+    echo "$GEN_AXIOMS"
+    exit 1
+  fi
+done
+if [[ -n "$GEN_UNSAFE" ]]; then
+  echo "check_theorem_axioms: FAIL — generated-tree census: unsafeCast in generated code (banned, no allowlist):"
+  echo "$GEN_UNSAFE"
+  exit 1
+fi
+echo "check_theorem_axioms: generated-tree census OK ($GEN_SCANNED files: 2 declared-boundary axioms, 0 others, 0 unsafeCast)"
+
+# ---------------------------------------------------------------------------
 # D14 ban (arc-6): non-kernel proof methods (native_decide / bv_decide).
 # Two legs, both fail-closed:
 #   * grep leg (here): the banned tactics may not occur in the test/proof
