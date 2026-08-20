@@ -16,6 +16,28 @@ name = "batteries"
 git = "https://github.com/leanprover-community/batteries"
 rev = "v4.32.0"
 
+# arc-7 S4: iris-lean, the Layer-3 program logic (ProgramLogic WP/adequacy,
+# proof mode, GenHeap/GhostVar). Pinned to the exact rev the local build at
+# deps/iris-lean is at (resolved offline via the deps/gitconfig redirect;
+# mirror TODO recorded there for the next network window). The package
+# lives in the repo's Iris/ subdir. Its own scoped requires (batteries,
+# Qq @ v4.32.0) are shadowed by the direct git requires here so resolution
+# never touches the Reservoir API (offline discipline; batteries rev above
+# is already the iris-vendored one).
+[[require]]
+name = "iris"
+git = "https://github.com/leanprover-community/iris-lean"
+rev = "79dab154a64051384179c4d4e00511752cf2a168"
+subDir = "Iris"
+
+# Qq pinned at iris-lean's vendored rev (deps/iris-lean/Iris/lake-manifest.json);
+# direct git require so the scoped form never needs the network (mirror:
+# deps/mirrors/quote4.git).
+[[require]]
+name = "Qq"
+git = "https://github.com/leanprover-community/quote4"
+rev = "38d591e778f100aec9762bb582f9c7f55f50e9dc"
+
 # LemLib is the Lem runtime library for Lean, from the septract/lem-lean fork.
 # arc-6 S3: pinned to the arc/libc-load branch pair (Fmap representation);
 # re-pin to mdd/lean-backend at arc close per the two-repo pin dance.
