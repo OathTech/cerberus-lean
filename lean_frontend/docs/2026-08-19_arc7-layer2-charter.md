@@ -1,5 +1,21 @@
 # Arc 7 charter: Layer 2 + first adequacy ("the bridge")
 
+> **STATUS: EXECUTED IN FULL — 2026-08-20.** S0–S5a complete; every
+> success condition met: T1–T3 + T4 (the exit criterion) proved
+> ∀-quantified, interpreter-only, kernel-checked, through the full WP
+> route and the in-repo adequacy theorem (fallback NOT taken); T5
+> PARKED WITH PRICING per this charter's own bar
+> ("proved-or-parked-with-pricing" — one-session price, results doc
+> §Arc-8 pricing); statement-TCB and axiom cones mechanized in-build;
+> CerbND totalized + runner soundness proved; toolchain bumped to
+> 4.32.2 on full gate evidence, zero movement; census still 2;
+> mainlines untouched, lem-lean untouched (pins hold at `bd7e2eb`).
+> Results: 2026-08-20_arc7-results.md. Decisions D1–D9,
+> provenance-tagged. **Audits: 2 adversarial, IN PROGRESS at
+> close-prep** — dispositions land in the results doc addendum before
+> any merge ask. Per S5 the arc STOPS unmerged —
+> 2026-08-20_arc7-merge-checklist.md awaits operator sign-off.
+
 Date: 2026-08-19. Mode: long-cycle autonomous under the orchestrator/
 worker doctrine; provenance-tagged decisions; verbatim-transcript rule;
 D14 proof-method ban in force. DRAFT until operator-blessed.
