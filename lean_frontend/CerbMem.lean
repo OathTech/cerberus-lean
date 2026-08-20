@@ -214,17 +214,33 @@ private def targetPtrSize : Nat := 8  -- DefaultImpl.sizeof_pointer/alignof_poin
 
 private abbrev TagDefs := List (sym × (CerbLocation.Loc × tag_definition))
 
+/-! ARC-7 S4 TOTALIZATION (fuel; arc-3 pattern): the layout oracles and
+    the (de)serializers below were `partial def`s — kernel-opaque, no
+    equations, so NO slate app-equation could compute through a memory
+    operation (S4 record, escalation event 1). Each is now a fuel'd
+    worker `*_lemFuel` (fuel decremented once per recursion layer;
+    exhaustion = the OPAQUE `fuelExhaustedWith` sentinel, LemLib —
+    a fake value provable equal to something would be a lie, D4
+    transparency doctrine) + the original name as the default-budget
+    wrapper (`lemDefaultFuel`, rfl-defeq), so every call site and every
+    runtime behavior is unchanged. `stringFromMemValue` (pp-only, never
+    on a computed path) stays partial. -/
+
 mutual
 
 /-- Member alignment with the `align_opt` (_Alignas) override —
     impl_mem.ml:115-122 (the align_opt match inside offsetsof; the same
     three-way match is repeated verbatim at impl_mem.ml:179-186 for union
     sizeof and inside the struct/union alignof folds). -/
-partial def memberAlign (alignOpt : Option alignment) (ty : ctype) : Nat :=
-  match alignOpt with
-  | none => alignofCtype ty
-  | some (AlignInteger al_n) => al_n.toNat
-  | some (AlignType al_ty) => alignofCtype al_ty
+def memberAlign_lemFuel (lemFuel : Nat) (alignOpt : Option alignment)
+    (ty : ctype) : Nat :=
+  match lemFuel with
+  | 0 => fuelExhaustedWith "CerbMem.memberAlign: fuel exhausted" 1
+  | lemFuel + 1 =>
+    match alignOpt with
+    | none => alignofCtype_lemFuel lemFuel ty
+    | some (AlignInteger al_n) => al_n.toNat
+    | some (AlignType al_ty) => alignofCtype_lemFuel lemFuel al_ty
 
 /-- THE struct-layout oracle: fold over the raw member quadruples,
     padding each member up to its (possibly _Alignas-overridden)
@@ -234,19 +250,22 @@ partial def memberAlign (alignOpt : Option alignment) (ty : ctype) : Nat :=
     (Alignment 0 is impossible for valid C members; Lean's `% 0 = id` +
     truncated subtraction make it degrade to pad = 0 instead of OCaml's
     Division_by_zero.) -/
-partial def offsetsofMembers
+def offsetsofMembers_lemFuel (lemFuel : Nat)
     (members : List (identifier × (attributes × Option alignment × qualifiers × ctype)))
     : List (identifier × ctype × Nat) × Nat :=
-  let (xs, maxoffset) := members.foldl (init := (([] : List (identifier × ctype × Nat)), 0))
-    fun (acc : List (identifier × ctype × Nat) × Nat) memb =>
-      let (xs, lastOffset) := acc
-      let (ident, (_, alignOpt, _, ty)) := memb
-      let size := sizeofCtype ty                    -- impl_mem.ml:114
-      let align := memberAlign alignOpt ty          -- impl_mem.ml:115-122
-      let x := lastOffset % align                   -- impl_mem.ml:123
-      let pad := if x == 0 then 0 else align - x    -- impl_mem.ml:124
-      ((ident, ty, lastOffset + pad) :: xs, lastOffset + pad + size)  -- impl_mem.ml:125
-  (xs.reverse, maxoffset)
+  match lemFuel with
+  | 0 => fuelExhaustedWith "CerbMem.offsetsofMembers: fuel exhausted" ([], 0)
+  | lemFuel + 1 =>
+    let (xs, maxoffset) := members.foldl (init := (([] : List (identifier × ctype × Nat)), 0))
+      fun (acc : List (identifier × ctype × Nat) × Nat) memb =>
+        let (xs, lastOffset) := acc
+        let (ident, (_, alignOpt, _, ty)) := memb
+        let size := sizeofCtype_lemFuel lemFuel ty          -- impl_mem.ml:114
+        let align := memberAlign_lemFuel lemFuel alignOpt ty -- impl_mem.ml:115-122
+        let x := lastOffset % align                   -- impl_mem.ml:123
+        let pad := if x == 0 then 0 else align - x    -- impl_mem.ml:124
+        ((ident, ty, lastOffset + pad) :: xs, lastOffset + pad + size)  -- impl_mem.ml:125
+    (xs.reverse, maxoffset)
 
 /-- offsetsof — impl_mem.ml:98-129. Struct: offsetsofMembers over the
     member list, with the flexible array member appended as an ordinary
@@ -258,19 +277,22 @@ partial def offsetsofMembers
     — OCaml's symbol_compare/Pmap key order, symbol.lem), NOT the derived
     BEq which also compares the description. Same for every tag lookup in
     this file. -/
-partial def offsetsof (tagDefs : TagDefs) (tagSym : sym)
+def offsetsof_lemFuel (lemFuel : Nat) (tagDefs : TagDefs) (tagSym : sym)
     (ignoreFlexible : Bool := false) : List (identifier × ctype × Nat) × Nat :=
-  match tagDefs.find? (fun (s, _) => symbolEquality s tagSym) with
-  | none => panic! "CerbMem.offsetsof: unknown tag (OCaml: Pmap.find Not_found)"
-  | some (_, (_, StructDef membrs_ flexibleOpt)) =>
-    let membrs := match flexibleOpt with
-      | none => membrs_
-      | some (FlexibleArrayMember attrs ident qs ty) =>
-        if ignoreFlexible then membrs_
-        else membrs_ ++ [(ident, (attrs, none, qs, ty))]  -- impl_mem.ml:107-108 (raw stored ctype)
-    offsetsofMembers membrs
-  | some (_, (_, UnionDef membrs)) =>
-    (membrs.map (fun (ident, (_, _, _, ty)) => (ident, ty, 0)), 0)
+  match lemFuel with
+  | 0 => fuelExhaustedWith "CerbMem.offsetsof: fuel exhausted" ([], 0)
+  | lemFuel + 1 =>
+    match tagDefs.find? (fun (s, _) => symbolEquality s tagSym) with
+    | none => panic! "CerbMem.offsetsof: unknown tag (OCaml: Pmap.find Not_found)"
+    | some (_, (_, StructDef membrs_ flexibleOpt)) =>
+      let membrs := match flexibleOpt with
+        | none => membrs_
+        | some (FlexibleArrayMember attrs ident qs ty) =>
+          if ignoreFlexible then membrs_
+          else membrs_ ++ [(ident, (attrs, none, qs, ty))]  -- impl_mem.ml:107-108 (raw stored ctype)
+      offsetsofMembers_lemFuel lemFuel membrs
+    | some (_, (_, UnionDef membrs)) =>
+      (membrs.map (fun (ident, (_, _, _, ty)) => (ident, ty, 0)), 0)
 
 /-- sizeof — impl_mem.ml:131-194.
     Struct (impl_mem.ml:162-171): offsetsof last_offset (ignore_flexible —
@@ -280,42 +302,46 @@ partial def offsetsof (tagDefs : TagDefs) (tagSym : sym)
     alignment (align_opt honored).
     Divergence kept from the pre-existing code: Void/incomplete-Array/
     Function return 0 where OCaml `assert false` (impl_mem.ml:133-135). -/
-partial def sizeofCtype (cty : ctype) : Nat :=
-  match cty with
-  | Ctype _ ty_ =>
-    match ty_ with
-    | .Void0 => 0                                 -- OCaml: assert false
-    | .Array0 _ none => 0                         -- OCaml: assert false
-    | .Function _ _ _ | .FunctionNoParams _ => 0  -- OCaml: assert false
-    | .Basic (.Integer ity) =>
-      match CerberusImpl.sizeof_ity ity with      -- impl_mem.ml:136-141
-      | some n => n
-      | none => panic! "the concrete memory model requires a complete implementation sizeof INTEGER"
-    | .Basic (.Floating fty) =>
-      match CerberusImpl.sizeof_fty fty with      -- impl_mem.ml:143-148
-      | some n => n
-      | none => panic! "the concrete memory model requires a complete implementation sizeof FLOAT"
-    | .Array0 elemCty (some n) => n.toNat * sizeofCtype elemCty  -- impl_mem.ml:150-151
-    | .Pointer _ _ => targetPtrSize               -- impl_mem.ml:153-158
-    | .Atomic innerCty => sizeofCtype innerCty    -- impl_mem.ml:160-161
-    | .Struct tagSym =>                           -- impl_mem.ml:162-171
-      let (_, maxOffset) := offsetsof (fmapElements (CerbTags.tagDefs ())) tagSym (ignoreFlexible := true)
-      let align := alignofCtype cty
-      let x := maxOffset % align
-      if x == 0 then maxOffset else maxOffset + (align - x)
-    | .Union0 tagSym =>                           -- impl_mem.ml:172-192
-      match (fmapElements (CerbTags.tagDefs ())).find? (fun (s, _) => symbolEquality s tagSym) with
-      | some (_, (_, UnionDef membrs)) =>
-        let (maxSize, maxAlign) := membrs.foldl (init := ((0 : Nat), (0 : Nat)))
-          fun (acc : Nat × Nat) memb =>
-            let (accSize, accAlign) := acc
-            let (_, (_, alignOpt, _, ty)) := memb
-            (max accSize (sizeofCtype ty), max accAlign (memberAlign alignOpt ty))
-        -- trailing padding up to the max alignment — impl_mem.ml:189-191
-        let x := maxSize % maxAlign
-        if x == 0 then maxSize else maxSize + (maxAlign - x)
-      | _ => panic! "CerbMem.sizeofCtype: Union tag not a UnionDef (OCaml: assert false / Not_found)"
-    | .Byte => 1                                  -- impl_mem.ml:193-194
+def sizeofCtype_lemFuel (lemFuel : Nat) (cty : ctype) : Nat :=
+  match lemFuel with
+  | 0 => fuelExhaustedWith "CerbMem.sizeofCtype: fuel exhausted" 0
+  | lemFuel + 1 =>
+    match cty with
+    | Ctype _ ty_ =>
+      match ty_ with
+      | .Void0 => 0                                 -- OCaml: assert false
+      | .Array0 _ none => 0                         -- OCaml: assert false
+      | .Function _ _ _ | .FunctionNoParams _ => 0  -- OCaml: assert false
+      | .Basic (.Integer ity) =>
+        match CerberusImpl.sizeof_ity ity with      -- impl_mem.ml:136-141
+        | some n => n
+        | none => panic! "the concrete memory model requires a complete implementation sizeof INTEGER"
+      | .Basic (.Floating fty) =>
+        match CerberusImpl.sizeof_fty fty with      -- impl_mem.ml:143-148
+        | some n => n
+        | none => panic! "the concrete memory model requires a complete implementation sizeof FLOAT"
+      | .Array0 elemCty (some n) => n.toNat * sizeofCtype_lemFuel lemFuel elemCty  -- impl_mem.ml:150-151
+      | .Pointer _ _ => targetPtrSize               -- impl_mem.ml:153-158
+      | .Atomic innerCty => sizeofCtype_lemFuel lemFuel innerCty    -- impl_mem.ml:160-161
+      | .Struct tagSym =>                           -- impl_mem.ml:162-171
+        let (_, maxOffset) := offsetsof_lemFuel lemFuel (fmapElements (CerbTags.tagDefs ())) tagSym (ignoreFlexible := true)
+        let align := alignofCtype_lemFuel lemFuel cty
+        let x := maxOffset % align
+        if x == 0 then maxOffset else maxOffset + (align - x)
+      | .Union0 tagSym =>                           -- impl_mem.ml:172-192
+        match (fmapElements (CerbTags.tagDefs ())).find? (fun (s, _) => symbolEquality s tagSym) with
+        | some (_, (_, UnionDef membrs)) =>
+          let (maxSize, maxAlign) := membrs.foldl (init := ((0 : Nat), (0 : Nat)))
+            fun (acc : Nat × Nat) memb =>
+              let (accSize, accAlign) := acc
+              let (_, (_, alignOpt, _, ty)) := memb
+              (max accSize (sizeofCtype_lemFuel lemFuel ty),
+               max accAlign (memberAlign_lemFuel lemFuel alignOpt ty))
+          -- trailing padding up to the max alignment — impl_mem.ml:189-191
+          let x := maxSize % maxAlign
+          if x == 0 then maxSize else maxSize + (maxAlign - x)
+        | _ => panic! "CerbMem.sizeofCtype: Union tag not a UnionDef (OCaml: assert false / Not_found)"
+      | .Byte => 1                                  -- impl_mem.ml:193-194
 
 /-- alignof — impl_mem.ml:196-273.
     Struct (impl_mem.ml:228-252): max member alignment (align_opt
@@ -324,44 +350,70 @@ partial def sizeofCtype (cty : ctype) : Nat :=
     Union (impl_mem.ml:253-271): max member alignment, seed 0.
     Divergence kept from the pre-existing code: Void/Function return 1
     where OCaml `assert false`. -/
-partial def alignofCtype (cty : ctype) : Nat :=
-  match cty with
-  | Ctype _ ty_ =>
-    match ty_ with
-    | .Void0 => 1                                 -- OCaml: assert false
-    | .Function _ _ _ | .FunctionNoParams _ => 1  -- OCaml: assert false
-    | .Basic (.Integer ity) =>
-      match CerberusImpl.alignof_ity ity with     -- impl_mem.ml:200-206
-      | some n => n
-      | none => panic! "the concrete memory model requires a complete implementation alignof INTEGER"
-    | .Basic (.Floating fty) =>
-      match CerberusImpl.alignof_fty fty with     -- impl_mem.ml:207-213
-      | some n => n
-      | none => panic! "the concrete memory model requires a complete implementation alignof FLOATING"
-    | .Array0 elemCty _ => alignofCtype elemCty   -- impl_mem.ml:214-215
-    | .Pointer _ _ => targetPtrSize               -- impl_mem.ml:219-225
-    | .Atomic innerCty => alignofCtype innerCty   -- impl_mem.ml:226-227
-    | .Struct tagSym =>                           -- impl_mem.ml:228-252
-      match (fmapElements (CerbTags.tagDefs ())).find? (fun (s, _) => symbolEquality s tagSym) with
-      | some (_, (_, StructDef membrs flexibleOpt)) =>
-        let init := match flexibleOpt with        -- impl_mem.ml:234-239
-          | none => 0
-          | some (FlexibleArrayMember _ _ _ elemTy) =>
-            alignofCtype (mkCtype (.Array0 elemTy none))
-        membrs.foldl (init := init) fun acc memb =>
-          let (_, (_, alignOpt, _, ty)) := memb
-          max (memberAlign alignOpt ty) acc       -- impl_mem.ml:242-251
-      | _ => panic! "CerbMem.alignofCtype: Struct tag not a StructDef (OCaml: assert false / Not_found)"
-    | .Union0 tagSym =>                           -- impl_mem.ml:253-271
-      match (fmapElements (CerbTags.tagDefs ())).find? (fun (s, _) => symbolEquality s tagSym) with
-      | some (_, (_, UnionDef membrs)) =>
-        membrs.foldl (init := (0 : Nat)) fun acc memb =>
-          let (_, (_, alignOpt, _, ty)) := memb
-          max (memberAlign alignOpt ty) acc
-      | _ => panic! "CerbMem.alignofCtype: Union tag not a UnionDef (OCaml: assert false / Not_found)"
-    | .Byte => 1                                  -- impl_mem.ml:272-273
+def alignofCtype_lemFuel (lemFuel : Nat) (cty : ctype) : Nat :=
+  match lemFuel with
+  | 0 => fuelExhaustedWith "CerbMem.alignofCtype: fuel exhausted" 1
+  | lemFuel + 1 =>
+    match cty with
+    | Ctype _ ty_ =>
+      match ty_ with
+      | .Void0 => 1                                 -- OCaml: assert false
+      | .Function _ _ _ | .FunctionNoParams _ => 1  -- OCaml: assert false
+      | .Basic (.Integer ity) =>
+        match CerberusImpl.alignof_ity ity with     -- impl_mem.ml:200-206
+        | some n => n
+        | none => panic! "the concrete memory model requires a complete implementation alignof INTEGER"
+      | .Basic (.Floating fty) =>
+        match CerberusImpl.alignof_fty fty with     -- impl_mem.ml:207-213
+        | some n => n
+        | none => panic! "the concrete memory model requires a complete implementation alignof FLOATING"
+      | .Array0 elemCty _ => alignofCtype_lemFuel lemFuel elemCty   -- impl_mem.ml:214-215
+      | .Pointer _ _ => targetPtrSize               -- impl_mem.ml:219-225
+      | .Atomic innerCty => alignofCtype_lemFuel lemFuel innerCty   -- impl_mem.ml:226-227
+      | .Struct tagSym =>                           -- impl_mem.ml:228-252
+        match (fmapElements (CerbTags.tagDefs ())).find? (fun (s, _) => symbolEquality s tagSym) with
+        | some (_, (_, StructDef membrs flexibleOpt)) =>
+          let init := match flexibleOpt with        -- impl_mem.ml:234-239
+            | none => 0
+            | some (FlexibleArrayMember _ _ _ elemTy) =>
+              alignofCtype_lemFuel lemFuel (mkCtype (.Array0 elemTy none))
+          membrs.foldl (init := init) fun acc memb =>
+            let (_, (_, alignOpt, _, ty)) := memb
+            max (memberAlign_lemFuel lemFuel alignOpt ty) acc  -- impl_mem.ml:242-251
+        | _ => panic! "CerbMem.alignofCtype: Struct tag not a StructDef (OCaml: assert false / Not_found)"
+      | .Union0 tagSym =>                           -- impl_mem.ml:253-271
+        match (fmapElements (CerbTags.tagDefs ())).find? (fun (s, _) => symbolEquality s tagSym) with
+        | some (_, (_, UnionDef membrs)) =>
+          membrs.foldl (init := (0 : Nat)) fun acc memb =>
+            let (_, (_, alignOpt, _, ty)) := memb
+            max (memberAlign_lemFuel lemFuel alignOpt ty) acc
+        | _ => panic! "CerbMem.alignofCtype: Union tag not a UnionDef (OCaml: assert false / Not_found)"
+      | .Byte => 1                                  -- impl_mem.ml:272-273
 
 end
+
+/-- Default-budget wrapper (rfl-defeq to the worker; arc-3 discipline). -/
+def memberAlign (alignOpt : Option alignment) (ty : ctype) : Nat :=
+  memberAlign_lemFuel lemDefaultFuel alignOpt ty
+
+/-- Default-budget wrapper. -/
+def offsetsofMembers
+    (members : List (identifier × (attributes × Option alignment × qualifiers × ctype)))
+    : List (identifier × ctype × Nat) × Nat :=
+  offsetsofMembers_lemFuel lemDefaultFuel members
+
+/-- Default-budget wrapper. -/
+def offsetsof (tagDefs : TagDefs) (tagSym : sym)
+    (ignoreFlexible : Bool := false) : List (identifier × ctype × Nat) × Nat :=
+  offsetsof_lemFuel lemDefaultFuel tagDefs tagSym ignoreFlexible
+
+/-- Default-budget wrapper. -/
+def sizeofCtype (cty : ctype) : Nat :=
+  sizeofCtype_lemFuel lemDefaultFuel cty
+
+/-- Default-budget wrapper. -/
+def alignofCtype (cty : ctype) : Nat :=
+  alignofCtype_lemFuel lemDefaultFuel cty
 
 /-! ## Byte-level serialization
 
@@ -441,8 +493,11 @@ abbrev Funptrmap := List (Int × (String × String))
     `repr funptrmap mval : (funptrmap' × bytes)` — storing a PVfunction
     registers the symbol in the map (impl_mem.ml:1168-1185, survey
     finding 20); all other arms pass it through. -/
-partial def memValueToBytes (funptrmap : Funptrmap) (val_ : MemValue) :
-    Funptrmap × List AbsByte :=
+def memValueToBytes_lemFuel (lemFuel : Nat) (funptrmap : Funptrmap)
+    (val_ : MemValue) : Funptrmap × List AbsByte :=
+  match lemFuel with
+  | 0 => fuelExhaustedWith "CerbMem.memValueToBytes: fuel exhausted" (funptrmap, [])
+  | lemFuel + 1 =>
   match val_ with
   | .MVunspecified ty =>
     -- impl_mem.ml:1142-1144
@@ -501,7 +556,7 @@ partial def memValueToBytes (funptrmap : Funptrmap) (val_ : MemValue) :
     let (fpm, bss) := elems.foldl (init := (funptrmap, ([] : List (List AbsByte))))
       fun (acc : Funptrmap × List (List AbsByte)) mval =>
         let (fpm, bss) := acc
-        let (fpm', bs) := memValueToBytes fpm mval
+        let (fpm', bs) := memValueToBytes_lemFuel lemFuel fpm mval
         (fpm', bs :: bss)
     (fpm, bss.reverse.flatten)
   | .MVstruct tagSym members =>
@@ -520,15 +575,20 @@ partial def memValueToBytes (funptrmap : Funptrmap) (val_ : MemValue) :
         let (fpm, lastOff, accBs) := acc
         let ((_, ty, off), (_, _, mval)) := p
         let pad := off - lastOff
-        let (fpm', bs) := memValueToBytes fpm mval
+        let (fpm', bs) := memValueToBytes_lemFuel lemFuel fpm mval
         (fpm', off + sizeofCtype ty, accBs ++ List.replicate pad paddingByte ++ bs)
     (fpm, bs ++ List.replicate finalPad paddingByte)  -- impl_mem.ml:1214
   | .MVunion tagSym _ mval =>
     -- impl_mem.ml:1216-1219: the active member's bytes, padded out with
     -- unspecified bytes to sizeof(union).
     let size := sizeofCtype (mkCtype (.Union0 tagSym))
-    let (fpm, bs) := memValueToBytes funptrmap mval
+    let (fpm, bs) := memValueToBytes_lemFuel lemFuel funptrmap mval
     (fpm, bs ++ List.replicate (size - bs.length) paddingByte)
+
+/-- Default-budget wrapper (rfl-defeq to the worker). -/
+def memValueToBytes (funptrmap : Funptrmap) (val_ : MemValue) :
+    Funptrmap × List AbsByte :=
+  memValueToBytes_lemFuel lemDefaultFuel funptrmap val_
 
 /-- Reconstruct a MemValue from bytes — abst, impl_mem.ml:916-1095.
     INVARIANT (differs from OCaml's consume-and-return-rest shape):
@@ -539,9 +599,13 @@ partial def memValueToBytes (funptrmap : Funptrmap) (val_ : MemValue) :
     consulted ONLY by the Pointer-to-Function arm (impl_mem.ml:1004-1016)
     — exactly as in OCaml's abst.
     Not ported: taint tracking (PNVI) and is_zap. -/
-partial def reconstructValue (unionmap : List (Int × identifier))
+def reconstructValue_lemFuel (lemFuel : Nat)
+    (unionmap : List (Int × identifier))
     (funptrmap : Funptrmap) (addr : Int)
     (ty : ctype) (bytes : List AbsByte) : MemValue :=
+  match lemFuel with
+  | 0 => fuelExhaustedWith "CerbMem.reconstructValue: fuel exhausted" (.MVunspecified ty)
+  | lemFuel + 1 =>
   match ty with
   | Ctype _ (.Basic (.Integer ity)) =>
     -- impl_mem.ml:949-960 (signedness via the implementation, as
@@ -603,11 +667,11 @@ partial def reconstructValue (unionmap : List (Int × identifier))
       let elems := List.range nNat |>.map fun i =>
         let start := i * elemSize
         let elemBytes := bytes.drop start |>.take elemSize
-        reconstructValue unionmap funptrmap addr elemCty elemBytes
+        reconstructValue_lemFuel lemFuel unionmap funptrmap addr elemCty elemBytes
       .MVarray elems
   | Ctype _ (.Atomic innerCty) =>
     -- impl_mem.ml:1058-1060 (same repr as the non-atomic version)
-    reconstructValue unionmap funptrmap addr innerCty bytes
+    reconstructValue_lemFuel lemFuel unionmap funptrmap addr innerCty bytes
   | Ctype _ .Byte =>
     -- impl_mem.ml:961-973 ("handled similarly to integers": provenance
     -- via pvi_split_bytes' combine_prov fold, impl_mem.ml:964)
@@ -629,7 +693,7 @@ partial def reconstructValue (unionmap : List (Int × identifier))
         let (ident, membTy, off) := memb
         let pad := off - prevEnd
         let membBytes := bytes.drop off |>.take (sizeofCtype membTy)
-        let mval := reconstructValue unionmap funptrmap (addr + (pad : Int)) membTy membBytes
+        let mval := reconstructValue_lemFuel lemFuel unionmap funptrmap (addr + (pad : Int)) membTy membBytes
         ((ident, membTy, mval) :: revXs, off + sizeofCtype membTy)
     .MVstruct tagSym revXs.reverse
   | Ctype _ (.Union0 tagSym) =>
@@ -650,11 +714,17 @@ partial def reconstructValue (unionmap : List (Int × identifier))
             match membrs.find? (fun (i, _) => idEqual i membr) with
             | some (i, (_, _, _, t)) => (i, t)
             | none => panic! "CerbMem.reconstructValue: recorded union member not in UnionDef (OCaml: assert false)"
-        let mval := reconstructValue unionmap funptrmap addr membTy
+        let mval := reconstructValue_lemFuel lemFuel unionmap funptrmap addr membTy
           (bytes.take (sizeofCtype membTy))  -- self membr_ty bs1 — impl_mem.ml:1091
         .MVunion tagSym membIdent mval
     | _ => panic! "CerbMem.reconstructValue: Union tag not a UnionDef (OCaml: assert false)"
   | _ => .MVunspecified ty
+
+/-- Default-budget wrapper (rfl-defeq to the worker). -/
+def reconstructValue (unionmap : List (Int × identifier))
+    (funptrmap : Funptrmap) (addr : Int)
+    (ty : ctype) (bytes : List AbsByte) : MemValue :=
+  reconstructValue_lemFuel lemDefaultFuel unionmap funptrmap addr ty bytes
 
 /-! ## Memory-value typing — the store guard's helpers (audit-2 C3) -/
 
@@ -663,39 +733,57 @@ partial def reconstructValue (unionmap : List (Int × identifier))
     MVarray []: OCaml `assert false` ("ill-formed value",
     impl_mem.ml:1125-1127) — panic. Array element type from the FIRST
     element only (OCaml's own TODO shrug, impl_mem.ml:1128-1131). -/
-partial def typeofMval : MemValue → ctype
+def typeofMval_lemFuel (lemFuel : Nat) : MemValue → ctype :=
+  fun mval =>
+  match lemFuel with
+  | 0 => fuelExhaustedWith "CerbMem.typeofMval: fuel exhausted" (mkCtype .Void0)
+  | lemFuel + 1 =>
+  match mval with
   | .MVunspecified (Ctype _ ty) => mkCtype ty
   | .MVinteger ity _ => mkCtype (.Basic (.Integer ity))
   | .MVfloating fty _ => mkCtype (.Basic (.Floating fty))
   | .MVpointer refTy _ => mkCtype (.Pointer no_qualifiers refTy)
   | .MVarray [] => panic! "CerbMem.typeofMval: MVarray [] (OCaml: assert false, ill-formed value)"
   | .MVarray (mval :: rest) =>
-    mkCtype (.Array0 (typeofMval mval) (some ((rest.length + 1 : Nat) : Int)))
+    mkCtype (.Array0 (typeofMval_lemFuel lemFuel mval) (some ((rest.length + 1 : Nat) : Int)))
   | .MVstruct tagSym _ => mkCtype (.Struct tagSym)
   | .MVunion tagSym _ _ => mkCtype (.Union0 tagSym)
+
+/-- Default-budget wrapper (rfl-defeq to the worker). -/
+def typeofMval (mval : MemValue) : ctype :=
+  typeofMval_lemFuel lemDefaultFuel mval
 
 /-- ctype_mem_compatible — impl_mem.ml:23-49: structural ctype equality
     after recursively erasing qualifiers, annotations and Atomic wrappers;
     Byte compares as unsigned char (impl_mem.ml:30-32); function-parameter
     is_register flags are dropped to false (impl_mem.ml:33-38, the
     `(_, ty, _) -> (..., false)` map). Used ONLY by the store guard. -/
-private partial def unqualifyAndUnatomic : ctype → ctype_
+private def unqualifyAndUnatomic_lemFuel (lemFuel : Nat) : ctype → ctype_ :=
+  fun cty =>
+  match lemFuel with
+  | 0 => fuelExhaustedWith "CerbMem.unqualifyAndUnatomic: fuel exhausted" .Void0
+  | lemFuel + 1 =>
+  match cty with
   | Ctype _ ty =>
     match ty with
     | .Void0 | .Basic _ | .Struct _ | .Union0 _ => ty
     | .Byte => .Basic (.Integer (.Unsigned .Ichar))
     | .Function (_, retTy) params variadic =>
-      .Function (no_qualifiers, Ctype [] (unqualifyAndUnatomic retTy))
+      .Function (no_qualifiers, Ctype [] (unqualifyAndUnatomic_lemFuel lemFuel retTy))
         (params.map fun (p : qualifiers × ctype × Bool) =>
-          (no_qualifiers, Ctype [] (unqualifyAndUnatomic p.2.1), false))
+          (no_qualifiers, Ctype [] (unqualifyAndUnatomic_lemFuel lemFuel p.2.1), false))
         variadic
     | .FunctionNoParams (_, retTy) =>
-      .FunctionNoParams (no_qualifiers, Ctype [] (unqualifyAndUnatomic retTy))
+      .FunctionNoParams (no_qualifiers, Ctype [] (unqualifyAndUnatomic_lemFuel lemFuel retTy))
     | .Array0 elemTy nOpt =>
-      .Array0 (Ctype [] (unqualifyAndUnatomic elemTy)) nOpt
+      .Array0 (Ctype [] (unqualifyAndUnatomic_lemFuel lemFuel elemTy)) nOpt
     | .Pointer _ refTy =>
-      .Pointer no_qualifiers (Ctype [] (unqualifyAndUnatomic refTy))
-    | .Atomic atomTy => unqualifyAndUnatomic atomTy
+      .Pointer no_qualifiers (Ctype [] (unqualifyAndUnatomic_lemFuel lemFuel refTy))
+    | .Atomic atomTy => unqualifyAndUnatomic_lemFuel lemFuel atomTy
+
+/-- Default-budget wrapper (rfl-defeq to the worker). -/
+private def unqualifyAndUnatomic (cty : ctype) : ctype_ :=
+  unqualifyAndUnatomic_lemFuel lemDefaultFuel cty
 
 def ctypeMemCompatible (ty1 ty2 : ctype) : Bool :=
   ctypeEqual (Ctype [] (unqualifyAndUnatomic ty1)) (Ctype [] (unqualifyAndUnatomic ty2))
