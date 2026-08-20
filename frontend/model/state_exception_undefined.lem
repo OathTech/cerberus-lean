@@ -144,3 +144,12 @@ let stExceptUndef_undef loc ubs =
   State_exception.return (Undefined.undef loc ubs)
 let inline undef loc ubs =
   stExceptUndef_undef loc ubs
+
+(* === Totality declares (arc 7 S5a, 2026-08-20): Lean-target only.
+   stExceptUndef_foldM is an arc-3 F8 call-graph escapee on the slate
+   theorems' kernel path (S4 record §6.3 event 2: Erun/Eccall argument
+   evaluation); filterM is the module's only other partial, same
+   structural list-walk shape, so the totality gate can adopt
+   State_exception_undefined. Both automatic. === *)
+declare {lean} termination_argument stExceptUndef_foldM = automatic
+declare {lean} termination_argument filterM = automatic

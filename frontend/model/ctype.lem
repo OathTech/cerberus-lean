@@ -416,3 +416,13 @@ let is_ptr_t (Ctype _ ty_) =
     | _ ->
         false
   end
+
+(* === Totality declares (arc 7 S5a, 2026-08-20): Lean-target only.
+   ctypeEqual is an arc-3 F8 call-graph escapee on the slate theorems'
+   kernel path (S4 record §6.3 event 2: the store guard's
+   ctypeMemCompatible and conv_int's ty = '_Bool' value equality).
+   Fuel, not automatic: the Function arm recurses under a let-bound
+   lambda applied by List.all over a zipped pair list (the arc-3 D6
+   beyond-automatic shape). Witness false (Bool return; honesty lives
+   in the opaque runtime panic, not the witness). === *)
+declare {lean} fuel val ctypeEqual = `fuelExhausted false`

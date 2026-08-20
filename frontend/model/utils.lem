@@ -327,3 +327,35 @@ let product_list xs ys =
 val is_power_of_two: integer -> bool
 declare ocaml target_rep function is_power_of_two = `Cerb_util.is_power_of_two`
 declare lean target_rep function is_power_of_two = `CerbUtils.is_power_of_two`
+
+(* === Totality declares (arc 7 S5a, 2026-08-20): Lean-target only.
+   The arc-3 F8 call-graph escapees on the slate theorems' kernel path
+   (S4 record §6.3 event 2: assoc_insert/remove/adjust) + the rest of
+   the module so the totality gate can adopt Utils whole.
+   Structural recursions -> termination_argument automatic.
+   Fuel cases (fuelExhausted witness panics at runtime, typing only):
+   mkListN_aux / mkListFromTo_aux count an integer UP to a bound
+   (Int-measure recursions automatic cannot infer) and list_unfoldr_aux
+   recurses through the ctor oracle (no structural subterm); the
+   replicate_list_ countdown guard is the Bool natGtb (condition opaque
+   to the decreasing tactic; automatic rejected by probe) -> witness
+   the accumulator acc (input arg, return type matches, arc-3 D6
+   witness rule). === *)
+declare {lean} fuel val mkListN_aux = `fuelExhausted acc`
+declare {lean} fuel val mkListFromTo_aux = `fuelExhausted acc`
+declare {lean} termination_argument numerote_ = automatic
+declare {lean} termination_argument foldl2 = automatic
+declare {lean} termination_argument map2_ = automatic
+declare {lean} termination_argument filter_opt = automatic
+declare {lean} termination_argument set_from_options = automatic
+declare {lean} termination_argument mapUnzip_ = automatic
+declare {lean} termination_argument map_option = automatic
+declare {lean} fuel val replicate_list_ = `fuelExhausted acc`
+declare {lean} termination_argument assoc_insert = automatic
+declare {lean} termination_argument assoc_remove = automatic
+declare {lean} termination_argument assoc_adjust = automatic
+declare {lean} termination_argument list_index_update = automatic
+declare {lean} termination_argument pickWith_ = automatic
+declare {lean} termination_argument last_aux = automatic
+declare {lean} fuel val list_unfoldr_aux = `fuelExhausted acc`
+declare {lean} termination_argument maybe_mapM_aux = automatic

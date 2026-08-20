@@ -459,3 +459,15 @@ declare {coq} rename type impl = impl_ (* workaround for Lem issue #74 *)
 instance (SetType polarity)
   let setElemCompare = defaultCompare
 end
+
+(* === Totality declares (arc 7 S5a, 2026-08-20): Lean-target only.
+   eq_core_object_type is an arc-3 F8 call-graph escapee on the slate
+   theorems' kernel path (S4 record §6.3 event 2, via Core_aux);
+   eq_core_base_type is the module's only other partial (totality-gate
+   adoption of Core). eq_core_object_type: structural pair-component
+   recursion -> automatic. eq_core_base_type: the BTy_tuple arm passes
+   the recursive occurrence POINT-FREE to listEqualBy (the arc-3
+   has_concurRead shape, automatic rejected) -> fuel, witness false
+   (Bool return; honesty lives in the opaque runtime panic). === *)
+declare {lean} termination_argument eq_core_object_type = automatic
+declare {lean} fuel val eq_core_base_type = `fuelExhausted false`

@@ -19,10 +19,9 @@
 # runner-soundness theorems in lean_frontend/relsem/RelSem/RunND.lean are
 # stated against it, and `partial` would silently re-opacify them).
 # CerbND thereby LEAVES the arc-4 G3 declared boundary. Still OUTSIDE the
-# gate and NOT partial-free: CerbMem.lean carries partial defs
-# (memberAlign/offsetsofMembers/offsetsof/sizeofCtype/
-# alignofCtype/memValueToBytes/reconstructValue/typeofMval/
-# unqualifyAndUnatomic/stringFromMemValue) and panic! sites;
+# gate and NOT partial-free: CerbMem.lean carries ONE partial def
+# (stringFromMemValue, pp-only — the nine exec-path functions were
+# fuel-totalized in arc-7 S4, escalation event 1) and panic! sites;
 # CerbTags.lean carries the with_tagDefs axiom.
 # Declared-boundary record: 2026-08-19_arc4-results.md (CerbND exit to be
 # recorded in the arc-7 results doc at close). Expanding the gate to the
@@ -33,10 +32,18 @@ GEN="$SCRIPT_DIR/../lean_frontend/generated"
 ALLOW="$SCRIPT_DIR/exec_totality_allowlist.txt"
 ENFORCE="${ENFORCE:-0}"
 
-# Same slice as check_exec_purity.sh (keep the two lists in lockstep).
+# First 11 = same slice as check_exec_purity.sh (keep that prefix in
+# lockstep with the purity gate). Arc-7 S5a extends the TOTALITY gate
+# (only) over the five modules totalized by the F8 declares sweep
+# (D6 gating item; declares in frontend/model/{utils,annot,ctype,core,
+# state_exception_undefined}.lem): Utils, Annot, Ctype, Core,
+# State_exception_undefined are now partial-free and may not regress —
+# the slate theorems' app-equation computations (RelSem/T1.lean etc.)
+# need their kernel equations.
 EXEC_MODULES=(Core_run Core_reduction Core_eval Driver Core_run_aux
               Core_aux Defacto_memory Defacto_memory_aux Ctype_aux
-              Nondeterminism Mem_aux)
+              Nondeterminism Mem_aux
+              Utils Annot Ctype Core State_exception_undefined)
 
 declare -A allowed=()
 if [[ -f "$ALLOW" ]]; then

@@ -323,3 +323,17 @@ let set_loc loc annots =
     end) annots
   in
   Aloc loc :: annots'
+
+(* === Totality declares (arc 7 S5a, 2026-08-20): Lean-target only.
+   get_loc is an arc-3 F8 call-graph escapee on the slate theorems'
+   kernel path (S4 record §6.3 event 2: step_ctx consults it on every
+   driver step); the other six get_* are the same list-walk shape, so
+   the whole module totalizes and the totality gate can adopt Annot.
+   All structural recursions on the annots list -> automatic. === *)
+declare {lean} termination_argument get_loc = automatic
+declare {lean} termination_argument get_typedef = automatic
+declare {lean} termination_argument get_attrs = automatic
+declare {lean} termination_argument get_marker = automatic
+declare {lean} termination_argument get_marker_object_types = automatic
+declare {lean} termination_argument get_label_annot = automatic
+declare {lean} termination_argument get_uid = automatic
