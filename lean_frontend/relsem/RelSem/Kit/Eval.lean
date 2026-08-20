@@ -48,6 +48,7 @@ theorem eumapM_one {A C M : Type} {f : C → exceptM (t0 A) M} {a : C} {b : A}
     mapM1, except_sequence, sequence0, bind2, return1]
 
 /-- Crossing lemma for `liftCore_run` at a Defined verdict (generic). -/
+@[app_eq]
 theorem liftCore_run_defined {A : Type}
     {m : core_run_state → exceptM (t0 A × core_run_state) core_run_cause}
     {dr : driver_state} {z : A} {rs' : core_run_state}

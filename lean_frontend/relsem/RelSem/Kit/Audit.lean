@@ -19,6 +19,7 @@ import RelSem.Kit.AppEq
 import RelSem.Kit.Eval
 import RelSem.Kit.Round
 import RelSem.Kit.Loop
+import RelSem.Kit.Mem
 
 -- Kit/Loop — the loop rule + fuel algebra
 /-- info: 'RelSem.Kit.iter_compose' does not depend on any axioms -/
@@ -69,3 +70,29 @@ import RelSem.Kit.Loop
 #guard_msgs in #print axioms RelSem.Kit.ars_store_unfold
 /-- info: 'RelSem.Kit.ars_kill_unfold' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Kit.ars_kill_unfold
+
+-- Kit/Mem — the memory-op blocks (arc-9 S2 wave 2)
+/-- info: 'RelSem.Kit.mem_alloc_block' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Kit.mem_alloc_block
+/-- info: 'RelSem.Kit.mem_store_block' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Kit.mem_store_block
+/-- info: 'RelSem.Kit.mem_load_block' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Kit.mem_load_block
+/-- info: 'RelSem.Kit.mem_kill_block' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Kit.mem_kill_block
+
+-- Kit/Round — the perform layer (arc-9 S2 wave 2)
+/-- info: 'RelSem.Kit.liftMem_unfold' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Kit.liftMem_unfold
+/-- info: 'RelSem.Kit.app_liftMem_active' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Kit.app_liftMem_active
+/-- info: 'RelSem.Kit.aid_draw' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Kit.aid_draw
+/-- info: 'RelSem.Kit.perform_create' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Kit.perform_create
+/-- info: 'RelSem.Kit.perform_load' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Kit.perform_load
+/-- info: 'RelSem.Kit.perform_store' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Kit.perform_store
+/-- info: 'RelSem.Kit.perform_kill' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Kit.perform_kill

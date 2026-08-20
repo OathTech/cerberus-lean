@@ -213,6 +213,13 @@ moreLinkArgs = ["native/fresh_int.o", "native/debug.o", "native/tags.o", "native
 
 # arc-7 S4: T1 program-term drift gate + concrete differential on the
 # assembled theorem object (RelSem/T1File.lean).
+# arc-9 S2 (scratch instrument): round-by-round T5 execution census.
+[[lean_exe]]
+name = "t5-probe"
+srcDir = "test"
+root = "Unit.T5ProbeMain"
+moreLinkArgs = ["native/fresh_int.o", "native/debug.o", "native/tags.o", "native/md5.o"]
+
 # arc-9 S2: the walker exercise file (kernel-checked contract table).
 [[lean_exe]]
 name = "app-walk-test"

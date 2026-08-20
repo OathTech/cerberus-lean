@@ -68,14 +68,23 @@ initialize appEqExt :
     addEntry := addLaw
   }
 
+syntax (name := app_eq) "app_eq" (ppSpace num)? : attr
+
 initialize registerBuiltinAttribute {
   name := `app_eq
   descr := "register an app-equation law for the app_walk tactic \
-    (DiscrTree-keyed on the conclusion's LHS)"
-  add := fun declName _stx kind => do
+    (DiscrTree-keyed on the conclusion's LHS); optional explicit \
+    priority (default: key depth)"
+  add := fun declName stx kind => do
     let keys ← MetaM.run' (appEqKeysOfDecl declName)
+    let prio := match stx with
+      | `(attr| app_eq $[$n:num]?) =>
+        match n with
+        | some n => n.getNat
+        | none => keys.size
+      | _ => keys.size
     ScopedEnvExtension.add appEqExt
-      { name := declName, keys := keys, prio := keys.size } kind
+      { name := declName, keys := keys, prio := prio } kind
 }
 
 /-- All laws matching an expression, most-specific-first (key-depth

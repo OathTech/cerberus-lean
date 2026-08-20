@@ -19,6 +19,7 @@ import RelSem.Tactics.AppEqAttr
 import RelSem.Tactics.AppWalk
 import RelSem.Kit.AppEq
 import RelSem.Kit.Eval
+import RelSem.Kit.Mem
 import RelSem.Kit.Round
 import RelSem.Kit.Loop
 import RelSem.Kit.Audit
@@ -40,6 +41,8 @@ import RelSem.T2AppEq
 import RelSem.T2
 import RelSem.T3AppEq
 import RelSem.T3
+import RelSem.T5Fixture
+import RelSem.T5Prefix
 import RelSem.T4Defs
 import RelSem.T4AppEq
 import RelSem.T4

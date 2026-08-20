@@ -178,7 +178,10 @@ partial def dischargeHyp (fuel : Nat) (h : MVarId) : MetaM Bool := do
 partial def walkOnce (goal : MVarId) (verbose : Bool := false) :
     TacticM (Option (Name × Option MVarId)) := do
   goal.withContext do
-  let tgt ← instantiateMVars (← goal.getType)
+  -- consumeMData: `have`-style tactics wrap the goal type in metadata,
+  -- which `Expr.eq?` does not see through (S2 finding: the walker
+  -- silently no-opped on goals under a `have`).
+  let tgt := (← instantiateMVars (← goal.getType)).consumeMData
   let some (α, lhs, rhs) := tgt.eq? | return none
   let lhs ← whnfCore lhs
   let cands ← appEqMatches lhs
@@ -236,7 +239,13 @@ partial def walkLoop (goal : MVarId) (budget : Nat) (verbose : Bool) :
     -- replaces one declaration PER ROUND (the arc-7 per-round lemma
     -- files), so per-round accounting is parity, not a budget bump;
     -- the total is bounded by the explicit round budget.
-    match ← Core.withCurrHeartbeats (walkOnce g verbose) with
+    let step? ← tryCatchRuntimeEx
+      (Core.withCurrHeartbeats (walkOnce g verbose))
+      (fun ex => do
+        if verbose then
+          logInfo m!"app_walk?: round aborted — {ex.toMessageData}"
+        pure none)
+    match step? with
     | some (n, some g') =>
       if verbose then logInfo m!"app_walk: {n}"
       g := g'
@@ -246,7 +255,8 @@ partial def walkLoop (goal : MVarId) (budget : Nat) (verbose : Bool) :
     | none =>
       -- stuck: try rfl, else stop with the goal as-is
       if (← attempt candidateBudget (do
-          let some (_, l, r) := (← instantiateMVars (← g.getType)).eq?
+          let some (_, l, r) :=
+              (← instantiateMVars (← g.getType)).consumeMData.eq?
             | failure
           unless (← isDefEq l r) do failure
           g.assign (← mkEqRefl l))).isSome then

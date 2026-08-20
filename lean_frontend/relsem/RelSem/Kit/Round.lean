@@ -36,6 +36,7 @@ import RelSem.Machine
 import RelSem.Cerberus
 import RelSem.Call
 import RelSem.Kit.Eval
+import RelSem.Kit.Mem
 import RelSem.Tactics.AppEqAttr
 
 set_option autoImplicit false
@@ -49,7 +50,7 @@ open RelSem RelSem.Cerb
 /-- The advancing dnms round, fully generic (P1-probed): one fuel
     tick; the step discovery, find, and advance enter as hypotheses;
     NOWAKEUP scheduling (the single-threaded shape — every slate run). -/
-@[app_eq]
+@[app_eq 1000]
 theorem dnms_round
     {tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)}
     {fuelS fuel : Nat} {acc : Fmap thread_id (List core_step2)}
@@ -275,5 +276,172 @@ theorem ars_kill_unfold (loc : CerbLocation.Loc) (tid aid : Nat)
               trace := ME_kill loc isDyn ptr :: dr_st.trace,
               core_state0 := update_thread_state tid (mk aid)
                 dr_st.core_state0 })) := rfl
+
+
+/-! ## The perform layer (composed request laws — computed RHS).
+    With these registered, an action-request round is fully mechanical
+    whenever its Kit/Mem block's side facts discharge mechanically. -/
+
+/-- `liftMem`, unfolded (explicit-equation form — the same kernel
+    deep-recursion consideration as `advance_action_unfold`). -/
+theorem liftMem_unfold {a : Type}
+    (m : ndM a String mem_error (mem_constraint CerbMem.IntegerValue)
+        CerbMem.MemState) :
+    (liftMem m : ndM a step_kind driver_error
+        (mem_constraint CerbMem.IntegerValue) driver_state)
+      = liftND (fun (dr_st : driver_state) => dr_st.layout_state)
+          (fun (dr_st : driver_state) (mem_st : CerbMem.MemState) =>
+            { dr_st with layout_state := mem_st })
+          (fun (err_str : String) => SK_misc ["memory", err_str])
+          (fun (mem_err : mem_error) => DErr_memory mem_err) m := rfl
+
+/-- The memory-lens crossing at an active head (the `liftMem` form of
+    `app_liftND_active`). -/
+@[app_eq]
+theorem app_liftMem_active {a : Type}
+    {m : ndM a String mem_error (mem_constraint CerbMem.IntegerValue)
+        CerbMem.MemState}
+    {σ : driver_state} {v : a} {mem0 mem' : CerbMem.MemState}
+    (hσ : σ.layout_state = mem0)
+    (h : app m mem0 = (NDactive v, mem')) :
+    app (liftMem m) σ = (NDactive v, { σ with layout_state := mem' }) := by
+  rw [liftMem_unfold]
+  exact app_liftND_active _ _ _ _ (hσ ▸ h)
+
+/-- The action-id draw (perform_action_request2's first stage),
+    computed generically. -/
+theorem aid_draw {σ : driver_state} :
+    app (liftCore_run (runS fresh_action_id')) σ
+      = (NDactive σ.core_run_state0.aid_supply,
+         { σ with core_run_state0 :=
+             { σ.core_run_state0 with
+               aid_supply := σ.core_run_state0.aid_supply + 1 } }) :=
+  liftCore_run_defined rfl
+
+/-- CREATE round's perform (aid draw + allocate through the memory
+    lens + trace/thread update). -/
+@[app_eq]
+theorem perform_create
+    {loc : CerbLocation.Loc} {tid : Nat}
+    {pref : prefix0} {align : CerbMem.IntegerValue} {ty : ctype}
+    {mk : Nat → CerbMem.PointerValue → thread_state}
+    {σ : driver_state} {ptr : CerbMem.PointerValue}
+    {mem' : CerbMem.MemState}
+    (hmem : app (CerbMem.allocateObject tid pref align ty none none)
+        σ.layout_state = (NDactive ptr, mem')) :
+    app (perform_action_request2 false loc tid
+          (CreateRequest2 pref align ty none none mk)) σ
+      = (NDactive (),
+         (fun σm => { σm with
+            trace := ME_allocate_object tid pref align ty none ptr
+              :: σm.trace,
+            core_state0 := update_thread_state tid
+              (mk σ.core_run_state0.aid_supply ptr) σm.core_state0 })
+         { σ with
+           core_run_state0 :=
+             { σ.core_run_state0 with
+               aid_supply := σ.core_run_state0.aid_supply + 1 },
+           layout_state := mem' }) := by
+  rw [perform_unfold]
+  refine (app_bind_active aid_draw).trans ?_
+  rw [ars_create_unfold]
+  refine (app_bind_active (app_liftMem_active ?_ hmem)).trans ?_
+  case _ => rfl
+  exact app_nd_update _ _
+
+/-- LOAD round's perform. -/
+@[app_eq]
+theorem perform_load
+    {loc : CerbLocation.Loc} {tid : Nat}
+    {mo : memory_order} {ty : ctype} {ptr : CerbMem.PointerValue}
+    {mk : Nat → CerbMem.Footprint → CerbMem.MemValue → thread_state}
+    {σ : driver_state} {fp : CerbMem.Footprint} {mval : CerbMem.MemValue}
+    {mem' : CerbMem.MemState} {prefv : Option String}
+    (hmem : app (CerbMem.loadM loc ty ptr) σ.layout_state
+        = (NDactive (fp, mval), mem'))
+    (hpref : app (CerbMem.prefixOfPointer ptr) mem'
+        = (NDactive prefv, mem')) :
+    app (perform_action_request2 false loc tid
+          (LoadRequest2 mo ty ptr mk)) σ
+      = (NDactive (),
+         (fun σm => { σm with
+            trace := ME_load loc prefv ty ptr mval :: σm.trace,
+            core_state0 := update_thread_state tid
+              (mk σ.core_run_state0.aid_supply fp mval) σm.core_state0 })
+         { σ with
+           core_run_state0 :=
+             { σ.core_run_state0 with
+               aid_supply := σ.core_run_state0.aid_supply + 1 },
+           layout_state := mem' }) := by
+  rw [perform_unfold]
+  refine (app_bind_active aid_draw).trans ?_
+  rw [ars_load_unfold]
+  refine (app_bind_active (app_liftMem_active ?_ hmem)).trans ?_
+  case _ => rfl
+  refine (app_bind_active (app_liftMem_active ?_ hpref)).trans ?_
+  case _ => rfl
+  exact app_nd_update _ _
+
+/-- STORE round's perform. -/
+@[app_eq]
+theorem perform_store
+    {loc : CerbLocation.Loc} {tid : Nat}
+    {mo : memory_order} {ty : ctype} {isLocking : Bool}
+    {ptr : CerbMem.PointerValue} {mval : CerbMem.MemValue}
+    {mk : Nat → CerbMem.Footprint → thread_state}
+    {σ : driver_state} {fp : CerbMem.Footprint}
+    {mem' : CerbMem.MemState} {prefv : Option String}
+    (hmem : app (CerbMem.storeM loc ty isLocking ptr mval) σ.layout_state
+        = (NDactive fp, mem'))
+    (hpref : app (CerbMem.prefixOfPointer ptr) mem'
+        = (NDactive prefv, mem')) :
+    app (perform_action_request2 false loc tid
+          (StoreRequest2 mo ty isLocking ptr mval mk)) σ
+      = (NDactive (),
+         (fun σm => { σm with
+            trace := ME_store loc prefv ty isLocking ptr mval :: σm.trace,
+            core_state0 := update_thread_state tid
+              (mk σ.core_run_state0.aid_supply fp) σm.core_state0 })
+         { σ with
+           core_run_state0 :=
+             { σ.core_run_state0 with
+               aid_supply := σ.core_run_state0.aid_supply + 1 },
+           layout_state := mem' }) := by
+  rw [perform_unfold]
+  refine (app_bind_active aid_draw).trans ?_
+  rw [ars_store_unfold]
+  refine (app_bind_active (app_liftMem_active ?_ hmem)).trans ?_
+  case _ => rfl
+  refine (app_bind_active (app_liftMem_active ?_ hpref)).trans ?_
+  case _ => rfl
+  exact app_nd_update _ _
+
+/-- KILL round's perform. -/
+@[app_eq]
+theorem perform_kill
+    {loc : CerbLocation.Loc} {tid : Nat}
+    {isDyn : Bool} {ptr : CerbMem.PointerValue}
+    {mk : Nat → thread_state}
+    {σ : driver_state} {mem' : CerbMem.MemState}
+    (hmem : app (CerbMem.killM loc isDyn ptr) σ.layout_state
+        = (NDactive (), mem')) :
+    app (perform_action_request2 false loc tid
+          (KillRequest2 isDyn ptr mk)) σ
+      = (NDactive (),
+         (fun σm => { σm with
+            trace := ME_kill loc isDyn ptr :: σm.trace,
+            core_state0 := update_thread_state tid
+              (mk σ.core_run_state0.aid_supply) σm.core_state0 })
+         { σ with
+           core_run_state0 :=
+             { σ.core_run_state0 with
+               aid_supply := σ.core_run_state0.aid_supply + 1 },
+           layout_state := mem' }) := by
+  rw [perform_unfold]
+  refine (app_bind_active aid_draw).trans ?_
+  rw [ars_kill_unfold]
+  refine (app_bind_active (app_liftMem_active ?_ hmem)).trans ?_
+  case _ => rfl
+  exact app_nd_update _ _
 
 end RelSem.Kit
