@@ -1,0 +1,42 @@
+#!/bin/bash
+# creduce wrapper — project-scoped shim for a sandbox-environment gap
+# (arc-10 S0 kit rot).
+#
+# The installed creduce 2.11.0 was configured against
+# /usr/lib/llvm-18/bin/clang-format, which does not exist on this box
+# (llvm-17's does). creduce's find_external_program falls back to a
+# PATH search for "clang-format" (creduce_utils.pm:33-43), so we
+# prepend a project-local shim dir containing a clang-format symlink
+# and exec the real creduce. No machine-global state is touched.
+#
+# Usage: ./scripts/creduce [creduce args...]
+# e.g.:  CSMITH_TEST_FILE=bug.c INTERESTING_REGEX='MISMATCH' \
+#          ./scripts/creduce ./scripts/creduce_interestingness.sh bug.c
+
+set -euo pipefail
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+command -v creduce >/dev/null 2>&1 || {
+    echo "Error: creduce not found" >&2; exit 1; }
+
+SHIM_DIR="$PROJECT_ROOT/.tmp/creduce-shim"
+if ! command -v clang-format >/dev/null 2>&1; then
+    CF=""
+    for cand in /usr/bin/clang-format-17 /usr/lib/llvm-17/bin/clang-format; do
+        [[ -x "$cand" ]] && { CF="$cand"; break; }
+    done
+    if [[ -n "$CF" ]]; then
+        mkdir -p "$SHIM_DIR"
+        ln -sf "$CF" "$SHIM_DIR/clang-format"
+        export PATH="$SHIM_DIR:$PATH"
+    else
+        # No clang-format anywhere: creduce would die on pass_indent's
+        # prereq check. Drop that one pass, loudly, rather than fail.
+        echo "creduce wrapper: WARNING — no clang-format found;" \
+             "running with --remove-pass pass_indent" >&2
+        exec creduce --remove-pass pass_indent "$@"
+    fi
+fi
+
+exec creduce "$@"
