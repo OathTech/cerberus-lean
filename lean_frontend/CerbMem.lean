@@ -1215,6 +1215,30 @@ def isInBounds (alloc : Allocation) (addr size : Int) : Bool :=
 
 /-! ### Allocation — impl_mem.ml:1288-1435 -/
 
+/-- readonly_status per init_opt — impl_mem.ml:1304-1333: uninitialized
+    allocations are IsWritable (:1306); pre-initialized ones (Core
+    create_readonly: string literals, const objects) are IsReadOnly with
+    the kind chosen by prefix (:1325-1332).
+    A NAMED helper (not an inline match in allocateObject, arc-10 S2):
+    the extra nested match on `initOpt`/`pref` inside allocateObject's
+    already match-heavy body pushed Lean's equation-lemma generation for
+    allocateObject past maxRecDepth, breaking the frozen
+    relsem/RelSem/T1AppEq.lean `simp only [CerbMem.allocateObject]`
+    proofs. Semantics identical to the inline arc-10 S1 form. -/
+def readonlyStatusForAlloc (pref : prefix0) (initOpt : Option MemValue) : ReadonlyStatus :=
+  match initOpt with
+  | none => .IsWritable
+  | some _ => .IsReadOnly (match pref with
+      | PrefStringLiteral _ _ => readonly_kind.ReadonlyStringLiteral
+      | PrefTemporaryLifetime _ _ => readonly_kind.ReadonlyTemporaryLifetime
+      | _ => readonly_kind.ReadonlyConstQualified)
+
+/-- Uninitialized allocations are writable (impl_mem.ml:1306); @[simp] so
+    the relsem closed-run proofs (full-`simp` steps) reduce it without
+    naming it. -/
+@[simp] theorem readonlyStatusForAlloc_none (pref : prefix0) :
+    readonlyStatusForAlloc pref none = .IsWritable := rfl
+
 def allocateObject (_ : Nat) (pref : prefix0) (alignIv : IntegerValue)
     (ty : ctype) (_ : Option Int) (initOpt : Option MemValue) : memM PointerValue :=
   match alignIv with
@@ -1227,18 +1251,11 @@ def allocateObject (_ : Nat) (pref : prefix0) (alignIv : IntegerValue)
     if alignedAddr == 0 then (NDkilled (Other (MerrOther "out of memory")), st)
     else
       let allocId := st.nextAllocId
-      -- readonly_status per init_opt — impl_mem.ml:1304-1333: uninitialized
-      -- allocations are IsWritable (:1306); pre-initialized ones (Core
-      -- create_readonly: string literals, const objects) are IsReadOnly with
-      -- the kind chosen by prefix (:1325-1332)
-      let roStatus : ReadonlyStatus := match initOpt with
-        | none => .IsWritable
-        | some _ => .IsReadOnly (match pref with
-            | PrefStringLiteral _ _ => readonly_kind.ReadonlyStringLiteral
-            | PrefTemporaryLifetime _ _ => readonly_kind.ReadonlyTemporaryLifetime
-            | _ => readonly_kind.ReadonlyConstQualified)
+      -- readonly_status per init_opt — impl_mem.ml:1304-1333 (see
+      -- readonlyStatusForAlloc above)
       let alloc : Allocation := { base := alignedAddr, size := size, ty := some ty,
-                                  isReadonly := roStatus, prefix_ := pref }
+                                  isReadonly := readonlyStatusForAlloc pref initOpt,
+                                  prefix_ := pref }
       let st' := { st with
         nextAllocId := allocId + 1, lastAddress := alignedAddr
         allocations := st.allocations.insert allocId alloc }
