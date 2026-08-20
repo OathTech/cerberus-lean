@@ -185,4 +185,54 @@ Baseline check: 0 regression(s), 0 improvement(s)
 BASELINE OK
 ```
 
-## S3b(b) — BYTES lane (filled in by the S3b bytes commit)
+## S3b(b) — BYTES lane (tests/bytes, 14 files)
+
+Oracle-INDEPENDENT micro-lane (survey §5 bytes row): the committed
+`.exec`/`.elab` files are upstream diff-prog.py records
+(tests/diff-prog.py:33-37, mode configs tests/bytes/exec.json /
+elab.json) — the reference is the RECORD, not the oracle binary (the
+oracle only produces the Cabs-JSON input, the pipeline's standing
+parse boundary). New `scripts/test_bytes.sh` (LADDER Tier A row 4c),
+fail-closed both directions (mismatch exits 1 — probed with a doctored
+expected, restored; zero-comparison vacuous pass refused).
+
+Leg semantics (full rationale in the script header):
+- EXEC leg, 9 `*.exec.c`: Lean batch `Specified(N)` rendered as
+  `return code: (N mod 256)` (POSIX exit-status byte, diff-prog.py's
+  process return code) and byte-compared to the committed `.exec`.
+- NEG leg, 5 non-exec `.c` (committed `.elab` = `return code: 1`):
+  the oracle front-end rejects these at DESUGAR level BEFORE the
+  Cabs-JSON boundary (verified: `--cabs-json` exits 1 with the same
+  constraint-violation text as the committed `.elab` body), so the
+  Lean pipeline is UNREACHABLE for them. The leg pins that boundary
+  (JSON emission for one of these files fails the lane loudly).
+  RESIDUAL (recorded, not a defect): the Lean desugar's own
+  byte-typing rejection rules are unprobed by this corpus — probing
+  them needs either an oracle parse-only mode or Lean-side C parsing,
+  both out of this arc's scope.
+
+First (and only) sweep — no fixes were needed; verbatim:
+
+```
+[MATCH] cast_0_byte.exec.c: return code: 0
+[MATCH] cast_256_byte.exec.c: return code: 0
+[MATCH] cast_byte_byte.exec.c: return code: 0
+[MATCH] cast_byte_uchar.exec.c: return code: 0
+[MATCH] cast_load_byte_pointer.exec.c: return code: 0
+[MATCH] cast_neg_128_byte.exec.c: return code: 128
+[MATCH] cast_neg_1_byte.exec.c: return code: 255
+[MATCH] function_return.exec.c: return code: 0
+[MATCH] memcpy.exec.c: return code: 0
+[NEG_OK] byte_is_not_char.c: front-end reject pinned (committed .elab rc 1)
+[NEG_OK] no_add.c: front-end reject pinned (committed .elab rc 1)
+[NEG_OK] no_shift_left.c: front-end reject pinned (committed .elab rc 1)
+[NEG_OK] no_shift_right.c: front-end reject pinned (committed .elab rc 1)
+[NEG_OK] only_unsigned_char.c: front-end reject pinned (committed .elab rc 1)
+
+SUMMARY: exec_match=9 neg_pinned=5 fail=0
+ALL AT COMMITTED EXPECTEDS
+```
+
+CerbMem byte handling (loads/stores through `[[cerb::byte]]` pointers,
+negative-value wrap, byte-wise memcpy) agrees with the upstream
+records on every probeable file; zero mismatches to classify.

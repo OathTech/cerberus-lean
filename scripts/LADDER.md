@@ -16,6 +16,7 @@ Order is the conventional run order; all are fail-closed gates.
 | 3 | `./scripts/test_exec.sh --check-baseline=scripts/exec_coverage_baseline.txt tests/coverage` | rc 0 (recorded DIFFs unchanged) |
 | 4 | `./scripts/test_exec.sh --check-baseline=scripts/exec_debug_baseline.txt tests/debug` | rc 0 |
 | 4b | `./scripts/test_exec.sh --check-baseline=scripts/exec_float_baseline.txt tests/float` | rc 0 (69/69 MATCH baseline, arc-10 S3b; oracle-indicting caveat in the baseline header) |
+| 4c | `./scripts/test_bytes.sh` | rc 0 — 9/9 exec files at the COMMITTED `.exec` expecteds (oracle-independent reference) + 5/5 front-end-reject pins (arc-10 S3b; script header has the leg semantics) |
 | 5 | `./scripts/test_libc_exec.sh` | all MATCH recorded baseline (`tests/libc_exec/baseline.txt`) |
 | 6 | `./scripts/test_multi_tu.sh` | all corpus entries pass |
 | 7 | `./scripts/test_parse.sh` | tests/minimal 100% |
