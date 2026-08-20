@@ -367,6 +367,188 @@ theorem app_liftND_active
     app (liftND get2 put1 li le m) st2 = (NDactive v, put1 st2 st1') :=
   app_liftFuel_active 999998 get2 put1 li le h
 
+/-- `liftAction`'s kill-reason mapping, named (the error component is
+    re-based through the lens; locations/UB payloads are untouched). -/
+def liftKill (le : E₁ → E₂) : kill_reason E₁ → kill_reason E₂
+  | Undef0 loc ubs => Undef0 loc ubs
+  | Error0 loc msg => Error0 loc msg
+  | Other e => Other (le e)
+
+/-- Kill propagation through the lens (fuel-generic): a killed head
+    surfaces as a killed head of the lifted computation, with the
+    reason mapped by `liftKill` and the state written back. -/
+theorem app_liftFuel_killed (fuel : Nat)
+    (get2 : S₂ → S₁) (put1 : S₂ → S₁ → S₂)
+    (li : I₁ → I₂) (le : E₁ → E₂)
+    {m : ndM A I₁ E₁ C S₁} {st2 : S₂} {st1' : S₁} {r : kill_reason E₁}
+    (h : app m (get2 st2) = (NDkilled r, st1')) :
+    app (liftND_lemFuel (fuel + 2) get2 put1 li le m) st2
+      = (NDkilled (liftKill le r), put1 st2 st1') := by
+  cases m with
+  | ND g =>
+    have hg : g (get2 st2) = (NDkilled r, st1') := h
+    cases r <;>
+      simp only [liftND_lemFuel, liftAction_lemFuel, app, hg, liftKill]
+
+/-- The default-fuel wrapper form. -/
+theorem app_liftND_killed
+    (get2 : S₂ → S₁) (put1 : S₂ → S₁ → S₂)
+    (li : I₁ → I₂) (le : E₁ → E₂)
+    {m : ndM A I₁ E₁ C S₁} {st2 : S₂} {st1' : S₁} {r : kill_reason E₁}
+    (h : app m (get2 st2) = (NDkilled r, st1')) :
+    app (liftND get2 put1 li le m) st2
+      = (NDkilled (liftKill le r), put1 st2 st1') :=
+  app_liftFuel_killed 999998 get2 put1 li le h
+
 end Lift
+
+/-! ## Coverage-by-need micro-lemmas (arc-7 S3, 2026-08-20).
+
+    EVIDENCE (tests/verify fixtures under
+    `cerberus-lean --trace-nodes [--call f --call-args …]`, branch-0
+    trace = the exhaustive set on this corpus): every T1-T5 execution —
+    main-startup mode and call-harness mode alike — crosses exactly ONE
+    ND-tree node: `NDactive` (`NDkilled` on T2's signed-overflow
+    instance). Two generated-code facts make this so: `nd_bind`
+    collapses ACTIVE heads inside one `app` unfolding
+    (Nondeterminism.lean:169, the NDactive case applies the
+    continuation's action to the post-state directly), and the
+    scheduler's `pick` on a SINGLETON candidate list builds an
+    `NDactive` node, not an `NDnd` (Nondeterminism.lean:257) — so a
+    deterministic single-threaded run is ONE `Step.active` (or
+    `Step.killed`) from `callConfig` to `done`.
+
+    CONSEQUENCE (Step coverage BY NEED, the charter's bespoke stance):
+    no new Step ARMS are needed for T1-T5 — the 7-rule relation already
+    covers every node kind, and these executions traverse exactly the
+    `active`/`killed` arms. What the slate proofs need instead is THE
+    APP-EQUATION LAYER: lemmas that compute the one big `app` unfolding
+    combinator by combinator (state-combinator equations, kill
+    propagation through bind and the lens, singleton scheduling, and
+    inversion at `done`). Those are below; each is characteristic
+    (one equation per combinator), per the escalation rule. -/
+
+section AppEquations
+variable {A B I E C S : Type}
+
+/-- `app`-computation on `nd_return`: an active head, state untouched. -/
+theorem app_nd_return (v : A) (st : S) :
+    app (nd_return v : ndM A I E C S) st = (NDactive v, st) := rfl
+
+/-- `app`-computation on `kill`: a killed head, state untouched. -/
+theorem app_kill (r : kill_reason E) (st : S) :
+    app (kill r : ndM A I E C S) st = (NDkilled r, st) := rfl
+
+/-- `app`-computation on `nd_get`: yields the state, state untouched. -/
+theorem app_nd_get (st : S) :
+    app (nd_get : ndM S I E C S) st = (NDactive st, st) := rfl
+
+/-- `app`-computation on `nd_put`: yields unit, replaces the state. -/
+theorem app_nd_put (st st0 : S) :
+    app (nd_put st : ndM Unit I E C S) st0 = (NDactive (), st) := rfl
+
+/-- `app`-computation on `nd_update`: yields unit, transforms the state. -/
+theorem app_nd_update (f : S → S) (st : S) :
+    app (nd_update f : ndM Unit I E C S) st = (NDactive (), f st) := rfl
+
+/-- `app`-computation on `nd_read`: yields a projection, state untouched. -/
+theorem app_nd_read (f : S → A) (st : S) :
+    app (nd_read f : ndM A I E C S) st = (NDactive (f st), st) := rfl
+
+/-- `app`-computation on `print_debug`: logically `nd_return ()` (the
+    debug printing is pure-invisible; unit eta). -/
+theorem app_print_debug (level : Nat) (doms : List domain)
+    (msg : Unit → String) (st : S) :
+    app (print_debug level doms msg : ndM Unit I E C S) st
+      = (NDactive (), st) := rfl
+
+/-- `nd_guard` at a satisfied guard: `nd_return ()`. -/
+theorem app_nd_guard_true (r : kill_reason E) (st : S) :
+    app (nd_guard true r : ndM Unit I E C S) st = (NDactive (), st) := rfl
+
+/-- `nd_guard` at a violated guard: `kill`. -/
+theorem app_nd_guard_false (r : kill_reason E) (st : S) :
+    app (nd_guard false r : ndM Unit I E C S) st = (NDkilled r, st) := rfl
+
+/-- SINGLETON SCHEDULING (the trace-evidence keystone): `pick` on a
+    one-candidate list is an ACTIVE node — no `NDnd`, no relational
+    branching. This is why single-threaded deterministic runs are
+    one-step: the driver loop's `pick (SK_misc ["driver 2"]) tid_steps`
+    always sees a singleton. -/
+theorem app_pick_singleton [Constraints C] [Lem_Show.Show I]
+    (i : I) (x : A) (st : S) :
+    app (pick i [x] : ndM A I E C S) st = (NDactive x, st) := rfl
+
+end AppEquations
+
+/-! ## Kill propagation through bind (the T2 UB-trace shape) -/
+
+section BindKilled
+variable {A B I E C S : Type}
+
+/-- A killed head propagates through a bind INSIDE one `app` unfolding
+    (nd_bind's NDkilled case) — the whole T2 signed-overflow run is one
+    `NDkilled` node because every bind on the path forwards the kill. -/
+theorem app_bindFuel_killed (fuel : Nat) {m : ndM A I E C S}
+    {f : A → ndM B I E C S} {st st' : S} {r : kill_reason E}
+    (h : app m st = (NDkilled r, st')) :
+    app (nd_bind_lemFuel (fuel + 1) m f) st = (NDkilled r, st') := by
+  cases m with
+  | ND g =>
+    have hg : g st = (NDkilled r, st') := h
+    simp only [nd_bind_lemFuel, app, hg]
+
+/-- The default-fuel wrapper form (the executable's own `nd_bind`). -/
+theorem app_bind_killed {m : ndM A I E C S} {f : A → ndM B I E C S}
+    {st st' : S} {r : kill_reason E}
+    (h : app m st = (NDkilled r, st')) :
+    app (nd_bind m f) st = (NDkilled r, st') :=
+  app_bindFuel_killed 999999 h
+
+/-- One killed step out of a bind with a killed head. -/
+theorem step_bind_killed {γ : CsSem C S} {m : ndM A I E C S}
+    {f : A → ndM B I E C S} {st st' : S} {r : kill_reason E}
+    (h : app m st = (NDkilled r, st')) :
+    Step γ (⟨.running (nd_bind m f), st⟩ : Config B I E C S)
+           ⟨.done (.killed r), st'⟩ :=
+  .killed (app_bind_killed h)
+
+end BindKilled
+
+/-! ## Inversion at `done` (the adequacy-direction reading: a terminal
+    step happened, therefore the `app` equation held) -/
+
+section DoneInversion
+variable {A I E C S : Type}
+
+/-- Any step into a `done` configuration is an `active`/`killed` arm
+    with the matching `app` equation. -/
+theorem step_done_inv {γ : CsSem C S} {m : ndM A I E C S}
+    {st st' : S} {o : Outcome A E}
+    (h : Step γ ⟨.running m, st⟩ ⟨.done o, st'⟩) :
+    (∃ v, o = .value v ∧ app m st = (NDactive v, st')) ∨
+    (∃ r, o = .killed r ∧ app m st = (NDkilled r, st')) := by
+  cases h with
+  | active happ => exact Or.inl ⟨_, rfl, happ⟩
+  | killed happ => exact Or.inr ⟨_, rfl, happ⟩
+
+/-- Value-terminal inversion: a step to `done (.value v)` IS the
+    `NDactive v` equation. -/
+theorem step_done_value_inv {γ : CsSem C S} {m : ndM A I E C S}
+    {st st' : S} {v : A}
+    (h : Step γ ⟨.running m, st⟩ ⟨.done (.value v), st'⟩) :
+    app m st = (NDactive v, st') := by
+  cases h with
+  | active happ => exact happ
+
+/-- Kill-terminal inversion. -/
+theorem step_done_killed_inv {γ : CsSem C S} {m : ndM A I E C S}
+    {st st' : S} {r : kill_reason E}
+    (h : Step γ ⟨.running m, st⟩ ⟨.done (.killed r), st'⟩) :
+    app m st = (NDkilled r, st') := by
+  cases h with
+  | killed happ => exact happ
+
+end DoneInversion
 
 end RelSem

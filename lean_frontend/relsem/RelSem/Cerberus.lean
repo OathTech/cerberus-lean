@@ -123,6 +123,30 @@ theorem liftMem_step_active {A : Type}
       (fun (err_str : String) => SK_misc ["memory", err_str])
       (fun (mem_err : mem_error) => DErr_memory mem_err) h)
 
+/-- MEMORY-OP KILL (arc-7 S3, the killed counterpart): a memory-model
+    action that KILLS (a memory UB/error verdict) is one driver-level
+    `killed` step through the same `liftMem` lens, the reason mapped by
+    `liftKill` (memory errors become `DErr_memory`; UB payloads pass
+    through untouched) and the memory state written back. -/
+theorem liftMem_step_killed {A : Type}
+    {m : ndM A String mem_error (mem_constraint CerbMem.IntegerValue)
+        CerbMem.MemState}
+    {dr : driver_state} {r : kill_reason mem_error}
+    {mem' : CerbMem.MemState}
+    (h : app m dr.layout_state = (NDkilled r, mem')) :
+    Step γexh
+      (⟨.running (liftMem m), dr⟩ :
+        Config A step_kind driver_error mem_iv_constraint driver_state)
+      ⟨.done (.killed
+          (liftKill (fun (mem_err : mem_error) => DErr_memory mem_err) r)),
+        { dr with layout_state := mem' }⟩ :=
+  Step.killed
+    (app_liftND_killed (fun (dr_st : driver_state) => dr_st.layout_state)
+      (fun (dr_st : driver_state) (mem_st : CerbMem.MemState) =>
+        { dr_st with layout_state := mem_st })
+      (fun (err_str : String) => SK_misc ["memory", err_str])
+      (fun (mem_err : mem_error) => DErr_memory mem_err) h)
+
 /-! ## The pure-expression step (Core_eval), fuel-erased -/
 
 /-- Pure-expression small step: `pe` reduces to `pe'` in the environment

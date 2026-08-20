@@ -134,6 +134,24 @@ def sorryExceptions : List Name := []
 #guard_msgs in #print axioms RelSem.Cerb.pexprStep_val
 /-- info: 'RelSem.Cerb.driver2_wrapper_defeq' depends on axioms: [DAEMON, propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Cerb.driver2_wrapper_defeq
+-- arc-7 S3: coverage-by-need micro-lemmas (RelSem/Machine.lean §
+-- "Coverage-by-need", RelSem/Cerberus.lean liftMem_step_killed). The
+-- generic app-equation layer is near-axiom-free (propext from the simp
+-- rewrites); app_pick_singleton quotes `pick` (whose compiled body
+-- carries lem's failwith fallback) so DAEMON enters through the
+-- substrate, exactly the standing disposition. Pinned exactly.
+/-- info: 'RelSem.step_done_inv' does not depend on any axioms -/
+#guard_msgs in #print axioms RelSem.step_done_inv
+/-- info: 'RelSem.app_bind_killed' depends on axioms: [propext] -/
+#guard_msgs in #print axioms RelSem.app_bind_killed
+/-- info: 'RelSem.app_liftND_killed' depends on axioms: [propext] -/
+#guard_msgs in #print axioms RelSem.app_liftND_killed
+/-- info: 'RelSem.app_pick_singleton' depends on axioms: [DAEMON, propext] -/
+#guard_msgs in #print axioms RelSem.app_pick_singleton
+/-- info: 'RelSem.Cerb.liftMem_step_active' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.liftMem_step_active
+/-- info: 'RelSem.Cerb.liftMem_step_killed' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.liftMem_step_killed
 -- arc-7 S3: the symbolic-argument harness (RelSem/Call.lean). Every
 -- theorem below MENTIONS the harness computation `callND` (drive-path
 -- generated substrate), so DAEMON and runEffectful enter through the
