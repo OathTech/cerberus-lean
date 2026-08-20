@@ -338,7 +338,9 @@ lean-native-obj:
 .PHONY: lean-build
 lean-build: lean-prelude-src lean-native-obj
 	@echo "[LAKE] building CerberusLean"
-	$(Q)cd lean_frontend && lake build
+	@# Arc-7 S5c (audit-1 F4): lake runs under the cgroup memory cap
+	@# (D7 rule; scripts/capped falls back loudly without systemd-run).
+	$(Q)cd lean_frontend && ../scripts/capped lake build
 
 .PHONY: clean-lean
 clean-lean:

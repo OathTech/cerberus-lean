@@ -51,6 +51,47 @@ fail() { echo -e "${RED}FAIL${NC} $1"; FAIL=$((FAIL + 1)); }
 pass() { PASS=$((PASS + 1)); $VERBOSE && echo -e "${GREEN}ok${NC}   $1"; }
 
 # ---------------------------------------------------------------------------
+# Pin-provenance check (arc-7 S5c, audit-1 F6): the pinned Core dumps the
+# theorems' program terms are transcribed from (tests/verify/*.core) must
+# be re-derivable from the .c fixtures via the oracle, byte-identically.
+# Fail-closed: a drifted pin means the theorem objects describe a program
+# the oracle no longer produces.
+# ---------------------------------------------------------------------------
+for cfile in "$VERIFY_DIR"/*.c; do
+    [[ -f "$cfile" ]] || continue
+    stem=$(basename "$cfile" .c)
+    pin="$VERIFY_DIR/$stem.core"
+    if [[ ! -f "$pin" ]]; then
+        fail "$stem: pinned Core dump missing ($pin)"
+        continue
+    fi
+    fresh="$WORK_DIR/$stem.fresh.core"
+    if ! run_cerberus --nolibc --pp=core "$cfile" > "$fresh" 2>"$WORK_DIR/$stem.pp.err"; then
+        fail "$stem: oracle --pp=core derivation failed"
+        continue
+    fi
+    if cmp -s "$fresh" "$pin"; then
+        pass "$stem: pin provenance (oracle --pp=core byte-identical)"
+    else
+        fail "$stem: pin provenance — tests/verify/$stem.core differs from a fresh oracle derivation"
+        diff "$pin" "$fresh" | head -10
+    fi
+done
+
+# ---------------------------------------------------------------------------
+# T4EnvHyp witness probe (arc-7 S5c, audit-1 F3): first-in-process
+# fresh-draw ordering + the three T4EnvHyp conjunct values + the t4 run
+# on the witnessed state (its own exe BY DESIGN — draw ordering is the
+# probe's subject; see test/Unit/T4EnvWitnessTest.lean).
+# ---------------------------------------------------------------------------
+(cd "$PROJECT_ROOT/lean_frontend" && "$SCRIPT_DIR/capped" lake build t4-env-witness 2>&1 | tail -2)
+if env LEAN_ABORT_ON_PANIC=1 "$PROJECT_ROOT/lean_frontend/.lake/build/bin/t4-env-witness"; then
+    pass "t4-env-witness: T4EnvHyp gate-witnessed (draw ordering + 3 conjuncts + t4 run)"
+else
+    fail "t4-env-witness: T4EnvHyp witness probe FAILED"
+fi
+
+# ---------------------------------------------------------------------------
 # Per-fixture: cabs-json + main-mode differential
 # ---------------------------------------------------------------------------
 declare -A JSON_OF

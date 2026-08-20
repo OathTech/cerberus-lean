@@ -117,7 +117,7 @@ EOF
     echo "#print axioms $name"
   done
 } > "$PROBE"
-OUT=$(cd lean_frontend && lake env lean .axiom-probe.lean 2>&1 | grep -v -i warning || true)
+OUT=$(cd lean_frontend && "$SCRIPT_DIR/capped" lake env lean .axiom-probe.lean 2>&1 | grep -v -i warning || true)
 rm -f "$PROBE"
 echo "$OUT"
 
@@ -164,7 +164,7 @@ cat > "$PROBE2" <<'EOF'
 import Driver
 #print axioms driver2
 EOF
-OUT2=$(cd lean_frontend && lake env lean .axiom-probe-driver2.lean 2>&1 | grep -v -i warning || true)
+OUT2=$(cd lean_frontend && "$SCRIPT_DIR/capped" lake env lean .axiom-probe-driver2.lean 2>&1 | grep -v -i warning || true)
 rm -f "$PROBE2"
 echo "$OUT2"
 if ! grep -q "'driver2' \(depends on axioms\|does not depend on any axioms\)" <<<"$OUT2"; then

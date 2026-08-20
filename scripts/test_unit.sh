@@ -93,7 +93,7 @@ total_fail=0
 for test in "${TESTS[@]}"; do
     echo
     echo "=== $test ==="
-    lake build "$test" 2>&1 | tail -3
+    "$SCRIPT_DIR/capped" lake build "$test" 2>&1 | tail -3
     if "./.lake/build/bin/$test"; then
         echo "${GREEN}✓ $test PASSED${NC}"
         total_pass=$((total_pass + 1))

@@ -21,4 +21,14 @@ if [[ "$MEM" == "none" ]]; then
   echo "capped: CERB_MEM_MAX=none — running UNCAPPED (explicit opt-out)" >&2
   exec "$@"
 fi
+# Portability fallback (arc-7 S5c, audit-1 F4): on hosts without
+# systemd-run (containers, non-systemd distros) warn LOUDLY and
+# proceed uncapped rather than break every routed script. The warning
+# is the tripwire: an uncapped run on the dev box means a broken
+# environment, not a policy change.
+if ! command -v systemd-run >/dev/null 2>&1; then
+  echo "capped: WARNING — systemd-run NOT FOUND; running UNCAPPED" >&2
+  echo "capped: WARNING — the D7 memory-cap rule is NOT enforced here" >&2
+  exec "$@"
+fi
 exec systemd-run --user --scope --quiet -p "MemoryMax=$MEM" -p "MemorySwapMax=0" "$@"

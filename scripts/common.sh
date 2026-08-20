@@ -77,7 +77,10 @@ build_cerberus() {
 build_lean() {
     require_lean
     echo "Building cerberus-lean (Lean)..."
-    (cd "$PROJECT_ROOT/lean_frontend" && lake build cerberus-lean 2>&1 | tail -3)
+    # Arc-7 S5c (audit-1 F4): ALL lake/lean invocations run under the
+    # cgroup memory cap (D7 rule; scripts/capped falls back loudly if
+    # systemd-run is absent).
+    (cd "$PROJECT_ROOT/lean_frontend" && "$SCRIPT_DIR/capped" lake build cerberus-lean 2>&1 | tail -3)
     if [[ ! -f "$CERBERUS_LEAN_BIN" ]]; then
         echo "Error: cerberus-lean build failed" >&2
         exit 1
