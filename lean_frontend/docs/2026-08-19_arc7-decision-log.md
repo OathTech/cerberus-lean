@@ -107,3 +107,14 @@ escalation rule applies: build the compositional equation-lemma chain
 through the staged combinators instead. S5a state: commit 1 (F8 sweep +
 totality gate over 5 more modules) landed pre-crash; T1Probe.lean
 untracked scratch preserved as evidence.
+
+**D8 [USER]** — Heartbeat-hacking doctrine (operator, near-verbatim):
+raising elaborator budgets "usually means we are brute forcing something
+that should be done more intelligently — typically we want something
+more compositional or clever to support scalability"; increases are
+"allowed only as a temporary measure, they are by-definition a defect
+(unless investigated and agreed with the user to be unavoidable)".
+Codified in container CLAUDE.md (audits now grep proof files for budget
+bumps; un-registered = finding). Relayed to the running S5a worker.
+Note: the crashed probe's maxHeartbeats-8000000 was this smell at
+maximum volume — the doctrine names what D7's rules already punished.
