@@ -70,3 +70,23 @@ exit theorem proved by the direct route would not exercise the bridge
 and does not satisfy the charter. T5's loop-invariant rule is a WP-level
 item (S4). Zero proof-fight escalations in S3 — the infra-first
 discipline held.
+
+**D6 [AGENT]** — S4 boundary passed (verified: 584-job build with the
+iris dep, unit 5/5, baselines rc 0, test_verify 23/23). THE ADEQUACY
+THEOREM proved, fallback NOT taken; iris-lean adds ZERO axioms to the
+pure coupling layer; statement-TCB held. Endorsed [AGENT:S4] calls:
+(a) StateInterp = full-driver-state ghost_var at driver-node granularity
+(probe-argued: one-step runs mean the interp must determine the app
+equation; gen_heap catalogued as the Q4-refinement fill when
+granularity refines; slot stays parameterized). (b) The inventory's
+bind/PureExec N/A findings + T5 re-priced as fuel-induction (D5's
+"WP-level loop rule" REVISED on trace evidence — [AGENT] revision of an
+[AGENT] call, both logged). (c) Escalation event 1: CerbMem exec-path
+totalization (9 partials) — an arc-4 G3 expansion item landed as
+infrastructure-first discipline; zero movement. S5 GATING ITEM
+[registered]: T1AppEq blocked on the arc-3 F8 call-graph escapees on
+T1's path (~8 fuel declares + regen — declares-only, the arc-3
+pattern); when landed, T1 UNCONDITIONAL falls out of t1_of_app_eq
+unchanged. Infra: iris-lean pinned 79dab15; deps/gitconfig gained its
+redirect; MIRROR NEEDED next network window (deps/mirrors lacks
+iris-lean.git).
