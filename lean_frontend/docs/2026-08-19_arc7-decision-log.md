@@ -57,3 +57,16 @@ two different failure shapes. (c) Bonus: arc-2's declared
 RunNDActiveSound seam is now PROVED — a standing IOU closed.
 Register: arc-4 G3 results-language update due at close (CerbND left
 the declared boundary).
+
+**D5 [AGENT]** — S3 boundary passed (verified: test_verify 23/23, unit
+4/4, minimal baseline rc 0). Endorsed: the caller-protocol discovery
+(int params by pointer — read off the real elaborated Core, not
+assumed); quantification as statement data; the app-equation finding
+(Step was node-kind-complete; coverage-by-need meant equations, not
+arms). RULING for S5 [AGENT, per the charter's exit criterion]: slate
+theorems go through the IRIS WP ROUTE (callHarnessAdequate_of_adequate);
+the direct route (…_of_app_active) is cross-check scaffolding only — an
+exit theorem proved by the direct route would not exercise the bridge
+and does not satisfy the charter. T5's loop-invariant rule is a WP-level
+item (S4). Zero proof-fight escalations in S3 — the infra-first
+discipline held.
