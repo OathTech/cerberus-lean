@@ -38,7 +38,7 @@ theorem wp_of_app_active {GF : BundledGFunctors} [CerbGpreS GF]
     (heq : app (callND tagDefs file1 fname args)
         (initial_driver_state file1 fs) = (NDactive r, st'))
     (hspec : spec r) :
-    (stateIs (hlc := .hasLC) (GF := GF)
+    (stateIs (GF := GF)
         (initial_driver_state file1 fs)) ⊢
       WP (MExpr.running (callND tagDefs file1 fname args) : DriveExpr)
         @ Stuckness.NotStuck ; ⊤

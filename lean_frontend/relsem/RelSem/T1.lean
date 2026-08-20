@@ -78,7 +78,7 @@ def T1AppEq : Prop :=
     postcondition. -/
 theorem t1_wp {GF : BundledGFunctors} [CerbGpreS GF] [CerbGS .hasLC GF]
     (happ : T1AppEq) (x : Int) (hx : intRange x) :
-    (stateIs (hlc := .hasLC) (GF := GF)
+    (stateIs (GF := GF)
         (initial_driver_state t1File t1Fs)) ⊢
       WP (MExpr.running (callND t1File.tagDefs t1File "id" [intValue x])
           : DriveExpr)

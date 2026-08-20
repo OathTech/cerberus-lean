@@ -1,12 +1,16 @@
 /-
-  RelSem.IrisAdequacy — arc-7 S4 (2026-08-20): THE ADEQUACY THEOREM.
+  RelSem.IrisAdequacy — arc-9 S2 (2026-08-20): THE ADEQUACY THEOREM,
+  reworked per the OwnP adoption (design
+  docs/2026-08-20_arc9-s1-design.md §1.1).
 
   Iris WP judgment on the harness configuration ⇒ ExecModel-level
-  behavior statement. The discharge chain (spike design, realized):
+  behavior statement. The discharge chain:
 
     Hwp : stateIs init ⊢ WP (running (callND …)) {{ o, ⌜φ o⌝ }}
-      ⇒ iris-lean `wp_adequacy_gen` (Iris/ProgramLogic/Adequacy.lean:302)
-        [ghost cell allocated + split at the initial state]
+      ⇒ iris-lean `ownP_adequacy` (OwnP.lean:64)
+        [the arc-7 ghost_var_alloc + Qp.half_add_half split + the
+         instance-defeq bridge are RETIRED — the allocation dance now
+         happens inside the library lemma]
       ⇒ `adequate .NotStuck … (fun v _ => φ v)`
       ⇒ per behavior b: `callOutcomes_sound` (S3) gives a DSteps trace,
         `steps_erased` (IrisLang) erases it to a thread-pool trace,
@@ -14,20 +18,16 @@
       ⇒ `CallAdequate … (fun b => φ b.1)`  — seqModel.Adequate at
         callConfig: THE ExecModel-shaped conclusion.
 
+  Leg 2 (Cerberus-specific) is UNCHANGED from arc-7.
+
   STATEMENT-TCB: the CONCLUSION mentions only ExecModel-level objects
   (`CallAdequate`/`CallHarnessAdequate` — runner outcomes); Iris
-  appears only in the discharged HYPOTHESIS. S5's slate theorems are
-  direct corollaries: `callHarnessAdequate_of_wp` below lands exactly
-  the CerbND-shaped headline form.
-
-  FALLBACK STATUS (charter, pre-approved restricted-Config fallback):
-  NOT TAKEN — no restriction on the harness configuration class was
-  needed; the theorem covers every `callConfig`.
+  appears only in the discharged HYPOTHESIS.
 
   House rules: no sorry, no new axioms. Under the in-build audit.
 -/
 
-import Iris.ProgramLogic.Adequacy
+import Iris.ProgramLogic.OwnP
 import RelSem.IrisRules
 
 set_option autoImplicit false
@@ -38,7 +38,7 @@ namespace Cerb
 open Iris Iris.ProgramLogic Iris.BI
 
 /-- THE ADEQUACY THEOREM: an Iris WP for the harness computation —
-    against the SC state interpretation, provable at ANY functor
+    against the OwnP state interpretation, provable at ANY functor
     bundle carrying the prerequisites — discharges into the
     model-parametric adequacy of the harness configuration. -/
 theorem callAdequate_of_wp {GF : BundledGFunctors} [CerbGpreS GF]
@@ -47,49 +47,21 @@ theorem callAdequate_of_wp {GF : BundledGFunctors} [CerbGpreS GF]
     (args : List value) (fs : CerbFS.FsState)
     (φ : DriveVal → Prop)
     (Hwp : ∀ [CerbGS .hasLC GF],
-      (stateIs (hlc := .hasLC) (GF := GF)
-          (initial_driver_state file1 fs)) ⊢
+      (stateIs (GF := GF) (initial_driver_state file1 fs)) ⊢
         WP (MExpr.running (callND tagDefs file1 fname args) : DriveExpr)
           @ Stuckness.NotStuck ; ⊤ {{ o, ⌜φ o⌝ }}) :
     CallAdequate tagDefs file1 fname args fs (fun b => φ b.1) := by
-  -- Leg 1: the iris-lean adequacy record for the coupled language.
+  -- Leg 1: the iris-lean OwnP adequacy record for the coupled language.
   have Had : adequate .NotStuck
       (MExpr.running (callND tagDefs file1 fname args) : DriveExpr)
-      (initial_driver_state file1 fs) (fun v _ => φ v) := by
-    refine wp_adequacy_gen (GF := GF) (hlc := .hasLC) .NotStuck _ _ φ ?_
-    intro Hinv κs
-    imod (ghost_var_alloc (initial_driver_state file1 fs)) with ⟨%γ, Hγ⟩
-    letI η : CerbGS .hasLC GF := ⟨γ⟩
-    have hsplit : ⊢@{IProp GF}
-        (γ ↪VAR (initial_driver_state file1 fs)) -∗
-          stateIs (hlc := .hasLC) (initial_driver_state file1 fs) ∗
-          stateIs (initial_driver_state file1 fs) := by
-      have h0 := ghost_var_split (GF := GF) γ
-        (initial_driver_state file1 fs) (1 : Qp).half (1 : Qp).half
-      rw [Qp.half_add_half] at h0
-      exact h0
-    icases hsplit $$ Hγ with ⟨Hσ, Hst⟩
-    iexists (fun σ _ => stateIs (hlc := .hasLC) (GF := GF) σ)
-    iexists (fun _ => iprop(True))
-    dsimp only
-    ihave Hwp' := (@Hwp η) $$ Hst
-    iframe Hσ
-    imodintro
-    -- The premise's WP is stated over `instIrisGSDrive η`; the goal's is
-    -- over the `IrisGS_gen.mk` term `wp_adequacy_gen` builds from the
-    -- witnesses. The two instances are definitionally equal field-by-field
-    -- (same invGS, same interpretation, 0 laters, True forkPost; the mono
-    -- proofs are irrelevant), so drop to a plain entailment and close by
-    -- defeq.
-    irevert Hwp'
-    istop
-    exact Iris.BI.entails_wand Iris.BI.BIBase.Entails.rfl
+      (initial_driver_state file1 fs) (fun v _ => φ v) :=
+    ownP_adequacy .NotStuck _ _ φ Hwp
   -- Leg 2: every model behavior is a relational trace, every relational
   -- trace erases to a thread-pool trace, and the adequacy record fires.
   intro b hb
   exact Had.adequate_result [] b.2 b.1 (steps_erased (callOutcomes_sound hb))
 
-/-- COROLLARY (the S5 discharge shape): a WP with the value-shaped
+/-- COROLLARY (the slate discharge shape): a WP with the value-shaped
     postcondition yields the CerbND-shaped HEADLINE
     (`CallHarnessAdequate`: fuel opsem only — the statement form of
     every slate theorem). -/
@@ -99,8 +71,7 @@ theorem callHarnessAdequate_of_wp {GF : BundledGFunctors} [CerbGpreS GF]
     (args : List value) (fs : CerbFS.FsState)
     (spec : driver_result → Prop)
     (Hwp : ∀ [CerbGS .hasLC GF],
-      (stateIs (hlc := .hasLC) (GF := GF)
-          (initial_driver_state file1 fs)) ⊢
+      (stateIs (GF := GF) (initial_driver_state file1 fs)) ⊢
         WP (MExpr.running (callND tagDefs file1 fname args) : DriveExpr)
           @ Stuckness.NotStuck ; ⊤
           {{ o, ⌜∃ r : driver_result, o = Outcome.value r ∧ spec r⌝ }}) :
@@ -131,8 +102,7 @@ theorem callUBFree_of_wp {GF : BundledGFunctors} [CerbGpreS GF]
     (args : List value) (fs : CerbFS.FsState)
     (spec : driver_result → Prop)
     (Hwp : ∀ [CerbGS .hasLC GF],
-      (stateIs (hlc := .hasLC) (GF := GF)
-          (initial_driver_state file1 fs)) ⊢
+      (stateIs (GF := GF) (initial_driver_state file1 fs)) ⊢
         WP (MExpr.running (callND tagDefs file1 fname args) : DriveExpr)
           @ Stuckness.NotStuck ; ⊤
           {{ o, ⌜∃ r : driver_result, o = Outcome.value r ∧ spec r⌝ }}) :

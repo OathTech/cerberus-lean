@@ -273,10 +273,10 @@ def sorryExceptions : List Name := []
 #guard_msgs in #print axioms RelSem.Cerb.instLanguageDrive
 /-- info: 'RelSem.Cerb.steps_erased' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Cerb.steps_erased
-/-- info: 'RelSem.Cerb.stateIs_agree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.stateIs_agree
-/-- info: 'RelSem.Cerb.stateIs_update' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.stateIs_update
+-- (arc-9 S2 re-baseline, OwnP adoption: `stateIs_agree`/`stateIs_update`
+-- are RETIRED — agreement/update now happen inside iris-lean's
+-- `ownP_eq`/`ownP_lift_step`; the pins below cover the reworked
+-- surface. Design: docs/2026-08-20_arc9-s1-design.md §1.1.)
 /-- info: 'RelSem.Cerb.instCerbGpreS_CerbS' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Cerb.instCerbGpreS_CerbS
 /-- info: 'RelSem.Cerb.wp_app_active' depends on axioms: [propext, Classical.choice, Quot.sound] -/
