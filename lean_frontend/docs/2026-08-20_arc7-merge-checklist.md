@@ -14,7 +14,14 @@ merge base at S5b), INCLUDING the 9 spike/relsem commits
 arc's history). Head at
 checklist time: `798431ebf` (D9); S5b close-prep commits follow it.
 Audit-disposition commits (2 adversarial audits, in progress) land
-before the merge ask is made.
+before the merge ask is made. [S5c note, 2026-08-20: LANDED — the
+audit-response commits (audit-1 F1–F6 + audit-2; DAEMON eviction+
+honesty, transitive statement gate + CerbND-shaped T?_ubFree +
+T?Outcomes, T4EnvHyp F3 fix + witness probe, pin-provenance check,
+capped routing, records) follow the close-prep commits; dispositions
+in the results doc's addendum. test_verify is now 29 checks (was 23:
++5 pin-provenance, +1 t4-env-witness). Step 4's "(23/23)" reads
+"29/29" accordingly.]
 
 Order (ff-only, exactly):
 

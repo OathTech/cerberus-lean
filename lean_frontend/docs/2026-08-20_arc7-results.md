@@ -43,8 +43,13 @@ read three process-global externs the kernel cannot see through — the
 tag-definitions global (`with_tagDefs`), the TU-digest global and the
 fresh-int supply (both via `runEffectful`). `T4EnvHyp` hypothesizes
 exactly the state the harness establishes (`CerbTags.tagDefs () =
-t4File.tagDefs`; digest `""`; first fresh draw `1048577`, the
-start-of-process value of native/fresh_int.c). This is the DECLARED
+t4File.tagDefs`; digest `""`; sym-supply seed `1048577` — [CORRECTED
+2026-08-20, S5c/audit-1 F3: this is the SECOND process draw, not the
+first: native/fresh_int.c is post-increment from 1<<20, so the first
+draw is 1048576, consumed by Main's startup floor probe; the seed
+drawn by `initial_core_run_state` is 1048577. Gate-witnessed
+first-in-process by test_verify's t4-env-witness probe]). This is the
+DECLARED
 census boundary made **visible in the statement** instead of hidden in
 an axiom cone: a reader sees precisely which environment facts the
 theorem assumes, and the concrete harness (Main `--call` under
@@ -55,8 +60,22 @@ fixtures (D9).
 Every slate cone is exactly `[DAEMON, propext, runEffectful,
 Classical.choice, Quot.sound]` — classical trio + the two declared
 LemLib boundary axioms — pinned exactly and build-enforced in
-relsem/RelSem/Audit.lean (sweep at close: 2119 declarations, 0 sorryAx
-exceptions). Proofs at DEFAULT elaborator budgets throughout (D8-clean
+relsem/RelSem/Audit.lean (sweep at close: 2142 declarations, 0 sorryAx
+exceptions). **DAEMON, honestly (S5c, audit-1 F1 — this qualifier is
+part of the headline):** `axiom DAEMON : ∀ {α : Type}, α` is, AS
+DECLARED, a logically INCONSISTENT axiom — `(DAEMON : Empty)` proves
+`False`, kernel-verified (addendum below, probe quoted verbatim). A
+cone carrying DAEMON is therefore kernel-checked only MODULO a
+meta-assumption the kernel cannot state: that the generated code uses
+DAEMON solely as an unreachable-inhabitant marker. The S5c kernel-walked
+census reduced the entry vectors from 10 leaves to 2 (LemLib `failwith`
+via 7 polymorphic generated callers incl. `pick`;
+`instInhabitedAction_request2`, a same-module fallback) — both
+STRUCTURAL until the C-tier lem redesign, which is now the TOP C-tier
+item (temporal boundary, maximum-priority mover;
+lembugs/2026-08-20_daemon-inconsistent-axiom.md). The DAEMON-free pins
+(runND_sound, the adequacy layer, etc.) carry no such qualifier.
+Proofs at DEFAULT elaborator budgets throughout (D8-clean
 by grep). T5 (bounded loop) is parked with pricing, which the charter
 explicitly allows (bar: "T5 proved-or-parked-with-pricing").
 
@@ -87,7 +106,10 @@ contributing ZERO axioms to the pure coupling layer.
    T1 landed first as the plumbing validator (S4/S5a); every statement
    Iris/RelSem-free by the MECHANIZED in-build statement gate
    (RelSem/Audit.lean, negative-tested in-build on t1_wp: "12 slate
-   statements fuel-opsem-clean"); axiom cones exactly classical trio +
+   statements fuel-opsem-clean" — DERIVED quote, whitespace-normalized;
+   the literal output had a five-space run from a wrapped string
+   literal, and the gate now reports 16 statements after the S5c
+   rebuild — see the addendum); axiom cones exactly classical trio +
    declared boundary, pinned exactly, build-enforced; D14 gate green
    throughout. T5 parked-with-pricing — the charter bar
    ("proved-or-parked-with-pricing") is met on its parked leg; pricing
@@ -225,8 +247,10 @@ contributing ZERO axioms to the pure coupling layer.
 ## Pins at close
 
 Single-repo arc: lem-lean UNTOUCHED (zero commits; zero model-.lem
-semantic changes — the arc's .lem edits are declares-only totality
-annotations + one token-neutral reindent, both cerberus-side). LemLib
+semantic changes — the arc's .lem edits are declares-only: totality
+annotations, `extra_import` declares (core_aux.lem CerbFunMapInstances
+at S2; seven more for CerbCoreInstances at S5c, audit-response), and
+one token-neutral reindent, all cerberus-side). LemLib
 pin: Lake manifest `bd7e2eb` = deps/lem-pinned `bd7e2eb` = opam pin —
 unchanged from the arc-6 close, verified at S5b. New pins this arc:
 iris `79dab154a` + Qq `38d591e77` + batteries `023ce7d62` (v4.32.0),
@@ -261,3 +285,260 @@ leanprover/lean4:v4.32.2.
 7. **Lem C-tier items** (lem-lean, next time the pin moves): expr-BEq
    sorried instance; column-0 continuation emission; DAEMON instance
    fallbacks (standing temporal-boundary mover).
+
+## Audit-dispositions addendum (S5c, 2026-08-20)
+
+Two adversarial audits ran at close-prep (success condition 6's open
+item). Their findings, as scoped to the S5c audit-response worker by
+the orchestrator: audit 1 (proof layer/process) filed F1–F6 with F1 a
+BLOCKER; audit 2 (records/instruments) filed the record-integrity and
+instrument findings below and re-ran the tests/ci sweep (closing the
+derived notes in success conditions 2 and 5). Per the orchestrator's
+brief, the audits' remaining probes — beyond the filed findings —
+surfaced nothing actionable (relayed summary, not a quote). Every
+finding is fixed-or-recorded below; validation for the batch: full
+Tier A + test_verify (29/29, now incl. the F3 witness + F6 provenance
+checks) + battery slice 00 + the ci sweep, all rc 0 at the S5c head.
+
+### Audit-1 F1 — THE DAEMON BLOCKER (resolved by eviction + honest rewording)
+
+**The finding (auditor, kernel-verified; S5c re-ran the probe):**
+`axiom DAEMON : ∀ {α : Type}, α` (LemLib.lean:26) is logically
+INCONSISTENT — every T1–T4 cone carries it, so "kernel-checked" was
+overclaiming. The daemon_false probe, S5c re-run 2026-08-20 (source +
+output verbatim; exit 0):
+
+```lean
+import LemLib
+theorem daemon_false : False := (DAEMON : Empty).elim
+#print axioms daemon_false
+```
+
+```
+'daemon_false' depends on axioms: [DAEMON]
+```
+
+**Diagnosis (S5c, kernel-walked leaf enumeration over the T1–T4 cones
+— constants whose type/value DIRECTLY references DAEMON; probe output
+verbatim, pre-eviction):**
+
+```
+cone size (constants visited): 4320
+DAEMON direct referencers in the union T1-T4 cone: 10
+LEAF failwith   [LemLib]
+    referenced-by (7): [foldl2._f, map2_._f, msum, pick, subst_pattern_val_lemFuel._f, subst_wait_stack._f, update_env_aux_lemFuel._f]
+LEAF instInhabitedAction_request2   [Core_reduction]
+    referenced-by (2): [instInhabitedAction_step, step_ctx]
+LEAF instInhabitedDlist   [Dlist]
+    referenced-by (1): [instInhabitedIo_state]
+LEAF instInhabitedExceptM   [Exception]
+    referenced-by (5): [call_function, one_step0, process_impl_proc, step_ctx, step_eval_pexpr_lemFuel._f]
+LEAF instInhabitedGeneric_expr   [Core]
+    referenced-by (1): [instInhabitedThread_state]
+LEAF instInhabitedGeneric_expr_   [Core]
+    referenced-by (1): [add_to_asw_lemFuel._f]
+LEAF instInhabitedGeneric_pattern   [Core]
+    referenced-by (1): [mk_tuple_pat]
+LEAF instInhabitedGeneric_pexpr   [Core]
+    referenced-by (2): [finalize, mk_stdcall]
+LEAF instInhabitedGeneric_pexpr_   [Core]
+    referenced-by (1): [pull_constrained_lemFuel._f]
+LEAF instInhabitedNdM   [Nondeterminism]
+    referenced-by (8): [advance_step, drive_fs_step, driver_globals, perform_action_request2, perform_memop_request2, print_eval_conv_aux_lemFuel._f, process_core_step2, vsnprintf]
+```
+
+Classification: 8 of the 9 Inhabited fallbacks EVICTABLE (real
+instances + import wiring); `failwith` STRUCTURAL (its value IS
+DAEMON; poly-typed sites need the C-tier lem redesign);
+`instInhabitedAction_request2` STRUCTURAL-this-arc (its use site
+`step_ctx` is in the SAME generated module — the extra_import
+mechanism cannot reach it).
+
+**Eviction executed:** lean_frontend/CerbCoreInstances.lean (real
+Inhabited instances for the generic Core AST families — honest total
+constructions; imports CerbInhabitedInstances, whose arc-2 real
+monadic instances were already in-tree but not wired into the
+use-site modules) + `declare {lean} extra_import` in seven .lem files
+(core_aux, core_eval, core_reduction, core_run_aux, driver,
+translation_aux, formatted — declares-only, arc-4 S1a mechanism) +
+regen + rebuild. Post-eviction probe (verbatim):
+
+```
+cone size (constants visited): 4324
+DAEMON direct referencers in the union T1-T4 cone: 2
+LEAF failwith   [LemLib]
+    referenced-by (7): [foldl2._f, map2_._f, msum, pick, subst_pattern_val_lemFuel._f, subst_wait_stack._f, update_env_aux_lemFuel._f]
+LEAF instInhabitedAction_request2   [Core_reduction]
+    referenced-by (2): [instInhabitedAction_step, step_ctx]
+```
+
+(per-theorem walk: each of T1/T2/T3/T4 and each `_ubFree` cone shows
+exactly `#[failwith, instInhabitedAction_request2]`). Zero movement:
+full Tier A + battery slice green post-regen.
+
+**Structural residue ⇒ the honest-rewording package (mandatory,
+executed):** DAEMON remains on every slate cone via `failwith`
+(reached through `pick`, the ND scheduler on every driver run), so the
+F1 target ("cones = [propext, runEffectful, Classical.choice,
+Quot.sound]") is NOT achievable this arc. Accordingly: (a) the
+headline above now carries the DAEMON-honesty qualifier as part of the
+claim; (b) RelSem/Audit.lean's boundary entry is the
+DAEMON-INCONSISTENCY TRIPWIRE (verbatim-class honesty + the leaf
+census + a build-failing DAEMON1-stays-un-allowlisted check); (c) the
+container CLAUDE.md doctrine bullet gained the same statement; (d) the
+lem-lane register item is filed with the consistent-design sketch
+(lembugs/2026-08-20_daemon-inconsistent-axiom.md: failwith→failwithI
+with threaded `[Inhabited]` binders + derived real instances; NO
+single axiom over all `Type` can be consistent for this purpose) as
+the TOP C-tier lem item — the temporal boundary's maximum-priority
+mover.
+
+**Final T1–T4 cones (unchanged by design — the pins are the record;
+Audit.lean asserts each of these EXACTLY, build-failing):**
+`T1/T1_direct/T1_ubFree/T1Outcomes`, `T2/…`, `T3/…`, `T4/…` all depend
+on axioms `[DAEMON, propext, runEffectful, Classical.choice,
+Quot.sound]` — now read under the honesty qualifier above.
+
+### Audit-1 F2 — statement-TCB wrapper hole (fixed, both halves)
+
+The gate's constant walk unfolded only one level and only T?-prefixed
+Prop defs, so `CallUBFree` (= `seqModel.UBFree` — a relational-layer
+object) sat INSIDE the T?_ubFree statements unseen. Fixed: (a) the
+gate walk is now TRANSITIVE through every RelSem-rooted Prop-family
+def, with a small positive allowlist of harness-surface/fixture-data
+names (fail-closed: new statement vocabulary must be allowlisted
+deliberately) and seqModel/DStep/ExecModel added to the banned exact
+list; (b) the in-tree instance is fixed — `CallHarnessUBFree`
+(RelSem/Call.lean) is the CerbND-shaped UB-freedom headline (no
+outcome the production runner enumerates is an `Undef0` kill), and
+all four `T?_ubFree` are RESTATED to conclude it (WP route intact:
+WP ⇒ `CallUBFree` ⇒ discharge `callHarnessUBFree_of_ubFree`; a
+direct-route twin `callHarnessUBFree_of_app_active` exists as
+cross-check per D5); (c) the wrapper-hole probe is a PERMANENT
+in-build negative test (`wrapperHole_thm` — the gate must surface
+`seqModel` THROUGH a Prop-def wrapper, else the build fails), joining
+the kept t1_wp negative test. Gate line at the S5c head (verbatim):
+
+```
+info: relsem/RelSem/Audit.lean:565:0: RelSem statement gate: 16 slate statements fuel-opsem-clean (negative tests: t1_wp and the wrapper-hole probe correctly rejected)
+```
+
+The leaf census itself is ENFORCED in-build (a census drift fails the
+build); at the S5c head (verbatim):
+
+```
+info: relsem/RelSem/Audit.lean:442:0: RelSem DAEMON census: 2 entry vectors on the slate cones, exactly as pinned (#[failwith, instInhabitedAction_request2])
+```
+
+### Audit-1 F3 — T4EnvHyp fresh-draw value (corrected + gate-witnessed)
+
+Truth established against native/fresh_int.c and by first-in-process
+probe: the counter is POST-increment from CERB_FRESH_BASE = 1<<20, so
+the FIRST process draw is 1048576 — consumed by Main's startup floor
+probe (Main.lean "Sym non-escape floor assertion") — and the
+sym-supply seed drawn by `initial_core_run_state` is the SECOND draw,
+1048577. The proof's value (1048577) was RIGHT; the docstrings'
+"first fresh draw / start-of-process value" description was WRONG and
+is corrected (RelSem/T4.lean header + T4EnvHyp docstring + the
+headline above). The transform's anon binders 1048577/1048578 are
+supply increments, not further draws (no "third draw" exists). The
+witness probe `t4-env-witness` (its own exe BY DESIGN — draw ordering
+is its subject; module-init evaluation of the AppEq modules' closed
+initial-state constants would shift the counter, so its import
+closure mirrors Main's) now runs inside test_verify; first run
+(verbatim):
+
+```
+ok   first process draw = 1048576 (got 1048576; post-increment from 1<<20)
+ok   tag global: sizeof(struct S) = 8
+ok   tag global: alignof(struct S) = 4
+ok   tag global: struct S member offsets a=+0, b=+4 (got (some 0), (some 4))
+ok   digest () = "" (got "")
+ok   initial_driver_state sym-supply seed = 1048577 (got 1048577; the SECOND process draw)
+ok   t4 memb(11) on the witnessed state = {Active Specified(11)}
+T4EnvWitnessTest: ALL PASSED
+```
+
+### Audit-1 F4 — capped compliance (fixed)
+
+`scripts/capped` gained a loud portability fallback (systemd-run
+absent ⇒ two WARNING lines, proceed uncapped); routed through capped:
+common.sh `build_lean`, test_unit.sh's per-exe `lake build`,
+check_theorem_axioms.sh's two `lake env lean` probes, and the
+Makefile `lean-build` target.
+
+### Audit-1 F5 — outcome-set companions (exported)
+
+`T?Outcomes : T?OutcomesStatement` (T4's under `T4EnvHyp`) are now
+named theorems: `runND (callND …) (initial_driver_state …) =
+[(Active (finalize … (drDone …)), [], drDone …)]` — "outcomes =
+{Specified(·)}" literally, as a set equation on the fuel opsem. All
+four are statement-gated (slate list 12 → 16) and Audit-pinned
+exactly.
+
+### Audit-1 F6 — pin provenance (gated)
+
+test_verify.sh now re-derives each tests/verify/*.core from its .c
+fixture via the oracle (`--nolibc --pp=core`) and byte-compares
+against the pin, fail-closed (5/5 byte-identical at install).
+
+### Audit-2 — record integrity + instruments (all dispositioned)
+
+* **The ci re-run (closes the derived notes in success conditions 2
+  and 5):** S5c re-ran the sweep at the audit-response head; outputs
+  verbatim:
+
+```
+Total:          250
+Cerberus parse: 128 ok, 122 failed
+Lean parse:     128 ok, 0 failed
+```
+
+  (`./scripts/test_parse.sh tests/ci`, rc 0; test_core.sh tests/ci
+  identical shape: `Cerberus --pp:  128 ok, 122 failed` /
+  `Lean parse:     128 ok, 0 failed`, rc 0), and
+
+```
+SUMMARY: total=242 match=88 ub_match=22 ub_diff=0 mismatch=4 fail=0 crash=0 lean_error=0 timeout=0 cerb_skip=110 cerb_inconsistent=18
+
+Checking against baseline: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/layer2/scripts/exec_ci_baseline.txt
+
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+```
+
+  (`./scripts/test_exec.sh --check-baseline=scripts/exec_ci_baseline.txt
+  tests/ci`, rc 0 — the arc-6 scoreboard state, zero movement through
+  the toolchain bump, the totalizations, AND the S5c instance
+  eviction).
+* **Statement-gate string-literal gap (audit-2 F2 class):** the
+  wrapped string literals produced a five-space run in the gate's
+  output; D9 and this doc quoted it single-spaced as if verbatim.
+  Fixed the literals (string gaps); the D9 quote is relabeled DERIVED
+  by a dated correction note appended to the decision log (history
+  unrewritten), and this doc's success-condition-1 quote is marked
+  DERIVED above. Pre-fix literal line, for the record (verbatim):
+
+```
+info: relsem/RelSem/Audit.lean:408:0: RelSem statement gate: 12 slate statements     fuel-opsem-clean (negative test: t1_wp correctly rejected)
+```
+
+* **D2's 5-vs-9 spike-commit count:** corrected by a dated appended
+  note in the decision log (9 commits, verified by `git log`).
+* **Arc-4 results stale boundary entry:** the CerbND "partial runND"
+  declared-boundary line now carries a one-line SUPERSEDED pointer to
+  this doc (arc-7 S2 totalization).
+* **"Pins at close" completeness:** the sentence now names the
+  extra_import declares among the arc's .lem edits (S2's
+  CerbFunMapInstances + S5c's seven CerbCoreInstances lines).
+
+### S5c validation at the audit-response head
+
+Full Tier A (unit 5/5 + all gates incl. totality "16 generated
+modules + hand-written CerbND, 0 allowlisted" and the D14/axiom-cone
+checks; minimal/coverage/debug baselines rc 0; libc_exec; multi_tu;
+parse ALL; core 106/106; elab recorded state; uri GATE PASS 16/16) +
+test_verify 29/29 (5 fixtures + 5 pin-provenance + 18 harness points
++ t4-env-witness) + chvalid_battery_00 `MATCH … 1354 points` + the
+tests/ci sweep above — every command rc 0, all through
+scripts/capped where lake/lean is invoked.

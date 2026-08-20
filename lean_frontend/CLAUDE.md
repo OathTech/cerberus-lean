@@ -88,6 +88,11 @@ names; negative-tested in-build).
 ./scripts/test_verify.sh   # tests/verify: T1-T5 fixture differentials —
                            # 5/5 main-mode vs the OCaml oracle + 18/18
                            # harness concrete points vs recorded specs
+                           # + (arc-7 S5c) 5/5 pin-provenance checks
+                           # (oracle --pp=core re-derivation byte-equal
+                           # to the pinned .core dumps) + the
+                           # t4-env-witness probe (T4EnvHyp conjuncts +
+                           # first-in-process fresh-draw ordering)
 ```
 
 ### Integration tests (C → JSON → Lean, per parser)
@@ -166,6 +171,7 @@ If you skip this step, Lake will compile the stale `generated/` copy and your ch
 | `CoreParser.lean` | Core text parser (Parsec) |
 | `CerbND.lean` | Exhaustive ND runner (+ runND1 single-trace, arc-5 `--first`); fuel-TOTALIZED in arc-7 S2 (runNDFuel + wrappers, loud panic at exhaustion) — no `partial` allowed (totality gate scans it; RelSem/RunND.lean states soundness against it) |
 | `CerbFunMapInstances.lean` | Arc-7 S2: real SetType instance for generic_fun_map_decl (evicts the lem backend's sorried fallback from initial_driver_state's cone) |
+| `CerbCoreInstances.lean` | Arc-7 S5c (audit-1 F1): real Inhabited instances for the generic Core AST families, evicting 8 of the 10 DAEMON fallback-instance entry vectors from the slate cones (extra_import'd into 7 generated modules; DAEMON is an inconsistent axiom — see lembugs/2026-08-20_daemon-inconsistent-axiom.md) |
 | `CerbStepInstances.lean` | OCaml-poly-eq-parity instances for core_step2 (arc 4) |
 | `CerbLocation.lean` | Source location type |
 | `CerberusFresh.lean` | Fresh symbol/digest generation |
@@ -212,7 +218,11 @@ Lem is pinned to `https://github.com/septract/lem-lean#mdd/lean-backend`.
 - `declare lean target_rep type t = \`Lean.Type\`` — maps lem type to Lean
 - `declare {lean} skip_instances type t` — suppresses all instance generation
 - `declare {lean} rename module = Name` — renames generated module
-- Inhabited fallback: DAEMON (axiom + @[implemented_by], computable, priority := low)
+- Inhabited fallback: DAEMON (axiom + @[implemented_by], computable, priority := low).
+  WARNING (arc-7 audit-1 F1): DAEMON as declared is an INCONSISTENT axiom
+  (`(DAEMON : Empty)` proves False) — cones carrying it are kernel-checked
+  only modulo the unreachable-marker meta-assumption; elimination is the
+  top C-tier lem item (lembugs/2026-08-20_daemon-inconsistent-axiom.md)
 - Simple enums in mutual blocks get `deriving BEq, Ord` (not sorry)
 
 **Bug reports:** `lean_frontend/lembugs/` — dated markdown files with reproducers.

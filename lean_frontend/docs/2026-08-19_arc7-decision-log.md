@@ -134,3 +134,21 @@ false-positive green until imported — recipe note). S5b = close-out:
 results, de-stale, twin audits, checklist. Lem-lean UNTOUCHED this arc
 (single-repo merge; pins stay bd7e2eb); iris-lean mirror needed next
 network window (D6).
+
+**S5c correction notes (2026-08-20, audit-response — appended per the
+never-rewrite-history rule) [AGENT:S5c]**
+- D2 correction (audit-2): D2 says "REBASE the 5 spike commits onto
+  arc/layer2"; the spike branch carried NINE commits, all nine rebased
+  (verified 2026-08-20: `git log --oneline mdd/cerberus-lean..spike/relsem`
+  lists 9). The results doc's "9 commits" figure is correct; D2's "5"
+  was a miscount at writing time. D2's text stands unedited above; this
+  note is the correction of record.
+- D9 quote relabeled DERIVED (audit-2 F2): D9's verification line
+  quotes the statement gate as `12 slate statements fuel-opsem-clean`.
+  The LITERAL build output at the time was
+  `RelSem statement gate: 12 slate statements     fuel-opsem-clean (negative test: t1_wp correctly rejected)`
+  (five-space run — a wrapped string literal in Audit.lean). Per the
+  verbatim-transcript rule the D9 quote is hereby relabeled DERIVED
+  (whitespace-normalized), not verbatim. S5c fixed the literal (string
+  gaps); the gate line as of the S5c rebuild reads, verbatim:
+  `RelSem statement gate: 16 slate statements fuel-opsem-clean (negative tests: t1_wp and the wrapper-hole probe correctly rejected)`.

@@ -105,6 +105,9 @@ are covered only by this list:
   unqualifyAndUnatomic, stringFromMemValue) and panic! sites (mirroring
   OCaml failwith/assert-false, each cited at the site);
 * `CerbND.lean` — partial `runND` (the exhaustive driver loop);
+  [SUPERSEDED 2026-08-20, arc 7: `runND` was fuel-TOTALIZED (arc-7 S2)
+  and CerbND joined the totality gate — this boundary entry's CerbND
+  leg is discharged; see docs/2026-08-20_arc7-results.md.]
 * `CerbTags.lean` — the `with_tagDefs` **axiom** (@[implemented_by] on
   the C-side set/restore extent, native/tags.c; the axiom form is what
   survives DCE — arc-4 S1r). It sits in the Mini_pipeline cone, which
