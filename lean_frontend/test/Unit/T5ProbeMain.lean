@@ -39,6 +39,38 @@ def stepKindStr : core_step2 → String
   | Step_error2 e => s!"ERR[{e}]"
   | _ => "misc"
 
+def showVal : value → String
+  | Vloaded (LVspecified (OVinteger (CerbMem.IntegerValue.IV _ v))) => s!"loaded({v})"
+  | Vloaded (LVunspecified _) => "loaded(unspec)"
+  | Vobject (OVpointer (CerbMem.PointerValue.PV _ (CerbMem.PointerValueBase.PVconcrete _ a))) => s!"ptr@{a}"
+  | Vobject (OVinteger (CerbMem.IntegerValue.IV _ v)) => s!"int({v})"
+  | Vunit => "unit"
+  | Vtrue => "true"
+  | Vfalse => "false"
+  | _ => "?"
+
+def dumpHead (tag : String) (σ : driver_state) : IO Unit := do
+  let th := (Lem_List.lookupBy (fun x y => x == y) 0 σ.core_state0.thread_states).get!.2
+  let rs := σ.core_run_state0
+  IO.println s!"{tag}: aid={rs.aid_supply} sym={rs.sym_supply} eid={rs.excluded_supply} tid={rs.tid_supply} ctr={σ.dr_step_counter} tr={σ.trace.length}"
+  IO.println s!"{tag}: cur_loc={CerbLocation.stringFromLocation th.current_loc}"
+  let e := th.env.head!
+  let dom := setToList (fmapDomainBy (fun (s1 s2 : sym) => Lem_Basic_classes.ordCompare s1 s2) e)
+  for k in dom do
+    let v := (fmapLookupBy (fun (s1 s2 : sym) => Lem_Basic_classes.ordCompare s1 s2) k e).get!
+    IO.println s!"{tag}:   {show_symbol k} := {showVal v}"
+  let showByte : CerbMem.AbsByte → String := fun b =>
+    match b.value with
+    | some u => toString u
+    | none => "~"
+  IO.println s!"{tag}: bytemap={(σ.layout_state.bytemap.toList.map (fun (a, b) => s!"{a}:{showByte b}"))}"
+  IO.println s!"{tag}: allocs={(σ.layout_state.allocations.toList.map (fun (i, al) => s!"{i}@{al.base}+{al.size}"))} dead={σ.layout_state.deadAllocations} nextAlloc={σ.layout_state.nextAllocId} lastAddr={σ.layout_state.lastAddress}"
+  -- insertion order (newest first): the recursive env-family chain
+  let elems := (fmapElements e).take 32
+  IO.println s!"{tag}: newest-first:"
+  for (k, v) in elems do
+    IO.println s!"{tag}:   << {show_symbol k} := {showVal v}"
+
 def main : IO Unit := do
   let n : Int := 2
   let fs := CerbFS.fs_initial_state
@@ -75,6 +107,11 @@ def main : IO Unit := do
        current_loc := CerbLocation.other "RelSem.callND",
        exec_loc := ELoc_normal [(fsym, CerbLocation.other "RelSem.callND")],
        env := env', current_proc_opt := some fsym } : thread_state)) σ7
+  -- labeled-continuation map structure (proc syms + label syms)
+  for (psym, lcs) in fmapElements σ8.core_run_state0.labeled do
+    IO.println s!"labeled proc {show_symbol psym}:"
+    for (lsym, (params, _body)) in fmapElements lcs do
+      IO.println s!"  label {show_symbol lsym} params={params.map (fun (s', bty) => show_symbol s')}"
   IO.println s!"=== post-prefix: aid={σ8.core_run_state0.aid_supply} ctr={σ8.dr_step_counter} nextAlloc={σ8.layout_state.nextAllocId} lastAddr={σ8.layout_state.lastAddress}"
   IO.println s!"bound: {bound.length} binding(s)"
   for (s', v) in bound do
@@ -85,6 +122,7 @@ def main : IO Unit := do
   let mut done := false
   let mut heads : Array driver_state := #[]
   while !done && round < 250 do
+    if round == 21 then dumpHead "postR20" σ
     let th_info :=
       match Lem_List.lookupBy (fun x y => x == y) 0 σ.core_state0.thread_states with
       | some z => z
@@ -99,8 +137,12 @@ def main : IO Unit := do
       let (a, σ') := RelSem.app (advance_step t5File.tagDefs 0 step1) σ
       match a with
       | NDactive NOWAKEUP =>
-        let aidD := σ'.core_run_state0.aid_supply - σ.core_run_state0.aid_supply
-        let _ := aidD
+        let rs := σ'.core_run_state0
+        let teStr :=
+          match σ'.trace.head? with
+          | some te => if σ'.trace.length > σ.trace.length then s!" +{showTE te}" else ""
+          | none => ""
+        IO.println s!"R{round}: {stepKindStr step1} ctr={σ'.dr_step_counter} aid={rs.aid_supply} sym={rs.sym_supply} eid={rs.excluded_supply} tr={σ'.trace.length}{teStr}"
         if (match step1 with
             | Step_with_runstate2 (RSK_eval dbg) _ => dbg == "Erun"
             | _ => false) then
@@ -111,6 +153,9 @@ def main : IO Unit := do
   -- loop-head comparisons (post-Erun states)
   IO.println s!"=== end: rounds={round} aid={σ.core_run_state0.aid_supply} ctr={σ.dr_step_counter}"
   IO.println s!"Erun-post states captured: {heads.size}"
+  dumpHead "postpfx" σ8
+  for hi in [0:heads.size] do
+    dumpHead s!"head{hi}" heads[hi]!
   if h2 : heads.size ≥ 2 then
     let a := heads[0]!
     let b := heads[1]!

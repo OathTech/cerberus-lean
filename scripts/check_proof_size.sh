@@ -51,7 +51,7 @@ else
 fi
 
 # --- app_walk? ban in committed proofs -------------------------------
-dbg_hits=$(grep -rnE '^[^-]*\bapp_walk\?' "$RELSEM"/*.lean "$RELSEM"/Kit/*.lean 2>/dev/null \
+dbg_hits=$(grep -rnE '^[^-]*\bapp_walk(_norm)?\?' "$RELSEM"/*.lean "$RELSEM"/Kit/*.lean 2>/dev/null \
     | grep -v 'Tactics/' || true)
 if [[ -n "$dbg_hits" ]]; then
     echo "check_proof_size: FAIL — app_walk? (debug-only) in committed files:"

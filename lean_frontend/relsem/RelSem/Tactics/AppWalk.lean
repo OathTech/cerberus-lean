@@ -92,13 +92,84 @@ partial def normSpine : Nat → Expr → MetaM Expr
       | _ => return e
     | _ => return e
 
+/-! ## Walker v2 (arc-9 S3, design §11.3): type-aware selective state
+    normalization. ADDITIVE/OPT-IN: `app_walk` behavior is untouched;
+    `app_walk_norm` runs the same loop with `WalkCfg.norm := true`. -/
+
+/-- The walker configuration. v1 (`app_walk`) is the default; v2
+    (`app_walk_norm`) sets `norm := true` and loads the state-atom set. -/
+structure WalkCfg where
+  norm : Bool := false
+  atoms : NameSet := {}
+  depth : Nat := 64
+  deriving Inhabited
+
+/-- Type heads whose inhabitants the v2 normalizer never touches
+    (map-value OPACITY, F-T5-2: whnf of map inserts materializes
+    well-formedness-proof-carrying internal tree literals). Terms of
+    these types ride in their DELIVERED spelling — for St-v2 states
+    that is the `fmapAddBy`/`insert` chain form. -/
+def opaqueTypeHeads : List Name :=
+  [`Fmap, `Std.TreeMap, `Std.DTreeMap, `Std.TreeMap.Raw,
+   `Std.DTreeMap.Raw, `Std.DTreeMap.Internal.Impl]
+
+/-- v2 state normalizer (design §11.3): constructor-spine
+    normalization with two opacity rules — (a) subterms of opaque map
+    types are returned AS DELIVERED; (b) `@[app_state_atom]`-tagged
+    constants are never delta-unfolded (fixture-name preservation).
+    A subterm whose whnf is not constructor-headed is returned in its
+    ORIGINAL spelling (progress only through constructors — no
+    half-reduced junk, the F-T5-1 lesson). -/
+partial def normStateV2 (atoms : NameSet) : Nat → Expr → MetaM Expr
+  | 0, e => return e
+  | d + 1, e => do
+    -- (a) type-aware opacity
+    let ty ← instantiateMVars (← inferType e)
+    if let .const tn _ := ty.getAppFn then
+      if opaqueTypeHeads.contains tn then return e
+    -- (b) state-atom head opacity
+    if let .const fn _ := e.getAppFn then
+      if atoms.contains fn then return e
+    let e' ← whnf e
+    match e'.getAppFn with
+    | .const n _ =>
+      match (← getEnv).find? n with
+      | some (.ctorInfo _) =>
+        let args ← e'.getAppArgs.mapM fun a => do
+          if (← instantiateMVars (← inferType a)).isSort then
+            pure a
+          else
+            normStateV2 atoms d a
+        return mkAppN e'.getAppFn args
+      | _ =>
+        -- whnf stuck at a non-constructor head: keep the original
+        -- spelling (name preservation over half-reduction)
+        if atoms.contains n then return e
+        else if e'.getAppFn == e.getAppFn then return e'
+        else return e
+    | _ => return e
+
+/-- Normalize ONLY the state argument of an `app C σ`-shaped
+    continuation RHS (never the computation — whnf'ing `app C σ`
+    would run the whole remaining computation). -/
+def normAppState (cfg : WalkCfg) (e : Expr) : MetaM Expr := do
+  unless cfg.norm do return e
+  if let .const n _ := e.getAppFn then
+    if n == `RelSem.app then
+      let args := e.getAppArgs
+      if args.size > 0 then
+        let i := args.size - 1
+        let st' ← normStateV2 cfg.atoms cfg.depth args[i]!
+        return mkAppN e.getAppFn (args.set! i st')
+  return e
+
 /-- Discharge one side hypothesis of a candidate law, mechanically:
     computed-value assignment (normalize-and-assign for a bare-mvar
     RHS), `assumption`, then (for app-equation hyps) a one-shot
     registered law whose own hypotheses discharge recursively, then
     `rfl` (definitional unfolding — the T1-round move). Anything else:
     failure (the law does not apply). -/
-partial def dischargeHyp (fuel : Nat) (h : MVarId) : MetaM Bool := do
+partial def dischargeHyp (cfg : WalkCfg) (fuel : Nat) (h : MVarId) : MetaM Bool := do
   if (← h.isAssigned) then return true
   let ty ← instantiateMVars (← h.getType)
   -- (0) computed-value hypothesis: `lhs = ?m` with a bare unassigned
@@ -108,7 +179,8 @@ partial def dischargeHyp (fuel : Nat) (h : MVarId) : MetaM Bool := do
      if !(← rhs.mvarId!.isAssigned) then
       let st ← saveState
       match ← attempt candidateBudget (do
-          let v ← normSpine 4 lhs
+          let v ← if cfg.norm then normStateV2 cfg.atoms cfg.depth lhs
+                  else normSpine 4 lhs
           if (← isDefEq rhs v) then
             h.assign (← mkEqRefl lhs)
             return true
@@ -135,7 +207,7 @@ partial def dischargeHyp (fuel : Nat) (h : MVarId) : MetaM Bool := do
           if a.isMVar then
             if !(← a.mvarId!.isAssigned) then
               if (← isProp (← inferType a)) then
-                unless (← dischargeHyp fuel a.mvarId!) do
+                unless (← dischargeHyp cfg fuel a.mvarId!) do
                   ok := false
                   break
         unless ok do return false
@@ -175,7 +247,8 @@ partial def dischargeHyp (fuel : Nat) (h : MVarId) : MetaM Bool := do
 /-- One walker round on goal `app C σ = R`: try registered laws
     most-specific-first; on success return the fired law's name and
     the continuation goal (none when the goal is CLOSED terminally). -/
-partial def walkOnce (goal : MVarId) (verbose : Bool := false) :
+partial def walkOnce (cfg : WalkCfg) (goal : MVarId)
+    (verbose : Bool := false) :
     TacticM (Option (Name × Option MVarId)) := do
   goal.withContext do
   -- consumeMData: `have`-style tactics wrap the goal type in metadata,
@@ -201,7 +274,7 @@ partial def walkOnce (goal : MVarId) (verbose : Bool := false) :
         if a.isMVar then
          if !(← a.mvarId!.isAssigned) then
           if (← isProp (← inferType a)) then
-            unless (← dischargeHyp 4 a.mvarId!) do
+            unless (← dischargeHyp cfg 4 a.mvarId!) do
               if verbose then
                 logInfo m!"app_walk?: {law.name} rejected — side \
                   hypothesis not mechanical: \
@@ -216,8 +289,11 @@ partial def walkOnce (goal : MVarId) (verbose : Bool := false) :
       if (← withReducible <| isDefEq lemRhs rhs) then
         goal.assign (← mkEqTrans proof (← mkEqRefl rhs))
         return some (law.name, none)
-      -- chain: Eq.trans into a continuation goal
-      let restTy ← mkEq lemRhs rhs
+      -- chain: Eq.trans into a continuation goal. Under v2 the
+      -- continuation's LHS state is replaced by its normalized
+      -- (defeq) image — `mkEqTrans` performs the defeq bridge.
+      let lemRhsN ← normAppState cfg lemRhs
+      let restTy ← mkEq lemRhsN rhs
       let rest ← mkFreshExprMVar restTy (userName := `walk)
       goal.assign (← mkEqTrans proof rest)
       return some (law.name, some rest.mvarId!))
@@ -230,7 +306,8 @@ partial def walkOnce (goal : MVarId) (verbose : Bool := false) :
 
 /-- The walk loop: up to `budget` rounds, then (if the goal survives)
     try `rfl`. Reports the trace when `verbose`. -/
-partial def walkLoop (goal : MVarId) (budget : Nat) (verbose : Bool) :
+partial def walkLoop (cfg : WalkCfg) (goal : MVarId) (budget : Nat)
+    (verbose : Bool) :
     TacticM (Option MVarId) := do
   let mut g := goal
   for _ in [0:budget] do
@@ -240,7 +317,7 @@ partial def walkLoop (goal : MVarId) (budget : Nat) (verbose : Bool) :
     -- files), so per-round accounting is parity, not a budget bump;
     -- the total is bounded by the explicit round budget.
     let step? ← tryCatchRuntimeEx
-      (Core.withCurrHeartbeats (walkOnce g verbose))
+      (Core.withCurrHeartbeats (walkOnce cfg g verbose))
       (fun ex => do
         if verbose then
           logInfo m!"app_walk?: round aborted — {ex.toMessageData}"
@@ -272,19 +349,47 @@ elab_rules : tactic
   | `(tactic| app_walk $[$n:num]?) => do
     let budget := match n with | some n => n.getNat | none => 64
     let goal ← getMainGoal
-    match ← walkLoop goal budget false with
+    match ← walkLoop {} goal budget false with
+    | some g => replaceMainGoal [g]
+    | none => replaceMainGoal []
+
+/-- `app_walk_norm` / `app_walk_norm n` — the v2 walk (design §11.3):
+    the same loop with type-aware selective state normalization
+    (opt-in; `app_walk` is untouched). -/
+syntax (name := appWalkNorm) "app_walk_norm" (ppSpace num)? : tactic
+
+elab_rules : tactic
+  | `(tactic| app_walk_norm $[$n:num]?) => do
+    let budget := match n with | some n => n.getNat | none => 64
+    let goal ← getMainGoal
+    let cfg : WalkCfg := { norm := true, atoms := (← stateAtoms) }
+    match ← walkLoop cfg goal budget false with
     | some g => replaceMainGoal [g]
     | none => replaceMainGoal []
 
 /-- `app_walk?` — one reported step (debug only; banned in committed
-    proofs). -/
+    proofs). Reports through the v2 config when the walk would (the
+    debug lane mirrors `app_walk`; use `app_walk_norm?` for v2). -/
 syntax (name := appWalkDebug) "app_walk?" (ppSpace num)? : tactic
 
 elab_rules : tactic
   | `(tactic| app_walk? $[$n:num]?) => do
     let budget := match n with | some n => n.getNat | none => 1
     let goal ← getMainGoal
-    match ← walkLoop goal budget true with
+    match ← walkLoop {} goal budget true with
+    | some g => replaceMainGoal [g]
+    | none => replaceMainGoal []
+
+/-- `app_walk_norm?` — v2 debug lane (banned in committed proofs,
+    same as `app_walk?`). -/
+syntax (name := appWalkNormDebug) "app_walk_norm?" (ppSpace num)? : tactic
+
+elab_rules : tactic
+  | `(tactic| app_walk_norm? $[$n:num]?) => do
+    let budget := match n with | some n => n.getNat | none => 1
+    let goal ← getMainGoal
+    let cfg : WalkCfg := { norm := true, atoms := (← stateAtoms) }
+    match ← walkLoop cfg goal budget true with
     | some g => replaceMainGoal [g]
     | none => replaceMainGoal []
 

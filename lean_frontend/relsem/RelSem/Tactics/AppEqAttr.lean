@@ -94,4 +94,33 @@ def appEqMatches (e : Expr) : MetaM (Array AppEqLaw) := do
   let hits ← laws.tree.getMatch e
   return hits.qsort (fun a b => a.prio > b.prio)
 
+/-! ## Walker v2 (arc-9 S3, design §11.3): the state-atom opacity set.
+
+    `@[app_state_atom]` marks a constant the v2 state normalizer must
+    treat as OPAQUE (never delta-unfold): fixture files tag their own
+    pinned defs (t5File, memD3, …) — the attribute lives here, the
+    names stay fixture-side (the §4 fixture-free grep-gate on Kit/
+    Tactics is unaffected). -/
+
+initialize appStateAtomExt :
+    SimpleScopedEnvExtension Name NameSet ←
+  registerSimpleScopedEnvExtension {
+    initial := {}
+    addEntry := fun s n => s.insert n
+  }
+
+syntax (name := app_state_atom) "app_state_atom" : attr
+
+initialize registerBuiltinAttribute {
+  name := `app_state_atom
+  descr := "mark a constant opaque for the app_walk_norm state \
+    normalizer (never delta-unfolded; design §11.3 name preservation)"
+  add := fun declName _ kind =>
+    ScopedEnvExtension.add appStateAtomExt declName kind
+}
+
+/-- The current state-atom set. -/
+def stateAtoms : MetaM NameSet :=
+  return appStateAtomExt.getState (← getEnv)
+
 end RelSem.Tactics

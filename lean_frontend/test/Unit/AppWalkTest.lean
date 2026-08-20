@@ -74,10 +74,29 @@ theorem e6 (M' : Nat → M Nat) (σ : Nat) :
     app (M' 1000000) σ = app (M' (999998 + 2)) σ :=
   app_fuel_cast M' (fuel_split (c := 2) (by decide)) σ
 
+/-- E7 (arc-9 S3, walker v2): `app_walk_norm` — the same contract as
+    E1/E2 through the v2 normalizing loop (opt-in path exercised;
+    `app_walk` itself is untouched, E1-E6 unchanged). -/
+theorem e7 (st : Nat) :
+    app (nd_bind nd_get (fun a =>
+         nd_bind (nd_put (a + 1)) (fun _ =>
+         nd_return a)) : M Nat) st
+      = (NDactive st, st + 1) := by
+  app_walk_norm
+
+/-- E8 (walker v2 opacity): a state ARRIVING as an unreduced redex is
+    normalized by the v2 loop (the F-T5-2 shape at toy scale) — the
+    walk must still close against the stated RHS. -/
+theorem e8 (st : Nat) :
+    app (nd_bind (nd_return 3) (fun a => nd_return (a + 1)) : M Nat)
+        (Nat.succ (st + 1 - 1))
+      = (NDactive 4, st + 1) := by
+  app_walk_norm
+
 end AppWalkTest
 
 def main : IO UInt32 := do
   -- The exercises are kernel-checked at compile time; report and pass.
-  IO.println "AppWalkTest: E1-E6 kernel-checked (walker contract table)"
+  IO.println "AppWalkTest: E1-E8 kernel-checked (walker contract table + v2 lane)"
   IO.println "AppWalkTest: ALL PASSED"
   return 0

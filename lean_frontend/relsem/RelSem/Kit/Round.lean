@@ -416,6 +416,26 @@ theorem perform_store
   case _ => rfl
   exact app_nd_update _ _
 
+/-! ### The NEG-transform run-state draw laws (arc-9 S3, design
+    §11.2 — the census R59 round class's two supply stages; the
+    digest read stays STUCK per the T4 stuck-form discipline
+    (T4AppEq.lean:745-830) and is rewritten at the fixture by
+    `hdig : CerberusFresh.digest () = ""`). -/
+
+/-- `fresh_excluded_id`: draws the exclusion counter. -/
+theorem eid_draw_eval {a : Type} (rs : core_run_state) :
+    (E.fresh_excluded_id (a := a)) rs
+      = Result (Defined rs.excluded_supply,
+          { rs with excluded_supply := rs.excluded_supply + 1 }) := rfl
+
+/-- `fresh_symbol0`: draws the sym supply; the produced symbol is the
+    STUCK-digest form `Symbol (digest ()) rs.sym_supply SD_None`. -/
+theorem sym_draw_eval {a : Type} (rs : core_run_state) :
+    (E.fresh_symbol0 (a := a)) rs
+      = Result (Defined (Symbol (CerberusFresh.digest ())
+            rs.sym_supply SD_None),
+          { rs with sym_supply := rs.sym_supply + 1 }) := rfl
+
 /-- KILL round's perform. -/
 @[app_eq]
 theorem perform_kill

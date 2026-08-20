@@ -20,6 +20,7 @@ import RelSem.Kit.Eval
 import RelSem.Kit.Round
 import RelSem.Kit.Loop
 import RelSem.Kit.Mem
+import RelSem.Kit.Map
 
 -- Kit/Loop — the loop rule + fuel algebra
 /-- info: 'RelSem.Kit.iter_compose' does not depend on any axioms -/
@@ -80,6 +81,51 @@ import RelSem.Kit.Mem
 #guard_msgs in #print axioms RelSem.Kit.mem_load_block
 /-- info: 'RelSem.Kit.mem_kill_block' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Kit.mem_kill_block
+
+-- Kit/Map — the lawful-map lookup layer (arc-9 S3 wave 3; design
+-- §11.2 — the P2 route generalized from bytemaps to environments)
+/-- info: 'RelSem.Kit.symOrd_eval' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Kit.symOrd_eval
+/-- info: 'RelSem.Kit.symCmpAlt_eval' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Kit.symCmpAlt_eval
+/-- info: 'RelSem.Kit.strCompare_lt' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Kit.strCompare_lt
+/-- info: 'RelSem.Kit.strCompare_self' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Kit.strCompare_self
+/-- info: 'RelSem.Kit.strCompare_gt' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Kit.strCompare_gt
+/-- info: 'RelSem.Kit.digest_compare_lt' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Kit.digest_compare_lt
+/-- info: 'RelSem.Kit.digest_compare_self' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Kit.digest_compare_self
+/-- info: 'RelSem.Kit.digest_compare_gt' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Kit.digest_compare_gt
+/-- info: 'RelSem.Kit.symCmp_bridge' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Kit.symCmp_bridge
+/-- info: 'RelSem.Kit.symCmpO_eq_iff' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Kit.symCmpO_eq_iff
+/-- info: 'RelSem.Kit.transCmpPre' depends on axioms: [propext] -/
+#guard_msgs in #print axioms RelSem.Kit.transCmpPre
+/-- info: 'RelSem.Kit.instTransCmpSymCmpO' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Kit.instTransCmpSymCmpO
+/-- info: 'RelSem.Kit.fmapEmpty_cmpIs' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Kit.fmapEmpty_cmpIs
+/-- info: 'RelSem.Kit.fmapAddBy_cmpIs' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Kit.fmapAddBy_cmpIs
+/-- info: 'RelSem.Kit.fmapLookupBy_addBy_eq' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Kit.fmapLookupBy_addBy_eq
+/-- info: 'RelSem.Kit.fmapLookupBy_addBy_ne' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Kit.fmapLookupBy_addBy_ne
+/-- info: 'RelSem.Kit.tmInt_get?_insert_self' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Kit.tmInt_get?_insert_self
+/-- info: 'RelSem.Kit.tmInt_get?_insert_ne' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Kit.tmInt_get?_insert_ne
+
+-- Kit/Round — the NEG-transform draw laws (arc-9 S3 wave 3)
+/-- info: 'RelSem.Kit.eid_draw_eval' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Kit.eid_draw_eval
+/-- info: 'RelSem.Kit.sym_draw_eval' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Kit.sym_draw_eval
 
 -- Kit/Round — the perform layer (arc-9 S2 wave 2)
 /-- info: 'RelSem.Kit.liftMem_unfold' depends on axioms: [propext, Classical.choice, Quot.sound] -/
