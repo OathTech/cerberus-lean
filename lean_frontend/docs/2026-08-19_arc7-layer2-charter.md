@@ -10,11 +10,15 @@
 > CerbND totalized + runner soundness proved; toolchain bumped to
 > 4.32.2 on full gate evidence, zero movement; census still 2;
 > mainlines untouched, lem-lean untouched (pins hold at `bd7e2eb`).
-> Results: 2026-08-20_arc7-results.md. Decisions D1–D9,
-> provenance-tagged. **Audits: 2 adversarial, IN PROGRESS at
-> close-prep** — dispositions land in the results doc addendum before
-> any merge ask. Per S5 the arc STOPS unmerged —
-> 2026-08-20_arc7-merge-checklist.md awaits operator sign-off.
+> Results: 2026-08-20_arc7-results.md. Decisions D1–D10,
+> provenance-tagged. **Audits: 2 adversarial, COMPLETE** — one BLOCKER
+> found and honestly resolved (the DAEMON axiom is inconsistent as
+> declared; 8 of 10 slate-cone entry vectors evicted, the 2 structural
+> residues carry an enforced in-build census + verbatim-class boundary
+> rewording; elimination = TOP lem C-tier item, work order filed); all
+> other findings FIXED; dispositions in the results-doc addendum. Per
+> S5 the arc STOPS unmerged — 2026-08-20_arc7-merge-checklist.md awaits
+> operator sign-off.
 
 Date: 2026-08-19. Mode: long-cycle autonomous under the orchestrator/
 worker doctrine; provenance-tagged decisions; verbatim-transcript rule;
