@@ -27,7 +27,7 @@ rev = "v4.32.0"
 [[require]]
 name = "iris"
 git = "https://github.com/leanprover-community/iris-lean"
-rev = "79dab154a64051384179c4d4e00511752cf2a168"
+rev = "34390a0133986385c62bf59a6eb01938945b48ec"
 subDir = "Iris"
 
 # Qq pinned at iris-lean's vendored rev (deps/iris-lean/Iris/lake-manifest.json);
