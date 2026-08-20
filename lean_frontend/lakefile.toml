@@ -143,8 +143,6 @@ roots = [
   "CerbStepInstances",
   "CerbFunMapInstances",
   "CerbCabsInstances",
-  "CerbInhabitedInstances",
-  "CerbCoreInstances",
   "CerbTags",
   "CerbDebug",
   "CerbDecode",

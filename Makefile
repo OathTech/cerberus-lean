@@ -290,7 +290,7 @@ LEAN_SRC_DIR = lean_frontend/generated
 # by the generated code (which references them via declare lean target_rep).
 LEAN_HANDWRITTEN = CerberusImpl.lean CerbLocation.lean CerberusFresh.lean \
     CerbGlobal.lean CerbFloat.lean CerbUtils.lean CerbPP.lean CerbMem.lean \
-    CerbFS.lean CerbConcurrency.lean CerbCtypeInstances.lean CerbStepInstances.lean CerbFunMapInstances.lean CerbCabsInstances.lean CerbInhabitedInstances.lean CerbCoreInstances.lean \
+    CerbFS.lean CerbConcurrency.lean CerbCtypeInstances.lean CerbStepInstances.lean CerbFunMapInstances.lean CerbCabsInstances.lean \
     CerbTags.lean CerbDebug.lean CerbDecode.lean CabsImport.lean CoreParser.lean \
     CerbND.lean Main.lean
 # Main.lean is in the list since arc-4 S5f: it was previously copied only

@@ -2,7 +2,6 @@ import CerberusImpl
 import CerbMem
 import CerbCtypeInstances
 import CerbCabsInstances
-import CerbInhabitedInstances
 import CabsImport
 import CoreParser
 import Cabs_to_ail

@@ -2,14 +2,6 @@ open import Pervasives
 open import Utils
 open import Core Core_aux Core_run_aux
 
-(* Arc-7 S5c DAEMON eviction (audit-1 F1): evict the backend's
-   low-priority `default := DAEMON` fallback Inhabited instances at this
-   module's use sites via the real default-priority instances in
-   lean_frontend/CerbCoreInstances.lean (arc-4 S1a priority-override
-   mechanism). *)
-declare {lean} extra_import `CerbCoreInstances`
-
-
 import State
 import Core_eval Cmm_aux Cmm_csem
 

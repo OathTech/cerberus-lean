@@ -2,14 +2,6 @@ open import Pervasives Utils Show Core
 import Global Dlist Pp State_exception_undefined Map_extra
 
 open import Errors Core Annot
-
-(* Arc-7 S5c DAEMON eviction (audit-1 F1): evict the backend's
-   low-priority `default := DAEMON` fallback Inhabited instances at this
-   module's use sites via the real default-priority instances in
-   lean_frontend/CerbCoreInstances.lean (arc-4 S1a priority-override
-   mechanism). *)
-declare {lean} extra_import `CerbCoreInstances`
-
 import Cmm_csem Mem_common Core_aux
 
 

@@ -3,14 +3,6 @@ import Core Core_aux
 import Implementation AilSyntax AilTypesAux GenTypes GenTypesAux
 import Boot Map_extra
 
-(* Arc-7 S5c DAEMON eviction (audit-1 F1): evict the backend's
-   low-priority `default := DAEMON` fallback Inhabited instances at this
-   module's use sites via the real default-priority instances in
-   lean_frontend/CerbCoreInstances.lean (arc-4 S1a priority-override
-   mechanism). *)
-declare {lean} extra_import `CerbCoreInstances`
-
-
 module C    = Core
 module Caux = Core_aux
 
