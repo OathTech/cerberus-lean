@@ -68,3 +68,11 @@ orchestrator judgment call resolved by project principles.
   stay untouched until the closing pin dance. Rationale: switch-global
   opam pin churn mid-arc risks other sessions' state for zero benefit;
   the checkout mechanism is the documented stream-safe path.
+- **D7 [AGENT] — S3 boundary verified.** Orchestrator independently
+  re-ran: capped default-target build rc 0 (597 jobs) with the in-build
+  absence gate + audit sweep green (verbatim outputs in the S3 record);
+  test_unit 5/5 with driver2 DAEMON-free under the tightened arc-8 S3
+  gate bar; test_verify 29/29; test_exec zero movement byte-identical.
+  LemLib DAEMON references = history comment only; lakefile pin =
+  9d220e49 (mid-arc, documented in-file, re-pin note for close). Both
+  worktrees clean, commits coherent (LEM 9d220e4, CERB f147aad91).
