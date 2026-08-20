@@ -1,6 +1,16 @@
 # exec differential baseline — written by test_exec.sh --write-baseline
 # format: <file.c> <STATUS>   (see test_exec.sh header for the taxonomy)
 # corpus: tests/coverage (ported verbatim from cerberus-lean-prototype, arc-4 S4b)
+# 2026-08-20 arc-10 S1: mem3-004-string-write-attempt.c DIFF → UB_MATCH —
+#   same root cause and fix as ci 0086-literal_access.undef.c (register
+#   finding 11): CerbMem.allocateObject now marks pre-initialized
+#   allocations read-only per prefix (impl_mem.ml:1304-1333 mirrored), so
+#   the string-literal write raises UB033_modifying_string_literal matching
+#   the oracle. NOTE: the arc-10 S0 triage table (row 2) listed this file
+#   under the pp-placeholder class by baseline-grep inference; its own
+#   header comment ("Exercise select_ro_kind PrefStringLiteral in
+#   impl_mem.ml (L1704-1710)") identifies it as the finding-11 class —
+#   in-class movement, not collateral.
 # REPORTING baseline — obj-2 parity scoreboard; does NOT gate this arc.
 # 2026-08-19 S5f: ptr3-006-eq-one-past-end.c MATCH→MISMATCH — not a Lean
 #   regression but the H1 harness hardening (full verdict-SEQUENCE
@@ -198,7 +208,7 @@ mem-010-flexible-array.c MATCH
 mem3-001-bool-load.c MATCH
 mem3-002-bool-trap.c MATCH
 mem3-003-const-compound-literal.c MATCH
-mem3-004-string-write-attempt.c DIFF
+mem3-004-string-write-attempt.c UB_MATCH
 mem3-005-struct-multi-ptr.c MATCH
 mem3-006-array-of-ptrs.c MATCH
 mem3-007-realloc-null.libc.c MATCH

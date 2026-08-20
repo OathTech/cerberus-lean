@@ -1,5 +1,12 @@
 # exec differential baseline — written by test_exec.sh --write-baseline
 # format: <file.c> <STATUS>   (see test_exec.sh header for the taxonomy)
+# 2026-08-20 arc-10 S1: 0086-literal_access.undef.c DIFF → UB_MATCH —
+#   register finding 11 fixed: CerbMem.allocateObject now marks
+#   pre-initialized allocations read-only per prefix (mirrors
+#   impl_mem.ml:1304-1333), so the write to a string literal raises
+#   MerrWriteOnReadOnly ReadonlyStringLiteral → UB033_modifying_string_literal,
+#   matching the oracle. Only movement in the ci sweep (0 regressions,
+#   1 improvement).
 0001-emptymain.c MATCH
 0002-return_const.c MATCH
 0003-return_arith.c MATCH
@@ -83,7 +90,7 @@
 0083-array_initializers.c MATCH
 0084-KO1.error.c CERB_SKIP
 0085-excess_array_initializer.c MATCH
-0086-literal_access.undef.c DIFF
+0086-literal_access.undef.c UB_MATCH
 0087-array_with_delayed_size.c MATCH
 0101-sym_cfunction.c CERB_SKIP
 0105-incr.c MATCH

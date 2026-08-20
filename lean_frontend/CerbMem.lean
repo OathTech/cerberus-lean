@@ -1227,7 +1227,18 @@ def allocateObject (_ : Nat) (pref : prefix0) (alignIv : IntegerValue)
     if alignedAddr == 0 then (NDkilled (Other (MerrOther "out of memory")), st)
     else
       let allocId := st.nextAllocId
-      let alloc : Allocation := { base := alignedAddr, size := size, ty := some ty, prefix_ := pref }
+      -- readonly_status per init_opt — impl_mem.ml:1304-1333: uninitialized
+      -- allocations are IsWritable (:1306); pre-initialized ones (Core
+      -- create_readonly: string literals, const objects) are IsReadOnly with
+      -- the kind chosen by prefix (:1325-1332)
+      let roStatus : ReadonlyStatus := match initOpt with
+        | none => .IsWritable
+        | some _ => .IsReadOnly (match pref with
+            | PrefStringLiteral _ _ => readonly_kind.ReadonlyStringLiteral
+            | PrefTemporaryLifetime _ _ => readonly_kind.ReadonlyTemporaryLifetime
+            | _ => readonly_kind.ReadonlyConstQualified)
+      let alloc : Allocation := { base := alignedAddr, size := size, ty := some ty,
+                                  isReadonly := roStatus, prefix_ := pref }
       let st' := { st with
         nextAllocId := allocId + 1, lastAddress := alignedAddr
         allocations := st.allocations.insert allocId alloc }
