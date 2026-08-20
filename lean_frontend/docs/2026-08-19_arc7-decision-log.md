@@ -118,3 +118,19 @@ Codified in container CLAUDE.md (audits now grep proof files for budget
 bumps; un-registered = finding). Relayed to the running S5a worker.
 Note: the crashed probe's maxHeartbeats-8000000 was this smell at
 maximum volume — the doctrine names what D7's rules already punished.
+
+**D9 [AGENT]** — S5a boundary passed (verified: 595-job capped build,
+unit 5/5 incl. "12 slate statements fuel-opsem-clean", baselines rc 0,
+test_verify 23/23, ZERO budget bumps in relsem/ by grep — D8-clean).
+THE EXIT CRITERION IS PROVED: T1-T4 ∀-quantified interpreter-only
+theorems through the full WP route; T5 parked with a one-session price
+(charter-legal). Endorsed: the T4EnvHyp pattern (process globals as
+explicit hypotheses = the census boundary made visible in the
+statement; the standing pattern for future struct/fresh-drawing
+fixtures); the fuel-k sentinel state-discovery trick; the
+fixture-generic SlateWP bridge. Register items accepted: expr-family
+sorried BEq (C-tier lem item); the Lake lib-root wiring gotcha (a
+false-positive green until imported — recipe note). S5b = close-out:
+results, de-stale, twin audits, checklist. Lem-lean UNTOUCHED this arc
+(single-repo merge; pins stay bd7e2eb); iris-lean mirror needed next
+network window (D6).
