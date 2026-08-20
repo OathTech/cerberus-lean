@@ -41,6 +41,26 @@ orchestrator judgment call resolved by project principles.
   lem register at close. Hand-instance retirement (CerbCoreInstances /
   CerbInhabitedInstances shrink) assigned to S3 alongside the Audit.lean
   pin updates.
+- **D5 [AGENT] — S2 whole-invocation analysis prepass RATIFIED.**
+  `lean_analysis_prepass_all` (census + threading over every
+  typechecked module incl. non-output library modules) is a
+  design-note-uncovered mechanism the worker flagged rather than
+  improvised silently. Ratified: required because `make lean-libs`
+  threads library defs in a separate invocation; it recomputes from
+  source (no hardcoded lists), consistent with durability req 1.
+  Evidence: design note S2 record + green cerberus-scale validation.
+- **D6 [AGENT] — S0 census errata ACCEPTED (pass right, census
+  wrong).** S2's computed binder set = all 16 Class-T defs + 6 library
+  defs + 13 extra cerberus defs, each with recorded root cause (ndM's
+  actual S1 instance is bounded, not leg-(a)'s hand unconditional; the
+  witness-based checker argument doesn't apply to term-level synthesis;
+  exceptM value-side bounds; depth-2 propagation via fromJust — the
+  census's depth≤1 claim was wrong there). All callers concrete; green
+  build + zero movement. The design note's S2 record is the corrected
+  reference; S3/S4 records cite it, not the census's Class partition.
+  Orchestrator independently re-verified at the boundary: unit rc 0
+  with **driver2 cone = [propext, Classical.choice, Quot.sound]
+  (DAEMON-FREE, pre-deletion)**, exec rc 0 byte-identical summary.
 - **D2 [AGENT] — mid-arc lem consumption mechanism.** S1/S2 cerberus-
   scale validation uses the per-worktree checkout lem (PATH-prepend +
   LEMLIB, the parallel-streams mechanism from the container playbook);
