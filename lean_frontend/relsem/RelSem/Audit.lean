@@ -89,6 +89,7 @@ import RelSem.Machine
 import RelSem.RunND
 import RelSem.Cerberus
 import RelSem.Call
+import RelSem.FuelHooks
 import RelSem.IrisCoupling
 
 namespace RelSem.Audit
@@ -176,6 +177,45 @@ info: 'RelSem.Cerb.callHarnessAdequate_of_adequate' depends on axioms: [DAEMON,
  Quot.sound]
 -/
 #guard_msgs in #print axioms RelSem.Cerb.callHarnessAdequate_of_adequate
+-- arc-7 S3: the terminal-head outcome-set characterization (the slate-
+-- path fuel-erasure instances, RelSem/RunND.lean + the model-level and
+-- callConfig faces). The RunND layer is [propext]-grade and DAEMON-FREE
+-- (boundary theorems); the callConfig corollaries quote the harness
+-- substrate (DAEMON + runEffectful, standing disposition). The 30
+-- FuelHooks wrapper-defeq theorems are rfl objects covered by the
+-- sweep; `nd_bind_wrapper_defeq` is pinned as the exemplar (axiom-free).
+/-- info: 'RelSem.runND_active' depends on axioms: [propext] -/
+#guard_msgs in #print axioms RelSem.runND_active
+/-- info: 'RelSem.runND_killed' depends on axioms: [propext] -/
+#guard_msgs in #print axioms RelSem.runND_killed
+/-- info: 'RelSem.behaviors_active_iff' depends on axioms: [propext] -/
+#guard_msgs in #print axioms RelSem.behaviors_active_iff
+/-- info: 'RelSem.behaviors_killed_iff' depends on axioms: [propext] -/
+#guard_msgs in #print axioms RelSem.behaviors_killed_iff
+/-- info: 'RelSem.Cerb.seqModel_behavior_running_active_iff' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.seqModel_behavior_running_active_iff
+/-- info: 'RelSem.Cerb.seqModel_behavior_running_killed_iff' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.seqModel_behavior_running_killed_iff
+/--
+info: 'RelSem.Cerb.callAdequate_of_app_active' depends on axioms: [DAEMON,
+ propext,
+ runEffectful,
+ Classical.choice,
+ Quot.sound]
+-/
+#guard_msgs in #print axioms RelSem.Cerb.callAdequate_of_app_active
+/-- info: 'RelSem.Cerb.callUBFree_of_app_active' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.callUBFree_of_app_active
+/--
+info: 'RelSem.Cerb.callHarnessAdequate_of_app_active' depends on axioms: [DAEMON,
+ propext,
+ runEffectful,
+ Classical.choice,
+ Quot.sound]
+-/
+#guard_msgs in #print axioms RelSem.Cerb.callHarnessAdequate_of_app_active
+/-- info: 'RelSem.FuelHooks.nd_bind_wrapper_defeq' does not depend on any axioms -/
+#guard_msgs in #print axioms RelSem.FuelHooks.nd_bind_wrapper_defeq
 
 /-! ## The exhaustive sweep — LAST in the file by design: a constant
     declared after this point would dodge it (negative-test lesson,

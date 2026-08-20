@@ -359,5 +359,64 @@ theorem callHarnessAdequate_of_adequate
   obtain ⟨r, hr, hs⟩ := h _ hb
   exact ⟨r, ofStatus_value_inv hr, hs⟩
 
+/-! ## The app-equation route to the slate conclusions (arc-7 S3).
+    On the slate corpus every harness run is ONE bind-collapsed `app`
+    computation (trace evidence, RelSem/Machine.lean § Coverage-by-
+    need), so a single ∀-quantified `app` equation determines the whole
+    behavior/outcome set. The corollaries below are the last mile from
+    that equation to every statement shape the slate uses — S5 proves
+    the equation (by WP or by direct computation) and cites these. -/
+
+/-- One active `app` equation ⇒ model-parametric adequacy at any spec
+    the terminal behavior satisfies. -/
+theorem callAdequate_of_app_active
+    {tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)}
+    {file1 : file core_run_annotation} {fname : String}
+    {args : List value} {fs : CerbFS.FsState}
+    {r : driver_result} {st' : driver_state}
+    (h : app (callND tagDefs file1 fname args)
+        (initial_driver_state file1 fs) = (NDactive r, st'))
+    {spec : DriveBehavior → Prop} (hs : spec (.value r, st')) :
+    CallAdequate tagDefs file1 fname args fs spec := by
+  intro b hb
+  have hb' : seqModel.behavior
+      (⟨.running (callND tagDefs file1 fname args),
+        initial_driver_state file1 fs⟩ : DriveConfig) b := hb
+  rw [seqModel_behavior_running_active_iff h b] at hb'
+  subst hb'
+  exact hs
+
+/-- One active `app` equation ⇒ UB-freedom of the call (a value
+    behavior is never classified UB). -/
+theorem callUBFree_of_app_active
+    {tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)}
+    {file1 : file core_run_annotation} {fname : String}
+    {args : List value} {fs : CerbFS.FsState}
+    {r : driver_result} {st' : driver_state}
+    (h : app (callND tagDefs file1 fname args)
+        (initial_driver_state file1 fs) = (NDactive r, st')) :
+    CallUBFree tagDefs file1 fname args fs :=
+  callAdequate_of_app_active h
+    (fun hub => match hub with | ⟨_, _, hh⟩ => nomatch hh)
+
+/-- One active `app` equation ⇒ the CerbND-shaped HEADLINE: the
+    production runner's outcome set is exactly the `Active r`
+    singleton, so every outcome is `Active` and satisfies any spec `r`
+    does (statement-TCB shape: fuel opsem only). -/
+theorem callHarnessAdequate_of_app_active
+    {tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)}
+    {file1 : file core_run_annotation} {fname : String}
+    {args : List value} {fs : CerbFS.FsState}
+    {r : driver_result} {st' : driver_state}
+    (h : app (callND tagDefs file1 fname args)
+        (initial_driver_state file1 fs) = (NDactive r, st'))
+    {spec : driver_result → Prop} (hs : spec r) :
+    CallHarnessAdequate tagDefs file1 fname args fs spec := by
+  intro out tr st'' hmem
+  rw [runND_active h] at hmem
+  cases hmem with
+  | head => exact ⟨r, rfl, hs⟩
+  | tail _ h' => cases h'
+
 end Cerb
 end RelSem

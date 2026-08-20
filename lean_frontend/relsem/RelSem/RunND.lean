@@ -252,12 +252,94 @@ theorem runNDFuel_mono :
                 exact Or.inl ⟨b, hb.1, ih fuel' hle' b.2 st1 x hb.2⟩
             | inr h' => cases h'
 
+/-! ## Terminal-head outcome-set characterization (arc-7 S3): the
+    slate-path fuel-erasure instances. The tests/verify trace evidence
+    (RelSem/Machine.lean § Coverage-by-need) shows every T1-T5 run is
+    ONE bind-collapsed `app` computation with a terminal head; on such
+    a head the production worker's ENTIRE enumeration is the same
+    singleton at EVERY positive fuel — fuel fully erased: the `∃ fuel`
+    extraction, the default budget, and the exhaustive verdict set all
+    coincide. These are the lemmas that turn one proved `app` equation
+    into "outcomes = {…}" (the slate theorems' conclusion shape). -/
+
+/-- Active head ⇒ the enumeration is the singleton `Active` triple, at
+    every positive fuel (fuel-erasure instance). -/
+theorem runNDFuel_active (fuel : Nat) {m : ndM A I E C S} {st st' : S}
+    {v : A} (h : app m st = (NDactive v, st')) :
+    CerbND.runNDFuel (fuel + 1) m st = [(Active v, [], st')] := by
+  cases m with
+  | ND g =>
+    have hg : g st = (NDactive v, st') := h
+    simp only [CerbND.runNDFuel, hg]
+
+/-- Killed head ⇒ the singleton `Killed` triple, at every positive
+    fuel. -/
+theorem runNDFuel_killed (fuel : Nat) {m : ndM A I E C S} {st st' : S}
+    {r : kill_reason E} (h : app m st = (NDkilled r, st')) :
+    CerbND.runNDFuel (fuel + 1) m st = [(Killed st' r, [], st')] := by
+  cases m with
+  | ND g =>
+    have hg : g st = (NDkilled r, st') := h
+    simp only [CerbND.runNDFuel, hg]
+
+/-- The production runner's outcome set on an active head (default
+    budget = any positive fuel, by the erasure above). -/
+theorem runND_active {m : ndM A I E C S} {st st' : S} {v : A}
+    (h : app m st = (NDactive v, st')) :
+    CerbND.runND m st = [(Active v, [], st')] :=
+  runNDFuel_active 999999 h
+
+/-- The production runner's outcome set on a killed head. -/
+theorem runND_killed {m : ndM A I E C S} {st st' : S}
+    {r : kill_reason E} (h : app m st = (NDkilled r, st')) :
+    CerbND.runND m st = [(Killed st' r, [], st')] :=
+  runNDFuel_killed 999999 h
+
 /-- The ∃-fuel behavior set of an ND computation: the union over fuel of
     the production worker's enumerations (increasing by `runNDFuel_mono`).
     This is the observable-behavior extraction the sequential `ExecModel`
     instance uses (RelSem.Cerberus `seqModel`). -/
 def Behaviors (m : ndM A I E C S) (st : S) (x : RunResult A E S) : Prop :=
   ∃ fuel, x ∈ CerbND.runNDFuel fuel m st
+
+/-- ∃-FUEL ERASURE on an active head: the behavior set IS the singleton
+    — the quantified extraction and the executable's default budget
+    agree exactly (no behavior appears at any other fuel). -/
+theorem behaviors_active_iff {m : ndM A I E C S} {st st' : S} {v : A}
+    (h : app m st = (NDactive v, st')) (x : RunResult A E S) :
+    Behaviors m st x ↔ x = (Active v, [], st') := by
+  constructor
+  · intro hx
+    obtain ⟨fuel, hmem⟩ := hx
+    cases fuel with
+    | zero => rw [runNDFuel_zero] at hmem; cases hmem
+    | succ fuel =>
+      rw [runNDFuel_active fuel h] at hmem
+      cases hmem with
+      | head => rfl
+      | tail _ h' => cases h'
+  · intro hx
+    subst hx
+    exact ⟨1, by rw [runNDFuel_active 0 h]; exact List.Mem.head _⟩
+
+/-- ∃-fuel erasure on a killed head. -/
+theorem behaviors_killed_iff {m : ndM A I E C S} {st st' : S}
+    {r : kill_reason E} (h : app m st = (NDkilled r, st'))
+    (x : RunResult A E S) :
+    Behaviors m st x ↔ x = (Killed st' r, [], st') := by
+  constructor
+  · intro hx
+    obtain ⟨fuel, hmem⟩ := hx
+    cases fuel with
+    | zero => rw [runNDFuel_zero] at hmem; cases hmem
+    | succ fuel =>
+      rw [runNDFuel_killed fuel h] at hmem
+      cases hmem with
+      | head => rfl
+      | tail _ h' => cases h'
+  · intro hx
+    subst hx
+    exact ⟨1, by rw [runNDFuel_killed 0 h]; exact List.Mem.head _⟩
 
 /-- ∃-fuel corollary of `runNDFuel_sound`: every behavior is a relational
     trace. -/

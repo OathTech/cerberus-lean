@@ -341,6 +341,47 @@ theorem seqModel_behavior_sound {c : DriveConfig} {b : DriveBehavior}
               subst hb
               exact runNDFuel_sound fuel m st out tr st' h.1
 
+/-- BEHAVIOR-SET CHARACTERIZATION on a terminal head (arc-7 S3): if the
+    suspended computation's one `app` unfolding is ACTIVE, the model
+    admits EXACTLY ONE behavior — the value at the post-state. This is
+    the model-level face of the ∃-fuel erasure instances
+    (`behaviors_active_iff`, RelSem/RunND.lean): on the slate corpus
+    (every run one bind-collapsed node, tests/verify trace evidence) a
+    single proved `app` equation determines the whole behavior set. -/
+theorem seqModel_behavior_running_active_iff
+    {m : ndM driver_result step_kind driver_error mem_iv_constraint
+        driver_state}
+    {st st' : driver_state} {v : driver_result}
+    (h : app m st = (NDactive v, st')) (b : DriveBehavior) :
+    seqModel.behavior ⟨.running m, st⟩ b ↔ b = (.value v, st') := by
+  constructor
+  · intro hb
+    obtain ⟨fuel, x, hmem, hbx⟩ := hb
+    have hx := (behaviors_active_iff h x).mp ⟨fuel, hmem⟩
+    subst hx; subst hbx; rfl
+  · intro hb
+    subst hb
+    exact ⟨1, (Active v, [], st'),
+      by rw [runNDFuel_active 0 h]; exact List.Mem.head _, rfl⟩
+
+/-- The killed-head counterpart: exactly one behavior, the kill at the
+    post-state. -/
+theorem seqModel_behavior_running_killed_iff
+    {m : ndM driver_result step_kind driver_error mem_iv_constraint
+        driver_state}
+    {st st' : driver_state} {r : kill_reason driver_error}
+    (h : app m st = (NDkilled r, st')) (b : DriveBehavior) :
+    seqModel.behavior ⟨.running m, st⟩ b ↔ b = (.killed r, st') := by
+  constructor
+  · intro hb
+    obtain ⟨fuel, x, hmem, hbx⟩ := hb
+    have hx := (behaviors_killed_iff h x).mp ⟨fuel, hmem⟩
+    subst hx; subst hbx; rfl
+  · intro hb
+    subst hb
+    exact ⟨1, (Killed st' r, [], st'),
+      by rw [runNDFuel_killed 0 h]; exact List.Mem.head _, rfl⟩
+
 /-- Layer-2 → adequacy discharge (proved): a relational proof covering
     every `Steps`-reachable terminal configuration discharges into the
     model-parametric adequacy statement. This is the plumbing an Iris

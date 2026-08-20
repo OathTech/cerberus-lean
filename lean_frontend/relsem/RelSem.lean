@@ -9,6 +9,7 @@ import RelSem.Machine
 import RelSem.RunND
 import RelSem.Cerberus
 import RelSem.Call
+import RelSem.FuelHooks
 import RelSem.IrisCoupling
 -- arc-7 S1: the in-build axiom audit (golean pattern) — a lib member,
 -- so `lake build RelSem` elaborates it and drift fails the build.
