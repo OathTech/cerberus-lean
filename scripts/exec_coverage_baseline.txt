@@ -17,6 +17,13 @@
 #   squotes in the batch Unspecified payload). Only movement in the
 #   coverage sweep (0 regressions, 1 improvement).
 # REPORTING baseline — obj-2 parity scoreboard; does NOT gate this arc.
+# 2026-08-20 arc-10 S4: ptr3-006-eq-one-past-end.c MISMATCH → MATCH —
+#   register finding 8 FIXED (CerbMem.eqPtrval now mirrors the OCaml
+#   eq_ptrval msum provenance fork, impl_mem.ml:1830-1881 arm-for-arm;
+#   the trace-count divergence the S5f note below describes is gone:
+#   both sides now enumerate the 2-branch "pointer equality" NDnd fork).
+#   Verified: coverage sweep 0 regressions, 1 improvement (this file);
+#   csmith seed-930005 reproducer 6-vs-6 MATCH.
 # 2026-08-19 S5f: ptr3-006-eq-one-past-end.c MATCH→MISMATCH — not a Lean
 #   regression but the H1 harness hardening (full verdict-SEQUENCE
 #   comparison) unmasking open defect 8: OCaml eq_ptrval FORKS on a
@@ -261,7 +268,7 @@ ptr3-002-int-to-ptr-null.libc.c MATCH
 ptr3-003-int-to-ptr-roundtrip.libc.c MATCH
 ptr3-004-ptrdiff-array.c MATCH
 ptr3-005-ptrdiff-cross-alloc.c UB_MATCH
-ptr3-006-eq-one-past-end.c MISMATCH
+ptr3-006-eq-one-past-end.c MATCH
 ptr3-007-null-lt-null.c CERB_SKIP
 ptr3-008-null-le-null.c CERB_SKIP
 store2-001-string-literal.c MATCH

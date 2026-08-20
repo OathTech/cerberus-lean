@@ -1637,12 +1637,59 @@ def storeM (loc : CerbLocation.Loc) (ty : ctype) (isLocking : Bool) (pv : Pointe
 def ptrAddr (pv : PointerValue) : Option Int :=
   match pv with | .PV _ (.PVconcrete _ addr) => some addr | _ => none
 
+/-- eq_ptrval — impl_mem.ml:1830-1881, arm-for-arm (arc-10 S4, register
+    finding 8 fix: the previous version collapsed the differing-provenance
+    `Eff.msum` fork to a deterministic `false` — visible as trace-COUNT
+    divergences in exhaustive mode: coverage ptr3-006, csmith seed 930005).
+    * (PVnull, PVnull) → true                                (:1832-1833)
+    * (PVnull, _) | (_, PVnull) → false                      (:1834-1836)
+    * (PVfunction, PVfunction) → symbolEquality              (:1837-1838)
+      (the OCaml Eq_Symbol_sym_dict isEqual_method: digest+nat,
+      description-INSENSITIVE — NOT the derived BEq)
+    * (PVfunction with SD_Id name, PVconcrete addr) and the swapped arm →
+      funptrmap lookup at addr, name comparison; absent → false
+                                                             (:1839-1847)
+    * (PVfunction, _) | (_, PVfunction) → false              (:1848-1850)
+    * (PVconcrete addr1, PVconcrete addr2):                  (:1851-1881)
+      - the SW_strict_pointer_equality branch (:1852-1853) is NOT ported:
+        the differential pipeline never sets switches (file convention,
+        cf. loadM / diffPtrval notes)
+      - same-provenance: none/none → true, some/some → id equality,
+        device/device → true, mixed → false (:1855-1861,1873); the
+        Prov_symbolic iota arms (:1863-1872, PNVI-ae-udi) are unreachable
+        here (the concrete Lean model never mints Prov_symbolic — cf.
+        diffPtrval) and fold into the mixed-→-false arm
+      - same-provenance true → addr equality                 (:1875-1876)
+      - same-provenance false → msum "pointer equality"
+        [("using provenance", false); ("ignoring provenance", addr
+        equality)] (:1877-1880) — a real ND fork (NDnd), enumerated by
+        both sides' exhaustive runners, so the trace-count doubling is
+        oracle-matching by construction. -/
 def eqPtrval (_ : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
-  memReturn (match pv1, pv2 with
-    | .PV _ (.PVnull _), .PV _ (.PVnull _) => true
-    | .PV _ (.PVfunction s1), .PV _ (.PVfunction s2) => s1 == s2
-    | .PV p1 (.PVconcrete _ a1), .PV p2 (.PVconcrete _ a2) => p1 == p2 && a1 == a2
-    | _, _ => false)
+  match pv1, pv2 with
+  | .PV _ (.PVnull _), .PV _ (.PVnull _) => memReturn true
+  | .PV _ (.PVnull _), _ | _, .PV _ (.PVnull _) => memReturn false
+  | .PV _ (.PVfunction s1), .PV _ (.PVfunction s2) =>
+    memReturn (symbolEquality s1 s2)
+  | .PV _ (.PVfunction (Symbol _ _ (SD_Id funname))), .PV _ (.PVconcrete _ addr)
+  | .PV _ (.PVconcrete _ addr), .PV _ (.PVfunction (Symbol _ _ (SD_Id funname))) =>
+    ND fun st =>
+      (NDactive (match st.funptrmap.find? (fun (a, _) => a == addr) with
+        | some (_, (_, funname')) => funname == funname'
+        | none => false), st)
+  | .PV _ (.PVfunction _), _ | _, .PV _ (.PVfunction _) => memReturn false
+  | .PV prov1 (.PVconcrete _ addr1), .PV prov2 (.PVconcrete _ addr2) =>
+    let sameProv : Bool := match prov1, prov2 with
+      | .Prov_none, .Prov_none => true
+      | .Prov_some allocId1, .Prov_some allocId2 => allocId1 == allocId2
+      | .Prov_device, .Prov_device => true
+      | _, _ => false
+    if sameProv then
+      memReturn (addr1 == addr2)
+    else
+      msum "pointer equality"
+        [("using provenance", memReturn false),
+         ("ignoring provenance", memReturn (addr1 == addr2))]
 
 def nePtrval (loc : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
   nd_bind (eqPtrval loc pv1 pv2) (fun b => memReturn (!b))
