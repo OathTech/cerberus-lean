@@ -41,10 +41,12 @@ rev = "38d591e778f100aec9762bb582f9c7f55f50e9dc"
 # LemLib is the Lem runtime library for Lean, from the septract/lem-lean fork.
 # arc-8 close: pinned to the MERGED mdd/lean-backend head (arc-8 pin dance;
 # DAEMON/DAEMON1/legacy failwith removed from LemLib in this lineage);
+# arc-10 S2: bumped to the arc/robustness lem head (Sum BEq/Ord, R1 +
+# comparison derivation backend); re-pin to the merged head at arc close.
 [[require]]
 name = "LemLib"
 git = "https://github.com/septract/lem-lean"
-rev = "237867bbf1059dbb685156ce3db31910b3fcb449"
+rev = "a9387fbb834d552b3334b499f83076c9ee35dbb5"
 subDir = "lean-lib"
 
 [[lean_lib]]
