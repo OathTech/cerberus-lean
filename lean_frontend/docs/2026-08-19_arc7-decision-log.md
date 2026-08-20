@@ -152,3 +152,21 @@ never-rewrite-history rule) [AGENT:S5c]**
   (whitespace-normalized), not verbatim. S5c fixed the literal (string
   gaps); the gate line as of the S5c rebuild reads, verbatim:
   `RelSem statement gate: 16 slate statements fuel-opsem-clean (negative tests: t1_wp and the wrapper-hole probe correctly rejected)`.
+
+**D10 [AGENT]** — S5c boundary passed (verified: unit 5/5 incl. census,
+test_verify 29/29, minimal baseline rc 0). Arc CLOSED. THE DAEMON
+DISPOSITION, stated for the merge ask: audit-1 proved the DAEMON axiom
+inconsistent (∀{α:Type},α ⊢ False at Empty — in the boundary since
+arc 2, exposed by the first-theorems audit); S5c evicted 8/10 slate-cone
+entry vectors (real instances arc-2 had built but never wired — a
+lesson in itself); the 2 structural residues (poly-site failwith =
+DAEMON by value, on every driver cone via pick; one same-module
+instance) are immovable without the C-tier lem redesign, now filed as
+lembugs/2026-08-20_daemon-inconsistent-axiom.md with the design sketch.
+CONSEQUENCE, honestly stated everywhere it matters: T1-T4 are
+kernel-checked MODULO the DAEMON meta-assumption (unreachable-inhabitant
+marker) — proofs read-verified genuine by the auditor, cones pinned
+exact, entry vectors census-enforced in-build. The TOP item for the
+next lem arc. All other audit findings FIXED (strongest options:
+CerbND-shaped ubFree restatements, enforced census, T4EnvHyp truth,
+capped-everywhere, provenance gate, singleton companions).
