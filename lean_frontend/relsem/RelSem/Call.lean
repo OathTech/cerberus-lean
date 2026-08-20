@@ -359,6 +359,42 @@ theorem callHarnessAdequate_of_adequate
   obtain ⟨r, hr, hs⟩ := h _ hb
   exact ⟨r, ofStatus_value_inv hr, hs⟩
 
+/-- CerbND-shaped UB-FREEDOM headline (arc-7 S5c, audit-1 F2): no
+    outcome the production runner enumerates for the harness call is an
+    `Undef0` kill. This is the statement-TCB twin of `CallUBFree`
+    (which is `seqModel.UBFree` — a relational-layer object): the slate
+    `T?_ubFree` theorems STATE this form, so their statements mention
+    the fuel opsem only; the seqModel form remains the proof route's
+    intermediate (WP ⇒ `CallUBFree` ⇒ this, `callHarnessUBFree_of_ubFree`). -/
+def CallHarnessUBFree
+    (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
+    (file1 : file core_run_annotation) (fname : String)
+    (args : List value) (fs : CerbFS.FsState) : Prop :=
+  ∀ (out : nd_status driver_result driver_error driver_state)
+    (tr : List String) (st' : driver_state),
+    (out, tr, st') ∈
+      CerbND.runND (callND tagDefs file1 fname args)
+        (initial_driver_state file1 fs) →
+    ∀ (stk : driver_state) (loc : CerbLocation.Loc)
+      (ubs : List undefined_behaviour),
+      out ≠ Killed stk (Undef0 loc ubs)
+
+/-- PROVED DISCHARGE (the UB face of `callHarnessAdequate_of_adequate`):
+    model-parametric UB-freedom yields the CerbND-shaped headline — a
+    runner-enumerated `Undef0` kill would be a behavior `seqModel.isUB`
+    classifies as UB. -/
+theorem callHarnessUBFree_of_ubFree
+    {tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)}
+    {file1 : file core_run_annotation} {fname : String}
+    {args : List value} {fs : CerbFS.FsState}
+    (h : CallUBFree tagDefs file1 fname args fs) :
+    CallHarnessUBFree tagDefs file1 fname args fs := by
+  intro out tr st' hmem stk loc ubs hout
+  have hb : seqModel.behavior (callConfig tagDefs file1 fname args fs)
+      (Outcome.ofStatus out, st') :=
+    ⟨CerbND.ndDefaultFuel, (out, tr, st'), hmem, rfl⟩
+  exact h _ hb ⟨loc, ubs, by rw [hout]; rfl⟩
+
 /-! ## The app-equation route to the slate conclusions (arc-7 S3).
     On the slate corpus every harness run is ONE bind-collapsed `app`
     computation (trace evidence, RelSem/Machine.lean § Coverage-by-
@@ -398,6 +434,23 @@ theorem callUBFree_of_app_active
     CallUBFree tagDefs file1 fname args fs :=
   callAdequate_of_app_active h
     (fun hub => match hub with | ⟨_, _, hh⟩ => nomatch hh)
+
+/-- One active `app` equation ⇒ the CerbND-shaped UB-freedom HEADLINE
+    (direct route; arc-7 S5c): the runner's outcome set is the `Active`
+    singleton, which is no `Undef0` kill. -/
+theorem callHarnessUBFree_of_app_active
+    {tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)}
+    {file1 : file core_run_annotation} {fname : String}
+    {args : List value} {fs : CerbFS.FsState}
+    {r : driver_result} {st' : driver_state}
+    (h : app (callND tagDefs file1 fname args)
+        (initial_driver_state file1 fs) = (NDactive r, st')) :
+    CallHarnessUBFree tagDefs file1 fname args fs := by
+  intro out tr st'' hmem stk loc ubs hout
+  rw [runND_active h] at hmem
+  cases hmem with
+  | head => cases hout
+  | tail _ h' => cases h'
 
 /-- One active `app` equation ⇒ the CerbND-shaped HEADLINE: the
     production runner's outcome set is exactly the `Active r`

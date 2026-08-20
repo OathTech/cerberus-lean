@@ -15,6 +15,14 @@ import Core_eval Core_run Core_reduction
    core_runM closures) and crashed at runtime -- arc-4 S0/S1a. *)
 declare {lean} extra_import `CerbStepInstances`
 
+(* Arc-7 S5c DAEMON eviction (audit-1 F1): evict the backend's
+   low-priority `default := DAEMON` fallback Inhabited instances at this
+   module's use sites via the real default-priority instances in
+   lean_frontend/CerbCoreInstances.lean (arc-4 S1a priority-override
+   mechanism). *)
+declare {lean} extra_import `CerbCoreInstances`
+
+
 import Translation_aux
 import Enum State_exception_undefined Exception Undefined Nondeterminism Dlist
 

@@ -131,20 +131,42 @@ theorem T1 : T1Statement := t1_of_app_eq t1AppEq_holds
 /-- T1's direct-route twin (cross-check scaffolding per D5). -/
 theorem T1_direct : T1Statement := t1_of_app_eq_direct t1AppEq_holds
 
-/-- UB-FREEDOM face ("no UB" in the slate row), through the WP route. -/
+/-- UB-FREEDOM face ("no UB" in the slate row), through the WP route.
+    RESTATED CerbND-shaped in arc-7 S5c (audit-1 F2): the conclusion is
+    `CallHarnessUBFree` — the production runner's outcome set contains
+    no `Undef0` kill; `CallUBFree` (the seqModel form) is now only the
+    route's intermediate, never the statement. -/
 theorem t1_ubFree_of_app_eq (happ : T1AppEq) :
     ∀ x : Int, intRange x →
-      CallUBFree t1File.tagDefs t1File "id" [intValue x] t1Fs := by
+      CallHarnessUBFree t1File.tagDefs t1File "id" [intValue x] t1Fs := by
   intro x hx
+  refine callHarnessUBFree_of_ubFree ?_
   refine callUBFree_of_wp (GF := CerbS)
     t1File.tagDefs t1File "id" [intValue x] t1Fs (t1Spec x) ?_
   intro η
   exact t1_wp happ x hx
 
-/-- **T1's UB-freedom, UNCONDITIONAL** (WP route). -/
+/-- **T1's UB-freedom, UNCONDITIONAL** (WP route; CerbND-shaped
+    statement per S5c). -/
 theorem T1_ubFree :
     ∀ x : Int, intRange x →
-      CallUBFree t1File.tagDefs t1File "id" [intValue x] t1Fs :=
+      CallHarnessUBFree t1File.tagDefs t1File "id" [intValue x] t1Fs :=
   t1_ubFree_of_app_eq t1AppEq_holds
+
+/-- T1's outcome-SET companion statement (arc-7 S5c, audit-1 F5): the
+    production runner's enumeration for the T1 call is EXACTLY the
+    `Active` singleton — "outcomes = {Specified(x)}" literally, as a
+    set equation on the fuel opsem. -/
+def T1OutcomesStatement : Prop :=
+  ∀ x : Int, intRange x →
+    CerbND.runND (callND t1File.tagDefs t1File "id" [intValue x])
+        (initial_driver_state t1File t1Fs)
+      = [(Active (finalize t1File.tagDefs "callND" (drDone x)), [],
+          drDone x)]
+
+/-- **T1's outcome-set singleton, UNCONDITIONAL** (the `runND_active`
+    corollary of the app equation). -/
+theorem T1Outcomes : T1OutcomesStatement := fun x hx =>
+  runND_active (t1_app_eq x hx.1 hx.2)
 
 end RelSem.T1

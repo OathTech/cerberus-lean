@@ -17,6 +17,14 @@ module ND = Nondeterminism
    precedent; see lean_frontend/CerbFunMapInstances.lean). *)
 declare {lean} extra_import `CerbFunMapInstances`
 
+(* Arc-7 S5c DAEMON eviction (audit-1 F1): real default-priority
+   Inhabited instances for the generic Core AST families + the monadic
+   types (lean_frontend/CerbCoreInstances.lean), evicting the backend's
+   low-priority `default := DAEMON` fallback instances from theorem
+   axiom cones (DAEMON is an inconsistent axiom; the fewer entry
+   vectors, the smaller the meta-assumption). *)
+declare {lean} extra_import `CerbCoreInstances`
+
 
 val strip: forall 'ty 'sym. generic_pexpr 'ty 'sym -> generic_pexpr_ 'ty 'sym
 let strip (Pexpr _ _ pexpr_) =

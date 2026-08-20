@@ -53,11 +53,28 @@ theorem T3_direct : T3Statement := by
   exact callHarnessAdequate_of_app_active
     (t3_app_eq x hx.1 hx.2) (t3_result_eq x)
 
-/-- **T3's UB-freedom, UNCONDITIONAL** (WP route). -/
+/-- **T3's UB-freedom, UNCONDITIONAL** (WP route). RESTATED
+    CerbND-shaped in arc-7 S5c (audit-1 F2): conclusion is
+    `CallHarnessUBFree`; the seqModel form is only the route's
+    intermediate. -/
 theorem T3_ubFree :
     ∀ x : Int, intRange x →
-      CallUBFree t3File.tagDefs t3File "roundtrip" [intValue x] t3Fs := by
+      CallHarnessUBFree t3File.tagDefs t3File "roundtrip"
+        [intValue x] t3Fs := by
   intro x hx
-  exact callUBFree_of_app_eq_wp (t3_app_eq x hx.1 hx.2)
+  exact callHarnessUBFree_of_ubFree
+    (callUBFree_of_app_eq_wp (t3_app_eq x hx.1 hx.2))
+
+/-- T3's outcome-SET companion statement (arc-7 S5c, audit-1 F5). -/
+def T3OutcomesStatement : Prop :=
+  ∀ x : Int, intRange x →
+    CerbND.runND (callND t3File.tagDefs t3File "roundtrip" [intValue x])
+        (initial_driver_state t3File t3Fs)
+      = [(Active (finalize t3File.tagDefs "callND" (drDone x)), [],
+          drDone x)]
+
+/-- **T3's outcome-set singleton, UNCONDITIONAL.** -/
+theorem T3Outcomes : T3OutcomesStatement := fun x hx =>
+  runND_active (t3_app_eq x hx.1 hx.2)
 
 end RelSem.T3

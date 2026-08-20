@@ -67,13 +67,28 @@ theorem T2_direct : T2Statement := by
     (t2_result_eq x y)
 
 /-- **T2's UB-freedom, UNCONDITIONAL** (WP route): under the
-    preconditions the call has no UB outcome. -/
+    preconditions the call has no UB outcome. RESTATED CerbND-shaped in
+    arc-7 S5c (audit-1 F2): conclusion is `CallHarnessUBFree`; the
+    seqModel form is only the route's intermediate. -/
 theorem T2_ubFree :
     ∀ x y : Int, intRange x → intRange y → intRange (x + y) →
-      CallUBFree t2File.tagDefs t2File "add"
+      CallHarnessUBFree t2File.tagDefs t2File "add"
         [intValue x, intValue y] t2Fs := by
   intro x y hx hy hs
-  exact callUBFree_of_app_eq_wp
-    (t2_app_eq x y hx.1 hx.2 hy.1 hy.2 hs.1 hs.2)
+  exact callHarnessUBFree_of_ubFree (callUBFree_of_app_eq_wp
+    (t2_app_eq x y hx.1 hx.2 hy.1 hy.2 hs.1 hs.2))
+
+/-- T2's outcome-SET companion statement (arc-7 S5c, audit-1 F5). -/
+def T2OutcomesStatement : Prop :=
+  ∀ x y : Int, intRange x → intRange y → intRange (x + y) →
+    CerbND.runND (callND t2File.tagDefs t2File "add"
+        [intValue x, intValue y])
+        (initial_driver_state t2File t2Fs)
+      = [(Active (finalize t2File.tagDefs "callND" (drDone x y)), [],
+          drDone x y)]
+
+/-- **T2's outcome-set singleton, UNCONDITIONAL.** -/
+theorem T2Outcomes : T2OutcomesStatement := fun x y hx hy hs =>
+  runND_active (t2_app_eq x y hx.1 hx.2 hy.1 hy.2 hs.1 hs.2)
 
 end RelSem.T2

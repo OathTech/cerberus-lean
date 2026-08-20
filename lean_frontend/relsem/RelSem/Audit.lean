@@ -27,8 +27,34 @@
 
   THE DECLARED BOUNDARY (allowlist), with provenance:
   * the classical trio `propext`, `Classical.choice`, `Quot.sound`;
-  * `DAEMON` (LemLib.lean:26) — lem's Inhabited-fallback axiom for
-    generated instances;
+  * `DAEMON` (LemLib.lean:26) — lem's undefined-value axiom.
+    ⚠ DAEMON-INCONSISTENCY TRIPWIRE (arc-7 S5c, audit-1 F1 — read
+    before touching this entry): `axiom DAEMON : ∀ {α : Type}, α` is,
+    AS DECLARED, a logically INCONSISTENT axiom — `(DAEMON : Empty)`
+    proves `False`, kernel-checked (audit-1's daemon_false probe,
+    reproduced verbatim in the arc-7 results addendum). Therefore a
+    cone that carries DAEMON is kernel-checked only MODULO a
+    meta-assumption the kernel cannot state: that the generated code
+    uses DAEMON solely as an unreachable-inhabitant marker (failwith
+    at polymorphic sites; Inhabited fallbacks), never as a proof
+    step. No relsem/ source names DAEMON and the boundary-clean pins
+    below stay DAEMON-free, but "depends on axioms: [DAEMON, …]" must
+    NEVER be reported as an unconditional kernel certificate.
+    Elimination is the TOP C-tier lem item (temporal boundary,
+    maximum-priority mover; lembugs/2026-08-20_daemon-inconsistent-
+    axiom.md has the consistent-design sketch — per-type real
+    instances/failwithI where derivable; NO single axiom over all
+    `Type` can be consistent for this purpose). Arc-7 S5c leaf census
+    (kernel-walked, per-theorem): after evicting 8 generated
+    Inhabited fallbacks (CerbCoreInstances.lean + extra_imports),
+    exactly TWO DAEMON entry vectors remain on every T1–T4 cone:
+    `LemLib.failwith` (value = DAEMON; 7 polymorphic generated
+    callers: foldl2, map2_, msum, pick, subst_pattern_val,
+    subst_wait_stack, update_env_aux) and
+    `instInhabitedAction_request2` (Core_reduction; same-module use
+    site, unreachable by the extra_import mechanism). Do not
+    re-baseline any pin to ADD DAEMON without extending this census;
+    a DAEMON-free pin that grows DAEMON is a finding, not a drift.
   * `runEffectful` (LemLib.lean:52) — the arcs-1+2 effect-erasure
     barrier (docs/2026-08-18_effects-totality-design.md);
   * `CerbTags.with_tagDefs` (CerbTags.lean:70) and
@@ -120,6 +146,19 @@ def allowedAxioms : List Name :=
   [``propext, ``Classical.choice, ``Quot.sound,
    `DAEMON, `runEffectful, `CerbTags.with_tagDefs, `CerberusFresh.forceIO]
 
+-- IN-BUILD TRIPWIRE (arc-7 S5c): `DAEMON1` must stay un-allowlisted
+-- (header note: it has never appeared in a RelSem cone; its entry
+-- would be a fresh decision, not a drift) — this check makes an
+-- "add it to the allowlist" edit fail the build until this guard is
+-- changed in the same deliberate commit.
+open Lean in
+#eval show CoreM Unit from do
+  if allowedAxioms.contains `DAEMON1 then
+    throwError "RelSem audit: DAEMON1 has been ALLOWLISTED — this is \
+      a fresh boundary decision, not a drift (header note); revert, \
+      or record the decision and update this tripwire in the same \
+      commit"
+
 /-- Non-theorem constants allowed to carry `sorryAx` IN ADDITION to the
     boundary. EMPTY since the arc-7 S2 eviction (finding-closed note in
     the header); the machinery stays, exact and fail-closed both ways,
@@ -196,6 +235,23 @@ info: 'RelSem.Cerb.callHarnessAdequate_of_adequate' depends on axioms: [DAEMON,
  Quot.sound]
 -/
 #guard_msgs in #print axioms RelSem.Cerb.callHarnessAdequate_of_adequate
+-- arc-7 S5c (audit-1 F2): the CerbND-shaped UB-freedom surface.
+/--
+info: 'RelSem.Cerb.callHarnessUBFree_of_ubFree' depends on axioms: [DAEMON,
+ propext,
+ runEffectful,
+ Classical.choice,
+ Quot.sound]
+-/
+#guard_msgs in #print axioms RelSem.Cerb.callHarnessUBFree_of_ubFree
+/--
+info: 'RelSem.Cerb.callHarnessUBFree_of_app_active' depends on axioms: [DAEMON,
+ propext,
+ runEffectful,
+ Classical.choice,
+ Quot.sound]
+-/
+#guard_msgs in #print axioms RelSem.Cerb.callHarnessUBFree_of_app_active
 -- arc-7 S3: the terminal-head outcome-set characterization (the slate-
 -- path fuel-erasure instances, RelSem/RunND.lean + the model-level and
 -- callConfig faces). The RunND layer is [propext]-grade and DAEMON-FREE
@@ -308,6 +364,8 @@ info: 'RelSem.Cerb.callHarnessAdequate_of_app_active' depends on axioms: [DAEMON
 #guard_msgs in #print axioms RelSem.T1.T1_direct
 /-- info: 'RelSem.T1.T1_ubFree' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.T1_ubFree
+/-- info: 'RelSem.T1.T1Outcomes' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T1.T1Outcomes
 
 
 -- Arc-7 S5a: THE SLATE CLIMB — T2 (add, the forced no-signed-overflow
@@ -343,6 +401,8 @@ info: 'RelSem.Cerb.callHarnessAdequate_of_app_eq_wp' depends on axioms: [DAEMON,
 #guard_msgs in #print axioms RelSem.T2.T2_direct
 /-- info: 'RelSem.T2.T2_ubFree' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T2.T2_ubFree
+/-- info: 'RelSem.T2.T2Outcomes' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T2.T2Outcomes
 /-- info: 'RelSem.T3.t3_app_eq' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T3.t3_app_eq
 /-- info: 'RelSem.T3.T3' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
@@ -351,6 +411,8 @@ info: 'RelSem.Cerb.callHarnessAdequate_of_app_eq_wp' depends on axioms: [DAEMON,
 #guard_msgs in #print axioms RelSem.T3.T3_direct
 /-- info: 'RelSem.T3.T3_ubFree' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T3.T3_ubFree
+/-- info: 'RelSem.T3.T3Outcomes' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T3.T3Outcomes
 /-- info: 'RelSem.T4.t4_app_eq' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T4.t4_app_eq
 /-- info: 'RelSem.T4.T4' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
@@ -359,72 +421,191 @@ info: 'RelSem.Cerb.callHarnessAdequate_of_app_eq_wp' depends on axioms: [DAEMON,
 #guard_msgs in #print axioms RelSem.T4.T4_direct
 /-- info: 'RelSem.T4.T4_ubFree' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T4.T4_ubFree
+/-- info: 'RelSem.T4.T4Outcomes' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T4.T4Outcomes
 
-/-! ## THE STATEMENT-TCB GATE (arc-7 S5a, Task 4): a slate theorem's
-    STATEMENT may mention only fuel-opsem-level objects. Mechanized:
-    collect the constants of each slate theorem's TYPE (plus one
-    unfolding level for the `T?Statement`/`T4EnvHyp` Prop-defs the
-    types abbreviate), and FAIL THE BUILD if any is Iris-rooted or one
-    of the relational-layer internals (Step/Steps/CsSem/DSteps/
-    stateIs). Allowed by construction: ExecModel/CerbND-shaped surface
-    (CallHarnessAdequate, CallUBFree), the generated types, and the
-    fixture terms. NEGATIVE-TESTED below on `t1_wp` (an
-    Iris-statement theorem), which the checker must reject. -/
+/-! ## THE DAEMON ENTRY-VECTOR CENSUS (arc-7 S5c, audit-1 F1): the
+    boundary entry's leaf census, ENFORCED. Walk the union constant
+    cone of the slate theorems and collect every constant whose
+    type/value DIRECTLY references DAEMON/DAEMON1; the set must be
+    EXACTLY the pinned census. A new entry vector (or an eviction) is
+    a deliberate re-baseline here + in the header, never a drift. -/
 
 open Lean in
-/-- Names a slate STATEMENT must not mention (the Iris root covers
-    WP/IProp/state-interpretation constants). -/
-def stmtBannedExact : List Name :=
-  [`RelSem.Step, `RelSem.Steps, `RelSem.CsSem,
-   `RelSem.Cerb.DSteps, `RelSem.Cerb.stateIs]
-
-open Lean in
-/-- The constants a theorem's statement mentions, with the T-namespace
-    Prop-def abbreviations unfolded one level. -/
-def stmtConstantsOf (env : Environment) (n : Name) :
-    Except String (List Name) := do
-  let some ci := env.find? n
-    | .error s!"statement gate: {n} not found"
-  let direct := ci.type.getUsedConstants.toList
-  let mut out := direct
-  for c in direct do
-    -- one unfolding level for the statement abbreviations
-    if c.getPrefix == `RelSem.T1 || c.getPrefix == `RelSem.T2
-        || c.getPrefix == `RelSem.T3 || c.getPrefix == `RelSem.T4 then
-      if let some (.defnInfo dv) := env.find? c then
-        if dv.type.isProp then
-          out := out ++ dv.value.getUsedConstants.toList
-  .ok out
-
-open Lean in
-/-- The banned names a statement mentions (empty = pass). -/
-def stmtViolations (env : Environment) (n : Name) :
-    Except String (List Name) := do
-  let cs ← stmtConstantsOf env n
-  .ok <| cs.filter (fun c =>
-    c.getRoot == `Iris || stmtBannedExact.contains c)
+/-- The pinned DAEMON direct-referencer census on the slate cones
+    (S5c: post-eviction; both STRUCTURAL until the C-tier lem mover —
+    header entry + lembugs/2026-08-20_daemon-inconsistent-axiom.md). -/
+def daemonCensus : List Name :=
+  [`failwith, `instInhabitedAction_request2]
 
 open Lean in
 #eval show CoreM Unit from do
   let env ← getEnv
+  let roots : List Name :=
+    [`RelSem.T1.T1, `RelSem.T2.T2, `RelSem.T3.T3, `RelSem.T4.T4,
+     `RelSem.T1.T1_ubFree, `RelSem.T2.T2_ubFree, `RelSem.T3.T3_ubFree,
+     `RelSem.T4.T4_ubFree]
+  let mut seen : NameSet := {}
+  let mut queue : Array Name := roots.toArray
+  let mut leaves : NameSet := {}
+  while h : queue.size > 0 do
+    let n := queue[queue.size - 1]
+    queue := queue.pop
+    if seen.contains n then continue
+    seen := seen.insert n
+    let some ci := env.find? n | continue
+    let used := ci.type.getUsedConstants ++
+      (match ci.value? with | some v => v.getUsedConstants | none => #[])
+    for c in used do
+      if c == `DAEMON || c == `DAEMON1 then
+        leaves := leaves.insert n
+      else
+        unless seen.contains c do queue := queue.push c
+  let got := (leaves.toArray.map (·.toString)).qsort (· < ·)
+  let want := (daemonCensus.toArray.map (·.toString)).qsort (· < ·)
+  unless got == want do
+    throwError "RelSem audit: DAEMON entry-vector census DRIFTED — \
+      expected {want}, walked {got}. A new vector (or an eviction) is \
+      a deliberate re-baseline of daemonCensus + the header census, \
+      with the classification (evictable vs structural) recorded."
+  logInfo s!"RelSem DAEMON census: {got.size} entry vectors on the \
+    slate cones, exactly as pinned ({got})"
+
+/-! ## THE STATEMENT-TCB GATE (arc-7 S5a Task 4; REBUILT arc-7 S5c,
+    audit-1 F2): a slate theorem's STATEMENT may mention only
+    fuel-opsem-level objects. Mechanized: walk the constants of each
+    slate theorem's TYPE, TRANSITIVELY unfolding every RelSem-rooted
+    Prop-family def (`T?Statement`, `t?Spec`, `intRange`, `T4EnvHyp`,
+    `CallHarnessAdequate`, `CallHarnessUBFree`, …) — audit-1 F2 showed
+    the previous one-level walk let a Prop-def wrapper hide a
+    relational-layer name (`CallUBFree` = `seqModel.UBFree`). FAIL THE
+    BUILD if the walk reaches (a) an Iris-rooted constant, (b) a
+    banned relational-layer internal, or (c) any RelSem-rooted
+    NON-Prop constant outside the small positive allowlist of
+    harness-surface/fixture-data names below (fail-closed: new
+    statement vocabulary must be allowlisted deliberately, here).
+    NEGATIVE-TESTED in-build on `t1_wp` (Iris statement) and on the
+    permanent wrapper-hole probe (`wrapperHole_thm`), both of which
+    the checker must reject. -/
+
+open Lean in
+/-- Names a slate STATEMENT must not mention (the Iris root covers
+    WP/IProp/state-interpretation constants; the exact list covers the
+    relational layer incl. the seqModel route — audit-1 F2's in-tree
+    finding). -/
+def stmtBannedExact : List Name :=
+  [`RelSem.Step, `RelSem.Steps, `RelSem.CsSem,
+   `RelSem.Cerb.DSteps, `RelSem.Cerb.DStep, `RelSem.Cerb.stateIs,
+   `RelSem.Cerb.seqModel, `RelSem.ExecModel]
+
+open Lean in
+/-- The RelSem-rooted NON-Prop constants a slate statement MAY mention:
+    the harness surface (`callND`, `intValue`) and the pinned fixture
+    data (program terms, fs states, terminal states). Everything
+    RelSem-rooted that is neither here nor a transparently-unfolded
+    Prop-family def fails the gate. -/
+def stmtAllowed : List Name :=
+  [`RelSem.Cerb.callND, `RelSem.Cerb.intValue,
+   `RelSem.T1.t1File, `RelSem.T1.t1Fs, `RelSem.T1.drDone,
+   `RelSem.T2.t2Fs, `RelSem.T2.drDone,
+   `RelSem.T3.t3Fs, `RelSem.T3.drDone,
+   `RelSem.T4.t4Fs, `RelSem.T4.drDone,
+   `RelSem.Slate.t2File, `RelSem.Slate.t3File, `RelSem.Slate.t4File]
+
+open Lean in
+/-- Syntactic "ends in Prop" (Prop-family def: `Prop` or a pi chain
+    into `Prop`) — the unfolding trigger for the transitive walk. -/
+def endsInProp : Expr → Bool
+  | .forallE _ _ b _ => endsInProp b
+  | .mdata _ b => endsInProp b
+  | .sort l => l == .zero
+  | _ => false
+
+open Lean in
+/-- The banned/dis-allowed names reachable from `n`'s statement through
+    the transitive Prop-def unfolding (empty = pass). -/
+def stmtViolations (env : Environment) (n : Name) :
+    Except String (List Name) := do
+  let some ci := env.find? n
+    | .error s!"statement gate: {n} not found"
+  let mut viol : Array Name := #[]
+  let mut seen : NameSet := {}
+  let mut queue : Array Name := ci.type.getUsedConstants
+  while h : queue.size > 0 do
+    let c := queue[queue.size - 1]
+    queue := queue.pop
+    if seen.contains c then continue
+    seen := seen.insert c
+    if c.getRoot == `Iris || stmtBannedExact.contains c then
+      viol := viol.push c
+      continue
+    if c.getRoot == `RelSem then
+      match env.find? c with
+      | some (.defnInfo dv) =>
+        if endsInProp dv.type then
+          -- Prop-family wrapper: transparent — its CONTENT is walked
+          queue := queue ++ dv.value.getUsedConstants
+        else if !stmtAllowed.contains c then
+          viol := viol.push c
+      | _ =>
+        if !stmtAllowed.contains c then viol := viol.push c
+  .ok viol.toList
+
+/-- PERMANENT NEGATIVE-TEST FIXTURE (audit-1 F2, the wrapper hole): a
+    Prop-def wrapper hiding a relational-layer name behind two levels
+    of indirection. Never a real statement — exists only so the gate's
+    transitive walk is itself gate-tested. -/
+def wrapperHoleProbe : Prop :=
+  ∃ c, RelSem.Cerb.seqModel.UBFree c
+
+/-- The wrapper-hole probe theorem the gate must REJECT. -/
+theorem wrapperHole_thm : wrapperHoleProbe → wrapperHoleProbe := id
+
+open Lean in
+#eval show CoreM Unit from do
+  let env ← getEnv
+  -- Fail-closed existence checks on the gate's own lists (a rename must
+  -- re-point the gate, never silently drop a check).
+  for n in stmtBannedExact ++ stmtAllowed do
+    let some _ := env.find? n
+      | throwError "RelSem statement gate: listed name {n} is MISSING \
+          (renamed without re-pointing the gate?)"
   let slate : List Name :=
     [`RelSem.T1.T1, `RelSem.T1.T1_direct, `RelSem.T1.T1_ubFree,
+     `RelSem.T1.T1Outcomes,
      `RelSem.T2.T2, `RelSem.T2.T2_direct, `RelSem.T2.T2_ubFree,
+     `RelSem.T2.T2Outcomes,
      `RelSem.T3.T3, `RelSem.T3.T3_direct, `RelSem.T3.T3_ubFree,
-     `RelSem.T4.T4, `RelSem.T4.T4_direct, `RelSem.T4.T4_ubFree]
+     `RelSem.T3.T3Outcomes,
+     `RelSem.T4.T4, `RelSem.T4.T4_direct, `RelSem.T4.T4_ubFree,
+     `RelSem.T4.T4Outcomes]
   for n in slate do
     match stmtViolations env n with
     | .error e => throwError "{e}"
     | .ok [] => pure ()
     | .ok vs =>
-      throwError "RelSem statement gate: {n}'s STATEMENT mentions         banned constants {vs} — slate statements are fuel-opsem only"
-  -- NEGATIVE TEST: an Iris-statement theorem must be rejected.
+      throwError "RelSem statement gate: {n}'s STATEMENT mentions \
+        banned constants {vs} — slate statements are fuel-opsem only"
+  -- NEGATIVE TEST 1: an Iris-statement theorem must be rejected.
   match stmtViolations env `RelSem.T1.t1_wp with
   | .error e => throwError "{e}"
   | .ok [] =>
-    throwError "RelSem statement gate NEGATIVE TEST FAILED: t1_wp's       Iris statement passed the checker — the gate is not detecting"
+    throwError "RelSem statement gate NEGATIVE TEST FAILED: t1_wp's \
+      Iris statement passed the checker — the gate is not detecting"
   | .ok _ => pure ()
-  logInfo s!"RelSem statement gate: {slate.length} slate statements     fuel-opsem-clean (negative test: t1_wp correctly rejected)"
+  -- NEGATIVE TEST 2 (permanent, audit-1 F2): the wrapper-hole probe
+  -- must be rejected, and specifically by seeing seqModel THROUGH the
+  -- Prop-def wrapper.
+  match stmtViolations env `RelSem.Audit.wrapperHole_thm with
+  | .error e => throwError "{e}"
+  | .ok vs =>
+    unless vs.contains `RelSem.Cerb.seqModel do
+      throwError "RelSem statement gate NEGATIVE TEST FAILED: the \
+        wrapper-hole probe did not surface seqModel through the \
+        Prop-def wrapper (transitive walk broken?) — got {vs}"
+  logInfo s!"RelSem statement gate: {slate.length} slate statements \
+    fuel-opsem-clean (negative tests: t1_wp and the wrapper-hole probe \
+    correctly rejected)"
 
 /-! ## The exhaustive sweep — LAST in the file by design: a constant
     declared after this point would dodge it (negative-test lesson,
