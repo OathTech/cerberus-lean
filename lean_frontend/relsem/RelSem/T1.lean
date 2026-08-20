@@ -22,7 +22,8 @@
   WP route (`t1_of_app_eq`, the D5 ruling); `T1_direct` is the
   direct-route cross-check; `T1_ubFree` is the no-UB face. Exact axiom
   pins in RelSem/Audit.lean: the classical trio + the declared
-  boundary (DAEMON, runEffectful) — no sorryAx, no ofReduce*.
+  boundary (runEffectful; DAEMON deleted in arc-8 S3) — no sorryAx,
+  no ofReduce*.
 
   House rules: no sorry, no axioms. Under the in-build audit.
 -/

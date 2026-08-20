@@ -475,7 +475,7 @@ theorem app_nd_guard_false (r : kill_reason E) (st : S) :
     branching. This is why single-threaded deterministic runs are
     one-step: the driver loop's `pick (SK_misc ["driver 2"]) tid_steps`
     always sees a singleton. -/
-theorem app_pick_singleton [Constraints C] [Lem_Show.Show I]
+theorem app_pick_singleton [Constraints C] [Lem_Show.Show I] [Inhabited S]
     (i : I) (x : A) (st : S) :
     app (pick i [x] : ndM A I E C S) st = (NDactive x, st) := rfl
 

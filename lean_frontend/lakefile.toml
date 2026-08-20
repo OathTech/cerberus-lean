@@ -39,12 +39,13 @@ git = "https://github.com/leanprover-community/quote4"
 rev = "38d591e778f100aec9762bb582f9c7f55f50e9dc"
 
 # LemLib is the Lem runtime library for Lean, from the septract/lem-lean fork.
-# arc-6 S3: pinned to the arc/libc-load branch pair (Fmap representation);
+# arc-8 S3: mid-arc pin to the arc/daemon-elim DAEMON-deletion commit
+# (DAEMON/DAEMON1/legacy failwith removed from LemLib);
 # re-pin to mdd/lean-backend at arc close per the two-repo pin dance.
 [[require]]
 name = "LemLib"
 git = "https://github.com/septract/lem-lean"
-rev = "mdd/lean-backend"
+rev = "9d220e49ee1a91356d8034f12b6a9896e1ba7819"
 subDir = "lean-lib"
 
 [[lean_lib]]

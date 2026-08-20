@@ -3,9 +3,10 @@
 #
 # Asserts the axiom dependencies of the exemplar definitions/theorems via
 # #print axioms, so any change to the inhabitation machinery is measured,
-# not narrated. Installed BEFORE the S5 failwith change (guardrail-first):
-# starts by pinning the CURRENT known-tainted state; S5 flips EXPECT below
-# to the clean state and the gate then enforces it forever.
+# not narrated. (History: installed guardrail-first before the arc-2 S5
+# failwith change with an EXPECT staging toggle; since arc-8 S3 the
+# DAEMON axiom family is DELETED from LemLib and the toggle is gone —
+# DAEMON is unconditionally fatal in every probed cone.)
 #
 # BOUNDARY HONESTY (arc-4 S5f, audit G3; updated arc-5 audit 2, F3): the
 # probes below measure GENERATED exemplar cones + driver2 ONLY.
@@ -97,9 +98,15 @@ if [[ -n "$D14_HITS" ]]; then
 fi
 echo "check_theorem_axioms: D14 grep-ban OK (no native_decide/bv_decide in ${#D14_SCAN_PATHS[@]} tree(s) + LemLibTest.lean)"
 
-# EXPECT: default 'clean' since S5c landed (the merge-bar condition);
-# 'daemon' documented the pre-S5 pinned state.
-EXPECT="${CERB_AXIOM_EXPECT:-clean}"
+# DAEMON is DELETED (arc-8 S3): lem's DAEMON axiom family was removed
+# from LemLib (it was logically inconsistent as declared — arc-7
+# audit-1 F1) after the arc-8 S1/S2 backend passes (derived real
+# Inhabited instances + failwithI threading) made it unreferenced.
+# DAEMON is therefore FORBIDDEN in EVERY probed cone below, driver2
+# included (the old arc-3 D9 "DAEMON allowed in driver2" allowance is
+# removed, and the pre-arc-8 CERB_AXIOM_EXPECT staging toggle is gone —
+# there is no expectation under which DAEMON may appear). Fail-closed:
+# any DAEMON anywhere in any probed cone fails this gate.
 
 PROBE=lean_frontend/.axiom-probe.lean
 EXEMPLARS=(core_object_type_of_ctype get_membersDefs zeros_aux
@@ -135,8 +142,12 @@ for name in "${EXEMPLARS[@]}"; do
   fi
 done
 
-has_daemon=0
-grep -q "DAEMON" <<<"$OUT" && has_daemon=1
+# DAEMON anywhere in these cones is always a failure (arc-8 S3: the
+# axiom family is deleted; reintroduction = build/gate failure forever).
+if grep -q "DAEMON" <<<"$OUT"; then
+  echo "check_theorem_axioms: FAIL — DAEMON in an exemplar cone (the DAEMON axiom family was DELETED in arc-8; it is forbidden everywhere)"
+  exit 1
+fi
 # sorryAx anywhere in these cones is always a failure (no expectation
 # under which the exemplar defs may depend on sorry).
 if grep -q "sorryAx" <<<"$OUT"; then
@@ -153,12 +164,12 @@ if grep -qE 'ofReduce(Bool|Nat)' <<<"$OUT"; then
 fi
 
 # driver2 kernel-cone probe (arc 4, success condition 2): the execution
-# driver's cone must be sorryAx-FREE. DAEMON is ALLOWED here (driver2 is
-# NOT part of the DAEMON-clean exemplar set above — recorded per arc-3 D9);
-# only sorry taints fail. Separate probe so driver2's DAEMON cannot leak
-# into the clean-set check. Fails closed: a probe error (e.g. unknown
-# constant) produces no "depends on axioms"/"does not depend" line and
-# fails the assertion below.
+# driver's cone must be sorryAx-FREE and — since arc-8 S3 — DAEMON-FREE
+# like every other probed cone (the arc-3 D9 allowance is removed; the
+# S2 boundary verified driver2's cone was already DAEMON-free before
+# the deletion). Fails closed: a probe error (e.g. unknown constant)
+# produces no "depends on axioms"/"does not depend" line and fails the
+# assertion below.
 PROBE2=lean_frontend/.axiom-probe-driver2.lean
 cat > "$PROBE2" <<'EOF'
 import Driver
@@ -180,22 +191,11 @@ if grep -qE 'ofReduce(Bool|Nat)' <<<"$OUT2"; then
   echo "check_theorem_axioms: FAIL — ofReduceBool/ofReduceNat in driver2's kernel cone (D14 non-kernel proof-method ban)"
   exit 1
 fi
-echo "check_theorem_axioms: driver2 cone sorryAx-free + ofReduce*-free (DAEMON allowed there, per arc-3 D9)"
+# DAEMON leg, driver2 cone (arc-8 S3): forbidden like every other cone.
+if grep -q "DAEMON" <<<"$OUT2"; then
+  echo "check_theorem_axioms: FAIL — DAEMON in driver2's kernel cone (the DAEMON axiom family was DELETED in arc-8; the arc-3 D9 allowance is removed)"
+  exit 1
+fi
+echo "check_theorem_axioms: driver2 cone sorryAx-free + ofReduce*-free + DAEMON-free (arc-8 S3 bar)"
 
-case "$EXPECT" in
-  daemon)
-    if [[ $has_daemon -eq 1 ]]; then
-      echo "check_theorem_axioms: OK (pinned pre-S5 state: DAEMON present, as recorded)"
-    else
-      echo "check_theorem_axioms: state CHANGED (DAEMON gone) — flip EXPECT to 'clean' deliberately, with a commit explaining why"
-      exit 1
-    fi ;;
-  clean)
-    if [[ $has_daemon -eq 0 ]]; then
-      echo "check_theorem_axioms: OK (post-S5 bar: DAEMON-clean cones)"
-    else
-      echo "check_theorem_axioms: FAIL — DAEMON re-entered a theorem cone"
-      exit 1
-    fi ;;
-  *) echo "check_theorem_axioms: bad EXPECT '$EXPECT'"; exit 2 ;;
-esac
+echo "check_theorem_axioms: OK (arc-8 S3 bar: DAEMON-free cones everywhere)"

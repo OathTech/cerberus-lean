@@ -16,72 +16,46 @@
      file being elaborated (no module index yet). Each constant's
      TRANSITIVE axioms (`collectAxioms`) must lie inside the declared
      boundary below; `sorryAx` / `ofReduceBool` / `ofReduceNat` (the D14
-     non-kernel-method axioms) are never in it. (Header line "DAEMON
-     entering `runNDT_sound`" reads `runNDFuel_sound` since the arc-7 S2
-     totalize-CerbND transfer.)
+     non-kernel-method axioms) are never in it.
 
   2. CURATED PINS — `#guard_msgs in #print axioms` on the load-bearing
-     proved theorems, asserting their EXACT axiom sets, so growth (e.g.
-     DAEMON entering `runNDT_sound`) is a build failure until this file
-     is deliberately re-baselined in the same commit with the reason.
+     proved theorems, asserting their EXACT axiom sets, so growth (a
+     new axiom entering `runNDFuel_sound`) is a build failure until this
+     file is deliberately re-baselined in the same commit with the
+     reason. Since arc-8 S3 every pin is DAEMON-free (deletion note
+     below); the T1–T4 cones are exactly `[propext, runEffectful,
+     Classical.choice, Quot.sound]`.
 
   THE DECLARED BOUNDARY (allowlist), with provenance:
   * the classical trio `propext`, `Classical.choice`, `Quot.sound`;
-  * `DAEMON` (LemLib.lean:26) — lem's undefined-value axiom.
-    ⚠ DAEMON-INCONSISTENCY TRIPWIRE (arc-7 S5c, audit-1 F1 — read
-    before touching this entry): `axiom DAEMON : ∀ {α : Type}, α` is,
-    AS DECLARED, a logically INCONSISTENT axiom — `(DAEMON : Empty)`
-    proves `False`, kernel-checked (audit-1's daemon_false probe,
-    reproduced verbatim in the arc-7 results addendum). Therefore a
-    cone that carries DAEMON is kernel-checked only MODULO a
-    meta-assumption the kernel cannot state: that the generated code
-    uses DAEMON solely as an unreachable-inhabitant marker (failwith
-    at polymorphic sites; Inhabited fallbacks), never as a proof
-    step. No relsem/ source names DAEMON and the boundary-clean pins
-    below stay DAEMON-free, but "depends on axioms: [DAEMON, …]" must
-    NEVER be reported as an unconditional kernel certificate.
-    Elimination is the TOP C-tier lem item (temporal boundary,
-    maximum-priority mover; lembugs/2026-08-20_daemon-inconsistent-
-    axiom.md has the consistent-design sketch — per-type real
-    instances/failwithI where derivable; NO single axiom over all
-    `Type` can be consistent for this purpose). Arc-7 S5c leaf census
-    (kernel-walked, per-theorem): after evicting 8 generated
-    Inhabited fallbacks (CerbCoreInstances.lean + extra_imports),
-    exactly TWO DAEMON entry vectors remain on every T1–T4 cone:
-    `LemLib.failwith` (value = DAEMON; 7 polymorphic generated
-    callers: foldl2, map2_, msum, pick, subst_pattern_val,
-    subst_wait_stack, update_env_aux) and
-    `instInhabitedAction_request2` (Core_reduction; same-module use
-    site, unreachable by the extra_import mechanism). Do not
-    re-baseline any pin to ADD DAEMON without extending this census;
-    a DAEMON-free pin that grows DAEMON is a finding, not a drift.
-  * `runEffectful` (LemLib.lean:52) — the arcs-1+2 effect-erasure
+  * `runEffectful` (LemLib.lean) — the arcs-1+2 effect-erasure
     barrier (docs/2026-08-18_effects-totality-design.md);
   * `CerbTags.with_tagDefs` (CerbTags.lean:70) and
     `CerberusFresh.forceIO` (CerberusFresh.lean:113) — the two
     hand-written declared-boundary axioms (check_theorem_axioms.sh
     census).
-  Deliberately NOT allowed: `DAEMON1` (LemLib.lean:27) — it has never
-  appeared in a RelSem cone; if it ever does, that is a fresh decision,
-  not a drift.
 
-  DAEMON DISPOSITION ([AGENT:S1S0], 2026-08-19, decided on probe
-  evidence): DAEMON DOES appear in RelSem cones — e.g.
-  `pexprStep_val` / `step_eval_pexpr_val_erase` / `driver2_wrapper_defeq`
-  carry it. This is NOT a generated-instance leak into proof REASONING:
-  `collectAxioms` walks the VALUES of every constant a statement
-  mentions, so any theorem about the real generated substrate
-  (`step_eval_pexpr`, `driver2`, `drive` — each of whose compiled bodies
-  contains lem's DAEMON Inhabited fallback) inherits DAEMON through the
-  substrate, exactly the arc-3 D9 allowance for driver2's cone. No
-  relsem/ source names DAEMON (the hand-written axiom census and the D14
-  grep cover relsem/), so the only entry vector is the generated code.
-  The layer-boundary theorems that do NOT mention the fuel'd substrate
-  (`runNDFuel_sound`, `runND_sound`, `runNDFuel_mono`, `behaviors_sound`,
-  `seqModel_behavior_sound`, `seqModel_adequate_of_reach`,
-  `pointsToByte_functional`) are DAEMON-FREE and pinned exactly below —
-  the curated pins are what keep "DAEMON allowed in principle" from
-  becoming "DAEMON everywhere".
+  DAEMON IS DELETED — THE ABSENCE IS ENFORCED (arc-8 S3, 2026-08-20).
+  History: `axiom DAEMON : ∀ {α : Type}, α` (lem's undefined-value
+  axiom, formerly in LemLib) was, AS DECLARED, a logically INCONSISTENT
+  axiom — `(DAEMON : Empty)` proves `False`, kernel-checked (arc-7
+  audit-1 F1; the arc-7 results addendum has the verbatim probe). Until
+  arc-8, every substrate-quoting cone here carried it (kernel-checked
+  only MODULO the unreachable-marker meta-assumption), tracked by an
+  entry-vector census. Arc-8 executed the temporal mover
+  (lembugs/2026-08-20_daemon-inconsistent-axiom.md): the lem backend
+  now derives real bounded Inhabited instances (S1) and emits
+  failwithI with `[Inhabited tv]` signature threading (S2), and DAEMON,
+  DAEMON1, and legacy `failwith` are DELETED from LemLib (S3). The
+  T1–T4 cones are now exactly `[propext, runEffectful,
+  Classical.choice, Quot.sound]` — UNCONDITIONAL kernel certificates
+  modulo only the declared boundary above.
+  FAIL-CLOSED ABSENCE GATE (below, replacing the old census walk): the
+  build FAILS if any constant named `DAEMON` or `DAEMON1` exists
+  ANYWHERE in the elaboration environment (LemLib, the full generated
+  tree, relsem — the whole import closure), or if either name is ever
+  allowlisted. Reintroduction under any guise is a build failure, not
+  a re-baseline; there is no sanctioned path back.
 
   FINDING CLOSED (arc-7 S2 — was: REGISTERED FINDING, arc-7 S1/D3,
   arc-blocking): `sorryAx` sat in the cone of `initial_driver_state`
@@ -144,20 +118,33 @@ open Lean
 /-- The declared axiom boundary (docstring above records provenance). -/
 def allowedAxioms : List Name :=
   [``propext, ``Classical.choice, ``Quot.sound,
-   `DAEMON, `runEffectful, `CerbTags.with_tagDefs, `CerberusFresh.forceIO]
+   `runEffectful, `CerbTags.with_tagDefs, `CerberusFresh.forceIO]
 
--- IN-BUILD TRIPWIRE (arc-7 S5c): `DAEMON1` must stay un-allowlisted
--- (header note: it has never appeared in a RelSem cone; its entry
--- would be a fresh decision, not a drift) — this check makes an
--- "add it to the allowlist" edit fail the build until this guard is
--- changed in the same deliberate commit.
+-- THE DAEMON ABSENCE GATE (arc-8 S3, durability requirement 3 —
+-- replaces the arc-7 S5c DAEMON1 tripwire and the entry-vector census
+-- walk). FAIL-CLOSED: the build fails if a constant named `DAEMON` or
+-- `DAEMON1` exists ANYWHERE in the environment (the full import
+-- closure: LemLib, every generated module, relsem), or if either name
+-- is allowlisted. The deleted axiom was logically INCONSISTENT
+-- (header history); reintroduction is a build failure forever after —
+-- never a re-baseline.
 open Lean in
 #eval show CoreM Unit from do
-  if allowedAxioms.contains `DAEMON1 then
-    throwError "RelSem audit: DAEMON1 has been ALLOWLISTED — this is \
-      a fresh boundary decision, not a drift (header note); revert, \
-      or record the decision and update this tripwire in the same \
-      commit"
+  let env ← getEnv
+  for banned in [`DAEMON, `DAEMON1] do
+    if allowedAxioms.contains banned then
+      throwError "RelSem audit: {banned} has been ALLOWLISTED — the \
+        DAEMON axiom family was DELETED in arc-8 (it was logically \
+        inconsistent as declared); there is no sanctioned path back. \
+        Revert."
+    if (env.find? banned).isSome then
+      throwError "RelSem audit: a constant named {banned} EXISTS in \
+        the environment — the DAEMON axiom family was DELETED in \
+        arc-8 (it was logically inconsistent as declared) and its \
+        absence is enforced fail-closed. Remove the declaration; \
+        reintroduction is a build failure, never a re-baseline."
+  logInfo "RelSem DAEMON absence gate: no constant named DAEMON or \
+    DAEMON1 exists in the environment; neither is allowlisted"
 
 /-- Non-theorem constants allowed to carry `sorryAx` IN ADDITION to the
     boundary. EMPTY since the arc-7 S2 eviction (finding-closed note in
@@ -184,28 +171,29 @@ def sorryExceptions : List Name := []
 #guard_msgs in #print axioms RelSem.Cerb.seqModel_adequate_of_reach
 /-- info: 'RelSem.Cerb.pointsToByte_functional' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Cerb.pointsToByte_functional
--- Substrate-mentioning theorems: DAEMON enters through the generated
--- bodies they quote (disposition in the header), pinned exactly so any
--- FURTHER growth (sorryAx above all) is a build failure.
-/-- info: 'RelSem.Cerb.step_eval_pexpr_val_erase' depends on axioms: [DAEMON, propext, Classical.choice, Quot.sound] -/
+-- Substrate-mentioning theorems: pinned exactly so any growth
+-- (sorryAx above all) is a build failure. DAEMON-free since the arc-8
+-- S3 deletion (formerly it entered through the quoted generated
+-- bodies).
+/-- info: 'RelSem.Cerb.step_eval_pexpr_val_erase' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Cerb.step_eval_pexpr_val_erase
-/-- info: 'RelSem.Cerb.pexprStep_val' depends on axioms: [DAEMON, propext, Classical.choice, Quot.sound] -/
+/-- info: 'RelSem.Cerb.pexprStep_val' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Cerb.pexprStep_val
-/-- info: 'RelSem.Cerb.driver2_wrapper_defeq' depends on axioms: [DAEMON, propext, Classical.choice, Quot.sound] -/
+/-- info: 'RelSem.Cerb.driver2_wrapper_defeq' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Cerb.driver2_wrapper_defeq
 -- arc-7 S3: coverage-by-need micro-lemmas (RelSem/Machine.lean §
 -- "Coverage-by-need", RelSem/Cerberus.lean liftMem_step_killed). The
 -- generic app-equation layer is near-axiom-free (propext from the simp
--- rewrites); app_pick_singleton quotes `pick` (whose compiled body
--- carries lem's failwith fallback) so DAEMON enters through the
--- substrate, exactly the standing disposition. Pinned exactly.
+-- rewrites); app_pick_singleton quotes `pick` (failwithI + threaded
+-- [Inhabited] binders since arc-8 — its cone is now [propext]).
+-- Pinned exactly.
 /-- info: 'RelSem.step_done_inv' does not depend on any axioms -/
 #guard_msgs in #print axioms RelSem.step_done_inv
 /-- info: 'RelSem.app_bind_killed' depends on axioms: [propext] -/
 #guard_msgs in #print axioms RelSem.app_bind_killed
 /-- info: 'RelSem.app_liftND_killed' depends on axioms: [propext] -/
 #guard_msgs in #print axioms RelSem.app_liftND_killed
-/-- info: 'RelSem.app_pick_singleton' depends on axioms: [DAEMON, propext] -/
+/-- info: 'RelSem.app_pick_singleton' depends on axioms: [propext] -/
 #guard_msgs in #print axioms RelSem.app_pick_singleton
 /-- info: 'RelSem.Cerb.liftMem_step_active' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Cerb.liftMem_step_active
@@ -213,50 +201,30 @@ def sorryExceptions : List Name := []
 #guard_msgs in #print axioms RelSem.Cerb.liftMem_step_killed
 -- arc-7 S3: the symbolic-argument harness (RelSem/Call.lean). Every
 -- theorem below MENTIONS the harness computation `callND` (drive-path
--- generated substrate), so DAEMON and runEffectful enter through the
--- quoted bodies exactly as for the D3-disposed substrate theorems
--- above (initial_driver_state carries runEffectful; the driver code
--- carries DAEMON). Pinned exactly — growth (sorryAx above all) fails
--- the build. `ofStatus_value_inv` is the harness's one pure lemma and
--- is pinned axiom-FREE.
-/-- info: 'RelSem.Cerb.callReaches' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+-- generated substrate), so runEffectful enters through the quoted
+-- bodies (initial_driver_state carries it). Pinned exactly — growth
+-- (sorryAx above all) fails the build. `ofStatus_value_inv` is the
+-- harness's one pure lemma and is pinned axiom-FREE.
+/-- info: 'RelSem.Cerb.callReaches' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Cerb.callReaches
-/-- info: 'RelSem.Cerb.callOutcomes_sound' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'RelSem.Cerb.callOutcomes_sound' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Cerb.callOutcomes_sound
-/-- info: 'RelSem.Cerb.callAdequate_of_reach' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'RelSem.Cerb.callAdequate_of_reach' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Cerb.callAdequate_of_reach
 /-- info: 'RelSem.Cerb.ofStatus_value_inv' does not depend on any axioms -/
 #guard_msgs in #print axioms RelSem.Cerb.ofStatus_value_inv
-/--
-info: 'RelSem.Cerb.callHarnessAdequate_of_adequate' depends on axioms: [DAEMON,
- propext,
- runEffectful,
- Classical.choice,
- Quot.sound]
--/
+/-- info: 'RelSem.Cerb.callHarnessAdequate_of_adequate' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Cerb.callHarnessAdequate_of_adequate
 -- arc-7 S5c (audit-1 F2): the CerbND-shaped UB-freedom surface.
-/--
-info: 'RelSem.Cerb.callHarnessUBFree_of_ubFree' depends on axioms: [DAEMON,
- propext,
- runEffectful,
- Classical.choice,
- Quot.sound]
--/
+/-- info: 'RelSem.Cerb.callHarnessUBFree_of_ubFree' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Cerb.callHarnessUBFree_of_ubFree
-/--
-info: 'RelSem.Cerb.callHarnessUBFree_of_app_active' depends on axioms: [DAEMON,
- propext,
- runEffectful,
- Classical.choice,
- Quot.sound]
--/
+/-- info: 'RelSem.Cerb.callHarnessUBFree_of_app_active' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Cerb.callHarnessUBFree_of_app_active
 -- arc-7 S3: the terminal-head outcome-set characterization (the slate-
 -- path fuel-erasure instances, RelSem/RunND.lean + the model-level and
--- callConfig faces). The RunND layer is [propext]-grade and DAEMON-FREE
--- (boundary theorems); the callConfig corollaries quote the harness
--- substrate (DAEMON + runEffectful, standing disposition). The 30
+-- callConfig faces). The RunND layer is [propext]-grade (boundary
+-- theorems); the callConfig corollaries quote the harness
+-- substrate (runEffectful). The 30
 -- FuelHooks wrapper-defeq theorems are rfl objects covered by the
 -- sweep; `nd_bind_wrapper_defeq` is pinned as the exemplar (axiom-free).
 /-- info: 'RelSem.runND_active' depends on axioms: [propext] -/
@@ -271,23 +239,11 @@ info: 'RelSem.Cerb.callHarnessUBFree_of_app_active' depends on axioms: [DAEMON,
 #guard_msgs in #print axioms RelSem.Cerb.seqModel_behavior_running_active_iff
 /-- info: 'RelSem.Cerb.seqModel_behavior_running_killed_iff' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Cerb.seqModel_behavior_running_killed_iff
-/--
-info: 'RelSem.Cerb.callAdequate_of_app_active' depends on axioms: [DAEMON,
- propext,
- runEffectful,
- Classical.choice,
- Quot.sound]
--/
+/-- info: 'RelSem.Cerb.callAdequate_of_app_active' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Cerb.callAdequate_of_app_active
-/-- info: 'RelSem.Cerb.callUBFree_of_app_active' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'RelSem.Cerb.callUBFree_of_app_active' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Cerb.callUBFree_of_app_active
-/--
-info: 'RelSem.Cerb.callHarnessAdequate_of_app_active' depends on axioms: [DAEMON,
- propext,
- runEffectful,
- Classical.choice,
- Quot.sound]
--/
+/-- info: 'RelSem.Cerb.callHarnessAdequate_of_app_active' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Cerb.callHarnessAdequate_of_app_active
 /-- info: 'RelSem.FuelHooks.nd_bind_wrapper_defeq' does not depend on any axioms -/
 #guard_msgs in #print axioms RelSem.FuelHooks.nd_bind_wrapper_defeq
@@ -296,8 +252,8 @@ info: 'RelSem.Cerb.callHarnessAdequate_of_app_active' depends on axioms: [DAEMON
 -- classical trio (verified: every pure-coupling theorem below is
 -- trio-only); the harness-mentioning theorems (wp_callND, the adequacy
 -- chain) quote `callND`/`initial_driver_state` and inherit
--- DAEMON + runEffectful through the substrate, exactly the standing D3
--- disposition. Pinned exactly — growth (sorryAx above all) fails the
+-- runEffectful through the substrate. Pinned exactly — growth
+-- (sorryAx above all) fails the
 -- build. The terminal-head determinism lemmas are axiom-FREE.
 /-- info: 'RelSem.step_running_active_inv' does not depend on any axioms -/
 #guard_msgs in #print axioms RelSem.step_running_active_inv
@@ -319,13 +275,13 @@ info: 'RelSem.Cerb.callHarnessAdequate_of_app_active' depends on axioms: [DAEMON
 #guard_msgs in #print axioms RelSem.Cerb.wp_app_killed
 /-- info: 'RelSem.Cerb.wp_done' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Cerb.wp_done
-/-- info: 'RelSem.Cerb.wp_callND' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'RelSem.Cerb.wp_callND' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Cerb.wp_callND
-/-- info: 'RelSem.Cerb.callAdequate_of_wp' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'RelSem.Cerb.callAdequate_of_wp' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Cerb.callAdequate_of_wp
-/-- info: 'RelSem.Cerb.callHarnessAdequate_of_wp' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'RelSem.Cerb.callHarnessAdequate_of_wp' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Cerb.callHarnessAdequate_of_wp
-/-- info: 'RelSem.Cerb.callUBFree_of_wp' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'RelSem.Cerb.callUBFree_of_wp' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Cerb.callUBFree_of_wp
 -- arc-7 S4: T1 through the full WP route (RelSem/T1.lean), conditional
 -- on the Layer-2 residual T1AppEq (blocked on the arc-3 F8 generated-
@@ -333,38 +289,38 @@ info: 'RelSem.Cerb.callHarnessAdequate_of_app_active' depends on axioms: [DAEMON
 -- (T1Core/T1File — the emitted parsed AST) is boundary-clean: the AST
 -- literals themselves are axiom-FREE; t1File adds only the classical
 -- trio through convert_file/fromList. The theorems quote the harness
--- substrate (DAEMON + runEffectful, standing disposition). Pinned.
+-- substrate (runEffectful). Pinned.
 /-- info: 'RelSem.T1.idT1Decl' does not depend on any axioms -/
 #guard_msgs in #print axioms RelSem.T1.idT1Decl
 /-- info: 'RelSem.T1.t1File' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.t1File
-/-- info: 'RelSem.T1.t1_wp' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'RelSem.T1.t1_wp' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.t1_wp
-/-- info: 'RelSem.T1.t1_of_app_eq' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'RelSem.T1.t1_of_app_eq' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.t1_of_app_eq
-/-- info: 'RelSem.T1.t1_of_app_eq_direct' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'RelSem.T1.t1_of_app_eq_direct' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.t1_of_app_eq_direct
-/-- info: 'RelSem.T1.t1_ubFree_of_app_eq' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'RelSem.T1.t1_ubFree_of_app_eq' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.t1_ubFree_of_app_eq
 
 -- Arc-7 S5a: THE F8 SWEEP LANDED — T1AppEq is a theorem and T1 is
 -- UNCONDITIONAL. The app-equation chain (RelSem/T1AppEq.lean) quotes
--- the harness substrate (DAEMON + runEffectful, the standing D3
--- disposition); the byte-roundtrip arithmetic is [propext, Quot.sound].
+-- the harness substrate (runEffectful);
+-- the byte-roundtrip arithmetic is [propext, Quot.sound].
 -- Pinned exactly; sorryAx-free by the sweep.
 /-- info: 'RelSem.T1.roundtrip_arith' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.roundtrip_arith
-/-- info: 'RelSem.T1.t1_app_eq' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'RelSem.T1.t1_app_eq' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.t1_app_eq
-/-- info: 'RelSem.T1.t1AppEq_holds' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'RelSem.T1.t1AppEq_holds' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.t1AppEq_holds
-/-- info: 'RelSem.T1.T1' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'RelSem.T1.T1' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.T1
-/-- info: 'RelSem.T1.T1_direct' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'RelSem.T1.T1_direct' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.T1_direct
-/-- info: 'RelSem.T1.T1_ubFree' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'RelSem.T1.T1_ubFree' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.T1_ubFree
-/-- info: 'RelSem.T1.T1Outcomes' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'RelSem.T1.T1Outcomes' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.T1Outcomes
 
 
@@ -373,17 +329,11 @@ info: 'RelSem.Cerb.callHarnessAdequate_of_app_active' depends on axioms: [DAEMON
 -- criterion; under the harness-environment hypotheses T4EnvHyp, the
 -- three census-boundary globals surfaced). All through the
 -- fixture-generic WP bridge (RelSem/SlateWP.lean). Pinned exactly.
-/-- info: 'RelSem.Cerb.wp_of_app_active' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'RelSem.Cerb.wp_of_app_active' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Cerb.wp_of_app_active
-/--
-info: 'RelSem.Cerb.callHarnessAdequate_of_app_eq_wp' depends on axioms: [DAEMON,
- propext,
- runEffectful,
- Classical.choice,
- Quot.sound]
--/
+/-- info: 'RelSem.Cerb.callHarnessAdequate_of_app_eq_wp' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Cerb.callHarnessAdequate_of_app_eq_wp
-/-- info: 'RelSem.Cerb.callUBFree_of_app_eq_wp' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'RelSem.Cerb.callUBFree_of_app_eq_wp' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Cerb.callUBFree_of_app_eq_wp
 /-- info: 'RelSem.Slate.t2File' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Slate.t2File
@@ -393,83 +343,45 @@ info: 'RelSem.Cerb.callHarnessAdequate_of_app_eq_wp' depends on axioms: [DAEMON,
 #guard_msgs in #print axioms RelSem.Slate.t4File
 /-- info: 'RelSem.T2.catch_add_fact' depends on axioms: [propext] -/
 #guard_msgs in #print axioms RelSem.T2.catch_add_fact
-/-- info: 'RelSem.T2.t2_app_eq' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'RelSem.T2.t2_app_eq' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T2.t2_app_eq
-/-- info: 'RelSem.T2.T2' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'RelSem.T2.T2' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T2.T2
-/-- info: 'RelSem.T2.T2_direct' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'RelSem.T2.T2_direct' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T2.T2_direct
-/-- info: 'RelSem.T2.T2_ubFree' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'RelSem.T2.T2_ubFree' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T2.T2_ubFree
-/-- info: 'RelSem.T2.T2Outcomes' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'RelSem.T2.T2Outcomes' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T2.T2Outcomes
-/-- info: 'RelSem.T3.t3_app_eq' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'RelSem.T3.t3_app_eq' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T3.t3_app_eq
-/-- info: 'RelSem.T3.T3' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'RelSem.T3.T3' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T3.T3
-/-- info: 'RelSem.T3.T3_direct' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'RelSem.T3.T3_direct' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T3.T3_direct
-/-- info: 'RelSem.T3.T3_ubFree' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'RelSem.T3.T3_ubFree' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T3.T3_ubFree
-/-- info: 'RelSem.T3.T3Outcomes' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'RelSem.T3.T3Outcomes' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T3.T3Outcomes
-/-- info: 'RelSem.T4.t4_app_eq' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'RelSem.T4.t4_app_eq' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T4.t4_app_eq
-/-- info: 'RelSem.T4.T4' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'RelSem.T4.T4' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T4.T4
-/-- info: 'RelSem.T4.T4_direct' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'RelSem.T4.T4_direct' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T4.T4_direct
-/-- info: 'RelSem.T4.T4_ubFree' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'RelSem.T4.T4_ubFree' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T4.T4_ubFree
-/-- info: 'RelSem.T4.T4Outcomes' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'RelSem.T4.T4Outcomes' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T4.T4Outcomes
 
-/-! ## THE DAEMON ENTRY-VECTOR CENSUS (arc-7 S5c, audit-1 F1): the
-    boundary entry's leaf census, ENFORCED. Walk the union constant
-    cone of the slate theorems and collect every constant whose
-    type/value DIRECTLY references DAEMON/DAEMON1; the set must be
-    EXACTLY the pinned census. A new entry vector (or an eviction) is
-    a deliberate re-baseline here + in the header, never a drift. -/
-
-open Lean in
-/-- The pinned DAEMON direct-referencer census on the slate cones
-    (S5c: post-eviction; both STRUCTURAL until the C-tier lem mover —
-    header entry + lembugs/2026-08-20_daemon-inconsistent-axiom.md). -/
-def daemonCensus : List Name :=
-  [`failwith, `instInhabitedAction_request2]
-
-open Lean in
-#eval show CoreM Unit from do
-  let env ← getEnv
-  let roots : List Name :=
-    [`RelSem.T1.T1, `RelSem.T2.T2, `RelSem.T3.T3, `RelSem.T4.T4,
-     `RelSem.T1.T1_ubFree, `RelSem.T2.T2_ubFree, `RelSem.T3.T3_ubFree,
-     `RelSem.T4.T4_ubFree]
-  let mut seen : NameSet := {}
-  let mut queue : Array Name := roots.toArray
-  let mut leaves : NameSet := {}
-  while h : queue.size > 0 do
-    let n := queue[queue.size - 1]
-    queue := queue.pop
-    if seen.contains n then continue
-    seen := seen.insert n
-    let some ci := env.find? n | continue
-    let used := ci.type.getUsedConstants ++
-      (match ci.value? with | some v => v.getUsedConstants | none => #[])
-    for c in used do
-      if c == `DAEMON || c == `DAEMON1 then
-        leaves := leaves.insert n
-      else
-        unless seen.contains c do queue := queue.push c
-  let got := (leaves.toArray.map (·.toString)).qsort (· < ·)
-  let want := (daemonCensus.toArray.map (·.toString)).qsort (· < ·)
-  unless got == want do
-    throwError "RelSem audit: DAEMON entry-vector census DRIFTED — \
-      expected {want}, walked {got}. A new vector (or an eviction) is \
-      a deliberate re-baseline of daemonCensus + the header census, \
-      with the classification (evictable vs structural) recorded."
-  logInfo s!"RelSem DAEMON census: {got.size} entry vectors on the \
-    slate cones, exactly as pinned ({got})"
+/-! ## (RETIRED SECTION — arc-8 S3.) The arc-7 S5c DAEMON entry-vector
+    census (a kernel walk pinning `failwith` and
+    `instInhabitedAction_request2` as the exactly-two DAEMON
+    referencers on the slate cones) lived here while DAEMON existed.
+    The axiom family is now DELETED from LemLib and the census is
+    superseded by the stronger fail-closed ABSENCE GATE above (no
+    constant named DAEMON/DAEMON1 may exist anywhere in the
+    environment) together with the DAEMON-free curated pins. -/
 
 /-! ## THE STATEMENT-TCB GATE (arc-7 S5a Task 4; REBUILT arc-7 S5c,
     audit-1 F2): a slate theorem's STATEMENT may mention only

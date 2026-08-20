@@ -1,64 +1,28 @@
 /-
-  CerbCoreInstances — arc-7 S5c (2026-08-20, audit-1 F1 eviction):
-  REAL Inhabited instances for the generic Core AST families, evicting
-  the lem backend's `(priority := low) … default := DAEMON` fallbacks
-  from the slate-theorem axiom cones (the arc-2 CerbInhabitedInstances /
-  arc-4 S1a priority-override precedent: a hand-written default-priority
-  instance, imported into the use-site modules via
-  `declare {lean} extra_import` in the .lem sources, wins resolution
-  over the low-priority generated fallback at regen).
+  CerbCoreInstances — RETIRED to an instance-free shell (arc-8 S3).
 
-  WHY (audit-1 F1): `axiom DAEMON : ∀ {α : Type}, α` is logically
-  INCONSISTENT (`DAEMON (α := Empty)` proves `False`), so every
-  fallback-instance use is a DAEMON entry vector into theorem cones.
-  Each instance below is an HONEST total construction — the default is
-  a real value of the type (for the AST families, a `PEundef`-anchored
-  "unreachable default" node built from nullary/empty leaves), so
-  nothing here can prove anything false. Defaults are only ever consumed
-  at unreachable sites (`panic!`/`head!` shapes); differential gates
-  verify zero observable movement.
+  History (arc-7 S5c, audit-1 F1 eviction): this file carried REAL
+  Inhabited instances for the generic Core AST families
+  (generic_pattern_/generic_pattern, generic_pexpr_/generic_pexpr,
+  generic_expr_/generic_expr), extra_import'd into 7 generated modules
+  to evict the lem backend's low-priority fallback instances whose
+  default was the logically INCONSISTENT DAEMON axiom
+  (lembugs/2026-08-20_daemon-inconsistent-axiom.md).
 
-  This module also imports CerbInhabitedInstances, so an extra_import of
-  this file brings the monadic real instances (ndM, nd_action, exceptM,
-  dlist, …) into scope for the same eviction.
+  Since arc-8 S1/S2 the backend DERIVES real bounded Inhabited instances
+  for these families in generated/Core.lean itself (tier-2
+  per-constructor derivation; DAEMON deleted from LemLib at arc-8 S3),
+  so the eviction mechanism is obsolete and every instance formerly here
+  is retired. NOTHING here needed retention: an uncovered demand
+  surfaces as a loud Lean "failed to synthesize" error, never a hidden
+  fallback. Derived defaults occupy only unreachable/panic positions —
+  enforced by the arc-8 S3 zero-movement differential bar.
 
-  No OCaml counterpart (OCaml has no Inhabited): divergence is
-  deliberate and documented here (mirror-OCaml doctrine, 2026-08-19).
-
-  House rules: no sorry, no axioms, total constructions only.
+  The module is kept (empty) only as the anchor for the
+  `declare {lean} extra_import CerbCoreInstances` declares in
+  frontend/model/*.lem; removing that plumbing is an arc-8 S4 cleanup
+  candidate. It still imports CerbInhabitedInstances to preserve the
+  arc-7 import shape for those declares.
 -/
 
-import Core
 import CerbInhabitedInstances
-
--- Patterns: `CaseBase (none, BTy_unit)` is a real pattern for every
--- symbol type (the `Option sym` slot is `none`, so no `sym` inhabitant
--- is needed).
-instance {sym : Type} : Inhabited (generic_pattern_ sym) where
-  default := CaseBase (none, BTy_unit)
-
-instance {sym : Type} : Inhabited (generic_pattern sym) where
-  default := Pattern [] (CaseBase (none, BTy_unit))
-
--- Pure expressions: `PEundef` needs only a location and an
--- undefined-behaviour tag — a real node for every (bty, sym); the
--- DUMMY string marks the value as an instance default should it ever
--- surface in diagnostics.
-instance {bty : Type} {sym : Type} : Inhabited (generic_pexpr_ bty sym) where
-  default := PEundef CerbLocation.Loc.unknown (DUMMY "Inhabited default")
-
-instance {bty : Type} {sym : Type} [Inhabited bty] :
-    Inhabited (generic_pexpr bty sym) where
-  default := Pexpr [] default
-    (PEundef CerbLocation.Loc.unknown (DUMMY "Inhabited default"))
-
--- Effectful expressions: a pure wrapper around the pexpr default.
-instance {a : Type} {bty : Type} {sym : Type} [Inhabited bty] :
-    Inhabited (generic_expr_ a bty sym) where
-  default := Epure (Pexpr [] default
-    (PEundef CerbLocation.Loc.unknown (DUMMY "Inhabited default")))
-
-instance {a : Type} {bty : Type} {sym : Type} [Inhabited bty] :
-    Inhabited (generic_expr a bty sym) where
-  default := Expr [] (Epure (Pexpr [] default
-    (PEundef CerbLocation.Loc.unknown (DUMMY "Inhabited default"))))

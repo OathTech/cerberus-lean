@@ -42,8 +42,8 @@
   it is the stream-stitching converse golean records as unbuilt and
   unneeded (MachineSound.lean:535-545).
 
-  House rules: no sorry, no axioms (beyond the generated code's declared
-  DAEMON boundary entering through the types), no Iris imports.
+  House rules: no sorry, no axioms (DAEMON deleted in arc-8 S3 — the
+  generated code's cones are boundary-clean), no Iris imports.
 -/
 
 import Nondeterminism
