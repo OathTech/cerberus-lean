@@ -1,0 +1,86 @@
+# exec differential baseline — written by test_exec.sh --write-baseline
+# format: <file.c> <STATUS>   (see test_exec.sh header for the taxonomy)
+# corpus: tests/float (69 files, ported verbatim from the prototype in
+#   arc 4, wired arc-10 S3b — the last dangling arc-4 corpus deferral;
+#   see notes/2026-08-20_prototype-test-migration-survey.md §4.1).
+# First sweep 2026-08-20 (post-S3 pp mirrors): 69/69 MATCH, no fixes
+#   needed. NOTE the upstream float-mul oracle bug
+#   (lembugs/2026-08-19_upstream-float-mul.md, declared TEMPORAL
+#   boundary) did NOT surface: both sides evaluate this corpus through
+#   the concrete model's own op_fval (impl_mem.ml:2529-2537 /
+#   CerbMem.opFval), not the buggy lem-level Cerb_floating.mul —
+#   072-compound-mul.c MATCHes for that reason. A future differential
+#   here that DOES implicate Cerb_floating is oracle-indicting
+#   boundary-entry evidence: classify against the lembugs entry, never
+#   "fix" the Lean side to match a wrong oracle.
+# Invocation (Tier A, LADDER.md):
+#   ./scripts/test_exec.sh --check-baseline=scripts/exec_float_baseline.txt tests/float
+001-literal-zero.c MATCH
+002-literal-one.c MATCH
+003-literal-negative.c MATCH
+004-literal-fraction.c MATCH
+005-literal-large.c MATCH
+006-literal-small.c MATCH
+010-compare-eq-true.c MATCH
+011-compare-eq-false.c MATCH
+012-compare-ne-true.c MATCH
+013-compare-lt.c MATCH
+014-compare-gt.c MATCH
+015-compare-le.c MATCH
+016-compare-ge.c MATCH
+020-arith-add.c MATCH
+021-arith-sub.c MATCH
+022-arith-mul.c MATCH
+023-arith-div.c MATCH
+024-arith-neg.c MATCH
+030-conv-int-to-float.c MATCH
+031-conv-float-to-int.c MATCH
+032-conv-float-to-int-neg.c MATCH
+033-conv-float-to-double.c MATCH
+034-conv-double-to-float.c MATCH
+035-conv-neg-int-to-float.c MATCH
+036-conv-unsigned-to-float.c MATCH
+037-conv-implicit-int-to-float.c MATCH
+038-conv-implicit-float-to-double.c MATCH
+039-conv-double-to-int.c MATCH
+040-bool-zero-is-false.c MATCH
+041-bool-nonzero-is-true.c MATCH
+042-bool-neg-is-true.c MATCH
+043-bool-small-is-true.c MATCH
+044-bool-logical-not.c MATCH
+045-bool-logical-not-zero.c MATCH
+046-bool-and.c MATCH
+047-bool-or.c MATCH
+048-bool-double-zero.c MATCH
+049-bool-double-nonzero.c MATCH
+050-store-load-roundtrip.c MATCH
+051-store-load-negative.c MATCH
+052-store-load-fraction.c MATCH
+053-store-load-double.c MATCH
+054-array-float.c MATCH
+055-pointer-deref.c MATCH
+056-pointer-write.c MATCH
+057-large-value.c MATCH
+058-small-value.c MATCH
+059-neg-zero.c MATCH
+060-func-param.c MATCH
+061-func-return.c MATCH
+062-func-two-params.c MATCH
+063-func-double-param.c MATCH
+064-func-mixed-params.c MATCH
+065-struct-member.c MATCH
+066-struct-init.c MATCH
+067-struct-double.c MATCH
+068-struct-mixed.c MATCH
+069-funcptr-float.c MATCH
+070-compound-add.c MATCH
+071-compound-sub.c MATCH
+072-compound-mul.c MATCH
+073-compound-div.c MATCH
+074-increment.c MATCH
+075-decrement.c MATCH
+076-postinc.c MATCH
+077-postdec.c MATCH
+078-compound-double.c MATCH
+079-ternary-float.c MATCH
+080-nan-inf.c MATCH

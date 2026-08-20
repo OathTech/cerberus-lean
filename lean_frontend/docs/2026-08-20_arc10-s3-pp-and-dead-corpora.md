@@ -153,6 +153,36 @@ CerbND, 0 allowlisted)`), minimal `BASELINE OK` (0/0), debug
 core `ALL PASSED`, elab `SUMMARY: total=106 same=103 diff=3` (recorded
 state), uri `GATE PASS … (16/16)`.
 
-## S3b(a) — FLOAT lane (filled in by the S3b float commit)
+## S3b(a) — FLOAT lane (tests/float, 69 files)
+
+The last dangling arc-4 corpus deferral (survey §4.1: copied verbatim
+in arc 4, never wired). Wired as a test_exec.sh lane with its own
+committed baseline (`scripts/exec_float_baseline.txt`), the
+debug-corpus pattern; LADDER Tier A row 4b.
+
+**First-sweep tally, verbatim, BEFORE any fixes (and none were
+needed)** — run post-S3 at e0d3ad1f7:
+
+```
+SUMMARY: total=69 match=69 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 lean_error=0 timeout=0 cerb_skip=0 cerb_inconsistent=0
+```
+
+100% MATCH; final baseline composition: 69× MATCH, 0 oracle-indicting
+entries, 0 registered defects, 0 skips. Expected-failure
+classification outcome: the upstream float-mul oracle-bug class
+(lembugs/2026-08-19_upstream-float-mul.md, declared TEMPORAL boundary)
+did NOT surface — this corpus evaluates float arithmetic through the
+concrete model's op_fval (impl_mem.ml:2529-2537 / CerbMem.opFval) on
+BOTH sides, and the upstream bug lives in the lem-level
+Cerb_floating.mul, which nothing here reaches; that is why
+072-compound-mul.c MATCHes. The baseline header carries the standing
+classification rule for any future float differential (oracle-indicting
+hits are boundary-entry evidence, never "fixed" to match). Baseline
+re-check after commit of the baseline file (verbatim):
+
+```
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+```
 
 ## S3b(b) — BYTES lane (filled in by the S3b bytes commit)
