@@ -90,3 +90,20 @@ pattern); when landed, T1 UNCONDITIONAL falls out of t1_of_app_eq
 unchanged. Infra: iris-lean pinned 79dab15; deps/gitconfig gained its
 redirect; MIRROR NEEDED next network window (deps/mirrors lacks
 iris-lean.git).
+
+**D7 [USER-prompted / AGENT-implemented]** — SESSION OOM KILL during S5a's
+T1AppEq probe (a whole-driver-run rfl with maxHeartbeats 8000000 — the
+kernel reducing the entire concrete execution as one defeq check ate the
+125G box; golean's exact failure shape: kernel grinding on an
+unevaluated/huge proposition). Operator directed: adopt golean's
+mitigations. Landed: `scripts/capped` (cgroup MemoryMax via systemd-run
+--user --scope, default 64G, CERB_MEM_MAX override, =none loud opt-out;
+breach-kill verified rc 137 in-scope). RULES now standing (container
+CLAUDE.md): (1) NEVER run lake/lean uncapped — every worker brief
+carries it; (2) the #eval-first habit — evaluate the Bool/shape cheaply
+before asking the kernel to prove it; (3) monolithic whole-run
+rfl/decide on driver executions is BANNED as a proof method — the
+escalation rule applies: build the compositional equation-lemma chain
+through the staged combinators instead. S5a state: commit 1 (F8 sweep +
+totality gate over 5 more modules) landed pre-crash; T1Probe.lean
+untracked scratch preserved as evidence.

@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# capped — run a command inside its own cgroup with a hard memory cap.
+# Ported from golean (deps/golean CLAUDE.md "Never run a Lean build
+# uncapped", 2026-08-09) after this project's own OOM session kill
+# (arc-7 S5a: a whole-driver-run rfl ate a 125G box).
+#
+#   scripts/capped lake build ...
+#   CERB_MEM_MAX=32G scripts/capped lake env lean probe.lean
+#   CERB_MEM_MAX=none scripts/capped ...   # loud opt-out
+#
+# Why this mechanism: on breach the kernel kills INSIDE the scope, so the
+# build dies instead of the session (the OOM killer's badness score
+# otherwise picks the multiplexer/agent). Two knobs measured NOT to work
+# by golean, do not "simplify" back to them: `lean -M` (not enforced
+# during kernel reduction) and `prlimit --as` (kills Lean spuriously —
+# per-thread address-space reservation). Cgroup RSS is the honest knob.
+# The cap is a BLAST RADIUS, not a budget.
+set -euo pipefail
+MEM="${CERB_MEM_MAX:-64G}"
+if [[ "$MEM" == "none" ]]; then
+  echo "capped: CERB_MEM_MAX=none — running UNCAPPED (explicit opt-out)" >&2
+  exec "$@"
+fi
+exec systemd-run --user --scope --quiet -p "MemoryMax=$MEM" -p "MemorySwapMax=0" "$@"
