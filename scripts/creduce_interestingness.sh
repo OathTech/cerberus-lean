@@ -49,6 +49,11 @@ fi
 INTERESTING_REGEX="${INTERESTING_REGEX:-MISMATCH|DIFF}"
 export TIMEOUT_SECS="${TIMEOUT_SECS:-15}"
 export CERB_MEM_MAX="${CERB_MEM_MAX:-8G}"
+# Arc-10 S4: skip the no-op build steps (D1-authorized SKIP_BUILD
+# instrument in test_exec.sh) — creduce calls this hundreds of times;
+# binaries are built once by the invoking session. Fail-closed in
+# test_exec.sh if they don't exist. Override with SKIP_BUILD=0.
+export SKIP_BUILD="${SKIP_BUILD:-1}"
 
 # csmith candidates include csmith_cerberus.h/safe_math.h relative to
 # the file; creduce scratch dirs start with only the candidate.

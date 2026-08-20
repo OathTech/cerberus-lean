@@ -101,6 +101,8 @@ Options:
 
 Environment:
   TIMEOUT_SECS   per-test timeout for each side (default: 30)
+  SKIP_BUILD     1 = skip the (no-op) build steps; binaries must exist
+                 (fail-closed). For high-frequency callers (creduce).
 
 Examples:
   ./scripts/test_exec.sh tests/minimal/001-return-literal.c
@@ -196,9 +198,19 @@ if [[ -n "$WRITE_BASELINE" ]]; then
     WRITE_BASELINE="$wb_dir/$(basename "$WRITE_BASELINE")"
 fi
 
-# Build both sides (each exits 1 on failure — fail-closed)
-build_cerberus
-build_lean
+# Build both sides (each exits 1 on failure — fail-closed).
+# SKIP_BUILD=1 (arc-10 S4 instrument, D1-authorized): skip the no-op
+# build steps for high-frequency callers (creduce interestingness runs
+# ~8-12 s of no-op dune/lake per call otherwise; also avoids concurrent
+# no-op builds racing in the shared _build/.lake). Semantics unchanged
+# when unset. Fail-closed: the binaries must already exist.
+if [[ "${SKIP_BUILD:-0}" == "1" ]]; then
+    [[ -f "$CERBERUS_BIN" ]] || { echo "Error: SKIP_BUILD=1 but $CERBERUS_BIN missing" >&2; exit 1; }
+    [[ -f "$CERBERUS_LEAN_BIN" ]] || { echo "Error: SKIP_BUILD=1 but $CERBERUS_LEAN_BIN missing" >&2; exit 1; }
+else
+    build_cerberus
+    build_lean
+fi
 
 RUNTIME_DIR="$PROJECT_ROOT/_build/install/default"
 if [[ ! -d "$RUNTIME_DIR" ]]; then

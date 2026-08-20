@@ -96,6 +96,21 @@ transparent_crc_bytes(char *ptr, int nbytes, char* vname, int flag)
  * actually execute. We just need the declaration for compilation. */
 int printf(const char *format, ...);
 
+/* strcmp - needed by --argc-mode mains (the in-tree upstream corpus,
+ * tests/csmith/small_*, uses `argc == 2 && strcmp(argv[1], "1")` to
+ * gate hash printing; arc-10 S4 corpus list-lane). Under the batch
+ * drivers main receives argc=0 so the short-circuit means it is never
+ * actually called, but a real (libc-free) definition is provided so
+ * both sides see identical, complete source. Mirrors the prototype
+ * runtime's TCC-mode strcmp (tests/csmith/runtime/csmith_minimal.h:69-75). */
+static int strcmp(const char *s1, const char *s2)
+{
+    for (; *s1 == *s2; ++s1, ++s2)
+        if (*s1 == 0)
+            return 0;
+    return *(const unsigned char *)s1 < *(const unsigned char *)s2 ? -1 : 1;
+}
+
 /* platform_main_end: RETURN the checksum's low byte from main (see the
  * header comment — the prototype exit()ed here, which needs libc).
  * csmith emits `platform_main_end(crc32_context ^ ..., print_hash_value);`
