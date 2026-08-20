@@ -39,3 +39,26 @@ orchestrator judgment call resolved by project principles.
   construction; the S0 triage row's pp-class listing was inference,
   now corrected. Scoreboard: ci 111/114 (derived). Finding 11 CLOSED
   (register). Commit 3b82fac70 coherent, no forbidden surfaces.
+- **D3 [USER] — scope additions applied at the S2 boundary** (staged
+  in notes/2026-08-20_arc10-pending-scope-additions.md while the S2
+  worker held the worktree): S3b float+bytes wiring; S4
+  csmith-configuration exploration (prototype setup explicitly not
+  final); S4 list-lane + seeded reproducer. See the charter ADDENDUM.
+- **D4 [AGENT] — S2 boundary verified + a standing gate rule.** Both
+  worktrees clean; LEM 98d19fb/a9387fb, CERB 442a52334/eec935634
+  (pin-bump own commit per the touch-point discipline). Orchestrator
+  re-ran: capped DEFAULT-TARGET build green (593 jobs, RelSem audit
+  sweep clean), unit 5/5, exec zero movement, sorry census
+  independently confirmed (1 comment hit only). Census accepted:
+  1134 → 0 real comparison-sorry sites; 58 types fully derived; 21
+  fn-residual types / 210 failwithI sites + 494 tv-fallback sites
+  counted and labeled; 4 register items with movers. THE LESSON
+  (S2's major finding): S1 shipped a latent RelSem elaboration
+  regression (equation-lemma maxRecDepth from an inline nested
+  match in allocateObject) that BOTH the S1 worker's gates AND the
+  orchestrator's S1 boundary verification missed, because neither
+  ran the capped default-target build. STANDING RULE from here:
+  every S-boundary verification (worker AND orchestrator) includes
+  the capped default-target build — the April cerberus-scale lesson
+  generalizes to Layer-2. Fixed in-scope by the named-helper hoist
+  (semantics identical, citations preserved); relsem untouched.

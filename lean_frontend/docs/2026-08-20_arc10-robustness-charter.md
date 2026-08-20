@@ -166,3 +166,27 @@ EXIT always permitted, nature declared. Tripwires: any fix demanding
 a forbidden surface (park instead); comparison-semantics divergence
 that cannot be cleanly mirrored; any gate keepable-green only by
 weakening; machine-global state.
+
+## ADDENDUM (2026-08-20, applied at the S2 boundary; provenance in D3)
+
+- **[USER] S3b — dead-corpora wiring** ("may as well roll this into
+  arc-10"): (a) FLOAT — wire tests/float (69 files, copied arc-4,
+  never wired) into a test_exec.sh lane + committed baseline;
+  expected-failure classification against the upstream float-mul
+  boundary entry (a differential there may indict the ORACLE —
+  classify, never "fix" to match a wrong oracle). (b) BYTES — run
+  tests/bytes (14 files) against their committed .exec/.elab
+  expecteds as oracle-independent CerbMem probes. Both priced S
+  (notes/2026-08-20_prototype-test-migration-survey.md).
+- **[USER] S4 opens with csmith CONFIGURATION EXPLORATION** — "making
+  csmith work properly was something we struggled with in the
+  prototype... try a few different configurations, try to figure out
+  how to make csmith cover as much as possible." The prototype's
+  setup is NOT final; the S0 V/NV lanes are provisional input. Sweep
+  configs across feature axes, measure per-config oracle-runnable
+  yield AND construct coverage reaching the Lean side, choose a lane
+  PORTFOLIO. Deterministic seeds + verbatim tallies throughout.
+- **[AGENT] S4 additions** (migration survey): deterministic
+  list-lane over the in-tree 1,669-file upstream csmith corpus; the
+  prototype's interesting_cases/union_unspecified reproducer seeded
+  into triage.
