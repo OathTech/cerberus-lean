@@ -542,3 +542,5 @@ test_verify 29/29 (5 fixtures + 5 pin-provenance + 18 harness points
 + t4-env-witness) + chvalid_battery_00 `MATCH … 1354 points` + the
 tests/ci sweep above — every command rc 0, all through
 scripts/capped where lake/lean is invoked.
+
+**Terminal addendum (arc-8, 2026-08-20):** the DAEMON qualifier that runs through this record is RESOLVED — arc-8 (`arc/daemon-elim`) deleted DAEMON/DAEMON1 from LemLib and every generated cone; T1–T4 cones are now exactly `[propext, runEffectful, Classical.choice, Quot.sound]`, unconditional. See `docs/2026-08-20_arc8-results.md` and `lembugs/2026-08-20_daemon-inconsistent-axiom.md` (RESOLVED header). Nothing above is rewritten; it is the record of the pre-arc-8 state.

@@ -1,5 +1,43 @@
 # DAEMON is an inconsistent axiom — TOP C-tier lem item [AGENT:S5c]
 
+## RESOLVED — arc-8 (`arc/daemon-elim`), 2026-08-20
+
+Closed by arc-8 at LEM `9d220e4` / CERB `f147aad91` (branch pair
+`arc/daemon-elim`; merge pending the arc-8 pin dance). The consistent
+design sketched below was executed essentially as written:
+
+- **S1 (LEM `446e799`):** the Lean backend DERIVES real bounded
+  Inhabited instances per generated type (tier-2 per-constructor,
+  `[Inhabited tv]` bounds, in-module, fail-closed: underivable types
+  get NO instance — a demand is a generation-time error naming the
+  type and both escape hatches). `default := DAEMON` emission count in
+  the regenerated cerberus tree: 55 → 0.
+- **S2 (LEM `0549d36`):** every failure site emits axiom-free
+  `LemLib.failwithI`; a fixpoint threading pass adds `[Inhabited tv]`
+  instance-implicit binders to exactly the enclosing defs whose failure
+  sites sit at bare-tyvar positions (zero call-site edits; both
+  pre-existing backend sorry-emission paths eliminated per D4).
+- **S3 (LEM `9d220e4` / CERB `f147aad91`):** `DAEMON`, `DAEMON1`, their
+  `@[implemented_by]` impls, and legacy `failwith` DELETED from LemLib;
+  full regeneration + clean re-pin; the acceptance test below is met —
+  T1–T4 (and every substrate pin) = exactly `[propext, runEffectful,
+  Classical.choice, Quot.sound]`, and the Audit.lean boundary entry +
+  DAEMON1 tripwire + entry-vector census walk are replaced by a
+  fail-closed ABSENCE GATE (build fails if any constant named
+  DAEMON/DAEMON1 exists anywhere in the environment or is allowlisted);
+  `check_theorem_axioms.sh` makes DAEMON unconditionally fatal in every
+  probed cone. Zero movement across the full differential surface
+  (behavior neutrality — see the S3 commit message tallies).
+
+Records: `docs/2026-08-20_arc8-daemon-charter.md`,
+`docs/2026-08-20_arc8-decision-log.md` (D1–D7),
+`docs/2026-08-20_arc8-s0-probe-census.md` (+ the D6 errata),
+`docs/2026-08-20_arc8-results.md`, and the lem-side design note
+lem-lean `doc/notes/2026-08-20_arc8-inhabited-threading-design.md`.
+The analysis below is retained verbatim as the record of the defect.
+
+---
+
 Date: 2026-08-20 (arc-7 audit-1 F1, BLOCKER-class; filed as the lem-lane
 register item with the consistent-design sketch). Lem is UNTOUCHED this
 arc — this file is the work order for the next time the pin moves.

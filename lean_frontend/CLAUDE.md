@@ -166,12 +166,10 @@ If you skip this step, Lake will compile the stale `generated/` copy and your ch
 | `CerbConcurrency.lean` | Concurrency stubs |
 | `CerbCtypeInstances.lean` | BEq/Ord for mutual ctype types |
 | `CerbCabsInstances.lean` | BEq for Cabs enum types |
-| `CerbInhabitedInstances.lean` | Computable Inhabited for monadic types |
 | `CabsImport.lean` | JSON → Cabs AST deserializer |
 | `CoreParser.lean` | Core text parser (Parsec) |
 | `CerbND.lean` | Exhaustive ND runner (+ runND1 single-trace, arc-5 `--first`); fuel-TOTALIZED in arc-7 S2 (runNDFuel + wrappers, loud panic at exhaustion) — no `partial` allowed (totality gate scans it; RelSem/RunND.lean states soundness against it) |
 | `CerbFunMapInstances.lean` | Arc-7 S2: real SetType instance for generic_fun_map_decl (evicts the lem backend's sorried fallback from initial_driver_state's cone) |
-| `CerbCoreInstances.lean` | Arc-7 S5c (audit-1 F1): real Inhabited instances for the generic Core AST families, evicting 8 of the 10 DAEMON fallback-instance entry vectors from the slate cones (extra_import'd into 7 generated modules; DAEMON is an inconsistent axiom — see lembugs/2026-08-20_daemon-inconsistent-axiom.md) |
 | `CerbStepInstances.lean` | OCaml-poly-eq-parity instances for core_step2 (arc 4) |
 | `CerbLocation.lean` | Source location type |
 | `CerberusFresh.lean` | Fresh symbol/digest generation |
@@ -218,11 +216,21 @@ Lem is pinned to `https://github.com/septract/lem-lean#mdd/lean-backend`.
 - `declare lean target_rep type t = \`Lean.Type\`` — maps lem type to Lean
 - `declare {lean} skip_instances type t` — suppresses all instance generation
 - `declare {lean} rename module = Name` — renames generated module
-- Inhabited fallback: DAEMON (axiom + @[implemented_by], computable, priority := low).
-  WARNING (arc-7 audit-1 F1): DAEMON as declared is an INCONSISTENT axiom
-  (`(DAEMON : Empty)` proves False) — cones carrying it are kernel-checked
-  only modulo the unreachable-marker meta-assumption; elimination is the
-  top C-tier lem item (lembugs/2026-08-20_daemon-inconsistent-axiom.md)
+- Inhabited handling (arc-8; replaces the old DAEMON axiom fallback,
+  which was logically inconsistent and is DELETED —
+  lembugs/2026-08-20_daemon-inconsistent-axiom.md, RESOLVED): the
+  backend DERIVES real bounded `Inhabited` instances per generated type
+  (tier-1 nullary + tier-2 per-constructor with `[Inhabited tv]` bounds,
+  in the type's own module); every failure site emits axiom-free
+  `LemLib.failwithI`, with `[Inhabited tv]` binders threaded through
+  exactly the enclosing defs whose failure sites sit at bare-tyvar
+  positions (fixpoint over the call graph, zero call-site edits).
+  FAIL-CLOSED: an underivable type gets NO instance — a demand on it is
+  a generation-time error naming the type and the escape hatches
+  (`skip_instances` + hand target_rep). Reintroduction is
+  build-fatal: the in-build RelSem absence gate (Audit.lean) bans any
+  constant named DAEMON/DAEMON1, and check_theorem_axioms.sh treats
+  DAEMON as unconditionally fatal in every probed cone
 - Simple enums in mutual blocks get `deriving BEq, Ord` (not sorry)
 
 **Bug reports:** `lean_frontend/lembugs/` — dated markdown files with reproducers.
@@ -234,7 +242,7 @@ Lem is pinned to `https://github.com/septract/lem-lean#mdd/lean-backend`.
   `runND_proxy` is implemented — hand-written `CerbND.runND`).
   Concurrency stubs remain the declared boundary.
 
-### Pipeline status (updated 2026-08-20, post arc-7 — see the arc results docs)
+### Pipeline status (updated 2026-08-20, post arc-8 — see the arc results docs)
 - ✅ C → Cabs JSON → Cabs types (100%)
 - ✅ Core text parser + stdlib loading (incl. ailname attribute capture, arc 5)
 - ✅ Desugar / Typecheck / Translation (all 106/106 tests/minimal)
@@ -271,6 +279,18 @@ Lem is pinned to `https://github.com/septract/lem-lean#mdd/lean-backend`.
   modules totalized; in-build axiom audit + statement-TCB gate.
   T5 (bounded loop) parked with pricing. See
   `docs/2026-08-20_arc7-results.md`.
+- ✅ DAEMON ELIMINATED (arc-8, "the consistent boundary"): lem's
+  logically inconsistent `axiom DAEMON`/`DAEMON1` DELETED from LemLib
+  and every generated cone — replaced by backend-derived real bounded
+  Inhabited instances (S1) + failwithI with `[Inhabited tv]` signature
+  threading (S2), fail-closed (underivable types are loud
+  generation-time errors, never opaque fallbacks). T1-T4 cones are now
+  exactly [propext, runEffectful, Classical.choice, Quot.sound] —
+  UNCONDITIONAL kernel certificates, no meta-assumption. Absence gates
+  enforce non-reintroduction (in-build Audit.lean + arc-8 S3
+  check_theorem_axioms.sh bar); zero differential movement across the
+  full surface. See `docs/2026-08-20_arc8-results.md` and
+  lembugs/2026-08-20_daemon-inconsistent-axiom.md (RESOLVED).
 
 ## Conventions
 
