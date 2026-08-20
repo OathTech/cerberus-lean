@@ -280,6 +280,24 @@ info: 'RelSem.Cerb.callHarnessAdequate_of_app_active' depends on axioms: [DAEMON
 /-- info: 'RelSem.T1.t1_ubFree_of_app_eq' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.t1_ubFree_of_app_eq
 
+-- Arc-7 S5a: THE F8 SWEEP LANDED — T1AppEq is a theorem and T1 is
+-- UNCONDITIONAL. The app-equation chain (RelSem/T1AppEq.lean) quotes
+-- the harness substrate (DAEMON + runEffectful, the standing D3
+-- disposition); the byte-roundtrip arithmetic is [propext, Quot.sound].
+-- Pinned exactly; sorryAx-free by the sweep.
+/-- info: 'RelSem.T1.roundtrip_arith' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T1.roundtrip_arith
+/-- info: 'RelSem.T1.t1_app_eq' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T1.t1_app_eq
+/-- info: 'RelSem.T1.t1AppEq_holds' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T1.t1AppEq_holds
+/-- info: 'RelSem.T1.T1' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T1.T1
+/-- info: 'RelSem.T1.T1_direct' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T1.T1_direct
+/-- info: 'RelSem.T1.T1_ubFree' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T1.T1_ubFree
+
 /-! ## The exhaustive sweep — LAST in the file by design: a constant
     declared after this point would dodge it (negative-test lesson,
     2026-08-19), so nothing may be declared below, and RelSem.Audit is

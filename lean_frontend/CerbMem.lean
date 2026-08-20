@@ -210,7 +210,7 @@ def combineProv : Provenance → Provenance → Provenance
     exactly like OCaml routes them through `(Ocaml_implementation.get ())`
     — no local size constants are kept here. -/
 
-private def targetPtrSize : Nat := 8  -- DefaultImpl.sizeof_pointer/alignof_pointer = Some 8
+def targetPtrSize : Nat := 8  -- DefaultImpl.sizeof_pointer/alignof_pointer = Some 8
 
 private abbrev TagDefs := List (sym × (CerbLocation.Loc × tag_definition))
 
@@ -481,7 +481,11 @@ def splitBytesProv (bytes : List AbsByte) : Provenance × Bool :=
 
 /-- An unspecified padding byte — OCaml's `padding_byte` / `AbsByte.v
     Prov_none None` (impl_mem.ml:1200). -/
-private def paddingByte : AbsByte :=
+-- NOTE (arc-7 S5a): the byte/allocation helpers below were `private`;
+-- they are now public so the T1 slate's memory-op equation lemmas
+-- (lean_frontend/relsem/RelSem/T1AppEq.lean) can unfold them by name.
+-- No behavior change.
+def paddingByte : AbsByte :=
   { prov := .Prov_none, copyOffset := none, value := none }
 
 /-- The funptrmap: function-pointer address (= the function symbol's
@@ -1162,7 +1166,7 @@ def getIntrinsicTypeSpec (_ : String) : Option intrinsics_signature := none
 
 abbrev memM (a : Type) := ndM a String mem_error (mem_constraint IntegerValue) MemState
 
-private def memReturn {a : Type} (x : a) : memM a := nd_return x
+def memReturn {a : Type} (x : a) : memM a := nd_return x
 
 /-- The concrete model's kill reason for a memory error — mirrors
     Concrete.fail (impl_mem.ml:540-546): a mem_error that maps to an
@@ -1170,7 +1174,7 @@ private def memReturn {a : Type} (x : a) : memM a := nd_return x
     kills with `Undef0 (loc, [ub])` (→ batch verdict `Undefined {ub:...}`),
     everything else with `Other err`. Default loc mirrors OCaml's
     `?(loc=Cerb_location.other "Concrete")`. -/
-private def failReason (err : mem_error)
+def failReason (err : mem_error)
     (loc : CerbLocation.Loc := CerbLocation.other "Concrete") :
     kill_reason mem_error :=
   match undefinedFromMem_error err with
@@ -1178,35 +1182,35 @@ private def failReason (err : mem_error)
   | none => kill_reason.Other err
 
 /-- fail — impl_mem.ml:540-546 (see failReason). -/
-private def memFail {a : Type} (err : mem_error)
+def memFail {a : Type} (err : mem_error)
     (loc : CerbLocation.Loc := CerbLocation.other "Concrete") : memM a :=
   kill (failReason err loc)
 
-private def alignDown (addr align : Nat) : Nat := (addr / align) * align
+def alignDown (addr align : Nat) : Nat := (addr / align) * align
 
 /-! ### Bytemap operations -/
 
-private def writeBytesTo (st : MemState) (addr : Int) (bytes : List AbsByte) : MemState :=
+def writeBytesTo (st : MemState) (addr : Int) (bytes : List AbsByte) : MemState :=
   -- insert-or-replace per byte (was: prepend + filter of the whole map)
   let bm := (bytes.foldl
     (fun (acc : Std.TreeMap Int AbsByte × Int) b => (acc.1.insert acc.2 b, acc.2 + 1))
     (st.bytemap, addr)).1
   { st with bytemap := bm }
 
-private def readBytesFrom (st : MemState) (addr : Int) (size : Nat) : List AbsByte :=
+def readBytesFrom (st : MemState) (addr : Int) (size : Nat) : List AbsByte :=
   (List.range size).map fun (i : Nat) =>
     match st.bytemap.get? (addr + (i : Int)) with
     | some b => b
     | none => { prov := .Prov_none, copyOffset := none, value := none }
 
-private def getAllocation (st : MemState) (pv : PointerValue) : Option (Int × Allocation) :=
+def getAllocation (st : MemState) (pv : PointerValue) : Option (Int × Allocation) :=
   match pv with
   | .PV (.Prov_some allocId) _ =>
     if st.deadAllocations.contains allocId then none
     else (st.allocations.get? allocId).map (fun a => (allocId, a))
   | _ => none
 
-private def isInBounds (alloc : Allocation) (addr size : Int) : Bool :=
+def isInBounds (alloc : Allocation) (addr size : Int) : Bool :=
   addr >= alloc.base && addr + size <= alloc.base + alloc.size
 
 /-! ### Allocation — impl_mem.ml:1288-1435 -/
@@ -1312,7 +1316,7 @@ def killM (loc : CerbLocation.Loc) (isDynamic : Bool) (pv : PointerValue) : memM
 /-- is_atomic_member_access — impl_mem.ml:689-706: accessing a PART of an
     atomic allocation (not the whole object with the same type) is an
     AtomicMemberof error. -/
-private def isAtomicMemberAccess (alloc : Allocation) (lvalueTy : ctype) (addr : Int) : Bool :=
+def isAtomicMemberAccess (alloc : Allocation) (lvalueTy : ctype) (addr : Int) : Bool :=
   match alloc.ty with
   | some allocTy =>
     match allocTy with
@@ -1438,7 +1442,7 @@ def storeM (loc : CerbLocation.Loc) (ty : ctype) (isLocking : Bool) (pv : Pointe
 
 /-! ### Pointer comparisons — impl_mem.ml:1830+ -/
 
-private def ptrAddr (pv : PointerValue) : Option Int :=
+def ptrAddr (pv : PointerValue) : Option Int :=
   match pv with | .PV _ (.PVconcrete _ addr) => some addr | _ => none
 
 def eqPtrval (_ : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=

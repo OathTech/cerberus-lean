@@ -10,37 +10,26 @@
   production runner on the pinned Core program term, RelSem/T1File.lean;
   no Iris, no Step, no seqModel in the statement).
 
-  STATUS (S4 record §6): the D5 WP-route derivation and the adequacy
-  discharge are PROVED end-to-end below (`t1_wp`, `t1_of_app_eq`),
-  together with the direct-route twin (`t1_of_app_eq_direct`, the
-  cross-check D5 mandates) and the UB-freedom face — all from ONE
-  ∀-quantified Layer-2 hypothesis `T1AppEq`: the harness app equation.
-  T1AppEq itself is the app-equation computation (S3's plan), and it is
-  BLOCKED this slice on the arc-3 F8 residue: `partial def`s in
-  non-slice GENERATED modules on the exec spine's kernel path — probed
-  and enumerated this slice (S4 record, escalation event 2):
-  Annot.get_loc, Ctype.ctypeEqual, State_exception_undefined
-  .stExceptUndef_foldM/_mapM, Core.eq_core_object_type,
-  Utils.assoc_adjust/insert/remove (+closure). Partial defs have no
-  kernel equations, so NO computation can cross them; totalizing them
-  is lem-side work (the arc-3 B1/B2 fuel machinery, .lem/backend —
-  outside this slice's zero-lem-changes mandate). The hand-written half
-  (CerbMem) WAS totalized this slice, unblocking every memory-model
-  step. When the F8 sweep lands, `T1AppEq`'s proof is a Layer-2
-  computation and T1 falls out of `t1_of_app_eq` with NO change to
-  anything in this file.
-
-  What the conditional theorems VALIDATE now (the smoke-test purpose):
-  the entire bridge — language instance, SC state interpretation, the
-  lifting rule, iris-lean's adequacy, the behavior discharge — is
-  exercised end-to-end by `t1_of_app_eq`'s proof, kernel-checked, with
-  the exact axiom pins in RelSem/Audit.lean.
+  STATUS (arc-7 S5a, 2026-08-20): **T1 IS UNCONDITIONAL.** The F8 fuel
+  sweep (frontend/model .lem declares) gave the exec spine kernel
+  equations outside the arc-3 11-module boundary, and `T1AppEq` is now
+  a THEOREM (`t1AppEq_holds`, discharged by the compositional
+  app-equation chain of RelSem/T1AppEq.lean: the prefix walk, nine
+  driver rounds — including the byte-roundtrip load and the
+  range-checked conv_loaded_int evaluation, where the intRange
+  hypothesis enters — and the scheduler/exit glue; every lemma at
+  default elaborator budgets). `T1 : T1Statement` goes through the full
+  WP route (`t1_of_app_eq`, the D5 ruling); `T1_direct` is the
+  direct-route cross-check; `T1_ubFree` is the no-UB face. Exact axiom
+  pins in RelSem/Audit.lean: the classical trio + the declared
+  boundary (DAEMON, runEffectful) — no sorryAx, no ofReduce*.
 
   House rules: no sorry, no axioms. Under the in-build audit.
 -/
 
 import RelSem.IrisAdequacy
 import RelSem.T1File
+import RelSem.T1AppEq
 
 set_option autoImplicit false
 
@@ -124,6 +113,24 @@ theorem t1_of_app_eq_direct (happ : T1AppEq) : T1Statement := by
   obtain ⟨r, st', heq, hval⟩ := happ x hx
   exact callHarnessAdequate_of_app_active heq hval
 
+/-! ## THE F8 SWEEP LANDED (arc-7 S5a): `T1AppEq` is now a THEOREM —
+    the compositional app-equation chain of RelSem/T1AppEq.lean (prefix
+    walk + nine driver rounds incl. the byte-roundtrip load and the
+    range-checked conv chain + the scheduler/exit glue). T1 is
+    UNCONDITIONAL. -/
+
+/-- THE LAYER-2 RESIDUAL, DISCHARGED. -/
+theorem t1AppEq_holds : T1AppEq := by
+  intro x hx
+  exact ⟨finalize t1File.tagDefs "callND" (drDone x), drDone x,
+    t1_app_eq x hx.1 hx.2, t1_result_eq x⟩
+
+/-- **T1, UNCONDITIONAL** (through the full WP route per D5). -/
+theorem T1 : T1Statement := t1_of_app_eq t1AppEq_holds
+
+/-- T1's direct-route twin (cross-check scaffolding per D5). -/
+theorem T1_direct : T1Statement := t1_of_app_eq_direct t1AppEq_holds
+
 /-- UB-FREEDOM face ("no UB" in the slate row), through the WP route. -/
 theorem t1_ubFree_of_app_eq (happ : T1AppEq) :
     ∀ x : Int, intRange x →
@@ -133,5 +140,11 @@ theorem t1_ubFree_of_app_eq (happ : T1AppEq) :
     t1File.tagDefs t1File "id" [intValue x] t1Fs (t1Spec x) ?_
   intro η
   exact t1_wp happ x hx
+
+/-- **T1's UB-freedom, UNCONDITIONAL** (WP route). -/
+theorem T1_ubFree :
+    ∀ x : Int, intRange x →
+      CallUBFree t1File.tagDefs t1File "id" [intValue x] t1Fs :=
+  t1_ubFree_of_app_eq t1AppEq_holds
 
 end RelSem.T1
