@@ -19,6 +19,28 @@ orchestrator judgment call resolved by project principles.
   computed binder set must equal census Class T (16 defs) on today's
   corpus, behavior neutrality deferred to the S3 zero-movement
   differential bar.
+- **D3 [AGENT] — S1 rule-4 interpretation RATIFIED.** The derivation
+  skips self + FORWARD-mutual-sibling constructor references only;
+  backward siblings resolve through already-emitted instances (worker
+  flag 1). Basis: required for ndM/expression/Core wrapper pairs,
+  consistent with the design note's "cross-type dependencies resolve
+  through the emitted instances themselves", validated by the green
+  cerberus-scale build + orchestrator-re-run zero-movement differential
+  (unit rc 0; exec rc 0, SUMMARY verbatim-matched the worker's).
+- **D4 [AGENT] — remaining opaque-fallback emission paths fold into
+  S2.** S1 surfaced two pre-existing sorry-emission paths (worker flag
+  2: non-parameterized opaque types' `default := sorry` instances;
+  `default_value` L_undefined tyvar sorry). Charter durability req 2
+  bans EVERY opaque inhabitant categorically — 0-in-corpus is not an
+  exemption. S2's scope extends to eliminate them (fail-closed
+  no-instance + generation-time error on backend-visible demand); after
+  S2 the backend must be unable to emit sorry or DAEMON anywhere.
+- **R1 [AGENT] — register candidate (S4 close-out):** `deriving BEq,
+  Ord` fails on Sum-typed constructor fields (LemLib lacks `Ord (Sum)`)
+  — pre-existing, surfaced by S1's ebox test, orthogonal; record in the
+  lem register at close. Hand-instance retirement (CerbCoreInstances /
+  CerbInhabitedInstances shrink) assigned to S3 alongside the Audit.lean
+  pin updates.
 - **D2 [AGENT] — mid-arc lem consumption mechanism.** S1/S2 cerberus-
   scale validation uses the per-worktree checkout lem (PATH-prepend +
   LEMLIB, the parallel-streams mechanism from the container playbook);
