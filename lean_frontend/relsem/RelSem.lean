@@ -22,6 +22,18 @@ import RelSem.IrisAdequacy
 import RelSem.T1Core
 import RelSem.T1File
 import RelSem.T1
+-- arc-7 S5a: the T2–T5 slate program terms (emitted, drift-gated) +
+-- the T2 app-equation chain.
+import RelSem.SlateCore
+import RelSem.SlateFiles
+import RelSem.SlateWP
+import RelSem.T2AppEq
+import RelSem.T2
+import RelSem.T3AppEq
+import RelSem.T3
+import RelSem.T4Defs
+import RelSem.T4AppEq
+import RelSem.T4
 -- arc-7 S1: the in-build axiom audit (golean pattern) — a lib member,
 -- so `lake build RelSem` elaborates it and drift fails the build.
 import RelSem.Audit

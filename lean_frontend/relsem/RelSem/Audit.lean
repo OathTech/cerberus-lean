@@ -99,6 +99,17 @@ import RelSem.IrisAdequacy
 import RelSem.T1Core
 import RelSem.T1File
 import RelSem.T1
+-- arc-7 S5a: the slate climb (T2-T4) + the fixture-generic WP bridge.
+import RelSem.SlateCore
+import RelSem.SlateFiles
+import RelSem.SlateWP
+import RelSem.T2AppEq
+import RelSem.T2
+import RelSem.T3AppEq
+import RelSem.T3
+import RelSem.T4Defs
+import RelSem.T4AppEq
+import RelSem.T4
 
 namespace RelSem.Audit
 
@@ -297,6 +308,123 @@ info: 'RelSem.Cerb.callHarnessAdequate_of_app_active' depends on axioms: [DAEMON
 #guard_msgs in #print axioms RelSem.T1.T1_direct
 /-- info: 'RelSem.T1.T1_ubFree' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.T1_ubFree
+
+
+-- Arc-7 S5a: THE SLATE CLIMB — T2 (add, the forced no-signed-overflow
+-- precondition), T3 (roundtrip), T4 (struct member — the exit
+-- criterion; under the harness-environment hypotheses T4EnvHyp, the
+-- three census-boundary globals surfaced). All through the
+-- fixture-generic WP bridge (RelSem/SlateWP.lean). Pinned exactly.
+/-- info: 'RelSem.Cerb.wp_of_app_active' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.wp_of_app_active
+/--
+info: 'RelSem.Cerb.callHarnessAdequate_of_app_eq_wp' depends on axioms: [DAEMON,
+ propext,
+ runEffectful,
+ Classical.choice,
+ Quot.sound]
+-/
+#guard_msgs in #print axioms RelSem.Cerb.callHarnessAdequate_of_app_eq_wp
+/-- info: 'RelSem.Cerb.callUBFree_of_app_eq_wp' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.callUBFree_of_app_eq_wp
+/-- info: 'RelSem.Slate.t2File' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Slate.t2File
+/-- info: 'RelSem.Slate.t3File' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Slate.t3File
+/-- info: 'RelSem.Slate.t4File' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Slate.t4File
+/-- info: 'RelSem.T2.catch_add_fact' depends on axioms: [propext] -/
+#guard_msgs in #print axioms RelSem.T2.catch_add_fact
+/-- info: 'RelSem.T2.t2_app_eq' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T2.t2_app_eq
+/-- info: 'RelSem.T2.T2' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T2.T2
+/-- info: 'RelSem.T2.T2_direct' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T2.T2_direct
+/-- info: 'RelSem.T2.T2_ubFree' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T2.T2_ubFree
+/-- info: 'RelSem.T3.t3_app_eq' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T3.t3_app_eq
+/-- info: 'RelSem.T3.T3' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T3.T3
+/-- info: 'RelSem.T3.T3_direct' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T3.T3_direct
+/-- info: 'RelSem.T3.T3_ubFree' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T3.T3_ubFree
+/-- info: 'RelSem.T4.t4_app_eq' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T4.t4_app_eq
+/-- info: 'RelSem.T4.T4' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T4.T4
+/-- info: 'RelSem.T4.T4_direct' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T4.T4_direct
+/-- info: 'RelSem.T4.T4_ubFree' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T4.T4_ubFree
+
+/-! ## THE STATEMENT-TCB GATE (arc-7 S5a, Task 4): a slate theorem's
+    STATEMENT may mention only fuel-opsem-level objects. Mechanized:
+    collect the constants of each slate theorem's TYPE (plus one
+    unfolding level for the `T?Statement`/`T4EnvHyp` Prop-defs the
+    types abbreviate), and FAIL THE BUILD if any is Iris-rooted or one
+    of the relational-layer internals (Step/Steps/CsSem/DSteps/
+    stateIs). Allowed by construction: ExecModel/CerbND-shaped surface
+    (CallHarnessAdequate, CallUBFree), the generated types, and the
+    fixture terms. NEGATIVE-TESTED below on `t1_wp` (an
+    Iris-statement theorem), which the checker must reject. -/
+
+open Lean in
+/-- Names a slate STATEMENT must not mention (the Iris root covers
+    WP/IProp/state-interpretation constants). -/
+def stmtBannedExact : List Name :=
+  [`RelSem.Step, `RelSem.Steps, `RelSem.CsSem,
+   `RelSem.Cerb.DSteps, `RelSem.Cerb.stateIs]
+
+open Lean in
+/-- The constants a theorem's statement mentions, with the T-namespace
+    Prop-def abbreviations unfolded one level. -/
+def stmtConstantsOf (env : Environment) (n : Name) :
+    Except String (List Name) := do
+  let some ci := env.find? n
+    | .error s!"statement gate: {n} not found"
+  let direct := ci.type.getUsedConstants.toList
+  let mut out := direct
+  for c in direct do
+    -- one unfolding level for the statement abbreviations
+    if c.getPrefix == `RelSem.T1 || c.getPrefix == `RelSem.T2
+        || c.getPrefix == `RelSem.T3 || c.getPrefix == `RelSem.T4 then
+      if let some (.defnInfo dv) := env.find? c then
+        if dv.type.isProp then
+          out := out ++ dv.value.getUsedConstants.toList
+  .ok out
+
+open Lean in
+/-- The banned names a statement mentions (empty = pass). -/
+def stmtViolations (env : Environment) (n : Name) :
+    Except String (List Name) := do
+  let cs ← stmtConstantsOf env n
+  .ok <| cs.filter (fun c =>
+    c.getRoot == `Iris || stmtBannedExact.contains c)
+
+open Lean in
+#eval show CoreM Unit from do
+  let env ← getEnv
+  let slate : List Name :=
+    [`RelSem.T1.T1, `RelSem.T1.T1_direct, `RelSem.T1.T1_ubFree,
+     `RelSem.T2.T2, `RelSem.T2.T2_direct, `RelSem.T2.T2_ubFree,
+     `RelSem.T3.T3, `RelSem.T3.T3_direct, `RelSem.T3.T3_ubFree,
+     `RelSem.T4.T4, `RelSem.T4.T4_direct, `RelSem.T4.T4_ubFree]
+  for n in slate do
+    match stmtViolations env n with
+    | .error e => throwError "{e}"
+    | .ok [] => pure ()
+    | .ok vs =>
+      throwError "RelSem statement gate: {n}'s STATEMENT mentions         banned constants {vs} — slate statements are fuel-opsem only"
+  -- NEGATIVE TEST: an Iris-statement theorem must be rejected.
+  match stmtViolations env `RelSem.T1.t1_wp with
+  | .error e => throwError "{e}"
+  | .ok [] =>
+    throwError "RelSem statement gate NEGATIVE TEST FAILED: t1_wp's       Iris statement passed the checker — the gate is not detecting"
+  | .ok _ => pure ()
+  logInfo s!"RelSem statement gate: {slate.length} slate statements     fuel-opsem-clean (negative test: t1_wp correctly rejected)"
 
 /-! ## The exhaustive sweep — LAST in the file by design: a constant
     declared after this point would dodge it (negative-test lesson,
