@@ -17,6 +17,10 @@ UNIT_TESTS=(
     "totality-proof-test"
     "core-parser-test"
     "fresh-int-test"
+    # arc-7 S4: T1 program-term drift gate (emit-lean-core byte-identity
+    # against relsem/RelSem/T1Core.lean) + concrete differential of the
+    # assembled theorem object (RelSem.T1.t1File) through callND.
+    "emit-lean-core-test"
 )
 
 # ---------------------------------------------------------------------------

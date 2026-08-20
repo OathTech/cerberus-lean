@@ -193,3 +193,19 @@ name = "fresh-int-test"
 srcDir = "test"
 root = "Unit.FreshIntTest"
 moreLinkArgs = ["native/fresh_int.o", "native/debug.o", "native/tags.o", "native/md5.o"]
+
+# arc-7 S4: the term-emission instrument (parsed Core → Lean source terms;
+# regenerates relsem/RelSem/T1Core.lean — see that file's header).
+[[lean_exe]]
+name = "emit-lean-core"
+srcDir = "test"
+root = "Unit.EmitLeanCoreMain"
+moreLinkArgs = ["native/fresh_int.o", "native/debug.o", "native/tags.o", "native/md5.o"]
+
+# arc-7 S4: T1 program-term drift gate + concrete differential on the
+# assembled theorem object (RelSem/T1File.lean).
+[[lean_exe]]
+name = "emit-lean-core-test"
+srcDir = "test"
+root = "Unit.EmitLeanCoreTest"
+moreLinkArgs = ["native/fresh_int.o", "native/debug.o", "native/tags.o", "native/md5.o"]

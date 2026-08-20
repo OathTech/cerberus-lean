@@ -199,26 +199,85 @@ Per the table: R3 only (+R1 reused, R4 free).
   the call rule's hypothesis IS the ∀-quantified app equation, with
   the T2-style precondition carried as its Lean hypothesis — R5).
 
-## 5. THE ADEQUACY THEOREM (Task 4 — RelSem/IrisAdequacy.lean)
+## 5. THE ADEQUACY THEOREM (Task 4 — RelSem/IrisAdequacy.lean, PROVED)
 
-(statement verbatim in §5.1 below; recorded after the build went
-green.)
+Statement, verbatim:
 
-Chain: WP premise ⇒ `wp_adequacy_gen` ⇒ `adequate .NotStuck` over the
-coupled language ⇒ (`callOutcomes_sound` : behavior ⇒ DSteps) +
-(`steps_erased` : DSteps ⇒ `-·->ₜₚ*` at the singleton pool) +
-`adequate_result` ⇒ every behavior satisfies φ ⇒
-`CallAdequate … (fun b => φ b.1)`. Statement-TCB: the CONCLUSION
-mentions only ExecModel-level objects (`CallAdequate`, i.e.
-`seqModel.Adequate` at `callConfig`); Iris appears only in the
-hypothesis (discharged by the T1 WP proof). FALLBACK STATUS: **not
-taken** — no Config-class restriction was needed; the theorem covers
-every `callConfig` (and a whole-program `initConfig` variant comes
-free through the same lemmas).
+```lean
+theorem callAdequate_of_wp {GF : BundledGFunctors} [CerbGpreS GF]
+    (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
+    (file1 : file core_run_annotation) (fname : String)
+    (args : List value) (fs : CerbFS.FsState)
+    (φ : DriveVal → Prop)
+    (Hwp : ∀ [CerbGS .hasLC GF],
+      (stateIs (hlc := .hasLC) (GF := GF)
+          (initial_driver_state file1 fs)) ⊢
+        WP (MExpr.running (callND tagDefs file1 fname args) : DriveExpr)
+          @ Stuckness.NotStuck ; ⊤ {{ o, ⌜φ o⌝ }}) :
+    CallAdequate tagDefs file1 fname args fs (fun b => φ b.1)
+```
+
+Chain: WP premise ⇒ ghost cell allocated + split at the initial state ⇒
+`wp_adequacy_gen` ⇒ `adequate .NotStuck` over the coupled language ⇒
+(`callOutcomes_sound` : behavior ⇒ DSteps, S3) + (`steps_erased` :
+DSteps ⇒ `-·->ₜₚ*` at the singleton pool, §2) + `adequate_result` ⇒
+every behavior satisfies φ ⇒ `CallAdequate … (fun b => φ b.1)`.
+Statement-TCB: the CONCLUSION mentions only ExecModel-level objects
+(`CallAdequate` = `seqModel.Adequate` at `callConfig`); Iris appears
+only in the discharged hypothesis. Corollaries shaped for S5:
+`callHarnessAdequate_of_wp` (the CerbND-shaped headline form),
+`callUBFree_of_wp`, `callUBFree_of_value_adequate`. FALLBACK STATUS:
+**NOT taken** — no Config-class restriction was needed; every
+`callConfig` is covered. Axiom cone: DAEMON + runEffectful (through
+the quoted harness substrate, standing D3 disposition) + the classical
+trio; the PURE coupling layer (language instance, steps_erased,
+lifting rules, stateIs lemmas, CerbS witness) is classical-trio-only —
+**iris-lean contributes no axioms**. All pinned exactly in
+RelSem/Audit.lean.
+
+One IPM-boundary note for auditors: `wp_adequacy_gen` builds its
+`IrisGS_gen` instance from the existential witnesses, while the premise
+WP is stated over `instIrisGSDrive`; the two instance VALUES are
+definitionally equal field-by-field, and the proof closes that gap with
+an explicit `irevert/istop/entails_wand rfl` step (IrisAdequacy.lean) —
+a defeq bridge, not an axiom.
 
 ## 6. T1 (Task 5) — status, statement, and the materialization record
 
-(§6 filled in as the slice landed; see the end of this doc.)
+### 6.0 Status summary
+
+* The term-emission instrument, the pinned T1 program term, the
+  runtime drift gate + concrete differential: LANDED (§6.1-§6.2).
+* THE WP-ROUTE DERIVATION AND DISCHARGE: PROVED end-to-end
+  (`t1_wp`, `t1_of_app_eq`, RelSem/T1.lean), with the direct-route
+  twin (`t1_of_app_eq_direct`, cited per D5) and the UB-freedom face
+  (`t1_ubFree_of_app_eq`) — all conditional on ONE Layer-2 residual:
+* `T1AppEq` (the ∀-quantified harness app equation) is BLOCKED this
+  slice on generated-code partiality (§6.3, escalation event 2) — the
+  arc-3 F8 residue, priced below. The moment the F8 sweep lands,
+  `T1AppEq` is an S3-style app-equation computation and the
+  unconditional T1 is `t1_of_app_eq T1AppEq_proof` — nothing in the
+  bridge changes.
+
+T1 statement, verbatim (RelSem/T1.lean; statement-TCB: fuel opsem
+only — no Iris/RelSem-relation names):
+
+```lean
+def T1Statement : Prop :=
+  ∀ x : Int, intRange x →
+    CallHarnessAdequate t1File.tagDefs t1File "id" [intValue x] t1Fs
+      (t1Spec x)
+-- t1Spec x r := r.dres_core_value = intValue x
+-- intRange x := -2147483648 ≤ x ∧ x ≤ 2147483647
+
+theorem t1_of_app_eq (happ : T1AppEq) : T1Statement
+```
+
+Axiom pins (exact, build-enforced in RelSem/Audit.lean):
+`t1_wp` / `t1_of_app_eq` / `t1_of_app_eq_direct` / `t1_ubFree_of_app_eq`
+: `[DAEMON, propext, runEffectful, Classical.choice, Quot.sound]`;
+`t1File` : classical trio only; the emitted AST (`idT1Decl` etc.) :
+axiom-FREE.
 
 ### 6.1 The program-term materialization problem and the decision
 
@@ -254,18 +313,103 @@ concrete differential runs `callND` on the SAME assembled file against
 the recorded spec points. Upgrading the term to the full pipeline file
 (emit the whole linked file) is the priced S5/arc-8 item.
 
-## 7. Validation & audit
+### 6.2 The instrument + the pinned term (landed)
 
-(recorded at slice end: Tier A zero-movement, lake build with the iris
-dep, Audit sweep extended over the coupling modules, test_verify.)
+* `emit-lean-core` (test/Unit/EmitLeanCore(Main).lean): parses the
+  pinned inputs with the compiled CoreParser and prints the AST as
+  pure constructor literals (name-hash symbol ids evaluated to
+  numerals at emission — the term needs NO opaque calls to reduce).
+  Unhandled constructors error loudly. Scoped to T1's needs; growth
+  path = whole-linked-file emission (§8).
+* `relsem/RelSem/T1Core.lean` (generated, committed): `id`'s proc from
+  tests/verify/t1_id.core + the conv_loaded_int closure
+  (conv_loaded_int/conv_int/is_representable_integer/
+  catch_exceptional_condition) from std.core. `main` is deliberately
+  NOT emitted (its body carries a function-pointer literal the
+  instrument doesn't cover, and `callND` never reads it).
+* `relsem/RelSem/T1File.lean`: the assembly (funs = {id}, stdlib =
+  the closure, hand-pinned funinfo `signed int id(signed int)`,
+  everything else empty) + `convert_file`.
+* Gates: `emit-lean-core-test` (now in test_unit.sh's Tier A list) —
+  (1) byte-identity drift gate of the emitted module vs the committed
+  one; (2) concrete differential: `callND t1File id(x)` =
+  Specified(x) at x ∈ {0, 1, 42, −7, INT_MAX, INT_MIN} on the EXACT
+  theorem object. All green.
+
+### 6.3 Escalation events (the rule, exercised — each: what was
+###     missing, what was built)
+
+* **Event 1 — hand-written CerbMem partiality.** The first concrete
+  kernel probe of the harness app equation stuck at
+  `CerbMem.sizeofCtype` — `partial def`s have NO kernel equations, so
+  no app equation can cross a memory operation. This is the S2-priced
+  "CerbMem stays declared-boundary" decision colliding with the slate.
+  BUILT: the CerbMem exec-path totalization (this slice) — 9 fuel'd
+  workers + default-budget wrappers (arc-3 pattern; exhaustion = the
+  opaque `fuelExhaustedWith`, D4 transparency doctrine): memberAlign /
+  offsetsofMembers / offsetsof / sizeofCtype / alignofCtype (one
+  mutual block), memValueToBytes, reconstructValue, typeofMval,
+  unqualifyAndUnatomic. `stringFromMemValue` (pp-only) stays partial.
+  Call sites and behavior unchanged (wrappers); the ENTIRE standing
+  ladder re-validated zero-movement (§7). Post-fix probes:
+  sizeof/alignof/allocateObject/memValueToBytes all kernel-reduce.
+* **Event 2 — generated non-slice partials (the arc-3 F8 residue,
+  now load-bearing).** The next probes stuck at GENERATED partial defs
+  outside the arc-3 11-module totality boundary, ON the T1 kernel
+  path: `Ctype.ctypeEqual` (the store guard's ctypeMemCompatible AND
+  conv_int's `ty = '_Bool'` value equality), `Annot.get_loc`
+  (step_ctx, every driver step), `State_exception_undefined
+  .stExceptUndef_foldM/_mapM` (Erun/Eccall argument evaluation),
+  `Core.eq_core_object_type` (Core_aux), `Utils.assoc_adjust/insert/
+  remove` (Core_run) — enumerated by grep over the 11 exec modules.
+  NOT built here: the fix is `declare {lean} fuel val …` in the .lem
+  sources + `make lean-prelude-src` (the exact arc-3 B1/B2 machinery,
+  frontend/model/driver.lem:1886-1889 precedent) — .lem changes are
+  OUTSIDE this slice's mandate (zero model .lem changes; lem pin
+  frozen mid-arc). PRICED: ~8 one-line declares + regeneration + the
+  standing-ladder re-run; this is `T1AppEq`'s only blocker (§6.0).
+  No hacking campaign was attempted against it (the rule's point):
+  partial defs admit no equations, so no tactic effort could succeed.
+
+Zero other escalation events: every Iris-side proof in this slice is
+the lifting shell + ghost agree/update + constructor disjointness.
+
+## 7. Validation (zero movement) & audit
+
+At the slice head (all green, this worktree):
+`lake build` (all targets, WITH the iris dep — includes the in-build
+RelSem audit: sweep "470 declarations across RelSem.* modules, all
+within the declared axiom boundary, 0 sorryAx exceptions" + every
+curated pin exact); `test_unit.sh` 5/5 (sync gate 22 files, purity
+CLEAN, hand-written census 2, D14 grep, theorem-axiom cones,
+totality CLEAN — and the new emit-lean-core-test drift gate +
+t1File differential); exec baselines `--check-baseline`: minimal rc 0
+(103/106 + 3 oracle skips, 100% of comparable), coverage rc 0, debug
+rc 0; `test_parse.sh` ALL (100%); `test_core.sh` 106/106 ALL PASSED;
+`test_libc_exec.sh` 7/7 ALL MATCH; `test_multi_tu.sh` 2/2;
+`test_libxml2_uri.sh` GATE PASS 16/16; `test_verify.sh` 23/23.
+The CerbMem totalization (escalation event 1) is covered by this whole
+net — the swap is behaviorally invisible.
 
 ## 8. Register items out of this slice
 
-* CoreParser totalization (route-2 unblock) — parked, priced as a
-  fuel-totalization sweep over 97 partial defs (arc-3 pattern).
-* Term-emission instrument growth path: whole-linked-file emission
-  (T2-T5 + libxml2-scale statements).
+* **THE T1 UNBLOCK (top priority, S5-gating): the F8 fuel sweep** —
+  `declare {lean} fuel` for the §6.3-event-2 list (+ closure) in the
+  .lem sources, regenerate, re-run the ladder; then prove `T1AppEq`
+  (an S3-style app-equation computation) and the unconditional T1 is
+  `t1_of_app_eq` applied to it. T2-T4's equations hit the same list
+  (nothing extra known; T4 additionally exercises the struct arms of
+  the NOW-TOTAL CerbMem layout oracles).
+* CoreParser totalization (statement-side nicety only — the emission
+  instrument made it non-blocking) — parked.
+* Term-emission instrument growth: whole-linked-file emission (full
+  stdlib + main + function-pointer values) for T2-T5 and
+  libxml2-scale statements.
 * gen_heap-over-heapOf instantiation — the Q4 granularity refinement's
-  first work item (catalogued entry points in §0.1 make it a
-  parameter fill of the slot, §3).
-* mirrors: deps/mirrors/iris-lean.git at the next network window.
+  first work item (catalogued entry points in §0.1 make it a parameter
+  fill of the slot, §3).
+* Totality-gate boundary: CerbMem's 9 exec-path functions are now
+  total but the gate does not yet scan CerbMem.lean (census/results
+  language update at arc close; extending the scanner is mechanical).
+* mirrors: deps/mirrors/iris-lean.git at the next network window
+  (recorded in deps/gitconfig too).

@@ -96,6 +96,9 @@ import RelSem.IrisLang
 import RelSem.IrisState
 import RelSem.IrisRules
 import RelSem.IrisAdequacy
+import RelSem.T1Core
+import RelSem.T1File
+import RelSem.T1
 
 namespace RelSem.Audit
 
@@ -257,6 +260,25 @@ info: 'RelSem.Cerb.callHarnessAdequate_of_app_active' depends on axioms: [DAEMON
 #guard_msgs in #print axioms RelSem.Cerb.callHarnessAdequate_of_wp
 /-- info: 'RelSem.Cerb.callUBFree_of_wp' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Cerb.callUBFree_of_wp
+-- arc-7 S4: T1 through the full WP route (RelSem/T1.lean), conditional
+-- on the Layer-2 residual T1AppEq (blocked on the arc-3 F8 generated-
+-- partials residue — see the T1.lean header). The program TERM
+-- (T1Core/T1File — the emitted parsed AST) is boundary-clean: the AST
+-- literals themselves are axiom-FREE; t1File adds only the classical
+-- trio through convert_file/fromList. The theorems quote the harness
+-- substrate (DAEMON + runEffectful, standing disposition). Pinned.
+/-- info: 'RelSem.T1.idT1Decl' does not depend on any axioms -/
+#guard_msgs in #print axioms RelSem.T1.idT1Decl
+/-- info: 'RelSem.T1.t1File' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T1.t1File
+/-- info: 'RelSem.T1.t1_wp' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T1.t1_wp
+/-- info: 'RelSem.T1.t1_of_app_eq' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T1.t1_of_app_eq
+/-- info: 'RelSem.T1.t1_of_app_eq_direct' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T1.t1_of_app_eq_direct
+/-- info: 'RelSem.T1.t1_ubFree_of_app_eq' depends on axioms: [DAEMON, propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T1.t1_ubFree_of_app_eq
 
 /-! ## The exhaustive sweep — LAST in the file by design: a constant
     declared after this point would dodge it (negative-test lesson,
