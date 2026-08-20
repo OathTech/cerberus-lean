@@ -62,3 +62,19 @@ orchestrator judgment call resolved by project principles.
   the capped default-target build — the April cerberus-scale lesson
   generalizes to Layer-2. Fixed in-scope by the named-helper hoist
   (semantics identical, citations preserved); relsem untouched.
+- **D5 [AGENT] — S3+S3b boundary verified.** Orchestrator re-ran the
+  full D4 set: capped default-target build 0 errors, unit 6/6 (new
+  pp-test lane), minimal zero movement, float lane BASELINE OK
+  (69/69 MATCH — first sweep needed zero fixes; 0 oracle-indicting:
+  the corpus exercises the concrete model's op_fval, not the buggy
+  lem-level mul — classification rule banked in the baseline
+  header), bytes ALL AT COMMITTED EXPECTEDS (9 exec + 5 neg-pinned),
+  ci BASELINE OK. Register row 2 (pp-placeholder text class) CLOSED
+  with a 25-item enumerated residual, all honest-bracketed;
+  format_string_of_float stub closed (row 11/#29 folded);
+  stringFromMemValue partial→total (half of row 21). MILESTONE
+  (derived): ci mismatch count is now 0 — 114/114 comparable agree.
+  Commits e0d3ad1f7/57fe96ab4/65f77606c coherent, no forbidden
+  surfaces (diffstat-checked by worker; lakefile touch = additive
+  exe entry only). S4 (csmith campaign) is GO per the amended
+  charter: configuration exploration first.
