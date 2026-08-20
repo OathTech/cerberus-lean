@@ -20,16 +20,29 @@ cerberus (OCaml)                    cerberus-lean (Lean)
 
 **Core text parser:** Lean parses `.core` and `.impl` files directly using `Std.Internal.Parsec`.
 
+**Proof layer (arc 7):** `lean_frontend/relsem/RelSem/` — Layer 2
+(relational semantics over the fuel opsem: ExecModel, Machine, RunND,
+Call harness) + Layer 3 (iris-lean coupling: IrisLang/IrisState/
+IrisRules/IrisAdequacy) + the slate theorems T1–T4 (T?.lean, T?AppEq)
+and the in-build axiom audit + statement-TCB gate (Audit.lean).
+`RelSem` is in `defaultTargets`, so a plain `lake build` elaborates the
+audit. Lake deps: `LemLib` (lem-lean pin) + `iris`/`Qq`/`batteries`
+(pinned revs, resolved offline via deps/gitconfig redirects). See
+`docs/2026-08-20_arc7-results.md`.
+
 ## Build
 
 ```bash
-# Prerequisites: Lean 4.29.0 (lean-toolchain), local opam switch with lem pinned
+# Prerequisites: Lean 4.32.2 (lean-toolchain; bumped from 4.29.0 in
+# arc-7 S0), local opam switch with lem pinned
 
 # Generate Lean from .lem files
 make lean-prelude-src
 
-# Build Lean executable
-cd lean_frontend && lake build cerberus-lean
+# Build Lean executable — ALWAYS through scripts/capped (cgroup memory
+# cap; never run lake/lean uncapped — arc-7 D7 rule after an OOM
+# session kill; CERB_MEM_MAX overrides the 64G default)
+cd lean_frontend && ../scripts/capped lake build cerberus-lean
 
 # Build OCaml driver (for --cabs-json)
 opam exec -- dune build backend/driver/main.exe
@@ -54,8 +67,28 @@ Each is a `[[lean_exe]]` in `lakefile.toml` that exits 0 on pass.
 ```
 
 Current unit tests:
+- `effects-proof-test` / `totality-proof-test` — kernel-checked proof exemplars for the effect-erasure and totality machinery
 - `core-parser-test` — 280 tests for `CoreParser.lean`
-- `fresh-int-test` — verifies `fresh_int`/`Symbol.fresh` generate unique values
+- `fresh-int-test` — verifies `fresh_int`/`Symbol.fresh` generate unique values (+ the native-obj fresh-counter floor probe)
+- `emit-lean-core-test` — arc-7: byte drift gate for the emitted slate program terms (`relsem/RelSem/T1Core.lean`, `SlateCore.lean` vs a fresh parse of the pinned oracle Core dumps) + concrete differential points on the assembled theorem objects
+
+`test_unit.sh` also runs the gate scripts: the hand-written↔generated
+sync gate, the hand-written-axiom census (exactly 2),
+`check_exec_purity.sh`, `check_exec_totality.sh` (16 generated modules
++ CerbND since arc-7 S5a), and `check_theorem_axioms.sh` (theorem-axiom
+cones + the D14 non-kernel-proof-method ban). Two further gates are
+IN-BUILD (fail the `lake build` itself, arc 7): the RelSem axiom audit
+and the slate statement-TCB gate — both in `relsem/RelSem/Audit.lean`
+(slate statements must be fuel-opsem-only: no Iris/RelSem-relation
+names; negative-tested in-build).
+
+### Verification fixtures (arc 7)
+
+```bash
+./scripts/test_verify.sh   # tests/verify: T1-T5 fixture differentials —
+                           # 5/5 main-mode vs the OCaml oracle + 18/18
+                           # harness concrete points vs recorded specs
+```
 
 ### Integration tests (C → JSON → Lean, per parser)
 
@@ -131,7 +164,8 @@ If you skip this step, Lake will compile the stale `generated/` copy and your ch
 | `CerbInhabitedInstances.lean` | Computable Inhabited for monadic types |
 | `CabsImport.lean` | JSON → Cabs AST deserializer |
 | `CoreParser.lean` | Core text parser (Parsec) |
-| `CerbND.lean` | Exhaustive ND runner (+ runND1 single-trace, arc-5 `--first`) |
+| `CerbND.lean` | Exhaustive ND runner (+ runND1 single-trace, arc-5 `--first`); fuel-TOTALIZED in arc-7 S2 (runNDFuel + wrappers, loud panic at exhaustion) — no `partial` allowed (totality gate scans it; RelSem/RunND.lean states soundness against it) |
+| `CerbFunMapInstances.lean` | Arc-7 S2: real SetType instance for generic_fun_map_decl (evicts the lem backend's sorried fallback from initial_driver_state's cone) |
 | `CerbStepInstances.lean` | OCaml-poly-eq-parity instances for core_step2 (arc 4) |
 | `CerbLocation.lean` | Source location type |
 | `CerberusFresh.lean` | Fresh symbol/digest generation |
@@ -164,6 +198,8 @@ If you skip this step, Lake will compile the stale `generated/` copy and your ch
 | `scripts/libc_prep.sh` | Arc-6 S1: pins + drift-checks `tests/libc/libc.core` (the oracle's unlinked libc Core text dump) and emits the 12 libc metadata TU cabs-jsons (see Main.loadLibc) |
 | `scripts/test_libc_exec.sh` | Arc-6 S1 differential: C-with-libc programs, both sides load the C library (`tests/libc_exec/`, own baseline; NEW mode — standing corpora stay --nolibc) |
 | `scripts/test_cabs_json.sh` | Quick smoke test |
+| `scripts/test_verify.sh` | Arc-7 S3: verification-fixture differentials (tests/verify T1-T5) — main-mode vs oracle + harness concrete points vs recorded specs (23 checks, fail-closed) |
+| `scripts/capped` | Arc-7 D7: run any command under a cgroup memory cap (default 64G; `CERB_MEM_MAX` override, `=none` loud opt-out). ALL lake/lean invocations go through it |
 
 ## Lem backend interaction
 
@@ -188,12 +224,13 @@ Lem is pinned to `https://github.com/septract/lem-lean#mdd/lean-backend`.
   `runND_proxy` is implemented — hand-written `CerbND.runND`).
   Concurrency stubs remain the declared boundary.
 
-### Pipeline status (2026-08-19, post arc-5 — see arc-4/5 results docs)
+### Pipeline status (updated 2026-08-20, post arc-7 — see the arc results docs)
 - ✅ C → Cabs JSON → Cabs types (100%)
 - ✅ Core text parser + stdlib loading (incl. ailname attribute capture, arc 5)
 - ✅ Desugar / Typecheck / Translation (all 106/106 tests/minimal)
 - ✅ Execution, differentially validated vs OCaml: tests/minimal 103/106
-  (3 oracle-side skips), coverage 178/199 comparable, debug corpus green
+  (3 oracle-side skips), coverage 183/199 comparable (since arc-6 S2),
+  debug corpus green
 - ✅ libc/builtin procedure linking (arc 5: 20/20 coverage FAILs closed)
 - ✅ Multi-TU: real Core_linking + per-TU MD5 digests (arc 5)
 - ✅ libxml2 chvalid through the full pipeline: 100% differential
@@ -216,6 +253,14 @@ Lem is pinned to `https://github.com/septract/lem-lean#mdd/lean-backend`.
   slices (339 pts ~100 s Lean vs old 50-pt ~35 s each). Known residual:
   step-runner stack ceiling (S0 register; onset ~1.5k plain loop
   iterations, bimodal quiet-death/hang — not corpus-binding)
+- ✅ VERIFICATION (arc-7, "the bridge"): first theorems — T1-T4
+  ∀-quantified interpreter-only statements about pinned compiled Core
+  programs (T4 = struct member write/read, the exit criterion), proved
+  through the iris-lean WP route + the in-repo adequacy theorem;
+  toolchain 4.32.2; CerbND + CerbMem exec-path + 5 more generated
+  modules totalized; in-build axiom audit + statement-TCB gate.
+  T5 (bounded loop) parked with pricing. See
+  `docs/2026-08-20_arc7-results.md`.
 
 ## Conventions
 

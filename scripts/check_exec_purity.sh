@@ -12,16 +12,26 @@
 #   enforcing (CERB_PURITY_ENFORCE=1, default after S2 flips it below):
 #     any non-allowlisted finding fails the gate.
 #
-# BOUNDARY HONESTY (arc-4 S5f, audit G3; amended arc-7 S2): the 11-module
-# list below covers GENERATED modules only. The hand-written seams those
-# modules call into (CerbMem.lean — partial defs and panic! sites;
-# CerbND.lean — TOTALIZED in arc-7 S2, partial-free and covered by
-# check_exec_totality.sh's hand-written clause, though still outside THIS
-# purity scan; CerbTags.lean — the with_tagDefs AXIOM + BaseIO externs;
-# CerbFloat/CerbUtils/...) are OUTSIDE this gate's scan: nothing here
-# inspects them. They are covered only by the declared-boundary list in
-# the arc results doc (2026-08-19_arc4-results.md). Expanding the gate
-# to the hand-written seams is a priced next-arc item, NOT done this arc.
+# BOUNDARY HONESTY (arc-4 S5f, audit G3; amended arc-7 S2 + S5b): the
+# 11-module list below covers GENERATED modules only, and is the PURITY
+# scope — note the totality gate (check_exec_totality.sh) scans a
+# 16-generated-module SUPERSET since arc-7 S5a (this 11-module list is
+# its prefix). The hand-written seams those modules call into are
+# OUTSIDE this gate's scan: nothing here inspects them. Their state as
+# of arc-7:
+#   CerbND.lean  — TOTALIZED (arc-7 S2), partial-free, covered by
+#     check_exec_totality.sh's hand-written clause; still outside THIS
+#     purity scan.
+#   CerbMem.lean — exec-path TOTALIZED (arc-7 S4: the nine layout/
+#     byte-codec functions are fuel'd); ONE partial def remains
+#     (stringFromMemValue, pp-only) plus panic! sites; outside both
+#     scans (extending the totality scanner over it is a priced item).
+#   CerbTags.lean — the with_tagDefs AXIOM + BaseIO externs;
+#   CerbFloat/CerbUtils/... — unchanged.
+# Declared-boundary records: 2026-08-19_arc4-results.md, updated by
+# 2026-08-20_arc7-results.md (CerbND left the boundary; CerbMem's leg
+# partially discharged). Expanding this purity gate to the hand-written
+# seams remains a priced next-arc item.
 set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."

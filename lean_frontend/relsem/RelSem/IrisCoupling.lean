@@ -1,5 +1,29 @@
 /-
-  RelSem.IrisCoupling — spike/relsem (2026-08-19). PAPER-ONLY.
+  RelSem.IrisCoupling — spike/relsem (2026-08-19). PAPER-ONLY —
+  **SUPERSEDED (arc-7 S4, 2026-08-20): the coupling is REALIZED.**
+
+  Everything sketched below now EXISTS as checked code in this same
+  package (the "separate 4.32.x proof package" plan was overtaken by
+  the S0 toolchain bump — this repo is on 4.32.2 and imports iris-lean
+  directly):
+
+    * language instance            -> RelSem/IrisLang.lean
+    * StateInterp (the SC slot)    -> RelSem/IrisState.lean
+    * WP rules (wp_app_*, wp_callND) -> RelSem/IrisRules.lean
+    * THE ADEQUACY THEOREM         -> RelSem/IrisAdequacy.lean
+    * slate theorems T1-T4         -> RelSem/T{1,2,3,4}.lean (+ SlateWP)
+    * axiom pins + statement gate  -> RelSem/Audit.lean
+
+  Where the realization diverged from the sketch, the CODE and the S4
+  worker record (docs/2026-08-20_arc7-s4-iris-coupling.md) are
+  authoritative — notably StateInterp landed as the full-driver-state
+  ghost_var (S4 record §3), NOT the gen_heap-over-heapOf sketched
+  below, which is now the priced Q4-refinement fill. This file is kept
+  UNCHANGED below this banner as the historical design record (D6
+  noted the sketch; nothing after this line is load-bearing).
+
+  ------------------------------------------------------------------
+  ORIGINAL HEADER (historical; toolchain facts below are pre-bump):
 
   This file intentionally contains NO Iris code and NO Iris imports.
   iris-lean is pinned at Lean 4.32.2 (deps/iris-lean/Iris/lean-toolchain);
@@ -118,8 +142,9 @@
 namespace RelSem
 namespace IrisCoupling
 
-/-- Paper-only marker so the module is non-empty and buildable. The real
-    coupling lives in a future 4.32.x proof package; see the header. -/
+/-- Paper-only marker so the module is non-empty and buildable. The
+    real coupling landed in arc-7 S4 (RelSem/IrisLang, IrisState,
+    IrisRules, IrisAdequacy); see the SUPERSEDED banner in the header. -/
 def paperOnly : Unit := ()
 
 end IrisCoupling

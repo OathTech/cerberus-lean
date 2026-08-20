@@ -27,7 +27,16 @@
 # files and fails if the count differs from 2 (fail-closed: a third
 # axiom must be consciously registered here). sorryAx remains forbidden
 # everywhere probed. Declared-boundary records: 2026-08-19_arc4-results.md,
-# 2026-08-19_arc5-results.md.
+# 2026-08-19_arc5-results.md, 2026-08-20_arc7-results.md.
+#
+# SCOPE COMPANION (arc-7): the RelSem/proof-layer cones (slate theorems
+# T1-T4, adequacy, the coupling) are NOT probed here — they are covered
+# by the IN-BUILD audit lean_frontend/relsem/RelSem/Audit.lean (golean
+# pattern: exhaustive sweep + exact #guard_msgs pins, build-failing,
+# runs on plain `lake build` via defaultTargets) plus the in-build
+# statement-TCB gate in the same file. This script's probes remain the
+# generated-exemplar + driver2 legs, and its D14 grep leg scans
+# lean_frontend/relsem/ (below).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
