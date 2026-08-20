@@ -224,7 +224,8 @@ private abbrev TagDefs := List (sym × (CerbLocation.Loc × tag_definition))
     transparency doctrine) + the original name as the default-budget
     wrapper (`lemDefaultFuel`, rfl-defeq), so every call site and every
     runtime behavior is unchanged. `stringFromMemValue` (pp-only, never
-    on a computed path) stays partial. -/
+    on a computed path) is total since arc-10 S3 (structural mutual
+    recursion — no fuel needed). -/
 
 mutual
 
@@ -1128,30 +1129,193 @@ def overlapping (f1 f2 : Footprint) : Bool :=
 
 def initialMemState : MemState := {}
 
-/-! ## String conversion stubs -/
+/-! ## Pretty-printing (arc-10 S3 — real mirrors of the OCaml printers)
 
-def stringFromCtype (_ : ctype) : String := "<ctype>"
-/-- Minimal pretty-printer for diagnostics. Not a full impl of
-    Impl_mem.string_of_mem_value. -/
-partial def stringFromMemValue : MemValue → String
-  | .MVunspecified _ => "MVunspecified"
-  | .MVinteger _ (.IV _ n) => s!"MVinteger({n})"
-  | .MVfloating _ f => s!"MVfloating({f})"
-  | .MVpointer _ (.PV _ b) => s!"MVpointer({match b with
-      | .PVnull _ => "null"
-      | .PVfunction _ => "fun"
-      | .PVconcrete _ addr => s!"@{addr}"})"
-  | .MVarray vs => "MVarray[" ++ (vs.map stringFromMemValue).foldl (fun a b => a ++ ", " ++ b) "" ++ "]"
-  | .MVstruct _ _ => "MVstruct(<tag>)"
-  | .MVunion _ _ _ => "MVunion(<tag>)"
+The OCaml concrete model's pp section lives at impl_mem.ml:560-615 and
+reaches into the shared printers Pp_symbol (pp_symbol.ml) and
+Pp_core_ctype (pp_core_ctype.ml). PLACEMENT NOTE: the Lean import graph
+forces the shared symbol/ctype mirrors to live HERE rather than in
+CerbPP.lean — CerbPP imports Core, which imports Mem → CerbMem, so
+CerbMem is the lowest hand-written module that sees ctype/sym and is
+seen by everything that pretty-prints. CerbPP delegates to these.
+All output is colour-free: every mirrored OCaml path is wrapped in
+Cerb_colour.without_colour (e.g. driver_ocaml.ml:79) or prints through
+plain-text `!^`. -/
 
-def stringFromPointerValue : PointerValue → String
-  | .PV _ (.PVnull _) => "null"
-  | .PV _ (.PVfunction _) => "<funptr>"
-  | .PV _ (.PVconcrete _ addr) => s!"@{addr}"
+/-- Mirrors Pp_symbol.to_string (pp_symbol.ml:5-10). -/
+def ppSymbolRaw : sym → String
+  | .Symbol _ n sd =>
+    match sd with
+    | .SD_Id str | .SD_ObjectAddress str | .SD_FunArgValue str =>
+      str ++ "_" ++ toString n
+    | _ => "a_" ++ toString n
 
+/-- Mirrors Pp_symbol.to_string_pretty (pp_symbol.ml:12-35) with
+    is_human = false (the default; every caller mirrored here uses it). -/
+def ppSymbol : sym → String
+  | .Symbol _ n sd =>
+    -- pp_symbol.ml:13-19: name{n} at debug_level > 4, else the bare name
+    let maybeAddNumber (name : String) : String :=
+      if CerbDebug.get_level () > 4 then name ++ "{" ++ toString n ++ "}"
+      else name
+    match sd with
+    | .SD_Id str | .SD_ObjectAddress str | .SD_FunArgValue str =>
+      maybeAddNumber str
+    | .SD_unnamed_tag _ => "__cerbty_unnamed_tag_" ++ toString n  -- is_human=false arm (pp_symbol.ml:25-29)
+    | .SD_CN_Id str => str
+    | _ => "a_" ++ toString n  -- SD_None / SD_Return / SD_FunArg (pp_symbol.ml:33-34)
+
+/-- Mirrors Pp_symbol.pp_identifier (pp_symbol.ml:99-103), clever=false.
+    DELIBERATE DIVERGENCE (documented): at debug_level ≥ 5 OCaml prepends
+    the pp'd location; we never do (debug-only path, location pp is the
+    registered pretty-printer-arc residual). -/
+def ppIdentifier : identifier → String
+  | .Identifier _ str => str
+
+/-- Mirrors Pp_core_ctype.pp_integer_base_ctype (pp_core_ctype.ml:18-30). -/
+def ppIntegerBaseCtype : integerBaseType → String
+  | .Ichar => "ichar"
+  | .Short => "short"
+  | .Int_ => "int"
+  | .Long => "long"
+  | .LongLong => "long_long"
+  | .IntN_t n => "int" ++ toString n ++ "_t"
+  | .Int_leastN_t n => "int_least" ++ toString n ++ "_t"
+  | .Int_fastN_t n => "int_fast" ++ toString n ++ "_t"
+  | .Intmax_t => "intmax_t"
+  | .Intptr_t => "intptr_t"
+
+/-- The fixed-width class special-cased at pp_core_ctype.ml:36-39. -/
+private def isStdlibIbty : integerBaseType → Bool
+  | .IntN_t _ | .Int_leastN_t _ | .Int_fastN_t _ | .Intmax_t | .Intptr_t => true
+  | _ => false
+
+/-- Mirrors Pp_core_ctype.pp_integer_ctype (pp_core_ctype.ml:33-47);
+    the ?compact flag is unused in the OCaml body and omitted here. -/
+def ppIntegerCtype : integerType → String
+  | .Char0 => "char"
+  | .Bool0 => "_Bool"
+  | .Signed ibty =>
+    if isStdlibIbty ibty then ppIntegerBaseCtype ibty
+    else "signed " ++ ppIntegerBaseCtype ibty
+  | .Unsigned ibty =>
+    if isStdlibIbty ibty then "u" ++ ppIntegerBaseCtype ibty
+    else "unsigned " ++ ppIntegerBaseCtype ibty
+  | .Enum0 s => "enum " ++ ppSymbol s
+  | .Size_t => "size_t"
+  | .Wchar_t => "wchar_t"
+  | .Wint_t => "wint_t"
+  | .Ptrdiff_t => "ptrdiff_t"
+  | .Ptraddr_t => "ptraddr_t"
+
+/-- Mirrors Pp_core_ctype.pp_floating_ctype (pp_core_ctype.ml:50-57). -/
+def ppFloatingCtype : floatingType → String
+  | .RealFloating .Float0 => "float"
+  | .RealFloating .Double => "double"
+  | .RealFloating .LongDouble => "long_double"
+
+/-- Mirrors Pp_core_ctype.pp_basic_ctype (pp_core_ctype.ml:60-63). -/
+def ppBasicCtype : basicType → String
+  | .Integer ity => ppIntegerCtype ity
+  | .Floating fty => ppFloatingCtype fty
+
+mutual
+/-- Mirrors Pp_core_ctype.pp_ctype (pp_core_ctype.ml:66-90). Array sizes
+    print via Pp_ail.pp_integer = Z.to_string (pp_ail.ml:103). The
+    OCaml TODOs that drop qualifiers (Function/Pointer arms) are
+    mirrored as-is: qualifiers are never printed. -/
+def ppCtype : ctype → String
+  | .Ctype _ ty => ppCtype_ ty
+
+def ppCtype_ : ctype_ → String
+  | .Void0 => "void"
+  | .Basic bty => ppBasicCtype bty
+  | .Array0 elemTy nOpt =>
+    ppCtype elemTy ++ "[" ++ (match nOpt with | some n => toString n | none => "") ++ "]"
+  | .Function (_, retTy) argTys isVariadic =>
+    ppCtype retTy ++ " (" ++ ppCtypeParams argTys
+      ++ (if isVariadic then ", ..." else "") ++ ")"
+  | .FunctionNoParams (_, retTy) => ppCtype retTy ++ " ()"
+  | .Pointer _ refTy => ppCtype refTy ++ "*"
+  | .Atomic atomTy => "_Atomic (" ++ ppCtype atomTy ++ ")"
+  | .Struct s => "struct " ++ ppSymbol s
+  | .Union0 s => "union " ++ ppSymbol s
+  | .Byte => "byte"
+
+/-- comma_list over the parameter triples (pp_core_ctype.ml:76-78). -/
+def ppCtypeParams : List (qualifiers × ctype × Bool) → String
+  | [] => ""
+  | [(_, ty, _)] => ppCtype ty
+  | (_, ty, _) :: rest => ppCtype ty ++ ", " ++ ppCtypeParams rest
+end
+
+/-- Mirrors string_of_provenance (impl_mem.ml:550-558). -/
+def stringOfProvenance : Provenance → String
+  | .Prov_none => "@empty"
+  | .Prov_some allocId => "@" ++ toString allocId
+  | .Prov_symbolic iota => "@iota(" ++ toString iota ++ ")"
+  | .Prov_device => "@device"
+
+/-- Mirrors `"0x" ^ Z.format "%x" n` (impl_mem.ml:572). Addresses are
+    nonnegative in the concrete model; a negative Int would print as its
+    toNat clamp (0) — unreachable, kept total. -/
+private def hexOfAddress (n : Int) : String :=
+  "0x" ++ String.ofList (Nat.toDigits 16 n.toNat)
+
+/-- Mirrors pp_ctype used with `stringFromCtype` — mem.lem:411-413's
+    declared OCaml referent (`String_Ctype.string_of_ctype`) does not
+    exist upstream (dead val on the OCaml side); we point it at the same
+    Pp_core_ctype text as every other ctype pp. -/
+def stringFromCtype (ty : ctype) : String := ppCtype ty
+
+/-- Mirrors pp_integer_value (impl_mem.ml:576-580);
+    Impl_mem.string_of_integer_value (impl_mem.ml:3004-3005) and
+    pp_integer_value_for_core (impl_mem.ml:582) both resolve to it. -/
 def stringFromIntegerValue : IntegerValue → String
-  | .IV _ n => toString n
+  | .IV prov n =>
+    if CerbDebug.get_level () ≥ 3 then
+      "<" ++ stringOfProvenance prov ++ ">:" ++ toString n
+    else
+      toString n
+
+/-- Mirrors pp_pointer_value (impl_mem.ml:563-572); the ?is_verbose flag
+    is unused in the OCaml body. -/
+def stringFromPointerValue : PointerValue → String
+  | .PV prov base =>
+    match base with
+    | .PVnull ty => "NULL(" ++ ppCtype ty ++ ")"
+    | .PVfunction s => "Cfunction(" ++ ppSymbol s ++ ")"
+    | .PVconcrete _ n =>
+      "(" ++ stringOfProvenance prov ++ ", " ++ hexOfAddress n ++ ")"
+
+mutual
+/-- Mirrors pp_mem_value (impl_mem.ml:591-615), exactly — incl. the
+    quirky `equals ^^^` spacing (".m= v") and `braces(comma_list …)`
+    for arrays. Total (was `partial`; arc-10 S3). -/
+def stringFromMemValue : MemValue → String
+  | .MVunspecified _ => "UNSPEC"
+  | .MVinteger _ ival => stringFromIntegerValue ival
+  | .MVfloating _ fval => CerbFloat.string_of_float fval
+  | .MVpointer _ ptrval => "ptr(" ++ stringFromPointerValue ptrval ++ ")"
+  | .MVarray mvals => "{" ++ ppMemValueList mvals ++ "}"
+  | .MVstruct tag xs =>
+    "(struct " ++ ppSymbol tag ++ "){" ++ ppMemValueMembers xs ++ "}"
+  | .MVunion tag membrIdent mval =>
+    "(union " ++ ppSymbol tag ++ "){." ++ ppIdentifier membrIdent ++ "= "
+      ++ stringFromMemValue mval ++ "}"
+
+def ppMemValueList : List MemValue → String
+  | [] => ""
+  | [mval] => stringFromMemValue mval
+  | mval :: rest => stringFromMemValue mval ++ ", " ++ ppMemValueList rest
+
+def ppMemValueMembers : List (identifier × ctype × MemValue) → String
+  | [] => ""
+  | [(ident, _, mval)] => "." ++ ppIdentifier ident ++ "= " ++ stringFromMemValue mval
+  | (ident, _, mval) :: rest =>
+    "." ++ ppIdentifier ident ++ "= " ++ stringFromMemValue mval ++ ", "
+      ++ ppMemValueMembers rest
+end
 
 /-! ## CHERI stubs (not used in concrete model) -/
 

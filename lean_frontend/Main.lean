@@ -341,8 +341,9 @@ the format the prototype's `test_interp.sh` parses:
 Multiple executions get `EXECUTION i:` header lines, like OCaml.
 Deviations from OCaml (hand-written latitude, documented):
   - loc strings use CerbLocation.stringFromLocation (harness never compares loc)
-  - Unspecified/OtherValue payloads use our placeholder pretty-printers
-    (an honest textual mismatch if they ever differ; OCaml uses String_core)
+  - Unspecified/OtherValue payloads print via the arc-10 S3 REAL mirrors of
+    String_core.string_of_value (CerbPP.stringFromCore_value; residual
+    divergences are enumerated in CerbPP.lean and stay "<...>"-bracketed)
   - non-UB frontend failures emit an `Error {msg: ...}` line on stdout
     (OCaml puts them on stderr only); fail-closed either way
   - runND returning zero executions emits `Error {msg: ...}` + exit 1
@@ -358,17 +359,23 @@ def batchEscape (s : String) : String :=
       else if c == '\r' then "\\r"
       else String.singleton c)) ""
 
-/-- Batch rendering of the final core value (mirrors OCaml's
-    `string_of_batch_exit` for the Specified-integer case, which is the
-    only case the harness compares by value). -/
+/-- Batch rendering of the final core value — mirrors OCaml's exit
+    selection in batch_drive (driver_ocaml.ml:162-171) composed with
+    string_of_batch_exit (driver_ocaml.ml:42-52), which re-wraps the exit
+    and prints it with String_core.string_of_value (= Pp_core.pp_value):
+    * Specified-integer: case_integer_value → `Specified n` →
+      re-wrapped via Impl_mem.integer_ival n (provenance ERASED) →
+      pp "Specified(<n>)" — hence the explicit branch here (a direct
+      pp of the original value would leak provenance at debug ≥ 3).
+    * everything else round-trips to pp_value of the value itself
+      (Unspecified included: "Unspecified('<ctype>')", pp_core.ml:304-308). -/
 def batchExitValue (v : value) : String :=
   match v with
   | Vloaded (LVspecified (OVinteger ival)) =>
     match eval_integer_value ival with
     | some n => s!"Specified({n})"
-    | none => s!"OtherValue(<unevaluatable integer>)"
-  | Vloaded (LVunspecified ty) => s!"Unspecified({CerbPP.stringFromCtype ty})"
-  | v => s!"OtherValue({CerbPP.stringFromCore_value v})"
+    | none => CerbPP.stringFromCore_value v  -- OtherValue arm (driver_ocaml.ml:167)
+  | v => CerbPP.stringFromCore_value v
 
 /-- Batch rendering of a driver error (info-parity with the human-mode
     printer; the harness never compares these strings textually). -/

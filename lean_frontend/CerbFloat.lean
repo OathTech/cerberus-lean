@@ -163,8 +163,116 @@ def of_string (s : String) : Float :=
   | some f => if neg then -f else f
   | none => panic! s!"CerbFloat.of_string: {s} (OCaml Cerb_floating.of_string raises Failure)"
 
-/-- Corresponds to: string_of_float in OCaml -/
-def string_of_float (f : Float) : String := toString f
+/-! ## Exact decimal formatting (arc-10 S3, pp-placeholder text class)
+
+OCaml's float→text goes through C printf: `string_of_float f =
+valid_float_lexem (format_float "%.12g" f)` (OCaml stdlib.ml) and
+`Decode.format_string_of_float prec f = Printf.sprintf "%.<prec>f" f`
+(ocaml_frontend/decode.ml:228-232). glibc prints the CORRECTLY-ROUNDED
+decimal form of the exact binary value (ties: round-half-even). We
+reproduce that exactly with integer arithmetic on the IEEE-754
+decomposition: |f| = m·2^e with m,e integers, so any scaled value
+m·2^e·10^p is a ratio of integers and can be rounded half-even exactly.
+Verified against OCaml 5.4.0 (= glibc printf) reference outputs in
+test/Unit/PPTest.lean. -/
+
+/-- IEEE-754 double decomposition: (sign, m, e) with |f| = m·2^e (m = 0
+    iff f = ±0). Finite inputs only (callers branch on nan/inf first). -/
+private def decomposeFinite (f : Float) : Bool × Nat × Int :=
+  let bits := f.toBits
+  let sign := bits >>> 63 == 1
+  let expField := ((bits >>> 52) &&& 0x7FF).toNat
+  let mantissa := (bits &&& 0xFFFFFFFFFFFFF).toNat
+  if expField == 0 then (sign, mantissa, -1074)          -- subnormal / zero
+  else (sign, mantissa + (1 <<< 52), (expField : Int) - 1075)
+
+/-- round-half-even of m·2^e·10^p (all exact) to a Nat. -/
+private def scaledRound (m : Nat) (e : Int) (p : Int) : Nat :=
+  let num := m * (if e ≥ 0 then 2 ^ e.toNat else 1)
+               * (if p ≥ 0 then 10 ^ p.toNat else 1)
+  let den := (if e < 0 then 2 ^ (-e).toNat else 1)
+               * (if p < 0 then 10 ^ (-p).toNat else 1)
+  let q := num / den
+  let r := num % den
+  if 2 * r > den then q + 1
+  else if 2 * r < den then q
+  else if q % 2 == 0 then q else q + 1
+
+/-- C printf `%.<prec>f` of a double, exactly (glibc: correctly rounded,
+    half-even on the exact binary value). Mirror target:
+    Decode.format_string_of_float (ocaml_frontend/decode.ml:228-232).
+    nan/inf: "nan"/"inf"/"-inf" like glibc %f, except that a negative
+    NaN's "-nan" is not reproduced (DELIBERATE: Lean gives no portable
+    NaN sign access; unobservable in the corpora). -/
+def formatFixed (prec : Nat) (f : Float) : String :=
+  if f.isNaN then "nan"
+  else if f.isInf then (if f < 0 then "-inf" else "inf")
+  else
+    let (sign, m, e) := decomposeFinite f
+    let scaled := scaledRound m e (prec : Int)
+    let ip := scaled / 10 ^ prec
+    let fp := scaled % 10 ^ prec
+    let sgn := if sign then "-" else ""
+    if prec == 0 then sgn ++ toString ip
+    else
+      let fpStr := toString fp
+      let pad := String.ofList (List.replicate (prec - fpStr.length) '0')
+      sgn ++ toString ip ++ "." ++ pad ++ fpStr
+
+/-- Number of decimal digits of a Nat (1 for 0). -/
+private def numDigits (n : Nat) : Nat := (toString n).length
+
+/-- Corresponds to: string_of_float in OCaml — EXACT mirror of
+    `valid_float_lexem (format_float "%.12g" f)` (OCaml stdlib.ml):
+    C `%.12g` = round to 12 significant decimal digits (half-even on the
+    exact value); use `%e` style iff the decimal exponent X < -4 or
+    X ≥ 12; strip trailing fraction zeros; exponent `e±dd` (≥ 2 digits);
+    then valid_float_lexem appends "." iff the result is a plain integer
+    lexeme. NaN sign caveat as in formatFixed. -/
+def string_of_float (f : Float) : String :=
+  if f.isNaN then "nan"
+  else if f.isInf then (if f < 0 then "-inf" else "inf")
+  else
+    let (sign, m, e) := decomposeFinite f
+    let sgn := if sign then "-" else ""
+    if m == 0 then sgn ++ "0."
+    else
+      -- decimal exponent X (10^X ≤ |f| < 10^(X+1)): probe at a fixed wide
+      -- scale (10^400 puts even the smallest subnormal ≥ 10^76), then
+      -- correct after the 12-digit rounding.
+      let probe := scaledRound m e 400
+      let X0 : Int := (numDigits probe : Int) - 1 - 400
+      let n0 := scaledRound m e (11 - X0)
+      let (n1, X) : Nat × Int :=
+        if numDigits n0 > 12 then (n0 / 10, X0 + 1)      -- overflow: n0 = 10^12
+        else if numDigits n0 < 12 then (scaledRound m e (11 - (X0 - 1)), X0 - 1)
+        else (n0, X0)
+      -- strip trailing zeros (%g without '#')
+      let rec strip (n : Nat) (fuel : Nat) : Nat :=
+        match fuel with
+        | 0 => n
+        | fuel + 1 => if n % 10 == 0 && n ≥ 10 then strip (n / 10) fuel else n
+      let ds := toString (strip n1 12)
+      if X < -4 || X ≥ 12 then
+        -- %e style: d[.ddd]e±XX
+        let mant :=
+          if ds.length == 1 then ds
+          else (ds.take 1).toString ++ "." ++ (ds.drop 1).toString
+        let xa := (if X < 0 then -X else X).toNat
+        let xs := toString xa
+        let xs := if xs.length < 2 then "0" ++ xs else xs
+        sgn ++ mant ++ "e" ++ (if X < 0 then "-" else "+") ++ xs
+      else if X ≥ 0 then
+        if (ds.length : Int) ≤ X then
+          -- all digits before the point; valid_float_lexem appends "."
+          sgn ++ ds ++ String.ofList (List.replicate (X + 1 - ds.length).toNat '0') ++ "."
+        else if (ds.length : Int) == X + 1 then
+          sgn ++ ds ++ "."
+        else
+          sgn ++ (ds.take (X + 1).toNat).toString ++ "." ++ (ds.drop (X + 1).toNat).toString
+      else
+        -- -4 ≤ X < 0: 0.00ddd
+        sgn ++ "0." ++ String.ofList (List.replicate (-X - 1).toNat '0') ++ ds
 
 /-- Truncate a Float toward zero to an integer — corresponds to zarith's
     `Z.of_float` (used by ivfromfloat, impl_mem.ml:2553-2554): truncation

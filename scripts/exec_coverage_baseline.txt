@@ -11,6 +11,11 @@
 #   header comment ("Exercise select_ro_kind PrefStringLiteral in
 #   impl_mem.ml (L1704-1710)") identifies it as the finding-11 class —
 #   in-class movement, not collateral.
+# 2026-08-20 arc-10 S3: mem-006-uninitialized-read.c MISMATCH → MATCH —
+#   the pp-placeholder ctype text class closed (same fix as ci
+#   0006/0007/0046: real Pp_core_ctype mirror + the pp_core.ml:304-308
+#   squotes in the batch Unspecified payload). Only movement in the
+#   coverage sweep (0 regressions, 1 improvement).
 # REPORTING baseline — obj-2 parity scoreboard; does NOT gate this arc.
 # 2026-08-19 S5f: ptr3-006-eq-one-past-end.c MATCH→MISMATCH — not a Lean
 #   regression but the H1 harness hardening (full verdict-SEQUENCE
@@ -200,7 +205,7 @@ mem-002-store-load-short.c MATCH
 mem-003-type-pun-char.c MATCH
 mem-004-type-pun-write.c MATCH
 mem-005-readonly-const.c UB_MATCH
-mem-006-uninitialized-read.c MISMATCH
+mem-006-uninitialized-read.c MATCH
 mem-007-zero-size-array.c CERB_SKIP
 mem-008-large-struct.c MATCH
 mem-009-packed-access.c MATCH

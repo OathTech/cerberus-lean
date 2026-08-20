@@ -195,6 +195,14 @@ srcDir = "test"
 root = "Unit.FreshIntTest"
 moreLinkArgs = ["native/fresh_int.o", "native/debug.o", "native/tags.o", "native/md5.o"]
 
+# arc-10 S3: pretty-printer mirrors vs recorded oracle outputs (OCaml
+# string_of_float / %.*f transcript + Pp_core_ctype / pp_value shapes).
+[[lean_exe]]
+name = "pp-test"
+srcDir = "test"
+root = "Unit.PPTest"
+moreLinkArgs = ["native/fresh_int.o", "native/debug.o", "native/tags.o", "native/md5.o"]
+
 # arc-7 S4: the term-emission instrument (parsed Core → Lean source terms;
 # regenerates relsem/RelSem/T1Core.lean — see that file's header).
 [[lean_exe]]

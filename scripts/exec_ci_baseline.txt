@@ -7,13 +7,20 @@
 #   MerrWriteOnReadOnly ReadonlyStringLiteral → UB033_modifying_string_literal,
 #   matching the oracle. Only movement in the ci sweep (0 regressions,
 #   1 improvement).
+# 2026-08-20 arc-10 S3: 0006-return_var_unspec.c, 0007-inits.c,
+#   0046-jump_inside_lifetime.c MISMATCH → MATCH — the pp-placeholder
+#   ctype text class closed: CerbMem.ppCtype now mirrors
+#   Pp_core_ctype.pp_ctype (pp_core_ctype.ml:18-90) and the batch
+#   Unspecified payload prints "Unspecified('<ctype>')" per
+#   pp_core.ml:304-308 (was "Unspecified(<ctype>)" placeholder text).
+#   Only movement in the ci sweep (0 regressions, 3 improvements).
 0001-emptymain.c MATCH
 0002-return_const.c MATCH
 0003-return_arith.c MATCH
 0004-return_var.c MATCH
 0005-return_var_arith.c MATCH
-0006-return_var_unspec.c MISMATCH
-0007-inits.c MISMATCH
+0006-return_var_unspec.c MATCH
+0007-inits.c MATCH
 0008-cond_integer.c MATCH
 0009-cond-pointer.c MATCH
 0010-if_int.c MATCH
@@ -50,7 +57,7 @@
 0042-struct_namespace.c MATCH
 0044-init_scalar_enclosed.c MATCH
 0045-global_postinit.c MATCH
-0046-jump_inside_lifetime.c MISMATCH
+0046-jump_inside_lifetime.c MATCH
 0047-conditional_eq.c MATCH
 0048-conditional_eq_else.c MATCH
 0049-void_return_empty.c MATCH
