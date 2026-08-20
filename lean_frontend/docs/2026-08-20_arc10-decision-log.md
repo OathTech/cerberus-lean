@@ -27,3 +27,15 @@ orchestrator judgment call resolved by project principles.
   STALE (onset now 16384<N<=24576, loud exit-134, not quiet — the
   arc-7 totalization presumably moved it); the S5 results doc carries
   the correction, the item remains FORBIDDEN-surface parked.
+- **D2 [AGENT] — S1 boundary verified + coverage-baseline call
+  RATIFIED.** Orchestrator re-ran: unit 5/5 (sync gate 21 files),
+  minimal zero movement, ci `BASELINE OK` (first re-run attempt used
+  the wrong baseline file — --check-baseline defaults to the minimal
+  baseline; operator-education note: ci needs
+  `--check-baseline=scripts/exec_ci_baseline.txt`). The flagged
+  coverage flip (mem3-004-string-write-attempt DIFF → UB_MATCH) is
+  RATIFIED as expected-in-class: the file's own header cites
+  select_ro_kind impl_mem.ml:1704-1710 — it is a finding-11 test by
+  construction; the S0 triage row's pp-class listing was inference,
+  now corrected. Scoreboard: ci 111/114 (derived). Finding 11 CLOSED
+  (register). Commit 3b82fac70 coherent, no forbidden surfaces.
