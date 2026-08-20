@@ -76,3 +76,26 @@ orchestrator judgment call resolved by project principles.
   LemLib DAEMON references = history comment only; lakefile pin =
   9d220e49 (mid-arc, documented in-file, re-pin note for close). Both
   worktrees clean, commits coherent (LEM 9d220e4, CERB f147aad91).
+- **D8 [AGENT] — audit dispositions.** Two adversarial audits (scopes
+  per charter S4). Both MAJORs FIXED, not recorded: auditor-A F1
+  (L_undefined rendered silent `default` vs OCaml's failwith raise —
+  mirror-doctrine defect + forward landmine for the concurrency arc)
+  → backend emits failwithI with the OCaml-identical message
+  (src/backend.ml:864 cited), 16 sites converted, panic path pinned
+  (LEM 237867b, lean-lib byte-untouched so the Lake pin stands);
+  auditor-B F1 (in-build absence gate sees only its 133-module import
+  closure; a planted DAEMON in Core_indet passed all gates) →
+  tree-wide NAME-INDEPENDENT axiom census + unsafeCast ban over all
+  193 generated files, plant-tested FAIL/restore-green verbatim, and
+  the overstated scope wording corrected (CERB 33c7b7ba0). F2/F3/N2
+  corrected in records; F4 record-only (checklist already flags it);
+  N3 residual stated (in-closure DAEMON leg stays name-based; theorem
+  cones remain the backstop); N4 already documented. Orchestrator
+  re-verified post-fix: unit 5/5 with both censuses OK, verify 29/29,
+  exec byte-identical zero movement.
+- **R2 [AGENT] — register note:** Lean 4.28 closed-term extraction is
+  EAGER — LemLib-importing exes abort message-less at init under
+  LEAN_ABORT_ON_PANIC=1 (lem-suite toolchain only; ≥4.32 lazy via
+  lean_obj_once, cerberus unaffected). Documented in the lem test
+  Makefile + design-note addendum; expected mover: lem-suite toolchain
+  bump.
