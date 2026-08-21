@@ -150,6 +150,16 @@ structure WalkCfg where
       builder. The trace is UNTRUSTED DATA — inspection and (batch-3)
       replay guidance only; it never justifies acceptance. -/
   traceRef : Option TraceRef := none
+  /-- PREVIEW mode (arc-11 S1 batch 2, design §12.2 as amended in the
+      batch-1 record): discovery + trace WITHOUT closing power — the
+      walk NEVER assigns any goal metavariable and never assembles a
+      round/goal proof (state bridge + round seal + goal.assign are
+      skipped). Fact-level aux certificates and value/state seal
+      definitions still occur (faithful discovery needs them; they
+      cannot close the user's theorem). NEVER CI-authoritative: the
+      `app_walk_preview` tactic always fails, and the surface is
+      gate-banned in committed proofs. -/
+  preview : Bool := false
   deriving Inhabited
 
 /-- Type heads whose inhabitants the v2 normalizer never touches
@@ -1169,7 +1179,10 @@ partial def walkOnce (cfg : WalkCfg) (goal : MVarId)
       let lemRhs ← instantiateMVars lemRhs
       -- terminal: the law's RHS meets the goal's RHS directly
       if (← withReducible <| isDefEq lemRhs rhs) then
-        goal.assign (← mkEqTrans proof (← mkEqRefl rhs))
+        -- PREVIEW (§12.2): never assign the goal — the walk reports
+        -- the terminal without closing anything.
+        unless cfg.preview do
+          goal.assign (← mkEqTrans proof (← mkEqRefl rhs))
         return some (law.name, none)
       -- chain: Eq.trans into a continuation goal. Under v2 the
       -- continuation's LHS state is replaced by its normalized
@@ -1179,7 +1192,9 @@ partial def walkOnce (cfg : WalkCfg) (goal : MVarId)
       -- unification as one monolithic kernel defeq.
       let lemRhsN ← normAppState cfg lemRhs
       let proof ← do
-        if cfg.sealStates && !(Expr.equal lemRhs lemRhsN) then
+        -- PREVIEW: skip the certificate assembly (bridge/round seal)
+        -- — the continuation value lemRhsN is all progression needs.
+        if !cfg.preview && cfg.sealStates && !(Expr.equal lemRhs lemRhsN) then
           let bridge ←
             if lemRhs.isApp && lemRhsN.isApp
                 && Expr.equal lemRhs.appFn! lemRhsN.appFn! then do
@@ -1190,7 +1205,7 @@ partial def walkOnce (cfg : WalkCfg) (goal : MVarId)
         else pure proof
       -- PER-ROUND SEALING (after the bridge: the sealed type is a
       -- named-state-to-named-state equation — small for the kernel).
-      let proof ← if cfg.sealRounds then do
+      let proof ← if !cfg.preview && cfg.sealRounds then do
           let pty ← instantiateMVars (← inferType proof)
           let pf ← mkAuxTheorem pty proof (zetaDelta := false)
           if let some n := pf.getAppFn.constName? then
@@ -1200,7 +1215,10 @@ partial def walkOnce (cfg : WalkCfg) (goal : MVarId)
         else pure proof
       let restTy ← mkEq lemRhsN rhs
       let rest ← mkFreshExprMVar restTy (userName := `walk)
-      goal.assign (← mkEqTrans proof rest)
+      -- PREVIEW: the continuation mvar drives the next round's
+      -- discovery but is NEVER connected to the user's goal.
+      unless cfg.preview do
+        goal.assign (← mkEqTrans proof rest)
       return some (law.name, some rest.mvarId!))
     match res with
     | some (some r) =>
@@ -1271,7 +1289,10 @@ private partial def walkLoopCore (cfg : WalkCfg) (goal : MVarId)
               (← instantiateMVars (← g.getType)).consumeMData.eq?
             | failure
           unless (← isDefEq l r) do failure
-          g.assign (← mkEqRefl l))
+          -- PREVIEW: report closability, never close (round 0's `g`
+          -- IS the user's goal).
+          unless cfg.preview do
+            g.assign (← mkEqRefl l))
       IO.setNumHeartbeats hb1
       trCloseRound cfg.traceRef idx none ledger
       if rflRes.isSome then
@@ -1348,6 +1369,46 @@ elab_rules : tactic
 -- (`app_walk_norm!` RETIRED, arc-11 S1 F12-4: sealing is
 -- `app_walk_norm`'s default; the ban-list row is dropped in the same
 -- commit — scripts/check_proof_size.sh.)
+
+/-- `app_walk_preview` / `app_walk_preview n` — PREVIEW mode (design
+    §12.2, survey rank 1): run discovery + record the structured
+    trace, close NOTHING, then FAIL.
+
+    NEVER CI-AUTHORITATIVE, by three independent layers:
+    1. structural — `WalkCfg.preview` guards every `goal.assign`/
+       `g.assign` site in the walk (audit scope: `goal.assign` is
+       unreachable under `preview := true`), so no goal metavariable
+       is ever assigned;
+    2. the tactic ALWAYS FAILS (`throwError` below) — a proof
+       containing it cannot elaborate (negative-tested: AppWalkTest
+       E9 pins the failure on the very goal E1 closes);
+    3. the surface is grep-banned in committed relsem proofs
+       (scripts/check_proof_size.sh).
+
+    The error message carries a deterministic summary (counts only,
+    no timings — `#guard_msgs`-stable); the full trace (with ledger
+    rows) is printed via `logInfo` only under `app_walk_norm?` or a
+    programmatic `traceRef` consumer (the batch-3 bench). -/
+syntax (name := appWalkPreview) "app_walk_preview" (ppSpace num)? : tactic
+
+elab_rules : tactic
+  | `(tactic| app_walk_preview $[$n:num]?) => do
+    let budget := match n with | some n => n.getNat | none => 64
+    let goal ← getMainGoal
+    let atoms ← stateAtoms
+    let tr ← IO.mkRef ({} : TraceSt)
+    let cfg : WalkCfg :=
+      { normWalkCfg atoms with preview := true, traceRef := some tr }
+    let _ ← walkLoop cfg goal budget false
+    let t := (← tr.get).toTrace
+    let fired : Nat := t.rounds.foldl
+      (fun (k : Nat) r => if r.fired.isSome then k + 1 else k) 0
+    let outc := match t.outcome with
+      | some o => o.tag
+      | none => "(open)"
+    throwError "app_walk_preview: preview only — goal intentionally \
+      left unsolved ({t.rounds.size} round(s) previewed, {fired} \
+      fired, outcome {outc})"
 
 /-- `app_walk_norm?` — the norm-walk debug lane (banned in committed
     proofs, same as `app_walk?`): mirrors `app_walk_norm`'s

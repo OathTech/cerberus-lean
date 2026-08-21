@@ -13,6 +13,11 @@
     E4  app_walk_finish (block-equation segment end)
     E5  iter_compose at a computation-shaped C (fuel offsets composed)
     E6  fuel algebra (fuel_split + app_fuel_cast shapes)
+    E7  app_walk_norm on the E2 contract (v2 lane; since arc-11 S1
+        this exercises the SEALED default — F12-4)
+    E8  v2 state-opacity normalization
+    E9  app_walk_preview NEGATIVE test (arc-11 S1 batch 2, design
+        §12.2): the e2 goal, pinned to FAIL under preview
 -/
 
 import RelSem.Kit.AppEq
@@ -93,10 +98,30 @@ theorem e8 (st : Nat) :
       = (NDactive 4, st + 1) := by
   app_walk_norm
 
+/-! E9 (arc-11 S1 batch 2, design §12.2): THE PREVIEW NEGATIVE TEST —
+    the discriminating pair. The goal below is EXACTLY e2's (which
+    `app_walk` closes, kernel-checked above); `app_walk_preview` must
+    FAIL on it even though its discovery walks the same rounds — the
+    pinned message proves the preview walked (rounds/fired counts)
+    AND that the goal was intentionally left unsolved. This is a
+    TEST (untrusted-evaluator checking, per doctrine); the trust
+    layers are the structural preview guards + the gate ban. -/
+
+/--
+error: app_walk_preview: preview only — goal intentionally left unsolved (4 round(s) previewed, 3 fired, outcome closed-rfl)
+-/
+#guard_msgs in
+example (st : Nat) :
+    app (nd_bind nd_get (fun a =>
+         nd_bind (nd_put (a + 1)) (fun _ =>
+         nd_return a)) : M Nat) st
+      = (NDactive st, st + 1) := by
+  app_walk_preview
+
 end AppWalkTest
 
 def main : IO UInt32 := do
   -- The exercises are kernel-checked at compile time; report and pass.
-  IO.println "AppWalkTest: E1-E8 kernel-checked (walker contract table + v2 lane)"
+  IO.println "AppWalkTest: E1-E8 kernel-checked + E9 preview-negative pinned (walker contract table)"
   IO.println "AppWalkTest: ALL PASSED"
   return 0

@@ -30,6 +30,11 @@
 #     git-tracked filter below — the ban is on COMMITTED files; a
 #     future legitimate committed use requires an explicit,
 #     operator-visible gate-policy change here.
+#     arc-11 S1 batch 2 (design §12.2 enforcement layer 2):
+#     `app_walk_preview` is ADDED to the ban — preview output is
+#     NEVER CI-authoritative; no committed relsem proof may invoke
+#     it (its negative test lives in test/Unit/AppWalkTest.lean E9,
+#     outside this gate's scan surface by design).
 #   * fixture-symbol references inside Kit/*.lean — the MEGA-LEMMA
 #     COUNTER: a "kit lemma" that names a fixture is bar-gaming by
 #     construction.
@@ -70,7 +75,7 @@ fi
 # the header). Hits are filtered to git-TRACKED files: the ban is on
 # COMMITTED proofs; untracked session scratch (Probe*.lean) may use
 # debug surfaces by design.
-raw_dbg_hits=$(grep -rnE '^[^-]*\b(app_walk(_norm)?\?|dnms_kwalk|app_defeq_diag)' \
+raw_dbg_hits=$(grep -rnE '^[^-]*\b(app_walk(_norm)?\?|dnms_kwalk|app_defeq_diag|app_walk_preview)' \
     "$RELSEM"/*.lean "$RELSEM"/Kit/*.lean 2>/dev/null \
     | grep -v 'Tactics/' || true)
 dbg_hits=""
@@ -88,7 +93,7 @@ if [[ -n "$dbg_hits" ]]; then
     printf '%s' "$dbg_hits"
     fail=1
 else
-    echo "check_proof_size: debug-surface ban OK (app_walk?/app_walk_norm?/dnms_kwalk/app_defeq_diag)"
+    echo "check_proof_size: debug-surface ban OK (app_walk?/app_walk_norm?/dnms_kwalk/app_defeq_diag/app_walk_preview)"
 fi
 
 # --- per-slate-file line + manual-step tallies ------------------------

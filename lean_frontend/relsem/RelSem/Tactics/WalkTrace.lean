@@ -265,6 +265,12 @@ def HypEv.line : HypEv → String
   | .seal ev =>
     s!"  seal[{repr ev.kind}] {ev.name} depth {ev.depthBefore}→{ev.depthAfter}"
 
+def Outcome.tag : Outcome → String
+  | .closedTerminal => "closed-terminal"
+  | .closedRfl => "closed-rfl"
+  | .stuck _ => "stuck"
+  | .budget => "budget"
+
 def CandFate.tag : CandFate → String
   | .lhsMismatch => "lhs-mismatch"
   | .hypFailed i r =>
