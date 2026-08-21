@@ -47,21 +47,27 @@
       record: a collision-corrupted const-expr could still flip the
       export's ERROR VERDICT (desugar hard-error class) — refusal-shaped,
       never wrong bytes.
-   2. GRANDFATHER MODE (`grandfather_mode`, opt-in via the environment
-      variable CERB_FRESH_FLOOR_GRANDFATHER=1). D2 Option-C mechanics for
-      the two grandfathered gate lanes ONLY (test_libxml2_uri.sh
-      ORACLE_LIBC; libc artifacts) — surfaces whose beyond-margin oracle
-      elaboration is validated-by-agreement against the protected Lean
-      side (uri 16/16, libc 7/7; register entries + record addenda carry
-      the exposure numbers). Any other use is a finding. *)
+   2. GRANDFATHER MODE (`grandfather_mode`, opt-in via the CLI flag
+      `--fresh-floor-grandfather` — audit A-F2 hardening: a flag cannot be
+      inherited ambiently the way an env var can; it acts only where
+      literally written). D2 Option-C mechanics for the two grandfathered
+      gate-lane invocations ONLY (test_libxml2_uri.sh ORACLE_LIBC +
+      OCAML_NOLIBC) — surfaces whose beyond-margin oracle elaboration is
+      validated-by-agreement against the protected Lean side (uri 16/16,
+      libc 7/7; register entries + record addenda carry the exposure
+      numbers). Any other use is a finding. Defense-in-depth: the
+      warning token is ALSO classified as CERB_FLOOR by test_exec.sh, so
+      a grandfathered run leaking into a differential lane still buckets
+      as floored. *)
 
 let cur_filename = ref ""
 
-(* D2 warn-only modes (see header). *)
+(* D2 warn-only modes (see header). Audit A-F2: the grandfather mode is a
+   CLI FLAG (--fresh-floor-grandfather, backend/driver/main.ml), NOT an
+   environment variable — no ambient inheritance; it acts only where
+   written on a command line. *)
 let export_only_mode = ref false
-let grandfather_mode =
-  ref (match Sys.getenv_opt "CERB_FRESH_FLOOR_GRANDFATHER" with
-       | Some "1" -> true | _ -> false)
+let grandfather_mode = ref false
 (* one warning per TU, not per draw (the forward check fires on every
    ambient draw below the hwm — thousands per TU) *)
 let warned_this_tu = ref false

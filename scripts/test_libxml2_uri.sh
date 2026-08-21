@@ -116,12 +116,12 @@ record() { echo "$1: $2" >> "$OUTPUT_DIR/baseline.new"; }
 # the explicit grandfather mode (loud stderr warning, never silent) and is
 # trusted ONLY via the byte-agreement gate against the protected Lean side
 # below (16/16). Register entry + record addendum carry the exposure;
-# mover: renumbering-era re-derivation. Any OTHER use of this variable is
-# a finding.
+# mover: renumbering-era re-derivation. Any OTHER use of this flag is
+# a finding (audit A-F2: CLI flag, not env — no ambient inheritance).
 rc=0
-CERB_FRESH_FLOOR_GRANDFATHER=1 \
 run_capped "$OUTPUT_DIR/oracle.out" "$OUTPUT_DIR/oracle.err" \
     "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" --exec --batch \
+    --fresh-floor-grandfather \
     "${FLAGS[@]}" "${TUS[@]}" || rc=$?
 [[ $rc -lt 124 ]] || fail "ORACLE_LIBC timeout/crash (exit $rc)"
 record "ORACLE_LIBC exit" "$rc"
@@ -142,9 +142,9 @@ oracle_line=$(head -1 "$OUTPUT_DIR/oracle.out")
 # pinned failure mode; the mirrored-failure PAIR (this lane + LEAN_NOLIBC
 # both pinning unknown-procedure memset) is the lane's validation.
 rc=0
-CERB_FRESH_FLOOR_GRANDFATHER=1 \
 run_capped "$OUTPUT_DIR/nolibc.out" "$OUTPUT_DIR/nolibc.err" \
     "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" --nolibc --exec --batch \
+    --fresh-floor-grandfather \
     "${FLAGS[@]}" "${TUS[@]}" || rc=$?
 [[ $rc -lt 124 ]] || fail "OCAML_NOLIBC timeout/crash (exit $rc)"
 record "OCAML_NOLIBC exit" "$rc"

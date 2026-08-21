@@ -6,11 +6,13 @@
 # kit header substitution).
 # ASSEMBLY NOTE (labeled derived): statuses taken from the verbatim
 # per-file lines of ONE full sequential --check-baseline pass under the
-# arc-12 F-D fail-stop floor (fold v2), TIMEOUT_SECS=15, capped 8G
-# (_the run's SUMMARY, verbatim_: total=1669 match=1038 ub_match=0
-# ub_diff=0 mismatch=0 fail=0 crash=2 lean_error=0 timeout=0+5
-# cerb_skip=108 cerb_floor=516 cerb_inconsistent=0 — the timeout field
-# reads 5). Re-validate with --check-baseline at the S2 reruns.
+# arc-12 F-D fail-stop floor (fold v2), TIMEOUT_SECS=15, capped 8G.
+# The run's SUMMARY line, verbatim [B-F2 correction: the previous
+# header mangled this quote with a "0+5" annotation]:
+# SUMMARY: total=1669 match=1038 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=2 lean_error=0 timeout=5 cerb_skip=108 cerb_floor=516 cerb_inconsistent=0
+# Re-validate with --check-baseline at the S2 reruns. [Post-audit
+# corrections below make the 041/139 and enum-fix rows DERIVED
+# deltas against that run — each labeled where it occurs.]
 # MOVEMENT vs the arc-10 baseline (every row justified; evidence:
 # lean_frontend/docs/2026-08-21_arc12-s1-floor-record.md):
 #  - 15 DIFF -> CERB_FLOOR: the F-D witness rows (oracle spurious
@@ -18,15 +20,24 @@
 #  - 2 TIMEOUT -> CERB_FLOOR: sa_csmith_190 (F-D under the perf cap,
 #    arc-10-classified) and sia_csmith_976 (LATENT F-D, S0 register
 #    item: 97 live collisions under a perf-timeout label).
-#  - 34 MATCH -> CERB_FLOOR: the coincidentally-correct class (live
-#    (digest,num) collisions present, result correct by layout luck —
-#    one head-morph from corruption; S0 predicted 25-40, sampled 3).
+#  - 34 MATCH -> CERB_FLOOR [CORRECTED, arc-12 audit B-F1]: 32 rows are
+#    the coincidentally-correct class (live (digest,num) collisions
+#    present — validated row-wise by the audit's independently rebuilt
+#    duplicate scanner; result correct by layout luck, one head-morph
+#    from corruption; S0 predicted 25-40, sampled 3). TWO rows —
+#    sa_csmith_44.c and smx_csmith_7.c — are SUPPLY-ONLY-OVERFLOW
+#    floors (live-symbol hwm >= the margin but zero live duplicate
+#    pairs, the vfscanf class): floored honestly, but not
+#    collision-carrying today.
 #  - 465 CERB_SKIP -> CERB_FLOOR: rank-neutral relabeling — files the
 #    oracle already failed on (largely F-D-class internal errors) now
 #    refused with the honest, distinguishable floor class.
-#  - 2 TIMEOUT -> MATCH: sia_csmith_041/139 — the arc-10 baseline's own
-#    jitter-rationale files, recorded there as boundary-jitter
-#    candidates; reclassified on this full pass.
+#  - sia_csmith_041/139 remain TIMEOUT [CORRECTED, arc-12 audit B-F5,
+#    orchestrator ruling]: this baseline briefly re-recorded them as
+#    MATCH off one full-pass observation; arc-10's jitter precedent
+#    stands — a re-record requires an uncapped classification run +
+#    explicit rationale (neither was present). Their single-run MATCH
+#    observations will surface as non-fatal "improvement" lines.
 #  - mismatch=0; no other row moved.
 # format: <file.c> <STATUS>   (see test_exec.sh header for the taxonomy)
 sa_csmith_001.c MATCH
@@ -539,7 +550,7 @@ sia_csmith_037.c CERB_FLOOR
 sia_csmith_038.c MATCH
 sia_csmith_039.c MATCH
 sia_csmith_040.c MATCH
-sia_csmith_041.c MATCH
+sia_csmith_041.c TIMEOUT
 sia_csmith_042.c MATCH
 sia_csmith_043.c MATCH
 sia_csmith_044.c MATCH
@@ -830,7 +841,7 @@ sia_csmith_135.c CERB_FLOOR
 sia_csmith_136.c CERB_FLOOR
 sia_csmith_137.c CERB_SKIP
 sia_csmith_138.c CERB_SKIP
-sia_csmith_139.c MATCH
+sia_csmith_139.c TIMEOUT
 sia_csmith_140.c MATCH
 sia_csmith_141.c MATCH
 sia_csmith_142.c MATCH

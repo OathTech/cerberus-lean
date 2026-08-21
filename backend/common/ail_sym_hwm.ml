@@ -60,7 +60,7 @@ let max_sym_program ((_main_opt : ail_identifier option), (sigma : 'a sigma))
 
   and walk_ctype_ = function
     | Ctype.Void -> ()
-    | Ctype.Basic _bty -> ()
+    | Ctype.Basic bty -> walk_basicType bty
     | Ctype.Array (ct, _n_opt) -> walk_ctype ct
     | Ctype.Function ((_q, ret_ct), params, _variadic) ->
         walk_ctype ret_ct;
@@ -71,6 +71,26 @@ let max_sym_program ((_main_opt : ail_identifier option), (sigma : 'a sigma))
     | Ctype.Struct tag -> note_sym tag
     | Ctype.Union tag -> note_sym tag
     | Ctype.Byte -> ()
+
+  (* audit A-F1 fix: `Basic _bty` was a de-facto catch-all dropping the
+     ENUM TAG symbol inside integerType — exactly the class the
+     no-catch-all rule exists to prevent. Both payload types are now
+     walked exhaustively. *)
+  and walk_basicType = function
+    | Ctype.Integer ity -> walk_integerType ity
+    | Ctype.Floating (Ctype.RealFloating _rft) -> ()
+
+  and walk_integerType = function
+    | IntegerType.Char -> ()
+    | IntegerType.Bool -> ()
+    | IntegerType.Signed _ibt -> ()     (* integerBaseType: sym-free *)
+    | IntegerType.Unsigned _ibt -> ()
+    | IntegerType.Enum tag -> note_sym tag
+    | IntegerType.Wchar_t -> ()
+    | IntegerType.Wint_t -> ()
+    | IntegerType.Size_t -> ()
+    | IntegerType.Ptrdiff_t -> ()
+    | IntegerType.Ptraddr_t -> ()
 
   (* ---- Annot ---- *)
   and walk_annots annots = List.iter walk_annot annots
@@ -87,7 +107,7 @@ let max_sym_program ((_main_opt : ail_identifier option), (sigma : 'a sigma))
     | Annot.Alabel la -> walk_label_annot la
     | Annot.Acerb (Annot.ACerb_with_address _) -> ()
     | Annot.Acerb Annot.ACerb_hidden -> ()
-    | Annot.Avalue (Annot.Ainteger _) -> ()
+    | Annot.Avalue (Annot.Ainteger ity) -> walk_integerType ity  (* A-F1: Enum *)
     | Annot.Ainlined_label (_loc, sym, la) -> note_sym sym; walk_label_annot la
     | Annot.Astmt -> ()
     | Annot.Aexpr -> ()
@@ -145,9 +165,9 @@ let max_sym_program ((_main_opt : ail_identifier option), (sigma : 'a sigma))
     | AilEcompound (_q, ct, e) -> walk_ctype ct; walk_expr e
     | AilEmemberof (e, _member_ident) -> walk_expr e
     | AilEmemberofptr (e, _member_ident) -> walk_expr e
-    | AilEbuiltin _b -> ()
-    | AilEstr _lit -> ()
-    | AilEconst _c -> ()
+    | AilEbuiltin _b -> ()    (* ail_builtin: sym-free (atomic/linux/CHERI-string) *)
+    | AilEstr _lit -> ()      (* stringLiteral: sym-free *)
+    | AilEconst c -> walk_constant c   (* A-F1 sibling: constant carries syms *)
     | AilEident sym -> note_sym sym
     | AilEsizeof (_q, ct) -> walk_ctype ct
     | AilEsizeof_expr e -> walk_expr e
@@ -171,6 +191,26 @@ let max_sym_program ((_main_opt : ail_identifier option), (sigma : 'a sigma))
   and walk_generic_association = function
     | AilGAtype (_q, ct, e) -> walk_ctype ct; walk_expr e
     | AilGAdefault e -> walk_expr e
+
+  (* A-F1 sibling fix: `AilEconst _c` was another de-facto catch-all —
+     constant carries struct/union TAG syms, ctypes, and integerTypes. *)
+  and walk_constant = function
+    | ConstantIndeterminate ct -> walk_ctype ct
+    | ConstantNull -> ()
+    | ConstantInteger ic -> walk_integerConstant ic
+    | ConstantFloating (_str, _suf) -> ()
+    | ConstantCharacter (_pref, _str) -> ()
+    | ConstantArray (ct, cs) -> walk_ctype ct; List.iter walk_constant cs
+    | ConstantStruct (tag, members) ->
+        note_sym tag;
+        List.iter (fun (_member_ident, c) -> walk_constant c) members
+    | ConstantUnion (tag, _member_ident, c) -> note_sym tag; walk_constant c
+    | ConstantPredefined (PConstantFalse | PConstantTrue) -> ()
+
+  and walk_integerConstant = function
+    | IConstant (_n, _basis, _suf) -> ()
+    | IConstantMax ity -> walk_integerType ity
+    | IConstantMin ity -> walk_integerType ity
 
   and walk_stmt { loc = _; desug_info = _; attrs = _attrs; node } =
     walk_stmt_ node
