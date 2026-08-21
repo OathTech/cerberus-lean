@@ -44,3 +44,26 @@ orchestrator judgment call resolved by project principles.
   in design order as capacity honestly reaches; T10 stretch + park
   clauses stand. Amendment lands as a DATED ADDENDUM to the S1
   design doc (never a silent rewrite).
+- **D3 [AGENT] — S3 boundary verified; T5 continuation AUTHORIZED
+  (per-stage certificate emitter).** Orchestrator re-ran the full
+  boundary set at d1a02c473 (capped 40G default-target build 0
+  errors, unit 6/6 + proof-size gate OK, verify 29/29, exec zero
+  movement). The re-park is accepted as evidence-grade: St-v2 is
+  kernel-defeq-VALIDATED at symbolic n (all 21 entry rounds
+  mechanical, incl. create/store through the perform layer — the
+  F-T5-1 risk is discharged; two family defects found BY the kernel
+  diff and fixed), and the sole remaining wall is engine-shaped:
+  `(kernel) deep recursion detected` when packaging a whole round's
+  certificate as ONE defeq, with a 10-row configuration matrix
+  showing every component passes individually. The identified
+  completion — a per-stage certificate emitter (mirroring how T4's
+  hand proofs pass identical content as many small obligations) — is
+  bounded and specified (build record §6 pricing). RULING: one
+  continuation session for the emitter + T5 completion; if the
+  emitter meets ANOTHER wall class, the arc closes with T5 parked
+  and the workbench (calibration + kits + walker + OwnP + iter_
+  compose) as the deliverable — no open-ended climbing. Slate T6+
+  only after T5 lands, capacity permitting. Doctrine-adjacent items
+  flagged by the worker (heartbeat LEDGER — an accounting instrument,
+  no ambient raise anywhere; §11.2 file-placement amendment) are
+  accepted, audit-visible.
