@@ -243,3 +243,40 @@ pre-scan + lane, ladder sweeps, full-corpus sweep + re-baseline
 (validated), drift-manifest refresh (gate green, hashes unmoved),
 records. NOT done, parked with options: the libc/uri conflict (§7);
 the libc/uri baselines and any floor scoping change await the ruling.
+
+---
+
+## AUDIT CORRECTIONS (arc-12 adversarial audit fix batch, 2026-08-21 — labeled; original text above unchanged)
+
+1. **§6 movement table, the 34 MATCH→FLOOR rows [B-F1]:** the blanket
+   justification "coincidentally-correct (live collisions present)" is
+   CORRECTED to: **32 rows live-collision-positive** (validated row-wise
+   by the audit's independently rebuilt duplicate scanner — the
+   row-wise scan-line commitment is discharged by that validation) +
+   **2 rows (sa_csmith_44.c, smx_csmith_7.c) SUPPLY-ONLY-OVERFLOW**
+   (live-symbol hwm ≥ margin, zero live duplicate pairs — the vfscanf
+   class; floored honestly, not collision-carrying today).
+2. **§6 "verbatim" SUMMARY [B-F2]:** the run's summary was quoted with
+   a mangled `timeout=0+5` annotation inside a verbatim label — a
+   record-integrity slip against the arc-6 doctrine. The true literal
+   line (also now in the baseline header):
+   `SUMMARY: total=1669 match=1038 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=2 lean_error=0 timeout=5 cerb_skip=108 cerb_floor=516 cerb_inconsistent=0`
+3. **§6 "2 TIMEOUT→MATCH improvements" [B-F5, orchestrator ruling]:**
+   REVERTED — sia_csmith_041/139 stay TIMEOUT in the baseline
+   (arc-10's jitter precedent: a re-record needs an uncapped
+   classification run + explicit rationale; neither was present).
+   Their single-run MATCH observations surface as non-fatal
+   improvement lines.
+4. **The hwm fold had residual catch-all gaps [A-F1]:** `Basic _bty`
+   dropped ENUM TAG syms inside integerType; sibling sweep also found
+   `AilEconst _c` (constant: struct/union tag syms, ctypes,
+   IConstantMax/Min integerTypes) and `Avalue (Ainteger ity)`. All
+   fixed (exhaustive walks); regression pair banked: N fillers + a
+   block-scoped tag referenced only via `sizeof` — es461/st461 both
+   `Specified(4)`, es462/st462 both floor `range [0..483]` (pre-fix
+   the enum variant slipped the floor). Post-fix full-corpus re-run:
+   see the results doc's audit section.
+5. **Grandfather mode hardened [A-F2]:** env var replaced by the CLI
+   flag `--fresh-floor-grandfather` (no ambient inheritance; env
+   demonstrated inert); test_exec.sh now buckets the WARNING token as
+   CERB_FLOOR too (defense-in-depth).

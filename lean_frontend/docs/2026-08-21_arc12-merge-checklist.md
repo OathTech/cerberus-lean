@@ -1,10 +1,14 @@
 # Arc-12 merge checklist (the honest oracle)
 
-Prepared 2026-08-21 at S4 close-out. **MERGE LIVES WITH THE USER — this
-checklist is preparation only; the ff-only merge executes on explicit
-per-merge sign-off, after the 2-agent adversarial audit and the D2
-VETO WINDOW (open through the merge ask; a veto reverts batch 4's lane
-re-greens to Option A honest-red — the floor itself is unaffected).**
+Prepared 2026-08-21 at S4 close-out; updated post-audit-fix-batch.
+**MERGE LIVES WITH THE USER — this checklist is preparation only; the
+ff-only merge executes on explicit per-merge sign-off.** The 2-agent
+adversarial audit is COMPLETE (fix batch applied, dispositions in the
+results doc). **D2 is RATIFIED (D4, operator, verbatim in the decision
+log): the veto window is CLOSED early** — the exemption + grandfather +
+lane re-greens carry operator authority; their expiry is the
+RENUMBERING arc (operator-ordered parked-for-immediate execution after
+the arc-11/arc-12 merges), when register G1–G4's movers execute.
 
 ## Facts (rev-parsed at checklist time)
 
@@ -80,8 +84,9 @@ must not compile).
 
 ## Forbidden-surface confirmation (for the audit)
 
-Whole-arc diff (`mdd/cerberus-lean..arc/honest-oracle`) = 21 files:
-4 oracle OCaml + 4 scripts/baselines + 12 docs/records +
+Whole-arc diff (`mdd/cerberus-lean..arc/honest-oracle`) = 23 files
+[B-F4 count correction; recounted post-fix-batch]:
+4 oracle OCaml + 4 scripts/baselines + 13 docs/records +
 tests/csmith_findings/README.md + lean_frontend/CLAUDE.md.
 Grep-verified ABSENT from the diff: `lean_frontend/relsem/**`,
 `tests/verify/**`, `lakefile*`/`lake-manifest*`,
@@ -90,7 +95,8 @@ any `frontend/**`, anything in lem-lean (separate repo, untouched).
 
 ## Post-merge follow-ups (not blockers)
 
-- Operator: D2 veto decision recorded; F-A/F-B filing per the tray
-  checklist (network window).
-- Post-arc-13 agenda: the renumbering arc
-  (`2026-08-21_arc12-renumbering-case.md`) — retires register G1–G4.
+- Operator: F-A/F-B filing per the tray checklist (network window).
+- The renumbering arc (`2026-08-21_arc12-renumbering-case.md`) —
+  operator-ordered (D4) parked-for-immediate execution after the
+  arc-11/arc-12 merges; retires register G1–G4 and re-derives the
+  asterisked artifacts clean.

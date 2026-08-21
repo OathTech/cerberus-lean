@@ -81,3 +81,14 @@
   audit with the worker's suggested added scopes (exemption
   soundness, grandfather containment, fold-v2 completeness plant)
   joined to the charter's mandatory four.
+- **D4 [USER 2026-08-21] — D2 RATIFIED; veto window CLOSED early by
+  the operator.** Verbatim: "yeah, this is fine - leave as is until we
+  fix it." The charter-bar amendment (the verified-sound cabs-json
+  export exemption + the grandfathered uri/libc surfaces + the lane
+  re-greens) now carries operator authority. The grandfathered state's
+  EXPIRY is the RENUMBERING arc — operator-ordered the same day as
+  parked-for-immediate execution after the arc-11/arc-12 merges (see
+  the container CLAUDE.md ruling) — at which point register G1–G4's
+  movers execute and the asterisked artifacts re-derive clean. The
+  merge ask itself remains operator-gated as always; the merge
+  checklist's veto-window step becomes a ratified-note.
