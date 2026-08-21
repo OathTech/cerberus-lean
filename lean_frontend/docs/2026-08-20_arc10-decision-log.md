@@ -78,3 +78,35 @@ orchestrator judgment call resolved by project principles.
   surfaces (diffstat-checked by worker; lakefile touch = additive
   exe entry only). S4 (csmith campaign) is GO per the amended
   charter: configuration exploration first.
+- **D6 [AGENT] — S4 boundary verified; campaign ACCEPTED; F-D
+  REATTRIBUTED (the [USER] root-cause directive's payoff).**
+  Orchestrator re-ran the full D4 set at ac509e962 — all green, ci +
+  coverage BASELINE OK. Campaign: 3169 differential programs (1500
+  portfolio-generated + 1669 corpus + 1 seeded), evidence-based
+  5-lane portfolio (the dim-3 initializer discovery recovered ~52%
+  yield), ZERO Lean-side semantic defects, finding 8 FIXED
+  CerbMem-only (the D1 park line never tripped). THE HEADLINE: the
+  F-D family (internal errors / spurious UB / silent value
+  corruption, declaration-layout-sensitive, 24 witnesses) is NOT
+  upstream — un-forked upstream cerberus is correct on every tested
+  witness; the defect is a CERBERUS-LEAN FORK REGRESSION, suspect =
+  the arc-2 S1 threaded sym_supply (core_run_aux.lem:233-247,287;
+  its own comment concedes the undischarged sym non-escape
+  obligation) interacting with description-insensitive
+  symbolEquality; head-vs-tail declaration predictions TESTED.
+  Without the root-cause directive we would have filed OUR bug
+  upstream — record-integrity near-miss, banked as a lesson.
+  CONSEQUENCES: (1) upstream tray corrected — F-D pulled (WireGuard
+  note addendum'd); F-A (initializer desugar, shared-model) + F-B
+  (address-constant strictness) confirmed genuinely upstream with
+  un-forked repros, tray-ready; F-E dissolved. (2) The F-D REPAIR is
+  model-.lem surface (frontend/model — outside arc-10's blessed
+  scope and the declares-only doctrine's easy path): PARKED as the
+  TOP candidate for the next arc, with the worker's M-priced
+  analysis attached; the affected differential class stays
+  classified in baselines (Lean+gcc agree; the fork-oracle side is
+  the wrong one — baselines already record these as
+  ORACLE_DEFECT-class, honest). (3) Perf register: 15 timeout
+  entries (2.4-3x, worst 50x) + 2 CEILING_FUEL. S5 (close-out +
+  audits) is GO; the queued corpus-lane full baseline pass lands
+  there (sharded/foreground per the watchdog constraint).
