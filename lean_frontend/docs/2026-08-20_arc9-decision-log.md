@@ -67,3 +67,28 @@ orchestrator judgment call resolved by project principles.
   flagged by the worker (heartbeat LEDGER — an accounting instrument,
   no ambient raise anywhere; §11.2 file-placement amendment) are
   accepted, audit-visible.
+- **D4 [AGENT] — ARC CLOSES per the D3 fallback; T5 completion moves
+  to workbench-v2.** Boundary verified at 2b3a686dd (build 0 errors,
+  unit 6/6, verify 29/29, exec zero movement, cones unchanged). The
+  D3 stop-rule trigger was NOT met — no new wall class; every wall
+  fell to the emitter design (the entry theorem kernel-checks in ~5s;
+  44/79 census rounds green incl. the mechanized semantic-round
+  engine: decide-fact chase-rewrite, Eq.ndrec materialization,
+  ledgered budgets, raw-addDecl kernel-only certificates). The
+  session ended on CAPACITY: ~35 rounds + body + exit + composition
+  remain at a measured ~1 hour/round of worker discovery — which is
+  exactly the open-ended climbing D3 bans and exactly the cost the
+  workbench-v2 slate items attack (trace/replay collapses repeat
+  round classes; context-indexed laws collapse the per-round
+  discovery; ONE new Kit law class — the continuation-lambda advance
+  — is the named unknown at the park point). RULING: arc 9 closes
+  with THE WORKBENCH as its deliverable (OwnP adoption ~380→~150,
+  50+ pinned kit lemmas across 7 kits, walker v1-v3 + the per-stage
+  emitter, iter_compose axiom-free, the 700→5-line calibration, the
+  proof-size gate) and T5 PARKED AT EVIDENCE GRADE with a precise
+  resumption point; workbench-v2's charter takes T5 completion as
+  its FIRST exit criterion, powered by the survey slate (the
+  external Iris survey + the Lithium source review are v2's S0
+  inputs, committed at this close). The proof-size gate's T5
+  registration stays honestly pending — never gamed. S4
+  (rebase-over-arc-10 + close-out + audits) proceeds.
