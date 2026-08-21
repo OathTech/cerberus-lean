@@ -17,29 +17,39 @@ stay untouched by this stream.
 
 State at checklist time (verified 2026-08-21, S5):
 
-- LEM branch `arc/robustness` @ `a9387fb` (S2a `98d19fb` → S2b
-  `a9387fb`; untouched since S2 — no lem close-out commit was needed,
-  the S2 record lives in the commit messages + the CERB results doc),
-  worktree `worktrees/lem-lean-arc/robustness`, clean. **Linear
-  descendant of the mainline: `git merge-base --is-ancestor`
-  `mdd/lean-backend` (@ `237867bbf`) → `a9387fb` succeeds (verified at
-  S5) — ff-only applies directly as of now.**
-- CERB branch `arc/robustness` @ the S5 close-out head (S0 `a0f3706ab`
-  → S1 `3b82fac70` → S2 `442a52334`+`eec935634` → S3/S3b
+- LEM branch `arc/robustness` @ `11d4b4c` [UPDATED 2026-08-21, audit
+  fix-batch: the auditor-A F1 fix — Type-1 sorry emission path made
+  fail-closed — landed as `11d4b4c` on top of S2b `a9387fb`; history:
+  S2a `98d19fb` → S2b `a9387fb` → audit-fix `11d4b4c`. The commit
+  touches `src/` + `tests/comprehensive/` only — **lean-lib/ is
+  untouched**], worktree `worktrees/lem-lean-arc/robustness`, clean.
+  **Still a linear descendant of the mainline `237867bbf` — ff-only
+  applies directly as of now (re-verified at the audit-fix commit).**
+- CERB branch `arc/robustness` @ the audit-fix-batch head [UPDATED
+  2026-08-21: the S5 close-out head `e4f093ef9` gained the audit
+  fix-batch — scripts commit `496a639cf` (shard-gate vanished-file
+  direction + the fork-drift gate) + the docs/records commit (labeled
+  corrections; carries this checklist update)] (history: S0
+  `a0f3706ab` → S1 `3b82fac70` → S2 `442a52334`+`eec935634` → S3/S3b
   `e0d3ad1f7`/`57fe96ab4`/`65f77606c` → S4 `fb36810a8`…`ac509e962` →
-  D-log commits → S5 `b4768cabf` + the close-out docs commit),
+  D-log commits → S5 `b4768cabf` + `e4f093ef9` → the fix-batch),
   worktree `worktrees/cerberus-lean-arc/robustness`, clean. **Merge
   base with `mdd/cerberus-lean` (@ `da8378eed`) is `da8378eed`
   (verified at S5) — linear descendant, ff-only applies directly as
   of now.**
 - CERB lakefile.toml LemLib pin: rev
-  `a9387fbb834d552b3334b499f83076c9ee35dbb5` **= the LEM branch head**
-  (mid-arc S2 bump, own commit `eec935634`); lake-manifest.json
-  inputRev matches. Because no lem commit followed S2b, the Lake pin
-  ALREADY equals what the merged `mdd/lean-backend` head will be — no
-  re-pin commit is needed at merge, only the in-file comment's
-  "re-pin at arc close" wording is retired (comment-only edit, step
-  A4/B5).
+  `a9387fbb834d552b3334b499f83076c9ee35dbb5` = the PRE-audit-fix LEM
+  head (mid-arc S2 bump, own commit `eec935634`); lake-manifest.json
+  inputRev matches. [UPDATED 2026-08-21, audit fix-batch — this
+  REPLACES the earlier "no re-pin commit is needed" note:] the LEM
+  branch head is now `11d4b4c`, so pin ≠ head again. The audit-fix
+  commit leaves `lean-lib/` (the Lake subDir) byte-untouched, so the
+  current pin stays SEMANTICALLY valid for builds mid-close; per the
+  standing pin dance the lakefile rev is RE-POINTED TO THE MERGED
+  `mdd/lean-backend` HEAD at close (step A4/B5: bump rev + offline
+  `lake update LemLib` via the deps/gitconfig redirect, own commit,
+  gate re-run). The arc-close criterion stays: branch heads = opam
+  pin = Lake pin.
 - `deps/lem-pinned` is still @ `237867bbf` (mainline; D2 pattern —
   opam pin untouched mid-arc); the opam-installed lem is the 237867bbf
   build. Mid-arc regeneration used the checkout lem (PATH+LEMLIB).
@@ -48,6 +58,19 @@ State at checklist time (verified 2026-08-21, S5):
   iris-lean to `34390a01339` on ITS branch). Same files
   (lakefile.toml / lake-manifest.json), different entries — the
   expected trivial rebase conflict for whichever stream goes second.
+- [ADDED 2026-08-21, audit fix-batch — auditor B F2: the rebase
+  surface above was under-enumerated] **Two more shared files** both
+  streams touch, for whichever stream goes second:
+  (1) `scripts/test_unit.sh` — arc-10 edits the `UNIT_TESTS` array
+  (pp-test, S3) AND appends the fork-drift gate (audit fix-batch);
+  arc-9 adds its own unit exes to the SAME `UNIT_TESTS` hunk —
+  expect a same-hunk conflict; resolution = union of both arrays +
+  both gate tails. (2) `lean_frontend/lakefile.toml` beyond the dep
+  revs: each stream adds its own `[[lean_exe]]` blocks — union them.
+  THE LESSON (D1-ruling-5 class, made standing here): gate scripts
+  and the lakefile are SHARED SURFACE — future parallel-stream
+  charters must DECLARE intended touches to them up front, like the
+  dep-pin touch-points already are.
 
 ## Pre-steps (either order)
 
@@ -76,18 +99,22 @@ linear descendants today)
 3. **lem-lean merge (operator sign-off required):** on the lem-lean
    primary (parked on `mdd/lean-backend`):
    `git merge --ff-only arc/robustness` → `mdd/lean-backend` =
-   `a9387fb`. Re-run lem `make` + `tests/comprehensive: make lean` on
+   `11d4b4c` [UPDATED 2026-08-21: was `a9387fb` before the audit-fix
+   commit]. Re-run lem `make` + `tests/comprehensive: make lean` on
    the merged mainline (gate).
-4. **CERB Lake pin check (no bump needed):** lakefile rev `a9387fbb…`
-   already = the merged head. Retire the in-file "re-pin at arc close"
-   comment wording (comment-only, part of a CERB-branch commit before
-   its merge, gate re-run after) OR record the comment as-is
-   (operator's call; content-neutral either way — the REV is already
-   aligned, so the arc-close criterion "branch heads = Lake pin"
-   holds).
+4. **CERB Lake pin bump (NEEDED — [UPDATED 2026-08-21, audit
+   fix-batch]; supersedes the earlier "no bump needed" wording):**
+   set lakefile.toml LemLib rev to the merged head `11d4b4c` and
+   `lake update LemLib` (offline via the deps/gitconfig redirect);
+   own commit on the CERB branch BEFORE its merge, retiring the
+   in-file "re-pin at arc close" comment in the same touch; gate
+   re-run after. (lean-lib is byte-identical between `a9387fbb…` and
+   `11d4b4c`, so the bump is content-neutral for builds — the commit
+   message should say so.)
 5. **opam pin re-sync (operator/orchestrator at merge time;
    switch-level, in-session-allowed):**
-   `git -C deps/lem-pinned reset --hard a9387fbb` (branch
+   `git -C deps/lem-pinned reset --hard 11d4b4c` [UPDATED 2026-08-21:
+   was `a9387fbb`] (branch
    `cerberus-pin`, = the merged `mdd/lean-backend`), then from
    `cerberus-lean/`: `opam upgrade --switch=. --no-depexts lem`
    (the arc-8-merge-verified form: `--switch=cerberus-lean` fails —
@@ -98,8 +125,11 @@ linear descendants today)
    NOT an arc-worker action.)
 6. **CERB gate re-run at the merge candidate with the OPAM lem now at
    the merged head:** `make lean-prelude-src` must produce a no-diff
-   generated/ tree vs the committed one (same backend commit as the
-   checkout lem used all arc); then the full validation gate: capped
+   generated/ tree vs the committed one ([UPDATED 2026-08-21] the
+   merged head `11d4b4c` differs from the mid-arc checkout lem
+   `a9387fb` only in the fail-closed Type-1 error path — diff -rq
+   zero-movement over all 195 generated files was verified at the
+   audit-fix commit); then the full validation gate: capped
    default-target build (D4 standing rule; CERB_MEM_MAX=40G while the
    arc-9 lane is live), Tier A per scripts/LADDER.md (now incl. float
    4b + bytes 4c), test_verify.sh 29/29, ci check-baseline
@@ -128,11 +158,23 @@ linear descendants today)
 ## ORDER B — arc 9 merged first (this stream goes second)
 
 3. **Rebase:** `git rebase mdd/cerberus-lean` on `arc/robustness`
-   (CERB). Expected conflict: lakefile.toml / lake-manifest.json —
-   keep the mainline's (arc-9) iris rev AND this branch's LemLib rev
-   `a9387fbb…`; after resolving, `lake update LemLib` offline via the
-   deps/gitconfig redirect if the manifest needs regeneration. Record
-   the resolution in the rebase commit/log. If arc 9 also moved
+   (CERB). Expected conflicts [enumeration EXTENDED 2026-08-21, audit
+   fix-batch — auditor B F2]:
+   (a) lakefile.toml / lake-manifest.json dep revs — keep the
+   mainline's (arc-9) iris rev AND this branch's LemLib rev (the
+   merged `mdd/lean-backend` head per step A4); after resolving,
+   `lake update LemLib` offline via the deps/gitconfig redirect if
+   the manifest needs regeneration;
+   (b) `scripts/test_unit.sh` — SAME-HUNK collision on the
+   `UNIT_TESTS` array (arc-10 added pp-test; arc-9 adds its exes)
+   plus arc-10's appended fork-drift gate tail — resolve as the
+   union of both arrays + both gate tails;
+   (c) lakefile.toml `[[lean_exe]]` blocks — each stream adds its
+   own; union them.
+   Record every resolution in the rebase commit/log. (Lesson, D1-
+   ruling-5 class: gate scripts are shared surface — future parallel
+   charters declare them; see the state-section note.) If arc 9 also
+   moved
    `mdd/lean-backend` (not expected — its lem surface was not
    declared): rebase the LEM branch too and re-verify ff-only
    ancestry; any non-trivial lem conflict = stop and re-scope with the
@@ -142,10 +184,11 @@ linear descendants today)
    head, no prior green transfers).
 5. **Re-ask.** The audit disposition and the merge ask are both
    renewed at the rebased head (per doctrine: re-gate, re-ask).
-6.–9. Then as ORDER A steps 3, 5, 6, 7–9 (lem merge unchanged —
-   `a9387fb` is untouched by the rebase unless step B3's lem caveat
-   fired; opam pin re-sync; gate; cerb ff-only merge; post-merge
-   rebuild + certification).
+6.–9. Then as ORDER A steps 3, 4, 5, 6, 7–9 (lem merge unchanged —
+   `11d4b4c` [UPDATED 2026-08-21: was `a9387fb`] is untouched by the
+   rebase unless step B3's lem caveat fired; Lake pin bump to the
+   merged head per A4; opam pin re-sync; gate; cerb ff-only merge;
+   post-merge rebuild + certification).
 
 ## Common tail (either order)
 
@@ -153,9 +196,10 @@ linear descendants today)
     repos):** arcs line (arc 10 merged: finding 11 + pp class +
     finding 8 closed, 1134→0 comparison sorries, csmith campaign 3169
     programs zero Lean defects, F-D fork-regression = TOP next-arc
-    candidate); known-issues pin lines (lem-lean pins → `a9387fb`;
-    gates line gains float/bytes/csmith-corpus lanes + unit 6/6 + ci
-    at 114/114); queue line (F-D repair slotted; wireguard note
+    candidate); known-issues pin lines (lem-lean pins → `11d4b4c`
+    [UPDATED 2026-08-21: was `a9387fb`]; gates line gains
+    float/bytes/csmith-corpus lanes + the fork-drift gate + unit 6/6
+    + ci at 114/114); queue line (F-D repair slotted; wireguard note
     already addendum'd in S4).
 12. **Worktree/branch disposition (operator's call):** the two
     `arc/robustness` worktrees prunable after both merges (ff-only ⇒

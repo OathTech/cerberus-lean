@@ -11,7 +11,7 @@ Order is the conventional run order; all are fail-closed gates.
 
 | # | Command | Bar |
 |---|---------|-----|
-| 1 | `./scripts/test_unit.sh` | 6/6 exes (incl. 280 parser tests + pp-test, arc-10 S3) + sync gate + census + exec-purity/totality + theorem-axiom cones |
+| 1 | `./scripts/test_unit.sh` | 6/6 exes (incl. 280 parser tests + pp-test, arc-10 S3) + sync gate + census + exec-purity/totality + theorem-axiom cones + fork-drift gate (`check_fork_drift.sh` — oracle-surface manifest + hash-pinned generated-OCaml deltas; arc-10 audit follow-up) |
 | 2 | `./scripts/test_exec.sh --check-baseline` | tests/minimal vs `scripts/exec_baseline.txt`, rc 0 |
 | 3 | `./scripts/test_exec.sh --check-baseline=scripts/exec_coverage_baseline.txt tests/coverage` | rc 0 (recorded DIFFs unchanged) |
 | 4 | `./scripts/test_exec.sh --check-baseline=scripts/exec_debug_baseline.txt tests/debug` | rc 0 |

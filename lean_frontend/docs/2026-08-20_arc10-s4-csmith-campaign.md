@@ -510,8 +510,10 @@ the seeded prototype reproducer.) Derived, labeled.
 bottleneck):** the triage queue was drained after every round; the
 actual bottleneck is neither generation nor triage but the PARKED F-D
 fork-oracle regression — every further batch's expected yield is more
-F-D witnesses (oracle-side noise, already root-caused with 24
-witnesses) rather than Lean-side signal. Zero Lean-side semantic
+F-D witnesses (oracle-side noise, already root-caused with 35
+witnesses [CORRECTION 2026-08-21, audit fix-batch: originally "24" —
+see the findings-ledger correction below]) rather than Lean-side
+signal. Zero Lean-side semantic
 defects across all 3,169 differential programs; the one Lean semantic
 defect of the campaign (register finding 8, eqPtrval msum fork,
 S0-found) was fixed in fix-batch 1 and re-confirmed closed by the
@@ -523,7 +525,7 @@ repaired (lanes + seeds + instruments all committed).
 | bucket | count | disposition |
 |---|---|---|
 | MISMATCH_VALUE / DIFF vs truth — Lean wrong | 0 | — |
-| F-D fork-oracle corruption (spurious UB / silent wrong values / can_advance) | 24 witnesses (8 generated + 15 corpus + seed-3016022-block internal errors) | REGISTERED + root-caused (fork regression, arc-2 threading suspect); reduced artifact + witnesses committed (tests/csmith_findings/); repair PARKED to orchestrator (not S4 surface; priced M) |
+| F-D fork-oracle corruption (spurious UB / silent wrong values / can_advance) | 35 witnesses [CORRECTION 2026-08-21, audit fix-batch: originally "24 (8 generated + 15 corpus + seed-3016022-block internal errors)" — that arithmetic took only the rounds-2/3 generated count (dropping round-1's three P5 witnesses 6000018/6000038/6000098), omitted sa_csmith_190 (F-D under a perf timeout), and counted the 8-seed exploration block as one. Recount from this record's own per-witness lists: 11 generated (P1 1000139/1000299; P2 2000129/2000239/2000287; P3 4000250; P4 5000125; P5 6000018/6000038/6000098/6000245) + 16 corpus (15 DIFF rows + sa_csmith_190) + 8 B1 seeds (3016022/44/49/51/58/74/82/99) = 35] | REGISTERED + root-caused (fork regression, arc-2 threading suspect); reduced artifact + witnesses committed (tests/csmith_findings/); repair PARKED to orchestrator (not S4 surface; priced M) |
 | F-A upstream initializer-desugar (AilEinvalid, nesting-depth class) | dominant CERB_SKIP driver at csmith defaults | UPSTREAM TRAY (minimal repros committed; upstream reproduced verbatim); flag-mitigated in the portfolio (--max-array-dim 2) |
 | F-B upstream address-constant rejection | class | UPSTREAM TRAY (minimal repro committed; upstream reproduced) |
 | UB081 scalar-initializer class (upstream-shared) + F-E channel split (fork cabs-json hard-errors vs exec deferred verdict) | 3 CERB_INCONSISTENT | upstream question + fork cosmetic register note |

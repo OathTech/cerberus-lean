@@ -76,8 +76,14 @@ Current unit tests:
 `test_unit.sh` also runs the gate scripts: the hand-written↔generated
 sync gate, the hand-written-axiom census (exactly 2),
 `check_exec_purity.sh`, `check_exec_totality.sh` (16 generated modules
-+ CerbND since arc-7 S5a), and `check_theorem_axioms.sh` (theorem-axiom
-cones + the D14 non-kernel-proof-method ban). Two further gates are
++ CerbND since arc-7 S5a), `check_theorem_axioms.sh` (theorem-axiom
+cones + the D14 non-kernel-proof-method ban), and
+`check_fork_drift.sh` (arc-10 audit follow-up, [USER] mandate: the
+oracle surface must equal the reviewed manifest
+`scripts/fork_drift_manifest.txt`, and the generated-OCaml
+fork-vs-upstream deltas must match their pinned hashes — spec:
+`notes/2026-08-21_fork-drift-review.md` §6; loud SKIP when the
+upstream remote or a generated tree is absent, fail-closed otherwise). Two further gates are
 IN-BUILD (fail the `lake build` itself, arc 7): the RelSem axiom audit
 and the slate statement-TCB gate — both in `relsem/RelSem/Audit.lean`
 (slate statements must be fuel-opsem-only: no Iris/RelSem-relation

@@ -28,7 +28,7 @@ def ppAny {α : Type} (_ : α) : String := "<...>"
 /-! ## Symbol pretty-printing (real mirrors) -/
 
 /-- Mirrors String_symbol.string_of_prefix = Pp_symbol.pp_prefix
-    (pp_symbol.ml:80-96). -/
+    (pp_symbol.ml:80-94). -/
 def stringFromSymbol_prefix : prefix0 → String
   | .PrefSource _ syms =>
     "{" ++ String.intercalate "." (syms.map CerbMem.ppSymbol) ++ "}"
@@ -71,7 +71,7 @@ def ppObjectValue : object_value → String
     -- Impl_mem.pp_pointer_value (impl_mem.ml:563-572)
     CerbMem.stringFromPointerValue ptrval
   | .OVarray lvals =>
-    -- pp_core.ml:290-291 (P.nest is layout-only; plain text keeps one line)
+    -- pp_core.ml:289-290 (P.nest is layout-only; plain text keeps one line)
     "Array(" ++ ppLoadedValueList lvals ++ ")"
   | .OVstruct tagSym xs =>
     -- pp_core.ml:292-297; member shape ".m= v" incl. the `equals ^^^` space
@@ -87,7 +87,7 @@ def ppLoadedValue : loaded_value → String
   | .LVspecified oval => "Specified(" ++ ppObjectValue oval ++ ")"
   | .LVunspecified ty => "Unspecified('" ++ CerbMem.ppCtype ty ++ "')"
 
-/-- Mirrors Pp_core.pp_value (pp_core.ml:311-337). -/
+/-- Mirrors Pp_core.pp_value (pp_core.ml:311-336). -/
 def stringFromCore_value : value → String
   | .Vunit => "Unit"
   | .Vtrue => "True"
@@ -97,7 +97,7 @@ def stringFromCore_value : value → String
   | .Vctype ty =>
     -- DELIBERATE DIVERGENCE (documented): OCaml prints
     -- squotes(Pp_ail.pp_ctype no_qualifiers ty) — the human C-syntax
-    -- printer (pp_core.ml:333-334). The Ail declarator printer is the
+    -- printer (pp_core.ml:331-332). The Ail declarator printer is the
     -- registered pretty-printer-arc residual; until it exists we print
     -- the Pp_core_ctype text inside the same squotes. Debug/OtherValue
     -- path only — never reaches compared batch verdicts (main returns int).
@@ -105,13 +105,13 @@ def stringFromCore_value : value → String
   | .Vobject oval => ppObjectValue oval
   | .Vloaded lval => ppLoadedValue lval
 
-/-- comma_list pp_loaded_value (pp_core.ml:291). -/
+/-- comma_list pp_loaded_value (pp_core.ml:290). -/
 def ppLoadedValueList : List loaded_value → String
   | [] => ""
   | [lv] => ppLoadedValue lv
   | lv :: rest => ppLoadedValue lv ++ ", " ++ ppLoadedValueList rest
 
-/-- comma_list pp_value (pp_core.ml:328-331). -/
+/-- comma_list pp_value (pp_core.ml:328-330). -/
 def ppValueList : List value → String
   | [] => ""
   | [v] => stringFromCore_value v
@@ -138,9 +138,9 @@ def ppCoreObjectType : core_object_type → String
   | .OTy_union s => "union " ++ CerbMem.ppSymbolRaw s
 
 mutual
-/-- Mirrors Pp_core.pp_core_base_type (pp_core.ml:191-211) — note
+/-- Mirrors Pp_core.pp_core_base_type (pp_core.ml:191-207) — note
     BTy_tuple separates with a bare comma (P.separate_map P.comma,
-    pp_core.ml:210-211), unlike the ", " comma_list elsewhere. -/
+    pp_core.ml:206-207), unlike the ", " comma_list elsewhere. -/
 def stringFromCore_core_base_type : core_base_type → String
   | .BTy_storable => "storable"
   | .BTy_object bty => ppCoreObjectType bty

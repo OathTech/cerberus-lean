@@ -110,3 +110,19 @@ orchestrator judgment call resolved by project principles.
   entries (2.4-3x, worst 50x) + 2 CEILING_FUEL. S5 (close-out +
   audits) is GO; the queued corpus-lane full baseline pass lands
   there (sharded/foreground per the watchdog constraint).
+- **C1 [AGENT, 2026-08-21] — CORRECTION to D6's F-D witness tally
+  (audit fix-batch; D6's text above is left as written — corrections
+  are appended, never silently rewritten).** D6 says "24 witnesses";
+  the audit recount over the campaign record's own per-witness lists
+  gives **35**: 11 generated-lane (P1 1000139/1000299; P2
+  2000129/2000239/2000287; P3 4000250; P4 5000125; P5
+  6000018/6000038/6000098/6000245) + 16 corpus (the 15 DIFF rows +
+  sa_csmith_190 under a perf timeout) + 8 B1-exploration
+  internal-error seeds (3016022/44/49/51/58/74/82/99). The "24" came
+  from the findings-ledger arithmetic, which took only the rounds-2/3
+  generated count (dropping round-1's three P5 witnesses), omitted
+  sa_csmith_190, and counted the seed block as one. The same labeled
+  correction is applied to the results doc (headline + register row)
+  and the campaign record (ledger + stopping rationale). The
+  reattribution itself and every per-witness claim are unaffected —
+  this is a tally correction, not an evidence change.

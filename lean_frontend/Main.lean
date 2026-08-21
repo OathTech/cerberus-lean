@@ -401,8 +401,10 @@ def driverErrorBatchMsg : driver_error → String
 /-! ## Elaborated-Core signature dump (`--pp-core`, arc-4 S4)
 
 LIMITATION — SIGNATURE-LEVEL ONLY, deliberately. The Lean pipeline has no
-real Core pretty-printer (CerbPP is placeholders; the generated Pp.lean is
-a stub), and building one is explicitly out of scope for this slice
+real Core EXPRESSION pretty-printer (arc-10 S3 gave CerbPP real
+value/ctype/mem-value printer mirrors, but the expression/statement
+printers remain among its 25 enumerated placeholders and the generated
+Pp.lean is a stub), and building one is explicitly out of scope for this slice
 (charter S4: stage differential at whatever granularity is available
 WITHOUT building a printer). So `--pp-core` emits a canonical
 SIGNATURE-level dump of the translated Core file:

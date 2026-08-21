@@ -18,6 +18,12 @@
 #    verdict sequences IDENTICAL to the oracle, 2.4-3x slower);
 #    sa_csmith_190 additionally sits on F-D (oracle spurious
 #    UB_CERB002a; Lean+gcc agree at 123 uncapped).
+#    JITTER RATIONALE (2026-08-21, audit NIT): TIMEOUT entries record
+#    the S4 observation at the 15 s cap; files near the boundary can
+#    finish just inside it on a later run (TIMEOUT -> MATCH surfaces
+#    as a reported-not-fatal "improvement", e.g. sia_csmith_041/139 at
+#    S5). The baseline is deliberately NOT updated for run-to-run
+#    timing jitter — only a classified re-record moves an entry.
 #  - 2 LEAN_CRASH: loud "lem: fuel exhausted" (long goto-loops; oracle
 #    ~6-7s) — the bounded-fuel CEILING bucket, registered.
 #  - 573 CERB_SKIP: oracle-side (constraint-violation strictness,
