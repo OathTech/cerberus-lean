@@ -165,6 +165,105 @@ partial def evalScalar (scalarHeads : List Name) : Nat → Expr → MetaM Expr
       if e3 == e2 then return e3 else evalScalar scalarHeads d e3
     | _ => return e
 
+/-- Seal a kernel-established defeq as its OWN auxiliary theorem
+    (`mkAuxTheorem` closes over local fvars): the main proof then
+    references an opaque constant, so the kernel's per-declaration
+    recursion is bounded per COMPUTED VALUE instead of accumulating
+    across a whole round application (the S3 create-round
+    deep-recursion finding; the arc-7 per-round-declaration
+    accounting made literal). -/
+def mkAuxRfl (lhs rhs : Expr) : MetaM Expr := do
+  let ty ← mkEq lhs rhs
+  mkAuxTheorem ty (← mkEqRefl lhs) (zetaDelta := false)
+
+/-- KERNEL-BACKED whnf for discovery computation (arc-9 S3): the
+    elaborator's substitution-based whnf was MEASURED to blow the
+    memory cap on deep-context eval rounds (t5 entry round 10 —
+    >40G on one crossing); the kernel's closure-based reducer handles
+    the same reduction like the per-round rfl declarations of the
+    arc-7 hand style. Falls back to meta whnf on mvars/kernel
+    errors. Proofs are unaffected (the assigned values are re-checked
+    by the kernel at declaration end as always). -/
+def kWhnf (e : Expr) : MetaM Expr := do
+  let e ← instantiateMVars e
+  if e.hasExprMVar then
+    whnf e
+  else do
+    let t0 ← IO.monoMsNow
+    match Lean.Kernel.whnf (← getEnv) (← getLCtx) e with
+    | .ok e' =>
+      return e'
+    | .error _ =>
+      whnf e
+
+/-- PROOF-CARRYING scalar evaluation (D3 emitter): returns
+    `(v, proof : e = v)` with the kernel obligations DECOMPOSED —
+    one small aux per non-arithmetic leaf (a projection chain to a
+    literal) and one per operator fold over already-evaluated
+    arguments. Rationale (measured, S3-D3 minimal repro): the
+    kernel's accelerated Nat arithmetic does not fire through
+    unreduced argument redexes; `Nat.div`-class operators then take
+    the unary definitional path on 2^48-scale operands and trip the
+    recursion guard. Decomposition keeps every obligation in the
+    fast literal classes. -/
+partial def evalScalarPf (scalarHeads : List Name) :
+    Nat → Expr → MetaM (Expr × Expr)
+  | 0, e => return (e, ← mkEqRefl e)
+  | d + 1, e => do
+    -- already a literal?
+    let isLit (x : Expr) : Bool :=
+      x.rawNatLit?.isSome
+      || (x.isAppOfArity ``OfNat.ofNat 3)
+      || (x.isAppOfArity ``Int.ofNat 1 && x.appArg!.rawNatLit?.isSome)
+    if isLit e then return (e, ← mkEqRefl e)
+    let f := e.getAppFn
+    unless f.isConst do
+      let v ← kWhnf e
+      if Expr.equal v e then return (e, ← mkEqRefl e)
+      else return (v, ← mkAuxRfl e v)
+    -- recurse into scalar-typed args (arith spines); leaf otherwise
+    let args := e.getAppArgs
+    let mut anyScalarArg := false
+    let mut newArgs := args
+    let mut proofs : Array (Option Expr) := Array.replicate args.size none
+    for i in [0:args.size] do
+      let a := args[i]!
+      let ty ← whnf (← instantiateMVars (← inferType a))
+      if let .const tn _ := ty.getAppFn then
+        if scalarHeads.contains tn && !isLit a then
+          anyScalarArg := true
+          let (v, pf) ← evalScalarPf scalarHeads d a
+          newArgs := newArgs.set! i v
+          proofs := proofs.set! i (some pf)
+    if anyScalarArg then
+      -- e = f newArgs by congr over the evaluated args, then fold
+      let e' := mkAppN f newArgs
+      let congPf ← observing? do
+        let mut pf ← mkEqRefl f
+        for i in [0:args.size] do
+          match proofs[i]! with
+          | some p => pf ← mkCongr pf p
+          | none => pf ← mkCongr pf (← mkEqRefl args[i]!)
+        pure pf
+      match congPf with
+      | none =>
+        -- dependency prevented congr: single leaf aux
+        let v ← kWhnf e
+        if Expr.equal v e then return (e, ← mkEqRefl e)
+        else return (v, ← mkAuxRfl e v)
+      | some congPf =>
+        let v ← kWhnf e'
+        if Expr.equal v e' then
+          return (e', congPf)
+        else
+          let foldPf ← mkAuxRfl e' v
+          return (v, ← mkEqTrans congPf foldPf)
+    else
+      -- non-arith leaf: one small aux to its kernel value
+      let v ← kWhnf e
+      if Expr.equal v e then return (e, ← mkEqRefl e)
+      else return (v, ← mkAuxRfl e v)
+
 /-- The result-type head of a constant's type (structural). -/
 private def resultTypeHead : Expr → Expr
   | .forallE _ _ b _ => resultTypeHead b
@@ -248,37 +347,6 @@ partial def normStateV2Core (atoms : NameSet) : Nat → Expr → MetaM Expr
 def normStateV2 (atoms : NameSet) (d : Nat) (e : Expr) : MetaM Expr :=
   withCanUnfoldPred (atomsCanUnfold atoms) (normStateV2Core atoms d e)
 
-/-- Seal a kernel-established defeq as its OWN auxiliary theorem
-    (`mkAuxTheorem` closes over local fvars): the main proof then
-    references an opaque constant, so the kernel's per-declaration
-    recursion is bounded per COMPUTED VALUE instead of accumulating
-    across a whole round application (the S3 create-round
-    deep-recursion finding; the arc-7 per-round-declaration
-    accounting made literal). -/
-def mkAuxRfl (lhs rhs : Expr) : MetaM Expr := do
-  let ty ← mkEq lhs rhs
-  mkAuxTheorem ty (← mkEqRefl lhs) (zetaDelta := false)
-
-/-- KERNEL-BACKED whnf for discovery computation (arc-9 S3): the
-    elaborator's substitution-based whnf was MEASURED to blow the
-    memory cap on deep-context eval rounds (t5 entry round 10 —
-    >40G on one crossing); the kernel's closure-based reducer handles
-    the same reduction like the per-round rfl declarations of the
-    arc-7 hand style. Falls back to meta whnf on mvars/kernel
-    errors. Proofs are unaffected (the assigned values are re-checked
-    by the kernel at declaration end as always). -/
-def kWhnf (e : Expr) : MetaM Expr := do
-  let e ← instantiateMVars e
-  if e.hasExprMVar then
-    whnf e
-  else do
-    let t0 ← IO.monoMsNow
-    match Lean.Kernel.whnf (← getEnv) (← getLCtx) e with
-    | .ok e' =>
-      return e'
-    | .error _ =>
-      whnf e
-
 /-- Payload normalizer for DISCOVERY: plain full whnf spine (atoms
     and map lookups all compute — the program itself lives inside an
     Fmap), but subterms of opaque map types and program-term types
@@ -334,6 +402,75 @@ def normCompute (atoms : NameSet) (d : Nat) (e : Expr) : MetaM Expr := do
       | _ => return e'
     | _ => return e'
 
+/-- THE PER-STAGE STATE BRIDGE (walker v3, D3): prove
+    `raw = normalized` for two spellings of the same structure value
+    by decomposing FIELD-WISE (kernel-whnf/def-unfold one
+    constructor level, `congr` assembly) and emitting one auxiliary
+    rfl-theorem per DIFFERING leaf — so the kernel checks each
+    normalization step (a memory write, an arena reconstruction, a
+    counter fold) as its own small obligation, exactly the T4
+    hand-proof granularity. Syntactically equal fields cost an
+    `Eq.refl`. Depth-bounded; at the bound a leaf aux carries the
+    residual (still one component's worth). -/
+partial def mkStateBridge (d : Nat) (l r : Expr) : MetaM Expr := do
+  if Expr.equal l r then
+    mkAppM ``Eq.refl #[l]
+  else if d == 0 then
+    mkAuxRfl l r
+  else
+    let env ← getEnv
+    let lctx ← getLCtx
+    -- expose constructors: kernel whnf on the raw side; def-unfold +
+    -- beta on a sealed-const side; fall back to the term itself
+    let expose (e : Expr) : MetaM Expr := do
+      if e.getAppFn.isConst then
+        let n := e.getAppFn.constName!
+        if let some (.defnInfo dv) := env.find? n then
+          let isAux := match n with
+            | .str _ tail => tail.endsWith "_aux" || tail.startsWith "kwSt" || tail.startsWith "walkSt"
+            | _ => false
+          if isAux then
+            return (dv.value.beta e.getAppArgs)
+      match Lean.Kernel.whnf env lctx e with
+      | .ok e' => return e'
+      | .error _ => return e
+    let lC ← expose l
+    let rC ← expose r
+    if lC.getAppFn.isConst && rC.getAppFn.isConst
+        && lC.getAppFn.constName! == rC.getAppFn.constName!
+        && lC.getAppArgs.size == rC.getAppArgs.size then
+      match env.find? lC.getAppFn.constName! with
+      | some (.ctorInfo _) =>
+        let lAs := lC.getAppArgs
+        let rAs := rC.getAppArgs
+        -- fold the leading syntactically-equal prefix (params etc.)
+        -- into the head; congr only the tail (structure fields are
+        -- non-dependent). Any congr failure (dependency) falls back
+        -- to a single leaf aux for this node.
+        let assembled ← observing? do
+          let mut k := 0
+          while h : k < lAs.size do
+            if Expr.equal lAs[k] rAs[k]! then k := k + 1 else break
+          let mut pf ← mkEqRefl (mkAppN lC.getAppFn lAs[:k])
+          for i in [k:lAs.size] do
+            if Expr.equal lAs[i]! rAs[i]! then
+              pf ← mkCongr pf (← mkEqRefl lAs[i]!)
+            else
+              pf ← mkCongr pf (← mkStateBridge (d-1) lAs[i]! rAs[i]!)
+          pure pf
+        match assembled with
+        | none => mkAuxRfl l r
+        | some pf =>
+          -- bridge the outer spellings to the exposed ctor forms
+          let lB ← if Expr.equal l lC then mkEqRefl l
+                   else mkAuxRfl l lC
+          let rB ← if Expr.equal rC r then mkEqRefl r
+                   else mkAuxRfl rC r
+          mkEqTrans lB (← mkEqTrans pf rB)
+      | _ => mkAuxRfl l r
+    else
+      mkAuxRfl l r
+
 /-- Normalize ONLY the state argument of an `app C σ`-shaped
     continuation RHS (never the computation — whnf'ing `app C σ`
     would run the whole remaining computation). -/
@@ -354,6 +491,10 @@ def normAppState (cfg : WalkCfg) (e : Expr) : MetaM Expr := do
           let stConst ← mkAuxDefinition
             ((← mkFreshUserName `walkSt).appendAfter "_aux") stTy st'
             (compile := false)
+          if cfg.trace then
+            let n := stConst.getAppFn.constName!
+            let body := ((← getEnv).find? n).map (fun ci => ci.value?.getD (mkConst `x)) |>.getD (mkConst `x)
+            dbg_trace "sealState {n} bodyDepth={body.approxDepth} args={stConst.getAppArgs.size} headOfBody={toString body.getAppFn |>.take 40}"
           return mkAppN e.getAppFn (args.set! i stConst)
         return mkAppN e.getAppFn (args.set! i st')
   return e
@@ -397,6 +538,20 @@ partial def dischargeHyp (cfg : WalkCfg) (fuel : Nat) (h : MVarId) : MetaM Bool 
       let st ← saveState
       match ← attempt cfg.candBudget (do
           let t0 ← IO.monoMsNow
+          -- SCALAR-typed facts go through the PROOF-CARRYING
+          -- evaluator (decomposed kernel obligations — the D3
+          -- unary-arithmetic finding); the aux-rfl of a raw
+          -- arithmetic spelling is never used.
+          if cfg.norm && cfg.sealFacts then
+            let lty ← whnf (← instantiateMVars (← inferType lhs))
+            if let .const tn _ := lty.getAppFn then
+              if scalarTypeHeads.contains tn then
+                let (v, pf) ← evalScalarPf scalarTypeHeads 16 lhs
+                if (← isDefEq rhs v) then
+                  h.assign pf
+                  return true
+                else
+                  return false
           -- selection-shaped facts (`some ?x` patterns) take the
           -- kernel-whnf output VERBATIM: the value is a subterm of an
           -- already-normal spine, and re-normalization creates a
@@ -409,7 +564,28 @@ partial def dischargeHyp (cfg : WalkCfg) (fuel : Nat) (h : MVarId) : MetaM Bool 
                   else normSpine 4 lhs
           if (← isDefEq rhs v) then
             if cfg.sealFacts then
-              h.assign (← mkAuxRfl lhs (← instantiateMVars rhs))
+              let pf ← try mkAuxRfl lhs (← instantiateMVars rhs)
+                catch ex =>
+                  if cfg.trace then
+                    dbg_trace "dh[{fuel}]: mkAuxRfl THREW: {← ex.toMessageData.toString}"
+                    -- dump a standalone repro: the fact type + every
+                    -- referenced walk const body
+                    let ty ← mkEq lhs (← instantiateMVars rhs)
+                    let h ← IO.FS.Handle.mk "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/wp-tactics/scratch/repro.txt" .write
+                    h.putStrLn s!"-- FACT TYPE:\n{← ppExpr ty}"
+                    let cs := ty.getUsedConstants
+                    for c in cs do
+                      let isW := match c with
+                        | .str _ t => t.startsWith "walkSt" || t.endsWith "_aux"
+                        | _ => false
+                      if isW then
+                        if let some ci := (← getEnv).find? c then
+                          h.putStrLn s!"-- CONST {c} : {← ppExpr ci.type}"
+                          if let some v := ci.value? then
+                            h.putStrLn s!"-- BODY:\n{← ppExpr v}"
+                    h.flush
+                  throw ex
+              h.assign pf
             else
               h.assign (← mkEqRefl lhs)
             return true
@@ -597,23 +773,33 @@ partial def walkOnce (cfg : WalkCfg) (goal : MVarId)
       let proof ← instantiateMVars (mkAppN lemExpr args)
       if proof.hasExprMVar then return none
       let lemRhs ← instantiateMVars lemRhs
-      -- v2 PER-ROUND SEALING: each round's equation becomes its OWN
-      -- auxiliary theorem, so the kernel checks rounds one at a time
-      -- (the arc-7 per-round-declaration accounting made literal; a
-      -- monolithic multi-round proof term was MEASURED to trip the
-      -- kernel's deep-recursion guard).
-      let proof ← if cfg.sealRounds then do
-          let pty ← instantiateMVars (← inferType proof)
-          mkAuxTheorem pty proof (zetaDelta := false)
-        else pure proof
       -- terminal: the law's RHS meets the goal's RHS directly
       if (← withReducible <| isDefEq lemRhs rhs) then
         goal.assign (← mkEqTrans proof (← mkEqRefl rhs))
         return some (law.name, none)
       -- chain: Eq.trans into a continuation goal. Under v2 the
       -- continuation's LHS state is replaced by its normalized
-      -- (defeq) image — `mkEqTrans` performs the defeq bridge.
+      -- (defeq) image; in the PER-STAGE lane (D3) the raw↔normalized
+      -- bridge is proven field-wise (mkStateBridge — one aux per
+      -- differing leaf) instead of being left to the trans
+      -- unification as one monolithic kernel defeq.
       let lemRhsN ← normAppState cfg lemRhs
+      let proof ← do
+        if cfg.sealStates && !(Expr.equal lemRhs lemRhsN) then
+          let bridge ←
+            if lemRhs.isApp && lemRhsN.isApp
+                && Expr.equal lemRhs.appFn! lemRhsN.appFn! then do
+              let sb ← mkStateBridge 6 lemRhs.appArg! lemRhsN.appArg!
+              mkAppM ``congrArg #[lemRhs.appFn!, sb]
+            else mkAuxRfl lemRhs lemRhsN
+          mkEqTrans proof bridge
+        else pure proof
+      -- PER-ROUND SEALING (after the bridge: the sealed type is a
+      -- named-state-to-named-state equation — small for the kernel).
+      let proof ← if cfg.sealRounds then do
+          let pty ← instantiateMVars (← inferType proof)
+          mkAuxTheorem pty proof (zetaDelta := false)
+        else pure proof
       let restTy ← mkEq lemRhsN rhs
       let rest ← mkFreshExprMVar restTy (userName := `walk)
       goal.assign (← mkEqTrans proof rest)
@@ -889,7 +1075,10 @@ def kwalkRound (cfg : WalkCfg) (goal : MVarId) :
   unless outcome.getAppFn.isConstOf `nd_action.NDactive do return none
   let wake ← kWhnf outcome.appArg!
   let wakeName := wake.getAppFn.constName?.getD .anonymous
-  unless wakeName.getString! == "NOWAKEUP" do return none
+  let wakeOk := match wakeName with
+    | .str _ tail => tail == "NOWAKEUP"
+    | _ => false
+  unless wakeOk do return none
   let σraw := adv.getAppArgs[3]!
   -- normalize + seal the post-state
   let σnorm ← normStateV2 cfg.atoms cfg.depth σraw
