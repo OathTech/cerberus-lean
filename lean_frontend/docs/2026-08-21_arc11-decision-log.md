@@ -17,3 +17,20 @@
   layers thin); F12-3 ambiguity static+same-prio-dynamic (full sweeps
   available in preview at slice boundaries); F12-4 sealing-as-default
   surface change (inside the blessed charter; regression bar binding).
+- **D2 [AGENT] — S1 boundary verified; S2 GO.** Four batch commits
+  (8bd81b7ba/60c351a04/c47c7b8d0/12977f0c9) re-verified: unit 7/7
+  (ban list now incl. app_walk_preview), verify 29/29, exec zero
+  movement, entry5_walk present as a committed theorem
+  (T5Prefix.lean:629, in-build kernel-accepted). The S0 gap is
+  CLOSED-BY-EXIT-TEST; the bench thesis-numbers accepted (discovery
+  2350ms / cold 39985ms / replay 2593ms — the ~15x replay economics
+  the T5 climb needs). Recorded deviations accepted (grammar
+  extensions, preview-keeps-certs, deferred fingerprint components +
+  per-addDecl kernel split → S5). Register items accepted:
+  sealStates entry-store early stop (S2 material — the store-i hadv
+  case); the async record/replay sequencing contract (Elab.async
+  false, elab warnings — S5 audit visibility). S2 (the T5 climb) is
+  GO: the stuck round is typed SEMANTIC with the trace instrument
+  live, the gating context-query mode is built for the
+  continuation-lambda advance law + round_run_jump, entry5_walk is
+  the proof's first segment. D3-class stop rule armed as chartered.
