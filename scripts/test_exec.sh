@@ -472,7 +472,10 @@ for c_file in "${TEST_FILES[@]}"; do
     # New vs prototype: crash detection (SIGABRT under LEAN_ABORT_ON_PANIC=1,
     # SIGSEGV, ...). Classify by signal + first PANIC line on stderr.
     if [[ $lean_exit -ge 128 ]]; then
-        crash_kind=$(echo "$lean_output" | grep -m1 'PANIC' | cut -c1-120)
+        # arc-10 S4: also capture the loud fuel-exhaustion marker (the
+        # arc-3/7 fuel totalization aborts with "lem: fuel exhausted",
+        # not a PANIC line — previously showed as "no PANIC line captured")
+        crash_kind=$(echo "$lean_output" | grep -m1 -E 'PANIC|fuel exhausted' | cut -c1-120)
         [[ -z "$crash_kind" ]] && crash_kind="(no PANIC line captured)"
         if $expect_unsupported; then
             UNSUPPORTED_EXPECTED=$((UNSUPPORTED_EXPECTED + 1))

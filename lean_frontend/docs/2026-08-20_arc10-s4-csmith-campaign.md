@@ -218,4 +218,234 @@ Runtime parameters per S0 (confirmed): TIMEOUT_SECS=15 both sides,
 whole batch under `scripts/capped` CERB_MEM_MAX=8G, sequential batches
 only (post-crash constraint).
 
-<!-- phase 2 + 3 appended below as they land -->
+## Phase 2 — the sweep
+
+### Generated lanes, round 1 (batch 1 of each lane, 100 seeds)
+
+Verbatim SUMMARY lines (.tmp/sweep/round1_log.txt; per-lane seed blocks
+as in the portfolio table):
+
+```
+P1_full  : SUMMARY: total=100 match=33 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 lean_error=0 timeout=0 cerb_skip=65 cerb_inconsistent=2
+P2_value : SUMMARY: total=100 match=32 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 lean_error=0 timeout=0 cerb_skip=68 cerb_inconsistent=0
+P3_ub    : SUMMARY: total=100 match=34 ub_match=9 ub_diff=0 mismatch=0 fail=0 crash=0 lean_error=0 timeout=1 cerb_skip=56 cerb_inconsistent=0
+P4_argc  : SUMMARY: total=100 match=33 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 lean_error=0 timeout=0 cerb_skip=67 cerb_inconsistent=0
+P5_noptr : SUMMARY: total=100 match=34 ub_match=0 ub_diff=0 mismatch=2 fail=0 crash=0 lean_error=0 timeout=1 cerb_skip=63 cerb_inconsistent=0
+```
+
+(The lane label prefixes are derived annotations; each SUMMARY line is
+verbatim from its lane run.) Comparable-agreement: P1-P4 batch 1 =
+100% agreement (141 comparisons, 0 mismatch; the P3 timeout resolved
+below). P5's three non-agreements triaged below — ALL THREE are
+oracle-side, none is a Lean defect.
+
+### Round-1 triage (every non-MATCH classified)
+
+- **P1 `[11/100] CERB_INCONSISTENT csmith_1000011: exec succeeded but
+  cabs-json failed`** (and the identical [42/100] csmith_1000042):
+  oracle MODE INCONSISTENCY — `--exec` accepts the program but
+  `--cabs-json` rejects it, verbatim: `error: undefined behaviour: the
+  initializer for a scalar shall be a single expression` on a
+  `static volatile struct S2 g_43[7][5] = {...}` nested initializer.
+  Oracle finding F-E (§findings); counted, visible, not hidden.
+- **P3 `[25/100] TIMEOUT csmith_4000025 (Lean >15s)`**: perf-gap, not
+  semantic — uncapped rerun: oracle 11.3s, Lean 30.5s, and the two
+  130-line verdict sequences are IDENTICAL (65× UB51b_shift_too_large
+  each, diff clean). Bucket TIMEOUT_LEAN_PERF.
+- **P5 `[18/100] DIFF csmith_6000018: Lean=VAL:Specified(100)
+  Cerberus=UB:UB_CERB002b_out_of_bound_store`**: gcc -O0 native run
+  returns 100 (= Lean). Declaration-morph fingerprint: adding ONE
+  unused declaration (`int __extra_decl(int);`) morphs the oracle
+  verdict to verbatim `internal error: can_advance: Step_error2 ==>
+  Store`. Bucket ORACLE_DEFECT (F-D family).
+- **P5 `[98/100] MISMATCH csmith_6000098: Lean=VAL:Specified(117)
+  Cerberus=VAL:Specified(187)`**: gcc returns 117 (= Lean).
+  Morph fingerprint: oracle 187 → **Specified(138)** with one added
+  declaration; Lean stays 117 on both variants. The oracle's DEFINED
+  RESULT VALUE is a function of top-level declaration count — silent
+  value corruption, the most dangerous F-D manifestation (extends the
+  wireguard §2a characterization, which saw only internal errors and
+  spurious UB). Bucket ORACLE_DEFECT.
+- **P5 `[38/100] TIMEOUT csmith_6000038 (Lean >15s)`**: uncapped rerun
+  — oracle 6.2s/2240 executions all Specified(218); Lean 86s/2240
+  executions all Specified(13); gcc returns 13 (= Lean); morph
+  fingerprint: oracle 218 → 134. Bucket ORACLE_DEFECT (value
+  corruption) + a Lean perf-gap note (14× on this fork-heavy case;
+  perf register).
+
+## Root-cause poking ([USER] directive, 2026-08-21, timeboxed)
+
+### F-D — the can_advance / spurious-UB / silent-value-corruption family: **REATTRIBUTED — a cerberus-lean FORK regression, upstream is clean**
+
+The decisive experiment: the same reproducers against the PROTOTYPE's
+un-forked upstream cerberus (`cerberus-lean-prototype/cerberus` @
+866be5254, its own switch/build):
+
+- csmith_6000098: upstream verbatim `Defined {value: "Specified(117)",
+  ...}` — the gcc/Lean value. Our fork's oracle: 187 (and 138 with one
+  added declaration).
+- csmith_6000018: upstream `Specified(100)` (= gcc/Lean); fork:
+  spurious `UB_CERB002b_out_of_bound_store`.
+- sa_csmith_168 (in-tree corpus): upstream `Specified(28)`; fork:
+  spurious `UB010_pointer_to_dead_object`.
+
+So the entire F-D family — including the wireguard scoping survey's
+"oracle exec-driver defect" (§2a addendum, same fingerprint), which
+must be RE-ATTRIBUTED accordingly — is a regression OUR fork
+introduced, not an upstream defect. It does NOT go in the upstream
+tray; it is a cerberus-lean register item.
+
+**Mechanism evidence (all verbatim outputs banked in scratch, recipes
+deterministic):**
+
+1. Elaboration is NOT the divergence: `--pp core` of the
+   csmith_6000098 morph pair, alpha-canonicalized
+   (scripts/canonicalize_ids.py), differs in exactly one line — the
+   added `proc __extra_decl (pointer)`. 23,155-line dumps otherwise
+   identical.
+2. ND scheduling is NOT the divergence: the program is single-trace
+   (exhaustive mode = 1 execution) and random-mode runs are stable.
+3. The memory-action trace (`--exec --trace`, both variants,
+   line-number-normalized) is IDENTICAL for the first ~397 actions —
+   same allocation ids, same addresses, same values — then diverges
+   inside main's checksum for-loops: the unmodified variant executes a
+   spurious extra `seq_rmw` of the inner loop counter (j 6→7 with no
+   body between) and skips whole rows of the `transparent_crc` nest
+   (subsequently reading `g_282[2]` where the +1-decl variant is still
+   correctly iterating `g_7[1]`) — i.e. a WRONG-CONTINUATION jump in
+   the Core Esave/Erun label machinery, which then yields the wrong
+   checksum (and, in other layouts, ill-typed actions =
+   `can_advance: Step_error2 ==> Load/Store`, spurious
+   DeadPtr/OutOfBound UB, etc.).
+4. Since the interpreter diverges on alpha-equivalent Core, it is not
+   alpha-invariant in symbol ids: something keys on RAW symbol
+   numbers. The fork's suspect surface (file:line): the arc-2 S1
+   threaded symbol supply — `core_run_state.sym_supply`
+   (core_run_aux.lem:233-247, seeded at :287 from the ambient
+   `Symbol.fresh_int ()`), consumed by `fresh_symbol'`
+   (core_run.lem:115-119, minting `Symbol (digest()) n SD_None`), with
+   sibling threaded supplies in cabs_to_ail_effect.lem:568/622. The
+   in-code invariant comment ITSELF concedes the hole: "A run's
+   threaded range can overlap ambient ids drawn AFTER init …
+   latent-safe because run-created symbols do not escape their run …
+   a Phase-2 differential obligation asserts non-escape" — an
+   obligation that was never discharged; this finding is that
+   obligation firing. Collisions become misbehavior through
+   description-INSENSITIVE symbol equality (Symbol.symbolEquality:
+   digest+number only — it even carries a "suspicious equality" debug
+   print) feeding the env/label/substitution machinery
+   (core_run.lem:1502-1541 Esave substitution + Erun label lookup).
+5. Tested predictions: a declaration inserted at the HEAD (shifts the
+   27 later globals' symbol numbers, observed via the -d6 global-eval
+   trace: first 43 ids identical, last 27 shifted +1) changes the
+   result/failure mode on every witness; a declaration appended at the
+   TAIL (program symbol numbers unchanged) does NOT change the result
+   (still 187) — the corruption keys on program-symbol numbering, not
+   on the final counter value alone.
+
+Not root-caused to the exact colliding pair within the timebox (the
+precise first wrong lookup needs an instrumented build, out of scope
+here). Ruled out: elaboration, ND scheduling, memory-model state.
+Register disposition: fork-side OCaml/lem repair in the arc-2
+threading region (frontend/model/core_run_aux.lem + friends) — NOT
+S4's write surface, PARKED with this analysis; priced M (needs
+probe-first lem work + the full validation ladder; the Lean side is
+unaffected — its supply threading is pure and collision-free, which is
+WHY the differential caught this at all).
+
+**Impact note:** standing green baselines are structurally unaffected
+(a corrupted oracle verdict against an independent correct Lean
+verdict surfaces as a visible MISMATCH/DIFF, never as a silent MATCH),
+but F-D suppresses differential VALUE on affected files (they sit as
+oracle-side noise) until the fork regression is repaired.
+
+### F-E — cabs-json vs exec disagreement: DISSOLVED into two small precise findings
+
+Bisection (seed-1000011 witness): `--nolibc` is not the axis. The
+frontends do not disagree semantically; the differences are
+stage/channel:
+
+- (a) The oracle desugar flags the nested `static volatile struct S2
+  g_43[7][5] = {...}` initializer as
+  `UB081_scalar_initializer_not_single_expression` (gcc: accepts,
+  rc 0). In `--exec` mode this surfaces as a legitimate-looking
+  EXECUTION verdict (`Undefined {ub: UB081...}` — which the harness
+  counts as an oracle UB verdict), while the fork's `--cabs-json`
+  exporter treats the same desugar UB as a HARD frontend error (exit
+  1, no JSON) → harness CERB_INCONSISTENT. UPSTREAM shows the
+  identical UB081 verdict, so the UB081 class itself is
+  upstream-shared (upstream-tray as a question: probably a
+  Desugaring_init false-positive — F-A's neighborhood); the
+  hard-vs-deferred CHANNEL inconsistency is fork-side (our exporter),
+  cosmetic, register-noted.
+- (b) The reverse direction (my minimal `cabsjson_vs_exec_init.c`:
+  exec-rejected, cabs-json-accepted) is trivial once seen: the F-A
+  AilEinvalid only explodes at TRANSLATION, a stage the cabs-json
+  export never runs. Not a checker disagreement.
+
+### F-A / F-B — upstream attribution confirmed
+
+Upstream cerberus reproduces both verbatim: `init_array_3d.c` /
+`init_struct_depth3.c` → `internal error: Translation called on Ail
+program with an invalid node`; `init_addr_const.c` → `error:
+constraint violation: initializer element is not a compile-time
+constant`. Both genuinely upstream (shared Desugaring_init /
+constant-expression checker). Upstream-tray: YES for both.
+
+## Phase 2 — the in-tree corpus lane ([AGENT] addition)
+
+`scripts/test_csmith_corpus.sh` (commit fb36810a8): all 1669 in-tree
+upstream csmith programs (small_int_arith 1192 + small_arrays 470 +
+small_mix 7), prefixed materialization + kit header substitution,
+TIMEOUT_SECS=15, capped 8G, SKIP_BUILD=1. Run as one full pass (killed
+externally at 962/1669 — an infrastructure stop, not a harness
+failure; the partial log's positions 1-837 are complete) + shards 4-6
+covering positions 838-1669. Verbatim shard SUMMARY lines:
+
+```
+SUMMARY: total=279 match=223 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 lean_error=0 timeout=0 cerb_skip=56 cerb_inconsistent=0
+SUMMARY: total=279 match=267 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=1 lean_error=0 timeout=0 cerb_skip=11 cerb_inconsistent=0
+SUMMARY: total=274 match=225 ub_match=0 ub_diff=0 mismatch=1 fail=0 crash=1 lean_error=0 timeout=2 cerb_skip=45 cerb_inconsistent=0
+```
+
+Combined per-file tally (derived from the verbatim per-file lines,
+1669 rows, banked as `scripts/exec_csmith_corpus_baseline.txt` with
+the assembly note in its header): **MATCH 1070, CERB_SKIP 573, DIFF
+15, TIMEOUT 9, LEAN_CRASH 2.**
+
+Triage — 100% of the 26 non-agreements classified:
+
+- **15 DIFF — ALL F-D** (oracle spurious UB010_pointer_to_dead_object
+  / UB009_outside_lifetime vs Lean values): sa_csmith_19/28/95/120/
+  149/168/218/317/350/369/371, sia_csmith_081/136/1168/897. Verified:
+  upstream cerberus returns the Lean-agreeing value on the two
+  spot-checked witnesses (sa_csmith_168 → 28, sia_csmith_897 → 157);
+  the declaration-morph fingerprint on sa_csmith_168 morphs UB010 into
+  verbatim `internal error: can_advance: Step_error2 ==> Load`. The
+  in-tree corpus provides these as plain deterministic single-file
+  reproducers (better than the wireguard shim recipe).
+- **9 TIMEOUT (Lean >15s)** — uncapped reruns, every one: sequences
+  vs the oracle for sia_csmith_041/072/139/161/169/976/996 +
+  sa_csmith_435 are IDENTICAL (diff clean; oracle 4.3-10.8s vs Lean
+  11.1-26.4s — a 2.4-3x interpreter perf-gap, register); sa_csmith_190
+  is F-D-on-top-of-perf (oracle spuriously `UB_CERB002a_out_of_
+  bound_load` in 1.3s; Lean 66s → Specified(123) = gcc; morph →
+  can_advance). Bucket TIMEOUT_LEAN_PERF (+1 F-D).
+- **2 LEAN_CRASH — CEILING_FUEL**: sia_csmith_477/769 abort loudly
+  with verbatim `lem: fuel exhausted` (goto-loops iterating ≥tens of
+  thousands of times; oracle finishes in ~6-7s). The bounded-fuel
+  ceiling bucket — registered, not chased (fuel policy sits in the
+  CerbND/driver seam, a forbidden surface this arc). Harness
+  improvement landed: test_exec.sh crash-kind capture now also
+  extracts the fuel-exhaustion marker (previously "(no PANIC line
+  captured)").
+- 573 CERB_SKIP: oracle-side, the F-A/constraint-strictness/oracle-
+  timeout classes (same taxonomy as the exploration rounds).
+
+**Zero Lean-side semantic defects in 1669 in-tree programs.** The
+seeded prototype reproducer (union_unspecified_3014219861.c, [AGENT]
+addition): oracle times out in exhaustive mode even at 180s (volatile
+trace explosion — the prototype ran it in single-trace mode) → the
+current harness envelope records it CERB_SKIP; noted, not hidden.
+
+<!-- further rounds + ledger + gates appended below -->

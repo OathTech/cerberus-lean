@@ -3,9 +3,24 @@
 Committed reproducer artifacts for the arc-10 S4 csmith campaign
 (record: `lean_frontend/docs/2026-08-20_arc10-s4-csmith-campaign.md`,
 which carries the verbatim evidence; this manifest is the artifact
-index). NOT wired into any harness — these document findings, most of
-which are ORACLE-side (upstream-tray candidates). Deterministic
-regeneration recipes are given where the artifact is generated.
+index). NOT wired into any harness — these document findings, all of
+which are ORACLE-side. Deterministic regeneration recipes are given
+where the artifact is generated.
+
+**ATTRIBUTION UPDATE (root-cause poking, 2026-08-21, [USER]-directed;
+full evidence in the campaign record §root-cause):** the F-D family is
+NOT upstream — the un-forked upstream cerberus (prototype checkout)
+returns the correct gcc/Lean-agreeing values on every tested witness
+(6000098→117, 6000018→100, sa_csmith_168→28). F-D is a cerberus-lean
+FORK regression, prime suspect the arc-2 S1 threaded symbol supply
+(core_run_aux.lem:233-247,287; its own invariant comment concedes the
+undischarged non-escape obligation) via description-insensitive symbol
+equality into the Esave/Erun machinery. F-A and F-B ARE upstream
+(reproduced verbatim on upstream). F-E dissolves into (a) an
+upstream-shared UB081 initializer class surfaced through two different
+channels (deferred exec verdict vs hard cabs-json error — the channel
+split is fork-side, cosmetic) and (b) a trivial stage difference
+(cabs-json never runs translation, so F-A cannot fire there).
 
 Running an artifact: `scripts/test_exec.sh tests/csmith_findings/oracle/<f>.c`
 (files that `#include "csmith_cerberus.h"` need
