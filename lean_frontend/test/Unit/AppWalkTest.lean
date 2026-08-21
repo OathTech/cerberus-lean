@@ -118,10 +118,42 @@ example (st : Nat) :
       = (NDactive st, st + 1) := by
   app_walk_preview
 
+/-! E10 (arc-11 S1 batch 3, design §12.2): RECORD → CHECKED REPLAY on
+    the e2 contract + the goal-fingerprint NEGATIVE. All three decls
+    sit under `Elab.async false` per the recorded sequencing contract
+    (tactic-time env-extension visibility + the shared heartbeat
+    ledger). -/
+
+set_option Elab.async false in
+theorem e10rec (st : Nat) :
+    app (nd_bind nd_get (fun a =>
+         nd_bind (nd_put (a + 1)) (fun _ =>
+         nd_return a)) : M Nat) st
+      = (NDactive st, st + 1) := by
+  app_walk_rec e10_tr
+
+set_option Elab.async false in
+theorem e10replay (st : Nat) :
+    app (nd_bind nd_get (fun a =>
+         nd_bind (nd_put (a + 1)) (fun _ =>
+         nd_return a)) : M Nat) st
+      = (NDactive st, st + 1) := by
+  app_walk_replay e10_tr
+
+/--
+error: app_walk_replay: trace 'e10_tr' was recorded for a DIFFERENT goal statement; re-record
+-/
+#guard_msgs in
+set_option Elab.async false in
+example (st : Nat) :
+    app (nd_bind (nd_return 1) (fun a => nd_return (a + 1)) : M Nat) st
+      = (NDactive 2, st) := by
+  app_walk_replay e10_tr
+
 end AppWalkTest
 
 def main : IO UInt32 := do
   -- The exercises are kernel-checked at compile time; report and pass.
-  IO.println "AppWalkTest: E1-E8 kernel-checked + E9 preview-negative pinned (walker contract table)"
+  IO.println "AppWalkTest: E1-E8+E10 kernel-checked, E9 preview-negative + E10-mismatch pinned"
   IO.println "AppWalkTest: ALL PASSED"
   return 0

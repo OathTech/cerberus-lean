@@ -81,7 +81,7 @@ inductive Residual where
   | ambiguousLaw (laws : Array Name)
   /-- empty candidate set on an app-shaped position. -/
   | missingLaw
-  deriving Inhabited, Repr
+  deriving Inhabited, Repr, BEq
 
 /-- Why a candidate law did or did not fire. -/
 inductive CandFate where
@@ -156,13 +156,56 @@ inductive Outcome where
   | closedTerminal | closedRfl
   | stuck (r : Option Residual := none)
   | budget
-  deriving Inhabited, Repr
+  deriving Inhabited, Repr, BEq
 
-/-- The whole-walk trace (Fingerprint/GoalKey: batch 3). -/
+/-- Trace-stability fingerprint (§12.2, batch 3). Freshness UX only —
+    NEVER a trust surface (replay re-checks everything; a stale
+    fingerprint or a forgotten `engineRev` bump can only cause a loud
+    replay refusal/failure, not a wrong theorem). Batch-3 scope
+    (recorded deviation vs §12.1): `gen`/`fixture` components are
+    DEFERRED — generated-code and fixture drift are already pinned by
+    the standing fork-drift and emit-lean-core gates, and any
+    resulting staleness surfaces as a loud replay divergence. -/
+structure Fingerprint where
+  /-- hash of the sorted `@[app_eq]` registry (name, key path, prio,
+      statement hash). -/
+  kit : UInt64 := 0
+  /-- `engineRev` at record time. -/
+  engine : Nat := 0
+  /-- goal-statement key (pretty-printed goal hash — stable across
+      elaborations, unlike raw `Expr.hash` over fvars). -/
+  goal : UInt64 := 0
+  deriving Inhabited, Repr, BEq
+
+/-- The whole-walk trace. -/
 structure WalkTrace where
   rounds : Array RoundTrace := #[]
   outcome : Option Outcome := none
+  fp : Option Fingerprint := none
   deriving Inhabited, Repr
+
+/-! ## Stored traces (record → replay across declarations/modules).
+
+    A PERSISTENT env extension: `app_walk_rec name` stores the
+    recorded trace under `name`; `app_walk_replay name` fetches it
+    (imports included). The stored trace is UNTRUSTED DATA — replay
+    re-runs every check. -/
+
+initialize storedTracesExt :
+    SimplePersistentEnvExtension (Name × WalkTrace)
+      (NameMap WalkTrace) ←
+  registerSimplePersistentEnvExtension {
+    addEntryFn := fun m (n, t) => m.insert n t
+    addImportedFn := fun as =>
+      as.foldl (fun m arr =>
+        arr.foldl (fun m (n, t) => m.insert n t) m) {}
+  }
+
+def storeWalkTrace (n : Name) (t : WalkTrace) : CoreM Unit :=
+  modifyEnv fun env => storedTracesExt.addEntry env (n, t)
+
+def findWalkTrace (n : Name) : CoreM (Option WalkTrace) :=
+  return (storedTracesExt.getState (← getEnv)).find? n
 
 /-! ## The trace builder (walk-time state) -/
 

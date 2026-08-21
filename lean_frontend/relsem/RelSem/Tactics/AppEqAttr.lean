@@ -39,13 +39,17 @@ structure AppEqLaw where
   prio : Nat
   deriving Inhabited, BEq
 
-/-- The law table: a DiscrTree over conclusion LHS patterns. -/
+/-- The law table: a DiscrTree over conclusion LHS patterns, plus the
+    flat registry (arc-11 S1 batch 3: enumerable for the trace
+    FINGERPRINT — design §12.2 stability). -/
 structure AppEqLaws where
   tree : DiscrTree AppEqLaw := {}
+  all : Array AppEqLaw := #[]
   deriving Inhabited
 
 private def addLaw (laws : AppEqLaws) (l : AppEqLaw) : AppEqLaws :=
-  { laws with tree := laws.tree.insertKeyValue l.keys l }
+  { laws with tree := laws.tree.insertKeyValue l.keys l,
+              all := laws.all.push l }
 
 /-- Compute the DiscrTree keys of a candidate `@[app_eq]` lemma: the
     conclusion must be an `Eq` whose LHS is (after telescope) the
@@ -93,6 +97,12 @@ def appEqMatches (e : Expr) : MetaM (Array AppEqLaw) := do
   let laws := appEqExt.getState (← getEnv)
   let hits ← laws.tree.getMatch e
   return hits.qsort (fun a b => a.prio > b.prio)
+
+/-- The whole registered-law surface (name-sorted; the fingerprint's
+    input). -/
+def appEqAll : MetaM (Array AppEqLaw) := do
+  let laws := appEqExt.getState (← getEnv)
+  return laws.all.qsort (fun a b => a.name.toString < b.name.toString)
 
 /-! ## Walker v2 (arc-9 S3, design §11.3): the state-atom opacity set.
 

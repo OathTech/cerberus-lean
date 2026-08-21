@@ -613,5 +613,25 @@ theorem storeI_t5 (n : Int) (k : Nat) (v : Int) :
     (hatomic := rfl) (hbytes := by exact i2b_t5 _ v)
   simpa [iPtr, mvi, RelSem.T1.sizeof_intCty_eq] using this
 
+/-! ## THE ENTRY THEOREM (arc-11 S1 batch 3 — the exit test; the
+    §12.0-item-5 gap CLOSED and BANKED as a committed, kernel-accepted
+    theorem: the 21-round entry block from the post-prefix state to
+    the validated St-v2 family at k = 0, symbolic n and fuel).
+
+    Configuration (batch-3 archaeology, build record): the `nostates`
+    walk fires all 21 rounds as sealed per-round certificates; the
+    boundary (synthesized state vs `StT5 n 0`) closes by `app_defeq`'s
+    whole-side KERNEL defeq. `Elab.async false` pins walk determinism
+    (the process-global heartbeat ledger is shared across concurrent
+    proof elaborations — the recorded sequencing contract). -/
+
+set_option Elab.async false in
+theorem entry5_walk (n : Int) (fuel : Nat) :
+    app (dnms5 (fuel + 21) fmapEmpty [0])
+        (mkDr5 th0T5 (RelSem.T1.memD3 n) rsD5 [] 0)
+      = app (dnms5 fuel fmapEmpty [0]) (StT5 n 0) := by
+  app_walk_norm 25 nostates
+  app_defeq
+
 end RelSem.T5
 

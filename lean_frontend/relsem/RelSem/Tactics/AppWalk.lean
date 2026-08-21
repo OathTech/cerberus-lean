@@ -160,6 +160,10 @@ structure WalkCfg where
       `app_walk_preview` tactic always fails, and the surface is
       gate-banned in committed proofs. -/
   preview : Bool := false
+  /-- REPLAY restriction (arc-11 S1 batch 3, design §12.2): when set,
+      `walkOnce` considers ONLY this law — replay removes CHOICE, not
+      checking (every unification/discharge/kernel check re-runs). -/
+  replayOnly : Option Name := none
   deriving Inhabited
 
 /-- Type heads whose inhabitants the v2 normalizer never touches
@@ -1131,6 +1135,11 @@ partial def walkOnce (cfg : WalkCfg) (goal : MVarId)
   let some (α, lhs, rhs) := tgt.eq? | return none
   let lhs ← whnfCore lhs
   let cands ← appEqMatches lhs
+  -- replay (batch 3): restrict to the recorded law — choice removed,
+  -- checking identical.
+  let cands : Array AppEqLaw := match cfg.replayOnly with
+    | some n => cands.filter (fun l => l.name == n)
+    | none => cands
   if verbose then
     logInfo m!"app_walk?: {cands.size} candidate(s):       {cands.map (·.name)}"
   -- (A-F4 cleanup, arc-11 S1: the dead `verbose && false` raw-attempt
@@ -1341,15 +1350,26 @@ def normWalkCfg (atoms : NameSet) : WalkCfg :=
 
 /-- `app_walk_norm` / `app_walk_norm n` — the normalizing walk with
     the per-stage certificate emitter ON by default (arc-11 S1;
-    formerly the `app_walk_norm!` surface, now retired). -/
-syntax (name := appWalkNorm) "app_walk_norm" (ppSpace num)? : tactic
+    formerly the `app_walk_norm!` surface, now retired).
+
+    `app_walk_norm n nostates` — state SEALING off (facts/rounds
+    still sealed): the measured entry-block configuration (batch-3
+    archaeology: the sealStates lane stops early at the entry store-i
+    round — S2 register item — while the nostates lane walks 21/21
+    and leaves a boundary the kernel closes stably; on the iteration
+    corpus the sealed lane reaches further, 44 vs 38 of 79, so the
+    SEALED default stands per F12-4). -/
+syntax (name := appWalkNorm) "app_walk_norm" (ppSpace num)?
+  (ppSpace &"nostates")? : tactic
 
 elab_rules : tactic
-  | `(tactic| app_walk_norm $[$n:num]?) => do
+  | `(tactic| app_walk_norm $[$n:num]? $[nostates%$ns]?) => do
     let budget := match n with | some n => n.getNat | none => 64
     let goal ← getMainGoal
     let atoms ← stateAtoms
-    match ← walkLoop (normWalkCfg atoms) goal budget false with
+    let cfg := normWalkCfg atoms
+    let cfg := if ns.isSome then { cfg with sealStates := false } else cfg
+    match ← walkLoop cfg goal budget false with
     | some g => replaceMainGoal [g]
     | none => replaceMainGoal []
 
@@ -1429,6 +1449,132 @@ elab_rules : tactic
     match res with
     | some g => replaceMainGoal [g]
     | none => replaceMainGoal []
+
+/-! ## Record → checked replay (arc-11 S1 batch 3, design §12.2).
+    The trace is UNTRUSTED DATA: replay removes CHOICE (the law
+    search), never CHECKING — every unification, discharge, and
+    kernel obligation re-runs; the outputs are ordinary kernel-checked
+    declarations indistinguishable from a discovery walk's. -/
+
+/-- The kit component of the stability fingerprint: hash over the
+    name-sorted `@[app_eq]` registry (name, key path, priority,
+    statement hash). Freshness UX, never a trust surface. -/
+def kitFingerprint : MetaM UInt64 := do
+  let laws ← appEqAll
+  let env ← getEnv
+  let mut h : UInt64 := 7
+  for l in laws do
+    h := mixHash h l.name.hash
+    h := mixHash h (UInt64.ofNat l.prio)
+    for k in l.keys do
+      h := mixHash h (hash k)
+    if let some ci := env.find? l.name then
+      h := mixHash h ci.type.hash
+  return h
+
+/-- Goal-statement key: hash of the pretty-printed goal (stable
+    across elaborations — raw `Expr.hash` is fvar-id-sensitive). -/
+def goalKey (g : MVarId) : MetaM UInt64 :=
+  g.withContext do
+    return (toString (← ppExpr (← instantiateMVars (← g.getType)))).hash
+
+/-- `app_walk_rec name` / `app_walk_rec name n` — a NORMAL sealed
+    walk (full closing power, ordinary certificates) that additionally
+    RECORDS its trace under `name` in the persistent store, stamped
+    with the stability fingerprint. Committed-legal: recording is the
+    real walk plus data. -/
+syntax (name := appWalkRec) "app_walk_rec" ident (ppSpace num)? : tactic
+
+/-- Record/replay SEQUENCING CONTRACT (batch 3, recorded): under
+    parallel proof elaboration (`Elab.async`, the default), a
+    tactic-time env-extension write is not reliably visible to other
+    declarations, and concurrent walks share the process-global
+    heartbeat ledger (nondeterministic stop points). Recording and
+    replaying declarations must therefore sit under
+    `set_option Elab.async false` (file- or declaration-scoped); the
+    elabs below warn when the option is on. This is a determinism/
+    visibility contract, never a soundness surface (everything is
+    kernel-checked either way). -/
+def warnIfAsync (tac : String) : TacticM Unit := do
+  if (← getOptions).get `Elab.async true then
+    logWarning m!"{tac}: Elab.async is ON — cross-declaration trace \
+      visibility and walk determinism are not guaranteed; wrap the \
+      recording/replaying declarations in `set_option Elab.async \
+      false`"
+
+elab_rules : tactic
+  | `(tactic| app_walk_rec $id:ident $[$n:num]?) => do
+    warnIfAsync "app_walk_rec"
+    let budget := match n with | some n => n.getNat | none => 64
+    let goal ← getMainGoal
+    let atoms ← stateAtoms
+    let tr ← IO.mkRef ({} : TraceSt)
+    let cfg : WalkCfg := { normWalkCfg atoms with traceRef := some tr }
+    let gk ← goalKey goal
+    let res ← walkLoop cfg goal budget false
+    let fp : Fingerprint :=
+      { kit := ← kitFingerprint, engine := engineRev, goal := gk }
+    storeWalkTrace id.getId { (← tr.get).toTrace with fp := some fp }
+    match res with
+    | some g => replaceMainGoal [g]
+    | none => replaceMainGoal []
+
+/-- `app_walk_replay name` — CHECKED REPLAY (§12.2): fetch the stored
+    trace; REFUSE loudly on fingerprint staleness (engineRev / kit
+    registry / goal statement); then walk exactly the recorded law
+    sequence (choice removed, checking identical). Divergence = a
+    loud error naming the step — NO fallback to search. Closure
+    tactics (e.g. `app_defeq`) stay explicit in the proof text. -/
+syntax (name := appWalkReplay) "app_walk_replay" ident : tactic
+
+elab_rules : tactic
+  | `(tactic| app_walk_replay $id:ident) => do
+    warnIfAsync "app_walk_replay"
+    let goal ← getMainGoal
+    let some t ← (findWalkTrace id.getId : TacticM _)
+      | throwError "app_walk_replay: no stored trace named '{id.getId}'"
+    if let some fp := t.fp then
+      unless fp.engine == engineRev do
+        throwError "app_walk_replay: STALE trace '{id.getId}' — \
+          engineRev {fp.engine} ≠ current {engineRev}; re-record"
+      unless fp.kit == (← kitFingerprint) do
+        throwError "app_walk_replay: STALE trace '{id.getId}' — the \
+          @[app_eq] registry changed since recording; re-record"
+      unless fp.goal == (← goalKey goal) do
+        throwError "app_walk_replay: trace '{id.getId}' was recorded \
+          for a DIFFERENT goal statement; re-record"
+    let atoms ← stateAtoms
+    let mut g := goal
+    let mut i : Nat := 0
+    for r in t.rounds do
+      match r.fired with
+      | none => break  -- the recorded stuck/boundary round
+      | some f =>
+        let cfg : WalkCfg :=
+          { normWalkCfg atoms with replayOnly := some f.law }
+        let hb0 ← IO.getNumHeartbeats
+        let step? ← tryCatchRuntimeEx
+          (Core.withCurrHeartbeats (walkOnce cfg g false))
+          (fun _ => pure none)
+        IO.setNumHeartbeats hb0
+        match step? with
+        | some (_, some g') => g := g'; i := i + 1
+        | some (_, none) => replaceMainGoal []; return
+        | none =>
+          throwError "app_walk_replay: step {i}: recorded law \
+            {f.law} no longer applies — the trace has diverged; \
+            re-record"
+    if t.outcome == some .closedRfl then
+      let hb1 ← IO.getNumHeartbeats
+      let rflRes ← attempt candidateBudget (do
+          let some (_, l, r) :=
+              (← instantiateMVars (← g.getType)).consumeMData.eq?
+            | failure
+          unless (← isDefEq l r) do failure
+          g.assign (← mkEqRefl l))
+      IO.setNumHeartbeats hb1
+      if rflRes.isSome then replaceMainGoal []; return
+    replaceMainGoal [g]
 
 /-- `app_defeq` — close an equation goal by KERNEL defeq: the two
     sides are checked with `Kernel.isDefEq` (closure-based reduction —
