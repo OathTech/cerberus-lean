@@ -31,6 +31,10 @@
 # Environment:
 #   TIMEOUT_SECS       per-side per-test timeout (default here: 15)
 #   CSMITH_SEED_START  deterministic sequential seeds from this value
+#   CSMITH_FLAGS       (arc-10 S4) space-separated csmith flag override —
+#                      REPLACES the default kit flag set below (the
+#                      phase-1 lane portfolio passes per-lane flags);
+#                      unset = the historical kit flags, unchanged
 #
 # Exit: 1 if any bug (FAIL/MISMATCH/DIFF/LEAN_CRASH) was found, else 0.
 # Harness-internal errors also exit 1 (fail-closed).
@@ -75,15 +79,20 @@ for i in $(seq 1 "$NUM_TESTS"); do
     else
         seed=$RANDOM$RANDOM
     fi
-    csmith \
-        --no-argc \
-        --no-bitfields \
-        --seed "$seed" \
-        --max-funcs 3 \
-        --max-block-depth 3 \
-        --max-block-size 4 \
-        --max-expr-complexity 3 \
-        2>/dev/null \
+    if [[ -n "${CSMITH_FLAGS:-}" ]]; then
+        # shellcheck disable=SC2086 — word-splitting is the interface
+        csmith --seed "$seed" ${CSMITH_FLAGS} 2>/dev/null
+    else
+        csmith \
+            --no-argc \
+            --no-bitfields \
+            --seed "$seed" \
+            --max-funcs 3 \
+            --max-block-depth 3 \
+            --max-block-size 4 \
+            --max-expr-complexity 3 \
+            2>/dev/null
+    fi \
       | sed 's|#include "csmith.h"|#define CSMITH_MINIMAL\n#include "csmith_cerberus.h"|' \
       > "$GEN_DIR/csmith_${seed}.c"
     [[ -s "$GEN_DIR/csmith_${seed}.c" ]] || { echo "Error: csmith produced no output (seed $seed)" >&2; exit 1; }

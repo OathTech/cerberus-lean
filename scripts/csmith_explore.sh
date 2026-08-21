@@ -85,7 +85,11 @@ done
 # the generated source (header excluded by construction: markers are counted
 # on the .c file minus its #include line region — csmith puts all program
 # text after the include; the shim header is constant across configs anyway).
-MARKER_NAMES=(volatile union struct packed ptr_deref addr_of array2plus array1 goto int64 bitfield div_mod safe_math incdec compound_assn comma_in_expr embedded_assn const inline_fn float_use argc_use func_ptr)
+# NOTE: no marker for comma-operators / embedded-assignments — no
+# grep-reliable source signature exists (early drafts' patterns
+# false-positived on calls and multi-declarator inits); those axes are
+# controlled by their flags, not measured.
+MARKER_NAMES=(volatile union struct packed ptr_deref addr_of array2plus array1 goto int64 bitfield div_mod safe_math incdec compound_assn const inline_fn float_use argc_use func_ptr)
 marker_pat() {
     case "$1" in
         volatile)      echo 'volatile' ;;
@@ -103,8 +107,6 @@ marker_pat() {
         safe_math)     echo 'safe_(add|sub|mul|lshift|rshift|unary)' ;;
         incdec)        echo '\+\+|--' ;;
         compound_assn) echo '(\+=|-=|\*=|/=|%=|\&=|\|=|\^=|<<=|>>=)' ;;
-        comma_in_expr) echo '\([^;()]*,[^;()]*\)[^;]*;' ;;   # approximate
-        embedded_assn) echo '=[^=;]*[^=!<>+*/%&|^-]=[^=]' ;; # approximate
         const)         echo '\bconst\b' ;;
         inline_fn)     echo '\binline\b' ;;
         float_use)     echo '\b(float|double)\b' ;;
@@ -146,8 +148,9 @@ for i in $(seq 1 "$N"); do
     if [[ "$status" == OK ]]; then
         OK_FILES+=("$f")
         # markers are counted on comment-stripped source (the csmith
-        # "// Options:" banner would otherwise match flag names)
-        stripped=$(grep -vE '^[[:space:]]*(//|/\*|\*)' "$f" | sed 's|/\*.*\*/||g')
+        # "Options:" banner and the trailing "XXX ..." stats block are
+        # comments and would otherwise match flag/construct names)
+        stripped=$(perl -0777 -pe 's{/\*.*?\*/}{}gs; s{//[^\n]*}{}g' "$f")
         { printf '%s\t%s' "$seed" "$status"
           for m in "${MARKER_NAMES[@]}"; do
               if grep -qE "$(marker_pat "$m")" <<<"$stripped"; then printf '\t1'; else printf '\t0'; fi
