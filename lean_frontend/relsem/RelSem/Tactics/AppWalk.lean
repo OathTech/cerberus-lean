@@ -53,7 +53,12 @@ def attempt {α : Type} (hb : Nat) (x : MetaM α) (dbg : Bool := false) :
     MetaM (Option α) := do
   let curMax := (← readThe Core.Context).maxHeartbeats
   let hb := if curMax == 0 then hb else min hb curMax
-  Core.withCurrHeartbeats do
+  -- LEDGERED (D3): an attempt's consumption is settled locally — the
+  -- window is its own cap, and the global counter is RESTORED on exit
+  -- so enclosing meters bill only their own glue (the walkLoop
+  -- per-round accounting model, pushed down to every attempt).
+  let hb0 ← IO.getNumHeartbeats
+  let res ← Core.withCurrHeartbeats do
     withTheReader Core.Context
         (fun ctx => { ctx with maxHeartbeats := hb }) do
       tryCatchRuntimeEx
@@ -65,6 +70,8 @@ def attempt {α : Type} (hb : Nat) (x : MetaM α) (dbg : Bool := false) :
         (fun ex => do
           if dbg then logInfo m!"app_walk?: attempt ABORTED — {ex.toMessageData}"
           return none)
+  IO.setNumHeartbeats hb0
+  return res
 
 /-- The per-candidate heartbeat window (a quarter of the default
     200000; every legitimate mechanical discharge measured so far fits
@@ -174,7 +181,33 @@ partial def evalScalar (scalarHeads : List Name) : Nat → Expr → MetaM Expr
     accounting made literal). -/
 def mkAuxRfl (lhs rhs : Expr) : MetaM Expr := do
   let ty ← mkEq lhs rhs
-  mkAuxTheorem ty (← mkEqRefl lhs) (zetaDelta := false)
+  -- primary path: mkAuxTheorem (elaborator-side closure + check).
+  -- On a BUDGET trip there, fall back to a RAW addDecl: close the
+  -- type/value over fvars ourselves and let the KERNEL be the only
+  -- checker (heartbeat-free) — the elaborator re-verification of a
+  -- heavy defeq is exactly what the kernel engine exists to avoid.
+  match ← tryCatchRuntimeEx
+      (attempt (100000 * 1000)
+        (mkAuxTheorem ty (← mkEqRefl lhs) (zetaDelta := false)))
+      (fun _ => pure none) with
+  | some pf => return pf
+  | none =>
+    let value ← mkEqRefl lhs
+    let ty' ← instantiateMVars ty
+    let value' ← instantiateMVars value
+    -- fvar closure (shared for type and value)
+    let fvars := (collectFVars {} ty').fvarIds
+    let fvarExprs := fvars.map mkFVar
+    let tyAbs ← mkForallFVars fvarExprs ty'
+    let valAbs ← mkLambdaFVars fvarExprs value'
+    if tyAbs.hasExprMVar || valAbs.hasExprMVar then
+      throwError "mkAuxRfl raw fallback: residual mvars"
+    let lvls := (collectLevelParams {} tyAbs).params.toList
+    let nm ← mkFreshUserName `walkRfl
+    let nm := nm.appendAfter "_aux"
+    addDecl <| .thmDecl {
+      name := nm, levelParams := lvls, type := tyAbs, value := valAbs }
+    return mkAppN (mkConst nm (lvls.map .param)) fvarExprs
 
 /-- KERNEL-BACKED whnf for discovery computation (arc-9 S3): the
     elaborator's substitution-based whnf was MEASURED to blow the
@@ -184,17 +217,51 @@ def mkAuxRfl (lhs rhs : Expr) : MetaM Expr := do
     arc-7 hand style. Falls back to meta whnf on mvars/kernel
     errors. Proofs are unaffected (the assigned values are re-checked
     by the kernel at declaration end as always). -/
-def kWhnf (e : Expr) : MetaM Expr := do
+def kWhnf (e : Expr) (avatars : Bool := false) : MetaM Expr := do
   let e ← instantiateMVars e
   if e.hasExprMVar then
-    whnf e
+    if !avatars then
+      return (← whnf e)
+    -- AVATAR ABSTRACTION (D3, opt-in — v3 lanes only; the kernel
+    -- ignores the atom discipline, so v1/v2 callers keep the
+    -- elaborator path): an unassigned mvar (e.g. the abstraction
+    -- avatar of a symbolic variable) is just an atom — present it as
+    -- a fresh local constant, kernel-whnf, then restore. Falls back
+    -- to the elaborator only if an mvar's own type carries mvars.
+    let mvs := (e.collectMVars {}).result
+    let mut lctx ← getLCtx
+    let mut e' := e
+    let mut pairs : Array (Expr × Expr) := #[]
+    let mut ok := true
+    for m in mvs do
+      let mty ← instantiateMVars (← m.getType)
+      if mty.hasExprMVar || mty.hasFVar then
+        ok := false
+        break
+      let fid ← mkFreshFVarId
+      lctx := lctx.mkLocalDecl fid ((`kAtom).appendAfter (toString pairs.size)) mty
+      let fv := mkFVar fid
+      e' := e'.replace (fun x => if x == mkMVar m then some fv else none)
+      pairs := pairs.push (fv, mkMVar m)
+    if !ok then
+      pure ((← attempt (50000 * 1000) (whnf e)).getD e)
+    else
+      match Lean.Kernel.whnf (← getEnv) lctx e' with
+      | .ok r =>
+        let mut r := r
+        for (fv, mv) in pairs do
+          r := r.replace (fun x => if x == fv then some mv else none)
+        return r
+      | .error _ =>
+        -- kernel refused (recursion pit); capped elaborator fallback —
+        -- on a trip the caller gets the term unreduced (sealable)
+        pure ((← attempt (50000 * 1000) (whnf e)).getD e)
   else do
-    let t0 ← IO.monoMsNow
     match Lean.Kernel.whnf (← getEnv) (← getLCtx) e with
     | .ok e' =>
       return e'
     | .error _ =>
-      whnf e
+      pure ((← attempt (50000 * 1000) (whnf e)).getD e)
 
 /-- PROOF-CARRYING scalar evaluation (D3 emitter): returns
     `(v, proof : e = v)` with the kernel obligations DECOMPOSED —
@@ -499,6 +566,178 @@ def normAppState (cfg : WalkCfg) (e : Expr) : MetaM Expr := do
         return mkAppN e.getAppFn (args.set! i st')
   return e
 
+/-- Kernel-engine spine normalizer: kernel-whnf at each level,
+    recursing into constructor fields (heartbeat-free fallback for
+    when the elaborator normalizer trips the ambient budget). -/
+partial def kNormCompute (d : Nat) (e : Expr) : MetaM Expr := do
+  if d == 0 then return e
+  let e1 ← kWhnf e
+  let hd := e1.getAppFn
+  if hd.isConst then
+    if let some (.ctorInfo ci) := (← getEnv).find? hd.constName! then
+      let args := e1.getAppArgs
+      let mut out := args
+      for i in [ci.numParams : args.size] do
+        out := out.set! i (← kNormCompute (d-1) args[i]!)
+      return mkAppN hd out
+  return e1
+
+/-- Seal the LEAVES of a constructor spine as auxiliary definitions:
+    constructor structure stays visible (pattern hypotheses must still
+    match), while each large non-constructor leaf becomes a constant —
+    downstream traversals (occurs checks, whnfCore, congruence) see
+    small terms and the kernel unfolds on demand. -/
+partial def sealCtorLeaves (d : Nat) (e : Expr) : MetaM Expr := do
+  let sealIfBig (x : Expr) : MetaM Expr := do
+    let already :=
+      match x.getAppFn with
+      | .const (.str _ t) _ => t.endsWith "_aux"
+      | _ => false
+    if already || x.approxDepth.toNat ≤ 24 then return x
+    -- capped: type inference can be arbitrarily deep on continuation
+    -- lambdas — an unsealable leaf stays raw rather than burning
+    pure ((← attempt (100000 * 1000) (do
+      let nm := (← mkFreshUserName `walkVal).appendAfter "_aux"
+      mkAuxDefinition nm (← inferType x) x (compile := false))).getD x)
+  if d == 0 then return (← sealIfBig e)
+  -- normalize to constructor form first (kernel engine): an
+  -- unreduced element would otherwise be sealed whole, hiding its
+  -- constructor from law dispatch (DiscrTree keys).
+  let e0 := e
+  let e ← if e.approxDepth.toNat > 24 then kWhnf e (avatars := true) else pure e
+  let hd := e.getAppFn
+  if hd.isConst then
+    if let some (.ctorInfo ci) := (← getEnv).find? hd.constName! then
+      let args := e.getAppArgs
+      let mut out := args
+      for i in [ci.numParams : args.size] do
+        out := out.set! i (← sealCtorLeaves (d-1) args[i]!)
+      return mkAppN hd out
+  let r ← sealIfBig e
+  -- a leaf that could not be sealed keeps its ORIGINAL (pre-whnf)
+  -- spelling — never trade a compact unreduced form for a large
+  -- materialized one without a seal to pay for it
+  if !r.getAppFn.isConst || r.approxDepth.toNat ≤ e0.approxDepth.toNat then
+    return r
+  if (match r.getAppFn with
+      | .const (.str _ t) _ => t.endsWith "_aux"
+      | _ => false) then
+    return r
+  return e0
+
+/-- Collect closed `decide P` applications in an expression
+    (bounded traversal; duplicates deduped). -/
+partial def collectDecides (e : Expr) : Array Expr := Id.run do
+  let mut out : Array Expr := #[]
+  let mut stack : Array Expr := #[e]
+  let mut fuel := 100000
+  while h : stack.size > 0 do
+    if fuel == 0 then break
+    fuel := fuel - 1
+    let x := stack[stack.size - 1]
+    stack := stack.pop
+    if x.isAppOfArity ``decide 2 && !x.hasLooseBVars then
+      if !out.any (Expr.equal · x) then out := out.push x
+    match x with
+    | .app f a => stack := stack.push f |>.push a
+    | .lam _ _ b _ => stack := stack.push b
+    | .letE _ _ v b _ => stack := stack.push v |>.push b
+    | .mdata _ b => stack := stack.push b
+    | .proj _ _ b => stack := stack.push b
+    | _ => pure ()
+  return out
+
+/-- Find a closed `decide P` subterm of `e` with a matching context
+    hypothesis `h : P` (or `h : ¬P`). -/
+def findDecideFact (e : Expr) : MetaM (Option (Expr × Expr × Bool)) := do
+  for dec in collectDecides e do
+    let P := dec.getAppArgs[0]!
+    for decl in (← getLCtx) do
+      if decl.isImplementationDetail then continue
+      let dty ← instantiateMVars decl.type
+      if dty.isMVar then continue
+      -- small props: full-transparency defeq (literal spellings vary:
+      -- `Int.ofNat 0` vs `OfNat.ofNat 0`; bounds sit under matcher
+      -- spellings like `maxIval`)
+      if (← observing? (do unless (← isDefEq dty P) do failure)).isSome then
+        return some (dec, decl.toExpr, true)
+      if dty.isAppOfArity ``Not 1 then
+        if (← observing? (do
+            unless (← isDefEq dty.appArg! P) do failure)).isSome then
+          return some (dec, decl.toExpr, false)
+  return none
+
+/-- DECIDE-REWRITING evaluation (D3, the T1-s4 ladder mechanized).
+
+    Kernel-whnf until stuck. A symbolic `decide P` blocking the
+    reduction generally sits INSIDE an unreduced recursor major /
+    matcher discriminant (it materializes only transiently during
+    whnf), so on a stuck form we CHASE: descend into the stuck
+    position, recursively rewrite there, and MATERIALIZE the advanced
+    subterm back into the parent via an `Eq.ndrec` motive step (the
+    matcher result types are syntactically discr-dependent, so
+    `congrArg` does not apply); then resume whnf at the parent. Every
+    kernel obligation stays small: aux-rfl segments (pure definitional
+    advances) and one-position congruences (the rewrites). Returns
+    `(value, proof : e = value, progressed)`. -/
+partial def kWhnfWithFacts (d : Nat) (e : Expr) :
+    MetaM (Expr × Expr × Bool) := do
+  let e1 ← kWhnf e (avatars := true)
+  let changed := !(Expr.equal e e1)
+  let p1 ← if changed then mkAuxRfl e e1 else mkEqRefl e
+  if d == 0 then return (e1, p1, changed)
+  -- (a) a decide visible at this level with a context fact: rewrite,
+  -- materialize its Boolean, resume.
+  if let some (dec, hpf, pos) ← findDecideFact e1 then
+    let bval := if pos then mkConst ``Bool.true else mkConst ``Bool.false
+    let hdec ← if pos then mkAppM ``decide_eq_true #[hpf]
+               else mkAppM ``decide_eq_false #[hpf]
+    let motiveBody ← kabstract e1 dec
+    if motiveBody.hasLooseBVars then
+      let τ ← inferType e1
+      let u ← getLevel τ
+      let eqMotive := Lean.mkLambda `x .default (mkConst ``Bool)
+        (mkApp3 (mkConst ``Eq [u]) τ e1 motiveBody)
+      let base ← mkExpectedTypeHint (← mkEqRefl e1)
+        (mkApp3 (mkConst ``Eq [u]) τ e1 (motiveBody.instantiate1 dec))
+      let p2 ← mkEqNDRec eqMotive base hdec
+      let e2 := motiveBody.instantiate1 bval
+      let (v, p3, _) ← kWhnfWithFacts (d-1) e2
+      return (v, ← mkEqTrans p1 (← mkEqTrans p2 p3), true)
+  -- (b) stuck on a recursor/matcher: chase into the blocking
+  -- position(s), advance there, materialize, resume here.
+  let hd := e1.getAppFn
+  if hd.isConst && e1.isApp then
+    let n := hd.constName!
+    let args := e1.getAppArgs
+    let positions : Array Nat ← do
+      if ((← getEnv).find? n).any (fun ci => ci matches .recInfo _) then
+        pure #[args.size - 1]
+      else if let some mi ← Lean.Meta.getMatcherInfo? n then
+        pure <| (Array.range mi.numDiscrs).map (mi.numParams + 1 + ·)
+      else pure #[]
+    for i in positions do
+      if h : i < args.size then
+        let (sv, spf, sChanged) ← kWhnfWithFacts (d-1) args[i]
+        if sChanged then
+          let aty ← inferType args[i]
+          let τ ← inferType e1
+          let cAt := fun (x : Expr) => mkAppN hd (args.set i x (by simpa using h))
+          let u ← getLevel τ
+          let eqMotive := Lean.mkLambda `x .default aty
+            (mkApp3 (mkConst ``Eq [u]) τ e1 (cAt (mkBVar 0)))
+          let base ← mkExpectedTypeHint (← mkEqRefl e1)
+            (mkApp3 (mkConst ``Eq [u]) τ e1 (cAt args[i]))
+          let p2 ← mkEqNDRec eqMotive base spf
+          let e2 := cAt sv
+          let e3 ← kWhnf e2 (avatars := true)
+          if Expr.equal e3 e2 then
+            continue
+          let p3 ← mkAuxRfl e2 e3
+          let (v, p4, _) ← kWhnfWithFacts (d-1) e3
+          return (v, ← mkEqTrans p1 (← mkEqTrans p2 (← mkEqTrans p3 p4)), true)
+  return (e1, p1, changed)
+
 /-- Discharge one side hypothesis of a candidate law, mechanically:
     computed-value assignment (normalize-and-assign for a bare-mvar
     RHS), `assumption`, then (for app-equation hyps) a one-shot
@@ -510,7 +749,8 @@ partial def dischargeHyp (cfg : WalkCfg) (fuel : Nat) (h : MVarId) : MetaM Bool 
   let ty ← instantiateMVars (← h.getType)
   -- (0) computed-value hypothesis: `lhs = ?m` with a bare unassigned
   -- mvar RHS — normalize the computation's spine and assign.
-  if let some (_, lhs, rhs) := ty.eq? then
+  if let some (eqTy, lhs, rhs) := ty.eq? then
+    let _ := eqTy
     let rhsCtorMvar : MetaM Bool := do
       -- v2: an RHS that is a constructor spine over mvars (e.g.
       -- `(NDactive ?v, ?σ)`, `Result (Defined ?z, ?rs)`) is also a
@@ -534,6 +774,16 @@ partial def dischargeHyp (cfg : WalkCfg) (fuel : Nat) (h : MVarId) : MetaM Bool 
           dbg_trace "dh[{fuel}]: lane guard false: mv={rhs.hasExprMVar} app={lhs.isAppOf `RelSem.app} hd={rhs.getAppFn}"
         return r
     if (← unassignedMVar) then
+     -- ENUMERATION SHORT-CIRCUIT (D3, v3 lane): a bare-mvar step
+     -- enumeration (`step_ctx … = ?steps`) is consumed only by the
+     -- selection hypothesis, which kernel-whnfs its LHS anyway —
+     -- plant the enumeration VERBATIM with a rfl certificate; the
+     -- selection's own certificate carries the real computation.
+     if cfg.sealStates && rhs.isMVar && lhs.isAppOf `step_ctx then
+       if (← isDefEq rhs lhs) then
+         h.assign (← mkEqRefl lhs)
+         if cfg.trace then dbg_trace "dh[{fuel}]: enum verbatim-plant"
+         return true
      if true then
       let st ← saveState
       match ← attempt cfg.candBudget (do
@@ -558,13 +808,49 @@ partial def dischargeHyp (cfg : WalkCfg) (fuel : Nat) (h : MVarId) : MetaM Bool 
           -- structurally different form whose kernel bridge
           -- deep-recurses (S3 hfind finding).
           let isSelection := rhs.isApp && rhs.getAppFn.isConstOf ``Option.some
-          let v ← if cfg.norm then
-                    if isSelection then kWhnf lhs
-                    else normCompute cfg.atoms cfg.depth lhs
-                  else normSpine 4 lhs
-          if (← isDefEq rhs v) then
+          let v? ← do
+            if cfg.norm then
+              tryCatchRuntimeEx
+                ((if isSelection then kWhnf lhs
+                  else normCompute cfg.atoms cfg.depth lhs) <&> some)
+                (fun _ => pure none)
+            else
+              -- v1: original behavior, no fallback lane
+              (normSpine 4 lhs) <&> some
+          -- A budget trip inside the normalizer exhausted THIS
+          -- attempt's heartbeat window; the kernel-engine fallback
+          -- and everything after it run under a FRESH window (the
+          -- fallback work itself is kernel-side, heartbeat-free).
+          let contFresh := v?.isNone
+          let v ← match v? with
+            | some v => pure v
+            | none => do
+              if cfg.trace then
+                dbg_trace "dh[{fuel}]: normCompute TRIPPED ({(← IO.monoMsNow) - t0}ms); kWhnf fallback"
+              Core.withCurrHeartbeats (kWhnf lhs (avatars := cfg.sealStates))
+          if cfg.trace then
+            dbg_trace "dh[{fuel}]: lane v ready ({(← IO.monoMsNow) - t0}ms)"
+          (if contFresh then Core.withCurrHeartbeats else id) do
+          -- VALUE SEALING (v3 lane): huge computed values (step
+          -- enumerations embedding whole continuations) get their
+          -- constructor-spine LEAVES sealed before planting.
+          let v ← do
+            if cfg.sealStates && v.approxDepth.toNat > 24 then
+              let v' ← sealCtorLeaves 12 v
+              if cfg.trace then
+                dbg_trace "dh[{fuel}]: sealed leaves (depth {v.approxDepth.toNat} → {v'.approxDepth.toNat})"
+              pure v'
+            else pure v
+          let defeqOk ← isDefEq rhs v
+          if cfg.trace then
+            dbg_trace "dh[{fuel}]: lane isDefEq={defeqOk} ({(← IO.monoMsNow) - t0}ms)"
+          if defeqOk then
             if cfg.sealFacts then
-              let pf ← try mkAuxRfl lhs (← instantiateMVars rhs)
+              -- fresh window: the value computation/unification above
+              -- may have consumed this attempt's budget; the
+              -- certificate build is mostly kernel-side work
+              let pf ← Core.withCurrHeartbeats do
+                try mkAuxRfl lhs (← instantiateMVars rhs)
                 catch ex =>
                   if cfg.trace then
                     dbg_trace "dh[{fuel}]: mkAuxRfl THREW: {← ex.toMessageData.toString}"
@@ -590,7 +876,31 @@ partial def dischargeHyp (cfg : WalkCfg) (fuel : Nat) (h : MVarId) : MetaM Bool 
               h.assign (← mkEqRefl lhs)
             return true
           else
-            if cfg.trace then dbg_trace "dh[{fuel}]: lane isDefEq FAILED"
+            -- DECIDE-FACTS route (D3): a run-state crossing stuck on
+            -- a symbolic `decide P` with a context fact `h : P` —
+            -- chase-rewrite-and-resume (kWhnfWithFacts), then
+            -- normalize the resumed value; the certificate is the
+            -- facts chain composed with an aux-rfl bridge.
+            if cfg.norm && cfg.sealFacts && !isSelection
+                && !lhs.isAppOf `RelSem.app then
+              let (v0, pf0, prog) ←
+                try kWhnfWithFacts 24 lhs
+                catch ex =>
+                  if cfg.trace then
+                    dbg_trace "dh[{fuel}]: kWhnfWithFacts THREW: {(← ex.toMessageData.toString).take 300}"
+                  throw ex
+              if prog && !(Expr.equal v0 v) then
+                let v1 ← tryCatchRuntimeEx
+                  (normCompute cfg.atoms cfg.depth v0) (fun _ => pure v0)
+                if (← isDefEq rhs v1) then
+                  let rhs' ← instantiateMVars rhs
+                  let pfB ← if Expr.equal v0 rhs' then mkEqRefl v0
+                            else mkAuxRfl v0 rhs'
+                  h.assign (← mkEqTrans pf0 pfB)
+                  if cfg.trace then dbg_trace "dh[{fuel}]: decide-facts HIT"
+                  return true
+            if cfg.trace then
+              dbg_trace "dh[{fuel}]: lane isDefEq FAILED; v-head: {v.getAppFn}"
             return false) with
       | some true => return true
       | _ =>
@@ -614,10 +924,27 @@ partial def dischargeHyp (cfg : WalkCfg) (fuel : Nat) (h : MVarId) : MetaM Bool 
         let dty ← instantiateMVars decl.type
         if let some (_, dlhs, _) := dty.eq? then
           if dlhs.getAppFn == lhsHead then
-            if (← observing? (do
-                unless (← isDefEq dty ty) do failure
-                h.assign decl.toExpr)).isSome then
-              return true
+            -- OP PRE-MATCH (D3): for `app comp mem`-shaped facts,
+            -- require the COMPUTATION arguments to unify FIRST
+            -- (small terms, no states) — a wrong-op fact must miss
+            -- fast; full-type unification on a mismatched op was
+            -- measured to fall into whole-computation reduction.
+            -- Both defeq steps are BUDGET-CAPPED (ledgered): a fact
+            -- that cannot be decided quickly is a MISS, never a
+            -- window burn.
+            let opOk ← do
+              if lhs.isAppOfArity `RelSem.app 7
+                  && dlhs.isAppOfArity `RelSem.app 7 then
+                pure <| (← attempt (20000 * 1000) (do
+                  unless (← isDefEq dlhs.getAppArgs[5]!
+                      lhs.getAppArgs[5]!) do failure)).isSome
+              else pure true
+            if opOk then
+              if (← attempt (100000 * 1000) (do
+                  unless (← isDefEq dty ty) do failure
+                  h.assign decl.toExpr)).isSome then
+                if cfg.trace then dbg_trace "assum HIT {decl.userName}"
+                return true
       return false
   if tried then return true
   if cfg.trace then dbg_trace "dh[{fuel}]: past-assumption ({(← IO.monoMsNow) - ta0}ms)"
@@ -625,9 +952,16 @@ partial def dischargeHyp (cfg : WalkCfg) (fuel : Nat) (h : MVarId) : MetaM Bool 
   | fuel + 1, some (_, lhs, _) =>
     -- (ii) one-shot registered law on an app-shaped hypothesis
     let t0 ← IO.monoMsNow
-    let lhs ← whnfCore lhs
+    -- capped: a pathological whnfCore / DiscrTree key computation
+    -- (matcher scrutinee chains over large embedded terms) must not
+    -- burn the enclosing window
+    let lhs ← Core.withCurrHeartbeats <| tryCatchRuntimeEx
+      (attempt (20000 * 1000) (whnfCore lhs) <&> (·.getD lhs))
+      (fun _ => pure lhs)
     let t1 ← IO.monoMsNow
-    let cands ← appEqMatches lhs
+    let cands ← Core.withCurrHeartbeats <| tryCatchRuntimeEx
+      (attempt (20000 * 1000) (appEqMatches lhs) <&> (·.getD #[]))
+      (fun _ => pure #[])
     if cfg.trace then
       dbg_trace "dh[{fuel}]: whnfCore {t1-t0}ms; cands {cands.map (·.name)} for {lhs.getAppFn}"
       if cands.isEmpty && lhs.isAppOf `RelSem.app then
@@ -654,7 +988,9 @@ partial def dischargeHyp (cfg : WalkCfg) (fuel : Nat) (h : MVarId) : MetaM Bool 
             if !(← a.mvarId!.isAssigned) then
               if (← isProp (← inferType a)) then
                 let t0 ← IO.monoMsNow
-                let okh ← dischargeHyp cfg fuel a.mvarId!
+                -- per-hyp ledger window: each discharge is internally
+                -- capped; its consumption must not bill the round
+                let okh ← Core.withCurrHeartbeats (dischargeHyp cfg fuel a.mvarId!)
                 let t1 ← IO.monoMsNow
                 if cfg.trace then
                   let ty' ← instantiateMVars (← a.mvarId!.getType)
@@ -666,13 +1002,17 @@ partial def dischargeHyp (cfg : WalkCfg) (fuel : Nat) (h : MVarId) : MetaM Bool 
                   ok := false
                   break
         unless ok do return false
-        -- any remaining non-Prop arg mvars must be determined
-        let proof ← instantiateMVars (mkAppN lemExpr args)
-        if proof.hasExprMVar then
-          if cfg.trace then dbg_trace "dh law {law.name}: RESIDUAL MVARS"
-          return false
-        h.assign proof
-        return true)
+        -- fresh window: hyp discharges may have consumed this
+        -- attempt's entire budget; assembling and planting the proof
+        -- must not inherit their bill
+        Core.withCurrHeartbeats do
+          -- any remaining non-Prop arg mvars must be determined
+          let proof ← instantiateMVars (mkAppN lemExpr args)
+          if proof.hasExprMVar then
+            if cfg.trace then dbg_trace "dh law {law.name}: RESIDUAL MVARS"
+            return false
+          h.assign proof
+          return true)
       match res with
       | some true => return true
       | _ => restoreState st
@@ -760,7 +1100,7 @@ partial def walkOnce (cfg : WalkCfg) (goal : MVarId)
         if a.isMVar then
          if !(← a.mvarId!.isAssigned) then
           if (← isProp (← inferType a)) then
-            unless (← dischargeHyp cfg 4 a.mvarId!) do
+            unless (← Core.withCurrHeartbeats (dischargeHyp cfg 4 a.mvarId!)) do
               if verbose then
                 let ty' ← instantiateMVars (← a.mvarId!.getType)
                 let lhsHead := match ty'.eq? with
@@ -770,7 +1110,7 @@ partial def walkOnce (cfg : WalkCfg) (goal : MVarId)
               ok := false
               break
       unless ok do return none
-      let proof ← instantiateMVars (mkAppN lemExpr args)
+      let proof ← Core.withCurrHeartbeats (instantiateMVars (mkAppN lemExpr args))
       if proof.hasExprMVar then return none
       let lemRhs ← instantiateMVars lemRhs
       -- terminal: the law's RHS meets the goal's RHS directly

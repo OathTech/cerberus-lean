@@ -340,5 +340,278 @@ def thL (n : Int) (k : Nat) : thread_state :=
 def StT5 (n : Int) (k : Nat) : driver_state :=
   mkDr5 (thL n k) (memL n k) (rsL k) (trL n k) (17 + 72*k)
 
+/-! ## Arc-9 S3/D3: the iteration memory-fact family (context facts
+    the walker consumes; every proof kernel-small via the Kit/Map
+    byte-fetch laws + the T1 roundtrip). -/
+
+open RelSem.Kit (tmInt_get?_insert_self tmInt_get?_insert_ne)
+
+/-- The bytemap family's n-cell is invariant (the loop never writes
+    it): induction over the per-iteration 8-insert chains. -/
+theorem bmL_get_n (n : Int) (j : Int) (hj0 : 0 ≤ j) (hj : j < 4) :
+    ∀ k, (bmL n k).get? (RelSem.T1.xAddr + j)
+      = (memD3 n).bytemap.get? (RelSem.T1.xAddr + j) := by
+  intro k
+  induction k with
+  | zero =>
+    rw [show bmL n 0
+        = (((((((((memD3 n).bytemap.insert sAddr (mkByte 0 0)).insert
+      (sAddr+1) (mkByte 0 1)).insert (sAddr+2) (mkByte 0 2)).insert
+      (sAddr+3) (mkByte 0 3)).insert iAddr (mkByte 0 0)).insert
+      (iAddr+1) (mkByte 0 1)).insert (iAddr+2) (mkByte 0 2)).insert
+      (iAddr+3) (mkByte 0 3)) from rfl]
+    rw [tmInt_get?_insert_ne _ _ (by simp [iAddr, RelSem.T1.xAddr]; omega),
+      tmInt_get?_insert_ne _ _ (by simp [iAddr, RelSem.T1.xAddr]; omega),
+      tmInt_get?_insert_ne _ _ (by simp [iAddr, RelSem.T1.xAddr]; omega),
+      tmInt_get?_insert_ne _ _ (by simp [iAddr, RelSem.T1.xAddr]; omega),
+      tmInt_get?_insert_ne _ _ (by simp [sAddr, RelSem.T1.xAddr]; omega),
+      tmInt_get?_insert_ne _ _ (by simp [sAddr, RelSem.T1.xAddr]; omega),
+      tmInt_get?_insert_ne _ _ (by simp [sAddr, RelSem.T1.xAddr]; omega),
+      tmInt_get?_insert_ne _ _ (by simp [sAddr, RelSem.T1.xAddr]; omega)]
+  | succ k ih =>
+    rw [show bmL n (k+1)
+        = ((((((((bmL n k).insert sAddr (mkByte (sV k + (k : Int)) 0)).insert
+          (sAddr+1) (mkByte (sV k + (k : Int)) 1)).insert
+          (sAddr+2) (mkByte (sV k + (k : Int)) 2)).insert
+          (sAddr+3) (mkByte (sV k + (k : Int)) 3)).insert
+          iAddr (mkByte ((k : Int) + 1) 0)).insert
+          (iAddr+1) (mkByte ((k : Int) + 1) 1)).insert
+          (iAddr+2) (mkByte ((k : Int) + 1) 2)).insert
+          (iAddr+3) (mkByte ((k : Int) + 1) 3) from rfl]
+    rw [tmInt_get?_insert_ne _ _ (by simp [iAddr, RelSem.T1.xAddr]; omega),
+      tmInt_get?_insert_ne _ _ (by simp [iAddr, RelSem.T1.xAddr]; omega),
+      tmInt_get?_insert_ne _ _ (by simp [iAddr, RelSem.T1.xAddr]; omega),
+      tmInt_get?_insert_ne _ _ (by simp [iAddr, RelSem.T1.xAddr]; omega),
+      tmInt_get?_insert_ne _ _ (by simp [sAddr, RelSem.T1.xAddr]; omega),
+      tmInt_get?_insert_ne _ _ (by simp [sAddr, RelSem.T1.xAddr]; omega),
+      tmInt_get?_insert_ne _ _ (by simp [sAddr, RelSem.T1.xAddr]; omega),
+      tmInt_get?_insert_ne _ _ (by simp [sAddr, RelSem.T1.xAddr]; omega)]
+    exact ih
+
+/-- The bytemap family always ends in the same 8-insert key pattern
+    (4 s-cell writes then 4 i-cell writes); expose it once. -/
+theorem bmL_shape (n : Int) (k : Nat) :
+    ∃ base vs vi, bmL n k
+      = ((((((((base : Std.TreeMap Int CerbMem.AbsByte).insert
+          sAddr (mkByte vs 0)).insert
+          (sAddr+1) (mkByte vs 1)).insert (sAddr+2) (mkByte vs 2)).insert
+          (sAddr+3) (mkByte vs 3)).insert iAddr (mkByte vi 0)).insert
+          (iAddr+1) (mkByte vi 1)).insert (iAddr+2) (mkByte vi 2)).insert
+          (iAddr+3) (mkByte vi 3)
+      ∧ vi = (k : Int) ∧ vs = sV k := by
+  cases k with
+  | zero => exact ⟨(memD3 n).bytemap, 0, 0, rfl, rfl, rfl⟩
+  | succ k => exact ⟨bmL n k, sV k + (k : Int), (k : Int) + 1, rfl, rfl, rfl⟩
+
+/-- i-cell reads: the last 4 inserts win. -/
+theorem bmL_get_i (n : Int) (k : Nat) :
+    ((bmL n k).get? iAddr = some (mkByte (k : Int) 0)
+    ∧ (bmL n k).get? (iAddr+1) = some (mkByte (k : Int) 1))
+    ∧ ((bmL n k).get? (iAddr+2) = some (mkByte (k : Int) 2)
+    ∧ (bmL n k).get? (iAddr+3) = some (mkByte (k : Int) 3)) := by
+  obtain ⟨base, vs, vi, hshape, hvi, hvs⟩ := bmL_shape n k
+  subst hvi hvs
+  rw [hshape]
+  refine ⟨⟨?_, ?_⟩, ?_, ?_⟩ <;>
+    simp only [tmInt_get?_insert_self,
+      tmInt_get?_insert_ne _ _ (by simp [iAddr] : (iAddr+3) ≠ iAddr),
+      tmInt_get?_insert_ne _ _ (by simp [iAddr] : (iAddr+3) ≠ iAddr+1),
+      tmInt_get?_insert_ne _ _ (by simp [iAddr] : (iAddr+3) ≠ iAddr+2),
+      tmInt_get?_insert_ne _ _ (by simp [iAddr] : (iAddr+2) ≠ iAddr),
+      tmInt_get?_insert_ne _ _ (by simp [iAddr] : (iAddr+2) ≠ iAddr+1),
+      tmInt_get?_insert_ne _ _ (by simp [iAddr] : (iAddr+1) ≠ iAddr)]
+
+/-- s-cell reads: skip the 4 i-cell inserts, then the s writes win. -/
+theorem bmL_get_s (n : Int) (k : Nat) :
+    ((bmL n k).get? sAddr = some (mkByte (sV k) 0)
+    ∧ (bmL n k).get? (sAddr+1) = some (mkByte (sV k) 1))
+    ∧ ((bmL n k).get? (sAddr+2) = some (mkByte (sV k) 2)
+    ∧ (bmL n k).get? (sAddr+3) = some (mkByte (sV k) 3)) := by
+  obtain ⟨base, vs, vi, hshape, hvi, hvs⟩ := bmL_shape n k
+  subst hvi hvs
+  rw [hshape]
+  refine ⟨⟨?_, ?_⟩, ?_, ?_⟩ <;>
+    simp only [tmInt_get?_insert_self,
+      tmInt_get?_insert_ne _ _ (by simp [iAddr, sAddr] : iAddr ≠ sAddr),
+      tmInt_get?_insert_ne _ _ (by simp [iAddr, sAddr] : iAddr ≠ sAddr+1),
+      tmInt_get?_insert_ne _ _ (by simp [iAddr, sAddr] : iAddr ≠ sAddr+2),
+      tmInt_get?_insert_ne _ _ (by simp [iAddr, sAddr] : iAddr ≠ sAddr+3),
+      tmInt_get?_insert_ne _ _ (by simp [iAddr, sAddr] : (iAddr+1) ≠ sAddr),
+      tmInt_get?_insert_ne _ _ (by simp [iAddr, sAddr] : (iAddr+1) ≠ sAddr+1),
+      tmInt_get?_insert_ne _ _ (by simp [iAddr, sAddr] : (iAddr+1) ≠ sAddr+2),
+      tmInt_get?_insert_ne _ _ (by simp [iAddr, sAddr] : (iAddr+1) ≠ sAddr+3),
+      tmInt_get?_insert_ne _ _ (by simp [iAddr, sAddr] : (iAddr+2) ≠ sAddr),
+      tmInt_get?_insert_ne _ _ (by simp [iAddr, sAddr] : (iAddr+2) ≠ sAddr+1),
+      tmInt_get?_insert_ne _ _ (by simp [iAddr, sAddr] : (iAddr+2) ≠ sAddr+2),
+      tmInt_get?_insert_ne _ _ (by simp [iAddr, sAddr] : (iAddr+2) ≠ sAddr+3),
+      tmInt_get?_insert_ne _ _ (by simp [iAddr, sAddr] : (iAddr+3) ≠ sAddr),
+      tmInt_get?_insert_ne _ _ (by simp [iAddr, sAddr] : (iAddr+3) ≠ sAddr+1),
+      tmInt_get?_insert_ne _ _ (by simp [iAddr, sAddr] : (iAddr+3) ≠ sAddr+2),
+      tmInt_get?_insert_ne _ _ (by simp [iAddr, sAddr] : (iAddr+3) ≠ sAddr+3),
+      tmInt_get?_insert_ne _ _ (by simp [sAddr] : (sAddr+3) ≠ sAddr),
+      tmInt_get?_insert_ne _ _ (by simp [sAddr] : (sAddr+3) ≠ sAddr+1),
+      tmInt_get?_insert_ne _ _ (by simp [sAddr] : (sAddr+3) ≠ sAddr+2),
+      tmInt_get?_insert_ne _ _ (by simp [sAddr] : (sAddr+2) ≠ sAddr),
+      tmInt_get?_insert_ne _ _ (by simp [sAddr] : (sAddr+2) ≠ sAddr+1),
+      tmInt_get?_insert_ne _ _ (by simp [sAddr] : (sAddr+1) ≠ sAddr)]
+
+/-- 4-byte reads at the family cells. -/
+theorem readN_t5 (n : Int) (k : Nat) :
+    CerbMem.readBytesFrom (memL n k) RelSem.T1.xAddr 4
+      = [mkByte n 0, mkByte n 1, mkByte n 2, mkByte n 3] := by
+  have h0 := (bmL_get_n n 0 (by omega) (by omega) k).trans (RelSem.T1.bmD3_get0 n)
+  have h1 := (bmL_get_n n 1 (by omega) (by omega) k).trans (RelSem.T1.bmD3_get1 n)
+  have h2 := (bmL_get_n n 2 (by omega) (by omega) k).trans (RelSem.T1.bmD3_get2 n)
+  have h3 := (bmL_get_n n 3 (by omega) (by omega) k).trans (RelSem.T1.bmD3_get3 n)
+  simp only [Int.add_zero] at h0
+  rw [Std.TreeMap.get?_eq_getElem?] at h0 h1 h2 h3
+  simp [CerbMem.readBytesFrom, List.range, List.range.loop, memL,
+    h0, h1, h2, h3]
+
+theorem readI_t5 (n : Int) (k : Nat) :
+    CerbMem.readBytesFrom (memL n k) iAddr 4
+      = [mkByte (k : Int) 0, mkByte (k : Int) 1,
+         mkByte (k : Int) 2, mkByte (k : Int) 3] := by
+  obtain ⟨⟨h0, h1⟩, h2, h3⟩ := bmL_get_i n k
+  rw [Std.TreeMap.get?_eq_getElem?] at h0 h1 h2 h3
+  simp [CerbMem.readBytesFrom, List.range, List.range.loop, memL,
+    show iAddr + (0:Int) = iAddr from by omega, h0, h1, h2, h3]
+
+theorem readS_t5 (n : Int) (k : Nat) :
+    CerbMem.readBytesFrom (memL n k) sAddr 4
+      = [mkByte (sV k) 0, mkByte (sV k) 1,
+         mkByte (sV k) 2, mkByte (sV k) 3] := by
+  obtain ⟨⟨h0, h1⟩, h2, h3⟩ := bmL_get_s n k
+  rw [Std.TreeMap.get?_eq_getElem?] at h0 h1 h2 h3
+  simp [CerbMem.readBytesFrom, List.range, List.range.loop, memL,
+    show sAddr + (0:Int) = sAddr from by omega, h0, h1, h2, h3]
+
+/-- reconstructValue on 4 int bytes, generic in maps and address (the
+    int path never consults them; T1's reconX_eq generalized). -/
+theorem recon_int_t5 (lum : List (Int × identifier))
+    (fpm : CerbMem.Funptrmap) (addr : Int) (x : Int)
+    (h1 : -2147483648 ≤ x) (h2 : x ≤ 2147483647) :
+    CerbMem.reconstructValue lum fpm addr
+      RelSem.T1.intCty [mkByte x 0, mkByte x 1, mkByte x 2, mkByte x 3]
+    = .MVinteger (Signed Int_) (.IV .Prov_none x) := by
+  show CerbMem.reconstructValue_lemFuel (999999+1) _ _ _
+    (Ctype [] (Basic (Integer (Signed Int_)))) _ = _
+  rw [CerbMem.reconstructValue_lemFuel]
+  simp only [CerberusImpl.is_signed_ity]
+  rw [RelSem.T1.roundtrip_arith x h1 h2]
+  simp [CerbMem.provFromIntegerBytes, CerbMem.combineProv, mkByte]
+
+/-- sV bounds at slate scale. -/
+theorem sV_nonneg (k : Nat) : 0 ≤ sV k := by
+  induction k with
+  | zero => simp [sV]
+  | succ k ih => show 0 ≤ sV k + (k : Int); omega
+
+theorem sV_le (k : Nat) (hk : k ≤ 100) : sV k ≤ 4950 := by
+  have hd := sV_double k
+  have hk' : (k : Int) ≤ 100 := by omega
+  have hk0 : (0 : Int) ≤ (k : Int) := by omega
+  by_cases h0 : (k : Int) ≤ 1
+  · rcases k with _ | _ | k
+    · simp [sV]
+    · show sV 0 + ((0:Nat) : Int) ≤ 4950; simp [sV]
+    · exact absurd h0 (by omega)
+  · have h1 : (0:Int) ≤ (k:Int) - 1 := by omega
+    have hmul : (k:Int) * ((k:Int) - 1) ≤ 100 * 99 := by
+      calc (k:Int) * ((k:Int) - 1) ≤ 100 * ((k:Int) - 1) :=
+            Int.mul_le_mul_of_nonneg_right (by omega) h1
+        _ ≤ 100 * 99 := by
+            apply Int.mul_le_mul_of_nonneg_left (by omega) (by omega)
+    omega
+
+/-! ### The iteration memory-op facts (walker context facts; the
+    values are the family's own) -/
+
+open RelSem.Kit (mem_load_block mem_store_block mem_kill_block)
+open RelSem.T1 (intCty xPtr xAddr)
+
+theorem intRange_of_slate {v : Int} (h1 : 0 ≤ v) (h2 : v ≤ 4950) :
+    -2147483648 ≤ v ∧ v ≤ 2147483647 := by omega
+
+/-- Load of the n cell at any loop state. -/
+theorem loadN_t5 (n : Int) (k : Nat)
+    (h1 : -2147483648 ≤ n) (h2 : n ≤ 2147483647) :
+    app (CerbMem.loadM CerbLocation.Loc.unknown intCty xPtr) (memL n k)
+      = (NDactive (CerbMem.Footprint.FP .R xAddr 4, mvi n), memL n k) := by
+  have := mem_load_block (loc := CerbLocation.Loc.unknown)
+    (mem := memL n k) (um := none) (allocId := 0) (addr := xAddr)
+    (alloc := RelSem.T1.allocX)
+    (hdead := rfl) (hget := rfl) (hbounds := rfl) (hatomic := rfl)
+    (ty := intCty)
+    (hbytes := by exact readN_t5 n k)
+    (hrecon := by exact recon_int_t5 _ _ _ n h1 h2)
+    (hnotbool := rfl)
+  simpa [RelSem.T1.xPtr, mvi, RelSem.T1.sizeof_intCty_eq] using this
+
+/-- Load of the i cell (value k). -/
+theorem loadI_t5 (n : Int) (k : Nat) (hk : k ≤ 100) :
+    app (CerbMem.loadM CerbLocation.Loc.unknown intCty iPtr) (memL n k)
+      = (NDactive (CerbMem.Footprint.FP .R iAddr 4, mvi (k : Int)), memL n k) := by
+  have := mem_load_block (loc := CerbLocation.Loc.unknown)
+    (mem := memL n k) (um := none) (allocId := 3) (addr := iAddr)
+    (alloc := allocI)
+    (hdead := rfl) (hget := rfl) (hbounds := rfl) (hatomic := rfl)
+    (ty := intCty)
+    (hbytes := by exact readI_t5 n k)
+    (hrecon := by exact recon_int_t5 _ _ _ (k : Int) (by omega) (by omega))
+    (hnotbool := rfl)
+  simpa [iPtr, mvi, RelSem.T1.sizeof_intCty_eq] using this
+
+/-- Load of the s cell (value sV k). -/
+theorem loadS_t5 (n : Int) (k : Nat) (hk : k ≤ 100) :
+    app (CerbMem.loadM CerbLocation.Loc.unknown intCty sPtr) (memL n k)
+      = (NDactive (CerbMem.Footprint.FP .R sAddr 4, mvi (sV k)), memL n k) := by
+  have hnn := sV_nonneg k
+  have hle := sV_le k hk
+  have := mem_load_block (loc := CerbLocation.Loc.unknown)
+    (mem := memL n k) (um := none) (allocId := 2) (addr := sAddr)
+    (alloc := allocS)
+    (hdead := rfl) (hget := rfl) (hbounds := rfl) (hatomic := rfl)
+    (ty := intCty)
+    (hbytes := by exact readS_t5 n k)
+    (hrecon := by exact recon_int_t5 _ _ _ (sV k) (by omega) (by omega))
+    (hnotbool := rfl)
+  simpa [sPtr, mvi, RelSem.T1.sizeof_intCty_eq] using this
+
+/-- Int-store bytes, generic in the stored value. -/
+theorem i2b_t5 (fpm : CerbMem.Funptrmap) (v : Int) :
+    CerbMem.memValueToBytes fpm (mvi v)
+      = (fpm, [mkByte v 0, mkByte v 1, mkByte v 2, mkByte v 3]) := rfl
+
+/-- Store to the s cell. -/
+theorem storeS_t5 (n : Int) (k : Nat) (v : Int) :
+    app (CerbMem.storeM CerbLocation.Loc.unknown intCty false sPtr (mvi v))
+        (memL n k)
+      = (NDactive (CerbMem.Footprint.FP .W sAddr 4),
+         CerbMem.writeBytesTo { memL n k with funptrmap := (memL n k).funptrmap }
+           sAddr [mkByte v 0, mkByte v 1, mkByte v 2, mkByte v 3]) := by
+  have := mem_store_block (loc := CerbLocation.Loc.unknown)
+    (mem := memL n k) (mv := mvi v) (allocId := 2) (addr := sAddr)
+    (alloc := allocS)
+    (hcompat := rfl) (hget := rfl) (hbounds := rfl) (hro := rfl)
+    (ty := intCty)
+    (hatomic := rfl) (hbytes := by exact i2b_t5 _ v)
+  simpa [sPtr, mvi, RelSem.T1.sizeof_intCty_eq] using this
+
+/-- Store to the i cell. -/
+theorem storeI_t5 (n : Int) (k : Nat) (v : Int) :
+    app (CerbMem.storeM CerbLocation.Loc.unknown intCty false iPtr (mvi v))
+        (memL n k)
+      = (NDactive (CerbMem.Footprint.FP .W iAddr 4),
+         CerbMem.writeBytesTo { memL n k with funptrmap := (memL n k).funptrmap }
+           iAddr [mkByte v 0, mkByte v 1, mkByte v 2, mkByte v 3]) := by
+  have := mem_store_block (loc := CerbLocation.Loc.unknown)
+    (mem := memL n k) (mv := mvi v) (allocId := 3) (addr := iAddr)
+    (alloc := allocI)
+    (hcompat := rfl) (hget := rfl) (hbounds := rfl) (hro := rfl)
+    (ty := intCty)
+    (hatomic := rfl) (hbytes := by exact i2b_t5 _ v)
+  simpa [iPtr, mvi, RelSem.T1.sizeof_intCty_eq] using this
+
 end RelSem.T5
 
