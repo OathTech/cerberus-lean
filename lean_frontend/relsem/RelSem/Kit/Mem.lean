@@ -33,12 +33,12 @@ open RelSem
 @[app_eq]
 theorem mem_alloc_block {tid : Nat} {pref : prefix0} {pv : CerbMem.Provenance}
     {alignN : Int} {ty : ctype} {mem : CerbMem.MemState}
-    {sz : Nat} {a : Int}
+    {addrOpt : Option Int} {sz : Nat} {a : Int}
     (hsz : (CerbMem.sizeofCtype ty).max 1 = sz)
     (haddr : ((CerbMem.alignDown (mem.lastAddress - sz).toNat
         (alignN.toNat.max 1) : Nat) : Int) = a)
     (hnz : (a == (0 : Int)) = false) :
-    app (CerbMem.allocateObject tid pref (.IV pv alignN) ty none none) mem
+    app (CerbMem.allocateObject tid pref (.IV pv alignN) ty addrOpt none) mem
       = (NDactive (.PV (.Prov_some mem.nextAllocId) (.PVconcrete none a)),
          CerbMem.writeBytesTo
            { mem with
@@ -103,6 +103,13 @@ theorem mem_load_block {loc : CerbLocation.Loc} {ty : ctype}
     if_true, reduceIte, Bool.not_false, Bool.false_and]
   exact if_neg (fun hx => Bool.noConfusion
     (hnotbool.symm.trans ((Bool.and_eq_true _ _).mp hx).1))
+
+/-- Pointer prefix (a placeholder in the concrete model: always
+    `none`; the trace events' pref field). -/
+@[app_eq]
+theorem mem_prefix_block {ptr : CerbMem.PointerValue}
+    {mem : CerbMem.MemState} :
+    app (CerbMem.prefixOfPointer ptr) mem = (NDactive none, mem) := rfl
 
 /-- KILL (object deallocation), success path: live allocation, at the
     base address, non-dynamic. -/

@@ -108,4 +108,70 @@ def finTail5 : Unit → driverM driver_result :=
   fun _ => nd_bind nd_get (fun (dr_st' : driver_state) =>
     nd_return (finalize t5File.tagDefs "callND" dr_st'))
 
+/-! ## Arc-9 S3 additions: the loop fixture data (label syms from the
+    labeled-continuation census; body-let syms from the loop-head env
+    dumps — all content-hashed ids validated by the entry/iteration
+    rfl walks). -/
+
+def symWhile : sym := Symbol "" 5345818875920638407 (SD_Id "while_501")
+
+def symA502 : sym := Symbol "" 8889381283917733902 (SD_Id "a_502")
+def symA503 : sym := Symbol "" 14798685261839020542 (SD_Id "a_503")
+def symA504 : sym := Symbol "" 13222863191375119694 (SD_Id "a_504")
+def symA505 : sym := Symbol "" 15587187630708245497 (SD_Id "a_505")
+def symA507 : sym := Symbol "" 3712579248453425038 (SD_Id "a_507")
+def symA508 : sym := Symbol "" 6853313270503072038 (SD_Id "a_508")
+def symA512 : sym := Symbol "" 17123687452746221040 (SD_Id "a_512")
+def symA513 : sym := Symbol "" 4622258550668407059 (SD_Id "a_513")
+def symA514 : sym := Symbol "" 7846888631986887727 (SD_Id "a_514")
+def symA515 : sym := Symbol "" 18346162544558864837 (SD_Id "a_515")
+def symA519 : sym := Symbol "" 238585015645548330 (SD_Id "a_519")
+def symA520 : sym := Symbol "" 3474084476103638235 (SD_Id "a_520")
+def symA521 : sym := Symbol "" 2151434721365532277 (SD_Id "a_521")
+def symA525 : sym := Symbol "" 3579765898737599443 (SD_Id "a_525")
+def symA526 : sym := Symbol "" 13429216386455784360 (SD_Id "a_526")
+def symA527 : sym := Symbol "" 4139409277016632516 (SD_Id "a_527")
+def symA528 : sym := Symbol "" 8935235297226827052 (SD_Id "a_528")
+def symA529 : sym := Symbol "" 1680278659536745755 (SD_Id "a_529")
+def symA530 : sym := Symbol "" 4915778119994869450 (SD_Id "a_530")
+def symA534 : sym := Symbol "" 5254944664791163557 (SD_Id "a_534")
+def symA535 : sym := Symbol "" 15754218577363027919 (SD_Id "a_535")
+def symA536 : sym := Symbol "" 6464411467923874555 (SD_Id "a_536")
+def symA537 : sym := Symbol "" 6477419756603697776 (SD_Id "a_537")
+def symA538 : sym := Symbol "" 18319030617476695216 (SD_Id "a_538")
+
+/-- The process sym-supply seed, STUCK form (the T4 anon1stuck
+    discipline, design §11.2): the invariant family carries the stuck
+    extern reads — `hdig`/`hfresh` (T5EnvHyp) pin them ONLY inside
+    the small per-key lookup lemmas, never by rewriting a big state. -/
+def seedT5 : Nat := rsD5.sym_supply
+
+/-- The NEG-transform's j-th fresh unit-binder symbol (stuck form:
+    digest and seed as the process reads them). -/
+def unitSym (j : Nat) : sym :=
+  Symbol (CerberusFresh.digest ()) (seedT5 + j) SD_None
+
+/-- The while_501 labeled continuation (params, body) —
+    fixture-derived from the collected labeled continuations, never
+    transcribed. -/
+def whileCont : List (sym × core_base_type)
+    × generic_expr core_run_annotation Unit sym :=
+  match Lem_Maybe.bind0
+      (fmapLookupBy (fun (s1 s2 : sym) => Lem_Basic_classes.ordCompare s1 s2)
+        sumT5Sym (initial_core_run_state
+          (collect_labeled_continuations_NEW t5File)).labeled)
+      (fmapLookupBy (fun (s1 s2 : sym) => Lem_Basic_classes.ordCompare s1 s2)
+        symWhile) with
+  | some pb => pb
+  | none => ([], Expr [] (Epure (Pexpr [] () (PEval Vunit))))
+
+/-- The loop-head arena (the while_501 continuation body). -/
+def whileBody : generic_expr core_run_annotation Unit sym := whileCont.2
+
+/-! ### Walker-v2 state atoms (design §11.3): the fixture's pinned
+    names the normalizer must never unfold. -/
+attribute [app_state_atom] t5File sumBody whileBody rsD5 env0T5 th0T5
+attribute [app_state_atom] RelSem.T1.memD3 RelSem.T1.memInj
+  RelSem.T1.bmErrAlloc RelSem.T1.memErrAlloc RelSem.T1.mkByte
+
 end RelSem.T5

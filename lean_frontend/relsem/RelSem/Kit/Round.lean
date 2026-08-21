@@ -324,13 +324,14 @@ theorem aid_draw {σ : driver_state} :
 theorem perform_create
     {loc : CerbLocation.Loc} {tid : Nat}
     {pref : prefix0} {align : CerbMem.IntegerValue} {ty : ctype}
+    {addrOpt : Option Int}
     {mk : Nat → CerbMem.PointerValue → thread_state}
     {σ : driver_state} {ptr : CerbMem.PointerValue}
     {mem' : CerbMem.MemState}
-    (hmem : app (CerbMem.allocateObject tid pref align ty none none)
+    (hmem : app (CerbMem.allocateObject tid pref align ty addrOpt none)
         σ.layout_state = (NDactive ptr, mem')) :
     app (perform_action_request2 false loc tid
-          (CreateRequest2 pref align ty none none mk)) σ
+          (CreateRequest2 pref align ty addrOpt none mk)) σ
       = (NDactive (),
          (fun σm => { σm with
             trace := ME_allocate_object tid pref align ty none ptr

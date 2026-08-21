@@ -81,6 +81,8 @@ import RelSem.Kit.Map
 #guard_msgs in #print axioms RelSem.Kit.mem_load_block
 /-- info: 'RelSem.Kit.mem_kill_block' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Kit.mem_kill_block
+/-- info: 'RelSem.Kit.mem_prefix_block' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Kit.mem_prefix_block
 
 -- Kit/Map — the lawful-map lookup layer (arc-9 S3 wave 3; design
 -- §11.2 — the P2 route generalized from bytemaps to environments)
@@ -108,10 +110,10 @@ import RelSem.Kit.Map
 #guard_msgs in #print axioms RelSem.Kit.transCmpPre
 /-- info: 'RelSem.Kit.instTransCmpSymCmpO' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Kit.instTransCmpSymCmpO
-/-- info: 'RelSem.Kit.fmapEmpty_cmpIs' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Kit.fmapEmpty_cmpIs
-/-- info: 'RelSem.Kit.fmapAddBy_cmpIs' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Kit.fmapAddBy_cmpIs
+/-- info: 'RelSem.Kit.fmapAddBy_built_empty' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Kit.fmapAddBy_built_empty
+/-- info: 'RelSem.Kit.fmapAddBy_built' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Kit.fmapAddBy_built
 /-- info: 'RelSem.Kit.fmapLookupBy_addBy_eq' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Kit.fmapLookupBy_addBy_eq
 /-- info: 'RelSem.Kit.fmapLookupBy_addBy_ne' depends on axioms: [propext, Classical.choice, Quot.sound] -/

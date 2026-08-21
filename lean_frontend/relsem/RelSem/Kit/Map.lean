@@ -206,59 +206,69 @@ theorem symCmpO_eq_iff (d1 d2 : String) (n1 n2 : Nat)
     rw [strCompare_self d1, Nat.compare_eq_eq.mpr rfl]
     rfl
 
-/-! ## The Fmap shape invariant + lookup laws (generic over the
-    comparator, instance-licensed) -/
+/-! ## The Fmap shape invariant + lookup laws.
 
-/-- The map's captured comparator is `lemCmpToOrd cmp` (trivially true
-    of the empty map; `fmapAddBy` maintains it). -/
-def FmapCmpIs {α β : Type} (cmp : α → α → LemOrdering) :
+    TWO comparators are in play at a generated env map: the CAPTURED
+    tree comparator (fixed at the first insert — for envs, the
+    hand-written callFinish/injectArgs `ordCompare` closure) and the
+    comparators PASSED by later call sites (`update_env_aux`/
+    `lookup_env` pass `@mapKeyCompare` — a DIFFERENT function).
+    `fmapAddBy`/`fmapLookupBy` IGNORE the passed comparator on `.mk`
+    maps (LemLib: the tree is searched with the captured one), so the
+    laws below quantify over arbitrary passed comparators and demand
+    only the captured-comparator invariant `FmapBuilt`. -/
+
+/-- The map is non-empty-built with captured comparator `c`. -/
+def FmapBuilt {α β : Type} (c : α → α → Ordering) :
     Fmap α β → Prop
-  | .empty => True
-  | .mk c _ _ _ => c = lemCmpToOrd cmp
+  | .empty => False
+  | .mk c' _ _ _ => c' = c
 
-theorem fmapEmpty_cmpIs {α β : Type} {cmp : α → α → LemOrdering} :
-    FmapCmpIs cmp (fmapEmpty : Fmap α β) := trivial
+/-- First insert on the empty map captures the passed comparator. -/
+theorem fmapAddBy_built_empty {α β : Type} [BEq α]
+    {pcmp : α → α → LemOrdering} {k : α} {v : β} :
+    FmapBuilt (lemCmpToOrd pcmp)
+      (fmapAddBy pcmp k v (fmapEmpty : Fmap α β)) := rfl
 
-theorem fmapAddBy_cmpIs {α β : Type} [BEq α]
-    {cmp : α → α → LemOrdering} {k : α} {v : β} {m : Fmap α β}
-    (h : FmapCmpIs cmp m) : FmapCmpIs cmp (fmapAddBy cmp k v m) := by
+/-- Inserts (under ANY passed comparator) keep the captured one. -/
+theorem fmapAddBy_built {α β : Type} [BEq α]
+    {c : α → α → Ordering} {pcmp : α → α → LemOrdering}
+    {k : α} {v : β} {m : Fmap α β}
+    (h : FmapBuilt c m) : FmapBuilt c (fmapAddBy pcmp k v m) := by
   cases m with
-  | empty => exact rfl
-  | mk c byKey bySeq n => exact h
+  | empty => exact absurd h (by simp [FmapBuilt])
+  | mk c' byKey bySeq n => exact h
 
-/-- Lookup after insert, comparator-EQ key: the just-inserted value. -/
+/-- Lookup after insert, captured-comparator-EQ key: the just-inserted
+    value (passed comparators arbitrary). -/
 theorem fmapLookupBy_addBy_eq {α β : Type} [BEq α]
-    {cmp : α → α → LemOrdering} [Std.TransCmp (lemCmpToOrd cmp)]
+    {c : α → α → Ordering} [Std.TransCmp c]
+    {pcmp pcmp' : α → α → LemOrdering}
     {k a : α} {v : β} {m : Fmap α β}
-    (hm : FmapCmpIs cmp m) (hk : lemCmpToOrd cmp k a = .eq) :
-    fmapLookupBy cmp a (fmapAddBy cmp k v m) = some v := by
+    (hm : FmapBuilt c m) (hk : c k a = .eq) :
+    fmapLookupBy pcmp' a (fmapAddBy pcmp k v m) = some v := by
   cases m with
-  | empty =>
-    simp only [fmapAddBy, fmapLookupBy]
-    rw [Std.TreeMap.get?_eq_getElem?, Std.TreeMap.getElem?_insert,
-      if_pos hk]
-  | mk c byKey bySeq n =>
-    have hc : c = lemCmpToOrd cmp := hm
+  | empty => exact absurd hm (by simp [FmapBuilt])
+  | mk c' byKey bySeq n =>
+    have hc : c' = c := hm
     subst hc
     simp only [fmapAddBy, fmapLookupBy]
     rw [Std.TreeMap.get?_eq_getElem?, Std.TreeMap.getElem?_insert,
       if_pos hk]
 
-/-- Lookup after insert, comparator-NE key: the underlying map's
-    verdict (the skip law — St-v2's induction engine). -/
+/-- Lookup after insert, captured-comparator-NE key: the underlying
+    map's verdict (the skip law — St-v2's induction engine). -/
 theorem fmapLookupBy_addBy_ne {α β : Type} [BEq α]
-    {cmp : α → α → LemOrdering} [Std.TransCmp (lemCmpToOrd cmp)]
+    {c : α → α → Ordering} [Std.TransCmp c]
+    {pcmp pcmp' : α → α → LemOrdering}
     {k a : α} {v : β} {m : Fmap α β}
-    (hm : FmapCmpIs cmp m) (hk : ¬ lemCmpToOrd cmp k a = .eq) :
-    fmapLookupBy cmp a (fmapAddBy cmp k v m) = fmapLookupBy cmp a m := by
+    (hm : FmapBuilt c m) (hk : ¬ c k a = .eq) :
+    fmapLookupBy pcmp' a (fmapAddBy pcmp k v m)
+      = fmapLookupBy pcmp' a m := by
   cases m with
-  | empty =>
-    simp only [fmapAddBy, fmapLookupBy]
-    rw [Std.TreeMap.get?_eq_getElem?, Std.TreeMap.getElem?_insert,
-      if_neg hk]
-    simp
-  | mk c byKey bySeq n =>
-    have hc : c = lemCmpToOrd cmp := hm
+  | empty => exact absurd hm (by simp [FmapBuilt])
+  | mk c' byKey bySeq n =>
+    have hc : c' = c := hm
     subst hc
     simp only [fmapAddBy, fmapLookupBy]
     rw [Std.TreeMap.get?_eq_getElem?, Std.TreeMap.getElem?_insert,
