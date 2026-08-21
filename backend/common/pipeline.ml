@@ -201,6 +201,11 @@ let c_frontend ?(cn_init_scope=Cn_desugaring.empty_init) (conf, io) (core_stdlib
     let (ailnames, core_stdlib_fun_map) = core_stdlib in
     Cabs_to_ail.desugar (ailnames, core_stdlib_fun_map, core_impl) cn_init_scope
       "main" cabs_tunit >>= fun (markers_env, ail_prog) ->
+          (* arc-12 F-D fail-stop floor: record the desugar high-water mark
+             so ambient draws below it fail loud instead of silently
+             colliding (util/cerb_fresh.ml; design:
+             lean_frontend/docs/2026-08-21_arc12-s0-floor-design.md §4.3) *)
+          Cerb_fresh.set_desugar_hwm (Ail_sym_hwm.max_sym_program ail_prog);
           io.set_progress "DESUG"
       >|> io.pass_message "Cabs -> Ail completed!"
           (* NOTE: if the debug level is lower the do the printing after the typing *)

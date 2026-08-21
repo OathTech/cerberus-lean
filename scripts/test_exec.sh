@@ -70,7 +70,17 @@
 #
 # Per-file statuses (baseline taxonomy):
 #   MATCH UB_MATCH UB_DIFF MISMATCH DIFF FAIL TIMEOUT LEAN_CRASH LEAN_ERROR
-#   CERB_SKIP CERB_INCONSISTENT UNSUPPORTED UNSUPPORTED_PASS
+#   CERB_SKIP CERB_INCONSISTENT UNSUPPORTED UNSUPPORTED_PASS CERB_FLOOR
+#
+#   CERB_FLOOR (arc-12): the oracle REFUSED the TU via the F-D fail-stop
+#   floor (stderr token CERB_FRESH_FLOOR_VIOLATION, exit 70 — the TU's
+#   desugar id supply exceeds the ambient symbol-id margin; the un-floored
+#   oracle would silently corrupt symbol identity). Checked BEFORE every
+#   other oracle-failure classification so a floor hit can never be
+#   laundered into CERB_SKIP; a floor hit on a file NOT baselined as
+#   CERB_FLOOR is FATAL (fail-closed both directions). No Lean-side run is
+#   possible for such files (the cabs-json bridge floors identically).
+#   Design: lean_frontend/docs/2026-08-21_arc12-s0-floor-design.md §4.4.
 #
 # NOTE: this script intentionally does NOT use `set -e` — it captures
 # non-zero exit codes from both sides for comparison. Every failure path
@@ -346,6 +356,7 @@ join_seq() {   # <token-lines>  → single line joined with '|'
 # ---------------------------------------------------------------------------
 CERBERUS_OK=0
 CERB_SKIP_COUNT=0
+CERB_FLOOR_COUNT=0
 LEAN_OK=0
 LEAN_FAIL=0
 LEAN_TIMEOUT_COUNT=0
@@ -394,6 +405,16 @@ for c_file in "${TEST_FILES[@]}"; do
         CERB_SKIP_COUNT=$((CERB_SKIP_COUNT + 1))
         echo "[$file_num/$total_to_test] CERB_SKIP $filename (Cerberus crashed: $cerberus_shell_exit)"
         record_status "$base_c" CERB_SKIP
+        continue
+    fi
+
+    # arc-12 F-D fail-stop floor: the oracle refused the TU (symbol-id
+    # margin exceeded). Distinct bucket, checked before every other
+    # oracle-failure path so it can never be laundered into CERB_SKIP.
+    if [[ "$cerberus_output" == *CERB_FRESH_FLOOR_VIOLATION* ]]; then
+        CERB_FLOOR_COUNT=$((CERB_FLOOR_COUNT + 1))
+        echo "[$file_num/$total_to_test] CERB_FLOOR $filename (oracle symbol-id floor, exit $cerberus_shell_exit)"
+        record_status "$base_c" CERB_FLOOR
         continue
     fi
 
@@ -625,6 +646,9 @@ echo ""
 echo "Cerberus execution:"
 echo "  Success:    $CERBERUS_OK"
 echo "  Skipped:    $CERB_SKIP_COUNT"
+if [[ $CERB_FLOOR_COUNT -gt 0 ]]; then
+    echo "  Floor:      $CERB_FLOOR_COUNT (oracle symbol-id floor refusals — arc-12 F-D fail-stop; DISJOINT from Skipped)"
+fi
 if [[ $CERB_INCONSISTENT_COUNT -gt 0 ]]; then
     echo "  Inconsist:  $CERB_INCONSISTENT_COUNT (OCaml-side exit/verdict or cabs-json inconsistency — non-fatal, visible; DISJOINT from Skipped)"
 fi
@@ -663,7 +687,7 @@ fi
 
 # One-line machine-grepable summary
 echo ""
-echo "SUMMARY: total=$file_num match=$MATCH ub_match=$UB_MATCH ub_diff=$UB_CODE_DIFF mismatch=$MISMATCH fail=$LEAN_FAIL crash=$LEAN_CRASH_COUNT lean_error=$LEAN_ERROR_COUNT timeout=$LEAN_TIMEOUT_COUNT cerb_skip=$CERB_SKIP_COUNT cerb_inconsistent=$CERB_INCONSISTENT_COUNT"
+echo "SUMMARY: total=$file_num match=$MATCH ub_match=$UB_MATCH ub_diff=$UB_CODE_DIFF mismatch=$MISMATCH fail=$LEAN_FAIL crash=$LEAN_CRASH_COUNT lean_error=$LEAN_ERROR_COUNT timeout=$LEAN_TIMEOUT_COUNT cerb_skip=$CERB_SKIP_COUNT cerb_floor=$CERB_FLOOR_COUNT cerb_inconsistent=$CERB_INCONSISTENT_COUNT"
 
 # ---------------------------------------------------------------------------
 # Baseline write / check
@@ -673,7 +697,7 @@ status_rank() {   # rank per status; unknown status = harness error
         MATCH|UB_MATCH|UNSUPPORTED_PASS) echo 3 ;;
         UB_DIFF) echo 2 ;;
         MISMATCH|DIFF|UNSUPPORTED) echo 1 ;;
-        FAIL|TIMEOUT|LEAN_CRASH|LEAN_ERROR|CERB_SKIP|CERB_INCONSISTENT) echo 0 ;;
+        FAIL|TIMEOUT|LEAN_CRASH|LEAN_ERROR|CERB_SKIP|CERB_INCONSISTENT|CERB_FLOOR) echo 0 ;;
         *) echo "HARNESS ERROR: unknown status '$1'" >&2; exit 1 ;;
     esac
 }
@@ -747,7 +771,7 @@ if [[ -n "$CHECK_BASELINE" ]]; then
     for f in "${!cur_map[@]}"; do
         if [[ -z "${base_map[$f]+x}" ]]; then
             case "${cur_map[$f]}" in
-                MISMATCH|DIFF|FAIL|LEAN_CRASH|LEAN_ERROR|TIMEOUT)
+                MISMATCH|DIFF|FAIL|LEAN_CRASH|LEAN_ERROR|TIMEOUT|CERB_FLOOR)
                     echo "REGRESSION: new file (not in baseline) with failing status: $f ${cur_map[$f]}"
                     regressions=$((regressions + 1))
                     ;;
