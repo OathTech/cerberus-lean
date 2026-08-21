@@ -230,12 +230,13 @@ If you skip this step, Lake will compile the stale `generated/` copy and your ch
 | `scripts/test_multi_tu.sh` | Differential multi-TU linking: N .c linked by OCaml vs N cabs-jsons linked by the Lean pipeline (corpus: `tests/multi_tu/<name>/`) |
 | `scripts/libxml2_prep.sh` | libxml2 no-autogen prep: pinned config (`tests/libxml2/config/`) + cerberus args per TU (probe recipe) |
 | `scripts/test_libxml2.sh` | Arc-5 exit-criterion differential: chvalid.c + generated boundary battery (4 slices since arc-6 S3, 1354 points), single-trace both sides (~8 min; Tier B slow ladder since arc-6 S4 — see scripts/LADDER.md) |
-| `scripts/test_libxml2_uri.sh` | Arc-6 GATE (S4, charter success condition 1): 5-TU xmlParseURISafe corpus grown to 16 URIs (RFC 3986 edge classes), 4 lanes (oracle+libc / ocaml-nolibc / lean-nolibc mirrored-failure pair / lean+libc) — pinned per-lane expectations + baseline drift check, fail-closed; 16/16 byte-identical lean+libc vs oracle |
+| `scripts/test_libxml2_uri.sh` | Arc-6 GATE (S4, charter success condition 1): 5-TU xmlParseURISafe corpus grown to 16 URIs (RFC 3986 edge classes), 4 lanes (oracle+libc / ocaml-nolibc / lean-nolibc mirrored-failure pair / lean+libc) — pinned per-lane expectations + baseline drift check, fail-closed; 16/16 byte-identical lean+libc vs oracle. Arc-12 D2: the two oracle invocations run GRANDFATHERED past the F-D floor (uri.c is beyond-margin, 252 live collisions — loud warning; validated by the 16/16 agreement gate itself; register G3) |
 | `scripts/libc_prep.sh` | Arc-6 S1: pins + drift-checks `tests/libc/libc.core` (the oracle's unlinked libc Core text dump) and emits the 12 libc metadata TU cabs-jsons (see Main.loadLibc) |
 | `scripts/test_libc_exec.sh` | Arc-6 S1 differential: C-with-libc programs, both sides load the C library (`tests/libc_exec/`, own baseline; NEW mode — standing corpora stay --nolibc) |
 | `scripts/test_cabs_json.sh` | Quick smoke test |
 | `scripts/test_bytes.sh` | Arc-10 S3b: oracle-INDEPENDENT tests/bytes micro-lane — 9 exec files byte-compared to the committed upstream `.exec` records (+ 5 front-end-reject negative pins), fail-closed both directions (Tier A row 4c). tests/float is a plain test_exec.sh lane (`--check-baseline=scripts/exec_float_baseline.txt tests/float`, Tier A row 4b) |
-| `scripts/test_csmith_corpus.sh` | Arc-10 S4: deterministic differential lane over the 1669 in-tree upstream csmith programs (prefixed materialization + kit header shim); committed classified baseline `scripts/exec_csmith_corpus_baseline.txt`; `--shard K/M` with shard-aware fail-closed baseline check (S5) |
+| `scripts/test_csmith_corpus.sh` | Arc-10 S4: deterministic differential lane over the 1669 in-tree upstream csmith programs (prefixed materialization + kit header shim); committed classified baseline `scripts/exec_csmith_corpus_baseline.txt` (re-baselined arc-12 S1 under the F-D floor: 516 CERB_FLOOR rows, movement table in its header); `--shard K/M` with shard-aware fail-closed baseline check (S5) |
+| (oracle F-D floor, arc-12) | `util/cerb_fresh.ml` two-check per-TU fail-stop floor + `backend/common/ail_sym_hwm.ml` (desugar hwm fold) + `pipeline.ml` hook: any TU whose desugar-threaded symbol ids can overlap ambient ids REFUSES loudly (`CERB_FRESH_FLOOR_VIOLATION`, exit 70) instead of silently corrupting (finding F-D). test_exec.sh classifies these as `CERB_FLOOR` (SUMMARY `cerb_floor=`; unbaselined floor rows FATAL). Two narrow warn-only modes (D2, never silent): cabs-json EXPORT (verified sound — the JSON is pre-desugar Cabs) and `CERB_FRESH_FLOOR_GRANDFATHER=1` (ONLY the two documented test_libxml2_uri.sh invocations). Records: `docs/2026-08-21_arc12-*.md`; renumbering (removing the refusal class) = post-arc-13 agenda |
 | `scripts/fuzz_csmith.sh` | csmith differential fuzz kit (arc-4 port; csmith + creduce are INSTALLED locally — gen + test_exec.sh differential; deterministic via `CSMITH_SEED_START`). Arc-10 S4 lane portfolio + seed ranges: `docs/2026-08-20_arc10-s4-csmith-campaign.md` |
 | `scripts/csmith_explore.sh` | Arc-10 S4: oracle-only per-configuration yield + construct-coverage measurement (the exploration instrument behind the lane portfolio) |
 | `scripts/creduce` + `scripts/creduce_interestingness.sh` | Arc-10 S0: creduce wrapper (project-local clang-format shim, no global state) + generic interestingness predicate against test_exec.sh single-file mode (`INTERESTING_REGEX` + `EXPECT_SNIPPET` signature pinning) |
@@ -308,6 +309,16 @@ Lem is pinned to `https://github.com/septract/lem-lean#mdd/lean-backend`.
   — tests/minimal test_core now 106/106.
 - ✅ Varargs execution (arc-6 S2, register 15 FIXED): CerbMem
   vaStart/vaCopy/vaArg/vaEnd/vaList mirror impl_mem.ml:2698-2764
+- ✅ THE ORACLE IS HONEST (arc-12): the F-D symbol-collision family is
+  CLOSED-BY-FLOOR — the fork oracle fail-stops (CERB_FLOOR) on any TU
+  beyond its ~483-id desugar margin instead of silently corrupting;
+  all 35 witnesses loud; numbering of in-margin programs bit-for-bit
+  unchanged (pin-provenance + generated-tree gates); corpus
+  re-baselined (mismatch=0, comparisons 1070→1038); libc/uri pinned
+  artifacts D2-grandfathered (validated-by-agreement, register G1-G4);
+  attribution corrected (April desugar threading 8923d6436, arc-2 run
+  supply exonerated); F-A/F-B upstream filing drafts ready
+  (notes/upstream/08+09). Records: docs/2026-08-21_arc12-*.md
   (prototype port Step.lean:1441-1513 attributed) — 5 coverage varargs
   DIFFs → MATCH, debug varargs-01 → MATCH, libc_exec 006 snprintf →
   MATCH, new 007 va_*×Formatted interplay MATCH
