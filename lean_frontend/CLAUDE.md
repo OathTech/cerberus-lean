@@ -71,6 +71,7 @@ Current unit tests:
 - `core-parser-test` — 280 tests for `CoreParser.lean`
 - `fresh-int-test` — verifies `fresh_int`/`Symbol.fresh` generate unique values (+ the native-obj fresh-counter floor probe)
 - `emit-lean-core-test` — arc-7: byte drift gate for the emitted slate program terms (`relsem/RelSem/T1Core.lean`, `SlateCore.lean` vs a fresh parse of the pinned oracle Core dumps) + concrete differential points on the assembled theorem objects
+- `pp-test` — arc-10 S3: pretty-printer mirrors (ctype/value shapes + float formatting vs an OCaml 5.4.0 reference transcript, in-file)
 
 `test_unit.sh` also runs the gate scripts: the hand-written↔generated
 sync gate, the hand-written-axiom census (exactly 2),
@@ -202,6 +203,11 @@ If you skip this step, Lake will compile the stale `generated/` copy and your ch
 | `scripts/libc_prep.sh` | Arc-6 S1: pins + drift-checks `tests/libc/libc.core` (the oracle's unlinked libc Core text dump) and emits the 12 libc metadata TU cabs-jsons (see Main.loadLibc) |
 | `scripts/test_libc_exec.sh` | Arc-6 S1 differential: C-with-libc programs, both sides load the C library (`tests/libc_exec/`, own baseline; NEW mode — standing corpora stay --nolibc) |
 | `scripts/test_cabs_json.sh` | Quick smoke test |
+| `scripts/test_bytes.sh` | Arc-10 S3b: oracle-INDEPENDENT tests/bytes micro-lane — 9 exec files byte-compared to the committed upstream `.exec` records (+ 5 front-end-reject negative pins), fail-closed both directions (Tier A row 4c). tests/float is a plain test_exec.sh lane (`--check-baseline=scripts/exec_float_baseline.txt tests/float`, Tier A row 4b) |
+| `scripts/test_csmith_corpus.sh` | Arc-10 S4: deterministic differential lane over the 1669 in-tree upstream csmith programs (prefixed materialization + kit header shim); committed classified baseline `scripts/exec_csmith_corpus_baseline.txt`; `--shard K/M` with shard-aware fail-closed baseline check (S5) |
+| `scripts/fuzz_csmith.sh` | csmith differential fuzz kit (arc-4 port; csmith + creduce are INSTALLED locally — gen + test_exec.sh differential; deterministic via `CSMITH_SEED_START`). Arc-10 S4 lane portfolio + seed ranges: `docs/2026-08-20_arc10-s4-csmith-campaign.md` |
+| `scripts/csmith_explore.sh` | Arc-10 S4: oracle-only per-configuration yield + construct-coverage measurement (the exploration instrument behind the lane portfolio) |
+| `scripts/creduce` + `scripts/creduce_interestingness.sh` | Arc-10 S0: creduce wrapper (project-local clang-format shim, no global state) + generic interestingness predicate against test_exec.sh single-file mode (`INTERESTING_REGEX` + `EXPECT_SNIPPET` signature pinning) |
 | `scripts/test_verify.sh` | Arc-7 S3: verification-fixture differentials (tests/verify T1-T5) — main-mode vs oracle + harness concrete points vs recorded specs (23 checks, fail-closed) |
 | `scripts/capped` | Arc-7 D7: run any command under a cgroup memory cap (default 64G; `CERB_MEM_MAX` override, `=none` loud opt-out). ALL lake/lean invocations go through it |
 
@@ -231,7 +237,16 @@ Lem is pinned to `https://github.com/septract/lem-lean#mdd/lean-backend`.
   build-fatal: the in-build RelSem absence gate (Audit.lean) bans any
   constant named DAEMON/DAEMON1, and check_theorem_axioms.sh treats
   DAEMON as unconditionally fatal in every probed cone
-- Simple enums in mutual blocks get `deriving BEq, Ord` (not sorry)
+- Comparison instances (arc-10 S2b; replaces the old sorried
+  BEq/Ord/SetType/Eq0/Ord0 bodies — 1134 sites → 0): the backend
+  derives total structural `beq_derived`/`compare_derived` per mutual
+  block with OCaml-polymorphic-compare parity (nullary constructors
+  rank below non-nullary, declaration order within each class, fields
+  left-to-right; `[BEq tv]`/`[Ord tv]` bounds for parameterized
+  types). FAIL-CLOSED: fn-carrying types (OCaml compare raises there
+  too) and their referencers get loud greppable failwithI residual
+  bodies, never sorry; surviving set comprehensions are a loud
+  generation-time error
 
 **Bug reports:** `lean_frontend/lembugs/` — dated markdown files with reproducers.
 
@@ -291,6 +306,21 @@ Lem is pinned to `https://github.com/septract/lem-lean#mdd/lean-backend`.
   check_theorem_axioms.sh bar); zero differential movement across the
   full surface. See `docs/2026-08-20_arc8-results.md` and
   lembugs/2026-08-20_daemon-inconsistent-axiom.md (RESOLVED).
+- ✅ ROBUSTNESS (arc-10): comparison instances are REAL — the lem
+  backend derives structural BEq/Ord/SetType/Eq0/Ord0 with
+  OCaml-poly-compare parity (generated-tree comparison-sorry census
+  1134 → 0; fn-carrying types get loud failwithI residuals,
+  fail-closed). tests/ci exec mismatches at ZERO (114/114 comparable
+  agree: finding 11 read-only allocations + the pp-placeholder ctype
+  text class closed by real OCaml mirrors); coverage 186/186
+  comparable agree (finding 8 eqPtrval msum fork fixed). New lanes:
+  tests/float (69/69 MATCH), tests/bytes (oracle-independent, 9 exec
+  + 5 neg pins), csmith corpus (1669 files, classified baseline) + a
+  5-lane csmith generation portfolio — 3169 differential programs,
+  ZERO Lean-side semantic defects; the F-D oracle-corruption family
+  root-caused to a CERBERUS-LEAN FORK regression (arc-2 threaded
+  sym_supply suspect; repair = top next-arc candidate). See
+  `docs/2026-08-21_arc10-results.md`.
 
 ## Conventions
 

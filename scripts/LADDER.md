@@ -11,7 +11,7 @@ Order is the conventional run order; all are fail-closed gates.
 
 | # | Command | Bar |
 |---|---------|-----|
-| 1 | `./scripts/test_unit.sh` | 4/4 exes (incl. 280 parser tests) + sync gate + census + exec-purity/totality + theorem-axiom cones |
+| 1 | `./scripts/test_unit.sh` | 6/6 exes (incl. 280 parser tests + pp-test, arc-10 S3) + sync gate + census + exec-purity/totality + theorem-axiom cones |
 | 2 | `./scripts/test_exec.sh --check-baseline` | tests/minimal vs `scripts/exec_baseline.txt`, rc 0 |
 | 3 | `./scripts/test_exec.sh --check-baseline=scripts/exec_coverage_baseline.txt tests/coverage` | rc 0 (recorded DIFFs unchanged) |
 | 4 | `./scripts/test_exec.sh --check-baseline=scripts/exec_debug_baseline.txt tests/debug` | rc 0 |
@@ -59,7 +59,8 @@ block a merge by themselves.
 | Command | Artifact |
 |---------|----------|
 | `./scripts/test_exec.sh --write-baseline=scripts/exec_ci_baseline.txt tests/ci` | tests/ci exec differential scoreboard (arc-6 S4 rider; see `lean_frontend/docs/2026-08-19_arc6-s4-ci-scoreboard.md`). NOTE: default-mode exit is nonzero while known mismatches exist — the artifact is the baseline file, not the exit code. A CHECK against this baseline (`--check-baseline=scripts/exec_ci_baseline.txt tests/ci`) may be used as a no-regression probe, but tier-C status means running it is optional, not part of certification. |
-| `./scripts/fuzz_csmith.sh` | csmith fuzzing (network/upstream-gated, see script header) |
+| `./scripts/fuzz_csmith.sh` | csmith differential fuzzing (csmith + creduce installed locally since arc-10; lane portfolio + deterministic seed ranges: `lean_frontend/docs/2026-08-20_arc10-s4-csmith-campaign.md`) |
+| `./scripts/test_csmith_corpus.sh --check-baseline` | 1669-file in-tree csmith corpus lane vs `scripts/exec_csmith_corpus_baseline.txt` (arc-10 S4; classified baseline — 15 DIFF are the F-D fork-oracle class, see baseline header). Full pass ~2.7 h: run `--shard K/6` sharded (shard-aware fail-closed baseline check, arc-10 S5). Reporting-tier: full pass at close-out/pre-merge boundaries, spot shard otherwise |
 
 ## Conventions
 
