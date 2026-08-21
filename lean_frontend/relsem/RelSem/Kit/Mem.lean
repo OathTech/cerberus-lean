@@ -48,7 +48,13 @@ theorem mem_alloc_block {tid : Nat} {pref : prefix0} {pv : CerbMem.Provenance}
                { base := a, size := sz, ty := some ty, prefix_ := pref } }
            a (List.replicate sz
                { prov := .Prov_none, copyOffset := none, value := none })) := by
+  -- arc-9 S4 rebase note (2026-08-21): arc-10 finding-11 gave
+  -- allocateObject a real readonly status (impl_mem.ml:1304-1333
+  -- mirror). At this block's `initOpt = none` it reduces to
+  -- `.IsWritable` = the structure default, so the STATED post-state is
+  -- unchanged — the proof just reduces the new call.
   simp only [CerbMem.allocateObject, app, hsz, haddr, hnz,
+    CerbMem.readonlyStatusForAlloc_none,
     Bool.false_eq_true, if_false, reduceIte]
 
 /-- STORE, success path (positive/negative alike — the polarity lives
