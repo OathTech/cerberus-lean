@@ -563,3 +563,25 @@ Residual verification queued for S5: one full corpus-lane
 `--check-baseline` pass against exec_csmith_corpus_baseline.txt
 (determinism already evidenced by the 125/125 identical double-run
 overlap).
+
+---
+
+## ADDENDUM (arc-12 S2, 2026-08-21) — root-cause attribution corrected; family repaired by fail-stop
+
+The §root-cause suspect naming ("the arc-2 S1 threaded symbol supply,
+core_run_aux.lem") is CORRECTED by arc-12's S0 probes: the mechanism
+of every probed F-D witness is the earlier APRIL desugar threading
+(commit `8923d6436`, `fresh_sym_supply = 0` in cabs_to_ail_effect.lem)
+— desugar ids reaching the ambient window [483, …) occupied by
+translation-minted label/temporary symbols; the observed
+wrong-continuation Esave/Erun jumps are label-symbol captures
+(e.g. `DUP num=594: ['__cerb_continue21', 'ret_594']`). The arc-2 run
+supply is exonerated for all probed witnesses (its ids seed above the
+program-symbol range); its non-escape obligation stays open,
+narrowed. This record's OBSERVATIONS (trace divergence, morph
+predictions, alpha-equivalence analysis) all stand — the correction
+is which threading member fires. Repair status: the F-D family is now
+LOUD (arc-12 fail-stop floor; all 35 witnesses CERB_FLOOR; corpus
+re-baselined). Records: 2026-08-21_arc12-s0-floor-design.md (+ its S1
+addendum), 2026-08-21_arc12-s1-floor-record.md,
+2026-08-21_arc12-renumbering-case.md.

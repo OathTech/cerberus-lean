@@ -72,3 +72,15 @@ used the post-S1 figure as the pre-arc baseline.]
 4. Then the Layer-2 (relational semantics) design charter — with the
    network-window prerequisites (elan 4.32.2, iris-lean vendoring,
    toolchain alignment) done first.
+
+---
+
+## ADDENDUM (arc-12 D2 honesty note, 2026-08-21)
+
+The libc linking/loading machinery this arc introduced is unchanged,
+but arc-12 measured that the ORACLE-side libc Core objects it links
+were elaborated with live symbol-id collisions (4/12 TUs beyond the
+F-D margin; details + grandfathering: the arc-6 s1-libc-load addendum
+and the arc-12 S1/S2 records). Arc-5's differential greens stand as
+agreement-evidence; the oracle-internal soundness qualifier now
+attaches to every libc-mode row.

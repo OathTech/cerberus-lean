@@ -76,3 +76,35 @@ shakedown and FIXED before the sweep, commit bdb9f1967; the sweep
 re-confirms it closed). Lean-side perf-gaps (TIMEOUT_LEAN_PERF bucket)
 are registered in the campaign record, not defects. Later-round
 findings, if any, are appended here.
+
+## ARC-12 STATUS UPDATE (2026-08-21): F-D REPAIRED — FAIL-STOP; attribution corrected
+
+**Repair.** The F-D family is now IMPOSSIBLE-SILENTLY on the fork
+oracle: the arc-12 fail-stop floor (util/cerb_fresh.ml two-check
+per-TU dynamic floor + backend/common/ail_sym_hwm.ml desugar
+high-water fold; design `lean_frontend/docs/
+2026-08-21_arc12-s0-floor-design.md`, evidence `..._arc12-s1-floor-
+record.md`) refuses any TU whose desugar-threaded symbol ids can
+overlap ambient ids — one `CERB_FRESH_FLOOR_VIOLATION` stderr line,
+exit 70, harness bucket `CERB_FLOOR`. All 35 witnesses in this
+manifest (+ sia_csmith_976, reclassified latent F-D) now fail LOUD;
+none silently wrong. Symbol numbering of in-margin programs is
+bit-for-bit unchanged (pin-provenance + generated-tree gates).
+RENUMBERING (removing the refusal class) is deferred:
+`lean_frontend/docs/2026-08-21_arc12-renumbering-case.md`.
+
+**Attribution correction (addendum — the 2026-08-21 attribution
+paragraph above is superseded on the mechanism, not on the
+upstream/fork split).** Arc-12 S0 probing (20/20 witnesses
+duplicate-scan-positive in `--pp core -d5`; upstream 0/2 control;
+11,206 run-time suspicious-equality hits on one witness) established
+that the family's mechanism is the APRIL DESUGAR THREADING (commit
+`8923d6436`: desugM `fresh_sym_supply = 0` — desugar ids [0,N) no
+longer advance the ambient counter) colliding with TRANSLATION-minted
+ambient label/temp symbols (`ret_/break_/continue_/while_N`, `a_N`)
+via description-insensitive symbol equality. The arc-2 S1 threaded
+run supply (`core_run_aux.lem:287`, named "prime suspect" above) is
+EXONERATED for every probed witness: run-supply ids seed above the
+whole program-symbol range (~5,000-8,700 measured). Its conceded
+non-escape obligation remains open but narrowed (arc-12 S1 record
+§5.3). F-A/F-B/F-E dispositions are unchanged.

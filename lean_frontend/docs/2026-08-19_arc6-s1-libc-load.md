@@ -255,3 +255,26 @@ ProcDecl pp form. tests/minimal test_core is now 106/106.
    generated guards (mechanically verified over the pinned dump).
 4. 006-strlen-snprintf: the precise S2 varargs handoff point
    (formatted.lem:797 → CerbMem.vaList stub).
+
+---
+
+## ADDENDUM (arc-12 D2 honesty note, 2026-08-21) — libc.co is collision-exposed
+
+Arc-12 measured the fork's own libc sources against the F-D symbol-id
+margin (483): 4 of the 12 TUs are beyond it — stdio (desugar hwm
+**856**), stdlib (**673**), internal (**682**), vfscanf (**521**) —
+and the un-floored elaborations of three carry LIVE duplicate
+(digest,num) pairs: stdio **214**, stdlib **58**, internal **106**
+(e.g. `__uflow` = `ret_526` as map keys); vfscanf's overflow is
+supply-only. The pinned `libc.co` / `tests/libc/libc.core` were BUILT
+from these elaborations, so every libc-mode oracle verdict rides on
+collision-exposed Core objects; their correctness evidence is the
+differential agreement with the protected Lean side (7/7 libc_exec,
+16/16 uri). Under the D2 ruling: the pinned artifacts are
+GRANDFATHERED (register entries, arc-12 S2 record); libc.co REBUILDS
+are blocked by the floor until the renumbering-era re-derivation (the
+mover); the 12 metadata cabs-jsons are regenerated via the
+verified-sound export exemption (Cabs bytes are pre-desugar — arc-12
+batch-4 evidence: beyond-margin exports byte-identical across
+collision-possible and collision-impossible counter bases). No arc-6
+result is changed; the trust base is now stated precisely.

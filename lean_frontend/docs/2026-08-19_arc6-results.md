@@ -74,3 +74,25 @@ lem-lean arc tip `bd7e2eb` = Lake manifest = deps/lem-pinned = opam
 3. pp-placeholder text class (3 of the 4 ci non-agreements + mem3-004).
 4. Stack-ceiling guard; csmith at scale (creduce now installed).
 5. Concurrency arc (survey Stage 0-2): charter tray complete.
+
+---
+
+## ADDENDUM (arc-12 D2 honesty note, 2026-08-21) — the uri gate's oracle side is collision-exposed
+
+Arc-12's F-D fail-stop floor (records:
+`2026-08-21_arc12-s0-floor-design.md`, `..._arc12-s1-floor-record.md`)
+measured that `deps/libxml2/uri.c` is far beyond the fork oracle's
+symbol-id margin: desugar high-water **1798** vs ambient window base
+**483**, with **252 live duplicate (digest,num) symbol pairs** in the
+fork's un-floored elaboration (including libxml2 API symbols
+`__xmlLastError`/`__xmlGenericError`/`__xmlStructuredError` colliding
+with SD_None temporaries). Every ORACLE_LIBC verdict this gate has ever
+produced — including this arc's 16/16 — came from that exposed
+elaboration; its correctness is validated BY the gate's byte-agreement
+with the protected Lean side (the coincidentally-correct class of the
+arc-12 corpus analysis), not by oracle-internal soundness. Under the
+D2 ruling the lane now runs GRANDFATHERED (explicit
+`CERB_FRESH_FLOOR_GRANDFATHER=1`, loud per-TU stderr warning, register
+entry in the arc-12 S2 record; mover: renumbering-era re-derivation).
+This addendum does not change any arc-6 result; it attaches the
+exposure asterisk the evidence now carries.
