@@ -31,8 +31,10 @@ namespace RelSem.Tactics
     behavioral change to the walker/emitter. A forgotten bump can only
     produce a loud mid-replay failure, never unsoundness (the trace is
     untrusted data). History: 1 = arc-11 S1 batch 1 (lane
-    consolidation, sealing-as-default, structured events). -/
-def engineRev : Nat := 1
+    consolidation, sealing-as-default, structured events);
+    2 = arc-11 S1 batches 3-4 (replay lanes, context queries, typed
+    residuals, dynamic ambiguity check). -/
+def engineRev : Nat := 2
 
 /-! ## The sealed-aux registry (A-F6).
 
@@ -81,6 +83,9 @@ inductive Residual where
   | ambiguousLaw (laws : Array Name)
   /-- empty candidate set on an app-shaped position. -/
   | missingLaw
+  /-- a GATING required-fact key found no context match (batch-4
+      grammar extension, recorded). -/
+  | missingFact (head : Name)
   deriving Inhabited, Repr, BEq
 
 /-- Why a candidate law did or did not fire. -/

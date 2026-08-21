@@ -1121,6 +1121,77 @@ partial def dischargeHyp (cfg : WalkCfg) (fuel : Nat) (h : MVarId) : MetaM Bool 
     -- No: mechanical means mechanical. Fail.
     return false
 
+/-! ## The §12.3 context query (arc-11 S1 batch 4).
+    Evidence: Lithium `FindInContext`/`FindHypEqual` + once-commit;
+    Islaris `findR(r)`/`findM(a)` keyed lookup; Diaframe
+    required-logical-state rule formats (design §12.3 evidence map). -/
+
+inductive FactQueryResult where
+  | hit (fact : Name) | noKey | commitFailed
+  deriving BEq, Inhabited
+
+/-- Resolve one declared required-fact for a candidate law whose LHS
+    is unified. DETERMINISTIC: local hypotheses newest-first; the
+    key argument compares syntactically first, then under a small
+    capped defeq; the FIRST key-match COMMITS to one capped full-type
+    defeq — success assigns the premise, failure is final for this
+    query (no further scanning, no backtracking). -/
+def queryRequiredFact (cfg : WalkCfg) (rf : RequiredFact)
+    (pm : MVarId) : MetaM FactQueryResult := do
+  let ty ← instantiateMVars (← pm.getType)
+  let some (_, plhs, _) := ty.eq? | return .noKey
+  unless plhs.getAppFn.isConstOf rf.head do return .noKey
+  let pargs := plhs.getAppArgs
+  unless rf.keyPos < pargs.size do return .noKey
+  let key := pargs[rf.keyPos]!
+  if key.hasExprMVar then return .noKey
+  let decls := (← getLCtx).decls.toArray.filterMap id |>.reverse
+  for decl in decls do
+    if decl.isImplementationDetail then continue
+    let dty ← instantiateMVars decl.type
+    let some (_, dlhs, _) := dty.eq? | continue
+    unless dlhs.getAppFn.isConstOf rf.head do continue
+    let dargs := dlhs.getAppArgs
+    unless rf.keyPos < dargs.size do continue
+    let dkey := dargs[rf.keyPos]!
+    let keyOk ←
+      if Expr.equal dkey key then pure true
+      else pure ((← attempt (20000 * 1000) (do
+        unless (← isDefEq dkey key) do failure)).isSome)
+    unless keyOk do continue
+    -- first key-match COMMITS
+    if (← attempt (100000 * 1000) (do
+        unless (← isDefEq dty ty) do failure
+        pm.assign decl.toExpr)).isSome then
+      trHyp cfg.traceRef (.assumption 0 decl.userName)
+      return .hit decl.userName
+    else
+      return .commitFailed
+  return .noKey
+
+/-- Typed residual classification (§12.3) for a failed premise. -/
+def classifyResidual (pm : MVarId) : MetaM Residual := do
+  let ty ← instantiateMVars (← pm.getType)
+  match ty.eq? with
+  | some (_, l, r) =>
+    if l.isAppOfArity `RelSem.app 7 then
+      let cands ← tryCatchRuntimeEx
+        (attempt (20000 * 1000) (appEqMatches (← whnfCore l))
+          <&> (·.getD #[]))
+        (fun _ => pure #[])
+      if cands.isEmpty then return .missingLaw
+      return .semantic
+        (l.getAppArgs[5]!.getAppFn.constName?.getD `RelSem.app)
+    else
+      return .defeqBridge (l.getAppFn.constName?.getD .anonymous)
+        (r.getAppFn.constName?.getD .anonymous)
+  | none =>
+    let h := ty.getAppFn.constName?.getD .anonymous
+    if h == ``LE.le || h == ``LT.lt || h == ``GE.ge || h == ``GT.gt
+        || h == ``Ne || h == ``Not then
+      return .arithmetic
+    return .semantic h
+
 /-- One walker round on goal `app C σ = R`: try registered laws
     most-specific-first; on success return the fired law's name and
     the continuation goal (none when the goal is CLOSED terminally). -/
@@ -1162,6 +1233,26 @@ partial def walkOnce (cfg : WalkCfg) (goal : MVarId)
         fateCell.set (some .lhsMismatch)
         if verbose then logInfo m!"app_walk?: {law.name} LHS mismatch"
         return none
+      -- §12.3 CONTEXT QUERIES: declared required-fact premises run
+      -- BEFORE mechanical discharge — gating facts (`fact!`) decide
+      -- applicability; soft facts (`fact`) pre-discharge and fall
+      -- through to the normal lanes on a miss.
+      for rf in law.facts do
+        if h : rf.idx < args.size then
+          let a := args[rf.idx]
+          if a.isMVar && !(← a.mvarId!.isAssigned) then
+            match ← queryRequiredFact cfg rf a.mvarId! with
+            | .hit _ => pure ()
+            | .commitFailed =>
+              if rf.gate then
+                fateCell.set (some (.hypFailed rf.idx
+                  (some (.defeqBridge rf.head rf.head))))
+                return none
+            | .noKey =>
+              if rf.gate then
+                fateCell.set (some (.hypFailed rf.idx
+                  (some (.missingFact rf.head))))
+                return none
       -- side hypotheses
       let mut ok := true
       let mut hidx := 0
@@ -1170,7 +1261,8 @@ partial def walkOnce (cfg : WalkCfg) (goal : MVarId)
          if !(← a.mvarId!.isAssigned) then
           if (← isProp (← inferType a)) then
             unless (← Core.withCurrHeartbeats (dischargeHyp cfg 4 a.mvarId!)) do
-              fateCell.set (some (.hypFailed hidx))
+              let rcls ← observing? (classifyResidual a.mvarId!)
+              fateCell.set (some (.hypFailed hidx rcls))
               if verbose then
                 let ty' ← instantiateMVars (← a.mvarId!.getType)
                 let lhsHead := match ty'.eq? with
@@ -1231,6 +1323,33 @@ partial def walkOnce (cfg : WalkCfg) (goal : MVarId)
       return some (law.name, some rest.mvarId!))
     match res with
     | some (some r) =>
+      -- §12.3 DYNAMIC AMBIGUITY: a SAME-priority sibling that also
+      -- passes the applicability gate (LHS unification + gating
+      -- facts) is an ERROR, never a silent first-wins. (Same-key
+      -- same-prio pairs are already excluded at registration.)
+      for law' in cands do
+        if law'.name != law.name && law'.prio == law.prio then
+          let st' ← saveState
+          let amb ← attempt (20000 * 1000) (do
+            let lemExpr' ← mkConstWithFreshMVarLevels law'.name
+            let (args', _, lemTy') ← forallMetaTelescopeReducing
+              (← inferType lemExpr')
+            let some (_, lemLhs', _) := lemTy'.eq? | failure
+            unless (← isDefEq lemLhs' lhs) do failure
+            for rf in law'.facts do
+              if rf.gate then
+                if h : rf.idx < args'.size then
+                  let a := args'[rf.idx]
+                  if a.isMVar then
+                    let qr ← queryRequiredFact cfg rf a.mvarId!
+                    unless (match qr with | .hit _ => true | _ => false) do
+                      failure)
+          restoreState st'
+          if amb.isSome then
+            throwError "app_walk: AMBIGUOUS round — laws {law.name} \
+              and {law'.name} both apply at priority {law.prio} \
+              (§12.3 ambiguity-is-error; resolve with explicit \
+              priorities)"
       trFate cfg.traceRef law.name law.prio .fired
       return some r
     | _ =>
@@ -1308,7 +1427,22 @@ private partial def walkLoopCore (cfg : WalkCfg) (goal : MVarId)
         trOutcome cfg.traceRef .closedRfl
         if verbose then logInfo m!"app_walk: closed by rfl"
         return none
-      trOutcome cfg.traceRef (.stuck none)
+      -- §12.3: classify the stuck goal (missing law vs semantic).
+      let rcls ← g.withContext do
+        let tgt := (← instantiateMVars (← g.getType)).consumeMData
+        match tgt.eq? with
+        | some (_, l, _) =>
+          if l.isAppOfArity `RelSem.app 7 then
+            let cands ← tryCatchRuntimeEx
+              (attempt (20000 * 1000)
+                (appEqMatches (← whnfCore l)) <&> (·.getD #[]))
+              (fun _ => pure #[])
+            if cands.isEmpty then pure (some Residual.missingLaw)
+            else pure (some (Residual.semantic
+              (l.getAppArgs[5]!.getAppFn.constName?.getD `RelSem.app)))
+          else pure none
+        | none => pure none
+      trOutcome cfg.traceRef (.stuck rcls)
       if verbose then dbg_trace "app_walk?: returning stuck goal"
       return some g
   trOutcome cfg.traceRef .budget

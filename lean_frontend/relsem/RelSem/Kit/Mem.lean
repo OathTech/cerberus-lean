@@ -87,8 +87,17 @@ def isBoolTy : ctype → Bool
   | _ => false
 
 /-- LOAD, success path: non-Bool type (no trap-representation branch),
-    live allocation, in bounds; state unchanged. -/
-@[app_eq]
+    live allocation, in bounds; state unchanged.
+
+    `(fact := hget 3)` — the arc-11 S1 batch-4 context-query EXEMPLAR
+    (design §12.3, SOFT mode): the `hget` allocation-lookup premise is
+    keyed on the allocations MAP (argument 3 of `Std.TreeMap.get?`);
+    a context hypothesis about the same map commits first (the
+    Islaris `findM(a)` move — the fact then DETERMINES allocId/alloc),
+    and the normal mechanical lanes run unchanged on a miss
+    (behavior-compatible: every existing walk discharges hget as
+    before). -/
+@[app_eq (fact := hget 3)]
 theorem mem_load_block {loc : CerbLocation.Loc} {ty : ctype}
     {allocId : Int} {addr : Int} {um : Option identifier}
     {alloc : CerbMem.Allocation} {mem : CerbMem.MemState}
