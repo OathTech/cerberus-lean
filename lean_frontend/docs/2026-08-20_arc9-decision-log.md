@@ -118,3 +118,23 @@ orchestrator judgment call resolved by project principles.
   fix). All tallies in this line are DERIVED (re-counted at head
   2026-08-21), labeled per the verbatim-transcript doctrine. Full
   finding list + dispositions: results doc §8.
+- **D5 [AGENT] — audits complete, fix-batch verified, ARC READY FOR
+  MERGE ASK.** Two adversarial audits: A (reuse honesty + soundness)
+  — clean bill on every attack: 5-lane plant test (no walker lane can
+  close a false goal, incl. the raw-addDecl emitter), all 54 pins
+  live-verified, statement gate + negative tests green, every
+  BUILD-NEW matrix row re-justified at the iris pin, OwnP retirement
+  real; B (attribution + grind honesty + rebase integrity) — rebase
+  15/16 patch-identical with the sole delta = the enumerated
+  resolution, 44/79 park position independently reproduced
+  byte-identical, attributions verified deep into cited sources,
+  heartbeat doctrine clean, Yolo paper-only boundary clean. Findings
+  fixed: A-F1 hardcoded debug path → trace stream; B-F1 calibration
+  headline corrected to the honest ~200→5 / 1,038→862 split
+  (C1 correction line, D4 untouched); B-F2 census block relabeled
+  condensed-derived per the arc-6 doctrine; census stales; A-F5
+  debug-surface gate ban extended + plant-tested. Record-only items
+  in results §8 (labeled derived). Orchestrator final verification at
+  54921fa23: unit 7/7 incl. the extended ban, exec zero movement,
+  merge-base = mainline head (ff-only ready), zero lem involvement.
+  Merge ask goes to the operator.
