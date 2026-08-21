@@ -15,7 +15,17 @@
 # breach is never silent.
 #
 # Additionally FAIL (unconditional):
-#   * `app_walk?` in ANY committed relsem file (debug-only tactic);
+#   * debug-only walker surfaces in ANY committed relsem file:
+#     `app_walk?`/`app_walk_norm?` (S2), and — arc-9 pre-merge audit
+#     A-F5 (2026-08-21) — `app_defeq_diag`, `dnms_kwalk`, and
+#     `app_walk_norm!`. POLICY DECISION (recorded here per the audit
+#     disposition): none of the three appear in any committed proof
+#     (T1AppEq/T5Prefix verified clean at the time of the extension),
+#     so ALL THREE are banned outright, same policy as `app_walk?`.
+#     Untracked session scratch (Probe*.lean etc.) is exempt via the
+#     git-tracked filter below — the ban is on COMMITTED files; a
+#     future legitimate committed use requires an explicit,
+#     operator-visible gate-policy change here.
 #   * fixture-symbol references inside Kit/*.lean — the MEGA-LEMMA
 #     COUNTER: a "kit lemma" that names a fixture is bar-gaming by
 #     construction.
@@ -50,15 +60,31 @@ else
     echo "check_proof_size: Kit files fixture-free OK ($(ls "$RELSEM"/Kit/*.lean | wc -l | tr -d ' ') files)"
 fi
 
-# --- app_walk? ban in committed proofs -------------------------------
-dbg_hits=$(grep -rnE '^[^-]*\bapp_walk(_norm)?\?' "$RELSEM"/*.lean "$RELSEM"/Kit/*.lean 2>/dev/null \
+# --- debug-surface ban in committed proofs ---------------------------
+# app_walk?/app_walk_norm? (S2) + app_defeq_diag/dnms_kwalk/
+# app_walk_norm! (arc-9 audit A-F5; policy note in the header).
+# Hits are filtered to git-TRACKED files: the ban is on COMMITTED
+# proofs; untracked session scratch (Probe*.lean) may use debug
+# surfaces by design.
+raw_dbg_hits=$(grep -rnE '^[^-]*\b(app_walk(_norm)?\?|app_walk_norm!|dnms_kwalk|app_defeq_diag)' \
+    "$RELSEM"/*.lean "$RELSEM"/Kit/*.lean 2>/dev/null \
     | grep -v 'Tactics/' || true)
+dbg_hits=""
+if [[ -n "$raw_dbg_hits" ]]; then
+    while IFS= read -r hit; do
+        [[ -z "$hit" ]] && continue
+        hf="${hit%%:*}"
+        if git -C "$SCRIPT_DIR/.." ls-files --error-unmatch "$hf" >/dev/null 2>&1; then
+            dbg_hits+="$hit"$'\n'
+        fi
+    done <<< "$raw_dbg_hits"
+fi
 if [[ -n "$dbg_hits" ]]; then
-    echo "check_proof_size: FAIL — app_walk? (debug-only) in committed files:"
-    echo "$dbg_hits"
+    echo "check_proof_size: FAIL — debug-only walker surface in committed files:"
+    printf '%s' "$dbg_hits"
     fail=1
 else
-    echo "check_proof_size: app_walk? ban OK"
+    echo "check_proof_size: debug-surface ban OK (app_walk?/app_walk_norm!/dnms_kwalk/app_defeq_diag)"
 fi
 
 # --- per-slate-file line + manual-step tallies ------------------------

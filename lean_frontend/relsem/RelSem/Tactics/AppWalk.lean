@@ -853,12 +853,13 @@ partial def dischargeHyp (cfg : WalkCfg) (fuel : Nat) (h : MVarId) : MetaM Bool 
                 try mkAuxRfl lhs (← instantiateMVars rhs)
                 catch ex =>
                   if cfg.trace then
+                    -- emit a standalone repro (the fact type + every
+                    -- referenced walk const body) on the TRACE stream.
+                    -- No file IO here (audit A-F1): an IO failure in
+                    -- diagnostics must never mask the original `ex`.
                     dbg_trace "dh[{fuel}]: mkAuxRfl THREW: {← ex.toMessageData.toString}"
-                    -- dump a standalone repro: the fact type + every
-                    -- referenced walk const body
                     let ty ← mkEq lhs (← instantiateMVars rhs)
-                    let h ← IO.FS.Handle.mk "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/wp-tactics/scratch/repro.txt" .write
-                    h.putStrLn s!"-- FACT TYPE:\n{← ppExpr ty}"
+                    dbg_trace "dh[{fuel}]: repro FACT TYPE:\n{← ppExpr ty}"
                     let cs := ty.getUsedConstants
                     for c in cs do
                       let isW := match c with
@@ -866,10 +867,9 @@ partial def dischargeHyp (cfg : WalkCfg) (fuel : Nat) (h : MVarId) : MetaM Bool 
                         | _ => false
                       if isW then
                         if let some ci := (← getEnv).find? c then
-                          h.putStrLn s!"-- CONST {c} : {← ppExpr ci.type}"
+                          dbg_trace "dh[{fuel}]: repro CONST {c} : {← ppExpr ci.type}"
                           if let some v := ci.value? then
-                            h.putStrLn s!"-- BODY:\n{← ppExpr v}"
-                    h.flush
+                            dbg_trace "dh[{fuel}]: repro BODY:\n{← ppExpr v}"
                   throw ex
               h.assign pf
             else
