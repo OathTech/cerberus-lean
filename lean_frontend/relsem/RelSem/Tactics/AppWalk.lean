@@ -397,7 +397,15 @@ partial def dischargeHyp (cfg : WalkCfg) (fuel : Nat) (h : MVarId) : MetaM Bool 
       let st ← saveState
       match ← attempt cfg.candBudget (do
           let t0 ← IO.monoMsNow
-          let v ← if cfg.norm then normCompute cfg.atoms cfg.depth lhs
+          -- selection-shaped facts (`some ?x` patterns) take the
+          -- kernel-whnf output VERBATIM: the value is a subterm of an
+          -- already-normal spine, and re-normalization creates a
+          -- structurally different form whose kernel bridge
+          -- deep-recurses (S3 hfind finding).
+          let isSelection := rhs.isApp && rhs.getAppFn.isConstOf ``Option.some
+          let v ← if cfg.norm then
+                    if isSelection then kWhnf lhs
+                    else normCompute cfg.atoms cfg.depth lhs
                   else normSpine 4 lhs
           if (← isDefEq rhs v) then
             if cfg.sealFacts then
@@ -714,6 +722,21 @@ elab_rules : tactic
     | some g => replaceMainGoal [g]
     | none => replaceMainGoal []
 
+/-- `app_walk_norm!` — the v3 SEALED walk: law-structured rounds with
+    per-fact aux theorems, per-round aux theorems, and per-state aux
+    definitions (the T4 hand-proof architecture, automated). -/
+syntax (name := appWalkNormSealed) "app_walk_norm!" (ppSpace num)? : tactic
+
+elab_rules : tactic
+  | `(tactic| app_walk_norm! $[$n:num]?) => do
+    let budget := match n with | some n => n.getNat | none => 64
+    let goal ← getMainGoal
+    let atoms ← stateAtoms
+    let cfg : WalkCfg := { norm := true, atoms := atoms, candBudget := 200000 * 1000, sealFacts := true, sealRounds := true, sealStates := true }
+    match ← walkLoop cfg goal budget false with
+    | some g => replaceMainGoal [g]
+    | none => replaceMainGoal []
+
 /-- `app_walk_norm?` — v2 debug lane (banned in committed proofs,
     same as `app_walk?`). -/
 syntax (name := appWalkNormDebug) "app_walk_norm?" (ppSpace num)? : tactic
@@ -776,6 +799,208 @@ elab "app_defeq" : tactic => do
     | .ok false => throwError "app_defeq: kernel says NOT defeq"
     | .error e =>
       throwError "app_defeq: kernel error {e.toMessageData {}}"
+
+/-! ## The KERNEL-ROUND walker (`dnms_kwalk`, walker v3 — S3):
+    a dedicated dnms pipeline with NO unification machinery — per
+    round it SYNTHESIZES the post-state (kernel whnf + the v2 state
+    normal form), seals it as an auxiliary DEFINITION, and certifies
+    the whole round as ONE auxiliary rfl-theorem whose kernel check
+    re-derives the round (the T4 per-round-lemma structure,
+    automated: every certificate is a small named-state-to-
+    named-state equation, so kernel recursion is bounded per round).
+    Stops (goal untouched by the failed round) at semantic rounds: a
+    non-NOWAKEUP advance, a stuck computation, or a kernel refusal —
+    such a round is then an explicit `app_walk_step`. -/
+
+/-- Parse `app <5 ty args> (dnmsFuel fuelS tagDefs acc tids) σ`
+    (the computation argument is reduced at reducible transparency so
+    fixture abbrevs like `dnms5` unfold). -/
+def parseDnmsApp (e : Expr) :
+    MetaM (Option (Expr × Expr × Nat × Expr × Expr × Expr × Expr)) := do
+  unless e.isAppOfArity `RelSem.app 7 do return none
+  let args := e.getAppArgs
+  let comp ← withReducible <| whnf args[5]!
+  let σ := args[6]!
+  let go : Option (Expr × Nat × Expr × Expr × Expr) := do
+    guard (comp.isAppOfArity `drive_nonmemory_steps_aux2_lemFuel 4)
+    let cargs := comp.getAppArgs
+    let fuelS := cargs[0]!
+    guard (fuelS.isAppOfArity `HAdd.hAdd 6)
+    let base := fuelS.getAppArgs[4]!
+    let litE := fuelS.getAppArgs[5]!
+    let lit ← litE.rawNatLit? <|> (do
+      guard (litE.isAppOfArity `OfNat.ofNat 3)
+      litE.getAppArgs[1]!.rawNatLit?)
+    guard (lit ≥ 1)
+    return (base, lit, cargs[1]!, cargs[2]!, cargs[3]!)
+  match go with
+  | none => return none
+  | some (base, lit, tagDefs, acc, tids) =>
+    -- the head applied through the five implicit type args
+    return some (e.appFn!.appFn!, base, lit, tagDefs, acc, tids, σ)
+
+/-- Scan a steps spine for the first advanceable step (meta mirror of
+    `find_can_advance`); the result is the EXACT spine subterm. -/
+partial def scanSteps (e : Expr) : MetaM (Option Expr) := do
+  let e ← kWhnf e
+  if e.isAppOfArity `List.cons 3 then
+    let hd := e.getAppArgs[1]!
+    let ca ← kWhnf (← mkAppM `can_advance #[hd])
+    if ca.isConstOf `Bool.true then
+      return some hd
+    else if ca.isConstOf `Bool.false then
+      scanSteps e.getAppArgs[2]!
+    else
+      return none
+  else
+    return none
+
+/-- One kernel-round: synthesize the post-state, seal, certify.
+    Returns the continuation goal (`none` = the round was not
+    taken). -/
+def kwalkRound (cfg : WalkCfg) (goal : MVarId) :
+    MetaM (Option (MVarId × Name)) := do
+  goal.withContext do
+  let tgt := (← instantiateMVars (← goal.getType)).consumeMData
+  let some (_, lhs0, rhs) := tgt.eq? | return none
+  let lhs ← whnfCore lhs0
+  let some (appFn, base, lit, tagDefs, acc, tids, σ) ← parseDnmsApp lhs
+    | return none
+  -- single-thread shape: th_info = the head of the thread list
+  let thList ← kWhnf (← mkAppM `core_state.thread_states
+    #[← mkAppM `driver_state.core_state0 #[σ]])
+  unless thList.isAppOfArity `List.cons 3 do return none
+  let hdPair ← kWhnf thList.getAppArgs[1]!   -- (tid, th_info)
+  unless hdPair.isAppOfArity `Prod.mk 4 do return none
+  let tid ← kWhnf hdPair.getAppArgs[2]!
+  let thInfo := hdPair.getAppArgs[3]!
+  -- discovery + scan
+  let steps ← kWhnf (← mkAppM `step_ctx
+    #[tagDefs, ← mkAppM `driver_state.layout_state #[σ],
+      ← mkAppM `driver_state.core_file #[σ],
+      ← mkAppM `driver_state.core_extern #[σ], tid, thInfo])
+  let some step1 ← scanSteps steps | return none
+  -- the advance
+  let advApp ← mkAppM `RelSem.app
+    #[← mkAppM `advance_step #[tagDefs, tid, step1], σ]
+  let adv ← kWhnf advApp
+  unless adv.isAppOfArity `Prod.mk 4 do return none
+  let outcome ← kWhnf adv.getAppArgs[2]!
+  unless outcome.getAppFn.isConstOf `nd_action.NDactive do return none
+  let wake ← kWhnf outcome.appArg!
+  let wakeName := wake.getAppFn.constName?.getD .anonymous
+  unless wakeName.getString! == "NOWAKEUP" do return none
+  let σraw := adv.getAppArgs[3]!
+  -- normalize + seal the post-state
+  let σnorm ← normStateV2 cfg.atoms cfg.depth σraw
+  let σconst ← mkAuxDefinition
+    ((← mkFreshUserName `kwSt).appendAfter "_aux")
+    (← inferType σnorm) σnorm (compile := false)
+  -- the continuation LHS and THE ROUND CERTIFICATE
+  let fuelPred ← if lit == 1 then pure base
+    else mkAppM `HAdd.hAdd #[base, mkRawNatLit (lit - 1)]
+  let compPred ← mkAppM `drive_nonmemory_steps_aux2_lemFuel
+    #[fuelPred, tagDefs, acc, tids]
+  let lhsPred := mkAppN appFn #[compPred, σconst]
+  let cert ← mkAuxRfl lhs lhsPred
+  let certName := cert.getAppFn.constName?.getD .anonymous
+  -- chain
+  let restTy ← mkEq lhsPred rhs
+  let rest ← mkFreshExprMVar restTy (userName := `kwalk)
+  goal.assign (← mkEqTrans cert rest)
+  return some (rest.mvarId!, certName)
+
+/-- `dnms_kwalk n` — walk up to `n` kernel-rounds. Each round runs in
+    its own settled heartbeat window (the walker accounting). -/
+syntax (name := dnmsKwalk) "dnms_kwalk" (ppSpace num)? : tactic
+
+elab_rules : tactic
+  | `(tactic| dnms_kwalk $[$n:num]?) => do
+    let budget := match n with | some n => n.getNat | none => 64
+    let atoms ← stateAtoms
+    let cfg : WalkCfg := { norm := true, atoms := atoms,
+                           candBudget := 200000 * 1000 }
+    let mut g ← getMainGoal
+    let mut count : Nat := 0
+    for _ in [0:budget] do
+      let hb0 ← IO.getNumHeartbeats
+      let r ← tryCatchRuntimeEx
+        (Core.withCurrHeartbeats do
+          attempt cfg.candBudget (kwalkRound cfg g))
+        (fun _ => pure none)
+      IO.setNumHeartbeats hb0
+      match r with
+      | some (some (g', _)) => g := g'; count := count + 1
+      | _ => break
+    let _ := count
+    replaceMainGoal [g]
+
+/-- `app_defeq_fields` — close an equation between two STRUCTURE
+    values (possibly under one application layer, as `app C σ = app
+    C' σ'`) by kernel-whnf'ing both sides to their constructor
+    applications and certifying each FIELD with its own kernel-checked
+    rfl auxiliary, assembled by `congr`. Bounds the kernel's
+    per-certificate work by field (the S3 boundary finding: the
+    monolithic state check across a sealed def-chain deep-recurses
+    where every field check passes). -/
+elab "app_defeq_fields" : tactic => do
+  let goal ← getMainGoal
+  goal.withContext do
+    let ty ← instantiateMVars (← goal.getType)
+    let some (_, l0, r0) := ty.consumeMData.eq?
+      | throwError "app_defeq_fields: goal is not an equation"
+    if ty.hasExprMVar then
+      throwError "app_defeq_fields: goal carries metavariables"
+    let env ← getEnv
+    let lctx ← getLCtx
+    -- peel one application layer when the functions are kernel-defeq
+    let (l, r, wrap?) ←
+      if l0.isApp && r0.isApp then
+        match Lean.Kernel.isDefEq env lctx l0.appFn! r0.appFn! with
+        | .ok true => pure (l0.appArg!, r0.appArg!, some l0.appFn!)
+        | _ => pure (l0, r0, none)
+      else pure (l0, r0, none)
+    -- whnf both to ctor applications
+    let lC := match Lean.Kernel.whnf env lctx l with | .ok x => x | _ => l
+    let rC := match Lean.Kernel.whnf env lctx r with | .ok x => x | _ => r
+    unless lC.getAppFn.isConst && Expr.equal lC.getAppFn rC.getAppFn do
+      throwError "app_defeq_fields: sides do not share a constructor"
+    let lAs := lC.getAppArgs
+    let rAs := rC.getAppArgs
+    unless lAs.size == rAs.size do
+      throwError "app_defeq_fields: arity mismatch"
+    -- per-field certificates (params included; cheap when syntactic)
+    let mut fieldPfs : Array Expr := #[]
+    for i in [0:lAs.size] do
+      let la := lAs[i]!
+      let ra := rAs[i]!
+      if Expr.equal la ra then
+        fieldPfs := fieldPfs.push (← mkAppM ``Eq.refl #[la])
+      else
+        match Lean.Kernel.isDefEq env lctx la ra with
+        | .ok true => fieldPfs := fieldPfs.push (← mkAuxRfl la ra)
+        | .ok false =>
+          throwError "app_defeq_fields: field {i} NOT defeq"
+        | .error e =>
+          throwError "app_defeq_fields: kernel error at field {i}: {e.toMessageData {}}"
+    -- assemble: mk l1… = mk r1… by iterated congr
+    let mut pf ← mkAppM ``Eq.refl #[lC.getAppFn]
+    for fpf in fieldPfs do
+      pf ← mkAppM ``congr #[pf, fpf]
+    -- bridge the outer spellings (l = lC by rfl aux; rC = r by rfl aux)
+    let lBridge ← if Expr.equal l lC then mkAppM ``Eq.refl #[l]
+      else mkAuxRfl l lC
+    let rBridge ← if Expr.equal rC r then mkAppM ``Eq.refl #[r]
+      else mkAuxRfl rC r
+    let mut whole ← mkEqTrans lBridge (← mkEqTrans pf rBridge)
+    if let some f := wrap? then
+      whole ← mkAppM ``congrArg #[f, whole]
+      -- and bridge the possibly-different function spellings
+      unless Expr.equal l0.appFn! r0.appFn! do
+        let fBridge ← mkAuxRfl l0.appFn! r0.appFn!
+        whole ← mkAppM ``congr #[fBridge, ← mkEqTrans lBridge (← mkEqTrans pf rBridge)]
+    goal.assign whole
+    replaceMainGoal []
 
 /-- `app_defeq_diag` — DIAGNOSTIC (debug only): kernel-whnf both
     sides to ctor spines and report pairwise kernel-defeq per
