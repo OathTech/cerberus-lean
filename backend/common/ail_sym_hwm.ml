@@ -4,18 +4,29 @@
    §4.3).
 
    Returns the maximum symbol NUMBER occurring anywhere in a desugared Ail
-   program (-1 if none), including:
-     - every Symbol.sym in the tree (declarations, definitions, binders,
-       labels incl. the freshify'd __cerb_continue AilSlabel syms, gotos,
-       struct/union tags inside ctypes, typedef/inlined-label annotations,
-       extern-idmap and typedef-attribute entries);
-     - the desugar-drawn NAT ids that live in the tree without being wrapped
-       in a Symbol (loop ids on AilSwhile/AilSdo + loop_attributes keys,
-       marker ids on AilSmarker / Amarker / loop_attribute.marker_id, the
-       per-function-definition marker int): a Symbol is not known to be
-       constructed from these, but they are desugar-supply draws, so noting
-       them only tightens the mark toward the true supply high water — never
-       above it.
+   program (-1 if none): every Symbol.sym in the tree (declarations,
+   definitions, binders, labels incl. the freshify'd __cerb_continue
+   AilSlabel syms, gotos, struct/union tags inside ctypes,
+   typedef/inlined-label annotations, extern-idmap and typedef-attribute
+   entries).
+
+   v2 — SYMBOLS ONLY (S1 measurement-driven correction, recorded in the S1
+   record): v1 also noted the desugar-drawn NAT ids that live in the tree
+   unwrapped (loop ids, marker ids). Those are draws of the same supply, so
+   v1 tracked the raw supply high water — but only SYMBOLS can collide
+   (symbol.lem symbolEqual is over syms; on the cerberus driver path no
+   Symbol is ever constructed from a loop/marker nat — verified at every
+   use site: loop_attributes and AilSmarker/Amarker/fn-def-marker are
+   int-keyed/int-valued throughout, translation label syms are fresh
+   ambient draws), and the corpus measurement showed the raw-supply mark
+   exceeds the live-symbol mark by roughly one draw per source line
+   (dropped aux draws), flooring ~half the csmith corpus with zero live
+   collisions. v2 restores the reviewed S0 margin semantics: the floor
+   fires exactly on live-symbol overlap potential. Documented residual: a
+   symbol drawn mid-desugar, referenced only inside a const-expr mini-run,
+   and absent from the final tree escapes this mark; such ids are aux-tier
+   (unnamed tags and object addresses land in the tree) and the window is
+   the S2-composition transient only.
 
    Digest note: symbols of foreign digests reachable here are only the core
    stdlib ailname symbols (ids below the std.core parse budget, hence below
@@ -68,8 +79,8 @@ let max_sym_program ((_main_opt : ail_identifier option), (sigma : 'a sigma))
     | Annot.Astd _ -> ()
     | Annot.Aloc _ -> ()
     | Annot.Auid _ -> ()
-    | Annot.Amarker id -> note id
-    | Annot.Amarker_object_types id -> note id
+    | Annot.Amarker _id -> ()               (* v2: int marker, never a sym *)
+    | Annot.Amarker_object_types _id -> ()  (* v2: int marker, never a sym *)
     | Annot.Abmc (Annot.Abmc_id _) -> ()
     | Annot.Aattrs _attrs -> ()   (* attributes: identifier/string payloads only *)
     | Annot.Atypedef sym -> note_sym sym
@@ -82,9 +93,9 @@ let max_sym_program ((_main_opt : ail_identifier option), (sigma : 'a sigma))
     | Annot.Aexpr -> ()
 
   and walk_label_annot = function
-    | Annot.LAloop id -> note id
-    | Annot.LAloop_continue id -> note id
-    | Annot.LAloop_break id -> note id
+    | Annot.LAloop _id -> ()           (* v2: loop ids are ints, never syms *)
+    | Annot.LAloop_continue _id -> ()
+    | Annot.LAloop_break _id -> ()
     | Annot.LAreturn -> ()
     | Annot.LAswitch -> ()
     | Annot.LAcase -> ()
@@ -170,8 +181,8 @@ let max_sym_program ((_main_opt : ail_identifier option), (sigma : 'a sigma))
     | AilSblock (bindings, stmts) ->
         walk_bindings bindings; List.iter walk_stmt stmts
     | AilSif (e, s1, s2) -> walk_expr e; walk_stmt s1; walk_stmt s2
-    | AilSwhile (e, s, loop_id) -> walk_expr e; walk_stmt s; note loop_id
-    | AilSdo (s, e, loop_id) -> walk_stmt s; walk_expr e; note loop_id
+    | AilSwhile (e, s, _loop_id) -> walk_expr e; walk_stmt s   (* v2: int *)
+    | AilSdo (s, e, _loop_id) -> walk_stmt s; walk_expr e      (* v2: int *)
     | AilSbreak -> ()
     | AilScontinue -> ()
     | AilSreturnVoid -> ()
@@ -188,7 +199,7 @@ let max_sym_program ((_main_opt : ail_identifier option), (sigma : 'a sigma))
           decls
     | AilSpar stmts -> List.iter walk_stmt stmts
     | AilSreg_store (_reg, e) -> walk_expr e
-    | AilSmarker (id, s) -> note id; walk_stmt s
+    | AilSmarker (_id, s) -> walk_stmt s                       (* v2: int *)
   in
 
   let walk_declaration = function
@@ -223,9 +234,8 @@ let max_sym_program ((_main_opt : ail_identifier option), (sigma : 'a sigma))
     (fun (sym, e) -> note_sym sym; walk_expr e)
     sigma.object_definitions;
   List.iter
-    (fun (sym, (_loc, marker_id, _attrs, param_syms, body)) ->
-      note_sym sym;
-      note marker_id;
+    (fun (sym, (_loc, _marker_id, _attrs, param_syms, body)) ->
+      note_sym sym;                          (* v2: marker int not noted *)
       List.iter note_sym param_syms;
       walk_stmt body)
     sigma.function_definitions;
@@ -242,10 +252,9 @@ let max_sym_program ((_main_opt : ail_identifier option), (sigma : 'a sigma))
   Pmap.fold
     (fun sym _attrs () -> note_sym sym)
     sigma.typedef_attributes ();
-  Pmap.fold
-    (fun loop_id { Annot.marker_id; attributes = _; loc_condition = _;
-                   loc_loop = _ } () ->
-      note loop_id; note marker_id)
+  Pmap.fold                                (* v2: loop/marker ints not noted *)
+    (fun _loop_id { Annot.marker_id = _; attributes = _; loc_condition = _;
+                    loc_loop = _ } () -> ())
     sigma.loop_attributes ();
   Pmap.fold
     (fun (_ns, _ident) sym () -> note_sym sym)

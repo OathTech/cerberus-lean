@@ -11,10 +11,20 @@
 # the generated OCaml (whitespace-only, strip-verified 2026-08-21);
 # the review's "19 differing files" count was taken against the
 # primary checkout's tree and is superseded by this manifest.
+# NOTE (arc-12 S1, the F-D fail-stop floor — DELIB, oracle-only OCaml,
+# zero .lem edits, generated trees unmoved): util/cerb_fresh.ml (the
+# two-check per-TU floor; retires the review's "util/ untouched"
+# negative), backend/common/pipeline.ml (post-desugar set_desugar_hwm
+# hook; retires the "backend/common untouched" negative),
+# backend/common/ail_sym_hwm.ml (NEW: the desugar high-water fold).
+# Design + probe evidence: lean_frontend/docs/
+# 2026-08-21_arc12-s0-floor-design.md; S1 record in docs/.
 [meta]
 merge-base=b9aeedcb4dd438763b0eef7f95ac19e93875d7de
 lem-pin=
 [files]
+backend/common/ail_sym_hwm.ml
+backend/common/pipeline.ml
 backend/driver/dune
 backend/driver/main.ml
 backend/lean_export/cabs_json.ml
@@ -67,6 +77,7 @@ frontend/model/translation_effect.lem
 frontend/model/translation.lem
 frontend/model/utils.lem
 runtime/libcore/impls/i686-apple-darwin10-gcc-4.2.1.impl
+util/cerb_fresh.ml
 [expected-semantic]
 # generated .ml allowed to differ in OCaml tokens, pinned by sha256 of
 # the label-normalized unified diff (upstream-pristine vs fork tree)
