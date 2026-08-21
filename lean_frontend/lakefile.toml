@@ -46,7 +46,7 @@ rev = "38d591e778f100aec9762bb582f9c7f55f50e9dc"
 [[require]]
 name = "LemLib"
 git = "https://github.com/septract/lem-lean"
-rev = "a9387fbb834d552b3334b499f83076c9ee35dbb5"
+rev = "11d4b4c3cd91aa251fb7c049050d12fc4f325d70"
 subDir = "lean-lib"
 
 [[lean_lib]]
