@@ -16,6 +16,9 @@
 # Usage: ./scripts/test_csmith_corpus.sh [--write-baseline|--check-baseline] [--max N] [--shard K/M]
 #   --shard K/M   run only the K-th of M equal slices (1-based; for
 #                 batching a long sweep — deterministic: files sorted)
+#   --check-baseline on a partial run (--shard/--max) checks against the
+#   committed baseline restricted to the run's files, fail-closed on
+#   corpus/baseline drift (arc-10 S5; union of shards 1..M = full check)
 #
 # Environment: TIMEOUT_SECS (default 15), SKIP_BUILD passed through.
 # Baseline: scripts/exec_csmith_corpus_baseline.txt
@@ -73,6 +76,29 @@ if [[ "$MAX" -gt 0 ]]; then
     LIST="$LIST.max"
 fi
 echo "csmith corpus lane: $(wc -l < "$LIST") of $TOTAL files (shard='${SHARD:-all}')"
+
+# Shard-aware baseline check (arc-10 S5): when checking a PARTIAL run
+# (--shard and/or --max), check against the committed baseline
+# RESTRICTED to this run's files — test_exec.sh otherwise flags every
+# out-of-run baseline line as "in baseline but not tested" (a full-lane
+# semantics that is correct for full runs and kept for them).
+# Fail-closed integrity: every file in this run MUST have a baseline
+# line (count equality), so the union of shards 1..M checks the entire
+# committed baseline exactly once iff the corpus is unchanged.
+if [[ "$MODE" == check && ( -n "$SHARD" || "$MAX" -gt 0 ) ]]; then
+    SLICE="$STAGE/baseline.slice"
+    {
+        echo "# auto-generated slice (shard='${SHARD:-all}' max=$MAX) of $(basename "$BASELINE") — test_csmith_corpus.sh"
+        awk 'NR==FNR { want[$1]=1; next } /^[[:space:]]*(#|$)/ { next } ($1 in want)' \
+            <(sed 's|.*/||' "$LIST") "$BASELINE"
+    } > "$SLICE"
+    want=$(wc -l < "$LIST"); have=$(( $(wc -l < "$SLICE") - 1 ))
+    if [[ "$have" -ne "$want" ]]; then
+        echo "Error: baseline slice has $have entries for $want run files — corpus/baseline drift; refusing partial check" >&2
+        exit 1
+    fi
+    BASELINE="$SLICE"
+fi
 
 ARGS=(--list "$LIST")
 case "$MODE" in
