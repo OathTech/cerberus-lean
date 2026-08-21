@@ -60,3 +60,24 @@
   exemption" — a success-condition amendment, hence the operator
   flag: veto reverses to Option A (honest red lanes) pending their
   call.
+- **D3 [AGENT] — S2/S3 boundary verified; the D2 condition DISCHARGED;
+  S4 GO.** The B-soundness verification passed at the strongest
+  evidence grade: code-cited (main.ml:246 discards the desugar
+  result; cabs_json.ml is a pure function of the Cabs tree, no symbol
+  numbers) AND empirical (the 4 beyond-margin libc TU exports
+  byte-identical between collision-possible and collision-impossible
+  builds). Orchestrator re-verified: unit 7/7, minimal zero movement
+  (cerb_floor=0 on Tier-A), libc_exec ALL MATCH, uri GATE PASS 16/16,
+  grandfather-mode containment grep = exactly the two documented
+  invocations, and a direct floor-fire on csmith_6000098 producing
+  the designed self-documenting violation message (backward check,
+  range [0..629], F-D pointer). Grandfather register G1-G4 +
+  honesty addenda + the renumbering case accepted; filing drafts
+  08/09 (both TRUE BUG classified, repros re-verified un-forked
+  today) accepted for the operator's filing checklist. The D2
+  operator-veto window REMAINS OPEN through the merge ask (veto
+  reverses batch 4's lane re-greens to honest-red; the floor itself
+  is unaffected). S4: results doc + merge checklist + the 2-agent
+  audit with the worker's suggested added scopes (exemption
+  soundness, grandfather containment, fold-v2 completeness plant)
+  joined to the charter's mandatory four.
