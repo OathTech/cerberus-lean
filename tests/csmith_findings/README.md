@@ -45,12 +45,20 @@ differential).
 | `csmith_6000098.c` | **F-D witness (SILENT VALUE CORRUPTION)**: oracle `Specified(187)`, +1 decl → `Specified(138)`; Lean+gcc stable at `Specified(117)`. The oracle's defined result is a function of top-level declaration count | same |
 | `csmith_6000038.c` | F-D witness (value corruption + Lean perf note): oracle 2240 executions all `Specified(218)` (6.2s), +1 decl → 134; Lean 2240 all `Specified(13)` (= gcc; 86s — perf-gap registered) | same |
 
-F-D family in-tree witnesses beyond these: `tests/csmith/small_arrays/`
-csmith_120/149/168/19/218 (and more — full list in the corpus-lane
-baseline) show the spurious-UB manifestation (UB010/UB009 DIFFs) as
-plain in-tree files; exploration seeds 3016022/3016044/3016049/3016051/
-3016058/3016074/3016082/3016099 (B1 flags) show the internal-error
-manifestation.
+F-D family witnesses beyond these (all deterministic; campaign record
+has the per-witness gcc/upstream/morph evidence):
+- in-tree corpus (spurious-UB manifestation, plain files): small_arrays
+  csmith_19/28/95/120/149/168/218/317/350/369/371 + csmith_190 (under
+  a Lean perf-timeout); small_int_arith csmith_081/136/1168/897 —
+  the 15 DIFF rows + 1 TIMEOUT row of
+  scripts/exec_csmith_corpus_baseline.txt.
+- generated (silent value corruption + spurious UB; regenerate with the
+  lane flags in the campaign record): P1 seed 1000139, 1000299; P2
+  2000129, 2000239, 2000287; P3 4000250; P4 5000125; P5 6000018,
+  6000038, 6000098, 6000245.
+- exploration seeds 3016022/3016044/3016049/3016051/3016058/3016074/
+  3016082/3016099 (B1 flags): the internal-error manifestation
+  (`can_advance: Step_error2 ==> Load/Store`).
 
 Lane-P5 flag set (for the seed-regeneration recipes):
 `--no-argc --no-bitfields --max-funcs 3 --max-block-depth 3

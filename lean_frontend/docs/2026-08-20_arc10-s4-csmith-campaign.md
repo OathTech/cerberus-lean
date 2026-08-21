@@ -448,4 +448,116 @@ addition): oracle times out in exhaustive mode even at 180s (volatile
 trace explosion — the prototype ran it in single-trace mode) → the
 current harness envelope records it CERB_SKIP; noted, not hidden.
 
-<!-- further rounds + ledger + gates appended below -->
+## Phase 2 — generated lanes, rounds 2+3 (batches 2-3 of each lane)
+
+Verbatim SUMMARY lines (.tmp/sweep/round23_log.txt + p5b3.log; lane
+labels derived; seed blocks: batch k of lane L = L_base+(k-1)*100+1 ..
+L_base+k*100):
+
+```
+P1_full  b2: SUMMARY: total=100 match=27 ub_match=0 ub_diff=0 mismatch=1 fail=0 crash=0 lean_error=0 timeout=0 cerb_skip=72 cerb_inconsistent=0
+P2_value b2: SUMMARY: total=100 match=35 ub_match=0 ub_diff=0 mismatch=1 fail=0 crash=0 lean_error=0 timeout=1 cerb_skip=63 cerb_inconsistent=0
+P3_ub    b2: SUMMARY: total=100 match=36 ub_match=14 ub_diff=0 mismatch=0 fail=0 crash=0 lean_error=0 timeout=0 cerb_skip=50 cerb_inconsistent=0
+P4_argc  b2: SUMMARY: total=100 match=35 ub_match=0 ub_diff=0 mismatch=1 fail=0 crash=0 lean_error=0 timeout=0 cerb_skip=64 cerb_inconsistent=0
+P5_noptr b2: SUMMARY: total=100 match=42 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 lean_error=0 timeout=0 cerb_skip=58 cerb_inconsistent=0
+P1_full  b3: SUMMARY: total=100 match=25 ub_match=0 ub_diff=0 mismatch=1 fail=0 crash=0 lean_error=0 timeout=1 cerb_skip=72 cerb_inconsistent=1
+P2_value b3: SUMMARY: total=100 match=33 ub_match=0 ub_diff=0 mismatch=2 fail=0 crash=0 lean_error=0 timeout=2 cerb_skip=63 cerb_inconsistent=0
+P3_ub    b3: SUMMARY: total=100 match=44 ub_match=13 ub_diff=0 mismatch=1 fail=0 crash=0 lean_error=0 timeout=0 cerb_skip=42 cerb_inconsistent=0
+P4_argc  b3: SUMMARY: total=100 match=38 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 lean_error=0 timeout=0 cerb_skip=62 cerb_inconsistent=0
+P5_noptr b3: SUMMARY: total=100 match=26 ub_match=0 ub_diff=0 mismatch=1 fail=0 crash=0 lean_error=0 timeout=2 cerb_skip=71 cerb_inconsistent=0
+```
+
+(The rounds-2+3 background job was externally killed after 9/10
+batches — same watchdog as the corpus-lane kill; P5_noptr b3 was
+re-run standalone to completion. All batches complete.)
+
+Round-2/3 triage — 100% classified, all via the gcc + upstream +
+declaration-morph protocol:
+
+- **8 value/UB mismatches, ALL F-D** (fork oracle wrong; gcc =
+  upstream = Lean in every case): csmith_1000139 (fork 245, morph 28,
+  truth 47), 2000129 (fork wrong, morph 103 = truth), 5000125 (fork
+  220, morph 252 = truth 252), 1000299 (fork 242, morph 134 = truth),
+  2000239 (fork 55, morph 245, truth 153), 2000287 (fork UB010 stable
+  under morph, truth 79), 4000250 (fork UB010, morph →
+  `can_advance: Step_error2 ==> Load`, truth 194), 6000245 (fork 205,
+  morph 139, truth 29). Note morphing sometimes lands ON the correct
+  value — exactly what layout-dependent corruption predicts.
+- **6 TIMEOUTs, all perf-gap**: 2000133 / 1000256 / 2000251 /
+  2000292 / 6000261 / 6000277 — uncapped sequences IDENTICAL to the
+  oracle (oracle 5.6-13.2s vs Lean 14.4-34.1s; 2.5-2.7x).
+- **1 CERB_INCONSISTENT**: csmith_1000282 `exec succeeded but
+  cabs-json failed` — the F-E UB081 channel class.
+
+## Final tallies + scale rationale
+
+N achieved (differential programs, deterministic seeds, all recorded):
+
+| lane | batches | N | mismatch-class finds | truth-side |
+|---|---|---|---|---|
+| P1_full | 3 | 300 | 2 F-D, 3 F-E-channel, 1 perf-timeout | oracle-side all |
+| P2_value | 3 | 300 | 3 F-D, 4 perf-timeouts | oracle-side all |
+| P3_ub | 3 | 300 | 1 F-D, 1 perf-timeout, 36 UB_MATCH agreements | oracle-side all |
+| P4_argc | 3 | 300 | 1 F-D | oracle-side |
+| P5_noptr | 3 | 300 | 4 F-D (incl. 1 under timeout), 3 perf-timeouts | oracle-side all |
+| in-tree corpus | — | 1669 | 16 F-D, 8 perf-timeouts, 2 CEILING_FUEL | oracle-side + registered Lean perf/fuel |
+| **total differential** | | **3169** | | |
+
+(plus 4,210 oracle-only exploration programs, S0 smoke/probes 50, and
+the seeded prototype reproducer.) Derived, labeled.
+
+**Stopping rationale (charter: run until the triage queue is the
+bottleneck):** the triage queue was drained after every round; the
+actual bottleneck is neither generation nor triage but the PARKED F-D
+fork-oracle regression — every further batch's expected yield is more
+F-D witnesses (oracle-side noise, already root-caused with 24
+witnesses) rather than Lean-side signal. Zero Lean-side semantic
+defects across all 3,169 differential programs; the one Lean semantic
+defect of the campaign (register finding 8, eqPtrval msum fork,
+S0-found) was fixed in fix-batch 1 and re-confirmed closed by the
+sweep. Resuming generated-lane volume is mechanical once F-D is
+repaired (lanes + seeds + instruments all committed).
+
+## Findings ledger (final)
+
+| bucket | count | disposition |
+|---|---|---|
+| MISMATCH_VALUE / DIFF vs truth — Lean wrong | 0 | — |
+| F-D fork-oracle corruption (spurious UB / silent wrong values / can_advance) | 24 witnesses (8 generated + 15 corpus + seed-3016022-block internal errors) | REGISTERED + root-caused (fork regression, arc-2 threading suspect); reduced artifact + witnesses committed (tests/csmith_findings/); repair PARKED to orchestrator (not S4 surface; priced M) |
+| F-A upstream initializer-desugar (AilEinvalid, nesting-depth class) | dominant CERB_SKIP driver at csmith defaults | UPSTREAM TRAY (minimal repros committed; upstream reproduced verbatim); flag-mitigated in the portfolio (--max-array-dim 2) |
+| F-B upstream address-constant rejection | class | UPSTREAM TRAY (minimal repro committed; upstream reproduced) |
+| UB081 scalar-initializer class (upstream-shared) + F-E channel split (fork cabs-json hard-errors vs exec deferred verdict) | 3 CERB_INCONSISTENT | upstream question + fork cosmetic register note |
+| TIMEOUT_LEAN_PERF (2.4-3x interpreter gap; worst 50x on fork-noise case sa_csmith_190) | 15 (6 gen + 9 corpus) | REGISTERED (perf); sequences verified identical uncapped |
+| CEILING_FUEL (loud `lem: fuel exhausted`) | 2 (corpus) | REGISTERED (fuel policy = CerbND seam, forbidden surface); harness now captures the marker |
+| register finding 8 (eqPtrval msum fork) | fixed | FIXED CerbMem-only (bdb9f1967); D1 park line never tripped |
+
+Determinism evidence for the assembled corpus baseline: the 125-file
+overlap region (positions 838-962) was executed in two independent
+runs — statuses IDENTICAL 125/125 (diff clean). A full-corpus
+--check-baseline pass is queued as an S5 close-out gate run (the lane
+is ~2.7 h; the external watchdog kills longer background jobs, so it
+should run sharded or foreground at S5).
+
+## Final gate evidence (S4 close, full D4 set at the closing head)
+
+Capped default-target build: `Build completed successfully (593 jobs)`
+(CERB_MEM_MAX=40G per the post-crash constraint). `./scripts/test_unit.sh`
+rc 0, tails verbatim:
+
+```
+check_theorem_axioms: OK (arc-8 S3 bar: DAEMON-free cones everywhere)
+check_exec_totality: CLEAN (16 generated modules + hand-written CerbND, 0 allowlisted)
+```
+
+Exec baselines (each verbatim tail `Baseline check: 0 regression(s), 0
+improvement(s)` + `BASELINE OK`): minimal, coverage (with the
+fix-batch-1 ptr3-006 flip committed at bdb9f1967), ci, debug, float.
+Bytes: `ALL AT COMMITTED EXPECTEDS` (9 exec + 5 neg-pinned). libc:
+`ALL MATCH RECORDED BASELINE` (7). multi_tu: `ALL PASSED` (2). Standing
+corpora zero-movement throughout the slice; the only baseline change
+of the whole campaign is the classified finding-8 improvement.
+
+Residual verification queued for S5: one full corpus-lane
+`--check-baseline` pass against exec_csmith_corpus_baseline.txt
+(determinism already evidenced by the 125/125 identical double-run
+overlap).
