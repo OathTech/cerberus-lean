@@ -20,14 +20,29 @@ cerberus (OCaml)                    cerberus-lean (Lean)
 
 **Core text parser:** Lean parses `.core` and `.impl` files directly using `Std.Internal.Parsec`.
 
-**Proof layer (arc 7):** `lean_frontend/relsem/RelSem/` — Layer 2
-(relational semantics over the fuel opsem: ExecModel, Machine, RunND,
-Call harness) + Layer 3 (iris-lean coupling: IrisLang/IrisState/
-IrisRules/IrisAdequacy) + the slate theorems T1–T4 (T?.lean, T?AppEq)
-and the in-build axiom audit + statement-TCB gate (Audit.lean).
+**Proof layer (arc 7; workbench arc 9):** `lean_frontend/relsem/RelSem/`
+— Layer 2 (relational semantics over the fuel opsem: ExecModel,
+Machine, RunND, Call harness) + Layer 3 (iris-lean coupling:
+IrisLang/IrisState/IrisRules/IrisAdequacy — since arc 9 on upstream
+`OwnP`, hand-rolled state-ghost twin retired) + the slate theorems
+T1–T4 (T?.lean, T?AppEq) and the in-build axiom audit + statement-TCB
+gate (Audit.lean). THE WORKBENCH (arc 9): `Kit/` — six lemma kits
+(AppEq law registrations, Eval, Loop with the axiom-free
+`iter_compose`, Map lawful-map layer, Mem computed-RHS blocks, Round
+dnms/perform layer; 54 `#print axioms` exactness pins in `Kit/Audit.lean`,
+in-build) + `Tactics/AppEqAttr.lean`/`Tactics/AppWalk.lean` (the
+`@[app_eq]` law table + the `app_walk` walker v1-v3 with the
+per-stage certificate emitter: kernel-whnf discovery, decide-facts
+chase-rewrite, ledgered heartbeat budgets — no ambient raise
+anywhere) + the proof-size gate (`scripts/check_proof_size.sh`,
+250-line/40-step bars, Tier A). T5 (bounded loop) is parked at
+evidence grade with fixture/prefix/St-family banked (T5Fixture,
+T5Prefix, the t5-probe census exe) — see
+`docs/2026-08-21_arc9-results.md`.
 `RelSem` is in `defaultTargets`, so a plain `lake build` elaborates the
 audit. Lake deps: `LemLib` (lem-lean pin) + `iris`/`Qq`/`batteries`
-(pinned revs, resolved offline via deps/gitconfig redirects). See
+(pinned revs, resolved offline via deps/gitconfig redirects; iris at
+head `34390a0133…` since arc-9 D1). See
 `docs/2026-08-20_arc7-results.md`.
 
 ## Build
@@ -72,6 +87,10 @@ Current unit tests:
 - `fresh-int-test` — verifies `fresh_int`/`Symbol.fresh` generate unique values (+ the native-obj fresh-counter floor probe)
 - `emit-lean-core-test` — arc-7: byte drift gate for the emitted slate program terms (`relsem/RelSem/T1Core.lean`, `SlateCore.lean` vs a fresh parse of the pinned oracle Core dumps) + concrete differential points on the assembled theorem objects
 - `pp-test` — arc-10 S3: pretty-printer mirrors (ctype/value shapes + float formatting vs an OCaml 5.4.0 reference transcript, in-file)
+- `app-walk-test` — arc-9 S2: the `app_walk` walker contract-table exercises (E1-E6, kernel-checked)
+
+(`t5-probe` is a further `[[lean_exe]]` — the arc-9 round-census
+instrument, run on demand, not part of the unit suite.)
 
 `test_unit.sh` also runs the gate scripts: the hand-written↔generated
 sync gate, the hand-written-axiom census (exactly 2),
@@ -83,7 +102,11 @@ oracle surface must equal the reviewed manifest
 `scripts/fork_drift_manifest.txt`, and the generated-OCaml
 fork-vs-upstream deltas must match their pinned hashes — spec:
 `notes/2026-08-21_fork-drift-review.md` §6; loud SKIP when the
-upstream remote or a generated tree is absent, fail-closed otherwise). Two further gates are
+upstream remote or a generated tree is absent, fail-closed otherwise),
+and `check_proof_size.sh` (arc-9 S2: slate proof files within the
+250-line/40-manual-step bar, Kit files fixture-free — the mega-lemma
+counter, `app_walk?` debug tactic banned in committed proofs;
+registered slate files listed in the script). Two further gates are
 IN-BUILD (fail the `lake build` itself, arc 7): the RelSem axiom audit
 and the slate statement-TCB gate — both in `relsem/RelSem/Audit.lean`
 (slate statements must be fuel-opsem-only: no Iris/RelSem-relation
@@ -263,7 +286,7 @@ Lem is pinned to `https://github.com/septract/lem-lean#mdd/lean-backend`.
   `runND_proxy` is implemented — hand-written `CerbND.runND`).
   Concurrency stubs remain the declared boundary.
 
-### Pipeline status (updated 2026-08-20, post arc-8 — see the arc results docs)
+### Pipeline status (updated 2026-08-21, post arc-9 — see the arc results docs)
 - ✅ C → Cabs JSON → Cabs types (100%)
 - ✅ Core text parser + stdlib loading (incl. ailname attribute capture, arc 5)
 - ✅ Desugar / Typecheck / Translation (all 106/106 tests/minimal)
@@ -327,6 +350,27 @@ Lem is pinned to `https://github.com/septract/lem-lean#mdd/lean-backend`.
   root-caused to a CERBERUS-LEAN FORK regression (arc-2 threaded
   sym_supply suspect; repair = top next-arc candidate). See
   `docs/2026-08-21_arc10-results.md`.
+- ✅ THE WORKBENCH (arc-9, "WP tactic library + complex-reasoning
+  slate"): proof machinery built deliberately — OwnP adoption
+  (iris-lean reuse, hand-rolled ghost twin retired, Iris layer
+  456→369 lines), six lemma kits with 54 in-build exactness pins
+  (incl. the AXIOM-FREE `iter_compose` loop rule), the `@[app_eq]`
+  law table + `app_walk` walker v1-v3 + the per-stage certificate
+  emitter (kernel-whnf discovery, decide-facts chase-rewrite,
+  ledgered budgets — every certificate an ordinary kernel-checked
+  declaration, zero TCB surface), the proof-size gate (Tier A,
+  fail-closed, T5 row honestly PENDING). THE CALIBRATION: T1's
+  ≈700-line dnms segment → 5 walker lines, identical statement +
+  cone. T5 (bounded loop) PARKED AT EVIDENCE GRADE: St-v2 family
+  kernel-validated at symbolic n, entry theorem green in ~5 s, probe
+  clears 44/79 iteration rounds; named resumption point =
+  the continuation-lambda advance law (+ trace/replay +
+  context-indexed laws — the v2 slate). T1-T4 re-validated on the
+  arc-10 rebased base (cones exactly [propext, runEffectful,
+  Classical.choice, Quot.sound]). See
+  `docs/2026-08-21_arc9-results.md` + the committed v2 survey
+  inputs (`2026-08-21_iris-rules-automation-survey.md` + Lithium
+  review + litreview brief).
 
 ## Conventions
 
