@@ -126,3 +126,24 @@ orchestrator judgment call resolved by project principles.
   and the campaign record (ledger + stopping rationale). The
   reattribution itself and every per-witness claim are unaffected —
   this is a tally correction, not an evidence change.
+- **D7 [AGENT] — audits complete, fix-batch verified, ARC READY FOR
+  MERGE ASK.** Two adversarial audits (A: semantics fidelity — 24,650
+  float comparison points zero-diff, eqPtrval arm-for-arm, OCaml
+  ground-truth cross-run on all pins, no constructible wrong-instance
+  case, deriving-divergence unreachable; B: baselines/records/
+  discipline — all baseline movements justified, D6 head-vs-tail
+  prediction reproduced live, zero forbidden-surface touches, all
+  checklist git facts true). Findings: A-F1 Type-1 sorry path FIXED
+  fail-closed (LEM 11d4b4c, zero tree movement verified); B-F1
+  shard-gate direction FIXED (bidirectional count check,
+  re-demonstrated); B-F2 checklist conflict list completed
+  (test_unit.sh declared + lesson recorded); records corrected as
+  labeled corrections (C1: F-D witnesses 24→35; 524; 29; ub010
+  qualifier; jitter note); A-F4/F5/F6 recorded/fixed. THE FORK-DRIFT
+  GATE landed both legs ([USER] mandate; 52-file manifest + 20
+  hash-pinned generated diffs, plant-tested both directions, wired
+  Tier A). B's jitter ruling: S5's call RIGHT, ratified.
+  Orchestrator final re-verification at CERB 6cec24d21 / LEM
+  11d4b4c: build 0 errors, unit 6/6 incl. check_fork_drift OK, exec
+  zero movement, LEM linearity confirmed. Merge ask goes to the
+  operator with the ORDER A/B serialization decision.
