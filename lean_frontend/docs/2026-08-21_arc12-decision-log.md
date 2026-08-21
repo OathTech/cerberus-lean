@@ -92,3 +92,16 @@
   movers execute and the asterisked artifacts re-derive clean. The
   merge ask itself remains operator-gated as always; the merge
   checklist's veto-window step becomes a ratified-note.
+- **D5 [AGENT] — audit fix batch verified; ARC READY FOR MERGE ASK.**
+  Both audits' findings fixed or ruled (A-F1: three fold gaps closed
+  incl. two sibling finds, es/st regression pair identical both
+  sides, corpus movement ZERO; A-F2: env var deleted, CLI flag +
+  classifier hardening, ambient-export demonstrated inert; B-F1/2/3/
+  4/5/6 per dispositions incl. the jitter reversion and the
+  sharpened draft-09 boundary). Orchestrator re-verified at
+  207c89e85: env var zero occurrences, unit 7/7 + drift gate
+  (layer-2 hashes unmoved), minimal cerb_floor=0 zero movement,
+  libc_exec ALL MATCH, uri GATE PASS 16/16 under the flag form.
+  D4 ([USER] ratification) closes the veto question. Merge-base =
+  mainline head — ff-only ready; zero lem; arc-11 intersection
+  measured zero-conflict. The merge ask goes to the operator.
