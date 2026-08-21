@@ -92,3 +92,29 @@ orchestrator judgment call resolved by project principles.
   inputs, committed at this close). The proof-size gate's T5
   registration stays honestly pending — never gamed. S4
   (rebase-over-arc-10 + close-out + audits) proceeds.
+- **C1 [AGENT, 2026-08-21] — CORRECTION line (pre-merge adversarial
+  audit; D4's text above is left as written, per record doctrine —
+  this line corrects it).** (1) [auditor B F1] D4's "the 700→5-line
+  calibration" headline is corrected with the honest split: the
+  MECHANICAL dnms content (~200 lines of round lemmas + transcribed
+  intermediate configurations + the 9-way `.trans` composition)
+  became the 5 walker lines; file-level T1AppEq went 1,038 → 862
+  (git numstat −193/+17); the round3/round6 SEMANTIC support is
+  retained and consumed by the walker's two `app_walk_step` lines.
+  The "≈700" was the design's SEGMENT estimate including semantic
+  support — the S2 record §3 always carried this split; the headline
+  form propagated to the results doc §1.5, lean_frontend/CLAUDE.md,
+  and merge-checklist step 6, all corrected in place. (2) [auditor
+  A F2] D4's "OwnP adoption ~380→~150": the "~380" is the S0
+  survey's reuse-debt sizing; the "~150" was a D4-text estimate with
+  no S2-record source — the MEASURED accounting is IrisState +
+  IrisRules + IrisAdequacy 456 → 369 lines (S2 record §1). (3)
+  [auditors B F3 / A F3] D4's "50+ pinned kit lemmas across 7 kits"
+  vs the results doc's six-kits/54-pins: the precise census at head
+  is 7 FILES under `Kit/` (Audit, AppEq, Eval, Loop, Map, Mem,
+  Round) = 6 content kits + the pin file `Kit/Audit.lean`, carrying
+  exactly 54 `#print axioms` exactness pins; Kit/Mem is 139 lines
+  (not the stale 133 — includes the `ad1460f59` rebase-integration
+  fix). All tallies in this line are DERIVED (re-counted at head
+  2026-08-21), labeled per the verbatim-transcript doctrine. Full
+  finding list + dispositions: results doc §8.

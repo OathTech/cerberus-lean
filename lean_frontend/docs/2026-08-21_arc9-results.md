@@ -25,10 +25,14 @@ IrisState + IrisRules + IrisAdequacy 456 → 369 lines (current: 96 +
 alloc/split/defeq-bridge became library calls; retired lemmas
 `stateIs_agree`/`stateIs_update` (their Audit pins removed with
 in-file reason — the only Audit edit). ACCEPTANCE: every T1-T4 Audit
-pin passed UNCHANGED (identical cones). (D4's "~380→~150" line
-referred to the reuse-opportunity sizing in the S0 survey; the
-measured commit-level delta is the 456 → 369 above plus the retired
-hand lemmas — both accountings are in the S2 record §1.)
+pin passed UNCHANGED (identical cones). (Sizing reconciliation,
+CORRECTED at the pre-merge audit, auditor A F2: D4's "~380→~150" was
+an estimate in the D4 text itself — the "~380" traces to the S0
+survey's reuse-debt register ("~380 lines of our" arc-7 code, survey
+§1.3), but the "~150" has no S2-record source. The MEASURED
+accounting is the 456 → 369 above, recorded in the S2 record §1;
+this doc's earlier claim that "both accountings are in the S2 record
+§1" was wrong for the ~150.)
 
 ### 1.2 L1 — the lemma kits (census by file, pin counts)
 
@@ -43,10 +47,19 @@ enforces it. Census at close (derived, this worktree):
 | Kit/Eval.lean | 106 | 6 | eubind/stub/eumapM crossings, liftCore_run_defined, aux2_step/done |
 | Kit/Loop.lean | 82 | 4 | `iter_compose` + `iter_compose_from` + `app_fuel_cast` + `fuel_split` |
 | Kit/Map.lean | 292 | 18 | lawful-map layer: symCmp TransCmp bridge, FmapBuilt captured-comparator invariant, fmapLookupBy/addBy laws, Int-TreeMap get?/insert laws |
-| Kit/Mem.lean | 133 | 5 | mem_alloc/store/load/kill/prefix blocks (computed-RHS, brick-B3 named-hypothesis convention) |
+| Kit/Mem.lean | 139 | 5 | mem_alloc/store/load/kill/prefix blocks (computed-RHS, brick-B3 named-hypothesis convention) |
 | Kit/Round.lean | 468 | 21 | dnms_round/dnms_terminal glue, advance classes, perform layer (liftMem, perform_create/load/store/kill), ars_* unfolds, draw laws |
 
-Total: **54 exactness pins** over the public kit surface.
+Total: **54 exactness pins** over the public kit surface. [CENSUS
+CORRECTIONS at the pre-merge audit, auditors B F3 / A F3: Kit/Mem is
+139 lines at head, not the stale 133 — the count includes the
+`ad1460f59` rebase-integration fix (readonlyStatusForAlloc_none in
+mem_alloc_block's proof). Precise file census: SEVEN files under
+`Kit/` at head — Audit, AppEq, Eval, Loop, Map, Mem, Round — i.e.
+the six content kits tabled above plus `Kit/Audit.lean` (the pin
+file); this is what the gate's "Kit files fixture-free OK (7 files)"
+tally counts, and reconciles D4's "7 kits/50+ pins" phrasing (7
+files, and 50+ was a floor) with this doc's six-kits/54-pins census.]
 `iter_compose`/`iter_compose_from` are pinned **axiom-free** ("does
 not depend on any axioms"); everything else is within the classical
 trio. Provenance tags per the S0 gap matrix (G1-G12): the loop rule
@@ -124,15 +137,21 @@ x-sensitive crossings):
   app_walk
 ```
 
-The design's ≈700-line dnms segment (rounds + transcribed
-intermediate configurations + the 9-way `.trans` composition, of
-T1AppEq's 1,038 lines) is now those 5 walker lines: **≈700 → 5**.
-File-level tally (honest accounting, S2 §3): T1AppEq 1,038 → 862
-lines (git numstat −193/+17) — the retained ~660 lines are the
-SEMANTIC support (memory-op lemmas, conv-chain ladder, prefix walk)
-the design assigns to later migration waves, not to the walker. What
-the walker promised to kill is dead in-segment: 0 round
-transcription defs, 0 `.trans` in the dnms proof. Elaboration ~6 s.
+The MECHANICAL dnms content (~200 lines of round lemmas, transcribed
+intermediate configurations, and the 9-way `.trans` composition) is
+now those 5 walker lines: **~200 mechanical lines → 5**. [CORRECTED
+at the pre-merge audit, auditor B F1: this doc's earlier headline
+"≈700 → 5" conflated the design's ≈700-line dnms-SEGMENT estimate —
+which includes the semantic support — with the walker's actual kill;
+the S2 record §3 always carried the honest split.] File-level tally
+(honest accounting, S2 §3): T1AppEq 1,038 → 862 lines (git numstat
+−193/+17) — the retained lines are the SEMANTIC support (memory-op
+lemmas, conv-chain ladder, prefix walk) the design assigns to later
+migration waves, not to the walker; note the two `app_walk_step`
+lines above CONSUME that retained support (`round3`/`round6` are the
+semantic steps, retained and fed to the walker). What the walker
+promised to kill is dead in-segment: 0 round transcription defs,
+0 `.trans` in the dnms proof. Elaboration ~6 s.
 
 ### 1.6 The proof-size gate (status: HONEST)
 
@@ -336,3 +355,89 @@ translation table.) Full post-rebase battery: §3 S4 block.
   interpreter-only, cones exactly [propext, runEffectful,
   Classical.choice, Quot.sound], heartbeat doctrine (the ledger is
   not a raise), the proof-size bar with its stop-extract-redo loop.
+
+## 8. Adversarial audits (pre-merge, 2026-08-21) — findings + dispositions
+
+Two independent auditors (A: code/soundness lane; B: records lane)
+ran the charter-mandated pre-merge audit; the orchestrator
+dispositioned every finding and the fixes landed in two commits
+(code+gate, then this records batch) BEFORE any merge ask. This
+section is a DERIVED summary of the finding list and dispositions
+(the auditors' raw reports were session material; tallies here were
+re-verified at head where cited).
+
+**Auditor A:**
+
+* **A-F1 (FIXED — code).** `dischargeHyp`'s mkAuxRfl catch in
+  `Tactics/AppWalk.lean` wrote a debug repro to a HARDCODED absolute
+  worktree path (`.../wp-tactics/scratch/repro.txt`), and an IO
+  failure there could mask the original exception. Fix: the repro
+  content (fact type + referenced walk const types/bodies) is folded
+  into the `dbg_trace` stream — no file IO in the catch, debug lane
+  keeps full diagnostics, trace-lane-only (full build + calibration
+  green unchanged).
+* **A-F2 (FIXED — records).** The §1.1 sizing-reconciliation sentence
+  claimed both the "~380→~150" and "456 → 369" accountings live in
+  the S2 record §1; the "~150" has no S2-record source (it was a
+  D4-text estimate). Rewritten honestly in §1.1; decision-log C1
+  item 2.
+* **A-F3 (FIXED — records).** Census stales (with B-F3): Kit/Mem is
+  139 lines at head (was quoted 133 — stale, predates `ad1460f59`);
+  kit-file census stated precisely (7 files = 6 content kits +
+  `Kit/Audit.lean`, 54 pins). §1.2 corrected; decision-log C1 item 3.
+* **A-F4 (RECORDED — v2 cleanup slate).** Dead lanes, WIP-stale
+  docstrings, and unused `normCompute` parameters in the walker:
+  accepted as a workbench-v2 cleanup slate item (no behavior change,
+  not fixed in the audit window by design — the walker is v2's
+  primary work surface).
+* **A-F5 (FIXED — gate).** The proof-size gate's debug-surface ban
+  covered only `app_walk?`; `app_defeq_diag`, `dnms_kwalk`, and
+  `app_walk_norm!` were uncovered. All three are now banned in
+  committed (git-tracked) relsem files — none appear in any committed
+  proof (T1AppEq/T5Prefix verified clean); untracked Probe*/scratch
+  stays exempt via the tracked-file filter; policy recorded in the
+  script header; plant-tested both directions (planted tracked hit →
+  FAIL rc=1; untracked `app_walk_norm!` in ProbeT5S3.lean → exempt,
+  OK rc=0).
+* **A-F6 (RECORDED — note).** The walker's kernel-engine couples to
+  NAME CONVENTIONS (`walkSt*`/`kwSt*` prefixes, `_aux` suffixes) at
+  its avatar/seal filters — a rename would silently change engine
+  behavior. Accepted as a recorded coupling (v2's trace/replay item
+  is the structural fix; no committed name is currently ambiguous).
+* **A-F7 (VERIFIED HONEST).** The heartbeat LEDGER audit came back
+  clean: it is accounting-only as claimed — no ambient raise, no
+  `set_option maxHeartbeats`/`maxRecDepth` anywhere in proof files.
+  Positive finding, no action.
+
+**Auditor B:**
+
+* **B-F1 (FIXED — records).** The calibration headline "≈700 → 5"
+  conflated the design's ≈700-line SEGMENT estimate (which includes
+  retained semantic support) with the walker's actual kill. Honest
+  form (now everywhere the headline propagated — §1.5 here,
+  lean_frontend/CLAUDE.md, merge-checklist step 6; decision-log C1
+  item 1): the mechanical dnms content ~200 lines → 5 walker lines;
+  file-level T1AppEq 1,038 → 862; round3/round6 semantic support
+  retained and consumed.
+* **B-F2 (FIXED — records).** The S2 record §4.2 census block was
+  labeled "(t5-probe … verbatim)" but is a condensed/DERIVED digest
+  of a session-scratch instrument run (the committed instruments
+  print different formats). Relabeled + annotated per the arc-6
+  relabel-don't-rewrite remedy; facts independently reproduced by
+  auditor B's re-run (223 rounds, period 79, env dom 26 vs 28).
+* **B-F3 (FIXED — records).** Census stales, jointly with A-F3
+  (Kit/Mem 139; six-kits/54 vs "7 kits/50+" reconciled precisely).
+* **B-F4 (nits; two fixed, two recorded).** (i) FIXED: the S0 survey
+  §1.3 OwnP line-cite pair for `OwnPGpreS`/`OwnPGS` was swapped —
+  now `OwnP.lean:31/:23` (verified against iris @ 34390a0133:
+  OwnPGS at :23, OwnPGpreS at :31). (ii) FIXED: the two S2-record
+  heartbeat-timeout quotes dropped the message's set_option-hint
+  tail without marking — truncation markers (`[…]`) added.
+  (iii) RECORDED: the S0 survey line "`Audit.lean` + `Audit/Kit.lean`
+  (1964 lines of exactness pins)" — clarification: 1964 is golean's
+  `proofs/Audit.lean` ALONE; `proofs/Audit/Kit.lean` is 639 (2603
+  combined; re-counted at deps/golean @ f78138d7). (iv) RECORDED:
+  §2's `iter0_probe` "~10 min wall" is CONSERVATIVE — the audit
+  re-run completed far faster (~39 s reported); the recorded figure
+  was the original discovery-session wall and stands as an upper
+  bound.

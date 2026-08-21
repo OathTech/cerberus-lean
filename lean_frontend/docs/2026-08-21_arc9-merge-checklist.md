@@ -54,7 +54,10 @@ State at checklist time (verified 2026-08-21, S4; rev-parse facts):
    re-pinned clean, statement gate untouched). Suggested extra scope
    for this close: the S4 rebase itself (conflict resolutions vs the
    enumeration; the ad1460f59 integration fix's statement-unchanged
-   claim).
+   claim). [STATUS 2026-08-21: the 2-agent adversarial audit RAN and
+   its findings are DISPOSITIONED — full list + dispositions in the
+   results doc §8 ("Adversarial audits"); decision-log correction
+   line C1. The merge ask itself remains open, operator-gated.]
 2. **Pre-merge state check.** Confirm `mdd/cerberus-lean` still @
    `56a994469` and `mdd/lean-backend` still @ `11d4b4c`. If the CERB
    mainline moved again: rebase again, full re-gate, re-ask (the
@@ -73,7 +76,7 @@ State at checklist time (verified 2026-08-21, S4; rev-parse facts):
    standing while this lane is live).
 5. **Post-merge certification:** Tier A per scripts/LADDER.md
    (test_unit now 7/7 incl. app-walk-test; proof-size gate in the
-   tail) + test_verify.sh 29/29 + ci
+   tail, incl. the audit-A-F5 debug-surface ban) + test_verify.sh 29/29 + ci
    `--check-baseline=scripts/exec_ci_baseline.txt` + one
    csmith-corpus shard (`--check-baseline --shard 1/6`); at least one
    libxml2 battery slice (full Tier B if time permits). Expected:
@@ -83,7 +86,10 @@ State at checklist time (verified 2026-08-21, S4; rev-parse facts):
 6. **Container-doc updates (orchestrator, POST-merge; outside the
    repo):** arcs line (arc 9 merged: the workbench — OwnP adoption,
    54-pin kit surface, walker v1-v3 + per-stage certificate emitter,
-   axiom-free iter_compose, 700→5 calibration, proof-size gate; T5
+   axiom-free iter_compose, the calibration (mechanical dnms content
+   ~200 lines → 5 walker lines; file-level T1AppEq 1,038 → 862;
+   round3/round6 semantic support retained and consumed — corrected
+   from "700→5" at the pre-merge audit, B F1), proof-size gate; T5
    parked at evidence grade 44/79 with named resumption; v2 charter
    queued with T5 as exit criterion 1 + the survey slate);
    known-issues gates line gains app-walk-test + the proof-size gate

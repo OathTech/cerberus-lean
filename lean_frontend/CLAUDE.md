@@ -105,7 +105,9 @@ fork-vs-upstream deltas must match their pinned hashes — spec:
 upstream remote or a generated tree is absent, fail-closed otherwise),
 and `check_proof_size.sh` (arc-9 S2: slate proof files within the
 250-line/40-manual-step bar, Kit files fixture-free — the mega-lemma
-counter, `app_walk?` debug tactic banned in committed proofs;
+counter, debug-only walker surfaces banned in committed (git-tracked)
+proofs: `app_walk?`/`app_walk_norm?` + `app_defeq_diag`/`dnms_kwalk`/
+`app_walk_norm!` since the arc-9 pre-merge audit (A-F5);
 registered slate files listed in the script). Two further gates are
 IN-BUILD (fail the `lake build` itself, arc 7): the RelSem axiom audit
 and the slate statement-TCB gate — both in `relsem/RelSem/Audit.lean`
@@ -359,9 +361,12 @@ Lem is pinned to `https://github.com/septract/lem-lean#mdd/lean-backend`.
   emitter (kernel-whnf discovery, decide-facts chase-rewrite,
   ledgered budgets — every certificate an ordinary kernel-checked
   declaration, zero TCB surface), the proof-size gate (Tier A,
-  fail-closed, T5 row honestly PENDING). THE CALIBRATION: T1's
-  ≈700-line dnms segment → 5 walker lines, identical statement +
-  cone. T5 (bounded loop) PARKED AT EVIDENCE GRADE: St-v2 family
+  fail-closed, T5 row honestly PENDING). THE CALIBRATION: the
+  mechanical dnms content (~200 lines of rounds + transcriptions +
+  `.trans` composition) → 5 walker lines; file-level T1AppEq 1,038 →
+  862 (the round3/round6 semantic support retained and consumed by
+  the walker); identical statement + cone. T5 (bounded loop) PARKED
+  AT EVIDENCE GRADE: St-v2 family
   kernel-validated at symbolic n, entry theorem green in ~5 s, probe
   clears 44/79 iteration rounds; named resumption point =
   the continuation-lambda advance law (+ trace/replay +
