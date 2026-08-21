@@ -110,7 +110,16 @@ run_capped() { # <out> <err> <cmd...>
 record() { echo "$1: $2" >> "$OUTPUT_DIR/baseline.new"; }
 
 # --- ORACLE_LIBC ------------------------------------------------------------
+# arc-12 D2 GRANDFATHER (Option C): uri.c is beyond the fork oracle's F-D
+# symbol-id margin (desugar hwm 1798 vs 483; 252 live collisions measured —
+# S1 record §7). This lane's oracle elaboration proceeds UN-FLOORED under
+# the explicit grandfather mode (loud stderr warning, never silent) and is
+# trusted ONLY via the byte-agreement gate against the protected Lean side
+# below (16/16). Register entry + record addendum carry the exposure;
+# mover: renumbering-era re-derivation. Any OTHER use of this variable is
+# a finding.
 rc=0
+CERB_FRESH_FLOOR_GRANDFATHER=1 \
 run_capped "$OUTPUT_DIR/oracle.out" "$OUTPUT_DIR/oracle.err" \
     "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" --exec --batch \
     "${FLAGS[@]}" "${TUS[@]}" || rc=$?
@@ -128,7 +137,12 @@ oracle_line=$(head -1 "$OUTPUT_DIR/oracle.out")
     || fail "GATE: ORACLE_LIBC corpus-size pin violated (expected uri_harness n=$N_URIS in stdout)"
 
 # --- OCAML_NOLIBC -----------------------------------------------------------
+# arc-12 D2 GRANDFATHER, same scope as ORACLE_LIBC above: without it the
+# F-D floor refuses uri.c (exit 70) before the lane can reproduce its
+# pinned failure mode; the mirrored-failure PAIR (this lane + LEAN_NOLIBC
+# both pinning unknown-procedure memset) is the lane's validation.
 rc=0
+CERB_FRESH_FLOOR_GRANDFATHER=1 \
 run_capped "$OUTPUT_DIR/nolibc.out" "$OUTPUT_DIR/nolibc.err" \
     "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" --nolibc --exec --batch \
     "${FLAGS[@]}" "${TUS[@]}" || rc=$?

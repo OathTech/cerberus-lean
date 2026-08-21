@@ -241,6 +241,12 @@ let cerberus debug_level progress core_obj
         return success
       (* Export Cabs as JSON for Lean backend *)
       else if cabs_json then
+        (* arc-12 D2: the F-D floor runs warn-only on this path — the
+           exported artifact is the pre-desugar Cabs tree (the `(cabs_tunit,
+           _)` bind below discards the desugar result), so a beyond-margin
+           TU cannot corrupt the JSON bytes (soundness note:
+           util/cerb_fresh.ml header). *)
+        let () = Cerb_fresh.export_only_mode := true in
         prelude >>= fun core_std ->
         Exception.except_mapM (fun filename ->
           c_frontend (conf, io) core_std ~filename >>= fun (cabs_tunit, _) ->
