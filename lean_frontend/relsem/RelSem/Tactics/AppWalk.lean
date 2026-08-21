@@ -26,6 +26,17 @@
   * `app_walk?` — `app_walk 1` + report which law fired (debugging
     only; grep-banned from committed proofs by
     scripts/check_proof_size.sh).
+  * `app_walk_norm` — the normalizing walk (v2 type-aware state
+    normalization, §11.3) with the D3 per-stage certificate emitter
+    ON by default (arc-11 S1, F12-4; the old opt-in `app_walk_norm!`
+    surface is retired). `app_walk_norm?` is its debug lane.
+
+  Arc-11 S1: the walk records a STRUCTURED TRACE (RelSem.Tactics.
+  WalkTrace, design §12.1 — rounds, candidate fates, discharge lanes,
+  seal events, ledger rows) when `WalkCfg.traceRef` is set. The trace
+  is UNTRUSTED DATA: inspection/replay guidance only, never grounds
+  for acceptance. Aux-constant filters consult the sealed-aux
+  REGISTRY (A-F6 fix), not name conventions.
 
   Meta-code residency (design §1.3): `partial` is allowed here (inside
   the tactic monad only); every proof produced is kernel-checked and
@@ -37,6 +48,7 @@
 
 import Lean
 import RelSem.Tactics.AppEqAttr
+import RelSem.Tactics.WalkTrace
 
 set_option autoImplicit false
 
@@ -120,15 +132,24 @@ structure WalkCfg where
   candBudget : Nat := candidateBudget
   /-- Debug tracing inside the discharge engine (debug lanes only). -/
   trace : Bool := false
-  /-- WALKER-V3 (WIP, S3 park record): seal computed-value facts as
-      auxiliary theorems (per-fact kernel checks). -/
+  /-- Per-stage emitter (D3, LANDED arc-9 S3 §8): seal computed-value
+      facts as auxiliary theorems (per-fact kernel checks). Default ON
+      for `app_walk_norm` since arc-11 S1 (F12-4 sealing-as-default). -/
   sealFacts : Bool := false
-  /-- WALKER-V3 (WIP): seal each round's equation as an auxiliary
-      theorem (per-round kernel checks — the arc-7 accounting). -/
+  /-- Per-stage emitter (D3, LANDED): seal each round's equation as an
+      auxiliary theorem (per-round kernel checks — the arc-7
+      accounting). Default ON for `app_walk_norm` since arc-11 S1. -/
   sealRounds : Bool := false
-  /-- WALKER-V3 (WIP): emit each normalized continuation state as an
-      auxiliary definition (the T4 named-state structure). -/
+  /-- Per-stage emitter (D3, LANDED): emit each normalized
+      continuation state as an auxiliary definition (the T4
+      named-state structure). Default ON for `app_walk_norm` since
+      arc-11 S1. -/
   sealStates : Bool := false
+  /-- Structured trace sink (arc-11 S1, design §12.1): when set, the
+      walk records rounds/candidates/discharge events into the
+      builder. The trace is UNTRUSTED DATA — inspection and (batch-3)
+      replay guidance only; it never justifies acceptance. -/
+  traceRef : Option TraceRef := none
   deriving Inhabited
 
 /-- Type heads whose inhabitants the v2 normalizer never touches
@@ -190,7 +211,11 @@ def mkAuxRfl (lhs rhs : Expr) : MetaM Expr := do
       (attempt (100000 * 1000)
         (mkAuxTheorem ty (← mkEqRefl lhs) (zetaDelta := false)))
       (fun _ => pure none) with
-  | some pf => return pf
+  | some pf =>
+    if let some n := pf.getAppFn.constName? then
+      registerSealedAux n
+      pushEngineEv (.seal { name := n, kind := .cert })
+    return pf
   | none =>
     let value ← mkEqRefl lhs
     let ty' ← instantiateMVars ty
@@ -207,6 +232,8 @@ def mkAuxRfl (lhs rhs : Expr) : MetaM Expr := do
     let nm := nm.appendAfter "_aux"
     addDecl <| .thmDecl {
       name := nm, levelParams := lvls, type := tyAbs, value := valAbs }
+    registerSealedAux nm
+    pushEngineEv (.seal { name := nm, kind := .cert })
     return mkAppN (mkConst nm (lvls.map .param)) fvarExprs
 
 /-- KERNEL-BACKED whnf for discovery computation (arc-9 S3): the
@@ -451,9 +478,7 @@ partial def normPayload : Nat → Expr → MetaM Expr
     are untouched, so this is bounded by the ctor-spine size. -/
 def payloadFuel : Nat := 4096
 
-def normCompute (atoms : NameSet) (d : Nat) (e : Expr) : MetaM Expr := do
-  let _ := atoms
-  let _ := d
+def normCompute (e : Expr) : MetaM Expr := do
   withoutCanUnfoldPred do
     let e' ← kWhnf e
     match e'.getAppFn with
@@ -493,10 +518,9 @@ partial def mkStateBridge (d : Nat) (l r : Expr) : MetaM Expr := do
       if e.getAppFn.isConst then
         let n := e.getAppFn.constName!
         if let some (.defnInfo dv) := env.find? n then
-          let isAux := match n with
-            | .str _ tail => tail.endsWith "_aux" || tail.startsWith "kwSt" || tail.startsWith "walkSt"
-            | _ => false
-          if isAux then
+          -- registry-first (A-F6 fix): the emitter registers every aux
+          -- it creates; the suffix fallback covers imported auxes only
+          if (← isSealedAuxName n) then
             return (dv.value.beta e.getAppArgs)
       match Lean.Kernel.whnf env lctx e with
       | .ok e' => return e'
@@ -550,14 +574,17 @@ def normAppState (cfg : WalkCfg) (e : Expr) : MetaM Expr := do
         let i := args.size - 1
         let st' ← normStateV2 cfg.atoms cfg.depth args[i]!
         if cfg.sealStates then
-          -- WALKER-V3 (WIP): emit the normalized state as an
-          -- auxiliary DEFINITION and continue with the constant —
-          -- the T4 named-state structure (park record: interacts
-          -- with fact normalization; not yet coherent end-to-end).
+          -- Per-stage emitter (D3, landed): emit the normalized state
+          -- as an auxiliary DEFINITION and continue with the constant
+          -- — the T4 named-state structure (default in the sealing
+          -- lane since arc-11 S1).
           let stTy ← inferType st'
           let stConst ← mkAuxDefinition
             ((← mkFreshUserName `walkSt).appendAfter "_aux") stTy st'
             (compile := false)
+          if let some n := stConst.getAppFn.constName? then
+            registerSealedAux n
+            pushEngineEv (.seal { name := n, kind := .state, depthBefore := e.appArg!.approxDepth.toNat, depthAfter := st'.approxDepth.toNat })
           if cfg.trace then
             let n := stConst.getAppFn.constName!
             let body := ((← getEnv).find? n).map (fun ci => ci.value?.getD (mkConst `x)) |>.getD (mkConst `x)
@@ -589,16 +616,19 @@ partial def kNormCompute (d : Nat) (e : Expr) : MetaM Expr := do
     small terms and the kernel unfolds on demand. -/
 partial def sealCtorLeaves (d : Nat) (e : Expr) : MetaM Expr := do
   let sealIfBig (x : Expr) : MetaM Expr := do
-    let already :=
-      match x.getAppFn with
-      | .const (.str _ t) _ => t.endsWith "_aux"
-      | _ => false
+    let already ← match x.getAppFn.constName? with
+      | some n => (isSealedAuxName n : MetaM Bool)
+      | none => pure false
     if already || x.approxDepth.toNat ≤ 24 then return x
     -- capped: type inference can be arbitrarily deep on continuation
     -- lambdas — an unsealable leaf stays raw rather than burning
     pure ((← attempt (100000 * 1000) (do
       let nm := (← mkFreshUserName `walkVal).appendAfter "_aux"
-      mkAuxDefinition nm (← inferType x) x (compile := false))).getD x)
+      let r ← mkAuxDefinition nm (← inferType x) x (compile := false)
+      if let some n := r.getAppFn.constName? then
+        registerSealedAux n
+        pushEngineEv (.seal { name := n, kind := .value, depthBefore := x.approxDepth.toNat, depthAfter := r.approxDepth.toNat })
+      pure r)).getD x)
   if d == 0 then return (← sealIfBig e)
   -- normalize to constructor form first (kernel engine): an
   -- unreduced element would otherwise be sealed whole, hiding its
@@ -619,9 +649,9 @@ partial def sealCtorLeaves (d : Nat) (e : Expr) : MetaM Expr := do
   -- materialized one without a seal to pay for it
   if !r.getAppFn.isConst || r.approxDepth.toNat ≤ e0.approxDepth.toNat then
     return r
-  if (match r.getAppFn with
-      | .const (.str _ t) _ => t.endsWith "_aux"
-      | _ => false) then
+  if (← match r.getAppFn.constName? with
+      | some n => (isSealedAuxName n : MetaM Bool)
+      | none => pure false) then
     return r
   return e0
 
@@ -689,6 +719,10 @@ partial def kWhnfWithFacts (d : Nat) (e : Expr) :
   -- (a) a decide visible at this level with a context fact: rewrite,
   -- materialize its Boolean, resume.
   if let some (dec, hpf, pos) ← findDecideFact e1 then
+    let fname ← if hpf.isFVar then
+        do pure (← hpf.fvarId!.getDecl).userName
+      else pure Name.anonymous
+    pushEngineEv (.decideFact fname pos)
     let bval := if pos then mkConst ``Bool.true else mkConst ``Bool.false
     let hdec ← if pos then mkAppM ``decide_eq_true #[hpf]
                else mkAppM ``decide_eq_false #[hpf]
@@ -782,10 +816,16 @@ partial def dischargeHyp (cfg : WalkCfg) (fuel : Nat) (h : MVarId) : MetaM Bool 
      if cfg.sealStates && rhs.isMVar && lhs.isAppOf `step_ctx then
        if (← isDefEq rhs lhs) then
          h.assign (← mkEqRefl lhs)
+         trHyp cfg.traceRef
+           (.seal { name := .anonymous, kind := .enumVerbatim })
          if cfg.trace then dbg_trace "dh[{fuel}]: enum verbatim-plant"
          return true
-     if true then
+     -- (A-F4 cleanup, arc-11 S1: the vestigial `if true then` guard is
+     -- gone; the nested `do` keeps the block's indentation and the
+     -- enclosing early-return semantics unchanged.)
+     do
       let st ← saveState
+      let depth := 4 - min 4 fuel
       match ← attempt cfg.candBudget (do
           let t0 ← IO.monoMsNow
           -- SCALAR-typed facts go through the PROOF-CARRYING
@@ -799,6 +839,8 @@ partial def dischargeHyp (cfg : WalkCfg) (fuel : Nat) (h : MVarId) : MetaM Bool 
                 let (v, pf) ← evalScalarPf scalarTypeHeads 16 lhs
                 if (← isDefEq rhs v) then
                   h.assign pf
+                  trHyp cfg.traceRef
+                    (.scalarPf depth pf.getAppFn.constName?)
                   return true
                 else
                   return false
@@ -812,7 +854,7 @@ partial def dischargeHyp (cfg : WalkCfg) (fuel : Nat) (h : MVarId) : MetaM Bool 
             if cfg.norm then
               tryCatchRuntimeEx
                 ((if isSelection then kWhnf lhs
-                  else normCompute cfg.atoms cfg.depth lhs) <&> some)
+                  else normCompute lhs) <&> some)
                 (fun _ => pure none)
             else
               -- v1: original behavior, no fallback lane
@@ -872,8 +914,18 @@ partial def dischargeHyp (cfg : WalkCfg) (fuel : Nat) (h : MVarId) : MetaM Bool 
                             dbg_trace "dh[{fuel}]: repro BODY:\n{← ppExpr v}"
                   throw ex
               h.assign pf
+              trHyp cfg.traceRef (.computed depth
+                (if !cfg.norm then .spineV1
+                 else if contFresh then .kWhnfAvatars
+                 else if isSelection then .selectionKWhnf
+                 else .normCompute) pf.getAppFn.constName?)
             else
               h.assign (← mkEqRefl lhs)
+              trHyp cfg.traceRef (.computed depth
+                (if !cfg.norm then .spineV1
+                 else if contFresh then .kWhnfAvatars
+                 else if isSelection then .selectionKWhnf
+                 else .normCompute) none)
             return true
           else
             -- DECIDE-FACTS route (D3): a run-state crossing stuck on
@@ -891,12 +943,14 @@ partial def dischargeHyp (cfg : WalkCfg) (fuel : Nat) (h : MVarId) : MetaM Bool 
                   throw ex
               if prog && !(Expr.equal v0 v) then
                 let v1 ← tryCatchRuntimeEx
-                  (normCompute cfg.atoms cfg.depth v0) (fun _ => pure v0)
+                  (normCompute v0) (fun _ => pure v0)
                 if (← isDefEq rhs v1) then
                   let rhs' ← instantiateMVars rhs
                   let pfB ← if Expr.equal v0 rhs' then mkEqRefl v0
                             else mkAuxRfl v0 rhs'
                   h.assign (← mkEqTrans pf0 pfB)
+                  trHyp cfg.traceRef (.computed depth .kWhnfAvatars
+                    pfB.getAppFn.constName?)
                   if cfg.trace then dbg_trace "dh[{fuel}]: decide-facts HIT"
                   return true
             if cfg.trace then
@@ -943,6 +997,8 @@ partial def dischargeHyp (cfg : WalkCfg) (fuel : Nat) (h : MVarId) : MetaM Bool 
               if (← attempt (100000 * 1000) (do
                   unless (← isDefEq dty ty) do failure
                   h.assign decl.toExpr)).isSome then
+                trHyp cfg.traceRef
+                  (.assumption (4 - min 4 fuel) decl.userName)
                 if cfg.trace then dbg_trace "assum HIT {decl.userName}"
                 return true
       return false
@@ -1014,7 +1070,9 @@ partial def dischargeHyp (cfg : WalkCfg) (fuel : Nat) (h : MVarId) : MetaM Bool 
           h.assign proof
           return true)
       match res with
-      | some true => return true
+      | some true =>
+        trHyp cfg.traceRef (.lawFired (4 - min 4 (fuel+1)) law.name)
+        return true
       | _ => restoreState st
     -- (iii) rfl (definitional computation) — NOT for `app`-shaped
     -- hypotheses: every app-crossing must go through a registered law
@@ -1031,9 +1089,13 @@ partial def dischargeHyp (cfg : WalkCfg) (fuel : Nat) (h : MVarId) : MetaM Bool 
         | return false
       if (← isDefEq lhs' rhs') then
         if cfg.sealFacts then
-          h.assign (← mkAuxRfl lhs' (← instantiateMVars rhs'))
+          let pf ← mkAuxRfl lhs' (← instantiateMVars rhs')
+          h.assign pf
+          trHyp cfg.traceRef
+            (.rflClosed (4 - min 4 (fuel+1)) pf.getAppFn.constName?)
         else
           h.assign (← mkEqRefl lhs')
+          trHyp cfg.traceRef (.rflClosed (4 - min 4 (fuel+1)) none)
         return true
       else
         return false)
@@ -1061,30 +1123,16 @@ partial def walkOnce (cfg : WalkCfg) (goal : MVarId)
   let cands ← appEqMatches lhs
   if verbose then
     logInfo m!"app_walk?: {cands.size} candidate(s):       {cands.map (·.name)}"
-  -- DEBUG LANE (verbose): run the FIRST candidate raw — exceptions
-  -- and logs propagate (attempt+restoreState would roll them back).
-  if verbose && false then
-    if h : cands.size > 0 then
-      let law := cands[0]!
-      logInfo m!"app_walk?: RAW attempt of {law.name}"
-      let lemExpr ← mkConstWithFreshMVarLevels law.name
-      let (args, _, lemTy) ← forallMetaTelescopeReducing
-        (← inferType lemExpr)
-      let some (_, lemLhs, _) := lemTy.eq?
-        | logInfo m!"app_walk?: not an eq"; return none
-      unless (← isDefEq lemLhs lhs) do
-        logInfo m!"app_walk?: LHS mismatch"; return none
-      for a in args do
-        if a.isMVar then
-         if !(← a.mvarId!.isAssigned) then
-          if (← isProp (← inferType a)) then
-            let ty0 ← instantiateMVars (← a.mvarId!.getType)
-            let t0 ← IO.monoMsNow
-            let okh ← dischargeHyp { cfg with trace := true } 4 a.mvarId!
-            let t1 ← IO.monoMsNow
-            logInfo m!"app_walk?: hyp ({t1-t0}ms, ok={okh}): {ty0}"
-      return none
+  -- (A-F4 cleanup, arc-11 S1: the dead `verbose && false` raw-attempt
+  -- block is deleted — its diagnostic role is covered by the
+  -- structured trace + the dischargeHyp trace lane.)
   for law in cands do
+    trResetHyps cfg.traceRef
+    -- per-candidate fate cell: the attempt's do-block records WHY the
+    -- candidate failed; an attempt-level abort (budget/runtime trip)
+    -- leaves it empty and is recorded as `.aborted` (the survey
+    -- rank-3 requirement: every candidate considered gets a fate).
+    let fateCell ← IO.mkRef (none : Option CandFate)
     let st ← saveState
     let res ← attempt (dbg := verbose) cfg.candBudget (do
       let lemExpr ← mkConstWithFreshMVarLevels law.name
@@ -1092,15 +1140,18 @@ partial def walkOnce (cfg : WalkCfg) (goal : MVarId)
         (← inferType lemExpr)
       let some (_, lemLhs, lemRhs) := lemTy.eq? | return none
       unless (← isDefEq lemLhs lhs) do
+        fateCell.set (some .lhsMismatch)
         if verbose then logInfo m!"app_walk?: {law.name} LHS mismatch"
         return none
       -- side hypotheses
       let mut ok := true
+      let mut hidx := 0
       for a in args do
         if a.isMVar then
          if !(← a.mvarId!.isAssigned) then
           if (← isProp (← inferType a)) then
             unless (← Core.withCurrHeartbeats (dischargeHyp cfg 4 a.mvarId!)) do
+              fateCell.set (some (.hypFailed hidx))
               if verbose then
                 let ty' ← instantiateMVars (← a.mvarId!.getType)
                 let lhsHead := match ty'.eq? with
@@ -1109,9 +1160,12 @@ partial def walkOnce (cfg : WalkCfg) (goal : MVarId)
                 dbg_trace "app_walk?: {law.name} rejected — not mechanical: {lhsHead.take 300}"
               ok := false
               break
+            hidx := hidx + 1
       unless ok do return none
       let proof ← Core.withCurrHeartbeats (instantiateMVars (mkAppN lemExpr args))
-      if proof.hasExprMVar then return none
+      if proof.hasExprMVar then
+        fateCell.set (some .residualMvars)
+        return none
       let lemRhs ← instantiateMVars lemRhs
       -- terminal: the law's RHS meets the goal's RHS directly
       if (← withReducible <| isDefEq lemRhs rhs) then
@@ -1138,25 +1192,35 @@ partial def walkOnce (cfg : WalkCfg) (goal : MVarId)
       -- named-state-to-named-state equation — small for the kernel).
       let proof ← if cfg.sealRounds then do
           let pty ← instantiateMVars (← inferType proof)
-          mkAuxTheorem pty proof (zetaDelta := false)
+          let pf ← mkAuxTheorem pty proof (zetaDelta := false)
+          if let some n := pf.getAppFn.constName? then
+            registerSealedAux n
+            pushEngineEv (.seal { name := n, kind := .round })
+          pure pf
         else pure proof
       let restTy ← mkEq lemRhsN rhs
       let rest ← mkFreshExprMVar restTy (userName := `walk)
       goal.assign (← mkEqTrans proof rest)
       return some (law.name, some rest.mvarId!))
     match res with
-    | some (some r) => return some r
-    | _ => restoreState st
+    | some (some r) =>
+      trFate cfg.traceRef law.name law.prio .fired
+      return some r
+    | _ =>
+      trFate cfg.traceRef law.name law.prio
+        ((← fateCell.get).getD .aborted)
+      restoreState st
   -- no law fired: leave the goal untouched
   let _ := α
   return none
 
 /-- The walk loop: up to `budget` rounds, then (if the goal survives)
     try `rfl`. Reports the trace when `verbose`. -/
-partial def walkLoop (cfg : WalkCfg) (goal : MVarId) (budget : Nat)
-    (verbose : Bool) :
+private partial def walkLoopCore (cfg : WalkCfg) (goal : MVarId)
+    (budget : Nat) (verbose : Bool) :
     TacticM (Option MVarId) := do
   let mut g := goal
+  let mut idx := 0
   for _ in [0:budget] do
     -- Each ROUND runs in a fresh heartbeat window (capped at the
     -- ambient per-declaration budget, never larger): the walker
@@ -1182,13 +1246,20 @@ partial def walkLoop (cfg : WalkCfg) (goal : MVarId) (budget : Nat)
           dbg_trace "app_walk?: round ABORTED (runtime)"
           logInfo m!"app_walk?: round aborted — {ex.toMessageData}"
         pure none)
+    let hbUsed := (← IO.getNumHeartbeats) - hb0
     IO.setNumHeartbeats hb0
+    let ledger : Ledger :=
+      { ms := (← IO.monoMsNow) - t0, hb := hbUsed / 1000 }
     match step? with
     | some (n, some g') =>
+      trCloseRound cfg.traceRef idx (some n) ledger
+      idx := idx + 1
       if verbose then
         dbg_trace "app_walk: {n} ({(← IO.monoMsNow) - t0}ms)"
       g := g'
     | some (n, none) =>
+      trCloseRound cfg.traceRef idx (some n) ledger
+      trOutcome cfg.traceRef .closedTerminal
       if verbose then logInfo m!"app_walk: {n} (closed)"
       return none
     | none =>
@@ -1202,12 +1273,29 @@ partial def walkLoop (cfg : WalkCfg) (goal : MVarId) (budget : Nat)
           unless (← isDefEq l r) do failure
           g.assign (← mkEqRefl l))
       IO.setNumHeartbeats hb1
+      trCloseRound cfg.traceRef idx none ledger
       if rflRes.isSome then
+        trOutcome cfg.traceRef .closedRfl
         if verbose then logInfo m!"app_walk: closed by rfl"
         return none
+      trOutcome cfg.traceRef (.stuck none)
       if verbose then dbg_trace "app_walk?: returning stuck goal"
       return some g
+  trOutcome cfg.traceRef .budget
   return some g
+
+/-- The walk loop, tracing-aware wrapper: enables the low-level
+    engine event buffer for a traced walk and restores it on every
+    exit path (structured tracing, arc-11 S1 — design §12.1). -/
+partial def walkLoop (cfg : WalkCfg) (goal : MVarId) (budget : Nat)
+    (verbose : Bool) :
+    TacticM (Option MVarId) := do
+  if cfg.traceRef.isSome then engineEvEnabled.set true
+  try
+    walkLoopCore cfg goal budget verbose
+  finally
+    engineEvEnabled.set false
+    engineEvBuf.set #[]
 
 /-- `app_walk` / `app_walk n` — see the header contract. -/
 syntax (name := appWalk) "app_walk" (ppSpace num)? : tactic
@@ -1220,9 +1308,19 @@ elab_rules : tactic
     | some g => replaceMainGoal [g]
     | none => replaceMainGoal []
 
-/-- `app_walk_norm` / `app_walk_norm n` — the v2 walk (design §11.3):
-    the same loop with type-aware selective state normalization
-    (opt-in; `app_walk` is untouched). -/
+/-- The `app_walk_norm` configuration (arc-11 S1, F12-4
+    sealing-as-default): type-aware selective state normalization
+    (design §11.3) WITH the D3 per-stage certificate emitter
+    (sealFacts/sealRounds/sealStates) — name-every-big-term as the
+    standing invariant (design §12.6 batch 1; Lithium review §6
+    item 1). `app_walk` (v1) is untouched. -/
+def normWalkCfg (atoms : NameSet) : WalkCfg :=
+  { norm := true, atoms := atoms, candBudget := 200000 * 1000,
+    sealFacts := true, sealRounds := true, sealStates := true }
+
+/-- `app_walk_norm` / `app_walk_norm n` — the normalizing walk with
+    the per-stage certificate emitter ON by default (arc-11 S1;
+    formerly the `app_walk_norm!` surface, now retired). -/
 syntax (name := appWalkNorm) "app_walk_norm" (ppSpace num)? : tactic
 
 elab_rules : tactic
@@ -1230,8 +1328,7 @@ elab_rules : tactic
     let budget := match n with | some n => n.getNat | none => 64
     let goal ← getMainGoal
     let atoms ← stateAtoms
-    let cfg : WalkCfg := { norm := true, atoms := atoms, candBudget := 200000 * 1000 }
-    match ← walkLoop cfg goal budget false with
+    match ← walkLoop (normWalkCfg atoms) goal budget false with
     | some g => replaceMainGoal [g]
     | none => replaceMainGoal []
 
@@ -1248,23 +1345,14 @@ elab_rules : tactic
     | some g => replaceMainGoal [g]
     | none => replaceMainGoal []
 
-/-- `app_walk_norm!` — the v3 SEALED walk: law-structured rounds with
-    per-fact aux theorems, per-round aux theorems, and per-state aux
-    definitions (the T4 hand-proof architecture, automated). -/
-syntax (name := appWalkNormSealed) "app_walk_norm!" (ppSpace num)? : tactic
+-- (`app_walk_norm!` RETIRED, arc-11 S1 F12-4: sealing is
+-- `app_walk_norm`'s default; the ban-list row is dropped in the same
+-- commit — scripts/check_proof_size.sh.)
 
-elab_rules : tactic
-  | `(tactic| app_walk_norm! $[$n:num]?) => do
-    let budget := match n with | some n => n.getNat | none => 64
-    let goal ← getMainGoal
-    let atoms ← stateAtoms
-    let cfg : WalkCfg := { norm := true, atoms := atoms, candBudget := 200000 * 1000, sealFacts := true, sealRounds := true, sealStates := true }
-    match ← walkLoop cfg goal budget false with
-    | some g => replaceMainGoal [g]
-    | none => replaceMainGoal []
-
-/-- `app_walk_norm?` — v2 debug lane (banned in committed proofs,
-    same as `app_walk?`). -/
+/-- `app_walk_norm?` — the norm-walk debug lane (banned in committed
+    proofs, same as `app_walk?`): mirrors `app_walk_norm`'s
+    configuration (seals ON), verbose + discharge tracing, and prints
+    the STRUCTURED trace dump at walk end (design §12.1). -/
 syntax (name := appWalkNormDebug) "app_walk_norm?" (ppSpace num)? : tactic
 
 elab_rules : tactic
@@ -1272,8 +1360,12 @@ elab_rules : tactic
     let budget := match n with | some n => n.getNat | none => 1
     let goal ← getMainGoal
     let atoms ← stateAtoms
-    let cfg : WalkCfg := { norm := true, atoms := atoms, candBudget := 100000 * 1000, trace := true }
-    match ← walkLoop cfg goal budget true with
+    let tr ← IO.mkRef ({} : TraceSt)
+    let cfg : WalkCfg :=
+      { normWalkCfg atoms with trace := true, traceRef := some tr }
+    let res ← walkLoop cfg goal budget true
+    logInfo m!"{((← tr.get).toTrace.dump (hyps := true))}"
+    match res with
     | some g => replaceMainGoal [g]
     | none => replaceMainGoal []
 
@@ -1425,6 +1517,8 @@ def kwalkRound (cfg : WalkCfg) (goal : MVarId) :
   let σconst ← mkAuxDefinition
     ((← mkFreshUserName `kwSt).appendAfter "_aux")
     (← inferType σnorm) σnorm (compile := false)
+  if let some n := σconst.getAppFn.constName? then
+    registerSealedAux n
   -- the continuation LHS and THE ROUND CERTIFICATE
   let fuelPred ← if lit == 1 then pure base
     else mkAppM `HAdd.hAdd #[base, mkRawNatLit (lit - 1)]

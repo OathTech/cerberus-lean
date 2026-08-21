@@ -106,8 +106,10 @@ upstream remote or a generated tree is absent, fail-closed otherwise),
 and `check_proof_size.sh` (arc-9 S2: slate proof files within the
 250-line/40-manual-step bar, Kit files fixture-free — the mega-lemma
 counter, debug-only walker surfaces banned in committed (git-tracked)
-proofs: `app_walk?`/`app_walk_norm?` + `app_defeq_diag`/`dnms_kwalk`/
-`app_walk_norm!` since the arc-9 pre-merge audit (A-F5);
+proofs: `app_walk?`/`app_walk_norm?` + `app_defeq_diag`/`dnms_kwalk`
+since the arc-9 pre-merge audit (A-F5); `app_walk_norm!` RETIRED in
+arc-11 S1 (F12-4) — the per-stage certificate emitter is now
+`app_walk_norm`'s default configuration;
 registered slate files listed in the script). Two further gates are
 IN-BUILD (fail the `lake build` itself, arc 7): the RelSem axiom audit
 and the slate statement-TCB gate — both in `relsem/RelSem/Audit.lean`

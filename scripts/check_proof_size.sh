@@ -17,11 +17,15 @@
 # Additionally FAIL (unconditional):
 #   * debug-only walker surfaces in ANY committed relsem file:
 #     `app_walk?`/`app_walk_norm?` (S2), and — arc-9 pre-merge audit
-#     A-F5 (2026-08-21) — `app_defeq_diag`, `dnms_kwalk`, and
-#     `app_walk_norm!`. POLICY DECISION (recorded here per the audit
-#     disposition): none of the three appear in any committed proof
-#     (T1AppEq/T5Prefix verified clean at the time of the extension),
-#     so ALL THREE are banned outright, same policy as `app_walk?`.
+#     A-F5 (2026-08-21) — `app_defeq_diag` and `dnms_kwalk`.
+#     POLICY DECISION (recorded here per the audit disposition): none
+#     appear in any committed proof (T1AppEq/T5Prefix verified clean
+#     at the time of the extension), so all are banned outright, same
+#     policy as `app_walk?`. `app_walk_norm!` was on this list until
+#     arc-11 S1 (F12-4): the surface is RETIRED — sealing is now
+#     `app_walk_norm`'s default, so the token no longer parses and
+#     the ban row is dropped (this comment is the recorded policy
+#     change, same commit as the retirement).
 #     Untracked session scratch (Probe*.lean etc.) is exempt via the
 #     git-tracked filter below — the ban is on COMMITTED files; a
 #     future legitimate committed use requires an explicit,
@@ -61,12 +65,12 @@ else
 fi
 
 # --- debug-surface ban in committed proofs ---------------------------
-# app_walk?/app_walk_norm? (S2) + app_defeq_diag/dnms_kwalk/
-# app_walk_norm! (arc-9 audit A-F5; policy note in the header).
-# Hits are filtered to git-TRACKED files: the ban is on COMMITTED
-# proofs; untracked session scratch (Probe*.lean) may use debug
-# surfaces by design.
-raw_dbg_hits=$(grep -rnE '^[^-]*\b(app_walk(_norm)?\?|app_walk_norm!|dnms_kwalk|app_defeq_diag)' \
+# app_walk?/app_walk_norm? (S2) + app_defeq_diag/dnms_kwalk (arc-9
+# audit A-F5; app_walk_norm! retired arc-11 S1 F12-4 — policy note in
+# the header). Hits are filtered to git-TRACKED files: the ban is on
+# COMMITTED proofs; untracked session scratch (Probe*.lean) may use
+# debug surfaces by design.
+raw_dbg_hits=$(grep -rnE '^[^-]*\b(app_walk(_norm)?\?|dnms_kwalk|app_defeq_diag)' \
     "$RELSEM"/*.lean "$RELSEM"/Kit/*.lean 2>/dev/null \
     | grep -v 'Tactics/' || true)
 dbg_hits=""
@@ -84,7 +88,7 @@ if [[ -n "$dbg_hits" ]]; then
     printf '%s' "$dbg_hits"
     fail=1
 else
-    echo "check_proof_size: debug-surface ban OK (app_walk?/app_walk_norm!/dnms_kwalk/app_defeq_diag)"
+    echo "check_proof_size: debug-surface ban OK (app_walk?/app_walk_norm?/dnms_kwalk/app_defeq_diag)"
 fi
 
 # --- per-slate-file line + manual-step tallies ------------------------
