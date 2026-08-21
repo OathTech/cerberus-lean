@@ -689,3 +689,45 @@ no-wildcard style + the §7.2 plant test + witness battery would expose
 an under-approximated M as a witness NOT tripping the floor), and
 harness-classifier interaction with `--batch` stdout parsing (floor
 message is stderr-only; stdout stays empty on floor exit).
+
+---
+
+## ADDENDUM (arc-12 S1, 2026-08-21) — corrections from implementation-time measurement
+
+This addendum records where S1's measurements corrected this document.
+The original text above is unchanged (records discipline). Full S1
+evidence: `2026-08-21_arc12-s1-floor-record.md`.
+
+1. **The libc-mode margin row in §3.1 is WRONG.** `.co` files are
+   MARSHALLED core objects (`backend/driver/main.ml:26-27
+   read_core_object`), not parsed — loading libc.co draws NOTHING from
+   `Cerb_fresh.int`, and `set_digest` is not called for it. The
+   `a_11253` tokens measured in the `-d6` libc-mode debug were libc.co's
+   own SYMBOLS (ids baked at libc build time, when the oracle elaborated
+   the libc sources sequentially on one counter), not fresh draws.
+   **The C-TU margin in libc mode is the same 483 as nolibc.** The
+   floor's per-TU dynamic design is unaffected (it never used the
+   constant), but the blast-radius prediction was: libc-mode lanes are
+   NOT protected by a large margin — see the S1 record's conflict
+   section (uri.c hwm 1798, libc source TUs stdio/stdlib/internal/
+   vfscanf hwm 856/673/682/521, all beyond-margin; stdio/stdlib/
+   internal/uri.c carry live collisions: 214/58/106/252 duplicate keys).
+2. **§4.3's "note the tree-resident nats" choice was implemented and
+   then REVERSED (fold v2, symbols only).** Noting loop/marker ints
+   made the mark track the raw supply high water, which exceeds the
+   live-symbol mark by roughly one draw per source line; the interim v1
+   corpus sweep floored 420 of the first 862 corpus files, most with
+   zero live collisions. v2 notes only `Symbol.sym` numbers (only
+   symbols can collide; no Symbol is built from a loop/marker nat on
+   the cerberus path — per-site verified). The §1.2 boundary
+   (N=463 pass / N=464 floor) holds under v2 EXACTLY as probed at S0;
+   under v1 it was 462/463 (main's function-definition `record_marker`
+   draw). Residual documented in ail_sym_hwm.ml's header.
+3. **The §5.2 coincidentally-correct estimate (~25-40 files) was
+   sample-biased.** The 89-file sample was sia_-dominated (small
+   files). For real programs max(live sym) ≈ total supply draws (the
+   last-registered symbol sits near the end of the supply sequence),
+   so EVERY TU registering more than ~460 identifiers is beyond-margin
+   — which includes roughly half of the sa_ (small_arrays, ~700-line)
+   subcorpus. The honest movement is structural, not a tail; v2 sweep
+   numbers in the S1 record.
