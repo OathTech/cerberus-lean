@@ -27,3 +27,36 @@
   before the ladder sweeps. Margin verdict (mode-dependent but
   runtime-known via the single Cerb_fresh.int chokepoint) = NO
   replan tripwire. S1 is GO per the doc §9 plan.
+- **D2 [AGENT, flagged for operator veto] — the §7 parked conflict:
+  ruling = B+C CONDITIONAL, D deferred-with-case-recorded.** The S1
+  floor is green on every chartered bar (generated trees untouched
+  AND gate-verified; 35/35+ witnesses loud; full-corpus sweep
+  all-justified incl. the 34 coincidentally-correct flips; Tier-A
+  untouched). The conflict: S0's libc-margin claim was WRONG
+  (S0 addendum committed) — the pinned libc.co/uri artifacts were
+  produced by the collision-exposed oracle, and the floor now
+  correctly refuses to regenerate them (test_libc_exec RED at prep,
+  uri lane RED). RULINGS: (1) Option B — a cabs-json-EXPORT
+  exemption — is approved CONDITIONALLY on a soundness verification:
+  the exemption is principled ONLY if the exported artifact is
+  pre-desugar Cabs JSON and the corrupted desugar result is
+  DISCARDED on that path (verify in main.ml; if the export consumes
+  desugar output in any way, B is DEAD and this escalates to the
+  operator as A-vs-D). (2) Option C — grandfather the pinned
+  libc.co/uri expectations with REGISTER findings: the artifacts are
+  collision-exposed but validated-by-agreement (uri 16/16 + libc 7/7
+  vs the protected Lean side — coincidental-correctness evidence of
+  the same class as the 34 corpus rows); each pinned artifact gets a
+  register entry with mover = renumbering-era re-derivation; the uri
+  gate's records gain an honesty ADDENDUM (its evidence now carries
+  the exposure asterisk). (3) Option D (renumbering) stays OUT of
+  this arc (the arc-11 collision we designed around) but the S1
+  evidence — THE FORK CANNOT REGENERATE ITS OWN LIBC under the
+  floor — is recorded as the strongest renumbering case yet; it
+  becomes a first-class agenda item for the post-arc-13 slate.
+  (4) The charter's "libc/uri zero movement" bar is AMENDED by this
+  ruling to "libc/uri validated-by-agreement, grandfathered with
+  register + addenda, lanes re-greened via the verified-sound
+  exemption" — a success-condition amendment, hence the operator
+  flag: veto reverses to Option A (honest red lanes) pending their
+  call.
