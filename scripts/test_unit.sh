@@ -134,3 +134,18 @@ if ! ENFORCE=1 "$TOTALITY_SH"; then
     echo "test_unit: exec-totality gate FAILED"
     exit 1
 fi
+
+# Fork-drift gate (arc-10 audit follow-up, [USER] mandate): the oracle
+# surface (frontend model, ocaml_frontend, memory, util, parsers,
+# backend/{common,driver,lean_export}, runtime, opam files) must equal
+# the reviewed manifest scripts/fork_drift_manifest.txt, and the
+# generated-OCaml fork-vs-upstream deltas must match their pinned
+# hashes (spec: notes/2026-08-21_fork-drift-review.md §6). Fail-closed
+# like the gates above (a missing script/manifest fails the suite; the
+# gate itself only SKIPs — loudly, rc 0 — when the upstream remote or
+# a generated tree is absent).
+DRIFT_SH="$(dirname "$PURITY_SH")/check_fork_drift.sh"
+if ! "$DRIFT_SH"; then
+    echo "test_unit: fork-drift gate FAILED"
+    exit 1
+fi

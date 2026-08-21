@@ -18,7 +18,11 @@
 #                 batching a long sweep — deterministic: files sorted)
 #   --check-baseline on a partial run (--shard/--max) checks against the
 #   committed baseline restricted to the run's files, fail-closed on
-#   corpus/baseline drift (arc-10 S5; union of shards 1..M = full check)
+#   corpus/baseline drift (arc-10 S5; union of shards 1..M = full check).
+#   Both drift directions are fail-closed: run files missing from the
+#   baseline (slice count check) AND corpus files vanished since the
+#   baseline was written (baseline-entries == corpus-TOTAL check, before
+#   slicing — arc-10 audit fix, auditor B F1)
 #
 # Environment: TIMEOUT_SECS (default 15), SKIP_BUILD passed through.
 # Baseline: scripts/exec_csmith_corpus_baseline.txt
@@ -63,6 +67,20 @@ materialize small_mix       smx
 LIST="$STAGE/list.txt"
 find "$STAGE" -name '*.c' | sort > "$LIST"
 TOTAL=$(wc -l < "$LIST")
+
+# Fail-closed VANISHED-FILE direction (arc-10 audit fix, auditor B F1):
+# a corpus file removed after the baseline was written is absent from
+# every shard's run list, so the slice-restricted check below would
+# silently drop its baseline line and the union of shards 1..M would no
+# longer cover the committed baseline. Require baseline entry count ==
+# corpus TOTAL before any slicing (full and partial checks alike).
+if [[ "$MODE" == check ]]; then
+    entries=$(grep -Evc '^[[:space:]]*(#|$)' "$BASELINE")
+    if [[ "$entries" -ne "$TOTAL" ]]; then
+        echo "Error: baseline $(basename "$BASELINE") has $entries entries but the corpus has $TOTAL files — corpus/baseline drift (vanished or added corpus files); refusing check" >&2
+        exit 1
+    fi
+fi
 if [[ -n "$SHARD" ]]; then
     K="${SHARD%%/*}"; M="${SHARD##*/}"
     [[ "$K" -ge 1 && "$K" -le "$M" ]] || { echo "Error: bad shard $SHARD" >&2; exit 1; }

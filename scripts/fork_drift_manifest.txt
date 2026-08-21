@@ -1,0 +1,95 @@
+# fork-drift manifest — the reviewed oracle-surface drift set
+# (gate: scripts/check_fork_drift.sh; review + per-hunk classification:
+# notes/2026-08-21_fork-drift-review.md — [files] classes DECL/DELIB/
+# SUSPECT are per that review's §2/§5 tables; the F-D suspect family is
+# symbol/cabs_to_ail{,_effect}/core_run{,_aux}/core_reduction).
+# Every entry is a reviewed claim about the oracle: additions/removals
+# and hash moves go through the gate's refresh recipe with a commit
+# message stating the justification.
+# NOTE (delta from the review's draft): driver.ml is a 12th cosmetic
+# entry — the fork's extra_import declare consumes one blank line in
+# the generated OCaml (whitespace-only, strip-verified 2026-08-21);
+# the review's "19 differing files" count was taken against the
+# primary checkout's tree and is superseded by this manifest.
+[meta]
+merge-base=b9aeedcb4dd438763b0eef7f95ac19e93875d7de
+lem-pin=
+[files]
+backend/driver/dune
+backend/driver/main.ml
+backend/lean_export/cabs_json.ml
+backend/lean_export/dune
+cerberus-lib.opam
+cerberus.opam
+frontend/concurrency/cmm_csem.lem
+frontend/concurrency/cmm_op.lem
+frontend/model/ail/ailSyntax.lem
+frontend/model/ail/ailTypesAux.lem
+frontend/model/ail/ailWf.lem
+frontend/model/ail/genTyping.lem
+frontend/model/annot.lem
+frontend/model/any.lem
+frontend/model/boot.lem
+frontend/model/builtins.lem
+frontend/model/cabs_to_ail_effect.lem
+frontend/model/cabs_to_ail.lem
+frontend/model/cn.lem
+frontend/model/core_aux.lem
+frontend/model/core_eval.lem
+frontend/model/core.lem
+frontend/model/core_linking.lem
+frontend/model/core_reduction.lem
+frontend/model/core_rewrite.lem
+frontend/model/core_run_aux.lem
+frontend/model/core_run.lem
+frontend/model/ctype_aux.lem
+frontend/model/ctype.lem
+frontend/model/debug.lem
+frontend/model/decode.lem
+frontend/model/defacto_memory_aux.lem
+frontend/model/defacto_memory.lem
+frontend/model/defacto_memory_types.lem
+frontend/model/driver.lem
+frontend/model/float.lem
+frontend/model/formatted.lem
+frontend/model/fs.lem
+frontend/model/global.lem
+frontend/model/implementation.lem
+frontend/model/loc.lem
+frontend/model/mem.lem
+frontend/model/mini_pipeline.lem
+frontend/model/nondeterminism.lem
+frontend/model/pp.lem
+frontend/model/state_exception_undefined.lem
+frontend/model/std.lem
+frontend/model/symbol.lem
+frontend/model/translation_effect.lem
+frontend/model/translation.lem
+frontend/model/utils.lem
+runtime/libcore/impls/i686-apple-darwin10-gcc-4.2.1.impl
+[expected-semantic]
+# generated .ml allowed to differ in OCaml tokens, pinned by sha256 of
+# the label-normalized unified diff (upstream-pristine vs fork tree)
+1ddebd0b8896b11a6cf9fd046d799f6fefb53595d11087b4bab5e7002f2206af cabs_to_ail.ml
+e92d767a035ebf22e49890d4070a5a008afaa1ef409cef1a10aedd39cba5abe3 cabs_to_ail_effect.ml
+5656cc3281557693b0dd5b0c81fa6a09817af7c863f524140fd409f86de1db77 core_reduction.ml
+b271c8505f6e342ae40c9e2626b934903c6f0df3fd80aae22be4134ce65208b9 core_run.ml
+f7c00767bf40c9638b4b386a06cfe33477b188fb0f7d1ec828fa4dbb48ee505d core_run_aux.ml
+05ccb517cf967dd47e5cb07efd09bbdbe6973a4c52c43d03496852c2e6259e17 mini_pipeline.ml
+fa837fef5ca985fcd56b737b2b99f74314f98e94f03cdbf7b922f87fb5199eed symbol.ml
+db00c33b9928bab5e428ac2d859367f5cd40de2c01f8867be2c9f1fe8f1b2446 translation_effect.ml
+[expected-cosmetic]
+# comment/blank-line-only generated diffs (strip-verified at review),
+# same hash pinning
+75dbb3f1b524df384b8783896995e45dbee6f6c123a990b2d5848c23595f9131 ailSyntax.ml
+f353c48b912b1f5ac4a73b42b981d01c38ac19760867ad8e043072e9489b383c cn.ml
+6be5e29b880db46c0ade6f228b78655f05d4ecfda4b5f55896011202cd7512d9 core.ml
+c0546a677a6bcdd16cc1630ad2360179ef2b74406520e27ec4d7378c6155a8f6 core_aux.ml
+45eeff90ad101db49d28a6ca58bfdcf0bdd2625423ecc646777f31487601546d ctype.ml
+f52f2e5074d521bca92f84a496050d0295550475b16ac3f3c2e01243f5297208 defacto_memory_types.ml
+55fbf935e888e29fda0bd52943546a0a180dd49658c4d51a0c3aedd4382ed3d6 driver.ml
+b0c09cbc54c6e976b401e001bf4ba4e037ea8c4f0c941dbe394a2ff6afba8deb lem_debug.ml
+e5b26939dde79f51654d4696010595af8178cb301e4e093973012ed00726eacd nondeterminism.ml
+98ce65a030e34b6f691e82d328aaf48e4cc2522ec4094aa145465810c658bdca pp.ml
+ab2dbee332b13d97f1752d5aecc0b8cbb95da5adf8c61cb3e5065dd0230ba2c1 std.ml
+c2008a0bb34b578d774f2816db605a7fa67a2e890eddd7f5052a02c521a336ff utils.ml
