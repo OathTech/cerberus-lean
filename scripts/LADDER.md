@@ -23,6 +23,7 @@ Order is the conventional run order; all are fail-closed gates.
 | 8 | `./scripts/test_core.sh` | tests/minimal 100% (078 is GREEN since arc-6 S1 — any red is a regression) |
 | 9 | `./scripts/test_elab.sh` | recorded same/diff state, rc 0 |
 | 10 | `./scripts/test_libxml2_uri.sh` | **GATING since arc-6 S4** (charter success condition 1): 16/16 byte-identical LEAN_LIBC vs ORACLE_LIBC + pinned per-lane expectations + baseline drift check (`tests/libxml2/uri_baseline.txt`), fail-closed both directions |
+| 11 | `./scripts/test_cn_coverage.sh --check-baseline` | CN-corpus coverage lane (arc/cn-coverage, 2026-08-22): 213/213 `deps/cn/tests/cn` files compared vs the oracle (S5f verdict-sequence semantics + REJECT lane, multi-TU drivers, fail-closed manifest bijection) at the exact-match `tests/cn_coverage/baseline.txt` (fail-closed both directions). **Tier A rationale:** measured wall time ~27 s warm (sequential, small programs) — cheaper than the exec-baseline suites that dominate this tier; its sensitivity surface (exec semantics, multi-TU linking, libc proxies) is per-commit surface, and the corpus is external real-world-shaped code |
 
 Measured wall time (arc-6 S4, warm builds): ~4-5 min for the full tier
 on the reference machine (the exec baseline suites dominate; the uri

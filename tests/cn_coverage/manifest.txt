@@ -1,0 +1,218 @@
+# cn_coverage manifest — one row per corpus file under deps/cn/tests/cn
+# format: <corpus relpath>|<class>|<comma-separated extra TUs>|<note>
+# classes: DIRECT (standalone), DRIVEN (driver main), ELAB (trivial driver,
+#          no callable entry), LINKED (own main + support TU).
+# extras: paths relative to tests/cn_coverage, or cn:<relpath> for corpus TUs.
+accesses_on_spec/clientfile.c|LINKED|support/clientfile_foo.c|corpus main calls spec-only foo
+accesses_on_spec/libfile.c|DIRECT||
+alloc_create.c|DIRECT||
+alloc_token.c|LINKED|support/cn_alloc_shim_ull.c|corpus main calls cn_malloc/cn_free_sized (ull)
+and_or_precedence.error.c|DRIVEN|drivers/and_or_precedence.error.driver.c|
+append.c|DIRECT||
+arith_type.error.c|ELAB|drivers/arith_type.error.driver.c|no callable non-static entry (see driver header)
+array_shift_mismatch.error.c|DRIVEN|drivers/array_shift_mismatch.error.driver.c|
+array_shift_void.error.c|DRIVEN|drivers/array_shift_void.error.driver.c|
+arrow_access.c|DRIVEN|drivers/arrow_access.driver.c|
+assert_on_toplevel.error.c|ELAB|drivers/assert_on_toplevel.error.driver.c|no callable non-static entry (see driver header)
+bad_col.error.c|DRIVEN|drivers/bad_col.error.driver.c|
+bad_constructor_user.error.c|ELAB|drivers/bad_constructor_user.error.driver.c|no callable non-static entry (see driver header)
+bad_function_call.error.c|ELAB|drivers/bad_function_call.error.driver.c|no callable non-static entry (see driver header)
+bad_ordering.error.c|DRIVEN|drivers/bad_ordering.error.driver.c|
+bad_record2.error.c|ELAB|drivers/bad_record2.error.driver.c|no callable non-static entry (see driver header)
+bad_record.error.c|ELAB|drivers/bad_record.error.driver.c|no callable non-static entry (see driver header)
+bad_recursion.error.c|ELAB|drivers/bad_recursion.error.driver.c|no callable non-static entry (see driver header)
+bad_resource_var.error.c|DRIVEN|drivers/bad_resource_var.error.driver.c|
+before_from_bytes.error.c|DIRECT||
+before_to_bytes.error.c|DIRECT||
+bitwise_and.c|DIRECT||
+bitwise_and_type_left.error.c|DIRECT||
+bitwise_and_type_right.error.c|DIRECT||
+bitwise_compl.c|DIRECT||
+bitwise_compl_precedence.c|DIRECT||
+bitwise_compl_type.error.c|DIRECT||
+block_type.c|DRIVEN|drivers/block_type.driver.c|
+b_or.c|DRIVEN|drivers/b_or.driver.c|
+builtin_ctz.c|DIRECT||
+builtin_ctz_val.c|DIRECT||
+b_xor.c|DRIVEN|drivers/b_xor.driver.c|
+byte_int.error.c|DIRECT||
+cnfunction_mismatched_args1.error.c|DRIVEN|drivers/cnfunction_mismatched_args1.error.driver.c|
+cnfunction_mismatched_args2.error.c|DRIVEN|drivers/cnfunction_mismatched_args2.error.driver.c|
+cnfunction_mismatched_args3.error.c|DRIVEN|drivers/cnfunction_mismatched_args3.error.driver.c|
+cnfunction_mismatched_args4.error.c|DRIVEN|drivers/cnfunction_mismatched_args4.error.driver.c|
+cn_inline.c|DIRECT||
+comma_operator_struct_field.error.c|DRIVEN|drivers/comma_operator_struct_field.error.driver.c|
+contrived_goto.c|DIRECT||
+copy_alloc_id2.error.c|DIRECT||
+copy_alloc_id.c|DIRECT||
+copy_alloc_id.error.c|DIRECT||
+create_rdonly.c|DIRECT||
+diff_spec_arg.c|DIRECT||
+disj_nonnull.c|DIRECT||
+division_by_0.error.c|DRIVEN|drivers/division_by_0.error.driver.c|
+division.c|DRIVEN|drivers/division.driver.c|
+division_casting.c|DRIVEN|drivers/division_casting.driver.c|
+division_precedence.c|DRIVEN|drivers/division_precedence.driver.c|
+division_return_sign.error.c|DRIVEN|drivers/division_return_sign.error.driver.c|
+division_return_size.error.c|DRIVEN|drivers/division_return_size.error.driver.c|
+division_with_constants.c|DRIVEN|drivers/division_with_constants.driver.c|
+double_spec1.error.c|DRIVEN|drivers/double_spec1.error.driver.c|
+double_spec2.error.c|ELAB|drivers/double_spec2.error.driver.c|no callable non-static entry (see driver header)
+doubling.c|DIRECT||
+duplicate_datatype_var.error.c|ELAB|drivers/duplicate_datatype_var.error.driver.c|no callable non-static entry (see driver header)
+duplicate_pattern_var.error.c|ELAB|drivers/duplicate_pattern_var.error.driver.c|no callable non-static entry (see driver header)
+enum_and_and.c|DIRECT||
+extract_verbose.c|DIRECT||
+failing_postcond.error.c|DRIVEN|drivers/failing_postcond.error.driver.c|
+failing_precond.error.c|DRIVEN|drivers/failing_precond.error.driver.c|
+forloop_with_decl.c|DIRECT||
+from_bytes.error.c|DIRECT||
+fun_addrs_cn_stmt.c|DIRECT||
+fun_ptr_extern.c|LINKED|support/fun_ptr_extern_f2.c|corpus main calls spec-only f2
+fun_ptr_known.c|DIRECT||
+fun_ptr_three_opts.c|DIRECT||
+get_from_array.c|DIRECT||
+get_from_arr.c|DIRECT||
+ghost_arg_exec_fail.error.c|DIRECT||
+ghost_arg_exec_label_fail.error.c|DIRECT||
+ghost_arg_exec_switch_default_fail.error.c|DIRECT||
+ghost_arg_exec_switch_fail.error.c|DIRECT||
+ghost_arg_exec_while_fail.error.c|DIRECT||
+ghost_args_and_nested_function.c|DIRECT||
+ghost_arguments.c|DIRECT||
+ghost_arguments.error.c|DIRECT||
+ghost_arguments_too_few_empty_magic.error.c|DIRECT||
+ghost_arguments_too_few.error.c|DIRECT||
+ghost_arguments_too_few_magic.error.c|DIRECT||
+ghost_arguments_too_many.error.c|DIRECT||
+ghost_arguments_too_many_newline.error.c|DIRECT||
+ghost_arguments_type_mismatch.error.c|DIRECT||
+ghost_bad_ordering.error.c|DRIVEN|drivers/ghost_bad_ordering.error.driver.c|
+ghost_pointer_to_bitvec_cast.c|DIRECT||
+gnu_case_ranges.c|DIRECT||
+gnu_choose.c|DIRECT||
+gnu_ctz.c|DIRECT||
+gnu_ffs.c|DIRECT||
+gnu_types_compatible.c|DIRECT||
+has_alloc_id.c|DIRECT||
+has_alloc_id.error.c|DRIVEN|drivers/has_alloc_id.error.driver.c|
+has_alloc_id_ptr_eq2.error.c|DRIVEN|drivers/has_alloc_id_ptr_eq2.error.driver.c|
+has_alloc_id_ptr_eq.error.c|DRIVEN|drivers/has_alloc_id_ptr_eq.error.driver.c|
+has_alloc_id_ptr_neq.c|DIRECT||
+has_alloc_id_ptr_neq.error.c|DRIVEN|drivers/has_alloc_id_ptr_neq.error.driver.c|
+has_alloc_id_shift.c|DIRECT||
+implies2.error.c|DRIVEN|drivers/implies2.error.driver.c|
+implies3.error.c|DRIVEN|drivers/implies3.error.driver.c|
+implies_associativity.c|DRIVEN|drivers/implies_associativity.driver.c|
+implies.c|DRIVEN|drivers/implies.driver.c|
+implies_precedence.c|DRIVEN|drivers/implies_precedence.driver.c|
+incomplete_match.error.c|DRIVEN|drivers/incomplete_match.error.driver.c|
+inconsistent2.error.c|DIRECT||
+inconsistent3.error.c|DIRECT||
+inconsistent.error.c|DRIVEN|drivers/inconsistent.error.driver.c|
+increments.c|DIRECT||
+int_to_ptr.c|DIRECT||
+int_to_ptr.error.c|DIRECT||
+issue_113.c|DRIVEN|drivers/issue_113.driver.c|
+issue_113.error.c|DRIVEN|drivers/issue_113.error.driver.c|
+issue_392.c|DIRECT||
+left_shift_const.c|DIRECT||
+lexer_hack_parse.error.c|ELAB|drivers/lexer_hack_parse.error.driver.c|no callable non-static entry (see driver header)
+list_literal_type.error.c|ELAB|drivers/list_literal_type.error.driver.c|no callable non-static entry (see driver header)
+list_rev01.c|DIRECT||
+magic_comment_not_closed.c|DIRECT||
+map_set.error.c|ELAB|drivers/map_set.error.driver.c|no callable non-static entry (see driver header)
+mask_ptr.c|LINKED|support/cn_alloc_shim_ul.c|corpus main calls cn_aligned_alloc/cn_free_sized (size_t)
+mask_ptr.error.c|DIRECT||
+match.c|DIRECT||
+max_min_consts.c|DIRECT||
+max_pipes.error.c|ELAB|drivers/max_pipes.error.driver.c|no callable non-static entry (see driver header)
+memcpy_2.error.c|DIRECT||
+memcpy.c|DIRECT||
+mergesort_alt.c|DIRECT||
+mergesort.c|DIRECT||
+merging_arrays.error.c|DIRECT||
+missing_resource.error.c|DRIVEN|drivers/missing_resource.error.driver.c|
+missing_resource_indirect.error.c|DRIVEN|drivers/missing_resource_indirect.error.driver.c|
+mod_by_0.error.c|DRIVEN|drivers/mod_by_0.error.driver.c|
+mod.c|DRIVEN|drivers/mod.driver.c|
+mod_casting.c|DRIVEN|drivers/mod_casting.driver.c|
+mod_precedence.c|DRIVEN|drivers/mod_precedence.driver.c|
+mod_return_sign.error.c|DRIVEN|drivers/mod_return_sign.error.driver.c|
+mod_return_size.error.c|DRIVEN|drivers/mod_return_size.error.driver.c|
+mod_with_constants.c|DRIVEN|drivers/mod_with_constants.driver.c|
+multifile/f.c|DRIVEN|cn:multifile/g.c,drivers/multifile__f.driver.c|cross-TU recursion with g.c
+multifile/g.c|DRIVEN|cn:multifile/f.c,drivers/multifile__g.driver.c|cross-TU recursion with f.c
+mutual_rec/mutual_rec1.c|DRIVEN|drivers/mutual_rec__mutual_rec1.driver.c|
+mutual_rec/mutual_rec2.c|DRIVEN|drivers/mutual_rec__mutual_rec2.driver.c|
+mutual_rec/mutual_rec3.c|DRIVEN|drivers/mutual_rec__mutual_rec3.driver.c|
+null_to_int.c|DIRECT||
+offsetof_int_const.c|ELAB|drivers/offsetof_int_const.driver.c|no callable non-static entry (see driver header)
+offsetof_type.c|DIRECT||
+ownership_at_negative_index.c|DIRECT||
+partial_init_bytes.error.c|DIRECT||
+pointer_to_char_cast.c|DIRECT||
+pointer_to_char_cast.error.c|DIRECT||
+pointer_to_int_cast.error.c|DRIVEN|drivers/pointer_to_int_cast.error.driver.c|
+pointer_to_intptr_t_cast.c|DIRECT||
+pointer_to_uintptr_t_cast.c|DIRECT||
+pointer_to_unsigned_int_cast.error.c|DIRECT||
+pred_def01.c|DIRECT||
+pred_def02.c|DIRECT||
+pred_def03.error.c|ELAB|drivers/pred_def03.error.driver.c|no callable non-static entry (see driver header)
+pred_def04.c|DIRECT||
+predicate_else_if.c|DIRECT||
+predicate_return_type.error.c|ELAB|drivers/predicate_return_type.error.driver.c|no callable non-static entry (see driver header)
+previously_inconsistent_assumptions1.c|ELAB|drivers/previously_inconsistent_assumptions1.driver.c|no callable non-static entry (see driver header)
+previously_inconsistent_assumptions2.c|ELAB|drivers/previously_inconsistent_assumptions2.driver.c|no callable non-static entry (see driver header)
+ptr_diff2.c|DIRECT||
+ptr_diff2.error.c|DIRECT||
+ptr_diff.c|DIRECT||
+ptr_diff.error.c|DIRECT||
+ptr_eq_arg_checking.error.c|DRIVEN|drivers/ptr_eq_arg_checking.error.driver.c|
+ptr_relop.c|DIRECT||
+ptr_relop.error.c|DIRECT||
+redundant_pattern.error.c|ELAB|drivers/redundant_pattern.error.driver.c|no callable non-static entry (see driver header)
+reverse.c|DIRECT||
+reverse.error.c|DIRECT||
+same_spec_arg.c|DIRECT||
+shift_diff_sz.c|DIRECT||
+simple_loop.c|DIRECT||
+simplify_add_0.c|DIRECT||
+simplify_array_shift.c|LINKED|support/cn_alloc_shim_ul.c|corpus main calls cn_malloc/cn_free_sized (size_t)
+solver_crash.error.c|DIRECT||
+spec_accesses2.error.c|DRIVEN|drivers/spec_accesses2.error.driver.c|
+spec_accesses.c|DIRECT||
+spec_accesses.error.c|DRIVEN|drivers/spec_accesses.error.driver.c|
+spec_after_curly_brace.error.c|DRIVEN|drivers/spec_after_curly_brace.error.driver.c|
+spec_after_decl.error.c|ELAB|drivers/spec_after_decl.error.driver.c|no callable non-static entry (see driver header)
+spec_after_def.error.c|DRIVEN|drivers/spec_after_def.error.driver.c|
+spec_decl_arg_number_mismatch.error.c|ELAB|drivers/spec_decl_arg_number_mismatch.error.driver.c|no callable non-static entry (see driver header)
+spec_grammar.error.c|DRIVEN|drivers/spec_grammar.error.driver.c|
+spec_null_shift2.error.c|DIRECT||
+spec_null_shift3.c|DIRECT||
+spec_null_shift.error.c|DIRECT||
+split_case.c|DIRECT||
+struct_updates2.error.c|ELAB|drivers/struct_updates2.error.driver.c|no callable non-static entry (see driver header)
+struct_updates.error.c|ELAB|drivers/struct_updates.error.driver.c|no callable non-static entry (see driver header)
+swap.c|DIRECT||
+swap_pair.c|DIRECT||
+tag_defs.c|DIRECT||
+to_bytes.error.c|DIRECT||
+to_from_bytes_block.c|DIRECT||
+to_from_bytes_owned.c|DIRECT||
+to_from_bytes_struct.error.c|ELAB|drivers/to_from_bytes_struct.error.driver.c|no callable non-static entry (see driver header)
+tree16/as_auto_mutual_dt/tree16.error.c|DRIVEN|drivers/tree16__as_auto_mutual_dt__tree16.error.driver.c|
+tree16/as_mutual_dt/tree16.c|DRIVEN|drivers/tree16__as_mutual_dt__tree16.driver.c|
+tree16/as_partial_map/tree16.c|DRIVEN|drivers/tree16__as_partial_map__tree16.driver.c|
+tree_rev01.c|DIRECT||
+type_synonym.c|DIRECT||
+unary_negation.c|DIRECT||
+unary_negation.error.c|ELAB|drivers/unary_negation.error.driver.c|no callable non-static entry (see driver header)
+unconstrained_ptr_eq2.error.c|DRIVEN|drivers/unconstrained_ptr_eq2.error.driver.c|
+unconstrained_ptr_eq.error.c|DRIVEN|drivers/unconstrained_ptr_eq.error.driver.c|
+unsupported_flexible_array_member.error.c|ELAB|drivers/unsupported_flexible_array_member.error.driver.c|no callable non-static entry (see driver header)
+unsupported_union.error.c|ELAB|drivers/unsupported_union.error.driver.c|no callable non-static entry (see driver header)
+use_enum.c|DIRECT||
+use_typedef.c|DIRECT||
+void_star_arg.c|DIRECT||
