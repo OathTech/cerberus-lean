@@ -1,0 +1,49 @@
+# speclab — arc-15 S0 (2026-08-22): THE SPEC LAB package (charter D2:
+# fresh in-repo Lake package, sibling of relsem — churn isolation from
+# the proof workbench + a rehearsal of the two-part design's THIRD
+# layer, the per-target example repos). Modeled on relsem's arc-11 S4
+# package-rehearsal structure (relsem/lakefile.toml).
+#
+# Dependency direction (the one-way gate pattern, standing forward-
+# design constraint): speclab REQUIRES CerberusLean (the semantics) —
+# and may later require relsem for proof machinery — but NOTHING under
+# the semantics or relsem may reference speclab. Lake's cycle ban
+# enforces the require direction; the absence of reverse references is
+# an audit surface.
+#
+# packagesDir points at the parent workspace's package store so the
+# git dependencies (batteries/iris/Qq/LemLib) are SHARED — no
+# re-clone, no re-build, offline-safe (deps/gitconfig redirects) —
+# the relsem precedent.
+#
+# STATEMENT DISCIPLINE (charter standing invariant): statements in
+# this package stay executable/first-order — Iris/RelSem vocabulary
+# in a speclab statement file fails scripts/check_speclab_statements.sh
+# (the grep-level statement-TCB extension; an in-build Audit gate in
+# the relsem style follows when the first semantics-facing theorems
+# land in S1).
+
+name = "speclab"
+defaultTargets = ["SpecLab"]
+moreLeanArgs = ["-DautoImplicit=false"]
+packagesDir = "../.lake/packages"
+
+[[require]]
+name = "CerberusLean"
+path = ".."
+
+# The SpecLab library. The `SpecLab` root-module prefix is unique to
+# this package (no cross-package prefix split — the arc-11 rehearsal
+# finding does not bite here), so a single root module suffices.
+[[lean_lib]]
+name = "SpecLab"
+
+# S0 sanity/emit executable: codec + renderer round-trip checks
+# (exit 0 on pass) and the identity-harness emitter consumed by
+# scripts/test_speclab.sh. Pure Lean — no semantics imports, hence no
+# native/*.o link args needed (add them when a speclab exe first
+# imports the semantics, per the relsem lakefile precedent).
+[[lean_exe]]
+name = "speclab-test"
+srcDir = "test"
+root = "Unit.SpecLabTest"
