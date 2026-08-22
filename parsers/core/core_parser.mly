@@ -1349,7 +1349,7 @@ ctype:
 | ty= ctype params= delimited(LPAREN, params, RPAREN)
     { let (tys, is_variadic) = params in
       Ctype ([], Function ( (Ctype.no_qualifiers, ty)
-                          , List.map (fun ty -> (Ctype.no_qualifiers, ty, false)) tys, false)) }
+                          , List.map (fun ty -> (Ctype.no_qualifiers, ty, false)) tys, is_variadic)) }
 | CONST ty= ctype STAR
     { Ctype ([], Pointer ({ no_qualifiers with const= true }, ty)) }
 | ty= ctype STAR
@@ -1372,11 +1372,23 @@ ctype:
     { Ctype.Ctype ([], Ctype.Union (Symbol.Symbol ("", -1, SD_Id (fst tag)))) }
 ;
 
+(* NOTE: the variadic marker is folded into the list to keep the grammar
+   LR(1) (the previous formulation had a shift/reduce conflict on COMMA
+   that made `, ...' unparseable) *)
 params:
-| xs= separated_list(COMMA, ctype)
-    { (xs, false) }
-| xs= separated_list(COMMA, ctype) COMMA DOTS
-    { (xs, true) }
+| (* empty *)
+    { ([], false) }
+| x= nonempty_params
+    { x }
+;
+
+nonempty_params:
+| ty= ctype
+    { ([ty], false) }
+| ty= ctype COMMA DOTS
+    { ([ty], true) }
+| ty= ctype COMMA rest= nonempty_params
+    { let (tys, is_variadic) = rest in (ty :: tys, is_variadic) }
 ;
 (* END Ail types *)
 
