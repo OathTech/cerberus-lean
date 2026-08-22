@@ -621,6 +621,14 @@ let fresh_sym_int () =
     let n = st.fresh_sym_supply in
     (n, <| st with fresh_sym_supply= n+1 |>)
   )
+(* arc-13 D1 (renumbering, scheme R-B): on the OCaml target desugar ids
+   come from the single ambient counter, exactly as un-forked upstream —
+   the threaded supply above is the LEAN-target scheme only (Lean CSE
+   safety, commit 8923d6436). Restores the single-supply collision-
+   impossibility and byte-identical-to-upstream numbering; checked per TU
+   by util/cerb_fresh.ml check_ail_window. Evidence + decision:
+   lean_frontend/docs/2026-08-22_arc13-s0-scheme-decision.md. *)
+declare ocaml target_rep function fresh_sym_int = `Fork_renumber.fresh_sym_int`
 
 val fresh_sym: unit -> desugM Symbol.sym
 let fresh_sym () =

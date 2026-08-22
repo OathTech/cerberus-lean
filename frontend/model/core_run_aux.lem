@@ -289,6 +289,13 @@ let initial_core_run_state xs = <|
   (*env=     [Map.empty];*)
   labeled= xs;
 |>
+(* arc-13 D1 (renumbering, scheme R-B): on the OCaml target the run
+   state carries NO seed draw (sym_supply dead — run symbols are minted
+   ambiently, see core_run.lem fresh_symbol'); the seed above is the
+   LEAN-target scheme only. The OCaml rep mirrors this record with
+   sym_supply = 0 (ocaml_frontend/fork_renumber.ml, cited divergence).
+   See lean_frontend/docs/2026-08-22_arc13-s0-scheme-decision.md. *)
+declare ocaml target_rep function initial_core_run_state = `Fork_renumber.initial_core_run_state`
 
 
 let empty_annotation = <|

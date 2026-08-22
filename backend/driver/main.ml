@@ -101,13 +101,9 @@ let cerberus debug_level progress core_obj
              sequentialise_core rewrite_core typecheck_core defacto permissive ignore_bitfields
              fs_dump fs trace
              output_name
-             fresh_floor_grandfather
              files args_opt =
   Cerb_debug.debug_level := debug_level;
   Cerb_runtime.specified_runtime := runtime_path_opt;
-  (* arc-12 D2 grandfather mode (audit A-F2: CLI flag, no ambient
-     inheritance) — see util/cerb_fresh.ml header *)
-  Cerb_fresh.grandfather_mode := fresh_floor_grandfather;
   let cpp_cmd =
     let cpp_cmd = if syntax_only then cpp_cmd ^ " -D__cerb_syntax_only__" else cpp_cmd in
     create_cpp_cmd cpp_cmd nostdinc macros macros_undef incl_dirs incl_files nolibc
@@ -245,12 +241,6 @@ let cerberus debug_level progress core_obj
         return success
       (* Export Cabs as JSON for Lean backend *)
       else if cabs_json then
-        (* arc-12 D2: the F-D floor runs warn-only on this path — the
-           exported artifact is the pre-desugar Cabs tree (the `(cabs_tunit,
-           _)` bind below discards the desugar result), so a beyond-margin
-           TU cannot corrupt the JSON bytes (soundness note:
-           util/cerb_fresh.ml header). *)
-        let () = Cerb_fresh.export_only_mode := true in
         prelude >>= fun core_std ->
         Exception.except_mapM (fun filename ->
           c_frontend (conf, io) core_std ~filename >>= fun (cabs_tunit, _) ->
@@ -523,14 +513,6 @@ let args =
   let doc = "List of arguments for the C program" in
   Arg.(value & opt (some string) None & info ["args"] ~docv:"\"ARG1 ARG2 ...\"" ~doc)
 
-let fresh_floor_grandfather =
-  let doc = "arc-12 D2 GRANDFATHER: run the F-D symbol-id floor in \
-             warn-only mode (loud stderr warning, no refusal). ONLY for \
-             the documented grandfathered gate lanes \
-             (scripts/test_libxml2_uri.sh); any other use is a finding. \
-             See util/cerb_fresh.ml." in
-  Arg.(value & flag & info ["fresh-floor-grandfather"] ~doc)
-
 (* entry point *)
 let () =
   let cerberus_t = Term.(const cerberus $ debug_level $ progress $ core_obj $
@@ -544,7 +526,6 @@ let () =
                          sequentialise $ rewrite $ typecheck_core $ defacto $ permissive $ ignore_bitfields $
                          fs_dump $ fs $ trace $
                          output_file $
-                         fresh_floor_grandfather $
                          files $ args) in
   let version = Version.version in
   let info = Cmd.info "cerberus" ~version ~doc:"Cerberus C semantics"  in

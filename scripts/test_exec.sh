@@ -408,17 +408,15 @@ for c_file in "${TEST_FILES[@]}"; do
         continue
     fi
 
-    # arc-12 F-D fail-stop floor: the oracle refused the TU (symbol-id
-    # margin exceeded). Distinct bucket, checked before every other
-    # oracle-failure path so it can never be laundered into CERB_SKIP.
-    # Audit A-F2 defense-in-depth: the warn-only token ALSO buckets here —
-    # this harness never grandfathers, so a warning in its oracle output
-    # means a floored elaboration leaked into a differential lane; it must
-    # classify as floored, never as a comparison. (The uri lane's two
-    # grandfathered invocations run outside this harness with their own
-    # pinned gates.)
-    if [[ "$cerberus_output" == *CERB_FRESH_FLOOR_VIOLATION* \
-       || "$cerberus_output" == *CERB_FRESH_FLOOR_WARNING* ]]; then
+    # arc-13 single-supply backstop (was: the arc-12 F-D floor): the
+    # oracle refused the TU — under the renumbered single-supply scheme
+    # this NEVER fires on healthy in-tree inputs (the arc-12 margin
+    # refusal class is gone); a hit means a re-threaded-supply/counter
+    # regression. Distinct bucket, checked before every other
+    # oracle-failure path so it can never be laundered into CERB_SKIP;
+    # any CERB_FLOOR row is a finding. (The arc-12 warn-only token and
+    # the grandfather mode were deleted in arc-13 S1.)
+    if [[ "$cerberus_output" == *CERB_FRESH_FLOOR_VIOLATION* ]]; then
         CERB_FLOOR_COUNT=$((CERB_FLOOR_COUNT + 1))
         echo "[$file_num/$total_to_test] CERB_FLOOR $filename (oracle symbol-id floor, exit $cerberus_shell_exit)"
         record_status "$base_c" CERB_FLOOR

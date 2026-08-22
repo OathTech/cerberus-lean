@@ -225,26 +225,26 @@ def e0 : Fmap sym value :=
 def envIter (n : Int) (k : Nat) (e : Fmap sym value) : Fmap sym value :=
   eIns symS sPtrV <| eIns symI iPtrV <|
   eIns (unitSym (2*k+1)) (ldi ((k : Int) + 1)) <|
-  eIns symA528 iPtrV <| eIns symA535 (ldi ((k : Int) + 1)) <|
-  eIns symA529 (ldi k) <| eIns symA530 (ldi 1) <|
-  eIns symA534 iPtrV <|
+  eIns symA558 iPtrV <| eIns symA565 (ldi ((k : Int) + 1)) <|
+  eIns symA559 (ldi k) <| eIns symA560 (ldi 1) <|
+  eIns symA564 iPtrV <|
   eIns (unitSym (2*k)) (ldi (sV k + (k : Int))) <|
-  eIns symA519 sPtrV <| eIns symA527 (ldi (sV k + (k : Int))) <|
-  eIns symA521 (ldi k) <| eIns symA520 (ldi (sV k)) <|
-  eIns symA525 sPtrV <| eIns symA526 iPtrV <|
-  eIns symA502 Vtrue <| eIns symA505 (ldi 0) <|
-  eIns symA507 (ldi 1) <| eIns symA508 (ldi 0) <|
-  eIns symA514 (ldi k) <| eIns symA515 (ldi n) <|
-  eIns symA512 iPtrV <| eIns symA513 xPtrV <| e
+  eIns symA549 sPtrV <| eIns symA557 (ldi (sV k + (k : Int))) <|
+  eIns symA551 (ldi k) <| eIns symA550 (ldi (sV k)) <|
+  eIns symA555 sPtrV <| eIns symA556 iPtrV <|
+  eIns symA532 Vtrue <| eIns symA535 (ldi 0) <|
+  eIns symA537 (ldi 1) <| eIns symA538 (ldi 0) <|
+  eIns symA544 (ldi k) <| eIns symA545 (ldi n) <|
+  eIns symA542 iPtrV <| eIns symA543 xPtrV <| e
 
 /-- THE ENV FAMILY: entry chain at 0 (bind order: s at its create,
-    a_503, i at its create, a_504, then the Esave REBINDS i and s —
+    a_533, i at its create, a_534, then the Esave REBINDS i and s —
     seven inserts, the S3 boundary-diag finding); iteration chains
     above. -/
 def envL (n : Int) : Nat → Fmap sym value
   | 0 => eIns symS sPtrV <| eIns symI iPtrV <|
-         eIns symA504 (ldi 0) <| eIns symI iPtrV <|
-         eIns symA503 (ldi 0) <| eIns symS sPtrV <| e0
+         eIns symA534 (ldi 0) <| eIns symI iPtrV <|
+         eIns symA533 (ldi 0) <| eIns symS sPtrV <| e0
   | k + 1 => envIter n k (envL n k)
 
 /-- THE BYTEMAP FAMILY: base = post-entry (n, errno zeroed, s cell 0,

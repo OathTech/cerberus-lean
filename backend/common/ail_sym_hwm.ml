@@ -1,14 +1,19 @@
-(* Ail maximum-symbol-id fold — the desugar high-water mark feeding the
-   arc-12 F-D fail-stop floor (util/cerb_fresh.ml set_desugar_hwm; design +
-   soundness argument: lean_frontend/docs/2026-08-21_arc12-s0-floor-design.md
-   §4.3).
+(* Ail symbol-id window fold — feeds the arc-13 single-supply backstop
+   (util/cerb_fresh.ml check_ail_window; scheme + design:
+   lean_frontend/docs/2026-08-22_arc13-s0-scheme-decision.md §3;
+   the walk itself is the arc-12 fold, unchanged —
+   lean_frontend/docs/2026-08-21_arc12-s0-floor-design.md §4.3).
 
-   Returns the maximum symbol NUMBER occurring anywhere in a desugared Ail
-   program (-1 if none): every Symbol.sym in the tree (declarations,
-   definitions, binders, labels incl. the freshify'd __cerb_continue
-   AilSlabel syms, gotos, struct/union tags inside ctypes,
-   typedef/inlined-label annotations, extern-idmap and typedef-attribute
-   entries).
+   Returns the (min, max) symbol NUMBER over every Symbol.sym of the
+   GIVEN TU digest occurring anywhere in a desugared Ail program
+   ((-1, -1) if none): declarations, definitions, binders, labels incl.
+   the freshify'd __cerb_continue AilSlabel syms, gotos, struct/union
+   tags inside ctypes, typedef/inlined-label annotations, extern-idmap
+   and typedef-attribute entries. Under the arc-13 single-supply scheme
+   every such symbol must have been drawn from Cerb_fresh.int inside the
+   TU's own window [tu_first .. last_issued]; the caller checks both
+   bounds (a below-window symbol = a supply re-threaded 0-based, the
+   F-D-era scheme; an above-window symbol = ids from nowhere).
 
    v2 — SYMBOLS ONLY (S1 measurement-driven correction, recorded in the S1
    record): v1 also noted the desugar-drawn NAT ids that live in the tree
@@ -28,10 +33,12 @@
    (unnamed tags and object addresses land in the tree) and the window is
    the S2-composition transient only.
 
-   Digest note: symbols of foreign digests reachable here are only the core
-   stdlib ailname symbols (ids below the std.core parse budget, hence below
-   any TU's first ambient id), so a digest-blind max is sound and never
-   false-fires the floor's checks (design note §4.3).
+   Digest note (arc-13): the fold FILTERS on the given digest. Symbols of
+   foreign digests reachable here (the core stdlib ailname symbols, and —
+   under the single supply — any symbol minted before this TU's
+   set_digest) are legitimately outside the TU window and must not
+   false-fire the window check; only current-digest symbols carry the
+   per-TU minting obligation.
 
    STYLE RULE (load-bearing): NO catch-all constructor arms anywhere in this
    file — a new constructor in any walked type must break this compile, not
@@ -46,11 +53,19 @@
 open Cerb_frontend
 open AilSyntax
 
-let max_sym_program ((_main_opt : ail_identifier option), (sigma : 'a sigma))
-    : int =
-  let m = ref (-1) in
-  let note n = if n > !m then m := n in
-  let note_sym (Symbol.Symbol (_dig, n, _descr)) = note n in
+let sym_window_program (tu_digest : Digest.t)
+    ((_main_opt : ail_identifier option), (sigma : 'a sigma))
+    : int * int =
+  let mn = ref (-1) in
+  let mx = ref (-1) in
+  let note n =
+    if !mn < 0 || n < !mn then mn := n;
+    if n > !mx then mx := n
+  in
+  (* arc-13: current-TU-digest symbols only (see the digest note above) *)
+  let note_sym (Symbol.Symbol (dig, n, _descr)) =
+    if dig = tu_digest then note n
+  in
   let note_opt f = function None -> () | Some x -> f x in
 
   (* ---- Ctype ---- *)
@@ -306,7 +321,7 @@ let max_sym_program ((_main_opt : ail_identifier option), (sigma : 'a sigma))
        (* fail-closed: this fold does not cover the Cn ASTs *)
        prerr_endline
          "CERB_FRESH_FLOOR_VIOLATION (unsupported): CN declarations present \
-          — the desugar high-water fold (backend/common/ail_sym_hwm.ml) \
+          — the symbol-window fold (backend/common/ail_sym_hwm.ml) \
           does not cover Cn ASTs; refusing rather than under-approximate.";
        exit 70);
-  !m
+  (!mn, !mx)

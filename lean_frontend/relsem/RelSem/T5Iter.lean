@@ -83,26 +83,26 @@ theorem envL_lookup_n (n : Int) (j : Nat) (hj : j ≤ 100)
     show fmapLookupBy symOrd symN (envIter n j (envL n j)) = _
     unfold envIter
     have b0 := envL_built n j
-    have b1 := eIns_built (k := symA513) (v := RelSem.T1.xPtrV) b0
-    have b2 := eIns_built (k := symA512) (v := iPtrV) b1
-    have b3 := eIns_built (k := symA515) (v := ldi n) b2
-    have b4 := eIns_built (k := symA514) (v := ldi j) b3
-    have b5 := eIns_built (k := symA508) (v := ldi 0) b4
-    have b6 := eIns_built (k := symA507) (v := ldi 1) b5
-    have b7 := eIns_built (k := symA505) (v := ldi 0) b6
-    have b8 := eIns_built (k := symA502) (v := Vtrue) b7
-    have b9 := eIns_built (k := symA526) (v := iPtrV) b8
-    have b10 := eIns_built (k := symA525) (v := sPtrV) b9
-    have b11 := eIns_built (k := symA520) (v := ldi (sV j)) b10
-    have b12 := eIns_built (k := symA521) (v := ldi j) b11
-    have b13 := eIns_built (k := symA527) (v := ldi (sV j + (j : Int))) b12
-    have b14 := eIns_built (k := symA519) (v := sPtrV) b13
+    have b1 := eIns_built (k := symA543) (v := RelSem.T1.xPtrV) b0
+    have b2 := eIns_built (k := symA542) (v := iPtrV) b1
+    have b3 := eIns_built (k := symA545) (v := ldi n) b2
+    have b4 := eIns_built (k := symA544) (v := ldi j) b3
+    have b5 := eIns_built (k := symA538) (v := ldi 0) b4
+    have b6 := eIns_built (k := symA537) (v := ldi 1) b5
+    have b7 := eIns_built (k := symA535) (v := ldi 0) b6
+    have b8 := eIns_built (k := symA532) (v := Vtrue) b7
+    have b9 := eIns_built (k := symA556) (v := iPtrV) b8
+    have b10 := eIns_built (k := symA555) (v := sPtrV) b9
+    have b11 := eIns_built (k := symA550) (v := ldi (sV j)) b10
+    have b12 := eIns_built (k := symA551) (v := ldi j) b11
+    have b13 := eIns_built (k := symA557) (v := ldi (sV j + (j : Int))) b12
+    have b14 := eIns_built (k := symA549) (v := sPtrV) b13
     have b15 := eIns_built (k := unitSym (2*j)) (v := ldi (sV j + (j : Int))) b14
-    have b16 := eIns_built (k := symA534) (v := iPtrV) b15
-    have b17 := eIns_built (k := symA530) (v := ldi 1) b16
-    have b18 := eIns_built (k := symA529) (v := ldi j) b17
-    have b19 := eIns_built (k := symA535) (v := ldi ((j : Int) + 1)) b18
-    have b20 := eIns_built (k := symA528) (v := iPtrV) b19
+    have b16 := eIns_built (k := symA564) (v := iPtrV) b15
+    have b17 := eIns_built (k := symA560) (v := ldi 1) b16
+    have b18 := eIns_built (k := symA559) (v := ldi j) b17
+    have b19 := eIns_built (k := symA565) (v := ldi ((j : Int) + 1)) b18
+    have b20 := eIns_built (k := symA558) (v := iPtrV) b19
     have b21 := eIns_built (k := unitSym (2*j+1)) (v := ldi ((j : Int) + 1)) b20
     have b22 := eIns_built (k := symI) (v := iPtrV) b21
     -- the two stuck-seed NE facts
@@ -150,15 +150,15 @@ theorem envL_lookup_i (n : Int) (j : Nat) :
     show fmapLookupBy symOrd symI (envIter n j (envL n j)) = _
     unfold envIter
     have b21 : FmapBuilt symCmpO (eIns (unitSym (2*j+1))
-        (ldi ((j : Int) + 1)) (eIns symA528 iPtrV (eIns symA535
-        (ldi ((j : Int) + 1)) (eIns symA529 (ldi j) (eIns symA530
-        (ldi 1) (eIns symA534 iPtrV (eIns (unitSym (2*j))
-        (ldi (sV j + (j : Int))) (eIns symA519 sPtrV (eIns symA527
-        (ldi (sV j + (j : Int))) (eIns symA521 (ldi j) (eIns symA520
-        (ldi (sV j)) (eIns symA525 sPtrV (eIns symA526 iPtrV
-        (eIns symA502 Vtrue (eIns symA505 (ldi 0) (eIns symA507
-        (ldi 1) (eIns symA508 (ldi 0) (eIns symA514 (ldi j)
-        (eIns symA515 (ldi n) (eIns symA512 iPtrV (eIns symA513 xPtrV
+        (ldi ((j : Int) + 1)) (eIns symA558 iPtrV (eIns symA565
+        (ldi ((j : Int) + 1)) (eIns symA559 (ldi j) (eIns symA560
+        (ldi 1) (eIns symA564 iPtrV (eIns (unitSym (2*j))
+        (ldi (sV j + (j : Int))) (eIns symA549 sPtrV (eIns symA557
+        (ldi (sV j + (j : Int))) (eIns symA551 (ldi j) (eIns symA550
+        (ldi (sV j)) (eIns symA555 sPtrV (eIns symA556 iPtrV
+        (eIns symA532 Vtrue (eIns symA535 (ldi 0) (eIns symA537
+        (ldi 1) (eIns symA538 (ldi 0) (eIns symA544 (ldi j)
+        (eIns symA545 (ldi n) (eIns symA542 iPtrV (eIns symA543 xPtrV
         (envL n j)))))))))))))))))))))) := by
       iterate 21 apply eIns_built
       exact envL_built n j
@@ -175,15 +175,15 @@ theorem envL_lookup_s (n : Int) (j : Nat) :
     show fmapLookupBy symOrd symS (envIter n j (envL n j)) = _
     unfold envIter
     have b22 : FmapBuilt symCmpO (eIns symI iPtrV (eIns (unitSym (2*j+1))
-        (ldi ((j : Int) + 1)) (eIns symA528 iPtrV (eIns symA535
-        (ldi ((j : Int) + 1)) (eIns symA529 (ldi j) (eIns symA530
-        (ldi 1) (eIns symA534 iPtrV (eIns (unitSym (2*j))
-        (ldi (sV j + (j : Int))) (eIns symA519 sPtrV (eIns symA527
-        (ldi (sV j + (j : Int))) (eIns symA521 (ldi j) (eIns symA520
-        (ldi (sV j)) (eIns symA525 sPtrV (eIns symA526 iPtrV
-        (eIns symA502 Vtrue (eIns symA505 (ldi 0) (eIns symA507
-        (ldi 1) (eIns symA508 (ldi 0) (eIns symA514 (ldi j)
-        (eIns symA515 (ldi n) (eIns symA512 iPtrV (eIns symA513 xPtrV
+        (ldi ((j : Int) + 1)) (eIns symA558 iPtrV (eIns symA565
+        (ldi ((j : Int) + 1)) (eIns symA559 (ldi j) (eIns symA560
+        (ldi 1) (eIns symA564 iPtrV (eIns (unitSym (2*j))
+        (ldi (sV j + (j : Int))) (eIns symA549 sPtrV (eIns symA557
+        (ldi (sV j + (j : Int))) (eIns symA551 (ldi j) (eIns symA550
+        (ldi (sV j)) (eIns symA555 sPtrV (eIns symA556 iPtrV
+        (eIns symA532 Vtrue (eIns symA535 (ldi 0) (eIns symA537
+        (ldi 1) (eIns symA538 (ldi 0) (eIns symA544 (ldi j)
+        (eIns symA545 (ldi n) (eIns symA542 iPtrV (eIns symA543 xPtrV
         (envL n j))))))))))))))))))))))) := by
       iterate 22 apply eIns_built
       exact envL_built n j

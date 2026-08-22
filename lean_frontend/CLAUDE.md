@@ -353,16 +353,23 @@ Lem is pinned to `https://github.com/septract/lem-lean#mdd/lean-backend`.
   — tests/minimal test_core now 106/106.
 - ✅ Varargs execution (arc-6 S2, register 15 FIXED): CerbMem
   vaStart/vaCopy/vaArg/vaEnd/vaList mirror impl_mem.ml:2698-2764
-- ✅ THE ORACLE IS HONEST (arc-12): the F-D symbol-collision family is
-  CLOSED-BY-FLOOR — the fork oracle fail-stops (CERB_FLOOR) on any TU
-  beyond its ~483-id desugar margin instead of silently corrupting;
-  all 35 witnesses loud; numbering of in-margin programs bit-for-bit
-  unchanged (pin-provenance + generated-tree gates); corpus
-  re-baselined (mismatch=0, comparisons 1070→1038); libc/uri pinned
-  artifacts D2-grandfathered (validated-by-agreement, register G1-G4);
+- ✅ THE ORACLE IS HONEST (arc-12) and RENUMBERED (arc-13): arc-12
+  made the F-D symbol-collision family fail-stop (CERB_FLOOR, ~483-id
+  margin, G1-G4 artifacts grandfathered); arc-13 D1 (scheme R-B)
+  REMOVED the collision class by construction — desugar + run symbol
+  supplies re-unified onto the single ambient Cerb_fresh.int on the
+  OCaml target (3 ocaml-only target_reps + ocaml_frontend/
+  fork_renumber.ml; Lean target's threaded supplies + 2^20 base
+  UNTOUCHED, generated-Lean diff EMPTY): oracle numbering is now
+  BYTE-IDENTICAL to un-forked upstream (verify pins + libc.core
+  re-pinned == upstream dumps), the margin refusal class is GONE,
+  grandfather mode/flag DELETED, and the floor is now the
+  single-supply window backstop (check_ail_window: never fires on
+  healthy inputs; plant-tested against the F-D-era scheme);
   attribution corrected (April desugar threading 8923d6436, arc-2 run
   supply exonerated); F-A/F-B upstream filing drafts ready
-  (notes/upstream/08+09). Records: docs/2026-08-21_arc12-*.md
+  (notes/upstream/08+09). Records: docs/2026-08-21_arc12-*.md +
+  docs/2026-08-22_arc13-s0-scheme-decision.md
   (prototype port Step.lean:1441-1513 attributed) — 5 coverage varargs
   DIFFs → MATCH, debug varargs-01 → MATCH, libc_exec 006 snprintf →
   MATCH, new 007 va_*×Formatted interplay MATCH

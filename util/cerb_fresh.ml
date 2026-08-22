@@ -1,119 +1,68 @@
-(* Fork F-D fail-stop floor (arc-12).
-   Design + probe evidence: lean_frontend/docs/2026-08-21_arc12-s0-floor-design.md.
+(* Fork single-supply symbol-id backstop (arc-13; supersedes the arc-12
+   two-check floor). Design + probe evidence:
+   lean_frontend/docs/2026-08-22_arc13-s0-scheme-decision.md.
 
-   Since commit 8923d6436 the desugar stage mints symbol ids from its own
-   0-based threaded supply (cabs_to_ail_effect.lem fresh_sym_supply) and no
-   longer advances this ambient counter, so a translation unit whose desugar
-   mints more ids than the counter's current value creates two DISTINCT
-   symbols with equal (digest, num) — which compare EQUAL (symbol.lem
-   symbolEqual ignores the description) and silently corrupt the Esave/Erun
-   label machinery, environments and substitutions (finding F-D,
-   tests/csmith_findings/README.md).
+   HISTORY. Commit 8923d6436 (April 2026) threaded the desugar stage's
+   symbol supply through desugM for the Lean target's sake and — contrary
+   to its own commit message — also moved the OCAML oracle's desugar
+   draws off this counter, splitting symbol minting into two 0-based-vs-
+   ambient streams whose overlap was finding F-D: two DISTINCT symbols
+   with equal (digest, num) compare EQUAL (symbol.lem symbolEqual ignores
+   the description) and silently corrupt the Esave/Erun label machinery,
+   environments and substitutions (tests/csmith_findings/README.md).
+   Arc-12 made the overlap FAIL-STOP (the two-check dynamic floor).
+   Arc-13 D1 removed the second stream entirely: the ocaml target_reps in
+   cabs_to_ail_effect.lem / core_run.lem / core_run_aux.lem
+   (ocaml_frontend/fork_renumber.ml) route desugar and run-time minting
+   back through this single counter, exactly as un-forked upstream.
+   Collisions are impossible by construction — one supply, every id a
+   distinct draw — and oracle numbering is byte-identical to upstream's
+   (S0 probe: 11/11 fixtures incl. the libc.co dump).
 
-   This mirrors the Lean side's protection (lean_frontend/native/fresh_int.c:
-   collision floor semantics) WITHOUT the 2^20 base displacement — the
-   numbering of every in-margin program is bit-for-bit unchanged; the floor
-   is a pair of pure comparisons:
+   THE BACKSTOP (this file + backend/common/ail_sym_hwm.ml +
+   backend/common/pipeline.ml): the single-supply invariant is checked,
+   never assumed. At the post-desugar hook, every symbol carrying the
+   CURRENT TU's digest in the desugared Ail program must have been minted
+   by this counter inside this TU's window:
 
-     forward  — every ambient id handed out under the current digest must lie
-                strictly above the desugar high-water mark M (set once per TU
-                by the post-desugar pipeline hook, set_desugar_hwm);
-     backward — at hook time, M must lie strictly below the FIRST ambient id
-                drawn for this TU (tu_first): a mid-desugar ambient draw
-                (mini_pipeline const-expr run seeds and their translation
-                temporaries) at or below M means a collision already
-                happened.
+       tu_first <= num <= last_issued
 
-   A violation is a LOUD, distinguishable failure: one stderr line carrying
-   the CERB_FRESH_FLOOR_VIOLATION token, exit code 70 (EX_SOFTWARE — chosen
-   so harnesses can never fold it into the timeout/signal buckets).
-   Renumbering (re-unifying the supplies) is deferred upstream-coordinated
-   work; see the design note.
+   - a symbol BELOW the window means a supply was re-threaded 0-based
+     (the F-D-era scheme; the plant test simulates exactly that);
+   - a symbol ABOVE the window means ids minted from nowhere;
+   - a post-hook draw at or below the recorded Ail maximum (forward
+     check) means the counter went backwards (re-init regression).
 
-   TWO NARROW WARN-ONLY MODES (arc-12 D2 ruling; never silent — each prints
-   one greppable stderr warning per TU instead of exiting):
-
-   1. EXPORT MODE (`export_only_mode`, set ONLY by the driver's --cabs-json
-      branch, backend/driver/main.ml). SOUNDNESS (D2 condition, verified):
-      the exported artifact is the PRE-DESUGAR Cabs tree — main.ml:246
-      destructures `(cabs_tunit, _)`, discarding the desugar+typing result;
-      pipeline.ml:242-246 produces cabs_tunit from `parse` BEFORE `desugar`
-      runs; the serializer (backend/lean_export/cabs_json.ml) is a pure
-      function of that tree whose identifiers are (loc, string) pairs — no
-      symbol numbers, no mutable state, no Tags/Cerb_fresh reads. A
-      desugar-time collision therefore CANNOT alter the emitted JSON bytes
-      (empirically confirmed: byte-identical export of a beyond-margin TU
-      under counter base 0 vs base 2^20 — the S2 record). Residual, on
-      record: a collision-corrupted const-expr could still flip the
-      export's ERROR VERDICT (desugar hard-error class) — refusal-shaped,
-      never wrong bytes.
-   2. GRANDFATHER MODE (`grandfather_mode`, opt-in via the CLI flag
-      `--fresh-floor-grandfather` — audit A-F2 hardening: a flag cannot be
-      inherited ambiently the way an env var can; it acts only where
-      literally written). D2 Option-C mechanics for the two grandfathered
-      gate-lane invocations ONLY (test_libxml2_uri.sh ORACLE_LIBC +
-      OCAML_NOLIBC) — surfaces whose beyond-margin oracle elaboration is
-      validated-by-agreement against the protected Lean side (uri 16/16,
-      libc 7/7; register entries + record addenda carry the exposure
-      numbers). Any other use is a finding. Defense-in-depth: the
-      warning token is ALSO classified as CERB_FLOOR by test_exec.sh, so
-      a grandfathered run leaking into a differential lane still buckets
-      as floored. *)
+   All three fail LOUD: one stderr line carrying the
+   CERB_FRESH_FLOOR_VIOLATION token, exit 70 (EX_SOFTWARE — never
+   foldable into the harness timeout/signal buckets; harness class
+   CERB_FLOOR). Acceptance property (arc-13 charter): the backstop NEVER
+   fires on any in-tree input — the arc-12 refusal class is gone, and
+   with it the arc-12 warn-only modes (cabs-json export, grandfather):
+   both DELETED as dead code, grandfather register G1-G4 dissolved. *)
 
 let cur_filename = ref ""
 
-(* D2 warn-only modes (see header). Audit A-F2: the grandfather mode is a
-   CLI FLAG (--fresh-floor-grandfather, backend/driver/main.ml), NOT an
-   environment variable — no ambient inheritance; it acts only where
-   written on a command line. *)
-let export_only_mode = ref false
-let grandfather_mode = ref false
-(* one warning per TU, not per draw (the forward check fires on every
-   ambient draw below the hwm — thousands per TU) *)
-let warned_this_tu = ref false
-
-(* desugar high-water mark + 1 for the current digest; 0 = no floor (never
-   set, or a non-desugared input such as a .co file) *)
-let floor = ref 0
-
-(* first ambient id drawn since the last set_digest; -1 = none yet *)
+(* first id drawn since the last set_digest; -1 = none yet *)
 let tu_first = ref (-1)
 
-let floor_fail which n m =
-  if !export_only_mode then begin
-    if not !warned_this_tu then begin
-      warned_this_tu := true;
-      prerr_endline (Printf.sprintf
-        "CERB_FRESH_FLOOR_WARNING (cabs-json export, %s): beyond-margin TU \
-         '%s' (ambient id %d vs desugar range [0..%d]); export permitted — \
-         the emitted artifact is the pre-desugar Cabs tree and cannot carry \
-         the collision (verified sound, D2; see this file's header). The \
-         exec/elaboration pipeline for this TU remains floored."
-        which !cur_filename n m)
-    end
-  end else if !grandfather_mode then begin
-    if not !warned_this_tu then begin
-      warned_this_tu := true;
-      prerr_endline (Printf.sprintf
-        "CERB_FRESH_FLOOR_WARNING (grandfathered lane, %s): beyond-margin \
-         TU '%s' (ambient id %d vs desugar range [0..%d]); proceeding \
-         UN-FLOORED under the D2 grandfather ruling — this elaboration is \
-         collision-EXPOSED and is trusted only via byte-agreement with the \
-         protected Lean side (register entries + record addenda; mover: \
-         renumbering-era re-derivation)."
-        which !cur_filename n m)
-    end
-  end else begin
-    prerr_endline (Printf.sprintf
-      "CERB_FRESH_FLOOR_VIOLATION (%s): ambient symbol id %d collides with \
-       the desugar-threaded id range [0..%d] of '%s' — this translation unit \
-       exceeds the fork oracle's symbol-id margin; refusing to continue (the \
-       un-floored oracle would silently corrupt symbol identity: finding F-D, \
-       tests/csmith_findings/README.md; design: \
-       lean_frontend/docs/2026-08-21_arc12-s0-floor-design.md)."
-      which n m !cur_filename);
-    exit 70
-  end
+(* last id issued (process-global, monotone); -1 = none yet *)
+let last_issued = ref (-1)
+
+(* forward backstop: current TU's max Ail symbol num + 1 (0 = unset /
+   non-desugared input such as a .co file) *)
+let floor = ref 0
+
+let floor_fail which n lo hi =
+  prerr_endline (Printf.sprintf
+    "CERB_FRESH_FLOOR_VIOLATION (%s): symbol id %d is outside the \
+     single-supply window [%d..%d] of '%s' — a symbol supply has been \
+     re-threaded off Cerb_fresh.int (the F-D-era split-stream scheme, \
+     finding F-D: tests/csmith_findings/README.md) or the counter was \
+     re-initialized; refusing to continue. Scheme + backstop design: \
+     lean_frontend/docs/2026-08-22_arc13-s0-scheme-decision.md."
+    which n lo hi !cur_filename);
+  exit 70
 
 let int : unit -> int =
   let counter = ref (-1) in
@@ -122,7 +71,8 @@ let int : unit -> int =
     incr counter;
     let n = !counter in
     if !tu_first < 0 then tu_first := n;
-    if n < !floor then floor_fail "forward" n (!floor - 1);
+    if n < !floor then floor_fail "forward" n !floor !last_issued;
+    last_issued := n;
     n
 
 let digest, set_digest =
@@ -132,12 +82,24 @@ let digest, set_digest =
     digest := Digest.file filename;
     cur_filename := filename;
     floor := 0;
-    tu_first := (-1);
-    warned_this_tu := false)
+    tu_first := (-1))
 
 (* Post-desugar pipeline hook (backend/common/pipeline.ml c_frontend):
-   m = max symbol id occurring in the desugared Ail program
-   (Ail_sym_hwm.max_sym_program; -1 when the program contains no ids). *)
-let set_desugar_hwm m =
-  if !tu_first >= 0 && m >= !tu_first then floor_fail "backward" !tu_first m;
-  floor := m + 1
+   (min_sym, max_sym) = the min/max symbol num of the CURRENT TU digest
+   occurring in the desugared Ail program (Ail_sym_hwm.sym_window_program;
+   (-1, -1) when the program carries no current-digest symbols — then the
+   window check is vacuous and only the forward backstop arms). *)
+let check_ail_window ~min_sym ~max_sym =
+  if min_sym >= 0 then begin
+    if !tu_first < 0 then
+      (* current-digest symbols exist but nothing was ever drawn: a
+         fully off-counter supply *)
+      floor_fail "window-nodraw" min_sym 0 (-1)
+    else begin
+      if min_sym < !tu_first then
+        floor_fail "window-low" min_sym !tu_first !last_issued;
+      if max_sym > !last_issued then
+        floor_fail "window-high" max_sym !tu_first !last_issued
+    end
+  end;
+  floor := max_sym + 1

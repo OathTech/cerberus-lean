@@ -8,15 +8,15 @@
   injectArgs (TWO argument objects: a@…648, b@…644) → errno@…640 →
   thread update) + ONE driver2 iteration whose new_drive_core_threads
   performs FIFTEEN dnms rounds:
-    R0  eval PEsym b (unseq 2nd el)   R1  Ewseq tau (a_510)
+    R0  eval PEsym b (unseq 2nd el)   R1  Ewseq tau (a_536)
     R2  eval b-load operands          R3  LoadRequest b   (aid 0→1)
-    R4  eval PEsym a (unseq 1st el)   R5  Ewseq tau (a_509)
+    R4  eval PEsym a (unseq 1st el)   R5  Ewseq tau (a_535)
     R6  eval a-load operands          R7  LoadRequest a   (aid 1→2)
-    R8  Eunseq collapse (tuple)       R9  Ewseq tau (a_504,a_505)
+    R8  Eunseq collapse (tuple)       R9  Ewseq tau (a_530,a_531)
     R10 eval PEcase/catch_add — THE OVERFLOW CHECK (x+y range)
-    R11 Ebound/Eannot strip           R12 Esseq tau (a_511)
+    R11 Ebound/Eannot strip           R12 Esseq tau (a_537)
     R13 eval Erun conv_loaded_int (range check again)
-    R14 eval PEsym a_512              R15 terminal [Step_done2 (x+y)]
+    R14 eval PEsym a_538              R15 terminal [Step_done2 (x+y)]
   then pick → process (Step_done2) → prepare_exit → finalize.
   x/y-sensitivity: R3/R7 (byte roundtrips), R10 (the catch_add check —
   where the no-signed-overflow PRECONDITION enters), R13 (conv range).
@@ -45,15 +45,15 @@ open RelSem.Kit (eubind_defined stub_defined eumapM_one
 
 def symA : sym := Symbol "" 15917291556903334389 (SD_Id "a")
 def symB : sym := Symbol "" 15817570140490810055 (SD_Id "b")
-def symA504 : sym := Symbol "" 13222863191375119694 (SD_Id "a_504")
-def symA505 : sym := Symbol "" 15587187630708245497 (SD_Id "a_505")
-def symA506 : sym := Symbol "" 9649512262977542826 (SD_Id "a_506")
-def symA507 : sym := Symbol "" 3712579248453425038 (SD_Id "a_507")
-def symA509 : sym := Symbol "" 17352587183074901948 (SD_Id "a_509")
-def symA510 : sym := Symbol "" 6418557454614919481 (SD_Id "a_510")
-def symA511 : sym := Symbol "" 11214383474825018729 (SD_Id "a_511")
-def symRet503 : sym := Symbol "" 4610000538772767529 (SD_Id "ret_503")
-def symA512 : sym := Symbol "" 17123687452746221040 (SD_Id "a_512")
+def symA530 : sym := Symbol "" 4915778119994869450 (SD_Id "a_530")
+def symA531 : sym := Symbol "" 17653705816563834534 (SD_Id "a_531")
+def symA532 : sym := Symbol "" 1342427191597093029 (SD_Id "a_532")
+def symA533 : sym := Symbol "" 18213349194842787190 (SD_Id "a_533")
+def symA535 : sym := Symbol "" 15754218577363027919 (SD_Id "a_535")
+def symA536 : sym := Symbol "" 6464411467923874555 (SD_Id "a_536")
+def symA537 : sym := Symbol "" 6477419756603697776 (SD_Id "a_537")
+def symRet529 : sym := Symbol "" 18125140908934492201 (SD_Id "ret_529")
+def symA538 : sym := Symbol "" 18319030617476695216 (SD_Id "a_538")
 
 /-! ## Addresses / pointers (deterministic allocations on the empty
     initial state: a first, b second, errno third) -/
@@ -72,15 +72,15 @@ def bPtrV : value := Vobject (OVpointer bPtr)
 /-! ## Patterns -/
 
 def patA509 : generic_pattern sym :=
-  Pattern aU (CaseBase (some symA509, BTy_object OTy_pointer))
+  Pattern aU (CaseBase (some symA535, BTy_object OTy_pointer))
 def patA510 : generic_pattern sym :=
-  Pattern aU (CaseBase (some symA510, BTy_object OTy_pointer))
+  Pattern aU (CaseBase (some symA536, BTy_object OTy_pointer))
 def patTup : generic_pattern sym :=
   Pattern aU (CaseCtor Ctuple
-    [Pattern aU (CaseBase (some symA504, BTy_loaded OTy_integer)),
-     Pattern aU (CaseBase (some symA505, BTy_loaded OTy_integer))])
+    [Pattern aU (CaseBase (some symA530, BTy_loaded OTy_integer)),
+     Pattern aU (CaseBase (some symA531, BTy_loaded OTy_integer))])
 def patA511 : generic_pattern sym :=
-  Pattern aU (CaseBase (some symA511, BTy_loaded OTy_integer))
+  Pattern aU (CaseBase (some symA537, BTy_loaded OTy_integer))
 
 /-! ## The add body's sub-expressions (probe-transcribed; the round
     rfls validate every transcription) -/
@@ -90,37 +90,37 @@ def patA511 : generic_pattern sym :=
 def casePE : generic_pexpr Unit sym :=
   Pexpr aU () (PEcase
     (Pexpr aU () (PEctor Ctuple
-      [Pexpr aU () (PEsym symA504), Pexpr aU () (PEsym symA505)]))
+      [Pexpr aU () (PEsym symA530), Pexpr aU () (PEsym symA531)]))
     [(Pattern aU (CaseCtor Ctuple
         [Pattern aU (CaseCtor Cspecified
-          [Pattern aU (CaseBase (some symA506, BTy_object OTy_integer))]),
+          [Pattern aU (CaseBase (some symA532, BTy_object OTy_integer))]),
          Pattern aU (CaseCtor Cspecified
-          [Pattern aU (CaseBase (some symA507, BTy_object OTy_integer))])]),
+          [Pattern aU (CaseBase (some symA533, BTy_object OTy_integer))])]),
       Pexpr aU () (PEctor Cspecified
         [Pexpr aU () (PEcatch_exceptional_condition (Signed Int_) IOpAdd
           (Pexpr aU () (PEconv_int (Signed Int_)
-            (Pexpr aU () (PEsym symA506))))
+            (Pexpr aU () (PEsym symA532))))
           (Pexpr aU () (PEconv_int (Signed Int_)
-            (Pexpr aU () (PEsym symA507)))))])),
+            (Pexpr aU () (PEsym symA533)))))])),
      (Pattern aU (CaseBase (none,
         BTy_tuple [BTy_loaded OTy_integer, BTy_loaded OTy_integer])),
       Pexpr aU () (PEundef CerbLocation.Loc.unknown
         (DUMMY "UB036_exceptional_condition")))])
 
-/-- The body tail (Erun ret_503 conv_loaded_int(a_511) → Esave). -/
+/-- The body tail (Erun ret_529 conv_loaded_int(a_537) → Esave). -/
 def bodyTail : RExpr :=
   Expr aU (Esseq patUnit
-    (Expr aU (Erun empty_annotation symRet503
+    (Expr aU (Erun empty_annotation symRet529
       [Pexpr aU () (PEcall (Sym convLoadedIntSym)
         [Pexpr aU () (PEval (Vctype intCty)),
-         Pexpr aU () (PEsym symA511)])]))
+         Pexpr aU () (PEsym symA537)])]))
     (Expr aU (Esseq patUnit
       (Expr aU (Epure (Pexpr aU () (PEval Vunit))))
-      (Expr aU (Esave (symRet503, BTy_loaded OTy_integer)
-        [(symA512, ((BTy_loaded OTy_integer, none),
+      (Expr aU (Esave (symRet529, BTy_loaded OTy_integer)
+        [(symA538, ((BTy_loaded OTy_integer, none),
           Pexpr aU () (PEundef CerbLocation.Loc.unknown
             (DUMMY "UB088_reached_end_of_function"))))]
-        (Expr aU (Epure (Pexpr aU () (PEsym symA512)))))))))
+        (Expr aU (Epure (Pexpr aU () (PEsym symA538)))))))))
 
 /-! ### The unseq load-branch stages (b steps first: R0–R3; a: R4–R7) -/
 
@@ -159,18 +159,18 @@ def mkArenaU (ea eb : RExpr) : RExpr :=
       (Expr aU (Epure casePE))))))
     bodyTail)
 
-def aBr0 : RExpr := br0 symA patA509 symA509
-def bBr0 : RExpr := br0 symB patA510 symA510
-def bBr1 : RExpr := br1 bPtrV patA510 symA510
-def aBr1 : RExpr := br1 aPtrV patA509 symA509
+def aBr0 : RExpr := br0 symA patA509 symA535
+def bBr0 : RExpr := br0 symB patA510 symA536
+def bBr1 : RExpr := br1 bPtrV patA510 symA536
+def aBr1 : RExpr := br1 aPtrV patA509 symA535
 
 def arena0 : RExpr := mkArenaU aBr0 bBr0
 def arena1 : RExpr := mkArenaU aBr0 bBr1
-def arena2 : RExpr := mkArenaU aBr0 (br2 symA510)
+def arena2 : RExpr := mkArenaU aBr0 (br2 symA536)
 def arena3 : RExpr := mkArenaU aBr0 (br3 bPtrV)
 def arena4 (y : Int) : RExpr := mkArenaU aBr0 (br4 bAddr y)
 def arena5 (y : Int) : RExpr := mkArenaU aBr1 (br4 bAddr y)
-def arena6 (y : Int) : RExpr := mkArenaU (br2 symA509) (br4 bAddr y)
+def arena6 (y : Int) : RExpr := mkArenaU (br2 symA535) (br4 bAddr y)
 def arena7 (y : Int) : RExpr := mkArenaU (br3 aPtrV) (br4 bAddr y)
 def arena8 (x y : Int) : RExpr := mkArenaU (br4 aAddr x) (br4 bAddr y)
 
@@ -209,11 +209,11 @@ def arena12 (x y : Int) : RExpr :=
     (Expr aU (Epure (Pexpr [] () (PEval (loadedV (x+y))))))
     bodyTail)
 
--- (Arena after R12 = bodyTail; a_511 bound.)
+-- (Arena after R12 = bodyTail; a_537 bound.)
 
-/-- Arena after R13 (Erun evaluated + jump to ret_503's Esave body). -/
+/-- Arena after R13 (Erun evaluated + jump to ret_529's Esave body). -/
 def arena14 : RExpr :=
-  Expr aU (Epure (Pexpr aU () (PEsym symA512)))
+  Expr aU (Epure (Pexpr aU () (PEsym symA538)))
 
 /-- Arena after R14. -/
 def arena15 (x y : Int) : RExpr :=
@@ -233,7 +233,7 @@ def env10 (x y : Int) : List (Fmap sym value) :=
 def env13 (x y : Int) : List (Fmap sym value) :=
   update_env patA511 (loadedV (x+y)) (env10 x y)
 def env14 (x y : Int) : List (Fmap sym value) :=
-  update_env (mk_sym_pat symA512 (BTy_loaded OTy_integer))
+  update_env (mk_sym_pat symA538 (BTy_loaded OTy_integer))
     (loadedV (x+y)) (env13 x y)
 
 /-! ## Thread / driver-state frames -/
@@ -841,18 +841,18 @@ theorem round9 (x y : Int) (fuel : Nat) (mem : CerbMem.MemState)
 def casePE_p : generic_pexpr Unit sym :=
   Pexpr [] () (PEcase
     (Pexpr [] () (PEctor Ctuple
-      [Pexpr aU () (PEsym symA504), Pexpr aU () (PEsym symA505)]))
+      [Pexpr aU () (PEsym symA530), Pexpr aU () (PEsym symA531)]))
     [(Pattern aU (CaseCtor Ctuple
         [Pattern aU (CaseCtor Cspecified
-          [Pattern aU (CaseBase (some symA506, BTy_object OTy_integer))]),
+          [Pattern aU (CaseBase (some symA532, BTy_object OTy_integer))]),
          Pattern aU (CaseCtor Cspecified
-          [Pattern aU (CaseBase (some symA507, BTy_object OTy_integer))])]),
+          [Pattern aU (CaseBase (some symA533, BTy_object OTy_integer))])]),
       Pexpr aU () (PEctor Cspecified
         [Pexpr aU () (PEcatch_exceptional_condition (Signed Int_) IOpAdd
           (Pexpr aU () (PEconv_int (Signed Int_)
-            (Pexpr aU () (PEsym symA506))))
+            (Pexpr aU () (PEsym symA532))))
           (Pexpr aU () (PEconv_int (Signed Int_)
-            (Pexpr aU () (PEsym symA507)))))])),
+            (Pexpr aU () (PEsym symA533)))))])),
      (Pattern aU (CaseBase (none,
         BTy_tuple [BTy_loaded OTy_integer, BTy_loaded OTy_integer])),
       Pexpr aU () (PEundef CerbLocation.Loc.unknown
@@ -1072,12 +1072,12 @@ theorem round12 (x y : Int) (fuel : Nat) (mem : CerbMem.MemState)
 /-- The conv-call pexpr (the Erun argument). -/
 def convPE : generic_pexpr Unit sym :=
   Pexpr aU () (PEcall (Sym convLoadedIntSym)
-    [Pexpr aU () (PEval (Vctype intCty)), Pexpr aU () (PEsym symA511)])
+    [Pexpr aU () (PEval (Vctype intCty)), Pexpr aU () (PEsym symA537)])
 
 /-- convPE in pull-normal form. -/
 def convPE_p : generic_pexpr Unit sym :=
   Pexpr [] () (PEcall (Sym convLoadedIntSym)
-    [Pexpr aU () (PEval (Vctype intCty)), Pexpr aU () (PEsym symA511)])
+    [Pexpr aU () (PEval (Vctype intCty)), Pexpr aU () (PEsym symA537)])
 
 theorem pull_convPE : pull_constrained 0 convPE = convPE_p := rfl
 theorem pull_z0 (v : Int) : pull_constrained 0 (z0 v) = z0 v := rfl

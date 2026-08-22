@@ -1,28 +1,32 @@
 # fork-drift manifest — the reviewed oracle-surface drift set
 # (gate: scripts/check_fork_drift.sh; review + per-hunk classification:
 # notes/2026-08-21_fork-drift-review.md — [files] classes DECL/DELIB/
-# SUSPECT are per that review's §2/§5 tables; the F-D suspect family is
-# symbol/cabs_to_ail{,_effect}/core_run{,_aux}/core_reduction).
+# SUSPECT are per that review's §2/§5 tables).
 # Every entry is a reviewed claim about the oracle: additions/removals
 # and hash moves go through the gate's refresh recipe with a commit
 # message stating the justification.
-# NOTE (delta from the review's draft): driver.ml is a 12th cosmetic
-# entry — the fork's extra_import declare consumes one blank line in
-# the generated OCaml (whitespace-only, strip-verified 2026-08-21);
-# the review's "19 differing files" count was taken against the
-# primary checkout's tree and is superseded by this manifest.
-# NOTE (arc-12 S1, the F-D fail-stop floor — DELIB, oracle-only OCaml,
-# zero .lem edits, generated trees unmoved): util/cerb_fresh.ml (the
-# two-check per-TU floor; retires the review's "util/ untouched"
-# negative), backend/common/pipeline.ml (post-desugar set_desugar_hwm
-# hook; retires the "backend/common untouched" negative),
-# backend/common/ail_sym_hwm.ml (NEW: the desugar high-water fold).
-# Design + probe evidence: lean_frontend/docs/
-# 2026-08-21_arc12-s0-floor-design.md; S1 record in docs/.
+# [files] = oracle-surface files allowed to differ from upstream/master;
+# [expected-semantic]/[expected-cosmetic] = generated .ml allowed to
+# differ, pinned by sha256 of their label-normalized unified diff.
+# Cosmetic = verified comment/blank-line-only at review time.
+# NOTE (arc-13 S1, the renumbering — D1 scheme R-B, upstream
+# re-convergence; docs/2026-08-22_arc13-s0-scheme-decision.md): the
+# review's F-D SUSPECT family is RESOLVED — desugar + run supplies
+# re-unified onto Cerb_fresh.int on the OCaml target via three
+# ocaml-only target_reps (cabs_to_ail_effect/core_run/core_run_aux
+# .lem) + ocaml_frontend/fork_renumber.ml (NEW [files] entry); oracle
+# numbering is now byte-identical to upstream. The six moved
+# [expected-semantic] hashes are exactly this change's call-site
+# rewrites (defs dropped for target_reps, calls -> Fork_renumber.*);
+# driver.ml MOVED cosmetic->semantic (its initial_core_run_state call
+# site now rewrites — no longer blank-line-only). util/cerb_fresh.ml
+# is the arc-13 single-supply window backstop (supersedes the arc-12
+# floor); ail_sym_hwm.ml is its digest-filtered (min,max) fold;
+# the arc-12 grandfather/warn modes are DELETED (main.ml).
 [meta]
 merge-base=b9aeedcb4dd438763b0eef7f95ac19e93875d7de
-lem-pin=
-floor=arc12
+lem-pin=11d4b4c
+renumber=arc13
 [files]
 backend/common/ail_sym_hwm.ml
 backend/common/pipeline.ml
@@ -77,29 +81,26 @@ frontend/model/symbol.lem
 frontend/model/translation_effect.lem
 frontend/model/translation.lem
 frontend/model/utils.lem
+ocaml_frontend/fork_renumber.ml
 runtime/libcore/impls/i686-apple-darwin10-gcc-4.2.1.impl
 util/cerb_fresh.ml
 [expected-semantic]
-# generated .ml allowed to differ in OCaml tokens, pinned by sha256 of
-# the label-normalized unified diff (upstream-pristine vs fork tree)
-1ddebd0b8896b11a6cf9fd046d799f6fefb53595d11087b4bab5e7002f2206af cabs_to_ail.ml
-e92d767a035ebf22e49890d4070a5a008afaa1ef409cef1a10aedd39cba5abe3 cabs_to_ail_effect.ml
-5656cc3281557693b0dd5b0c81fa6a09817af7c863f524140fd409f86de1db77 core_reduction.ml
-b271c8505f6e342ae40c9e2626b934903c6f0df3fd80aae22be4134ce65208b9 core_run.ml
-f7c00767bf40c9638b4b386a06cfe33477b188fb0f7d1ec828fa4dbb48ee505d core_run_aux.ml
+a84ccc6bb08442b19685d313265f8960134d39e958fbf9b8491acc3bebff1b68 cabs_to_ail_effect.ml
+12e6d9cf3322e34f00dd4c51f2cd985e7b000746b8ebb1cab056c725ffd0c86b cabs_to_ail.ml
+22b0b094c6622a92dfdff511a05f19de93f445c5f47d149deec3ed223e582f98 core_reduction.ml
+92e86efb5652fd8ed18a43a234a384389d2fa999ec96a34b685be66e7ad9684d core_run_aux.ml
+7d4e9c99b3954e7c103d98b371dfd3f9e56c4fb22f32886db3f5382d66db6fa9 core_run.ml
 05ccb517cf967dd47e5cb07efd09bbdbe6973a4c52c43d03496852c2e6259e17 mini_pipeline.ml
 fa837fef5ca985fcd56b737b2b99f74314f98e94f03cdbf7b922f87fb5199eed symbol.ml
 db00c33b9928bab5e428ac2d859367f5cd40de2c01f8867be2c9f1fe8f1b2446 translation_effect.ml
+9c9cda701c571f11b8d29f94933e4428ad1b76bdb61ecc5232708a27248dbec8 driver.ml
 [expected-cosmetic]
-# comment/blank-line-only generated diffs (strip-verified at review),
-# same hash pinning
 75dbb3f1b524df384b8783896995e45dbee6f6c123a990b2d5848c23595f9131 ailSyntax.ml
 f353c48b912b1f5ac4a73b42b981d01c38ac19760867ad8e043072e9489b383c cn.ml
-6be5e29b880db46c0ade6f228b78655f05d4ecfda4b5f55896011202cd7512d9 core.ml
 c0546a677a6bcdd16cc1630ad2360179ef2b74406520e27ec4d7378c6155a8f6 core_aux.ml
+6be5e29b880db46c0ade6f228b78655f05d4ecfda4b5f55896011202cd7512d9 core.ml
 45eeff90ad101db49d28a6ca58bfdcf0bdd2625423ecc646777f31487601546d ctype.ml
 f52f2e5074d521bca92f84a496050d0295550475b16ac3f3c2e01243f5297208 defacto_memory_types.ml
-55fbf935e888e29fda0bd52943546a0a180dd49658c4d51a0c3aedd4382ed3d6 driver.ml
 b0c09cbc54c6e976b401e001bf4ba4e037ea8c4f0c941dbe394a2ff6afba8deb lem_debug.ml
 e5b26939dde79f51654d4696010595af8178cb301e4e093973012ed00726eacd nondeterminism.ml
 98ce65a030e34b6f691e82d328aaf48e4cc2522ec4094aa145465810c658bdca pp.ml

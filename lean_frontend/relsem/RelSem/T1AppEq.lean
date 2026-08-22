@@ -9,11 +9,11 @@
     prefix (driver_globals → resolve/lookup → injectArgs → errno →
     thread update)  +  ONE driver2 iteration whose
     new_drive_core_threads performs NINE dnms rounds
-      R0 eval Epure(PEsym x)      R1 tau Ewseq-bind a_499
+      R0 eval Epure(PEsym x)      R1 tau Ewseq-bind a_524
       R2 eval Load operands       R3 LoadRequest (the memory read)
-      R4 tau Ebound/Eannot strip  R5 tau Esseq-bind a_500
+      R4 tau Ebound/Eannot strip  R5 tau Esseq-bind a_525
       R6 eval Erun (conv_loaded_int chain — the range check)
-      R7 eval Epure(PEsym a_501)  R8 terminal [Step_done2 v]
+      R7 eval Epure(PEsym a_526)  R8 terminal [Step_done2 v]
   then pick → process_core_step2 (Step_done2) → prepare_exit → finalize.
   x-sensitivity is confined to R3 (byte roundtrip) and R6 (the
   is_representable range check); everywhere else the payloads carrying
@@ -46,10 +46,10 @@ open RelSem RelSem.Cerb RelSem.Kit
 abbrev aU : List annot := [Aloc CerbLocation.Loc.unknown]
 
 def symX : sym := Symbol "" 16562859848569467201 (SD_Id "x")
-def symA499 : sym := Symbol "" 14539597331447198605 (SD_Id "a_499")
-def symA500 : sym := Symbol "" 18166180104677201841 (SD_Id "a_500")
-def symA501 : sym := Symbol "" 17257815879318811304 (SD_Id "a_501")
-def symRet : sym := Symbol "" 9907641387098162999 (SD_Id "ret_498")
+def symA524 : sym := Symbol "" 1574597236902804563 (SD_Id "a_524")
+def symA525 : sym := Symbol "" 3579765898737599443 (SD_Id "a_525")
+def symA526 : sym := Symbol "" 13429216386455784360 (SD_Id "a_526")
+def symRet : sym := Symbol "" 8833183227039990084 (SD_Id "ret_523")
 
 def intCty : ctype := Ctype [] (Basic (Integer (Signed Int_)))
 
@@ -65,7 +65,7 @@ def errPtr : CerbMem.PointerValue :=
 
 def xPtrV : value := Vobject (OVpointer xPtr)
 
-/-- The loaded specified integer value (the load result / a_500's
+/-- The loaded specified integer value (the load result / a_525's
     binding / the final Core value). -/
 def loadedV (v : Int) : value :=
   Vloaded (LVspecified (OVinteger (CerbMem.IntegerValue.IV .Prov_none v)))
@@ -75,9 +75,9 @@ def loadedV (v : Int) : value :=
     every rfl below validates the transcription) -/
 
 def patA499 : generic_pattern sym :=
-  Pattern aU (CaseBase (some symA499, BTy_object OTy_pointer))
+  Pattern aU (CaseBase (some symA524, BTy_object OTy_pointer))
 def patA500 : generic_pattern sym :=
-  Pattern aU (CaseBase (some symA500, BTy_loaded OTy_integer))
+  Pattern aU (CaseBase (some symA525, BTy_loaded OTy_integer))
 def patUnit : generic_pattern sym :=
   Pattern [] (CaseBase (none, BTy_unit))
 
@@ -88,21 +88,21 @@ def loadE (pc pp : generic_pexpr Unit sym) : RExpr :=
   Expr aU (Eaction (Paction Pos (Action CerbLocation.Loc.unknown
     empty_annotation (Load0 pc pp NA))))
 
-/-- The body tail: Esseq unit (Erun ret_498 [conv_loaded_int(int, a_500)])
-    (Esseq unit (pure unit) (Esave ret_498 …)). -/
+/-- The body tail: Esseq unit (Erun ret_523 [conv_loaded_int(int, a_525)])
+    (Esseq unit (pure unit) (Esave ret_523 …)). -/
 def bodyTail : RExpr :=
   Expr aU (Esseq patUnit
     (Expr aU (Erun empty_annotation symRet
       [Pexpr aU () (PEcall (Sym convLoadedIntSym)
         [Pexpr aU () (PEval (Vctype intCty)),
-         Pexpr aU () (PEsym symA500)])]))
+         Pexpr aU () (PEsym symA525)])]))
     (Expr aU (Esseq patUnit
       (Expr aU (Epure (Pexpr aU () (PEval Vunit))))
       (Expr aU (Esave (symRet, BTy_loaded OTy_integer)
-        [(symA501, ((BTy_loaded OTy_integer, none),
+        [(symA526, ((BTy_loaded OTy_integer, none),
           Pexpr aU () (PEundef CerbLocation.Loc.unknown
             (DUMMY "UB088_reached_end_of_function"))))]
-        (Expr aU (Epure (Pexpr aU () (PEsym symA501)))))))))
+        (Expr aU (Epure (Pexpr aU () (PEsym symA526)))))))))
 
 /-- Arena at R0 entry (the converted id body). -/
 def arena0 : RExpr :=
@@ -110,7 +110,7 @@ def arena0 : RExpr :=
     (Expr aU (Ebound (Expr aU (Ewseq patA499
       (Expr aU (Epure (Pexpr aU () (PEsym symX))))
       (loadE (Pexpr aU () (PEval (Vctype intCty)))
-             (Pexpr aU () (PEsym symA499)))))))
+             (Pexpr aU () (PEsym symA524)))))))
     bodyTail)
 
 /-- Arena after R2 (Load operands evaluated). -/
@@ -128,13 +128,13 @@ def arena4 (v : Int) : RExpr :=
       (Expr [] (Epure (Pexpr [] () (PEval (loadedV v)))))))))
     bodyTail)
 
--- (Arena after R5 = bodyTail; a_500 bound in env.)
+-- (Arena after R5 = bodyTail; a_525 bound in env.)
 
-/-- Arena after R6 (Erun evaluated + jumped to ret_498's Esave body). -/
+/-- Arena after R6 (Erun evaluated + jumped to ret_523's Esave body). -/
 def arena7 : RExpr :=
-  Expr aU (Epure (Pexpr aU () (PEsym symA501)))
+  Expr aU (Epure (Pexpr aU () (PEsym symA526)))
 
-/-- Arena after R7 (a_501 evaluated). -/
+/-- Arena after R7 (a_526 evaluated). -/
 def arena8 (v : Int) : RExpr :=
   Expr aU (Epure (Pexpr [] () (PEval (loadedV v))))
 
@@ -154,10 +154,10 @@ def env0 : List (Fmap sym value) :=
 def env2 : List (Fmap sym value) := update_env patA499 xPtrV env0
 def env5 (v : Int) : List (Fmap sym value) :=
   update_env patA500 (loadedV v) env2
-/-- After the Erun/Esave jump: a_501 bound by the SAVE tau's foldl
+/-- After the Erun/Esave jump: a_526 bound by the SAVE tau's foldl
     (Core_reduction one_step0 "SAVE (tau part)"). -/
 def env7 (v : Int) : List (Fmap sym value) :=
-  update_env (mk_sym_pat symA501 (BTy_loaded OTy_integer)) (loadedV v)
+  update_env (mk_sym_pat symA526 (BTy_loaded OTy_integer)) (loadedV v)
     (env5 v)
 
 /-! ### Thread states (fixed fields shared; only arena/env vary) -/
@@ -529,7 +529,7 @@ theorem round3 (x : Int) (h1 : -2147483648 ≤ x) (h2 : x ≤ 2147483647)
 /-- The conv-call pexpr (the Erun argument). -/
 def convPE : generic_pexpr Unit sym :=
   Pexpr aU () (PEcall (Sym convLoadedIntSym)
-    [Pexpr aU () (PEval (Vctype intCty)), Pexpr aU () (PEsym symA500)])
+    [Pexpr aU () (PEval (Vctype intCty)), Pexpr aU () (PEsym symA525)])
 
 /-! ### Eval-monad crossing lemmas (the `app_bind_active` pattern at the
     exception/state-exception monads — generic, proved once) -/
@@ -597,7 +597,7 @@ def z4 (x : Int) : generic_pexpr Unit sym :=
 /-- convPE in pull-normal form (top annots stripped). -/
 def convPE_p : generic_pexpr Unit sym :=
   Pexpr [] () (PEcall (Sym convLoadedIntSym)
-    [Pexpr aU () (PEval (Vctype intCty)), Pexpr aU () (PEsym symA500)])
+    [Pexpr aU () (PEval (Vctype intCty)), Pexpr aU () (PEsym symA525)])
 
 theorem pull_convPE : pull_constrained 0 convPE = convPE_p := rfl
 theorem pull_z0 (x : Int) : pull_constrained 0 (z0 x) = z0 x := rfl
@@ -738,7 +738,7 @@ theorem fullEval_conv_eq (x : Int) (h1 : -2147483648 ≤ x)
   rfl
 
 /-- R6: the Erun eval round — the conv chain evaluates (fullEval_conv_eq),
-    the jump to ret_498's continuation binds a_501. rs must be concrete
+    the jump to ret_523's continuation binds a_526. rs must be concrete
     enough for the label resolution; the round is stated at the chain's
     actual run-state (rsD3 with the load's aid drawn). -/
 theorem round6 (x : Int) (h1 : -2147483648 ≤ x) (h2 : x ≤ 2147483647)

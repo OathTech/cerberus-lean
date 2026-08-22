@@ -17,7 +17,14 @@ Self-test: `canonicalize_ids.py --self-test`.
 import re
 import sys
 
-SYM = re.compile(r'\b([A-Za-z][A-Za-z0-9]*)_(\d+)\b')
+# arc-13 (renumbering): the name part admits underscores so that
+# generated names with embedded symbol ids canonicalize too — e.g.
+# `__cerbty_unnamed_tag_504` (oracle ambient id under the arc-13
+# single-supply scheme) vs `__cerbty_unnamed_tag_21` (Lean threaded
+# id). The two sides' id STREAMS legitimately differ post-renumbering;
+# only id-insensitive comparison is meaningful cross-side (scheme:
+# lean_frontend/docs/2026-08-22_arc13-s0-scheme-decision.md).
+SYM = re.compile(r'\b([A-Za-z_][A-Za-z0-9_]*?)_(\d+)\b')
 TID = re.compile(r'\btid=(\d+)\b')
 
 
@@ -53,6 +60,11 @@ def self_test() -> None:
     # (a symbol's id is the number; the prefix is display only).
     d = canonicalize("a_9 b_9 a_9")
     assert d == "a_0 b_0 a_0", d
+    # arc-13: names with interior underscores canonicalize too (oracle
+    # ambient vs Lean threaded id streams differ post-renumbering).
+    e = canonicalize("union __cerbty_unnamed_tag_504")
+    f = canonicalize("union __cerbty_unnamed_tag_21")
+    assert e == f == "union __cerbty_unnamed_tag_0", (e, f)
     print("canonicalize_ids: self-test OK")
 
 

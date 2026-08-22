@@ -110,18 +110,14 @@ run_capped() { # <out> <err> <cmd...>
 record() { echo "$1: $2" >> "$OUTPUT_DIR/baseline.new"; }
 
 # --- ORACLE_LIBC ------------------------------------------------------------
-# arc-12 D2 GRANDFATHER (Option C): uri.c is beyond the fork oracle's F-D
-# symbol-id margin (desugar hwm 1798 vs 483; 252 live collisions measured —
-# S1 record §7). This lane's oracle elaboration proceeds UN-FLOORED under
-# the explicit grandfather mode (loud stderr warning, never silent) and is
-# trusted ONLY via the byte-agreement gate against the protected Lean side
-# below (16/16). Register entry + record addendum carry the exposure;
-# mover: renumbering-era re-derivation. Any OTHER use of this flag is
-# a finding (audit A-F2: CLI flag, not env — no ambient inheritance).
+# arc-13: plain invocation. The arc-12 grandfather mode this lane carried
+# (uri.c was beyond the F-D margin, 252 live collisions) is DISSOLVED —
+# under the single-supply renumbering (D1, scheme R-B) the oracle
+# elaborates uri.c collision-free and byte-identical to un-forked
+# upstream; the G3 register entry's mover executed.
 rc=0
 run_capped "$OUTPUT_DIR/oracle.out" "$OUTPUT_DIR/oracle.err" \
     "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" --exec --batch \
-    --fresh-floor-grandfather \
     "${FLAGS[@]}" "${TUS[@]}" || rc=$?
 [[ $rc -lt 124 ]] || fail "ORACLE_LIBC timeout/crash (exit $rc)"
 record "ORACLE_LIBC exit" "$rc"
@@ -137,14 +133,12 @@ oracle_line=$(head -1 "$OUTPUT_DIR/oracle.out")
     || fail "GATE: ORACLE_LIBC corpus-size pin violated (expected uri_harness n=$N_URIS in stdout)"
 
 # --- OCAML_NOLIBC -----------------------------------------------------------
-# arc-12 D2 GRANDFATHER, same scope as ORACLE_LIBC above: without it the
-# F-D floor refuses uri.c (exit 70) before the lane can reproduce its
-# pinned failure mode; the mirrored-failure PAIR (this lane + LEAN_NOLIBC
-# both pinning unknown-procedure memset) is the lane's validation.
+# arc-13: plain invocation (grandfather dissolved, as above). The
+# mirrored-failure PAIR (this lane + LEAN_NOLIBC both pinning
+# unknown-procedure memset) remains the lane's validation.
 rc=0
 run_capped "$OUTPUT_DIR/nolibc.out" "$OUTPUT_DIR/nolibc.err" \
     "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" --nolibc --exec --batch \
-    --fresh-floor-grandfather \
     "${FLAGS[@]}" "${TUS[@]}" || rc=$?
 [[ $rc -lt 124 ]] || fail "OCAML_NOLIBC timeout/crash (exit $rc)"
 record "OCAML_NOLIBC exit" "$rc"

@@ -113,32 +113,32 @@ def finTail5 : Unit → driverM driver_result :=
     dumps — all content-hashed ids validated by the entry/iteration
     rfl walks). -/
 
-def symWhile : sym := Symbol "" 5345818875920638407 (SD_Id "while_501")
+def symWhile : sym := Symbol "" 15846621060339386788 (SD_Id "while_531")
 
-def symA502 : sym := Symbol "" 8889381283917733902 (SD_Id "a_502")
-def symA503 : sym := Symbol "" 14798685261839020542 (SD_Id "a_503")
-def symA504 : sym := Symbol "" 13222863191375119694 (SD_Id "a_504")
-def symA505 : sym := Symbol "" 15587187630708245497 (SD_Id "a_505")
-def symA507 : sym := Symbol "" 3712579248453425038 (SD_Id "a_507")
-def symA508 : sym := Symbol "" 6853313270503072038 (SD_Id "a_508")
-def symA512 : sym := Symbol "" 17123687452746221040 (SD_Id "a_512")
-def symA513 : sym := Symbol "" 4622258550668407059 (SD_Id "a_513")
-def symA514 : sym := Symbol "" 7846888631986887727 (SD_Id "a_514")
-def symA515 : sym := Symbol "" 18346162544558864837 (SD_Id "a_515")
-def symA519 : sym := Symbol "" 238585015645548330 (SD_Id "a_519")
-def symA520 : sym := Symbol "" 3474084476103638235 (SD_Id "a_520")
-def symA521 : sym := Symbol "" 2151434721365532277 (SD_Id "a_521")
-def symA525 : sym := Symbol "" 3579765898737599443 (SD_Id "a_525")
-def symA526 : sym := Symbol "" 13429216386455784360 (SD_Id "a_526")
-def symA527 : sym := Symbol "" 4139409277016632516 (SD_Id "a_527")
-def symA528 : sym := Symbol "" 8935235297226827052 (SD_Id "a_528")
-def symA529 : sym := Symbol "" 1680278659536745755 (SD_Id "a_529")
-def symA530 : sym := Symbol "" 4915778119994869450 (SD_Id "a_530")
+def symA532 : sym := Symbol "" 1342427191597093029 (SD_Id "a_532")
+def symA533 : sym := Symbol "" 18213349194842787190 (SD_Id "a_533")
 def symA534 : sym := Symbol "" 5254944664791163557 (SD_Id "a_534")
 def symA535 : sym := Symbol "" 15754218577363027919 (SD_Id "a_535")
-def symA536 : sym := Symbol "" 6464411467923874555 (SD_Id "a_536")
 def symA537 : sym := Symbol "" 6477419756603697776 (SD_Id "a_537")
 def symA538 : sym := Symbol "" 18319030617476695216 (SD_Id "a_538")
+def symA542 : sym := Symbol "" 16217071427669230452 (SD_Id "a_542")
+def symA543 : sym := Symbol "" 14641249357205542421 (SD_Id "a_543")
+def symA544 : sym := Symbol "" 7590096031763635132 (SD_Id "a_544")
+def symA545 : sym := Symbol "" 11067898428807828624 (SD_Id "a_545")
+def symA549 : sym := Symbol "" 16629223912856532319 (SD_Id "a_549")
+def symA550 : sym := Symbol "" 2567468451026663467 (SD_Id "a_550")
+def symA551 : sym := Symbol "" 14409079311899709851 (SD_Id "a_551")
+def symA555 : sym := Symbol "" 6806144180337321293 (SD_Id "a_555")
+def symA556 : sym := Symbol "" 1097327803196824626 (SD_Id "a_556")
+def symA557 : sym := Symbol "" 16397053867550904782 (SD_Id "a_557")
+def symA558 : sym := Symbol "" 1656971181475828259 (SD_Id "a_558")
+def symA559 : sym := Symbol "" 1862827267035441118 (SD_Id "a_559")
+def symA560 : sym := Symbol "" 14386475981198921378 (SD_Id "a_560")
+def symA564 : sym := Symbol "" 4998152064567917579 (SD_Id "a_564")
+def symA565 : sym := Symbol "" 15936767184861729128 (SD_Id "a_565")
+def symA566 : sym := Symbol "" 5557795442846871051 (SD_Id "a_566")
+def symA567 : sym := Symbol "" 16496410563140706571 (SD_Id "a_567")
+def symA568 : sym := Symbol "" 12129931134301626842 (SD_Id "a_568")
 
 /-- The process sym-supply seed, STUCK form (the T4 anon1stuck
     discipline, design §11.2): the invariant family carries the stuck
@@ -151,7 +151,7 @@ def seedT5 : Nat := rsD5.sym_supply
 def unitSym (j : Nat) : sym :=
   Symbol (CerberusFresh.digest ()) (seedT5 + j) SD_None
 
-/-- The while_501 labeled continuation (params, body) —
+/-- The while_531 labeled continuation (params, body) —
     fixture-derived from the collected labeled continuations, never
     transcribed. -/
 def whileCont : List (sym × core_base_type)
@@ -165,7 +165,7 @@ def whileCont : List (sym × core_base_type)
   | some pb => pb
   | none => ([], Expr [] (Epure (Pexpr [] () (PEval Vunit))))
 
-/-- The loop-head arena (the while_501 continuation body). -/
+/-- The loop-head arena (the while_531 continuation body). -/
 def whileBody : generic_expr core_run_annotation Unit sym := whileCont.2
 
 /-! ### Walker-v2 state atoms (design §11.3): the fixture's pinned
