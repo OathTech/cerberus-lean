@@ -169,6 +169,22 @@ if ! ENFORCE=1 "$TOTALITY_SH"; then
     exit 1
 fi
 
+# Lem-sync gate (hotfix arc/hotfix-libc-floor, 2026-08-22):
+# ocaml_frontend/generated (gitignored `make prelude-src` output) must
+# be content-in-sync with the frontend .lem sources — a stale tree
+# builds a wrong oracle that the arc-13 single-supply backstop floors
+# wholesale (the post-merge libc.co certification failure). Stamp
+# written only by the generation recipe; checker also wired into the
+# dune graph (ocaml_frontend/dune lem_sync_checked -> runtime/libc .co
+# rules). Self-contained and fail-closed — unlike fork-drift layer 2
+# below, it never skips. Record:
+# lean_frontend/docs/2026-08-22_arc13-hotfix-libc-floor.md.
+LEMSYNC_SH="$PROJECT_ROOT/tools/check_lem_sync.sh"
+if ! bash "$LEMSYNC_SH" --check; then
+    echo "test_unit: lem-sync gate FAILED"
+    exit 1
+fi
+
 # Fork-drift gate (arc-10 audit follow-up, [USER] mandate): the oracle
 # surface (frontend model, ocaml_frontend, memory, util, parsers,
 # backend/{common,driver,lean_export}, runtime, opam files) must equal

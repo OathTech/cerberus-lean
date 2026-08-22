@@ -34,6 +34,13 @@
 # the gate. ocaml_frontend/fork_renumber.ml itself is a hand file:
 # name-manifested here (layer 1), content defended by review, not by
 # a hash pin.
+# NOTE (hotfix arc/hotfix-libc-floor, 2026-08-22): ocaml_frontend/dune
+# (+ lem_sync_checked witness rule) and runtime/libc/dune (.co rules
+# depend on the witness) are NEW [files] entries — the lem-sync gate
+# (tools/check_lem_sync.sh) that fail-stops dune builds on a
+# content-stale ocaml_frontend/generated tree (the post-merge libc.co
+# certification failure). Record:
+# lean_frontend/docs/2026-08-22_arc13-hotfix-libc-floor.md.
 [meta]
 merge-base=b9aeedcb4dd438763b0eef7f95ac19e93875d7de
 lem-pin=11d4b4c
@@ -92,7 +99,9 @@ frontend/model/symbol.lem
 frontend/model/translation_effect.lem
 frontend/model/translation.lem
 frontend/model/utils.lem
+ocaml_frontend/dune
 ocaml_frontend/fork_renumber.ml
+runtime/libc/dune
 runtime/libcore/impls/i686-apple-darwin10-gcc-4.2.1.impl
 util/cerb_fresh.ml
 [expected-semantic]

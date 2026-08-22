@@ -1,15 +1,26 @@
 (include_subdirs unqualified)
 
+; NOTE (hotfix arc/hotfix-libc-floor, 2026-08-22): both .co rules
+; depend on ../../ocaml_frontend/lem_sync_checked — the lem-sync gate
+; witness (tools/check_lem_sync.sh via ocaml_frontend/dune). Without
+; it, a `dune build` from a checkout whose gitignored
+; ocaml_frontend/generated/ tree is content-stale w.r.t. the .lem
+; sources builds a wrong oracle whose every C compile the arc-13
+; single-supply backstop refuses (CERB_FRESH_FLOOR_VIOLATION) — first
+; hit exactly here, at the multi-TU libc.co generation. Record:
+; lean_frontend/docs/2026-08-22_arc13-hotfix-libc-floor.md.
 (rule
  (target libm.co)
- (deps src/math.c include/math.h include/stdint.h include/limits.h)
+ (deps src/math.c include/math.h include/stdint.h include/limits.h
+       ../../ocaml_frontend/lem_sync_checked)
  (action
   (run cerberus --nolibc -I include -I include/posix --sequentialise
                 --rewrite -o libm.co src/math.c)))
 
 (rule
  (targets libc.co libc_inner_arg_temps.co)
- (deps src/ctype.c src/stdio.c src/stdlib.c src/string.c src/time.c
+ (deps ../../ocaml_frontend/lem_sync_checked
+       src/ctype.c src/stdio.c src/stdlib.c src/string.c src/time.c
        src/utime.c src/unistd.c src/stat.c src/uio.c src/internal.c
        src/vfscanf.c src/signal.c src/internal.h
        ../libcore/std.core

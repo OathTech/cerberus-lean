@@ -197,8 +197,18 @@ PRELUDE_SRC_DIR = ocaml_frontend/generated
 OCAML_SRC = $(addprefix $(PRELUDE_SRC_DIR)/, $(addsuffix .ml, $(notdir $(basename $(LEM_SRC_NOT_RENAMED))))) \
 						$(addprefix $(PRELUDE_SRC_DIR)/lem_, $(addsuffix .ml, $(notdir $(basename $(LEM_RENAMED)))))
 
+# Lem-sync content stamp (hotfix arc/hotfix-libc-floor, 2026-08-22):
+# written ONLY by the generation recipe below, immediately after lem+sed,
+# and verified by tools/check_lem_sync.sh --check (wired into the dune
+# graph via ocaml_frontend/dune `lem_sync_checked` and into
+# scripts/test_unit.sh). Guards against dune-building a STALE generated
+# tree (dune cannot see the .lem sources; make's own dependency is
+# mtime-based and no-ops on stale content after worktree priming).
+# Record: lean_frontend/docs/2026-08-22_arc13-hotfix-libc-floor.md.
+PRELUDE_SYNC_STAMP = ocaml_frontend/lem_sync.sha256
+
 # All targets generated at once thanks to [&:].
-$(OCAML_SRC)&: $(LEM_SRC)
+$(OCAML_SRC) $(PRELUDE_SYNC_STAMP)&: $(LEM_SRC)
 	@echo "[MKDIR] $(PRELUDE_SRC_DIR)"
 	$(Q)mkdir -p $(PRELUDE_SRC_DIR)
 	@echo "[LEM] generating files in [$(PRELUDE_SRC_DIR)] (log in [ocaml_frontend/lem.log])"
@@ -211,6 +221,8 @@ $(OCAML_SRC)&: $(LEM_SRC)
 	$(Q)$(SEDI) -e "s/Lem_debug.DB_/Cerb_debug.DB_/g" $(OCAML_SRC)
 	$(Q)$(SEDI) -e "1 s/.*/&[@@@warning \"-8\"]/" $(PRELUDE_SRC_DIR)/cmm_csem.ml
 	$(Q)$(SEDI) -e "1 s/.*/&[@@@warning \"-8\"]/" $(PRELUDE_SRC_DIR)/cmm_op.ml
+	@echo "[STAMP] recording lem-sync content stamp"
+	$(Q)bash tools/check_lem_sync.sh --record
 
 # Elaboration PP stuff
 elab_pp:
@@ -276,7 +288,7 @@ sibylfs-src: $(SIBYLFS_TRG)
 .PHONY: clean-prelude-src
 clean-prelude-src:
 	$(Q)rm -rf $(PRELUDE_SRC_DIR)
-	$(Q)rm -f ocaml_frontend/lem.log
+	$(Q)rm -f ocaml_frontend/lem.log $(PRELUDE_SYNC_STAMP)
 
 .PHONY: clean-sibylfs-src
 clean-sibylfs-src:

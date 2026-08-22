@@ -16,3 +16,28 @@
   (with-stdout-to version.ml
     (run ocaml -I +unix unix.cma %{dep:../tools/gen_version.ml})))
  (mode fallback))
+
+; Lem-sync gate (hotfix arc/hotfix-libc-floor, 2026-08-22): generated/
+; is `make prelude-src` output, and its .lem sources live OUTSIDE the
+; dune workspace (root `dune` (dirs ...) excludes frontend/), so dune
+; cannot track them — a stale generated/ tree silently builds a WRONG
+; oracle binary, which the arc-13 single-supply backstop then refuses
+; wholesale (observed at the arc-13 post-merge certification:
+; CERB_FRESH_FLOOR_VIOLATION window-nodraw on every TU of the
+; runtime/libc/libc.co rule). This rule re-verifies the content-hash
+; stamp written by the Makefile generation recipe on EVERY build
+; ((universe) = never cached, the version.ml precedent above; sandbox
+; none because the checker reads the .lem sources from the source tree
+; via the %{workspace_root}/../.. escape — default build context only,
+; the only context this project uses). runtime/libc's .co rules depend
+; on the lem_sync_checked witness. Record:
+; lean_frontend/docs/2026-08-22_arc13-hotfix-libc-floor.md.
+(rule
+ (targets lem_sync_checked)
+ (deps (universe) (sandbox none))
+ (action
+  (progn
+   (run bash %{workspace_root}/../../tools/check_lem_sync.sh
+        --root %{workspace_root}/../.. --check)
+   (with-stdout-to lem_sync_checked
+    (echo "lem generated tree verified in sync")))))
