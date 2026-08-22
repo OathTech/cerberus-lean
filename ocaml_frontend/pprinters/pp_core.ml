@@ -189,9 +189,11 @@ let rec pp_core_object_type = function
   | OTy_array bty ->
       pp_type "array" ^^ P.parens (pp_core_object_type bty)
   | OTy_struct ident ->
-      pp_type "struct" ^^^ !^(Pp_symbol.to_string ident)
+      (* NOTE: printed like the tag definitions (to_string would print a
+         name that does not match any printed definition) *)
+      pp_type "struct" ^^^ pp_raw_symbol ident
   | OTy_union ident  ->
-      pp_type "union" ^^^ !^(Pp_symbol.to_string ident)
+      pp_type "union" ^^^ pp_raw_symbol ident
 
 let rec pp_core_base_type = function
   | BTy_storable ->
