@@ -150,3 +150,139 @@ is a small constraint-solving step, do it deliberately.
 * `mkHarness` attribution comment initially spelled the relsem path
   and tripped the grep floor (comment-insensitive by design);
   reworded. Cheap reminder that grep gates constrain PROSE too.
+
+### S2-E1 — byte-blaster vs structured codec for the same array
+property (the containment-story experiment)
+
+Rung/target/date/worker: R2, deps/cn memcpy.c + get_from_arr.c,
+2026-08-22, [AGENT:arc15-laneA-S2].
+Objects: `SpecLab/ByteArr.lean` §structured-face experiment
+(`bytesOfU16s`, `encodeElems_u16_flatten`,
+`structured_forall_of_byte_forall`) vs the byte-blaster main line
+(`encodeInput` = u16le count + bytes VERBATIM,
+`Codec.encodeElems_u8_id`).
+
+Verdict: **verbatim byte-blaster is the right containment idiom at
+this rung; structured interpretation bought NOTHING.** The measured
+grounds: the structured (u16-element) model-∀ is an INSTANCE of the
+byte model-∀ — the subsumption theorem's entire proof is
+`fun ws hw => h _ hw` — while going the other way would surrender
+odd lengths and non-canonical element boundaries (exactly the
+attacker-controlled shapes the containment note cares about). A
+structured codec earns its keep only when the TARGET's contract is
+itself structure-level (R3's list nodes onward); for buffer-contents
+properties, bytes are the statement vocabulary. Supporting law: the
+byte-blaster's element layer is the identity (`encodeElems_u8_id`)
+— "copy the stream verbatim" is literally the codec.
+
+### S2-E2 — mutator post-state readback vs read-only readback
+(the first real post-STATE observation)
+
+Objects: memcpy Form 1 (post-call dst AND src read back — the CN
+`srcEnd == srcStart` clause is CHECKED, not assumed) vs getarr Form 1
+(ret + post-array readback on a read-only target).
+
+Verdict: **Form 1 on a mutated buffer works unchanged** — the
+comparator does not care that the observation is post-state; the only
+new ergonomic obligations were (a) the dst CANARY pre-fill (a
+mutation-visibility floor: without it, an uninitialized dst readback
+would be UB, and a no-op plant could alias garbage) and (b) putting
+BOTH post-buffers in the observation so the frame clause (src
+unchanged) is part of the same mismatch-index space. What this
+teaches R3's builder/comparator: post-state readback generalizes by
+CONCATENATING observation segments (prefix + segment layout beats
+per-buffer verdicts — one index space localizes across buffers), and
+canaries want to be template constants with a REGISTERED collision
+blind spot (S2-E5) rather than per-instance values (which would
+break the parametric-zip sharing).
+
+### S2-E3 — CN-vs-us comparison column (R2 entries)
+
+* memcpy: CN's requires/ensures are ownership + functional content
+  (`srcEnd == srcStart`, `each k. dstEnd[k] == srcStart[k]`); our Wf
+  adds what CN never states — the CAPACITY bound (length ≤ 16, the
+  template's buffers) — because closed-program observation must
+  realize the arrays it quantifies over. Modular contracts quantify
+  n free; we pay a concrete-N ceiling (proof register S2-N) for
+  runnability + differential grounding.
+* get_from_arr: CN's `ensures` is OWNERSHIP-ONLY — it does not
+  constrain the returned value at all. Our statement is STRICTLY
+  STRONGER functionally (ret == arr[4] ∧ array unchanged, both
+  checked bytes-for-bytes). Honest note both ways: CN could state
+  the value trivially and chose not to (the file tests ownership
+  machinery); but this is the first corpus point where the
+  closed-program harness spec EXCEEDS the CN spec's functional
+  content rather than mirroring it.
+
+### S2-E4 — parametric zip with SHARED sites vs verbatim pinning;
+the production/kernel-template unification
+
+* The S1 production/kernel-instance split COLLAPSES at R2: the
+  TARGET loops, so a loop-free harness buys no walk (T5 tech gates
+  either way) — one looped block-scope template serves the
+  differential lanes AND the pinned statements (memcpy_a..c pins are
+  literally the sweep's programs). The S1-E4 block-scope rule
+  reconfirmed (globs = [] on all 8 fixtures).
+* memcpy's expected[] REPEATS choices[] (healthy dst' = src' =
+  stream), so the 9 varying literal sites map to THREE parameters —
+  the zip generalization (`zipParamWith`, coinciding sites share a
+  parameter) makes the derived-ness of expected[] STRUCTURAL in the
+  statement term: `memcpyMainParamDecl c0 c1 c2` cannot state a
+  non-derived expected. Instance selection was trivial here (any
+  three distinct byte triples); the S1-E5 tie-break lesson did not
+  bite.
+* getarr mains pinned VERBATIM (2 instances, no zip) as the
+  contrasting style: cheaper to build (no table), but each new
+  sample costs a full pinned decl (~250KB module text at this
+  Core size) vs the parametric family's ZERO marginal cost per
+  sample. Verdict: parametric-zip wins wherever ≥3 instances exist;
+  verbatim pinning is the right floor for 1-2 instance targets.
+
+### S2-E5 — plant blind spots, the malformed-stream arm, and
+length-0 (documented-negative-space entries)
+
+* The off-by-one plant is INVISIBLE at n = 0 (loop body empty both
+  ways) and at bs[0] = canary (42); the wrong-index plant is
+  invisible at bs[3] = bs[4]. All three blind spots are DOCUMENTED
+  and demonstrated as green-with-predicted-0 twins in the --plant
+  lane (pure-side `plantVerdict` predicts 0; both pipelines agree)
+  — a plant lane that HIDES its blind spots is a vacuity risk of
+  its own. Plant sample selection must avoid the blind set (lane
+  uses bs[0] ∈ {1, 255}).
+* Verdict space grew a MALFORMED arm (254): the harness is total on
+  EVERY splice (prefix/capacity checks before any array access), so
+  harnesses-are-programs holds for arbitrary raw streams, and the
+  malformed twins are differentially exercised (4 cases, both
+  pipelines 254).
+* LENGTH 0 IS A LIVE INSTANCE, not an excluded case: the S0
+  empty-initializer caveat is closed BY CODEC DESIGN — the u16le
+  count prefix keeps both choices[] (`{0, 0}`) and expected[]
+  (`{0, 0}`) nonempty at n = 0. Swept, fuzzed (fuzz draws length
+  0..16), planted (blind-spot twin), and green both pipelines.
+* Form 2 was deliberately NOT built at R2: S1-E1 already graded it
+  a diagnostic variant (and found the trailing-newline discipline);
+  R2 adds no new stdout-shaped question — skipping recorded here
+  per the silent-deletion ban.
+
+### S2-E6 — frictions (register-worthy)
+
+* THE CODE-GENERATOR DEPTH WALL: the R2 pinned terms (memcpy main =
+  1,920 Core lines) exceed Lean's code-generator recursion depth as
+  single defs — the S1 emission style hit its ceiling one rung up.
+  Budget bumps being banned (heartbeat doctrine; also this worker's
+  scoping), the emitter grew a HOISTING pass: any Expr subterm over
+  a NORMALIZED-length threshold (digit runs weigh 1, so decisions
+  are literal-independent and the zip instances split identically)
+  becomes its own def; composition is definitional; the gate's
+  param pins re-flatten the composition and byte-compare against
+  fresh parses. Divmod emission re-verified byte-identical
+  (threshold ∞ path). This is the R2 statement-scaling finding: AT
+  SCALE, PINNED TERMS ARE TREES OF DEFS, and the emitter owns the
+  chunking.
+* `i++` in harness loops surfaces `seq_rmw` in Core — one new
+  emitter constructor (SeqRMW), loudly discovered per the fidelity
+  contract.
+* The generated module silences linter.unusedVariables (parametric
+  helpers bind c0 c1 c2 uniformly; helpers without sites don't
+  reference them) — cosmetic, generated-file-local, noted per the
+  no-silent-config rule.

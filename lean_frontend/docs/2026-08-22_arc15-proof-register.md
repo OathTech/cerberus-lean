@@ -129,3 +129,111 @@ unrolls away; the first real P4 object is R2's byte-blaster loop
 ## The Linux-scaling memo
 
 (close-out deliverable — not yet written)
+
+All S2 grades are SPECULATIVE per the charter. Target C: naive_memcpy
+= 9 LOC + get_from_arr = 8 LOC (bodies + braces, derived, CN
+annotations excluded); harness C ≈ 55 LOC (memcpy) / 35 LOC (getarr).
+
+### S2-P5 — pure-transport at a List-valued model (the R1 winner,
+re-graded)
+
+What landed kernel-checked entirely in pure land at R2: the Canonical
+codec layer (6 theorems in Codec.lean, 139 lines — parametric in the
+element codec, REUSABLE), the memcpy model-∀↔stream-∀ bridge through
+the full u16-prefixed codec + the file-level bridge
+(`memcpyFileOfStream_encode`, `memcpy_sample_model_iff_stream`), the
+getarr identity-codec bridge (zero codec laws consumed — measured
+contrast), the comparator's soundness+completeness
+(`verdictOf_eq_zero_iff`, ~45 lines, idiom-library law: verdict 0 ⟺
+observation equality — every Form 1 statement's anti-vacuity, once),
+and THE COLLAPSE FINDING: the CN postconditions' functional content
+for a verbatim copy is DEFINITIONAL (`src_unchanged`/`dst_copied` are
+`rfl`) — for byte-verbatim properties the entire property weight sits
+in the exec bridge, and pure land holds only codec + comparator
+algebra.
+
+(a) proof-lines/C-line: 4 — per-target marginal pure content ≈ 25
+    lines / 9 LOC ≈ 3/LOC (memcpy) and ≈ 10 lines / 8 LOC (getarr);
+    the 180-line codec/comparator layer is library, amortizing
+    ACROSS rungs (S1's Canonical recommendation was consumed here
+    exactly as priced). Trend across R1→R2: marginal per-target
+    pure cost FELL (7/LOC → 3/LOC) as the library thickened.
+(b) re-pin robustness: 5 — unchanged (no pure lemma names a program
+    term; the R2 template changes during development touched zero
+    pure proofs).
+(c) mechanization: 3 — unchanged (simp/omega/induction discharge;
+    statements hand-written).
+(d) elaboration pressure: 5 — all pure proofs at default budgets,
+    milliseconds. (The BUDGET EVENT of this rung was in the pinned
+    TERMS, not proofs — see S2-P1.)
+(e) C-shape realism: 4 (up from 3) — real buffers, interior
+    pointers, a mutating loop, and a frame clause all transported;
+    the List-valued model cost nothing over scalars. Heap SHAPES
+    (list/tree nodes) remain the open R3/R4 question.
+(f) parallelizability: 5 — unchanged.
+Evidence sentence: every R2 kernel theorem except the parked exec
+equations lives in pure land at default budgets, and the rung's new
+pure obligations were mostly library (paid once).
+
+### S2-P1 — walker/certificate (re-priced at R2; not attempted —
+the wall is parked, per scoping)
+
+Measured grounds refreshing the S1-P1 price: memcpy_a.core = 2,092
+lines (naive_memcpy 171 + main 1,920) and getarr_a.core = 1,208 vs
+divmod i8 1,262 and the T5 fixture's 172 — the R2 flagship instance
+is ~11x the largest walked fixture. NEW law surfaces beyond S1's
+four: `SeqRMW` rounds (harness `i++`), CALLEE-side loop save/run
+rounds (the target itself loops — S1's loops were harness-only and
+unrolled away; R2 is the first rung where the walk REQUIRES T5 loop
+tech in the callee), and the multi-buffer Create/store_lock init
+family. The statement side is walk-ready (parametric
+`memcpyMainParamDecl` = the symbolic-initializer route's input).
+Price: unchanged L, sequenced after Lane B/T5; grades unchanged from
+S1-P1 except (e) 4→5 (the walker remains the only kernel route to
+these shapes).
+
+### S2-P4 — direct invariant/iter_compose (object now exists, still
+gated)
+
+The R2 harness loops (builder byte-blast, canary fill, readback,
+comparator — concrete ≤16 iterations) and the target's copy loop are
+the first real P4 objects, exactly as S1-P4 anticipated. Not
+attempted this rung (same T5 gate as P1); noted that the copy loop's
+invariant IS the CN loop invariant's functional core (dstInv[j] =
+srcStart[j] for j < i) — when P4 runs, the CN inv column gives the
+invariant family for free.
+
+### S2-P5b — refutation-layer transfer (small, worth recording)
+
+`SpecLabProofs.harnessRunsTo_exclusive` (R1) is generic in the file:
+both R2 plant refutation schemas
+(`memcpyPlantClaim_refuted_of_run`, `getarrPlantClaim_refuted_of_run`)
+cost 8 lines each with zero new lemmas — the anti-vacuity layer is
+RUNG-INDEPENDENT. Cones: [propext, runEffectful, Classical.choice,
+Quot.sound], pinned in-build.
+
+### S2-N — THE CONCRETE-N CEILING (registered precisely)
+
+What R2 proves-at-statement-level today: sample-∀ over 4 pinned
+3-byte models (+ 2 getarr instances), with the parametric term
+`memcpyMainParamDecl c0 c1 c2` making the FIXED-LENGTH family-∀
+(all 256³ n=3 instances) the natural endpoint of the S1-P1 exec
+campaign — nothing further needed on the statement side.
+
+The statements the rung CANNOT yet make, and what each waits on:
+  1. FIXED-n FAMILY-∀ (∀ c0 c1 c2, HarnessRunsTo (memcpyI3File c0
+     c1 c2) 0 under byte-range side conditions): waits ONLY on the
+     parked exec-equation campaign (S1-P1, price L, after Lane
+     B/T5) — statement + parametric term + bridge are all built.
+  2. LENGTH-PARAMETRIC ∀ (∀ bs, bs.length ≤ 16 → HarnessRunsTo
+     (memcpyFileOfN bs) 0): the Core AST varies with n in ARITY
+     (the initializer's unseq/Array width, and the observation
+     loop's trip count), not just in literals — this needs T5's
+     symbolic-n iter_compose PLUS a symbolic-ARITY generalization
+     of the initializer lemma family (the template note's "vector
+     of unknowns through the builder-loop invariant"), which no
+     current machinery provides. Deliberately NOT attempted (the
+     scoping's do-not-attempt rule); registered as the R2 wall.
+  3. The TEMPLATE bound itself (cap = 16, u16 prefix admits 65535):
+     raising cap is a template re-render + re-pin, mechanical; the
+     16 ceiling is a fixture-economy choice, not a technical wall.

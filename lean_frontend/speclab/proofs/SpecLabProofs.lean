@@ -30,6 +30,7 @@ SpecLab lib (see SpecLabAudit.lean pins).
 -/
 
 import SpecLab.DivModFiles
+import SpecLab.ByteArrFiles
 import RelSem.Machine
 import RelSem.RunND
 
@@ -88,6 +89,49 @@ theorem plantClaim_refuted_of_run
   exact harnessRunsTo_exclusive divmodI8PlantFile 1 0 (by decide) hne
     ⟨h1, h0⟩
 
+/-! ## arc-15 S2 (R2): the byte-blaster plants' refutation schemas.
+    `harnessRunsTo_exclusive` is generic in the file — the R1 schema
+    transfers to the array rung with zero new machinery (proof
+    register S2-P5: the refutation layer is rung-independent). Same
+    epistemic status as S1: the exec equations delivering the
+    verdict-3/verdict-1 facts are parked (S1-P1 campaign); the gate
+    exe checks them EXECUTABLY today. -/
+
+open SpecLab.ByteArr in
+/-- The memcpy off-by-one plant refutes the healthy claim once the
+parked exec equation delivers `HarnessRunsTo memcpyPlantFile 3` (the
+mismatch-index comparator naming dst byte 0). -/
+theorem memcpyPlantClaim_refuted_of_run
+    (hne : ∃ out tr st',
+      (out, tr, st') ∈
+        CerbND.runND
+          (drive memcpyPlantFile.tagDefs false memcpyPlantFile
+            ["cmdname"])
+          (initial_driver_state memcpyPlantFile
+            CerbFS.fs_initial_state))
+    (h3 : HarnessRunsTo memcpyPlantFile 3) :
+    ¬ MemcpyPlantHealthyClaim := by
+  intro h0
+  exact harnessRunsTo_exclusive memcpyPlantFile 3 0 (by decide) hne
+    ⟨h3, h0⟩
+
+open SpecLab.ByteArr in
+/-- The getarr wrong-index plant refutes the healthy claim once the
+parked exec equation delivers `HarnessRunsTo getarrPlantFile 1`. -/
+theorem getarrPlantClaim_refuted_of_run
+    (hne : ∃ out tr st',
+      (out, tr, st') ∈
+        CerbND.runND
+          (drive getarrPlantFile.tagDefs false getarrPlantFile
+            ["cmdname"])
+          (initial_driver_state getarrPlantFile
+            CerbFS.fs_initial_state))
+    (h1 : HarnessRunsTo getarrPlantFile 1) :
+    ¬ GetarrPlantHealthyClaim := by
+  intro h0
+  exact harnessRunsTo_exclusive getarrPlantFile 1 0 (by decide) hne
+    ⟨h1, h0⟩
+
 /-! ## In-build axiom pins (captured verbatim at S1; growth fails the
     build — the SpecLabAudit discipline, proofs-side). -/
 
@@ -97,5 +141,9 @@ theorem plantClaim_refuted_of_run
 #guard_msgs in #print axioms SpecLabProofs.harnessRunsTo_exclusive
 /-- info: 'SpecLabProofs.plantClaim_refuted_of_run' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLabProofs.plantClaim_refuted_of_run
+/-- info: 'SpecLabProofs.memcpyPlantClaim_refuted_of_run' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLabProofs.memcpyPlantClaim_refuted_of_run
+/-- info: 'SpecLabProofs.getarrPlantClaim_refuted_of_run' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLabProofs.getarrPlantClaim_refuted_of_run
 
 end SpecLabProofs
