@@ -7,6 +7,7 @@
 
 import Std.Internal.Parsec
 import Std.Internal.Parsec.String
+import Std.Data.HashMap
 import Core
 import Ctype
 
@@ -2002,12 +2003,97 @@ private partial def pCoreFile : P CoreFile :=
 
 /-! ## Entry point -/
 
+/-! ### The symbol-hash collision tripwire (arc-14 S1 F3, sem:G6)
+
+Core-text symbol identity is the name's 64-bit hash (`mkSym` above):
+probabilistic injectivity, not an invariant. Lean's `String.hash` is
+MurmurHash64A(seed=11), for which collisions are CONSTRUCTIBLE — the
+arc-14 S0 probe (tests/immaculate/g6-hash-collision.lean) exhibits an
+identifier-charset pair — so "distinct names get distinct numbers" is a
+margin. The scan below makes the margin FAIL-CLOSED, in the
+CERB_FRESH_BASE floor-probe pattern: before parsing, every
+identifier-shaped token in the input (comments and quoted strings
+skipped — the lexical classes lexWs and the string lexer consume) is
+hashed; two DISTINCT names with EQUAL hash abort the parse loudly.
+Sound over-approximation: every identifier the parser interns is such a
+token; the extra tokens scanned (keywords, impl-constant bodies) only
+make the check stricter. Residual envelope (documented, accepted):
+`internSym` calls that rekey oracle-side metadata names (Main.loadLibc)
+are covered only insofar as those names also appear in a scanned file —
+they do, by construction: metadata names rekey onto symbols of parsed
+dumps. -/
+
+private structure ScanSt where
+  seen : Std.HashMap UInt64 String := {}
+  collision : Option (String × String) := none
+  deriving Inhabited
+
+/-- Skip a block comment body to past `-}` (no nesting, matching the
+    lexer); structural recursion. -/
+private def scanToBlockClose : List Char → List Char
+  | [] => []
+  | '-' :: '}' :: r => r
+  | _ :: r => scanToBlockClose r
+
+/-- Skip a string-literal body to past the closing quote (honoring
+    backslash escapes); structural recursion. -/
+private def scanToQuote : List Char → List Char
+  | [] => []
+  | '\\' :: [] => []
+  | '\\' :: _ :: r => scanToQuote r
+  | '"' :: r => r
+  | _ :: r => scanToQuote r
+
+/-- One scanner step, fuel-totalized (house pattern): every step consumes
+    at least one char, so fuel = input length + 1 can never exhaust; the
+    exhaustion arm is a loud panic, not a silent pass. -/
+private def scanStep (fuel : Nat) (st : ScanSt) (l : List Char) : ScanSt :=
+  match fuel with
+  | 0 => panic! "CoreParser.scanHashCollisions: fuel exhausted (unreachable: fuel = input length + 1)"
+  | fuel + 1 =>
+    match l with
+    | [] => st
+    | '-' :: '-' :: rest =>
+      scanStep fuel st (rest.dropWhile (· != '\n'))     -- line comment
+    | '{' :: '-' :: rest =>
+      scanStep fuel st (scanToBlockClose rest)          -- block comment
+    | '"' :: rest =>
+      scanStep fuel st (scanToQuote rest)               -- string literal
+    | c :: rest =>
+      if isIdentStart c then
+        let tok : String := (c :: rest.takeWhile isIdentCont).asString
+        let rest' := rest.dropWhile isIdentCont
+        match st.seen.get? tok.hash with
+        | some prev =>
+          if prev != tok && st.collision.isNone then
+            scanStep fuel { st with collision := some (prev, tok) } rest'
+          else scanStep fuel st rest'
+        | none => scanStep fuel { st with seen := st.seen.insert tok.hash tok } rest'
+      else if isIdentCont c then
+        -- digit-led runs (number literals): consume the whole run so a
+        -- trailing letter is not misread as an identifier start
+        scanStep fuel st (rest.dropWhile isIdentCont)
+      else
+        scanStep fuel st rest
+
+/-- Scan the whole input; `some (a, b)` = two distinct identifiers with
+    colliding hashes (symbol conflation would be silent — fail-stop). -/
+private def scanHashCollisions (input : String) : Option (String × String) :=
+  (scanStep (input.length + 1) {} input.toList).collision
+
 /-- Parse a .core file and return a CoreFile with all declarations.
-    Fails if parsing produces an error or if a non-empty file yields zero declarations. -/
+    Fails if parsing produces an error or if a non-empty file yields zero
+    declarations. FAIL-STOPS (arc-14 F3, sem:G6) if the input contains
+    two distinct hash-colliding identifiers — see the tripwire note
+    above. -/
 def parseFile (input : String) : Except String CoreFile :=
-  match pCoreFile.run input with
-  | .ok cf => .ok cf
-  | .error e => .error s!"parse error: {e}"
+  match scanHashCollisions input with
+  | some (a, b) =>
+    .error s!"SYMBOL-HASH COLLISION (fail-stop): distinct Core identifiers '{a}' and '{b}' share String.hash {a.hash}; CoreParser symbol identity (mkSym) would silently conflate them (arc-14 F3 tripwire, cf. the CERB_FRESH_BASE floor probe)"
+  | none =>
+    match pCoreFile.run input with
+    | .ok cf => .ok cf
+    | .error e => .error s!"parse error: {e}"
 
 /-- Parse a .core file and return a human-readable summary. -/
 def parseFileSummary (input : String) : Except String String :=

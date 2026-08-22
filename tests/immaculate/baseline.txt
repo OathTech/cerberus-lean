@@ -52,4 +52,4 @@ g4-ffs-negative MATCH | L=VAL:Specified(1)
 g5-decode-multichar MATCH | L=CRASH
 g5-decode-question ORACLE_CRASH | L=VAL:Specified(63)
 g5-escape-roundtrip DIFF | L=VAL:Specified(127)
-g6-hash-collision CONFLATED
+g6-hash-collision TRIPWIRE
