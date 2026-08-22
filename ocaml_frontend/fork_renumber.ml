@@ -24,10 +24,20 @@
    - Core_run.fresh_symbol'              (core_run.lem:115)
    - Core_run_aux.initial_core_run_state (core_run_aux.lem:282)
 
-   Backstop: the single-supply invariant is CHECKED per TU
-   (util/cerb_fresh.ml check_ail_window + backend/common/ail_sym_hwm.ml);
-   re-threading any of these seams off the counter fails loud
-   (plant-tested). *)
+   Backstop scope (narrowed at the arc-13 audit, finding A-F1): the
+   single-supply invariant is dynamically CHECKED per TU at the DESUGAR
+   seam only (util/cerb_fresh.ml check_ail_window +
+   backend/common/ail_sym_hwm.ml) — re-threading fresh_sym_int off the
+   counter fails loud in both directions (below- and above-window;
+   plant-tested). The RUN seams (fresh_symbol',
+   initial_core_run_state) carry NO dynamic check: run-minted symbols
+   never pass a hand-written chokepoint outside these shims, and an
+   in-shim assertion would be deleted by the very re-thread it is
+   meant to catch. Their defense is static: re-threading them at the
+   source level changes the generated OCaml call sites and trips the
+   fork-drift gate's layer-2 hash pins (scripts/check_fork_drift.sh
+   against scripts/fork_drift_manifest.txt), and this hand file is
+   itself a manifested, review-bound oracle surface. *)
 
 (* Desugar minting (upstream: Symbol.fresh* -> Cerb_fresh.int, one draw
    per registered identifier/tag/CN-ident/loop-id/marker). The desugM

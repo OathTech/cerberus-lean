@@ -22,8 +22,9 @@
 #    floor's refusal class is GONE under the single-supply renumbering;
 #    every restored row is a real verdict. The 391 SKIPs are the
 #    oracle-side non-F-D classes the exploration campaign measured for
-#    csmith at this margin-free scale (internal errors, exhaustive-mode
-#    timeouts folded to skip, etc.); mismatch=0 — no silent wrongs.
+#    csmith at this margin-free scale (exhaustive-mode timeouts folded
+#    to skip — the leading class per the arc-13 audit-B row sample —
+#    then internal errors, etc.); mismatch=0 — no silent wrongs.
 #    Three-way spot-checks (former DIFF/latent/coincidentally-correct
 #    rows incl. sa_19/168/190, sia_081/136/976): fork == un-forked
 #    upstream BYTE-LEVEL across all executions (close-out record §1.3).

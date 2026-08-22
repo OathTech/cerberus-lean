@@ -23,6 +23,17 @@
 # is the arc-13 single-supply window backstop (supersedes the arc-12
 # floor); ail_sym_hwm.ml is its digest-filtered (min,max) fold;
 # the arc-12 grandfather/warn modes are DELETED (main.ml).
+# NOTE (arc-13 audit fix, A-F1 — the layer-2 pins as seam-re-thread
+# tripwire): the dynamic backstop covers the DESUGAR seam only. For
+# the run seams (core_run.lem fresh_symbol' / core_run_aux.lem
+# initial_core_run_state) THIS GATE is the standing defense: any
+# source-level re-thread of a renumbering seam changes the generated
+# OCaml call sites, so the fork-vs-upstream delta of the affected
+# [expected-semantic] file (cabs_to_ail_effect.ml / core_run.ml /
+# core_run_aux.ml / driver.ml) moves and its pinned hash below FAILS
+# the gate. ocaml_frontend/fork_renumber.ml itself is a hand file:
+# name-manifested here (layer 1), content defended by review, not by
+# a hash pin.
 [meta]
 merge-base=b9aeedcb4dd438763b0eef7f95ac19e93875d7de
 lem-pin=11d4b4c

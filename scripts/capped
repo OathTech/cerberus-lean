@@ -16,6 +16,28 @@
 # per-thread address-space reservation). Cgroup RSS is the honest knob.
 # The cap is a BLAST RADIUS, not a budget.
 set -euo pipefail
+# --- env self-load ([USER] env-trap tweak, arc-13 audit-fix batch) ----------
+# Idempotently source the container's scripts/env.sh (opam switch +
+# GIT_CONFIG_GLOBAL redirects) so `scripts/capped <cmd>` works from a fresh
+# shell with no prior sourcing. Resolution: walk up from this script's REAL
+# location to the first directory carrying scripts/env.sh (the container
+# root; the repo's own scripts/ has no env.sh). Graceful no-op with a
+# one-line note if none is found. Shell-scoped only — no global state.
+if [[ -z "${CERB_PROJ:-}" || -z "${GIT_CONFIG_GLOBAL:-}" ]]; then
+  _capped_self="$(readlink -f "${BASH_SOURCE[0]}")"
+  _d="$(cd "$(dirname "$_capped_self")" && pwd)"
+  _env_sh=""
+  while [[ "$_d" != "/" ]]; do
+    if [[ -f "$_d/scripts/env.sh" ]]; then _env_sh="$_d/scripts/env.sh"; break; fi
+    _d="$(dirname "$_d")"
+  done
+  if [[ -n "$_env_sh" ]]; then
+    # shellcheck source=/dev/null
+    source "$_env_sh"
+  else
+    echo "capped: note — no scripts/env.sh found above $(dirname "$_capped_self"); proceeding with the current environment" >&2
+  fi
+fi
 MEM="${CERB_MEM_MAX:-64G}"
 if [[ "$MEM" == "none" ]]; then
   echo "capped: CERB_MEM_MAX=none — running UNCAPPED (explicit opt-out)" >&2

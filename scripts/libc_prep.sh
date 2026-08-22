@@ -20,8 +20,14 @@
 #    TUs), so the pinned text is the oracle's sequentialised+rewritten libc.
 #    This script FAILS (fail-closed, both directions) if the regenerated
 #    dump differs from the pin: either _build/libc.co moved (oracle drift)
-#    or the pin is stale. Version provenance: the libc.co header line
-#    (ocaml:…+cerb:…+mem:…) is recorded next to the pin in libc.co.version.
+#    or the pin is stale. Pin identity (arc-13 audit fix, B-F5): a
+#    CONTENT-HASH pin — tests/libc/libc.core.sha256 holds the sha256 of
+#    the dump text; the check verifies the committed pin AND the freshly
+#    regenerated dump against it. This is rebuild-independent: a clean
+#    rebuild that re-derives the same dump text passes with no re-pin.
+#    (The old version-string pin, tests/libc/libc.co.version, recorded a
+#    git-describe line that went '-dirty'/stale on every rebuild and is
+#    DELETED; the libc.co header line is now logged informationally only.)
 #
 #    KNOWN LIMITATION of the text form (S0 survey §a.1 + S1 finding): the
 #    stock pp omits the extern map, funinfo, main, AND all tagDefs whose
@@ -56,7 +62,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 LIBC_CO="$PROJECT_ROOT/_build/default/runtime/libc/libc.co"
 LIBC_SRC_DIR="$PROJECT_ROOT/runtime/libc"
 PIN="$PROJECT_ROOT/tests/libc/libc.core"
-PIN_VERSION="$PROJECT_ROOT/tests/libc/libc.co.version"
+PIN_HASH="$PROJECT_ROOT/tests/libc/libc.core.sha256"
 
 # The 12 TUs in the exact order of the oracle's libc link
 # (runtime/libc/dune:132-141; order matters: main.ml:150-156 folds the
@@ -80,15 +86,17 @@ regen_dump() { # <out>
 }
 
 co_version() { head -1 "$LIBC_CO"; }
+sha_of() { sha256sum "$1" | awk '{print $1}'; }
 
 MODE="${1:---check}"
 case "$MODE" in
   --record)
     mkdir -p "$(dirname "$PIN")"
     regen_dump "$PIN"
-    co_version > "$PIN_VERSION"
+    echo "$(sha_of "$PIN")  libc.core" > "$PIN_HASH"
     echo "libc_prep: PINNED $PIN ($(wc -c < "$PIN") bytes)"
-    echo "libc_prep: version: $(cat "$PIN_VERSION")"
+    echo "libc_prep: content hash: $(cat "$PIN_HASH")"
+    echo "libc_prep: libc.co version (informational): $(co_version)"
     exit 0
     ;;
   --check|--jsons|--tus) ;;
@@ -100,27 +108,32 @@ if [[ "$MODE" == "--tus" ]]; then
     exit 0
 fi
 
-# --- the pin drift check (always, fail-closed) ------------------------------
+# --- the pin drift check (always, fail-closed; content-hash pin, B-F5) ------
 [[ -f "$PIN" ]] || die "pin missing: $PIN (run libc_prep.sh --record)"
-[[ -f "$PIN_VERSION" ]] || die "pin version record missing: $PIN_VERSION"
-if [[ "$(co_version)" != "$(cat "$PIN_VERSION")" ]]; then
-    die "libc.co version header drifted: built='$(co_version)' pinned='$(cat "$PIN_VERSION")' — regenerate and re-pin deliberately (--record)"
+[[ -f "$PIN_HASH" ]] || die "content-hash pin missing: $PIN_HASH (run libc_prep.sh --record)"
+PINNED_SHA="$(awk '{print $1}' "$PIN_HASH")"
+[[ "$PINNED_SHA" =~ ^[0-9a-f]{64}$ ]] || die "malformed content-hash pin: $PIN_HASH"
+if [[ "$(sha_of "$PIN")" != "$PINNED_SHA" ]]; then
+    die "pinned libc.core does not match its content-hash pin ($PIN_HASH) — the pin pair is inconsistent; re-review and re-pin deliberately (--record)"
 fi
 REGEN="$(mktemp "$TMP_DIR/libc_regen.XXXXXXXXXX.core")" || die "mktemp failed"
 register_cleanup "$REGEN"
 regen_dump "$REGEN"
-if ! cmp -s "$REGEN" "$PIN"; then
+if [[ "$(sha_of "$REGEN")" != "$PINNED_SHA" ]]; then
     {
-        echo "libc_prep: ERROR: pinned libc.core does not match the regenerated dump."
+        echo "libc_prep: ERROR: regenerated libc.co dump does not match the content-hash pin."
+        echo "  pinned  sha256: $PINNED_SHA"
+        echo "  rebuilt sha256: $(sha_of "$REGEN")"
         echo "  Either the oracle's libc.co moved or the pin is stale. Refusing to proceed."
-        echo "  First differences:"
+        echo "  First differences vs the pinned text:"
         diff "$PIN" "$REGEN" | head -10
     } >&2
     exit 1
 fi
 
 if [[ "$MODE" == "--check" ]]; then
-    echo "libc_prep: OK (pin verified against regenerated dump, $(wc -c < "$PIN") bytes)"
+    echo "libc_prep: OK (content hash verified: pin + regenerated dump == $PINNED_SHA, $(wc -c < "$PIN") bytes)"
+    echo "libc_prep: libc.co version (informational): $(co_version)"
     exit 0
 fi
 

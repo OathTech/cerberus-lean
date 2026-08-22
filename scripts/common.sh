@@ -20,6 +20,16 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
+# Fail-fast env guard ([USER] env-trap tweak, arc-13 audit-fix batch):
+# every consumer of this file assumes the container env — the opam switch
+# putting lem/dune on PATH and the GIT_CONFIG_GLOBAL offline redirects.
+# A bare shell otherwise fails cryptically deep inside a lane
+# ("Compilation requires [lem]", git exit-128). Refuse up front instead.
+if [[ -z "${GIT_CONFIG_GLOBAL:-}" ]] || ! command -v lem >/dev/null 2>&1; then
+    echo "env not loaded: run via scripts/ce or source scripts/env.sh" >&2
+    exit 2
+fi
+
 # Binary paths
 CERBERUS_BIN="$PROJECT_ROOT/_build/default/backend/driver/main.exe"
 CERBERUS_LEAN_BIN="$PROJECT_ROOT/lean_frontend/.lake/build/bin/cerberus-lean"

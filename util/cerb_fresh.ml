@@ -20,10 +20,20 @@
    (S0 probe: 11/11 fixtures incl. the libc.co dump).
 
    THE BACKSTOP (this file + backend/common/ail_sym_hwm.ml +
-   backend/common/pipeline.ml): the single-supply invariant is checked,
-   never assumed. At the post-desugar hook, every symbol carrying the
-   CURRENT TU's digest in the desugared Ail program must have been minted
-   by this counter inside this TU's window:
+   backend/common/pipeline.ml): the single-supply invariant is checked
+   at the DESUGAR seam, never assumed there. SCOPE (narrowed at the
+   arc-13 audit, finding A-F1): this is a check of the desugar-stage
+   supply (Cabs_to_ail_effect.fresh_sym_int) in both directions; the
+   RUN-seam shims (Core_run.fresh_symbol',
+   Core_run_aux.initial_core_run_state) have no dynamic check — run
+   symbols pass no hand chokepoint outside the shims themselves. The
+   run seams' defense is the fork-drift gate: re-threading them at the
+   source level changes the generated OCaml call sites and trips the
+   layer-2 hash pins (scripts/check_fork_drift.sh,
+   scripts/fork_drift_manifest.txt notes). At the post-desugar hook,
+   every symbol carrying the CURRENT TU's digest in the desugared Ail
+   program must have been minted by this counter inside this TU's
+   window:
 
        tu_first <= num <= last_issued
 
