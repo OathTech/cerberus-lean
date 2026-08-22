@@ -244,7 +244,7 @@ for name in "${!BASE[@]}"; do
 done
 
 if [[ $rc -eq 0 ]]; then
-    echo "OK: lane matches committed baseline (DIFF/ORACLE_CRASH/CONFLATED rows are the EXPECTED S0 state)."
+    echo "OK: lane matches the committed post-S1 baseline (mostly MATCH; the intended non-MATCH rows: g5-decode-question ORACLE_CRASH/L=63 and g5-escape-roundtrip DIFF/L=127 are oracle-wrong — upstream-tray #10/#11 — and g6 is TRIPWIRE)."
 else
     echo "" >&2
     echo "A deviation means either a regression OR a fix flipped a row." >&2

@@ -265,24 +265,24 @@ If you skip this step, Lake will compile the stale `generated/` copy and your ch
 | File | Purpose |
 |------|---------|
 | `CerberusImpl.lean` | LP64 implementation-defined behaviour (sizeof, alignof, etc.) |
-| `CerbMem.lean` | Concrete memory model (byte-level load/store, allocation) |
+| `CerbMem.lean` | Concrete memory model (byte-level load/store, allocation). Arc-14 F1: the pre-doctrine F-row is re-mirrored — relational ptr kill-paths, checked per-byte memcpy/memcmp, MerrUndefinedRealloc, real update_prefix, byte asserts, sizeof/alignof assert-parity; F4: OCaml-(=)-parity leaf instances + the memory-model instance caveat (relocated here) |
 | `CerbTags.lean` | Mutable tag definitions state (struct/union defs) |
 | `CerbDebug.lean` | Debug level and output functions |
-| `CerbDecode.lean` | Integer/character constant decoding |
+| `CerbDecode.lean` | Integer/character constant decoding. Arc-14 F2: decode.ml's exhaustive fail-CLOSED table with C11 cites; `\?` -> 63 and hex escaped_char are documented Lean-right divergences (oracle-wrong: upstream tray 10/11) |
 | `CerbGlobal.lean` | Runtime config (execution mode, switches) |
-| `CerbFloat.lean` | IEEE 754 float operations |
-| `CerbUtils.lean` | Timing, logging, GCC builtins |
+| `CerbFloat.lean` | IEEE 754 float operations; lawful total Ord Float (NaN reflexive, arc-14 F4) |
+| `CerbUtils.lean` | Timing/logging no-op stubs (documented), GCC builtins on Z/two's-complement semantics mirroring ocaml_gcc_builtins.ml per-line (arc-14 F2: ffs(-1)=1, ctz(0)/bswap asserts panic) |
 | `CerbPP.lean` | Pretty-printer placeholders |
 | `CerbFS.lean` | In-memory filesystem model |
 | `CerbConcurrency.lean` | Concurrency stubs |
-| `CerbCtypeInstances.lean` | BEq/Ord for mutual ctype types |
+| `CerbCtypeInstances.lean` | BEq (annotation-insensitive ctypeEqual) + lawful derived Ord for mutual ctype types (arc-14 F4; the old unlawful eq-else-lt order is gone) |
 | `CerbCabsInstances.lean` | BEq for Cabs enum types |
 | `CabsImport.lean` | JSON → Cabs AST deserializer |
-| `CoreParser.lean` | Core text parser (Parsec) |
+| `CoreParser.lean` | Core text parser (Parsec). Arc-14 F3: pre-parse symbol-hash collision TRIPWIRE (String.hash is MurmurHash64A(11) — collisions constructible; parseFile fail-stops, tests/immaculate/g6 pins it) |
 | `CerbND.lean` | Exhaustive ND runner (+ runND1 single-trace, arc-5 `--first`); fuel-TOTALIZED in arc-7 S2 (runNDFuel + wrappers, loud panic at exhaustion) — no `partial` allowed (totality gate scans it; RelSem/RunND.lean states soundness against it) |
 | `CerbFunMapInstances.lean` | Arc-7 S2: real SetType instance for generic_fun_map_decl (evicts the lem backend's sorried fallback from initial_driver_state's cone) |
 | `CerbStepInstances.lean` | OCaml-poly-eq-parity instances for core_step2 (arc 4) |
-| `CerbLocation.lean` | Source location type |
+| `CerbLocation.lean` | Source location type; structural lawful Ord (arc-14 F4; was repr-string compare) |
 | `CerberusFresh.lean` | Fresh symbol/digest generation |
 | `Main.lean` | Driver: self-test, parse, desugar pipeline |
 
@@ -358,6 +358,26 @@ Lem is pinned to `https://github.com/septract/lem-lean#mdd/lean-backend`.
   too) and their referencers get loud greppable failwithI residual
   bodies, never sorry; surviving set comprehensions are a loud
   generation-time error
+- The instance-priority LATTICE (arc-14 B4; be:G1/sem:S2): every
+  generated/library instance priority is assigned from ONE normative
+  table (lem-lean doc/notes/2026-08-22_arc14-instance-priority-
+  lattice.md): model/override + derived BEq/Ord at default (1000), the
+  auto SetType/Eq0/Ord0 trio at 500, generic defaults/residuals at low
+  (100), open-tyvar fallbacks at 50 — so a model's own instance beats
+  the auto trio BY PRIORITY, not declaration order. Build-failing
+  resolution probe: lem tests/comprehensive test_instance_priority.lem
+  + TestInstancePriorityCheck.lean (plant-tested)
+- Set-layer comparator coherence (arc-14 B3; be:G4): lem sets are
+  comparator-keyed end to end (Pset parity) — `insert` and set literals
+  splice `setElemCompare` (`setAddBy`/`setFromListBy`); the BEq-keyed
+  setAdd/setFromList are DELETED from LemLib (a finer BEq can no longer
+  smuggle comparator-EQ duplicates past setEqualBy). Adversarial-key
+  property tests: LemLibTest SetCoherence section
+- The backend's mutable state lives in ONE module (arc-14 B1; be:G3):
+  lean_backend.ml `St` — per-field lifetime classes ([file]/
+  [invocation]/[render]), St.reset_per_file, St.reset_invocation (the
+  reentrancy hook). Effect-free emission is the registered L-priced
+  residual
 
 **Bug reports:** `lean_frontend/lembugs/` — dated markdown files with reproducers.
 
@@ -368,7 +388,7 @@ Lem is pinned to `https://github.com/septract/lem-lean#mdd/lean-backend`.
   `runND_proxy` is implemented — hand-written `CerbND.runND`).
   Concurrency stubs remain the declared boundary.
 
-### Pipeline status (updated 2026-08-22, post arc-13 — see the arc results docs)
+### Pipeline status (updated 2026-08-22, post arc-14 — see the arc results docs)
 - ✅ C → Cabs JSON → Cabs types (100%)
 - ✅ Core text parser + stdlib loading (incl. ailname attribute capture, arc 5)
 - ✅ Desugar / Typecheck / Translation (all 106/106 tests/minimal)
@@ -403,6 +423,18 @@ Lem is pinned to `https://github.com/septract/lem-lean#mdd/lean-backend`.
   healthy inputs; plant-tested against the F-D-era scheme);
   attribution corrected (April desugar threading 8923d6436, arc-2 run
   supply exonerated); F-A/F-B upstream filing drafts ready
+- ✅ THE IMMACULATE PASS (arc-14): the two grumpy-professor registers
+  (73 findings) remediated — all 6 semantics GRAVEs FIXED with their S0
+  differential probes flipped (relational kill-paths, checked
+  memcpy/memcmp, realloc UB family, Z-semantics builtins, fail-closed
+  decode, the CoreParser hash-collision tripwire); backend GRAVEs:
+  priority lattice + probe (G1), Set comparator coherence (G4) fixed,
+  de-globalization St core + Ott grammar + library-test consolidation
+  landed with the L/network-gated remainders registered. New standing
+  lane: scripts/test_immaculate.sh (fail-closed, tests/immaculate/);
+  TWO ORACLE-WRONG finds pinned Lean-right (upstream tray 10: '\?'
+  crash; 11: escaped_char octal round-trip 127->87). Disposition table:
+  docs/2026-08-22_arc14-results.md
   (notes/upstream/08+09). Records: docs/2026-08-21_arc12-*.md +
   docs/2026-08-22_arc13-s0-scheme-decision.md
   (prototype port Step.lean:1441-1513 attributed) — 5 coverage varargs
