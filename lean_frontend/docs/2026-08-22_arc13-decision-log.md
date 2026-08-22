@@ -43,3 +43,21 @@
   mover = workbench maintenance at the T5 resumption). S3: results,
   de-stale, audits (mandatory scopes per charter incl. the re-pin
   completeness tree-wide old-id sweep), checklist.
+- **C1 [AGENT, S3 audit correction — D1's text above left untouched
+  per record doctrine].** D1's payoff clause (iv) ("the drift
+  manifest's F-D-family deltas shrink toward upstream") stated the
+  wrong object (audit finding B-F4). The TRUE claim, and the one the
+  evidence supports: the fork oracle's OUTPUT/numbering divergence
+  from upstream went to ZERO (byte-identity, triple-verified — S0
+  probes 11/11, libc dump, D2's independent spot). The SEAM-CODE
+  manifest deltas did NOT shrink: of the six re-pinned
+  [expected-semantic] generated files, four are size-unchanged
+  (cabs_to_ail 24→24, cabs_to_ail_effect 85→85, core_reduction
+  30→30, core_run 17→17 changed lines vs upstream) and two GREW
+  (core_run_aux 16→20, driver 1→3) — all six justified
+  (target_rep call-site rewrites to Fork_renumber.*; measured at
+  the audit fix against the mainline generated tree). The
+  correction is propagated with labels at the S0 doc §6 and the
+  results cascade table; D1's decision itself (scheme R-B) is
+  unaffected — byte-identity, not delta size, was its load-bearing
+  evidence.

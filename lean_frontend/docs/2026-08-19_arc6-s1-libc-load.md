@@ -293,3 +293,17 @@ duplicates on the stdio/stdlib/internal/vfscanf elaborations (was
 warn-mode are deleted; libc_exec 7/7 and uri 16/16 re-verified against
 the re-derived artifacts. The asterisk this addendum placed on the
 arc-6 results is OFF.
+
+## ADDENDUM (arc-13 S3 audit fix, 2026-08-22, B-F5) — pin identity is now a content hash
+
+The version-provenance record this document introduced
+(`tests/libc/libc.co.version`, the libc.co header line) proved
+operationally broken as a PIN: the header embeds a git-describe
+string that goes '-dirty'/stale on every rebuild, forcing spurious
+re-pins after byte-identical re-derivations. It is DELETED and
+replaced by `tests/libc/libc.core.sha256` — the sha256 of the dump
+text, verified by `libc_prep.sh` against both the committed pin and
+the freshly regenerated dump (fail-closed both directions,
+plant-tested). The version header line is still printed by
+`libc_prep.sh`, informationally only. The trust story above is
+otherwise unchanged.

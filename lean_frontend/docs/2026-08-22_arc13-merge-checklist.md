@@ -28,11 +28,16 @@ sign-off; the pre-merge audit ASK is unconditional.**
 - Arc commits to merge (5 + the S3 close commits):
   `de68a4839` (charter), `41f7684a1` (S0 decision), `53e8c48e3` (D1),
   `0ca08d695` (S1 batch A), `59781c611` (S1/S2 close-out),
-  `157221fff` (D2), + S3 docs commit(s) + audit fix batch if any.
+  `157221fff` (D2), `dc09c702d` (S3 docs; the audited head),
+  `32264b40e` (audit fix a: code/scripts) + the audit-fix records
+  commit (batch b, this file's head).
 
 ## Whole-arc surface (vs charter; measured `git diff mdd..HEAD --name-only`)
 
-45 files, +44,840/−43,610 (dominated by the libc.core re-pin):
+51 files, +45,529/−43,627 [CORRECTED at the S3 audit, B-F6/F8:
+measured at the audit-fix final head — the earlier 45/+44,840/−43,610
+predated the S3 docs commit and the two audit-fix commits] (dominated
+by the libc.core re-pin):
 - Oracle OCaml (5): `util/cerb_fresh.ml` (single-supply window
   backstop), `backend/common/{ail_sym_hwm,pipeline}.ml`,
   `backend/driver/main.ml` (grandfather flag + warn modes DELETED),
@@ -49,8 +54,10 @@ sign-off; the pre-merge audit ASK is unconditional.**
   (`CSMITH_BASELINE` override), `test_exec.sh` (comment/classifier
   token cleanup), `test_libxml2_uri.sh` (grandfather removal),
   `canonicalize_ids.py` (underscore names + self-test).
-- Pinned artifacts (8): tests/verify ×5, tests/libc/libc.core
-  (+.co.version), uri_baseline.
+- Pinned artifacts: tests/verify ×5, tests/libc/libc.core
+  (+ its content-hash pin tests/libc/libc.core.sha256 — audit fix
+  B-F5; the old .co.version version-string pin is DELETED),
+  uri_baseline.
 - Docs: 6 arc-13 files + 7 APPENDED addenda (arc-12 ×5, arc-6 ×1,
   findings README) + `lean_frontend/CLAUDE.md` de-stale.
 - FORBIDDEN-SURFACE grep over the diff (`native/`, `CerbMem`,
@@ -92,18 +99,49 @@ sign-off; the pre-merge audit ASK is unconditional.**
    byte-equal to `deps/cerberus-upstream`'s oracle output
    (the byte-identity certificate survives the merge),
    (c) `SKIP_BUILD=1 test_exec.sh tests/minimal` SUMMARY identical.
-   NOTE: the primary checkout's `_build` still carries the OLD-scheme
-   libc.co until its own `dune build cerberus.install` re-derives it —
-   run that BEFORE any libc-mode lane on the merged primary tree
-   (tests/libc/libc.core pin-check will otherwise fail loudly, which
-   is the gate working as designed).
+   NOTE [updated at the S3 audit fix, B-F5 — the remedy now WORKS
+   without a re-pin]: the primary checkout's `_build` still carries
+   the OLD-scheme libc.co until its own `dune build cerberus.install`
+   re-derives it — run that BEFORE any libc-mode lane on the merged
+   primary tree, then `scripts/libc_prep.sh --check`: the regenerated
+   dump passes the CONTENT-HASH pin (tests/libc/libc.core.sha256)
+   with no version re-pin — the hash is rebuild-independent (the old
+   version-string pin would have demanded a spurious --record after
+   every rebuild; it is deleted). A hash mismatch after the rebuild
+   is a REAL drift signal, fail-closed as designed.
 6. `git push` remains a separate operator action.
+
+## The S3 audit (facts + dispositions pointer)
+
+- Audited head: `dc09c702d` (2-agent adversarial audit per the
+  charter). Dispositions executed in TWO audit-fix commits atop it
+  (batch a: code/scripts — A-F1 narrowing, B-F5 content-hash pin,
+  [USER] env-trap tweaks; batch b: records) — the merge ask states
+  these as the final head. Full per-finding record: the results doc
+  §"The S3 audit".
+- Gate re-verified at the audit-fix tree: test_unit rc=0 (both
+  packages), test_verify 29/29, exec-minimal at baseline
+  (`cerb_floor=0`), test_libc_exec 7/7 vs the content-hash pin,
+  `libc_prep.sh --check` OK (plant-tested).
+
+## Lessons (audit-plant hygiene — B-F7; orchestrator promotes to container doctrine at merge)
+
+- Plant recipes MANDATE rebuild-after-revert BEFORE any further
+  measurement: a reverted source with a stale planted binary is a
+  doctored instrument, and any number it produces is a
+  record-integrity hazard.
+- Audit pairs sharing a worktree SEQUENCE binary-affecting plants —
+  two auditors must never interleave plants that touch the same
+  build outputs.
 
 ## Post-merge follow-ups (registered, not merge-blocking)
 
-- WalkBench instrument repair (mover: workbench maintenance, T5
-  resumption).
+- ~~WalkBench instrument repair~~ CLOSED at the S3 audit fix (A-F2:
+  stale root-package RelSem oleans cleaned; green re-run recorded;
+  probe recipe fixed in lean_frontend/CLAUDE.md). No T5-resumption
+  work item remains for the instrument.
 - notes/upstream/07 addendum: DONE by orchestrator (D2); the 07
   filing's upstream ask itself unchanged.
-- The 8 restored-TIMEOUT-class corpus rows (3 old + 3 newly-restored
-  TIMEOUT + jitter watch) stay under the perf-gap register.
+- The 8 restored-TIMEOUT-class corpus rows ([CORRECTED, B-F2] 5
+  surviving old + 3 newly-restored TIMEOUT + jitter watch) stay
+  under the perf-gap register.

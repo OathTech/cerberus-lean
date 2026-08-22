@@ -365,7 +365,15 @@ oracle), and the id-free surfaces provably do not move:
   core_reduction.ml, core_run.ml, core_run_aux.ml + driver.ml
   reclassified cosmetic→semantic (all six ALREADY manifest-listed;
   five are the review's F-D suspect family — the deltas SHRINK toward
-  upstream), manifest [files] + fork_renumber.ml, csmith corpus
+  upstream) [CORRECTED at the S3 audit, B-F4 → decision-log C1: the
+  "deltas SHRINK" prediction was WRONG — what went to zero is the
+  OUTPUT/numbering divergence (byte-identity); the seam-code
+  manifest deltas did not shrink. Measured at S1 and re-measured at
+  the audit fix (changed-line counts vs upstream): cabs_to_ail
+  24→24, cabs_to_ail_effect 85→85, core_reduction 30→30, core_run
+  17→17 unchanged; core_run_aux 16→20 and driver 1→3 GREW — all six
+  are the justified target_rep call-site rewrites], manifest [files]
+  + fork_renumber.ml, csmith corpus
   baseline (516 CERB_FLOOR rows → real verdicts, three-way-checked
   sample), exploration-lane yield (restored, measured at S2).
 - **predicted no-move** (each verified at S1): tests/verify

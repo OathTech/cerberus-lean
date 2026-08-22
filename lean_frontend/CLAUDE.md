@@ -72,7 +72,20 @@ packages (root plain build stays green and drives the driver).
 RelSem-importing test exes (`app-walk-test`, `emit-lean-core-test`,
 `t4-env-witness`, `t5-probe`) live in the relsem package
 (`relsem/test/Unit/`), as does `bench/WalkBench.lean`; probes run via
-`lake env lean` FROM `relsem/`. See
+`lake lean <file>` FROM `relsem/` (through scripts/capped).
+PROBE-RECIPE WARNING (arc-13 audit A-F2): do NOT use raw
+`lake env lean` for ad-hoc RelSem-importing files — Lean resolves an
+import's ROOT module prefix (`RelSem`) against the FIRST search-path
+entry carrying a `RelSem/` directory, and the root package's build
+lib precedes the relsem package's in `lake env`'s LEAN_PATH, so the
+two-package RelSem split cannot resolve (and, worse, STALE root
+artifacts shadow current ones silently — the WalkBench
+"unknown tactic" breakage was exactly this). `lake lean` is
+workspace-aware and correct. After any structural move of modules
+between the packages, DELETE the orphaned artifacts the move strands
+in the other package's `.lake` tree (verify orphan status against
+the package's current module roots first); a stale-shadowed probe is
+a doctored instrument. See
 `docs/2026-08-22_arc11-s4-package-rehearsal.md`.
 Lake deps: `LemLib` (lem-lean pin) + `iris`/`Qq`/`batteries`
 (pinned revs, resolved offline via deps/gitconfig redirects; iris at
@@ -279,7 +292,7 @@ If you skip this step, Lake will compile the stale `generated/` copy and your ch
 | `scripts/libxml2_prep.sh` | libxml2 no-autogen prep: pinned config (`tests/libxml2/config/`) + cerberus args per TU (probe recipe) |
 | `scripts/test_libxml2.sh` | Arc-5 exit-criterion differential: chvalid.c + generated boundary battery (4 slices since arc-6 S3, 1354 points), single-trace both sides (~8 min; Tier B slow ladder since arc-6 S4 — see scripts/LADDER.md) |
 | `scripts/test_libxml2_uri.sh` | Arc-6 GATE (S4, charter success condition 1): 5-TU xmlParseURISafe corpus grown to 16 URIs (RFC 3986 edge classes), 4 lanes (oracle+libc / ocaml-nolibc / lean-nolibc mirrored-failure pair / lean+libc) — pinned per-lane expectations + baseline drift check, fail-closed; 16/16 byte-identical lean+libc vs oracle. Arc-12 D2: the two oracle invocations run GRANDFATHERED past the F-D floor (uri.c is beyond-margin, 252 live collisions — loud warning; validated by the 16/16 agreement gate itself; register G3) |
-| `scripts/libc_prep.sh` | Arc-6 S1: pins + drift-checks `tests/libc/libc.core` (the oracle's unlinked libc Core text dump) and emits the 12 libc metadata TU cabs-jsons (see Main.loadLibc) |
+| `scripts/libc_prep.sh` | Arc-6 S1: pins + drift-checks `tests/libc/libc.core` (the oracle's unlinked libc Core text dump) and emits the 12 libc metadata TU cabs-jsons (see Main.loadLibc). Arc-13 audit fix (B-F5): the pin's identity is a CONTENT HASH (`tests/libc/libc.core.sha256`, sha256 of the dump text, rebuild-independent — a clean rebuild re-deriving the same text passes with no re-pin); the libc.co version header is logged informationally only (the old `.co.version` version-string pin is deleted) |
 | `scripts/test_libc_exec.sh` | Arc-6 S1 differential: C-with-libc programs, both sides load the C library (`tests/libc_exec/`, own baseline; NEW mode — standing corpora stay --nolibc) |
 | `scripts/test_cabs_json.sh` | Quick smoke test |
 | `scripts/test_bytes.sh` | Arc-10 S3b: oracle-INDEPENDENT tests/bytes micro-lane — 9 exec files byte-compared to the committed upstream `.exec` records (+ 5 front-end-reject negative pins), fail-closed both directions (Tier A row 4c). tests/float is a plain test_exec.sh lane (`--check-baseline=scripts/exec_float_baseline.txt tests/float`, Tier A row 4b) |
