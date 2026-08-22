@@ -93,6 +93,7 @@ module Eff : sig
   val mapM: ('a -> 'b t) -> 'a list -> ('b list) t
   val mapM_: ('a -> 'b t) -> 'a list -> unit t
   val foldrM: ('a -> 'b -> 'b t) -> 'b -> 'a list -> 'b t
+  val foldlM: ('a -> 'b -> 'b t) -> 'b -> 'a list -> 'b t
   val fail: Cerb_location.t -> core_parser_cause -> 'a t
   val runM: 'a t -> symbolify_state -> (Cerb_location.t * core_parser_cause, 'a * symbolify_state) either
   val get: symbolify_state t
@@ -136,6 +137,10 @@ end = struct
   let rec foldrM f a = function
     | [] -> return a
     | x::xs -> bind (foldrM f a xs) (f x)
+
+  let rec foldlM f a = function
+    | [] -> return a
+    | x::xs -> bind (f x a) (fun a' -> foldlM f a' xs)
   
   let fail loc err =
     fun _ -> Left (loc, err)
@@ -893,8 +898,11 @@ let with_labels _e m =
 
 let symbolify_impl_or_file decls : ((Core.impl, parsed_core_file) either) Eff.t =
   (* Registering all the declaration symbol in first pass (and looking for the startup symbol) *)
+  (* NOTE: registering in file order keeps the relative order of the symbols
+     (and hence of Pmap-ordered prints) stable when re-parsing a
+     pretty-printed file *)
   open_scope >>= fun () ->
-  Eff.foldrM (fun decl acc ->
+  Eff.foldlM (fun decl acc ->
     match decl with
       | Glob_decl (_sym, _, _)
       | Fun_decl (_sym, _)
