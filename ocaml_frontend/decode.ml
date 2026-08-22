@@ -130,7 +130,7 @@ let decode_character_constant_aux = function
   | "<"    -> Z.of_int 60
   | "="    -> Z.of_int 61
   | ">"    -> Z.of_int 62
-  | "?"    -> Z.of_int 63
+  | "?" | "\\?"   -> Z.of_int 63 (* NOTE: '\?' is a simple-escape-sequence (§6.4.4.4#1) with the value of '?' (§6.4.4.4#4) *)
   | "["    -> Z.of_int 91
   | "\\\\" -> Z.of_int 92
   | "]"    -> Z.of_int 93
