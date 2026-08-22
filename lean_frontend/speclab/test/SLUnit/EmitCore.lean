@@ -356,6 +356,10 @@ def ppAction_ : generic_action_ Unit sym → Except String String
     pure s!"(Store0 {ppBool b} {← ppPexpr pe1} {← ppPexpr pe2} {← ppPexpr pe3} {← ppMemOrder mo})"
   | Load0 pe1 pe2 mo => do
     pure s!"(Load0 {← ppPexpr pe1} {← ppPexpr pe2} {← ppMemOrder mo})"
+  | SeqRMW b pe1 pe2 s pe3 => do
+    -- S2 surface: `seq_rmw(ty, ptr, x => e)` (postfix ++ in the
+    -- harness loops) — CoreParser.lean pActionSeqRMW[Forward]
+    pure s!"(SeqRMW {ppBool b} {← ppPexpr pe1} {← ppPexpr pe2} {← ppSym s} {← ppPexpr pe3})"
   | _ => throw "ppAction_: unhandled action constructor"
 
 def ppAction : generic_action Unit Unit sym → Except String String
@@ -366,29 +370,103 @@ def ppAction : generic_action Unit Unit sym → Except String String
 def ppPaction : generic_paction Unit Unit sym → Except String String
   | Paction p act => do pure s!"(Paction {← ppPolarity p} {← ppAction act})"
 
+/-! ## Hoisting machinery (arc-15 S2, code-generator depth control).
+
+The R2 dumps' pp'd AST terms exceed the Lean code generator's
+recursion depth as SINGLE defs (naive_memcpy alone is ~170 Core lines
+≈ >512 nested constructors). Budget bumps are banned (heartbeat
+doctrine), so the emitter SPLITS deep terms structurally: any `Expr`
+node whose emitted text exceeds a NORMALIZED-length threshold is
+hoisted into its own named def (the EXACT subterm — fidelity
+preserved; the composed value is definitionally the same AST), and the
+parent references it. Normalization collapses every digit run to
+weight 1, so hoisting decisions are LITERAL-INDEPENDENT — the three
+zip instances split at identical points and the parametric zip stays
+aligned. The S1 divmod emission path uses `noHoist` (threshold ∞) and
+is byte-identical to before. -/
+
+/-- Alternating same-class character runs (digit vs non-digit). -/
+partial def charRuns (s : String) : List (Bool × String) :=
+  go s.toList
+where
+  go : List Char → List (Bool × String)
+    | [] => []
+    | c :: rest =>
+      let isD := c.isDigit
+      let run := (c :: rest).takeWhile (fun c' => c'.isDigit == isD)
+      let remainder := (c :: rest).dropWhile (fun c' => c'.isDigit == isD)
+      (isD, run.foldl (fun acc ch => acc.push ch) "") :: go remainder
+
+/-- Literal-independent text weight: digit runs count 1. -/
+def nlen (s : String) : Nat :=
+  (charRuns s).foldl (fun acc p => acc + if p.1 then 1 else p.2.length) 0
+
+structure HoistCtx where
+  /-- Helper-def name prefix (e.g. `naiveMemcpyDeclH`). -/
+  base : String
+  /-- Extra binder text for helper defs (parametric decls thread the
+  zip parameters through every helper). -/
+  sig : String
+  /-- Application text at helper reference sites. -/
+  app : String
+  /-- Normalized-length hoisting threshold. -/
+  thresh : Nat
+
+/-- State: accumulated helper defs (in dependency order) + counter. -/
+abbrev HoistM := StateT (Array String × Nat) (Except String)
+
+def liftE {α : Type} : Except String α → HoistM α
+  | .ok a => pure a
+  | .error e => throw e
+
+/-- Hoist `text` (a full `generic_expr Unit Unit sym` term) into a
+named def if it exceeds the threshold; cheap raw-length pre-filter
+(nlen ≤ length). -/
+def hoistMaybe (ctx : HoistCtx) (text : String) : HoistM String := do
+  if text.length ≤ ctx.thresh then return text
+  if nlen text ≤ ctx.thresh then return text
+  let (defs, n) ← get
+  let name := s!"{ctx.base}_{n}"
+  let d := s!"/-- Hoisted subterm {n} of `{ctx.base}` (code-generator depth control; the exact subterm — fidelity preserved). -/\ndef {name}{ctx.sig} : generic_expr Unit Unit sym :=\n  {text}\n\n"
+  set (defs.push d, n + 1)
+  return s!"({name}{ctx.app})"
+
 mutual
-partial def ppExpr_ : generic_expr_ Unit Unit sym → Except String String
-  | Epure pe => do pure s!"(Epure {← ppPexpr pe})"
-  | Eaction pa => do pure s!"(Eaction {← ppPaction pa})"
+partial def ppExprH_ (ctx : HoistCtx) :
+    generic_expr_ Unit Unit sym → HoistM String
+  | Epure pe => do pure s!"(Epure {← liftE (ppPexpr pe)})"
+  | Eaction pa => do pure s!"(Eaction {← liftE (ppPaction pa)})"
   | Ecase pe arms => do
-    pure s!"(Ecase {← ppPexpr pe} {← ppList (ppProd ppPattern ppExpr) arms})"
+    let mut parts : List String := []
+    for (pat, e) in arms do
+      parts := parts ++
+        [s!"({← liftE (ppPattern pat)}, {← ppExprH ctx e})"]
+    pure s!"(Ecase {← liftE (ppPexpr pe)} [{String.intercalate ", " parts}])"
   | Elet pat pe e => do
-    pure s!"(Elet {← ppPattern pat} {← ppPexpr pe} {← ppExpr e})"
+    pure s!"(Elet {← liftE (ppPattern pat)} {← liftE (ppPexpr pe)} {← ppExprH ctx e})"
   | Eif pe e1 e2 => do
-    pure s!"(Eif {← ppPexpr pe} {← ppExpr e1} {← ppExpr e2})"
+    pure s!"(Eif {← liftE (ppPexpr pe)} {← ppExprH ctx e1} {← ppExprH ctx e2})"
   | Eccall a pe1 pe2 pes => do
     let _ : Unit := a
-    pure s!"(Eccall () {← ppPexpr pe1} {← ppPexpr pe2} {← ppList ppPexpr pes})"
+    pure s!"(Eccall () {← liftE (ppPexpr pe1)} {← liftE (ppPexpr pe2)} {← liftE (ppList ppPexpr pes)})"
   | Eproc a nm pes => do
     let _ : Unit := a
-    pure s!"(Eproc () {← ppName nm} {← ppList ppPexpr pes})"
-  | Eunseq es => do pure s!"(Eunseq {← ppList ppExpr es})"
+    pure s!"(Eproc () {← liftE (ppName nm)} {← liftE (ppList ppPexpr pes)})"
+  | Eunseq es => do
+    let mut parts : List String := []
+    for e in es do
+      parts := parts ++ [← ppExprH ctx e]
+    pure s!"(Eunseq [{String.intercalate ", " parts}])"
   | Ewseq pat e1 e2 => do
-    pure s!"(Ewseq {← ppPattern pat} {← ppExpr e1} {← ppExpr e2})"
+    pure s!"(Ewseq {← liftE (ppPattern pat)} {← ppExprH ctx e1} {← ppExprH ctx e2})"
   | Esseq pat e1 e2 => do
-    pure s!"(Esseq {← ppPattern pat} {← ppExpr e1} {← ppExpr e2})"
-  | Ebound e => do pure s!"(Ebound {← ppExpr e})"
-  | End es => do pure s!"(End {← ppList ppExpr es})"
+    pure s!"(Esseq {← liftE (ppPattern pat)} {← ppExprH ctx e1} {← ppExprH ctx e2})"
+  | Ebound e => do pure s!"(Ebound {← ppExprH ctx e})"
+  | End es => do
+    let mut parts : List String := []
+    for e in es do
+      parts := parts ++ [← ppExprH ctx e]
+    pure s!"(End [{String.intercalate ", " parts}])"
   | Esave (s, cbt) params e => do
     let ppParam := fun (p : sym × ((core_base_type ×
         Option (ctype × pass_by_value_or_pointer)) ×
@@ -399,20 +477,31 @@ partial def ppExpr_ : generic_expr_ Unit Unit sym → Except String String
           | By_pointer => "By_pointer"
         pure s!"({← ppCtype q.1}, {pv})") p.2.1.2
       pure s!"({← ppSym p.1}, (({← ppCbt p.2.1.1}, {inner}), {← ppPexpr p.2.2}))"
-    pure s!"(Esave ({← ppSym s}, {← ppCbt cbt}) {← ppList ppParam params} {← ppExpr e})"
+    pure s!"(Esave ({← liftE (ppSym s)}, {← liftE (ppCbt cbt)}) {← liftE (ppList ppParam params)} {← ppExprH ctx e})"
   | Erun a s pes => do
     let _ : Unit := a
-    pure s!"(Erun () {← ppSym s} {← ppList ppPexpr pes})"
+    pure s!"(Erun () {← liftE (ppSym s)} {← liftE (ppList ppPexpr pes)})"
   | Ememop mo pes => do
     let m ← match mo with
       | PtrValidForDeref => pure "PtrValidForDeref"
       | _ => throw "ppExpr_: unhandled memop kind"
-    pure s!"(Ememop {m} {← ppList ppPexpr pes})"
+    pure s!"(Ememop {m} {← liftE (ppList ppPexpr pes)})"
   | _ => throw "ppExpr_: unhandled expression constructor"
 
-partial def ppExpr : generic_expr Unit Unit sym → Except String String
-  | Expr anns e => do pure s!"(Expr {← ppAnnots anns} {← ppExpr_ e})"
+partial def ppExprH (ctx : HoistCtx) :
+    generic_expr Unit Unit sym → HoistM String
+  | Expr anns e => do
+    let t := s!"(Expr {← liftE (ppAnnots anns)} {← ppExprH_ ctx e})"
+    hoistMaybe ctx t
 end
+
+/-- The no-hoist context (threshold ∞): the S1-compatible pure path. -/
+def noHoist : HoistCtx :=
+  ⟨"", "", "", 1000000000⟩
+
+partial def ppExpr (e : generic_expr Unit Unit sym) :
+    Except String String :=
+  (ppExprH noHoist e).run ((#[] : Array String), 0) |>.map Prod.fst
 
 def ppFunMapDecl : generic_fun_map_decl Unit Unit → Except String String
   | Fun cbt params pe => do
@@ -467,6 +556,56 @@ def emitDecl (cf : CoreFile) (name defBase : String) :
     s!"/-- `{name}`: the parsed declaration, verbatim. -/\n" ++
     s!"def {defBase}Decl : generic_fun_map_decl Unit Unit :=\n  {declStr}\n")
 
+/-! ## Hoist-emitting decl printers (S2; see the hoisting block) -/
+
+/-- Like `ppFunMapDecl` but hoisting deep Proc bodies: returns
+(helper-defs text, decl body text). -/
+def ppFunMapDeclH (ctx : HoistCtx) (d : generic_fun_map_decl Unit Unit) :
+    Except String (String × String) := do
+  match d with
+  | Proc l marker cbt params e =>
+    match (ppExprH ctx e).run ((#[] : Array String), 0) with
+    | .ok (body, (defs, _)) =>
+      let lS ← ppLoc l
+      let mS ← ppOpt (fun n => pure (ppNat n)) marker
+      let cS ← ppCbt cbt
+      let pS ← ppList (ppProd ppSym ppCbt) params
+      pure (String.join defs.toList,
+        s!"(Proc {lS} {mS} {cS} {pS} {body})")
+    | .error e => throw e
+  | Fun cbt params pe => do
+    -- pure bodies in the R2 surface are shallow; no hoisting
+    pure ("", s!"(Fun {← ppCbt cbt} {← ppList (ppProd ppSym ppCbt) params} {← ppPexpr pe})")
+  | _ => throw "ppFunMapDeclH: unhandled declaration form"
+
+/-- The R2 hoisting threshold (normalized chars ≈ well under the code
+generator's depth ceiling per def). -/
+def hoistThresh : Nat := 8000
+
+/-- Emit one `def` pair with hoisted helpers (S2 verbatim decls). -/
+def emitDeclH (cf : CoreParser.CoreFile) (name defBase : String) :
+    Except String String := do
+  let (s, d) ← findDecl cf name
+  let ctx : HoistCtx := ⟨defBase ++ "DeclH", "", "", hoistThresh⟩
+  let (helpers, declStr) ← ppFunMapDeclH ctx d
+  let symStr ← ppSym s
+  pure (helpers ++
+    s!"/-- `{name}`: symbol, as interned by CoreParser (name-hash id). -/\n" ++
+    s!"def {defBase}Sym : sym :=\n  {symStr}\n\n" ++
+    s!"/-- `{name}`: the parsed declaration, verbatim (any helpers above are exact hoisted subterms). -/\n" ++
+    s!"def {defBase}Decl : generic_fun_map_decl Unit Unit :=\n  {declStr}\n")
+
+/-- One instance's FULL parametric-main block (hoisted helpers with
+the parameter binders threaded + the def line), ready for the
+whole-block zip. -/
+def emitMainBlockP (cf : CoreParser.CoreFile)
+    (defName sig app : String) : Except String String := do
+  let (_, d) ← findDecl cf "main"
+  let ctx : HoistCtx := ⟨defName ++ "H", sig, app, hoistThresh⟩
+  let (helpers, declStr) ← ppFunMapDeclH ctx d
+  pure (helpers ++
+    s!"def {defName}{sig} : generic_fun_map_decl Unit Unit :=\n  {declStr}\n")
+
 /-! ## The divmod S1 emission plan -/
 
 /-- The std.core closure the divmod harness's evaluation reaches
@@ -492,18 +631,6 @@ triples are pairwise distinct — the zip below therefore assigns each
 literal site its parameter name unambiguously, and ANY other
 difference is a loud error. -/
 
-/-- Alternating same-class character runs (digit vs non-digit). -/
-partial def charRuns (s : String) : List (Bool × String) :=
-  go s.toList
-where
-  go : List Char → List (Bool × String)
-    | [] => []
-    | c :: rest =>
-      let isD := c.isDigit
-      let run := (c :: rest).takeWhile (fun c' => c'.isDigit == isD)
-      let remainder := (c :: rest).dropWhile (fun c' => c'.isDigit == isD)
-      (isD, run.foldl (fun acc ch => acc.push ch) "") :: go remainder
-
 /-- (valueA, valueB, valueD) → parameter name, for the six splice
 sites of the pinned instance trio. -/
 def paramTable : List ((String × String × String) × String) :=
@@ -511,33 +638,45 @@ def paramTable : List ((String × String × String) × String) :=
    (("3", "255", "254"), "e0"), (("0", "255", "255"), "e1"),
    (("1", "254", "0"), "e2"), (("0", "255", "0"), "e3")]
 
-/-- Zip the three emitted main texts into the parametric body. -/
-def zipParamMain (ta tb td : String) : Except String String := do
+/-- Zip three emitted decl texts into a parametric body: constant runs
+pass through; varying digit runs are looked up in `table` by their
+value TRIPLE and replaced by the parameter name; any other variation
+is a loud error; exactly `nsites` substitutions must occur.
+Generalized at S2 (R2 reuses the S1 mechanism with a different table;
+coinciding sites — e.g. memcpy's expected[] repeating choices[] — map
+to the SAME parameter, which is the semantically honest reading: the
+healthy family is indexed by the choice bytes alone). -/
+def zipParamWith (table : List ((String × String × String) × String))
+    (nsites : Nat) (ta tb td : String) : Except String String := do
   let ra := charRuns ta
   let rb := charRuns tb
   let rd := charRuns td
   if ra.length ≠ rb.length || ra.length ≠ rd.length then
-    throw s!"zipParamMain: run-count mismatch ({ra.length}/{rb.length}/{rd.length})"
+    throw s!"zipParamWith: run-count mismatch ({ra.length}/{rb.length}/{rd.length})"
   let mut out := ""
   let mut seen : List String := []
   for ((da, va), (db, vb), (dd, vd)) in ra.zip (rb.zip rd) do
     if da ≠ db || da ≠ dd then
-      throw "zipParamMain: run-class mismatch"
+      throw "zipParamWith: run-class mismatch"
     if va == vb && va == vd then
       out := out ++ va
     else if da then
-      match paramTable.find? (fun e => e.1 == (va, vb, vd)) with
+      match table.find? (fun e => e.1 == (va, vb, vd)) with
       | some e =>
         -- the literal prints as `(N : Int)`; substituting the digits
         -- yields `(c0 : Int)` — type-correct, kernel-transparent
         out := out ++ e.2
         seen := seen ++ [e.2]
-      | none => throw s!"zipParamMain: unknown literal triple ({va},{vb},{vd})"
+      | none => throw s!"zipParamWith: unknown literal triple ({va},{vb},{vd})"
     else
-      throw s!"zipParamMain: non-digit divergence ({va} vs {vb} vs {vd})"
-  if seen.length ≠ 6 then
-    throw s!"zipParamMain: expected exactly 6 parameter sites, found {seen} "
+      throw s!"zipParamWith: non-digit divergence ({va} vs {vb} vs {vd})"
+  if seen.length ≠ nsites then
+    throw s!"zipParamWith: expected exactly {nsites} parameter sites, found {seen} "
   pure out
+
+/-- The S1 divmod zip (6 distinct sites). -/
+def zipParamMain (ta tb td : String) : Except String String :=
+  zipParamWith paramTable 6 ta tb td
 
 /-! ## Module emission -/
 
@@ -627,5 +766,121 @@ def readInputs : IO (String × String × String × String × String) := do
   let pl ← IO.FS.readFile (root ++ "tests/speclab/divmod_i8_plant.core")
   let std ← IO.FS.readFile (root ++ "runtime/libcore/std.core")
   pure (a, b, d, pl, std)
+
+/-! ## The byte-blaster S2 emission plan (R2: memcpy + getarr).
+
+The memcpy parametric main: instances a=[1,2,3], b=[250,251,252],
+d=[9,8,7] differ at NINE digit-run sites — the three choices[] content
+bytes and their SIX repetitions in expected[] (prefix bytes are
+constant at n=3). Coinciding sites share a parameter (the healthy
+family is indexed by the choice bytes alone — expected[] is DERIVED,
+which the parametric term makes structural). The out-of-trio pin is
+c=[0,255,42] (boundary contents + the dst canary value, deliberately:
+a canary-colliding content byte must still pin byte-for-byte).
+
+getarr mains are pinned VERBATIM per instance (no zip): the
+contrasting statement style for the register's parametric-vs-verbatim
+comparison (S2 register). -/
+
+/-- (valueA, valueB, valueD) → parameter name, memcpy trio. -/
+def byteArrParamTable : List ((String × String × String) × String) :=
+  [(("1", "250", "9"), "c0"), (("2", "251", "8"), "c1"),
+   (("3", "252", "7"), "c2")]
+
+def byteArrModuleHeader : String :=
+"/-
+  SpecLab.ByteArrCore — GENERATED by speclab-emit-bytearr (arc-15 S2).
+  DO NOT EDIT.
+
+  Kernel-transparent Lean terms for the R2 byte-blaster harness
+  families: naive_memcpy + get_from_arr (the CN targets, elaborated;
+  deps/cn/tests/cn/{memcpy.c,get_from_arr.c}) + the memcpy PARAMETRIC
+  main (a function of the three choice bytes c0 c1 c2 — nine
+  substitution sites, expected[] derived; digit-run zip over the
+  pinned instances a=[1,2,3], b=[250,251,252], d=[9,8,7] —
+  tests/speclab/memcpy_{a,b,d}.core), the memcpy OFF-BY-ONE PLANT pair
+  (tests/speclab/memcpy_plant.core, verbatim), the getarr mains
+  VERBATIM per instance (tests/speclab/getarr_{a,b}.core — the
+  contrasting statement style, register S2), and the getarr
+  WRONG-INDEX PLANT pair — exactly as CoreParser produces them
+  (fidelity contract of SLUnit.EmitCore). The std.core closure is
+  SHARED with SpecLab.DivModCore (same 8 reached declarations,
+  drift-gated there).
+
+  Drift gate: SLUnit.ByteArrGateTest re-parses the pinned inputs,
+  re-emits this module byte-for-byte, pins the parametric main back to
+  ALL FOUR pinned memcpy dumps (incl. the out-of-trio c=[0,255,42]),
+  and runs the assembled files through the generated `drive` at the
+  pinned verdicts. Regenerate:
+    .lake/build/bin/speclab-emit-bytearr > SpecLab/ByteArrCore.lean
+-/
+
+import Core
+
+set_option autoImplicit false
+-- parametric-main helpers bind (c0 c1 c2) uniformly; helpers without
+-- literal sites do not reference them (generated file, cosmetic)
+set_option linter.unusedVariables false
+
+namespace SpecLab.ByteArrCore
+
+"
+
+def byteArrModuleFooter : String := "\nend SpecLab.ByteArrCore\n"
+
+def emitByteArrModule (ma mb md mplant ga gb gplant : String) :
+    Except String String := do
+  let cfA ← CoreParser.parseFile ma
+  let cfB ← CoreParser.parseFile mb
+  let cfD ← CoreParser.parseFile md
+  let cfP ← CoreParser.parseFile mplant
+  let cgA ← CoreParser.parseFile ga
+  let cgB ← CoreParser.parseFile gb
+  let cgP ← CoreParser.parseFile gplant
+  -- the targets must be literally identical across their healthy dumps
+  let tm ← declText cfA "naive_memcpy"
+  if (← declText cfB "naive_memcpy") ≠ tm
+      || (← declText cfD "naive_memcpy") ≠ tm then
+    throw "emitByteArrModule: 'naive_memcpy' differs across healthy dumps"
+  let tg ← declText cgA "get_from_arr"
+  if (← declText cgB "get_from_arr") ≠ tg then
+    throw "emitByteArrModule: 'get_from_arr' differs across healthy dumps"
+  -- the memcpy parametric main: per-instance FULL blocks (hoisted
+  -- helpers, parameter binders threaded through every helper) are
+  -- zipped WHOLE — hoisting decisions are literal-independent (nlen
+  -- normalization), so the three blocks split at identical points
+  let (mainSymA, _) ← findDecl cfA "main"
+  let sig := " (c0 c1 c2 : Int)"
+  let app := " c0 c1 c2"
+  let ba ← emitMainBlockP cfA "memcpyMainParamDecl" sig app
+  let bb ← emitMainBlockP cfB "memcpyMainParamDecl" sig app
+  let bd ← emitMainBlockP cfD "memcpyMainParamDecl" sig app
+  let pblock ← zipParamWith byteArrParamTable 9 ba bb bd
+  let mut out := byteArrModuleHeader
+  out := out ++ (← emitDeclH cfA "naive_memcpy" "naiveMemcpy") ++ "\n"
+  out := out ++ s!"/-- `main`: symbol, as interned by CoreParser. -/\n"
+  out := out ++ s!"def mainSym : sym :=\n  {← ppSym mainSymA}\n\n"
+  out := out ++ "/- memcpy `main`, PARAMETRIC in the three choice bytes (see the\nmodule header; expected[] sites are DERIVED — they share the\nparameters; hoisted helpers below carry the binders).\n`memcpyMainParamDecl 1 2 3` is the parsed main of the pinned\ninstance a, byte-for-byte (SLUnit.ByteArrGateTest). -/\n"
+  out := out ++ pblock ++ "\n"
+  out := out ++ (← emitDeclH cfP "naive_memcpy" "naiveMemcpyPlant") ++ "\n"
+  out := out ++ (← emitDeclH cfP "main" "memcpyMainPlant") ++ "\n"
+  out := out ++ (← emitDeclH cgA "get_from_arr" "getFromArr") ++ "\n"
+  out := out ++ (← emitDeclH cgA "main" "getarrMainA") ++ "\n"
+  out := out ++ (← emitDeclH cgB "main" "getarrMainB") ++ "\n"
+  out := out ++ (← emitDeclH cgP "get_from_arr" "getFromArrPlant") ++ "\n"
+  out := out ++ (← emitDeclH cgP "main" "getarrMainPlant") ++ "\n"
+  pure (out ++ byteArrModuleFooter)
+
+def readByteArrInputs :
+    IO (String × String × String × String × String × String × String) := do
+  let root ← findRoot
+  let ma ← IO.FS.readFile (root ++ "tests/speclab/memcpy_a.core")
+  let mb ← IO.FS.readFile (root ++ "tests/speclab/memcpy_b.core")
+  let md ← IO.FS.readFile (root ++ "tests/speclab/memcpy_d.core")
+  let mp ← IO.FS.readFile (root ++ "tests/speclab/memcpy_plant.core")
+  let ga ← IO.FS.readFile (root ++ "tests/speclab/getarr_a.core")
+  let gb ← IO.FS.readFile (root ++ "tests/speclab/getarr_b.core")
+  let gp ← IO.FS.readFile (root ++ "tests/speclab/getarr_plant.core")
+  pure (ma, mb, md, mp, ga, gb, gp)
 
 end SpecLabEmitCore

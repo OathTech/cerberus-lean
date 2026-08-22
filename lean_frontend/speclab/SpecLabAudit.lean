@@ -39,6 +39,7 @@ House rules: no sorry, no axioms declared here.
 
 import Lean
 import SpecLab.DivModFiles
+import SpecLab.ByteArrFiles
 
 set_option autoImplicit false
 
@@ -107,7 +108,17 @@ open Lean in
      `SpecLab.DivMod.DivModI8PlantHealthyClaim,
      `SpecLab.DivMod.sample_model_iff_stream,
      `SpecLab.DivMod.model_forall_iff_stream_forall,
-     `SpecLab.DivMod.fileOfStream_encode]
+     `SpecLab.DivMod.fileOfStream_encode,
+     -- arc-15 S2 (R2 byte-blaster rung)
+     `SpecLab.ByteArr.MemcpySampleStatement,
+     `SpecLab.ByteArr.MemcpySampleStreamStatement,
+     `SpecLab.ByteArr.MemcpyPlantHealthyClaim,
+     `SpecLab.ByteArr.GetarrSampleStatement,
+     `SpecLab.ByteArr.GetarrPlantHealthyClaim,
+     `SpecLab.ByteArr.memcpy_sample_model_iff_stream,
+     `SpecLab.ByteArr.model_forall_iff_stream_forall,
+     `SpecLab.ByteArr.getarr_model_forall_iff_stream_forall,
+     `SpecLab.ByteArr.memcpyFileOfStream_encode]
   for n in statements do
     match slStmtViolations env n with
     | .error e => throwError "{e}"
@@ -197,3 +208,80 @@ open Lean in
 #guard_msgs in #print axioms SpecLab.DivModCore.mainParamDecl
 /-- info: 'SpecLab.DivModCore.divisionDecl' does not depend on any axioms -/
 #guard_msgs in #print axioms SpecLab.DivModCore.divisionDecl
+
+/-! ### arc-15 S2 pins (R2 byte-blaster rung; captured verbatim at
+    S2 — same discipline: classical-trio subsets for the pure layer,
+    `runEffectful` exactly where a statement quotes the drive
+    substrate, AST terms axiom-free). -/
+
+/-- info: 'SpecLab.Codec.canonical_u8' depends on axioms: [propext] -/
+#guard_msgs in #print axioms SpecLab.Codec.canonical_u8
+/-- info: 'SpecLab.Codec.canonical_u16le' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.Codec.canonical_u16le
+/-- info: 'SpecLab.Codec.decodeElems_length' depends on axioms: [propext] -/
+#guard_msgs in #print axioms SpecLab.Codec.decodeElems_length
+/-- info: 'SpecLab.Codec.encodeElems_decodeElems' depends on axioms: [propext] -/
+#guard_msgs in #print axioms SpecLab.Codec.encodeElems_decodeElems
+/-- info: 'SpecLab.Codec.canonical_arrayU16' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.Codec.canonical_arrayU16
+/-- info: 'SpecLab.Codec.encodeElems_u8_id' depends on axioms: [propext] -/
+#guard_msgs in #print axioms SpecLab.Codec.encodeElems_u8_id
+/-- info: 'SpecLab.ByteArr.decode_encode_input' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.ByteArr.decode_encode_input
+/-- info: 'SpecLab.ByteArr.encode_decode_input' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.ByteArr.encode_decode_input
+/-- info: 'SpecLab.ByteArr.model_forall_iff_stream_forall' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.ByteArr.model_forall_iff_stream_forall
+/-- info: 'SpecLab.ByteArr.getarr_model_forall_iff_stream_forall' depends on axioms: [propext] -/
+#guard_msgs in #print axioms SpecLab.ByteArr.getarr_model_forall_iff_stream_forall
+/-- info: 'SpecLab.ByteArr.src_unchanged' does not depend on any axioms -/
+#guard_msgs in #print axioms SpecLab.ByteArr.src_unchanged
+/-- info: 'SpecLab.ByteArr.dst_copied' depends on axioms: [propext] -/
+#guard_msgs in #print axioms SpecLab.ByteArr.dst_copied
+/-- info: 'SpecLab.ByteArr.expectedBytes_length' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.ByteArr.expectedBytes_length
+/-- info: 'SpecLab.ByteArr.getarrExpected_length' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.ByteArr.getarrExpected_length
+/-- info: 'SpecLab.ByteArr.verdictOf_eq_zero_iff' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.ByteArr.verdictOf_eq_zero_iff
+/-- info: 'SpecLab.ByteArr.encodeElems_u16_flatten' depends on axioms: [propext] -/
+#guard_msgs in #print axioms SpecLab.ByteArr.encodeElems_u16_flatten
+/-- info: 'SpecLab.ByteArr.structured_forall_of_byte_forall' does not depend on any axioms -/
+#guard_msgs in #print axioms SpecLab.ByteArr.structured_forall_of_byte_forall
+/-- info: 'SpecLab.ByteArr.memcpyFileOfStream_encode' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.ByteArr.memcpyFileOfStream_encode
+/--
+info: 'SpecLab.ByteArr.memcpy_sample_model_iff_stream' depends on axioms: [propext,
+ runEffectful,
+ Classical.choice,
+ Quot.sound]
+-/
+#guard_msgs in #print axioms SpecLab.ByteArr.memcpy_sample_model_iff_stream
+/-- info: 'SpecLab.ByteArr.MemcpySampleStatement' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.ByteArr.MemcpySampleStatement
+/-- info: 'SpecLab.ByteArr.MemcpySampleStreamStatement' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.ByteArr.MemcpySampleStreamStatement
+/-- info: 'SpecLab.ByteArr.MemcpyPlantHealthyClaim' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.ByteArr.MemcpyPlantHealthyClaim
+/-- info: 'SpecLab.ByteArr.GetarrSampleStatement' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.ByteArr.GetarrSampleStatement
+/-- info: 'SpecLab.ByteArr.GetarrPlantHealthyClaim' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.ByteArr.GetarrPlantHealthyClaim
+/-- info: 'SpecLab.ByteArr.memcpyI3File' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.ByteArr.memcpyI3File
+/-- info: 'SpecLab.ByteArr.memcpyPlantFile' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.ByteArr.memcpyPlantFile
+/-- info: 'SpecLab.ByteArr.memcpyFileOf' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.ByteArr.memcpyFileOf
+/-- info: 'SpecLab.ByteArr.getarrFileA' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.ByteArr.getarrFileA
+/-- info: 'SpecLab.ByteArr.getarrFileB' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.ByteArr.getarrFileB
+/-- info: 'SpecLab.ByteArr.getarrPlantFile' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.ByteArr.getarrPlantFile
+/-- info: 'SpecLab.ByteArrCore.memcpyMainParamDecl' does not depend on any axioms -/
+#guard_msgs in #print axioms SpecLab.ByteArrCore.memcpyMainParamDecl
+/-- info: 'SpecLab.ByteArrCore.naiveMemcpyDecl' does not depend on any axioms -/
+#guard_msgs in #print axioms SpecLab.ByteArrCore.naiveMemcpyDecl
+/-- info: 'SpecLab.ByteArrCore.getarrMainADecl' does not depend on any axioms -/
+#guard_msgs in #print axioms SpecLab.ByteArrCore.getarrMainADecl

@@ -93,3 +93,18 @@ name = "speclab-core-test"
 srcDir = "test"
 root = "SLUnit.CoreGateTest"
 moreLinkArgs = ["../native/fresh_int.o", "../native/debug.o", "../native/tags.o", "../native/md5.o"]
+
+# arc-15 S2: the R2 byte-blaster term-emission instrument (same
+# fidelity contract; plan in SLUnit.EmitCore).
+[[lean_exe]]
+name = "speclab-emit-bytearr"
+srcDir = "test"
+root = "SLUnit.EmitByteArrMain"
+moreLinkArgs = ["../native/fresh_int.o", "../native/debug.o", "../native/tags.o", "../native/md5.o"]
+
+# arc-15 S2: the ByteArrCore drift/param/exec gate.
+[[lean_exe]]
+name = "speclab-bytearr-core-test"
+srcDir = "test"
+root = "SLUnit.ByteArrGateTest"
+moreLinkArgs = ["../native/fresh_int.o", "../native/debug.o", "../native/tags.o", "../native/md5.o"]
