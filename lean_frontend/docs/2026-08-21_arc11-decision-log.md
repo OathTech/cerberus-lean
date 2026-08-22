@@ -59,3 +59,26 @@
   out of capacity scope for this arc per the charter's park clauses.
   R-S2-1 (sealed-closure avatars) stays parked per park-don't-grind;
   R-S2-3 noted.
+- **D4 [AGENT] — S2-final/S4 boundary verified; ARC CLOSES per D3's
+  capacity clause; S5 GO.** The final climb session honored every
+  bound: the push measured decisively (both R-S2-2 routes blocked
+  behind R-S2-1's sealed-closure avatar capture — kernel-isDefEq-
+  false through avatar-carrying walk states, evidence banked), made
+  no third attempt, and pivoted in-session to S4. T5 PARKS at the
+  improved grade (45/79 k=0 + symbolic-j route live at 3/79 + the
+  proved env-lookup family + ~6s cycles); the resumption's first
+  move is R-S2-1 (engine-side, FIXTURE-INDEPENDENT — deliberately
+  compatible with the queued renumbering re-pin), then the R-S2-2
+  routes unblock, then the climb resumes post-renumbering. S4 is
+  COMPLETE: relsem is its own Lake package with the gates re-homed +
+  plant-tested; the two structural findings (the RelSemCore
+  exec-facing boundary forced by Main's import; the root-module
+  prefix-resolution constraint making same-prefix cross-package
+  splits impossible) are the real-split design data — banked for
+  the split arc. The plain-build deviation (proof gates ride the
+  relsem package's plain build; test_unit builds both fail-closed)
+  is flagged to the S5 audit as chartered. Boundary re-verified:
+  unit 7/7, verify 29/29, exec zero movement. S5: close-out
+  mechanics, then the audit pair, then the merge ask — presented
+  JOINTLY with arc-12's outstanding ask (serialization per the
+  measured zero-conflict intersection).
