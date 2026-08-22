@@ -40,7 +40,10 @@ theorem e0_built : FmapBuilt symCmpO e0 := rfl
 
 theorem eIns_built {k : sym} {v : value} {m : Fmap sym value}
     (h : FmapBuilt symCmpO m) : FmapBuilt symCmpO (eIns k v m) :=
-  fmapAddBy_built h
+  -- R-S2-1: eIns pins fmapAddBy's [BEq sym] to the generated
+  -- update_env_aux instance (eInsBEq, T5Prefix) — pass it explicitly
+  -- so synthesis does not race it against instBEqSym.
+  @fmapAddBy_built sym value eInsBEq symCmpO _ _ _ _ h
 
 theorem envL_built (n : Int) (j : Nat) : FmapBuilt symCmpO (envL n j) := by
   induction j with
@@ -59,13 +62,13 @@ theorem envL_built (n : Int) (j : Nat) : FmapBuilt symCmpO (envL n j) := by
 theorem lookup_eIns_ne {a k : sym} {v : value} {m : Fmap sym value}
     (hm : FmapBuilt symCmpO m) (h : symCmpO k a ≠ .eq) :
     fmapLookupBy symOrd a (eIns k v m) = fmapLookupBy symOrd a m :=
-  fmapLookupBy_addBy_ne hm h
+  @fmapLookupBy_addBy_ne sym value eInsBEq symCmpO _ _ _ _ _ _ _ hm h
 
 /-- Hit law at the family spelling. -/
 theorem lookup_eIns_eq {a k : sym} {v : value} {m : Fmap sym value}
     (hm : FmapBuilt symCmpO m) (h : symCmpO k a = .eq) :
     fmapLookupBy symOrd a (eIns k v m) = some v :=
-  fmapLookupBy_addBy_eq hm h
+  @fmapLookupBy_addBy_eq sym value eInsBEq symCmpO _ _ _ _ _ _ _ hm h
 
 /-! ## The lookup family (symN through the whole chain; symI/symS at
     the chain head) -/

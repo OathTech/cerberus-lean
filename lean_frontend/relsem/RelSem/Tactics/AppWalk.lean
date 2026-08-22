@@ -212,6 +212,52 @@ partial def evalScalar (scalarHeads : List Name) : Nat → Expr → MetaM Expr
       if e3 == e2 then return e3 else evalScalar scalarHeads d e3
     | _ => return e
 
+/-- RAW kernel-only aux theorem (the shared mkAuxRfl/mkAuxThmRobust
+    fallback, arc-15 T5 resumption): close `ty`/`val` over local
+    fvars AND over unassigned LEVEL mvars — each level mvar becomes a
+    FRESH LEVEL PARAM on the declaration side, and the returned
+    reference instantiates that param with the ORIGINAL mvar, so the
+    ambient proof is unchanged (measured defect: the round-seal raw
+    fallback hit `(kernel) declaration has metavariables` on 6
+    surviving universe mvars at the symbolic-j round 4 — the expr-mvar
+    guard alone was not closure). The KERNEL remains the only checker
+    (`addDecl`, heartbeat-free). -/
+def addRawAuxThm (ty val : Expr) (base : Name) (kind : SealKind) :
+    MetaM Expr := do
+  let ty' ← instantiateMVars ty
+  let val' ← instantiateMVars val
+  let used := (collectFVars (collectFVars {} ty') val').fvarIds
+  let used ← sortFVarIds used
+  let fvarExprs := used.map mkFVar
+  let tyAbs ← mkForallFVars fvarExprs ty'
+  let valAbs ← mkLambdaFVars fvarExprs val'
+  if tyAbs.hasExprMVar || valAbs.hasExprMVar then
+    throwError "addRawAuxThm ({base}): residual expr mvars"
+  -- LEVEL-MVAR closure
+  let lmvs := (collectLevelMVars (collectLevelMVars {} tyAbs) valAbs).result
+  let mut freshPs : Array (LMVarId × Name) := #[]
+  for m in lmvs do
+    freshPs := freshPs.push (m, (← mkFreshUserName `wu))
+  let repl : Level → Option Level := fun l => match l with
+    | .mvar id => (freshPs.find? (fun p => p.1 == id)).map
+        (fun p => .param p.2)
+    | _ => none
+  let tyAbs := if freshPs.isEmpty then tyAbs else tyAbs.replaceLevel repl
+  let valAbs := if freshPs.isEmpty then valAbs else valAbs.replaceLevel repl
+  let lvls := (collectLevelParams (collectLevelParams {} tyAbs)
+    valAbs).params.toList
+  let nm ← mkFreshUserName base
+  let nm := nm.appendAfter "_aux"
+  addDecl <| .thmDecl {
+    name := nm, levelParams := lvls, type := tyAbs, value := valAbs }
+  registerSealedAux nm
+  pushEngineEv (.seal { name := nm, kind := kind })
+  let lvlArgs := lvls.map fun p =>
+    match freshPs.find? (fun q => q.2 == p) with
+    | some (m, _) => mkLevelMVar m
+    | none => Level.param p
+  return mkAppN (mkConst nm lvlArgs) fvarExprs
+
 /-- Seal a kernel-established defeq as its OWN auxiliary theorem
     (`mkAuxTheorem` closes over local fvars): the main proof then
     references an opaque constant, so the kernel's per-declaration
@@ -236,24 +282,9 @@ def mkAuxRfl (lhs rhs : Expr) : MetaM Expr := do
       pushEngineEv (.seal { name := n, kind := .cert })
     return pf
   | none =>
-    let value ← mkEqRefl lhs
-    let ty' ← instantiateMVars ty
-    let value' ← instantiateMVars value
-    -- fvar closure (shared for type and value)
-    let fvars := (collectFVars {} ty').fvarIds
-    let fvarExprs := fvars.map mkFVar
-    let tyAbs ← mkForallFVars fvarExprs ty'
-    let valAbs ← mkLambdaFVars fvarExprs value'
-    if tyAbs.hasExprMVar || valAbs.hasExprMVar then
-      throwError "mkAuxRfl raw fallback: residual mvars"
-    let lvls := (collectLevelParams {} tyAbs).params.toList
-    let nm ← mkFreshUserName `walkRfl
-    let nm := nm.appendAfter "_aux"
-    addDecl <| .thmDecl {
-      name := nm, levelParams := lvls, type := tyAbs, value := valAbs }
-    registerSealedAux nm
-    pushEngineEv (.seal { name := nm, kind := .cert })
-    return mkAppN (mkConst nm (lvls.map .param)) fvarExprs
+    -- RAW addDecl fallback (kernel-only checking; fvar + LEVEL-mvar
+    -- closure shared with the round seal — addRawAuxThm).
+    addRawAuxThm ty (← mkEqRefl lhs) `walkRfl .cert
 
 /-- Seal an arbitrary PROOF as its own auxiliary theorem, robustly
     (arc-11 S2, the round-seal trip): primary path `mkAuxTheorem`
@@ -264,33 +295,23 @@ def mkAuxRfl (lhs rhs : Expr) : MetaM Expr := do
 def mkAuxThmRobust (ty val : Expr) (base : Name := `walkRound) :
     MetaM Expr := do
   match ← tryCatchRuntimeEx
-      (attempt (100000 * 1000)
-        (mkAuxTheorem ty val (zetaDelta := false)))
-      (fun _ => pure none) with
+      (attempt (100000 * 1000) (do
+        try mkAuxTheorem ty val (zetaDelta := false)
+        catch ex =>
+          dbg_trace "mkAuxThmRobust: primary mkAuxTheorem failed — {(← ex.toMessageData.toString).take 300}"
+          throw ex))
+      (fun ex => do
+        dbg_trace "mkAuxThmRobust: primary ABORTED — {(← ex.toMessageData.toString).take 300}"
+        pure none) with
   | some pf =>
     if let some n := pf.getAppFn.constName? then
       registerSealedAux n
       pushEngineEv (.seal { name := n, kind := .round })
     return pf
   | none =>
-    let ty' ← instantiateMVars ty
-    let val' ← instantiateMVars val
-    let used := (collectFVars (collectFVars {} ty') val').fvarIds
-    let used ← sortFVarIds used
-    let fvarExprs := used.map mkFVar
-    let tyAbs ← mkForallFVars fvarExprs ty'
-    let valAbs ← mkLambdaFVars fvarExprs val'
-    if tyAbs.hasExprMVar || valAbs.hasExprMVar then
-      throwError "mkAuxThmRobust raw fallback: residual mvars"
-    let lvls := (collectLevelParams (collectLevelParams {} tyAbs)
-      valAbs).params.toList
-    let nm ← mkFreshUserName base
-    let nm := nm.appendAfter "_aux"
-    addDecl <| .thmDecl {
-      name := nm, levelParams := lvls, type := tyAbs, value := valAbs }
-    registerSealedAux nm
-    pushEngineEv (.seal { name := nm, kind := .round })
-    return mkAppN (mkConst nm (lvls.map .param)) fvarExprs
+    -- RAW addDecl fallback (kernel-only checking; fvar + LEVEL-mvar
+    -- closure — addRawAuxThm).
+    addRawAuxThm ty val base .round
 
 /-- KERNEL-BACKED whnf for discovery computation (arc-9 S3): the
     elaborator's substitution-based whnf was MEASURED to blow the
@@ -734,6 +755,56 @@ partial def sealCtorLeaves (d : Nat) (e : Expr) : MetaM Expr := do
     return r
   return e0
 
+/-- Bounded kernel-side structural DIFF (TRACE LANES ONLY — the
+    R-S2-3 register item: walk_diag-class dumps folded into the
+    committed debug surface; arc-15 T5 resumption). Descends where
+    `Kernel.isDefEq` says FALSE and both sides expose the same head
+    after kernel whnf, printing the first differing LEAVES with their
+    argument paths. Pure instrument: no proof surface, no behavioral
+    effect on any walk (only reachable under `trace`). -/
+partial def kDiffTrace (env : Environment) (lctx : LocalContext)
+    (budget : IO.Ref Nat) (d : Nat) (path : String) (l r : Expr) :
+    MetaM Unit := do
+  if (← budget.get) == 0 then return
+  match Lean.Kernel.isDefEq env lctx l r with
+  | .ok true => return
+  | .error _ =>
+    budget.modify (· - 1)
+    dbg_trace "kdiff {path}: KERNEL-ERR {l.getAppFn} vs {r.getAppFn}"
+  | .ok false =>
+    let l' := match Lean.Kernel.whnf env lctx l with | .ok x => x | _ => l
+    let r' := match Lean.Kernel.whnf env lctx r with | .ok x => x | _ => r
+    if d == 0 then
+      budget.modify (· - 1)
+      dbg_trace "kdiff {path}: DEPTH-CAP {l'.getAppFn} vs {r'.getAppFn}"
+      return
+    if Expr.equal l'.getAppFn r'.getAppFn
+        && l'.getAppArgs.size == r'.getAppArgs.size
+        && l'.getAppArgs.size > 0 then
+      for i in [0:l'.getAppArgs.size] do
+        kDiffTrace env lctx budget (d-1) s!"{path}.{i}"
+          l'.getAppArgs[i]! r'.getAppArgs[i]!
+    else if l'.isLambda && r'.isLambda then
+      -- domains first: a non-defeq binder DOMAIN is its own leaf (the
+      -- type-index divergence case — e.g. TreeMap's cmp index)
+      let domOk := match Lean.Kernel.isDefEq env lctx
+          l'.bindingDomain! r'.bindingDomain! with
+        | .ok true => true | _ => false
+      if !domOk then
+        budget.modify (· - 1)
+        dbg_trace "kdiff {path}: DOMAIN-LEAF\n  L: {((← withOptions (fun o => o.setBool `pp.explicit true) (ppExpr l'.bindingDomain!)).pretty 140).take 2000}\n  R: {((← withOptions (fun o => o.setBool `pp.explicit true) (ppExpr r'.bindingDomain!)).pretty 140).take 2000}"
+        return
+      -- descend under the binder with a shared fresh local (diff
+      -- localization inside closures — the R-S2-1 surface)
+      let fid ← mkFreshFVarId
+      let lctx' := lctx.mkLocalDecl fid l'.bindingName! l'.bindingDomain!
+      kDiffTrace env lctx' budget (d-1) s!"{path}.λ"
+        (l'.bindingBody!.instantiate1 (mkFVar fid))
+        (r'.bindingBody!.instantiate1 (mkFVar fid))
+    else
+      budget.modify (· - 1)
+      dbg_trace "kdiff {path}: LEAF\n  L: {((← withOptions (fun o => o.setBool `pp.explicit true) (ppExpr l')).pretty 140).take 2000}\n  R: {((← withOptions (fun o => o.setBool `pp.explicit true) (ppExpr r')).pretty 140).take 2000}"
+
 /-- Collect closed `decide P` applications in an expression
     (bounded traversal; duplicates deduped). -/
 partial def collectDecides (e : Expr) : Array Expr := Id.run do
@@ -831,11 +902,15 @@ partial def kWhnfWithFacts (d : Nat) (e : Expr)
           -- errors are misses.
           let e1c ← instantiateMVars e1
           let dlhsc ← instantiateMVars dlhs
+          let kernelLane := !e1c.hasExprMVar && !dlhsc.hasExprMVar
+          let mut kFalse := false
           let hit ← do
-            if !e1c.hasExprMVar && !dlhsc.hasExprMVar then
+            if kernelLane then
               match Lean.Kernel.isDefEq (← getEnv) (← getLCtx)
                   dlhsc e1c with
-              | .ok b => pure b
+              | .ok b =>
+                kFalse := !b
+                pure b
               | .error _ =>
                 if trace then
                   dbg_trace "kwf: eq-fact KERNEL-ERR {decl.userName} at d={d}"
@@ -845,10 +920,36 @@ partial def kWhnfWithFacts (d : Nat) (e : Expr)
                 unless (← isDefEq dlhs e1) do failure)
           if trace && !hit then
             dbg_trace "kwf: eq-fact MISS {decl.userName} at d={d}"
+            -- R-S2-3 diff instrument: on a KERNEL-FALSE miss whose
+            -- fact reduces to the SAME stuck head as e1, print the
+            -- first differing leaves (the R-S2-1 discrimination
+            -- surface). Bounded; trace lanes only.
+            if kFalse then
+              let env ← getEnv
+              let lctx ← getLCtx
+              let dwh := match Lean.Kernel.whnf env lctx dlhsc with
+                | .ok x => x | _ => dlhsc
+              if Expr.equal dwh.getAppFn e1c.getAppFn then
+                dbg_trace "kwf: KFALSE-DIFF {decl.userName} at d={d} (shared head {e1c.getAppFn}):"
+                let budget ← IO.mkRef 12
+                kDiffTrace env lctx budget 24 s!"{decl.userName}" dwh e1c
           if hit then
             if trace then dbg_trace "kwf: eq-fact HIT {decl.userName}"
-            let pf ← mkExpectedTypeHint decl.toExpr
-              (mkApp3 (mkConst ``Eq [← getLevel dα]) dα e1 drhs)
+            -- Certificate shape (arc-15 R-S2-1 batch): the spelling
+            -- bridge `e1 = dlhs` is its OWN kernel-checked aux
+            -- (Kernel.isDefEq just said true), composed with the fact
+            -- by Eq.trans — the old defeq TYPE-HINT form rode the
+            -- kernel defeq inside the parent proof, which defeated
+            -- the elaborator re-check at round-seal time (measured:
+            -- `Application type mismatch: hlk513` in the primary
+            -- mkAuxTheorem, then level-mvar residue in the raw path).
+            let _ := dα
+            let pf ← do
+              if Expr.equal dlhs e1 then
+                pure decl.toExpr
+              else do
+                let bridge ← mkAuxRfl e1 dlhsc  -- e1 = dlhs (kernel)
+                mkEqTrans bridge decl.toExpr    -- e1 = drhs
             let (v, p3, _) ← kWhnfWithFacts (d-1) drhs trace
             return (v, ← mkEqTrans p1 (← mkEqTrans pf p3), true)
   -- (a) a decide visible at this level with a context fact: rewrite,

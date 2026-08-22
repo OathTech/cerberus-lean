@@ -578,8 +578,13 @@ open Lean in
 -- deliberately, same commit, with the reason. (When green the pin
 -- SWALLOWS the info line — absence of the sweep line from a green
 -- build log is expected; the DAEMON + statement gates still print.)
+-- Re-baselines: 3348 → 3356 (arc-15 T5 resumption, R-S2-1 batch:
+-- T5Prefix gains eInsMK/eInsBEq — the pinned generated-instance
+-- spelling for the env-family inserts — and Tactics/AppWalk gains
+-- kDiffTrace (trace-lane kernel diff, R-S2-3) + addRawAuxThm (raw
+-- seal fallback with level-mvar closure)).
 /--
-info: RelSem audit sweep: 3348 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 3356 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do

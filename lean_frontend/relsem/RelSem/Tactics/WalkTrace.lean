@@ -41,8 +41,14 @@ namespace RelSem.Tactics
     disposition so any rev-2 trace recorded pre-hardening refuses
     loudly instead of replaying against a changed engine). Process
     rule (same disposition): every batch checklist includes
-    "engineRev bump on behavioral engine change". -/
-def engineRev : Nat := 3
+    "engineRev bump on behavioral engine change";
+    4 = the arc-15 T5-resumption engine batch (R-S2-1): raw seal
+    fallbacks gain LEVEL-mvar closure (addRawAuxThm — fresh level
+    params decl-side, original mvars at the reference; previously the
+    round seal threw `(kernel) declaration has metavariables` and the
+    round aborted) + the R-S2-3 trace-lane kernel-diff instrument
+    (kDiffTrace, trace-only). -/
+def engineRev : Nat := 4
 
 /-! ## The sealed-aux registry (A-F6).
 

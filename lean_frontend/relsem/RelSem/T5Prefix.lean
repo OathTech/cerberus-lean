@@ -207,9 +207,31 @@ abbrev ldi (v : Int) : value := loadedV v
 
 /-- One env insert in the exact `update_env_aux` reduced spelling
     (the `@mapKeyCompare` passed comparator; the tree's CAPTURED
-    comparator stays the callFinish `ordCompare` closure). -/
+    comparator stays the callFinish `ordCompare` closure).
+
+    R-S2-1 RESOLUTION (arc-15 T5 resumption): `fmapAddBy`'s `[BEq α]`
+    INSTANCE-IMPLICIT is pinned to the instance the GENERATED call
+    site uses. `update_env_aux` is `{a} [MapKeyType a]`-generic
+    (Core_aux.lean:861), so its `fmapAddBy` resolves `[BEq a]` to the
+    `Lem_Map` blanket `instBEqOfMapKeyType` (comparator-EQ beq, prio
+    500 — the only candidate at generic `a`); at the fixture's
+    concrete `sym`, unpinned elaboration instead picked the derived
+    `instBEqSym` (prio 1000), which is symbol_description-SENSITIVE
+    where the comparator beq is not (LemLib.lean:436-441) — the two
+    are genuinely non-defeq, so every family fact kernel-missed the
+    walk's insert spelling at symbolic j (the arc-11 S2 §6 "kernel
+    isDefEq returns FALSE" measurement; diff instrument evidence:
+    scratch/probet5s4c-r5.out, the `@BEq.beq sym instBEqSym` vs
+    `@BEq.beq sym (Lem_Map.instBEqOfMapKeyType …)` leaves). At
+    concrete k both spellings evaluate away, which is why the k=0
+    walks never exposed it. -/
+abbrev eInsMK : Lem_Map.MapKeyType sym :=
+  @Lem_Map.instMapKeyTypeOfSetType sym instSetTypeSym_1
+
+abbrev eInsBEq : BEq sym := @Lem_Map.instBEqOfMapKeyType sym eInsMK
+
 abbrev eIns (s : sym) (v : value) (m : Fmap sym value) : Fmap sym value :=
-  fmapAddBy (@Lem_Map.mapKeyCompare sym _) s v m
+  @fmapAddBy sym value eInsBEq (@Lem_Map.mapKeyCompare sym eInsMK) s v m
 
 /-- The entry environment's base (env0T5's head map, verbatim
     spelling). -/
