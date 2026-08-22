@@ -123,9 +123,13 @@ run_c_case() {  # $1=name $2=cfile $3=libc(0/1)
     [[ -z "$lline" ]] && lline="$(head -1 "$OUTPUT_DIR/$name.lerr")"
     local ltok; ltok="$(verdict "$lline" "$lrc")"
     local status; status="$(classify "$otok" "$ltok")"
-    CUR["$name"]="$status"
+    # The Lean token is PART of the recorded state (F2 lane hardening):
+    # on ORACLE_CRASH rows the status alone cannot see a Lean-side value
+    # change (e.g. the '\?' fix moving 0 -> 63), so the baseline pins
+    # status AND Lean token.
+    CUR["$name"]="$status | L=$ltok"
     printf "  %-14s %-20s  O[%s] L[%s]\n" "$status" "$name" "$otok" "$ltok"
-    echo "$name $status" >> "$OUTPUT_DIR/baseline.new"
+    echo "$name $status | L=$ltok" >> "$OUTPUT_DIR/baseline.new"
 }
 
 echo ""
@@ -187,7 +191,10 @@ if $RECORD_BASELINE; then
         echo "#   G1 semantics: g1-lt-null, g1-ge-funptr (relational kill-path -> value-path)"
         echo "#   G2 semantics: g2-memcpy-oob, g2-memcpy-readonly, g2-memcmp-uninit (checked-path bypass)"
         echo "#   G3 semantics: g3-realloc-non-heap (UB179c), g3-realloc-dead (UB179d) (wrong UB family)"
-        echo "#   G4 semantics: g4-ffs-negative, g4-ffs-intmin (Int.toNat clamp); g4-ctz-nonzero is a control"
+        echo "#   G4 semantics: g4-ffs-negative, g4-ffs-intmin (Int.toNat clamp); g4-ctz-nonzero"
+        echo "#                 and g4-bswap-controls are controls (bswap asserts unreachable from C)"
+        echo "#   S12 semantics: g5-escape-roundtrip (ORACLE-WRONG: Char.escaped decimal read back"
+        echo "#                 as octal corrupts %c-stored char 127 -> 87; gcc & Lean = 127)"
         echo "#   G5 semantics: g5-decode-question (ORACLE-WRONG: '\\?' is a legal C11 escape = 63,"
         echo "#                 gcc agrees; upstream failwiths -> upstream-filing candidate),"
         echo "#                 g5-decode-multichar (impl-defined; oracle fail-closed is defensible)"
@@ -210,9 +217,9 @@ fi
 # --- fail-closed compare against the committed baseline ---
 rc=0
 declare -A BASE
-while read -r name st; do
+while read -r name rest; do
     [[ -z "$name" || "$name" == \#* ]] && continue
-    BASE["$name"]="$st"
+    BASE["$name"]="$rest"
 done < "$BASELINE"
 
 for name in "${!CUR[@]}"; do

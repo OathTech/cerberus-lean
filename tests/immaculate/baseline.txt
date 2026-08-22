@@ -20,7 +20,10 @@
 #   G1 semantics: g1-lt-null, g1-ge-funptr (relational kill-path -> value-path)
 #   G2 semantics: g2-memcpy-oob, g2-memcpy-readonly, g2-memcmp-uninit (checked-path bypass)
 #   G3 semantics: g3-realloc-non-heap (UB179c), g3-realloc-dead (UB179d) (wrong UB family)
-#   G4 semantics: g4-ffs-negative, g4-ffs-intmin (Int.toNat clamp); g4-ctz-nonzero is a control
+#   G4 semantics: g4-ffs-negative, g4-ffs-intmin (Int.toNat clamp); g4-ctz-nonzero
+#                 and g4-bswap-controls are controls (bswap asserts unreachable from C)
+#   S12 semantics: g5-escape-roundtrip (ORACLE-WRONG: Char.escaped decimal read back
+#                 as octal corrupts %c-stored char 127 -> 87; gcc & Lean = 127)
 #   G5 semantics: g5-decode-question (ORACLE-WRONG: '\?' is a legal C11 escape = 63,
 #                 gcc agrees; upstream failwiths -> upstream-filing candidate),
 #                 g5-decode-multichar (impl-defined; oracle fail-closed is defensible)
@@ -34,17 +37,19 @@
 #   G5 'ab'  -> Lean fail-closed to agree with the oracle's rejection (still not MATCH-token;
 #               both fail-closed — re-record as the agreed-rejection shape).
 #   G6       -> off CONFLATED once the intern-time fail-stop tripwire lands.
-g1-ge-funptr MATCH
-g1-lt-null MATCH
-g2-memcmp-uninit MATCH
-g2-memcpy-ok MATCH
-g2-memcpy-oob MATCH
-g2-memcpy-readonly MATCH
-g3-realloc-dead MATCH
-g3-realloc-non-heap MATCH
-g4-ctz-nonzero MATCH
-g4-ffs-intmin DIFF
-g4-ffs-negative DIFF
-g5-decode-multichar ORACLE_CRASH
-g5-decode-question ORACLE_CRASH
+g1-ge-funptr MATCH | L=ERR:Memory WIP: ge_ptrval
+g1-lt-null MATCH | L=ERR:Memory WIP: lt_ptrval ==> one null pointer
+g2-memcmp-uninit MATCH | L=CRASH
+g2-memcpy-ok MATCH | L=VAL:Specified(4)
+g2-memcpy-oob MATCH | L=UB:UB_CERB002b_out_of_bound_store
+g2-memcpy-readonly MATCH | L=UB:UB064_modifying_const
+g3-realloc-dead MATCH | L=UB:UB179d_dead_allocation_realloc
+g3-realloc-non-heap MATCH | L=UB:UB179c_non_matching_allocation_realloc
+g4-bswap-controls MATCH | L=VAL:Specified(0)
+g4-ctz-nonzero MATCH | L=VAL:Specified(3)
+g4-ffs-intmin MATCH | L=VAL:Specified(32)
+g4-ffs-negative MATCH | L=VAL:Specified(1)
+g5-decode-multichar MATCH | L=CRASH
+g5-decode-question ORACLE_CRASH | L=VAL:Specified(63)
+g5-escape-roundtrip DIFF | L=VAL:Specified(127)
 g6-hash-collision CONFLATED

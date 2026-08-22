@@ -8,7 +8,15 @@ import AilSyntax
 
 namespace CerbDecode
 
-/-- Read a hex digit character to its numeric value. -/
+/-- Read a hex digit character to its numeric value.
+    NOTE (sem:N11): returns 0 for a non-digit where upstream's
+    read_digit (decode.ml:3-27) computes garbage (`int_of_char n - 48`);
+    garbage-for-garbage is acceptable ONLY because every caller
+    validates first — decode_integer_constant's input is
+    lexer-guaranteed digits, and decode_character_constant_aux (below)
+    validates its hex/octal spans before folding (fail-closed since
+    arc-14 S1 F2; the pre-F2 char decode leaned on this silent 0 —
+    that was sem:G5). -/
 private def readDigit (c : Char) : Nat :=
   if '0' ≤ c && c ≤ '9' then c.toNat - '0'.toNat
   else if 'a' ≤ c && c ≤ 'f' then c.toNat - 'a'.toNat + 10
@@ -42,10 +50,26 @@ private def wrapChar (n : Int) : Int :=
   let r := Int.emod n dlt                  -- decode.ml:212 (mod_big_int)
   if r ≤ max then r else r - dlt           -- decode.ml:213-217
 
-/-- The pre-wrap decode — decode.ml's decode_character_constant_aux. -/
+/-- The single-character table — decode.ml:44-159: the "basic source and
+    basic execution sets" (STD §5.2.1#2: letters, digits, the enumerated
+    graphic characters, space, horizontal tab) plus the graphical
+    extended ASCII characters upstream admits ($ @ `, decode.ml:155-159).
+    Backslash is NOT here — it must arrive escaped ("\\\\"). -/
+private def basicSourceChar (c : Char) : Bool :=
+  ('A' ≤ c && c ≤ 'Z') || ('a' ≤ c && c ≤ 'z') || ('0' ≤ c && c ≤ '9') ||
+  "!\"#%&'()*+,-./:;<=>?[]^_{|}~ \t$@`".contains c
+
+/-- The pre-wrap decode — decode.ml:43-200 (decode_character_constant_aux),
+    ported as the same exhaustive, fail-CLOSED table (arc-14 S1 F2,
+    sem:G5: the previous version was fail-OPEN — multi-char constants
+    silently returned the first char's code, invalid hex/octal digits
+    folded in as 0 via readDigit's default, empty input returned 0; the
+    oracle failwiths on all of these). Failure arms are loud panics
+    mirroring upstream's `failwith` (fail-stop under
+    LEAN_ABORT_ON_PANIC). -/
 private def decode_character_constant_aux (str : String) : Int :=
-  -- Simple escape sequences
   match str with
+  -- simple-escape-sequences — STD §5.2.2#2, decode.ml:146-153
   | "\\a" => 7
   | "\\b" => 8
   | "\\f" => 12
@@ -53,27 +77,55 @@ private def decode_character_constant_aux (str : String) : Int :=
   | "\\r" => 13
   | "\\t" => 9
   | "\\v" => 11
+  -- escaped punctuation — decode.ml:115 ("\\\""), :119 ("\\'"), :135 ("\\\\")
   | "\\\\" => 92
   | "\\'" => 39
   | "\\\"" => 34
-  | "\\0" => 0
+  -- '\?' — STD §6.4.4.4#4 lists \? among the simple-escape-sequences
+  -- (value '?' = 63; gcc agrees). DELIBERATE DIVERGENCE from upstream:
+  -- decode.ml has NO "\\?" arm, so its catch-all routes '?' into the
+  -- octal validator and FAILWITHS on legal C — an upstream bug
+  -- (three-way classified oracle-wrong at arc-14 S0; upstream-tray
+  -- candidate, see tests/immaculate g5-decode-question and the arc-14
+  -- records). We decode it correctly rather than mirror a crash.
+  | "\\?" => 63
   | _ =>
     if str.length == 1 then
-      -- Single character — use ASCII value
-      Int.ofNat str.front.toNat
+      -- decode.ml:44-159: the enumerated single-character table;
+      -- anything else falls through to failwith (:199-200)
+      let c := str.front
+      if basicSourceChar c then Int.ofNat c.toNat
+      else panic! s!"decode_character_constant: invalid char constant ==> {str} (decode.ml:199-200)"
     else if str.startsWith "\\x" then
-      -- Hex escape: \xNN
-      let hex := str.drop 2
-      (decode_integer_constant ("0x" ++ hex)).2
-    else if str.startsWith "\\" then
-      -- Octal escape: \NNN
-      let oct := str.drop 1
-      (decode_integer_constant ("0" ++ oct)).2
-    else if str.length > 0 then
-      -- Single character
-      Int.ofNat str.front.toNat
+      -- Hexadecimal escape sequence — STD §6.4.4.4#9, decode.ml:169-183:
+      -- every span char must be a hex digit, else failwith
+      let hexs := (str.drop 2).toString
+      if hexs.isEmpty then
+        panic! "decode_character_constant, invalid constant: '\\x' (decode.ml:171-172)"
+      else if hexs.toList.all (fun c =>
+          ('0' ≤ c && c ≤ '9') || ('A' ≤ c && c ≤ 'F') || ('a' ≤ c && c ≤ 'f')) then
+        (decode_integer_constant ("0x" ++ hexs)).2
+      else
+        panic! s!"decode_character_constant, started like an hexa constant, but failed: {hexs} (decode.ml:182-183)"
+    else if str.startsWith "\\" && str.length ≥ 2 then
+      -- Octal escape sequence — STD §6.4.4.4 octal-escape-sequence,
+      -- decode.ml:184-197. QUIRK MIRRORED: upstream's validator accepts
+      -- character codes 48..56 = '0'..'8' (decode.ml:188-191) — '8' is
+      -- not an octal digit ('\8' is a constraint violation gcc
+      -- rejects), and read_digit folds it in with value 8; kept
+      -- deliberately for oracle parity (documented upstream quirk).
+      let octs := (str.drop 1).toString
+      if octs.toList.all (fun c => '0' ≤ c && c ≤ '8') then
+        (decode_integer_constant ("0" ++ octs)).2
+      else
+        panic! s!"decode_character_constant, started like an octal constant, but failed: {octs} (decode.ml:196-197)"
+    else if str.isEmpty then
+      panic! "decode_character_constant: empty constant (decode.ml:162-163)"
     else
-      0  -- empty string
+      -- multi-character constants and everything else — decode.ml:199-200
+      -- (also subsumes the bare "\\" arm, decode.ml:165-167: length-1
+      -- backslash fails in the single-char table above)
+      panic! s!"decode_character_constant: invalid char constant ==> {str} (decode.ml:199-200)"
 
 /-- Decode a C character constant string to its integer value (ASCII).
     Corresponds to: Decode.decode_character_constant in decode.ml:201-219
@@ -81,8 +133,22 @@ private def decode_character_constant_aux (str : String) : Int :=
 def decode_character_constant (str : String) : Int :=
   wrapChar (decode_character_constant_aux str)
 
-/-- Escape a character for display.
-    Corresponds to: Decode.escaped_char (= Char.escaped in OCaml) -/
+/-- Escape a character for display — used by formatted.lem's
+    store_chars_in_array, which round-trips every printf-stored char
+    through `decode_character_constant (escaped_char c)`.
+
+    DELIBERATE DIVERGENCE from upstream (arc-14 S1 F2, sem:S12; the old
+    comment MIScited this as "= Char.escaped in OCaml"): upstream's
+    escaped_char IS `Char.escaped` (decode.ml:221-222), which renders
+    non-printables as DECIMAL "\ddd" — and decode's octal reader then
+    reads that back as OCTAL, silently corrupting the round-trip for
+    chars whose decimal digits ≠ octal value. MEASURED (arc-14 S0/S1
+    three-way, tests/immaculate/libc/g5-escape-roundtrip.c):
+    `snprintf(buf, 8, "%c", 127); return buf[0];` returns 87 on the
+    oracle (Char.escaped 127 = "\127" → 0o127 = 87) but 127 on BOTH gcc
+    and this backend (hex \xNN round-trips exactly).
+    Lean-right/oracle-wrong — upstream-tray candidate (arc-14 records);
+    never "fix" this to match the oracle. -/
 def escaped_char (c : Char) : String :=
   match c with
   | '\n' => "\\n"
