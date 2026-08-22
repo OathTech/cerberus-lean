@@ -1,0 +1,11 @@
+hacl_star	tests/hacl-star/compact/AEAD_Poly1305_64.c	CERB_REJECT	exit 1: In file included from /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-ci-sweep/tests/hacl-star/compact/AEAD_Poly1305_64.c:7:
+hacl_star	tests/hacl-star/compact/Hacl_Chacha20.c	CERB_REJECT	exit 1: In file included from /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-ci-sweep/tests/hacl-star/compact/Hacl_Chacha20.c:7:
+hacl_star	tests/hacl-star/compact/Hacl_Chacha20Poly1305.c	CERB_REJECT	exit 1: In file included from /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-ci-sweep/tests/hacl-star/compact/Hacl_Chacha20Poly1305.h:12,
+hacl_star	tests/hacl-star/compact/Hacl_Curve25519.c	CERB_REJECT	exit 1: In file included from /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-ci-sweep/tests/hacl-star/compact/Hacl_Curve25519.c:7:
+hacl_star	tests/hacl-star/compact/Hacl_Ed25519.c	CERB_REJECT	exit 1: In file included from /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-ci-sweep/tests/hacl-star/compact/Hacl_Ed25519.c:7:
+hacl_star	tests/hacl-star/compact/Hacl_Hash.c	CERB_REJECT	exit 1: In file included from /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-ci-sweep/tests/hacl-star/compact/Hacl_Hash.h:11,
+hacl_star	tests/hacl-star/compact/Hacl_Poly1305_64.c	CERB_REJECT	exit 1: In file included from /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-ci-sweep/tests/hacl-star/compact/Hacl_Poly1305_64.c:7:
+hacl_star	tests/hacl-star/minimal/C_Endianness.c	CERB_REJECT	exit 1: In file included from /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-ci-sweep/tests/hacl-star/minimal/C_Endianness.h:11,
+hacl_star	tests/hacl-star/minimal/fstar_uint128.c	CERB_REJECT	exit 1: In file included from /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-ci-sweep/tests/hacl-star/minimal/FStar_UInt128.h:11,
+hacl_star	tests/hacl-star/minimal/FStar_UInt_8_16_32_64.c	CERB_REJECT	exit 1: In file included from /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-ci-sweep/tests/hacl-star/minimal/FStar_UInt_8_16_32_64.c:7:
+# SWEEP SUMMARY suite=hacl_star mode=libc total=10 match=0 ub_match=0 ub_diff=0 stdout_diff=0 diff=0 mismatch=0 lean_fail=0 lean_crash=0 lean_error=0 lean_timeout=0 cerb_reject=10 cerb_error=0 cerb_timeout=0 cerb_crash=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0

@@ -1,0 +1,3 @@
+freebsd	tests/freebsd/cat.c	LEAN_FAIL	msg: "assert() failure"
+freebsd	tests/freebsd/echo.c	MATCH	VAL:Specified(0)
+# SWEEP SUMMARY suite=freebsd mode=libc total=2 match=1 ub_match=0 ub_diff=0 stdout_diff=0 diff=0 mismatch=0 lean_fail=1 lean_crash=0 lean_error=0 lean_timeout=0 cerb_reject=0 cerb_error=0 cerb_timeout=0 cerb_crash=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0

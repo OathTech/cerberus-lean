@@ -1,0 +1,6 @@
+examples	tests/examples/6.2.5-29.c	CERB_ERROR	msg: "no startup function was declared"
+examples	tests/examples/6.2.5-30.c	CERB_ERROR	msg: "no startup function was declared"
+examples	tests/examples/6.5.2.1-4.c	UB_MATCH	UB:UB_CERB004_unspecified__pointer_add
+examples	tests/examples/6.5-2.1.c	UB_MATCH	UB:UB035_unsequenced_race
+examples	tests/examples/6.5-2.2.c	UB_MATCH	UB:UB035_unsequenced_race
+# SWEEP SUMMARY suite=examples mode=libc total=5 match=0 ub_match=3 ub_diff=0 stdout_diff=0 diff=0 mismatch=0 lean_fail=0 lean_crash=0 lean_error=0 lean_timeout=0 cerb_reject=0 cerb_error=2 cerb_timeout=0 cerb_crash=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0
