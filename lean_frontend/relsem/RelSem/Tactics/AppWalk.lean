@@ -77,10 +77,15 @@ def attempt {α : Type} (hb : Nat) (x : MetaM α) (dbg : Bool := false) :
         (try
           return some (← x)
         catch ex =>
-          if dbg then logInfo m!"app_walk?: attempt failed — {ex.toMessageData}"
+          if dbg then
+            -- dbg_trace, NOT logInfo: the caller's restoreState rolls
+            -- the message log back, silently eating logInfo output
+            -- from failed attempts (arc-11 S2 diagnosis finding)
+            dbg_trace "app_walk?: attempt failed — {← ex.toMessageData.toString}"
           return none)
         (fun ex => do
-          if dbg then logInfo m!"app_walk?: attempt ABORTED — {ex.toMessageData}"
+          if dbg then
+            dbg_trace "app_walk?: attempt ABORTED — {← ex.toMessageData.toString}"
           return none)
   IO.setNumHeartbeats hb0
   return res
@@ -248,6 +253,43 @@ def mkAuxRfl (lhs rhs : Expr) : MetaM Expr := do
       name := nm, levelParams := lvls, type := tyAbs, value := valAbs }
     registerSealedAux nm
     pushEngineEv (.seal { name := nm, kind := .cert })
+    return mkAppN (mkConst nm (lvls.map .param)) fvarExprs
+
+/-- Seal an arbitrary PROOF as its own auxiliary theorem, robustly
+    (arc-11 S2, the round-seal trip): primary path `mkAuxTheorem`
+    (elaborator-side closure + check, budget-capped); on a trip, RAW
+    `addDecl` — close type and value over their fvars and let the
+    KERNEL be the only checker (heartbeat-free), exactly the
+    `mkAuxRfl` fallback generalized to non-rfl values. -/
+def mkAuxThmRobust (ty val : Expr) (base : Name := `walkRound) :
+    MetaM Expr := do
+  match ← tryCatchRuntimeEx
+      (attempt (100000 * 1000)
+        (mkAuxTheorem ty val (zetaDelta := false)))
+      (fun _ => pure none) with
+  | some pf =>
+    if let some n := pf.getAppFn.constName? then
+      registerSealedAux n
+      pushEngineEv (.seal { name := n, kind := .round })
+    return pf
+  | none =>
+    let ty' ← instantiateMVars ty
+    let val' ← instantiateMVars val
+    let used := (collectFVars (collectFVars {} ty') val').fvarIds
+    let used ← sortFVarIds used
+    let fvarExprs := used.map mkFVar
+    let tyAbs ← mkForallFVars fvarExprs ty'
+    let valAbs ← mkLambdaFVars fvarExprs val'
+    if tyAbs.hasExprMVar || valAbs.hasExprMVar then
+      throwError "mkAuxThmRobust raw fallback: residual mvars"
+    let lvls := (collectLevelParams (collectLevelParams {} tyAbs)
+      valAbs).params.toList
+    let nm ← mkFreshUserName base
+    let nm := nm.appendAfter "_aux"
+    addDecl <| .thmDecl {
+      name := nm, levelParams := lvls, type := tyAbs, value := valAbs }
+    registerSealedAux nm
+    pushEngineEv (.seal { name := nm, kind := .round })
     return mkAppN (mkConst nm (lvls.map .param)) fvarExprs
 
 /-- KERNEL-BACKED whnf for discovery computation (arc-9 S3): the
@@ -425,14 +467,21 @@ partial def normStateV2Core (atoms : NameSet) : Nat → Expr → MetaM Expr
     let ty ← whnf (← instantiateMVars (← inferType e))
     if let .const tn _ := ty.getAppFn then
       if opaqueTypeHeads.contains tn then
-        let e' ← whnf e
+        let e' := (← attempt (50000 * 1000) (whnf e)).getD e
         return (if e'.approxDepth ≤ e.approxDepth then e' else e)
       if scalarTypeHeads.contains tn then
         return (← withoutCanUnfoldPred (evalScalar scalarTypeHeads 12 e))
     -- (b) state-atom head opacity
     if let .const fn _ := e.getAppFn then
       if atoms.contains fn then return e
-    let e' ← whnf e
+    -- CAPPED (arc-11 S2 stuck-round root cause): the elaborator whnf
+    -- on a deep non-ctor subterm (measured: the census-R65 step's
+    -- `apply_ctx` arena redex) trips the ambient window and ABORTS
+    -- the whole fired candidate. A tripped whnf now falls back to
+    -- ride-as-delivered (the give-up-keeps-compact-spelling
+    -- discipline) — the next round's KERNEL discovery reduces
+    -- through it heartbeat-free.
+    let e' := (← attempt (50000 * 1000) (whnf e)).getD e
     match e'.getAppFn with
     | .const n _ =>
       match (← getEnv).find? n with
@@ -586,16 +635,32 @@ def normAppState (cfg : WalkCfg) (e : Expr) : MetaM Expr := do
       let args := e.getAppArgs
       if args.size > 0 then
         let i := args.size - 1
-        let st' ← normStateV2 cfg.atoms cfg.depth args[i]!
+        -- CAPPED WHOLE (arc-11 S2 stuck-round root cause): the state
+        -- normalizer's recursion carries uncapped elaborator
+        -- inferType/whnf steps; on pathological states (the census
+        -- R65 `apply_ctx`-arena post-state) it burns the candidate's
+        -- window. A tripped normalization now RIDES THE RAW STATE
+        -- (give-up-keeps-compact-spelling; the next round's KERNEL
+        -- discovery computes through it heartbeat-free).
+        let st'? ← tryCatchRuntimeEx
+          (attempt (150000 * 1000) (normStateV2 cfg.atoms cfg.depth args[i]!))
+          (fun _ => pure none)
+        let some st' := st'? | return e
         if cfg.sealStates then
           -- Per-stage emitter (D3, landed): emit the normalized state
           -- as an auxiliary DEFINITION and continue with the constant
           -- — the T4 named-state structure (default in the sealing
-          -- lane since arc-11 S1).
-          let stTy ← inferType st'
-          let stConst ← mkAuxDefinition
-            ((← mkFreshUserName `walkSt).appendAfter "_aux") stTy st'
-            (compile := false)
+          -- lane since arc-11 S1). CAPPED: a tripped seal rides the
+          -- normalized state unsealed.
+          let sealed? ← tryCatchRuntimeEx
+            (attempt (100000 * 1000) (do
+              let stTy ← inferType st'
+              mkAuxDefinition
+                ((← mkFreshUserName `walkSt).appendAfter "_aux") stTy st'
+                (compile := false)))
+            (fun _ => pure none)
+          let some stConst := sealed?
+            | return mkAppN e.getAppFn (args.set! i st')
           if let some n := stConst.getAppFn.constName? then
             registerSealedAux n
             pushEngineEv (.seal { name := n, kind := .state, depthBefore := e.appArg!.approxDepth.toNat, depthAfter := st'.approxDepth.toNat })
@@ -724,12 +789,65 @@ def findDecideFact (e : Expr) : MetaM (Option (Expr × Expr × Bool)) := do
     kernel obligation stays small: aux-rfl segments (pure definitional
     advances) and one-position congruences (the rewrites). Returns
     `(value, proof : e = value, progressed)`. -/
-partial def kWhnfWithFacts (d : Nat) (e : Expr) :
+partial def kWhnfWithFacts (d : Nat) (e : Expr)
+    (trace : Bool := false) :
     MetaM (Expr × Expr × Bool) := do
   let e1 ← kWhnf e (avatars := true)
   let changed := !(Expr.equal e e1)
   let p1 ← if changed then mkAuxRfl e e1 else mkEqRefl e
   if d == 0 then return (e1, p1, changed)
+  -- (a0) EQUATION-FACT rewrite at this level (arc-11 S2: the
+  -- decide-facts chase GENERALIZED — the §11.2 hypothesis-mediated
+  -- env-lookup route, mechanized): a context fact `h : L = v` whose
+  -- LHS head matches the stuck form rewrites it to `v` and reduction
+  -- resumes. Deterministic first match; the certificate is the fact
+  -- itself under a defeq type hint (kernel-checked at declaration
+  -- end as always).
+  if !e1.getAppFn.isConst
+      || !(match (← getEnv).find? e1.getAppFn.constName! with
+           | some (.ctorInfo _) => true | _ => false) then
+    let h1 := e1.getAppFn
+    -- a RECURSOR/matcher-stuck form has lost its def-level head
+    -- (kernel-whnf unfolded it), so facts stated at def heads
+    -- (fmapLookupBy, lookup_env, …) can only match by DEFEQ — relax
+    -- the head filter for exactly the stuck classes (capped defeq
+    -- decides; misses are cheap).
+    let e1Stuck ← do
+      match h1.constName? with
+      | some n =>
+        if (match (← getEnv).find? n with
+            | some (.recInfo _) => true | _ => false) then pure true
+        else pure (← Lean.Meta.getMatcherInfo? n).isSome
+      | none => pure false
+    for decl in (← getLCtx) do
+      if decl.isImplementationDetail then continue
+      let dty ← instantiateMVars decl.type
+      if dty.isMVar then continue
+      if let some (dα, dlhs, drhs) := dty.eq? then
+        if dlhs.getAppFn == h1 || (e1Stuck && dlhs.getAppFn.isConst) then
+          -- CLOSED facts decide by KERNEL defeq (heartbeat-free —
+          -- the elaborator's capped defeq cannot afford e.g. the
+          -- extern-lookup-through-seal reduction, measured); kernel
+          -- errors are misses.
+          let e1c ← instantiateMVars e1
+          let dlhsc ← instantiateMVars dlhs
+          let hit ← do
+            if !e1c.hasExprMVar && !dlhsc.hasExprMVar then
+              match Lean.Kernel.isDefEq (← getEnv) (← getLCtx)
+                  dlhsc e1c with
+              | .ok b => pure b
+              | .error _ => pure false
+            else
+              (·.isSome) <$> attempt (100000 * 1000) (do
+                unless (← isDefEq dlhs e1) do failure)
+          if trace && !hit then
+            dbg_trace "kwf: eq-fact MISS {decl.userName} at d={d}"
+          if hit then
+            if trace then dbg_trace "kwf: eq-fact HIT {decl.userName}"
+            let pf ← mkExpectedTypeHint decl.toExpr
+              (mkApp3 (mkConst ``Eq [← getLevel dα]) dα e1 drhs)
+            let (v, p3, _) ← kWhnfWithFacts (d-1) drhs trace
+            return (v, ← mkEqTrans p1 (← mkEqTrans pf p3), true)
   -- (a) a decide visible at this level with a context fact: rewrite,
   -- materialize its Boolean, resume.
   if let some (dec, hpf, pos) ← findDecideFact e1 then
@@ -750,7 +868,7 @@ partial def kWhnfWithFacts (d : Nat) (e : Expr) :
         (mkApp3 (mkConst ``Eq [u]) τ e1 (motiveBody.instantiate1 dec))
       let p2 ← mkEqNDRec eqMotive base hdec
       let e2 := motiveBody.instantiate1 bval
-      let (v, p3, _) ← kWhnfWithFacts (d-1) e2
+      let (v, p3, _) ← kWhnfWithFacts (d-1) e2 trace
       return (v, ← mkEqTrans p1 (← mkEqTrans p2 p3), true)
   -- (b) stuck on a recursor/matcher: chase into the blocking
   -- position(s), advance there, materialize, resume here.
@@ -766,7 +884,7 @@ partial def kWhnfWithFacts (d : Nat) (e : Expr) :
       else pure #[]
     for i in positions do
       if h : i < args.size then
-        let (sv, spf, sChanged) ← kWhnfWithFacts (d-1) args[i]
+        let (sv, spf, sChanged) ← kWhnfWithFacts (d-1) args[i] trace
         if sChanged then
           let aty ← inferType args[i]
           let τ ← inferType e1
@@ -782,9 +900,57 @@ partial def kWhnfWithFacts (d : Nat) (e : Expr) :
           if Expr.equal e3 e2 then
             continue
           let p3 ← mkAuxRfl e2 e3
-          let (v, p4, _) ← kWhnfWithFacts (d-1) e3
+          let (v, p4, _) ← kWhnfWithFacts (d-1) e3 trace
           return (v, ← mkEqTrans p1 (← mkEqTrans p2 (← mkEqTrans p3 p4)), true)
+  if trace then
+    -- chase exhaustion: show the stuck form so the missing FACT is
+    -- readable off the trace (arc-11 S2)
+    dbg_trace "kwf: STUCK[d={d}] at head {e1.getAppFn}:\n{((← ppExpr e1).pretty 120).take 900}"
   return (e1, p1, changed)
+
+/-- Unfold registered SEAL constants at the head (bounded delta +
+    beta) until a non-seal head shows — computed values must expose
+    their constructor to the ctor-pattern unification (arc-11 S2:
+    a seal-headed value silently defeats `Result (Defined ?th', ?rs')`
+    assignment). -/
+def unsealHead (e : Expr) : MetaM Expr := do
+  let mut e := e
+  for _ in [0:8] do
+    match e.getAppFn.constName? with
+    | some n =>
+      if (← isSealedAuxName n) then
+        match ((← getEnv).find? n).bind (·.value?) with
+        | some v => e := v.beta e.getAppArgs
+        | none => return e
+      else return e
+    | none => return e
+  return e
+
+/-- Selection-lane normalizer (arc-11 S2 engine prong, design
+    §12.5-1 — the stuck-round root cause): `kWhnf` of a selection
+    fact stops at `Option.some payload` in WHNF, leaving the PAYLOAD
+    (the selected step) with a non-constructor head; a later advance
+    law then finds it by DiscrTree keys (whnfCore exposes the ctor)
+    but its full unification must re-reduce the payload with the
+    ELABORATOR's whnf in deep context — measured: a 200k-heartbeat
+    abort at the census-R65 round. Fix: kernel-whnf the payload too
+    (heartbeat-free, kernel-canonical — the aux-rfl certificate
+    re-derives it as its own reduct), so planted selections are
+    ctor-headed one level down. -/
+def kWhnfSelection (lhs : Expr) (avatars : Bool) : MetaM Expr := do
+  let e ← kWhnf lhs (avatars := avatars)
+  if e.isAppOfArity ``Option.some 2 then
+    let p := e.appArg!
+    let pIsCtor ← do
+      match p.getAppFn.constName? with
+      | some n => pure (((← getEnv).find? n).isSome
+          && (match (← getEnv).find? n with
+              | some (.ctorInfo _) => true | _ => false))
+      | none => pure false
+    if !pIsCtor then
+      let p' ← kWhnf p (avatars := avatars)
+      return mkApp e.appFn! p'
+  return e
 
 /-- Discharge one side hypothesis of a candidate law, mechanically:
     computed-value assignment (normalize-and-assign for a bare-mvar
@@ -867,7 +1033,8 @@ partial def dischargeHyp (cfg : WalkCfg) (fuel : Nat) (h : MVarId) : MetaM Bool 
           let v? ← do
             if cfg.norm then
               tryCatchRuntimeEx
-                ((if isSelection then kWhnf lhs
+                ((if isSelection then
+                    kWhnfSelection lhs (avatars := cfg.sealStates)
                   else normCompute lhs) <&> some)
                 (fun _ => pure none)
             else
@@ -896,6 +1063,11 @@ partial def dischargeHyp (cfg : WalkCfg) (fuel : Nat) (h : MVarId) : MetaM Bool 
               if cfg.trace then
                 dbg_trace "dh[{fuel}]: sealed leaves (depth {v.approxDepth.toNat} → {v'.approxDepth.toNat})"
               pure v'
+            else pure v
+          -- seal-headed values expose their ctor first (arc-11 S2)
+          let v ← if v.getAppFn.isConst then do
+              let v' ← unsealHead v
+              if !(Expr.equal v' v) then pure (← kWhnf v' (avatars := cfg.sealStates)) else pure v
             else pure v
           let defeqOk ← isDefEq rhs v
           if cfg.trace then
@@ -950,12 +1122,13 @@ partial def dischargeHyp (cfg : WalkCfg) (fuel : Nat) (h : MVarId) : MetaM Bool 
             if cfg.norm && cfg.sealFacts && !isSelection
                 && !lhs.isAppOf `RelSem.app then
               let (v0, pf0, prog) ←
-                try kWhnfWithFacts 24 lhs
+                try kWhnfWithFacts 48 lhs (trace := cfg.trace)
                 catch ex =>
                   if cfg.trace then
                     dbg_trace "dh[{fuel}]: kWhnfWithFacts THREW: {(← ex.toMessageData.toString).take 300}"
                   throw ex
               if prog && !(Expr.equal v0 v) then
+                let v0 ← unsealHead v0
                 let v1 ← tryCatchRuntimeEx
                   (normCompute v0) (fun _ => pure v0)
                 if (← isDefEq rhs v1) then
@@ -986,12 +1159,36 @@ partial def dischargeHyp (cfg : WalkCfg) (fuel : Nat) (h : MVarId) : MetaM Bool 
     | none => return (← observing? h.assumption).isSome
     | some (_, lhs, _) =>
       let lhsHead := lhs.getAppFn
+      -- SEAL-TRANSPARENT head (arc-11 S2): a crossing whose LHS head
+      -- is an emitter-created sealed aux (e.g. a sealed step_m
+      -- closure applied to the run state) must still match context
+      -- facts stated at the REAL semantic head — unfold registered
+      -- seals (registry-driven, bounded) + beta for the head
+      -- comparison only; the full defeq crosses the seals by
+      -- ordinary delta.
+      let lhsEffHead ← do
+        let mut e := lhs
+        let mut out := lhsHead
+        for _ in [0:8] do
+          match e.getAppFn.constName? with
+          | some n =>
+            if (← isSealedAuxName n) then
+              match ((← getEnv).find? n).bind (·.value?) with
+              | some v => e := v.beta e.getAppArgs
+              | none => break
+            else
+              out := e.getAppFn
+              break
+          | none =>
+            out := e.getAppFn
+            break
+        pure out
       let lctx ← getLCtx
       for decl in lctx do
         if decl.isImplementationDetail then continue
         let dty ← instantiateMVars decl.type
         if let some (_, dlhs, _) := dty.eq? then
-          if dlhs.getAppFn == lhsHead then
+          if dlhs.getAppFn == lhsHead || dlhs.getAppFn == lhsEffHead then
             -- OP PRE-MATCH (D3): for `app comp mem`-shaped facts,
             -- require the COMPUTATION arguments to unify FIRST
             -- (small terms, no states) — a wrong-op fact must miss
@@ -1017,7 +1214,25 @@ partial def dischargeHyp (cfg : WalkCfg) (fuel : Nat) (h : MVarId) : MetaM Bool 
                 return true
       return false
   if tried then return true
-  if cfg.trace then dbg_trace "dh[{fuel}]: past-assumption ({(← IO.monoMsNow) - ta0}ms)"
+  if cfg.trace then
+    dbg_trace "dh[{fuel}]: past-assumption ({(← IO.monoMsNow) - ta0}ms)"
+    -- arc-11 S2 diagnosis: show the seal-transparent head + a slice
+    -- of the unfolded crossing so the missing FACT's statement shape
+    -- is readable off the trace
+    if let some (_, lhs, _) := ty.eq? then
+      if let some n := lhs.getAppFn.constName? then
+        if (← isSealedAuxName n) then
+          let mut e := lhs
+          for _ in [0:8] do
+            match e.getAppFn.constName? with
+            | some m =>
+              if (← isSealedAuxName m) then
+                match ((← getEnv).find? m).bind (·.value?) with
+                | some v => e := v.beta e.getAppArgs
+                | none => break
+              else break
+            | none => break
+          dbg_trace "dh[{fuel}]: eff-head {e.getAppFn} unfolded:\n{((← ppExpr e).pretty 120).take 3500}"
   match fuel, ty.eq? with
   | fuel + 1, some (_, lhs, _) =>
     -- (ii) one-shot registered law on an app-shaped hypothesis
@@ -1034,6 +1249,10 @@ partial def dischargeHyp (cfg : WalkCfg) (fuel : Nat) (h : MVarId) : MetaM Bool 
       (fun _ => pure #[])
     if cfg.trace then
       dbg_trace "dh[{fuel}]: whnfCore {t1-t0}ms; cands {cands.map (·.name)} for {lhs.getAppFn}"
+      -- arc-11 S2 diagnosis: dump the crossing when an advance-class
+      -- law is about to be tried (sealed leaves keep this moderate)
+      if !cands.isEmpty && lhs.isAppOf `RelSem.app then
+        dbg_trace "dh[{fuel}]: crossing:\n{((← ppExpr lhs).pretty 120).take 6000}"
       if cands.isEmpty && lhs.isAppOf `RelSem.app then
         dbg_trace "dh[{fuel}]: EMPTY-CANDS lhs args heads: {lhs.getAppArgs.map (fun a => toString a.getAppFn)}"
         if lhs.getAppArgs.size ≥ 2 then
@@ -1045,7 +1264,11 @@ partial def dischargeHyp (cfg : WalkCfg) (fuel : Nat) (h : MVarId) : MetaM Bool 
           dbg_trace "dh[{fuel}]: target keys 5-20: {(keys.toList.drop 5).take 15 |>.map (fun k => Format.pretty (format k))}"
     for law in cands do
       let st ← saveState
-      let res ← attempt cfg.candBudget (do
+      -- (dbg := cfg.trace): surface attempt-level ABORTS in the trace
+      -- lane (arc-11 S2 diagnosis finding: a silent unification abort
+      -- inside a candidate attempt is indistinguishable from a
+      -- mismatch without it)
+      let res ← attempt (dbg := cfg.trace) cfg.candBudget (do
         let lemExpr ← mkConstWithFreshMVarLevels law.name
         let (args, _, lemTy) ← forallMetaTelescopeReducing
           (← inferType lemExpr)
@@ -1095,7 +1318,10 @@ partial def dischargeHyp (cfg : WalkCfg) (fuel : Nat) (h : MVarId) : MetaM Bool 
     -- leaving the crossing to an explicit `app_walk_step`).
     if lhs.isAppOf `RelSem.app then
       if cfg.trace then
-        logInfo m!"dh[{fuel}]: STOP no law fired on app-shaped: {lhs.getAppFn}, {(← appEqMatches lhs).map (·.name)}"
+        dbg_trace "dh[{fuel}]: STOP no law fired on app-shaped: {lhs.getAppFn}, {(← appEqMatches lhs).map (·.name)}"
+        -- arc-11 S2 diagnosis: dump the crossing (sealed leaves keep
+        -- this moderate) so aborted unifications are inspectable
+        dbg_trace "dh[{fuel}]: STOP crossing:\n{(← ppExpr lhs).pretty 120 |>.take 4000}"
       return false
     let st ← saveState
     let res ← attempt candidateBudget (do
@@ -1273,13 +1499,24 @@ partial def walkOnce (cfg : WalkCfg) (goal : MVarId)
               break
             hidx := hidx + 1
       unless ok do return none
+      if cfg.trace then dbg_trace "walkOnce {law.name}: hyps ok"
       let proof ← Core.withCurrHeartbeats (instantiateMVars (mkAppN lemExpr args))
       if proof.hasExprMVar then
         fateCell.set (some .residualMvars)
         return none
+      if cfg.trace then dbg_trace "walkOnce {law.name}: proof assembled"
       let lemRhs ← instantiateMVars lemRhs
-      -- terminal: the law's RHS meets the goal's RHS directly
-      if (← withReducible <| isDefEq lemRhs rhs) then
+      -- terminal: the law's RHS meets the goal's RHS directly.
+      -- CAPPED (arc-11 S2 stuck-round root cause, measured at census
+      -- R65): as the mid-iteration state approaches the target
+      -- family, a NEGATIVE deep defeq here burns the whole window —
+      -- a terminal that cannot be decided fast is NOT terminal (the
+      -- op pre-match discipline); state restored on the miss.
+      let st0 ← saveState
+      let isTerminal := (← attempt (20000 * 1000)
+        (withReducible <| isDefEq lemRhs rhs)).getD false
+      unless isTerminal do restoreState st0
+      if isTerminal then
         -- PREVIEW (§12.2): never assign the goal — the walk reports
         -- the terminal without closing anything.
         unless cfg.preview do
@@ -1292,6 +1529,7 @@ partial def walkOnce (cfg : WalkCfg) (goal : MVarId)
       -- differing leaf) instead of being left to the trans
       -- unification as one monolithic kernel defeq.
       let lemRhsN ← normAppState cfg lemRhs
+      if cfg.trace then dbg_trace "walkOnce {law.name}: state normalized"
       let proof ← do
         -- PREVIEW: skip the certificate assembly (bridge/round seal)
         -- — the continuation value lemRhsN is all progression needs.
@@ -1306,14 +1544,15 @@ partial def walkOnce (cfg : WalkCfg) (goal : MVarId)
         else pure proof
       -- PER-ROUND SEALING (after the bridge: the sealed type is a
       -- named-state-to-named-state equation — small for the kernel).
+      if cfg.trace then dbg_trace "walkOnce {law.name}: bridge done"
       let proof ← if !cfg.preview && cfg.sealRounds then do
+          -- ROBUST round seal (arc-11 S2): mkAuxTheorem capped with
+          -- the raw-addDecl kernel-only fallback (the measured
+          -- census-R65 trip after normalization/bridge were cleared).
           let pty ← instantiateMVars (← inferType proof)
-          let pf ← mkAuxTheorem pty proof (zetaDelta := false)
-          if let some n := pf.getAppFn.constName? then
-            registerSealedAux n
-            pushEngineEv (.seal { name := n, kind := .round })
-          pure pf
+          mkAuxThmRobust pty proof
         else pure proof
+      if cfg.trace then dbg_trace "walkOnce {law.name}: round sealed"
       let restTy ← mkEq lemRhsN rhs
       let rest ← mkFreshExprMVar restTy (userName := `walk)
       -- PREVIEW: the continuation mvar drives the next round's
