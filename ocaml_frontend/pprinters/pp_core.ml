@@ -331,8 +331,9 @@ let rec pp_value = function
       pp_datactor "True"
   | Vfalse ->
       pp_datactor "False"
-  | Vlist (_, cvals) ->
-      P.brackets (comma_list pp_value cvals)
+  | Vlist (bTy, cvals) ->
+      (* NOTE: the type annotation is required by the Core parser *)
+      P.brackets (comma_list pp_value cvals) ^^ P.colon ^^^ pp_core_base_type (BTy_list bTy)
   | Vtuple cvals ->
       P.parens (comma_list pp_value cvals)
   | Vctype ty ->
@@ -470,12 +471,14 @@ let pp_pexpr pe =
             Cerb_debug.warn [] (fun () ->
               "Pp_core found a Cnil with pes <> []"
             );
-          P.brackets P.empty ^^ P.colon ^^^ pp_core_base_type bTy
+          (* NOTE: the annotation is the type of the list (the Core parser
+             rejects a non-list type here) *)
+          P.brackets P.empty ^^ P.colon ^^^ pp_core_base_type (BTy_list bTy)
       | PEctor (Ccons, pes) ->
           let to_list =
             let rec aux acc = function
-              | PEctor (Cnil _, []) ->
-                  Some (List.rev acc)
+              | PEctor (Cnil bTy, []) ->
+                  Some (bTy, List.rev acc)
               | PEctor (Ccons, [pe1; Pexpr (_, _, pe2_)]) ->
                   aux (pe1 :: acc) pe2_
               | _ ->
@@ -483,8 +486,9 @@ let pp_pexpr pe =
             in
             aux [] pe in
           begin match to_list with
-            | Some pes' ->
-                P.brackets (comma_list pp pes')
+            | Some (bTy, pes') ->
+                (* NOTE: the type annotation is required by the Core parser *)
+                P.brackets (comma_list pp pes') ^^ P.colon ^^^ pp_core_base_type (BTy_list bTy)
             | None ->
                 P.separate_map (P.space ^^ P.colon ^^ P.colon ^^ P.space) pp pes
           end
