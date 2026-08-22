@@ -888,6 +888,7 @@ let symbolify_impl_or_file decls : ((Core.impl, parsed_core_file) either) Eff.t 
       | Fun_decl (_sym, _)
       | Proc_decl (_sym, _, _)
       | Proc_fwd_decl (_sym, _)
+      | Builtin_decl (_sym, _)
       | Aggregate_decl (_sym, _) ->
           lookup_sym _sym >>= (function
             | Some (_, loc) ->
