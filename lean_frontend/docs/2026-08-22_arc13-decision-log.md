@@ -61,3 +61,27 @@
   results cascade table; D1's decision itself (scheme R-B) is
   unaffected — byte-identity, not delta size, was its load-bearing
   evidence.
+- **D3 [AGENT] — audits complete, fix batch verified, ARC READY FOR
+  MERGE ASK.** Both audits' verdicts: the core claims
+  (collision-freedom by construction, upstream byte-identity —
+  10/10 + 7 fresh files independently, the 516-row restoration with
+  mismatch=0, the 5x yield, grandfather dissolution, the
+  zero-manual-edit proof re-pin) all survived adversarial
+  recomputation. Fixes landed and verified: A-F1 backstop claims
+  honestly narrowed (desugar-seam only; seam re-threading =
+  drift-gate-defended — the sound architecture, park rationale
+  recorded); A-F2 stale-olean shadowing cleaned (280 orphans) with
+  the deeper prefix-resolution probe hazard documented AND the
+  WalkBench register entry CLOSED (bench reproduces arc-11's shape,
+  ~16x replay); B-F5 the libc pin converted to a content-hash
+  (stronger, rebuild-independent, plant-tested both directions);
+  B-F1-F4/F6/F8 record corrections labeled incl. the C1
+  comparability correction (output-convergence, not manifest-delta
+  shrinkage); B-F7 plant-hygiene doctrine recorded (promoted to the
+  container playbook at merge); the [USER] env-trap tweaks landed
+  and plant-tested (self-sourcing capped; common.sh fail-fast
+  guard — verified live: bare shells now refuse loudly by name).
+  Orchestrator final verification at a7ec300ac via the ce wrapper:
+  unit 7/7, verify 29/29, exec zero movement cerb_floor=0,
+  libc_prep content-hash check OK. Merge-base = mainline head,
+  ff-only, zero lem. The merge ask goes to the operator.
