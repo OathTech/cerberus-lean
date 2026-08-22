@@ -301,8 +301,10 @@ def offsetsof_lemFuel (lemFuel : Nat) (tagDefs : TagDefs) (tagSym : sym)
     padding), padded up to alignof(struct).
     Union (impl_mem.ml:172-192): max member size padded up to max member
     alignment (align_opt honored).
-    Divergence kept from the pre-existing code: Void/incomplete-Array/
-    Function return 0 where OCaml `assert false` (impl_mem.ml:133-135). -/
+    Void/incomplete-Array/Function PANIC, mirroring OCaml `assert false`
+    (impl_mem.ml:134-135) — a 0-sized value flowing onward is the
+    panic-optimized-into-value hazard (arc-14 S1 F1, sem:S7; the previous
+    "return 0" divergence carried provenance, not a rationale). -/
 def sizeofCtype_lemFuel (lemFuel : Nat) (cty : ctype) : Nat :=
   match lemFuel with
   | 0 => fuelExhaustedWith "CerbMem.sizeofCtype: fuel exhausted" 0
@@ -310,9 +312,10 @@ def sizeofCtype_lemFuel (lemFuel : Nat) (cty : ctype) : Nat :=
     match cty with
     | Ctype _ ty_ =>
       match ty_ with
-      | .Void0 => 0                                 -- OCaml: assert false
-      | .Array0 _ none => 0                         -- OCaml: assert false
-      | .Function _ _ _ | .FunctionNoParams _ => 0  -- OCaml: assert false
+      | .Void0 => panic! "CerbMem.sizeofCtype: Void (impl_mem.ml:134-135 assert false)"
+      | .Array0 _ none => panic! "CerbMem.sizeofCtype: incomplete array (impl_mem.ml:134-135 assert false)"
+      | .Function _ _ _ | .FunctionNoParams _ =>
+        panic! "CerbMem.sizeofCtype: function type (impl_mem.ml:134-135 assert false)"
       | .Basic (.Integer ity) =>
         match CerberusImpl.sizeof_ity ity with      -- impl_mem.ml:136-141
         | some n => n
@@ -349,8 +352,9 @@ def sizeofCtype_lemFuel (lemFuel : Nat) (cty : ctype) : Nat :=
     honored), the fold seeded with the flexible array member's
     array-of-element alignment when present (else 0).
     Union (impl_mem.ml:253-271): max member alignment, seed 0.
-    Divergence kept from the pre-existing code: Void/Function return 1
-    where OCaml `assert false`. -/
+    Void/Function PANIC, mirroring OCaml `assert false` (impl_mem.ml:
+    198-199, 216-218) — arc-14 S1 F1, sem:S7 (was: silent 1,
+    provenance-only). -/
 def alignofCtype_lemFuel (lemFuel : Nat) (cty : ctype) : Nat :=
   match lemFuel with
   | 0 => fuelExhaustedWith "CerbMem.alignofCtype: fuel exhausted" 1
@@ -358,8 +362,9 @@ def alignofCtype_lemFuel (lemFuel : Nat) (cty : ctype) : Nat :=
     match cty with
     | Ctype _ ty_ =>
       match ty_ with
-      | .Void0 => 1                                 -- OCaml: assert false
-      | .Function _ _ _ | .FunctionNoParams _ => 1  -- OCaml: assert false
+      | .Void0 => panic! "CerbMem.alignofCtype: Void (impl_mem.ml:198-199 assert false)"
+      | .Function _ _ _ | .FunctionNoParams _ =>
+        panic! "CerbMem.alignofCtype: function type (impl_mem.ml:216-218 assert false)"
       | .Basic (.Integer ity) =>
         match CerberusImpl.alignof_ity ity with     -- impl_mem.ml:200-206
         | some n => n
@@ -1112,13 +1117,31 @@ def memberShiftPtrval (pv : PointerValue) (tag : sym) (memb : identifier) : Poin
   | .PV prov (.PVnull ty) =>
     if offsetVal == 0 then .PV prov (.PVnull ty)
     else .PV prov (.PVconcrete unionMem offsetVal)
-  | .PV _ (.PVfunction _) => pv  -- undefined per OCaml, but return unchanged
+  | .PV _ (.PVfunction _) =>
+    -- impl_mem.ml:2239-2240: failwith "Concrete.member_shift_ptrval,
+    -- PVfunction" — mirrored as a panic (arc-14 S1 F1, sem:S8; was a
+    -- self-confessed fail→value divergence returning pv unchanged).
+    panic! "Concrete.member_shift_ptrval, PVfunction (impl_mem.ml:2239-2240)"
   | .PV prov (.PVconcrete _ addr) =>
     .PV prov (.PVconcrete unionMem (addr + offsetVal))
 
+/-- bytefromint — impl_mem.ml:2775-2777: `assert (0 ≤ n ≤ 255)`, value
+    returned UNCHANGED (no wrap). The assert is mirrored as a panic
+    (arc-14 S1 F1, sem:S6; was: silent euclidean `n % 256` wrap — a
+    crash-path turned value-path). -/
 def bytefromint (iv : IntegerValue) : IntegerValue :=
-  match iv with | .IV prov n => .IV prov (n % 256)
-def intfrombyte (iv : IntegerValue) : IntegerValue := iv
+  match iv with
+  | .IV _ n =>
+    if 0 ≤ n && n ≤ 255 then iv
+    else panic! "CerbMem.bytefromint: value out of byte range (impl_mem.ml:2776 assert)"
+
+/-- intfrombyte — impl_mem.ml:2779-2781: same assert, value unchanged
+    (arc-14 S1 F1, sem:S6; the assert was previously dropped). -/
+def intfrombyte (iv : IntegerValue) : IntegerValue :=
+  match iv with
+  | .IV _ n =>
+    if 0 ≤ n && n ≤ 255 then iv
+    else panic! "CerbMem.intfrombyte: value out of byte range (impl_mem.ml:2780 assert)"
 
 /-- overlapping — impl_mem.ml:527-532 -/
 def overlapping (f1 f2 : Footprint) : Bool :=
@@ -1694,18 +1717,45 @@ def eqPtrval (_ : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
 def nePtrval (loc : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
   nd_bind (eqPtrval loc pv1 pv2) (fun b => memReturn (!b))
 
-def ltPtrval (_ : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
-  memReturn (match ptrAddr pv1, ptrAddr pv2 with
-    | some a1, some a2 => a1 < a2 | _, _ => false)
-def gtPtrval (_ : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
-  memReturn (match ptrAddr pv1, ptrAddr pv2 with
-    | some a1, some a2 => a1 > a2 | _, _ => false)
-def lePtrval (_ : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
-  memReturn (match ptrAddr pv1, ptrAddr pv2 with
-    | some a1, some a2 => a1 <= a2 | _, _ => false)
-def gePtrval (_ : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
-  memReturn (match ptrAddr pv1, ptrAddr pv2 with
-    | some a1, some a2 => a1 >= a2 | _, _ => false)
+/-! Relational pointer operators — impl_mem.ml:1886-1955 (arc-14 S1 F1,
+    sem:G1: the kill-paths are restored — these previously returned a
+    silent `false` for null/function/mixed operands where upstream FAILS).
+    The SW_strict_pointer_relationals branches (:1889-1895 etc.) are not
+    ported — the Lean pipeline never sets that switch (same fencing as
+    diff_ptrval below); the non-strict path compares concrete addresses
+    regardless of provenance. Only lt_ptrval has a dedicated null arm
+    upstream (:1898-1900); gt/le/ge fall to their generic MerrWIP arm —
+    mirrored arm-for-arm, including the exact error strings. -/
+
+/-- lt_ptrval — impl_mem.ml:1886-1902. -/
+def ltPtrval (loc : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
+  match pv1, pv2 with
+  | .PV _ (.PVconcrete _ a1), .PV _ (.PVconcrete _ a2) =>
+    memReturn (a1 < a2)                                       -- :1896-1897 (non-strict)
+  | .PV _ (.PVnull _), _ | _, .PV _ (.PVnull _) =>
+    memFail (MerrWIP "lt_ptrval ==> one null pointer") loc    -- :1898-1900
+  | _, _ => memFail (MerrWIP "lt_ptrval") loc                 -- :1901-1902
+
+/-- gt_ptrval — impl_mem.ml:1904-1917. -/
+def gtPtrval (loc : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
+  match pv1, pv2 with
+  | .PV _ (.PVconcrete _ a1), .PV _ (.PVconcrete _ a2) =>
+    memReturn (a1 > a2)                                       -- :1914-1915 (non-strict)
+  | _, _ => memFail (MerrWIP "gt_ptrval") loc                 -- :1916-1917
+
+/-- le_ptrval — impl_mem.ml:1919-1935. -/
+def lePtrval (loc : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
+  match pv1, pv2 with
+  | .PV _ (.PVconcrete _ a1), .PV _ (.PVconcrete _ a2) =>
+    memReturn (a1 ≤ a2)                                       -- :1930-1932 (non-strict)
+  | _, _ => memFail (MerrWIP "le_ptrval") loc                 -- :1934-1935
+
+/-- ge_ptrval — impl_mem.ml:1937-1953. -/
+def gePtrval (loc : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
+  match pv1, pv2 with
+  | .PV _ (.PVconcrete _ a1), .PV _ (.PVconcrete _ a2) =>
+    memReturn (a1 ≥ a2)                                       -- :1948-1950 (non-strict)
+  | _, _ => memFail (MerrWIP "ge_ptrval") loc                 -- :1952-1953
 
 /-- diff_ptrval — impl_mem.ml:1954-1984 (strict, non-PERMISSIVE path;
     the SW_pointer_arith PERMISSIVE branch at :1970-1975 is not ported —
@@ -1843,31 +1893,62 @@ def effMemberShiftPtrval (_ : CerbLocation.Loc) (pv : PointerValue) (tag : sym) 
 
 /-! ### Memory operations -/
 
-def memcpyM (_ : CerbLocation.Loc) (dst src : PointerValue) (sizeIv : IntegerValue) : memM PointerValue :=
-  ND fun st =>
-    match dst, src, sizeIv with
-    | .PV _ (.PVconcrete _ dstAddr), .PV _ (.PVconcrete _ srcAddr), .IV _ n =>
-      let size := n.toNat
-      let bytes := readBytesFrom st srcAddr size
-      let st' := writeBytesTo st dstAddr bytes
-      (NDactive dst, st')
-    | _, _, _ => (NDkilled (Other (MerrOther "memcpy: non-concrete pointers")), st)
+/-- memcpy — impl_mem.ml:2635-2646 (arc-14 S1 F1, sem:G2: previously
+    copied raw bytemap bytes, silently bypassing every access check).
+    Mirrored as upstream writes it: a per-byte loop of CHECKED
+    `load`/`store` of `unsigned char` at `array_shift_ptrval` offsets, so
+    OOB source/destination, dead or read-only destination, and atomicity
+    violations kill exactly as the oracle's load/store machinery does.
+    Upstream's own TODOs (overlap-UB unimplemented) inherit unchanged.
+    The loop recurses on a Nat countdown (structural; upstream counts up
+    with `Z.lt i size_n`, same iteration space). -/
+def memcpyM (loc : CerbLocation.Loc) (dst src : PointerValue) (sizeIv : IntegerValue) : memM PointerValue :=
+  match sizeIv with
+  | .IV _ size_n =>
+    let rec aux : Nat → Int → memM PointerValue
+      | 0, _ => memReturn dst                                        -- :2643-2644
+      | k + 1, i =>
+        -- :2640-2642: load uchar (src+i) >>= store uchar (dst+i)
+        nd_bind (loadM loc unsigned_char
+            (arrayShiftPtrval src unsigned_char (.IV .Prov_none i))) fun lr =>
+        nd_bind (storeM loc unsigned_char false
+            (arrayShiftPtrval dst unsigned_char (.IV .Prov_none i)) lr.2) fun _ =>
+        aux k (i + 1)
+    aux size_n.toNat 0
 
+/-- memcmp — impl_mem.ml:2649-2665 (arc-14 S1 F1, sem:G2: previously read
+    raw bytemap bytes with unspecified bytes silently comparing equal).
+    Mirrored: per-byte CHECKED `load` of `unsigned char` on both sides;
+    a load that does not produce `MVinteger` — an unspecified
+    (uninitialised) byte — hits upstream's own `assert false`
+    (impl_mem.ml:2658-2659), mirrored here as a loud panic (fail-stop
+    under LEAN_ABORT_ON_PANIC; both sides crash rather than invent a
+    value — the oracle's inelegant-but-fail-closed behavior, mirrored
+    not improved; see tests/immaculate g2-memcmp-uninit).
+    Byte comparison is on the loaded integer VALUES (Z.compare upstream,
+    :2662-2664), fold stopping at the first nonzero. -/
 def memcmpM (pv1 pv2 : PointerValue) (sizeIv : IntegerValue) : memM IntegerValue :=
-  ND fun st =>
-    match pv1, pv2, sizeIv with
-    | .PV _ (.PVconcrete _ a1), .PV _ (.PVconcrete _ a2), .IV _ n =>
-      let size := n.toNat
-      let b1 := readBytesFrom st a1 size
-      let b2 := readBytesFrom st a2 size
-      let cmp := (b1.zip b2).foldl (init := (0 : Int)) fun acc (x, y) =>
-        if acc != 0 then acc
-        else match x.value, y.value with
-          | some v1, some v2 =>
-            if v1.toNat < v2.toNat then -1 else if v1.toNat > v2.toNat then 1 else 0
-          | _, _ => 0
-      (NDactive (integerIval cmp), st)
-    | _, _, _ => (NDactive (integerIval 0), st)
+  match sizeIv with
+  | .IV _ size_n =>
+    -- get_bytes — impl_mem.ml:2650-2659 (ptr' = ptr+1 uchar per step)
+    let rec getBytes (ptrval : PointerValue) (acc : List Int) : Nat → memM (List Int)
+      | 0 => memReturn acc.reverse
+      | k + 1 =>
+        nd_bind (loadM CerbLocation.unknown unsigned_char ptrval) fun lr =>
+        match lr.2 with
+        | .MVinteger _ (.IV _ byte_n) =>
+          let ptr' := arrayShiftPtrval ptrval unsigned_char (.IV .Prov_none 1)
+          getBytes ptr' (byte_n :: acc) k
+        | _ =>
+          -- impl_mem.ml:2658-2659: assert false (unspecified byte)
+          panic! "Concrete.memcmp: non-integer byte (impl_mem.ml:2658-2659 assert false)"
+    nd_bind (getBytes pv1 [] size_n.toNat) fun bytes1 =>
+    nd_bind (getBytes pv2 [] size_n.toNat) fun bytes2 =>
+    -- impl_mem.ml:2661-2664
+    memReturn (integerIval ((bytes1.zip bytes2).foldl (init := (0 : Int))
+      fun acc (n1, n2) =>
+        if acc == 0 then (if n1 < n2 then -1 else if n1 > n2 then 1 else 0)
+        else acc))
 
 /-- realloc — impl_mem.ml:2668-2696.
     null → allocate_region (fresh)
@@ -1877,48 +1958,62 @@ def reallocM (loc : CerbLocation.Loc) (tid : Nat) (align : IntegerValue)
     (ptr : PointerValue) (size : IntegerValue) : memM PointerValue :=
   match ptr with
   | .PV .Prov_none (.PVnull _) =>
-    allocateRegion tid (PrefOther "realloc") align size
+    allocateRegion tid (PrefOther "realloc") align size          -- :2670-2671
   | .PV .Prov_none _ =>
-    memFail (MerrOther "realloc no provenance")
+    memFail (MerrWIP "realloc no provenance") loc                -- :2672-2673
   | .PV (.Prov_some allocId) (.PVconcrete _ addr) =>
     ND fun st =>
-      let isDynamic := st.dynamicAddrs.contains addr
-      let isDead := st.deadAllocations.contains allocId
-      -- fail mapping (impl_mem.ml:540-546) — these surface as UB179a/b
+      let isDynamic := st.dynamicAddrs.contains addr             -- is_dynamic, :2675
+      let isDead := st.deadAllocations.contains allocId          -- is_dead, :2678
+      -- fail mapping (impl_mem.ml:540-546): MerrUndefinedRealloc →
+      -- UB179c/d (Mem_common undefinedFromMem_error). Arc-14 S1 F1,
+      -- sem:G3: these previously raised MerrUndefinedFree (UB179a/b) —
+      -- the wrong UB family, and the old comment even miscited it.
       if !isDynamic then
-        (NDkilled (failReason (MerrUndefinedFree Free_non_matching) loc), st)
+        (NDkilled (failReason (MerrUndefinedRealloc Free_non_matching) loc), st)    -- :2676-2677
       else if isDead then
-        (NDkilled (failReason (MerrUndefinedFree Free_dead_allocation) loc), st)
+        (NDkilled (failReason (MerrUndefinedRealloc Free_dead_allocation) loc), st) -- :2679-2681
       else match st.allocations.get? allocId with
-        | none => (NDkilled (Other (MerrOther "realloc: allocation missing")), st)
+        | none =>
+          -- get_allocation ~loc:(other "Concrete.realloc") — :2683 (fails
+          -- MerrOutsideLifetime via get_allocation, impl_mem.ml:669-675)
+          (NDkilled (failReason
+            (MerrOutsideLifetime s!"Concrete.get_allocation, alloc_id={allocId}")), st)
         | some alloc =>
-          if alloc.base != addr then
-            (NDkilled (Other (MerrOther "realloc: invalid pointer (not at base)")), st)
+          if alloc.base == addr then
+            -- impl_mem.ml:2685-2691: allocate_region >>= memcpy (the
+            -- CHECKED per-byte copy — see memcpyM) >>= kill >>= return.
+            -- size_to_copy = IV (Prov_none, min alloc.size size_n), :2686-2688.
+            let sizeToCopy : IntegerValue := match size with
+              | .IV _ size_n => .IV .Prov_none (min alloc.size size_n)
+            let chain : memM PointerValue :=
+              nd_bind (allocateRegion tid (PrefOther "realloc") align size) fun newPtr =>
+              nd_bind (memcpyM loc newPtr ptr sizeToCopy) fun _ =>
+              nd_bind (killM (CerbLocation.other "realloc") true ptr) fun _ =>
+              memReturn newPtr
+            (match chain with | ND f => f st)
           else
-            -- Allocate new region, copy bytes, free old
-            let (newPtrStatus, st1) :=
-              match allocateRegion tid (PrefOther "realloc") align size with
-              | ND f => f st
-            match newPtrStatus with
-            | NDactive newPtr =>
-              match newPtr with
-              | .PV _ (.PVconcrete _ newAddr) =>
-                let copySize := match size with
-                  | .IV _ n => Nat.min alloc.size.toNat n.toNat
-                let bytes := readBytesFrom st1 addr copySize
-                let st2 := writeBytesTo st1 newAddr bytes
-                -- Kill old
-                let st3 := { st2 with
-                  deadAllocations := allocId :: st2.deadAllocations
-                  allocations := st2.allocations.erase allocId }
-                (NDactive newPtr, st3)
-              | _ => (NDactive newPtr, st1)
-            | other => (other, st1)
-  | _ => memFail (MerrOther "realloc: invalid pointer")
+            (NDkilled (failReason (MerrWIP "realloc: invalid pointer") loc), st)    -- :2692-2693
+  | _ => memFail (MerrWIP "realloc: invalid pointer") loc        -- :2695-2696
 
 /-! ### Prefix operations -/
 
-def updatePrefix (_ : prefix0 × MemValue) : memM Unit := memReturn ()
+/-- update_prefix — impl_mem.ml:1349-1362 (arc-14 S1 F1, sem:S5: was a
+    silent no-op; the prefix is semantically LIVE — storeM's is_locking
+    arm selects the readonly KIND from `alloc.prefix_`, see :1573-1577's
+    mirror above). MVpointer with Prov_some → update that allocation's
+    prefix; a missing allocation or non-pointer argument warns upstream
+    (Cerb_debug.warn, no debug facility on the batch path here) and
+    returns unit — same observable behavior. -/
+def updatePrefix : prefix0 × MemValue → memM Unit
+  | (pref, .MVpointer _ (.PV (.Prov_some allocId) _)) =>
+    ND fun st =>
+      match st.allocations.get? allocId with
+      | some alloc =>                                            -- :1353-1355
+        (NDactive (), { st with
+          allocations := st.allocations.insert allocId { alloc with prefix_ := pref } })
+      | none => (NDactive (), st)                                -- :1356-1358 (warn)
+  | _ => memReturn ()                                            -- :1360-1362 (warn)
 def prefixOfPointer (_ : PointerValue) : memM (Option String) := memReturn none
 
 /-! ### Varargs

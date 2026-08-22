@@ -1,11 +1,12 @@
 # arc-14 immaculate test-first lane baseline (scripts/test_immaculate.sh).
 #
-# THIS IS THE HONEST S0 BASELINE: most rows are EXPECTED-FAILING.
-# DIFF / ORACLE_CRASH / CONFLATED are NOT gate failures — they are
-# the recorded current-tree wrong-answer state that the S1/S2 fixes
-# will FLIP. The lane is fail-closed against THIS file: a fix that
-# flips a row (or a regression on a MATCH row) exits nonzero and
-# forces a deliberate, justified re-record.
+# THIS IS THE HONEST CURRENT-TREE BASELINE (recorded at S0; re-recorded
+# per fix batch with the flipped finding ids in the commit message).
+# DIFF / ORACLE_CRASH / CONFLATED rows are NOT gate failures — they are
+# the recorded wrong-answer state the remaining S1/S2 fixes will FLIP.
+# The lane is fail-closed against THIS file: a fix that flips a row
+# (or a regression on a MATCH row) exits nonzero and forces a
+# deliberate, justified re-record.
 #
 # Status vocabulary:
 #   MATCH        oracle and Lean agree on the semantic verdict (control rows).
@@ -33,14 +34,14 @@
 #   G5 'ab'  -> Lean fail-closed to agree with the oracle's rejection (still not MATCH-token;
 #               both fail-closed — re-record as the agreed-rejection shape).
 #   G6       -> off CONFLATED once the intern-time fail-stop tripwire lands.
-g1-ge-funptr DIFF
-g1-lt-null DIFF
-g2-memcmp-uninit ORACLE_CRASH
+g1-ge-funptr MATCH
+g1-lt-null MATCH
+g2-memcmp-uninit MATCH
 g2-memcpy-ok MATCH
-g2-memcpy-oob DIFF
-g2-memcpy-readonly DIFF
-g3-realloc-dead DIFF
-g3-realloc-non-heap DIFF
+g2-memcpy-oob MATCH
+g2-memcpy-readonly MATCH
+g3-realloc-dead MATCH
+g3-realloc-non-heap MATCH
 g4-ctz-nonzero MATCH
 g4-ffs-intmin DIFF
 g4-ffs-negative DIFF

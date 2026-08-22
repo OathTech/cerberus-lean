@@ -377,8 +377,18 @@ def batchExitValue (v : value) : String :=
     | none => CerbPP.stringFromCore_value v  -- OtherValue arm (driver_ocaml.ml:167)
   | v => CerbPP.stringFromCore_value v
 
-/-- Batch rendering of a driver error (info-parity with the human-mode
-    printer; the harness never compares these strings textually). -/
+/-- Batch rendering of a driver error — mirrors driver_ocaml.ml:22-30
+    (string_of_driver_error). The DErr_memory arm uses the lem-generated
+    Show instance for mem_error (driver_ocaml.ml:25-26 calls
+    `Mem_common.instance_Show_Show_Mem_common_mem_error_dict.show_method`;
+    `Lem_Show.show0` is the same generated method here) so `Error {msg:}`
+    lines agree textually with the oracle (arc-14 S1 F1: the previous
+    hand-rolled "memory error" summaries were an undocumented divergence,
+    visible on the G1 relational kill-paths).
+    DELIBERATE divergence, documented: the DErr_core_run arm keeps a local
+    rendering (upstream routes through Pp_errors.string_of_core_run_cause,
+    pp_errors.ml, which pretty-prints via the Pp machinery not ported to
+    the batch path); no standing harness compares these strings. -/
 def driverErrorBatchMsg : driver_error → String
   | .DErr_core_run cause =>
     match cause with
@@ -388,13 +398,7 @@ def driverErrorBatchMsg : driver_error → String
     | .Unknown_impl => "Unknown_impl"
     | .Unresolved_symbol loc (Symbol _ n _) =>
       s!"Unresolved_symbol: Symbol(_, {n}, _) at {CerbLocation.stringFromLocation loc}"
-  | .DErr_memory merr =>
-    match merr with
-    | .MerrInternal s => s!"memory internal: {s}"
-    | .MerrOther s => s!"memory other: {s}"
-    | .MerrOutsideLifetime s => s!"outside lifetime: {s}"
-    | .MerrAccess _ _ => "memory access error"
-    | _ => "memory error"
+  | .DErr_memory merr => Lem_Show.show0 merr    -- driver_ocaml.ml:25-26
   | .DErr_concurrency s => s!"Concurrency error: {s}"
   | .DErr_other s => s
 
