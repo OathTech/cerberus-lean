@@ -115,7 +115,7 @@ total_fail=0
 # even under a filtered test selection.
 echo
 echo "=== relsem package build (in-build audits) ==="
-if ! (cd relsem && "$SCRIPT_DIR/capped" lake build 2>&1 | tail -3); then
+if ! (cd relsem && "$SCRIPT_DIR/capped" lake build 2>&1 | tail -4); then  # -4: keep the DAEMON absence gate line visible (audit B-F5)
     echo "${RED}test_unit: relsem package build FAILED (in-build audit gate)${NC}"
     exit 1
 fi

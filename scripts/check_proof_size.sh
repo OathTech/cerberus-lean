@@ -75,9 +75,24 @@ fi
 # the header). Hits are filtered to git-TRACKED files: the ban is on
 # COMMITTED proofs; untracked session scratch (Probe*.lean) may use
 # debug surfaces by design.
-raw_dbg_hits=$(grep -rnE '^[^-]*\b(app_walk(_norm)?\?|dnms_kwalk|app_defeq_diag|app_walk_preview)' \
-    "$RELSEM"/*.lean "$RELSEM"/Kit/*.lean 2>/dev/null \
-    | grep -v 'Tactics/' || true)
+# Arc-11 audit A-F3: `--` line comments are STRIPPED before matching.
+# The old regex prefixed `^[^-]*` (an attempt to skip comment lines)
+# — that character class let a banned token hide behind ANY earlier
+# dash on the line (e.g. `theorem x : a - b = c := by
+# app_walk_preview` evaded the gate). A banned token inside a
+# `/- block comment -/` still trips the gate — that false positive is
+# the safe, loud direction (reword the comment).
+# SCAN SURFACE (recorded policy, A-F3): committed PROOF files only —
+# RelSem/*.lean + RelSem/Kit/*.lean. Deliberately excluded:
+# RelSem/Tactics/ (defines the surfaces), relsem/test/ (the E9
+# negative test invokes app_walk_preview by design), relsem/bench/
+# (Tier C instrument, exit-1-by-design, never proof-authoritative).
+raw_dbg_hits=$(for f in "$RELSEM"/*.lean "$RELSEM"/Kit/*.lean; do
+    [[ -f "$f" ]] || continue
+    sed 's/--.*//' "$f" \
+      | grep -nE '\b(app_walk(_norm)?\?|dnms_kwalk|app_defeq_diag|app_walk_preview)' \
+      | sed "s|^|$f:|"
+done)
 dbg_hits=""
 if [[ -n "$raw_dbg_hits" ]]; then
     while IFS= read -r hit; do

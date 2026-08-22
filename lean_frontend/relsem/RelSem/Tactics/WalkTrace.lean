@@ -33,8 +33,16 @@ namespace RelSem.Tactics
     untrusted data). History: 1 = arc-11 S1 batch 1 (lane
     consolidation, sealing-as-default, structured events);
     2 = arc-11 S1 batches 3-4 (replay lanes, context queries, typed
-    residuals, dynamic ambiguity check). -/
-def engineRev : Nat := 2
+    residuals, dynamic ambiguity check);
+    3 = the arc-11 S2 HARDENING (audit A-F2: the S2 engine changes —
+    emitter defect fixes F-S2-1/2/3, kernel-side closed-fact matching
+    F-S2-6, equation-fact chase generalization F-S2-4/5/7 — were
+    behavioral but shipped without a bump; bumped at the audit
+    disposition so any rev-2 trace recorded pre-hardening refuses
+    loudly instead of replaying against a changed engine). Process
+    rule (same disposition): every batch checklist includes
+    "engineRev bump on behavioral engine change". -/
+def engineRev : Nat := 3
 
 /-! ## The sealed-aux registry (A-F6).
 

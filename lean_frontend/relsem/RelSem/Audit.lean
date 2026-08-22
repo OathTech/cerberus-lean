@@ -17,6 +17,14 @@
      TRANSITIVE axioms (`collectAxioms`) must lie inside the declared
      boundary below; `sorryAx` / `ofReduceBool` / `ofReduceNat` (the D14
      non-kernel-method axioms) are never in it.
+     SCOPE = THIS FILE'S IMPORT CLOSURE, exactly (arc-11 audit A-F1:
+     the T5 chain — T5Fixture/T5Prefix/T5Iter — was package-built but
+     NOT imported here, so its constants dodged the sweep; the chain
+     is now imported below, the sweep's tail line states the closure
+     scope honestly, and the sweep count is #guard_msgs-PINNED so a
+     module leaving the closure is a build failure, not a silent
+     shrink. Re-baseline the pinned count deliberately, in the same
+     commit, with the reason.)
 
   2. CURATED PINS — `#guard_msgs in #print axioms` on the load-bearing
      proved theorems, asserting their EXACT axiom sets, so growth (a
@@ -119,6 +127,11 @@ import RelSem.Kit.Audit
 import RelSem.T4Defs
 import RelSem.T4AppEq
 import RelSem.T4
+-- arc-11 audit A-F1: the T5 chain (T5Fixture → T5Prefix → T5Iter)
+-- joins the sweep closure + pins. It was in the package build but
+-- OUTSIDE this file's import closure — the sweep/gate hole the
+-- arc-11 adversarial audit found.
+import RelSem.T5Iter
 
 namespace RelSem.Audit
 
@@ -386,6 +399,25 @@ def sorryExceptions : List Name := []
 /-- info: 'RelSem.T4.T4Outcomes' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T4.T4Outcomes
 
+-- Arc-11 (audit A-F1 disposition): THE T5 FLAGSHIPS — the committed
+-- in-build theorems of the parked T5 climb (T5 itself is NOT proved;
+-- these are the entry walk + the T5Iter env-lookup family). Each
+-- sits at the clean quartet: they quote the harness/driver substrate
+-- (runEffectful enters through the quoted generated bodies), and the
+-- walker's per-round certificates are ordinary kernel-checked
+-- declarations adding nothing. Pinned exactly — growth (sorryAx
+-- above all) fails the build.
+/-- info: 'RelSem.T5.entry5_walk' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5.entry5_walk
+/-- info: 'RelSem.T5.envL_built' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5.envL_built
+/-- info: 'RelSem.T5.envL_lookup_n' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5.envL_lookup_n
+/-- info: 'RelSem.T5.envL_lookup_i' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5.envL_lookup_i
+/-- info: 'RelSem.T5.envL_lookup_s' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5.envL_lookup_s
+
 /-! ## (RETIRED SECTION — arc-8 S3.) The arc-7 S5c DAEMON entry-vector
     census (a kernel walk pinning `failwith` and
     `instInhabitedAction_request2` as the exactly-two DAEMON
@@ -538,6 +570,18 @@ open Lean in
     the last import of the lib root. -/
 
 open Lean in
+-- The sweep's success line is #guard_msgs-PINNED (arc-11 audit A-F1
+-- re-baseline: 3021 → 3348 after the T5 chain joined the closure).
+-- The pin makes the COUNT exact in-build: a module silently leaving
+-- this file's import closure (the A-F1 hole class) now FAILS the
+-- build instead of shrinking the sweep quietly. Re-baseline
+-- deliberately, same commit, with the reason. (When green the pin
+-- SWALLOWS the info line — absence of the sweep line from a green
+-- build log is expected; the DAEMON + statement gates still print.)
+/--
+info: RelSem audit sweep: 3348 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+-/
+#guard_msgs in
 #eval show CoreM Unit from do
   let env ← getEnv
   -- Fail-closed existence checks on the lists themselves (a rename must
@@ -579,9 +623,13 @@ open Lean in
     throwError "RelSem audit: sorry-exceptions no longer carry sorryAx \
       (fixed upstream?) — REMOVE them deliberately: {staleExceptions}"
   if bad.isEmpty then
-    IO.println s!"RelSem audit sweep: {audited} declarations across \
-      RelSem.* modules, all within the declared axiom boundary \
-      ({sorryExceptions.length} recorded sorryAx exceptions)"
+    -- Arc-11 audit A-F1: the old tail ("across RelSem.* modules")
+    -- OVERSTATED the scope — the sweep sees exactly this file's
+    -- import closure, no more. Say so.
+    logInfo s!"RelSem audit sweep: {audited} declarations \
+      (module-of-origin root RelSem, within RelSem.Audit's import \
+      closure — NOT the whole tree), all within the declared axiom \
+      boundary ({sorryExceptions.length} recorded sorryAx exceptions)"
   else
     let lines := bad.qsort (fun a b => a.1.toString < b.1.toString)
       |>.map (fun (n, ax) => s!"  {n} depends on {ax}")

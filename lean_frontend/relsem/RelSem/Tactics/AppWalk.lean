@@ -1896,8 +1896,9 @@ elab_rules : tactic
     | none => replaceMainGoal []
 
 /-- `app_walk_replay name` — CHECKED REPLAY (§12.2): fetch the stored
-    trace; REFUSE loudly on fingerprint staleness (engineRev / kit
-    registry / goal statement); then walk exactly the recorded law
+    trace; REFUSE loudly on fingerprint ABSENCE (audit A-F4) or
+    staleness (engineRev / kit registry / goal statement); then walk
+    exactly the recorded law
     sequence (choice removed, checking identical). Divergence = a
     loud error naming the step — NO fallback to search. Closure
     tactics (e.g. `app_defeq`) stay explicit in the proof text. -/
@@ -1909,16 +1910,22 @@ elab_rules : tactic
     let goal ← getMainGoal
     let some t ← (findWalkTrace id.getId : TacticM _)
       | throwError "app_walk_replay: no stored trace named '{id.getId}'"
-    if let some fp := t.fp then
-      unless fp.engine == engineRev do
-        throwError "app_walk_replay: STALE trace '{id.getId}' — \
-          engineRev {fp.engine} ≠ current {engineRev}; re-record"
-      unless fp.kit == (← kitFingerprint) do
-        throwError "app_walk_replay: STALE trace '{id.getId}' — the \
-          @[app_eq] registry changed since recording; re-record"
-      unless fp.goal == (← goalKey goal) do
-        throwError "app_walk_replay: trace '{id.getId}' was recorded \
-          for a DIFFERENT goal statement; re-record"
+    -- Arc-11 audit A-F4: a trace with NO fingerprint (predating the
+    -- stamp, or hand-built) must REFUSE loudly — never silently skip
+    -- the staleness checks.
+    let some fp := t.fp
+      | throwError "app_walk_replay: trace '{id.getId}' has NO \
+          fingerprint — refusing to replay an unstamped trace; \
+          re-record with app_walk_rec"
+    unless fp.engine == engineRev do
+      throwError "app_walk_replay: STALE trace '{id.getId}' — \
+        engineRev {fp.engine} ≠ current {engineRev}; re-record"
+    unless fp.kit == (← kitFingerprint) do
+      throwError "app_walk_replay: STALE trace '{id.getId}' — the \
+        @[app_eq] registry changed since recording; re-record"
+    unless fp.goal == (← goalKey goal) do
+      throwError "app_walk_replay: trace '{id.getId}' was recorded \
+        for a DIFFERENT goal statement; re-record"
     let atoms ← stateAtoms
     let mut g := goal
     let mut i : Nat := 0
