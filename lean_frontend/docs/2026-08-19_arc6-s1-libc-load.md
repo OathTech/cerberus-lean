@@ -278,3 +278,18 @@ verified-sound export exemption (Cabs bytes are pre-desugar — arc-12
 batch-4 evidence: beyond-margin exports byte-identical across
 collision-possible and collision-impossible counter bases). No arc-6
 result is changed; the trust base is now stated precisely.
+
+## CLOSURE (arc-13 S1, 2026-08-22) — the mover executed; exposure GONE
+
+The renumbering landed (D1 scheme R-B, upstream re-convergence —
+`2026-08-22_arc13-s0-scheme-decision.md`): desugar + run symbol
+supplies are back on the single ambient counter on the OCaml target,
+so collisions are impossible by construction. `libc.co` was REBUILT
+under the new scheme and `tests/libc/libc.core` re-pinned — the fresh
+dump is byte-identical to the un-forked upstream oracle's own libc.co
+dump, and the arc-12 duplicate-(digest,num) scanner reports ZERO
+duplicates on the stdio/stdlib/internal/vfscanf elaborations (was
+214/58/106/supply-only). The grandfather machinery and the export
+warn-mode are deleted; libc_exec 7/7 and uri 16/16 re-verified against
+the re-derived artifacts. The asterisk this addendum placed on the
+arc-6 results is OFF.

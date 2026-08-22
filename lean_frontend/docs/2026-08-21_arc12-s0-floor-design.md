@@ -731,3 +731,20 @@ evidence: `2026-08-21_arc12-s1-floor-record.md`.
    — which includes roughly half of the sa_ (small_arrays, ~700-line)
    subcorpus. The honest movement is structural, not a tail; v2 sweep
    numbers in the S1 record.
+
+---
+
+## SUPERSEDED (arc-13 S1, 2026-08-22) — the floor became the single-supply backstop
+
+The two-check margin floor this document designed is RETIRED: arc-13
+D1 (scheme R-B) removed the second id stream, so the margin and both
+checks lost their subject. `util/cerb_fresh.ml` now enforces the
+single-supply WINDOW invariant (every current-digest Ail symbol num in
+`[tu_first .. last_issued]`, digest-filtered (min,max) fold in
+ail_sym_hwm.ml) — it detects a RE-INTRODUCTION of the F-D-era
+split-stream scheme (plant-tested) and never fires on healthy inputs.
+§4.2's "ocaml target_rep restoration — cannot be numbering-neutral —
+out of scope per the charter" was correct for arc-12's
+numbering-neutral charter; arc-13's charter made renumbering the
+point, and that exact route landed. See
+`2026-08-22_arc13-s0-scheme-decision.md`.

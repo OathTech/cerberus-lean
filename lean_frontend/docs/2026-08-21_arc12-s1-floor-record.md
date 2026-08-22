@@ -280,3 +280,16 @@ the libc/uri baselines and any floor scoping change await the ruling.
    flag `--fresh-floor-grandfather` (no ambient inheritance; env
    demonstrated inert); test_exec.sh now buckets the WARNING token as
    CERB_FLOOR too (defense-in-depth).
+
+---
+
+## SUPERSEDED IN PART (arc-13 S1, 2026-08-22)
+
+The two-check floor this record implemented is retired with its
+subject: arc-13 D1 (scheme R-B) re-unified the id streams, and
+`util/cerb_fresh.ml` now enforces the single-supply window invariant
+instead (`check_ail_window` + the digest-filtered (min,max) fold —
+the fold's walk body and its audited no-catch-all style are unchanged
+from this record's v2). The CERB_FLOOR harness class, token and exit
+code survive as the backstop's surface; the warn-only modes and the
+grandfather flag are deleted. See `2026-08-22_arc13-s1-build.md`.

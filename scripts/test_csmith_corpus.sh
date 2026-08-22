@@ -30,7 +30,11 @@
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 set -uo pipefail
 
-BASELINE="$SCRIPT_DIR/exec_csmith_corpus_baseline.txt"
+# CSMITH_BASELINE env (arc-13): override the baseline PATH — lets a
+# sharded re-baseline write per-shard files for later assembly (the
+# committed default stays the single source of truth; a write to a
+# non-default path never touches it).
+BASELINE="${CSMITH_BASELINE:-$SCRIPT_DIR/exec_csmith_corpus_baseline.txt}"
 MODE=""
 MAX=0
 SHARD=""

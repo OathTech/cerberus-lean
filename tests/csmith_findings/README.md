@@ -108,3 +108,35 @@ EXONERATED for every probed witness: run-supply ids seed above the
 whole program-symbol range (~5,000-8,700 measured). Its conceded
 non-escape obligation remains open but narrowed (arc-12 S1 record
 §5.3). F-A/F-B/F-E dispositions are unchanged.
+
+## ARC-13 STATUS UPDATE (2026-08-22): F-D CLOSED-BY-CONSTRUCTION — the witnesses land on upstream
+
+The renumbering the arc-12 update deferred is DONE (arc-13 D1, scheme
+R-B "upstream re-convergence": desugar + run symbol supplies
+re-unified onto the single ambient `Cerb_fresh.int` on the OCaml
+target via three ocaml-only target_reps +
+`ocaml_frontend/fork_renumber.ml`; decision + probe evidence
+`lean_frontend/docs/2026-08-22_arc13-s0-scheme-decision.md`, build
+record `..._arc13-s1-build.md`). Consequences for this manifest:
+
+- **The F-D mechanism no longer exists** (one supply, nothing to
+  collide with); the floor is now a single-supply window BACKSTOP
+  (fires only if the split-stream scheme is ever re-introduced —
+  plant-tested) and the `CERB_FLOOR` refusal class is gone from every
+  lane.
+- **Witness verdicts, fork (renumbered) vs un-forked upstream
+  (b9aeedcb4), verbatim:** csmith_6000018 `Specified(100)` ==
+  upstream; csmith_6000038 `Specified(13)` == upstream on ALL
+  exhaustive executions (the manifest's old-oracle 218/134 rows above
+  describe the pre-renumbering corruption); csmith_6000098
+  `Specified(117)` == upstream; ub010_dead_object_reduced: exit 124
+  timeout == upstream's honest non-termination (the spurious UB010 is
+  gone). Fork `--pp core` output is byte-identical to upstream's on
+  every S0-probed fixture, so fork-vs-upstream triage on any future
+  finding is a byte-diff.
+- The 15 corpus DIFF rows + sa_csmith_190 + sia_csmith_976 + the
+  34-row coincidentally-correct class: restored to real verdicts in
+  the arc-13 corpus re-baseline (close-out record).
+- The arc-2 run supply's narrowed non-escape obligation (O1) is
+  CLOSED on the OCaml side (run symbols are ambient draws again);
+  it remains a Lean-side-only note.

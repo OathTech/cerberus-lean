@@ -74,3 +74,24 @@ are already collision-free at base 2^20).
   reception) — or an explicit decision to carry R1/R2 as fork-only.
 - A priced fixture-re-pin inventory (the arc-12 S1 record's gate list
   is the checklist skeleton).
+
+---
+
+## EXECUTED (arc-13, 2026-08-22)
+
+This case was scheduled as arc 13 and EXECUTED as **R1 in its full
+form** (= arc-13 D1 "scheme R-B": ocaml target_reps for the desugar
+helpers AND the run supply back onto `Cerb_fresh.int`; the arc-2 run
+seed also removed on OCaml). The S0 probes settled the design space on
+evidence: fork `--pp core` output and the rebuilt libc.co dump are
+byte-identical to the un-forked upstream oracle; the generated-Lean
+diff is EMPTY (the R1 con "Lean-side numbering diverges" is real and
+handled — cross-side comparisons stay id-insensitive, canonicalizer
+extended); R2's partitioned space was probed too (desugar at 2^20) and
+rejected (pp leakage via tag-suffix/glob-order + a run-supply growth
+hazard). Decision + probe evidence:
+`2026-08-22_arc13-s0-scheme-decision.md`; execution:
+`2026-08-22_arc13-s1-build.md`. R3 (upstream adopting threaded
+supplies) remains the notes/upstream/07 conversation — now with the
+fork re-converged, any future upstream scheme change surfaces as a
+byte-diff.
