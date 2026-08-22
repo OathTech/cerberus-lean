@@ -29,14 +29,15 @@
 #                 g5-decode-multichar (impl-defined; oracle fail-closed is defensible)
 #   G6 semantics: g6-hash-collision (CoreParser symbol-hash conflation)
 #
-# Expected post-fix shape (recorded so the flip is deliberate):
-#   G1/G2/G3 -> MATCH (Lean kills / emits the same UB as the oracle).
-#   G4       -> MATCH (Z/two's-complement semantics).
-#   G5 '\?'  -> Lean C-correct (63) DIVERGES from the crashing oracle: expect a
-#               NEW status (Lean-right) + an upstream bug filing, NOT fix-to-match.
-#   G5 'ab'  -> Lean fail-closed to agree with the oracle's rejection (still not MATCH-token;
-#               both fail-closed — re-record as the agreed-rejection shape).
-#   G6       -> off CONFLATED once the intern-time fail-stop tripwire lands.
+# Post-S1 state (the S0 flips are DONE — see the F1-F3 commit messages):
+#   G1/G2/G3/G4 rows and 'ab' -> MATCH (fixed in S1 F1/F2).
+#   g5-decode-question -> ORACLE_CRASH with L pinned Specified(63):
+#     '\?' is legal C11 (= 63, gcc agrees); the ORACLE failwiths — oracle-wrong,
+#     upstream-tray #10. Never fix-to-match.
+#   g5-escape-roundtrip -> DIFF, Lean-right (127 vs oracle 87): Char.escaped
+#     decimal read back through the octal decoder corrupts the printf %c
+#     round-trip upstream — oracle-wrong, upstream-tray #11. Never fix-to-match.
+#   g6-hash-collision -> TRIPWIRE (CoreParser fail-stops on hash collisions, F3).
 g1-ge-funptr MATCH | L=ERR:Memory WIP: ge_ptrval
 g1-lt-null MATCH | L=ERR:Memory WIP: lt_ptrval ==> one null pointer
 g2-memcmp-uninit MATCH | L=CRASH

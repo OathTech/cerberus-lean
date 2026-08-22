@@ -1,22 +1,30 @@
 #!/bin/bash
-# test_immaculate.sh — arc-14 (the immaculate pass) TEST-FIRST lane.
+# test_immaculate.sh — arc-14 (the immaculate pass) targeted-differential
+# lane (born TEST-FIRST at S0; wording refreshed post-S1 per D2).
 #
-# Targeted differential probes for the latent-wrong-answer GRAVE/SERIOUS
-# items in the two grumpy-professor registers
+# Targeted probes for the latent-wrong-answer GRAVE/SERIOUS items of the
+# two grumpy-professor registers
 # (notes/2026-08-21_grumpy-audit-cerberus-semantics.md and
-#  .../grumpy-audit-lem-backend.md). These findings are latent precisely
-# because the standing corpora never exercise the failing inputs; this
-# lane exercises them NOW, records the honest CURRENT-tree failures as its
-# baseline, and each S1/S2 fix flips a row.
+#  .../grumpy-audit-lem-backend.md). These findings were latent precisely
+# because the standing corpora never exercised the failing inputs; this
+# lane exercises them permanently.
 #
-# THE HONEST BASELINE (charter S0 centerpiece): the committed baseline
-# (tests/immaculate/baseline.txt) records the CURRENT, mostly-FAILING
-# state. DIFF / ORACLE_CRASH / CONFLATED rows are EXPECTED — they are the
-# S0 baseline the fixes will flip, NOT gate failures. This script is
-# fail-closed against that baseline: any status that differs from the
-# recorded one (a regression on a MATCH row, OR a fix flipping a DIFF to
-# MATCH) exits nonzero, forcing a deliberate, justified re-record when a
-# fix lands (the test_exec.sh / uri-baseline discipline).
+# THE BASELINE (tests/immaculate/baseline.txt) records the current
+# EXPECTED state, re-recorded deliberately per fix batch with the flipped
+# finding ids in the commit message. History: at S0 it recorded 12
+# failing rows (the honest pre-fix state); after the S1 fix batches it
+# records the post-fix shape — MATCH on the fixed rows, plus the
+# documented-deliberate rows that are NOT MATCH by design:
+#   g5-decode-question   ORACLE_CRASH, Lean pinned at 63 ('\?' is legal
+#                        C11; the ORACLE is wrong — upstream-tray #10)
+#   g5-escape-roundtrip  DIFF, Lean-right 127 vs oracle 87 (Char.escaped
+#                        decimal read back as octal — upstream-tray #11)
+#   g6-hash-collision    TRIPWIRE (parseFile fail-stops on constructed
+#                        hash collisions)
+# The script is fail-closed BOTH directions against that baseline: any
+# deviation (regression or improvement) exits nonzero and forces a
+# deliberate, justified re-record (the test_exec.sh / uri-baseline
+# discipline).
 #
 # Corpora:
 #   tests/immaculate/nolibc/*.c  — oracle --exec --batch --nolibc  vs
@@ -200,14 +208,15 @@ if $RECORD_BASELINE; then
         echo "#                 g5-decode-multichar (impl-defined; oracle fail-closed is defensible)"
         echo "#   G6 semantics: g6-hash-collision (CoreParser symbol-hash conflation)"
         echo "#"
-        echo "# Expected post-fix shape (recorded so the flip is deliberate):"
-        echo "#   G1/G2/G3 -> MATCH (Lean kills / emits the same UB as the oracle)."
-        echo "#   G4       -> MATCH (Z/two's-complement semantics)."
-        echo "#   G5 '\\?'  -> Lean C-correct (63) DIVERGES from the crashing oracle: expect a"
-        echo "#               NEW status (Lean-right) + an upstream bug filing, NOT fix-to-match."
-        echo "#   G5 'ab'  -> Lean fail-closed to agree with the oracle's rejection (still not MATCH-token;"
-        echo "#               both fail-closed — re-record as the agreed-rejection shape)."
-        echo "#   G6       -> off CONFLATED once the intern-time fail-stop tripwire lands."
+        echo "# Post-S1 state (the S0 flips are DONE — see the F1-F3 commit messages):"
+        echo "#   G1/G2/G3/G4 rows and 'ab' -> MATCH (fixed in S1 F1/F2)."
+        echo "#   g5-decode-question -> ORACLE_CRASH with L pinned Specified(63):"
+        echo "#     '\\?' is legal C11 (= 63, gcc agrees); the ORACLE failwiths — oracle-wrong,"
+        echo "#     upstream-tray #10. Never fix-to-match."
+        echo "#   g5-escape-roundtrip -> DIFF, Lean-right (127 vs oracle 87): Char.escaped"
+        echo "#     decimal read back through the octal decoder corrupts the printf %c"
+        echo "#     round-trip upstream — oracle-wrong, upstream-tray #11. Never fix-to-match."
+        echo "#   g6-hash-collision -> TRIPWIRE (CoreParser fail-stops on hash collisions, F3)."
         cat "$OUTPUT_DIR/baseline.new"
     } > "$BASELINE"
     echo "BASELINE RECORDED: $BASELINE"
