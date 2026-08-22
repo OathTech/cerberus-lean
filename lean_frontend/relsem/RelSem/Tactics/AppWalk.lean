@@ -755,6 +755,24 @@ partial def sealCtorLeaves (d : Nat) (e : Expr) : MetaM Expr := do
     return r
   return e0
 
+/-- Unfold registered SEAL constants at the head (bounded delta +
+    beta) until a non-seal head shows — computed values must expose
+    their constructor to the ctor-pattern unification (arc-11 S2:
+    a seal-headed value silently defeats `Result (Defined ?th', ?rs')`
+    assignment). -/
+def unsealHead (e : Expr) : MetaM Expr := do
+  let mut e := e
+  for _ in [0:8] do
+    match e.getAppFn.constName? with
+    | some n =>
+      if (← isSealedAuxName n) then
+        match ((← getEnv).find? n).bind (·.value?) with
+        | some v => e := v.beta e.getAppArgs
+        | none => return e
+      else return e
+    | none => return e
+  return e
+
 /-- Bounded kernel-side structural DIFF (TRACE LANES ONLY — the
     R-S2-3 register item: walk_diag-class dumps folded into the
     committed debug surface; arc-15 T5 resumption). Descends where
@@ -863,6 +881,13 @@ def findDecideFact (e : Expr) : MetaM (Option (Expr × Expr × Bool)) := do
 partial def kWhnfWithFacts (d : Nat) (e : Expr)
     (trace : Bool := false) :
     MetaM (Expr × Expr × Bool) := do
+  -- (arc-15 measured-and-reverted: a seal-transparent ENTRY — unseal
+  -- then bridge by aux-rfl — dies with `(kernel) deep recursion
+  -- detected`: the bridge DECLARATION's statement materializes the
+  -- unsealed eval body, and kernel typechecking of that deep term is
+  -- the pit. The R13-class fix needs SEAL-THROUGH-THE-CHASE
+  -- certificates — checkpointed seals keeping every kernel statement
+  -- shallow; see the arc-15 resumption record.)
   let e1 ← kWhnf e (avatars := true)
   let changed := !(Expr.equal e e1)
   let p1 ← if changed then mkAuxRfl e e1 else mkEqRefl e
@@ -1012,24 +1037,6 @@ partial def kWhnfWithFacts (d : Nat) (e : Expr)
     dbg_trace "kwf: STUCK[d={d}] at head {e1.getAppFn}:\n{((← ppExpr e1).pretty 120).take 900}"
   return (e1, p1, changed)
 
-/-- Unfold registered SEAL constants at the head (bounded delta +
-    beta) until a non-seal head shows — computed values must expose
-    their constructor to the ctor-pattern unification (arc-11 S2:
-    a seal-headed value silently defeats `Result (Defined ?th', ?rs')`
-    assignment). -/
-def unsealHead (e : Expr) : MetaM Expr := do
-  let mut e := e
-  for _ in [0:8] do
-    match e.getAppFn.constName? with
-    | some n =>
-      if (← isSealedAuxName n) then
-        match ((← getEnv).find? n).bind (·.value?) with
-        | some v => e := v.beta e.getAppArgs
-        | none => return e
-      else return e
-    | none => return e
-  return e
-
 /-- Selection-lane normalizer (arc-11 S2 engine prong, design
     §12.5-1 — the stuck-round root cause): `kWhnf` of a selection
     fact stops at `Option.some payload` in WHNF, leaving the PAYLOAD
@@ -1136,10 +1143,20 @@ partial def dischargeHyp (cfg : WalkCfg) (fuel : Nat) (h : MVarId) : MetaM Bool 
           let isSelection := rhs.isApp && rhs.getAppFn.isConstOf ``Option.some
           let v? ← do
             if cfg.norm then
+              -- SUB-CAPPED (arc-15 T5 resumption, measured at the
+              -- symbolic-j R13 wall): an elaborator normCompute on a
+              -- fact-needing crossing (stuck on symbolic env lookups)
+              -- ground for ~30s producing a fact-blocked blob, and
+              -- the candidate window then died in sealing — the
+              -- facts route never ran. TIGHT sub-cap: a trip falls to
+              -- the heartbeat-free kernel lane and the facts route
+              -- under a FRESH window (contFresh) — the intended
+              -- give-up-keeps-compact-spelling pipeline.
               tryCatchRuntimeEx
-                ((if isSelection then
+                (attempt (20000 * 1000)
+                  (if isSelection then
                     kWhnfSelection lhs (avatars := cfg.sealStates)
-                  else normCompute lhs) <&> some)
+                  else normCompute lhs))
                 (fun _ => pure none)
             else
               -- v1: original behavior, no fallback lane
@@ -1251,6 +1268,50 @@ partial def dischargeHyp (cfg : WalkCfg) (fuel : Nat) (h : MVarId) : MetaM Bool 
       | _ =>
         if cfg.trace then dbg_trace "dh[{fuel}]: lane attempt none/false"
         restoreState st
+        -- SECOND-CHANCE FACTS STAGE (arc-15 T5 resumption, measured
+        -- at the symbolic-j R13 wall): the computed-value lane's
+        -- window can die inside a long KERNEL whnf (kernel time is
+        -- heartbeat-free and uncappable) before the chase-rewrite
+        -- facts route ever runs. Re-run the route under its OWN
+        -- fresh window; certificates identical to the in-lane route.
+        if cfg.norm && cfg.sealFacts && !lhs.isAppOf `RelSem.app
+            && !(rhs.isApp && rhs.getAppFn.isConstOf ``Option.some) then
+          let st2 ← saveState
+          let res2 ← tryCatchRuntimeEx
+            (Core.withCurrHeartbeats (attempt cfg.candBudget (do
+              let (v0, pf0, prog) ←
+                try kWhnfWithFacts 48 lhs (trace := cfg.trace)
+                catch ex =>
+                  if cfg.trace then
+                    dbg_trace "dh[{fuel}]: second-chance kwf THREW: {(← ex.toMessageData.toString).take 300}"
+                  throw ex
+              if !prog then return false
+              let v0' ← unsealHead v0
+              let v1 ← tryCatchRuntimeEx
+                (attempt (20000 * 1000) (normCompute v0')
+                  <&> (·.getD v0'))
+                (fun _ => pure v0')
+              if (← isDefEq rhs v1) then
+                let rhs' ← instantiateMVars rhs
+                let pfB ← if Expr.equal v0 rhs' then mkEqRefl v0
+                          else mkAuxRfl v0 rhs'
+                h.assign (← mkEqTrans pf0 pfB)
+                trHyp cfg.traceRef (.computed (4 - min 4 fuel)
+                  .kWhnfAvatars pfB.getAppFn.constName?)
+                if cfg.trace then
+                  dbg_trace "dh[{fuel}]: second-chance facts HIT"
+                return true
+              else
+                if cfg.trace then
+                  dbg_trace "dh[{fuel}]: second-chance facts: v1 no-match; head {v1.getAppFn}"
+                return false)))
+            (fun _ => pure none)
+          match res2 with
+          | some true => return true
+          | _ =>
+            if cfg.trace then
+              dbg_trace "dh[{fuel}]: second-chance none/false"
+            restoreState st2
   -- (i) assumption (range/overflow side conditions + context-fed
   -- block facts). HEAD-FILTERED (S3): plain `assumption` walks every
   -- context hypothesis with full-size isDefEq — measured seconds at
