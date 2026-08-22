@@ -18,6 +18,7 @@ sibylfs/generated
 lean_frontend/generated
 lean_frontend/lem.log
 lean_frontend/.lake/
+lean_frontend/relsem/.lake/
 lean_frontend/lembugs/
 
 # Elaboration PP tex generation

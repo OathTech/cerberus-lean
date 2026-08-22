@@ -2,7 +2,14 @@ name = "CerberusLean"
 # RelSem in defaultTargets since arc-7 S1: `lake build` elaborates
 # relsem/RelSem/Audit.lean (the in-build axiom audit), so plain builds
 # carry the gate (golean in-build audit property).
-defaultTargets = ["CerberusLean", "RelSem", "cerberus-lean"]
+defaultTargets = ["CerberusLean", "RelSemCore", "cerberus-lean"]
+# (arc-11 S4, the package rehearsal: the PROOF layers moved to the
+# nested `relsem/` PACKAGE — its in-build audits ride `lake build`
+# there, driven by the gate scripts (see relsem/lakefile.toml). The
+# EXEC-FACING RelSem core (Call/Machine/RunND/ExecModel/Cerberus —
+# the driver's verify-harness closure, measured: Main imports
+# RelSem.Call) stays ROOT-side as the RelSemCore lib below — the
+# rehearsal's boundary finding.)
 moreLeanArgs = ["-DautoImplicit=false"]
 
 # arc-7 S0 toolchain bump: batteries as a plain git require (the scoped
@@ -52,6 +59,7 @@ subDir = "lean-lib"
 [[lean_lib]]
 name = "CerberusLean"
 srcDir = "generated"
+
 roots = [
   "AilSyntax", "AilSyntax_auxiliary",
   "AilSyntaxAux", "AilSyntaxAux_auxiliary",
@@ -152,12 +160,13 @@ roots = [
   "CerbND",
 ]
 
-# Relational semantics (arc 7, load-bearing since S1): Layer-2 skeleton
-# over the generated opsem + the in-build axiom audit (RelSem/Audit.lean).
-# A default target — `lake build` elaborates the audit.
+# arc-11 S4: the exec-facing RelSem core (module names unchanged —
+# `RelSem.*`); the nested relsem package imports these via the path
+# require.
 [[lean_lib]]
-name = "RelSem"
-srcDir = "relsem"
+name = "RelSemCore"
+srcDir = "relsemcore"
+roots = ["RelSem.Call", "RelSem.Machine", "RelSem.RunND", "RelSem.ExecModel", "RelSem.Cerberus"]
 
 [[lean_exe]]
 name = "cerberus-lean"
@@ -211,33 +220,4 @@ srcDir = "test"
 root = "Unit.EmitLeanCoreMain"
 moreLinkArgs = ["native/fresh_int.o", "native/debug.o", "native/tags.o", "native/md5.o"]
 
-# arc-7 S4: T1 program-term drift gate + concrete differential on the
-# assembled theorem object (RelSem/T1File.lean).
-# arc-9 S2 (scratch instrument): round-by-round T5 execution census.
-[[lean_exe]]
-name = "t5-probe"
-srcDir = "test"
-root = "Unit.T5ProbeMain"
-moreLinkArgs = ["native/fresh_int.o", "native/debug.o", "native/tags.o", "native/md5.o"]
 
-# arc-9 S2: the walker exercise file (kernel-checked contract table).
-[[lean_exe]]
-name = "app-walk-test"
-srcDir = "test"
-root = "Unit.AppWalkTest"
-moreLinkArgs = ["native/fresh_int.o", "native/debug.o", "native/tags.o", "native/md5.o"]
-
-[[lean_exe]]
-name = "emit-lean-core-test"
-srcDir = "test"
-root = "Unit.EmitLeanCoreTest"
-moreLinkArgs = ["native/fresh_int.o", "native/debug.o", "native/tags.o", "native/md5.o"]
-
-# arc-7 S5c (audit-1 F3): the T4EnvHyp first-in-process witness probe.
-# Its OWN exe by design — the fresh-draw ORDERING is what it witnesses
-# (never merge into another test). Run by scripts/test_verify.sh.
-[[lean_exe]]
-name = "t4-env-witness"
-srcDir = "test"
-root = "Unit.T4EnvWitnessTest"
-moreLinkArgs = ["native/fresh_int.o", "native/debug.o", "native/tags.o", "native/md5.o"]

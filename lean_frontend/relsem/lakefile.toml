@@ -1,0 +1,74 @@
+# relsem — arc-11 S4 (2026-08-22): THE PACKAGE REHEARSAL (charter S4,
+# the [USER] two-part-design item). RelSem (Layer 2/3: kits, walker,
+# Iris coupling, slate theorems, THE IN-BUILD AUDITS) as its OWN Lake
+# package, requiring the semantics package by PATH. Rehearsal only —
+# no repo split; sources stay where they were (this package's srcDir
+# is this directory; the audit gates re-home with the lib).
+#
+# Dependency direction (measured constraint, S4 record): relsem
+# REQUIRES CerberusLean (its modules import the generated opsem), so
+# the root cannot require relsem back (Lake forbids cycles). The
+# in-build-gate property therefore rides THIS package's plain
+# `lake build` (RelSem is the default target; RelSem/Audit.lean +
+# Kit/Audit elaborate on every build, fail-closed); the gate scripts
+# drive both packages' builds.
+#
+# packagesDir points at the parent workspace's package store so the
+# git dependencies (batteries/iris/Qq/LemLib) are SHARED — no
+# re-clone, no re-build, offline-safe (deps/gitconfig redirects).
+
+name = "relsem"
+defaultTargets = ["RelSem"]
+moreLeanArgs = ["-DautoImplicit=false"]
+packagesDir = "../.lake/packages"
+
+[[require]]
+name = "CerberusLean"
+path = ".."
+
+# The RelSem library. REHEARSAL FINDING (S4 record): Lake resolves
+# imports by root-module PREFIX, so a root module `RelSem` would
+# claim the dep-provided exec-core modules (RelSem.Call/Machine/
+# RunND/ExecModel/Cerberus, root package RelSemCore lib) too — the
+# roots are therefore ENUMERATED leaf modules (component-wise prefix
+# semantics keep them disjoint), with `RelSemAll` as the aggregator
+# (the old RelSem.lean, renamed; imports of the exec core resolve to
+# the path-required parent).
+[[lean_lib]]
+name = "RelSem"
+roots = ["RelSemAll", "RelSem.Audit", "RelSem.FuelHooks", "RelSem.IrisAdequacy", "RelSem.IrisCoupling", "RelSem.IrisLang", "RelSem.IrisRules", "RelSem.IrisState", "RelSem.Kit.AppEq", "RelSem.Kit.Audit", "RelSem.Kit.Eval", "RelSem.Kit.Loop", "RelSem.Kit.Map", "RelSem.Kit.Mem", "RelSem.Kit.Round", "RelSem.SlateCore", "RelSem.SlateFiles", "RelSem.SlateWP", "RelSem.T1", "RelSem.T1AppEq", "RelSem.T1Core", "RelSem.T1File", "RelSem.T2", "RelSem.T2AppEq", "RelSem.T3", "RelSem.T3AppEq", "RelSem.T4", "RelSem.T4AppEq", "RelSem.T4Defs", "RelSem.T5Fixture", "RelSem.T5Iter", "RelSem.T5Prefix", "RelSem.Tactics.AppEqAttr", "RelSem.Tactics.AppWalk", "RelSem.Tactics.WalkTrace"]
+
+# ---- RelSem-importing test/instrument executables (re-homed from
+# the root package with the lib; invoked by scripts/test_unit.sh and
+# scripts/test_verify.sh via this package) -------------------------
+
+# arc-9 S2: the walker contract-table exercises (E1-E10).
+[[lean_exe]]
+name = "app-walk-test"
+srcDir = "test"
+root = "Unit.AppWalkTest"
+moreLinkArgs = ["../native/fresh_int.o", "../native/debug.o", "../native/tags.o", "../native/md5.o"]
+
+# arc-7 S4: T1 program-term drift gate + concrete differential on the
+# assembled theorem object.
+[[lean_exe]]
+name = "emit-lean-core-test"
+srcDir = "test"
+root = "Unit.EmitLeanCoreTest"
+moreLinkArgs = ["../native/fresh_int.o", "../native/debug.o", "../native/tags.o", "../native/md5.o"]
+
+# arc-9 S2 (instrument): round-by-round T5 execution census.
+[[lean_exe]]
+name = "t5-probe"
+srcDir = "test"
+root = "Unit.T5ProbeMain"
+moreLinkArgs = ["../native/fresh_int.o", "../native/debug.o", "../native/tags.o", "../native/md5.o"]
+
+# arc-7 S5c (audit-1 F3): the T4EnvHyp first-in-process witness probe.
+# Its OWN exe by design — the fresh-draw ORDERING is what it
+# witnesses (never merge into another test). Run by test_verify.sh.
+[[lean_exe]]
+name = "t4-env-witness"
+srcDir = "test"
+root = "Unit.T4EnvWitnessTest"
+moreLinkArgs = ["../native/fresh_int.o", "../native/debug.o", "../native/tags.o", "../native/md5.o"]

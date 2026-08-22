@@ -27,6 +27,21 @@ UNIT_TESTS=(
     "emit-lean-core-test"
 )
 
+# arc-11 S4 (the package rehearsal): tests living in the nested
+# `relsem` PACKAGE (lean_frontend/relsem/lakefile.toml) — built and
+# run from that package's workspace.
+RELSEM_TESTS=(
+    "app-walk-test"
+    "emit-lean-core-test"
+)
+is_relsem_test() {
+    local t
+    for t in "${RELSEM_TESTS[@]}"; do
+        [[ "$t" == "$1" ]] && return 0
+    done
+    return 1
+}
+
 # ---------------------------------------------------------------------------
 # Sync gate (arc-4 S5f, audit G2). Lake compiles from lean_frontend/generated/
 # (srcDir), NOT from lean_frontend/ — a stale generated/ copy of a
@@ -94,11 +109,28 @@ fi
 total_pass=0
 total_fail=0
 
+# arc-11 S4: THE RE-HOMED IN-BUILD AUDIT GATE — a plain `lake build`
+# of the nested relsem package elaborates RelSem/Audit.lean +
+# Kit/Audit (fail-closed); run before the test loop so the gate fires
+# even under a filtered test selection.
+echo
+echo "=== relsem package build (in-build audits) ==="
+if ! (cd relsem && "$SCRIPT_DIR/capped" lake build 2>&1 | tail -3); then
+    echo "${RED}test_unit: relsem package build FAILED (in-build audit gate)${NC}"
+    exit 1
+fi
+
 for test in "${TESTS[@]}"; do
     echo
     echo "=== $test ==="
-    "$SCRIPT_DIR/capped" lake build "$test" 2>&1 | tail -3
-    if "./.lake/build/bin/$test"; then
+    if is_relsem_test "$test"; then
+        (cd relsem && "$SCRIPT_DIR/capped" lake build "$test" 2>&1 | tail -3)
+        bin="./relsem/.lake/build/bin/$test"
+    else
+        "$SCRIPT_DIR/capped" lake build "$test" 2>&1 | tail -3
+        bin="./.lake/build/bin/$test"
+    fi
+    if "$bin"; then
         echo "${GREEN}✓ $test PASSED${NC}"
         total_pass=$((total_pass + 1))
     else

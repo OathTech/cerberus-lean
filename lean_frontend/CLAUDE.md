@@ -39,8 +39,25 @@ anywhere) + the proof-size gate (`scripts/check_proof_size.sh`,
 evidence grade with fixture/prefix/St-family banked (T5Fixture,
 T5Prefix, the t5-probe census exe) — see
 `docs/2026-08-21_arc9-results.md`.
-`RelSem` is in `defaultTargets`, so a plain `lake build` elaborates the
-audit. Lake deps: `LemLib` (lem-lean pin) + `iris`/`Qq`/`batteries`
+THE PACKAGE REHEARSAL (arc-11 S4, the [USER] two-part-design item):
+`relsem/` is its OWN Lake package (`relsem/lakefile.toml`) requiring
+the semantics package by path, with the git deps SHARED via
+`packagesDir = "../.lake/packages"`. The EXEC-FACING RelSem core
+(Call/Machine/RunND/ExecModel/Cerberus — the driver's verify-harness
+closure) stays ROOT-side as the `RelSemCore` lib (`relsemcore/`,
+module names unchanged); the PROOF layers (kits, tactics, Iris
+coupling, slate, audits) build in the relsem package, whose lib
+enumerates leaf-module roots (Lake resolves imports by root-module
+PREFIX — the rehearsal's structural finding; aggregator module
+`RelSemAll`). The in-build audits ride the relsem package's plain
+`lake build` (fail-closed, plant-tested); `test_unit.sh` builds BOTH
+packages (root plain build stays green and drives the driver).
+RelSem-importing test exes (`app-walk-test`, `emit-lean-core-test`,
+`t4-env-witness`, `t5-probe`) live in the relsem package
+(`relsem/test/Unit/`), as does `bench/WalkBench.lean`; probes run via
+`lake env lean` FROM `relsem/`. See
+`docs/2026-08-22_arc11-s4-package-rehearsal.md`.
+Lake deps: `LemLib` (lem-lean pin) + `iris`/`Qq`/`batteries`
 (pinned revs, resolved offline via deps/gitconfig redirects; iris at
 head `34390a0133…` since arc-9 D1). See
 `docs/2026-08-20_arc7-results.md`.
@@ -87,7 +104,7 @@ Current unit tests:
 - `fresh-int-test` — verifies `fresh_int`/`Symbol.fresh` generate unique values (+ the native-obj fresh-counter floor probe)
 - `emit-lean-core-test` — arc-7: byte drift gate for the emitted slate program terms (`relsem/RelSem/T1Core.lean`, `SlateCore.lean` vs a fresh parse of the pinned oracle Core dumps) + concrete differential points on the assembled theorem objects
 - `pp-test` — arc-10 S3: pretty-printer mirrors (ctype/value shapes + float formatting vs an OCaml 5.4.0 reference transcript, in-file)
-- `app-walk-test` — arc-9 S2: the `app_walk` walker contract-table exercises (E1-E6, kernel-checked)
+- `app-walk-test` — arc-9 S2: the `app_walk` walker contract-table exercises (E1-E10 since arc-11 S1: v2/sealed lanes, the E9 preview negative, E10 record→replay + fingerprint mismatch; relsem package since arc-11 S4)
 
 (`t5-probe` is a further `[[lean_exe]]` — the arc-9 round-census
 instrument, run on demand, not part of the unit suite.)

@@ -836,7 +836,10 @@ partial def kWhnfWithFacts (d : Nat) (e : Expr)
               match Lean.Kernel.isDefEq (← getEnv) (← getLCtx)
                   dlhsc e1c with
               | .ok b => pure b
-              | .error _ => pure false
+              | .error _ =>
+                if trace then
+                  dbg_trace "kwf: eq-fact KERNEL-ERR {decl.userName} at d={d}"
+                pure false
             else
               (·.isSome) <$> attempt (100000 * 1000) (do
                 unless (← isDefEq dlhs e1) do failure)
