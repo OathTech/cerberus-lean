@@ -22,3 +22,23 @@
   per the S0 plan — de-globalization under the byte-neutrality
   protocol, the Ott grammar repair, Set-eq, the instance-priority
   guard (with sem:S2's cross-listed fix), the tail.
+- **D3 [AGENT, under the operator's AFK mandate] — S2 boundary
+  verified; S3 GO.** Both worktrees clean (LEM @ 3ddcafb 6 batches,
+  CERB @ f9b9e977b with both Lake manifests pinned incl. relsem's —
+  the B3 lesson); orchestrator re-ran: unit 7/7, immaculate lane at
+  baseline, exec zero movement, core ALL PASSED. Accepted: B1
+  de-globalization byte-neutral with the L remainder parked-with-
+  evidence (upstream-inherited skeleton; register's own price); B2
+  Ott textually normative with regeneration NETWORK-GATED (operator
+  item at return: opam install ott + the regen/byte-compare — the
+  residual is pre-registered with the two known shape divergences);
+  B3 full with its property tests (one wrong guard draft caught by
+  its own test — the discipline working); B4 the priority lattice
+  normative + probe-enforced (plant-tested); B5 half + B6 tail; the
+  residual set carried to S3's disposition table. Pin-dance
+  implications recorded (lean-lib touched → full dance at close;
+  opam lem stays 11d4b4c until then — the stale-lem gap verified
+  fail-closed). NIT for S3: the immaculate lane's explanatory
+  message STILL prints the S0 wording despite the claimed refresh —
+  fix it for real. S3: the 73-finding disposition table, docs
+  de-stale, the 11 upstream filing drafts, then S4 THE RE-MARK.
