@@ -335,15 +335,25 @@ let rec symbolify_pexpr (Pexpr (annot, (), _pexpr): parsed_pexpr) : pexpr Eff.t 
     | PEval (Vobject (OVinteger ival)) ->
         Eff.return (Pexpr (annot, (), PEval (Vobject (OVinteger ival))))
     | PEval (Vobject (OVpointer ptrval)) ->
-        Eff.return (Pexpr (annot, (), PEval (Vobject (OVpointer ptrval))))
-          (*
-    | PEval (Vobject (OVcfunction _nm)) ->
-        (* TODO(V): CHANGING THE MEANING OF THIS KEYWORD *)
-        symbolify_name _nm >>= (function
-        | Sym sym ->
-          Eff.return (Pexpr (annot, (), PEval (Vobject (OVpointer (Impl_mem.fun_ptrval sym)))))
-        | _ -> failwith "PANIC")
-             *)
+        Impl_mem.case_ptrval ptrval
+          (fun _ ->
+            Eff.return (Pexpr (annot, (), PEval (Vobject (OVpointer ptrval)))))
+          (function
+            | Some (Symbol.Symbol (_, _, SD_Id str)) ->
+                (* this pointer value was parsed from a Cfunction(...) value:
+                   the grammar only collected the function name, which is
+                   resolved here *)
+                let dummy = Cerb_position.dummy in
+                begin lookup_sym (str, (dummy, dummy)) >>= function
+                  | Some (sym, _) ->
+                      Eff.return (Pexpr (annot, (), PEval (Vobject (OVpointer (Impl_mem.fun_ptrval sym)))))
+                  | None ->
+                      Eff.fail loc (Core_parser_unresolved_symbol str)
+                end
+            | _ ->
+                Eff.return (Pexpr (annot, (), PEval (Vobject (OVpointer ptrval)))))
+          (fun _ _ ->
+            Eff.return (Pexpr (annot, (), PEval (Vobject (OVpointer ptrval)))))
     | PEval Vunit ->
         Eff.return (Pexpr (annot, (), PEval Vunit))
     | PEval Vtrue ->
@@ -1555,8 +1565,10 @@ value:
     { Vobject (OVinteger (Impl_mem.integer_ival (Z.of_int (Ocaml_implementation.(get ()).max_alignment)))) }
 | NULL ty= delimited(LPAREN, ctype, RPAREN)
     { Vobject (OVpointer (Impl_mem.null_ptrval ty)) }
-| CFUNCTION_VALUE _nm= delimited(LPAREN, name, RPAREN)
-  { (*TODO*) Vobject (OVpointer (Impl_mem.null_ptrval Ctype.void)) }
+| CFUNCTION_VALUE _sym= delimited(LPAREN, SYM, RPAREN)
+    (* NOTE: we only collect the string name here (the symbol is resolved by
+       symbolify_pexpr, as for struct/union tags) *)
+    { Vobject (OVpointer (Impl_mem.fun_ptrval (Symbol.Symbol ("", -1, SD_Id (fst _sym))))) }
 | UNIT_VALUE
     { Vunit }
 | TRUE
