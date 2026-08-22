@@ -216,12 +216,37 @@ end
 /-! ## Undefined behaviours / implementation constants (by need) -/
 
 def ppUB (ub : undefined_behaviour) : Except String String :=
-  -- CoreParser wraps every parsed UB name in the DUMMY carrier
-  -- (CoreParser.lean:1065) — its payload string is what the driver
-  -- prints; keep parser fidelity and emit exactly that.
+  -- CoreParser mirrors OCaml scan_ub (parsers/core/core_lexer.mll:221-232):
+  -- known UB names round-trip through Undefined.ub_str_bimap to their REAL
+  -- constructors; only unknown DUMMY(...) spellings remain in the DUMMY
+  -- carrier. Emit accordingly: for every nullary bimap constructor the
+  -- bimap string IS the constructor name (undefined.lem:840ff), so it is
+  -- printed verbatim; the two applied families (UB_std_omission,
+  -- UB_CERB004_unspecified) are spelled out; anything not parseable from
+  -- Core text errors loudly per the fidelity contract.
   match ub with
   | DUMMY s => pure s!"(DUMMY {s.quote})"
-  | _ => throw s!"ppUB: non-DUMMY undefined_behaviour in parsed Core"
+  | UB_std_omission om =>
+    let o := match om with
+      | UB_OMIT_memcpy_non_object => "UB_OMIT_memcpy_non_object"
+      | UB_OMIT_memcpy_out_of_bound => "UB_OMIT_memcpy_out_of_bound"
+    pure s!"(UB_std_omission {o})"
+  | UB_CERB004_unspecified ctx =>
+    let c := match ctx with
+      | UB_unspec_equality_ptr_vs_NULL => "UB_unspec_equality_ptr_vs_NULL"
+      | UB_unspec_equality_both_arith_or_ptr => "UB_unspec_equality_both_arith_or_ptr"
+      | UB_unspec_pointer_add => "UB_unspec_pointer_add"
+      | UB_unspec_pointer_sub => "UB_unspec_pointer_sub"
+      | UB_unspec_conditional => "UB_unspec_conditional"
+      | UB_unspec_copy_alloc_id => "UB_unspec_copy_alloc_id"
+      | UB_unspec_rvalue_memberof => "UB_unspec_rvalue_memberof"
+      | UB_unspec_memberofptr => "UB_unspec_memberofptr"
+      | UB_unspec_do => "UB_unspec_do"
+    pure s!"(UB_CERB004_unspecified {c})"
+  | ub =>
+    match lookupL ub ub_str_bimap with
+    | some s => pure s
+    | none => throw s!"ppUB: undefined_behaviour not representable in parsed Core"
 
 def ppImplConst : implementation_constant → Except String String
   | Integer__conv_nonrepresentable_signed_integer =>

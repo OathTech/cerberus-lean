@@ -1063,7 +1063,24 @@ partial def pPexprAtom (minPrec : Nat := 0) : P PE := do
       lexSym "("
       let ubStr ← lexDoubleAngle
       lexSym ")"
-      return (mkPE (PEundef loc0 (DUMMY ubStr)))
+      -- Mirror OCaml scan_ub (parsers/core/core_lexer.mll:221-232): the
+      -- <<...>> payload is first looked up in Undefined.ub_str_bimap (known
+      -- UB names round-trip to their constructors); an unknown name is
+      -- accepted only in the DUMMY(<str>) spelling, unwrapping to DUMMY
+      -- <str> (remove_prefix "<<DUMMY(" / trim_end 3 there ≡ dropping
+      -- "DUMMY(" and ")" here, since lexDoubleAngle already stripped the
+      -- angles); anything else raises Core_lexer_invalid_ubname there and
+      -- fails here. Previously we wrapped the payload in DUMMY
+      -- unconditionally, so std.core's undef(<<DUMMY(align_alloc)>>)
+      -- rendered DUMMY(DUMMY(align_alloc)) — the cn_coverage mask_ptr.c
+      -- UB_DIFF.
+      match lookupR ubStr ub_str_bimap with
+      | some ub => return (mkPE (PEundef loc0 ub))
+      | none =>
+        if ubStr.startsWith "DUMMY(" && ubStr.endsWith ")" then
+          return (mkPE (PEundef loc0 (DUMMY ((ubStr.drop 6).dropRight 1).toString)))
+        else
+          fail s!"invalid ub name: <<{ubStr}>>"
     | some "error" =>
       lexSym "("
       -- PEerror's string prints DQUOTED (pp_core.ml:444-445, matching the

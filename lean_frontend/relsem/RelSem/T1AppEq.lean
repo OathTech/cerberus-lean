@@ -101,7 +101,7 @@ def bodyTail : RExpr :=
       (Expr aU (Esave (symRet, BTy_loaded OTy_integer)
         [(symA526, ((BTy_loaded OTy_integer, none),
           Pexpr aU () (PEundef CerbLocation.Loc.unknown
-            (DUMMY "UB088_reached_end_of_function"))))]
+            UB088_reached_end_of_function)))]
         (Expr aU (Epure (Pexpr aU () (PEsym symA526)))))))))
 
 /-- Arena at R0 entry (the converted id body). -/

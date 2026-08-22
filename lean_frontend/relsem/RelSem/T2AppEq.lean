@@ -105,7 +105,7 @@ def casePE : generic_pexpr Unit sym :=
      (Pattern aU (CaseBase (none,
         BTy_tuple [BTy_loaded OTy_integer, BTy_loaded OTy_integer])),
       Pexpr aU () (PEundef CerbLocation.Loc.unknown
-        (DUMMY "UB036_exceptional_condition")))])
+        UB036_exceptional_condition))])
 
 /-- The body tail (Erun ret_529 conv_loaded_int(a_537) → Esave). -/
 def bodyTail : RExpr :=
@@ -119,7 +119,7 @@ def bodyTail : RExpr :=
       (Expr aU (Esave (symRet529, BTy_loaded OTy_integer)
         [(symA538, ((BTy_loaded OTy_integer, none),
           Pexpr aU () (PEundef CerbLocation.Loc.unknown
-            (DUMMY "UB088_reached_end_of_function"))))]
+            UB088_reached_end_of_function)))]
         (Expr aU (Epure (Pexpr aU () (PEsym symA538)))))))))
 
 /-! ### The unseq load-branch stages (b steps first: R0–R3; a: R4–R7) -/
@@ -856,7 +856,7 @@ def casePE_p : generic_pexpr Unit sym :=
      (Pattern aU (CaseBase (none,
         BTy_tuple [BTy_loaded OTy_integer, BTy_loaded OTy_integer])),
       Pexpr aU () (PEundef CerbLocation.Loc.unknown
-        (DUMMY "UB036_exceptional_condition")))])
+        UB036_exceptional_condition))])
 
 theorem pull_casePE : pull_constrained 0 casePE = casePE_p := rfl
 
