@@ -22,3 +22,24 @@
   S1 IS GO per the 8-step plan (implementation → cascade → floor
   adaptation → grandfather dissolution), with the replay-economics
   measurement as a first-class deliverable.
+- **D2 [AGENT] — S1/S2 boundary verified; S3 GO.** Orchestrator
+  re-verified at 59781c611: unit 7/7 (both packages), drift gate
+  green (56-file manifest, renumber=arc13), exec zero movement with
+  cerb_floor=0, uri 16/16 plain (grandfather gone), and an
+  independent byte-identity spot: fork and upstream --pp core
+  output LITERALLY IDENTICAL on t1_id (a_525 both sides). THE
+  ECONOMICS FINDING accepted with its honest refinement: full proof
+  package re-elaboration = 30.5s / zero manual edits (1,510
+  scripted token replacements) — at T1-T4 scale renumbering is
+  essentially free and REPLAY WAS NOT NEEDED (no stored traces;
+  the 15x thesis becomes load-bearing only at T5-walk scale) — the
+  workbench prediction refined, not refuted, and recorded as such.
+  516 floors → real verdicts with mismatch=0 (three-way 6/6
+  byte-level); exploration yield 5x on the identical seed block;
+  jitter pair re-recorded properly under the B-F5 bar (3x uncapped,
+  stable). Parked items handled: notes/upstream/07 addendum
+  appended by the orchestrator (container surface); WalkBench
+  breakage REGISTERED (not an arc-13 surface — zero tactic diffs;
+  mover = workbench maintenance at the T5 resumption). S3: results,
+  de-stale, audits (mandatory scopes per charter incl. the re-pin
+  completeness tree-wide old-id sweep), checklist.
