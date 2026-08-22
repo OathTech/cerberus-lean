@@ -1966,7 +1966,14 @@ def memcpyM (loc : CerbLocation.Loc) (dst src : PointerValue) (sizeIv : IntegerV
     value — the oracle's inelegant-but-fail-closed behavior, mirrored
     not improved; see tests/immaculate g2-memcmp-uninit).
     Byte comparison is on the loaded integer VALUES (Z.compare upstream,
-    :2662-2664), fold stopping at the first nonzero. -/
+    :2662-2664), fold stopping at the first nonzero.
+    DOCUMENTED DIVERGENCE (re-mark R4): the size argument goes through
+    `Int.toNat`, which CLAMPS a negative size_n to 0 (empty comparison,
+    result 0) — upstream `Z.to_int` keeps the negative and get_bytes'
+    `| size` arm then recurses on size-1 forever (non-termination).
+    Unreachable from C (memcmp's size_t is non-negative after
+    conversion); the clamp is the total-function rendering of an
+    upstream divergence-by-nontermination, deliberately not mirrored. -/
 def memcmpM (pv1 pv2 : PointerValue) (sizeIv : IntegerValue) : memM IntegerValue :=
   match sizeIv with
   | .IV _ size_n =>

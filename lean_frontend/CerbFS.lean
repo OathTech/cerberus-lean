@@ -4,7 +4,12 @@
 
   The OCaml backend uses SibylFS, a formal POSIX filesystem model.
   For the Lean port we provide a minimal in-memory implementation
-  sufficient to run C programs with basic file I/O.
+  sufficient for the corpus's file-I/O smoke tests ONLY — NOT a faithful
+  fs model (re-mark honesty; sem:S13 residual): lseek maintains offsets
+  that read/write IGNORE (read from 0, write appends), pread/pwrite
+  ignore their offset, open ignores flags (no O_TRUNC) — a
+  seek-then-read program gets silently wrong data. The registered mover:
+  per-fd offsets or loud enosys + a CerbPP-style divergence table.
   This is a leaf module.
 -/
 

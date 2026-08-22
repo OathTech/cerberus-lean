@@ -21,15 +21,51 @@ def max_alignment : Nat := 8
 
 /-! ## Integer Type Properties -/
 
-/-- Get the integer type for an enum.
-    Corresponds to: DefaultImpl.typeof_enum in ocaml_implementation.ml:144-150.
-    OCaml looks the tag up in the mutable `registered_enums` registry
-    (populated by register_enum: Signed Int_ if any negative enumerator,
-    else Unsigned Int_) and fails if unregistered. The Lean registry is
-    NOT ported yet (survey finding 18, S3c): this stub returns the
-    all-negative-enumerators answer `Signed Int_` for every tag.
-    Polymorphic in sym to avoid circular imports. -/
-def typeof_enum {α : Type} (_ : α) : integerType := .Signed .Int_
+/-! ## The enum registry (sem:S9, arc-14 re-mark basket)
+
+Mirrors DefaultImpl's mutable `registered_enums` (ocaml_implementation.ml:
+124-150): `register_enum` decides the enum's compatible type — GCC's
+rule, `Signed Int_` iff any enumerator is negative, else `Unsigned Int_`
+(:130-135) — and records it; `typeof_enum` looks it up and FAILS on an
+unregistered tag (:144-150). Registration flows through the SHARED lem
+model (cabs_to_ail_effect.lem:1759 calls Implementation.register_enum
+during desugar), so the Lean pipeline registers exactly where the oracle
+does. (Previously typeof_enum was a stub returning `Signed Int_` for
+every enum — silently wrong signedness for all-nonnegative enums; lane
+probe tests/immaculate/nolibc/s9-enum-signedness.c.)
+
+EFFECT-ERASURE SEAM (the invariant page,
+docs/2026-08-22_arc14-effect-erasure-invariant.md): both entry points
+are pure-typed at the lem interface (the OCaml side mutates a ref inside
+pure-typed functions the same way). The cell uses Lean's `initialize`
+idiom (the page's sanctioned pattern for a WRITTEN cell without a native
+global) + the standard armour; per the invariant, no proof may relate
+these applications across registrations and no theorem statement may
+mention them — registration and every lookup happen within one desugar
+run's ambient state. Keys compare by digest+num (Symbol.symbol_compare
+parity, ocaml_implementation.ml:137,145). -/
+
+initialize enumRegistryRef : IO.Ref (List (sym × integerType)) ← IO.mkRef []
+
+private def symKeyEq : sym → sym → Bool
+  | Symbol d1 n1 _, Symbol d2 n2 _ =>
+    CerberusFresh.digest_compare d1 d2 == 0 && n1 == n2
+
+@[never_extract, noinline]
+private unsafe def typeof_enum_impl (tag_sym : sym) : integerType :=
+  unsafeBaseIO do
+    let regs ← enumRegistryRef.get
+    match regs.find? (fun (z, _) => symKeyEq z tag_sym) with
+    | some (_, ity) => pure ity
+    | none =>
+      -- ocaml_implementation.ml:146-149 failwith, mirrored loud
+      pure (panic! "Ocaml_implementation.typeof_enum: tag was not registered (ocaml_implementation.ml:146-149)")
+
+/-- typeof_enum — ocaml_implementation.ml:144-150 (registry lookup;
+    unregistered tag panics, mirroring upstream's failwith). -/
+@[implemented_by typeof_enum_impl]
+opaque typeof_enum : sym → integerType
+attribute [never_extract] typeof_enum
 
 /-- Whether an integer type is signed.
     Corresponds to: Common.is_signed_ity in ocaml_implementation.ml:79-107,
@@ -77,13 +113,22 @@ def sizeof_integerBaseType : integerBaseType → Nat
   | .Intptr_t => 8   -- pointer-sized
 
 /-- Size of an integer type in bytes.
-    Corresponds to: DefaultImpl.sizeof_ity in ocaml_implementation.ml -/
+    Corresponds to: DefaultImpl.sizeof_ity in ocaml_implementation.ml.
+    The Enum arm ROUTES through typeof_enum (sem:S9 routing fix — was a
+    literal `some 4` that would silently stop tracking the registry;
+    the registry only ever returns Signed/Unsigned Int_, so the VALUE is
+    unchanged, but the route now follows upstream's). Non-recursive by
+    construction: typeof_enum never returns Enum0, so one re-dispatch on
+    the base arms suffices. -/
 def sizeof_ity : integerType → Option Nat
   | .Char0 => some 1
   | .Bool0 => some 1
   | .Signed ibty => some (sizeof_integerBaseType ibty)
   | .Unsigned ibty => some (sizeof_integerBaseType ibty)
-  | .Enum0 _ => some 4  -- enums are int-sized
+  | .Enum0 tag_sym =>
+    (match typeof_enum tag_sym with
+     | .Signed ibty | .Unsigned ibty => some (sizeof_integerBaseType ibty)
+     | _ => panic! "CerberusImpl.sizeof_ity: typeof_enum returned a non-Int type (unreachable)")
   | .Wchar_t => some 4  -- wchar_t is int-sized
   | .Wint_t => some 4   -- wint_t is int-sized
   | .Size_t => some 8   -- LP64: size_t is 8 bytes
@@ -172,11 +217,25 @@ port we use a simpler approach: all enums are treated as signed int.
 This matches the common case and can be refined later.
 -/
 
-/-- Register an enum type. Returns true if all values fit in int.
-    Corresponds to: DefaultImpl.register_enum in ocaml_implementation.ml
-    Polymorphic in sym to avoid circular imports.
-    (typeof_enum lives above is_signed_ity, which routes Enum through it.) -/
-def register_enum {α : Type} (_ : α) (_ : List Int) : Bool := true
+@[never_extract, noinline]
+private unsafe def register_enum_impl (tag_sym : sym) (ns : List Int) : Bool :=
+  unsafeBaseIO do
+    -- GCC's rule — ocaml_implementation.ml:130-135
+    let ity : integerType := if ns.any (· < 0) then .Signed .Int_ else .Unsigned .Int_
+    let regs ← enumRegistryRef.get
+    if regs.any (fun (z, _) => symKeyEq z tag_sym) then
+      pure false                                        -- :136-138 (duplicate)
+    else do
+      enumRegistryRef.set ((tag_sym, ity) :: regs)      -- :139-141
+      pure true
+
+/-- register_enum — ocaml_implementation.ml:129-142 (the real registry;
+    was a `true`-returning stub). Returns false on a duplicate tag,
+    exactly as upstream (cabs_to_ail uses the bool for redefinition
+    detection). -/
+@[implemented_by register_enum_impl]
+opaque register_enum : sym → List Int → Bool
+attribute [never_extract] register_enum
 
 /-! ## Type Normalisation -/
 

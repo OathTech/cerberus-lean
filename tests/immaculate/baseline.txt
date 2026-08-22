@@ -21,7 +21,8 @@
 #   G2 semantics: g2-memcpy-oob, g2-memcpy-readonly, g2-memcmp-uninit (checked-path bypass)
 #   G3 semantics: g3-realloc-non-heap (UB179c), g3-realloc-dead (UB179d) (wrong UB family)
 #   G4 semantics: g4-ffs-negative, g4-ffs-intmin (Int.toNat clamp); g4-ctz-nonzero
-#                 and g4-bswap-controls are controls (bswap asserts unreachable from C)
+#                 and g4-bswap-controls are controls (16/32 asserts unreachable from C;
+#                 bswap64 >= 2^63 IS reachable: g4-bswap64-overflow, both fail-stop, tray #12)
 #   S12 semantics: g5-escape-roundtrip (ORACLE-WRONG: Char.escaped decimal read back
 #                 as octal corrupts %c-stored char 127 -> 87; gcc & Lean = 127)
 #   G5 semantics: g5-decode-question (ORACLE-WRONG: '\?' is a legal C11 escape = 63,
@@ -46,6 +47,7 @@ g2-memcpy-oob MATCH | L=UB:UB_CERB002b_out_of_bound_store
 g2-memcpy-readonly MATCH | L=UB:UB064_modifying_const
 g3-realloc-dead MATCH | L=UB:UB179d_dead_allocation_realloc
 g3-realloc-non-heap MATCH | L=UB:UB179c_non_matching_allocation_realloc
+g4-bswap64-overflow MATCH | L=CRASH
 g4-bswap-controls MATCH | L=VAL:Specified(0)
 g4-ctz-nonzero MATCH | L=VAL:Specified(3)
 g4-ffs-intmin MATCH | L=VAL:Specified(32)
@@ -54,3 +56,5 @@ g5-decode-multichar MATCH | L=CRASH
 g5-decode-question ORACLE_CRASH | L=VAL:Specified(63)
 g5-escape-roundtrip DIFF | L=VAL:Specified(127)
 g6-hash-collision TRIPWIRE
+s9-enum-signedness MATCH | L=VAL:Specified(2)
+s9-enum-sizeof-route MATCH | L=VAL:Specified(4)

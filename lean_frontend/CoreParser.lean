@@ -2016,12 +2016,21 @@ identifier-shaped token in the input (comments and quoted strings
 skipped — the lexical classes lexWs and the string lexer consume) is
 hashed; two DISTINCT names with EQUAL hash abort the parse loudly.
 Sound over-approximation: every identifier the parser interns is such a
-token; the extra tokens scanned (keywords, impl-constant bodies) only
-make the check stricter. Residual envelope (documented, accepted):
-`internSym` calls that rekey oracle-side metadata names (Main.loadLibc)
-are covered only insofar as those names also appear in a scanned file —
-they do, by construction: metadata names rekey onto symbols of parsed
-dumps. -/
+token — including the SUFFIX-STRIPPED tag names minted via
+`mkSym (stripRawSymSuffix tag)`, whose stripped form is scanned
+alongside the raw token (R1, arc-14 re-mark); the extra tokens scanned
+(keywords, impl-constant bodies) only make the check stricter.
+SCOPE (the second-preimage boundary, stated precisely): the tripwire
+quantifies over ONE parseFile input — it rules out silent conflation
+WITHIN each scanned file. A hash second preimage split ACROSS parseFile
+calls (a name in std.core colliding with a different name in libc.core
+or a TU) is outside this scan's premise; it is covered only by the
+64-bit margin plus the fact that cross-file symbol AGREEMENT is
+by-name interning (same name = same hash is intended there). Residual
+envelope (documented, accepted): `internSym` calls that rekey
+oracle-side metadata names (Main.loadLibc) are covered only insofar as
+those names also appear in a scanned file — they do, by construction:
+metadata names rekey onto symbols of parsed dumps. -/
 
 private structure ScanSt where
   seen : Std.HashMap UInt64 String := {}
@@ -2063,12 +2072,22 @@ private def scanStep (fuel : Nat) (st : ScanSt) (l : List Char) : ScanSt :=
       if isIdentStart c then
         let tok : String := (c :: rest.takeWhile isIdentCont).asString
         let rest' := rest.dropWhile isIdentCont
-        match st.seen.get? tok.hash with
-        | some prev =>
-          if prev != tok && st.collision.isNone then
-            scanStep fuel { st with collision := some (prev, tok) } rest'
-          else scanStep fuel st rest'
-        | none => scanStep fuel { st with seen := st.seen.insert tok.hash tok } rest'
+        -- R1 (arc-14 re-mark, professor A): the parser ALSO interns
+        -- SUFFIX-STRIPPED names (mkSym (stripRawSymSuffix tag) on
+        -- struct/union tags), so a raw token can mint a SECOND hash the
+        -- raw-token scan alone would never see — both forms enter the
+        -- seen-map.
+        let checkOne (st : ScanSt) (t : String) : ScanSt :=
+          match st.seen.get? t.hash with
+          | some prev =>
+            if prev != t && st.collision.isNone then
+              { st with collision := some (prev, t) }
+            else st
+          | none => { st with seen := st.seen.insert t.hash t }
+        let stripped := stripRawSymSuffix tok
+        let st := checkOne st tok
+        let st := if stripped == tok then st else checkOne st stripped
+        scanStep fuel st rest'
       else if isIdentCont c then
         -- digit-led runs (number literals): consume the whole run so a
         -- trailing letter is not misread as an identifier start

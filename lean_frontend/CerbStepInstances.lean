@@ -62,21 +62,28 @@
   panic arms are dead in practice — they exist for parity honesty. Do NOT
   soften them to false/true.
 
-  Mechanism note: `declare {lean} skip_instances type core_step2` can NOT be
-  used (probed, arc-4 S1a): it also suppresses the real Inhabited instance,
-  which Core_reduction.lean itself needs (failwithI sites) and which this
-  file cannot provide (import cycle). Instead the generated sorry instances
-  remain at (priority := low) and the default-priority instances below
-  override them wherever this file is imported — currently Driver.lean (via
+  Mechanism note (wording post-arc-10/arc-14 re-mark R3: the generated
+  fallbacks are loud FAILWITHI-bodied residual instances since arc-10 —
+  "sorry" above is HISTORY, describing the arc-4 state; sorry is banned
+  tree-wide and gate-enforced): `declare {lean} skip_instances type
+  core_step2` can NOT be used (probed, arc-4 S1a): it also suppresses the
+  real Inhabited instance, which Core_reduction.lean itself needs
+  (failwithI sites) and which this file cannot provide (import cycle).
+  Instead the generated residual (failwithI) instances remain at
+  (priority := low) and the default-priority instances below override
+  them wherever this file is imported — currently Driver.lean (via
   `declare {lean} extra_import` in driver.lem), the ONLY module that uses
-  equality on core_step2. Any NEW use site in another generated module must
-  also extra_import this file, or it will silently get the sorry fallback.
+  equality on core_step2. Any NEW use site in another generated module
+  must also extra_import this file, or it gets the residual fallback —
+  which since arc-10 PANICS loudly rather than sorry-ing (and the axiom
+  gates would catch a sorry regardless).
 -/
 import Core_reduction
 import CerbCtypeInstances
 
 /- Structural equality for Core values, bypassing the generated
-   (transitively sorry) `deriving BEq` on `value`. Leaf comparisons use
+   (transitively residual/failwithI-bodied — historically sorry, arc-4)
+   `deriving BEq` on `value`. Leaf comparisons use
    real instances: CerbMem.IntegerValue/PointerValue/MemValue (hand-written
    in CerbMem.lean), Float (IEEE ==, matching OCaml (=) incl. nan, -0.0),
    sym/identifier/core_base_type (derived), ctype (CerbCtypeInstances).
