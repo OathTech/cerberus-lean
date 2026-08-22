@@ -34,3 +34,28 @@
   live, the gating context-query mode is built for the
   continuation-lambda advance law + round_run_jump, entry5_walk is
   the proof's first segment. D3-class stop rule armed as chartered.
+- **D3 [AGENT] — S2 boundary verified; ONE final climb session
+  authorized; R-S2-2 ruled.** Boundary green at 817635f2f (unit 7/7,
+  verify 29/29, exec zero movement, sweep in-boundary). The park is
+  evidence-grade: the arc-9 named suspect DISSOLVED (census R65 is an
+  ordinary Ewseq tau; the walls were three measured emitter defects,
+  fixed), the symbolic hbody route is live end-to-end
+  (kernel-side closed-fact matching = the breakthrough; ~6s cycles vs
+  arc-9's ~10min), T5Iter's env-lookup family PROVED in-build.
+  RULINGS: (1) R-S2-2 = the SKIP-LAW-AS-REWRITE route — teach the
+  chase the Kit skip-law as a deterministic, trace-recorded law-table
+  mechanism (scales to T6-T9; consistent with the law-table
+  architecture and the proof-scaling philosophy); per-round fact
+  families remain the bounded fallback per round. (2) ONE final
+  climb session (the arc-9-D3 pattern), with a NEW deciding factor:
+  the operator-ordered RENUMBERING arc starts at this arc's close
+  and will re-pin the T5 fixtures — a LANDED T5 re-records
+  mechanically via replay; a half-climb resumes at full cost. So the
+  marginal value of finishing now is at its maximum. Stop conditions
+  unchanged (new wall class = immediate stop) PLUS: capacity-end
+  without T5 = NO third climb in this arc — the session then pivots
+  to S4 (the package rehearsal, [USER] item, T5-independent) and the
+  arc closes with T5 parked at the improved grade. S3 slate (T6+) is
+  out of capacity scope for this arc per the charter's park clauses.
+  R-S2-1 (sealed-closure avatars) stays parked per park-don't-grind;
+  R-S2-3 noted.
