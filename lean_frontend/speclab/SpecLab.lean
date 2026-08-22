@@ -11,3 +11,5 @@ import SpecLab.DivMod
 import SpecLab.DivModHarness
 import SpecLab.DivModCore
 import SpecLab.DivModFiles
+import SpecLab.ByteArr
+import SpecLab.ByteArrHarness

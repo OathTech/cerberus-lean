@@ -130,9 +130,48 @@ def divmodChecks : List Check :=
     , pass := render3 [0, 255] == "000,255," }
   ]
 
+open SpecLab.ByteArr in
+def byteArrChecks : List Check :=
+  let ramp : List UInt8 := [1, 2, 3]
+  [ { name := "bytearr: encodeInput = u16le prefix ++ verbatim bytes"
+    , pass := encodeInput ramp == [3, 0, 1, 2, 3]
+        && encodeInput [] == [0, 0] }
+  , { name := "bytearr: expectedBytes = prefix ++ dst' ++ src'; n=0 nonempty"
+    , pass := expectedBytes ramp == [3, 0, 1, 2, 3, 1, 2, 3]
+        && expectedBytes [] == [0, 0] }
+  , { name := "bytearr: canonicity (executable spot): decode-then-encode = id"
+    , pass := [[], [7], ramp, List.replicate 16 255].all fun bs =>
+        match decodeInput (encodeInput bs) with
+        | some (bs', []) => encodeInput bs' == encodeInput bs
+        | _ => false }
+  , { name := "bytearr: validStreamb accepts encoded Wf, rejects malformed"
+    , pass := validStreamb (encodeInput ramp)
+        && validStreamb [0, 0]
+        && !validStreamb [5, 0, 1]          -- short body
+        && !validStreamb [17, 0]            -- over capacity
+        && !validStreamb (encodeInput (List.replicate 17 1)) }
+  , { name := "bytearr: plant verdict predicted 3 (dst byte 0) on ramp"
+    , pass := plantVerdict ramp == 3
+        && plantVerdict [] == 0             -- n=0: plant is invisible
+        && plantVerdict [canary, 9] == 0 }  -- canary collision: blind spot, by design
+  , { name := "bytearr: getarr expected = ret ++ arr; plant verdict 1"
+    , pass :=
+        let hello : List UInt8 :=
+          [104, 101, 108, 108, 111, 104, 101, 108, 108, 111]
+        getarrExpected hello == 111 :: hello
+        && getarrPlantVerdict hello == 1
+        && getarrPlantVerdict (List.replicate 10 7) == 0 }
+  , { name := "bytearr: sweep sample sets sized and Wf (memcpy ≥ 100)"
+    , pass := sweepSamples.length ≥ 100 && sweepSamples.all wfb
+        && getarrSamples.length == 20 && getarrSamples.all gwfb }
+  , { name := "bytearr: structured face flattens to byte face (executable)"
+    , pass := bytesOfU16s [4660, 255] == [52, 18, 255, 0] }
+  ]
+
 /-- #eval-able one-shot: `#eval SpecLab.Test.allPass` (also the exe's
 exit verdict). -/
-def allChecks : List Check := codecChecks ++ harnessChecks ++ divmodChecks
+def allChecks : List Check :=
+  codecChecks ++ harnessChecks ++ divmodChecks ++ byteArrChecks
 
 def emitPlant (bs : List UInt8) (idx : Nat) : Option String :=
   if h : idx < bs.length then
@@ -173,8 +212,74 @@ as literal `\n` in the batch line). -/
 def predictForm2Stdout (x y : Int) : String :=
   render3 (expectedBytes ⟨x, y⟩) ++ "\\n"
 
+/-- Model-bytes CSV: like `parseCsvBytes` but the empty string is the
+empty model (n = 0 is a live memcpy instance; its STREAM `[0,0]` is
+never empty — only the model list is). -/
+def parseModelCsv (s : String) : Option (List UInt8) :=
+  if s.isEmpty then some [] else parseCsvBytes s
+
+def csvOfBytes (bs : List UInt8) : String :=
+  String.intercalate "," (bs.map (fun b => toString b.toNat))
+
+open SpecLab.ByteArr in
+/-- The R2 byte-blaster emitter arms (memcpy + getarr). Returns
+(harness text, predicted verdict) or an error. -/
+def emitByteArr (mode : String) (csv : String) :
+    Except String (String × String) := do
+  match mode with
+  | "memcpy" =>
+    let some bs := parseModelCsv csv | throw s!"bad byte list: {csv}"
+    if !wfb bs then throw s!"model not Wf (length {bs.length} > 16)"
+    pure (mkMemcpy bs, "Specified(0)")
+  | "memcpy-plant" =>
+    let some bs := parseModelCsv csv | throw s!"bad byte list: {csv}"
+    if !wfb bs then throw s!"model not Wf (length {bs.length} > 16)"
+    pure (mkMemcpyPlant bs, s!"Specified({plantVerdict bs})")
+  | "memcpy-stream" =>
+    let some s := parseCsvBytes csv | throw s!"bad byte list: {csv}"
+    if !validStreamb s then throw "INVALID stream (prefix/capacity)"
+    pure (mkMemcpyOfStream s, "Specified(0)")
+  | "memcpy-raw" =>
+    -- NO validity check (the malformed lane); nonempty splice only
+    -- (empty C initializers are invalid pre-C23)
+    let some s := parseCsvBytes csv | throw s!"bad byte list: {csv}"
+    if s.isEmpty then throw "raw stream must be nonempty"
+    pure (mkMemcpyOfStream s,
+      if validStreamb s then "Specified(0)" else "Specified(254)")
+  | "getarr" =>
+    let some bs := parseModelCsv csv | throw s!"bad byte list: {csv}"
+    if !gwfb bs then throw s!"model not GWf (length {bs.length} ≠ 10)"
+    pure (mkGetarr bs, "Specified(0)")
+  | "getarr-plant" =>
+    let some bs := parseModelCsv csv | throw s!"bad byte list: {csv}"
+    if !gwfb bs then throw s!"model not GWf (length {bs.length} ≠ 10)"
+    pure (mkGetarrPlant bs, s!"Specified({getarrPlantVerdict bs})")
+  | "getarr-raw" =>
+    let some s := parseCsvBytes csv | throw s!"bad byte list: {csv}"
+    if s.isEmpty then throw "raw stream must be nonempty"
+    pure (mkGetarrOfStream s,
+      if gwfb s then "Specified(0)" else "Specified(254)")
+  | _ => throw s!"unknown bytearr mode: {mode}"
+
 def main (args : List String) : IO UInt32 := do
   match args with
+  | ["--emit-bytearr", mode, csv] =>
+    match emitByteArr mode csv with
+    | .ok (h, _) => IO.print h; return 0
+    | .error e => IO.eprintln s!"SpecLabTest: {e}"; return 2
+  | ["--bytearr-predict", mode, csv] =>
+    match emitByteArr mode csv with
+    | .ok (_, v) => IO.println v; return 0
+    | .error e => IO.eprintln s!"SpecLabTest: {e}"; return 2
+  | ["--bytearr-samples"] =>
+    -- memcpy sweep sample STREAMS (2+n bytes each — never empty)
+    for bs in SpecLab.ByteArr.sweepSamples do
+      IO.println (csvOfBytes (SpecLab.ByteArr.encodeInput bs))
+    return 0
+  | ["--getarr-samples"] =>
+    for bs in SpecLab.ByteArr.getarrSamples do
+      IO.println (csvOfBytes bs)
+    return 0
   | ["--emit-divmod", form, xs, ys] =>
     match xs.toInt?, ys.toInt? with
     | some x, some y =>
