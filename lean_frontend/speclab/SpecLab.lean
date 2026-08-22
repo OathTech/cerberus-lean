@@ -7,3 +7,5 @@ lean_frontend/docs/2026-08-22_arc15-spec-lab-charter.md.
 -/
 import SpecLab.Codec
 import SpecLab.MkHarness
+import SpecLab.DivMod
+import SpecLab.DivModHarness

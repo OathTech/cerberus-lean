@@ -97,9 +97,42 @@ def harnessChecks : List Check :=
         && (h.splitOn "\n").length > 20 }
   ]
 
+open SpecLab.DivMod in
+def divmodChecks : List Check :=
+  let m72 : Input := ⟨7, 2⟩
+  let mneg : Input := ⟨-7, 2⟩
+  let i8s : List Int := [-128, -127, -1, 0, 1, 126, 127]
+  [ { name := "divmod: expectedBytes (7,2) = [3,0,0,0,1,0,0,0]"
+    , pass := expectedBytes m72 == [3, 0, 0, 0, 1, 0, 0, 0] }
+  , { name := "divmod: expectedBytes (-7,2) = q=-3 r=-1 two's complement"
+    , pass := expectedBytes mneg
+        == [253, 255, 255, 255, 255, 255, 255, 255] }
+  , { name := "divmod: C truncation semantics spot checks (tdiv/tmod)"
+    , pass := modelFn ⟨-7, 2⟩ == (-3, -1) && modelFn ⟨7, -2⟩ == (-3, 1)
+        && modelFn ⟨-7, -2⟩ == (3, -1) && modelFn ⟨7, 2⟩ == (3, 1) }
+  , { name := "divmod: i8 byte codec round trip (executable spot checks)"
+    , pass := i8s.all fun n => ofByteI8 (toByteI8 n) == n }
+  , { name := "divmod: input codec round trip at edges (executable)"
+    , pass := edgeSamples.all fun m =>
+        decodeInput (encodeInput m) == some (m, []) }
+  , { name := "divmod: edge sample set ≥ 100 and all Wf"
+    , pass := edgeSamples.length ≥ 100 && edgeSamples.all wfb }
+  , { name := "divmod: INT_MIN/-1 and y=0 rows filtered from edges"
+    , pass := edgeSamples.all fun m =>
+        m.y ≠ 0 && !(m.x == i32Min && m.y == -1) }
+  , { name := "divmod: verdictOf mirror (agree/index/length)"
+    , pass := verdictOf [1, 2] [1, 2] == 0
+        && verdictOf [1, 9] [1, 2] == 2
+        && verdictOf [1] [1, 2] == 255 }
+  , { name := "divmod: plant verdict predicted at (7,2) is 1 (q byte 0)"
+    , pass := plantVerdict m72 == 1 && plantVerdictI8 m72 == 1 }
+  , { name := "divmod: render3 stdout mirror (0,255 -> 000,255,)"
+    , pass := render3 [0, 255] == "000,255," }
+  ]
+
 /-- #eval-able one-shot: `#eval SpecLab.Test.allPass` (also the exe's
 exit verdict). -/
-def allChecks : List Check := codecChecks ++ harnessChecks
+def allChecks : List Check := codecChecks ++ harnessChecks ++ divmodChecks
 
 def emitPlant (bs : List UInt8) (idx : Nat) : Option String :=
   if h : idx < bs.length then
@@ -107,8 +140,75 @@ def emitPlant (bs : List UInt8) (idx : Nat) : Option String :=
     some (mkHarness identityTemplateV1 bs corrupted)
   else none
 
+open SpecLab.DivMod in
+/-- Render a divmod harness for FORM at input (x, y). Returns
+(harness text, predicted verdict line) or an error string. -/
+def emitDivMod (form : String) (x y : Int) :
+    Except String (String × String) := do
+  let m : Input := ⟨x, y⟩
+  let needI8 := form == "i8" || form == "i8-plant"
+  if needI8 then
+    if !wfI8b m then throw s!"input ({x}, {y}) not WfI8"
+  else
+    if !wfb m then throw s!"input ({x}, {y}) not Wf"
+  match form with
+  | "form1" => pure (mkDivModForm1 m, "Specified(0)")
+  | "form1b" => pure (mkDivModForm1b m, "Specified(0)")
+  | "form2" => pure (mkDivModForm2 m, "Specified(0)")
+  | "i8" => pure (mkDivModI8 m, "Specified(0)")
+  | "form1-plant" =>
+    pure (mkDivModForm1Plant m, s!"Specified({plantVerdict m})")
+  | "form1b-plant" =>
+    pure (mkDivModForm1bPlant m,
+      if plantVerdict m == 0 then "Specified(0)" else "Specified(1)")
+  | "form2-plant" => pure (mkDivModForm2Plant m, "Specified(0)")
+  | "i8-plant" =>
+    pure (mkDivModI8Plant m, s!"Specified({plantVerdictI8 m})")
+  | _ => throw s!"unknown divmod form: {form}"
+
+open SpecLab.DivMod in
+/-- Predicted Form 2 stdout for input (x, y) (healthy targets), in
+the batch-output ESCAPED spelling (the trailing flush newline prints
+as literal `\n` in the batch line). -/
+def predictForm2Stdout (x y : Int) : String :=
+  render3 (expectedBytes ⟨x, y⟩) ++ "\\n"
+
 def main (args : List String) : IO UInt32 := do
   match args with
+  | ["--emit-divmod", form, xs, ys] =>
+    match xs.toInt?, ys.toInt? with
+    | some x, some y =>
+      match emitDivMod form x y with
+      | .ok (h, _) => IO.print h; return 0
+      | .error e => IO.eprintln s!"SpecLabTest: {e}"; return 2
+    | _, _ => IO.eprintln "SpecLabTest: bad --emit-divmod ints"; return 2
+  | ["--divmod-predict", form, xs, ys] =>
+    match xs.toInt?, ys.toInt? with
+    | some x, some y =>
+      match emitDivMod form x y with
+      | .ok (_, v) =>
+        IO.println v
+        if form == "form2" || form == "form2-plant" then
+          -- Form 2's observable: the healthy-model stdout prediction
+          -- (the plant's stdout DIVERGES from this — that is the red)
+          IO.println (predictForm2Stdout x y)
+        return 0
+      | .error e => IO.eprintln s!"SpecLabTest: {e}"; return 2
+    | _, _ => IO.eprintln "SpecLabTest: bad --divmod-predict ints"; return 2
+  | ["--emit-divmod-stream", csv] =>
+    match parseCsvBytes csv with
+    | some bs =>
+      if SpecLab.DivMod.validStreamb bs then
+        IO.print (SpecLab.DivMod.mkDivModForm1OfStream bs)
+        return 0
+      else
+        IO.eprintln "SpecLabTest: INVALID stream (not 8 bytes / not Wf)"
+        return 3
+    | none => IO.eprintln s!"SpecLabTest: bad byte list: {csv}"; return 2
+  | ["--divmod-samples"] =>
+    for m in SpecLab.DivMod.edgeSamples do
+      IO.println s!"{m.x} {m.y}"
+    return 0
   | ["--emit-identity", csv] =>
     match parseCsvBytes csv with
     | some bs =>
