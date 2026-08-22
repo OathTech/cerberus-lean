@@ -35,3 +35,14 @@ ACTION_ILLTYPED class; finding 5 ↔ 066-cast-float; findings 1/4 ↔
 ### Tier 3: latents + coverage statement — see orchestrator transcript;
 ### headline gaps NOT compared at all: CerbFS (largest untouched seam),
 ### CoreParser (no OCaml counterpart), CerbConcurrency, instance files.
+
+### Addendum 2026-08-22 (cn-coverage audit)
+31. DELIBERATE DIVERGENCE, documented in-code: CoreParser.lexDoubleAngle
+    stops at the first '>' while OCaml's ub_name lexeme
+    (core_lexer.mll:250-251) admits '<'/'>' inside DUMMY(...) payloads.
+    Fail-closed (loud Lean parse error, never silent divergence);
+    empirically unreachable — no in-tree DUMMY payload contains '>'
+    (tree-wide sweep at the cn-coverage audit). Becomes live only if a
+    future std.core stub names a payload with '>'; the fix then is to
+    mirror the ub_name regex in lexDoubleAngle. [audit A-1, resolved by
+    in-code comment at CoreParser.lean undef arm]

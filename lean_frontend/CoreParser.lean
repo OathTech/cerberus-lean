@@ -1074,6 +1074,13 @@ partial def pPexprAtom (minPrec : Nat := 0) : P PE := do
       -- unconditionally, so std.core's undef(<<DUMMY(align_alloc)>>)
       -- rendered DUMMY(DUMMY(align_alloc)) — the cn_coverage mask_ptr.c
       -- UB_DIFF.
+      -- DELIBERATE DIVERGENCE (registered, arc4-seam-survey): OCaml's
+      -- ub_name lexeme (core_lexer.mll:250-251) admits '<'/'>' INSIDE a
+      -- DUMMY(...) payload; lexDoubleAngle above stops at the first '>',
+      -- so such a payload fails here with a loud parse error instead of
+      -- parsing. No payload in runtime/libcore or any in-tree DUMMY
+      -- string contains '>' (tree-wide sweep, 2026-08-22 cn-coverage
+      -- audit), and the failure mode is fail-closed, never silent.
       match lookupR ubStr ub_str_bimap with
       | some ub => return (mkPE (PEundef loc0 ub))
       | none =>
