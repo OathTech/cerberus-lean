@@ -6,9 +6,23 @@
   This is a leaf module — no imports from generated code.
 -/
 
--- Instances needed by generated code
+-- Ord Float — a total, reflexive order (sem:N8 fix: the previous
+-- `if x<y .lt else if x==y .eq else .gt` returned .gt for EVERY NaN
+-- comparison, including `compare nan nan` — irreflexive, an unlawful
+-- order once a float keys a set). Mirrors OCaml Stdlib.compare's key
+-- properties: NaN equals itself and sorts below every non-NaN value
+-- (+0.0/-0.0 compare equal here — OCaml's compare distinguishes them,
+-- a documented finer-point divergence not observed on any float-keyed
+-- differential path).
 instance : Ord Float where
-  compare x y := if x < y then .lt else if x == y then .eq else .gt
+  compare x y :=
+    if x < y then .lt
+    else if y < x then .gt
+    else match x.isNaN, y.isNaN with
+      | true,  true  => .eq
+      | true,  false => .lt
+      | false, true  => .gt
+      | false, false => .eq
 
 namespace CerbFloat
 

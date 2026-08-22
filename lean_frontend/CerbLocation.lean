@@ -34,9 +34,44 @@ inductive Loc where
   | regions : List (Pos × Pos) → Cursor → Loc
   deriving BEq, Inhabited, Repr
 
--- Ord instance needed by generated code (e.g. Undefined.lean uses Loc in sets)
+-- Ord Loc (needed by generated code — e.g. Undefined.lean uses Loc in
+-- sets). Arc-14 S1 F4 (sem:S3): a real structural lexicographic order
+-- (by constructor rank, then fields via the existing Ord Pos/Cursor),
+-- replacing the previous `compare (repr a).pretty (repr b).pretty` —
+-- which was both unlawful as a stable key discipline (lexicographic on
+-- pretty-printed Repr text: "line 10" < "line 9") and O(n·|repr|) per
+-- comparison. Total, lawful, structural; it does not mirror OCaml's
+-- Cerb_location compare (locations are cosmetic on the batch path — no
+-- differential output enumerates a Loc-keyed set), a deliberate
+-- proof-friendliness divergence, documented. `Ord (List (Pos × Pos))`
+-- is not auto-derived, so the region list is compared element-wise here.
+private def cmpPosPairList : List (Pos × Pos) → List (Pos × Pos) → Ordering
+  | [], [] => .eq
+  | [], _ => .lt
+  | _, [] => .gt
+  | (a1, b1) :: xs, (a2, b2) :: ys =>
+    match compare a1 a2 with
+    | .eq => match compare b1 b2 with
+      | .eq => cmpPosPairList xs ys
+      | o => o
+    | o => o
+
+private def locRank : Loc → Nat
+  | .unknown => 0 | .other _ => 1 | .point _ => 2
+  | .region _ _ _ => 3 | .regions _ _ => 4
+
 instance : Ord Loc where
-  compare a b := compare (repr a).pretty (repr b).pretty
+  compare a b := match a, b with
+    | .unknown, .unknown => .eq
+    | .other s1, .other s2 => compare s1 s2
+    | .point p1, .point p2 => compare p1 p2
+    | .region a1 b1 c1, .region a2 b2 c2 =>
+      match compare a1 a2 with
+      | .eq => match compare b1 b2 with | .eq => compare c1 c2 | o => o
+      | o => o
+    | .regions l1 c1, .regions l2 c2 =>
+      match cmpPosPairList l1 l2 with | .eq => compare c1 c2 | o => o
+    | _, _ => compare (locRank a) (locRank b)
 
 /-! ## Constructors -/
 

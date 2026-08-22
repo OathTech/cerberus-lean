@@ -137,13 +137,44 @@ structure MemState where
   requested : List (Address × Int) := []
   deriving Inhabited
 
-/-! ## Instances -/
+/-! ## Instances
 
+  THE MEMORY-MODEL INSTANCE CAVEAT (arc-14 S1 F4, sem:S1 — relocated here
+  from CerbStepInstances.lean:84-94, where it lived scoped to one call
+  site and asked future readers to "re-audit").
+
+  The equality instances below are now OCaml-polymorphic-compare PARITY
+  (structural, all payloads compared) — the previous coarse forms (PVnull
+  compared equal ignoring the ctype; MVstruct compared by tag ignoring
+  members; MVinteger/MVfloating/MVpointer/MVunspecified ignored their
+  ity/fty/refTy/ctype payloads) diverged silently from OCaml `(=)`.
+  Those coarse arms were unreachable from the live core-value equality
+  sites (driver.lem:1376,1410 only ever test against the nullary
+  Step_blocked2, per CerbStepInstances) — so this enrichment is a no-op
+  on today's differential surface (bar-verified zero movement) that
+  removes the latent divergence.
+
+  The ORDER instances on the aggregate state types (PointerValue,
+  MemValue, MemState) and the equality on Allocation/MemState remain
+  DELIBERATELY degenerate, with a REACHABILITY NOTE per the register's
+  "OCaml-parity OR loud-failwithI, each with a reachability note" rule:
+  none of these types is ever used as a Std.TreeMap/set key or dedup key
+  on any path (the concrete model keys its bytemap and allocations by
+  `Int`, verified by grep — no ordered/dedup structure is keyed by
+  PointerValue/MemValue/MemState/Allocation). A constant `.eq`/`false`
+  is therefore never a DECIDING comparison; it exists only to satisfy
+  class resolution. Any future code that keys an ordered/dedup structure
+  on one of these types MUST replace the corresponding instance with a
+  real structural comparator first — that is the standing obligation this
+  note records. -/
+
+/-- BEq PointerValueBase — OCaml `(=)` parity: PVnull compares the carried
+    ctype; PVconcrete compares the union-member tag AND the address. -/
 instance : BEq PointerValueBase where
   beq a b := match a, b with
-    | .PVnull _, .PVnull _ => true
+    | .PVnull t1, .PVnull t2 => t1 == t2
     | .PVfunction s1, .PVfunction s2 => s1 == s2
-    | .PVconcrete _ a1, .PVconcrete _ a2 => a1 == a2
+    | .PVconcrete m1 a1, .PVconcrete m2 a2 => m1 == m2 && a1 == a2
     | _, _ => false
 
 instance : BEq PointerValue where
@@ -152,15 +183,22 @@ instance : BEq PointerValue where
 instance : BEq IntegerValue where
   beq | .IV p1 n1, .IV p2 n2 => p1 == p2 && n1 == n2
 
+/-- Structural MemValue equality — OCaml `(=)` parity: every constructor
+    compares ALL payloads (ity/fty/refTy/ctype/members). Kept in the
+    unsafe+opaque sandwich for the MVarray/MVstruct nested recursion. -/
 private unsafe def beqMemValueImpl : MemValue → MemValue → Bool
-  | .MVunspecified _, .MVunspecified _ => true
-  | .MVinteger _ v1, .MVinteger _ v2 => v1 == v2
-  | .MVfloating _ v1, .MVfloating _ v2 => v1 == v2
-  | .MVpointer _ v1, .MVpointer _ v2 => v1 == v2
+  | .MVunspecified t1, .MVunspecified t2 => t1 == t2
+  | .MVinteger ity1 v1, .MVinteger ity2 v2 => ity1 == ity2 && v1 == v2
+  | .MVfloating fty1 v1, .MVfloating fty2 v2 => fty1 == fty2 && v1 == v2
+  | .MVpointer t1 v1, .MVpointer t2 v2 => t1 == t2 && v1 == v2
   | .MVarray e1, .MVarray e2 =>
     e1.length == e2.length && (e1.zip e2).all (fun (a, b) => beqMemValueImpl a b)
-  | .MVstruct t1 _, .MVstruct t2 _ => t1 == t2
-  | .MVunion t1 m1 _, .MVunion t2 m2 _ => t1 == t2 && m1 == m2
+  | .MVstruct t1 ms1, .MVstruct t2 ms2 =>
+    t1 == t2 && ms1.length == ms2.length &&
+    (ms1.zip ms2).all (fun ((i1, c1, v1), (i2, c2, v2)) =>
+      i1 == i2 && c1 == c2 && beqMemValueImpl v1 v2)
+  | .MVunion t1 m1 v1, .MVunion t2 m2 v2 =>
+    t1 == t2 && m1 == m2 && beqMemValueImpl v1 v2
   | _, _ => false
 
 @[implemented_by beqMemValueImpl]
@@ -171,8 +209,10 @@ instance : BEq Footprint where
   beq | .FP a1 b1 s1, .FP a2 b2 s2 => a1 == a2 && b1 == b2 && s1 == s2
 instance : Ord Footprint where
   compare | .FP _ b1 _, .FP _ b2 _ => compare b1 b2
-instance : Ord PointerValue where compare _ _ := .eq
 instance : Ord IntegerValue where compare | .IV _ n1, .IV _ n2 => compare n1 n2
+-- Degenerate-by-design (see the reachability note above): never a set/map
+-- key on any path.
+instance : Ord PointerValue where compare _ _ := .eq
 instance : Ord MemValue where compare _ _ := .eq
 instance : BEq Allocation where beq _ _ := false
 instance : BEq MemState where beq _ _ := false

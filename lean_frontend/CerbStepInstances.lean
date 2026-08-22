@@ -81,17 +81,13 @@ import CerbCtypeInstances
    in CerbMem.lean), Float (IEEE ==, matching OCaml (=) incl. nan, -0.0),
    sym/identifier/core_base_type (derived), ctype (CerbCtypeInstances).
 
-   LEAF-PARITY CAVEAT (audit-2, stated not fixed): two CerbMem leaf
-   instances are COARSER than OCaml polymorphic (=) —
-     * BEq PointerValueBase treats any two PVnull as equal, ignoring the
-       carried ctype (CerbMem.lean; OCaml (=) compares the ctype);
-     * beqMemValueImpl compares MVstruct by tag only, ignoring members
-       (likewise: MVunion ignores the member value, MVinteger the ity,
-       MVfloating the fty, MVunspecified/MVpointer the carried ctype).
-   Unreachable from the LIVE sites: both driver.lem sites (:1376, :1410)
-   only test against the nullary Step_blocked2, so the structural arms
-   (and hence these leaves) never decide a comparison today. Any new
-   equality use of core_step2 values must re-audit this caveat. -/
+   LEAF-PARITY: the CerbMem leaf instances (BEq PointerValueBase,
+   beqMemValueImpl) were made OCaml-polymorphic-`(=)` PARITY in arc-14 S1
+   F4 (sem:S1) — they now compare all payloads. The former coarseness
+   caveat and its reachability argument have been RELOCATED to CerbMem.lean
+   (see "THE MEMORY-MODEL INSTANCE CAVEAT" there). Both driver.lem sites
+   (:1376, :1410) still only test against the nullary Step_blocked2, so
+   these leaves never decide a live comparison regardless. -/
 mutual
 
 private def beqObjectValue : object_value → object_value → Bool
