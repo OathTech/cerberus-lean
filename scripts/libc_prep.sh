@@ -131,8 +131,54 @@ if [[ "$(sha_of "$REGEN")" != "$PINNED_SHA" ]]; then
     exit 1
 fi
 
+# --- the lane-loaded staging check (2026-08-22 hotfix, fail-closed) ---------
+# Trust-gap closure (docs/2026-08-22_libc-co-divergence-diagnosis.md §6.2):
+# the checks above verify the BUILD-TREE .co ($LIBC_CO), but libc-mode
+# oracle runs load a DIFFERENT path — the `cerberus` package's install
+# staging (backend/driver/main.ml:55-77 via Cerb_runtime.in_runtime
+# ~pkg:"cerberus" with --runtime=_build/install/default →
+# util/cerb_runtime.ml:41-48). Nothing else asserted that path exists or
+# agrees with the verified artifact; a post-`dune clean` recipe that
+# stages only cerberus-lib leaves it missing and every libc-mode oracle
+# run dies at startup (Failure("file libc.co not found"), exit 125).
+# Assert existence AND byte-identity so --check certifies the artifact
+# the lanes actually load, not a sibling path.
+STAGED_CO="$PROJECT_ROOT/_build/install/default/lib/cerberus/runtime/libc/libc.co"
+if [[ ! -e "$STAGED_CO" ]]; then
+    {
+        echo "libc_prep: ERROR: lane-loaded staging path missing: $STAGED_CO"
+        echo "  The libc-mode oracle loads libc.co from the cerberus package's"
+        echo "  install staging, which is NOT created by the cerberus-lib-only"
+        echo "  build recipe. Refusing to proceed."
+        echo "  Remediation: (cd $PROJECT_ROOT && opam exec --switch=. -- dune build cerberus.install)"
+        echo "  (If the path is still missing afterwards, _build was manually"
+        echo "  altered — dune trusts its incremental db over the filesystem and"
+        echo "  will not re-stage; run dune clean and rebuild per the documented"
+        echo "  recipe, lean_frontend/CLAUDE.md Build.)"
+    } >&2
+    exit 1
+fi
+if ! cmp -s "$STAGED_CO" "$LIBC_CO"; then
+    {
+        echo "libc_prep: ERROR: lane-loaded staging libc.co does not byte-match the verified build-tree libc.co."
+        echo "  staged (lane-loaded): $STAGED_CO ($(sha_of "$STAGED_CO"))"
+        echo "  build tree (verified): $LIBC_CO ($(sha_of "$LIBC_CO"))"
+        echo "  The lanes would load an artifact other than the one this check"
+        echo "  verified. Refusing to proceed."
+        echo "  A mismatch here means _build/install was manually altered (dune"
+        echo "  stages this entry as a symlink into _build/default, which cannot"
+        echo "  go stale) — and dune trusts its incremental db over the"
+        echo "  filesystem, so 'dune build cerberus.install' will NOT repair it."
+        echo "  Remediation: (cd $PROJECT_ROOT && opam exec --switch=. -- dune clean)"
+        echo "  then rebuild per the documented recipe (lean_frontend/CLAUDE.md"
+        echo "  Build), which ends with: dune build cerberus.install"
+    } >&2
+    exit 1
+fi
+
 if [[ "$MODE" == "--check" ]]; then
     echo "libc_prep: OK (content hash verified: pin + regenerated dump == $PINNED_SHA, $(wc -c < "$PIN") bytes)"
+    echo "libc_prep: OK (lane-loaded staging verified: $STAGED_CO byte-matches build-tree libc.co)"
     echo "libc_prep: libc.co version (informational): $(co_version)"
     exit 0
 fi

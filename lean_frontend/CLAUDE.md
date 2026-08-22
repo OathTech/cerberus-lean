@@ -111,9 +111,27 @@ cd lean_frontend && ../scripts/capped lake build cerberus-lean
 # packages fail-closed)
 cd lean_frontend/relsem && ../../scripts/capped lake build
 
-# Build OCaml driver (for --cabs-json)
-opam exec -- dune build backend/driver/main.exe
+# Build OCaml driver (for --cabs-json). cerberus-lib.install must be
+# built explicitly: `dune install cerberus-lib` does NOT build it (fails
+# after a dune clean), and building it stages
+# _build/install/default/lib/cerberus-lib (std.core etc.) which every
+# --runtime=_build/install/default invocation needs.
+opam exec -- dune build backend/driver/main.exe cerberus-lib.install
 opam exec -- dune install cerberus-lib  # for runtime files
+# REQUIRED for libc-mode lanes (2026-08-22 hotfix,
+# docs/2026-08-22_libc-co-divergence-diagnosis.md): stage the `cerberus`
+# PACKAGE's install tree. Libc-mode oracle runs (no --nolibc) load
+# _build/install/default/lib/cerberus/runtime/libc/libc.co, which only
+# `cerberus`'s install stanzas create (as symlinks into _build/default —
+# always in sync once present). cerberus-lib stages headers only; after
+# a `dune clean`, omitting this step kills every libc-mode oracle run at
+# startup (Failure("file libc.co not found"), exit 125).
+# scripts/common.sh build_cerberus and libc_prep.sh --check now enforce it.
+# CAVEAT (plant-tested): dune trusts its incremental db over the
+# filesystem — deleting/altering anything under _build by hand is NOT
+# repaired by this command (or any incremental build); only `dune clean`
+# + this recipe recovers a tampered _build.
+opam exec -- dune build cerberus.install
 
 # Update lem (pinned to GitHub branch)
 make rebuild-lem

@@ -72,15 +72,50 @@ require_lean() {
 build_cerberus() {
     require_cerberus
     echo "Building cerberus (OCaml)..."
+    # cerberus-lib.install must be built EXPLICITLY (2026-08-22 hotfix):
+    # `dune install cerberus-lib` below does NOT build it — after a
+    # `dune clean` it fails ("The following <package>.install are
+    # missing"), and building it is also what stages
+    # _build/install/default/lib/cerberus-lib (std.core etc.), which
+    # every --runtime=_build/install/default invocation needs.
     (cd "$PROJECT_ROOT" && opam exec --switch="$PROJECT_ROOT" -- \
-        dune build backend/driver/main.exe 2>&1 | tail -3)
+        dune build backend/driver/main.exe cerberus-lib.install 2>&1 | tail -3)
     if [[ ! -f "$CERBERUS_BIN" ]]; then
         echo "Error: Cerberus build failed" >&2
         exit 1
     fi
-    # Ensure cerberus-lib is installed (for runtime files)
+    # Ensure cerberus-lib is installed (for runtime files). Fail LOUDLY
+    # (2026-08-22 hotfix): the old `2>/dev/null` masked the post-clean
+    # "cerberus-lib.install missing" failure and let lanes proceed on a
+    # half-staged tree.
+    local _install_out
+    if ! _install_out=$(cd "$PROJECT_ROOT" && opam exec --switch="$PROJECT_ROOT" -- \
+        dune install cerberus-lib 2>&1); then
+        echo "Error: dune install cerberus-lib failed:" >&2
+        echo "$_install_out" | tail -4 >&2
+        exit 1
+    fi
+    # Stage the `cerberus` PACKAGE's install tree (2026-08-22 hotfix,
+    # docs/2026-08-22_libc-co-divergence-diagnosis.md): libc-mode oracle
+    # runs (--runtime=_build/install/default, no --nolibc) load
+    # _build/install/default/lib/cerberus/runtime/libc/libc.co — a path
+    # created ONLY by the `cerberus` package's install stanzas
+    # (runtime/libc/dune:159-173), never by cerberus-lib. Dune stages it
+    # as a relative symlink into _build/default, so once present it is
+    # permanently in sync with the build tree by construction. Without
+    # this step a post-`dune clean` rebuild leaves the path missing and
+    # every libc-mode oracle invocation dies at startup
+    # (Failure("file libc.co not found"), exit 125).
     (cd "$PROJECT_ROOT" && opam exec --switch="$PROJECT_ROOT" -- \
-        dune install cerberus-lib 2>/dev/null)
+        dune build cerberus.install 2>&1 | tail -3)
+    local staged_co="$PROJECT_ROOT/_build/install/default/lib/cerberus/runtime/libc/libc.co"
+    if [[ ! -e "$staged_co" ]]; then
+        echo "Error: cerberus install staging failed: $staged_co missing" >&2
+        echo "(dune trusts its incremental db over the filesystem: if _build was" >&2
+        echo "manually altered it will not re-stage — run dune clean and rebuild" >&2
+        echo "per the documented recipe, lean_frontend/CLAUDE.md Build)" >&2
+        exit 1
+    fi
 }
 
 # Build Lean cerberus-lean executable

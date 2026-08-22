@@ -106,6 +106,21 @@ run_capped() { # <out> <err> <cmd...>
     return $rc
 }
 
+# Honest rc>=124 labeling (2026-08-22 hotfix, diagnosis §6.3): cerberus
+# uses exit 125 for INTERNAL ERRORS (uncaught exception, e.g. the
+# startup Failure("file libc.co not found")), which collides with the
+# `timeout`-tool convention (124 = timed out, 125 = timeout itself
+# failed) the old blanket "timeout/crash" label assumed. Distinguish so
+# a startup failwith is never reported as a timeout.
+rc_label() { # <rc>
+    case "$1" in
+        124) echo "timeout after ${TIMEOUT_SECS}s (exit 124)" ;;
+        125) echo "internal error (exit 125 — cerberus's uncaught-exception exit, NOT a timeout; check the lane's stderr)" ;;
+        137) echo "killed by SIGKILL (exit 137 — likely the memory cap)" ;;
+        *)   echo "crash (exit $1)" ;;
+    esac
+}
+
 : > "$OUTPUT_DIR/baseline.new"
 record() { echo "$1: $2" >> "$OUTPUT_DIR/baseline.new"; }
 
@@ -119,7 +134,7 @@ rc=0
 run_capped "$OUTPUT_DIR/oracle.out" "$OUTPUT_DIR/oracle.err" \
     "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" --exec --batch \
     "${FLAGS[@]}" "${TUS[@]}" || rc=$?
-[[ $rc -lt 124 ]] || fail "ORACLE_LIBC timeout/crash (exit $rc)"
+[[ $rc -lt 124 ]] || fail "ORACLE_LIBC $(rc_label $rc): $(tail -2 "$OUTPUT_DIR/oracle.err" | tr '\n' ' ')"
 record "ORACLE_LIBC exit" "$rc"
 record "ORACLE_LIBC" "$(head -1 "$OUTPUT_DIR/oracle.out")"
 echo "[oracle+libc] exit=$rc wall=$(grep -oE 'Elapsed.*' "$OUTPUT_DIR/oracle.err" | awk '{print $NF}') maxRSS=$(grep 'Maximum resident' "$OUTPUT_DIR/oracle.err" | awk '{print $NF}')kB"
@@ -140,7 +155,7 @@ rc=0
 run_capped "$OUTPUT_DIR/nolibc.out" "$OUTPUT_DIR/nolibc.err" \
     "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" --nolibc --exec --batch \
     "${FLAGS[@]}" "${TUS[@]}" || rc=$?
-[[ $rc -lt 124 ]] || fail "OCAML_NOLIBC timeout/crash (exit $rc)"
+[[ $rc -lt 124 ]] || fail "OCAML_NOLIBC $(rc_label $rc): $(tail -2 "$OUTPUT_DIR/nolibc.err" | tr '\n' ' ')"
 record "OCAML_NOLIBC exit" "$rc"
 record "OCAML_NOLIBC" "$(head -1 "$OUTPUT_DIR/nolibc.out")"
 echo "[ocaml-nolibc] exit=$rc: $(head -c 100 "$OUTPUT_DIR/nolibc.out")"
@@ -165,7 +180,7 @@ done
 rc=0
 run_capped "$OUTPUT_DIR/lean.out" "$OUTPUT_DIR/lean.err" \
     env LEAN_ABORT_ON_PANIC=1 "$CERBERUS_LEAN_BIN" --batch --first "${JSONS[@]}" || rc=$?
-[[ $rc -lt 124 ]] || fail "LEAN_NOLIBC timeout/crash (exit $rc): $(tail -2 "$OUTPUT_DIR/lean.err" | tr '\n' ' ')"
+[[ $rc -lt 124 ]] || fail "LEAN_NOLIBC $(rc_label $rc): $(tail -2 "$OUTPUT_DIR/lean.err" | tr '\n' ' ')"
 record "LEAN_NOLIBC exit" "$rc"
 record "LEAN_NOLIBC" "$(head -1 "$OUTPUT_DIR/lean.out")"
 echo "[lean-nolibc] exit=$rc wall=$(grep -oE 'Elapsed.*' "$OUTPUT_DIR/lean.err" | awk '{print $NF}') maxRSS=$(grep 'Maximum resident' "$OUTPUT_DIR/lean.err" | awk '{print $NF}')kB: $(head -c 100 "$OUTPUT_DIR/lean.out")"
@@ -193,7 +208,7 @@ for j in "${LIBC_JSONS[@]}"; do LIBC_ARGS+=(--libc-tu "$j"); done
 rc=0
 run_capped "$OUTPUT_DIR/lean_libc.out" "$OUTPUT_DIR/lean_libc.err" \
     env LEAN_ABORT_ON_PANIC=1 "$CERBERUS_LEAN_BIN" --batch --first "${LIBC_ARGS[@]}" "${JSONS[@]}" || rc=$?
-[[ $rc -lt 124 ]] || fail "LEAN_LIBC timeout/crash (exit $rc): $(tail -2 "$OUTPUT_DIR/lean_libc.err" | tr '\n' ' ')"
+[[ $rc -lt 124 ]] || fail "LEAN_LIBC $(rc_label $rc): $(tail -2 "$OUTPUT_DIR/lean_libc.err" | tr '\n' ' ')"
 record "LEAN_LIBC exit" "$rc"
 record "LEAN_LIBC" "$(head -1 "$OUTPUT_DIR/lean_libc.out")"
 echo "[lean+libc] exit=$rc wall=$(grep -oE 'Elapsed.*' "$OUTPUT_DIR/lean_libc.err" | awk '{print $NF}') maxRSS=$(grep 'Maximum resident' "$OUTPUT_DIR/lean_libc.err" | awk '{print $NF}')kB: $(head -c 100 "$OUTPUT_DIR/lean_libc.out")"
