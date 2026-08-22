@@ -37,6 +37,7 @@ type declaration =
   | Glob_decl of _sym * (Core.core_base_type * Ctype.ctype) * parsed_expr
   | Fun_decl  of _sym * (Core.core_base_type * (_sym * Core.core_base_type) list * parsed_pexpr)
   | Proc_decl of _sym * attribute list * (Core.core_base_type * (_sym * Core.core_base_type) list * parsed_expr)
+  | Proc_fwd_decl of _sym * (Core.core_base_type * (Core.core_base_type) list)
   | Builtin_decl of _sym * (Core.core_base_type * (Core.core_base_type) list)
   | Aggregate_decl of _sym * Ctype.tag_definition
 (*
@@ -886,6 +887,7 @@ let symbolify_impl_or_file decls : ((Core.impl, parsed_core_file) either) Eff.t 
       | Glob_decl (_sym, _, _)
       | Fun_decl (_sym, _)
       | Proc_decl (_sym, _, _)
+      | Proc_fwd_decl (_sym, _)
       | Aggregate_decl (_sym, _) ->
           lookup_sym _sym >>= (function
             | Some (_, loc) ->
@@ -953,6 +955,13 @@ let symbolify_impl_or_file decls : ((Core.impl, parsed_core_file) either) Eff.t 
             | None ->
                 assert false
           end
+      | Proc_fwd_decl (_sym, (bTy, bTys)) ->
+          begin lookup_sym _sym >>= function
+            | Some (decl_sym, decl_loc) ->
+                Eff.return (impl_acc, globs_acc, Pmap.add decl_sym (ProcDecl (decl_loc, bTy, bTys)) fun_map_acc, tagDefs_acc)
+            | None ->
+                assert false
+          end
       | Builtin_decl (_sym, (bTy, bTys)) ->
           begin lookup_sym _sym >>= function
             | Some (decl_sym, decl_loc) ->
@@ -985,6 +994,7 @@ let symbolify_std decls : (unit Core.fun_map) Eff.t =
     | Glob_decl (_sym, _, _)
     | Fun_decl (_sym, _)
     | Proc_decl (_sym, _, _)
+    | Proc_fwd_decl (_sym, _)
     | Builtin_decl (_sym, _) ->
         lookup_sym _sym >>= (function
           | Some (_, loc) ->
@@ -1017,6 +1027,13 @@ let symbolify_std decls : (unit Core.fun_map) Eff.t =
           | None ->
               assert false
         )
+    | Proc_fwd_decl (_sym, (bTy, bTys)) ->
+        begin lookup_sym _sym >>= function
+          | Some (decl_sym, decl_loc) ->
+              Eff.return (Pmap.add decl_sym (ProcDecl (decl_loc, bTy, bTys)) fun_map_acc)
+          | None ->
+              assert false
+        end
     | Builtin_decl (_sym, (bTy, bTys)) ->
         begin lookup_sym _sym >>= function
           | Some (decl_sym, decl_loc) ->
@@ -1800,12 +1817,34 @@ fun_declaration:
     { Fun_decl (_sym, (bTy, params, fbody)) }
 ;
 
+(* NOTE: procedure definitions and forward declarations share this
+   nonterminal (instead of using separated_pair(SYM, COLON, core_base_type)
+   and core_base_type lists) to keep the grammar LR(1) *)
+proc_param:
+| _sym= SYM COLON bTy= core_base_type
+    { (Some _sym, bTy) }
+| bTy= core_base_type
+    { (None, bTy) }
+;
+
 proc_declaration:
-| PROC attrs_opt= attribute? _sym= SYM params= delimited(LPAREN, separated_list(COMMA, separated_pair(SYM, COLON, core_base_type)), RPAREN)
+| PROC attrs_opt= attribute? _sym= SYM params= delimited(LPAREN, separated_list(COMMA, proc_param), RPAREN)
   COLON EFF bTy= core_base_type
   COLON_EQ fbody= expr
     { let attrs = (function None -> [] | Some z -> z) attrs_opt in
+      let params = List.map (function
+        | (Some _sym, bTy) ->
+            (_sym, bTy)
+        | (None, _) ->
+            (* the parameters of a procedure definition must be named *)
+            raise (Core_parser_util.Core_error
+                    ( region ($startpos(params), $endpos(params)) NoCursor
+                    , Errors.Core_parser_unexpected_token "unnamed parameter in a proc definition" ))
+        ) params in
       Proc_decl (_sym, attrs, (bTy, params, fbody)) }
+| PROC attribute? _sym= SYM params= delimited(LPAREN, separated_list(COMMA, proc_param), RPAREN)
+  COLON EFF bTy= core_base_type
+    { Proc_fwd_decl (_sym, (bTy, List.map snd params)) }
 ;
 
 builtin_declaration:
