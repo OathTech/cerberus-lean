@@ -34,7 +34,17 @@ Twin registers (the arc's primary product):
 |------|------|
 | `SpecLab/Codec.lean` | Self-delimiting byte codecs (LE scalars, length-prefixed arrays) with kernel-checked `decode∘encode = id` round-trip lemmas (`decode_encode_u8/u16le/u32le/u64le`, `decodeElems_encodeElems`, `decode_encode_arrayU16`) |
 | `SpecLab/MkHarness.lean` | `mkHarness` v1 — the choice-stream C source splicer (mechanism A), THE single trust point: three literal template parts + rendered `choices[]`/`expected[]` byte arrays, four-way concatenation, nothing else. Includes the v1 identity reference template (byte-blaster builder + mismatch-index comparator) |
-| `test/Unit/SpecLabTest.lean` | Executable sanity layer (a TEST, not a proof): codec spot checks, renderer parse-back round trip, splice decomposition; `--emit-identity`/`--emit-plant` harness emitters for the runner |
+| `SpecLab/DivMod.lean` | S1 (R1): the division/mod model (CN targets cited verbatim), i32 codec layer with round-trip + canonicity halves, the model-∀↔stream-∀ BRIDGE, P5 pure lemmas, edge sample set |
+| `SpecLab/DivModHarness.lean` | S1: the divmod templates — Form 1 (mismatch-index, looped i32), Form 1b (boolean), Form 2 (stdout, libc; trailing-newline finding), Form 1u-i8 (kernel instance, unrolled, block-scope arrays) + wrong-operator plant twins |
+| `SpecLab/DivModCore.lean` | GENERATED (speclab-emit-core; drift-gated): kernel-transparent parsed AST terms — division/mod, the PARAMETRIC `mainParamDecl` (six spliced byte literals), plant trio, std.core closure |
+| `SpecLab/DivModFiles.lean` | S1: T1File-pattern file assembly (`divmodI8File` — the symbolic-initializer statement family), the R1 exec statements (`HarnessRunsTo`, sample model-∀/stream-∀), kernel-checked file-level bridge |
+| `SpecLabAudit.lean` | IN-BUILD statement-TCB + axiom gate (own default-target lib, outside the grep scan scope by necessity): transitive Iris/RelSem-root ban with in-build negative test + 31 exact `#guard_msgs` axiom pins |
+| `proofs/SpecLabProofs.lean` | The proof-side lib (requires relsem, one-way): verdict-exclusivity + plant-refutation schemas; the concrete exec-equation campaign is PARKED-PRICED (proof register S1-P1) |
+| `test/Unit/SpecLabTest.lean` | Executable sanity layer (a TEST, not a proof): codec spot checks, renderer parse-back round trip, splice decomposition; `--emit-identity`/`--emit-plant` + the `--emit-divmod*`/`--divmod-*` emitters for the lanes |
+| `test/SLUnit/EmitCore.lean` (+`EmitCoreMain`) | speclab-emit-core: the term-emission instrument (adapted, attributed, from the root emit-lean-core; digit-run-zip parametric-main derivation). `SLUnit` prefix avoids the root `Unit.*` test-lib collision |
+| `test/SLUnit/CoreGateTest.lean` | speclab-core-test: drift gate + param pins (all four dumps) + in-Lean exec on the assembled theorem objects (`test_speclab_divmod.sh --gate`) |
+| `../../scripts/test_speclab_divmod.sh` | The R1 lanes: `--sweep form1\|form1b\|i8`, `--i8sweep`, `--fuzz N [SEED]` (byte-wise shrinker), `--plant`, `--form2 N` (libc), `--gate` |
+| `../../tests/speclab/` | Pinned R1 fixtures: divmod_i8_{a,b,d,c,plant}.{c,core} |
 | `../../scripts/test_speclab.sh` | Plant-test runner: harness → BOTH pipelines (oracle `--nolibc --exec --batch`; Lean cabs-json + `cerberus-lean --batch`) → agreement + expected verdict; `--selftest` and `--plant` modes live at S0. NOT gating until a rung stabilizes |
 | `../../scripts/check_speclab_statements.sh` | Statement-TCB grep extension (invariant 1) |
 

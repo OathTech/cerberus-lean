@@ -24,13 +24,21 @@
 # land in S1).
 
 name = "speclab"
-defaultTargets = ["SpecLab", "SpecLabAudit"]
+defaultTargets = ["SpecLab", "SpecLabAudit", "SpecLabProofs"]
 moreLeanArgs = ["-DautoImplicit=false"]
 packagesDir = "../.lake/packages"
 
 [[require]]
 name = "CerberusLean"
 path = ".."
+
+# arc-15 S1 (proof-style spike): the relsem PROOF package (walker,
+# kits, Machine/RunND lemma layer) — consumed one-way for the PROOFS
+# lib only; nothing under SpecLab/ (the statement surface) may import
+# it (in-build statement-TCB gate + grep floor enforce).
+[[require]]
+name = "relsem"
+path = "../relsem"
 
 # The SpecLab library. The `SpecLab` root-module prefix is unique to
 # this package (no cross-package prefix split — the arc-11 rehearsal
@@ -43,6 +51,12 @@ name = "SpecLab"
 # SpecLab/ scan scope of check_speclab_statements.sh — see its header.
 [[lean_lib]]
 name = "SpecLabAudit"
+
+# arc-15 S1: the proof-side lib (relsem-importing; never imported by
+# the statement surface). Default target so proofs ride plain builds.
+[[lean_lib]]
+name = "SpecLabProofs"
+srcDir = "proofs"
 
 # S0 sanity/emit executable: codec + renderer round-trip checks
 # (exit 0 on pass) and the identity-harness emitter consumed by

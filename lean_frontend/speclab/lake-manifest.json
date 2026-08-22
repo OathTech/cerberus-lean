@@ -3,6 +3,13 @@
  "packages":
  [{"type": "path",
    "scope": "",
+   "name": "relsem",
+   "manifestFile": "lake-manifest.json",
+   "inherited": false,
+   "dir": "../relsem",
+   "configFile": "lakefile.toml"},
+  {"type": "path",
+   "scope": "",
    "name": "CerberusLean",
    "manifestFile": "lake-manifest.json",
    "inherited": false,
