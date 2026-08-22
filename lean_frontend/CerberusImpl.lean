@@ -212,10 +212,10 @@ partial def alignof_ty
 
 /-! ## Enum Registration
 
-In OCaml Cerberus, enum registration uses a mutable ref cell. For the Lean
-port we use a simpler approach: all enums are treated as signed int.
-This matches the common case and can be refined later.
--/
+The REAL registry (sem:S9; S4b F-3 header de-stale — the "all enums
+treated as signed int" simplification this header once described is
+GONE): register_enum below writes the ref-cell registry declared with
+typeof_enum above, mirroring DefaultImpl exactly. -/
 
 @[never_extract, noinline]
 private unsafe def register_enum_impl (tag_sym : sym) (ns : List Int) : Bool :=

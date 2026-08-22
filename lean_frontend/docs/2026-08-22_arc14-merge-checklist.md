@@ -1,16 +1,22 @@
-# Arc-14 merge checklist — SKELETON (finalize after S4)
+# Arc-14 merge checklist — FINAL (S4b complete; the arc PARKS at the merge ask)
 
-Status: DRAFT. Heads and gate results below are as of the S3 boundary;
-S4 (the re-mark) may add a fix-or-record batch that moves them. Every
-`[ ]` is checked at execution time; merges are ff-only, operator-gated,
-with the unconditional pre-merge audit ask.
+Status: READY FOR THE ASK. Merges are ff-only, operator-gated, with the
+unconditional pre-merge audit ask. The arc is PARKED here — no merge
+action without the operator's explicit per-merge sign-off.
 
-## Heads at S3 (to re-confirm after S4)
+## Final heads (S4b completion batch)
 
-- LEM `arc/immaculate` @ `3ddcafb` (B1 553df2a → B5 3ddcafb; 6 commits).
-- CERB `arc/immaculate` @ <S3 docs commit — fill> (S0 677551e76 → …).
-- Lake pins (lean_frontend + relsem): `3ddcafb`. opam lem still
+- LEM `arc/immaculate` @ `861ed81` (9 commits: B1 553df2a … B5 3ddcafb,
+  the re-mark basket 3cb656f, RG5 28d592d, RG1-RG4 861ed81 — the lem
+  branch MOVED TWICE after the S2 close; the dance below re-pins to the
+  final MERGED head).
+- CERB `arc/immaculate` @ <the S4b completion commit — the commit
+  carrying this file's finalization>.
+- Lake pins (lean_frontend + relsem): `861ed81`. opam lem still
   `11d4b4c` (worktree-lem regeneration discipline in force until step 3).
+- Re-grades on record: semantics A−, backend B+ (results doc §7).
+- PROTECTED: the workbench-v2 worktree is NOT part of this arc — do not
+  touch it during the dance (standing reminder from the S0 work order).
 
 ## The dance (order is normative: lem first)
 
@@ -39,19 +45,21 @@ with the unconditional pre-merge audit ask.
 
 ## Arc-specific riders
 
-- [ ] S4 re-mark GRADE reported to the operator VERBATIM (charter
-  success condition 2) + the re-mark's fix-or-record batch folded in.
+- [x] S4 re-mark grades reported verbatim (B+/B+ → A−/B+-held after
+  the baskets; results doc §7 + decision log D4/D5) + both fix
+  batches folded in (the A− baskets, the S4b completion batch).
 - [ ] Standing-rules promotions folded into the container playbook at
   merge (results doc §6): cache-disabled build-rule validation;
   audit-plant rebuild-after-revert; (candidate) bars-are-exclusive.
-- [ ] Upstream tray: filings 10 + 11 in `notes/upstream/` + INDEX —
+- [ ] Upstream tray: filings 10-13 in `notes/upstream/` + INDEX —
   operator filing window (network + GitHub; re-verify against current
   master first, per the tray checklist).
 - [ ] be:G2 regen leg: when ott is installable (network window),
   run `language/Makefile`'s rule, byte-compare ast.ml, resolve
   grammar-first (the two pre-registered shape divergences), re-gate.
-- [ ] Residual register (28 entries, results doc §2) carried into the
-  next planning surface; no GRAVE remainder is unregistered.
+- [ ] Residual register (results doc §2: 24 residuals + the S4b
+  REGISTERED-LATER block) carried into the next planning surface; no
+  GRAVE remainder is unregistered.
 - [ ] Docs de-staled this arc: lean_frontend/CLAUDE.md (seam rows, lem
   mechanisms incl. the priority lattice + Set coherence + St module,
   arc-14 status line); the lane's wording (D3 NIT) — verify no other

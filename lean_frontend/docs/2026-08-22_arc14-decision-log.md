@@ -42,3 +42,41 @@
   message STILL prints the S0 wording despite the claimed refresh —
   fix it for real. S3: the 73-finding disposition table, docs
   de-stale, the 11 upstream filing drafts, then S4 THE RE-MARK.
+- **D4 [AGENT, under the operator's AFK mandate + the operator's
+  standing follow-on-fixes permission] — S4 re-mark verdicts + the A−
+  basket.** Two fresh auditor instances (no remediation context, the
+  original persona/standard, registers + disposition table in hand)
+  graded BOTH sides **B+ (from B−)**; fix genuineness verified
+  non-probe-shaped (14/14 neighbor attacks MATCHed semantics-side; the
+  backend's priority probe caught a real wrong-winner plant; the St
+  invariants held under a lifetime plant). The standing permission was
+  invoked for the A− baskets: semantics R1-R4 + sem:S9 THE ENUM
+  REGISTRY landed probe-first (pre-fix Specified(1) recorded verbatim
+  via a stub-restored rebuild; no native shim needed — no park);
+  backend R1-R3 + be:S1/S2 probe-first (the lemFuel shadow measured —
+  the 999-sentinel wrong answer — then fail-closed under the new
+  reserved-name contract; the none-binder class measured DEFENDED by
+  the avoid machinery and pinned). Upstream tray #12 (bswap64
+  Z.Overflow on legal C). Both baskets full-bar green at zero
+  standing-corpus movement; lem @ 3cb656f, pins bumped.
+- **D5 [AGENT, same mandate] — S4b re-grades + the final completion
+  batch.** Re-grades: semantics **A−** (professor B′: "I could no
+  longer produce a silent wrong value anywhere"); backend **B+ HELD**
+  — A− withheld by exactly one item (the reserved-name scan's
+  body-level hole). The batch: RG1 the body-scan (exp_bound_names)
+  closes the hole and simultaneously discharges the registered
+  body-binder residual — A′'s two witnesses (the tuple-fuel case; the
+  tuple-reader case that COMPILED AND RAN silently wrong, use2 100
+  (1,2) = 5 not 103) are now negative probes failing loud+located;
+  RG2 the de-tie probe leg (plant measured honest: the reverted tie
+  did not flip the guard — order still covered it; the de-tie
+  converts the order argument to a priority argument); RG3/RG4
+  lattice-note contradiction + cite; RG5 the .rmprobe deletion commit
+  (no history surgery). Semantics record items: tray #13 (memcmp
+  huge-size Z.Overflow oracle crash; the Lean checked loop kills
+  UB_CERB002a — lane row pinned), the enum-header de-stale, this
+  D4/D5 record + the §7 verdict slots. B′'s remaining items
+  REGISTERED-LATER per the operator's save-for-later ruling (F-2
+  memcmp-description miscitation, F-4 the invariant page's fifth
+  seam, F-6 crash-reason pinning, the Z-conversion family census, the
+  standing-corpus enum test). The arc PARKS at the merge ask.
