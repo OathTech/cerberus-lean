@@ -17,3 +17,5 @@ import SpecLab.ByteArrCore
 import SpecLab.ByteArrFiles
 import SpecLab.ListAppend
 import SpecLab.ListAppendHarness
+import SpecLab.ListAppendCore
+import SpecLab.ListAppendFiles

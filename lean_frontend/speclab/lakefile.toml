@@ -108,3 +108,17 @@ name = "speclab-bytearr-core-test"
 srcDir = "test"
 root = "SLUnit.ByteArrGateTest"
 moreLinkArgs = ["../native/fresh_int.o", "../native/debug.o", "../native/tags.o", "../native/md5.o"]
+
+# arc-15 S3: the R3 linked-list term-emission instrument.
+[[lean_exe]]
+name = "speclab-emit-list"
+srcDir = "test"
+root = "SLUnit.EmitListMain"
+moreLinkArgs = ["../native/fresh_int.o", "../native/debug.o", "../native/tags.o", "../native/md5.o"]
+
+# arc-15 S3: the ListAppendCore drift/param/exec/LEAK gate.
+[[lean_exe]]
+name = "speclab-list-core-test"
+srcDir = "test"
+root = "SLUnit.ListGateTest"
+moreLinkArgs = ["../native/fresh_int.o", "../native/debug.o", "../native/tags.o", "../native/md5.o"]

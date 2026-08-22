@@ -40,6 +40,7 @@ House rules: no sorry, no axioms declared here.
 import Lean
 import SpecLab.DivModFiles
 import SpecLab.ByteArrFiles
+import SpecLab.ListAppendFiles
 
 set_option autoImplicit false
 
@@ -118,7 +119,19 @@ open Lean in
      `SpecLab.ByteArr.memcpy_sample_model_iff_stream,
      `SpecLab.ByteArr.model_forall_iff_stream_forall,
      `SpecLab.ByteArr.getarr_model_forall_iff_stream_forall,
-     `SpecLab.ByteArr.memcpyFileOfStream_encode]
+     `SpecLab.ByteArr.memcpyFileOfStream_encode,
+     -- arc-15 S3 (R3 list rung, incl. the live leak conjunct)
+     `SpecLab.ListAppend.AppendSampleStatement,
+     `SpecLab.ListAppend.AppendSampleStreamStatement,
+     `SpecLab.ListAppend.BuildOnlyStatement,
+     `SpecLab.ListAppend.AppendLinkPlantHealthyClaim,
+     `SpecLab.ListAppend.AppendElemPlantHealthyClaim,
+     `SpecLab.ListAppend.AppendSampleLeakStatement,
+     `SpecLab.ListAppend.BuildOnlyLeakStatement,
+     `SpecLab.ListAppend.LinkPlantLeakClaim,
+     `SpecLab.ListAppend.append_sample_model_iff_stream,
+     `SpecLab.ListAppend.model_forall_iff_stream_forall,
+     `SpecLab.ListAppend.appendFileOfStream_encode]
   for n in statements do
     match slStmtViolations env n with
     | .error e => throwError "{e}"
@@ -285,3 +298,103 @@ info: 'SpecLab.ByteArr.memcpy_sample_model_iff_stream' depends on axioms: [prope
 #guard_msgs in #print axioms SpecLab.ByteArrCore.naiveMemcpyDecl
 /-- info: 'SpecLab.ByteArrCore.getarrMainADecl' does not depend on any axioms -/
 #guard_msgs in #print axioms SpecLab.ByteArrCore.getarrMainADecl
+
+/-! ### arc-15 S3 pins (R3 list rung; captured verbatim at S3 — same
+    discipline: classical-trio subsets for the pure layer,
+    `runEffectful` exactly where a statement quotes the drive
+    substrate — the leak statements included, AST terms axiom-free). -/
+
+/-- info: 'SpecLab.Codec.decodeElems_encodeElems_of' depends on axioms: [propext] -/
+#guard_msgs in #print axioms SpecLab.Codec.decodeElems_encodeElems_of
+/-- info: 'SpecLab.Codec.decode_encode_arrayU16_of' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.Codec.decode_encode_arrayU16_of
+/-- info: 'SpecLab.ListAppend.decode_encode_list' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.ListAppend.decode_encode_list
+/-- info: 'SpecLab.ListAppend.decode_encode_input' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.ListAppend.decode_encode_input
+/-- info: 'SpecLab.ListAppend.canonical_i32le' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.ListAppend.canonical_i32le
+/-- info: 'SpecLab.ListAppend.canonical_list' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.ListAppend.canonical_list
+/-- info: 'SpecLab.ListAppend.encode_decode_input' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.ListAppend.encode_decode_input
+/-- info: 'SpecLab.ListAppend.model_forall_iff_stream_forall' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.ListAppend.model_forall_iff_stream_forall
+/-- info: 'SpecLab.ListAppend.append_is_model' does not depend on any axioms -/
+#guard_msgs in #print axioms SpecLab.ListAppend.append_is_model
+/-- info: 'SpecLab.ListAppend.modelFn_length' depends on axioms: [propext] -/
+#guard_msgs in #print axioms SpecLab.ListAppend.modelFn_length
+/-- info: 'SpecLab.ListAppend.modelFn_fits' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.ListAppend.modelFn_fits
+/-- info: 'SpecLab.ListAppend.modelFn_inRange' depends on axioms: [propext] -/
+#guard_msgs in #print axioms SpecLab.ListAppend.modelFn_inRange
+/-- info: 'SpecLab.ListAppend.alloc_free_balance' depends on axioms: [propext] -/
+#guard_msgs in #print axioms SpecLab.ListAppend.alloc_free_balance
+/-- info: 'SpecLab.ListAppend.linkSkip_leaks' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.ListAppend.linkSkip_leaks
+/-- info: 'SpecLab.ListAppend.xorOne_inRange' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.ListAppend.xorOne_inRange
+/-- info: 'SpecLab.ListAppend.xorOne_ne' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.ListAppend.xorOne_ne
+/-- info: 'SpecLab.ListAppend.appendFileOfStream_encode' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.ListAppend.appendFileOfStream_encode
+/--
+info: 'SpecLab.ListAppend.append_sample_model_iff_stream' depends on axioms: [propext,
+ runEffectful,
+ Classical.choice,
+ Quot.sound]
+-/
+#guard_msgs in #print axioms SpecLab.ListAppend.append_sample_model_iff_stream
+/-- info: 'SpecLab.ListAppend.AppendSampleStatement' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.ListAppend.AppendSampleStatement
+/--
+info: 'SpecLab.ListAppend.AppendSampleStreamStatement' depends on axioms: [propext,
+ runEffectful,
+ Classical.choice,
+ Quot.sound]
+-/
+#guard_msgs in #print axioms SpecLab.ListAppend.AppendSampleStreamStatement
+/-- info: 'SpecLab.ListAppend.BuildOnlyStatement' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.ListAppend.BuildOnlyStatement
+/--
+info: 'SpecLab.ListAppend.AppendLinkPlantHealthyClaim' depends on axioms: [propext,
+ runEffectful,
+ Classical.choice,
+ Quot.sound]
+-/
+#guard_msgs in #print axioms SpecLab.ListAppend.AppendLinkPlantHealthyClaim
+/--
+info: 'SpecLab.ListAppend.AppendElemPlantHealthyClaim' depends on axioms: [propext,
+ runEffectful,
+ Classical.choice,
+ Quot.sound]
+-/
+#guard_msgs in #print axioms SpecLab.ListAppend.AppendElemPlantHealthyClaim
+/-- info: 'SpecLab.ListAppend.HarnessFinalAllocs' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.ListAppend.HarnessFinalAllocs
+/-- info: 'SpecLab.ListAppend.AppendSampleLeakStatement' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.ListAppend.AppendSampleLeakStatement
+/-- info: 'SpecLab.ListAppend.BuildOnlyLeakStatement' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.ListAppend.BuildOnlyLeakStatement
+/-- info: 'SpecLab.ListAppend.LinkPlantLeakClaim' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.ListAppend.LinkPlantLeakClaim
+/-- info: 'SpecLab.ListAppend.appendI12File' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.ListAppend.appendI12File
+/-- info: 'SpecLab.ListAppend.appendLinkPlantFile' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.ListAppend.appendLinkPlantFile
+/-- info: 'SpecLab.ListAppend.appendElemPlantFile' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.ListAppend.appendElemPlantFile
+/-- info: 'SpecLab.ListAppend.appendBuildFile' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.ListAppend.appendBuildFile
+/-- info: 'SpecLab.ListAppend.appendFileOf' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.ListAppend.appendFileOf
+/-- info: 'SpecLab.ListAppendCore.appendMainParamDecl' does not depend on any axioms -/
+#guard_msgs in #print axioms SpecLab.ListAppendCore.appendMainParamDecl
+/-- info: 'SpecLab.ListAppendCore.intListAppendDecl' does not depend on any axioms -/
+#guard_msgs in #print axioms SpecLab.ListAppendCore.intListAppendDecl
+/-- info: 'SpecLab.ListAppendCore.intListTagDef' does not depend on any axioms -/
+#guard_msgs in #print axioms SpecLab.ListAppendCore.intListTagDef
+/-- info: 'SpecLab.ListAppendCore.mallocProxyDecl' does not depend on any axioms -/
+#guard_msgs in #print axioms SpecLab.ListAppendCore.mallocProxyDecl
+/-- info: 'SpecLab.ListAppendCore.freeProxyDecl' does not depend on any axioms -/
+#guard_msgs in #print axioms SpecLab.ListAppendCore.freeProxyDecl
