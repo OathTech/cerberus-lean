@@ -107,6 +107,7 @@ let keywords =
       ("par",          T.PAR         );
       ("array_shift",  T.ARRAY_SHIFT );
       ("member_shift", T.MEMBER_SHIFT);
+      ("memberof",     T.MEMBEROF    );
       ("case",         T.CASE        );
       ("of"  ,         T.OF          );
       ("end" ,         T.END         );

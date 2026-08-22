@@ -559,7 +559,9 @@ let rec symbolify_pexpr (Pexpr (annot, (), _pexpr): parsed_pexpr) : pexpr Eff.t 
         symbolify_pexpr _pe >>= fun pe ->
         Eff.return (Pexpr (annot, (), PEcfunction pe))
     | PEmemberof (tag_sym, member_ident, _pe) ->
-        failwith "WIP: PEmemberof"
+        symbolify_sym tag_sym >>= fun sym ->
+        symbolify_pexpr _pe   >>= fun pe  ->
+        Eff.return (Pexpr (annot, (), PEmemberof (sym, member_ident, pe)))
     | PEcall (_nm, _pes) ->
         symbolify_name _nm >>= fun nm ->
         Eff.mapM symbolify_pexpr _pes >>= fun pes ->
@@ -1139,7 +1141,7 @@ let mk_file decls =
 
 (* Core constant keywords *)
 %token NULL TRUE FALSE UNIT_VALUE
-%token ARRAY_SHIFT MEMBER_SHIFT
+%token ARRAY_SHIFT MEMBER_SHIFT MEMBEROF
 %token UNDEF ERROR
 %token<string> CSTRING STRING
 %token IF THEN ELSE
@@ -1635,6 +1637,8 @@ pexpr:
     { Pexpr ([Aloc (region ($startpos, $endpos) NoCursor)], (), PEarray_shift (_pe1, ty, _pe2)) }
 | MEMBER_SHIFT LPAREN _pe1= pexpr COMMA _sym= SYM COMMA DOT cid= cabs_id RPAREN
     { Pexpr ([Aloc (region ($startpos, $endpos) NoCursor)], (), PEmember_shift (_pe1, _sym, cid)) }
+| MEMBEROF LPAREN _sym= SYM COMMA cid= cabs_id COMMA _pe= pexpr RPAREN
+    { Pexpr ([Aloc (region ($startpos, $endpos) NoCursor)], (), PEmemberof (_sym, cid, _pe)) }
 | NOT _pe= delimited(LPAREN, pexpr, RPAREN)
     { Pexpr ([Aloc (region ($startpos, $endpos) (pointCursor $startpos($1)))], (), PEnot _pe) }
 | MINUS _pe= pexpr

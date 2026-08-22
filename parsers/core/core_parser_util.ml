@@ -176,7 +176,8 @@ type token =
   | ND
   | ARRAY_SHIFT
   | MEMBER_SHIFT
-  
+  | MEMBEROF
+
   (* integer values *)
   | IVMAX
   | IVMIN
