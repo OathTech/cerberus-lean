@@ -782,10 +782,12 @@ let pp_fun_map funs =
           P.nest 2 (P.break 1 ^^ pp_pexpr pe) ^^ P.hardline ^^ P.hardline
       | ProcDecl (loc, bTy, bTys) ->
           pp_cond loc @@
-          pp_keyword "proc" ^^^ pp_symbol sym ^^^ P.parens (comma_list pp_core_base_type bTys) ^^ P.hardline ^^ P.hardline
+          pp_keyword "proc" ^^^ pp_symbol sym ^^^ P.parens (comma_list pp_core_base_type bTys) ^^
+          P.colon ^^^ pp_keyword "eff" ^^^ pp_core_base_type bTy ^^ P.hardline ^^ P.hardline
       | BuiltinDecl (loc, bTy, bTys) ->
           pp_cond loc @@
-          pp_keyword "builtin" ^^^ pp_symbol sym ^^^ P.parens (comma_list pp_core_base_type bTys) ^^ P.hardline ^^ P.hardline
+          pp_keyword "builtin" ^^^ pp_symbol sym ^^^ P.parens (comma_list pp_core_base_type bTys) ^^
+          P.colon ^^^ pp_keyword "eff" ^^^ pp_core_base_type bTy ^^ P.hardline ^^ P.hardline
       | Proc (loc, _mrk, bTy, params, e) ->
           pp_cond loc @@
           pp_keyword "proc" ^^^ pp_symbol sym ^^^ pp_params params ^^ P.colon ^^^ pp_keyword "eff" ^^^ pp_core_base_type bTy ^^^
