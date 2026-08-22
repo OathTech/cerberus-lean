@@ -78,7 +78,9 @@ opaque setDigestIO : @& String → BaseIO Unit
     a startup constant (it would freeze the pre-set "" value) nor be
     CSE-hoisted across the per-TU set sites. Within one TU the value is
     constant, so intra-TU sharing — the only sharing never_extract
-    permits inside a single evaluation — is semantically harmless. -/
+    permits inside a single evaluation — is semantically harmless.
+    Normative soundness invariant: docs/2026-08-22_arc14-effect-erasure-
+    invariant.md (arc-14 S1 F5, sem:S17). -/
 @[never_extract, noinline]
 private unsafe def digest_impl (_ : Unit) : String :=
   unsafeBaseIO (digestIO ())

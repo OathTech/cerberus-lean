@@ -169,6 +169,14 @@ def getFilename : Loc → Option String
     "library" iff the file's directory is runtime/libc/include, runtime/libcore,
     or runtime/libcore/impls. We don't have the runtime root at this point, so
     approximate by checking if the path contains those path fragments. -/
+-- APPROXIMATION ENVELOPE (sem:N9, documented arc-14 S1 F6): "library"
+-- is decided by any PATH SEGMENT equal to libcore/include/impls, so a
+-- user file under a directory named e.g. `include/` is a false positive
+-- (classified library). Accepted: the only effect is suppressing the
+-- per-thread current-loc update (loc stays at the previous non-library
+-- location, cosmetic on the batch path); no value semantics depend on
+-- it. A path-based flag threaded from the CLI would remove the envelope
+-- (mover, if ever load-bearing).
 def isLibraryLocation (loc : Loc) : Bool :=
   match getFilename loc with
   | none => false

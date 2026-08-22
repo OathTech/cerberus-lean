@@ -19,13 +19,15 @@ namespace CerbConcurrency
 
 def statically_satisfied {α β γ : Type} (_ : α) (_ : β) (_ : γ) : Bool := true
 
--- The behaviour functions all return program_behaviours.
--- Since these types are generated, we use polymorphic return.
--- The actual ndM monad wiring will use sorry for the return type.
-
--- For now, all behaviour functions are sorry because they need
--- the full concurrency model types which are deeply interconnected
--- with the memory model. These are only needed for concurrent
--- C programs.
+-- TEMPORAL BOUNDARY (comment corrected arc-14 S1 F6, sem:N5 — the old
+-- text claimed these functions "use sorry"/"are sorry", which is both
+-- stale and forbidden: sorry is banned tree-wide and DAEMON was
+-- executed). Reality: `statically_satisfied` is a total stub returning
+-- `true`; the concurrency behaviour surface is not modelled — the full
+-- concurrency model types are deeply interconnected with the memory
+-- model and are only exercised by concurrent C programs, which the
+-- pipeline does not run. This is a declared TEMPORAL boundary entry
+-- (expected mover: the concurrency arc; forward-design constraint:
+-- Layer-2/3 shapes must not bake in single-thread/SC assumptions).
 
 end CerbConcurrency

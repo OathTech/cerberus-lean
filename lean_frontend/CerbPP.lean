@@ -23,7 +23,11 @@ namespace CerbPP
 def ppRepr {α : Type} [inst : Repr α] (x : α) : String :=
   (repr x).pretty
 
-def ppAny {α : Type} (_ : α) : String := "<...>"
+-- (sem:N14) The generic `ppAny := "<...>"` escape hatch was DELETED in
+-- arc-14 S1 F6 — it had zero call sites, and the enumerated
+-- pp-placeholder register (below / CerbPP throughout) is the only
+-- sanctioned placeholder discipline. Reintroducing a catch-all is a
+-- finding: every placeholder must be a reasoned, enumerated entry.
 
 /-! ## Symbol pretty-printing (real mirrors) -/
 

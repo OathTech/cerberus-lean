@@ -41,6 +41,15 @@
 # content-stale ocaml_frontend/generated tree (the post-merge libc.co
 # certification failure). Record:
 # lean_frontend/docs/2026-08-22_arc13-hotfix-libc-floor.md.
+# NOTE (arc-14 S1 F6, 2026-08-22): cabs_to_ail_effect.ml's
+# [expected-semantic] hash moved a84ccc6b -> 3765f211 for a COMMENT-ONLY
+# reason — the sem:S18 comment-truth fix on the fresh_sym_supply field
+# (re-scoped to the arc-13 R-B reality: OCaml uses the single ambient
+# Cerb_fresh via fork_renumber; the field is Lean-only). The generated
+# .ml code is UNCHANGED; only the propagated doc-comment differs
+# (verified hunk-by-hunk). Deliberate single-line refresh (the
+# --refresh recipe was NOT used wholesale — it strips this documented
+# header; only the one hash was edited).
 [meta]
 merge-base=b9aeedcb4dd438763b0eef7f95ac19e93875d7de
 lem-pin=11d4b4c
@@ -105,7 +114,7 @@ runtime/libc/dune
 runtime/libcore/impls/i686-apple-darwin10-gcc-4.2.1.impl
 util/cerb_fresh.ml
 [expected-semantic]
-a84ccc6bb08442b19685d313265f8960134d39e958fbf9b8491acc3bebff1b68 cabs_to_ail_effect.ml
+3765f211968f713c112938562485b00054380e780eb552632ec5cf370b9298ba cabs_to_ail_effect.ml
 12e6d9cf3322e34f00dd4c51f2cd985e7b000746b8ebb1cab056c725ffd0c86b cabs_to_ail.ml
 22b0b094c6622a92dfdff511a05f19de93f445c5f47d149deec3ed223e582f98 core_reduction.ml
 92e86efb5652fd8ed18a43a234a384389d2fa999ec96a34b685be66e7ad9684d core_run_aux.ml

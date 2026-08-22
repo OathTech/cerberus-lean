@@ -44,16 +44,32 @@ structure CerbConf where
   deriving Inhabited
 
 /-! ## Mutable global state
-    Mirrors: cerb_conf ref and Switches.internal_ref in OCaml -/
+    Mirrors: cerb_conf ref and Switches.internal_ref in OCaml.
 
+    @[never_extract, noinline] on the ref cells (arc-14 S1 F5, sem:S10):
+    matches the CerbTags/CerberusFresh armour and its rationale — a
+    top-level `def` allocating a ref via `unsafeBaseIO (IO.mkRef _)` is a
+    closed application the compiler may inline/CSE, which would mint a
+    FRESH ref at each use site (every read then sees `default`). The
+    hazard is latent today only because nothing ever WRITES these refs
+    (no setter is exposed — `current_execution_mode` is permanently
+    `none`), so all reads return `default` regardless; the armour makes
+    the seam correct-by-construction against a future compiler upgrade or
+    a setter landing, converging on the armoured pattern the effect-
+    erasure invariant page prescribes (docs/2026-08-22_arc14-effect-
+    erasure-invariant.md). -/
+
+@[never_extract, noinline]
 private unsafe def confRef : IO.Ref CerbConf :=
   unsafeBaseIO (IO.mkRef default)
 
+@[never_extract, noinline]
 private unsafe def switchesRef : IO.Ref (List CerbSwitch) :=
   unsafeBaseIO (IO.mkRef [])
 
 -- Config accessors (mirror cerb_global.ml)
 
+@[never_extract, noinline]
 private unsafe def getConf : CerbConf :=
   unsafeBaseIO confRef.get
 
@@ -80,6 +96,7 @@ unsafe def isIgnoreBitfields_impl (_ : Unit) : Bool :=
 
 -- Switch accessors (mirror switches.ml)
 
+@[never_extract, noinline]
 unsafe def has_switch_impl (sw : CerbSwitch) : Bool :=
   let sws := unsafeBaseIO switchesRef.get
   sws.any (· == sw)

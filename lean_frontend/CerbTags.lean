@@ -39,7 +39,10 @@ unsafe opaque withTagDefsIO {b : Type} : @& TagDefsMap → (@& (Unit → b)) →
     @[never_extract, noinline] on every impl: without them the compiler may
     cache a closed application (e.g. a reader SEED like 'tagDefs ()' at a
     pipeline entry) as a startup constant — evaluated before any set — or
-    CSE-merge sites. Same hazard class as LemLib.runEffectful. -/
+    CSE-merge sites. Same hazard class as LemLib.runEffectful.
+    Soundness invariant (armour + never-discard-writes + no-proof-may-
+    relate-across-state): docs/2026-08-22_arc14-effect-erasure-invariant.md
+    (arc-14 S1 F5, sem:S17 — the single normative statement). -/
 @[never_extract, noinline]
 private unsafe def tagDefs_impl (_ : Unit) : TagDefsMap :=
   unsafeBaseIO (tagDefsIO ())

@@ -8,8 +8,12 @@ namespace CerbUtils
 
 /-! ## Timing
     Corresponds to: Cerb_debug.begin_timing/end_timing in cerb_debug.ml
-    The OCaml implementation records wall-clock time to cerb.prof.
-    We use Lean's IO for the same purpose. -/
+    (OCaml records wall-clock time to cerb.prof).
+    NO-OP STUBS (comment corrected arc-14 S1 F6, sem:N6 — the old claim
+    "We use Lean's IO for the same purpose" was untrue): profiling is not
+    ported (it is not observable on any differential path). `begin_timing`
+    and `end_timing` do nothing; `timingStackRef` below is retained only
+    so the shape matches the OCaml module — it is intentionally unread. -/
 
 private unsafe def timingStackRef : IO.Ref (List (String × Float)) :=
   unsafeBaseIO (IO.mkRef [])
@@ -25,8 +29,10 @@ opaque begin_timing : String → Unit
 opaque end_timing : Unit → Unit
 
 /-! ## Logging
-    Corresponds to: Cerb_logging.log_standard in cerb_logging.ml
-    Logs the string and returns the value unchanged. -/
+    Corresponds to: Cerb_logging.log_standard in cerb_logging.ml.
+    Returns the value unchanged (the OCaml side logs; sem:N6: `logRef`
+    accumulates the messages but nothing READS the log — the store exists
+    for parity of shape only, not observable behavior). -/
 
 private unsafe def logRef : IO.Ref (List String) :=
   unsafeBaseIO (IO.mkRef [])
@@ -55,12 +61,22 @@ def set_fold {α β : Type} (f : α → β → β) (s : List α) (init : β) : �
   s.foldl (fun acc x => f x acc) init
 
 /-! ## Random bounded integer
-    Corresponds to: Cerb_any.bounded_integer in cerb_any.ml
-    OCaml uses Random.int64 to pick a value in [min, max]. -/
+    Corresponds to: Cerb_any.bounded_integer in cerb_any.ml (linked into
+    core_run). OCaml draws Random.int64 in [lo, hi].
+
+    DIVERGENCE ENVELOPE (sem:S14, documented arc-14 S1 F6): we return
+    `lo` deterministically. Call site: the Core `Ndollar`/`bounded`
+    nondeterminism primitive, reachable only for programs that invoke it
+    explicitly. In EXHAUSTIVE mode the oracle's differential story is that
+    the RNG draw is one of a range while we pin one endpoint — so a
+    single-trace differential over a bounded-integer program can diverge
+    in the CHOSEN VALUE (never in the set of reachable behaviors modelled
+    otherwise); the standing corpora do not exercise it. Mover, if it
+    becomes load-bearing: thread a real RNG through the ND fork the way
+    eqPtrval threads its msum. -/
 
 private unsafe def boundedIntegerImpl (lo hi : Int) : Int :=
   unsafeBaseIO do
-    -- Simple deterministic approach: return lo (can be replaced with real RNG)
     pure lo
 
 @[implemented_by boundedIntegerImpl]

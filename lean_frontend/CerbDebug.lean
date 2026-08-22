@@ -17,18 +17,30 @@ opaque getLevelIO : @& Unit → BaseIO Nat
 opaque setLevelIO : @& Nat → BaseIO Unit
 
 /-- Pure wrappers used by hand-written code (Main.lean etc.).
-    Generated code uses the IO versions via effectful target_rep. -/
+    Generated code uses the IO versions via effectful target_rep.
+    @[never_extract, noinline] (arc-14 S1 F5, sem:S11): matches the
+    CerbTags armour — without it the compiler may cache/CSE a closed
+    `get_level ()` read (evaluated before any `set_level`) or drop the
+    `set_level` effect. `set_level` is ALSO effect-discarding in pure
+    position (its result is Unit), so hand-written call sites that need
+    the write to happen MUST use the BaseIO extern `setLevelIO` directly
+    (see the effect-erasure invariant page); the pure wrapper stays for
+    generated read paths. -/
+@[never_extract, noinline]
 private unsafe def get_level_impl (_ : Unit) : Nat :=
   unsafeBaseIO (getLevelIO ())
 
+@[never_extract, noinline]
 private unsafe def set_level_impl (n : Nat) : Unit :=
   unsafeBaseIO (setLevelIO n)
 
 @[implemented_by get_level_impl]
 opaque get_level : Unit → Nat
+attribute [never_extract] get_level
 
 @[implemented_by set_level_impl]
 opaque set_level : Nat → Unit
+attribute [never_extract] set_level
 
 def output_string (_ : String) : Unit := ()
 

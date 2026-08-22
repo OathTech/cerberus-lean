@@ -958,6 +958,13 @@ def runPipeline (runtimeDir : String) (batch : Bool) (ppCore : Bool)
 /-! ## Entry point -/
 
 def main (args : List String) : IO Unit := do
+  -- CLI ORDER CONTRACT (sem:N7, documented arc-14 S1 F6): this is a
+  -- POSITIONAL flag parser (not cmdliner like the oracle). The contract:
+  -- `--batch` or `--pp-core` must be argv[0]; `--first` must immediately
+  -- follow it; `--parse-core` is matched against the raw args head. A
+  -- misordered flag is silently treated as a filename. This is
+  -- acceptable for a test-harness binary (the harnesses always pass the
+  -- canonical order); a real CLI would use a proper parser.
   -- --batch: machine-parseable output for the differential harness
   -- --pp-core: signature-level elaborated-Core dump (test_elab.sh)
   let batchMode := args.head? == some "--batch"
@@ -1033,7 +1040,12 @@ def main (args : List String) : IO Unit := do
   -- Set debug level for Core evaluation tracing (0=off, 2=basic, 5=verbose).
   -- Batch/pp-core modes match the OCaml driver default (0): keeps stderr
   -- clean for the harness's crash classification.
-  let _ := CerbDebug.set_level (if batchMode || ppCoreMode then 0 else 2)
+  -- BaseIO variant (arc-14 S1 F5, sem:S11): the pure `set_level`'s result
+  -- is unused, so `let _ := CerbDebug.set_level …` is dead-code
+  -- eliminated (the exact arc-4 S3b hazard the CerbTags reset/set sites
+  -- were fixed for; see the warnings at :545-549 and :789-791). Call the
+  -- BaseIO extern directly so the write actually happens.
+  let _ ← CerbDebug.setLevelIO (if batchMode || ppCoreMode then 0 else 2)
   -- Sym non-escape floor assertion (arc-2 Phase-2 obligation, closed arc-4
   -- S5; invariant record: docs/2026-08-19_arc4-s0-frontier.md addendum).
   -- CURRENT invariant (post arc-4 S3a): desugar-threaded ids < 2^20 ≤

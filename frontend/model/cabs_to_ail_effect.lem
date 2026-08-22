@@ -227,8 +227,16 @@ type state = <|
   scope_id_supply: nat;
   (* Counter for fresh Symbol.sym values. Threaded through desugM to avoid
      relying on Symbol.fresh_int's hidden mutable state (which Lean's CSE
-     collapses). OCaml-side target_reps can still use Cerb_fresh.int via the
-     old API; this field gives the Lean backend a deterministic counter. *)
+     collapses).
+     ARC-13 RE-SCOPE (sem:S18, was false-neutrality per the drift review):
+     on the OCaml target this field is NOT used — arc-13 D1 scheme R-B
+     re-unified the OCaml desugar supply onto the SINGLE ambient
+     Cerb_fresh.int via an ocaml-only target_rep to Fork_renumber (so the
+     oracle's numbering is byte-identical to un-forked upstream). This
+     field serves the LEAN target only, where it gives the deterministic
+     counter the CSE hazard demands. See ocaml_frontend/fork_renumber.ml,
+     the fork-drift manifest (renumber=arc13), and native/fresh_int.c for
+     the Lean-side margin backstop. *)
   fresh_sym_supply: nat;
   (* table (with stacked scopes) associating C identifiers to symbols *)
   
