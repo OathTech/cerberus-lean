@@ -217,8 +217,17 @@ let decode_character_constant str =
       sub r dlt in
   wrapI (decode_character_constant_aux str)
 
+(* NOTE: the output feeds decode_character_constant (see store_chars_in_array()
+   in formatted.lem), which reads C escape syntax. [Char.escaped] renders chars
+   without a symbolic escape in OCaml's *decimal* '\DDD' notation, which the
+   decoder would misread as a C octal escape, so we emit octal escapes for
+   those chars ourselves. *)
 let escaped_char c =
-  Char.escaped c
+  match c with
+  | ' ' .. '~' | '\n' | '\t' | '\r' | '\b' ->
+      Char.escaped c
+  | _ ->
+      Printf.sprintf "\\%03o" (Char.code c)
 
 let encode_character_constant n =
   (* TODO: fixing the encoding to ASCII for now *)

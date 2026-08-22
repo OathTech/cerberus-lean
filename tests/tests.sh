@@ -207,6 +207,7 @@ citests=(
   0339-invalid-string-character.error.c
   0340-shl_promotion_to_signed.undef.c
   0342-escape_question.c
+  0343-snprintf_nonprintable_char.c
 )
 
 # TESTS THAT ARE KNOW TO FAIL (for example .error test for which we need to improve the message)
