@@ -82,3 +82,21 @@
   mechanics, then the audit pair, then the merge ask — presented
   JOINTLY with arc-12's outstanding ask (serialization per the
   measured zero-conflict intersection).
+- **D5 [AGENT] — audits complete, fix batch verified, ARC READY FOR
+  THE JOINT MERGE ASK.** Auditor A: trust boundary held under
+  original attacks (preview unbreakable, no smuggle path, replay
+  ordinary + stale-refusing, Yolo boundary spotless, all rehearsal
+  gate plants fired); its F1 (the T5 family outside every axiom gate
+  — a planted sorry shipped green) FIXED with the sweep closure
+  import, the pinned sweep count (3021→3348), five flagship pins,
+  and the plant now failing the build by name; F2 engineRev 3 +
+  process rule; F3 regex + policy; F4 fp-less refusal. Auditor B:
+  everything load-bearing reproduced (gate never flipped, climb
+  numbers from banked evidence, checklist facts true, heartbeat
+  clean); its F1-F5 fixed as one-line corrections incl. the
+  scorecard's condition-2 → MET-with-registered-deviation (routed
+  to the operator at the merge ask per the auditor's suggestion).
+  Orchestrator re-verified at 428647848: both builds green, unit
+  7/7 with the DAEMON line now visible, verify 29/29, exec zero
+  movement, merge-base = mainline head. The merge ask goes to the
+  operator JOINTLY with arc-12's.
