@@ -168,10 +168,53 @@ def byteArrChecks : List Check :=
     , pass := bytesOfU16s [4660, 255] == [52, 18, 255, 0] }
   ]
 
+open SpecLab.ListAppend in
+def listAppendChecks : List Check :=
+  let m21 : SpecLab.ListAppend.Input := ⟨[1, 2], [3]⟩
+  let mBound : SpecLab.ListAppend.Input :=
+    ⟨[-2147483648, -1], [2147483647]⟩
+  [ { name := "list: encodeInput (xs=[1,2],ys=[3]) = the S3 probe stream"
+    , pass := encodeInput m21
+        == [2, 0, 1, 0, 0, 0, 2, 0, 0, 0, 1, 0, 3, 0, 0, 0] }
+  , { name := "list: expectedBytes = count ++ appended heads; n=0 nonempty"
+    , pass := expectedBytes m21 == [3, 0, 1, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0]
+        && expectedBytes ⟨[], []⟩ == [0, 0] }
+  , { name := "list: input codec round trip at edges (executable)"
+    , pass := [m21, mBound, ⟨[], []⟩, ⟨[], [7]⟩,
+        ⟨List.replicate 8 (-1), List.replicate 8 2147483647⟩].all fun m =>
+        decodeInput (encodeInput m) == some (m, []) }
+  , { name := "list: validStreamb accepts encoded Wf, rejects malformed"
+    , pass := validStreamb (encodeInput m21)
+        && validStreamb [0, 0, 0, 0]
+        && !validStreamb [2, 0, 1]                 -- short body
+        && !validStreamb [9, 0]                    -- over cap
+        && !validStreamb (encodeInput m21 ++ [1]) }  -- trailing junk
+  , { name := "list: link plant verdict 255 (len arm); blind at |xs| ≤ 1"
+    , pass := linkPlantVerdict m21 == 255
+        && linkPlantVerdict ⟨[], [3]⟩ == 0
+        && linkPlantVerdict ⟨[5], [3]⟩ == 0
+        && linkPlantLeaked m21 == 1 }
+  , { name := "list: elem plant verdict 3 (element 0 low byte); blind at xs=[]"
+    , pass := elemPlantVerdict m21 == 3
+        && elemPlantVerdict ⟨[], [3]⟩ == 0
+        && elemPlantVerdict mBound == 3 }
+  , { name := "list: xorOne two's-complement mirror (evens up, odds down)"
+    , pass := xorOne 0 == 1 && xorOne 1 == 0 && xorOne (-1) == -2
+        && xorOne (-2) == -1 && xorOne 2147483647 == 2147483646
+        && xorOne (-2147483648) == -2147483647 }
+  , { name := "list: sweep sample set ≥ 100 and all Wf"
+    , pass := sweepSamples.length ≥ 100 && sweepSamples.all wfb }
+  , { name := "list: at-samples all AtWf; at model = drop k ++ ys"
+    , pass := atSamples.all atWfb
+        && atModelFn ⟨1, [1, 2, 3], [9]⟩ == [2, 3, 9]
+        && encodeAtInput ⟨1, [5], []⟩ == 1 :: encodeInput ⟨[5], []⟩ }
+  ]
+
 /-- #eval-able one-shot: `#eval SpecLab.Test.allPass` (also the exe's
 exit verdict). -/
 def allChecks : List Check :=
   codecChecks ++ harnessChecks ++ divmodChecks ++ byteArrChecks
+    ++ listAppendChecks
 
 def emitPlant (bs : List UInt8) (idx : Nat) : Option String :=
   if h : idx < bs.length then
@@ -261,8 +304,113 @@ def emitByteArr (mode : String) (csv : String) :
       if gwfb s then "Specified(0)" else "Specified(254)")
   | _ => throw s!"unknown bytearr mode: {mode}"
 
+/-- Parse a comma-separated Int list ("1,-2,3"; "" = empty). -/
+def parseCsvInts (s : String) : Option (List Int) :=
+  if s.isEmpty then some [] else
+  (s.splitOn ",").foldr (fun tok acc => do
+    let ns ← acc
+    let n ← tok.trimAscii.toString.toInt?
+    some (n :: ns)) (some [])
+
+/-- Parse the R3 pair-model CSV: `xs|ys` (each side comma-separated
+ints, empty side = empty list; "1,2|3"). -/
+def parsePairCsv (s : String) : Option SpecLab.ListAppend.Input :=
+  match s.splitOn "|" with
+  | [xs, ys] => do
+    let l1 ← parseCsvInts xs
+    let l2 ← parseCsvInts ys
+    some ⟨l1, l2⟩
+  | _ => none
+
+/-- Parse the pointer-selection CSV: `k|xs|ys`. -/
+def parseAtCsv (s : String) : Option SpecLab.ListAppend.AtInput :=
+  match s.splitOn "|" with
+  | [ks, xs, ys] => do
+    let k ← ks.trimAscii.toString.toNat?
+    let l1 ← parseCsvInts xs
+    let l2 ← parseCsvInts ys
+    some ⟨k, l1, l2⟩
+  | _ => none
+
+def pairCsvOf (m : SpecLab.ListAppend.Input) : String :=
+  String.intercalate "," (m.xs.map toString) ++ "|"
+    ++ String.intercalate "," (m.ys.map toString)
+
+def atCsvOf (m : SpecLab.ListAppend.AtInput) : String :=
+  s!"{m.k}|" ++ String.intercalate "," (m.xs.map toString) ++ "|"
+    ++ String.intercalate "," (m.ys.map toString)
+
+open SpecLab.ListAppend in
+/-- The R3 linked-list emitter arms. Returns (harness text, predicted
+verdict) or an error. -/
+def emitList (mode : String) (csv : String) :
+    Except String (String × String) := do
+  let getPair : Except String SpecLab.ListAppend.Input := do
+    let some m := parsePairCsv csv | throw s!"bad pair csv: {csv}"
+    if !wfb m then throw s!"model not Wf (caps 8/8, i32 heads)"
+    pure m
+  match mode with
+  | "append" =>
+    let m ← getPair
+    pure (mkAppend m, "Specified(0)")
+  | "append-link-plant" =>
+    let m ← getPair
+    pure (mkAppendLinkPlant m, s!"Specified({linkPlantVerdict m})")
+  | "append-elem-plant" =>
+    let m ← getPair
+    pure (mkAppendElemPlant m, s!"Specified({elemPlantVerdict m})")
+  | "append-form2" =>
+    let m ← getPair
+    pure (mkAppendForm2 m, "Specified(0)")
+  | "build-only" =>
+    let m ← getPair
+    pure (mkBuildOnly m, "Specified(0)")
+  | "append-stream" =>
+    let some s := parseCsvBytes csv | throw s!"bad byte list: {csv}"
+    if !validStreamb s then throw "INVALID stream (prefix/cap/range)"
+    pure (mkAppendOfStream s, "Specified(0)")
+  | "append-raw" =>
+    -- NO validity check (the malformed lane); nonempty splice only
+    let some s := parseCsvBytes csv | throw s!"bad byte list: {csv}"
+    if s.isEmpty then throw "raw stream must be nonempty"
+    pure (mkAppendOfStream s,
+      if validStreamb s then "Specified(0)" else "Specified(254)")
+  | "append-at" =>
+    let some m := parseAtCsv csv | throw s!"bad at csv (k|xs|ys): {csv}"
+    if !atWfb m then throw "model not AtWf (k < |xs|, caps 8/8)"
+    pure (mkAppendAt m, "Specified(0)")
+  | _ => throw s!"unknown list mode: {mode}"
+
+open SpecLab.ListAppend in
+/-- Predicted Form 2 stdout for the append harness (healthy target),
+batch-escaped spelling. -/
+def predictListForm2Stdout (m : SpecLab.ListAppend.Input) : String :=
+  SpecLab.DivMod.render3 (expectedBytes m) ++ "\\n"
+
 def main (args : List String) : IO UInt32 := do
   match args with
+  | ["--emit-list", mode, csv] =>
+    match emitList mode csv with
+    | .ok (h, _) => IO.print h; return 0
+    | .error e => IO.eprintln s!"SpecLabTest: {e}"; return 2
+  | ["--list-predict", mode, csv] =>
+    match emitList mode csv with
+    | .ok (_, v) =>
+      IO.println v
+      if mode == "append-form2" then
+        match parsePairCsv csv with
+        | some m => IO.println (predictListForm2Stdout m)
+        | none => pure ()
+      return 0
+    | .error e => IO.eprintln s!"SpecLabTest: {e}"; return 2
+  | ["--list-samples"] =>
+    for m in SpecLab.ListAppend.sweepSamples do
+      IO.println (pairCsvOf m)
+    return 0
+  | ["--list-at-samples"] =>
+    for m in SpecLab.ListAppend.atSamples do
+      IO.println (atCsvOf m)
+    return 0
   | ["--emit-bytearr", mode, csv] =>
     match emitByteArr mode csv with
     | .ok (h, _) => IO.print h; return 0

@@ -334,5 +334,49 @@ theorem encodeElems_u8_id : ∀ bs : List UInt8,
   | nil => rfl
   | cons b rest ih => simp [encodeElems, encodeU8, ih]
 
+/-! ## Conditional round trips (arc-15 S3).
+
+The R3 list rung's element codec is the S1 i32 layer, whose round
+trip holds only on the i32 RANGE (`DivMod.decode_encode_i32le` needs
+`inI32 n`) — the unconditional `RoundTrip` hypothesis of
+`decode_encode_arrayU16` is unavailable. These are the
+element-membership-conditioned variants: the round-trip hypothesis is
+demanded only AT THE ELEMENTS ACTUALLY ENCODED, which the caller's
+`Wf` supplies. (Canonicity needs no conditional variant —
+`Canonical` is unconditional for the i32 layer, see
+`DivMod.encode_decode_i32le'`.) -/
+
+/-- Element-count round trip, conditioned on a per-element round-trip
+fact (membership form). -/
+theorem decodeElems_encodeElems_of {α : Type} {encA : α → Stream}
+    {decA : Dec α} :
+    ∀ (xs : List α),
+      (∀ a ∈ xs, ∀ rest : Stream, decA (encA a ++ rest) = some (a, rest)) →
+      ∀ rest : Stream,
+        decodeElems decA xs.length (encodeElems encA xs ++ rest)
+          = some (xs, rest) := by
+  intro xs
+  induction xs with
+  | nil => intro _ rest; rfl
+  | cons a as ih =>
+    intro h rest
+    have ha := h a (List.mem_cons_self ..) (encodeElems encA as ++ rest)
+    have has := ih (fun b hb => h b (List.mem_cons_of_mem a hb)) rest
+    simp [encodeElems, decodeElems, List.append_assoc, ha, has]
+
+/-- Array round trip, conditioned on per-element round trips at the
+encoded elements (the R3 i32-element form). -/
+theorem decode_encode_arrayU16_of {α : Type} {encA : α → Stream}
+    {decA : Dec α} (xs : List α)
+    (hRT : ∀ a ∈ xs, ∀ rest : Stream,
+      decA (encA a ++ rest) = some (a, rest))
+    (hlen : xs.length < 65536) (rest : Stream) :
+    decodeArrayU16 decA (encodeArrayU16 encA xs ++ rest)
+      = some (xs, rest) := by
+  have hn : (UInt16.ofNat xs.length).toNat = xs.length := by simp; omega
+  simp [decodeArrayU16, encodeArrayU16, List.append_assoc,
+    decode_encode_u16le (UInt16.ofNat xs.length) (encodeElems encA xs ++ rest),
+    hn, decodeElems_encodeElems_of xs hRT rest]
+
 end Codec
 end SpecLab
