@@ -184,11 +184,13 @@ let decode_character_constant_aux = function
                 else
                   failwith ("decode_character_constant, started like an hexa constant, but failed: " ^ str)
             else
+                (* Octal escape sequence *)
+                (* see STD §6.4.4.4#1 *)
                 let str = String.sub str 1 (String.length str - 1) in
                 let b = ref true in
                 String.iter (fun c ->
                   let n = Char.code c in
-                  if not (48 <= n && n <= 56) then
+                  if not (48 <= n && n <= 55) then
                     b := false
                 ) str;
                 if !b then
