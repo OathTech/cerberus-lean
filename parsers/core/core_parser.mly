@@ -781,7 +781,7 @@ and symbolify_action_ = function
      under_scope (
        register_sym _sym    >>= fun sym ->
        symbolify_pexpr _pe3 >>= fun pe3 ->
-       Eff.return (SeqRMW (b, pe1, pe3, sym, pe3))
+       Eff.return (SeqRMW (b, pe1, pe2, sym, pe3))
      )
  | Load0 (_pe1, _pe2, mo) ->
      symbolify_pexpr _pe1 >>= fun pe1 ->
