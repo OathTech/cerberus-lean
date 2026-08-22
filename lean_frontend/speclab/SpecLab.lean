@@ -9,3 +9,5 @@ import SpecLab.Codec
 import SpecLab.MkHarness
 import SpecLab.DivMod
 import SpecLab.DivModHarness
+import SpecLab.DivModCore
+import SpecLab.DivModFiles

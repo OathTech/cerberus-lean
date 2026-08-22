@@ -92,12 +92,14 @@ theorem decode_encode_inputI8 (m : Input) (h : WfI8 m) (rest : Stream) :
   simp [encodeInputI8, decodeInputI8, ofByteI8_toByteI8 m.x hx1 hx2,
     ofByteI8_toByteI8 m.y hy1 hy2]
 
+/-- The i16le byte halves. -/
+def i16b0 (n : Int) : UInt8 := UInt8.ofNat ((n % 65536).toNat % 256)
+def i16b1 (n : Int) : UInt8 := UInt8.ofNat ((n % 65536).toNat / 256)
+
 /-- i16le two's-complement encoding of a result value (2 bytes —
 exact for every value the i8 family can produce: q ∈ [-128, 128],
 r ∈ (-128, 128)). -/
-def toBytesI16 (n : Int) : Stream :=
-  [UInt8.ofNat ((n % 65536).toNat % 256),
-   UInt8.ofNat ((n % 65536).toNat / 256)]
+def toBytesI16 (n : Int) : Stream := [i16b0 n, i16b1 n]
 
 /-- The i8 kernel instance's expected observation: 4 bytes,
 i16le(quotient) ++ i16le(remainder). -/

@@ -279,7 +279,18 @@ do_form2() {
     [[ $red -eq 0 ]] || fail "form2: red=$red"
 }
 
+# ---- pinned-term gate (drift + param pins + in-Lean exec) -----------
+do_gate() {
+    (cd "$PROJECT_ROOT/lean_frontend/speclab" && \
+        "$SCRIPT_DIR/capped" lake build speclab-core-test >/dev/null 2>&1) \
+        || fail "speclab-core-test build failed"
+    local bin="$PROJECT_ROOT/lean_frontend/speclab/.lake/build/bin/speclab-core-test"
+    [[ -f "$bin" ]] || fail "speclab-core-test binary missing"
+    (cd "$PROJECT_ROOT" && "$bin") || fail "CoreGateTest red"
+}
+
 case "$MODE" in
+    --gate)    do_gate ;;
     --sweep)   do_sweep "${2:-form1}" ;;
     --i8sweep) do_i8sweep ;;
     --fuzz)    do_fuzz "${2:?--fuzz needs N}" "${3:-20260822}" ;;

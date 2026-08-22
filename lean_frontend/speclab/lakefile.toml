@@ -24,7 +24,7 @@
 # land in S1).
 
 name = "speclab"
-defaultTargets = ["SpecLab"]
+defaultTargets = ["SpecLab", "SpecLabAudit"]
 moreLeanArgs = ["-DautoImplicit=false"]
 packagesDir = "../.lake/packages"
 
@@ -38,6 +38,12 @@ path = ".."
 [[lean_lib]]
 name = "SpecLab"
 
+# arc-15 S1: the in-build statement-TCB + axiom gate (fails the plain
+# `lake build` on violation; rides defaultTargets). Lives OUTSIDE the
+# SpecLab/ scan scope of check_speclab_statements.sh — see its header.
+[[lean_lib]]
+name = "SpecLabAudit"
+
 # S0 sanity/emit executable: codec + renderer round-trip checks
 # (exit 0 on pass) and the identity-harness emitter consumed by
 # scripts/test_speclab.sh. Pure Lean — no semantics imports, hence no
@@ -47,3 +53,29 @@ name = "SpecLab"
 name = "speclab-test"
 srcDir = "test"
 root = "Unit.SpecLabTest"
+
+# arc-15 S1: test library (the root CerberusLeanTest pattern) — makes
+# the test/Unit modules importable across the speclab test exes.
+[[lean_lib]]
+name = "SpecLabTestLib"
+srcDir = "test"
+globs = ["SLUnit.+"]
+
+# arc-15 S1: the divmod kernel-instance term-emission instrument
+# (adapted from the root emit-lean-core, attributed in-file). Imports
+# CoreParser (the semantics package), hence the native link args —
+# the relsem lakefile precedent.
+[[lean_exe]]
+name = "speclab-emit-core"
+srcDir = "test"
+root = "SLUnit.EmitCoreMain"
+moreLinkArgs = ["../native/fresh_int.o", "../native/debug.o", "../native/tags.o", "../native/md5.o"]
+
+# arc-15 S1: the DivModCore drift/param/exec gate (relsem
+# EmitLeanCoreTest pattern). Runs the assembled theorem objects
+# through the generated drive — semantics imports, native link args.
+[[lean_exe]]
+name = "speclab-core-test"
+srcDir = "test"
+root = "SLUnit.CoreGateTest"
+moreLinkArgs = ["../native/fresh_int.o", "../native/debug.o", "../native/tags.o", "../native/md5.o"]
