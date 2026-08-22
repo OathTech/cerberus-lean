@@ -27,16 +27,20 @@ let bswap32 n =
   end
 
 let bswap64 n =
-  let n = Z.to_int64 n in
-  Z.of_int64 begin
+  (* NOTE: the argument is a uint64_t value, so it is reinterpreted as a
+     two's complement int64 before the conversion (Z.to_int64 raises
+     Z.Overflow for values >= 2^63), and the (possibly negative) swapped
+     int64 is read back as unsigned *)
+  let n = Z.to_int64 (Z.signed_extract n 0 64) in
+  let swapped =
     logor
       (logor
         (logor (shift_left (logand 0x000000000000ff00L n) 40) (shift_left (logand 0x00000000000000ffL n) 56))
         (logor (shift_left (logand 0x0000000000ff0000L n) 24) (shift_left (logand 0x00000000ff000000L n) 8)))
       (logor
         (logor (shift_right_logical (logand 0x00ff000000000000L n) 40) (shift_right_logical (logand 0xff00000000000000L n) 56))
-        (logor (shift_right_logical (logand 0x0000ff0000000000L n) 24) (shift_right_logical (logand 0x000000ff00000000L n) 8)))
-  end
+        (logor (shift_right_logical (logand 0x0000ff0000000000L n) 24) (shift_right_logical (logand 0x000000ff00000000L n) 8))) in
+  Z.extract (Z.of_int64 swapped) 0 64
 
 let generic_ffs n =
   if Z.(equal zero n) then
