@@ -1,0 +1,49 @@
+# arc-14 immaculate test-first lane baseline (scripts/test_immaculate.sh).
+#
+# THIS IS THE HONEST S0 BASELINE: most rows are EXPECTED-FAILING.
+# DIFF / ORACLE_CRASH / CONFLATED are NOT gate failures — they are
+# the recorded current-tree wrong-answer state that the S1/S2 fixes
+# will FLIP. The lane is fail-closed against THIS file: a fix that
+# flips a row (or a regression on a MATCH row) exits nonzero and
+# forces a deliberate, justified re-record.
+#
+# Status vocabulary:
+#   MATCH        oracle and Lean agree on the semantic verdict (control rows).
+#   DIFF         both sides produced a verdict; they disagree (the target bug).
+#   ORACLE_CRASH oracle fail-closed with an uncaught exception / assert;
+#                Lean silently returned a value (Lean-side latent-wrong).
+#   CONFLATED    G6 in-Lean probe: two distinct hash-colliding identifiers
+#                intern to the SAME symbol (silent conflation).
+#
+# Finding -> row map (registers: notes/2026-08-21_grumpy-audit-*.md):
+#   G1 semantics: g1-lt-null, g1-ge-funptr (relational kill-path -> value-path)
+#   G2 semantics: g2-memcpy-oob, g2-memcpy-readonly, g2-memcmp-uninit (checked-path bypass)
+#   G3 semantics: g3-realloc-non-heap (UB179c), g3-realloc-dead (UB179d) (wrong UB family)
+#   G4 semantics: g4-ffs-negative, g4-ffs-intmin (Int.toNat clamp); g4-ctz-nonzero is a control
+#   G5 semantics: g5-decode-question (ORACLE-WRONG: '\?' is a legal C11 escape = 63,
+#                 gcc agrees; upstream failwiths -> upstream-filing candidate),
+#                 g5-decode-multichar (impl-defined; oracle fail-closed is defensible)
+#   G6 semantics: g6-hash-collision (CoreParser symbol-hash conflation)
+#
+# Expected post-fix shape (recorded so the flip is deliberate):
+#   G1/G2/G3 -> MATCH (Lean kills / emits the same UB as the oracle).
+#   G4       -> MATCH (Z/two's-complement semantics).
+#   G5 '\?'  -> Lean C-correct (63) DIVERGES from the crashing oracle: expect a
+#               NEW status (Lean-right) + an upstream bug filing, NOT fix-to-match.
+#   G5 'ab'  -> Lean fail-closed to agree with the oracle's rejection (still not MATCH-token;
+#               both fail-closed — re-record as the agreed-rejection shape).
+#   G6       -> off CONFLATED once the intern-time fail-stop tripwire lands.
+g1-ge-funptr DIFF
+g1-lt-null DIFF
+g2-memcmp-uninit ORACLE_CRASH
+g2-memcpy-ok MATCH
+g2-memcpy-oob DIFF
+g2-memcpy-readonly DIFF
+g3-realloc-dead DIFF
+g3-realloc-non-heap DIFF
+g4-ctz-nonzero MATCH
+g4-ffs-intmin DIFF
+g4-ffs-negative DIFF
+g5-decode-multichar ORACLE_CRASH
+g5-decode-question ORACLE_CRASH
+g6-hash-collision CONFLATED
