@@ -35,10 +35,27 @@ in-build) + `Tactics/AppEqAttr.lean`/`Tactics/AppWalk.lean` (the
 per-stage certificate emitter: kernel-whnf discovery, decide-facts
 chase-rewrite, ledgered heartbeat budgets — no ambient raise
 anywhere) + the proof-size gate (`scripts/check_proof_size.sh`,
-250-line/40-step bars, Tier A). T5 (bounded loop) is parked at
-evidence grade with fixture/prefix/St-family banked (T5Fixture,
-T5Prefix, the t5-probe census exe) — see
-`docs/2026-08-21_arc9-results.md`.
+250-line/40-step bars, Tier A).
+WORKBENCH V2 (arc-11): the walker gained a structured TRACE IR
+(`Tactics/WalkTrace.lean`: per-candidate fates, discharge lanes,
+seal events, per-round ledgers, typed residual classifications,
+`engineRev`) + PREVIEW (`app_walk_preview` — never assigns the goal,
+always fails, gate-banned in committed proofs; E9 negative-tested) +
+CHECKED REPLAY (`app_walk_rec`/`app_walk_replay`: fingerprint
+refusal on engineRev/kit-registry/goal mismatch, recorded law
+sequence with checking identical, loud divergence — ~15x vs cold
+discovery, `relsem/bench/WalkBench.lean`) + CONTEXT QUERIES
+(`@[app_eq] (fact := …)`/`(fact! := …)`: deterministic
+required-fact hypothesis queries, ambiguity-is-error static+dynamic,
+`#app_eq_lint`) + kernel-side closed-fact equation-chase matching
+(`Kernel.isDefEq`, heartbeat-free). Sealing is `app_walk_norm`'s
+DEFAULT (`nostates` modifier committed; `app_walk_norm!` retired).
+T5 (bounded loop) is parked at the arc-11 improved grade:
+`entry5_walk` (21-round entry, symbolic n/fuel) and the T5Iter
+env-lookup family are committed in-build theorems; k=0 walk 45/79,
+symbolic-j route live 3/79; resumption's first move = register
+R-S2-1 (sealed-closure avatar coherence, fixture-independent) — see
+`docs/2026-08-22_arc11-results.md`.
 THE PACKAGE REHEARSAL (arc-11 S4, the [USER] two-part-design item):
 `relsem/` is its OWN Lake package (`relsem/lakefile.toml`) requiring
 the semantics package by path, with the git deps SHARED via
@@ -76,6 +93,11 @@ make lean-prelude-src
 # session kill; CERB_MEM_MAX overrides the 64G default)
 cd lean_frontend && ../scripts/capped lake build cerberus-lean
 
+# Build the relsem PROOF package (arc-11 S4 two-package structure;
+# carries the in-build proof gates — test_unit.sh builds both
+# packages fail-closed)
+cd lean_frontend/relsem && ../../scripts/capped lake build
+
 # Build OCaml driver (for --cabs-json)
 opam exec -- dune build backend/driver/main.exe
 opam exec -- dune install cerberus-lib  # for runtime files
@@ -107,7 +129,8 @@ Current unit tests:
 - `app-walk-test` — arc-9 S2: the `app_walk` walker contract-table exercises (E1-E10 since arc-11 S1: v2/sealed lanes, the E9 preview negative, E10 record→replay + fingerprint mismatch; relsem package since arc-11 S4)
 
 (`t5-probe` is a further `[[lean_exe]]` — the arc-9 round-census
-instrument, run on demand, not part of the unit suite.)
+instrument, run on demand, not part of the unit suite; in the relsem
+package since arc-11 S4.)
 
 `test_unit.sh` also runs the gate scripts: the hand-written↔generated
 sync gate, the hand-written-axiom census (exactly 2),
@@ -124,7 +147,9 @@ and `check_proof_size.sh` (arc-9 S2: slate proof files within the
 250-line/40-manual-step bar, Kit files fixture-free — the mega-lemma
 counter, debug-only walker surfaces banned in committed (git-tracked)
 proofs: `app_walk?`/`app_walk_norm?` + `app_defeq_diag`/`dnms_kwalk`
-since the arc-9 pre-merge audit (A-F5); `app_walk_norm!` RETIRED in
+since the arc-9 pre-merge audit (A-F5), + `app_walk_preview` since
+arc-11 S1 (the §12.2 preview enforcement layer, plant-tested both
+directions); `app_walk_norm!` RETIRED in
 arc-11 S1 (F12-4) — the per-stage certificate emitter is now
 `app_walk_norm`'s default configuration;
 registered slate files listed in the script). Two further gates are
@@ -308,7 +333,7 @@ Lem is pinned to `https://github.com/septract/lem-lean#mdd/lean-backend`.
   `runND_proxy` is implemented — hand-written `CerbND.runND`).
   Concurrency stubs remain the declared boundary.
 
-### Pipeline status (updated 2026-08-21, post arc-9 — see the arc results docs)
+### Pipeline status (updated 2026-08-22, post arc-11 — see the arc results docs)
 - ✅ C → Cabs JSON → Cabs types (100%)
 - ✅ Core text parser + stdlib loading (incl. ailname attribute capture, arc 5)
 - ✅ Desugar / Typecheck / Translation (all 106/106 tests/minimal)
@@ -406,6 +431,23 @@ Lem is pinned to `https://github.com/septract/lem-lean#mdd/lean-backend`.
   `docs/2026-08-21_arc9-results.md` + the committed v2 survey
   inputs (`2026-08-21_iris-rules-automation-survey.md` + Lithium
   review + litreview brief).
+- ✅ WORKBENCH V2 (arc-11, "trace/replay, context laws, the package
+  rehearsal"): the walker engine v2 — structured trace IR + preview
+  (non-authoritative, negative-tested) + checked replay with
+  fingerprints (~15x vs cold discovery) + deterministic context
+  queries with typed residuals + `#app_eq_lint`, sealing-as-default;
+  the S2 hardening (three emitter defects fixed, kernel-side
+  closed-fact matching) broke the arc-9 park: the named suspect
+  DISSOLVED, k=0 45/79, symbolic-j route live, `entry5_walk` +
+  T5Iter env-lookup family committed in-build theorems. T5 itself
+  remains PARKED (proof-size gate row honestly PENDING); resumption
+  = R-S2-1 (fixture-independent, renumbering-compatible). THE
+  PACKAGE REHEARSAL ([USER] two-part design): relsem is its own
+  Lake package, gates re-homed fail-closed + plant-tested, the two
+  structural findings (forced exec-facing RelSemCore boundary;
+  root-module prefix resolution) banked as real-split design data.
+  Zero exec movement; zero lem changes. See
+  `docs/2026-08-22_arc11-results.md`.
 
 ## Conventions
 
