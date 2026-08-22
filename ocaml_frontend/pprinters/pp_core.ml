@@ -86,8 +86,6 @@ let precedence_pexpr = function
   | PEunion _
   | PEmemberof _
   | PEcall _
-  | PElet _
-  | PEif _
   | PEcfunction _
   | PEis_scalar _
   | PEis_integer _
@@ -119,6 +117,13 @@ let precedence_pexpr = function
       Some 6
   | PEop (OpOr,  _, _) ->
       Some 7
+  (* NOTE: `let` and `if` extend arbitrarily far to the right, so they
+     are parenthesised when printed as the operand of an operator
+     (without parentheses the re-parse would swallow the rest of the
+     surrounding expression into their last sub-expression) *)
+  | PElet _
+  | PEif _ ->
+      Some 8
 
 (* let precedence_expr = function
   | Epure _
@@ -646,7 +651,15 @@ let rec pp_expr expr =
         | Ewseq (pat, e1, e2) ->
             pp_let ~ctor:"let weak" pp pp pat e1 e2
         | Esseq (Pattern (_, CaseBase (None, BTy_unit)), e1, e2) ->
-            (pp e1 ^^^ P.semi) ^^ P.hardline ^^ (pp e2)
+            (* NOTE: constructs that extend arbitrarily far to the right are
+               parenthesised when sequenced (without parentheses the re-parse
+               would swallow `; e2` into the last sub-expression of e1) *)
+            let pp_e1 = match e1 with
+              | Expr (_, (Eif _ | Elet _ | Ewseq _ | Esseq _ | Esave _)) ->
+                  P.parens (pp e1)
+              | _ ->
+                  pp e1 in
+            (pp_e1 ^^^ P.semi) ^^ P.hardline ^^ (pp e2)
         | Esseq (pat, e1, e2) ->
             pp_let ~ctor:"let strong" pp pp pat e1 e2
         | Esave ((sym, bTy), sym_bTy_pes, e) ->
