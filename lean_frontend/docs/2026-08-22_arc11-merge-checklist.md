@@ -67,8 +67,13 @@ The arc-11 bar (S4 two-package structure — BOTH builds required):
 1. capped ROOT plain `lake build` (from `lean_frontend/`) — green,
    driver linked.
 2. capped RELSEM package plain `lake build` (from
-   `lean_frontend/relsem/`) — green WITH the three audit-gate info
-   lines (DAEMON absence, statement gate 16, axiom sweep 3021/0).
+   `lean_frontend/relsem/`) — green WITH the audit-gate info lines
+   (DAEMON absence, statement gate 16). [Amended at the audit-fix
+   commits: the axiom-sweep line is now #guard_msgs-PINNED in
+   Audit.lean at 3348/0 (A-F1 re-baseline — the T5 chain joined the
+   closure), so on a GREEN build the pin swallows it — its absence
+   from the build log is expected; a count change is a build
+   failure.]
 3. `./scripts/test_unit.sh` — exit 0 (builds both packages
    fail-closed; 7 unit tests; all check_* gates incl. the
    proof-size gate with its honestly-PENDING T5 row and the
