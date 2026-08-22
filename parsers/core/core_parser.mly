@@ -1601,6 +1601,9 @@ pexpr:
     { Pexpr ([Aloc (region ($startpos, $endpos) NoCursor)], (), PEundef (region ($startpos, $endpos) NoCursor, ub)) }
 | ERROR LPAREN str= STRING COMMA _pe= pexpr RPAREN
     { Pexpr ([Aloc (region ($startpos, $endpos) NoCursor)], (), PEerror (str, _pe))  }
+(* NOTE: --pp=core prints the error message as a C-like string literal *)
+| ERROR LPAREN str= CSTRING COMMA _pe= pexpr RPAREN
+    { Pexpr ([Aloc (region ($startpos, $endpos) NoCursor)], (), PEerror (str, _pe))  }
 | _cval= value
     { Pexpr ([Aloc (region ($startpos, $endpos) NoCursor)], (), PEval _cval) }
 | _sym= SYM
