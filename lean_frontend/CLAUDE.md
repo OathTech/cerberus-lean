@@ -142,7 +142,11 @@ oracle surface must equal the reviewed manifest
 `scripts/fork_drift_manifest.txt`, and the generated-OCaml
 fork-vs-upstream deltas must match their pinned hashes — spec:
 `notes/2026-08-21_fork-drift-review.md` §6; loud SKIP when the
-upstream remote or a generated tree is absent, fail-closed otherwise),
+upstream remote or a generated tree is absent, fail-closed otherwise;
+manifest state since arc-13 S1: `renumber=arc13` meta, 56 [files]
+entries incl. `ocaml_frontend/fork_renumber.ml`, the review's F-D
+SUSPECT family hashes re-pinned to the re-convergence deltas, and
+driver.ml reclassified cosmetic→semantic),
 and `check_proof_size.sh` (arc-9 S2: slate proof files within the
 250-line/40-manual-step bar, Kit files fixture-free — the mega-lemma
 counter, debug-only walker surfaces banned in committed (git-tracked)
@@ -333,7 +337,7 @@ Lem is pinned to `https://github.com/septract/lem-lean#mdd/lean-backend`.
   `runND_proxy` is implemented — hand-written `CerbND.runND`).
   Concurrency stubs remain the declared boundary.
 
-### Pipeline status (updated 2026-08-22, post arc-11 — see the arc results docs)
+### Pipeline status (updated 2026-08-22, post arc-13 — see the arc results docs)
 - ✅ C → Cabs JSON → Cabs types (100%)
 - ✅ Core text parser + stdlib loading (incl. ailname attribute capture, arc 5)
 - ✅ Desugar / Typecheck / Translation (all 106/106 tests/minimal)
