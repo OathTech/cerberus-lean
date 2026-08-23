@@ -453,3 +453,163 @@ arms (R3)
   instantly. Instance selection for parametric emission remains "do
   it deliberately" (S1-E5), now with: derive the bytes from the
   pure encoder, never by hand.
+
+### S4-E1 — "rest of the tree unchanged", stated two ways (the
+rotation-specific spec question)
+
+Rung/target/date/worker: R4, rotate_right (fresh authorship),
+2026-08-23, [AGENT:arc15-laneA-S4].
+Objects: Way 1 = the Form 1 statement family (observation =
+`encodeTree (rotateAt tree path)`, full-tree readback equality —
+`RotateSampleStatement` and friends); Way 2 = the kernel decomposition
+pair `TreeRot.rotateAt_as_replace` (rotation = replace the locus
+subtree by its rotation — unconditional, off-shape both sides
+identity) + `TreeRot.rotateAt_frame` (every subtree on a path
+DIVERGING from the rotation path is untouched — the frame clause as a
+pure theorem over `subtreeAt`), ~63 code lines, cones [propext] /
+[propext, Quot.sound].
+
+Verdict: **Way 1 stays THE STATEMENT; Way 2 is pure-layer/proof
+vocabulary — and that division is exactly right.** Grounds:
+
+* Way 1 keeps the observation-channel discipline intact: one wire
+  vocabulary, one mismatch-index space (the S2-E2 lesson), zero locus
+  vocabulary in the statement, and the statement never mentions
+  memory. It is also what the differential/fuzz lanes actually run.
+* Way 2 as a STATEMENT would need `subtreeAt`/`replaceAt` in
+  statement vocabulary plus a ∀ over diverging paths — heavier to
+  read, and its frame half asserts nothing the full readback doesn't
+  already imply (kernel-checked: the decomposition is DERIVABLE from
+  the model, so stating it buys no strength, only surface).
+* Way 2 reads BETTER as the human explanation of what rotation does
+  ("the locus rotates, the remainder is untouched") and as future
+  proof machinery — `rotateAt_frame` is precisely the shape a
+  representation-predicate/framing proof (P2, Iris party in the back)
+  wants, and CN-style modular contracts get it for free from
+  ownership. Register rule for the template note: full readback in
+  the statement; locus/frame decomposition in the pure layer, proved
+  once per modelFn.
+
+### S4-E2 — THE SEQUENCED-CALL RULE (exhaustive-mode ND economy;
+measured, idiom-library rule)
+
+The FIRST R4 instance blew a 120s oracle timeout at 6 nodes. Bisect
+(verbatim counts): a single `*link = rotate_right(*link);` statement
+makes the oracle's exhaustive mode enumerate 3 EXECUTIONS (the
+assignment's LHS lvalue walk is unsequenced with the RHS call); the
+leaf-tree harness showed 3 executions from that one site, and the
+per-site factor compounds — the 6-node instance never finished.
+Landing the call in a plain local first
+(`newsub = rotate_right(*link); *link = newsub;`) restores ONE
+execution; the fixed 6-node instance runs in 0.07s oracle-side. Same
+class inside the builder: `t->left = build_tree(...)` became
+`lch = build_tree(...); t->left = lch;`.
+
+RULE (harness idiom library): a call result always lands in a plain
+local before any member/deref store. Member stores whose RHS is a
+simple load (`t->left = l->right`) are FINE (measured — the TARGET C
+stays boring and untouched). The S3 append harness complied BY
+ACCIDENT (its C99 initializer style `struct int_list *new_tail =
+IntList_append(...)` is exactly the landed-local form); R4's C89
+declaration style exposed the trap. Register-worthy consequence: the
+harness template's C dialect choices are DIFFERENTIAL-BUDGET choices,
+not style.
+
+### S4-E3 — the recursive idiom trio + per-TU pinning at six procs
+(the template's demonstration-of-completeness rung)
+
+* The R3 in-main iterative builder/walker does not extend to trees;
+  the R4 trio is RECURSIVE HELPER PROCEDURES (scan_tree /
+  build_tree / serialize_tree / free_tree) — the first speclab
+  harness with procs beyond target+main. The S3
+  validate-before-build discipline survives recursion (scan_tree
+  allocates nothing; malformed input never allocates), and the
+  serializer's cap guard (253 arm) now doubles as CYCLE protection —
+  a cycle-creating target variant is counted out at 32 nodes, never
+  a hang, and teardown runs only on serializer-validated trees.
+* The S3 symbol-numbering-coupling finding bites PER HELPER: the
+  root/deep/build TUs (structurally different mains) are pinned
+  WHOLE from their own dumps — 6 decls each, `TUSyms` symbol sets
+  per TU in the file assembly; the plant TUs share the healthy
+  helper numbering (byte-identical, ASSERTED at emission with a loud
+  error). Cost of a verbatim path instance: ~6 pinned decls ≈ 600
+  module lines; the module is 2.5k lines / 6.0 MB, ~90 s capped
+  compile — the S2-E6 "pinned terms are trees of defs" finding now
+  at TU scale.
+* THE POINTER-SELECTION STATEMENT FAMILY (S3-E3 promoted): the path
+  is model + stream data (`Input.path`, in-stream after the tree
+  code); the parametric family carries its path in choices[], and
+  `RotatePathSampleStatement` pins two further paths (root [],
+  depth-2 [l,l]) as verbatim instances — path selection is now
+  statement-level, not harness configuration. The C mechanism is the
+  parent-link walk (`struct node **link`), handing the target the
+  interior pointer and storing the returned subtree root back
+  through the link exactly as a real caller would.
+* Documented deviation (S1-E4 register rule): the spliced arrays are
+  block-scope but NOT `const` this rung — helper procs take
+  `unsigned char *`, and a const-qualified pointee would drag
+  pointer-to-const qualifiers into hand-pinned funinfo for zero
+  statement value; nothing writes the arrays.
+
+### S4-E4 — fresh authorship + the CN comparison column (R4 entry)
+
+* CORPUS REASONING (recorded per the charter): deps/cn/tests/cn has
+  NO rotation target (searched 2026-08-23: zero `rotate` hits; the
+  tree family is tree_rev01.c — a mirror mutator on
+  `struct tree_node {int v; *left; *right}` — and tree16/* 16-ary
+  trees). rotate_right is therefore FRESH AUTHORSHIP (the operator's
+  worked example); the struct shape follows the corpus
+  int-binary-tree reference (tree_rev01.c), per the charter's shape
+  note. The harness header records an informal CN-style contract
+  (`requires take T = Tree(t); ensures take T2 = Tree(return);
+  T2 == rotate_right_spec(T)`) as the comparison-column anchor.
+* The CN-vs-us column therefore INVERTS at this rung: there is no CN
+  spec to mirror — the harness statement IS the only spec, and the
+  things R1-R3 recorded as "beyond CN" (capacity Wf, leak conjunct,
+  closed-program observation) are here the whole story. What a CN
+  treatment would add back: shape-parametric ∀ via the Tree
+  predicate's recursion (our registered wall) and modular framing
+  (our Way-2 pure lemmas).
+
+### S4-E5 — plant signatures: THE LEAK-CLASS SEPARATION
+
+* The two charter plants split the failure space on BOTH observables
+  for the first time: the WRONG-CHILD-SWAP plant is a content/
+  structure break with NO leak (verdict 7 = the locus val's first
+  wire byte; final allocations = baseline — `swapPlant_size` is the
+  pure face), while the DROPPED-SUBTREE plant is a structural break
+  in the 255 length arm AND leaks exactly the orphaned middle
+  subtree (baseline + 1 at the pinned instance; `dropPlant_size` /
+  `orphanedAt`). A verdict-only harness family could not tell a
+  leak-free break from a leaking one — the leak conjunct's value is
+  DEMONSTRATED, not asserted.
+* Blind spots documented + demonstrated as predicted-green twins:
+  swap at the self-similar locus `node a (node a L L) L` (swap =
+  rotation there — kernel-checkable coincidence class) and at every
+  off-shape locus (both plants keep the target's guards); drop when
+  the locus's `l->right` is already null (`t->left = 0` IS the
+  healthy assignment) and at off-shape paths. Plant sample selection
+  avoids the blind set; the blind spots ride the --plant lane as
+  green twins per the S2-E5 rule.
+* Malformed arms extended to the recursive code: truncated children,
+  bad presence byte, missing path count, path over cap, bad path
+  bit, trailing junk, and the 32-node over-capacity spine — all at
+  254, both pipelines, no allocation (scan-before-build).
+
+### S4-E6 — frictions (register-worthy)
+
+* THE CAPACITY CORNER WAS INITIALLY FAKE: `completeT 4` is a
+  4-LEVEL tree (15 nodes), not the 31-node cap — a levels-vs-edges
+  confusion; caught during probing when the longest sweep sample
+  printed only 15 nodes. Fixed to `completeT 5` (= exactly capN =
+  31 nodes, depth-4-in-edges, with a depth-4 path). The S3-E5
+  "sweep the corners" lesson now has a corollary: VERIFY the corner
+  is the corner (the sweep set's max should be computed against the
+  cap, not assumed).
+* `emitTreeTU` first emitted `{pfx}MainSym` twice (explicitly + via
+  emitDeclH) — caught by Lean's duplicate-declaration error at
+  first compile; harmless class, but a reminder that the emitter's
+  per-TU plan composes helper emitters that each own their naming.
+* Sandbox note re-confirmed: /tmp is write-only under the nono
+  profile (S0 note); scratch stays under the worktree
+  (`.s4-probes/`, deleted before the batch-3 commit).

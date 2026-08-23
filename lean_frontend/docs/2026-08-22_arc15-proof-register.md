@@ -346,3 +346,115 @@ What R3 cannot yet state, and what each waits on:
      alongside the filing drafts). Until then the leak lane's
      epistemic status is: Lean-side measured, pure-predicted,
      logic-refutable — not cross-checked against OCaml.
+
+All S4 grades are SPECULATIVE per the charter. Target C: rotate_right
+= 10 LOC (signature + body + braces, derived); harness C ≈ 145 LOC
+(the recursive helper trio ≈ 80 + main ≈ 55, comments excluded; the
+first speclab harness with helper procedures).
+
+### S4-P5 — pure-transport at a RECURSIVE model (fourth grading: the
+trend check)
+
+What landed kernel-checked entirely in pure land at R4: the tree
+codec's full law set (fuel-indexed decoder + `decodeTreeF_mono` +
+round trip + canonicity + the path codec, ~200 lines — LIBRARY: any
+presence-bit-coded structure family reuses the fuel pattern), the
+two-codec bridge through a RECURSIVE self-delimiting code
+(`model_forall_iff_stream_forall` — the S1-S3 proof shape survived
+recursion unchanged), the locus-walk algebra (`applyAt` generic in
+the locus operation — healthy target and both plants are
+INSTANCES), ALLOCATION NEUTRALITY (`rotateAt_size` — the leak
+statement's pure face), the plant accounting (`swapPlant_size`:
+leak-free break; `dropPlant_size`: result + orphaned = input — the
+gate's baseline+1 is its instance), vals preservation
+(`rotateAt_valsOk` — readback exactness), the observation bound
+(`expectedBytes_fits` — the out[] capacity as a lemma), and the
+S4-E1 decomposition pair (`rotateAt_as_replace` + `rotateAt_frame`,
+~63 lines, counted as the experiment).
+
+(a) proof-lines/C-line: 3 — marginal per-target pure content ≈ 80
+    theorem+proof code lines / 10 LOC ≈ 8/LOC. THE TREND BENDS at
+    the tree rung: 7 (R1) → 3 (R2) → 3 (R3) → 8 (R4). Honest
+    decomposition: the model is RECURSIVE for the first time, so
+    every preservation fact costs a path-generalizing induction, and
+    the rung carries THREE locus operations (healthy + two plants)
+    each with size/vals accounting — per-locus-operation cost ≈ 25
+    lines ≈ 2.5/LOC, roughly the R2/R3 flat rate; the bend is the
+    OPERATION COUNT, not a per-fact blowup. The generic `applyAt`
+    lemmas (size/valsOk/frame parametric in f) are paid once and
+    amortize over any future locus-operation family.
+(b) re-pin robustness: 5 — unchanged; zero pure lemmas name program
+    terms (the sequenced-call template fix and the capacity-corner
+    fix touched zero pure proofs).
+(c) mechanization: 3 — unchanged (split/simp/omega/induction;
+    statements hand-written; the fuel-decoder proofs are the rung's
+    manual-labor peak at ~30 lines each).
+(d) elaboration pressure: 5 — all pure proofs at default budgets,
+    milliseconds; no set_option anywhere.
+(e) C-shape realism: 5 — a recursive heap structure, path-indexed
+    interior pointers, recursive C helpers, allocation-neutral
+    mutation, and a two-class plant space all transported; the pure
+    layer's ceiling is STILL not found. The open question after four
+    rungs is no longer whether pure transport scales over structure
+    complexity (it does) but over OPERATION COUNT per structure —
+    the buddy allocator's operation family is the real test.
+(f) parallelizability: 5 — unchanged.
+Evidence sentence: every R4 kernel theorem except the parked exec
+equations lives in pure land at default budgets; the marginal cost
+bent to 8/LOC for a measured, structural reason (three locus
+operations on a recursive model at ~2.5/LOC each), and the leak
+lane's two predictions (baseline, baseline+1) each fell out of a
+one-induction size lemma.
+
+### S4-P1 — walker/certificate (re-priced at R4; not attempted —
+the wall stays parked, per scoping)
+
+Measured grounds refreshing the price: rotate_a.core = 5,638 lines
+(main ≈ 2,210 + FIVE further procs) vs applist_a's 4,424 and the T5
+fixture's 172 — the R4 flagship is ~33x the largest walked fixture.
+NEW law surfaces beyond S3's list: a FIVE-proc call graph (main →
+scan/build/serialize/free, each recursive; build_tree is doubly
+recursive with depth ≤ 31 — the call-depth induction the S3 register
+anticipated now composes across procs), and parent-link
+pointer-to-pointer stores (`*link = …` through `struct node **`).
+NOTABLE ABSENCE: zero new Core CONSTRUCTS — the R4 emitter needed no
+new pp surface at all (first rung with an empty fidelity delta),
+i.e. the Core construct vocabulary has SATURATED for this program
+class; what grows is round count and call structure, exactly the
+walker's amortization axis. Price: unchanged L, after Lane B/T5;
+campaign order unchanged (R1/R2 first, tree last).
+
+### S4-P2 — Iris WP + adequacy (the note completes)
+
+R4 is where the WP route's representation predicates become the
+natural vocabulary: the builder invariant IS the Tree representation
+predicate (container doctrine), `rotateAt_frame` is the frame rule's
+pure shadow, and a modular rotate_right triple would discharge all
+six healthy instances without walking any 2,210-line main. Still
+deferred (consumes the same parked app equations); recorded as the
+natural SECOND target (after R3's append) when the exec-equation
+campaign lands — with the boring statement in front unchanged.
+
+### S4-N — the R4 statement-shape ledger (registered precisely)
+
+What R4 states today: sample-∀ over 4 pinned-shape models (24-param
+parametric term ⇒ the fixed-shape family-∀, 256^24 instances, is the
+exec campaign's natural endpoint — statement side complete) + the
+pointer-selection path family (2 verbatim path instances + the
+in-stream parametric path) + the build-only builder-correctness
+instance + the full leak family (healthy/path/build at baseline,
+swap plant at baseline, drop plant at baseline+1 — the two-observable
+plant separation stated, not just measured).
+
+What R4 cannot yet state, and what each waits on:
+  1. FIXED-SHAPE FAMILY-∀: waits only on the parked exec-equation
+     campaign (price L, after Lane B/T5).
+  2. SHAPE/PATH-PARAMETRIC ∀ (∀ t p, Wf ⟨t,p⟩ → …): the R2/R3 wall
+     (symbolic-ARITY initializers + T5 symbolic-n + recursion depth)
+     now PLUS the PATH dimension (the walk loop's trip count and the
+     locus's position both vary with p — a fourth symbolic axis).
+     Deliberately not attempted.
+  3. THE LEAK CONJUNCT'S ORACLE LEG: unchanged from S3-N item 3 (an
+     oracle --batch allocation-census line, est. S, fork-side,
+     upstream-tray candidate). The R4 leak lane doubles the stakes —
+     the plant-class separation is only Lean-side observable.

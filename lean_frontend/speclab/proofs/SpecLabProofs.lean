@@ -32,6 +32,7 @@ SpecLab lib (see SpecLabAudit.lean pins).
 import SpecLab.DivModFiles
 import SpecLab.ByteArrFiles
 import SpecLab.ListAppendFiles
+import SpecLab.TreeRotFiles
 import RelSem.Machine
 import RelSem.RunND
 
@@ -211,6 +212,76 @@ theorem linkPlantLeak_refutes_leakFree
   exact finalAllocs_exclusive appendLinkPlantFile
     (driverBaseline + 1) driverBaseline (by decide) hne ⟨hleak, h0⟩
 
+/-! ## arc-15 S4 (R4): the tree plants' refutation schemas.
+    `harnessRunsTo_exclusive` and `finalAllocs_exclusive` transfer
+    once more (rung-independent — the S2-P5b finding, third
+    confirmation); the drop plant gets BOTH refutation faces (verdict
+    AND leak), and the swap plant demonstrates the observable's
+    separation: its leak face is the BASELINE (leak-free broken
+    target), so only its verdict refutes. Epistemic status as at
+    S1-S3: the exec equations delivering the refuting facts are
+    parked (the exec-equation campaign); the gate exe checks them
+    EXECUTABLY today (Specified(7) / Specified(255) / allocations
+    baseline+1). -/
+
+open SpecLab.TreeRot in
+/-- The wrong-child-swap plant refutes the healthy claim once the
+parked exec equation delivers `HarnessRunsTo swapPlantFile 7` (the
+locus val's first wire byte — the mismatch index localizes the
+un-rotated node). -/
+theorem swapPlantClaim_refuted_of_run
+    (hne : ∃ out tr st',
+      (out, tr, st') ∈
+        CerbND.runND
+          (drive swapPlantFile.tagDefs false swapPlantFile
+            ["cmdname"])
+          (initial_driver_state swapPlantFile
+            CerbFS.fs_initial_state))
+    (h7 : HarnessRunsTo swapPlantFile 7) :
+    ¬ SwapPlantHealthyClaim := by
+  intro h0
+  exact harnessRunsTo_exclusive swapPlantFile 7 0 (by decide) hne
+    ⟨h7, h0⟩
+
+open SpecLab.TreeRot in
+/-- The dropped-subtree plant refutes the healthy claim once the
+parked exec equation delivers `HarnessRunsTo dropPlantFile 255`
+(structural breaks land in the length arm). -/
+theorem dropPlantClaim_refuted_of_run
+    (hne : ∃ out tr st',
+      (out, tr, st') ∈
+        CerbND.runND
+          (drive dropPlantFile.tagDefs false dropPlantFile
+            ["cmdname"])
+          (initial_driver_state dropPlantFile
+            CerbFS.fs_initial_state))
+    (h255 : HarnessRunsTo dropPlantFile 255) :
+    ¬ DropPlantHealthyClaim := by
+  intro h0
+  exact harnessRunsTo_exclusive dropPlantFile 255 0 (by decide) hne
+    ⟨h255, h0⟩
+
+open SpecLab.TreeRot SpecLab.ListAppend in
+/-- The dropped-subtree plant's LEAK refutation: once the exec
+equation delivers the `baseline + 1` fact (the orphaned middle
+subtree — `TreeRot.orphanedAt` = 1 at the pinned instance, checked
+executably by the gate exe), the plant's leak-free claim is REFUTED
+— rotation's allocation-neutrality conjunct is anti-vacuous at the
+logic level. -/
+theorem dropPlantLeak_refutes_leakFree
+    (hne : ∃ out tr st',
+      (out, tr, st') ∈
+        CerbND.runND
+          (drive dropPlantFile.tagDefs false dropPlantFile
+            ["cmdname"])
+          (initial_driver_state dropPlantFile
+            CerbFS.fs_initial_state))
+    (hleak : DropPlantLeakClaim) :
+    ¬ HarnessFinalAllocs dropPlantFile driverBaseline := by
+  intro h0
+  exact finalAllocs_exclusive dropPlantFile
+    (driverBaseline + 1) driverBaseline (by decide) hne ⟨hleak, h0⟩
+
 /-! ## In-build axiom pins (captured verbatim at S1; growth fails the
     build — the SpecLabAudit discipline, proofs-side). -/
 
@@ -242,5 +313,11 @@ info: 'SpecLabProofs.appendElemPlantClaim_refuted_of_run' depends on axioms: [pr
 #guard_msgs in #print axioms SpecLabProofs.finalAllocs_exclusive
 /-- info: 'SpecLabProofs.linkPlantLeak_refutes_leakFree' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLabProofs.linkPlantLeak_refutes_leakFree
+/-- info: 'SpecLabProofs.swapPlantClaim_refuted_of_run' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLabProofs.swapPlantClaim_refuted_of_run
+/-- info: 'SpecLabProofs.dropPlantClaim_refuted_of_run' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLabProofs.dropPlantClaim_refuted_of_run
+/-- info: 'SpecLabProofs.dropPlantLeak_refutes_leakFree' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLabProofs.dropPlantLeak_refutes_leakFree
 
 end SpecLabProofs
