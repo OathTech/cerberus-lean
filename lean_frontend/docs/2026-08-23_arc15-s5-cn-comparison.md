@@ -48,9 +48,13 @@ Consequences, honestly stated:
   (harnesses-are-programs). See §3.1 — this produced a real finding
   at R1.
 * CN's guarantees are per-function and compose; ours are per-program
-  and OBSERVED — but end-to-end against the C semantics itself,
-  kernel-checked, with the oracle differentially in the loop for
-  every instance.
+  and OBSERVED — end-to-end against the C semantics itself, with
+  the oracle differentially in the loop for every instance. The
+  kernel-checked layer today is the pure models, the model↔stream
+  bridges, and the conditional refutation schemas; the exec
+  equations that would make the per-program claims unconditional
+  kernel theorems are parked-priced with the exec-equation campaign
+  [audit-1 MAJOR-1 precision].
 
 Both directions are load-bearing for the north star: at Linux scale
 we need CN-style modularity IN THE PROOF LAYER (P2's representation

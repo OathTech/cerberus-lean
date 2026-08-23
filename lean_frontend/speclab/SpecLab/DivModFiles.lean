@@ -135,7 +135,12 @@ def specifiedInt (n : Int) : value :=
 /-- THE EXEC HEADLINE SHAPE: every outcome the production runner
 enumerates for the driver run of `f` (the Main.lean entry: `drive`
 with the default `["cmdname"]` args on the default filesystem) is
-`Active` with the given `Specified` verdict. -/
+`Active` with the given `Specified` verdict.
+DELIBERATE DIVERGENCE from Main.lean (audit-1 MINOR-1): Main.lean:866
+drives with the ambient `CerbTags.tagDefs ()` where this statement
+passes `f.tagDefs` — the self-contained form is better statement
+material (no ambient state in the Prop); behaviorally validated at
+every pinned instance by the gate exes against both real pipelines. -/
 def HarnessRunsTo (f : file core_run_annotation) (verdict : Int) : Prop :=
   ∀ (out : nd_status driver_result driver_error driver_state)
     (tr : List String) (st' : driver_state),
