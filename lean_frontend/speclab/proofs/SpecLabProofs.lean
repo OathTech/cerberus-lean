@@ -31,6 +31,7 @@ SpecLab lib (see SpecLabAudit.lean pins).
 
 import SpecLab.DivModFiles
 import SpecLab.ByteArrFiles
+import SpecLab.ListAppendFiles
 import RelSem.Machine
 import RelSem.RunND
 
@@ -132,6 +133,84 @@ theorem getarrPlantClaim_refuted_of_run
   exact harnessRunsTo_exclusive getarrPlantFile 1 0 (by decide) hne
     ⟨h1, h0⟩
 
+/-! ## arc-15 S3 (R3): the list plants' refutation schemas + the
+    LEAK layer's exclusivity. `harnessRunsTo_exclusive` transfers
+    again (rung-independent, the S2-P5b finding); the leak conjunct
+    gets its own exclusivity lemma — the final allocation count is a
+    FUNCTION of the outcome, so distinct counts refute each other on
+    any nonempty run: the wrong-link plant's `baseline + 1` fact
+    refutes its leak-free claim by logic, not just measurement. -/
+
+open SpecLab.ListAppend in
+/-- The wrong-link plant refutes the healthy claim once the parked
+exec equation delivers `HarnessRunsTo appendLinkPlantFile 255` (the
+structural break's length-arm verdict; the gate exe checks it
+executably today). -/
+theorem appendLinkPlantClaim_refuted_of_run
+    (hne : ∃ out tr st',
+      (out, tr, st') ∈
+        CerbND.runND
+          (drive appendLinkPlantFile.tagDefs false appendLinkPlantFile
+            ["cmdname"])
+          (initial_driver_state appendLinkPlantFile
+            CerbFS.fs_initial_state))
+    (h255 : HarnessRunsTo appendLinkPlantFile 255) :
+    ¬ AppendLinkPlantHealthyClaim := by
+  intro h0
+  exact harnessRunsTo_exclusive appendLinkPlantFile 255 0 (by decide) hne
+    ⟨h255, h0⟩
+
+open SpecLab.ListAppend in
+/-- The wrong-element plant refutes the healthy claim once the parked
+exec equation delivers `HarnessRunsTo appendElemPlantFile 3`. -/
+theorem appendElemPlantClaim_refuted_of_run
+    (hne : ∃ out tr st',
+      (out, tr, st') ∈
+        CerbND.runND
+          (drive appendElemPlantFile.tagDefs false appendElemPlantFile
+            ["cmdname"])
+          (initial_driver_state appendElemPlantFile
+            CerbFS.fs_initial_state))
+    (h3 : HarnessRunsTo appendElemPlantFile 3) :
+    ¬ AppendElemPlantHealthyClaim := by
+  intro h0
+  exact harnessRunsTo_exclusive appendElemPlantFile 3 0 (by decide) hne
+    ⟨h3, h0⟩
+
+open SpecLab.ListAppend in
+/-- LEAK EXCLUSIVITY: distinct final-allocation counts are mutually
+exclusive on any nonempty run — the leak observable cannot be
+vacuously "leak-free" while the map size says otherwise. -/
+theorem finalAllocs_exclusive (f : file core_run_annotation)
+    (a b : Nat) (hab : a ≠ b)
+    (hne : ∃ out tr st',
+      (out, tr, st') ∈
+        CerbND.runND (drive f.tagDefs false f ["cmdname"])
+          (initial_driver_state f CerbFS.fs_initial_state)) :
+    ¬ (HarnessFinalAllocs f a ∧ HarnessFinalAllocs f b) := by
+  rintro ⟨ha, hb⟩
+  obtain ⟨out, tr, st', hmem⟩ := hne
+  exact hab ((ha out tr st' hmem).symm.trans (hb out tr st' hmem))
+
+open SpecLab.ListAppend in
+/-- The wrong-link plant's LEAK refutation: once the exec equation
+delivers the `baseline + 1` fact (the orphaned node; checked
+executably by the gate exe), the plant's leak-free claim is REFUTED
+— the teardown conjunct is anti-vacuous at the logic level. -/
+theorem linkPlantLeak_refutes_leakFree
+    (hne : ∃ out tr st',
+      (out, tr, st') ∈
+        CerbND.runND
+          (drive appendLinkPlantFile.tagDefs false appendLinkPlantFile
+            ["cmdname"])
+          (initial_driver_state appendLinkPlantFile
+            CerbFS.fs_initial_state))
+    (hleak : LinkPlantLeakClaim) :
+    ¬ HarnessFinalAllocs appendLinkPlantFile driverBaseline := by
+  intro h0
+  exact finalAllocs_exclusive appendLinkPlantFile
+    (driverBaseline + 1) driverBaseline (by decide) hne ⟨hleak, h0⟩
+
 /-! ## In-build axiom pins (captured verbatim at S1; growth fails the
     build — the SpecLabAudit discipline, proofs-side). -/
 
@@ -145,5 +224,23 @@ theorem getarrPlantClaim_refuted_of_run
 #guard_msgs in #print axioms SpecLabProofs.memcpyPlantClaim_refuted_of_run
 /-- info: 'SpecLabProofs.getarrPlantClaim_refuted_of_run' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLabProofs.getarrPlantClaim_refuted_of_run
+/--
+info: 'SpecLabProofs.appendLinkPlantClaim_refuted_of_run' depends on axioms: [propext,
+ runEffectful,
+ Classical.choice,
+ Quot.sound]
+-/
+#guard_msgs in #print axioms SpecLabProofs.appendLinkPlantClaim_refuted_of_run
+/--
+info: 'SpecLabProofs.appendElemPlantClaim_refuted_of_run' depends on axioms: [propext,
+ runEffectful,
+ Classical.choice,
+ Quot.sound]
+-/
+#guard_msgs in #print axioms SpecLabProofs.appendElemPlantClaim_refuted_of_run
+/-- info: 'SpecLabProofs.finalAllocs_exclusive' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLabProofs.finalAllocs_exclusive
+/-- info: 'SpecLabProofs.linkPlantLeak_refutes_leakFree' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLabProofs.linkPlantLeak_refutes_leakFree
 
 end SpecLabProofs

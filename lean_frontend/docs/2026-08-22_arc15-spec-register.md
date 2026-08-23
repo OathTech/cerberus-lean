@@ -286,3 +286,170 @@ length-0 (documented-negative-space entries)
   helpers bind c0 c1 c2 uniformly; helpers without sites don't
   reference them) — cosmetic, generated-file-local, noted per the
   no-silent-config rule.
+
+### S3-E1 — comparator-in-C vs serialize-then-judge-in-Lean, same
+list property (the charter-named R3 head-to-head)
+
+Rung/target/date/worker: R3, deps/cn append.c IntList_append,
+2026-08-22, [AGENT:arc15-laneA-S3].
+Objects: `appendTemplate` (Form 1: C comparator, verdict =
+mismatch index) vs `appendForm2Template` (Form 2: C serializes the
+walked result to stdout, the JUDGE is the Lean/pure side — statement
+asserts `stdout = render3(expectedBytes m) ++ "\n"`). Lanes: Form 1
+sweep 125/125 + fuzz 150; Form 2 6/6 byte-identical stdout (both
+pipelines vs pure render).
+
+Verdict: **Form 1 stays the default at the heap rung; Form 2's value
+grows with structure size but its costs are unchanged.** Findings:
+
+* Statement weight: Form 1's claim is one scalar (`Specified(0)`),
+  with the shared comparator + `verdictOf_eq_zero_iff` carrying the
+  equality meaning; Form 2's claim is a string equation whose RHS is
+  a pure render — arguably the more direct "serialize-then-judge"
+  reading (the C carries NO judgment at all, so the harness C is
+  simpler: no expected[] consultation in the verdict path), but the
+  trust surface grows (libc mode: libc.co + stdio + the S1-E1
+  newline discipline).
+* Localization: Form 1's index localizes in one token (elem plant →
+  `Specified(3)` = element 0's low byte); Form 2 shows THE WITNESS
+  (the whole serialized list, human-readable decimal) — at R3 sizes
+  (14-66 obs bytes) that witness is genuinely readable in the batch
+  log, which it wasn't for scalars. Diagnostic ranking unchanged
+  from S1-E1 (Form 2 > Form 1 > boolean), default unchanged.
+* The judge's location is the real axis: comparator-in-C keeps the
+  differential observable tiny and nolibc; judge-in-Lean moves the
+  comparison INTO the statement (good: less C to audit per family;
+  bad: the stdout observable depends on libc buffering discipline).
+  For the CN warm-up slate: Form 1 default, Form 2 as the diagnostic
+  lane exactly as S1 graded it.
+
+### S3-E2 — the builder/walker/comparator idiom trio + the
+build-only harness (builder correctness as a program)
+
+Objects: `buildPhases` / `walkSerialize` / `teardownResult`
+(template-composable C fragments — ListAppendHarness composes all
+five templates from them by plain `++` of literals), and
+`buildOnlyTemplate` (builder + walker, NO call: `expected =
+choices`, the builder-walker round trip through the heap made a
+runnable program; pinned as `BuildOnlyStatement`, gate-checked
+Specified(0) + leak-checked at baseline).
+
+Verdict: **kept — the R3 idiom library shape.** The build-only
+harness is the cheap trick of the rung: it turns "builder
+correctness" (an obligation about heap states that the
+statement-TCB rightly cannot mention) into an ordinary harness
+statement (`expected[] = choices[]`), giving the builder its own
+plant surface and its own leak conjunct with ZERO new statement
+vocabulary. The walker's CAP GUARD (253 overlong arm) is what keeps
+every plant variant total (a cyclic plant cannot hang the harness).
+Register rule: the walk cap (16) and the 252 allocator-refusal arm
+are model-side unreachable, documented as totality arms, exercised
+never in healthy lanes (their absence from the sweep logs is by
+design; the malformed lane exercises 254 on both pipelines).
+
+### S3-E3 — the pointer-selection idiom prototype (the R4 on-ramp)
+
+Objects: `appendAtTemplate` + `AtInput`/`atModelFn` (stream = u8
+walk index k ++ the two-list layout; validity k < |xs|); lane `--at`
+10/10 both pipelines (front/middle/back indexes, boundary heads,
+k=7 deep walk).
+
+Verdict: **the interior-pointer pattern works exactly as the
+template note designed it** — choices select a PATH, the harness
+walks its own built structure and hands the target the interior
+pointer it arrives at; pointer VALUES never appear in the stream;
+teardown partitions cleanly (k prefix nodes + the result walk, no
+double-free because append reuses suffix nodes). Model face is
+`drop k xs ++ ys` — pure, first-order. This is the R4 (tree
+rotation, path-selected subtree argument) mechanism, prototyped
+differentially; pinning it as a statement family is deliberately
+deferred to R4 (where the path selection is the POINT of the rung).
+
+### S3-E4 — CN-vs-us comparison column (R3 entry) + the corpus
+walker gap
+
+* IntList_append: CN's requires/ensures are the two IntList
+  resources + `L3 == append(L1, L2)` — the postcondition IS a pure
+  recursive function, and our model collapse (`modelFn = xs ++ ys`,
+  `append_is_model = rfl`) mirrors it directly: the R3 comparison
+  is the closest yet (CN's seq datatype ≅ List Int, CN's append ≅
+  List.append). Our Wf again adds what CN never states: the
+  capacity bounds (8/8, the closed-program realization ceiling) and
+  the i32 range CN carries in its datatype (`i32 head`).
+* What we state BEYOND CN at this rung: interpreter-only
+  LEAK-FREEDOM (final allocation map at driver baseline after
+  teardown). CN's ownership discipline makes leak-freedom implicit
+  in the resource accounting (returning `take L3 = IntList(return)`
+  means exactly the result's cells are owned); our closed-program
+  form states it as an outcome-level scalar. Honest note: CN gets
+  it per-function and modularly; we get it per-program and
+  observably.
+* CORPUS GAP (selection reasoning, recorded): deps/cn/tests/cn has
+  NO read-only list walker with functional content (list_rev01's
+  predicate yields only a length; reverse/mergesort are mutators).
+  The read-only-walker slot of the R3 charter line is filled by the
+  harness's own serializer (idiom library), not a corpus target.
+
+### S3-E5 — plant signatures, blind spots, and the negative-space
+arms (R3)
+
+* STRUCTURAL breaks land in the LENGTH ARM: the wrong-link plant's
+  serialized count diverges before any content index, so its
+  verdict is 255 (not 1+i) — measured in the S3 probes and pinned.
+  The register lesson: at heap rungs the mismatch-index space
+  splits into a STRUCTURE signature (length arm) and a CONTENT
+  signature (1+i), and plant prediction must model both
+  (`linkPlantVerdict` returns 255 via the same shared verdictOf).
+* Blind spots documented + demonstrated as predicted-green twins:
+  wrong-link at xs = [] and |xs| = 1 (the singleton case makes
+  `xs->tail = ys` CORRECT — a plant that is accidentally right, the
+  sharpest vacuity trap of the rung); wrong-element at xs = [].
+  Plant sample selection avoids the blind set (|xs| = 2, 3).
+* The wrong-element plant uses `^ 1` (not `+ 1`): INT_MAX + 1 would
+  make the plant a UB program — harnesses-are-programs binds PLANTS
+  too. Pure face: `xorOne` (evens up, odds down, incl. negatives),
+  `xorOne_inRange`, and `xorOne_ne` (the low wire byte always
+  flips — the plant cannot hide behind the codec).
+* Malformed arms (254) extended to the two-list layout: short first
+  list, over-cap count, missing second prefix, trailing junk — all
+  four differentially exercised.
+* THE CAPACITY-CORNER CATCH (lane working as designed): the first
+  build-only sweep went red at (8,8) — a real out[] overrun (66 <
+  68 build-only observation bytes), caught because the sweep
+  includes the capacity corner; both pipelines refused
+  identically. Fixed (out[68]); the S2-E5 lesson (sweep the
+  corners) re-confirmed with a live catch.
+
+### S3-E6 — frictions (register-worthy)
+
+* SYMBOL-NUMBERING COUPLING: a TU's fresh symbol numbers depend on
+  the WHOLE TU — the build-only main's different structure shifts
+  the (textually identical) target's internal symbols, so the
+  build-only dump's target must be pinned from ITS OWN dump
+  (`intListAppendBuildDecl`), and cross-dump target-identity
+  assertions hold only across structurally identical mains
+  (a/b/d/c). Pinning multi-decl TUs = pinning per-TU, not per-decl.
+* The R3 dumps reach `all_values_representable_in` (pointer
+  conversion checks) — not in the divmod std closure; discovered by
+  the loud unknown-function error, added to the pinned closure
+  (+ malloc_proxy/free_proxy). The fail-closed closure discipline
+  worked as designed.
+* AMBIENT TAG STATE: the first speclab rung with structs hits the
+  with_tagDefs boundary — the gate exe must install
+  `CerbTags.setTagDefsIO f.tagDefs` before running (Main.lean
+  set/reset pattern; relsem T4 precedent). The STATEMENTS are
+  unaffected (the axiom is part of the declared boundary; cones
+  unchanged).
+* VALUE-aliasing vs POINTER-aliasing honesty: the sweep's ys = xs
+  shapes are value-aliasing only — the two-builder codec CANNOT
+  express pointer aliasing (xs and ys sharing nodes), which is a
+  REAL gap vs CN's separation discipline (where non-aliasing is a
+  resource fact, and aliased calls are simply outside the spec).
+  Register note for the escape-hatch ledger: aliased-input append
+  is UB-adjacent territory the harness family deliberately does not
+  quantify over.
+* My first d/b instance byte patterns were mis-derived by hand
+  (hex arithmetic); the zip's unknown-triple error caught both
+  instantly. Instance selection for parametric emission remains "do
+  it deliberately" (S1-E5), now with: derive the bytes from the
+  pure encoder, never by hand.

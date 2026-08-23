@@ -237,3 +237,112 @@ The statements the rung CANNOT yet make, and what each waits on:
   3. The TEMPLATE bound itself (cap = 16, u16 prefix admits 65535):
      raising cap is a template re-render + re-pin, mechanical; the
      16 ceiling is a fixture-economy choice, not a technical wall.
+
+All S3 grades are SPECULATIVE per the charter. Target C:
+IntList_append = 13 LOC (signature + body + braces, derived; CN
+annotations excluded); harness C ≈ 95 LOC (append Form 1) / 100 LOC
+(build-only).
+
+### S3-P5 — pure-transport at a HEAP-STRUCTURE model (third grading:
+does the ≈3/LOC trend hold?)
+
+What landed kernel-checked entirely in pure land at R3: the
+conditional array round trip (Codec.decodeElems_encodeElems_of /
+decode_encode_arrayU16_of, ~55 lines — LIBRARY, the range-conditioned
+element form any int-element codec will reuse), the two-codec
+sequence bridge (decode/encode/canonicity through TWO length-prefixed
+lists + `model_forall_iff_stream_forall` — the S1/S2 proof shape
+survived composition unchanged), THE COLLAPSE AGAIN
+(`append_is_model = rfl`: the CN postcondition's functional content
+IS the model — third rung, now for a heap mutator), the plant models'
+soundness (`xorOne_inRange`/`xorOne_ne` — the plant's predicted index
+is structurally forced), and THE LEAK LAYER'S PURE FACE
+(`alloc_free_balance`: allocs = frees for the healthy target by
+`length_append`; `linkSkip_leaks`: the wrong-link plant orphans
+exactly |xs| − 1 nodes — the gate's measured `baseline + 1` is this
+theorem's instance at |xs| = 2).
+
+(a) proof-lines/C-line: 4 — per-target marginal pure content ≈ 34
+    theorem+proof lines / 13 LOC ≈ 3/LOC (derived: the 8 P5-section
+    theorems' code lines, docstrings excluded). THE TREND HOLDS:
+    7/LOC (R1) → 3/LOC (R2) → ~3/LOC (R3) with the library
+    thickening (the conditional-round-trip lemmas join Canonical as
+    paid-once codec algebra). The List-valued model cost NOTHING
+    over byte lists; the heap structure never appears in pure land
+    at all — that is the division of labor working.
+(b) re-pin robustness: 5 — unchanged; zero pure lemmas name program
+    terms (the out[68] template fix touched zero pure proofs).
+(c) mechanization: 3 — unchanged (simp/omega/induction; statements
+    hand-written).
+(d) elaboration pressure: 5 — all pure proofs at default budgets,
+    milliseconds.
+(e) C-shape realism: 5 (up from 4) — a real recursive heap mutator
+    with malloc'd nodes, interior pointers (the at-k prototype),
+    struct tag defs, and a leak conjunct all transported; the pure
+    layer's ceiling has not been found yet. R4's tree + path
+    selection is the next probe.
+(f) parallelizability: 5 — unchanged.
+Evidence sentence: every R3 kernel theorem except the parked exec
+equations lives in pure land at default budgets, the marginal
+per-target cost is flat at ~3/LOC across three rungs, and the leak
+conjunct's red-lane prediction (`baseline + 1`) fell out of a
+2-line list lemma.
+
+### S3-P1 — walker/certificate (re-priced at R3; not attempted —
+the wall stays parked, per scoping)
+
+Measured grounds refreshing the price: applist_a.core = 4,424 lines
+(main ≈ 4,270 + IntList_append ≈ 140) vs memcpy_a's 2,092 and the T5
+fixture's 172 — the R3 flagship is ~26x the largest walked fixture
+and 2.1x R2's. NEW law surfaces beyond S2's list: `Alloc0`/Kill-
+dynamic rounds (the allocator proxies — the first DYNAMIC allocation
+lifecycle in any pinned family), PtrEq/PtrNe/PtrWellAligned memop
+rounds, RECURSIVE Eccall (IntList_append calls itself — the first
+non-tail recursive callee; the walk needs a call-depth induction the
+slate has never exercised), and struct member_shift addressing.
+Statement side remains walk-ready (parametric `appendMainParamDecl`
+= the symbolic-initializer route's input; 12 params). Price:
+unchanged L, sequenced after Lane B/T5; the recursion surface
+suggests the walker campaign should START at R1/R2 fixtures and
+reach R3 only after a callee-recursion lemma family exists.
+
+### S3-P2 — Iris WP + adequacy (assessed again, still not
+attempted; the note sharpens)
+
+R3 is the first rung where the WP route would DIFFERENTIATE: a
+modular callee spec for IntList_append (the CN contract, Iris-typed)
++ a representation predicate for IntList (the builder invariant IS
+the representation predicate — container doctrine) would discharge
+the sample statements without walking the 4,270-line main, and the
+recursion is exactly where WP's induction beats the walker's
+round-by-round chase. Still deferred (T1-T4's WP machinery consumes
+app equations the walker must first produce for THESE fixtures);
+recorded as the natural first target when the exec-equation campaign
+reaches R3 — with the boring statement in front unchanged.
+
+### S3-N — the R3 statement-shape ledger (registered precisely)
+
+What R3 states today: sample-∀ over 4 pinned (2,1)-shape models +
+2 pinned plants + the build-only instance, each with the leak
+conjunct stated (and executably checked); the parametric
+`appendMainParamDecl b0..b11` makes the FIXED-SHAPE family-∀ (256^12
+instances) the exec campaign's natural endpoint — statement side
+complete, nothing further needed there.
+
+What R3 cannot yet state, and what each waits on:
+  1. FIXED-SHAPE FAMILY-∀: waits only on the parked exec-equation
+     campaign (S1-P1/S2-P1/S3-P1, price L, after Lane B/T5).
+  2. LENGTH/SHAPE-PARAMETRIC ∀ (∀ xs ys, |xs| ≤ 8 → …): the R2 wall
+     unchanged (symbolic-ARITY initializers + T5 symbolic-n), now
+     PLUS the recursion-depth dimension (the callee's unfolding
+     count varies with |xs|). Deliberately not attempted (parked
+     wall stays parked).
+  3. THE LEAK CONJUNCT'S ORACLE LEG: the oracle batch surface
+     prints no allocation census — the leak observable is in-logic
+     + in-Lean-executable but not oracle-differential. Priced: an
+     oracle `--batch` final-allocation-count line (driver_ocaml
+     batch printer + the concrete memory model's allocation map
+     size; est. S, fork-side; candidate for the upstream tray
+     alongside the filing drafts). Until then the leak lane's
+     epistemic status is: Lean-side measured, pure-predicted,
+     logic-refutable — not cross-checked against OCaml.
