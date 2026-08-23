@@ -136,3 +136,17 @@ name = "speclab-tree-core-test"
 srcDir = "test"
 root = "SLUnit.TreeGateTest"
 moreLinkArgs = ["../native/fresh_int.o", "../native/debug.o", "../native/tags.o", "../native/md5.o"]
+
+# arc-15 S5: the R5 CN-seed term-emission instrument.
+[[lean_exe]]
+name = "speclab-emit-seed"
+srcDir = "test"
+root = "SLUnit.EmitSeedMain"
+moreLinkArgs = ["../native/fresh_int.o", "../native/debug.o", "../native/tags.o", "../native/md5.o"]
+
+# arc-15 S5: the CnSeedCore drift/param/exec gate.
+[[lean_exe]]
+name = "speclab-seed-core-test"
+srcDir = "test"
+root = "SLUnit.SeedGateTest"
+moreLinkArgs = ["../native/fresh_int.o", "../native/debug.o", "../native/tags.o", "../native/md5.o"]

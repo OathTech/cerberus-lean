@@ -1,0 +1,1086 @@
+proc lookup_size_shift (sz: pointer): eff loaded integer :=
+  let strong a_833: loaded integer =
+    bound(
+      let weak a_832: pointer = pure(sz) in
+      load('enum size', a_832)
+    ) in
+  case a_833 of
+    | Specified(a_834: integer) =>
+        let strong a_835: integer = pure(conv_int('enum size', a_834)) in
+        if a_835 = 0 then run case_838() else pure(Unit) ;
+        if a_835 = 1 then run case_837() else pure(Unit) ;
+        if a_835 = 2 then run case_836() else pure(Unit) ;
+        run default_839() ;
+        run break_831() ;
+        save case_838: unit () in
+          let strong a_840: loaded integer = bound(pure(Specified(12))) in
+          run ret_829(conv_loaded_int('signed int', a_840)) ;
+        save case_837: unit () in
+          let strong a_841: loaded integer = bound(pure(Specified(8))) in
+          run ret_829(conv_loaded_int('signed int', a_841)) ;
+        save case_836: unit () in
+          let strong a_842: loaded integer = bound(pure(Specified(2))) in
+          run ret_829(conv_loaded_int('signed int', a_842)) ;
+        save default_839: unit () in
+          let strong a_843: loaded integer = bound(pure(Specified(0))) in
+          run ret_829(conv_loaded_int('signed int', a_843)) ;
+        pure(Unit) ;
+        pure(Unit)
+    | Unspecified(_: ctype) =>
+        pure(undef(<<UB036_exceptional_condition>>))
+  end ;
+  save break_831: unit () in  pure(Unit) ;
+  pure(Unit) ;
+  pure(Unit) ;
+  save ret_829: loaded integer (a_844: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
+    pure(a_844)
+
+proc main (): eff loaded integer :=
+  let strong choices: pointer =
+    create(Ivalignof('unsigned char[4]'), 'unsigned char[4]') in
+  let strong expected: pointer =
+    create(Ivalignof('unsigned char[4]'), 'unsigned char[4]') in
+  let strong out: pointer =
+    create(Ivalignof('unsigned char[4]'), 'unsigned char[4]') in
+  let strong i: pointer = create(Ivalignof('unsigned long'), 'unsigned long') in
+  let strong acc: pointer = create(Ivalignof('signed long'), 'signed long') in
+  let strong v: pointer = create(Ivalignof('signed int'), 'signed int') in
+  let strong r: pointer = create(Ivalignof('signed int'), 'signed int') in
+  let strong a_555: loaded array(integer) =
+    bound(
+      let weak (a_559: loaded integer, a_558: loaded integer,
+      a_557: loaded integer, a_556: loaded integer) =
+        unseq(
+          pure(Specified(0))
+        ,
+          pure(Specified(0))
+        ,
+          pure(Specified(0))
+        ,
+          pure(Specified(77))
+        ) in
+      pure(
+        Specified(Array(conv_loaded_int('unsigned char', a_556),
+        conv_loaded_int('unsigned char', a_557),
+        conv_loaded_int('unsigned char', a_558),
+        conv_loaded_int('unsigned char', a_559)))
+      )
+    ) in
+  store_lock('unsigned char[4]', choices, a_555) ;
+  let strong a_560: loaded array(integer) =
+    bound(
+      let weak (a_564: loaded integer, a_563: loaded integer,
+      a_562: loaded integer, a_561: loaded integer) =
+        unseq(
+          pure(Specified(0))
+        ,
+          pure(Specified(0))
+        ,
+          pure(Specified(0))
+        ,
+          pure(Specified(0))
+        ) in
+      pure(
+        Specified(Array(conv_loaded_int('unsigned char', a_561),
+        conv_loaded_int('unsigned char', a_562),
+        conv_loaded_int('unsigned char', a_563),
+        conv_loaded_int('unsigned char', a_564)))
+      )
+    ) in
+  store_lock('unsigned char[4]', expected, a_560) ;
+  store('unsigned char[4]', out, Unspecified('unsigned ichar[4]')) ;
+  store('unsigned long', i, Unspecified('unsigned long')) ;
+  store('signed long', acc, Unspecified('signed long')) ;
+  store('signed int', v, Unspecified('signed int')) ;
+  store('signed int', r, Unspecified('signed int')) ;
+  let strong a_565: loaded integer =
+    bound(
+      let weak (a_567: loaded integer, a_568: loaded integer) =
+        unseq(
+          let weak (a_572: loaded integer, a_573: loaded integer) =
+            unseq(
+              pure(Specified(Ivsizeof('unsigned char[4]')))
+            ,
+              pure(Specified(4))
+            ) in
+          pure(
+            case (a_572, a_573) of
+              | (Specified(a_574: integer), Specified(a_575: integer)) =>
+                  if not(conv_int('size_t', a_574) = conv_int('size_t', a_575)) then
+                    Specified(1)
+                  else
+                    Specified(0)
+              | _: (loaded integer,loaded integer) =>
+                  Unspecified('signed int')
+            end
+          )
+        ,
+          pure(Specified(0))
+        ) in
+      pure(
+        case (a_567, a_568) of
+          | (Specified(a_569: integer), Specified(a_570: integer)) =>
+              if conv_int('signed int', a_569) = conv_int('signed int', a_570) then
+                Specified(1)
+              else
+                Specified(0)
+          | _: (loaded integer,loaded integer) =>
+              Unspecified('signed int')
+        end
+      )
+    ) in
+  let strong a_552: boolean =
+    case a_565 of
+      | Specified(a_566: integer) =>
+          pure(if not(a_566 = 1) then True else False)
+      | Unspecified(_: ctype) =>
+          nd(pure(True), pure(False))
+    end in
+  if a_552 then
+    let strong a_577: loaded integer = bound(pure(Specified(254))) in
+    kill('unsigned ichar[4]', choices) ;
+    kill('unsigned ichar[4]', expected) ;
+    kill('unsigned ichar[4]', out) ;
+    kill('unsigned long', i) ;
+    kill('signed long', acc) ;
+    kill('signed int', v) ;
+    kill('signed int', r) ;
+    run ret_536(conv_loaded_int('signed int', a_577)) ;
+    pure(Unit)
+  else
+    pure(Unit) ;
+  let strong _: loaded integer =
+    bound(
+      let weak (a_578: pointer, a_579: loaded integer) =
+        unseq(pure(acc), pure(Specified(0))) in
+      let weak _: unit =
+        neg(store('signed long', a_578, conv_loaded_int('signed long', a_579))) in
+      pure(conv_loaded_int('signed long', a_579))
+    ) in
+  pure(Unit) ;
+  let strong _: loaded integer =
+    bound(
+      let weak (a_580: pointer, a_581: loaded integer) =
+        unseq(pure(i), pure(Specified(0))) in
+      let weak _: unit =
+        neg(store('unsigned long', a_580,
+        conv_loaded_int('unsigned long', a_581))) in
+      pure(conv_loaded_int('unsigned long', a_581))
+    ) in
+  pure(Unit) ;
+  save while_550: unit (choices: pointer:= choices, expected: pointer:= expected,
+  out: pointer:= out, i: pointer:= i, acc: pointer:= acc, v: pointer:= v,
+  r: pointer:= r) in
+    let strong a_582: loaded integer =
+      bound(
+        let weak (a_584: loaded integer, a_585: loaded integer) =
+          unseq(
+            let weak (a_590: loaded integer, a_591: loaded integer) =
+              unseq(
+                let weak a_589: pointer = pure(i) in
+                load('unsigned long', a_589)
+              ,
+                pure(Specified(4))
+              ) in
+            case (a_590, a_591) of
+              | (Specified(a_592: integer), Specified(a_593: integer)) =>
+                  pure(
+                    if conv_int('unsigned long', a_592) <
+                    conv_int('unsigned long', a_593) then
+                      Specified(1)
+                    else
+                      Specified(0)
+                  )
+              | _: (loaded integer,loaded integer) =>
+                  pure(Unspecified('signed int'))
+            end
+          ,
+            pure(Specified(0))
+          ) in
+        pure(
+          case (a_584, a_585) of
+            | (Specified(a_586: integer), Specified(a_587: integer)) =>
+                if conv_int('signed int', a_586) = conv_int('signed int', a_587) then
+                  Specified(1)
+                else
+                  Specified(0)
+            | _: (loaded integer,loaded integer) =>
+                Unspecified('signed int')
+          end
+        )
+      ) in
+    let strong a_551: boolean =
+      case a_582 of
+        | Specified(a_583: integer) =>
+            pure(if not(a_583 = 1) then True else False)
+        | Unspecified(_: ctype) =>
+            nd(pure(True), pure(False))
+      end in
+    if a_551 then
+      let strong _: loaded integer =
+        bound(
+          let weak (a_595: pointer, a_630: loaded integer) =
+            unseq(
+              pure(acc)
+            ,
+              let weak (a_596: loaded integer, a_597: loaded integer) =
+                unseq(
+                  let weak a_601: pointer = pure(acc) in
+                  load('signed long', a_601)
+                ,
+                  let weak (a_602: loaded integer, a_603: loaded integer) =
+                    unseq(
+                      let weak a_609: loaded integer =
+                        let weak a_622: pointer =
+                          let weak a_611: loaded pointer =
+                            let weak (a_614: loaded pointer,
+                            a_616: loaded integer) =
+                              unseq(
+                                let weak a_619: pointer = pure(choices) in
+                                pure(
+                                  Specified(array_shift(a_619, 'unsigned ichar', 0))
+                                )
+                              ,
+                                let weak a_621: pointer = pure(i) in
+                                load('unsigned long', a_621)
+                              ) in
+                            case (a_614, a_616) of
+                              | (Specified(a_615: pointer),
+                              Specified(a_617: integer)) =>
+                                  pure(
+                                    Specified(array_shift(a_615, 'unsigned ichar', a_617))
+                                  )
+                              | _: (loaded pointer,loaded integer) =>
+                                  pure(
+                                    undef(<<UB_CERB004_unspecified__pointer_add>>)
+                                  )
+                            end in
+                          case a_611 of
+                            | Specified(a_612: pointer) =>
+                                let weak a_613: boolean =
+                                  memop(PtrValidForDeref, 'unsigned char', a_612) in
+                                pure(
+                                  if a_613 then
+                                    a_612
+                                  else
+                                    undef(<<UB043_indirection_invalid_value>>)
+                                )
+                            | Unspecified(_: ctype) =>
+                                pure(undef(<<UB043_indirection_invalid_value>>))
+                          end in
+                        load('unsigned char', a_622) in
+                      pure(conv_loaded_int('signed long', a_609))
+                    ,
+                      let weak (a_625: loaded integer, a_626: loaded integer) =
+                        unseq(
+                          pure(Specified(8))
+                        ,
+                          let weak a_624: pointer = pure(i) in
+                          load('unsigned long', a_624)
+                        ) in
+                      pure(
+                        case (a_625, a_626) of
+                          | (Specified(a_627: integer),
+                          Specified(a_628: integer)) =>
+                              Specified(wrapI_mul('unsigned long', conv_int('unsigned long',
+                              a_627), conv_int('unsigned long', a_628)))
+                          | _: (loaded integer,loaded integer) =>
+                              Unspecified('unsigned long')
+                        end
+                      )
+                    ) in
+                  pure(
+                    case (a_602, a_603) of
+                      | (_: loaded integer, Unspecified(_: ctype)) =>
+                          undef(<<UB036_exceptional_condition>>)
+                      | (Unspecified(_: ctype), _: loaded integer) =>
+                          undef(<<UB036_exceptional_condition>>)
+                      | (Specified(a_604: integer), Specified(a_605: integer)) =>
+                          let a_606: integer = conv_int('signed long', a_604) in
+                          let a_607: integer =
+                            conv_int('unsigned long', a_605) in
+                          if a_607 < 0 then
+                            undef(<<UB051a_negative_shift>>)
+                          else
+                            if ctype_width('signed long') < a_607 \/
+                            ctype_width('signed long') = a_607 then
+                              undef(<<UB51b_shift_too_large>>)
+                            else
+                              if a_606 < 0 then
+                                undef(<<UB052a_negative_left_shift>>)
+                              else
+                                let a_608: integer = a_606 * 2 ^ a_607 in
+                                if is_representable_integer(a_608, 'signed long') then
+                                  Specified(a_608)
+                                else
+                                  undef(<<UB052b_non_representable_left_shift>>)
+                    end
+                  )
+                ) in
+              pure(
+                case (a_596, a_597) of
+                  | (Specified(a_598: integer), Specified(a_599: integer)) =>
+                      Specified(catch_exceptional_condition_add('signed long', __conv_int__('signed long', a_598), __conv_int__('signed long', a_599)))
+                  | _: (loaded integer,loaded integer) =>
+                      undef(<<UB036_exceptional_condition>>)
+                end
+              )
+            ) in
+          let weak _: unit =
+            neg(store('signed long', a_595,
+            conv_loaded_int('signed long', a_630))) in
+          pure(conv_loaded_int('signed long', a_630))
+        ) in
+      pure(Unit) ;
+      save __cerb_continue0: unit (choices: pointer:= choices,
+      expected: pointer:= expected, out: pointer:= out, i: pointer:= i,
+      acc: pointer:= acc, v: pointer:= v, r: pointer:= r) in
+        let strong _: loaded integer =
+          bound(
+            let weak a_631: pointer = pure(i) in
+            seq_rmw('unsigned long', a_631, a_632 => case a_632 of
+              | Specified(a_633: integer) =>
+                  Specified(conv_int('unsigned long',
+                  wrapI_add('unsigned long', conv_int('unsigned long', a_633), 1)))
+              | Unspecified(_: ctype) =>
+                  Unspecified('unsigned long')
+            end)
+          ) in
+        pure(Unit) ;
+      pure(Unit) ;
+      save continue_537: unit (choices: pointer:= choices,
+      expected: pointer:= expected, out: pointer:= out, i: pointer:= i,
+      acc: pointer:= acc, v: pointer:= v, r: pointer:= r) in
+        pure(Unit) ;
+      pure(Unit) ;
+      run while_550(choices, expected, out, i, acc, v, r)
+    else
+      pure(Unit) ;
+  save break_538: unit (choices: pointer:= choices, expected: pointer:= expected,
+  out: pointer:= out, i: pointer:= i, acc: pointer:= acc, v: pointer:= v,
+  r: pointer:= r) in
+    pure(Unit) ;
+  pure(Unit) ;
+  let strong a_634: loaded integer =
+    bound(
+      let weak (a_636: loaded integer, a_637: loaded integer) =
+        unseq(
+          let weak (a_642: loaded integer, a_643: loaded integer) =
+            unseq(
+              let weak a_641: pointer = pure(acc) in
+              load('signed long', a_641)
+            ,
+              pure(Specified(2147483648))
+            ) in
+          case (a_642, a_643) of
+            | (Specified(a_644: integer), Specified(a_645: integer)) =>
+                pure(
+                  if conv_int('signed long', a_644) >=
+                  conv_int('signed long', a_645) then
+                    Specified(1)
+                  else
+                    Specified(0)
+                )
+            | _: (loaded integer,loaded integer) =>
+                pure(Unspecified('signed int'))
+          end
+        ,
+          pure(Specified(0))
+        ) in
+      pure(
+        case (a_636, a_637) of
+          | (Specified(a_638: integer), Specified(a_639: integer)) =>
+              if conv_int('signed int', a_638) = conv_int('signed int', a_639) then
+                Specified(1)
+              else
+                Specified(0)
+          | _: (loaded integer,loaded integer) =>
+              Unspecified('signed int')
+        end
+      )
+    ) in
+  let strong a_549: boolean =
+    case a_634 of
+      | Specified(a_635: integer) =>
+          pure(if not(a_635 = 1) then True else False)
+      | Unspecified(_: ctype) =>
+          nd(pure(True), pure(False))
+    end in
+  if a_549 then
+    let strong a_647: loaded integer = bound(pure(Specified(254))) in
+    kill('unsigned ichar[4]', choices) ;
+    kill('unsigned ichar[4]', expected) ;
+    kill('unsigned ichar[4]', out) ;
+    kill('unsigned long', i) ;
+    kill('signed long', acc) ;
+    kill('signed int', v) ;
+    kill('signed int', r) ;
+    run ret_536(conv_loaded_int('signed int', a_647)) ;
+    pure(Unit)
+  else
+    pure(Unit) ;
+  let strong _: loaded integer =
+    bound(
+      let weak (a_648: pointer, a_653: loaded integer) =
+        unseq(
+          pure(v)
+        ,
+          let weak a_649: loaded integer =
+            let weak a_651: pointer = pure(acc) in
+            load('signed long', a_651) in
+          pure(conv_loaded_int('signed int', a_649))
+        ) in
+      let weak _: unit =
+        neg(store('signed int', a_648, conv_loaded_int('signed int', a_653))) in
+      pure(conv_loaded_int('signed int', a_653))
+    ) in
+  pure(Unit) ;
+  let strong _: loaded integer =
+    bound(
+      let weak (a_654: pointer, a_670: loaded integer) =
+        unseq(
+          pure(r)
+        ,
+          let strong ((a_656: loaded pointer,
+          (a_657: ctype, a_658: [ctype], a_659: boolean, a_660: boolean)),
+          a_662: loaded integer) =
+            unseq(
+              let strong a_655: loaded pointer =
+                pure(Specified(Cfunction(lookup_size_shift))) in
+              pure((a_655, cfunction(a_655)))
+            ,
+              let weak a_663: loaded integer =
+                let weak a_665: pointer = pure(v) in
+                load('signed int', a_665) in
+              pure(conv_loaded_int('enum size', a_663))
+            ) in
+          if not(params_length(a_658) = 1) then
+            pure(undef(<<UB038_number_of_args>>))
+          else
+            if a_659 \/ not(are_compatible ('signed int', a_657)) then
+              pure(undef(<<UB041_function_not_compatible>>))
+            else
+              let strong a_661: pointer =
+                let a_667: ctype = params_nth(a_658, 0) in
+                if not(are_compatible ('enum size', a_667)) then
+                  pure(undef(<<UB041_function_not_compatible>>))
+                else
+                  let weak a_668: pointer =
+                    create(Ivalignof('enum size'), 'enum size') in
+                  let weak _: unit =
+                    store('enum size', a_668,
+                    conv_loaded_int('enum size', a_662)) in
+                  pure(a_668) in
+              let strong a_669: loaded integer =
+                ccall('signed int (*) (enum size)', a_656, a_661) in
+              kill('enum size', a_661) ;
+              pure(a_669)
+        ) in
+      let weak _: unit =
+        neg(store('signed int', a_654, conv_loaded_int('signed int', a_670))) in
+      pure(conv_loaded_int('signed int', a_670))
+    ) in
+  pure(Unit) ;
+  let strong _: loaded integer =
+    bound(
+      let weak (a_671: pointer, a_676: loaded integer) =
+        unseq(
+          pure(acc)
+        ,
+          let weak a_672: loaded integer =
+            let weak a_674: pointer = pure(r) in
+            load('signed int', a_674) in
+          pure(conv_loaded_int('signed long', a_672))
+        ) in
+      let weak _: unit =
+        neg(store('signed long', a_671, conv_loaded_int('signed long', a_676))) in
+      pure(conv_loaded_int('signed long', a_676))
+    ) in
+  pure(Unit) ;
+  let strong a_677: loaded integer =
+    bound(
+      let weak (a_679: loaded integer, a_680: loaded integer) =
+        unseq(
+          let weak (a_685: loaded integer, a_686: loaded integer) =
+            unseq(
+              let weak a_684: pointer = pure(acc) in
+              load('signed long', a_684)
+            ,
+              pure(Specified(0))
+            ) in
+          case (a_685, a_686) of
+            | (Specified(a_687: integer), Specified(a_688: integer)) =>
+                pure(
+                  if conv_int('signed long', a_687) <
+                  conv_int('signed long', a_688) then
+                    Specified(1)
+                  else
+                    Specified(0)
+                )
+            | _: (loaded integer,loaded integer) =>
+                pure(Unspecified('signed int'))
+          end
+        ,
+          pure(Specified(0))
+        ) in
+      pure(
+        case (a_679, a_680) of
+          | (Specified(a_681: integer), Specified(a_682: integer)) =>
+              if conv_int('signed int', a_681) = conv_int('signed int', a_682) then
+                Specified(1)
+              else
+                Specified(0)
+          | _: (loaded integer,loaded integer) =>
+              Unspecified('signed int')
+        end
+      )
+    ) in
+  let strong a_548: boolean =
+    case a_677 of
+      | Specified(a_678: integer) =>
+          pure(if not(a_678 = 1) then True else False)
+      | Unspecified(_: ctype) =>
+          nd(pure(True), pure(False))
+    end in
+  if a_548 then
+    let strong _: loaded integer =
+      bound(
+        let weak (a_690: pointer, a_697: loaded integer) =
+          unseq(
+            pure(acc)
+          ,
+            let weak (a_691: loaded integer, a_692: loaded integer) =
+              unseq(
+                let weak a_696: pointer = pure(acc) in
+                load('signed long', a_696)
+              ,
+                pure(Specified(4294967296))
+              ) in
+            pure(
+              case (a_691, a_692) of
+                | (Specified(a_693: integer), Specified(a_694: integer)) =>
+                    Specified(catch_exceptional_condition_add('signed long', __conv_int__('signed long', a_693), __conv_int__('signed long', a_694)))
+                | _: (loaded integer,loaded integer) =>
+                    undef(<<UB036_exceptional_condition>>)
+              end
+            )
+          ) in
+        let weak _: unit =
+          neg(store('signed long', a_690, conv_loaded_int('signed long', a_697))) in
+        pure(conv_loaded_int('signed long', a_697))
+      ) in
+    pure(Unit) ;
+    pure(Unit)
+  else
+    pure(Unit) ;
+  let strong _: loaded integer =
+    bound(
+      let weak (a_698: pointer, a_699: loaded integer) =
+        unseq(pure(i), pure(Specified(0))) in
+      let weak _: unit =
+        neg(store('unsigned long', a_698,
+        conv_loaded_int('unsigned long', a_699))) in
+      pure(conv_loaded_int('unsigned long', a_699))
+    ) in
+  pure(Unit) ;
+  save while_546: unit (choices: pointer:= choices, expected: pointer:= expected,
+  out: pointer:= out, i: pointer:= i, acc: pointer:= acc, v: pointer:= v,
+  r: pointer:= r) in
+    let strong a_700: loaded integer =
+      bound(
+        let weak (a_702: loaded integer, a_703: loaded integer) =
+          unseq(
+            let weak (a_708: loaded integer, a_709: loaded integer) =
+              unseq(
+                let weak a_707: pointer = pure(i) in
+                load('unsigned long', a_707)
+              ,
+                pure(Specified(4))
+              ) in
+            case (a_708, a_709) of
+              | (Specified(a_710: integer), Specified(a_711: integer)) =>
+                  pure(
+                    if conv_int('unsigned long', a_710) <
+                    conv_int('unsigned long', a_711) then
+                      Specified(1)
+                    else
+                      Specified(0)
+                  )
+              | _: (loaded integer,loaded integer) =>
+                  pure(Unspecified('signed int'))
+            end
+          ,
+            pure(Specified(0))
+          ) in
+        pure(
+          case (a_702, a_703) of
+            | (Specified(a_704: integer), Specified(a_705: integer)) =>
+                if conv_int('signed int', a_704) = conv_int('signed int', a_705) then
+                  Specified(1)
+                else
+                  Specified(0)
+            | _: (loaded integer,loaded integer) =>
+                Unspecified('signed int')
+          end
+        )
+      ) in
+    let strong a_547: boolean =
+      case a_700 of
+        | Specified(a_701: integer) =>
+            pure(if not(a_701 = 1) then True else False)
+        | Unspecified(_: ctype) =>
+            nd(pure(True), pure(False))
+      end in
+    if a_547 then
+      let strong _: loaded integer =
+        bound(
+          let weak (a_713: pointer, a_735: loaded integer) =
+            unseq(
+              let weak a_714: loaded pointer =
+                let weak (a_717: loaded pointer, a_719: loaded integer) =
+                  unseq(
+                    let weak a_722: pointer = pure(out) in
+                    pure(Specified(array_shift(a_722, 'unsigned ichar', 0)))
+                  ,
+                    let weak a_724: pointer = pure(i) in
+                    load('unsigned long', a_724)
+                  ) in
+                case (a_717, a_719) of
+                  | (Specified(a_718: pointer), Specified(a_720: integer)) =>
+                      pure(
+                        Specified(array_shift(a_718, 'unsigned ichar', a_720))
+                      )
+                  | _: (loaded pointer,loaded integer) =>
+                      pure(undef(<<UB_CERB004_unspecified__pointer_add>>))
+                end in
+              case a_714 of
+                | Specified(a_715: pointer) =>
+                    let weak a_716: boolean =
+                      memop(PtrValidForDeref, 'unsigned char', a_715) in
+                    pure(
+                      if a_716 then
+                        a_715
+                      else
+                        undef(<<UB043_indirection_invalid_value>>)
+                    )
+                | Unspecified(_: ctype) =>
+                    pure(undef(<<UB043_indirection_invalid_value>>))
+              end
+            ,
+              let weak a_725: loaded integer =
+                let weak (a_728: loaded integer, a_729: loaded integer) =
+                  unseq(
+                    let weak a_727: pointer = pure(acc) in
+                    load('signed long', a_727)
+                  ,
+                    pure(Specified(256))
+                  ) in
+                pure(
+                  case (a_728, a_729) of
+                    | (Unspecified(_: ctype), Specified(a_731: integer)) =>
+                        let a_733: integer = conv_int('signed long', a_731) in
+                        if a_733 = 0 then
+                          undef(<<UB045b_modulo_by_zero>>)
+                        else
+                          undef(<<UB036_exceptional_condition>>)
+                    | (_: loaded integer, Unspecified(_: ctype)) =>
+                        undef(<<UB045b_modulo_by_zero>>)
+                    | (Specified(a_730: integer), Specified(a_731: integer)) =>
+                        let a_732: integer = conv_int('signed long', a_730) in
+                        let a_733: integer = conv_int('signed long', a_731) in
+                        if a_733 = 0 then
+                          undef(<<UB045b_modulo_by_zero>>)
+                        else
+                          if is_representable_integer(a_732 / a_733,
+                          'signed long') then
+                            Specified(a_732 rem_t a_733)
+                          else
+                            undef(<<UB045c_quotient_not_representable>>)
+                  end
+                ) in
+              pure(conv_loaded_int('unsigned char', a_725))
+            ) in
+          let weak _: unit =
+            neg(store('unsigned char', a_713,
+            conv_loaded_int('unsigned char', a_735))) in
+          pure(conv_loaded_int('unsigned char', a_735))
+        ) in
+      pure(Unit) ;
+      let strong _: loaded integer =
+        bound(
+          let weak (a_736: pointer, a_744: loaded integer) =
+            unseq(
+              pure(acc)
+            ,
+              let weak (a_738: loaded integer, a_739: loaded integer) =
+                unseq(
+                  let weak a_737: pointer = pure(acc) in
+                  load('signed long', a_737)
+                ,
+                  pure(Specified(256))
+                ) in
+              pure(
+                case (a_738, a_739) of
+                  | (Unspecified(_: ctype), Specified(a_741: integer)) =>
+                      let a_743: integer = conv_int('signed long', a_741) in
+                      if a_743 = 0 then
+                        undef(<<UB045a_division_by_zero>>)
+                      else
+                        undef(<<UB036_exceptional_condition>>)
+                  | (_: loaded integer, Unspecified(_: ctype)) =>
+                      undef(<<UB045a_division_by_zero>>)
+                  | (Specified(a_740: integer), Specified(a_741: integer)) =>
+                      let a_742: integer = conv_int('signed long', a_740) in
+                      let a_743: integer = conv_int('signed long', a_741) in
+                      if a_743 = 0 then
+                        undef(<<UB045a_division_by_zero>>)
+                      else
+                        if is_representable_integer(a_742 / a_743, 'signed long') then
+                          Specified(a_742 / a_743)
+                        else
+                          undef(<<UB045c_quotient_not_representable>>)
+                end
+              )
+            ) in
+          let weak _: unit =
+            neg(store('signed long', a_736,
+            conv_loaded_int('signed long', a_744))) in
+          pure(conv_loaded_int('signed long', a_744))
+        ) in
+      pure(Unit) ;
+      save __cerb_continue1: unit (choices: pointer:= choices,
+      expected: pointer:= expected, out: pointer:= out, i: pointer:= i,
+      acc: pointer:= acc, v: pointer:= v, r: pointer:= r) in
+        let strong _: loaded integer =
+          bound(
+            let weak a_745: pointer = pure(i) in
+            seq_rmw('unsigned long', a_745, a_746 => case a_746 of
+              | Specified(a_747: integer) =>
+                  Specified(conv_int('unsigned long',
+                  wrapI_add('unsigned long', conv_int('unsigned long', a_747), 1)))
+              | Unspecified(_: ctype) =>
+                  Unspecified('unsigned long')
+            end)
+          ) in
+        pure(Unit) ;
+      pure(Unit) ;
+      save continue_539: unit (choices: pointer:= choices,
+      expected: pointer:= expected, out: pointer:= out, i: pointer:= i,
+      acc: pointer:= acc, v: pointer:= v, r: pointer:= r) in
+        pure(Unit) ;
+      pure(Unit) ;
+      run while_546(choices, expected, out, i, acc, v, r)
+    else
+      pure(Unit) ;
+  save break_540: unit (choices: pointer:= choices, expected: pointer:= expected,
+  out: pointer:= out, i: pointer:= i, acc: pointer:= acc, v: pointer:= v,
+  r: pointer:= r) in
+    pure(Unit) ;
+  pure(Unit) ;
+  let strong a_748: loaded integer =
+    bound(
+      let weak (a_750: loaded integer, a_751: loaded integer) =
+        unseq(
+          let weak (a_755: loaded integer, a_756: loaded integer) =
+            unseq(
+              pure(Specified(Ivsizeof('unsigned char[4]')))
+            ,
+              pure(Specified(4))
+            ) in
+          pure(
+            case (a_755, a_756) of
+              | (Specified(a_757: integer), Specified(a_758: integer)) =>
+                  if not(conv_int('size_t', a_757) = conv_int('size_t', a_758)) then
+                    Specified(1)
+                  else
+                    Specified(0)
+              | _: (loaded integer,loaded integer) =>
+                  Unspecified('signed int')
+            end
+          )
+        ,
+          pure(Specified(0))
+        ) in
+      pure(
+        case (a_750, a_751) of
+          | (Specified(a_752: integer), Specified(a_753: integer)) =>
+              if conv_int('signed int', a_752) = conv_int('signed int', a_753) then
+                Specified(1)
+              else
+                Specified(0)
+          | _: (loaded integer,loaded integer) =>
+              Unspecified('signed int')
+        end
+      )
+    ) in
+  let strong a_545: boolean =
+    case a_748 of
+      | Specified(a_749: integer) =>
+          pure(if not(a_749 = 1) then True else False)
+      | Unspecified(_: ctype) =>
+          nd(pure(True), pure(False))
+    end in
+  if a_545 then
+    let strong a_760: loaded integer = bound(pure(Specified(255))) in
+    kill('unsigned ichar[4]', choices) ;
+    kill('unsigned ichar[4]', expected) ;
+    kill('unsigned ichar[4]', out) ;
+    kill('unsigned long', i) ;
+    kill('signed long', acc) ;
+    kill('signed int', v) ;
+    kill('signed int', r) ;
+    run ret_536(conv_loaded_int('signed int', a_760)) ;
+    pure(Unit)
+  else
+    pure(Unit) ;
+  let strong _: loaded integer =
+    bound(
+      let weak (a_761: pointer, a_762: loaded integer) =
+        unseq(pure(i), pure(Specified(0))) in
+      let weak _: unit =
+        neg(store('unsigned long', a_761,
+        conv_loaded_int('unsigned long', a_762))) in
+      pure(conv_loaded_int('unsigned long', a_762))
+    ) in
+  pure(Unit) ;
+  save while_543: unit (choices: pointer:= choices, expected: pointer:= expected,
+  out: pointer:= out, i: pointer:= i, acc: pointer:= acc, v: pointer:= v,
+  r: pointer:= r) in
+    let strong a_763: loaded integer =
+      bound(
+        let weak (a_765: loaded integer, a_766: loaded integer) =
+          unseq(
+            let weak (a_771: loaded integer, a_772: loaded integer) =
+              unseq(
+                let weak a_770: pointer = pure(i) in
+                load('unsigned long', a_770)
+              ,
+                pure(Specified(4))
+              ) in
+            case (a_771, a_772) of
+              | (Specified(a_773: integer), Specified(a_774: integer)) =>
+                  pure(
+                    if conv_int('unsigned long', a_773) <
+                    conv_int('unsigned long', a_774) then
+                      Specified(1)
+                    else
+                      Specified(0)
+                  )
+              | _: (loaded integer,loaded integer) =>
+                  pure(Unspecified('signed int'))
+            end
+          ,
+            pure(Specified(0))
+          ) in
+        pure(
+          case (a_765, a_766) of
+            | (Specified(a_767: integer), Specified(a_768: integer)) =>
+                if conv_int('signed int', a_767) = conv_int('signed int', a_768) then
+                  Specified(1)
+                else
+                  Specified(0)
+            | _: (loaded integer,loaded integer) =>
+                Unspecified('signed int')
+          end
+        )
+      ) in
+    let strong a_544: boolean =
+      case a_763 of
+        | Specified(a_764: integer) =>
+            pure(if not(a_764 = 1) then True else False)
+        | Unspecified(_: ctype) =>
+            nd(pure(True), pure(False))
+      end in
+    if a_544 then
+      let strong a_777: loaded integer =
+        bound(
+          let weak (a_779: loaded integer, a_780: loaded integer) =
+            unseq(
+              let weak (a_784: loaded integer, a_785: loaded integer) =
+                unseq(
+                  let weak a_800: pointer =
+                    let weak a_789: loaded pointer =
+                      let weak (a_792: loaded pointer, a_794: loaded integer) =
+                        unseq(
+                          let weak a_797: pointer = pure(out) in
+                          pure(
+                            Specified(array_shift(a_797, 'unsigned ichar', 0))
+                          )
+                        ,
+                          let weak a_799: pointer = pure(i) in
+                          load('unsigned long', a_799)
+                        ) in
+                      case (a_792, a_794) of
+                        | (Specified(a_793: pointer), Specified(a_795: integer)) =>
+                            pure(
+                              Specified(array_shift(a_793, 'unsigned ichar', a_795))
+                            )
+                        | _: (loaded pointer,loaded integer) =>
+                            pure(undef(<<UB_CERB004_unspecified__pointer_add>>))
+                      end in
+                    case a_789 of
+                      | Specified(a_790: pointer) =>
+                          let weak a_791: boolean =
+                            memop(PtrValidForDeref, 'unsigned char', a_790) in
+                          pure(
+                            if a_791 then
+                              a_790
+                            else
+                              undef(<<UB043_indirection_invalid_value>>)
+                          )
+                      | Unspecified(_: ctype) =>
+                          pure(undef(<<UB043_indirection_invalid_value>>))
+                    end in
+                  load('unsigned char', a_800)
+                ,
+                  let weak a_812: pointer =
+                    let weak a_801: loaded pointer =
+                      let weak (a_804: loaded pointer, a_806: loaded integer) =
+                        unseq(
+                          let weak a_809: pointer = pure(expected) in
+                          pure(
+                            Specified(array_shift(a_809, 'unsigned ichar', 0))
+                          )
+                        ,
+                          let weak a_811: pointer = pure(i) in
+                          load('unsigned long', a_811)
+                        ) in
+                      case (a_804, a_806) of
+                        | (Specified(a_805: pointer), Specified(a_807: integer)) =>
+                            pure(
+                              Specified(array_shift(a_805, 'unsigned ichar', a_807))
+                            )
+                        | _: (loaded pointer,loaded integer) =>
+                            pure(undef(<<UB_CERB004_unspecified__pointer_add>>))
+                      end in
+                    case a_801 of
+                      | Specified(a_802: pointer) =>
+                          let weak a_803: boolean =
+                            memop(PtrValidForDeref, 'unsigned char', a_802) in
+                          pure(
+                            if a_803 then
+                              a_802
+                            else
+                              undef(<<UB043_indirection_invalid_value>>)
+                          )
+                      | Unspecified(_: ctype) =>
+                          pure(undef(<<UB043_indirection_invalid_value>>))
+                    end in
+                  load('unsigned char', a_812)
+                ) in
+              pure(
+                case (a_784, a_785) of
+                  | (Specified(a_786: integer), Specified(a_787: integer)) =>
+                      if not(conv_int('signed int', a_786) =
+                      conv_int('signed int', a_787)) then
+                        Specified(1)
+                      else
+                        Specified(0)
+                  | _: (loaded integer,loaded integer) =>
+                      Unspecified('signed int')
+                end
+              )
+            ,
+              pure(Specified(0))
+            ) in
+          pure(
+            case (a_779, a_780) of
+              | (Specified(a_781: integer), Specified(a_782: integer)) =>
+                  if conv_int('signed int', a_781) =
+                  conv_int('signed int', a_782) then
+                    Specified(1)
+                  else
+                    Specified(0)
+              | _: (loaded integer,loaded integer) =>
+                  Unspecified('signed int')
+            end
+          )
+        ) in
+      let strong a_776: boolean =
+        case a_777 of
+          | Specified(a_778: integer) =>
+              pure(if not(a_778 = 1) then True else False)
+          | Unspecified(_: ctype) =>
+              nd(pure(True), pure(False))
+        end in
+      if a_776 then
+        let strong a_822: loaded integer =
+          bound(
+            let weak a_813: loaded integer =
+              let weak (a_815: loaded integer, a_816: loaded integer) =
+                unseq(
+                  pure(Specified(1))
+                ,
+                  let weak a_820: pointer = pure(i) in
+                  load('unsigned long', a_820)
+                ) in
+              pure(
+                case (a_815, a_816) of
+                  | (Specified(a_817: integer), Specified(a_818: integer)) =>
+                      Specified(wrapI_add('unsigned long', __conv_int__('unsigned long', a_817), __conv_int__('unsigned long', a_818)))
+                  | _: (loaded integer,loaded integer) =>
+                      Unspecified('unsigned long')
+                end
+              ) in
+            pure(conv_loaded_int('signed int', a_813))
+          ) in
+        kill('unsigned ichar[4]', choices) ;
+        kill('unsigned ichar[4]', expected) ;
+        kill('unsigned ichar[4]', out) ;
+        kill('unsigned long', i) ;
+        kill('signed long', acc) ;
+        kill('signed int', v) ;
+        kill('signed int', r) ;
+        run ret_536(conv_loaded_int('signed int', a_822)) ;
+        pure(Unit)
+      else
+        pure(Unit) ;
+      save __cerb_continue2: unit (choices: pointer:= choices,
+      expected: pointer:= expected, out: pointer:= out, i: pointer:= i,
+      acc: pointer:= acc, v: pointer:= v, r: pointer:= r) in
+        let strong _: loaded integer =
+          bound(
+            let weak a_823: pointer = pure(i) in
+            seq_rmw('unsigned long', a_823, a_824 => case a_824 of
+              | Specified(a_825: integer) =>
+                  Specified(conv_int('unsigned long',
+                  wrapI_add('unsigned long', conv_int('unsigned long', a_825), 1)))
+              | Unspecified(_: ctype) =>
+                  Unspecified('unsigned long')
+            end)
+          ) in
+        pure(Unit) ;
+      pure(Unit) ;
+      save continue_541: unit (choices: pointer:= choices,
+      expected: pointer:= expected, out: pointer:= out, i: pointer:= i,
+      acc: pointer:= acc, v: pointer:= v, r: pointer:= r) in
+        pure(Unit) ;
+      pure(Unit) ;
+      run while_543(choices, expected, out, i, acc, v, r)
+    else
+      pure(Unit) ;
+  save break_542: unit (choices: pointer:= choices, expected: pointer:= expected,
+  out: pointer:= out, i: pointer:= i, acc: pointer:= acc, v: pointer:= v,
+  r: pointer:= r) in
+    pure(Unit) ;
+  pure(Unit) ;
+  let strong a_826: loaded integer = bound(pure(Specified(0))) in
+  kill('unsigned ichar[4]', choices) ;
+  kill('unsigned ichar[4]', expected) ;
+  kill('unsigned ichar[4]', out) ;
+  kill('unsigned long', i) ;
+  kill('signed long', acc) ;
+  kill('signed int', v) ;
+  kill('signed int', r) ;
+  run ret_536(conv_loaded_int('signed int', a_826)) ;
+  kill('unsigned ichar[4]', choices) ;
+  kill('unsigned ichar[4]', expected) ;
+  kill('unsigned ichar[4]', out) ;
+  kill('unsigned long', i) ;
+  kill('signed long', acc) ;
+  kill('signed int', v) ;
+  kill('signed int', r) ;
+  pure(Unit) ;
+  save ret_536: loaded integer (a_827: loaded integer:= Specified(0)) in
+    pure(a_827)
+

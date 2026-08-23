@@ -23,3 +23,7 @@ import SpecLab.TreeRot
 import SpecLab.TreeRotHarness
 import SpecLab.TreeRotCore
 import SpecLab.TreeRotFiles
+import SpecLab.CnSeed
+import SpecLab.CnSeedHarness
+import SpecLab.CnSeedCore
+import SpecLab.CnSeedFiles

@@ -327,11 +327,56 @@ def treeRotChecks : List Check :=
         fun m => parseTreeArg (treeArgOf m) == some m }
   ]
 
+/-! ## arc-15 S5: the CN-seed rung (R5: swap_pair + lookup_size_shift)
+    test-side layer. -/
+
+open SpecLab.CnSeed in
+/-- The pinned swap instance a (wire bytes 1..16). -/
+def swapM0 : SpecLab.CnSeed.PairInput :=
+  ⟨578437695752307201, 1157159078456920585⟩
+
+open SpecLab.CnSeed in
+def cnSeedChecks : List Check :=
+  [ { name := "cnseed: encodePair swapM0 = wire bytes 1..16"
+    , pass := (encodePair swapM0).map (·.toNat)
+        == (List.range 16).map (· + 1) }
+  , { name := "cnseed: expectedBytes = swapped halves (bytes 9..16 ++ 1..8)"
+    , pass := (expectedBytes swapM0).map (·.toNat)
+        == ((List.range 8).map (· + 9)) ++ ((List.range 8).map (· + 1)) }
+  , { name := "cnseed: pair codec round trip at edges (executable)"
+    , pass := swapSamples.all fun m =>
+        decodePair (encodePair m) == some (m, []) }
+  , { name := "cnseed: validStreamb accepts 16 bytes, rejects 15/17"
+    , pass := validStreamb (encodePair swapM0)
+        && !validStreamb (List.replicate 15 1)
+        && !validStreamb (List.replicate 17 1) }
+  , { name := "cnseed: swap plant verdict 9 at swapM0; blind exactly on diagonal"
+    , pass := swapPlantVerdict swapM0 == 9
+        && swapPlantVerdict ⟨5, 5⟩ == 0
+        && swapPlantVerdict ⟨0, 18446744073709551615⟩ == 9 }
+  , { name := "cnseed: swap sweep set = full 10x10 cross incl. diagonal"
+    , pass := swapSamples.length == 100
+        && swapSamples.any (fun m => m.a == m.b) }
+  , { name := "cnseed: lookupSizeShift arms (12/8/2/0) + plant verdicts"
+    , pass := lookupSizeShift 0 == 12 && lookupSizeShift 1 == 8
+        && lookupSizeShift 2 == 2 && lookupSizeShift 3 == 0
+        && lookupSizeShift 2000000000 == 0
+        && lookupPlantVerdict 1 == 1 && lookupPlantVerdict 0 == 0
+        && lookupPlantVerdict 2 == 0 && lookupPlantVerdict 77 == 0 }
+  , { name := "cnseed: lookup wire (encodeSz/lookupExpected LE spot checks)"
+    , pass := (encodeSz 1).map (·.toNat) == [1, 0, 0, 0]
+        && (encodeSz 2000000000).map (·.toNat) == [0, 148, 53, 119]
+        && (lookupExpected 1).map (·.toNat) == [8, 0, 0, 0]
+        && (lookupExpected 77).map (·.toNat) == [0, 0, 0, 0] }
+  , { name := "cnseed: lookup samples all LWf"
+    , pass := lookupSamples.all lwfb && lookupSamples.length ≥ 12 }
+  ]
+
 /-- #eval-able one-shot: `#eval SpecLab.Test.allPass` (also the exe's
 exit verdict). -/
 def allChecks : List Check :=
   codecChecks ++ harnessChecks ++ divmodChecks ++ byteArrChecks
-    ++ listAppendChecks ++ treeRotChecks
+    ++ listAppendChecks ++ treeRotChecks ++ cnSeedChecks
 
 def emitPlant (bs : List UInt8) (idx : Nat) : Option String :=
   if h : idx < bs.length then
@@ -547,8 +592,79 @@ batch-escaped spelling. -/
 def predictTreeForm2Stdout (m : SpecLab.TreeRot.Input) : String :=
   SpecLab.DivMod.render3 (expectedBytes m) ++ "\\n"
 
+/-- Parse a u64 decimal CLI argument. -/
+def parseU64 (s : String) : Option UInt64 := do
+  let n ← s.toNat?
+  if n < 18446744073709551616 then some (UInt64.ofNat n) else none
+
+open SpecLab.CnSeed in
+/-- The R5 CN-seed emitter arms (swap_pair: arg = "A B" u64 decimals
+via two CLI args folded into one csv "A,B"; lookup: arg = sz).
+Returns (harness text, predicted verdict) or an error. -/
+def emitSeed (mode : String) (arg : String) :
+    Except String (String × String) := do
+  let getPair : Except String SpecLab.CnSeed.PairInput := do
+    match arg.splitOn "," with
+    | [as, bs] =>
+      let some a := parseU64 as.trimAscii.toString | throw s!"bad u64: {as}"
+      let some b := parseU64 bs.trimAscii.toString | throw s!"bad u64: {bs}"
+      pure ⟨a, b⟩
+    | _ => throw s!"bad pair arg (A,B): {arg}"
+  let getSz : Except String Int := do
+    let some n := arg.toNat? | throw s!"bad sz: {arg}"
+    if !lwfb (n : Int) then throw s!"sz {n} not LWf (< 2^31)" else
+    pure (n : Int)
+  match mode with
+  | "swap" =>
+    let m ← getPair
+    pure (mkSwap m, "Specified(0)")
+  | "swap-plant" =>
+    let m ← getPair
+    pure (mkSwapPlant m, s!"Specified({swapPlantVerdict m})")
+  | "swap-stream" =>
+    let some s := parseCsvBytes arg | throw s!"bad byte list: {arg}"
+    if !validStreamb s then throw "INVALID stream (not 16 bytes)"
+    pure (mkSwapOfStream s, "Specified(0)")
+  | "swap-raw" =>
+    -- NO validity check (the malformed lane); nonempty splice only
+    let some s := parseCsvBytes arg | throw s!"bad byte list: {arg}"
+    if s.isEmpty then throw "raw stream must be nonempty"
+    pure (mkSwapOfStream s,
+      if validStreamb s then "Specified(0)" else "Specified(254)")
+  | "lookup" =>
+    let sz ← getSz
+    pure (mkLookup sz, "Specified(0)")
+  | "lookup-plant" =>
+    let sz ← getSz
+    pure (mkLookupPlant sz, s!"Specified({lookupPlantVerdict sz})")
+  | "lookup-raw" =>
+    let some s := parseCsvBytes arg | throw s!"bad byte list: {arg}"
+    if s.isEmpty then throw "raw stream must be nonempty"
+    pure (mkLookupOfStream s,
+      match Codec.decodeU32LE s with
+      | some (u, []) =>
+        if u.toNat < 2147483648 then "Specified(0)" else "Specified(254)"
+      | _ => "Specified(254)")
+  | _ => throw s!"unknown seed mode: {mode}"
+
 def main (args : List String) : IO UInt32 := do
   match args with
+  | ["--emit-seed", mode, arg] =>
+    match emitSeed mode arg with
+    | .ok (h, _) => IO.print h; return 0
+    | .error e => IO.eprintln s!"SpecLabTest: {e}"; return 2
+  | ["--seed-predict", mode, arg] =>
+    match emitSeed mode arg with
+    | .ok (_, v) => IO.println v; return 0
+    | .error e => IO.eprintln s!"SpecLabTest: {e}"; return 2
+  | ["--seed-swap-samples"] =>
+    for m in SpecLab.CnSeed.swapSamples do
+      IO.println s!"{m.a},{m.b}"
+    return 0
+  | ["--seed-lookup-samples"] =>
+    for sz in SpecLab.CnSeed.lookupSamples do
+      IO.println s!"{sz}"
+    return 0
   | ["--emit-tree", mode, arg] =>
     match emitTree mode arg with
     | .ok (h, _) => IO.print h; return 0

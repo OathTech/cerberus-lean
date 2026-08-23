@@ -33,6 +33,7 @@ import SpecLab.DivModFiles
 import SpecLab.ByteArrFiles
 import SpecLab.ListAppendFiles
 import SpecLab.TreeRotFiles
+import SpecLab.CnSeedFiles
 import RelSem.Machine
 import RelSem.RunND
 
@@ -282,6 +283,37 @@ theorem dropPlantLeak_refutes_leakFree
   exact finalAllocs_exclusive dropPlantFile
     (driverBaseline + 1) driverBaseline (by decide) hne ⟨hleak, h0⟩
 
+/-! ## arc-15 S5 (R5): the CN-seed swap plant's refutation schema.
+    `harnessRunsTo_exclusive` transfers a fourth time
+    (rung-independent — the S2-P5b finding is now a series). The
+    lookup family has no schema: no pinned layer (the CoreParser
+    enum-ctype gap, registered) — its plant's red face lives in the
+    differential lane only. Epistemic status as at S1-S4: the exec
+    equation delivering `HarnessRunsTo pairSwapPlantFile 9` is parked
+    (the exec-equation campaign); the gate exe checks it EXECUTABLY
+    today (Specified(9)). -/
+
+open SpecLab.CnSeed in
+/-- The lost-update plant refutes the healthy claim once the parked
+exec equation delivers `HarnessRunsTo pairSwapPlantFile 9` (the
+mismatch-index comparator naming post-state cell 1's low byte). Off
+the diagonal the index is structurally forced
+(`CnSeed.swapPlant_blind_iff`: verdict 0 ⟺ a = b — the
+kernel-characterized blind set). -/
+theorem pairSwapPlantClaim_refuted_of_run
+    (hne : ∃ out tr st',
+      (out, tr, st') ∈
+        CerbND.runND
+          (drive pairSwapPlantFile.tagDefs false pairSwapPlantFile
+            ["cmdname"])
+          (initial_driver_state pairSwapPlantFile
+            CerbFS.fs_initial_state))
+    (h9 : HarnessRunsTo pairSwapPlantFile 9) :
+    ¬ SwapPlantHealthyClaim := by
+  intro h0
+  exact harnessRunsTo_exclusive pairSwapPlantFile 9 0 (by decide) hne
+    ⟨h9, h0⟩
+
 /-! ## In-build axiom pins (captured verbatim at S1; growth fails the
     build — the SpecLabAudit discipline, proofs-side). -/
 
@@ -319,5 +351,12 @@ info: 'SpecLabProofs.appendElemPlantClaim_refuted_of_run' depends on axioms: [pr
 #guard_msgs in #print axioms SpecLabProofs.dropPlantClaim_refuted_of_run
 /-- info: 'SpecLabProofs.dropPlantLeak_refutes_leakFree' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLabProofs.dropPlantLeak_refutes_leakFree
+/--
+info: 'SpecLabProofs.pairSwapPlantClaim_refuted_of_run' depends on axioms: [propext,
+ runEffectful,
+ Classical.choice,
+ Quot.sound]
+-/
+#guard_msgs in #print axioms SpecLabProofs.pairSwapPlantClaim_refuted_of_run
 
 end SpecLabProofs

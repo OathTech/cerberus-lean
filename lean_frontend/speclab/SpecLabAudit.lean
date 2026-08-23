@@ -42,6 +42,7 @@ import SpecLab.DivModFiles
 import SpecLab.ByteArrFiles
 import SpecLab.ListAppendFiles
 import SpecLab.TreeRotFiles
+import SpecLab.CnSeedFiles
 
 set_option autoImplicit false
 
@@ -147,7 +148,15 @@ open Lean in
      `SpecLab.TreeRot.DropPlantLeakClaim,
      `SpecLab.TreeRot.rotate_sample_model_iff_stream,
      `SpecLab.TreeRot.model_forall_iff_stream_forall,
-     `SpecLab.TreeRot.rotateFileOfStream_encode]
+     `SpecLab.TreeRot.rotateFileOfStream_encode,
+     -- arc-15 S5 (R5 CN-seed rung: the swap statement family; lookup
+     -- has no pinned layer — the CoreParser enum-ctype gap)
+     `SpecLab.CnSeed.SwapSampleStatement,
+     `SpecLab.CnSeed.SwapSampleStreamStatement,
+     `SpecLab.CnSeed.SwapPlantHealthyClaim,
+     `SpecLab.CnSeed.swap_sample_model_iff_stream,
+     `SpecLab.CnSeed.model_forall_iff_stream_forall,
+     `SpecLab.CnSeed.swapFileOfStream_encode]
   for n in statements do
     match slStmtViolations env n with
     | .error e => throwError "{e}"
@@ -511,3 +520,60 @@ info: 'SpecLab.TreeRot.rotate_sample_model_iff_stream' depends on axioms: [prope
 #guard_msgs in #print axioms SpecLab.TreeRotCore.rootMainDecl
 /-- info: 'SpecLab.TreeRotCore.swapRotateRightDecl' does not depend on any axioms -/
 #guard_msgs in #print axioms SpecLab.TreeRotCore.swapRotateRightDecl
+
+/-! ### arc-15 S5 pins (R5 CN-seed rung; captured verbatim at S5 —
+    same discipline: classical-trio subsets for the pure layer,
+    + `runEffectful` exactly where a statement quotes the drive
+    substrate, AST terms axiom-free. The S5 novelties: the
+    Wf-free bridge (full-domain swap model), the kernel-characterized
+    plant blind set (`swapPlant_blind_iff`), and the library
+    canonicity completions (`canonical_u32le`/`canonical_u64le`). -/
+
+/-- info: 'SpecLab.Codec.canonical_u32le' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.Codec.canonical_u32le
+/-- info: 'SpecLab.Codec.canonical_u64le' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.Codec.canonical_u64le
+/-- info: 'SpecLab.CnSeed.swap_post' does not depend on any axioms -/
+#guard_msgs in #print axioms SpecLab.CnSeed.swap_post
+/-- info: 'SpecLab.CnSeed.swap_involutive' does not depend on any axioms -/
+#guard_msgs in #print axioms SpecLab.CnSeed.swap_involutive
+/-- info: 'SpecLab.CnSeed.decode_encode_pair' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.CnSeed.decode_encode_pair
+/-- info: 'SpecLab.CnSeed.encode_decode_pair' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.CnSeed.encode_decode_pair
+/-- info: 'SpecLab.CnSeed.encodeU64LE_inj' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.CnSeed.encodeU64LE_inj
+/-- info: 'SpecLab.CnSeed.model_forall_iff_stream_forall' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.CnSeed.model_forall_iff_stream_forall
+/-- info: 'SpecLab.CnSeed.swapPlant_blind_iff' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.CnSeed.swapPlant_blind_iff
+/-- info: 'SpecLab.CnSeed.lookup_is_model' does not depend on any axioms -/
+#guard_msgs in #print axioms SpecLab.CnSeed.lookup_is_model
+/-- info: 'SpecLab.CnSeed.lookup_bounds' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.CnSeed.lookup_bounds
+/-- info: 'SpecLab.CnSeed.f_model_lt_1000' does not depend on any axioms -/
+#guard_msgs in #print axioms SpecLab.CnSeed.f_model_lt_1000
+/-- info: 'SpecLab.CnSeed.lookup_inRange' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.CnSeed.lookup_inRange
+/-- info: 'SpecLab.CnSeed.swapFileOfStream_encode' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.CnSeed.swapFileOfStream_encode
+/-- info: 'SpecLab.CnSeed.swap_sample_model_iff_stream' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.CnSeed.swap_sample_model_iff_stream
+/-- info: 'SpecLab.CnSeed.SwapSampleStatement' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.CnSeed.SwapSampleStatement
+/-- info: 'SpecLab.CnSeed.SwapSampleStreamStatement' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.CnSeed.SwapSampleStreamStatement
+/-- info: 'SpecLab.CnSeed.SwapPlantHealthyClaim' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.CnSeed.SwapPlantHealthyClaim
+/-- info: 'SpecLab.CnSeed.swapFileOf' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.CnSeed.swapFileOf
+/-- info: 'SpecLab.CnSeed.pairSwapPlantFile' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.CnSeed.pairSwapPlantFile
+/-- info: 'SpecLab.CnSeedCore.swapMainParamDecl' does not depend on any axioms -/
+#guard_msgs in #print axioms SpecLab.CnSeedCore.swapMainParamDecl
+/-- info: 'SpecLab.CnSeedCore.swapPairDecl' does not depend on any axioms -/
+#guard_msgs in #print axioms SpecLab.CnSeedCore.swapPairDecl
+/-- info: 'SpecLab.CnSeedCore.swapPairPlantDecl' does not depend on any axioms -/
+#guard_msgs in #print axioms SpecLab.CnSeedCore.swapPairPlantDecl
+/-- info: 'SpecLab.CnSeedCore.ctypeWidthDecl' does not depend on any axioms -/
+#guard_msgs in #print axioms SpecLab.CnSeedCore.ctypeWidthDecl

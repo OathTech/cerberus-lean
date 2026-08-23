@@ -248,6 +248,72 @@ theorem canonical_u16le : Canonical encodeU16LE decodeU16LE := by
   | [] => simp [decodeU16LE] at h
   | [_] => simp [decodeU16LE] at h
 
+/-- Canonicity at the u32 wire (arc-15 S5: the CN-seed rung's swap
+codec is u64le, whose canonicity composes from this; proof shape =
+the S1 `DivMod.encode_decode_u32le`, re-homed to the library per the
+S1-E2 "ship both laws" recommendation — the DivMod local copy stays,
+consolidation parked). -/
+theorem canonical_u32le : Canonical encodeU32LE decodeU32LE := by
+  intro s a rest h
+  cases h1 : decodeU16LE s with
+  | none => simp [decodeU32LE, h1] at h
+  | some p =>
+    obtain ⟨lo, s1⟩ := p
+    cases h2 : decodeU16LE s1 with
+    | none => simp [decodeU32LE, h1, h2] at h
+    | some q =>
+      obtain ⟨hi, s2⟩ := q
+      simp only [decodeU32LE, h1, h2, Option.some.injEq,
+        Prod.mk.injEq] at h
+      obtain ⟨hu, hrest⟩ := h
+      rw [hrest] at h2
+      have hlo' := lo.toNat_lt
+      have hhi' := hi.toNat_lt
+      have e1 := canonical_u16le s lo s1 h1
+      have e2 := canonical_u16le s1 hi rest h2
+      have hlo : u32lo a = lo := by
+        apply UInt16.toNat_inj.mp
+        rw [← hu]
+        simp only [u32lo, UInt32.toNat_ofNat', UInt16.toNat_ofNat']
+        omega
+      have hhi : u32hi a = hi := by
+        apply UInt16.toNat_inj.mp
+        rw [← hu]
+        simp only [u32hi, UInt32.toNat_ofNat', UInt16.toNat_ofNat']
+        omega
+      rw [e1, e2, encodeU32LE, hlo, hhi, List.append_assoc]
+
+/-- Canonicity at the u64 wire (composes the u32 halves). -/
+theorem canonical_u64le : Canonical encodeU64LE decodeU64LE := by
+  intro s a rest h
+  cases h1 : decodeU32LE s with
+  | none => simp [decodeU64LE, h1] at h
+  | some p =>
+    obtain ⟨lo, s1⟩ := p
+    cases h2 : decodeU32LE s1 with
+    | none => simp [decodeU64LE, h1, h2] at h
+    | some q =>
+      obtain ⟨hi, s2⟩ := q
+      simp only [decodeU64LE, h1, h2, Option.some.injEq,
+        Prod.mk.injEq] at h
+      obtain ⟨hu, hrest⟩ := h
+      rw [hrest] at h2
+      have hlo' := lo.toNat_lt
+      have hhi' := hi.toNat_lt
+      have e1 := canonical_u32le s lo s1 h1
+      have e2 := canonical_u32le s1 hi rest h2
+      have hlo : u64lo a = lo := by
+        apply UInt32.toNat_inj.mp
+        rw [← hu]
+        simp only [u64lo, UInt64.toNat_ofNat', UInt32.toNat_ofNat']
+        omega
+      have hhi : u64hi a = hi := by
+        apply UInt32.toNat_inj.mp
+        rw [← hu]
+        simp only [u64hi, UInt64.toNat_ofNat', UInt32.toNat_ofNat']
+        omega
+      rw [e1, e2, encodeU64LE, hlo, hhi, List.append_assoc]
+
 /-- A count-decode yields exactly `n` elements. -/
 theorem decodeElems_length {α : Type} {decA : Dec α} :
     ∀ (n : Nat) (s : Stream) (as : List α) (rest : Stream),
