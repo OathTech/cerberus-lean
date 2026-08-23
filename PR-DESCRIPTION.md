@@ -102,3 +102,20 @@ Without the fixes: 0342 crashes (uncaught `Failure`), 0343 returns 1
 tightening). With the fixes all three pass, and the rest of the CI lane
 is unchanged relative to the base commit (verified by running
 `./run-ci.sh` on both and diffing the results).
+
+The rest of `decode.ml` was checked for adjacent defects: every other
+C11 simple escape has an arm, the hexadecimal path validates correctly,
+and `encode_character_constant`'s `Z.to_int` only ever receives
+char-range values from its callers. Possibly related: #154 reports
+`'\xFF'` decoding to 255 instead of -1 under signed char, but the
+current `wrapI` in `decode_character_constant` appears to have fixed
+that already (`'\xFF' == -1` evaluates true at the base commit) — that
+issue may be closable independently of this PR.
+
+## Provenance
+
+These defects were found, and this patch (code, tests, and this
+description) was written, by an AI assistant (Anthropic's Claude) under
+human direction, as part of a project that differentially tests
+Cerberus against a Lean port of its semantics. It is submitted after
+review and validation by the human author.
