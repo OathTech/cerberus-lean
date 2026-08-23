@@ -125,6 +125,42 @@ design note `docs/2026-08-23_stepper-arc-design.md`).
 Length/shape-parametric ∀ (beyond fixed shapes) is staged behind the
 same machinery. Do not read any claim in this file as covering these.
 
+### Where the C is, and what ties a theorem to it
+
+Every verified program's C source is committed next to its pins: the
+foundational fixtures under `../tests/verify/` (e.g.
+`t4_struct_member.c`), the spec-lab harness instances under
+`../tests/speclab/` (e.g. `rotate_a.c`, a closed runnable program).
+The theorems' formal subject, however, is the **elaborated (Core)
+form** of the program — a pinned Lean term — and the chain from the
+`.c` file to that term has three links with different status:
+
+1. **Theorem term ↔ pinned Core dump**: byte-checked in-build (the
+   drift gates re-parse the committed `.core` dump and compare
+   against the term the theorem actually mentions).
+2. **Pinned dump ↔ the C file**: mechanically re-derived, not proved
+   — the verification lanes re-run the oracle's elaboration
+   (`--pp=core`) on the `.c` and demand byte-identity with the pin.
+   So *which program* is precise and reproducible; that the Core term
+   is the *meaning* of the C rests on trusting the elaboration
+   pipeline.
+3. **The elaboration pipeline itself**: cross-checked, with a caveat
+   worth stating plainly. Both elaborators (OCaml and Lean) are
+   generated from the *same Lem model*, so their agreement rules out
+   implementation/backend bugs but not model-level elaboration bugs.
+   The independent evidence against those is the differential corpus
+   record — our execution verdicts match what compiled C actually
+   does on thousands of gcc-torture/csmith programs — plus upstream
+   Cerberus's own validation history. The C *parser* (text → AST)
+   stays a thin OCaml front end and is a permanent, declared trust
+   boundary.
+
+A registered design option would shrink link 2/3: since desugaring
+and elaboration are total generated Lean, a statement can in
+principle start from the pinned parsed AST and include elaboration
+inside the kernel-checked claim, leaving only the parse outside (see
+TODO.md).
+
 ## 4. The proof machinery (aggressive, but outside the TCB)
 
 "Boring executable specs in the front, Iris party in the back": proof

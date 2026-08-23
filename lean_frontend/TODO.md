@@ -76,3 +76,8 @@ is deliberately not pinned here — follow the pointers.
   differential campaigns; two already have ready branches).
 - Decide the fate of the earlier prototype interpreter (reduce to a
   test oracle vs archive) — open decision.
+- **Elaboration-in-statement probe** — start theorem statements from
+  the pinned parsed C AST with elaboration inside the kernel-checked
+  claim (shrinks the trusted C-to-Core link to the parser alone;
+  PROOF.md §3). Unpriced until the kernel-side elaboration cost is
+  probed; natural once the sealing/stepper machinery lands.

@@ -73,6 +73,35 @@ scripts ("lanes") and their pinned baselines — is catalogued in
 `scripts/LADDER.md`; the agent-facing operating manual with all build
 gotchas is [CLAUDE.md](CLAUDE.md).
 
+## What are we proving? A two-minute tour
+
+Two concrete examples, with every artifact's actual location. The
+guiding question for any claim here is *"where is the C, what is the
+statement, and how do I check it?"* — if you can't answer all three
+from the files below, that's a documentation bug.
+
+**A proved kernel theorem** (struct member write/read):
+
+| Artifact | Where |
+|---|---|
+| The C program | `../tests/verify/t4_struct_member.c` |
+| Its elaborated (Core) form, pinned | pinned terms in `relsem/RelSem/T1Core.lean`; byte-checked against a fresh oracle dump by the `emit-lean-core-test` gate |
+| The statement | `T4Statement` in `relsem/RelSem/T4.lean` — quantified, mentions only the executable semantics and the program |
+| The proof | `theorem T4 : T4Statement`, same file — an ordinary kernel-checked theorem |
+| Its exact axioms | `#print axioms RelSem.T4` = `[propext, runEffectful, Classical.choice, Quot.sound]`, pinned in-build in `relsem/RelSem/Audit.lean` |
+| The differential check | `../scripts/test_verify.sh` — runs the same C on both implementations and against the recorded spec points |
+
+**A specified real C function** (binary-tree rotation, the
+harness style of PROOF.md §2):
+
+| Artifact | Where |
+|---|---|
+| The target C + its harness | `../tests/speclab/rotate_a.c` (a closed, runnable program: the target function, the compiled-in choice/expected arrays, builder, comparator) |
+| The pure model + spec | `Tree`/`rotateAt` in `speclab/SpecLab/TreeRot.lean` |
+| The statement | `RotateSampleStatement` in `speclab/SpecLab/TreeRotFiles.lean` — note its status: *defined and differentially validated*; the kernel proof of the execution itself is the in-flight campaign (PROOF.md §3 states exactly what is and isn't proved) |
+| What IS kernel-checked today | the model lemmas, codec round-trips, model↔stream bridges, and plant-refutation schemas — `speclab/proofs/SpecLabProofs.lean`, cones pinned in `speclab/SpecLabAudit.lean` |
+| The differential check | `../scripts/test_speclab_tree.sh --gate` (and `--plant`: deliberately broken targets must go red at the predicted index) |
+
 ## Where the proofs live
 
 - `relsem/` — the theorem substrate: a relational layer over the
