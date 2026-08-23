@@ -210,11 +210,128 @@ def listAppendChecks : List Check :=
         && encodeAtInput ⟨1, [5], []⟩ == 1 :: encodeInput ⟨[5], []⟩ }
   ]
 
+/-! ## arc-15 S4: the tree-rotation (R4) test-side layer — the
+    TREE|PATH text syntax (parser + printer, TEST-SIDE ONLY; the pure
+    encoders remain the statement vocabulary) and the sanity checks. -/
+
+/-- Recursive-descent tree parser over `L` / `( v LEFT RIGHT )`
+tokens (fuel = token count; test-side). -/
+def treeOfToks : Nat → List String → Option (SpecLab.TreeRot.Tree × List String)
+  | 0, _ => none
+  | _ + 1, "L" :: rest => some (.leaf, rest)
+  | fuel + 1, "(" :: vtok :: rest => do
+    let v ← vtok.toInt?
+    let (l, r1) ← treeOfToks fuel rest
+    let (r, r2) ← treeOfToks fuel r1
+    match r2 with
+    | ")" :: r3 => some (.node v l r, r3)
+    | _ => none
+  | _, _ => none
+
+/-- `(7 (2 L L) L)` → Tree (whitespace-tolerant around parens). -/
+def parseTreeText (s : String) : Option SpecLab.TreeRot.Tree :=
+  let toks := ((s.replace "(" " ( ").replace ")" " ) ").splitOn " "
+    |>.filter (· ≠ "")
+  match treeOfToks (toks.length + 1) toks with
+  | some (t, []) => some t
+  | _ => none
+
+/-- Path text: a string over {l, r} (empty = rotate at the root). -/
+def parsePathText (s : String) : Option (List Bool) :=
+  s.toList.foldr (fun c acc => do
+    let p ← acc
+    match c with
+    | 'l' => some (false :: p)
+    | 'r' => some (true :: p)
+    | _ => none) (some [])
+
+/-- The R4 model CLI argument: `TREE|PATH`. -/
+def parseTreeArg (s : String) : Option SpecLab.TreeRot.Input :=
+  match s.splitOn "|" with
+  | [ts, ps] => do
+    let t ← parseTreeText ts
+    let p ← parsePathText ps
+    some ⟨t, p⟩
+  | _ => none
+
+def treeTextOf : SpecLab.TreeRot.Tree → String
+  | .leaf => "L"
+  | .node v l r => s!"({v} {treeTextOf l} {treeTextOf r})"
+
+def pathTextOf (p : List Bool) : String :=
+  String.join (p.map fun b => if b then "r" else "l")
+
+def treeArgOf (m : SpecLab.TreeRot.Input) : String :=
+  treeTextOf m.tree ++ "|" ++ pathTextOf m.path
+
+open SpecLab.TreeRot in
+/-- The pinned worked-example instance (small vals): tree
+`(1 (2 (3 L (4 L L)) (5 L L)) (6 L L))`, path `[l]` — the rotation
+locus is b=2, the transferred middle subtree is `(4 L L)`. -/
+def treeM0 : SpecLab.TreeRot.Input :=
+  ⟨pinnedShape 1 2 3 4 5 6, [false]⟩
+
+open SpecLab.TreeRot in
+def treeRotChecks : List Check :=
+  let m0 := treeM0
+  let expect0 : List UInt8 :=  -- encodeTree (node 1 (node 3 L (node 2 (node 4 L L) (node 5 L L))) (node 6 L L))
+    [1,1,0,0,0, 1,3,0,0,0, 0, 1,2,0,0,0, 1,4,0,0,0, 0,0, 1,5,0,0,0,
+     0,0, 1,6,0,0,0, 0,0]
+  [ { name := "tree: encodeInput m0 = pre-order presence code ++ path"
+    , pass := encodeInput m0
+        == [1,1,0,0,0, 1,2,0,0,0, 1,3,0,0,0, 0, 1,4,0,0,0, 0,0,
+            1,5,0,0,0, 0,0, 1,6,0,0,0, 0,0] ++ [1, 0] }
+  , { name := "tree: rotateAt m0 transfers the middle subtree (hand-checked)"
+    , pass := modelFn m0
+        == .node 1 (.node 3 .leaf (.node 2 (.node 4 .leaf .leaf)
+             (.node 5 .leaf .leaf))) (.node 6 .leaf .leaf)
+        && expectedBytes m0 == expect0 }
+  , { name := "tree: rotateAt off-shape is identity (leaf walk, no-left locus)"
+    , pass := rotateAt .leaf [false] == .leaf
+        && rotateAt (.node 5 .leaf (.node 6 .leaf .leaf)) [] ==
+             .node 5 .leaf (.node 6 .leaf .leaf)
+        && rotateAt (.node 1 (.node 2 .leaf .leaf) .leaf) [true, true] ==
+             .node 1 (.node 2 .leaf .leaf) .leaf }
+  , { name := "tree: input codec round trip at edges (executable)"
+    , pass := [m0, ⟨.leaf, []⟩, ⟨.leaf, [true]⟩,
+        ⟨pinnedShape 0 (-1) (-2147483648) 2147483647 1 (-2147483647), [false]⟩,
+        ⟨completeT 5 0 (fun i => Int.ofNat i + 1), [false, false, false, false]⟩].all
+        fun m => decodeInput (encodeInput m) == some (m, []) }
+  , { name := "tree: validStreamb accepts encoded Wf, rejects malformed"
+    , pass := validStreamb (encodeInput m0)
+        && validStreamb [0, 0]                    -- leaf tree, empty path
+        && !validStreamb [1, 5, 0, 0, 0]          -- truncated children
+        && !validStreamb [2, 0]                   -- bad presence byte
+        && !validStreamb [0]                      -- missing path count
+        && !validStreamb [0, 1, 2]                -- bad path bit
+        && !validStreamb ([0, 0] ++ [7]) }        -- trailing junk
+  , { name := "tree: swap plant verdict 7 on m0 (byte 6 = locus val); blind spots 0"
+    , pass := swapPlantVerdict m0 == 7
+        && swapPlantVerdict ⟨.node 7 (.node 7 .leaf .leaf) .leaf, []⟩ == 0
+        && swapPlantVerdict ⟨.node 5 .leaf (.node 6 .leaf .leaf), []⟩ == 0 }
+  , { name := "tree: drop plant verdict 255 (length arm) on m0; leak 1; blind spot 0"
+    , pass := dropPlantVerdict m0 == 255
+        && dropPlantLeaked m0 == 1
+        && dropPlantVerdict ⟨.node 1 (.node 2 .leaf .leaf) .leaf, []⟩ == 0
+        && dropPlantLeaked ⟨.node 1 (.node 2 .leaf .leaf) .leaf, []⟩ == 0 }
+  , { name := "tree: sweep sample set ≥ 120 and all Wf"
+    , pass := sweepSamples.length ≥ 120 && sweepSamples.all wfb }
+  , { name := "tree: preorderVals of the pinned instance a = wire bytes 1..24"
+    , pass := ((pinnedShape 67305985 134678021 202050057 269422093
+          336794129 404166165).preorderVals.flatMap
+          SpecLab.DivMod.encodeI32LE).map (fun b => b.toNat)
+        == (List.range 24).map (· + 1) }
+  , { name := "tree: text syntax round trip (parser ∘ printer = id)"
+    , pass := [m0, ⟨.leaf, []⟩,
+        ⟨lspineT 4 0 (fun i => Int.ofNat i - 2), [false, false]⟩].all
+        fun m => parseTreeArg (treeArgOf m) == some m }
+  ]
+
 /-- #eval-able one-shot: `#eval SpecLab.Test.allPass` (also the exe's
 exit verdict). -/
 def allChecks : List Check :=
   codecChecks ++ harnessChecks ++ divmodChecks ++ byteArrChecks
-    ++ listAppendChecks
+    ++ listAppendChecks ++ treeRotChecks
 
 def emitPlant (bs : List UInt8) (idx : Nat) : Option String :=
   if h : idx < bs.length then
@@ -387,8 +504,69 @@ batch-escaped spelling. -/
 def predictListForm2Stdout (m : SpecLab.ListAppend.Input) : String :=
   SpecLab.DivMod.render3 (expectedBytes m) ++ "\\n"
 
+open SpecLab.TreeRot in
+/-- The R4 tree-rotation emitter arms. Returns (harness text,
+predicted verdict) or an error. -/
+def emitTree (mode : String) (arg : String) :
+    Except String (String × String) := do
+  let getM : Except String SpecLab.TreeRot.Input := do
+    let some m := parseTreeArg arg | throw s!"bad tree arg (TREE|PATH): {arg}"
+    if !wfb m then throw "model not Wf (≤ 31 nodes, i32 vals, path ≤ 8)"
+    pure m
+  match mode with
+  | "rotate" =>
+    let m ← getM
+    pure (mkRotate m, "Specified(0)")
+  | "rotate-swap-plant" =>
+    let m ← getM
+    pure (mkRotateSwapPlant m, s!"Specified({swapPlantVerdict m})")
+  | "rotate-drop-plant" =>
+    let m ← getM
+    pure (mkRotateDropPlant m, s!"Specified({dropPlantVerdict m})")
+  | "rotate-form2" =>
+    let m ← getM
+    pure (mkRotateForm2 m, "Specified(0)")
+  | "build-only" =>
+    let m ← getM
+    pure (mkBuildOnly m, "Specified(0)")
+  | "rotate-stream" =>
+    let some s := parseCsvBytes arg | throw s!"bad byte list: {arg}"
+    if !validStreamb s then throw "INVALID stream (scan/path/cap)"
+    pure (mkRotateOfStream s, "Specified(0)")
+  | "rotate-raw" =>
+    -- NO validity check (the malformed lane); nonempty splice only
+    let some s := parseCsvBytes arg | throw s!"bad byte list: {arg}"
+    if s.isEmpty then throw "raw stream must be nonempty"
+    pure (mkRotateOfStream s,
+      if validStreamb s then "Specified(0)" else "Specified(254)")
+  | _ => throw s!"unknown tree mode: {mode}"
+
+open SpecLab.TreeRot in
+/-- Predicted Form 2 stdout for the rotate harness (healthy target),
+batch-escaped spelling. -/
+def predictTreeForm2Stdout (m : SpecLab.TreeRot.Input) : String :=
+  SpecLab.DivMod.render3 (expectedBytes m) ++ "\\n"
+
 def main (args : List String) : IO UInt32 := do
   match args with
+  | ["--emit-tree", mode, arg] =>
+    match emitTree mode arg with
+    | .ok (h, _) => IO.print h; return 0
+    | .error e => IO.eprintln s!"SpecLabTest: {e}"; return 2
+  | ["--tree-predict", mode, arg] =>
+    match emitTree mode arg with
+    | .ok (_, v) =>
+      IO.println v
+      if mode == "rotate-form2" then
+        match parseTreeArg arg with
+        | some m => IO.println (predictTreeForm2Stdout m)
+        | none => pure ()
+      return 0
+    | .error e => IO.eprintln s!"SpecLabTest: {e}"; return 2
+  | ["--tree-samples"] =>
+    for m in SpecLab.TreeRot.sweepSamples do
+      IO.println (treeArgOf m)
+    return 0
   | ["--emit-list", mode, csv] =>
     match emitList mode csv with
     | .ok (h, _) => IO.print h; return 0
