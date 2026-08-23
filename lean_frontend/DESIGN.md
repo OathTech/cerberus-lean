@@ -147,8 +147,9 @@ cloned locally and mirrored (`deps/mirrors/`), with git `insteadOf`
 redirects supplied per-invocation via `GIT_CONFIG_GLOBAL` (never
 installed globally — the machine is shared). The Lem tool is
 opam-pinned to a fixed commit of `lem-lean` (`deps/lem-pinned`); the
-Lake manifest pins the same commit, and an arc (unit of work) is
-closed only when branch heads, opam pin, and Lake pin agree.
+Lake manifest pins the same commit, and the two pins are kept in
+lockstep — work lands only when branch heads, opam pin, and Lake pin
+agree.
 
 Two operational rules exist because they were each earned the hard
 way (records in `docs/`): every `lake`/`lean` invocation runs under a

@@ -10,6 +10,12 @@ hands on. The point of having the semantics in Lean is that you can
 the Lean kernel, with no gap between the semantics you test and the
 semantics you reason about.
 
+**Provenance.** This port was developed primarily by AI agents
+(Claude, Anthropic) operating under the direction and review of a
+human operator (Mike Dodds). The upstream Cerberus semantics is by
+its own authors (see the top-level README); the dated records in
+`docs/` are the working history of the port.
+
 Who this is for:
 
 - You want to **run C** through an executable, rigorously defined
@@ -28,7 +34,7 @@ lean_frontend/
 ├── *.lean            # hand-written "seam" files (memory model, ND runner,
 │                     #   parsers, implementation-defined behaviour, ...)
 ├── relsem/           # the proof package: relational semantics, iris-lean
-│                     #   coupling, proof machinery, the theorem slate
+│                     #   coupling, proof machinery, the theorems
 ├── relsemcore/       # exec-facing proof-support modules (root package side)
 ├── speclab/          # the spec lab: harness-based specification of real C
 │                     #   functions (models, codecs, statements, proofs)
@@ -43,8 +49,9 @@ typing, elaboration to Core, execution).
 
 ## Build and run one differential test
 
-From the repository root (see `../scripts/env.sh` if your shell lacks
-the opam switch):
+From the repository root (`../scripts/env.sh`, one level above this
+repository in the working layout, sets up the opam switch if your
+shell lacks it):
 
 ```bash
 # OCaml side (the oracle + the C parser front-end)
@@ -58,18 +65,19 @@ make lean-prelude-src
 cd lean_frontend && ../scripts/capped lake build
 
 # One end-to-end differential run
-cd .. && ./scripts/test_exec.sh tests/minimal/001-return.c
+cd .. && ./scripts/test_exec.sh tests/minimal/001-return-literal.c
 ```
 
-The full test surface (unit gates, differential lanes, baselines) is
-catalogued in `scripts/LADDER.md`; the agent-facing operating manual
-with all build gotchas is [CLAUDE.md](CLAUDE.md).
+The full test surface — unit gates plus the per-corpus differential
+scripts ("lanes") and their pinned baselines — is catalogued in
+`scripts/LADDER.md`; the agent-facing operating manual with all build
+gotchas is [CLAUDE.md](CLAUDE.md).
 
 ## Where the proofs live
 
 - `relsem/` — the theorem substrate: a relational layer over the
   executable semantics, iris-lean based proof machinery, and the
-  current theorem slate. Build: `cd relsem && ../../scripts/capped
+  current theorems. Build: `cd relsem && ../../scripts/capped
   lake build` (the build itself runs the proof-integrity gates).
 - `speclab/` — specifications of real C functions in the
   "harnesses are programs" style, with their models, differential

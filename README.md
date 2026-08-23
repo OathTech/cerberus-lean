@@ -6,6 +6,9 @@
 same Lem model, differentially validated against the OCaml
 implementation, and usable as a substrate for kernel-checked theorems
 about C programs: see [lean_frontend/README.md](lean_frontend/README.md).
+The port was developed primarily by AI agents (Claude, Anthropic)
+working under the direction and review of Mike Dodds; the upstream
+Cerberus semantics is by the people listed below.
 
 
 Web interfaces, papers, and web page

@@ -6,7 +6,8 @@ is deliberately not pinned here — follow the pointers.
 
 ## In flight
 
-- **In-chase sealing + landing the bounded-loop theorem (T5).** A new
+- **In-chase sealing + landing T5, the first bounded-loop theorem**
+  (the next rung after the T1–T4 slate, PROOF.md §3). A new
   engine capability keeps every kernel obligation shallow inside long
   symbolic-execution chases (the Lean kernel's recursion depth is the
   binding limit, not proof content). Mechanism + current state:
@@ -31,42 +32,44 @@ is deliberately not pinned here — follow the pointers.
 
 - **WireGuard ladder** — `../../notes/2026-08-20_wireguard-target-scoping.md`.
 - **pKVM buddy allocator** — `../../deps/CN-pKVM-buddy-allocator-case-study/`;
-  GPL-derived fixtures live in a separate example repo per the
-  recorded ruling (container CLAUDE.md, layout table).
+  GPL-derived fixtures stay out of this repository (they go in a
+  separate example repository, for licence separation).
 
 ## Queued larger work
 
 - **Concurrency (cmm) instantiation** — choice streams become
-  schedules; the current semantics keeps concurrency stubbed as a
-  declared temporal boundary with this arc as its mover.
+  schedules. Concurrency is currently stubbed (a declared, documented
+  boundary); this is the work that removes the stub.
 - **The repo split** — "the semantics" vs "the verification layer" as
   separate repositories; the package structure already rehearses it
   (DESIGN.md §6).
 
-## Small priced items (S each — can ride any fix batch)
+## Small items (independent; can ride along with any fix batch)
 
 - `pr44468.c` offsetof unknown-tag panic (the CI sweep's one new
   defect): `docs/2026-08-22_ci-sweep-results.md`.
 - CoreParser `enum TAG` ctype-literal arm (unblocks a parked spec-lab
-  pinned layer; reproducers in `tests/speclab/`).
+  statement layer; reproducers in `tests/speclab/`).
 - Oracle `--batch` allocation-census line (unlocks the leak
-  conjunct's differential leg; upstream-tray candidate).
+  conjunct's differential leg; a candidate patch for upstream
+  Cerberus).
 - Lean driver `--args` flag (argv parity already verified; unlocks
   the ∀-inputs statement form).
 - DivMod local-canonicity consolidation into `Codec.Canonical`
   (noted in `speclab/SpecLab/Codec.lean`).
-- Step-runner stack-ceiling guard (long-known residual; registered).
+- Step-runner stack-ceiling guard (known limitation: loops of a few
+  thousand iterations can overflow the process stack in the step/ND
+  recursion; `docs/2026-08-19_arc6-s0-survey.md`).
 
 ## Deferred polish
 
-- The backend/semantics polish basket (pure-render emission split,
-  remaining audit gaps) — registered with prices in the latest
-  `docs/*-results.md`; deliberately parked behind the substantive
-  track.
+- Backend/semantics cleanups (pure-render emission split, remaining
+  audit gaps) — itemized in the latest `docs/*-results.md`;
+  deliberately parked behind the substantive track.
 
-## Operator / network-window
+## Needs maintainer action or network access
 
-- Upstream filing tray: `../../notes/upstream/` + the prepared PR
-  branches (worktrees at the container level).
-- Prototype disposition (reduce `cerberus-lean-prototype` to a test
+- Patches queued for upstream Cerberus: drafts in
+  `../../notes/upstream/`, plus prepared PR branches.
+- Decide the fate of `cerberus-lean-prototype` (reduce to a test
   oracle vs archive) — open decision, container `ROADMAP.md`.

@@ -16,21 +16,24 @@ you must trust:
 
 1. **The Lean kernel** (and, for the semantics' meaning, the model —
    which is executable and differentially validated, see DESIGN.md §5).
-2. **The declared boundary axioms** — exactly three, census-gated:
-   - `LemLib.runEffectful` (`lem-lean/lean-lib/LemLib.lean:54`) — the
+2. **The declared boundary axioms** — exactly three:
+   - `LemLib.runEffectful` (in `lem-lean/lean-lib/LemLib.lean`) — the
      effect-erasure boundary for `BaseIO` externs (fresh counters,
      debug output);
-   - `CerbTags.with_tagDefs` (`CerbTags.lean:70`) — tag-definition
+   - `CerbTags.with_tagDefs` (`CerbTags.lean`) — tag-definition
      state installation;
-   - `CerberusFresh.forceIO` (`CerberusFresh.lean:113`) — fresh
+   - `CerberusFresh.forceIO` (`CerberusFresh.lean`) — fresh
      symbol/digest generation.
-   A build gate asserts the hand-written axiom census is exactly this
-   set, and asserts each theorem's **transitive axiom cone exactly**:
-   the flagship theorems' cones are
+   Build gates pin this set: the axiom census over this repository
+   (hand-written and generated code) is asserted to be exactly
+   `with_tagDefs` + `forceIO` — `runEffectful` lives in the LemLib
+   runtime library — and each theorem's **transitive axiom cone** is
+   asserted exactly: the flagship theorems' cones are
    `[propext, runEffectful, Classical.choice, Quot.sound]` — the
    classical trio plus the effect boundary, nothing else. The
    assertions are in-build (`relsem/RelSem/Audit.lean` plus
-   `scripts/check_theorem_axioms.sh`) and plant-tested.
+   `scripts/check_theorem_axioms.sh`) and plant-tested (deliberately
+   broken to confirm they fire — DESIGN.md §5).
 3. **Nothing evaluator-shaped.** Non-kernel proof methods are banned
    outright and gate-enforced: no `native_decide`, no `bv_decide`,
    nothing whose proof carries `Lean.ofReduceBool`/`ofReduceNat`.
