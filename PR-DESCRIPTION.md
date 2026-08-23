@@ -8,8 +8,10 @@ the octal validator.
 
 ## 1. Missing `\?` simple escape (tool crash on conforming input)
 
-C11 §6.4.4.4#4 lists `\?` among the simple-escape-sequences (its value is
-`'?'` = 63; it exists so trigraph-era code can write `?`-safe strings).
+The C11 grammar lists `\?` among the simple-escape-sequences
+(§6.4.4.4#1), and §6.4.4.4#3–4 give it the value of `?` — 63 under the
+ASCII mapping this file implements (it exists so trigraph-era code can
+write `?`-safe strings).
 The C lexer (`parsers/c/c_lexer.mll`) accepts it, but
 `decode_character_constant_aux` had no arm for it: the constant fell
 through to the octal reader and the whole tool died with an uncaught
@@ -66,7 +68,8 @@ minimal and equivalent).
 ## 3. Octal validator accepts `'8'` (off-by-one)
 
 The decoder's octal-escape validator accepted digit characters `'0'..'8'`;
-octal-digit is one of `0..7` (§6.4.4.4#1). This is not observable from C
+octal-digit is one of `0..7` (§6.4.4.1#1, referenced by the escape
+grammar in §6.4.4.4#1). This is not observable from C
 source — the lexer already enforces the escape grammar, so `'\8'` is
 rejected with a proper diagnostic before reaching the decoder — but until
 item 2 it was reachable via `escaped_char`'s decimal output (e.g. char 138
