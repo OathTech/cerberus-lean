@@ -20,35 +20,77 @@ cerberus (OCaml)                    cerberus-lean (Lean)
 
 **Core text parser:** Lean parses `.core` and `.impl` files directly using `Std.Internal.Parsec`.
 
-**Proof layer:** see [PROOF.md](PROOF.md) for capabilities/trust story
-and [DESIGN.md](DESIGN.md) for architecture. Operational map:
-
-- `relsem/` is its OWN Lake package (requires the semantics package by
-  path; git deps shared via `packagesDir = "../.lake/packages"`). It
-  holds the relational layer + iris-lean coupling + the theorem slate
-  (T1-T4, T5 family) + the workbench (Kit/ lemma kits, the `@[app_eq]`
-  law table, the `app_walk` walker + certificate emitter + trace/replay
-  in `Tactics/`) + the in-build gates (`RelSem/Audit.lean`: axiom
-  sweeps, statement-TCB, absence gates — fail the build, plant-tested).
-- The exec-facing core (Call/Machine/RunND/ExecModel/Cerberus) stays
-  ROOT-side as the `RelSemCore` lib (`relsemcore/`).
-- `speclab/` is a further package (same pattern): spec-lab models,
-  codecs, mkHarness, statements + `SpecLabAudit.lean` gates, proofs in
-  `speclab/proofs/`.
-- `test_unit.sh` builds all packages; RelSem-importing test exes live
-  in `relsem/test/Unit/`; probes run via `lake lean <file>` FROM
-  `relsem/` (through scripts/capped).
-- PROBE-RECIPE WARNING: never use raw `lake env lean` for ad-hoc
-  RelSem-importing files — the root package's build lib precedes the
-  relsem package's in `lake env`'s LEAN_PATH, so the two-package split
-  cannot resolve and STALE root artifacts shadow current ones
-  silently. `lake lean` is workspace-aware and correct. After moving
-  modules between packages, delete the orphaned artifacts stranded in
-  the other package's `.lake` tree (a stale-shadowed probe is a
-  doctored instrument). Details:
-  `docs/2026-08-22_arc11-s4-package-rehearsal.md`.
-- Lake deps: `LemLib` (lem-lean pin) + `iris`/`Qq`/`batteries`
-  (pinned revs, resolved offline via deps/gitconfig redirects).
+**Proof layer (arc 7; workbench arc 9):** `lean_frontend/relsem/RelSem/`
+— Layer 2 (relational semantics over the fuel opsem: ExecModel,
+Machine, RunND, Call harness) + Layer 3 (iris-lean coupling:
+IrisLang/IrisState/IrisRules/IrisAdequacy — since arc 9 on upstream
+`OwnP`, hand-rolled state-ghost twin retired) + the slate theorems
+T1–T4 (T?.lean, T?AppEq) and the in-build axiom audit + statement-TCB
+gate (Audit.lean). THE WORKBENCH (arc 9): `Kit/` — six lemma kits
+(AppEq law registrations, Eval, Loop with the axiom-free
+`iter_compose`, Map lawful-map layer, Mem computed-RHS blocks, Round
+dnms/perform layer; 54 `#print axioms` exactness pins in `Kit/Audit.lean`,
+in-build) + `Tactics/AppEqAttr.lean`/`Tactics/AppWalk.lean` (the
+`@[app_eq]` law table + the `app_walk` walker v1-v3 with the
+per-stage certificate emitter: kernel-whnf discovery, decide-facts
+chase-rewrite, ledgered heartbeat budgets — no ambient raise
+anywhere) + the proof-size gate (`scripts/check_proof_size.sh`,
+250-line/40-step bars, Tier A).
+WORKBENCH V2 (arc-11): the walker gained a structured TRACE IR
+(`Tactics/WalkTrace.lean`: per-candidate fates, discharge lanes,
+seal events, per-round ledgers, typed residual classifications,
+`engineRev`) + PREVIEW (`app_walk_preview` — never assigns the goal,
+always fails, gate-banned in committed proofs; E9 negative-tested) +
+CHECKED REPLAY (`app_walk_rec`/`app_walk_replay`: fingerprint
+refusal on engineRev/kit-registry/goal mismatch, recorded law
+sequence with checking identical, loud divergence — ~15x vs cold
+discovery, `relsem/bench/WalkBench.lean`) + CONTEXT QUERIES
+(`@[app_eq] (fact := …)`/`(fact! := …)`: deterministic
+required-fact hypothesis queries, ambiguity-is-error static+dynamic,
+`#app_eq_lint`) + kernel-side closed-fact equation-chase matching
+(`Kernel.isDefEq`, heartbeat-free). Sealing is `app_walk_norm`'s
+DEFAULT (`nostates` modifier committed; `app_walk_norm!` retired).
+T5 (bounded loop) is parked at the arc-11 improved grade:
+`entry5_walk` (21-round entry, symbolic n/fuel) and the T5Iter
+env-lookup family are committed in-build theorems; k=0 walk 45/79,
+symbolic-j route live 3/79; resumption's first move = register
+R-S2-1 (sealed-closure avatar coherence, fixture-independent) — see
+`docs/2026-08-22_arc11-results.md`.
+THE PACKAGE REHEARSAL (arc-11 S4, the [USER] two-part-design item):
+`relsem/` is its OWN Lake package (`relsem/lakefile.toml`) requiring
+the semantics package by path, with the git deps SHARED via
+`packagesDir = "../.lake/packages"`. The EXEC-FACING RelSem core
+(Call/Machine/RunND/ExecModel/Cerberus — the driver's verify-harness
+closure) stays ROOT-side as the `RelSemCore` lib (`relsemcore/`,
+module names unchanged); the PROOF layers (kits, tactics, Iris
+coupling, slate, audits) build in the relsem package, whose lib
+enumerates leaf-module roots (Lake resolves imports by root-module
+PREFIX — the rehearsal's structural finding; aggregator module
+`RelSemAll`). The in-build audits ride the relsem package's plain
+`lake build` (fail-closed, plant-tested); `test_unit.sh` builds BOTH
+packages (root plain build stays green and drives the driver).
+RelSem-importing test exes (`app-walk-test`, `emit-lean-core-test`,
+`t4-env-witness`, `t5-probe`) live in the relsem package
+(`relsem/test/Unit/`), as does `bench/WalkBench.lean`; probes run via
+`lake lean <file>` FROM `relsem/` (through scripts/capped).
+PROBE-RECIPE WARNING (arc-13 audit A-F2): do NOT use raw
+`lake env lean` for ad-hoc RelSem-importing files — Lean resolves an
+import's ROOT module prefix (`RelSem`) against the FIRST search-path
+entry carrying a `RelSem/` directory, and the root package's build
+lib precedes the relsem package's in `lake env`'s LEAN_PATH, so the
+two-package RelSem split cannot resolve (and, worse, STALE root
+artifacts shadow current ones silently — the WalkBench
+"unknown tactic" breakage was exactly this). `lake lean` is
+workspace-aware and correct. After any structural move of modules
+between the packages, DELETE the orphaned artifacts the move strands
+in the other package's `.lake` tree (verify orphan status against
+the package's current module roots first); a stale-shadowed probe is
+a doctored instrument. See
+`docs/2026-08-22_arc11-s4-package-rehearsal.md`.
+Lake deps: `LemLib` (lem-lean pin) + `iris`/`Qq`/`batteries`
+(pinned revs, resolved offline via deps/gitconfig redirects; iris at
+head `34390a0133…` since arc-9 D1). See
+`docs/2026-08-20_arc7-results.md`.
 
 ## Build
 
@@ -151,7 +193,7 @@ and the slate statement-TCB gate — both in `relsem/RelSem/Audit.lean`
 (slate statements must be fuel-opsem-only: no Iris/RelSem-relation
 names; negative-tested in-build).
 
-### Verification fixtures
+### Verification fixtures (arc 7)
 
 ```bash
 ./scripts/test_verify.sh   # tests/verify: T1-T5 fixture differentials —
@@ -339,20 +381,147 @@ Lem is pinned to `https://github.com/septract/lem-lean#mdd/lean-backend`.
 
 **Bug reports:** `lean_frontend/lembugs/` — dated markdown files with reproducers.
 
-## Status
+## Remaining work
 
-Current state, boundary list, and per-capability status live in the
-dated records — do not maintain status lists here. Start points:
+### Sorry target_reps (non-concurrency)
+- NONE (arc 4: `easy_update_mem_value_aux` un-sorried via a fuel declare;
+  `runND_proxy` is implemented — hand-written `CerbND.runND`).
+  Concurrency stubs remain the declared boundary.
 
-- Latest arc results: `docs/` (most recent `*-results.md`; arc index
-  in the container `ROADMAP.md`).
-- Proof capabilities + exactly-what-is-proved: [PROOF.md](PROOF.md).
-- Declared boundary: concurrency stubs (temporal, cmm arc is the
-  mover) + the three boundary axioms (PROOF.md §1). No sorried
-  target_reps outside that boundary; any new one is a finding.
-- Known operational residuals (step-runner stack ceiling, oracle
-  allocation-census gap, etc.): registered with prices in the latest
-  results docs.
+### Pipeline status (updated 2026-08-22, post arc-14 — see the arc results docs)
+- ✅ C → Cabs JSON → Cabs types (100%)
+- ✅ Core text parser + stdlib loading (incl. ailname attribute capture, arc 5)
+- ✅ Desugar / Typecheck / Translation (all 106/106 tests/minimal)
+- ✅ Execution, differentially validated vs OCaml: tests/minimal 103/106
+  (3 oracle-side skips), coverage 183/199 comparable (since arc-6 S2),
+  debug corpus green
+- ✅ libc/builtin procedure linking (arc 5: 20/20 coverage FAILs closed)
+- ✅ Multi-TU: real Core_linking + per-TU MD5 digests (arc 5)
+- ✅ libxml2 chvalid through the full pipeline: 100% differential
+  (4 slices, 1354 boundary points — `test_libxml2.sh`; consolidated from
+  28 by the arc-6 S3 map-representation speedups)
+- ✅ C-libc loading (arc-6 S1): pinned libc Core dump (`tests/libc/`)
+  parsed by CoreParser + metadata (extern/funinfo/tagDefs) from our own
+  elaboration of the 12 libc TUs, linked via Core_linking
+  (`--libc`/`--libc-tu`, Main.loadLibc). uri corpus 16/16 vs oracle, GATING (arc-6 S4);
+  test_core known-red 078-float-special FIXED (bodyless ProcDecl form)
+  — tests/minimal test_core now 106/106.
+- ✅ Varargs execution (arc-6 S2, register 15 FIXED): CerbMem
+  vaStart/vaCopy/vaArg/vaEnd/vaList mirror impl_mem.ml:2698-2764
+- ✅ THE ORACLE IS HONEST (arc-12) and RENUMBERED (arc-13): arc-12
+  made the F-D symbol-collision family fail-stop (CERB_FLOOR, ~483-id
+  margin, G1-G4 artifacts grandfathered); arc-13 D1 (scheme R-B)
+  REMOVED the collision class by construction — desugar + run symbol
+  supplies re-unified onto the single ambient Cerb_fresh.int on the
+  OCaml target (3 ocaml-only target_reps + ocaml_frontend/
+  fork_renumber.ml; Lean target's threaded supplies + 2^20 base
+  UNTOUCHED, generated-Lean diff EMPTY): oracle numbering is now
+  BYTE-IDENTICAL to un-forked upstream (verify pins + libc.core
+  re-pinned == upstream dumps), the margin refusal class is GONE,
+  grandfather mode/flag DELETED, and the floor is now the
+  single-supply window backstop (check_ail_window: never fires on
+  healthy inputs; plant-tested against the F-D-era scheme);
+  attribution corrected (April desugar threading 8923d6436, arc-2 run
+  supply exonerated); F-A/F-B upstream filing drafts ready
+- ✅ THE IMMACULATE PASS (arc-14): the two grumpy-professor registers
+  (73 findings) remediated — all 6 semantics GRAVEs FIXED with their S0
+  differential probes flipped (relational kill-paths, checked
+  memcpy/memcmp, realloc UB family, Z-semantics builtins, fail-closed
+  decode, the CoreParser hash-collision tripwire); backend GRAVEs:
+  priority lattice + probe (G1), Set comparator coherence (G4) fixed,
+  de-globalization St core + Ott grammar + library-test consolidation
+  landed with the L/network-gated remainders registered. New standing
+  lane: scripts/test_immaculate.sh (fail-closed, tests/immaculate/);
+  TWO ORACLE-WRONG finds pinned Lean-right (upstream tray 10: '\?'
+  crash; 11: escaped_char octal round-trip 127->87). Disposition table:
+  docs/2026-08-22_arc14-results.md
+  (notes/upstream/08+09). Records: docs/2026-08-21_arc12-*.md +
+  docs/2026-08-22_arc13-s0-scheme-decision.md
+  (prototype port Step.lean:1441-1513 attributed) — 5 coverage varargs
+  DIFFs → MATCH, debug varargs-01 → MATCH, libc_exec 006 snprintf →
+  MATCH, new 007 va_*×Formatted interplay MATCH
+- ✅ Perf (arc-6 S3): LemLib Fmap -> comparator-keyed Std.TreeMap indexes
+  (lem-lean arc/libc-load, proved/tested equivalence in LemLibTest.lean) +
+  CerbMem bytemap/allocations -> Std.TreeMap Int; chvalid battery now 4
+  slices (339 pts ~100 s Lean vs old 50-pt ~35 s each). Known residual:
+  step-runner stack ceiling (S0 register; onset ~1.5k plain loop
+  iterations, bimodal quiet-death/hang — not corpus-binding)
+- ✅ VERIFICATION (arc-7, "the bridge"): first theorems — T1-T4
+  ∀-quantified interpreter-only statements about pinned compiled Core
+  programs (T4 = struct member write/read, the exit criterion), proved
+  through the iris-lean WP route + the in-repo adequacy theorem;
+  toolchain 4.32.2; CerbND + CerbMem exec-path + 5 more generated
+  modules totalized; in-build axiom audit + statement-TCB gate.
+  T5 (bounded loop) parked with pricing. See
+  `docs/2026-08-20_arc7-results.md`.
+- ✅ DAEMON ELIMINATED (arc-8, "the consistent boundary"): lem's
+  logically inconsistent `axiom DAEMON`/`DAEMON1` DELETED from LemLib
+  and every generated cone — replaced by backend-derived real bounded
+  Inhabited instances (S1) + failwithI with `[Inhabited tv]` signature
+  threading (S2), fail-closed (underivable types are loud
+  generation-time errors, never opaque fallbacks). T1-T4 cones are now
+  exactly [propext, runEffectful, Classical.choice, Quot.sound] —
+  UNCONDITIONAL kernel certificates, no meta-assumption. Absence gates
+  enforce non-reintroduction (in-build Audit.lean + arc-8 S3
+  check_theorem_axioms.sh bar); zero differential movement across the
+  full surface. See `docs/2026-08-20_arc8-results.md` and
+  lembugs/2026-08-20_daemon-inconsistent-axiom.md (RESOLVED).
+- ✅ ROBUSTNESS (arc-10): comparison instances are REAL — the lem
+  backend derives structural BEq/Ord/SetType/Eq0/Ord0 with
+  OCaml-poly-compare parity (generated-tree comparison-sorry census
+  1134 → 0; fn-carrying types get loud failwithI residuals,
+  fail-closed). tests/ci exec mismatches at ZERO (114/114 comparable
+  agree: finding 11 read-only allocations + the pp-placeholder ctype
+  text class closed by real OCaml mirrors); coverage 186/186
+  comparable agree (finding 8 eqPtrval msum fork fixed). New lanes:
+  tests/float (69/69 MATCH), tests/bytes (oracle-independent, 9 exec
+  + 5 neg pins), csmith corpus (1669 files, classified baseline) + a
+  5-lane csmith generation portfolio — 3169 differential programs,
+  ZERO Lean-side semantic defects; the F-D oracle-corruption family
+  root-caused to a CERBERUS-LEAN FORK regression (arc-2 threaded
+  sym_supply suspect; repair = top next-arc candidate). See
+  `docs/2026-08-21_arc10-results.md`.
+- ✅ THE WORKBENCH (arc-9, "WP tactic library + complex-reasoning
+  slate"): proof machinery built deliberately — OwnP adoption
+  (iris-lean reuse, hand-rolled ghost twin retired, Iris layer
+  456→369 lines), six lemma kits with 54 in-build exactness pins
+  (incl. the AXIOM-FREE `iter_compose` loop rule), the `@[app_eq]`
+  law table + `app_walk` walker v1-v3 + the per-stage certificate
+  emitter (kernel-whnf discovery, decide-facts chase-rewrite,
+  ledgered budgets — every certificate an ordinary kernel-checked
+  declaration, zero TCB surface), the proof-size gate (Tier A,
+  fail-closed, T5 row honestly PENDING). THE CALIBRATION: the
+  mechanical dnms content (~200 lines of rounds + transcriptions +
+  `.trans` composition) → 5 walker lines; file-level T1AppEq 1,038 →
+  862 (the round3/round6 semantic support retained and consumed by
+  the walker); identical statement + cone. T5 (bounded loop) PARKED
+  AT EVIDENCE GRADE: St-v2 family
+  kernel-validated at symbolic n, entry theorem green in ~5 s, probe
+  clears 44/79 iteration rounds; named resumption point =
+  the continuation-lambda advance law (+ trace/replay +
+  context-indexed laws — the v2 slate). T1-T4 re-validated on the
+  arc-10 rebased base (cones exactly [propext, runEffectful,
+  Classical.choice, Quot.sound]). See
+  `docs/2026-08-21_arc9-results.md` + the committed v2 survey
+  inputs (`2026-08-21_iris-rules-automation-survey.md` + Lithium
+  review + litreview brief).
+- ✅ WORKBENCH V2 (arc-11, "trace/replay, context laws, the package
+  rehearsal"): the walker engine v2 — structured trace IR + preview
+  (non-authoritative, negative-tested) + checked replay with
+  fingerprints (~15x vs cold discovery) + deterministic context
+  queries with typed residuals + `#app_eq_lint`, sealing-as-default;
+  the S2 hardening (three emitter defects fixed, kernel-side
+  closed-fact matching) broke the arc-9 park: the named suspect
+  DISSOLVED, k=0 45/79, symbolic-j route live, `entry5_walk` +
+  T5Iter env-lookup family committed in-build theorems. T5 itself
+  remains PARKED (proof-size gate row honestly PENDING); resumption
+  = R-S2-1 (fixture-independent, renumbering-compatible). THE
+  PACKAGE REHEARSAL ([USER] two-part design): relsem is its own
+  Lake package, gates re-homed fail-closed + plant-tested, the two
+  structural findings (forced exec-facing RelSemCore boundary;
+  root-module prefix resolution) banked as real-split design data.
+  Zero exec movement; zero lem changes. See
+  `docs/2026-08-22_arc11-results.md`.
 
 ## Conventions
 
