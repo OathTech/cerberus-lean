@@ -1,6 +1,34 @@
 # Arc 15 — THE SPEC-STYLE REGISTER
 
-Status: OPEN (stub created at S0 scaffold; entries begin at S1).
+Status: CLOSED at S5 (2026-08-23) — final-verdict summary below;
+entries S1-E1 … S5-E5 are the record.
+
+## S5 SUMMARY HEAD — the spec-style final verdicts
+
+| Question the lab asked | Verdict (normative for the template) | Evidence |
+|---|---|---|
+| Readback form | **Form 1 (expected-array + mismatch-index) DEFAULT at every rung**; Form 2 (stdout) kept as diagnostic/witness variant (value grows with structure size; costs unchanged: libc mode + the newline-buffering discipline); boolean verdict legitimate only for genuinely boolean properties, strictly dominated elsewhere | S1-E1, S2-E5, S3-E1, S4 §d |
+| Headline quantifier | **model-∀** ([USER] ruling confirmed), with the stream-∀ face STATED (it is what fuzz/replay exercises) and a kernel bridge between them | S1-E2, every rung's `*_sample_model_iff_stream` |
+| Codec contract | codecs ship **BOTH laws from day one** (`RoundTrip` + `Canonical`) — the operational-validity bridge needs both; adopted S2, completed to u64 at S5 | S1-E2, S2, S5 |
+| Bytes vs structure | **verbatim byte-blaster for buffer-contents properties** (containment story); a structured codec only when the TARGET's contract is structure-level (R3+) | S2-E1 |
+| Term pinning | **parametric digit-run zip wherever ≥ 3 instances** (zero marginal cost per sample; derived expected[] is structural — at S5 through a permutation); verbatim pinning the floor for 1-2-instance targets; instance selection deliberate (tie-break rule; derive bytes from the pure encoder, never by hand) | S1-E5, S2-E4, S3-E6, S5 |
+| Mutating-structure statements | **full readback equality IN THE STATEMENT; locus/frame decomposition in the pure layer** (proved once per model, the Iris-side framing shape; adds no statement strength) | S4-E1 |
+| Plant discipline | predicted indexes from the pure mirror; **blind spots documented + demonstrated green** (and kernel-CHARACTERIZED when cheap — S5's closed-form blind set); malformed-stream arms make every splice a defined program; **plants split by leak class where the shape admits** (broken-leak-free vs broken-leaking) | S2-E5, S3-E5, S4-E5, S5-E2 |
+| Wf honesty | closed-program `Wf` surfaces the WHOLE realizable domain (incl. UB corners CN's requires leaves implicit — the R1 finding); capacity ceilings are honest realization bounds, labeled; a full-domain model (S5 swap) makes Wf vacuous and the bridge hypothesis-free | S1-E3, S2-E3, S5 |
+| Leak conjunct | outcome-level scalar (final allocation count vs measured driver baseline), LIVE since R3, plant-separating since R4; the oracle-differential leg is the one open limb (priced S, fork-side) | S3, S4-E5 |
+| Statement scaling | pinned program terms are **trees of defs** (the hoisting emitter owns chunking); multi-decl TUs pin **per-TU** (symbol-numbering coupling); harness C dialect choices are differential-budget choices (the sequenced-call rule) | S2-E6, S3-E6, S4-E2/E3 |
+| Corpus reach | five rungs, six of seven targets straight from deps/cn with specs quoted verbatim; ONE fidelity gap found (CoreParser enum-ctype literal — the pinning path only; exec pipelines carry enums fine), parked priced | S5-E4 |
+
+Charter success criterion 2 (every experiment recorded with verdict
++ reason, abandonments included) — met; the abandoned/parked set is:
+file-scope static arrays (S1-E4, documented deviation), Form 2 at
+R2/R5 (deliberate skips, recorded), the lookup pinned layer (S5-E4,
+parked on a registered gap), structural tree shrinking (S4, byte
+shrinker never fired).
+
+Original register header follows (the entry format + running
+entries, unchanged).
+
 Charter: `2026-08-22_arc15-spec-lab-charter.md` — this register is the
 arc's primary product: a dated record of what fit together, what
 fought, and why. Every experiment — including abandoned ones — gets an
@@ -613,3 +641,97 @@ not style.
 * Sandbox note re-confirmed: /tmp is write-only under the nono
   profile (S0 note); scratch stays under the worktree
   (`.s4-probes/`, deleted before the batch-3 commit).
+
+### S5-E1 — the amortization measurement (the seed rung's primary
+deliverable)
+
+Rung/target/date/worker: R5, deps/cn swap_pair.c + cn_inline.c
+lookup_size_shift, 2026-08-23, [AGENT:arc15-laneA-S5].
+Objects: the whole `SpecLab/CnSeed*` family + `test_speclab_seed.sh`;
+measurement detail in the S5 record.
+
+Verdict: **a new CN target is now a ~half-hour, zero-new-idiom
+exercise.** Measured: BOTH targets — probes to committed
+green-battery batch — in 31.5 min wall (timestamps in-session),
+with ZERO new codec definitions, ZERO new harness idioms, ZERO new
+pp surfaces (one impl-constant table row), the S2 comparator law and
+S1 refutation schema consumed as-is (the schema's fourth
+rung-independent transfer at 8 lines), and the 16-param zip table
+costing 3 lines. The un-amortized remainder: per-target harness C
+(~60 lines each, line-for-line adaptations), funinfo/closure pinning
+(one new std decl + the first impl0 entry), fixture dumps. Compare:
+R1-R4 were full slices of 3 batches each. The library thesis of the
+charter — the ladder pays for the corpus — is MEASURED, not argued.
+
+### S5-E2 — the kernel-characterized plant blind set (a new plant
+grade)
+
+Objects: `CnSeed.swapPlant_blind_iff` (verdict 0 ⟺ a = b; 11 lines
+via `ByteArr.verdictOf_eq_zero_iff` + u64 wire injectivity), the
+`--plant` diagonal twin.
+
+Verdict: **where the blind set has a closed form, prove it.** The
+S2-E5 rule (document + demonstrate blind spots) gets a third grade
+above "demonstrated": CHARACTERIZED — the plant's discriminating
+power is itself a kernel theorem, so plant-sample selection is
+provably outside the blind set rather than believed so. Cheap here
+because the comparator law reduces it to codec injectivity; worth
+attempting wherever that reduction exists (byte-image models).
+
+### S5-E3 — CN-vs-us comparison column (R5 entries)
+
+Full treatment in `2026-08-23_arc15-s5-cn-comparison.md` §3.5. Register
+kernel: swap_pair's `ensures` is functional post-state content and
+collapses to `⟨rfl, rfl⟩` on the model (collapse datapoint 4); our
+Wf is VACUOUS (full u64 domain) where CN still needs ownership
+`requires`; CN's `/*@ trusted; @*/` main is exactly the closed
+program we check. lookup's `cn_function` is the modelFn idea with
+the arrow REVERSED (CN derives the spec function from the body and
+trusts the translation; we author the model independently and check
+it by execution — different trust shapes, both stated); cn_inline's
+second contract (`f: return < 1000`) has a one-`decide` pure mirror
+(`f_model_lt_1000`), collapse datapoint 5.
+
+### S5-E4 — THE COREPARSER ENUM-CTYPE GAP (the rung's finding;
+parked-priced)
+
+Objects: tests/speclab/lookup_*.core (committed reproducers), the
+minimal repro pair in the S5 record (switch-only parses; + enum
+parameter refuses: `parse error: offset 0: expected 'builtin', got
+'proc'` — the ctype-literal grammar has no `enum TAG` arm).
+
+Verdict: **the first corpus construct whose oracle dump the pinning
+path cannot re-parse is C's most ordinary enum** — surfaced by
+instantiating real corpus code, invisible to every prior lane (the
+cabs-json exec path carries enums natively; lookup's differential
+lanes are all green, incl. non-enumerator values through the
+int→enum conversion). Disposition per park-don't-improvise
+(CoreParser.lean is semantics surface, outside the S5 worker's write
+scope; the S3 leak-oracle-leg precedent): lookup's pinned statement
+layer is PARKED, its lanes stay green, the fixtures + the 2-param
+zip plan stay committed. PRICE S (a ctype-grammar arm + re-run the
+emitter). The lab's purpose realized: gaps found by real code, filed
+with reproducers and prices.
+
+### S5-E5 — frictions (register-worthy)
+
+* The swap dumps' `wrapI_add`/`wrapI_mul`/
+  `catch_exceptional_condition_*` tokens are BUILT-IN pexpr forms
+  (PEwrapI/PEcatch…, parsed by suffix), NOT std.core calls — a
+  10-minute false trail during the unknown-function chase; the real
+  missing decl was `ctype_width` (u64 shift bound checks). Noted so
+  the next closure chase greps the parser's special forms first.
+* FIRST NONEMPTY impl0 in a pinned family: `<bits_in_byte> = 8`
+  (ctype_width's multiplier), hand-pinned from the gcc LP64 impl
+  file, behaviorally gated — the T1File-era "impl0 := fmapEmpty"
+  convention ends at R5; future rungs touching width-generic std
+  code should expect impl closure entries.
+* The junk expected-splice convention (`junkExpected`, S2) bit once
+  more: an empty `expected[]` fallback renders `{ }` — invalid C
+  pre-C23 (the S0 caveat); the raw-stream lane caught it on first
+  run. The convention is now uniform across all five rungs.
+* Naming collision avoided by prefix: TreeRot already owns
+  `SwapPlant*` names (its wrong-child-swap plant); the R5 pair-swap
+  family uses `pairSwap*`/`CnSeed.Swap*` namespacing — cross-rung
+  name hygiene is now a real concern at five rungs and worth a
+  convention row in any future speclab style note.

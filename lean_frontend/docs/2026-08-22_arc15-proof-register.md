@@ -1,6 +1,41 @@
 # Arc 15 — THE PROOF-STYLE REGISTER
 
-Status: OPEN (stub created at S0 scaffold; entries begin at S1).
+Status: CLOSED at S5 (2026-08-23) — final-grades summary below; the
+speculative Linux-scaling memo is §memo at the end of this file
+(compressed copy in `2026-08-23_arc15-results.md`).
+
+## S5 SUMMARY HEAD — the proof-style final grades
+
+Grades are the LATEST grading per style (S4/S5 refresh), rubric
+(a)–(f) per the charter, 1-5, SPECULATIVE per the charter's bonus
+framing. "—" = not attempted (no grade without evidence).
+
+| Style | (a) lines/LOC | (b) re-pin | (c) mech. | (d) elab. | (e) C-shape | (f) parallel | Status |
+|---|---|---|---|---|---|---|---|
+| P5 pure-transport | 4 | 5 | 3 | 5 | 5 | 5 | **the arc's workhorse — graded on five rungs of landed theorems** |
+| P1 walker/certificate | 2 | 4 | 3 | 4 | 5 | 4 | parked-priced L (the exec-equation campaign, after Lane B/T5); re-priced every rung on measured Core sizes |
+| P2 Iris WP + adequacy | — | — | — | — | — | — | assessed 3×, not attempted (consumes P1's equations); natural targets recorded: R3 append (recursion), R4 rotation (representation predicates) |
+| P3 trace/replay | — | (5, inherited arc-11) | — | — | — | — | applicable the day P1 runs; what makes its re-pins affordable |
+| P4 direct invariant/iter_compose | — | — | — | — | — | — | objects exist since R2 (target loops); gated on T5 tech; the CN `inv` column gives invariant families for free |
+
+THE P5 TREND (marginal per-target pure theorem+proof lines per
+target LOC; derived, method in each grading): **7 (R1) → 3 (R2) → 3
+(R3) → 8 (R4) → ~5 (R5: 2 targets combined; ~2.7 excluding the
+pair-codec algebra, which is library-shaped)**. The R4 bend has a
+measured STRUCTURAL reason, not a scaling failure: the first
+RECURSIVE model costs a path-generalizing induction per preservation
+fact, ×3 locus operations (healthy + two plants) at ≈ 2.5/LOC each —
+the per-OPERATION rate stays flat at the R2/R3 level; what grew was
+the operation count. R5 confirms from the other side: with the
+library mature, two new targets' CN-postcondition content cost ZERO
+marginal lines (both collapse to rfl — five collapse datapoints
+across the arc), and the residue is codec algebra paid once per
+layout. The trend's honest reading: pure-transport marginal cost is
+FLAT-PER-OPERATION and dominated by (i) codec algebra per new wire
+layout and (ii) induction count per recursive model — both
+library-amortizing, neither growing with target LOC.
+
+Original register header follows.
 Charter: `2026-08-22_arc15-spec-lab-charter.md`, "Proof-style
 exploration" (bonus objective, [USER 2026-08-22]): per rung, where
 affordable, discharge the same obligation in contending styles and
@@ -458,3 +493,165 @@ What R4 cannot yet state, and what each waits on:
      oracle --batch allocation-census line, est. S, fork-side,
      upstream-tray candidate). The R4 leak lane doubles the stakes —
      the plant-class separation is only Lean-side observable.
+
+All S5 grades are SPECULATIVE per the charter. Target C: swap_pair =
+6 LOC + lookup_size_shift = 14 LOC (bodies + braces, derived; CN
+annotations excluded); harness C ≈ 60 LOC each.
+
+### S5-P5 — pure-transport at the mature library (fifth grading: the
+amortization check)
+
+What landed kernel-checked entirely in pure land at R5: the codec
+CANONICITY COMPLETIONS (`canonical_u32le`/`canonical_u64le` — the
+last scalar widths join the S2 `Canonical` layer; LIBRARY), the
+Wf-FREE bridge (`CnSeed.model_forall_iff_stream_forall` — the first
+bridge with NO side conditions anywhere, the full-domain u64 model),
+the CN postconditions' pure content at ZERO marginal cost
+(`swap_post = ⟨rfl, rfl⟩`, `lookup_is_model` by decide — collapse
+datapoints 4 and 5), the bonus mirrors (`swap_involutive`;
+`f_model_lt_1000` — cn_inline's second contract in one decide;
+`lookup_bounds`/`lookup_inRange`), and THE BLIND-SET
+CHARACTERIZATION (`swapPlant_blind_iff` via the S2 comparator law +
+`encodeU64LE_inj` — the plant's discriminating power as a kernel
+theorem, 11 lines).
+
+(a) proof-lines/C-line: 4 — marginal per-target pure content ≈ 85
+    lines / 6 LOC (swap, of which ~55 is pair-codec algebra —
+    library-shaped, reusable for any 2×u64 layout) + ≈ 22 / 14 LOC
+    (lookup) ≈ 5/LOC combined, ~2.7/LOC excluding codec algebra
+    (derived from the CnSeed.lean sections). Trend: see the summary
+    head — flat per operation, library-amortizing.
+(b) re-pin robustness: 5 — unchanged (zero pure lemmas name program
+    terms; the harness-body iterations during probing touched zero
+    pure proofs).
+(c) mechanization: 3 — unchanged (simp/omega/decide/two case walks;
+    statements hand-written).
+(d) elaboration pressure: 5 — all pure proofs at default budgets,
+    milliseconds; no set_option anywhere.
+(e) C-shape realism: 5 — a pointer-mutating target on caller memory
+    (u64 cells) and an enum-switch scalar both transported with the
+    existing machinery; NOTHING in the pure layer noticed the new
+    shapes. Ceiling still not found.
+(f) parallelizability: 5 — unchanged; R5 itself was built alongside
+    nothing blocking.
+Evidence sentence: at the mature library the pure layer's marginal
+cost for two fresh corpus targets was one sitting's work with both
+CN postconditions definitionally absorbed, and the only
+non-library-shaped new proof (the blind-set characterization) is a
+NEW KIND of cheap theorem the earlier rungs didn't think to state.
+
+### S5-P1 — walker/certificate (re-priced at R5; not attempted —
+the wall stays parked, per scoping)
+
+Measured grounds refreshing the price: pairswap_a.core = 1,439 lines
+(main ≈ 1,180 + swap_pair ≈ 250) — BELOW R2's memcpy flagship
+(2,092) with NO new law surfaces beyond R2's list (loops, SeqRMW,
+store/load families; callee non-recursive, 3 straight-line stores)
+— and the swap family is therefore the exec-equation campaign's
+natural SECOND target after divmod-i8 (campaign order refined:
+R1 i8 → R5 swap → R2 → R3 → R4, ascending call-graph complexity).
+The lookup TU (1,086 lines) cannot enter the campaign until the
+CoreParser enum gap closes (S5-E4). Price: unchanged L, after Lane
+B/T5.
+
+### S5-N — the R5 statement-shape ledger (registered precisely)
+
+What R5 states today: swap sample-∀ over 4 pinned pairs (16-param
+parametric term ⇒ fixed-family-∀, 256^16 instances, the campaign
+endpoint — statement side complete) + the stream face via the first
+hypothesis-free bridge + the plant claim with its refutation schema
++ the kernel-characterized blind set. No leak family (no
+allocation). What R5 cannot yet state, and why:
+  1. FIXED-FAMILY-∀: the parked exec-equation campaign (price L).
+  2. The LOOKUP statement family (model-indexed lookupFileOf over
+     the sz<256 sub-family, 2-param zip): parked on the CoreParser
+     enum-ctype gap (S5-E4, price S) — NOT on any statement-side
+     wall; the zip plan is drafted in the batch-1 history.
+  3. Shape-parametric ∀: not applicable (fixed 16-byte stream is the
+     swap family's full domain).
+
+## THE LINUX-SCALING MEMO (close-out deliverable; speculative by
+charter design)
+
+Question: which proof styles plausibly scale to the kernel-adjacent
+slate (pKVM buddy allocator, WireGuard-class code), what is missing
+from each, and where should the next automation investment go?
+Grounded in this arc's measured numbers; all forward claims are
+speculative and say so.
+
+**1. The scaling architecture the arc's evidence supports is a
+two-stage division of labor: P5 in front of everything, P1(+P3) as
+the bridge, P2 behind for structure.** Five rungs of evidence that
+property content lives almost entirely in pure land (flat
+per-operation cost, five definitional collapses of external specs,
+zero elaboration pressure, perfect re-pin robustness, embarrassing
+parallelism) — and that the ONE impure obligation per family (the
+exec equation at the pinned/parametric term) is a single,
+well-shaped, walker-class goal. Nothing at buddy-allocator scale
+changes this shape: a page-allocator model is a pure map/tree with
+an operation family, exactly the R4 "operation count" axis, priced
+at ~2.5 lines/LOC per operation on this arc's numbers.
+
+**2. The binding constraint is NOT statement supply — it is the
+exec-equation campaign (P1), and its cost structure is now
+understood.** The statement side is COMPLETE five rungs deep
+(parametric terms make family-∀ free at the statement level). The
+walker re-pricing across rungs measured the real growth axis: Core
+size grows with CALL STRUCTURE, not construct vocabulary — the pp/
+law surface SATURATED at R3 (R4 and R5 added zero new Core
+constructs; R5's flagship is smaller than R2's). Speculatively: a
+walker campaign that (i) starts at the smallest fixtures (i8, swap),
+(ii) registers the four known-missing law surfaces (main-driven
+drive prefix, Eccall rounds, block-scope store_lock init, Ememop),
+and (iii) leans on arc-11 replay for re-pins, amortizes over EVERY
+harness-family theorem at once — the highest-leverage automation
+investment on the board, and it is already priced (L) and
+sequenced (after T5).
+
+**3. What each style is missing, concretely.** P1: T5's symbolic-n
+(the loop tech) + the four law surfaces + a callee-recursion lemma
+family (R3's finding); nothing conceptual. P4: is not really a
+separate style at scale — it is P1's loop layer; the CN `inv` column
+supplies invariant candidates for free where corpus targets carry
+them. P2: consumes P1's equations; its scale value is MODULARITY
+(callee triples + representation predicates = prove each kernel
+function once, not per harness family) — the R3/R4 registers name
+the first two targets; the S4-E1 frame lemmas are its pure shadows
+already in place. P3: engineering, not research — inherited arc-11
+measurements make P1 re-pins ~seconds; must be wired into the
+campaign from day one, not retrofitted. P5: nothing is missing; its
+ceiling was probed at recursive-heap-shape complexity and not found.
+
+**4. The parametric walls are the honest long pole for
+kernel-shaped ∀.** Fixed-shape family-∀ is reachable by the
+campaign; LENGTH/SHAPE/PATH-parametric ∀ (the R2→R4 walls:
+symbolic-arity initializers × recursion depth × path position) is
+where "vast and unprecedented" lives. Speculation: the buddy
+allocator's statements can start honest at fixed shapes (the
+S2-E4/S5 zip machinery reaches 256^k families today), with the
+symbolic axes landed one at a time on T5's iter_compose foundation —
+and the template's per-shape scoping amendment keeps every
+intermediate claim honestly labeled.
+
+**5. Recommended next automation investment, ranked.** (1) THE
+EXEC-EQUATION CAMPAIGN with replay wired in (unlocks: proved
+sample-∀ + fixed-family-∀ for all five rungs' statements +
+unconditional plant refutations; every future target inherits). (2)
+T5 landing (Lane B — prerequisite for campaign's loop rungs and all
+symbolic axes). (3) The CoreParser enum arm + the oracle
+allocation-census line (S-priced instrument gaps that widen the
+corpus and close the leak conjunct's differential leg). (4) P2
+modular layer AFTER the campaign produces equations (its inputs).
+This ordering front-loads the investments that amortize over every
+target; it is the memo's only non-speculative claim — it follows
+from which artifacts consume which.
+
+**6. What this arc does NOT yet know.** Whether the walker's
+round-count growth stays tractable at five-proc call graphs
+(R4's 33x is measured but unwalked); whether exhaustive-mode ND
+economies (the sequenced-call rule's 3^sites) stay controllable in
+kernel-shaped code with real unsequenced idioms (the rule keeps
+HARNESSES clean; targets arrive as they are); and whether the
+concurrency axis (cmm schedules as streams — the forward design)
+composes with the harness template at all. All three are named,
+none is evidence-graded here.
