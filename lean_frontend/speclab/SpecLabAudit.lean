@@ -41,6 +41,7 @@ import Lean
 import SpecLab.DivModFiles
 import SpecLab.ByteArrFiles
 import SpecLab.ListAppendFiles
+import SpecLab.TreeRotFiles
 
 set_option autoImplicit false
 
@@ -131,7 +132,22 @@ open Lean in
      `SpecLab.ListAppend.LinkPlantLeakClaim,
      `SpecLab.ListAppend.append_sample_model_iff_stream,
      `SpecLab.ListAppend.model_forall_iff_stream_forall,
-     `SpecLab.ListAppend.appendFileOfStream_encode]
+     `SpecLab.ListAppend.appendFileOfStream_encode,
+     -- arc-15 S4 (R4 tree rung, the reference instance)
+     `SpecLab.TreeRot.RotateSampleStatement,
+     `SpecLab.TreeRot.RotateSampleStreamStatement,
+     `SpecLab.TreeRot.RotatePathSampleStatement,
+     `SpecLab.TreeRot.BuildOnlyStatement,
+     `SpecLab.TreeRot.SwapPlantHealthyClaim,
+     `SpecLab.TreeRot.DropPlantHealthyClaim,
+     `SpecLab.TreeRot.RotateSampleLeakStatement,
+     `SpecLab.TreeRot.RotatePathSampleLeakStatement,
+     `SpecLab.TreeRot.BuildOnlyLeakStatement,
+     `SpecLab.TreeRot.SwapPlantLeakStatement,
+     `SpecLab.TreeRot.DropPlantLeakClaim,
+     `SpecLab.TreeRot.rotate_sample_model_iff_stream,
+     `SpecLab.TreeRot.model_forall_iff_stream_forall,
+     `SpecLab.TreeRot.rotateFileOfStream_encode]
   for n in statements do
     match slStmtViolations env n with
     | .error e => throwError "{e}"
@@ -398,3 +414,100 @@ info: 'SpecLab.ListAppend.AppendElemPlantHealthyClaim' depends on axioms: [prope
 #guard_msgs in #print axioms SpecLab.ListAppendCore.mallocProxyDecl
 /-- info: 'SpecLab.ListAppendCore.freeProxyDecl' does not depend on any axioms -/
 #guard_msgs in #print axioms SpecLab.ListAppendCore.freeProxyDecl
+
+/-! ### arc-15 S4 pins (R4 tree rung; captured verbatim at S4 — same
+    discipline: classical-trio subsets for the pure layer,
+    `runEffectful` exactly where a statement quotes the drive
+    substrate — the leak statements included, AST terms axiom-free). -/
+
+/-- info: 'SpecLab.TreeRot.decodeTreeF_mono' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.TreeRot.decodeTreeF_mono
+/-- info: 'SpecLab.TreeRot.decodeTreeF_encode' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.TreeRot.decodeTreeF_encode
+/-- info: 'SpecLab.TreeRot.decode_encode_tree' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.TreeRot.decode_encode_tree
+/-- info: 'SpecLab.TreeRot.decode_encode_path' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.TreeRot.decode_encode_path
+/-- info: 'SpecLab.TreeRot.decode_encode_input' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.TreeRot.decode_encode_input
+/-- info: 'SpecLab.TreeRot.encode_decodeTreeF' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.TreeRot.encode_decodeTreeF
+/-- info: 'SpecLab.TreeRot.canonical_tree' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.TreeRot.canonical_tree
+/-- info: 'SpecLab.TreeRot.canonical_path' depends on axioms: [propext] -/
+#guard_msgs in #print axioms SpecLab.TreeRot.canonical_path
+/-- info: 'SpecLab.TreeRot.encode_decode_input' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.TreeRot.encode_decode_input
+/-- info: 'SpecLab.TreeRot.model_forall_iff_stream_forall' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.TreeRot.model_forall_iff_stream_forall
+/-- info: 'SpecLab.TreeRot.rotateRight_size' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.TreeRot.rotateRight_size
+/-- info: 'SpecLab.TreeRot.rotateAt_size' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.TreeRot.rotateAt_size
+/-- info: 'SpecLab.TreeRot.swapPlant_size' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.TreeRot.swapPlant_size
+/-- info: 'SpecLab.TreeRot.dropPlant_size' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.TreeRot.dropPlant_size
+/-- info: 'SpecLab.TreeRot.rotateAt_valsOk' depends on axioms: [propext] -/
+#guard_msgs in #print axioms SpecLab.TreeRot.rotateAt_valsOk
+/-- info: 'SpecLab.TreeRot.expectedBytes_fits' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.TreeRot.expectedBytes_fits
+/-- info: 'SpecLab.TreeRot.rotateAt_as_replace' depends on axioms: [propext] -/
+#guard_msgs in #print axioms SpecLab.TreeRot.rotateAt_as_replace
+/-- info: 'SpecLab.TreeRot.rotateAt_frame' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.TreeRot.rotateAt_frame
+/-- info: 'SpecLab.TreeRot.rotateFileOfStream_encode' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.TreeRot.rotateFileOfStream_encode
+/--
+info: 'SpecLab.TreeRot.rotate_sample_model_iff_stream' depends on axioms: [propext,
+ runEffectful,
+ Classical.choice,
+ Quot.sound]
+-/
+#guard_msgs in #print axioms SpecLab.TreeRot.rotate_sample_model_iff_stream
+/-- info: 'SpecLab.TreeRot.RotateSampleStatement' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.TreeRot.RotateSampleStatement
+/-- info: 'SpecLab.TreeRot.RotateSampleStreamStatement' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.TreeRot.RotateSampleStreamStatement
+/-- info: 'SpecLab.TreeRot.RotatePathSampleStatement' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.TreeRot.RotatePathSampleStatement
+/-- info: 'SpecLab.TreeRot.BuildOnlyStatement' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.TreeRot.BuildOnlyStatement
+/-- info: 'SpecLab.TreeRot.SwapPlantHealthyClaim' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.TreeRot.SwapPlantHealthyClaim
+/-- info: 'SpecLab.TreeRot.DropPlantHealthyClaim' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.TreeRot.DropPlantHealthyClaim
+/-- info: 'SpecLab.TreeRot.RotateSampleLeakStatement' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.TreeRot.RotateSampleLeakStatement
+/-- info: 'SpecLab.TreeRot.RotatePathSampleLeakStatement' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.TreeRot.RotatePathSampleLeakStatement
+/-- info: 'SpecLab.TreeRot.BuildOnlyLeakStatement' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.TreeRot.BuildOnlyLeakStatement
+/-- info: 'SpecLab.TreeRot.SwapPlantLeakStatement' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.TreeRot.SwapPlantLeakStatement
+/-- info: 'SpecLab.TreeRot.DropPlantLeakClaim' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.TreeRot.DropPlantLeakClaim
+/-- info: 'SpecLab.TreeRot.rotateI24File' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.TreeRot.rotateI24File
+/-- info: 'SpecLab.TreeRot.rotateRootFile' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.TreeRot.rotateRootFile
+/-- info: 'SpecLab.TreeRot.rotateDeepFile' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.TreeRot.rotateDeepFile
+/-- info: 'SpecLab.TreeRot.swapPlantFile' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.TreeRot.swapPlantFile
+/-- info: 'SpecLab.TreeRot.dropPlantFile' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.TreeRot.dropPlantFile
+/-- info: 'SpecLab.TreeRot.rotateBuildFile' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.TreeRot.rotateBuildFile
+/-- info: 'SpecLab.TreeRot.rotateFileOf' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.TreeRot.rotateFileOf
+/-- info: 'SpecLab.TreeRotCore.rotateMainParamDecl' does not depend on any axioms -/
+#guard_msgs in #print axioms SpecLab.TreeRotCore.rotateMainParamDecl
+/-- info: 'SpecLab.TreeRotCore.rotateRightDecl' does not depend on any axioms -/
+#guard_msgs in #print axioms SpecLab.TreeRotCore.rotateRightDecl
+/-- info: 'SpecLab.TreeRotCore.nodeTagDef' does not depend on any axioms -/
+#guard_msgs in #print axioms SpecLab.TreeRotCore.nodeTagDef
+/-- info: 'SpecLab.TreeRotCore.rootMainDecl' does not depend on any axioms -/
+#guard_msgs in #print axioms SpecLab.TreeRotCore.rootMainDecl
+/-- info: 'SpecLab.TreeRotCore.swapRotateRightDecl' does not depend on any axioms -/
+#guard_msgs in #print axioms SpecLab.TreeRotCore.swapRotateRightDecl

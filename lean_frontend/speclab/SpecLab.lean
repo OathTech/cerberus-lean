@@ -21,3 +21,5 @@ import SpecLab.ListAppendCore
 import SpecLab.ListAppendFiles
 import SpecLab.TreeRot
 import SpecLab.TreeRotHarness
+import SpecLab.TreeRotCore
+import SpecLab.TreeRotFiles
