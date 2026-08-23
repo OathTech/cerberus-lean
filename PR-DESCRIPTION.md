@@ -91,3 +91,17 @@ CI lane is unchanged relative to the base commit (verified by running
 `./run-ci.sh` on both and diffing the results), and `bswap16`/
 `bswap32`/sub-2^63 `bswap64` calls were additionally spot-checked
 against gcc.
+
+The other conversions in this file were checked for the same defect:
+`ctz` also starts with `Z.to_int64`, but only `__builtin_ctz` (a 32-bit
+`unsigned int` argument, zero-guarded in the Core proxy) reaches it, so
+it cannot overflow; `bswap16`/`bswap32` arrive pre-bounded (their
+`assert`s are intentional); `generic_ffs` works in `Z` throughout.
+
+## Provenance
+
+This defect was found, and this patch (code, tests, and this
+description) was written, by an AI assistant (Anthropic's Claude) under
+human direction, as part of a project that differentially tests
+Cerberus against a Lean port of its semantics. It is submitted after
+review and validation by the human author.
