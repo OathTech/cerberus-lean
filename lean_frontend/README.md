@@ -85,10 +85,10 @@ from the files below, that's a documentation bug.
 | Artifact | Where |
 |---|---|
 | The C program | `../tests/verify/t4_struct_member.c` |
-| Its elaborated (Core) form, pinned | pinned terms in `relsem/RelSem/T1Core.lean`; byte-checked against a fresh oracle dump by the `emit-lean-core-test` gate |
+| Its elaborated (Core) form, pinned | `../tests/verify/t4_struct_member.core` (oracle dump), parsed into pinned terms in `relsem/RelSem/SlateCore.lean`; term↔pin byte-checked by the `emit-lean-core-test` gate, pin↔C re-derived from the `.c` by `test_verify.sh` (the three-link chain: PROOF.md §3) |
 | The statement | `T4Statement` in `relsem/RelSem/T4.lean` — quantified, mentions only the executable semantics and the program |
 | The proof | `theorem T4 : T4Statement`, same file — an ordinary kernel-checked theorem |
-| Its exact axioms | `#print axioms RelSem.T4` = `[propext, runEffectful, Classical.choice, Quot.sound]`, pinned in-build in `relsem/RelSem/Audit.lean` |
+| Its exact axioms | `#print axioms RelSem.T4.T4` = `[propext, runEffectful, Classical.choice, Quot.sound]`, pinned in-build in `relsem/RelSem/Audit.lean` |
 | The differential check | `../scripts/test_verify.sh` — runs the same C on both implementations and against the recorded spec points |
 
 **A specified real C function** (binary-tree rotation, the
