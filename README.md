@@ -2,6 +2,11 @@
 
 [![CI](https://github.com/rems-project/cerberus/actions/workflows/ci.yml/badge.svg)](https://github.com/rems-project/cerberus/actions/workflows/ci.yml) [![CI-CHERI](https://github.com/rems-project/cerberus/actions/workflows/ci-cheri.yml/badge.svg)](https://github.com/rems-project/cerberus/actions/workflows/ci-cheri.yml)
 
+**This fork adds a Lean 4 port of the semantics** — generated from the
+same Lem model, differentially validated against the OCaml
+implementation, and usable as a substrate for kernel-checked theorems
+about C programs: see [lean_frontend/README.md](lean_frontend/README.md).
+
 
 Web interfaces, papers, and web page
 ---
