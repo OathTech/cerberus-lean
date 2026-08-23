@@ -77,4 +77,5 @@ with all build gotchas is [CLAUDE.md](CLAUDE.md).
 
 Start with [PROOF.md](PROOF.md) for the capabilities and the precise
 status of what is proved; [DESIGN.md](DESIGN.md) for architecture;
-`docs/` for the dated record of how everything got here.
+[TODO.md](TODO.md) for the roadmap and backlog; `docs/` for the dated
+record of how everything got here.
