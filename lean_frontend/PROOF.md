@@ -62,7 +62,7 @@ testable against the OCaml oracle. There is no symbolic input, no
 conjured memory state, and no runtime randomness anywhere.
 
 The statement shape (full ratified design:
-`../../notes/2026-08-22_harness-statement-template.md`; worked
+`docs/2026-08-22_harness-statement-template.md`; worked
 example: `docs/2026-08-23_arc15-s4-r4-tree-worked-example.md`):
 
 - a **pure model** of the data structure (a first-order inductive
@@ -121,7 +121,7 @@ sample-∀ to family-∀ and make the refutation schemas unconditional) —
 is the current binding constraint; it waits on the symbolic-walk
 machinery (T5 and the in-chase sealing work, both in flight — see
 `docs/2026-08-22_arc15-t5-resumption-record.md` and the stepper
-design note `../../notes/2026-08-23_stepper-arc-design.md`).
+design note `docs/2026-08-23_stepper-arc-design.md`).
 Length/shape-parametric ∀ (beyond fixed shapes) is staged behind the
 same machinery. Do not read any claim in this file as covering these.
 
@@ -150,7 +150,7 @@ ordinary kernel-checked declaration.
 The direction of travel (compositional symbolic stepping with
 per-function summaries — proof-layer only; statements stay
 closed-program) is designed in
-`../../notes/2026-08-23_stepper-arc-design.md`.
+`docs/2026-08-23_stepper-arc-design.md`.
 
 ## 5. How to check any claim in this file
 

@@ -163,8 +163,7 @@ generated trees.
 - Agent-facing operating manual (build mechanics, gates, gotchas):
   [CLAUDE.md](CLAUDE.md)
 - The specification style (harnesses as programs, choice streams):
-  `../../notes/2026-08-22_harness-statement-template.md` (container
-  level), with the worked example in
-  `docs/2026-08-23_arc15-s4-r4-tree-worked-example.md`
+  `docs/2026-08-22_harness-statement-template.md`, with the worked
+  example in `docs/2026-08-23_arc15-s4-r4-tree-worked-example.md`
 - Dated design records and results: `docs/` (start with the most
   recent `*-results.md`)

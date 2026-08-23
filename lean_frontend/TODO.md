@@ -12,7 +12,7 @@ is deliberately not pinned here — follow the pointers.
   symbolic-execution chases (the Lean kernel's recursion depth is the
   binding limit, not proof content). Mechanism + current state:
   `docs/2026-08-22_arc15-t5-resumption-record.md`, seals section of
-  `../../notes/2026-08-23_stepper-arc-design.md`.
+  `docs/2026-08-23_stepper-arc-design.md`.
 
 ## Next, in sequence
 
@@ -26,12 +26,13 @@ is deliberately not pinned here — follow the pointers.
   executor: proved-rewrite laws + in-chase seals + typed residuals +
   per-function summary **overrides** at call sites (whole-state
   summaries first, separation-logic footprints second). Design:
-  `../../notes/2026-08-23_stepper-arc-design.md`.
+  `docs/2026-08-23_stepper-arc-design.md`.
 
 ## Targets (once the stepper sets the proof economics)
 
-- **WireGuard ladder** — `../../notes/2026-08-20_wireguard-target-scoping.md`.
-- **pKVM buddy allocator** — `../../deps/CN-pKVM-buddy-allocator-case-study/`;
+- **WireGuard ladder** — `docs/2026-08-20_wireguard-target-scoping.md`.
+- **pKVM buddy allocator** — reference: the CN pKVM buddy-allocator
+  case study (github.com/rems-project/CN-pKVM-buddy-allocator-case-study);
   GPL-derived fixtures stay out of this repository (they go in a
   separate example repository, for licence separation).
 
@@ -69,7 +70,9 @@ is deliberately not pinned here — follow the pointers.
 
 ## Needs maintainer action or network access
 
-- Patches queued for upstream Cerberus: drafts in
-  `../../notes/upstream/`, plus prepared PR branches.
-- Decide the fate of `cerberus-lean-prototype` (reduce to a test
-  oracle vs archive) — open decision, container `ROADMAP.md`.
+- Patches queued for upstream Cerberus: a tray of drafted bug
+  reports and prepared PR branches, maintained operator-side and
+  filed as network windows allow (several findings from the
+  differential campaigns; two already have ready branches).
+- Decide the fate of the earlier prototype interpreter (reduce to a
+  test oracle vs archive) — open decision.
