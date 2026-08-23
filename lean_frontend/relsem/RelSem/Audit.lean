@@ -132,6 +132,9 @@ import RelSem.T4
 -- OUTSIDE this file's import closure — the sweep/gate hole the
 -- arc-11 adversarial audit found.
 import RelSem.T5Iter
+-- arc/t5-seal (2026-08-23): the T5Ladder wave-2 family (audit W-1
+-- promotion) joins the sweep closure + pins.
+import RelSem.T5Ladder
 
 namespace RelSem.Audit
 
@@ -418,6 +421,76 @@ def sorryExceptions : List Name := []
 /-- info: 'RelSem.T5.envL_lookup_s' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T5.envL_lookup_s
 
+-- Arc/t5-seal (2026-08-23, audit W-1): THE T5 LADDER (wave 2) — the
+-- interstitial prefix-env lookup family promoted from probe scratch
+-- (ProbeT5S4c's have-fact ladder, validated to 13/79). Same clean
+-- quartet as the wave-1 family; the two pure-fixture rfl facts sit at
+-- the classical trio. Pinned exactly — growth fails the build.
+/-- info: 'RelSem.T5.envP22_spec' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5.envP22_spec
+/-- info: 'RelSem.T5.envP22_built' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5.envP22_built
+/-- info: 'RelSem.T5.unitSym_cmp_ne' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5.unitSym_cmp_ne
+/-- info: 'RelSem.T5.envP1_lookup_a543' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5.envP1_lookup_a543
+/-- info: 'RelSem.T5.envP1_lookup_i' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5.envP1_lookup_i
+/-- info: 'RelSem.T5.envP2_lookup_a542' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5.envP2_lookup_a542
+/-- info: 'RelSem.T5.envP2_lookup_a543' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5.envP2_lookup_a543
+/-- info: 'RelSem.T5.envP3_lookup_a542' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5.envP3_lookup_a542
+/-- info: 'RelSem.T5.envP4_lookup_a544' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5.envP4_lookup_a544
+/-- info: 'RelSem.T5.envP4_lookup_a545' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5.envP4_lookup_a545
+/-- info: 'RelSem.T5.envP6_lookup_a537' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5.envP6_lookup_a537
+/-- info: 'RelSem.T5.envP6_lookup_a538' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5.envP6_lookup_a538
+/-- info: 'RelSem.T5.envP7_lookup_a544' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5.envP7_lookup_a544
+/-- info: 'RelSem.T5.envP7_lookup_a545' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5.envP7_lookup_a545
+/-- info: 'RelSem.T5.envP8_lookup_i' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5.envP8_lookup_i
+/-- info: 'RelSem.T5.envP9_lookup_s' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5.envP9_lookup_s
+/-- info: 'RelSem.T5.envP10_lookup_a555' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5.envP10_lookup_a555
+/-- info: 'RelSem.T5.envP11_lookup_a556' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5.envP11_lookup_a556
+/-- info: 'RelSem.T5.envP12_lookup_a550' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5.envP12_lookup_a550
+/-- info: 'RelSem.T5.envP12_lookup_a551' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5.envP12_lookup_a551
+/-- info: 'RelSem.T5.envP14_lookup_a549' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5.envP14_lookup_a549
+/-- info: 'RelSem.T5.envP14_lookup_a557' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5.envP14_lookup_a557
+/-- info: 'RelSem.T5.envP15_lookup_i' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5.envP15_lookup_i
+/-- info: 'RelSem.T5.envP16_lookup_a564' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5.envP16_lookup_a564
+/-- info: 'RelSem.T5.envP18_lookup_a559' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5.envP18_lookup_a559
+/-- info: 'RelSem.T5.envP18_lookup_a560' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5.envP18_lookup_a560
+/-- info: 'RelSem.T5.envP20_lookup_a558' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5.envP20_lookup_a558
+/-- info: 'RelSem.T5.envP20_lookup_a565' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5.envP20_lookup_a565
+/-- info: 'RelSem.T5.envP21_lookup_i' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5.envP21_lookup_i
+/-- info: 'RelSem.T5.envP22_lookup_s' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5.envP22_lookup_s
+/-- info: 'RelSem.T5.extern_lookup_a543' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5.extern_lookup_a543
+/-- info: 'RelSem.T5.funs_lookup_a543' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5.funs_lookup_a543
+
 /-! ## (RETIRED SECTION — arc-8 S3.) The arc-7 S5c DAEMON entry-vector
     census (a kernel walk pinning `failwith` and
     `instInhabitedAction_request2` as the exactly-two DAEMON
@@ -583,8 +656,12 @@ open Lean in
 -- spelling for the env-family inserts — and Tactics/AppWalk gains
 -- kDiffTrace (trace-lane kernel diff, R-S2-3) + addRawAuxThm (raw
 -- seal fallback with level-mvar closure)).
+-- 3356 → 3436 (arc/t5-seal, audit W-1: RelSem.T5Ladder joins the
+-- closure — 22 prefix defs + 22 built lemmas + 29 lookup lemmas +
+-- unitSym_cmp_ne + envP22_spec + the 2 a543 miss facts and their
+-- equation-compiler auxiliaries).
 /--
-info: RelSem audit sweep: 3356 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 3436 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do

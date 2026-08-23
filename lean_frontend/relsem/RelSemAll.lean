@@ -44,6 +44,7 @@ import RelSem.T3
 import RelSem.T5Fixture
 import RelSem.T5Prefix
 import RelSem.T5Iter
+import RelSem.T5Ladder
 import RelSem.T4Defs
 import RelSem.T4AppEq
 import RelSem.T4
