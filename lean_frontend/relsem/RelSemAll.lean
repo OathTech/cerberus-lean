@@ -36,6 +36,14 @@ import RelSem.MemLocal
 import RelSem.CerbHeapRA
 import RelSem.CerbHeapWP
 import RelSem.CerbHeapDemo
+-- arc-16 S3: the loop peels, the per-construct law library, and the
+-- wp-tactic layer (runner algebra + dnmsK/driver2K + laws + tactics
+-- + the tactic smoke).
+import RelSem.PerStepRunner
+import RelSem.PerStepPeel
+import RelSem.PerStepLaws
+import RelSem.PerStepTactics
+import RelSem.PerStepTacSmoke
 -- arc-7 S4: the T1 program term (emitted, drift-gated) + the WP-route
 -- smoke theorems.
 import RelSem.T1Core

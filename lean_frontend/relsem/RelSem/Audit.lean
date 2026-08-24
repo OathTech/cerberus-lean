@@ -142,6 +142,13 @@ import RelSem.MemLocal
 import RelSem.CerbHeapRA
 import RelSem.CerbHeapWP
 import RelSem.CerbHeapDemo
+-- arc-16 S3: the loop peels + law library + wp-tactics join the
+-- sweep closure + pins.
+import RelSem.PerStepRunner
+import RelSem.PerStepPeel
+import RelSem.PerStepLaws
+import RelSem.PerStepTactics
+import RelSem.PerStepTacSmoke
 
 namespace RelSem.Audit
 
@@ -677,6 +684,72 @@ open Lean in
 /-- info: 'RelSem.Cerb.two_alloc_frame' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Cerb.two_alloc_frame
 
+-- arc-16 S3: THE LOOP PEELS + LAW LIBRARY + WP-TACTICS
+-- (RelSem/PerStepRunner + PerStepPeel + PerStepLaws + PerStepTactics
+-- + PerStepTacSmoke; design record
+-- docs/2026-08-24_arc16-s3-laws-and-tactics.md). The runner algebra
+-- is [propext(,Quot.sound)]-grade; the peels and the law library are
+-- exactly the classical trio; the statement-facing adequacy wrappers
+-- and the T1 tactic smoke inherit the temporal effect boundary's
+-- runEffectful through the quoted harness substrate, IDENTICAL to
+-- the committed T1's cone. Pinned exactly.
+/-- info: 'RelSem.runNDFuel_bind_congr' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.runNDFuel_bind_congr
+/-- info: 'RelSem.runNDFuel_bind_assoc' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.runNDFuel_bind_assoc
+/-- info: 'RelSem.runNDFuel_bind_active' depends on axioms: [propext] -/
+#guard_msgs in #print axioms RelSem.runNDFuel_bind_active
+/-- info: 'RelSem.Cerb.dnmsK_runner_eq' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.dnmsK_runner_eq
+/-- info: 'RelSem.Cerb.driver2K_runner_eq' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.driver2K_runner_eq
+/-- info: 'RelSem.Cerb.callK2_runner_eq' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.callK2_runner_eq
+/-- info: 'RelSem.Cerb.wpk_seq_active_ecast' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.wpk_seq_active_ecast
+/-- info: 'RelSem.Cerb.wpk_seq_active_proj' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.wpk_seq_active_proj
+/-- info: 'RelSem.Cerb.wpk_ite' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.wpk_ite
+/-- info: 'RelSem.Cerb.wpk_ite_conj' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.wpk_ite_conj
+/-- info: 'RelSem.Cerb.wpk_round_accum' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.wpk_round_accum
+/-- info: 'RelSem.Cerb.wpk_round_advance' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.wpk_round_advance
+/-- info: 'RelSem.Cerb.wpk_round_tau' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.wpk_round_tau
+/-- info: 'RelSem.Cerb.wpk_round_eval' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.wpk_round_eval
+/-- info: 'RelSem.Cerb.wpk_round_rsk_tau' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.wpk_round_rsk_tau
+/-- info: 'RelSem.Cerb.wpk_round_tau_ret' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.wpk_round_tau_ret
+/-- info: 'RelSem.Cerb.wpk_round_rsk_ret' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.wpk_round_rsk_ret
+/-- info: 'RelSem.Cerb.wpk_round_load' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.wpk_round_load
+/-- info: 'RelSem.Cerb.wpk_round_store' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.wpk_round_store
+/-- info: 'RelSem.Cerb.wpk_round_create' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.wpk_round_create
+/-- info: 'RelSem.Cerb.wpk_round_kill' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.wpk_round_kill
+/-- info: 'RelSem.Cerb.wpk_pcs_done' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.wpk_pcs_done
+/-- info: 'RelSem.Cerb.wpk_pcs_ccall' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.wpk_pcs_ccall
+/-- info: 'RelSem.Cerb.kCallHarnessAdequate_of_wpK2' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.kCallHarnessAdequate_of_wpK2
+/-- info: 'RelSem.Cerb.kCallHarnessUBFree_of_wpK2' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.kCallHarnessUBFree_of_wpK2
+/-- info: 'RelSem.T1.t1_wpK_tac' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T1.t1_wpK_tac
+/-- info: 'RelSem.T1.T1_perStep_tac' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T1.T1_perStep_tac
+/-- info: 'RelSem.T1.two_alloc_frame_tac' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T1.two_alloc_frame_tac
+
 /-! ## The exhaustive sweep — LAST in the file by design: a constant
     declared after this point would dodge it (negative-test lesson,
     2026-08-19), so nothing may be declared below, and RelSem.Audit is
@@ -701,8 +774,12 @@ open Lean in
 -- boundary-clean; pins above). 3517 → 3697 (arc-16 S2: the CerbMem
 -- heap RA modules MemLocal/CerbHeapRA/CerbHeapWP/CerbHeapDemo join
 -- the closure — 175 declarations, all trio-clean; pins above).
+-- 3692 → 3904 (arc-16 S3: the peel/law/tactic modules
+-- PerStepRunner/PerStepPeel/PerStepLaws/PerStepTactics/PerStepTacSmoke
+-- join the closure — 212 declarations, all boundary-clean; pins
+-- above).
 /--
-info: RelSem audit sweep: 3692 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 3904 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do
