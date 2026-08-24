@@ -208,3 +208,6 @@ if ! "$PROOFSIZE_SH"; then
     echo "test_unit: proof-size gate FAILED"
     exit 1
 fi
+
+# Chase-freeze gate (arc-16 S0a): no NEW imports/uses of the frozen chase surfaces outside the legacy allowlist (see the script header; fail-closed).
+"$(dirname "$PURITY_SH")/check_chase_freeze.sh" || { echo "test_unit: chase-freeze gate FAILED"; exit 1; }
