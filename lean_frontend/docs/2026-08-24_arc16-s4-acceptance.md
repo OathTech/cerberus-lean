@@ -137,7 +137,7 @@ digest-compare then Nat-compare on the drawn number. Session probes
   drawn symbol IS the static `a_529` to the semantics
   (`symbolEquality` ignores the description), so the env insert
   CAPTURES the static binding. **The unrestricted ∀-seed T4
-  statement is FALSE**, not merely hard: no machinery improvement
+  statement is FALSE**, not merely hard (epistemic status, audit-1 note: the COLLISION is kernel-witnessed by P3; the falseness conclusion additionally rests on the capture argument over the e21 arena — argued, not end-to-end-run-witnessed; the park-and-relax response is correct under either reading): no machinery improvement
   can prove it.
 
 THE PRICE FOR PART 2 (the contained fix, estimated M):
@@ -184,7 +184,7 @@ composition. T1 paid extra to RESTORE what the walker had absorbed
 the purge). Elaboration: ~1 s/fixture — no budget pressure anywhere
 (default heartbeats/recursion throughout; zero bumps).
 
-## 4. Cones (VERBATIM, session probes; all Audit-pinned build-fatally)
+## 4. Cones (VERBATIM, session probes; the trio-cone family Audit-pinned build-fatally — dnms_chain twins covered transitively via the pinned app-eq cones)
 
 ```
 'RelSem.Cerb.kCallHarnessAdequateThr_of_wp' depends on axioms: [propext, Classical.choice, Quot.sound]
@@ -225,6 +225,7 @@ The labeled impure side (mentions the ambient state, BY DESIGN):
 'RelSem.T1.T1_of_threaded' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound]
 'RelSem.T2.T2_of_threaded' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound]
 'RelSem.T3.T3_of_threaded' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound]
+(sixth member, audit-1 count correction: 'RelSem.Cerb.initial_core_run_state_eq_threaded_ambient' also wears the quartet — in-file labeled, unpinned, impure by statement text)
 ```
 
 ## 5. The tagDefs/forceIO seam (brief task 3)

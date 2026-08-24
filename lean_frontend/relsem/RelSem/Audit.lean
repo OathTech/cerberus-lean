@@ -876,7 +876,7 @@ open Lean in
 -- seal fallback with level-mvar closure)). 3356 → 3517 (arc-16 S1:
 -- the per-step language modules PerStep/PerStepIris/PerStepCall/
 -- PerStepSmoke join the closure — 161 declarations, all
--- boundary-clean; pins above). 3517 → 3697 (arc-16 S2: the CerbMem
+-- boundary-clean; pins above). 3517 → 3692 (arc-16 S2: the CerbMem
 -- heap RA modules MemLocal/CerbHeapRA/CerbHeapWP/CerbHeapDemo join
 -- the closure — 175 declarations, all trio-clean; pins above).
 -- 3692 → 3904 (arc-16 S3: the peel/law/tactic modules

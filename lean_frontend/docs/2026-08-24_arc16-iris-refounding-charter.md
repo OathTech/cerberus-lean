@@ -106,8 +106,12 @@ objects are the operator's; pre-merge audit ask unconditional.
 
 ## Success criteria
 
-1. S4 passes: T1–T4 re-proved cheaply, statements/cones
-   byte-identical.
+1. S4 passes: T1–T4 re-proved cheaply through S1–S3 — per the
+   [USER] S4 amendment, AT THE THREADED ∀-seed STATE with cones
+   exactly the classical trio (the ambient family untouched,
+   bridged by labeled lemmas). [Outcome: T1–T3 landed; T4 stopped
+   at the kernel-witnessed apartness diagnosis — the stop clause's
+   defined success; see the S4 record.]
 2. The heap RA supports framing (demonstrated: one two-function
    proof where the second function's proof does not mention the
    first's footprint).
