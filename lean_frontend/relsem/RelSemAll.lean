@@ -44,6 +44,10 @@ import RelSem.PerStepPeel
 import RelSem.PerStepLaws
 import RelSem.PerStepTactics
 import RelSem.PerStepTacSmoke
+-- arc-16 S4: the threaded effect state (∀-seed statement family) +
+-- the T1 threaded acceptance fixture.
+import RelSem.Threaded
+import RelSem.T1Threaded
 -- arc-7 S4: the T1 program term (emitted, drift-gated) + the WP-route
 -- smoke theorems.
 import RelSem.T1Core

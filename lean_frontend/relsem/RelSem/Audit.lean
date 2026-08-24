@@ -149,6 +149,10 @@ import RelSem.PerStepPeel
 import RelSem.PerStepLaws
 import RelSem.PerStepTactics
 import RelSem.PerStepTacSmoke
+-- arc-16 S4: the threaded effect state (∀-seed statements; the
+-- acceptance re-proof) joins the sweep closure + pins.
+import RelSem.Threaded
+import RelSem.T1Threaded
 
 namespace RelSem.Audit
 
@@ -484,7 +488,13 @@ def stmtAllowed : List Name :=
    `RelSem.T2.t2Fs, `RelSem.T2.drDone,
    `RelSem.T3.t3Fs, `RelSem.T3.drDone,
    `RelSem.T4.t4Fs, `RelSem.T4.drDone,
-   `RelSem.Slate.t2File, `RelSem.Slate.t3File, `RelSem.Slate.t4File]
+   `RelSem.Slate.t2File, `RelSem.Slate.t3File, `RelSem.Slate.t4File,
+   -- arc-16 S4: the threaded statement vocabulary — the
+   -- seed-parametric initial state (fuel-opsem-level: mirrors the
+   -- generated def with the seed explicit) + the per-fixture threaded
+   -- terminal states.
+   `RelSem.Cerb.initial_driver_state_threaded,
+   `RelSem.T1.drDone_thr]
 
 open Lean in
 /-- Syntactic "ends in Prop" (Prop-family def: `Prop` or a pi chain
@@ -552,7 +562,10 @@ open Lean in
      `RelSem.T3.T3, `RelSem.T3.T3_direct, `RelSem.T3.T3_ubFree,
      `RelSem.T3.T3Outcomes,
      `RelSem.T4.T4, `RelSem.T4.T4_direct, `RelSem.T4.T4_ubFree,
-     `RelSem.T4.T4Outcomes]
+     `RelSem.T4.T4Outcomes,
+     -- arc-16 S4: the threaded (∀-seed) family joins the gate.
+     `RelSem.T1.T1Threaded, `RelSem.T1.T1Threaded_ubFree,
+     `RelSem.T1.T1ThreadedOutcomes]
   for n in slate do
     match stmtViolations env n with
     | .error e => throwError "{e}"
@@ -750,6 +763,53 @@ open Lean in
 /-- info: 'RelSem.T1.two_alloc_frame_tac' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.two_alloc_frame_tac
 
+-- arc-16 S4: THE THREADED EFFECT STATE + THE ACCEPTANCE RE-PROOF
+-- (RelSem/Threaded.lean + the T?Threaded fixture family; record
+-- docs/2026-08-24_arc16-s4-acceptance.md). The ∀-seed statements are
+-- STRONGER than the ambient originals, and their cones are EXACTLY
+-- the classical trio — the seed-parametric initial state removes
+-- `runEffectful`'s entry point (the [USER 2026-08-24] amendment,
+-- executed; the axiom itself remains declared for the compiled/driver
+-- path — what tightens here is the THEOREM cones). The ambient-bridge
+-- lemmas (and only they) mention the ambient state and wear the
+-- boundary axiom DELIBERATELY — the labeled pins below document the
+-- impure side. Pinned exactly; growth fails the build.
+/-- info: 'RelSem.Cerb.kCallHarnessAdequateThr_of_wp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.kCallHarnessAdequateThr_of_wp
+/-- info: 'RelSem.Cerb.kCallHarnessUBFreeThr_of_wp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.kCallHarnessUBFreeThr_of_wp
+/-- info: 'RelSem.T1.round0_thr' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T1.round0_thr
+/-- info: 'RelSem.T1.round6_thr' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T1.round6_thr
+/-- info: 'RelSem.T1.dnms_chain_thr' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T1.dnms_chain_thr
+/-- info: 'RelSem.T1.driver2_iter_thr' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T1.driver2_iter_thr
+/-- info: 'RelSem.T1.t1_app_eq_thr' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T1.t1_app_eq_thr
+/-- info: 'RelSem.T1.t1_wpK_thr' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T1.t1_wpK_thr
+/-- info: 'RelSem.T1.T1Threaded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T1.T1Threaded
+/-- info: 'RelSem.T1.T1Threaded_ubFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T1.T1Threaded_ubFree
+/-- info: 'RelSem.T1.T1ThreadedOutcomes' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T1.T1ThreadedOutcomes
+-- The impure side, LABELED: the ambient bridge mentions the ambient
+-- state, so it (and only it) wears the boundary axiom — by design.
+/--
+info: 'RelSem.Cerb.initial_driver_state_eq_threaded_ambient' depends on axioms: [propext,
+ runEffectful,
+ Classical.choice,
+ Quot.sound]
+-/
+#guard_msgs in #print axioms RelSem.Cerb.initial_driver_state_eq_threaded_ambient
+/-- info: 'RelSem.Cerb.callHarnessAdequate_of_thr' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.callHarnessAdequate_of_thr
+/-- info: 'RelSem.T1.T1_of_threaded' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T1.T1_of_threaded
+
 /-! ## The exhaustive sweep — LAST in the file by design: a constant
     declared after this point would dodge it (negative-test lesson,
     2026-08-19), so nothing may be declared below, and RelSem.Audit is
@@ -777,9 +837,12 @@ open Lean in
 -- 3692 → 3904 (arc-16 S3: the peel/law/tactic modules
 -- PerStepRunner/PerStepPeel/PerStepLaws/PerStepTactics/PerStepTacSmoke
 -- join the closure — 212 declarations, all boundary-clean; pins
+-- above). 3904 → 3983 (arc-16 S4: the threaded effect-state modules
+-- Threaded/T1Threaded join the closure — 79 declarations, all
+-- boundary-clean, the threaded theorem family trio-exact; pins
 -- above).
 /--
-info: RelSem audit sweep: 3904 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 3983 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do
