@@ -273,8 +273,9 @@ open Iris Iris.ProgramLogic Iris.BI
     then), restored because the ∀-seed chain needs walker-free
     proofs; the intermediate arenas/threads are transcribed from the
     kernel's own reduction (session goal display). R3 (the load) and
-    R6 (the conv eval) stay the committed `round3` (∀-rs, reused
-    as-is) and the spike-shaped `round6_thr` below. -/
+    R6 (the conv eval) are the committed `round3`/`round6` (both ∀-rs,
+    reused as-is; round6 via the arc-17 S1 `erun_jump_m` construct
+    law — its `round6_thr` twin is dissolved). -/
 
 /-- Arena after R0 (the Ewseq's left operand evaluated). -/
 def arena1 : RExpr :=
@@ -371,40 +372,10 @@ theorem round8_thr (x : Int) (fuel : Nat) (rs : core_run_state)
   refine (app_bind_active rfl).trans ?_
   rfl
 
-/-- R6, threaded (twin of the committed `round6`, whose statement pins
-    the ambient run state for the label resolution; the proof body is
-    the identical recipe at the seed-parametric state — the committed
-    rs-generic `fullEval_conv_eq` carries the evaluation). -/
-theorem round6_thr (seed : Nat) (x : Int)
-    (h1 : -2147483648 ≤ x) (h2 : x ≤ 2147483647)
-    (fuel : Nat) (mem : CerbMem.MemState)
-    (tr : List trace_event) (n : Nat) :
-    app (dnms (fuel+1) fmapEmpty [0])
-        (mkDr (th6 x) mem (rsR6_thr seed) tr n)
-      = app (dnms fuel fmapEmpty [0])
-        (mkDr (th7 x) mem (rsR6_thr seed) tr (n+1)) := by
-  refine (app_bind_active rfl).trans ?_    -- nd_read (step_ctx)
-  apply (app_bind_active ?hadv).trans
-  case hadv =>
-    refine (app_bind_active rfl).trans ?_  -- rsk match (RSK_eval)
-    apply (app_bind_active (liftCore_run_defined ?hM)).trans
-    case hM =>
-      change stExceptUndef_bind _ _ _ = _
-      apply (stub_defined ?hLab).trans        -- runSE label resolution
-      case hLab => rfl
-      change stExceptUndef_bind _ _ _ = _
-      apply (stub_defined ?hFold).trans       -- the args foldM
-      case hFold =>
-        change stExceptUndef_bind _ _ _ = _
-        apply (stub_defined ?hElem).trans
-        case hElem =>
-          change stExceptUndef_bind _ _ _ = _
-          apply (stub_defined (fullEval_conv_eq x h1 h2 _ _)).trans
-          rfl
-        rfl
-      rfl
-    rfl
-  rfl
+/-! R6 needs NO twin (arc-17 S1): the committed `round6` is ∀-run-state
+    through the `erun_jump_m` construct law — the chain below consumes
+    it at `rsR6_thr seed` with the `hlab` hypothesis discharged by
+    `rfl` (the twin this dissolved: `round6_thr`, arc-16 S4). -/
 
 /-! ## Composition: the nine rounds chained (walker-free), the
     scheduler pick, the driver2 iteration, THE THREADED T1 APP
@@ -425,7 +396,7 @@ theorem dnms_chain_thr (seed : Nat) (x : Int)
   ((round3 x h1 h2 999996 (rsD3_thr seed) [] 3).trans
   ((round4_thr x 999995 (rsR6_thr seed) [meLoad x] 3).trans
   ((round5_thr x 999994 (rsR6_thr seed) [meLoad x] 4).trans
-  ((round6_thr seed x h1 h2 999993 (memD3 x) [meLoad x] 5).trans
+  ((round6 x h1 h2 999993 (memD3 x) (rsR6_thr seed) rfl [meLoad x] 5).trans
   ((round7_thr x 999992 (rsR6_thr seed) [meLoad x] 6).trans
   (round8_thr x 999990 (rsR6_thr seed) [meLoad x] 7))))))))
 

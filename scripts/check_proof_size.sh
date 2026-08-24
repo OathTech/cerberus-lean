@@ -59,14 +59,18 @@ fail=0
 # --- the mega-lemma counter: Kit files must be fixture-free ----------
 # fixture symbol classes: t<n>File / t<n>Fs / T<n>-namespaces / pinned
 # fixture def names.
+# arc-17 S1: the per-construct law registry (ConstructLaws.lean) rides
+# the same counter — a "construct law" naming a fixture is bar-gaming
+# by construction, exactly as for Kit lemmas.
 kit_hits=$(grep -nE 't[0-9]+File|t[0-9]+Fs|RelSem\.T[0-9]+\.|T[0-9]+Core' \
-    "$RELSEM"/Kit/*.lean 2>/dev/null | grep -v 'Kit/Audit.lean' || true)
+    "$RELSEM"/Kit/*.lean "$RELSEM"/ConstructLaws.lean 2>/dev/null \
+    | grep -v 'Kit/Audit.lean' || true)
 if [[ -n "$kit_hits" ]]; then
-    echo "check_proof_size: FAIL — Kit files reference fixture symbols (mega-lemma counter):"
+    echo "check_proof_size: FAIL — Kit/registry files reference fixture symbols (mega-lemma counter):"
     echo "$kit_hits"
     fail=1
 else
-    echo "check_proof_size: Kit files fixture-free OK ($(ls "$RELSEM"/Kit/*.lean | wc -l | tr -d ' ') files)"
+    echo "check_proof_size: Kit + ConstructLaws files fixture-free OK ($(ls "$RELSEM"/Kit/*.lean "$RELSEM"/ConstructLaws.lean | wc -l | tr -d ' ') files)"
 fi
 
 # --- debug-surface ban in committed proofs ---------------------------

@@ -47,6 +47,9 @@ import RelSem.PerStepLaws
 -- ground-fact discharger backing wp_side.
 import RelSem.DeriveState
 import RelSem.WpGround
+-- arc-17 S1: the per-construct law registry (fixture-independent
+-- construct laws; the equation-supply frontier).
+import RelSem.ConstructLaws
 import RelSem.PerStepTactics
 import RelSem.PerStepTacSmoke
 -- arc-16 S4: the threaded effect state (∀-seed statement family) +

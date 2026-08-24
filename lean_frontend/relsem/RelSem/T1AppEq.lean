@@ -31,6 +31,7 @@ import RelSem.Call
 import RelSem.Kit.Eval
 import RelSem.Kit.Round
 import RelSem.Kit.AppEq
+import RelSem.ConstructLaws
 import RelSem.Tactics.AppWalk
 
 set_option autoImplicit false
@@ -738,17 +739,18 @@ theorem fullEval_conv_eq (x : Int) (h1 : -2147483648 ≤ x)
   rfl
 
 /-- R6: the Erun eval round — the conv chain evaluates (fullEval_conv_eq),
-    the jump to ret_523's continuation binds a_526. rs must be concrete
-    enough for the label resolution; the round is stated at the chain's
-    actual run-state (rsD3 with the load's aid drawn). -/
+    the jump to ret_523's continuation binds a_526. ∀-run-state through
+    the `erun_jump_m` construct law (arc-17 S1; was pinned to the
+    chain's concrete run state — the label resolution now enters as
+    the `hlab` projection hypothesis, `rfl` at every state ladder). -/
 theorem round6 (x : Int) (h1 : -2147483648 ≤ x) (h2 : x ≤ 2147483647)
-    (fuel : Nat) (mem : CerbMem.MemState)
+    (fuel : Nat) (mem : CerbMem.MemState) (rs : core_run_state)
+    (hlab : rs.labeled = collect_labeled_continuations_NEW t1File)
     (tr : List trace_event) (n : Nat) :
     app (dnms (fuel+1) fmapEmpty [0])
-        (mkDr (th6 x) mem { rsD3 with aid_supply := rsD3.aid_supply + 1 } tr n)
+        (mkDr (th6 x) mem rs tr n)
       = app (dnms fuel fmapEmpty [0])
-        (mkDr (th7 x) mem { rsD3 with aid_supply := rsD3.aid_supply + 1 }
-          tr (n+1)) := by
+        (mkDr (th7 x) mem rs tr (n+1)) := by
   refine (app_bind_active rfl).trans ?_    -- nd_read (step_ctx)
   apply (app_bind_active ?hadv).trans
   case hadv =>
@@ -756,19 +758,20 @@ theorem round6 (x : Int) (h1 : -2147483648 ≤ x) (h2 : x ≤ 2147483647)
     apply (app_bind_active (liftCore_run_defined ?hM)).trans
     case hM =>
       change stExceptUndef_bind _ _ _ = _
-      apply (stub_defined ?hLab).trans        -- runSE label resolution
-      case hLab => rfl
-      change stExceptUndef_bind _ _ _ = _
-      apply (stub_defined ?hFold).trans       -- the args foldM
-      case hFold =>
+      apply RelSem.Laws.erun_jump_m ?hres ?hk  -- label-jump construct law
+      case hres => simp only [mkDr, hlab]; rfl -- label resolution
+      case hk =>
         change stExceptUndef_bind _ _ _ = _
-        apply (stub_defined ?hElem).trans
-        case hElem =>
+        apply (stub_defined ?hFold).trans       -- the args foldM
+        case hFold =>
           change stExceptUndef_bind _ _ _ = _
-          apply (stub_defined (fullEval_conv_eq x h1 h2 _ _)).trans
+          apply (stub_defined ?hElem).trans
+          case hElem =>
+            change stExceptUndef_bind _ _ _ = _
+            apply (stub_defined (fullEval_conv_eq x h1 h2 _ _)).trans
+            rfl
           rfl
         rfl
-      rfl
     rfl
   rfl
 
@@ -790,7 +793,8 @@ theorem dnms_chain (x : Int) (h1 : -2147483648 ≤ x) (h2 : x ≤ 2147483647) :
   app_walk
   app_walk_step (round3 x h1 h2 999996 rsD3 [] 3)
   app_walk
-  app_walk_step (round6 x h1 h2 999993 (memD3 x) [meLoad x] 5)
+  app_walk_step (round6 x h1 h2 999993 (memD3 x)
+    { rsD3 with aid_supply := rsD3.aid_supply + 1 } rfl [meLoad x] 5)
   app_walk
 
 /-- The scheduler sees exactly the done step. -/

@@ -9,11 +9,11 @@
   = {Specified(v)}, no UB. Cones: EXACTLY the classical trio
   (Audit-pinned).
 
-  Reuse discipline: of T3AppEq's twenty-four rounds only `round21`
-  (the second conv/save eval round) pins the ambient run state — the
-  chain consumes the other twenty-three committed ∀-rs lemmas AS-IS
-  at the threaded run-state ladder and twins round21, the prefix
-  skeleton (memory stages through the kit at the open state), and the
+  Reuse discipline: ALL twenty-four of T3AppEq's rounds are ∀-run-
+  state (round21's last pin dissolved by the arc-17 S1 `erun_jump_m`
+  construct law) — the chain consumes the committed lemmas AS-IS at
+  the threaded run-state ladder; the only threaded text is the prefix
+  skeleton (memory stages through the kit at the open state) and the
   composition. Statement-facing discharge: the S1–S3 WP route.
 
   House rules: no sorry, no axioms. Under the in-build audit.
@@ -142,48 +142,15 @@ theorem k9_thr (seed : Nat) (x : Int) (th : thread_state)
       = (NDactive (), mkDr th00 (memD3 x) (rsD3_thr seed) [] 0) := by
   subst hth; rfl
 
-/-! ## The rounds: only R21 pins the run state — twinned; the other
-    twenty-three are the committed ∀-rs lemmas -/
-
-/-- R21, threaded (twin of `round21`; identical recipe — the
-    rs-generic `fullEvalConvRun` carries conv chain #2 + the save
-    jump's label resolution at the open state). -/
-theorem round21_thr (seed : Nat) (x : Int)
-    (h1 : -2147483648 ≤ x) (h2 : x ≤ 2147483647)
-    (fuel : Nat) (mem : CerbMem.MemState)
-    (tr : List trace_event) (n : Nat) :
-    app (dnms (fuel+1) fmapEmpty [0])
-        (mkDr (th21 x) mem (rs5_thr seed) tr n)
-      = app (dnms fuel fmapEmpty [0])
-        (mkDr (th22 x) mem (rs5_thr seed) tr (n+1)) := by
-  refine (app_bind_active rfl).trans ?_    -- nd_read (step_ctx)
-  apply (app_bind_active ?hadv).trans
-  case hadv =>
-    refine (app_bind_active rfl).trans ?_  -- rsk match (RSK_eval)
-    apply (app_bind_active (liftCore_run_defined ?hM)).trans
-    case hM =>
-      change stExceptUndef_bind _ _ _ = _
-      apply (stub_defined ?hLab).trans        -- runSE label resolution
-      case hLab => rfl
-      change stExceptUndef_bind _ _ _ = _
-      apply (stub_defined ?hFold).trans       -- the args foldM
-      case hFold =>
-        change stExceptUndef_bind _ _ _ = _
-        apply (stub_defined ?hElem).trans
-        case hElem =>
-          change stExceptUndef_bind _ _ _ = _
-          apply (stub_defined (fullEvalConvRun x h1 h2 _ _)).trans
-          rfl
-        rfl
-      rfl
-    rfl
-  rfl
+/-! ## The rounds: ALL TWENTY-FOUR are the committed ∀-rs lemmas
+    (arc-17 S1: R21 — the last rs-pinned round — is ∀-rs through the
+    `erun_jump_m` construct law; its `round21_thr` twin is dissolved,
+    the chain discharges `hlab` by `rfl` at `rs5_thr seed`). -/
 
 /-! ## Composition -/
 
-/-- The full dnms run at the threaded state: twenty-three committed
-    ∀-rs rounds + the twinned R21 + terminal, at the threaded
-    run-state ladder. -/
+/-- The full dnms run at the threaded state: the twenty-four committed
+    ∀-rs rounds + terminal, at the threaded run-state ladder. -/
 theorem dnms_chain_thr (seed : Nat) (x : Int)
     (h1 : -2147483648 ≤ x) (h2 : x ≤ 2147483647) :
     app (dnms lemDefaultFuel fmapEmpty [0])
@@ -223,7 +190,7 @@ theorem dnms_chain_thr (seed : Nat) (x : Int)
       [meLoadX x, meStore x, meLoadV x, meCreate] 15).trans
   ((round20 x 999979 (memK x) (rs5_thr seed)
       [meKill, meLoadX x, meStore x, meLoadV x, meCreate] 15).trans
-  ((round21_thr seed x h1 h2 999978 (memK x)
+  ((round21 x h1 h2 999978 (memK x) (rs5_thr seed) rfl
       [meKill, meLoadX x, meStore x, meLoadV x, meCreate] 16).trans
   ((round22 x 999977 (memK x) (rs5_thr seed)
       [meKill, meLoadX x, meStore x, meLoadV x, meCreate] 17).trans

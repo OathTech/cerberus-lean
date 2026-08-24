@@ -153,6 +153,9 @@ import RelSem.PerStepTacSmoke
 -- memoized ground-fact discharger) joins the sweep closure.
 import RelSem.DeriveState
 import RelSem.WpGround
+-- arc-17 S1: the per-construct law registry joins the sweep closure
+-- + pins.
+import RelSem.ConstructLaws
 -- arc-16 S4: the threaded effect state (∀-seed statements; the
 -- acceptance re-proof) joins the sweep closure + pins.
 import RelSem.Threaded
@@ -792,8 +795,22 @@ open Lean in
 #guard_msgs in #print axioms RelSem.Cerb.kCallHarnessUBFreeThr_of_wp
 /-- info: 'RelSem.T1.round0_thr' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.round0_thr
-/-- info: 'RelSem.T1.round6_thr' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T1.round6_thr
+-- arc-17 S1: the label-resolution twins (round6_thr/round13_thr/
+-- round21_thr) are DISSOLVED — the ambient eval rounds are ∀-run-
+-- state through the construct-law registry (RelSem.ConstructLaws)
+-- and are pinned trio here (they no longer mention any concrete run
+-- state, so the ambient files' rs ladders can't pull the boundary
+-- axiom in).
+/-- info: 'RelSem.Laws.seu_read_bind' depends on axioms: [propext] -/
+#guard_msgs in #print axioms RelSem.Laws.seu_read_bind
+/-- info: 'RelSem.Laws.erun_jump_m' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Laws.erun_jump_m
+/-- info: 'RelSem.T1.round6' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T1.round6
+/-- info: 'RelSem.T2.round13' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T2.round13
+/-- info: 'RelSem.T3.round21' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T3.round21
 /-- info: 'RelSem.T1.dnms_chain_thr' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.dnms_chain_thr
 /-- info: 'RelSem.T1.driver2_iter_thr' depends on axioms: [propext, Classical.choice, Quot.sound] -/
@@ -809,16 +826,14 @@ open Lean in
 /-- info: 'RelSem.T1.T1ThreadedOutcomes' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.T1ThreadedOutcomes
 -- T2/T3 at the threaded state (same recipe; T2AppEq/T3AppEq's ∀-rs
--- round lemmas consumed AS-IS — only the rs-pinning eval rounds are
--- twinned). T4 is PARKED at a kernel-witnessed diagnosis (the record
+-- round lemmas consumed AS-IS — since arc-17 S1 that is ALL of them;
+-- no twins remain). T4 is PARKED at a kernel-witnessed diagnosis (the record
 -- §T4): its exec path READS the supply (the NEG-store transform's two
 -- draws), the drawn symbols enter comparison-keyed env maps, and at a
 -- COLLIDING seed the fresh symbol captures a static one — the
 -- unrestricted ∀-seed T4 statement is FALSE; the fresh conjunct
 -- relaxes to a seed-apartness hypothesis, priced for part 2. The
 -- ambient T4 (T4EnvHyp route) stands unchanged.
-/-- info: 'RelSem.T2.round13_thr' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T2.round13_thr
 /-- info: 'RelSem.T2.t2_app_eq_thr' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T2.t2_app_eq_thr
 /-- info: 'RelSem.T2.t2_wpK_thr' depends on axioms: [propext, Classical.choice, Quot.sound] -/
@@ -829,8 +844,6 @@ open Lean in
 #guard_msgs in #print axioms RelSem.T2.T2Threaded_ubFree
 /-- info: 'RelSem.T2.T2ThreadedOutcomes' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T2.T2ThreadedOutcomes
-/-- info: 'RelSem.T3.round21_thr' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T3.round21_thr
 /-- info: 'RelSem.T3.t3_app_eq_thr' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T3.t3_app_eq_thr
 /-- info: 'RelSem.T3.t3_wpK_thr' depends on axioms: [propext, Classical.choice, Quot.sound] -/
@@ -909,9 +922,14 @@ open Lean in
 -- WpGround (memoized ground-fact discharger) join the closure, and
 -- T1Threaded's state ladder is re-emitted through `derive_state`
 -- (+3 `_def` rfl lemmas, trio-pinned above); 58 declarations, all
--- boundary-clean).
+-- boundary-clean). 4108 → 4129 (arc-17 S1: the per-construct law
+-- registry ConstructLaws joins the closure (seu_read_bind +
+-- erun_jump_m + match/eq auxiliaries) and the three label-resolution
+-- twins round6_thr/round13_thr/round21_thr are DELETED — their
+-- ambient rounds are ∀-run-state and pinned trio above; net +21,
+-- all boundary-clean).
 /--
-info: RelSem audit sweep: 4108 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 4129 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do

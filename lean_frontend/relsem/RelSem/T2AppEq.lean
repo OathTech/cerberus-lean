@@ -27,6 +27,7 @@
 
 import RelSem.SlateFiles
 import RelSem.T1AppEq
+import RelSem.ConstructLaws
 
 set_option autoImplicit false
 
@@ -1224,15 +1225,20 @@ theorem fullEval_conv_eq (x y : Int)
 def rsB : core_run_state := { rsD3 with aid_supply := rsD3.aid_supply + 1 }
 def rsAB : core_run_state := { rsB with aid_supply := rsB.aid_supply + 1 }
 
-/-- R13: the Erun eval round (label resolution at the concrete rs). -/
+/-- R13: the Erun eval round, ∀-run-state through the `erun_jump_m`
+    construct law (arc-17 S1; was pinned to the concrete `rsAB` — the
+    label resolution now enters as the `hlab` projection hypothesis,
+    which every state ladder, ambient or threaded ∀-seed, discharges
+    by `rfl`). -/
 theorem round13 (x y : Int)
     (hs1 : -2147483648 ≤ x + y) (hs2 : x + y ≤ 2147483647)
-    (fuel : Nat) (mem : CerbMem.MemState)
+    (fuel : Nat) (mem : CerbMem.MemState) (rs : core_run_state)
+    (hlab : rs.labeled = collect_labeled_continuations_NEW t2File)
     (tr : List trace_event) (n : Nat) :
     app (dnms (fuel+1) fmapEmpty [0])
-        (mkDr (th13 x y) mem rsAB tr n)
+        (mkDr (th13 x y) mem rs tr n)
       = app (dnms fuel fmapEmpty [0])
-        (mkDr (th14 x y) mem rsAB tr (n+1)) := by
+        (mkDr (th14 x y) mem rs tr (n+1)) := by
   refine (app_bind_active rfl).trans ?_    -- nd_read (step_ctx)
   apply (app_bind_active ?hadv).trans
   case hadv =>
@@ -1240,19 +1246,20 @@ theorem round13 (x y : Int)
     apply (app_bind_active (liftCore_run_defined ?hM)).trans
     case hM =>
       change stExceptUndef_bind _ _ _ = _
-      apply (stub_defined ?hLab).trans        -- runSE label resolution
-      case hLab => rfl
-      change stExceptUndef_bind _ _ _ = _
-      apply (stub_defined ?hFold).trans       -- the args foldM
-      case hFold =>
+      apply RelSem.Laws.erun_jump_m ?hres ?hk  -- label-jump construct law
+      case hres => simp only [mkDr, hlab]; rfl -- label resolution
+      case hk =>
         change stExceptUndef_bind _ _ _ = _
-        apply (stub_defined ?hElem).trans
-        case hElem =>
+        apply (stub_defined ?hFold).trans       -- the args foldM
+        case hFold =>
           change stExceptUndef_bind _ _ _ = _
-          apply (stub_defined (fullEval_conv_eq x y hs1 hs2 _ _)).trans
+          apply (stub_defined ?hElem).trans
+          case hElem =>
+            change stExceptUndef_bind _ _ _ = _
+            apply (stub_defined (fullEval_conv_eq x y hs1 hs2 _ _)).trans
+            rfl
           rfl
         rfl
-      rfl
     rfl
   rfl
 
@@ -1298,7 +1305,7 @@ theorem dnms_chain (x y : Int)
   ((round10 x y hx1 hx2 hy1 hy2 hs1 hs2 999989 rsAB (tr2 x y) 8).trans
   ((round11 x y 999988 (memD3 x y) rsAB (tr2 x y) 9).trans
   ((round12 x y 999987 (memD3 x y) rsAB (tr2 x y) 10).trans
-  ((round13 x y hs1 hs2 999986 (memD3 x y) (tr2 x y) 11).trans
+  ((round13 x y hs1 hs2 999986 (memD3 x y) rsAB rfl (tr2 x y) 11).trans
   ((round14 x y 999985 (memD3 x y) rsAB (tr2 x y) 12).trans
   (round15 x y 999983 (memD3 x y) rsAB (tr2 x y) 13)))))))))))))))
 

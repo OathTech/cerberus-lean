@@ -8,12 +8,12 @@
   initial state = {Specified(x+y)}, no UB. Cones: EXACTLY the
   classical trio (Audit-pinned).
 
-  Reuse discipline: T2AppEq's round lemmas are ∀-run-state EXCEPT
-  `round13` (the Erun eval round, which pins the ambient `rsAB` for
-  the label resolution) — the chain below consumes the committed
-  rounds AS-IS at the threaded run states and twins only round13, the
+  Reuse discipline: ALL of T2AppEq's round lemmas are ∀-run-state
+  (round13's last pin dissolved by the arc-17 S1 `erun_jump_m`
+  construct law) — the chain below consumes the committed rounds
+  AS-IS at the threaded run states; the only threaded text is the
   prefix skeleton (whose memory stages route through the kit at the
-  open state — the recorded spike hazard), and the composition. The
+  open state — the recorded spike hazard) and the composition. The
   statement-facing discharge is the S1–S3 WP route (per-step walk
   over `callK`, S3 tactics, threaded adequacy bridges).
 
@@ -147,43 +147,11 @@ theorem k9_thr (seed : Nat) (x y : Int) (th : thread_state)
       = (NDactive (), mkDr th0 (memD3 x y) (rsD3_thr seed) [] 0) := by
   subst hth; rfl
 
-/-! ## The rounds: only R13 pins the run state (label resolution) —
-    twinned; every other round is the committed ∀-rs lemma, consumed
-    as-is in the chain -/
-
-/-- R13, threaded (twin of `round13`; identical recipe at the
-    seed-parametric state — the rs-generic `fullEval_conv_eq` carries
-    the sum's conv evaluation). -/
-theorem round13_thr (seed : Nat) (x y : Int)
-    (hs1 : -2147483648 ≤ x + y) (hs2 : x + y ≤ 2147483647)
-    (fuel : Nat) (mem : CerbMem.MemState)
-    (tr : List trace_event) (n : Nat) :
-    app (dnms (fuel+1) fmapEmpty [0])
-        (mkDr (th13 x y) mem (rsAB_thr seed) tr n)
-      = app (dnms fuel fmapEmpty [0])
-        (mkDr (th14 x y) mem (rsAB_thr seed) tr (n+1)) := by
-  refine (app_bind_active rfl).trans ?_    -- nd_read (step_ctx)
-  apply (app_bind_active ?hadv).trans
-  case hadv =>
-    refine (app_bind_active rfl).trans ?_  -- rsk match (RSK_eval)
-    apply (app_bind_active (liftCore_run_defined ?hM)).trans
-    case hM =>
-      change stExceptUndef_bind _ _ _ = _
-      apply (stub_defined ?hLab).trans        -- runSE label resolution
-      case hLab => rfl
-      change stExceptUndef_bind _ _ _ = _
-      apply (stub_defined ?hFold).trans       -- the args foldM
-      case hFold =>
-        change stExceptUndef_bind _ _ _ = _
-        apply (stub_defined ?hElem).trans
-        case hElem =>
-          change stExceptUndef_bind _ _ _ = _
-          apply (stub_defined (fullEval_conv_eq x y hs1 hs2 _ _)).trans
-          rfl
-        rfl
-      rfl
-    rfl
-  rfl
+/-! ## The rounds: ALL SIXTEEN are the committed ∀-rs lemmas, consumed
+    as-is in the chain (arc-17 S1: R13 — the label-resolution eval,
+    T2's last rs-pinned round — is ∀-rs through the `erun_jump_m`
+    construct law; its `round13_thr` twin is dissolved, the chain
+    discharges `hlab` by `rfl` at `rsAB_thr seed`). -/
 
 /-! ## Composition -/
 
@@ -212,7 +180,8 @@ theorem dnms_chain_thr (seed : Nat) (x y : Int)
       (tr2 x y) 8).trans
   ((round11 x y 999988 (memD3 x y) (rsAB_thr seed) (tr2 x y) 9).trans
   ((round12 x y 999987 (memD3 x y) (rsAB_thr seed) (tr2 x y) 10).trans
-  ((round13_thr seed x y hs1 hs2 999986 (memD3 x y) (tr2 x y) 11).trans
+  ((round13 x y hs1 hs2 999986 (memD3 x y) (rsAB_thr seed) rfl
+      (tr2 x y) 11).trans
   ((round14 x y 999985 (memD3 x y) (rsAB_thr seed) (tr2 x y) 12).trans
   (round15 x y 999983 (memD3 x y) (rsAB_thr seed) (tr2 x y) 13)))))))))))))))
 
