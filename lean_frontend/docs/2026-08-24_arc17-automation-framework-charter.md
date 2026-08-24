@@ -51,6 +51,34 @@ theorem costs its loop invariants and contracts — nothing else.
   trio cone. The guarded form's honesty: the statement carries the
   apartness hypothesis VISIBLY (it is true, and its necessity is
   kernel-witnessed — the S4 counterexample is the justification).
+- **S2b — THE BOUNDARY-AXIOM ENDGAME** ([USER 2026-08-24]: "we
+  definitely want to resolve the additional axiom uncertainty" —
+  this slice CLOSES it, no residual ambiguity). Current state:
+  threaded T1–T3 are trio-clean; the ambient family (retiring at
+  S5) and the spec-lab statement substrate still wear
+  `runEffectful`; `with_tagDefs`/`forceIO` are absent from every
+  T1–T4 cone but exist as axioms in the tree (entering only via
+  Mini_pipeline/Main compiled paths). Deliverables: (a) the
+  spec-lab/harness statement substrate (HarnessRunsTo and the
+  drive-quoting layer) moved to the threaded initial state so that
+  EVERY statement-layer family in the repo is trio-clean — no
+  statement anywhere quotes the ambient effect state; (b) each of
+  the three axioms gets a FINAL DISPOSITION, executed: DELETED from
+  the tree (its remaining consumers rethreaded — expected for
+  `with_tagDefs`/`forceIO`, whose only consumers are driver-path
+  code that can take the state explicitly; the digest/tagDefs
+  threading priced S–M by the spike) or, where genuinely retained
+  for the compiled/differential path (candidate: LemLib
+  `runEffectful`, consumed by generated OCaml-parity code),
+  re-justified in PROOF.md with a NEW GATE asserting no-cone-entry
+  tree-wide (any theorem cone acquiring it is build-fatal, not
+  merely unpinned); (c) the hand-written axiom census updated to
+  the end state (target: 2 → 0 in this repo; LemLib's residual, if
+  kept, carries its own lem-side justification + the no-cone
+  gate); (d) PROOF.md §1 rewritten from "scheduled for
+  elimination" to the achieved state. Exit condition: a reader of
+  PROOF.md can answer "what axioms exist, where, why, and what
+  guarantees they never touch a theorem" with zero uncertainty.
 - **S3 — T5 BY INVARIANT** (the classics demonstration): the loop
   proved via a logical loop invariant + one body WP discharged by
   the S1 laws + iter_compose/löb — no round-walks. T5's statement
