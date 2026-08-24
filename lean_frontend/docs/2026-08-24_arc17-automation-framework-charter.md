@@ -106,6 +106,32 @@ theorem costs its loop invariants and contracts — nothing else.
   (expected: string/buffer idioms, the typed-view layer). Its
   report is arc-18's charter seed.
 
+## The parity goal ([USER 2026-08-24]: aim for Lithium/Caesium parity)
+
+The framework's named horizon: **RefinedC-grade automation** — a user
+writes ONLY annotations (contracts, loop invariants, type/ownership
+assignments); one entry-point invocation discharges the whole
+function; failures surface as READABLE STUCK GOALS (the holes), never
+tactic errors. Component ledger (distance measured at S6):
+1. TYPED LAYER — typed views promoted from parked to load-bearing
+   (user-facing goals speak types/rep predicates, not byte ranges);
+   Caesium's typing layer is the donor.
+2. GOAL-DIRECTED SEARCH — the one major un-chartered artifact (M–L,
+   arc-18 centerpiece unless S6 demands it earlier): a single
+   verify_fn entry point doing Lithium-style DETERMINISTIC,
+   backtracking-free decomposition over the S1 rule registry
+   (normal-form goals, unique-rule-per-step, find_in_context;
+   the arc-9-era Lithium source review is the design map).
+3. CONTRACTS AT CALLS — the override/summary layer (S1 laws + the
+   summary library feed it; without it push-button stops at the
+   first call).
+4. COVERAGE + SIDE CONDITIONS — S1 construct completion + the S0
+   decide/omega engines.
+S6's libxml2-rung report MUST include the parity-distance table
+(which of the four carried the rung's cost, and what a Lithium-grade
+run would have cost instead). Arc-18's charter takes parity as its
+success bar if the S6 numbers support it.
+
 ## Extension track (explicitly NOT main line; never blocks it)
 
 CN-1+ (typed views are MAIN-LINE citizens wanted by S6 anyway; the
