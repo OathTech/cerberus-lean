@@ -32,6 +32,10 @@ import RelSem.PerStep
 import RelSem.PerStepIris
 import RelSem.PerStepCall
 import RelSem.PerStepSmoke
+import RelSem.MemLocal
+import RelSem.CerbHeapRA
+import RelSem.CerbHeapWP
+import RelSem.CerbHeapDemo
 -- arc-7 S4: the T1 program term (emitted, drift-gated) + the WP-route
 -- smoke theorems.
 import RelSem.T1Core

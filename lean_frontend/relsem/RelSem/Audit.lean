@@ -138,6 +138,10 @@ import RelSem.PerStep
 import RelSem.PerStepIris
 import RelSem.PerStepCall
 import RelSem.PerStepSmoke
+import RelSem.MemLocal
+import RelSem.CerbHeapRA
+import RelSem.CerbHeapWP
+import RelSem.CerbHeapDemo
 
 namespace RelSem.Audit
 
@@ -621,6 +625,58 @@ open Lean in
 /-- info: 'RelSem.T1.T1_ubFree_perStep' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.T1_ubFree_perStep
 
+-- arc-16 S2: THE CERBMEM HEAP RA (RelSem/MemLocal + CerbHeapRA +
+-- CerbHeapWP + CerbHeapDemo; design record
+-- docs/2026-08-24_arc16-s2-cerbmem-heap-ra.md). Every cone is
+-- EXACTLY the classical trio (the physical layer picks up
+-- Classical.choice/Quot.sound through the Std map lemmas + omega);
+-- the rules quantify over programs, so no harness substrate (and no
+-- runEffectful) enters any cone. Pinned exactly.
+/-- info: 'RelSem.Cerb.writeBytesTo_eq' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.writeBytesTo_eq
+/-- info: 'RelSem.Cerb.readBytesFrom_of_pointwise' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.readBytesFrom_of_pointwise
+/-- info: 'RelSem.Cerb.lem_int_beq_eq_true_iff' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.lem_int_beq_eq_true_iff
+/-- info: 'RelSem.Cerb.lem_int_beq_eq_false_iff' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.lem_int_beq_eq_false_iff
+/-- info: 'RelSem.Cerb.lem_int_contains_eq_false_of_not_mem' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.lem_int_contains_eq_false_of_not_mem
+/-- info: 'RelSem.Cerb.MemInv.store' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.MemInv.store
+/-- info: 'RelSem.Cerb.MemInv.alloc' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.MemInv.alloc
+/-- info: 'RelSem.Cerb.MemInv.kill' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.MemInv.kill
+/-- info: 'RelSem.Cerb.interp_rest_agree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.interp_rest_agree
+/-- info: 'RelSem.Cerb.interp_alloc_lookup' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.interp_alloc_lookup
+/-- info: 'RelSem.Cerb.interp_bytes_lookup' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.interp_bytes_lookup
+/-- info: 'RelSem.Cerb.interp_store_update' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.interp_store_update
+/-- info: 'RelSem.Cerb.interp_alloc_update' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.interp_alloc_update
+/-- info: 'RelSem.Cerb.interp_kill_update' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.interp_kill_update
+/-- info: 'RelSem.Cerb.wpk_seq_res_det' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.wpk_seq_res_det
+/-- info: 'RelSem.Cerb.wpk_load' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.wpk_load
+/-- info: 'RelSem.Cerb.wpk_store' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.wpk_store
+/-- info: 'RelSem.Cerb.wpk_alloc' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.wpk_alloc
+/-- info: 'RelSem.Cerb.wpk_kill' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.wpk_kill
+/-- info: 'RelSem.Cerb.cerbHeap_adequacy' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.cerbHeap_adequacy
+/-- info: 'RelSem.Cerb.kAdequateHeap_of_wp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.kAdequateHeap_of_wp
+/-- info: 'RelSem.Cerb.two_alloc_frame' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.two_alloc_frame
+
 /-! ## The exhaustive sweep — LAST in the file by design: a constant
     declared after this point would dodge it (negative-test lesson,
     2026-08-19), so nothing may be declared below, and RelSem.Audit is
@@ -642,9 +698,11 @@ open Lean in
 -- seal fallback with level-mvar closure)). 3356 → 3517 (arc-16 S1:
 -- the per-step language modules PerStep/PerStepIris/PerStepCall/
 -- PerStepSmoke join the closure — 161 declarations, all
--- boundary-clean; pins above).
+-- boundary-clean; pins above). 3517 → 3697 (arc-16 S2: the CerbMem
+-- heap RA modules MemLocal/CerbHeapRA/CerbHeapWP/CerbHeapDemo join
+-- the closure — 175 declarations, all trio-clean; pins above).
 /--
-info: RelSem audit sweep: 3517 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 3692 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do
