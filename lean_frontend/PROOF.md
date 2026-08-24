@@ -24,6 +24,16 @@ you must trust:
      state installation;
    - `CerberusFresh.forceIO` (`CerberusFresh.lean`) — fresh
      symbol/digest generation.
+   These three are **scheduled for elimination, not accepted as
+   permanent**: the effect state they hide (the fresh-symbol supply,
+   the tag-definition table) is planned to move *inside* the modeled
+   machine state — Lean-side only; the OCaml implementation keeps its
+   ambient counter for upstream fidelity — after which theorem cones
+   shrink to exactly the three standard Lean axioms
+   (`propext`, `Classical.choice`, `Quot.sound`) and the native
+   counter survives only as the compiled binary's implementation of
+   the modeled supply. Until then, every cone wears them visibly
+   (below), and no design may make that migration harder.
    Build gates pin this set: the axiom census over this repository
    (hand-written and generated code) is asserted to be exactly
    `with_tagDefs` + `forceIO` — `runEffectful` lives in the LemLib

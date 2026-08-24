@@ -81,3 +81,10 @@ is deliberately not pinned here — follow the pointers.
   claim (shrinks the trusted C-to-Core link to the parser alone;
   PROOF.md §3). Unpriced until the kernel-side elaboration cost is
   probed; natural once the sealing/stepper machinery lands.
+- **Kill the effect axioms** — thread the effect state (fresh-symbol
+  supply, tag-definition table) into the modeled machine state,
+  Lean-side only, retiring `runEffectful`/`forceIO`/`with_tagDefs`
+  from every theorem cone; end state = exactly the three standard
+  Lean axioms (PROOF.md §1). Sooner rather than later; the
+  concurrency work (which needs explicit machine state anyway) is
+  the natural vehicle if nothing earlier takes it.
