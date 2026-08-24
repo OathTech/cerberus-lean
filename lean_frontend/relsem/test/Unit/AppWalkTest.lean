@@ -23,6 +23,7 @@
 import RelSem.Kit.AppEq
 import RelSem.Kit.Loop
 import RelSem.Tactics.AppWalk
+import Exception
 
 set_option autoImplicit false
 
@@ -150,10 +151,142 @@ example (st : Nat) :
       = (NDactive 2, st) := by
   app_walk_replay e10_tr
 
+/-! ## E11-E13 (arc/t5-seal, engineRev 5): SEAL-THROUGH-THE-CHASE
+    exercises — the checkpoint/propositional-iota/doctored-link
+    contract rows. E11/E12 run as elaboration-time meta checks (the
+    compile IS the test, same as the theorem rows); E13 exercises the
+    deep-chase entry on a kernel-guard-class synthetic. -/
+
+/- E11 (the NEGATIVE row): a DOCTORED chase link — a checkpoint-link
+   statement that is FALSE — must be refused by the kernel. The link
+   path's only checker is `addDecl` (addRawAuxThm); nothing
+   elaborator-trusted can accept it. -/
+set_option Elab.async false in
+open Lean Meta RelSem.Tactics in
+#eval show MetaM Unit from do
+  let ty := mkApp3 (mkConst ``Eq [1]) (mkConst ``Nat)
+    (mkNatLit 0) (mkNatLit 1)
+  let val ← mkEqRefl (mkNatLit 0)
+  let accepted ← tryCatchRuntimeEx
+    (try
+      discard <| addRawAuxThm ty val `e11plant .cert
+      pure true
+    catch _ => pure false)
+    (fun _ => pure false)
+  if accepted then
+    throwError "E11 FAIL: doctored chase link ACCEPTED"
+  IO.println "E11 ok: doctored chase link kernel-refused (addDecl)"
+
+namespace E12Fixture
+
+def resVal : exceptM (Nat -> Nat) Unit := exceptM.Result (fun x => x + 1)
+
+def stuckApp : Nat :=
+  exceptM.casesOn (motive := fun _ => Nat -> Nat) resVal
+    (fun f => f) (fun _ => id) 7
+
+end E12Fixture
+
+/- E12: CHECKPOINT SEAL + PROPOSITIONAL IOTA. (a) `chaseCheckpoint`
+   mints a registered aux definition whose reference the KERNEL
+   accepts as defeq to the original; (b) `iotaByLemma` produces a
+   one-step reduct with a proof that survives `check` AND lands as an
+   ordinary kernel-checked declaration (`addDecl`) — the generic
+   equation lemma route, zero new axioms. -/
+set_option Elab.async false in
+open Lean Meta RelSem.Tactics in
+#eval show MetaM Unit from do
+  let some ci := (← getEnv).find? ``E12Fixture.stuckApp
+    | throwError "E12: fixture missing"
+  let e := ci.value!
+  -- (a) checkpoint seal
+  let some ref ← chaseCheckpoint e
+    | throwError "E12 FAIL: checkpoint refused"
+  let some n := ref.getAppFn.constName?
+    | throwError "E12 FAIL: seal reference malformed"
+  unless (← isSealedAuxName n) do
+    throwError "E12 FAIL: seal not registered"
+  match Lean.Kernel.isDefEq (← getEnv) {} ref e with
+  | .ok true => pure ()
+  | _ => throwError "E12 FAIL: kernel rejects seal = original"
+  -- (b) propositional iota: expose the casesOn app at ctor major
+  let rv := (((← getEnv).find? ``E12Fixture.resVal).get!).value!
+  let eCtor := e.replace (fun x =>
+    if x.isConstOf ``E12Fixture.resVal then some rv else none)
+  let some (y, pf) ← iotaByLemma eCtor false
+    | throwError "E12 FAIL: iota lemma did not fire"
+  check pf
+  let pty ← inferType pf
+  let nm ← mkFreshUserName `e12iota
+  addDecl <| .thmDecl { name := nm, levelParams := [], type := pty, value := pf }
+  let _ := y
+  IO.println "E12 ok: checkpoint seal kernel-accepted; propositional-iota certificate kernel-checked"
+
+namespace E13Fixture
+
+/-- forces a case on its argument: `g (deepApp n)` chains majors. -/
+def g : Nat → Nat
+  | 0 => 1
+  | _+1 => 0
+
+def deepApp : Nat → Nat
+  | 0 => 0
+  | n+1 => g (deepApp n)
+
+end E13Fixture
+
+/- E13: DEEP CHASE. Find a major-chain depth the KERNEL refuses
+   (`deep recursion detected` — the R13 wall class), then drive the
+   rev-5 chase on it: the certificate chain must land (progress with
+   a `check`-clean, kernel-addable proof). If the kernel handles all
+   probed depths in this environment, the exercise still validates
+   the chase on the largest (SKIP-tolerant on the refusal premise —
+   the guard is an environment property, never assert its position). -/
+set_option Elab.async false in
+open Lean Meta RelSem.Tactics in
+#eval show MetaM Unit from do
+  let mk (n : Nat) : Expr :=
+    mkApp (mkConst ``E13Fixture.deepApp) (mkNatLit n)
+  let mut lo := 0
+  let mut chosen := 4096
+  let mut found := false
+  for n in [1024, 2048, 4096] do
+    if !found then
+      match Lean.Kernel.whnf (← getEnv) {} (mk n) with
+      | .ok _ => lo := n
+      | .error _ =>
+        chosen := n
+        found := true
+  -- bisect toward the guard so the chase gap stays small
+  if found then
+    let mut hi := chosen
+    while hi - lo > 64 do
+      let mid := (hi + lo) / 2
+      match Lean.Kernel.whnf (← getEnv) {} (mk mid) with
+      | .ok _ => lo := mid
+      | .error _ => hi := mid
+    chosen := hi
+  let e := mk chosen
+  let env0 ← getEnv
+  let refused : Bool := match Lean.Kernel.whnf env0 {} e with
+    | .error _ => true | _ => false
+  let cache : ChaseCache ← IO.mkRef {}
+  let (v, pf, prog) ← kWhnfWithFacts 4096 e (trace := false)
+    (sealDepth := 48) (cache := some cache)
+  unless prog do
+    throwError "E13 FAIL: chase made no progress at depth {chosen} (kernel refused: {refused})"
+  check pf
+  let pty ← inferType pf
+  let nm ← mkFreshUserName `e13chase
+  addDecl <| .thmDecl { name := nm, levelParams := [], type := pty, value := pf }
+  let _ := v
+  IO.println s!"E13 ok: deep chase at n={chosen} (kernel refused: {refused}) — certificate chain kernel-checked"
+
 end AppWalkTest
 
 def main : IO UInt32 := do
   -- The exercises are kernel-checked at compile time; report and pass.
   IO.println "AppWalkTest: E1-E8+E10 kernel-checked, E9 preview-negative + E10-mismatch pinned"
+  IO.println "AppWalkTest: E11 doctored-link refusal, E12 checkpoint+prop-iota, E13 deep chase (engineRev 5)"
   IO.println "AppWalkTest: ALL PASSED"
   return 0

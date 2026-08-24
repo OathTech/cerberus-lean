@@ -169,6 +169,29 @@ structure WalkCfg where
       `walkOnce` considers ONLY this law — replay removes CHOICE, not
       checking (every unification/discharge/kernel check re-runs). -/
   replayOnly : Option Name := none
+  /-- SEAL-THROUGH-THE-CHASE checkpoint threshold (engineRev 5, the
+      R13 wall kill). SEMANTICS: the maximum `approxDepth` an
+      intermediate chase form may have before the chase NAMES it (a
+      checkpoint seal — an ordinary aux definition) and continues
+      against the seal constant, so every kernel certificate
+      STATEMENT stays a shallow reference and every kernel defeq
+      obligation's reduction anchors at a named constant. This is NOT
+      a heartbeat-style ambient knob: raising it cannot make a stuck
+      goal provable and lowering it cannot make a provable goal stuck
+      — it only trades kernel-obligation COUNT against per-obligation
+      statement depth (the stepper-note trade; count parallelizes,
+      depth doesn't). Default measured against the R13 crossing (the
+      `RSK_eval "Epure"` PEcase eval whose monolithic Kernel.whnf
+      died with `deep recursion detected`): materialized parents at
+      R13 sit at approxDepth 60-85, so 48 checkpoints every
+      materialization there while leaving the shallow pre-R13 chase
+      segments (≤ 48) un-sealed. -/
+  chaseSealDepth : Nat := 48
+  /-- The eq-fact chase's recursion fuel (was the hard-coded 48; a
+      walker-internal LEDGERED sub-cap — bounds chase advances per
+      discharge, never a kernel/elaborator budget). Deep R13-class
+      evals consume one unit per position descent/advance/resume. -/
+  chaseDepth : Nat := 48
   deriving Inhabited
 
 /-- Type heads whose inhabitants the v2 normalizer never touches
@@ -320,12 +343,22 @@ def mkAuxThmRobust (ty val : Expr) (base : Name := `walkRound) :
     the same reduction like the per-round rfl declarations of the
     arc-7 hand style. Falls back to meta whnf on mvars/kernel
     errors. Proofs are unaffected (the assigned values are re-checked
-    by the kernel at declaration end as always). -/
-def kWhnf (e : Expr) (avatars : Bool := false) : MetaM Expr := do
+    by the kernel at declaration end as always).
+    engineRev 5 (`kWhnfR`): returns the reduct PLUS the kernel-refusal
+    signal (the deep-recursion pit — a kernel `.error`, distinct from
+    an ok-but-stuck form); the chase's exposure branch keys on it.
+    `fallback := false` (the CHASE configuration) suppresses the
+    capped ELABORATOR retry after a kernel refusal: inside the chase
+    that retry was measured pure waste (a ~50k-heartbeat grind per
+    refused deep form, once per materialization/exposure level — the
+    22-minute R13 first-attempt pathology); the exposure branch is
+    the chase's refusal handler. -/
+def kWhnfR (e : Expr) (avatars : Bool := false) (fallback : Bool := true) :
+    MetaM (Expr × Bool) := do
   let e ← instantiateMVars e
   if e.hasExprMVar then
     if !avatars then
-      return (← whnf e)
+      return (← whnf e, false)
     -- AVATAR ABSTRACTION (D3, opt-in — v3 lanes only; the kernel
     -- ignores the atom discipline, so v1/v2 callers keep the
     -- elaborator path): an unassigned mvar (e.g. the abstraction
@@ -348,24 +381,37 @@ def kWhnf (e : Expr) (avatars : Bool := false) : MetaM Expr := do
       e' := e'.replace (fun x => if x == mkMVar m then some fv else none)
       pairs := pairs.push (fv, mkMVar m)
     if !ok then
-      pure ((← attempt (50000 * 1000) (whnf e)).getD e)
+      pure ((← attempt (50000 * 1000) (whnf e)).getD e, false)
     else
       match Lean.Kernel.whnf (← getEnv) lctx e' with
       | .ok r =>
         let mut r := r
         for (fv, mv) in pairs do
           r := r.replace (fun x => if x == fv then some mv else none)
-        return r
+        return (r, false)
       | .error _ =>
         -- kernel refused (recursion pit); capped elaborator fallback —
-        -- on a trip the caller gets the term unreduced (sealable)
-        pure ((← attempt (50000 * 1000) (whnf e)).getD e)
+        -- on a trip the caller gets the term unreduced (sealable).
+        -- The refusal is REPORTED (engineRev 5): the chase's exposure
+        -- branch keys on it (kernel-error ≠ kernel-stuck).
+        if fallback then
+          pure ((← attempt (50000 * 1000) (whnf e)).getD e, true)
+        else
+          pure (e, true)
   else do
     match Lean.Kernel.whnf (← getEnv) (← getLCtx) e with
     | .ok e' =>
-      return e'
+      return (e', false)
     | .error _ =>
-      pure ((← attempt (50000 * 1000) (whnf e)).getD e)
+      if fallback then
+        pure ((← attempt (50000 * 1000) (whnf e)).getD e, true)
+      else
+        pure (e, true)
+
+/-- `kWhnf` — the classic entry (kernel-refusal signal dropped; every
+    pre-rev-5 caller unchanged). -/
+def kWhnf (e : Expr) (avatars : Bool := false) : MetaM Expr :=
+  (·.1) <$> kWhnfR e avatars
 
 /-- PROOF-CARRYING scalar evaluation (D3 emitter): returns
     `(v, proof : e = v)` with the kernel obligations DECOMPOSED —
@@ -856,14 +902,383 @@ def findDecideFact (e : Expr) : MetaM (Option (Expr × Expr × Bool)) := do
       if dty.isMVar then continue
       -- small props: full-transparency defeq (literal spellings vary:
       -- `Int.ofNat 0` vs `OfNat.ofNat 0`; bounds sit under matcher
-      -- spellings like `maxIval`)
-      if (← observing? (do unless (← isDefEq dty P) do failure)).isSome then
+      -- spellings like `maxIval`). CAPPED (engineRev 5): a deep-state
+      -- P sends the uncapped elaborator defeq into a maxRecDepth trip
+      -- (measured at the R13 leaf, seal-r11) — `attempt` turns both
+      -- budget and recursion-depth trips into misses.
+      let probe (a b : Expr) : MetaM Bool := do
+        let r ← attempt (20000 * 1000) (do
+          let ok ← observing? (do unless (← isDefEq a b) do failure)
+          pure ok.isSome)
+        pure (r.getD false)
+      if (← probe dty P) then
         return some (dec, decl.toExpr, true)
       if dty.isAppOfArity ``Not 1 then
-        if (← observing? (do
-            unless (← isDefEq dty.appArg! P) do failure)).isSome then
+        if (← probe dty.appArg! P) then
           return some (dec, decl.toExpr, false)
   return none
+
+/-! ## Seal-through-the-chase (engineRev 5, arc/t5-seal — the R13
+    wall kill; design: the arc-15 resumption record §5 + the stepper
+    note's seals section). The kernel's recursion guard refuses a
+    MONOLITHIC whnf of R13-class evals (deep major-premise chains)
+    that the elaborator reduces fine; the chase therefore (a) EXPOSES
+    a kernel-refused head (one delta+beta + whnfCore — no deep
+    reduction) so the (b) descent can decompose the chain into
+    per-position obligations, and (b) NAMES intermediate materialized
+    forms past `chaseSealDepth` as CHECKPOINT SEALS (ordinary aux
+    definitions) so every certificate statement stays a shallow
+    reference. Zero new axioms; every link is an ordinary
+    kernel-checked declaration; compositions cross seal constants by
+    one-delta defeq at the `Eq.trans` points (no deep statements are
+    ever minted). Obligation COUNT is the deliberate trade for
+    obligation DEPTH (ledgered per chase). -/
+
+/-- Unfold the head constant one delta+beta step (syntactic — no
+    reduction machinery), then capped `whnfCore` (beta/proj/iota, no
+    delta) to surface the stuck recursor/matcher. `none` when the head
+    is not an unfoldable definition. -/
+def exposeStuck (e : Expr) : MetaM (Option Expr) := do
+  let f := e.getAppFn
+  let some n := f.constName? | return none
+  let some (.defnInfo dv) := (← getEnv).find? n | return none
+  let body := dv.value.instantiateLevelParams dv.levelParams f.constLevels!
+  let e1 := body.beta e.getAppArgs
+  let e2 ← tryCatchRuntimeEx
+    (attempt (50000 * 1000) (whnfCore e1) <&> (·.getD e1))
+    (fun _ => pure e1)
+  return some e2
+
+/-- Mint a CHECKPOINT SEAL for an intermediate chase form: an ordinary
+    aux definition (fvar-closed, kernel-checked at `addDecl` like
+    every emitter aux). Returns the seal reference (constant applied
+    to the closed-over locals) — downstream certificate statements
+    reference it instead of inlining the deep form. Capped; `none`
+    rides the raw form. -/
+def chaseCheckpoint (e : Expr) (trace : Bool := false) :
+    MetaM (Option Expr) := do
+  if e.hasExprMVar then return none
+  let r? ← tryCatchRuntimeEx
+    (attempt (100000 * 1000) (do
+      let nm := (← mkFreshUserName `chSeal).appendAfter "_aux"
+      let r ← mkAuxDefinition nm (← inferType e) e (compile := false)
+      pure (some r)))
+    (fun _ => pure none)
+  match r?.getD none with
+  | some r =>
+    if let some n := r.getAppFn.constName? then
+      registerSealedAux n
+      pushEngineEv (.seal { name := n, kind := .chase, depthBefore := e.approxDepth.toNat, depthAfter := r.approxDepth.toNat })
+      if trace then
+        dbg_trace "kwf: CHECKPOINT {n} (depth {e.approxDepth} → {r.approxDepth})"
+    return some r
+  | none =>
+    if trace then
+      dbg_trace "kwf: CHECKPOINT trip (depth {e.approxDepth}) — riding raw"
+    return none
+
+/-- Capped `whnfCore` (beta/proj/iota, NO delta): the deep-mode
+    head-progress primitive — cheap by construction (no deep
+    definitional chains can enter). -/
+def whnfCoreCapped (e : Expr) : MetaM Expr := do
+  tryCatchRuntimeEx
+    (attempt (20000 * 1000) (whnfCore e) <&> (·.getD e))
+    (fun _ => pure e)
+
+/-- REAL structural depth (sharing-blind, iterative — trace lanes
+    only; `approxDepth` saturates and hides the kernel-guard-relevant
+    number). Capped at `cap` to bound the traversal. -/
+def realDepth (e : Expr) (cap : Nat := 100000) : Nat := Id.run do
+  let mut stack : Array (Expr × Nat) := #[(e, 0)]
+  let mut best := 0
+  let mut fuel := cap
+  while h : stack.size > 0 do
+    if fuel == 0 then return best
+    fuel := fuel - 1
+    let (x, dep) := stack[stack.size - 1]
+    stack := stack.pop
+    if dep > best then best := dep
+    match x with
+    | .app f a => stack := stack.push (f, dep+1) |>.push (a, dep+1)
+    | .lam _ t b _ => stack := stack.push (t, dep+1) |>.push (b, dep+1)
+    | .forallE _ t b _ => stack := stack.push (t, dep+1) |>.push (b, dep+1)
+    | .letE _ t v b _ => stack := stack.push (t, dep+1) |>.push (v, dep+1) |>.push (b, dep+1)
+    | .mdata _ b => stack := stack.push (b, dep+1)
+    | .proj _ _ b => stack := stack.push (b, dep+1)
+    | _ => pure ()
+  return best
+
+/-- Pure syntactic first-difference walker (trace lanes only): descend
+    where both sides share an app head, report the first differing
+    leaf paths. No reduction, no kernel. -/
+partial def synDiff (budget : IO.Ref Nat) (d : Nat) (path : String)
+    (l r : Expr) : MetaM Unit := do
+  if (← budget.get) == 0 then return
+  if Expr.equal l r then return
+  if d == 0 then
+    budget.modify (· - 1)
+    dbg_trace "syndiff {path}: DEPTH-CAP {l.getAppFn} vs {r.getAppFn}"
+    return
+  if l.isApp && r.isApp && Expr.equal l.getAppFn r.getAppFn
+      && l.getAppArgs.size == r.getAppArgs.size then
+    for i in [0:l.getAppArgs.size] do
+      synDiff budget (d-1) s!"{path}.{i}" l.getAppArgs[i]! r.getAppArgs[i]!
+  else if l.isLambda && r.isLambda then
+    synDiff budget (d-1) s!"{path}λt" l.bindingDomain! r.bindingDomain!
+    synDiff budget (d-1) s!"{path}λ" l.bindingBody! r.bindingBody!
+  else
+    budget.modify (· - 1)
+    dbg_trace "syndiff {path}: LEAF\n  L({l.ctorName}): {((← ppExpr l).pretty 120).take 300}\n  R({r.ctorName}): {((← ppExpr r).pretty 120).take 300}"
+
+/-- STRICT single iota step (engineRev 5): fire `reduceRecMatcher?`
+    ONLY when the recursor major / every matcher discriminant is
+    SYNTACTICALLY constructor-headed — then the kernel re-derives the
+    step by local iota+beta (shallow). The permissive form was
+    measured to fire on meta-derived ctor majors whose kernel
+    re-derivation is exactly the deep-recursion pit (seal-r14). -/
+def iotaStepStrict (e : Expr) : MetaM (Option Expr) := do
+  let f := e.getAppFn
+  let some n := f.constName? | return none
+  let env ← getEnv
+  let args := e.getAppArgs
+  let isCtorHeaded : Expr → Bool := fun x =>
+    match x.getAppFn.constName? with
+    | some cn => ((env.find? cn) matches some (.ctorInfo _))
+    | none => false
+  match env.find? n with
+  | some (.recInfo ri) =>
+    if h : ri.getMajorIdx < args.size then
+      -- beta-redex majors occur in-situ (measured: the R13 rec-stall
+      -- major was `(fun … => Result …) a b …`); pure beta is
+      -- kernel-shallow, so expose the ctor first.
+      let majorB := args[ri.getMajorIdx].headBeta
+      if isCtorHeaded majorB then
+        return (← Meta.reduceRecMatcher?
+          (mkAppN f (args.set ri.getMajorIdx majorB (by simpa using h)))).map
+          (·.headBeta)
+      else return none
+    else return none
+  | _ =>
+    if let some mi ← Lean.Meta.getMatcherInfo? n then
+      let ds := (Array.range mi.numDiscrs).map (mi.numParams + 1 + ·)
+      let mut args' := args
+      for i in ds do
+        if h : i < args'.size then
+          args' := args'.set i args'[i].headBeta (by simpa using h)
+      let allCtor := ds.all (fun i =>
+        if h : i < args'.size then isCtorHeaded args'[i] else false)
+      if allCtor then
+        return (← Meta.reduceRecMatcher? (mkAppN f args')).map (·.headBeta)
+      else return none
+    else return none
+
+/-! ## PROPOSITIONAL IOTA (engineRev 5, the R13 link-cert unlock).
+
+    An INSTANTIATED iota certificate (`x = y` with y one rec/matcher
+    step from x) is kernel-REFUSED on eval-scale terms: the kernel's
+    lazy-delta prefers the higher-definitional-height head — the
+    reduct side — and dives into continuing the whole eval (measured:
+    deep-recursion trips on single-step links, seal-r18/r20/r21, with
+    real term depth only ~150). The fix is to prove the iota step
+    GENERICALLY, once per (head, ctor-vector): the generic equation's
+    RHS head is a BOUND ALT/MINOR VARIABLE, so the kernel can only
+    unfold the LHS — the check is local by construction. Instantiating
+    the lemma at the deep terms is application typechecking — no
+    reduction. Lemmas are cached process-globally (they recur across
+    every round of the climb). -/
+
+initialize iotaLemmaCache : IO.Ref (Std.HashMap String Name) ← IO.mkRef {}
+
+/-- Build (or fetch) the generic one-step iota lemma for head `fn`
+    (recursor / casesOn / matcher) at level instantiation `lvls`, with
+    the discriminant/major positions `dPos` specialized to the ctor
+    names `ctors`. Returns the lemma name; the lemma's statement is
+    `∀ …, fn … (ctorᵢ fields…) … = <whnfCore reduct>` proved by rfl at
+    the GENERIC level (small terms — an ordinary kernel-checked
+    declaration). -/
+def getIotaLemma (fn : Name) (lvls : List Level)
+    (dPos : Array Nat) (ctors : Array Name) (trace : Bool) :
+    MetaM (Option Name) := do
+  let key := s!"{fn}|{lvls}|{dPos}|{ctors}"
+  if let some n := (← iotaLemmaCache.get).get? key then
+    return some n
+  let finish (xs : Array Expr) (argMap : Array Expr)
+      (fieldsAll : Array Expr) (fnE : Expr) : MetaM (Option Name) := do
+    let lhs := mkAppN fnE argMap
+    let rhs := (← whnfCore lhs).headBeta
+    if Expr.equal rhs lhs then return none
+    let mut binders : Array Expr := #[]
+    for i in [0:xs.size] do
+      unless dPos.contains i do
+        binders := binders.push xs[i]!
+    -- field binders depend only on params (earlier kept binders);
+    -- mkForallFVars validates the dependency order.
+    let allB := binders ++ fieldsAll
+    let stmt ← mkForallFVars allB (← mkEq lhs rhs)
+    let pf ← mkLambdaFVars allB (← mkEqRefl lhs)
+    if stmt.hasExprMVar || stmt.hasFVar then return none
+    let nm ← mkFreshUserName `chIota
+    let nm := nm.appendAfter "_aux"
+    addDecl <| .thmDecl {
+      name := nm
+      levelParams := (collectLevelParams (collectLevelParams {} stmt) pf).params.toList
+      type := stmt, value := pf }
+    registerSealedAux nm
+    pushEngineEv (.seal { name := nm, kind := .chase })
+    if trace then
+      dbg_trace "kwf: IOTA-LEMMA minted {nm} for {fn} / {ctors}"
+    return some nm
+  let rec specialize (xs : Array Expr) (fnE : Expr)
+      (pending : List (Nat × Name))
+      (argMap : Array Expr) (fieldsAll : Array Expr) :
+      MetaM (Option Name) := do
+    match pending with
+    | [] => finish xs argMap fieldsAll fnE
+    | (p, ctorN) :: rest =>
+      if hp : p < xs.size then
+        let dty ← whnf (← inferType xs[p])
+        let .const iName iLvls := dty.getAppFn | return none
+        let some (.inductInfo iv) := (← getEnv).find? iName | return none
+        let some (.ctorInfo cv) := (← getEnv).find? ctorN | return none
+        let params := dty.getAppArgs[:iv.numParams].toArray
+        let ctorTy0 ← instantiateForall
+          (cv.type.instantiateLevelParams cv.levelParams iLvls) params
+        forallTelescope ctorTy0 fun fs _ => do
+          let ctorApp := mkAppN (mkAppN (mkConst ctorN iLvls) params) fs
+          specialize xs fnE rest (argMap.set! p ctorApp)
+            (fieldsAll ++ fs)
+      else return none
+  let build : MetaM (Option Name) := do
+    let fnE := mkConst fn lvls
+    let fnTy ← inferType fnE
+    forallTelescopeReducing fnTy fun xs _ =>
+      specialize xs fnE (dPos.toList.zip ctors.toList) xs #[]
+  match ← tryCatchRuntimeEx
+      (attempt (100000 * 1000) (try build catch ex => do
+        if trace then
+          dbg_trace "kwf: iota-lemma build FAILED for {fn}: {(← ex.toMessageData.toString).take 200}"
+        pure none))
+      (fun _ => pure none) with
+  | some (some n) =>
+    iotaLemmaCache.modify (·.insert key n)
+    return some n
+  | _ => return none
+
+/-- Apply the generic iota lemma at a concrete application: unify the
+    lemma's LHS pattern with `e` (structural — discr ctor spines match
+    our syntactic ctors; everything else binds as plain mvars), return
+    `(reduct, proof : e = reduct)`. Over-application is closed by
+    `congrFun` (no defeq). -/
+def applyIotaLemma (lemma : Name) (e : Expr) (trace : Bool := false) :
+    MetaM (Option (Expr × Expr)) := do
+  let lemE ← mkConstWithFreshMVarLevels lemma
+  let (margs, _, lemTy) ← forallMetaTelescope (← inferType lemE)
+  let some (_, lhs, rhs) := lemTy.eq? | return none
+  -- split e's args to the lemma-lhs arity
+  let lhsArity := lhs.getAppArgs.size
+  let eArgs := e.getAppArgs
+  if eArgs.size < lhsArity then
+    if trace then
+      dbg_trace "kwf: iota-apply MISS arity {eArgs.size} < {lhsArity} ({lemma})"
+    return none
+  let ePre := mkAppN e.getAppFn eArgs[:lhsArity]
+  let extra := eArgs[lhsArity:].toArray
+  let lhsArgs := lhs.getAppArgs
+  let preArgs := ePre.getAppArgs
+  unless lhsArgs.size == preArgs.size do return none
+  unless (← withReducible <| isDefEq lhs.getAppFn ePre.getAppFn) do
+    if trace then
+      dbg_trace "kwf: iota-apply MISS head-unify ({lemma})"
+    return none
+  for i in [0:lhsArgs.size] do
+    unless (← withReducible <| isDefEq lhsArgs[i]! preArgs[i]!) do
+      if trace then
+        dbg_trace "kwf: iota-apply MISS arg {i} ({lemma}):\n  L: {((← ppExpr (← instantiateMVars lhsArgs[i]!)).pretty 110).take 300}\n  R: {((← ppExpr preArgs[i]!).pretty 110).take 300}"
+      return none
+  let pf0 ← instantiateMVars (mkAppN lemE margs)
+  if pf0.hasExprMVar then
+    if trace then
+      dbg_trace "kwf: iota-apply MISS residual mvars ({lemma})"
+    return none
+  let rhs' ← instantiateMVars rhs
+  let mut pf := pf0
+  let mut y := rhs'
+  for a in extra do
+    pf ← mkCongrFun pf a
+    y := mkApp y a
+  return some (y.headBeta, pf)
+
+/-- Propositional iota at a concrete application (engineRev 5): find
+    the discriminant/major positions, require SYNTACTIC ctor heads
+    (after headBeta), fetch/mint the generic lemma, instantiate.
+    Returns `(reduct, proof)`; the proof's type is stated at the
+    beta-normalized discr spelling (consumers cross the pure-beta gap
+    by defeq at their Eq.trans points — shallow, symmetric). -/
+def iotaByLemma (e : Expr) (trace : Bool) : MetaM (Option (Expr × Expr)) := do
+  let f := e.getAppFn
+  let some n := f.constName? | return none
+  let env ← getEnv
+  let args := e.getAppArgs
+  let dPos? ← do
+    match env.find? n with
+    | some (.recInfo ri) => pure (some #[ri.getMajorIdx])
+    | _ =>
+      if Lean.isCasesOnRecursor env n then
+        match env.find? n.getPrefix with
+        | some (.inductInfo iv) =>
+          pure (some #[iv.numParams + 1 + iv.numIndices])
+        | _ => pure none
+      else if let some mi ← Lean.Meta.getMatcherInfo? n then
+        pure (some ((Array.range mi.numDiscrs).map (mi.numParams + 1 + ·)))
+      else pure none
+  let some dPos := dPos? | return none
+  let mut args' := args
+  let mut ctors : Array Name := #[]
+  for p in dPos do
+    if h : p < args'.size then
+      let b := args'[p].headBeta
+      match b.getAppFn.constName? with
+      | some cn =>
+        if (env.find? cn) matches some (.ctorInfo _) then
+          args' := args'.set p b (by simpa using h)
+          ctors := ctors.push cn
+        else return none
+      | none => return none
+    else return none
+  let e' := mkAppN f args'
+  let some lem ← getIotaLemma n f.constLevels! dPos ctors trace
+    | return none
+  applyIotaLemma lem e' (trace := trace)
+
+/-- Chase memoization entry (engineRev 5): sub-chase results are
+    deterministic within one discharge (fixed env/lctx/facts), and the
+    descent re-visits identical subterms at every resume — measured
+    O(advances²) re-refusals without it. `dTried` guards no-progress
+    reuse (a failure at low fuel must not mask a success at high). -/
+structure ChaseHit where
+  dTried : Nat
+  v : Expr
+  pf : Expr
+  prog : Bool
+
+/-- Per-invocation chase state (engineRev 5): the sub-chase memo plus
+    the REFUSED-HEAD set — once one application of a head constant
+    kernel-refused (a ~28s guard-trip, measured), further applications
+    of the same head skip the kernel attempt and go straight to
+    exposure/descent (the eval/bind family heads recur constantly; a
+    head that is shallow elsewhere just takes the descent route — no
+    power lost, its leaf certificates are still kernel obligations). -/
+structure ChaseSt where
+  memo : Std.HashMap Expr ChaseHit := {}
+  refusedHeads : NameSet := {}
+
+/-- Per-invocation chase cache. NEVER shared across a `restoreState`
+    boundary — stored proofs reference auxes created in this
+    invocation's env (the kernel re-checks everything at declaration
+    end as always). -/
+abbrev ChaseCache := IO.Ref ChaseSt
+
+mutual
 
 /-- DECIDE-REWRITING evaluation (D3, the T1-s4 ladder mechanized).
 
@@ -879,18 +1294,224 @@ def findDecideFact (e : Expr) : MetaM (Option (Expr × Expr × Bool)) := do
     advances) and one-position congruences (the rewrites). Returns
     `(value, proof : e = value, progressed)`. -/
 partial def kWhnfWithFacts (d : Nat) (e : Expr)
-    (trace : Bool := false) :
+    (trace : Bool := false) (sealDepth : Nat := 48)
+    (deep : Bool := false) (cache : Option ChaseCache := none) :
+    MetaM (Expr × Expr × Bool) := do
+  -- memoization shell (engineRev 5): the descent re-visits identical
+  -- subterms at every materialize/resume; results are deterministic
+  -- within one discharge. No-progress reuse is fuel-guarded.
+  let eKey ← instantiateMVars e
+  if !eKey.hasExprMVar then
+    if let some c := cache then
+      if let some hit := (← c.get).memo.get? eKey then
+        if hit.prog || hit.dTried ≥ d then
+          if trace && !hit.prog then
+            dbg_trace "kwf: cache-hit NOPROG d={d} (dTried={hit.dTried}) head {eKey.getAppFn}"
+          return (hit.v, hit.pf, hit.prog)
+  -- PER-LEVEL SETTLED WINDOW (engineRev 5): each chase level runs
+  -- against a fresh heartbeat base and settles its consumption back —
+  -- the walkLoop per-round accounting pushed into the chase. Every
+  -- primitive inside a level is individually capped (whnfCore 20k,
+  -- fact scans, exposure), so the total is bounded by
+  -- chaseDepth × the per-level caps — a LEDGERED product, no ambient
+  -- raise anywhere. (Without this, the R13 exposure cascade died
+  -- mid-descent when the enclosing candidate window ran out —
+  -- measured, seal-r6.)
+  let hb0 ← IO.getNumHeartbeats
+  let r ← tryCatchRuntimeEx
+    (Core.withCurrHeartbeats
+      (kWhnfWithFactsGo d e trace sealDepth deep cache))
+    (fun ex => do
+      if trace then
+        dbg_trace "kwf: RUNTIME-EX[d={d}]: {(← ex.toMessageData.toString).take 200}"
+      throw ex)
+  IO.setNumHeartbeats hb0
+  if !eKey.hasExprMVar then
+    if let some c := cache then
+      let hit : ChaseHit :=
+        { dTried := d, v := r.1, pf := r.2.1, prog := r.2.2 }
+      c.modify (fun s => { s with memo := s.memo.insert eKey hit })
+  return r
+
+partial def kWhnfWithFactsGo (d : Nat) (e : Expr)
+    (trace : Bool) (sealDepth : Nat) (deep : Bool)
+    (cache : Option ChaseCache) :
     MetaM (Expr × Expr × Bool) := do
   -- (arc-15 measured-and-reverted: a seal-transparent ENTRY — unseal
   -- then bridge by aux-rfl — dies with `(kernel) deep recursion
   -- detected`: the bridge DECLARATION's statement materializes the
   -- unsealed eval body, and kernel typechecking of that deep term is
-  -- the pit. The R13-class fix needs SEAL-THROUGH-THE-CHASE
-  -- certificates — checkpointed seals keeping every kernel statement
-  -- shallow; see the arc-15 resumption record.)
-  let e1 ← kWhnf e (avatars := true)
+  -- the pit. engineRev 5 lands the named fix — SEAL-THROUGH-THE-CHASE:
+  -- exposure branch (c) + checkpoint seals at the (b) materialization,
+  -- keeping every kernel statement shallow.)
+  -- CHASE CONFIGURATION (engineRev 5): kernel-only — a refusal goes
+  -- to the exposure branch, never to a wasted elaborator grind. DEEP
+  -- MODE: once any enclosing form was kernel-refused, non-leaf forms
+  -- are NEVER handed to the kernel whole (a refusal churns ~30s
+  -- before the recursion guard trips — measured at R13); whnfCore
+  -- gives cheap head progress, the descent/exposure give structure,
+  -- and leaf-sized subterms (approxDepth ≤ sealDepth) keep full
+  -- kernel treatment — one threshold, one meaning: forms above the
+  -- bar are neither inlined in statements nor handed to the kernel
+  -- whole.
+  if trace then
+    dbg_trace "kwf: enter[d={d}] deep={deep} depth={e.approxDepth} head {e.getAppFn}"
+  -- deep-mode KERNEL-ATTEMPT bound (engineRev 5): distinct from the
+  -- statement bar `sealDepth`. Concrete-but-large leaves (the
+  -- conv-chain `valueFromPexpr` evals, depth ~150) REDUCE fine in the
+  -- kernel — the pre-R13 rounds ran kernel whnf at this size
+  -- routinely; only genuinely bottomless heads refuse, and the
+  -- process-global head memo caps each such head at ONE ~20s refusal.
+  let leafish := e.approxDepth.toNat ≤ max sealDepth 192
+  let headRefused ← do
+    match e.getAppFn.constName? with
+    | some n => do
+      let inLocal ← match cache with
+        | some c => pure ((← c.get).refusedHeads.contains n)
+        | none => pure false
+      if inLocal then pure true
+      else if (← refusedHeadsGlobal.get).contains n then pure true
+      -- a CHASE-SEAL head in deep mode is definitionally the deep
+      -- form we chose not to hand the kernel — never re-attempt it
+      -- through the seal (measured: one ~20s refusal per checkpoint,
+      -- distinct names defeating the head memo)
+      else if deep then isSealedAuxName n
+      else pure false
+    | _ => pure false
+  let tkw0 ← IO.monoMsNow
+  let mut kernelTried := false
+  -- PROPOSITIONAL-IOTA proof for the entry advance, when that lane
+  -- produced it (engineRev 5): the certificate is a generic-lemma
+  -- instantiation — no whole-term defeq link is minted.
+  let mut lemPf : Option Expr := none
+  -- lambda-headed app = beta-redex whose kernel whnf CONTINUES into
+  -- the deep eval — always refuses here, and a lambda head cannot be
+  -- head-memoized; never hand it to the kernel in deep mode.
+  let headIsLam := e.getAppFn.isLambda
+  let (e1, kRefused) ←
+    if (deep && (!leafish || headIsLam)) || headRefused then do
+      -- (1) propositional iota first (rec/casesOn/matcher with
+      -- syntactic ctor discrs — the R13 link-cert unlock)
+      match ← tryCatchRuntimeEx
+          (attempt (50000 * 1000) (iotaByLemma e trace))
+          (fun _ => pure none) with
+      | some (some (y, pf)) =>
+        if trace then
+          dbg_trace "kwf: iota-lemma[d={d}] {e.getAppFn} → {y.getAppFn}"
+        lemPf := some pf
+        pure (y, true)
+      | _ =>
+        -- (2) whnfCore head progress (beta/proj; its defeq link is
+        -- robust-guarded below); PURE headBeta as the unconditional
+        -- last resort — whnfCoreCapped was measured silently no-oping
+        -- on large beta-redexes (a caught runtime trip), and headBeta
+        -- is syntactic (cannot fail; its link is a shallow beta defeq)
+        let e' ← whnfCoreCapped e
+        let e' := if Expr.equal e' e && e.getAppFn.isLambda && e.isApp
+          then e.headBeta else e'
+        pure (e', true)
+    else do
+      kernelTried := true
+      let (r, ref) ← kWhnfR e (avatars := true) (fallback := false)
+      if ref && Expr.equal r e then
+        -- refused leafish form: the iota-lemma lane FIRST (a fresh
+        -- refusal must not ride unreduced into the memo cache — the
+        -- post-memo retry would hit the poisoned no-progress entry;
+        -- measured, seal-r28), then the cheap whnfCore fallback.
+        match ← tryCatchRuntimeEx
+            (attempt (50000 * 1000) (iotaByLemma e trace))
+            (fun _ => pure none) with
+        | some (some (y, pf)) =>
+          if trace then
+            dbg_trace "kwf: iota-lemma[d={d}] (post-refusal) {e.getAppFn} → {y.getAppFn}"
+          lemPf := some pf
+          pure (y, true)
+        | _ =>
+          let e' ← whnfCoreCapped e
+          let e' := if Expr.equal e' e && e.getAppFn.isLambda && e.isApp
+            then e.headBeta else e'
+          pure (e', true)
+      else
+        pure (r, ref)
+  -- record a fresh kernel refusal's head (once per head,
+  -- PROCESS-GLOBAL — the same family heads refuse in every round)
+  if kernelTried && kRefused then
+    if let some n := e.getAppFn.constName? then
+      refusedHeadsGlobal.modify (·.insert n)
+      if let some c := cache then
+        c.modify (fun s =>
+          { s with refusedHeads := s.refusedHeads.insert n })
+  if trace then
+    let dt := (← IO.monoMsNow) - tkw0
+    if dt > 100 then
+      dbg_trace "kwf: kWhnfR {dt}ms at d={d} (refused={kRefused}, deep={deep}, head {e.getAppFn})"
   let changed := !(Expr.equal e e1)
-  let p1 ← if changed then mkAuxRfl e e1 else mkEqRefl e
+  if trace && changed then
+    dbg_trace "kwf: entry-advance[d={d}] → head {e1.getAppFn} (depth {e1.approxDepth}); sealing p1"
+  -- CERT-REFUSAL ROBUSTNESS (engineRev 5): a p1 certificate the
+  -- kernel refuses (deep-recursion class) makes THIS advance
+  -- unavailable — ride the unreduced form and let descent/exposure
+  -- work instead; never let one refused link kill the whole chase
+  -- (seal-r14: a thrown kernel exception unwound 50 productive
+  -- levels). SEAL-LINKED STATEMENTS: sides past `sealDepth` are
+  -- checkpointed first, so the link declaration's statement stays a
+  -- shallow reference (the certificate's TYPE is stated at the seal
+  -- references; consumers cross `x = xRef` by one delta at their
+  -- Eq.trans points).
+  let tryLink (x y : Expr) : MetaM (Option Expr) := do
+    tryCatchRuntimeEx
+      (try pure (some (← mkAuxRfl x y))
+       catch ex => do
+         if trace then
+           dbg_trace "kwf: link-cert ORD-EX: {(← ex.toMessageData.toString).take 250}"
+           dbg_trace "kwf: link-fail realDepth x={realDepth x} y={realDepth y} (approx {x.approxDepth}/{y.approxDepth})"
+           -- meta one-step reduct of x, then SYNTACTIC diff vs y (the
+           -- drift the kernel's shallow check would have to cross)
+           let xw ← whnfCoreCapped x
+           let xw := (← tryCatchRuntimeEx
+             (attempt (20000*1000) (iotaStepStrict xw))
+             (fun _ => pure none)).bind id |>.getD xw
+           let b ← IO.mkRef 6
+           synDiff b 60 "r" xw y
+         pure none)
+      (fun ex => do
+        if trace then
+          dbg_trace "kwf: link-cert RUNTIME-EX: {(← ex.toMessageData.toString).take 250}"
+        pure none)
+  let mkChaseLink (x y : Expr) : MetaM (Option Expr) := do
+    -- RAW FIRST (engineRev 5, measured): a raw statement PRESERVES
+    -- POINTER SHARING between the two snapshots, so the kernel's
+    -- structural compare only walks the changed path; sealing first
+    -- ABSTRACTS the fvars, which copies both bodies wholesale and
+    -- sends the compare into full-real-depth recursion (the seal-r18
+    -- link refusal). The sealed form remains the fallback for
+    -- statements whose typecheck itself is the problem.
+    match ← tryLink x y with
+    | some p => pure (some p)
+    | none =>
+      let xR ← do
+        if x.approxDepth.toNat > sealDepth && !x.hasExprMVar then
+          pure ((← chaseCheckpoint x (trace := trace)).getD x)
+        else pure x
+      let yR ← do
+        if y.approxDepth.toNat > sealDepth && !y.hasExprMVar then
+          pure ((← chaseCheckpoint y (trace := trace)).getD y)
+        else pure y
+      if Expr.equal xR x && Expr.equal yR y then pure none
+      else tryLink xR yR
+  let (e1, changed, p1) ← do
+    if changed then
+      match lemPf with
+      | some p => pure (e1, true, p)
+      | none =>
+        match ← mkChaseLink e e1 with
+        | some p => pure (e1, true, p)
+        | none =>
+          if trace then
+            dbg_trace "kwf: p1-cert REFUSED[d={d}] — riding unreduced"
+          pure (e, false, ← mkEqRefl e)
+    else
+      pure (e1, false, ← mkEqRefl e)
   if d == 0 then return (e1, p1, changed)
   -- (a0) EQUATION-FACT rewrite at this level (arc-11 S2: the
   -- decide-facts chase GENERALIZED — the §11.2 hypothesis-mediated
@@ -899,9 +1520,16 @@ partial def kWhnfWithFacts (d : Nat) (e : Expr)
   -- resumes. Deterministic first match; the certificate is the fact
   -- itself under a defeq type hint (kernel-checked at declaration
   -- end as always).
-  if !e1.getAppFn.isConst
+  -- engineRev 5: the eq-fact stage is SKIPPED on a kernel-REFUSED
+  -- (unreduced deep) form — facts are stated at reduced spellings, so
+  -- a match attempt here is a per-fact kernel defeq that re-attempts
+  -- the refused deep reduction (measured: the depth-48 R13 attack
+  -- ground 38+ CPU-minutes in exactly these scans). The exposure
+  -- descent reaches reduced sub-forms where matching is cheap.
+  if !kRefused &&
+     (!e1.getAppFn.isConst
       || !(match (← getEnv).find? e1.getAppFn.constName! with
-           | some (.ctorInfo _) => true | _ => false) then
+           | some (.ctorInfo _) => true | _ => false)) then
     let h1 := e1.getAppFn
     -- a RECURSOR/matcher-stuck form has lost its def-level head
     -- (kernel-whnf unfolded it), so facts stated at def heads
@@ -975,10 +1603,11 @@ partial def kWhnfWithFacts (d : Nat) (e : Expr)
               else do
                 let bridge ← mkAuxRfl e1 dlhsc  -- e1 = dlhs (kernel)
                 mkEqTrans bridge decl.toExpr    -- e1 = drhs
-            let (v, p3, _) ← kWhnfWithFacts (d-1) drhs trace
+            let (v, p3, _) ← kWhnfWithFacts (d-1) drhs trace sealDepth (deep || kRefused) cache
             return (v, ← mkEqTrans p1 (← mkEqTrans pf p3), true)
   -- (a) a decide visible at this level with a context fact: rewrite,
   -- materialize its Boolean, resume.
+  if trace then dbg_trace "kwf: phase-decide[d={d}]"
   if let some (dec, hpf, pos) ← findDecideFact e1 then
     let fname ← if hpf.isFVar then
         do pure (← hpf.fvarId!.getDecl).userName
@@ -997,23 +1626,32 @@ partial def kWhnfWithFacts (d : Nat) (e : Expr)
         (mkApp3 (mkConst ``Eq [u]) τ e1 (motiveBody.instantiate1 dec))
       let p2 ← mkEqNDRec eqMotive base hdec
       let e2 := motiveBody.instantiate1 bval
-      let (v, p3, _) ← kWhnfWithFacts (d-1) e2 trace
+      let (v, p3, _) ← kWhnfWithFacts (d-1) e2 trace sealDepth (deep || kRefused) cache
       return (v, ← mkEqTrans p1 (← mkEqTrans p2 p3), true)
   -- (b) stuck on a recursor/matcher: chase into the blocking
   -- position(s), advance there, materialize, resume here.
+  if trace then dbg_trace "kwf: phase-b[d={d}]"
   let hd := e1.getAppFn
   if hd.isConst && e1.isApp then
     let n := hd.constName!
     let args := e1.getAppArgs
     let positions : Array Nat ← do
-      if ((← getEnv).find? n).any (fun ci => ci matches .recInfo _) then
-        pure #[args.size - 1]
-      else if let some mi ← Lean.Meta.getMatcherInfo? n then
-        pure <| (Array.range mi.numDiscrs).map (mi.numParams + 1 + ·)
-      else pure #[]
+      match (← getEnv).find? n with
+      | some (.recInfo ri) =>
+        -- the TRUE major position (engineRev 5 fix): an over-applied
+        -- recursor (motive returning a function — the monadic shapes)
+        -- carries trailing args AFTER the major; `args.size - 1`
+        -- descended into those (measured: the exceptM.rec R13 stall —
+        -- the major was ctor-ready but the chase chased the trailing
+        -- state instead, and whnfCore's iota never fired).
+        pure #[ri.getMajorIdx]
+      | _ =>
+        if let some mi ← Lean.Meta.getMatcherInfo? n then
+          pure <| (Array.range mi.numDiscrs).map (mi.numParams + 1 + ·)
+        else pure #[]
     for i in positions do
       if h : i < args.size then
-        let (sv, spf, sChanged) ← kWhnfWithFacts (d-1) args[i] trace
+        let (sv, spf, sChanged) ← kWhnfWithFacts (d-1) args[i] trace sealDepth (deep || kRefused) cache
         if sChanged then
           let aty ← inferType args[i]
           let τ ← inferType e1
@@ -1025,17 +1663,96 @@ partial def kWhnfWithFacts (d : Nat) (e : Expr)
             (mkApp3 (mkConst ``Eq [u]) τ e1 (cAt args[i]))
           let p2 ← mkEqNDRec eqMotive base spf
           let e2 := cAt sv
-          let e3 ← kWhnf e2 (avatars := true)
-          if Expr.equal e3 e2 then
+          -- CHECKPOINT (engineRev 5): a materialized parent past the
+          -- threshold is NAMED before the chase continues — the seal
+          -- constant anchors every downstream certificate statement;
+          -- the certificate chain crosses `e2 = seal args` by ONE
+          -- delta at the Eq.trans points (kernel-checked there — no
+          -- deep statement is minted for the crossing itself).
+          let e2c ← do
+            if e2.approxDepth.toNat > sealDepth then
+              pure ((← chaseCheckpoint e2 (trace := trace)).getD e2)
+            else pure e2
+          let e2cSkipKernel ← do
+            if (deep || kRefused) && e2c.approxDepth.toNat > sealDepth then
+              pure true
+            else match e2c.getAppFn.constName? with
+              | some n => do
+                if (← refusedHeadsGlobal.get).contains n then pure true
+                else if deep || kRefused then isSealedAuxName n
+                else pure false
+              | none => pure false
+          let (e3, _) ←
+            if e2cSkipKernel then
+              do pure (← whnfCoreCapped e2c, true)
+            else
+              kWhnfR e2c (avatars := true) (fallback := false)
+          if Expr.equal e3 e2c then
+            -- The sub-advance did not unlock the parent in one kernel
+            -- whnf (R13 class: the kernel refused, or the next redex
+            -- needs a further advance/fact). Re-enter the chase on
+            -- the (possibly checkpointed) parent instead of
+            -- DISCARDING the progress — the rev-4 `continue` here
+            -- silently dropped p2 (a measured R13 progress leak).
+            let (v, p4, prog2) ← kWhnfWithFacts (d-1) e2c trace sealDepth (deep || kRefused) cache
+            if prog2 && !(Expr.equal v e2c) then
+              return (v, ← mkEqTrans p1 (← mkEqTrans p2 p4), true)
             continue
-          let p3 ← mkAuxRfl e2 e3
-          let (v, p4, _) ← kWhnfWithFacts (d-1) e3 trace
-          return (v, ← mkEqTrans p1 (← mkEqTrans p2 (← mkEqTrans p3 p4)), true)
+          -- CERT-REFUSAL ROBUSTNESS: a refused p3 link falls back to
+          -- the resume recursion on the unadvanced parent.
+          let p3? ← mkChaseLink e2c e3
+          match p3? with
+          | some p3 =>
+            let (v, p4, _) ← kWhnfWithFacts (d-1) e3 trace sealDepth (deep || kRefused) cache
+            return (v, ← mkEqTrans p1 (← mkEqTrans p2 (← mkEqTrans p3 p4)), true)
+          | none =>
+            if trace then
+              dbg_trace "kwf: p3-cert REFUSED[d={d}] — resume on parent"
+            let (v, p4, prog2) ← kWhnfWithFacts (d-1) e2c trace sealDepth (deep || kRefused) cache
+            if prog2 && !(Expr.equal v e2c) then
+              return (v, ← mkEqTrans p1 (← mkEqTrans p2 p4), true)
+            continue
+  -- (c) EXPOSURE (engineRev 5, seal-through-the-chase): the KERNEL
+  -- REFUSED this form (deep-recursion pit — reducible, not stuck) and
+  -- no rec/matcher head is visible to descend into (the R13 shape: a
+  -- sealed eval closure applied to the run state). Unfold the shallow
+  -- anchor's head one delta+beta step + whnfCore (no delta, capped),
+  -- and re-enter the chase on the EXPOSED form: its rec/matcher head
+  -- lets the (b) descent decompose the deep major chain into
+  -- per-position kernel obligations. The anchor `e1` stays the
+  -- certificate chain's reference: `Eq.trans` is built RAW with
+  -- b := e1, so the kernel crosses `e1 = exposed` by one delta + the
+  -- whnfCore replay (shallow), and no deep statement is minted.
+  -- rec-stall diagnostic (trace lane): a rec/matcher head that neither
+  -- whnfCore nor the descent advanced — show the major's head.
+  if trace && hd.isConst then
+    if let some (.recInfo ri) := (← getEnv).find? hd.constName! then
+      let args := e1.getAppArgs
+      if h : ri.getMajorIdx < args.size then
+        dbg_trace "kwf: rec-stall[d={d}] {hd.constName!} args={args.size} majorIdx={ri.getMajorIdx} majorHead={args[ri.getMajorIdx].getAppFn}"
+      else
+        dbg_trace "kwf: rec-stall[d={d}] {hd.constName!} UNDERAPPLIED args={args.size} majorIdx={ri.getMajorIdx}"
+  if kRefused && d > 0 && !e1.hasExprMVar then
+    let tex0 ← IO.monoMsNow
+    if let some ex ← exposeStuck e1 then
+      if !(Expr.equal ex e1) then
+        if trace then
+          dbg_trace "kwf: EXPOSE[d={d}] {e1.getAppFn} → head {ex.getAppFn} (depth {ex.approxDepth}, {(← IO.monoMsNow) - tex0}ms)"
+        let (v, p3, prog) ← kWhnfWithFacts (d-1) ex trace sealDepth (deep || kRefused) cache
+        if trace then
+          dbg_trace "kwf: EXPOSE-RET[d={d}] prog={prog} vhead={v.getAppFn}"
+        if prog && !(Expr.equal v ex) then
+          let τ ← inferType e1
+          let u ← getLevel τ
+          let pf := mkApp6 (mkConst ``Eq.trans [u]) τ e e1 v p1 p3
+          return (v, pf, true)
   if trace then
     -- chase exhaustion: show the stuck form so the missing FACT is
     -- readable off the trace (arc-11 S2)
-    dbg_trace "kwf: STUCK[d={d}] at head {e1.getAppFn}:\n{((← ppExpr e1).pretty 120).take 900}"
+    dbg_trace "kwf: STUCK[d={d}] at head {e1.getAppFn} (args={e1.getAppArgs.size}):\n{((← ppExpr e1).pretty 120).take 900}"
   return (e1, p1, changed)
+
+end
 
 /-- Selection-lane normalizer (arc-11 S2 engine prong, design
     §12.5-1 — the stuck-round root cause): `kWhnf` of a selection
@@ -1242,12 +1959,23 @@ partial def dischargeHyp (cfg : WalkCfg) (fuel : Nat) (h : MVarId) : MetaM Bool 
             -- facts chain composed with an aux-rfl bridge.
             if cfg.norm && cfg.sealFacts && !isSelection
                 && !lhs.isAppOf `RelSem.app then
+              let ob0 ← sealedAuxCount.get
+              -- fresh per-invocation cache (NEVER shared across a
+              -- restoreState boundary — cached proofs reference the
+              -- auxes created in this invocation's env)
+              let chaseC : ChaseCache ← IO.mkRef {}
               let (v0, pf0, prog) ←
-                try kWhnfWithFacts 48 lhs (trace := cfg.trace)
+                try kWhnfWithFacts cfg.chaseDepth lhs
+                      (trace := cfg.trace) (sealDepth := cfg.chaseSealDepth)
+                      (cache := some chaseC)
                 catch ex =>
                   if cfg.trace then
                     dbg_trace "dh[{fuel}]: kWhnfWithFacts THREW: {(← ex.toMessageData.toString).take 300}"
                   throw ex
+              if cfg.trace then
+                -- the obligations-per-chase LEDGER (engineRev 5):
+                -- count is the deliberate trade for depth
+                dbg_trace "kwf: chase ledger — {(← sealedAuxCount.get) - ob0} kernel obligation(s) this chase (prog={prog})"
               if prog && !(Expr.equal v0 v) then
                 let v0 ← unsealHead v0
                 let v1 ← tryCatchRuntimeEx
@@ -1279,12 +2007,18 @@ partial def dischargeHyp (cfg : WalkCfg) (fuel : Nat) (h : MVarId) : MetaM Bool 
           let st2 ← saveState
           let res2 ← tryCatchRuntimeEx
             (Core.withCurrHeartbeats (attempt cfg.candBudget (do
+              let ob0 ← sealedAuxCount.get
+              let chaseC : ChaseCache ← IO.mkRef {}
               let (v0, pf0, prog) ←
-                try kWhnfWithFacts 48 lhs (trace := cfg.trace)
+                try kWhnfWithFacts cfg.chaseDepth lhs
+                      (trace := cfg.trace) (sealDepth := cfg.chaseSealDepth)
+                      (cache := some chaseC)
                 catch ex =>
                   if cfg.trace then
                     dbg_trace "dh[{fuel}]: second-chance kwf THREW: {(← ex.toMessageData.toString).take 300}"
                   throw ex
+              if cfg.trace then
+                dbg_trace "kwf: chase ledger — {(← sealedAuxCount.get) - ob0} kernel obligation(s) this chase (prog={prog}, second-chance)"
               if !prog then return false
               let v0' ← unsealHead v0
               let v1 ← tryCatchRuntimeEx

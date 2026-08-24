@@ -660,8 +660,15 @@ open Lean in
 -- closure — 22 prefix defs + 22 built lemmas + 29 lookup lemmas +
 -- unitSym_cmp_ne + envP22_spec + the 2 a543 miss facts and their
 -- equation-compiler auxiliaries).
+-- 3436 → 3522 (arc/t5-seal, engineRev 5 — SEAL-THROUGH-THE-CHASE:
+-- Tactics/AppWalk gains kWhnfR, whnfCoreCapped, exposeStuck,
+-- chaseCheckpoint, realDepth, synDiff, iotaStepStrict, the
+-- propositional-iota builders getIotaLemma/applyIotaLemma/iotaByLemma,
+-- ChaseHit/ChaseSt/ChaseCache and the mutual chase pair; WalkTrace
+-- gains sealedAuxCount + refusedHeadsGlobal; plus their
+-- equation-compiler/match auxiliaries).
 /--
-info: RelSem audit sweep: 3436 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 3522 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do

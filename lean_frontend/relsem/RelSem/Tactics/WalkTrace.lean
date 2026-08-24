@@ -47,8 +47,20 @@ namespace RelSem.Tactics
     params decl-side, original mvars at the reference; previously the
     round seal threw `(kernel) declaration has metavariables` and the
     round aborted) + the R-S2-3 trace-lane kernel-diff instrument
-    (kDiffTrace, trace-only). -/
-def engineRev : Nat := 4
+    (kDiffTrace, trace-only);
+    5 = SEAL-THROUGH-THE-CHASE (arc/t5-seal, 2026-08-23, the R13 wall
+    kill): the eq-fact chase gains kernel-refusal visibility (kWhnfR),
+    head EXPOSURE on a kernel deep-recursion refusal (unfold the
+    shallow anchor one delta+beta step, whnfCore, descend — the
+    non-ctor seal variant the wall record named), CHECKPOINT SEALS at
+    materialization points past `WalkCfg.chaseSealDepth` (intermediate
+    forms become named aux definitions; every chase certificate
+    statement references seal constants, so kernel obligations trade
+    DEPTH for COUNT — the stepper-note trade), and progress-keeping
+    recursion at the (b) resume (a sub-advance that does not unlock
+    the parent re-enters the chase instead of being discarded).
+    Recordings from rev ≤ 4 refuse loudly (fingerprint). -/
+def engineRev : Nat := 5
 
 /-! ## The sealed-aux registry (A-F6).
 
@@ -63,8 +75,26 @@ def engineRev : Nat := 4
 
 initialize sealedAuxRegistry : IO.Ref NameSet ← IO.mkRef {}
 
+/-- Monotone count of emitter-created auxiliaries (engineRev 5): the
+    OBLIGATIONS-PER-CHASE ledger samples this before/after a chase —
+    every auxiliary created inside the chase window is one kernel
+    obligation (the count-for-depth trade, logged per chase in the
+    trace lane). Ledger data only, never a trust surface. -/
+initialize sealedAuxCount : IO.Ref Nat ← IO.mkRef 0
+
+/-- Process-global REFUSED-HEAD registry (engineRev 5): head constants
+    whose applications the kernel has refused to whnf (deep-recursion
+    guard). A refusal costs ~17-28s of kernel churn before the guard
+    trips (measured, seal-r18: 36 refusals ≈ 598s of one R13 attempt)
+    and the same eval/bind-family heads recur in every round — so the
+    skip memo is process-global. Pure heuristic: skipping the kernel
+    attempt only routes the form through exposure/descent; no proof
+    surface, no soundness weight. -/
+initialize refusedHeadsGlobal : IO.Ref NameSet ← IO.mkRef {}
+
 /-- Record an emitter-created auxiliary constant. -/
-def registerSealedAux (n : Name) : BaseIO Unit :=
+def registerSealedAux (n : Name) : BaseIO Unit := do
+  sealedAuxCount.modify (· + 1)
   sealedAuxRegistry.modify (·.insert n)
 
 /-- Is `n` an emitter-created auxiliary (this process)? -/
@@ -128,6 +158,10 @@ inductive NormLane where
 
 inductive SealKind where
   | value | state | enumVerbatim | round | cert
+  /-- seal-through-the-chase checkpoint (engineRev 5): an intermediate
+      chase form named so downstream certificate statements stay
+      shallow. -/
+  | chase
   deriving Inhabited, Repr, BEq
 
 /-- One sealing event (aux constant created by the emitter). -/
