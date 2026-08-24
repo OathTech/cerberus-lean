@@ -1,3 +1,11 @@
+> SUPERSEDED 2026-08-24: the seals section rested on a falsified
+> assumption (kernel wall = depth; measured: unfold-order — see
+> docs/2026-08-24_chase-era-postmortem.md) and the compositional
+> direction is re-founded on Iris instantiation — see
+> docs/2026-08-24_arc16-iris-refounding-charter.md. The laws/
+> residuals/overrides content survives in the charter's L3/L4.
+> Original preserved below.
+
 > Imported 2026-08-23 from the project-container notes/ folder (the
 > operator-side working layout) so the repo is self-contained; the
 > container copy may accrue operator annotations.

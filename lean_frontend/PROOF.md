@@ -193,10 +193,15 @@ ordinary kernel-checked declaration.
   lives as ordinary lemmas about the pure model (cheap, parallel,
   standard Lean), connected to execution once per structure family.
 
-The direction of travel (compositional symbolic stepping with
-per-function summaries — proof-layer only; statements stay
-closed-program) is designed in
-`docs/2026-08-23_stepper-arc-design.md`.
+The direction of travel is the **Iris refounding**: instantiating the
+proof machinery this section describes as a proper Iris language
+instance with a points-to heap over the memory model, per-construct
+WP laws, and logical loop invariants — after which the walker-based
+discharge described above is scheduled for retirement (re-proof
+first, statements and axiom cones unchanged). The plan and its
+post-mortem of the superseded route:
+`docs/2026-08-24_arc16-iris-refounding-charter.md` and
+`docs/2026-08-24_chase-era-postmortem.md`.
 
 ## 5. How to check any claim in this file
 
