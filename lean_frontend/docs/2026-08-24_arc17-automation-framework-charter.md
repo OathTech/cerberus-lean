@@ -130,7 +130,12 @@ tactic errors. Component ledger (distance measured at S6):
 S6's libxml2-rung report MUST include the parity-distance table
 (which of the four carried the rung's cost, and what a Lithium-grade
 run would have cost instead). Arc-18's charter takes parity as its
-success bar if the S6 numbers support it.
+success bar if the S6 numbers support it. [USER 2026-08-24]: parity
+is A FLOOR, NOT A CEILING — "RefinedC isn't the end point, but it's
+one of the best things out there. We want to at least meet this
+bar." The ledger is a DRIVER for the build-out; exceeding the bar
+(the kernel-certified trust story already does on one axis) is the
+expectation, not the exception.
 
 ## Extension track (explicitly NOT main line; never blocks it)
 
