@@ -45,21 +45,25 @@ open RelSem RelSem.Cerb
 
 /-! ## The threaded T1 run states (seed-parametric twins of
     rsD3/rsR6/drDone; thread states, memories and traces are seed-free
-    on the T1 path and are consumed from RelSem.T1AppEq unchanged) -/
+    on the T1 path and are consumed from RelSem.T1AppEq unchanged).
+    Arc-17 S0: emitted through `derive_state` (RelSem/DeriveState.lean
+    — abbrev hints + realizations + `_def` equation lemmas; the
+    donor-pattern named-state regime). Names and definition bodies are
+    byte-identical to the hand `def`s they replace. -/
 
 /-- Post-globals run-state at seed (twin of `rsD3`; the seed is
     carried, never read, on the T1 path). -/
-def rsD3_thr (seed : Nat) : core_run_state :=
+derive_state rsD3_thr (seed : Nat) : core_run_state :=
   { initial_core_run_state_threaded seed
       (collect_labeled_continuations_NEW t1File) with tid_supply := 1 }
 
 /-- The run-state after the load's action-id draw (twin of `rsR6`). -/
-def rsR6_thr (seed : Nat) : core_run_state :=
+derive_state rsR6_thr (seed : Nat) : core_run_state :=
   { rsD3_thr seed with aid_supply := (rsD3_thr seed).aid_supply + 1 }
 
 /-- The final driver state of the threaded harness run (twin of
     `drDone`). -/
-def drDone_thr (seed : Nat) (x : Int) : driver_state :=
+derive_state drDone_thr (seed : Nat) (x : Int) : driver_state :=
   mkDr (thDone x) (memD3 x) (rsR6_thr seed) [meLoad x] 7
 
 /-! ## The argument-injection memory ops (seed-free: memory states are

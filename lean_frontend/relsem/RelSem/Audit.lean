@@ -149,6 +149,10 @@ import RelSem.PerStepPeel
 import RelSem.PerStepLaws
 import RelSem.PerStepTactics
 import RelSem.PerStepTacSmoke
+-- arc-17 S0: the discharge-engine substrate (named-state emitter +
+-- memoized ground-fact discharger) joins the sweep closure.
+import RelSem.DeriveState
+import RelSem.WpGround
 -- arc-16 S4: the threaded effect state (∀-seed statements; the
 -- acceptance re-proof) joins the sweep closure + pins.
 import RelSem.Threaded
@@ -855,6 +859,18 @@ info: 'RelSem.Cerb.initial_driver_state_eq_threaded_ambient' depends on axioms: 
 /-- info: 'RelSem.T3.T3_of_threaded' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T3.T3_of_threaded
 
+-- arc-17 S0: the `derive_state`-emitted equation lemmas of the
+-- T1Threaded state ladder (the named-state emitter's first committed
+-- clients). Kernel-checked `rfl` objects; pinned trio-exact so a
+-- change in the emitter's proof shape (or the states' vocabulary)
+-- surfaces build-fatally.
+/-- info: 'RelSem.T1.rsD3_thr_def' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T1.rsD3_thr_def
+/-- info: 'RelSem.T1.rsR6_thr_def' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T1.rsR6_thr_def
+/-- info: 'RelSem.T1.drDone_thr_def' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T1.drDone_thr_def
+
 /-! ## The exhaustive sweep — LAST in the file by design: a constant
     declared after this point would dodge it (negative-test lesson,
     2026-08-19), so nothing may be declared below, and RelSem.Audit is
@@ -888,9 +904,14 @@ open Lean in
 -- above). 3983 → 4050 (arc-16 S4 cont.: T2Threaded/T3Threaded join
 -- the closure — 67 declarations, all boundary-clean, theorem cones
 -- trio-exact; pins above. T4Threaded deliberately absent: parked at
--- the collision diagnosis).
+-- the collision diagnosis). 4050 → 4108 (arc-17 S0: the
+-- discharge-engine substrate — DeriveState (named-state emitter) +
+-- WpGround (memoized ground-fact discharger) join the closure, and
+-- T1Threaded's state ladder is re-emitted through `derive_state`
+-- (+3 `_def` rfl lemmas, trio-pinned above); 58 declarations, all
+-- boundary-clean).
 /--
-info: RelSem audit sweep: 4050 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 4108 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do

@@ -36,6 +36,15 @@
 
 import RelSem.PerStepLaws
 import RelSem.CerbHeapWP
+-- arc-17 S0: the named-state emitter (`derive_state` /
+-- `derive_state_step`) — the SUPPLY SIDE of `wp_step`'s named-state
+-- feeding path (S3 record §7: named-state regime = seconds;
+-- compute-forward = the parked wall). Emitted step equations
+-- (`…_app` / `expecting`-mode) feed `wp_step` directly; goals ride
+-- state NAMES, never inlined records or projection chains.
+import RelSem.DeriveState
+-- arc-17 S0: the memoized ground-fact discharger backing `wp_side`.
+import RelSem.WpGround
 
 set_option autoImplicit false
 
@@ -122,8 +131,15 @@ macro "wp_done" : tactic => `(tactic| iapply wpk_done)
 /-! ## Heap-route tactics (consume S2's four op rules UNMODIFIED;
     side conditions computed, resources left to the caller's names) -/
 
+-- arc-17 S0: `wp_side`'s closed-goal engine is the MEMOIZED
+-- ground-fact discharger (RelSem/WpGround.lean — the ACL2Lean
+-- `proveByDecide`+memo lift; kernel decide only, successes cached,
+-- stats via `#wp_ground_stats`). `assumption` keeps hypothesis-fed
+-- side conditions first; `rfl` remains for defeq goals without a
+-- `Decidable` instance. The old trailing bare `decide` is subsumed:
+-- `wp_ground` is kernel decide + memo behind a closed-goal guard.
 macro "wp_side" : tactic =>
-  `(tactic| first | assumption | rfl | decide)
+  `(tactic| first | assumption | wp_ground | rfl)
 
 macro "wp_load" : tactic =>
   `(tactic| iapply (wpk_load (hbounds := by wp_side)

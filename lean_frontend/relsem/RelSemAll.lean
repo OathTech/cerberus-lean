@@ -42,6 +42,11 @@ import RelSem.CerbHeapDemo
 import RelSem.PerStepRunner
 import RelSem.PerStepPeel
 import RelSem.PerStepLaws
+-- arc-17 S0: the discharge-engine substrate — the named-state
+-- emitter (derive_state/derive_state_step) + the memoized
+-- ground-fact discharger backing wp_side.
+import RelSem.DeriveState
+import RelSem.WpGround
 import RelSem.PerStepTactics
 import RelSem.PerStepTacSmoke
 -- arc-16 S4: the threaded effect state (∀-seed statement family) +
