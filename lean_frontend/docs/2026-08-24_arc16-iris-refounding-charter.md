@@ -64,8 +64,20 @@ in front, unchanged; this arc rebuilds the back of the house.
 - **S3 — primitive laws + wp-tactics** for the exec-relevant Core
   inventory; laws pinned Kit/Audit-style; tactics exercised on
   straight-line micro-programs.
-- **S4 — THE ACCEPTANCE TEST: re-prove T1–T4** through S1–S3.
-  Identical statements, identical cones (byte-identical pins).
+- **S4 — THE ACCEPTANCE TEST: re-prove T1–T4** through S1–S3 — **AT
+  THE THREADED STATE** ([USER 2026-08-24] amendment: the effect-state
+  elimination folds in here; recipe = the parked spike branch
+  effect-spike @ 7f4100a5c). Statements restated at the
+  seed-parametric initial state (∀-seed — STRONGER than the ambient
+  originals; T4's `fresh = 1048577` conjunct dissolves); success
+  criterion: cones EXACTLY the classical trio
+  {propext, Classical.choice, Quot.sound} — no runEffectful.
+  `with_tagDefs`/`forceIO` (the digest/tagDefs seam, S–M) attempted
+  in the same pass; if it spreads, parked with a price for part 2.
+  Recorded hazard: whole-stage rfl requires CLOSED states —
+  seed-quantified proofs route memory ops through the kit (the
+  spike's finding, hardened to necessity). Boundary-list and
+  cone-gate tightening ride the same commits.
   Success bar: proof text per fixture on the order of TENS OF LINES
   (today: ~464K of round chains across the AppEq files). [Audit
   clause, verbatim spirit]: if it is not cheap, the machinery is
