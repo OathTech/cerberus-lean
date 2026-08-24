@@ -48,6 +48,8 @@ import RelSem.PerStepTacSmoke
 -- the T1 threaded acceptance fixture.
 import RelSem.Threaded
 import RelSem.T1Threaded
+import RelSem.T2Threaded
+import RelSem.T3Threaded
 -- arc-7 S4: the T1 program term (emitted, drift-gated) + the WP-route
 -- smoke theorems.
 import RelSem.T1Core

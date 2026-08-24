@@ -153,6 +153,8 @@ import RelSem.PerStepTacSmoke
 -- acceptance re-proof) joins the sweep closure + pins.
 import RelSem.Threaded
 import RelSem.T1Threaded
+import RelSem.T2Threaded
+import RelSem.T3Threaded
 
 namespace RelSem.Audit
 
@@ -494,7 +496,7 @@ def stmtAllowed : List Name :=
    -- generated def with the seed explicit) + the per-fixture threaded
    -- terminal states.
    `RelSem.Cerb.initial_driver_state_threaded,
-   `RelSem.T1.drDone_thr]
+   `RelSem.T1.drDone_thr, `RelSem.T2.drDone_thr, `RelSem.T3.drDone_thr]
 
 open Lean in
 /-- Syntactic "ends in Prop" (Prop-family def: `Prop` or a pi chain
@@ -563,9 +565,15 @@ open Lean in
      `RelSem.T3.T3Outcomes,
      `RelSem.T4.T4, `RelSem.T4.T4_direct, `RelSem.T4.T4_ubFree,
      `RelSem.T4.T4Outcomes,
-     -- arc-16 S4: the threaded (∀-seed) family joins the gate.
+     -- arc-16 S4: the threaded (∀-seed) family joins the gate
+     -- (T4Threaded absent by design: parked at the collision
+     -- diagnosis — see the S4 pin block note).
      `RelSem.T1.T1Threaded, `RelSem.T1.T1Threaded_ubFree,
-     `RelSem.T1.T1ThreadedOutcomes]
+     `RelSem.T1.T1ThreadedOutcomes,
+     `RelSem.T2.T2Threaded, `RelSem.T2.T2Threaded_ubFree,
+     `RelSem.T2.T2ThreadedOutcomes,
+     `RelSem.T3.T3Threaded, `RelSem.T3.T3Threaded_ubFree,
+     `RelSem.T3.T3ThreadedOutcomes]
   for n in slate do
     match stmtViolations env n with
     | .error e => throwError "{e}"
@@ -796,8 +804,41 @@ open Lean in
 #guard_msgs in #print axioms RelSem.T1.T1Threaded_ubFree
 /-- info: 'RelSem.T1.T1ThreadedOutcomes' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.T1ThreadedOutcomes
--- The impure side, LABELED: the ambient bridge mentions the ambient
--- state, so it (and only it) wears the boundary axiom — by design.
+-- T2/T3 at the threaded state (same recipe; T2AppEq/T3AppEq's ∀-rs
+-- round lemmas consumed AS-IS — only the rs-pinning eval rounds are
+-- twinned). T4 is PARKED at a kernel-witnessed diagnosis (the record
+-- §T4): its exec path READS the supply (the NEG-store transform's two
+-- draws), the drawn symbols enter comparison-keyed env maps, and at a
+-- COLLIDING seed the fresh symbol captures a static one — the
+-- unrestricted ∀-seed T4 statement is FALSE; the fresh conjunct
+-- relaxes to a seed-apartness hypothesis, priced for part 2. The
+-- ambient T4 (T4EnvHyp route) stands unchanged.
+/-- info: 'RelSem.T2.round13_thr' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T2.round13_thr
+/-- info: 'RelSem.T2.t2_app_eq_thr' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T2.t2_app_eq_thr
+/-- info: 'RelSem.T2.t2_wpK_thr' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T2.t2_wpK_thr
+/-- info: 'RelSem.T2.T2Threaded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T2.T2Threaded
+/-- info: 'RelSem.T2.T2Threaded_ubFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T2.T2Threaded_ubFree
+/-- info: 'RelSem.T2.T2ThreadedOutcomes' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T2.T2ThreadedOutcomes
+/-- info: 'RelSem.T3.round21_thr' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T3.round21_thr
+/-- info: 'RelSem.T3.t3_app_eq_thr' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T3.t3_app_eq_thr
+/-- info: 'RelSem.T3.t3_wpK_thr' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T3.t3_wpK_thr
+/-- info: 'RelSem.T3.T3Threaded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T3.T3Threaded
+/-- info: 'RelSem.T3.T3Threaded_ubFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T3.T3Threaded_ubFree
+/-- info: 'RelSem.T3.T3ThreadedOutcomes' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T3.T3ThreadedOutcomes
+-- The impure side, LABELED: the ambient bridges mention the ambient
+-- state, so they (and only they) wear the boundary axiom — by design.
 /--
 info: 'RelSem.Cerb.initial_driver_state_eq_threaded_ambient' depends on axioms: [propext,
  runEffectful,
@@ -809,6 +850,10 @@ info: 'RelSem.Cerb.initial_driver_state_eq_threaded_ambient' depends on axioms: 
 #guard_msgs in #print axioms RelSem.Cerb.callHarnessAdequate_of_thr
 /-- info: 'RelSem.T1.T1_of_threaded' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.T1_of_threaded
+/-- info: 'RelSem.T2.T2_of_threaded' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T2.T2_of_threaded
+/-- info: 'RelSem.T3.T3_of_threaded' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T3.T3_of_threaded
 
 /-! ## The exhaustive sweep — LAST in the file by design: a constant
     declared after this point would dodge it (negative-test lesson,
@@ -840,9 +885,12 @@ open Lean in
 -- above). 3904 → 3983 (arc-16 S4: the threaded effect-state modules
 -- Threaded/T1Threaded join the closure — 79 declarations, all
 -- boundary-clean, the threaded theorem family trio-exact; pins
--- above).
+-- above). 3983 → 4050 (arc-16 S4 cont.: T2Threaded/T3Threaded join
+-- the closure — 67 declarations, all boundary-clean, theorem cones
+-- trio-exact; pins above. T4Threaded deliberately absent: parked at
+-- the collision diagnosis).
 /--
-info: RelSem audit sweep: 3983 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 4050 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do
