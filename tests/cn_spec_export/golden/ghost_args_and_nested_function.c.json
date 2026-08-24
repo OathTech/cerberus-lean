@@ -1,0 +1,232 @@
+{
+  "cn_spec_json_version": 1,
+  "file": "ghost_args_and_nested_function.c",
+  "toplevel": [],
+  "functions": [
+    {
+      "name": "f",
+      "name_loc": {
+        "tag": "Loc_region",
+        "begin": {
+          "file": "ghost_args_and_nested_function.c",
+          "line": 1,
+          "col": 5
+        },
+        "end": {
+          "file": "ghost_args_and_nested_function.c",
+          "line": 1,
+          "col": 6
+        },
+        "cursor": "NoCursor"
+      },
+      "def_loc": {
+        "tag": "Loc_region",
+        "begin": {
+          "file": "ghost_args_and_nested_function.c",
+          "line": 1,
+          "col": 1
+        },
+        "end": {
+          "file": "ghost_args_and_nested_function.c",
+          "line": 4,
+          "col": 2
+        },
+        "cursor": "NoCursor"
+      },
+      "spec": {
+        "tag": "CN_func_spec",
+        "trusted": null,
+        "acc_func": null,
+        "requires": {
+          "loc": {
+            "tag": "Loc_region",
+            "begin": {
+              "file": "ghost_args_and_nested_function.c",
+              "line": 1,
+              "col": 18
+            },
+            "end": {
+              "file": "ghost_args_and_nested_function.c",
+              "line": 1,
+              "col": 48
+            },
+            "cursor": "NoCursor"
+          },
+          "vars": [
+            {
+              "name": {
+                "loc": {
+                  "tag": "Loc_point",
+                  "pos": {
+                    "file": "ghost_args_and_nested_function.c",
+                    "line": 1,
+                    "col": 40
+                  }
+                },
+                "name": "y"
+              },
+              "type": {
+                "tag": "CN_bits",
+                "sign": "CN_unsigned",
+                "width": 64
+              }
+            }
+          ],
+          "conditions": [
+            {
+              "tag": "CN_cconstr",
+              "loc": {
+                "tag": "Loc_region",
+                "begin": {
+                  "file": "ghost_args_and_nested_function.c",
+                  "line": 1,
+                  "col": 43
+                },
+                "end": {
+                  "file": "ghost_args_and_nested_function.c",
+                  "line": 1,
+                  "col": 48
+                },
+                "cursor": "NoCursor"
+              },
+              "assertion": {
+                "tag": "CN_assert_exp",
+                "expr": {
+                  "loc": {
+                    "tag": "Loc_point",
+                    "pos": {
+                      "file": "ghost_args_and_nested_function.c",
+                      "line": 1,
+                      "col": 43
+                    }
+                  },
+                  "expr": {
+                    "tag": "CNExpr_const",
+                    "const": { "tag": "CNConst_bool", "value": true }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "ensures": null
+      },
+      "loops": [],
+      "statements": [],
+      "ghost_calls": []
+    },
+    {
+      "name": "main",
+      "name_loc": {
+        "tag": "Loc_region",
+        "begin": {
+          "file": "ghost_args_and_nested_function.c",
+          "line": 6,
+          "col": 5
+        },
+        "end": {
+          "file": "ghost_args_and_nested_function.c",
+          "line": 6,
+          "col": 9
+        },
+        "cursor": "NoCursor"
+      },
+      "def_loc": {
+        "tag": "Loc_region",
+        "begin": {
+          "file": "ghost_args_and_nested_function.c",
+          "line": 6,
+          "col": 1
+        },
+        "end": {
+          "file": "ghost_args_and_nested_function.c",
+          "line": 9,
+          "col": 2
+        },
+        "cursor": "NoCursor"
+      },
+      "spec": null,
+      "loops": [],
+      "statements": [],
+      "ghost_calls": [
+        {
+          "loc": {
+            "tag": "Loc_region",
+            "begin": {
+              "file": "ghost_args_and_nested_function.c",
+              "line": 7,
+              "col": 14
+            },
+            "end": {
+              "file": "ghost_args_and_nested_function.c",
+              "line": 7,
+              "col": 21
+            },
+            "cursor": "NoCursor"
+          },
+          "exprs": [
+            {
+              "loc": {
+                "tag": "Loc_point",
+                "pos": {
+                  "file": "ghost_args_and_nested_function.c",
+                  "line": 7,
+                  "col": 15
+                }
+              },
+              "expr": {
+                "tag": "CNExpr_const",
+                "const": {
+                  "tag": "CNConst_bits",
+                  "sign": "CN_unsigned",
+                  "width": 64,
+                  "value": "2"
+                }
+              }
+            }
+          ],
+          "idents": []
+        },
+        {
+          "loc": {
+            "tag": "Loc_region",
+            "begin": {
+              "file": "ghost_args_and_nested_function.c",
+              "line": 7,
+              "col": 28
+            },
+            "end": {
+              "file": "ghost_args_and_nested_function.c",
+              "line": 7,
+              "col": 35
+            },
+            "cursor": "NoCursor"
+          },
+          "exprs": [
+            {
+              "loc": {
+                "tag": "Loc_point",
+                "pos": {
+                  "file": "ghost_args_and_nested_function.c",
+                  "line": 7,
+                  "col": 29
+                }
+              },
+              "expr": {
+                "tag": "CNExpr_const",
+                "const": {
+                  "tag": "CNConst_bits",
+                  "sign": "CN_unsigned",
+                  "width": 64,
+                  "value": "3"
+                }
+              }
+            }
+          ],
+          "idents": []
+        }
+      ]
+    }
+  ],
+  "stray": { "loops": [], "statements": [], "ghost_calls": [] }
+}

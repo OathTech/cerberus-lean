@@ -92,7 +92,7 @@ let create_executable out =
   Unix.chmod out 0o755
 
 let cerberus debug_level progress core_obj
-             cpp_cmd syntax_only cabs_json nostdinc nolibc agnostic macros macros_undef
+             cpp_cmd syntax_only cabs_json cn_spec_json nostdinc nolibc agnostic macros macros_undef
              runtime_path_opt incl_dirs incl_files cpp_only
              link_lib_path link_core_obj
              impl_name
@@ -250,6 +250,26 @@ let cerberus debug_level progress core_obj
           return ()
         ) files >>= fun _ ->
         return success
+      (* Export the CN specification AST as JSON (parse-only; see
+         backend/lean_export/cn_spec_json.ml). The mode implies the
+         at_magic_comments switch — with the switch off, /*@ ... @*/
+         comments are ordinary comments and there would be nothing to
+         export. Stops after parsing: no desugaring, no Core, so the
+         core stdlib prelude is not needed. *)
+      else if cn_spec_json then begin
+        if not (Switches.(has_switch SW_at_magic_comments)) then
+          Switches.set ["at_magic_comments"];
+        Exception.except_mapM (fun filename ->
+          Cerb_fresh.set_digest filename;
+          cpp (conf, io) ~filename >>= fun file_content ->
+          C_parser_driver.parse_from_string ~filename file_content >>= fun cabs_tunit ->
+          Lean_export.Cn_spec_json.export ~filename cabs_tunit >>= fun json ->
+          print_string (Yojson.Safe.pretty_to_string ~std:true json);
+          print_newline ();
+          return ()
+        ) files >>= fun _ ->
+        return success
+      end
       (* Dump a core object (-c) *)
       else if core_obj then
         prelude >>= fun core_std ->
@@ -361,6 +381,12 @@ let syntax_only =
 let cabs_json =
   let doc = "Parse C and output the Cabs AST as JSON (for the Lean backend)." in
   Arg.(value & flag & info ["cabs-json"] ~doc)
+
+let cn_spec_json =
+  let doc = "Parse C with CN magic-comment annotations (/*@ ... @*/) and \
+             output the CN specification AST as JSON. Implies the \
+             at_magic_comments switch; the pipeline stops after parsing." in
+  Arg.(value & flag & info ["cn-spec-json"] ~doc)
 
 let incl_dir =
   let doc = "Add the specified directory to the search path for the\
@@ -516,7 +542,7 @@ let args =
 (* entry point *)
 let () =
   let cerberus_t = Term.(const cerberus $ debug_level $ progress $ core_obj $
-                         cpp_cmd $ syntax_only $ cabs_json $ nostdinc $ nolibc $ agnostic $ macros $ macros_undef $
+                         cpp_cmd $ syntax_only $ cabs_json $ cn_spec_json $ nostdinc $ nolibc $ agnostic $ macros $ macros_undef $
                          runtime_path $ incl_dir $ incl_file $ cpp_only $
                          link_lib_path $ link_core_obj $
                          impl $

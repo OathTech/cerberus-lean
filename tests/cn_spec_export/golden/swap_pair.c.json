@@ -1,0 +1,1358 @@
+{
+  "cn_spec_json_version": 1,
+  "file": "swap_pair.c",
+  "toplevel": [],
+  "functions": [
+    {
+      "name": "swap_pair",
+      "name_loc": {
+        "tag": "Loc_region",
+        "begin": { "file": "swap_pair.c", "line": 1, "col": 6 },
+        "end": { "file": "swap_pair.c", "line": 1, "col": 15 },
+        "cursor": "NoCursor"
+      },
+      "def_loc": {
+        "tag": "Loc_region",
+        "begin": { "file": "swap_pair.c", "line": 1, "col": 1 },
+        "end": { "file": "swap_pair.c", "line": 18, "col": 2 },
+        "cursor": "NoCursor"
+      },
+      "spec": {
+        "tag": "CN_func_spec",
+        "trusted": null,
+        "acc_func": null,
+        "requires": {
+          "loc": {
+            "tag": "Loc_region",
+            "begin": { "file": "swap_pair.c", "line": 3, "col": 1 },
+            "end": { "file": "swap_pair.c", "line": 4, "col": 87 },
+            "cursor": "NoCursor"
+          },
+          "vars": [],
+          "conditions": [
+            {
+              "tag": "CN_cletResource",
+              "loc": {
+                "tag": "Loc_point",
+                "pos": { "file": "swap_pair.c", "line": 4, "col": 10 }
+              },
+              "name": {
+                "loc": {
+                  "tag": "Loc_point",
+                  "pos": { "file": "swap_pair.c", "line": 4, "col": 10 }
+                },
+                "name": "pairStart"
+              },
+              "resource": {
+                "tag": "CN_each",
+                "var": {
+                  "loc": {
+                    "tag": "Loc_point",
+                    "pos": { "file": "swap_pair.c", "line": 4, "col": 32 }
+                  },
+                  "name": "j"
+                },
+                "type": {
+                  "tag": "CN_bits",
+                  "sign": "CN_signed",
+                  "width": 32
+                },
+                "guard": {
+                  "loc": {
+                    "tag": "Loc_region",
+                    "begin": { "file": "swap_pair.c", "line": 4, "col": 35 },
+                    "end": { "file": "swap_pair.c", "line": 4, "col": 56 },
+                    "cursor": {
+                      "tag": "PointCursor",
+                      "pos": { "file": "swap_pair.c", "line": 4, "col": 45 }
+                    }
+                  },
+                  "expr": {
+                    "tag": "CNExpr_binop",
+                    "op": "CN_and",
+                    "e1": {
+                      "loc": {
+                        "tag": "Loc_region",
+                        "begin": {
+                          "file": "swap_pair.c",
+                          "line": 4,
+                          "col": 35
+                        },
+                        "end": {
+                          "file": "swap_pair.c",
+                          "line": 4,
+                          "col": 44
+                        },
+                        "cursor": {
+                          "tag": "PointCursor",
+                          "pos": {
+                            "file": "swap_pair.c",
+                            "line": 4,
+                            "col": 40
+                          }
+                        }
+                      },
+                      "expr": {
+                        "tag": "CNExpr_binop",
+                        "op": "CN_le",
+                        "e1": {
+                          "loc": {
+                            "tag": "Loc_point",
+                            "pos": {
+                              "file": "swap_pair.c",
+                              "line": 4,
+                              "col": 35
+                            }
+                          },
+                          "expr": {
+                            "tag": "CNExpr_const",
+                            "const": {
+                              "tag": "CNConst_bits",
+                              "sign": "CN_signed",
+                              "width": 32,
+                              "value": "0"
+                            }
+                          }
+                        },
+                        "e2": {
+                          "loc": {
+                            "tag": "Loc_point",
+                            "pos": {
+                              "file": "swap_pair.c",
+                              "line": 4,
+                              "col": 43
+                            }
+                          },
+                          "expr": {
+                            "tag": "CNExpr_var",
+                            "name": {
+                              "loc": {
+                                "tag": "Loc_point",
+                                "pos": {
+                                  "file": "swap_pair.c",
+                                  "line": 4,
+                                  "col": 43
+                                }
+                              },
+                              "name": "j"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "e2": {
+                      "loc": {
+                        "tag": "Loc_region",
+                        "begin": {
+                          "file": "swap_pair.c",
+                          "line": 4,
+                          "col": 48
+                        },
+                        "end": {
+                          "file": "swap_pair.c",
+                          "line": 4,
+                          "col": 56
+                        },
+                        "cursor": {
+                          "tag": "PointCursor",
+                          "pos": {
+                            "file": "swap_pair.c",
+                            "line": 4,
+                            "col": 50
+                          }
+                        }
+                      },
+                      "expr": {
+                        "tag": "CNExpr_binop",
+                        "op": "CN_lt",
+                        "e1": {
+                          "loc": {
+                            "tag": "Loc_point",
+                            "pos": {
+                              "file": "swap_pair.c",
+                              "line": 4,
+                              "col": 48
+                            }
+                          },
+                          "expr": {
+                            "tag": "CNExpr_var",
+                            "name": {
+                              "loc": {
+                                "tag": "Loc_point",
+                                "pos": {
+                                  "file": "swap_pair.c",
+                                  "line": 4,
+                                  "col": 48
+                                }
+                              },
+                              "name": "j"
+                            }
+                          }
+                        },
+                        "e2": {
+                          "loc": {
+                            "tag": "Loc_point",
+                            "pos": {
+                              "file": "swap_pair.c",
+                              "line": 4,
+                              "col": 52
+                            }
+                          },
+                          "expr": {
+                            "tag": "CNExpr_const",
+                            "const": {
+                              "tag": "CNConst_bits",
+                              "sign": "CN_signed",
+                              "width": 32,
+                              "value": "2"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "loc": {
+                  "tag": "Loc_region",
+                  "begin": { "file": "swap_pair.c", "line": 4, "col": 59 },
+                  "end": { "file": "swap_pair.c", "line": 4, "col": 61 },
+                  "cursor": "NoCursor"
+                },
+                "pred": { "tag": "CN_owned", "type": null },
+                "args": [
+                  {
+                    "loc": {
+                      "tag": "Loc_region",
+                      "begin": {
+                        "file": "swap_pair.c",
+                        "line": 4,
+                        "col": 62
+                      },
+                      "end": { "file": "swap_pair.c", "line": 4, "col": 84 },
+                      "cursor": {
+                        "tag": "PointCursor",
+                        "pos": {
+                          "file": "swap_pair.c",
+                          "line": 4,
+                          "col": 62
+                        }
+                      }
+                    },
+                    "expr": {
+                      "tag": "CNExpr_array_shift",
+                      "base": {
+                        "loc": {
+                          "tag": "Loc_point",
+                          "pos": {
+                            "file": "swap_pair.c",
+                            "line": 4,
+                            "col": 74
+                          }
+                        },
+                        "expr": {
+                          "tag": "CNExpr_var",
+                          "name": {
+                            "loc": {
+                              "tag": "Loc_point",
+                              "pos": {
+                                "file": "swap_pair.c",
+                                "line": 4,
+                                "col": 74
+                              }
+                            },
+                            "name": "pair_p"
+                          }
+                        }
+                      },
+                      "type": null,
+                      "index": {
+                        "loc": {
+                          "tag": "Loc_point",
+                          "pos": {
+                            "file": "swap_pair.c",
+                            "line": 4,
+                            "col": 82
+                          }
+                        },
+                        "expr": {
+                          "tag": "CNExpr_var",
+                          "name": {
+                            "loc": {
+                              "tag": "Loc_point",
+                              "pos": {
+                                "file": "swap_pair.c",
+                                "line": 4,
+                                "col": 82
+                              }
+                            },
+                            "name": "j"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "ensures": {
+          "loc": {
+            "tag": "Loc_region",
+            "begin": { "file": "swap_pair.c", "line": 5, "col": 1 },
+            "end": { "file": "swap_pair.c", "line": 8, "col": 38 },
+            "cursor": "NoCursor"
+          },
+          "vars": [],
+          "conditions": [
+            {
+              "tag": "CN_cletResource",
+              "loc": {
+                "tag": "Loc_point",
+                "pos": { "file": "swap_pair.c", "line": 6, "col": 10 }
+              },
+              "name": {
+                "loc": {
+                  "tag": "Loc_point",
+                  "pos": { "file": "swap_pair.c", "line": 6, "col": 10 }
+                },
+                "name": "pairEnd"
+              },
+              "resource": {
+                "tag": "CN_each",
+                "var": {
+                  "loc": {
+                    "tag": "Loc_point",
+                    "pos": { "file": "swap_pair.c", "line": 6, "col": 30 }
+                  },
+                  "name": "j"
+                },
+                "type": {
+                  "tag": "CN_bits",
+                  "sign": "CN_signed",
+                  "width": 32
+                },
+                "guard": {
+                  "loc": {
+                    "tag": "Loc_region",
+                    "begin": { "file": "swap_pair.c", "line": 6, "col": 33 },
+                    "end": { "file": "swap_pair.c", "line": 6, "col": 54 },
+                    "cursor": {
+                      "tag": "PointCursor",
+                      "pos": { "file": "swap_pair.c", "line": 6, "col": 43 }
+                    }
+                  },
+                  "expr": {
+                    "tag": "CNExpr_binop",
+                    "op": "CN_and",
+                    "e1": {
+                      "loc": {
+                        "tag": "Loc_region",
+                        "begin": {
+                          "file": "swap_pair.c",
+                          "line": 6,
+                          "col": 33
+                        },
+                        "end": {
+                          "file": "swap_pair.c",
+                          "line": 6,
+                          "col": 42
+                        },
+                        "cursor": {
+                          "tag": "PointCursor",
+                          "pos": {
+                            "file": "swap_pair.c",
+                            "line": 6,
+                            "col": 38
+                          }
+                        }
+                      },
+                      "expr": {
+                        "tag": "CNExpr_binop",
+                        "op": "CN_le",
+                        "e1": {
+                          "loc": {
+                            "tag": "Loc_point",
+                            "pos": {
+                              "file": "swap_pair.c",
+                              "line": 6,
+                              "col": 33
+                            }
+                          },
+                          "expr": {
+                            "tag": "CNExpr_const",
+                            "const": {
+                              "tag": "CNConst_bits",
+                              "sign": "CN_signed",
+                              "width": 32,
+                              "value": "0"
+                            }
+                          }
+                        },
+                        "e2": {
+                          "loc": {
+                            "tag": "Loc_point",
+                            "pos": {
+                              "file": "swap_pair.c",
+                              "line": 6,
+                              "col": 41
+                            }
+                          },
+                          "expr": {
+                            "tag": "CNExpr_var",
+                            "name": {
+                              "loc": {
+                                "tag": "Loc_point",
+                                "pos": {
+                                  "file": "swap_pair.c",
+                                  "line": 6,
+                                  "col": 41
+                                }
+                              },
+                              "name": "j"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "e2": {
+                      "loc": {
+                        "tag": "Loc_region",
+                        "begin": {
+                          "file": "swap_pair.c",
+                          "line": 6,
+                          "col": 46
+                        },
+                        "end": {
+                          "file": "swap_pair.c",
+                          "line": 6,
+                          "col": 54
+                        },
+                        "cursor": {
+                          "tag": "PointCursor",
+                          "pos": {
+                            "file": "swap_pair.c",
+                            "line": 6,
+                            "col": 48
+                          }
+                        }
+                      },
+                      "expr": {
+                        "tag": "CNExpr_binop",
+                        "op": "CN_lt",
+                        "e1": {
+                          "loc": {
+                            "tag": "Loc_point",
+                            "pos": {
+                              "file": "swap_pair.c",
+                              "line": 6,
+                              "col": 46
+                            }
+                          },
+                          "expr": {
+                            "tag": "CNExpr_var",
+                            "name": {
+                              "loc": {
+                                "tag": "Loc_point",
+                                "pos": {
+                                  "file": "swap_pair.c",
+                                  "line": 6,
+                                  "col": 46
+                                }
+                              },
+                              "name": "j"
+                            }
+                          }
+                        },
+                        "e2": {
+                          "loc": {
+                            "tag": "Loc_point",
+                            "pos": {
+                              "file": "swap_pair.c",
+                              "line": 6,
+                              "col": 50
+                            }
+                          },
+                          "expr": {
+                            "tag": "CNExpr_const",
+                            "const": {
+                              "tag": "CNConst_bits",
+                              "sign": "CN_signed",
+                              "width": 32,
+                              "value": "2"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "loc": {
+                  "tag": "Loc_region",
+                  "begin": { "file": "swap_pair.c", "line": 6, "col": 57 },
+                  "end": { "file": "swap_pair.c", "line": 6, "col": 59 },
+                  "cursor": "NoCursor"
+                },
+                "pred": { "tag": "CN_owned", "type": null },
+                "args": [
+                  {
+                    "loc": {
+                      "tag": "Loc_region",
+                      "begin": {
+                        "file": "swap_pair.c",
+                        "line": 6,
+                        "col": 60
+                      },
+                      "end": { "file": "swap_pair.c", "line": 6, "col": 82 },
+                      "cursor": {
+                        "tag": "PointCursor",
+                        "pos": {
+                          "file": "swap_pair.c",
+                          "line": 6,
+                          "col": 60
+                        }
+                      }
+                    },
+                    "expr": {
+                      "tag": "CNExpr_array_shift",
+                      "base": {
+                        "loc": {
+                          "tag": "Loc_point",
+                          "pos": {
+                            "file": "swap_pair.c",
+                            "line": 6,
+                            "col": 72
+                          }
+                        },
+                        "expr": {
+                          "tag": "CNExpr_var",
+                          "name": {
+                            "loc": {
+                              "tag": "Loc_point",
+                              "pos": {
+                                "file": "swap_pair.c",
+                                "line": 6,
+                                "col": 72
+                              }
+                            },
+                            "name": "pair_p"
+                          }
+                        }
+                      },
+                      "type": null,
+                      "index": {
+                        "loc": {
+                          "tag": "Loc_point",
+                          "pos": {
+                            "file": "swap_pair.c",
+                            "line": 6,
+                            "col": 80
+                          }
+                        },
+                        "expr": {
+                          "tag": "CNExpr_var",
+                          "name": {
+                            "loc": {
+                              "tag": "Loc_point",
+                              "pos": {
+                                "file": "swap_pair.c",
+                                "line": 6,
+                                "col": 80
+                              }
+                            },
+                            "name": "j"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "tag": "CN_cconstr",
+              "loc": {
+                "tag": "Loc_region",
+                "begin": { "file": "swap_pair.c", "line": 7, "col": 5 },
+                "end": { "file": "swap_pair.c", "line": 7, "col": 38 },
+                "cursor": "NoCursor"
+              },
+              "assertion": {
+                "tag": "CN_assert_exp",
+                "expr": {
+                  "loc": {
+                    "tag": "Loc_region",
+                    "begin": { "file": "swap_pair.c", "line": 7, "col": 5 },
+                    "end": { "file": "swap_pair.c", "line": 7, "col": 37 },
+                    "cursor": {
+                      "tag": "PointCursor",
+                      "pos": { "file": "swap_pair.c", "line": 7, "col": 19 }
+                    }
+                  },
+                  "expr": {
+                    "tag": "CNExpr_binop",
+                    "op": "CN_equal",
+                    "e1": {
+                      "loc": {
+                        "tag": "Loc_region",
+                        "begin": {
+                          "file": "swap_pair.c",
+                          "line": 7,
+                          "col": 5
+                        },
+                        "end": {
+                          "file": "swap_pair.c",
+                          "line": 7,
+                          "col": 18
+                        },
+                        "cursor": {
+                          "tag": "PointCursor",
+                          "pos": {
+                            "file": "swap_pair.c",
+                            "line": 7,
+                            "col": 12
+                          }
+                        }
+                      },
+                      "expr": {
+                        "tag": "CNExpr_binop",
+                        "op": "CN_map_get",
+                        "e1": {
+                          "loc": {
+                            "tag": "Loc_point",
+                            "pos": {
+                              "file": "swap_pair.c",
+                              "line": 7,
+                              "col": 5
+                            }
+                          },
+                          "expr": {
+                            "tag": "CNExpr_var",
+                            "name": {
+                              "loc": {
+                                "tag": "Loc_point",
+                                "pos": {
+                                  "file": "swap_pair.c",
+                                  "line": 7,
+                                  "col": 5
+                                }
+                              },
+                              "name": "pairEnd"
+                            }
+                          }
+                        },
+                        "e2": {
+                          "loc": {
+                            "tag": "Loc_point",
+                            "pos": {
+                              "file": "swap_pair.c",
+                              "line": 7,
+                              "col": 13
+                            }
+                          },
+                          "expr": {
+                            "tag": "CNExpr_const",
+                            "const": {
+                              "tag": "CNConst_bits",
+                              "sign": "CN_signed",
+                              "width": 32,
+                              "value": "0"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "e2": {
+                      "loc": {
+                        "tag": "Loc_region",
+                        "begin": {
+                          "file": "swap_pair.c",
+                          "line": 7,
+                          "col": 22
+                        },
+                        "end": {
+                          "file": "swap_pair.c",
+                          "line": 7,
+                          "col": 37
+                        },
+                        "cursor": {
+                          "tag": "PointCursor",
+                          "pos": {
+                            "file": "swap_pair.c",
+                            "line": 7,
+                            "col": 31
+                          }
+                        }
+                      },
+                      "expr": {
+                        "tag": "CNExpr_binop",
+                        "op": "CN_map_get",
+                        "e1": {
+                          "loc": {
+                            "tag": "Loc_point",
+                            "pos": {
+                              "file": "swap_pair.c",
+                              "line": 7,
+                              "col": 22
+                            }
+                          },
+                          "expr": {
+                            "tag": "CNExpr_var",
+                            "name": {
+                              "loc": {
+                                "tag": "Loc_point",
+                                "pos": {
+                                  "file": "swap_pair.c",
+                                  "line": 7,
+                                  "col": 22
+                                }
+                              },
+                              "name": "pairStart"
+                            }
+                          }
+                        },
+                        "e2": {
+                          "loc": {
+                            "tag": "Loc_point",
+                            "pos": {
+                              "file": "swap_pair.c",
+                              "line": 7,
+                              "col": 32
+                            }
+                          },
+                          "expr": {
+                            "tag": "CNExpr_const",
+                            "const": {
+                              "tag": "CNConst_bits",
+                              "sign": "CN_signed",
+                              "width": 32,
+                              "value": "1"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "tag": "CN_cconstr",
+              "loc": {
+                "tag": "Loc_region",
+                "begin": { "file": "swap_pair.c", "line": 8, "col": 5 },
+                "end": { "file": "swap_pair.c", "line": 8, "col": 38 },
+                "cursor": "NoCursor"
+              },
+              "assertion": {
+                "tag": "CN_assert_exp",
+                "expr": {
+                  "loc": {
+                    "tag": "Loc_region",
+                    "begin": { "file": "swap_pair.c", "line": 8, "col": 5 },
+                    "end": { "file": "swap_pair.c", "line": 8, "col": 37 },
+                    "cursor": {
+                      "tag": "PointCursor",
+                      "pos": { "file": "swap_pair.c", "line": 8, "col": 19 }
+                    }
+                  },
+                  "expr": {
+                    "tag": "CNExpr_binop",
+                    "op": "CN_equal",
+                    "e1": {
+                      "loc": {
+                        "tag": "Loc_region",
+                        "begin": {
+                          "file": "swap_pair.c",
+                          "line": 8,
+                          "col": 5
+                        },
+                        "end": {
+                          "file": "swap_pair.c",
+                          "line": 8,
+                          "col": 18
+                        },
+                        "cursor": {
+                          "tag": "PointCursor",
+                          "pos": {
+                            "file": "swap_pair.c",
+                            "line": 8,
+                            "col": 12
+                          }
+                        }
+                      },
+                      "expr": {
+                        "tag": "CNExpr_binop",
+                        "op": "CN_map_get",
+                        "e1": {
+                          "loc": {
+                            "tag": "Loc_point",
+                            "pos": {
+                              "file": "swap_pair.c",
+                              "line": 8,
+                              "col": 5
+                            }
+                          },
+                          "expr": {
+                            "tag": "CNExpr_var",
+                            "name": {
+                              "loc": {
+                                "tag": "Loc_point",
+                                "pos": {
+                                  "file": "swap_pair.c",
+                                  "line": 8,
+                                  "col": 5
+                                }
+                              },
+                              "name": "pairEnd"
+                            }
+                          }
+                        },
+                        "e2": {
+                          "loc": {
+                            "tag": "Loc_point",
+                            "pos": {
+                              "file": "swap_pair.c",
+                              "line": 8,
+                              "col": 13
+                            }
+                          },
+                          "expr": {
+                            "tag": "CNExpr_const",
+                            "const": {
+                              "tag": "CNConst_bits",
+                              "sign": "CN_signed",
+                              "width": 32,
+                              "value": "1"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "e2": {
+                      "loc": {
+                        "tag": "Loc_region",
+                        "begin": {
+                          "file": "swap_pair.c",
+                          "line": 8,
+                          "col": 22
+                        },
+                        "end": {
+                          "file": "swap_pair.c",
+                          "line": 8,
+                          "col": 37
+                        },
+                        "cursor": {
+                          "tag": "PointCursor",
+                          "pos": {
+                            "file": "swap_pair.c",
+                            "line": 8,
+                            "col": 31
+                          }
+                        }
+                      },
+                      "expr": {
+                        "tag": "CNExpr_binop",
+                        "op": "CN_map_get",
+                        "e1": {
+                          "loc": {
+                            "tag": "Loc_point",
+                            "pos": {
+                              "file": "swap_pair.c",
+                              "line": 8,
+                              "col": 22
+                            }
+                          },
+                          "expr": {
+                            "tag": "CNExpr_var",
+                            "name": {
+                              "loc": {
+                                "tag": "Loc_point",
+                                "pos": {
+                                  "file": "swap_pair.c",
+                                  "line": 8,
+                                  "col": 22
+                                }
+                              },
+                              "name": "pairStart"
+                            }
+                          }
+                        },
+                        "e2": {
+                          "loc": {
+                            "tag": "Loc_point",
+                            "pos": {
+                              "file": "swap_pair.c",
+                              "line": 8,
+                              "col": 32
+                            }
+                          },
+                          "expr": {
+                            "tag": "CNExpr_const",
+                            "const": {
+                              "tag": "CNConst_bits",
+                              "sign": "CN_signed",
+                              "width": 32,
+                              "value": "0"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "loops": [],
+      "statements": [
+        {
+          "loc": {
+            "tag": "Loc_region",
+            "begin": { "file": "swap_pair.c", "line": 11, "col": 8 },
+            "end": { "file": "swap_pair.c", "line": 11, "col": 45 },
+            "cursor": "NoCursor"
+          },
+          "stmts": [
+            {
+              "loc": {
+                "tag": "Loc_region",
+                "begin": { "file": "swap_pair.c", "line": 11, "col": 9 },
+                "end": { "file": "swap_pair.c", "line": 11, "col": 43 },
+                "cursor": "NoCursor"
+              },
+              "stmt": {
+                "tag": "CN_extract",
+                "attrs": [],
+                "target": {
+                  "tag": "E_Pred",
+                  "pred": {
+                    "tag": "CN_owned",
+                    "type": {
+                      "tag": "Type_name",
+                      "type_specifiers": [
+                        {
+                          "tag": "TSpec",
+                          "loc": {
+                            "tag": "Loc_region",
+                            "begin": {
+                              "file": "swap_pair.c",
+                              "line": 11,
+                              "col": 18
+                            },
+                            "end": {
+                              "file": "swap_pair.c",
+                              "line": 11,
+                              "col": 26
+                            },
+                            "cursor": "NoCursor"
+                          },
+                          "spec": "TSpec_unsigned"
+                        },
+                        {
+                          "tag": "TSpec",
+                          "loc": {
+                            "tag": "Loc_region",
+                            "begin": {
+                              "file": "swap_pair.c",
+                              "line": 11,
+                              "col": 27
+                            },
+                            "end": {
+                              "file": "swap_pair.c",
+                              "line": 11,
+                              "col": 31
+                            },
+                            "cursor": "NoCursor"
+                          },
+                          "spec": "TSpec_long"
+                        },
+                        {
+                          "tag": "TSpec",
+                          "loc": {
+                            "tag": "Loc_region",
+                            "begin": {
+                              "file": "swap_pair.c",
+                              "line": 11,
+                              "col": 32
+                            },
+                            "end": {
+                              "file": "swap_pair.c",
+                              "line": 11,
+                              "col": 35
+                            },
+                            "cursor": "NoCursor"
+                          },
+                          "spec": "TSpec_int"
+                        }
+                      ],
+                      "type_qualifiers": [],
+                      "alignment_specifiers": [],
+                      "abstract_declarator": null
+                    }
+                  }
+                },
+                "expr": {
+                  "loc": {
+                    "tag": "Loc_point",
+                    "pos": { "file": "swap_pair.c", "line": 11, "col": 38 }
+                  },
+                  "expr": {
+                    "tag": "CNExpr_const",
+                    "const": {
+                      "tag": "CNConst_bits",
+                      "sign": "CN_signed",
+                      "width": 32,
+                      "value": "0"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "loc": {
+            "tag": "Loc_region",
+            "begin": { "file": "swap_pair.c", "line": 13, "col": 8 },
+            "end": { "file": "swap_pair.c", "line": 13, "col": 45 },
+            "cursor": "NoCursor"
+          },
+          "stmts": [
+            {
+              "loc": {
+                "tag": "Loc_region",
+                "begin": { "file": "swap_pair.c", "line": 13, "col": 9 },
+                "end": { "file": "swap_pair.c", "line": 13, "col": 43 },
+                "cursor": "NoCursor"
+              },
+              "stmt": {
+                "tag": "CN_extract",
+                "attrs": [],
+                "target": {
+                  "tag": "E_Pred",
+                  "pred": {
+                    "tag": "CN_owned",
+                    "type": {
+                      "tag": "Type_name",
+                      "type_specifiers": [
+                        {
+                          "tag": "TSpec",
+                          "loc": {
+                            "tag": "Loc_region",
+                            "begin": {
+                              "file": "swap_pair.c",
+                              "line": 13,
+                              "col": 18
+                            },
+                            "end": {
+                              "file": "swap_pair.c",
+                              "line": 13,
+                              "col": 26
+                            },
+                            "cursor": "NoCursor"
+                          },
+                          "spec": "TSpec_unsigned"
+                        },
+                        {
+                          "tag": "TSpec",
+                          "loc": {
+                            "tag": "Loc_region",
+                            "begin": {
+                              "file": "swap_pair.c",
+                              "line": 13,
+                              "col": 27
+                            },
+                            "end": {
+                              "file": "swap_pair.c",
+                              "line": 13,
+                              "col": 31
+                            },
+                            "cursor": "NoCursor"
+                          },
+                          "spec": "TSpec_long"
+                        },
+                        {
+                          "tag": "TSpec",
+                          "loc": {
+                            "tag": "Loc_region",
+                            "begin": {
+                              "file": "swap_pair.c",
+                              "line": 13,
+                              "col": 32
+                            },
+                            "end": {
+                              "file": "swap_pair.c",
+                              "line": 13,
+                              "col": 35
+                            },
+                            "cursor": "NoCursor"
+                          },
+                          "spec": "TSpec_int"
+                        }
+                      ],
+                      "type_qualifiers": [],
+                      "alignment_specifiers": [],
+                      "abstract_declarator": null
+                    }
+                  }
+                },
+                "expr": {
+                  "loc": {
+                    "tag": "Loc_point",
+                    "pos": { "file": "swap_pair.c", "line": 13, "col": 38 }
+                  },
+                  "expr": {
+                    "tag": "CNExpr_const",
+                    "const": {
+                      "tag": "CNConst_bits",
+                      "sign": "CN_signed",
+                      "width": 32,
+                      "value": "1"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "loc": {
+            "tag": "Loc_region",
+            "begin": { "file": "swap_pair.c", "line": 14, "col": 8 },
+            "end": { "file": "swap_pair.c", "line": 14, "col": 53 },
+            "cursor": "NoCursor"
+          },
+          "stmts": [
+            {
+              "loc": {
+                "tag": "Loc_region",
+                "begin": { "file": "swap_pair.c", "line": 14, "col": 9 },
+                "end": { "file": "swap_pair.c", "line": 14, "col": 51 },
+                "cursor": "NoCursor"
+              },
+              "stmt": {
+                "tag": "CN_instantiate",
+                "target": {
+                  "tag": "I_Good",
+                  "type": {
+                    "tag": "Type_name",
+                    "type_specifiers": [
+                      {
+                        "tag": "TSpec",
+                        "loc": {
+                          "tag": "Loc_region",
+                          "begin": {
+                            "file": "swap_pair.c",
+                            "line": 14,
+                            "col": 26
+                          },
+                          "end": {
+                            "file": "swap_pair.c",
+                            "line": 14,
+                            "col": 34
+                          },
+                          "cursor": "NoCursor"
+                        },
+                        "spec": "TSpec_unsigned"
+                      },
+                      {
+                        "tag": "TSpec",
+                        "loc": {
+                          "tag": "Loc_region",
+                          "begin": {
+                            "file": "swap_pair.c",
+                            "line": 14,
+                            "col": 35
+                          },
+                          "end": {
+                            "file": "swap_pair.c",
+                            "line": 14,
+                            "col": 39
+                          },
+                          "cursor": "NoCursor"
+                        },
+                        "spec": "TSpec_long"
+                      },
+                      {
+                        "tag": "TSpec",
+                        "loc": {
+                          "tag": "Loc_region",
+                          "begin": {
+                            "file": "swap_pair.c",
+                            "line": 14,
+                            "col": 40
+                          },
+                          "end": {
+                            "file": "swap_pair.c",
+                            "line": 14,
+                            "col": 43
+                          },
+                          "cursor": "NoCursor"
+                        },
+                        "spec": "TSpec_int"
+                      }
+                    ],
+                    "type_qualifiers": [],
+                    "alignment_specifiers": [],
+                    "abstract_declarator": null
+                  }
+                },
+                "expr": {
+                  "loc": {
+                    "tag": "Loc_point",
+                    "pos": { "file": "swap_pair.c", "line": 14, "col": 46 }
+                  },
+                  "expr": {
+                    "tag": "CNExpr_const",
+                    "const": {
+                      "tag": "CNConst_bits",
+                      "sign": "CN_signed",
+                      "width": 32,
+                      "value": "0"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "loc": {
+            "tag": "Loc_region",
+            "begin": { "file": "swap_pair.c", "line": 16, "col": 8 },
+            "end": { "file": "swap_pair.c", "line": 16, "col": 53 },
+            "cursor": "NoCursor"
+          },
+          "stmts": [
+            {
+              "loc": {
+                "tag": "Loc_region",
+                "begin": { "file": "swap_pair.c", "line": 16, "col": 9 },
+                "end": { "file": "swap_pair.c", "line": 16, "col": 51 },
+                "cursor": "NoCursor"
+              },
+              "stmt": {
+                "tag": "CN_instantiate",
+                "target": {
+                  "tag": "I_Good",
+                  "type": {
+                    "tag": "Type_name",
+                    "type_specifiers": [
+                      {
+                        "tag": "TSpec",
+                        "loc": {
+                          "tag": "Loc_region",
+                          "begin": {
+                            "file": "swap_pair.c",
+                            "line": 16,
+                            "col": 26
+                          },
+                          "end": {
+                            "file": "swap_pair.c",
+                            "line": 16,
+                            "col": 34
+                          },
+                          "cursor": "NoCursor"
+                        },
+                        "spec": "TSpec_unsigned"
+                      },
+                      {
+                        "tag": "TSpec",
+                        "loc": {
+                          "tag": "Loc_region",
+                          "begin": {
+                            "file": "swap_pair.c",
+                            "line": 16,
+                            "col": 35
+                          },
+                          "end": {
+                            "file": "swap_pair.c",
+                            "line": 16,
+                            "col": 39
+                          },
+                          "cursor": "NoCursor"
+                        },
+                        "spec": "TSpec_long"
+                      },
+                      {
+                        "tag": "TSpec",
+                        "loc": {
+                          "tag": "Loc_region",
+                          "begin": {
+                            "file": "swap_pair.c",
+                            "line": 16,
+                            "col": 40
+                          },
+                          "end": {
+                            "file": "swap_pair.c",
+                            "line": 16,
+                            "col": 43
+                          },
+                          "cursor": "NoCursor"
+                        },
+                        "spec": "TSpec_int"
+                      }
+                    ],
+                    "type_qualifiers": [],
+                    "alignment_specifiers": [],
+                    "abstract_declarator": null
+                  }
+                },
+                "expr": {
+                  "loc": {
+                    "tag": "Loc_point",
+                    "pos": { "file": "swap_pair.c", "line": 16, "col": 46 }
+                  },
+                  "expr": {
+                    "tag": "CNExpr_const",
+                    "const": {
+                      "tag": "CNConst_bits",
+                      "sign": "CN_signed",
+                      "width": 32,
+                      "value": "1"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ghost_calls": []
+    },
+    {
+      "name": "main",
+      "name_loc": {
+        "tag": "Loc_region",
+        "begin": { "file": "swap_pair.c", "line": 20, "col": 5 },
+        "end": { "file": "swap_pair.c", "line": 20, "col": 9 },
+        "cursor": "NoCursor"
+      },
+      "def_loc": {
+        "tag": "Loc_region",
+        "begin": { "file": "swap_pair.c", "line": 20, "col": 1 },
+        "end": { "file": "swap_pair.c", "line": 25, "col": 2 },
+        "cursor": "NoCursor"
+      },
+      "spec": {
+        "tag": "CN_func_spec",
+        "trusted": {
+          "tag": "Loc_region",
+          "begin": { "file": "swap_pair.c", "line": 21, "col": 5 },
+          "end": { "file": "swap_pair.c", "line": 21, "col": 13 },
+          "cursor": "NoCursor"
+        },
+        "acc_func": null,
+        "requires": null,
+        "ensures": null
+      },
+      "loops": [],
+      "statements": [],
+      "ghost_calls": []
+    }
+  ],
+  "stray": { "loops": [], "statements": [], "ghost_calls": [] }
+}
