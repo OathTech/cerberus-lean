@@ -1,6 +1,6 @@
 # Arc 17 — the automation framework (Iris refounding, part 2)
 
-STATUS: DRAFT — awaiting operator blessing. ORIENTATION [USER
+STATUS: BLESSED [USER 2026-08-24]: "Go ahead and launch the arc." ORIENTATION [USER
 2026-08-24, verbatim]: "Our main line is building a scalable proof
 automation framework inside Iris for theorem proving use. Ultimately,
 we want to be able to verify libxml2 via this framework. CN is a kind
