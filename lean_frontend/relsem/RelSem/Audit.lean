@@ -922,14 +922,16 @@ open Lean in
 -- WpGround (memoized ground-fact discharger) join the closure, and
 -- T1Threaded's state ladder is re-emitted through `derive_state`
 -- (+3 `_def` rfl lemmas, trio-pinned above); 58 declarations, all
--- boundary-clean). 4108 → 4129 (arc-17 S1: the per-construct law
+-- boundary-clean). 4108 → 4119 (arc-17 S1: the per-construct law
 -- registry ConstructLaws joins the closure (seu_read_bind +
--- erun_jump_m + match/eq auxiliaries) and the three label-resolution
--- twins round6_thr/round13_thr/round21_thr are DELETED — their
--- ambient rounds are ∀-run-state and pinned trio above; net +21,
--- all boundary-clean).
+-- erun_jump_m + ndct_offer1 + driver2_done + match/eq auxiliaries);
+-- the three label-resolution twins round6_thr/round13_thr/round21_thr
+-- are DELETED — their ambient rounds are ∀-run-state and pinned trio
+-- above — and the per-fixture scheduler/driver-iteration proof
+-- machinery in the threaded files collapses into the two
+-- call-structure laws; net +11, all boundary-clean).
 /--
-info: RelSem audit sweep: 4129 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 4119 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do

@@ -112,4 +112,84 @@ theorem erun_jump_m {B : Type}
   rw [seu_read_bind, hres]
   exact hk
 
+/-! ## The call structure: scheduler read + driver iteration -/
+
+/-- CONSTRUCT LAW `ndct_offer1` — the single-thread scheduler read.
+
+    SHAPE: `new_drive_core_threads` (generated/Driver.lean): read the
+    state, run the non-memory loop over the thread ids, then pick one
+    offered step per thread. At the single-threaded shape every slate
+    run has (thread table `[(0, thi)]`, one offered step), the read
+    and the pick are DETERMINISTIC — the whole scheduler stage reduces
+    once the dnms result enters as a hypothesis. WHY THE NEXT PROGRAM
+    GETS IT FREE: `ndct_eq` was per-fixture text in every fixture
+    (T1/T2/T3 ambient + threaded); this law replaces each with one
+    application fed by the fixture's dnms-chain equation.
+
+    TRACE-ATOM SCHEMA (S0 §3.3 level 2): `{law := ndct_offer1,
+    joint := scheduler-read, hyps := [hths : ground (thread-table
+    shape), hdnms : fed-equation BY NAME (the dnms chain)]}`. -/
+theorem ndct_offer1
+    {tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)}
+    {σ σ' : driver_state} {step1 : core_step2}
+    {thi : Option thread_id × thread_state}
+    (hths : σ.core_state0.thread_states = [(0, thi)])
+    (hdnms : app (drive_nonmemory_steps_aux2_lemFuel lemDefaultFuel tagDefs
+        fmapEmpty [0]) σ
+      = (NDactive (fmapAddBy defaultCompare 0 [step1] fmapEmpty), σ')) :
+    app (new_drive_core_threads tagDefs ()) σ
+      = (NDactive [(0, some step1)], σ') := by
+  refine (app_bind_active (app_nd_get σ)).trans ?_
+  simp only [hths]
+  refine (app_bind_active hdnms).trans ?_
+  rfl
+
+/-- CONSTRUCT LAW `driver2_done` — one driver iteration at a done
+    offer (the program-exit iteration).
+
+    SHAPE: `driver2_lemFuel` (generated/Driver.lean) at an offer list
+    `[(0, some (Step_done2 v))]`: the opaque execution-mode read
+    splits the scheduler dispatch (random vs exhaustive — both
+    deterministic at a singleton offer; the split is CASED once, here),
+    the pick yields the done step, and `process_core_step2`'s
+    `Step_done2` arm rebuilds the core state via `prepare_exit` and
+    RETURNS — no recursion, so ONE iteration is the whole run. WHY THE
+    NEXT PROGRAM GETS IT FREE: `driver2_iter` (with its per-fixture
+    execution-mode `cases` dance) was per-fixture text in every
+    fixture; this law replaces each with one application fed by the
+    fixture's scheduler equation (`ndct_offer1`'s output).
+
+    TRACE-ATOM SCHEMA (S0 §3.3 level 2): `{law := driver2_done,
+    joint := driver-iteration/done, hyps := [hndct : fed-equation BY
+    NAME (the scheduler read)]}`. -/
+theorem driver2_done
+    {tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)}
+    {fuel : Nat} {σ σ' : driver_state} {v : value}
+    (hndct : app (new_drive_core_threads tagDefs ()) σ
+      = (NDactive [(0, some (Step_done2 v))], σ')) :
+    app (driver2_lemFuel (fuel+1) tagDefs false) σ
+      = (NDactive (),
+         { σ' with core_state0 := prepare_exit σ'.core_state0 v }) := by
+  change app (nd_bind _ _) _ = _
+  refine (app_bind_active hndct).trans ?_
+  refine (app_bind_active (app_nd_get σ')).trans ?_
+  cases hmode : Lem_Maybe.maybeEqualBy (fun x y => x == y)
+      (CerbGlobal.current_execution_mode ())
+      (some CerbGlobal.ExecutionMode.random) with
+  | true =>
+    simp only [reduceIte, bindExhaustive]
+    apply (app_bind_active ?hpickT).trans
+    case hpickT => rfl
+    apply (app_bind_active ?hdbgT).trans
+    case hdbgT => rfl
+    rfl
+  | false =>
+    apply (app_bind_active ?hgrd).trans
+    case hgrd => rfl
+    apply (app_bind_active ?hpickF).trans
+    case hpickF => rfl
+    apply (app_bind_active ?hdbgF).trans
+    case hdbgF => rfl
+    rfl
+
 end RelSem.Laws

@@ -197,19 +197,22 @@ theorem dnms_chain_thr (seed : Nat) (x : Int)
   (round23 x 999975 (memK x) (rs5_thr seed)
       [meKill, meLoadX x, meStore x, meLoadV x, meCreate] 18)))))))))))))))))))))))
 
-/-- The scheduler sees exactly the done step. -/
+/-- The scheduler sees exactly the done step (arc-17 S1: through the
+    `ndct_offer1` construct law — the per-fixture scheduler text is
+    gone). -/
 theorem ndct_eq_thr (seed : Nat) (x : Int)
     (h1 : -2147483648 ≤ x) (h2 : x ≤ 2147483647) :
     app (new_drive_core_threads t3File.tagDefs ())
         (mkDr th00 (memD3 x) (rsD3_thr seed) [] 0)
       = (NDactive [(0, some (Step_done2 (loadedV x)))],
          mkDr (th23 x) (memK x) (rs5_thr seed)
-           [meKill, meLoadX x, meStore x, meLoadV x, meCreate] 18) := by
-  refine (app_bind_active rfl).trans ?_
-  refine (app_bind_active (dnms_chain_thr seed x h1 h2)).trans ?_
-  rfl
+           [meKill, meLoadX x, meStore x, meLoadV x, meCreate] 18) :=
+  RelSem.Laws.ndct_offer1 rfl
+    ((dnms_chain_thr seed x h1 h2).trans (by rfl))
 
-/-- ONE driver2 iteration does the whole run. -/
+/-- ONE driver2 iteration does the whole run (arc-17 S1: through the
+    `driver2_done` construct law — the per-fixture execution-mode
+    `cases` dance is gone). -/
 theorem driver2_iter_thr (seed : Nat) (x : Int)
     (h1 : -2147483648 ≤ x) (h2 : x ≤ 2147483647) :
     app (driver2 t3File.tagDefs false)
@@ -218,27 +221,8 @@ theorem driver2_iter_thr (seed : Nat) (x : Int)
   show app (driver2_lemFuel (999999+1) t3File.tagDefs false)
     (mkDr th00 (memD3 x) (rsD3_thr seed) [] 0)
     = (NDactive (), drDone_thr seed x)
-  change app (nd_bind _ _) _ = _
-  refine (app_bind_active (ndct_eq_thr seed x h1 h2)).trans ?_
-  refine (app_bind_active rfl).trans ?_          -- nd_get
-  cases hmode : Lem_Maybe.maybeEqualBy (fun x y => x == y)
-      (CerbGlobal.current_execution_mode ())
-      (some CerbGlobal.ExecutionMode.random) with
-  | true =>
-    simp only [reduceIte, bindExhaustive]
-    apply (app_bind_active ?hpickT).trans
-    case hpickT => rfl
-    apply (app_bind_active ?hdbgT).trans
-    case hdbgT => rfl
-    rfl
-  | false =>
-    apply (app_bind_active ?hgrd).trans
-    case hgrd => rfl
-    apply (app_bind_active ?hpickF).trans
-    case hpickF => rfl
-    apply (app_bind_active ?hdbgF).trans
-    case hdbgF => rfl
-    rfl
+  exact (RelSem.Laws.driver2_done
+    (ndct_eq_thr seed x h1 h2)).trans (by rfl)
 
 /-- THE THREADED T3 HARNESS APP EQUATION. -/
 theorem t3_app_eq_thr (seed : Nat) (x : Int)

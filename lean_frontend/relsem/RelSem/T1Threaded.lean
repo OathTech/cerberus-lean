@@ -400,20 +400,21 @@ theorem dnms_chain_thr (seed : Nat) (x : Int)
   ((round7_thr x 999992 (rsR6_thr seed) [meLoad x] 6).trans
   (round8_thr x 999990 (rsR6_thr seed) [meLoad x] 7))))))))
 
-/-- The scheduler sees exactly the done step (twin of `ndct_eq`). -/
+/-- The scheduler sees exactly the done step (arc-17 S1: through the
+    `ndct_offer1` construct law — the per-fixture scheduler text is
+    gone). -/
 theorem ndct_eq_thr (seed : Nat) (x : Int)
     (h1 : -2147483648 ≤ x) (h2 : x ≤ 2147483647) :
     app (new_drive_core_threads t1File.tagDefs ())
         (mkDr th0 (memD3 x) (rsD3_thr seed) [] 0)
       = (NDactive [(0, some (Step_done2 (loadedV x)))],
-         mkDr (th8 x) (memD3 x) (rsR6_thr seed) [meLoad x] 7) := by
-  refine (app_bind_active rfl).trans ?_          -- nd_get (tids)
-  refine (app_bind_active (dnms_chain_thr seed x h1 h2)).trans ?_
-  rfl                                            -- nd_mapM pick (singleton)
+         mkDr (th8 x) (memD3 x) (rsR6_thr seed) [meLoad x] 7) :=
+  RelSem.Laws.ndct_offer1 rfl
+    ((dnms_chain_thr seed x h1 h2).trans (by rfl))
 
-/-- ONE driver2 iteration does the whole run (twin of `driver2_iter`;
-    the execution-mode opaque is dispatched by cases exactly as
-    there). -/
+/-- ONE driver2 iteration does the whole run (arc-17 S1: through the
+    `driver2_done` construct law — the per-fixture execution-mode
+    `cases` dance is gone). -/
 theorem driver2_iter_thr (seed : Nat) (x : Int)
     (h1 : -2147483648 ≤ x) (h2 : x ≤ 2147483647) :
     app (driver2 t1File.tagDefs false)
@@ -422,27 +423,8 @@ theorem driver2_iter_thr (seed : Nat) (x : Int)
   show app (driver2_lemFuel (999999+1) t1File.tagDefs false)
     (mkDr th0 (memD3 x) (rsD3_thr seed) [] 0)
     = (NDactive (), drDone_thr seed x)
-  change app (nd_bind _ _) _ = _
-  refine (app_bind_active (ndct_eq_thr seed x h1 h2)).trans ?_
-  refine (app_bind_active rfl).trans ?_          -- nd_get
-  cases hmode : Lem_Maybe.maybeEqualBy (fun x y => x == y)
-      (CerbGlobal.current_execution_mode ())
-      (some CerbGlobal.ExecutionMode.random) with
-  | true =>
-    simp only [reduceIte, bindExhaustive]
-    apply (app_bind_active ?hpickT).trans        -- pick (singleton)
-    case hpickT => rfl
-    apply (app_bind_active ?hdbgT).trans         -- process: print_debug
-    case hdbgT => rfl
-    rfl                                          -- nd_update (prepare_exit)
-  | false =>
-    apply (app_bind_active ?hgrd).trans          -- |non_blocked| guard
-    case hgrd => rfl
-    apply (app_bind_active ?hpickF).trans        -- pick (singleton)
-    case hpickF => rfl
-    apply (app_bind_active ?hdbgF).trans         -- process: print_debug
-    case hdbgF => rfl
-    rfl                                          -- nd_update (prepare_exit)
+  exact (RelSem.Laws.driver2_done
+    (ndct_eq_thr seed x h1 h2)).trans (by rfl)
 
 /-- THE THREADED T1 HARNESS APP EQUATION (twin of `t1_app_eq`,
     ∀-quantified over the supply seed; composed from the k-stage
