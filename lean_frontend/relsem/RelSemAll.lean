@@ -27,6 +27,11 @@ import RelSem.IrisLang
 import RelSem.IrisState
 import RelSem.IrisRules
 import RelSem.IrisAdequacy
+-- arc-16 S1: the per-step language instance (the Iris refounding).
+import RelSem.PerStep
+import RelSem.PerStepIris
+import RelSem.PerStepCall
+import RelSem.PerStepSmoke
 -- arc-7 S4: the T1 program term (emitted, drift-gated) + the WP-route
 -- smoke theorems.
 import RelSem.T1Core

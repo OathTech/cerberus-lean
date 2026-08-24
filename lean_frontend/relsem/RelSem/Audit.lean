@@ -132,6 +132,12 @@ import RelSem.T4
 -- OUTSIDE this file's import closure — the sweep/gate hole the
 -- arc-11 adversarial audit found.
 import RelSem.T5Iter
+-- arc-16 S1: the per-step language (the Iris refounding's language
+-- layer) joins the sweep closure + pins.
+import RelSem.PerStep
+import RelSem.PerStepIris
+import RelSem.PerStepCall
+import RelSem.PerStepSmoke
 
 namespace RelSem.Audit
 
@@ -564,6 +570,57 @@ open Lean in
     fuel-opsem-clean (negative tests: t1_wp and the wrapper-hole probe \
     correctly rejected)"
 
+-- arc-16 S1: THE PER-STEP LANGUAGE (RelSem/PerStep*.lean — the Iris
+-- refounding's language layer; design record
+-- docs/2026-08-24_arc16-s1-language-instance.md). The generic layer
+-- (KExpr/KStep/completeness) is boundary-clean ([propext, Quot.sound]
+-- grade — Quot.sound enters through funext in the fold congruence);
+-- the coupling layer is trio-only; the harness-mentioning theorems
+-- (callK anchors consume the quoted substrate transparently; the
+-- adequacy/smoke chain quotes `callND`/`initial_driver_state`)
+-- inherit runEffectful exactly as the arc-7 route's. T1_perStep's
+-- cone is IDENTICAL to the committed T1's. Pinned exactly.
+/-- info: 'RelSem.ksteps_of_runNDFuel' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.ksteps_of_runNDFuel
+/-- info: 'RelSem.ksteps_of_runND' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.ksteps_of_runND
+/-- info: 'RelSem.runNDFuel_bind_fuel_irrel' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.runNDFuel_bind_fuel_irrel
+/-- info: 'RelSem.runNDFuel_succ_congr' depends on axioms: [propext] -/
+#guard_msgs in #print axioms RelSem.runNDFuel_succ_congr
+/-- info: 'RelSem.kstep_seq_active_inv' does not depend on any axioms -/
+#guard_msgs in #print axioms RelSem.kstep_seq_active_inv
+/-- info: 'RelSem.kval_stuck' does not depend on any axioms -/
+#guard_msgs in #print axioms RelSem.kval_stuck
+/-- info: 'RelSem.Cerb.instLanguageKDrive' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.instLanguageKDrive
+/-- info: 'RelSem.Cerb.ksteps_erased' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.ksteps_erased
+/-- info: 'RelSem.Cerb.ownP_lift_det_step_no_fork' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.ownP_lift_det_step_no_fork
+/-- info: 'RelSem.Cerb.wpk_seq_active' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.wpk_seq_active
+/-- info: 'RelSem.Cerb.wpk_seq_killed' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.wpk_seq_killed
+/-- info: 'RelSem.Cerb.wpk_done' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.wpk_done
+/-- info: 'RelSem.Cerb.kAdequate_of_wp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.kAdequate_of_wp
+/-- info: 'RelSem.Cerb.callFinishK_denote' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.callFinishK_denote
+/-- info: 'RelSem.Cerb.callK_denote' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.callK_denote
+/-- info: 'RelSem.Cerb.kCallHarnessAdequate_of_wp' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.kCallHarnessAdequate_of_wp
+/-- info: 'RelSem.Cerb.kCallHarnessUBFree_of_wp' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.kCallHarnessUBFree_of_wp
+/-- info: 'RelSem.T1.t1_wpK' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T1.t1_wpK
+/-- info: 'RelSem.T1.T1_perStep' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T1.T1_perStep
+/-- info: 'RelSem.T1.T1_ubFree_perStep' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T1.T1_ubFree_perStep
+
 /-! ## The exhaustive sweep — LAST in the file by design: a constant
     declared after this point would dodge it (negative-test lesson,
     2026-08-19), so nothing may be declared below, and RelSem.Audit is
@@ -582,9 +639,12 @@ open Lean in
 -- T5Prefix gains eInsMK/eInsBEq — the pinned generated-instance
 -- spelling for the env-family inserts — and Tactics/AppWalk gains
 -- kDiffTrace (trace-lane kernel diff, R-S2-3) + addRawAuxThm (raw
--- seal fallback with level-mvar closure)).
+-- seal fallback with level-mvar closure)). 3356 → 3517 (arc-16 S1:
+-- the per-step language modules PerStep/PerStepIris/PerStepCall/
+-- PerStepSmoke join the closure — 161 declarations, all
+-- boundary-clean; pins above).
 /--
-info: RelSem audit sweep: 3356 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 3517 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do
