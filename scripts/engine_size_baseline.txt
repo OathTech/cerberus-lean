@@ -1,0 +1,21 @@
+# engine_size_baseline.txt — arc-18 C1 (2026-08-25): the engine-size
+# watch baseline (scripts/check_engine_size.sh; the R3 down-pressure
+# register's ENGINE row). Format: '<module> <lines>'. Re-baseline
+# deliberately, same commit, with the reason appended here.
+#
+# C1 baseline: the RoundEval decomposition of the 3,586-line
+# monolith (arc-17 S2/S2b/S3 growth; review finding F8 — the
+# recurrence-risk locus). Down-pressure direction: DOWN.
+RoundEval.lean 87
+RoundEval/Core.lean 281
+RoundEval/Hyp.lean 818
+RoundEval/Mint.lean 248
+RoundEval/Classify.lean 166
+RoundEval/Arith.lean 669
+RoundEval/Lanes.lean 493
+RoundEval/Rounds.lean 644
+RoundEval/Assembly.lean 436
+DeriveState.lean 260
+WpGround.lean 121
+LawRegistry.lean 296
+TOTAL 4519

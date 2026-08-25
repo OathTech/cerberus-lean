@@ -1161,7 +1161,13 @@ open Lean in
 -- deliberately, same commit, with the reason. (When green the pin
 -- SWALLOWS the info line — absence of the sweep line from a green
 -- build log is expected; the DAEMON + statement gates still print.)
--- Re-baselines: 4746 → 4830 (arc-18 C1: THE ONE REGISTRY —
+-- Re-baselines: 4830 → 4885 (arc-18 C1: the RoundEval DECOMPOSITION
+-- — the monolithic evaluator split into 8 contract-shaped modules
+-- (RoundEval/{Core,Hyp,Mint,Arith,Classify,Lanes,Rounds,Assembly});
+-- zero code additions — the +55 is per-module compiler auxiliaries
+-- (match/eq lemmas no longer shared across one module's body); all
+-- boundary-clean, drive behavior unchanged).
+-- 4746 → 4830 (arc-18 C1: THE ONE REGISTRY —
 -- RelSem.LawRegistry (StepLaw/Registry structures + derived
 -- instances, the @[step_law] attribute, query/census/lint machinery)
 -- joins the closure; the 42-law population is attribute metadata on
@@ -1249,7 +1255,7 @@ open Lean in
 -- probe's law layer; the probe fixture file itself is parked OUT of
 -- the build).
 /--
-info: RelSem audit sweep: 4830 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 4885 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do
