@@ -908,7 +908,11 @@ open Lean in
 -- loop 2 (Kit/Loop) + wpSeq 2 (the re-homed live seq laws,
 -- PerStepIris) + heapWP 4 (CerbHeapWP — the wp_load/store/alloc/kill
 -- rules; macro-side query conversion rides C2's restatement) = 46.
-/-- info: step_law census: 46 laws [advance 4, construct 8, envAlg 3, envMap 3, heapWP 4, loop 2, memBlock 5, memRW 7, perform 5, roundGlue 3, wpSeq 2] -/
+-- Census re-baseline 46 → 47 (arc-18 C2): `inject_ptr_arg2` — the
+-- two-scalar-argument caller protocol registers as a construct law
+-- (the engine-to-law rule: the two-parameter inject stage recurs, so
+-- it is a law, not per-fixture text; born with the T2 migration).
+/-- info: step_law census: 47 laws [advance 4, construct 9, envAlg 3, envMap 3, heapWP 4, loop 2, memBlock 5, memRW 7, perform 5, roundGlue 3, wpSeq 2] -/
 #guard_msgs in #step_law_census
 /-- info: 'RelSem.T1.round6' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.round6
@@ -1161,7 +1165,16 @@ open Lean in
 -- deliberately, same commit, with the reason. (When green the pin
 -- SWALLOWS the info line — absence of the sweep line from a green
 -- build log is expected; the DAEMON + statement gates still print.)
--- Re-baselines: 4786 → 4827 (arc-18 C2: THE T1 MIGRATION — the T1
+-- Re-baselines: 4827 → 4914 (arc-18 C2: THE T2/T3 MIGRATIONS — the
+-- T2 and T3 open-memory equation layers (rest ladders, open stage
+-- equations, open load/create/store/kill rounds, driver2_o, terminal
+-- readouts) + the substrate's two-object and scratch-object rules
+-- (interp_alloc_store factored, wpk_seq_alloc_store2, wpk_seq_read2,
+-- wpk_seq_scratch1 + ecasts + macros, tm_get?_insert_ne,
+-- writeBytesTo_lastAddress/nextAllocId) + the registered
+-- inject_ptr_arg2 construct law; all trio-clean; every pre-existing
+-- cone pin passed VERBATIM).
+-- 4786 → 4827 (arc-18 C2: THE T1 MIGRATION — the T1
 -- walk moves to the heap route: the T1 open-memory equation layer
 -- (rest ladder, k*_o stage equations, round*_o open rounds,
 -- driver2_o, the terminal readout) + wpk_seq_get/_ecast and the walk
@@ -1287,7 +1300,7 @@ open Lean in
 -- probe's law layer; the probe fixture file itself is parked OUT of
 -- the build).
 /--
-info: RelSem audit sweep: 4827 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 4914 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do

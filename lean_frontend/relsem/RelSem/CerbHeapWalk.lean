@@ -355,6 +355,29 @@ def allocStoreState (ρ' : driver_state)
     (al : CerbMem.Allocation) : driver_state :=
   setMaps ρ' (allocStoreBytes bm a sz stored) (am.insert nid al)
 
+/-- `writeBytesTo` never touches the bump allocator's mark (the
+    projection the chained address arithmetic reads). -/
+theorem writeBytesTo_lastAddress (m : CerbMem.MemState) (a : Int)
+    (bs : List CerbMem.AbsByte) :
+    (CerbMem.writeBytesTo m a bs).lastAddress = m.lastAddress := by
+  rw [writeBytesTo_eq]
+
+/-- `writeBytesTo` never touches the allocation counter. -/
+theorem writeBytesTo_nextAllocId (m : CerbMem.MemState) (a : Int)
+    (bs : List CerbMem.AbsByte) :
+    (CerbMem.writeBytesTo m a bs).nextAllocId = m.nextAllocId := by
+  rw [writeBytesTo_eq]
+
+/-- `get?` through an insert at a DIFFERENT key (the comparator form
+    the fixtures' allocation-table reads need). -/
+theorem tm_get?_insert_ne {V : Type} (t : Std.TreeMap Int V)
+    {k k' : Int} (h : k ≠ k') (v : V) :
+    (t.insert k v).get? k' = t.get? k' := by
+  simp only [Std.TreeMap.get?_eq_getElem?, Std.TreeMap.getElem?_insert]
+  rw [if_neg]
+  intro hc
+  exact h (Std.LawfulEqCmp.eq_of_compare hc)
+
 /-- `restOf` ignores the maps a `setMaps` splices. -/
 theorem restOf_setMaps (ρ : driver_state)
     (bm : Std.TreeMap Int CerbMem.AbsByte)
@@ -394,6 +417,111 @@ theorem MemInv_alloc_store {ms : CerbMem.MemState} (h : MemInv ms)
       simp [uninitB, hi])
   rw [writeBytesTo_eq] at h2
   exact h2
+
+/-- A rest-shaped state stays rest-shaped across the alloc counters
+    move. -/
+theorem restOf_restAllocR {ρ : driver_state} (hρ : restOf ρ = ρ)
+    (a : Int) : restOf (restAllocR ρ a) = restAllocR ρ a := by
+  show { restAllocR ρ a with
+    layout_state := memRest (restAllocR ρ a).layout_state }
+    = restAllocR ρ a
+  show restAllocR { ρ with layout_state := memRest ρ.layout_state } a
+    = restAllocR ρ a
+  rw [show ({ ρ with layout_state := memRest ρ.layout_state }
+    : driver_state) = restOf ρ from rfl, hρ]
+
+/-- THE OBJECT-CREATION GHOST MOVE, factored once (both compound
+    rules instantiate it): at a decomposed state, the alloc+store
+    interpretation update — fresh `allocIs` + stored `pointsToBytes`
+    minted by the frame-preserving updates, freshness from `MemInv`. -/
+theorem interp_alloc_store [CerbHeapGS GF] {ρ : driver_state}
+    {bm : Std.TreeMap Int CerbMem.AbsByte}
+    {am : Std.TreeMap Int CerbMem.Allocation}
+    {ty : ctype} {pref : prefix0} {alignN : Int} {sz : Nat} {a : Int}
+    {stored : List CerbMem.AbsByte}
+    (hρ : restOf ρ = ρ)
+    (hsz : (CerbMem.sizeofCtype ty).max 1 = sz)
+    (haddr : ((CerbMem.alignDown (ρ.layout_state.lastAddress - sz).toNat
+        (alignN.toNat.max 1) : Nat) : Int) = a)
+    (hnz : (a == (0 : Int)) = false)
+    (hlen : stored.length = sz)
+    (hinv : MemInv (setMaps ρ bm am).layout_state) :
+    (CerbMemInterp (GF := GF) (setMaps ρ bm am)
+      ∗ restIs restHalf ρ : IProp GF) ⊢ |==>
+      (CerbMemInterp (allocStoreState (restAllocR ρ a) bm am a sz
+          stored ρ.layout_state.nextAllocId
+          { base := a, size := sz, ty := some ty, prefix_ := pref })
+        ∗ (restIs restHalf (restAllocR ρ a)
+           ∗ allocIs ρ.layout_state.nextAllocId (.own 1)
+               { base := a, size := sz, ty := some ty, prefix_ := pref }
+           ∗ pointsToBytes a (.own 1) stored)) := by
+  have hB : bytesOf (allocStoreState (restAllocR ρ a)
+      bm am a sz stored ρ.layout_state.nextAllocId
+      { base := a, size := sz, ty := some ty,
+        prefix_ := pref }).layout_state
+      = extWriteList (extWriteList
+          (bytesOf (setMaps ρ bm am).layout_state) a
+          (List.replicate sz uninitB)) a stored := by
+    show toExt (allocStoreBytes bm a sz stored) = _
+    unfold allocStoreBytes
+    rw [toExt_writeList, toExt_writeList]
+    rfl
+  have hA : allocsOf (allocStoreState (restAllocR ρ a)
+      bm am a sz stored ρ.layout_state.nextAllocId
+      { base := a, size := sz, ty := some ty,
+        prefix_ := pref }).layout_state
+      = Std.PartialMap.insert (M := CerbHeapF)
+          (allocsOf (setMaps ρ bm am).layout_state)
+          ρ.layout_state.nextAllocId
+          { base := a, size := sz, ty := some ty, prefix_ := pref } := by
+    show toExt (am.insert ρ.layout_state.nextAllocId _) = _
+    exact toExt_insert ..
+  have hR : restOf (allocStoreState (restAllocR ρ a)
+      bm am a sz stored ρ.layout_state.nextAllocId
+      { base := a, size := sz, ty := some ty,
+        prefix_ := pref }) = restAllocR ρ a := by
+    show restOf (setMaps (restAllocR ρ a) _ _) = _
+    rw [restOf_setMaps]
+    exact restOf_restAllocR hρ a
+  rw [CerbMemInterp_congr
+    (σ' := allocStoreState (restAllocR ρ a)
+      bm am a sz stored ρ.layout_state.nextAllocId
+      { base := a, size := sz, ty := some ty, prefix_ := pref })
+    hB hA hR]
+  unfold CerbMemInterp restIs allocIs
+  iintro ⟨⟨Hb, Ha, Hri, %Hinv'⟩, Hrp⟩
+  have hfreshB : ∀ i : Nat,
+      i < (List.replicate sz uninitB).length →
+      Std.PartialMap.get? (M := CerbHeapF)
+        (bytesOf (setMaps ρ bm am).layout_state)
+        (a + (i : Int)) = none := by
+    intro i hi
+    show (toExt bm)[(a + (i : Int))]? = none
+    rw [toExt_getElem?, ← Std.TreeMap.get?_eq_getElem?]
+    refine hinv.bytemap_below_none ?_
+    show a + (i : Int) < (setMaps ρ bm am).layout_state.lastAddress
+    show a + (i : Int) < ρ.layout_state.lastAddress
+    have hrange : a + sz ≤ ρ.layout_state.lastAddress :=
+      alloc_range_le haddr hnz
+    simp only [List.length_replicate] at hi
+    omega
+  imod bytes_alloc_ghost _ hfreshB $$ Hb with ⟨Hb, Hpts⟩
+  imod bytes_update_ghost stored
+    (by simpa using hlen) $$ [$Hb $Hpts] with ⟨Hb, Hpts⟩
+  have hfreshA : Std.PartialMap.get? (M := CerbHeapF)
+      (allocsOf (setMaps ρ bm am).layout_state)
+      ρ.layout_state.nextAllocId = none := by
+    show (toExt am)[ρ.layout_state.nextAllocId]? = none
+    rw [toExt_getElem?, ← Std.TreeMap.get?_eq_getElem?]
+    exact hinv.next_fresh
+  imod ghost_map_insert _ _ hfreshA $$ Ha with ⟨Ha, Hfrag⟩
+  imod ghost_var_update_halves (restAllocR ρ a) _ _ _ $$ Hri Hrp
+    with ⟨Hri, Hrp⟩
+  imodintro
+  iframe Hb Ha Hri Hrp Hfrag Hpts
+  ipureintro
+  exact MemInv_alloc_store hinv (pref := pref) (ty := ty)
+    (alignN := alignN) hsz haddr hnz hlen
 
 /-- OBJECT-CREATION STEP: consumes the rest half (the allocator
     counters move), MINTS the fresh allocation fragment + the stored
@@ -453,88 +581,7 @@ theorem wpk_seq_alloc_store [CerbHeapGS GF] {α : Type}
   · intro σ hp
     obtain ⟨hr, hinv⟩ := hp
     obtain ⟨bm, am, rfl⟩ := exists_setMaps_of_restOf hr
-    -- component images of the successor
-    have hB : bytesOf (allocStoreState (restAllocR ρ a)
-        (setMaps ρ bm am).layout_state.bytemap
-        (setMaps ρ bm am).layout_state.allocations a sz stored
-        ρ.layout_state.nextAllocId
-        { base := a, size := sz, ty := some ty,
-          prefix_ := pref }).layout_state
-        = extWriteList (extWriteList
-            (bytesOf (setMaps ρ bm am).layout_state) a
-            (List.replicate sz uninitB)) a stored := by
-      show toExt (allocStoreBytes bm a sz stored) = _
-      unfold allocStoreBytes
-      rw [toExt_writeList, toExt_writeList]
-      rfl
-    have hA : allocsOf (allocStoreState (restAllocR ρ a)
-        (setMaps ρ bm am).layout_state.bytemap
-        (setMaps ρ bm am).layout_state.allocations a sz stored
-        ρ.layout_state.nextAllocId
-        { base := a, size := sz, ty := some ty,
-          prefix_ := pref }).layout_state
-        = Std.PartialMap.insert (M := CerbHeapF)
-            (allocsOf (setMaps ρ bm am).layout_state)
-            ρ.layout_state.nextAllocId
-            { base := a, size := sz, ty := some ty, prefix_ := pref } := by
-      show toExt (am.insert ρ.layout_state.nextAllocId _) = _
-      exact toExt_insert ..
-    have hR : restOf (allocStoreState (restAllocR ρ a)
-        (setMaps ρ bm am).layout_state.bytemap
-        (setMaps ρ bm am).layout_state.allocations a sz stored
-        ρ.layout_state.nextAllocId
-        { base := a, size := sz, ty := some ty,
-          prefix_ := pref }) = restAllocR ρ a := by
-      show restOf (setMaps (restAllocR ρ a) _ _) = _
-      rw [restOf_setMaps]
-      show restAllocR (restOf ρ) a = restAllocR ρ a
-      rw [hρ]
-    rw [CerbMemInterp_congr
-      (σ' := allocStoreState (restAllocR ρ a)
-        (setMaps ρ bm am).layout_state.bytemap
-        (setMaps ρ bm am).layout_state.allocations a sz stored
-        ρ.layout_state.nextAllocId
-        { base := a, size := sz, ty := some ty, prefix_ := pref })
-      hB hA hR]
-    unfold CerbMemInterp restIs allocIs
-    iintro ⟨⟨Hb, Ha, Hri, %Hinv'⟩, Hrp⟩
-    -- byte ghost: fresh range (MemInv freshness), then overwrite
-    have hfreshB : ∀ i : Nat,
-        i < (List.replicate sz uninitB).length →
-        Std.PartialMap.get? (M := CerbHeapF)
-          (bytesOf (setMaps ρ bm am).layout_state)
-          (a + (i : Int)) = none := by
-      intro i hi
-      show (toExt bm)[(a + (i : Int))]? = none
-      rw [toExt_getElem?, ← Std.TreeMap.get?_eq_getElem?]
-      refine hinv.bytemap_below_none ?_
-      show a + (i : Int) < (setMaps ρ bm am).layout_state.lastAddress
-      show a + (i : Int) < ρ.layout_state.lastAddress
-      have hrange : a + sz ≤ ρ.layout_state.lastAddress :=
-        alloc_range_le haddr hnz
-      simp only [List.length_replicate] at hi
-      omega
-    imod bytes_alloc_ghost _ hfreshB $$ Hb with ⟨Hb, Hpts⟩
-    imod bytes_update_ghost stored
-      (by simpa using hlen) $$ [$Hb $Hpts] with ⟨Hb, Hpts⟩
-    -- alloc ghost: fresh id (MemInv freshness)
-    have hfreshA : Std.PartialMap.get? (M := CerbHeapF)
-        (allocsOf (setMaps ρ bm am).layout_state)
-        ρ.layout_state.nextAllocId = none := by
-      show (toExt am)[ρ.layout_state.nextAllocId]? = none
-      rw [toExt_getElem?, ← Std.TreeMap.get?_eq_getElem?]
-      exact hinv.next_fresh
-    imod ghost_map_insert _ _ hfreshA $$ Ha with ⟨Ha, Hfrag⟩
-    -- rest ghost: both halves move to the post-alloc rest
-    imod ghost_var_update_halves (restAllocR ρ a) _ _ _ $$ Hri Hrp
-      with ⟨Hri, Hrp⟩
-    imodintro
-    iframe Hb Ha Hri Hrp Hfrag Hpts
-    ipureintro
-    -- MemInv preservation: the composed pure lemma at the spliced
-    -- layout (fields defeq through the setMaps projections)
-    exact MemInv_alloc_store hinv (pref := pref) (ty := ty)
-      (alignN := alignN) hsz haddr hnz hlen
+    exact interp_alloc_store hρ hsz haddr hnz hlen hinv
 
 /-- `wpk_seq_alloc_store`'s ecast hook. -/
 theorem wpk_seq_alloc_store_ecast [CerbHeapGS GF] {α : Type}
@@ -564,6 +611,519 @@ theorem wpk_seq_alloc_store_ecast [CerbHeapGS GF] {α : Type}
         -∗ WP (k v) @ s ; E {{ Φ }}) ⊢
       WP e0 @ s ; E {{ Φ }} :=
   he ▸ wpk_seq_alloc_store hρ hsz haddr hnz hlen hnid hal h
+
+/-- TWO-OBJECT CREATION STEP (the two-argument caller protocol: both
+    injections live in ONE `injectArgs` atom): the factored ghost
+    move applied twice — the mid-state is again a decomposition
+    (`allocStoreState` IS `setMaps`), so the second application runs
+    at the moved rest with the extended maps. -/
+theorem wpk_seq_alloc_store2 [CerbHeapGS GF] {α : Type}
+    {m : ndM α step_kind driver_error mem_iv_constraint driver_state}
+    {k : α → KDriveExpr} {v : α} {ρ : driver_state}
+    {tyA tyB : ctype} {prefA prefB : prefix0} {alignA alignB : Int}
+    {szA szB : Nat} {aA aB : Int}
+    {nidA nidB : Int} {alA alB : CerbMem.Allocation}
+    {storedA storedB : List CerbMem.AbsByte}
+    {s : Stuckness} {E : CoPset} {Φ : DriveVal → IProp GF}
+    (hρ : restOf ρ = ρ)
+    (hszA : (CerbMem.sizeofCtype tyA).max 1 = szA)
+    (haddrA : ((CerbMem.alignDown
+        (ρ.layout_state.lastAddress - szA).toNat
+        (alignA.toNat.max 1) : Nat) : Int) = aA)
+    (hnzA : (aA == (0 : Int)) = false)
+    (hlenA : storedA.length = szA)
+    (hnidA : nidA = ρ.layout_state.nextAllocId)
+    (halA : alA = { base := aA, size := szA, ty := some tyA,
+                    prefix_ := prefA })
+    (hszB : (CerbMem.sizeofCtype tyB).max 1 = szB)
+    (haddrB : ((CerbMem.alignDown ((aA : Int) - szB).toNat
+        (alignB.toNat.max 1) : Nat) : Int) = aB)
+    (hnzB : (aB == (0 : Int)) = false)
+    (hlenB : storedB.length = szB)
+    (hnidB : nidB = ρ.layout_state.nextAllocId + 1)
+    (halB : alB = { base := aB, size := szB, ty := some tyB,
+                    prefix_ := prefB })
+    (h : ∀ bm am, app m (setMaps ρ bm am)
+        = (NDactive v, allocStoreState
+            (restAllocR (restAllocR ρ aA) aB)
+            (allocStoreBytes bm aA szA storedA) (am.insert nidA alA)
+            aB szB storedB nidB alB)) :
+    restIs (GF := GF) restHalf ρ ∗
+      ((restIs restHalf (restAllocR (restAllocR ρ aA) aB)
+          ∗ allocIs nidA (.own 1) alA
+          ∗ pointsToBytes aA (.own 1) storedA
+          ∗ allocIs nidB (.own 1) alB
+          ∗ pointsToBytes aB (.own 1) storedB)
+        -∗ WP (k v) @ s ; E {{ Φ }}) ⊢
+      WP (KExpr.seq m k : KDriveExpr) @ s ; E {{ Φ }} := by
+  subst hnidA; subst halA; subst hnidB; subst halB
+  refine wpk_seq_res_det
+    (R := iprop(restIs restHalf ρ))
+    (R' := iprop(restIs restHalf (restAllocR (restAllocR ρ aA) aB)
+      ∗ allocIs ρ.layout_state.nextAllocId (.own 1)
+          { base := aA, size := szA, ty := some tyA, prefix_ := prefA }
+      ∗ pointsToBytes aA (.own 1) storedA
+      ∗ allocIs (ρ.layout_state.nextAllocId + 1) (.own 1)
+          { base := aB, size := szB, ty := some tyB, prefix_ := prefB }
+      ∗ pointsToBytes aB (.own 1) storedB))
+    (Pre := fun σ => restOf σ = ρ ∧ MemInv σ.layout_state)
+    (upd := fun σ => allocStoreState
+      (restAllocR (restAllocR ρ aA) aB)
+      (allocStoreBytes σ.layout_state.bytemap aA szA storedA)
+      (σ.layout_state.allocations.insert ρ.layout_state.nextAllocId
+        { base := aA, size := szA, ty := some tyA, prefix_ := prefA })
+      aB szB storedB (ρ.layout_state.nextAllocId + 1)
+      { base := aB, size := szB, ty := some tyB, prefix_ := prefB })
+    ?_ ?_ ?_
+  · intro σ
+    iintro ⟨Hi, Hr⟩
+    icases interp_rest_agree $$ [$Hi $Hr] with ⟨%h1, Hi, Hr⟩
+    icases interp_meminv $$ Hi with ⟨%h2, Hi⟩
+    iframe Hi Hr
+    ipureintro
+    exact ⟨h1, h2⟩
+  · intro σ hp
+    obtain ⟨bm, am, rfl⟩ := exists_setMaps_of_restOf hp.1
+    exact h bm am
+  · intro σ hp
+    obtain ⟨hr, hinv⟩ := hp
+    obtain ⟨bm, am, rfl⟩ := exists_setMaps_of_restOf hr
+    -- application 1: the A object at ρ
+    iintro ⟨Hi, Hr⟩
+    imod (interp_alloc_store (ty := tyA) (pref := prefA)
+      (alignN := alignA) hρ hszA haddrA hnzA hlenA hinv)
+      $$ [$Hi $Hr] with ⟨Hi, Hr, HalA, HptA⟩
+    -- application 2: the B object at the moved rest; the mid-state
+    -- IS a decomposition (allocStoreState = setMaps by definition)
+    have hρ2 : restOf (restAllocR ρ aA) = restAllocR ρ aA :=
+      restOf_restAllocR hρ aA
+    have haddrB' : ((CerbMem.alignDown
+        ((restAllocR ρ aA).layout_state.lastAddress - szB).toNat
+        (alignB.toNat.max 1) : Nat) : Int) = aB := haddrB
+    have hinv2 : MemInv (setMaps (restAllocR ρ aA)
+        (allocStoreBytes bm aA szA storedA)
+        (am.insert ρ.layout_state.nextAllocId
+          { base := aA, size := szA, ty := some tyA,
+            prefix_ := prefA })).layout_state :=
+      MemInv_alloc_store hinv (pref := prefA) (ty := tyA)
+        (alignN := alignA) hszA haddrA hnzA hlenA
+    have hmid : (CerbMemInterp (GF := GF)
+        (allocStoreState (restAllocR ρ aA) bm am aA szA storedA
+          ρ.layout_state.nextAllocId
+          { base := aA, size := szA, ty := some tyA,
+            prefix_ := prefA }) : IProp GF)
+        = CerbMemInterp (setMaps (restAllocR ρ aA)
+            (allocStoreBytes bm aA szA storedA)
+            (am.insert ρ.layout_state.nextAllocId
+              { base := aA, size := szA, ty := some tyA,
+                prefix_ := prefA })) := rfl
+    icases hmid $$ Hi with Hi
+    imod (interp_alloc_store (ρ := restAllocR ρ aA)
+      (ty := tyB) (pref := prefB) (alignN := alignB)
+      (bm := allocStoreBytes bm aA szA storedA)
+      (am := am.insert ρ.layout_state.nextAllocId
+        { base := aA, size := szA, ty := some tyA, prefix_ := prefA })
+      hρ2 hszB haddrB' hnzB hlenB hinv2)
+      $$ [$Hi $Hr] with ⟨Hi, Hr, HalB, HptB⟩
+    have hfin : (CerbMemInterp (GF := GF)
+        (allocStoreState (restAllocR (restAllocR ρ aA) aB)
+          (allocStoreBytes bm aA szA storedA)
+          (am.insert ρ.layout_state.nextAllocId
+            { base := aA, size := szA, ty := some tyA,
+              prefix_ := prefA })
+          aB szB storedB (restAllocR ρ aA).layout_state.nextAllocId
+          { base := aB, size := szB, ty := some tyB,
+            prefix_ := prefB }) : IProp GF)
+        = CerbMemInterp (allocStoreState
+            (restAllocR (restAllocR ρ aA) aB)
+            (allocStoreBytes
+              (setMaps ρ bm am).layout_state.bytemap aA szA storedA)
+            ((setMaps ρ bm am).layout_state.allocations.insert
+              ρ.layout_state.nextAllocId
+              { base := aA, size := szA, ty := some tyA,
+                prefix_ := prefA })
+            aB szB storedB (ρ.layout_state.nextAllocId + 1)
+            { base := aB, size := szB, ty := some tyB,
+              prefix_ := prefB }) := rfl
+    icases hfin $$ Hi with Hi
+    have halBconv : (allocIs (GF := GF)
+        (restAllocR ρ aA).layout_state.nextAllocId (.own 1)
+        { base := aB, size := szB, ty := some tyB,
+          prefix_ := prefB } : IProp GF)
+        = allocIs (ρ.layout_state.nextAllocId + 1) (.own 1)
+            { base := aB, size := szB, ty := some tyB,
+              prefix_ := prefB } := rfl
+    icases halBconv $$ HalB with HalB
+    imodintro
+    iframe Hi Hr HalA HptA HalB HptB
+
+/-- `wpk_seq_alloc_store2`'s ecast hook. -/
+theorem wpk_seq_alloc_store2_ecast [CerbHeapGS GF] {α : Type}
+    {m : ndM α step_kind driver_error mem_iv_constraint driver_state}
+    {k : α → KDriveExpr} {e0 : KDriveExpr} {v : α} {ρ : driver_state}
+    {tyA tyB : ctype} {prefA prefB : prefix0} {alignA alignB : Int}
+    {szA szB : Nat} {aA aB : Int}
+    {nidA nidB : Int} {alA alB : CerbMem.Allocation}
+    {storedA storedB : List CerbMem.AbsByte}
+    {s : Stuckness} {E : CoPset} {Φ : DriveVal → IProp GF}
+    (h : ∀ bm am, app m (setMaps ρ bm am)
+        = (NDactive v, allocStoreState
+            (restAllocR (restAllocR ρ aA) aB)
+            (allocStoreBytes bm aA szA storedA) (am.insert nidA alA)
+            aB szB storedB nidB alB))
+    (he : e0 = KExpr.seq m k)
+    (hρ : restOf ρ = ρ)
+    (hszA : (CerbMem.sizeofCtype tyA).max 1 = szA)
+    (haddrA : ((CerbMem.alignDown
+        (ρ.layout_state.lastAddress - szA).toNat
+        (alignA.toNat.max 1) : Nat) : Int) = aA)
+    (hnzA : (aA == (0 : Int)) = false)
+    (hlenA : storedA.length = szA)
+    (hnidA : nidA = ρ.layout_state.nextAllocId)
+    (halA : alA = { base := aA, size := szA, ty := some tyA,
+                    prefix_ := prefA })
+    (hszB : (CerbMem.sizeofCtype tyB).max 1 = szB)
+    (haddrB : ((CerbMem.alignDown ((aA : Int) - szB).toNat
+        (alignB.toNat.max 1) : Nat) : Int) = aB)
+    (hnzB : (aB == (0 : Int)) = false)
+    (hlenB : storedB.length = szB)
+    (hnidB : nidB = ρ.layout_state.nextAllocId + 1)
+    (halB : alB = { base := aB, size := szB, ty := some tyB,
+                    prefix_ := prefB }) :
+    restIs (GF := GF) restHalf ρ ∗
+      ((restIs restHalf (restAllocR (restAllocR ρ aA) aB)
+          ∗ allocIs nidA (.own 1) alA
+          ∗ pointsToBytes aA (.own 1) storedA
+          ∗ allocIs nidB (.own 1) alB
+          ∗ pointsToBytes aB (.own 1) storedB)
+        -∗ WP (k v) @ s ; E {{ Φ }}) ⊢
+      WP e0 @ s ; E {{ Φ }} :=
+  he ▸ wpk_seq_alloc_store2 hρ hszA haddrA hnzA hlenA hnidA halA
+    hszB haddrB hnzB hlenB hnidB halB h
+
+/-- TWO-OBJECT READ STEP (the two-argument fixtures' driver loop:
+    both argument objects read; everything ELSE — the errno object —
+    rides the frame). -/
+theorem wpk_seq_read2 [CerbHeapGS GF] {α : Type}
+    {m : ndM α step_kind driver_error mem_iv_constraint driver_state}
+    {k : α → KDriveExpr} {v : α} {ρ ρ' : driver_state}
+    {aidA addrA aidB addrB : Int} {alA alB : CerbMem.Allocation}
+    {bsA bsB : List CerbMem.AbsByte} {dqaA dqbA dqaB dqbB : DFrac}
+    {s : Stuckness} {E : CoPset} {Φ : DriveVal → IProp GF}
+    (hlay : ρ'.layout_state = ρ.layout_state)
+    (h : ∀ bm am, am.get? aidA = some alA → am.get? aidB = some alB →
+        (∀ i : Nat, (hi : i < bsA.length) →
+          bm.get? (addrA + (i : Int)) = some bsA[i]) →
+        (∀ i : Nat, (hi : i < bsB.length) →
+          bm.get? (addrB + (i : Int)) = some bsB[i]) →
+        app m (setMaps ρ bm am) = (NDactive v, setMaps ρ' bm am)) :
+    (restIs (GF := GF) restHalf ρ
+        ∗ allocIs aidA dqaA alA ∗ pointsToBytes addrA dqbA bsA
+        ∗ allocIs aidB dqaB alB ∗ pointsToBytes addrB dqbB bsB) ∗
+      ((restIs restHalf ρ'
+          ∗ allocIs aidA dqaA alA ∗ pointsToBytes addrA dqbA bsA
+          ∗ allocIs aidB dqaB alB ∗ pointsToBytes addrB dqbB bsB)
+        -∗ WP (k v) @ s ; E {{ Φ }}) ⊢
+      WP (KExpr.seq m k : KDriveExpr) @ s ; E {{ Φ }} := by
+  refine wpk_seq_res_det
+    (R := iprop(restIs restHalf ρ
+      ∗ allocIs aidA dqaA alA ∗ pointsToBytes addrA dqbA bsA
+      ∗ allocIs aidB dqaB alB ∗ pointsToBytes addrB dqbB bsB))
+    (R' := iprop(restIs restHalf ρ'
+      ∗ allocIs aidA dqaA alA ∗ pointsToBytes addrA dqbA bsA
+      ∗ allocIs aidB dqaB alB ∗ pointsToBytes addrB dqbB bsB))
+    (Pre := fun σ => restOf σ = ρ ∧
+      (σ.layout_state.allocations.get? aidA = some alA ∧
+       σ.layout_state.allocations.get? aidB = some alB) ∧
+      (∀ i : Nat, (hi : i < bsA.length) →
+        σ.layout_state.bytemap.get? (addrA + (i : Int)) = some bsA[i]) ∧
+      (∀ i : Nat, (hi : i < bsB.length) →
+        σ.layout_state.bytemap.get? (addrB + (i : Int)) = some bsB[i]))
+    (upd := fun σ => patchRest σ ρ')
+    ?_ ?_ ?_
+  · intro σ
+    iintro ⟨Hi, Hr, HaA, HpA, HaB, HpB⟩
+    icases interp_rest_agree $$ [$Hi $Hr] with ⟨%h1, Hi, Hr⟩
+    icases interp_alloc_lookup $$ [$Hi $HaA] with ⟨%h2, Hi, HaA⟩
+    icases interp_alloc_lookup $$ [$Hi $HaB] with ⟨%h3, Hi, HaB⟩
+    icases interp_bytes_lookup $$ [$Hi $HpA] with ⟨%h4, Hi, HpA⟩
+    icases interp_bytes_lookup $$ [$Hi $HpB] with ⟨%h5, Hi, HpB⟩
+    iframe Hi Hr HaA HpA HaB HpB
+    ipureintro
+    exact ⟨h1, ⟨h2, h3⟩, h4, h5⟩
+  · intro σ hp
+    obtain ⟨hr, ⟨hgA, hgB⟩, hbA, hbB⟩ := hp
+    obtain ⟨bm, am, rfl⟩ := exists_setMaps_of_restOf hr
+    rw [patchRest_setMaps hlay]
+    exact h bm am hgA hgB hbA hbB
+  · intro σ hp
+    rw [CerbMemInterp_congr (σ' := patchRest σ ρ')
+      (B := bytesOf σ.layout_state) (A := allocsOf σ.layout_state)
+      (R := ρ') rfl rfl (restOf_patchRest hp.1 hlay)]
+    unfold CerbMemInterp restIs
+    iintro ⟨⟨Hb, Ha, Hri, %Hinv⟩, Hrp, HaA, HpA, HaB, HpB⟩
+    imod ghost_var_update_halves ρ' _ _ _ $$ Hri Hrp with ⟨Hri, Hrp⟩
+    imodintro
+    iframe Hb Ha Hri Hrp HaA HpA HaB HpB
+    ipureintro
+    exact Hinv
+
+/-- `wpk_seq_read2`'s ecast hook. -/
+theorem wpk_seq_read2_ecast [CerbHeapGS GF] {α : Type}
+    {m : ndM α step_kind driver_error mem_iv_constraint driver_state}
+    {k : α → KDriveExpr} {e0 : KDriveExpr} {v : α} {ρ ρ' : driver_state}
+    {aidA addrA aidB addrB : Int} {alA alB : CerbMem.Allocation}
+    {bsA bsB : List CerbMem.AbsByte} {dqaA dqbA dqaB dqbB : DFrac}
+    {s : Stuckness} {E : CoPset} {Φ : DriveVal → IProp GF}
+    (h : ∀ bm am, am.get? aidA = some alA → am.get? aidB = some alB →
+        (∀ i : Nat, (hi : i < bsA.length) →
+          bm.get? (addrA + (i : Int)) = some bsA[i]) →
+        (∀ i : Nat, (hi : i < bsB.length) →
+          bm.get? (addrB + (i : Int)) = some bsB[i]) →
+        app m (setMaps ρ bm am) = (NDactive v, setMaps ρ' bm am))
+    (he : e0 = KExpr.seq m k)
+    (hlay : ρ'.layout_state = ρ.layout_state) :
+    (restIs (GF := GF) restHalf ρ
+        ∗ allocIs aidA dqaA alA ∗ pointsToBytes addrA dqbA bsA
+        ∗ allocIs aidB dqaB alB ∗ pointsToBytes addrB dqbB bsB) ∗
+      ((restIs restHalf ρ'
+          ∗ allocIs aidA dqaA alA ∗ pointsToBytes addrA dqbA bsA
+          ∗ allocIs aidB dqaB alB ∗ pointsToBytes addrB dqbB bsB)
+        -∗ WP (k v) @ s ; E {{ Φ }}) ⊢
+      WP e0 @ s ; E {{ Φ }} :=
+  he ▸ wpk_seq_read2 hlay h
+
+/-- SCRATCH-OBJECT STEP (the create/store/load/kill loop shape): the
+    atom reads one object's footprint AND creates, uses, and kills a
+    SCRATCH object entirely within itself. Ghost accounting: the
+    allocation fragment is minted by the insert and consumed by the
+    delete (net zero — the scratch allocation is unobservable
+    outside); the scratch object's final bytes stay minted and are
+    handed to the prover as DEAD CAPITAL (the physical model keeps
+    killed bytes — S2 deviation D2 — and no rule accepts them
+    without a live `allocIs`, so use-after-free stays unprovable). -/
+theorem wpk_seq_scratch1 [CerbHeapGS GF] {α : Type}
+    {m : ndM α step_kind driver_error mem_iv_constraint driver_state}
+    {k : α → KDriveExpr} {v : α} {ρ ρ' : driver_state}
+    {aidV addrV : Int} {alV : CerbMem.Allocation}
+    {bsV : List CerbMem.AbsByte} {dqa dqb : DFrac}
+    {tyS : ctype} {prefS : prefix0} {alignS : Int} {szS : Nat}
+    {aS nidS : Int} {alS : CerbMem.Allocation}
+    {storedS : List CerbMem.AbsByte}
+    {s : Stuckness} {E : CoPset} {Φ : DriveVal → IProp GF}
+    (hρ' : restOf ρ' = ρ')
+    (hlayK : ρ'.layout_state = { ρ.layout_state with
+      nextAllocId := ρ.layout_state.nextAllocId + 1,
+      lastAddress := aS,
+      deadAllocations := nidS :: ρ.layout_state.deadAllocations })
+    (hszS : (CerbMem.sizeofCtype tyS).max 1 = szS)
+    (haddrS : ((CerbMem.alignDown
+        (ρ.layout_state.lastAddress - szS).toNat
+        (alignS.toNat.max 1) : Nat) : Int) = aS)
+    (hnzS : (aS == (0 : Int)) = false)
+    (hlenS : storedS.length = szS)
+    (hnidS : nidS = ρ.layout_state.nextAllocId)
+    (halS : alS = { base := aS, size := szS, ty := some tyS,
+                    prefix_ := prefS })
+    (h : ∀ bm am, am.get? aidV = some alV →
+        (∀ i : Nat, (hi : i < bsV.length) →
+          bm.get? (addrV + (i : Int)) = some bsV[i]) →
+        app m (setMaps ρ bm am)
+          = (NDactive v, setMaps ρ'
+              (allocStoreBytes bm aS szS storedS)
+              ((am.insert nidS alS).erase nidS))) :
+    (restIs (GF := GF) restHalf ρ ∗ allocIs aidV dqa alV
+        ∗ pointsToBytes addrV dqb bsV) ∗
+      ((restIs restHalf ρ' ∗ allocIs aidV dqa alV
+          ∗ pointsToBytes addrV dqb bsV
+          ∗ pointsToBytes aS (.own 1) storedS)
+        -∗ WP (k v) @ s ; E {{ Φ }}) ⊢
+      WP (KExpr.seq m k : KDriveExpr) @ s ; E {{ Φ }} := by
+  subst hnidS
+  subst halS
+  refine wpk_seq_res_det
+    (R := iprop(restIs restHalf ρ ∗ allocIs aidV dqa alV
+      ∗ pointsToBytes addrV dqb bsV))
+    (R' := iprop(restIs restHalf ρ' ∗ allocIs aidV dqa alV
+      ∗ pointsToBytes addrV dqb bsV
+      ∗ pointsToBytes aS (.own 1) storedS))
+    (Pre := fun σ => (restOf σ = ρ ∧ MemInv σ.layout_state) ∧
+      σ.layout_state.allocations.get? aidV = some alV ∧
+      (∀ i : Nat, (hi : i < bsV.length) →
+        σ.layout_state.bytemap.get? (addrV + (i : Int)) = some bsV[i]))
+    (upd := fun σ => setMaps ρ'
+      (allocStoreBytes σ.layout_state.bytemap aS szS storedS)
+      ((σ.layout_state.allocations.insert ρ.layout_state.nextAllocId
+        { base := aS, size := szS, ty := some tyS,
+          prefix_ := prefS }).erase ρ.layout_state.nextAllocId))
+    ?_ ?_ ?_
+  · intro σ
+    iintro ⟨Hi, Hr, Ha, Hp⟩
+    icases interp_rest_agree $$ [$Hi $Hr] with ⟨%h1, Hi, Hr⟩
+    icases interp_meminv $$ Hi with ⟨%h2, Hi⟩
+    icases interp_alloc_lookup $$ [$Hi $Ha] with ⟨%h3, Hi, Ha⟩
+    icases interp_bytes_lookup $$ [$Hi $Hp] with ⟨%h4, Hi, Hp⟩
+    iframe Hi Hr Ha Hp
+    ipureintro
+    exact ⟨⟨h1, h2⟩, h3, h4⟩
+  · intro σ hp
+    obtain ⟨bm, am, rfl⟩ := exists_setMaps_of_restOf hp.1.1
+    exact h bm am hp.2.1 hp.2.2
+  · intro σ hp
+    obtain ⟨⟨hr, hinv⟩, -, -⟩ := hp
+    obtain ⟨bm, am, rfl⟩ := exists_setMaps_of_restOf hr
+    show (CerbMemInterp (GF := GF) (setMaps ρ bm am)
+        ∗ (restIs restHalf ρ ∗ allocIs aidV dqa alV
+          ∗ pointsToBytes addrV dqb bsV) : IProp GF) ⊢
+      |==> (CerbMemInterp (setMaps ρ'
+          (allocStoreBytes bm aS szS storedS)
+          ((am.insert ρ.layout_state.nextAllocId
+            { base := aS, size := szS, ty := some tyS,
+              prefix_ := prefS }).erase
+            ρ.layout_state.nextAllocId))
+        ∗ (restIs restHalf ρ' ∗ allocIs aidV dqa alV
+          ∗ pointsToBytes addrV dqb bsV
+          ∗ pointsToBytes aS (.own 1) storedS))
+    have hB : bytesOf (setMaps ρ'
+        (allocStoreBytes bm aS szS storedS)
+        ((am.insert ρ.layout_state.nextAllocId
+          { base := aS, size := szS, ty := some tyS,
+            prefix_ := prefS }).erase
+          ρ.layout_state.nextAllocId)).layout_state
+        = extWriteList (extWriteList
+            (bytesOf (setMaps ρ bm am).layout_state) aS
+            (List.replicate szS uninitB)) aS storedS := by
+      show toExt (allocStoreBytes bm aS szS storedS) = _
+      unfold allocStoreBytes
+      rw [toExt_writeList, toExt_writeList]
+      rfl
+    have hA : allocsOf (setMaps ρ'
+        (allocStoreBytes bm aS szS storedS)
+        ((am.insert ρ.layout_state.nextAllocId
+          { base := aS, size := szS, ty := some tyS,
+            prefix_ := prefS }).erase
+          ρ.layout_state.nextAllocId)).layout_state
+        = Std.PartialMap.delete (M := CerbHeapF)
+            (Std.PartialMap.insert (M := CerbHeapF)
+              (allocsOf (setMaps ρ bm am).layout_state)
+              ρ.layout_state.nextAllocId
+              { base := aS, size := szS, ty := some tyS,
+                prefix_ := prefS })
+            ρ.layout_state.nextAllocId := by
+      show toExt ((am.insert ρ.layout_state.nextAllocId _).erase
+        ρ.layout_state.nextAllocId) = _
+      rw [toExt_erase, toExt_insert]
+      rfl
+    have hR : restOf (setMaps ρ'
+        (allocStoreBytes bm aS szS storedS)
+        ((am.insert ρ.layout_state.nextAllocId
+          { base := aS, size := szS, ty := some tyS,
+            prefix_ := prefS }).erase
+          ρ.layout_state.nextAllocId)) = ρ' := by
+      rw [restOf_setMaps]
+      exact hρ'
+    rw [CerbMemInterp_congr
+      (σ' := setMaps ρ'
+        (allocStoreBytes bm aS szS storedS)
+        ((am.insert ρ.layout_state.nextAllocId
+          { base := aS, size := szS, ty := some tyS,
+            prefix_ := prefS }).erase
+          ρ.layout_state.nextAllocId))
+      hB hA hR]
+    unfold CerbMemInterp restIs allocIs
+    iintro ⟨⟨Hb, Ha, Hri, %Hinv'⟩, Hrp, HaV, HpV⟩
+    -- byte ghost: fresh scratch range, then the stored overwrite
+    have hfreshB : ∀ i : Nat,
+        i < (List.replicate szS uninitB).length →
+        Std.PartialMap.get? (M := CerbHeapF)
+          (bytesOf (setMaps ρ bm am).layout_state)
+          (aS + (i : Int)) = none := by
+      intro i hi
+      show (toExt bm)[(aS + (i : Int))]? = none
+      rw [toExt_getElem?, ← Std.TreeMap.get?_eq_getElem?]
+      refine hinv.bytemap_below_none ?_
+      show aS + (i : Int) < (setMaps ρ bm am).layout_state.lastAddress
+      show aS + (i : Int) < ρ.layout_state.lastAddress
+      have hrange : aS + szS ≤ ρ.layout_state.lastAddress :=
+        alloc_range_le haddrS hnzS
+      simp only [List.length_replicate] at hi
+      omega
+    imod bytes_alloc_ghost _ hfreshB $$ Hb with ⟨Hb, Hpts⟩
+    imod bytes_update_ghost storedS
+      (by simpa using hlenS) $$ [$Hb $Hpts] with ⟨Hb, Hpts⟩
+    -- alloc ghost: mint the scratch fragment, then consume it at the
+    -- kill (net zero — the can't-happen pattern closing over itself)
+    have hfreshA : Std.PartialMap.get? (M := CerbHeapF)
+        (allocsOf (setMaps ρ bm am).layout_state)
+        ρ.layout_state.nextAllocId = none := by
+      show (toExt am)[ρ.layout_state.nextAllocId]? = none
+      rw [toExt_getElem?, ← Std.TreeMap.get?_eq_getElem?]
+      exact hinv.next_fresh
+    imod ghost_map_insert _ _ hfreshA $$ Ha with ⟨Ha, Hfrag⟩
+    imod ghost_map_delete _ _ $$ Ha Hfrag with Ha
+    -- rest ghost
+    imod ghost_var_update_halves ρ' _ _ _ $$ Hri Hrp with ⟨Hri, Hrp⟩
+    imodintro
+    iframe Hb Ha Hri Hrp HaV HpV Hpts
+    ipureintro
+    -- MemInv: alloc+store then kill
+    have h1 := MemInv_alloc_store hinv (pref := prefS) (ty := tyS)
+      (alignN := alignS) hszS haddrS hnzS hlenS
+    have h2 := h1.kill (aid := ρ.layout_state.nextAllocId)
+      (al := { base := aS, size := szS, ty := some tyS,
+               prefix_ := prefS })
+      (by
+        show ((am.insert ρ.layout_state.nextAllocId _).get?
+          ρ.layout_state.nextAllocId) = _
+        simp [Std.TreeMap.get?_eq_getElem?, Std.TreeMap.getElem?_insert])
+    show MemInv { ρ'.layout_state with
+      bytemap := allocStoreBytes bm aS szS storedS,
+      allocations := (am.insert ρ.layout_state.nextAllocId
+        { base := aS, size := szS, ty := some tyS,
+          prefix_ := prefS }).erase ρ.layout_state.nextAllocId }
+    rw [hlayK]
+    exact h2
+
+/-- `wpk_seq_scratch1`'s ecast hook. -/
+theorem wpk_seq_scratch1_ecast [CerbHeapGS GF] {α : Type}
+    {m : ndM α step_kind driver_error mem_iv_constraint driver_state}
+    {k : α → KDriveExpr} {e0 : KDriveExpr} {v : α} {ρ ρ' : driver_state}
+    {aidV addrV : Int} {alV : CerbMem.Allocation}
+    {bsV : List CerbMem.AbsByte} {dqa dqb : DFrac}
+    {tyS : ctype} {prefS : prefix0} {alignS : Int} {szS : Nat}
+    {aS nidS : Int} {alS : CerbMem.Allocation}
+    {storedS : List CerbMem.AbsByte}
+    {s : Stuckness} {E : CoPset} {Φ : DriveVal → IProp GF}
+    (h : ∀ bm am, am.get? aidV = some alV →
+        (∀ i : Nat, (hi : i < bsV.length) →
+          bm.get? (addrV + (i : Int)) = some bsV[i]) →
+        app m (setMaps ρ bm am)
+          = (NDactive v, setMaps ρ'
+              (allocStoreBytes bm aS szS storedS)
+              ((am.insert nidS alS).erase nidS)))
+    (he : e0 = KExpr.seq m k)
+    (hρ' : restOf ρ' = ρ')
+    (hlayK : ρ'.layout_state = { ρ.layout_state with
+      nextAllocId := ρ.layout_state.nextAllocId + 1,
+      lastAddress := aS,
+      deadAllocations := nidS :: ρ.layout_state.deadAllocations })
+    (hszS : (CerbMem.sizeofCtype tyS).max 1 = szS)
+    (haddrS : ((CerbMem.alignDown
+        (ρ.layout_state.lastAddress - szS).toNat
+        (alignS.toNat.max 1) : Nat) : Int) = aS)
+    (hnzS : (aS == (0 : Int)) = false)
+    (hlenS : storedS.length = szS)
+    (hnidS : nidS = ρ.layout_state.nextAllocId)
+    (halS : alS = { base := aS, size := szS, ty := some tyS,
+                    prefix_ := prefS }) :
+    (restIs (GF := GF) restHalf ρ ∗ allocIs aidV dqa alV
+        ∗ pointsToBytes addrV dqb bsV) ∗
+      ((restIs restHalf ρ' ∗ allocIs aidV dqa alV
+          ∗ pointsToBytes addrV dqb bsV
+          ∗ pointsToBytes aS (.own 1) storedS)
+        -∗ WP (k v) @ s ; E {{ Φ }}) ⊢
+      WP e0 @ s ; E {{ Φ }} :=
+  he ▸ wpk_seq_scratch1 hρ' hlayK hszS haddrS hnzS hlenS hnidS halS h
 
 /-- MID-WALK STATE READ (`nd_get` feeding further stages): the value
     is the machine state, which the footprint logic does not pin —
@@ -698,6 +1258,69 @@ macro "wp_argobj" e:term:max ha:term:max h:ident hal:ident hpt:ident : tactic =>
              case wpnz => wp_side
              case wplen => rfl
              iintro ⟨$h:ident, $hal:ident, $hpt:ident⟩))
+
+/-- Two-object creation step (both argument injections in one atom):
+    mints `hal1`/`hpt1` and `hal2`/`hpt2`. `ha1`/`ha2` are the two
+    address-arithmetic facts. -/
+macro "wp_argobj2" e:term:max ha1:term:max ha2:term:max h:ident
+    hal1:ident hpt1:ident hal2:ident hpt2:ident : tactic =>
+  `(tactic| (wp_expose
+             iapply wpk_seq_alloc_store2_ecast $e ?wpe ?wprho ?wpszA ?wpaddrA ?wpnzA ?wplenA ?wpnidA ?wpalA ?wpszB ?wpaddrB ?wpnzB ?wplenB ?wpnidB ?wpalB
+             rotate_left; rotate_left; rotate_left; rotate_left
+             rotate_left; rotate_left; rotate_left; rotate_left
+             rotate_left; rotate_left; rotate_left; rotate_left
+             rotate_left; rotate_left
+             iframe $h:ident
+             case wpe => rfl
+             case wprho => rfl
+             case wpnidA => rfl
+             case wpalA => rfl
+             case wpnidB => rfl
+             case wpalB => rfl
+             case wpszA => rfl
+             case wpaddrA => exact $ha1
+             case wpnzA => wp_side
+             case wplenA => rfl
+             case wpszB => rfl
+             case wpaddrB => exact $ha2
+             case wpnzB => wp_side
+             case wplenB => rfl
+             iintro ⟨$h:ident, $hal1:ident, $hpt1:ident, $hal2:ident, $hpt2:ident⟩))
+
+/-- Two-object read step (rest + two footprints; everything else
+    frames). -/
+macro "wp_read2" e:term:max hr:ident ha1:ident hp1:ident
+    ha2:ident hp2:ident : tactic =>
+  `(tactic| (wp_expose
+             iapply wpk_seq_read2_ecast $e ?wpe ?wplay
+             rotate_left
+             rotate_left
+             iframe $hr:ident $ha1:ident $hp1:ident $ha2:ident $hp2:ident
+             case wpe => rfl
+             case wplay => rfl
+             iintro ⟨$hr:ident, $ha1:ident, $hp1:ident, $ha2:ident, $hp2:ident⟩))
+
+/-- Scratch-object step (create/store/load/kill within one atom):
+    reads the `hr`/`haV`/`hpV` footprint, mints the dead scratch
+    bytes as `hptS`. `ha` is the scratch address-arithmetic fact. -/
+macro "wp_scratch1" e:term:max ha:term:max hr:ident haV:ident
+    hpV:ident hptS:ident : tactic =>
+  `(tactic| (wp_expose
+             iapply wpk_seq_scratch1_ecast $e ?wpe ?wprho ?wplayk ?wpsz ?wpaddr ?wpnz ?wplen ?wpnid ?wpal
+             rotate_left; rotate_left; rotate_left
+             rotate_left; rotate_left; rotate_left
+             rotate_left; rotate_left; rotate_left
+             iframe $hr:ident $haV:ident $hpV:ident
+             case wpe => rfl
+             case wprho => rfl
+             case wpnid => rfl
+             case wpal => rfl
+             case wplayk => rfl
+             case wpsz => rfl
+             case wpaddr => exact $ha
+             case wpnz => wp_side
+             case wplen => rfl
+             iintro ⟨$hr:ident, $haV:ident, $hpV:ident, $hptS:ident⟩))
 
 /-- The harness terminal: `nd_get` + the pure readout. -/
 macro "wp_fin" hp:term:max h:ident : tactic =>

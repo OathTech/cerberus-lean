@@ -287,6 +287,67 @@ theorem inject_ptr_arg1
   apply (app_bind_active (app_nd_return _ _)).trans
   exact app_nd_return _ _
 
+/-- CONSTRUCT LAW `inject_ptr_arg2` — the two-scalar-argument caller
+    protocol (arc-18 C2; the engine-to-law rule: the two-parameter
+    inject stage recurs across every two-argument fixture, so it is a
+    registered law, not per-fixture text).
+
+    SHAPE: `injectArgs` at two pointer-typed parameters — convert,
+    allocate, store, bind, twice in sequence. The fixture supplies
+    only the four memory-level facts.
+
+    TRACE-ATOM SCHEMA (S0 §3.3 level 2): `{law := inject_ptr_arg2,
+    joint := harness-inject, hyps := [hmvA/hmvB : ground,
+    hallocA/hstoreA/hallocB/hstoreB : fed, hout : ground]}`. -/
+@[step_law (kind := construct) (variant := two) (side := fed)
+  (frontier := "construct/harness-inject2")
+  (trace := "{law := inject_ptr_arg2, joint := harness-inject, hyps := [hmvA : ground, hmvB : ground, hallocA : fed, hstoreA : fed, hallocB : fed, hstoreB : fed, hout : ground]}")
+  (lineage := "caller-protocol decompilation: the two-scalar-argument inject stage, proved once (arc-18 C2)")]
+theorem inject_ptr_arg2
+    {tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)}
+    {tid0 : Nat} {psymA psymB : sym} {tyA tyB : ctype} {vA vB : value}
+    {mvalA mvalB : CerbMem.MemValue}
+    {σ : driver_state} {ptrA ptrB : CerbMem.PointerValue}
+    {mem1 mem2 mem3 mem4 : CerbMem.MemState}
+    {fpA fpB : CerbMem.Footprint}
+    (hmvA : memValueFromValue tagDefs tyA vA = some mvalA)
+    (hmvB : memValueFromValue tagDefs tyB vB = some mvalB)
+    (hallocA : app (CerbMem.allocateObject tid0 (PrefOther "callND arg")
+        (CerbMem.alignofIval tyA) tyA none none) σ.layout_state
+      = (NDactive ptrA, mem1))
+    (hstoreA : app (CerbMem.storeM (CerbLocation.other "callND arg init")
+        tyA false ptrA mvalA) mem1 = (NDactive fpA, mem2))
+    (hallocB : app (CerbMem.allocateObject tid0 (PrefOther "callND arg")
+        (CerbMem.alignofIval tyB) tyB none none) mem2
+      = (NDactive ptrB, mem3))
+    (hstoreB : app (CerbMem.storeM (CerbLocation.other "callND arg init")
+        tyB false ptrB mvalB) mem3 = (NDactive fpB, mem4))
+    {σ' : driver_state}
+    (hout : { σ with layout_state := mem4 } = σ') :
+    app (injectArgs tagDefs tid0
+        [(psymA, BTy_object OTy_pointer), (psymB, BTy_object OTy_pointer)]
+        [tyA, tyB] [vA, vB]) σ
+      = (NDactive [(psymA, Vobject (OVpointer ptrA)),
+                   (psymB, Vobject (OVpointer ptrB))], σ') := by
+  subst hout
+  simp only [injectArgs, injectArg, hmvA, hmvB]
+  apply (app_bind_active (app_liftMem_active rfl ?hma)).trans
+  case hma =>
+    refine (app_bind_active hallocA).trans ?_
+    refine (app_bind_active hstoreA).trans ?_
+    exact app_nd_return _ _
+  apply (app_bind_active ?hinjb).trans
+  case hinjb =>
+    apply (app_bind_active (app_liftMem_active ?hlay ?hmb)).trans
+    case hlay => rfl
+    case hmb =>
+      refine (app_bind_active hallocB).trans ?_
+      refine (app_bind_active hstoreB).trans ?_
+      exact app_nd_return _ _
+    refine (app_bind_active rfl).trans ?_
+    rfl
+  rfl
+
 /-- CONSTRUCT LAW `callND_errno` — the harness errno block.
 
     SHAPE: `callFinish`'s errno stage (relsemcore/RelSem/Call.lean:171

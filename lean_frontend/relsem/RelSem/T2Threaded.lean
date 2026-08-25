@@ -22,7 +22,7 @@
 
 import RelSem.Threaded
 import RelSem.PerStepTactics
-import RelSem.PerStepOwnP
+import RelSem.CerbHeapWalk
 import RelSem.T2
 
 set_option autoImplicit false
@@ -30,7 +30,7 @@ set_option autoImplicit false
 namespace RelSem.T2
 
 open RelSem RelSem.Cerb RelSem.Slate
-open RelSem.T1 (aU intCty loadedV intRange)
+open RelSem.T1 (aU intCty loadedV intRange mkByte zeroByte)
 open RelSem.Kit (stub_defined liftCore_run_defined)
 open Iris Iris.ProgramLogic Iris.BI
 
@@ -245,32 +245,403 @@ theorem t2_result_eq_thr (seed : Nat) (x y : Int) :
         (drDone_thr seed x y)).dres_core_value
       = intValue (x+y) := rfl
 
-/-! ## The statement-facing route (S1–S3) -/
+/-! ## The statement-facing route (arc-18 C2, THE ONE ROUTE): the
+    per-step WP walk over `CerbMemInterp` — open-memory equation
+    supply, footprint resources only (the T1Threaded recipe at the
+    two-argument fixture: BOTH argument objects are minted by the
+    double-inject compound and consumed read-only by the driver-loop
+    step; the errno object rides the frame across the whole loop). -/
 
-/-- T2's WP over the per-step instance at the threaded initial state
-    (the `T1_perStep_tac` shape). -/
-theorem t2_wpK_thr {GF : BundledGFunctors} [CerbGpreS GF]
-    [CerbGS .hasLC GF] (seed : Nat) (x y : Int)
+/-! ### The rest ladder -/
+
+abbrev rInit2 (seed : Nat) : driver_state :=
+  restOf (initial_driver_state_threaded seed t2File t2Fs)
+abbrev rGlob2 (seed : Nat) : driver_state := restOf (dG_thr seed)
+abbrev rInj2 (seed : Nat) : driver_state :=
+  restAllocR (restAllocR (rGlob2 seed) aAddr) bAddr
+abbrev rErr2 (seed : Nat) : driver_state := restAllocR (rInj2 seed) errAddr
+/-- The D3 rest-layout (x-free: the non-map fields of the run's
+    fixed memory). -/
+abbrev memR2 : CerbMem.MemState := memRest (memD3 0 0)
+abbrev rD32 (seed : Nat) : driver_state :=
+  mkDr th0 memR2 (rsD3_thr seed) [] 0
+abbrev rDone2 (seed : Nat) (x y : Int) : driver_state :=
+  mkDr (thDone x y) memR2 (rsAB_thr seed) (tr2 x y) 13
+
+/-- The stored byte image of an injected int argument. -/
+def argBytes2 (v : Int) : List CerbMem.AbsByte :=
+  [mkByte v 0, mkByte v 1, mkByte v 2, mkByte v 3]
+
+/-! ### The open-memory stage equations -/
+
+theorem k1_o (seed : Nat) : ∀ bm am,
+    app (driver_globals t2File.tagDefs false t2File)
+        (setMaps (rInit2 seed) bm am)
+      = (NDactive 0, setMaps (rGlob2 seed) bm am) := fun _ _ => rfl
+
+theorem k3_o (seed : Nat) : ∀ bm am,
+    app (resolveFunSym (dG_thr seed).core_file "add")
+        (setMaps (rGlob2 seed) bm am)
+      = (NDactive addT2Sym, setMaps (rGlob2 seed) bm am) := fun _ _ => rfl
+
+theorem k4_o (seed : Nat) : ∀ bm am,
+    app (lookupFunBody (dG_thr seed).core_file addT2Sym)
+        (setMaps (rGlob2 seed) bm am)
+      = (NDactive ([(symA, BTy_object OTy_pointer),
+                    (symB, BTy_object OTy_pointer)], arena0),
+         setMaps (rGlob2 seed) bm am) := fun _ _ => rfl
+
+theorem k5_o (seed : Nat) : ∀ bm am,
+    app (lookupParamTys (dG_thr seed).core_file addT2Sym)
+        (setMaps (rGlob2 seed) bm am)
+      = (NDactive [signed_int, signed_int], setMaps (rGlob2 seed) bm am) :=
+  fun _ _ => rfl
+
+theorem argAddrA_fact (seed : Nat) :
+    ((CerbMem.alignDown
+        ((rGlob2 seed).layout_state.lastAddress - 4).toNat
+        ((4 : Int).toNat.max 1) : Nat) : Int) = aAddr := by
+  rw [show (rGlob2 seed).layout_state.lastAddress
+    = (281474976710655 : Int) from rfl]
+  decide
+
+theorem argAddrB_fact :
+    ((CerbMem.alignDown ((aAddr : Int) - 4).toNat
+        ((4 : Int).toNat.max 1) : Nat) : Int) = bAddr := by
+  decide
+
+/-- Stage 6, BOTH ARGUMENT INJECTIONS at open maps (through the
+    `inject_ptr_arg2` construct law + the Kit mem blocks). -/
+theorem k6_o (seed : Nat) (x y : Int) : ∀ bm am,
+    app (injectArgs t2File.tagDefs 0
+          [(symA, BTy_object OTy_pointer), (symB, BTy_object OTy_pointer)]
+          [signed_int, signed_int] [intValue x, intValue y])
+        (setMaps (rGlob2 seed) bm am)
+      = (NDactive [(symA, aPtrV), (symB, bPtrV)],
+         allocStoreState (restAllocR (restAllocR (rGlob2 seed) aAddr) bAddr)
+           (allocStoreBytes bm aAddr 4 (argBytes2 x)) (am.insert 0 allocA)
+           bAddr 4 (argBytes2 y) 1 allocB) := by
+  intro bm am
+  refine Laws.inject_ptr_arg2 (σ := setMaps (rGlob2 seed) bm am)
+    (hmvA := mvvA_fact x) (hmvB := mvvA_fact y)
+    (hallocA := Kit.mem_alloc_block (sz := 4) (a := aAddr)
+      (by exact rfl) (argAddrA_fact seed) (by exact rfl))
+    (hstoreA := Kit.mem_store_block (ty := signed_int)
+      (mv := CerbMem.integerValueMval (Signed Int_)
+        (CerbMem.integerIval x))
+      (allocId := 0) (addr := aAddr) (alloc := allocA)
+      (fpm := []) (bytes := argBytes2 x)
+      (hcompat := by exact rfl)
+      (hget := by
+        rw [Kit.writeBytesTo_allocations]
+        show (am.insert 0 allocA).get? 0 = some allocA
+        simp [Std.TreeMap.get?_eq_getElem?, Std.TreeMap.getElem?_insert])
+      (hbounds := by exact rfl) (hro := rfl)
+      (hatomic := by exact rfl)
+      (hbytes := by
+        rw [Kit.writeBytesTo_funptrmap]
+        exact storeArg_bytes_fact x))
+    (hallocB := Kit.mem_alloc_block (sz := 4) (a := bAddr)
+      (by exact rfl)
+      (by
+        rw [writeBytesTo_lastAddress, writeBytesTo_lastAddress]
+        exact argAddrB_fact)
+      (by exact rfl))
+    (hstoreB := Kit.mem_store_block (ty := signed_int)
+      (mv := CerbMem.integerValueMval (Signed Int_)
+        (CerbMem.integerIval y))
+      (allocId := 1) (addr := bAddr) (alloc := allocB)
+      (fpm := []) (bytes := argBytes2 y)
+      (hcompat := by exact rfl)
+      (hget := by
+        simp only [Kit.writeBytesTo_allocations]
+        show ((am.insert 0 allocA).insert 1 allocB).get? 1 = some allocB
+        simp [Std.TreeMap.get?_eq_getElem?, Std.TreeMap.getElem?_insert])
+      (hbounds := by exact rfl) (hro := rfl)
+      (hatomic := by exact rfl)
+      (hbytes := by
+        simp only [Kit.writeBytesTo_funptrmap]
+        exact storeArg_bytes_fact y))
+    (hout := by
+      simp only [writeBytesTo_eq]
+      rfl)
+
+theorem k7_o (seed : Nat) : ∀ bm am,
+    app get_thread_states (setMaps (rInj2 seed) bm am)
+      = (NDactive [(0, (none, thG))], setMaps (rInj2 seed) bm am) :=
+  fun _ _ => rfl
+
+theorem errAddr2_fact (seed : Nat) :
+    ((CerbMem.alignDown
+        ((rInj2 seed).layout_state.lastAddress - 4).toNat
+        ((4 : Int).toNat.max 1) : Nat) : Int) = errAddr := by
+  rw [show (rInj2 seed).layout_state.lastAddress = bAddr from rfl]
+  decide
+
+/-- Stage 8, THE ERRNO BLOCK at open maps. -/
+theorem k8_o (seed : Nat) : ∀ bm am,
+    app (liftMem (nd_bind
+        (CerbMem.allocateObject 0 (PrefOther "errno")
+          (CerbMem.alignofIval signed_int) signed_int none none)
+        (fun (ptr_val : CerbMem.PointerValue) =>
+          let zero := CerbMem.integerValueMval (Signed Int_)
+            (CerbMem.integerIval (0 : Int))
+          nd_bind
+            (CerbMem.storeM (CerbLocation.other "errno init")
+              signed_int false ptr_val zero)
+            (fun (_ : CerbMem.Footprint) => nd_return ptr_val))))
+      (setMaps (rInj2 seed) bm am)
+      = (NDactive errPtr,
+         allocStoreState (restAllocR (rInj2 seed) errAddr) bm am errAddr
+           4 [zeroByte, zeroByte, zeroByte, zeroByte] 2 allocErr) := by
+  intro bm am
+  refine Laws.callND_errno (σ := setMaps (rInj2 seed) bm am)
+    (halloc := Kit.mem_alloc_block (sz := 4) (a := errAddr)
+      (by exact rfl) (errAddr2_fact seed) (by exact rfl))
+    (hstore := Kit.mem_store_block (ty := signed_int)
+      (mv := CerbMem.integerValueMval (Signed Int_)
+        (CerbMem.integerIval 0))
+      (allocId := 2) (addr := errAddr) (alloc := allocErr)
+      (fpm := []) (bytes := [zeroByte, zeroByte, zeroByte, zeroByte])
+      (hcompat := by exact rfl)
+      (hget := by
+        rw [Kit.writeBytesTo_allocations]
+        show (am.insert 2 allocErr).get? 2 = some allocErr
+        simp [Std.TreeMap.get?_eq_getElem?, Std.TreeMap.getElem?_insert])
+      (hbounds := by exact rfl) (hro := rfl)
+      (hatomic := by exact rfl)
+      (hbytes := by
+        rw [Kit.writeBytesTo_funptrmap]
+        exact RelSem.T1.errStore_bytes_fact))
+    (hout := by
+      simp only [writeBytesTo_eq]
+      rfl)
+
+/-- Stage 9, the thread setup (rest-only). -/
+theorem k9_o (seed : Nat) (th : thread_state) (hth : th = th0) :
+    ∀ bm am,
+    app (driver_update_thread_state 0 th : driverM Unit)
+        (setMaps (rErr2 seed) bm am)
+      = (NDactive (), setMaps (rD32 seed) bm am) := by
+  subst hth; exact fun _ _ => rfl
+
+/-! ### The driver loop at open maps: T2AppEq's rounds are already
+    ∀-mem except the two loads (3/7) and the add-eval (10) — those
+    three get open twins here. -/
+
+/-- The T2 D3-shaped memory with open maps. -/
+abbrev memOpen2 (bm : Std.TreeMap Int CerbMem.AbsByte)
+    (am : Std.TreeMap Int CerbMem.Allocation) : CerbMem.MemState :=
+  { memR2 with bytemap := bm, allocations := am }
+
+/-- R3, the load of b at open maps. -/
+theorem round3_o (x y : Int)
+    (hy1 : -2147483648 ≤ y) (hy2 : y ≤ 2147483647) (fuel : Nat)
+    (bm : Std.TreeMap Int CerbMem.AbsByte)
+    (am : Std.TreeMap Int CerbMem.Allocation)
+    (rs : core_run_state) (tr : List trace_event) (n : Nat)
+    (hget : am.get? 1 = some allocB)
+    (hb : ∀ i : Nat, (hi : i < (argBytes2 y).length) →
+      bm.get? (bAddr + (i : Int)) = some ((argBytes2 y)[i])) :
+    app (dnms (fuel+1) fmapEmpty [0]) (mkDr th3 (memOpen2 bm am) rs tr n)
+      = app (dnms fuel fmapEmpty [0]) (mkDr (th4 y) (memOpen2 bm am)
+          { rs with aid_supply := rs.aid_supply + 1 }
+          (meLoadB y :: tr) n) := by
+  have hload : app (CerbMem.loadM CerbLocation.Loc.unknown intCty bPtr)
+      (memOpen2 bm am)
+      = (NDactive (CerbMem.Footprint.FP .R bAddr 4,
+          CerbMem.MemValue.MVinteger (Signed Int_) (.IV .Prov_none y)),
+         memOpen2 bm am) := by
+    have hbytes : CerbMem.readBytesFrom (memOpen2 bm am) bAddr
+        (CerbMem.sizeofCtype intCty) = argBytes2 y := by
+      refine readBytesFrom_of_pointwise (by rfl) ?_
+      intro i hi
+      show bm.get? (bAddr + (i : Int)) = _
+      exact hb i hi
+    have := Kit.mem_load_block (loc := CerbLocation.Loc.unknown)
+      (ty := intCty) (allocId := 1) (addr := bAddr) (um := none)
+      (alloc := allocB) (mem := memOpen2 bm am)
+      (mv := CerbMem.MemValue.MVinteger (Signed Int_) (.IV .Prov_none y))
+      (hdead := rfl) (hget := hget)
+      (hbounds := by exact rfl) (hatomic := by exact rfl)
+      (hbytes := hbytes)
+      (hrecon := reconB_eq x y hy1 hy2)
+      (hnotbool := rfl)
+    simpa [bPtr, RelSem.T1.sizeof_intCty_eq] using this
+  refine (app_bind_active rfl).trans ?_
+  apply (app_bind_active ?hadv).trans
+  case hadv =>
+    apply (app_bind_active ?hreq).trans
+    case hreq =>
+      refine (app_bind_active rfl).trans ?_
+      rw [Kit.perform_unfold]
+      refine (app_bind_active rfl).trans ?_
+      rw [Kit.ars_load_unfold]
+      apply (app_bind_active (app_liftND_active _ _ _ _ ?hload)).trans
+      case hload => exact hload
+      apply (app_bind_active (app_liftND_active _ _ _ _ ?hpref)).trans
+      case hpref => rfl
+      rfl
+    rfl
+  rfl
+
+/-- R7, the load of a at open maps. -/
+theorem round7_o (x y : Int)
+    (hx1 : -2147483648 ≤ x) (hx2 : x ≤ 2147483647) (fuel : Nat)
+    (bm : Std.TreeMap Int CerbMem.AbsByte)
+    (am : Std.TreeMap Int CerbMem.Allocation)
+    (rs : core_run_state) (tr : List trace_event) (n : Nat)
+    (hget : am.get? 0 = some allocA)
+    (hb : ∀ i : Nat, (hi : i < (argBytes2 x).length) →
+      bm.get? (aAddr + (i : Int)) = some ((argBytes2 x)[i])) :
+    app (dnms (fuel+1) fmapEmpty [0])
+        (mkDr (th7 y) (memOpen2 bm am) rs tr n)
+      = app (dnms fuel fmapEmpty [0]) (mkDr (th8 x y) (memOpen2 bm am)
+          { rs with aid_supply := rs.aid_supply + 1 }
+          (meLoadA x :: tr) n) := by
+  have hload : app (CerbMem.loadM CerbLocation.Loc.unknown intCty aPtr)
+      (memOpen2 bm am)
+      = (NDactive (CerbMem.Footprint.FP .R aAddr 4,
+          CerbMem.MemValue.MVinteger (Signed Int_) (.IV .Prov_none x)),
+         memOpen2 bm am) := by
+    have hbytes : CerbMem.readBytesFrom (memOpen2 bm am) aAddr
+        (CerbMem.sizeofCtype intCty) = argBytes2 x := by
+      refine readBytesFrom_of_pointwise (by rfl) ?_
+      intro i hi
+      show bm.get? (aAddr + (i : Int)) = _
+      exact hb i hi
+    have := Kit.mem_load_block (loc := CerbLocation.Loc.unknown)
+      (ty := intCty) (allocId := 0) (addr := aAddr) (um := none)
+      (alloc := allocA) (mem := memOpen2 bm am)
+      (mv := CerbMem.MemValue.MVinteger (Signed Int_) (.IV .Prov_none x))
+      (hdead := rfl) (hget := hget)
+      (hbounds := by exact rfl) (hatomic := by exact rfl)
+      (hbytes := hbytes)
+      (hrecon := reconA_eq x y hx1 hx2)
+      (hnotbool := rfl)
+    simpa [aPtr, RelSem.T1.sizeof_intCty_eq] using this
+  refine (app_bind_active rfl).trans ?_
+  apply (app_bind_active ?hadv).trans
+  case hadv =>
+    apply (app_bind_active ?hreq).trans
+    case hreq =>
+      refine (app_bind_active rfl).trans ?_
+      rw [Kit.perform_unfold]
+      refine (app_bind_active rfl).trans ?_
+      rw [Kit.ars_load_unfold]
+      apply (app_bind_active (app_liftND_active _ _ _ _ ?hload)).trans
+      case hload => exact hload
+      apply (app_bind_active (app_liftND_active _ _ _ _ ?hpref)).trans
+      case hpref => rfl
+      rfl
+    rfl
+  rfl
+
+/-- R10, the add evaluation at open memory (pure — the committed
+    proof verbatim at a free memory state). -/
+theorem round10_o (x y : Int)
+    (hx1 : -2147483648 ≤ x) (hx2 : x ≤ 2147483647)
+    (hy1 : -2147483648 ≤ y) (hy2 : y ≤ 2147483647)
+    (hs1 : -2147483648 ≤ x + y) (hs2 : x + y ≤ 2147483647)
+    (fuel : Nat) (ms : CerbMem.MemState) (rs : core_run_state)
+    (tr : List trace_event) (n : Nat) :
+    app (dnms (fuel+1) fmapEmpty [0]) (mkDr (th10 x y) ms rs tr n)
+      = app (dnms fuel fmapEmpty [0])
+          (mkDr (th11 x y) ms rs tr (n+1)) := by
+  refine (app_bind_active rfl).trans ?_
+  apply (app_bind_active ?hadv).trans
+  case hadv =>
+    refine (app_bind_active rfl).trans ?_
+    apply (app_bind_active (liftCore_run_defined ?hM)).trans
+    case hM =>
+      change stExceptUndef_bind _ _ _ = _
+      apply (stub_defined ?hEv).trans
+      case hEv =>
+        change stExceptUndef_bind _ _ _ = _
+        refine (stub_defined
+          (fullEvalCase_eq x y hx1 hx2 hy1 hy2 hs1 hs2 _ _)).trans ?_
+        rfl
+      rfl
+    rfl
+  rfl
+
+/-- THE DRIVER LOOP at open maps: characterized by the rest + BOTH
+    argument objects' footprints; the errno object is never
+    mentioned — it rides the frame across the entire loop. -/
+theorem driver2_o (seed : Nat) (x y : Int)
+    (hx1 : -2147483648 ≤ x) (hx2 : x ≤ 2147483647)
+    (hy1 : -2147483648 ≤ y) (hy2 : y ≤ 2147483647)
+    (hs1 : -2147483648 ≤ x + y) (hs2 : x + y ≤ 2147483647) : ∀ bm am,
+    am.get? 0 = some allocA → am.get? 1 = some allocB →
+    (∀ i : Nat, (hi : i < (argBytes2 x).length) →
+      bm.get? (aAddr + (i : Int)) = some ((argBytes2 x)[i])) →
+    (∀ i : Nat, (hi : i < (argBytes2 y).length) →
+      bm.get? (bAddr + (i : Int)) = some ((argBytes2 y)[i])) →
+    app (driver2 t2File.tagDefs false) (setMaps (rD32 seed) bm am)
+      = (NDactive (), setMaps (rDone2 seed x y) bm am) := by
+  intro bm am hgA hgB hbA hbB
+  have hchain : app (dnms lemDefaultFuel fmapEmpty [0])
+      (mkDr th0 (memOpen2 bm am) (rsD3_thr seed) [] 0)
+      = (NDactive (accDone (x+y)),
+         mkDr (th15 x y) (memOpen2 bm am) (rsAB_thr seed) (tr2 x y) 13) :=
+    (round0 999999 (memOpen2 bm am) (rsD3_thr seed) [] 0).trans
+    ((round1 999998 (memOpen2 bm am) (rsD3_thr seed) [] 1).trans
+    ((round2 999997 (memOpen2 bm am) (rsD3_thr seed) [] 2).trans
+    ((round3_o x y hy1 hy2 999996 bm am (rsD3_thr seed) [] 3 hgB hbB).trans
+    ((round4 y 999995 (memOpen2 bm am) (rsB_thr seed) (tr1 y) 3).trans
+    ((round5 y 999994 (memOpen2 bm am) (rsB_thr seed) (tr1 y) 4).trans
+    ((round6 y 999993 (memOpen2 bm am) (rsB_thr seed) (tr1 y) 5).trans
+    ((round7_o x y hx1 hx2 999992 bm am (rsB_thr seed) (tr1 y) 6 hgA hbA).trans
+    ((round8 x y 999991 (memOpen2 bm am) (rsAB_thr seed) (tr2 x y) 6).trans
+    ((round9 x y 999990 (memOpen2 bm am) (rsAB_thr seed) (tr2 x y) 7).trans
+    ((round10_o x y hx1 hx2 hy1 hy2 hs1 hs2 999989 (memOpen2 bm am)
+        (rsAB_thr seed) (tr2 x y) 8).trans
+    ((round11 x y 999988 (memOpen2 bm am) (rsAB_thr seed) (tr2 x y) 9).trans
+    ((round12 x y 999987 (memOpen2 bm am) (rsAB_thr seed) (tr2 x y) 10).trans
+    ((round13 x y hs1 hs2 999986 (memOpen2 bm am) (rsAB_thr seed) rfl
+        (tr2 x y) 11).trans
+    ((round14 x y 999985 (memOpen2 bm am) (rsAB_thr seed) (tr2 x y) 12).trans
+    (round15 x y 999983 (memOpen2 bm am) (rsAB_thr seed) (tr2 x y) 13)))))))))))))))
+  have hndct : app (new_drive_core_threads t2File.tagDefs ())
+      (setMaps (rD32 seed) bm am)
+      = (NDactive [(0, some (Step_done2 (loadedV (x+y))))],
+         mkDr (th15 x y) (memOpen2 bm am) (rsAB_thr seed) (tr2 x y) 13) :=
+    RelSem.Laws.ndct_offer1 rfl (hchain.trans (by rfl))
+  show app (driver2_lemFuel (999999+1) t2File.tagDefs false)
+    (setMaps (rD32 seed) bm am)
+    = (NDactive (), setMaps (rDone2 seed x y) bm am)
+  exact RelSem.Laws.driver2_done hndct (by rfl)
+
+/-- The terminal readout, uniform over the rest fiber. -/
+theorem t2_post_o (seed : Nat) (x y : Int) : ∀ bm am,
+    ∃ r : driver_result,
+      (Outcome.value (finalize t2File.tagDefs "callND"
+          (setMaps (rDone2 seed x y) bm am)) : DriveVal)
+        = Outcome.value r ∧ t2Spec x y r :=
+  fun _ _ => ⟨_, rfl, rfl⟩
+
+/-- T2's WP over the per-step instance at the threaded initial state,
+    ON THE HEAP ROUTE (both argument footprints minted by one
+    compound; the errno fragments frame across the loop). -/
+theorem t2_wpK_thr {GF : BundledGFunctors} [CerbHeapGS GF]
+    (seed : Nat) (x y : Int)
     (hx : intRange x) (hy : intRange y) (hs : intRange (x + y)) :
-    (stateIs (GF := GF) (initial_driver_state_threaded seed t2File t2Fs)) ⊢
+    (restIs (GF := GF) restHalf (rInit2 seed)) ⊢
       WP (callK t2File.tagDefs t2File "add" [intValue x, intValue y])
         @ Stuckness.NotStuck ; ⊤
         {{ o, ⌜∃ r : driver_result, o = Outcome.value r ∧ t2Spec x y r⌝ }} := by
   iintro Hst
-  wp_step (k1_thr seed) Hst
-  wp_step (app_nd_get (dG_thr seed)) Hst
-  wp_step (k3_thr seed) Hst
-  wp_step (k4_thr seed) Hst
-  wp_step (k5_thr seed) Hst
-  wp_step (k6_thr seed x y) Hst
-  wp_step (k7_thr seed x y) Hst
-  wp_step (k8_thr seed x y) Hst
-  wp_step (k9_thr seed x y _ (by rfl)) Hst
-  wp_step (driver2_iter_thr seed x y hx.1 hx.2 hy.1 hy.2 hs.1 hs.2) Hst
-  wp_step (app_nd_get (drDone_thr seed x y)) Hst
-  wp_done
-  ipureintro
-  exact ⟨_, rfl, t2_result_eq_thr seed x y⟩
+  wp_rest (k1_o seed) Hst
+  wp_get (dG_thr seed) Hst
+  wp_rest (k3_o seed) Hst
+  wp_rest (k4_o seed) Hst
+  wp_rest (k5_o seed) Hst
+  wp_argobj2 (k6_o seed x y) (argAddrA_fact seed) argAddrB_fact Hst HalA HptA HalB HptB
+  wp_rest (k7_o seed) Hst
+  wp_argobj (k8_o seed) (errAddr2_fact seed) Hst HalE HptE
+  wp_rest (k9_o seed _ (by rfl)) Hst
+  wp_read2 (driver2_o seed x y hx.1 hx.2 hy.1 hy.2 hs.1 hs.2) Hst HalA HptA HalB HptB
+  wp_fin (t2_post_o seed x y) Hst
 
 /-! ## THE THREADED STATEMENTS -/
 
@@ -284,7 +655,7 @@ def T2ThreadedStatement : Prop :=
 /-- **T2 THREADED, UNCONDITIONAL** (S1–S3 WP route; trio cone). -/
 theorem T2Threaded : T2ThreadedStatement := by
   intro seed x y hx hy hs
-  refine kCallHarnessAdequateThr_of_wp (GF := CerbS) seed
+  refine kCallHarnessAdequateThrHeap_of_wp (GF := CerbHeapS) seed
     t2File.tagDefs t2File "add" [intValue x, intValue y] t2Fs
     (t2Spec x y) ?_
   intro η
@@ -297,7 +668,7 @@ theorem T2Threaded_ubFree :
       CallHarnessUBFreeThr seed t2File.tagDefs t2File "add"
         [intValue x, intValue y] t2Fs := by
   intro seed x y hx hy hs
-  refine kCallHarnessUBFreeThr_of_wp (GF := CerbS) seed
+  refine kCallHarnessUBFreeThrHeap_of_wp (GF := CerbHeapS) seed
     t2File.tagDefs t2File "add" [intValue x, intValue y] t2Fs
     (t2Spec x y) ?_
   intro η
