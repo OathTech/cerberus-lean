@@ -18,6 +18,7 @@ import RelSem.IrisCoupling
 import RelSem.Tactics.AppEqAttr
 import RelSem.Tactics.AppWalk
 import RelSem.Kit.AppEq
+import RelSem.Kit.Env
 import RelSem.Kit.Eval
 import RelSem.Kit.Mem
 import RelSem.Kit.Round

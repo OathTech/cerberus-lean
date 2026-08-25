@@ -155,6 +155,10 @@ import RelSem.DeriveState
 import RelSem.WpGround
 -- arc-17 S2: the law-driven round evaluator joins the sweep closure.
 import RelSem.RoundEval
+-- arc-17 S2: the ordered-map env algebra joins the sweep closure +
+-- pins (comparator lawfulness + lookup-through-insert under
+-- apartness).
+import RelSem.Kit.Env
 -- arc-17 S1: the per-construct law registry joins the sweep closure
 -- + pins. (The acceptance probe, RelSem/T6Probe.lean, is parked OUT
 -- of the build at its measured frontier — see the S1 record.)
@@ -893,6 +897,17 @@ open Lean in
 #guard_msgs in #print axioms RelSem.T6.r_chain
 /-- info: 'RelSem.T6.r_driver' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T6.r_driver
+
+-- arc-17 S2: the ordered-map env algebra — the comparator-lawfulness
+-- theorem and the lookup-through-insert payoff lemmas, trio-exact.
+/-- info: 'RelSem.Kit.lemCmpToOrd_symEnvCmp_eq_model' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Kit.lemCmpToOrd_symEnvCmp_eq_model
+/-- info: 'RelSem.Kit.fmapLookupBy_addBy_mk' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Kit.fmapLookupBy_addBy_mk
+/-- info: 'RelSem.Kit.fmapLookupBy_addBy_apart' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Kit.fmapLookupBy_addBy_apart
+/-- info: 'RelSem.Kit.symEnvCmp_LT_of_num_lt' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Kit.symEnvCmp_LT_of_num_lt
 -- The impure side, LABELED: the ambient bridges mention the ambient
 -- state, so they (and only they) wear the boundary axiom — by design.
 /--
@@ -953,6 +968,8 @@ open Lean in
 -- above). 3904 → 3983 (arc-16 S4: the threaded effect-state modules
 -- Threaded/T1Threaded join the closure — 79 declarations, all
 -- boundary-clean, the threaded theorem family trio-exact; pins
+-- 4361 → 4410 (arc-17 S2 cont.: Kit/Env — the ordered-map env
+-- algebra: comparator model + lawfulness + Fmap lookup layer).
 -- 4128 → 4361 (arc-17 S2: RoundEval meta code + the completed t6
 -- probe — 51 evaluator-minted round decls + equations + the run
 -- artifacts + the ∀-seed theorem family; provenance: the S2 record).
@@ -978,7 +995,7 @@ open Lean in
 -- probe's law layer; the probe fixture file itself is parked OUT of
 -- the build).
 /--
-info: RelSem audit sweep: 4361 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 4410 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do
