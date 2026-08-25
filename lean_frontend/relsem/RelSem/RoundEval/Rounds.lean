@@ -295,12 +295,20 @@ def mintLawPure (declName : Name) (fvars : Array Expr)
   -- verbatim on failure.
   if stepE.isAppOfArity ``core_step2.Step_tau2 3 then
     let kindE ← whnfU stepE.getAppArgs[1]!
-    unless kindE.isConstOf ``core_tau_step_kind.TSK_Misc do
-      throwFrontier m!"derive_rounds: round {roundIdx} tau kind has no \
-        registered law:{indentExpr kindE}"
+    -- REGISTRY DISPATCH (arc-18 C1, the R4 contract): the advance law
+    -- by goal-form key at the kind-normalized step (defeq respell for
+    -- the QUERY only; the proof still elaborates at the classified
+    -- stepE). An unregistered tau kind is a registry-miss frontier —
+    -- the old hardcoded TSK_Misc check, now the key's job.
+    let stepQ := mkApp3 stepE.getAppFn (← qStar) kindE (← qStar)
+    let goal0 ← mkAppMU ``RelSem.app
+      #[← mkAppMU ``advance_step #[td, tid, stepE], σ]
+    let law ← queryLaw `advance
+      (← appGoalSkeleton goal0 #[← qStar, ← qStar, stepQ])
+      (what := s!"round {roundIdx} tau advance")
     let mkStx (th : Expr) : TermElabM Term := do
       let thS ← toStxU th
-      `(RelSem.Kit.advance_tau_misc (th' := $thS))
+      `($(mkCIdent law.name) (th' := $thS))
     let (pf, succRaw) ← (try
         elabLawChain td tid σ stepE lhs roundIdx
           (← mkStx (← thNorm stepE.getAppArgs[2]!))
@@ -345,31 +353,39 @@ def mintLawPure (declName : Name) (fvars : Array Expr)
     let (thS, rsS) ← withCurrHeartbeats do
       pure (← toStxU thN, ← toStxU rsN)
     trace[RelSem.roundEval] "round {roundIdx}: syntax built"
-    let proofStx ←
+    let proofStx ← do
       -- dbg/step_m supplied EXPLICITLY (arc-17 S3): at a
       -- builder-state σ0 (free component binders) the elaborator's
       -- own stepAt unification wedges where classification's plain
       -- whnf succeeded — the mintMemRound explicit-decomposition
-      -- lesson, applied to the pure branches
-      if kindE.isAppOfArity ``runstate_step_kind.RSK_eval 1 then do
-        let dbgS ← toStxU kindE.getAppArgs[0]!
-        let stepmS ← toStxU stepM
-        `(RelSem.Kit.advance_runstate_eval (dbg := $dbgS)
-            (step_m := $stepmS) (th' := $thS) (rs' := $rsS)
-            (hm := by first | exact rfl | hyp_norm_side))
-      else if kindE.isAppOfArity ``runstate_step_kind.RSK_tau 2 then do
-        let tkE ← whnfU kindE.getAppArgs[1]!
-        unless tkE.isConstOf ``core_tau_step_kind.TSK_Misc do
-          throwFrontier m!"derive_rounds: round {roundIdx} RSK_tau kind \
-            has no registered law:{indentExpr tkE}"
-        let dbgS ← toStxU kindE.getAppArgs[0]!
-        let stepmS ← toStxU stepM
-        `(RelSem.Kit.advance_runstate_tau_misc (dbg := $dbgS)
-            (step_m := $stepmS) (th' := $thS)
-            (rs' := $rsS) (hm := by first | exact rfl | hyp_norm_side))
-      else
+      -- lesson, applied to the pure branches.
+      -- REGISTRY DISPATCH (arc-18 C1): the runstate advance laws
+      -- share their slot names, so ONE splice serves whichever law
+      -- the goal-form key selects (kind-normalized for the query;
+      -- an unregistered kind is a registry-miss frontier — the old
+      -- hardcoded RSK_eval/RSK_tau-Misc branch, now the key's job).
+      let kindQ ← (do
+        if kindE.isAppOfArity ``runstate_step_kind.RSK_tau 2 then
+          let tkW ← whnfU kindE.getAppArgs[1]!
+          pure (mkApp2 kindE.getAppFn (← qStar) tkW)
+        else if kindE.isApp then
+          pure (mkAppN kindE.getAppFn
+            (← kindE.getAppArgs.mapM (fun _ => qStar)))
+        else pure kindE)
+      let stepQ := mkApp2 stepE.getAppFn kindQ (← qStar)
+      let goal0 ← mkAppMU ``RelSem.app
+        #[← mkAppMU ``advance_step #[td, tid, stepE], σ]
+      let law ← queryLaw `advance
+        (← appGoalSkeleton goal0 #[← qStar, ← qStar, stepQ])
+        (what := s!"round {roundIdx} runstate advance")
+      unless kindE.getAppNumArgs ≥ 1 do
         throwFrontier m!"derive_rounds: round {roundIdx} runstate kind \
           has no registered law:{indentExpr kindE}"
+      let dbgS ← toStxU kindE.getAppArgs[0]!
+      let stepmS ← toStxU stepM
+      `($(mkCIdent law.name) (dbg := $dbgS)
+          (step_m := $stepmS) (th' := $thS) (rs' := $rsS)
+          (hm := by first | exact rfl | hyp_norm_side))
     let (pf, succRaw) ← elabLawChain td tid σ stepE lhs roundIdx proofStx
     emitLawRound declName fvars a σ lhs pf succRaw roundIdx "runstate"
   else
@@ -448,6 +464,47 @@ def mintMemRound (declName : Name) (fvars : Array Expr)
   let mReqS ← toStxU mReq
   let reqS ← toStxU reqE
   let σS ← toStxU σ
+  -- REGISTRY DISPATCH (arc-18 C1, the R4 contract): the three law
+  -- tiers of an action round — ADVANCE / PERFORM / MEM-BLOCK — each
+  -- selected by goal-form key from the one registry; the per-request
+  -- branches below prepare each law's declared SLOTS (ground
+  -- literals, spellings — elaborator handling) and splice the
+  -- QUERIED names. An unregistered request shape is a registry-miss
+  -- frontier (the old hardcoded reqCtor branch, now the key's job).
+  let stepQ := mkAppN stepE.getAppFn
+    #[← qStar, ← qStar, ← qStar, unseqE, ← qStar]
+  let advGoal0 ← mkAppMU ``RelSem.app
+    #[← mkAppMU ``advance_step #[td, tid, stepE], σ]
+  let advLaw ← queryLaw `advance
+    (← appGoalSkeleton advGoal0 #[← qStar, ← qStar, stepQ])
+    (what := s!"round {roundIdx} action advance")
+  -- request-arg skeleton: concrete only where CHEAP and closed (the
+  -- discriminating positions — e.g. perform_create's
+  -- `initOpt = none` — are small nullary spellings); pack-stuck or
+  -- large args star (the pattern side is a wildcard there anyway,
+  -- and key-reduction over live spellings is the measured timeout).
+  let reqQ := mkAppN reqE.getAppFn
+    (← reqE.getAppArgs.mapM (fun e => do
+      if e.hasFVar then qStar
+      else
+        let w ← whnfU e
+        if (← w.numObjs) ≤ 64 then pure w else qStar))
+  let perfGoal0 ← mkAppMU ``RelSem.app
+    #[← mkAppMU ``perform_action_request2
+        #[unseqE, stepArgs[1]!, stepArgs[2]!, reqE], σ]
+  let perfLaw ← queryLaw `perform
+    (← appGoalSkeleton perfGoal0 #[unseqE, ← qStar, ← qStar, reqQ])
+    (what := s!"round {roundIdx} perform ({reqCtor})")
+  let advS := mkCIdent advLaw.name
+  let perfS := mkCIdent perfLaw.name
+  -- the mem-block goal builder: typed construction from the live
+  -- pieces, then the skeleton m-args + starred state
+  let blockLaw (mk : TermElabM Expr) (mArgs' : Array Expr)
+      (what : String) : TermElabM Ident := do
+    let goal0 ← mkAppMU ``RelSem.app #[← mk, memE]
+    return mkCIdent
+      (← queryLaw `memBlock (← appGoalSkeleton goal0 mArgs')
+        (what := what)).name
   let mut subs : Array (Expr × Expr) := #[]
   let mut pfSucc : Expr × Expr := (default, default)
   let mut cls := ""
@@ -455,6 +512,8 @@ def mintMemRound (declName : Name) (fvars : Array Expr)
     -- StoreRequest2 mo ty lk ptr mval mk
     let rargs := reqE.getAppArgs
     let tyE := rargs[rargs.size - 5]!
+    let lkW ← (let e := rargs[rargs.size - 4]!
+               if e.hasFVar then pure e else whnfU e)
     let (ptrE, idE, addrE) ← destructPtr rargs[rargs.size - 3]!
     let mvalE ← evalGroundA s!"round {roundIdx} stored value"
       rargs[rargs.size - 2]!
@@ -474,13 +533,22 @@ def mintMemRound (declName : Name) (fvars : Array Expr)
     -- in hyp mode the respell bridge (emitLawRound) carries it
     if (← activeHypPack.get).isNone then
       subs := #[((← mkAppMU ``CerbMem.sizeofCtype #[tyE]), szE)]
-    let proofStx ← `(RelSem.Kit.advance_action_request (dbg := $dbgS) (loc := $locS)
+    let blkS ← blockLaw
+      (mkAppMU ``CerbMem.storeM
+        #[stepArgs[1]!, tyE, lkW, ptrE, mvalE])
+      #[← qStar, ← qStar, lkW, ptrE, ← qStar]
+      s!"round {roundIdx} store block"
+    let prefS ← blockLaw
+      (mkAppMU ``CerbMem.prefixOfPointer #[ptrE])
+      #[← qStar]
+      s!"round {roundIdx} prefix block"
+    let proofStx ← `($advS (dbg := $dbgS) (loc := $locS)
       (tid' := $tid'S) (m_request := $mReqS) (request := $reqS)
       (σ := $σS) (σ₁ := $σS) (hreq := by first | exact rfl | decide | hyp_norm_side)
-      (hperf := RelSem.Kit.perform_store
+      (hperf := $perfS
         (ptr := $(← toStxU ptrE))
         (mval := $(← toStxU mvalE))
-        (hmem := RelSem.Kit.mem_store_block
+        (hmem := $blkS
           (allocId := $(← toStxU idE))
           (addr := $(← toStxU addrE))
           (alloc := $(← toStxU allocE))
@@ -488,7 +556,7 @@ def mintMemRound (declName : Name) (fvars : Array Expr)
           (bytes := $(← toStxU bytesE))
           (by first | exact rfl | decide | hyp_norm_side) (by first | exact rfl | decide | hyp_norm_side) (by first | exact rfl | decide | hyp_norm_side) (by first | exact rfl | decide | hyp_norm_side)
           (by first | exact rfl | decide | hyp_norm_side) (by first | exact rfl | decide | hyp_norm_side))
-        (hpref := RelSem.Kit.mem_prefix_block)))
+        (hpref := $prefS)))
     pfSucc ← elabLawChain td tid σ stepE lhs roundIdx proofStx
     cls := "store"
   else if reqCtor == ``action_request2.CreateRequest2 then
@@ -544,11 +612,17 @@ def mintMemRound (declName : Name) (fvars : Array Expr)
          decide on the closed literal arithmetic). \
          {provenanceNote "derive_rounds"}"
     let haddrS ← toStxU (mkAppN (mkConst haddrName) fvars)
-    let proofStx ← `(RelSem.Kit.advance_action_request (dbg := $dbgS) (loc := $locS)
+    let blkS ← blockLaw
+      (mkAppMU ``CerbMem.allocateObject
+        #[stepArgs[2]!, rargs[rargs.size - 6]!, alignE, tyE,
+          rargs[rargs.size - 3]!, initOptE])
+      #[← qStar, ← qStar, alignE, ← qStar, ← qStar, initOptE]
+      s!"round {roundIdx} alloc block"
+    let proofStx ← `($advS (dbg := $dbgS) (loc := $locS)
       (tid' := $tid'S) (m_request := $mReqS) (request := $reqS)
       (σ := $σS) (σ₁ := $σS) (hreq := by first | exact rfl | decide | hyp_norm_side)
-      (hperf := RelSem.Kit.perform_create
-        (hmem := RelSem.Kit.mem_alloc_block
+      (hperf := $perfS
+        (hmem := $blkS
           (sz := $szS)
           (a := $aS)
           (by first | exact rfl | decide | hyp_norm_side) $haddrS (by first | exact rfl | decide | hyp_norm_side))))
@@ -577,12 +651,20 @@ def mintMemRound (declName : Name) (fvars : Array Expr)
           addrE, tyE, bytesE]
     if (← activeHypPack.get).isNone then
       subs := #[((← mkAppMU ``CerbMem.sizeofCtype #[tyE]), szE)]
-    let proofStx ← `(RelSem.Kit.advance_action_request (dbg := $dbgS) (loc := $locS)
+    let blkS ← blockLaw
+      (mkAppMU ``CerbMem.loadM #[stepArgs[1]!, tyE, ptrE])
+      #[← qStar, ← qStar, ptrE]
+      s!"round {roundIdx} load block"
+    let prefS ← blockLaw
+      (mkAppMU ``CerbMem.prefixOfPointer #[ptrE])
+      #[← qStar]
+      s!"round {roundIdx} prefix block"
+    let proofStx ← `($advS (dbg := $dbgS) (loc := $locS)
       (tid' := $tid'S) (m_request := $mReqS) (request := $reqS)
       (σ := $σS) (σ₁ := $σS) (hreq := by first | exact rfl | decide | hyp_norm_side)
-      (hperf := RelSem.Kit.perform_load
+      (hperf := $perfS
         (ptr := $(← toStxU ptrE))
-        (hmem := RelSem.Kit.mem_load_block
+        (hmem := $blkS
           (allocId := $(← toStxU idE))
           (addr := $(← toStxU addrE))
           (alloc := $(← toStxU allocE))
@@ -590,20 +672,26 @@ def mintMemRound (declName : Name) (fvars : Array Expr)
           (mv := $(← toStxU mvE))
           (by first | exact rfl | decide | hyp_norm_side) (by first | exact rfl | decide | hyp_norm_side) (by first | exact rfl | decide | hyp_norm_side) (by first | exact rfl | decide | hyp_norm_side)
           (by first | exact rfl | decide | hyp_norm_side) (by first | exact rfl | decide | hyp_norm_side) (by first | exact rfl | decide | hyp_norm_side))
-        (hpref := RelSem.Kit.mem_prefix_block)))
+        (hpref := $prefS)))
     pfSucc ← elabLawChain td tid σ stepE lhs roundIdx proofStx
     cls := "load"
   else if reqCtor == ``action_request2.KillRequest2 then
     -- KillRequest2 isDyn ptr mk
     let rargs := reqE.getAppArgs
+    let isDynW ← (let e := rargs[rargs.size - 3]!
+                  if e.hasFVar then pure e else whnfU e)
     let (ptrE, idE, _) ← destructPtr rargs[rargs.size - 2]!
     let allocE ← lookupAlloc idE
-    let proofStx ← `(RelSem.Kit.advance_action_request (dbg := $dbgS) (loc := $locS)
+    let blkS ← blockLaw
+      (mkAppMU ``CerbMem.killM #[stepArgs[1]!, isDynW, ptrE])
+      #[← qStar, isDynW, ptrE]
+      s!"round {roundIdx} kill block"
+    let proofStx ← `($advS (dbg := $dbgS) (loc := $locS)
       (tid' := $tid'S) (m_request := $mReqS) (request := $reqS)
       (σ := $σS) (σ₁ := $σS) (hreq := by first | exact rfl | decide | hyp_norm_side)
-      (hperf := RelSem.Kit.perform_kill
+      (hperf := $perfS
         (ptr := $(← toStxU ptrE))
-        (hmem := RelSem.Kit.mem_kill_block
+        (hmem := $blkS
           (allocId := $(← toStxU idE))
           (alloc := $(← toStxU allocE))
           (by first | exact rfl | decide | hyp_norm_side) (by first | exact rfl | decide | hyp_norm_side) (by first | exact rfl | decide | hyp_norm_side))))

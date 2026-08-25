@@ -20,6 +20,7 @@ import Lean
 import RelSem.Machine
 import RelSem.Cerberus
 import RelSem.DeriveState
+import RelSem.LawRegistry
 
 set_option autoImplicit false
 
@@ -276,6 +277,53 @@ def normalizeThreads (e : Expr) : MetaM Expr := do
     return .done node)
   trace[RelSem.roundEval] "normalizeThreads: {← count.get} thread payloads normalized"
   return r
+
+/-! ## Registry dispatch (arc-18 C1 — the R4 contract made
+    mechanical) -/
+
+/-- A query STAR: a fresh metavariable keys as a DiscrTree wildcard
+    and is never reduced. Dispatch goals are SKELETONS — only the
+    DISCRIMINATING positions are concrete; every other position is a
+    star (measured necessity: `getMatchLoop` key-reduces EVERY
+    position, star edges included, so live states/payloads in a query
+    ran whnfCore over execution spellings — the T4 round-18
+    timeout). -/
+def qStar : TermElabM Expr := do
+  mkFreshExprMVar none
+
+/-- Skeletonize an `app`-rooted dispatch goal: `goal0` is BUILT from
+    the live pieces (the typed construction supplies the correct
+    implicit type-argument keys), then the computation's arguments
+    are REPLACED by the caller's skeleton `mArgs'` (stars everywhere
+    but the discriminating positions) and the state is starred. Raw
+    `mkAppN` replacement — `mkAppM` runs at a fresh MCtx depth and
+    cannot take outer star mvars. -/
+def appGoalSkeleton (goal0 : Expr) (mArgs' : Array Expr) :
+    TermElabM Expr := do
+  let gargs := goal0.getAppArgs
+  let m0 := gargs[gargs.size - 2]!
+  return mkAppN goal0.getAppFn
+    ((gargs.set! (gargs.size - 2) (mkAppN m0.getAppFn mArgs')).set!
+      (gargs.size - 1) (← qStar))
+
+/-- THE DISPATCH QUERY: the unique registered law of `kind`
+    (/`variant`) whose goal-form key matches `goal`
+    (RelSem.LawRegistry.queryUnique). A miss or an ambiguity surfaces
+    as a FAIL-CLOSED FRONTIER naming the joint — the lane's "no
+    registered law" error, now produced by the registry instead of a
+    hardcoded head check. Hardcoded law-NAME dispatch in the engine is
+    retired in favor of this query; the engine keeps only slot
+    PREPARATION (ground literals, spellings — elaborator handling per
+    the entry's declared trace schema). -/
+def queryLaw (kind : Name) (goal : Expr) (variant : Name := .anonymous)
+    (what : String := "") : TermElabM RelSem.LawRegistry.StepLaw := do
+  try
+    let law ← RelSem.LawRegistry.queryUnique kind goal variant
+    trace[RelSem.roundEval] "queryLaw: {law.name} ({what})"
+    return law
+  catch ex =>
+    throwFrontier m!"derive_rounds: registry dispatch ({what}): \
+      {ex.toMessageData}"
 
 end RoundEval
 end RelSem

@@ -148,6 +148,18 @@ private def mintBoolTower (hp : HypPack) (d : Expr) : TermElabM Bool := do
     return true
   | none => return false
 
+/-- Soft registry query for the minter lanes (arc-18 C1): `none`
+    (the lane DECLINES) instead of a frontier — the CONSUMER's
+    frontier fires with the term printed if nothing ultimately mints
+    (the minter's fail-closed contract, unchanged). Law selection by
+    goal-form key; the hardcoded law-name tables are retired. -/
+private def queryLaw? (kind : Name) (goal : Expr)
+    (variant : Name := .anonymous) : MetaM (Option Name) := do
+  try
+    let l ← RelSem.LawRegistry.queryUnique kind goal variant
+    return some l.name
+  catch _ => return none
+
 /-- Symbol-constructor destructuring. -/
 private def symParts? (e : Expr) : Option (Expr × Expr × Expr) :=
   if e.isAppOfArity ``Symbol 3 then
@@ -162,7 +174,11 @@ private partial def proveBuilt (m : Expr) : TermElabM (Option Expr) := do
   if m.isAppOf ``fmapAddBy && m.getAppArgs.size == 7 then
     let a := m.getAppArgs
     let some hInner ← proveBuilt a[6]! | return none
-    return some (← mkAppOptMU ``RelSem.Kit.fmapAddBy_built
+    let some law ← queryLaw? `envMap
+      (← mkAppMU ``RelSem.Kit.FmapBuilt
+        #[mkConst ``RelSem.Kit.symCmpO, m]) (variant := `built)
+      | return none
+    return some (← mkAppOptMU law
       #[some a[0]!, some a[1]!, some a[2]!, none, some a[3]!,
         some a[4]!, some a[5]!, some a[6]!, some hInner])
   let stmt ← mkAppMU ``RelSem.Kit.FmapBuilt
@@ -234,7 +250,9 @@ private def mintEnvLookup (hp : HypPack) (d : Expr) : TermElabM Bool := do
     let some (dg, n, sd) := symParts? key | return false
     let hk ← mkAppMU ``RelSem.RoundEval.symCmpO_eq_same #[dg, n, sd, sd]
     let rhs ← mkAppMU ``Option.some #[v]
-    let some pf ← mkLaw ``RelSem.Kit.fmapLookupBy_addBy_eq hk rhs
+    let some hitLaw ← queryLaw? `envMap d (variant := `hit)
+      | return false
+    let some pf ← mkLaw hitLaw hk rhs
       | return false
     mintEmit hp d rhs pf "env lookup hit"
     return true
@@ -255,7 +273,9 @@ private def mintEnvLookup (hp : HypPack) (d : Expr) : TermElabM Bool := do
     #[some dg1, some dg2, some n1, some n2, some sd1, some sd2,
       some (← mkEqRefl dg1), some hrefNe]
   let rhs := mkAppN d.getAppFn (dArgs.set! 4 inner)
-  let some pf ← mkLaw ``RelSem.Kit.fmapLookupBy_addBy_ne hk rhs
+  let some skipLaw ← queryLaw? `envMap d (variant := `skip)
+    | return false
+  let some pf ← mkLaw skipLaw hk rhs
     | return false
   mintEmit hp d rhs pf "env lookup skip"
   return true
@@ -303,19 +323,17 @@ private def mintMemRW (hp : HypPack) (d : Expr) : TermElabM Bool := do
   if let .proj sName idx b := d then
     unless sName == ``CerbMem.MemState
         && b.isAppOfArity ``CerbMem.writeBytesTo 3 do return false
-    -- MemState field order: 3 = allocations, 5 = funptrmap,
-    -- 9 = lastUsedUnionMembers, 10 = deadAllocations
-    let law? : Option Name :=
-      if idx == 3 then some ``RelSem.Kit.writeBytesTo_allocations
-      else if idx == 5 then some ``RelSem.Kit.writeBytesTo_funptrmap
-      else if idx == 9 then
-        some ``RelSem.Kit.writeBytesTo_lastUsedUnionMembers
-      else if idx == 10 then
-        some ``RelSem.Kit.writeBytesTo_deadAllocations
-      else none
+    -- REGISTRY DISPATCH (arc-18 C1): rebuild the accessor-application
+    -- goal form (STRUCTURE METADATA, not a law table — the raw-proj
+    -- spelling keys differently from the laws' accessor-app LHS) and
+    -- query the memRW lane.
+    let fields := getStructureFields (← getEnv) ``CerbMem.MemState
+    let some field := fields[idx]? | return false
+    let accApp ← mkAppMU (``CerbMem.MemState ++ field) #[b]
+    let law? ← queryLaw? `memRW accApp
     if law?.isNone then
-      trace[RelSem.roundEval] "mem lane: unhandled projection idx \
-        {idx} over writeBytesTo"
+      trace[RelSem.roundEval] "mem lane: no registered projection law \
+        for field {field} over writeBytesTo"
     let some law := law? | return false
     let wa := b.getAppArgs
     let rhs := Expr.proj sName idx wa[0]!
@@ -326,45 +344,32 @@ private def mintMemRW (hp : HypPack) (d : Expr) : TermElabM Bool := do
     return true
   let .const c _ := d.getAppFn | return false
   let args := d.getAppArgs
-  -- projection lane
-  let projLaw? : Option Name :=
-    if c == ``CerbMem.MemState.allocations then
-      some ``RelSem.Kit.writeBytesTo_allocations
-    else if c == ``CerbMem.MemState.deadAllocations then
-      some ``RelSem.Kit.writeBytesTo_deadAllocations
-    else if c == ``CerbMem.MemState.funptrmap then
-      some ``RelSem.Kit.writeBytesTo_funptrmap
-    else if c == ``CerbMem.MemState.lastUsedUnionMembers then
-      some ``RelSem.Kit.writeBytesTo_lastUsedUnionMembers
-    else none
-  if let some law := projLaw? then
-    unless args.size == 1 do return false
-    let m' := args[0]!
-    if m'.isAppOfArity ``CerbMem.writeBytesTo 3 then
-      let wa := m'.getAppArgs
+  -- projection lane: query the memRW registry at d's OWN goal form
+  -- (registry dispatch, arc-18 C1 — the accessor-name table is
+  -- retired; the four writeBytesTo projection laws key on their
+  -- accessor heads, so d matches exactly its law or nothing)
+  if args.size == 1 && args[0]!.isAppOfArity ``CerbMem.writeBytesTo 3 then
+    if let some law ← queryLaw? `memRW d then
+      let wa := args[0]!.getAppArgs
       let rhs := mkApp d.getAppFn wa[0]!
       let pf ← mkAppOptMU law
         #[some wa[0]!, some wa[1]!, some wa[2]!]
       mintEmit hp d rhs pf "mem write projection"
       return true
-    -- fall through: the accessor may sit over a literal record
-    -- (the fenced-accessor iota below)
+    -- fall through: no registered projection law (e.g. bytemap)
   -- FENCED-ACCESSOR IOTA (arc-17 S3): a pack-hypothesis head fence
   -- freezes the accessor CONST, so `accessor {mk-record}` cannot
   -- delta-iota even though the reduction is fence-irrelevant. Mint
-  -- the field value with a kernel-deferred refl bridge.
-  let fieldIdx? : Option Nat :=
-    if c == ``CerbMem.MemState.funptrmap then some 5
-    else if c == ``CerbMem.MemState.lastUsedUnionMembers then some 9
-    else if c == ``CerbMem.MemState.bytemap then some 8
-    else if c == ``CerbMem.MemState.allocations then some 3
-    else if c == ``CerbMem.MemState.deadAllocations then some 10
-    else none
-  if let some idx := fieldIdx? then
+  -- the field value with a kernel-deferred refl bridge. (arc-18 C1:
+  -- the field-index table is retired for PROJECTION METADATA —
+  -- generic over every MemState field, same defeq bridge.)
+  if let some pinfo := (← getEnv).getProjectionFnInfo? c then
+    unless pinfo.ctorName == ``CerbMem.MemState.mk do return false
     unless args.size == 1 do return false
     let m' := args[0]!
     unless m'.isAppOfArity ``CerbMem.MemState.mk 14 do return false
-    let rhs := m'.getAppArgs[idx]!
+    let some rhs := m'.getAppArgs[pinfo.numParams + pinfo.i]?
+      | return false
     let pf ← mkExpectedTypeHint (← mkEqRefl rhs) (← mkEq d rhs)
     mintEmit hp d rhs pf "fenced-accessor iota"
     return true
@@ -394,7 +399,8 @@ private def mintMemRW (hp : HypPack) (d : Expr) : TermElabM Bool := do
     let h ← mkExpectedTypeHint
       (← mkEqRefl (Expr.proj ``CerbMem.MemState 8 base)) hTy
     let rhs := mkAppN d.getAppFn #[base, a', nE]
-    let pf ← mkAppOptMU ``RelSem.Kit.readBytesFrom_congr_bytemap
+    let some law ← queryLaw? `memRW d (variant := `congr) | return false
+    let pf ← mkAppOptMU law
       #[some m', some base, some a', some nE, some h]
     mintEmit hp d rhs pf "mem read record-respelling"
     return true
@@ -419,7 +425,8 @@ private def mintMemRW (hp : HypPack) (d : Expr) : TermElabM Bool := do
     -- HIT: exact-footprint readback
     let hn ← mkExpectedTypeHint (← mkEqRefl nE)
       (← mkEq nE (← mkAppMU ``List.length #[bs]))
-    let pf ← mkAppOptMU ``RelSem.Kit.readBytesFrom_writeBytesTo_hit
+    let some law ← queryLaw? `memRW d (variant := `hit) | return false
+    let pf ← mkAppOptMU law
       #[some m, some a, some bs, some nE, some hn]
     mintEmit hp d bs pf "mem read-over-write hit"
     return true
@@ -439,7 +446,8 @@ private def mintMemRW (hp : HypPack) (d : Expr) : TermElabM Bool := do
           | throwError "mem lane: ground disjunct failed (R)"
         mkAppOptMU ``Or.inr #[some disjL, some disjR, some pfR])
     let rhs := mkAppN d.getAppFn #[m, a', nE]
-    let pf ← mkAppOptMU ``RelSem.Kit.readBytesFrom_writeBytesTo_disjoint
+    let some law ← queryLaw? `memRW d (variant := `frame) | return false
+    let pf ← mkAppOptMU law
       #[some m, some a, some a', some bs, some nE, some hdisj]
     mintEmit hp d rhs pf "mem read-over-write frame"
     return true

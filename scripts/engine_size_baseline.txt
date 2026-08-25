@@ -6,16 +6,23 @@
 # C1 baseline: the RoundEval decomposition of the 3,586-line
 # monolith (arc-17 S2/S2b/S3 growth; review finding F8 — the
 # recurrence-risk locus). Down-pressure direction: DOWN.
+#
+# C1 re-baseline (dispatch conversion, same slice): Core +48
+# (queryLaw/qStar/appGoalSkeleton — the registry dispatch
+# helpers), Rounds +88 / Lanes +8 / Arith +12 / Assembly +29 /
+# LawRegistry +4 (query joints + skeleton goals + the residue
+# note). Direction remains DOWN; the conversion DELETED the
+# hardcoded law-name tables the growth replaces.
 RoundEval.lean 87
-RoundEval/Core.lean 281
+RoundEval/Core.lean 329
 RoundEval/Hyp.lean 818
 RoundEval/Mint.lean 248
 RoundEval/Classify.lean 166
-RoundEval/Arith.lean 669
-RoundEval/Lanes.lean 493
-RoundEval/Rounds.lean 644
-RoundEval/Assembly.lean 436
+RoundEval/Arith.lean 681
+RoundEval/Lanes.lean 501
+RoundEval/Rounds.lean 732
+RoundEval/Assembly.lean 465
 DeriveState.lean 260
 WpGround.lean 121
-LawRegistry.lean 296
-TOTAL 4519
+LawRegistry.lean 300
+TOTAL 4708

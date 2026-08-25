@@ -266,6 +266,16 @@ elab "derive_rounds " id:ident bs:bracketedBinder* assum:(roundsAssuming)? fenc:
         let σ0S ← toStxU σ0E
         let succS ← toStxU σ
         let accS ← `(fmapEmpty)
+        -- REGISTRY DISPATCH (arc-18 C1): the round-glue laws by
+        -- goal-form key (the dnms application at this drive's own
+        -- td/acc/[tid]/σ0), variants generic/terminal.
+        let glueGoal ← elabClosed (← `(RelSem.app
+          (drive_nonmemory_steps_aux2_lemFuel lemDefaultFuel $tdS
+            $accS [$tidS]) $σ0S))
+        let glueS := mkCIdent (← queryLaw `roundGlue glueGoal
+          (variant := `generic) (what := "relative chain glue")).name
+        let termGlueS := mkCIdent (← queryLaw `roundGlue glueGoal
+          (variant := `terminal) (what := "relative chain terminal")).name
         let fuelId := mkIdent `fuel
         let mkF (m : Nat) : TermElabM Term :=
           if m == 0 then pure fuelId
@@ -276,7 +286,7 @@ elab "derive_rounds " id:ident bs:bracketedBinder* assum:(roundsAssuming)? fenc:
           let fS ← mkF (n + off - j)
           let f1S ← mkF (n + off - j - 1)
           let hadvS ← toStxU (mkAppN (mkConst rounds[j]!.eqName) fvars)
-          let step ← `(RelSem.Kit.dnms_round (fuelS := $fS)
+          let step ← `($glueS (fuelS := $fS)
             (fuel := $f1S) rfl rfl rfl rfl $hadvS)
           pf? := some (← match pf? with
             | none => pure step
@@ -293,7 +303,7 @@ elab "derive_rounds " id:ident bs:bracketedBinder* assum:(roundsAssuming)? fenc:
             pure (stmtStx, ← `(fun ($fuelId : Nat) => $body))
           | some stepsE =>
             let stepsS ← toStxU stepsE
-            let termS ← `(RelSem.Kit.dnms_terminal
+            let termS ← `($termGlueS
               (fuelS := $(← mkF 2)) (fuel := $fuelId)
               (steps := $stepsS) rfl rfl rfl rfl)
             let whole ← match pf? with
@@ -337,6 +347,21 @@ elab "derive_rounds " id:ident bs:bracketedBinder* assum:(roundsAssuming)? fenc:
         let accS ← `(fmapEmpty)
         let σ0S ← toStxU σ0E
         let stepsS ← toStxU stepsE
+        -- REGISTRY DISPATCH (arc-18 C1): glue + call-structure laws
+        -- by goal-form key (variants generic/terminal for the dnms
+        -- glue; the scheduler read and the driver-done iteration are
+        -- construct-kind laws keyed on their own heads).
+        let glueGoal ← elabClosed (← `(RelSem.app
+          (drive_nonmemory_steps_aux2_lemFuel lemDefaultFuel $tdS
+            $accS [$tidS]) $σ0S))
+        let glueS := mkCIdent (← queryLaw `roundGlue glueGoal
+          (variant := `generic) (what := "whole-run chain glue")).name
+        let termGlueS := mkCIdent (← queryLaw `roundGlue glueGoal
+          (variant := `terminal) (what := "whole-run chain terminal")).name
+        let ndctLawS := mkCIdent (← queryLaw `construct
+          (← elabClosed (← `(RelSem.app
+            (new_drive_core_threads $tdS ()) $σ0S)))
+          (what := "scheduler offer")).name
         -- chain statement:
         --   app (dnms lemDefaultFuel td fmapEmpty [tid]) σ0
         --     = (NDactive (fmapAddBy defaultCompare tid steps fmapEmpty),
@@ -357,7 +382,7 @@ elab "derive_rounds " id:ident bs:bracketedBinder* assum:(roundsAssuming)? fenc:
         let mut proofStx : Term ← do
           let fS := Syntax.mkNatLit (fuel0 - n)
           let f2S := Syntax.mkNatLit (fuel0 - n - 2)
-          `(RelSem.Kit.dnms_terminal (fuelS := $fS) (fuel := $f2S)
+          `($termGlueS (fuelS := $fS) (fuel := $f2S)
               (steps := $stepsS) rfl rfl rfl rfl)
         for i in [0 : n] do
           let k := n - 1 - i
@@ -365,7 +390,7 @@ elab "derive_rounds " id:ident bs:bracketedBinder* assum:(roundsAssuming)? fenc:
           let f1S := Syntax.mkNatLit (fuel0 - k - 1)
           let hadvS ← toStxU
             (mkAppN (mkConst rounds[k]!.eqName) fvars)
-          proofStx ← `((RelSem.Kit.dnms_round (fuelS := $fS)
+          proofStx ← `(($glueS (fuelS := $fS)
             (fuel := $f1S) rfl rfl rfl rfl $hadvS).trans $proofStx)
         let chainStmt ← Term.elabType chainStmtStx
         Term.synthesizeSyntheticMVarsNoPostponing
@@ -382,7 +407,7 @@ elab "derive_rounds " id:ident bs:bracketedBinder* assum:(roundsAssuming)? fenc:
         let ndctStmtStx ← `(RelSem.app
           (new_drive_core_threads $tdS ()) $σ0S
           = (NDactive [($tidS, some (Step_done2 $vS))], $succS))
-        let ndctPfStx ← `(RelSem.Laws.ndct_offer1 rfl $chainS)
+        let ndctPfStx ← `($ndctLawS rfl $chainS)
         let ndctStmt ← Term.elabType ndctStmtStx
         Term.synthesizeSyntheticMVarsNoPostponing
         let ndctPf ← Term.elabTermEnsuringType ndctPfStx
@@ -411,7 +436,11 @@ elab "derive_rounds " id:ident bs:bracketedBinder* assum:(roundsAssuming)? fenc:
         let fm1S := Syntax.mkNatLit (fuel0 - 1)
         let drvStmtStx ← `(RelSem.app (driver2 $tdS false) $σ0S
           = (NDactive (), $finS))
-        let drvPfStx ← `(RelSem.Laws.driver2_done (fuel := $fm1S)
+        let drvLawS := mkCIdent (← queryLaw `construct
+          (← elabClosed (← `(RelSem.app
+            (driver2_lemFuel ($fm1S + 1) $tdS false) $σ0S)))
+          (what := "driver-done iteration")).name
+        let drvPfStx ← `($drvLawS (fuel := $fm1S)
           $ndctS rfl)
         let drvStmt ← Term.elabType drvStmtStx
         Term.synthesizeSyntheticMVarsNoPostponing

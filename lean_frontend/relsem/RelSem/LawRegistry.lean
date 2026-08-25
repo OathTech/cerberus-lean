@@ -199,10 +199,14 @@ initialize registerBuiltinAttribute {
     consult; hardcoded-name dispatch is retired in their favor). -/
 
 /-- All laws of `kind` matching the goal form `e`, most specific
-    first. -/
+    first. REDUCIBLE-transparency matching (measured, arc-18 C1): at
+    ambient default transparency the DiscrTree's key reduction
+    UNFOLDS plain definitions — on `app …` goal forms that runs the
+    interpreter inside the query (a T4 round-18 heartbeat timeout);
+    goal-form keys are matched as spelled, reducible-only. -/
 def query (kind : Name) (e : Expr) : MetaM (Array StepLaw) := do
   let r := stepLawExt.getState (← getEnv)
-  let hits ← r.tree.getMatch e
+  let hits ← withReducible <| r.tree.getMatch e
   return (hits.filter (·.kind == kind)).qsort (fun a b => a.prio > b.prio)
 
 /-- THE dispatch query: exactly one law of `kind`/`variant` must

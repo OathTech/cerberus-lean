@@ -298,7 +298,19 @@ def openVerdict (p : Expr) : TermElabM (Option (Bool × Expr)) := do
 
 /-- The Bool-head prop table (shared by the Bool lane and the
     decide-shape lane's registry-scrutinee case): head constant ↦
-    (relational Prop, true-bridge, false-bridge). -/
+    (relational Prop, true-bridge, false-bridge).
+
+    ENGINE-TO-LAW RESIDUE (arc-18 C1, recorded): this table and the
+    symCmpO bridge pair below are the one surviving hardcoded law
+    map in the engine. The bridges are proof-layer constants defined
+    IN this module (adjacent to their lane, not Kit laws), and the
+    table also DERIVES each bridge's relational Prop — a
+    registry-query version needs premise-instantiation machinery the
+    arc-19 search will build anyway (its side-condition tracing wants
+    exactly that). Registered follow-up, priced S; the C1 record's
+    sweep table carries the entry. New bridge heads still register
+    fail-closed here (an unlisted head mints nothing and the
+    consumer's frontier fires). -/
 def boolHeadProp? (c : Name) (a b : Expr) :
     TermElabM (Option (Expr × Name × Name)) := do
   if c == ``Nat.ble then
