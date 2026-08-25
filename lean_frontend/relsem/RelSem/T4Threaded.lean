@@ -149,26 +149,62 @@ derive_state dRdyT (seed : Nat) (x : Int) : driver_state :=
   { dErrT seed x with
     core_state0 := update_thread_state 0 thRdyT (dErrT seed x).core_state0 }
 
-/-! ## THE DRIVER RUN — the measured S2 frontier
+/-! ## THE DRIVER RUN — the measured S2b frontier (was: the S2
+    frontier at ROUND 2)
 
-    The evaluator drive from `dRdyT` mints round 1 (pure) and STOPS
-    at round 2 — THE STRUCT CREATE: `sizeofCtype structSCty` /
-    `alignofCtype structSCty` consult the tag-table EXTERN
-    (`CerbTags.tagDefs ()`), so the round's ground arithmetic is not
-    kernel-computable WITHOUT the `htags` hypothesis — and the round
-    evaluator is hypothesis-free BY DESIGN (its mints are
-    unconditional equations). This is a DIFFERENT frontier from the
-    S4 collision diagnosis: T4's memory rounds are
-    HYPOTHESIS-CARRYING (struct layout), on top of the env rounds
-    being apartness-carrying. Registered (S2 record): the evaluator
-    extension that threads a hypothesis context (htags/hdig/apartness)
-    through law mints — priced M; with it plus the Kit/Env algebra
-    (landed this slice) the remaining ~54 rounds are the S4-priced
-    mechanical re-derivation. The ambient T4 (T4EnvHyp route) stands
-    untouched. -/
+    Arc-17 S2b: the S2-registered evaluator HYPOTHESIS-THREADING MODE
+    is BUILT (RoundEval `assuming` clause — curated tidy-pattern
+    rewrites + the attribute fence + the materialized-memory twin +
+    the kernel-deferred side-condition engine + the respell bridge;
+    design notes in RoundEval.lean). Under the pack below the drive
+    now mints SEVENTEEN rounds mechanically — through the struct
+    create (round 2, the old frontier), the struct store-unspecified
+    (round 5, the `hunspec` padding image), and the x-symbolic load
+    of v (round 10: the byte roundtrip enters through `hrecv`; the
+    load-round mint cost fell from the S2-recorded ~7 s to ~120 ms
+    via the twin + memoization). Per-round mint: 42–914 ms, flat.
+
+    THE NEW MEASURED FRONTIER — ROUND 18, the conv RANGE CHECK on x:
+    the eval sticks on Int-comparison DECIDABLES over the open x
+    (`match x + 2147483648 with | ofNat _ => isTrue … | negSucc _ =>
+    isFalse …` towers from the inlined stdlib conv body). A REWRITE
+    cannot fix a stuck constructor-match — this needs the ARITH
+    MINTER (mint `⟨stuck decidable/Bool spelling⟩ = ⟨verdict⟩` facts
+    from range hypotheses, omega-backed): the same subsystem the
+    anon-seed comparisons need (seed vs static under `hap`).
+    ENUMERATED REMAINDER (S2b record, priced): (1) the arith minter
+    (M — unlocks the conv rounds AND the Kit/Env-backed anon-env
+    rounds); (2) the SeqRMW mint branch over `perform_seqrmw` (S–M);
+    (3) terminal + wpK walk + statement discharge (S, the T6
+    template). The ambient T4 (T4EnvHyp route) stands untouched. -/
 
 derive_rounds rT (seed : Nat) (x : Int)
-  using (t4File.tagDefs) 0 from (dRdyT seed x) upto 1
+  (hap : seed + 1 < 229457971439601039)
+  (htags : CerbTags.tagDefs () = t4File.tagDefs)
+  (hdig : CerberusFresh.digest () = "")
+  -- the curated layout-fact vocabulary (each DERIVABLE from htags via
+  -- the ambient T4AppEq facts — discharged at the final theorem):
+  (hsz : CerbMem.sizeofCtype structSCty = 8)
+  (halign : CerbMem.alignofIval structSCty
+    = CerbMem.IntegerValue.IV .Prov_none 4)
+  (hshiftA : CerbMem.memberShiftPtrval sPtr structSSym
+    (Identifier CerbLocation.Loc.unknown "a") = sPtr)
+  (hshiftB : CerbMem.memberShiftPtrval sPtr structSSym
+    (Identifier CerbLocation.Loc.unknown "b") = bPtr)
+  (hunspec : CerbMem.memValueToBytes [] (.MVunspecified structSCty)
+    = ([], [CerbMem.paddingByte, CerbMem.paddingByte, CerbMem.paddingByte,
+            CerbMem.paddingByte, CerbMem.paddingByte, CerbMem.paddingByte,
+            CerbMem.paddingByte, CerbMem.paddingByte]))
+  (hszI : CerbMem.sizeofCtype (Ctype [] (Basic (Integer (Signed Int_)))) = 4)
+  -- x-symbolic value facts (the loads' byte roundtrips — derivable
+  -- from the ambient T4AppEq facts under intRange x):
+  (hrecv : CerbMem.reconstructValue [] [] vAddr
+    (Ctype [] (Basic (Integer (Signed Int_))))
+    [mkByte x 0, mkByte x 1, mkByte x 2, mkByte x 3]
+    = CerbMem.MemValue.MVinteger (Signed Int_)
+        (CerbMem.IntegerValue.IV .Prov_none x))
+  assuming hap htags hdig hsz halign hshiftA hshiftB hunspec hszI hrecv
+  using (t4File.tagDefs) 0 from (dRdyT seed x) upto 17
 
 /-! ## THE GUARDED STATEMENT (landed; its theorem is the enumerated
     remaining work above) -/

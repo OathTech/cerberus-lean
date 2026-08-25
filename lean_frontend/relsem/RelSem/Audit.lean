@@ -1160,6 +1160,13 @@ open Lean in
 -- above). 3904 → 3983 (arc-16 S4: the threaded effect-state modules
 -- Threaded/T1Threaded join the closure — 79 declarations, all
 -- boundary-clean, the threaded theorem family trio-exact; pins
+-- 4439 → 4552 (arc-17 S2b cont.: the evaluator HYPOTHESIS-THREADING
+-- MODE lands — RoundEval's engine (HypPack/substitution/
+-- kernel-deferred prover/twin) + the T4 drive's frontier moves from
+-- round 1 to round 17: rT1..rT17 successor defs + _app equations +
+-- the create-round _addr fact, all boundary-clean (the ∀-seed/∀-x
+-- conditional equations carry their hypothesis binders, no new
+-- axioms — this sweep line is the trio-cleanliness witness).
 -- 4438 → 4439 (arc-17 S2b: the runEffectful no-cone-entry gate's
 -- registered-carrier list `runEffectfulCarriers` joins this file).
 -- 4410 → 4438 (arc-17 S2 cont.: T4Threaded — the guarded statement
@@ -1192,7 +1199,7 @@ open Lean in
 -- probe's law layer; the probe fixture file itself is parked OUT of
 -- the build).
 /--
-info: RelSem audit sweep: 4439 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 4552 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do
