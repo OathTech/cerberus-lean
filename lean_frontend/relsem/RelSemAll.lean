@@ -47,10 +47,11 @@ import RelSem.PerStepLaws
 -- ground-fact discharger backing wp_side.
 import RelSem.DeriveState
 import RelSem.WpGround
+-- arc-17 S2: the law-driven round evaluator (memory-round successors
+-- through the Kit law chain; the S1-registered input #1).
+import RelSem.RoundEval
 -- arc-17 S1: the per-construct law registry (fixture-independent
--- construct laws; the equation-supply frontier). The acceptance
--- probe (RelSem/T6Probe.lean) is PARKED OUT OF THE BUILD at its
--- measured frontier — see its header + the S1 record.
+-- construct laws; the equation-supply frontier).
 import RelSem.ConstructLaws
 import RelSem.PerStepTactics
 import RelSem.PerStepTacSmoke
@@ -75,6 +76,9 @@ import RelSem.T2
 import RelSem.T3AppEq
 import RelSem.T3
 import RelSem.T5Fixture
+-- arc-17 S2: the completed acceptance probe (un-parked — the whole
+-- t6 run through the law-driven round evaluator; ∀-seed theorems).
+import RelSem.T6Probe
 import RelSem.T5Prefix
 import RelSem.T5Iter
 import RelSem.T4Defs

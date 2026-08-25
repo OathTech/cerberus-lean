@@ -108,11 +108,15 @@ private def checkClosed (what : String) (e : Expr) : TermElabM Unit := do
 
 /-- Provenance trailer for every emitted constant (the donor records
     producer identity in the artifact — review §1 item 4; ours is the
-    emitter name + arc, since the producer is in-repo). -/
-private def provenance (form : String) : String :=
-  s!"Emitted by `{form}` (RelSem.DeriveState, arc-17 S0; donor pattern: \
-ACL2Lean derive_world, DevQuery.lean:74-87). Do not edit by hand — \
-re-run the emitting command."
+    emitter name + arc, since the producer is in-repo). Public since
+    arc-17 S2: the RoundEval loop emitter stamps the same trailer. -/
+def provenanceNote (form : String) : String :=
+  s!"Emitted by `{form}` (RelSem.DeriveState emitter family, arc-17; \
+donor pattern: ACL2Lean derive_world, DevQuery.lean:74-87). Do not \
+edit by hand — re-run the emitting command."
+
+@[inherit_doc provenanceNote]
+private def provenance (form : String) : String := provenanceNote form
 
 /-- Add the definition (abbrev hints + realizations + docstring).
     `value`/`type` are already closed (binder-abstracted). Must run

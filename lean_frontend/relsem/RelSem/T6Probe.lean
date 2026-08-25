@@ -1,31 +1,40 @@
 /-
-  RelSem.T6Probe — arc-17 S1 (2026-08-24/25): THE ACCEPTANCE PROBE,
-  PARKED AT ITS MEASURED FRONTIER (the charter's stop clause).
+  RelSem.T6Probe — arc-17 S1/S2 (2026-08-24/25): THE ACCEPTANCE PROBE,
+  COMPLETED (un-parked; charter S2 deliverable 1's acceptance).
 
-  NOT IN THE BUILD (deliberately absent from lakefile roots /
-  RelSemAll / Audit): the file is a reproducible record of how far
-  the zero-fixture-equation probe reached and of the precise
-  machinery gap that stops it — run `scripts/capped lake lean` on it
-  (green, ~18 s) to reproduce the frontier. Full account: the S1
-  record (docs/2026-08-24_arc17-s1-equation-frontier.md, acceptance-
-  probe section).
+  History: S1 drove this fixture's zero-fixture-equation proof to the
+  first MEMORY round and PARKED at a measured wall — minting the store
+  round's successor by raw meta whnf allocated past the 64 G cap (S1
+  record §4.2). S2's law-driven round evaluator
+  (RelSem/RoundEval.lean — memory rounds through the Kit law chain,
+  successors ANCHORED as constant-depth records) closes the gap: the
+  ENTIRE run (51 advancing dnms rounds + terminal, mixed
+  tau/runstate/create/store/load classes) is minted by ONE
+  `derive_rounds` command, and the whole-run driver equation
+  (`r_driver`) comes out of the same command via the S1 construct laws
+  (`ndct_offer1`, `driver2_done`).
 
-  Fixture: tests/verify/t6_branch.c (branch + arithmetic + scalar
-  locals; oracle-pinned, drift-gated, 4 harness expectation points,
-  slate concrete points in EmitLeanCoreTest). What stands VERIFIED
-  here: the statement data, the S0-emitter stage mints (globals /
-  resolve / body / param-tys), the named-state ladder, and the
-  mechanical per-round successor mints for the run's first seven
-  (pure) rounds — ZERO fixture-specific equation lemmas anywhere.
-  The park frontier (round 8, the first memory round) is documented
-  at the bottom with its measurements.
+  Fixture: tests/verify/t6_branch.c — `int pick(int x)` with a local,
+  a computed branch, subtraction/addition arms; oracle-pinned,
+  drift-gated, 4 harness expectation points, slate concrete points in
+  EmitLeanCoreTest. Headline: ∀-seed, callND(pick,[10]) = Specified 7,
+  no UB — statements at the threaded faces, cones exactly the
+  classical trio.
 
-  House rules: no sorry, no axioms.
+  ACCOUNTING (the charter bar): ZERO fixture-specific derived-equation
+  lemmas. The per-fixture text is DATA (addresses, byte literals, the
+  named-state ladder) plus one-line INSTANTIATIONS of registered
+  construct laws (`inject_ptr_arg1`, `callND_errno`,
+  `driver_update_ts`) whose side conditions discharge by rfl/decide.
+  All driver rounds are evaluator mints.
+
+  House rules: no sorry, no axioms. Under the in-build audit.
 -/
 
 import RelSem.Threaded
 import RelSem.PerStepTactics
 import RelSem.DeriveState
+import RelSem.RoundEval
 import RelSem.ConstructLaws
 import RelSem.SlateFiles
 
@@ -42,11 +51,6 @@ open Iris Iris.ProgramLogic Iris.BI
 /-- T6's filesystem state (initial, as every slate fixture). -/
 def t6Fs : CerbFS.FsState := CerbFS.fs_initial_state
 
-/-- A loaded specified integer value (the shared T1AppEq spelling,
-    restated to keep this file fixture-import-free). -/
-def loadedV (v : Int) : value :=
-  Vloaded (LVspecified (OVinteger (CerbMem.IntegerValue.IV .Prov_none v)))
-
 /-- T6's pure spec on driver results: pick(10) = 10 - 3 = 7,
     Specified. -/
 def t6Spec (r : driver_result) : Prop :=
@@ -54,7 +58,14 @@ def t6Spec (r : driver_result) : Prop :=
 
 /-! ## Fixture data (addresses, bytes, memory states — DATA, not
     equations; the LP64 allocator is deterministic from the initial
-    state, same layout family as every scalar fixture) -/
+    state, same layout family as every scalar fixture).
+
+    S2 change from the parked frontier: the memory-state ladder is
+    spelled in the Kit laws' COMPUTED-RHS form (`writeBytesTo` layers)
+    rather than insert-chain literals — the recorded heartbeat
+    crossers on the `hout` recast direction (S1 record §4.2, input 5)
+    dissolve because the law output and the named state now match by
+    spelling. -/
 
 /-- `pick`'s single parameter symbol (the emitted decl's binder). -/
 def symX : sym := Symbol "" 16562859848569467201 (SD_Id "x")
@@ -81,36 +92,31 @@ def mkByte (x : Int) (i : Nat) : CerbMem.AbsByte :=
 def uninitByte : CerbMem.AbsByte :=
   { prov := .Prov_none, copyOffset := none, value := none }
 
-/-- Bytemap after the argument's alloc+store (overwrite-chain
-    spelling — the defeq-faithful shape). -/
-def bmX : Std.TreeMap Int CerbMem.AbsByte :=
-  ((((((( Std.TreeMap.empty.insert xAddr uninitByte).insert
-    (xAddr+1) uninitByte).insert (xAddr+2) uninitByte).insert
-    (xAddr+3) uninitByte).insert xAddr (mkByte 10 0)).insert
-    (xAddr+1) (mkByte 10 1)).insert (xAddr+2) (mkByte 10 2)).insert
-    (xAddr+3) (mkByte 10 3)
+/-- Memory after the argument allocation (mem_alloc_block RHS form). -/
+def memArgAlloc : CerbMem.MemState :=
+  CerbMem.writeBytesTo
+    { CerbMem.initialMemState with
+      nextAllocId := 1, lastAddress := xAddr,
+      allocations := Std.TreeMap.empty.insert 0 allocX }
+    xAddr (List.replicate 4 uninitByte)
 
-/-- Bytemap after the errno alloc+zero-store. -/
-def bmD3 : Std.TreeMap Int CerbMem.AbsByte :=
-  ((((((( bmX.insert errAddr uninitByte).insert
-    (errAddr+1) uninitByte).insert (errAddr+2) uninitByte).insert
-    (errAddr+3) uninitByte).insert errAddr (mkByte 0 0)).insert
-    (errAddr+1) (mkByte 0 1)).insert (errAddr+2) (mkByte 0 2)).insert
-    (errAddr+3) (mkByte 0 3)
-
-/-- Memory after the argument injection. -/
+/-- Memory after the argument injection (mem_store_block RHS form). -/
 def memInj : CerbMem.MemState :=
-  { CerbMem.initialMemState with
-    nextAllocId := 1, lastAddress := xAddr,
-    allocations := Std.TreeMap.empty.insert 0 allocX,
-    bytemap := bmX }
+  CerbMem.writeBytesTo { memArgAlloc with funptrmap := [] } xAddr
+    [mkByte 10 0, mkByte 10 1, mkByte 10 2, mkByte 10 3]
+
+/-- Memory after the errno allocation. -/
+def memErrAlloc : CerbMem.MemState :=
+  CerbMem.writeBytesTo
+    { memInj with
+      nextAllocId := 2, lastAddress := errAddr,
+      allocations := (Std.TreeMap.empty.insert 0 allocX).insert 1 allocErr }
+    errAddr (List.replicate 4 uninitByte)
 
 /-- Memory after the errno block (the pre-run memory). -/
 def memD3 : CerbMem.MemState :=
-  { CerbMem.initialMemState with
-    nextAllocId := 2, lastAddress := errAddr,
-    allocations := (Std.TreeMap.empty.insert 0 allocX).insert 1 allocErr,
-    bytemap := bmD3 }
+  CerbMem.writeBytesTo { memErrAlloc with funptrmap := [] } errAddr
+    [mkByte 0 0, mkByte 0 1, mkByte 0 2, mkByte 0 3]
 
 /-- `pick`'s Core body, projected from the emitted (drift-gated)
     declaration. The fallback arm is unreachable (pickT6Decl IS a
@@ -171,90 +177,133 @@ derive_state dRdy (seed : Nat) : driver_state :=
   { dErr seed with
     core_state0 := update_thread_state 0 thRdy (dErr seed).core_state0 }
 
-/-- Round 1 successor (minted; the create of `t`). -/
-derive_state_step r1 (seed : Nat)
-  from (advance_step t6File.tagDefs 0
-    (RelSem.Laws.stepAt t6File.tagDefs 0 (dRdy seed)))
-  at (dRdy seed)
+/-! ## The harness caller-protocol stages (registered construct laws
+    at this fixture's data; side conditions rfl/decide — the S2
+    projection-rewrite + kernel-decide recipe for the allocator
+    arithmetic) -/
 
-/-- Round 2 successor (minted). -/
-derive_state_step r2 (seed : Nat)
-  from (advance_step t6File.tagDefs 0
-    (RelSem.Laws.stepAt t6File.tagDefs 0 (r1 seed)))
-  at (r1 seed)
+/-- The argument injection through `Laws.inject_ptr_arg1` (the
+    one-scalar-argument caller protocol). -/
+theorem t6_inject (seed : Nat) :
+    app (injectArgs t6File.tagDefs 0 [(symX, BTy_object OTy_pointer)]
+        [signed_int] [intValue 10]) (dG seed)
+      = (NDactive [(symX, Vobject (OVpointer xPtr))], dInj seed) :=
+  RelSem.Laws.inject_ptr_arg1
+    (hmv := by exact rfl)
+    (halloc := Kit.mem_alloc_block (ty := signed_int) (sz := 4)
+      (a := xAddr) (by exact rfl)
+      (by rw [show (dG seed).layout_state.lastAddress
+            = 281474976710655 from rfl]; decide) (by exact rfl))
+    (hstore := Kit.mem_store_block (ty := signed_int)
+      (mv := CerbMem.integerValueMval (Signed Int_)
+        (CerbMem.integerIval 10))
+      (allocId := 0) (addr := xAddr)
+      (alloc := allocX) (fpm := [])
+      (bytes := [mkByte 10 0, mkByte 10 1, mkByte 10 2, mkByte 10 3])
+      (by exact rfl) (by exact rfl) (by decide) (by exact rfl)
+      (by exact rfl) (by exact rfl))
+    (hout := rfl)
 
-/-- Round 3 successor (minted). -/
-derive_state_step r3 (seed : Nat)
-  from (advance_step t6File.tagDefs 0
-    (RelSem.Laws.stepAt t6File.tagDefs 0 (r2 seed)))
-  at (r2 seed)
+/-- The errno block through `Laws.callND_errno`. -/
+theorem t6_errno (seed : Nat) :
+    app (liftMem (nd_bind
+        (CerbMem.allocateObject 0 (PrefOther "errno")
+          (CerbMem.alignofIval signed_int) signed_int none none)
+        (fun (ptr_val : CerbMem.PointerValue) =>
+          let zero := CerbMem.integerValueMval (Signed Int_)
+            (CerbMem.integerIval (0 : Int))
+          nd_bind
+            (CerbMem.storeM (CerbLocation.other "errno init")
+              signed_int false ptr_val zero)
+            (fun (_ : CerbMem.Footprint) => nd_return ptr_val))))
+      (dInj seed)
+      = (NDactive errPtr, dErr seed) :=
+  RelSem.Laws.callND_errno
+    (halloc := Kit.mem_alloc_block (ty := signed_int) (sz := 4)
+      (a := errAddr) (by exact rfl)
+      (by rw [show (dInj seed).layout_state.lastAddress
+            = xAddr from rfl]; decide) (by exact rfl))
+    (hstore := Kit.mem_store_block (ty := signed_int)
+      (mv := CerbMem.integerValueMval (Signed Int_)
+        (CerbMem.integerIval 0))
+      (allocId := 1) (addr := errAddr)
+      (alloc := allocErr) (fpm := [])
+      (bytes := [mkByte 0 0, mkByte 0 1, mkByte 0 2, mkByte 0 3])
+      (by exact rfl) (by exact rfl) (by decide) (by exact rfl)
+      (by exact rfl) (by exact rfl))
+    (hout := rfl)
 
-/-- Round 4 successor (minted). -/
-derive_state_step r4 (seed : Nat)
-  from (advance_step t6File.tagDefs 0
-    (RelSem.Laws.stepAt t6File.tagDefs 0 (r3 seed)))
-  at (r3 seed)
+/-! ## THE DRIVER RUN — every round evaluator-minted (RoundEval:
+    memory rounds through the Kit law chain, successors anchored;
+    emits the dnms chain `r_chain`, the scheduler offer `r_ndct`, the
+    final state `r_fin` and the whole-run driver equation
+    `r_driver`) -/
 
-/-- Round 5 successor (minted). -/
-derive_state_step r5 (seed : Nat)
-  from (advance_step t6File.tagDefs 0
-    (RelSem.Laws.stepAt t6File.tagDefs 0 (r4 seed)))
-  at (r4 seed)
+derive_rounds r (seed : Nat) using (t6File.tagDefs) 0 from (dRdy seed)
 
-/-- Round 6 successor (minted). -/
-derive_state_step r6 (seed : Nat)
-  from (advance_step t6File.tagDefs 0
-    (RelSem.Laws.stepAt t6File.tagDefs 0 (r5 seed)))
-  at (r5 seed)
+/-- The finalize result: Specified 7 (kernel-checked at the anchored
+    final state). -/
+theorem t6_result_eq (seed : Nat) :
+    (finalize t6File.tagDefs "callND" (r_fin seed)).dres_core_value
+      = intValue 7 := rfl
 
-/-- Round 7 successor (minted). -/
-derive_state_step r7 (seed : Nat)
-  from (advance_step t6File.tagDefs 0
-    (RelSem.Laws.stepAt t6File.tagDefs 0 (r6 seed)))
-  at (r6 seed)
+/-! ## The statement-facing route: the per-step WP walk, discharged
+    through the threaded adequacy bridges (the T1Threaded template) -/
 
-/-! ## The harness prefix (parked evidence note)
+/-- T6's WP over the per-step instance at the THREADED initial state
+    (all feeds are mints, construct-law instantiations, or the
+    evaluator's whole-run equation). -/
+theorem t6_wpK_thr {GF : BundledGFunctors} [CerbGpreS GF]
+    [CerbGS .hasLC GF] (seed : Nat) :
+    (stateIs (GF := GF) (initial_driver_state_threaded seed t6File t6Fs)) ⊢
+      WP (callK t6File.tagDefs t6File "pick" [intValue 10])
+        @ Stuckness.NotStuck ; ⊤
+        {{ o, ⌜∃ r : driver_result, o = Outcome.value r ∧ t6Spec r⌝ }} := by
+  iintro Hst
+  wp_step (dG_app seed) Hst
+  wp_step (app_nd_get (dG seed)) Hst
+  wp_step (kRes seed) Hst
+  wp_step (kBody seed) Hst
+  wp_step (kTys seed) Hst
+  wp_step (t6_inject seed) Hst
+  wp_step (RelSem.Laws.get_ths_eq (dInj seed)) Hst
+  wp_step (t6_errno seed) Hst
+  wp_step (RelSem.Laws.driver_update_ts 0 _ (dErr seed) (by rfl)) Hst
+  wp_step (r_driver seed) Hst
+  wp_step (app_nd_get (r_fin seed)) Hst
+  wp_done
+  ipureintro
+  exact ⟨_, rfl, t6_result_eq seed⟩
 
-    The full harness-prefix WP walk — 9 `wp_step`s: the minted stage
-    equations above + `Laws.inject_ptr_arg1` / `Laws.get_ths_eq` /
-    `Laws.callND_errno` / `Laws.driver_update_ts` with Kit mem-block
-    facts at this file's literals — elaborated to `stateIs (dRdy
-    seed)` with the loop atom exposed (goal-display transcript in the
-    S1 record). It is not committed here because its tail (the loop
-    equation) is exactly the parked frontier below; standalone
-    `example` forms of the memory-stage instantiations cross the
-    default heartbeat budget on the `hout` recast direction
-    (literal-vs-computed memory defeq — same cost family as the
-    frontier). No heartbeat bump taken, per doctrine. -/
+/-! ## THE THREADED STATEMENTS (fuel-opsem faces, ∀-seed) -/
 
-/-! ## THE PARK FRONTIER (arc-17 S1; the acceptance probe's stop point)
+/-- THE T6 HEADLINE (fuel opsem only): for EVERY fresh-symbol supply
+    seed, every outcome the production runner enumerates for
+    `callND(pick, [intValue 10])` from the threaded initial state is
+    `Active r` with `r.dres_core_value = intValue 7`. -/
+def T6ThreadedStatement : Prop :=
+  ∀ (seed : Nat),
+    CallHarnessAdequateThr seed t6File.tagDefs t6File "pick"
+      [intValue 10] t6Fs t6Spec
 
-    Round 8 is the first MEMORY round (`Step_action_request2`, the
-    store of `t`'s initializer). Its mechanical mint is the measured
-    wall — reproducer (uncomment to reproduce; run via
-    `scripts/capped lake lean` and expect the blast-radius kill):
+/-- **T6 THREADED, UNCONDITIONAL** (cone exactly the classical trio;
+    the S1 acceptance probe's theorem, landed). -/
+theorem T6Threaded : T6ThreadedStatement := by
+  intro seed
+  refine kCallHarnessAdequateThr_of_wp (GF := CerbS) seed
+    t6File.tagDefs t6File "pick" [intValue 10] t6Fs t6Spec ?_
+  intro η
+  exact t6_wpK_thr seed
 
-    derive_state_step r8 (seed : Nat)
-      from (advance_step t6File.tagDefs 0
-        (RelSem.Laws.stepAt t6File.tagDefs 0 (r7 seed)))
-      at (r7 seed)
-
-    Measured (2026-08-25, this worktree):
-    * meta-whnf of the store round's successor allocates past the
-      64 G blast-radius cap at BOTH `.default` and `.all`
-      transparency (single command; capped cgroup kill at ~75 s);
-    * an all-projection body design instead crosses the default
-      heartbeat budget by round 5 (exponential recompute, no
-      memoization);
-    * the run's ground truth (compiled runner, seed 0):
-      44 advancing rounds + terminal, final value Specified(7).
-
-    The pure-round frontier (rounds 1–7 + the full harness-prefix
-    walk below) elaborates in ~17 s with ZERO fixture-specific
-    equations. The gap is S0-emitter-class machinery — a law-driven
-    successor evaluator for memory rounds (compute the post-state
-    through the Kit mem-block laws instead of raw whnf; the
-    HeapLang-ProofMode architecture) — registered in the S1 record
-    as an S2 input. -/
+/-- **T6 THREADED UB-freedom** (same route). -/
+theorem T6Threaded_ubFree :
+    ∀ (seed : Nat),
+      CallHarnessUBFreeThr seed t6File.tagDefs t6File "pick"
+        [intValue 10] t6Fs := by
+  intro seed
+  refine kCallHarnessUBFreeThr_of_wp (GF := CerbS) seed
+    t6File.tagDefs t6File "pick" [intValue 10] t6Fs t6Spec ?_
+  intro η
+  exact t6_wpK_thr seed
 
 end RelSem.T6

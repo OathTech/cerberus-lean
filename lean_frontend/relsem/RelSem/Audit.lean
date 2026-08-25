@@ -153,6 +153,8 @@ import RelSem.PerStepTacSmoke
 -- memoized ground-fact discharger) joins the sweep closure.
 import RelSem.DeriveState
 import RelSem.WpGround
+-- arc-17 S2: the law-driven round evaluator joins the sweep closure.
+import RelSem.RoundEval
 -- arc-17 S1: the per-construct law registry joins the sweep closure
 -- + pins. (The acceptance probe, RelSem/T6Probe.lean, is parked OUT
 -- of the build at its measured frontier — see the S1 record.)
@@ -163,6 +165,9 @@ import RelSem.Threaded
 import RelSem.T1Threaded
 import RelSem.T2Threaded
 import RelSem.T3Threaded
+-- arc-17 S2: the completed acceptance probe joins the sweep closure
+-- + pins (the ∀-seed t6 theorems through the round evaluator).
+import RelSem.T6Probe
 
 namespace RelSem.Audit
 
@@ -504,7 +509,11 @@ def stmtAllowed : List Name :=
    -- generated def with the seed explicit) + the per-fixture threaded
    -- terminal states.
    `RelSem.Cerb.initial_driver_state_threaded,
-   `RelSem.T1.drDone_thr, `RelSem.T2.drDone_thr, `RelSem.T3.drDone_thr]
+   `RelSem.T1.drDone_thr, `RelSem.T2.drDone_thr, `RelSem.T3.drDone_thr,
+   -- arc-17 S2: the completed acceptance probe's fixture data (the
+   -- pinned program term + its fs state — same class as the t1-t4
+   -- rows above).
+   `RelSem.Slate.t6File, `RelSem.T6.t6Fs]
 
 open Lean in
 /-- Syntactic "ends in Prop" (Prop-family def: `Prop` or a pi chain
@@ -581,7 +590,11 @@ open Lean in
      `RelSem.T2.T2Threaded, `RelSem.T2.T2Threaded_ubFree,
      `RelSem.T2.T2ThreadedOutcomes,
      `RelSem.T3.T3Threaded, `RelSem.T3.T3Threaded_ubFree,
-     `RelSem.T3.T3ThreadedOutcomes]
+     `RelSem.T3.T3ThreadedOutcomes,
+     -- arc-17 S2: the completed acceptance probe's ∀-seed family
+     -- (outcome-set companion deliberately absent: priced, not owed
+     -- — the S2 record registers it).
+     `RelSem.T6.T6Threaded, `RelSem.T6.T6Threaded_ubFree]
   for n in slate do
     match stmtViolations env n with
     | .error e => throwError "{e}"
@@ -867,6 +880,19 @@ open Lean in
 #guard_msgs in #print axioms RelSem.T3.T3Threaded_ubFree
 /-- info: 'RelSem.T3.T3ThreadedOutcomes' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T3.T3ThreadedOutcomes
+
+-- arc-17 S2: the completed acceptance probe — the t6 ∀-seed family
+-- and the evaluator-emitted whole-run equations, trio-exact.
+/-- info: 'RelSem.T6.T6Threaded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T6.T6Threaded
+/-- info: 'RelSem.T6.T6Threaded_ubFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T6.T6Threaded_ubFree
+/-- info: 'RelSem.T6.t6_wpK_thr' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T6.t6_wpK_thr
+/-- info: 'RelSem.T6.r_chain' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T6.r_chain
+/-- info: 'RelSem.T6.r_driver' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T6.r_driver
 -- The impure side, LABELED: the ambient bridges mention the ambient
 -- state, so they (and only they) wear the boundary axiom — by design.
 /--
@@ -927,6 +953,9 @@ open Lean in
 -- above). 3904 → 3983 (arc-16 S4: the threaded effect-state modules
 -- Threaded/T1Threaded join the closure — 79 declarations, all
 -- boundary-clean, the threaded theorem family trio-exact; pins
+-- 4128 → 4361 (arc-17 S2: RoundEval meta code + the completed t6
+-- probe — 51 evaluator-minted round decls + equations + the run
+-- artifacts + the ∀-seed theorem family; provenance: the S2 record).
 -- above). 3983 → 4050 (arc-16 S4 cont.: T2Threaded/T3Threaded join
 -- the closure — 67 declarations, all boundary-clean, theorem cones
 -- trio-exact; pins above. T4Threaded deliberately absent: parked at
@@ -949,7 +978,7 @@ open Lean in
 -- probe's law layer; the probe fixture file itself is parked OUT of
 -- the build).
 /--
-info: RelSem audit sweep: 4128 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 4361 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do
