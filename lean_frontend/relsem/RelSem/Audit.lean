@@ -1160,6 +1160,14 @@ open Lean in
 -- above). 3904 → 3983 (arc-16 S4: the threaded effect-state modules
 -- Threaded/T1Threaded join the closure — 79 declarations, all
 -- boundary-clean, the threaded theorem family trio-exact; pins
+-- 4646 → 4712 (arc-17 S3 cont.: THE BUILDER-WALK ENGINE — the
+-- Lem-comparator Bool bridges (natLtb-family ×14), the NonNeg/
+-- decide-shape/bool-eq/verdict-transfer bridges, the env-lookup
+-- lane's symCmpO bridges, closeBoolTower, position-safe
+-- substitution, dual-mode proveHypEq, the relative-chain emitter —
+-- plus the re-minted T4 verdict-fact population under the evolved
+-- lanes (named facts differ; all boundary-clean; the sweep line
+-- remains the trio-cleanliness witness).
 -- 4552 → 4646 (arc-17 S3: THE ARITH MINTER — RoundEval's verdict
 -- lanes + bridge lemmas (dec_eq_isTrue/False, nat_ble/blt/beq
 -- bridges, decide-shape bridges, Int.NonNeg bridges, symCmpO
@@ -1208,7 +1216,7 @@ open Lean in
 -- probe's law layer; the probe fixture file itself is parked OUT of
 -- the build).
 /--
-info: RelSem audit sweep: 4646 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 4712 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do

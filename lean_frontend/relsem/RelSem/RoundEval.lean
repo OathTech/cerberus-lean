@@ -153,6 +153,18 @@ initialize digHook : IO.Ref (Expr → MetaM (Option Expr)) ←
 
 initialize digCache : IO.Ref (Std.HashMap Expr Expr) ← IO.mkRef {}
 
+/-- The active drive's BASE pattern-head fence set (for groundNorm's
+    fenced-head ground escape; set/cleared by the command). -/
+initialize baseFenceHeads : IO.Ref NameSet ← IO.mkRef {}
+
+/-- BUILDER MODE (arc-17 S3): set by `derive_rounds … builder` for
+    walks from a BUILDER state (free component binders). Gates the
+    mechanisms that builder walks need and materialized-state drives
+    must not see (measured regressions both ways): the fenced-head
+    ground escape, the position-safe minted substitution, and the
+    exactness-bridged proof chains. -/
+initialize builderMode : IO.Ref Bool ← IO.mkRef false
+
 /-- Fixpoint normalizer for first-order ground data: whnf the head,
     normalize the arguments, then RE-whnf — literal arithmetic
     (reduceNat/reduceBin) only fires once the arguments are literals,
@@ -186,8 +198,14 @@ def groundNorm (what : String) (e : Expr) : MetaM Expr := do
       | .undef => if ← Meta.isProof e then return e
       let e0 := e
       -- per-whnf scoping (phase note): the fixpoint's step count
-      -- scales with the term, so each head reduction is its own unit
-      let e ← withCurrHeartbeats (whnf e)
+      -- scales with the term, so each head reduction is its own unit.
+      -- writeBytesTo ladders skip the head whnf: reducing the top
+      -- layer forces EVERY layer below in one whnf unit (the S2b
+      -- one-shot-materialization cost, measured again at the T5
+      -- body-walk start); args-first normalization materializes
+      -- layer by layer, each under its own budget.
+      let e ← if e.isAppOfArity ``CerbMem.writeBytesTo 3 then pure e
+              else withCurrHeartbeats (whnf e)
       let r ← do
         if e.isApp then
           let f := e.getAppFn
@@ -203,13 +221,45 @@ def groundNorm (what : String) (e : Expr) : MetaM Expr := do
               args' := args'.set! i (← norm fuel args[i]!)
             pure (mkAppN f args')
           else
-            let args ← e.getAppArgs.mapM (norm fuel)
+            let mut args ← e.getAppArgs.mapM (norm fuel)
+            -- Fin-literal PROOF SCRUB (arc-17 S3): a byte value's
+            -- `Fin.mk` certificate quotes the UNNORMALIZED value
+            -- spelling (proofs are opaque to this normalizer), which
+            -- can embed minted-verdict references and their pack
+            -- binders — a leak into successor defs. At literal
+            -- index/bound the canonical kernel-decide proof replaces
+            -- it (same Prop after normalization; defeq-preserving).
+            if false then pure () -- Fin scrub RETIRED (arc-17 S3):
+              -- the proof-position substitution skip makes it
+              -- redundant, and its canonical proofs mis-typed at one
+              -- measured byte site
             let e' := mkAppN f args
             let e'' ← withCurrHeartbeats (whnf e')
-            if e'' == e' then
-              match ← (← digHook.get) e' with
+            if e'' == e' then do
+              -- FENCED-HEAD GROUND ESCAPE (arc-17 S3): the attribute
+              -- fence exists to keep pack-pattern SPELLINGS visible;
+              -- a fully-CLOSED application of a fenced head is plain
+              -- ground computation and must still reduce (measured:
+              -- a lookup-fact pack fences `fmapLookupBy`, freezing
+              -- the ground extern-resolve wrapper inside every PEsym
+              -- eval). `.all` is attribute-blind; the kernel
+              -- re-checks everything downstream.
+              let escaped? ← (do
+                unless ← (builderMode.get : BaseIO _) do return none
+                if e'.hasFVar || e'.hasExprMVar then return none
+                let .const c _ := f | return none
+                unless (← (baseFenceHeads.get : BaseIO _)).contains c do
+                  return none
+                let r ← (try
+                    withCurrHeartbeats (withTransparency .all (whnf e'))
+                  catch _ => pure e')
+                return if r == e' then none else some r)
+              match escaped? with
               | some r => norm fuel r
-              | none => pure e'
+              | none =>
+                match ← (← digHook.get) e' with
+                | some r => norm fuel r
+                | none => pure e'
             else norm fuel e''
         else pure e
       cache.modify (·.insert e0 r)
@@ -409,27 +459,101 @@ def abstractExact (root pat : Expr) : MetaM Expr := do
       return .done n)
     return e'.abstract #[fv]
 
-/-- Structural single-pattern substitution (minted patterns): direct
-    `Core.transform` replacement, TYPE-CHECK GUARDED (arc-17 S3,
-    measured): a minted verdict is propositionally-not-definitionally
-    equal to its tower, and the same logical tower can occur in
-    defeq-VARIANT spellings inside dependent (motive/branch-type)
-    positions — a partial structural replacement then builds an
-    ill-typed term the kernel rejects at addDecl. The guard `check`s
-    the substituted result and refuses (returns none) instead; the
-    minter's decide-shape lane then mints the enclosing tower, which
-    substitutes the whole dependent cluster atomically. -/
+/-- STRUCTURAL POSITION SAFETY for minted-verdict substitution
+    (arc-17 S3): a verdict is propositionally-not-definitionally
+    equal to its tower, so replacing an occurrence is type-safe only
+    where the surrounding application cannot see the difference —
+    the MAJOR/discriminant of an eliminator whose motive is a
+    NON-DEPENDENT lambda (iota then collapses it), or the instance
+    argument of `ite`/`dite`/`decide`. Everything else is refused
+    (the enclosing-cluster lanes mint those atomically). The earlier
+    `Meta.check` guard was elaborator-lenient where the kernel is
+    not (measured: the T4 round-5 offsetsof cluster). -/
+private def motiveNonDep (m : Expr) : Bool :=
+  match m with
+  | .lam _ _ b _ => !b.hasLooseBVars
+  | _ => false
+
+private partial def substDecSafeCore (root pat rhs : Expr)
+    (found : IO.Ref Bool) : MetaM Expr := do
+  let env ← getEnv
+  let cache ← IO.mkRef ({} : Std.HashMap Expr Expr)
+  let rec go (e : Expr) : MetaM Expr := do
+    unless e.isApp || e.isLambda || e.isForall || e.isLet
+        || e.isMData || e.isProj do return e
+    if let some r := (← cache.get).get? e then return r
+    let r ← (do
+      match e with
+      | .app .. => do
+        let fn := e.getAppFn
+        let args := e.getAppArgs
+        -- which positions may take the verdict directly?
+        let safeIdx : Array Nat ← (do
+          match fn with
+          | .const c _ =>
+            if c == ``ite || c == ``dite then
+              return #[2]
+            else if c == ``decide then
+              return #[1]
+            else if c == ``Decidable.rec then
+              -- @Decidable.rec p motive hf ht major : 5 args
+              if args.size == 5 && motiveNonDep args[1]! then
+                return #[4]
+              return #[]
+            else if isMatcherAppCore env e then
+              if let some ma ← Lean.Meta.matchMatcherApp? e then
+                if motiveNonDep ma.motive then
+                  let base := ma.params.size + 1
+                  return (Array.range ma.discrs.size).map (base + ·)
+              return #[]
+            else if (env.find? c).isSome
+                && (env.find? c matches some (.recInfo _)) then
+              return #[]
+            else return #[]
+          | _ => return #[])
+        let mut newArgs := args
+        for i in [0:args.size] do
+          if args[i]! == pat && safeIdx.contains i then
+            newArgs := newArgs.set! i rhs
+            found.set true
+          else
+            newArgs := newArgs.set! i (← go args[i]!)
+        return mkAppN (← go fn) newArgs
+      | .lam n t b i => return .lam n (← go t) (← go b) i
+      | .forallE n t b i => return .forallE n (← go t) (← go b) i
+      | .letE n t v b nd =>
+        return .letE n (← go t) (← go v) (← go b) nd
+      | .mdata m b => return .mdata m (← go b)
+      | .proj sN i b => return .proj sN i (← go b)
+      | e => return e)
+    cache.modify (·.insert e r)
+    return r
+  go root
+
 def substPatternExact (e lhs rhs : Expr) : MetaM (Option Expr) := do
   let quick := match lhs.getAppFn with
     | .const c _ => (e.find? (fun sub => sub.isConstOf c)).isSome
     | _ => true
   unless quick do return none
+  if ← (builderMode.get : BaseIO _) then
+    -- builder mode: STRUCTURAL position safety
+    let found ← IO.mkRef false
+    let e' ← substDecSafeCore e lhs rhs found
+    if ← found.get then return some e' else return none
+  -- materialized-state mode (the committed S2b/minter behavior):
+  -- full structural replacement, proof-subterms skipped, type-check
+  -- guarded
   let found ← IO.mkRef false
-  let e' ← Core.transform e (post := fun n => do
-    if n == lhs then
-      found.set true
-      return .done rhs
-    return .done n)
+  let e' ← Meta.transform e
+    (pre := fun n => do
+      if (← Meta.isProofQuick n) matches .true then
+        return .done n
+      return .continue)
+    (post := fun n => do
+      if n == lhs then
+        found.set true
+        return .done rhs
+      return .done n)
   unless ← found.get do return none
   try
     withCurrHeartbeats <| check e'
@@ -439,9 +563,17 @@ def substPatternExact (e lhs rhs : Expr) : MetaM (Option Expr) := do
       (result fails type check — dependent-position variant mixing)"
     return none
 
-/-- `abstractExact` with the same type-check guard as
-    `substPatternExact` (the proof-path variant). -/
+/-- `abstractExact` under the SAME structural position discipline as
+    `substPatternExact` (the proof-path variant): only safe
+    occurrences are abstracted. -/
 def abstractExactChecked (e lhs rhs : Expr) : MetaM (Option Expr) := do
+  if ← (builderMode.get : BaseIO _) then
+    let ty ← inferType lhs
+    return ← withLocalDeclD `x ty fun fv => do
+      let found ← IO.mkRef false
+      let e' ← substDecSafeCore e lhs fv found
+      unless ← found.get do return none
+      return some (e'.abstract #[fv])
   let abst ← abstractExact e lhs
   unless abst.hasLooseBVars do return none
   try
@@ -545,6 +677,7 @@ def proveSubstEq (hp : HypPack) (lhs rhs : Expr) : TermElabM Expr := withCurrHea
   | some p => return p
   | none => mkEqRefl rhs
 
+
 /-- THE STUCK-COMPARISON FACT MINTER (v1 registry; grown empirically,
     fail-closed — an unregistered stuck shape simply mints nothing and
     the consumer's frontier fires with the term printed). Scans `e`
@@ -639,7 +772,7 @@ def hypNorm (hp : HypPack) (what : String) (e : Expr) :
     `kabstract`+`congrArg`, repeat; finish with `rfl` (elaborator
     defeq) or kernel `decide`. Every step is an ordinary term the
     kernel re-checks at addDecl (the S0 donor contract). -/
-def proveHypEq (hp : HypPack) (lhs rhs : Expr) : TermElabM Expr := do
+def proveHypEqMat (hp : HypPack) (lhs rhs : Expr) : TermElabM Expr := do
   let mut cur := lhs
   let mut pf : Option Expr := none
   -- One subst/norm/mint pass; returns (continue?, cur', pf'). Runs
@@ -734,6 +867,146 @@ def proveHypEq (hp : HypPack) (lhs rhs : Expr) : TermElabM Expr := do
   | none => return fin
   | some p => mkEqTrans p fin
 
+/-- Build a proof of `lhs = rhs` by the directed chain: normalize
+    (defeq, free), substitute one registered rewrite via
+    `kabstract`+`congrArg`, repeat; finish with `rfl` (elaborator
+    defeq) or kernel `decide`. Every step is an ordinary term the
+    kernel re-checks at addDecl (the S0 donor contract). -/
+def proveHypEqBld (hp : HypPack) (lhs rhs : Expr) : TermElabM Expr := do
+  let mut cur := lhs
+  let mut pf : Option Expr := none
+  -- One subst/norm/mint pass; returns (continue?, cur', pf'). Runs
+  -- under its OWN default heartbeat budget (arc-17 S3 — the mint loop
+  -- re-normalizes the term once per unblocked tower, so the pass
+  -- count scales with the round's comparison population; budget
+  -- SCOPING at the default value, not a raise — the hypNorm note).
+  let step := fun (it : Nat) (cur : Expr) (pf : Option Expr) =>
+    withCurrHeartbeats (do
+    let tIt ← IO.monoMsNow
+    -- NOTE (measured): the materialized twin must NEVER be
+    -- substituted into a GOAL — its accumulated tree-WF proof terms
+    -- make every later kabstract traversal ~1.2 s. The twin serves
+    -- VALUE derivation (hypNorm/evalGround) only; goals keep the
+    -- spelling and the kernel-deferred finisher walks it
+    -- heartbeat-free.
+    -- substitute-first (see hypNorm): find a registered pattern in
+    -- the CURRENT spelling before normalization explodes it; only
+    -- normalize when nothing matches.
+    let pairs ← hp.pairs
+    let mut found : Option (HypRw × Expr) := none
+    for r in pairs do
+      if found.isNone then
+        let quick := match r.lhs.getAppFn with
+          | .const c _ => (cur.find? (·.isConstOf c)).isSome
+          | _ => true
+        if quick then
+          if r.syntactic then
+            if let some abst ← abstractExactChecked cur r.lhs r.rhs then
+              found := some (r, abst)
+          else
+            let abst ← kabstract cur r.lhs
+            if abst.hasLooseBVars then found := some (r, abst)
+    trace[RelSem.roundEval] "proveHypEq[{it}] pattern scan done {(← IO.monoMsNow) - tIt} ms; found={found.isSome}"
+    -- exposure normalization ONLY while nothing has been substituted
+    -- yet (the hidden-pattern class, e.g. an eval step whose payload
+    -- exposes a fenced head after one unfold burst). Once the chain
+    -- has a substitution and no pattern remains, the kernel finisher
+    -- takes over — deep-normalizing ladder goals here was the
+    -- measured budget killer.
+    -- (the S2b-era early break on pf.isSome is GONE, arc-17 S3: at a
+    -- builder state later stuck sites surface only after further
+    -- normalization, and every hop is now bridged EXACTLY, so full
+    -- subst/normalize alternation is both needed and sound; per-hop
+    -- budget scoping keeps it affordable)
+    let n ← match found with
+      | some _ => pure cur
+      | none => groundNormFenced hp "proveHypEq" cur
+    trace[RelSem.roundEval] "proveHypEq[{it}] norm done {(← IO.monoMsNow) - tIt} ms"
+    if found.isNone && n != cur then
+      -- re-scan the normalized spelling
+      for r in pairs do
+        if found.isNone then
+          let quick := match r.lhs.getAppFn with
+            | .const c _ => (n.find? (·.isConstOf c)).isSome
+            | _ => true
+          if quick then
+            if r.syntactic then
+              if let some abst ← abstractExactChecked n r.lhs r.rhs then
+                found := some (r, abst)
+            else
+              let abst ← kabstract n r.lhs
+              if abst.hasLooseBVars then found := some (r, abst)
+    match found with
+    | some (r, abst) =>
+      -- CHAIN EXACTNESS (arc-17 S3): the chain invariant is
+      -- `pf : lhs = cur` with a SYNTACTIC cur — every normalization
+      -- hop is carried by its own kernel-deferred bridge
+      -- (`Eq.refl` type-hinted at `cur = n`), never by mkEqTrans's
+      -- implicit midpoint unification (measured: a builder-state
+      -- midpoint the elaborator glued and the kernel rejected).
+      let src := if found.isSome && n != cur then n else cur
+      let mut pf := pf
+      if src != cur then
+        let bridge ← mkExpectedTypeHint (← mkEqRefl src)
+          (← mkEq cur src)
+        pf := some (← match pf with
+          | none => pure bridge
+          | some p => mkEqTrans p bridge)
+      let motive := Lean.mkLambda `x .default (← inferType r.lhs) abst
+      let piece0 ← mkCongrArg motive r.prf
+      -- hint the piece at the SYNTACTIC endpoints (beta-reduced)
+      let src' := abst.instantiate1 r.rhs
+      let piece ← mkExpectedTypeHint piece0 (← mkEq src src')
+      let pf' := some (← match pf with
+        | none => pure piece
+        | some p => mkEqTrans p piece)
+      return (true, src', pf')
+    | none =>
+      let mint ← mintHook.get
+      if ← mint hp n then
+        -- normalization hop bridged explicitly (see above)
+        let mut pf := pf
+        if n != cur then
+          let bridge ← mkExpectedTypeHint (← mkEqRefl n) (← mkEq cur n)
+          pf := some (← match pf with
+            | none => pure bridge
+            | some p => mkEqTrans p bridge)
+        return (true, n, pf)
+      return (false, n, pf) :
+    TermElabM (Bool × Expr × Option Expr))
+  for it in [0:64] do
+    if cur == rhs then break
+    let (cont, cur', pf') ← step it cur pf
+    cur := cur'
+    pf := pf'
+    unless cont do break
+  trace[RelSem.roundEval] "proveHypEq: chain built, finishing"
+  -- KERNEL-DEFERRED finisher (arc-17 S2b, measured): the elaborator's
+  -- lazy defeq on ladder-walking residuals is the budget burn point
+  -- (t4 load rounds: >200k heartbeats), while the KERNEL recomputes
+  -- the same facts heartbeat-free at the round's addDecl (the S0
+  -- recompute-and-check contract — a wrong residual is a LOUD addDecl
+  -- failure naming the round, never a silent pass). So the finisher
+  -- emits `Eq.refl rhs` and lets the kernel judge; syntactic equality
+  -- short-circuits the common case.
+  match pf with
+  | none => return ← mkExpectedTypeHint (← mkEqRefl rhs) (← mkEq lhs rhs)
+  | some p => do
+    -- the final hop, hinted at the exact endpoints
+    let curFinal ← (do
+      let ty ← instantiateMVars (← inferType p)
+      match ty.eq? with
+      | some (_, _, r) => pure r
+      | none => pure rhs)
+    let fin ← mkExpectedTypeHint (← mkEqRefl rhs) (← mkEq curFinal rhs)
+    mkEqTrans p fin
+
+
+/-- Mode dispatcher (see `builderMode`). -/
+def proveHypEq (hp : HypPack) (lhs rhs : Expr) : TermElabM Expr := do
+  if ← (builderMode.get : BaseIO _) then proveHypEqBld hp lhs rhs
+  else proveHypEqMat hp lhs rhs
+
 /-- `hyp_norm_side`: the law side-condition tactic of hypothesis mode
     — proves `lhs = rhs` goals via `proveHypEq` against the active
     pack. Only meaningful inside a `derive_rounds … assuming …`
@@ -759,6 +1032,33 @@ elab "hyp_norm_side" : tactic => do
   g.assign pf
   Lean.Elab.Tactic.replaceMainGoal []
 
+/-- Free DATA variables of a term: fvars occurring outside PROOF
+    subterms (arc-17 S3 — a minted-fact reference inside a Fin/
+    tree-WF certificate is proof content, data-irrelevant by proof
+    irrelevance, and must not trip the closedness frontier). -/
+private partial def collectDataFVars (e : Expr) : MetaM (Array FVarId) := do
+  let seen ← IO.mkRef ({} : Std.HashSet Expr)
+  let out ← IO.mkRef (#[] : Array FVarId)
+  let rec go (e : Expr) : MetaM Unit := do
+    unless e.hasFVar do return
+    if (← seen.get).contains e then return
+    seen.modify (·.insert e)
+    match ← Meta.isProofQuick e with
+    | .true => return
+    | _ => pure ()
+    match e with
+    | .fvar id =>
+      unless (← out.get).contains id do out.modify (·.push id)
+    | .app f a => go f; go a
+    | .lam _ t b _ => go t; go b
+    | .forallE _ t b _ => go t; go b
+    | .letE _ t v b _ => go t; go v; go b
+    | .mdata _ b => go b
+    | .proj _ _ b => go b
+    | _ => pure ()
+  go e
+  out.get
+
 /-- Hypothesis-aware `evalGround`: normalization through the pack;
     metavariables always reject; free variables must be the command's
     VALUE binders (open data like `seed + 2` is legal in hypothesis
@@ -773,7 +1073,7 @@ def evalGroundH (hp : HypPack) (what : String) (e : Expr) :
     throwFrontier m!"derive_rounds: ground evaluation of {what} left \
       metavariables:{indentExpr r}"
   let mut bad : Array Expr := #[]
-  for fv in (collectFVars {} r).fvarIds do
+  for fv in (← collectDataFVars r) do
     let fe := Expr.fvar fv
     if hp.valueFVars.contains fe then continue
     bad := bad.push fe
@@ -891,12 +1191,78 @@ structure MintedRound where
   cls : String
   deriving Inhabited
 
+/-- Default any leftover UNCONSTRAINED level metavariables to zero
+    (arc-17 S3): law elaboration at a builder-state σ0 can leave a
+    payload's container universes unconstrained (`List.{?u}` in
+    quoted AST data — all Type-0 data here); the kernel re-checks the
+    defaulted result at addDecl. -/
+private def defaultLevelMVars (e : Expr) : MetaM Expr := do
+  let e ← instantiateMVars e
+  unless e.hasLevelMVar do return e
+  let st := collectLevelMVars {} e
+  for id in st.result do
+    assignLevelMVar id .zero
+  instantiateMVars e
+
 /-- Shared declaration emitter: `def name bs := value` (abbrev hints +
     realizations, like the S0 emitter) plus optionally nothing else. -/
 private def emitFlatDef (declName : Name) (fvars : Array Expr)
     (value : Expr) (doc : String) : TermElabM Unit := do
-  let type ← mkForallFVars fvars (← inferType value)
-  let val ← mkLambdaFVars fvars value
+  let value ← instantiateMVars value
+  let type ← defaultLevelMVars (← mkForallFVars fvars (← inferType value))
+  let val ← defaultLevelMVars (← mkLambdaFVars fvars value)
+  if val.hasLevelMVar || type.hasLevelMVar then
+    let mut path : Array MessageData := #[]
+    let mut cur := if val.hasLevelMVar then val else type
+    for _ in [0:64] do
+      let children : Array Expr := match cur with
+        | .app .. => cur.getAppArgs.push cur.getAppFn
+        | .lam _ t b _ => #[t, b]
+        | .forallE _ t b _ => #[t, b]
+        | .letE _ t v b _ => #[t, v, b]
+        | .mdata _ b => #[b]
+        | .proj _ _ b => #[b]
+        | _ => #[]
+      match children.find? (·.hasLevelMVar) with
+      | some nx =>
+        path := path.push m!"{cur.getAppFn}"
+        cur := nx
+      | none =>
+        path := path.push m!"LEAF {cur}"
+        break
+    throwError "derive_rounds: emitted {declName} has LEVEL \
+      metavariables; descent: {path.toList}"
+  if val.hasFVar then
+    -- diagnostic (fail-closed either way — addDecl would reject):
+    -- name the leftover fvars and the smallest app subterm carrying
+    -- the first one
+    let bad := (collectFVars {} val).fvarIds
+    let mut path : Array MessageData := #[]
+    if let some fv0 := bad[0]? then
+      let mut cur := val
+      for _ in [0:64] do
+        let children : Array Expr := match cur with
+          | .app .. => cur.getAppArgs.push cur.getAppFn
+          | .lam _ t b _ => #[t, b]
+          | .forallE _ t b _ => #[t, b]
+          | .letE _ t v b _ => #[t, v, b]
+          | .mdata _ b => #[b]
+          | .proj _ _ b => #[b]
+          | _ => #[]
+        let next? := children.find? (·.hasAnyFVar (· == fv0))
+        match next? with
+        | some nx =>
+          path := path.push m!"{cur.getAppFn}"
+          cur := nx
+        | none =>
+          path := path.push m!"LEAF {cur}"
+          break
+    let names ← bad.mapM (fun fv => do
+      match (← getLCtx).find? fv with
+      | some d => pure d.userName
+      | none => pure fv.name)
+    throwError "derive_rounds: emitted {declName} has leftover free \
+      variables {names}; descent path heads: {path.toList}"
   if type.hasExprMVar || val.hasExprMVar then
     throwError "derive_rounds: emitted {declName} has metavariables"
   if type.hasSorry || val.hasSorry then
@@ -917,8 +1283,8 @@ private def emitFlatDef (declName : Name) (fvars : Array Expr)
 
 private def emitThm (thmName : Name) (fvars : Array Expr)
     (stmt proof : Expr) (doc : String) : TermElabM Unit := do
-  let type ← instantiateMVars (← mkForallFVars fvars stmt)
-  let value ← instantiateMVars (← mkLambdaFVars fvars proof)
+  let type ← defaultLevelMVars (← mkForallFVars fvars stmt)
+  let value ← defaultLevelMVars (← mkLambdaFVars fvars proof)
   if type.hasExprMVar || value.hasExprMVar then
     throwError "derive_rounds: emitted {thmName} has metavariables"
   if type.hasLevelMVar then
@@ -935,7 +1301,14 @@ private def emitThm (thmName : Name) (fvars : Array Expr)
   try
     addDecl <| .thmDecl { name := thmName, levelParams := [], type, value }
   catch ex =>
-    throwError "derive_rounds: addDecl of {thmName} FAILED: {ex.toMessageData}"
+    -- failure localization: the elaborator check's error pretty-
+    -- prints where the kernel's often cannot
+    let checkMsg ← (try
+        withCurrHeartbeats (check value)
+        pure m!"(elaborator check PASSES)"
+      catch ex2 => pure m!"elaborator check says: {ex2.toMessageData}")
+    throwError "derive_rounds: addDecl of {thmName} FAILED: \
+      {ex.toMessageData}\n--- {checkMsg}"
   addDocStringCore thmName doc
 
 /-- Emit a kernel-certified ground fact `∀ bs, stmt` with proof
@@ -1034,6 +1407,35 @@ theorem nat_beq_false {a b : Nat} (h : ¬ a = b) : Nat.beq a b = false := by
   | true => exact absurd (Nat.eq_of_beq_eq_true hb) h
   | false => rfl
 
+/-! Lem Bool-comparator bridges (`natLtb`-family: `Bool := a < b`
+    decide-coercions; proofs are `decide_eq_true/false` at the folded
+    spelling). -/
+
+theorem natLtb_true {a b : Nat} (h : a < b) : natLtb a b = true := decide_eq_true h
+theorem natLtb_false {a b : Nat} (h : ¬ a < b) : natLtb a b = false := decide_eq_false h
+theorem natLteb_true {a b : Nat} (h : a ≤ b) : natLteb a b = true := decide_eq_true h
+theorem natLteb_false {a b : Nat} (h : ¬ a ≤ b) : natLteb a b = false := decide_eq_false h
+theorem natGteb_true {a b : Nat} (h : a ≥ b) : natGteb a b = true := decide_eq_true h
+theorem natGteb_false {a b : Nat} (h : ¬ a ≥ b) : natGteb a b = false := decide_eq_false h
+theorem intLtb_true {a b : Int} (h : a < b) : intLtb a b = true := decide_eq_true h
+theorem intLtb_false {a b : Int} (h : ¬ a < b) : intLtb a b = false := decide_eq_false h
+theorem intLteb_true {a b : Int} (h : a ≤ b) : intLteb a b = true := decide_eq_true h
+theorem intLteb_false {a b : Int} (h : ¬ a ≤ b) : intLteb a b = false := decide_eq_false h
+theorem intGtb_true {a b : Int} (h : a > b) : intGtb a b = true := decide_eq_true h
+theorem intGtb_false {a b : Int} (h : ¬ a > b) : intGtb a b = false := decide_eq_false h
+theorem intGteb_true {a b : Int} (h : a ≥ b) : intGteb a b = true := decide_eq_true h
+theorem intGteb_false {a b : Int} (h : ¬ a ≥ b) : intGteb a b = false := decide_eq_false h
+
+theorem verdict_transfer_true {p q : Prop} (h : p = q) (hq : q) : p :=
+  h ▸ hq
+theorem verdict_transfer_false {p q : Prop} (h : p = q) (hnq : ¬q) :
+    ¬p := h ▸ hnq
+
+theorem bool_ne_false_of_true {b : Bool} (h : b = true) :
+    ¬ b = false := by simp [h]
+theorem bool_ne_true_of_false {b : Bool} (h : b = false) :
+    ¬ b = true := by simp [h]
+
 /-! decide-shape bridges (the outer-tower lane). -/
 
 theorem decide_not_false {p : Prop} [Decidable p] (h : p) :
@@ -1075,7 +1477,9 @@ theorem int_not_nonneg_of_lt {a : Int} (h : a < 0) : ¬ a.NonNeg :=
 
 /-- Bool-lane registry (v1; grown empirically, fail-closed). -/
 private def registryBoolHead (c : Name) : Bool :=
-  c == ``Nat.ble || c == ``Nat.blt || c == ``Nat.beq
+  c == ``Nat.ble || c == ``Nat.blt || c == ``Nat.beq ||
+  c == ``natLtb || c == ``natLteb || c == ``natGteb ||
+  c == ``intLtb || c == ``intLteb || c == ``intGtb || c == ``intGteb
 
 /-- Decidable-instance heads worth testing BEFORE whnf explodes them
     (post-explosion towers are caught by the matcher filter). -/
@@ -1083,7 +1487,8 @@ private def registryDecHead (c : Name) : Bool :=
   c == ``Nat.decLt || c == ``Nat.decLe || c == ``Nat.decEq ||
   c == ``Int.decLt || c == ``Int.decLe || c == ``Int.decEq ||
   c == ``Int.decNonneg ||
-  c == ``instDecidableEqNat || c == ``Int.instDecidableEq
+  c == ``instDecidableEqNat || c == ``Int.instDecidableEq ||
+  c == ``instDecidableEqBool
 
 /-- Recursor-like heads: whnf's smart unfolding leaves stuck towers
     as raw `rec`/`casesOn` applications (the S2b "raw Acc.rec towers"
@@ -1113,7 +1518,7 @@ private partial def collectMintCands (root : Expr) :
       unless e.hasLooseBVars do
         if let .const c _ := e.getAppFn then
           if registryBoolHead c || registryDecHead c
-              || c == ``fmapLookupBy
+              || c == ``fmapLookupBy || c == ``BEq.beq
               || isMatcherAppCore env e || recLikeHead env c then
             out.modify (·.push e)
     | .lam _ t b _ => go t; go b
@@ -1205,6 +1610,8 @@ private def foldArith (e : Expr) : MetaM Expr :=
     else if c == ``Int.emod then fold2 ``HMod.hMod
     else if c == ``Int.lt then fold2 ``LT.lt
     else if c == ``Int.le then fold2 ``LE.le
+    else if c == ``Nat.lt then fold2 ``LT.lt
+    else if c == ``Nat.le then fold2 ``LE.le
     else if c == ``Int.neg && args.size == 1 then
       return .done (← mkAppMU ``Neg.neg #[args[0]!])
     else if c == ``Int.negOfNat && args.size == 1 then
@@ -1259,9 +1666,15 @@ private def mintEmitSide (hp : HypPack) (stmt pf : Expr) (what : String) :
   let idx ← hp.mintIdx.get
   hp.mintIdx.set (idx + 1)
   let name := (hp.baseName.appendAfter "s").appendAfter (toString idx)
-  emitThm name hp.fvars stmt pf
+  -- close over (and reference with) only the binders the fact
+  -- actually uses — a GROUND fact referenced with the full telescope
+  -- drags the Prop binders into every substitution site (measured:
+  -- the T5 entry probe's successor-def fvar leak)
+  let used := hp.fvars.filter (fun fv =>
+    stmt.containsFVar fv.fvarId! || pf.containsFVar fv.fvarId!)
+  emitThm name used stmt pf
     s!"Arith-minter side fact ({what}). {provenanceNote "derive_rounds"}"
-  return mkAppN (mkConst name) hp.fvars
+  return mkAppN (mkConst name) used
 
 /-- Emit a minted verdict fact (`<base>_hf<i>`, ∀-closed over the
     telescope, kernel-checked) and register its rewrite. Fail-closed:
@@ -1274,13 +1687,216 @@ private def mintEmit (hp : HypPack) (d rhs prf : Expr) (what : String) :
   let idx ← hp.mintIdx.get
   hp.mintIdx.set (idx + 1)
   let name := hp.baseName.appendAfter (toString idx)
-  emitThm name hp.fvars (← mkEq d rhs) prf
+  let stmt ← mkEq d rhs
+  let used := hp.fvars.filter (fun fv =>
+    stmt.containsFVar fv.fvarId! || prf.containsFVar fv.fvarId!)
+  emitThm name used stmt prf
     s!"Arith-minter fact ({what}). {provenanceNote "derive_rounds"}"
   let rw : HypRw :=
-    { lhs := d, rhs := rhs, prf := mkAppN (mkConst name) hp.fvars,
+    { lhs := d, rhs := rhs, prf := mkAppN (mkConst name) used,
       syntactic := true }
   hp.minted.modify (·.push rw)
   trace[RelSem.roundEval] "arith minter: {name} ({what})"
+
+/-- The Bool-head prop table (shared by the Bool lane and the
+    decide-shape lane's registry-scrutinee case): head constant ↦
+    (relational Prop, true-bridge, false-bridge). -/
+private def boolHeadProp? (c : Name) (a b : Expr) :
+    TermElabM (Option (Expr × Name × Name)) := do
+  if c == ``Nat.ble then
+    return some (← mkAppMU ``LE.le #[a, b],
+      ``RelSem.RoundEval.nat_ble_true, ``RelSem.RoundEval.nat_ble_false)
+  else if c == ``Nat.blt then
+    return some (← mkAppMU ``LT.lt #[a, b],
+      ``RelSem.RoundEval.nat_blt_true, ``RelSem.RoundEval.nat_blt_false)
+  else if c == ``Nat.beq then
+    return some (← mkAppMU ``Eq #[a, b],
+      ``RelSem.RoundEval.nat_beq_true, ``RelSem.RoundEval.nat_beq_false)
+  else if c == ``natLtb then
+    return some (← mkAppMU ``LT.lt #[a, b],
+      ``RelSem.RoundEval.natLtb_true, ``RelSem.RoundEval.natLtb_false)
+  else if c == ``natLteb then
+    return some (← mkAppMU ``LE.le #[a, b],
+      ``RelSem.RoundEval.natLteb_true, ``RelSem.RoundEval.natLteb_false)
+  else if c == ``natGteb then
+    return some (← mkAppMU ``GE.ge #[a, b],
+      ``RelSem.RoundEval.natGteb_true, ``RelSem.RoundEval.natGteb_false)
+  else if c == ``intLtb then
+    return some (← mkAppMU ``LT.lt #[a, b],
+      ``RelSem.RoundEval.intLtb_true, ``RelSem.RoundEval.intLtb_false)
+  else if c == ``intLteb then
+    return some (← mkAppMU ``LE.le #[a, b],
+      ``RelSem.RoundEval.intLteb_true, ``RelSem.RoundEval.intLteb_false)
+  else if c == ``intGtb then
+    return some (← mkAppMU ``GT.gt #[a, b],
+      ``RelSem.RoundEval.intGtb_true, ``RelSem.RoundEval.intGtb_false)
+  else if c == ``intGteb then
+    return some (← mkAppMU ``GE.ge #[a, b],
+      ``RelSem.RoundEval.intGteb_true, ``RelSem.RoundEval.intGteb_false)
+  else return none
+
+/-- ITERATIVE BOOL-TOWER CLOSER (arc-17 S3): drive a stuck Bool term
+    to a literal by alternating (scoped) whnf hops — bridged by
+    kernel-deferred refls — with inner-decidable verdict
+    substitutions — bridged by congrArg over the proof-irrelevance
+    verdict — until a literal falls out. Returns `(lit, h : b = lit)`.
+    The verdict search is passed in (breaks the mutual recursion with
+    `propVerdict`). -/
+private partial def closeBoolTower
+    (verdict : Expr → TermElabM (Option (Bool × Expr)))
+    (b0 : Expr) (cdepth : Nat := 0) :
+    TermElabM (Option (Expr × Expr)) := do
+  if cdepth > 10 then return none
+  let mut bCur := b0
+  let mut chain : Option Expr := none   -- : b0 = bCur (syntactic)
+  for _ in [0:32] do
+    let bv ← (try withCurrHeartbeats (whnf bCur) catch _ => pure bCur)
+    if bv != bCur then
+      let br ← mkExpectedTypeHint (← mkEqRefl bv) (← mkEq bCur bv)
+      chain := some (← match chain with
+        | none => pure br
+        | some c => mkEqTrans c br)
+      bCur := bv
+    if bCur.isConstOf ``Bool.true || bCur.isConstOf ``Bool.false then
+      let hFin ← match chain with
+        | some c => pure c
+        | none => mkExpectedTypeHint (← mkEqRefl bCur) (← mkEq b0 bCur)
+      return some (bCur, hFin)
+    -- registry-headed towers close directly through the bridges
+    -- (`BEq.beq` at Nat routes through the Nat.beq bridges — the
+    -- conclusions are defeq, carried by the type hint below)
+    let regArgs? : Option (Name × Expr × Expr) :=
+      match bCur.getAppFn with
+      | .const bc _ =>
+        let args := bCur.getAppArgs
+        if args.size == 2 then some (bc, args[0]!, args[1]!)
+        else if bc == ``BEq.beq && args.size == 4
+            && args[0]!.isConstOf ``Nat then
+          some (``Nat.beq, args[2]!, args[3]!)
+        else none
+      | _ => none
+    if let some (bc, aA, aB) := regArgs? then
+        if let some (q0, brTrue, brFalse) ← boolHeadProp? bc aA aB then
+          let q ← foldArith q0
+          if let some (polq, pfq) ← verdict q then
+            let hV ← if polq then mkAppMU brTrue #[pfq]
+                     else mkAppMU brFalse #[pfq]
+            let litE := if polq then mkConst ``Bool.true
+                        else mkConst ``Bool.false
+            let hV ← mkExpectedTypeHint hV (← mkEq bCur litE)
+            let hFin ← match chain with
+              | some c => mkEqTrans c hV
+              | none => pure hV
+            return some (litE, hFin)
+          return none
+    let mut progressed := false
+    -- Bool.rec / Bool-matcher over a stuck scrutinee: close the
+    -- scrutinee recursively and substitute (the race-check
+    -- `Bool.rec (…) (…) ((fun x => …) (DA_pos …))` shape)
+    let major? : Option Expr ← (do
+      if bCur.isAppOf ``Bool.rec && bCur.getAppArgs.size ≥ 1 then
+        return some bCur.getAppArgs.back!
+      if let some ma ← Lean.Meta.matchMatcherApp? bCur then
+        if ma.discrs.size ≥ 1 then
+          let dsc := ma.discrs[0]!
+          let tyD ← whnfU (← inferType dsc)
+          if tyD.isConstOf ``Bool then return some dsc
+      return none)
+    if let some major := major? then
+      unless major.isConstOf ``Bool.true
+          || major.isConstOf ``Bool.false do
+        let step? ← (try
+          (do
+            let some (lit', hSub) ←
+                closeBoolTower verdict major (cdepth + 1) | return none
+            let abst ← abstractExact bCur major
+            unless abst.hasLooseBVars do return none
+            let bNext := abst.instantiate1 lit'
+            let motive := Lean.mkLambda `x .default
+              (← inferType major) abst
+            let piece ← mkExpectedTypeHint (← mkCongrArg motive hSub)
+              (← mkEq bCur bNext)
+            return some (bNext, piece)
+            : TermElabM (Option (Expr × Expr)))
+          catch _ => pure none)
+        if let some (bNext, piece) := step? then
+          chain := some (← match chain with
+            | none => pure piece
+            | some c => mkEqTrans c piece)
+          bCur := bNext
+          progressed := true
+    -- find an inner stuck decidable and substitute its verdict
+    let inners ← collectMintCands bCur
+    for d' in inners do
+      if progressed then continue
+      if d' == bCur then continue
+      if d'.isAppOf ``Decidable.isTrue
+          || d'.isAppOf ``Decidable.isFalse then continue
+      let step? ← (try
+        (do
+          let tyW' ← whnfU (← inferType d')
+          let mut sub? : Option (Expr × Expr) := none  -- (vTerm, hIn)
+          if tyW'.isAppOfArity ``Decidable 1 then
+            let q' ← foldArith (← withCurrHeartbeats
+              (groundNorm "inner prop" tyW'.appArg!))
+            if !(q'.hasExprMVar || q'.hasLooseBVars) then
+            if let some (polq, pfq) ← verdict q' then
+              let vTerm := if polq then
+                  mkApp2 (mkConst ``Decidable.isTrue) q' pfq
+                else mkApp2 (mkConst ``Decidable.isFalse) q' pfq
+              let hIn := if polq then
+                  mkApp3 (mkConst ``RelSem.RoundEval.dec_eq_isTrue)
+                    q' pfq d'
+                else mkApp3 (mkConst ``RelSem.RoundEval.dec_eq_isFalse)
+                    q' pfq d'
+              sub? := some (vTerm, hIn)
+          else if tyW'.isConstOf ``Bool && d'.isApp then
+            -- Bool-typed inner tower: close recursively
+            if let some (lit', hSub) ←
+                closeBoolTower verdict d' (cdepth + 1) then
+              sub? := some (lit', hSub)
+          if sub?.isNone then
+            trace[RelSem.roundEval] "closeBoolTower: inner {d'.getAppFn} no verdict"
+          let some (vTerm, hIn) := sub? | return none
+          -- self-insertion guard (the mintEmit drip lesson)
+          if (vTerm.find? (· == d')).isSome then return none
+          let abst ← abstractExact bCur d'
+          unless abst.hasLooseBVars do return none
+          let bNext := abst.instantiate1 vTerm
+          let motive := Lean.mkLambda `x .default (← inferType d') abst
+          let piece ← mkExpectedTypeHint (← mkCongrArg motive hIn)
+            (← mkEq bCur bNext)
+          return some (bNext, piece)
+          : TermElabM (Option (Expr × Expr)))
+        catch ex => (do
+          trace[RelSem.roundEval] "closeBoolTower: inner {d'.getAppFn} threw: {ex.toMessageData}"
+          pure none))
+      if let some (bNext, piece) := step? then
+        trace[RelSem.roundEval] "closeBoolTower: subst {d'.getAppFn} ({← bCur.numObjs} → {← bNext.numObjs} objs)"
+        chain := some (← match chain with
+          | none => pure piece
+          | some c => mkEqTrans c piece)
+        bCur := bNext
+        progressed := true
+    unless progressed do
+      -- last resort: the DIG hop (smart-unfolding-off `.all` whnf)
+      -- exposes towers hidden inside folded definitions; a defeq hop
+      let r ← (try
+          withCurrHeartbeats <|
+            withOptions (fun o => o.set `smartUnfolding false) <|
+              withTransparency .all (whnf bCur)
+        catch _ => pure bCur)
+      if r != bCur then
+        let br ← mkExpectedTypeHint (← mkEqRefl r) (← mkEq bCur r)
+        chain := some (← match chain with
+          | none => pure br
+          | some c => mkEqTrans c br)
+        bCur := r
+      else
+        trace[RelSem.roundEval] "closeBoolTower: stuck ({← bCur.numObjs} objs, head {bCur.getAppFn}):{indentExpr bCur}"
+        return none
+  trace[RelSem.roundEval] "closeBoolTower: fuel out"
+  return none
 
 /-- THE PROP-VERDICT SEARCH (shared by the decidable and decide-shape
     lanes; recursion depth-capped). Lanes: `Int.NonNeg` (omega-opaque;
@@ -1290,7 +1906,13 @@ private def mintEmit (hp : HypPack) (d rhs prf : Expr) (what : String) :
     type-check guard demands); open omega; ground kernel decide. -/
 private partial def propVerdict (p : Expr) (depth : Nat := 0) :
     TermElabM (Option (Bool × Expr)) := do
-  if depth > 4 then return none
+  if depth > 10 then return none
+  -- syntactic-refl fast path (a = a): omega's certificate for a
+  -- reflexive equality can embed the enclosing tower (measured drip);
+  -- Eq.refl is the clean witness
+  if let some (_, a, b) := p.eq? then
+    if a == b then
+      return some (true, ← mkEqRefl a)
   -- Int.NonNeg face
   if p.isAppOfArity ``Int.NonNeg 1 then
     let a := p.appArg!
@@ -1312,7 +1934,42 @@ private partial def propVerdict (p : Expr) (depth : Nat := 0) :
       let lit := args[2]!
       let litT := lit.isConstOf ``Bool.true
       let litF := lit.isConstOf ``Bool.false
-      if litT || litF then
+      -- closed props go to the kernel lane below
+      if (litT || litF) && p.hasFVar then
+        -- unwrap IDENTITY matcher debris (`match X with | false =>
+        -- false | true => true` from unfolded decide towers): a
+        -- single-discr matcher defeq to its own discriminant IS its
+        -- discriminant (isDefEq-probed, exact)
+        let mut b := b
+        for _ in [0:4] do
+          let stop ← (do
+            if let some ma ← Lean.Meta.matchMatcherApp? b then
+              if ma.discrs.size == 1 then
+                if ← withNewMCtxDepth
+                    (withCurrHeartbeats (isDefEq b ma.discrs[0]!)) then
+                  return some ma.discrs[0]!
+            return none)
+          match stop with
+          | some d' => b := d'
+          | none => break
+        -- registry-headed scrutinee: `(intLteb a b) = lit`-class
+        if let .const bc _ := b.getAppFn then
+          if b.getAppArgs.size == 2 then
+            if let some (q0, brTrue, brFalse) ← boolHeadProp? bc
+                b.getAppArgs[0]! b.getAppArgs[1]! then
+              let q ← foldArith q0
+              if let some (polq, pfq) ← propVerdict q (depth + 1) then
+                if polq then
+                  let hbt ← mkAppMU brTrue #[pfq]  -- b = true
+                  if litT then return some (true, hbt)
+                  else return some (false, ← mkAppMU
+                    ``RelSem.RoundEval.bool_ne_false_of_true #[hbt])
+                else
+                  let hbf ← mkAppMU brFalse #[pfq]  -- b = false
+                  if litF then return some (true, hbf)
+                  else return some (false, ← mkAppMU
+                    ``RelSem.RoundEval.bool_ne_true_of_false #[hbf])
+              return none
         let qi? : Option (Expr × Expr) ← (do
           if b.isAppOfArity ``decide 2 then
             return some (b.getAppArgs[0]!, b.getAppArgs[1]!)
@@ -1339,17 +1996,90 @@ private partial def propVerdict (p : Expr) (depth : Nat := 0) :
             if !polq && litF then
               return some (true, ← mk ``decide_eq_false pfq)
           return none
-  if p.hasFVar then openVerdict p else kernelVerdict p
+        -- ITERATIVE TOWER CLOSURE (arc-17 S3): drive b to a literal
+        match ← closeBoolTower (fun q => propVerdict q (depth + 1)) b with
+        | some (litE, hFull) =>
+          let ok ← (try
+              withCurrHeartbeats (check hFull)
+              pure true
+            catch _ => pure false)
+          if ok then
+            let bvT := litE.isConstOf ``Bool.true
+            if bvT == litT then
+              return some (true, hFull)
+            else if litT then
+              return some (false, ← mkAppMU
+                ``RelSem.RoundEval.bool_ne_true_of_false #[hFull])
+            else
+              return some (false, ← mkAppMU
+                ``RelSem.RoundEval.bool_ne_false_of_true #[hFull])
+        | none => pure ()
+        return none
+  match ← (if p.hasFVar then openVerdict p else kernelVerdict p) with
+  | some r => return some r
+  | none =>
+  -- GENERALIZED INNER-VERDICT LANE (arc-17 S3): substitute the
+  -- innermost stuck decidable's verdict INTO THE PROP, recurse, and
+  -- transfer through the congrArg equality (`p = p[d' := verdict]`)
+  -- — the discovery's mixed race-check towers land here.
+  if depth ≥ 8 then return none
+  unless p.hasFVar do return none
+  let inners ← collectMintCands p
+  for d' in inners do
+    if d'.isAppOf ``Decidable.isTrue
+        || d'.isAppOf ``Decidable.isFalse then continue
+    if d' == p then continue
+    let r? ← (try
+      (do
+        let tyW' ← whnfU (← inferType d')
+        unless tyW'.isAppOfArity ``Decidable 1 do return none
+        let q' ← foldArith (← withCurrHeartbeats
+          (groundNorm "inner prop" tyW'.appArg!))
+        if q'.hasExprMVar || q'.hasLooseBVars then return none
+        let some (polq, pfq) ← propVerdict q' (depth + 1) | return none
+        let vTerm := if polq then
+            mkApp2 (mkConst ``Decidable.isTrue) q' pfq
+          else mkApp2 (mkConst ``Decidable.isFalse) q' pfq
+        let abst ← abstractExact p d'
+        unless abst.hasLooseBVars do return none
+        let p' := abst.instantiate1 vTerm
+        let hIn := if polq then
+            mkApp3 (mkConst ``RelSem.RoundEval.dec_eq_isTrue) q' pfq d'
+          else mkApp3 (mkConst ``RelSem.RoundEval.dec_eq_isFalse) q' pfq d'
+        let motive := Lean.mkLambda `x .default (← inferType d') abst
+        let hEq ← mkExpectedTypeHint (← mkCongrArg motive hIn)
+          (← mkEq p p')
+        let pNorm ← foldArith (← withCurrHeartbeats
+          (groundNorm "subst prop" p'))
+        let some (pol', pf') ← propVerdict pNorm (depth + 1)
+          | return none
+        withCurrHeartbeats (check hEq)
+        if pol' then
+          return some (true, ← mkAppOptMU
+            ``RelSem.RoundEval.verdict_transfer_true
+            #[some p, some p', some hEq, some pf'])
+        else
+          return some (false, ← mkAppOptMU
+            ``RelSem.RoundEval.verdict_transfer_false
+            #[some p, some p', some hEq, some pf'])
+        : TermElabM (Option (Bool × Expr)))
+      catch _ => pure none)
+    if let some r := r? then return some r
+  return none
 
 /-- Decidable lane. -/
 private def mintDecidable (hp : HypPack) (d : Expr) : TermElabM Bool := do
   let tyW ← whnf (← instantiateMVars (← inferType d))
   unless tyW.isAppOfArity ``Decidable 1 do return false
-  let p ← foldArith (← instantiateMVars tyW.appArg!)
+  -- the Prop quotes the TYPE-level spelling, which may carry
+  -- unreduced ground subterms (a minIval match over a constructor);
+  -- normalize before folding so omega sees literals
+  let p0 ← instantiateMVars tyW.appArg!
+  let p ← foldArith (← withCurrHeartbeats (groundNorm "mint prop" p0))
   if p.hasExprMVar || p.hasLooseBVars then return false
   let v? ← propVerdict p
   let some (pol, pf) := v?
-    | (do trace[RelSem.roundEval] "arith minter: no verdict for{indentExpr p}"
+    | (do trace[RelSem.roundEval] "arith minter: no verdict ({← p.numObjs} objs, head {p.getAppFn}) for{indentExpr p}"
           return false)
   if pol then
     let href ← mintEmitSide hp p pf "decidable/isTrue side"
@@ -1369,20 +2099,14 @@ private def mintBool (hp : HypPack) (d : Expr) : TermElabM Bool := do
   let .const c _ := d.getAppFn | return false
   let args := d.getAppArgs
   unless args.size == 2 do return false
-  let a := args[0]!
-  let b := args[1]!
-  let (p, brTrue, brFalse) ←
-    if c == ``Nat.ble then
-      pure (← mkAppMU ``LE.le #[a, b],
-        ``RelSem.RoundEval.nat_ble_true, ``RelSem.RoundEval.nat_ble_false)
-    else if c == ``Nat.blt then
-      pure (← mkAppMU ``LT.lt #[a, b],
-        ``RelSem.RoundEval.nat_blt_true, ``RelSem.RoundEval.nat_blt_false)
-    else if c == ``Nat.beq then
-      pure (← mkAppMU ``Eq #[a, b],
-        ``RelSem.RoundEval.nat_beq_true, ``RelSem.RoundEval.nat_beq_false)
-    else return false
+  -- normalize the ARGS (ground matches reduce; the relation head
+  -- itself must stay folded — normalizing the whole Prop unfolds
+  -- `≤` into `NonNeg` and breaks the bridge shape, measured)
+  let a ← withCurrHeartbeats (groundNorm "mint arg" args[0]!)
+  let b ← withCurrHeartbeats (groundNorm "mint arg" args[1]!)
+  let some (p, brTrue, brFalse) ← boolHeadProp? c a b | return false
   if p.hasExprMVar || p.hasLooseBVars then return false
+  let p ← foldArith p
   let v? ← propVerdict p
   let some (pol, pf) := v? | return false
   if pol then
@@ -1396,6 +2120,30 @@ private def mintBool (hp : HypPack) (d : Expr) : TermElabM Bool := do
       s!"{c} → false"
   return true
 
+/-- BOOL-TOWER LANE (arc-17 S3): a Bool-typed stuck matcher/recursor
+    tower (a `cond` scrutinee, a race-check conjunction) closes by
+    verdicting an inner stuck decidable, substituting INSIDE the
+    tower only, and letting the kernel reduce the result to a
+    literal — minted as an atomic `tower = lit` rewrite (the
+    dependent-cluster-safe move the type-check guard demands). -/
+private def mintBoolTower (hp : HypPack) (d : Expr) : TermElabM Bool := do
+  let env ← getEnv
+  let .const c _ := d.getAppFn | return false
+  unless isMatcherAppCore env d || recLikeHead env c
+    || c == ``cond do return false
+  let ty ← whnfU (← inferType d)
+  unless ty.isConstOf ``Bool do return false
+  match ← closeBoolTower (fun q => propVerdict q 1) d with
+  | some (litE, hFull) =>
+    let ok ← (try
+        withCurrHeartbeats (check hFull)
+        pure true
+      catch _ => pure false)
+    unless ok do return false
+    mintEmit hp d litE hFull "bool tower"
+    return true
+  | none => return false
+
 /-- Symbol-constructor destructuring. -/
 private def symParts? (e : Expr) : Option (Expr × Expr × Expr) :=
   if e.isAppOfArity ``Symbol 3 then
@@ -1408,10 +2156,19 @@ private def symParts? (e : Expr) : Option (Expr × Expr × Expr) :=
     comparator defeq `symCmpO` — rfl-grade). -/
 private partial def proveBuilt (m : Expr) : TermElabM (Option Expr) := do
   if m.isAppOf ``fmapAddBy && m.getAppArgs.size == 7 then
-    let some hInner ← proveBuilt m.getAppArgs[6]! | return none
-    return some (← mkAppMU ``RelSem.Kit.fmapAddBy_built #[hInner])
+    let a := m.getAppArgs
+    let some hInner ← proveBuilt a[6]! | return none
+    return some (← mkAppOptMU ``RelSem.Kit.fmapAddBy_built
+      #[some a[0]!, some a[1]!, some a[2]!, none, some a[3]!,
+        some a[4]!, some a[5]!, some a[6]!, some hInner])
   let stmt ← mkAppMU ``RelSem.Kit.FmapBuilt
     #[mkConst ``RelSem.Kit.symCmpO, m]
+  -- pack-hypothesis base (free env binders: built-ness is a curated
+  -- hypothesis, e.g. `hbuilt : FmapBuilt symCmpO env`)
+  if let some hp ← (activeHypPack.get : BaseIO _) then
+    for h in hp.arith do
+      if (← instantiateMVars (← inferType h)) == stmt then
+        return some h
   try
     withCurrHeartbeats <| Term.withoutErrToSorry do
       let pf ← Term.elabTermEnsuringType (← `(rfl)) stmt
@@ -1444,24 +2201,37 @@ private def mintEnvLookup (hp : HypPack) (d : Expr) : TermElabM Bool := do
   let some hm ← proveBuilt inner
     | (do trace[RelSem.roundEval] "env lane: no built-ness for inner map"
           return false)
+  let beqInst := mArgs[2]!
+  let pcmp := mArgs[3]!
+  let pcmp' := dArgs[2]!
+  let symCmpOE := mkConst ``RelSem.Kit.symCmpO
+  -- instances supplied from the TERM's own spelling (the R-S2-1
+  -- instance-implicit-divergence lesson: synthesis picks a different
+  -- BEq than the generated call site captured)
+  let mkLaw (law : Name) (hk : Expr) (rhs : Expr) :
+      TermElabM (Option Expr) := do
+    let eqTy ← mkEq d rhs
+    try
+      withCurrHeartbeats <| Term.withoutErrToSorry do
+        let pf ← mkAppOptMU law
+          #[some (mkConst ``sym), none, some beqInst, some symCmpOE,
+            none, some pcmp, some pcmp', some k', some key, some v,
+            some inner, some hm, some hk]
+        let pfTy ← instantiateMVars (← inferType pf)
+        unless ← withCurrHeartbeats (isDefEq pfTy eqTy) do
+          trace[RelSem.roundEval] "env lane: law type mismatch:{indentExpr pfTy}\nvs{indentExpr eqTy}"
+          return none
+        return some (← instantiateMVars pf)
+    catch ex => (do
+      trace[RelSem.roundEval] "env lane: law build failed: {ex.toMessageData}"
+      return none)
   if k' == key then
     -- HIT: the just-inserted key reads back its value
     let some (dg, n, sd) := symParts? key | return false
     let hk ← mkAppMU ``RelSem.RoundEval.symCmpO_eq_same #[dg, n, sd, sd]
     let rhs ← mkAppMU ``Option.some #[v]
-    let eqTy ← mkEq d rhs
-    let hmS ← toStxU hm
-    let hkS ← toStxU hk
-    let pf? : Option Expr ← (try
-      withCurrHeartbeats <| Term.withoutErrToSorry do
-        let pf ← Term.elabTermEnsuringType
-          (← `(RelSem.Kit.fmapLookupBy_addBy_eq $hmS $hkS)) eqTy
-        Term.synthesizeSyntheticMVarsNoPostponing
-        return some (← instantiateMVars pf)
-      catch ex => (do
-        trace[RelSem.roundEval] "env lane: hit-law elaboration failed: {ex.toMessageData}"
-        return none))
-    let some pf := pf? | return false
+    let some pf ← mkLaw ``RelSem.Kit.fmapLookupBy_addBy_eq hk rhs
+      | return false
     mintEmit hp d rhs pf "env lookup hit"
     return true
   -- SKIP: apartness of the two keys
@@ -1469,7 +2239,11 @@ private def mintEnvLookup (hp : HypPack) (d : Expr) : TermElabM Bool := do
   let some (dg2, n2, sd2) := symParts? key | return false
   unless dg1 == dg2 do return false
   let neStmt ← mkAppMU ``Ne #[← foldArith n1, ← foldArith n2]
-  let some pfNe ← tryOmegaProof neStmt | (do
+  let pfNe? ← (do
+    match ← propVerdict neStmt with
+    | some (true, pf) => return some pf
+    | _ => tryOmegaProof neStmt)
+  let some pfNe := pfNe? | (do
     trace[RelSem.roundEval] "env lane: apartness unprovable: {neStmt}"
     return false)
   let hrefNe ← mintEmitSide hp neStmt pfNe "env-key apartness"
@@ -1477,19 +2251,8 @@ private def mintEnvLookup (hp : HypPack) (d : Expr) : TermElabM Bool := do
     #[some dg1, some dg2, some n1, some n2, some sd1, some sd2,
       some (← mkEqRefl dg1), some hrefNe]
   let rhs := mkAppN d.getAppFn (dArgs.set! 4 inner)
-  let eqTy ← mkEq d rhs
-  let hmS ← toStxU hm
-  let hkS ← toStxU hk
-  let pf? : Option Expr ← (try
-    withCurrHeartbeats <| Term.withoutErrToSorry do
-      let pf ← Term.elabTermEnsuringType
-        (← `(RelSem.Kit.fmapLookupBy_addBy_ne $hmS $hkS)) eqTy
-      Term.synthesizeSyntheticMVarsNoPostponing
-      return some (← instantiateMVars pf)
-    catch ex => (do
-      trace[RelSem.roundEval] "env lane: skip-law elaboration failed: {ex.toMessageData}"
-      return none))
-  let some pf := pf? | return false
+  let some pf ← mkLaw ``RelSem.Kit.fmapLookupBy_addBy_ne hk rhs
+    | return false
   mintEmit hp d rhs pf "env lookup skip"
   return true
 
@@ -1518,6 +2281,9 @@ def mintCmpFact? (hp : HypPack) (e : Expr) : TermElabM Bool := do
       trace[RelSem.roundEval] "arith minter: hit after {(← IO.monoMsNow) - t0} ms ({cands.size} candidates)"
       return true
     if ← withCurrHeartbeats (mintDecidable hp d) then
+      trace[RelSem.roundEval] "arith minter: hit after {(← IO.monoMsNow) - t0} ms ({cands.size} candidates)"
+      return true
+    if ← withCurrHeartbeats (mintBoolTower hp d) then
       trace[RelSem.roundEval] "arith minter: hit after {(← IO.monoMsNow) - t0} ms ({cands.size} candidates)"
       return true
   if !cands.isEmpty then
@@ -1553,6 +2319,10 @@ def digStuck (e : Expr) : MetaM (Option Expr) := do
       -- minter-handled candidates are minted, not dug
       if registryBoolHead c || registryDecHead c || c == ``fmapLookupBy
           || isMatcherAppCore env e || recLikeHead env c then
+        return none
+      -- fenced heads are NEVER dug: the fence exists to preserve the
+      -- spelling and the dig's `.all` is attribute-blind
+      if (← (baseFenceHeads.get : BaseIO _)).contains c then
         return none
       if let some (.ctorInfo _) := env.find? c then return none
       unless e.isApp do return none
@@ -1622,28 +2392,59 @@ private def mkNDactiveNowakeup (lhs : Expr) : TermElabM Expr := do
     successor a METAVARIABLE and return (proof, raw successor). The
     raw successor (the law's computed-RHS shape at the predecessor
     name) is then ANCHORED by `anchorSucc`. -/
-private def elabLawChain (lhs : Expr) (roundIdx : Nat)
+private def elabLawChain (td tid σ stepE lhs : Expr) (roundIdx : Nat)
     (proofStx : Term) : TermElabM (Expr × Expr) := withCurrHeartbeats do
-  let (_, sTy) ← pairComponentTys lhs
-  let succMVar ← mkFreshExprMVar (some sTy)
-  let nowakeup ← mkNDactiveNowakeup lhs
-  let rhs ← mkAppMU ``Prod.mk #[nowakeup, succMVar]
-  let eqTy ← mkEq lhs rhs
-  trace[RelSem.roundEval] "elabLawChain[{roundIdx}]: elaborating"
-  let pf ← withCurrHeartbeats do
-    let pf ← Term.elabTermEnsuringType proofStx eqTy
-    Term.synthesizeSyntheticMVarsNoPostponing
-    pure pf
-  trace[RelSem.roundEval] "elabLawChain[{roundIdx}]: done"
-  let pf ← instantiateMVars pf
-  if pf.hasSorry then
-    throwError "derive_rounds: round {roundIdx} law-chain elaboration \
-      produced sorry (a side condition failed — see the errors above)"
-  let succ ← instantiateMVars succMVar
-  if succ.hasExprMVar then
-    throwError "derive_rounds: round {roundIdx} successor still has \
-      metavariables after law elaboration"
-  return (pf, succ)
+  -- Try the DIRECT face first (eqTy at the `stepAt` spelling — the
+  -- committed S2b behavior, correct for materialized-state drives);
+  -- on failure, elaborate against the DISCOVERED step and glue back
+  -- through a kernel-deferred (or pack-proved) discovery equation
+  -- (arc-17 S3 — at a builder-state σ0 the elaborator's stepAt
+  -- unification wedges where both classification's whnf and the
+  -- kernel succeed).
+  let elabAt (theLhs : Expr) : TermElabM (Expr × Expr) := do
+    let (_, sTy) ← pairComponentTys theLhs
+    let succMVar ← mkFreshExprMVar (some sTy)
+    let nowakeup ← mkNDactiveNowakeup theLhs
+    let rhs ← mkAppMU ``Prod.mk #[nowakeup, succMVar]
+    let eqTy ← mkEq theLhs rhs
+    trace[RelSem.roundEval] "elabLawChain[{roundIdx}]: elaborating"
+    let pf ← withCurrHeartbeats do
+      let pf ← Term.elabTermEnsuringType proofStx eqTy
+      Term.synthesizeSyntheticMVarsNoPostponing
+      pure pf
+    trace[RelSem.roundEval] "elabLawChain[{roundIdx}]: done"
+    let pf ← instantiateMVars pf
+    if pf.hasSorry then
+      throwError "derive_rounds: round {roundIdx} law-chain \
+        elaboration produced sorry (a side condition failed — see \
+        the errors above)"
+    let succ ← instantiateMVars succMVar
+    if succ.hasExprMVar then
+      throwError "derive_rounds: round {roundIdx} successor still \
+        has metavariables after law elaboration"
+    return (pf, succ)
+  try
+    elabAt lhs
+  catch exDirect =>
+    let advE ← mkAppMU ``advance_step #[td, tid, stepE]
+    let lhsD ← mkAppMU ``RelSem.app #[advE, σ]
+    if lhs == lhsD then throw exDirect
+    trace[RelSem.roundEval] "elabLawChain[{roundIdx}]: direct face \
+      failed ({exDirect.toMessageData}); retrying at the discovered \
+      step with glue"
+    let (pf, succ) ← elabAt lhsD
+    let stepAtE ← mkAppMU ``RelSem.Laws.stepAt #[td, tid, σ]
+    let hstep ← (do
+      match ← (activeHypPack.get : BaseIO _) with
+      | some hp => proveHypEq hp stepAtE stepE
+      | none =>
+        mkExpectedTypeHint (← mkEqRefl stepE) (← mkEq stepAtE stepE))
+    let motive ← withLocalDeclD `s (← inferType stepE) fun sv => do
+      mkLambdaFVars #[sv]
+        (← mkAppMU ``RelSem.app
+          #[← mkAppMU ``advance_step #[td, tid, sv], σ])
+    let glue ← mkCongrArg motive hstep
+    return (← mkEqTrans glue pf, succ)
 
 /-- Unfold definition heads (dnmsBump and friends) until the record
     constructor is exposed (bounded; beta after each unfold). -/
@@ -1805,7 +2606,7 @@ private def emitLawRound (declName : Name) (fvars : Array Expr)
     heartbeat wall at 12. The named-state discipline applied per
     round kills the accretion.) -/
 private def mintLawPure (declName : Name) (fvars : Array Expr)
-    (a : Anchor) (σ lhs stepE : Expr) (roundIdx : Nat) :
+    (a : Anchor) (td tid σ lhs stepE : Expr) (roundIdx : Nat) :
     TermElabM (MintedRound × Anchor) := do
   -- expose + normalize a thread payload (arena/stack are first-order
   -- data; env/errno stay as the step spelled them)
@@ -1814,14 +2615,30 @@ private def mintLawPure (declName : Name) (fvars : Array Expr)
     match ← activeHypPack.get with
     | some hp => hypNorm hp "thread payload" w
     | none => normalizeThreads w
+  -- Payload-spelling retry (arc-17 S3): materialized-state drives
+  -- (T4/T6) NEED the normalized payload (the S2 accretion lesson —
+  -- verbatim payloads re-open the per-round cost doubling), while
+  -- builder-state drives (free component binders) need the VERBATIM
+  -- payload (pack substitution makes the normalized spelling
+  -- propositionally different from the classified step's, and even
+  -- `.all`/dig reductions are ones the elaborator's smart-unfolding
+  -- defeq refuses to retrace — measured both ways). The law is
+  -- elaborated with the normalized payload first and retried
+  -- verbatim on failure.
   if stepE.isAppOfArity ``core_step2.Step_tau2 3 then
     let kindE ← whnfU stepE.getAppArgs[1]!
     unless kindE.isConstOf ``core_tau_step_kind.TSK_Misc do
       throwFrontier m!"derive_rounds: round {roundIdx} tau kind has no \
         registered law:{indentExpr kindE}"
-    let thS ← toStxU (← thNorm stepE.getAppArgs[2]!)
-    let proofStx ← `(RelSem.Kit.advance_tau_misc (th' := $thS))
-    let (pf, succRaw) ← elabLawChain lhs roundIdx proofStx
+    let mkStx (th : Expr) : TermElabM Term := do
+      let thS ← toStxU th
+      `(RelSem.Kit.advance_tau_misc (th' := $thS))
+    let (pf, succRaw) ← (try
+        elabLawChain td tid σ stepE lhs roundIdx
+          (← mkStx (← thNorm stepE.getAppArgs[2]!))
+      catch _ =>
+        elabLawChain td tid σ stepE lhs roundIdx
+          (← mkStx (← whnfU stepE.getAppArgs[2]!)))
     emitLawRound declName fvars a σ lhs pf succRaw roundIdx "tau"
   else if stepE.isAppOfArity ``core_step2.Step_with_runstate2 2 then
     let kindE ← whnfU stepE.getAppArgs[0]!
@@ -1861,20 +2678,31 @@ private def mintLawPure (declName : Name) (fvars : Array Expr)
       pure (← toStxU thN, ← toStxU rsN)
     trace[RelSem.roundEval] "round {roundIdx}: syntax built"
     let proofStx ←
-      if kindE.isAppOfArity ``runstate_step_kind.RSK_eval 1 then
-        `(RelSem.Kit.advance_runstate_eval (th' := $thS) (rs' := $rsS)
+      -- dbg/step_m supplied EXPLICITLY (arc-17 S3): at a
+      -- builder-state σ0 (free component binders) the elaborator's
+      -- own stepAt unification wedges where classification's plain
+      -- whnf succeeded — the mintMemRound explicit-decomposition
+      -- lesson, applied to the pure branches
+      if kindE.isAppOfArity ``runstate_step_kind.RSK_eval 1 then do
+        let dbgS ← toStxU kindE.getAppArgs[0]!
+        let stepmS ← toStxU stepM
+        `(RelSem.Kit.advance_runstate_eval (dbg := $dbgS)
+            (step_m := $stepmS) (th' := $thS) (rs' := $rsS)
             (hm := by first | exact rfl | hyp_norm_side))
       else if kindE.isAppOfArity ``runstate_step_kind.RSK_tau 2 then do
         let tkE ← whnfU kindE.getAppArgs[1]!
         unless tkE.isConstOf ``core_tau_step_kind.TSK_Misc do
           throwFrontier m!"derive_rounds: round {roundIdx} RSK_tau kind \
             has no registered law:{indentExpr tkE}"
-        `(RelSem.Kit.advance_runstate_tau_misc (th' := $thS)
+        let dbgS ← toStxU kindE.getAppArgs[0]!
+        let stepmS ← toStxU stepM
+        `(RelSem.Kit.advance_runstate_tau_misc (dbg := $dbgS)
+            (step_m := $stepmS) (th' := $thS)
             (rs' := $rsS) (hm := by first | exact rfl | hyp_norm_side))
       else
         throwFrontier m!"derive_rounds: round {roundIdx} runstate kind \
           has no registered law:{indentExpr kindE}"
-    let (pf, succRaw) ← elabLawChain lhs roundIdx proofStx
+    let (pf, succRaw) ← elabLawChain td tid σ stepE lhs roundIdx proofStx
     emitLawRound declName fvars a σ lhs pf succRaw roundIdx "runstate"
   else
     throwFrontier m!"derive_rounds: round {roundIdx} step class has no \
@@ -1993,7 +2821,7 @@ private def mintMemRound (declName : Name) (fvars : Array Expr)
           (by first | exact rfl | decide | hyp_norm_side) (by first | exact rfl | decide | hyp_norm_side) (by first | exact rfl | decide | hyp_norm_side) (by first | exact rfl | decide | hyp_norm_side)
           (by first | exact rfl | decide | hyp_norm_side) (by first | exact rfl | decide | hyp_norm_side))
         (hpref := RelSem.Kit.mem_prefix_block)))
-    pfSucc ← elabLawChain lhs roundIdx proofStx
+    pfSucc ← elabLawChain td tid σ stepE lhs roundIdx proofStx
     cls := "store"
   else if reqCtor == ``action_request2.CreateRequest2 then
     -- CreateRequest2 pref align ty addrOpt initOpt mk
@@ -2056,7 +2884,7 @@ private def mintMemRound (declName : Name) (fvars : Array Expr)
           (sz := $szS)
           (a := $aS)
           (by first | exact rfl | decide | hyp_norm_side) $haddrS (by first | exact rfl | decide | hyp_norm_side))))
-    pfSucc ← elabLawChain lhs roundIdx proofStx
+    pfSucc ← elabLawChain td tid σ stepE lhs roundIdx proofStx
     cls := "create"
   else if reqCtor == ``action_request2.LoadRequest2 then
     -- LoadRequest2 mo ty ptr mk
@@ -2095,7 +2923,7 @@ private def mintMemRound (declName : Name) (fvars : Array Expr)
           (by first | exact rfl | decide | hyp_norm_side) (by first | exact rfl | decide | hyp_norm_side) (by first | exact rfl | decide | hyp_norm_side) (by first | exact rfl | decide | hyp_norm_side)
           (by first | exact rfl | decide | hyp_norm_side) (by first | exact rfl | decide | hyp_norm_side) (by first | exact rfl | decide | hyp_norm_side))
         (hpref := RelSem.Kit.mem_prefix_block)))
-    pfSucc ← elabLawChain lhs roundIdx proofStx
+    pfSucc ← elabLawChain td tid σ stepE lhs roundIdx proofStx
     cls := "load"
   else if reqCtor == ``action_request2.KillRequest2 then
     -- KillRequest2 isDyn ptr mk
@@ -2111,7 +2939,7 @@ private def mintMemRound (declName : Name) (fvars : Array Expr)
           (allocId := $(← toStxU idE))
           (alloc := $(← toStxU allocE))
           (by first | exact rfl | decide | hyp_norm_side) (by first | exact rfl | decide | hyp_norm_side) (by first | exact rfl | decide | hyp_norm_side))))
-    pfSucc ← elabLawChain lhs roundIdx proofStx
+    pfSucc ← elabLawChain td tid σ stepE lhs roundIdx proofStx
     cls := "kill"
   else
     throwFrontier m!"derive_rounds: round {roundIdx} request \
@@ -2150,14 +2978,19 @@ private def terminalValue (stepsE : Expr) (roundIdx : Nat) :
     module header. -/
 syntax roundsUpto := " upto " num
 syntax roundsAssuming := " assuming " ident+
+syntax roundsChain := " chain"
+syntax roundsBuilder := " builder"
+syntax roundsFencing := " fencing " ident+
 
-elab "derive_rounds " id:ident bs:bracketedBinder* assum:(roundsAssuming)? " using " td:term:max tid:term:max " from " σ0:term upto:(roundsUpto)? : command => do
+elab "derive_rounds " id:ident bs:bracketedBinder* assum:(roundsAssuming)? fenc:(roundsFencing)? " using " td:term:max tid:term:max " from " σ0:term upto:(roundsUpto)? chainTk:(roundsChain)? builderTk:(roundsBuilder)? : command => do
   let ns ← getCurrNamespace
   let baseName := ns ++ id.getId
   let maxRounds := match upto with
     | some u => (u.raw[1].isNatLit?).getD 256
     | none => 256
   let demandTerminal := upto.isNone
+  let emitChainRel := chainTk.isSome
+  builderMode.set builderTk.isSome
   runTermElabM fun _ => do
     Term.elabBinders bs fun fvars => do
       -- hypothesis mode: build the pack from the named binders
@@ -2209,11 +3042,26 @@ elab "derive_rounds " id:ident bs:bracketedBinder* assum:(roundsAssuming)? " usi
       -- as before.
       let fence : NameSet := {}
       let mut fenceSaved : Array (Name × ReducibilityStatus) := #[]
+      let mut fenceHeadSet : NameSet := {}
       for r in baseRw do
         if let .const c _ := r.lhs.getAppFn then
+          fenceHeadSet := fenceHeadSet.insert c
           unless fenceSaved.any (·.1 == c) do
             fenceSaved := fenceSaved.push (c, ← getReducibilityStatus c)
             setReducibilityStatus c .irreducible
+      -- explicit `fencing f g …` heads (arc-17 S3): spelling
+      -- preservation for constructs the pack reasons about by LAW
+      -- rather than rewrite (e.g. `fmapAddBy` chains over a free env
+      -- binder, consumed by the env-lookup lane); ground occurrences
+      -- still compute via the fenced-head ground escape.
+      if let some ftk := fenc then
+        for fid in ftk.raw[1].getArgs do
+          let cs ← realizeGlobalConstNoOverload fid
+          fenceHeadSet := fenceHeadSet.insert cs
+          unless fenceSaved.any (·.1 == cs) do
+            fenceSaved := fenceSaved.push (cs, ← getReducibilityStatus cs)
+            setReducibilityStatus cs .irreducible
+      baseFenceHeads.set fenceHeadSet
       let hp : HypPack :=
         { baseRw, arith, minted := ← IO.mkRef #[],
           mintIdx := ← IO.mkRef 0,
@@ -2238,13 +3086,27 @@ elab "derive_rounds " id:ident bs:bracketedBinder* assum:(roundsAssuming)? " usi
       let tdS ← toStxU tdE
       let tidS ← toStxU tidE
       let mut σ := σ0E
-      let mut anchor ← Anchor.init σ0E
+      -- anchor on the LITERAL record fields when σ0 unfolds to one
+      -- (arc-17 S3): projection-spelled components re-force the
+      -- whole state per use — for a ladder-carrying memory field the
+      -- head whnf then chains through every layer in one unit
+      -- (measured: the T5 body walk's memMat initialization)
+      let σ0R ← unfoldToRecord σ0E
+      let mut anchor ←
+        (if σ0R.isAppOfArity ``driver_state.mk 11 then do
+          let a := σ0R.getAppArgs
+          pure { cs := a[2]!, rs := a[3]!, mem := a[4]!,
+                 memMat := a[4]!, tr := a[7]!, ctr := a[10]!,
+                 fixed := #[a[0]!, a[1]!, a[5]!, a[6]!, a[8]!, a[9]!] }
+        else Anchor.init σ0E)
       -- hyp mode: materialize the initial memory ONCE (the twin's
       -- base; ~1.4 s at T4's 4-layer ready ladder — measured within
       -- the default budget; every later update is a delta pass)
       if !hypIdents.isEmpty then
+        trace[RelSem.roundEval] "memMat init: start"
         let mat ← withCurrHeartbeats
           (groundNorm "initial memMat" anchor.mem)
+        trace[RelSem.roundEval] "memMat init: done ({← mat.numObjs} objs)"
         hp.defeqSubst.modify (·.push (anchor.mem, mat))
         anchor := { anchor with memMat := mat }
       let mut rounds : Array MintedRound := #[]
@@ -2276,13 +3138,27 @@ elab "derive_rounds " id:ident bs:bracketedBinder* assum:(roundsAssuming)? " usi
             -- whnf is blocked by the hyp-mode fences (a ground
             -- lookup inside step discovery), re-classify at `.all`
             -- (attribute-blind) — the pre-fence behavior exactly
-            if r.isAppOf ``core_step2.Step_action_request2
-                || r.isAppOf ``core_step2.Step_blocked2
-                || r.isAppOf ``core_step2.Step_tau2
-                || r.isAppOf ``core_step2.Step_with_runstate2 then
+            let isStep (e : Expr) : Bool :=
+              e.isAppOf ``core_step2.Step_action_request2
+                || e.isAppOf ``core_step2.Step_blocked2
+                || e.isAppOf ``core_step2.Step_tau2
+                || e.isAppOf ``core_step2.Step_with_runstate2
+            if isStep r then
               pure r
             else
-              withCurrHeartbeats (withTransparency .all (whnf stepAtE))
+              let r2 ← withCurrHeartbeats
+                (withTransparency .all (whnf stepAtE))
+              if isStep r2 then
+                pure r2
+              else
+                -- HYP-AWARE classification (arc-17 S3): at a
+                -- builder-state σ0 the discovery itself can consult
+                -- the free components (step_ctx reads layout_state —
+                -- the S3-record open question, measured at the T5
+                -- body's post-store round); the pack normalizes it,
+                -- and the discovery GLUE (elabLawChain) carries the
+                -- matching PROVED equation instead of a refl hint.
+                hypNormA "classification" r
           catch ex =>
             throwError "derive_rounds: round {k} CLASSIFICATION \
               failed/timed out: {ex.toMessageData}")
@@ -2307,7 +3183,7 @@ elab "derive_rounds " id:ident bs:bracketedBinder* assum:(roundsAssuming)? " usi
           return Sum.inr stepsE
         else
           let lhs ← mkRoundLhs tdE tidE σ
-          let (r, a') ← mintLawPure declName fvars anchor σ lhs stepE k
+          let (r, a') ← mintLawPure declName fvars anchor tdE tidE σ lhs stepE k
           trace[RelSem.roundEval] "round {k}: {r.cls} ({(← IO.monoMsNow) - t0} ms)"
           return Sum.inl (r, a') :
           TermElabM (Sum (MintedRound × Anchor) Expr))
@@ -2323,9 +3199,78 @@ elab "derive_rounds " id:ident bs:bracketedBinder* assum:(roundsAssuming)? " usi
       let classes := rounds.map (·.cls)
       logInfo m!"derive_rounds {baseName}: {rounds.size} advancing \
         rounds minted; classes: {classes}"
+      -- THE RELATIVE CHAIN (arc-17 S3, opt-in `chain` token): the
+      -- iter_compose feed — a ∀-fuel composable block equation. The
+      -- dnms laws are already fuel-relative (`hfuel : fuelS = fuel+1`
+      -- discharges by rfl at `fuel + m ≟ (fuel + (m-1)) + 1`), so the
+      -- chain states
+      --   ∀ fuel, app (dnms (fuel + N) …) σ0 = app (dnms fuel …) σN
+      -- (partial mode), or, when the terminal offer was reached,
+      --   ∀ fuel, app (dnms (fuel + N + 2) …) σ0 = (NDactive offer, σN)
+      -- — the shapes T5-by-invariant's loop composition consumes.
+      if emitChainRel then withCurrHeartbeats do
+        let n := rounds.size
+        let σ0S ← toStxU σ0E
+        let succS ← toStxU σ
+        let accS ← `(fmapEmpty)
+        let fuelId := mkIdent `fuel
+        let mkF (m : Nat) : TermElabM Term :=
+          if m == 0 then pure fuelId
+          else `($fuelId + $(Syntax.mkNatLit m))
+        let off := if terminal.isSome then 2 else 0
+        let mut pf? : Option Term := none
+        for j in [0 : n] do
+          let fS ← mkF (n + off - j)
+          let f1S ← mkF (n + off - j - 1)
+          let hadvS ← toStxU (mkAppN (mkConst rounds[j]!.eqName) fvars)
+          let step ← `(RelSem.Kit.dnms_round (fuelS := $fS)
+            (fuel := $f1S) rfl rfl rfl rfl $hadvS)
+          pf? := some (← match pf? with
+            | none => pure step
+            | some p => `(($p).trans $step))
+        let (stmtStx, pfStx) ← (do
+          match terminal with
+          | none =>
+            let stmtStx ← `(∀ ($fuelId : Nat), RelSem.app
+                (drive_nonmemory_steps_aux2_lemFuel
+                  ($fuelId + $(Syntax.mkNatLit n)) $tdS $accS [$tidS]) $σ0S
+              = RelSem.app (drive_nonmemory_steps_aux2_lemFuel $fuelId
+                  $tdS $accS [$tidS]) $succS)
+            let body := pf?.get!
+            pure (stmtStx, ← `(fun ($fuelId : Nat) => $body))
+          | some stepsE =>
+            let stepsS ← toStxU stepsE
+            let termS ← `(RelSem.Kit.dnms_terminal
+              (fuelS := $(← mkF 2)) (fuel := $fuelId)
+              (steps := $stepsS) rfl rfl rfl rfl)
+            let whole ← match pf? with
+              | none => pure termS
+              | some p => `(($p).trans $termS)
+            let stmtStx ← `(∀ ($fuelId : Nat), RelSem.app
+                (drive_nonmemory_steps_aux2_lemFuel
+                  ($fuelId + $(Syntax.mkNatLit (n + 2))) $tdS $accS
+                  [$tidS]) $σ0S
+              = (NDactive (fmapAddBy defaultCompare $tidS $stepsS
+                  fmapEmpty), $succS))
+            pure (stmtStx, ← `(fun ($fuelId : Nat) => $whole)))
+        let stmt ← Term.elabType stmtStx
+        Term.synthesizeSyntheticMVarsNoPostponing
+        let stmt ← instantiateMVars stmt
+        let pf ← Term.elabTermEnsuringType pfStx stmt
+        Term.synthesizeSyntheticMVarsNoPostponing
+        let chainName := baseName.appendAfter "_chainrel"
+        emitThm chainName fvars stmt (← instantiateMVars pf)
+          s!"RELATIVE {if terminal.isSome then "terminal " else ""}chain \
+             ({rounds.size} rounds{if terminal.isSome then " + terminal" else ""}, \
+             ∀-fuel — the iter_compose feed). \
+             {provenanceNote "derive_rounds"}"
+        logInfo m!"derive_rounds {baseName}: relative chain {chainName} \
+          emitted ({rounds.size} rounds, terminal={terminal.isSome})"
       match terminal with
       | none =>
         activeHypPack.set none
+        builderMode.set false
+        baseFenceHeads.set {}
         for (c, st) in fenceSaved do
           setReducibilityStatus c st
         if demandTerminal then
@@ -2429,6 +3374,8 @@ elab "derive_rounds " id:ident bs:bracketedBinder* assum:(roundsAssuming)? " usi
           {n} rounds; emitted {chainName}, {ndctName}, {finName}, \
           {drvName}"
       activeHypPack.set none
+      builderMode.set false
+      baseFenceHeads.set {}
       for (c, st) in fenceSaved do
         setReducibilityStatus c st
 
