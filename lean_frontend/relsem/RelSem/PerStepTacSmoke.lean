@@ -94,9 +94,11 @@ theorem T1_perStep_tac : T1Statement := by
     stay folded, so terms stay small) fed to `wp_step`, or the donor's
     Qq-computed stepping with let-bound states (HeapLang
     `wp_load`-style tactics computing the successor state ONCE,
-    outside the goal). The peel itself, its adequacy bridge
-    (`kCallHarnessAdequate_of_wpK2`), and the law library are proved
-    and unaffected; part 2's T5-by-invariant is their consumer. -/
+    outside the goal). HISTORY NOTE (arc-18 C2): the peel, its
+    adequacy bridge (`kCallHarnessAdequate_of_wpK2`), and the
+    wpk_round_* law library were DELETED per the Q1 [USER] ruling
+    (zero live consumers; the named-state/evaluator route superseded
+    them) — this section survives as the measured-wall record only. -/
 
 /-! ## 3. The heap tactics on the framing demo -/
 

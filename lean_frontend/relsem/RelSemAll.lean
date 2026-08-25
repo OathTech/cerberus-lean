@@ -37,12 +37,12 @@ import RelSem.MemLocal
 import RelSem.CerbHeapRA
 import RelSem.CerbHeapWP
 import RelSem.CerbHeapDemo
--- arc-16 S3: the loop peels, the per-construct law library, and the
--- wp-tactic layer (runner algebra + dnmsK/driver2K + laws + tactics
--- + the tactic smoke).
+-- arc-16 S3: the runner-observation algebra + the wp-tactic layer.
+-- (The dormant S3 half — PerStepPeel + the wpk_round_* law library —
+-- was DELETED at arc-18 C2 per the Q1 [USER] ruling; archive = the
+-- arc-16 S3 record, last commit carrying the files cited in
+-- docs/2026-08-25_arc18-c2-one-route.md.)
 import RelSem.PerStepRunner
-import RelSem.PerStepPeel
-import RelSem.PerStepLaws
 -- arc-17 S0: the discharge-engine substrate — the named-state
 -- emitter (derive_state/derive_state_step) + the memoized
 -- ground-fact discharger backing wp_side.

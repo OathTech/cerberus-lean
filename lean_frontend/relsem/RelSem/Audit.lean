@@ -159,11 +159,10 @@ import RelSem.MemLocal
 import RelSem.CerbHeapRA
 import RelSem.CerbHeapWP
 import RelSem.CerbHeapDemo
--- arc-16 S3: the loop peels + law library + wp-tactics join the
--- sweep closure + pins.
+-- arc-16 S3: the runner-observation algebra + wp-tactics join the
+-- sweep closure + pins. (PerStepPeel + PerStepLaws DELETED at
+-- arc-18 C2, Q1 [USER] ruling — pins removed in the same commit.)
 import RelSem.PerStepRunner
-import RelSem.PerStepPeel
-import RelSem.PerStepLaws
 import RelSem.PerStepTactics
 import RelSem.PerStepTacSmoke
 -- arc-17 S0: the discharge-engine substrate (named-state emitter +
@@ -793,65 +792,34 @@ open Lean in
 /-- info: 'RelSem.Cerb.two_alloc_frame' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Cerb.two_alloc_frame
 
--- arc-16 S3: THE LOOP PEELS + LAW LIBRARY + WP-TACTICS
--- (RelSem/PerStepRunner + PerStepPeel + PerStepLaws + PerStepTactics
--- + PerStepTacSmoke; design record
--- docs/2026-08-24_arc16-s3-laws-and-tactics.md). The runner algebra
--- is [propext(,Quot.sound)]-grade; the peels and the law library are
--- exactly the classical trio; the statement-facing adequacy wrappers
--- and the T1 tactic smoke inherit the temporal effect boundary's
--- runEffectful through the quoted harness substrate, IDENTICAL to
--- the committed T1's cone. Pinned exactly.
+-- arc-16 S3 (post arc-18 C2 deletions): THE RUNNER ALGEBRA +
+-- WP-TACTICS (RelSem/PerStepRunner + PerStepTactics +
+-- PerStepTacSmoke; design record
+-- docs/2026-08-24_arc16-s3-laws-and-tactics.md). The dormant S3
+-- half — PerStepPeel (dnmsK/driver2K/callK2 + runner_eq bridges)
+-- and PerStepLaws (the 12 wpk_round_* laws, wpk_ite, wpk_pcs_*,
+-- the _of_wpK2 adequacy bridges) — was DELETED at arc-18 C2 per
+-- the Q1 [USER] ruling (zero live consumers; the two live seq laws
+-- were re-homed into PerStepIris at C1; archive = the arc-16 S3
+-- record; the cmm arc re-derives per-round ND granularity against
+-- the C1 registry when genuinely needed). Their pins were removed
+-- in the deleting commit. The runner algebra is
+-- [propext(,Quot.sound)]-grade; the T1 tactic smoke inherits the
+-- temporal effect boundary's runEffectful through the quoted
+-- harness substrate, IDENTICAL to the committed T1's cone. Pinned
+-- exactly.
 /-- info: 'RelSem.runNDFuel_bind_congr' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.runNDFuel_bind_congr
 /-- info: 'RelSem.runNDFuel_bind_assoc' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.runNDFuel_bind_assoc
 /-- info: 'RelSem.runNDFuel_bind_active' depends on axioms: [propext] -/
 #guard_msgs in #print axioms RelSem.runNDFuel_bind_active
-/-- info: 'RelSem.Cerb.dnmsK_runner_eq' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.dnmsK_runner_eq
-/-- info: 'RelSem.Cerb.driver2K_runner_eq' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.driver2K_runner_eq
-/-- info: 'RelSem.Cerb.callK2_runner_eq' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.callK2_runner_eq
 /-- info: 'RelSem.Cerb.wpk_seq_active_ecast' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Cerb.wpk_seq_active_ecast
 /-- info: 'RelSem.Cerb.wpk_seq_active_proj' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Cerb.wpk_seq_active_proj
-/-- info: 'RelSem.Cerb.wpk_ite' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.wpk_ite
 /-- info: 'RelSem.Cerb.wpk_ite_conj' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Cerb.wpk_ite_conj
-/-- info: 'RelSem.Cerb.wpk_round_accum' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.wpk_round_accum
-/-- info: 'RelSem.Cerb.wpk_round_advance' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.wpk_round_advance
-/-- info: 'RelSem.Cerb.wpk_round_tau' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.wpk_round_tau
-/-- info: 'RelSem.Cerb.wpk_round_eval' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.wpk_round_eval
-/-- info: 'RelSem.Cerb.wpk_round_rsk_tau' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.wpk_round_rsk_tau
-/-- info: 'RelSem.Cerb.wpk_round_tau_ret' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.wpk_round_tau_ret
-/-- info: 'RelSem.Cerb.wpk_round_rsk_ret' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.wpk_round_rsk_ret
-/-- info: 'RelSem.Cerb.wpk_round_load' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.wpk_round_load
-/-- info: 'RelSem.Cerb.wpk_round_store' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.wpk_round_store
-/-- info: 'RelSem.Cerb.wpk_round_create' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.wpk_round_create
-/-- info: 'RelSem.Cerb.wpk_round_kill' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.wpk_round_kill
-/-- info: 'RelSem.Cerb.wpk_pcs_done' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.wpk_pcs_done
-/-- info: 'RelSem.Cerb.wpk_pcs_ccall' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.wpk_pcs_ccall
-/-- info: 'RelSem.Cerb.kCallHarnessAdequate_of_wpK2' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.kCallHarnessAdequate_of_wpK2
-/-- info: 'RelSem.Cerb.kCallHarnessUBFree_of_wpK2' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.kCallHarnessUBFree_of_wpK2
 /-- info: 'RelSem.T1.t1_wpK_tac' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.t1_wpK_tac
 /-- info: 'RelSem.T1.T1_perStep_tac' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
@@ -1048,7 +1016,9 @@ info: 'RelSem.Cerb.initial_driver_state_eq_threaded_ambient' depends on axioms: 
 
 open Lean in
 /-- The registered `runEffectful` theorem carriers (see the section
-    note above; 114 names, all ambient-family). -/
+    note above; 112 names, all ambient-family — was 114 until the
+    arc-18 C2 deletion of the two `_of_wpK2` bridges with their host
+    PerStepLaws.lean, Q1 ruling). -/
 def runEffectfulCarriers : List Name :=
   [`RelSem.Cerb.callAdequate_of_app_active,
    `RelSem.Cerb.callAdequate_of_reach, `RelSem.Cerb.callAdequate_of_wp,
@@ -1068,9 +1038,9 @@ def runEffectfulCarriers : List Name :=
    `RelSem.Cerb.initial_core_run_state_eq_threaded_ambient,
    `RelSem.Cerb.initial_driver_state_eq_threaded_ambient,
    `RelSem.Cerb.kCallHarnessAdequate_of_wp,
-   `RelSem.Cerb.kCallHarnessAdequate_of_wpK2,
-   `RelSem.Cerb.kCallHarnessUBFree_of_wp,
-   `RelSem.Cerb.kCallHarnessUBFree_of_wpK2, `RelSem.Cerb.wp_callND,
+   -- (kCallHarnessAdequate_of_wpK2/kCallHarnessUBFree_of_wpK2 removed
+   -- arc-18 C2: their host PerStepLaws.lean deleted, Q1 ruling)
+   `RelSem.Cerb.kCallHarnessUBFree_of_wp, `RelSem.Cerb.wp_callND,
    `RelSem.Cerb.wp_callND_killed, `RelSem.Cerb.wp_of_app_active,
    `RelSem.T1.dnms_chain, `RelSem.T1.driver2_iter,
    `RelSem.T1.k1_globals, `RelSem.T1.k3_resolve, `RelSem.T1.k4_body,
@@ -1161,7 +1131,13 @@ open Lean in
 -- deliberately, same commit, with the reason. (When green the pin
 -- SWALLOWS the info line — absence of the sweep line from a green
 -- build log is expected; the DAEMON + statement gates still print.)
--- Re-baselines: 4890 → 4898 (arc-18 C1: THE PIECEWISE CHAIN
+-- Re-baselines: 4898 → 4737 (arc-18 C2: THE ENTRY-2 DELETIONS —
+-- PerStepPeel.lean + PerStepLaws.lean deleted per the Q1 [USER]
+-- ruling (the dormant arc-16 half: peels, wpk_round_* library,
+-- wpk_ite/wpk_pcs_*, the _of_wpK2 bridges); −161 declarations, all
+-- previously pinned trio/labeled; the carrier pin shrank 114 → 112
+-- in the same commit; no cone movement anywhere else).
+-- 4890 → 4898 (arc-18 C1: THE PIECEWISE CHAIN
 -- ASSEMBLER — the re-derived relative-chain emitter (endpoint-
 -- tracked pieces through dnms_round_computed, kernel-deferred
 -- premises) + its T6 smoke: rchain1..3 successor defs + _app
@@ -1269,7 +1245,7 @@ open Lean in
 -- probe's law layer; the probe fixture file itself is parked OUT of
 -- the build).
 /--
-info: RelSem audit sweep: 4898 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 4737 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do

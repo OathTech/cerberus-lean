@@ -3,7 +3,10 @@
 
   Per-construct tactics over the per-step language, packaged in the
   brick-wp mold: every recurring proof step is a LEMMA
-  (RelSem/PerStepLaws.lean, RelSem/CerbHeapWP.lean), and this layer is
+  (RelSem/PerStepIris.lean, RelSem/CerbHeapWP.lean; the dormant
+  arc-16 PerStepLaws/PerStepPeel half was DELETED at arc-18 C2 per
+  the Q1 [USER] ruling — the two live seq laws had already been
+  re-homed into PerStepIris at C1), and this layer is
   deliberately THIN — macros that apply the lemma, route the one state
   hypothesis (named selectively — S0's iframe-width discipline), and
   discharge side conditions by kernel computation
@@ -34,7 +37,7 @@
   House rules: no sorry, no axioms. Under the in-build audit.
 -/
 
-import RelSem.PerStepLaws
+import RelSem.PerStepIris
 import RelSem.CerbHeapWP
 -- arc-17 S0: the named-state emitter (`derive_state` /
 -- `derive_state_step`) — the SUPPLY SIDE of `wp_step`'s named-state
