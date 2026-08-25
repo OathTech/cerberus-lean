@@ -38,10 +38,26 @@ if [[ -z "${CERB_PROJ:-}" || -z "${GIT_CONFIG_GLOBAL:-}" ]]; then
     echo "capped: note — no scripts/env.sh found above $(dirname "$_capped_self"); proceeding with the current environment" >&2
   fi
 fi
+# --- the KILL banner (arc-17 S2 micro-item) ---------------------------------
+# Three exit-code misreadings in one arc family (the tail-pipe swallow, the
+# lem-gate chain, the S1 cgroup kills read as green) earned this: a killed
+# child must SHOUT. 137 = 128+SIGKILL (cgroup/OOM kill lands here),
+# 143 = 128+SIGTERM. The banner goes to stderr and the exit code is
+# propagated unchanged — this is a loudness feature, never a rescue.
+run_reporting_kills() {
+  local rc=0
+  "$@" || rc=$?
+  if [[ $rc -eq 137 || $rc -eq 143 ]]; then
+    echo "==============================================================" >&2
+    echo "capped: KILLED (exit $rc — cgroup/OOM or signal; NOT a pass)" >&2
+    echo "==============================================================" >&2
+  fi
+  exit $rc
+}
 MEM="${CERB_MEM_MAX:-64G}"
 if [[ "$MEM" == "none" ]]; then
   echo "capped: CERB_MEM_MAX=none — running UNCAPPED (explicit opt-out)" >&2
-  exec "$@"
+  run_reporting_kills "$@"
 fi
 # Portability fallback (arc-7 S5c, audit-1 F4): on hosts without
 # systemd-run (containers, non-systemd distros) warn LOUDLY and
@@ -51,6 +67,6 @@ fi
 if ! command -v systemd-run >/dev/null 2>&1; then
   echo "capped: WARNING — systemd-run NOT FOUND; running UNCAPPED" >&2
   echo "capped: WARNING — the D7 memory-cap rule is NOT enforced here" >&2
-  exec "$@"
+  run_reporting_kills "$@"
 fi
-exec systemd-run --user --scope --quiet -p "MemoryMax=$MEM" -p "MemorySwapMax=0" "$@"
+run_reporting_kills systemd-run --user --scope --quiet -p "MemoryMax=$MEM" -p "MemorySwapMax=0" "$@"
