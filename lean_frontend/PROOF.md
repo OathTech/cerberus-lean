@@ -16,34 +16,68 @@ you must trust:
 
 1. **The Lean kernel** (and, for the semantics' meaning, the model —
    which is executable and differentially validated, see DESIGN.md §5).
-2. **The declared boundary axioms** — exactly three:
-   - `LemLib.runEffectful` (in `lem-lean/lean-lib/LemLib.lean`) — the
-     effect-erasure boundary for `BaseIO` externs (fresh counters,
-     debug output);
+2. **The axiom story — the achieved end state (arc-17 S2b).** This
+   repository declares **zero axioms**. The gates enforce it: the
+   hand-written axiom census and the generated-tree census
+   (`scripts/check_theorem_axioms.sh`) both assert an **empty**
+   allowlist, fail-closed.
+
+   *What happened to the old boundary axioms.* Two hand-written
+   axioms used to exist and are **deleted** (arc-17 S2b, executing
+   the operator's temporal-mover ruling):
    - `CerbTags.with_tagDefs` (`CerbTags.lean`) — tag-definition
-     state installation;
-   - `CerberusFresh.forceIO` (`CerberusFresh.lean`) — fresh
-     symbol/digest generation.
-   These three are **scheduled for elimination, not accepted as
-   permanent**: the effect state they hide (the fresh-symbol supply,
-   the tag-definition table) is planned to move *inside* the modeled
-   machine state — Lean-side only; the OCaml implementation keeps its
-   ambient counter for upstream fidelity — after which theorem cones
-   shrink to exactly the three standard Lean axioms
-   (`propext`, `Classical.choice`, `Quot.sound`) and the native
-   counter survives only as the compiled binary's implementation of
-   the modeled supply. Until then, every cone wears them visibly
-   (below), and no design may make that migration harder.
-   Build gates pin this set: the axiom census over this repository
-   (hand-written and generated code) is asserted to be exactly
-   `with_tagDefs` + `forceIO` — `runEffectful` lives in the LemLib
-   runtime library — and each theorem's **transitive axiom cone** is
-   asserted exactly: the flagship theorems' cones are
-   `[propext, runEffectful, Classical.choice, Quot.sound]` — the
-   classical trio plus the effect boundary, nothing else. The
-   assertions are in-build (`relsem/RelSem/Audit.lean` plus
-   `scripts/check_theorem_axioms.sh`) and plant-tested (deliberately
-   broken to confirm they fire — DESIGN.md §5).
+     state installation — and
+   - `CerberusFresh.forceIO` (`CerberusFresh.lean`) — the IO-position
+     evaluation barrier for fresh symbol/digest reads —
+
+   are now `opaque` constants with **kernel-checked inhabitation
+   witnesses** (`fun _ f => f ()` and `fun f => pure (f ())` — their
+   effect-erased meanings). Nothing is postulated: the kernel checks
+   the witnesses; the constants stay irreducible to every proof
+   (opaque), so no proof can exploit them; and the compiled behavior
+   is unchanged (`@[implemented_by]` still binds the native C
+   extents — re-verified by the differential lanes and the unit
+   tests that found the original effect-erasure bugs). Because
+   opaques are not axioms, these constants **can never appear in any
+   axiom cone**. An in-build **boundary-opaque gate**
+   (`relsem/RelSem/Audit.lean`) makes the conversion irreversible by
+   default: either name existing as an axiom, being a transparent
+   def, or being allowlisted fails the build (plant-tested both
+   directions).
+
+   *The one residual axiom, outside this repo.*
+   `LemLib.runEffectful` (in `lem-lean/lean-lib/LemLib.lean`, a
+   dependency) — the arcs-1+2 effect-erasure barrier for `BaseIO`
+   externs, consumed by the generated ambient/compiled driver paths.
+   It is **temporal, not permanent**: its remaining consumers are the
+   ambient theorem family (which retires at the arc-17 purge in
+   favor of the threaded family) and compiled driver code; its
+   deletion is lem-side surgery, registered for a lem arc. Two gates
+   bound it meanwhile: (a) the **no-cone-entry gate**
+   (`relsem/RelSem/Audit.lean`) pins the exact set of theorems whose
+   cones carry it (114 registered ambient-family theorems) — any NEW
+   theorem cone acquiring it is build-fatal, and a stale entry is
+   build-fatal until deliberately removed; (b) the per-theorem
+   `#guard_msgs` cone pins. The **threaded flagship theorems**
+   (`T1Threaded`–`T3Threaded`, `T6Threaded` and their UB-freedom
+   companions) have cones of **exactly the classical trio**
+   `[propext, Classical.choice, Quot.sound]` — no effect axiom
+   anywhere; the ambient originals wear
+   `[propext, runEffectful, Classical.choice, Quot.sound]`, exactly
+   and pinned. What remains to reach trio-everywhere: the spec-lab
+   statement substrate still quotes the ambient initial state
+   (registered for the family-∀ slice, which re-lands those
+   statements anyway), and the ambient family retires at the purge.
+   All assertions are in-build and plant-tested (deliberately broken
+   to confirm they fire — transcripts in
+   `docs/2026-08-25_arc17-s2b-axiom-endgame.md`).
+
+   *Where the runtime trust actually lives:* the `@[implemented_by]`
+   / `@[extern]` boundary (native counters, the tag table, MD5) —
+   compiled-side implementation state, out of every cone by
+   construction, mirrored against the OCaml originals and pinned by
+   the differential gates. That boundary is permanent (native C
+   externs are a declared immovable object); the AXIOMS are gone.
 3. **Nothing evaluator-shaped.** Non-kernel proof methods are banned
    outright and gate-enforced: no `native_decide`, no `bv_decide`,
    nothing whose proof carries `Lean.ofReduceBool`/`ofReduceNat`.
@@ -106,7 +140,14 @@ foundational slate T1–T4 (scalar arithmetic through struct member
 write/read): ∀-quantified, interpreter-only statements about pinned
 compiled Core programs, proved via the iris-lean weakest-precondition
 route and discharged through an in-repo adequacy theorem into
-statements that mention only the fuel semantics. Cones exactly as §1.
+statements that mention only the fuel semantics. Cones exactly as §1
+(the ambient quartet, pinned). Since the Iris refounding (arc-16/17),
+a **threaded** family re-proves T1–T3 (and a fifth fixture, T6) at
+**∀-fresh-supply-seed statements** — strictly stronger than the
+ambient originals — with cones of **exactly the classical trio**;
+T4's threaded ∀-seed statement is landed with its kernel-witnessed
+seed-apartness guard, its theorem in progress at a measured frontier
+(the arc-17 S2/S2b records).
 
 **Kernel-checked statement layers for real C functions** (the spec
 lab: division/modulo, `memcpy`, array access, linked-list append,
@@ -128,10 +169,13 @@ corpora with zero semantic mismatches. See
 **exec-equation campaign** — the unconditional kernel proofs that the
 compiled harnesses *execute* to their verdicts (which would upgrade
 sample-∀ to family-∀ and make the refutation schemas unconditional) —
-is the current binding constraint; it waits on the symbolic-walk
-machinery (T5 and the in-chase sealing work, both in flight — see
-`docs/2026-08-22_arc15-t5-resumption-record.md` and the stepper
-design note `docs/2026-08-23_stepper-arc-design.md`).
+is the current binding constraint. Its machinery is now the arc-17
+automation framework (the law-driven round evaluator with its
+hypothesis-threading mode, the per-construct law registry, and the
+planned invariant-based loop treatment — charter:
+`docs/2026-08-24_arc17-automation-framework-charter.md`); the
+chase-era walk/sealing route it supersedes is retired
+(`docs/2026-08-24_chase-era-postmortem.md`).
 Length/shape-parametric ∀ (beyond fixed shapes) is staged behind the
 same machinery. Do not read any claim in this file as covering these.
 

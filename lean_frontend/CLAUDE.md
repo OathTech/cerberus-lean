@@ -348,7 +348,10 @@ dated records — do not maintain status lists here. Start points:
   in the container `ROADMAP.md`).
 - Proof capabilities + exactly-what-is-proved: [PROOF.md](PROOF.md).
 - Declared boundary: concurrency stubs (temporal, cmm arc is the
-  mover) + the three boundary axioms (PROOF.md §1). No sorried
+  mover) + the axiom story of PROOF.md §1 (arc-17 S2b end state:
+  ZERO axioms in this repo — the former with_tagDefs/forceIO axioms
+  are kernel-checked opaques, gate-enforced; the one residual,
+  LemLib's `runEffectful`, is temporal and no-cone-gated). No sorried
   target_reps outside that boundary; any new one is a finding.
 - Known operational residuals (step-runner stack ceiling, oracle
   allocation-census gap, etc.): registered with prices in the latest

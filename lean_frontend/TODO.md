@@ -81,10 +81,13 @@ is deliberately not pinned here — follow the pointers.
   claim (shrinks the trusted C-to-Core link to the parser alone;
   PROOF.md §3). Unpriced until the kernel-side elaboration cost is
   probed; natural once the sealing/stepper machinery lands.
-- **Kill the effect axioms** — thread the effect state (fresh-symbol
-  supply, tag-definition table) into the modeled machine state,
-  Lean-side only, retiring `runEffectful`/`forceIO`/`with_tagDefs`
-  from every theorem cone; end state = exactly the three standard
-  Lean axioms (PROOF.md §1). Sooner rather than later; the
-  concurrency work (which needs explicit machine state anyway) is
-  the natural vehicle if nothing earlier takes it.
+- **Kill the effect axioms** — LARGELY DONE (arc-17 S2b):
+  `with_tagDefs`/`forceIO` are DELETED as axioms (kernel-checked
+  opaques, boundary-opaque gate); the threaded theorem family is
+  trio-exact. Residual: `runEffectful` (LemLib, temporal — its
+  deletion is lem-side surgery; carrier set pinned by the
+  no-cone-entry gate, the ambient family retires at the arc-17
+  purge), and the spec-lab statement substrate still quotes the
+  ambient initial state (registered for the family-∀ slice). Full
+  machine-state threading of the supply remains the cmm-arc-adjacent
+  end state (PROOF.md §1).
