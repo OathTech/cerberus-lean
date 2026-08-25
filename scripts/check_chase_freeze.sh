@@ -5,9 +5,12 @@
 # The chase-era proof machinery (the app_walk walker + trace/replay:
 # RelSem.Tactics.AppWalk, RelSem.Tactics.WalkTrace and the tactic
 # surfaces app_walk / app_walk_norm / app_walk_rec / app_walk_replay)
-# is FROZEN pending retirement: the Iris refounding (arc 16) re-proves
-# T1-T4 through a real language instance + heap RA, after which part
-# 2's PURGE deletes the chase surfaces in one commit. Until then the
+# is FROZEN pending retirement: the Iris refounding (arc 16/17) has
+# re-proved the flagship theorems threaded through the per-step
+# language + evaluator route; the arc-18 C5 EXTENDED PURGE deletes
+# the chase surfaces in one commit (retirement inventory:
+# lean_frontend/docs/2026-08-25_reasoning-layer-contracts.md §7).
+# Until then the
 # existing consumers below are grandfathered as the LEGACY ALLOWLIST,
 # and any NEW dependence on the chase — an import of either module, or
 # a use of any of the four tactic tokens, in a file not on the list —
@@ -36,9 +39,14 @@
 #   relsem/test/Unit/AppWalkTest.lean  (E1-E10 contract table)
 # Tactic-token users beyond those:
 #   relsem/bench/WalkBench.lean      (app_walk_rec/app_walk_replay bench)
-#   relsem/RelSem/Tactics/AppEqAttr.lean (docstring mentions only; the
-#     @[app_eq] law table itself SURVIVES the purge — the charter's
-#     primitive-law layer consumes it)
+#   relsem/RelSem/Tactics/AppEqAttr.lean (docstring mentions only.
+#     Truth about @[app_eq] — corrected arc-18 C0: the proved LEMMAS
+#     under the attribute survive by re-registration in the arc-18 C1
+#     unified registry (today's law layer consumes them by NAME, not
+#     through the attribute index); the DiscrTree attribute MECHANISM
+#     is consumed only by the frozen walker (appEqMatches appears only
+#     in AppWalk.lean) and is the C1 registry's in-house donor — its
+#     disposition, evolve-or-delete, is decided at C1)
 # NOT on the list (verified: no direct import, no tactic token):
 #   T2AppEq/T3AppEq/T4AppEq/T4Defs/T5Fixture/T5Iter — they consume
 #   T1AppEq's proved lemmas, not the walker.

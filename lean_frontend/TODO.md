@@ -6,29 +6,38 @@ is deliberately not pinned here — follow the pointers.
 
 ## In flight
 
-- **In-chase sealing + landing T5, the first bounded-loop theorem**
-  (the next rung after the T1–T4 slate, PROOF.md §3). A new
-  engine capability keeps every kernel obligation shallow inside long
-  symbolic-execution chases (the Lean kernel's recursion depth is the
-  binding limit, not proof content). Mechanism + current state:
-  `docs/2026-08-22_arc15-t5-resumption-record.md`, seals section of
-  `docs/2026-08-23_stepper-arc-design.md`.
+- **Arc 18 — the coherence consolidation**: one reasoning route
+  survives (the law-driven round evaluator minting equations, the
+  per-step WP layer consuming them, `CerbMemInterp` as the sole state
+  interpretation, one attribute-indexed law registry as the public
+  interface), the superseded routes are purged, and a playbook makes
+  the layer explainable to a fresh agent. Charter (slice ladder
+  C0–C6, operator-blessed):
+  `docs/2026-08-25_arc18-coherence-charter.md`; layer contracts:
+  `docs/2026-08-25_reasoning-layer-contracts.md`. T4-threaded and T5
+  (the first bounded-loop theorem) complete on the consolidated
+  substrate at C3. (The previously headlined in-chase sealing/stepper
+  plan was falsified and superseded — post-mortem:
+  `docs/2026-08-24_chase-era-postmortem.md`; the design note
+  `docs/2026-08-23_stepper-arc-design.md` is superseded history.)
 
 ## Next, in sequence
 
-- **The exec-equation campaign** — kernel proofs that the compiled
-  spec harnesses execute to their verdicts. The binding constraint on
-  proof capability: upgrades the spec lab's finite sample-∀ statements
-  to family-∀ and makes the plant-refutation schemas unconditional.
-  Benchmark: the five parked spec-lab campaigns
-  (`docs/2026-08-23_arc15-results.md`, parked inventory).
-- **The compositional stepper** — a certificate-emitting symbolic
-  executor: proved-rewrite laws + in-chase seals + typed residuals +
-  per-function summary **overrides** at call sites (whole-state
-  summaries first, separation-logic footprints second). Design:
-  `docs/2026-08-23_stepper-arc-design.md`.
+- **Family-∀ spec-lab endpoints** (arc-18 C4) — kernel proofs that
+  the compiled spec harnesses execute to their verdicts: upgrades the
+  spec lab's finite sample-∀ statements to family-∀ and makes the
+  plant-refutation schemas unconditional. Benchmark: the five parked
+  spec-lab campaigns (`docs/2026-08-23_arc15-results.md`, parked
+  inventory).
+- **The libxml2 rung** — `uri.c` under the consolidated layer (the
+  differential corpus + 16/16 gate already stand); its memory
+  reasoning runs under `CerbMemInterp` and produces the
+  Lithium-parity-distance table.
+- **Arc 19 — goal-directed search** over the arc-18 registry (the
+  Lithium parity floor; charter to be written against the post-arc-18
+  tree).
 
-## Targets (once the stepper sets the proof economics)
+## Targets (once the automation framework sets the proof economics)
 
 - **WireGuard ladder** — `docs/2026-08-20_wireguard-target-scoping.md`.
 - **pKVM buddy allocator** — reference: the CN pKVM buddy-allocator
@@ -80,14 +89,15 @@ is deliberately not pinned here — follow the pointers.
   the pinned parsed C AST with elaboration inside the kernel-checked
   claim (shrinks the trusted C-to-Core link to the parser alone;
   PROOF.md §3). Unpriced until the kernel-side elaboration cost is
-  probed; natural once the sealing/stepper machinery lands.
+  probed; natural once the consolidated automation layer (arc 18) is
+  in place.
 - **Kill the effect axioms** — LARGELY DONE (arc-17 S2b):
   `with_tagDefs`/`forceIO` are DELETED as axioms (kernel-checked
   opaques, boundary-opaque gate); the threaded theorem family is
   trio-exact. Residual: `runEffectful` (LemLib, temporal — its
   deletion is lem-side surgery; carrier set pinned by the
-  no-cone-entry gate, the ambient family retires at the arc-17
+  no-cone-entry gate, the ambient family retires at the arc-18 C5
   purge), and the spec-lab statement substrate still quotes the
-  ambient initial state (registered for the family-∀ slice). Full
+  ambient initial state (re-landed threaded at arc-18 C4). Full
   machine-state threading of the supply remains the cmm-arc-adjacent
   end state (PROOF.md §1).

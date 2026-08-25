@@ -50,7 +50,7 @@ you must trust:
    dependency) — the arcs-1+2 effect-erasure barrier for `BaseIO`
    externs, consumed by the generated ambient/compiled driver paths.
    It is **temporal, not permanent**: its remaining consumers are the
-   ambient theorem family (which retires at the arc-17 purge in
+   ambient theorem family (which retires at the arc-18 C5 purge in
    favor of the threaded family) and compiled driver code; its
    deletion is lem-side surgery, registered for a lem arc. Two gates
    bound it meanwhile: (a) the **no-cone-entry gate**
@@ -146,8 +146,9 @@ a **threaded** family re-proves T1–T3 (and a fifth fixture, T6) at
 **∀-fresh-supply-seed statements** — strictly stronger than the
 ambient originals — with cones of **exactly the classical trio**;
 T4's threaded ∀-seed statement is landed with its kernel-witnessed
-seed-apartness guard, its theorem in progress at a measured frontier
-(the arc-17 S2/S2b records).
+seed-apartness guard, its theorem honestly parked at a measured
+frontier (round 22 of the evaluator walk, the arc-17 S3 record) and
+scheduled to complete on the consolidated substrate (arc-18 C3).
 
 **Kernel-checked statement layers for real C functions** (the spec
 lab: division/modulo, `memcpy`, array access, linked-list append,
@@ -169,12 +170,15 @@ corpora with zero semantic mismatches. See
 **exec-equation campaign** — the unconditional kernel proofs that the
 compiled harnesses *execute* to their verdicts (which would upgrade
 sample-∀ to family-∀ and make the refutation schemas unconditional) —
-is the current binding constraint. Its machinery is now the arc-17
+is the current binding constraint. Its machinery is the arc-17
 automation framework (the law-driven round evaluator with its
-hypothesis-threading mode, the per-construct law registry, and the
-planned invariant-based loop treatment — charter:
-`docs/2026-08-24_arc17-automation-framework-charter.md`); the
-chase-era walk/sealing route it supersedes is retired
+hypothesis-threading mode, the construct-law layer, and the
+invariant-based loop treatment — charter:
+`docs/2026-08-24_arc17-automation-framework-charter.md`), being
+consolidated to a single route by the arc-18 coherence arc
+(`docs/2026-08-25_arc18-coherence-charter.md`; family-∀ endpoints
+land at its C4 slice); the chase-era walk/sealing route it
+supersedes is frozen pending the arc-18 C5 purge
 (`docs/2026-08-24_chase-era-postmortem.md`).
 Length/shape-parametric ∀ (beyond fixed shapes) is staged behind the
 same machinery. Do not read any claim in this file as covering these.
@@ -219,33 +223,56 @@ TODO.md).
 
 "Boring executable specs in the front, Iris party in the back": proof
 *construction* is unrestricted, so long as every step lands as an
-ordinary kernel-checked declaration.
+ordinary kernel-checked declaration. The route a landed theorem
+actually takes (the flagships `T1Threaded`–`T3Threaded`, `T6Threaded`
+all run on it) is: **the evaluator mints equations; the WP layer
+consumes them; adequacy lands the fuel-opsem statement.** The layer
+contracts are stated normatively in
+`docs/2026-08-25_reasoning-layer-contracts.md`; in brief:
 
-- **The workbench** (`relsem/`): a law table (`@[app_eq]`) of proved
-  rewrite equations; a symbolic walker (`app_walk`) that discharges
-  execution steps by emitting per-stage certificates — each an
-  ordinary kernel-checked declaration; sealing (naming big
-  intermediate terms) to keep every kernel obligation shallow;
-  structured trace IR with **checked replay** (recorded proof runs
-  replay ~15× faster with identical checking, and refuse loudly on
-  any fingerprint mismatch).
+- **The per-step language layer** (`relsem/RelSem/PerStep.lean`,
+  `PerStepIris.lean`): a reified per-step language (`KExpr`/`KStep`)
+  over the fuel semantics' own driver state, with an iris-lean
+  `Language` instance and a completeness theorem
+  (`ksteps_of_runNDFuel`) tying it to the executable runner — every
+  step arm is *defined* from generated-code equations, never
+  axiomatized.
+- **The equation supply** (`relsem/RelSem/DeriveState.lean`,
+  `RoundEval.lean`): the law-driven round evaluator mints *named*
+  states and per-round `app` equations by applying proved construct
+  laws (`ConstructLaws.lean`, the `Kit/` lemma kits) — the meta layer
+  only shapes the claim; the kernel re-checks everything at
+  declaration time. Anything it cannot mint is a *tagged frontier*,
+  fail-closed, never a silent skip.
+- **The wp-tactic layer** (`PerStepTactics.lean`, `WpGround.lean`):
+  `wp_step`/`wp_pures` walk the harness spine consuming the minted
+  equations; `wp_side`/`wp_ground` discharge ground side conditions.
+  Loops enter through `iter_compose` (`Kit/Loop.lean`) — an
+  invariant-style composed-block equation at the equation calculus
+  (Floyd–Hoare-shaped; the Iris-level invariant story arrives with
+  contracts/typed views in a later arc).
 - **iris-lean coupling**: separation-logic machinery (weakest
   preconditions, framing, invariants) used freely in proofs and
   discharged through the adequacy theorem — Iris never appears in a
-  statement.
+  statement. The memory-model heap RA (`CerbHeapRA`/`CerbHeapWP`:
+  byte points-to over the concrete memory model, framing) is landed
+  and becomes the sole state interpretation in the arc-18 migration.
 - **Pure transport**: most of a specification's intellectual content
   lives as ordinary lemmas about the pure model (cheap, parallel,
   standard Lean), connected to execution once per structure family.
 
-The direction of travel is the **Iris refounding**: instantiating the
-proof machinery this section describes as a proper Iris language
-instance with a points-to heap over the memory model, per-construct
-WP laws, and logical loop invariants — after which the walker-based
-discharge described above is scheduled for retirement (re-proof
-first, statements and axiom cones unchanged). The plan and its
-post-mortem of the superseded route:
-`docs/2026-08-24_arc16-iris-refounding-charter.md` and
-`docs/2026-08-24_chase-era-postmortem.md`.
+**Frozen legacy, purge-bound.** The chase-era workbench — the
+`@[app_eq]` law table with its symbolic walker (`app_walk`),
+per-stage certificate emission, and trace/replay — still exists
+in-tree feeding the *ambient* (pre-threading) theorem family, but it
+is frozen by a build gate (`scripts/check_chase_freeze.sh`: any new
+dependence on it is build-fatal) and scheduled for deletion at the
+arc-18 C5 purge together with the ambient family it serves. New
+proof work goes through the evaluator/WP route above, never the
+walker. Consolidation plan and the retirement inventory:
+`docs/2026-08-25_arc18-coherence-charter.md`,
+`docs/2026-08-25_reasoning-layer-contracts.md`; post-mortem of the
+superseded route: `docs/2026-08-24_chase-era-postmortem.md`.
 
 ## 5. How to check any claim in this file
 

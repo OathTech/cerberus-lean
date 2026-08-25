@@ -80,8 +80,11 @@ compared across the whole enumeration in differential runs.
 **Effects.** The OCaml model uses mutable references for ambient state
 (fresh-name counters, tag definitions, debug output). In Lean these
 run through a small effect-erasure boundary: `BaseIO` externs behind
-the declared axiom `LemLib.runEffectful` (see PROOF.md §trust for why
-this is on the boundary list and what constrains it).
+`LemLib.runEffectful` — a declared *temporal* axiom living in the
+`lem-lean` dependency, not this repository (which declares zero
+axioms), consumed only by the ambient/compiled driver paths; the
+threaded theorem family avoids it entirely (see PROOF.md §1 for the
+full axiom story and the gates that constrain it).
 
 **Totality.** Proof-bearing code must not contain `partial`
 definitions the kernel cannot reason about. Every function on the
