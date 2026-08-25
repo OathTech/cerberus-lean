@@ -7,7 +7,7 @@
   the zero-fixture-equation probe reached and of the precise
   machinery gap that stops it — run `scripts/capped lake lean` on it
   (green, ~18 s) to reproduce the frontier. Full account: the S1
-  record (docs/2026-08-25_arc17-s1-equation-frontier.md, acceptance-
+  record (docs/2026-08-24_arc17-s1-equation-frontier.md, acceptance-
   probe section).
 
   Fixture: tests/verify/t6_branch.c (branch + arithmetic + scalar

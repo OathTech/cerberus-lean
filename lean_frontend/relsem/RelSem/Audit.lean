@@ -806,6 +806,18 @@ open Lean in
 #guard_msgs in #print axioms RelSem.Laws.seu_read_bind
 /-- info: 'RelSem.Laws.erun_jump_m' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Laws.erun_jump_m
+/-- info: 'RelSem.Laws.ndct_offer1' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Laws.ndct_offer1
+/-- info: 'RelSem.Laws.driver2_done' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Laws.driver2_done
+/-- info: 'RelSem.Laws.inject_ptr_arg1' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Laws.inject_ptr_arg1
+/-- info: 'RelSem.Laws.callND_errno' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Laws.callND_errno
+/-- info: 'RelSem.Laws.get_ths_eq' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Laws.get_ths_eq
+/-- info: 'RelSem.Laws.driver_update_ts' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Laws.driver_update_ts
 /-- info: 'RelSem.T1.round6' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.round6
 /-- info: 'RelSem.T2.round13' depends on axioms: [propext, Classical.choice, Quot.sound] -/
