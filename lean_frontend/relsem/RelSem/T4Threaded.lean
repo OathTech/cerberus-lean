@@ -149,34 +149,46 @@ derive_state dRdyT (seed : Nat) (x : Int) : driver_state :=
   { dErrT seed x with
     core_state0 := update_thread_state 0 thRdyT (dErrT seed x).core_state0 }
 
-/-! ## THE DRIVER RUN — the measured S2b frontier (was: the S2
-    frontier at ROUND 2)
+/-! ## THE DRIVER RUN — frontier 17 → 22 (arc-17 S3, THE ARITH
+    MINTER; was: the S2b frontier at round 18)
 
-    Arc-17 S2b: the S2-registered evaluator HYPOTHESIS-THREADING MODE
-    is BUILT (RoundEval `assuming` clause — curated tidy-pattern
-    rewrites + the attribute fence + the materialized-memory twin +
-    the kernel-deferred side-condition engine + the respell bridge;
-    design notes in RoundEval.lean). Under the pack below the drive
-    now mints SEVENTEEN rounds mechanically — through the struct
-    create (round 2, the old frontier), the struct store-unspecified
-    (round 5, the `hunspec` padding image), and the x-symbolic load
-    of v (round 10: the byte roundtrip enters through `hrecv`; the
-    load-round mint cost fell from the S2-recorded ~7 s to ~120 ms
-    via the twin + memoization). Per-round mint: 42–914 ms, flat.
+    Arc-17 S3: the S2b-identified ARITH MINTER is BUILT (RoundEval —
+    the Decidable/Bool verdict lanes over pack-bounded binders:
+    `dec_eq_isTrue/False` proof-irrelevance bridges + omega side
+    facts emitted as NAMED theorems, kernel decide for ground cases,
+    the arith refold for omega's vocabulary, the decide-shape lane
+    for dependent tower clusters, the type-check guard on verdict
+    substitution, and the `.all` dig for smart-unfolding-hidden
+    towers). Under the pack below the drive now mints TWENTY-TWO
+    rounds mechanically: the round-18/19 conv RANGE CHECKS on the
+    open x mint through exactly the identified recipe (the towers
+    `match x + 2147483648 with | ofNat _ => isTrue … | negSucc _ =>
+    isFalse …` become registered verdicts backed by `hrng1`/`hrng2`
+    via omega), and the round-20 struct-member STORE of the
+    x-symbolic value mints through `hi2b` (the int-store byte image,
+    rfl-derivable).
 
-    THE NEW MEASURED FRONTIER — ROUND 18, the conv RANGE CHECK on x:
-    the eval sticks on Int-comparison DECIDABLES over the open x
-    (`match x + 2147483648 with | ofNat _ => isTrue … | negSucc _ =>
-    isFalse …` towers from the inlined stdlib conv body). A REWRITE
-    cannot fix a stuck constructor-match — this needs the ARITH
-    MINTER (mint `⟨stuck decidable/Bool spelling⟩ = ⟨verdict⟩` facts
-    from range hypotheses, omega-backed): the same subsystem the
-    anon-seed comparisons need (seed vs static under `hap`).
-    ENUMERATED REMAINDER (S2b record, priced): (1) the arith minter
-    (M — unlocks the conv rounds AND the Kit/Env-backed anon-env
-    rounds); (2) the SeqRMW mint branch over `perform_seqrmw` (S–M);
-    (3) terminal + wpK walk + statement discharge (S, the T6
-    template). The ambient T4 (T4EnvHyp route) stands untouched. -/
+    THE S3 MEASURED WALL — ROUND 23, the ANON-ENV REGION (parked;
+    the S3 record carries the full diagnosis): resolving
+    `PEsym anon1` at ∀-seed forces lookups through env maps that the
+    earlier rounds MATERIALIZED into raw `Std.DTreeMap.Internal`
+    trees; the seed-vs-static comparison towers hide INSIDE folded
+    tree operations (smart unfolding refuses stuck-match unfolds at
+    every transparency), and every mechanical route measured is
+    either representation-level combat with the tree internals (the
+    `.all` dig — repeated collisions with `._f` WF-auxiliary
+    spellings; the trick-filter prong-2 tell) or an `fmapAddBy/
+    fmapLookupBy` fence that breaks the evaluator's ground-defeq
+    spine (classification, law unification, chain rfl side
+    conditions — all measured). This is a NEW wall class beyond the
+    S2b enumeration: the verdicts themselves mint fine; the
+    CONSUMING spellings are not law-shaped and cannot be made
+    law-shaped without a representation-level env model. DESIGN
+    MOVERS (registered): an abstract env layer above the tree
+    representation (the typed-view direction), or the effect-state
+    threading that keeps anon draws out of comparator maps entirely
+    (the [USER] machine-state end state). The ambient T4 (T4EnvHyp
+    route) stands untouched; `T4ThreadedStatement` stands landed. -/
 
 derive_rounds rT (seed : Nat) (x : Int)
   (hap : seed + 1 < 229457971439601039)
@@ -196,15 +208,23 @@ derive_rounds rT (seed : Nat) (x : Int)
             CerbMem.paddingByte, CerbMem.paddingByte, CerbMem.paddingByte,
             CerbMem.paddingByte, CerbMem.paddingByte]))
   (hszI : CerbMem.sizeofCtype (Ctype [] (Basic (Integer (Signed Int_)))) = 4)
-  -- x-symbolic value facts (the loads' byte roundtrips — derivable
-  -- from the ambient T4AppEq facts under intRange x):
+  -- x range (the conv checks' omega ammunition; intRange x at the
+  -- statement):
+  (hrng1 : -2147483648 ≤ x) (hrng2 : x ≤ 2147483647)
+  -- x-symbolic value facts (the loads' byte roundtrips + the store's
+  -- byte image — derivable from the ambient T4AppEq facts under
+  -- intRange x):
   (hrecv : CerbMem.reconstructValue [] [] vAddr
     (Ctype [] (Basic (Integer (Signed Int_))))
     [mkByte x 0, mkByte x 1, mkByte x 2, mkByte x 3]
     = CerbMem.MemValue.MVinteger (Signed Int_)
         (CerbMem.IntegerValue.IV .Prov_none x))
-  assuming hap htags hdig hsz halign hshiftA hshiftB hunspec hszI hrecv
-  using (t4File.tagDefs) 0 from (dRdyT seed x) upto 17
+  (hi2b : CerbMem.memValueToBytes []
+    (CerbMem.MemValue.MVinteger (Signed Int_)
+      (CerbMem.IntegerValue.IV .Prov_none x))
+    = ([], [mkByte x 0, mkByte x 1, mkByte x 2, mkByte x 3]))
+  assuming hap htags hdig hsz halign hshiftA hshiftB hunspec hszI hrng1 hrng2 hrecv hi2b
+  using (t4File.tagDefs) 0 from (dRdyT seed x) upto 22
 
 /-! ## THE GUARDED STATEMENT (landed; its theorem is the enumerated
     remaining work above) -/
