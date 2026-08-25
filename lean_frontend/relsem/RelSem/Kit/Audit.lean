@@ -144,3 +144,6 @@ import RelSem.Kit.Map
 #guard_msgs in #print axioms RelSem.Kit.perform_store
 /-- info: 'RelSem.Kit.perform_kill' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Kit.perform_kill
+-- arc-17 S2: the seq_rmw construct law (the S1-registered census gap).
+/-- info: 'RelSem.Kit.perform_seqrmw' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Kit.perform_seqrmw

@@ -437,6 +437,84 @@ theorem sym_draw_eval {a : Type} (rs : core_run_state) :
             rs.sym_supply SD_None),
           { rs with sym_supply := rs.sym_supply + 1 }) := rfl
 
+/-- action_request_sequential2's SeqRMWRequest2 arm (arc-17 S2 — the
+    S1-registered census gap: `seq_rmw`, 122 occurrences / 34 files;
+    generic unfold, explicit-equation form). -/
+theorem ars_seqrmw_unfold (loc : CerbLocation.Loc) (tid aid : Nat)
+    (ty : ctype) (ptr : CerbMem.PointerValue)
+    (mkv : CerbMem.MemValue → core_runM CerbMem.MemValue)
+    (mk : Nat → CerbMem.Footprint → CerbMem.MemValue →
+      CerbMem.MemValue → thread_state) :
+    action_request_sequential2 loc tid aid (SeqRMWRequest2 ty ptr mkv mk)
+      = nd_bind (liftMem (CerbMem.loadM loc ty ptr))
+          (fun (p : CerbMem.Footprint × CerbMem.MemValue) =>
+            match p with
+            | (_, mval) => nd_bind (liftCore_run (mkv mval))
+                (fun (mval' : CerbMem.MemValue) =>
+                  nd_bind (liftMem (CerbMem.storeM loc ty false ptr mval'))
+                    (fun (fp : CerbMem.Footprint) =>
+                      nd_bind (liftMem (CerbMem.prefixOfPointer ptr))
+                        (fun (pref : Option String) =>
+                          nd_update (fun (dr_st : driver_state) =>
+                            { dr_st with
+                              trace := ME_seq_rmw loc pref ty ptr mval mval'
+                                :: dr_st.trace,
+                              core_state0 := update_thread_state tid
+                                (mk aid fp mval mval')
+                                dr_st.core_state0 }))))) := rfl
+
+/-- SEQ-RMW round's perform (arc-17 S2; CONSTRUCT LAW for the
+    supply-reading `seq_rmw` shape — the S1-registered gap, blocked
+    until the env algebra existed because the RMW COMPUTE stage
+    (`hrmw`, a runstate step) is where the NEG/exclusion transform's
+    fresh-symbol draws live; its output hypotheses are exactly what
+    the Kit/Env lookup lemmas discharge at open seed. Load, RMW
+    compute, store, trace/thread update; the `hmid`/`hout` recasts
+    follow the S1 output-recast discipline (callers pass NAMED states
+    + rfl). -/
+@[app_eq]
+theorem perform_seqrmw
+    {loc : CerbLocation.Loc} {tid : Nat}
+    {ty : ctype} {ptr : CerbMem.PointerValue}
+    {mkv : CerbMem.MemValue → core_runM CerbMem.MemValue}
+    {mk : Nat → CerbMem.Footprint → CerbMem.MemValue →
+      CerbMem.MemValue → thread_state}
+    {σ σ₁ σ₂ : driver_state} {fp0 fp : CerbMem.Footprint}
+    {mval mval' : CerbMem.MemValue}
+    {memL memS : CerbMem.MemState} {prefv : Option String}
+    (hload : app (CerbMem.loadM loc ty ptr) σ.layout_state
+      = (NDactive (fp0, mval), memL))
+    (hmid : { σ with
+        core_run_state0 := { σ.core_run_state0 with
+          aid_supply := σ.core_run_state0.aid_supply + 1 },
+        layout_state := memL } = σ₁)
+    (hrmw : app (liftCore_run (mkv mval)) σ₁ = (NDactive mval', σ₂))
+    (hstore : app (CerbMem.storeM loc ty false ptr mval')
+        σ₂.layout_state = (NDactive fp, memS))
+    (hpref : app (CerbMem.prefixOfPointer ptr) memS
+      = (NDactive prefv, memS)) :
+    app (perform_action_request2 false loc tid
+          (SeqRMWRequest2 ty ptr mkv mk)) σ
+      = (NDactive (),
+         (fun σm => { σm with
+            trace := ME_seq_rmw loc prefv ty ptr mval mval' :: σm.trace,
+            core_state0 := update_thread_state tid
+              (mk σ.core_run_state0.aid_supply fp mval mval')
+              σm.core_state0 })
+         { σ₂ with layout_state := memS }) := by
+  subst hmid
+  rw [perform_unfold]
+  refine (app_bind_active aid_draw).trans ?_
+  rw [ars_seqrmw_unfold]
+  refine (app_bind_active (app_liftMem_active ?_ hload)).trans ?_
+  case _ => rfl
+  refine (app_bind_active hrmw).trans ?_
+  refine (app_bind_active (app_liftMem_active ?_ hstore)).trans ?_
+  case _ => rfl
+  refine (app_bind_active (app_liftMem_active ?_ hpref)).trans ?_
+  case _ => rfl
+  exact app_nd_update _ _
+
 /-- KILL round's perform. -/
 @[app_eq]
 theorem perform_kill

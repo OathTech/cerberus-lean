@@ -80,6 +80,10 @@ import RelSem.T5Fixture
 -- arc-17 S2: the completed acceptance probe (un-parked — the whole
 -- t6 run through the law-driven round evaluator; ∀-seed theorems).
 import RelSem.T6Probe
+-- arc-17 S2: the guarded ∀-seed T4 statement + apartness hypothesis
+-- + the evaluator-driven prefix (theorem = enumerated remaining work;
+-- the in-file frontier note is the S2 record's park).
+import RelSem.T4Threaded
 import RelSem.T5Prefix
 import RelSem.T5Iter
 import RelSem.T4Defs

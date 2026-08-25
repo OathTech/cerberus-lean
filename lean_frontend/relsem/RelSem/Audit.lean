@@ -172,6 +172,7 @@ import RelSem.T3Threaded
 -- arc-17 S2: the completed acceptance probe joins the sweep closure
 -- + pins (the ∀-seed t6 theorems through the round evaluator).
 import RelSem.T6Probe
+import RelSem.T4Threaded
 
 namespace RelSem.Audit
 
@@ -968,6 +969,9 @@ open Lean in
 -- above). 3904 → 3983 (arc-16 S4: the threaded effect-state modules
 -- Threaded/T1Threaded join the closure — 79 declarations, all
 -- boundary-clean, the threaded theorem family trio-exact; pins
+-- 4410 → 4438 (arc-17 S2 cont.: T4Threaded — the guarded statement
+-- + apartness defs + evaluator-driven prefix at the measured
+-- frontier; the seq_rmw perform law joins via Kit/Round).
 -- 4361 → 4410 (arc-17 S2 cont.: Kit/Env — the ordered-map env
 -- algebra: comparator model + lawfulness + Fmap lookup layer).
 -- 4128 → 4361 (arc-17 S2: RoundEval meta code + the completed t6
@@ -995,7 +999,7 @@ open Lean in
 -- probe's law layer; the probe fixture file itself is parked OUT of
 -- the build).
 /--
-info: RelSem audit sweep: 4410 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 4438 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do
