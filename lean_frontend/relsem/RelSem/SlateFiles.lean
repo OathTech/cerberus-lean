@@ -1,7 +1,8 @@
 /-
-  RelSem.SlateFiles — arc-7 S5a (2026-08-20): THE T2–T5 PROGRAM TERMS.
+  RelSem.SlateFiles — arc-7 S5a (2026-08-20): THE T2–T6 PROGRAM TERMS
+  (T6 added arc-17 S1: the acceptance-probe fixture).
 
-  Assembles the kernel-transparent Core files the T2–T5 slate theorems
+  Assembles the kernel-transparent Core files the T2–T6 slate theorems
   quantify over, from the emitted parsed ASTs (RelSem/SlateCore.lean —
   generated, drift-gated) plus pinned metadata, exactly as
   RelSem/T1File.lean does for T1:
@@ -106,5 +107,16 @@ def t5FileU : file Unit :=
 
 /-- THE T5 file. -/
 def t5File : file core_run_annotation := convert_file t5FileU
+
+/-! ## T6: `int pick(int x)` (arc-17 S1: the acceptance-probe fixture —
+    branch + arithmetic + scalar locals) -/
+
+def t6FileU : file Unit :=
+  slateFileU (Lem_Map.fromList [(pickT6Sym, pickT6Decl)])
+    (Lem_Map.fromList [(pickT6Sym, funinfoOf [intParam])])
+    fmapEmpty
+
+/-- THE T6 file. -/
+def t6File : file core_run_annotation := convert_file t6FileU
 
 end RelSem.Slate

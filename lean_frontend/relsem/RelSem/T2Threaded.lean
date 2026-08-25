@@ -212,8 +212,8 @@ theorem driver2_iter_thr (seed : Nat) (x y : Int)
   show app (driver2_lemFuel (999999+1) t2File.tagDefs false)
     (mkDr th0 (memD3 x y) (rsD3_thr seed) [] 0)
     = (NDactive (), drDone_thr seed x y)
-  exact (RelSem.Laws.driver2_done
-    (ndct_eq_thr seed x y hx1 hx2 hy1 hy2 hs1 hs2)).trans (by rfl)
+  exact RelSem.Laws.driver2_done
+    (ndct_eq_thr seed x y hx1 hx2 hy1 hy2 hs1 hs2) (by rfl)
 
 /-- THE THREADED T2 HARNESS APP EQUATION. -/
 theorem t2_app_eq_thr (seed : Nat) (x y : Int)

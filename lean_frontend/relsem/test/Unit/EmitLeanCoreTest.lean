@@ -87,7 +87,11 @@ def slatePoints : List (String × file core_run_annotation × String ×
    ("t5", t5File, "sum", [0], .inl 0),
    ("t5", t5File, "sum", [1], .inl 0),
    ("t5", t5File, "sum", [10], .inl 45),
-   ("t5", t5File, "sum", [100], .inl 4950)]
+   ("t5", t5File, "sum", [100], .inl 4950),
+   ("t6", t6File, "pick", [10], .inl 7),
+   ("t6", t6File, "pick", [4], .inl 1),
+   ("t6", t6File, "pick", [3], .inl 6),
+   ("t6", t6File, "pick", [-5], .inl (-2))]
 
 def main : IO UInt32 := do
   let mut failures := 0

@@ -154,7 +154,8 @@ import RelSem.PerStepTacSmoke
 import RelSem.DeriveState
 import RelSem.WpGround
 -- arc-17 S1: the per-construct law registry joins the sweep closure
--- + pins.
+-- + pins. (The acceptance probe, RelSem/T6Probe.lean, is parked OUT
+-- of the build at its measured frontier — see the S1 record.)
 import RelSem.ConstructLaws
 -- arc-16 S4: the threaded effect state (∀-seed statements; the
 -- acceptance re-proof) joins the sweep closure + pins.
@@ -929,9 +930,14 @@ open Lean in
 -- are DELETED — their ambient rounds are ∀-run-state and pinned trio
 -- above — and the per-fixture scheduler/driver-iteration proof
 -- machinery in the threaded files collapses into the two
--- call-structure laws; net +11, all boundary-clean).
+-- call-structure laws; net +11, all boundary-clean). 4119 → 4128
+-- (arc-17 S1 cont.: the harness caller-protocol laws
+-- inject_ptr_arg1/callND_errno/get_ths_eq/driver_update_ts + the
+-- stepAt registry helper join ConstructLaws — the acceptance
+-- probe's law layer; the probe fixture file itself is parked OUT of
+-- the build).
 /--
-info: RelSem audit sweep: 4119 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 4128 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do

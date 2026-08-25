@@ -48,7 +48,9 @@ import RelSem.PerStepLaws
 import RelSem.DeriveState
 import RelSem.WpGround
 -- arc-17 S1: the per-construct law registry (fixture-independent
--- construct laws; the equation-supply frontier).
+-- construct laws; the equation-supply frontier). The acceptance
+-- probe (RelSem/T6Probe.lean) is PARKED OUT OF THE BUILD at its
+-- measured frontier — see its header + the S1 record.
 import RelSem.ConstructLaws
 import RelSem.PerStepTactics
 import RelSem.PerStepTacSmoke

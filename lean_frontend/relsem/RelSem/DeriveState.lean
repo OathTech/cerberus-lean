@@ -185,7 +185,21 @@ elab doc:(docComment)? "derive_state_step " id:ident bs:bracketedBinder* " from 
       let appE ← instantiateMVars appE
       -- THE META STEP (once, outside any goal): weak-head compute the
       -- application. Convenience only — the kernel recomputes below.
-      let pairE ← whnf appE
+      -- arc-17 S1: DEFAULT-transparency first; `.all` only as the
+      -- fallback. At `.default` the matcher fast-path can give up on
+      -- match-of-match nests (the action-request wrap continuations)
+      -- — `.all` lets whnf delta-unfold the matcher constants
+      -- themselves. But `.all` is NOT safe as the primary mode: on
+      -- memory-op successors it unfolds the byte-map's well-founded
+      -- recursion (measured: one store-round mint allocated past the
+      -- 64 G blast-radius cap). Convenience only, as before: the
+      -- kernel recomputes at `addDecl`.
+      let pairD ← whnf appE
+      let pairE ←
+        if pairD.isAppOfArity ``Prod.mk 4 then
+          pure pairD
+        else
+          withTransparency .all <| whnf pairD
       unless pairE.isAppOfArity ``Prod.mk 4 do
         throwFrontier m!"derive_state_step: `app` application did not \
           weak-head compute to a pair — the step is not \
