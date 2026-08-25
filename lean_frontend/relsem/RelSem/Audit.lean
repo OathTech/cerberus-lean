@@ -177,8 +177,8 @@ import RelSem.RoundEval
 -- apartness).
 import RelSem.Kit.Env
 -- arc-17 S1: the per-construct law registry joins the sweep closure
--- + pins. (The acceptance probe, RelSem/T6Probe.lean, is parked OUT
--- of the build at its measured frontier — see the S1 record.)
+-- + pins. (RelSem/T6Probe.lean joined the build at S2 when the
+-- evaluator completed the probe — audit-1 NOTE-1 comment refresh.)
 import RelSem.ConstructLaws
 -- arc-16 S4: the threaded effect state (∀-seed statements; the
 -- acceptance re-proof) joins the sweep closure + pins.

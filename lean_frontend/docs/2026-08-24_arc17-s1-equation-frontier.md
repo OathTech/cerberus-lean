@@ -101,7 +101,7 @@ Instrument: `scripts/core_shape_census.sh` (committed, Tier C
 reporting; fail-closed on an empty corpus; counting caveats in its
 header — `nd(` lookbehind, pure-let by subtraction, if/case conflate
 pure and effectful forms). Corpus: the 44 pinned Core dumps
-(tests/verify 6 + tests/speclab 38 — the drift-gated oracle dumps).
+(at census time tests/verify 5 + tests/speclab 39, the drift-gated oracle dumps — audit-1 MINOR-1 correction; post-t6-pin the census reads 45 = 6 + 39).
 Verbatim run (2026-08-25):
 
 ```
