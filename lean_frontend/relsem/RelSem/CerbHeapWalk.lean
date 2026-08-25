@@ -50,6 +50,9 @@
 
 import RelSem.CerbHeapWP
 import RelSem.Threaded
+-- for `wp_expose`/`wp_side` (the interpretation-generic tactic
+-- pieces the walk macros expand to)
+import RelSem.PerStepTactics
 
 set_option autoImplicit false
 
@@ -401,6 +404,7 @@ theorem wpk_seq_alloc_store [CerbHeapGS GF] {α : Type}
     {m : ndM α step_kind driver_error mem_iv_constraint driver_state}
     {k : α → KDriveExpr} {v : α} {ρ : driver_state}
     {ty : ctype} {pref : prefix0} {alignN : Int} {sz : Nat} {a : Int}
+    {nid : Int} {al : CerbMem.Allocation}
     {stored : List CerbMem.AbsByte}
     {s : Stuckness} {E : CoPset} {Φ : DriveVal → IProp GF}
     (hρ : restOf ρ = ρ)
@@ -409,17 +413,21 @@ theorem wpk_seq_alloc_store [CerbHeapGS GF] {α : Type}
         (alignN.toNat.max 1) : Nat) : Int) = a)
     (hnz : (a == (0 : Int)) = false)
     (hlen : stored.length = sz)
+    -- the canonical-spelling knobs: the fixture names the minted
+    -- fragments in its own vocabulary (rfl at instances)
+    (hnid : nid = ρ.layout_state.nextAllocId)
+    (hal : al = { base := a, size := sz, ty := some ty, prefix_ := pref })
     (h : ∀ bm am, app m (setMaps ρ bm am)
         = (NDactive v, allocStoreState (restAllocR ρ a) bm am a sz
-            stored ρ.layout_state.nextAllocId
-            { base := a, size := sz, ty := some ty, prefix_ := pref })) :
+            stored nid al)) :
     restIs (GF := GF) restHalf ρ ∗
       ((restIs restHalf (restAllocR ρ a)
-          ∗ allocIs ρ.layout_state.nextAllocId (.own 1)
-              { base := a, size := sz, ty := some ty, prefix_ := pref }
+          ∗ allocIs nid (.own 1) al
           ∗ pointsToBytes a (.own 1) stored)
         -∗ WP (k v) @ s ; E {{ Φ }}) ⊢
       WP (KExpr.seq m k : KDriveExpr) @ s ; E {{ Φ }} := by
+  subst hnid
+  subst hal
   refine wpk_seq_res_det
     (R := iprop(restIs restHalf ρ))
     (R' := iprop(restIs restHalf (restAllocR ρ a)
@@ -533,27 +541,88 @@ theorem wpk_seq_alloc_store_ecast [CerbHeapGS GF] {α : Type}
     {m : ndM α step_kind driver_error mem_iv_constraint driver_state}
     {k : α → KDriveExpr} {e0 : KDriveExpr} {v : α} {ρ : driver_state}
     {ty : ctype} {pref : prefix0} {alignN : Int} {sz : Nat} {a : Int}
+    {nid : Int} {al : CerbMem.Allocation}
     {stored : List CerbMem.AbsByte}
     {s : Stuckness} {E : CoPset} {Φ : DriveVal → IProp GF}
     (h : ∀ bm am, app m (setMaps ρ bm am)
         = (NDactive v, allocStoreState (restAllocR ρ a) bm am a sz
-            stored ρ.layout_state.nextAllocId
-            { base := a, size := sz, ty := some ty, prefix_ := pref }))
+            stored nid al))
     (he : e0 = KExpr.seq m k)
     (hρ : restOf ρ = ρ)
     (hsz : (CerbMem.sizeofCtype ty).max 1 = sz)
     (haddr : ((CerbMem.alignDown (ρ.layout_state.lastAddress - sz).toNat
         (alignN.toNat.max 1) : Nat) : Int) = a)
     (hnz : (a == (0 : Int)) = false)
-    (hlen : stored.length = sz) :
+    (hlen : stored.length = sz)
+    (hnid : nid = ρ.layout_state.nextAllocId)
+    (hal : al = { base := a, size := sz, ty := some ty,
+                  prefix_ := pref }) :
     restIs (GF := GF) restHalf ρ ∗
       ((restIs restHalf (restAllocR ρ a)
-          ∗ allocIs ρ.layout_state.nextAllocId (.own 1)
-              { base := a, size := sz, ty := some ty, prefix_ := pref }
+          ∗ allocIs nid (.own 1) al
           ∗ pointsToBytes a (.own 1) stored)
         -∗ WP (k v) @ s ; E {{ Φ }}) ⊢
       WP e0 @ s ; E {{ Φ }} :=
-  he ▸ wpk_seq_alloc_store hρ hsz haddr hnz hlen h
+  he ▸ wpk_seq_alloc_store hρ hsz haddr hnz hlen hnid hal h
+
+/-- MID-WALK STATE READ (`nd_get` feeding further stages): the value
+    is the machine state, which the footprint logic does not pin —
+    but the harness continuations consume it only through REST
+    projections, so the successor expression is the same at every
+    state the rest half admits (`hk`, `rfl` at fixtures: the
+    projections reduce). `c` is the canonical representative the
+    walk continues at. -/
+theorem wpk_seq_get [CerbHeapGS GF]
+    {k : driver_state → KDriveExpr} (c : driver_state)
+    {ρ : driver_state} {s : Stuckness} {E : CoPset}
+    {Φ : DriveVal → IProp GF}
+    (hk : ∀ bm am, k (setMaps ρ bm am) = k c) :
+    restIs (GF := GF) restHalf ρ ∗
+      (restIs restHalf ρ -∗ WP (k c) @ s ; E {{ Φ }}) ⊢
+      WP (KExpr.seq nd_get k : KDriveExpr) @ s ; E {{ Φ }} := by
+  have hrest : ∀ σ : driver_state,
+      app (nd_get : ndM driver_state step_kind driver_error
+        mem_iv_constraint driver_state) σ = (NDactive σ, σ) :=
+    fun σ => rfl
+  iintro ⟨Hr, Hcont⟩
+  iapply wp_lift_step rfl
+  iintro %σ %ns %obs %obs' %nt Hσ
+  icases cerbStateInterp_eq.1 $$ Hσ with Hσ
+  icases interp_rest_agree $$ [$Hσ $Hr] with ⟨%h1, Hσ, Hr⟩
+  iapply fupd_mask_intro Std.LawfulSet.empty_subset
+  iintro Hclose
+  isplitl []
+  · ipureintro
+    cases s
+    · exact kreducible_of_app_active (hrest σ)
+    · trivial
+  iintro !> %e₂ %σ₂ %eₜ %Hprim Hcred
+  iclear Hcred
+  obtain ⟨hd, -, hefs⟩ := kPrimStep_inv Hprim
+  have hconf := kstep_seq_active_inv (hrest σ) hd
+  injection hconf with he hσ
+  subst he; subst hσ; subst hefs
+  imod Hclose
+  imodintro
+  icases cerbStateInterp_eq.2 $$ Hσ with Hσ
+  iframe Hσ
+  simp only [Algebra.BigOpL.bigOpL_nil]
+  iframe
+  obtain ⟨bm, am, hσeq⟩ := exists_setMaps_of_restOf h1
+  rw [hσeq, hk bm am]
+  iapply Hcont $$ Hr
+
+/-- `wpk_seq_get`'s ecast hook. -/
+theorem wpk_seq_get_ecast [CerbHeapGS GF]
+    {k : driver_state → KDriveExpr} (c : driver_state)
+    {e0 : KDriveExpr} {ρ : driver_state} {s : Stuckness} {E : CoPset}
+    {Φ : DriveVal → IProp GF}
+    (hk : ∀ bm am, k (setMaps ρ bm am) = k c)
+    (he : e0 = KExpr.seq nd_get k) :
+    restIs (GF := GF) restHalf ρ ∗
+      (restIs restHalf ρ -∗ WP (k c) @ s ; E {{ Φ }}) ⊢
+      WP e0 @ s ; E {{ Φ }} :=
+  he ▸ wpk_seq_get c hk
 
 /-- `wpk_get_done_pure`'s ecast hook. -/
 theorem wpk_get_done_pure_ecast [CerbHeapGS GF]
@@ -564,6 +633,81 @@ theorem wpk_get_done_pure_ecast [CerbHeapGS GF]
     restIs (GF := GF) restHalf ρ ⊢
       WP e0 @ s ; E {{ o, ⌜φ o⌝ }} :=
   he ▸ wpk_get_done_pure hpost
+
+/-! ## The walk macros (the heap-route `wp_step` family — thin
+    appliers of the rules above, exactly the PerStepTactics mold:
+    apply the named law, frame the named resources, compute the side
+    conditions) -/
+
+/-- One rest-only step by an open-memory stage equation. -/
+macro "wp_rest" e:term:max h:ident : tactic =>
+  `(tactic| (wp_expose
+             iapply wpk_seq_rest_ecast $e ?wpe ?wplay
+             rotate_left
+             rotate_left
+             iframe $h:ident
+             case wpe => rfl
+             case wplay => rfl
+             iintro $h:ident))
+
+/-- The mid-walk state read (`nd_get`): continue at the canonical
+    representative `c`. -/
+macro "wp_get" c:term:max h:ident : tactic =>
+  `(tactic| (wp_expose
+             iapply wpk_seq_get_ecast $c ?wpk ?wpe
+             rotate_left
+             rotate_left
+             iframe $h:ident
+             case wpe => rfl
+             case wpk => intro bm am; rfl
+             iintro $h:ident))
+
+/-- One read step over one object's footprint (rest + allocIs +
+    pointsToBytes; everything else frames). -/
+macro "wp_read1" e:term:max hr:ident ha:ident hp:ident : tactic =>
+  `(tactic| (wp_expose
+             iapply wpk_seq_read1_ecast $e ?wpe ?wplay
+             rotate_left
+             rotate_left
+             iframe $hr:ident $ha:ident $hp:ident
+             case wpe => rfl
+             case wplay => rfl
+             iintro ⟨$hr:ident, $ha:ident, $hp:ident⟩))
+
+/-- One object-creation step (alloc+store compound): consumes the
+    rest half, mints `allocIs` (named `hal`) + `pointsToBytes`
+    (named `hpt`). `ha` is the fixture's address-arithmetic fact. -/
+macro "wp_argobj" e:term:max ha:term:max h:ident hal:ident hpt:ident : tactic =>
+  `(tactic| (wp_expose
+             iapply wpk_seq_alloc_store_ecast $e ?wpe ?wprho ?wpsz ?wpaddr ?wpnz ?wplen ?wpnid ?wpal
+             rotate_left
+             rotate_left
+             rotate_left
+             rotate_left
+             rotate_left
+             rotate_left
+             rotate_left
+             rotate_left
+             iframe $h:ident
+             case wpe => rfl
+             case wprho => rfl
+             case wpnid => rfl
+             case wpal => rfl
+             case wpsz => rfl
+             case wpaddr => exact $ha
+             case wpnz => wp_side
+             case wplen => rfl
+             iintro ⟨$h:ident, $hal:ident, $hpt:ident⟩))
+
+/-- The harness terminal: `nd_get` + the pure readout. -/
+macro "wp_fin" hp:term:max h:ident : tactic =>
+  `(tactic| (wp_expose
+             iapply wpk_get_done_pure_ecast ?wpp ?wpe
+             rotate_left
+             rotate_left
+             iframe $h:ident
+             case wpe => rfl
+             case wpp => exact $hp))
 
 /-! ## The closed functor bundle (the HeapLangS template at the
     CerbHeap resource: indices 0-3 the invariant/credit machinery,

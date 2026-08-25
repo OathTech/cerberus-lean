@@ -1161,7 +1161,13 @@ open Lean in
 -- deliberately, same commit, with the reason. (When green the pin
 -- SWALLOWS the info line — absence of the sweep line from a green
 -- build log is expected; the DAEMON + statement gates still print.)
--- Re-baselines: 4737 → 4786 (arc-18 C2: THE HEAP-ROUTE WALK
+-- Re-baselines: 4786 → 4827 (arc-18 C2: THE T1 MIGRATION — the T1
+-- walk moves to the heap route: the T1 open-memory equation layer
+-- (rest ladder, k*_o stage equations, round*_o open rounds,
+-- driver2_o, the terminal readout) + wpk_seq_get/_ecast and the walk
+-- macros join the closure; all trio-clean; every pre-existing cone
+-- pin passed VERBATIM).
+-- 4737 → 4786 (arc-18 C2: THE HEAP-ROUTE WALK
 -- SUBSTRATE — RelSem/CerbHeapWalk.lean joins the closure (rest-patch
 -- algebra, happ adapters, wpk_seq_rest/read1/alloc_store +
 -- wpk_get_done_pure + ecast faces, MemInv_alloc_store/MemInv_initial,
@@ -1281,7 +1287,7 @@ open Lean in
 -- probe's law layer; the probe fixture file itself is parked OUT of
 -- the build).
 /--
-info: RelSem audit sweep: 4786 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 4827 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do

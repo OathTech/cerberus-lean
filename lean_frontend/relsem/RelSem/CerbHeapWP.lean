@@ -18,6 +18,8 @@
   House rules: no sorry, no new axioms. Under the in-build audit.
 -/
 
+import Iris.ProgramLogic.Lifting
+import Iris.ProgramLogic.Adequacy
 import RelSem.CerbHeapRA
 import RelSem.LawRegistry
 
