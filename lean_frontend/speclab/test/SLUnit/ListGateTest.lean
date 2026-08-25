@@ -41,8 +41,8 @@ def ppOfL (d : generic_fun_map_decl Unit Unit) : Except String String :=
 
 /-- Run the assembled file through the production driver entry and
 project (verdict, final allocation-map size). IO: the exec path reads
-struct layouts through the AMBIENT CerbTags state (the with_tagDefs
-boundary), so the tag defs must be installed first — the Main.lean
+struct layouts through the AMBIENT CerbTags state (the CerbTags
+effect boundary), so the tag defs must be installed first — the Main.lean
 set/reset pattern (arc-4 S3b; relsem EmitLeanCoreTest T4 precedent).
 R3 is the first speclab rung where this bites (nonempty tagDefs). -/
 def runFileL (f : file core_run_annotation) : IO (Sum (Int × Nat) String) := do

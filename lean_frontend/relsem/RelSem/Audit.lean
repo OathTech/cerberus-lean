@@ -37,11 +37,28 @@
   THE DECLARED BOUNDARY (allowlist), with provenance:
   * the classical trio `propext`, `Classical.choice`, `Quot.sound`;
   * `runEffectful` (LemLib.lean) — the arcs-1+2 effect-erasure
-    barrier (docs/2026-08-18_effects-totality-design.md);
-  * `CerbTags.with_tagDefs` (CerbTags.lean:70) and
-    `CerberusFresh.forceIO` (CerberusFresh.lean:113) — the two
-    hand-written declared-boundary axioms (check_theorem_axioms.sh
-    census).
+    barrier (docs/2026-08-18_effects-totality-design.md). TEMPORAL
+    ([USER 2026-08-24]): it survives only because it lives in the
+    LemLib runtime (lem-side surgery, out of this repo's scope) and
+    is consumed by the generated ambient/compiled paths; the threaded
+    theorem family is already free of it, and the ambient family
+    retires at the arc-17 purge. Its carrier set is PINNED EXACTLY by
+    the no-cone-entry gate below — any NEW theorem cone acquiring it
+    is a build failure.
+
+  BOUNDARY AXIOMS DELETED (arc-17 S2b, 2026-08-25 — the [USER
+  2026-08-24] temporal-mover execution): `CerbTags.with_tagDefs`
+  (axiom since arc-4 S1r) and `CerberusFresh.forceIO` (axiom since
+  arc-5 S2) are NO LONGER AXIOMS — each is now an `opaque` with a
+  kernel-checked inhabitation witness (`fun _ f => f ()` /
+  `fun f => pure (f ())`, the effect-erased meanings), still
+  irreducible to every proof, still @[implemented_by]-bound to the
+  same native extents (behavior re-verified by the differential
+  lanes + FreshIntTest). They can never appear in an axiom cone
+  again; the hand-written axiom census (check_theorem_axioms.sh) is
+  0, and the BOUNDARY-OPAQUE gate below asserts the axiom-form
+  absence fail-closed (either name existing as an axiom, or ever
+  being allowlisted, fails the build).
 
   DAEMON IS DELETED — THE ABSENCE IS ENFORCED (arc-8 S3, 2026-08-20).
   History: `axiom DAEMON : ∀ {α : Type}, α` (lem's undefined-value
@@ -178,10 +195,12 @@ namespace RelSem.Audit
 
 open Lean
 
-/-- The declared axiom boundary (docstring above records provenance). -/
+/-- The declared axiom boundary (docstring above records provenance).
+    Arc-17 S2b: `CerbTags.with_tagDefs` and `CerberusFresh.forceIO`
+    are REMOVED — they are opaques now, not axioms (the boundary-opaque
+    gate below enforces that they never come back as axioms). -/
 def allowedAxioms : List Name :=
-  [``propext, ``Classical.choice, ``Quot.sound,
-   `runEffectful, `CerbTags.with_tagDefs, `CerberusFresh.forceIO]
+  [``propext, ``Classical.choice, ``Quot.sound, `runEffectful]
 
 -- THE DAEMON ABSENCE GATE (arc-8 S3, durability requirement 3 —
 -- replaces the arc-7 S5c DAEMON1 tripwire and the entry-vector census
@@ -211,6 +230,46 @@ open Lean in
         reintroduction is a build failure, never a re-baseline."
   logInfo "RelSem DAEMON absence gate: no constant named DAEMON or \
     DAEMON1 exists in the environment; neither is allowlisted"
+
+-- THE BOUNDARY-OPAQUE GATE (arc-17 S2b — the axiom-endgame
+-- enforcement, DAEMON-gate pattern). The two former hand-written
+-- boundary axioms were converted to opaques with kernel-checked
+-- witnesses; this gate makes the conversion IRREVERSIBLE-BY-DEFAULT:
+-- FAIL-CLOSED in all directions — each name must (1) EXIST (a rename
+-- must re-point the gate, never silently drop the check), (2) NOT be
+-- an axiom (reintroduction under the same name is a build failure,
+-- never a re-baseline), (3) BE an opaque (the irreducibility the
+-- armor depends on — a plain def would let proofs see the witness),
+-- and (4) never be allowlisted in `allowedAxioms`. Plant-tested both
+-- directions (transcripts: docs/2026-08-25_arc17-s2b-axiom-endgame.md).
+open Lean in
+#eval show CoreM Unit from do
+  let env ← getEnv
+  for n in [`CerbTags.with_tagDefs, `CerberusFresh.forceIO] do
+    if allowedAxioms.contains n then
+      throwError "RelSem boundary-opaque gate: {n} is ALLOWLISTED as \
+        an axiom — it was DELETED as an axiom in arc-17 S2b (it is an \
+        opaque with a kernel-checked witness); there is no sanctioned \
+        path back. Revert."
+    match env.find? n with
+    | none =>
+      throwError "RelSem boundary-opaque gate: {n} is MISSING from \
+        the environment (renamed without re-pointing the gate?)"
+    | some ci =>
+      if ci matches ConstantInfo.axiomInfo _ then
+        throwError "RelSem boundary-opaque gate: {n} exists as an \
+          AXIOM — the boundary axioms were deleted in arc-17 S2b \
+          (converted to opaques with kernel-checked witnesses); \
+          reintroduction is a build failure, never a re-baseline."
+      unless ci matches ConstantInfo.opaqueInfo _ do
+        throwError "RelSem boundary-opaque gate: {n} is neither an \
+          axiom nor an opaque — the effect-erasure armor requires the \
+          constant to be IRREDUCIBLE (a plain def would let proofs \
+          unfold the witness and relate states across the effect \
+          boundary). Restore the opaque form."
+  logInfo "RelSem boundary-opaque gate: with_tagDefs/forceIO exist, \
+    are opaque (kernel-checked witnesses, not axioms), and are not \
+    allowlisted"
 
 /-- Non-theorem constants allowed to carry `sorryAx` IN ADDITION to the
     boundary. EMPTY since the arc-7 S2 eviction (finding-closed note in

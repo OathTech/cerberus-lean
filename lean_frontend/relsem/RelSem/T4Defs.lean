@@ -6,7 +6,9 @@
   TAG-GLOBAL BOUNDARY (honesty note): struct LAYOUT (sizeof/alignof/
   member offsets) is computed by CerbMem against the PROCESS-GLOBAL tag
   table (`CerbTags.tagDefs ()` — the native-extern state behind the
-  census-pinned `with_tagDefs`/`forceIO` boundary; CerbTags.lean).
+  effect boundary; CerbTags.lean. Since arc-17 S2b `with_tagDefs`/
+  `forceIO` are kernel-checked opaques, not axioms — the boundary is
+  implemented_by-only, gated by the Audit boundary-opaque gate).
   The harness executable establishes it before running
   (Main.lean --call: `CerbTags.setTagDefsIO runFile.tagDefs`). The
   kernel cannot see through the extern, so every layout-dependent

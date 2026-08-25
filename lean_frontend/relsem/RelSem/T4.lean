@@ -10,10 +10,12 @@
   — s.a := v survives the sibling write s.b := 7 at the pinned struct
   layout (member offsets +0/+4, size 8).
 
-  THE HARNESS-ENVIRONMENT HYPOTHESES (the census boundary, surfaced):
+  THE HARNESS-ENVIRONMENT HYPOTHESES (the effect boundary, surfaced):
   struct layout and the NEG-store transform's fresh draws read three
-  process-global externs the kernel cannot see through (all on the
-  declared boundary: with_tagDefs/forceIO census + runEffectful):
+  process-global externs the kernel cannot see through (the
+  implemented_by boundary — since arc-17 S2b with_tagDefs/forceIO are
+  kernel-checked opaques, not axioms; runEffectful remains the one
+  LemLib boundary axiom):
 
     * `CerbTags.tagDefs () = t4File.tagDefs` — the tag table the
       harness establishes before running (Main.lean --call:

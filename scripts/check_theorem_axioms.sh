@@ -8,27 +8,33 @@
 # DAEMON axiom family is DELETED from LemLib and the toggle is gone —
 # DAEMON is unconditionally fatal in every probed cone.)
 #
-# BOUNDARY HONESTY (arc-4 S5f, audit G3; updated arc-5 audit 2, F3): the
-# probes below measure GENERATED exemplar cones + driver2 ONLY.
-# Hand-written seams are outside every probe here. TWO hand-written
-# AXIOMS exist on the pipeline and are part of the DECLARED boundary, not
-# findings:
-#   1. CerbTags.with_tagDefs (CerbTags.lean:70) — an `axiom` with
-#      @[implemented_by] binding the C-side set/restore extent
-#      (native/tags.c cerb_tags_with; the axiom form survives the DCE
-#      that erased the opaque form, arc-4 S1r). Sits in the
-#      Mini_pipeline (const-expr mini-run) cone, which no probe below
-#      covers.
-#   2. CerberusFresh.forceIO (CerberusFresh.lean:113) — an `axiom` with
-#      @[implemented_by] pinning thunk evaluation to an IO position
-#      (native/md5.c cerb_force_thunk; arc-5 S2 digest/fresh barrier).
-#      Used from Main.lean and the unit tests — also outside every probe
-#      below.
+# BOUNDARY HONESTY (arc-4 S5f, audit G3; updated arc-5 audit 2, F3;
+# END STATE arc-17 S2b, 2026-08-25): the probes below measure GENERATED
+# exemplar cones + driver2 ONLY. Hand-written seams are outside every
+# probe here. ZERO hand-written axioms exist in this repository: the
+# two former declared-boundary axioms were DELETED (arc-17 S2b, the
+# [USER 2026-08-24] temporal-mover execution):
+#   1. CerbTags.with_tagDefs — was an `axiom` (arc-4 S1r), now an
+#      `opaque` with the kernel-checked inhabitation witness
+#      `fun _ f => f ()` (the effect-erased meaning). @[implemented_by]
+#      still binds the C-side set/restore extent (native/tags.c
+#      cerb_tags_with) — runtime behavior unchanged, re-verified by
+#      the differential lanes.
+#   2. CerberusFresh.forceIO — was an `axiom` (arc-5 S2), now an
+#      `opaque` with witness `fun f => pure (f ())`. @[implemented_by]
+#      still binds native/md5.c cerb_force_thunk — re-verified by
+#      test/Unit/FreshIntTest.lean testDigestGlobal.
+# Neither constant can appear in ANY axiom cone anymore (opaque
+# definitions are not axioms); the in-build gate in
+# relsem/RelSem/Audit.lean additionally asserts the AXIOM-FORM ABSENCE
+# (either name existing as an axiom fails the build — no sanctioned
+# path back without deliberate re-registration).
 # A cheap CENSUS below counts '^axiom' across the hand-written .lean
-# files and fails if the count differs from 2 (fail-closed: a third
+# files and fails if the count differs from 0 (fail-closed: any new
 # axiom must be consciously registered here). sorryAx remains forbidden
-# everywhere probed. Declared-boundary records: 2026-08-19_arc4-results.md,
-# 2026-08-19_arc5-results.md, 2026-08-20_arc7-results.md.
+# everywhere probed. Records: 2026-08-19_arc4-results.md,
+# 2026-08-19_arc5-results.md, 2026-08-20_arc7-results.md,
+# 2026-08-25_arc17-s2b-axiom-endgame.md (the deletion).
 #
 # SCOPE COMPANION (arc-7): the RelSem/proof-layer cones (slate theorems
 # T1-T4, adequacy, the coupling) are NOT probed here — they are covered
@@ -43,26 +49,29 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/.."
 
-# Hand-written axiom census (arc-5 audit 2, F3): everything under
-# lean_frontend/ EXCEPT generated/ and the build dir is hand-written.
-# Exactly the two declared-boundary axioms may exist; any drift (third
-# axiom, or a removal) fails until this gate is deliberately updated.
+# Hand-written axiom census (arc-5 audit 2, F3; end state arc-17 S2b):
+# everything under lean_frontend/ EXCEPT generated/ and the build dir
+# is hand-written. ZERO axioms may exist (the former two
+# declared-boundary axioms are now kernel-checked opaques — header
+# above); any new '^axiom' fails until this gate is deliberately
+# updated with a registered justification.
 AXIOM_COUNT=$(find lean_frontend -name '*.lean' \
                 -not -path 'lean_frontend/generated/*' \
                 -not -path 'lean_frontend/.lake/*' -print0 \
               | xargs -0 grep -h '^axiom' | wc -l || true)
-if [[ "$AXIOM_COUNT" -ne 2 ]]; then
-  echo "check_theorem_axioms: FAIL — hand-written axiom census: found $AXIOM_COUNT '^axiom' declarations, expected exactly 2 (CerbTags.with_tagDefs, CerberusFresh.forceIO). Register any new axiom in the BOUNDARY HONESTY header deliberately."
+if [[ "$AXIOM_COUNT" -ne 0 ]]; then
+  echo "check_theorem_axioms: FAIL — hand-written axiom census: found $AXIOM_COUNT '^axiom' declarations, expected exactly 0 (the boundary axioms were deleted in arc-17 S2b — with_tagDefs/forceIO are opaques now). Register any new axiom in the BOUNDARY HONESTY header deliberately."
   find lean_frontend -name '*.lean' \
     -not -path 'lean_frontend/generated/*' \
     -not -path 'lean_frontend/.lake/*' -print0 \
     | xargs -0 grep -n '^axiom' || true
   exit 1
 fi
-echo "check_theorem_axioms: hand-written axiom census OK (2 declared-boundary axioms)"
+echo "check_theorem_axioms: hand-written axiom census OK (0 axioms — the arc-17 S2b end state)"
 
 # ---------------------------------------------------------------------------
-# Tree-wide generated/ axiom census (arc-8 audit fix, auditor B F1).
+# Tree-wide generated/ axiom census (arc-8 audit fix, auditor B F1;
+# end state arc-17 S2b).
 # NAME-INDEPENDENT and file-complete: the in-build Audit.lean sweep sees
 # the import closure of the audited roots + the probed cones above, but a
 # generated file OUTSIDE that closure (e.g. Core_indet.lean) could carry
@@ -71,13 +80,15 @@ echo "check_theorem_axioms: hand-written axiom census OK (2 declared-boundary ax
 # stripping discipline as check_exec_totality.sh: strings, char
 # literals, `--` line comments, nested /- -/ block comments removed
 # before matching) for:
-#   * `axiom` declarations — the complete allowlist is exactly the two
-#     declared hand-written boundary axioms in their build copies:
-#       CerbTags.lean       axiom with_tagDefs
-#       CerberusFresh.lean  axiom forceIO
-#     Any OTHER axiom in ANY generated file = FAIL. The two allowlisted
-#     axioms must each be found exactly once (their absence means the
-#     copy pipeline or the scanner broke — fail-closed both ways).
+#   * `axiom` declarations — the allowlist is EMPTY since arc-17 S2b
+#     (the two former boundary axioms are opaques now): ANY axiom in
+#     ANY generated file = FAIL.
+#   * scanner/copy-pipeline LIVENESS (fail-closed replacement for the
+#     old "each allowlisted axiom found exactly once" leg): the two
+#     converted opaques must each be found exactly once in their build
+#     copies (CerbTags.lean `opaque with_tagDefs`, CerberusFresh.lean
+#     `opaque forceIO`) — their absence means the copy pipeline or the
+#     scanner broke.
 #   * `unsafeCast` — banned outright in generated code (no allowlist;
 #     count is 0 as of the arc-8 audits).
 # Missing directory or an empty scan = FAIL (fail-closed).
@@ -135,6 +146,9 @@ for path in files:
     for m in re.finditer(r'\baxiom\s+([A-Za-z_0-9α-ω.\']+)', clean):
         line = clean.count('\n', 0, m.start()) + 1
         print(f"AXIOM {base}:{line}:{m.group(1)}")
+    for m in re.finditer(r'\bopaque\s+(with_tagDefs|forceIO)\b', clean):
+        line = clean.count('\n', 0, m.start()) + 1
+        print(f"OPAQUE {base}:{line}:{m.group(1)}")
     for m in re.finditer(r'\bunsafeCast\b', clean):
         line = clean.count('\n', 0, m.start()) + 1
         print(f"UNSAFECAST {base}:{line}")
@@ -153,18 +167,20 @@ if ! grep -q '^SCANNED ' <<<"$GEN_CENSUS"; then
 fi
 GEN_SCANNED=$(grep '^SCANNED ' <<<"$GEN_CENSUS" | awk '{print $2}')
 GEN_AXIOMS=$(grep '^AXIOM ' <<<"$GEN_CENSUS" || true)
+GEN_OPAQUES=$(grep '^OPAQUE ' <<<"$GEN_CENSUS" || true)
 GEN_UNSAFE=$(grep '^UNSAFECAST ' <<<"$GEN_CENSUS" || true)
-GEN_BAD=$(grep -vE '^AXIOM (CerbTags\.lean:[0-9]+:with_tagDefs|CerberusFresh\.lean:[0-9]+:forceIO)$' <<<"$GEN_AXIOMS" | grep '^AXIOM ' || true)
-if [[ -n "$GEN_BAD" ]]; then
-  echo "check_theorem_axioms: FAIL — generated-tree census: axiom declaration(s) outside the declared boundary (allowlist: CerbTags.with_tagDefs, CerberusFresh.forceIO):"
-  echo "$GEN_BAD"
+if [[ -n "$GEN_AXIOMS" ]]; then
+  echo "check_theorem_axioms: FAIL — generated-tree census: axiom declaration(s) found (allowlist is EMPTY since arc-17 S2b — with_tagDefs/forceIO are opaques now; any axiom must be deliberately registered here):"
+  echo "$GEN_AXIOMS"
   exit 1
 fi
+# Scanner/copy-pipeline liveness (fail-closed): the two converted
+# opaques must each be present exactly once in their build copies.
 for want in 'CerbTags\.lean:[0-9]+:with_tagDefs' 'CerberusFresh\.lean:[0-9]+:forceIO'; do
-  cnt=$(grep -cE "^AXIOM ${want}$" <<<"$GEN_AXIOMS" || true)
+  cnt=$(grep -cE "^OPAQUE ${want}$" <<<"$GEN_OPAQUES" || true)
   if [[ "$cnt" -ne 1 ]]; then
-    echo "check_theorem_axioms: FAIL — generated-tree census: declared-boundary axiom /${want}/ found $cnt times, expected exactly 1 (copy pipeline or scanner drift; fail-closed)"
-    echo "$GEN_AXIOMS"
+    echo "check_theorem_axioms: FAIL — generated-tree census: converted boundary opaque /${want}/ found $cnt times, expected exactly 1 (copy pipeline or scanner drift; fail-closed)"
+    echo "$GEN_OPAQUES"
     exit 1
   fi
 done
@@ -173,7 +189,7 @@ if [[ -n "$GEN_UNSAFE" ]]; then
   echo "$GEN_UNSAFE"
   exit 1
 fi
-echo "check_theorem_axioms: generated-tree census OK ($GEN_SCANNED files: 2 declared-boundary axioms, 0 others, 0 unsafeCast)"
+echo "check_theorem_axioms: generated-tree census OK ($GEN_SCANNED files: 0 axioms, boundary opaques present, 0 unsafeCast)"
 
 # ---------------------------------------------------------------------------
 # D14 ban (arc-6): non-kernel proof methods (native_decide / bv_decide).

@@ -98,21 +98,40 @@ attribute [never_extract] digest
     deferred past a LATER `setDigestIO` and observe the wrong TU's
     digest (caught by test/Unit/FreshIntTest.lean testDigestGlobal).
     Armoring mirrors CerbTags.with_tagDefs exactly (unsafe extern +
-    @[never_extract, noinline] impl + @[implemented_by] axiom; the
-    whole-extent-in-C rationale of arc-4 S3b): the thunk is applied
-    inside the C call, extern calls are never reordered, and the
-    closure boundary blocks let-sinking out of the body. Sound as an
-    axiom: `fun f => pure (f ())` inhabits the type (kept opaque so the
-    compiler cannot inline-and-beta-reduce the closure away). -/
+    @[never_extract, noinline] impl + @[implemented_by] on an
+    irreducible constant; the whole-extent-in-C rationale of arc-4
+    S3b): the thunk is applied inside the C call, extern calls are
+    never reordered, and the closure boundary blocks let-sinking out
+    of the body.
+
+    AXIOM DELETED (arc-17 S2b, 2026-08-25 — the [USER 2026-08-24]
+    temporal-mover execution for this entry): this was `axiom forceIO`
+    from arc-5 S2 until arc-17 S2b. The old docstring already stated
+    the witness — "`fun f => pure (f ())` inhabits the type" — and it
+    is now an `opaque` carrying that witness explicitly, so the KERNEL
+    checks it and nothing is postulated. The constant stays
+    IRREDUCIBLE (opaque — the compiler cannot inline-and-beta-reduce
+    the closure away, and no proof can unfold it), implemented_by
+    still routes execution through the C-side barrier (behavior
+    re-verified by test/Unit/FreshIntTest.lean testDigestGlobal — the
+    test that found the original sinking bug). Result: this constant
+    can NEVER appear in any axiom cone; the runtime trust is exactly
+    the implemented_by boundary (declared, gated — RelSem/Audit.lean
+    asserts the axiom-form absence build-fatally). -/
 @[extern "cerb_force_thunk"]
-private unsafe opaque forceThunkIO {b : Type} : (@& (Unit → b)) → BaseIO b
+private unsafe opaque forceThunkIO {b : Type} : (@& (Unit → b)) → BaseIO b :=
+  fun f => pure (f ())  -- explicit witness (arc-17 S2b): kills the
+                        -- synthesized-sorryAx inhabitant (see
+                        -- CerbTags.withTagDefsIO)
 
 @[never_extract, noinline]
 private unsafe def forceIO_impl {b : Type} (f : Unit → b) : BaseIO b :=
   forceThunkIO f
 
 @[implemented_by forceIO_impl]
-axiom forceIO {b : Type} : (Unit → b) → BaseIO b
+opaque forceIO {b : Type} : (Unit → b) → BaseIO b :=
+  fun f => pure (f ())
+attribute [never_extract] forceIO
 
 /-- Fresh integer counter.
     Corresponds to: Cerb_fresh.int (uses a mutable ref cell in OCaml).

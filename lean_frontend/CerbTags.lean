@@ -33,7 +33,11 @@ opaque resetTagDefsIO : @& Unit → BaseIO Unit
     test 106-sizeof-struct-array.c, empirically confirmed by native-side
     tracing: cerb_tags_set never fired). -/
 @[extern "cerb_tags_with"]
-unsafe opaque withTagDefsIO {b : Type} : @& TagDefsMap → (@& (Unit → b)) → BaseIO b
+unsafe opaque withTagDefsIO {b : Type} : @& TagDefsMap → (@& (Unit → b)) → BaseIO b :=
+  fun _ f => pure (f ())  -- explicit witness (arc-17 S2b): kills the
+                          -- synthesized-sorryAx inhabitant the witness-less
+                          -- unsafe opaque carried (build-log hygiene; the
+                          -- extern C body is what actually runs)
 
 /-- Pure wrappers used by hand-written code (Main.lean etc.).
     @[never_extract, noinline] on every impl: without them the compiler may
@@ -68,9 +72,29 @@ opaque set_tagDefs : TagDefsMap → Unit
 
 /- `b` pinned to Type (was universe-polymorphic via autoImplicit): the C
    with-extent binding goes through BaseIO, which lives in Type. The lem
-   val is `forall 'a` over lem types, which all land in Type. -/
+   val is `forall 'a` over lem types, which all land in Type.
+
+   AXIOM DELETED (arc-17 S2b, 2026-08-25 — the [USER 2026-08-24]
+   temporal-mover execution for this entry): this was `axiom
+   with_tagDefs` from arc-4 S1r until arc-17 S2b. It is now an
+   `opaque` with an explicit inhabitation witness `fun _ f => f ()` —
+   the effect-erased meaning (OCaml Tags.with_tagDefs returns exactly
+   `f ()` after the set/restore extent; the ambient write is invisible
+   to the pure model, per the effect-erasure invariant,
+   docs/2026-08-22_arc14-effect-erasure-invariant.md). The KERNEL
+   checks the witness, so nothing is postulated; the constant stays
+   IRREDUCIBLE (opaque — no proof can unfold it or exploit the
+   witness), and the compiled behavior is unchanged (implemented_by
+   still binds the C-side whole extent — behavior re-verified by the
+   differential lanes incl. the 106-sizeof-struct-array obligation
+   test that found the original DCE bug). Result: this constant can
+   NEVER appear in any axiom cone. The runtime trust is exactly where
+   it always was: the implemented_by boundary (declared, gated —
+   RelSem/Audit.lean asserts the axiom-form absence build-fatally). -/
 @[implemented_by with_tagDefs_impl]
-axiom with_tagDefs {b : Type} : TagDefsMap → (Unit → b) → b
+opaque with_tagDefs {b : Type} : TagDefsMap → (Unit → b) → b :=
+  fun _ f => f ()
+attribute [never_extract] with_tagDefs
 
 @[implemented_by reset_tagDefs_impl]
 opaque reset_tagDefs : Unit → Unit
