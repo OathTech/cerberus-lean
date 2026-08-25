@@ -21,6 +21,7 @@
 
 import RelSem.Threaded
 import RelSem.PerStepTactics
+import RelSem.PerStepOwnP
 import RelSem.T3
 
 set_option autoImplicit false

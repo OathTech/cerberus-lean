@@ -164,6 +164,9 @@ import RelSem.CerbHeapDemo
 -- arc-18 C2, Q1 [USER] ruling — pins removed in the same commit.)
 import RelSem.PerStepRunner
 import RelSem.PerStepTactics
+-- arc-18 C2: the transitional OwnP surface (disentangled from the
+-- live route; the OwnP pins below now originate here).
+import RelSem.PerStepOwnP
 import RelSem.PerStepTacSmoke
 -- arc-17 S0: the discharge-engine substrate (named-state emitter +
 -- memoized ground-fact discharger) joins the sweep closure.

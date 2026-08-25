@@ -16,11 +16,10 @@
   word for word, with the ambient initial state replaced by the
   threaded one — ∀-seed statements over them are STRONGER than the
   ambient originals (which are seed-instantiated images, bridge
-  lemmas at the bottom). The adequacy bridges re-derive the S1
-  statement-facing discharge (`kCallHarnessAdequate_of_wp`,
-  RelSem/PerStepCall.lean) at the threaded initial state; their cones
-  are EXACTLY the classical trio — no `runEffectful` (the threaded
-  state removes its entry point).
+  lemmas at the bottom). Adequacy bridges (cones EXACTLY the
+  classical trio — no `runEffectful`): the heap-route ones (the C2
+  one-route migration's) live in RelSem/CerbHeapWalk.lean; the
+  transitional OwnP ones in RelSem/PerStepOwnP.lean (C5-bound).
 
   Statement-TCB: the faces are fuel-opsem-only (production runner +
   threaded initial state; no Iris, no relational layer); Iris appears
@@ -105,32 +104,13 @@ def CallHarnessUBFreeThr (seed : Nat)
       (ubs : List undefined_behaviour),
       out ≠ Killed stk (Undef0 loc ubs)
 
-/-! ## Statement-facing adequacy through the per-step instance, at the
-    threaded state (the S1 `kCallHarnessAdequate_of_wp` re-derived;
-    cones: exactly the classical trio) -/
-
-/-- WP over the per-step instance at the reified harness, FROM the
-    threaded initial state ⇒ the threaded headline face. -/
-theorem kCallHarnessAdequateThr_of_wp {GF : BundledGFunctors}
-    [CerbGpreS GF] (seed : Nat)
-    (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
-    (file1 : file core_run_annotation) (fname : String)
-    (args : List value) (fs : CerbFS.FsState)
-    (spec : driver_result → Prop)
-    (Hwp : ∀ [CerbGS .hasLC GF],
-      (stateIs (GF := GF) (initial_driver_state_threaded seed file1 fs)) ⊢
-        WP (callK tagDefs file1 fname args)
-          @ Stuckness.NotStuck ; ⊤
-          {{ o, ⌜∃ r : driver_result, o = Outcome.value r ∧ spec r⌝ }}) :
-    CallHarnessAdequateThr seed tagDefs file1 fname args fs spec := by
-  intro out tr st' hmem
-  rw [← callK_denote] at hmem
-  have hφ := kAdequate_of_wp (GF := GF) (callK tagDefs file1 fname args)
-    (initial_driver_state_threaded seed file1 fs)
-    (fun o => ∃ r : driver_result, o = Outcome.value r ∧ spec r)
-    Hwp out tr st' hmem
-  obtain ⟨r, hr, hs⟩ := hφ
-  exact ⟨r, ofStatus_value_inv hr, hs⟩
+/-! ## Statement-facing plumbing (pure). Arc-18 C2: the OwnP adequacy
+    bridges (`kCallHarnessAdequateThr_of_wp`/
+    `kCallHarnessUBFreeThr_of_wp`) MOVED name-stably to
+    RelSem/PerStepOwnP.lean with the rest of the OwnP surface; the
+    heap-route bridges (the migration's replacements) live in
+    RelSem/CerbHeapWalk.lean. This module keeps only the faces and
+    the pure plumbing — it binds no interpretation. -/
 
 /-- The value-shaped threaded headline implies the threaded UB-freedom
     headline. Pure statement-layer plumbing, no Iris. -/
@@ -145,23 +125,6 @@ theorem callHarnessUBFreeThr_of_adequateThr {seed : Nat}
   obtain ⟨r, hr, -⟩ := h out tr st' hmem
   rw [hout] at hr
   cases hr
-
-/-- WP over the per-step instance at the threaded state ⇒ the threaded
-    UB-freedom headline. -/
-theorem kCallHarnessUBFreeThr_of_wp {GF : BundledGFunctors}
-    [CerbGpreS GF] (seed : Nat)
-    (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
-    (file1 : file core_run_annotation) (fname : String)
-    (args : List value) (fs : CerbFS.FsState)
-    (spec : driver_result → Prop)
-    (Hwp : ∀ [CerbGS .hasLC GF],
-      (stateIs (GF := GF) (initial_driver_state_threaded seed file1 fs)) ⊢
-        WP (callK tagDefs file1 fname args)
-          @ Stuckness.NotStuck ; ⊤
-          {{ o, ⌜∃ r : driver_result, o = Outcome.value r ∧ spec r⌝ }}) :
-    CallHarnessUBFreeThr seed tagDefs file1 fname args fs :=
-  callHarnessUBFreeThr_of_adequateThr
-    (kCallHarnessAdequateThr_of_wp seed tagDefs file1 fname args fs spec Hwp)
 
 /-! ## The ambient bridge (DELIBERATELY impure: these mention the
     ambient state, so they — and only they, in this file — wear the

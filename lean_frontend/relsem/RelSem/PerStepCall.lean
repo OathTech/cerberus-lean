@@ -148,32 +148,11 @@ theorem callK_denote
   refine congrArg _ (funext fun bound => ?_)
   exact callFinishK_denote tagDefs tid0 fsym pb.2 bound
 
-/-! ## Statement-facing adequacy through the per-step instance
-    (CONCLUSIONS byte-identical to the existing statement forms) -/
-
-/-- WP over the per-step instance at the reified harness ⇒ the
-    CerbND-shaped HEADLINE (`CallHarnessAdequate`, unchanged): every
-    outcome the production runner enumerates for the harness call is
-    `Active` and satisfies `spec`. -/
-theorem kCallHarnessAdequate_of_wp {GF : BundledGFunctors} [CerbGpreS GF]
-    (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
-    (file1 : file core_run_annotation) (fname : String)
-    (args : List value) (fs : CerbFS.FsState)
-    (spec : driver_result → Prop)
-    (Hwp : ∀ [CerbGS .hasLC GF],
-      (stateIs (GF := GF) (initial_driver_state file1 fs)) ⊢
-        WP (callK tagDefs file1 fname args)
-          @ Stuckness.NotStuck ; ⊤
-          {{ o, ⌜∃ r : driver_result, o = Outcome.value r ∧ spec r⌝ }}) :
-    CallHarnessAdequate tagDefs file1 fname args fs spec := by
-  intro out tr st' hmem
-  rw [← callK_denote] at hmem
-  have hφ := kAdequate_of_wp (GF := GF) (callK tagDefs file1 fname args)
-    (initial_driver_state file1 fs)
-    (fun o => ∃ r : driver_result, o = Outcome.value r ∧ spec r)
-    Hwp out tr st' hmem
-  obtain ⟨r, hr, hs⟩ := hφ
-  exact ⟨r, ofStatus_value_inv hr, hs⟩
+/-! ## Statement-facing plumbing (pure). Arc-18 C2: the OwnP adequacy
+    bridges (`kCallHarnessAdequate_of_wp`/`kCallHarnessUBFree_of_wp`)
+    MOVED name-stably to RelSem/PerStepOwnP.lean with the rest of the
+    OwnP surface — this module is live-route (the reified harness +
+    anchors) and binds no interpretation. -/
 
 /-- The value-shaped headline implies the UB-freedom headline
     (`CallHarnessUBFree`, unchanged): an outcome that is `Active` is
@@ -189,21 +168,6 @@ theorem callHarnessUBFree_of_callHarnessAdequate
   obtain ⟨r, hr, -⟩ := h out tr st' hmem
   rw [hout] at hr
   cases hr
-
-/-- WP over the per-step instance ⇒ the UB-freedom HEADLINE. -/
-theorem kCallHarnessUBFree_of_wp {GF : BundledGFunctors} [CerbGpreS GF]
-    (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
-    (file1 : file core_run_annotation) (fname : String)
-    (args : List value) (fs : CerbFS.FsState)
-    (spec : driver_result → Prop)
-    (Hwp : ∀ [CerbGS .hasLC GF],
-      (stateIs (GF := GF) (initial_driver_state file1 fs)) ⊢
-        WP (callK tagDefs file1 fname args)
-          @ Stuckness.NotStuck ; ⊤
-          {{ o, ⌜∃ r : driver_result, o = Outcome.value r ∧ spec r⌝ }}) :
-    CallHarnessUBFree tagDefs file1 fname args fs :=
-  callHarnessUBFree_of_callHarnessAdequate
-    (kCallHarnessAdequate_of_wp tagDefs file1 fname args fs spec Hwp)
 
 end Cerb
 end RelSem

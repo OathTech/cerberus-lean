@@ -43,6 +43,9 @@ import RelSem.CerbHeapDemo
 -- arc-16 S3 record, last commit carrying the files cited in
 -- docs/2026-08-25_arc18-c2-one-route.md.)
 import RelSem.PerStepRunner
+-- arc-18 C2: the transitional OwnP surface (the disentangled
+-- interpretation the ambient family + smokes still bind; C5-bound).
+import RelSem.PerStepOwnP
 -- arc-17 S0: the discharge-engine substrate — the named-state
 -- emitter (derive_state/derive_state_step) + the memoized
 -- ground-fact discharger backing wp_side.

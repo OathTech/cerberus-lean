@@ -42,6 +42,10 @@ import Iris.ProgramLogic.Language
 import RelSem.Machine
 import RelSem.Cerberus
 import RelSem.Call
+-- arc-18 C2 disentanglement: `DriveVal` moved to the live language
+-- core (RelSem/PerStepIris.lean); this arc-7 module now consumes it
+-- from there (shell → live is the permitted dependence direction).
+import RelSem.PerStepIris
 
 set_option autoImplicit false
 
@@ -50,11 +54,8 @@ namespace Cerb
 
 open Iris.ProgramLogic
 
-/-- The value type of the coupled language: terminal outcomes. A
-    `killed` outcome (UB included) is a VALUE of the machine, not a
-    stuck configuration — specs exclude UB explicitly (spike
-    stuckness-honesty note). -/
-abbrev DriveVal := Outcome driver_result driver_error
+-- (`DriveVal` — the value type of the coupled language — moved to
+-- RelSem/PerStepIris.lean at arc-18 C2, name-stable.)
 
 /-- The primitive step relation: one Layer-2 driver step, no
     observations, no forks. -/

@@ -33,6 +33,7 @@
 
 import RelSem.Threaded
 import RelSem.PerStepTactics
+import RelSem.PerStepOwnP
 import RelSem.DeriveState
 import RelSem.RoundEval
 import RelSem.ConstructLaws

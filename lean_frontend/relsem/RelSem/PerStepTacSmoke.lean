@@ -29,6 +29,7 @@
 -/
 
 import RelSem.PerStepTactics
+import RelSem.PerStepOwnP
 import RelSem.PerStepSmoke
 import RelSem.CerbHeapDemo
 

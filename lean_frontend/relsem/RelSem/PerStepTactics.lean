@@ -56,17 +56,6 @@ namespace Cerb
 
 open Iris Iris.ProgramLogic Iris.BI
 
-/-- The mode-split law in IPM-consumable form (both arms under one
-    context; `∧` duplicates it). -/
-theorem wpk_ite_conj {GF : BundledGFunctors} [CerbGS .hasLC GF]
-    {s : Stuckness} {E : CoPset} {c : Bool} {e₁ e₂ : KDriveExpr}
-    {Φ : DriveVal → IProp GF} :
-    iprop((WP e₁ @ s ; E {{ Φ }}) ∧ (WP e₂ @ s ; E {{ Φ }})) ⊢
-      WP (if c then e₁ else e₂) @ s ; E {{ Φ }} := by
-  cases c with
-  | false => rw [if_neg Bool.false_ne_true]; exact and_elim_r
-  | true => rw [if_pos rfl]; exact and_elim_l
-
 open Lean Elab Tactic Meta in
 /-- Expose the WP goal's head redex: definitionally normalize the
     expression under `WP` to weak head normal form (a `change`, so the
@@ -93,40 +82,12 @@ elab "wp_expose" : tactic => do
   let g' ← g.change tgt'
   replaceMainGoal [g']
 
-/-- One self-computing deterministic step: the head atom's `app`
-    activation is computed by `rfl` AFTER the state is pinned by
-    framing `H` (deferred side condition — the S1 late-defeq move). -/
-macro "wp_pure1" h:ident : tactic =>
-  `(tactic| (wp_expose
-             iapply wpk_seq_active_proj ?wpprf
-             rotate_left
-             iframe $h:ident
-             case wpprf => rfl
-             iintro $h:ident))
-
-/-- All available self-computing steps (stops at the first atom whose
-    activation does not compute — a genuine law/equation site). -/
-macro "wp_pures" h:ident : tactic =>
-  `(tactic| repeat wp_pure1 $h)
-
-/-- One step by a proved `app` equation (the seq/bind stepper); the
-    goal's state spelling is bridged by a deferred definitional
-    check. -/
-macro "wp_step" e:term:max h:ident : tactic =>
-  `(tactic| (wp_expose
-             iapply wpk_seq_active_ecast $e ?wpe ?wpcast
-             rotate_left
-             rotate_left
-             iframe $h:ident
-             case wpe => rfl
-             case wpcast => rfl
-             iintro $h:ident))
-
-/-- Split the reified scheduler-mode `if` into its two arms (shared
-    context). -/
-macro "wp_mode" : tactic =>
-  `(tactic| (iapply wpk_ite_conj
-             isplit))
+-- Arc-18 C2: the OwnP-route step macros (`wp_pure1`/`wp_pures`/
+-- `wp_step`/`wp_mode`) and their backing lemmas moved to
+-- RelSem/PerStepOwnP.lean with the OwnP surface; the heap-route walk
+-- macros live in RelSem/CerbHeapWalk.lean. This module keeps the
+-- interpretation-generic pieces (`wp_expose`, `wp_done`, `wp_side`)
+-- and the heap op-rule macros.
 
 /-- Value discharge. -/
 macro "wp_done" : tactic => `(tactic| iapply wpk_done)
