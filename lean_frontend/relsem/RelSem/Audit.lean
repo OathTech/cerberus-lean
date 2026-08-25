@@ -998,6 +998,138 @@ info: 'RelSem.Cerb.initial_driver_state_eq_threaded_ambient' depends on axioms: 
 /-- info: 'RelSem.T1.drDone_thr_def' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.drDone_thr_def
 
+/-! ## THE RUNEFFECTFUL NO-CONE-ENTRY GATE (arc-17 S2b)
+
+    `runEffectful` (LemLib) is the SINGLE residual boundary axiom —
+    temporal, retiring with the ambient family at the arc-17 purge
+    (its deletion is lem-side surgery, out of this repo's scope). This
+    gate pins its theorem-carrier set EXACTLY, both directions
+    fail-closed:
+
+    * a theorem cone ACQUIRING the axiom (any RelSem-module theorem
+      whose transitive cone contains `runEffectful but is not in the
+      registered list) FAILS THE BUILD — acquisition is build-fatal,
+      never silent, never merely unpinned;
+    * a STALE entry (registered but no longer carrying — e.g. after
+      the purge re-founds a consumer) FAILS THE BUILD until removed
+      deliberately, in the same commit, with the reason.
+
+    Scope: theorems (thmInfo) of RelSem-module origin within this
+    file's import closure — the sweep's scope exactly. Compiler-
+    generated sub-proofs (`Name.isInternalDetail`: `_proof_*` etc.)
+    are excluded from the pin because their parent theorem references
+    them, so the parent's cone contains everything theirs does — any
+    acquisition surfaces at a registered (or build-failing) named
+    theorem; internal names are also unstable across recompiles.
+    The registered set below is the AMBIENT family (T1–T5 chains +
+    the callND harness layer + the labeled ambient bridges) — the
+    quartet-cone theorems the arc-16 S4 pins already LABEL as the
+    impure side. The threaded family carries none of it. EXPECTED
+    END STATE: the purge (charter S5) empties most of this list.
+    Plant-tested both directions (transcripts:
+    docs/2026-08-25_arc17-s2b-axiom-endgame.md). -/
+
+open Lean in
+/-- The registered `runEffectful` theorem carriers (see the section
+    note above; 114 names, all ambient-family). -/
+def runEffectfulCarriers : List Name :=
+  [`RelSem.Cerb.callAdequate_of_app_active,
+   `RelSem.Cerb.callAdequate_of_reach, `RelSem.Cerb.callAdequate_of_wp,
+   `RelSem.Cerb.callHarnessAdequate_of_adequate,
+   `RelSem.Cerb.callHarnessAdequate_of_app_active,
+   `RelSem.Cerb.callHarnessAdequate_of_app_eq_wp,
+   `RelSem.Cerb.callHarnessAdequate_of_thr,
+   `RelSem.Cerb.callHarnessAdequate_of_wp,
+   `RelSem.Cerb.callHarnessUBFree_of_app_active,
+   `RelSem.Cerb.callHarnessUBFree_of_callHarnessAdequate,
+   `RelSem.Cerb.callHarnessUBFree_of_ubFree,
+   `RelSem.Cerb.callOutcomes_sound, `RelSem.Cerb.callReaches,
+   `RelSem.Cerb.callUBFree_of_app_active,
+   `RelSem.Cerb.callUBFree_of_app_eq_wp,
+   `RelSem.Cerb.callUBFree_of_value_adequate,
+   `RelSem.Cerb.callUBFree_of_wp,
+   `RelSem.Cerb.initial_core_run_state_eq_threaded_ambient,
+   `RelSem.Cerb.initial_driver_state_eq_threaded_ambient,
+   `RelSem.Cerb.kCallHarnessAdequate_of_wp,
+   `RelSem.Cerb.kCallHarnessAdequate_of_wpK2,
+   `RelSem.Cerb.kCallHarnessUBFree_of_wp,
+   `RelSem.Cerb.kCallHarnessUBFree_of_wpK2, `RelSem.Cerb.wp_callND,
+   `RelSem.Cerb.wp_callND_killed, `RelSem.Cerb.wp_of_app_active,
+   `RelSem.T1.dnms_chain, `RelSem.T1.driver2_iter,
+   `RelSem.T1.k1_globals, `RelSem.T1.k3_resolve, `RelSem.T1.k4_body,
+   `RelSem.T1.k5_ptys, `RelSem.T1.k6_inject, `RelSem.T1.k7_ths,
+   `RelSem.T1.k8_errno, `RelSem.T1.k9_update, `RelSem.T1.ndct_eq,
+   `RelSem.T1.prefix_a, `RelSem.T1.prefix_b, `RelSem.T1.prefix_walk,
+   `RelSem.T1.T1, `RelSem.T1.t1_app_eq, `RelSem.T1.t1AppEq_holds,
+   `RelSem.T1.T1_direct, `RelSem.T1.t1_of_app_eq,
+   `RelSem.T1.t1_of_app_eq_direct, `RelSem.T1.T1_of_threaded,
+   `RelSem.T1.T1Outcomes, `RelSem.T1.T1_perStep,
+   `RelSem.T1.T1_perStep_tac, `RelSem.T1.t1_result_eq,
+   `RelSem.T1.T1_ubFree, `RelSem.T1.t1_ubFree_of_app_eq,
+   `RelSem.T1.T1_ubFree_perStep, `RelSem.T1.t1_wp, `RelSem.T1.t1_wpK,
+   `RelSem.T1.t1_wpK_tac, `RelSem.T2.dnms_chain,
+   `RelSem.T2.driver2_iter, `RelSem.T2.ndct_eq, `RelSem.T2.prefix_a,
+   `RelSem.T2.prefix_a0, `RelSem.T2.prefix_a1, `RelSem.T2.prefix_b,
+   `RelSem.T2.prefix_walk, `RelSem.T2.T2, `RelSem.T2.t2_app_eq,
+   `RelSem.T2.T2_direct, `RelSem.T2.T2_of_threaded,
+   `RelSem.T2.T2Outcomes, `RelSem.T2.t2_result_eq,
+   `RelSem.T2.T2_ubFree, `RelSem.T3.dnms_chain,
+   `RelSem.T3.driver2_iter, `RelSem.T3.ndct_eq, `RelSem.T3.prefix_a0,
+   `RelSem.T3.prefix_a1, `RelSem.T3.prefix_b, `RelSem.T3.prefix_walk,
+   `RelSem.T3.T3, `RelSem.T3.t3_app_eq, `RelSem.T3.T3_direct,
+   `RelSem.T3.T3_of_threaded, `RelSem.T3.T3Outcomes,
+   `RelSem.T3.t3_result_eq, `RelSem.T3.T3_ubFree,
+   `RelSem.T4.anon1_stuck_eq, `RelSem.T4.anon2_stuck_eq,
+   `RelSem.T4.arena16_stuck, `RelSem.T4.arena33_stuck,
+   `RelSem.T4.dnms_chain, `RelSem.T4.driver2_iter, `RelSem.T4.ndct_eq,
+   `RelSem.T4.prefix_a0, `RelSem.T4.prefix_a1, `RelSem.T4.prefix_b,
+   `RelSem.T4.prefix_walk, `RelSem.T4.round15, `RelSem.T4.round32,
+   `RelSem.T4.round54, `RelSem.T4.T4, `RelSem.T4.t4_app_eq,
+   `RelSem.T4.T4_direct, `RelSem.T4.T4Outcomes,
+   `RelSem.T4.t4_result_eq, `RelSem.T4.T4_ubFree,
+   `RelSem.T5.entry5_walk, `RelSem.T5.envL_built,
+   `RelSem.T5.envL_lookup_i, `RelSem.T5.envL_lookup_n,
+   `RelSem.T5.envL_lookup_s, `RelSem.T5.prefix5_a,
+   `RelSem.T5.prefix5_b, `RelSem.T5.prefix5_walk]
+
+open Lean in
+#eval show CoreM Unit from do
+  let env ← getEnv
+  -- fail-closed existence check on the registered list itself
+  for n in runEffectfulCarriers do
+    let some _ := env.find? n
+      | throwError "runEffectful no-cone gate: registered carrier {n} \
+          is MISSING (renamed without re-pointing the gate?)"
+  let mods := env.header.moduleNames
+  let isOurs : Array Bool := mods.map (fun m => m.getRoot == `RelSem)
+  let names : Array Name := env.constants.fold
+    (fun acc n _ => acc.push n) #[]
+  let mut got : Array Name := #[]
+  for n in names do
+    let ours := match env.getModuleIdxFor? n with
+      | some idx => isOurs[idx.toNat]!
+      | none => true  -- the file being elaborated
+    unless ours do continue
+    unless env.find? n matches some (.thmInfo _) do continue
+    if n.isInternalDetail then continue
+    let axs ← collectAxioms n
+    if axs.contains `runEffectful then got := got.push n
+  let newAcq := got.filter (fun n => !runEffectfulCarriers.contains n)
+  let stale := runEffectfulCarriers.filter (fun n => !got.contains n)
+  unless newAcq.isEmpty do
+    throwError "runEffectful no-cone gate FAILED — theorem cone(s) \
+      ACQUIRED the residual boundary axiom (acquisition is build-fatal; \
+      re-found the proof through the threaded substrate, or register \
+      the carrier here deliberately, same commit, with the \
+      reason):\n{newAcq.toList}"
+  unless stale.isEmpty do
+    throwError "runEffectful no-cone gate: registered carrier(s) no \
+      longer carry the axiom (re-founded upstream?) — REMOVE them \
+      deliberately, same commit, with the reason:\n{stale}"
+  logInfo s!"runEffectful no-cone gate: carrier set exact \
+    ({got.size} registered ambient-family theorems; no acquisition, \
+    no stale entries)"
+
 /-! ## The exhaustive sweep — LAST in the file by design: a constant
     declared after this point would dodge it (negative-test lesson,
     2026-08-19), so nothing may be declared below, and RelSem.Audit is
@@ -1028,6 +1160,8 @@ open Lean in
 -- above). 3904 → 3983 (arc-16 S4: the threaded effect-state modules
 -- Threaded/T1Threaded join the closure — 79 declarations, all
 -- boundary-clean, the threaded theorem family trio-exact; pins
+-- 4438 → 4439 (arc-17 S2b: the runEffectful no-cone-entry gate's
+-- registered-carrier list `runEffectfulCarriers` joins this file).
 -- 4410 → 4438 (arc-17 S2 cont.: T4Threaded — the guarded statement
 -- + apartness defs + evaluator-driven prefix at the measured
 -- frontier; the seq_rmw perform law joins via Kit/Round).
@@ -1058,7 +1192,7 @@ open Lean in
 -- probe's law layer; the probe fixture file itself is parked OUT of
 -- the build).
 /--
-info: RelSem audit sweep: 4438 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 4439 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do
