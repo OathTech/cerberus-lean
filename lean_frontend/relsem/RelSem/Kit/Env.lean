@@ -38,6 +38,7 @@
 
 import RelSem.Machine
 import RelSem.Cerberus
+import RelSem.LawRegistry
 
 set_option autoImplicit false
 
@@ -237,6 +238,10 @@ theorem fmapLookupBy_mk {α β : Type}
 
 /-- THE PAYOFF: lookup through an insert, decided by the comparator
     verdict on the two keys — never by computing the tree. -/
+@[step_law (kind := envAlg) (variant := base) (side := rfl)
+  (frontier := "env/alg-base")
+  (trace := "{law := fmapLookupBy_addBy_mk, joint := env/alg, hyps := []}")
+  (lineage := "ordered-map lookup-through-insert, if-form (the comparator-model env algebra, arc-17 S2)")]
 theorem fmapLookupBy_addBy_mk {α β : Type} [BEq α]
     (cmp : α → α → LemOrdering) [TransCmp (lemCmpToOrd cmp)]
     (k k' : α) (v : β)
@@ -268,6 +273,10 @@ theorem fmapLookupBy_addBy_empty {α β : Type} [BEq α]
   by_cases hcm : lemCmpToOrd cmp k' k = .eq <;> simp [hcm]
 
 /-- Consumer face: an APART insert is invisible to the lookup. -/
+@[step_law (kind := envAlg) (variant := skip) (side := omega)
+  (frontier := "env/alg-skip")
+  (trace := "{law := fmapLookupBy_addBy_apart, joint := env/alg, hyps := [h : omega]}")
+  (lineage := "consumer face: an apart insert is invisible to the lookup (seed-apartness discharge)")]
 theorem fmapLookupBy_addBy_apart {α β : Type} [BEq α]
     (cmp : α → α → LemOrdering) [TransCmp (lemCmpToOrd cmp)]
     {k k' : α} (v : β)
@@ -279,6 +288,10 @@ theorem fmapLookupBy_addBy_apart {α β : Type} [BEq α]
   rw [fmapLookupBy_addBy_mk, if_neg h]
 
 /-- Consumer face: the freshly inserted key reads back its value. -/
+@[step_law (kind := envAlg) (variant := hit) (side := ground)
+  (frontier := "env/alg-hit")
+  (trace := "{law := fmapLookupBy_addBy_self, joint := env/alg, hyps := [h : ground]}")
+  (lineage := "consumer face: the freshly inserted key reads back its value")]
 theorem fmapLookupBy_addBy_self {α β : Type} [BEq α]
     (cmp : α → α → LemOrdering) [TransCmp (lemCmpToOrd cmp)]
     {k k' : α} (v : β)

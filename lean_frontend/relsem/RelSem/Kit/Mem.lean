@@ -19,6 +19,7 @@
 import RelSem.Machine
 import RelSem.Cerberus
 import RelSem.Tactics.AppEqAttr
+import RelSem.LawRegistry
 
 set_option autoImplicit false
 
@@ -30,7 +31,11 @@ open RelSem
     computed from the pre-state (hypothesis-pinned so fixtures
     discharge the arithmetic by `decide`); the post-state appends the
     allocation and writes `sz` uninitialized bytes. -/
-@[app_eq]
+@[app_eq,
+  step_law (kind := memBlock) (side := ground)
+  (frontier := "mem/alloc")
+  (trace := "{law := mem_alloc_block, joint := mem/alloc, hyps := [hsz : ground, haddr : ground, hnz : ground]}")
+  (lineage := "computed-RHS memory-op block (brick-B3 named-hypothesis shape): allocate, success path")]
 theorem mem_alloc_block {tid : Nat} {pref : prefix0} {pv : CerbMem.Provenance}
     {alignN : Int} {ty : ctype} {mem : CerbMem.MemState}
     {addrOpt : Option Int} {sz : Nat} {a : Int}
@@ -61,7 +66,11 @@ theorem mem_alloc_block {tid : Nat} {pref : prefix0} {pv : CerbMem.Provenance}
     at the driver layer): non-union concrete pointer, writable
     allocation, compatible value; the post-state is the byte write
     with the funptrmap threaded (integers: unchanged). -/
-@[app_eq]
+@[app_eq,
+  step_law (kind := memBlock) (side := ground)
+  (frontier := "mem/store")
+  (trace := "{law := mem_store_block, joint := mem/store, hyps := [hcompat : ground, hget : ground, hbounds : ground, hro : ground, hatomic : ground, hbytes : ground]}")
+  (lineage := "computed-RHS memory-op block: store as a folded byte write (writeBytesTo spelling preserved)")]
 theorem mem_store_block {loc : CerbLocation.Loc} {ty : ctype}
     {allocId : Int} {addr : Int} {alloc : CerbMem.Allocation}
     {mem : CerbMem.MemState} {mv : CerbMem.MemValue}
@@ -97,7 +106,11 @@ def isBoolTy : ctype → Bool
     and the normal mechanical lanes run unchanged on a miss
     (behavior-compatible: every existing walk discharges hget as
     before). -/
-@[app_eq (fact := hget 3)]
+@[app_eq (fact := hget 3),
+  step_law (kind := memBlock) (side := ground)
+  (frontier := "mem/load")
+  (trace := "{law := mem_load_block, joint := mem/load, hyps := [hdead : ground, hget : ground, hbounds : ground, hatomic : ground, hbytes : ground, hrecon : ground, hnotbool : ground]}")
+  (lineage := "computed-RHS memory-op block: load, success path, state unchanged")]
 theorem mem_load_block {loc : CerbLocation.Loc} {ty : ctype}
     {allocId : Int} {addr : Int} {um : Option identifier}
     {alloc : CerbMem.Allocation} {mem : CerbMem.MemState}
@@ -121,14 +134,22 @@ theorem mem_load_block {loc : CerbLocation.Loc} {ty : ctype}
 
 /-- Pointer prefix (a placeholder in the concrete model: always
     `none`; the trace events' pref field). -/
-@[app_eq]
+@[app_eq,
+  step_law (kind := memBlock) (side := rfl)
+  (frontier := "mem/prefix")
+  (trace := "{law := mem_prefix_block, joint := mem/prefix, hyps := []}")
+  (lineage := "concrete-model pointer prefix: always none, rfl")]
 theorem mem_prefix_block {ptr : CerbMem.PointerValue}
     {mem : CerbMem.MemState} :
     app (CerbMem.prefixOfPointer ptr) mem = (NDactive none, mem) := rfl
 
 /-- KILL (object deallocation), success path: live allocation, at the
     base address, non-dynamic. -/
-@[app_eq]
+@[app_eq,
+  step_law (kind := memBlock) (side := ground)
+  (frontier := "mem/kill")
+  (trace := "{law := mem_kill_block, joint := mem/kill, hyps := [hdead : ground, hget : ground, hbase : ground]}")
+  (lineage := "computed-RHS memory-op block: kill, success path")]
 theorem mem_kill_block {loc : CerbLocation.Loc}
     {allocId : Int} {addr : Int} {um : Option identifier}
     {alloc : CerbMem.Allocation} {mem : CerbMem.MemState}
@@ -153,19 +174,35 @@ theorem mem_kill_block {loc : CerbLocation.Loc}
     consumes (store rounds keep `writeBytesTo` folded; later loads
     mint through these instead of materializing the byte tree). -/
 
+@[step_law (kind := memRW) (variant := projAllocations) (side := rfl)
+  (frontier := "mem/rw-proj")
+  (trace := "{law := writeBytesTo_allocations, joint := mem/rw-proj, hyps := []}")
+  (lineage := "SL footprint projection law: the byte write touches only the bytemap")]
 theorem writeBytesTo_allocations {m : CerbMem.MemState} {a : Int}
     {bs : List CerbMem.AbsByte} :
     (CerbMem.writeBytesTo m a bs).allocations = m.allocations := rfl
 
+@[step_law (kind := memRW) (variant := projDeadAllocations) (side := rfl)
+  (frontier := "mem/rw-proj")
+  (trace := "{law := writeBytesTo_deadAllocations, joint := mem/rw-proj, hyps := []}")
+  (lineage := "SL footprint projection law: the byte write touches only the bytemap")]
 theorem writeBytesTo_deadAllocations {m : CerbMem.MemState} {a : Int}
     {bs : List CerbMem.AbsByte} :
     (CerbMem.writeBytesTo m a bs).deadAllocations
       = m.deadAllocations := rfl
 
+@[step_law (kind := memRW) (variant := projFunptrmap) (side := rfl)
+  (frontier := "mem/rw-proj")
+  (trace := "{law := writeBytesTo_funptrmap, joint := mem/rw-proj, hyps := []}")
+  (lineage := "SL footprint projection law: the byte write touches only the bytemap")]
 theorem writeBytesTo_funptrmap {m : CerbMem.MemState} {a : Int}
     {bs : List CerbMem.AbsByte} :
     (CerbMem.writeBytesTo m a bs).funptrmap = m.funptrmap := rfl
 
+@[step_law (kind := memRW) (variant := projLastUsedUnionMembers) (side := rfl)
+  (frontier := "mem/rw-proj")
+  (trace := "{law := writeBytesTo_lastUsedUnionMembers, joint := mem/rw-proj, hyps := []}")
+  (lineage := "SL footprint projection law: the byte write touches only the bytemap")]
 theorem writeBytesTo_lastUsedUnionMembers {m : CerbMem.MemState}
     {a : Int} {bs : List CerbMem.AbsByte} :
     (CerbMem.writeBytesTo m a bs).lastUsedUnionMembers
@@ -231,6 +268,10 @@ private theorem writeBytesTo_bytemap_get? {m : CerbMem.MemState}
 /-- A byte read depends only on the bytemap (the record-respelling
     bridge: an anchored `MemState.mk` record whose bytemap field is a
     projection of the base state reads identically to the base). -/
+@[step_law (kind := memRW) (variant := congr) (side := rfl)
+  (frontier := "mem/rw-congr")
+  (trace := "{law := readBytesFrom_congr_bytemap, joint := mem/rw, hyps := [h : rfl]}")
+  (lineage := "reads depend only on the bytemap (the record-respelling bridge)")]
 theorem readBytesFrom_congr_bytemap {m1 m2 : CerbMem.MemState}
     {a : Int} {n : Nat} (h : m1.bytemap = m2.bytemap) :
     CerbMem.readBytesFrom m1 a n = CerbMem.readBytesFrom m2 a n := by
@@ -238,6 +279,10 @@ theorem readBytesFrom_congr_bytemap {m1 m2 : CerbMem.MemState}
   rw [h]
 
 /-- Disjoint read passes through the write (the FRAME law). -/
+@[step_law (kind := memRW) (variant := frame) (side := ground)
+  (frontier := "mem/rw-frame")
+  (trace := "{law := readBytesFrom_writeBytesTo_disjoint, joint := mem/rw, hyps := [hdisj : ground]}")
+  (lineage := "the SL FRAME law at bytemap level: a disjoint read passes through the write (Burstall/Bornat independent cells)")]
 theorem readBytesFrom_writeBytesTo_disjoint {m : CerbMem.MemState}
     {a a' : Int} {bs : List CerbMem.AbsByte} {n : Nat}
     (hdisj : a + bs.length ≤ a' ∨ a' + n ≤ a) :
@@ -254,6 +299,10 @@ theorem readBytesFrom_writeBytesTo_disjoint {m : CerbMem.MemState}
 
 /-- Exact-footprint readback: reading `bs.length` bytes at the write
     address returns the written bytes. -/
+@[step_law (kind := memRW) (variant := hit) (side := ground)
+  (frontier := "mem/rw-hit")
+  (trace := "{law := readBytesFrom_writeBytesTo_hit, joint := mem/rw, hyps := [hn : ground]}")
+  (lineage := "exact-footprint readback: load-over-store at the written cells (Burstall/Bornat)")]
 theorem readBytesFrom_writeBytesTo_hit {m : CerbMem.MemState}
     {a : Int} {bs : List CerbMem.AbsByte} {n : Nat}
     (hn : n = bs.length) :

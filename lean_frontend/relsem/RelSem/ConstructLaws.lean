@@ -35,6 +35,7 @@ import RelSem.Cerberus
 import RelSem.Call
 import RelSem.Kit.Eval
 import RelSem.Kit.Round
+import RelSem.LawRegistry
 
 set_option autoImplicit false
 
@@ -59,6 +60,10 @@ open RelSem RelSem.Cerb RelSem.Kit
     TRACE-ATOM SCHEMA (S0 §3.3 level 2): `{law := seu_read_bind,
     joint := runstate-read, hyps := []}` — no hypothesis slots; the
     consumer recomputes `f st` (S0 §3.1 item 2). -/
+@[step_law (kind := construct) (side := rfl)
+  (frontier := "construct/runstate-read")
+  (trace := "{law := seu_read_bind, joint := runstate-read, hyps := []}")
+  (lineage := "decompilation-into-logic (Myreen): one derived rule per stereotyped elaboration shape")]
 theorem seu_read_bind {A B S E : Type}
     (f : S → A) (k : A → S → exceptM (t0 B × S) E) (st : S) :
     stExceptUndef_bind (runSE (state_except_read f)) k st = k (f st) st :=
@@ -92,6 +97,10 @@ theorem seu_read_bind {A B S E : Type}
     joint := rsk-eval/label-jump, hyps := [hres : ground (labeled-map
     lookup; consumer recomputes), hk : fed-equation BY NAME (the
     fixture's eval-chain lemma)]}`. -/
+@[step_law (kind := construct) (side := fed)
+  (frontier := "construct/label-jump")
+  (trace := "{law := erun_jump_m, joint := rsk-eval/label-jump, hyps := [hres : ground, hk : fed]}")
+  (lineage := "decompilation-into-logic: the Erun arm split at resolution/jump (arc-17 S1)")]
 theorem erun_jump_m {B : Type}
     {resolve : core_run_state →
       Option (List (sym × core_base_type) ×
@@ -131,6 +140,10 @@ theorem erun_jump_m {B : Type}
     TRACE-ATOM SCHEMA (S0 §3.3 level 2): `{law := ndct_offer1,
     joint := scheduler-read, hyps := [hths : ground (thread-table
     shape), hdnms : fed-equation BY NAME (the dnms chain)]}`. -/
+@[step_law (kind := construct) (side := fed)
+  (frontier := "construct/scheduler-read")
+  (trace := "{law := ndct_offer1, joint := scheduler-read, hyps := [hths : ground, hdnms : fed]}")
+  (lineage := "decompilation-into-logic: the single-thread scheduler read, one law per call structure")]
 theorem ndct_offer1
     {tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)}
     {σ σ' : driver_state} {step1 : core_step2}
@@ -164,6 +177,10 @@ theorem ndct_offer1
     TRACE-ATOM SCHEMA (S0 §3.3 level 2): `{law := driver2_done,
     joint := driver-iteration/done, hyps := [hndct : fed-equation BY
     NAME (the scheduler read)]}`. -/
+@[step_law (kind := construct) (side := fed)
+  (frontier := "construct/driver-done")
+  (trace := "{law := driver2_done, joint := driver-iteration/done, hyps := [hndct : fed, hout : ground]}")
+  (lineage := "decompilation-into-logic: the program-exit driver iteration, cased once over the mode read")]
 theorem driver2_done
     {tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)}
     {fuel : Nat} {σ σ' : driver_state} {v : value}
@@ -239,6 +256,10 @@ def stepAt (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
     TRACE-ATOM SCHEMA (S0 §3.3 level 2): `{law := inject_ptr_arg1,
     joint := harness-inject, hyps := [hmv : ground, halloc :
     ground/fed, hstore : ground/fed]}`. -/
+@[step_law (kind := construct) (side := fed)
+  (frontier := "construct/harness-inject")
+  (trace := "{law := inject_ptr_arg1, joint := harness-inject, hyps := [hmv : ground, halloc : fed, hstore : fed, hout : ground]}")
+  (lineage := "caller-protocol decompilation: the one-scalar-argument inject stage, proved once (arc-17 S1)")]
 theorem inject_ptr_arg1
     {tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)}
     {tid0 : Nat} {psym : sym} {ty : ctype} {v : value}
@@ -277,6 +298,10 @@ theorem inject_ptr_arg1
     TRACE-ATOM SCHEMA (S0 §3.3 level 2): `{law := callND_errno,
     joint := harness-errno, hyps := [halloc : ground/fed, hstore :
     ground/fed]}`. -/
+@[step_law (kind := construct) (side := fed)
+  (frontier := "construct/harness-errno")
+  (trace := "{law := callND_errno, joint := harness-errno, hyps := [halloc : fed, hstore : fed, hout : ground]}")
+  (lineage := "caller-protocol decompilation: the fixture-independent errno stage")]
 theorem callND_errno
     {tid0 : Nat} {σ : driver_state} {ptr : CerbMem.PointerValue}
     {mem1 mem2 : CerbMem.MemState} {fp : CerbMem.Footprint}
@@ -313,6 +338,10 @@ theorem callND_errno
 
     TRACE-ATOM SCHEMA (S0 §3.3 level 2): `{law := get_ths_eq,
     joint := harness-thread-read, hyps := []}`. -/
+@[step_law (kind := construct) (side := rfl)
+  (frontier := "construct/thread-read")
+  (trace := "{law := get_ths_eq, joint := harness-thread-read, hyps := []}")
+  (lineage := "decompilation-into-logic: get+return composite, generic state-preserving read")]
 theorem get_ths_eq (σ : driver_state) :
     app get_thread_states σ
       = (NDactive σ.core_state0.thread_states, σ) :=
@@ -326,6 +355,10 @@ theorem get_ths_eq (σ : driver_state) :
 
     TRACE-ATOM SCHEMA (S0 §3.3 level 2): `{law := driver_update_ts,
     joint := harness-thread-setup, hyps := []}`. -/
+@[step_law (kind := construct) (side := rfl)
+  (frontier := "construct/thread-setup")
+  (trace := "{law := driver_update_ts, joint := harness-thread-setup, hyps := [hout : ground]}")
+  (lineage := "decompilation-into-logic: nd_update at the thread table, named feeding handle")]
 theorem driver_update_ts (tid : Nat) (th : thread_state)
     (σ : driver_state) {σ' : driver_state}
     (hout : { σ with core_state0 :=

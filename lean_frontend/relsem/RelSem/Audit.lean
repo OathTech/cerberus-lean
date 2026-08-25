@@ -172,6 +172,9 @@ import RelSem.DeriveState
 import RelSem.WpGround
 -- arc-17 S2: the law-driven round evaluator joins the sweep closure.
 import RelSem.RoundEval
+-- arc-18 C1: THE ONE REGISTRY (the reasoning layer's single law
+-- interface; census pinned below).
+import RelSem.LawRegistry
 -- arc-17 S2: the ordered-map env algebra joins the sweep closure +
 -- pins (comparator lawfulness + lookup-through-insert under
 -- apartness).
@@ -895,6 +898,20 @@ open Lean in
 #guard_msgs in #print axioms RelSem.Laws.get_ths_eq
 /-- info: 'RelSem.Laws.driver_update_ts' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Laws.driver_update_ts
+
+-- arc-18 C1: THE ONE REGISTRY census pin (register row R4 — the
+-- machine-indexed law interface). The pin makes the registered
+-- population EXACT in-build: a law silently dropping out of (or
+-- sneaking into) the registry fails the build. Re-baseline
+-- deliberately, same commit, with the reason. Population at C1:
+-- construct 8 (ConstructLaws) + roundGlue 3 + advance 4 + perform 5
+-- (Kit/Round) + memBlock 5 + memRW 7 (Kit/Mem incl. the C1-salvaged
+-- read-over-write laws) + envMap 3 (Kit/Map) + envAlg 3 (Kit/Env) +
+-- loop 2 (Kit/Loop) + wpSeq 2 (the re-homed live seq laws,
+-- PerStepIris) + heapWP 4 (CerbHeapWP — the wp_load/store/alloc/kill
+-- rules; macro-side query conversion rides C2's restatement) = 46.
+/-- info: step_law census: 46 laws [advance 4, construct 8, envAlg 3, envMap 3, heapWP 4, loop 2, memBlock 5, memRW 7, perform 5, roundGlue 3, wpSeq 2] -/
+#guard_msgs in #step_law_census
 /-- info: 'RelSem.T1.round6' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.round6
 /-- info: 'RelSem.T2.round13' depends on axioms: [propext, Classical.choice, Quot.sound] -/
@@ -1144,7 +1161,14 @@ open Lean in
 -- deliberately, same commit, with the reason. (When green the pin
 -- SWALLOWS the info line — absence of the sweep line from a green
 -- build log is expected; the DAEMON + statement gates still print.)
--- Re-baselines: 4712 → 4746 (arc-18 C1: the stash-salvaged MEM
+-- Re-baselines: 4746 → 4830 (arc-18 C1: THE ONE REGISTRY —
+-- RelSem.LawRegistry (StepLaw/Registry structures + derived
+-- instances, the @[step_law] attribute, query/census/lint machinery)
+-- joins the closure; the 42-law population is attribute metadata on
+-- EXISTING theorems (census pinned above), so the census pin, not
+-- this count, tracks it; the two re-homed wpk seq laws move files
+-- name-stably. All boundary-clean).
+-- 4712 → 4746 (arc-18 C1: the stash-salvaged MEM
 -- FOOTPRINT PACKAGE — Kit/Mem read-over-write laws (writeBytesTo_*
 -- projection quartet + writeFold_get?/writeBytesTo_bytemap_get? +
 -- readBytesFrom_congr_bytemap + the disjoint-frame/exact-hit
@@ -1225,7 +1249,7 @@ open Lean in
 -- probe's law layer; the probe fixture file itself is parked OUT of
 -- the build).
 /--
-info: RelSem audit sweep: 4746 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 4830 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do

@@ -19,6 +19,7 @@
 -/
 
 import RelSem.CerbHeapRA
+import RelSem.LawRegistry
 
 set_option autoImplicit false
 
@@ -128,6 +129,10 @@ theorem wpk_seq_res_det [CerbHeapGS GF] {α : Type}
 
 /-! ## LOAD — read-only: any fractions; every resource returns. -/
 
+@[step_law (kind := heapWP) (variant := load) (side := ground)
+  (frontier := "heap/load")
+  (trace := "{law := wpk_load, joint := heap/load, hyps := [pointsToBytes : resource, allocIs : resource, side : ground]}")
+  (lineage := "HeapLang PrimitiveLaws wp_load shape: footprint points-to in, unchanged points-to out (the framing rule)")]
 theorem wpk_load [CerbHeapGS GF] {s : Stuckness} {E : CoPset}
     {Φ : DriveVal → IProp GF}
     {loc : CerbLocation.Loc} {ty : ctype} {aid addr : Int}
@@ -214,6 +219,10 @@ theorem wpk_load [CerbHeapGS GF] {s : Stuckness} {E : CoPset}
     serialization leaves the funptrmap unchanged): full-fraction
     range overwrite. -/
 
+@[step_law (kind := heapWP) (variant := store) (side := ground)
+  (frontier := "heap/store")
+  (trace := "{law := wpk_store, joint := heap/store, hyps := [pointsToBytes : resource, allocIs : resource, side : ground]}")
+  (lineage := "HeapLang PrimitiveLaws wp_store shape: points-to updated at the written footprint")]
 theorem wpk_store [CerbHeapGS GF] {s : Stuckness} {E : CoPset}
     {Φ : DriveVal → IProp GF}
     {loc : CerbLocation.Loc} {ty : ctype} {aid addr : Int}
@@ -302,6 +311,10 @@ theorem wpk_store [CerbHeapGS GF] {s : Stuckness} {E : CoPset}
     half (the bump counters move), mints the allocation fragment and
     the range points-to at the model's deterministic address. -/
 
+@[step_law (kind := heapWP) (variant := alloc) (side := ground)
+  (frontier := "heap/alloc")
+  (trace := "{law := wpk_alloc, joint := heap/alloc, hyps := [side : ground]}")
+  (lineage := "HeapLang wp_alloc shape: fresh points-to + allocIs minted by the frame-preserving update")]
 theorem wpk_alloc [CerbHeapGS GF] {s : Stuckness} {E : CoPset}
     {Φ : DriveVal → IProp GF}
     {tid : Nat} {pref : prefix0} {pvAlign : CerbMem.Provenance}
@@ -408,6 +421,10 @@ theorem wpk_alloc [CerbHeapGS GF] {s : Stuckness} {E : CoPset}
     (the freeable token) and the rest half; the byte points-to stays
     with the prover as dead capital (study deviation D2). -/
 
+@[step_law (kind := heapWP) (variant := kill) (side := ground)
+  (frontier := "heap/kill")
+  (trace := "{law := wpk_kill, joint := heap/kill, hyps := [pointsToBytes : resource, allocIs : resource, side : ground]}")
+  (lineage := "HeapLang wp_free shape: consume the footprint resources at deallocation")]
 theorem wpk_kill [CerbHeapGS GF] {s : Stuckness} {E : CoPset}
     {Φ : DriveVal → IProp GF}
     {loc : CerbLocation.Loc} {aid addr : Int}

@@ -27,6 +27,7 @@
 import Iris.ProgramLogic.OwnP
 import RelSem.PerStep
 import RelSem.IrisState
+import RelSem.LawRegistry
 
 set_option autoImplicit false
 
@@ -263,6 +264,49 @@ theorem kAdequate_of_wp {GF : BundledGFunctors} [CerbGpreS GF]
   intro out tr σ' hmem
   exact Had.adequate_result [] σ' (Outcome.ofStatus out)
     (ksteps_erased (ksteps_of_runND hmem))
+
+/-! ## The live seq-law faces (re-homed from PerStepLaws, arc-18 C1:
+    the two NON-dormant laws of the Q1-DELETE file — the wp-tactic
+    layer's `wp_step`/`wp_pures` backing lemmas; registered in the
+    one registry as the wpSeq lane) -/
+
+/-- `wpk_seq_active` with BOTH the expression and the state given up
+    to definitional casts (for tactic use: `iapply` unifies at
+    reducible transparency, so a proved equation whose atom spelling
+    is a computed form of the goal's needs the bridge; both casts
+    discharge by `rfl`). -/
+@[step_law (kind := wpSeq) (variant := ecast) (side := rfl)
+  (frontier := "wp/seq-ecast")
+  (trace := "{law := wpk_seq_active_ecast, joint := wp/seq, hyps := [h : fed, he : rfl, hcast : rfl]}")
+  (lineage := "HeapLang wp_step shape: one WP step by a proved app equation, endpoints bridged by definitional casts")]
+theorem wpk_seq_active_ecast {α : Type}
+    {m : ndM α step_kind driver_error mem_iv_constraint driver_state}
+    {k : α → KDriveExpr} {e0 : KDriveExpr} {σ0 σ σ' : driver_state}
+    {v : α}
+    (h : app m σ = (NDactive v, σ'))
+    (he : e0 = KExpr.seq m k) (hσ : σ0 = σ)
+    {Φ : DriveVal → IProp GF} :
+    stateIs σ0 ∗ (stateIs σ' -∗ WP (k v) @ s ; E {{ Φ }}) ⊢
+      WP e0 @ s ; E {{ Φ }} :=
+  he ▸ hσ ▸ wpk_seq_active h
+
+/-- The self-computing step: the successor state is the projection
+    `(app m σ).2` — whnf computes it on demand while goals stay
+    compact; the ONE side condition (the head activates) discharges by
+    `rfl` when the atom computes. This is `wp_pures`' backing lemma. -/
+@[step_law (kind := wpSeq) (variant := proj) (side := rfl)
+  (frontier := "wp/seq-proj")
+  (trace := "{law := wpk_seq_active_proj, joint := wp/seq, hyps := [h : rfl]}")
+  (lineage := "HeapLang wp_pures shape: the self-computing deterministic step, successor as a projection")]
+theorem wpk_seq_active_proj {α : Type}
+    {m : ndM α step_kind driver_error mem_iv_constraint driver_state}
+    {k : α → KDriveExpr} {σ : driver_state} {v : α}
+    (h : (app m σ).1 = NDactive v)
+    {Φ : DriveVal → IProp GF} :
+    stateIs σ ∗ (stateIs (app m σ).2 -∗ WP (k v) @ s ; E {{ Φ }}) ⊢
+      WP (KExpr.seq m k : KDriveExpr) @ s ; E {{ Φ }} :=
+  wpk_seq_active (show app m σ = (NDactive v, (app m σ).2) by
+    rw [← h])
 
 end Cerb
 end RelSem

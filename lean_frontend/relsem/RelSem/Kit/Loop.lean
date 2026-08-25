@@ -17,6 +17,7 @@
 -/
 
 import RelSem.Machine
+import RelSem.LawRegistry
 
 set_option autoImplicit false
 
@@ -25,6 +26,15 @@ namespace RelSem.Kit
 /-- The offset composition core, shifted form (the induction engine
     behind `iter_compose`): from start index `j`, `n` iterations
     compose. -/
+-- REGISTRY NOTE: degenerate goal-form key BY DESIGN (the conclusion
+-- head is the invariant family C, a wildcard): iter_compose is never
+-- goal-form-dispatched — the human names the invariant (module header;
+-- design S1.3). The entry exists for the interface census + trace
+-- vocabulary; queries cannot select it.
+@[step_law (kind := loop) (variant := fromN) (side := fed)
+  (frontier := "loop/compose")
+  (trace := "{law := iter_compose_from, joint := loop/compose, hyps := [hbody : fed]}")
+  (lineage := "Floyd-Hoare invariant composition at the equation calculus, shifted form (pure Nat induction)")]
 theorem iter_compose_from {α σ : Type} {C : Nat → σ → α} {St : Nat → σ}
     {k : Nat} (j n : Nat)
     (hbody : ∀ i, j ≤ i → i < j + n → ∀ fuel,
@@ -53,6 +63,10 @@ theorem iter_compose_from {α σ : Type} {C : Nat → σ → α} {St : Nat → �
     composed `k·n`-round block equation from `St 0` to `St n` — still
     relative fuel, still an ordinary app equation consumed by the
     UNCHANGED adequacy chain. -/
+@[step_law (kind := loop) (variant := from0) (side := fed)
+  (frontier := "loop/compose")
+  (trace := "{law := iter_compose, joint := loop/compose, hyps := [hbody : fed]}")
+  (lineage := "THE loop rule: invariant family St, k-round body block, composed k*n block equation (Floyd-Hoare at the equation calculus)")]
 theorem iter_compose {α σ : Type} {C : Nat → σ → α} {St : Nat → σ}
     {k : Nat} {n : Nat}
     (hbody : ∀ i, i < n → ∀ fuel,

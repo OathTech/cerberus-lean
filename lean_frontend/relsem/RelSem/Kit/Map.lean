@@ -26,6 +26,7 @@
 import RelSem.Machine
 import RelSem.Cerberus
 import RelSem.Tactics.AppEqAttr
+import RelSem.LawRegistry
 
 set_option autoImplicit false
 
@@ -231,6 +232,10 @@ theorem fmapAddBy_built_empty {α β : Type} [BEq α]
       (fmapAddBy pcmp k v (fmapEmpty : Fmap α β)) := rfl
 
 /-- Inserts (under ANY passed comparator) keep the captured one. -/
+@[step_law (kind := envMap) (variant := built) (side := rfl)
+  (frontier := "env/built")
+  (trace := "{law := fmapAddBy_built, joint := env/built, hyps := [h : fed]}")
+  (lineage := "comparator-capture invariant: inserts keep the captured comparator (arc-17 S3 env lane)")]
 theorem fmapAddBy_built {α β : Type} [BEq α]
     {c : α → α → Ordering} {pcmp : α → α → LemOrdering}
     {k : α} {v : β} {m : Fmap α β}
@@ -241,6 +246,10 @@ theorem fmapAddBy_built {α β : Type} [BEq α]
 
 /-- Lookup after insert, captured-comparator-EQ key: the just-inserted
     value (passed comparators arbitrary). -/
+@[step_law (kind := envMap) (variant := hit) (side := ground)
+  (frontier := "env/lookup-hit")
+  (trace := "{law := fmapLookupBy_addBy_eq, joint := env/lookup, hyps := [hm : fed, hk : ground]}")
+  (lineage := "lookup-over-insert hit at the captured comparator (Pset parity; the env-lookup lane)")]
 theorem fmapLookupBy_addBy_eq {α β : Type} [BEq α]
     {c : α → α → Ordering} [Std.TransCmp c]
     {pcmp pcmp' : α → α → LemOrdering}
@@ -258,6 +267,10 @@ theorem fmapLookupBy_addBy_eq {α β : Type} [BEq α]
 
 /-- Lookup after insert, captured-comparator-NE key: the underlying
     map's verdict (the skip law — St-v2's induction engine). -/
+@[step_law (kind := envMap) (variant := skip) (side := omega)
+  (frontier := "env/lookup-skip")
+  (trace := "{law := fmapLookupBy_addBy_ne, joint := env/lookup, hyps := [hm : fed, hk : omega]}")
+  (lineage := "lookup-over-insert skip: apartness makes the insert invisible (the induction engine of env walks)")]
 theorem fmapLookupBy_addBy_ne {α β : Type} [BEq α]
     {c : α → α → Ordering} [Std.TransCmp c]
     {pcmp pcmp' : α → α → LemOrdering}

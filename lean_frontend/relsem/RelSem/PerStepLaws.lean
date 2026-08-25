@@ -76,35 +76,15 @@ theorem wpk_seq_active' {α : Type}
       WP (KExpr.seq m k : KDriveExpr) @ s ; E {{ Φ }} :=
   hσ ▸ wpk_seq_active h
 
-/-- `wpk_seq_active` with BOTH the expression and the state given up
-    to definitional casts (for tactic use: `iapply` unifies at
-    reducible transparency, so a proved equation whose atom spelling
-    is a computed form of the goal's needs the bridge; both casts
-    discharge by `rfl`). -/
-theorem wpk_seq_active_ecast {α : Type}
-    {m : ndM α step_kind driver_error mem_iv_constraint driver_state}
-    {k : α → KDriveExpr} {e0 : KDriveExpr} {σ0 σ σ' : driver_state}
-    {v : α}
-    (h : app m σ = (NDactive v, σ'))
-    (he : e0 = KExpr.seq m k) (hσ : σ0 = σ)
-    {Φ : DriveVal → IProp GF} :
-    stateIs σ0 ∗ (stateIs σ' -∗ WP (k v) @ s ; E {{ Φ }}) ⊢
-      WP e0 @ s ; E {{ Φ }} :=
-  he ▸ hσ ▸ wpk_seq_active h
-
-/-- The self-computing step: the successor state is the projection
-    `(app m σ).2` — whnf computes it on demand while goals stay
-    compact; the ONE side condition (the head activates) discharges by
-    `rfl` when the atom computes. This is `wp_pures`' backing lemma. -/
-theorem wpk_seq_active_proj {α : Type}
-    {m : ndM α step_kind driver_error mem_iv_constraint driver_state}
-    {k : α → KDriveExpr} {σ : driver_state} {v : α}
-    (h : (app m σ).1 = NDactive v)
-    {Φ : DriveVal → IProp GF} :
-    stateIs σ ∗ (stateIs (app m σ).2 -∗ WP (k v) @ s ; E {{ Φ }}) ⊢
-      WP (KExpr.seq m k : KDriveExpr) @ s ; E {{ Φ }} :=
-  wpk_seq_active (show app m σ = (NDactive v, (app m σ).2) by
-    rw [← h])
+/-! ## RE-HOMED (arc-18 C1): `wpk_seq_active_ecast` and
+    `wpk_seq_active_proj` — the TWO LIVE seq laws the wp-tactic layer
+    consumes (`wp_step`/`wp_pures` backing lemmas) — now live in
+    RelSem/PerStepIris.lean beside `wpk_seq_active`/`wpk_done` and are
+    registered in the one registry (`@[step_law (kind := wpSeq)]`).
+    Everything REMAINING in this file is the dormant arc-16 half
+    (Q1 [USER]: DELETE) — it retires at C2 with the peels
+    (retirement register entry 2,
+    docs/2026-08-25_reasoning-layer-contracts.md §7). -/
 
 /-- Boolean split on a reified scheduling decision (the opaque
     execution-mode read): both arms provable ⇒ the `if` is. -/
