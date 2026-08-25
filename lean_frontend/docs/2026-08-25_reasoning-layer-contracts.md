@@ -90,16 +90,27 @@ sub-contract.
   the SOLE state interpretation; proof-level assertions abstract over
   unmodified heap (footprint points-to + framing, never flat
   whole-heap enumerations).
-- **TODAY**: every landed theorem binds the whole-state OwnP
-  interpretation (`[CerbGS …]`/`stateIs`), which is *defined in the
-  arc-7 module* `IrisState.lean` and reused wholesale by
-  `PerStepIris.lean:29`; the heap RA's consumers are exactly its own
-  files, `CerbHeapDemo.lean` (`two_alloc_frame`), `PerStepTacSmoke`,
-  and Audit pins (verified). The S2-recorded coexistence hazard ("no
-  file may bind both `CerbGS` and `CerbHeapGS`") has no gate (→ R2).
-- **MIGRATION**: C2 (exit ramp per the charter: if it exceeds M, land
-  the role-labeling fallback and report). After C2, at least one
-  re-derived theorem's proof visibly frames.
+- **LANDED (C2, 2026-08-25)**: `CerbMemInterp` IS the live route's
+  sole interpretation. The T1/T2/T3 threaded walks are re-derived
+  over it (equation supply in OPEN-MEMORY form — `∀ bm am` at the
+  rest decomposition, memory reads as pointwise footprint facts; the
+  walk substrate is `CerbHeapWalk.lean`); statement texts and cones
+  byte-stable throughout. The disentanglement moved the OwnP
+  interpretation out of the live route into the transitional
+  `PerStepOwnP.lean` (C5-bound; the arc-7 shell + ambient family +
+  smokes consume it through the `IrisState.lean` shell). FRAMING IS
+  DEMONSTRATED IN LANDED THEOREMS: T1/T2's driver-loop step consumes
+  only the argument objects' footprints (the errno fragments ride
+  the frame across the whole loop); T3's loop runs a scratch object's
+  entire lifetime inside one rule (`wpk_seq_scratch1` — the fragment
+  minted and consumed internally, dead bytes out as D2 capital).
+  LABELED EXEMPTION with named mover: `T6Probe.lean` stays on the
+  transitional surface — its equation supply is EVALUATOR-MINTED and
+  `derive_rounds`' side-fact discharge is ground-eval against closed
+  maps; mover = the RoundEval OPEN-MEMORY MINTING MODE (map reads
+  through the registered read-over-write laws / the `assuming` pack),
+  C3/arc-19 territory. Gate: `scripts/check_one_route.sh` (→ R2,
+  CLOSED).
 
 ### 3b. Equation supply: the evaluator mints
 
@@ -202,7 +213,7 @@ closes it (per the blessed charter's slice plan).
 | # | Convention-only contract | Closed by |
 |---|---|---|
 | R1 | Lockstep COVERAGE: generated-step-surface changes re-prove `ksteps_of_runNDFuel` in the same commit; new step forms extend `KStep`, never bypass it | C6 (playbook merge-invariant; gate feasibility assessed at C5 re-registration) |
-| R2 | Single-interpretation discipline: no file binds both `CerbGS` and `CerbHeapGS` (the S2 coexistence hazard) | C2 (migration makes OwnP retire; interim check rides C2's gate re-registration) |
+| R2 | Single-interpretation discipline: no file binds both `CerbGS` and `CerbHeapGS` (the S2 coexistence hazard) | **CLOSED at C2** — `scripts/check_one_route.sh` (in `test_unit.sh`, fail-closed, plant-tested both directions): live-route modules OwnP-free (imports + comment-stripped tokens), no both-binding file anywhere, OwnP binders confined to the retirement register + the labeled T6 exemption (mover: RoundEval open-memory minting). Record: `docs/2026-08-25_arc18-c2-one-route.md` |
 | R3 | Engine-to-law rule + engine-size down-pressure: RoundEval stays a thin law-applier; semantic mechanism firing twice becomes a registered law | C1 (decomposition + registry dispatch); watched-metric row maintained from C1, summarized C6 |
 | R4 | Registry as the law interface: law applicability determined by registry key, not hardcoded dispatch; unique-rule-per-goal-form; frontier-tag/trace-schema fields machine-readable | C1 |
 | R5 | Statement-gate completeness: every landed statement face is on the slate list (`T4ThreadedStatement` currently absent, annotated as parked) | C3 (added when the T4 theorem completes) |
@@ -225,14 +236,21 @@ Surfaces: `relsem/RelSem/IrisLang.lean`, `IrisState.lean`,
 Dependents today: ambient `T1.lean:31` (imports IrisAdequacy),
 `T2.lean:25`/`T3.lean:19`/`T4.lean:51` (import SlateWP) — the ambient
 family falls with it at C5; `RelSemAll.lean`, `Audit.lean` imports +
-pins. **LIVE wrinkle**: `PerStepIris.lean:29` imports `IrisState` —
-the OwnP interpretation (`CerbGpreS`/`CerbGS`/`stateIs`/`CerbS`,
-`IrisState.lean:49-84`) that every landed threaded theorem binds is
-DEFINED in this arc-7 module. Prerequisite chain: C2 retires the OwnP
-bindings from the live route (any surviving generic content re-homed
-then); C5 deletes the modules with the ambient family.
+pins. **LIVE wrinkle RESOLVED at C2 (2026-08-25)**: the OwnP surface
+(interpretation defs + lifting + seq rules + adequacy bridges + OwnP
+step macros) moved name-stably into the transitional
+`PerStepOwnP.lean`; `IrisState.lean` is now a shell importing it (the
+arc-7 route resolves the same names through the shell), `DriveVal`
+moved to the live language core, and NO live module imports the
+shell (gate: `scripts/check_one_route.sh`). C5 deletes
+`PerStepOwnP.lean` + the shell with the ambient family.
 
-### Entry 2 — the dormant arc-16 half (Q1: DELETE) → retires at C2
+### Entry 2 — the dormant arc-16 half (Q1: DELETE) → **EXECUTED at C2
+    (2026-08-25, commit 068fe11c5)**: PerStepPeel.lean +
+    PerStepLaws.lean deleted wholesale; pins/carrier rows/lakefile
+    re-registered in the deleting commit (carrier 114 → 112, sweep
+    −161); PerStepRunner retained (generic runner algebra,
+    zero-consumer — flagged for C5's sweep). Original entry follows.
 
 Surfaces: `relsem/RelSem/PerStepPeel.lean` (the `dnmsK`/`driver2K`/
 `callK2` loop peels) + the 12 `wpk_round_*` laws and the

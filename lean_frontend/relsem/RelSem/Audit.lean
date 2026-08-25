@@ -912,7 +912,17 @@ open Lean in
 -- two-scalar-argument caller protocol registers as a construct law
 -- (the engine-to-law rule: the two-parameter inject stage recurs, so
 -- it is a law, not per-fixture text; born with the T2 migration).
-/-- info: step_law census: 47 laws [advance 4, construct 9, envAlg 3, envMap 3, heapWP 4, loop 2, memBlock 5, memRW 7, perform 5, roundGlue 3, wpSeq 2] -/
+-- Census re-baseline 47 → 55 (arc-18 C2): the heapWalk lane — the
+-- eight walk-rule faces the heap-route macros apply
+-- (rest/read1/read2/allocStore/allocStore2/scratch1/get/getDone,
+-- CerbHeapWalk) register; the registry-backing check in
+-- CerbHeapWalk.lean makes a macro-backing law leaving the registry
+-- build-fatal (the C1 heap-macro handoff, adjudicated:
+-- registry-as-source-of-truth; goal-form-query APPLICATION is
+-- arc-19's search). The wpSeq lane's two OwnP faces stay registered
+-- while their consumers (T6Probe's walk + the C5-bound smokes)
+-- remain on the transitional OwnP surface.
+/-- info: step_law census: 55 laws [advance 4, construct 9, envAlg 3, envMap 3, heapWP 4, heapWalk 8, loop 2, memBlock 5, memRW 7, perform 5, roundGlue 3, wpSeq 2] -/
 #guard_msgs in #step_law_census
 /-- info: 'RelSem.T1.round6' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.round6

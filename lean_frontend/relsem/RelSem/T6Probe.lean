@@ -28,6 +28,22 @@
   `driver_update_ts`) whose side conditions discharge by rfl/decide.
   All driver rounds are evaluator mints.
 
+  ARC-18 C2 INTERPRETATION LABEL: this walk remains on the
+  TRANSITIONAL OwnP surface (RelSem/PerStepOwnP.lean) — the ONE
+  labeled exemption of the single-interpretation gate
+  (scripts/check_one_route.sh). Its equation supply is
+  EVALUATOR-MINTED (`derive_rounds`), and the evaluator's side-fact
+  discharge is ground-eval against CLOSED maps
+  (RoundEval/Rounds.lean `evalGroundA`), which cannot produce the
+  open-memory (∀ bm am) equations the CerbMemInterp walk rules
+  consume. NAMED MOVER: the RoundEval OPEN-MEMORY MINTING MODE —
+  map reads resolved through the registered read-over-write laws
+  (memRW lane) / the T4 `assuming` hypothesis pack instead of kernel
+  evaluation — C3/arc-19 territory. Migration recipe once it exists:
+  the T1Threaded C2 pattern verbatim (rest ladder + open stage
+  equations + the walk macros). Record:
+  docs/2026-08-25_arc18-c2-one-route.md §6.
+
   House rules: no sorry, no axioms. Under the in-build audit.
 -/
 

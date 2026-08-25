@@ -187,6 +187,10 @@ theorem wpk_seq_rest [CerbHeapGS GF] {α : Type}
 
 /-- `wpk_seq_rest` with the goal expression given up to a definitional
     cast (the tactic-facing ecast hook, as `wpk_seq_active_ecast`). -/
+@[step_law (kind := heapWalk) (variant := rest) (side := fed)
+  (frontier := "walk/rest")
+  (trace := "{law := wpk_seq_rest_ecast, joint := walk/rest, hyps := [h : fed(open-mem equation), he : rfl, hlay : rfl]}")
+  (lineage := "footprint walk: rest-only step — the atom is rest-determined, every heap fragment frames (HeapLang pure-step analogue at the machine-state remainder)")]
 theorem wpk_seq_rest_ecast [CerbHeapGS GF] {α : Type}
     {m : ndM α step_kind driver_error mem_iv_constraint driver_state}
     {k : α → KDriveExpr} {e0 : KDriveExpr} {v : α} {ρ ρ' : driver_state}
@@ -257,6 +261,10 @@ theorem wpk_seq_read1 [CerbHeapGS GF] {α : Type}
     exact Hinv
 
 /-- `wpk_seq_read1`'s ecast hook. -/
+@[step_law (kind := heapWalk) (variant := read1) (side := fed)
+  (frontier := "walk/read1")
+  (trace := "{law := wpk_seq_read1_ecast, joint := walk/read1, hyps := [h : fed(open-mem equation + footprint facts), he : rfl, hlay : rfl]}")
+  (lineage := "footprint walk: one-object read step at any fraction; the rest of the heap frames (the framing rule made per-step)")]
 theorem wpk_seq_read1_ecast [CerbHeapGS GF] {α : Type}
     {m : ndM α step_kind driver_error mem_iv_constraint driver_state}
     {k : α → KDriveExpr} {e0 : KDriveExpr} {v : α} {ρ ρ' : driver_state}
@@ -584,6 +592,10 @@ theorem wpk_seq_alloc_store [CerbHeapGS GF] {α : Type}
     exact interp_alloc_store hρ hsz haddr hnz hlen hinv
 
 /-- `wpk_seq_alloc_store`'s ecast hook. -/
+@[step_law (kind := heapWalk) (variant := allocStore) (side := fed)
+  (frontier := "walk/alloc-store")
+  (trace := "{law := wpk_seq_alloc_store_ecast, joint := walk/alloc-store, hyps := [h : fed, he : rfl, hrho/hsz/hnz/hlen/hnid/hal : rfl, haddr : ground]}")
+  (lineage := "footprint walk: object creation mints allocIs + pointsToBytes by the frame-preserving update; freshness from MemInv (Caesium heap_alloc — double allocation unconstructible)")]
 theorem wpk_seq_alloc_store_ecast [CerbHeapGS GF] {α : Type}
     {m : ndM α step_kind driver_error mem_iv_constraint driver_state}
     {k : α → KDriveExpr} {e0 : KDriveExpr} {v : α} {ρ : driver_state}
@@ -758,6 +770,10 @@ theorem wpk_seq_alloc_store2 [CerbHeapGS GF] {α : Type}
     iframe Hi Hr HalA HptA HalB HptB
 
 /-- `wpk_seq_alloc_store2`'s ecast hook. -/
+@[step_law (kind := heapWalk) (variant := allocStore2) (side := fed)
+  (frontier := "walk/alloc-store2")
+  (trace := "{law := wpk_seq_alloc_store2_ecast, joint := walk/alloc-store2, hyps := [h : fed, he : rfl, ground facts x2]}")
+  (lineage := "footprint walk: the two-object creation compound (the factored ghost move applied twice; the mid-state is again a decomposition)")]
 theorem wpk_seq_alloc_store2_ecast [CerbHeapGS GF] {α : Type}
     {m : ndM α step_kind driver_error mem_iv_constraint driver_state}
     {k : α → KDriveExpr} {e0 : KDriveExpr} {v : α} {ρ : driver_state}
@@ -869,6 +885,10 @@ theorem wpk_seq_read2 [CerbHeapGS GF] {α : Type}
     exact Hinv
 
 /-- `wpk_seq_read2`'s ecast hook. -/
+@[step_law (kind := heapWalk) (variant := read2) (side := fed)
+  (frontier := "walk/read2")
+  (trace := "{law := wpk_seq_read2_ecast, joint := walk/read2, hyps := [h : fed, he : rfl, hlay : rfl]}")
+  (lineage := "footprint walk: two-object read step (the two-argument fixtures' loop shape)")]
 theorem wpk_seq_read2_ecast [CerbHeapGS GF] {α : Type}
     {m : ndM α step_kind driver_error mem_iv_constraint driver_state}
     {k : α → KDriveExpr} {e0 : KDriveExpr} {v : α} {ρ ρ' : driver_state}
@@ -1085,6 +1105,10 @@ theorem wpk_seq_scratch1 [CerbHeapGS GF] {α : Type}
     exact h2
 
 /-- `wpk_seq_scratch1`'s ecast hook. -/
+@[step_law (kind := heapWalk) (variant := scratch1) (side := fed)
+  (frontier := "walk/scratch1")
+  (trace := "{law := wpk_seq_scratch1_ecast, joint := walk/scratch1, hyps := [h : fed, he : rfl, ground facts]}")
+  (lineage := "footprint walk: scratch-object step — the allocation fragment is minted and consumed inside the rule (net unobservable), dead bytes out as D2 dead capital")]
 theorem wpk_seq_scratch1_ecast [CerbHeapGS GF] {α : Type}
     {m : ndM α step_kind driver_error mem_iv_constraint driver_state}
     {k : α → KDriveExpr} {e0 : KDriveExpr} {v : α} {ρ ρ' : driver_state}
@@ -1173,6 +1197,10 @@ theorem wpk_seq_get [CerbHeapGS GF]
   iapply Hcont $$ Hr
 
 /-- `wpk_seq_get`'s ecast hook. -/
+@[step_law (kind := heapWalk) (variant := get) (side := rfl)
+  (frontier := "walk/get")
+  (trace := "{law := wpk_seq_get_ecast, joint := walk/get, hyps := [hk : rfl, he : rfl]}")
+  (lineage := "footprint walk: mid-walk state read — continuations consume the state only through rest projections, so the successor is uniform over the rest fiber")]
 theorem wpk_seq_get_ecast [CerbHeapGS GF]
     {k : driver_state → KDriveExpr} (c : driver_state)
     {e0 : KDriveExpr} {ρ : driver_state} {s : Stuckness} {E : CoPset}
@@ -1185,6 +1213,10 @@ theorem wpk_seq_get_ecast [CerbHeapGS GF]
   he ▸ wpk_seq_get c hk
 
 /-- `wpk_get_done_pure`'s ecast hook. -/
+@[step_law (kind := heapWalk) (variant := getDone) (side := fed)
+  (frontier := "walk/get-done")
+  (trace := "{law := wpk_get_done_pure_ecast, joint := walk/get-done, hyps := [hpost : fed, he : rfl]}")
+  (lineage := "footprint walk: the harness terminal — the postcondition holds at every state the rest half admits")]
 theorem wpk_get_done_pure_ecast [CerbHeapGS GF]
     {g : driver_state → DriveVal} {e0 : KDriveExpr} {ρ : driver_state}
     {φ : DriveVal → Prop} {s : Stuckness} {E : CoPset}
@@ -1461,6 +1493,30 @@ theorem kCallHarnessUBFreeThrHeap_of_wp {GF : BundledGFunctors}
   callHarnessUBFreeThr_of_adequateThr
     (kCallHarnessAdequateThrHeap_of_wp seed tagDefs file1 fname args fs
       spec Hwp)
+
+/-! ## The registry-backing check (the C1 handoff's macro-side
+    conversion, adjudicated): the walk macros stay THIN NAMED
+    APPLIERS, and every law they apply is a REGISTERED heapWalk/heapWP
+    entry — this check makes a law silently leaving the registry
+    build-fatal (the registry stays the source of truth; the full
+    goal-form-query applier is arc-19's search machinery). -/
+open Lean in
+#eval show Lean.Elab.Term.TermElabM Unit from do
+  let backing : List Name :=
+    [``RelSem.Cerb.wpk_seq_rest_ecast, ``RelSem.Cerb.wpk_seq_read1_ecast,
+     ``RelSem.Cerb.wpk_seq_read2_ecast,
+     ``RelSem.Cerb.wpk_seq_alloc_store_ecast,
+     ``RelSem.Cerb.wpk_seq_alloc_store2_ecast,
+     ``RelSem.Cerb.wpk_seq_scratch1_ecast,
+     ``RelSem.Cerb.wpk_seq_get_ecast,
+     ``RelSem.Cerb.wpk_get_done_pure_ecast,
+     -- the heap op-rule macros' backing laws (wp_load/store/alloc/kill)
+     ``RelSem.Cerb.wpk_load, ``RelSem.Cerb.wpk_store,
+     ``RelSem.Cerb.wpk_alloc, ``RelSem.Cerb.wpk_kill]
+  for n in backing do
+    let some _ ← RelSem.LawRegistry.byName? n
+      | throwError "CerbHeapWalk registry-backing check: the walk/op           macro law {n} is NOT registered — the tactic layer may only           apply registered laws (R4)"
+  Lean.logInfo s!"CerbHeapWalk registry-backing check:     {backing.length} macro-backing laws registered"
 
 end Cerb
 end RelSem

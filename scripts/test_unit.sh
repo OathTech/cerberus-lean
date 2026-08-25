@@ -212,6 +212,13 @@ fi
 # Chase-freeze gate (arc-16 S0a): no NEW imports/uses of the frozen chase surfaces outside the legacy allowlist (see the script header; fail-closed).
 "$(dirname "$PURITY_SH")/check_chase_freeze.sh" || { echo "test_unit: chase-freeze gate FAILED"; exit 1; }
 
+# Single-interpretation gate (arc-18 C2; register row R2): the live
+# route binds only CerbMemInterp — no OwnP imports/tokens on the
+# live-module list, no both-binding file, OwnP binders confined to
+# the retirement register + the labeled T6 exemption (fail-closed;
+# plant-tested both directions — the C2 record carries transcripts).
+"$(dirname "$PURITY_SH")/check_one_route.sh" || { echo "test_unit: single-interpretation gate FAILED"; exit 1; }
+
 # Engine-size watch (arc-18 C1; the R3 down-pressure register's ENGINE
 # row): WARN-level reporting instrument — exit != 0 only means the
 # instrument itself is broken (missing baseline/module), which IS
