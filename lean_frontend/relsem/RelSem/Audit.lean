@@ -159,6 +159,9 @@ import RelSem.MemLocal
 import RelSem.CerbHeapRA
 import RelSem.CerbHeapWP
 import RelSem.CerbHeapDemo
+-- arc-18 C2: the heap-route walk substrate joins the sweep closure +
+-- pins (the one-route migration).
+import RelSem.CerbHeapWalk
 -- arc-16 S3: the runner-observation algebra + wp-tactics join the
 -- sweep closure + pins. (PerStepPeel + PerStepLaws DELETED at
 -- arc-18 C2, Q1 [USER] ruling — pins removed in the same commit.)
@@ -795,6 +798,30 @@ open Lean in
 /-- info: 'RelSem.Cerb.two_alloc_frame' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Cerb.two_alloc_frame
 
+-- arc-18 C2: THE HEAP-ROUTE WALK SUBSTRATE (RelSem/CerbHeapWalk.lean
+-- — the one-route migration's rules + adequacy bridges over
+-- CerbMemInterp; record docs/2026-08-25_arc18-c2-one-route.md). Every
+-- cone is EXACTLY the classical trio: the rules quantify over
+-- programs and the bridges quote only the threaded (seed-parametric)
+-- substrate — no runEffectful anywhere on the heap route. Pinned
+-- exactly.
+/-- info: 'RelSem.Cerb.wpk_seq_rest' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.wpk_seq_rest
+/-- info: 'RelSem.Cerb.wpk_seq_read1' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.wpk_seq_read1
+/-- info: 'RelSem.Cerb.wpk_seq_alloc_store' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.wpk_seq_alloc_store
+/-- info: 'RelSem.Cerb.wpk_get_done_pure' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.wpk_get_done_pure
+/-- info: 'RelSem.Cerb.MemInv_alloc_store' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.MemInv_alloc_store
+/-- info: 'RelSem.Cerb.MemInv_initial' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.MemInv_initial
+/-- info: 'RelSem.Cerb.kCallHarnessAdequateThrHeap_of_wp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.kCallHarnessAdequateThrHeap_of_wp
+/-- info: 'RelSem.Cerb.kCallHarnessUBFreeThrHeap_of_wp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.kCallHarnessUBFreeThrHeap_of_wp
+
 -- arc-16 S3 (post arc-18 C2 deletions): THE RUNNER ALGEBRA +
 -- WP-TACTICS (RelSem/PerStepRunner + PerStepTactics +
 -- PerStepTacSmoke; design record
@@ -1134,7 +1161,13 @@ open Lean in
 -- deliberately, same commit, with the reason. (When green the pin
 -- SWALLOWS the info line — absence of the sweep line from a green
 -- build log is expected; the DAEMON + statement gates still print.)
--- Re-baselines: 4898 → 4737 (arc-18 C2: THE ENTRY-2 DELETIONS —
+-- Re-baselines: 4737 → 4786 (arc-18 C2: THE HEAP-ROUTE WALK
+-- SUBSTRATE — RelSem/CerbHeapWalk.lean joins the closure (rest-patch
+-- algebra, happ adapters, wpk_seq_rest/read1/alloc_store +
+-- wpk_get_done_pure + ecast faces, MemInv_alloc_store/MemInv_initial,
+-- the CerbHeapS bundle, the threaded heap-route adequacy bridges);
+-- +49 declarations, all trio-clean; pins above).
+-- 4898 → 4737 (arc-18 C2: THE ENTRY-2 DELETIONS —
 -- PerStepPeel.lean + PerStepLaws.lean deleted per the Q1 [USER]
 -- ruling (the dormant arc-16 half: peels, wpk_round_* library,
 -- wpk_ite/wpk_pcs_*, the _of_wpK2 bridges); −161 declarations, all
@@ -1248,7 +1281,7 @@ open Lean in
 -- probe's law layer; the probe fixture file itself is parked OUT of
 -- the build).
 /--
-info: RelSem audit sweep: 4737 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 4786 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do

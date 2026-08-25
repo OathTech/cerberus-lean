@@ -37,6 +37,9 @@ import RelSem.MemLocal
 import RelSem.CerbHeapRA
 import RelSem.CerbHeapWP
 import RelSem.CerbHeapDemo
+-- arc-18 C2: the heap-route walk substrate (the one-route migration's
+-- rules + adequacy bridges over CerbMemInterp).
+import RelSem.CerbHeapWalk
 -- arc-16 S3: the runner-observation algebra + the wp-tactic layer.
 -- (The dormant S3 half — PerStepPeel + the wpk_round_* law library —
 -- was DELETED at arc-18 C2 per the Q1 [USER] ruling; archive = the
