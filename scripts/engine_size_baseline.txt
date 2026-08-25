@@ -13,6 +13,11 @@
 # LawRegistry +4 (query joints + skeleton goals + the residue
 # note). Direction remains DOWN; the conversion DELETED the
 # hardcoded law-name tables the growth replaces.
+#
+# C1 re-baseline (piecewise chain assembler, same slice): Assembly
+# 465 -> 566 — the re-derived relative-chain emitter (endpoint-
+# tracked pieces via dnms_round_computed, size-gated diagnostics)
+# replacing the single-monster-elaboration emitter.
 RoundEval.lean 87
 RoundEval/Core.lean 329
 RoundEval/Hyp.lean 818
@@ -21,8 +26,8 @@ RoundEval/Classify.lean 166
 RoundEval/Arith.lean 681
 RoundEval/Lanes.lean 501
 RoundEval/Rounds.lean 732
-RoundEval/Assembly.lean 465
+RoundEval/Assembly.lean 566
 DeriveState.lean 260
 WpGround.lean 121
 LawRegistry.lean 300
-TOTAL 4708
+TOTAL 4809

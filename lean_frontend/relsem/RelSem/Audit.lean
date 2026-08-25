@@ -1161,7 +1161,13 @@ open Lean in
 -- deliberately, same commit, with the reason. (When green the pin
 -- SWALLOWS the info line — absence of the sweep line from a green
 -- build log is expected; the DAEMON + statement gates still print.)
--- Re-baselines: 4885 → 4890 (arc-18 C1: THE DISPATCH CONVERSION —
+-- Re-baselines: 4890 → 4898 (arc-18 C1: THE PIECEWISE CHAIN
+-- ASSEMBLER — the re-derived relative-chain emitter (endpoint-
+-- tracked pieces through dnms_round_computed, kernel-deferred
+-- premises) + its T6 smoke: rchain1..3 successor defs + _app
+-- equations + rchain_chainrel (the ∀-fuel iter_compose feed) join
+-- the closure; all boundary-clean).
+-- 4885 → 4890 (arc-18 C1: THE DISPATCH CONVERSION —
 -- queryLaw/qStar/appGoalSkeleton (Core) + queryLaw? (Lanes) join the
 -- engine; RoundEval's hardcoded law-name dispatch now consults the
 -- registry by goal-form SKELETON at every joint — tau/runstate/
@@ -1263,7 +1269,7 @@ open Lean in
 -- probe's law layer; the probe fixture file itself is parked OUT of
 -- the build).
 /--
-info: RelSem audit sweep: 4890 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 4898 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do

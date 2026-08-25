@@ -306,4 +306,20 @@ theorem T6Threaded_ubFree :
   intro η
   exact t6_wpK_thr seed
 
+/-! ## The piecewise relative-chain SMOKE (arc-18 C1)
+
+    A 3-round partial drive with the `chain` token: exercises the
+    re-derived PIECEWISE chain assembler (endpoints tracked
+    syntactically; premises kernel-deferred through
+    `dnms_round_computed` — registry variant `computed`) on the t6
+    fixture. `rchain_chainrel` is the iter_compose feed shape:
+    ∀ fuel, app (dnms (fuel+3) …) (dRdy seed)
+      = app (dnms fuel …) (rchain3 seed) — the ∀-fuel relative block
+    equation T5-by-invariant's loop composition consumes (C3). The
+    sweep is the cone witness (trio-clean like every minted
+    artifact); the emission itself is the smoke. -/
+
+derive_rounds rchain (seed : Nat) using (t6File.tagDefs) 0
+  from (dRdy seed) upto 3 chain
+
 end RelSem.T6

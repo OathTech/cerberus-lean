@@ -252,80 +252,181 @@ elab "derive_rounds " id:ident bs:bracketedBinder* assum:(roundsAssuming)? fenc:
       let classes := rounds.map (·.cls)
       logInfo m!"derive_rounds {baseName}: {rounds.size} advancing \
         rounds minted; classes: {classes}"
-      -- THE RELATIVE CHAIN (arc-17 S3, opt-in `chain` token): the
-      -- iter_compose feed — a ∀-fuel composable block equation. The
-      -- dnms laws are already fuel-relative (`hfuel : fuelS = fuel+1`
-      -- discharges by rfl at `fuel + m ≟ (fuel + (m-1)) + 1`), so the
-      -- chain states
+      -- THE RELATIVE CHAIN (opt-in `chain` token): the iter_compose
+      -- feed — a ∀-fuel composable block equation:
       --   ∀ fuel, app (dnms (fuel + N) …) σ0 = app (dnms fuel …) σN
       -- (partial mode), or, when the terminal offer was reached,
       --   ∀ fuel, app (dnms (fuel + N + 2) …) σ0 = (NDactive offer, σN)
       -- — the shapes T5-by-invariant's loop composition consumes.
+      --
+      -- THE PIECEWISE ASSEMBLER (arc-18 C1 — the chain-capacity
+      -- DESIGN re-derived from the parked S3 stash assessment; the
+      -- wholesale stash delta was debris, only the design re-lands):
+      --   * ENDPOINTS TRACKED SYNTACTICALLY — the σ-ladder is the
+      --     mint loop's own successor array; never recovered by
+      --     inferType over state terms;
+      --   * ONE PIECE PER ROUND at the Expr level through
+      --     `dnms_round_computed` (registry variant `computed`):
+      --     every premise is spelled from σⱼ and KERNEL-DEFERRED as
+      --     an Eq.refl hint — no elaborator unification against the
+      --     scheduler computation (the stepAt wedge), no monster
+      --     single elaboration, no midpoint unification (mkEqTrans
+      --     joins endpoints that are syntactically identical by
+      --     construction);
+      --   * per-piece budget windows (withCurrHeartbeats);
+      --   * SIZE-GATED diagnostics — a failing piece names its round
+      --     and endpoint sizes, printing terms only when small.
       if emitChainRel then withCurrHeartbeats do
         let n := rounds.size
+        let σs : Array Expr := #[σ0E] ++ rounds.map (·.succ)
         let σ0S ← toStxU σ0E
-        let succS ← toStxU σ
         let accS ← `(fmapEmpty)
-        -- REGISTRY DISPATCH (arc-18 C1): the round-glue laws by
-        -- goal-form key (the dnms application at this drive's own
-        -- td/acc/[tid]/σ0), variants generic/terminal.
+        let accE ← elabClosed
+          (← `((fmapEmpty : Fmap thread_id (List core_step2))))
+        let nilE ← elabClosed (← `(([] : List Nat)))
+        let tidListE ← elabClosed (← `(([$tidS] : List Nat)))
         let glueGoal ← elabClosed (← `(RelSem.app
           (drive_nonmemory_steps_aux2_lemFuel lemDefaultFuel $tdS
             $accS [$tidS]) $σ0S))
-        let glueS := mkCIdent (← queryLaw `roundGlue glueGoal
-          (variant := `generic) (what := "relative chain glue")).name
-        let termGlueS := mkCIdent (← queryLaw `roundGlue glueGoal
-          (variant := `terminal) (what := "relative chain terminal")).name
-        let fuelId := mkIdent `fuel
-        let mkF (m : Nat) : TermElabM Term :=
-          if m == 0 then pure fuelId
-          else `($fuelId + $(Syntax.mkNatLit m))
+        let glueLaw ← queryLaw `roundGlue glueGoal
+          (variant := `computed) (what := "relative chain glue")
+        let termLaw ← queryLaw `roundGlue glueGoal
+          (variant := `terminal) (what := "relative chain terminal")
         let off := if terminal.isSome then 2 else 0
-        let mut pf? : Option Term := none
-        for j in [0 : n] do
-          let fS ← mkF (n + off - j)
-          let f1S ← mkF (n + off - j - 1)
-          let hadvS ← toStxU (mkAppN (mkConst rounds[j]!.eqName) fvars)
-          let step ← `($glueS (fuelS := $fS)
-            (fuel := $f1S) rfl rfl rfl rfl $hadvS)
-          pf? := some (← match pf? with
-            | none => pure step
-            | some p => `(($p).trans $step))
-        let (stmtStx, pfStx) ← (do
-          match terminal with
-          | none =>
-            let stmtStx ← `(∀ ($fuelId : Nat), RelSem.app
-                (drive_nonmemory_steps_aux2_lemFuel
-                  ($fuelId + $(Syntax.mkNatLit n)) $tdS $accS [$tidS]) $σ0S
-              = RelSem.app (drive_nonmemory_steps_aux2_lemFuel $fuelId
-                  $tdS $accS [$tidS]) $succS)
-            let body := pf?.get!
-            pure (stmtStx, ← `(fun ($fuelId : Nat) => $body))
-          | some stepsE =>
-            let stepsS ← toStxU stepsE
-            let termS ← `($termGlueS
-              (fuelS := $(← mkF 2)) (fuel := $fuelId)
-              (steps := $stepsS) rfl rfl rfl rfl)
-            let whole ← match pf? with
-              | none => pure termS
-              | some p => `(($p).trans $termS)
-            let stmtStx ← `(∀ ($fuelId : Nat), RelSem.app
-                (drive_nonmemory_steps_aux2_lemFuel
-                  ($fuelId + $(Syntax.mkNatLit (n + 2))) $tdS $accS
-                  [$tidS]) $σ0S
-              = (NDactive (fmapAddBy defaultCompare $tidS $stepsS
-                  fmapEmpty), $succS))
-            pure (stmtStx, ← `(fun ($fuelId : Nat) => $whole)))
-        let stmt ← Term.elabType stmtStx
-        Term.synthesizeSyntheticMVarsNoPostponing
-        let stmt ← instantiateMVars stmt
-        let pf ← Term.elabTermEnsuringType pfStx stmt
-        Term.synthesizeSyntheticMVarsNoPostponing
         let chainName := baseName.appendAfter "_chainrel"
-        emitThm chainName fvars stmt (← instantiateMVars pf)
+        let (stmt, value) ← withLocalDeclD `fuel (mkConst ``Nat)
+            fun fuelFv => do
+          let fuelStx ← toStxU fuelFv
+          let mkFuelE (m : Nat) : TermElabM Expr := do
+            if m == 0 then return fuelFv
+            else elabClosed (← `(($fuelStx + $(Syntax.mkNatLit m) : Nat)))
+          let mkDnms (fE σE : Expr) : TermElabM Expr := do
+            mkAppMU ``RelSem.app
+              #[← mkAppMU ``drive_nonmemory_steps_aux2_lemFuel
+                  #[fE, tdE, accE, tidListE], σE]
+          let mut pf? : Option Expr := none
+          for j in [0 : n] do
+            let piece ← withCurrHeartbeats do
+              try
+                let fS ← mkFuelE (n + off - j)
+                let f1 ← mkFuelE (n + off - j - 1)
+                let σj := σs[j]!
+                let σjS ← toStxU σj
+                let hfuelTy ← elabClosed (← `(
+                  ($(← toStxU fS) : Nat) = $(← toStxU f1) + 1))
+                let hfuel ← mkExpectedTypeHint (← mkEqRefl fS) hfuelTy
+                let hlookTy ← elabClosed (← `(
+                  (Lem_List.lookupBy (fun (x y : Nat) => x == y) $tidS
+                    (core_state.thread_states
+                      (driver_state.core_state0 $σjS))).isSome = true))
+                let hlook ← mkExpectedTypeHint
+                  (← elabClosed (← `((rfl : (true : Bool) = true))))
+                  hlookTy
+                let stepAtE ← mkAppMU ``RelSem.Laws.stepAt
+                  #[tdE, tidE, σj]
+                let hfindTy ← elabClosed (← `(
+                  find_can_advance (step_ctx $tdS
+                      (driver_state.layout_state $σjS)
+                      (driver_state.core_file $σjS)
+                      (driver_state.core_extern $σjS) $tidS
+                      ((Lem_List.lookupBy (fun (x y : Nat) => x == y)
+                        $tidS (core_state.thread_states
+                          (driver_state.core_state0 $σjS))).getD
+                        default))
+                    = some (RelSem.Laws.stepAt $tdS $tidS $σjS)))
+                let hfind ← mkExpectedTypeHint
+                  (← mkEqRefl (← mkAppMU ``Option.some #[stepAtE]))
+                  hfindTy
+                let hadv := mkAppN (mkConst rounds[j]!.eqName) fvars
+                let raw ← mkAppOptMU glueLaw.name
+                  #[some tdE, some fS, some f1, some accE, some tidE,
+                    some nilE, some σj, some σs[j+1]!, some stepAtE,
+                    some hfuel, some hlook, some hfind, some hadv]
+                let pieceTy ← mkEq (← mkDnms fS σj)
+                  (← mkDnms f1 σs[j+1]!)
+                mkExpectedTypeHint raw pieceTy
+              catch ex =>
+                let lo ← σs[j]!.numObjs
+                let hi ← σs[j+1]!.numObjs
+                let detail ← (do
+                  if lo + hi < 256 then
+                    pure m!"{indentExpr σs[j]!}\n→{indentExpr σs[j+1]!}"
+                  else
+                    pure m!"(endpoints {lo}/{hi} objs — elided)")
+                throwError "derive_rounds: piecewise chain piece \
+                  {j+1}/{n} FAILED: {ex.toMessageData}\n{detail}"
+            pf? := some (← match pf? with
+              | none => pure piece
+              | some p => mkEqTrans p piece)
+          let pfWhole ← (do
+            match terminal with
+            | none => pure pf?
+            | some stepsE => withCurrHeartbeats do
+              let σN := σs[n]!
+              let σNS ← toStxU σN
+              let stepsS ← toStxU stepsE
+              let fS ← mkFuelE 2
+              let thInfoE ← evalGroundA "terminal th_info" <|
+                ← elabClosed (← `(((Lem_List.lookupBy
+                  (fun (x y : Nat) => x == y) $tidS
+                  (core_state.thread_states
+                    (driver_state.core_state0 $σNS))).getD default)))
+              let thS ← toStxU thInfoE
+              let hfuelTy ← elabClosed (← `(
+                ($(← toStxU fS) : Nat) = $fuelStx + 2))
+              let hfuel ← mkExpectedTypeHint (← mkEqRefl fS) hfuelTy
+              let hlookTy ← elabClosed (← `(
+                Lem_List.lookupBy (fun (x y : Nat) => x == y) $tidS
+                  (core_state.thread_states
+                    (driver_state.core_state0 $σNS)) = some $thS))
+              let hlook ← mkExpectedTypeHint
+                (← mkEqRefl (← mkAppMU ``Option.some #[thInfoE]))
+                hlookTy
+              let hstepsTy ← elabClosed (← `(
+                step_ctx $tdS (driver_state.layout_state $σNS)
+                  (driver_state.core_file $σNS)
+                  (driver_state.core_extern $σNS) $tidS $thS
+                  = $stepsS))
+              let hsteps ← mkExpectedTypeHint (← mkEqRefl stepsE)
+                hstepsTy
+              let hfindTy ← elabClosed
+                (← `(find_can_advance $stepsS = none))
+              let hfind ← mkExpectedTypeHint
+                (← elabClosed
+                  (← `((rfl : (none : Option core_step2) = none))))
+                hfindTy
+              let raw ← mkAppOptMU termLaw.name
+                #[some tdE, some fS, some fuelFv, some accE, some tidE,
+                  some σN, some thInfoE, some stepsE,
+                  some hfuel, some hlook, some hsteps, some hfind]
+              let rhsE ← elabClosed (← `((NDactive (fmapAddBy
+                  defaultCompare $tidS $stepsS fmapEmpty),
+                  $(← toStxU σN))))
+              let termTy ← mkEq (← mkDnms fS σN) rhsE
+              let term ← mkExpectedTypeHint raw termTy
+              match pf? with
+              | none => pure (some term)
+              | some p => pure (some (← mkEqTrans p term)))
+          let some pfBody := pfWhole
+            | throwFrontier m!"derive_rounds: empty relative chain \
+                (no rounds and no terminal)"
+          let lhsAll ← mkDnms (← mkFuelE (n + off)) σ0E
+          let rhsAll ← (do
+            match terminal with
+            | none => mkDnms fuelFv σs[n]!
+            | some stepsE =>
+              let stepsS ← toStxU stepsE
+              elabClosed (← `((NDactive (fmapAddBy defaultCompare
+                $tidS $stepsS fmapEmpty), $(← toStxU σs[n]!)))))
+          let stmt1 ← mkEq lhsAll rhsAll
+          return (← mkForallFVars #[fuelFv] stmt1,
+                  ← mkLambdaFVars #[fuelFv] pfBody)
+        emitThm chainName fvars stmt value
           s!"RELATIVE {if terminal.isSome then "terminal " else ""}chain \
              ({rounds.size} rounds{if terminal.isSome then " + terminal" else ""}, \
-             ∀-fuel — the iter_compose feed). \
+             ∀-fuel — the iter_compose feed; PIECEWISE assembly: \
+             endpoints tracked syntactically, premises kernel-deferred \
+             through dnms_round_computed). \
              {provenanceNote "derive_rounds"}"
         logInfo m!"derive_rounds {baseName}: relative chain {chainName} \
           emitted ({rounds.size} rounds, terminal={terminal.isSome})"
