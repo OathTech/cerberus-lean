@@ -76,6 +76,37 @@ theorem dnms_round
   refine (app_bind_active hadv).trans ?_
   rfl
 
+/-- `dnms_round` with σ-COMPUTABLE hypotheses (arc-17 S3, the
+    relative-chain emitter's face): every premise is spelled purely
+    from `σ` (plus the round's advance theorem), so the emitter can
+    kernel-defer them as `Eq.refl` hints — no elaborator unification
+    against the scheduler computation (the stepAt wedge) is ever
+    attempted. `step1` is instantiated at the round theorem's own
+    (stepAt-spelled) step. -/
+theorem dnms_round_computed
+    {tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)}
+    {fuelS fuel : Nat} {acc : Fmap thread_id (List core_step2)}
+    {tid : Nat} {xs' : List Nat}
+    {σ σ' : driver_state} {step1 : core_step2}
+    (hfuel : fuelS = fuel + 1)
+    (hlook : (Lem_List.lookupBy (fun x y => x == y) tid
+        σ.core_state0.thread_states).isSome = true)
+    (hfind : find_can_advance (step_ctx tagDefs σ.layout_state
+        σ.core_file σ.core_extern tid
+        ((Lem_List.lookupBy (fun x y => x == y) tid
+          σ.core_state0.thread_states).getD default))
+      = some step1)
+    (hadv : app (advance_step tagDefs tid step1) σ
+        = (NDactive NOWAKEUP, σ')) :
+    app (drive_nonmemory_steps_aux2_lemFuel fuelS tagDefs acc
+          (tid :: xs')) σ
+      = app (drive_nonmemory_steps_aux2_lemFuel fuel tagDefs acc
+          (tid :: xs')) σ' := by
+  obtain ⟨ti, hti⟩ := Option.isSome_iff_exists.mp hlook
+  refine dnms_round hfuel hti rfl ?_ hadv
+  rw [hti, Option.getD_some] at hfind
+  exact hfind
+
 /-- The terminal dnms round: no advancing step; the offered steps are
     accumulated and (at the singleton tid list) the accumulator is
     returned one tick later. -/

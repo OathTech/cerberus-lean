@@ -145,4 +145,130 @@ theorem mem_kill_block {loc : CerbLocation.Loc}
     Bool.false_eq_true, if_false, if_true, reduceIte, Bool.not_false,
     Bool.false_and, Bool.and_false]
 
+/-! ### Read-over-write (arc-17 S3): the separation-logic footprint
+    primitives at bytemap level — `writeBytesTo` touches ONLY the
+    bytemap (projection laws), a disjoint read passes through
+    (frame), the exact-footprint read reads back the written bytes.
+    These are the laws the builder walk's fenced-store discipline
+    consumes (store rounds keep `writeBytesTo` folded; later loads
+    mint through these instead of materializing the byte tree). -/
+
+theorem writeBytesTo_allocations {m : CerbMem.MemState} {a : Int}
+    {bs : List CerbMem.AbsByte} :
+    (CerbMem.writeBytesTo m a bs).allocations = m.allocations := rfl
+
+theorem writeBytesTo_deadAllocations {m : CerbMem.MemState} {a : Int}
+    {bs : List CerbMem.AbsByte} :
+    (CerbMem.writeBytesTo m a bs).deadAllocations
+      = m.deadAllocations := rfl
+
+theorem writeBytesTo_funptrmap {m : CerbMem.MemState} {a : Int}
+    {bs : List CerbMem.AbsByte} :
+    (CerbMem.writeBytesTo m a bs).funptrmap = m.funptrmap := rfl
+
+theorem writeBytesTo_lastUsedUnionMembers {m : CerbMem.MemState}
+    {a : Int} {bs : List CerbMem.AbsByte} :
+    (CerbMem.writeBytesTo m a bs).lastUsedUnionMembers
+      = m.lastUsedUnionMembers := rfl
+
+/-- The byte-write fold's pointwise character: key `k` reads the
+    written byte when `a ≤ k < a + bs.length`, the base map
+    otherwise. -/
+private theorem writeFold_get? (bs : List CerbMem.AbsByte)
+    (bm : Std.TreeMap Int CerbMem.AbsByte) (a k : Int) :
+    ((bs.foldl (fun (acc : Std.TreeMap Int CerbMem.AbsByte × Int) b =>
+        (acc.1.insert acc.2 b, acc.2 + 1)) (bm, a)).1.get? k
+      = if h : a ≤ k ∧ k < a + bs.length
+        then some (bs[(k - a).toNat]'(by omega))
+        else bm.get? k) := by
+  induction bs generalizing bm a with
+  | nil =>
+    have h : ¬ (a ≤ k ∧ k < a + ([] : List CerbMem.AbsByte).length) := by
+      simp
+    simp only [List.foldl_nil, dif_neg h]
+  | cons b bs ih =>
+    show ((bs.foldl _ (bm.insert a b, a + 1)).1.get? k = _)
+    rw [ih]
+    rcases Decidable.em (a = k) with heq | hne
+    · subst heq
+      have h1 : ¬ (a + 1 ≤ a ∧ a < a + 1 + bs.length) := by omega
+      have h2 : a ≤ a ∧ a < a + (b :: bs).length := by
+        simp; omega
+      simp only [dif_neg h1, dif_pos h2,
+        Std.TreeMap.get?_eq_getElem?, Std.TreeMap.getElem?_insert]
+      have : compare a a = Ordering.eq := by
+        simp [Int.compare_eq_eq]
+      simp [this]
+    · rcases Decidable.em (a + 1 ≤ k ∧ k < a + 1 + bs.length)
+        with hin | hout
+      · have h2 : a ≤ k ∧ k < a + (b :: bs).length := by
+          simp; omega
+        rw [dif_pos hin, dif_pos h2]
+        congr 1
+        have hk : (k - (a + 1)).toNat + 1 = (k - a).toNat := by omega
+        rw [List.getElem_cons]
+        split
+        · omega
+        · congr 1; omega
+      · have h2 : ¬ (a ≤ k ∧ k < a + (b :: bs).length) := by
+          simp; simp at hout; omega
+        rw [dif_neg hout, dif_neg h2,
+          Std.TreeMap.get?_eq_getElem?, Std.TreeMap.get?_eq_getElem?,
+          Std.TreeMap.getElem?_insert]
+        have : compare a k ≠ Ordering.eq := by
+          simp [Int.compare_eq_eq]; omega
+        simp [this]
+
+/-- `writeBytesTo`'s bytemap, pointwise. -/
+private theorem writeBytesTo_bytemap_get? {m : CerbMem.MemState}
+    {a k : Int} {bs : List CerbMem.AbsByte} :
+    (CerbMem.writeBytesTo m a bs).bytemap.get? k
+      = if h : a ≤ k ∧ k < a + bs.length
+        then some (bs[(k - a).toNat]'(by omega))
+        else m.bytemap.get? k :=
+  writeFold_get? bs m.bytemap a k
+
+/-- A byte read depends only on the bytemap (the record-respelling
+    bridge: an anchored `MemState.mk` record whose bytemap field is a
+    projection of the base state reads identically to the base). -/
+theorem readBytesFrom_congr_bytemap {m1 m2 : CerbMem.MemState}
+    {a : Int} {n : Nat} (h : m1.bytemap = m2.bytemap) :
+    CerbMem.readBytesFrom m1 a n = CerbMem.readBytesFrom m2 a n := by
+  unfold CerbMem.readBytesFrom
+  rw [h]
+
+/-- Disjoint read passes through the write (the FRAME law). -/
+theorem readBytesFrom_writeBytesTo_disjoint {m : CerbMem.MemState}
+    {a a' : Int} {bs : List CerbMem.AbsByte} {n : Nat}
+    (hdisj : a + bs.length ≤ a' ∨ a' + n ≤ a) :
+    CerbMem.readBytesFrom (CerbMem.writeBytesTo m a bs) a' n
+      = CerbMem.readBytesFrom m a' n := by
+  unfold CerbMem.readBytesFrom
+  apply List.map_congr_left
+  intro i hi
+  have hi' : i < n := List.mem_range.mp hi
+  rw [writeBytesTo_bytemap_get?]
+  have : ¬ (a ≤ a' + (i : Int) ∧ a' + (i : Int) < a + bs.length) := by
+    omega
+  rw [dif_neg this]
+
+/-- Exact-footprint readback: reading `bs.length` bytes at the write
+    address returns the written bytes. -/
+theorem readBytesFrom_writeBytesTo_hit {m : CerbMem.MemState}
+    {a : Int} {bs : List CerbMem.AbsByte} {n : Nat}
+    (hn : n = bs.length) :
+    CerbMem.readBytesFrom (CerbMem.writeBytesTo m a bs) a n = bs := by
+  subst hn
+  unfold CerbMem.readBytesFrom
+  apply List.ext_getElem
+  · simp
+  · intro i h1 h2
+    simp only [List.getElem_map, List.getElem_range]
+    rw [writeBytesTo_bytemap_get?]
+    have hin : a ≤ a + (i : Int) ∧ a + (i : Int) < a + bs.length := by
+      simp at h1; omega
+    rw [dif_pos hin]
+    simp only [show a + (i : Int) - a = (i : Int) from by omega,
+      Int.toNat_natCast]
+
 end RelSem.Kit

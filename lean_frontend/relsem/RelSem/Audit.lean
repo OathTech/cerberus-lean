@@ -1144,7 +1144,16 @@ open Lean in
 -- deliberately, same commit, with the reason. (When green the pin
 -- SWALLOWS the info line — absence of the sweep line from a green
 -- build log is expected; the DAEMON + statement gates still print.)
--- Re-baselines: 3348 → 3356 (arc-15 T5 resumption, R-S2-1 batch:
+-- Re-baselines: 4712 → 4746 (arc-18 C1: the stash-salvaged MEM
+-- FOOTPRINT PACKAGE — Kit/Mem read-over-write laws (writeBytesTo_*
+-- projection quartet + writeFold_get?/writeBytesTo_bytemap_get? +
+-- readBytesFrom_congr_bytemap + the disjoint-frame/exact-hit
+-- read-over-write laws), Kit/Round dnms_round_computed (the
+-- σ-computable dnms face), and RoundEval's mem read-over-write
+-- minter lane (groundIntLit?/listSpineLen?/mintMemRW); all
+-- boundary-clean, drive behavior byte-identical — T4 22 rounds same
+-- classes, t6 51 rounds terminal).
+-- 3348 → 3356 (arc-15 T5 resumption, R-S2-1 batch:
 -- T5Prefix gains eInsMK/eInsBEq — the pinned generated-instance
 -- spelling for the env-family inserts — and Tactics/AppWalk gains
 -- kDiffTrace (trace-lane kernel diff, R-S2-3) + addRawAuxThm (raw
@@ -1216,7 +1225,7 @@ open Lean in
 -- probe's law layer; the probe fixture file itself is parked OUT of
 -- the build).
 /--
-info: RelSem audit sweep: 4712 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 4746 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do

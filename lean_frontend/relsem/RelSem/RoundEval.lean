@@ -1519,13 +1519,26 @@ private partial def collectMintCands (root : Expr) :
         if let .const c _ := e.getAppFn then
           if registryBoolHead c || registryDecHead c
               || c == ``fmapLookupBy || c == ``BEq.beq
+              || c == ``CerbMem.readBytesFrom
+              || c == ``CerbMem.MemState.allocations
+              || c == ``CerbMem.MemState.deadAllocations
+              || c == ``CerbMem.MemState.funptrmap
+              || c == ``CerbMem.MemState.lastUsedUnionMembers
+              || c == ``CerbMem.MemState.bytemap
               || isMatcherAppCore env e || recLikeHead env c then
             out.modify (·.push e)
     | .lam _ t b _ => go t; go b
     | .forallE _ t b _ => go t; go b
     | .letE _ t v b _ => go t; go v; go b
     | .mdata _ b => go b
-    | .proj _ _ b => go b
+    | .proj sN _ b =>
+      go b
+      -- MemState projections over a fenced byte-write (the mem
+      -- read-over-write lane's projection candidates)
+      if sN == ``CerbMem.MemState
+          && b.isAppOfArity ``CerbMem.writeBytesTo 3
+          && !e.hasLooseBVars then
+        out.modify (·.push e)
     | _ => pure ()
   go root
   out.get
@@ -2256,6 +2269,193 @@ private def mintEnvLookup (hp : HypPack) (d : Expr) : TermElabM Bool := do
   mintEmit hp d rhs pf "env lookup skip"
   return true
 
+/-- Int-literal extraction at kernel reduction strength (closed
+    ground spellings only). -/
+private def groundIntLit? (e : Expr) : MetaM (Option Int) := do
+  if e.hasFVar then return none
+  let e ← withOptions (smartUnfolding.set · false) <|
+    withTransparency .all <| whnf e
+  match_expr e with
+  | Int.ofNat n =>
+    let n ← withOptions (smartUnfolding.set · false) <|
+      withTransparency .all <| whnf n
+    return (n.rawNatLit? <|> n.nat?).map Int.ofNat
+  | Int.negSucc n =>
+    let n ← withOptions (smartUnfolding.set · false) <|
+      withTransparency .all <| whnf n
+    return (n.rawNatLit? <|> n.nat?).map Int.negSucc
+  | _ => return none
+
+/-- List-literal spine length (syntactic `List.cons` chain). -/
+private partial def listSpineLen? (e : Expr) : Option Nat :=
+  if e.isAppOfArity ``List.cons 3 then
+    (listSpineLen? e.appArg!).map (· + 1)
+  else if e.isAppOfArity ``List.nil 1 then some 0
+  else none
+
+/-- THE MEM READ-OVER-WRITE LANE (arc-17 S3 salvage, arc-18 C1): under
+    the `writeBytesTo` fence, store rounds keep the byte write FOLDED;
+    stuck reads and MemState projections over it mint through
+    Kit/Mem's footprint laws — `readBytesFrom_writeBytesTo_hit`
+    (exact footprint readback), `readBytesFrom_writeBytesTo_disjoint`
+    (the frame law; ground address arithmetic decides the disjunct),
+    and the `writeBytesTo_*` projection laws (the write touches only
+    the bytemap). Iterative peeling handles write towers (one layer
+    per mint). *Lineage (canon-first)*: separation-logic read-over-
+    write/frame reasoning at the byte level — the footprint laws are
+    the equation-calculus face of load-over-store small-footprint
+    axioms (Burstall/Bornat's independent-cell reasoning; the same
+    laws the heap-RA rules state resource-wise). -/
+private def mintMemRW (hp : HypPack) (d : Expr) : TermElabM Bool := do
+  -- raw-projection spelling (whnf reduces the accessor const to
+  -- `Expr.proj` when the record argument is not a constructor app)
+  if let .proj sName idx b := d then
+    unless sName == ``CerbMem.MemState
+        && b.isAppOfArity ``CerbMem.writeBytesTo 3 do return false
+    -- MemState field order: 3 = allocations, 5 = funptrmap,
+    -- 9 = lastUsedUnionMembers, 10 = deadAllocations
+    let law? : Option Name :=
+      if idx == 3 then some ``RelSem.Kit.writeBytesTo_allocations
+      else if idx == 5 then some ``RelSem.Kit.writeBytesTo_funptrmap
+      else if idx == 9 then
+        some ``RelSem.Kit.writeBytesTo_lastUsedUnionMembers
+      else if idx == 10 then
+        some ``RelSem.Kit.writeBytesTo_deadAllocations
+      else none
+    if law?.isNone then
+      trace[RelSem.roundEval] "mem lane: unhandled projection idx \
+        {idx} over writeBytesTo"
+    let some law := law? | return false
+    let wa := b.getAppArgs
+    let rhs := Expr.proj sName idx wa[0]!
+    let pf ← mkAppOptMU law #[some wa[0]!, some wa[1]!, some wa[2]!]
+    -- restate at the proj spelling (defeq; kernel rechecks)
+    let pf ← mkExpectedTypeHint pf (← mkEq d rhs)
+    mintEmit hp d rhs pf "mem write projection (proj)"
+    return true
+  let .const c _ := d.getAppFn | return false
+  let args := d.getAppArgs
+  -- projection lane
+  let projLaw? : Option Name :=
+    if c == ``CerbMem.MemState.allocations then
+      some ``RelSem.Kit.writeBytesTo_allocations
+    else if c == ``CerbMem.MemState.deadAllocations then
+      some ``RelSem.Kit.writeBytesTo_deadAllocations
+    else if c == ``CerbMem.MemState.funptrmap then
+      some ``RelSem.Kit.writeBytesTo_funptrmap
+    else if c == ``CerbMem.MemState.lastUsedUnionMembers then
+      some ``RelSem.Kit.writeBytesTo_lastUsedUnionMembers
+    else none
+  if let some law := projLaw? then
+    unless args.size == 1 do return false
+    let m' := args[0]!
+    if m'.isAppOfArity ``CerbMem.writeBytesTo 3 then
+      let wa := m'.getAppArgs
+      let rhs := mkApp d.getAppFn wa[0]!
+      let pf ← mkAppOptMU law
+        #[some wa[0]!, some wa[1]!, some wa[2]!]
+      mintEmit hp d rhs pf "mem write projection"
+      return true
+    -- fall through: the accessor may sit over a literal record
+    -- (the fenced-accessor iota below)
+  -- FENCED-ACCESSOR IOTA (arc-17 S3): a pack-hypothesis head fence
+  -- freezes the accessor CONST, so `accessor {mk-record}` cannot
+  -- delta-iota even though the reduction is fence-irrelevant. Mint
+  -- the field value with a kernel-deferred refl bridge.
+  let fieldIdx? : Option Nat :=
+    if c == ``CerbMem.MemState.funptrmap then some 5
+    else if c == ``CerbMem.MemState.lastUsedUnionMembers then some 9
+    else if c == ``CerbMem.MemState.bytemap then some 8
+    else if c == ``CerbMem.MemState.allocations then some 3
+    else if c == ``CerbMem.MemState.deadAllocations then some 10
+    else none
+  if let some idx := fieldIdx? then
+    unless args.size == 1 do return false
+    let m' := args[0]!
+    unless m'.isAppOfArity ``CerbMem.MemState.mk 14 do return false
+    let rhs := m'.getAppArgs[idx]!
+    let pf ← mkExpectedTypeHint (← mkEqRefl rhs) (← mkEq d rhs)
+    mintEmit hp d rhs pf "fenced-accessor iota"
+    return true
+  unless c == ``CerbMem.readBytesFrom && args.size == 3 do
+    return false
+  let m' := args[0]!
+  let a' := args[1]!
+  let nE := args[2]!
+  -- RECORD-RESPELLING bridge: a read at an anchored `MemState.mk`
+  -- record whose bytemap field projects a base state = the read at
+  -- the base (readBytesFrom_congr_bytemap; the h is rfl-grade)
+  if m'.isAppOfArity ``CerbMem.MemState.mk 14 then
+    let bmArg := m'.getAppArgs[8]!
+    let base? : Option Expr :=
+      match bmArg with
+      | .proj sN 8 b => if sN == ``CerbMem.MemState then some b else none
+      | _ =>
+        if bmArg.isAppOfArity ``CerbMem.MemState.bytemap 1 then
+          some bmArg.appArg!
+        else none
+    if base?.isNone then
+      trace[RelSem.roundEval] "mem lane: record read, bytemap field \
+        not a base projection"
+    let some base := base? | return false
+    let hTy ← mkEq (Expr.proj ``CerbMem.MemState 8 m')
+      (Expr.proj ``CerbMem.MemState 8 base)
+    let h ← mkExpectedTypeHint
+      (← mkEqRefl (Expr.proj ``CerbMem.MemState 8 base)) hTy
+    let rhs := mkAppN d.getAppFn #[base, a', nE]
+    let pf ← mkAppOptMU ``RelSem.Kit.readBytesFrom_congr_bytemap
+      #[some m', some base, some a', some nE, some h]
+    mintEmit hp d rhs pf "mem read record-respelling"
+    return true
+  unless m'.isAppOfArity ``CerbMem.writeBytesTo 3 do return false
+  let wa := m'.getAppArgs
+  let m := wa[0]!; let a := wa[1]!; let bs := wa[2]!
+  let some av ← groundIntLit? a
+    | (do trace[RelSem.roundEval] "mem lane: write addr not ground {a}"
+          return false)
+  let some av' ← groundIntLit? a'
+    | (do trace[RelSem.roundEval] "mem lane: read addr not ground {a'}"
+          return false)
+  let some blen := listSpineLen? bs
+    | (do trace[RelSem.roundEval] "mem lane: bytes not a literal spine"
+          return false)
+  let nW ← withOptions (smartUnfolding.set · false) <|
+    withTransparency .all <| whnf nE
+  let some nv := nW.rawNatLit? <|> nW.nat?
+    | (do trace[RelSem.roundEval] "mem lane: read size not ground {nE}"
+          return false)
+  if av' == av && nv == blen then
+    -- HIT: exact-footprint readback
+    let hn ← mkExpectedTypeHint (← mkEqRefl nE)
+      (← mkEq nE (← mkAppMU ``List.length #[bs]))
+    let pf ← mkAppOptMU ``RelSem.Kit.readBytesFrom_writeBytesTo_hit
+      #[some m, some a, some bs, some nE, some hn]
+    mintEmit hp d bs pf "mem read-over-write hit"
+    return true
+  if av + blen ≤ av' || av' + nv ≤ av then
+    -- DISJOINT: the frame law; decide the disjunct at ground values
+    let lenE ← mkAppMU ``Int.ofNat #[← mkAppMU ``List.length #[bs]]
+    let disjL ← mkAppMU ``LE.le #[← mkAppMU ``HAdd.hAdd #[a, lenE], a']
+    let disjR ← mkAppMU ``LE.le
+      #[← mkAppMU ``HAdd.hAdd #[a', ← mkAppMU ``Int.ofNat #[nE]], a]
+    let hdisj ← (do
+      if av + blen ≤ av' then
+        let some (true, pfL) ← kernelVerdict disjL
+          | throwError "mem lane: ground disjunct failed (L)"
+        mkAppOptMU ``Or.inl #[some disjL, some disjR, some pfL]
+      else
+        let some (true, pfR) ← kernelVerdict disjR
+          | throwError "mem lane: ground disjunct failed (R)"
+        mkAppOptMU ``Or.inr #[some disjL, some disjR, some pfR])
+    let rhs := mkAppN d.getAppFn #[m, a', nE]
+    let pf ← mkAppOptMU ``RelSem.Kit.readBytesFrom_writeBytesTo_disjoint
+      #[some m, some a, some a', some bs, some nE, some hdisj]
+    mintEmit hp d rhs pf "mem read-over-write frame"
+    return true
+  trace[RelSem.roundEval] "mem lane: OVERLAPPING non-exact read \
+    (write [{av}, {av + blen}), read [{av'}, {av' + nv})) — unsupported"
+  return false
+
 /-- THE MINTER (the `mintHook` implementation): scan the stuck term
     for candidate towers, mint the first that yields a verdict.
     Returns true iff a rewrite was registered (the caller loops).
@@ -2275,6 +2475,9 @@ def mintCmpFact? (hp : HypPack) (e : Expr) : TermElabM Bool := do
       continue
     -- each candidate attempt is its own scoped unit (phase note)
     if ← withCurrHeartbeats (mintEnvLookup hp d) then
+      trace[RelSem.roundEval] "arith minter: hit after {(← IO.monoMsNow) - t0} ms ({cands.size} candidates)"
+      return true
+    if ← withCurrHeartbeats (mintMemRW hp d) then
       trace[RelSem.roundEval] "arith minter: hit after {(← IO.monoMsNow) - t0} ms ({cands.size} candidates)"
       return true
     if ← withCurrHeartbeats (mintBool hp d) then
