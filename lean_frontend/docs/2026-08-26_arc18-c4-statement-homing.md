@@ -5,7 +5,8 @@ Worker record, 2026-08-26. Charter:
 `2026-08-25_reasoning-layer-contracts.md` (register row R6 closes
 here; retirement register entry 4's speclab rows execute here).
 Branch `coherence`; this slice's commits: `963b4b52d` (homing +
-threading), plus the family-∀/laws commit and this record's commit.
+threading) and `761e1aaaf` (family-∀ targets + the drive-law yield +
+this record).
 [AGENT] decisions marked; quoted outputs verbatim from exit-checked
 runs.
 
