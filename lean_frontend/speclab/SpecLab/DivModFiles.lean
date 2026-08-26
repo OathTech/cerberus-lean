@@ -184,6 +184,29 @@ diverging byte). -/
 def DivModI8PlantHealthyClaim (seed : Nat) : Prop :=
   HarnessRunsToThr seed divmodI8PlantFile 0
 
+/-- THE R1 FAMILY-∀ STATEMENT (arc-18 C4 — the registered TARGET
+shape; ∀-seed AND ∀ over the full well-formed i8 model domain, not
+the pinned sample set). HONESTY LABEL: UNPROVED — the proof is the
+whole-program drive-walk campaign, parked at the ground-mode
+materialization frontier (the C4 record §4); the sample statements
+remain the executable-validated faces meanwhile. Note the ∀-seed here
+is part of the TARGET (a proof must establish it or weaken to a
+guarded face per the T4-apartness pattern). -/
+def DivModI8FamilyStatement : Prop :=
+  ∀ (seed : Nat) (m : Input), WfI8 m →
+    HarnessRunsToThr seed (divmodI8FileOf m) 0
+
+/-- The family-∀ target yields the sample statement at every seed
+(kernel-checked: the finite validated face is the family's image —
+the anti-vacuity link between target and evidence). -/
+theorem sample_of_family (seed : Nat)
+    (h : DivModI8FamilyStatement) : DivModI8SampleStatement seed := by
+  intro m hm
+  refine h seed m ?_
+  simp only [sampleSet, List.mem_cons, List.not_mem_nil,
+    or_false] at hm
+  rcases hm with rfl | rfl | rfl | rfl <;> decide
+
 /-! ## The file-level bridge (kernel-checked): the stream face and
     the model face build THE SAME program -/
 

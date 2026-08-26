@@ -378,6 +378,96 @@ theorem aid_draw {σ : driver_state} :
                aid_supply := σ.core_run_state0.aid_supply + 1 } }) :=
   liftCore_run_defined rfl
 
+/-- advance_step's sequential memop-request branch, unfolded (the
+    explicit-equation form — the advance_action_unfold discipline). -/
+theorem advance_memop_unfold
+    {tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)}
+    {tid tid' : Nat} {loc : CerbLocation.Loc}
+    {memop : generic_memop sym} {cvals : List value}
+    {mk_th_st : value → thread_state} :
+    advance_step tagDefs tid
+        (Step_memop_request2 loc memop cvals tid' false mk_th_st)
+      = nd_bind (perform_memop_request2 tagDefs loc memop cvals tid'
+          mk_th_st)
+          (fun (u : Unit) => match u with | () => nd_return NOWAKEUP) := rfl
+
+/-- Memop-request advance (sequential, not unseq-with-ccall; arc-18
+    C4 — the Ememop surface's driver layer, first demanded by the
+    divmod drive walk): the memop is performed
+    (`perform_memop_request2` — the per-memop laws enter through the
+    `hperf` hypothesis), then NOWAKEUP. -/
+@[app_eq,
+  step_law (kind := advance) (side := fed)
+  (frontier := "advance/memop-request")
+  (trace := "{law := advance_memop_request, joint := round/memop, hyps := [hperf : fed]}")
+  (lineage := "the sequential memop-request advance: perform then NOWAKEUP; the per-memop laws enter via hperf")]
+theorem advance_memop_request
+    {tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)}
+    {tid tid' : Nat} {loc : CerbLocation.Loc}
+    {memop : generic_memop sym} {cvals : List value}
+    {mk_th_st : value → thread_state}
+    {σ σ₁ : driver_state}
+    (hperf : app (perform_memop_request2 tagDefs loc memop cvals tid'
+        mk_th_st) σ = (NDactive (), σ₁)) :
+    app (advance_step tagDefs tid
+          (Step_memop_request2 loc memop cvals tid' false mk_th_st)) σ
+      = (NDactive NOWAKEUP, σ₁) := by
+  rw [advance_memop_unfold]
+  refine (app_bind_active hperf).trans ?_
+  exact app_nd_return _ _
+
+/-- perform_memop_request2's PtrValidForDeref arm, unfolded (generic;
+    explicit-equation form). -/
+theorem perform_memop_pvfd_unfold
+    {tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)}
+    {loc : CerbLocation.Loc} {ty : ctype} {ptr : CerbMem.PointerValue}
+    {tid : Nat} {mk_th_st : value → thread_state} :
+    perform_memop_request2 tagDefs loc PtrValidForDeref
+        [Vctype ty, Vobject (OVpointer ptr)] tid mk_th_st
+      = nd_bind (nd_bind
+          (liftMem (CerbMem.validForDerefPtrval ty ptr))
+          (fun (is_valid : Bool) =>
+            nd_return (mk_th_st (if is_valid then Vtrue else Vfalse))))
+          (fun (th_st' : thread_state) =>
+            nd_update (fun (dr_st : driver_state) =>
+              update_core_state
+                (update_thread_state tid th_st' dr_st.core_state0)
+                dr_st)) := rfl
+
+/-- PtrValidForDeref round's perform (arc-18 C4 — the Ememop class's
+    first law; the pointer-validity read is STATE-PRESERVING, so the
+    memory fact discharges by kernel rfl at ground memory: liveness +
+    alignment arithmetic). -/
+@[app_eq,
+  step_law (kind := perform) (side := fed)
+  (frontier := "perform/memop-pvfd")
+  (trace := "{law := perform_memop_pvfd, joint := perform/memop, hyps := [hmem : fed]}")
+  (lineage := "composed memop law: state-preserving validity read through the memory lens + thread update (computed RHS)")]
+theorem perform_memop_pvfd
+    {tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)}
+    {loc : CerbLocation.Loc} {ty : ctype} {ptr : CerbMem.PointerValue}
+    {tid : Nat} {mk_th_st : value → thread_state}
+    {σ : driver_state} {b : Bool}
+    (hmem : app (CerbMem.validForDerefPtrval ty ptr) σ.layout_state
+        = (NDactive b, σ.layout_state)) :
+    app (perform_memop_request2 tagDefs loc PtrValidForDeref
+          [Vctype ty, Vobject (OVpointer ptr)] tid mk_th_st) σ
+      = (NDactive (),
+         update_core_state
+           (update_thread_state tid
+             (mk_th_st (if b then Vtrue else Vfalse)) σ.core_state0)
+           σ) := by
+  rw [perform_memop_pvfd_unfold]
+  have h1 : app (nd_bind
+      (liftMem (CerbMem.validForDerefPtrval ty ptr))
+      (fun (is_valid : Bool) =>
+        nd_return (mk_th_st (if is_valid then Vtrue else Vfalse)))) σ
+      = (NDactive (mk_th_st (if b then Vtrue else Vfalse)), σ) := by
+    refine (app_bind_active (app_liftMem_active rfl hmem)).trans ?_
+    exact app_nd_return _ _
+  refine (app_bind_active h1).trans ?_
+  exact app_nd_update _ _
+
 /-- CREATE round's perform (aid draw + allocate through the memory
     lens + trace/thread update). -/
 @[app_eq,

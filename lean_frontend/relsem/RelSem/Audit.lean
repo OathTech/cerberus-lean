@@ -946,7 +946,16 @@ open Lean in
 -- [post-create allocation-table reads], tm_get?_erase_ne/
 -- list_contains_cons_ne [post-kill reads]; all Kit/Mem,
 -- fixture-free).
-/-- info: step_law census: 66 laws [advance 4, construct 9, envAlg 3, envMap 4, evalArith 2, evalPull 2, heapWP 4, heapWalk 8, loop 2, memBlock 5, memRW 13, perform 5, roundGlue 3, wpSeq 2] -/
+-- 66 → 69 (arc-18 C4: the WHOLE-PROGRAM DRIVE surfaces the divmod
+-- walk measured out — mem_store_lock_block [memBlock: the block-scope
+-- const-array init store, insert-canonical readonly flip],
+-- advance_memop_request + perform_memop_pvfd [advance/perform: the
+-- Ememop lane's driver layer + PtrValidForDeref, consumed by the new
+-- thin mintMemopRound dispatcher]; probe evidence: 74 divmod-plant
+-- drive rounds minted incl. store_lock and memop classes; the walk
+-- itself parks at the ground-mode materialization frontier —
+-- docs/2026-08-26_arc18-c4-statement-homing.md §4).
+/-- info: step_law census: 69 laws [advance 5, construct 9, envAlg 3, envMap 4, evalArith 2, evalPull 2, heapWP 4, heapWalk 8, loop 2, memBlock 6, memRW 13, perform 6, roundGlue 3, wpSeq 2] -/
 #guard_msgs in #step_law_census
 /-- info: 'RelSem.T1.round6' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.round6
@@ -1349,6 +1358,10 @@ open Lean in
 -- [builder-gated changes]). 5281 → 5292 (arc-18 C3b cont.: the six
 -- memRW read-over-update laws [Kit/Mem] + their auxiliaries +
 -- projBaseHead [Classify]; boundary-clean, no cone movement).
+-- 6774 → 6784 (arc-18 C4 cont.: the three whole-program-drive laws
+-- + their unfold lemmas + selectRoKindK [Kit/Mem, Kit/Round — the
+-- census 66→69 entries and their auxiliaries]; boundary-clean, no
+-- cone movement).
 -- 6772 → 6774 (arc-18 C4: the R6 STATEMENT HOMING — RelSem.Threaded
 -- MOVES to the semantics package [relsemcore/RelSem/Threaded.lean;
 -- one definition, one home; this package imports it] and gains the
@@ -1368,7 +1381,7 @@ open Lean in
 -- catch working as designed, record §3 of
 -- docs/2026-08-26_arc18-c3b-t5-landing.md).
 /--
-info: RelSem audit sweep: 6774 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 6784 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do

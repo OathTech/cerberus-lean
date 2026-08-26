@@ -180,6 +180,22 @@ naming post-state cell 1's low byte: the lost update). -/
 def SwapPlantHealthyClaim (seed : Nat) : Prop :=
   HarnessRunsToThr seed pairSwapPlantFile 0
 
+/-- THE R5 FAMILY-∀ STATEMENT (arc-18 C4 — the registered TARGET
+shape; ∀-seed AND the FULL u64-pair domain — the R5 model is Wf-free,
+the S5 record's full-domain bridge). HONESTY LABEL: UNPROVED — proof
+parked with the whole-program drive-walk campaign (the C4 record §4);
+the sample statement remains the executable-validated face. -/
+def SwapFamilyStatement : Prop :=
+  ∀ (seed : Nat) (m : PairInput),
+    HarnessRunsToThr seed (swapFileOf m) 0
+
+/-- The family-∀ target yields the sample statement at every seed
+(kernel-checked — the anti-vacuity link between target and
+evidence). -/
+theorem swap_sample_of_family (seed : Nat)
+    (h : SwapFamilyStatement) : SwapSampleStatement seed :=
+  fun m _ => h seed m
+
 /-! ## The file-level bridge (kernel-checked): the stream face and
     the model face build THE SAME program — Wf-FREE at this rung
     (the full-domain novelty: no side conditions anywhere) -/

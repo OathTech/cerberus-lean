@@ -89,6 +89,72 @@ theorem mem_store_block {loc : CerbLocation.Loc} {ty : ctype}
     hbytes, Bool.not_true, Bool.false_eq_true, if_false, if_true,
     reduceIte, Bool.not_false]
 
+/-- The readonly kind a locking store selects from the allocation's
+    prefix (CerbMem.storeM's local `selectRoKind`, top-level —
+    mirrors impl_mem.ml:1704-1710 select_ro_kind). -/
+def selectRoKindK : prefix0 → readonly_kind
+  | PrefTemporaryLifetime _ _ => .ReadonlyTemporaryLifetime
+  | PrefStringLiteral _ _ => .ReadonlyStringLiteral
+  | _ => .ReadonlyConstQualified
+
+/-- STORE_LOCK, success path (arc-18 C4: the block-scope CONST-array
+    initialization store — the harness template's choice/expected
+    arrays; first demanded by the divmod drive walk, fires for every
+    const-array fixture): as `mem_store_block` with `isLocking =
+    true`, so the post-state additionally marks the target allocation
+    read-only (kind from the allocation's own prefix —
+    impl_mem.ml:1776-1787). -/
+@[app_eq,
+  step_law (kind := memBlock) (side := ground)
+  (frontier := "mem/store_lock")
+  (trace := "{law := mem_store_lock_block, joint := mem/store_lock, hyps := [hcompat : ground, hget : ground, hbounds : ground, hro : ground, hatomic : ground, hbytes : ground]}")
+  (lineage := "computed-RHS memory-op block: locking store as the plain store's byte write + the allocation readonly flip (const-qualified init)")]
+theorem mem_store_lock_block {loc : CerbLocation.Loc} {ty : ctype}
+    {allocId : Int} {addr : Int} {alloc : CerbMem.Allocation}
+    {mem : CerbMem.MemState} {mv : CerbMem.MemValue}
+    {fpm : CerbMem.Funptrmap} {bytes : List CerbMem.AbsByte}
+    (hcompat : CerbMem.ctypeMemCompatible ty (CerbMem.typeofMval mv) = true)
+    (hget : mem.allocations.get? allocId = some alloc)
+    (hbounds : CerbMem.isInBounds alloc addr (CerbMem.sizeofCtype ty) = true)
+    (hro : alloc.isReadonly = .IsWritable)
+    (hatomic : CerbMem.isAtomicMemberAccess alloc ty addr = false)
+    (hbytes : CerbMem.memValueToBytes mem.funptrmap mv = (fpm, bytes))
+    -- the readonly flip's ANCHOR-CANONICAL spelling: the store body's
+    -- whole-map `.map` equals a single `insert` of the flipped record
+    -- (ground states discharge by kernel rfl — an autoParam so the
+    -- engine's six-slot mem-block splice serves both store laws; the
+    -- insert spelling is what keeps the anchored allocations ladder
+    -- read-over-update-navigable instead of accreting `.map` layers,
+    -- the measured round-75 whnf cliff)
+    (hallocs : mem.allocations.map (fun id a =>
+        if id == allocId then
+          { a with isReadonly :=
+              CerbMem.ReadonlyStatus.IsReadOnly (selectRoKindK alloc.prefix_) }
+        else a)
+      = mem.allocations.insert allocId
+          { alloc with isReadonly :=
+              CerbMem.ReadonlyStatus.IsReadOnly (selectRoKindK alloc.prefix_) }
+      := by first | exact rfl | decide) :
+    app (CerbMem.storeM loc ty true
+          (.PV (.Prov_some allocId) (.PVconcrete none addr)) mv) mem
+      = (NDactive (.FP .W addr (CerbMem.sizeofCtype ty)),
+         { CerbMem.writeBytesTo { mem with funptrmap := fpm } addr bytes with
+           allocations := mem.allocations.insert allocId
+             { alloc with isReadonly := CerbMem.ReadonlyStatus.IsReadOnly (selectRoKindK alloc.prefix_) } }) := by
+  have base : app (CerbMem.storeM loc ty true
+        (.PV (.Prov_some allocId) (.PVconcrete none addr)) mv) mem
+      = (NDactive (.FP .W addr (CerbMem.sizeofCtype ty)),
+         { CerbMem.writeBytesTo { mem with funptrmap := fpm } addr bytes with
+           allocations := mem.allocations.map (fun id a =>
+             if id == allocId then
+               { a with isReadonly := CerbMem.ReadonlyStatus.IsReadOnly (selectRoKindK alloc.prefix_) }
+             else a) }) := by
+    simp only [CerbMem.storeM, app, hcompat, hget, hbounds, hro, hatomic,
+      hbytes, Bool.not_true, Bool.false_eq_true, if_false, if_true,
+      reduceIte, Bool.not_false]
+    rfl
+  rw [base, hallocs]
+
 /-- Is a ctype the `_Bool` type (the load trap-representation
     discriminator)? -/
 def isBoolTy : ctype → Bool

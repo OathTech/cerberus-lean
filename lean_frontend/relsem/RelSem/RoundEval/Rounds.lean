@@ -484,6 +484,55 @@ def mintLawPure (declName : Name) (fvars : Array Expr)
     throwFrontier m!"derive_rounds: round {roundIdx} step class has no \
       registered law:{indentExpr stepE}"
 
+/-- MEMOP-ROUND MINT (arc-18 C4): `Step_memop_request2`, sequential —
+    the Ememop surface, first demanded by the divmod drive walk. THIN
+    registry dispatcher (the engine-to-law rule): the ADVANCE and
+    PERFORM laws are selected by goal form from the one registry;
+    every law hypothesis discharges through the standard side triple
+    (the PtrValidForDeref class's memory fact is state-preserving and
+    reduces by kernel rfl at the anchored ground memory: liveness +
+    alignment arithmetic). An unregistered memop shape is a
+    registry-miss frontier, never an engine branch. -/
+def mintMemopRound (declName : Name) (fvars : Array Expr)
+    (a : Anchor) (td tid σ lhs stepE : Expr) (roundIdx : Nat) :
+    TermElabM (MintedRound × Anchor) := do
+  let stepArgs := stepE.getAppArgs -- loc memop cvals tid' unseq mk
+  unless stepArgs.size == 6 do
+    throwError "derive_rounds: Step_memop_request2 arity {stepArgs.size}"
+  let unseqE ← whnfU stepArgs[4]!
+  unless unseqE.isConstOf ``Bool.false do
+    throwFrontier m!"derive_rounds: round {roundIdx} is an \
+      unseq-with-ccall memop request (no law registered)"
+  let memopE ← whnfU stepArgs[1]!
+  -- the memop ctor is passed CONCRETE (its only argument is the `sym`
+  -- type parameter — starring it would put a query star against the
+  -- pattern's concrete key and kill the match)
+  let memopQ := memopE
+  -- ADVANCE law by goal form (keyed on the step head + memop ctor)
+  let stepQ := mkAppN stepE.getAppFn
+    #[← qStar, memopQ, ← qStar, ← qStar, unseqE, ← qStar]
+  let advGoal0 ← mkAppMU ``RelSem.app
+    #[← mkAppMU ``advance_step #[td, tid, stepE], σ]
+  let advLaw ← queryLaw `advance
+    (← appGoalSkeleton advGoal0 #[← qStar, ← qStar, stepQ])
+    (what := s!"round {roundIdx} memop advance")
+  -- PERFORM law by goal form (keyed on the memop ctor + the operand
+  -- list's live spelling — the law patterns discriminate the arm)
+  let cvalsE ← whnfU stepArgs[2]!
+  let perfGoal0 ← mkAppMU ``RelSem.app
+    #[← mkAppMU ``perform_memop_request2
+        #[td, stepArgs[0]!, memopE, cvalsE, stepArgs[3]!, stepArgs[5]!],
+      σ]
+  let perfLaw ← queryLaw `perform
+    (← appGoalSkeleton perfGoal0
+      #[← qStar, ← qStar, memopQ, cvalsE, ← qStar, ← qStar])
+    (what := s!"round {roundIdx} memop perform")
+  let proofStx ← `($(mkCIdent advLaw.name)
+    (hperf := $(mkCIdent perfLaw.name)
+      (hmem := by first | exact rfl | decide | hyp_norm_side)))
+  let (pf, succRaw) ← elabLawChain td tid σ stepE lhs roundIdx proofStx
+  emitLawRound declName fvars a td tid σ lhs pf succRaw roundIdx "memop"
+
 /-- MEMORY-ROUND MINT: law-chain elaboration (see module header).
     `stepE` is the whnf'd `Step_action_request2` application. -/
 def mintMemRound (declName : Name) (fvars : Array Expr)

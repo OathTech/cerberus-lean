@@ -197,6 +197,7 @@ elab "derive_rounds " id:ident bs:bracketedBinder* assum:(roundsAssuming)? fenc:
                 || e.isAppOf ``core_step2.Step_blocked2
                 || e.isAppOf ``core_step2.Step_tau2
                 || e.isAppOf ``core_step2.Step_with_runstate2
+                || e.isAppOf ``core_step2.Step_memop_request2
             if isStep r then
               pure r
             else
@@ -222,6 +223,11 @@ elab "derive_rounds " id:ident bs:bracketedBinder* assum:(roundsAssuming)? fenc:
         if stepE.isAppOf ``core_step2.Step_action_request2 then
           let lhs ← mkRoundLhs tdE tidE σ
           let (r, a') ← mintMemRound declName fvars anchor tdE tidE σ lhs stepE k
+          trace[RelSem.roundEval] "round {k}: {r.cls} ({(← IO.monoMsNow) - t0} ms)"
+          return Sum.inl (r, a')
+        else if stepE.isAppOf ``core_step2.Step_memop_request2 then
+          let lhs ← mkRoundLhs tdE tidE σ
+          let (r, a') ← mintMemopRound declName fvars anchor tdE tidE σ lhs stepE k
           trace[RelSem.roundEval] "round {k}: {r.cls} ({(← IO.monoMsNow) - t0} ms)"
           return Sum.inl (r, a')
         else if stepE.isAppOf ``core_step2.Step_blocked2 then

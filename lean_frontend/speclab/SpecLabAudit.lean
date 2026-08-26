@@ -135,6 +135,11 @@ open Lean in
     [`SpecLab.DivMod.DivModI8SampleStatement,
      `SpecLab.DivMod.DivModI8SampleStreamStatement,
      `SpecLab.DivMod.DivModI8PlantHealthyClaim,
+     -- arc-18 C4: the R1/R5 family-∀ TARGET shapes + their
+     -- family→sample links (unproved targets, gate-registered from
+     -- birth; the R5 twins are in the CnSeed section)
+     `SpecLab.DivMod.DivModI8FamilyStatement,
+     `SpecLab.DivMod.sample_of_family,
      `SpecLab.DivMod.sample_model_iff_stream,
      `SpecLab.DivMod.model_forall_iff_stream_forall,
      `SpecLab.DivMod.fileOfStream_encode,
@@ -180,6 +185,8 @@ open Lean in
      `SpecLab.CnSeed.SwapSampleStatement,
      `SpecLab.CnSeed.SwapSampleStreamStatement,
      `SpecLab.CnSeed.SwapPlantHealthyClaim,
+     `SpecLab.CnSeed.SwapFamilyStatement,
+     `SpecLab.CnSeed.swap_sample_of_family,
      `SpecLab.CnSeed.swap_sample_model_iff_stream,
      `SpecLab.CnSeed.model_forall_iff_stream_forall,
      `SpecLab.CnSeed.swapFileOfStream_encode]
@@ -269,6 +276,10 @@ open Lean in
 #guard_msgs in #print axioms SpecLab.DivMod.DivModI8SampleStreamStatement
 /-- info: 'SpecLab.DivMod.DivModI8PlantHealthyClaim' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.DivMod.DivModI8PlantHealthyClaim
+/-- info: 'SpecLab.DivMod.DivModI8FamilyStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.DivMod.DivModI8FamilyStatement
+/-- info: 'SpecLab.DivMod.sample_of_family' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.DivMod.sample_of_family
 /-- info: 'SpecLab.DivModCore.mainParamDecl' does not depend on any axioms -/
 #guard_msgs in #print axioms SpecLab.DivModCore.mainParamDecl
 /-- info: 'SpecLab.DivModCore.divisionDecl' does not depend on any axioms -/
@@ -563,6 +574,10 @@ open Lean in
 #guard_msgs in #print axioms SpecLab.CnSeed.SwapSampleStreamStatement
 /-- info: 'SpecLab.CnSeed.SwapPlantHealthyClaim' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.CnSeed.SwapPlantHealthyClaim
+/-- info: 'SpecLab.CnSeed.SwapFamilyStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.CnSeed.SwapFamilyStatement
+/-- info: 'SpecLab.CnSeed.swap_sample_of_family' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms SpecLab.CnSeed.swap_sample_of_family
 /-- info: 'SpecLab.CnSeed.swapFileOf' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.CnSeed.swapFileOf
 /-- info: 'SpecLab.CnSeed.pairSwapPlantFile' depends on axioms: [propext, Classical.choice, Quot.sound] -/
