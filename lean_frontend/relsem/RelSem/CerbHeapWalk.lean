@@ -49,7 +49,12 @@
 -/
 
 import RelSem.CerbHeapWP
+-- RelSem.Threaded is the SEMANTICS-SIDE homed module since arc-18 C4
+-- (relsemcore/RelSem/Threaded.lean); the reified call spine (`callK`)
+-- it used to re-export from the proof package now comes from
+-- RelSem.PerStepCall explicitly.
 import RelSem.Threaded
+import RelSem.PerStepCall
 -- for `wp_expose`/`wp_side` (the interpretation-generic tactic
 -- pieces the walk macros expand to)
 import RelSem.PerStepTactics

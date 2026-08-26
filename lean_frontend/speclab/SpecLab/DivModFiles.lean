@@ -27,11 +27,22 @@ names.
 import Core_run_aux
 import Driver
 import CerbND
+import RelSem.Threaded
 import SpecLab.DivMod
 import SpecLab.DivModHarness
 import SpecLab.DivModCore
 
 set_option autoImplicit false
+
+-- Arc-18 C4 (R6 homing): the threaded statement vocabulary lives
+-- SEMANTICS-SIDE (relsemcore …/Threaded.lean — the exec-facing
+-- RelSemCore lib of the root package, NOT the proof package). This
+-- `open` brings exactly the three homed statement names; the
+-- statement gates (scripts/check_speclab_statements.sh + the in-build
+-- SpecLabAudit walk) allowlist exactly these — any other proof-layer-rooted
+-- name remains banned. Provenance: the blessed arc-18 charter C4 +
+-- contracts §6 R6 ([USER 2026-08-25] charter blessing).
+open RelSem.Cerb (HarnessRunsToThr specifiedInt initial_driver_state_threaded)
 
 namespace SpecLab
 namespace DivMod
@@ -125,30 +136,23 @@ def divmodI8FileOfStream (s : Stream) : file core_run_annotation :=
       (byteToInt e0) (byteToInt e1) (byteToInt e2) (byteToInt e3)
   | _, _ => divmodI8File 0 1 0 0 0 0
 
-/-! ## The R1 exec statements (fuel opsem only) -/
+/-! ## The R1 exec statements (fuel opsem only)
 
-/-- A `Specified` integer driver value (local spelling — generated
-vocabulary only). -/
-def specifiedInt (n : Int) : value :=
-  Vloaded (LVspecified (OVinteger (CerbMem.integerIval n)))
-
-/-- THE EXEC HEADLINE SHAPE: every outcome the production runner
-enumerates for the driver run of `f` (the Main.lean entry: `drive`
-with the default `["cmdname"]` args on the default filesystem) is
-`Active` with the given `Specified` verdict.
-DELIBERATE DIVERGENCE from Main.lean (audit-1 MINOR-1): Main.lean:866
-drives with the ambient `CerbTags.tagDefs ()` where this statement
-passes `f.tagDefs` — the self-contained form is better statement
-material (no ambient state in the Prop); behaviorally validated at
-every pinned instance by the gate exes against both real pipelines. -/
-def HarnessRunsTo (f : file core_run_annotation) (verdict : Int) : Prop :=
-  ∀ (out : nd_status driver_result driver_error driver_state)
-    (tr : List String) (st' : driver_state),
-    (out, tr, st') ∈
-      CerbND.runND (drive f.tagDefs false f ["cmdname"])
-        (initial_driver_state f CerbFS.fs_initial_state) →
-    ∃ r : driver_result, out = Active r ∧
-      r.dres_core_value = specifiedInt verdict
+    THREADED at arc-18 C4: the exec headline shape is the homed
+    whole-program face `HarnessRunsToThr`
+    (relsemcore …/Threaded.lean — the ambient `HarnessRunsTo`
+    that lived here, arc-15 S1..arc-18 C3b, is REPLACED, not aliased:
+    an alias would re-import the ambient initial state's
+    `runEffectful` cone, which this threading removes). `specifiedInt`
+    moved with it (one definition, one home). Every statement takes
+    the fresh-symbol supply SEED as an explicit parameter — the
+    ambient originals are the images at the ambient draw
+    (`initial_driver_state_eq_threaded_ambient`). The statements
+    deliberately do NOT ∀-quantify the seed: unrestricted ∀-seed
+    claims are false for some program shapes (the arc-16 S4 T4
+    hash-collision finding), and these statements' healthy faces are
+    executable-validated, not yet kernel-proved — ∀-seed closure
+    arrives only with proof (the family-∀ upgrades). -/
 
 /-- The R1 sample set (the finite explicit set the S1 kernel
 statements quantify over — LABEL: this is quantification over FOUR
@@ -158,26 +162,27 @@ second byte). -/
 def sampleSet : List Input :=
   [⟨7, 2⟩, ⟨-5, 3⟩, ⟨-6, 3⟩, ⟨-128, -1⟩]
 
-/-- THE R1 MODEL-∀ STATEMENT (finite sample form): for every model
-input in the explicit sample set, the healthy harness instance runs
-to verdict 0. -/
-def DivModI8SampleStatement : Prop :=
-  ∀ m ∈ sampleSet, HarnessRunsTo (divmodI8FileOf m) 0
+/-- THE R1 MODEL-∀ STATEMENT (finite sample form, seed-parametric):
+for every model input in the explicit sample set, the healthy harness
+instance runs to verdict 0 from the seed's initial state. -/
+def DivModI8SampleStatement (seed : Nat) : Prop :=
+  ∀ m ∈ sampleSet, HarnessRunsToThr seed (divmodI8FileOf m) 0
 
 /-- The sample streams (the stream-∀ face's index set). -/
 def sampleStreams : List Stream := sampleSet.map encodeInputI8
 
-/-- THE R1 STREAM-∀ STATEMENT (finite sample form): for every choice
-stream in the explicit sample-stream set, the harness instance built
-FROM THE STREAM runs to verdict 0. -/
-def DivModI8SampleStreamStatement : Prop :=
-  ∀ s ∈ sampleStreams, HarnessRunsTo (divmodI8FileOfStream s) 0
+/-- THE R1 STREAM-∀ STATEMENT (finite sample form, seed-parametric):
+for every choice stream in the explicit sample-stream set, the
+harness instance built FROM THE STREAM runs to verdict 0. -/
+def DivModI8SampleStreamStatement (seed : Nat) : Prop :=
+  ∀ s ∈ sampleStreams, HarnessRunsToThr seed (divmodI8FileOfStream s) 0
 
 /-- The plant's healthy-shaped claim — the statement the plant must
-REFUTE (its refutation face is `HarnessRunsTo divmodI8PlantFile 1`:
-the mismatch-index comparator names the diverging byte). -/
-def DivModI8PlantHealthyClaim : Prop :=
-  HarnessRunsTo divmodI8PlantFile 0
+REFUTE (its refutation face is `HarnessRunsToThr seed
+divmodI8PlantFile 1`: the mismatch-index comparator names the
+diverging byte). -/
+def DivModI8PlantHealthyClaim (seed : Nat) : Prop :=
+  HarnessRunsToThr seed divmodI8PlantFile 0
 
 /-! ## The file-level bridge (kernel-checked): the stream face and
     the model face build THE SAME program -/
@@ -195,9 +200,9 @@ theorem fileOfStream_encode (m : Input) (h : WfI8 m) :
     List.cons_append, List.nil_append, divmodI8FileOf]
 
 /-- THE R1 SAMPLE BRIDGE (kernel-checked): the model-∀ and stream-∀
-sample statements are interderivable. -/
-theorem sample_model_iff_stream :
-    DivModI8SampleStatement ↔ DivModI8SampleStreamStatement := by
+sample statements are interderivable (at every seed). -/
+theorem sample_model_iff_stream (seed : Nat) :
+    DivModI8SampleStatement seed ↔ DivModI8SampleStreamStatement seed := by
   constructor
   · intro hm s hs
     unfold sampleStreams at hs

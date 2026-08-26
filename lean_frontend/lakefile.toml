@@ -166,7 +166,7 @@ roots = [
 [[lean_lib]]
 name = "RelSemCore"
 srcDir = "relsemcore"
-roots = ["RelSem.Call", "RelSem.Machine", "RelSem.RunND", "RelSem.ExecModel", "RelSem.Cerberus"]
+roots = ["RelSem.Call", "RelSem.Machine", "RelSem.RunND", "RelSem.ExecModel", "RelSem.Cerberus", "RelSem.Threaded"]
 
 [[lean_exe]]
 name = "cerberus-lean"

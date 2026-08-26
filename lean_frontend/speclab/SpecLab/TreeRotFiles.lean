@@ -36,10 +36,16 @@ import CerbND
 import SpecLab.TreeRot
 import SpecLab.TreeRotHarness
 import SpecLab.TreeRotCore
+import RelSem.Threaded
 import SpecLab.DivModFiles
 import SpecLab.ListAppendFiles
 
 set_option autoImplicit false
+
+-- Arc-18 C4 (R6 homing): the homed threaded statement vocabulary —
+-- exactly these names are gate-allowlisted (see SpecLab/DivModFiles.lean).
+open RelSem.Cerb (HarnessRunsToThr specifiedInt initial_driver_state_threaded)
+
 
 namespace SpecLab
 namespace TreeRot
@@ -252,15 +258,15 @@ through the walker equals `rotateAt tree path` (full-tree readback
 equality: the S4-E1 experiment's Way 1, THE statement form), with the
 untouched remainder checked byte-for-byte through the same
 observation. -/
-def RotateSampleStatement : Prop :=
-  ∀ m ∈ sampleSet, DivMod.HarnessRunsTo (rotateFileOf m) 0
+def RotateSampleStatement (seed : Nat) : Prop :=
+  ∀ m ∈ sampleSet, HarnessRunsToThr seed (rotateFileOf m) 0
 
 /-- The sample streams (full tree-and-path codec). -/
 def sampleStreams : List Stream := sampleSet.map encodeInput
 
 /-- THE R4 STREAM-∀ STATEMENT (finite sample form). -/
-def RotateSampleStreamStatement : Prop :=
-  ∀ s ∈ sampleStreams, DivMod.HarnessRunsTo (rotateFileOfStream s) 0
+def RotateSampleStreamStatement (seed : Nat) : Prop :=
+  ∀ s ∈ sampleStreams, HarnessRunsToThr seed (rotateFileOfStream s) 0
 
 /-- THE POINTER-SELECTION STATEMENT FAMILY (the S3 prototype,
 promoted): the pinned instances at FURTHER paths — the root rotation
@@ -269,8 +275,8 @@ verdict 0. Verbatim-pinned file list (the S2-E4 floor for 1-2
 instance targets); together with the parametric family's in-stream
 path, the path dimension is statement-level data, not harness
 configuration. -/
-def RotatePathSampleStatement : Prop :=
-  ∀ f ∈ [rotateRootFile, rotateDeepFile], DivMod.HarnessRunsTo f 0
+def RotatePathSampleStatement (seed : Nat) : Prop :=
+  ∀ f ∈ [rotateRootFile, rotateDeepFile], HarnessRunsToThr seed f 0
 
 /-- THE BUILDER-CORRECTNESS OBLIGATION, stated (the build-only
 harness — builder then walker, NO call — runs to verdict 0: the heap
@@ -279,19 +285,19 @@ encoded model, `expected = choices`; the pure mirror is `decodeInput`
 itself, the free-generator reading). Proof parked with the
 exec-equation campaign per the S1-S3 pattern — statement side
 complete; the gate exe checks it executably. -/
-def BuildOnlyStatement : Prop :=
-  DivMod.HarnessRunsTo rotateBuildFile 0
+def BuildOnlyStatement (seed : Nat) : Prop :=
+  HarnessRunsToThr seed rotateBuildFile 0
 
 /-- The wrong-child-swap plant's healthy-shaped claim — refuted by
 `HarnessRunsTo swapPlantFile 7` (the locus val's first wire byte). -/
-def SwapPlantHealthyClaim : Prop :=
-  DivMod.HarnessRunsTo swapPlantFile 0
+def SwapPlantHealthyClaim (seed : Nat) : Prop :=
+  HarnessRunsToThr seed swapPlantFile 0
 
 /-- The dropped-subtree plant's healthy-shaped claim — refuted by
 `HarnessRunsTo dropPlantFile 255` (structural breaks land in the
 length arm). -/
-def DropPlantHealthyClaim : Prop :=
-  DivMod.HarnessRunsTo dropPlantFile 0
+def DropPlantHealthyClaim (seed : Nat) : Prop :=
+  HarnessRunsToThr seed dropPlantFile 0
 
 /-! ## The leak conjunct (the R3 observable, reused verbatim) -/
 
@@ -299,33 +305,33 @@ def DropPlantHealthyClaim : Prop :=
 healthy pinned instance's final allocation map is exactly the driver
 baseline — rotation is allocation-neutral (`rotateAt_size` is the
 pure face) and the harness owns no heap. -/
-def RotateSampleLeakStatement : Prop :=
+def RotateSampleLeakStatement (seed : Nat) : Prop :=
   ∀ m ∈ sampleSet,
-    ListAppend.HarnessFinalAllocs (rotateFileOf m) ListAppend.driverBaseline
+    ListAppend.HarnessFinalAllocs seed (rotateFileOf m) ListAppend.driverBaseline
 
 /-- The path instances' leak conjunct. -/
-def RotatePathSampleLeakStatement : Prop :=
+def RotatePathSampleLeakStatement (seed : Nat) : Prop :=
   ∀ f ∈ [rotateRootFile, rotateDeepFile],
-    ListAppend.HarnessFinalAllocs f ListAppend.driverBaseline
+    ListAppend.HarnessFinalAllocs seed f ListAppend.driverBaseline
 
 /-- The build-only instance's leak conjunct. -/
-def BuildOnlyLeakStatement : Prop :=
-  ListAppend.HarnessFinalAllocs rotateBuildFile ListAppend.driverBaseline
+def BuildOnlyLeakStatement (seed : Nat) : Prop :=
+  ListAppend.HarnessFinalAllocs seed rotateBuildFile ListAppend.driverBaseline
 
 /-- The wrong-child-swap plant's leak face: BASELINE — a broken
 target that leaks nothing (all nodes stay reachable;
 `swapPlant_size`). The observable separates the two plant classes:
 content break (swap, leak-free) vs structural break (drop, +1). -/
-def SwapPlantLeakStatement : Prop :=
-  ListAppend.HarnessFinalAllocs swapPlantFile ListAppend.driverBaseline
+def SwapPlantLeakStatement (seed : Nat) : Prop :=
+  ListAppend.HarnessFinalAllocs seed swapPlantFile ListAppend.driverBaseline
 
 /-- The dropped-subtree plant's leak face — the orphaned middle
 subtree (exactly 1 node at the pinned instance: `orphanedAt` = 1,
 `dropPlant_size`) survives teardown: final size = baseline + 1.
 Stating the EXACT leaked count keeps the observable
 differential-grade. -/
-def DropPlantLeakClaim : Prop :=
-  ListAppend.HarnessFinalAllocs dropPlantFile
+def DropPlantLeakClaim (seed : Nat) : Prop :=
+  ListAppend.HarnessFinalAllocs seed dropPlantFile
     (ListAppend.driverBaseline + 1)
 
 /-! ## The file-level bridge (kernel-checked): the stream face and
@@ -342,8 +348,8 @@ theorem rotateFileOfStream_encode (m : Input) (h : Wf m) :
 
 /-- THE R4 SAMPLE BRIDGE (kernel-checked): the model-∀ and stream-∀
 sample statements are interderivable. -/
-theorem rotate_sample_model_iff_stream :
-    RotateSampleStatement ↔ RotateSampleStreamStatement := by
+theorem rotate_sample_model_iff_stream (seed : Nat) :
+    RotateSampleStatement seed ↔ RotateSampleStreamStatement seed := by
   constructor
   · intro hm s hs
     unfold sampleStreams at hs

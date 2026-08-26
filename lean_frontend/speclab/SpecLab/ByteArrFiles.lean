@@ -27,9 +27,15 @@ import CerbND
 import SpecLab.ByteArr
 import SpecLab.ByteArrHarness
 import SpecLab.ByteArrCore
+import RelSem.Threaded
 import SpecLab.DivModFiles
 
 set_option autoImplicit false
+
+-- Arc-18 C4 (R6 homing): the homed threaded statement vocabulary —
+-- exactly these names are gate-allowlisted (see SpecLab/DivModFiles.lean).
+open RelSem.Cerb (HarnessRunsToThr specifiedInt initial_driver_state_threaded)
+
 
 namespace SpecLab
 namespace ByteArr
@@ -152,31 +158,31 @@ def memcpySampleSet : List (List UInt8) :=
 /-- THE R2 memcpy MODEL-∀ STATEMENT (finite sample form): every
 healthy pinned instance runs to verdict 0 — dst' = src' = the choice
 bytes, verbatim through the compiled copy loop. -/
-def MemcpySampleStatement : Prop :=
-  ∀ bs ∈ memcpySampleSet, DivMod.HarnessRunsTo (memcpyFileOf bs) 0
+def MemcpySampleStatement (seed : Nat) : Prop :=
+  ∀ bs ∈ memcpySampleSet, HarnessRunsToThr seed (memcpyFileOf bs) 0
 
 /-- The sample streams (full codec: u16le prefix + bytes). -/
 def memcpySampleStreams : List Stream := memcpySampleSet.map encodeInput
 
 /-- THE R2 memcpy STREAM-∀ STATEMENT (finite sample form). -/
-def MemcpySampleStreamStatement : Prop :=
+def MemcpySampleStreamStatement (seed : Nat) : Prop :=
   ∀ s ∈ memcpySampleStreams,
-    DivMod.HarnessRunsTo (memcpyFileOfStream s) 0
+    HarnessRunsToThr seed (memcpyFileOfStream s) 0
 
 /-- The memcpy plant's healthy-shaped claim — refuted by
 `HarnessRunsTo memcpyPlantFile 3` (the mismatch-index comparator
 names dst byte 0). -/
-def MemcpyPlantHealthyClaim : Prop :=
-  DivMod.HarnessRunsTo memcpyPlantFile 0
+def MemcpyPlantHealthyClaim (seed : Nat) : Prop :=
+  HarnessRunsToThr seed memcpyPlantFile 0
 
 /-- THE R2 getarr STATEMENT (verbatim-pinned instance pair). -/
-def GetarrSampleStatement : Prop :=
-  ∀ f ∈ [getarrFileA, getarrFileB], DivMod.HarnessRunsTo f 0
+def GetarrSampleStatement (seed : Nat) : Prop :=
+  ∀ f ∈ [getarrFileA, getarrFileB], HarnessRunsToThr seed f 0
 
 /-- The getarr plant's healthy-shaped claim — refuted by
 `HarnessRunsTo getarrPlantFile 1`. -/
-def GetarrPlantHealthyClaim : Prop :=
-  DivMod.HarnessRunsTo getarrPlantFile 0
+def GetarrPlantHealthyClaim (seed : Nat) : Prop :=
+  HarnessRunsToThr seed getarrPlantFile 0
 
 /-! ## The file-level bridge (kernel-checked): the stream face and the
     model face build THE SAME program — through the FULL byte-blaster
@@ -195,8 +201,8 @@ theorem memcpyFileOfStream_encode (bs : List UInt8)
 
 /-- THE R2 SAMPLE BRIDGE (kernel-checked): the model-∀ and stream-∀
 sample statements are interderivable. -/
-theorem memcpy_sample_model_iff_stream :
-    MemcpySampleStatement ↔ MemcpySampleStreamStatement := by
+theorem memcpy_sample_model_iff_stream (seed : Nat) :
+    MemcpySampleStatement seed ↔ MemcpySampleStreamStatement seed := by
   constructor
   · intro hm s hs
     unfold memcpySampleStreams at hs

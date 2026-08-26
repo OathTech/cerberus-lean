@@ -45,9 +45,15 @@ import CerbND
 import SpecLab.ListAppend
 import SpecLab.ListAppendHarness
 import SpecLab.ListAppendCore
+import RelSem.Threaded
 import SpecLab.DivModFiles
 
 set_option autoImplicit false
+
+-- Arc-18 C4 (R6 homing): the homed threaded statement vocabulary —
+-- exactly these names are gate-allowlisted (see SpecLab/DivModFiles.lean).
+open RelSem.Cerb (HarnessRunsToThr specifiedInt initial_driver_state_threaded)
+
 
 namespace SpecLab
 namespace ListAppend
@@ -201,15 +207,15 @@ pinned instance runs to verdict 0 — the post-state list read back
 through the walker equals `xs ++ ys` (the CN `L3 == append(L1, L2)`,
 observed), with the frame content checked byte-for-byte through the
 same observation. -/
-def AppendSampleStatement : Prop :=
-  ∀ m ∈ sampleSet, DivMod.HarnessRunsTo (appendFileOf m) 0
+def AppendSampleStatement (seed : Nat) : Prop :=
+  ∀ m ∈ sampleSet, HarnessRunsToThr seed (appendFileOf m) 0
 
 /-- The sample streams (full two-list codec). -/
 def sampleStreams : List Stream := sampleSet.map encodeInput
 
 /-- THE R3 STREAM-∀ STATEMENT (finite sample form). -/
-def AppendSampleStreamStatement : Prop :=
-  ∀ s ∈ sampleStreams, DivMod.HarnessRunsTo (appendFileOfStream s) 0
+def AppendSampleStreamStatement (seed : Nat) : Prop :=
+  ∀ s ∈ sampleStreams, HarnessRunsToThr seed (appendFileOfStream s) 0
 
 /-- THE BUILDER-CORRECTNESS STATEMENT (pinned instance): the
 build-only harness — builder then walker, NO call — runs to verdict
@@ -219,19 +225,19 @@ what the builder constructs is `decodeInput` itself (the
 free-generator reading); this statement is the exec-level face of
 that correspondence. Proof parked with the exec-equation campaign
 (S1-P1); the gate exe checks it executably. -/
-def BuildOnlyStatement : Prop :=
-  DivMod.HarnessRunsTo appendBuildFile 0
+def BuildOnlyStatement (seed : Nat) : Prop :=
+  HarnessRunsToThr seed appendBuildFile 0
 
 /-- The wrong-link plant's healthy-shaped claim — refuted by
 `HarnessRunsTo appendLinkPlantFile 255` (structural breaks land in
 the length arm). -/
-def AppendLinkPlantHealthyClaim : Prop :=
-  DivMod.HarnessRunsTo appendLinkPlantFile 0
+def AppendLinkPlantHealthyClaim (seed : Nat) : Prop :=
+  HarnessRunsToThr seed appendLinkPlantFile 0
 
 /-- The wrong-element plant's healthy-shaped claim — refuted by
 `HarnessRunsTo appendElemPlantFile 3` (element 0's low wire byte). -/
-def AppendElemPlantHealthyClaim : Prop :=
-  DivMod.HarnessRunsTo appendElemPlantFile 0
+def AppendElemPlantHealthyClaim (seed : Nat) : Prop :=
+  HarnessRunsToThr seed appendElemPlantFile 0
 
 /-! ## THE LEAK CONJUNCT (exec-level, live this rung) -/
 
@@ -240,12 +246,13 @@ production runner leaves exactly `n` allocations in the final
 memory state's allocation map. A single scalar fact about the final
 state — no contents/shape vocabulary (the template note's sanctioned
 leak form). -/
-def HarnessFinalAllocs (f : file core_run_annotation) (n : Nat) : Prop :=
+def HarnessFinalAllocs (seed : Nat) (f : file core_run_annotation)
+    (n : Nat) : Prop :=
   ∀ (out : nd_status driver_result driver_error driver_state)
     (tr : List String) (st' : driver_state),
     (out, tr, st') ∈
       CerbND.runND (drive f.tagDefs false f ["cmdname"])
-        (initial_driver_state f CerbFS.fs_initial_state) →
+        (initial_driver_state_threaded seed f CerbFS.fs_initial_state) →
     st'.layout_state.allocations.size = n
 
 /-- The driver's own baseline, DISCOVERED EXECUTABLY at S3 and pinned
@@ -262,19 +269,19 @@ def driverBaseline : Nat := 1
 healthy pinned instance's final allocation map is exactly the driver
 baseline — the harness owns no heap; interpreter-only leak-freedom
 (the [USER 2026-08-22] teardown conjunct, live). -/
-def AppendSampleLeakStatement : Prop :=
-  ∀ m ∈ sampleSet, HarnessFinalAllocs (appendFileOf m) driverBaseline
+def AppendSampleLeakStatement (seed : Nat) : Prop :=
+  ∀ m ∈ sampleSet, HarnessFinalAllocs seed (appendFileOf m) driverBaseline
 
 /-- The build-only instance's leak conjunct. -/
-def BuildOnlyLeakStatement : Prop :=
-  HarnessFinalAllocs appendBuildFile driverBaseline
+def BuildOnlyLeakStatement (seed : Nat) : Prop :=
+  HarnessFinalAllocs seed appendBuildFile driverBaseline
 
 /-- The wrong-link plant's leak face — the orphaned xs tail (1 node
 at the pinned instance) survives teardown: final size = baseline +
 1. Stating the EXACT leaked count (not mere disequality) keeps the
 observable differential-grade. -/
-def LinkPlantLeakClaim : Prop :=
-  HarnessFinalAllocs appendLinkPlantFile (driverBaseline + 1)
+def LinkPlantLeakClaim (seed : Nat) : Prop :=
+  HarnessFinalAllocs seed appendLinkPlantFile (driverBaseline + 1)
 
 /-! ## The file-level bridge (kernel-checked): the stream face and
     the model face build THE SAME program — through the full two-list
@@ -290,8 +297,8 @@ theorem appendFileOfStream_encode (m : Input) (h : Wf m) :
 
 /-- THE R3 SAMPLE BRIDGE (kernel-checked): the model-∀ and stream-∀
 sample statements are interderivable. -/
-theorem append_sample_model_iff_stream :
-    AppendSampleStatement ↔ AppendSampleStreamStatement := by
+theorem append_sample_model_iff_stream (seed : Nat) :
+    AppendSampleStatement seed ↔ AppendSampleStreamStatement seed := by
   constructor
   · intro hm s hs
     unfold sampleStreams at hs

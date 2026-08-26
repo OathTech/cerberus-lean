@@ -199,10 +199,12 @@ shared), per-fixture wrappers, and T4's guarded `T4SeedApart` face.
   (whole-program, primary) and `CallHarnessAdequateThr` (the labeled
   function-call slate idiom) — with UBFree/Outcomes as derived forms
   and ambient faces deleted or inverted to labeled corollaries.
-- **CONVENTION-ONLY residue**: the Thr faces live in the PROOF
+- **CONVENTION-ONLY residue**: ~~the Thr faces live in the PROOF
   package although they are statement vocabulary — the one-way
   semantics→verification seam therefore blocks speclab from using
-  them (→ R6); `T4ThreadedStatement` is landed but absent from the
+  them~~ (R6 CLOSED at C4: the faces are semantics-side, speclab
+  quotes them — the 46 statements + 15 lemmas are threaded and
+  trio-clean); `T4ThreadedStatement` is landed but absent from the
   statement gate's slate list (→ R5).
 
 ## 6. REGISTER: contracts enforced only by convention (work items)
@@ -217,7 +219,7 @@ closes it (per the blessed charter's slice plan).
 | R3 | Engine-to-law rule + engine-size down-pressure: RoundEval stays a thin law-applier; semantic mechanism firing twice becomes a registered law | C1 (decomposition + registry dispatch); watched-metric row maintained from C1, summarized C6 |
 | R4 | Registry as the law interface: law applicability determined by registry key, not hardcoded dispatch; unique-rule-per-goal-form; frontier-tag/trace-schema fields machine-readable | C1 |
 | R5 | Statement-gate completeness: every landed statement face is on the slate list (`T4ThreadedStatement` currently absent, annotated as parked) | C3 attempted, REMAINS OPEN (the T4 theorem did not complete: the anon-env fence-over-materialized route re-measured failing under the C3 engine; the adjudicated route is the T5 builder architecture — `docs/2026-08-25_arc18-c3-theorems.md` §4). Closes when the T4 theorem lands |
-| R6 | Statement-face homing: threaded faces defined semantics-side (MOVE, not mirror — the mirror doctrine forbids a duplicated initial-state def) | C4 |
+| R6 | Statement-face homing: threaded faces defined semantics-side (MOVE, not mirror — the mirror doctrine forbids a duplicated initial-state def) | **CLOSED at C4** (2026-08-26) — `RelSem.Threaded` MOVED to `relsemcore/RelSem/Threaded.lean` (root package, RelSemCore lib; module name and every declaration name stable; the proof package imports it); the whole-program primary face `HarnessRunsToThr` + `specifiedInt` homed beside the call faces; speclab statements quote them across the one-way seam under exact-name gate allowlists (SpecLabAudit `slAllowedSemanticsSide` + the check_speclab_statements.sh two-line-form carve-out). Record: `docs/2026-08-26_arc18-c4-statement-homing.md` |
 
 ## 7. RETIREMENT REGISTER (the C-series freeze addendum)
 

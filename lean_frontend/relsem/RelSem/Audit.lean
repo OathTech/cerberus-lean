@@ -1349,6 +1349,13 @@ open Lean in
 -- [builder-gated changes]). 5281 → 5292 (arc-18 C3b cont.: the six
 -- memRW read-over-update laws [Kit/Mem] + their auxiliaries +
 -- projBaseHead [Classify]; boundary-clean, no cone movement).
+-- 6772 → 6774 (arc-18 C4: the R6 STATEMENT HOMING — RelSem.Threaded
+-- MOVES to the semantics package [relsemcore/RelSem/Threaded.lean;
+-- one definition, one home; this package imports it] and gains the
+-- two homed whole-program statement-vocabulary defs: `specifiedInt`
+-- + `HarnessRunsToThr` [moved/derived from speclab DivModFiles —
+-- the spec-lab statement surface now quotes them across the
+-- one-way seam]; boundary-clean, no cone movement).
 -- 5292 → 6772 (arc-18 C3b cont.: THE T5 EQUATION SUPPLY + FAMILY
 -- join the sweep — T5Walks' five builder drives [e 22 / b 79 /
 -- bx 44+terminal / bfirst 78 / bxzero 43+terminal: round successors,
@@ -1361,7 +1368,7 @@ open Lean in
 -- catch working as designed, record §3 of
 -- docs/2026-08-26_arc18-c3b-t5-landing.md).
 /--
-info: RelSem audit sweep: 6772 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 6774 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do

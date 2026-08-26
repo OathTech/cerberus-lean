@@ -28,10 +28,12 @@ Two layers:
 
   2. CURATED AXIOM PINS: `#guard_msgs in #print axioms` on every S1
      kernel theorem + the pinned program terms + the statement defs.
-     Expected sets: subsets of the classical trio for the pure layer;
-     the trio + `runEffectful` (the declared boundary, entering
-     through the quoted generated `drive` substrate) for anything
-     mentioning the runner — exactly the arc-7 slate discipline.
+     Expected sets: subsets of the classical trio EVERYWHERE — since
+     the arc-18 C4 threading (statements at the seed-parametric
+     `initial_driver_state_threaded`, R6-homed semantics-side) no
+     speclab statement or lemma carries `runEffectful` any more (the
+     S2b-registered prize, delivered; the ambient originals wore the
+     quartet through the quoted ambient initial state).
      Growth (sorryAx above all) fails the build.
 
 House rules: no sorry, no axioms declared here.
@@ -58,6 +60,23 @@ private def slEndsInProp : Expr → Bool
   | _ => false
 
 open Lean in
+/-- THE HOMED STATEMENT VOCABULARY (arc-18 C4, register row R6): the
+threaded initial state + whole-program face live SEMANTICS-SIDE
+(relsemcore/RelSem/Threaded.lean — the exec-facing RelSemCore lib of
+the ROOT package, not the proof package), so speclab statements may
+reach EXACTLY these four `RelSem.Cerb` names. The allowlist is
+exact-name (never root- or prefix-level); allowed constants are still
+WALKED THROUGH (their closures scanned — defense in depth), and every
+other RelSem- or Iris-rooted constant remains a violation.
+Provenance: the blessed arc-18 charter C4 ([USER 2026-08-25]) +
+contracts doc §5 target vocabulary / §6 R6. -/
+def slAllowedSemanticsSide : List Name :=
+  [`RelSem.Cerb.HarnessRunsToThr,
+   `RelSem.Cerb.initial_driver_state_threaded,
+   `RelSem.Cerb.initial_core_run_state_threaded,
+   `RelSem.Cerb.specifiedInt]
+
+open Lean in
 /-- Banned-root constants reachable from `n`'s statement through
 transitive SpecLab-rooted Prop-def unfolding (empty = pass). -/
 def slStmtViolations (env : Environment) (n : Name) :
@@ -73,6 +92,13 @@ def slStmtViolations (env : Environment) (n : Name) :
     if seen.contains c then continue
     seen := seen.insert c
     if c.getRoot == `Iris || c.getRoot == `RelSem then
+      if slAllowedSemanticsSide.contains c then
+        -- homed statement vocabulary: legal, but walk THROUGH it so
+        -- nothing banned can smuggle behind an allowed name
+        match env.find? c with
+        | some (.defnInfo dv) => queue := queue ++ dv.value.getUsedConstants
+        | _ => pure ()
+        continue
       viol := viol.push c
       continue
     if c.getRoot == `SpecLab then
@@ -180,9 +206,10 @@ open Lean in
 /-! ## 2. Curated axiom pins (exact, fail-closed both directions).
     The expected sets were captured VERBATIM from `#print axioms` at
     S1 and are the permanent bar: any growth — sorryAx above all —
-    fails this build. `runEffectful` is the declared boundary axiom
-    (BaseIO bridge), entering exactly where a statement quotes the
-    generated `drive`/`runND` substrate. -/
+    fails this build. Since arc-18 C4 no pin here carries
+    `runEffectful`: the threaded statements quote the seed-parametric
+    initial state, and the boundary axiom's only remaining carriers
+    repo-wide are the ambient relsem family (C5-bound). -/
 
 /-- info: 'SpecLab.Codec.decode_encode_u8' does not depend on any axioms -/
 #guard_msgs in #print axioms SpecLab.Codec.decode_encode_u8
@@ -228,7 +255,7 @@ open Lean in
 #guard_msgs in #print axioms SpecLab.DivMod.decode_encode_inputI8
 /-- info: 'SpecLab.DivMod.fileOfStream_encode' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.DivMod.fileOfStream_encode
-/-- info: 'SpecLab.DivMod.sample_model_iff_stream' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'SpecLab.DivMod.sample_model_iff_stream' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.DivMod.sample_model_iff_stream
 /-- info: 'SpecLab.DivMod.divmodI8File' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.DivMod.divmodI8File
@@ -236,11 +263,11 @@ open Lean in
 #guard_msgs in #print axioms SpecLab.DivMod.divmodI8PlantFile
 /-- info: 'SpecLab.DivMod.divmodI8FileOf' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.DivMod.divmodI8FileOf
-/-- info: 'SpecLab.DivMod.DivModI8SampleStatement' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'SpecLab.DivMod.DivModI8SampleStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.DivMod.DivModI8SampleStatement
-/-- info: 'SpecLab.DivMod.DivModI8SampleStreamStatement' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'SpecLab.DivMod.DivModI8SampleStreamStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.DivMod.DivModI8SampleStreamStatement
-/-- info: 'SpecLab.DivMod.DivModI8PlantHealthyClaim' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'SpecLab.DivMod.DivModI8PlantHealthyClaim' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.DivMod.DivModI8PlantHealthyClaim
 /-- info: 'SpecLab.DivModCore.mainParamDecl' does not depend on any axioms -/
 #guard_msgs in #print axioms SpecLab.DivModCore.mainParamDecl
@@ -249,8 +276,8 @@ open Lean in
 
 /-! ### arc-15 S2 pins (R2 byte-blaster rung; captured verbatim at
     S2 — same discipline: classical-trio subsets for the pure layer,
-    `runEffectful` exactly where a statement quotes the drive
-    substrate, AST terms axiom-free). -/
+    (re-pinned trio at arc-18 C4: the threading removed
+    `runEffectful` from the statement cones), AST terms axiom-free). -/
 
 /-- info: 'SpecLab.Codec.canonical_u8' depends on axioms: [propext] -/
 #guard_msgs in #print axioms SpecLab.Codec.canonical_u8
@@ -288,22 +315,17 @@ open Lean in
 #guard_msgs in #print axioms SpecLab.ByteArr.structured_forall_of_byte_forall
 /-- info: 'SpecLab.ByteArr.memcpyFileOfStream_encode' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.ByteArr.memcpyFileOfStream_encode
-/--
-info: 'SpecLab.ByteArr.memcpy_sample_model_iff_stream' depends on axioms: [propext,
- runEffectful,
- Classical.choice,
- Quot.sound]
--/
+/-- info: 'SpecLab.ByteArr.memcpy_sample_model_iff_stream' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.ByteArr.memcpy_sample_model_iff_stream
-/-- info: 'SpecLab.ByteArr.MemcpySampleStatement' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'SpecLab.ByteArr.MemcpySampleStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.ByteArr.MemcpySampleStatement
-/-- info: 'SpecLab.ByteArr.MemcpySampleStreamStatement' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'SpecLab.ByteArr.MemcpySampleStreamStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.ByteArr.MemcpySampleStreamStatement
-/-- info: 'SpecLab.ByteArr.MemcpyPlantHealthyClaim' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'SpecLab.ByteArr.MemcpyPlantHealthyClaim' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.ByteArr.MemcpyPlantHealthyClaim
-/-- info: 'SpecLab.ByteArr.GetarrSampleStatement' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'SpecLab.ByteArr.GetarrSampleStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.ByteArr.GetarrSampleStatement
-/-- info: 'SpecLab.ByteArr.GetarrPlantHealthyClaim' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'SpecLab.ByteArr.GetarrPlantHealthyClaim' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.ByteArr.GetarrPlantHealthyClaim
 /-- info: 'SpecLab.ByteArr.memcpyI3File' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.ByteArr.memcpyI3File
@@ -326,8 +348,8 @@ info: 'SpecLab.ByteArr.memcpy_sample_model_iff_stream' depends on axioms: [prope
 
 /-! ### arc-15 S3 pins (R3 list rung; captured verbatim at S3 — same
     discipline: classical-trio subsets for the pure layer,
-    `runEffectful` exactly where a statement quotes the drive
-    substrate — the leak statements included, AST terms axiom-free). -/
+    (re-pinned trio at arc-18 C4: the threading removed
+    `runEffectful` from the statement cones) — the leak statements included, AST terms axiom-free). -/
 
 /-- info: 'SpecLab.Codec.decodeElems_encodeElems_of' depends on axioms: [propext] -/
 #guard_msgs in #print axioms SpecLab.Codec.decodeElems_encodeElems_of
@@ -363,45 +385,25 @@ info: 'SpecLab.ByteArr.memcpy_sample_model_iff_stream' depends on axioms: [prope
 #guard_msgs in #print axioms SpecLab.ListAppend.xorOne_ne
 /-- info: 'SpecLab.ListAppend.appendFileOfStream_encode' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.ListAppend.appendFileOfStream_encode
-/--
-info: 'SpecLab.ListAppend.append_sample_model_iff_stream' depends on axioms: [propext,
- runEffectful,
- Classical.choice,
- Quot.sound]
--/
+/-- info: 'SpecLab.ListAppend.append_sample_model_iff_stream' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.ListAppend.append_sample_model_iff_stream
-/-- info: 'SpecLab.ListAppend.AppendSampleStatement' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'SpecLab.ListAppend.AppendSampleStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.ListAppend.AppendSampleStatement
-/--
-info: 'SpecLab.ListAppend.AppendSampleStreamStatement' depends on axioms: [propext,
- runEffectful,
- Classical.choice,
- Quot.sound]
--/
+/-- info: 'SpecLab.ListAppend.AppendSampleStreamStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.ListAppend.AppendSampleStreamStatement
-/-- info: 'SpecLab.ListAppend.BuildOnlyStatement' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'SpecLab.ListAppend.BuildOnlyStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.ListAppend.BuildOnlyStatement
-/--
-info: 'SpecLab.ListAppend.AppendLinkPlantHealthyClaim' depends on axioms: [propext,
- runEffectful,
- Classical.choice,
- Quot.sound]
--/
+/-- info: 'SpecLab.ListAppend.AppendLinkPlantHealthyClaim' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.ListAppend.AppendLinkPlantHealthyClaim
-/--
-info: 'SpecLab.ListAppend.AppendElemPlantHealthyClaim' depends on axioms: [propext,
- runEffectful,
- Classical.choice,
- Quot.sound]
--/
+/-- info: 'SpecLab.ListAppend.AppendElemPlantHealthyClaim' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.ListAppend.AppendElemPlantHealthyClaim
-/-- info: 'SpecLab.ListAppend.HarnessFinalAllocs' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'SpecLab.ListAppend.HarnessFinalAllocs' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.ListAppend.HarnessFinalAllocs
-/-- info: 'SpecLab.ListAppend.AppendSampleLeakStatement' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'SpecLab.ListAppend.AppendSampleLeakStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.ListAppend.AppendSampleLeakStatement
-/-- info: 'SpecLab.ListAppend.BuildOnlyLeakStatement' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'SpecLab.ListAppend.BuildOnlyLeakStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.ListAppend.BuildOnlyLeakStatement
-/-- info: 'SpecLab.ListAppend.LinkPlantLeakClaim' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'SpecLab.ListAppend.LinkPlantLeakClaim' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.ListAppend.LinkPlantLeakClaim
 /-- info: 'SpecLab.ListAppend.appendI12File' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.ListAppend.appendI12File
@@ -426,8 +428,8 @@ info: 'SpecLab.ListAppend.AppendElemPlantHealthyClaim' depends on axioms: [prope
 
 /-! ### arc-15 S4 pins (R4 tree rung; captured verbatim at S4 — same
     discipline: classical-trio subsets for the pure layer,
-    `runEffectful` exactly where a statement quotes the drive
-    substrate — the leak statements included, AST terms axiom-free). -/
+    (re-pinned trio at arc-18 C4: the threading removed
+    `runEffectful` from the statement cones) — the leak statements included, AST terms axiom-free). -/
 
 /-- info: 'SpecLab.TreeRot.decodeTreeF_mono' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.TreeRot.decodeTreeF_mono
@@ -467,34 +469,29 @@ info: 'SpecLab.ListAppend.AppendElemPlantHealthyClaim' depends on axioms: [prope
 #guard_msgs in #print axioms SpecLab.TreeRot.rotateAt_frame
 /-- info: 'SpecLab.TreeRot.rotateFileOfStream_encode' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.TreeRot.rotateFileOfStream_encode
-/--
-info: 'SpecLab.TreeRot.rotate_sample_model_iff_stream' depends on axioms: [propext,
- runEffectful,
- Classical.choice,
- Quot.sound]
--/
+/-- info: 'SpecLab.TreeRot.rotate_sample_model_iff_stream' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.TreeRot.rotate_sample_model_iff_stream
-/-- info: 'SpecLab.TreeRot.RotateSampleStatement' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'SpecLab.TreeRot.RotateSampleStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.TreeRot.RotateSampleStatement
-/-- info: 'SpecLab.TreeRot.RotateSampleStreamStatement' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'SpecLab.TreeRot.RotateSampleStreamStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.TreeRot.RotateSampleStreamStatement
-/-- info: 'SpecLab.TreeRot.RotatePathSampleStatement' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'SpecLab.TreeRot.RotatePathSampleStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.TreeRot.RotatePathSampleStatement
-/-- info: 'SpecLab.TreeRot.BuildOnlyStatement' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'SpecLab.TreeRot.BuildOnlyStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.TreeRot.BuildOnlyStatement
-/-- info: 'SpecLab.TreeRot.SwapPlantHealthyClaim' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'SpecLab.TreeRot.SwapPlantHealthyClaim' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.TreeRot.SwapPlantHealthyClaim
-/-- info: 'SpecLab.TreeRot.DropPlantHealthyClaim' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'SpecLab.TreeRot.DropPlantHealthyClaim' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.TreeRot.DropPlantHealthyClaim
-/-- info: 'SpecLab.TreeRot.RotateSampleLeakStatement' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'SpecLab.TreeRot.RotateSampleLeakStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.TreeRot.RotateSampleLeakStatement
-/-- info: 'SpecLab.TreeRot.RotatePathSampleLeakStatement' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'SpecLab.TreeRot.RotatePathSampleLeakStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.TreeRot.RotatePathSampleLeakStatement
-/-- info: 'SpecLab.TreeRot.BuildOnlyLeakStatement' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'SpecLab.TreeRot.BuildOnlyLeakStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.TreeRot.BuildOnlyLeakStatement
-/-- info: 'SpecLab.TreeRot.SwapPlantLeakStatement' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'SpecLab.TreeRot.SwapPlantLeakStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.TreeRot.SwapPlantLeakStatement
-/-- info: 'SpecLab.TreeRot.DropPlantLeakClaim' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'SpecLab.TreeRot.DropPlantLeakClaim' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.TreeRot.DropPlantLeakClaim
 /-- info: 'SpecLab.TreeRot.rotateI24File' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.TreeRot.rotateI24File
@@ -522,9 +519,10 @@ info: 'SpecLab.TreeRot.rotate_sample_model_iff_stream' depends on axioms: [prope
 #guard_msgs in #print axioms SpecLab.TreeRotCore.swapRotateRightDecl
 
 /-! ### arc-15 S5 pins (R5 CN-seed rung; captured verbatim at S5 —
-    same discipline: classical-trio subsets for the pure layer,
-    + `runEffectful` exactly where a statement quotes the drive
-    substrate, AST terms axiom-free. The S5 novelties: the
+    same discipline: classical-trio subsets for the pure layer
+    (re-pinned trio at arc-18 C4: the threading removed
+    `runEffectful` from the statement cones), AST terms axiom-free.
+    The S5 novelties: the
     Wf-free bridge (full-domain swap model), the kernel-characterized
     plant blind set (`swapPlant_blind_iff`), and the library
     canonicity completions (`canonical_u32le`/`canonical_u64le`). -/
@@ -557,13 +555,13 @@ info: 'SpecLab.TreeRot.rotate_sample_model_iff_stream' depends on axioms: [prope
 #guard_msgs in #print axioms SpecLab.CnSeed.lookup_inRange
 /-- info: 'SpecLab.CnSeed.swapFileOfStream_encode' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.CnSeed.swapFileOfStream_encode
-/-- info: 'SpecLab.CnSeed.swap_sample_model_iff_stream' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'SpecLab.CnSeed.swap_sample_model_iff_stream' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.CnSeed.swap_sample_model_iff_stream
-/-- info: 'SpecLab.CnSeed.SwapSampleStatement' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'SpecLab.CnSeed.SwapSampleStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.CnSeed.SwapSampleStatement
-/-- info: 'SpecLab.CnSeed.SwapSampleStreamStatement' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'SpecLab.CnSeed.SwapSampleStreamStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.CnSeed.SwapSampleStreamStatement
-/-- info: 'SpecLab.CnSeed.SwapPlantHealthyClaim' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
+/-- info: 'SpecLab.CnSeed.SwapPlantHealthyClaim' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.CnSeed.SwapPlantHealthyClaim
 /-- info: 'SpecLab.CnSeed.swapFileOf' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.CnSeed.swapFileOf

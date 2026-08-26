@@ -32,9 +32,15 @@ import CerbND
 import SpecLab.CnSeed
 import SpecLab.CnSeedHarness
 import SpecLab.CnSeedCore
+import RelSem.Threaded
 import SpecLab.DivModFiles
 
 set_option autoImplicit false
+
+-- Arc-18 C4 (R6 homing): the homed threaded statement vocabulary —
+-- exactly these names are gate-allowlisted (see SpecLab/DivModFiles.lean).
+open RelSem.Cerb (HarnessRunsToThr specifiedInt initial_driver_state_threaded)
+
 
 namespace SpecLab
 namespace CnSeed
@@ -158,21 +164,21 @@ def swapSampleSet : List PairInput :=
 /-- THE R5 swap MODEL-∀ STATEMENT (finite sample form): every healthy
 pinned instance runs to verdict 0 — the post-call pair reads back as
 the swapped input, bytes for bytes (the CN ensures, checked). -/
-def SwapSampleStatement : Prop :=
-  ∀ m ∈ swapSampleSet, DivMod.HarnessRunsTo (swapFileOf m) 0
+def SwapSampleStatement (seed : Nat) : Prop :=
+  ∀ m ∈ swapSampleSet, HarnessRunsToThr seed (swapFileOf m) 0
 
 /-- The sample streams (full u64-pair codec). -/
 def swapSampleStreams : List Stream := swapSampleSet.map encodePair
 
 /-- THE R5 swap STREAM-∀ STATEMENT (finite sample form). -/
-def SwapSampleStreamStatement : Prop :=
-  ∀ s ∈ swapSampleStreams, DivMod.HarnessRunsTo (swapFileOfStream s) 0
+def SwapSampleStreamStatement (seed : Nat) : Prop :=
+  ∀ s ∈ swapSampleStreams, HarnessRunsToThr seed (swapFileOfStream s) 0
 
 /-- The swap plant's healthy-shaped claim — refuted by
 `HarnessRunsTo pairSwapPlantFile 9` (the mismatch-index comparator
 naming post-state cell 1's low byte: the lost update). -/
-def SwapPlantHealthyClaim : Prop :=
-  DivMod.HarnessRunsTo pairSwapPlantFile 0
+def SwapPlantHealthyClaim (seed : Nat) : Prop :=
+  HarnessRunsToThr seed pairSwapPlantFile 0
 
 /-! ## The file-level bridge (kernel-checked): the stream face and
     the model face build THE SAME program — Wf-FREE at this rung
@@ -190,8 +196,8 @@ theorem swapFileOfStream_encode (m : PairInput) :
 /-- THE R5 SAMPLE BRIDGE (kernel-checked): the model-∀ and stream-∀
 sample statements are interderivable — with no per-member Wf lemmas
 at all (contrast the S1/S2 bridges). -/
-theorem swap_sample_model_iff_stream :
-    SwapSampleStatement ↔ SwapSampleStreamStatement := by
+theorem swap_sample_model_iff_stream (seed : Nat) :
+    SwapSampleStatement seed ↔ SwapSampleStreamStatement seed := by
   constructor
   · intro hm s hs
     unfold swapSampleStreams at hs
