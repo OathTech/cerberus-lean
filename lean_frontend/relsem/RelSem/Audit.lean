@@ -198,6 +198,8 @@ import RelSem.T3Threaded
 -- + pins (the ∀-seed t6 theorems through the round evaluator).
 import RelSem.T6Probe
 import RelSem.T4Threaded
+import RelSem.T5Walks
+import RelSem.T5Inv
 
 namespace RelSem.Audit
 
@@ -1347,8 +1349,19 @@ open Lean in
 -- [builder-gated changes]). 5281 → 5292 (arc-18 C3b cont.: the six
 -- memRW read-over-update laws [Kit/Mem] + their auxiliaries +
 -- projBaseHead [Classify]; boundary-clean, no cone movement).
+-- 5292 → 6772 (arc-18 C3b cont.: THE T5 EQUATION SUPPLY + FAMILY
+-- join the sweep — T5Walks' five builder drives [e 22 / b 79 /
+-- bx 44+terminal / bfirst 78 / bxzero 43+terminal: round successors,
+-- _app equations, minted facts, chainrel prefixes] + T5Inv [triF,
+-- the St family, alignment rfls, component invariants, memStep/
+-- envStepF layers]; ALL boundary-clean — the initial wiring tripped
+-- the runEffectful no-cone gate [the builders' labeled spelling
+-- routed through the AMBIENT initial_core_run_state] and was
+-- respelled via initial_core_run_state_threaded 0: the acquisition
+-- catch working as designed, record §3 of
+-- docs/2026-08-26_arc18-c3b-t5-landing.md).
 /--
-info: RelSem audit sweep: 5292 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 6772 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do

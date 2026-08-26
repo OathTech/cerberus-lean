@@ -7,7 +7,7 @@
   * `e`  — THE ENTRY: the prologue (create s / store 0 / create i /
     store 0 / save registrations) from the ready builder `mkRdy` with
     the two heap maps FREE (the ∀ bm am form the CerbMemInterp walk
-    rules consume) and free supplies — 21 rounds, `e_chainrel`.
+    rules consume) and free supplies — 22 rounds, `e_chainrel`.
   * `b`  — THE BODY: one full loop iteration from the loop-head
     builder `mkLH` (every varying component a free binder; all
     behavior from the 27-hypothesis pack) through the loop-closing
@@ -99,7 +99,7 @@ def sumBody : generic_expr core_run_annotation Unit sym :=
 def whileBody : generic_expr core_run_annotation Unit sym :=
   match Lem_Maybe.bind0
       (fmapLookupBy (fun (s1 s2 : sym) => ordCompare s1 s2) sumT5Sym
-        (initial_core_run_state
+        (initial_core_run_state_threaded 0
           (collect_labeled_continuations_NEW t5File)).labeled)
       (fmapLookupBy (fun (s1 s2 : sym) => ordCompare s1 s2) symWhile) with
   | some pb => pb.2
@@ -131,7 +131,7 @@ def mkRdy (bm : Std.TreeMap Int CerbMem.AbsByte)
     core_run_state0 :=
       { tid_supply := 1, aid_supply := aid, excluded_supply := exc,
         sym_supply := symc,
-        labeled := (initial_core_run_state
+        labeled := (initial_core_run_state_threaded 0
           (collect_labeled_continuations_NEW t5File)).labeled },
     layout_state :=
       { CerbMem.initialMemState with
@@ -165,7 +165,7 @@ def mkLH (env : Fmap sym value) (mem : CerbMem.MemState)
     core_run_state0 :=
       { tid_supply := 1, aid_supply := aid, excluded_supply := exc,
         sym_supply := symc,
-        labeled := (initial_core_run_state
+        labeled := (initial_core_run_state_threaded 0
           (collect_labeled_continuations_NEW t5File)).labeled },
     layout_state := mem,
     concurrency_state := symInitialState symInitialPre,
@@ -175,7 +175,8 @@ def mkLH (env : Fmap sym value) (mem : CerbMem.MemState)
     blocked := false,
     dr_step_counter := ctr }
 
-/-! ## THE ENTRY WALK (21 rounds; ∀ bm am + free supplies) -/
+
+/-! ## THE ENTRY WALK (22 rounds; ∀ bm am + free supplies) -/
 
 set_option Elab.async false in
 derive_rounds e (bm : Std.TreeMap Int CerbMem.AbsByte)
@@ -186,7 +187,59 @@ derive_rounds e (bm : Std.TreeMap Int CerbMem.AbsByte)
   (hexcB : exc < 1152921504606846976)
   assuming hdig hscB hexcB
   fencing fmapAddBy CerbMem.writeBytesTo Std.TreeMap.insert Std.TreeMap.get? mkByte mk_conv_int mk_call_catch_exceptional_condition mk_wrapI
-  using (t5File.tagDefs) 0 from (mkRdy bm am tr aid exc symc ctr) upto 21 chain builder
+  using (t5File.tagDefs) 0 from (mkRdy bm am tr aid exc symc ctr) upto 22 chain builder
+
+/-! ## The first-iteration loop head (arc-18 C3b, the measured seam):
+    falling INTO `save while_531` leaves iteration 1's loop head at a
+    DIFFERENT SPELLING from the stored continuation every later
+    iteration jumps to (outer annotation hoist + partial forcing) —
+    propositionally distinct states, so iteration 1 gets TWIN walks
+    from its own builder. The arena is the ENTRY WALK'S OWN endpoint
+    arena, projected (fixture-derived, binder-independent program
+    text — never transcribed). -/
+
+/-- Head thread of a driver state (total; the defaults never fire on
+    walk emissions — the alignment rfls in RelSem/T5.lean are the
+    loud check). -/
+def thOf (σ : driver_state) : thread_state :=
+  match σ.core_state0.thread_states with
+  | (_, (_, th)) :: _ => th
+  | [] => thRdy
+
+/-- Iteration 1's loop-head arena: e22's own. -/
+noncomputable def lh1Arena : generic_expr core_run_annotation Unit sym :=
+  (thOf (e22 Std.TreeMap.empty Std.TreeMap.empty [] 0 0 0 0)).arena
+
+/-- The loop-head builder at the ENTRY spelling (iteration 1's body
+    walk + the n = 0 exit walk start here; iterations ≥ 2 and the
+    n ≥ 1 exit start at `mkLH`). -/
+noncomputable def mkLH1 (env : Fmap sym value) (mem : CerbMem.MemState)
+    (tr : List trace_event) (aid exc symc ctr : Nat) : driver_state :=
+  { core_file := t5File,
+    core_extern := create_extern_symmap t5File,
+    core_state0 :=
+      { thread_states := [(0, (none,
+          { arena := lh1Arena,
+            stack0 := Stack_empty,
+            errno := errPtr,
+            current_loc := CerbLocation.Loc.unknown,
+            exec_loc := ELoc_normal
+              [(sumT5Sym, CerbLocation.other "RelSem.callND")],
+            env := [env],
+            current_proc_opt := some sumT5Sym }))],
+        io := initial_io_state },
+    core_run_state0 :=
+      { tid_supply := 1, aid_supply := aid, excluded_supply := exc,
+        sym_supply := symc,
+        labeled := (initial_core_run_state_threaded 0
+          (collect_labeled_continuations_NEW t5File)).labeled },
+    layout_state := mem,
+    concurrency_state := symInitialState symInitialPre,
+    fs_state0 := CerbFS.fs_initial_state,
+    trace := tr,
+    symbolic_assoc := fmapEmpty,
+    blocked := false,
+    dr_step_counter := ctr }
 
 /-! ## THE BODY WALK (79 rounds — one full iteration through the
     loop-closing Erun; the 27-hypothesis pack) -/
@@ -280,5 +333,101 @@ derive_rounds bx (env : Fmap sym value) (mem : CerbMem.MemState)
     hscB hexcB
   fencing fmapAddBy CerbMem.writeBytesTo Std.TreeMap.erase mkByte mk_conv_int mk_call_catch_exceptional_condition mk_wrapI
   using (t5File.tagDefs) 0 from (mkLH env mem tr aid exc symc ctr) upto 80 chain builder
+
+/-! ## THE FIRST-ITERATION BODY WALK (78 rounds — the entry-spelled head runs one round shorter; the mkLH1 twin —
+    round names `bfirst<k>`: the `b1<k>` scheme collides with the b
+    walk's rounds 11+) -/
+
+set_option Elab.async false in
+derive_rounds bfirst (env : Fmap sym value) (mem : CerbMem.MemState)
+  (tr : List trace_event) (aid exc symc ctr : Nat) (n sv iv : Int)
+  (hdig : CerberusFresh.digest () = "")
+  (hbuilt : RelSem.Kit.FmapBuilt RelSem.Kit.symCmpO env)
+  (hlkN : fmapLookupBy (fun (s1 s2 : sym) => ordCompare s1 s2) symN env
+    = some (Vobject (OVpointer nPtr)))
+  (hlkS : fmapLookupBy (fun (s1 s2 : sym) => ordCompare s1 s2) symS env
+    = some (Vobject (OVpointer sPtr)))
+  (hlkI : fmapLookupBy (fun (s1 s2 : sym) => ordCompare s1 s2) symI env
+    = some (Vobject (OVpointer iPtr)))
+  (hdd0 : mem.deadAllocations.contains 0 = false)
+  (hdd2 : mem.deadAllocations.contains 2 = false)
+  (hdd3 : mem.deadAllocations.contains 3 = false)
+  (halN : mem.allocations.get? 0 = some allocN)
+  (halS : mem.allocations.get? 2 = some allocS)
+  (halI : mem.allocations.get? 3 = some allocI)
+  (hfpm : mem.funptrmap = [])
+  (hlum : mem.lastUsedUnionMembers = [])
+  (hrdN : CerbMem.readBytesFrom mem nAddr 4
+    = [mkByte n 0, mkByte n 1, mkByte n 2, mkByte n 3])
+  (hrdS : CerbMem.readBytesFrom mem sAddr 4
+    = [mkByte sv 0, mkByte sv 1, mkByte sv 2, mkByte sv 3])
+  (hrdI : CerbMem.readBytesFrom mem iAddr 4
+    = [mkByte iv 0, mkByte iv 1, mkByte iv 2, mkByte iv 3])
+  (hrecN : CerbMem.reconstructValue [] [] nAddr intCty
+    [mkByte n 0, mkByte n 1, mkByte n 2, mkByte n 3] = mvi n)
+  (hrecS : CerbMem.reconstructValue [] [] sAddr intCty
+    [mkByte sv 0, mkByte sv 1, mkByte sv 2, mkByte sv 3] = mvi sv)
+  (hrecI : CerbMem.reconstructValue [] [] iAddr intCty
+    [mkByte iv 0, mkByte iv 1, mkByte iv 2, mkByte iv 3] = mvi iv)
+  (hi2bS : CerbMem.memValueToBytes [] (mvi (sv + iv))
+    = ([], [mkByte (sv + iv) 0, mkByte (sv + iv) 1,
+            mkByte (sv + iv) 2, mkByte (sv + iv) 3]))
+  (hi2bI : CerbMem.memValueToBytes [] (mvi (iv + 1))
+    = ([], [mkByte (iv + 1) 0, mkByte (iv + 1) 1,
+            mkByte (iv + 1) 2, mkByte (iv + 1) 3]))
+  (hlt : iv < n) (hn1 : n ≤ 100)
+  (hiv0 : 0 ≤ iv) (hsv0 : 0 ≤ sv) (hsv1 : sv ≤ 4950)
+  (hscB : symc < 1152921504606846976)
+  (hexcB : exc < 1152921504606846976)
+  assuming hdig hbuilt hlkN hlkS hlkI hdd0 hdd2 hdd3 halN halS halI hfpm hlum
+    hrdN hrdS hrdI hrecN hrecS hrecI hi2bS hi2bI hlt hn1 hiv0 hsv0 hsv1
+    hscB hexcB
+  fencing fmapAddBy CerbMem.writeBytesTo mkByte mk_conv_int mk_call_catch_exceptional_condition mk_wrapI
+  using (t5File.tagDefs) 0 from (mkLH1 env mem tr aid exc symc ctr) upto 78 chain builder
+
+
+/-! ## THE n = 0 EXIT WALK (the mkLH1 twin; guard false at the
+    entry-spelled loop head; round names `bxzero<k>`) -/
+
+set_option Elab.async false in
+derive_rounds bxzero (env : Fmap sym value) (mem : CerbMem.MemState)
+  (tr : List trace_event) (aid exc symc ctr : Nat) (n sv iv : Int)
+  (hdig : CerberusFresh.digest () = "")
+  (hbuilt : RelSem.Kit.FmapBuilt RelSem.Kit.symCmpO env)
+  (hlkN : fmapLookupBy (fun (s1 s2 : sym) => ordCompare s1 s2) symN env
+    = some (Vobject (OVpointer nPtr)))
+  (hlkS : fmapLookupBy (fun (s1 s2 : sym) => ordCompare s1 s2) symS env
+    = some (Vobject (OVpointer sPtr)))
+  (hlkI : fmapLookupBy (fun (s1 s2 : sym) => ordCompare s1 s2) symI env
+    = some (Vobject (OVpointer iPtr)))
+  (hdd0 : mem.deadAllocations.contains 0 = false)
+  (hdd2 : mem.deadAllocations.contains 2 = false)
+  (hdd3 : mem.deadAllocations.contains 3 = false)
+  (halN : mem.allocations.get? 0 = some allocN)
+  (halS : mem.allocations.get? 2 = some allocS)
+  (halI : mem.allocations.get? 3 = some allocI)
+  (hfpm : mem.funptrmap = [])
+  (hlum : mem.lastUsedUnionMembers = [])
+  (hrdN : CerbMem.readBytesFrom mem nAddr 4
+    = [mkByte n 0, mkByte n 1, mkByte n 2, mkByte n 3])
+  (hrdS : CerbMem.readBytesFrom mem sAddr 4
+    = [mkByte sv 0, mkByte sv 1, mkByte sv 2, mkByte sv 3])
+  (hrdI : CerbMem.readBytesFrom mem iAddr 4
+    = [mkByte iv 0, mkByte iv 1, mkByte iv 2, mkByte iv 3])
+  (hrecN : CerbMem.reconstructValue [] [] nAddr intCty
+    [mkByte n 0, mkByte n 1, mkByte n 2, mkByte n 3] = mvi n)
+  (hrecS : CerbMem.reconstructValue [] [] sAddr intCty
+    [mkByte sv 0, mkByte sv 1, mkByte sv 2, mkByte sv 3] = mvi sv)
+  (hrecI : CerbMem.reconstructValue [] [] iAddr intCty
+    [mkByte iv 0, mkByte iv 1, mkByte iv 2, mkByte iv 3] = mvi iv)
+  (hge : n ≤ iv) (hn0 : 0 ≤ n) (hn1 : n ≤ 100)
+  (hiv0 : 0 ≤ iv) (hiv1 : iv ≤ 100) (hsv0 : 0 ≤ sv) (hsv1 : sv ≤ 4950)
+  (hscB : symc < 1152921504606846976)
+  (hexcB : exc < 1152921504606846976)
+  assuming hdig hbuilt hlkN hlkS hlkI hdd0 hdd2 hdd3 halN halS halI hfpm hlum
+    hrdN hrdS hrdI hrecN hrecS hrecI hge hn0 hn1 hiv0 hiv1 hsv0 hsv1
+    hscB hexcB
+  fencing fmapAddBy CerbMem.writeBytesTo Std.TreeMap.erase mkByte mk_conv_int mk_call_catch_exceptional_condition mk_wrapI
+  using (t5File.tagDefs) 0 from (mkLH1 env mem tr aid exc symc ctr) upto 46 chain builder
 
 end RelSem.T5W
