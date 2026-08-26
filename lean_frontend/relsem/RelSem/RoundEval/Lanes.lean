@@ -168,7 +168,12 @@ private def mintBoolTower (hp : HypPack) (d : Expr) : TermElabM Bool := do
 private def queryLaw? (kind : Name) (goal : Expr)
     (variant : Name := .anonymous) : MetaM (Option Name) := do
   try
+    -- builder drives opt into the fence-robust fallback (arc-18
+    -- C3b — the Core.queryLaw note; measured here: the fenced
+    -- `List.contains` keys as a const where the tree stored the
+    -- `List.elem`-reduced path, so the kill-skip lane's query missed)
     let l ← RelSem.LawRegistry.queryUnique kind goal variant
+      (unifyFallback := ← (builderMode.get : BaseIO _))
     return some l.name
   catch _ => return none
 
@@ -400,6 +405,78 @@ private def mintMemRW (hp : HypPack) (d : Expr) : TermElabM Bool := do
     let pf ← mkExpectedTypeHint (← mkEqRefl rhs) (← mkEq d rhs)
     mintEmit hp d rhs pf "fenced-accessor iota"
     return true
+  -- READ-OVER-UPDATE pass-throughs at the kill shapes (arc-18 C3b):
+  -- get? through a fenced `erase` at ground distinct keys; contains
+  -- through a cons at a ground-apart head — registered memRW laws
+  -- (the exit walk's post-kill s-load, measured round 37).
+  if c == ``Std.TreeMap.get? && args.size ≥ 2 then
+    let m' := args[args.size - 2]!
+    let k'E := args[args.size - 1]!
+    let some k'v ← groundIntLit? k'E | return false
+    if m'.isAppOf ``Std.TreeMap.erase then
+      let ma := m'.getAppArgs
+      if ma.size ≥ 2 then
+        let tE := ma[ma.size - 2]!
+        let kE := ma[ma.size - 1]!
+        let some kv ← groundIntLit? kE | return false
+        if kv ≠ k'v then
+          let neStmt ← mkAppMU ``Ne #[kE, k'E]
+          let some (true, pfNe) ← kernelVerdict neStmt | return false
+          let some law ← queryLaw? `memRW d (variant := `eraseNe)
+            | return false
+          let prf ← mkAppM law #[tE, pfNe]
+          let some (_, _, rhs) := (← inferType prf).eq? | return false
+          let prf' ← mkExpectedTypeHint prf (← mkEq d rhs)
+          mintEmit hp d rhs prf' "get? over erase (kill skip)"
+          return true
+      return false
+    if m'.isAppOf ``Std.TreeMap.insert then
+      let ma := m'.getAppArgs
+      if ma.size ≥ 3 then
+        let tE := ma[ma.size - 3]!
+        let kE := ma[ma.size - 2]!
+        let vE := ma[ma.size - 1]!
+        let some kv ← groundIntLit? kE | return false
+        if kv == k'v then
+          -- HIT: the just-inserted record reads back
+          let some law ← queryLaw? `memRW d (variant := `insertEq)
+            | return false
+          let prf ← mkAppM law #[tE, kE, vE]
+          let some (_, _, rhs) := (← inferType prf).eq? | return false
+          let prf' ← mkExpectedTypeHint prf (← mkEq d rhs)
+          mintEmit hp d rhs prf' "get? over insert (hit)"
+          return true
+        else
+          let neStmt ← mkAppMU ``Ne #[kE, k'E]
+          let some (true, pfNe) ← kernelVerdict neStmt | return false
+          let some law ← queryLaw? `memRW d (variant := `insertNe)
+            | return false
+          let prf ← mkAppM law #[tE, pfNe, vE]
+          let some (_, _, rhs) := (← inferType prf).eq? | return false
+          let prf' ← mkExpectedTypeHint prf (← mkEq d rhs)
+          mintEmit hp d rhs prf' "get? over insert (skip)"
+          return true
+    return false
+  if c == ``List.contains && args.size ≥ 2 then
+    let lE := args[args.size - 2]!
+    let xE := args[args.size - 1]!
+    if lE.isAppOfArity ``List.cons 3 then
+      let aE := lE.getAppArgs[1]!
+      let tlE := lE.getAppArgs[2]!
+      let some av ← groundIntLit? aE | return false
+      let some xv ← groundIntLit? xE | return false
+      if xv ≠ av then
+        let beqStmt ← mkEq (← mkAppM ``BEq.beq #[xE, aE])
+          (mkConst ``Bool.false)
+        let some (true, pfNe) ← kernelVerdict beqStmt | return false
+        let some law ← queryLaw? `memRW d (variant := `containsConsNe)
+          | return false
+        let prf ← mkAppM law #[tlE, pfNe]
+        let some (_, _, rhs) := (← inferType prf).eq? | return false
+        let prf' ← mkExpectedTypeHint prf (← mkEq d rhs)
+        mintEmit hp d rhs prf' "contains over cons (kill skip)"
+        return true
+    return false
   unless c == ``CerbMem.readBytesFrom && args.size == 3 do
     return false
   let m' := args[0]!

@@ -434,10 +434,17 @@ elab "derive_rounds " id:ident bs:bracketedBinder* assum:(roundsAssuming)? fenc:
                 #[some tdE, some fS, some fuelFv, some accE, some tidE,
                   some σN, some thInfoE, some stepsE,
                   some hfuel, some hlook, some hsteps, some hfind]
-              let rhsE ← elabClosed (← `((NDactive (fmapAddBy
+              -- rhs elaborated against the lhs's pair type (see the
+              -- endpoint note below — the phantom-param mvar hazard)
+              let lhsT ← mkDnms fS σN
+              let rhsStx ← `((NDactive (fmapAddBy
                   defaultCompare $tidS $stepsS fmapEmpty),
-                  $(← toStxU σN))))
-              let termTy ← mkEq (← mkDnms fS σN) rhsE
+                  $(← toStxU σN)))
+              let rhsE ← Term.elabTermEnsuringType rhsStx
+                (some (← inferType lhsT))
+              Term.synthesizeSyntheticMVarsNoPostponing
+              let rhsE ← instantiateMVars rhsE
+              let termTy ← mkEq lhsT rhsE
               let term ← mkExpectedTypeHint raw termTy
               match pf? with
               | none => pure (some term)
@@ -452,9 +459,17 @@ elab "derive_rounds " id:ident bs:bracketedBinder* assum:(roundsAssuming)? fenc:
             match terminal with
             | none => mkDnms fuelFv σs[n]!
             | some stepsE =>
+              -- elaborated AGAINST the lhs's pair type (arc-18 C3b:
+              -- a bare elab leaves nd_action's phantom-type params as
+              -- unassigned mvars — measured at the exit walk's
+              -- terminal chainrel)
               let stepsS ← toStxU stepsE
-              elabClosed (← `((NDactive (fmapAddBy defaultCompare
-                $tidS $stepsS fmapEmpty), $(← toStxU σs[n]!)))))
+              let stx ← `((NDactive (fmapAddBy defaultCompare
+                $tidS $stepsS fmapEmpty), $(← toStxU σs[n]!)))
+              let e ← Term.elabTermEnsuringType stx
+                (some (← inferType lhsAll))
+              Term.synthesizeSyntheticMVarsNoPostponing
+              instantiateMVars e)
           trace[RelSem.roundEval] "chain: endpoints built"
           let stmt1 ← withCurrHeartbeats (mkEq lhsAll rhsAll)
           trace[RelSem.roundEval] "chain: stmt built"
@@ -481,6 +496,26 @@ elab "derive_rounds " id:ident bs:bracketedBinder* assum:(roundsAssuming)? fenc:
           throwFrontier m!"derive_rounds: no terminal within \
             {maxRounds} rounds (partial mode requires `upto`)"
       | some stepsE => withCurrHeartbeats do
+        -- BUILDER MODE: the ∀-fuel relative chain (above) is the
+        -- deliverable — the whole-run artifacts' rfl premises cannot
+        -- re-run pack-dependent discoveries at a builder σ0 (arc-18
+        -- C3b, measured at the exit walk's terminal); whole-run
+        -- assembly happens at the theorem layer (iter_compose +
+        -- fuel algebra + the construct laws).
+        if ← builderMode.get then
+          logInfo m!"derive_rounds {baseName}: terminal reached after \
+            {rounds.size} rounds (builder mode: relative terminal \
+            chain emitted; whole-run artifacts are the theorem \
+            layer's)"
+          -- ref + FENCE hygiene before the early return (the fence's
+          -- irreducible statuses are env-global for the drive's
+          -- extent — leaking them would corrupt every later command)
+          activeHypPack.set none
+          builderMode.set false
+          baseFenceHeads.set {}
+          for (c, st) in fenceSaved do
+            setReducibilityStatus c st
+          return
         -- The whole-run chain, the scheduler offer, the driver
         -- iteration (own budget scope, same rationale as per-round).
         let n := rounds.size

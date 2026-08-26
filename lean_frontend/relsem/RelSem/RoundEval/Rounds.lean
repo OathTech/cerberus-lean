@@ -693,8 +693,13 @@ def mintMemRound (declName : Name) (fvars : Array Expr)
     let haddrStmt ← elabClosed (← `((((CerbMem.alignDown
         (($memS).lastAddress - ($szS : Int)).toNat
         (($alignNS : Int).toNat.max 1) : Nat) : Int) = $aS)))
+    -- the projection rewrite's witness: plain rfl at ground states;
+    -- at a fenced builder ladder the elaborator's rfl is blocked and
+    -- the equation routes through the pack machinery (arc-18 C3b —
+    -- measured at the entry walk's create-i over the s-write ladder)
     let haddrPf ← Term.elabTermEnsuringType
-      (← `((by rw [show ($memS).lastAddress = $lastLitS from rfl]; decide)))
+      (← `((by rw [show ($memS).lastAddress = $lastLitS from
+              by first | exact rfl | hyp_norm_side]; decide)))
       haddrStmt
     Term.synthesizeSyntheticMVarsNoPostponing
     let haddrPf ← instantiateMVars haddrPf

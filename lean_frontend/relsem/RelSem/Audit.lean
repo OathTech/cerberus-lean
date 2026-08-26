@@ -937,7 +937,14 @@ open Lean in
 -- lane with omega-discharged range premises — plus the envMap
 -- empty-lookup base case (fmapLookupBy_empty, Kit/Map.lean: the
 -- core_extern wrapper at freshly-drawn symbols under the env fence).
-/-- info: step_law census: 60 laws [advance 4, construct 9, envAlg 3, envMap 4, evalArith 2, evalPull 2, heapWP 4, heapWalk 8, loop 2, memBlock 5, memRW 7, perform 5, roundGlue 3, wpSeq 2] -/
+-- 60 → 66 (arc-18 C3b: the memRW READ-OVER-UPDATE completion the
+-- three T5 walks measured out — writeBytesTo_lastAddress/
+-- writeBytesTo_nextAllocId [the create rounds' supply projections
+-- over open-map ladders], tm_get?_insert_eq/tm_get?_insert_skip
+-- [post-create allocation-table reads], tm_get?_erase_ne/
+-- list_contains_cons_ne [post-kill reads]; all Kit/Mem,
+-- fixture-free).
+/-- info: step_law census: 66 laws [advance 4, construct 9, envAlg 3, envMap 4, evalArith 2, evalPull 2, heapWP 4, heapWalk 8, loop 2, memBlock 5, memRW 13, perform 5, roundGlue 3, wpSeq 2] -/
 #guard_msgs in #step_law_census
 /-- info: 'RelSem.T1.round6' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.round6
@@ -1337,9 +1344,11 @@ open Lean in
 -- [THE PROJECTION-NORMALIZATION HOP], Rounds.classifyUsedHypNorm
 -- [glue-first flag]; meta code only, all boundary-clean, no cone
 -- movement — the committed T4/T6 drives re-elaborate byte-identically
--- [builder-gated changes]).
+-- [builder-gated changes]). 5281 → 5292 (arc-18 C3b cont.: the six
+-- memRW read-over-update laws [Kit/Mem] + their auxiliaries +
+-- projBaseHead [Classify]; boundary-clean, no cone movement).
 /--
-info: RelSem audit sweep: 5281 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 5292 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do

@@ -76,11 +76,20 @@ partial def collectMintCands (root : Expr) :
               || c == ``pull_constrained
               || c == ``pull_constrained_lemFuel
               || c == ``CerbMem.readBytesFrom
+              -- the kill-skip lanes' heads (arc-18 C3b: get?-over-
+              -- erase / contains-over-cons; both heads are typically
+              -- pack-fenced, so stuck occurrences stay law-shaped)
+              || c == ``Std.TreeMap.get?
+              || c == ``List.contains
               || c == ``CerbMem.MemState.allocations
               || c == ``CerbMem.MemState.deadAllocations
               || c == ``CerbMem.MemState.funptrmap
               || c == ``CerbMem.MemState.lastUsedUnionMembers
               || c == ``CerbMem.MemState.bytemap
+              -- the create rounds' supply projections over open-map
+              -- ladders (arc-18 C3b)
+              || c == ``CerbMem.MemState.lastAddress
+              || c == ``CerbMem.MemState.nextAllocId
               || isMatcherAppCore env e || recLikeHead env c then
             out.modify (·.push e)
     | .lam _ t b _ => go t; go b
@@ -98,6 +107,16 @@ partial def collectMintCands (root : Expr) :
     | _ => pure ()
   go root
   out.get
+
+/-- The leftmost head constant under projection/app/mdata spines
+    (arc-18 C3b: the dig's fence guard must see through `.proj`
+    chains — a ladder projection's base can itself be a projection). -/
+partial def projBaseHead : Expr → Option Name
+  | .const c _ => some c
+  | .app f _ => projBaseHead f
+  | .proj _ _ b => projBaseHead b
+  | .mdata _ b => projBaseHead b
+  | _ => none
 
 /-- THE `.all` DIG (arc-17 S3 — the anon-env unlock): smart
     unfolding refuses to unfold a definition whose internal match is
@@ -131,13 +150,36 @@ def digStuck (e : Expr) : MetaM (Option Expr) := do
       if let some (.ctorInfo _) := env.find? c then return none
       unless e.isApp do return none
       return some c
-    | .proj .. =>
+    | .proj _ _ b =>
       -- projection-headed redexes (WF-aux `._f` partial-application
-      -- projections — measured at the round-23 wall) dig too
+      -- projections — measured at the round-23 wall) dig too —
+      -- EXCEPT over a fenced head anywhere down the base spine
+      -- (arc-18 C3b: `.proj MemState i (writeBytesTo …)` dug the
+      -- ladder open layer by layer into a maxRecDepth blowup at the
+      -- entry walk's create-i; the memRW projection lane owns those)
+      if let some bh := projBaseHead b then
+        if (← (baseFenceHeads.get : BaseIO _)).contains bh then
+          trace[RelSem.roundEval] "dig: refused _proj over fenced {bh}"
+          return none
+        return some (`_proj ++ bh)
       return some `_proj
     | _ => return none)
   let some c := cName? | return none
   unless e.hasFVar do return none
+  -- fenced heads are never dug — INCLUDING nested occurrences
+  -- (arc-18 C3b: digging `Nat.div` over an operand containing the
+  -- fenced write ladder exposed the WF-recursion internals one
+  -- `.proj Nat.rec` layer per dig into a maxRecDepth wall at the
+  -- entry walk's create-i address arithmetic; the minter's
+  -- projection lanes own the fenced spellings inside)
+  let fh ← (baseFenceHeads.get : BaseIO _)
+  unless fh.isEmpty do
+    if (e.find? (fun sub =>
+        match sub.getAppFn with
+        | .const cs _ => fh.contains cs
+        | _ => false)).isSome then
+      trace[RelSem.roundEval] "dig: refused {c} (contains a fenced head)"
+      return none
   -- tidiness guard: never expose a spelling carrying a CURATED
   -- pattern head (minted verdict patterns don't count — their
   -- substitution sites are exactly what digging exposes)

@@ -278,6 +278,79 @@ theorem readBytesFrom_congr_bytemap {m1 m2 : CerbMem.MemState}
   unfold CerbMem.readBytesFrom
   rw [h]
 
+@[step_law (kind := memRW) (variant := projLastAddress) (side := rfl)
+  (frontier := "mem/rw-proj")
+  (trace := "{law := writeBytesTo_lastAddress, joint := mem/rw-proj, hyps := []}")
+  (lineage := "SL footprint projection law: the byte write touches only the bytemap")]
+theorem writeBytesTo_lastAddress {m : CerbMem.MemState} {a : Int}
+    {bs : List CerbMem.AbsByte} :
+    (CerbMem.writeBytesTo m a bs).lastAddress = m.lastAddress := rfl
+
+@[step_law (kind := memRW) (variant := projNextAllocId) (side := rfl)
+  (frontier := "mem/rw-proj")
+  (trace := "{law := writeBytesTo_nextAllocId, joint := mem/rw-proj, hyps := []}")
+  (lineage := "SL footprint projection law: the byte write touches only the bytemap")]
+theorem writeBytesTo_nextAllocId {m : CerbMem.MemState} {a : Int}
+    {bs : List CerbMem.AbsByte} :
+    (CerbMem.writeBytesTo m a bs).nextAllocId = m.nextAllocId := rfl
+
+/-- `get?` through an `insert` at the SAME key (arc-18 C3b: the
+    entry walk's post-create allocation-table reads at open maps —
+    the store's `hget` reads back the just-inserted record). -/
+@[step_law (kind := memRW) (variant := insertEq) (side := ground)
+  (frontier := "mem/rw-insert")
+  (trace := "{law := tm_get?_insert_eq, joint := mem/rw, hyps := []}")
+  (lineage := "read-over-update readback at the allocation table (Burstall/Bornat independent cells, insert-hit face)")]
+theorem tm_get?_insert_eq {V : Type} (t : Std.TreeMap Int V)
+    (k : Int) (v : V) :
+    (t.insert k v).get? k = some v := by
+  simp only [Std.TreeMap.get?_eq_getElem?, Std.TreeMap.getElem?_insert]
+  have : compare k k = Ordering.eq := by
+    simp [Int.compare_eq_eq]
+  simp [this]
+
+/-- `get?` through an `insert` at a DIFFERENT key (the skip face; the
+    registered twin of CerbHeapWalk's fixture-facing
+    `tm_get?_insert_ne`). -/
+@[step_law (kind := memRW) (variant := insertNe) (side := ground)
+  (frontier := "mem/rw-insert")
+  (trace := "{law := tm_get?_insert_skip, joint := mem/rw, hyps := [h : ground]}")
+  (lineage := "read-over-update pass-through at the allocation table (insert-skip face)")]
+theorem tm_get?_insert_skip {V : Type} (t : Std.TreeMap Int V)
+    {k k' : Int} (h : k ≠ k') (v : V) :
+    (t.insert k v).get? k' = t.get? k' := by
+  simp only [Std.TreeMap.get?_eq_getElem?, Std.TreeMap.getElem?_insert]
+  rw [if_neg]
+  intro hc
+  exact h (Std.LawfulEqCmp.eq_of_compare hc)
+
+/-- `get?` through an `erase` at a DIFFERENT key (arc-18 C3b: the
+    kill rounds' allocation-table reads — a later load's `hget` must
+    cross the kill's `allocations.erase`). -/
+@[step_law (kind := memRW) (variant := eraseNe) (side := ground)
+  (frontier := "mem/rw-erase")
+  (trace := "{law := tm_get?_erase_ne, joint := mem/rw, hyps := [h : ground]}")
+  (lineage := "read-over-update pass-through at the allocation table (Burstall/Bornat independent cells, delete face)")]
+theorem tm_get?_erase_ne {V : Type} (t : Std.TreeMap Int V)
+    {k k' : Int} (h : k ≠ k') :
+    (t.erase k).get? k' = t.get? k' := by
+  simp only [Std.TreeMap.get?_eq_getElem?, Std.TreeMap.getElem?_erase]
+  rw [if_neg]
+  intro hc
+  exact h (Std.LawfulEqCmp.eq_of_compare hc)
+
+/-- `contains` through a cons at a DIFFERENT element (arc-18 C3b: the
+    kill rounds' dead-list reads — a later load's `hdead` must cross
+    the kill's `deadAllocations` cons). -/
+@[step_law (kind := memRW) (variant := containsConsNe) (side := ground)
+  (frontier := "mem/rw-dead")
+  (trace := "{law := list_contains_cons_ne, joint := mem/rw, hyps := [h : ground]}")
+  (lineage := "read-over-update pass-through at the dead list (cons skip at a decided-apart head)")]
+theorem list_contains_cons_ne {a x : Int} (l : List Int)
+    (h : (x == a) = false) :
+    (a :: l).contains x = l.contains x := by
+  simp only [List.contains_cons, h, Bool.false_or]
+
 /-- Disjoint read passes through the write (the FRAME law). -/
 @[step_law (kind := memRW) (variant := frame) (side := ground)
   (frontier := "mem/rw-frame")

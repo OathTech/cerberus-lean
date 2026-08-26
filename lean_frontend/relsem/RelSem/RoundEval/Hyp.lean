@@ -766,6 +766,10 @@ def projNormHop (e : Expr) : MetaM (Option Expr) := do
 def proveHypEqBld (hp : HypPack) (lhs rhs : Expr) : TermElabM Expr := do
   let mut cur := lhs
   let mut pf : Option Expr := none
+  -- the projection hop fires at most ONCE per chain (arc-18 C3b:
+  -- groundNorm re-exposes `.proj` spellings the hop canonicalizes,
+  -- so an unguarded hop ping-pongs against the normalizer)
+  let hopUsed ← IO.mkRef false
   -- One subst/norm/mint pass; returns (continue?, cur', pf'). Runs
   -- under its OWN default heartbeat budget (arc-17 S3 — the mint loop
   -- re-normalizes the term once per unblocked tower, so the pass
@@ -871,7 +875,10 @@ def proveHypEqBld (hp : HypPack) (lhs rhs : Expr) : TermElabM Expr := do
       -- the hop fires exactly where the chain used to give up and
       -- defer an uncomputable refl to the kernel (the round-56
       -- measured failure). The hop is definitional throughout, so
-      -- ONE kernel-deferred bridge carries cur → hopped.
+      -- ONE kernel-deferred bridge carries cur → hopped. Once per
+      -- chain (the ping-pong guard — see hopUsed).
+      if ← hopUsed.get then return (false, n, pf)
+      hopUsed.set true
       match ← withCurrHeartbeats (projNormHop n) with
       | some n' =>
         if n' != n then

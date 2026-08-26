@@ -206,7 +206,16 @@ def emitThm (thmName : Name) (fvars : Array Expr)
   let type ← defaultLevelMVars (← mkForallFVars fvars stmt)
   let value ← defaultLevelMVars (← mkLambdaFVars fvars proof)
   if type.hasExprMVar || value.hasExprMVar then
-    throwError "derive_rounds: emitted {thmName} has metavariables"
+    -- diagnostic (arc-18 C3b): name the side and the mvar types
+    let side := if type.hasExprMVar then "TYPE" else "VALUE"
+    let carrier := if type.hasExprMVar then type else value
+    let st := carrier.collectMVars {}
+    let mut infos : Array MessageData := #[]
+    for mv in st.result do
+      let ty ← instantiateMVars (← mv.getType)
+      infos := infos.push m!"?{mv.name} : {ty}"
+    throwError "derive_rounds: emitted {thmName} has metavariables \
+      ({side}): {infos.toList}"
   if type.hasLevelMVar then
     throwError "derive_rounds: emitted {thmName} TYPE has level \
       metavariables:{indentExpr type}"
