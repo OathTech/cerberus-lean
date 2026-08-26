@@ -44,6 +44,7 @@ MODULES=(
     "DeriveState.lean"
     "WpGround.lean"
     "LawRegistry.lean"
+    "SegmentFaces.lean"
 )
 
 if [[ ! -f "$BASELINE" ]]; then

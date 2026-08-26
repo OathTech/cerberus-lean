@@ -197,6 +197,11 @@ import RelSem.T3Threaded
 -- arc-17 S2: the completed acceptance probe joins the sweep closure
 -- + pins (the ∀-seed t6 theorems through the round evaluator).
 import RelSem.T6Probe
+-- arc-18 R2: the segment layer (judgment + composition + FnSpec) and
+-- its faces (verify_fn/seg_auto + the seg_* registration attributes)
+-- join the sweep closure + pins.
+import RelSem.Segment
+import RelSem.SegmentFaces
 import RelSem.T4Threaded
 import RelSem.T5Walks
 import RelSem.T5Inv
@@ -961,7 +966,15 @@ open Lean in
 -- requested] — the T6 open drive's Erun round rebuilds the memory
 -- record field-by-field over the folded ladder, so every non-bytemap
 -- field needs its registered projection; all Kit/Mem, fixture-free).
-/-- info: step_law census: 76 laws [advance 5, construct 9, envAlg 3, envMap 4, evalArith 2, evalPull 2, heapWP 4, heapWalk 8, loop 2, memBlock 6, memRW 20, perform 6, roundGlue 3, wpSeq 2] -/
+-- 76 → 92 (arc-18 R2, the segment layer: loop 2 → 5 [the [F1]
+-- variable-round `iter_compose_var`/`_from` + the ∃-round `Seg.iter`,
+-- all Kit/Segment, fixture-free] + the T6 fixture's registered
+-- EQUATION SUPPLY under the new supply kinds — segEq 9 [the k-stage
+-- open equations + driver2_o], segFact 3 [address-arithmetic facts],
+-- segCanon 1 [the nd_get representative]; supply entries are
+-- per-fixture BY DESIGN, visible per-kind here — the engine-side
+-- minting of supply entries is the registered arc-19 frontier).
+/-- info: step_law census: 92 laws [advance 5, construct 9, envAlg 3, envMap 4, evalArith 2, evalPull 2, heapWP 4, heapWalk 8, loop 5, memBlock 6, memRW 20, perform 6, roundGlue 3, segCanon 1, segEq 9, segFact 3, wpSeq 2] -/
 #guard_msgs in #step_law_census
 /-- info: 'RelSem.T1.round6' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.round6
@@ -1019,8 +1032,9 @@ open Lean in
 #guard_msgs in #print axioms RelSem.T6.T6Threaded
 /-- info: 'RelSem.T6.T6Threaded_ubFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T6.T6Threaded_ubFree
-/-- info: 'RelSem.T6.t6_wpK_thr' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T6.t6_wpK_thr
+-- (arc-18 R2: the hand walk `t6_wpK_thr` is SUBSUMED by the segment
+-- route — T6Threaded's pin above covers the whole discharge; the
+-- walk lemma is deleted with its plumbing.)
 /-- info: 'RelSem.T6.r_chain' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T6.r_chain
 /-- info: 'RelSem.T6.r_driver' depends on axioms: [propext, Classical.choice, Quot.sound] -/
@@ -1392,8 +1406,14 @@ open Lean in
 -- k-stage equations + driver2_o + rDone6 ladder], and the seven new
 -- Kit/Mem writeBytesTo projection laws; ALL boundary-clean — record
 -- docs/2026-08-26_arc18-r1-open-memory.md).
+-- 6959 → 7182 (arc-18 R2, the segment layer: RelSem.Segment [the
+-- ∃-round judgment + composition + FnSpec + spelling normalization]
+-- + RelSem.SegmentFaces [verify_fn/seg_auto + the seg_* attributes]
+-- + Kit/Loop's variable-round variants + the T6Probe reshape
+-- [t6_canon/pickSpec in, t6_wpK_thr/t6_post_o out]; ALL
+-- boundary-clean).
 /--
-info: RelSem audit sweep: 6959 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 7182 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do

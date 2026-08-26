@@ -70,6 +70,8 @@ LIVE_MODULES=(
   relsem/RelSem/CerbHeapWP.lean
   relsem/RelSem/CerbHeapWalk.lean
   relsem/RelSem/CerbHeapDemo.lean
+  relsem/RelSem/Segment.lean
+  relsem/RelSem/SegmentFaces.lean
   relsemcore/RelSem/Threaded.lean
   relsem/RelSem/T1Threaded.lean
   relsem/RelSem/T2Threaded.lean

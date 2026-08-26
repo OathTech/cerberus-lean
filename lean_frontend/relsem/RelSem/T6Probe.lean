@@ -51,6 +51,10 @@ import RelSem.RoundEval
 import RelSem.ConstructLaws
 import RelSem.SlateFiles
 import RelSem.CerbHeapWalk
+-- arc-18 R2: the segment layer — the statement-facing proofs below
+-- run THROUGH it (verify_fn + seg_auto over the registered equation
+-- supply; RelSem/Segment.lean + RelSem/SegmentFaces.lean).
+import RelSem.SegmentFaces
 
 set_option autoImplicit false
 
@@ -366,6 +370,7 @@ noncomputable abbrev rDone6 (seed : Nat) : driver_state := restOf (roFin0 seed)
     argument object's footprint; the scratch object's whole lifetime
     (create/store/load/kill of t) is internal to the equation; the
     errno object is never mentioned (it rides the frame). -/
+@[seg_eq scratch1]
 theorem driver2_o (seed : Nat) : ∀ bm am,
     am.get? 0 = some allocX →
     (∀ i : Nat, (hi : i < argBytes6.length) →
@@ -397,14 +402,6 @@ theorem driver2_o (seed : Nat) : ∀ bm am,
   rw [halign]
   exact h6
 
-/-- The terminal readout, uniform over the rest fiber. -/
-theorem t6_post_o (seed : Nat) : ∀ bm am,
-    ∃ r : driver_result,
-      (Outcome.value (finalize t6File.tagDefs "callND"
-          (setMaps (rDone6 seed) bm am)) : DriveVal)
-        = Outcome.value r ∧ t6Spec r :=
-  fun _ _ => ⟨_, rfl, rfl⟩
-
 /-! ## The harness spine at open maps (the T1Threaded k-stage recipe
     verbatim at the T6 data; pure stages `rfl` at free maps, memory
     stages through the construct laws + Kit blocks) -/
@@ -417,23 +414,27 @@ abbrev rArg6 (seed : Nat) : driver_state :=
 abbrev rErr6 (seed : Nat) : driver_state :=
   restAllocR (rArg6 seed) errAddr
 
+@[seg_eq rest]
 theorem k1_o (seed : Nat) : ∀ bm am,
     app (driver_globals t6File.tagDefs false t6File)
         (setMaps (rInit6 seed) bm am)
       = (NDactive 0, setMaps (rGlob6 seed) bm am) := fun _ _ => rfl
 
+@[seg_eq rest]
 theorem k3_o (seed : Nat) : ∀ bm am,
     app (resolveFunSym (dG seed).core_file "pick")
         (setMaps (rGlob6 seed) bm am)
       = (NDactive pickT6Sym, setMaps (rGlob6 seed) bm am) :=
   fun _ _ => rfl
 
+@[seg_eq rest]
 theorem k4_o (seed : Nat) : ∀ bm am,
     app (lookupFunBody (dG seed).core_file pickT6Sym)
         (setMaps (rGlob6 seed) bm am)
       = (NDactive ([(symX, BTy_object OTy_pointer)], pickBody),
          setMaps (rGlob6 seed) bm am) := fun _ _ => rfl
 
+@[seg_eq rest]
 theorem k5_o (seed : Nat) : ∀ bm am,
     app (lookupParamTys (dG seed).core_file pickT6Sym)
         (setMaps (rGlob6 seed) bm am)
@@ -441,6 +442,7 @@ theorem k5_o (seed : Nat) : ∀ bm am,
   fun _ _ => rfl
 
 /-- The argument-object address arithmetic. -/
+@[seg_fact]
 theorem argAddr6_fact (seed : Nat) :
     ((CerbMem.alignDown
         ((rGlob6 seed).layout_state.lastAddress - 4).toNat
@@ -458,6 +460,7 @@ theorem memValueFromValue_t6_eq :
           (CerbMem.integerIval 10)) := rfl
 
 /-- Stage 6, THE ARGUMENT INJECTION at open maps. -/
+@[seg_eq argobj]
 theorem k6_o (seed : Nat) : ∀ bm am,
     app (injectArgs t6File.tagDefs 0
           [(symX, BTy_object OTy_pointer)] [signed_int] [intValue 10])
@@ -489,6 +492,7 @@ theorem k6_o (seed : Nat) : ∀ bm am,
       simp only [writeBytesTo_eq]
       rfl)
 
+@[seg_eq rest]
 theorem k7_o (seed : Nat) : ∀ bm am,
     app get_thread_states (setMaps (rArg6 seed) bm am)
       = (NDactive ((dG seed).core_state0.thread_states),
@@ -496,6 +500,7 @@ theorem k7_o (seed : Nat) : ∀ bm am,
   fun _ _ => rfl
 
 /-- The errno address arithmetic. -/
+@[seg_fact]
 theorem errAddr6_fact (seed : Nat) :
     ((CerbMem.alignDown
         ((rArg6 seed).layout_state.lastAddress - 4).toNat
@@ -504,6 +509,7 @@ theorem errAddr6_fact (seed : Nat) :
   decide
 
 /-- Stage 8, THE ERRNO BLOCK at open maps. -/
+@[seg_eq argobj]
 theorem k8_o (seed : Nat) : ∀ bm am,
     app (liftMem (nd_bind
         (CerbMem.allocateObject 0 (PrefOther "errno")
@@ -545,6 +551,7 @@ theorem k8_o (seed : Nat) : ∀ bm am,
       rfl)
 
 /-- Stage 9, the thread setup (rest-only). -/
+@[seg_eq rest]
 theorem k9_o (seed : Nat) (th : thread_state) (hth : th = thRdy) :
     ∀ bm am,
     app (driver_update_thread_state 0 th : driverM Unit)
@@ -554,6 +561,7 @@ theorem k9_o (seed : Nat) (th : thread_state) (hth : th = thRdy) :
 
 /-- The scratch address arithmetic (t's create inside the driver
     atom). -/
+@[seg_fact]
 theorem tAddr_fact (seed : Nat) :
     ((CerbMem.alignDown
         ((rRdy seed).layout_state.lastAddress - 4).toNat
@@ -561,30 +569,31 @@ theorem tAddr_fact (seed : Nat) :
   rw [show (rRdy seed).layout_state.lastAddress = errAddr from rfl]
   decide
 
-/-! ## The statement-facing route: the per-step WP walk ON THE HEAP
-    ROUTE (CerbMemInterp; the T1/T3 walk pattern — the driver atom is
-    `wp_scratch1`: it reads the argument object's footprint, runs t's
-    whole lifetime internally, and the errno fragments ride the frame
-    across it). -/
+/-! ## The statement-facing route (arc-18 R2): THROUGH THE SEGMENT
+    LAYER. `verify_fn` bridges the byte-stable statement to the WP
+    obligation via the FnSpec ([F9]); `seg_auto` walks the segments,
+    dispatching every joint through the registered equation supply
+    above (THE ONE REGISTRY — kinds segEq/segFact/segCanon; R4). The
+    pre-layer hand walk (11 macro lines over the same rules, arc-18
+    R1) is SUBSUMED: the rules fired are identical — the driver atom
+    is still `wpk_seq_scratch1` (reads the argument object's
+    footprint, runs t's whole lifetime internally, the errno
+    fragments riding the frame) — only the per-joint plumbing moved
+    engine-side. -/
 
-theorem t6_wpK_thr {GF : BundledGFunctors} [CerbHeapGS GF]
-    (seed : Nat) :
-    (restIs (GF := GF) restHalf (rInit6 seed)) ⊢
-      WP (callK t6File.tagDefs t6File "pick" [intValue 10])
-        @ Stuckness.NotStuck ; ⊤
-        {{ o, ⌜∃ r : driver_result, o = Outcome.value r ∧ t6Spec r⌝ }} := by
-  iintro Hst
-  wp_rest (k1_o seed) Hst
-  wp_get (dG seed) Hst
-  wp_rest (k3_o seed) Hst
-  wp_rest (k4_o seed) Hst
-  wp_rest (k5_o seed) Hst
-  wp_argobj (k6_o seed) (argAddr6_fact seed) Hst HalX HptX
-  wp_rest (k7_o seed) Hst
-  wp_argobj (k8_o seed) (errAddr6_fact seed) Hst HalE HptE
-  wp_rest (k9_o seed _ (by rfl)) Hst
-  wp_scratch1 (driver2_o seed) (tAddr_fact seed) Hst HalX HptX HptT
-  wp_fin (t6_post_o seed) Hst
+/-- The post-globals canonical representative (the `nd_get` joint's
+    named state — the S0 giant-terms discipline riding the
+    automation). -/
+@[seg_canon]
+theorem t6_canon (seed : Nat) : Seg.CanonAt (rGlob6 seed) (dG seed) :=
+  rfl
+
+/-- T6's FnSpec ([F9], role 1): `pick(10)` returns `Specified 7`.
+    REDUCIBLE (abbrev) — the faces unify its projections against the
+    byte-stable statement text. -/
+abbrev pickSpec : Seg.FnSpec Unit :=
+  { fname := "pick", args := fun _ => [intValue 10],
+    post := fun _ => t6Spec }
 
 /-! ## THE THREADED STATEMENTS (fuel-opsem faces, ∀-seed) -/
 
@@ -598,26 +607,19 @@ def T6ThreadedStatement : Prop :=
       [intValue 10] t6Fs t6Spec
 
 /-- **T6 THREADED, UNCONDITIONAL** (cone exactly the classical trio;
-    arc-18 R1: through the heap-route walk — the open-memory minted
-    equation supply discharged via `kCallHarnessAdequateThrHeap_of_wp`;
-    statement text byte-stable across the migration). -/
+    arc-18 R2: THROUGH THE SEGMENT LAYER — the professor exhibit
+    realized; statement text byte-stable across the migration). -/
 theorem T6Threaded : T6ThreadedStatement := by
-  intro seed
-  refine kCallHarnessAdequateThrHeap_of_wp (GF := CerbHeapS) seed
-    t6File.tagDefs t6File "pick" [intValue 10] t6Fs t6Spec ?_
-  intro η
-  exact t6_wpK_thr seed
+  verify_fn pickSpec
+  seg_auto
 
 /-- **T6 THREADED UB-freedom** (same route). -/
 theorem T6Threaded_ubFree :
     ∀ (seed : Nat),
       CallHarnessUBFreeThr seed t6File.tagDefs t6File "pick"
         [intValue 10] t6Fs := by
-  intro seed
-  refine kCallHarnessUBFreeThrHeap_of_wp (GF := CerbHeapS) seed
-    t6File.tagDefs t6File "pick" [intValue 10] t6Fs t6Spec ?_
-  intro η
-  exact t6_wpK_thr seed
+  verify_fn pickSpec
+  seg_auto
 
 /-! ## The piecewise relative-chain SMOKE (arc-18 C1)
 

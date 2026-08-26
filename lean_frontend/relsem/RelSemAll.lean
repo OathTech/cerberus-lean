@@ -88,6 +88,9 @@ import RelSem.T5Inv
 -- arc-17 S2: the completed acceptance probe (un-parked — the whole
 -- t6 run through the law-driven round evaluator; ∀-seed theorems).
 import RelSem.T6Probe
+-- arc-18 R2: the segment layer + faces
+import RelSem.Segment
+import RelSem.SegmentFaces
 -- arc-17 S2: the guarded ∀-seed T4 statement + apartness hypothesis
 -- + the evaluator-driven prefix (theorem = enumerated remaining work;
 -- the in-file frontier note is the S2 record's park).

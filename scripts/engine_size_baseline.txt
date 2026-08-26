@@ -77,6 +77,19 @@
 #       mechanisms are elaborator handling/law appliers per the
 #       engine-to-law rule. Record:
 #       lean_frontend/docs/2026-08-26_arc18-r1-open-memory.md.
+#
+# R2 re-baseline (arc-18 R2, the segment layer): SegmentFaces.lean
+#       joins the engine surface at 554 lines (verify_fn/seg_auto —
+#       the registry-driven segment walker: joint classification,
+#       segEq/segFact/segCanon/segPost dispatch through THE ONE
+#       registry, proof-mode resource discovery; all proof steps land
+#       through the REGISTERED CerbHeapWalk rules — the meta layer
+#       shapes claims, never certifies them). RelSem/Segment.lean
+#       (the judgment + composition + FnSpec, 480 lines) is a LAW
+#       module, not engine (no meta code), and is deliberately NOT on
+#       this watch. Direction remains DOWN for the evaluator; the
+#       faces' budget rides this row from R2 on. Record:
+#       lean_frontend/docs/2026-08-26_arc18-r2-segment-layer.md.
 RoundEval.lean 87
 RoundEval/Core.lean 346
 RoundEval/Hyp.lean 1033
@@ -89,4 +102,5 @@ RoundEval/Assembly.lean 647
 DeriveState.lean 260
 WpGround.lean 121
 LawRegistry.lean 342
-TOTAL 5727
+SegmentFaces.lean 554
+TOTAL 6281
