@@ -318,7 +318,11 @@ def appGoalSkeleton (goal0 : Expr) (mArgs' : Array Expr) :
 def queryLaw (kind : Name) (goal : Expr) (variant : Name := .anonymous)
     (what : String := "") : TermElabM RelSem.LawRegistry.StepLaw := do
   try
+    -- builder drives run under the attribute fence, which perturbs
+    -- DiscrTree key computation — they opt into the unify fallback
+    -- (arc-18 C3b; ambient dispatch stays tree-only)
     let law ← RelSem.LawRegistry.queryUnique kind goal variant
+      (unifyFallback := ← (builderMode.get : BaseIO _))
     trace[RelSem.roundEval] "queryLaw: {law.name} ({what})"
     return law
   catch ex =>
