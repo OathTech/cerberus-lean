@@ -183,6 +183,7 @@ elab "derive_rounds " id:ident bs:bracketedBinder* assum:(roundsAssuming)? fenc:
         -- the PRODUCING round's respell bridge (emitLawRound) cleans
         -- it before the successor is named.
         trace[RelSem.roundEval] "round {k}: classifying"
+        classifyUsedHypNorm.set false
         let stepE ← (do
           try
             let r ← whnf stepAtE
@@ -211,6 +212,7 @@ elab "derive_rounds " id:ident bs:bracketedBinder* assum:(roundsAssuming)? fenc:
                 -- body's post-store round); the pack normalizes it,
                 -- and the discovery GLUE (elabLawChain) carries the
                 -- matching PROVED equation instead of a refl hint.
+                classifyUsedHypNorm.set true
                 hypNormA "classification" r
           catch ex =>
             throwError "derive_rounds: round {k} CLASSIFICATION \

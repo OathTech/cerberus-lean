@@ -1331,8 +1331,15 @@ open Lean in
 -- equation/matcher auxiliaries [Kit/Eval], fmapLookupBy_empty
 -- [Kit/Map], option_eq_some_getD + the substitution-hardening
 -- engine decls [RoundEval]; all boundary-clean, no cone movement).
+-- 5265 → 5281 (arc-18 C3b: the T5-continuation routing fixes' engine
+-- decls + auxiliaries — LawRegistry.matchByUnify [the fence-robust
+-- opt-in query fallback], RoundEval/Hyp resolveProjVal + projNormHop
+-- [THE PROJECTION-NORMALIZATION HOP], Rounds.classifyUsedHypNorm
+-- [glue-first flag]; meta code only, all boundary-clean, no cone
+-- movement — the committed T4/T6 drives re-elaborate byte-identically
+-- [builder-gated changes]).
 /--
-info: RelSem audit sweep: 5265 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 5281 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do

@@ -633,6 +633,131 @@ def proveHypEqMat (hp : HypPack) (lhs rhs : Expr) : TermElabM Expr := do
   | none => return fin
   | some p => mkEqTrans p fin
 
+/-- THE PROJECTION-NORMALIZATION HOP (arc-18 C3b — the C3 record's
+    §3.4 routing item). Builder-state side-condition goals quote
+    structure projections of FOLDED successor spellings
+    (`(b55 …).layout_state.deadAllocations`) while the pack's facts
+    are stated at the base binder (`mem.deadAllocations`) — and the
+    attribute fence blocks kabstract's defeq walk from bridging the
+    two (the fence is the very mechanism keeping the ladder
+    law-shaped; measured: the T5 body walk's round-56 post-store-load
+    `hdead`, discharged as a kernel-uncomputable deferred refl).
+
+    The hop resolves such a projection to its base form: the
+    projected structure argument is whnf-exposed (named-state defs
+    unfold; the fence stops at the curated ladder heads), constructor
+    records iota-reduce, and fenced ladder layers peel through the
+    REGISTERED rfl-side projection laws (registry query, kind
+    `memRW` — R4: no law names in engine code; only `side := rfl`
+    entries are consumed, so every step is DEFINITIONAL and the whole
+    hop is carried by one kernel-deferred refl bridge in the chain —
+    the kernel is attribute-blind and never forces the bytemap fold).
+    The resolved value is respelled as an accessor APPLICATION (the
+    pack patterns' spelling, so the next scan matches). -/
+private partial def resolveProjVal (sN : Name) (fieldIdx : Nat)
+    (X0 : Expr) : MetaM (Option Expr) := do
+  let env ← getEnv
+  unless isStructure env sN do return none
+  let fields := getStructureFields env sN
+  let some field := fields[fieldIdx]? | return none
+  let accName := sN ++ field
+  let ctor := getStructureCtor env sN
+  let ctorArity := ctor.numParams + ctor.numFields
+  -- canonical accessor-app spelling of a resolved value (top node
+  -- only — kabstract keys on head constants, `.proj` has none)
+  let canon (v : Expr) : Expr :=
+    match v with
+    | .proj sN' j b =>
+      if isStructure env sN' then
+        match (getStructureFields env sN')[j]? with
+        | some f => mkApp (mkConst (sN' ++ f)) b
+        | none => v
+      else v
+    | _ => v
+  let rec go (X : Expr) (fuel : Nat) (moved : Bool) :
+      MetaM (Option Expr) := do
+    match fuel with
+    | 0 => return none
+    | fuel + 1 =>
+      -- expose (own scoped unit; a stuck whnf leaves X unchanged)
+      let XW ← (try whnfU X catch _ => pure X)
+      let moved := moved || XW != X
+      -- constructor iota: the field value as stored
+      if XW.isAppOfArity ctor.name ctorArity then
+        let some v := XW.getAppArgs[ctor.numParams + fieldIdx]?
+          | return none
+        return some (canon v)
+      -- registered rfl-side projection law at the accessor goal form
+      -- (unify fallback ON: the hop runs only under the drive fence,
+      -- where tree keys are perturbed — the round-59 measurement)
+      let acc := mkApp (mkConst accName) XW
+      let hits ← RelSem.LawRegistry.query `memRW acc
+        (unifyFallback := true)
+      for l in hits do
+        if l.side == `rfl then
+          let cinfo ← getConstInfo l.name
+          let (_, _, concl) ← forallMetaTelescopeReducing cinfo.type
+          if let some (_, lawLhs, lawRhs) := concl.eq? then
+            if ← withReducible (isDefEq lawLhs acc) then
+              let rhs' ← instantiateMVars lawRhs
+              unless rhs'.hasExprMVar do
+                -- the law's rhs is the projection at the peeled base
+                -- — continue peeling there
+                if rhs'.isApp && rhs'.getAppFn.constName? == some accName then
+                  match ← go rhs'.appArg! fuel true with
+                  | some v => return some v
+                  | none => return some (canon rhs')
+                else
+                  return some (canon rhs')
+      -- exposure alone is progress worth respelling only when a base
+      -- binder was reached (the pack patterns' spelling)
+      if moved && XW.isFVar then
+        return some (mkApp (mkConst accName) XW)
+      return none
+  go X0 16 false
+
+/-- The hop's term pass: respell every resolvable structure
+    projection (raw `.proj` node or accessor application) in `e`.
+    Proof subterms are opaque; nodes under binders are skipped (side
+    conditions are closed goals). Returns none when nothing
+    resolved. -/
+def projNormHop (e : Expr) : MetaM (Option Expr) := do
+  let env ← getEnv
+  let changed ← IO.mkRef false
+  let r ← Meta.transform e
+    (pre := fun n => do
+      if (← Meta.isProofQuick n) matches .true then
+        return .done n
+      return .continue)
+    (post := fun node => do
+      if node.hasLooseBVars then return .done node
+      match node with
+      | .proj sN i b =>
+        match ← resolveProjVal sN i b with
+        | some v => changed.set true; return .done v
+        | none =>
+          -- canonical accessor-app respelling even without a peel
+          -- (defeq; `.proj` has no head constant for kabstract)
+          if isStructure env sN then
+            if let some f := (getStructureFields env sN)[i]? then
+              changed.set true
+              return .done (mkApp (mkConst (sN ++ f)) b)
+          return .done node
+      | .app .. =>
+        let some c := node.getAppFn.constName? | return .done node
+        let some pinfo := env.getProjectionFnInfo? c
+          | return .done node
+        let args := node.getAppArgs
+        unless args.size == pinfo.numParams + 1 do return .done node
+        let sN := pinfo.ctorName.getPrefix
+        -- base already a binder: nothing to resolve
+        if args.back!.isFVar then return .done node
+        match ← resolveProjVal sN pinfo.i args.back! with
+        | some v => changed.set true; return .done v
+        | none => return .done node
+      | _ => return .done node)
+  if ← changed.get then return some r else return none
+
 /-- Build a proof of `lhs = rhs` by the directed chain: normalize
     (defeq, free), substitute one registered rewrite via
     `kabstract`+`congrArg`, repeat; finish with `rfl` (elaborator
@@ -738,7 +863,28 @@ def proveHypEqBld (hp : HypPack) (lhs rhs : Expr) : TermElabM Expr := do
             | none => pure bridge
             | some p => mkEqTrans p bridge)
         return (true, n, pf)
-      return (false, n, pf) :
+      -- THE PROJECTION HOP (arc-18 C3b), last resort: nothing scans,
+      -- nothing normalizes, nothing mints — respell stuck structure
+      -- projections of folded successor spellings to their base form
+      -- (see projNormHop). Placement is deliberately AFTER the
+      -- ordinary lanes: previously-succeeding chains are untouched;
+      -- the hop fires exactly where the chain used to give up and
+      -- defer an uncomputable refl to the kernel (the round-56
+      -- measured failure). The hop is definitional throughout, so
+      -- ONE kernel-deferred bridge carries cur → hopped.
+      match ← withCurrHeartbeats (projNormHop n) with
+      | some n' =>
+        if n' != n then
+          trace[RelSem.roundEval] "proveHypEq: projection hop fired"
+          let mut pf := pf
+          let bridge ← mkExpectedTypeHint (← mkEqRefl n')
+            (← mkEq cur n')
+          pf := some (← match pf with
+            | none => pure bridge
+            | some p => mkEqTrans p bridge)
+          return (true, n', pf)
+        return (false, n, pf)
+      | none => return (false, n, pf) :
     TermElabM (Bool × Expr × Option Expr))
   for it in [0:64] do
     if cur == rhs then break

@@ -379,6 +379,8 @@ private def mintMemRW (hp : HypPack) (d : Expr) : TermElabM Bool := do
       mintEmit hp d rhs pf "mem write projection"
       return true
     -- fall through: no registered projection law (e.g. bytemap)
+    trace[RelSem.roundEval] "mem lane: accessor-over-write {c}: no \
+      registered projection law (query miss)"
   -- FENCED-ACCESSOR IOTA (arc-17 S3): a pack-hypothesis head fence
   -- freezes the accessor CONST, so `accessor {mk-record}` cannot
   -- delta-iota even though the reduction is fence-irrelevant. Mint
@@ -389,7 +391,10 @@ private def mintMemRW (hp : HypPack) (d : Expr) : TermElabM Bool := do
     unless pinfo.ctorName == ``CerbMem.MemState.mk do return false
     unless args.size == 1 do return false
     let m' := args[0]!
-    unless m'.isAppOfArity ``CerbMem.MemState.mk 14 do return false
+    unless m'.isAppOfArity ``CerbMem.MemState.mk 14 do
+      trace[RelSem.roundEval] "mem lane: accessor {c} arg neither \
+        writeBytesTo nor mk-record (head {m'.getAppFn}) — declined"
+      return false
     let some rhs := m'.getAppArgs[pinfo.numParams + pinfo.i]?
       | return false
     let pf ← mkExpectedTypeHint (← mkEqRefl rhs) (← mkEq d rhs)
@@ -496,10 +501,23 @@ private def mintConvArith (hp : HypPack) (d : Expr) : TermElabM Bool := do
   let rangeProofs (v : Expr) : TermElabM (Option (Expr × Expr)) := do
     let p1 ← mkAppM ``LE.le #[intLit (-2147483648), v]
     let p2 ← mkAppM ``LE.le #[v, intLit 2147483647]
-    let some (true, pf1) ← propVerdict p1 | return none
-    let some (true, pf2) ← propVerdict p2 | return none
-    return some (← mintEmitSide hp p1 pf1 "conv-arith range lo",
-                 ← mintEmitSide hp p2 pf2 "conv-arith range hi")
+    -- omega reads the FOLDED vocabulary (arc-18 C3b, measured: a raw
+    -- `Int.ofNat 1` operand from a whnf'd spelling atomizes — the
+    -- round-59 i-increment catch); the side fact is stated folded and
+    -- the use site carries a kernel-deferred cast to the term
+    -- spelling (defeq — the foldArith contract; the mintDecidable
+    -- original-spelling recipe)
+    let p1F ← foldArith p1
+    let p2F ← foldArith p2
+    let some (true, pf1) ← propVerdict p1F
+      | (do trace[RelSem.roundEval] "convArith: no lo-range verdict for {v}"
+            return none)
+    let some (true, pf2) ← propVerdict p2F
+      | (do trace[RelSem.roundEval] "convArith: no hi-range verdict for {v}"
+            return none)
+    let h1 ← mintEmitSide hp p1F pf1 "conv-arith range lo"
+    let h2 ← mintEmitSide hp p2F pf2 "conv-arith range hi"
+    return some (← mkExpectedTypeHint h1 p1, ← mkExpectedTypeHint h2 p2)
   let emitVia (law : Name) (lawArgs : Array Expr) : TermElabM Bool := do
     let prf ← mkAppM law lawArgs
     let some (_, _, rhs) := (← inferType prf).eq? | return false
@@ -553,7 +571,8 @@ private def mintConvArith (hp : HypPack) (d : Expr) : TermElabM Bool := do
     let some (pn2, b, hc2) ← convValue? args[3]! | return false
     unless a.hasFVar || b.hasFVar do return false
     let some law ← queryLaw? `evalArith d (variant := `catchAdd)
-      | return false
+      | (do trace[RelSem.roundEval] "convArith: catchAdd query miss"
+            return false)
     let sum ← mkAppM ``HAdd.hAdd #[a, b]
     let some (h1, h2) ← rangeProofs sum | return false
     let catchAt (x y : Expr) : Expr :=

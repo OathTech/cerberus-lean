@@ -40,16 +40,30 @@
 #     discovery equations for the chain assembler) + phase scoping.
 #   Assembly 566->604: prefix checkpoints (windowed kernel work) +
 #     glue-aware hfind premises + phase traces.
+#
+# C3b re-baseline (2026-08-26, the T5 continuation's routing fixes):
+# Hyp 880 -> 1023 (THE PROJECTION-NORMALIZATION HOP — resolveProjVal/
+# projNormHop + the last-resort wiring in proveHypEqBld; consumes
+# REGISTERED rfl-side projection laws by registry query, C3 record
+# §3.4's enumerated item); LawRegistry 300 -> 337 (matchByUnify —
+# the fence-robust zero-hit fallback: the drive's attribute fence
+# changes DiscrTree KEY COMPUTATION, measured round-59 dispatch
+# miss); Rounds 794 -> 820 (glue-first for hyp-classified rounds —
+# the round-68 uncatchable direct-face timeout skipped, not
+# survived); Lanes 686 -> 705 (rangeProofs foldArith + decline
+# traces); Assembly 604 -> 606 (the classifyUsedHypNorm flag).
+# Direction: growth is ROUTING/ROBUSTNESS at the engine interface,
+# no semantic knowledge added (laws stay in the registry).
 RoundEval.lean 87
 RoundEval/Core.lean 329
-RoundEval/Hyp.lean 880
+RoundEval/Hyp.lean 1023
 RoundEval/Mint.lean 253
 RoundEval/Classify.lean 171
 RoundEval/Arith.lean 722
-RoundEval/Lanes.lean 686
-RoundEval/Rounds.lean 794
-RoundEval/Assembly.lean 604
+RoundEval/Lanes.lean 705
+RoundEval/Rounds.lean 820
+RoundEval/Assembly.lean 606
 DeriveState.lean 260
 WpGround.lean 121
-LawRegistry.lean 300
+LawRegistry.lean 337
 TOTAL 5207

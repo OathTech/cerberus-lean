@@ -198,16 +198,57 @@ initialize registerBuiltinAttribute {
 /-! ## The query interface (what the engine and the tactic layer
     consult; hardcoded-name dispatch is retired in their favor). -/
 
+/-- FENCE-ROBUST FALLBACK (arc-18 C3b): a drive-scoped attribute
+    fence (RoundEval's temporary `@[irreducible]` statuses on the
+    hypothesis pack's pattern heads) changes DiscrTree KEY
+    COMPUTATION — a structure accessor keys as a projection at
+    registration time (accessors reducible) but as a plain const
+    under a fence that happens to contain it, so tree matching
+    silently misses registered laws during exactly the drives that
+    need them (measured: the T5 body walk's round-59 memRW projection
+    dispatch — the pack's `hfpm`/`hlum` facts fence the accessors
+    themselves). On ZERO tree hits the query falls back to a linear
+    scan of the kind's entries with a meta-telescope defeq match
+    against the goal form — the same applicability semantics,
+    key-computation-independent; assignments are rolled back per
+    attempt so caller metavariables (skeleton stars) are untouched.
+    Genuine misses still return empty: fail-closed frontiers are
+    unchanged. -/
+def matchByUnify (kind : Name) (e : Expr) : MetaM (Array StepLaw) := do
+  let r := stepLawExt.getState (← getEnv)
+  let mut out : Array StepLaw := #[]
+  for l in r.all do
+    if l.kind == kind then
+      let ok ← try
+        withoutModifyingState <| withCurrHeartbeats do
+          let cinfo ← getConstInfo l.name
+          let (_, _, concl) ← forallMetaTelescopeReducing cinfo.type
+          let target := match concl.eq? with
+            | some (_, lhs, _) => lhs
+            | none => concl
+          withReducible (isDefEq target e)
+      catch _ => pure false
+      if ok then out := out.push l
+  return out
+
 /-- All laws of `kind` matching the goal form `e`, most specific
     first. REDUCIBLE-transparency matching (measured, arc-18 C1): at
     ambient default transparency the DiscrTree's key reduction
     UNFOLDS plain definitions — on `app …` goal forms that runs the
     interpreter inside the query (a T4 round-18 heartbeat timeout);
-    goal-form keys are matched as spelled, reducible-only. -/
-def query (kind : Name) (e : Expr) : MetaM (Array StepLaw) := do
+    goal-form keys are matched as spelled, reducible-only. Zero tree
+    hits fall back to the fence-robust unification scan when the
+    caller opts in (`unifyFallback` — drives under an attribute
+    fence; see `matchByUnify`'s note. OFF by default: ambient
+    dispatch stays byte-identical to the tree semantics). -/
+def query (kind : Name) (e : Expr)
+    (unifyFallback : Bool := false) : MetaM (Array StepLaw) := do
   let r := stepLawExt.getState (← getEnv)
   let hits ← withReducible <| r.tree.getMatch e
-  return (hits.filter (·.kind == kind)).qsort (fun a b => a.prio > b.prio)
+  let hits := hits.filter (·.kind == kind)
+  let hits ← if hits.isEmpty && unifyFallback then matchByUnify kind e
+    else pure hits
+  return hits.qsort (fun a b => a.prio > b.prio)
 
 /-- THE dispatch query: exactly one law of `kind`/`variant` must
     match the goal form — zero matches raises the registry's
@@ -215,8 +256,9 @@ def query (kind : Name) (e : Expr) : MetaM (Array StepLaw) := do
     it in its lane frontier); two matches at top priority is an
     ambiguity error (consumption-time unique-rule check). -/
 def queryUnique (kind : Name) (e : Expr)
-    (variant : Name := .anonymous) : MetaM StepLaw := do
-  let hits ← query kind e
+    (variant : Name := .anonymous) (unifyFallback : Bool := false) :
+    MetaM StepLaw := do
+  let hits ← query kind e unifyFallback
   let hits := if variant == .anonymous then hits
     else hits.filter (·.variant == variant)
   match hits.size with

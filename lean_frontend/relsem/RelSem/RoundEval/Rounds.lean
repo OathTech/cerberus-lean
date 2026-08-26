@@ -38,6 +38,14 @@ open RelSem.DeriveState (throwFrontier provenanceNote)
     pack-dependent discovery). -/
 initialize lastGlueUsed : IO.Ref Bool ← IO.mkRef false
 
+/-- Set by the loop's CLASSIFICATION when the step discovery needed
+    the hypothesis pack (hyp-aware classification — arc-18 C3b): the
+    direct face's `stepAt` unification would re-run that discovery
+    WITHOUT the pack (measured: the round-68 post-store tau — a
+    200k-heartbeat whnf abort the elaborator logs uncatchably), so
+    `elabLawChain` goes straight to the discovered-step glue. -/
+initialize classifyUsedHypNorm : IO.Ref Bool ← IO.mkRef false
+
 /-- Build `app (advance_step td tid (Laws.stepAt td tid σ)) σ`. -/
 def mkRoundLhs (td tid σ : Expr) : TermElabM Expr := do
   let stepAtE ← mkAppMU ``RelSem.Laws.stepAt #[td, tid, σ]
@@ -99,22 +107,18 @@ private def elabLawChain (td tid σ stepE lhs : Expr) (roundIdx : Nat)
       throwError "derive_rounds: round {roundIdx} successor still \
         has metavariables after law elaboration"
     return (pf, succ)
-  try
-    elabAt lhs
-  catch exDirect =>
+  let doGlue : TermElabM (Expr × Expr) := do
     let advE ← mkAppMU ``advance_step #[td, tid, stepE]
     let lhsD ← mkAppMU ``RelSem.app #[advE, σ]
-    if lhs == lhsD then throw exDirect
-    trace[RelSem.roundEval] "elabLawChain[{roundIdx}]: direct face \
-      failed ({exDirect.toMessageData}); retrying at the discovered \
-      step with glue"
     let (pf, succ) ← elabAt lhsD
+    trace[RelSem.roundEval] "elabLawChain[{roundIdx}]: glue elab done"
     let stepAtE ← mkAppMU ``RelSem.Laws.stepAt #[td, tid, σ]
     let hstep ← withCurrHeartbeats (do
       match ← (activeHypPack.get : BaseIO _) with
       | some hp => proveHypEq hp stepAtE stepE
       | none =>
         mkExpectedTypeHint (← mkEqRefl stepE) (← mkEq stepAtE stepE))
+    trace[RelSem.roundEval] "elabLawChain[{roundIdx}]: glue hstep done"
     -- per-phase scope (arc-18 C3): inferType/congr over the
     -- race-analyzed round-44-class step spellings is its own unit
     withCurrHeartbeats do
@@ -125,6 +129,32 @@ private def elabLawChain (td tid σ stepE lhs : Expr) (roundIdx : Nat)
     let glue ← mkCongrArg motive hstep
     lastGlueUsed.set true
     return (← mkEqTrans glue pf, succ)
+  -- GLUE-FIRST for hyp-classified BUILDER rounds (arc-18 C3b): when
+  -- the discovery itself needed the pack, the direct face's stepAt
+  -- unification re-runs it packless — round 44 failed fast, round 68
+  -- ABORTED (an uncatchable logged 200k-whnf timeout inside term
+  -- elaboration). The doomed attempt is skipped, not survived.
+  -- BUILDER-GATED: materialized hyp drives (T4's committed rT) also
+  -- hyp-classify some rounds but their direct faces SUCCEED — the
+  -- gate keeps their emissions byte-identical (measured: ungated,
+  -- the T4 drive emitted +16 glue artifacts).
+  if (← classifyUsedHypNorm.get) && (← builderMode.get) then
+    let advE ← mkAppMU ``advance_step #[td, tid, stepE]
+    let lhsD ← mkAppMU ``RelSem.app #[advE, σ]
+    unless lhs == lhsD do
+      trace[RelSem.roundEval] "elabLawChain[{roundIdx}]: hyp-classified \
+        round — glue-first"
+      return ← doGlue
+  try
+    elabAt lhs
+  catch exDirect =>
+    let advE ← mkAppMU ``advance_step #[td, tid, stepE]
+    let lhsD ← mkAppMU ``RelSem.app #[advE, σ]
+    if lhs == lhsD then throw exDirect
+    trace[RelSem.roundEval] "elabLawChain[{roundIdx}]: direct face \
+      failed ({exDirect.toMessageData}); retrying at the discovered \
+      step with glue"
+    doGlue
 
 /-- Unfold definition heads (dnmsBump and friends) until the record
     constructor is exposed (bounded; beta after each unfold). -/
