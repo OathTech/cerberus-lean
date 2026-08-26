@@ -147,3 +147,16 @@ import RelSem.Kit.Map
 -- arc-17 S2: the seq_rmw construct law (the S1-registered census gap).
 /-- info: 'RelSem.Kit.perform_seqrmw' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Kit.perform_seqrmw
+
+-- Kit/Eval — THE PULL_CONSTRAINED IDENTITY LAW (arc-18 C3; the
+-- arc-17 S3 §3.4 priced mechanism). Both faces + the head lemma +
+-- the pull_helper identity: SUB-trio cones (no Classical.choice
+-- anywhere; the fold identity is even choice- and quot-free).
+/-- info: 'RelSem.Kit.pull_constrained_spine' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Kit.pull_constrained_spine
+/-- info: 'RelSem.Kit.pull_constrained_id' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Kit.pull_constrained_id
+/-- info: 'RelSem.Kit.pullSpine_notConstrained' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Kit.pullSpine_notConstrained
+/-- info: 'RelSem.Kit.pull_helper_id' depends on axioms: [propext] -/
+#guard_msgs in #print axioms RelSem.Kit.pull_helper_id

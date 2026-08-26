@@ -922,7 +922,14 @@ open Lean in
 -- arc-19's search). The wpSeq lane's two OwnP faces stay registered
 -- while their consumers (T6Probe's walk + the C5-bound smokes)
 -- remain on the transitional OwnP surface.
-/-- info: step_law census: 55 laws [advance 4, construct 9, envAlg 3, envMap 3, heapWP 4, heapWalk 8, loop 2, memBlock 5, memRW 7, perform 5, roundGlue 3, wpSeq 2] -/
+-- Census re-baseline 55 → 57 (arc-18 C3): the evalPull lane — THE
+-- PULL_CONSTRAINED IDENTITY LAW's two faces (fuel + wrapper,
+-- Kit/Eval.lean): pull_constrained at constraint-free pexprs is the
+-- pullSpine rebuild (the arc-17 S3 record §3.4's priced mechanism —
+-- "a LAW, not a lane"); the constraint-set dedup wall deletes by
+-- construction wherever the walk crosses the symbolic-exc
+-- eval boundary.
+/-- info: step_law census: 57 laws [advance 4, construct 9, envAlg 3, envMap 3, evalPull 2, heapWP 4, heapWalk 8, loop 2, memBlock 5, memRW 7, perform 5, roundGlue 3, wpSeq 2] -/
 #guard_msgs in #step_law_census
 /-- info: 'RelSem.T1.round6' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.round6
@@ -1308,9 +1315,12 @@ open Lean in
 -- inject_ptr_arg1/callND_errno/get_ths_eq/driver_update_ts + the
 -- stepAt registry helper join ConstructLaws — the acceptance
 -- probe's law layer; the probe fixture file itself is parked OUT of
--- the build).
+-- the build). 4914 → 5090 (arc-18 C3: THE PULL_CONSTRAINED IDENTITY
+-- LAW — Kit/Eval's pullSpine mirror + its equation/matcher
+-- auxiliaries + notConstrained + pull_helper_id/foldl_inr_of_step +
+-- the two law faces; all boundary-clean, no cone movement).
 /--
-info: RelSem audit sweep: 4914 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 5090 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do
