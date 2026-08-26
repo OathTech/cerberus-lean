@@ -70,6 +70,11 @@ partial def collectMintCands (root : Expr) :
         if let .const c _ := e.getAppFn then
           if registryBoolHead c || registryDecHead c
               || c == ``fmapLookupBy || c == ``BEq.beq
+              -- the evalArith + evalPull lanes' heads (arc-18 C3)
+              || c == ``mk_conv_int
+              || c == ``mk_call_catch_exceptional_condition
+              || c == ``pull_constrained
+              || c == ``pull_constrained_lemFuel
               || c == ``CerbMem.readBytesFrom
               || c == ``CerbMem.MemState.allocations
               || c == ``CerbMem.MemState.deadAllocations

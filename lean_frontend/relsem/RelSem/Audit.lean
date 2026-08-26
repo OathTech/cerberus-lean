@@ -929,7 +929,15 @@ open Lean in
 -- "a LAW, not a lane"); the constraint-set dedup wall deletes by
 -- construction wherever the walk crosses the symbolic-exc
 -- eval boundary.
-/-- info: step_law census: 57 laws [advance 4, construct 9, envAlg 3, envMap 3, evalPull 2, heapWP 4, heapWalk 8, loop 2, memBlock 5, memRW 7, perform 5, roundGlue 3, wpSeq 2] -/
+-- Census re-baseline 57 → 60 (arc-18 C3): the evalArith lane — the
+-- conv/catch arithmetic laws (conv_int_signed_range /
+-- catch_add_signed_range, Kit/Eval.lean): the T5 body walk's
+-- round-35 tower cascade resolved as once-proved laws (identity /
+-- guarded sum at in-range operands), consumed by the mintConvArith
+-- lane with omega-discharged range premises — plus the envMap
+-- empty-lookup base case (fmapLookupBy_empty, Kit/Map.lean: the
+-- core_extern wrapper at freshly-drawn symbols under the env fence).
+/-- info: step_law census: 60 laws [advance 4, construct 9, envAlg 3, envMap 4, evalArith 2, evalPull 2, heapWP 4, heapWalk 8, loop 2, memBlock 5, memRW 7, perform 5, roundGlue 3, wpSeq 2] -/
 #guard_msgs in #step_law_census
 /-- info: 'RelSem.T1.round6' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.round6
@@ -1319,8 +1327,12 @@ open Lean in
 -- LAW — Kit/Eval's pullSpine mirror + its equation/matcher
 -- auxiliaries + notConstrained + pull_helper_id/foldl_inr_of_step +
 -- the two law faces; all boundary-clean, no cone movement).
+-- 5090 → 5265 (arc-18 C3 cont.: the evalArith laws + their
+-- equation/matcher auxiliaries [Kit/Eval], fmapLookupBy_empty
+-- [Kit/Map], option_eq_some_getD + the substitution-hardening
+-- engine decls [RoundEval]; all boundary-clean, no cone movement).
 /--
-info: RelSem audit sweep: 5090 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 5265 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do

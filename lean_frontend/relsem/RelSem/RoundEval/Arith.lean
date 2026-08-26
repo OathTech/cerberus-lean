@@ -172,6 +172,18 @@ theorem int_not_nonneg_of_lt {a : Int} (h : a < 0) : ¬ a.NonNeg :=
       exact this
     omega
 
+/-- Raw `Expr.lit` Nat numerals respelled as standard `OfNat`
+    numerals (arc-18 C3 — the C1-registered seed, applied at its
+    predicted frontier: quoted-AST symbol digests reach apartness
+    goals as raw literals, which omega treats as ATOMS; the respell
+    is defeq, so the proof is cast back to the original spelling by
+    a kernel-deferred hint). -/
+def ofNatify (e : Expr) : CoreM Expr :=
+  Core.transform e (post := fun n => do
+    match n with
+    | .lit (.natVal v) => return .done (mkNatLit v)
+    | _ => return .continue)
+
 /-- Speculative tactic proof of `goal` (omega); state fully restored
     on failure (messages included — a failed attempt must not poison
     the log). -/
@@ -189,6 +201,15 @@ def tryOmegaProof (goal : Expr) : TermElabM (Option Expr) := do
   catch _ =>
     s.restore
     return none
+
+/-- `tryOmegaProof` at the `ofNatify` respell (used ONLY by the
+    env-apartness discharge — the C1-seed frontier; globally the
+    respell perturbs the measured verdict population). -/
+def tryOmegaProofNumLit (goal : Expr) : TermElabM (Option Expr) := do
+  let goal' ← ofNatify goal
+  if goal' == goal then return ← tryOmegaProof goal
+  let some pf ← tryOmegaProof goal' | return none
+  return some (← mkExpectedTypeHint pf goal)
 
 /-- Ground verdict by the S0 kernel-decide contract (donor pattern:
     synthesize, whnf at `.all` — attribute-blind, so fence-stuck
@@ -419,7 +440,13 @@ partial def closeBoolTower
           (do
             let some (lit', hSub) ←
                 closeBoolTower verdict major (cdepth + 1) | return none
-            let abst ← abstractExact bCur major
+            -- position-checked abstraction (arc-18 C3: raw
+            -- abstractExact also abstracted occurrences inside
+            -- dependent motive/type positions — kernel-deferred
+            -- congrArg pieces then failed at addDecl; measured at
+            -- the T5 body walk's round-14 guard)
+            let some abst ← abstractExactChecked bCur major lit'
+              | return none
             unless abst.hasLooseBVars do return none
             let bNext := abst.instantiate1 lit'
             let motive := Lean.mkLambda `x .default
@@ -447,18 +474,23 @@ partial def closeBoolTower
           let tyW' ← whnfU (← inferType d')
           let mut sub? : Option (Expr × Expr) := none  -- (vTerm, hIn)
           if tyW'.isAppOfArity ``Decidable 1 then
+            let q0 := tyW'.appArg!
             let q' ← foldArith (← withCurrHeartbeats
-              (groundNorm "inner prop" tyW'.appArg!))
+              (groundNorm "inner prop" q0))
             if !(q'.hasExprMVar || q'.hasLooseBVars) then
             if let some (polq, pfq) ← verdict q' then
+              -- the C3 ORIGINAL-SPELLING RULE (see mintDecidable):
+              -- verdicts typed at q0, proof cast kernel-deferred
+              let pfq0 ← if polq then mkExpectedTypeHint pfq q0
+                else mkExpectedTypeHint pfq (mkApp (mkConst ``Not) q0)
               let vTerm := if polq then
-                  mkApp2 (mkConst ``Decidable.isTrue) q' pfq
-                else mkApp2 (mkConst ``Decidable.isFalse) q' pfq
+                  mkApp2 (mkConst ``Decidable.isTrue) q0 pfq0
+                else mkApp2 (mkConst ``Decidable.isFalse) q0 pfq0
               let hIn := if polq then
                   mkApp3 (mkConst ``RelSem.RoundEval.dec_eq_isTrue)
-                    q' pfq d'
+                    q0 pfq0 d'
                 else mkApp3 (mkConst ``RelSem.RoundEval.dec_eq_isFalse)
-                    q' pfq d'
+                    q0 pfq0 d'
               sub? := some (vTerm, hIn)
           else if tyW'.isConstOf ``Bool && d'.isApp then
             -- Bool-typed inner tower: close recursively
@@ -470,7 +502,10 @@ partial def closeBoolTower
           let some (vTerm, hIn) := sub? | return none
           -- self-insertion guard (the mintEmit drip lesson)
           if (vTerm.find? (· == d')).isSome then return none
-          let abst ← abstractExact bCur d'
+          -- position-checked abstraction (the C3 hardening; see the
+          -- major-site note above)
+          let some abst ← abstractExactChecked bCur d' vTerm
+            | return none
           unless abst.hasLooseBVars do return none
           let bNext := abst.instantiate1 vTerm
           let motive := Lean.mkLambda `x .default (← inferType d') abst
@@ -643,19 +678,25 @@ partial def propVerdict (p : Expr) (depth : Nat := 0) :
       (do
         let tyW' ← whnfU (← inferType d')
         unless tyW'.isAppOfArity ``Decidable 1 do return none
+        let q0 := tyW'.appArg!
         let q' ← foldArith (← withCurrHeartbeats
-          (groundNorm "inner prop" tyW'.appArg!))
+          (groundNorm "inner prop" q0))
         if q'.hasExprMVar || q'.hasLooseBVars then return none
         let some (polq, pfq) ← propVerdict q' (depth + 1) | return none
+        -- the C3 ORIGINAL-SPELLING RULE (see mintDecidable)
+        let pfq0 ← if polq then mkExpectedTypeHint pfq q0
+          else mkExpectedTypeHint pfq (mkApp (mkConst ``Not) q0)
         let vTerm := if polq then
-            mkApp2 (mkConst ``Decidable.isTrue) q' pfq
-          else mkApp2 (mkConst ``Decidable.isFalse) q' pfq
-        let abst ← abstractExact p d'
+            mkApp2 (mkConst ``Decidable.isTrue) q0 pfq0
+          else mkApp2 (mkConst ``Decidable.isFalse) q0 pfq0
+        -- position-checked abstraction (the C3 hardening)
+        let some abst ← abstractExactChecked p d' vTerm
+          | return none
         unless abst.hasLooseBVars do return none
         let p' := abst.instantiate1 vTerm
         let hIn := if polq then
-            mkApp3 (mkConst ``RelSem.RoundEval.dec_eq_isTrue) q' pfq d'
-          else mkApp3 (mkConst ``RelSem.RoundEval.dec_eq_isFalse) q' pfq d'
+            mkApp3 (mkConst ``RelSem.RoundEval.dec_eq_isTrue) q0 pfq0 d'
+          else mkApp3 (mkConst ``RelSem.RoundEval.dec_eq_isFalse) q0 pfq0 d'
         let motive := Lean.mkLambda `x .default (← inferType d') abst
         let hEq ← mkExpectedTypeHint (← mkCongrArg motive hIn)
           (← mkEq p p')

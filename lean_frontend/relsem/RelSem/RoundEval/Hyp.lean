@@ -63,6 +63,17 @@ open RelSem.DeriveState (throwFrontier provenanceNote)
     machine state, the eq-hypotheses simply disappear from the packs
     and the mode degenerates to the hypothesis-free evaluator. -/
 
+/-- An `isSome` option equals `some` of its `getD` (the glue-round
+    discovery bridge, arc-18 C3: the payload-blind route — `isSome`
+    forward-normalizes through the pack where the payload spelling
+    itself is verdict-substituted and not kernel-defeq to the folded
+    face). -/
+theorem option_eq_some_getD {α : Type} (o : Option α) (d : α)
+    (h : o.isSome = true) : o = some (o.getD d) := by
+  cases o with
+  | none => simp at h
+  | some v => rfl
+
 /-- One registered rewrite: (stuck lhs, replacement rhs, proof term
     `lhs = rhs` valid in the command's binder scope). `syntactic`
     marks MINTED patterns (arith-minter verdicts): they are harvested
@@ -181,17 +192,38 @@ private def motiveNonDep (m : Expr) : Bool :=
 private partial def substDecSafeCore (root pat rhs : Expr)
     (found : IO.Ref Bool) : MetaM Expr := do
   let env ← getEnv
+  -- DATA-typed patterns (arc-18 C3): the position discipline below
+  -- exists for DECIDABLE-typed verdicts (defeq-variant hazards in
+  -- dependent slots). A pattern of rigid data type (IntegerValue,
+  -- Option _, …) is replaceable at ANY value position reached by the
+  -- recursion — the conv/catch law rewrites are data rewrites.
+  let patTy ← try whnf (← inferType pat) catch _ => pure (mkConst ``Unit)
+  let dataPat := !(patTy.isAppOf ``Decidable)
   let cache ← IO.mkRef ({} : Std.HashMap Expr Expr)
   let rec go (e : Expr) : MetaM Expr := do
+    if dataPat && e == pat then
+      found.set true
+      return rhs
     unless e.isApp || e.isLambda || e.isForall || e.isLet
         || e.isMData || e.isProj do return e
     if let some r := (← cache.get).get? e then return r
+    -- proofs are opaque (arc-18 C3, mirroring the materialized-mode
+    -- transform's pre-skip): replacing inside a proof buys nothing
+    -- and can desynchronize it from its statement spelling.
+    if (← Meta.isProofQuick e) matches .true then return e
     let r ← (do
       match e with
       | .app .. => do
         let fn := e.getAppFn
         let args := e.getAppArgs
-        -- which positions may take the verdict directly?
+        -- which positions may take the verdict directly, and which
+        -- may be RECURSED into? (arc-18 C3 hardening, replacing the
+        -- interim whole-term type-check: for the Decidable machinery
+        -- the Prop/motive/instance-type slots are NEVER entered —
+        -- a nested replacement there changes an enclosing type and
+        -- builds kernel-rejected terms [measured: the T5 body walk's
+        -- round-14 guard]; a whole-term `check` per substitution was
+        -- the measured 200k-heartbeat cost at round-35 tower sizes.)
         let safeIdx : Array Nat ← (do
           match fn with
           | .const c _ =>
@@ -215,18 +247,43 @@ private partial def substDecSafeCore (root pat rhs : Expr)
               return #[]
             else return #[]
           | _ => return #[])
+        let recurseIdx : Array Nat ← (do
+          match fn with
+          | .const c _ =>
+            if c == ``ite || c == ``dite then
+              return #[3, 4]          -- branches only (α, c, inst frozen)
+            else if c == ``decide then
+              return #[]              -- whole-instance replacement only
+            else if c == ``Decidable.rec then
+              if args.size == 5 then return #[2, 3] else return #[]
+            else if isMatcherAppCore env e then
+              if let some ma ← Lean.Meta.matchMatcherApp? e then
+                let base := ma.params.size + 1
+                -- discrs + alts; params/motive frozen
+                return (Array.range (ma.discrs.size + ma.alts.size)).map
+                  (base + ·)
+              return #[]
+            else
+              return Array.range args.size
+          | _ => return Array.range args.size)
         let mut newArgs := args
         for i in [0:args.size] do
           if args[i]! == pat && safeIdx.contains i then
             newArgs := newArgs.set! i rhs
             found.set true
-          else
+          else if recurseIdx.contains i then
             newArgs := newArgs.set! i (← go args[i]!)
         return mkAppN (← go fn) newArgs
-      | .lam n t b i => return .lam n (← go t) (← go b) i
-      | .forallE n t b i => return .forallE n (← go t) (← go b) i
+      -- binder TYPES are quoted text (arc-18 C3, the frozen-slot
+      -- discipline's binder face): a replacement inside a lambda's
+      -- type annotation desynchronizes it from the enclosing
+      -- application's Prop slots (measured: the T5 round-14 minor
+      -- premise annotated at a verdict-substituted `decide` instance
+      -- while the rec's Prop kept the original spelling)
+      | .lam n t b i => return .lam n t (← go b) i
+      | .forallE n t b i => return .forallE n t (← go b) i
       | .letE n t v b nd =>
-        return .letE n (← go t) (← go v) (← go b) nd
+        return .letE n t (← go v) (← go b) nd
       | .mdata m b => return .mdata m (← go b)
       | .proj sN i b => return .proj sN i (← go b)
       | e => return e)
@@ -240,7 +297,12 @@ def substPatternExact (e lhs rhs : Expr) : MetaM (Option Expr) := do
     | _ => true
   unless quick do return none
   if ← (builderMode.get : BaseIO _) then
-    -- builder mode: STRUCTURAL position safety
+    -- builder mode: STRUCTURAL position safety (arc-18 C3 hardened:
+    -- substDecSafeCore no longer recurses into Prop/motive/instance
+    -- type slots and skips proofs — the round-14 dependent-position
+    -- kernel reject is unconstructible by position discipline; the
+    -- interim whole-term check guard was the measured round-35
+    -- 200k-heartbeat cost and is retired with the hardening)
     let found ← IO.mkRef false
     let e' ← substDecSafeCore e lhs rhs found
     if ← found.get then return some e' else return none

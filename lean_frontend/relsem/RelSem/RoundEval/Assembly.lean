@@ -306,6 +306,7 @@ elab "derive_rounds " id:ident bs:bracketedBinder* assum:(roundsAssuming)? fenc:
                   #[fE, tdE, accE, tidListE], σE]
           let mut pf? : Option Expr := none
           for j in [0 : n] do
+            trace[RelSem.roundEval] "chain piece {j+1}/{n}"
             let piece ← withCurrHeartbeats do
               try
                 let fS ← mkFuelE (n + off - j)
@@ -334,9 +335,17 @@ elab "derive_rounds " id:ident bs:bracketedBinder* assum:(roundsAssuming)? fenc:
                           (driver_state.core_state0 $σjS))).getD
                         default))
                     = some (RelSem.Laws.stepAt $tdS $tidS $σjS)))
-                let hfind ← mkExpectedTypeHint
-                  (← mkEqRefl (← mkAppMU ``Option.some #[stepAtE]))
-                  hfindTy
+                -- glue rounds carry a pack-proved discovery
+                -- equation (arc-18 C3) — a refl hint cannot re-run
+                -- a pack-dependent discovery in the kernel
+                let hfind ← (do
+                  if let some nm := rounds[j]!.hfindName then
+                    mkExpectedTypeHint (mkAppN (mkConst nm) fvars)
+                      hfindTy
+                  else
+                    mkExpectedTypeHint
+                      (← mkEqRefl (← mkAppMU ``Option.some #[stepAtE]))
+                      hfindTy)
                 let hadv := mkAppN (mkConst rounds[j]!.eqName) fvars
                 let raw ← mkAppOptMU glueLaw.name
                   #[some tdE, some fS, some f1, some accE, some tidE,
@@ -355,9 +364,33 @@ elab "derive_rounds " id:ident bs:bracketedBinder* assum:(roundsAssuming)? fenc:
                     pure m!"(endpoints {lo}/{hi} objs — elided)")
                 throwError "derive_rounds: piecewise chain piece \
                   {j+1}/{n} FAILED: {ex.toMessageData}\n{detail}"
-            pf? := some (← match pf? with
+            -- per-piece scope for the accumulation too (arc-18 C3:
+            -- 50-piece chains cumulatively exceeded the single outer
+            -- budget inside mkEqTrans's inferType at T5-body sizes)
+            pf? := some (← withCurrHeartbeats (do
+              match pf? with
               | none => pure piece
-              | some p => mkEqTrans p piece)
+              | some p => mkEqTrans p piece))
+            -- PREFIX CHECKPOINTS (arc-18 C3): every `segW` pieces the
+            -- accumulated prefix chain is emitted as its own named,
+            -- kernel-checked lemma and the accumulator RESTARTS from
+            -- that lemma's application — the final declaration's
+            -- kernel work is one window, not the whole run (measured:
+            -- a 50-round single-decl chain at T5-body state sizes
+            -- exceeded one whnf budget unit; 30 rounds fit).
+            let segW := 12
+            if (j + 1) % segW == 0 && j + 1 < n then
+              let segName := chainName.appendAfter s!"_p{j+1}"
+              let segTy ← withCurrHeartbeats (mkEq
+                (← mkDnms (← mkFuelE (n + off)) σ0E)
+                (← mkDnms (← mkFuelE (n + off - (j+1))) σs[j+1]!))
+              let some pAcc := pf? | throwError "chain: empty prefix"
+              trace[RelSem.roundEval] "chain prefix checkpoint {j+1}"
+              withCurrHeartbeats (emitThm segName (fvars ++ #[fuelFv])
+                segTy pAcc
+                s!"Relative-chain prefix checkpoint (rounds 1..{j+1}; the windowed kernel-work discipline). {provenanceNote "derive_rounds"}")
+              pf? := some (mkAppN (mkConst segName)
+                (fvars ++ #[fuelFv]))
           let pfWhole ← (do
             match terminal with
             | none => pure pf?
@@ -407,9 +440,11 @@ elab "derive_rounds " id:ident bs:bracketedBinder* assum:(roundsAssuming)? fenc:
               match pf? with
               | none => pure (some term)
               | some p => pure (some (← mkEqTrans p term)))
+          trace[RelSem.roundEval] "chain pieces done"
           let some pfBody := pfWhole
             | throwFrontier m!"derive_rounds: empty relative chain \
                 (no rounds and no terminal)"
+          trace[RelSem.roundEval] "chain: building endpoints"
           let lhsAll ← mkDnms (← mkFuelE (n + off)) σ0E
           let rhsAll ← (do
             match terminal with
@@ -418,16 +453,19 @@ elab "derive_rounds " id:ident bs:bracketedBinder* assum:(roundsAssuming)? fenc:
               let stepsS ← toStxU stepsE
               elabClosed (← `((NDactive (fmapAddBy defaultCompare
                 $tidS $stepsS fmapEmpty), $(← toStxU σs[n]!)))))
-          let stmt1 ← mkEq lhsAll rhsAll
+          trace[RelSem.roundEval] "chain: endpoints built"
+          let stmt1 ← withCurrHeartbeats (mkEq lhsAll rhsAll)
+          trace[RelSem.roundEval] "chain: stmt built"
           return (← mkForallFVars #[fuelFv] stmt1,
                   ← mkLambdaFVars #[fuelFv] pfBody)
-        emitThm chainName fvars stmt value
+        trace[RelSem.roundEval] "chain: emitting"
+        withCurrHeartbeats (emitThm chainName fvars stmt value
           s!"RELATIVE {if terminal.isSome then "terminal " else ""}chain \
              ({rounds.size} rounds{if terminal.isSome then " + terminal" else ""}, \
              ∀-fuel — the iter_compose feed; PIECEWISE assembly: \
              endpoints tracked syntactically, premises kernel-deferred \
              through dnms_round_computed). \
-             {provenanceNote "derive_rounds"}"
+             {provenanceNote "derive_rounds"}")
         logInfo m!"derive_rounds {baseName}: relative chain {chainName} \
           emitted ({rounds.size} rounds, terminal={terminal.isSome})"
       match terminal with

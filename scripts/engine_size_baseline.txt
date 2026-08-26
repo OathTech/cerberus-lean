@@ -18,16 +18,38 @@
 # 465 -> 566 — the re-derived relative-chain emitter (endpoint-
 # tracked pieces via dnms_round_computed, size-gated diagnostics)
 # replacing the single-monster-elaboration emitter.
+#
+# C3 re-baseline (arc-18 C3, the T5 body-walk unblocking): total
+# 4809 -> 5207. Provenance per module, each either an engine-to-law
+# CONSUMER (a lane applying a REGISTERED law: evalPull/evalArith/
+# envMap-empty) or measured substitution-safety HARDENING:
+#   Hyp 818->880: substDecSafeCore position discipline (frozen
+#     binder-type/motive/instance slots + proof skip + data-pattern
+#     replacement) + option_eq_some_getD (the glue-discovery bridge).
+#   Mint 248->253: MintedRound.hfindName (glue-round discovery).
+#   Classify 166->171: evalArith/evalPull candidate heads.
+#   Arith 681->722: original-spelling verdicts (q0 casts), ofNatify
+#     (the C1-registered seed at its predicted frontier), checked
+#     abstraction at the three closeBoolTower/propVerdict sites.
+#   Lanes 501->686: mintConvArith (evalArith-law consumer, incl. the
+#     conv-through-operand congr composition) + mintPull (the
+#     pull_constrained identity-law consumer) + the envMap empty
+#     branch — all three are REGISTRY-QUERY appliers, zero semantic
+#     knowledge in engine code (the laws carry it).
+#   Rounds 732->794: the glue-round _hfind emission (pack-proved
+#     discovery equations for the chain assembler) + phase scoping.
+#   Assembly 566->604: prefix checkpoints (windowed kernel work) +
+#     glue-aware hfind premises + phase traces.
 RoundEval.lean 87
 RoundEval/Core.lean 329
-RoundEval/Hyp.lean 818
-RoundEval/Mint.lean 248
-RoundEval/Classify.lean 166
-RoundEval/Arith.lean 681
-RoundEval/Lanes.lean 501
-RoundEval/Rounds.lean 732
-RoundEval/Assembly.lean 566
+RoundEval/Hyp.lean 880
+RoundEval/Mint.lean 253
+RoundEval/Classify.lean 171
+RoundEval/Arith.lean 722
+RoundEval/Lanes.lean 686
+RoundEval/Rounds.lean 794
+RoundEval/Assembly.lean 604
 DeriveState.lean 260
 WpGround.lean 121
 LawRegistry.lean 300
-TOTAL 4809
+TOTAL 5207

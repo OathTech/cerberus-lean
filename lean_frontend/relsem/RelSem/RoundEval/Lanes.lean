@@ -85,16 +85,28 @@ private def mintDecidable (hp : HypPack) (d : Expr) : TermElabM Bool := do
   let some (pol, pf) := v?
     | (do trace[RelSem.roundEval] "arith minter: no verdict ({← p.numObjs} objs, head {p.getAppFn}) for{indentExpr p}"
           return false)
+  -- THE ORIGINAL-SPELLING RULE (arc-18 C3, measured at the T5 body
+  -- walk's round-14 guard): the verdict term must be typed at the
+  -- ORIGINAL Prop spelling `p0` (what the term's dependent
+  -- neighbors quote), not the normalized `p` omega consumed —
+  -- substituting an `isTrue p …` into a `Decidable p0` position
+  -- mixes defeq-variant spellings inside dependent structure and
+  -- the kernel rejects the emitted round. The side fact stays
+  -- STATED at `p` (omega's vocabulary); the use site carries a
+  -- kernel-deferred cast p ≡ p0.
   if pol then
     let href ← mintEmitSide hp p pf "decidable/isTrue side"
-    mintEmit hp d (mkApp2 (mkConst ``Decidable.isTrue) p href)
-      (mkApp3 (mkConst ``RelSem.RoundEval.dec_eq_isTrue) p href d)
+    let href0 ← mkExpectedTypeHint href p0
+    mintEmit hp d (mkApp2 (mkConst ``Decidable.isTrue) p0 href0)
+      (mkApp3 (mkConst ``RelSem.RoundEval.dec_eq_isTrue) p0 href0 d)
       "decidable → isTrue"
   else
     let href ← mintEmitSide hp (mkApp (mkConst ``Not) p) pf
       "decidable/isFalse side"
-    mintEmit hp d (mkApp2 (mkConst ``Decidable.isFalse) p href)
-      (mkApp3 (mkConst ``RelSem.RoundEval.dec_eq_isFalse) p href d)
+    let href0 ← mkExpectedTypeHint href
+      (mkApp (mkConst ``Not) p0)
+    mintEmit hp d (mkApp2 (mkConst ``Decidable.isFalse) p0 href0)
+      (mkApp3 (mkConst ``RelSem.RoundEval.dec_eq_isFalse) p0 href0 d)
       "decidable → isFalse"
   return true
 
@@ -213,6 +225,16 @@ private def mintEnvLookup (hp : HypPack) (d : Expr) : TermElabM Bool := do
   unless dArgs.size == 5 do return false
   let key := dArgs[3]!
   let m := dArgs[4]!
+  -- EMPTY-map base case (arc-18 C3): the core_extern wrapper at a
+  -- freshly-drawn symbol — definitional, applied by registry query
+  if m.isAppOf ``Fmap.empty || m.isAppOf ``fmapEmpty then
+    let some emptyLaw ← queryLaw? `envMap d (variant := `empty)
+      | return false
+    let prf ← mkAppOptM emptyLaw #[some dArgs[0]!, some dArgs[1]!, some dArgs[2]!, some key]
+    let some (_, _, rhs) := (← inferType prf).eq? | return false
+    let prf' ← mkExpectedTypeHint prf (← mkEq d rhs)
+    mintEmit hp d rhs prf' "env lookup empty"
+    return true
   unless m.isAppOf ``fmapAddBy && m.getAppArgs.size == 7 do return false
   let mArgs := m.getAppArgs
   let k' := mArgs[4]!
@@ -264,7 +286,7 @@ private def mintEnvLookup (hp : HypPack) (d : Expr) : TermElabM Bool := do
   let pfNe? ← (do
     match ← propVerdict neStmt with
     | some (true, pf) => return some pf
-    | _ => tryOmegaProof neStmt)
+    | _ => tryOmegaProofNumLit neStmt)
   let some pfNe := pfNe? | (do
     trace[RelSem.roundEval] "env lane: apartness unprovable: {neStmt}"
     return false)
@@ -455,6 +477,163 @@ private def mintMemRW (hp : HypPack) (d : Expr) : TermElabM Bool := do
     (write [{av}, {av + blen}), read [{av'}, {av' + nv})) — unsupported"
   return false
 
+
+/-- THE CONV/CATCH ARITHMETIC LANE (arc-18 C3): a stuck
+    `mk_conv_int` / `mk_call_catch_exceptional_condition` application
+    at signed-int type and symbolic operands rewrites through the
+    registered `evalArith` laws (Kit/Eval — the round-35 tower
+    cascade of the T5 body walk, resolved as LAWS: the tower's
+    semantic content at in-range operands is the identity / the
+    guarded sum). Range premises discharge through the verdict
+    engine (omega over the pack); law selection by registry query
+    (R4). -/
+private def mintConvArith (hp : HypPack) (d : Expr) : TermElabM Bool := do
+  let .const c _ := d.getAppFn | return false
+  let args := d.getAppArgs
+  let sigInt := mkApp (mkConst ``integerType.Signed)
+    (mkConst ``integerBaseType.Int_)
+  let intLit (n : Int) : Expr := toExpr n
+  let rangeProofs (v : Expr) : TermElabM (Option (Expr × Expr)) := do
+    let p1 ← mkAppM ``LE.le #[intLit (-2147483648), v]
+    let p2 ← mkAppM ``LE.le #[v, intLit 2147483647]
+    let some (true, pf1) ← propVerdict p1 | return none
+    let some (true, pf2) ← propVerdict p2 | return none
+    return some (← mintEmitSide hp p1 pf1 "conv-arith range lo",
+                 ← mintEmitSide hp p2 pf2 "conv-arith range hi")
+  let emitVia (law : Name) (lawArgs : Array Expr) : TermElabM Bool := do
+    let prf ← mkAppM law lawArgs
+    let some (_, _, rhs) := (← inferType prf).eq? | return false
+    if (rhs.find? (· == d)).isSome then return false
+    let prf' ← mkExpectedTypeHint prf (← mkEq d rhs)
+    mintEmit hp d rhs prf' "conv/catch arith law"
+    return true
+  if c == ``mk_conv_int && args.size == 2 then
+    unless args[0]! == sigInt || (← isDefEq args[0]! sigInt) do
+      return false
+    let ivW ← whnfU args[1]!
+    unless ivW.isAppOfArity ``CerbMem.IntegerValue.IV 2 do
+      trace[RelSem.roundEval] "convArith: conv operand not IV-headed ({ivW.getAppFn})"
+      return false
+    unless ivW.appArg!.hasFVar do return false -- ground convs are whnf's job
+    let some law ← queryLaw? `evalArith d (variant := `conv)
+      | return false
+    let some (h1, h2) ← rangeProofs ivW.appArg! | return false
+    emitVia law #[ivW.getAppArgs[0]!, ivW.appArg!, h1, h2]
+  else if c == ``mk_call_catch_exceptional_condition && args.size == 4 then
+    unless args[0]! == sigInt || (← isDefEq args[0]! sigInt) do
+      return false
+    unless (← whnfU args[1]!).isConstOf ``iop.IOpAdd do return false
+    -- pull an operand's value through ONE fenced conv layer (the
+    -- Core spelling `catch(conv a, conv b)` — the conv is fenced to
+    -- stay law-shaped, so resolve it here by the conv law with a
+    -- congr-composed proof)
+    let convValue? (arg : Expr) :
+        TermElabM (Option (Expr × Expr × Option Expr)) := do
+      let w ← whnfU arg
+      if w.isAppOfArity ``CerbMem.IntegerValue.IV 2 then
+        return some (w.getAppArgs[0]!, w.appArg!, none)
+      if w.isAppOfArity ``mk_conv_int 2 then
+        let wa := w.getAppArgs
+        unless wa[0]! == sigInt || (← isDefEq wa[0]! sigInt) do
+          return none
+        let ivW ← whnfU wa[1]!
+        unless ivW.isAppOfArity ``CerbMem.IntegerValue.IV 2 do
+          return none
+        let some cLaw ← queryLaw? `evalArith w (variant := `conv)
+          | return none
+        let some (h1, h2) ← rangeProofs ivW.appArg! | return none
+        let prf ← mkAppM cLaw
+          #[ivW.getAppArgs[0]!, ivW.appArg!, h1, h2]
+        let some (_, _, rhs) := (← inferType prf).eq? | return none
+        let prf' ← mkExpectedTypeHint prf (← mkEq arg rhs)
+        return some (rhs.getAppArgs[0]!, rhs.appArg!, some prf')
+      trace[RelSem.roundEval] "convArith: catch operand not resolvable ({w.getAppFn})"
+      return none
+    let some (pn1, a, hc1) ← convValue? args[2]! | return false
+    let some (pn2, b, hc2) ← convValue? args[3]! | return false
+    unless a.hasFVar || b.hasFVar do return false
+    let some law ← queryLaw? `evalArith d (variant := `catchAdd)
+      | return false
+    let sum ← mkAppM ``HAdd.hAdd #[a, b]
+    let some (h1, h2) ← rangeProofs sum | return false
+    let catchAt (x y : Expr) : Expr :=
+      mkApp4 (mkConst c) args[0]! args[1]! x y
+    let mkIV (pn v : Expr) : Expr :=
+      mkApp2 (mkConst ``CerbMem.IntegerValue.IV) pn v
+    -- congr the operand conv proofs into the catch app
+    let mut cur := d
+    let mut prfAcc : Option Expr := none
+    if let some h := hc1 then
+      let motive := Lean.mkLambda `x .default
+        (mkConst ``CerbMem.IntegerValue) (catchAt (.bvar 0) args[3]!)
+      let piece ← mkCongrArg motive h
+      let next := catchAt (mkIV pn1 a) args[3]!
+      let piece ← mkExpectedTypeHint piece (← mkEq cur next)
+      cur := next
+      prfAcc := some piece
+    if let some h := hc2 then
+      let motive := Lean.mkLambda `y .default
+        (mkConst ``CerbMem.IntegerValue)
+        (mkApp4 (mkConst c) args[0]! args[1]!
+          (if hc1.isSome then mkIV pn1 a else args[2]!) (.bvar 0))
+      let piece ← mkCongrArg motive h
+      let next := mkApp4 (mkConst c) args[0]! args[1]!
+        (if hc1.isSome then mkIV pn1 a else args[2]!) (mkIV pn2 b)
+      let piece ← mkExpectedTypeHint piece (← mkEq cur next)
+      cur := next
+      prfAcc := some (← match prfAcc with
+        | none => pure piece
+        | some p => mkEqTrans p piece)
+    let lawPrf ← mkAppM law #[pn1, pn2, a, b, h1, h2]
+    let some (_, _, rhs) := (← inferType lawPrf).eq? | return false
+    if (rhs.find? (· == d)).isSome then return false
+    let lawPrf ← mkExpectedTypeHint lawPrf (← mkEq cur rhs)
+    let full ← match prfAcc with
+      | none => pure lawPrf
+      | some p => mkEqTrans p lawPrf
+    let full ← mkExpectedTypeHint full (← mkEq d rhs)
+    mintEmit hp d rhs full "conv/catch arith law"
+    return true
+  else
+    return false
+
+
+/-- THE PULL LANE (arc-18 C3): a stuck `pull_constrained` crossing at
+    a constraint-free pexpr rewrites through THE PULL_CONSTRAINED
+    IDENTITY LAW (Kit/Eval, kind `evalPull`) — the arc-17 S3 §3.4
+    wall deleted by construction: the side condition is the
+    `pullSpine` mirror's computation, kernel-deferred as an `Eq.refl`
+    hint (structural, symbolic-leaf-safe). -/
+private def mintPull (hp : HypPack) (d : Expr) : TermElabM Bool := do
+  let .const c _ := d.getAppFn | return false
+  let args := d.getAppArgs
+  let mut face : Option (Name × Expr × Expr × Option Expr) := none
+  if c == ``pull_constrained && args.size == 2 then
+    face := some (`wrapper, args[0]!, args[1]!, none)
+  else if c == ``pull_constrained_lemFuel && args.size == 3 then
+    face := some (`fuel, args[1]!, args[2]!, some args[0]!)
+  let some (variant, nE, peE, fuelE?) := face | return false
+  let some law ← queryLaw? `evalPull d (variant := variant)
+    | return false
+  let fuelE := fuelE?.getD (mkConst ``lemDefaultFuel)
+  let spineApp := mkApp2 (mkConst ``RelSem.Kit.pullSpine) fuelE peE
+  let res ← withCurrHeartbeats (groundNorm "pullSpine" spineApp)
+  unless res.isAppOfArity ``Option.some 2 do
+    trace[RelSem.roundEval] "pull lane: spine did not close ({res.getAppFn})"
+    return false
+  let prfSide ← mkExpectedTypeHint (← mkEqRefl res)
+    (← mkEq spineApp res)
+  let peP := res.appArg!
+  let prf ← (do
+    match variant with
+    | `wrapper => mkAppM law #[nE, prfSide]
+    | _ => mkAppM law #[fuelE, peE, peP, nE, prfSide])
+  let some (_, _, rhs) := (← inferType prf).eq? | return false
+  if (rhs.find? (· == d)).isSome then return false
+  let prf' ← mkExpectedTypeHint prf (← mkEq d rhs)
+  mintEmit hp d rhs prf' "pull_constrained identity law"
+  return true
+
 /-- THE MINTER (the `mintHook` implementation): scan the stuck term
     for candidate towers, mint the first that yields a verdict.
     Returns true iff a rewrite was registered (the caller loops).
@@ -474,6 +653,12 @@ def mintCmpFact? (hp : HypPack) (e : Expr) : TermElabM Bool := do
       continue
     -- each candidate attempt is its own scoped unit (phase note)
     if ← withCurrHeartbeats (mintEnvLookup hp d) then
+      trace[RelSem.roundEval] "arith minter: hit after {(← IO.monoMsNow) - t0} ms ({cands.size} candidates)"
+      return true
+    if ← withCurrHeartbeats (mintConvArith hp d) then
+      trace[RelSem.roundEval] "arith minter: hit after {(← IO.monoMsNow) - t0} ms ({cands.size} candidates)"
+      return true
+    if ← withCurrHeartbeats (mintPull hp d) then
       trace[RelSem.roundEval] "arith minter: hit after {(← IO.monoMsNow) - t0} ms ({cands.size} candidates)"
       return true
     if ← withCurrHeartbeats (mintMemRW hp d) then

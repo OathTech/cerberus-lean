@@ -219,6 +219,18 @@ theorem symCmpO_eq_iff (d1 d2 : String) (n1 n2 : Nat)
     laws below quantify over arbitrary passed comparators and demand
     only the captured-comparator invariant `FmapBuilt`. -/
 
+/-- Lookup on the EMPTY map is `none` (arc-18 C3: the core_extern
+    resolution wrapper at a freshly-drawn symbol crosses this under
+    the env fence — definitional, kernel-refl, registered so the
+    lane applies it by query). -/
+@[step_law (kind := envMap) (variant := empty) (side := rfl)
+  (frontier := "env/lookup-empty")
+  (trace := "{law := fmapLookupBy_empty, joint := env-lookup, hyps := []}")
+  (lineage := "the empty-map lookup base case (definitional; arc-18 C3)")]
+theorem fmapLookupBy_empty {α β : Type}
+    (cmp : α → α → LemOrdering) (k : α) :
+    fmapLookupBy cmp k (Fmap.empty : Fmap α β) = none := rfl
+
 /-- The map is non-empty-built with captured comparator `c`. -/
 def FmapBuilt {α β : Type} (c : α → α → Ordering) :
     Fmap α β → Prop

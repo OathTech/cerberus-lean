@@ -104,6 +104,11 @@ structure MintedRound where
   eqName : Name
   /-- Round class, for the summary line (trace-format §3.3 level 1). -/
   cls : String
+  /-- The pack-proved DISCOVERY equation's theorem name (glue rounds
+      only, arc-18 C3): `find_can_advance (step_ctx …σ…) = some
+      (stepAt …σ)` — chain pieces consume it where a kernel-deferred
+      refl cannot re-run a pack-dependent discovery. -/
+  hfindName : Option Name := none
   deriving Inhabited
 
 /-- Default any leftover UNCONSTRAINED level metavariables to zero

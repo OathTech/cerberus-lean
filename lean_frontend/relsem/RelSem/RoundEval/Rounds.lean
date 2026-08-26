@@ -31,6 +31,13 @@ namespace RoundEval
 open Lean Lean.Meta Lean.Elab Lean.Elab.Command
 open RelSem.DeriveState (throwFrontier provenanceNote)
 
+/-- Set when the last `elabLawChain` used the DISCOVERY GLUE (the
+    stepAt face required a pack-proved discovery equation, arc-18 C3):
+    `emitLawRound` then emits the round's `_hfind` theorem for the
+    chain assembler (a kernel-deferred refl cannot re-run a
+    pack-dependent discovery). -/
+initialize lastGlueUsed : IO.Ref Bool ← IO.mkRef false
+
 /-- Build `app (advance_step td tid (Laws.stepAt td tid σ)) σ`. -/
 def mkRoundLhs (td tid σ : Expr) : TermElabM Expr := do
   let stepAtE ← mkAppMU ``RelSem.Laws.stepAt #[td, tid, σ]
@@ -69,6 +76,7 @@ private def elabLawChain (td tid σ stepE lhs : Expr) (roundIdx : Nat)
   -- (arc-17 S3 — at a builder-state σ0 the elaborator's stepAt
   -- unification wedges where both classification's whnf and the
   -- kernel succeed).
+  lastGlueUsed.set false
   let elabAt (theLhs : Expr) : TermElabM (Expr × Expr) := do
     let (_, sTy) ← pairComponentTys theLhs
     let succMVar ← mkFreshExprMVar (some sTy)
@@ -102,16 +110,20 @@ private def elabLawChain (td tid σ stepE lhs : Expr) (roundIdx : Nat)
       step with glue"
     let (pf, succ) ← elabAt lhsD
     let stepAtE ← mkAppMU ``RelSem.Laws.stepAt #[td, tid, σ]
-    let hstep ← (do
+    let hstep ← withCurrHeartbeats (do
       match ← (activeHypPack.get : BaseIO _) with
       | some hp => proveHypEq hp stepAtE stepE
       | none =>
         mkExpectedTypeHint (← mkEqRefl stepE) (← mkEq stepAtE stepE))
+    -- per-phase scope (arc-18 C3): inferType/congr over the
+    -- race-analyzed round-44-class step spellings is its own unit
+    withCurrHeartbeats do
     let motive ← withLocalDeclD `s (← inferType stepE) fun sv => do
       mkLambdaFVars #[sv]
         (← mkAppMU ``RelSem.app
           #[← mkAppMU ``advance_step #[td, tid, sv], σ])
     let glue ← mkCongrArg motive hstep
+    lastGlueUsed.set true
     return (← mkEqTrans glue pf, succ)
 
 /-- Unfold definition heads (dnmsBump and friends) until the record
@@ -185,8 +197,9 @@ private def anchorSucc (a : Anchor) (σprev succRaw : Expr)
 /-- Emit the anchored successor def + `_app` law equation (shared
     tail of every law-driven mint). -/
 private def emitLawRound (declName : Name) (fvars : Array Expr)
-    (a : Anchor) (σprev lhs pf succRaw : Expr) (roundIdx : Nat)
+    (a : Anchor) (td tid σprev lhs pf succRaw : Expr) (roundIdx : Nat)
     (cls : String) : TermElabM (MintedRound × Anchor) := do
+  let glueUsed ← lastGlueUsed.get
   let (succE, a') ← anchorSucc a σprev succRaw roundIdx
   -- hypothesis mode: successor DEFS close over the value binders only
   -- (a Prop binder leaking into the spelling is caught by the
@@ -262,7 +275,54 @@ private def emitLawRound (declName : Name) (fvars : Array Expr)
        advance-law application, side conditions rfl/decide/hyp-pack; \
        respell bridge: {bridge.isSome}). \
        {provenanceNote "derive_rounds"}"
-  return ({ succ, eqName, cls }, a'')
+  -- glue rounds: the pack-proved DISCOVERY equation as a named
+  -- theorem (the chain assembler's hfind premise; arc-18 C3)
+  let mut hfindName : Option Name := none
+  if glueUsed then
+    if let some hp ← activeHypPack.get then
+      let hfName := declName.appendAfter "_hfind"
+      let lookupE ← mkAppMU ``Lem_List.lookupBy
+        #[← withLocalDeclD `x (mkConst ``Nat) fun x =>
+            withLocalDeclD `y (mkConst ``Nat) fun y => do
+              mkLambdaFVars #[x, y] (← mkAppM ``BEq.beq #[x, y]),
+          tid,
+          ← mkAppMU ``core_state.thread_states
+            #[← mkAppMU ``driver_state.core_state0 #[σprev]]]
+      let lookTy ← whnfU (← inferType lookupE)
+      let some elemTy := lookTy.app1? ``Option
+        | throwError "derive_rounds: _hfind lookup type"
+      let thInfoE ← mkAppOptMU ``Option.getD
+        #[some elemTy, some lookupE,
+          some (← mkAppOptMU ``default #[some elemTy, none])]
+      let lhsF ← mkAppMU ``find_can_advance
+        #[← mkAppMU ``step_ctx
+          #[td, ← mkAppMU ``driver_state.layout_state #[σprev],
+            ← mkAppMU ``driver_state.core_file #[σprev],
+            ← mkAppMU ``driver_state.core_extern #[σprev],
+            tid, thInfoE]]
+      let stepAtE ← mkAppMU ``RelSem.Laws.stepAt #[td, tid, σprev]
+      let rhsF ← mkAppMU ``Option.some #[stepAtE]
+      -- the payload-blind route (see option_eq_some_getD): prove
+      -- isSome-ness forward through the pack (the endpoint `true`
+      -- discards the verdict-substituted payload), then the getD
+      -- bridge + a delta-refl cast onto the stepAt face
+      let isSomeE ← mkAppMU ``Option.isSome #[lhsF]
+      let pfSome ← withCurrHeartbeats
+        (proveHypEq hp isSomeE (mkConst ``Bool.true))
+      let blockedE := mkConst ``core_step2.Step_blocked2
+      let lemmaPf ← mkAppM ``RelSem.RoundEval.option_eq_some_getD
+        #[lhsF, blockedE, pfSome]
+      let getDE ← mkAppMU ``Option.getD #[lhsF, blockedE]
+      let someGetDE ← mkAppMU ``Option.some #[getDE]
+      let castPf ← mkExpectedTypeHint (← mkEqRefl someGetDE)
+        (← mkEq someGetDE rhsF)
+      let pfF ← mkEqTrans lemmaPf castPf
+      withCurrHeartbeats (emitThm hfName fvars (← mkEq lhsF rhsF) pfF
+        s!"Round {roundIdx} pack-proved discovery equation (glue \
+           round; the chain assembler's hfind premise). \
+           {provenanceNote "derive_rounds"}")
+      hfindName := some hfName
+  return ({ succ, eqName, cls, hfindName }, a'')
 
 /-- PURE-ROUND MINT, LAW-DRIVEN (arc-17 S2 second iteration): tau and
     runstate rounds go through their Kit advance laws exactly like
@@ -279,7 +339,9 @@ def mintLawPure (declName : Name) (fvars : Array Expr)
   -- expose + normalize a thread payload (arena/stack are first-order
   -- data; env/errno stay as the step spelled them)
   let thNorm (th : Expr) : TermElabM Expr := do
-    let w ← whnfU th
+    -- per-phase scope (arc-18 C3: the round-44 race-analyzed payload
+    -- is a single whnf unit — the default budget is its own scope)
+    let w ← withCurrHeartbeats (whnfU th)
     match ← activeHypPack.get with
     | some hp => hypNorm hp "thread payload" w
     | none => normalizeThreads w
@@ -314,8 +376,8 @@ def mintLawPure (declName : Name) (fvars : Array Expr)
           (← mkStx (← thNorm stepE.getAppArgs[2]!))
       catch _ =>
         elabLawChain td tid σ stepE lhs roundIdx
-          (← mkStx (← whnfU stepE.getAppArgs[2]!)))
-    emitLawRound declName fvars a σ lhs pf succRaw roundIdx "tau"
+          (← mkStx (← withCurrHeartbeats (whnfU stepE.getAppArgs[2]!))))
+    emitLawRound declName fvars a td tid σ lhs pf succRaw roundIdx "tau"
   else if stepE.isAppOfArity ``core_step2.Step_with_runstate2 2 then
     let kindE ← whnfU stepE.getAppArgs[0]!
     trace[RelSem.roundEval] "round {roundIdx} runstate kind: {kindE}"
@@ -387,7 +449,7 @@ def mintLawPure (declName : Name) (fvars : Array Expr)
           (step_m := $stepmS) (th' := $thS) (rs' := $rsS)
           (hm := by first | exact rfl | hyp_norm_side))
     let (pf, succRaw) ← elabLawChain td tid σ stepE lhs roundIdx proofStx
-    emitLawRound declName fvars a σ lhs pf succRaw roundIdx "runstate"
+    emitLawRound declName fvars a td tid σ lhs pf succRaw roundIdx "runstate"
   else
     throwFrontier m!"derive_rounds: round {roundIdx} step class has no \
       registered law:{indentExpr stepE}"
@@ -707,7 +769,7 @@ def mintMemRound (declName : Name) (fvars : Array Expr)
   let aidProj ← mkAppMU ``core_run_state.aid_supply #[a.rs]
   let subsAll := subs.push (aidProj, aidE)
   let succSub ← substGround succRaw subsAll
-  emitLawRound declName fvars a σ lhs pf succSub roundIdx cls
+  emitLawRound declName fvars a td tid σ lhs pf succSub roundIdx cls
 
 /-! ## The terminal artifacts -/
 

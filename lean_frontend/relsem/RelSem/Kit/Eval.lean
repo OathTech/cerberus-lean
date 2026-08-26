@@ -666,4 +666,42 @@ theorem pull_constrained_id (n : Nat)
     pull_constrained n pe = peP :=
   pull_constrained_spine lemDefaultFuel pe peP n h
 
+/-- CONV-INT IDENTITY at in-range signed-int operands (arc-18 C3;
+    the T5 body walk's round-35 wall — the conv/catch arithmetic
+    towers at symbolic loop-carried values — resolved as a LAW, the
+    same species as the pull_constrained identity: the tower's
+    semantic content at in-range operands is the identity/the sum,
+    proved once against generated Core_eval.lean `mk_conv_int`). -/
+@[step_law (kind := evalArith) (variant := conv) (side := omega)
+  (frontier := "eval/conv-int-range")
+  (trace := "{law := conv_int_signed_range, joint := eval-arith, hyps := [h1 : omega, h2 : omega]}")
+  (lineage := "conditional rewriting at the semantic boundary: mk_conv_int is the identity on in-range signed ints (generated Core_eval.lean; arc-18 C3)")]
+theorem conv_int_signed_range (pn : CerbMem.Provenance) (v : Int)
+    (h1 : -2147483648 ≤ v) (h2 : v ≤ 2147483647) :
+    mk_conv_int (Signed Int_) (.IV pn v) = .IV .Prov_none v := by
+  unfold mk_conv_int
+  simp [eval_integer_value, CerbMem.minIval, CerbMem.maxIval,
+    CerbMem.integerIval, integerTypeEqual, intLteb,
+    CerbMem.caseIntegerValue, CerberusImpl.sizeof_ity,
+    CerberusImpl.sizeof_integerBaseType]
+  omega
+
+/-- CATCH-EXCEPTIONAL ADD at in-range results (the UB036 guard's
+    in-range arm; same species). -/
+@[step_law (kind := evalArith) (variant := catchAdd) (side := omega)
+  (frontier := "eval/catch-add-range")
+  (trace := "{law := catch_add_signed_range, joint := eval-arith, hyps := [h1 : omega, h2 : omega]}")
+  (lineage := "conditional rewriting at the semantic boundary: catch_exceptional_condition add at in-range sums is `some (a+b)` (generated Core_eval.lean; arc-18 C3)")]
+theorem catch_add_signed_range (pn1 pn2 : CerbMem.Provenance) (a b : Int)
+    (h1 : -2147483648 ≤ a + b) (h2 : a + b ≤ 2147483647) :
+    mk_call_catch_exceptional_condition (Signed Int_) IOpAdd
+      (.IV pn1 a) (.IV pn2 b)
+    = some (.IV (CerbMem.combineProv pn1 pn2) (a + b)) := by
+  unfold mk_call_catch_exceptional_condition
+  simp [mk_iop, CerbMem.opIval, eval_integer_value, CerbMem.minIval,
+    CerbMem.maxIval, intLteb, CerbMem.caseIntegerValue,
+    CerberusImpl.sizeof_ity, CerberusImpl.sizeof_integerBaseType,
+    CerbMem.integerIval]
+  omega
+
 end RelSem.Kit
