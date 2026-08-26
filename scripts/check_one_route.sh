@@ -9,7 +9,7 @@
 # whole-state OwnP interpretation survives only on the TRANSITIONAL
 # surface (RelSem/PerStepOwnP.lean, C5-bound) consumed by the arc-7
 # shell, the ambient family, the arc-16 smokes (retirement register
-# entry 4), and the ONE labeled walk exemption below.
+# entry 4).
 #
 # Semantics (fail-closed):
 #   * LIVE-ROUTE MODULES (the contracts doc §7 non-retirements + the
@@ -25,17 +25,11 @@
 #   * A listed live module that is MISSING is fatal (the list is the
 #     gate's own registration; renames re-point it, never drop it).
 #
-# LABELED EXEMPTION (deliberate, with the named mover):
-#   relsem/RelSem/T6Probe.lean — the one walk whose equation supply is
-#   EVALUATOR-MINTED (derive_rounds). The evaluator's side-fact
-#   discharge is ground-eval against closed maps (RoundEval/Rounds.lean
-#   `evalGroundA`), so its mints cannot yet take the open-memory form
-#   the heap route consumes. MOVER: the RoundEval OPEN-MEMORY MINTING
-#   MODE (map reads resolved through the registered read-over-write
-#   laws / the T4 `assuming` pack instead of kernel evaluation) —
-#   C3/arc-19 territory (the record:
-#   docs/2026-08-25_arc18-c2-one-route.md §T6). When T6 migrates, the
-#   exemption line DELETES and this header shrinks.
+# (The C2-era labeled T6 exemption is CLEARED — arc-18 R1, 2026-08-26:
+#   T6Probe migrated to the heap route via the RoundEval OPEN-MEMORY
+#   MINTING MODE, the exemption's named mover; T6Probe is now a
+#   LIVE-ROUTE module below. Record:
+#   lean_frontend/docs/2026-08-26_arc18-r1-open-memory.md.)
 #   (PerStepSmoke/PerStepTacSmoke/the arc-7 shell/the ambient family
 #   are NOT live-route modules — they are retirement-register entries
 #   1/3/4, deleted at C5 with the transitional surface.)
@@ -80,6 +74,7 @@ LIVE_MODULES=(
   relsem/RelSem/T1Threaded.lean
   relsem/RelSem/T2Threaded.lean
   relsem/RelSem/T3Threaded.lean
+  relsem/RelSem/T6Probe.lean
 )
 
 BANNED_IMPORTS='^import[[:space:]]+RelSem\.(PerStepOwnP|IrisState|IrisLang|IrisRules|IrisAdequacy|SlateWP)([[:space:]]|$)'
@@ -161,9 +156,9 @@ if [[ -n "$both" ]]; then
   fail=1
 fi
 
-# The labeled exemption must still be the ONLY OwnP-binding walk
-# outside the retirement-register surfaces (drift check: a NEW
-# OwnP-binding file is a finding even outside the live list).
+# OwnP binders must stay confined to the retirement-register surfaces
+# (drift check: a NEW OwnP-binding file is a finding even outside the
+# live list; the C2-era T6 exemption is CLEARED — R1).
 OWNP_ALLOWED=(
   relsem/RelSem/PerStepOwnP.lean
   relsem/RelSem/IrisState.lean
@@ -181,7 +176,6 @@ OWNP_ALLOWED=(
   relsem/RelSem/T4Defs.lean
   relsem/RelSem/T5Prefix.lean
   relsem/RelSem/T5Iter.lean
-  relsem/RelSem/T6Probe.lean   # LABELED EXEMPTION (header; mover: RoundEval open-memory minting)
   relsem/RelSem/Audit.lean
 )
 ownp_binders=""
@@ -208,4 +202,4 @@ if [[ $fail -ne 0 ]]; then
   echo "check_one_route: FAILED"
   exit 1
 fi
-echo "check_one_route: OK — one state interpretation on the live route (${#LIVE_MODULES[@]} modules OwnP-free; coexistence hazard clear; OwnP binders confined to the retirement register + the labeled T6 exemption)"
+echo "check_one_route: OK — one state interpretation on the live route (${#LIVE_MODULES[@]} modules OwnP-free; coexistence hazard clear; OwnP binders confined to the retirement register)"

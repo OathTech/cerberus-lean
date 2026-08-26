@@ -494,9 +494,43 @@ private def mintMemRW (hp : HypPack) (d : Expr) : TermElabM Bool := do
         if bmArg.isAppOfArity ``CerbMem.MemState.bytemap 1 then
           some bmArg.appArg!
         else none
+    -- PACK-CANONICAL RESPELLING (arc-18 R1 — the open-memory minting
+    -- mode's base-read joint): the walk's footprint READ facts are
+    -- stated at the fixture's canonical open state, but mid-run reads
+    -- surface at records whose SCALAR fields have drifted (supplies
+    -- bumped by creates/kills) while the bytemap is the SAME open
+    -- map binder. Bridge through the registered congr law (kind
+    -- `memRW`, variant `congr` — reads depend only on the bytemap)
+    -- to the pack fact's own state; the ordinary substitution then
+    -- fires on the result. Base facts only (a minted rewrite is
+    -- never a canonical state).
     if base?.isNone then
+      for r in hp.baseRw do
+        if r.lhs.isAppOfArity ``CerbMem.readBytesFrom 3
+            && r.lhs != d then
+          let la := r.lhs.getAppArgs
+          let m2 := la[0]!
+          let hitAddr ← withCurrHeartbeats (isDefEq la[1]! a')
+          let hitLen ← if hitAddr then
+              withCurrHeartbeats (isDefEq la[2]! nE)
+            else pure false
+          if hitAddr && hitLen then
+            let m2bm ← withCurrHeartbeats
+              (whnfU (← mkAppMU ``CerbMem.MemState.bytemap #[m2]))
+            if m2bm == bmArg
+                || (← withCurrHeartbeats (isDefEq m2bm bmArg)) then
+              let hTy ← mkEq (Expr.proj ``CerbMem.MemState 8 m')
+                (Expr.proj ``CerbMem.MemState 8 m2)
+              let h ← mkExpectedTypeHint (← mkEqRefl m2bm) hTy
+              let rhs := mkAppN d.getAppFn #[m2, a', nE]
+              let some law ← queryLaw? `memRW d (variant := `congr)
+                | return false
+              let pf ← mkAppOptMU law
+                #[some m', some m2, some a', some nE, some h]
+              mintEmit hp d rhs pf "mem read pack-canonical respelling"
+              return true
       trace[RelSem.roundEval] "mem lane: record read, bytemap field \
-        not a base projection"
+        not a base projection (and no pack-canonical fact matched)"
     let some base := base? | return false
     let hTy ← mkEq (Expr.proj ``CerbMem.MemState 8 m')
       (Expr.proj ``CerbMem.MemState 8 base)

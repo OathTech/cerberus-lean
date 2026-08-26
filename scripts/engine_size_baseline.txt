@@ -54,16 +54,39 @@
 # traces); Assembly 604 -> 606 (the classifyUsedHypNorm flag).
 # Direction: growth is ROUTING/ROBUSTNESS at the engine interface,
 # no semantic knowledge added (laws stay in the registry).
+# R1 re-baseline (arc-18 segment ladder, 2026-08-26): 5207 -> 5727.
+# Two components, separated per FF-3 (the C3 baseline had gone stale):
+#   (1) THE FF-3 STALE DELTA (+473, landed C3b/C4, pre-R1 HEAD 5680;
+#       per-module provenance in the C3b/C4 records): Core 329->333,
+#       Hyp 1023, Mint 253->262, Classify 171->213, Lanes 705->782,
+#       Rounds 820->878, Assembly 606->647, LawRegistry 337->342 —
+#       the C4 memop lane, C3b builder-walk routing, and the
+#       whole-program-drive engine work (9 standing WARN lines
+#       re-registered here).
+#   (2) R1 GROWTH (+47, the OPEN-MEMORY MINTING MODE): Core 333->346
+#       (PROJ-NODE RECURSION in groundNorm — whnf leaves raw `.proj`
+#       over fenced-head apps; the app path's args-first walk never
+#       entered them, so the fenced-head ground escape could not fire
+#       [measured: T6 open drive round 50, the funs table under a
+#       TreeMap fence]); Lanes 705->816 of which +34 is R1
+#       (PACK-CANONICAL RESPELLING in mintMemRW — reads surfacing at
+#       records with drifted scalar fields bridge through the
+#       REGISTERED readBytesFrom_congr_bytemap law to the pack fact's
+#       canonical state; a registry-law CONSUMER, zero semantic
+#       knowledge in engine code). Direction remains DOWN; both R1
+#       mechanisms are elaborator handling/law appliers per the
+#       engine-to-law rule. Record:
+#       lean_frontend/docs/2026-08-26_arc18-r1-open-memory.md.
 RoundEval.lean 87
-RoundEval/Core.lean 329
-RoundEval/Hyp.lean 1023
-RoundEval/Mint.lean 253
-RoundEval/Classify.lean 171
+RoundEval/Core.lean 346
+RoundEval/Hyp.lean 1033
+RoundEval/Mint.lean 262
+RoundEval/Classify.lean 213
 RoundEval/Arith.lean 722
-RoundEval/Lanes.lean 705
-RoundEval/Rounds.lean 820
-RoundEval/Assembly.lean 606
+RoundEval/Lanes.lean 816
+RoundEval/Rounds.lean 878
+RoundEval/Assembly.lean 647
 DeriveState.lean 260
 WpGround.lean 121
-LawRegistry.lean 337
-TOTAL 5207
+LawRegistry.lean 342
+TOTAL 5727

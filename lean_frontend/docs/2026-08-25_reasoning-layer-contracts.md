@@ -104,13 +104,14 @@ sub-contract.
   the frame across the whole loop); T3's loop runs a scratch object's
   entire lifetime inside one rule (`wpk_seq_scratch1` — the fragment
   minted and consumed internally, dead bytes out as D2 capital).
-  LABELED EXEMPTION with named mover: `T6Probe.lean` stays on the
-  transitional surface — its equation supply is EVALUATOR-MINTED and
-  `derive_rounds`' side-fact discharge is ground-eval against closed
-  maps; mover = the RoundEval OPEN-MEMORY MINTING MODE (map reads
-  through the registered read-over-write laws / the `assuming` pack),
-  C3/arc-19 territory. Gate: `scripts/check_one_route.sh` (→ R2,
-  CLOSED).
+  ~~LABELED EXEMPTION with named mover: `T6Probe.lean` stays on the
+  transitional surface~~ — EXEMPTION CLEARED at arc-18 R1
+  (2026-08-26): the named mover, the RoundEval OPEN-MEMORY MINTING
+  MODE, landed — T6's driver run is minted at open maps
+  (`derive_rounds … builder` + footprint pack; map reads through the
+  registered memRW laws), and T6Probe is a LIVE-ROUTE module of the
+  gate. Record: `docs/2026-08-26_arc18-r1-open-memory.md`. Gate:
+  `scripts/check_one_route.sh` (→ R2, CLOSED).
 
 ### 3b. Equation supply: the evaluator mints
 
@@ -215,7 +216,7 @@ closes it (per the blessed charter's slice plan).
 | # | Convention-only contract | Closed by |
 |---|---|---|
 | R1 | Lockstep COVERAGE: generated-step-surface changes re-prove `ksteps_of_runNDFuel` in the same commit; new step forms extend `KStep`, never bypass it | C6 (playbook merge-invariant; gate feasibility assessed at C5 re-registration) |
-| R2 | Single-interpretation discipline: no file binds both `CerbGS` and `CerbHeapGS` (the S2 coexistence hazard) | **CLOSED at C2** — `scripts/check_one_route.sh` (in `test_unit.sh`, fail-closed, plant-tested both directions): live-route modules OwnP-free (imports + comment-stripped tokens), no both-binding file anywhere, OwnP binders confined to the retirement register + the labeled T6 exemption (mover: RoundEval open-memory minting). Record: `docs/2026-08-25_arc18-c2-one-route.md` |
+| R2 | Single-interpretation discipline: no file binds both `CerbGS` and `CerbHeapGS` (the S2 coexistence hazard) | **CLOSED at C2** — `scripts/check_one_route.sh` (in `test_unit.sh`, fail-closed, plant-tested both directions): live-route modules OwnP-free (imports + comment-stripped tokens), no both-binding file anywhere, OwnP binders confined to the retirement register (the C2-era labeled T6 exemption CLEARED at arc-18 R1 — the open-memory minting mode landed, T6Probe live-route). Records: `docs/2026-08-25_arc18-c2-one-route.md`, `docs/2026-08-26_arc18-r1-open-memory.md` |
 | R3 | Engine-to-law rule + engine-size down-pressure: RoundEval stays a thin law-applier; semantic mechanism firing twice becomes a registered law | C1 (decomposition + registry dispatch); watched-metric row maintained from C1, summarized C6 |
 | R4 | Registry as the law interface: law applicability determined by registry key, not hardcoded dispatch; unique-rule-per-goal-form; frontier-tag/trace-schema fields machine-readable | C1 |
 | R5 | Statement-gate completeness: every landed statement face is on the slate list (`T4ThreadedStatement` currently absent, annotated as parked) | C3 attempted, REMAINS OPEN (the T4 theorem did not complete: the anon-env fence-over-materialized route re-measured failing under the C3 engine; the adjudicated route is the T5 builder architecture — `docs/2026-08-25_arc18-c3-theorems.md` §4). Closes when the T4 theorem lands |

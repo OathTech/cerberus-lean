@@ -955,7 +955,13 @@ open Lean in
 -- drive rounds minted incl. store_lock and memop classes; the walk
 -- itself parks at the ground-mode materialization frontier —
 -- docs/2026-08-26_arc18-c4-statement-homing.md §4).
-/-- info: step_law census: 69 laws [advance 5, construct 9, envAlg 3, envMap 4, evalArith 2, evalPull 2, heapWP 4, heapWalk 8, loop 2, memBlock 6, memRW 13, perform 6, roundGlue 3, wpSeq 2] -/
+-- 69 → 76 (arc-18 R1, the open-memory minting mode: the seven
+-- remaining writeBytesTo pass-through projection laws
+-- [nextIota/iotaMap/varargs/nextVarargsId/dynamicAddrs/lastUsed/
+-- requested] — the T6 open drive's Erun round rebuilds the memory
+-- record field-by-field over the folded ladder, so every non-bytemap
+-- field needs its registered projection; all Kit/Mem, fixture-free).
+/-- info: step_law census: 76 laws [advance 5, construct 9, envAlg 3, envMap 4, evalArith 2, evalPull 2, heapWP 4, heapWalk 8, loop 2, memBlock 6, memRW 20, perform 6, roundGlue 3, wpSeq 2] -/
 #guard_msgs in #step_law_census
 /-- info: 'RelSem.T1.round6' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.round6
@@ -1380,8 +1386,14 @@ open Lean in
 -- respelled via initial_core_run_state_threaded 0: the acquisition
 -- catch working as designed, record §3 of
 -- docs/2026-08-26_arc18-c3b-t5-landing.md).
+-- 6784 → 6959 (arc-18 R1, the open-memory minting mode: T6's OPEN
+-- drive `ro` [51 round successors + _app equations + minted facts +
+-- chainrel prefixes at free maps], the T6 heap-route spine [open
+-- k-stage equations + driver2_o + rDone6 ladder], and the seven new
+-- Kit/Mem writeBytesTo projection laws; ALL boundary-clean — record
+-- docs/2026-08-26_arc18-r1-open-memory.md).
 /--
-info: RelSem audit sweep: 6784 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 6959 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do

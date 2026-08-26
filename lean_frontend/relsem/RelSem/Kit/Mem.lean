@@ -360,6 +360,70 @@ theorem writeBytesTo_nextAllocId {m : CerbMem.MemState} {a : Int}
     {bs : List CerbMem.AbsByte} :
     (CerbMem.writeBytesTo m a bs).nextAllocId = m.nextAllocId := rfl
 
+/-! The remaining pass-through projections (arc-18 R1, the
+    open-memory minting mode): the T6 open drive's Erun round rebuilds
+    the memory record FIELD-BY-FIELD from the folded write ladder, so
+    EVERY non-bytemap field needs its registered pass-through law
+    (measured: round 50 fixpointed un-normalized on exactly the seven
+    missing fields). Same law shape as the four above — the byte
+    write touches only the bytemap. -/
+
+@[step_law (kind := memRW) (variant := projNextIota) (side := rfl)
+  (frontier := "mem/rw-proj")
+  (trace := "{law := writeBytesTo_nextIota, joint := mem/rw-proj, hyps := []}")
+  (lineage := "SL footprint projection law: the byte write touches only the bytemap")]
+theorem writeBytesTo_nextIota {m : CerbMem.MemState} {a : Int}
+    {bs : List CerbMem.AbsByte} :
+    (CerbMem.writeBytesTo m a bs).nextIota = m.nextIota := rfl
+
+@[step_law (kind := memRW) (variant := projIotaMap) (side := rfl)
+  (frontier := "mem/rw-proj")
+  (trace := "{law := writeBytesTo_iotaMap, joint := mem/rw-proj, hyps := []}")
+  (lineage := "SL footprint projection law: the byte write touches only the bytemap")]
+theorem writeBytesTo_iotaMap {m : CerbMem.MemState} {a : Int}
+    {bs : List CerbMem.AbsByte} :
+    (CerbMem.writeBytesTo m a bs).iotaMap = m.iotaMap := rfl
+
+@[step_law (kind := memRW) (variant := projVarargs) (side := rfl)
+  (frontier := "mem/rw-proj")
+  (trace := "{law := writeBytesTo_varargs, joint := mem/rw-proj, hyps := []}")
+  (lineage := "SL footprint projection law: the byte write touches only the bytemap")]
+theorem writeBytesTo_varargs {m : CerbMem.MemState} {a : Int}
+    {bs : List CerbMem.AbsByte} :
+    (CerbMem.writeBytesTo m a bs).varargs = m.varargs := rfl
+
+@[step_law (kind := memRW) (variant := projNextVarargsId) (side := rfl)
+  (frontier := "mem/rw-proj")
+  (trace := "{law := writeBytesTo_nextVarargsId, joint := mem/rw-proj, hyps := []}")
+  (lineage := "SL footprint projection law: the byte write touches only the bytemap")]
+theorem writeBytesTo_nextVarargsId {m : CerbMem.MemState} {a : Int}
+    {bs : List CerbMem.AbsByte} :
+    (CerbMem.writeBytesTo m a bs).nextVarargsId = m.nextVarargsId := rfl
+
+@[step_law (kind := memRW) (variant := projDynamicAddrs) (side := rfl)
+  (frontier := "mem/rw-proj")
+  (trace := "{law := writeBytesTo_dynamicAddrs, joint := mem/rw-proj, hyps := []}")
+  (lineage := "SL footprint projection law: the byte write touches only the bytemap")]
+theorem writeBytesTo_dynamicAddrs {m : CerbMem.MemState} {a : Int}
+    {bs : List CerbMem.AbsByte} :
+    (CerbMem.writeBytesTo m a bs).dynamicAddrs = m.dynamicAddrs := rfl
+
+@[step_law (kind := memRW) (variant := projLastUsed) (side := rfl)
+  (frontier := "mem/rw-proj")
+  (trace := "{law := writeBytesTo_lastUsed, joint := mem/rw-proj, hyps := []}")
+  (lineage := "SL footprint projection law: the byte write touches only the bytemap")]
+theorem writeBytesTo_lastUsed {m : CerbMem.MemState} {a : Int}
+    {bs : List CerbMem.AbsByte} :
+    (CerbMem.writeBytesTo m a bs).lastUsed = m.lastUsed := rfl
+
+@[step_law (kind := memRW) (variant := projRequested) (side := rfl)
+  (frontier := "mem/rw-proj")
+  (trace := "{law := writeBytesTo_requested, joint := mem/rw-proj, hyps := []}")
+  (lineage := "SL footprint projection law: the byte write touches only the bytemap")]
+theorem writeBytesTo_requested {m : CerbMem.MemState} {a : Int}
+    {bs : List CerbMem.AbsByte} :
+    (CerbMem.writeBytesTo m a bs).requested = m.requested := rfl
+
 /-- `get?` through an `insert` at the SAME key (arc-18 C3b: the
     entry walk's post-create allocation-table reads at open maps —
     the store's `hget` reads back the just-inserted record). -/

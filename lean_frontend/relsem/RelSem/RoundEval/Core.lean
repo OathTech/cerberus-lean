@@ -218,6 +218,19 @@ def groundNorm (what : String) (e : Expr) : MetaM Expr := do
                 | some r => norm fuel r
                 | none => pure e'
             else norm fuel e''
+        else if let .proj sN i b := e then
+          -- PROJ-NODE RECURSION (arc-18 R1, the open-memory minting
+          -- mode): whnf leaves raw `.proj` nodes over fenced-head
+          -- applications (the file tables' Fmap/TreeMap internals
+          -- under a TreeMap fence) — the app path's args-first
+          -- normalization never enters a proj node, so the
+          -- fenced-head ground escape could not fire (measured: the
+          -- T6 open drive's Erun round, `(insert …).inner.1` over
+          -- the funs table). Normalize the projected term, then
+          -- re-reduce the projection.
+          let b' ← norm fuel b
+          if b' != b then norm fuel (Expr.proj sN i b')
+          else pure e
         else pure e
       cache.modify (·.insert e0 r)
       return r

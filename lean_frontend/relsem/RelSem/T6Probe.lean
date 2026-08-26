@@ -28,32 +28,29 @@
   `driver_update_ts`) whose side conditions discharge by rfl/decide.
   All driver rounds are evaluator mints.
 
-  ARC-18 C2 INTERPRETATION LABEL: this walk remains on the
-  TRANSITIONAL OwnP surface (RelSem/PerStepOwnP.lean) — the ONE
-  labeled exemption of the single-interpretation gate
-  (scripts/check_one_route.sh). Its equation supply is
-  EVALUATOR-MINTED (`derive_rounds`), and the evaluator's side-fact
-  discharge is ground-eval against CLOSED maps
-  (RoundEval/Rounds.lean `evalGroundA`), which cannot produce the
-  open-memory (∀ bm am) equations the CerbMemInterp walk rules
-  consume. NAMED MOVER: the RoundEval OPEN-MEMORY MINTING MODE —
-  map reads resolved through the registered read-over-write laws
-  (memRW lane) / the T4 `assuming` hypothesis pack instead of kernel
-  evaluation — C3/arc-19 territory. Migration recipe once it exists:
-  the T1Threaded C2 pattern verbatim (rest ladder + open stage
-  equations + the walk macros). Record:
-  docs/2026-08-25_arc18-c2-one-route.md §6.
+  ARC-18 R1 (2026-08-26): THE OPEN-MEMORY ROUTE. The C2 exemption is
+  CLEARED — this walk now lives on the ONE route (`CerbMemInterp`):
+  the driver run is minted by `derive_rounds … builder` at the
+  setMaps decomposition (heap maps FREE binders; map reads discharged
+  through the registered memRW lane laws + the footprint hypothesis
+  pack instead of ground eval — the RoundEval OPEN-MEMORY MINTING
+  MODE, the C2 §6 named mover, landed), and the statement-facing
+  discharge is the T1Threaded heap-route pattern verbatim: rest
+  ladder + open k-stage equations + the CerbHeapWalk macros +
+  `kCallHarnessAdequateThrHeap_of_wp`. The GROUND drive (below) is
+  retained as the evaluator's ground-lane acceptance instance; the
+  OPEN drive is the segment layer's equation supply.
 
   House rules: no sorry, no axioms. Under the in-build audit.
 -/
 
 import RelSem.Threaded
 import RelSem.PerStepTactics
-import RelSem.PerStepOwnP
 import RelSem.DeriveState
 import RelSem.RoundEval
 import RelSem.ConstructLaws
 import RelSem.SlateFiles
+import RelSem.CerbHeapWalk
 
 set_option autoImplicit false
 
@@ -264,33 +261,330 @@ theorem t6_result_eq (seed : Nat) :
     (finalize t6File.tagDefs "callND" (r_fin seed)).dres_core_value
       = intValue 7 := rfl
 
-/-! ## The statement-facing route: the per-step WP walk, discharged
-    through the threaded adequacy bridges (the T1Threaded template) -/
+/-! ## THE OPEN-MEMORY EQUATION SUPPLY (arc-18 R1): the driver run
+    minted at the setMaps decomposition — heap maps FREE binders,
+    map reads through the registered memRW lane laws + the footprint
+    pack. The builder is the T5W `mkRdy` discipline (LITERAL scalar
+    fields — no hidden fenced ladders under the anchor); the pack is
+    exactly the two footprint facts the walk rule feeds
+    (`wpk_seq_scratch1`'s hget + pointwise-bytes premises, in the
+    one-fact `readBytesFrom` form `readBytesFrom_of_pointwise`
+    derives). -/
 
-/-- T6's WP over the per-step instance at the THREADED initial state
-    (all feeds are mints, construct-law instantiations, or the
-    evaluator's whole-run equation). -/
-theorem t6_wpK_thr {GF : BundledGFunctors} [CerbGpreS GF]
-    [CerbGS .hasLC GF] (seed : Nat) :
-    (stateIs (GF := GF) (initial_driver_state_threaded seed t6File t6Fs)) ⊢
+/-- The ready rest (the driver loop's start, maps zeroed). -/
+abbrev rRdy (seed : Nat) : driver_state := restOf (dRdy seed)
+
+/-- The argument object's byte image (x = 10). -/
+def argBytes6 : List CerbMem.AbsByte :=
+  [mkByte 10 0, mkByte 10 1, mkByte 10 2, mkByte 10 3]
+
+/-- The ready memory at open maps (the `mkRdy6` layout; literal
+    scalar fields). -/
+def memRdy (bm : Std.TreeMap Int CerbMem.AbsByte)
+    (am : Std.TreeMap Int CerbMem.Allocation) : CerbMem.MemState :=
+  { CerbMem.initialMemState with
+    nextAllocId := 2, lastAddress := errAddr,
+    bytemap := bm, allocations := am }
+
+/-- THE READY BUILDER (T5W mkRdy shape at the T6 fixture): heap maps
+    and supplies free, every other field concrete. Aligns with
+    `setMaps (rRdy seed) bm am` by rfl at the canonical
+    instantiation. -/
+def mkRdy6 (bm : Std.TreeMap Int CerbMem.AbsByte)
+    (am : Std.TreeMap Int CerbMem.Allocation)
+    (tr : List trace_event) (aid exc symc ctr : Nat) : driver_state :=
+  { core_file := t6File,
+    core_extern := create_extern_symmap t6File,
+    core_state0 :=
+      { thread_states := [(0, (none, thRdy))],
+        io := initial_io_state },
+    core_run_state0 :=
+      { tid_supply := 1, aid_supply := aid, excluded_supply := exc,
+        sym_supply := symc,
+        labeled := (initial_core_run_state_threaded 0
+          (collect_labeled_continuations_NEW t6File)).labeled },
+    layout_state := memRdy bm am,
+    concurrency_state := symInitialState symInitialPre,
+    fs_state0 := CerbFS.fs_initial_state,
+    trace := tr,
+    symbolic_assoc := fmapEmpty,
+    blocked := false,
+    dr_step_counter := ctr }
+
+/-! THE OPEN DRIVE: the whole run (51 rounds + terminal) minted with
+    the maps free; the terminal ∀-fuel relative chain `ro_chainrel`
+    is the theorem layer's feed. -/
+set_option Elab.async false in
+derive_rounds ro
+  (bm : Std.TreeMap Int CerbMem.AbsByte)
+  (am : Std.TreeMap Int CerbMem.Allocation)
+  (tr : List trace_event) (aid exc symc ctr : Nat)
+  (halX : am.get? 0 = some allocX)
+  (hrdX : CerbMem.readBytesFrom (memRdy bm am) xAddr 4 = argBytes6)
+  assuming halX hrdX
+  fencing CerbMem.writeBytesTo Std.TreeMap.insert Std.TreeMap.get? Std.TreeMap.erase
+  using (t6File.tagDefs) 0 from (mkRdy6 bm am tr aid exc symc ctr) upto 60 chain builder
+
+/-! ## The scratch object (t, pick's local) and the final state -/
+
+/-- t's address (the bump allocator's next slot below errno). -/
+def tAddr : Int := 281474976710640
+
+/-- t's allocation record (rule-shaped). -/
+def allocT : CerbMem.Allocation :=
+  { base := tAddr, size := 4, ty := some signed_int,
+    prefix_ := PrefOther "Core" }
+
+/-- t's stored byte image (t = 3). -/
+def bytesT : List CerbMem.AbsByte :=
+  [mkByte 3 0, mkByte 3 1, mkByte 3 2, mkByte 3 3]
+
+/-- The run's terminal value (Specified 7). -/
+def v7 : value :=
+  Vloaded (LVspecified (OVinteger
+    (CerbMem.IntegerValue.IV .Prov_none 7)))
+
+/-- The final driver state at the canonical instantiation with the
+    maps ZEROED (map-independent by construction — the walk's own
+    endpoint, projected, never transcribed; the `lh1Arena`
+    precedent), post `prepare_exit`. -/
+noncomputable abbrev roFin0 (seed : Nat) : driver_state :=
+  { ro51 Std.TreeMap.empty Std.TreeMap.empty [] 0 0 seed 0 with
+    core_state0 := prepare_exit
+      (ro51 Std.TreeMap.empty Std.TreeMap.empty [] 0 0 seed 0).core_state0
+      v7 }
+
+/-- The final rest. -/
+noncomputable abbrev rDone6 (seed : Nat) : driver_state := restOf (roFin0 seed)
+
+/-! ## The driver loop at open maps: the whole `driver2` atom from
+    the minted terminal chain + the construct laws (`ndct_offer1` /
+    `driver2_done` — the T1Threaded recipe with the hand round-chain
+    replaced by the evaluator's `ro_chainrel`). -/
+
+/-- THE DRIVER LOOP at open maps: characterized by the rest + the
+    argument object's footprint; the scratch object's whole lifetime
+    (create/store/load/kill of t) is internal to the equation; the
+    errno object is never mentioned (it rides the frame). -/
+theorem driver2_o (seed : Nat) : ∀ bm am,
+    am.get? 0 = some allocX →
+    (∀ i : Nat, (hi : i < argBytes6.length) →
+      bm.get? (xAddr + (i : Int)) = some (argBytes6[i])) →
+    app (driver2 t6File.tagDefs false) (setMaps (rRdy seed) bm am)
+      = (NDactive (), setMaps (rDone6 seed)
+          (allocStoreBytes bm tAddr 4 bytesT)
+          ((am.insert 2 allocT).erase 2)) := by
+  intro bm am hget hb
+  have hrdX : CerbMem.readBytesFrom (memRdy bm am) xAddr 4
+      = argBytes6 :=
+    readBytesFrom_of_pointwise rfl (fun i hi => hb i hi)
+  have hchain := ro_chainrel bm am [] 0 0 seed 0 hget hrdX 999947
+  have hndct : app (new_drive_core_threads t6File.tagDefs ())
+      (mkRdy6 bm am [] 0 0 seed 0)
+      = (NDactive [(0, some (Step_done2 v7))],
+         ro51 bm am [] 0 0 seed 0) :=
+    RelSem.Laws.ndct_offer1 rfl hchain
+  have h6 : app (driver2 t6File.tagDefs false)
+      (mkRdy6 bm am [] 0 0 seed 0)
+      = (NDactive (), setMaps (rDone6 seed)
+          (allocStoreBytes bm tAddr 4 bytesT)
+          ((am.insert 2 allocT).erase 2)) := by
+    show app (driver2_lemFuel (999999+1) t6File.tagDefs false)
+      (mkRdy6 bm am [] 0 0 seed 0) = _
+    exact RelSem.Laws.driver2_done hndct (by rfl)
+  have halign : setMaps (rRdy seed) bm am
+      = mkRdy6 bm am [] 0 0 seed 0 := rfl
+  rw [halign]
+  exact h6
+
+/-- The terminal readout, uniform over the rest fiber. -/
+theorem t6_post_o (seed : Nat) : ∀ bm am,
+    ∃ r : driver_result,
+      (Outcome.value (finalize t6File.tagDefs "callND"
+          (setMaps (rDone6 seed) bm am)) : DriveVal)
+        = Outcome.value r ∧ t6Spec r :=
+  fun _ _ => ⟨_, rfl, rfl⟩
+
+/-! ## The harness spine at open maps (the T1Threaded k-stage recipe
+    verbatim at the T6 data; pure stages `rfl` at free maps, memory
+    stages through the construct laws + Kit blocks) -/
+
+abbrev rInit6 (seed : Nat) : driver_state :=
+  restOf (initial_driver_state_threaded seed t6File t6Fs)
+abbrev rGlob6 (seed : Nat) : driver_state := restOf (dG seed)
+abbrev rArg6 (seed : Nat) : driver_state :=
+  restAllocR (rGlob6 seed) xAddr
+abbrev rErr6 (seed : Nat) : driver_state :=
+  restAllocR (rArg6 seed) errAddr
+
+theorem k1_o (seed : Nat) : ∀ bm am,
+    app (driver_globals t6File.tagDefs false t6File)
+        (setMaps (rInit6 seed) bm am)
+      = (NDactive 0, setMaps (rGlob6 seed) bm am) := fun _ _ => rfl
+
+theorem k3_o (seed : Nat) : ∀ bm am,
+    app (resolveFunSym (dG seed).core_file "pick")
+        (setMaps (rGlob6 seed) bm am)
+      = (NDactive pickT6Sym, setMaps (rGlob6 seed) bm am) :=
+  fun _ _ => rfl
+
+theorem k4_o (seed : Nat) : ∀ bm am,
+    app (lookupFunBody (dG seed).core_file pickT6Sym)
+        (setMaps (rGlob6 seed) bm am)
+      = (NDactive ([(symX, BTy_object OTy_pointer)], pickBody),
+         setMaps (rGlob6 seed) bm am) := fun _ _ => rfl
+
+theorem k5_o (seed : Nat) : ∀ bm am,
+    app (lookupParamTys (dG seed).core_file pickT6Sym)
+        (setMaps (rGlob6 seed) bm am)
+      = (NDactive [signed_int], setMaps (rGlob6 seed) bm am) :=
+  fun _ _ => rfl
+
+/-- The argument-object address arithmetic. -/
+theorem argAddr6_fact (seed : Nat) :
+    ((CerbMem.alignDown
+        ((rGlob6 seed).layout_state.lastAddress - 4).toNat
+        ((4 : Int).toNat.max 1) : Nat) : Int) = xAddr := by
+  rw [show (rGlob6 seed).layout_state.lastAddress
+    = (281474976710655 : Int) from rfl]
+  decide
+
+/-- The memValue the caller protocol computes for the T6 argument
+    (fixes the injection law's ctype/align slots for the eager named
+    facts below — the T1 `memValueFromValue_t1_eq` recipe). -/
+theorem memValueFromValue_t6_eq :
+    memValueFromValue t6File.tagDefs signed_int (intValue 10)
+      = some (CerbMem.integerValueMval (Signed Int_)
+          (CerbMem.integerIval 10)) := rfl
+
+/-- Stage 6, THE ARGUMENT INJECTION at open maps. -/
+theorem k6_o (seed : Nat) : ∀ bm am,
+    app (injectArgs t6File.tagDefs 0
+          [(symX, BTy_object OTy_pointer)] [signed_int] [intValue 10])
+        (setMaps (rGlob6 seed) bm am)
+      = (NDactive [(symX, Vobject (OVpointer xPtr))],
+         allocStoreState (restAllocR (rGlob6 seed) xAddr) bm am xAddr 4
+           argBytes6 0 allocX) := by
+  intro bm am
+  refine Laws.inject_ptr_arg1 (σ := setMaps (rGlob6 seed) bm am)
+    (hmv := memValueFromValue_t6_eq)
+    (halloc := Kit.mem_alloc_block (sz := 4) (a := xAddr)
+      (by exact rfl) (argAddr6_fact seed) (by exact rfl))
+    (hstore := Kit.mem_store_block (ty := signed_int)
+      (mv := CerbMem.integerValueMval (Signed Int_)
+        (CerbMem.integerIval 10))
+      (allocId := 0) (addr := xAddr) (alloc := allocX)
+      (fpm := []) (bytes := argBytes6)
+      (hcompat := by exact rfl)
+      (hget := by
+        rw [Kit.writeBytesTo_allocations]
+        show (am.insert 0 allocX).get? 0 = some allocX
+        simp [Std.TreeMap.get?_eq_getElem?, Std.TreeMap.getElem?_insert])
+      (hbounds := by exact rfl) (hro := rfl)
+      (hatomic := by exact rfl)
+      (hbytes := by
+        rw [Kit.writeBytesTo_funptrmap]
+        exact rfl))
+    (hout := by
+      simp only [writeBytesTo_eq]
+      rfl)
+
+theorem k7_o (seed : Nat) : ∀ bm am,
+    app get_thread_states (setMaps (rArg6 seed) bm am)
+      = (NDactive ((dG seed).core_state0.thread_states),
+         setMaps (rArg6 seed) bm am) :=
+  fun _ _ => rfl
+
+/-- The errno address arithmetic. -/
+theorem errAddr6_fact (seed : Nat) :
+    ((CerbMem.alignDown
+        ((rArg6 seed).layout_state.lastAddress - 4).toNat
+        ((4 : Int).toNat.max 1) : Nat) : Int) = errAddr := by
+  rw [show (rArg6 seed).layout_state.lastAddress = xAddr from rfl]
+  decide
+
+/-- Stage 8, THE ERRNO BLOCK at open maps. -/
+theorem k8_o (seed : Nat) : ∀ bm am,
+    app (liftMem (nd_bind
+        (CerbMem.allocateObject 0 (PrefOther "errno")
+          (CerbMem.alignofIval signed_int) signed_int none none)
+        (fun (ptr_val : CerbMem.PointerValue) =>
+          let zero := CerbMem.integerValueMval (Signed Int_)
+            (CerbMem.integerIval (0 : Int))
+          nd_bind
+            (CerbMem.storeM (CerbLocation.other "errno init")
+              signed_int false ptr_val zero)
+            (fun (_ : CerbMem.Footprint) => nd_return ptr_val))))
+      (setMaps (rArg6 seed) bm am)
+      = (NDactive errPtr,
+         allocStoreState (restAllocR (rArg6 seed) errAddr) bm am errAddr
+           4 [mkByte 0 0, mkByte 0 1, mkByte 0 2, mkByte 0 3]
+           1 allocErr) := by
+  intro bm am
+  refine Laws.callND_errno (σ := setMaps (rArg6 seed) bm am)
+    (halloc := Kit.mem_alloc_block (sz := 4) (a := errAddr)
+      (by exact rfl) (errAddr6_fact seed) (by exact rfl))
+    (hstore := Kit.mem_store_block (ty := signed_int)
+      (mv := CerbMem.integerValueMval (Signed Int_)
+        (CerbMem.integerIval 0))
+      (allocId := 1) (addr := errAddr) (alloc := allocErr)
+      (fpm := [])
+      (bytes := [mkByte 0 0, mkByte 0 1, mkByte 0 2, mkByte 0 3])
+      (hcompat := by exact rfl)
+      (hget := by
+        rw [Kit.writeBytesTo_allocations]
+        show (am.insert 1 allocErr).get? 1 = some allocErr
+        simp [Std.TreeMap.get?_eq_getElem?, Std.TreeMap.getElem?_insert])
+      (hbounds := by exact rfl) (hro := rfl)
+      (hatomic := by exact rfl)
+      (hbytes := by
+        rw [Kit.writeBytesTo_funptrmap]
+        exact rfl))
+    (hout := by
+      simp only [writeBytesTo_eq]
+      rfl)
+
+/-- Stage 9, the thread setup (rest-only). -/
+theorem k9_o (seed : Nat) (th : thread_state) (hth : th = thRdy) :
+    ∀ bm am,
+    app (driver_update_thread_state 0 th : driverM Unit)
+        (setMaps (rErr6 seed) bm am)
+      = (NDactive (), setMaps (rRdy seed) bm am) := by
+  subst hth; exact fun _ _ => rfl
+
+/-- The scratch address arithmetic (t's create inside the driver
+    atom). -/
+theorem tAddr_fact (seed : Nat) :
+    ((CerbMem.alignDown
+        ((rRdy seed).layout_state.lastAddress - 4).toNat
+        ((4 : Int).toNat.max 1) : Nat) : Int) = tAddr := by
+  rw [show (rRdy seed).layout_state.lastAddress = errAddr from rfl]
+  decide
+
+/-! ## The statement-facing route: the per-step WP walk ON THE HEAP
+    ROUTE (CerbMemInterp; the T1/T3 walk pattern — the driver atom is
+    `wp_scratch1`: it reads the argument object's footprint, runs t's
+    whole lifetime internally, and the errno fragments ride the frame
+    across it). -/
+
+theorem t6_wpK_thr {GF : BundledGFunctors} [CerbHeapGS GF]
+    (seed : Nat) :
+    (restIs (GF := GF) restHalf (rInit6 seed)) ⊢
       WP (callK t6File.tagDefs t6File "pick" [intValue 10])
         @ Stuckness.NotStuck ; ⊤
         {{ o, ⌜∃ r : driver_result, o = Outcome.value r ∧ t6Spec r⌝ }} := by
   iintro Hst
-  wp_step (dG_app seed) Hst
-  wp_step (app_nd_get (dG seed)) Hst
-  wp_step (kRes seed) Hst
-  wp_step (kBody seed) Hst
-  wp_step (kTys seed) Hst
-  wp_step (t6_inject seed) Hst
-  wp_step (RelSem.Laws.get_ths_eq (dInj seed)) Hst
-  wp_step (t6_errno seed) Hst
-  wp_step (RelSem.Laws.driver_update_ts 0 _ (dErr seed) (by rfl)) Hst
-  wp_step (r_driver seed) Hst
-  wp_step (app_nd_get (r_fin seed)) Hst
-  wp_done
-  ipureintro
-  exact ⟨_, rfl, t6_result_eq seed⟩
+  wp_rest (k1_o seed) Hst
+  wp_get (dG seed) Hst
+  wp_rest (k3_o seed) Hst
+  wp_rest (k4_o seed) Hst
+  wp_rest (k5_o seed) Hst
+  wp_argobj (k6_o seed) (argAddr6_fact seed) Hst HalX HptX
+  wp_rest (k7_o seed) Hst
+  wp_argobj (k8_o seed) (errAddr6_fact seed) Hst HalE HptE
+  wp_rest (k9_o seed _ (by rfl)) Hst
+  wp_scratch1 (driver2_o seed) (tAddr_fact seed) Hst HalX HptX HptT
+  wp_fin (t6_post_o seed) Hst
 
 /-! ## THE THREADED STATEMENTS (fuel-opsem faces, ∀-seed) -/
 
@@ -304,10 +598,12 @@ def T6ThreadedStatement : Prop :=
       [intValue 10] t6Fs t6Spec
 
 /-- **T6 THREADED, UNCONDITIONAL** (cone exactly the classical trio;
-    the S1 acceptance probe's theorem, landed). -/
+    arc-18 R1: through the heap-route walk — the open-memory minted
+    equation supply discharged via `kCallHarnessAdequateThrHeap_of_wp`;
+    statement text byte-stable across the migration). -/
 theorem T6Threaded : T6ThreadedStatement := by
   intro seed
-  refine kCallHarnessAdequateThr_of_wp (GF := CerbS) seed
+  refine kCallHarnessAdequateThrHeap_of_wp (GF := CerbHeapS) seed
     t6File.tagDefs t6File "pick" [intValue 10] t6Fs t6Spec ?_
   intro η
   exact t6_wpK_thr seed
@@ -318,7 +614,7 @@ theorem T6Threaded_ubFree :
       CallHarnessUBFreeThr seed t6File.tagDefs t6File "pick"
         [intValue 10] t6Fs := by
   intro seed
-  refine kCallHarnessUBFreeThr_of_wp (GF := CerbS) seed
+  refine kCallHarnessUBFreeThrHeap_of_wp (GF := CerbHeapS) seed
     t6File.tagDefs t6File "pick" [intValue 10] t6Fs t6Spec ?_
   intro η
   exact t6_wpK_thr seed
