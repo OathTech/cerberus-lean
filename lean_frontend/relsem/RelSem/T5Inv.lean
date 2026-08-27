@@ -918,6 +918,14 @@ theorem exitAt0_rest_indep (p : Pm) :
   rw [bxzero43_of_rest, St_rest_indep p 0, ← bxzero43_of_rest,
     show (zeroP p).n = p.n from rfl]
 
+theorem stFin_rest_indep (p : Pm) :
+    restOf (stFin p) = restOf (stFin (zeroP p)) := by
+  unfold stFin
+  rw [show (zeroP p).n = p.n from rfl]
+  cases hN : p.n.toNat with
+  | zero => exact exitAt0_rest_indep p
+  | succ m => exact exitAt_rest_indep p (m + 1)
+
 /-! ## The exit endpoint's layout faces (the scratch2 rule's
     pointwise/allocation feed at the final state) -/
 

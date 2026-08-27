@@ -1296,10 +1296,14 @@ theorem wpk_seq_write1_ecast [CerbHeapGS GF] {α : Type}
     loop's stores discharges the same rule — the ghost layer jumps
     straight to the final images (`bytes_alloc_ghost` at fresh
     ranges), and `MemInv` is rebuilt from the pointwise facts
-    (`MemInv.scratch2_pointwise`). Ghost accounting mirrors
-    `wpk_seq_scratch1` doubled: both allocation fragments are minted
-    and consumed inside the rule (net unobservable); both scratch
-    ranges' final bytes go out as D2 dead capital. -/
+    (`MemInv.scratch2_pointwise`). The geometry is stated over the
+    final images' LENGTHS (`finalA.length`/`finalB.length`) so that
+    every slot the equation itself cannot pin is determined by the
+    registered pointwise facts (auto-dispatch discipline). Ghost
+    accounting mirrors `wpk_seq_scratch1` doubled: both allocation
+    fragments are minted and consumed inside the rule (net
+    unobservable); both scratch ranges' final bytes go out as D2
+    dead capital. -/
 theorem wpk_seq_scratch2 [CerbHeapGS GF] {α : Type}
     {m : ndM α step_kind driver_error mem_iv_constraint driver_state}
     {k : α → KDriveExpr} {v : α} {ρ ρ' : driver_state}
@@ -1307,32 +1311,26 @@ theorem wpk_seq_scratch2 [CerbHeapGS GF] {α : Type}
       Std.TreeMap Int CerbMem.Allocation → driver_state}
     {aidV addrV : Int} {alV : CerbMem.Allocation}
     {bsV : List CerbMem.AbsByte} {dqa dqb : DFrac}
-    {tyA tyB : ctype} {alignA alignB : Int} {szA szB : Nat}
     {aA aB nidA nidB : Int} {alA alB : CerbMem.Allocation}
     {finalA finalB : List CerbMem.AbsByte}
     {s : Stuckness} {E : CoPset} {Φ : DriveVal → IProp GF}
-    (hszA : (CerbMem.sizeofCtype tyA).max 1 = szA)
-    (haddrA : ((CerbMem.alignDown
-        (ρ.layout_state.lastAddress - szA).toNat
-        (alignA.toNat.max 1) : Nat) : Int) = aA)
-    (hnzA : (aA == (0 : Int)) = false)
-    (hszB : (CerbMem.sizeofCtype tyB).max 1 = szB)
-    (haddrB : ((CerbMem.alignDown (aA - szB).toNat
-        (alignB.toNat.max 1) : Nat) : Int) = aB)
-    (hnzB : (aB == (0 : Int)) = false)
-    (hlenA : finalA.length = szA) (hlenB : finalB.length = szB)
+    (hszA1 : 1 ≤ finalA.length)
+    (hrangeA : aA + (finalA.length : Int)
+      ≤ (ρ.layout_state.lastAddress : Int))
+    (hrangeB : aB + (finalB.length : Int) ≤ aA)
     (hnidA : nidA = (ρ.layout_state.nextAllocId : Int))
     (hnidB : nidB = (ρ.layout_state.nextAllocId : Int) + 1)
     (hFrest : ∀ bm am, restOf (F bm am) = ρ')
     (hFalloc : ∀ bm am, (F bm am).layout_state.allocations
       = (((am.insert nidA alA).insert nidB alB).erase nidB).erase nidA)
-    (hFout : ∀ bm am (a : Int), ¬(aA ≤ a ∧ a < aA + szA) →
-      ¬(aB ≤ a ∧ a < aB + szB) →
+    (hFout : ∀ bm am (a : Int),
+      ¬(aA ≤ a ∧ a < aA + finalA.length) →
+      ¬(aB ≤ a ∧ a < aB + finalB.length) →
       (F bm am).layout_state.bytemap.get? a = bm.get? a)
-    (hFinA : ∀ bm am (i : Nat), i < szA →
+    (hFinA : ∀ bm am (i : Nat), i < finalA.length →
       (F bm am).layout_state.bytemap.get? (aA + (i : Int))
         = finalA[i]?)
-    (hFinB : ∀ bm am (i : Nat), i < szB →
+    (hFinB : ∀ bm am (i : Nat), i < finalB.length →
       (F bm am).layout_state.bytemap.get? (aB + (i : Int))
         = finalB[i]?)
     (hnext' : (ρ'.layout_state.nextAllocId : Int)
@@ -1352,8 +1350,6 @@ theorem wpk_seq_scratch2 [CerbHeapGS GF] {α : Type}
           ∗ pointsToBytes aB (.own 1) finalB)
         -∗ WP (k v) @ s ; E {{ Φ }}) ⊢
       WP (KExpr.seq m k : KDriveExpr) @ s ; E {{ Φ }} := by
-  have hszA1 : 1 ≤ szA := hszA ▸ Nat.le_max_right _ 1
-  have hszB1 : 1 ≤ szB := hszB ▸ Nat.le_max_right _ 1
   refine wpk_seq_res_det
     (R := iprop(restIs restHalf ρ ∗ allocIs aidV dqa alV
       ∗ pointsToBytes addrV dqb bsV))
@@ -1385,10 +1381,8 @@ theorem wpk_seq_scratch2 [CerbHeapGS GF] {α : Type}
     obtain ⟨bm, am, rfl⟩ := exists_setMaps_of_restOf hr
     rw [show F (setMaps ρ bm am).layout_state.bytemap
         (setMaps ρ bm am).layout_state.allocations = F bm am from rfl]
-    have hrangeA : aA + szA
-        ≤ ((setMaps ρ bm am).layout_state.lastAddress : Int) :=
-      alloc_range_le haddrA hnzA
-    have hrangeB : aB + szB ≤ aA := alloc_range_le haddrB hnzB
+    have hrangeA' : aA + (finalA.length : Int)
+        ≤ ((setMaps ρ bm am).layout_state.lastAddress : Int) := hrangeA
     -- the final auth byte image: the two fresh ranges written over
     -- the incoming map (ext-side; pointwise via the F facts)
     have hB : bytesOf (F bm am).layout_state
@@ -1406,20 +1400,20 @@ theorem wpk_seq_scratch2 [CerbHeapGS GF] {α : Type}
       show ((F bm am).layout_state.bytemap)[a]?
         = (writeList (writeList bm aA finalA) aB finalB)[a]?
       rw [← Std.TreeMap.get?_eq_getElem?, ← Std.TreeMap.get?_eq_getElem?]
-      by_cases hA : aA ≤ a ∧ a < aA + szA
-      · rw [writeList_get?_notin _ _ _ _ (by rw [hlenB]; omega),
-          writeList_get?_in _ _ _ _ hA.1 (by rw [hlenA]; omega)]
+      by_cases hA : aA ≤ a ∧ a < aA + finalA.length
+      · rw [writeList_get?_notin _ _ _ _ (by omega),
+          writeList_get?_in _ _ _ _ hA.1 (by omega)]
         have := hFinA bm am (a - aA).toNat (by omega)
         rw [show aA + (((a - aA).toNat : Nat) : Int) = a by omega] at this
         exact this
-      · by_cases hBr : aB ≤ a ∧ a < aB + szB
-        · rw [writeList_get?_in _ _ _ _ hBr.1 (by rw [hlenB]; omega)]
+      · by_cases hBr : aB ≤ a ∧ a < aB + finalB.length
+        · rw [writeList_get?_in _ _ _ _ hBr.1 (by omega)]
           have := hFinB bm am (a - aB).toNat (by omega)
           rw [show aB + (((a - aB).toNat : Nat) : Int) = a by omega]
             at this
           exact this
-        · rw [writeList_get?_notin _ _ _ _ (by rw [hlenB]; omega),
-            writeList_get?_notin _ _ _ _ (by rw [hlenA]; omega)]
+        · rw [writeList_get?_notin _ _ _ _ (by omega),
+            writeList_get?_notin _ _ _ _ (by omega)]
           exact hFout bm am a hA hBr
     -- the final auth allocation image
     have hA' : allocsOf (F bm am).layout_state
@@ -1447,7 +1441,6 @@ theorem wpk_seq_scratch2 [CerbHeapGS GF] {α : Type}
       refine hinv.bytemap_below_none ?_
       show @LT.lt Int Int.instLTInt (aA + (i : Int))
         (setMaps ρ bm am).layout_state.lastAddress
-      rw [hlenA] at hi
       omega
     imod bytes_alloc_ghost _ hfreshA $$ Hb with ⟨Hb, HptA⟩
     have hfreshB : ∀ i : Nat, i < finalB.length →
@@ -1459,11 +1452,10 @@ theorem wpk_seq_scratch2 [CerbHeapGS GF] {α : Type}
       show Std.PartialMap.get? (M := CerbHeapF)
         (extWriteList (toExt bm) aA finalA) (aB + (i : Int)) = none
       rw [← toExt_writeList, toExt_get?,
-        writeList_get?_notin _ _ _ _ (by rw [hlenA, hlenB] at *; omega)]
+        writeList_get?_notin _ _ _ _ (by omega)]
       refine hinv.bytemap_below_none ?_
       show @LT.lt Int Int.instLTInt (aB + (i : Int))
         (setMaps ρ bm am).layout_state.lastAddress
-      rw [hlenB] at hi
       omega
     imod bytes_alloc_ghost _ hfreshB $$ Hb with ⟨Hb, HptB⟩
     -- alloc ghost: mint both scratch fragments, consume both at the
@@ -1519,7 +1511,7 @@ theorem wpk_seq_scratch2 [CerbHeapGS GF] {α : Type}
         = (restOf (F bm am)).layout_state.deadAllocations from rfl,
         hFrest bm am]
       exact hdead'
-    exact MemInv.scratch2_pointwise hinv hszA1 hrangeA hrangeB
+    exact MemInv.scratch2_pointwise hinv hszA1 hrangeA' hrangeB
       hnidA hnidB (hFalloc bm am) hFdead hFnext hFlast
       (fun a hA hBr => hFout bm am a hA hBr)
 
@@ -1535,7 +1527,6 @@ theorem wpk_seq_scratch2_ecast [CerbHeapGS GF] {α : Type}
       Std.TreeMap Int CerbMem.Allocation → driver_state}
     {aidV addrV : Int} {alV : CerbMem.Allocation}
     {bsV : List CerbMem.AbsByte} {dqa dqb : DFrac}
-    {tyA tyB : ctype} {alignA alignB : Int} {szA szB : Nat}
     {aA aB nidA nidB : Int} {alA alB : CerbMem.Allocation}
     {finalA finalB : List CerbMem.AbsByte}
     {s : Stuckness} {E : CoPset} {Φ : DriveVal → IProp GF}
@@ -1544,30 +1535,25 @@ theorem wpk_seq_scratch2_ecast [CerbHeapGS GF] {α : Type}
           bm.get? (addrV + (i : Int)) = some bsV[i]) →
         app m (setMaps ρ bm am) = (NDactive v, F bm am))
     (he : e0 = KExpr.seq m k)
-    (hszA : (CerbMem.sizeofCtype tyA).max 1 = szA)
-    (haddrA : ((CerbMem.alignDown
-        (ρ.layout_state.lastAddress - szA).toNat
-        (alignA.toNat.max 1) : Nat) : Int) = aA)
-    (hnzA : (aA == (0 : Int)) = false)
-    (hszB : (CerbMem.sizeofCtype tyB).max 1 = szB)
-    (haddrB : ((CerbMem.alignDown (aA - szB).toNat
-        (alignB.toNat.max 1) : Nat) : Int) = aB)
-    (hnzB : (aB == (0 : Int)) = false)
-    (hlenA : finalA.length = szA) (hlenB : finalB.length = szB)
-    (hnidA : nidA = (ρ.layout_state.nextAllocId : Int))
-    (hnidB : nidB = (ρ.layout_state.nextAllocId : Int) + 1)
+    (hFinA : ∀ bm am (i : Nat), i < finalA.length →
+      (F bm am).layout_state.bytemap.get? (aA + (i : Int))
+        = finalA[i]?)
+    (hFinB : ∀ bm am (i : Nat), i < finalB.length →
+      (F bm am).layout_state.bytemap.get? (aB + (i : Int))
+        = finalB[i]?)
     (hFrest : ∀ bm am, restOf (F bm am) = ρ')
     (hFalloc : ∀ bm am, (F bm am).layout_state.allocations
       = (((am.insert nidA alA).insert nidB alB).erase nidB).erase nidA)
-    (hFout : ∀ bm am (a : Int), ¬(aA ≤ a ∧ a < aA + szA) →
-      ¬(aB ≤ a ∧ a < aB + szB) →
+    (hFout : ∀ bm am (a : Int),
+      ¬(aA ≤ a ∧ a < aA + finalA.length) →
+      ¬(aB ≤ a ∧ a < aB + finalB.length) →
       (F bm am).layout_state.bytemap.get? a = bm.get? a)
-    (hFinA : ∀ bm am (i : Nat), i < szA →
-      (F bm am).layout_state.bytemap.get? (aA + (i : Int))
-        = finalA[i]?)
-    (hFinB : ∀ bm am (i : Nat), i < szB →
-      (F bm am).layout_state.bytemap.get? (aB + (i : Int))
-        = finalB[i]?)
+    (hnidA : nidA = (ρ.layout_state.nextAllocId : Int))
+    (hnidB : nidB = (ρ.layout_state.nextAllocId : Int) + 1)
+    (hszA1 : 1 ≤ finalA.length)
+    (hrangeA : aA + (finalA.length : Int)
+      ≤ (ρ.layout_state.lastAddress : Int))
+    (hrangeB : aB + (finalB.length : Int) ≤ aA)
     (hnext' : (ρ'.layout_state.nextAllocId : Int)
       = (ρ.layout_state.nextAllocId : Int) + 2)
     (hlast' : (ρ'.layout_state.lastAddress : Int) = aB)
@@ -1581,8 +1567,8 @@ theorem wpk_seq_scratch2_ecast [CerbHeapGS GF] {α : Type}
           ∗ pointsToBytes aB (.own 1) finalB)
         -∗ WP (k v) @ s ; E {{ Φ }}) ⊢
       WP e0 @ s ; E {{ Φ }} :=
-  he ▸ wpk_seq_scratch2 hszA haddrA hnzA hszB haddrB hnzB hlenA hlenB
-    hnidA hnidB hFrest hFalloc hFout hFinA hFinB hnext' hlast' hdead' h
+  he ▸ wpk_seq_scratch2 hszA1 hrangeA hrangeB hnidA hnidB hFrest
+    hFalloc hFout hFinA hFinB hnext' hlast' hdead' h
 
 /-- MID-WALK STATE READ (`nd_get` feeding further stages): the value
     is the machine state, which the footprint logic does not pin —

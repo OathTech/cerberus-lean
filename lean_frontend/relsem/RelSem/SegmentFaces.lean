@@ -108,6 +108,8 @@ initialize registerBuiltinAttribute {
     registerSegEntry declName `segPost .anonymous kind
 }
 
+initialize registerTraceClass `RelSem.segAuto
+
 /-! ## §2 Registry-backed side-condition discharge -/
 
 /-- A proof of `ty` from a local proof `e : ety`, descending through
@@ -130,12 +132,19 @@ private partial def fromLocal (e ety ty : Expr) (depth : Nat := 3) :
     return none
 
 /-- Close a hypothesis hole by local assumption (conjunct descent
-    included) or `rfl`. -/
+    included) or `rfl`. INNERMOST-FIRST (arc-18 R4): the statement
+    faces leave the outer statement binders in the hole's context
+    beside the freshly-introduced obligation binders; the obligation's
+    own (innermost) locals are the intended witnesses. -/
 private def solveHole (mid : MVarId) : MetaM Bool := do
   let ty ← instantiateMVars (← mid.getType)
-  let byLocal ← (← getLCtx).findDeclM? fun d => do
-    if d.isImplementationDetail then return none
-    fromLocal d.toExpr d.type ty
+  let decls := (← getLCtx).foldl (init := #[]) fun acc d =>
+    if d.isImplementationDetail then acc else acc.push d
+  let mut byLocal : Option Expr := none
+  for i in [0:decls.size] do
+    if byLocal.isNone then
+      let d := decls[decls.size - 1 - i]!
+      byLocal ← fromLocal d.toExpr d.type ty
   if let some e := byLocal then
     mid.assign e
     return true
@@ -145,37 +154,93 @@ private def solveHole (mid : MVarId) : MetaM Bool := do
       return true
   return false
 
+/-- The ∀-arity of a type (plain syntactic count — the partial
+    telescope below matches a ∀-shaped expectation without consuming
+    its binders). -/
+private def forallArity : Expr → Nat
+  | .forallE _ _ b _ => forallArity b + 1
+  | _ => 0
+
 /-- Instantiate a registered entry against an expected proposition:
-    meta-telescope the entry, unify its conclusion, then close
+    meta-telescope the entry DOWN TO the expectation's own ∀-arity
+    (arc-18 R4: ∀-shaped holes — e.g. the scratch2 rule's
+    `∀ bm am, …` final-state facts — match registered facts whose
+    trailing binders line up), unify its conclusion, then close
     leftover hypothesis holes (`solveHole`). Returns the proof term,
     or `none` (state restored). -/
 private def instantiateEntry (declName : Name) (expected : Expr) :
     MetaM (Option Expr) := do
   let s ← saveState
-  try
-    let cinfo ← getConstInfo declName
-    let (margs, _, concl) ← forallMetaTelescopeReducing cinfo.type
-    unless ← isDefEq concl expected do
-      restoreState s; return none
-    let mut ok := true
-    for m in margs do
-      let m ← instantiateMVars m
-      unless m.isMVar do continue
-      unless ← solveHole m.mvarId! do ok := false
-    unless ok do
-      restoreState s; return none
-    return some (← instantiateMVars (mkAppN
-      (mkConst declName (cinfo.levelParams.map Level.param)) margs))
-  catch _ =>
-    restoreState s; return none
+  -- runtime exceptions (deep-recursion storms during speculative
+  -- unification against arbitrary registered entries) must restore
+  -- and miss, exactly like ordinary failures (arc-18 R4)
+  tryCatchRuntimeEx (do
+    try
+      let cinfo ← getConstInfo declName
+      let nT := forallArity cinfo.type
+      let nE := forallArity expected
+      let (margs, _, concl) ←
+        forallMetaTelescopeReducing cinfo.type (some (nT - nE))
+      unless ← isDefEq concl expected do
+        restoreState s; return none
+      let mut ok := true
+      for m in margs do
+        let m ← instantiateMVars m
+        unless m.isMVar do continue
+        unless ← solveHole m.mvarId! do ok := false
+      unless ok do
+        restoreState s; return none
+      return some (← instantiateMVars (mkAppN
+        (mkConst declName (cinfo.levelParams.map Level.param)) margs))
+    catch _ =>
+      restoreState s; return none)
+    (fun _ => do restoreState s; return none)
 
-/-- Scan all registered entries of `kind` for one whose conclusion
-    proves `expected`. -/
+/-- Run a speculative probe under its OWN small heartbeat budget
+    (arc-18 R4): a probe that storms (whnf into a symbolic-index
+    family, say) burns only its own allowance — the enclosing
+    declaration's budget is measured from a fresh start, so one bad
+    probe cannot poison every later match into instant timeout. -/
+private def withProbeBudget {m : Type → Type} {α : Type} [Monad m]
+    [MonadControlT Core.CoreM m] [Lean.MonadWithOptions m]
+    (x : m α) : m α :=
+  Core.withCurrHeartbeats
+    (withOptions (fun o => o.set `maxHeartbeats (5000 : Nat)) x)
+
+/-- Scan registered entries of `kind` for one whose conclusion proves
+    `expected` — KEYED pre-selection first (the expectation's
+    goal-form key, symmetric to `goalFormKeys`: telescope, eq-LHS;
+    arc-18 R4 — the linear all-entries scan burned the enclosing
+    declaration's heartbeat budget on speculative unification), the
+    fence/shape-robust full kind scan as fallback. Every attempt is
+    probe-budgeted. -/
 private def proveByRegistry (kind : Name) (expected : Expr) :
     MetaM (Option Expr) := do
-  for l in ← LawRegistry.byKind kind do
-    if let some pf ← instantiateEntry l.name expected then
+  let tryEntry (nm : Name) : MetaM (Option Expr) := do
+    match ← withProbeBudget (instantiateEntry nm expected) with
+    | some pf =>
+      trace[RelSem.segAuto] "proveByRegistry: {nm} HIT for        {indentExpr expected}"
       return some pf
+    | none =>
+      trace[RelSem.segAuto] "proveByRegistry: {nm} miss"
+      return none
+  let cands ← try
+    withoutModifyingState do
+      let (_, _, body) ← forallMetaTelescopeReducing expected
+      let target := match body.eq? with
+        | some (_, l, _) => l
+        | none => body
+      LawRegistry.query kind target
+    catch _ => pure #[]
+  let mut tried : Array Name := #[]
+  for l in cands do
+    tried := tried.push l.name
+    if let some pf ← tryEntry l.name then
+      return some pf
+  for l in ← LawRegistry.byKind kind do
+    unless tried.contains l.name do
+      if let some pf ← tryEntry l.name then
+        return some pf
   return none
 
 /-- Try a tactic; restore state (including the message log — tactic
@@ -202,21 +267,33 @@ private def tryTac (stx : TSyntax `tactic) : TacticM Bool := do
     supply (address arithmetic at open states). Fail-closed: names the
     goal on miss. -/
 elab "seg_side" : tactic => do
+  -- cheap closed-form attempts first (probe-budgeted: a storming
+  -- probe must not poison the registry scan's budget), the
+  -- registered segFact supply next, `wp_ground` (kernel decide —
+  -- the most storm-prone probe) LAST
   let cheap : List (TSyntax `tactic) :=
-    [← `(tactic| assumption), ← `(tactic| wp_ground),
-     ← `(tactic| rfl)]
+    [← `(tactic| assumption), ← `(tactic| rfl)]
   for t in cheap do
-    if ← tryTac t then
+    if ← withProbeBudget (tryTac t) then
       return
   let g ← getMainGoal
-  g.withContext do
-  let expected ← instantiateMVars (← g.getType)
-  if let some pf ← proveByRegistry `segFact expected then
-    g.assign pf
+  let done ← g.withContext do
+    let expected ← instantiateMVars (← g.getType)
+    if let some pf ← proveByRegistry `segFact expected then
+      g.assign pf
+      pure true
+    else
+      pure false
+  if done then
     replaceMainGoal []
-  else
+    return
+  if ← withProbeBudget (tryTac (← `(tactic| wp_ground))) then
+    return
+  let g ← getMainGoal
+  g.withContext do
+    let expected ← instantiateMVars (← g.getType)
     throwError "seg_side: no route to side condition (assumption/\
-      wp_ground/rfl/segFact all missed):{indentExpr expected}"
+      rfl/segFact/wp_ground all missed):{indentExpr expected}"
 
 /-- `seg_post_side`: the harness terminal's readout — the uniform
     inline witness first, then the registered `segPost` supply. -/
@@ -551,36 +628,31 @@ macro "seg_argobj2" e:term:max h:ident hal1:ident hpt1:ident
              case wplenB => rfl
              iintro ⟨$h:ident, $hal1:ident, $hpt1:ident, $hal2:ident, $hpt2:ident⟩))
 
-/-- Two-scratch loop atom, auto side facts (arc-18 R4; mirror shape
-    of `seg_scratch1` at the pointwise scratch2 interface — the
-    final-state characterization facts arrive from the registered
-    `segFact` supply). -/
+/-- Two-scratch loop atom, auto side facts (arc-18 R4; the pointwise
+    scratch2 interface — the final-state characterization facts and
+    the ρ' scalar pins arrive from the registered `segFact` supply;
+    the pointwise-image cases run FIRST so they pin the geometry the
+    later ground cases compute over). -/
 macro "seg_scratch2" e:term:max hr:ident haV:ident hpV:ident
     hptA:ident hptB:ident : tactic =>
   `(tactic| (wp_expose
-             iapply RelSem.Cerb.wpk_seq_scratch2_ecast $e ?wpe ?wpszA ?wpaddrA ?wpnzA ?wpszB ?wpaddrB ?wpnzB ?wplenA ?wplenB ?wpnidA ?wpnidB ?wpfrest ?wpfalloc ?wpfout ?wpfinA ?wpfinB ?wpnext ?wplast ?wpdead
+             iapply RelSem.Cerb.wpk_seq_scratch2_ecast $e ?wpe ?wpfinA ?wpfinB ?wpfrest ?wpfalloc ?wpfout ?wpnidA ?wpnidB ?wpszA1 ?wprangeA ?wprangeB ?wpnext ?wplast ?wpdead
              rotate_left; rotate_left; rotate_left; rotate_left
              rotate_left; rotate_left; rotate_left; rotate_left
              rotate_left; rotate_left; rotate_left; rotate_left
-             rotate_left; rotate_left; rotate_left; rotate_left
-             rotate_left; rotate_left; rotate_left
+             rotate_left; rotate_left
              iframe $hr:ident $haV:ident $hpV:ident
              case wpe => rfl
-             case wpszA => rfl
-             case wpaddrA => seg_side
-             case wpnzA => seg_side
-             case wpszB => rfl
-             case wpaddrB => seg_side
-             case wpnzB => seg_side
-             case wplenA => rfl
-             case wplenB => rfl
-             case wpnidA => rfl
-             case wpnidB => rfl
+             case wpfinA => seg_side
+             case wprangeB => seg_side
+             case wpfinB => seg_side
              case wpfrest => seg_side
              case wpfalloc => seg_side
              case wpfout => seg_side
-             case wpfinA => seg_side
-             case wpfinB => seg_side
+             case wpnidA => rfl
+             case wpnidB => rfl
+             case wpszA1 => seg_side
+             case wprangeA => seg_side
              case wpnext => seg_side
              case wplast => seg_side
              case wpdead => seg_side
@@ -686,7 +758,14 @@ private partial def prefixArity (ty : Expr) (n : Nat := 0) :
     the indices that locate `allocIs`/`pointsToBytes` hypotheses. -/
 private structure EqFootprint where
   aids : Array Expr := #[]
+  /-- The allocation records paired with `aids` (data-hole pinning). -/
+  als : Array Expr := #[]
   addrs : Array Expr := #[]
+  /-- The byte images paired with `addrs` (data-hole pinning: a
+      symbolic spec parameter — T5's n — reaches the equation only
+      through its byte image, so the discovered points-to hypothesis
+      is the ONE place it can be unified from; arc-18 R4). -/
+  bss : Array Expr := #[]
 
 private def eqFootprint (hTy : Expr) : MetaM EqFootprint := do
   forallTelescope hTy fun xs _ => do
@@ -697,16 +776,29 @@ private def eqFootprint (hTy : Expr) : MetaM EqFootprint := do
         if lhs.isAppOf ``Std.TreeMap.get?
             && rhs.isAppOf ``Option.some then
           if (← inferType rhs.appArg!).isAppOf ``CerbMem.Allocation then
-            fp := { fp with aids := fp.aids.push (← instantiateMVars lhs.appArg!) }
+            fp := { fp with
+              aids := fp.aids.push (← instantiateMVars lhs.appArg!),
+              als := fp.als.push (← instantiateMVars rhs.appArg!) }
       else if ty.isForall then
         let inner ← forallTelescope ty fun _ body => pure body
-        if let some (_, lhs, _) := inner.eq? then
+        if let some (_, lhs, rhs) := inner.eq? then
           if lhs.isAppOf ``Std.TreeMap.get? then
             let idx := lhs.appArg!
             let addr := if idx.isAppOf ``HAdd.hAdd then
                 idx.getAppArgs[idx.getAppNumArgs - 2]!
               else idx
-            fp := { fp with addrs := fp.addrs.push (← instantiateMVars addr) }
+            -- rhs shape: some (bs[i]'h) — extract the image list
+            let bs? : Option Expr :=
+              if rhs.isAppOf ``Option.some then
+                let ge := rhs.appArg!
+                if ge.isAppOf ``getElem && ge.getAppNumArgs ≥ 3 then
+                  some (ge.getAppArgs[ge.getAppNumArgs - 3]!)
+                else none
+              else none
+            fp := { fp with
+              addrs := fp.addrs.push (← instantiateMVars addr),
+              bss := fp.bss.push
+                (← instantiateMVars (bs?.getD (mkConst ``Unit.unit))) }
     return fp
 
 /-- Locate a proof-mode hypothesis by head constant and one index
@@ -730,7 +822,6 @@ private def findRest (hyps : Array (Name × Expr)) :
       some (n, ty.getAppArgs.back!)
     else none
 
-initialize registerTraceClass `RelSem.segAuto
 
 /-- A matched segment equation: the registry entry, the instantiated
     application (the walk rule's `h` feed), and its type. -/
@@ -743,7 +834,8 @@ private structure EqHit where
     supply: unify each entry's equation LHS (`app m' (setMaps ρ' bm
     am)`) with the goal-derived pattern, close leftover prefix holes
     (`solveHole`). -/
-private def matchSegEq (m ρ : Expr) : TacticM (Option EqHit) := do
+private def matchSegEq (hyps : Array (Name × Expr)) (m ρ : Expr) :
+    TacticM (Option EqHit) := do
   for l in ← LawRegistry.byKind `segEq do
     let s ← saveState
     let hit? ← try
@@ -767,6 +859,26 @@ private def matchSegEq (m ρ : Expr) : TacticM (Option EqHit) := do
       if !okU then
         pure none
       else
+        -- DATA-HOLE PINNING (arc-18 R4): unify the equation's
+        -- footprint (allocation records / byte images) against the
+        -- discovered proof-mode resources BEFORE the hole solver —
+        -- a symbolic spec parameter reaches the equation only
+        -- through the footprint, and the blind local search would
+        -- pick an arbitrary same-typed binder. Best-effort: misses
+        -- leave the hole for solveHole.
+        let fp ← eqFootprint (← instantiateMVars hTy)
+        for i in [0:fp.aids.size] do
+          if let some hn ← findResHyp hyps ``RelSem.Cerb.allocIs 2
+              fp.aids[i]! then
+            for (n', ty) in hyps do
+              if n' == hn then
+                let _ ← isDefEq fp.als[i]! ty.getAppArgs.back!
+        for i in [0:fp.addrs.size] do
+          if let some hn ← findResHyp hyps
+              ``RelSem.Cerb.pointsToBytes 2 fp.addrs[i]! then
+            for (n', ty) in hyps do
+              if n' == hn then
+                let _ ← isDefEq fp.bss[i]! ty.getAppArgs.back!
         let mut ok := true
         for mv in margs do
           let mv ← instantiateMVars mv
@@ -823,7 +935,7 @@ private def segStep : TacticM Bool := do
     evalTactic (← `(tactic| wp_get $cStx $hstId))
     return true
   -- ── equation joints: registry dispatch by goal form (R4) ──
-  let some hit ← matchSegEq m ρ
+  let some hit ← matchSegEq hyps m ρ
     | throwError "seg_auto: no registered segment equation (kind \
         segEq) matches the head atom at rest{indentExpr ρ}\natom:\
         {indentExpr m}\nregistered segEq entries: \

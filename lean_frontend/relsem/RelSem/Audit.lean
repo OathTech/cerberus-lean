@@ -212,6 +212,10 @@ import RelSem.T4Threaded
 import RelSem.T5Walks
 import RelSem.T5Inv
 import RelSem.T5Seam
+-- arc-18 R4: T5-THROUGH-THE-LAYER (the input-family loop flagship +
+-- its spine) joins the sweep closure + pins.
+import RelSem.T5Spine
+import RelSem.T5
 
 namespace RelSem.Audit
 
@@ -604,7 +608,11 @@ def stmtAllowed : List Name :=
    -- face's hypothesis vocabulary (digest pin + seed apartness —
    -- first-order executable, the T4EnvHyp discipline).
    `RelSem.Slate.t7File, `RelSem.T7W.t7Fs, `RelSem.T7.t7Spec,
-   `RelSem.T7.T7EnvHypThr, `RelSem.T7.T7SeedApart]
+   `RelSem.T7.T7EnvHypThr, `RelSem.T7.T7SeedApart,
+   -- arc-18 R4: the T5 input-family flagship's statement vocabulary
+   -- (guarded ∀-seed ∀-n house shape; all first-order executable).
+   `RelSem.Slate.t5File, `RelSem.T5.t5Fs, `RelSem.T5.t5Spec,
+   `RelSem.T5.T5EnvHypThr, `RelSem.T5.T5SeedApart, `RelSem.T5.t5Range]
 
 open Lean in
 /-- Syntactic "ends in Prop" (Prop-family def: `Prop` or a pi chain
@@ -688,7 +696,10 @@ open Lean in
      `RelSem.T6.T6Threaded, `RelSem.T6.T6Threaded_ubFree,
      -- arc-18 R2: the branch-in-loop flagship (guarded ∀-seed
      -- house shape; through the segment layer).
-     `RelSem.T7.T7Threaded, `RelSem.T7.T7Threaded_ubFree]
+     `RelSem.T7.T7Threaded, `RelSem.T7.T7Threaded_ubFree,
+     -- arc-18 R4: THE T5 INPUT-FAMILY LOOP FLAGSHIP (guarded ∀-seed
+     -- ∀-n; through the segment layer at the symbolic trip count).
+     `RelSem.T5.T5Threaded, `RelSem.T5.T5Threaded_ubFree]
   for n in slate do
     match stmtViolations env n with
     | .error e => throwError "{e}"
@@ -996,7 +1007,13 @@ open Lean in
 -- 105 → 106 (arc-18 R4, the scratch2 engine leg: heapWalk 9 → 10 —
 -- `wpk_seq_scratch2_ecast`, the two-scratch loop atom at the C3b
 -- pointwise final-state interface; once-proved, fixture-free).
-/-- info: step_law census: 106 laws [advance 5, construct 9, envAlg 3, envMap 4, evalArith 2, evalPull 2, heapWP 4, heapWalk 10, loop 5, memBlock 6, memRW 20, perform 6, roundGlue 3, segCanon 2, segEq 18, segFact 5, wpSeq 2] -/
+-- 106 → 130 (arc-18 R4, the T5 fixture's registered equation supply:
+-- segEq 18 → 27 [the t5File k-stage open equations + the scratch2
+-- driver atom], segFact 5 → 18 [address arithmetic, the t5Fin
+-- pointwise final-state facts, the ρ' scalar pins, geometry],
+-- segCanon 2 → 3, segPost 0 → 1 [the closed-form readout] —
+-- per-fixture supply entries by design, visible per kind).
+/-- info: step_law census: 130 laws [advance 5, construct 9, envAlg 3, envMap 4, evalArith 2, evalPull 2, heapWP 4, heapWalk 10, loop 5, memBlock 6, memRW 20, perform 6, roundGlue 3, segCanon 3, segEq 27, segFact 18, segPost 1, wpSeq 2] -/
 #guard_msgs in #step_law_census
 /-- info: 'RelSem.T1.round6' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.round6
@@ -1072,6 +1089,19 @@ open Lean in
 #guard_msgs in #print axioms RelSem.T5S.t5_seam_body0
 /-- info: 'RelSem.T5S.t5_seam_bodyS' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T5S.t5_seam_bodyS
+
+-- arc-18 R4: T5-THROUGH-THE-LAYER — the input-family loop flagship
+-- (∀-seed ∀-n at the symbolic trip count; `verify_fn` + `seg_auto`
+-- over the ∀-k pack closure + the once-proved scratch2 atom rule).
+-- Cones exactly the classical trio.
+/-- info: 'RelSem.T5.T5Threaded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5.T5Threaded
+/-- info: 'RelSem.T5.T5Threaded_ubFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5.T5Threaded_ubFree
+/-- info: 'RelSem.T5.t5_run_seg' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5.t5_run_seg
+/-- info: 'RelSem.T5.driver2_o' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5.driver2_o
 -- (arc-18 R2: the hand walk `t6_wpK_thr` is SUBSUMED by the segment
 -- route — T6Threaded's pin above covers the whole discharge; the
 -- walk lemma is deleted with its plumbing.)
@@ -1471,8 +1501,14 @@ open Lean in
 -- exitAt/exitAt0/stFin] + the SegmentFaces R4 legs [mkBuiltProof
 -- env-peel built-chain, verify_fn guarded-family alternatives,
 -- argobj2/read2/scratch2 dispatch arms]; ALL boundary-clean).
+-- 8654 → 8769 (arc-18 R4 slice 3: RelSem.T5Spine [the t5File
+-- harness spine at symbolic n, the ∀-k pack closure `packAt`, the
+-- twin exit legs, the composed run + scratch2 driver atom, the
+-- fixed final rest + readout] + RelSem.T5 [statement data + the
+-- two-line flagships] + the SegmentFaces R4 hardening legs;
+-- ALL boundary-clean).
 /--
-info: RelSem audit sweep: 8654 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 8769 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do

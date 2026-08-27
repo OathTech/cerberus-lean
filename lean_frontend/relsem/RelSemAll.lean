@@ -88,6 +88,8 @@ import RelSem.T5Fixture
 import RelSem.T5Walks
 import RelSem.T5Inv
 import RelSem.T5Seam
+import RelSem.T5Spine
+import RelSem.T5
 -- arc-17 S2: the completed acceptance probe (un-parked — the whole
 -- t6 run through the law-driven round evaluator; ∀-seed theorems).
 import RelSem.T6Probe
