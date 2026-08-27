@@ -38,19 +38,20 @@
   TAGGED frontier (fail-closed — that is the env-algebra/apartness
   boundary, not a silent skip).
 
-  Commands:
-
-  * `derive_rounds id (bs…) using td tid from σ0 [upto N]` — the round
-    LOOP: classify each round's discovered step (cheap whnf of
-    `Laws.stepAt`), mint `id1`, `id2`, … named successors plus
-    `idK_app` step equations (pure rounds via the S0 whnf path, memory
-    rounds via the law chain), and at the TERMINAL round (done-thread
-    offer) emit the whole-run artifacts: `id_chain` (the dnms run),
-    `id_ndct` (the scheduler offer, via `Laws.ndct_offer1`),
-    `id_fin` (the named final driver state) and `id_driver` (one
-    driver2 iteration, via `Laws.driver2_done`). With `upto N` the
-    loop stops after N rounds without demanding a terminal (the
-    partial mode T4-class fixtures drive law-by-law from).
+  THE WHOLE-RUN MINT MODE IS DELETED (V0, 2026-08-27, kill basket —
+  record docs/2026-08-27_v0-statements-and-ban.md): the
+  `derive_rounds` command (RoundEval/Assembly.lean — binder/pack
+  setup, the round loop, relative-chain assembly, the whole-run
+  terminal artifacts) was the enumeration engine's entry point
+  (assessment K-2b: per-round kernel equations of one concrete
+  execution) and its last KEEP consumers (the T1–T5 threaded proofs)
+  are retired to honest-unproved statements. What remains below is
+  exactly the CHASSIS the conversion table keeps (C-5: fail-closed
+  proof-producing emitters, law-chain elaboration + registry
+  dispatch, kernelVerdict ground leaves, hypothesis threading,
+  anchor/ground-literal discipline) — the V2 symbolic stepper
+  re-targets it to goal-directed per-construct stepping with
+  case-split at irreducible discriminants.
 
   House rules: no sorry, no axioms; meta code only — every emitted
   object is an ordinary kernel-checked declaration. Frontier errors
@@ -70,7 +71,8 @@
 --   RoundEval/Classify.lean candidate collection + the .all dig
 --   RoundEval/Lanes.lean    minter lanes + dispatcher
 --   RoundEval/Rounds.lean   per-head round lanes + law chains
---   RoundEval/Assembly.lean the derive_rounds command + whole-run
+--   (RoundEval/Assembly.lean — the derive_rounds command + whole-run
+--    assembly — DELETED at V0 2026-08-27 with the mint mode)
 --
 -- The engine's line count is a WATCHED METRIC under down-pressure
 -- (scripts/check_engine_size.sh + scripts/engine_size_baseline.txt;
@@ -84,4 +86,3 @@ import RelSem.RoundEval.Arith
 import RelSem.RoundEval.Classify
 import RelSem.RoundEval.Lanes
 import RelSem.RoundEval.Rounds
-import RelSem.RoundEval.Assembly

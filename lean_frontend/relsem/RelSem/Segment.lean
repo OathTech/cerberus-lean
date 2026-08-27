@@ -51,7 +51,9 @@
 
 import RelSem.ConstructLaws
 import RelSem.CerbHeapWalk
-import RelSem.Kit.Loop
+-- (import RelSem.Kit.Loop removed at V0 2026-08-27: the iter_compose
+-- family is deleted [conversion C-14]; Seg.iter below is the
+-- survivor and is self-contained.)
 
 set_option autoImplicit false
 
@@ -401,9 +403,14 @@ structure FnSpec (A : Type) where
       summary's segment pre — closed harnesses receive their initial
       footprint from adequacy (the HeapLang precedent). -/
   pre : A → Prop := fun _ => True
-  /-- Environment/seed guard (the guarded-face statements' front
-      hypotheses: digest pins + seed apartness, the T4SeedApart /
-      T5EnvHypThr house shape; `True` for unconditional faces). -/
+  /-- Environment/seed guard (`True` for unconditional faces).
+      V0 NOTE (2026-08-27): the statement layer's seed-apartness
+      guards are DELETED (consistency-freshness restatement,
+      relsemcore Threaded.lean §CONSISTENCY) — only env pins (digest/
+      tagDefs, seed-independent) remain statement-side. This
+      PROOF-LAYER field keeps the seed-indexed form until the V1/V2
+      re-target restates `Verified` against the Cns faces (the
+      chassis conversion; nothing consumes it meanwhile). -/
   guard : Nat → Prop := fun _ => True
   /-- Postcondition on the driver result. -/
   post : A → driver_result → Prop

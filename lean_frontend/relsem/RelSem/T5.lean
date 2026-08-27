@@ -1,36 +1,47 @@
 /-
-  RelSem.T5 — arc-18 R4 (2026-08-27): T5 THROUGH THE SEGMENT LAYER —
-  THE INPUT-FAMILY LOOP FLAGSHIP.
+  RelSem.T5 — V0 (2026-08-27): THE T5 STATEMENT, HONEST-UNPROVED, in
+  the consistency-freshness house shape.
 
   tests/verify/t5_sum.c: `int sum(int n)` — the bounded scalar loop.
   THE CHARTERED THEOREM SHAPE (the fixture header): for all n with
   0 ≤ n ≤ 100, outcomes of callND(sum, [intValue n]) =
-  {Specified(n*(n-1)/2)}, no UB — at the guarded ∀-seed house form
-  (digest pin + seed apartness; T4SeedApart lineage), ∀-n INPUT
-  FAMILY (the trip count is SYMBOLIC: `Seg.while_inv` applies at the
-  free variable — the loop induction lives in the once-proved rule,
-  never in this file).
+  {Specified(n*(n-1)/2)}, no UB — the ∀-n INPUT FAMILY at a symbolic
+  trip count.
 
-  The proof is the blackboard argument: ONE invariant declared at the
-  loop head (`T5S.t5SeamInv` — s = k·(k−1)/2 ∧ i = k at the k-th
-  visit, both twin spellings routed by the [F3] normalizer), body
-  obligations discharged by the registered walk chains over the ∀-k
-  pack closure (RelSem/T5Inv + RelSem/T5Spine — engine room), the
-  driver atom by `driver2_of_seg` through the once-proved
-  `wpk_seq_scratch2`, statements by `verify_fn` + `seg_auto`.
+  THE FRESHNESS FINALIZATION (V0, the Q3 amendment): the former
+  `T5SeedApart` guard (seed + 256 < 2⁶⁰, a slack-carrying numeric
+  bound) is DELETED; the statement quantifies over CONSISTENT
+  EXECUTIONS (relsemcore/RelSem/Threaded.lean §CONSISTENCY) against
+  the pinned static vocabulary `t5Prior` — the excluded runs are
+  exactly the capturing ones, with no per-program slack arithmetic.
+
+  TOMBSTONE (the V0 kill basket — record
+  docs/2026-08-27_v0-statements-and-ban.md): the guarded ∀-seed proof
+  (`verify_fn sumSpec; seg_auto` over the T5Inv/T5Seam/T5Spine
+  ∀-k pack closure and T5Walks' five builder drives — ~3,300 lines of
+  engine room) is DELETED; the statement stands as an HONEST-UNPROVED
+  TARGET for the V3a predicate-invariant re-proof (retiring which was
+  the engine rooms' registered trigger — executed early, at V0, with
+  the whole basket, per the operator-ratified brief).
 
   House rules: no sorry, no axioms. Under the in-build audit.
 -/
 
-import RelSem.T5Spine
+import RelSem.Threaded
+import RelSem.T1File
+import RelSem.SlateFiles
 
 set_option autoImplicit false
 
 namespace RelSem.T5
 
-open RelSem RelSem.Cerb RelSem.Slate RelSem.Kit RelSem.T5W RelSem.T5S
+open RelSem RelSem.Cerb RelSem.Slate
 
 /-! ## Statement data (fuel-opsem faces; first-order executable) -/
+
+/-- The harness filesystem. RE-HOMED from the deleted
+    RelSem/T5Spine.lean at V0 (text unchanged). -/
+def t5Fs : CerbFS.FsState := CerbFS.fs_initial_state
 
 /-- T5's pure spec on driver results: sum(n) = n·(n−1)/2, Specified.
     (For the C loop `for (i = 0; i < n; i++) s += i`, the sum of
@@ -38,77 +49,32 @@ open RelSem RelSem.Cerb RelSem.Slate RelSem.Kit RelSem.T5W RelSem.T5S
 def t5Spec (n : Int) (r : driver_result) : Prop :=
   r.dres_core_value = intValue (n * (n - 1) / 2)
 
-/-- The environment hypothesis (digest pin; T4EnvHypThr lineage). -/
+/-- The environment hypothesis (digest pin; T4EnvHypThr lineage;
+    UNCHANGED by the freshness finalization). -/
 def T5EnvHypThr : Prop := CerberusFresh.digest () = ""
-
-/-- Seed apartness: the run's fresh draws (2 per iteration, ≤ 100
-    iterations, plus slack) stay below every static symbol hash
-    (≥ 2⁶⁰; T4SeedApart lineage). -/
-def T5SeedApart (seed : Nat) : Prop :=
-  seed + 256 < 1152921504606846976
 
 /-- The chartered input range (the fixture header's 0 ≤ n ≤ 100). -/
 def t5Range (n : Int) : Prop := 0 ≤ n ∧ n ≤ 100
 
-/-- T5's FnSpec ([F9]): sum(n) = Specified(n·(n−1)/2) for range n,
-    under the guarded face (REDUCIBLE — the faces unify against the
-    statement text). The ∀-n INPUT FAMILY: `A = Int`. -/
-abbrev sumSpec : Seg.FnSpec Int :=
-  { fname := "sum", args := fun n => [intValue n],
-    pre := t5Range,
-    guard := fun seed => T5EnvHypThr ∧ T5SeedApart seed,
-    post := t5Spec }
+/-! ## THE STATEMENT (honest-unproved target; consistency-freshness
+    house shape) -/
 
-/-! ## The terminal readout (the one registered postcondition fact:
-    the run's exit value meets the closed form — `triF_closed`) -/
-
-/-- The harness terminal's readout at the fixed final rest: the
-    composed run returns exactly the closed-form sum. -/
-@[seg_post]
-theorem t5_post_o (seed : Nat) (n : Int) (hn0 : 0 ≤ n)
-    (hn1 : n ≤ 100) : ∀ bm am,
-    ∃ r : driver_result,
-      (Outcome.value (finalize t5File.tagDefs "callND"
-          (setMaps (rDone5 seed n) bm am)) : DriveVal)
-        = Outcome.value r ∧ t5Spec n r :=
-  fun bm am => ⟨_, rfl, by
-    show (finalize t5File.tagDefs "callND"
-      (setMaps (rDone5 seed n) bm am)).dres_core_value
-      = intValue (n * (n - 1) / 2)
-    rw [rDone5_readout seed n bm am]
-    show intValue (triF n.toNat) = intValue (n * (n - 1) / 2)
-    rw [triF_closed n hn0]⟩
-
-/-! ## THE THREADED STATEMENTS (fuel-opsem faces, guarded ∀-seed,
-    ∀-n input family) -/
-
-/-- THE T5 HEADLINE (fuel opsem only): under the digest pin + seed
-    apartness, for EVERY n with 0 ≤ n ≤ 100, every outcome of
-    `callND(sum, [intValue n])` from the threaded initial state is
-    `Active r` with `r = intValue (n·(n−1)/2)`. -/
+/-- THE T5 HEADLINE (fuel opsem only): under the digest pin, for
+    EVERY n with 0 ≤ n ≤ 100, every CONSISTENT outcome of
+    `callND(sum, [intValue n])` is `Active (n·(n−1)/2)`, Specified.
+    HONESTY LABEL: UNPROVED (V0 target; V3a re-proof through
+    predicate invariants + the variant rule). -/
 def T5ThreadedStatement : Prop :=
   T5EnvHypThr →
-  ∀ (seed : Nat), T5SeedApart seed →
-    ∀ (n : Int), t5Range n →
-      CallHarnessAdequateThr seed t5File.tagDefs t5File "sum"
-        [intValue n] t5Fs (t5Spec n)
+  ∀ (n : Int), t5Range n →
+    CallHarnessAdequateCns t5Prior t5File.tagDefs t5File "sum"
+      [intValue n] t5Fs (t5Spec n)
 
-/-- **T5 THREADED** (cone exactly the classical trio): the
-    input-family loop flagship THROUGH THE SEGMENT LAYER — one
-    declared invariant, derived obligations at the symbolic trip
-    count, a two-line proof. -/
-theorem T5Threaded : T5ThreadedStatement := by
-  verify_fn sumSpec
-  seg_auto
-
-/-- **T5 THREADED UB-freedom** (same route). -/
-theorem T5Threaded_ubFree :
-    T5EnvHypThr →
-    ∀ (seed : Nat), T5SeedApart seed →
-      ∀ (n : Int), t5Range n →
-        CallHarnessUBFreeThr seed t5File.tagDefs t5File "sum"
-          [intValue n] t5Fs := by
-  verify_fn sumSpec
-  seg_auto
+/-- The UB-freedom companion. HONESTY LABEL: UNPROVED. -/
+def T5ThreadedUBFreeStatement : Prop :=
+  T5EnvHypThr →
+  ∀ (n : Int), t5Range n →
+    CallHarnessUBFreeCns t5Prior t5File.tagDefs t5File "sum"
+      [intValue n] t5Fs
 
 end RelSem.T5

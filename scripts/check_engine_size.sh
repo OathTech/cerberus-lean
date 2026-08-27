@@ -40,7 +40,8 @@ MODULES=(
     "RoundEval/Arith.lean"
     "RoundEval/Lanes.lean"
     "RoundEval/Rounds.lean"
-    "RoundEval/Assembly.lean"
+    # (RoundEval/Assembly.lean — the whole-run mint mode — DELETED at
+    # V0 2026-08-27; record docs/2026-08-27_v0-statements-and-ban.md)
     "DeriveState.lean"
     "WpGround.lean"
     "LawRegistry.lean"

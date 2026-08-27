@@ -168,7 +168,7 @@
 #       discharge (exact Kit.mem_pvfd_block over the component lane;
 #       the law itself is registered [memBlock 7], the fixture is
 #       parked). TOTAL 6963 -> 6963.
-RoundEval.lean 87
+RoundEval.lean 88
 RoundEval/Core.lean 377
 RoundEval/Hyp.lean 1041
 RoundEval/Mint.lean 262
@@ -176,15 +176,22 @@ RoundEval/Classify.lean 213
 RoundEval/Arith.lean 722
 RoundEval/Lanes.lean 829
 RoundEval/Rounds.lean 886
-RoundEval/Assembly.lean 647
 DeriveState.lean 260
 WpGround.lean 121
 LawRegistry.lean 343
 SegmentFaces.lean 1176
-TOTAL 6964
+TOTAL 6318
 #
 # 2026-08-27 kill-list execution re-baseline: LawRegistry 342 -> 343
 # (total 6963 -> 6964) — one COMMENT line documenting the deletion of
 # the @[app_eq] DiscrTree attribute (Tactics/AppEqAttr.lean) whose
 # index the registry header cites; no code change. Record:
 # lean_frontend/docs/2026-08-27_kill-list-execution.md.
+#
+# V0 2026-08-27 re-baseline (THE KILL BASKET, record
+# lean_frontend/docs/2026-08-27_v0-statements-and-ban.md):
+# RoundEval/Assembly.lean (647 — the derive_rounds whole-run mint
+# mode, assessment K-2b) DELETED; RoundEval.lean umbrella header
+# updated (87 -> 88 — the mode-deletion note). The engine
+# total DROPS 6964 -> 6318 — the first engine shrink of the
+# down-pressure watch.

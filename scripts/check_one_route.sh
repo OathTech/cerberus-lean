@@ -46,13 +46,11 @@ LIVE_MODULES=(
   relsem/RelSem/RoundEval/Arith.lean
   relsem/RelSem/RoundEval/Lanes.lean
   relsem/RelSem/RoundEval/Rounds.lean
-  relsem/RelSem/RoundEval/Assembly.lean
   relsem/RelSem/ConstructLaws.lean
   relsem/RelSem/LawRegistry.lean
   relsem/RelSem/Kit/Audit.lean
   relsem/RelSem/Kit/Env.lean
   relsem/RelSem/Kit/Eval.lean
-  relsem/RelSem/Kit/Loop.lean
   relsem/RelSem/Kit/Map.lean
   relsem/RelSem/Kit/Mem.lean
   relsem/RelSem/Kit/Round.lean
@@ -64,23 +62,20 @@ LIVE_MODULES=(
   relsem/RelSem/Segment.lean
   relsem/RelSem/SegmentFaces.lean
   relsemcore/RelSem/Threaded.lean
-  relsem/RelSem/T1Walks.lean
-  relsem/RelSem/T2Walks.lean
-  relsem/RelSem/T3Walks.lean
+  relsem/RelSem/PriorCensus.lean
   relsem/RelSem/T1Threaded.lean
   relsem/RelSem/T2Threaded.lean
   relsem/RelSem/T3Threaded.lean
-  relsem/RelSem/T4Walks.lean
   relsem/RelSem/T4Threaded.lean
-  relsem/RelSem/T5Walks.lean
-  relsem/RelSem/T5Inv.lean
-  relsem/RelSem/T5Seam.lean
-  relsem/RelSem/T5Spine.lean
   relsem/RelSem/T5.lean
   # (T6Probe/T7/T7Walks and the R6 corpus modules — 2026-08-27
-  # kill-list execution: DELETED with the concrete-input slate;
-  # T1/T2/T3Walks are the slimmed trio-clean walk supplies, formerly
-  # T?AppEq, now live-route modules.)
+  # kill-list execution: DELETED with the concrete-input slate.
+  # V0 2026-08-27 kill basket: the T1–T5 walk engine rooms
+  # [T?Walks/T5Inv/T5Seam/T5Spine], the whole-run mint mode
+  # [RoundEval/Assembly.lean] and Kit/Loop DELETED; the T?Threaded/T5
+  # files are statement-only honest-unproved targets; PriorCensus is
+  # the prior-vocabulary pin instrument. Record:
+  # docs/2026-08-27_v0-statements-and-ban.md.)
 )
 
 BANNED_IMPORTS='^import[[:space:]]+RelSem\.(PerStepOwnP|IrisState|IrisLang|IrisRules|IrisAdequacy|SlateWP)([[:space:]]|$)'

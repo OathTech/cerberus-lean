@@ -128,12 +128,15 @@ import RelSem.FuelHooks
 -- arc-7 S4: the iris-lean coupling modules join the sweep + pins.
 import RelSem.T1Core
 import RelSem.T1File
-import RelSem.T1Walks
-import RelSem.T2Walks
-import RelSem.T3Walks
+-- (T1Walks/T2Walks/T3Walks — the hand walk supplies — DELETED at V0
+-- 2026-08-27 with the whole walk-engine kill basket; record
+-- docs/2026-08-27_v0-statements-and-ban.md.)
 -- arc-7 S5a: the slate climb (T2-T4) + the fixture-generic WP bridge.
 import RelSem.SlateCore
 import RelSem.SlateFiles
+-- V0: the prior-vocabulary census instrument (consistency statement
+-- layer; gates below).
+import RelSem.PriorCensus
 -- arc-9 S2: the kit exactness pins join the in-build audit.
 import RelSem.Kit.Audit
 -- (arc-11 audit A-F1's T5 chain — T5Fixture → T5Prefix → T5Iter —
@@ -189,16 +192,11 @@ import RelSem.T3Threaded
 -- join the sweep closure + pins.
 import RelSem.Segment
 import RelSem.SegmentFaces
--- arc-18 R2: the branch-in-loop flagship (walks + fixture + the
--- composed invariant proof through the layer) joins the sweep
--- closure + pins.
+-- V0 2026-08-27: T4Threaded/T5 are STATEMENT-ONLY files now
+-- (honest-unproved targets, consistency-freshness shape); the
+-- T4Walks/T5Walks/T5Inv/T5Seam/T5Spine engine rooms are DELETED
+-- (kill basket, record docs/2026-08-27_v0-statements-and-ban.md).
 import RelSem.T4Threaded
-import RelSem.T5Walks
-import RelSem.T5Inv
-import RelSem.T5Seam
--- arc-18 R4: T5-THROUGH-THE-LAYER (the input-family loop flagship +
--- its spine) joins the sweep closure + pins.
-import RelSem.T5Spine
 import RelSem.T5
 -- arc-18 R6: the breadth-campaign corpus, batch 1 (EASY tier e1–e5)
 -- joins the sweep closure + pins.
@@ -398,28 +396,17 @@ def sorryExceptions : List Name := []
 /-- info: 'RelSem.T1.t1File' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.t1File
 
--- Arc-7 S5a: THE F8 SWEEP LANDED — T1AppEq is a theorem and T1 is
--- UNCONDITIONAL. The app-equation chain (RelSem/T1AppEq.lean) quotes
--- the harness substrate (runEffectful);
--- the byte-roundtrip arithmetic is [propext, Quot.sound].
--- Pinned exactly; sorryAx-free by the sweep.
-/-- info: 'RelSem.T1.roundtrip_arith' depends on axioms: [propext, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T1.roundtrip_arith
+-- (RelSem.T1.roundtrip_arith / RelSem.T2.catch_add_fact — walk-file
+-- residents — DELETED at V0 with their files.)
 
-
--- Arc-7 S5a: THE SLATE CLIMB — T2 (add, the forced no-signed-overflow
--- precondition), T3 (roundtrip), T4 (struct member — the exit
--- criterion; under the harness-environment hypotheses T4EnvHyp, the
--- three census-boundary globals surfaced). All through the
--- fixture-generic WP bridge (RelSem/SlateWP.lean). Pinned exactly.
+-- The pinned fixture program terms (emitted, drift-gated). Pinned
+-- exactly.
 /-- info: 'RelSem.Slate.t2File' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Slate.t2File
 /-- info: 'RelSem.Slate.t3File' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Slate.t3File
 /-- info: 'RelSem.Slate.t4File' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Slate.t4File
-/-- info: 'RelSem.T2.catch_add_fact' depends on axioms: [propext] -/
-#guard_msgs in #print axioms RelSem.T2.catch_add_fact
 
 -- (The arc-11 A-F1 "T5 FLAGSHIPS" pin block — entry5_walk + the
 -- T5Iter env-lookup family at the clean quartet — RETIRED at arc-18
@@ -477,26 +464,28 @@ open Lean in
     Prop-family def fails the gate. -/
 def stmtAllowed : List Name :=
   -- (2026-08-27 kill-list execution: the ambient drDone rows and the
-  -- t6/t7/corpus fixture-data rows left with their statements; the
-  -- threaded vocabulary below is the KEEP slate's.)
+  -- t6/t7/corpus fixture-data rows left with their statements.
+  -- V0 2026-08-27 freshness finalization: the drDone_thr terminal
+  -- states left with the Outcomes statements; T5SeedApart +
+  -- t4MinStaticSym — the seed-apartness guards — are DELETED (the
+  -- consistency quantification replaces them); freshDrawsOf + the
+  -- per-fixture prior vocabularies join.)
   [`RelSem.Cerb.callND, `RelSem.Cerb.intValue,
    `RelSem.T1.t1File, `RelSem.T1.t1Fs,
    `RelSem.T2.t2Fs, `RelSem.T3.t3Fs, `RelSem.T4.t4Fs,
    `RelSem.Slate.t2File, `RelSem.Slate.t3File, `RelSem.Slate.t4File,
-   -- arc-16 S4: the threaded statement vocabulary — the
-   -- seed-parametric initial state (fuel-opsem-level: mirrors the
-   -- generated def with the seed explicit) + the per-fixture threaded
-   -- terminal states.
+   -- arc-16 S4: the seed-parametric initial state (fuel-opsem-level:
+   -- mirrors the generated def with the seed explicit).
    `RelSem.Cerb.initial_driver_state_threaded,
-   `RelSem.T1.drDone_thr, `RelSem.T2.drDone_thr, `RelSem.T3.drDone_thr,
-   -- arc-18 R4: the T5 input-family flagship's statement vocabulary
-   -- (guarded ∀-seed ∀-n house shape; all first-order executable).
    `RelSem.Slate.t5File, `RelSem.T5.t5Fs, `RelSem.T5.t5Spec,
-   `RelSem.T5.T5EnvHypThr, `RelSem.T5.T5SeedApart, `RelSem.T5.t5Range,
-   -- arc-18 R5: the T4 guarded face's apartness bound (the pinned
-   -- minimum static symbol number — a Nat literal def, first-order
-   -- executable; T4SeedApart's body reads it).
-   `RelSem.T4.t4MinStaticSym]
+   `RelSem.T5.T5EnvHypThr, `RelSem.T5.t5Range,
+   -- V0: the consistency statement layer — the draw window (non-Prop
+   -- def inside `ConsistentRun`'s transparent unfolding) + the pinned
+   -- prior vocabularies (Nat-list literal fixture data, PriorCensus-
+   -- gated below).
+   `RelSem.Cerb.freshDrawsOf,
+   `RelSem.T1.t1Prior, `RelSem.Slate.t2Prior, `RelSem.Slate.t3Prior,
+   `RelSem.Slate.t4Prior, `RelSem.Slate.t5Prior]
 
 open Lean in
 /-- Syntactic "ends in Prop" (Prop-family def: `Prop` or a pi chain
@@ -514,9 +503,18 @@ def stmtViolations (env : Environment) (n : Name) :
     Except String (List Name) := do
   let some ci := env.find? n
     | .error s!"statement gate: {n} not found"
+  -- V0 (2026-08-27): the slate is registered as honest-unproved
+  -- STATEMENT DEFS (Prop-family defs), not theorems — for a Prop-def
+  -- target the walk seeds with the def ITSELF (the loop below then
+  -- unfolds it transparently and walks its VALUE); for a theorem it
+  -- walks the TYPE as before.
   let mut viol : Array Name := #[]
   let mut seen : NameSet := {}
-  let mut queue : Array Name := ci.type.getUsedConstants
+  let mut queue : Array Name :=
+    match ci with
+    | .defnInfo dv => if endsInProp dv.type then #[n]
+                      else dv.type.getUsedConstants
+    | _ => ci.type.getUsedConstants
   while h : queue.size > 0 do
     let c := queue[queue.size - 1]
     queue := queue.pop
@@ -561,16 +559,18 @@ open Lean in
     -- (T1–T4 quadruples), the T6/T7 pairs and the 22 R6 corpus
     -- theorems — all CONCRETE-INPUT or superseded-ambient — are
     -- DELETED (operator-ratified; record
-    -- docs/2026-08-27_kill-list-execution.md). What remains is the
-    -- KEEP slate: the quantified threaded family T1–T5.
-    [`RelSem.T1.T1Threaded, `RelSem.T1.T1Threaded_ubFree,
-     `RelSem.T1.T1ThreadedOutcomes,
-     `RelSem.T2.T2Threaded, `RelSem.T2.T2Threaded_ubFree,
-     `RelSem.T2.T2ThreadedOutcomes,
-     `RelSem.T3.T3Threaded, `RelSem.T3.T3Threaded_ubFree,
-     `RelSem.T3.T3ThreadedOutcomes,
-     `RelSem.T5.T5Threaded, `RelSem.T5.T5Threaded_ubFree,
-     `RelSem.T4.T4Threaded, `RelSem.T4.T4Threaded_ubFree]
+    -- docs/2026-08-27_kill-list-execution.md).
+    -- V0 2026-08-27: the slate is re-registered as HONEST-UNPROVED
+    -- STATEMENT DEFS in the consistency-freshness house shape (the
+    -- theorems and their walk supply are deleted — kill basket,
+    -- record docs/2026-08-27_v0-statements-and-ban.md; the
+    -- ThreadedOutcomes statements — exact outcome-list pins over
+    -- internal terminal states — left with the walk vocabulary).
+    [`RelSem.T1.T1ThreadedStatement, `RelSem.T1.T1ThreadedUBFreeStatement,
+     `RelSem.T2.T2ThreadedStatement, `RelSem.T2.T2ThreadedUBFreeStatement,
+     `RelSem.T3.T3ThreadedStatement, `RelSem.T3.T3ThreadedUBFreeStatement,
+     `RelSem.T4.T4ThreadedStatement, `RelSem.T4.T4ThreadedUBFreeStatement,
+     `RelSem.T5.T5ThreadedStatement, `RelSem.T5.T5ThreadedUBFreeStatement]
   for n in slate do
     match stmtViolations env n with
     | .error e => throwError "{e}"
@@ -601,6 +601,28 @@ open Lean in
   logInfo s!"RelSem statement gate: {slate.length} slate statements \
     fuel-opsem-clean (negative tests: wpk_load and the wrapper-hole probe \
     correctly rejected)"
+
+/-! ## THE PRIOR-VOCABULARY PINS (V0): the consistency statements'
+    `prior` lists vs the fixture terms' emitted symbol vocabulary —
+    exact, both directions, fail-closed (instrument:
+    RelSem/PriorCensus.lean; untrusted-evaluator/test-ledger grade,
+    TEMPORAL — mover: a total Core-AST symbol census, V2-class). -/
+
+open Lean in
+#eval show CoreM Unit from do
+  let env ← getEnv
+  let pins : List (Name × List Nat × String) :=
+    [(`RelSem.T1.t1File, RelSem.T1.t1Prior, "t1Prior"),
+     (`RelSem.Slate.t2File, RelSem.Slate.t2Prior, "t2Prior"),
+     (`RelSem.Slate.t3File, RelSem.Slate.t3Prior, "t3Prior"),
+     (`RelSem.Slate.t4File, RelSem.Slate.t4Prior, "t4Prior"),
+     (`RelSem.Slate.t5File, RelSem.Slate.t5Prior, "t5Prior")]
+  for (root, pinned, pinName) in pins do
+    match RelSem.PriorCensus.checkPin env root pinned pinName with
+    | .ok () => pure ()
+    | .error e => throwError "{e}"
+  logInfo s!"PriorCensus gate: {pins.length} prior-vocabulary pins \
+    exact against the emitted fixture terms (both directions)"
 
 -- arc-16 S1: THE PER-STEP LANGUAGE (RelSem/PerStep*.lean — the Iris
 -- refounding's language layer; design record
@@ -739,8 +761,8 @@ open Lean in
 -- lemmas (and only they) mention the ambient state and wear the
 -- boundary axiom DELIBERATELY — the labeled pins below document the
 -- impure side. Pinned exactly; growth fails the build.
-/-- info: 'RelSem.T1.round0_thr' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T1.round0_thr
+-- (RelSem.T1.round0_thr — a T1Threaded hand round — DELETED at V0
+-- with the walk supply.)
 -- arc-17 S1: the label-resolution twins (round6_thr/round13_thr/
 -- round21_thr) are DISSOLVED — the ambient eval rounds are ∀-run-
 -- state through the construct-law registry (RelSem.ConstructLaws)
@@ -900,107 +922,45 @@ open Lean in
 -- envAlg 3, envMap 4, evalArith 2, evalPull 2, heapWP 4, heapWalk
 -- 11, loop 5, memBlock 7, memRW 21, perform 6, roundGlue 3. Record:
 -- docs/2026-08-27_kill-list-execution.md.)
-/-- info: step_law census: 166 laws [advance 5, construct 9, envAlg 3, envMap 4, evalArith 2, evalPull 2, heapWP 4, heapWalk 11, loop 5, memBlock 7, memRW 21, perform 6, roundGlue 3, segCanon 5, segEq 45, segFact 32, segPost 2] -/
+-- 166 → 78 (V0 2026-08-27, THE KILL BASKET — record
+-- docs/2026-08-27_v0-statements-and-ban.md: the t1–t5 threaded
+-- per-fixture supply left with its files [segEq 45 → 0, segFact
+-- 32 → 0, segCanon 5 → 0, segPost 2 → 0 — the killed-by-registration
+-- §3 row, executed at V0 with the walk engine rooms]; loop 5 → 1
+-- [the iter_compose family died with Kit/Loop, conversion C-14;
+-- `Seg.iter` — the ∃-round survivor — is the lane's one law]. ALL
+-- other engine lanes unchanged: advance 5, construct 9, envAlg 3,
+-- envMap 4, evalArith 2, evalPull 2, heapWP 4, heapWalk 11,
+-- memBlock 7, memRW 21, perform 6, roundGlue 3.)
+/-- info: step_law census: 78 laws [advance 5, construct 9, envAlg 3, envMap 4, evalArith 2, evalPull 2, heapWP 4, heapWalk 11, loop 1, memBlock 7, memRW 21, perform 6, roundGlue 3] -/
 #guard_msgs in #step_law_census
-/-- info: 'RelSem.T1.round6' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T1.round6
-/-- info: 'RelSem.T2.round13' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T2.round13
-/-- info: 'RelSem.T3.round21' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T3.round21
-/-- info: 'RelSem.T1.dnms_chain_thr' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T1.dnms_chain_thr
-/-- info: 'RelSem.T1.driver2_iter_thr' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T1.driver2_iter_thr
-/-- info: 'RelSem.T1.t1_app_eq_thr' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T1.t1_app_eq_thr
--- (t1_wpK_thr — the R1-era hand walk — DELETED at arc-18 R4: the
--- statement discharge runs verify_fn + seg_auto; its pin retires
--- with it, the statement pins below stand.)
-/-- info: 'RelSem.T1.T1Threaded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T1.T1Threaded
-/-- info: 'RelSem.T1.T1Threaded_ubFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T1.T1Threaded_ubFree
-/-- info: 'RelSem.T1.T1ThreadedOutcomes' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T1.T1ThreadedOutcomes
--- T2/T3 at the threaded state (same recipe; T2AppEq/T3AppEq's ∀-rs
--- round lemmas consumed AS-IS — since arc-17 S1 that is ALL of them;
--- no twins remain). T4 is PARKED at a kernel-witnessed diagnosis (the record
--- §T4): its exec path READS the supply (the NEG-store transform's two
--- draws), the drawn symbols enter comparison-keyed env maps, and at a
--- COLLIDING seed the fresh symbol captures a static one — the
--- unrestricted ∀-seed T4 statement is FALSE; the fresh conjunct
--- relaxes to a seed-apartness hypothesis, priced for part 2. The
--- ambient T4 (T4EnvHyp route) stands unchanged.
-/-- info: 'RelSem.T2.t2_app_eq_thr' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T2.t2_app_eq_thr
--- (t2_wpK_thr deleted at arc-18 R4 — see the T1 note.)
-/-- info: 'RelSem.T2.T2Threaded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T2.T2Threaded
-/-- info: 'RelSem.T2.T2Threaded_ubFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T2.T2Threaded_ubFree
-/-- info: 'RelSem.T2.T2ThreadedOutcomes' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T2.T2ThreadedOutcomes
-/-- info: 'RelSem.T3.t3_app_eq_thr' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T3.t3_app_eq_thr
--- (t3_wpK_thr deleted at arc-18 R4 — see the T1 note.)
-/-- info: 'RelSem.T3.T3Threaded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T3.T3Threaded
-/-- info: 'RelSem.T3.T3Threaded_ubFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T3.T3Threaded_ubFree
-/-- info: 'RelSem.T3.T3ThreadedOutcomes' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T3.T3ThreadedOutcomes
-
--- arc-17 S2: the completed acceptance probe — the t6 ∀-seed family
--- and the evaluator-emitted whole-run equations, trio-exact.
--- arc-18 R2: the branch-in-loop flagship through the segment layer
--- (the ∃-round composition + the write1 rule + verify_fn/seg_auto),
--- trio-exact.
--- arc-18 R6: the breadth-campaign corpus, batch 1 (EASY tier e1–e5)
--- — every headline + safety twin trio-exact through the layer.
--- arc-18 R6 batch 2 (CENSUS tier): the four fixtures' headline +
--- twin cones, + the c3b composed-loop segment (invariant route).
--- arc-18 R6 batch 3 (edge tier): early-return-in-loop + break —
--- the multi-exit compositions, trio-exact.
--- arc-18 R2 [F3] acceptance: the T5 twin-spelling seam normalized
--- through the layer — ONE declared invariant (t5SeamInv), both
--- spellings' body obligations discharged over it, trio-exact.
-/-- info: 'RelSem.T5S.t5SeamInv_St_eq' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T5S.t5SeamInv_St_eq
-/-- info: 'RelSem.T5S.t5_seam_body0' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T5S.t5_seam_body0
-/-- info: 'RelSem.T5S.t5_seam_bodyS' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T5S.t5_seam_bodyS
-
--- arc-18 R4: T5-THROUGH-THE-LAYER — the input-family loop flagship
--- (∀-seed ∀-n at the symbolic trip count; `verify_fn` + `seg_auto`
--- over the ∀-k pack closure + the once-proved scratch2 atom rule).
--- Cones exactly the classical trio.
-/-- info: 'RelSem.T5.T5Threaded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T5.T5Threaded
-/-- info: 'RelSem.T5.T5Threaded_ubFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T5.T5Threaded_ubFree
-/-- info: 'RelSem.T5.t5_run_seg' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T5.t5_run_seg
-/-- info: 'RelSem.T5.driver2_o' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T5.driver2_o
-
--- arc-18 R5: T4-APARTNESS THROUGH THE LAYER — the guarded ∀-seed
--- struct-member theorem (the arc-16 S4 park's priced fix, landed:
--- `verify_fn membSpec; seg_auto` over the two-walk equation supply
--- (wa 44 + wb 12 rounds at OPEN maps and OPEN seed under the
--- apartness bound) + the once-proved one-scratch pointwise atom rule
--- `wpk_seq_scratch1p`). Cones exactly the classical trio.
-/-- info: 'RelSem.T4.T4Threaded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T4.T4Threaded
-/-- info: 'RelSem.T4.T4Threaded_ubFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T4.T4Threaded_ubFree
-/-- info: 'RelSem.T4W.t4_run_seg' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T4W.t4_run_seg
-/-- info: 'RelSem.T4.driver2_o' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T4.driver2_o
+-- (V0 2026-08-27, THE KILL BASKET — record
+-- docs/2026-08-27_v0-statements-and-ban.md: the T1–T5 threaded
+-- THEOREMS and their whole-run equation supply — round6/round13/
+-- round21, the dnms chains, the app equations, T1/T2/T3Threaded[_ubFree],
+-- the ThreadedOutcomes pins, the T5 seam/spine family
+-- (T5S.*, t5_run_seg, T5.driver2_o), and the T4 walk family
+-- (T4W.t4_run_seg, T4.driver2_o, T4Threaded[_ubFree]) — are DELETED;
+-- the statements stand honest-unproved in the consistency-freshness
+-- shape, registered in the statement gate above. Their ~40 cone pins
+-- retired here in the same commit. `wpk_seq_scratch1p` below is a
+-- CerbHeapWalk ENGINE law (KEEP class) — its pin stands.)
 /-- info: 'RelSem.Cerb.wpk_seq_scratch1p' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Cerb.wpk_seq_scratch1p
+
+-- V0: THE CONSISTENCY-FRESHNESS METATHEOREMS (relsemcore
+-- RelSem/Threaded.lean §CONSISTENCY) — the anti-vacuity schema
+-- (monotone ⇒ distinct; below-the-vocabulary ⇒ non-capturing) and
+-- the UB-freedom plumbing. Kernel theorems; cones pinned AT MOST the
+-- classical trio (the metatheorem is required ≤ trio by the V0
+-- validation criteria).
+/-- info: 'RelSem.Cerb.freshDrawsOf_nodup' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.freshDrawsOf_nodup
+/-- info: 'RelSem.Cerb.consistentRun_of_supply_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.consistentRun_of_supply_le
+/-- info: 'RelSem.Cerb.callHarnessUBFreeCns_of_adequateCns' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.callHarnessUBFreeCns_of_adequateCns
+
 -- (arc-18 R2: the hand walk `t6_wpK_thr` is SUBSUMED by the segment
 -- route — T6Threaded's pin above covers the whole discharge; the
 -- walk lemma is deleted with its plumbing.)
@@ -1018,17 +978,9 @@ open Lean in
 -- The impure side, LABELED: the ambient bridges mention the ambient
 -- state, so they (and only they) wear the boundary axiom — by design.
 
--- arc-17 S0: the `derive_state`-emitted equation lemmas of the
--- T1Threaded state ladder (the named-state emitter's first committed
--- clients). Kernel-checked `rfl` objects; pinned trio-exact so a
--- change in the emitter's proof shape (or the states' vocabulary)
--- surfaces build-fatally.
-/-- info: 'RelSem.T1.rsD3_thr_def' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T1.rsD3_thr_def
-/-- info: 'RelSem.T1.rsR6_thr_def' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T1.rsR6_thr_def
-/-- info: 'RelSem.T1.drDone_thr_def' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T1.drDone_thr_def
+-- (arc-17 S0 derive_state ladder pins — rsD3_thr_def/rsR6_thr_def/
+-- drDone_thr_def, T1Threaded residents — DELETED at V0 with the walk
+-- supply; the derive_state EMITTER itself is KEEP chassis.)
 
 /-! ## THE RUNEFFECTFUL NO-CONE-ENTRY GATE (arc-17 S2b)
 
@@ -1344,6 +1296,15 @@ open Lean in
 -- open-memory route [spine equations + minted rounds + driver atom
 -- + ∀-seed statements + safety twin]; ALL boundary-clean, zero
 -- engine changes).
+-- 6024 → 2490 (V0 2026-08-27, THE KILL BASKET — record
+-- docs/2026-08-27_v0-statements-and-ban.md: the T1–T5 walk engine
+-- rooms [T1Walks/T2Walks/T3Walks/T4Walks/T5Walks/T5Inv/T5Seam/
+-- T5Spine — hand rounds, evaluator-minted whole-run chains, seam/
+-- spine families], the whole-run mint mode [RoundEval/Assembly.lean]
+-- and Kit/Loop leave the closure with the T1–T5 threaded THEOREMS
+-- (statements stand honest-unproved, consistency-freshness shape);
+-- PriorCensus + the Cns statement layer join — net ~3,534
+-- declarations out.)
 -- 12410 → 6024 (2026-08-27 KILL-LIST EXECUTION, one commit: the
 -- ambient theorem family + AppEq carriers, the arc-7 Iris shell +
 -- SlateWP, the transitional OwnP surface + runner/smokes, the chase
@@ -1372,7 +1333,7 @@ open Lean in
 -- capability — DELETED; T5-the-theorem stands proved through the
 -- layer at the trio. Carrier set 112 → 104 in the same commit.)
 /--
-info: RelSem audit sweep: 6024 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 2490 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do

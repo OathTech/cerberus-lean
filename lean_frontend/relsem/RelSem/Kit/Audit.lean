@@ -21,19 +21,14 @@
 --  RelSem/Machine.lean, pinned by the sweep.)
 import RelSem.Kit.Eval
 import RelSem.Kit.Round
-import RelSem.Kit.Loop
 import RelSem.Kit.Mem
 import RelSem.Kit.Map
 
--- Kit/Loop — the loop rule + fuel algebra
-/-- info: 'RelSem.Kit.iter_compose' does not depend on any axioms -/
-#guard_msgs in #print axioms RelSem.Kit.iter_compose
-/-- info: 'RelSem.Kit.iter_compose_from' does not depend on any axioms -/
-#guard_msgs in #print axioms RelSem.Kit.iter_compose_from
-/-- info: 'RelSem.Kit.app_fuel_cast' does not depend on any axioms -/
-#guard_msgs in #print axioms RelSem.Kit.app_fuel_cast
-/-- info: 'RelSem.Kit.fuel_split' depends on axioms: [propext] -/
-#guard_msgs in #print axioms RelSem.Kit.fuel_split
+-- (Kit/Loop — the fixed-round `iter_compose` family + fixture fuel
+-- algebra — DELETED at V0 2026-08-27, conversion C-14: `Seg.iter`
+-- (RelSem/Segment.lean, ∃-round) is the survivor; the fuel helpers
+-- app_fuel_cast/fuel_split had zero remaining consumers. Its pins
+-- retired here in the same commit.)
 
 -- Kit/Eval — the eval crossings
 /-- info: 'RelSem.Kit.eubind_defined' depends on axioms: [propext] -/

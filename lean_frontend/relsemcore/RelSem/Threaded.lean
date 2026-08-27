@@ -161,7 +161,166 @@ def HarnessRunsToThr (seed : Nat) (f : file core_run_annotation)
     ∃ r : driver_result, out = Active r ∧
       r.dres_core_value = specifiedInt verdict
 
+/-! ## CONSISTENCY — freshness as can't-happen nondeterminism
+    (V0, 2026-08-27; the [USER 2026-08-24] model-level end state,
+    operator-scheduled at the V0 brief's Q3 amendment: "guards die
+    now").
+
+    THE MODEL: the fresh-symbol allocator picks values
+    nondeterministically; a CONSISTENCY PREDICATE discards
+    inconsistent executions (assume-not-assert) — an execution is
+    consistent iff its fresh draws are NON-CAPTURING: pairwise
+    distinct and distinct from every symbol number already in
+    existence (the program's static vocabulary, itself the image of
+    the elaboration-time draws). The counter implementation is a
+    REFINEMENT of this model; its metatheorem (monotone ⇒ distinct +
+    below-the-vocabulary ⇒ non-capturing, `consistentRun_of_supply_le`
+    below) is both the implementation's correctness and the
+    anti-vacuity witness schema.
+
+    THE STATEMENT SHAPE this replaces: the ∀-seed + `SeedApart` guard
+    (T4SeedApart/T5SeedApart, arc-16 S4 → arc-18 R5 — per-program
+    numeric bounds in headline hypotheses, the assessment's C-11
+    wart). Statements now quantify over EXECUTIONS and condition on
+    consistency of the execution's OWN draw window — the excluded set
+    is exactly the capturing runs (the arc-16 S4 P3 falsifier class),
+    named for what it is instead of bounded around.
+
+    THE DRAW WINDOW: mid-run draws are state-threaded (arc-13), so a
+    terminated execution's draws are exactly the half-open counter
+    window from the initial seed to the final state's `sym_supply`.
+
+    `prior` — the program's static symbol-number vocabulary — is
+    PINNED FIXTURE DATA (same trust class as the emitted program
+    terms themselves: extracted from the same pinned emitted sources,
+    validated in-build by the PriorCensus instrument on the test
+    ledger). TEMPORAL registration: the agreement "prior ⊇ the file's
+    symbol numbers" is instrument-checked, not yet a kernel theorem;
+    the registered mover is a total symbol-census function over the
+    Core AST (V2-class, with the per-construct rules). -/
+
+/-- The fresh draws of a terminated execution: the half-open counter
+    window `[seed, final sym_supply)` (state-threaded supply; empty
+    when no draw happened). -/
+def freshDrawsOf (seed : Nat) (st' : driver_state) : List Nat :=
+  List.range' seed (st'.core_run_state0.sym_supply - seed)
+
+/-- CONSISTENCY (can't-happen ND, assume-not-assert): the execution's
+    fresh draws are non-capturing — pairwise distinct AND distinct
+    from every prior symbol number (`prior` = the program's static
+    vocabulary). The first conjunct is the ND model's own freshness
+    face (free for the counter refinement — `freshDrawsOf_nodup`);
+    the second is what the arc-16 S4 P3 falsifier violated. -/
+def ConsistentRun (prior : List Nat) (seed : Nat)
+    (st' : driver_state) : Prop :=
+  (freshDrawsOf seed st').Nodup ∧
+  ∀ n ∈ freshDrawsOf seed st', n ∉ prior
+
+/-- `CallHarnessAdequate` OVER CONSISTENT EXECUTIONS (the V0 house
+    statement face): every consistent outcome the production runner
+    enumerates — any counter seed, the execution's own draw window
+    non-capturing — is `Active` and satisfies `spec`. Replaces the
+    guarded ∀-seed shape (`∀ seed, SeedApart seed → …Thr seed …`);
+    quantification honesty: the executions ranged over are the
+    counter refinement's (one per seed), the fully ND allocator
+    formulation is the chartered cmm-arc form. -/
+def CallHarnessAdequateCns (prior : List Nat)
+    (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
+    (file1 : file core_run_annotation) (fname : String)
+    (args : List value) (fs : CerbFS.FsState)
+    (spec : driver_result → Prop) : Prop :=
+  ∀ (seed : Nat)
+    (out : nd_status driver_result driver_error driver_state)
+    (tr : List String) (st' : driver_state),
+    (out, tr, st') ∈
+      CerbND.runND (callND tagDefs file1 fname args)
+        (initial_driver_state_threaded seed file1 fs) →
+    ConsistentRun prior seed st' →
+    ∃ r : driver_result, out = Active r ∧ spec r
+
+/-- `CallHarnessUBFree` over consistent executions. -/
+def CallHarnessUBFreeCns (prior : List Nat)
+    (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
+    (file1 : file core_run_annotation) (fname : String)
+    (args : List value) (fs : CerbFS.FsState) : Prop :=
+  ∀ (seed : Nat)
+    (out : nd_status driver_result driver_error driver_state)
+    (tr : List String) (st' : driver_state),
+    (out, tr, st') ∈
+      CerbND.runND (callND tagDefs file1 fname args)
+        (initial_driver_state_threaded seed file1 fs) →
+    ConsistentRun prior seed st' →
+    ∀ (stk : driver_state) (loc : CerbLocation.Loc)
+      (ubs : List undefined_behaviour),
+      out ≠ Killed stk (Undef0 loc ubs)
+
+/-- THE WHOLE-PROGRAM FACE over consistent executions (the
+    `HarnessRunsToThr` shape at the consistency quantification — the
+    corpus memory-input rows' face). -/
+def HarnessRunsToCns (prior : List Nat)
+    (f : file core_run_annotation) (verdict : Int) : Prop :=
+  ∀ (seed : Nat)
+    (out : nd_status driver_result driver_error driver_state)
+    (tr : List String) (st' : driver_state),
+    (out, tr, st') ∈
+      CerbND.runND (drive f.tagDefs false f ["cmdname"])
+        (initial_driver_state_threaded seed f CerbFS.fs_initial_state) →
+    ConsistentRun prior seed st' →
+    ∃ r : driver_result, out = Active r ∧
+      r.dres_core_value = specifiedInt verdict
+
+/-! ## THE ANTI-VACUITY METATHEOREM (proved once; kernel; the
+    plant-test doctrine's schema for the consistency families).
+
+    The counter refinement's correctness: its draw window is
+    automatically duplicate-free (monotone ⇒ distinct), and it is
+    non-capturing whenever the final supply clears the program's
+    static vocabulary — which the ambient counter run does by
+    construction (small counter seeds, hash-range static numbers).
+    So a quantified consistency family is non-vacuous at any
+    terminating counter run whose supply bound is checked — the
+    per-program bound check is kernel computation at proof time;
+    the schema is proved HERE, once. -/
+
+/-- Monotone ⇒ distinct: the counter window never repeats a draw
+    (the ND model's freshness face, held by the refinement). -/
+theorem freshDrawsOf_nodup (seed : Nat) (st' : driver_state) :
+    (freshDrawsOf seed st').Nodup :=
+  List.nodup_range'
+
+/-- THE ANTI-VACUITY METATHEOREM: a counter execution whose final
+    supply stays at-or-below every prior symbol number is a
+    CONSISTENT execution. (With every static number ≥ the hash floor
+    and counter seeds small, this is the "counter run is consistent"
+    fact, once — instantiated per program by a kernel bound check.) -/
+theorem consistentRun_of_supply_le (prior : List Nat) (seed : Nat)
+    (st' : driver_state)
+    (h : ∀ m ∈ prior, st'.core_run_state0.sym_supply ≤ m) :
+    ConsistentRun prior seed st' := by
+  refine ⟨freshDrawsOf_nodup seed st', ?_⟩
+  intro n hn hmem
+  have hge : seed ≤ n := (List.mem_range'_1.mp hn).1
+  have hlt : n < seed + (st'.core_run_state0.sym_supply - seed) :=
+    (List.mem_range'_1.mp hn).2
+  have hle := h n hmem
+  omega
+
 /-! ## Statement-facing plumbing (pure; binds no interpretation) -/
+
+/-- The value-shaped consistency headline implies the consistency
+    UB-freedom headline. Pure statement-layer plumbing, no Iris. -/
+theorem callHarnessUBFreeCns_of_adequateCns {prior : List Nat}
+    {tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)}
+    {file1 : file core_run_annotation} {fname : String}
+    {args : List value} {fs : CerbFS.FsState}
+    {spec : driver_result → Prop}
+    (h : CallHarnessAdequateCns prior tagDefs file1 fname args fs
+      spec) :
+    CallHarnessUBFreeCns prior tagDefs file1 fname args fs := by
+  intro seed out tr st' hmem hcons stk loc ubs hout
+  obtain ⟨r, hr, -⟩ := h seed out tr st' hmem hcons
+  rw [hout] at hr
+  cases hr
 
 /-- The value-shaped threaded headline implies the threaded UB-freedom
     headline. Pure statement-layer plumbing, no Iris. -/

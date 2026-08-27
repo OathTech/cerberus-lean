@@ -36,7 +36,12 @@ path = ".."
 # the path-required parent).
 [[lean_lib]]
 name = "RelSem"
-roots = ["RelSemAll", "RelSem.Audit", "RelSem.ConstructLaws", "RelSem.DeriveState", "RelSem.LawRegistry", "RelSem.RoundEval", "RelSem.RoundEval.Core", "RelSem.RoundEval.Hyp", "RelSem.RoundEval.Mint", "RelSem.RoundEval.Arith", "RelSem.RoundEval.Classify", "RelSem.RoundEval.Lanes", "RelSem.RoundEval.Rounds", "RelSem.RoundEval.Assembly", "RelSem.WpGround", "RelSem.FuelHooks", "RelSem.T1Threaded", "RelSem.T2Threaded", "RelSem.T3Threaded", "RelSem.MemLocal", "RelSem.CerbHeapRA", "RelSem.CerbHeapWP", "RelSem.CerbHeapDemo", "RelSem.CerbHeapWalk", "RelSem.PerStep", "RelSem.PerStepIris", "RelSem.PerStepCall", "RelSem.PerStepTactics", "RelSem.Kit.Audit", "RelSem.Kit.Env", "RelSem.Kit.Eval", "RelSem.Kit.Loop", "RelSem.Kit.Map", "RelSem.Kit.Mem", "RelSem.Kit.Round", "RelSem.SlateCore", "RelSem.SlateFiles", "RelSem.T1Core", "RelSem.T1File", "RelSem.T4Threaded", "RelSem.T4Walks", "RelSem.T5Walks", "RelSem.T5Inv", "RelSem.Segment", "RelSem.SegmentFaces", "RelSem.T5Seam", "RelSem.T5Spine", "RelSem.T5", "RelSem.T1Walks", "RelSem.T2Walks", "RelSem.T3Walks"]
+# (V0 2026-08-27: the T1–T5 walk engine rooms [T?Walks/T5Inv/T5Seam/
+# T5Spine], the whole-run mint mode [RoundEval.Assembly], and
+# Kit.Loop [iter_compose family, C-14] left the roots — kill basket,
+# record docs/2026-08-27_v0-statements-and-ban.md. PriorCensus joins:
+# the consistency statement layer's pin instrument.)
+roots = ["RelSemAll", "RelSem.Audit", "RelSem.ConstructLaws", "RelSem.DeriveState", "RelSem.LawRegistry", "RelSem.RoundEval", "RelSem.RoundEval.Core", "RelSem.RoundEval.Hyp", "RelSem.RoundEval.Mint", "RelSem.RoundEval.Arith", "RelSem.RoundEval.Classify", "RelSem.RoundEval.Lanes", "RelSem.RoundEval.Rounds", "RelSem.WpGround", "RelSem.FuelHooks", "RelSem.T1Threaded", "RelSem.T2Threaded", "RelSem.T3Threaded", "RelSem.MemLocal", "RelSem.CerbHeapRA", "RelSem.CerbHeapWP", "RelSem.CerbHeapDemo", "RelSem.CerbHeapWalk", "RelSem.PerStep", "RelSem.PerStepIris", "RelSem.PerStepCall", "RelSem.PerStepTactics", "RelSem.Kit.Audit", "RelSem.Kit.Env", "RelSem.Kit.Eval", "RelSem.Kit.Map", "RelSem.Kit.Mem", "RelSem.Kit.Round", "RelSem.SlateCore", "RelSem.SlateFiles", "RelSem.T1Core", "RelSem.T1File", "RelSem.T4Threaded", "RelSem.Segment", "RelSem.SegmentFaces", "RelSem.T5", "RelSem.PriorCensus"]
 
 # ---- RelSem-importing test/instrument executables (re-homed from
 # the root package with the lib; invoked by scripts/test_unit.sh and

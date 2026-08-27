@@ -84,4 +84,16 @@ def t1FileU : file Unit :=
     (the same `convert_file` move Main.lean makes before execution). -/
 def t1File : file core_run_annotation := convert_file t1FileU
 
+/-- T1's PRIOR VOCABULARY (V0, consistency-freshness statement layer):
+    the static symbol numbers of `t1File`'s emitted term closure —
+    pinned fixture data, validated fail-closed by the PriorCensus
+    instrument gate (RelSem/Audit.lean; TEMPORAL — mover: a total
+    Core-AST symbol census, V2-class). -/
+def t1Prior : List Nat :=
+  [362773788461399393, 1574597236902804563, 3579765898737599443,
+   7363042538087792746, 7499171796590179012, 7764867060197914680,
+   8148669997605808657, 8833183227039990084, 13429216386455784360,
+   14671517598387306907, 15837442492999787586, 16562859848569467201,
+   16930491615947487770, 17659931425627118568]
+
 end RelSem.T1
