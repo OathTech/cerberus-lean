@@ -84,6 +84,7 @@ import Iris.Instances.Lib.GhostVar
 import Iris.ProgramLogic.WeakestPre
 import RelSem.PerStepIris
 import RelSem.MemLocal
+import RelSem.Kit.Map
 
 set_option autoImplicit false
 
@@ -238,6 +239,45 @@ theorem envLookup_of_core_eq {σ σ' : driver_state}
   unfold envLookup thread0Env
   rw [h]
 
+/-! ## The env well-formedness invariant.
+
+    MIRROR (structural, with attribution — operator directive
+    2026-08-28): Caesium's `heap_state_ctx` carries the PURE physical
+    invariant inside the state interpretation
+    (deps/refinedc/theories/caesium/ghost_state.v:189-193:
+    `⌜heap_state_invariant st⌝ ∗ heap_ctx … ∗ alloc_meta_ctx … ∗
+    alloc_alive_ctx …`) — our `MemInv` and `EnvWf` conjuncts are the
+    same move. THE CERBERUS DELTA (the retrofitting-locality work):
+    Caesium's physical maps are stdpp `gmap`s, so their auth images
+    are EXACT projections (`to_heapUR := fmap to_heap_cellR`,
+    ghost_state.v:39-49) and no map well-formedness is needed;
+    Cerberus's env frames are LemLib `Fmap`s carrying CAPTURED
+    COMPARATOR CLOSURES — lookup-through-insert reasoning is only
+    sound for frames whose captured comparator is the canonical sym
+    order, so the interpretation must carry that as an invariant.
+    `EnvWf` says exactly this: every frame of the head thread's scope
+    stack is empty or built at `Kit.symCmpO` (the arc-18 `FmapBuilt`
+    invariant, here promoted from per-instance hypothesis to
+    interpretation conjunct). -/
+
+/-- A well-formed env frame: empty, or built at the canonical sym
+    comparator. -/
+def EnvWfFrame (f : Fmap sym value) : Prop :=
+  f = Fmap.empty ∨ RelSem.Kit.FmapBuilt RelSem.Kit.symCmpO f
+
+/-- Env well-formedness of a state (head thread's scope stack; the
+    singleton-pool scope note applies). -/
+def EnvWf (σ : driver_state) : Prop :=
+  ∀ f ∈ thread0Env σ, EnvWfFrame f
+
+theorem EnvWf_of_core_eq {σ σ' : driver_state}
+    (h : σ'.core_state0 = σ.core_state0) (hwf : EnvWf σ) : EnvWf σ' := by
+  intro f hf
+  refine hwf f ?_
+  unfold thread0Env at hf ⊢
+  rw [h] at hf
+  exact hf
+
 /-! ## The resource classes (HeapLangGS template) -/
 
 class CerbStGpreS (GF : BundledGFunctors) extends InvGpreS GF where
@@ -346,7 +386,7 @@ theorem pointsToBytes_cons [CerbStGS GF] {a : Int} {dq : DFrac}
     ((CerbStGS.ctlName GF) ↪VAR{stHalf} ctlOf σ) ∗
     ((CerbStGS.supName GF) ↪VAR{stHalf} suppliesOf σ) ∗
     ((CerbStGS.mrestName GF) ↪VAR{stHalf} memRestOf σ) ∗
-    ⌜MemInv σ.layout_state⌝)
+    ⌜MemInv σ.layout_state⌝ ∗ ⌜EnvWf σ⌝)
 
 @[reducible] instance instCerbStStateInterp [CerbStGS GF] :
     StateInterp driver_state Empty GF where
@@ -373,10 +413,21 @@ theorem interp_meminv [CerbStGS GF] {σ : driver_state} :
     CerbStInterp (GF := GF) σ ⊢
       ⌜MemInv σ.layout_state⌝ ∗ CerbStInterp σ := by
   unfold CerbStInterp
-  iintro ⟨Hb, Ha, He, Hc, Hs, Hm, %Hinv⟩
+  iintro ⟨Hb, Ha, He, Hc, Hs, Hm, %Hinv, %Hwf⟩
   iframe Hb Ha He Hc Hs Hm
   ipureintro
-  exact ⟨Hinv, Hinv⟩
+  exact ⟨Hinv, Hinv, Hwf⟩
+
+/-- The interpretation carries env well-formedness (the Caesium
+    `heap_state_invariant`-conjunct move, ghost_state.v:189-193). -/
+theorem interp_envwf [CerbStGS GF] {σ : driver_state} :
+    CerbStInterp (GF := GF) σ ⊢
+      ⌜EnvWf σ⌝ ∗ CerbStInterp σ := by
+  unfold CerbStInterp
+  iintro ⟨Hb, Ha, He, Hc, Hs, Hm, %Hinv, %Hwf⟩
+  iframe Hb Ha He Hc Hs Hm
+  ipureintro
+  exact ⟨Hwf, Hinv, Hwf⟩
 
 /-- Control agreement: the prover's token pins the control image. -/
 theorem interp_ctl_agree [CerbStGS GF] {σ : driver_state}
@@ -384,11 +435,11 @@ theorem interp_ctl_agree [CerbStGS GF] {σ : driver_state}
     CerbStInterp (GF := GF) σ ∗ ctlIs dq c ⊢
       ⌜ctlOf σ = c⌝ ∗ CerbStInterp σ ∗ ctlIs dq c := by
   unfold CerbStInterp ctlIs
-  iintro ⟨⟨Hb, Ha, He, Hc, Hs, Hm, %Hinv⟩, Hfrag⟩
+  iintro ⟨⟨Hb, Ha, He, Hc, Hs, Hm, %Hinv, %Hwf⟩, Hfrag⟩
   icombine Hc Hfrag gives %Hag
   iframe Hb Ha He Hc Hs Hm Hfrag
   ipureintro
-  exact ⟨Hag.2, Hinv⟩
+  exact ⟨Hag.2, Hinv, Hwf⟩
 
 /-- Supply agreement. -/
 theorem interp_sup_agree [CerbStGS GF] {σ : driver_state}
@@ -396,11 +447,11 @@ theorem interp_sup_agree [CerbStGS GF] {σ : driver_state}
     CerbStInterp (GF := GF) σ ∗ supIs dq s ⊢
       ⌜suppliesOf σ = s⌝ ∗ CerbStInterp σ ∗ supIs dq s := by
   unfold CerbStInterp supIs
-  iintro ⟨⟨Hb, Ha, He, Hc, Hs, Hm, %Hinv⟩, Hfrag⟩
+  iintro ⟨⟨Hb, Ha, He, Hc, Hs, Hm, %Hinv, %Hwf⟩, Hfrag⟩
   icombine Hs Hfrag gives %Hag
   iframe Hb Ha He Hc Hs Hm Hfrag
   ipureintro
-  exact ⟨Hag.2, Hinv⟩
+  exact ⟨Hag.2, Hinv, Hwf⟩
 
 /-- Memory-residual agreement. -/
 theorem interp_mrest_agree [CerbStGS GF] {σ : driver_state}
@@ -408,11 +459,11 @@ theorem interp_mrest_agree [CerbStGS GF] {σ : driver_state}
     CerbStInterp (GF := GF) σ ∗ mrestIs dq mr ⊢
       ⌜memRestOf σ = mr⌝ ∗ CerbStInterp σ ∗ mrestIs dq mr := by
   unfold CerbStInterp mrestIs
-  iintro ⟨⟨Hb, Ha, He, Hc, Hs, Hm, %Hinv⟩, Hfrag⟩
+  iintro ⟨⟨Hb, Ha, He, Hc, Hs, Hm, %Hinv, %Hwf⟩, Hfrag⟩
   icombine Hm Hfrag gives %Hag
   iframe Hb Ha He Hc Hs Hm Hfrag
   ipureintro
-  exact ⟨Hag.2, Hinv⟩
+  exact ⟨Hag.2, Hinv, Hwf⟩
 
 /-- ENV LOOKUP: a cell fragment yields the interpreter's own lookup
     fact — the pure premise every step derivation consumes. -/
@@ -421,7 +472,7 @@ theorem interp_env_lookup [CerbStGS GF] {σ : driver_state}
     CerbStInterp (GF := GF) σ ∗ envIs x dq v ⊢
       ⌜envLookup σ x = some v⌝ ∗ CerbStInterp σ ∗ envIs x dq v := by
   unfold CerbStInterp envIs
-  iintro ⟨⟨Hb, Ha, He, Hc, Hs, Hm, %Hinv⟩, Hfrag⟩
+  iintro ⟨⟨Hb, Ha, He, Hc, Hs, Hm, %Hinv, %Hwf⟩, Hfrag⟩
   icases He with ⟨%e, He, %Hcoh⟩
   icombine He Hfrag gives %Hlk
   iframe Hb Ha Hc Hs Hm Hfrag
@@ -434,7 +485,7 @@ theorem interp_env_lookup [CerbStGS GF] {σ : driver_state}
     ipureintro
     exact Hcoh
   · ipureintro
-    exact Hinv
+    exact ⟨Hinv, Hwf⟩
 
 /-- Allocation lookup (unchanged shape from S2). -/
 theorem interp_alloc_lookup [CerbStGS GF] {σ : driver_state}
@@ -443,11 +494,11 @@ theorem interp_alloc_lookup [CerbStGS GF] {σ : driver_state}
       ⌜σ.layout_state.allocations.get? aid = some al⌝ ∗
         CerbStInterp σ ∗ allocIs aid dq al := by
   unfold CerbStInterp allocIs
-  iintro ⟨⟨Hb, Ha, He, Hc, Hs, Hm, %Hinv⟩, Hfrag⟩
+  iintro ⟨⟨Hb, Ha, He, Hc, Hs, Hm, %Hinv, %Hwf⟩, Hfrag⟩
   icombine Ha Hfrag gives %Hlk
   iframe Hb Ha He Hc Hs Hm Hfrag
   ipureintro
-  refine ⟨?_, Hinv⟩
+  refine ⟨?_, Hinv, Hwf⟩
   rw [← toExt_get? σ.layout_state.allocations aid]
   exact Hlk
 
@@ -458,7 +509,7 @@ theorem interp_byte_lookup [CerbStGS GF] {σ : driver_state}
       ⌜σ.layout_state.bytemap.get? a = some b⌝ ∗
         CerbStInterp σ ∗ (a ↦{dq} b) := by
   unfold CerbStInterp genHeapInterp pointsTo
-  iintro ⟨⟨⟨%m, %Hdom, Hσ, Hm2⟩, Ha, He, Hc, Hs, Hm, %Hinv⟩, Hpt⟩
+  iintro ⟨⟨⟨%m, %Hdom, Hσ, Hm2⟩, Ha, He, Hc, Hs, Hm, %Hinv, %Hwf⟩, Hpt⟩
   icombine Hσ Hpt gives %Hlk
   iframe Ha He Hc Hs Hm Hpt
   isplitl []
@@ -471,7 +522,7 @@ theorem interp_byte_lookup [CerbStGS GF] {σ : driver_state}
     ipureintro
     exact Hdom
   · ipureintro
-    exact Hinv
+    exact ⟨Hinv, Hwf⟩
 
 /-- Byte lookup over a RANGE (what `readBytesFrom_of_pointwise`
     consumes; unchanged shape from S2). -/
@@ -652,7 +703,7 @@ theorem CerbStInterp_congr [CerbStGS GF] {σ' : driver_state}
           ((CerbStGS.ctlName GF) ↪VAR{stHalf} C) ∗
           ((CerbStGS.supName GF) ↪VAR{stHalf} S) ∗
           ((CerbStGS.mrestName GF) ↪VAR{stHalf} MR) ∗
-          ⌜MemInv σ'.layout_state⌝) := by
+          ⌜MemInv σ'.layout_state⌝ ∗ ⌜EnvWf σ'⌝) := by
   subst hb; subst ha; subst hc; subst hs; subst hmr; rfl
 
 /-- CONTROL MOVE (layout untouched, supplies untouched, env
@@ -663,7 +714,8 @@ theorem CerbStInterp_congr [CerbStGS GF] {σ' : driver_state}
 theorem interp_ctl_move [CerbStGS GF] {σ σ' : driver_state}
     (hlay : σ'.layout_state = σ.layout_state)
     (hsup : suppliesOf σ' = suppliesOf σ)
-    (henv : ∀ x v, envLookup σ x = some v → envLookup σ' x = some v) :
+    (henv : ∀ x v, envLookup σ x = some v → envLookup σ' x = some v)
+    (hwfp : EnvWf σ → EnvWf σ') :
     CerbStInterp (GF := GF) σ ∗ ctlIs stHalf (ctlOf σ) ⊢ |==>
       (CerbStInterp σ' ∗ ctlIs stHalf (ctlOf σ')) := by
   rw [CerbStInterp_congr (σ' := σ')
@@ -672,7 +724,7 @@ theorem interp_ctl_move [CerbStGS GF] {σ σ' : driver_state}
     (by rw [hlay]) (by rw [hlay]) rfl hsup
     (by unfold memRestOf; rw [hlay])]
   unfold CerbStInterp ctlIs
-  iintro ⟨⟨Hb, Ha, He, Hc, Hs, Hm, %Hinv⟩, Hfrag⟩
+  iintro ⟨⟨Hb, Ha, He, Hc, Hs, Hm, %Hinv, %Hwf⟩, Hfrag⟩
   icases He with ⟨%e, He, %Hcoh⟩
   imod ghost_var_update_halves (ctlOf σ') _ _ _ $$ Hc Hfrag
     with ⟨Hc, Hfrag⟩
@@ -685,13 +737,14 @@ theorem interp_ctl_move [CerbStGS GF] {σ σ' : driver_state}
     exact Hcoh.mono henv
   · ipureintro
     rw [hlay]
-    exact Hinv
+    exact ⟨Hinv, hwfp Hwf⟩
 
 /-- CONTROL + SUPPLY MOVE: as `interp_ctl_move`, for steps that also
     draw from the supplies (both tokens consumed and updated). -/
 theorem interp_ctl_sup_move [CerbStGS GF] {σ σ' : driver_state}
     (hlay : σ'.layout_state = σ.layout_state)
-    (henv : ∀ x v, envLookup σ x = some v → envLookup σ' x = some v) :
+    (henv : ∀ x v, envLookup σ x = some v → envLookup σ' x = some v)
+    (hwfp : EnvWf σ → EnvWf σ') :
     CerbStInterp (GF := GF) σ ∗ ctlIs stHalf (ctlOf σ)
         ∗ supIs stHalf (suppliesOf σ) ⊢ |==>
       (CerbStInterp σ' ∗ ctlIs stHalf (ctlOf σ')
@@ -702,7 +755,7 @@ theorem interp_ctl_sup_move [CerbStGS GF] {σ σ' : driver_state}
     (by rw [hlay]) (by rw [hlay]) rfl rfl
     (by unfold memRestOf; rw [hlay])]
   unfold CerbStInterp ctlIs supIs
-  iintro ⟨⟨Hb, Ha, He, Hc, Hs, Hm, %Hinv⟩, Hcf, Hsf⟩
+  iintro ⟨⟨Hb, Ha, He, Hc, Hs, Hm, %Hinv, %Hwf⟩, Hcf, Hsf⟩
   icases He with ⟨%e, He, %Hcoh⟩
   imod ghost_var_update_halves (ctlOf σ') _ _ _ $$ Hc Hcf
     with ⟨Hc, Hcf⟩
@@ -717,7 +770,7 @@ theorem interp_ctl_sup_move [CerbStGS GF] {σ σ' : driver_state}
     exact Hcoh.mono henv
   · ipureintro
     rw [hlay]
-    exact Hinv
+    exact ⟨Hinv, hwfp Hwf⟩
 
 /-- ENV WRITE (the new capability's update leg): a step rebinds the
     owned cell `x` to `vNew`, every OTHER cell is preserved by
@@ -730,7 +783,8 @@ theorem interp_env_write [CerbStGS GF] {σ σ' : driver_state}
     (hsup : suppliesOf σ' = suppliesOf σ)
     (hnew : envLookup σ' x = some vNew)
     (hpres : ∀ y v, symNum y ≠ symNum x →
-      envLookup σ y = some v → envLookup σ' y = some v) :
+      envLookup σ y = some v → envLookup σ' y = some v)
+    (hwfp : EnvWf σ → EnvWf σ') :
     CerbStInterp (GF := GF) σ ∗ ctlIs stHalf (ctlOf σ)
         ∗ envIs x (.own 1) vOld ⊢ |==>
       (CerbStInterp σ' ∗ ctlIs stHalf (ctlOf σ')
@@ -741,7 +795,7 @@ theorem interp_env_write [CerbStGS GF] {σ σ' : driver_state}
     (by rw [hlay]) (by rw [hlay]) rfl hsup
     (by unfold memRestOf; rw [hlay])]
   unfold CerbStInterp ctlIs envIs
-  iintro ⟨⟨Hb, Ha, He, Hc, Hs, Hm, %Hinv⟩, Hcf, Hef⟩
+  iintro ⟨⟨Hb, Ha, He, Hc, Hs, Hm, %Hinv, %Hwf⟩, Hcf, Hef⟩
   icases He with ⟨%e, He, %Hcoh⟩
   icombine He Hef gives %Hlk
   imod ghost_var_update_halves (ctlOf σ') _ _ _ $$ Hc Hcf
@@ -769,7 +823,7 @@ theorem interp_env_write [CerbStGS GF] {σ σ' : driver_state}
       exact hn
   · ipureintro
     rw [hlay]
-    exact Hinv
+    exact ⟨Hinv, hwfp Hwf⟩
 
 /-- STORE (memory-only step): full-fraction range overwrite on mapped
     keys; the residual is READ (any fraction) but does not move; ctl,
@@ -792,7 +846,7 @@ theorem interp_store_update [CerbStGS GF] {σ : driver_state}
     (ctlOf_layout _) (suppliesOf_layout _)
     (memRestOf_store σ a new)]
   unfold CerbStInterp
-  iintro ⟨⟨Hb, Ha, He, Hc, Hs, Hm, %Hinv⟩, Hp⟩
+  iintro ⟨⟨Hb, Ha, He, Hc, Hs, Hm, %Hinv, %Hwf⟩, Hp⟩
   icases He with ⟨%e, He, %Hcoh⟩
   imod bytes_update_ghost new hlen $$ [$Hb $Hp] with ⟨Hb, Hp⟩
   imodintro
@@ -803,7 +857,7 @@ theorem interp_store_update [CerbStGS GF] {σ : driver_state}
     ipureintro
     exact Hcoh.mono (fun x v h => by rwa [envLookup_layout])
   · ipureintro
-    exact Hinv.store hlen hold
+    exact ⟨Hinv.store hlen hold, EnvWf_of_core_eq rfl Hwf⟩
 
 /-- The residual image after a fresh-object allocation. -/
 def mrAlloc (mr : CerbMem.MemState) (a : Int) : CerbMem.MemState :=
@@ -861,7 +915,7 @@ theorem interp_alloc_update [CerbStGS GF] {σ : driver_state}
   have hrange : a + sz ≤ σ.layout_state.lastAddress :=
     alloc_range_le haddr hnz
   unfold CerbStInterp mrestIs allocIs
-  iintro ⟨⟨Hb, Ha, He, Hc, Hs, Hm, %Hinv⟩, Hmf⟩
+  iintro ⟨⟨Hb, Ha, He, Hc, Hs, Hm, %Hinv, %Hwf⟩, Hmf⟩
   icases He with ⟨%e, He, %Hcoh⟩
   have hfreshA : Std.PartialMap.get? (M := CerbStF)
       (allocsOf σ.layout_state) σ.layout_state.nextAllocId = none := by
@@ -892,7 +946,7 @@ theorem interp_alloc_update [CerbStGS GF] {σ : driver_state}
     ipureintro
     exact Hcoh.mono (fun x v h => by rwa [envLookup_layout])
   · ipureintro
-    exact Hinv.alloc hsz haddr hnz
+    exact ⟨Hinv.alloc hsz haddr hnz, EnvWf_of_core_eq rfl Hwf⟩
 
 /-- The residual image after a kill. -/
 def mrKill (mr : CerbMem.MemState) (aid : Int) : CerbMem.MemState :=
@@ -926,7 +980,7 @@ theorem interp_kill_update [CerbStGS GF] {σ : driver_state}
     rfl rfl
     (by subst hmr; unfold memRestOf mrKill; rfl)]
   unfold CerbStInterp mrestIs allocIs
-  iintro ⟨⟨Hb, Ha, He, Hc, Hs, Hm, %Hinv⟩, Hmf, Hfrag⟩
+  iintro ⟨⟨Hb, Ha, He, Hc, Hs, Hm, %Hinv, %Hwf⟩, Hmf, Hfrag⟩
   icases He with ⟨%e, He, %Hcoh⟩
   icombine Ha Hfrag gives %Hlk
   have hget : σ.layout_state.allocations.get? aid = some al := by
@@ -943,7 +997,7 @@ theorem interp_kill_update [CerbStGS GF] {σ : driver_state}
     ipureintro
     exact Hcoh.mono (fun x v h => by rwa [envLookup_layout])
   · ipureintro
-    exact Hinv.kill hget
+    exact ⟨Hinv.kill hget, EnvWf_of_core_eq rfl Hwf⟩
 
 end CerbSt
 end RelSem

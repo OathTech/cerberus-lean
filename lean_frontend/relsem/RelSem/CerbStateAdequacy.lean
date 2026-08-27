@@ -107,6 +107,14 @@ theorem MemInv_initial : MemInv CerbMem.initialMemState := by
       = (none : Option CerbMem.AbsByte) from rfl] at hget
     cases hget
 
+/-- States with no threads are env-well-formed (the initial harness
+    state's face). -/
+theorem EnvWf_of_no_threads {σ : driver_state}
+    (h : thread0Env σ = []) : EnvWf σ := by
+  intro f hf
+  rw [h] at hf
+  cases hf
+
 /-- The empty tracked-env footprint is coherent at any state. -/
 theorem EnvCoh_empty (σ : driver_state) :
     EnvCoh σ (∅ : CerbStF EnvCell) := by
@@ -124,7 +132,7 @@ theorem EnvCoh_empty (σ : driver_state) :
     the client the initial footprint, conclude `adequate`. -/
 theorem cerbSt_adequacy [CerbStGpreS GF] (e : KDriveExpr)
     (σ : driver_state) (φ : DriveVal → Prop)
-    (hinv : MemInv σ.layout_state)
+    (hinv : MemInv σ.layout_state) (hwf : EnvWf σ)
     (e₀ : CerbStF EnvCell) (hcoh : EnvCoh σ e₀)
     (Hwp : ∀ [CerbStGS GF],
       (iprop(([∗map] a ↦ b ∈ bytesOf σ.layout_state, (a ↦ b)) ∗
@@ -166,7 +174,7 @@ theorem cerbSt_adequacy [CerbStGpreS GF] (e : KDriveExpr)
     (γc ↪VAR{stHalf} ctlOf σ') ∗
     (γs ↪VAR{stHalf} suppliesOf σ') ∗
     (γm ↪VAR{stHalf} memRestOf σ') ∗
-    ⌜MemInv σ'.layout_state⌝)), (fun _ => iprop(True))
+    ⌜MemInv σ'.layout_state⌝ ∗ ⌜EnvWf σ'⌝)), (fun _ => iprop(True))
   have hconvB : (iprop([∗map] a ↦ b ∈ bytesOf σ.layout_state,
         (pointsTo (G := Gb) a (.own 1) b)) : IProp GF)
       = iprop([∗map] a ↦ b ∈ bytesOf σ.layout_state,
@@ -204,14 +212,14 @@ theorem cerbSt_adequacy [CerbStGpreS GF] (e : KDriveExpr)
       ipureintro
       exact hcoh
     · ipureintro
-      exact hinv
+      exact ⟨hinv, hwf⟩
   · iapply Hwpres
 
 /-- The production-runner face: WP under the initial footprint ⇒
     every enumerated outcome satisfies the postcondition. -/
 theorem kAdequateSt_of_wp [CerbStGpreS GF] (e : KDriveExpr)
     (σ : driver_state) (φ : DriveVal → Prop)
-    (hinv : MemInv σ.layout_state)
+    (hinv : MemInv σ.layout_state) (hwf : EnvWf σ)
     (e₀ : CerbStF EnvCell) (hcoh : EnvCoh σ e₀)
     (Hwp : ∀ [CerbStGS GF],
       (iprop(([∗map] a ↦ b ∈ bytesOf σ.layout_state, (a ↦ b)) ∗
@@ -226,7 +234,7 @@ theorem kAdequateSt_of_wp [CerbStGpreS GF] (e : KDriveExpr)
       (tr : List String) (σ' : driver_state),
       (out, tr, σ') ∈ CerbND.runND e.denote σ →
       φ (Outcome.ofStatus out) := by
-  have Had := cerbSt_adequacy e σ φ hinv e₀ hcoh Hwp
+  have Had := cerbSt_adequacy e σ φ hinv hwf e₀ hcoh Hwp
   intro out tr σ' hmem
   exact Had.adequate_result [] σ' (Outcome.ofStatus out)
     (ksteps_erased (ksteps_of_runND hmem))
@@ -260,7 +268,7 @@ theorem kCallHarnessAdequateThrSt_of_wp {GF : BundledGFunctors}
     (callK tagDefs file1 fname args)
     (initial_driver_state_threaded seed file1 fs)
     (fun o => ∃ r : driver_result, o = Outcome.value r ∧ spec r)
-    MemInv_initial
+    MemInv_initial (EnvWf_of_no_threads rfl)
     (∅ : CerbStF EnvCell) (EnvCoh_empty _)
     (by
       intro inst

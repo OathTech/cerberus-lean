@@ -121,32 +121,37 @@ theorem wpk_seq_ctl [CerbStGS GF] {α : Type}
     {k : α → KDriveExpr} {v : α} {upd : driver_state → driver_state}
     {c c' : driver_state}
     {s : Stuckness} {E : CoPset} {Φ : DriveVal → IProp GF}
-    (Happ : ∀ σ, ctlOf σ = c → app m σ = (NDactive v, upd σ))
-    (hctl' : ∀ σ, ctlOf σ = c → ctlOf (upd σ) = c')
-    (hlay : ∀ σ, ctlOf σ = c →
+    (Happ : ∀ σ, ctlOf σ = c → EnvWf σ →
+      app m σ = (NDactive v, upd σ))
+    (hctl' : ∀ σ, ctlOf σ = c → EnvWf σ → ctlOf (upd σ) = c')
+    (hlay : ∀ σ, ctlOf σ = c → EnvWf σ →
       (upd σ).layout_state = σ.layout_state)
-    (hsup : ∀ σ, ctlOf σ = c →
+    (hsup : ∀ σ, ctlOf σ = c → EnvWf σ →
       suppliesOf (upd σ) = suppliesOf σ)
-    (henv : ∀ σ, ctlOf σ = c → ∀ x v', envLookup σ x = some v' →
-      envLookup (upd σ) x = some v') :
+    (henv : ∀ σ, ctlOf σ = c → EnvWf σ →
+      ∀ x v', envLookup σ x = some v' →
+        envLookup (upd σ) x = some v')
+    (hwfp : ∀ σ, ctlOf σ = c → EnvWf σ → EnvWf (upd σ)) :
     ctlIs (GF := GF) stHalf c ∗
       (ctlIs stHalf c' -∗ WP (k v) @ s ; E {{ Φ }}) ⊢
       WP (KExpr.seq m k : KDriveExpr) @ s ; E {{ Φ }} := by
-  refine wpk_seq_res_det (Pre := fun σ => ctlOf σ = c)
-    (upd := upd) ?_ Happ ?_
+  refine wpk_seq_res_det (Pre := fun σ => ctlOf σ = c ∧ EnvWf σ)
+    (upd := upd) ?_ (fun σ hp => Happ σ hp.1 hp.2) ?_
   · intro σ
     iintro ⟨Hi, Hc⟩
     icases interp_ctl_agree $$ [$Hi $Hc] with ⟨%h1, Hi, Hc⟩
+    icases interp_envwf $$ Hi with ⟨%h2, Hi⟩
     iframe Hi Hc
     ipureintro
-    exact h1
+    exact ⟨h1, h2⟩
   · intro σ hp
     iintro ⟨Hi, Hc⟩
-    rw [show c = ctlOf σ from hp.symm]
-    imod interp_ctl_move (hlay σ hp) (hsup σ hp) (henv σ hp)
+    rw [show c = ctlOf σ from hp.1.symm]
+    imod interp_ctl_move (hlay σ hp.1 hp.2) (hsup σ hp.1 hp.2)
+      (henv σ hp.1 hp.2) (fun _ => hwfp σ hp.1 hp.2)
       $$ [$Hi $Hc] with ⟨Hi, Hc⟩
     imodintro
-    rw [hctl' σ hp]
+    rw [hctl' σ hp.1 hp.2]
     iframe Hi Hc
 
 /-! ## CONTROL STEP WITH ONE ENV READ — as `wpk_seq_ctl`, with the
@@ -159,38 +164,43 @@ theorem wpk_seq_ctl_env1 [CerbStGS GF] {α : Type}
     {k : α → KDriveExpr} {v : α} {upd : driver_state → driver_state}
     {c c' : driver_state} {x : sym} {vx : value} {dq : DFrac}
     {s : Stuckness} {E : CoPset} {Φ : DriveVal → IProp GF}
-    (Happ : ∀ σ, ctlOf σ = c → envLookup σ x = some vx →
+    (Happ : ∀ σ, ctlOf σ = c → EnvWf σ → envLookup σ x = some vx →
       app m σ = (NDactive v, upd σ))
-    (hctl' : ∀ σ, ctlOf σ = c → envLookup σ x = some vx →
+    (hctl' : ∀ σ, ctlOf σ = c → EnvWf σ → envLookup σ x = some vx →
       ctlOf (upd σ) = c')
-    (hlay : ∀ σ, ctlOf σ = c → envLookup σ x = some vx →
+    (hlay : ∀ σ, ctlOf σ = c → EnvWf σ → envLookup σ x = some vx →
       (upd σ).layout_state = σ.layout_state)
-    (hsup : ∀ σ, ctlOf σ = c → envLookup σ x = some vx →
+    (hsup : ∀ σ, ctlOf σ = c → EnvWf σ → envLookup σ x = some vx →
       suppliesOf (upd σ) = suppliesOf σ)
-    (henv : ∀ σ, ctlOf σ = c → envLookup σ x = some vx →
+    (henv : ∀ σ, ctlOf σ = c → EnvWf σ → envLookup σ x = some vx →
       ∀ y v', envLookup σ y = some v' →
-        envLookup (upd σ) y = some v') :
+        envLookup (upd σ) y = some v')
+    (hwfp : ∀ σ, ctlOf σ = c → EnvWf σ → envLookup σ x = some vx →
+      EnvWf (upd σ)) :
     (ctlIs (GF := GF) stHalf c ∗ envIs x dq vx) ∗
       ((ctlIs stHalf c' ∗ envIs x dq vx)
         -∗ WP (k v) @ s ; E {{ Φ }}) ⊢
       WP (KExpr.seq m k : KDriveExpr) @ s ; E {{ Φ }} := by
   refine wpk_seq_res_det
-    (Pre := fun σ => ctlOf σ = c ∧ envLookup σ x = some vx)
-    (upd := upd) ?_ (fun σ hp => Happ σ hp.1 hp.2) ?_
+    (Pre := fun σ => (ctlOf σ = c ∧ EnvWf σ) ∧
+      envLookup σ x = some vx)
+    (upd := upd) ?_ (fun σ hp => Happ σ hp.1.1 hp.1.2 hp.2) ?_
   · intro σ
     iintro ⟨Hi, Hc, He⟩
     icases interp_ctl_agree $$ [$Hi $Hc] with ⟨%h1, Hi, Hc⟩
+    icases interp_envwf $$ Hi with ⟨%h1b, Hi⟩
     icases interp_env_lookup $$ [$Hi $He] with ⟨%h2, Hi, He⟩
     iframe Hi Hc He
     ipureintro
-    exact ⟨h1, h2⟩
+    exact ⟨⟨h1, h1b⟩, h2⟩
   · intro σ hp
     iintro ⟨Hi, Hc, He⟩
-    rw [show c = ctlOf σ from hp.1.symm]
-    imod interp_ctl_move (hlay σ hp.1 hp.2) (hsup σ hp.1 hp.2)
-      (henv σ hp.1 hp.2) $$ [$Hi $Hc] with ⟨Hi, Hc⟩
+    rw [show c = ctlOf σ from hp.1.1.symm]
+    imod interp_ctl_move (hlay σ hp.1.1 hp.1.2 hp.2)
+      (hsup σ hp.1.1 hp.1.2 hp.2) (henv σ hp.1.1 hp.1.2 hp.2)
+      (fun _ => hwfp σ hp.1.1 hp.1.2 hp.2) $$ [$Hi $Hc] with ⟨Hi, Hc⟩
     imodintro
-    rw [hctl' σ hp.1 hp.2]
+    rw [hctl' σ hp.1.1 hp.1.2 hp.2]
     iframe Hi Hc He
 
 /-! ## ENV WRITE — the atom rebinds the OWNED cell `x` (full
@@ -203,34 +213,40 @@ theorem wpk_seq_env_write [CerbStGS GF] {α : Type}
     {k : α → KDriveExpr} {v : α} {upd : driver_state → driver_state}
     {c c' : driver_state} {x : sym} {vOld vNew : value}
     {s : Stuckness} {E : CoPset} {Φ : DriveVal → IProp GF}
-    (Happ : ∀ σ, ctlOf σ = c → app m σ = (NDactive v, upd σ))
-    (hctl' : ∀ σ, ctlOf σ = c → ctlOf (upd σ) = c')
-    (hlay : ∀ σ, ctlOf σ = c →
+    (Happ : ∀ σ, ctlOf σ = c → EnvWf σ →
+      app m σ = (NDactive v, upd σ))
+    (hctl' : ∀ σ, ctlOf σ = c → EnvWf σ → ctlOf (upd σ) = c')
+    (hlay : ∀ σ, ctlOf σ = c → EnvWf σ →
       (upd σ).layout_state = σ.layout_state)
-    (hsup : ∀ σ, ctlOf σ = c →
+    (hsup : ∀ σ, ctlOf σ = c → EnvWf σ →
       suppliesOf (upd σ) = suppliesOf σ)
-    (hnew : ∀ σ, ctlOf σ = c → envLookup (upd σ) x = some vNew)
-    (hpres : ∀ σ, ctlOf σ = c → ∀ y v', symNum y ≠ symNum x →
-      envLookup σ y = some v' → envLookup (upd σ) y = some v') :
+    (hnew : ∀ σ, ctlOf σ = c → EnvWf σ →
+      envLookup (upd σ) x = some vNew)
+    (hpres : ∀ σ, ctlOf σ = c → EnvWf σ →
+      ∀ y v', symNum y ≠ symNum x →
+        envLookup σ y = some v' → envLookup (upd σ) y = some v')
+    (hwfp : ∀ σ, ctlOf σ = c → EnvWf σ → EnvWf (upd σ)) :
     (ctlIs (GF := GF) stHalf c ∗ envIs x (.own 1) vOld) ∗
       ((ctlIs stHalf c' ∗ envIs x (.own 1) vNew)
         -∗ WP (k v) @ s ; E {{ Φ }}) ⊢
       WP (KExpr.seq m k : KDriveExpr) @ s ; E {{ Φ }} := by
-  refine wpk_seq_res_det (Pre := fun σ => ctlOf σ = c)
-    (upd := upd) ?_ Happ ?_
+  refine wpk_seq_res_det (Pre := fun σ => ctlOf σ = c ∧ EnvWf σ)
+    (upd := upd) ?_ (fun σ hp => Happ σ hp.1 hp.2) ?_
   · intro σ
     iintro ⟨Hi, Hc, He⟩
     icases interp_ctl_agree $$ [$Hi $Hc] with ⟨%h1, Hi, Hc⟩
+    icases interp_envwf $$ Hi with ⟨%h2, Hi⟩
     iframe Hi Hc He
     ipureintro
-    exact h1
+    exact ⟨h1, h2⟩
   · intro σ hp
     iintro ⟨Hi, Hc, He⟩
-    rw [show c = ctlOf σ from hp.symm]
-    imod interp_env_write x (hlay σ hp) (hsup σ hp) (hnew σ hp)
-      (hpres σ hp) $$ [$Hi $Hc $He] with ⟨Hi, Hc, He⟩
+    rw [show c = ctlOf σ from hp.1.symm]
+    imod interp_env_write x (hlay σ hp.1 hp.2) (hsup σ hp.1 hp.2)
+      (hnew σ hp.1 hp.2) (hpres σ hp.1 hp.2)
+      (fun _ => hwfp σ hp.1 hp.2) $$ [$Hi $Hc $He] with ⟨Hi, Hc, He⟩
     imodintro
-    rw [hctl' σ hp]
+    rw [hctl' σ hp.1 hp.2]
     iframe Hi Hc He
 
 /-! ## THE TERMINAL READOUT: `nd_get` feeding a pure readout — the
