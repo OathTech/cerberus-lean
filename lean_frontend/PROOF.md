@@ -149,15 +149,19 @@ sixth fixture, **T7** (`t7_flip.c`, a branch-in-loop: data-dependent
 arms alternating across iterations), is proved at a guarded ∀-seed
 statement through the arc-18 **segment layer** (one declared loop
 invariant, `verify_fn` + `seg_auto`; `relsem/RelSem/T7.lean`), same
-trio-exact cone. Honest OPEN items: **T4**'s threaded statement is
-landed with its seed-apartness guard, but the theorem itself is OPEN
-— parked at a measured frontier (round 22 of the evaluator run, the
-arc-17 S3 record), scheduled at the segment ladder's R5 rung. **T5**
-(the sum loop) is OPEN at R4: its segment substrate is fully landed
-(the five drive-minted segment chains, the invariant state family,
-the twin-spelling seam normalized through the segment layer —
-`RelSem/T5Seam.lean`), the ∀-k closure of the segment hypotheses and
-the end-to-end theorem are the R4 rung. The ambient T4/T5-prefix theorems stand meanwhile.
+trio-exact cone. **T5** (`t5_sum.c`, the bounded
+sum loop) is PROVED at the chartered **∀-n input-family** statement
+(0 ≤ n ≤ 100 ⇒ outcomes = {Specified(n·(n−1)/2)}, no UB) through the
+segment layer at the SYMBOLIC trip count — one declared loop
+invariant, body obligations from the ∀-k pack closure, the driver
+atom through the once-proved two-scratch rule, a two-line proof
+(`relsem/RelSem/T5.lean`, arc-18 R4), trio-exact cone. Honest OPEN
+item: **T4**'s threaded statement is landed with its seed-apartness
+guard, but the theorem itself is OPEN — parked at a measured frontier
+(round 22 of the evaluator run, the arc-17 S3 record), scheduled at
+the segment ladder's R5 rung. The ambient T4 theorem stands
+meanwhile (the ambient-era T5 prefix chain retired at R4 — subsumed
+by the proved theorem).
 
 **Kernel-checked statement layers for real C functions** (the spec
 lab: division/modulo, `memcpy`, array access, linked-list append,
