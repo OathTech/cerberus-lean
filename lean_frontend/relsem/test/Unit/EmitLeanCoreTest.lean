@@ -141,7 +141,19 @@ def slatePoints : List (String × file core_run_annotation × String ×
    ("c3b", c3bFile, "lead_digit", [273], .inl 2),
    ("c3b", c3bFile, "lead_digit", [7], .inl 7),
    ("c3b", c3bFile, "lead_digit", [100000], .inl 1),
-   ("c3b", c3bFile, "lead_digit", [99], .inl 9)]
+   ("c3b", c3bFile, "lead_digit", [99], .inl 9),
+   -- arc-18 R6 breadth corpus, batch 3 (edge loop rows; c9 is the
+   -- PARKED array-lane frontier — its file is assembled and pinned
+   -- but carries no slate points until the lane lands).
+   ("x7", x7File, "is_pow2", [6], .inl 0),
+   ("x7", x7File, "is_pow2", [8], .inl 1),
+   ("x7", x7File, "is_pow2", [1], .inl 1),
+   ("x7", x7File, "is_pow2", [12], .inl 0),
+   ("x7", x7File, "is_pow2", [0], .inl 1),
+   ("x2", x2File, "cap10", [273], .inl 27),
+   ("x2", x2File, "cap10", [99], .inl 99),
+   ("x2", x2File, "cap10", [100000], .inl 10),
+   ("x2", x2File, "cap10", [0], .inl 0)]
 
 def main : IO UInt32 := do
   let mut failures := 0

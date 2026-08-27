@@ -163,6 +163,11 @@
 #       the registered wpk_seq_scratch1p rule). TOTAL 6860 -> 6955.
 #       Direction remains DOWN; every leg is dispatch plumbing/budget
 #       scoping over registered laws.
+# R6 re-baseline (batch 3, the array-lane park's kept leg): Rounds
+#       878 -> 886 — ONE feeder alternative in the memop lane's hmem
+#       discharge (exact Kit.mem_pvfd_block over the component lane;
+#       the law itself is registered [memBlock 7], the fixture is
+#       parked). TOTAL 6963 -> 6963.
 RoundEval.lean 87
 RoundEval/Core.lean 377
 RoundEval/Hyp.lean 1041
@@ -170,10 +175,10 @@ RoundEval/Mint.lean 262
 RoundEval/Classify.lean 213
 RoundEval/Arith.lean 722
 RoundEval/Lanes.lean 829
-RoundEval/Rounds.lean 878
+RoundEval/Rounds.lean 886
 RoundEval/Assembly.lean 647
 DeriveState.lean 260
 WpGround.lean 121
 LawRegistry.lean 342
 SegmentFaces.lean 1176
-TOTAL 6955
+TOTAL 6963

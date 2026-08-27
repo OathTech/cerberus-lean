@@ -529,7 +529,15 @@ def mintMemopRound (declName : Name) (fvars : Array Expr)
     (what := s!"round {roundIdx} memop perform")
   let proofStx ← `($(mkCIdent advLaw.name)
     (hperf := $(mkCIdent perfLaw.name)
-      (hmem := by first | exact rfl | decide | hyp_norm_side)))
+      (hmem := by first
+        | exact rfl
+        | decide
+        -- arc-18 R6 batch 3 (the array lane): the pvfd memory fact
+        -- at OPEN builder memory — liveness through the component
+        -- lane, alignment left closed for the ground escape.
+        | exact RelSem.Kit.mem_pvfd_block
+            (by first | exact rfl | hyp_norm_side) rfl
+        | hyp_norm_side)))
   let (pf, succRaw) ← elabLawChain td tid σ stepE lhs roundIdx proofStx
   emitLawRound declName fvars a td tid σ lhs pf succRaw roundIdx "memop"
 

@@ -229,6 +229,10 @@ import RelSem.Corpus.C4
 import RelSem.Corpus.C5
 import RelSem.Corpus.C3A
 import RelSem.Corpus.C3B
+-- arc-18 R6: batch 3 (edge loop rows x7/x2; the array-lane C9 is
+-- PARKED — not imported, see RelSem/Corpus/C9.lean's header).
+import RelSem.Corpus.X7
+import RelSem.Corpus.X2
 
 namespace RelSem.Audit
 
@@ -633,7 +637,13 @@ def stmtAllowed : List Name :=
    `RelSem.Slate.c3aFile, `RelSem.C3A.c3aFs,
    `RelSem.Slate.c3bFile, `RelSem.C3B.c3bFs,
    `RelSem.C3B.c3bSpec, `RelSem.C3B.C3BEnvHypThr,
-   `RelSem.C3B.C3BSeedApart]
+   `RelSem.C3B.C3BSeedApart,
+   -- arc-18 R6 batch 3: the edge-tier fixture data + guarded-face
+   -- vocabulary (x7 early-return-in-loop, x2 break).
+   `RelSem.Slate.x7File, `RelSem.X7.x7Fs, `RelSem.X7.x7Spec,
+   `RelSem.X7.X7EnvHypThr, `RelSem.X7.X7SeedApart,
+   `RelSem.Slate.x2File, `RelSem.X2.x2Fs, `RelSem.X2.x2Spec,
+   `RelSem.X2.X2EnvHypThr, `RelSem.X2.X2SeedApart]
 
 open Lean in
 /-- Syntactic "ends in Prop" (Prop-family def: `Prop` or a pi chain
@@ -736,7 +746,10 @@ open Lean in
      `RelSem.C4.C4Threaded, `RelSem.C4.C4Threaded_ubFree,
      `RelSem.C5.C5Threaded, `RelSem.C5.C5Threaded_ubFree,
      `RelSem.C3A.C3AThreaded, `RelSem.C3A.C3AThreaded_ubFree,
-     `RelSem.C3B.C3BThreaded, `RelSem.C3B.C3BThreaded_ubFree]
+     `RelSem.C3B.C3BThreaded, `RelSem.C3B.C3BThreaded_ubFree,
+     -- arc-18 R6 batch 3 (edge tier: multi-exit compositions).
+     `RelSem.X7.X7Threaded, `RelSem.X7.X7Threaded_ubFree,
+     `RelSem.X2.X2Threaded, `RelSem.X2.X2Threaded_ubFree]
   for n in slate do
     match stmtViolations env n with
     | .error e => throwError "{e}"
@@ -1080,7 +1093,13 @@ open Lean in
 -- has three (scratch)], segCanon 12 → 16 — ZERO new engine laws
 -- again: heapWalk unchanged at 11; the batch consumed five
 -- DISTINCT existing atom shapes with no additions).
-/-- info: step_law census: 302 laws [advance 5, construct 9, envAlg 3, envMap 4, evalArith 2, evalPull 2, heapWP 4, heapWalk 11, loop 5, memBlock 6, memRW 20, perform 6, roundGlue 3, segCanon 16, segEq 144, segFact 58, segPost 2, wpSeq 2] -/
+-- 302 → 327 (arc-18 R6 batch 3: memBlock 6 → 7 — the ONE new
+-- engine-lane law of the whole campaign so far, `mem_pvfd_block`
+-- (the array lane's PtrValidForDeref at open memory; the fixture
+-- itself is PARKED, the law + feeder stay); segEq 144 → 162,
+-- segFact 58 → 62, segCanon 16 → 18 — the x7/x2 edge fixtures'
+-- per-fixture supply).
+/-- info: step_law census: 327 laws [advance 5, construct 9, envAlg 3, envMap 4, evalArith 2, evalPull 2, heapWP 4, heapWalk 11, loop 5, memBlock 7, memRW 20, perform 6, roundGlue 3, segCanon 18, segEq 162, segFact 62, segPost 2, wpSeq 2] -/
 #guard_msgs in #step_law_census
 /-- info: 'RelSem.T1.round6' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.round6
@@ -1188,6 +1207,20 @@ open Lean in
 #guard_msgs in #print axioms RelSem.C3B.C3BThreaded_ubFree
 /-- info: 'RelSem.C3B.c3b_run_seg' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.C3B.c3b_run_seg
+-- arc-18 R6 batch 3 (edge tier): early-return-in-loop + break —
+-- the multi-exit compositions, trio-exact.
+/-- info: 'RelSem.X7.X7Threaded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.X7.X7Threaded
+/-- info: 'RelSem.X7.X7Threaded_ubFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.X7.X7Threaded_ubFree
+/-- info: 'RelSem.X7.x7_run_seg' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.X7.x7_run_seg
+/-- info: 'RelSem.X2.X2Threaded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.X2.X2Threaded
+/-- info: 'RelSem.X2.X2Threaded_ubFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.X2.X2Threaded_ubFree
+/-- info: 'RelSem.X2.x2_run_seg' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.X2.x2_run_seg
 -- arc-18 R2 [F3] acceptance: the T5 twin-spelling seam normalized
 -- through the layer — ONE declared invariant (t5SeamInv), both
 -- spellings' body obligations discharged over it, trio-exact.
@@ -1643,6 +1676,9 @@ open Lean in
 -- open-memory route [spine equations + minted rounds + driver atom
 -- + ∀-seed statements + safety twin]; ALL boundary-clean, zero
 -- engine changes).
+-- 11501 → 12383 (arc-18 R6 batch 3: the x7/x2 edge fixtures —
+-- multi-exit/break compositions, two walks each — + mem_pvfd_block
+-- + the assembled-but-unimported c9 file data; boundary-clean).
 -- 10060 → 11501 (arc-18 R6 batch 2, the CENSUS tier: four corpus
 -- fixtures — RelSem.Corpus.C4/C5/C3A/C3B; c3b is the first corpus
 -- LOOP through the invariant route (three walks + SegInv map +
@@ -1653,7 +1689,7 @@ open Lean in
 -- capability — DELETED; T5-the-theorem stands proved through the
 -- layer at the trio. Carrier set 112 → 104 in the same commit.)
 /--
-info: RelSem audit sweep: 11501 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 12383 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do

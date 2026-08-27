@@ -118,6 +118,10 @@ import RelSem.Corpus.C4
 import RelSem.Corpus.C5
 import RelSem.Corpus.C3A
 import RelSem.Corpus.C3B
+-- arc-18 R6: batch 3 (edge loop rows; C9 = the parked array lane,
+-- deliberately NOT imported).
+import RelSem.Corpus.X7
+import RelSem.Corpus.X2
 -- arc-7 S1: the in-build axiom audit (golean pattern) — a lib member,
 -- so `lake build RelSem` elaborates it and drift fails the build.
 import RelSem.Audit

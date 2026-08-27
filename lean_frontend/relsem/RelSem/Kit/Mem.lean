@@ -198,6 +198,29 @@ theorem mem_load_block {loc : CerbLocation.Loc} {ty : ctype}
   exact if_neg (fun hx => Bool.noConfusion
     (hnotbool.symm.trans ((Bool.and_eq_true _ _).mp hx).1))
 
+/-- PtrValidForDeref (the pointer-validity read), Prov_some concrete
+    path: STATE-PRESERVING — liveness by a component fact, alignment
+    by ground arithmetic (arc-18 R6 batch 3: the array lane's memop
+    at OPEN memory; the divmod-era whole-state kernel-rfl route stays
+    first in the feeder and still fires at ground memory). -/
+@[app_eq,
+  step_law (kind := memBlock) (side := ground)
+  (frontier := "mem/pvfd")
+  (trace := "{law := mem_pvfd_block, joint := mem/pvfd, hyps := [hdead : ground, hwa : ground]}")
+  (lineage := "computed-RHS memory-op block: validity read, state-preserving")]
+theorem mem_pvfd_block {ty : ctype} {allocId : Int} {addr : Int}
+    {um : Option identifier} {mem : CerbMem.MemState} {b : Bool}
+    (hdead : mem.deadAllocations.contains allocId = false)
+    (hwa : CerbMem.isWellAlignedPtrval ty
+        (.PV (.Prov_some allocId) (.PVconcrete um addr))
+      = CerbMem.memReturn b) :
+    app (CerbMem.validForDerefPtrval ty
+          (.PV (.Prov_some allocId) (.PVconcrete um addr))) mem
+      = (NDactive b, mem) := by
+  simp only [CerbMem.validForDerefPtrval, app, hdead,
+    Bool.false_eq_true, if_false, reduceIte, hwa, CerbMem.memReturn,
+    nd_return]
+
 /-- Pointer prefix (a placeholder in the concrete model: always
     `none`; the trace events' pref field). -/
 @[app_eq,

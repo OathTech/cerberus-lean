@@ -361,9 +361,17 @@ def ppAction : generic_action Unit Unit sym → Except String String
 def ppPaction : generic_paction Unit Unit sym → Except String String
   | Paction p act => do pure s!"(Paction {← ppPolarity p} {← ppAction act})"
 
+/-- Memory-op names (arc-18 R6 batch 3: the array lane's
+    `PtrValidForDeref` — extend loudly per the fidelity contract). -/
+def ppMemop : generic_memop sym → Except String String
+  | PtrValidForDeref => pure "PtrValidForDeref"
+  | _ => throw "ppMemop: unhandled memop constructor"
+
 mutual
 partial def ppExpr_ : generic_expr_ Unit Unit sym → Except String String
   | Epure pe => do pure s!"(Epure {← ppPexpr pe})"
+  | Ememop mo pes => do
+    pure s!"(Ememop {← ppMemop mo} {← ppList ppPexpr pes})"
   | Eaction pa => do pure s!"(Eaction {← ppPaction pa})"
   | Ecase pe arms => do
     pure s!"(Ecase {← ppPexpr pe} {← ppList (ppProd ppPattern ppExpr) arms})"
@@ -557,7 +565,12 @@ def slatePlan : List (String × String × String) :=
    ("c4_hexval", "hex_val", "hexvalC4"),
    ("c5_pcthi", "pct_hi", "pcthiC5"),
    ("c3a_accguard", "acc10", "accguardC3A"),
-   ("c3b_leaddigit", "lead_digit", "leaddigitC3B")]
+   ("c3b_leaddigit", "lead_digit", "leaddigitC3B"),
+   -- arc-18 R6: batch 3 (array lane).
+   ("c9_arrw", "arr_rw", "arrwC9"),
+   -- arc-18 R6: batch 3 (edge loop rows).
+   ("x7_earlyret", "is_pow2", "ispow2X7"),
+   ("x2_break", "cap10", "cap10X2")]
 
 def slateHeader : String :=
 "/-
@@ -569,7 +582,8 @@ def slateHeader : String :=
   designated functions of
   tests/verify/{t2_add,t3_roundtrip,t4_struct_member,t5_sum,
   t6_branch,t7_flip,e1_clamp,e2_abs,e3_scale,e4_isdigit,
-  e5_ismark,c4_hexval,c5_pcthi,c3a_accguard,c3b_leaddigit}.core
+  e5_ismark,c4_hexval,c5_pcthi,c3a_accguard,c3b_leaddigit,
+  c9_arrw,x7_earlyret,x2_break}.core
   (the pinned oracle Core dumps of the .c fixtures; t6_branch is the
   arc-17 S1 acceptance-probe fixture, t7_flip the arc-18 R2
   branch-in-loop fixture, e1–e5 the R6 EASY tier, c* the R6 CENSUS

@@ -216,4 +216,33 @@ def c3bFileU : file Unit :=
 /-- THE c3b file. -/
 def c3bFile : file core_run_annotation := convert_file c3bFileU
 
+/-! ## Batch 3 (array lane): c9a `int arr_rw(int x)`. -/
+
+def c9FileU : file Unit :=
+  slateFileU (Lem_Map.fromList [(arrwC9Sym, arrwC9Decl)])
+    (Lem_Map.fromList [(arrwC9Sym, funinfoOf [intParam])])
+    fmapEmpty
+
+/-- THE c9 file. -/
+def c9File : file core_run_annotation := convert_file c9FileU
+
+/-! ## Batch 3 (edge loop rows): x7 `int is_pow2(int n)`,
+    x2 `int cap10(int n)`. -/
+
+def x7FileU : file Unit :=
+  slateFileU (Lem_Map.fromList [(ispow2X7Sym, ispow2X7Decl)])
+    (Lem_Map.fromList [(ispow2X7Sym, funinfoOf [intParam])])
+    fmapEmpty
+
+/-- THE x7 file. -/
+def x7File : file core_run_annotation := convert_file x7FileU
+
+def x2FileU : file Unit :=
+  slateFileU (Lem_Map.fromList [(cap10X2Sym, cap10X2Decl)])
+    (Lem_Map.fromList [(cap10X2Sym, funinfoOf [intParam])])
+    fmapEmpty
+
+/-- THE x2 file. -/
+def x2File : file core_run_annotation := convert_file x2FileU
+
 end RelSem.Slate

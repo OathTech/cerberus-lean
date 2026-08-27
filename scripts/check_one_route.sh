@@ -91,6 +91,10 @@ LIVE_MODULES=(
   relsem/RelSem/Corpus/C5.lean
   relsem/RelSem/Corpus/C3A.lean
   relsem/RelSem/Corpus/C3B.lean
+  # arc-18 R6: batch 3 (edge loop rows; Corpus/C9.lean is the PARKED
+  # array-lane frontier — outside the build, not a live module).
+  relsem/RelSem/Corpus/X7.lean
+  relsem/RelSem/Corpus/X2.lean
 )
 
 BANNED_IMPORTS='^import[[:space:]]+RelSem\.(PerStepOwnP|IrisState|IrisLang|IrisRules|IrisAdequacy|SlateWP)([[:space:]]|$)'
