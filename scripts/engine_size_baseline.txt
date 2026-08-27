@@ -113,7 +113,7 @@
 #       (2) verify_fn's guarded-family + two-parameter statement
 #       alternatives (T5/T2 house shapes); (3) the argobj2/read2/
 #       scratch2 dispatch arms + seg_argobj2/seg_scratch2 macros
-#       (thin appliers of registered rules). TOTAL 6810 -> 6698.
+#       (thin appliers of registered rules). TOTAL 6860 -> 6698.
 #       Direction remains DOWN; every leg consumes registered laws.
 # R4 re-baseline 2 (arc-18 R4 slice 3, the T5-walk hardening legs):
 #       SegmentFaces 958 -> 1070. Four legs, all engine-not-law
@@ -129,9 +129,20 @@
 #       reaches the equation only through its byte image — unified
 #       from the discovered points-to, never blind-picked) +
 #       innermost-first solveHole; (4) runtime-exception catching in
-#       speculative unification. TOTAL 6810 -> 6810. Direction
+#       speculative unification. TOTAL 6860 -> 6810. Direction
 #       remains DOWN; every leg is dispatch plumbing over registered
 #       laws.
+# R4 re-baseline 3 (arc-18 R4 slice 4, the re-housing legs):
+#       SegmentFaces 1070 -> 1120. (1) SHAPE-INDEXED verify_fn
+#       (classifyStmt reads the goal's leading binder domains and
+#       picks the ONE bridge alternative — the try-every-alternative
+#       loop burned real budget on mis-matched refine unification
+#       against whole adequacy statements); (2) KEYED matchSegEq
+#       (goal-form DiscrTree pre-selection + per-attempt probe
+#       budget, mirror of proveByRegistry); (3) tryTac flushes
+#       postponed elaboration (a wrong alternative can no longer
+#       "succeed" with deferred errors). TOTAL 6860 -> 6860.
+#       Direction remains DOWN; all three are dispatch plumbing.
 RoundEval.lean 87
 RoundEval/Core.lean 346
 RoundEval/Hyp.lean 1033
@@ -144,5 +155,5 @@ RoundEval/Assembly.lean 647
 DeriveState.lean 260
 WpGround.lean 121
 LawRegistry.lean 342
-SegmentFaces.lean 1070
-TOTAL 6810
+SegmentFaces.lean 1120
+TOTAL 6860

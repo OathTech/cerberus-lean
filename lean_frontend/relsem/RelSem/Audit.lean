@@ -1013,7 +1013,11 @@ open Lean in
 -- pointwise final-state facts, the ρ' scalar pins, geometry],
 -- segCanon 2 → 3, segPost 0 → 1 [the closed-form readout] —
 -- per-fixture supply entries by design, visible per kind).
-/-- info: step_law census: 130 laws [advance 5, construct 9, envAlg 3, envMap 4, evalArith 2, evalPull 2, heapWP 4, heapWalk 10, loop 5, memBlock 6, memRW 20, perform 6, roundGlue 3, segCanon 3, segEq 27, segFact 18, segPost 1, wpSeq 2] -/
+-- 130 → 168 (arc-18 R4, T1/T2/T3 re-housed through the layer: their
+-- k-stage open equations + driver atoms + canon representatives +
+-- address facts join the registry [segEq 27 → 54, segFact 18 → 26,
+-- segCanon 3 → 6] — per-fixture supply entries by design).
+/-- info: step_law census: 168 laws [advance 5, construct 9, envAlg 3, envMap 4, evalArith 2, evalPull 2, heapWP 4, heapWalk 10, loop 5, memBlock 6, memRW 20, perform 6, roundGlue 3, segCanon 6, segEq 54, segFact 26, segPost 1, wpSeq 2] -/
 #guard_msgs in #step_law_census
 /-- info: 'RelSem.T1.round6' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.round6
@@ -1027,8 +1031,9 @@ open Lean in
 #guard_msgs in #print axioms RelSem.T1.driver2_iter_thr
 /-- info: 'RelSem.T1.t1_app_eq_thr' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.t1_app_eq_thr
-/-- info: 'RelSem.T1.t1_wpK_thr' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T1.t1_wpK_thr
+-- (t1_wpK_thr — the R1-era hand walk — DELETED at arc-18 R4: the
+-- statement discharge runs verify_fn + seg_auto; its pin retires
+-- with it, the statement pins below stand.)
 /-- info: 'RelSem.T1.T1Threaded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.T1Threaded
 /-- info: 'RelSem.T1.T1Threaded_ubFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
@@ -1046,8 +1051,7 @@ open Lean in
 -- ambient T4 (T4EnvHyp route) stands unchanged.
 /-- info: 'RelSem.T2.t2_app_eq_thr' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T2.t2_app_eq_thr
-/-- info: 'RelSem.T2.t2_wpK_thr' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T2.t2_wpK_thr
+-- (t2_wpK_thr deleted at arc-18 R4 — see the T1 note.)
 /-- info: 'RelSem.T2.T2Threaded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T2.T2Threaded
 /-- info: 'RelSem.T2.T2Threaded_ubFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
@@ -1056,8 +1060,7 @@ open Lean in
 #guard_msgs in #print axioms RelSem.T2.T2ThreadedOutcomes
 /-- info: 'RelSem.T3.t3_app_eq_thr' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T3.t3_app_eq_thr
-/-- info: 'RelSem.T3.t3_wpK_thr' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T3.t3_wpK_thr
+-- (t3_wpK_thr deleted at arc-18 R4 — see the T1 note.)
 /-- info: 'RelSem.T3.T3Threaded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T3.T3Threaded
 /-- info: 'RelSem.T3.T3Threaded_ubFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
@@ -1507,8 +1510,12 @@ open Lean in
 -- fixed final rest + readout] + RelSem.T5 [statement data + the
 -- two-line flagships] + the SegmentFaces R4 hardening legs;
 -- ALL boundary-clean).
+-- 8769 → 8798 (arc-18 R4 slice 4: T1/T2/T3 re-housed — canon
+-- representatives + FnSpecs in, the three hand wpK walks + inline
+-- readouts DELETED, the shape-indexed verify_fn + keyed matchSegEq
+-- in SegmentFaces; ALL boundary-clean).
 /--
-info: RelSem audit sweep: 8769 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 8798 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do

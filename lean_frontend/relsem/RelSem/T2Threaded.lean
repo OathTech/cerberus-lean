@@ -21,6 +21,9 @@
 -/
 
 import RelSem.Threaded
+-- arc-18 R4: the statement-facing discharge runs THROUGH THE SEGMENT
+-- LAYER (verify_fn + seg_auto over the registered equation supply)
+import RelSem.SegmentFaces
 import RelSem.PerStepTactics
 import RelSem.CerbHeapWalk
 import RelSem.T2
@@ -274,16 +277,19 @@ def argBytes2 (v : Int) : List CerbMem.AbsByte :=
 
 /-! ### The open-memory stage equations -/
 
+@[seg_eq rest]
 theorem k1_o (seed : Nat) : ∀ bm am,
     app (driver_globals t2File.tagDefs false t2File)
         (setMaps (rInit2 seed) bm am)
       = (NDactive 0, setMaps (rGlob2 seed) bm am) := fun _ _ => rfl
 
+@[seg_eq rest]
 theorem k3_o (seed : Nat) : ∀ bm am,
     app (resolveFunSym (dG_thr seed).core_file "add")
         (setMaps (rGlob2 seed) bm am)
       = (NDactive addT2Sym, setMaps (rGlob2 seed) bm am) := fun _ _ => rfl
 
+@[seg_eq rest]
 theorem k4_o (seed : Nat) : ∀ bm am,
     app (lookupFunBody (dG_thr seed).core_file addT2Sym)
         (setMaps (rGlob2 seed) bm am)
@@ -291,12 +297,14 @@ theorem k4_o (seed : Nat) : ∀ bm am,
                     (symB, BTy_object OTy_pointer)], arena0),
          setMaps (rGlob2 seed) bm am) := fun _ _ => rfl
 
+@[seg_eq rest]
 theorem k5_o (seed : Nat) : ∀ bm am,
     app (lookupParamTys (dG_thr seed).core_file addT2Sym)
         (setMaps (rGlob2 seed) bm am)
       = (NDactive [signed_int, signed_int], setMaps (rGlob2 seed) bm am) :=
   fun _ _ => rfl
 
+@[seg_fact]
 theorem argAddrA_fact (seed : Nat) :
     ((CerbMem.alignDown
         ((rGlob2 seed).layout_state.lastAddress - 4).toNat
@@ -305,6 +313,7 @@ theorem argAddrA_fact (seed : Nat) :
     = (281474976710655 : Int) from rfl]
   decide
 
+@[seg_fact]
 theorem argAddrB_fact :
     ((CerbMem.alignDown ((aAddr : Int) - 4).toNat
         ((4 : Int).toNat.max 1) : Nat) : Int) = bAddr := by
@@ -312,6 +321,7 @@ theorem argAddrB_fact :
 
 /-- Stage 6, BOTH ARGUMENT INJECTIONS at open maps (through the
     `inject_ptr_arg2` construct law + the Kit mem blocks). -/
+@[seg_eq argobj2]
 theorem k6_o (seed : Nat) (x y : Int) : ∀ bm am,
     app (injectArgs t2File.tagDefs 0
           [(symA, BTy_object OTy_pointer), (symB, BTy_object OTy_pointer)]
@@ -366,11 +376,13 @@ theorem k6_o (seed : Nat) (x y : Int) : ∀ bm am,
       simp only [writeBytesTo_eq]
       rfl)
 
+@[seg_eq rest]
 theorem k7_o (seed : Nat) : ∀ bm am,
     app get_thread_states (setMaps (rInj2 seed) bm am)
       = (NDactive [(0, (none, thG))], setMaps (rInj2 seed) bm am) :=
   fun _ _ => rfl
 
+@[seg_fact]
 theorem errAddr2_fact (seed : Nat) :
     ((CerbMem.alignDown
         ((rInj2 seed).layout_state.lastAddress - 4).toNat
@@ -379,6 +391,7 @@ theorem errAddr2_fact (seed : Nat) :
   decide
 
 /-- Stage 8, THE ERRNO BLOCK at open maps. -/
+@[seg_eq argobj]
 theorem k8_o (seed : Nat) : ∀ bm am,
     app (liftMem (nd_bind
         (CerbMem.allocateObject 0 (PrefOther "errno")
@@ -418,6 +431,7 @@ theorem k8_o (seed : Nat) : ∀ bm am,
       rfl)
 
 /-- Stage 9, the thread setup (rest-only). -/
+@[seg_eq rest]
 theorem k9_o (seed : Nat) (th : thread_state) (hth : th = th0) :
     ∀ bm am,
     app (driver_update_thread_state 0 th : driverM Unit)
@@ -568,6 +582,7 @@ theorem round10_o (x y : Int)
 /-- THE DRIVER LOOP at open maps: characterized by the rest + BOTH
     argument objects' footprints; the errno object is never
     mentioned — it rides the frame across the entire loop. -/
+@[seg_eq read2]
 theorem driver2_o (seed : Nat) (x y : Int)
     (hx1 : -2147483648 ≤ x) (hx2 : x ≤ 2147483647)
     (hy1 : -2147483648 ≤ y) (hy2 : y ≤ 2147483647)
@@ -612,36 +627,17 @@ theorem driver2_o (seed : Nat) (x y : Int)
     = (NDactive (), setMaps (rDone2 seed x y) bm am)
   exact RelSem.Laws.driver2_done hndct (by rfl)
 
-/-- The terminal readout, uniform over the rest fiber. -/
-theorem t2_post_o (seed : Nat) (x y : Int) : ∀ bm am,
-    ∃ r : driver_result,
-      (Outcome.value (finalize t2File.tagDefs "callND"
-          (setMaps (rDone2 seed x y) bm am)) : DriveVal)
-        = Outcome.value r ∧ t2Spec x y r :=
-  fun _ _ => ⟨_, rfl, rfl⟩
+/-- The post-globals canonical representative (`nd_get` joint). -/
+@[seg_canon]
+theorem t2_canon (seed : Nat) :
+    RelSem.Seg.CanonAt (rGlob2 seed) (dG_thr seed) := rfl
 
-/-- T2's WP over the per-step instance at the threaded initial state,
-    ON THE HEAP ROUTE (both argument footprints minted by one
-    compound; the errno fragments frame across the loop). -/
-theorem t2_wpK_thr {GF : BundledGFunctors} [CerbHeapGS GF]
-    (seed : Nat) (x y : Int)
-    (hx : intRange x) (hy : intRange y) (hs : intRange (x + y)) :
-    (restIs (GF := GF) restHalf (rInit2 seed)) ⊢
-      WP (callK t2File.tagDefs t2File "add" [intValue x, intValue y])
-        @ Stuckness.NotStuck ; ⊤
-        {{ o, ⌜∃ r : driver_result, o = Outcome.value r ∧ t2Spec x y r⌝ }} := by
-  iintro Hst
-  wp_rest (k1_o seed) Hst
-  wp_get (dG_thr seed) Hst
-  wp_rest (k3_o seed) Hst
-  wp_rest (k4_o seed) Hst
-  wp_rest (k5_o seed) Hst
-  wp_argobj2 (k6_o seed x y) (argAddrA_fact seed) argAddrB_fact Hst HalA HptA HalB HptB
-  wp_rest (k7_o seed) Hst
-  wp_argobj (k8_o seed) (errAddr2_fact seed) Hst HalE HptE
-  wp_rest (k9_o seed _ (by rfl)) Hst
-  wp_read2 (driver2_o seed x y hx.1 hx.2 hy.1 hy.2 hs.1 hs.2) Hst HalA HptA HalB HptB
-  wp_fin (t2_post_o seed x y) Hst
+/-- T2's FnSpec ([F9]): `add(x, y) = Specified (x + y)` over the
+    range-tripled input pair (REDUCIBLE; two-parameter family). -/
+abbrev addSpec : RelSem.Seg.FnSpec (Int × Int) :=
+  { fname := "add", args := fun p => [intValue p.1, intValue p.2],
+    pre := fun p => intRange p.1 ∧ intRange p.2 ∧ intRange (p.1 + p.2),
+    post := fun p => t2Spec p.1 p.2 }
 
 /-! ## THE THREADED STATEMENTS -/
 
@@ -652,27 +648,21 @@ def T2ThreadedStatement : Prop :=
     CallHarnessAdequateThr seed t2File.tagDefs t2File "add"
       [intValue x, intValue y] t2Fs (t2Spec x y)
 
-/-- **T2 THREADED, UNCONDITIONAL** (S1–S3 WP route; trio cone). -/
+/-- **T2 THREADED, UNCONDITIONAL** (arc-18 R4: THROUGH THE SEGMENT
+    LAYER — statement text byte-stable across the re-housing; trio
+    cone). -/
 theorem T2Threaded : T2ThreadedStatement := by
-  intro seed x y hx hy hs
-  refine kCallHarnessAdequateThrHeap_of_wp (GF := CerbHeapS) seed
-    t2File.tagDefs t2File "add" [intValue x, intValue y] t2Fs
-    (t2Spec x y) ?_
-  intro η
-  exact t2_wpK_thr seed x y hx hy hs
+  verify_fn addSpec
+  seg_auto
 
-/-- **T2 THREADED UB-freedom**. -/
+/-- **T2 THREADED UB-freedom** (same route). -/
 theorem T2Threaded_ubFree :
     ∀ (seed : Nat) (x y : Int),
       intRange x → intRange y → intRange (x + y) →
       CallHarnessUBFreeThr seed t2File.tagDefs t2File "add"
         [intValue x, intValue y] t2Fs := by
-  intro seed x y hx hy hs
-  refine kCallHarnessUBFreeThrHeap_of_wp (GF := CerbHeapS) seed
-    t2File.tagDefs t2File "add" [intValue x, intValue y] t2Fs
-    (t2Spec x y) ?_
-  intro η
-  exact t2_wpK_thr seed x y hx hy hs
+  verify_fn addSpec
+  seg_auto
 
 /-- T2's threaded outcome-SET companion. -/
 def T2ThreadedOutcomesStatement : Prop :=

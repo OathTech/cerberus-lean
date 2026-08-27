@@ -20,6 +20,9 @@
 -/
 
 import RelSem.Threaded
+-- arc-18 R4: the statement-facing discharge runs THROUGH THE SEGMENT
+-- LAYER (verify_fn + seg_auto over the registered equation supply)
+import RelSem.SegmentFaces
 import RelSem.PerStepTactics
 import RelSem.CerbHeapWalk
 import RelSem.T3
@@ -306,29 +309,34 @@ abbrev moK (x : Int) (bm : Std.TreeMap Int CerbMem.AbsByte)
 
 /-! ### The open-memory stage equations -/
 
+@[seg_eq rest]
 theorem k1_o (seed : Nat) : ∀ bm am,
     app (driver_globals t3File.tagDefs false t3File)
         (setMaps (rInit3 seed) bm am)
       = (NDactive 0, setMaps (rGlob3 seed) bm am) := fun _ _ => rfl
 
+@[seg_eq rest]
 theorem k3_o (seed : Nat) : ∀ bm am,
     app (resolveFunSym (dG_thr seed).core_file "roundtrip")
         (setMaps (rGlob3 seed) bm am)
       = (NDactive roundtripT3Sym, setMaps (rGlob3 seed) bm am) :=
   fun _ _ => rfl
 
+@[seg_eq rest]
 theorem k4_o (seed : Nat) : ∀ bm am,
     app (lookupFunBody (dG_thr seed).core_file roundtripT3Sym)
         (setMaps (rGlob3 seed) bm am)
       = (NDactive ([(symV, BTy_object OTy_pointer)], arena00),
          setMaps (rGlob3 seed) bm am) := fun _ _ => rfl
 
+@[seg_eq rest]
 theorem k5_o (seed : Nat) : ∀ bm am,
     app (lookupParamTys (dG_thr seed).core_file roundtripT3Sym)
         (setMaps (rGlob3 seed) bm am)
       = (NDactive [signed_int], setMaps (rGlob3 seed) bm am) :=
   fun _ _ => rfl
 
+@[seg_fact]
 theorem argAddrV_fact (seed : Nat) :
     ((CerbMem.alignDown
         ((rGlob3 seed).layout_state.lastAddress - 4).toNat
@@ -338,6 +346,7 @@ theorem argAddrV_fact (seed : Nat) :
   decide
 
 /-- Stage 6, the argument injection at open maps. -/
+@[seg_eq argobj]
 theorem k6_o (seed : Nat) (x : Int) : ∀ bm am,
     app (injectArgs t3File.tagDefs 0
           [(symV, BTy_object OTy_pointer)] [signed_int] [intValue x])
@@ -369,11 +378,13 @@ theorem k6_o (seed : Nat) (x : Int) : ∀ bm am,
       simp only [writeBytesTo_eq]
       rfl)
 
+@[seg_eq rest]
 theorem k7_o (seed : Nat) : ∀ bm am,
     app get_thread_states (setMaps (rV3 seed) bm am)
       = (NDactive [(0, (none, thG))], setMaps (rV3 seed) bm am) :=
   fun _ _ => rfl
 
+@[seg_fact]
 theorem errAddr3_fact (seed : Nat) :
     ((CerbMem.alignDown
         ((rV3 seed).layout_state.lastAddress - 4).toNat
@@ -382,6 +393,7 @@ theorem errAddr3_fact (seed : Nat) :
   decide
 
 /-- Stage 8, the errno block at open maps. -/
+@[seg_eq argobj]
 theorem k8_o (seed : Nat) : ∀ bm am,
     app (liftMem (nd_bind
         (CerbMem.allocateObject 0 (PrefOther "errno")
@@ -421,6 +433,7 @@ theorem k8_o (seed : Nat) : ∀ bm am,
       rfl)
 
 /-- Stage 9, the thread setup (rest-only). -/
+@[seg_eq rest]
 theorem k9_o (seed : Nat) (th : thread_state) (hth : th = th00) :
     ∀ bm am,
     app (driver_update_thread_state 0 th : driverM Unit)
@@ -700,6 +713,7 @@ theorem round19_o (x : Int) (fuel : Nat)
     argument object's footprint; the SCRATCH object's whole lifetime
     (create/store/load/kill) is internal to the equation; the errno
     object is never mentioned. -/
+@[seg_eq scratch1]
 theorem driver2_o (seed : Nat) (x : Int)
     (h1 : -2147483648 ≤ x) (h2 : x ≤ 2147483647) : ∀ bm am,
     am.get? 0 = some allocV →
@@ -766,16 +780,10 @@ theorem driver2_o (seed : Nat) (x : Int)
         ((am.insert 2 allocX).erase 2))
   exact RelSem.Laws.driver2_done hndct (by rfl)
 
-/-- The terminal readout, uniform over the rest fiber. -/
-theorem t3_post_o (seed : Nat) (x : Int) : ∀ bm am,
-    ∃ r : driver_result,
-      (Outcome.value (finalize t3File.tagDefs "callND"
-          (setMaps (rDone3 seed x) bm am)) : DriveVal)
-        = Outcome.value r ∧ t3Spec x r :=
-  fun _ _ => ⟨_, rfl, rfl⟩
 
 /-- The scratch address arithmetic (the create's ground fact at the
     D3 rest). -/
+@[seg_fact]
 theorem xAddr_fact (seed : Nat) :
     ((CerbMem.alignDown
         ((rD33 seed).layout_state.lastAddress - 4).toNat
@@ -783,29 +791,17 @@ theorem xAddr_fact (seed : Nat) :
   rw [show (rD33 seed).layout_state.lastAddress = errAddr from rfl]
   decide
 
-/-- T3's WP over the per-step instance at the threaded initial state,
-    ON THE HEAP ROUTE: the driver-loop step reads the argument
-    object, runs the scratch object's whole lifetime internally
-    (its dead bytes come out as D2 dead capital `HptS`), and the
-    errno fragments frame across it. -/
-theorem t3_wpK_thr {GF : BundledGFunctors} [CerbHeapGS GF]
-    (seed : Nat) (x : Int) (hx : intRange x) :
-    (restIs (GF := GF) restHalf (rInit3 seed)) ⊢
-      WP (callK t3File.tagDefs t3File "roundtrip" [intValue x])
-        @ Stuckness.NotStuck ; ⊤
-        {{ o, ⌜∃ r : driver_result, o = Outcome.value r ∧ t3Spec x r⌝ }} := by
-  iintro Hst
-  wp_rest (k1_o seed) Hst
-  wp_get (dG_thr seed) Hst
-  wp_rest (k3_o seed) Hst
-  wp_rest (k4_o seed) Hst
-  wp_rest (k5_o seed) Hst
-  wp_argobj (k6_o seed x) (argAddrV_fact seed) Hst HalV HptV
-  wp_rest (k7_o seed) Hst
-  wp_argobj (k8_o seed) (errAddr3_fact seed) Hst HalE HptE
-  wp_rest (k9_o seed _ (by rfl)) Hst
-  wp_scratch1 (driver2_o seed x hx.1 hx.2) (xAddr_fact seed) Hst HalV HptV HptS
-  wp_fin (t3_post_o seed x) Hst
+/-- The post-globals canonical representative (`nd_get` joint). -/
+@[seg_canon]
+theorem t3_canon (seed : Nat) :
+    RelSem.Seg.CanonAt (rGlob3 seed) (dG_thr seed) := rfl
+
+/-- T3's FnSpec ([F9]): `roundtrip(x) = Specified x` for range x
+    (REDUCIBLE; ∀-x input family; the scratch object's lifetime is
+    internal to the driver atom). -/
+abbrev roundtripSpec : RelSem.Seg.FnSpec Int :=
+  { fname := "roundtrip", args := fun x => [intValue x],
+    pre := intRange, post := t3Spec }
 
 /-! ## THE THREADED STATEMENTS -/
 
@@ -815,24 +811,20 @@ def T3ThreadedStatement : Prop :=
     CallHarnessAdequateThr seed t3File.tagDefs t3File "roundtrip"
       [intValue x] t3Fs (t3Spec x)
 
-/-- **T3 THREADED, UNCONDITIONAL** (S1–S3 WP route; trio cone). -/
+/-- **T3 THREADED, UNCONDITIONAL** (arc-18 R4: THROUGH THE SEGMENT
+    LAYER — statement text byte-stable across the re-housing; trio
+    cone). -/
 theorem T3Threaded : T3ThreadedStatement := by
-  intro seed x hx
-  refine kCallHarnessAdequateThrHeap_of_wp (GF := CerbHeapS) seed
-    t3File.tagDefs t3File "roundtrip" [intValue x] t3Fs (t3Spec x) ?_
-  intro η
-  exact t3_wpK_thr seed x hx
+  verify_fn roundtripSpec
+  seg_auto
 
 /-- **T3 THREADED UB-freedom**. -/
 theorem T3Threaded_ubFree :
     ∀ (seed : Nat) (x : Int), intRange x →
       CallHarnessUBFreeThr seed t3File.tagDefs t3File "roundtrip"
         [intValue x] t3Fs := by
-  intro seed x hx
-  refine kCallHarnessUBFreeThrHeap_of_wp (GF := CerbHeapS) seed
-    t3File.tagDefs t3File "roundtrip" [intValue x] t3Fs (t3Spec x) ?_
-  intro η
-  exact t3_wpK_thr seed x hx
+  verify_fn roundtripSpec
+  seg_auto
 
 /-- T3's threaded outcome-SET companion. -/
 def T3ThreadedOutcomesStatement : Prop :=

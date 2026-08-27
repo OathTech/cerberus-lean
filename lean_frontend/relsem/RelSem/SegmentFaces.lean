@@ -256,6 +256,11 @@ private def tryTac (stx : TSyntax `tactic) : TacticM Bool := do
     pure false
   try
     evalTactic stx
+    -- flush postponed elaboration NOW (arc-18 R4): a `refine`
+    -- alternative can otherwise "succeed" with deferred unification
+    -- errors that detonate at the end of the surrounding tactic
+    -- block — long after the wrong alternative was accepted
+    Term.synthesizeSyntheticMVarsNoPostponing
     if (← getThe Core.State).messages.hasErrors && !msgs.hasErrors then
       fail
     else
@@ -670,40 +675,70 @@ macro "seg_fin" h:ident : tactic =>
 
 /-! ## §4 `verify_fn` -/
 
-/-- `verify_fn <spec>`: statement → WP obligation through the FnSpec
-    (role 1) + threaded heap-route adequacy. Handles the closed
-    (`A = Unit`) and one-parameter guarded statement shapes, and both
-    the adequacy and UB-freedom faces. The fixture's spec must be
-    REDUCIBLE (`abbrev`) — its projections are unified against the
+/-! `verify_fn <spec>`: statement → WP obligation through the FnSpec
+    (role 1) + threaded heap-route adequacy. Handles the closed and
+    one/two-parameter, unguarded and guarded statement shapes, and
+    both the adequacy and UB-freedom faces. The fixture's spec must
+    be REDUCIBLE (`abbrev`) — its projections are unified against the
     byte-stable statement text. Leaves the WP obligation introduced,
     with the initial rest half named `Hst`. -/
+/-- The statement-shape index (arc-18 R4): pick the ONE bridge
+    alternative from the goal's leading binder domains instead of
+    trying every alternative — mis-matched `refine` attempts unify
+    against the whole adequacy statement and burn real budget. -/
+private inductive StmtShape
+  | closed | closedGuarded | oneParam | oneParamGuarded | twoParam
+
+private def classifyStmt : TacticM StmtShape := do
+  let tgt ← getMainTarget
+  let tgt ← whnf tgt
+  forallBoundedTelescope tgt (some 6) fun xs _ => do
+    let doms ← xs.mapM fun x => inferType x
+    let isInt (e : Expr) : Bool := e.isConstOf ``Int
+    let isNat (e : Expr) : Bool := e.isConstOf ``Nat
+    let isP (e : Expr) : MetaM Bool := do pure (← inferType e).isProp
+    if h0 : 0 < doms.size then
+      if ← isP doms[0] then
+        -- guarded family: EnvHyp → ∀ seed, Apart → …
+        if h3 : 3 < doms.size then
+          if isInt doms[3] then return .oneParamGuarded
+          else return .closedGuarded
+        else return .closedGuarded
+      else if isNat doms[0] then
+        if h1 : 1 < doms.size then
+          if isInt doms[1] then
+            if h2 : 2 < doms.size then
+              if isInt doms[2] then return .twoParam
+              else return .oneParam
+            else return .oneParam
+          else return .closed
+        else return .closed
+      else
+        throwError "verify_fn: unrecognized leading binder"
+    else
+      throwError "verify_fn: no leading binders"
+
 elab "verify_fn" spec:term : tactic => do
-  let alts : List (TSyntax `tactic) := [
-    -- closed, unconditional (T6)
-    ← `(tactic| refine fun seed => RelSem.Seg.FnSpec.dischargeThr (S := $spec) (GF := RelSem.Cerb.CerbHeapS) ?_ seed () trivial trivial),
-    -- closed, guarded (the T4/T5/T7 house shape: EnvHyp → ∀ seed, Apart seed → …)
-    ← `(tactic| refine fun henv seed hap => RelSem.Seg.FnSpec.dischargeThr (S := $spec) (GF := RelSem.Cerb.CerbHeapS) ?_ seed () ⟨henv, hap⟩ trivial),
-    -- one-parameter guarded statement (∀ seed x, pre x → …)
-    ← `(tactic| refine fun seed a ha => RelSem.Seg.FnSpec.dischargeThr (S := $spec) (GF := RelSem.Cerb.CerbHeapS) ?_ seed a trivial ha),
-    -- GUARDED one-parameter family (arc-18 R4, the T5 house shape:
-    -- EnvHyp → ∀ seed, Apart seed → ∀ a, pre a → …)
-    ← `(tactic| refine fun henv seed hap a ha => RelSem.Seg.FnSpec.dischargeThr (S := $spec) (GF := RelSem.Cerb.CerbHeapS) ?_ seed a ⟨henv, hap⟩ ha),
-    -- two-parameter three-premise statement (the T2 shape:
-    -- ∀ seed x y, pre₁ → pre₂ → pre₃ → …; spec parameter = the pair)
-    ← `(tactic| refine fun seed x y h1 h2 h3 => RelSem.Seg.FnSpec.dischargeThr (S := $spec) (GF := RelSem.Cerb.CerbHeapS) ?_ seed (x, y) trivial ⟨h1, h2, h3⟩),
-    -- the UB-freedom twins
-    ← `(tactic| refine fun seed => RelSem.Seg.FnSpec.dischargeUBThr (S := $spec) (GF := RelSem.Cerb.CerbHeapS) ?_ seed () trivial trivial),
-    ← `(tactic| refine fun henv seed hap => RelSem.Seg.FnSpec.dischargeUBThr (S := $spec) (GF := RelSem.Cerb.CerbHeapS) ?_ seed () ⟨henv, hap⟩ trivial),
-    ← `(tactic| refine fun seed a ha => RelSem.Seg.FnSpec.dischargeUBThr (S := $spec) (GF := RelSem.Cerb.CerbHeapS) ?_ seed a trivial ha),
-    ← `(tactic| refine fun henv seed hap a ha => RelSem.Seg.FnSpec.dischargeUBThr (S := $spec) (GF := RelSem.Cerb.CerbHeapS) ?_ seed a ⟨henv, hap⟩ ha),
-    ← `(tactic| refine fun seed x y h1 h2 h3 => RelSem.Seg.FnSpec.dischargeUBThr (S := $spec) (GF := RelSem.Cerb.CerbHeapS) ?_ seed (x, y) trivial ⟨h1, h2, h3⟩)]
+  let shape ← classifyStmt
+  let altA : TSyntax `tactic ← match shape with
+    | .closed => `(tactic| refine fun seed => RelSem.Seg.FnSpec.dischargeThr (S := $spec) (GF := RelSem.Cerb.CerbHeapS) ?_ seed () trivial trivial)
+    | .closedGuarded => `(tactic| refine fun henv seed hap => RelSem.Seg.FnSpec.dischargeThr (S := $spec) (GF := RelSem.Cerb.CerbHeapS) ?_ seed () ⟨henv, hap⟩ trivial)
+    | .oneParam => `(tactic| refine fun seed a ha => RelSem.Seg.FnSpec.dischargeThr (S := $spec) (GF := RelSem.Cerb.CerbHeapS) ?_ seed a trivial ha)
+    | .oneParamGuarded => `(tactic| refine fun henv seed hap a ha => RelSem.Seg.FnSpec.dischargeThr (S := $spec) (GF := RelSem.Cerb.CerbHeapS) ?_ seed a ⟨henv, hap⟩ ha)
+    | .twoParam => `(tactic| refine fun seed x y h1 h2 h3 => RelSem.Seg.FnSpec.dischargeThr (S := $spec) (GF := RelSem.Cerb.CerbHeapS) ?_ seed (x, y) trivial ⟨h1, h2, h3⟩)
+  let altB : TSyntax `tactic ← match shape with
+    | .closed => `(tactic| refine fun seed => RelSem.Seg.FnSpec.dischargeUBThr (S := $spec) (GF := RelSem.Cerb.CerbHeapS) ?_ seed () trivial trivial)
+    | .closedGuarded => `(tactic| refine fun henv seed hap => RelSem.Seg.FnSpec.dischargeUBThr (S := $spec) (GF := RelSem.Cerb.CerbHeapS) ?_ seed () ⟨henv, hap⟩ trivial)
+    | .oneParam => `(tactic| refine fun seed a ha => RelSem.Seg.FnSpec.dischargeUBThr (S := $spec) (GF := RelSem.Cerb.CerbHeapS) ?_ seed a trivial ha)
+    | .oneParamGuarded => `(tactic| refine fun henv seed hap a ha => RelSem.Seg.FnSpec.dischargeUBThr (S := $spec) (GF := RelSem.Cerb.CerbHeapS) ?_ seed a ⟨henv, hap⟩ ha)
+    | .twoParam => `(tactic| refine fun seed x y h1 h2 h3 => RelSem.Seg.FnSpec.dischargeUBThr (S := $spec) (GF := RelSem.Cerb.CerbHeapS) ?_ seed (x, y) trivial ⟨h1, h2, h3⟩)
   let mut bridged := false
-  for t in alts do
+  for t in [altA, altB] do
     if !bridged then
       bridged ← tryTac t
   unless bridged do
     throwError "verify_fn: the goal is not a recognized threaded \
-      statement shape for this spec (closed or one-parameter guarded, \
+      statement shape for this spec (closed/guarded, one/two-parameter, \
       adequacy or UB-freedom face)"
   evalTactic (← `(tactic| intro seed a hg ha _inst))
   evalTactic (← `(tactic| iintro Hst))
@@ -836,9 +871,24 @@ private structure EqHit where
     (`solveHole`). -/
 private def matchSegEq (hyps : Array (Name × Expr)) (m ρ : Expr) :
     TacticM (Option EqHit) := do
-  for l in ← LawRegistry.byKind `segEq do
+  -- KEYED pre-selection (arc-18 R4, mirror of proveByRegistry): the
+  -- goal-form pattern `app m (setMaps ρ ? ?)` selects candidates by
+  -- DiscrTree key before any speculative unification; the full kind
+  -- scan remains as the fence/shape-robust fallback. Every attempt
+  -- is probe-budgeted.
+  let cands ← try
+    withoutModifyingState do
+      let pat ← mkAppM ``RelSem.app
+        #[m, ← mkAppM ``RelSem.Cerb.setMaps
+          #[ρ, ← mkFreshExprMVar none, ← mkFreshExprMVar none]]
+      LawRegistry.query `segEq pat
+    catch _ => pure #[]
+  let rest := (← LawRegistry.byKind `segEq).filter
+    (fun l => !(cands.any (·.name == l.name)))
+  let ordered := cands ++ rest
+  for l in ordered do
     let s ← saveState
-    let hit? ← try
+    let hit? ← withProbeBudget do try
       let cinfo ← getConstInfo l.name
       let nPrefix ← prefixArity cinfo.type
       let (margs, _, hTy) ←

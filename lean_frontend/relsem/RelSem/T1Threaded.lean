@@ -37,6 +37,9 @@ import RelSem.Threaded
 import RelSem.PerStepTactics
 import RelSem.CerbHeapWalk
 import RelSem.T1
+-- arc-18 R4: the statement-facing discharge runs THROUGH THE SEGMENT
+-- LAYER (verify_fn + seg_auto over the registered equation supply)
+import RelSem.SegmentFaces
 
 set_option autoImplicit false
 
@@ -495,22 +498,26 @@ def allocErrW : CerbMem.Allocation :=
 /-! ### The open-memory stage equations (pure stages: the same `rfl`
     at free maps; memory stages: the construct laws + Kit blocks) -/
 
+@[seg_eq rest]
 theorem k1_o (seed : Nat) : ∀ bm am,
     app (driver_globals t1File.tagDefs false t1File)
         (setMaps (rInit seed) bm am)
       = (NDactive 0, setMaps (rGlob seed) bm am) := fun _ _ => rfl
 
+@[seg_eq rest]
 theorem k3_o (seed : Nat) : ∀ bm am,
     app (resolveFunSym (dG_thr seed).core_file "id")
         (setMaps (rGlob seed) bm am)
       = (NDactive idT1Sym, setMaps (rGlob seed) bm am) := fun _ _ => rfl
 
+@[seg_eq rest]
 theorem k4_o (seed : Nat) : ∀ bm am,
     app (lookupFunBody (dG_thr seed).core_file idT1Sym)
         (setMaps (rGlob seed) bm am)
       = (NDactive ([(symX, BTy_object OTy_pointer)], arena0),
          setMaps (rGlob seed) bm am) := fun _ _ => rfl
 
+@[seg_eq rest]
 theorem k5_o (seed : Nat) : ∀ bm am,
     app (lookupParamTys (dG_thr seed).core_file idT1Sym)
         (setMaps (rGlob seed) bm am)
@@ -519,6 +526,7 @@ theorem k5_o (seed : Nat) : ∀ bm am,
 
 /-- The argument-object address arithmetic (the alloc rule's ground
     fact at the concrete rest). -/
+@[seg_fact]
 theorem argAddr_fact (seed : Nat) :
     ((CerbMem.alignDown
         ((rGlob seed).layout_state.lastAddress - 4).toNat
@@ -529,6 +537,7 @@ theorem argAddr_fact (seed : Nat) :
 
 /-- Stage 6, THE ARGUMENT INJECTION at open maps: the compound's app
     equation through `Laws.inject_ptr_arg1` + the Kit mem blocks. -/
+@[seg_eq argobj]
 theorem k6_o (seed : Nat) (x : Int) : ∀ bm am,
     app (injectArgs t1File.tagDefs 0
           [(symX, BTy_object OTy_pointer)] [signed_int] [intValue x])
@@ -560,12 +569,14 @@ theorem k6_o (seed : Nat) (x : Int) : ∀ bm am,
       simp only [writeBytesTo_eq]
       rfl)
 
+@[seg_eq rest]
 theorem k7_o (seed : Nat) : ∀ bm am,
     app get_thread_states (setMaps (rArg seed) bm am)
       = (NDactive [(0, (none, thG))], setMaps (rArg seed) bm am) :=
   fun _ _ => rfl
 
 /-- The errno address arithmetic. -/
+@[seg_fact]
 theorem errAddr_fact (seed : Nat) :
     ((CerbMem.alignDown
         ((rArg seed).layout_state.lastAddress - 4).toNat
@@ -574,6 +585,7 @@ theorem errAddr_fact (seed : Nat) :
   decide
 
 /-- Stage 8, THE ERRNO BLOCK at open maps. -/
+@[seg_eq argobj]
 theorem k8_o (seed : Nat) : ∀ bm am,
     app (liftMem (nd_bind
         (CerbMem.allocateObject 0 (PrefOther "errno")
@@ -615,6 +627,7 @@ theorem k8_o (seed : Nat) : ∀ bm am,
       rfl)
 
 /-- Stage 9, the thread setup (rest-only). -/
+@[seg_eq rest]
 theorem k9_o (seed : Nat) (th : thread_state) (hth : th = th0) :
     ∀ bm am,
     app (driver_update_thread_state 0 th : driverM Unit)
@@ -746,6 +759,7 @@ theorem round8_o (x : Int) (fuel : Nat) (ms : CerbMem.MemState)
     characterized by the rest + the argument object's footprint (the
     errno object is NEVER mentioned — in the walk it rides the frame
     across this entire step: the framing dividend, landed). -/
+@[seg_eq read1]
 theorem driver2_o (seed : Nat) (x : Int)
     (h1 : -2147483648 ≤ x) (h2 : x ≤ 2147483647) : ∀ bm am,
     am.get? 0 = some allocXW →
@@ -781,38 +795,17 @@ theorem driver2_o (seed : Nat) (x : Int)
     (setMaps (rD3 seed) bm am) = (NDactive (), setMaps (rDone seed x) bm am)
   exact RelSem.Laws.driver2_done hndct (by rfl)
 
-/-- The terminal readout, uniform over the rest fiber: `finalize`'s
-    result projection reads only the rest. -/
-theorem t1_post_o (seed : Nat) (x : Int) : ∀ bm am,
-    ∃ r : driver_result,
-      (Outcome.value (finalize t1File.tagDefs "callND"
-          (setMaps (rDone seed x) bm am)) : DriveVal)
-        = Outcome.value r ∧ t1Spec x r :=
-  fun _ _ => ⟨_, rfl, rfl⟩
+/-- The post-globals canonical representative (`nd_get` joint). -/
+@[seg_canon]
+theorem t1_canon (seed : Nat) :
+    RelSem.Seg.CanonAt (rGlob seed) (dG_thr seed) := rfl
 
-/-- T1's WP over the per-step instance at the THREADED initial state,
-    ON THE HEAP ROUTE: the walk carries the rest half and the
-    footprints it mints; the driver-loop step consumes ONLY the
-    argument object's footprint — the errno object's fragments
-    (`HalE`/`HptE`) ride the frame across it, untouched. -/
-theorem t1_wpK_thr {GF : BundledGFunctors} [CerbHeapGS GF]
-    (seed : Nat) (x : Int) (hx : intRange x) :
-    (restIs (GF := GF) restHalf (rInit seed)) ⊢
-      WP (callK t1File.tagDefs t1File "id" [intValue x])
-        @ Stuckness.NotStuck ; ⊤
-        {{ o, ⌜∃ r : driver_result, o = Outcome.value r ∧ t1Spec x r⌝ }} := by
-  iintro Hst
-  wp_rest (k1_o seed) Hst
-  wp_get (dG_thr seed) Hst
-  wp_rest (k3_o seed) Hst
-  wp_rest (k4_o seed) Hst
-  wp_rest (k5_o seed) Hst
-  wp_argobj (k6_o seed x) (argAddr_fact seed) Hst HalX HptX
-  wp_rest (k7_o seed) Hst
-  wp_argobj (k8_o seed) (errAddr_fact seed) Hst HalE HptE
-  wp_rest (k9_o seed _ (by rfl)) Hst
-  wp_read1 (driver2_o seed x hx.1 hx.2) Hst HalX HptX
-  wp_fin (t1_post_o seed x) Hst
+/-- T1's FnSpec ([F9]): `id(x) = Specified x` for range x (REDUCIBLE
+    — the faces unify against the byte-stable statement text; ∀-x
+    input family, unguarded). -/
+abbrev idSpec : RelSem.Seg.FnSpec Int :=
+  { fname := "id", args := fun x => [intValue x],
+    pre := intRange, post := t1Spec }
 
 /-! ## THE THREADED STATEMENTS (the committed conclusion forms at the
     seed-parametric state, ∀-seed in front — STRONGER than the
@@ -827,25 +820,20 @@ def T1ThreadedStatement : Prop :=
     CallHarnessAdequateThr seed t1File.tagDefs t1File "id" [intValue x]
       t1Fs (t1Spec x)
 
-/-- **T1 THREADED, UNCONDITIONAL** (through the S1–S3 WP route; cone
+/-- **T1 THREADED, UNCONDITIONAL** (arc-18 R4: THROUGH THE SEGMENT
+    LAYER — statement text byte-stable across the re-housing; cone
     exactly the classical trio). -/
 theorem T1Threaded : T1ThreadedStatement := by
-  intro seed x hx
-  refine kCallHarnessAdequateThrHeap_of_wp (GF := CerbHeapS) seed
-    t1File.tagDefs t1File "id" [intValue x] t1Fs (t1Spec x) ?_
-  intro η
-  exact t1_wpK_thr seed x hx
+  verify_fn idSpec
+  seg_auto
 
 /-- **T1 THREADED UB-freedom** (same route). -/
 theorem T1Threaded_ubFree :
     ∀ (seed : Nat) (x : Int), intRange x →
       CallHarnessUBFreeThr seed t1File.tagDefs t1File "id" [intValue x]
         t1Fs := by
-  intro seed x hx
-  refine kCallHarnessUBFreeThrHeap_of_wp (GF := CerbHeapS) seed
-    t1File.tagDefs t1File "id" [intValue x] t1Fs (t1Spec x) ?_
-  intro η
-  exact t1_wpK_thr seed x hx
+  verify_fn idSpec
+  seg_auto
 
 /-- T1's threaded outcome-SET companion: the enumeration is EXACTLY
     the `Active` singleton, for every seed. -/
