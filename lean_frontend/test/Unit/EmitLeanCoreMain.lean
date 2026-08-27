@@ -19,6 +19,11 @@ def main (args : List String) : IO UInt32 := do
     match EmitLeanCore.emitCorpusModule texts std with
     | .ok s => IO.print s; return 0
     | .error e => IO.eprintln s!"emit-lean-core corpus: {e}"; return 1
+  | ["corpusb"] =>
+    let texts ← EmitLeanCore.readCorpusBInputs
+    match EmitLeanCore.emitCorpusBModule texts with
+    | .ok s => IO.print s; return 0
+    | .error e => IO.eprintln s!"emit-lean-core corpusb: {e}"; return 1
   | [] =>
     let (t1, std) ← EmitLeanCore.readInputs
     match EmitLeanCore.emitModule t1 std with

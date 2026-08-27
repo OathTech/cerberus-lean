@@ -140,6 +140,9 @@ import RelSem.PriorCensus
 import RelSem.CorpusCore
 import RelSem.CorpusFiles
 import RelSem.CorpusStatements
+import RelSem.CorpusBCore
+import RelSem.CorpusBFiles
+import RelSem.CorpusBStatements
 -- arc-9 S2: the kit exactness pins join the in-build audit.
 import RelSem.Kit.Audit
 -- (arc-11 audit A-F1's T5 chain — T5Fixture → T5Prefix → T5Iter —
@@ -486,7 +489,7 @@ def stmtAllowed : List Name :=
    -- def inside `ConsistentRun`'s transparent unfolding) + the pinned
    -- prior vocabularies (Nat-list literal fixture data, PriorCensus-
    -- gated below).
-   `RelSem.Cerb.freshDrawsOf,
+   `RelSem.Cerb.freshDrawsOf, `RelSem.Cerb.specifiedInt,
    `RelSem.T1.t1Prior, `RelSem.Slate.t2Prior, `RelSem.Slate.t3Prior,
    `RelSem.Slate.t4Prior, `RelSem.Slate.t5Prior,
    -- V0: the corpus batch-A statement vocabulary (program terms,
@@ -499,7 +502,18 @@ def stmtAllowed : List Name :=
    `RelSem.Corpus.p03Prior, `RelSem.Corpus.p09Prior,
    `RelSem.Corpus.p10Prior, `RelSem.Corpus.p11Prior,
    `RelSem.Corpus.p12Prior,
-   `RelSem.Corpus.corpusFs, `RelSem.Corpus.satAdd]
+   `RelSem.Corpus.corpusFs, `RelSem.Corpus.satAdd,
+   -- V0 batch B: the memory-input rows' family builders + priors
+   -- (the whole-program face's statement vocabulary; the builders
+   -- are first-order executable file constructors).
+   `RelSem.Corpus.p04FileOf, `RelSem.Corpus.p05FileOf,
+   `RelSem.Corpus.p06FileOf, `RelSem.Corpus.p14FileOf,
+   `RelSem.Corpus.p15FileOf,
+   `RelSem.Corpus.p04Prior, `RelSem.Corpus.p05Prior,
+   `RelSem.Corpus.p06Prior, `RelSem.Corpus.p14Prior,
+   `RelSem.Corpus.p15Prior,
+   `RelSem.Corpus.p07FileOf, `RelSem.Corpus.p08FileOf,
+   `RelSem.Corpus.p07Prior, `RelSem.Corpus.p08Prior]
 
 open Lean in
 /-- Syntactic "ends in Prop" (Prop-family def: `Prop` or a pi chain
@@ -729,7 +743,15 @@ open Lean in
      `RelSem.Corpus.P09Statement, `RelSem.Corpus.P09UBFreeStatement,
      `RelSem.Corpus.P10Statement, `RelSem.Corpus.P10UBFreeStatement,
      `RelSem.Corpus.P11Statement, `RelSem.Corpus.P11UBFreeStatement,
-     `RelSem.Corpus.P12Statement, `RelSem.Corpus.P12UBFreeStatement]
+     `RelSem.Corpus.P12Statement, `RelSem.Corpus.P12UBFreeStatement,
+     -- V0 batch B: the memory-input rows (whole-program face —
+     -- HarnessRunsToCns's Active-conjunct already excludes UB, so
+     -- one statement per row; P07/P08 [struct arena] and P13
+     -- [malloc linkage] are V0-record findings/parks).
+     `RelSem.Corpus.P04Statement, `RelSem.Corpus.P05Statement,
+     `RelSem.Corpus.P06Statement, `RelSem.Corpus.P14Statement,
+     `RelSem.Corpus.P15Statement,
+     `RelSem.Corpus.P07Statement, `RelSem.Corpus.P08Statement]
   for n in concreteInputWaivers do
     let some _ := env.find? n
       | throwError "concrete-input ban: waived name {n} is MISSING \
@@ -813,7 +835,14 @@ open Lean in
      (`RelSem.Corpus.p09File, RelSem.Corpus.p09Prior, "p09Prior"),
      (`RelSem.Corpus.p10File, RelSem.Corpus.p10Prior, "p10Prior"),
      (`RelSem.Corpus.p11File, RelSem.Corpus.p11Prior, "p11Prior"),
-     (`RelSem.Corpus.p12File, RelSem.Corpus.p12Prior, "p12Prior")]
+     (`RelSem.Corpus.p12File, RelSem.Corpus.p12Prior, "p12Prior"),
+     (`RelSem.Corpus.p04FileOf, RelSem.Corpus.p04Prior, "p04Prior"),
+     (`RelSem.Corpus.p05FileOf, RelSem.Corpus.p05Prior, "p05Prior"),
+     (`RelSem.Corpus.p06FileOf, RelSem.Corpus.p06Prior, "p06Prior"),
+     (`RelSem.Corpus.p14FileOf, RelSem.Corpus.p14Prior, "p14Prior"),
+     (`RelSem.Corpus.p15FileOf, RelSem.Corpus.p15Prior, "p15Prior"),
+     (`RelSem.Corpus.p07FileOf, RelSem.Corpus.p07Prior, "p07Prior"),
+     (`RelSem.Corpus.p08FileOf, RelSem.Corpus.p08Prior, "p08Prior")]
   for (root, pinned, pinName) in pins do
     match RelSem.PriorCensus.checkPin env root pinned pinName with
     | .ok () => pure ()
@@ -1493,6 +1522,12 @@ open Lean in
 -- open-memory route [spine equations + minted rounds + driver atom
 -- + ∀-seed statements + safety twin]; ALL boundary-clean, zero
 -- engine changes).
+-- 2679 → 2698 (V0 2026-08-27, batch B cont.: the P07/P08 struct-
+-- arena builders + statements + priors; boundary-clean).
+-- 2590 → 2679 (V0 2026-08-27, THE CORPUS SLATE batch B: CorpusBCore
+-- [emitted fn+main terms ×5 + struct node tagdefs] + CorpusBFiles
+-- [glob builders, family constructors, priors] + CorpusBStatements
+-- [5 P-statement defs + models + wf]; ALL boundary-clean).
 -- 2505 → 2590 (V0 2026-08-27, THE CORPUS SLATE batch A: CorpusCore
 -- [emitted program terms: 10 fn decls + struct pt + the params trio]
 -- + CorpusFiles [assemblies, funinfo, priors] + CorpusStatements
@@ -1540,7 +1575,7 @@ open Lean in
 -- capability — DELETED; T5-the-theorem stands proved through the
 -- layer at the trio. Carrier set 112 → 104 in the same commit.)
 /--
-info: RelSem audit sweep: 2590 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 2698 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do

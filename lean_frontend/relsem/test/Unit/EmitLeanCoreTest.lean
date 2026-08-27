@@ -25,6 +25,7 @@ import RelSem.Call
 import RelSem.T1File
 import RelSem.SlateFiles
 import RelSem.CorpusFiles
+import RelSem.CorpusBFiles
 
 set_option autoImplicit false
 
@@ -122,6 +123,49 @@ def corpusPoints : List (String × file core_run_annotation × String ×
    ("p12", p12File, "harness", [0, 2, 4, 6], .inl 0),
    ("p12", p12File, "harness", [-1073741823, 1073741823, 1, 1], .inl 0)]
 
+
+/-- V0 batch B: run the whole-program DRIVE face on a built family
+    instance (the corpus memory-input rows' statement face —
+    `HarnessRunsToCns`'s runner shape at the ambient state). -/
+def runDrive (file1 : file core_run_annotation) : Sum Int String :=
+  -- EVERY enumerated outcome must be Active at ONE integer verdict
+  -- (the HarnessRunsToCns ∀-outcome shape; exhaustive mode explores
+  -- unsequenced-evaluation orders, so several agreeing executions
+  -- are the healthy case).
+  match CerbND.runND (drive file1.tagDefs false file1 ["cmdname"])
+      (initial_driver_state file1 CerbFS.fs_initial_state) with
+  | [] => .inr "no executions"
+  | outs =>
+    let vals := outs.map (fun (out, _, _) =>
+      match out with
+      | Active r =>
+        match r.dres_core_value with
+        | Vloaded (LVspecified (OVinteger (CerbMem.IntegerValue.IV _ n))) =>
+          Sum.inl (α := Int) (β := String) n
+        | _ => .inr "Active, non-integer result value"
+      | Killed _ reason =>
+        .inr (match reason with
+          | Undef0 _ _ => "UB"
+          | Error0 _ msg => s!"Killed: error {msg}"
+          | Other _ => "Killed: driver error"))
+    match vals with
+    | [] => .inr "no executions"
+    | v :: rest =>
+      if rest.all (· == v) then v
+      else .inr s!"outcome set not a singleton ({vals.length} executions)"
+
+/-- V0 batch B: the corpus .c sample splices, driven through the
+    PARAMETRIC family builders (the family→sample honesty link for
+    the memory-input rows: `pXXFileOf (sample m)` must run to the
+    oracle-validated verdict 0). -/
+def corpusBPoints : List (String × file core_run_annotation × Int) :=
+  [("p04 [3,5,-2,9]", p04FileOf [3, 5, -2, 9], 0),
+   ("p05 [7,1,9,3]@9", p05FileOf [7, 1, 9, 3] 9, 0),
+   ("p06 [1,2,3,4]", p06FileOf [1, 2, 3, 4], 0),
+   ("p14 [2,7,2,2]", p14FileOf [2, 7, 2, 2], 0),
+   ("p15 'a7.9'", p15FileOf [97, 55, 46, 57, 0], 0),
+   ("p07 heads[4,-1,7] pi[1,2,0]", p07FileOf [4, -1, 7] [1, 2, 0], 0),
+   ("p08 heads[1,2,3] pi[2,0,1]", p08FileOf [1, 2, 3] [2, 0, 1], 0)]
 
 def main : IO UInt32 := do
   let mut failures := 0
@@ -229,6 +273,19 @@ def main : IO UInt32 := do
       failures := failures + 1
     | .inr msg, .inl m =>
       IO.println s!"FAIL callND {label} {fname}{args}: {msg}, expected Specified({m})"
+      failures := failures + 1
+  -- 2d. Batch-B family sample drives (V0).
+  for (label, file1, expect) in corpusBPoints do
+    let _ ← (CerbTags.setTagDefsIO file1.tagDefs : BaseIO Unit)
+    match runDrive file1 with
+    | .inl n =>
+      if n == expect then
+        IO.println s!"ok   drive {label} = Specified({n})"
+      else
+        IO.println s!"FAIL drive {label} = Specified({n}), expected {expect}"
+        failures := failures + 1
+    | .inr msg =>
+      IO.println s!"FAIL drive {label}: {msg}"
       failures := failures + 1
   if failures == 0 then
     IO.println "EmitLeanCoreTest: ALL PASSED"

@@ -212,6 +212,16 @@ for stem in $CORPUS_SMALL; do
     else
         fail "corpus/$stem: pin provenance — tests/corpus/$stem.core differs from a fresh oracle derivation"
     fi
+    funspin="$CORPUS_PIN_DIR/${stem}_funs.core"
+    if [[ -f "$funspin" ]]; then
+        sed -n '/^-- Aggregates/,/^-- Globals/p;/^-- Fun map/,$p' "$fresh" \
+            | grep -v '^-- Globals' > "$WORK_DIR/$stem.funs.fresh"
+        if cmp -s "$WORK_DIR/$stem.funs.fresh" "$funspin"; then
+            pass "corpus/$stem: funs-extraction provenance (byte-identical)"
+        else
+            fail "corpus/$stem: funs-extraction provenance — tests/corpus/${stem}_funs.core differs from the fresh extraction"
+        fi
+    fi
 done
 for stem in $CORPUS_HASHED; do
     cfile="$CORPUS_SRC_DIR/$stem.c"
@@ -228,12 +238,27 @@ for stem in $CORPUS_HASHED; do
     fi
     got=$(sha256sum "$fresh" | cut -d" " -f1)
     want=$(cat "$pin")
-    rm -f "$fresh"
     if [[ "$got" == "$want" ]]; then
         pass "corpus/$stem: content-hash provenance (sha256 match)"
     else
         fail "corpus/$stem: content-hash provenance — fresh derivation sha256 $got != pinned $want"
     fi
+    # batch-B funs-extraction provenance: the pinned *_funs.core
+    # (aggregates + fun-map sections — the emitted code's input) must
+    # equal the extraction from the fresh derivation, byte-identically.
+    funspin="$CORPUS_PIN_DIR/${stem}_funs.core"
+    if [[ -f "$funspin" ]]; then
+        sed -n '/^-- Aggregates/,/^-- Globals/p;/^-- Fun map/,$p' "$fresh" \
+            | grep -v '^-- Globals' > "$WORK_DIR/$stem.funs.fresh"
+        if cmp -s "$WORK_DIR/$stem.funs.fresh" "$funspin"; then
+            pass "corpus/$stem: funs-extraction provenance (byte-identical)"
+        else
+            fail "corpus/$stem: funs-extraction provenance — tests/corpus/${stem}_funs.core differs from the fresh extraction"
+        fi
+    else
+        fail "corpus/$stem: funs pin missing ($funspin)"
+    fi
+    rm -f "$fresh"
 done
 
 # batch-A main-mode differential + harness rows

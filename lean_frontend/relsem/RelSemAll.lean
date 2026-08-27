@@ -81,6 +81,9 @@ import RelSem.T3Threaded
 import RelSem.CorpusCore
 import RelSem.CorpusFiles
 import RelSem.CorpusStatements
+import RelSem.CorpusBCore
+import RelSem.CorpusBFiles
+import RelSem.CorpusBStatements
 -- arc-18: the segment layer + faces (KEEP chassis).
 import RelSem.Segment
 import RelSem.SegmentFaces

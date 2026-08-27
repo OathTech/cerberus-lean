@@ -1,0 +1,2292 @@
+⚠ [6/345] Replayed CerbDebug
+warning: generated/CerbDebug.lean:56:31: Variable name `ds` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [21/345] Replayed LemLib.Word
+warning: LemLib/Word.lean:147:43: Variable name `len` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [30/345] Replayed LemLib.List_extra
+warning: LemLib/List_extra.lean:26:82: Variable name `xs` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: LemLib/List_extra.lean:29:68: Variable name `x` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: LemLib/List_extra.lean:36:70: Variable name `x` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [33/345] Replayed LemLib.Machine_word
+warning: LemLib/Machine_word.lean:52:40: Variable name `x` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [41/345] Replayed Nondeterminism
+warning: generated/Nondeterminism.lean:111:13: Variable name `x` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Nondeterminism.lean:113:14: Variable name `x` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Nondeterminism.lean:113:17: Variable name `y` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Nondeterminism.lean:147:22: Variable name `x4` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Nondeterminism.lean:235:78: Variable name `msg` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Nondeterminism.lean:242:91: Variable name `m1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Nondeterminism.lean:242:119: Variable name `m2` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Nondeterminism.lean:286:62: Variable name `x` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Nondeterminism.lean:286:70: Variable name `m` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Nondeterminism.lean:295:66: Variable name `m` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [45/345] Replayed Symbol
+warning: generated/Symbol.lean:248:31: Variable name `d` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [49/345] Replayed Annot
+warning: generated/Annot.lean:104:12: Variable name `attrs` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Annot.lean:319:56: Variable name `loc1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Annot.lean:360:87: Variable name `l` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [50/345] Replayed Ctype
+warning: generated/Ctype.lean:453:68: Variable name `annots1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [53/345] Replayed Cn
+warning: generated/Cn.lean:83:164: Variable name `sym1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [54/345] Replayed Cabs
+warning: generated/Cabs.lean:2146:0: unused `termination_by`, function is not recursive
+warning: generated/Cabs.lean:2131:0: unused `termination_by`, function is not recursive
+warning: generated/Cabs.lean:2116:0: unused `termination_by`, function is not recursive
+warning: generated/Cabs.lean:2149:0: unused `termination_by`, function is not recursive
+warning: generated/Cabs.lean:2143:0: unused `termination_by`, function is not recursive
+warning: generated/Cabs.lean:2119:0: unused `termination_by`, function is not recursive
+⚠ [57/345] Replayed IntegerImpl
+warning: generated/IntegerImpl.lean:73:65: Variable name `x2` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/IntegerImpl.lean:73:126: Variable name `x3` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/IntegerImpl.lean:125:665: Variable name `n` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/IntegerImpl.lean:125:776: Variable name `n` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/IntegerImpl.lean:139:669: Variable name `n` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/IntegerImpl.lean:139:782: Variable name `n` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [58/345] Replayed Implementation
+warning: generated/Implementation.lean:657:480: Variable name `tag_sym` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [63/345] Replayed ErrorMonad
+warning: generated/ErrorMonad.lean:49:26: Variable name `x1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [64/345] Replayed AilTypesAux
+warning: generated/AilTypesAux.lean:174:24: Variable name `impl2` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/AilTypesAux.lean:253:33: Variable name `impl2` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/AilTypesAux.lean:253:79: Variable name `ty2` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/AilTypesAux.lean:271:292: Variable name `qs1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/AilTypesAux.lean:271:325: Variable name `qs2` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/AilTypesAux.lean:280:619: Variable name `bty2` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/AilTypesAux.lean:280:995: Variable name `n2` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/AilTypesAux.lean:280:1432: Variable name `ret_qs2` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/AilTypesAux.lean:280:2191: Variable name `ret_qs2` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/AilTypesAux.lean:280:2484: Variable name `ret_qs2` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/AilTypesAux.lean:280:2969: Variable name `ret_qs2` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/AilTypesAux.lean:280:3633: Variable name `ref_qs2` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/AilTypesAux.lean:319:248: Variable name `ref_qs2` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/AilTypesAux.lean:322:197: Variable name `ref_qs2` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/AilTypesAux.lean:334:191: Variable name `ref_qs2` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [65/345] Replayed Mem_common
+warning: generated/Mem_common.lean:758:53: Variable name `ty1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [67/345] Replayed CerbFloat
+warning: generated/CerbFloat.lean:166:11: `String.dropRight` has been deprecated: Use `String.dropEnd` instead
+
+Note: The updated constant has a different type:
+  String → Nat → String.Slice
+instead of
+  String → Nat → String
+⚠ [68/345] Replayed CerbMem
+warning: generated/CerbMem.lean:1111:28: Variable name `onConcurRead` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/CerbMem.lean:1913:16: Variable name `loc` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [69/345] Replayed CerbDecode
+warning: generated/CerbDecode.lean:161:43: `List.asString` has been deprecated: Use `String.ofList` instead
+
+Note: The updated constant is in a different namespace. Dot notation may need to be changed (e.g., from `x.asString` to `String.ofList x`).
+⚠ [72/345] Replayed Mem
+warning: generated/Mem.lean:62:12: Variable name `ptrval` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Mem.lean:66:12: Variable name `mval` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [73/345] Replayed Cmm_aux
+warning: generated/Cmm_aux.lean:70:12: Variable name `x` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [74/345] Replayed Cmm_csem
+warning: generated/Cmm_csem.lean:201:55: Variable name `r` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:201:75: Variable name `s` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:204:49: Variable name `r` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:381:59: Variable name `loc1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:381:453: Variable name `loc1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:381:732: Variable name `loc1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:381:738: Variable name `val1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:381:1303: Variable name `loc1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:381:1309: Variable name `val1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:381:1873: Variable name `loc1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:381:1879: Variable name `val1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:381:1885: Variable name `val2` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:381:2952: Variable name `loc1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:381:3225: Variable name `loc1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:381:3555: Variable name `loc1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:438:67: Variable name `x12` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:466:131: Variable name `loc1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:466:525: Variable name `loc1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:466:804: Variable name `loc1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:466:810: Variable name `val1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:466:1375: Variable name `loc1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:466:1381: Variable name `val1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:466:1945: Variable name `loc1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:466:1951: Variable name `val1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:466:1957: Variable name `val2` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:466:3024: Variable name `loc1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:466:3297: Variable name `loc1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:466:3627: Variable name `loc1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:624:323: Variable name `loc1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:624:717: Variable name `loc1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:624:996: Variable name `loc1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:624:1002: Variable name `val1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:624:1567: Variable name `loc1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:624:1573: Variable name `val1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:624:2137: Variable name `loc1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:624:2143: Variable name `val1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:624:2149: Variable name `val2` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:624:3216: Variable name `loc1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:624:3489: Variable name `loc1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:624:3819: Variable name `loc1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:706:24: Variable name `x11` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:726:136: Variable name `name1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:737:34: Variable name `x10` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:811:68: Variable name `x8` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:811:98: Variable name `x9` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:974:30: Variable name `s` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:976:31: Variable name `s` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:978:32: Variable name `s` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:996:50: Variable name `action2` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1076:55: Variable name `out` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1076:111: Variable name `aid1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1076:117: Variable name `tid1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1076:127: Variable name `loc1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1076:177: Variable name `rval` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1076:233: Variable name `aid1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1076:239: Variable name `tid1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1076:245: Variable name `ord` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1076:250: Variable name `loc1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1076:256: Variable name `wval` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1076:306: Variable name `rval` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1076:374: Variable name `aid1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1076:380: Variable name `tid1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1076:386: Variable name `ord` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1076:412: Variable name `aid1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1076:418: Variable name `tid1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1076:428: Variable name `loc1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1081:18: Variable name `A` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1081:38: Variable name `R` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1091:21: Variable name `R` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1091:51: Variable name `a` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1091:64: Variable name `a'` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1108:21: Variable name `opsem` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1121:22: Variable name `Xo` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1121:43: Variable name `A` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1121:63: Variable name `A'` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1125:35: Variable name `opsem` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1168:64: Variable name `Xw` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1200:126: Variable name `Xw` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1200:130: Variable name `rl` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1215:33: Variable name `actions1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1282:72: Variable name `lk1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1301:151: Variable name `Xw` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1338:126: Variable name `Xw` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1338:130: Variable name `rl` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1378:126: Variable name `Xw` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1378:130: Variable name `rl` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1401:64: Variable name `actions1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1401:79: Variable name `sb1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1468:126: Variable name `Xw` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1468:130: Variable name `rl` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1471:104: Variable name `sb1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1489:67: Variable name `lk1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1533:126: Variable name `Xw` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1533:130: Variable name `rl` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1560:80: Variable name `lk1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1612:126: Variable name `Xw` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1612:130: Variable name `rl` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1651:126: Variable name `Xw` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1651:130: Variable name `rl` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1690:126: Variable name `Xw` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1690:130: Variable name `rl` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1690:351: Variable name `mo1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1690:386: Variable name `mo1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1690:419: Variable name `mo1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1690:457: Variable name `mo1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1692:71: Variable name `actions1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1721:78: Variable name `actions1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1731:57: Variable name `actions1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1884:653: Variable name `mo1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1901:26: Variable name `Xs` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1906:658: Variable name `mo1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1920:135: Variable name `Xo` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1985:126: Variable name `Xw` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1985:130: Variable name `rl` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1988:73: Variable name `actions1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:1988:88: Variable name `sb1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:2045:126: Variable name `Xw` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:2045:130: Variable name `rl` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:2160:188: Variable name `r` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:2164:138: Variable name `x` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:2187:98: Variable name `f` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:2229:102: Variable name `f` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:2256:27: Variable name `x7` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:2288:74: Variable name `x5` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:2288:104: Variable name `x6` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:2331:1548: Variable name `w` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:2337:338: Variable name `w` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_csem.lean:2337:606: Variable name `w` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [75/345] Replayed Core
+warning: generated/Core.lean:1175:68: Variable name `fp` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core.lean:1175:282: Variable name `fp` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [78/345] Replayed Cmm_op
+warning: generated/Cmm_op.lean:126:36: Variable name `wit` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_op.lean:130:36: Variable name `wit` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_op.lean:134:161: Variable name `rel1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_op.lean:273:18: Variable name `pre` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_op.lean:283:5: declaration uses `sorry`
+warning: generated/Cmm_op.lean:299:21: Variable name `pre` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_op.lean:315:18: Variable name `pre` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_op.lean:319:18: Variable name `pre` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_op.lean:494:125: Variable name `loc1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_op.lean:494:519: Variable name `loc1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_op.lean:494:798: Variable name `loc1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_op.lean:494:804: Variable name `val1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_op.lean:494:1369: Variable name `loc1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_op.lean:494:1375: Variable name `val1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_op.lean:494:1939: Variable name `loc1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_op.lean:494:1945: Variable name `val1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_op.lean:494:1951: Variable name `val2` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_op.lean:494:3018: Variable name `loc1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_op.lean:494:3291: Variable name `loc1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_op.lean:494:3621: Variable name `loc1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_op.lean:539:1012: Variable name `v1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Cmm_op.lean:539:1016: Variable name `v2` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [84/345] Replayed AilTyping
+warning: generated/AilTyping.lean:55:40: Variable name `loc1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [85/345] Replayed GenTypesAux
+warning: generated/GenTypesAux.lean:157:71: Variable name `ref_qs2` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [89/345] Replayed Ctype_aux
+warning: generated/Ctype_aux.lean:78:195: Variable name `qs1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Ctype_aux.lean:78:228: Variable name `qs2` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Ctype_aux.lean:84:621: Variable name `n2_opt` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [90/345] Replayed Core_aux
+warning: generated/Core_aux.lean:75:528: Variable name `ret_ty` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_aux.lean:75:537: Variable name `xs` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_aux.lean:75:541: Variable name `isVariadic` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_aux.lean:85:63: Variable name `ty1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_aux.lean:85:695: Variable name `mem_vals` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_aux.lean:104:40: Variable name `annots1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_aux.lean:402:1118: Variable name `flex_ident` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_aux.lean:402:1130: Variable name `flex_qs` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_aux.lean:402:1139: Variable name `flex_elem_ty` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_aux.lean:563:2311: Variable name `ctor1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_aux.lean:563:2318: Variable name `pats` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_aux.lean:572:48: Variable name `annot1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_aux.lean:598:2794: Variable name `annot1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_aux.lean:598:2802: Variable name `sym1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_aux.lean:598:2808: Variable name `pes` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_aux.lean:598:2838: Variable name `es` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_aux.lean:606:3695: Variable name `annot1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_aux.lean:606:3703: Variable name `sym1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_aux.lean:606:3709: Variable name `pes` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_aux.lean:606:3738: Variable name `es` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_aux.lean:622:350: Variable name `pe1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_aux.lean:622:528: Variable name `pe` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_aux.lean:622:532: Variable name `pat_es` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [93/345] Replayed Translation_aux
+warning: generated/Translation_aux.lean:56:45: Variable name `loc1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Translation_aux.lean:75:210: Variable name `bTy` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Translation_aux.lean:75:215: Variable name `params` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Translation_aux.lean:264:64: Variable name `x36` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Translation_aux.lean:264:103: Variable name `x37` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Translation_aux.lean:264:126: Variable name `x38` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Translation_aux.lean:264:183: Variable name `x39` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Translation_aux.lean:264:222: Variable name `x40` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Translation_aux.lean:264:245: Variable name `x41` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Translation_aux.lean:264:301: Variable name `x42` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Translation_aux.lean:264:341: Variable name `x43` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Translation_aux.lean:264:364: Variable name `x44` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Translation_aux.lean:264:418: Variable name `x45` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Translation_aux.lean:264:460: Variable name `x46` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Translation_aux.lean:264:520: Variable name `x47` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Translation_aux.lean:264:555: Variable name `x48` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Translation_aux.lean:264:616: Variable name `x49` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Translation_aux.lean:264:650: Variable name `x50` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Translation_aux.lean:264:713: Variable name `x51` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Translation_aux.lean:264:745: Variable name `x52` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Translation_aux.lean:264:806: Variable name `x53` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Translation_aux.lean:264:840: Variable name `x54` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Translation_aux.lean:264:902: Variable name `x55` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Translation_aux.lean:264:935: Variable name `x56` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Translation_aux.lean:264:999: Variable name `x57` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Translation_aux.lean:264:1030: Variable name `x58` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Translation_aux.lean:264:1080: Variable name `x59` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Translation_aux.lean:264:1125: Variable name `x60` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Translation_aux.lean:264:1181: Variable name `x61` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Translation_aux.lean:264:1257: Variable name `x62` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Translation_aux.lean:264:1291: Variable name `x63` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Translation_aux.lean:264:1363: Variable name `x64` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Translation_aux.lean:264:1386: Variable name `x65` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Translation_aux.lean:264:1458: Variable name `x66` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Translation_aux.lean:264:1481: Variable name `x67` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Translation_aux.lean:264:1548: Variable name `x68` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Translation_aux.lean:264:1610: Variable name `x69` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Translation_aux.lean:264:1678: Variable name `x70` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Translation_aux.lean:264:1718: Variable name `x71` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Translation_aux.lean:264:1774: Variable name `x72` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Translation_aux.lean:264:1850: Variable name `x73` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Translation_aux.lean:264:1884: Variable name `x74` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [97/345] Replayed Dlist
+warning: generated/Dlist.lean:42:25: Variable name `x0` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [98/345] Replayed CerbUtils
+warning: generated/CerbUtils.lean:78:42: Variable name `hi` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [100/345] Replayed Core_run_aux
+warning: generated/Core_run_aux.lean:248:135: Variable name `annot1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_run_aux.lean:265:225: Variable name `cont` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [101/345] Replayed Core_eval
+warning: generated/Core_eval.lean:142:367: Variable name `hasConstrained` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_eval.lean:145:460: Variable name `xs` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_eval.lean:145:1539: Variable name `cval` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_eval.lean:145:1942: Variable name `debug_pe` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_eval.lean:145:12002: Variable name `annot1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_eval.lean:145:12010: Variable name `pe_bTy` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_eval.lean:145:12139: Variable name `annot1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_eval.lean:145:12147: Variable name `pe_bTy` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_eval.lean:145:15350: Variable name `flexible_opt` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_eval.lean:145:27835: Variable name `pe` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [104/345] Replayed Core_run
+warning: generated/Core_run.lean:95:45: Variable name `bTy` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_run.lean:226:104: Variable name `x20` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_run.lean:392:1486: Variable name `xs1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_run.lean:392:1618: Variable name `xs2` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_run.lean:392:3983: Variable name `xs1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_run.lean:392:4121: Variable name `xs2` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_run.lean:392:4265: Variable name `xs3` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_run.lean:392:8311: Variable name `xs1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_run.lean:392:8348: Variable name `xs2` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_run.lean:392:8443: Variable name `xs1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_run.lean:392:8540: Variable name `xs2` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_run.lean:392:10644: Variable name `xs` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_run.lean:392:16682: Variable name `oTy` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_run.lean:392:22046: Variable name `pe1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_run.lean:392:22051: Variable name `pe2` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_run.lean:392:22056: Variable name `pe3` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_run.lean:392:22061: Variable name `pe4` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_run.lean:392:22066: Variable name `mo1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_run.lean:392:22071: Variable name `mo2` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_run.lean:392:22156: Variable name `pe1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_run.lean:392:22161: Variable name `pe2` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_run.lean:392:22166: Variable name `pe3` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_run.lean:392:22171: Variable name `pe4` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_run.lean:392:22176: Variable name `mo1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_run.lean:392:22181: Variable name `mo2` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_run.lean:392:22255: Variable name `mo1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_run.lean:392:22320: Variable name `pe1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_run.lean:392:22325: Variable name `pe2` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_run.lean:392:22330: Variable name `pe3` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_run.lean:392:22335: Variable name `mo1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_run.lean:392:22399: Variable name `pe1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_run.lean:392:22404: Variable name `pe2` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_run.lean:392:22409: Variable name `mo1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_run.lean:392:22471: Variable name `pe1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_run.lean:392:22476: Variable name `pe2` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_run.lean:392:22481: Variable name `pe3` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_run.lean:392:22486: Variable name `mo1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_run.lean:395:4340: Variable name `cont` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_run.lean:395:37684: Variable name `sym1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_run.lean:395:38007: Variable name `bTy` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_run.lean:395:38613: Variable name `annots1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_run.lean:395:38668: Variable name `cont` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [105/345] Replayed Core_reduction_aux
+warning: generated/Core_reduction_aux.lean:50:32: Variable name `th_st` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [107/345] Replayed Core_reduction
+warning: generated/Core_reduction.lean:152:57: Variable name `x21` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:152:77: Variable name `x22` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:154:74: Variable name `x23` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:154:94: Variable name `x24` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:156:73: Variable name `x25` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:156:93: Variable name `x26` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:158:56: Variable name `x27` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:158:76: Variable name `x28` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:158:111: Variable name `x29` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:160:50: Variable name `x30` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:160:92: Variable name `x31` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:160:112: Variable name `x32` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:160:147: Variable name `x33` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:160:181: Variable name `x34` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:162:48: Variable name `x35` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:288:965: Variable name `kind1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:347:718: Variable name `fp` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:347:932: Variable name `fp` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:347:1182: Variable name `fp` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:347:1396: Variable name `fp` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:353:1812: Variable name `xs` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:353:4597: Variable name `pe1_annots` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:353:4984: Variable name `annots11` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:353:5014: Variable name `annots2` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:353:5448: Variable name `pe1_annots` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:353:5835: Variable name `annots11` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:353:5865: Variable name `annots2` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:364:289: Variable name `e2` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:364:359: Variable name `e2` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:375:1843: Variable name `e` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:424:951: Variable name `aid1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:424:2111: Variable name `aid1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:424:3305: Variable name `is_locking` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:424:3317: Variable name `pe1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:424:3322: Variable name `pe2` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:424:3358: Variable name `xs3` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:424:3365: Variable name `mo1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:424:4015: Variable name `aid1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:424:5769: Variable name `aid1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:424:7133: Variable name `aid1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:424:8017: Variable name `aid1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:428:1054: Variable name `annots1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:428:1063: Variable name `ctx'` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:469:514: Variable name `annots1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:484:9284: Variable name `aid1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:484:15657: Variable name `call_annots` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:484:17323: Variable name `addr` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Core_reduction.lean:484:19612: Variable name `run_annots` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [110/345] Replayed Core_linking
+warning: generated/Core_linking.lean:70:1180: Variable name `sym1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [111/345] Replayed Monadic_parsing
+warning: generated/Monadic_parsing.lean:41:27: Variable name `x13` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [112/345] Replayed Formatted
+warning: generated/Formatted.lean:373:28: Variable name `isSignedConversion1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Formatted.lean:373:57: Variable name `fs` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Formatted.lean:373:70: Variable name `fw_opt` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Formatted.lean:373:102: Variable name `str` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Formatted.lean:399:1045: Variable name `ity` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [113/345] Replayed Driver
+warning: generated/Driver.lean:265:2826: Variable name `err` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Driver.lean:265:3415: Variable name `err` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Driver.lean:265:4405: Variable name `err` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Driver.lean:273:1620: Variable name `mo1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Driver.lean:273:2365: Variable name `mo1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Driver.lean:289:6480: Variable name `ret_ty` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Driver.lean:336:841: Variable name `debug_str` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Driver.lean:336:3212: Variable name `cval` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Driver.lean:359:1465: Variable name `kind1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Driver.lean:359:5400: Variable name `kind1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Driver.lean:377:3603: Variable name `kind1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Driver.lean:384:2975: Variable name `kind1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Driver.lean:384:6082: Variable name `tid1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Driver.lean:384:7600: Variable name `kind1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Driver.lean:424:52: Variable name `tid1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Driver.lean:424:845: Variable name `xs` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: generated/Driver.lean:455:119: Variable name `file1` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [120/345] Replayed RelSem.Kit.Eval
+warning: RelSem/Kit/Eval.lean:79:32: This simp argument is unused:
+  eubind_defined hstep
+
+Hint: Omit it from the simp argument list.
+  simp only [hpull, hstep, hnv,
+  ̲  ̲ ̲ ̲eubind_defined
+  ̲  ̲ ̲ ̲ ̲ ̲ ̲ ̲h̵s̵t̵e̵p̵,̵
+  ̵ ̵ ̵ ̵ ̵e̵u̵b̵i̵n̵d̵_̵d̵e̵f̵i̵n̵e̵d̵ ̵(rfl :
+  ̲  ̲ ̲ ̲ ̲ ̲ ̲ ̲ ̲ ̲(Result (Defined pe') : exceptM (t0 (generic_pexpr Unit sym)) core_run_cause) =
+  ̲  ̲ ̲ ̲ ̲ ̲ ̲ ̲ ̲ ̲ ̲ ̲Result (Defined pe'))]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: RelSem/Kit/Eval.lean:99:31: This simp argument is unused:
+  eubind_defined hstep
+
+Hint: Omit it from the simp argument list.
+  simp only [hpull, hstep, hv,
+  ̲  ̲ ̲ ̲eubind_defined
+  ̲  ̲ ̲ ̲ ̲ ̲ ̲ ̲h̵s̵t̵e̵p̵,̵
+  ̵ ̵ ̵ ̵ ̵e̵u̵b̵i̵n̵d̵_̵d̵e̵f̵i̵n̵e̵d̵ ̵(rfl :
+  ̲  ̲ ̲ ̲ ̲ ̲ ̲ ̲ ̲ ̲(Result (Defined pe') : exceptM (t0 (generic_pexpr Unit sym)) core_run_cause) =
+  ̲  ̲ ̲ ̲ ̲ ̲ ̲ ̲ ̲ ̲ ̲ ̲Result (Defined pe'))]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: RelSem/Kit/Eval.lean:210:20: This simp argument is unused:
+  notConstrained
+
+Hint: Omit it from the simp argument list.
+  simp_all ̵[̵n̵o̵t̵C̵o̵n̵s̵t̵r̵a̵i̵n̵e̵d̵]̵
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+⚠ [121/345] Replayed RelSem.Kit.Mem
+warning: RelSem/Kit/Mem.lean:61:34: This simp argument is unused:
+  reduceIte
+
+Hint: Omit it from the simp argument list.
+  simp only [CerbMem.allocateObject, app, hsz, haddr, hnz,
+  ̵  ̵ ̵ ̵CerbMem.readonlyStatusForAlloc_none,
+      Bool.false_eq_true, if_false,̵ ̵r̵e̵d̵u̵c̵e̵I̵t̵e̵]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: RelSem/Kit/Mem.lean:86:57: This simp argument is unused:
+  if_true
+
+Hint: Omit it from the simp argument list.
+  simp only [CerbMem.storeM, app, hcompat, hget, hbounds, hro, hatomic,
+  ̵  ̵ ̵ ̵hbytes, Bool.not_true,
+  ̲  ̲ ̲ ̲Bool.false_eq_true, if_false, i̵f̵_̵t̵ru̵e,̵
+  ̵ ̵ ̵ ̵ ̵r̵e̵duceIte, Bool.not_false]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: RelSem/Kit/Mem.lean:87:4: This simp argument is unused:
+  reduceIte
+
+Hint: Omit it from the simp argument list.
+  simp only [CerbMem.storeM, app, hcompat, hget, hbounds, hro, hatomic,
+  ̵  ̵ ̵ ̵hbytes, Bool.not_true,
+  ̲  ̲ ̲ ̲Bool.false_eq_true, if_false, if_true,
+  ̵  ̵ ̵ ̵r̵e̵d̵u̵c̵e̵I̵t̵e̵,̵ ̵Bool.not_false]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: RelSem/Kit/Mem.lean:87:15: This simp argument is unused:
+  Bool.not_false
+
+Hint: Omit it from the simp argument list.
+  simp only [CerbMem.storeM, app, hcompat, hget, hbounds, hro, hatomic,
+  ̵  ̵ ̵ ̵hbytes, Bool.not_true,
+  ̲  ̲ ̲ ̲Bool.false_eq_true, if_false, if_true,
+  ̵  ̵ ̵ ̵reduceIte,̵ ̵B̵o̵o̵l̵.̵n̵o̵t̵_̵f̵a̵l̵s̵e̵]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: RelSem/Kit/Mem.lean:150:6: This simp argument is unused:
+  reduceIte
+
+Hint: Omit it from the simp argument list.
+  simp only [CerbMem.storeM, app, hcompat, hget, hbounds, hro, hatomic,
+  ̵  ̵ ̵ ̵ ̵ ̵hbytes, Bool.not_true,
+  ̲  ̲ ̲ ̲ ̲ ̲Bool.false_eq_true, if_false, if_true,
+  ̵  ̵ ̵ ̵ ̵ ̵r̵e̵d̵u̵c̵e̵I̵t̵e̵,̵ ̵Bool.not_false]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: RelSem/Kit/Mem.lean:150:17: This simp argument is unused:
+  Bool.not_false
+
+Hint: Omit it from the simp argument list.
+  simp only [CerbMem.storeM, app, hcompat, hget, hbounds, hro, hatomic, hbytes, Bool.not_true,
+  ̲  ̲ ̲ ̲ ̲ ̲Bool.false_eq_true, if_false, if_true, r̵e̵d̵u̵c̵e̵I̵t̵e̵,̵ ̵B̵o̵o̵l̵.̵n̵o̵t̵_̵f̵a̵l̵s̵e̵]̵r̲e̲d̲u̲c̲e̲I̲t̲e̲]̲
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: RelSem/Kit/Mem.lean:192:4: This simp argument is unused:
+  if_true
+
+Hint: Omit it from the simp argument list.
+  simp only [CerbMem.loadM, app, hdead, hget, hbounds, hatomic, hbytes,
+  ̵  ̵ ̵ ̵hrecon, Bool.not_true,
+  ̲  ̲ ̲ ̲Bool.false_eq_true, if_false,
+  ̵  ̵ ̵ ̵i̵f̵_̵t̵ru̵e,̵ ̵r̵e̵duceIte, Bool.not_false, Bool.false_and]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: RelSem/Kit/Mem.lean:192:13: This simp argument is unused:
+  reduceIte
+
+Hint: Omit it from the simp argument list.
+  simp only [CerbMem.loadM, app, hdead, hget, hbounds, hatomic, hbytes,
+  ̵  ̵ ̵ ̵hrecon, Bool.not_true,
+  ̲  ̲ ̲ ̲Bool.false_eq_true, if_false,
+  ̵  ̵ ̵ ̵if_true, r̵e̵d̵u̵c̵e̵I̵t̵e̵,̵ ̵Bool.not_false, Bool.false_and]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: RelSem/Kit/Mem.lean:192:24: This simp argument is unused:
+  Bool.not_false
+
+Hint: Omit it from the simp argument list.
+  simp only [CerbMem.loadM, app, hdead, hget, hbounds, hatomic, hbytes,
+  ̵  ̵ ̵ ̵hrecon, Bool.not_true,
+  ̲  ̲ ̲ ̲Bool.false_eq_true, if_false,
+  ̵  ̵ ̵ ̵if_true, reduceIte, Bool.n̵o̵t̵_̵false,̵ ̵B̵o̵o̵l̵.̵f̵a̵l̵s̵e̵_and]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: RelSem/Kit/Mem.lean:192:40: This simp argument is unused:
+  Bool.false_and
+
+Hint: Omit it from the simp argument list.
+  simp only [CerbMem.loadM, app, hdead, hget, hbounds, hatomic, hbytes,
+  ̵  ̵ ̵ ̵hrecon, Bool.not_true,
+  ̲  ̲ ̲ ̲Bool.false_eq_true, if_false,
+  ̵  ̵ ̵ ̵if_true, reduceIte, Bool.not_false,̵ ̵B̵o̵o̵l̵.̵f̵a̵l̵s̵e̵_̵a̵n̵d̵]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: RelSem/Kit/Mem.lean:215:34: This simp argument is unused:
+  reduceIte
+
+Hint: Omit it from the simp argument list.
+  simp only [CerbMem.validForDerefPtrval, app, hdead,
+  ̵  ̵ ̵ ̵Bool.false_eq_true, if_false, r̵e̵d̵u̵c̵e̵I̵t̵e̵,̵ ̵hwa,
+  ̲  ̲ ̲ ̲CerbMem.memReturn,
+  ̵  ̵ ̵ ̵nd_return]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: RelSem/Kit/Mem.lean:246:53: This simp argument is unused:
+  Bool.not_true
+
+Hint: Omit it from the simp argument list.
+  simp only [CerbMem.killM, app, hdead, hget, hbase, B̵o̵o̵l̵.̵n̵o̵t̵_̵t̵r̵u̵e̵,̵Bool.false_eq_true, if_false, if_true,
+  ̲  ̲ ̲ ̲reduceIte, Bool.not_false, Bool.false_and, Bool.and_false]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: RelSem/Kit/Mem.lean:247:34: This simp argument is unused:
+  if_true
+
+Hint: Omit it from the simp argument list.
+  simp only [CerbMem.killM, app, hdead, hget, hbase, Bool.not_true,
+  ̵  ̵ ̵ ̵Bool.false_eq_true, if_false,
+  ̲ i̵f̵_̵t̵r̵u̵e̵,̵  ̲ ̲reduceIte, Bool.not_false,
+  ̵  ̵ ̵ ̵Bool.false_and, Bool.and_false]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: RelSem/Kit/Mem.lean:247:43: This simp argument is unused:
+  reduceIte
+
+Hint: Omit it from the simp argument list.
+  simp only [CerbMem.killM, app, hdead, hget, hbase, Bool.not_true,
+  ̵  ̵ ̵ ̵Bool.false_eq_true, if_false,
+  ̲  ̲ ̲ ̲if_true, r̵e̵d̵u̵c̵e̵I̵t̵e̵,̵ ̵Bool.not_false,
+  ̵  ̵ ̵ ̵Bool.false_and, Bool.and_false]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: RelSem/Kit/Mem.lean:247:54: This simp argument is unused:
+  Bool.not_false
+
+Hint: Omit it from the simp argument list.
+  simp only [CerbMem.killM, app, hdead, hget, hbase, Bool.not_true,
+  ̵  ̵ ̵ ̵Bool.false_eq_true, if_false,
+  ̲  ̲ ̲ ̲if_true, reduceIte, Bool.n̵o̵t̵_̵false,̵
+  ̵ ̵ ̵ ̵ ̵B̵o̵o̵l̵.̵f̵a̵l̵s̵e̵_and, Bool.and_false]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: RelSem/Kit/Mem.lean:248:20: This simp argument is unused:
+  Bool.and_false
+
+Hint: Omit it from the simp argument list.
+  simp only [CerbMem.killM, app, hdead, hget, hbase, Bool.not_true, Bool.false_eq_true, if_false,
+  ̲  ̲ ̲ ̲if_true, reduceIte, Bool.not_false, B̵o̵o̵l̵.̵f̵a̵l̵s̵e̵_̵a̵n̵d̵,̵ ̵B̵o̵o̵l̵.̵a̵n̵d̵_̵f̵a̵l̵s̵e̵]̵B̲o̲o̲l̲.̲f̲a̲l̲s̲e̲_̲a̲n̲d̲]̲
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: RelSem/Kit/Mem.lean:318:14: This simp argument is unused:
+  Int.compare_eq_eq
+
+Hint: Omit it from the simp argument list.
+  simp ̵[̵I̵n̵t̵.̵c̵o̵m̵p̵a̵r̵e̵_̵e̵q̵_̵e̵q̵]̵
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: RelSem/Kit/Mem.lean:319:12: This simp argument is unused:
+  this
+
+Hint: Omit it from the simp argument list.
+  simp ̵[̵t̵h̵i̵s̵]̵
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: RelSem/Kit/Mem.lean:337:16: This simp argument is unused:
+  Int.compare_eq_eq
+
+Hint: Omit it from the simp argument list.
+  simp ̵[̵I̵n̵t̵.̵c̵o̵m̵p̵a̵r̵e̵_̵e̵q̵_̵e̵q̵]̵
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: RelSem/Kit/Mem.lean:454:10: This simp argument is unused:
+  Int.compare_eq_eq
+
+Hint: Omit it from the simp argument list.
+  simp ̵[̵I̵n̵t̵.̵c̵o̵m̵p̵a̵r̵e̵_̵e̵q̵_̵e̵q̵]̵
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: RelSem/Kit/Mem.lean:455:8: This simp argument is unused:
+  this
+
+Hint: Omit it from the simp argument list.
+  simp ̵[̵t̵h̵i̵s̵]̵
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+⚠ [342/345] Replayed RelSem.CerbHeapWalk
+warning: RelSem/CerbHeapWalk.lean:1103:44: This simp argument is unused:
+  Std.TreeMap.getElem?_insert
+
+Hint: Omit it from the simp argument list.
+  simp [Std.TreeMap.get?_eq_getElem?,̵ ̵S̵t̵d̵.̵T̵r̵e̵e̵M̵a̵p̵.̵g̵e̵t̵E̵l̵e̵m̵?̵_̵i̵n̵s̵e̵r̵t̵]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+info: RelSem/CerbHeapWalk.lean:2164:0: CerbHeapWalk registry-backing check:     15 macro-backing laws registered
+⚠ [344/345] Replayed RelSem.Kit.Map
+warning: RelSem/Kit/Map.lean:258:0: Definition `RelSem.Kit.envBeq` of class type must be marked with `@[reducible]` or `@[implicit_reducible]`
