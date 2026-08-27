@@ -601,7 +601,11 @@ def stmtAllowed : List Name :=
    -- arc-18 R4: the T5 input-family flagship's statement vocabulary
    -- (guarded ∀-seed ∀-n house shape; all first-order executable).
    `RelSem.Slate.t5File, `RelSem.T5.t5Fs, `RelSem.T5.t5Spec,
-   `RelSem.T5.T5EnvHypThr, `RelSem.T5.T5SeedApart, `RelSem.T5.t5Range]
+   `RelSem.T5.T5EnvHypThr, `RelSem.T5.T5SeedApart, `RelSem.T5.t5Range,
+   -- arc-18 R5: the T4 guarded face's apartness bound (the pinned
+   -- minimum static symbol number — a Nat literal def, first-order
+   -- executable; T4SeedApart's body reads it).
+   `RelSem.T4.t4MinStaticSym]
 
 open Lean in
 /-- Syntactic "ends in Prop" (Prop-family def: `Prop` or a pi chain
@@ -670,9 +674,7 @@ open Lean in
      `RelSem.T3.T3Outcomes,
      `RelSem.T4.T4, `RelSem.T4.T4_direct, `RelSem.T4.T4_ubFree,
      `RelSem.T4.T4Outcomes,
-     -- arc-16 S4: the threaded (∀-seed) family joins the gate
-     -- (T4Threaded absent by design: parked at the collision
-     -- diagnosis — see the S4 pin block note).
+     -- arc-16 S4: the threaded (∀-seed) family joins the gate.
      `RelSem.T1.T1Threaded, `RelSem.T1.T1Threaded_ubFree,
      `RelSem.T1.T1ThreadedOutcomes,
      `RelSem.T2.T2Threaded, `RelSem.T2.T2Threaded_ubFree,
@@ -688,7 +690,11 @@ open Lean in
      `RelSem.T7.T7Threaded, `RelSem.T7.T7Threaded_ubFree,
      -- arc-18 R4: THE T5 INPUT-FAMILY LOOP FLAGSHIP (guarded ∀-seed
      -- ∀-n; through the segment layer at the symbolic trip count).
-     `RelSem.T5.T5Threaded, `RelSem.T5.T5Threaded_ubFree]
+     `RelSem.T5.T5Threaded, `RelSem.T5.T5Threaded_ubFree,
+     -- arc-18 R5: T4-APARTNESS — the guarded ∀-seed struct-member
+     -- theorem PROVED through the segment layer (the arc-16 S4 park
+     -- closed; the collision falsifier excluded by T4SeedApart).
+     `RelSem.T4.T4Threaded, `RelSem.T4.T4Threaded_ubFree]
   for n in slate do
     match stmtViolations env n with
     | .error e => throwError "{e}"
@@ -1006,7 +1012,16 @@ open Lean in
 -- k-stage open equations + driver atoms + canon representatives +
 -- address facts join the registry [segEq 27 → 54, segFact 18 → 26,
 -- segCanon 3 → 6] — per-fixture supply entries by design).
-/-- info: step_law census: 168 laws [advance 5, construct 9, envAlg 3, envMap 4, evalArith 2, evalPull 2, heapWP 4, heapWalk 10, loop 5, memBlock 6, memRW 20, perform 6, roundGlue 3, segCanon 6, segEq 54, segFact 26, segPost 1, wpSeq 2] -/
+-- 168 → 191 (arc-18 R5, T4-apartness through the layer: heapWalk
+-- 10 → 11 [wpk_seq_scratch1p — the one-scratch multi-layer atom at
+-- the scratch2 pointwise interface, once-proved, fixture-free];
+-- the t4 fixture's registered equation supply — segEq 54 → 63
+-- [the t4File k-stage open equations + the scratch1p driver atom],
+-- segFact 26 → 37 [address arithmetic, the t4Fin pointwise
+-- final-state facts, the ρ' scalar pins, geometry], segCanon 6 → 7,
+-- segPost 1 → 2 [the readout] — per-fixture supply entries by
+-- design, visible per kind).
+/-- info: step_law census: 191 laws [advance 5, construct 9, envAlg 3, envMap 4, evalArith 2, evalPull 2, heapWP 4, heapWalk 11, loop 5, memBlock 6, memRW 20, perform 6, roundGlue 3, segCanon 7, segEq 63, segFact 37, segPost 2, wpSeq 2] -/
 #guard_msgs in #step_law_census
 /-- info: 'RelSem.T1.round6' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.round6
@@ -1094,6 +1109,23 @@ open Lean in
 #guard_msgs in #print axioms RelSem.T5.t5_run_seg
 /-- info: 'RelSem.T5.driver2_o' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T5.driver2_o
+
+-- arc-18 R5: T4-APARTNESS THROUGH THE LAYER — the guarded ∀-seed
+-- struct-member theorem (the arc-16 S4 park's priced fix, landed:
+-- `verify_fn membSpec; seg_auto` over the two-walk equation supply
+-- (wa 44 + wb 12 rounds at OPEN maps and OPEN seed under the
+-- apartness bound) + the once-proved one-scratch pointwise atom rule
+-- `wpk_seq_scratch1p`). Cones exactly the classical trio.
+/-- info: 'RelSem.T4.T4Threaded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T4.T4Threaded
+/-- info: 'RelSem.T4.T4Threaded_ubFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T4.T4Threaded_ubFree
+/-- info: 'RelSem.T4W.t4_run_seg' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T4W.t4_run_seg
+/-- info: 'RelSem.T4.driver2_o' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T4.driver2_o
+/-- info: 'RelSem.Cerb.wpk_seq_scratch1p' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.Cerb.wpk_seq_scratch1p
 -- (arc-18 R2: the hand walk `t6_wpK_thr` is SUBSUMED by the segment
 -- route — T6Threaded's pin above covers the whole discharge; the
 -- walk lemma is deleted with its plumbing.)
@@ -1502,12 +1534,15 @@ open Lean in
 -- representatives + FnSpecs in, the three hand wpK walks + inline
 -- readouts DELETED, the shape-indexed verify_fn + keyed matchSegEq
 -- in SegmentFaces; ALL boundary-clean).
+-- 8469 → 8982 (arc-18 R5, T4-apartness through the layer: the
+-- T4Walks two-walk drive's minted rounds/facts + the T4W spine +
+-- the scratch1p rule + the re-housed T4Threaded route).
 -- 8798 → 8469 (arc-18 R4 slice 5, THE RETIREMENT: the ambient-era
 -- T5 chain — T5Fixture/T5Prefix/T5Iter, the arc-9→15 climb's parked
 -- capability — DELETED; T5-the-theorem stands proved through the
 -- layer at the trio. Carrier set 112 → 104 in the same commit.)
 /--
-info: RelSem audit sweep: 8469 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 8982 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do

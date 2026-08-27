@@ -205,12 +205,43 @@ def groundNorm (what : String) (e : Expr) : MetaM Expr := do
                 unless ← (builderMode.get : BaseIO _) do return none
                 if e'.hasFVar || e'.hasExprMVar then return none
                 let .const c _ := f | return none
-                unless (← (baseFenceHeads.get : BaseIO _)).contains c do
+                let fh ← (baseFenceHeads.get : BaseIO _)
+                unless fh.contains c do
                   return none
                 let r ← (try
                     withCurrHeartbeats (withTransparency .all (whnf e'))
                   catch _ => pure e')
-                return if r == e' then none else some r)
+                if r == e' then return none
+                -- PARTIAL-REDUCTION REJECTION (arc-18 R5, measured at
+                -- the T4 struct rounds): a fenced head whose body
+                -- reads a kernel-stuck extern (sizeofCtype/alignofIval
+                -- on a struct type → `CerbTags.tagDefs ()` →
+                -- `with_tagDefs …`) is CLOSED but not
+                -- ground-computable — whnf makes PROGRESS into an
+                -- opaque-stuck Decidable tower, and accepting it
+                -- destroys the tidy curated spelling the hypothesis
+                -- pack's rewrites key on (round-1 payload measured
+                -- 801 → 1622 objs; the round-5 successor then failed
+                -- kernel addDecl with mixed-spelling towers). The
+                -- escape exists for calls that COMPUTE, so a result
+                -- carrying a kernel-stuck constant (opaque/axiom — no
+                -- unfoldable value) is a half-reduction — reject it
+                -- and keep the spelling for the substitution pass.
+                -- (A result carrying merely FENCED heads is fine —
+                -- e.g. a label-table lookup legitimately returns a
+                -- map payload spelled with `fmapAddBy`. The check is
+                -- OPAQUES only: classical-trio axioms can occur inside
+                -- carried proof terms of legitimate data.)
+                let env ← getEnv
+                if (r.find? (fun sub =>
+                    match sub with
+                    | .const c' _ =>
+                      match env.find? c' with
+                      | some (.opaqueInfo _) => true
+                      | _ => false
+                    | _ => false)).isSome then
+                  return none
+                return some r)
               match escaped? with
               | some r => norm fuel r
               | none =>

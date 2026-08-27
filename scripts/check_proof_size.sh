@@ -53,6 +53,10 @@ MAX_STEPS=40
 SLATE_FILES=(
     "T5.lean"
     "T7.lean"
+    # arc-18 R5: the T4 statement file (statement + spec + atom
+    # registration + theorems; the equation supply lives in
+    # T4Walks.lean — engine room, not counted).
+    "T4Threaded.lean"
 )
 
 fail=0

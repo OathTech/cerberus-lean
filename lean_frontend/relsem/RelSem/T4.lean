@@ -51,6 +51,11 @@
 import RelSem.SlateWP
 import RelSem.T4AppEq
 import RelSem.T1
+-- arc-18 R5: `t4Fs`/`t4Spec` are RE-HOMED to the live route
+-- (T4Walks/T4Threaded) — this ambient file consumes them from there,
+-- so the R7 ambient retirement can delete this file without touching
+-- the live statements.
+import RelSem.T4Threaded
 
 set_option autoImplicit false
 
@@ -59,8 +64,7 @@ namespace RelSem.T4
 open RelSem RelSem.Cerb RelSem.Slate
 open RelSem.T1 (intRange)
 
-/-- The harness filesystem state (the driver default). -/
-def t4Fs : CerbFS.FsState := CerbFS.fs_initial_state
+-- (`t4Fs` re-homed to RelSem/T4Walks.lean at arc-18 R5.)
 
 /-- THE HARNESS-ENVIRONMENT HYPOTHESIS (header note): the three
     process-global externs at the state the harness establishes. The
@@ -72,10 +76,7 @@ def T4EnvHyp : Prop :=
   CerberusFresh.digest () = "" ∧
   runEffectful (fun () => CerberusFresh.freshIntIO ()) = 1048577
 
-/-- T4's pure spec: the result value is the injected integer,
-    Specified (read back through the struct member). -/
-def t4Spec (x : Int) (r : driver_result) : Prop :=
-  r.dres_core_value = intValue x
+-- (`t4Spec` re-homed to RelSem/T4Threaded.lean at arc-18 R5.)
 
 /-- THE T4 HEADLINE STATEMENT (fuel opsem only, under the
     harness-environment hypotheses). -/

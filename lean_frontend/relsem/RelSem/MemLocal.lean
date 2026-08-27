@@ -480,6 +480,80 @@ theorem MemInv.scratch2_pointwise {msOld msNew : MemState}
       hinv.bytes_above a b hget
     omega
 
+/-! ## The one-scratch allocation chain (arc-18 R5, the scratch1p
+    walk rule's physical layer — T4's struct-member fixture: ONE
+    scratch object created, written through member offsets in SEVERAL
+    interleaved layers, and killed inside the driver atom. The
+    syntactic `allocStoreBytes` interface of `wpk_seq_scratch1`
+    states exactly two write layers, which a multi-layer member-store
+    interleaving cannot meet as a term-shape equality over a symbolic
+    byte map — so this is the scratch2 pointwise design at ONE
+    range. -/
+
+theorem tm_get?_ie_ne {am : Std.TreeMap Int Allocation}
+    {nid aid : Int} {al : Allocation} (h1 : aid ≠ nid) :
+    ((am.insert nid al).erase nid).get? aid = am.get? aid := by
+  simp only [Std.TreeMap.get?_eq_getElem?, Std.TreeMap.getElem?_erase,
+    Std.TreeMap.getElem?_insert]
+  rw [if_neg (fun hc => h1 (Std.LawfulEqCmp.eq_of_compare hc).symm),
+    if_neg (fun hc => h1 (Std.LawfulEqCmp.eq_of_compare hc).symm)]
+
+theorem tm_get?_ie_self {am : Std.TreeMap Int Allocation}
+    {nid : Int} {al : Allocation} :
+    ((am.insert nid al).erase nid).get? nid = none := by
+  simp only [Std.TreeMap.get?_eq_getElem?, Std.TreeMap.getElem?_erase]
+  rw [if_pos Std.ReflCmp.compare_self]
+
+/-- MemInv for a ONE-SCRATCH post-state characterized pointwise
+    (`scratch2_pointwise` at one range; order-independent in the
+    interleaving of the atom's internal writes). -/
+theorem MemInv.scratch1_pointwise {msOld msNew : MemState}
+    (hinv : MemInv msOld)
+    {nid aS : Int} {szS : Nat} {alS : Allocation}
+    (_hszS1 : 1 ≤ szS)
+    (hrangeS : aS + szS ≤ (msOld.lastAddress : Int))
+    (hnid : nid = (msOld.nextAllocId : Int))
+    (halloc : msNew.allocations
+      = (msOld.allocations.insert nid alS).erase nid)
+    (hdead : msNew.deadAllocations = nid :: msOld.deadAllocations)
+    (hnext : (msNew.nextAllocId : Int) = (msOld.nextAllocId : Int) + 1)
+    (hlast : (msNew.lastAddress : Int) = aS)
+    (hbout : ∀ a : Int, ¬(aS ≤ a ∧ a < aS + szS) →
+      msNew.bytemap.get? a = msOld.bytemap.get? a) :
+    MemInv msNew := by
+  constructor
+  · intro aid al hget
+    rw [halloc] at hget
+    by_cases hA : aid = nid
+    · rw [hA, tm_get?_ie_self] at hget; cases hget
+    rw [tm_get?_ie_ne hA] at hget
+    have h9 := hinv.alloc_lt aid al hget
+    rw [hnext]; omega
+  · intro aid hmem
+    rw [hdead] at hmem
+    rw [halloc]
+    rcases List.mem_cons.mp hmem with rfl | hmem'
+    · exact tm_get?_ie_self
+    rw [tm_get?_ie_ne (by
+      have := hinv.dead_lt aid hmem'; omega)]
+    exact hinv.dead_not_alloc aid hmem'
+  · intro aid hmem
+    rw [hdead] at hmem
+    rw [hnext]
+    rcases List.mem_cons.mp hmem with rfl | hmem'
+    · omega
+    have := hinv.dead_lt aid hmem'
+    omega
+  · intro a b hget
+    show @LE.le Int Int.instLEInt msNew.lastAddress a
+    rw [show ((msNew.lastAddress : Int)) = aS from hlast]
+    by_cases hA : aS ≤ a ∧ a < aS + szS
+    · omega
+    rw [hbout a hA] at hget
+    have h2 : @LE.le Int Int.instLEInt msOld.lastAddress a :=
+      hinv.bytes_above a b hget
+    omega
+
 /-- SEQUENTIAL RANGE OVERWRITES (arc-18 R2, the write1 walk rule's
     physical shape): a loop's driver atom re-writes the SAME byte
     range once per iteration — the final bytemap is a `writeList`

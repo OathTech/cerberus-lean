@@ -37,6 +37,13 @@ set_option autoImplicit false
 
 namespace RelSem.T1
 
+/-- The C `int` value range (statement vocabulary; RE-HOMED from the
+    ambient statement file RelSem/T1.lean at arc-18 R5 — the LIVE
+    threaded statements consume it, and the T4 live route must not
+    ride the ambient chain. Text unchanged; every consumer resolves
+    the same `RelSem.T1.intRange`. -/
+def intRange (x : Int) : Prop := -2147483648 ≤ x ∧ x ≤ 2147483647
+
 /-- The stdlib fragment `id`'s evaluation can reach. -/
 def t1Stdlib : Fmap sym (generic_fun_map_decl Unit Unit) :=
   Lem_Map.fromList

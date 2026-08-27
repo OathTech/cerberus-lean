@@ -64,7 +64,7 @@ private def registerSegEntry (declName : Name) (kind : Name)
 /-- `@[seg_eq <variant>]`: register a fixture OPEN-MEMORY stage/atom
     equation (`∀ bm am, app m (setMaps ρ bm am) = …`) as segment
     equation supply. `<variant>` names the walk-rule class the
-    equation feeds: `rest | read1 | argobj | scratch1 | write1`. -/
+    equation feeds: `rest | read1 | read2 | argobj | argobj2 | scratch1 | scratch1p | scratch2 | write1`. -/
 syntax (name := seg_eq) "seg_eq" ident : attr
 
 initialize registerBuiltinAttribute {
@@ -349,6 +349,20 @@ private partial def mkBuiltProof (c : Expr) (mTerm : Expr) :
     MetaM (Option Expr) := do
   let mTerm ← instantiateMVars mTerm
   let mExp ← exposeMap mTerm
+  -- CLOSED-chain materialized refl FIRST (arc-18 R5): a concrete
+  -- chain over the empty map — T4's harness env at the composition
+  -- site — whnfs to `Fmap.mk` and closes by the captured-comparator
+  -- refl in one step; the layer descent would otherwise bottom out
+  -- at `FmapBuilt c fmapEmpty = False` (built-ness starts at the
+  -- FIRST insert, which the descent has no base case for). The fvar
+  -- guard keeps symbolic-key chains off the whnf (the S3
+  -- materialization wall).
+  if !mExp.hasFVar && !mExp.hasExprMVar then
+    let ty ← mkAppM ``RelSem.Kit.FmapBuilt #[c, mExp]
+    let tyW ← whnf ty
+    if let some (_, l, r) := tyW.eq? then
+      if (← isDefEq l r) then
+        return some (← mkExpectedTypeHint (← mkEqRefl r) ty)
   if mExp.isAppOf ``fmapAddBy && mExp.getAppNumArgs == 7 then
     let args := mExp.getAppArgs
     let some inner ← mkBuiltProof c args[6]! | return none
@@ -662,6 +676,32 @@ macro "seg_scratch2" e:term:max hr:ident haV:ident hpV:ident
              case wplast => seg_side
              case wpdead => seg_side
              iintro ⟨$hr:ident, $haV:ident, $hpV:ident, $hptA:ident, $hptB:ident⟩))
+
+/-- One-scratch multi-layer atom, auto side facts (arc-18 R5; the
+    scratch2 pointwise interface at one range — the final-state
+    characterization facts and the ρ' scalar pins arrive from the
+    registered `segFact` supply; the pointwise-image case runs FIRST
+    so it pins the geometry the later ground cases compute over). -/
+macro "seg_scratch1p" e:term:max hr:ident haV:ident hpV:ident
+    hptS:ident : tactic =>
+  `(tactic| (wp_expose
+             iapply RelSem.Cerb.wpk_seq_scratch1p_ecast $e ?wpe ?wpfinS ?wpfrest ?wpfalloc ?wpfout ?wpnidS ?wpszS1 ?wprangeS ?wpnext ?wplast ?wpdead
+             rotate_left; rotate_left; rotate_left; rotate_left
+             rotate_left; rotate_left; rotate_left; rotate_left
+             rotate_left; rotate_left; rotate_left
+             iframe $hr:ident $haV:ident $hpV:ident
+             case wpe => rfl
+             case wpfinS => seg_side
+             case wpfrest => seg_side
+             case wpfalloc => seg_side
+             case wpfout => seg_side
+             case wpnidS => rfl
+             case wpszS1 => seg_side
+             case wprangeS => seg_side
+             case wpnext => seg_side
+             case wplast => seg_side
+             case wpdead => seg_side
+             iintro ⟨$hr:ident, $haV:ident, $hpV:ident, $hptS:ident⟩))
 
 /-- The harness terminal, auto readout (mirror of `wp_fin`). -/
 macro "seg_fin" h:ident : tactic =>
@@ -1081,6 +1121,22 @@ private def segStep : TacticM Bool := do
           {indentExpr addr2}"
     evalTactic (← `(tactic| wp_read2 $hStx $hstId $(mkIdent ha1)
       $(mkIdent hp1) $(mkIdent ha2) $(mkIdent hp2)))
+    return true
+  | `scratch1p =>
+    let fp ← eqFootprint hit.hTy
+    let some aid := fp.aids[0]? | throwError "seg_auto: scratch1p \
+      entry {hit.law.name} carries no allocation-lookup hypothesis"
+    let some addr := fp.addrs[0]? | throwError "seg_auto: scratch1p \
+      entry {hit.law.name} carries no byte-range hypothesis"
+    let some haV ← findResHyp hyps ``RelSem.Cerb.allocIs 2 aid
+      | throwError "seg_auto: no allocIs hypothesis for aid\
+          {indentExpr aid}"
+    let some hpV ← findResHyp hyps ``RelSem.Cerb.pointsToBytes 2 addr
+      | throwError "seg_auto: no pointsToBytes hypothesis at\
+          {indentExpr addr}"
+    let hptS := mkIdent (freshHypName hyps "HptDead")
+    evalTactic (← `(tactic| seg_scratch1p $hStx $hstId
+      $(mkIdent haV) $(mkIdent hpV) $hptS))
     return true
   | `scratch2 =>
     let fp ← eqFootprint hit.hTy

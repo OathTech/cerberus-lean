@@ -143,9 +143,29 @@
 #       postponed elaboration (a wrong alternative can no longer
 #       "succeed" with deferred errors). TOTAL 6860 -> 6860.
 #       Direction remains DOWN; all three are dispatch plumbing.
+# R5 re-baseline (arc-18 R5, the T4-apartness engine legs): Core
+#       346 -> 377 (the fenced-head ground escape's PARTIAL-REDUCTION
+#       REJECTION — an extern-reading fenced head (sizeofCtype on a
+#       struct type) is closed but not ground-computable; whnf
+#       half-unfolds it into an opaque-stuck Decidable tower that
+#       destroyed the pack's tidy spellings [measured: round-1
+#       payload 801 -> 1622 objs, round-5 kernel addDecl rejection];
+#       the escape now rejects results carrying opaque constants);
+#       Hyp 1033 -> 1041 (per-SIDE budget scope in hyp_norm_side at
+#       the default value — one law application carries up to 7 side
+#       conditions sharing one budget; T4's round-49 4-layer read-back
+#       starved the reconstruct side into the 200k wall; scoping,
+#       never a raise); SegmentFaces 1120 -> 1176 (mkBuiltProof's
+#       CLOSED-CHAIN materialized refl — a concrete env chain over
+#       the empty map, T4's harness env at the composition site, has
+#       no descent base case [FmapBuilt fmapEmpty = False by design];
+#       + the seg_scratch1p macro + dispatch arm — thin appliers of
+#       the registered wpk_seq_scratch1p rule). TOTAL 6860 -> 6955.
+#       Direction remains DOWN; every leg is dispatch plumbing/budget
+#       scoping over registered laws.
 RoundEval.lean 87
-RoundEval/Core.lean 346
-RoundEval/Hyp.lean 1033
+RoundEval/Core.lean 377
+RoundEval/Hyp.lean 1041
 RoundEval/Mint.lean 262
 RoundEval/Classify.lean 213
 RoundEval/Arith.lean 722
@@ -155,5 +175,5 @@ RoundEval/Assembly.lean 647
 DeriveState.lean 260
 WpGround.lean 121
 LawRegistry.lean 342
-SegmentFaces.lean 1120
-TOTAL 6860
+SegmentFaces.lean 1176
+TOTAL 6955

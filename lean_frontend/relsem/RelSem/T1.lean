@@ -39,10 +39,9 @@ namespace RelSem.T1
 open RelSem.Cerb
 open Iris Iris.ProgramLogic Iris.BI
 
-/-- The C `int` range (LP64 signed int): the slate's T1 precondition
-    `P args` — an injected integer must fit the parameter type
-    (RelSem/Call.lean fidelity note). -/
-def intRange (x : Int) : Prop := -2147483648 ≤ x ∧ x ≤ 2147483647
+-- The C `int` range (LP64 signed int): the slate's T1 precondition —
+-- (`intRange` RE-HOMED to RelSem/T1File.lean at arc-18 R5 — the live
+-- threaded route consumes it without this file; resolution unchanged.)
 
 /-- The harness filesystem state (the driver default, as Main.lean). -/
 def t1Fs : CerbFS.FsState := CerbFS.fs_initial_state

@@ -946,7 +946,15 @@ elab "hyp_norm_side" : tactic => do
     throwError "hyp_norm_side: whole-state app goal (rfl's territory)"
   trace[RelSem.roundEval] "hyp_norm_side ENTER: lhs head {l.getAppFn}, rhs head {r.getAppFn}"
   let t0 ← IO.monoMsNow
-  let pf ← proveHypEq hp l r
+  -- per-side budget SCOPE at the default value (arc-18 R5, the S2 §4
+  -- pattern — scoping, never a raise): one law application carries
+  -- up to 7 side conditions sharing the enclosing elaboration's
+  -- budget; at a deep-ladder memory (T4's round-49 s.a read-back
+  -- over 4 write layers, 580-obj spelling) the earlier sides'
+  -- normalization grind starved the reconstruct side into the 200k
+  -- wall. Each side condition is its own unit; a single side
+  -- exceeding the default still fails loudly.
+  let pf ← Lean.Core.withCurrHeartbeats (proveHypEq hp l r)
   trace[RelSem.roundEval] "hyp_norm_side: {(← IO.monoMsNow) - t0} ms"
   g.assign pf
   Lean.Elab.Tactic.replaceMainGoal []
