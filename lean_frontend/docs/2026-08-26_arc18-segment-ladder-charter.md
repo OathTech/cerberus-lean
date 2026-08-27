@@ -1,8 +1,8 @@
 # Arc-18 amended charter — the segment ladder (long-cycle)
 
-STATUS: codifies the RATIFIED decision slate ([USER 2026-08-26]);
-charter TEXT awaits operator bless (amended post-audit; PENDING-[USER]
-items marked inline). Supersedes the arc-18 remainder (C3c–C6) with a
+STATUS: BLESSED [USER 2026-08-26] (decision slate ratified in
+conversation; charter text blessed; the formerly-PENDING items all
+ratified same day — tags updated in place at the R2 boundary). Supersedes the arc-18 remainder (C3c–C6) with a
 single long-cycle ladder run to completion, on branch
 `arc/segment-ladder` from the R0 merge point. Inputs: the
 reasoning-layer design pass (container
@@ -68,11 +68,11 @@ ff-merged to `mdd/cerberus-lean` @ cfeb7af5e on [USER] sign-off
   (RefinedC fn_spec / BRiCk wp_call mirror; SAW overrides cited as
   the lineage that dissolves into this, kernel-checked). [F9] FnSpec
   is GREENFIELD (zero occurrences in the tree today) — an explicit
-  R2 build item, not an existing form. PENDING-[USER] forward-design
-  constraint (proposed, awaiting nod): FnSpec designed
-  PROMOTION-READY — nothing in its form may assume it stays
-  proof-layer-only, so a later operator decision to admit API
-  contracts at statement level is a promotion, not a rework.
+  R2 build item, not an existing form. RATIFIED [USER 2026-08-26]
+  forward-design constraint: FnSpec designed PROMOTION-READY —
+  nothing in its form may assume it stays proof-layer-only, so a
+  later operator decision to admit API contracts at statement level
+  is a promotion, not a rework.
 - **Assertions**: existing CerbMemInterp footprint vocabulary; no new
   assertion DSL. Loop invariants in footprint form are ORDINARY
   proof-layer content (no per-instance gate; the SL escape hatch
@@ -161,12 +161,23 @@ ff-merged to `mdd/cerberus-lean` @ cfeb7af5e on [USER] sign-off
     campaign for a layer-gap investigation (proof-grind species 3
     is the failure mode this guards — 30 workaround-proofs around a
     layer gap before the professor sample is ever drawn).
-  - PENDING-[USER] hooks (proposed 2026-08-26, awaiting nod):
-    SAFETY-ONLY LANE (same programs, trivial postcondition —
-    UB-freedom cost measured for free; the containment product
-    tier) and SIZE LADDER (a few deliberately oversized straight-
-    line/wide-context programs whose only purpose is to measure
-    where the iris-lean substrate bends, before the capstone).
+  - RATIFIED [USER 2026-08-26] lanes: SAFETY-ONLY LANE (same
+    programs, trivial postcondition — UB-freedom cost measured for
+    free; the containment product tier) and SIZE LADDER (a few
+    deliberately oversized straight-line/wide-context programs
+    whose only purpose is to measure where the iris-lean substrate
+    bends, before the capstone) — with the ruling: a found
+    substrate cliff is answered by BETTER ABSTRACTIONS, NOT GRIND
+    (representation/abstraction work items, never budget bumps or
+    wait-it-out).
+  - RATIFIED [USER 2026-08-26, from the cmm/pKVM spike]: a
+    LOCK-SHAPED OWNERSHIP-TRANSFER worked example joins the edge
+    tier (lock acquire/release = footprint + invariant transfer,
+    CSL lineage) — rehearses the pKVM buddy target's key idiom;
+    spike: notes/2026-08-26_cmm-pkvm-scoping-spike.md (pKVM EL2 is
+    lock-disciplined sequential C; buddy needs NO cmm arc; cmm arc
+    rescoped, weak-memory logic deferred as its own future
+    program).
   - Mixed sources: majority fresh minimal C; minority clean-room from
     deps/cn/tests/cn shapes (Yolo rule respected).
   - Call-rule worked examples land here (two-function programs,
