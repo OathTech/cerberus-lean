@@ -168,3 +168,13 @@ if (( fail )); then
     exit 1
 fi
 echo "check_proof_size: OK"
+
+# --- TARGET CORPUS FREEZE (operator-ratified 2026-08-27; anti-gate-grind: one
+# hash check riding this existing gate, not a new gate). Changes to the corpus
+# or manifest require USER-level sign-off (corpus/README.md).
+CORPUS_DIR="$SCRIPT_DIR/../lean_frontend/corpus"
+if ! (cd "$CORPUS_DIR" 2>/dev/null && sha256sum -c "$SCRIPT_DIR/target_corpus.sha256" --quiet 2>/dev/null); then
+  echo "check_proof_size: FAIL — TARGET CORPUS FROZEN: hash mismatch vs scripts/target_corpus.sha256 (corpus changes require operator sign-off; see lean_frontend/corpus/README.md)"
+  exit 1
+fi
+echo "check_proof_size: target-corpus freeze OK (16 files match the pinned manifest)"
