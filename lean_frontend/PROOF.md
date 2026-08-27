@@ -169,6 +169,24 @@ the segment layer. The ambient T1–T4 theorems stand until the purge
 (the ambient-era T5 prefix chain retired at R4 — subsumed by the
 proved theorem).
 
+**The breadth-campaign corpus (arc-18 R6):** eleven further C
+programs proved through the segment layer at 2 manual steps per
+theorem, each with a UB-freedom safety twin, cones exactly the
+classical trio — five EASY-tier (branch floor, two-arm branch,
+straight-line local, and the uri.c `ISA_DIGIT`/`IS_MARK` char-class
+shapes), four CENSUS-tier (the hex-value range ladder, percent-encode
+nibble arithmetic, the two-argument overflow-guard function, and a
+scalar reduce **loop** through the declared-invariant route), and two
+EDGE-tier multi-exit loops (**early-return-inside-the-loop** and
+**break**, both composed with zero interior iterations through
+`InvMap.while_inv`). Statements are ∀-seed (guarded where the run
+draws fresh symbols). Four corpus lanes are PARKED at measured,
+priced frontiers — the array vocabulary, the internal-call protocol
+(root cause: a generated `partial def` in the compatibility check),
+and the two size-ladder cliffs — with committed reproducers; the
+campaign record (`docs/2026-08-27_arc18-r6-breadth-campaign.md`) has
+the tables.
+
 **Kernel-checked statement layers for real C functions** (the spec
 lab: division/modulo, `memcpy`, array access, linked-list append,
 tree rotation, and two CN-suite functions): the pure models and their
