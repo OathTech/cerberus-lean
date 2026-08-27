@@ -171,7 +171,129 @@ if [[ $row_count -eq 0 ]]; then
     exit 1
 fi
 
+# ---------------------------------------------------------------------------
+# THE CORPUS SAMPLE LANE (V0, 2026-08-27 — the frozen target corpus's
+# family→sample rows; record docs/2026-08-27_v0-statements-and-ban.md).
+# The corpus .c sources are FROZEN (lean_frontend/corpus, hash-gated by
+# check_proof_size.sh); dumps pinned under tests/corpus:
+#   * batch A + p14: in-tree pins, byte-identical re-derivation;
+#   * the arena programs (p04/p05/p06/p07/p08/p15 — 16–94 MB dumps):
+#     CONTENT-HASH pins (the libc.core B-F5 pattern), re-derived and
+#     sha256-compared here;
+#   * batch A: main-mode differential + call-harness rows
+#     (tests/corpus/expectations.txt);
+#   * the arena programs' main-mode Lean-exec rows arrive with the
+#     batch-B statement slice (the 4 MB-arena exec cost is priced in
+#     the V0 record; the oracle sample validation is the corpus
+#     freeze's 15/15 record).
+# ---------------------------------------------------------------------------
+CORPUS_SRC_DIR="$PROJECT_ROOT/lean_frontend/corpus"
+CORPUS_PIN_DIR="$PROJECT_ROOT/tests/corpus"
+CORPUS_EXPECT="$CORPUS_PIN_DIR/expectations.txt"
+CORPUS_SMALL="p01_clamp p02_sat_add p03_swap_mayalias p09_call_contract p10_gcd_rec p11_gcd_iter p12_pt_midpoint p14_count_pairs"
+CORPUS_HASHED="p04_arr_sum p05_find_first p06_arr_reverse p07_list_sum p08_list_reverse p15_scan_classify"
+
+corpus_fixture_count=0
+for stem in $CORPUS_SMALL; do
+    cfile="$CORPUS_SRC_DIR/$stem.c"
+    pin="$CORPUS_PIN_DIR/$stem.core"
+    corpus_fixture_count=$((corpus_fixture_count + 1))
+    if [[ ! -f "$pin" ]]; then
+        fail "corpus/$stem: pinned Core dump missing ($pin)"
+        continue
+    fi
+    fresh="$WORK_DIR/$stem.fresh.core"
+    if ! run_cerberus --nolibc --pp=core "$cfile" > "$fresh" 2>"$WORK_DIR/$stem.pp.err"; then
+        fail "corpus/$stem: oracle --pp=core derivation failed"
+        continue
+    fi
+    if cmp -s "$fresh" "$pin"; then
+        pass "corpus/$stem: pin provenance (byte-identical)"
+    else
+        fail "corpus/$stem: pin provenance — tests/corpus/$stem.core differs from a fresh oracle derivation"
+    fi
+done
+for stem in $CORPUS_HASHED; do
+    cfile="$CORPUS_SRC_DIR/$stem.c"
+    pin="$CORPUS_PIN_DIR/$stem.core.sha256"
+    corpus_fixture_count=$((corpus_fixture_count + 1))
+    if [[ ! -f "$pin" ]]; then
+        fail "corpus/$stem: content-hash pin missing ($pin)"
+        continue
+    fi
+    fresh="$WORK_DIR/$stem.fresh.core"
+    if ! run_cerberus --nolibc --pp=core "$cfile" > "$fresh" 2>"$WORK_DIR/$stem.pp.err"; then
+        fail "corpus/$stem: oracle --pp=core derivation failed"
+        continue
+    fi
+    got=$(sha256sum "$fresh" | cut -d" " -f1)
+    want=$(cat "$pin")
+    rm -f "$fresh"
+    if [[ "$got" == "$want" ]]; then
+        pass "corpus/$stem: content-hash provenance (sha256 match)"
+    else
+        fail "corpus/$stem: content-hash provenance — fresh derivation sha256 $got != pinned $want"
+    fi
+done
+
+# batch-A main-mode differential + harness rows
+declare -A CORPUS_JSON_OF
+for stem in p01_clamp p02_sat_add p03_swap_mayalias p09_call_contract p10_gcd_rec p11_gcd_iter p12_pt_midpoint; do
+    cfile="$CORPUS_SRC_DIR/$stem.c"
+    json="$WORK_DIR/$stem.json"
+    if ! run_cerberus --cabs-json "$cfile" > "$json" 2>"$WORK_DIR/$stem.cabs.err"; then
+        fail "corpus/$stem: cabs-json generation failed"
+        continue
+    fi
+    CORPUS_JSON_OF[$stem]="$json"
+    oracle_out=$(timeout 30 bash -c "
+        source \"$SCRIPT_DIR/common.sh\"
+        run_cerberus --nolibc --exec --batch --mode=exhaustive \"$cfile\" 2>/dev/null" \
+        | grep -E "^(Defined|Undefined|Error|EXECUTION)" || true)
+    lean_out=$(timeout 30 env LEAN_ABORT_ON_PANIC=1 "$CERBERUS_LEAN_BIN" --batch "$json" 2>/dev/null \
+        | grep -E "^(Defined|Undefined|Error|EXECUTION)" || true)
+    if [[ -z "$oracle_out" ]]; then
+        fail "corpus/$stem: oracle produced no verdict"
+    elif [[ "$oracle_out" == "$lean_out" ]]; then
+        pass "corpus/$stem: main-mode differential ($oracle_out)"
+    else
+        fail "corpus/$stem: main-mode differential mismatch"
+        echo "    oracle: $oracle_out"
+        echo "    lean:   $lean_out"
+    fi
+done
+
+corpus_row_count=0
+if [[ -f "$CORPUS_EXPECT" ]]; then
+    while read -r stem fname argscsv expected; do
+        [[ -z "$stem" || "$stem" == \#* ]] && continue
+        corpus_row_count=$((corpus_row_count + 1))
+        json="${CORPUS_JSON_OF[$stem]:-}"
+        if [[ -z "$json" ]]; then
+            fail "corpus/$stem $fname($argscsv): no cabs-json"
+            continue
+        fi
+        out=$(timeout 30 env LEAN_ABORT_ON_PANIC=1 "$CERBERUS_LEAN_BIN" \
+            --batch --call "$fname" --call-args "$argscsv" "$json" 2>&1 | head -1)
+        got=""
+        case "$out" in
+            Defined*)   got=$(sed -n 's/^Defined {value: "\([^"]*\)".*/\1/p' <<<"$out") ;;
+            Undefined*) got=$(sed -n 's/^Undefined {ub: "\([^"]*\)".*/\1/p' <<<"$out") ;;
+            *)          got="<no verdict: $out>" ;;
+        esac
+        if [[ "$got" == "$expected" ]]; then
+            pass "corpus/$stem: $fname($argscsv) = $expected"
+        else
+            fail "corpus/$stem: $fname($argscsv) — expected $expected, got $got"
+        fi
+    done < "$CORPUS_EXPECT"
+fi
+if [[ $corpus_row_count -eq 0 ]]; then
+    echo "Error: no corpus expectation rows (vacuous pass is a failure)" >&2
+    exit 1
+fi
+
 echo ""
-echo "test_verify: $PASS passed, $FAIL failed ($fixture_count fixtures, $row_count harness points)"
+echo "test_verify: $PASS passed, $FAIL failed ($fixture_count fixtures, $row_count harness points, $corpus_fixture_count corpus fixtures, $corpus_row_count corpus points)"
 [[ $FAIL -eq 0 ]] || exit 1
 exit 0

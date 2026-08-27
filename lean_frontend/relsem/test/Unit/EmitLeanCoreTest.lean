@@ -24,10 +24,11 @@ import Unit.EmitLeanCore
 import RelSem.Call
 import RelSem.T1File
 import RelSem.SlateFiles
+import RelSem.CorpusFiles
 
 set_option autoImplicit false
 
-open RelSem.Cerb RelSem.T1 RelSem.Slate
+open RelSem.Cerb RelSem.T1 RelSem.Slate RelSem.Corpus
 
 /-- Run the T1 harness at a concrete argument; project the outcome.
     `.inl n` = the single execution returned Specified(n);
@@ -93,6 +94,34 @@ def slatePoints : List (String × file core_run_annotation × String ×
    -- fixtures' file terms; the T2–T5 rows above are the sanity net
    -- under the KEPT threaded slate.)
 
+/-- V0 (2026-08-27): concrete sample points on the ASSEMBLED corpus
+    batch-A theorem objects (the family→sample honesty link: the
+    emitted+assembled file terms the P-statements quantify over
+    EXECUTE to their specs' values at the samples). -/
+def corpusPoints : List (String × file core_run_annotation × String ×
+    List Int × Sum Int Unit) :=
+  [("p01", p01File, "clamp0", [-3], .inl 0),
+   ("p01", p01File, "clamp0", [5], .inl 5),
+   ("p01", p01File, "clamp0", [-2147483648], .inl 0),
+   ("p01", p01File, "clamp0", [2147483647], .inl 2147483647),
+   ("p02", p02File, "sat_add", [2147483640, 10], .inl 2147483647),
+   ("p02", p02File, "sat_add", [-2147483640, -10], .inl (-2147483648)),
+   ("p02", p02File, "sat_add", [3, 4], .inl 7),
+   ("p03", p03File, "harness", [1, 5, 0], .inl 0),
+   ("p03", p03File, "harness", [1, 5, 1], .inl 0),
+   ("p03", p03File, "harness", [-7, 42, 0], .inl 0),
+   ("p09", p09File, "harness", [20, 21], .inl 43),
+   ("p09", p09File, "harness", [0, 0], .inl 2),
+   ("p09", p09File, "harness", [2147483645, 0], .inl 2147483647),
+   ("p10", p10File, "gcd_rec", [12, 18], .inl 6),
+   ("p10", p10File, "gcd_rec", [5, 0], .inl 5),
+   ("p10", p10File, "gcd_rec", [1, 2147483647], .inl 1),
+   ("p11", p11File, "gcd", [12, 18], .inl 6),
+   ("p11", p11File, "gcd", [2147483647, 2], .inl 1),
+   ("p11", p11File, "gcd", [100, 75], .inl 25),
+   ("p12", p12File, "harness", [0, 2, 4, 6], .inl 0),
+   ("p12", p12File, "harness", [-1073741823, 1073741823, 1, 1], .inl 0)]
+
 
 def main : IO UInt32 := do
   let mut failures := 0
@@ -129,6 +158,22 @@ def main : IO UInt32 := do
         relsem/RelSem/SlateCore.lean — regenerate deliberately with \
         .lake/build/bin/emit-lean-core slate"
       failures := failures + 1
+  -- 1c. Corpus drift gate (V0 2026-08-27).
+  let (corpusTexts, corpusStd) ← EmitLeanCore.readCorpusInputs
+  match EmitLeanCore.emitCorpusModule corpusTexts corpusStd with
+  | .error e =>
+    IO.println s!"FAIL corpus emit: {e}"
+    failures := failures + 1
+  | .ok emitted =>
+    let committed ← IO.FS.readFile
+      (root ++ "lean_frontend/relsem/RelSem/CorpusCore.lean")
+    if emitted == committed then
+      IO.println "ok   drift gate: emitted CorpusCore module is byte-identical"
+    else
+      IO.println "FAIL drift gate: emitted CorpusCore differs from committed \
+        relsem/RelSem/CorpusCore.lean — regenerate deliberately with \
+        .lake/build/bin/emit-lean-core corpus"
+      failures := failures + 1
   -- 2. Concrete differential on the theorem object.
   for x in concretePoints do
     match runT1 x with
@@ -145,6 +190,28 @@ def main : IO UInt32 := do
   -- struct layout needs the tag global — exactly the T4EnvHyp state).
   let _ ← (CerbTags.setTagDefsIO t4File.tagDefs : BaseIO Unit)
   for (label, file1, fname, args, expect) in slatePoints do
+    match runSlate file1 fname args, expect with
+    | .inl n, .inl m =>
+      if n == m then
+        IO.println s!"ok   callND {label} {fname}{args} = Specified({n})"
+      else
+        IO.println s!"FAIL callND {label} {fname}{args} = Specified({n}), expected {m}"
+        failures := failures + 1
+    | .inr "UB", .inr () =>
+      IO.println s!"ok   callND {label} {fname}{args} = UB (as recorded)"
+    | .inr msg, .inr () =>
+      IO.println s!"FAIL callND {label} {fname}{args}: {msg}, expected UB"
+      failures := failures + 1
+    | .inl n, .inr () =>
+      IO.println s!"FAIL callND {label} {fname}{args} = Specified({n}), expected UB"
+      failures := failures + 1
+    | .inr msg, .inl m =>
+      IO.println s!"FAIL callND {label} {fname}{args}: {msg}, expected Specified({m})"
+      failures := failures + 1
+  -- 2c. Corpus concrete differential on the assembled theorem
+  -- objects (V0; p12's struct layout needs the tag global).
+  let _ ← (CerbTags.setTagDefsIO p12File.tagDefs : BaseIO Unit)
+  for (label, file1, fname, args, expect) in corpusPoints do
     match runSlate file1 fname args, expect with
     | .inl n, .inl m =>
       if n == m then

@@ -76,6 +76,11 @@ import RelSem.PriorCensus
 import RelSem.T1Threaded
 import RelSem.T2Threaded
 import RelSem.T3Threaded
+-- V0: THE CORPUS STATEMENT SLATE (batch A — the frozen corpus's
+-- scalar call-boundary rows, honest-unproved targets).
+import RelSem.CorpusCore
+import RelSem.CorpusFiles
+import RelSem.CorpusStatements
 -- arc-18: the segment layer + faces (KEEP chassis).
 import RelSem.Segment
 import RelSem.SegmentFaces

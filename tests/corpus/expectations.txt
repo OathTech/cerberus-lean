@@ -1,0 +1,31 @@
+# tests/corpus concrete sample rows (V0, 2026-08-27 — the frozen
+# target corpus's family→sample pattern; record
+# lean_frontend/docs/2026-08-27_v0-statements-and-ban.md).
+# Format: <corpus-stem> <function> <args-csv> <expected>
+# These run the LEAN PIPELINE's call harness (--batch --call) at
+# concrete points of each registered batch-A P-statement's family and
+# compare against the PURE SPEC's value — the executable sanity net
+# UNDER the honest-unproved corpus targets, never a substitute.
+# (The emitted-term twin points live in Unit.EmitLeanCoreTest's
+# corpusPoints — same values, run on the assembled theorem objects.)
+p01_clamp clamp0 -3 Specified(0)
+p01_clamp clamp0 5 Specified(5)
+p01_clamp clamp0 -2147483648 Specified(0)
+p01_clamp clamp0 2147483647 Specified(2147483647)
+p02_sat_add sat_add 2147483640,10 Specified(2147483647)
+p02_sat_add sat_add -2147483640,-10 Specified(-2147483648)
+p02_sat_add sat_add 3,4 Specified(7)
+p03_swap_mayalias harness 1,5,0 Specified(0)
+p03_swap_mayalias harness 1,5,1 Specified(0)
+p03_swap_mayalias harness -7,42,0 Specified(0)
+p09_call_contract harness 20,21 Specified(43)
+p09_call_contract harness 0,0 Specified(2)
+p09_call_contract harness 2147483645,0 Specified(2147483647)
+p10_gcd_rec gcd_rec 12,18 Specified(6)
+p10_gcd_rec gcd_rec 5,0 Specified(5)
+p10_gcd_rec gcd_rec 1,2147483647 Specified(1)
+p11_gcd_iter gcd 12,18 Specified(6)
+p11_gcd_iter gcd 2147483647,2 Specified(1)
+p11_gcd_iter gcd 100,75 Specified(25)
+p12_pt_midpoint harness 0,2,4,6 Specified(0)
+p12_pt_midpoint harness -1073741823,1073741823,1,1 Specified(0)

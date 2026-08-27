@@ -14,9 +14,14 @@ def main (args : List String) : IO UInt32 := do
     match EmitLeanCore.emitSlateModule texts with
     | .ok s => IO.print s; return 0
     | .error e => IO.eprintln s!"emit-lean-core slate: {e}"; return 1
+  | ["corpus"] =>
+    let (texts, std) ← EmitLeanCore.readCorpusInputs
+    match EmitLeanCore.emitCorpusModule texts std with
+    | .ok s => IO.print s; return 0
+    | .error e => IO.eprintln s!"emit-lean-core corpus: {e}"; return 1
   | [] =>
     let (t1, std) ← EmitLeanCore.readInputs
     match EmitLeanCore.emitModule t1 std with
     | .ok s => IO.print s; return 0
     | .error e => IO.eprintln s!"emit-lean-core: {e}"; return 1
-  | _ => IO.eprintln "usage: emit-lean-core [slate]"; return 2
+  | _ => IO.eprintln "usage: emit-lean-core [slate|corpus]"; return 2
