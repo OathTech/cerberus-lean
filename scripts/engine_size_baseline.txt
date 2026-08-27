@@ -102,6 +102,19 @@
 #       layers / omega at seed layers; the species-3 replacement for
 #       a per-layer manual peel ladder). TOTAL 6281 -> 6533.
 #       Direction remains DOWN; both rows are law/pack CONSUMERS.
+# R4 re-baseline (arc-18 R4, the T5-through-the-layer engine legs):
+#       SegmentFaces 793 -> 958. Three law/pack-consumer legs:
+#       (1) mkBuiltProof — the env-peel built-chain constructor
+#       (FmapBuilt through the once-proved Kit.fmapAddBy_built at
+#       open base envs; replaces the pre-R4 UNCHECKED refl cast the
+#       kernel rejected at symbolic bases) + the equal-key skip
+#       guard (a FALSE closed disequality now fails the skip route
+#       instead of fabricating a kernel-rejected decide proof);
+#       (2) verify_fn's guarded-family + two-parameter statement
+#       alternatives (T5/T2 house shapes); (3) the argobj2/read2/
+#       scratch2 dispatch arms + seg_argobj2/seg_scratch2 macros
+#       (thin appliers of registered rules). TOTAL 6698 -> 6698.
+#       Direction remains DOWN; every leg consumes registered laws.
 RoundEval.lean 87
 RoundEval/Core.lean 346
 RoundEval/Hyp.lean 1033
@@ -114,5 +127,5 @@ RoundEval/Assembly.lean 647
 DeriveState.lean 260
 WpGround.lean 121
 LawRegistry.lean 342
-SegmentFaces.lean 793
-TOTAL 6533
+SegmentFaces.lean 958
+TOTAL 6698

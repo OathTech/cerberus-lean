@@ -253,6 +253,38 @@ private def exposeMap (e : Expr) : MetaM Expr := do
     return r
   return e
 
+/-- Built-ness proof for a (possibly open-based) `fmapAddBy` chain at
+    the pinned comparator `c` (arc-18 R4, the ∀-k closure's engine
+    leg): peel chain layers through the once-proved
+    `Kit.fmapAddBy_built` (instances taken FROM THE TERM — the R-S2-1
+    lesson), close the base by (a) the captured-comparator refl when
+    the base is MATERIALIZED (`FmapBuilt c (Fmap.mk c …)` whnfs to an
+    `Eq`, CHECKED — the pre-R4 unchecked cast is gone), or (b) a
+    local hypothesis `FmapBuilt c base` (the symbolic-base case: the
+    family lemmas carry built-ness as an ordinary hypothesis).
+    Fail-closed: `none` when neither applies. -/
+private partial def mkBuiltProof (c : Expr) (mTerm : Expr) :
+    MetaM (Option Expr) := do
+  let mTerm ← instantiateMVars mTerm
+  let mExp ← exposeMap mTerm
+  if mExp.isAppOf ``fmapAddBy && mExp.getAppNumArgs == 7 then
+    let args := mExp.getAppArgs
+    let some inner ← mkBuiltProof c args[6]! | return none
+    return some (← mkAppOptM ``RelSem.Kit.fmapAddBy_built
+      #[args[0]!, args[1]!, args[2]!, c, args[3]!, args[4]!, args[5]!,
+        args[6]!, inner])
+  -- materialized base: checked captured-comparator refl
+  let ty ← mkAppM ``RelSem.Kit.FmapBuilt #[c, mExp]
+  let tyW ← whnf ty
+  if let some (_, l, r) := tyW.eq? then
+    if (← isDefEq l r) then
+      return some (← mkExpectedTypeHint (← mkEqRefl r) ty)
+  -- symbolic base: a local FmapBuilt hypothesis
+  let byLocal ← (← getLCtx).findDeclM? fun d => do
+    if d.isImplementationDetail then return none
+    if ← isDefEq d.type ty then return some d.toExpr else return none
+  return byLocal
+
 /-- `seg_env_lookup`: discharge a `fmapLookupBy _ k <env>` goal at a
     minted state's env — peel non-matching `fmapAddBy` layers by the
     registered Kit skip law (`refine`-driven: the chain is exposed by
@@ -314,6 +346,12 @@ elab "seg_env_lookup" : tactic => do
         try
           if neTy.hasFVar || neTy.hasMVar then
             throwError "open (omega route)"
+          -- guard (arc-18 R4): a FALSE closed disequality must fail
+          -- HERE — mkDecideProof does not evaluate, so on equal keys
+          -- (rebind layers) it would fabricate a kernel-rejected
+          -- proof and mask the hit route
+          if ← isDefEq n1 n2 then
+            throwError "keys equal (not a skip — hit route)"
           mkDecideProof neTy
         catch _ =>
           let gNe ← mkFreshExprMVar neTy
@@ -356,13 +394,19 @@ elab "seg_env_lookup" : tactic => do
               if (← isClass? t).isSome then
                 if let .some inst ← trySynthInstance t then
                   let _ ← isDefEq m inst
-          -- built-ness: the captured-comparator refl at the unified
-          -- inner chain
+          -- built-ness: checked refl at materialized chains, the
+          -- fmapAddBy_built chain at open bases (arc-18 R4 — the old
+          -- UNCHECKED refl cast produced kernel-rejected terms at
+          -- symbolic base envs)
           let hmSlot ← instantiateMVars margs[margs.size - 2]!
           if hmSlot.isMVar then
             let hmTy ← instantiateMVars (← hmSlot.mvarId!.getType)
-            let hmPf ← mkExpectedTypeHint
-              (← mkEqRefl (mkConst ``RelSem.Kit.symCmpO)) hmTy
+            unless hmTy.isAppOfArity ``RelSem.Kit.FmapBuilt 4 do
+              throwError "hm slot shape"
+            let hmArgs := hmTy.getAppArgs
+            let some hmPf ← mkBuiltProof hmArgs[2]! hmArgs[3]!
+              | throwError "hm: no built-ness route (materialized \
+                  refl and local-hypothesis base both missed)"
             unless ← isDefEq hmSlot hmPf do
               throwError "hm assignment failed"
           -- key verdict: PURE construction over the ctor components
@@ -480,6 +524,68 @@ macro "seg_scratch1" e:term:max hr:ident haV:ident hpV:ident
              case wplen => rfl
              iintro ⟨$hr:ident, $haV:ident, $hpV:ident, $hptS:ident⟩))
 
+/-- Two-object creation step, auto side facts (mirror of
+    `wp_argobj2`). -/
+macro "seg_argobj2" e:term:max h:ident hal1:ident hpt1:ident
+    hal2:ident hpt2:ident : tactic =>
+  `(tactic| (wp_expose
+             iapply RelSem.Cerb.wpk_seq_alloc_store2_ecast $e ?wpe ?wprho ?wpszA ?wpaddrA ?wpnzA ?wplenA ?wpnidA ?wpalA ?wpszB ?wpaddrB ?wpnzB ?wplenB ?wpnidB ?wpalB
+             rotate_left; rotate_left; rotate_left; rotate_left
+             rotate_left; rotate_left; rotate_left; rotate_left
+             rotate_left; rotate_left; rotate_left; rotate_left
+             rotate_left; rotate_left
+             iframe $h:ident
+             case wpe => rfl
+             case wprho => rfl
+             case wpnidA => rfl
+             case wpalA => rfl
+             case wpnidB => rfl
+             case wpalB => rfl
+             case wpszA => rfl
+             case wpaddrA => seg_side
+             case wpnzA => seg_side
+             case wplenA => rfl
+             case wpszB => rfl
+             case wpaddrB => seg_side
+             case wpnzB => seg_side
+             case wplenB => rfl
+             iintro ⟨$h:ident, $hal1:ident, $hpt1:ident, $hal2:ident, $hpt2:ident⟩))
+
+/-- Two-scratch loop atom, auto side facts (arc-18 R4; mirror shape
+    of `seg_scratch1` at the pointwise scratch2 interface — the
+    final-state characterization facts arrive from the registered
+    `segFact` supply). -/
+macro "seg_scratch2" e:term:max hr:ident haV:ident hpV:ident
+    hptA:ident hptB:ident : tactic =>
+  `(tactic| (wp_expose
+             iapply RelSem.Cerb.wpk_seq_scratch2_ecast $e ?wpe ?wpszA ?wpaddrA ?wpnzA ?wpszB ?wpaddrB ?wpnzB ?wplenA ?wplenB ?wpnidA ?wpnidB ?wpfrest ?wpfalloc ?wpfout ?wpfinA ?wpfinB ?wpnext ?wplast ?wpdead
+             rotate_left; rotate_left; rotate_left; rotate_left
+             rotate_left; rotate_left; rotate_left; rotate_left
+             rotate_left; rotate_left; rotate_left; rotate_left
+             rotate_left; rotate_left; rotate_left; rotate_left
+             rotate_left; rotate_left; rotate_left
+             iframe $hr:ident $haV:ident $hpV:ident
+             case wpe => rfl
+             case wpszA => rfl
+             case wpaddrA => seg_side
+             case wpnzA => seg_side
+             case wpszB => rfl
+             case wpaddrB => seg_side
+             case wpnzB => seg_side
+             case wplenA => rfl
+             case wplenB => rfl
+             case wpnidA => rfl
+             case wpnidB => rfl
+             case wpfrest => seg_side
+             case wpfalloc => seg_side
+             case wpfout => seg_side
+             case wpfinA => seg_side
+             case wpfinB => seg_side
+             case wpnext => seg_side
+             case wplast => seg_side
+             case wpdead => seg_side
+             iintro ⟨$hr:ident, $haV:ident, $hpV:ident, $hptA:ident, $hptB:ident⟩))
+
 /-- The harness terminal, auto readout (mirror of `wp_fin`). -/
 macro "seg_fin" h:ident : tactic =>
   `(tactic| (wp_expose
@@ -507,10 +613,18 @@ elab "verify_fn" spec:term : tactic => do
     ← `(tactic| refine fun henv seed hap => RelSem.Seg.FnSpec.dischargeThr (S := $spec) (GF := RelSem.Cerb.CerbHeapS) ?_ seed () ⟨henv, hap⟩ trivial),
     -- one-parameter guarded statement (∀ seed x, pre x → …)
     ← `(tactic| refine fun seed a ha => RelSem.Seg.FnSpec.dischargeThr (S := $spec) (GF := RelSem.Cerb.CerbHeapS) ?_ seed a trivial ha),
+    -- GUARDED one-parameter family (arc-18 R4, the T5 house shape:
+    -- EnvHyp → ∀ seed, Apart seed → ∀ a, pre a → …)
+    ← `(tactic| refine fun henv seed hap a ha => RelSem.Seg.FnSpec.dischargeThr (S := $spec) (GF := RelSem.Cerb.CerbHeapS) ?_ seed a ⟨henv, hap⟩ ha),
+    -- two-parameter three-premise statement (the T2 shape:
+    -- ∀ seed x y, pre₁ → pre₂ → pre₃ → …; spec parameter = the pair)
+    ← `(tactic| refine fun seed x y h1 h2 h3 => RelSem.Seg.FnSpec.dischargeThr (S := $spec) (GF := RelSem.Cerb.CerbHeapS) ?_ seed (x, y) trivial ⟨h1, h2, h3⟩),
     -- the UB-freedom twins
     ← `(tactic| refine fun seed => RelSem.Seg.FnSpec.dischargeUBThr (S := $spec) (GF := RelSem.Cerb.CerbHeapS) ?_ seed () trivial trivial),
     ← `(tactic| refine fun henv seed hap => RelSem.Seg.FnSpec.dischargeUBThr (S := $spec) (GF := RelSem.Cerb.CerbHeapS) ?_ seed () ⟨henv, hap⟩ trivial),
-    ← `(tactic| refine fun seed a ha => RelSem.Seg.FnSpec.dischargeUBThr (S := $spec) (GF := RelSem.Cerb.CerbHeapS) ?_ seed a trivial ha)]
+    ← `(tactic| refine fun seed a ha => RelSem.Seg.FnSpec.dischargeUBThr (S := $spec) (GF := RelSem.Cerb.CerbHeapS) ?_ seed a trivial ha),
+    ← `(tactic| refine fun henv seed hap a ha => RelSem.Seg.FnSpec.dischargeUBThr (S := $spec) (GF := RelSem.Cerb.CerbHeapS) ?_ seed a ⟨henv, hap⟩ ha),
+    ← `(tactic| refine fun seed x y h1 h2 h3 => RelSem.Seg.FnSpec.dischargeUBThr (S := $spec) (GF := RelSem.Cerb.CerbHeapS) ?_ seed (x, y) trivial ⟨h1, h2, h3⟩)]
   let mut bridged := false
   for t in alts do
     if !bridged then
@@ -772,6 +886,57 @@ private def segStep : TacticM Bool := do
           {indentExpr addr}"
     evalTactic (← `(tactic|
       wp_write1 $hStx $hstId $(mkIdent ha) $(mkIdent hp)))
+    return true
+  | `argobj2 =>
+    let hal1 := mkIdent (freshHypName hyps "Hal")
+    let hpt1 := mkIdent (freshHypName hyps "Hpt")
+    let hal2 := mkIdent (Name.mkSimple s!"{freshHypName hyps "Hal"}b")
+    let hpt2 := mkIdent (Name.mkSimple s!"{freshHypName hyps "Hpt"}b")
+    evalTactic (← `(tactic|
+      seg_argobj2 $hStx $hstId $hal1 $hpt1 $hal2 $hpt2))
+    return true
+  | `read2 =>
+    let fp ← eqFootprint hit.hTy
+    let some aid1 := fp.aids[0]? | throwError "seg_auto: read2 entry \
+      {hit.law.name} carries no allocation-lookup hypothesis"
+    let some aid2 := fp.aids[1]? | throwError "seg_auto: read2 entry \
+      {hit.law.name} carries only one allocation-lookup hypothesis"
+    let some addr1 := fp.addrs[0]? | throwError "seg_auto: read2 \
+      entry {hit.law.name} carries no byte-range hypothesis"
+    let some addr2 := fp.addrs[1]? | throwError "seg_auto: read2 \
+      entry {hit.law.name} carries only one byte-range hypothesis"
+    let some ha1 ← findResHyp hyps ``RelSem.Cerb.allocIs 2 aid1
+      | throwError "seg_auto: no allocIs hypothesis for aid\
+          {indentExpr aid1}"
+    let some hp1 ← findResHyp hyps ``RelSem.Cerb.pointsToBytes 2 addr1
+      | throwError "seg_auto: no pointsToBytes hypothesis at\
+          {indentExpr addr1}"
+    let some ha2 ← findResHyp hyps ``RelSem.Cerb.allocIs 2 aid2
+      | throwError "seg_auto: no allocIs hypothesis for aid\
+          {indentExpr aid2}"
+    let some hp2 ← findResHyp hyps ``RelSem.Cerb.pointsToBytes 2 addr2
+      | throwError "seg_auto: no pointsToBytes hypothesis at\
+          {indentExpr addr2}"
+    evalTactic (← `(tactic| wp_read2 $hStx $hstId $(mkIdent ha1)
+      $(mkIdent hp1) $(mkIdent ha2) $(mkIdent hp2)))
+    return true
+  | `scratch2 =>
+    let fp ← eqFootprint hit.hTy
+    let some aid := fp.aids[0]? | throwError "seg_auto: scratch2 \
+      entry {hit.law.name} carries no allocation-lookup hypothesis"
+    let some addr := fp.addrs[0]? | throwError "seg_auto: scratch2 \
+      entry {hit.law.name} carries no byte-range hypothesis"
+    let some haV ← findResHyp hyps ``RelSem.Cerb.allocIs 2 aid
+      | throwError "seg_auto: no allocIs hypothesis for aid\
+          {indentExpr aid}"
+    let some hpV ← findResHyp hyps ``RelSem.Cerb.pointsToBytes 2 addr
+      | throwError "seg_auto: no pointsToBytes hypothesis at\
+          {indentExpr addr}"
+    let hptA := mkIdent (freshHypName hyps "HptDead")
+    let hptB := mkIdent (Name.mkSimple
+      s!"{freshHypName hyps "HptDead"}b")
+    evalTactic (← `(tactic| seg_scratch2 $hStx $hstId
+      $(mkIdent haV) $(mkIdent hpV) $hptA $hptB))
     return true
   | v =>
     throwError "seg_auto: registered variant '{v}' of {hit.law.name} \

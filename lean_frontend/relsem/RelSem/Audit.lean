@@ -993,7 +993,10 @@ open Lean in
 -- rule — the loop atom's read-write store ladder] + t7's registered
 -- equation supply [segEq 9 → 18, segFact 3 → 5, segCanon 1 → 2] —
 -- per-fixture supply entries by design, visible per kind).
-/-- info: step_law census: 105 laws [advance 5, construct 9, envAlg 3, envMap 4, evalArith 2, evalPull 2, heapWP 4, heapWalk 9, loop 5, memBlock 6, memRW 20, perform 6, roundGlue 3, segCanon 2, segEq 18, segFact 5, wpSeq 2] -/
+-- 105 → 106 (arc-18 R4, the scratch2 engine leg: heapWalk 9 → 10 —
+-- `wpk_seq_scratch2_ecast`, the two-scratch loop atom at the C3b
+-- pointwise final-state interface; once-proved, fixture-free).
+/-- info: step_law census: 106 laws [advance 5, construct 9, envAlg 3, envMap 4, evalArith 2, evalPull 2, heapWP 4, heapWalk 10, loop 5, memBlock 6, memRW 20, perform 6, roundGlue 3, segCanon 2, segEq 18, segFact 5, wpSeq 2] -/
 #guard_msgs in #step_law_census
 /-- info: 'RelSem.T1.round6' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.round6
@@ -1460,8 +1463,16 @@ open Lean in
 -- + Kit/Loop's variable-round variants + the T6Probe reshape
 -- [t6_canon/pickSpec in, t6_wpK_thr/t6_post_o out]; ALL
 -- boundary-clean).
+-- 8403 → 8654 (arc-18 R4 slice 1: the scratch2 engine leg
+-- [MemLocal's ii-ee chain get? lemmas + MemInv.scratch2_pointwise;
+-- CerbHeapWalk's wpk_seq_scratch2/_ecast] + the T5Inv ∀-k FAMILY
+-- CLOSURE [roundtrip5/recon_i32/i2b_i32, triF bounds, supply/env/
+-- byte/allocation families ∀ k, St_rest_indep + the exit endpoints
+-- exitAt/exitAt0/stFin] + the SegmentFaces R4 legs [mkBuiltProof
+-- env-peel built-chain, verify_fn guarded-family alternatives,
+-- argobj2/read2/scratch2 dispatch arms]; ALL boundary-clean).
 /--
-info: RelSem audit sweep: 8403 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 8654 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do

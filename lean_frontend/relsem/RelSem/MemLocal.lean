@@ -375,6 +375,111 @@ theorem kill {ms : MemState} (h : MemInv ms)
 
 end MemInv
 
+/-! ## The two-scratch allocation chain (arc-18 R4, the scratch2 walk
+    rule's physical layer): `get?` over the insert-insert-erase-erase
+    allocation chain, and `MemInv` for a post-state characterized
+    POINTWISE against the pre-state (the C3b scratch2 design note's
+    prescription — n-fold write ladders enter as pointwise byte facts,
+    never as a canonical term shape). -/
+
+theorem tm_get?_ii_ee_ne {am : Std.TreeMap Int Allocation}
+    {nidA nidB aid : Int} {alA alB : Allocation}
+    (h1 : aid ≠ nidA) (h2 : aid ≠ nidB) :
+    ((((am.insert nidA alA).insert nidB alB).erase nidB).erase
+        nidA).get? aid = am.get? aid := by
+  simp only [Std.TreeMap.get?_eq_getElem?, Std.TreeMap.getElem?_erase,
+    Std.TreeMap.getElem?_insert]
+  rw [if_neg (fun hc => h1 (Std.LawfulEqCmp.eq_of_compare hc).symm),
+    if_neg (fun hc => h2 (Std.LawfulEqCmp.eq_of_compare hc).symm),
+    if_neg (fun hc => h2 (Std.LawfulEqCmp.eq_of_compare hc).symm),
+    if_neg (fun hc => h1 (Std.LawfulEqCmp.eq_of_compare hc).symm)]
+
+theorem tm_get?_ii_ee_a {am : Std.TreeMap Int Allocation}
+    {nidA nidB : Int} {alA alB : Allocation} :
+    ((((am.insert nidA alA).insert nidB alB).erase nidB).erase
+        nidA).get? nidA = none := by
+  simp only [Std.TreeMap.get?_eq_getElem?, Std.TreeMap.getElem?_erase]
+  rw [if_pos Std.ReflCmp.compare_self]
+
+theorem tm_get?_ii_ee_b {am : Std.TreeMap Int Allocation}
+    {nidA nidB : Int} {alA alB : Allocation} (hne : nidB ≠ nidA) :
+    ((((am.insert nidA alA).insert nidB alB).erase nidB).erase
+        nidA).get? nidB = none := by
+  simp only [Std.TreeMap.get?_eq_getElem?, Std.TreeMap.getElem?_erase]
+  rw [if_neg (fun hc => hne (Std.LawfulEqCmp.eq_of_compare hc).symm),
+    if_pos Std.ReflCmp.compare_self]
+
+/-- MemInv for a TWO-SCRATCH post-state characterized pointwise: two
+    fresh allocations created and killed inside one atom (allocation
+    chain insert-insert-erase-erase; dead list gains both ids; the
+    bump counters move; bytes change only inside the two fresh
+    ranges). Order-independent in the interleaving of the atom's
+    internal writes — exactly why the interface is pointwise. -/
+theorem MemInv.scratch2_pointwise {msOld msNew : MemState}
+    (hinv : MemInv msOld)
+    {nidA nidB aA aB : Int} {szA szB : Nat}
+    {alA alB : Allocation}
+    (hszA1 : 1 ≤ szA)
+    (hrangeA : aA + szA ≤ (msOld.lastAddress : Int))
+    (hrangeB : aB + szB ≤ aA)
+    (hnidA : nidA = (msOld.nextAllocId : Int))
+    (hnidB : nidB = (msOld.nextAllocId : Int) + 1)
+    (halloc : msNew.allocations
+      = (((msOld.allocations.insert nidA alA).insert nidB alB).erase
+          nidB).erase nidA)
+    (hdead : msNew.deadAllocations
+      = nidA :: nidB :: msOld.deadAllocations)
+    (hnext : (msNew.nextAllocId : Int) = (msOld.nextAllocId : Int) + 2)
+    (hlast : (msNew.lastAddress : Int) = aB)
+    (hbout : ∀ a : Int, ¬(aA ≤ a ∧ a < aA + szA) →
+      ¬(aB ≤ a ∧ a < aB + szB) →
+      msNew.bytemap.get? a = msOld.bytemap.get? a) :
+    MemInv msNew := by
+  have hAlt : aA < (msOld.lastAddress : Int) := by omega
+  constructor
+  · intro aid al hget
+    rw [halloc] at hget
+    by_cases hA : aid = nidA
+    · rw [hA, tm_get?_ii_ee_a] at hget; cases hget
+    by_cases hB : aid = nidB
+    · rw [hB, tm_get?_ii_ee_b (by omega)] at hget; cases hget
+    rw [tm_get?_ii_ee_ne hA hB] at hget
+    have h9 := hinv.alloc_lt aid al hget
+    rw [hnext]
+    omega
+  · intro aid hmem
+    rw [hdead] at hmem
+    rw [halloc]
+    rcases List.mem_cons.mp hmem with rfl | hmem'
+    · exact tm_get?_ii_ee_a
+    rcases List.mem_cons.mp hmem' with rfl | hmem''
+    · exact tm_get?_ii_ee_b (by omega)
+    have hlt := hinv.dead_lt aid hmem''
+    rw [tm_get?_ii_ee_ne (by omega) (by omega)]
+    exact hinv.dead_not_alloc aid hmem''
+  · intro aid hmem
+    rw [hdead] at hmem
+    rw [hnext]
+    rcases List.mem_cons.mp hmem with rfl | hmem'
+    · omega
+    rcases List.mem_cons.mp hmem' with rfl | hmem''
+    · omega
+    have := hinv.dead_lt aid hmem''
+    omega
+  · intro a b hget
+    -- re-type the field's `≤` off the Address abbrev (the MemInv
+    -- note's omega-foreign-atom trap; explicit-instance `show`)
+    show @LE.le Int Int.instLEInt msNew.lastAddress a
+    rw [show ((msNew.lastAddress : Int)) = aB from hlast]
+    by_cases hA : aA ≤ a ∧ a < aA + szA
+    · omega
+    by_cases hB : aB ≤ a ∧ a < aB + szB
+    · omega
+    rw [hbout a hA hB] at hget
+    have h2 : @LE.le Int Int.instLEInt msOld.lastAddress a :=
+      hinv.bytes_above a b hget
+    omega
+
 /-- SEQUENTIAL RANGE OVERWRITES (arc-18 R2, the write1 walk rule's
     physical shape): a loop's driver atom re-writes the SAME byte
     range once per iteration — the final bytemap is a `writeList`
