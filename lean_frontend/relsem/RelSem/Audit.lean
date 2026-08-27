@@ -1676,6 +1676,10 @@ open Lean in
 -- open-memory route [spine equations + minted rounds + driver atom
 -- + ∀-seed statements + safety twin]; ALL boundary-clean, zero
 -- engine changes).
+-- 12383 → 12404 (arc-18 R6 batch 4: the SlateFiles additions for
+-- the PARKED lanes — x3Stdlib [the ccall protocol's params trio,
+-- emitted from std.core] + the x3/z1/z2 file assemblies; no new
+-- theorems, no new laws — the parked reproducers' data only).
 -- 11501 → 12383 (arc-18 R6 batch 3: the x7/x2 edge fixtures —
 -- multi-exit/break compositions, two walks each — + mem_pvfd_block
 -- + the assembled-but-unimported c9 file data; boundary-clean).
@@ -1689,7 +1693,7 @@ open Lean in
 -- capability — DELETED; T5-the-theorem stands proved through the
 -- layer at the trio. Carrier set 112 → 104 in the same commit.)
 /--
-info: RelSem audit sweep: 12383 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 12404 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do

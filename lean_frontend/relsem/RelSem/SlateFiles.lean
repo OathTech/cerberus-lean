@@ -245,4 +245,52 @@ def x2FileU : file Unit :=
 /-- THE x2 file. -/
 def x2File : file core_run_annotation := convert_file x2FileU
 
+/-! ## Batch 4 (the call rule): x3 — TWO functions,
+    `int inc3(int x)` + `int twice(int y)` (twice calls inc3). -/
+
+/-- The x3 stdlib: the t1 closure PLUS the ccall protocol's
+    functions (params_length/_aux/params_nth — the function-pointer
+    call checks read the callee's parameter list through them).
+    Existing fixtures keep the t1 closure: their file VALUES stay
+    untouched (statement stability). -/
+def x3Stdlib : Fmap sym (generic_fun_map_decl Unit Unit) :=
+  Lem_Map.fromList
+    [(RelSem.T1.convLoadedIntSym, RelSem.T1.convLoadedIntDecl),
+     (RelSem.T1.convIntSym, RelSem.T1.convIntDecl),
+     (RelSem.T1.isReprIntegerSym, RelSem.T1.isReprIntegerDecl),
+     (RelSem.T1.catchExceptionalSym, RelSem.T1.catchExceptionalDecl),
+     (paramsLengthAuxSym, paramsLengthAuxDecl),
+     (paramsLengthSym, paramsLengthDecl),
+     (paramsNthSym, paramsNthDecl)]
+
+def x3FileU : file Unit :=
+  { slateFileU
+      (Lem_Map.fromList [(inc3X3Sym, inc3X3Decl), (twiceX3Sym, twiceX3Decl)])
+      (Lem_Map.fromList [(inc3X3Sym, funinfoOf [intParam]),
+                         (twiceX3Sym, funinfoOf [intParam])])
+      fmapEmpty
+    with stdlib := x3Stdlib }
+
+/-- THE x3 file. -/
+def x3File : file core_run_annotation := convert_file x3FileU
+
+/-! ## Batch 4 (size ladder): z1 `int chain20(int x)` (20-layer
+    write1 ladder), z2 `int wide8(int x)` (8 scratch objects). -/
+
+def z1FileU : file Unit :=
+  slateFileU (Lem_Map.fromList [(chain20Z1Sym, chain20Z1Decl)])
+    (Lem_Map.fromList [(chain20Z1Sym, funinfoOf [intParam])])
+    fmapEmpty
+
+/-- THE z1 file. -/
+def z1File : file core_run_annotation := convert_file z1FileU
+
+def z2FileU : file Unit :=
+  slateFileU (Lem_Map.fromList [(wide8Z2Sym, wide8Z2Decl)])
+    (Lem_Map.fromList [(wide8Z2Sym, funinfoOf [intParam])])
+    fmapEmpty
+
+/-- THE z2 file. -/
+def z2File : file core_run_annotation := convert_file z2FileU
+
 end RelSem.Slate

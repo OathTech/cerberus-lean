@@ -153,7 +153,18 @@ def slatePoints : List (String × file core_run_annotation × String ×
    ("x2", x2File, "cap10", [273], .inl 27),
    ("x2", x2File, "cap10", [99], .inl 99),
    ("x2", x2File, "cap10", [100000], .inl 10),
-   ("x2", x2File, "cap10", [0], .inl 0)]
+   ("x2", x2File, "cap10", [0], .inl 0),
+   -- arc-18 R6 batch 4: the call-rule fixture (PARKED lane — the
+   -- file object is live and its points keep it honest) + the size
+   -- ladder.
+   ("x3", x3File, "twice", [5], .inl 12),
+   ("x3", x3File, "inc3", [7], .inl 10),
+   ("z1", z1File, "chain20", [5], .inl 215),
+   ("z1", z1File, "chain20", [0], .inl 210),
+   ("z1", z1File, "chain20", [-210], .inl 0),
+   ("z2", z2File, "wide8", [1], .inl 44),
+   ("z2", z2File, "wide8", [0], .inl 36),
+   ("z2", z2File, "wide8", [-5], .inl (-4))]
 
 def main : IO UInt32 := do
   let mut failures := 0

@@ -194,10 +194,23 @@ def ppProvenance : CerbMem.Provenance → Except String String
 def ppIntegerValue : CerbMem.IntegerValue → Except String String
   | .IV prov n => do pure s!"(CerbMem.IntegerValue.IV {← ppProvenance prov} {ppInt n})"
 
+/-- Pointer-value printers (arc-18 R6 batch 4: `Cfunction(sym)`
+    parses to `OVpointer (PV Prov_none (PVfunction sym))` — the
+    call-rule fixture's function designators; extend loudly). -/
+def ppPtrBase : CerbMem.PointerValueBase → Except String String
+  | .PVfunction s => do
+    pure s!"(CerbMem.PointerValueBase.PVfunction {← ppSym s})"
+  | _ => throw "ppPtrBase: unhandled pointer-value base in parsed Core"
+
+def ppPointerValue : CerbMem.PointerValue → Except String String
+  | .PV prov base => do
+    pure s!"(CerbMem.PointerValue.PV {← ppProvenance prov} {← ppPtrBase base})"
+
 mutual
 partial def ppObjectValue : object_value → Except String String
   | OVinteger iv => do pure s!"(OVinteger {← ppIntegerValue iv})"
   | OVarray lvs => do pure s!"(OVarray {← ppList ppLoadedValue lvs})"
+  | OVpointer pv => do pure s!"(OVpointer {← ppPointerValue pv})"
   | _ => throw "ppObjectValue: unhandled object value in parsed Core"
 
 partial def ppLoadedValue : loaded_value → Except String String
@@ -288,6 +301,7 @@ partial def ppPexpr_ : generic_pexpr_ Unit sym → Except String String
   | PEimpl ic => do pure s!"(PEimpl {← ppImplConst ic})"
   | PEval v => do pure s!"(PEval {← ppValue v})"
   | PEundef l ub => do pure s!"(PEundef {← ppLoc l} {← ppUB ub})"
+  | PEerror msg pe => do pure s!"(PEerror {ppStr msg} {← ppPexpr pe})"
   | PEctor c pes => do pure s!"(PEctor {← ppCtor c} {← ppList ppPexpr pes})"
   | PEcase pe arms => do
     pure s!"(PEcase {← ppPexpr pe} {← ppList (ppProd ppPattern ppPexpr) arms})"
@@ -570,7 +584,13 @@ def slatePlan : List (String × String × String) :=
    ("c9_arrw", "arr_rw", "arrwC9"),
    -- arc-18 R6: batch 3 (edge loop rows).
    ("x7_earlyret", "is_pow2", "ispow2X7"),
-   ("x2_break", "cap10", "cap10X2")]
+   ("x2_break", "cap10", "cap10X2"),
+   -- arc-18 R6: batch 4 (the call rule — TWO functions, one stem).
+   ("x3_call", "inc3", "inc3X3"),
+   ("x3_call", "twice", "twiceX3"),
+   -- arc-18 R6: batch 4 (size ladder).
+   ("z1_chain", "chain20", "chain20Z1"),
+   ("z2_wide", "wide8", "wide8Z2")]
 
 def slateHeader : String :=
 "/-
@@ -583,7 +603,7 @@ def slateHeader : String :=
   tests/verify/{t2_add,t3_roundtrip,t4_struct_member,t5_sum,
   t6_branch,t7_flip,e1_clamp,e2_abs,e3_scale,e4_isdigit,
   e5_ismark,c4_hexval,c5_pcthi,c3a_accguard,c3b_leaddigit,
-  c9_arrw,x7_earlyret,x2_break}.core
+  c9_arrw,x7_earlyret,x2_break,x3_call,z1_chain,z2_wide}.core
   (the pinned oracle Core dumps of the .c fixtures; t6_branch is the
   arc-17 S1 acceptance-probe fixture, t7_flip the arc-18 R2
   branch-in-loop fixture, e1–e5 the R6 EASY tier, c* the R6 CENSUS
@@ -618,12 +638,25 @@ def emitSlateModule (texts : List (String × String)) :
       out := out ++ (← emitDecl cf fname base) ++ "\n"
       if stem == "t4_struct_member" then
         out := out ++ (← emitTagDef cf "S" "structS") ++ "\n"
+  -- arc-18 R6 batch 4 (the call rule): the ccall protocol's stdlib
+  -- functions (params_length/_aux/params_nth from std.core — the
+  -- x3Stdlib extension; existing fixtures keep the t1 closure).
+  match texts.find? (fun p => p.1 == "__std") with
+  | none => throw "emitSlateModule: no __std text"
+  | some (_, stdText) =>
+    let scf ← CoreParser.parseFile stdText
+    for (fname, base) in [("params_length_aux", "paramsLengthAux"),
+                          ("params_length", "paramsLength"),
+                          ("params_nth", "paramsNth")] do
+      out := out ++ (← emitDecl scf fname base) ++ "\n"
   pure (out ++ slateFooter)
 
 def readSlateInputs : IO (List (String × String)) := do
   let root ← findRoot
-  slatePlan.mapM (fun (stem, _, _) => do
+  let fx ← slatePlan.mapM (fun (stem, _, _) => do
     let text ← IO.FS.readFile (root ++ s!"tests/verify/{stem}.core")
     pure (stem, text))
+  let std ← IO.FS.readFile (root ++ "runtime/libcore/std.core")
+  pure (fx ++ [("__std", std)])
 
 end EmitLeanCore
