@@ -545,6 +545,139 @@ def wrapperHoleProbe : Prop :=
 /-- The wrapper-hole probe theorem the gate must REJECT. -/
 theorem wrapperHole_thm : wrapperHoleProbe → wrapperHoleProbe := id
 
+/-! ## THE CONCRETE-INPUT BAN (V0, 2026-08-27 — the ONE gate the
+    forbidden class earned; catechism §III.1/§VII, assessment §2.6).
+    An EXTENSION of this statement-TCB gate (same registration, new
+    axis, negative-probed — no new gate script, anti-gate-grind):
+
+    every REGISTERED slate statement must bind a universally
+    quantified input that FLOWS INTO the harness input position — the
+    call args of a call-boundary face, or the file (init encoding) of
+    a whole-program face. Mechanically: the statement def's value must
+    apply a registered input face DIRECTLY (fail-closed: a statement
+    that hides its face behind a wrapper is rejected — apply faces at
+    statement top level), and EVERY such application's input-position
+    argument must depend on an enclosing ∀-binder (`hasLooseBVars`).
+    Constant-args applications are rejected. FINITE-SAMPLE
+    quantification is rejected on the `x ∈ [literal, …]` premise
+    shape (a `Membership.mem` premise whose container is a
+    cons/nil-literal spine). SCOPE HONESTY: these two mechanical
+    checks catch the constant-args and ∈-literal-sample classes; other
+    finite-sample costumes (disjunction-of-equalities, decidable
+    range predicates over tiny bounds) are the catechism's §III.2
+    anti-brute-force review obligation, not this walker's — bounds
+    are reviewed at statement registration (the corpus §0 discipline).
+
+    WAIVERS: empty at birth. Any entry requires an in-file [USER] tag
+    at the waived statement AND a row here naming the operator
+    decision — an [AGENT]-added waiver is a record-integrity
+    finding. -/
+
+open Lean in
+/-- The registered input faces: (face constant, input-position
+    argument index). Call faces carry inputs in `args`; whole-program
+    faces carry them in the file (the init/model encoding). -/
+def inputFaces : List (Name × Nat) :=
+  [(`RelSem.Cerb.CallHarnessAdequateCns, 4),
+   (`RelSem.Cerb.CallHarnessUBFreeCns, 4),
+   (`RelSem.Cerb.HarnessRunsToCns, 1),
+   (`RelSem.Cerb.CallHarnessAdequateThr, 4),
+   (`RelSem.Cerb.CallHarnessUBFreeThr, 4),
+   (`RelSem.Cerb.HarnessRunsToThr, 1)]
+
+open Lean in
+/-- Concrete-input waivers (EMPTY at birth; see the section note —
+    entries require an in-file [USER] tag). -/
+def concreteInputWaivers : List Name := []
+
+open Lean in
+/-- Is `e` a cons/nil list-literal spine? (The finite-sample container
+    shape.) -/
+partial def isListLiteral (e : Expr) : Bool :=
+  if e.isAppOfArity ``List.nil 1 then true
+  else if e.isAppOfArity ``List.cons 3 then isListLiteral (e.getArg! 2)
+  else false
+
+open Lean in
+/-- The concrete-input scan: walk the statement value; count face
+    applications with a quantified input; collect violations
+    (constant-input face applications; ∈-literal-list premises). -/
+partial def concreteInputScan (e : Expr)
+    (acc : Nat × List String) : Nat × List String := Id.run do
+  let mut (found, viols) := acc
+  match e with
+  | .app .. =>
+    let fn := e.getAppFn
+    if let .const c _ := fn then
+      if let some (_, idx) := inputFaces.find? (fun p => p.1 == c) then
+        if e.getAppNumArgs > idx then
+          let input := e.getArg! idx
+          if input.hasLooseBVars then
+            found := found + 1
+          else
+            viols := viols ++
+              [s!"face {c} applied at a CONSTANT input (no quantified \
+                variable flows into argument {idx})"]
+    for a in e.getAppArgs do
+      (found, viols) := concreteInputScan a (found, viols)
+    (found, viols) := concreteInputScan e.getAppFn (found, viols)
+    return (found, viols)
+  | .forallE _ t b _ =>
+    -- finite-sample premise check on the domain
+    if t.isAppOf ``Membership.mem then
+      if (t.getAppArgs.any isListLiteral) then
+        viols := viols ++
+          ["finite-sample quantification (∈ a literal list) in a \
+            premise — a sample set is not a ∀"]
+    (found, viols) := concreteInputScan t (found, viols)
+    (found, viols) := concreteInputScan b (found, viols)
+    return (found, viols)
+  | .lam _ t b _ =>
+    (found, viols) := concreteInputScan t (found, viols)
+    (found, viols) := concreteInputScan b (found, viols)
+    return (found, viols)
+  | .letE _ t v b _ =>
+    (found, viols) := concreteInputScan t (found, viols)
+    (found, viols) := concreteInputScan v (found, viols)
+    (found, viols) := concreteInputScan b (found, viols)
+    return (found, viols)
+  | .mdata _ b => return concreteInputScan b (found, viols)
+  | .proj _ _ b => return concreteInputScan b (found, viols)
+  | _ => return (found, viols)
+
+open Lean in
+/-- The concrete-input check of one registered statement def
+    (empty list = pass). -/
+def concreteInputViolations (env : Environment) (n : Name) :
+    Except String (List String) := do
+  if concreteInputWaivers.contains n then return []
+  let some (.defnInfo dv) := env.find? n
+    | .error s!"concrete-input ban: {n} is not a definition"
+  let (found, viols) := concreteInputScan dv.value (0, [])
+  if found == 0 && viols.isEmpty then
+    return ["no registered input-face application with a quantified \
+      input found (faces must be applied directly in the statement \
+      body, with a ∀-bound input flowing into the input position)"]
+  return viols
+
+/-! ### The ban's PERMANENT NEGATIVE-TEST FIXTURES (plants, both
+    directions: the checker must REJECT both; the real slate passing
+    is the positive direction). Never real statements. -/
+
+/-- Constant-args probe: the emblem of the forbidden class
+    (`clamp0(-3)`-style — a pinned literal argument). -/
+def constArgsProbe : Prop :=
+  RelSem.Cerb.CallHarnessAdequateCns RelSem.T1.t1Prior
+    RelSem.T1.t1File.tagDefs RelSem.T1.t1File "id"
+    [RelSem.Cerb.intValue 42] RelSem.T1.t1Fs (RelSem.T1.t1Spec 42)
+
+/-- Finite-sample probe: a "family" over a pinned 3-point sample. -/
+def finiteSampleProbe : Prop :=
+  ∀ x ∈ [(1 : Int), 2, 3],
+    RelSem.Cerb.CallHarnessAdequateCns RelSem.T1.t1Prior
+      RelSem.T1.t1File.tagDefs RelSem.T1.t1File "id"
+      [RelSem.Cerb.intValue x] RelSem.T1.t1Fs (RelSem.T1.t1Spec x)
+
 open Lean in
 #eval show CoreM Unit from do
   let env ← getEnv
@@ -571,6 +704,10 @@ open Lean in
      `RelSem.T3.T3ThreadedStatement, `RelSem.T3.T3ThreadedUBFreeStatement,
      `RelSem.T4.T4ThreadedStatement, `RelSem.T4.T4ThreadedUBFreeStatement,
      `RelSem.T5.T5ThreadedStatement, `RelSem.T5.T5ThreadedUBFreeStatement]
+  for n in concreteInputWaivers do
+    let some _ := env.find? n
+      | throwError "concrete-input ban: waived name {n} is MISSING \
+          (renamed without re-pointing the waiver?)"
   for n in slate do
     match stmtViolations env n with
     | .error e => throwError "{e}"
@@ -578,6 +715,15 @@ open Lean in
     | .ok vs =>
       throwError "RelSem statement gate: {n}'s STATEMENT mentions \
         banned constants {vs} — slate statements are fuel-opsem only"
+    -- THE CONCRETE-INPUT BAN (V0 axis, same registration)
+    match concreteInputViolations env n with
+    | .error e => throwError "{e}"
+    | .ok [] => pure ()
+    | .ok vs =>
+      throwError "RelSem statement gate (CONCRETE-INPUT BAN): {n} — \
+        {vs} — quantified all-input properties are the MINIMUM \
+        specification class (catechism §II/§III.1); fix the \
+        statement or obtain an operator waiver ([USER] tag required)"
   -- NEGATIVE TEST 1: an Iris-statement theorem must be rejected.
   -- (2026-08-27 kill-list execution: the historical probe subject
   -- `t1_wp` died with the ambient family; `wpk_load` — the heap-route
@@ -598,9 +744,27 @@ open Lean in
       throwError "RelSem statement gate NEGATIVE TEST FAILED: the \
         wrapper-hole probe did not surface seqModel through the \
         Prop-def wrapper (transitive walk broken?) — got {vs}"
+  -- NEGATIVE TESTS 3+4 (V0, the concrete-input ban's plants, both
+  -- directions of the forbidden class): the constant-args probe and
+  -- the finite-sample probe must BOTH be rejected.
+  match concreteInputViolations env `RelSem.Audit.constArgsProbe with
+  | .error e => throwError "{e}"
+  | .ok [] =>
+    throwError "CONCRETE-INPUT BAN NEGATIVE TEST FAILED: the \
+      constant-args probe passed the checker — the ban is not \
+      detecting"
+  | .ok _ => pure ()
+  match concreteInputViolations env `RelSem.Audit.finiteSampleProbe with
+  | .error e => throwError "{e}"
+  | .ok [] =>
+    throwError "CONCRETE-INPUT BAN NEGATIVE TEST FAILED: the \
+      finite-sample probe passed the checker — the ban is not \
+      detecting"
+  | .ok _ => pure ()
   logInfo s!"RelSem statement gate: {slate.length} slate statements \
-    fuel-opsem-clean (negative tests: wpk_load and the wrapper-hole probe \
-    correctly rejected)"
+    fuel-opsem-clean + concrete-input-clean (negative tests: wpk_load, \
+    the wrapper-hole probe, the constant-args probe and the \
+    finite-sample probe all correctly rejected)"
 
 /-! ## THE PRIOR-VOCABULARY PINS (V0): the consistency statements'
     `prior` lists vs the fixture terms' emitted symbol vocabulary —
@@ -1296,6 +1460,10 @@ open Lean in
 -- open-memory route [spine equations + minted rounds + driver atom
 -- + ∀-seed statements + safety twin]; ALL boundary-clean, zero
 -- engine changes).
+-- 2490 → 2505 (V0 2026-08-27, THE CONCRETE-INPUT BAN: the ban's
+-- checker meta decls + the two permanent negative-test probes
+-- [constArgsProbe/finiteSampleProbe] + auxiliaries join this file;
+-- boundary-clean).
 -- 6024 → 2490 (V0 2026-08-27, THE KILL BASKET — record
 -- docs/2026-08-27_v0-statements-and-ban.md: the T1–T5 walk engine
 -- rooms [T1Walks/T2Walks/T3Walks/T4Walks/T5Walks/T5Inv/T5Seam/
@@ -1333,7 +1501,7 @@ open Lean in
 -- capability — DELETED; T5-the-theorem stands proved through the
 -- layer at the trio. Carrier set 112 → 104 in the same commit.)
 /--
-info: RelSem audit sweep: 2490 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 2505 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do
