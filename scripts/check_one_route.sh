@@ -80,6 +80,12 @@ LIVE_MODULES=(
   relsem/RelSem/T7Walks.lean
   relsem/RelSem/T7.lean
   relsem/RelSem/T5Seam.lean
+  # arc-18 R6: the breadth-campaign corpus (batch 1, EASY tier).
+  relsem/RelSem/Corpus/E1.lean
+  relsem/RelSem/Corpus/E2.lean
+  relsem/RelSem/Corpus/E3.lean
+  relsem/RelSem/Corpus/E4.lean
+  relsem/RelSem/Corpus/E5.lean
 )
 
 BANNED_IMPORTS='^import[[:space:]]+RelSem\.(PerStepOwnP|IrisState|IrisLang|IrisRules|IrisAdequacy|SlateWP)([[:space:]]|$)'

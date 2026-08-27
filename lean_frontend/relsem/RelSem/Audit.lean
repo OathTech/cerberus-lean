@@ -216,6 +216,13 @@ import RelSem.T5Seam
 -- its spine) joins the sweep closure + pins.
 import RelSem.T5Spine
 import RelSem.T5
+-- arc-18 R6: the breadth-campaign corpus, batch 1 (EASY tier e1–e5)
+-- joins the sweep closure + pins.
+import RelSem.Corpus.E1
+import RelSem.Corpus.E2
+import RelSem.Corpus.E3
+import RelSem.Corpus.E4
+import RelSem.Corpus.E5
 
 namespace RelSem.Audit
 
@@ -605,7 +612,14 @@ def stmtAllowed : List Name :=
    -- arc-18 R5: the T4 guarded face's apartness bound (the pinned
    -- minimum static symbol number — a Nat literal def, first-order
    -- executable; T4SeedApart's body reads it).
-   `RelSem.T4.t4MinStaticSym]
+   `RelSem.T4.t4MinStaticSym,
+   -- arc-18 R6: the breadth-campaign corpus fixture data (batch 1,
+   -- EASY tier — pinned program terms + fs states, the t6 row class).
+   `RelSem.Slate.e1File, `RelSem.E1.e1Fs,
+   `RelSem.Slate.e2File, `RelSem.E2.e2Fs,
+   `RelSem.Slate.e3File, `RelSem.E3.e3Fs,
+   `RelSem.Slate.e4File, `RelSem.E4.e4Fs,
+   `RelSem.Slate.e5File, `RelSem.E5.e5Fs]
 
 open Lean in
 /-- Syntactic "ends in Prop" (Prop-family def: `Prop` or a pi chain
@@ -694,7 +708,15 @@ open Lean in
      -- arc-18 R5: T4-APARTNESS — the guarded ∀-seed struct-member
      -- theorem PROVED through the segment layer (the arc-16 S4 park
      -- closed; the collision falsifier excluded by T4SeedApart).
-     `RelSem.T4.T4Threaded, `RelSem.T4.T4Threaded_ubFree]
+     `RelSem.T4.T4Threaded, `RelSem.T4.T4Threaded_ubFree,
+     -- arc-18 R6: the breadth-campaign corpus, batch 1 (EASY tier;
+     -- plain ∀-seed house shape — no loops, no fresh draws, no
+     -- guard; each with its safety twin).
+     `RelSem.E1.E1Threaded, `RelSem.E1.E1Threaded_ubFree,
+     `RelSem.E2.E2Threaded, `RelSem.E2.E2Threaded_ubFree,
+     `RelSem.E3.E3Threaded, `RelSem.E3.E3Threaded_ubFree,
+     `RelSem.E4.E4Threaded, `RelSem.E4.E4Threaded_ubFree,
+     `RelSem.E5.E5Threaded, `RelSem.E5.E5Threaded_ubFree]
   for n in slate do
     match stmtViolations env n with
     | .error e => throwError "{e}"
@@ -1021,7 +1043,16 @@ open Lean in
 -- final-state facts, the ρ' scalar pins, geometry], segCanon 6 → 7,
 -- segPost 1 → 2 [the readout] — per-fixture supply entries by
 -- design, visible per kind).
-/-- info: step_law census: 191 laws [advance 5, construct 9, envAlg 3, envMap 4, evalArith 2, evalPull 2, heapWP 4, heapWalk 11, loop 5, memBlock 6, memRW 20, perform 6, roundGlue 3, segCanon 7, segEq 63, segFact 37, segPost 2, wpSeq 2] -/
+-- 191 → 252 (arc-18 R6 batch 1, the breadth-campaign EASY tier
+-- e1–e5: five fixtures' registered equation supply — segEq 63 → 108
+-- [per fixture: 8 k-stage open equations + the driver atom; read1
+-- atoms for e1/e2/e4/e5, scratch1 for e3], segFact 37 → 48 [the
+-- arg/errno address facts ×5 + e3's scratch address fact],
+-- segCanon 7 → 12 [one nd_get representative per fixture] — ZERO
+-- new engine laws: heapWalk unchanged at 11; the marginal law rate
+-- for this batch is entirely per-fixture supply, the arc-19
+-- minting-frontier shape).
+/-- info: step_law census: 252 laws [advance 5, construct 9, envAlg 3, envMap 4, evalArith 2, evalPull 2, heapWP 4, heapWalk 11, loop 5, memBlock 6, memRW 20, perform 6, roundGlue 3, segCanon 12, segEq 108, segFact 48, segPost 2, wpSeq 2] -/
 #guard_msgs in #step_law_census
 /-- info: 'RelSem.T1.round6' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.round6
@@ -1087,6 +1118,28 @@ open Lean in
 #guard_msgs in #print axioms RelSem.T7.T7Threaded_ubFree
 /-- info: 'RelSem.T7.t7_run_seg' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T7.t7_run_seg
+-- arc-18 R6: the breadth-campaign corpus, batch 1 (EASY tier e1–e5)
+-- — every headline + safety twin trio-exact through the layer.
+/-- info: 'RelSem.E1.E1Threaded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.E1.E1Threaded
+/-- info: 'RelSem.E1.E1Threaded_ubFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.E1.E1Threaded_ubFree
+/-- info: 'RelSem.E2.E2Threaded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.E2.E2Threaded
+/-- info: 'RelSem.E2.E2Threaded_ubFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.E2.E2Threaded_ubFree
+/-- info: 'RelSem.E3.E3Threaded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.E3.E3Threaded
+/-- info: 'RelSem.E3.E3Threaded_ubFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.E3.E3Threaded_ubFree
+/-- info: 'RelSem.E4.E4Threaded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.E4.E4Threaded
+/-- info: 'RelSem.E4.E4Threaded_ubFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.E4.E4Threaded_ubFree
+/-- info: 'RelSem.E5.E5Threaded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.E5.E5Threaded
+/-- info: 'RelSem.E5.E5Threaded_ubFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.E5.E5Threaded_ubFree
 -- arc-18 R2 [F3] acceptance: the T5 twin-spelling seam normalized
 -- through the layer — ONE declared invariant (t5SeamInv), both
 -- spellings' body obligations discharged over it, trio-exact.
@@ -1537,12 +1590,17 @@ open Lean in
 -- 8469 → 8982 (arc-18 R5, T4-apartness through the layer: the
 -- T4Walks two-walk drive's minted rounds/facts + the T4W spine +
 -- the scratch1p rule + the re-housed T4Threaded route).
+-- 8982 → 10060 (arc-18 R6 batch 1, the breadth-campaign EASY tier:
+-- five corpus fixtures — RelSem.Corpus.E1–E5, each the T6Probe
+-- open-memory route [spine equations + minted rounds + driver atom
+-- + ∀-seed statements + safety twin]; ALL boundary-clean, zero
+-- engine changes).
 -- 8798 → 8469 (arc-18 R4 slice 5, THE RETIREMENT: the ambient-era
 -- T5 chain — T5Fixture/T5Prefix/T5Iter, the arc-9→15 climb's parked
 -- capability — DELETED; T5-the-theorem stands proved through the
 -- layer at the trio. Carrier set 112 → 104 in the same commit.)
 /--
-info: RelSem audit sweep: 8982 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 10060 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do

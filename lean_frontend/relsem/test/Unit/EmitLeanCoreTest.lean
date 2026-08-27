@@ -95,7 +95,32 @@ def slatePoints : List (String × file core_run_annotation × String ×
    ("t7", t7File, "flip", [7], .inl 0),
    ("t7", t7File, "flip", [8], .inl 0),
    ("t7", t7File, "flip", [2], .inl (-2)),
-   ("t7", t7File, "flip", [0], .inl 0)]
+   ("t7", t7File, "flip", [0], .inl 0),
+   -- arc-18 R6 breadth corpus, batch 1 (EASY tier): the
+   -- expectations.txt rows on the assembled theorem objects.
+   ("e1", e1File, "clamp0", [-3], .inl 0),
+   ("e1", e1File, "clamp0", [5], .inl 5),
+   ("e1", e1File, "clamp0", [0], .inl 0),
+   ("e1", e1File, "clamp0", [-2147483648], .inl 0),
+   ("e2", e2File, "abs3", [-5], .inl 5),
+   ("e2", e2File, "abs3", [7], .inl 7),
+   ("e2", e2File, "abs3", [0], .inl 0),
+   ("e2", e2File, "abs3", [-2147483648], .inr ()),
+   ("e3", e3File, "scale", [7], .inl 17),
+   ("e3", e3File, "scale", [0], .inl 3),
+   ("e3", e3File, "scale", [-5], .inl (-7)),
+   ("e3", e3File, "scale", [1073741822], .inl 2147483647),
+   ("e3", e3File, "scale", [2147483647], .inr ()),
+   ("e4", e4File, "is_digit", [53], .inl 1),
+   ("e4", e4File, "is_digit", [47], .inl 0),
+   ("e4", e4File, "is_digit", [48], .inl 1),
+   ("e4", e4File, "is_digit", [57], .inl 1),
+   ("e4", e4File, "is_digit", [58], .inl 0),
+   ("e5", e5File, "is_mark", [42], .inl 1),
+   ("e5", e5File, "is_mark", [45], .inl 1),
+   ("e5", e5File, "is_mark", [41], .inl 1),
+   ("e5", e5File, "is_mark", [47], .inl 0),
+   ("e5", e5File, "is_mark", [65], .inl 0)]
 
 def main : IO UInt32 := do
   let mut failures := 0

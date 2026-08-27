@@ -132,4 +132,51 @@ def t7FileU : file Unit :=
 /-- THE T7 file. -/
 def t7File : file core_run_annotation := convert_file t7FileU
 
+/-! ## Arc-18 R6 breadth-campaign corpus, batch 1 (EASY tier):
+    e1 `int clamp0(int x)`, e2 `int abs3(int x)`,
+    e3 `int scale(int x)`, e4 `int is_digit(int c)`,
+    e5 `int is_mark(int c)` — same assembly recipe as T2–T7
+    (designated function + the shared stdlib closure + pinned
+    funinfo; drift-gated through SlateCore). -/
+
+def e1FileU : file Unit :=
+  slateFileU (Lem_Map.fromList [(clampE1Sym, clampE1Decl)])
+    (Lem_Map.fromList [(clampE1Sym, funinfoOf [intParam])])
+    fmapEmpty
+
+/-- THE e1 file. -/
+def e1File : file core_run_annotation := convert_file e1FileU
+
+def e2FileU : file Unit :=
+  slateFileU (Lem_Map.fromList [(absE2Sym, absE2Decl)])
+    (Lem_Map.fromList [(absE2Sym, funinfoOf [intParam])])
+    fmapEmpty
+
+/-- THE e2 file. -/
+def e2File : file core_run_annotation := convert_file e2FileU
+
+def e3FileU : file Unit :=
+  slateFileU (Lem_Map.fromList [(scaleE3Sym, scaleE3Decl)])
+    (Lem_Map.fromList [(scaleE3Sym, funinfoOf [intParam])])
+    fmapEmpty
+
+/-- THE e3 file. -/
+def e3File : file core_run_annotation := convert_file e3FileU
+
+def e4FileU : file Unit :=
+  slateFileU (Lem_Map.fromList [(isdigitE4Sym, isdigitE4Decl)])
+    (Lem_Map.fromList [(isdigitE4Sym, funinfoOf [intParam])])
+    fmapEmpty
+
+/-- THE e4 file. -/
+def e4File : file core_run_annotation := convert_file e4FileU
+
+def e5FileU : file Unit :=
+  slateFileU (Lem_Map.fromList [(ismarkE5Sym, ismarkE5Decl)])
+    (Lem_Map.fromList [(ismarkE5Sym, funinfoOf [intParam])])
+    fmapEmpty
+
+/-- THE e5 file. -/
+def e5File : file core_run_annotation := convert_file e5FileU
+
 end RelSem.Slate

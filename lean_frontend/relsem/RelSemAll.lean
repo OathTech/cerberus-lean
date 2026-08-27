@@ -107,6 +107,12 @@ import RelSem.T4Threaded
 import RelSem.T4Defs
 import RelSem.T4AppEq
 import RelSem.T4
+-- arc-18 R6: the breadth-campaign corpus (batch 1, EASY tier).
+import RelSem.Corpus.E1
+import RelSem.Corpus.E2
+import RelSem.Corpus.E3
+import RelSem.Corpus.E4
+import RelSem.Corpus.E5
 -- arc-7 S1: the in-build axiom audit (golean pattern) — a lib member,
 -- so `lake build RelSem` elaborates it and drift fails the build.
 import RelSem.Audit
