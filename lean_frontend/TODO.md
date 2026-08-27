@@ -62,13 +62,19 @@ is deliberately not pinned here — follow the pointers.
 
 - `pr44468.c` offsetof unknown-tag panic (the CI sweep's one new
   defect): `docs/2026-08-22_ci-sweep-results.md`.
-- CoreParser `enum TAG` ctype-literal arm (unblocks a parked spec-lab
-  statement layer; reproducers in `tests/speclab/`).
-- Oracle `--batch` allocation-census line (unlocks the leak
-  conjunct's differential leg; a candidate patch for upstream
-  Cerberus).
-- Lean driver `--args` flag (argv parity already verified; unlocks
-  the ∀-inputs statement form).
+- CoreParser `enum TAG` ctype-literal arm — DEMOTED to a
+  parser-completeness item (V0 register edit, 2026-08-27: the
+  spec-lab statement layer it unblocked was superseded by the
+  frozen-corpus slate; the gap remains a CoreParser coverage hole
+  worth closing on its own merits; reproducers in `tests/speclab/`).
+- Oracle `--batch` allocation-census line — SCHEDULED AT V5 (V0
+  register edit, 2026-08-27: the leak conjunct's differential leg is
+  P13/P07/P08 territory — the V5 heap-structures slice consumes it;
+  a candidate patch for upstream Cerberus).
+- Lean driver `--args` flag — ICEBOX (V0 register edit, 2026-08-27:
+  the ∀-inputs statement form it was to unlock is superseded by the
+  call-boundary + splice routes the corpus slate uses; revive only
+  if a future target genuinely needs argv-carried inputs).
 - DivMod local-canonicity consolidation into `Codec.Canonical`
   (noted in `speclab/SpecLab/Codec.lean`).
 - Step-runner stack-ceiling guard (known limitation: loops of a few

@@ -1,5 +1,20 @@
 # Arc-18 amended charter — the segment ladder (long-cycle)
 
+> **SUPERSEDED (V0, 2026-08-27; operator-ratified kill basket item
+> (d)).** The segment-ladder program this charter ran was overtaken
+> by the restart sequence: the professor whole-project assessment
+> (disposition:
+> `docs/2026-08-27_whole-project-assessment-disposition.md`), the
+> kill-list execution (`docs/2026-08-27_kill-list-execution.md` and
+> the V0 basket, `docs/2026-08-27_v0-statements-and-ban.md`), the
+> BLESSED design catechism (`docs/2026-08-27_design-catechism.md`),
+> the FROZEN target corpus (`docs/2026-08-27_target-corpus.md`), and
+> the infrastructure plan (container
+> `notes/2026-08-27_infrastructure-plan.md` — the V0–V6 ladder this
+> charter's remainder is replaced by). The R-slice records below
+> remain the historical account; the walk/mint machinery they built
+> was deleted at the kill-list execution + V0.
+
 STATUS: BLESSED [USER 2026-08-26] (decision slate ratified in
 conversation; charter text blessed; the formerly-PENDING items all
 ratified same day — tags updated in place at the R2 boundary). Supersedes the arc-18 remainder (C3c–C6) with a

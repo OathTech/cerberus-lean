@@ -42,15 +42,25 @@ and [DESIGN.md](DESIGN.md) for architecture. Operational map:
 - `test_unit.sh` builds all packages; RelSem-importing test exes live
   in `relsem/test/Unit/`; probes run via `lake lean <file>` FROM
   `relsem/` (through scripts/capped).
-- PROBE-RECIPE WARNING: never use raw `lake env lean` for ad-hoc
-  RelSem-importing files — the root package's build lib precedes the
-  relsem package's in `lake env`'s LEAN_PATH, so the two-package split
-  cannot resolve and STALE root artifacts shadow current ones
-  silently. `lake lean` is workspace-aware and correct. After moving
-  modules between packages, delete the orphaned artifacts stranded in
-  the other package's `.lake` tree (a stale-shadowed probe is a
-  doctored instrument). Details:
-  `docs/2026-08-22_arc11-s4-package-rehearsal.md`.
+- PROBE RECIPE (V0 2026-08-27, the FF-1 fix): ad-hoc probes of
+  RelSem-importing files run via `scripts/lean_probe.sh` FROM the
+  owning package dir (e.g. from `relsem/`:
+  `../../scripts/lean_probe.sh RelSem/MyProbe.lean`) — it drives
+  `lake setup-file` (the COMPLETE per-module artifact map) + `lean
+  --setup` under the memory cap. Neither `lake lean` nor
+  `lake env lean` is correct for this repo's two-package layout
+  (diagnosed at V0, record docs/2026-08-27_v0-statements-and-ban.md
+  §FF-1): `lake lean` pins only DIRECT imports and transitive
+  modules fall to LEAN_PATH search, and Lean's search commits per
+  ROOT COMPONENT (`RelSem/`) to ONE path entry — with the RelSem
+  prefix split across the two packages, whichever tree wins loses
+  the other's modules. `lake build RelSem.<Mod>` remains correct
+  for lib members (full pinning). After moving modules between
+  packages, delete the orphaned artifacts stranded in the other
+  package's `.lake` tree (a stale-shadowed probe is a doctored
+  instrument; the arc-11-era root-tree orphans were purged at V0).
+  Details: `docs/2026-08-22_arc11-s4-package-rehearsal.md` + the V0
+  record.
 - Lake deps: `LemLib` (lem-lean pin) + `iris`/`Qq`/`batteries`
   (pinned revs, resolved offline via deps/gitconfig redirects).
 
