@@ -117,9 +117,9 @@ Current unit tests:
 - `pp-test` — arc-10 S3: pretty-printer mirrors (ctype/value shapes + float formatting vs an OCaml 5.4.0 reference transcript, in-file)
 - `app-walk-test` — arc-9 S2: the `app_walk` walker contract-table exercises (E1-E10 since arc-11 S1: v2/sealed lanes, the E9 preview negative, E10 record→replay + fingerprint mismatch; relsem package since arc-11 S4)
 
-(`t5-probe` is a further `[[lean_exe]]` — the arc-9 round-census
-instrument, run on demand, not part of the unit suite; in the relsem
-package since arc-11 S4.)
+(The former `t5-probe` exe — the arc-9 round-census instrument — was
+deleted at arc-18 R3: zero importers, retirement-register entry 3;
+record `docs/2026-08-27_arc18-r3-early-purge.md`.)
 
 `test_unit.sh` also runs the gate scripts: the hand-written↔generated
 sync gate, the hand-written-axiom census (exactly 2),

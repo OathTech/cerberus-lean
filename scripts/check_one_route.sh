@@ -170,7 +170,8 @@ OWNP_ALLOWED=(
   relsem/RelSem/IrisLang.lean
   relsem/RelSem/IrisRules.lean
   relsem/RelSem/IrisAdequacy.lean
-  relsem/RelSem/IrisCoupling.lean
+  # (IrisCoupling.lean DELETED at arc-18 R3 — zero importers; record
+  #  lean_frontend/docs/2026-08-27_arc18-r3-early-purge.md)
   relsem/RelSem/SlateWP.lean
   relsem/RelSem/PerStepSmoke.lean
   relsem/RelSem/PerStepTacSmoke.lean

@@ -90,8 +90,9 @@ fi
 # SCAN SURFACE (recorded policy, A-F3): committed PROOF files only —
 # RelSem/*.lean + RelSem/Kit/*.lean. Deliberately excluded:
 # RelSem/Tactics/ (defines the surfaces), relsem/test/ (the E9
-# negative test invokes app_walk_preview by design), relsem/bench/
-# (Tier C instrument, exit-1-by-design, never proof-authoritative).
+# negative test invokes app_walk_preview by design). (relsem/bench/ —
+# formerly excluded on the same policy — was deleted at arc-18 R3:
+# its one file, WalkBench.lean, had zero importers.)
 raw_dbg_hits=$(for f in "$RELSEM"/*.lean "$RELSEM"/Kit/*.lean; do
     [[ -f "$f" ]] || continue
     sed 's/--.*//' "$f" \

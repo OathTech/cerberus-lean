@@ -28,7 +28,8 @@ namespace RelSem
     the Layer-3 coupling) consumes.
 
     * `Config`/`Step` — the relational machine the program logic couples
-      to (iris-lean `PrimStep` wraps `Step`; see RelSem/IrisCoupling.lean).
+      to (iris-lean `PrimStep` wraps `Step`; realized coupling record:
+      docs/2026-08-20_arc7-s4-iris-coupling.md).
     * `Behavior`/`behavior` — the observable-behavior extraction: which
       observable behaviors a configuration admits. For the sequential
       instance this is (outcome, final state) via the fuel-erased total

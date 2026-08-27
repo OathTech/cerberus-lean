@@ -23,8 +23,9 @@
     interface (Iris/ProgramLogic/Language.lean:34-115: ToVal + PrimStep +
     val_stuck): `toVal (running _) = none`, `toVal (done o) = some o`,
     and `Step` only fires from `running`, giving `val_stuck` for free
-    (proved below). NO Iris import here — coupling is paper-only in
-    RelSem/IrisCoupling.lean.
+    (proved below). NO Iris import here — the coupling was realized in
+    relsem (arc-7 S4; docs/2026-08-20_arc7-s4-iris-coupling.md — the
+    paper-only IrisCoupling.lean sketch was deleted at arc-18 R3).
 
   House rules: no sorry, no axioms. Statements that are arc-scale (not
   spike-scale) are given as Prop-valued defs; spike-scale facts are proved.

@@ -10,7 +10,9 @@ import RelSem.RunND
 import RelSem.Cerberus
 import RelSem.Call
 import RelSem.FuelHooks
-import RelSem.IrisCoupling
+-- (RelSem.IrisCoupling — the arc-7 paper-only coupling sketch —
+-- DELETED at arc-18 R3: zero importers; the realized coupling is the
+-- modules below; record docs/2026-08-20_arc7-s4-iris-coupling.md.)
 -- arc-7 S4: the iris-lean coupling (language instance, SC state
 -- interpretation, WP rules, THE adequacy theorem).
 -- arc-9 S2: the WP-workbench layers (L1 kits + L2 walker) + their

@@ -416,8 +416,9 @@ def HarnessUBFree
     bytemap is a `Std.TreeMap Int AbsByte` (keyed lookup replaces the
     spike-era leftmost-wins assoc-list denotation — graft fix on
     arc/layer2, 2026-08-19). This finite-map denotation is the carrier
-    the Iris `gen_heap` points-to will sit on (paper design in
-    RelSem/IrisCoupling.lean). -/
+    the Iris `gen_heap` points-to sits on (realized as CerbHeapRA's
+    CerbMemInterp, arc-16 S2; the paper-only IrisCoupling.lean sketch
+    was deleted at arc-18 R3). -/
 def heapOf (st : CerbMem.MemState) (a : Int) : Option CerbMem.AbsByte :=
   st.bytemap.get? a
 

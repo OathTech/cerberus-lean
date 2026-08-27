@@ -122,7 +122,9 @@ import RelSem.RunND
 import RelSem.Cerberus
 import RelSem.Call
 import RelSem.FuelHooks
-import RelSem.IrisCoupling
+-- (RelSem.IrisCoupling — arc-7 paper-only sketch, 1 marker decl —
+-- DELETED at arc-18 R3: zero importers, retirement-register surface;
+-- sweep re-pinned 8404 → 8403 in the deleting commit.)
 -- arc-7 S4: the iris-lean coupling modules join the sweep + pins.
 import RelSem.IrisLang
 import RelSem.IrisState
@@ -1444,6 +1446,9 @@ open Lean in
 -- 8362 → 8404 (arc-18 R2, the [F3] seam acceptance: RelSem.T5Seam
 -- [t5SeamInv + the normalization theorem + the two BPack-hypothesized
 -- discharge instances over the T5W twin chains]; ALL boundary-clean).
+-- 8404 → 8403 (arc-18 R3, the early purge: RelSem.IrisCoupling
+-- deleted — zero importers, its single paper-only marker decl
+-- leaves the closure; record docs/2026-08-27_arc18-r3-early-purge.md).
 -- 7182 → 8362 (arc-18 R2, the t7 slice: the four T7W walk drives'
 -- minted artifacts [e 95 / bEven 72 / bOdd 94 / bx 33+terminal —
 -- round successors + _app equations + chainrel prefixes at open
@@ -1456,7 +1461,7 @@ open Lean in
 -- [t6_canon/pickSpec in, t6_wpK_thr/t6_post_o out]; ALL
 -- boundary-clean).
 /--
-info: RelSem audit sweep: 8404 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 8403 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do

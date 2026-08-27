@@ -38,7 +38,10 @@
 #   relsem/RelSem/Tactics/AppWalk.lean (the walker itself; imports WalkTrace)
 #   relsem/test/Unit/AppWalkTest.lean  (E1-E10 contract table)
 # Tactic-token users beyond those:
-#   relsem/bench/WalkBench.lean      (app_walk_rec/app_walk_replay bench)
+#   (relsem/bench/WalkBench.lean — the arc-11 metrics bench — DELETED
+#    at arc-18 R3: zero importers, never a build target; allowlist
+#    entry removed in the deleting commit. Record:
+#    lean_frontend/docs/2026-08-27_arc18-r3-early-purge.md)
 #   relsem/RelSem/Tactics/AppEqAttr.lean (docstring mentions only.
 #     Truth about @[app_eq] — corrected arc-18 C0: the proved LEMMAS
 #     under the attribute survive by re-registration in the arc-18 C1
@@ -65,7 +68,6 @@ ALLOWLIST=(
     "lean_frontend/relsem/RelSem/Tactics/AppEqAttr.lean"
     "lean_frontend/relsem/RelSem/Tactics/WalkTrace.lean"
     "lean_frontend/relsem/test/Unit/AppWalkTest.lean"
-    "lean_frontend/relsem/bench/WalkBench.lean"
 )
 
 is_allowlisted() {
