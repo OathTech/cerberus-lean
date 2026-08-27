@@ -4,9 +4,11 @@
 # lean_frontend/docs/2026-08-25_reasoning-layer-contracts.md §6; the
 # arc-16 S2 record's §2.5 coexistence hazard, mechanized).
 #
-# THE CONTRACT (charter Q2 FULL, executed at C2; COMPLETED at the
-# 2026-08-27 kill-list execution): `CerbMemInterp` (the heap RA) is
-# the ONE state interpretation, period. The transitional OwnP surface
+# THE CONTRACT (charter Q2 FULL, executed at C2; re-pointed at V1
+# 2026-08-28): `CerbStInterp` (the DECOMPOSED machine-state RA,
+# RelSem/CerbStateRA.lean) is the ONE state interpretation, period —
+# the whole-state heap route (CerbMemInterp/restIs) is deleted and
+# its binding tokens banned below. The transitional OwnP surface
 # and its consumers (the arc-7 shell, the ambient family, the smokes)
 # are DELETED; the retirement register below is EMPTY and any
 # OwnP-binding file anywhere is a fail-closed finding.
@@ -55,10 +57,10 @@ LIVE_MODULES=(
   relsem/RelSem/Kit/Mem.lean
   relsem/RelSem/Kit/Round.lean
   relsem/RelSem/MemLocal.lean
-  relsem/RelSem/CerbHeapRA.lean
-  relsem/RelSem/CerbHeapWP.lean
-  relsem/RelSem/CerbHeapWalk.lean
-  relsem/RelSem/CerbHeapDemo.lean
+  relsem/RelSem/CerbStateRA.lean
+  relsem/RelSem/CerbStateWP.lean
+  relsem/RelSem/CerbStateAdequacy.lean
+  relsem/RelSem/CerbStateDemo.lean
   relsem/RelSem/Segment.lean
   relsem/RelSem/SegmentFaces.lean
   relsemcore/RelSem/Threaded.lean
@@ -80,7 +82,10 @@ LIVE_MODULES=(
 
 BANNED_IMPORTS='^import[[:space:]]+RelSem\.(PerStepOwnP|IrisState|IrisLang|IrisRules|IrisAdequacy|SlateWP)([[:space:]]|$)'
 # OwnP binding tokens (word-boundary; scanned on comment-stripped text)
-BANNED_TOKENS='(CerbGS|CerbGpreS|stateIs|OwnPGS|OwnPGpreS|\bownP\b|\bCerbS\b)'
+# V1 2026-08-28: the whole-state heap route (CerbHeapGS/CerbMemInterp/
+# restIs) is DELETED — its binding tokens join the ban (reintroduction
+# guard; \brestIs\b does not match the live mrestIs).
+BANNED_TOKENS='(CerbGS|CerbGpreS|stateIs|OwnPGS|OwnPGpreS|\bownP\b|\bCerbS\b|CerbHeapGS|CerbHeapGpreS|CerbMemInterp|\brestIs\b|\bCerbHeapS\b)'
 
 fail=0
 
@@ -142,7 +147,7 @@ while IFS= read -r f; do
   [[ -z "$f" ]] && continue
   stripped=$(strip_comments "$f")
   if grep -qE '\[CerbGS ' <<< "$stripped" \
-      && grep -qE '\[CerbHeapGS' <<< "$stripped"; then
+      && grep -qE '\[CerbStGS' <<< "$stripped"; then
     both+="$f"$'\n'
   fi
 done < <(git ls-files 'relsem/*.lean' 'speclab/*.lean' 2>/dev/null; \

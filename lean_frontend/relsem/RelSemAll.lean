@@ -43,12 +43,12 @@ import RelSem.PerStep
 import RelSem.PerStepIris
 import RelSem.PerStepCall
 import RelSem.MemLocal
-import RelSem.CerbHeapRA
-import RelSem.CerbHeapWP
-import RelSem.CerbHeapDemo
+import RelSem.CerbStateRA
+import RelSem.CerbStateWP
+import RelSem.CerbStateAdequacy
+import RelSem.CerbStateDemo
 -- arc-18 C2: the heap-route walk substrate (the one-route migration's
 -- rules + adequacy bridges over CerbMemInterp).
-import RelSem.CerbHeapWalk
 -- arc-17 S0: the discharge-engine substrate — the named-state
 -- emitter (derive_state/derive_state_step) + the memoized
 -- ground-fact discharger backing wp_side.

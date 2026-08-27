@@ -38,7 +38,7 @@
 -/
 
 import RelSem.PerStepIris
-import RelSem.CerbHeapWP
+import RelSem.CerbStateWP
 -- arc-17 S0: the named-state emitter (`derive_state` /
 -- `derive_state_step`) — the SUPPLY SIDE of `wp_step`'s named-state
 -- feeding path (S3 record §7: named-state regime = seconds;
@@ -106,22 +106,22 @@ macro "wp_side" : tactic =>
   `(tactic| first | assumption | wp_ground | rfl)
 
 macro "wp_load" : tactic =>
-  `(tactic| iapply (wpk_load (hbounds := by wp_side)
+  `(tactic| iapply (RelSem.CerbSt.wpk_load (hbounds := by wp_side)
       (hatomic := by wp_side) (hlen := by wp_side)
       (hrecon := by wp_side) (hnotbool := by wp_side)))
 
 macro "wp_store" : tactic =>
-  `(tactic| iapply (wpk_store (hcompat := by wp_side)
+  `(tactic| iapply (RelSem.CerbSt.wpk_store (hcompat := by wp_side)
       (hbounds := by wp_side) (hro := by wp_side)
       (hatomic := by wp_side) (hbytes := by wp_side)
       (hlen := by wp_side)))
 
 macro "wp_alloc" : tactic =>
-  `(tactic| iapply (wpk_alloc (hsz := by wp_side)
+  `(tactic| iapply (RelSem.CerbSt.wpk_alloc (hsz := by wp_side)
       (haddr := by wp_side) (hnz := by wp_side)))
 
 macro "wp_kill" : tactic =>
-  `(tactic| iapply (wpk_kill (hbase := by wp_side)))
+  `(tactic| iapply (RelSem.CerbSt.wpk_kill (hbase := by wp_side)))
 
 end Cerb
 end RelSem

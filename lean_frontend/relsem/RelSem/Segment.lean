@@ -39,18 +39,18 @@
   BRANCHES has data-dependent per-iteration round counts; the uniform-k
   `iter_compose` cannot state it, `Seg.iter` can.
 
-  Framing: segments ride the CerbMemInterp footprint discipline — the
-  equation calculus quantifies the heap maps (`setMaps` decomposition,
-  reads as footprint facts), and the WP layer (RelSem/CerbHeapWalk.lean
-  rules) carries every untouched fragment across a segment implicitly.
-  No new assertion DSL: pre/posts are the existing footprint
-  vocabulary (points-to + allocation fragments + pure facts + restIs).
+  Framing: segments ride the DECOMPOSED footprint discipline (V1,
+  RelSem/CerbStateRA.lean) — the WP layer's component rules carry
+  every untouched fragment (env cells, byte ranges, allocations, the
+  exclusive tokens) across a segment implicitly. No new assertion
+  DSL: pre/posts are the footprint vocabulary (envIs/pointsToBytes/
+  allocIs + pure facts + the ctl/supply/residual tokens).
 
   House rules: no sorry, no axioms. Under the in-build audit.
 -/
 
 import RelSem.ConstructLaws
-import RelSem.CerbHeapWalk
+import RelSem.CerbStateAdequacy
 -- (import RelSem.Kit.Loop removed at V0 2026-08-27: the iter_compose
 -- family is deleted [conversion C-14]; Seg.iter below is the
 -- survivor and is self-contained.)
@@ -59,7 +59,7 @@ set_option autoImplicit false
 
 namespace RelSem.Seg
 
-open RelSem RelSem.Cerb
+open RelSem RelSem.Cerb RelSem.CerbSt
 open Iris Iris.ProgramLogic Iris.BI
 
 /-! ## §1 The judgment (generic over a fuel-indexed computation)
@@ -323,14 +323,9 @@ def dnmsC (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
     (tid : Nat) (fuel : Nat) (σ : driver_state) :=
   app (drive_nonmemory_steps_aux2_lemFuel fuel tagDefs fmapEmpty [tid]) σ
 
-/-- The canonical mid-walk representative at rest `ρ` (the `nd_get`
-    continuation state): harness continuations consume the state only
-    through rest projections (`wpk_seq_get`'s contract), so any state
-    whose rest is `ρ` represents the fiber; fixtures register their
-    named representative (`@[seg_canon]`) and `seg_auto` continues
-    there — the named-state discipline (S0 giant-terms rule) riding
-    the automation. -/
-def CanonAt (ρ c : driver_state) : Prop := restOf c = ρ
+-- (`CanonAt` — the rest-fiber canonical-representative predicate —
+-- died at V1 with the whole-state route; the V2 re-target owns any
+-- successor notion at the decomposed components.)
 
 /-- A driver segment (the judgment at `dnmsC`). -/
 abbrev DSeg (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
@@ -436,10 +431,14 @@ def FnSpec.VerifiedUB {A : Type} (S : FnSpec A)
     pre in front, post in the postcondition). -/
 def FnSpec.WpOb {A : Type} (S : FnSpec A)
     (file1 : file core_run_annotation) (fs : CerbFS.FsState)
-    (GF : BundledGFunctors) [CerbHeapGpreS GF] : Prop :=
-  ∀ (seed : Nat) (a : A), S.guard seed → S.pre a → ∀ [CerbHeapGS GF],
-    (restIs (GF := GF) restHalf
-        (restOf (initial_driver_state_threaded seed file1 fs))) ⊢
+    (GF : BundledGFunctors) [CerbStGpreS GF] : Prop :=
+  ∀ (seed : Nat) (a : A), S.guard seed → S.pre a → ∀ [CerbStGS GF],
+    (ctlIs (GF := GF) stHalf
+        (ctlOf (initial_driver_state_threaded seed file1 fs)) ∗
+      supIs stHalf
+        (suppliesOf (initial_driver_state_threaded seed file1 fs)) ∗
+      mrestIs stHalf
+        (memRestOf (initial_driver_state_threaded seed file1 fs))) ⊢
       WP (callK file1.tagDefs file1 S.fname (S.args a))
         @ Stuckness.NotStuck ; ⊤
         {{ o, ⌜∃ r : driver_result, o = Outcome.value r ∧ S.post a r⌝ }}
@@ -448,10 +447,10 @@ def FnSpec.WpOb {A : Type} (S : FnSpec A)
     `Verified` through the threaded heap-route adequacy. -/
 theorem FnSpec.dischargeThr {A : Type} {S : FnSpec A}
     {file1 : file core_run_annotation} {fs : CerbFS.FsState}
-    {GF : BundledGFunctors} [CerbHeapGpreS GF]
+    {GF : BundledGFunctors} [CerbStGpreS GF]
     (Hwp : S.WpOb file1 fs GF) : S.Verified file1 fs := by
   intro seed a hg ha
-  refine kCallHarnessAdequateThrHeap_of_wp (GF := GF) seed file1.tagDefs
+  refine kCallHarnessAdequateThrSt_of_wp (GF := GF) seed file1.tagDefs
     file1 S.fname (S.args a) fs (S.post a) ?_
   intro _
   exact Hwp seed a hg ha
@@ -459,10 +458,10 @@ theorem FnSpec.dischargeThr {A : Type} {S : FnSpec A}
 /-- The UB-freedom twin (same `Hwp`). -/
 theorem FnSpec.dischargeUBThr {A : Type} {S : FnSpec A}
     {file1 : file core_run_annotation} {fs : CerbFS.FsState}
-    {GF : BundledGFunctors} [CerbHeapGpreS GF]
+    {GF : BundledGFunctors} [CerbStGpreS GF]
     (Hwp : S.WpOb file1 fs GF) : S.VerifiedUB file1 fs := by
   intro seed a hg ha
-  refine kCallHarnessUBFreeThrHeap_of_wp (GF := GF) seed file1.tagDefs
+  refine kCallHarnessUBFreeThrSt_of_wp (GF := GF) seed file1.tagDefs
     file1 S.fname (S.args a) fs (S.post a) ?_
   intro _
   exact Hwp seed a hg ha

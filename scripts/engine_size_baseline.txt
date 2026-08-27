@@ -179,7 +179,11 @@ RoundEval/Rounds.lean 886
 DeriveState.lean 260
 WpGround.lean 121
 LawRegistry.lean 343
-SegmentFaces.lean 1176
+# V1 re-baseline (2026-08-28, THE WHOLE-STATE ROUTE DELETION):
+#       SegmentFaces 1176 -> 656 — §3 (auto-fed walk macros) and §5
+#       (seg_auto) DELETED with the rest-pinning walk rules they
+#       applied; verify_fn retargeted to the decomposed route.
+SegmentFaces.lean 656
 TOTAL 6318
 #
 # 2026-08-27 kill-list execution re-baseline: LawRegistry 342 -> 343

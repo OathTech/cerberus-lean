@@ -25,6 +25,7 @@ import Iris.ProgramLogic.Lifting
 import Iris.ProgramLogic.Adequacy
 import RelSem.CerbStateRA
 import RelSem.Kit.Mem
+import RelSem.LawRegistry
 
 set_option autoImplicit false
 
@@ -116,6 +117,10 @@ theorem wpk_seq_res_det [CerbStGS GF] {α : Type}
     EVERY env cell, byte range, allocation fragment, the supply and
     residual components ride the frame. -/
 
+@[step_law (kind := stateWP) (variant := ctl) (side := fed)
+  (frontier := "state/ctl")
+  (trace := "{law := wpk_seq_ctl, joint := state/ctl, hyps := [Happ : fed, transports : fed]}")
+  (lineage := "control-token step (ghost_var exclusive token; HeapLang pure-step analogue at the decomposed machine state — every env cell, heap fragment, supply frames)")]
 theorem wpk_seq_ctl [CerbStGS GF] {α : Type}
     {m : ndM α step_kind driver_error mem_iv_constraint driver_state}
     {k : α → KDriveExpr} {v : α} {upd : driver_state → driver_state}
@@ -159,6 +164,10 @@ theorem wpk_seq_ctl [CerbStGS GF] {α : Type}
     fraction); the fragment returns unchanged. The rule whose
     instances read a local at a SYMBOLIC value. -/
 
+@[step_law (kind := stateWP) (variant := ctlEnv1) (side := fed)
+  (frontier := "state/ctl-env1")
+  (trace := "{law := wpk_seq_ctl_env1, joint := state/ctl-env1, hyps := [Happ : fed(one-cell lookup), transports : fed]}")
+  (lineage := "control step characterized by ONE owned env cell at a symbolic value (gmap-auth locals view; the read rule)")]
 theorem wpk_seq_ctl_env1 [CerbStGS GF] {α : Type}
     {m : ndM α step_kind driver_error mem_iv_constraint driver_state}
     {k : α → KDriveExpr} {v : α} {upd : driver_state → driver_state}
@@ -208,6 +217,10 @@ theorem wpk_seq_ctl_env1 [CerbStGS GF] {α : Type}
     rides the frame. The rule whose instances update a local while a
     DIFFERENT local's symbolic assertion survives untouched. -/
 
+@[step_law (kind := stateWP) (variant := envWrite) (side := fed)
+  (frontier := "state/env-write")
+  (trace := "{law := wpk_seq_env_write, joint := state/env-write, hyps := [Happ : fed, hnew/hpres : fed(number-apartness)]}")
+  (lineage := "env-cell update at full fraction; all other cells preserved by number-apartness and framed (gen_heap update shape at the locals view)")]
 theorem wpk_seq_env_write [CerbStGS GF] {α : Type}
     {m : ndM α step_kind driver_error mem_iv_constraint driver_state}
     {k : α → KDriveExpr} {v : α} {upd : driver_state → driver_state}
@@ -252,6 +265,10 @@ theorem wpk_seq_env_write [CerbStGS GF] {α : Type}
 /-! ## THE TERMINAL READOUT: `nd_get` feeding a pure readout — the
     postcondition holds for EVERY state the control token admits. -/
 
+@[step_law (kind := stateWP) (variant := getDone) (side := fed)
+  (frontier := "state/get-done")
+  (trace := "{law := wpk_get_done_ctl, joint := state/get-done, hyps := [hpost : fed(ctl-determined readout)]}")
+  (lineage := "terminal readout at the control token (the nd_get joint; post holds for every state the token admits)")]
 theorem wpk_get_done_ctl [CerbStGS GF]
     {g : driver_state → DriveVal} {c : driver_state}
     {φ : DriveVal → Prop} {s : Stuckness} {E : CoPset}
@@ -295,6 +312,10 @@ theorem wpk_get_done_ctl [CerbStGS GF]
     Pins ONLY memory components (the decomposition dividend: control,
     env, supplies all frame across a load). -/
 
+@[step_law (kind := heapWP) (variant := load) (side := ground)
+  (frontier := "heap/load")
+  (trace := "{law := wpk_load, joint := heap/load, hyps := [pointsToBytes : resource, allocIs : resource, mrestIs : resource, side : ground]}")
+  (lineage := "HeapLang PrimitiveLaws wp_load shape at memory-residual granularity: footprint points-to in, unchanged points-to out; control/env/supplies frame")]
 theorem wpk_load [CerbStGS GF] {s : Stuckness} {E : CoPset}
     {Φ : DriveVal → IProp GF}
     {loc : CerbLocation.Loc} {ty : ctype} {aid addr : Int}
@@ -381,6 +402,10 @@ theorem wpk_load [CerbStGS GF] {s : Stuckness} {E : CoPset}
     residual is READ (any fraction, serialization side condition)
     and does not move. -/
 
+@[step_law (kind := heapWP) (variant := store) (side := ground)
+  (frontier := "heap/store")
+  (trace := "{law := wpk_store, joint := heap/store, hyps := [pointsToBytes : resource, allocIs : resource, mrestIs : resource, side : ground]}")
+  (lineage := "HeapLang PrimitiveLaws wp_store shape at memory-residual granularity")]
 theorem wpk_store [CerbStGS GF] {s : Stuckness} {E : CoPset}
     {Φ : DriveVal → IProp GF}
     {loc : CerbLocation.Loc} {ty : ctype} {aid addr : Int}
@@ -468,6 +493,10 @@ theorem wpk_store [CerbStGS GF] {s : Stuckness} {E : CoPset}
 /-! ## ALLOCATE — consumes the residual half (the bump counters
     move); control, env, supplies frame. -/
 
+@[step_law (kind := heapWP) (variant := alloc) (side := ground)
+  (frontier := "heap/alloc")
+  (trace := "{law := wpk_alloc, joint := heap/alloc, hyps := [mrestIs : resource, side : ground]}")
+  (lineage := "HeapLang wp_alloc shape: fresh points-to + allocIs minted by the frame-preserving update; only the memory residual consumed")]
 theorem wpk_alloc [CerbStGS GF] {s : Stuckness} {E : CoPset}
     {Φ : DriveVal → IProp GF}
     {tid : Nat} {pref : prefix0} {pvAlign : CerbMem.Provenance}
@@ -573,6 +602,10 @@ theorem wpk_alloc [CerbStGS GF] {s : Stuckness} {E : CoPset}
 /-! ## KILL — consumes the full allocation fragment and the residual
     half; the byte points-to stays as dead capital. -/
 
+@[step_law (kind := heapWP) (variant := kill) (side := ground)
+  (frontier := "heap/kill")
+  (trace := "{law := wpk_kill, joint := heap/kill, hyps := [mrestIs : resource, allocIs : resource, side : ground]}")
+  (lineage := "HeapLang wp_free shape: consume the footprint resources at deallocation")]
 theorem wpk_kill [CerbStGS GF] {s : Stuckness} {E : CoPset}
     {Φ : DriveVal → IProp GF}
     {loc : CerbLocation.Loc} {aid addr : Int}
@@ -638,6 +671,23 @@ theorem wpk_kill [CerbStGS GF] {s : Stuckness} {E : CoPset}
     imodintro
     iframe Hi Hr
   exact wpk_seq_res_det Hext Happ Hupd
+
+/-! ## The registry-backing check (the R4 contract, re-homed from the
+    retired CerbHeapWalk): every law the PerStepTactics op-rule macros
+    apply must be REGISTERED — a law silently leaving the registry is
+    build-fatal. -/
+open Lean in
+#eval show Lean.Elab.Term.TermElabM Unit from do
+  let backing : List Name :=
+    [``RelSem.CerbSt.wpk_load, ``RelSem.CerbSt.wpk_store,
+     ``RelSem.CerbSt.wpk_alloc, ``RelSem.CerbSt.wpk_kill,
+     ``RelSem.CerbSt.wpk_seq_ctl, ``RelSem.CerbSt.wpk_seq_ctl_env1,
+     ``RelSem.CerbSt.wpk_seq_env_write,
+     ``RelSem.CerbSt.wpk_get_done_ctl]
+  for n in backing do
+    let some _ ← RelSem.LawRegistry.byName? n
+      | throwError "CerbStateWP registry-backing check: the op/state           rule {n} is NOT registered — the tactic layer may only           apply registered laws (R4)"
+  Lean.logInfo s!"CerbStateWP registry-backing check:     {backing.length} macro-backing laws registered"
 
 end CerbSt
 end RelSem
