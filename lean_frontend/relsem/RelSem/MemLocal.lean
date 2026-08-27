@@ -375,5 +375,46 @@ theorem kill {ms : MemState} (h : MemInv ms)
 
 end MemInv
 
+/-- SEQUENTIAL RANGE OVERWRITES (arc-18 R2, the write1 walk rule's
+    physical shape): a loop's driver atom re-writes the SAME byte
+    range once per iteration — the final bytemap is a `writeList`
+    ladder at one address. The C3b scratch2 design note prescribed
+    POINTWISE vocabulary for n-fold ladders; `writeSeq` is that
+    ladder reified, with the ghost/invariant moves by fold. -/
+def writeSeq (t : Std.TreeMap Int AbsByte) (a : Int) :
+    List (List AbsByte) → Std.TreeMap Int AbsByte
+  | [] => t
+  | w :: ws => writeSeq (writeList t a w) a ws
+
+/-- STORE-SEQUENCE preservation: `MemInv.store` folded over a write
+    ladder (each layer lands on the previous layer's — initially the
+    hypothesis's — mapped range). -/
+theorem MemInv.writeSeq_pres {ms : MemState} (h : MemInv ms)
+    {a : Int} {old : List AbsByte}
+    (hold : ∀ i : Nat, (hi : i < old.length) →
+      ms.bytemap.get? (a + (i : Int)) = some old[i])
+    (ws : List (List AbsByte))
+    (hlens : ∀ w ∈ ws, w.length = old.length) :
+    MemInv { ms with bytemap := writeSeq ms.bytemap a ws } := by
+  induction ws generalizing ms old with
+  | nil => exact h
+  | cons w ws ih =>
+    have hlw : w.length = old.length := hlens w (List.mem_cons_self ..)
+    have h1 : MemInv (CerbMem.writeBytesTo
+        { ms with funptrmap := ms.funptrmap } a w) :=
+      h.store hlw hold
+    rw [writeBytesTo_eq] at h1
+    have hold' : ∀ i : Nat, (hi : i < w.length) →
+        (writeList ms.bytemap a w).get? (a + (i : Int)) = some w[i] := by
+      intro i hi
+      rw [writeList_get?_in _ _ _ _ (by omega) (by omega)]
+      have hidx : ((a + (i : Int)) - a).toNat = i := by omega
+      rw [hidx, List.getElem?_eq_getElem hi]
+    have := ih (ms := { ms with bytemap := writeList ms.bytemap a w })
+      (old := w) h1 hold'
+      (fun w' hw' => (hlens w' (List.mem_cons_of_mem _ hw')).trans
+        hlw.symm)
+    exact this
+
 end Cerb
 end RelSem

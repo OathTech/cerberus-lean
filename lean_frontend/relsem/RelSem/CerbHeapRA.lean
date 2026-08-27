@@ -385,6 +385,50 @@ theorem bytes_update_ghost [CerbHeapGS GF]
       iframe Hi
       iapply pointsToBytes_cons.2 $$ [$Hb $Hbs]
 
+/-- `writeSeq`'s image on the extensional side (arc-18 R2: the write1
+    walk rule's ladder). -/
+def extWriteSeq (m : CerbHeapF CerbMem.AbsByte) (a : Int) :
+    List (List CerbMem.AbsByte) → CerbHeapF CerbMem.AbsByte
+  | [] => m
+  | w :: ws => extWriteSeq (extWriteList m a w) a ws
+
+theorem toExt_writeSeq (t : Std.TreeMap Int CerbMem.AbsByte) (a : Int)
+    (ws : List (List CerbMem.AbsByte)) :
+    toExt (writeSeq t a ws) = extWriteSeq (toExt t) a ws := by
+  induction ws generalizing t with
+  | nil => rfl
+  | cons w ws ih =>
+    show toExt (writeSeq (writeList t a w) a ws) = _
+    rw [ih, toExt_writeList]
+    rfl
+
+/-- Full-fraction SEQUENTIAL range overwrite (`bytes_update_ghost`
+    folded over a write ladder — the loop atom's ghost move, arc-18
+    R2). The fragment lands at the LAST write's image. -/
+theorem bytes_update_seq_ghost [CerbHeapGS GF]
+    {m : CerbHeapF CerbMem.AbsByte} {a : Int}
+    (ws : List (List CerbMem.AbsByte)) {old : List CerbMem.AbsByte}
+    (hlens : ∀ w ∈ ws, w.length = old.length) :
+    (genHeapInterp (GF := GF) m ∗ pointsToBytes a (.own 1) old) ⊢ |==>
+      (genHeapInterp (extWriteSeq m a ws)
+        ∗ pointsToBytes a (.own 1) (ws.getLastD old)) := by
+  induction ws generalizing m old with
+  | nil =>
+    simp only [extWriteSeq, List.getLastD_nil]
+    iintro ⟨Hi, Hp⟩
+    imodintro
+    iframe Hi Hp
+  | cons w ws ih =>
+    have hlw : w.length = old.length := hlens w (List.mem_cons_self ..)
+    simp only [extWriteSeq, List.getLastD_cons]
+    iintro ⟨Hi, Hp⟩
+    imod bytes_update_ghost w hlw $$ [$Hi $Hp] with ⟨Hi, Hp⟩
+    imod (ih (old := w)
+      (fun w' hw' => (hlens w' (List.mem_cons_of_mem _ hw')).trans
+        hlw.symm)) $$ [$Hi $Hp] with ⟨Hi, Hp⟩
+    imodintro
+    iframe Hi Hp
+
 /-- Fresh-range allocation (the metaToken byproduct is dropped —
     deviation D6's neighborhood: we do not use GenHeap's meta). -/
 theorem bytes_alloc_ghost [CerbHeapGS GF]

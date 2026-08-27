@@ -119,4 +119,17 @@ def t6FileU : file Unit :=
 /-- THE T6 file. -/
 def t6File : file core_run_annotation := convert_file t6FileU
 
+/-! ## T7: `int flip(int n)` (arc-18 R2 [F1]: the branch-in-loop
+    fixture — a while loop whose body branches with arms of different
+    statement counts: data-dependent per-iteration round counts, the
+    ∃-round segment composition's acceptance case) -/
+
+def t7FileU : file Unit :=
+  slateFileU (Lem_Map.fromList [(flipT7Sym, flipT7Decl)])
+    (Lem_Map.fromList [(flipT7Sym, funinfoOf [intParam])])
+    fmapEmpty
+
+/-- THE T7 file. -/
+def t7File : file core_run_annotation := convert_file t7FileU
+
 end RelSem.Slate

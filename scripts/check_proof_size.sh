@@ -52,6 +52,7 @@ MAX_STEPS=40
 # the bar and are measured by the arc records, not this gate).
 SLATE_FILES=(
     "T5.lean"
+    "T7.lean"
 )
 
 fail=0

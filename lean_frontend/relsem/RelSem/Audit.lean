@@ -202,6 +202,10 @@ import RelSem.T6Probe
 -- join the sweep closure + pins.
 import RelSem.Segment
 import RelSem.SegmentFaces
+-- arc-18 R2: the branch-in-loop flagship (walks + fixture + the
+-- composed invariant proof through the layer) joins the sweep
+-- closure + pins.
+import RelSem.T7
 import RelSem.T4Threaded
 import RelSem.T5Walks
 import RelSem.T5Inv
@@ -592,7 +596,12 @@ def stmtAllowed : List Name :=
    -- arc-17 S2: the completed acceptance probe's fixture data (the
    -- pinned program term + its fs state — same class as the t1-t4
    -- rows above).
-   `RelSem.Slate.t6File, `RelSem.T6.t6Fs]
+   `RelSem.Slate.t6File, `RelSem.T6.t6Fs,
+   -- arc-18 R2: the branch-in-loop fixture's data + the guarded
+   -- face's hypothesis vocabulary (digest pin + seed apartness —
+   -- first-order executable, the T4EnvHyp discipline).
+   `RelSem.Slate.t7File, `RelSem.T7W.t7Fs, `RelSem.T7.t7Spec,
+   `RelSem.T7.T7EnvHypThr, `RelSem.T7.T7SeedApart]
 
 open Lean in
 /-- Syntactic "ends in Prop" (Prop-family def: `Prop` or a pi chain
@@ -673,7 +682,10 @@ open Lean in
      -- arc-17 S2: the completed acceptance probe's ∀-seed family
      -- (outcome-set companion deliberately absent: priced, not owed
      -- — the S2 record registers it).
-     `RelSem.T6.T6Threaded, `RelSem.T6.T6Threaded_ubFree]
+     `RelSem.T6.T6Threaded, `RelSem.T6.T6Threaded_ubFree,
+     -- arc-18 R2: the branch-in-loop flagship (guarded ∀-seed
+     -- house shape; through the segment layer).
+     `RelSem.T7.T7Threaded, `RelSem.T7.T7Threaded_ubFree]
   for n in slate do
     match stmtViolations env n with
     | .error e => throwError "{e}"
@@ -974,7 +986,11 @@ open Lean in
 -- segCanon 1 [the nd_get representative]; supply entries are
 -- per-fixture BY DESIGN, visible per-kind here — the engine-side
 -- minting of supply entries is the registered arc-19 frontier).
-/-- info: step_law census: 92 laws [advance 5, construct 9, envAlg 3, envMap 4, evalArith 2, evalPull 2, heapWP 4, heapWalk 8, loop 5, memBlock 6, memRW 20, perform 6, roundGlue 3, segCanon 1, segEq 9, segFact 3, wpSeq 2] -/
+-- 92 → 105 (arc-18 R2, the t7 slice: heapWalk 8 → 9 [the write1
+-- rule — the loop atom's read-write store ladder] + t7's registered
+-- equation supply [segEq 9 → 18, segFact 3 → 5, segCanon 1 → 2] —
+-- per-fixture supply entries by design, visible per kind).
+/-- info: step_law census: 105 laws [advance 5, construct 9, envAlg 3, envMap 4, evalArith 2, evalPull 2, heapWP 4, heapWalk 9, loop 5, memBlock 6, memRW 20, perform 6, roundGlue 3, segCanon 2, segEq 18, segFact 5, wpSeq 2] -/
 #guard_msgs in #step_law_census
 /-- info: 'RelSem.T1.round6' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.round6
@@ -1032,6 +1048,15 @@ open Lean in
 #guard_msgs in #print axioms RelSem.T6.T6Threaded
 /-- info: 'RelSem.T6.T6Threaded_ubFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T6.T6Threaded_ubFree
+-- arc-18 R2: the branch-in-loop flagship through the segment layer
+-- (the ∃-round composition + the write1 rule + verify_fn/seg_auto),
+-- trio-exact.
+/-- info: 'RelSem.T7.T7Threaded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T7.T7Threaded
+/-- info: 'RelSem.T7.T7Threaded_ubFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T7.T7Threaded_ubFree
+/-- info: 'RelSem.T7.t7_run_seg' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T7.t7_run_seg
 -- (arc-18 R2: the hand walk `t6_wpK_thr` is SUBSUMED by the segment
 -- route — T6Threaded's pin above covers the whole discharge; the
 -- walk lemma is deleted with its plumbing.)
@@ -1406,6 +1431,11 @@ open Lean in
 -- k-stage equations + driver2_o + rDone6 ladder], and the seven new
 -- Kit/Mem writeBytesTo projection laws; ALL boundary-clean — record
 -- docs/2026-08-26_arc18-r1-open-memory.md).
+-- 7182 → 8362 (arc-18 R2, the t7 slice: the four T7W walk drives'
+-- minted artifacts [e 95 / bEven 72 / bOdd 94 / bx 33+terminal —
+-- round successors + _app equations + chainrel prefixes at open
+-- maps] + the T7W spine/feeds + RelSem.T7 [the composed invariant
+-- proof]; ALL boundary-clean).
 -- 6959 → 7182 (arc-18 R2, the segment layer: RelSem.Segment [the
 -- ∃-round judgment + composition + FnSpec + spelling normalization]
 -- + RelSem.SegmentFaces [verify_fn/seg_auto + the seg_* attributes]
@@ -1413,7 +1443,7 @@ open Lean in
 -- [t6_canon/pickSpec in, t6_wpK_thr/t6_post_o out]; ALL
 -- boundary-clean).
 /--
-info: RelSem audit sweep: 7182 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 8362 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do

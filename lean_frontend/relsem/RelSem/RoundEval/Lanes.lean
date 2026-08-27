@@ -188,6 +188,19 @@ private def symParts? (e : Expr) : Option (Expr × Expr × Expr) :=
     `fmapAddBy` layers to an `Fmap.mk`-materialized base (captured
     comparator defeq `symCmpO` — rfl-grade). -/
 private partial def proveBuilt (m : Expr) : TermElabM (Option Expr) := do
+  -- PACK-HYPOTHESIS FIRST, at every node (arc-18 R2, the t7 entry
+  -- walk's literal-env wall): a chain ending at `fmapEmpty` is built
+  -- at the ADD level (`fmapAddBy_built_empty`), never at the empty
+  -- level — so descending past a curated pack fact
+  -- (`hbuilt : FmapBuilt symCmpO <literal chain>`) reaches an
+  -- unprovable base. A pack fact at the CURRENT node short-circuits
+  -- the descent (a hypothesis consumer; no semantic knowledge).
+  if let some hp ← (activeHypPack.get : BaseIO _) then
+    let stmt0 ← mkAppMU ``RelSem.Kit.FmapBuilt
+      #[mkConst ``RelSem.Kit.symCmpO, m]
+    for h in hp.arith do
+      if (← instantiateMVars (← inferType h)) == stmt0 then
+        return some h
   if m.isAppOf ``fmapAddBy && m.getAppArgs.size == 7 then
     let a := m.getAppArgs
     let some hInner ← proveBuilt a[6]! | return none

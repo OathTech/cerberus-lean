@@ -256,6 +256,17 @@ theorem fmapAddBy_built {α β : Type} [BEq α]
   | empty => exact absurd h (by simp [FmapBuilt])
   | mk c' byKey bySeq n => exact h
 
+/-- The generated `BEq sym` instance AS THE EMITTED CODE SPELLS IT
+    (the R-S2-1 instance-implicit lesson, promoted fixture-free from
+    the T5 family layer at arc-18 R2): instance SYNTHESIS picks
+    `instBEqSym`, but the minted env chains carry the map-key
+    comparator's closure — appliers that must unify against minted
+    spellings pass THIS instance explicitly. -/
+def envBeq : BEq sym :=
+  ⟨fun x y => match Lem_Map.mapKeyCompare x y with
+    | LemOrdering.EQ => true
+    | _ => false⟩
+
 /-- Lookup after insert, captured-comparator-EQ key: the just-inserted
     value (passed comparators arbitrary). -/
 @[step_law (kind := envMap) (variant := hit) (side := ground)

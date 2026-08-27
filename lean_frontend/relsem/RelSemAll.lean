@@ -91,6 +91,8 @@ import RelSem.T6Probe
 -- arc-18 R2: the segment layer + faces
 import RelSem.Segment
 import RelSem.SegmentFaces
+import RelSem.T7Walks
+import RelSem.T7
 -- arc-17 S2: the guarded ∀-seed T4 statement + apartness hypothesis
 -- + the evaluator-driven prefix (theorem = enumerated remaining work;
 -- the in-file frontier note is the S2 record's park).

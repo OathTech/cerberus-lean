@@ -1154,6 +1154,131 @@ theorem wpk_seq_scratch1_ecast [CerbHeapGS GF] {α : Type}
       WP e0 @ s ; E {{ Φ }} :=
   he ▸ wpk_seq_scratch1 hρ' hlayK hszS haddrS hnzS hlenS hnidS halS h
 
+/-- READ-WRITE OBJECT STEP (arc-18 R2 — the loop atom over a caller
+    object: the driver atom READS one object's footprint and
+    RE-WRITES the same range, possibly many times — one `writeList`
+    layer per loop-iteration store; no allocation moves). Ghost
+    accounting: the full-fraction points-to is updated through the
+    ladder (`bytes_update_seq_ghost`), landing at the LAST write's
+    image; the allocation fragment rides through; `MemInv` is
+    preserved by the store fold (`MemInv.writeSeq_pres` — writes land
+    on the already-mapped range the points-to certifies). Lineage:
+    HeapLang wp_store at the machine-atom granularity; the C3b
+    scratch2 design note's pointwise-ladder prescription. -/
+theorem wpk_seq_write1 [CerbHeapGS GF] {α : Type}
+    {m : ndM α step_kind driver_error mem_iv_constraint driver_state}
+    {k : α → KDriveExpr} {v : α} {ρ ρ' : driver_state}
+    {aid addr : Int} {al : CerbMem.Allocation}
+    {bsIn : List CerbMem.AbsByte} {ws : List (List CerbMem.AbsByte)}
+    {dqa : DFrac}
+    {s : Stuckness} {E : CoPset} {Φ : DriveVal → IProp GF}
+    (hρ' : restOf ρ' = ρ')
+    (hlay : ρ'.layout_state = ρ.layout_state)
+    (hlens : ∀ w ∈ ws, w.length = bsIn.length)
+    (h : ∀ bm am, am.get? aid = some al →
+        (∀ i : Nat, (hi : i < bsIn.length) →
+          bm.get? (addr + (i : Int)) = some bsIn[i]) →
+        app m (setMaps ρ bm am)
+          = (NDactive v, setMaps ρ' (writeSeq bm addr ws) am)) :
+    (restIs (GF := GF) restHalf ρ ∗ allocIs aid dqa al
+        ∗ pointsToBytes addr (.own 1) bsIn) ∗
+      ((restIs restHalf ρ' ∗ allocIs aid dqa al
+          ∗ pointsToBytes addr (.own 1) (ws.getLastD bsIn))
+        -∗ WP (k v) @ s ; E {{ Φ }}) ⊢
+      WP (KExpr.seq m k : KDriveExpr) @ s ; E {{ Φ }} := by
+  refine wpk_seq_res_det
+    (R := iprop(restIs restHalf ρ ∗ allocIs aid dqa al
+      ∗ pointsToBytes addr (.own 1) bsIn))
+    (R' := iprop(restIs restHalf ρ' ∗ allocIs aid dqa al
+      ∗ pointsToBytes addr (.own 1) (ws.getLastD bsIn)))
+    (Pre := fun σ => (restOf σ = ρ ∧ MemInv σ.layout_state) ∧
+      σ.layout_state.allocations.get? aid = some al ∧
+      (∀ i : Nat, (hi : i < bsIn.length) →
+        σ.layout_state.bytemap.get? (addr + (i : Int)) = some bsIn[i]))
+    (upd := fun σ => setMaps ρ'
+      (writeSeq σ.layout_state.bytemap addr ws)
+      σ.layout_state.allocations)
+    ?_ ?_ ?_
+  · intro σ
+    iintro ⟨Hi, Hr, Ha, Hp⟩
+    icases interp_rest_agree $$ [$Hi $Hr] with ⟨%h1, Hi, Hr⟩
+    icases interp_meminv $$ Hi with ⟨%h2, Hi⟩
+    icases interp_alloc_lookup $$ [$Hi $Ha] with ⟨%h3, Hi, Ha⟩
+    icases interp_bytes_lookup $$ [$Hi $Hp] with ⟨%h4, Hi, Hp⟩
+    iframe Hi Hr Ha Hp
+    ipureintro
+    exact ⟨⟨h1, h2⟩, h3, h4⟩
+  · intro σ hp
+    obtain ⟨bm, am, rfl⟩ := exists_setMaps_of_restOf hp.1.1
+    exact h bm am hp.2.1 hp.2.2
+  · intro σ hp
+    obtain ⟨⟨hr, hinv⟩, -, hbs⟩ := hp
+    obtain ⟨bm, am, rfl⟩ := exists_setMaps_of_restOf hr
+    show (CerbMemInterp (GF := GF) (setMaps ρ bm am)
+        ∗ (restIs restHalf ρ ∗ allocIs aid dqa al
+          ∗ pointsToBytes addr (.own 1) bsIn) : IProp GF) ⊢
+      |==> (CerbMemInterp (setMaps ρ' (writeSeq bm addr ws) am)
+        ∗ (restIs restHalf ρ' ∗ allocIs aid dqa al
+          ∗ pointsToBytes addr (.own 1) (ws.getLastD bsIn)))
+    have hB : bytesOf (setMaps ρ'
+        (writeSeq bm addr ws) am).layout_state
+        = extWriteSeq (bytesOf (setMaps ρ bm am).layout_state) addr
+            ws := by
+      show toExt (writeSeq bm addr ws) = _
+      exact toExt_writeSeq bm addr ws
+    have hA : allocsOf (setMaps ρ'
+        (writeSeq bm addr ws) am).layout_state
+        = allocsOf (setMaps ρ bm am).layout_state := rfl
+    have hR : restOf (setMaps ρ' (writeSeq bm addr ws) am) = ρ' := by
+      rw [restOf_setMaps]
+      exact hρ'
+    rw [CerbMemInterp_congr
+      (σ' := setMaps ρ' (writeSeq bm addr ws) am) hB hA hR]
+    unfold CerbMemInterp restIs
+    iintro ⟨⟨Hb, Ha, Hri, %Hinv'⟩, Hrp, HaV, HpV⟩
+    imod bytes_update_seq_ghost ws hlens $$ [$Hb $HpV]
+      with ⟨Hb, HpV⟩
+    imod ghost_var_update_halves ρ' _ _ _ $$ Hri Hrp with ⟨Hri, Hrp⟩
+    imodintro
+    iframe Hb Ha Hri Hrp HaV HpV
+    ipureintro
+    -- MemInv across the ladder, transported to the ρ'-layout record
+    have hpres := hinv.writeSeq_pres (a := addr) (old := bsIn)
+      (fun i hi => hbs i hi) ws hlens
+    show MemInv { ρ'.layout_state with
+      bytemap := writeSeq bm addr ws, allocations := am }
+    rw [hlay]
+    exact hpres
+
+/-- `wpk_seq_write1`'s ecast hook. -/
+@[step_law (kind := heapWalk) (variant := write1) (side := fed)
+  (frontier := "walk/write1")
+  (trace := "{law := wpk_seq_write1_ecast, joint := walk/write1, hyps := [h : fed(open-mem ladder equation + footprint facts), he : rfl, hlens : rfl]}")
+  (lineage := "footprint walk: read-write object step — the loop atom's per-iteration store ladder; ghost update by fold, MemInv by store fold (HeapLang wp_store at atom granularity)")]
+theorem wpk_seq_write1_ecast [CerbHeapGS GF] {α : Type}
+    {m : ndM α step_kind driver_error mem_iv_constraint driver_state}
+    {k : α → KDriveExpr} {e0 : KDriveExpr} {v : α} {ρ ρ' : driver_state}
+    {aid addr : Int} {al : CerbMem.Allocation}
+    {bsIn : List CerbMem.AbsByte} {ws : List (List CerbMem.AbsByte)}
+    {dqa : DFrac}
+    {s : Stuckness} {E : CoPset} {Φ : DriveVal → IProp GF}
+    (h : ∀ bm am, am.get? aid = some al →
+        (∀ i : Nat, (hi : i < bsIn.length) →
+          bm.get? (addr + (i : Int)) = some bsIn[i]) →
+        app m (setMaps ρ bm am)
+          = (NDactive v, setMaps ρ' (writeSeq bm addr ws) am))
+    (he : e0 = KExpr.seq m k)
+    (hρ' : restOf ρ' = ρ')
+    (hlay : ρ'.layout_state = ρ.layout_state)
+    (hlens : ∀ w ∈ ws, w.length = bsIn.length) :
+    (restIs (GF := GF) restHalf ρ ∗ allocIs aid dqa al
+        ∗ pointsToBytes addr (.own 1) bsIn) ∗
+      ((restIs restHalf ρ' ∗ allocIs aid dqa al
+          ∗ pointsToBytes addr (.own 1) (ws.getLastD bsIn))
+        -∗ WP (k v) @ s ; E {{ Φ }}) ⊢
+      WP e0 @ s ; E {{ Φ }} :=
+  he ▸ wpk_seq_write1 hρ' hlay hlens h
+
 /-- MID-WALK STATE READ (`nd_get` feeding further stages): the value
     is the machine state, which the footprint logic does not pin —
     but the harness continuations consume it only through REST
@@ -1337,6 +1462,23 @@ macro "wp_read2" e:term:max hr:ident ha1:ident hp1:ident
              case wplay => rfl
              iintro ⟨$hr:ident, $ha1:ident, $hp1:ident, $ha2:ident, $hp2:ident⟩))
 
+/-- Read-write object step (the loop atom's store ladder): reads and
+    re-writes one object's range; the points-to moves to the LAST
+    write's image (named `hpOut`). -/
+macro "wp_write1" e:term:max hr:ident ha:ident hp:ident : tactic =>
+  `(tactic| (wp_expose
+             iapply wpk_seq_write1_ecast $e ?wpe ?wprho ?wplay ?wplens
+             rotate_left
+             rotate_left
+             rotate_left
+             rotate_left
+             iframe $hr:ident $ha:ident $hp:ident
+             case wpe => rfl
+             case wprho => rfl
+             case wplay => rfl
+             case wplens => first | rfl | decide
+             iintro ⟨$hr:ident, $ha:ident, $hp:ident⟩))
+
 /-- Scratch-object step (create/store/load/kill within one atom):
     reads the `hr`/`haV`/`hpV` footprint, mints the dead scratch
     bytes as `hptS`. `ha` is the scratch address-arithmetic fact. -/
@@ -1513,6 +1655,7 @@ open Lean in
      ``RelSem.Cerb.wpk_seq_alloc_store_ecast,
      ``RelSem.Cerb.wpk_seq_alloc_store2_ecast,
      ``RelSem.Cerb.wpk_seq_scratch1_ecast,
+     ``RelSem.Cerb.wpk_seq_write1_ecast,
      ``RelSem.Cerb.wpk_seq_get_ecast,
      ``RelSem.Cerb.wpk_get_done_pure_ecast,
      -- the heap op-rule macros' backing laws (wp_load/store/alloc/kill)

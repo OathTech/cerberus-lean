@@ -77,6 +77,8 @@ LIVE_MODULES=(
   relsem/RelSem/T2Threaded.lean
   relsem/RelSem/T3Threaded.lean
   relsem/RelSem/T6Probe.lean
+  relsem/RelSem/T7Walks.lean
+  relsem/RelSem/T7.lean
 )
 
 BANNED_IMPORTS='^import[[:space:]]+RelSem\.(PerStepOwnP|IrisState|IrisLang|IrisRules|IrisAdequacy|SlateWP)([[:space:]]|$)'

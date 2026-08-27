@@ -388,6 +388,10 @@ structure FnSpec (A : Type) where
       summary's segment pre — closed harnesses receive their initial
       footprint from adequacy (the HeapLang precedent). -/
   pre : A → Prop := fun _ => True
+  /-- Environment/seed guard (the guarded-face statements' front
+      hypotheses: digest pins + seed apartness, the T4SeedApart /
+      T5EnvHypThr house shape; `True` for unconditional faces). -/
+  guard : Nat → Prop := fun _ => True
   /-- Postcondition on the driver result. -/
   post : A → driver_result → Prop
 
@@ -397,14 +401,14 @@ structure FnSpec (A : Type) where
     byte-stable and are derived by `verify_fn`'s bridge). -/
 def FnSpec.Verified {A : Type} (S : FnSpec A)
     (file1 : file core_run_annotation) (fs : CerbFS.FsState) : Prop :=
-  ∀ (seed : Nat) (a : A), S.pre a →
+  ∀ (seed : Nat) (a : A), S.guard seed → S.pre a →
     CallHarnessAdequateThr seed file1.tagDefs file1 S.fname (S.args a)
       fs (S.post a)
 
 /-- Role 1's UB-freedom companion (same WP obligation). -/
 def FnSpec.VerifiedUB {A : Type} (S : FnSpec A)
     (file1 : file core_run_annotation) (fs : CerbFS.FsState) : Prop :=
-  ∀ (seed : Nat) (a : A), S.pre a →
+  ∀ (seed : Nat) (a : A), S.guard seed → S.pre a →
     CallHarnessUBFreeThr seed file1.tagDefs file1 S.fname (S.args a) fs
 
 /-- The WP obligation of a spec (what `verify_fn` leaves; the
@@ -413,7 +417,7 @@ def FnSpec.VerifiedUB {A : Type} (S : FnSpec A)
 def FnSpec.WpOb {A : Type} (S : FnSpec A)
     (file1 : file core_run_annotation) (fs : CerbFS.FsState)
     (GF : BundledGFunctors) [CerbHeapGpreS GF] : Prop :=
-  ∀ (seed : Nat) (a : A), S.pre a → ∀ [CerbHeapGS GF],
+  ∀ (seed : Nat) (a : A), S.guard seed → S.pre a → ∀ [CerbHeapGS GF],
     (restIs (GF := GF) restHalf
         (restOf (initial_driver_state_threaded seed file1 fs))) ⊢
       WP (callK file1.tagDefs file1 S.fname (S.args a))
@@ -426,22 +430,22 @@ theorem FnSpec.dischargeThr {A : Type} {S : FnSpec A}
     {file1 : file core_run_annotation} {fs : CerbFS.FsState}
     {GF : BundledGFunctors} [CerbHeapGpreS GF]
     (Hwp : S.WpOb file1 fs GF) : S.Verified file1 fs := by
-  intro seed a ha
+  intro seed a hg ha
   refine kCallHarnessAdequateThrHeap_of_wp (GF := GF) seed file1.tagDefs
     file1 S.fname (S.args a) fs (S.post a) ?_
   intro _
-  exact Hwp seed a ha
+  exact Hwp seed a hg ha
 
 /-- The UB-freedom twin (same `Hwp`). -/
 theorem FnSpec.dischargeUBThr {A : Type} {S : FnSpec A}
     {file1 : file core_run_annotation} {fs : CerbFS.FsState}
     {GF : BundledGFunctors} [CerbHeapGpreS GF]
     (Hwp : S.WpOb file1 fs GF) : S.VerifiedUB file1 fs := by
-  intro seed a ha
+  intro seed a hg ha
   refine kCallHarnessUBFreeThrHeap_of_wp (GF := GF) seed file1.tagDefs
     file1 S.fname (S.args a) fs (S.post a) ?_
   intro _
-  exact Hwp seed a ha
+  exact Hwp seed a hg ha
 
 /-! ### Role 2 — the call-boundary segment (the Hoare procedure rule)
 

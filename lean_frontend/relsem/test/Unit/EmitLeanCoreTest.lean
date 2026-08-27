@@ -91,7 +91,11 @@ def slatePoints : List (String × file core_run_annotation × String ×
    ("t6", t6File, "pick", [10], .inl 7),
    ("t6", t6File, "pick", [4], .inl 1),
    ("t6", t6File, "pick", [3], .inl 6),
-   ("t6", t6File, "pick", [-5], .inl (-2))]
+   ("t6", t6File, "pick", [-5], .inl (-2)),
+   ("t7", t7File, "flip", [7], .inl 0),
+   ("t7", t7File, "flip", [8], .inl 0),
+   ("t7", t7File, "flip", [2], .inl (-2)),
+   ("t7", t7File, "flip", [0], .inl 0)]
 
 def main : IO UInt32 := do
   let mut failures := 0

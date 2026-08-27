@@ -39,6 +39,7 @@
 
 import RelSem.Segment
 import RelSem.LawRegistry
+import RelSem.Kit.Map
 
 set_option autoImplicit false
 
@@ -109,12 +110,32 @@ initialize registerBuiltinAttribute {
 
 /-! ## §2 Registry-backed side-condition discharge -/
 
-/-- Close a hypothesis hole by local assumption or `rfl`. -/
+/-- A proof of `ty` from a local proof `e : ety`, descending through
+    conjunctions (guarded statements pack digest pins + seed
+    apartness as one `∧` — the components feed separate equation
+    hypotheses). -/
+private partial def fromLocal (e ety ty : Expr) (depth : Nat := 3) :
+    MetaM (Option Expr) := do
+  if ← isDefEq ety ty then return some e
+  if depth == 0 then return none
+  let ety ← whnf ety
+  if ety.isAppOfArity ``And 2 then
+    let l := ety.getAppArgs[0]!
+    let r := ety.getAppArgs[1]!
+    if let some p ← fromLocal (← mkAppM ``And.left #[e]) l ty
+        (depth - 1) then
+      return some p
+    fromLocal (← mkAppM ``And.right #[e]) r ty (depth - 1)
+  else
+    return none
+
+/-- Close a hypothesis hole by local assumption (conjunct descent
+    included) or `rfl`. -/
 private def solveHole (mid : MVarId) : MetaM Bool := do
   let ty ← instantiateMVars (← mid.getType)
   let byLocal ← (← getLCtx).findDeclM? fun d => do
     if d.isImplementationDetail then return none
-    if ← isDefEq d.type ty then return some d.toExpr else return none
+    fromLocal d.toExpr d.type ty
   if let some e := byLocal then
     mid.assign e
     return true
@@ -213,6 +234,203 @@ elab "seg_post_side" : tactic => do
       failed and no registered segPost fact applies:\
       {indentExpr expected}"
 
+/-! ## §2b The env-peel discharger (the R4-priced env-lookup
+    automation's concrete-instance base case — built as a TACTIC
+    instead of ground per instance, per the proof-grind rule's third
+    species: the missing automation step IS the deliverable). -/
+
+/-- Reduce a map expression to its law-shaped head (`fmapAddBy` chain
+    or a materialized `Fmap.mk`/empty) WITHOUT unfolding the adds —
+    stepwise delta/iota so the Kit lookup laws' spelling survives. -/
+private def exposeMap (e : Expr) : MetaM Expr := do
+  let e ← instantiateMVars e
+  if e.isAppOf ``fmapAddBy || e.isAppOf ``Fmap.mk
+      || e.isAppOf ``Fmap.empty || e.isAppOf ``fmapEmpty then
+    return e
+  -- whnf UNTIL the chain head surfaces (never past it — the law
+  -- spelling survives); a non-chain result falls back untouched
+  if let some r ← whnfUntil e ``fmapAddBy then
+    return r
+  return e
+
+/-- `seg_env_lookup`: discharge a `fmapLookupBy _ k <env>` goal at a
+    minted state's env — peel non-matching `fmapAddBy` layers by the
+    registered Kit skip law (`refine`-driven: the chain is exposed by
+    DEFEQ UNIFICATION with the law's LHS, so folded projections like
+    `envOf (walk-endpoint …)` need no manual exposure; built-ness by
+    `rfl` post-unification; key apartness via `symCmpO_eq_iff` +
+    `omega`, consuming any seed bound/supply pins in context), take
+    the hit layer when the keys agree, and close ground residues by
+    `rfl`. Fail-closed with the residual goal. -/
+elab "seg_env_lookup" : tactic => do
+  for _ in [0:64] do
+    let g ← getMainGoal
+    let action ← g.withContext do
+      let tgt := (← instantiateMVars (← g.getType)).consumeMData
+      let some (_, lhs, _) := tgt.eq?
+        | throwError "seg_env_lookup: goal is not an equation:\
+            {indentExpr tgt}"
+      unless lhs.isAppOf ``fmapLookupBy do
+        return Sum.inl ()
+      let mp := lhs.getAppArgs.back!
+      let mp' ← exposeMap mp
+      unless mp' == mp do
+        let lhs' := mkAppN lhs.getAppFn
+          (lhs.getAppArgs.set! (lhs.getAppNumArgs - 1) mp')
+        let tgt' := tgt.replace
+          (fun t => if t == lhs then some lhs' else none)
+        let g' ← g.change tgt'
+        replaceMainGoal [g']
+      pure (Sum.inr (mp'.isAppOf ``fmapAddBy))
+    match action with
+    | .inl () =>
+      evalTactic (← `(tactic| rfl))
+      return
+    | .inr false =>
+      evalTactic (← `(tactic| rfl))
+      return
+    | .inr true => pure ()
+    let g ← getMainGoal
+    let stepped ← g.withContext do
+      let tgt := (← instantiateMVars (← g.getType)).consumeMData
+      let some (_, goalLhs, goalRhs) := tgt.eq? | pure false
+      -- arithmetic facts for the apartness discharge (seed bounds +
+      -- supply pins from the caller's context)
+      let arithFacts ← (← getLCtx).foldlM (init := #[]) fun acc d => do
+        if d.isImplementationDetail then return acc
+        let t := d.type.consumeMData
+        if t.isAppOf ``Eq || t.isAppOf ``Ne || t.isAppOf ``LT.lt
+            || t.isAppOf ``LE.le || t.isAppOf ``GT.gt
+            || t.isAppOf ``GE.ge || t.isAppOf ``Not then
+          return acc.push d.toExpr
+        return acc
+      -- ¬ n1 = n2: kernel decide at closed layers, omega (with the
+      -- gathered facts) at seed layers
+      let mkNe (n1 n2 : Expr) : TacticM Expr := do
+        let neTy := mkApp (mkConst ``Not)
+          (← mkEq n1 n2)
+        -- kernel decide only at CLOSED disequalities (mkDecideProof
+        -- does not itself reject open props — the kernel would)
+        try
+          if neTy.hasFVar || neTy.hasMVar then
+            throwError "open (omega route)"
+          mkDecideProof neTy
+        catch _ =>
+          let gNe ← mkFreshExprMVar neTy
+          try
+            -- the MetaM omega entry expects a byContra'd goal (the
+            -- omegaTactic frontend's own first move)
+            if let some g' ← gNe.mvarId!.falseOrByContra then
+              g'.withContext do
+                Lean.Elab.Tactic.Omega.omega
+                  (arithFacts.toList ++ (← getLocalHyps).toList) g'
+          catch ex =>
+            trace[RelSem.segAuto] "seg_env_lookup: apartness omega \
+              failed on{indentExpr neTy}\nwith facts \
+              {arithFacts.size}: {ex.toMessageData}"
+            throw ex
+          instantiateMVars gNe
+      let applyLaw (law : Name) (isSkip : Bool) : TacticM Bool := do
+        let s0 ← saveState
+        try
+          let cinfo ← getConstInfo law
+          let (margs, _, concl) ← forallMetaTelescope cinfo.type
+          let some (_, lawLhs, _) := concl.eq? | throwError "law shape"
+          unless ← isDefEq lawLhs goalLhs do
+            throwError "law LHS does not unify"
+          -- the invariant comparator `c` appears only in the
+          -- HYPOTHESES (never the conclusion) — pin it explicitly
+          for m in margs do
+            let m ← instantiateMVars m
+            if m.isMVar then
+              let t ← instantiateMVars (← m.mvarId!.getType)
+              if t == (← mkArrow (mkConst ``sym)
+                  (← mkArrow (mkConst ``sym) (mkConst ``Ordering))) then
+                let _ ← isDefEq m (mkConst ``RelSem.Kit.symCmpO)
+          -- instance holes (e.g. [Std.TransCmp c]) appear only in the
+          -- hypotheses — synthesize them at the now-pinned comparator
+          for m in margs do
+            let m ← instantiateMVars m
+            if m.isMVar then
+              let t ← instantiateMVars (← m.mvarId!.getType)
+              if (← isClass? t).isSome then
+                if let .some inst ← trySynthInstance t then
+                  let _ ← isDefEq m inst
+          -- built-ness: the captured-comparator refl at the unified
+          -- inner chain
+          let hmSlot ← instantiateMVars margs[margs.size - 2]!
+          if hmSlot.isMVar then
+            let hmTy ← instantiateMVars (← hmSlot.mvarId!.getType)
+            let hmPf ← mkExpectedTypeHint
+              (← mkEqRefl (mkConst ``RelSem.Kit.symCmpO)) hmTy
+            unless ← isDefEq hmSlot hmPf do
+              throwError "hm assignment failed"
+          -- key verdict: PURE construction over the ctor components
+          -- (no nested tactic runs — the assignments stay ambient)
+          let hkSlot ← instantiateMVars margs[margs.size - 1]!
+          if hkSlot.isMVar then
+            let hkTy ← instantiateMVars (← hkSlot.mvarId!.getType)
+            let eqTy := if isSkip then hkTy.appArg! else hkTy
+            let some (_, cmpApp, _) := eqTy.eq?
+              | throwError "hk shape"
+            let lk ← whnf cmpApp.getAppArgs[cmpApp.getAppNumArgs - 2]!
+            let tk ← whnf cmpApp.getAppArgs.back!
+            unless lk.isAppOfArity ``Symbol 3
+                && tk.isAppOfArity ``Symbol 3 do
+              throwError "keys not in constructor form"
+            let la := lk.getAppArgs
+            let ta := tk.getAppArgs
+            let iffE := mkAppN (mkConst ``RelSem.Kit.symCmpO_eq_iff)
+              #[la[0]!, ta[0]!, la[1]!, ta[1]!, la[2]!, ta[2]!]
+            let hkPf ← (do
+              if isSkip then
+                let nePf ← mkNe la[1]! ta[1]!
+                withLocalDeclD `hEq eqTy fun hEq => do
+                  let h2 ← mkAppM ``Iff.mp #[iffE, hEq]
+                  let h22 ← mkAppM ``And.right #[h2]
+                  let bot ← mkAppOptM ``absurd
+                    #[none, some (mkConst ``False), some h22, some nePf]
+                  mkLambdaFVars #[hEq] bot
+              else
+                -- a HIT must be a CHECKED key agreement (an unchecked
+                -- refl hint would defer the mismatch to the kernel)
+                unless (← isDefEq la[0]! ta[0]!)
+                    && (← isDefEq la[1]! ta[1]!) do
+                  throwError "keys do not agree (not a hit)"
+                let dEq ← mkExpectedTypeHint (← mkEqRefl la[0]!)
+                  (← mkEq la[0]! ta[0]!)
+                let nEq ← mkExpectedTypeHint (← mkEqRefl la[1]!)
+                  (← mkEq la[1]! ta[1]!)
+                mkAppM ``Iff.mpr
+                  #[iffE, ← mkAppM ``And.intro #[dEq, nEq]])
+            let hkPf ← mkExpectedTypeHint hkPf hkTy
+            unless ← isDefEq hkSlot hkPf do
+              throwError "hk assignment failed"
+          let lawE ← instantiateMVars (mkAppN
+            (mkConst law (cinfo.levelParams.map Level.param)) margs)
+          let some (_, _, lawRhs) := (← inferType lawE).eq?
+            | throwError "law lost its equation"
+          let gNew ← mkFreshExprMVar
+            (← mkEq (← instantiateMVars lawRhs) goalRhs)
+          g.assign (← mkEqTrans lawE gNew)
+          replaceMainGoal [gNew.mvarId!]
+          pure true
+        catch ex =>
+          restoreState s0
+          trace[RelSem.segAuto] "seg_env_lookup: {law} failed: \
+            {ex.toMessageData}"
+          pure false
+      if ← applyLaw ``RelSem.Kit.fmapLookupBy_addBy_ne true then
+        pure true
+      else if ← applyLaw ``RelSem.Kit.fmapLookupBy_addBy_eq false then
+        pure true
+      else
+        pure false
+    unless stepped do
+      throwError "seg_env_lookup: neither skip nor hit applies at \
+        the current layer (fail-closed):{indentExpr (← getMainTarget)}"
+  throwError "seg_env_lookup: layer budget (64) exceeded"
+
 /-! ## §3 The auto-fed walk macros (the CerbHeapWalk macros with the
     ground-fact slots routed through `seg_side` instead of an explicit
     term — same rules, same case structure; the explicit-feed macros
@@ -283,10 +501,16 @@ macro "seg_fin" h:ident : tactic =>
     with the initial rest half named `Hst`. -/
 elab "verify_fn" spec:term : tactic => do
   let alts : List (TSyntax `tactic) := [
-    ← `(tactic| refine fun seed => RelSem.Seg.FnSpec.dischargeThr (S := $spec) (GF := RelSem.Cerb.CerbHeapS) ?_ seed () trivial),
-    ← `(tactic| refine fun seed a ha => RelSem.Seg.FnSpec.dischargeThr (S := $spec) (GF := RelSem.Cerb.CerbHeapS) ?_ seed a ha),
-    ← `(tactic| refine fun seed => RelSem.Seg.FnSpec.dischargeUBThr (S := $spec) (GF := RelSem.Cerb.CerbHeapS) ?_ seed () trivial),
-    ← `(tactic| refine fun seed a ha => RelSem.Seg.FnSpec.dischargeUBThr (S := $spec) (GF := RelSem.Cerb.CerbHeapS) ?_ seed a ha)]
+    -- closed, unconditional (T6)
+    ← `(tactic| refine fun seed => RelSem.Seg.FnSpec.dischargeThr (S := $spec) (GF := RelSem.Cerb.CerbHeapS) ?_ seed () trivial trivial),
+    -- closed, guarded (the T4/T5/T7 house shape: EnvHyp → ∀ seed, Apart seed → …)
+    ← `(tactic| refine fun henv seed hap => RelSem.Seg.FnSpec.dischargeThr (S := $spec) (GF := RelSem.Cerb.CerbHeapS) ?_ seed () ⟨henv, hap⟩ trivial),
+    -- one-parameter guarded statement (∀ seed x, pre x → …)
+    ← `(tactic| refine fun seed a ha => RelSem.Seg.FnSpec.dischargeThr (S := $spec) (GF := RelSem.Cerb.CerbHeapS) ?_ seed a trivial ha),
+    -- the UB-freedom twins
+    ← `(tactic| refine fun seed => RelSem.Seg.FnSpec.dischargeUBThr (S := $spec) (GF := RelSem.Cerb.CerbHeapS) ?_ seed () trivial trivial),
+    ← `(tactic| refine fun henv seed hap => RelSem.Seg.FnSpec.dischargeUBThr (S := $spec) (GF := RelSem.Cerb.CerbHeapS) ?_ seed () ⟨henv, hap⟩ trivial),
+    ← `(tactic| refine fun seed a ha => RelSem.Seg.FnSpec.dischargeUBThr (S := $spec) (GF := RelSem.Cerb.CerbHeapS) ?_ seed a trivial ha)]
   let mut bridged := false
   for t in alts do
     if !bridged then
@@ -295,7 +519,7 @@ elab "verify_fn" spec:term : tactic => do
     throwError "verify_fn: the goal is not a recognized threaded \
       statement shape for this spec (closed or one-parameter guarded, \
       adequacy or UB-freedom face)"
-  evalTactic (← `(tactic| intro seed a ha _inst))
+  evalTactic (← `(tactic| intro seed a hg ha _inst))
   evalTactic (← `(tactic| iintro Hst))
 
 /-! ## §5 `seg_auto` — the registry-driven segment walker -/
@@ -533,6 +757,21 @@ private def segStep : TacticM Bool := do
     let hptS := mkIdent (freshHypName hyps "HptDead")
     evalTactic (← `(tactic| seg_scratch1 $hStx $hstId
       $(mkIdent haV) $(mkIdent hpV) $hptS))
+    return true
+  | `write1 =>
+    let fp ← eqFootprint hit.hTy
+    let some aid := fp.aids[0]? | throwError "seg_auto: write1 entry \
+      {hit.law.name} carries no allocation-lookup hypothesis"
+    let some addr := fp.addrs[0]? | throwError "seg_auto: write1 \
+      entry {hit.law.name} carries no byte-range hypothesis"
+    let some ha ← findResHyp hyps ``RelSem.Cerb.allocIs 2 aid
+      | throwError "seg_auto: no allocIs hypothesis for aid\
+          {indentExpr aid}"
+    let some hp ← findResHyp hyps ``RelSem.Cerb.pointsToBytes 2 addr
+      | throwError "seg_auto: no pointsToBytes hypothesis at\
+          {indentExpr addr}"
+    evalTactic (← `(tactic|
+      wp_write1 $hStx $hstId $(mkIdent ha) $(mkIdent hp)))
     return true
   | v =>
     throwError "seg_auto: registered variant '{v}' of {hit.law.name} \
