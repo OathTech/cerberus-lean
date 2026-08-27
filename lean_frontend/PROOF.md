@@ -55,10 +55,11 @@ you must trust:
    **no-cone-entry gate** (`relsem/RelSem/Audit.lean`) now pins the
    carrier set at **zero**: `runEffectful` is outside every theorem
    cone in this repository, and any theorem cone acquiring it is
-   build-fatal. Every theorem in the repository — the threaded slate
-   `T1Threaded`–`T5Threaded` with UB-freedom companions, the walk
-   supplies, the law library — has a cone of **exactly the classical
-   trio** `[propext, Classical.choice, Quot.sound]` (or a subset),
+   build-fatal. Every theorem in the repository — the law library,
+   the Iris layer, the consistency metatheorems (the V0 state: the
+   flagship slate itself is honest-UNPROVED, see §3) — has a cone of
+   **exactly the classical trio**
+   `[propext, Classical.choice, Quot.sound]` (or a subset),
    per-theorem `#guard_msgs`-pinned. The axiom's deletion proper is
    lem-side surgery, registered for a lem arc. All assertions are
    in-build and plant-tested (transcripts in
@@ -137,38 +138,45 @@ concrete-input theorem (the former T6/T7 pairs and the 22-theorem R6
 corpus slate) together with the superseded ambient family; there is
 deliberately NO concrete-theorem inventory to report.
 
-**The quantified threaded slate, T1–T5** — kernel theorems about
-pinned compiled Core programs, stated at the fuel semantics only,
-∀-quantified over the fresh-supply seed AND the C-level inputs, cones
-exactly the classical trio:
+**THE STATEMENT SLATE IS HONEST-UNPROVED (V0, 2026-08-27 — record
+`docs/2026-08-27_v0-statements-and-ban.md`).** The repository holds
+ZERO proved flagship theorems — ratified and intentional: the former
+T1–T5 threaded proofs rode the whole-run walk/mint machinery
+(assessment class K-2b — per-round kernel equations of concrete
+executions wearing quantified statements), and the operator-ratified
+V0 kill basket deleted the machinery AND the proofs together. What
+stands is the REGISTERED TARGET SLATE, every row honest-unproved and
+statement-gate-registered (fuel-opsem-only + the concrete-input ban;
+31 rows):
 
-- **T1** (`t1_id.c`): ∀ seed, ∀ x in int range — outcomes of
-  `id(x)` = {Specified(x)}, no UB (`relsem/RelSem/T1Threaded.lean`).
-- **T2** (`t2_add.c`): ∀ seed, ∀ x y with x, y, x+y in range —
-  outcomes of `add(x,y)` = {Specified(x+y)}, no UB (the forced
-  no-signed-overflow precondition, spec-discovery documented).
-- **T3** (`t3_roundtrip.c`): ∀ seed, ∀ x in range — roundtrip
-  through a volatile write/read returns x.
-- **T4** (`t4_struct_member.c`): ∀ seed under the kernel-computable
-  seed-apartness guard `T4SeedApart` (the unrestricted ∀-seed
-  statement is FALSE — the arc-16 S4 hash-collision falsifier, kept
-  as the guard's justification), ∀ x in range — struct member
-  write/read returns x (`relsem/RelSem/T4Threaded.lean`).
-- **T5** (`t5_sum.c`, the bounded sum loop): ∀ seed (guarded), ∀ n
-  with 0 ≤ n ≤ 100 — outcomes = {Specified(n·(n−1)/2)}, no UB, at
-  the SYMBOLIC trip count through the segment layer's once-proved
-  while rule with one declared invariant (`relsem/RelSem/T5.lean`).
+- **T1–T5** (`tests/verify/t1..t5`): the five KEEP anchors, restated
+  at V0 in the CONSISTENCY-FRESHNESS house shape — quantification
+  over consistent executions (non-capturing draw windows against the
+  pinned prior vocabulary; `relsemcore/RelSem/Threaded.lean`
+  §CONSISTENCY) replaces the ∀-seed + SeedApart-guard shape. Headline
+  + UB-freedom statement defs per fixture
+  (`relsem/RelSem/T?Threaded.lean`, `T5.lean`).
+- **The frozen target corpus, 14 of 15 rows**
+  (`docs/2026-08-27_target-corpus.md`; `relsem/RelSem/Corpus*.lean`):
+  P01/P02/P03/P09/P10/P11/P12 at the call-boundary face (headline +
+  UB-freedom each), P04/P05/P06/P07/P08/P14/P15 at the whole-program
+  family face (`∀ m, wf m → HarnessRunsToCns prior (fileOf m) 0` —
+  the parametric splice families). P13 (cell_alloc) is an OPEN
+  OPERATOR FINDING (malloc linkage at the statement layer; V0 record
+  §findings). ZERO of these are provable today — the corpus defines
+  the V1–V5 build.
 
-Each theorem's proof is `verify_fn <spec>; seg_auto` over its
-engine-room walk supply (T1Walks/…/T5Spine — trio-clean equation
-supply registered per fixture; the supply-vs-proof ratio is the
-registered automation frontier). The known honest limitation,
-recorded in the whole-project assessment
-(`docs/2026-08-27_professor-whole-project-assessment.md`): these
-statements do not yet cross a data-dependent branch at a symbolic
-value — the branch/case-split rule, the assertion layer over locals,
-and the symbolic executor are the build plan's subject (§B0–B6 of
-the assessment; awaiting ratification).
+PROVED and standing (kernel theorems, cones pinned): the
+consistency layer's ANTI-VACUITY METATHEOREM
+(`freshDrawsOf_nodup` — monotone ⇒ distinct;
+`consistentRun_of_supply_le` — below-the-vocabulary ⇒ consistent;
+exactly the classical trio), the adequacy bridges + WP rules + heap
+RA + framing demonstration (`two_alloc_frame`) of the Iris layer,
+the segment algebra (`Seg.iter`/`while_inv`/`Summary.consume`), the
+runNDFuel soundness layer, and the spec-lab model/codec lemma
+stock. There is currently NO end-to-end adequacy INSTANCE (the
+smallest one rode the deleted walk supply — V1's re-proof is its
+return path; the V0 record states this disposition).
 
 **Kernel-checked statement layers for real C functions** (the spec
 lab: division/modulo, `memcpy`, array access, linked-list append,
@@ -243,9 +251,12 @@ TODO.md).
 "Boring executable specs in the front, Iris party in the back": proof
 *construction* is unrestricted, so long as every step lands as an
 ordinary kernel-checked declaration. The route a landed theorem
-actually takes (the whole threaded slate `T1Threaded`–`T5Threaded`
-runs on it) is: **the evaluator mints equations; the WP layer
-consumes them; adequacy lands the fuel-opsem statement.** The layer
+would take is: **per-construct rules + the WP
+layer; adequacy lands the fuel-opsem statement** (V0 NOTE: the
+former whole-run mint route — evaluator-minted per-round equations
+consumed by walks — is DELETED with its theorems; the RoundEval
+CHASSIS below awaits the V2 re-target to a case-splitting symbolic
+stepper). The layer
 contracts are stated normatively in
 `docs/2026-08-25_reasoning-layer-contracts.md`; in brief:
 
@@ -256,20 +267,23 @@ contracts are stated normatively in
   (`ksteps_of_runNDFuel`) tying it to the executable runner — every
   step arm is *defined* from generated-code equations, never
   axiomatized.
-- **The equation supply** (`relsem/RelSem/DeriveState.lean`,
-  `RoundEval.lean`): the law-driven round evaluator mints *named*
-  states and per-round `app` equations by applying proved construct
-  laws (`ConstructLaws.lean`, the `Kit/` lemma kits) — the meta layer
-  only shapes the claim; the kernel re-checks everything at
-  declaration time. Anything it cannot mint is a *tagged frontier*,
-  fail-closed, never a silent skip.
+- **The discharge chassis** (`relsem/RelSem/DeriveState.lean`,
+  `RoundEval.lean` — V0 state: the whole-run `derive_rounds` mint
+  mode is DELETED; what remains is the KEEP chassis per the ratified
+  conversion table C-5): fail-closed proof-producing emitters,
+  registry-dispatched law chains over the proved construct laws
+  (`ConstructLaws.lean`, the `Kit/` lemma kits), kernelVerdict
+  ground leaves — the meta layer only shapes claims; the kernel
+  re-checks everything at declaration time. The V2 slice re-targets
+  it to goal-directed per-construct stepping with case-split at
+  irreducible discriminants.
 - **The wp-tactic layer** (`PerStepTactics.lean`, `WpGround.lean`):
   `wp_step`/`wp_pures` walk the harness spine consuming the minted
   equations; `wp_side`/`wp_ground` discharge ground side conditions.
-  Loops enter through `iter_compose` (`Kit/Loop.lean`) — an
-  invariant-style composed-block equation at the equation calculus
-  (Floyd–Hoare-shaped; the Iris-level invariant story arrives with
-  contracts/typed views in a later arc).
+  Loops enter through the ∃-round `Seg.iter` (the V0 kill retired
+  the fixed-round `iter_compose` family with Kit/Loop, conversion
+  C-14; the Iris-level invariant story arrives with the V3a
+  predicate-invariant slice).
 - **The segment layer** (arc-18 R2; `relsem/RelSem/Segment.lean`,
   `SegmentFaces.lean`): Floyd cut points at Core labels — an ∃-round
   budgeted segment judgment (`Seg`) over the minted chain equations,
