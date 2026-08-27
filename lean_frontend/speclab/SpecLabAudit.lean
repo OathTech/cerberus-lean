@@ -134,11 +134,14 @@ open Lean in
   let statements : List Name :=
     -- (2026-08-27 kill-list execution: the 23 sample/concrete
     -- statement Prop defs + the sample bridges left this list with
-    -- their deletion; what remains: the family-∀ TARGET shapes, the
-    -- model↔stream ∀-bridges, and the fileOfStream_encode
-    -- program-term equalities.)
-    [`SpecLab.DivMod.DivModI8FamilyStatement,
-     `SpecLab.DivMod.model_forall_iff_stream_forall,
+    -- their deletion. V0 2026-08-27 kill basket (c): the two
+    -- family-∀ TARGETS [DivModI8FamilyStatement/SwapFamilyStatement]
+    -- left — SUPERSEDED by the frozen-corpus statement slate
+    -- registered in relsem [record
+    -- docs/2026-08-27_v0-statements-and-ban.md]. What remains: the
+    -- model↔stream ∀-bridges and the fileOfStream_encode
+    -- program-term equalities — the splice machinery layer.)
+    [`SpecLab.DivMod.model_forall_iff_stream_forall,
      `SpecLab.DivMod.fileOfStream_encode,
      -- arc-15 S2 (R2 byte-blaster rung)
      `SpecLab.ByteArr.model_forall_iff_stream_forall,
@@ -150,9 +153,8 @@ open Lean in
      -- arc-15 S4 (R4 tree rung, the reference instance)
      `SpecLab.TreeRot.model_forall_iff_stream_forall,
      `SpecLab.TreeRot.rotateFileOfStream_encode,
-     -- arc-15 S5 (R5 CN-seed rung: the swap statement family; lookup
-     -- has no pinned layer — the CoreParser enum-ctype gap)
-     `SpecLab.CnSeed.SwapFamilyStatement,
+     -- arc-15 S5 (R5 CN-seed rung; lookup has no pinned layer — the
+     -- CoreParser enum-ctype gap)
      `SpecLab.CnSeed.model_forall_iff_stream_forall,
      `SpecLab.CnSeed.swapFileOfStream_encode]
   for n in statements do
@@ -233,8 +235,7 @@ open Lean in
 #guard_msgs in #print axioms SpecLab.DivMod.divmodI8PlantFile
 /-- info: 'SpecLab.DivMod.divmodI8FileOf' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.DivMod.divmodI8FileOf
-/-- info: 'SpecLab.DivMod.DivModI8FamilyStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLab.DivMod.DivModI8FamilyStatement
+-- (DivModI8FamilyStatement pin retired at V0 with the def.)
 /-- info: 'SpecLab.DivModCore.mainParamDecl' does not depend on any axioms -/
 #guard_msgs in #print axioms SpecLab.DivModCore.mainParamDecl
 /-- info: 'SpecLab.DivModCore.divisionDecl' does not depend on any axioms -/
@@ -467,8 +468,7 @@ open Lean in
 #guard_msgs in #print axioms SpecLab.CnSeed.lookup_inRange
 /-- info: 'SpecLab.CnSeed.swapFileOfStream_encode' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.CnSeed.swapFileOfStream_encode
-/-- info: 'SpecLab.CnSeed.SwapFamilyStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLab.CnSeed.SwapFamilyStatement
+-- (SwapFamilyStatement pin retired at V0 with the def.)
 /-- info: 'SpecLab.CnSeed.swapFileOf' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.CnSeed.swapFileOf
 /-- info: 'SpecLab.CnSeed.pairSwapPlantFile' depends on axioms: [propext, Classical.choice, Quot.sound] -/

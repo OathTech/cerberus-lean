@@ -162,14 +162,10 @@ def swapFileOfStream (s : Stream) : file core_run_annotation :=
 /-! ## The R5 exec statements (fuel opsem only; `HarnessRunsTo` is
     the R1 statement shape, reused verbatim) -/
 
-/-- THE R5 FAMILY-∀ STATEMENT (arc-18 C4 — the registered TARGET
-shape; ∀-seed AND the FULL u64-pair domain — the R5 model is Wf-free,
-the S5 record's full-domain bridge). HONESTY LABEL: UNPROVED — proof
-parked with the whole-program drive-walk campaign (the C4 record §4);
-the sample statement remains the executable-validated face. -/
-def SwapFamilyStatement : Prop :=
-  ∀ (seed : Nat) (m : PairInput),
-    HarnessRunsToThr seed (swapFileOf m) 0
+/-! (`SwapFamilyStatement` — the R5-era family-∀ TARGET — DELETED at
+    V0 2026-08-27, kill basket (c): SUPERSEDED by the frozen-corpus
+    statement slate. The codec/model/bridge layer stays. Record:
+    docs/2026-08-27_v0-statements-and-ban.md.) -/
 
 /-! ## The file-level bridge (kernel-checked): the stream face and
     the model face build THE SAME program — Wf-FREE at this rung

@@ -166,17 +166,12 @@ def divmodI8FileOfStream (s : Stream) : file core_run_annotation :=
     executable-validated, not yet kernel-proved — ∀-seed closure
     arrives only with proof (the family-∀ upgrades). -/
 
-/-- THE R1 FAMILY-∀ STATEMENT (arc-18 C4 — the registered TARGET
-shape; ∀-seed AND ∀ over the full well-formed i8 model domain, not
-the pinned sample set). HONESTY LABEL: UNPROVED — the proof is the
-whole-program drive-walk campaign, parked at the ground-mode
-materialization frontier (the C4 record §3); the sample statements
-remain the executable-validated faces meanwhile. Note the ∀-seed here
-is part of the TARGET (a proof must establish it or weaken to a
-guarded face per the T4-apartness pattern). -/
-def DivModI8FamilyStatement : Prop :=
-  ∀ (seed : Nat) (m : Input), WfI8 m →
-    HarnessRunsToThr seed (divmodI8FileOf m) 0
+/-! (`DivModI8FamilyStatement` — the R1/R5-era family-∀ TARGET —
+    DELETED at V0 2026-08-27, kill basket (c): SUPERSEDED by the
+    frozen-corpus statement slate (docs/2026-08-27_target-corpus.md;
+    registered V0 targets in relsem). The codec/model/bridge layer
+    below stays — it is the splice machinery the corpus memory-input
+    rows consume. Record: docs/2026-08-27_v0-statements-and-ban.md.) -/
 
 /-! ## The file-level bridge (kernel-checked): the stream face and
     the model face build THE SAME program -/
