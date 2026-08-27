@@ -1,8 +1,11 @@
-# The target corpus — DRAFT v2 (restart steps 1+2, revised per the step-3 review)
+# The target corpus — FROZEN AND CANONIZED
 
-STATUS: DRAFT for the step-3 aggressive review. Nothing here is canon;
-nothing enters a repository before step 3 passes and the operator's
-step-4 freeze sign-off. Mandate [USER 2026-08-27]: harnesses at
+STATUS: FROZEN [USER 2026-08-27 sign-off: "the corpus as proposed
+looks good"] — restart step 4 executed. This document specifies the
+canonical 15-program corpus in `lean_frontend/corpus/` (P10 = gcd_rec
+confirmed; hash-manifest freeze rides check_proof_size.sh). ALL
+CHANGES REQUIRE USER-LEVEL SIGN-OFF. The step-3 adversarial review +
+delta re-review (both passed): docs/2026-08-27_target-corpus-review.md. Mandate [USER 2026-08-27]: harnesses at
 arbitrary input memory (const-embedding); theorems that "clearly
 unambiguously and with no doubt whatsoever require exercising *all* of
 the complexities a program logic is designed to handle"; a tiny corpus
