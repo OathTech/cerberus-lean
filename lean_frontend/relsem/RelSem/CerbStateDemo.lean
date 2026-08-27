@@ -342,6 +342,337 @@ theorem roundB_app (f₁ : Fmap sym value) (tS aS eS sS ctr : Nat)
   refine (app_bind_active (app_nd_update _ _)).trans ?_
   exact app_nd_return _ _
 
+/-! ## Lookup plumbing (single-frame form + the demo apartness) -/
+
+/-- One-frame `lookup_env` is the bare Fmap lookup. -/
+theorem lookup_env_one (k : sym) (f : Fmap sym value) :
+    lookup_env k [f]
+      = fmapLookupBy (@Lem_Map.mapKeyCompare sym _) k f := by
+  cases h : fmapLookupBy (@Lem_Map.mapKeyCompare sym _) k f <;>
+    simp [lookup_env, h]
+
+/-- y is comparator-apart from every sym with a different number
+    (`symCmpO_eq_iff`: comparator-EQ is digest+number equality). -/
+theorem symCmpO_y_ne {z : sym} (hz : symNum z ≠ symNum ySym) :
+    ¬ RelSem.Kit.symCmpO ySym z = .eq := by
+  cases z with
+  | Symbol d n sd =>
+    intro he
+    rw [show ySym = Symbol "" 102 SD_None from rfl] at he
+    obtain ⟨-, hn⟩ := (RelSem.Kit.symCmpO_eq_iff "" d 102 n
+      SD_None sd).1 he
+    subst hn
+    exact hz rfl
+
+/-- The Kit hit law at the instance spelling the generated code
+    carries (the R-S2-1 instance discipline). -/
+theorem addBy_eq' {k a : sym} {v : value} {m : Fmap sym value}
+    (hm : RelSem.Kit.FmapBuilt RelSem.Kit.symCmpO m)
+    (hk : RelSem.Kit.symCmpO k a = .eq) :
+    fmapLookupBy (@Lem_Map.mapKeyCompare sym _) a
+      (@fmapAddBy sym value Lem_Map.instBEqOfMapKeyType
+        (@Lem_Map.mapKeyCompare sym _) k v m) = some v :=
+  @RelSem.Kit.fmapLookupBy_addBy_eq sym value Lem_Map.instBEqOfMapKeyType
+    RelSem.Kit.symCmpO RelSem.Kit.instTransCmpSymCmpO _ _ _ _ _ _ hm hk
+
+/-- The Kit skip law at the generated instance spelling. -/
+theorem addBy_ne' {k a : sym} {v : value} {m : Fmap sym value}
+    (hm : RelSem.Kit.FmapBuilt RelSem.Kit.symCmpO m)
+    (hk : ¬ RelSem.Kit.symCmpO k a = .eq) :
+    fmapLookupBy (@Lem_Map.mapKeyCompare sym _) a
+      (@fmapAddBy sym value Lem_Map.instBEqOfMapKeyType
+        (@Lem_Map.mapKeyCompare sym _) k v m)
+      = fmapLookupBy (@Lem_Map.mapKeyCompare sym _) a m :=
+  @RelSem.Kit.fmapLookupBy_addBy_ne sym value Lem_Map.instBEqOfMapKeyType
+    RelSem.Kit.symCmpO RelSem.Kit.instTransCmpSymCmpO _ _ _ _ _ _ hm hk
+
+/-! ## The WP rule legs at the demo family -/
+
+/-- Round A's step function (rebind y, arena to B, counter bump). -/
+def updA (w : value) : driver_state → driver_state :=
+  updTh arenaB (update_env (mk_sym_pat ySym BTy_unit) w)
+
+/-- Round B's step function (arena to C at the read value). -/
+def updB (vx : value) : driver_state → driver_state :=
+  updTh (arenaC vx) id
+
+theorem happA (w : value) : ∀ σ, ctlOf σ = ctlAt (arenaA w) 0 →
+    EnvWf σ →
+    app (roundM t1File.tagDefs) σ = (NDactive NOWAKEUP, updA w σ) := by
+  intro σ hσ _
+  obtain ⟨f₁, tS, aS, eS, sS, ls, rfl⟩ := ctl_inv hσ
+  exact roundA_app w f₁ tS aS eS sS 0 ls
+
+theorem hctlA (w : value) : ∀ σ, ctlOf σ = ctlAt (arenaA w) 0 →
+    EnvWf σ → ctlOf (updA w σ) = ctlAt arenaB 1 := by
+  intro σ hσ _
+  obtain ⟨f₁, tS, aS, eS, sS, ls, rfl⟩ := ctl_inv hσ
+  rfl
+
+theorem hlayA (w : value) : ∀ σ, ctlOf σ = ctlAt (arenaA w) 0 →
+    EnvWf σ → (updA w σ).layout_state = σ.layout_state := by
+  intro σ hσ _
+  obtain ⟨f₁, tS, aS, eS, sS, ls, rfl⟩ := ctl_inv hσ
+  rfl
+
+theorem hsupA (w : value) : ∀ σ, ctlOf σ = ctlAt (arenaA w) 0 →
+    EnvWf σ → suppliesOf (updA w σ) = suppliesOf σ := by
+  intro σ hσ _
+  obtain ⟨f₁, tS, aS, eS, sS, ls, rfl⟩ := ctl_inv hσ
+  rfl
+
+/-- The frame fact the demo consumes: after the rebind, y holds w. -/
+theorem hnewA (w : value) : ∀ σ, ctlOf σ = ctlAt (arenaA w) 0 →
+    EnvWf σ → envLookup (updA w σ) ySym = some w := by
+  intro σ hσ hwf
+  obtain ⟨f₁, tS, aS, eS, sS, ls, rfl⟩ := ctl_inv hσ
+  have hfr : EnvWfFrame f₁ := hwf f₁ (by
+    show f₁ ∈ thread0Env _
+    simp [thread0Env, famσ, famTh])
+  show lookup_env ySym
+      [update_env_aux (mk_sym_pat ySym BTy_unit) w f₁] = some w
+  rw [update_env_aux_sym, lookup_env_one]
+  cases hfr with
+  | inl he => subst he; rfl
+  | inr hb =>
+    exact addBy_eq' hb rfl
+
+/-- PRESERVATION: every cell at a different NUMBER keeps its value
+    across the y-rebind (the skip law under EnvWf built-ness). -/
+theorem hpresA (w : value) : ∀ σ, ctlOf σ = ctlAt (arenaA w) 0 →
+    EnvWf σ → ∀ z v', symNum z ≠ symNum ySym →
+      envLookup σ z = some v' → envLookup (updA w σ) z = some v' := by
+  intro σ hσ hwf z v' hz hzl
+  obtain ⟨f₁, tS, aS, eS, sS, ls, rfl⟩ := ctl_inv hσ
+  have hfr : EnvWfFrame f₁ := hwf f₁ (by
+    show f₁ ∈ thread0Env _
+    simp [thread0Env, famσ, famTh])
+  show lookup_env z
+      [update_env_aux (mk_sym_pat ySym BTy_unit) w f₁] = some v'
+  rw [update_env_aux_sym, lookup_env_one]
+  cases hfr with
+  | inl he =>
+    subst he
+    rw [show envLookup (famσ (arenaA w) Fmap.empty tS aS eS sS 0 ls) z
+        = none from (lookup_env_one z Fmap.empty).trans rfl] at hzl
+    cases hzl
+  | inr hb =>
+    rw [show envLookup (famσ (arenaA w) f₁ tS aS eS sS 0 ls) z
+        = lookup_env z [f₁] from rfl, lookup_env_one] at hzl
+    exact (addBy_ne' hb (symCmpO_y_ne hz)).trans hzl
+
+/-- Well-formedness survives the rebind (comparator capture kept). -/
+theorem hwfpA (w : value) : ∀ σ, ctlOf σ = ctlAt (arenaA w) 0 →
+    EnvWf σ → EnvWf (updA w σ) := by
+  intro σ hσ hwf
+  obtain ⟨f₁, tS, aS, eS, sS, ls, rfl⟩ := ctl_inv hσ
+  have hfr : EnvWfFrame f₁ := hwf f₁ (by
+    show f₁ ∈ thread0Env _
+    simp [thread0Env, famσ, famTh])
+  intro f hf
+  rw [show thread0Env (updA w (famσ (arenaA w) f₁ tS aS eS sS 0 ls))
+      = [update_env_aux (mk_sym_pat ySym BTy_unit) w f₁] from rfl,
+    update_env_aux_sym] at hf
+  cases hf with
+  | head =>
+    cases hfr with
+    | inl he =>
+      subst he
+      exact Or.inr mapKeyCompare_symCmpO
+    | inr hb =>
+      exact Or.inr (@RelSem.Kit.fmapAddBy_built sym value
+        Lem_Map.instBEqOfMapKeyType _ _ _ _ _ hb)
+  | tail _ h => cases h
+
+/-! ## Round B's legs -/
+
+theorem happB (vx : value) : ∀ σ, ctlOf σ = ctlAt arenaB 1 →
+    EnvWf σ → envLookup σ xSym = some vx →
+    app (roundM t1File.tagDefs) σ = (NDactive NOWAKEUP, updB vx σ) := by
+  intro σ hσ _ hx
+  obtain ⟨f₁, tS, aS, eS, sS, ls, rfl⟩ := ctl_inv hσ
+  exact roundB_app f₁ tS aS eS sS 1 ls vx hx
+
+theorem hctlB (vx : value) : ∀ σ, ctlOf σ = ctlAt arenaB 1 →
+    EnvWf σ → envLookup σ xSym = some vx →
+    ctlOf (updB vx σ) = ctlAt (arenaC vx) 2 := by
+  intro σ hσ _ _
+  obtain ⟨f₁, tS, aS, eS, sS, ls, rfl⟩ := ctl_inv hσ
+  rfl
+
+theorem hlayB (vx : value) : ∀ σ, ctlOf σ = ctlAt arenaB 1 →
+    EnvWf σ → envLookup σ xSym = some vx →
+    (updB vx σ).layout_state = σ.layout_state := by
+  intro σ hσ _ _
+  obtain ⟨f₁, tS, aS, eS, sS, ls, rfl⟩ := ctl_inv hσ
+  rfl
+
+theorem hsupB (vx : value) : ∀ σ, ctlOf σ = ctlAt arenaB 1 →
+    EnvWf σ → envLookup σ xSym = some vx →
+    suppliesOf (updB vx σ) = suppliesOf σ := by
+  intro σ hσ _ _
+  obtain ⟨f₁, tS, aS, eS, sS, ls, rfl⟩ := ctl_inv hσ
+  rfl
+
+theorem henvB (vx : value) : ∀ σ, ctlOf σ = ctlAt arenaB 1 →
+    EnvWf σ → envLookup σ xSym = some vx →
+    ∀ z v', envLookup σ z = some v' →
+      envLookup (updB vx σ) z = some v' := by
+  intro σ hσ _ _ z v' hz
+  obtain ⟨f₁, tS, aS, eS, sS, ls, rfl⟩ := ctl_inv hσ
+  exact hz
+
+theorem hwfpB (vx : value) : ∀ σ, ctlOf σ = ctlAt arenaB 1 →
+    EnvWf σ → envLookup σ xSym = some vx → EnvWf (updB vx σ) := by
+  intro σ hσ hwf _
+  obtain ⟨f₁, tS, aS, eS, sS, ls, rfl⟩ := ctl_inv hσ
+  exact hwf
+
+/-! ## The terminal readout leg -/
+
+theorem hpostFin (vx : value) : ∀ σ, ctlOf σ = ctlAt (arenaC vx) 2 →
+    (∃ r : driver_result,
+      (Outcome.value (finalize t1File.tagDefs "demo" σ)
+        : DriveVal) = .value r ∧ r.dres_core_value = vx) := by
+  intro σ hσ
+  obtain ⟨f₁, tS, aS, eS, sS, ls, rfl⟩ := ctl_inv hσ
+  exact ⟨_, rfl, rfl⟩
+
+/-! ## THE EXHIBIT: the WP theorem -/
+
+/-- THE SYMBOLIC-ENV FRAMING DEMONSTRATION. Ownership: the control
+    token + BOTH env cells, x at the SYMBOLIC vx. Step 1 (the y-
+    rebind) consumes ONLY the control token and y's fragment — x's
+    fragment is never mentioned and survives by the FRAME RULE. Step
+    2 reads x at its symbolic value. The postcondition: the driver's
+    own `finalize` readout carries exactly vx. -/
+theorem demo_wp {GF : BundledGFunctors} [CerbStGS GF]
+    (vx w0 w : value) :
+    (ctlIs (GF := GF) stHalf (ctlAt (arenaA w) 0) ∗
+      envIs xSym (.own 1) vx ∗ envIs ySym (.own 1) w0) ⊢
+      WP (demoK w) @ Stuckness.NotStuck ; ⊤
+        {{ o, ⌜∃ r : driver_result,
+            o = .value r ∧ r.dres_core_value = vx⌝ }} := by
+  unfold demoK
+  iintro ⟨Hc, Hx, Hy⟩
+  -- STEP 1: rebind y. Resources: ctl + y's fragment. x's fragment is
+  -- in the FRAME — the exhibit's point.
+  iapply wpk_seq_env_write (x := ySym) (vOld := w0) (vNew := w)
+    (happA w) (hctlA w) (hlayA w) (hsupA w) (hnewA w) (hpresA w)
+    (hwfpA w)
+  isplitl [Hc Hy]
+  · iframe Hc Hy
+  iintro ⟨Hc, Hy⟩
+  -- STEP 2: read x at its SYMBOLIC value.
+  iapply wpk_seq_ctl_env1 (x := xSym) (vx := vx) (dq := .own 1)
+    (happB vx) (hctlB vx) (hlayB vx) (hsupB vx) (henvB vx) (hwfpB vx)
+  isplitl [Hc Hx]
+  · iframe Hc Hx
+  iintro ⟨Hc, Hx⟩
+  -- the readout: determined by the control token alone.
+  iclear Hx
+  iclear Hy
+  iapply wpk_get_done_ctl (hpostFin vx) $$ Hc
+
+/-! ## THE LAYER-1 ENDPOINT: adequacy lands the outcome-set statement
+    — every production-runner outcome of the fragment carries EXACTLY
+    the symbolic x-value, for ALL vx (and all supplies). -/
+
+/-- The demo start state (both locals bound; initial memory). -/
+def demoσ0 (vx w0 w : value) (tS aS eS sS : Nat) : driver_state :=
+  famσ (arenaA w) (frame0 vx w0) tS aS eS sS 0 CerbMem.initialMemState
+
+/-- The tracked-cell footprint: both locals. -/
+abbrev e0demo (vx w0 : value) : CerbStF EnvCell :=
+  Std.PartialMap.insert (M := CerbStF)
+    (Std.PartialMap.insert (M := CerbStF) (∅ : CerbStF EnvCell)
+      101 ((xSym, vx) : EnvCell))
+    102 ((ySym, w0) : EnvCell)
+
+theorem demoσ0_wf (vx w0 w : value) (tS aS eS sS : Nat) :
+    EnvWf (demoσ0 vx w0 w tS aS eS sS) := by
+  intro f hf
+  rw [show thread0Env (demoσ0 vx w0 w tS aS eS sS)
+      = [frame0 vx w0] from rfl] at hf
+  cases hf with
+  | head => exact Or.inr rfl
+  | tail _ h => cases h
+
+theorem e0demo_coh (vx w0 w : value) (tS aS eS sS : Nat) :
+    EnvCoh (demoσ0 vx w0 w tS aS eS sS) (e0demo vx w0) := by
+  intro n c hc
+  unfold e0demo at hc
+  by_cases h2 : n = 102
+  · subst h2
+    rw [Std.LawfulPartialMap.get?_insert_eq rfl] at hc
+    cases hc
+    exact ⟨rfl, rfl⟩
+  · rw [Std.LawfulPartialMap.get?_insert_ne
+      (fun h => h2 h.symm)] at hc
+    by_cases h1 : n = 101
+    · subst h1
+      rw [Std.LawfulPartialMap.get?_insert_eq rfl] at hc
+      cases hc
+      exact ⟨rfl, rfl⟩
+    · rw [Std.LawfulPartialMap.get?_insert_ne
+        (fun h => h1 h.symm),
+        Std.LawfulPartialMap.get?_empty n] at hc
+      cases hc
+
+/-- THE LAYER-1 STATEMENT: for ALL vx (and w0/w/supplies), every
+    outcome the production runner enumerates for the demo fragment is
+    a value whose core value is EXACTLY vx — the symbolic cell's
+    content, carried across the y-rebind by the frame rule and
+    discharged through adequacy. -/
+theorem demo_adequate (vx w0 w : value) (tS aS eS sS : Nat)
+    (out : nd_status driver_result driver_error driver_state)
+    (tr : List String) (σ' : driver_state)
+    (hmem : (out, tr, σ') ∈ CerbND.runND (demoK w).denote
+      (demoσ0 vx w0 w tS aS eS sS)) :
+    ∃ r : driver_result,
+      Outcome.ofStatus out
+          = (.value r : Outcome driver_result driver_error) ∧
+        r.dres_core_value = vx := by
+  refine kAdequateSt_of_wp (GF := CerbStS) (demoK w)
+    (demoσ0 vx w0 w tS aS eS sS)
+    (fun o => ∃ r : driver_result,
+      o = (.value r : Outcome driver_result driver_error) ∧
+        r.dres_core_value = vx)
+    MemInv_initial (demoσ0_wf vx w0 w tS aS eS sS)
+    (e0demo vx w0) (e0demo_coh vx w0 w tS aS eS sS)
+    ?_ out tr σ' hmem
+  intro inst
+  iintro ⟨Hb, Ha, He, Hc, Hs, Hm⟩
+  iclear Hb
+  iclear Ha
+  iclear Hs
+  iclear Hm
+  icases (BI.BigSepM.bigSepM_insert
+    (show Std.PartialMap.get?
+        (Std.PartialMap.insert (M := CerbStF) (∅ : CerbStF EnvCell)
+          101 ((xSym, vx) : EnvCell)) (102 : Int) = none by
+      rw [Std.LawfulPartialMap.get?_insert_ne (by omega),
+        Std.LawfulPartialMap.get?_empty]))
+    |>.1 $$ He with ⟨Hy, He⟩
+  icases (BI.BigSepM.bigSepM_insert
+    (show Std.PartialMap.get? (∅ : CerbStF EnvCell) (101 : Int) = none
+      from Std.LawfulPartialMap.get?_empty 101))
+    |>.1 $$ He with ⟨Hx, He⟩
+  iclear He
+  have hcc : (ctlIs (GF := CerbStS) stHalf
+        (ctlOf (demoσ0 vx w0 w tS aS eS sS)) : IProp CerbStS)
+      = ctlIs stHalf (ctlAt (arenaA w) 0) := rfl
+  have hcx : (((CerbStGS.envName CerbStS)
+        ↪◯MAP[(101 : Int)] ((xSym, vx) : EnvCell)) : IProp CerbStS)
+      = envIs xSym (.own 1) vx := rfl
+  have hcy : (((CerbStGS.envName CerbStS)
+        ↪◯MAP[(102 : Int)] ((ySym, w0) : EnvCell)) : IProp CerbStS)
+      = envIs ySym (.own 1) w0 := rfl
+  icases hcc $$ Hc with Hc
+  icases hcx $$ Hx with Hx
+  icases hcy $$ Hy with Hy
+  iapply demo_wp vx w0 w $$ [$Hc $Hx $Hy]
+
 end Demo
 end CerbSt
 end RelSem
