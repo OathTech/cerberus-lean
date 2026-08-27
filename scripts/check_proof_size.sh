@@ -19,7 +19,7 @@
 #     `app_walk?`/`app_walk_norm?` (S2), and — arc-9 pre-merge audit
 #     A-F5 (2026-08-21) — `app_defeq_diag` and `dnms_kwalk`.
 #     POLICY DECISION (recorded here per the audit disposition): none
-#     appear in any committed proof (T1AppEq/T5Prefix verified clean
+#     appear in any committed proof (T1AppEq verified clean; T5Prefix deleted at arc-18 R4
 #     at the time of the extension), so all are banned outright, same
 #     policy as `app_walk?`. `app_walk_norm!` was on this list until
 #     arc-11 S1 (F12-4): the surface is RETIRED — sealing is now

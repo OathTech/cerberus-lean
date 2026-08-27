@@ -180,8 +180,6 @@ OWNP_ALLOWED=(
   relsem/RelSem/T3.lean
   relsem/RelSem/T4.lean
   relsem/RelSem/T4Defs.lean
-  relsem/RelSem/T5Prefix.lean
-  relsem/RelSem/T5Iter.lean
   relsem/RelSem/Audit.lean
 )
 ownp_binders=""

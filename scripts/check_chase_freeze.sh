@@ -34,7 +34,9 @@
 # RelSem.Tactics.{AppWalk,WalkTrace}:
 #   relsem/RelSemAll.lean            (lib aggregator)
 #   relsem/RelSem/T1AppEq.lean       (T1 round-chain; walk-driven)
-#   relsem/RelSem/T5Prefix.lean      (T5 prefix walks)
+#   (relsem/RelSem/T5Prefix.lean — the T5 prefix walks — DELETED at
+#    arc-18 R4 with T5Fixture/T5Iter: T5 is proved through the
+#    segment layer; allowlist entry removed in the deleting commit.)
 #   relsem/RelSem/Tactics/AppWalk.lean (the walker itself; imports WalkTrace)
 #   relsem/test/Unit/AppWalkTest.lean  (E1-E10 contract table)
 # Tactic-token users beyond those:
@@ -51,8 +53,9 @@
 #     in AppWalk.lean) and is the C1 registry's in-house donor — its
 #     disposition, evolve-or-delete, is decided at C1)
 # NOT on the list (verified: no direct import, no tactic token):
-#   T2AppEq/T3AppEq/T4AppEq/T4Defs/T5Fixture/T5Iter — they consume
-#   T1AppEq's proved lemmas, not the walker.
+#   T2AppEq/T3AppEq/T4AppEq/T4Defs — they consume T1AppEq's proved
+#   lemmas, not the walker. (T5Fixture/T5Iter — formerly in this
+#   note — deleted at arc-18 R4.)
 
 set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -63,7 +66,6 @@ cd "$PROJECT_ROOT"
 ALLOWLIST=(
     "lean_frontend/relsem/RelSemAll.lean"
     "lean_frontend/relsem/RelSem/T1AppEq.lean"
-    "lean_frontend/relsem/RelSem/T5Prefix.lean"
     "lean_frontend/relsem/RelSem/Tactics/AppWalk.lean"
     "lean_frontend/relsem/RelSem/Tactics/AppEqAttr.lean"
     "lean_frontend/relsem/RelSem/Tactics/WalkTrace.lean"

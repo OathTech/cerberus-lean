@@ -146,11 +146,11 @@ import RelSem.Kit.Audit
 import RelSem.T4Defs
 import RelSem.T4AppEq
 import RelSem.T4
--- arc-11 audit A-F1: the T5 chain (T5Fixture → T5Prefix → T5Iter)
--- joins the sweep closure + pins. It was in the package build but
--- OUTSIDE this file's import closure — the sweep/gate hole the
--- arc-11 adversarial audit found.
-import RelSem.T5Iter
+-- (arc-11 audit A-F1's T5 chain — T5Fixture → T5Prefix → T5Iter —
+-- RETIRED at arc-18 R4: T5-the-theorem is PROVED through the segment
+-- layer (RelSem.T5, pinned below at the trio); the ambient-era climb
+-- artifacts' capability is subsumed. Their Audit pins are
+-- re-registered to the flagship pins in the same commit.)
 -- arc-16 S1: the per-step language (the Iris refounding's language
 -- layer) joins the sweep closure + pins.
 import RelSem.PerStep
@@ -525,24 +525,13 @@ def sorryExceptions : List Name := []
 /-- info: 'RelSem.T4.T4Outcomes' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T4.T4Outcomes
 
--- Arc-11 (audit A-F1 disposition): THE T5 FLAGSHIPS — the committed
--- in-build theorems of the parked T5 climb (T5 itself is NOT proved;
--- these are the entry walk + the T5Iter env-lookup family). Each
--- sits at the clean quartet: they quote the harness/driver substrate
--- (runEffectful enters through the quoted generated bodies), and the
--- walker's per-round certificates are ordinary kernel-checked
--- declarations adding nothing. Pinned exactly — growth (sorryAx
--- above all) fails the build.
-/-- info: 'RelSem.T5.entry5_walk' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T5.entry5_walk
-/-- info: 'RelSem.T5.envL_built' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T5.envL_built
-/-- info: 'RelSem.T5.envL_lookup_n' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T5.envL_lookup_n
-/-- info: 'RelSem.T5.envL_lookup_i' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T5.envL_lookup_i
-/-- info: 'RelSem.T5.envL_lookup_s' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T5.envL_lookup_s
+-- (The arc-11 A-F1 "T5 FLAGSHIPS" pin block — entry5_walk + the
+-- T5Iter env-lookup family at the clean quartet — RETIRED at arc-18
+-- R4 with its files: T5-the-theorem is PROVED (RelSem.T5.T5Threaded,
+-- pinned in the R4 block below at EXACTLY the classical trio — the
+-- quartet's runEffectful is gone with the ambient-era substrate).
+-- The env-lookup capability lives on ∀-k in T5Inv's St_lk* family,
+-- swept trio-clean.)
 
 /-! ## (RETIRED SECTION — arc-8 S3.) The arc-7 S5c DAEMON entry-vector
     census (a kernel walk pinning `failwith` and
@@ -1243,11 +1232,10 @@ def runEffectfulCarriers : List Name :=
    `RelSem.T4.prefix_walk, `RelSem.T4.round15, `RelSem.T4.round32,
    `RelSem.T4.round54, `RelSem.T4.T4, `RelSem.T4.t4_app_eq,
    `RelSem.T4.T4_direct, `RelSem.T4.T4Outcomes,
-   `RelSem.T4.t4_result_eq, `RelSem.T4.T4_ubFree,
-   `RelSem.T5.entry5_walk, `RelSem.T5.envL_built,
-   `RelSem.T5.envL_lookup_i, `RelSem.T5.envL_lookup_n,
-   `RelSem.T5.envL_lookup_s, `RelSem.T5.prefix5_a,
-   `RelSem.T5.prefix5_b, `RelSem.T5.prefix5_walk]
+   `RelSem.T4.t4_result_eq, `RelSem.T4.T4_ubFree]
+   -- (the 8 ambient-era T5-chain carriers — entry5_walk, envL_*,
+   -- prefix5_* — RETIRED at arc-18 R4 with their files; the new T5
+   -- flagship is trio-clean and never enters this set)
 
 open Lean in
 #eval show CoreM Unit from do
@@ -1514,8 +1502,12 @@ open Lean in
 -- representatives + FnSpecs in, the three hand wpK walks + inline
 -- readouts DELETED, the shape-indexed verify_fn + keyed matchSegEq
 -- in SegmentFaces; ALL boundary-clean).
+-- 8798 → 8469 (arc-18 R4 slice 5, THE RETIREMENT: the ambient-era
+-- T5 chain — T5Fixture/T5Prefix/T5Iter, the arc-9→15 climb's parked
+-- capability — DELETED; T5-the-theorem stands proved through the
+-- layer at the trio. Carrier set 112 → 104 in the same commit.)
 /--
-info: RelSem audit sweep: 8798 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 8469 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do

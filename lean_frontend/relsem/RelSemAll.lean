@@ -84,7 +84,9 @@ import RelSem.T2AppEq
 import RelSem.T2
 import RelSem.T3AppEq
 import RelSem.T3
-import RelSem.T5Fixture
+-- (T5Fixture — the arc-9 ambient-era fixture layer — RETIRED at
+-- arc-18 R4 with T5Prefix/T5Iter: the T5 flagship now lives in
+-- RelSem.T5 over the T5W walk supply.)
 import RelSem.T5Walks
 import RelSem.T5Inv
 import RelSem.T5Seam
@@ -102,8 +104,6 @@ import RelSem.T7
 -- + the evaluator-driven prefix (theorem = enumerated remaining work;
 -- the in-file frontier note is the S2 record's park).
 import RelSem.T4Threaded
-import RelSem.T5Prefix
-import RelSem.T5Iter
 import RelSem.T4Defs
 import RelSem.T4AppEq
 import RelSem.T4
