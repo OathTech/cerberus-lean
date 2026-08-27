@@ -674,5 +674,76 @@ theorem demo_adequate (vx w0 w : value) (tS aS eS sS : Nat)
   iapply demo_wp vx w0 w $$ [$Hc $Hx $Hy]
 
 end Demo
+
+/-! ## THE HEAP FRAMING ANCHOR (arc-16 S2's `two_alloc_frame`, KEEP,
+    migrated to the decomposed route): store to allocation A, then
+    load from allocation B — B's read is fixed by B's bytes and the
+    memory residual ALONE; A's write cannot touch it, by FRAMING.
+    Strengthened by the decomposition: the rules consume the MEMORY
+    RESIDUAL only — control, env cells, and supplies also frame. -/
+
+open Iris Iris.BI Iris.ProgramLogic
+open RelSem.Cerb
+
+variable {GF : BundledGFunctors}
+
+theorem two_alloc_frame [CerbStGS GF] {s : Stuckness} {E : CoPset}
+    {Φ : DriveVal → IProp GF}
+    -- allocation A (the store target)
+    {locA : CerbLocation.Loc} {tyA : ctype} {aidA addrA : Int}
+    {alA : CerbMem.Allocation} {mvA : CerbMem.MemValue}
+    {oldA newA : List CerbMem.AbsByte} {dqaA : DFrac}
+    -- allocation B (the load source)
+    {locB : CerbLocation.Loc} {tyB : ctype} {aidB addrB : Int}
+    {alB : CerbMem.Allocation} {bsB : List CerbMem.AbsByte}
+    {mvB : CerbMem.MemValue} {dqaB dqbB : DFrac}
+    -- the shared memory residual
+    {mr : CerbMem.MemState} {dqm : DFrac}
+    {k : CerbMem.Footprint × CerbMem.MemValue → KDriveExpr}
+    -- A's store side conditions
+    (hcompatA : CerbMem.ctypeMemCompatible tyA
+      (CerbMem.typeofMval mvA) = true)
+    (hboundsA : CerbMem.isInBounds alA addrA
+      (CerbMem.sizeofCtype tyA) = true)
+    (hroA : alA.isReadonly = .IsWritable)
+    (hatomicA : CerbMem.isAtomicMemberAccess alA tyA addrA = false)
+    (hbytesA : CerbMem.memValueToBytes mr.funptrmap mvA
+      = (mr.funptrmap, newA))
+    (hlenA : newA.length = oldA.length)
+    -- B's load side conditions (mention ONLY B and the residual)
+    (hboundsB : CerbMem.isInBounds alB addrB
+      (CerbMem.sizeofCtype tyB) = true)
+    (hatomicB : CerbMem.isAtomicMemberAccess alB tyB addrB = false)
+    (hlenB : bsB.length = CerbMem.sizeofCtype tyB)
+    (hreconB : CerbMem.reconstructValue
+        mr.lastUsedUnionMembers mr.funptrmap addrB tyB bsB = mvB)
+    (hnotboolB : RelSem.Kit.isBoolTy tyB = false) :
+    (mrestIs (GF := GF) dqm mr
+        ∗ allocIs aidA dqaA alA ∗ pointsToBytes addrA (.own 1) oldA
+        ∗ allocIs aidB dqaB alB ∗ pointsToBytes addrB dqbB bsB) ∗
+      ((mrestIs dqm mr
+          ∗ allocIs aidA dqaA alA ∗ pointsToBytes addrA (.own 1) newA
+          ∗ allocIs aidB dqaB alB ∗ pointsToBytes addrB dqbB bsB)
+        -∗ WP (k (.FP .R addrB (CerbMem.sizeofCtype tyB), mvB))
+              @ s ; E {{ Φ }}) ⊢
+      WP (KExpr.seq (liftMem (CerbMem.storeM locA tyA false
+            (.PV (.Prov_some aidA) (.PVconcrete none addrA)) mvA))
+          (fun _ => KExpr.seq (liftMem (CerbMem.loadM locB tyB
+            (.PV (.Prov_some aidB) (.PVconcrete none addrB)))) k)
+        : KDriveExpr) @ s ; E {{ Φ }} := by
+  iintro ⟨⟨Hr, HaA, HpA, HaB, HpB⟩, Hcont⟩
+  -- STEP 1: the store — consumes {residual, A}; {B} rides the frame.
+  iapply wpk_store hcompatA hboundsA hroA hatomicA hbytesA hlenA
+  isplitl [Hr HaA HpA]
+  · iframe Hr HaA HpA
+  iintro ⟨Hr, HaA, HpA⟩
+  -- STEP 2: the load — consumes {residual, B}; A's updated resources
+  -- ride the frame. Nothing below mentions A's footprint.
+  iapply wpk_load hboundsB hatomicB hlenB hreconB hnotboolB
+  isplitl [Hr HaB HpB]
+  · iframe Hr HaB HpB
+  iintro ⟨Hr, HaB, HpB⟩
+  iapply Hcont
+  iframe Hr HaA HpA HaB HpB
 end CerbSt
 end RelSem
