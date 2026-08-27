@@ -217,6 +217,19 @@ inductive SegPoint where
   /-- The thread's terminal (the done offer). -/
   | terminal
 
+/-- Loop-head component record: the STANDARD loop-invariant
+    vocabulary at Core loop heads (scope env, memory, trace, the
+    supplies) — the `Comp` type every scalar-loop fixture's invariant
+    ranges over (T7, the T5 seam demo). -/
+structure LoopComps where
+  env : Fmap sym value
+  mem : CerbMem.MemState
+  tr : List trace_event
+  aid : Nat
+  exc : Nat
+  symc : Nat
+  ctr : Nat
+
 /-- The spelling table of one label ([F3]): how the SAME join point is
     spelled when fallen into (`entry`) vs jumped to through the stored
     continuation (`stored`). Component data `Comp` is the invariant's

@@ -188,7 +188,7 @@ def DivModI8PlantHealthyClaim (seed : Nat) : Prop :=
 shape; ∀-seed AND ∀ over the full well-formed i8 model domain, not
 the pinned sample set). HONESTY LABEL: UNPROVED — the proof is the
 whole-program drive-walk campaign, parked at the ground-mode
-materialization frontier (the C4 record §4); the sample statements
+materialization frontier (the C4 record §3); the sample statements
 remain the executable-validated faces meanwhile. Note the ∀-seed here
 is part of the TARGET (a proof must establish it or weaken to a
 guarded face per the T4-apartness pattern). -/

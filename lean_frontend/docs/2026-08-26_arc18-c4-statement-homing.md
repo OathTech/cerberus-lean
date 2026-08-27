@@ -51,8 +51,10 @@ re-landed at the threaded initial state:
   parameter; quotes `initial_driver_state_threaded`).
 - SEED QUANTIFICATION [AGENT, fail-closed]: every speclab statement
   takes the seed as an explicit PARAMETER and does NOT ∀-quantify it.
-  Rationale: unrestricted ∀-seed claims are kernel-witnessed FALSE
-  for some program shapes (the arc-16 S4 T4 hash-collision capture),
+  Rationale: unrestricted ∀-seed claims fail for some program shapes
+  (the arc-16 S4 T4 diagnosis: the hash COLLISION is kernel-witnessed;
+  the falseness reading additionally rests on the capture argument —
+  the acceptance doc's careful wording),
   and the speclab healthy faces are executable-validated, not
   kernel-proved — enshrining unproved ∀-seed claims would be the
   exact dishonesty the T4 diagnosis warns about. ∀-seed enters only
@@ -189,6 +191,11 @@ info: SpecLabAudit.lean:132:0: speclab statement-TCB gate: 46 statements clean; 
 check_one_route: OK — one state interpretation on the live route (34 modules OwnP-free; coexistence hazard clear; OwnP binders confined to the retirement register + the labeled T6 exemption)
 check_speclab_statements: OK — 23 speclab statement file(s) clean (Iris/RelSem/native_decide/bv_decide/sorry ban)
 ```
+
+(R2 line-ref note, 2026-08-27: the transcript above is verbatim as of
+C4; Audit.lean has since grown, so the no-cone gate now emits from a
+later line — content identical. Do not chase line numbers in this
+block.)
 
 At the family-∀/laws commit: speclab TCB gate line moves to
 `50 statements clean`; relsem census pin `69 laws [advance 5, …,

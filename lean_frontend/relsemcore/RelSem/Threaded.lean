@@ -33,9 +33,10 @@
   ∀-seed statements over these faces are STRONGER than the ambient
   originals (which are seed-instantiated images — bridge lemmas at the
   bottom). SEED-QUANTIFICATION HONESTY (arc-18 C4 [AGENT], from the
-  arc-16 S4 kernel-witnessed finding): unrestricted ∀-seed claims are
-  FALSE for some program shapes (the T4 hash-collision capture —
-  docs/2026-08-24_arc16-s4-acceptance.md), so these faces take the
+  arc-16 S4 finding): unrestricted ∀-seed claims fail for some
+  program shapes (the T4 diagnosis: hash collision kernel-witnessed,
+  the falseness reading additionally resting on the capture argument
+  — docs/2026-08-24_arc16-s4-acceptance.md), so these faces take the
   seed as a PARAMETER and quantify nothing; each client decides its
   quantification (∀-seed where proved, e.g. T1–T3/T6; guarded where
   apartness is needed, e.g. T4; seed-parametric where unproved, e.g.

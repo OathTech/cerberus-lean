@@ -1,6 +1,12 @@
 /-
   RelSem.T5Walks — arc-18 C3b (2026-08-26): THE T5 EQUATION SUPPLY.
 
+  NAMING (arc-18 R2, the walk→segment map in
+  docs/2026-08-26_arc18-r2-donor-correspondence.md): "walk" is
+  ENGINE-ROOM vocabulary — the drive/mint layer's term for a chain of
+  evaluator rounds. The user-facing surface calls these SEGMENTS
+  (RelSem/Segment.lean consumes each chain as one `Seg`).
+
   The three builder walks whose ∀-fuel relative chains T5's
   invariant-family composition consumes (RelSem/T5.lean):
 

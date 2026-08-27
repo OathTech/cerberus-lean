@@ -90,17 +90,29 @@
 #       this watch. Direction remains DOWN for the evaluator; the
 #       faces' budget rides this row from R2 on. Record:
 #       lean_frontend/docs/2026-08-26_arc18-r2-segment-layer.md.
+# R2 re-baseline 2 (arc-18 R2, the t7/env-peel slice — rows landed
+#       green with commit 09c322067's battery as WARN lines; pinned
+#       here at the R2 close): Lanes 816 -> 829 (proveBuilt
+#       PACK-FIRST SCAN — literal-env chains are built at the ADD
+#       level, so the pack hypothesis is checked at every node before
+#       descending; a pack-fact consumer, no semantic knowledge);
+#       SegmentFaces 554 -> 793 (SEG_ENV_LOOKUP — the env-peel
+#       automation: skip/hit over the REGISTERED captured-comparator
+#       lookup laws, pure-Meta construction, kernel decide at closed
+#       layers / omega at seed layers; the species-3 replacement for
+#       a per-layer manual peel ladder). TOTAL 6281 -> 6533.
+#       Direction remains DOWN; both rows are law/pack CONSUMERS.
 RoundEval.lean 87
 RoundEval/Core.lean 346
 RoundEval/Hyp.lean 1033
 RoundEval/Mint.lean 262
 RoundEval/Classify.lean 213
 RoundEval/Arith.lean 722
-RoundEval/Lanes.lean 816
+RoundEval/Lanes.lean 829
 RoundEval/Rounds.lean 878
 RoundEval/Assembly.lean 647
 DeriveState.lean 260
 WpGround.lean 121
 LawRegistry.lean 342
-SegmentFaces.lean 554
-TOTAL 6281
+SegmentFaces.lean 793
+TOTAL 6533

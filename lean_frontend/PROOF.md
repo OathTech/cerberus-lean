@@ -144,11 +144,20 @@ statements that mention only the fuel semantics. Cones exactly as §1
 (the ambient quartet, pinned). Since the Iris refounding (arc-16/17),
 a **threaded** family re-proves T1–T3 (and a fifth fixture, T6) at
 **∀-fresh-supply-seed statements** — strictly stronger than the
-ambient originals — with cones of **exactly the classical trio**;
-T4's threaded ∀-seed statement is landed with its kernel-witnessed
-seed-apartness guard, its theorem honestly parked at a measured
-frontier (round 22 of the evaluator walk, the arc-17 S3 record) and
-scheduled to complete on the consolidated substrate (arc-18 C3).
+ambient originals — with cones of **exactly the classical trio**. A
+sixth fixture, **T7** (`t7_flip.c`, a branch-in-loop: data-dependent
+arms alternating across iterations), is proved at a guarded ∀-seed
+statement through the arc-18 **segment layer** (one declared loop
+invariant, `verify_fn` + `seg_auto`; `relsem/RelSem/T7.lean`), same
+trio-exact cone. Honest OPEN items: **T4**'s threaded statement is
+landed with its seed-apartness guard, but the theorem itself is OPEN
+— parked at a measured frontier (round 22 of the evaluator run, the
+arc-17 S3 record), scheduled at the segment ladder's R5 rung. **T5**
+(the sum loop) is OPEN at R4: its segment substrate is fully landed
+(the five drive-minted segment chains, the invariant state family,
+the twin-spelling seam normalized through the segment layer —
+`RelSem/T5Seam.lean`), the ∀-k closure of the segment hypotheses and
+the end-to-end theorem are the R4 rung. The ambient T4/T5-prefix theorems stand meanwhile.
 
 **Kernel-checked statement layers for real C functions** (the spec
 lab: division/modulo, `memcpy`, array access, linked-list append,
@@ -251,6 +260,16 @@ contracts are stated normatively in
   invariant-style composed-block equation at the equation calculus
   (Floyd–Hoare-shaped; the Iris-level invariant story arrives with
   contracts/typed views in a later arc).
+- **The segment layer** (arc-18 R2; `relsem/RelSem/Segment.lean`,
+  `SegmentFaces.lean`): Floyd cut points at Core labels — an ∃-round
+  budgeted segment judgment (`Seg`) over the minted chain equations,
+  composition/while rules proved once, invariants declared as a map
+  from labels with obligations *derived* (RefinedC `typed_block`
+  lineage), loop-head spelling normalization engine-side, and
+  function contracts (`FnSpec`) with thin faces: user proofs are
+  `verify_fn <spec>; seg_auto` plus one invariant declaration per
+  loop (donor table:
+  `docs/2026-08-26_arc18-r2-donor-correspondence.md`).
 - **iris-lean coupling**: separation-logic machinery (weakest
   preconditions, framing, invariants) used freely in proofs and
   discharged through the adequacy theorem — Iris never appears in a

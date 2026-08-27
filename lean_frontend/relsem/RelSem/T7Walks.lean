@@ -1,6 +1,12 @@
 /-
   RelSem.T7Walks — arc-18 R2 (2026-08-26): THE T7 EQUATION SUPPLY.
 
+  NAMING (arc-18 R2, the walk→segment map in
+  docs/2026-08-26_arc18-r2-donor-correspondence.md): "walk" is
+  ENGINE-ROOM vocabulary — the drive/mint layer's term for a chain of
+  evaluator rounds. The user-facing surface calls these SEGMENTS
+  (RelSem/Segment.lean consumes each chain as one `Seg`).
+
   tests/verify/t7_flip.c — THE BRANCH-IN-LOOP FIXTURE ([F1], the
   fixed-round breaker): `int flip(int n)` decrements `n` through a
   while loop whose body BRANCHES (even arm: one store; odd arm: two
@@ -567,17 +573,6 @@ noncomputable def atComps
   f (envOf σ) σ.layout_state σ.trace
     σ.core_run_state0.aid_supply σ.core_run_state0.excluded_supply
     σ.core_run_state0.sym_supply σ.dr_step_counter
-
-/-- The invariant's component vocabulary (the loop head's varying
-    state; values are walk-endpoint projections, never transcribed). -/
-structure C7 where
-  env : Fmap sym value
-  mem : CerbMem.MemState
-  tr : List trace_event
-  aid : Nat
-  exc : Nat
-  symc : Nat
-  ctr : Nat
 
 /-! ### The stored-spelling alignments (the b79_align' discipline:
     every walk endpoint is DEFINITIONALLY a loop-head builder state

@@ -60,13 +60,13 @@ def v0 : value :=
 /-- The label's spelling table ([F3]): t7's join points all sit at
     the STORED spelling (measured), so both slots coincide; the
     two-spelled case is demonstrated on the T5 twins. -/
-def spell7 : Seg.JoinSpellings C7 where
+def spell7 : Seg.JoinSpellings Seg.LoopComps where
   entry c := mkLH c.env c.mem c.tr c.aid c.exc c.symc c.ctr
   stored c := mkLH c.env c.mem c.tr c.aid c.exc c.symc c.ctr
 
 /-- Component projection (the family IS the walks' own step,
     indexed). -/
-def compOf (σ : driver_state) : C7 :=
+def compOf (σ : driver_state) : Seg.LoopComps :=
   { env := envOf σ, mem := σ.layout_state, tr := σ.trace,
     aid := σ.core_run_state0.aid_supply,
     exc := σ.core_run_state0.excluded_supply,
@@ -77,7 +77,7 @@ def compOf (σ : driver_state) : C7 :=
     projections at the canonical harness supplies. -/
 noncomputable def at7 (bm : Std.TreeMap Int CerbMem.AbsByte)
     (am : Std.TreeMap Int CerbMem.Allocation) (seed : Nat) :
-    Nat → C7
+    Nat → Seg.LoopComps
   | 0 => compOf (h1 bm am seed)
   | 1 => compOf (h2 bm am seed)
   | _ + 2 => compOf (h3 bm am seed)
@@ -86,7 +86,7 @@ noncomputable def at7 (bm : Std.TreeMap Int CerbMem.AbsByte)
 noncomputable def flipInv (bm : Std.TreeMap Int CerbMem.AbsByte)
     (am : Std.TreeMap Int CerbMem.Allocation) (seed : Nat) :
     Seg.SegInv :=
-  { Comp := C7, label := symWhile, spell := spell7,
+  { Comp := Seg.LoopComps, label := symWhile, spell := spell7,
     at_ := at7 bm am seed }
 
 /-- The fixture's invariant map (RefinedC `gmap label` shape). -/

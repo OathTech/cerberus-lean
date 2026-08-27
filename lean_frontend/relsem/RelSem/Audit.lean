@@ -209,6 +209,7 @@ import RelSem.T7
 import RelSem.T4Threaded
 import RelSem.T5Walks
 import RelSem.T5Inv
+import RelSem.T5Seam
 
 namespace RelSem.Audit
 
@@ -1057,6 +1058,15 @@ open Lean in
 #guard_msgs in #print axioms RelSem.T7.T7Threaded_ubFree
 /-- info: 'RelSem.T7.t7_run_seg' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T7.t7_run_seg
+-- arc-18 R2 [F3] acceptance: the T5 twin-spelling seam normalized
+-- through the layer — ONE declared invariant (t5SeamInv), both
+-- spellings' body obligations discharged over it, trio-exact.
+/-- info: 'RelSem.T5S.t5SeamInv_St_eq' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5S.t5SeamInv_St_eq
+/-- info: 'RelSem.T5S.t5_seam_body0' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5S.t5_seam_body0
+/-- info: 'RelSem.T5S.t5_seam_bodyS' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T5S.t5_seam_bodyS
 -- (arc-18 R2: the hand walk `t6_wpK_thr` is SUBSUMED by the segment
 -- route — T6Threaded's pin above covers the whole discharge; the
 -- walk lemma is deleted with its plumbing.)
@@ -1431,6 +1441,9 @@ open Lean in
 -- k-stage equations + driver2_o + rDone6 ladder], and the seven new
 -- Kit/Mem writeBytesTo projection laws; ALL boundary-clean — record
 -- docs/2026-08-26_arc18-r1-open-memory.md).
+-- 8362 → 8404 (arc-18 R2, the [F3] seam acceptance: RelSem.T5Seam
+-- [t5SeamInv + the normalization theorem + the two BPack-hypothesized
+-- discharge instances over the T5W twin chains]; ALL boundary-clean).
 -- 7182 → 8362 (arc-18 R2, the t7 slice: the four T7W walk drives'
 -- minted artifacts [e 95 / bEven 72 / bOdd 94 / bx 33+terminal —
 -- round successors + _app equations + chainrel prefixes at open
@@ -1443,7 +1456,7 @@ open Lean in
 -- [t6_canon/pickSpec in, t6_wpK_thr/t6_post_o out]; ALL
 -- boundary-clean).
 /--
-info: RelSem audit sweep: 8362 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 8404 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do
