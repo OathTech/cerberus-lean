@@ -155,13 +155,19 @@ sum loop) is PROVED at the chartered **∀-n input-family** statement
 segment layer at the SYMBOLIC trip count — one declared loop
 invariant, body obligations from the ∀-k pack closure, the driver
 atom through the once-proved two-scratch rule, a two-line proof
-(`relsem/RelSem/T5.lean`, arc-18 R4), trio-exact cone. Honest OPEN
-item: **T4**'s threaded statement is landed with its seed-apartness
-guard, but the theorem itself is OPEN — parked at a measured frontier
-(round 22 of the evaluator run, the arc-17 S3 record), scheduled at
-the segment ladder's R5 rung. The ambient T4 theorem stands
-meanwhile (the ambient-era T5 prefix chain retired at R4 — subsumed
-by the proved theorem).
+(`relsem/RelSem/T5.lean`, arc-18 R4), trio-exact cone. **T4**
+(`t4_struct_member.c`, the struct-member exit-criterion target) is
+PROVED at its guarded ∀-seed threaded statement (arc-18 R5): the
+unrestricted ∀-seed statement is FALSE (the arc-16 S4 hash-collision
+falsifier), so the statement carries the kernel-computable
+**seed-apartness guard** `T4SeedApart`; under it the whole 56-round
+run — including the NEG-store transform's two fresh draws at the
+OPEN seed — is evaluator-minted equation supply, and the theorem is
+`verify_fn membSpec; seg_auto` (`relsem/RelSem/T4Threaded.lean`),
+trio-exact cone. The full threaded slate T1–T7 is now proved through
+the segment layer. The ambient T1–T4 theorems stand until the purge
+(the ambient-era T5 prefix chain retired at R4 — subsumed by the
+proved theorem).
 
 **Kernel-checked statement layers for real C functions** (the spec
 lab: division/modulo, `memcpy`, array access, linked-list append,
