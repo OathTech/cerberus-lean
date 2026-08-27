@@ -546,4 +546,50 @@ theorem readBytesFrom_writeBytesTo_hit {m : CerbMem.MemState}
     simp only [show a + (i : Int) - a = (i : Int) from by omega,
       Int.toNat_natCast]
 
+/-- THE ARRAY CARVE-OUT (arc-18 R6b, the array-vocabulary slice):
+    a SUB-RANGE read of a written block returns the block's slice —
+    the element-points-to face of the iterated-points-to array view.
+    An element load over a whole-array store (an initializer image,
+    an unspecified fill) is this law at the element's offset; `hit`
+    is the degenerate whole-range case.
+
+    *Lineage (canon-first, mirror-donor)*: RefinedC's array type
+    OWNS its cells as iterated element points-to
+    (`array ly tys` ty_own `= [∗ list] i ↦ ty ∈ tys,
+    (l offset{ly}ₗ i) ◁ₗ ty` — deps/refinedc/theories/typing/
+    array.v:9-16), and its deref/ref obligations split the byte
+    block with take/drop through `heap_mapsto_app`
+    (`l ↦ (v1 ++ v2) ⊣⊢ l ↦ v1 ∗ (l +ₗ length v1) ↦ v2` —
+    deps/refinedc/theories/caesium/ghost_state.v:506). This law is
+    that split's equation-calculus face at our bytemap: the slice
+    IS the carved element's points-to image. -/
+@[step_law (kind := memRW) (variant := within) (side := ground)
+  (frontier := "mem/rw-within")
+  (trace := "{law := readBytesFrom_writeBytesTo_within, joint := mem/rw, hyps := [hlo : ground, hhi : ground]}")
+  (lineage := "the array CARVE-OUT at bytemap level: sub-range read of a written block = the block's slice (RefinedC array.v big_sepL element points-to + caesium heap_mapsto_app; Burstall/Bornat cells)")]
+theorem readBytesFrom_writeBytesTo_within {m : CerbMem.MemState}
+    {a a' : Int} {bs : List CerbMem.AbsByte} {n : Nat}
+    (hlo : a ≤ a') (hhi : a' + n ≤ a + bs.length) :
+    CerbMem.readBytesFrom (CerbMem.writeBytesTo m a bs) a' n
+      = (bs.drop (a' - a).toNat).take n := by
+  unfold CerbMem.readBytesFrom
+  apply List.ext_getElem
+  · simp; omega
+  · intro i h1 h2
+    simp only [List.getElem_map, List.getElem_range]
+    rw [writeBytesTo_bytemap_get?]
+    have hn1 : i < n := by
+      simpa using h1
+    have hin : a ≤ a' + (i : Int) ∧ a' + (i : Int) < a + bs.length := by
+      omega
+    rw [dif_pos hin]
+    -- the match-on-`some` scrutinee iota-reduces; restate at the
+    -- bare getElem so congr exposes the index arithmetic
+    show bs[(a' + (i : Int) - a).toNat]'(by omega)
+      = ((bs.drop (a' - a).toNat).take n)[i]'(by
+          simp only [List.length_take, List.length_drop]; omega)
+    rw [List.getElem_take, List.getElem_drop]
+    congr 1
+    omega
+
 end RelSem.Kit

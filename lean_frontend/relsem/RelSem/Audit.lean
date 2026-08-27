@@ -1099,7 +1099,14 @@ open Lean in
 -- itself is PARKED, the law + feeder stay); segEq 144 → 162,
 -- segFact 58 → 62, segCanon 16 → 18 — the x7/x2 edge fixtures'
 -- per-fixture supply).
-/-- info: step_law census: 327 laws [advance 5, construct 9, envAlg 3, envMap 4, evalArith 2, evalPull 2, heapWP 4, heapWalk 11, loop 5, memBlock 7, memRW 20, perform 6, roundGlue 3, segCanon 18, segEq 162, segFact 62, segPost 2, wpSeq 2] -/
+-- 327 → 328 (2026-08-27 delta disposition, kill-list execution
+-- commit 1: memRW 20 → 21 — `readBytesFrom_writeBytesTo_within`
+-- (Kit/Mem), the sub-range read-over-write law salvaged from the
+-- killed worker's delta per the assessment §6 (C-7 class, RefinedC
+-- array.v / caesium heap_mapsto_app lineage); the rest of the
+-- delta (C9 rework, Lanes `within` arm, C9T) was dropped
+-- per the disposition record).
+/-- info: step_law census: 328 laws [advance 5, construct 9, envAlg 3, envMap 4, evalArith 2, evalPull 2, heapWP 4, heapWalk 11, loop 5, memBlock 7, memRW 21, perform 6, roundGlue 3, segCanon 18, segEq 162, segFact 62, segPost 2, wpSeq 2] -/
 #guard_msgs in #step_law_census
 /-- info: 'RelSem.T1.round6' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.round6
@@ -1676,6 +1683,10 @@ open Lean in
 -- open-memory route [spine equations + minted rounds + driver atom
 -- + ∀-seed statements + safety twin]; ALL boundary-clean, zero
 -- engine changes).
+-- 12404 → 12410 (2026-08-27 delta disposition, kill-list execution
+-- commit 1: `readBytesFrom_writeBytesTo_within` [Kit/Mem] + its
+-- compiler auxiliaries — the one salvaged law from the killed
+-- worker's delta; boundary-clean).
 -- 12383 → 12404 (arc-18 R6 batch 4: the SlateFiles additions for
 -- the PARKED lanes — x3Stdlib [the ccall protocol's params trio,
 -- emitted from std.core] + the x3/z1/z2 file assemblies; no new
@@ -1693,7 +1704,7 @@ open Lean in
 -- capability — DELETED; T5-the-theorem stands proved through the
 -- layer at the trio. Carrier set 112 → 104 in the same commit.)
 /--
-info: RelSem audit sweep: 12404 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 12410 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do
