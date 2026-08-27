@@ -552,7 +552,12 @@ def slatePlan : List (String × String × String) :=
    ("e2_abs", "abs3", "absE2"),
    ("e3_scale", "scale", "scaleE3"),
    ("e4_isdigit", "is_digit", "isdigitE4"),
-   ("e5_ismark", "is_mark", "ismarkE5")]
+   ("e5_ismark", "is_mark", "ismarkE5"),
+   -- arc-18 R6: batch 2 (CENSUS tier).
+   ("c4_hexval", "hex_val", "hexvalC4"),
+   ("c5_pcthi", "pct_hi", "pcthiC5"),
+   ("c3a_accguard", "acc10", "accguardC3A"),
+   ("c3b_leaddigit", "lead_digit", "leaddigitC3B")]
 
 def slateHeader : String :=
 "/-
@@ -564,9 +569,11 @@ def slateHeader : String :=
   designated functions of
   tests/verify/{t2_add,t3_roundtrip,t4_struct_member,t5_sum,
   t6_branch,t7_flip,e1_clamp,e2_abs,e3_scale,e4_isdigit,
-  e5_ismark}.core (the pinned oracle Core dumps of the .c fixtures;
-  t6_branch is the arc-17 S1 acceptance-probe fixture, t7_flip the
-  arc-18 R2 branch-in-loop fixture, e1–e5 the R6 EASY tier), plus the
+  e5_ismark,c4_hexval,c5_pcthi,c3a_accguard,c3b_leaddigit}.core
+  (the pinned oracle Core dumps of the .c fixtures; t6_branch is the
+  arc-17 S1 acceptance-probe fixture, t7_flip the arc-18 R2
+  branch-in-loop fixture, e1–e5 the R6 EASY tier, c* the R6 CENSUS
+  tier), plus the
   `struct S` tag definition T4's file carries, exactly as CoreParser
   produces them (same fidelity contract as RelSem/T1Core.lean; `main` is
   deliberately not emitted — `callND` never reads it).

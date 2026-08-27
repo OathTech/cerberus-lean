@@ -223,6 +223,12 @@ import RelSem.Corpus.E2
 import RelSem.Corpus.E3
 import RelSem.Corpus.E4
 import RelSem.Corpus.E5
+-- arc-18 R6: batch 2 (CENSUS tier c4/c5/c3a/c3b) joins the sweep
+-- closure + pins.
+import RelSem.Corpus.C4
+import RelSem.Corpus.C5
+import RelSem.Corpus.C3A
+import RelSem.Corpus.C3B
 
 namespace RelSem.Audit
 
@@ -619,7 +625,15 @@ def stmtAllowed : List Name :=
    `RelSem.Slate.e2File, `RelSem.E2.e2Fs,
    `RelSem.Slate.e3File, `RelSem.E3.e3Fs,
    `RelSem.Slate.e4File, `RelSem.E4.e4Fs,
-   `RelSem.Slate.e5File, `RelSem.E5.e5Fs]
+   `RelSem.Slate.e5File, `RelSem.E5.e5Fs,
+   -- arc-18 R6 batch 2: the CENSUS-tier fixture data (+ the c3b
+   -- guarded face's hypothesis vocabulary, T7 lineage).
+   `RelSem.Slate.c4File, `RelSem.C4.c4Fs,
+   `RelSem.Slate.c5File, `RelSem.C5.c5Fs,
+   `RelSem.Slate.c3aFile, `RelSem.C3A.c3aFs,
+   `RelSem.Slate.c3bFile, `RelSem.C3B.c3bFs,
+   `RelSem.C3B.c3bSpec, `RelSem.C3B.C3BEnvHypThr,
+   `RelSem.C3B.C3BSeedApart]
 
 open Lean in
 /-- Syntactic "ends in Prop" (Prop-family def: `Prop` or a pi chain
@@ -716,7 +730,13 @@ open Lean in
      `RelSem.E2.E2Threaded, `RelSem.E2.E2Threaded_ubFree,
      `RelSem.E3.E3Threaded, `RelSem.E3.E3Threaded_ubFree,
      `RelSem.E4.E4Threaded, `RelSem.E4.E4Threaded_ubFree,
-     `RelSem.E5.E5Threaded, `RelSem.E5.E5Threaded_ubFree]
+     `RelSem.E5.E5Threaded, `RelSem.E5.E5Threaded_ubFree,
+     -- arc-18 R6 batch 2 (CENSUS tier; c3b is the guarded ∀-seed
+     -- loop face, T7 lineage).
+     `RelSem.C4.C4Threaded, `RelSem.C4.C4Threaded_ubFree,
+     `RelSem.C5.C5Threaded, `RelSem.C5.C5Threaded_ubFree,
+     `RelSem.C3A.C3AThreaded, `RelSem.C3A.C3AThreaded_ubFree,
+     `RelSem.C3B.C3BThreaded, `RelSem.C3B.C3BThreaded_ubFree]
   for n in slate do
     match stmtViolations env n with
     | .error e => throwError "{e}"
@@ -1052,7 +1072,15 @@ open Lean in
 -- new engine laws: heapWalk unchanged at 11; the marginal law rate
 -- for this batch is entirely per-fixture supply, the arc-19
 -- minting-frontier shape).
-/-- info: step_law census: 252 laws [advance 5, construct 9, envAlg 3, envMap 4, evalArith 2, evalPull 2, heapWP 4, heapWalk 11, loop 5, memBlock 6, memRW 20, perform 6, roundGlue 3, segCanon 12, segEq 108, segFact 48, segPost 2, wpSeq 2] -/
+-- 252 → 302 (arc-18 R6 batch 2, the CENSUS tier c4/c5/c3a/c3b:
+-- four fixtures' registered supply — segEq 108 → 144 [k-stage
+-- spines + driver atoms: read1 c4, scratch1 c5, read2 c3a (the
+-- first argobj2/read2 corpus uses), write1 c3b (the loop)],
+-- segFact 48 → 58 [address facts; c3a has three (two args), c5
+-- has three (scratch)], segCanon 12 → 16 — ZERO new engine laws
+-- again: heapWalk unchanged at 11; the batch consumed five
+-- DISTINCT existing atom shapes with no additions).
+/-- info: step_law census: 302 laws [advance 5, construct 9, envAlg 3, envMap 4, evalArith 2, evalPull 2, heapWP 4, heapWalk 11, loop 5, memBlock 6, memRW 20, perform 6, roundGlue 3, segCanon 16, segEq 144, segFact 58, segPost 2, wpSeq 2] -/
 #guard_msgs in #step_law_census
 /-- info: 'RelSem.T1.round6' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.round6
@@ -1140,6 +1168,26 @@ open Lean in
 #guard_msgs in #print axioms RelSem.E5.E5Threaded
 /-- info: 'RelSem.E5.E5Threaded_ubFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.E5.E5Threaded_ubFree
+-- arc-18 R6 batch 2 (CENSUS tier): the four fixtures' headline +
+-- twin cones, + the c3b composed-loop segment (invariant route).
+/-- info: 'RelSem.C4.C4Threaded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.C4.C4Threaded
+/-- info: 'RelSem.C4.C4Threaded_ubFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.C4.C4Threaded_ubFree
+/-- info: 'RelSem.C5.C5Threaded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.C5.C5Threaded
+/-- info: 'RelSem.C5.C5Threaded_ubFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.C5.C5Threaded_ubFree
+/-- info: 'RelSem.C3A.C3AThreaded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.C3A.C3AThreaded
+/-- info: 'RelSem.C3A.C3AThreaded_ubFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.C3A.C3AThreaded_ubFree
+/-- info: 'RelSem.C3B.C3BThreaded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.C3B.C3BThreaded
+/-- info: 'RelSem.C3B.C3BThreaded_ubFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.C3B.C3BThreaded_ubFree
+/-- info: 'RelSem.C3B.c3b_run_seg' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.C3B.c3b_run_seg
 -- arc-18 R2 [F3] acceptance: the T5 twin-spelling seam normalized
 -- through the layer — ONE declared invariant (t5SeamInv), both
 -- spellings' body obligations discharged over it, trio-exact.
@@ -1595,12 +1643,17 @@ open Lean in
 -- open-memory route [spine equations + minted rounds + driver atom
 -- + ∀-seed statements + safety twin]; ALL boundary-clean, zero
 -- engine changes).
+-- 10060 → 11501 (arc-18 R6 batch 2, the CENSUS tier: four corpus
+-- fixtures — RelSem.Corpus.C4/C5/C3A/C3B; c3b is the first corpus
+-- LOOP through the invariant route (three walks + SegInv map +
+-- while_inv composition, the T7 recipe); ALL boundary-clean, zero
+-- engine changes).
 -- 8798 → 8469 (arc-18 R4 slice 5, THE RETIREMENT: the ambient-era
 -- T5 chain — T5Fixture/T5Prefix/T5Iter, the arc-9→15 climb's parked
 -- capability — DELETED; T5-the-theorem stands proved through the
 -- layer at the trio. Carrier set 112 → 104 in the same commit.)
 /--
-info: RelSem audit sweep: 10060 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 11501 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do

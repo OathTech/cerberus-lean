@@ -86,6 +86,11 @@ LIVE_MODULES=(
   relsem/RelSem/Corpus/E3.lean
   relsem/RelSem/Corpus/E4.lean
   relsem/RelSem/Corpus/E5.lean
+  # arc-18 R6: batch 2 (CENSUS tier).
+  relsem/RelSem/Corpus/C4.lean
+  relsem/RelSem/Corpus/C5.lean
+  relsem/RelSem/Corpus/C3A.lean
+  relsem/RelSem/Corpus/C3B.lean
 )
 
 BANNED_IMPORTS='^import[[:space:]]+RelSem\.(PerStepOwnP|IrisState|IrisLang|IrisRules|IrisAdequacy|SlateWP)([[:space:]]|$)'

@@ -113,6 +113,11 @@ import RelSem.Corpus.E2
 import RelSem.Corpus.E3
 import RelSem.Corpus.E4
 import RelSem.Corpus.E5
+-- arc-18 R6: batch 2 (CENSUS tier).
+import RelSem.Corpus.C4
+import RelSem.Corpus.C5
+import RelSem.Corpus.C3A
+import RelSem.Corpus.C3B
 -- arc-7 S1: the in-build axiom audit (golean pattern) — a lib member,
 -- so `lake build RelSem` elaborates it and drift fails the build.
 import RelSem.Audit

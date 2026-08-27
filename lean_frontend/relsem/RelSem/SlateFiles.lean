@@ -179,4 +179,41 @@ def e5FileU : file Unit :=
 /-- THE e5 file. -/
 def e5File : file core_run_annotation := convert_file e5FileU
 
+/-! ## Arc-18 R6 breadth-campaign corpus, batch 2 (CENSUS tier):
+    c4 `int hex_val(int c)`, c5 `int pct_hi(int v)`,
+    c3a `int acc10(int p, int d)` (two-arg),
+    c3b `int lead_digit(int n)` (while loop). -/
+
+def c4FileU : file Unit :=
+  slateFileU (Lem_Map.fromList [(hexvalC4Sym, hexvalC4Decl)])
+    (Lem_Map.fromList [(hexvalC4Sym, funinfoOf [intParam])])
+    fmapEmpty
+
+/-- THE c4 file. -/
+def c4File : file core_run_annotation := convert_file c4FileU
+
+def c5FileU : file Unit :=
+  slateFileU (Lem_Map.fromList [(pcthiC5Sym, pcthiC5Decl)])
+    (Lem_Map.fromList [(pcthiC5Sym, funinfoOf [intParam])])
+    fmapEmpty
+
+/-- THE c5 file. -/
+def c5File : file core_run_annotation := convert_file c5FileU
+
+def c3aFileU : file Unit :=
+  slateFileU (Lem_Map.fromList [(accguardC3ASym, accguardC3ADecl)])
+    (Lem_Map.fromList [(accguardC3ASym, funinfoOf [intParam, intParam])])
+    fmapEmpty
+
+/-- THE c3a file. -/
+def c3aFile : file core_run_annotation := convert_file c3aFileU
+
+def c3bFileU : file Unit :=
+  slateFileU (Lem_Map.fromList [(leaddigitC3BSym, leaddigitC3BDecl)])
+    (Lem_Map.fromList [(leaddigitC3BSym, funinfoOf [intParam])])
+    fmapEmpty
+
+/-- THE c3b file. -/
+def c3bFile : file core_run_annotation := convert_file c3bFileU
+
 end RelSem.Slate

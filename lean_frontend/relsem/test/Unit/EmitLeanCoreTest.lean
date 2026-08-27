@@ -120,7 +120,28 @@ def slatePoints : List (String × file core_run_annotation × String ×
    ("e5", e5File, "is_mark", [45], .inl 1),
    ("e5", e5File, "is_mark", [41], .inl 1),
    ("e5", e5File, "is_mark", [47], .inl 0),
-   ("e5", e5File, "is_mark", [65], .inl 0)]
+   ("e5", e5File, "is_mark", [65], .inl 0),
+   -- arc-18 R6 breadth corpus, batch 2 (CENSUS tier).
+   ("c4", c4File, "hex_val", [102], .inl 15),
+   ("c4", c4File, "hex_val", [48], .inl 0),
+   ("c4", c4File, "hex_val", [57], .inl 9),
+   ("c4", c4File, "hex_val", [70], .inl 15),
+   ("c4", c4File, "hex_val", [103], .inl (-1)),
+   ("c4", c4File, "hex_val", [47], .inl (-1)),
+   ("c5", c5File, "pct_hi", [65], .inl 52),
+   ("c5", c5File, "pct_hi", [255], .inl 70),
+   ("c5", c5File, "pct_hi", [160], .inl 65),
+   ("c5", c5File, "pct_hi", [9], .inl 48),
+   ("c3a", c3aFile, "acc10", [21474836, 5], .inl 214748365),
+   ("c3a", c3aFile, "acc10", [214748364, 7], .inl 2147483647),
+   ("c3a", c3aFile, "acc10", [214748364, 8], .inl (-1)),
+   ("c3a", c3aFile, "acc10", [300000000, 0], .inl (-1)),
+   ("c3a", c3aFile, "acc10", [-1, 5], .inl (-1)),
+   ("c3a", c3aFile, "acc10", [0, 0], .inl 0),
+   ("c3b", c3bFile, "lead_digit", [273], .inl 2),
+   ("c3b", c3bFile, "lead_digit", [7], .inl 7),
+   ("c3b", c3bFile, "lead_digit", [100000], .inl 1),
+   ("c3b", c3bFile, "lead_digit", [99], .inl 9)]
 
 def main : IO UInt32 := do
   let mut failures := 0
