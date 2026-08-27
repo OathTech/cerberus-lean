@@ -52,7 +52,8 @@ MAX_STEPS=40
 # the bar and are measured by the arc records, not this gate).
 SLATE_FILES=(
     "T5.lean"
-    "T7.lean"
+    # (T7.lean — the concrete-input flip(7) pair — DELETED at the
+    # 2026-08-27 kill-list execution.)
     # arc-18 R5: the T4 statement file (statement + spec + atom
     # registration + theorems; the equation supply lives in
     # T4Walks.lean — engine room, not counted).

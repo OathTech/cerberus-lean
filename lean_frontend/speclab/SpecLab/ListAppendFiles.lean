@@ -56,6 +56,18 @@ open RelSem.Cerb (HarnessRunsToThr specifiedInt initial_driver_state_threaded)
 
 
 namespace SpecLab
+
+/-! (2026-08-27 KILL-LIST EXECUTION, operator-ratified: the finite
+    sample-∀ / concrete statement Prop defs of this rung — the
+    `*Sample*`/`*Plant*Claim`/`*Leak*` family with their pinned
+    sample sets and the sample bridges — are DELETED: quantification
+    by membership in a closed literal list is enumeration by
+    construction, and their planned proof (the exec-equation
+    campaign) is CANCELLED. The pure models, codec laws, the
+    `model_forall_iff_stream_forall` bridges, the `fileOfStream_
+    encode` program-term equalities, the family-∀ TARGET statements,
+    and the file terms (test-lane data) all STAY. Record:
+    lean_frontend/docs/2026-08-27_kill-list-execution.md.) -/
 namespace ListAppend
 
 open SpecLab.ListAppendCore
@@ -190,55 +202,6 @@ def appendFileOfStream (s : Stream) : file core_run_annotation :=
 /-! ## The R3 exec statements (fuel opsem only; `HarnessRunsTo` is
     the R1 statement shape, reused verbatim from SpecLab.DivModFiles) -/
 
-/-- The R3 sample set (finite explicit quantification — LABEL: four
-concrete (2,1)-length models, not the family; the fixed-shape
-family-∀ rides the parametric term as the priced follow-on). Wire
-bytes: a = 1..12, b = 101..112, d = 201..212 (both maxima of each
-byte's sign bit exercised), c = out-of-trio boundary bit patterns
-(all-zeros, all-ones = -1, INT_MIN). -/
-def sampleSet : List Input :=
-  [⟨[67305985, 134678021], [202050057]⟩,
-   ⟨[1751606885, 1818978921], [1886350957]⟩,
-   ⟨[-859059511, -791687475], [-724315439]⟩,
-   ⟨[0, -1], [-2147483648]⟩]
-
-/-- THE R3 MODEL-∀ STATEMENT (finite sample form): every healthy
-pinned instance runs to verdict 0 — the post-state list read back
-through the walker equals `xs ++ ys` (the CN `L3 == append(L1, L2)`,
-observed), with the frame content checked byte-for-byte through the
-same observation. -/
-def AppendSampleStatement (seed : Nat) : Prop :=
-  ∀ m ∈ sampleSet, HarnessRunsToThr seed (appendFileOf m) 0
-
-/-- The sample streams (full two-list codec). -/
-def sampleStreams : List Stream := sampleSet.map encodeInput
-
-/-- THE R3 STREAM-∀ STATEMENT (finite sample form). -/
-def AppendSampleStreamStatement (seed : Nat) : Prop :=
-  ∀ s ∈ sampleStreams, HarnessRunsToThr seed (appendFileOfStream s) 0
-
-/-- THE BUILDER-CORRECTNESS STATEMENT (pinned instance): the
-build-only harness — builder then walker, NO call — runs to verdict
-0, i.e. the heap structure the builder constructs reads back as
-exactly the encoded model (`expected = choices`). The pure mirror of
-what the builder constructs is `decodeInput` itself (the
-free-generator reading); this statement is the exec-level face of
-that correspondence. Proof parked with the exec-equation campaign
-(S1-P1); the gate exe checks it executably. -/
-def BuildOnlyStatement (seed : Nat) : Prop :=
-  HarnessRunsToThr seed appendBuildFile 0
-
-/-- The wrong-link plant's healthy-shaped claim — refuted by
-`HarnessRunsTo appendLinkPlantFile 255` (structural breaks land in
-the length arm). -/
-def AppendLinkPlantHealthyClaim (seed : Nat) : Prop :=
-  HarnessRunsToThr seed appendLinkPlantFile 0
-
-/-- The wrong-element plant's healthy-shaped claim — refuted by
-`HarnessRunsTo appendElemPlantFile 3` (element 0's low wire byte). -/
-def AppendElemPlantHealthyClaim (seed : Nat) : Prop :=
-  HarnessRunsToThr seed appendElemPlantFile 0
-
 /-! ## THE LEAK CONJUNCT (exec-level, live this rung) -/
 
 /-- Final-allocation-count observable: every outcome of the
@@ -265,24 +228,6 @@ number on every run — drift here means the driver's startup footprint
 changed. -/
 def driverBaseline : Nat := 1
 
-/-- THE R3 LEAK STATEMENT (finite sample form): after teardown, every
-healthy pinned instance's final allocation map is exactly the driver
-baseline — the harness owns no heap; interpreter-only leak-freedom
-(the [USER 2026-08-22] teardown conjunct, live). -/
-def AppendSampleLeakStatement (seed : Nat) : Prop :=
-  ∀ m ∈ sampleSet, HarnessFinalAllocs seed (appendFileOf m) driverBaseline
-
-/-- The build-only instance's leak conjunct. -/
-def BuildOnlyLeakStatement (seed : Nat) : Prop :=
-  HarnessFinalAllocs seed appendBuildFile driverBaseline
-
-/-- The wrong-link plant's leak face — the orphaned xs tail (1 node
-at the pinned instance) survives teardown: final size = baseline +
-1. Stating the EXACT leaked count (not mere disequality) keeps the
-observable differential-grade. -/
-def LinkPlantLeakClaim (seed : Nat) : Prop :=
-  HarnessFinalAllocs seed appendLinkPlantFile (driverBaseline + 1)
-
 /-! ## The file-level bridge (kernel-checked): the stream face and
     the model face build THE SAME program — through the full two-list
     codec -/
@@ -294,29 +239,6 @@ theorem appendFileOfStream_encode (m : Input) (h : Wf m) :
   unfold appendFileOfStream
   rw [show encodeInput m = encodeInput m ++ [] by simp,
     decode_encode_input m h []]
-
-/-- THE R3 SAMPLE BRIDGE (kernel-checked): the model-∀ and stream-∀
-sample statements are interderivable. -/
-theorem append_sample_model_iff_stream (seed : Nat) :
-    AppendSampleStatement seed ↔ AppendSampleStreamStatement seed := by
-  constructor
-  · intro hm s hs
-    unfold sampleStreams at hs
-    obtain ⟨m, hmem, rfl⟩ := List.mem_map.mp hs
-    have hwf : Wf m := by
-      simp only [sampleSet, List.mem_cons, List.not_mem_nil,
-        or_false] at hmem
-      rcases hmem with rfl | rfl | rfl | rfl <;> decide
-    rw [appendFileOfStream_encode m hwf]
-    exact hm m hmem
-  · intro hs m hm
-    have hwf : Wf m := by
-      simp only [sampleSet, List.mem_cons, List.not_mem_nil,
-        or_false] at hm
-      rcases hm with rfl | rfl | rfl | rfl <;> decide
-    have := hs (encodeInput m)
-      (List.mem_map.mpr ⟨m, hm, rfl⟩)
-    rwa [appendFileOfStream_encode m hwf] at this
 
 end ListAppend
 end SpecLab

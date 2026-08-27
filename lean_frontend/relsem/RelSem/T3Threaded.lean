@@ -25,7 +25,7 @@ import RelSem.Threaded
 import RelSem.SegmentFaces
 import RelSem.PerStepTactics
 import RelSem.CerbHeapWalk
-import RelSem.T3
+import RelSem.T3Walks
 
 set_option autoImplicit false
 
@@ -837,10 +837,5 @@ def T3ThreadedOutcomesStatement : Prop :=
 /-- **T3's threaded outcome-set singleton**. -/
 theorem T3ThreadedOutcomes : T3ThreadedOutcomesStatement :=
   fun seed x hx => runND_active (t3_app_eq_thr seed x hx.1 hx.2)
-
-/-- SANITY, nothing lost (DELIBERATELY impure — the ambient bridge;
-    labeled pin in Audit.lean). -/
-theorem T3_of_threaded : T3Statement := fun x hx =>
-  callHarnessAdequate_of_thr (fun seed => T3Threaded seed x hx)
 
 end RelSem.T3

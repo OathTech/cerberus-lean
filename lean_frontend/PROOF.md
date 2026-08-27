@@ -49,28 +49,21 @@ you must trust:
    `LemLib.runEffectful` (in `lem-lean/lean-lib/LemLib.lean`, a
    dependency) — the arcs-1+2 effect-erasure barrier for `BaseIO`
    externs, consumed by the generated ambient/compiled driver paths.
-   It is **temporal, not permanent**: its remaining consumers are the
-   ambient theorem family (which retires at the arc-18 C5 purge in
-   favor of the threaded family) and compiled driver code; its
-   deletion is lem-side surgery, registered for a lem arc. Two gates
-   bound it meanwhile: (a) the **no-cone-entry gate**
-   (`relsem/RelSem/Audit.lean`) pins the exact set of theorems whose
-   cones carry it (114 registered ambient-family theorems) — any NEW
-   theorem cone acquiring it is build-fatal, and a stale entry is
-   build-fatal until deliberately removed; (b) the per-theorem
-   `#guard_msgs` cone pins. The **threaded flagship theorems**
-   (`T1Threaded`–`T3Threaded`, `T6Threaded` and their UB-freedom
-   companions) have cones of **exactly the classical trio**
-   `[propext, Classical.choice, Quot.sound]` — no effect axiom
-   anywhere; the ambient originals wear
-   `[propext, runEffectful, Classical.choice, Quot.sound]`, exactly
-   and pinned. What remains to reach trio-everywhere: the spec-lab
-   statement substrate still quotes the ambient initial state
-   (registered for the family-∀ slice, which re-lands those
-   statements anyway), and the ambient family retires at the purge.
-   All assertions are in-build and plant-tested (deliberately broken
-   to confirm they fire — transcripts in
-   `docs/2026-08-25_arc17-s2b-axiom-endgame.md`).
+   It is **temporal, not permanent**: since the 2026-08-27 kill-list
+   execution its consumers are compiled driver code ONLY — the
+   ambient theorem family that carried it is **deleted**, and the
+   **no-cone-entry gate** (`relsem/RelSem/Audit.lean`) now pins the
+   carrier set at **zero**: `runEffectful` is outside every theorem
+   cone in this repository, and any theorem cone acquiring it is
+   build-fatal. Every theorem in the repository — the threaded slate
+   `T1Threaded`–`T5Threaded` with UB-freedom companions, the walk
+   supplies, the law library — has a cone of **exactly the classical
+   trio** `[propext, Classical.choice, Quot.sound]` (or a subset),
+   per-theorem `#guard_msgs`-pinned. The axiom's deletion proper is
+   lem-side surgery, registered for a lem arc. All assertions are
+   in-build and plant-tested (transcripts in
+   `docs/2026-08-25_arc17-s2b-axiom-endgame.md`; the zeroing:
+   `docs/2026-08-27_kill-list-execution.md`).
 
    *Where the runtime trust actually lives:* the `@[implemented_by]`
    / `@[extern]` boundary (native counters, the tag table, MD5) —
@@ -135,90 +128,79 @@ decision, and the statement-TCB gate makes drift build-fatal.
 
 ## 3. What is proved today — exactly
 
-**Unconditional kernel theorems about compiled C programs.** The
-foundational slate T1–T4 (scalar arithmetic through struct member
-write/read): ∀-quantified, interpreter-only statements about pinned
-compiled Core programs, proved via the iris-lean weakest-precondition
-route and discharged through an in-repo adequacy theorem into
-statements that mention only the fuel semantics. Cones exactly as §1
-(the ambient quartet, pinned). Since the Iris refounding (arc-16/17),
-a **threaded** family re-proves T1–T3 (and a fifth fixture, T6) at
-**∀-fresh-supply-seed statements** — strictly stronger than the
-ambient originals — with cones of **exactly the classical trio**. A
-sixth fixture, **T7** (`t7_flip.c`, a branch-in-loop: data-dependent
-arms alternating across iterations), is proved at a guarded ∀-seed
-statement through the arc-18 **segment layer** (one declared loop
-invariant, `verify_fn` + `seg_auto`; `relsem/RelSem/T7.lean`), same
-trio-exact cone. **T5** (`t5_sum.c`, the bounded
-sum loop) is PROVED at the chartered **∀-n input-family** statement
-(0 ≤ n ≤ 100 ⇒ outcomes = {Specified(n·(n−1)/2)}, no UB) through the
-segment layer at the SYMBOLIC trip count — one declared loop
-invariant, body obligations from the ∀-k pack closure, the driver
-atom through the once-proved two-scratch rule, a two-line proof
-(`relsem/RelSem/T5.lean`, arc-18 R4), trio-exact cone. **T4**
-(`t4_struct_member.c`, the struct-member exit-criterion target) is
-PROVED at its guarded ∀-seed threaded statement (arc-18 R5): the
-unrestricted ∀-seed statement is FALSE (the arc-16 S4 hash-collision
-falsifier), so the statement carries the kernel-computable
-**seed-apartness guard** `T4SeedApart`; under it the whole 56-round
-run — including the NEG-store transform's two fresh draws at the
-OPEN seed — is evaluator-minted equation supply, and the theorem is
-`verify_fn membSpec; seg_auto` (`relsem/RelSem/T4Threaded.lean`),
-trio-exact cone. The full threaded slate T1–T7 is now proved through
-the segment layer. The ambient T1–T4 theorems stand until the purge
-(the ambient-era T5 prefix chain retired at R4 — subsumed by the
-proved theorem).
+THE OPERATOR MANDATE (2026-08-27, binding): theorems here are
+**quantified, ∀-input statements**. Concrete execution at specific
+values is not a proof deliverable — "if we wanted that, we would just
+run the interpreter." The 2026-08-27 kill-list execution
+(`docs/2026-08-27_kill-list-execution.md`) deleted every registered
+concrete-input theorem (the former T6/T7 pairs and the 22-theorem R6
+corpus slate) together with the superseded ambient family; there is
+deliberately NO concrete-theorem inventory to report.
 
-**The breadth-campaign corpus (arc-18 R6):** eleven further C
-programs proved through the segment layer at 2 manual steps per
-theorem, each with a UB-freedom safety twin, cones exactly the
-classical trio — five EASY-tier (branch floor, two-arm branch,
-straight-line local, and the uri.c `ISA_DIGIT`/`IS_MARK` char-class
-shapes), four CENSUS-tier (the hex-value range ladder, percent-encode
-nibble arithmetic, the two-argument overflow-guard function, and a
-scalar reduce **loop** through the declared-invariant route), and two
-EDGE-tier multi-exit loops (**early-return-inside-the-loop** and
-**break**, both composed with zero interior iterations through
-`InvMap.while_inv`). Statements are ∀-seed (guarded where the run
-draws fresh symbols). Four corpus lanes are PARKED at measured,
-priced frontiers — the array vocabulary, the internal-call protocol
-(root cause: a generated `partial def` in the compatibility check),
-and the two size-ladder cliffs — with committed reproducers; the
-campaign record (`docs/2026-08-27_arc18-r6-breadth-campaign.md`) has
-the tables.
+**The quantified threaded slate, T1–T5** — kernel theorems about
+pinned compiled Core programs, stated at the fuel semantics only,
+∀-quantified over the fresh-supply seed AND the C-level inputs, cones
+exactly the classical trio:
+
+- **T1** (`t1_id.c`): ∀ seed, ∀ x in int range — outcomes of
+  `id(x)` = {Specified(x)}, no UB (`relsem/RelSem/T1Threaded.lean`).
+- **T2** (`t2_add.c`): ∀ seed, ∀ x y with x, y, x+y in range —
+  outcomes of `add(x,y)` = {Specified(x+y)}, no UB (the forced
+  no-signed-overflow precondition, spec-discovery documented).
+- **T3** (`t3_roundtrip.c`): ∀ seed, ∀ x in range — roundtrip
+  through a volatile write/read returns x.
+- **T4** (`t4_struct_member.c`): ∀ seed under the kernel-computable
+  seed-apartness guard `T4SeedApart` (the unrestricted ∀-seed
+  statement is FALSE — the arc-16 S4 hash-collision falsifier, kept
+  as the guard's justification), ∀ x in range — struct member
+  write/read returns x (`relsem/RelSem/T4Threaded.lean`).
+- **T5** (`t5_sum.c`, the bounded sum loop): ∀ seed (guarded), ∀ n
+  with 0 ≤ n ≤ 100 — outcomes = {Specified(n·(n−1)/2)}, no UB, at
+  the SYMBOLIC trip count through the segment layer's once-proved
+  while rule with one declared invariant (`relsem/RelSem/T5.lean`).
+
+Each theorem's proof is `verify_fn <spec>; seg_auto` over its
+engine-room walk supply (T1Walks/…/T5Spine — trio-clean equation
+supply registered per fixture; the supply-vs-proof ratio is the
+registered automation frontier). The known honest limitation,
+recorded in the whole-project assessment
+(`docs/2026-08-27_professor-whole-project-assessment.md`): these
+statements do not yet cross a data-dependent branch at a symbolic
+value — the branch/case-split rule, the assertion layer over locals,
+and the symbolic executor are the build plan's subject (§B0–B6 of
+the assessment; awaiting ratification).
 
 **Kernel-checked statement layers for real C functions** (the spec
 lab: division/modulo, `memcpy`, array access, linked-list append,
-tree rotation, and two CN-suite functions): the pure models and their
-lemmas, the model↔stream bridges, finite *sample*-∀ statements over
-explicitly pinned instance sets (the quantification is labeled — a
-finite set, not the family), leak-observable statements, and
-*conditional* plant-refutation schemas — all kernel-checked, with
-cones pinned in-build.
+tree rotation, and two CN-suite functions): the pure models and
+their ~85 lemmas, the 16 codec round-trip/canonicity laws, the
+`model_forall_iff_stream_forall` bridges (genuinely ∀ over the model
+domain), the `fileOfStream_encode` program-term equalities, and the
+family-∀ TARGET statements (∀-seed, full model domain — registered
+targets, honestly labeled UNPROVED). The former finite sample-∀ /
+concrete statement defs and their planned proof are **deleted and
+cancelled** respectively (see below).
 
 **Differential evidence at scale** (evidence, not theorems): every
 harness instance and every corpus lane agrees between the Lean
 pipeline and the OCaml oracle — including ~2,000 executions across
 the spec-lab families and a 2,186-file sweep of the upstream CI
 corpora with zero semantic mismatches. See
-`docs/2026-08-22_ci-sweep-results.md` and the `*-results.md` records.
+`docs/2026-08-22_ci-sweep-results.md` and the `*-results.md`
+records. Differential testing validates the MODEL; it is not, and is
+never presented as, a proof strategy.
 
-**Not yet proved (parked, priced, in the records):** the
-**exec-equation campaign** — the unconditional kernel proofs that the
-compiled harnesses *execute* to their verdicts (which would upgrade
-sample-∀ to family-∀ and make the refutation schemas unconditional) —
-is the current binding constraint. Its machinery is the arc-17
-automation framework (the law-driven round evaluator with its
-hypothesis-threading mode, the construct-law layer, and the
-invariant-based loop treatment — charter:
-`docs/2026-08-24_arc17-automation-framework-charter.md`), being
-consolidated to a single route by the arc-18 coherence arc
-(`docs/2026-08-25_arc18-coherence-charter.md`; family-∀ endpoints
-land at its C4 slice); the chase-era walk/sealing route it
-supersedes is frozen pending the arc-18 C5 purge
-(`docs/2026-08-24_chase-era-postmortem.md`).
-Length/shape-parametric ∀ (beyond fixed shapes) is staged behind the
-same machinery. Do not read any claim in this file as covering these.
+**CANCELLED (not parked): the exec-equation campaign.** The former
+plan to kernel-prove that compiled harnesses *execute* to their
+verdicts at pinned concrete inputs — described in earlier versions
+of this section as "the current binding constraint" — was exactly
+the forbidden proof strategy under the operator mandate and is
+CANCELLED, not deferred (disposition:
+`docs/2026-08-27_whole-project-assessment-disposition.md` §1). The
+binding constraint is the VERIFIER — per-construct symbolic rules,
+the assertion layer, the case-splitting executor (the assessment's
+B0–B6 build plan). Family-∀ spec-lab endpoints re-base on that
+verifier. Do not read any claim in this file as covering these.
 
 ### Where the C is, and what ties a theorem to it
 
@@ -261,8 +243,8 @@ TODO.md).
 "Boring executable specs in the front, Iris party in the back": proof
 *construction* is unrestricted, so long as every step lands as an
 ordinary kernel-checked declaration. The route a landed theorem
-actually takes (the flagships `T1Threaded`–`T3Threaded`, `T6Threaded`
-all run on it) is: **the evaluator mints equations; the WP layer
+actually takes (the whole threaded slate `T1Threaded`–`T5Threaded`
+runs on it) is: **the evaluator mints equations; the WP layer
 consumes them; adequacy lands the fuel-opsem statement.** The layer
 contracts are stated normatively in
 `docs/2026-08-25_reasoning-layer-contracts.md`; in brief:
@@ -308,18 +290,17 @@ contracts are stated normatively in
   lives as ordinary lemmas about the pure model (cheap, parallel,
   standard Lean), connected to execution once per structure family.
 
-**Frozen legacy, purge-bound.** The chase-era workbench — the
-`@[app_eq]` law table with its symbolic walker (`app_walk`),
-per-stage certificate emission, and trace/replay — still exists
-in-tree feeding the *ambient* (pre-threading) theorem family, but it
-is frozen by a build gate (`scripts/check_chase_freeze.sh`: any new
-dependence on it is build-fatal) and scheduled for deletion at the
-arc-18 C5 purge together with the ambient family it serves. New
-proof work goes through the evaluator/WP route above, never the
-walker. Consolidation plan and the retirement inventory:
-`docs/2026-08-25_arc18-coherence-charter.md`,
-`docs/2026-08-25_reasoning-layer-contracts.md`; post-mortem of the
-superseded route: `docs/2026-08-24_chase-era-postmortem.md`.
+**The chase era is DELETED.** The chase-era workbench — the
+`@[app_eq]` law table, the symbolic walker (`app_walk`) with
+trace/replay, the arc-7 Iris shell, the transitional OwnP
+interpretation, and the ambient theorem family they served — was
+deleted at the 2026-08-27 kill-list execution (the C5 purge,
+absorbed and executed; record
+`docs/2026-08-27_kill-list-execution.md`). The chase-freeze gate
+retired with its subject (its allowlist emptied); the one-route gate
+now bans ANY OwnP-binding file, with an empty retirement register.
+Post-mortem of the superseded route:
+`docs/2026-08-24_chase-era-postmortem.md`.
 
 ## 5. How to check any claim in this file
 

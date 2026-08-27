@@ -48,6 +48,18 @@ open RelSem.Cerb (HarnessRunsToThr specifiedInt initial_driver_state_threaded)
 
 
 namespace SpecLab
+
+/-! (2026-08-27 KILL-LIST EXECUTION, operator-ratified: the finite
+    sample-∀ / concrete statement Prop defs of this rung — the
+    `*Sample*`/`*Plant*Claim`/`*Leak*` family with their pinned
+    sample sets and the sample bridges — are DELETED: quantification
+    by membership in a closed literal list is enumeration by
+    construction, and their planned proof (the exec-equation
+    campaign) is CANCELLED. The pure models, codec laws, the
+    `model_forall_iff_stream_forall` bridges, the `fileOfStream_
+    encode` program-term equalities, the family-∀ TARGET statements,
+    and the file terms (test-lane data) all STAY. Record:
+    lean_frontend/docs/2026-08-27_kill-list-execution.md.) -/
 namespace TreeRot
 
 open SpecLab.TreeRotCore
@@ -236,103 +248,7 @@ def rotateFileOfStream (s : Stream) : file core_run_annotation :=
 /-! ## The R4 exec statements (fuel opsem only; `DivMod.HarnessRunsTo`
     and the R3 leak observable reused verbatim) -/
 
-/-- The R4 sample set (finite explicit quantification — LABEL: four
-concrete pinned-shape models at the pinned path [l], not the family;
-the fixed-shape family-∀ rides the parametric term as the priced
-follow-on). Wire bytes: a = 1..24, b = 101..124, d = 201..224
-(sign-bit maxima exercised), c = out-of-trio boundary vals
-[0, -1, INT_MIN, INT_MAX, 1, -INT_MAX]. -/
-def sampleSet : List Input :=
-  [⟨pinnedShape 67305985 134678021 202050057 269422093 336794129
-      404166165, pinnedPath⟩,
-   ⟨pinnedShape 1751606885 1818978921 1886350957 1953722993 2021095029
-      2088467065, pinnedPath⟩,
-   ⟨pinnedShape (-859059511) (-791687475) (-724315439) (-656943403)
-      (-589571367) (-522199331), pinnedPath⟩,
-   ⟨pinnedShape 0 (-1) (-2147483648) 2147483647 1 (-2147483647),
-      pinnedPath⟩]
-
-/-- THE R4 MODEL-∀ STATEMENT (finite sample form): every healthy
-pinned instance runs to verdict 0 — the post-state tree read back
-through the walker equals `rotateAt tree path` (full-tree readback
-equality: the S4-E1 experiment's Way 1, THE statement form), with the
-untouched remainder checked byte-for-byte through the same
-observation. -/
-def RotateSampleStatement (seed : Nat) : Prop :=
-  ∀ m ∈ sampleSet, HarnessRunsToThr seed (rotateFileOf m) 0
-
-/-- The sample streams (full tree-and-path codec). -/
-def sampleStreams : List Stream := sampleSet.map encodeInput
-
-/-- THE R4 STREAM-∀ STATEMENT (finite sample form). -/
-def RotateSampleStreamStatement (seed : Nat) : Prop :=
-  ∀ s ∈ sampleStreams, HarnessRunsToThr seed (rotateFileOfStream s) 0
-
-/-- THE POINTER-SELECTION STATEMENT FAMILY (the S3 prototype,
-promoted): the pinned instances at FURTHER paths — the root rotation
-(path []) and the depth-2 spine rotation (path [l,l]) — each runs to
-verdict 0. Verbatim-pinned file list (the S2-E4 floor for 1-2
-instance targets); together with the parametric family's in-stream
-path, the path dimension is statement-level data, not harness
-configuration. -/
-def RotatePathSampleStatement (seed : Nat) : Prop :=
-  ∀ f ∈ [rotateRootFile, rotateDeepFile], HarnessRunsToThr seed f 0
-
-/-- THE BUILDER-CORRECTNESS OBLIGATION, stated (the build-only
-harness — builder then walker, NO call — runs to verdict 0: the heap
-structure the builder constructs serializes back as exactly the
-encoded model, `expected = choices`; the pure mirror is `decodeInput`
-itself, the free-generator reading). Proof parked with the
-exec-equation campaign per the S1-S3 pattern — statement side
-complete; the gate exe checks it executably. -/
-def BuildOnlyStatement (seed : Nat) : Prop :=
-  HarnessRunsToThr seed rotateBuildFile 0
-
-/-- The wrong-child-swap plant's healthy-shaped claim — refuted by
-`HarnessRunsTo swapPlantFile 7` (the locus val's first wire byte). -/
-def SwapPlantHealthyClaim (seed : Nat) : Prop :=
-  HarnessRunsToThr seed swapPlantFile 0
-
-/-- The dropped-subtree plant's healthy-shaped claim — refuted by
-`HarnessRunsTo dropPlantFile 255` (structural breaks land in the
-length arm). -/
-def DropPlantHealthyClaim (seed : Nat) : Prop :=
-  HarnessRunsToThr seed dropPlantFile 0
-
 /-! ## The leak conjunct (the R3 observable, reused verbatim) -/
-
-/-- THE R4 LEAK STATEMENT (finite sample form): after teardown, every
-healthy pinned instance's final allocation map is exactly the driver
-baseline — rotation is allocation-neutral (`rotateAt_size` is the
-pure face) and the harness owns no heap. -/
-def RotateSampleLeakStatement (seed : Nat) : Prop :=
-  ∀ m ∈ sampleSet,
-    ListAppend.HarnessFinalAllocs seed (rotateFileOf m) ListAppend.driverBaseline
-
-/-- The path instances' leak conjunct. -/
-def RotatePathSampleLeakStatement (seed : Nat) : Prop :=
-  ∀ f ∈ [rotateRootFile, rotateDeepFile],
-    ListAppend.HarnessFinalAllocs seed f ListAppend.driverBaseline
-
-/-- The build-only instance's leak conjunct. -/
-def BuildOnlyLeakStatement (seed : Nat) : Prop :=
-  ListAppend.HarnessFinalAllocs seed rotateBuildFile ListAppend.driverBaseline
-
-/-- The wrong-child-swap plant's leak face: BASELINE — a broken
-target that leaks nothing (all nodes stay reachable;
-`swapPlant_size`). The observable separates the two plant classes:
-content break (swap, leak-free) vs structural break (drop, +1). -/
-def SwapPlantLeakStatement (seed : Nat) : Prop :=
-  ListAppend.HarnessFinalAllocs seed swapPlantFile ListAppend.driverBaseline
-
-/-- The dropped-subtree plant's leak face — the orphaned middle
-subtree (exactly 1 node at the pinned instance: `orphanedAt` = 1,
-`dropPlant_size`) survives teardown: final size = baseline + 1.
-Stating the EXACT leaked count keeps the observable
-differential-grade. -/
-def DropPlantLeakClaim (seed : Nat) : Prop :=
-  ListAppend.HarnessFinalAllocs seed dropPlantFile
-    (ListAppend.driverBaseline + 1)
 
 /-! ## The file-level bridge (kernel-checked): the stream face and
     the model face build THE SAME program — through the recursive
@@ -345,29 +261,6 @@ theorem rotateFileOfStream_encode (m : Input) (h : Wf m) :
   unfold rotateFileOfStream
   rw [show encodeInput m = encodeInput m ++ [] by simp,
     decode_encode_input m h []]
-
-/-- THE R4 SAMPLE BRIDGE (kernel-checked): the model-∀ and stream-∀
-sample statements are interderivable. -/
-theorem rotate_sample_model_iff_stream (seed : Nat) :
-    RotateSampleStatement seed ↔ RotateSampleStreamStatement seed := by
-  constructor
-  · intro hm s hs
-    unfold sampleStreams at hs
-    obtain ⟨m, hmem, rfl⟩ := List.mem_map.mp hs
-    have hwf : Wf m := by
-      simp only [sampleSet, List.mem_cons, List.not_mem_nil,
-        or_false] at hmem
-      rcases hmem with rfl | rfl | rfl | rfl <;> decide
-    rw [rotateFileOfStream_encode m hwf]
-    exact hm m hmem
-  · intro hs m hm
-    have hwf : Wf m := by
-      simp only [sampleSet, List.mem_cons, List.not_mem_nil,
-        or_false] at hm
-      rcases hm with rfl | rfl | rfl | rfl <;> decide
-    have := hs (encodeInput m)
-      (List.mem_map.mpr ⟨m, hm, rfl⟩)
-    rwa [rotateFileOfStream_encode m hwf] at this
 
 end TreeRot
 end SpecLab

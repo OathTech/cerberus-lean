@@ -26,7 +26,7 @@ import RelSem.Threaded
 import RelSem.SegmentFaces
 import RelSem.PerStepTactics
 import RelSem.CerbHeapWalk
-import RelSem.T2
+import RelSem.T2Walks
 
 set_option autoImplicit false
 
@@ -678,10 +678,5 @@ def T2ThreadedOutcomesStatement : Prop :=
 theorem T2ThreadedOutcomes : T2ThreadedOutcomesStatement :=
   fun seed x y hx hy hs =>
     runND_active (t2_app_eq_thr seed x y hx.1 hx.2 hy.1 hy.2 hs.1 hs.2)
-
-/-- SANITY, nothing lost (DELIBERATELY impure — the ambient bridge;
-    labeled pin in Audit.lean). -/
-theorem T2_of_threaded : T2Statement := fun x y hx hy hs =>
-  callHarnessAdequate_of_thr (fun seed => T2Threaded seed x y hx hy hs)
 
 end RelSem.T2

@@ -64,9 +64,19 @@ def runFile (f : file core_run_annotation) : Sum Int String :=
   | [] => .inr "no executions"
   | _ => .inr "multiple executions"
 
+/-- The four pinned test points (TEST-LEDGER data, spelled out here —
+the ListGateTest/TreeGateTest pattern; formerly `swapSampleSet`,
+whose statement-side def was deleted at the 2026-08-27 kill-list
+execution — an edit here breaks the gate loudly). -/
+def seedTestSet : List PairInput :=
+  [⟨578437695752307201, 1157159078456920585⟩,
+   ⟨7812454979559974501, 8391176362264587885⟩,
+   ⟨15046472263367641801, 15625193646072255185⟩,
+   ⟨18446744073709551615, 0⟩]
+
 /-- (label, sample, expected verdict). -/
 def execPoints : List (String × PairInput × Int) :=
-  (swapSampleSet.zip ["a", "b", "d", "c"]).map fun (m, l) => (l, m, 0)
+  (seedTestSet.zip ["a", "b", "d", "c"]).map fun (m, l) => (l, m, 0)
 
 /-- The dumps' byte vectors, computed from the PURE encoder (single
 source of truth). -/
@@ -106,7 +116,7 @@ def main : IO UInt32 := do
   let dumps : List (String × String) :=
     [("a", sa), ("b", sb), ("d", sd), ("c", sc)]
   for ((label, text), (m, _)) in
-      dumps.zip (swapSampleSet.zip ["a", "b", "d", "c"]) do
+      dumps.zip (seedTestSet.zip ["a", "b", "d", "c"]) do
     let r : Except String Bool := do
       let cf ← CoreParser.parseFile text
       let (_, mainD) ← SpecLabEmitCore.findDecl cf "main"

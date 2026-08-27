@@ -25,11 +25,15 @@ and [DESIGN.md](DESIGN.md) for architecture. Operational map:
 
 - `relsem/` is its OWN Lake package (requires the semantics package by
   path; git deps shared via `packagesDir = "../.lake/packages"`). It
-  holds the relational layer + iris-lean coupling + the theorem slate
-  (T1-T4, T5 family) + the workbench (Kit/ lemma kits, the `@[app_eq]`
-  law table, the `app_walk` walker + certificate emitter + trace/replay
-  in `Tactics/`) + the in-build gates (`RelSem/Audit.lean`: axiom
-  sweeps, statement-TCB, absence gates — fail the build, plant-tested).
+  holds the relational layer + iris-lean coupling (per-step language +
+  CerbMem heap RA, the ONE state interpretation) + the quantified
+  threaded theorem slate T1–T5 with its walk supplies + the segment
+  layer (`Segment.lean`/`SegmentFaces.lean`) + the law registry and
+  round evaluator (`LawRegistry`/`RoundEval/`) + the Kit/ lemma kits +
+  the in-build gates (`RelSem/Audit.lean`: axiom sweeps,
+  statement-TCB, absence gates — fail the build, plant-tested). (The
+  chase-era `@[app_eq]` walker workbench and the ambient family were
+  DELETED at the 2026-08-27 kill-list execution.)
 - The exec-facing core (Call/Machine/RunND/ExecModel/Cerberus) stays
   ROOT-side as the `RelSemCore` lib (`relsemcore/`).
 - `speclab/` is a further package (same pattern): spec-lab models,
@@ -115,7 +119,10 @@ Current unit tests:
 - `fresh-int-test` — verifies `fresh_int`/`Symbol.fresh` generate unique values (+ the native-obj fresh-counter floor probe)
 - `emit-lean-core-test` — arc-7: byte drift gate for the emitted slate program terms (`relsem/RelSem/T1Core.lean`, `SlateCore.lean` vs a fresh parse of the pinned oracle Core dumps) + concrete differential points on the assembled theorem objects
 - `pp-test` — arc-10 S3: pretty-printer mirrors (ctype/value shapes + float formatting vs an OCaml 5.4.0 reference transcript, in-file)
-- `app-walk-test` — arc-9 S2: the `app_walk` walker contract-table exercises (E1-E10 since arc-11 S1: v2/sealed lanes, the E9 preview negative, E10 record→replay + fingerprint mismatch; relsem package since arc-11 S4)
+
+(The former `app-walk-test` exe — the chase-era walker contract
+table — was deleted at the 2026-08-27 kill-list execution with
+`Tactics/AppWalk`; record `docs/2026-08-27_kill-list-execution.md`.)
 
 (The former `t5-probe` exe — the arc-9 round-census instrument — was
 deleted at arc-18 R3: zero importers, retirement-register entry 3;
@@ -138,13 +145,8 @@ SUSPECT family hashes re-pinned to the re-convergence deltas, and
 driver.ml reclassified cosmetic→semantic),
 and `check_proof_size.sh` (arc-9 S2: slate proof files within the
 250-line/40-manual-step bar, Kit files fixture-free — the mega-lemma
-counter, debug-only walker surfaces banned in committed (git-tracked)
-proofs: `app_walk?`/`app_walk_norm?` + `app_defeq_diag`/`dnms_kwalk`
-since the arc-9 pre-merge audit (A-F5), + `app_walk_preview` since
-arc-11 S1 (the §12.2 preview enforcement layer, plant-tested both
-directions); `app_walk_norm!` RETIRED in
-arc-11 S1 (F12-4) — the per-stage certificate emitter is now
-`app_walk_norm`'s default configuration;
+counter; the debug-only walker-surface ban rows survive the walker's
+deletion as a reintroduction guard;
 registered slate files listed in the script). Two further gates are
 IN-BUILD (fail the `lake build` itself, arc 7): the RelSem axiom audit
 and the slate statement-TCB gate — both in `relsem/RelSem/Audit.lean`

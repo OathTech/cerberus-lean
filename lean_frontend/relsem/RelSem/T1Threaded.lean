@@ -36,7 +36,7 @@
 import RelSem.Threaded
 import RelSem.PerStepTactics
 import RelSem.CerbHeapWalk
-import RelSem.T1
+import RelSem.T1Walks
 -- arc-18 R4: the statement-facing discharge runs THROUGH THE SEGMENT
 -- LAYER (verify_fn + seg_auto over the registered equation supply)
 import RelSem.SegmentFaces
@@ -848,12 +848,5 @@ def T1ThreadedOutcomesStatement : Prop :=
     corollary of the threaded app equation). -/
 theorem T1ThreadedOutcomes : T1ThreadedOutcomesStatement :=
   fun seed x hx => runND_active (t1_app_eq_thr seed x hx.1 hx.2)
-
-/-- SANITY, nothing lost (DELIBERATELY impure — consumes the ambient
-    bridge, so it and only it here wears `runEffectful`; pinned
-    labeled in Audit.lean): the committed ambient `T1Statement` is a
-    corollary of the threaded family at the ambient draw. -/
-theorem T1_of_threaded : T1Statement := fun x hx =>
-  callHarnessAdequate_of_thr (fun seed => T1Threaded seed x hx)
 
 end RelSem.T1

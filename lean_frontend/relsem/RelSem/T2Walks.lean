@@ -26,7 +26,7 @@
 -/
 
 import RelSem.SlateFiles
-import RelSem.T1AppEq
+import RelSem.T1Walks
 import RelSem.ConstructLaws
 
 set_option autoImplicit false
@@ -639,79 +639,6 @@ def injPhase (x y : Int) : driverM driver_result :=
     (fun (bound : List (sym × value)) =>
       callFinish t2File.tagDefs 0 addT2Sym arena0 bound)
 
-/-- Prefix part 0: the resolution stages land on the spelled pre-inject
-    state (memory still initial). -/
-theorem prefix_a0 (x y : Int) :
-    app (callND t2File.tagDefs t2File "add" [intValue x, intValue y])
-        (initial_driver_state t2File CerbFS.fs_initial_state)
-      = app (injPhase x y)
-          (mkDr thG CerbMem.initialMemState rsD3 [] 0) := by
-  refine (app_bind_active rfl).trans ?_   -- driver_globals
-  refine (app_bind_active rfl).trans ?_   -- nd_get
-  refine (app_bind_active rfl).trans ?_   -- resolveFunSym
-  refine (app_bind_active rfl).trans ?_   -- lookupFunBody
-  refine (app_bind_active rfl).trans ?_   -- lookupParamTys
-  rfl
-
-/-- Prefix part 1: the two argument injections, walked at the spelled
-    state through the memory lens. -/
-theorem prefix_a1 (x y : Int) :
-    app (injPhase x y) (mkDr thG CerbMem.initialMemState rsD3 [] 0)
-      = app (callFinish t2File.tagDefs 0 addT2Sym arena0
-          [(symA, aPtrV), (symB, bPtrV)])
-          (mkDr thG (memInj x y) rsD3 [] 0) := by
-  apply (app_bind_active ?hinj).trans
-  case hinj =>
-    simp only [injectArgs, injectArg, mvvA_fact]
-    apply (app_bind_active (app_liftND_active _ _ _ _ ?hma)).trans
-    case hma =>
-      refine (app_bind_active allocA_eq).trans ?_
-      refine (app_bind_active (storeA_eq x)).trans ?_
-      exact app_nd_return (Vobject (OVpointer aPtr)) (memA x)
-    apply (app_bind_active ?hinjb).trans
-    case hinjb =>
-      apply (app_bind_active (app_liftND_active _ _ _ _ ?hmb)).trans
-      case hmb =>
-        refine (app_bind_active (allocB_eq x)).trans ?_
-        refine (app_bind_active (storeB_eq x y)).trans ?_
-        exact app_nd_return (Vobject (OVpointer bPtr)) (memInj x y)
-      refine (app_bind_active rfl).trans ?_   -- injectArgs []
-      rfl
-    rfl
-  rfl
-
-theorem prefix_a (x y : Int) :
-    app (callND t2File.tagDefs t2File "add" [intValue x, intValue y])
-        (initial_driver_state t2File CerbFS.fs_initial_state)
-      = app (callFinish t2File.tagDefs 0 addT2Sym arena0
-          [(symA, aPtrV), (symB, bPtrV)])
-          (mkDr thG (memInj x y) rsD3 [] 0) :=
-  (prefix_a0 x y).trans (prefix_a1 x y)
-
-theorem prefix_b (x y : Int) :
-    app (callFinish t2File.tagDefs 0 addT2Sym arena0
-        [(symA, aPtrV), (symB, bPtrV)])
-        (mkDr thG (memInj x y) rsD3 [] 0)
-      = app (nd_bind (driver2 t2File.tagDefs false) finTail)
-          (mkDr th0 (memD3 x y) rsD3 [] 0) := by
-  refine (app_bind_active
-    (v := (mkDr thG (memInj x y) rsD3 [] 0).core_state0.thread_states)
-    (st' := mkDr thG (memInj x y) rsD3 [] 0) rfl).trans ?_
-  apply (app_bind_active (app_liftND_active _ _ _ _ ?hmem)).trans
-  case hmem =>
-    refine (app_bind_active (allocErr_eq x y)).trans ?_
-    refine (app_bind_active (storeErr_eq x y)).trans ?_
-    exact app_nd_return errPtr (memD3 x y)
-  refine (app_bind_active rfl).trans ?_  -- driver_update_thread_state
-  rfl
-
-theorem prefix_walk (x y : Int) :
-    app (callND t2File.tagDefs t2File "add" [intValue x, intValue y])
-        (initial_driver_state t2File CerbFS.fs_initial_state)
-      = app (nd_bind (driver2 t2File.tagDefs false) finTail)
-          (mkDr th0 (memD3 x y) rsD3 [] 0) :=
-  (prefix_a x y).trans (prefix_b x y)
-
 /-! ## Round lemmas (frame-parametric where payload-opaque) -/
 
 theorem round0 (fuel : Nat) (mem : CerbMem.MemState) (rs : core_run_state)
@@ -1284,45 +1211,6 @@ theorem round15 (x y : Int) (fuel : Nat) (mem : CerbMem.MemState)
 def tr1 (y : Int) : List trace_event := [meLoadB y]
 def tr2 (x y : Int) : List trace_event := [meLoadA x, meLoadB y]
 
-/-- The full dnms run at the default budget: fifteen rounds + terminal. -/
-theorem dnms_chain (x y : Int)
-    (hx1 : -2147483648 ≤ x) (hx2 : x ≤ 2147483647)
-    (hy1 : -2147483648 ≤ y) (hy2 : y ≤ 2147483647)
-    (hs1 : -2147483648 ≤ x + y) (hs2 : x + y ≤ 2147483647) :
-    app (dnms lemDefaultFuel fmapEmpty [0]) (mkDr th0 (memD3 x y) rsD3 [] 0)
-      = (NDactive (accDone (x+y)),
-         mkDr (th15 x y) (memD3 x y) rsAB (tr2 x y) 13) :=
-  (round0 999999 (memD3 x y) rsD3 [] 0).trans
-  ((round1 999998 (memD3 x y) rsD3 [] 1).trans
-  ((round2 999997 (memD3 x y) rsD3 [] 2).trans
-  ((round3 x y hy1 hy2 999996 rsD3 [] 3).trans
-  ((round4 y 999995 (memD3 x y) rsB (tr1 y) 3).trans
-  ((round5 y 999994 (memD3 x y) rsB (tr1 y) 4).trans
-  ((round6 y 999993 (memD3 x y) rsB (tr1 y) 5).trans
-  ((round7 x y hx1 hx2 999992 rsB (tr1 y) 6).trans
-  ((round8 x y 999991 (memD3 x y) rsAB (tr2 x y) 6).trans
-  ((round9 x y 999990 (memD3 x y) rsAB (tr2 x y) 7).trans
-  ((round10 x y hx1 hx2 hy1 hy2 hs1 hs2 999989 rsAB (tr2 x y) 8).trans
-  ((round11 x y 999988 (memD3 x y) rsAB (tr2 x y) 9).trans
-  ((round12 x y 999987 (memD3 x y) rsAB (tr2 x y) 10).trans
-  ((round13 x y hs1 hs2 999986 (memD3 x y) rsAB rfl (tr2 x y) 11).trans
-  ((round14 x y 999985 (memD3 x y) rsAB (tr2 x y) 12).trans
-  (round15 x y 999983 (memD3 x y) rsAB (tr2 x y) 13)))))))))))))))
-
-/-- The scheduler sees exactly the done step. -/
-theorem ndct_eq (x y : Int)
-    (hx1 : -2147483648 ≤ x) (hx2 : x ≤ 2147483647)
-    (hy1 : -2147483648 ≤ y) (hy2 : y ≤ 2147483647)
-    (hs1 : -2147483648 ≤ x + y) (hs2 : x + y ≤ 2147483647) :
-    app (new_drive_core_threads t2File.tagDefs ())
-        (mkDr th0 (memD3 x y) rsD3 [] 0)
-      = (NDactive [(0, some (Step_done2 (loadedV (x+y))))],
-         mkDr (th15 x y) (memD3 x y) rsAB (tr2 x y) 13) := by
-  refine (app_bind_active rfl).trans ?_
-  refine (app_bind_active
-    (dnms_chain x y hx1 hx2 hy1 hy2 hs1 hs2)).trans ?_
-  rfl
-
 /-- The post-exit thread (prepare_exit's rebuild). -/
 def thDone (x y : Int) : thread_state :=
   { th15 x y with stack0 := Stack_empty, arena := mk_value_e (loadedV (x+y)) }
@@ -1331,58 +1219,17 @@ def thDone (x y : Int) : thread_state :=
 def drDone (x y : Int) : driver_state :=
   mkDr (thDone x y) (memD3 x y) rsAB (tr2 x y) 13
 
-/-- ONE driver2 iteration does the whole run (T1's opaque
-    execution-mode dispatch, verbatim). -/
-theorem driver2_iter (x y : Int)
-    (hx1 : -2147483648 ≤ x) (hx2 : x ≤ 2147483647)
-    (hy1 : -2147483648 ≤ y) (hy2 : y ≤ 2147483647)
-    (hs1 : -2147483648 ≤ x + y) (hs2 : x + y ≤ 2147483647) :
-    app (driver2 t2File.tagDefs false) (mkDr th0 (memD3 x y) rsD3 [] 0)
-      = (NDactive (), drDone x y) := by
-  show app (driver2_lemFuel (999999+1) t2File.tagDefs false)
-    (mkDr th0 (memD3 x y) rsD3 [] 0) = (NDactive (), drDone x y)
-  change app (nd_bind _ _) _ = _
-  refine (app_bind_active
-    (ndct_eq x y hx1 hx2 hy1 hy2 hs1 hs2)).trans ?_
-  refine (app_bind_active rfl).trans ?_          -- nd_get
-  cases hmode : Lem_Maybe.maybeEqualBy (fun x y => x == y)
-      (CerbGlobal.current_execution_mode ())
-      (some CerbGlobal.ExecutionMode.random) with
-  | true =>
-    simp only [reduceIte, bindExhaustive]
-    apply (app_bind_active ?hpickT).trans
-    case hpickT => rfl
-    apply (app_bind_active ?hdbgT).trans
-    case hdbgT => rfl
-    rfl
-  | false =>
-    simp only [reduceIte]
-    apply (app_bind_active ?hgrd).trans
-    case hgrd => rfl
-    apply (app_bind_active ?hpickF).trans
-    case hpickF => rfl
-    apply (app_bind_active ?hdbgF).trans
-    case hdbgF => rfl
-    rfl
+/-! ## Statement vocabulary (RE-HOMED from the deleted ambient
+    statement file RelSem/T2.lean at the 2026-08-27 kill-list
+    execution — texts unchanged; every consumer resolves the same
+    `RelSem.T2.t2Fs`/`RelSem.T2.t2Spec`). -/
 
-/-- THE T2 HARNESS APP EQUATION, composed. -/
-theorem t2_app_eq (x y : Int)
-    (hx1 : -2147483648 ≤ x) (hx2 : x ≤ 2147483647)
-    (hy1 : -2147483648 ≤ y) (hy2 : y ≤ 2147483647)
-    (hs1 : -2147483648 ≤ x + y) (hs2 : x + y ≤ 2147483647) :
-    app (callND t2File.tagDefs t2File "add" [intValue x, intValue y])
-        (initial_driver_state t2File CerbFS.fs_initial_state)
-      = (NDactive (finalize t2File.tagDefs "callND" (drDone x y)),
-         drDone x y) := by
-  refine (prefix_walk x y).trans ?_
-  refine (app_bind_active
-    (driver2_iter x y hx1 hx2 hy1 hy2 hs1 hs2)).trans ?_
-  refine (app_bind_active rfl).trans ?_          -- finTail's nd_get
-  rfl                                            -- nd_return finalize
+/-- The harness filesystem state (the driver default, as T1). -/
+def t2Fs : CerbFS.FsState := CerbFS.fs_initial_state
 
-/-- The finalize result carries the sum, Specified. -/
-theorem t2_result_eq (x y : Int) :
-    (finalize t2File.tagDefs "callND" (drDone x y)).dres_core_value
-      = intValue (x+y) := rfl
+/-- T2's pure spec on driver results: the result value is the sum,
+    Specified. -/
+def t2Spec (x y : Int) (r : driver_result) : Prop :=
+  r.dres_core_value = intValue (x + y)
 
 end RelSem.T2

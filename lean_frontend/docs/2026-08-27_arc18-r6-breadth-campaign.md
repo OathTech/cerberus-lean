@@ -1,5 +1,21 @@
 # Arc-18 R6 — THE BREADTH CAMPAIGN (slice record)
 
+> **SUPERSEDED — 2026-08-27 KILL-LIST EXECUTION (operator-ratified).**
+> This record stands as HISTORY, with its headline re-read under the
+> whole-project assessment: the eleven corpus theorems it reports were
+> **concrete-input theorems** (every argument a fixed literal — e.g.
+> clamp0(−3), hex_val(102)); the "2 manual steps per theorem" bought
+> that concrete-input form, and the ~400-line per-fixture supply
+> modules were the real price. All 22 corpus theorems (+ the T6/T7
+> pairs) and their fixtures' proof text were DELETED at the kill-list
+> execution (`docs/2026-08-27_kill-list-execution.md`); the fixtures
+> stay in tests/verify as differential-test inputs and as the ∀-input
+> acceptance targets of the assessment's build plan (B5). The
+> campaign's MEASUREMENT content (walls, root causes: the
+> are_compatible partial def, the depth/width cliffs, the
+> every-assignment-draws-a-symbol finding) remains real
+> reconnaissance and is the B2 work order (assessment C-15).
+
 STATUS: R6 CLOSED at this record (park-ends-slice; the record is the
 stop signal). Worker slice of the segment ladder (charter:
 `docs/2026-08-26_arc18-segment-ladder-charter.md`, rung R6, priced

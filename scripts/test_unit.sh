@@ -19,8 +19,8 @@ UNIT_TESTS=(
     "fresh-int-test"
     # arc-10 S3: pretty-printer mirrors vs recorded oracle outputs
     "pp-test"
-    # arc-9 S2: the app_walk walker contract-table exercises.
-    "app-walk-test"
+    # (app-walk-test — the chase-era walker contract table — DELETED
+    # at the 2026-08-27 kill-list execution with Tactics/AppWalk.)
     # arc-7 S4: T1 program-term drift gate (emit-lean-core byte-identity
     # against relsem/RelSem/T1Core.lean) + concrete differential of the
     # assembled theorem object (RelSem.T1.t1File) through callND.
@@ -31,7 +31,6 @@ UNIT_TESTS=(
 # `relsem` PACKAGE (lean_frontend/relsem/lakefile.toml) — built and
 # run from that package's workspace.
 RELSEM_TESTS=(
-    "app-walk-test"
     "emit-lean-core-test"
 )
 is_relsem_test() {
@@ -209,8 +208,13 @@ if ! "$PROOFSIZE_SH"; then
     exit 1
 fi
 
-# Chase-freeze gate (arc-16 S0a): no NEW imports/uses of the frozen chase surfaces outside the legacy allowlist (see the script header; fail-closed).
-"$(dirname "$PURITY_SH")/check_chase_freeze.sh" || { echo "test_unit: chase-freeze gate FAILED"; exit 1; }
+# (The chase-freeze gate — check_chase_freeze.sh, arc-16 S0a — was
+# DELETED at the 2026-08-27 kill-list execution: its entire allowlist
+# emptied (AppWalk/WalkTrace/AppEqAttr/Kit-AppEq/T1AppEq/AppWalkTest
+# all deleted) and the frozen surfaces no longer exist to guard; the
+# one-route gate below still bans any OwnP/arc-7-shell reintroduction,
+# plant-tested at the purge. Record:
+# lean_frontend/docs/2026-08-27_kill-list-execution.md.)
 
 # Single-interpretation gate (arc-18 C2; register row R2): the live
 # route binds only CerbMemInterp — no OwnP imports/tokens on the

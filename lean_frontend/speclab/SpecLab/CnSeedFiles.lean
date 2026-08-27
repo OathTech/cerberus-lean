@@ -43,6 +43,18 @@ open RelSem.Cerb (HarnessRunsToThr specifiedInt initial_driver_state_threaded)
 
 
 namespace SpecLab
+
+/-! (2026-08-27 KILL-LIST EXECUTION, operator-ratified: the finite
+    sample-∀ / concrete statement Prop defs of this rung — the
+    `*Sample*`/`*Plant*Claim`/`*Leak*` family with their pinned
+    sample sets and the sample bridges — are DELETED: quantification
+    by membership in a closed literal list is enumeration by
+    construction, and their planned proof (the exec-equation
+    campaign) is CANCELLED. The pure models, codec laws, the
+    `model_forall_iff_stream_forall` bridges, the `fileOfStream_
+    encode` program-term equalities, the family-∀ TARGET statements,
+    and the file terms (test-lane data) all STAY. Record:
+    lean_frontend/docs/2026-08-27_kill-list-execution.md.) -/
 namespace CnSeed
 
 open SpecLab.CnSeedCore
@@ -150,36 +162,6 @@ def swapFileOfStream (s : Stream) : file core_run_annotation :=
 /-! ## The R5 exec statements (fuel opsem only; `HarnessRunsTo` is
     the R1 statement shape, reused verbatim) -/
 
-/-- The R5 swap sample set (finite explicit quantification — LABEL:
-four concrete pairs, not the family; the family-∀ (256^16 instances
-via the parametric term) is the exec campaign's registered endpoint).
-a/b/d = wire bytes 1..16 / 101..116 / 201..216; c = the out-of-trio
-boundary pair (2^64−1, 0). -/
-def swapSampleSet : List PairInput :=
-  [⟨578437695752307201, 1157159078456920585⟩,
-   ⟨7812454979559974501, 8391176362264587885⟩,
-   ⟨15046472263367641801, 15625193646072255185⟩,
-   ⟨18446744073709551615, 0⟩]
-
-/-- THE R5 swap MODEL-∀ STATEMENT (finite sample form): every healthy
-pinned instance runs to verdict 0 — the post-call pair reads back as
-the swapped input, bytes for bytes (the CN ensures, checked). -/
-def SwapSampleStatement (seed : Nat) : Prop :=
-  ∀ m ∈ swapSampleSet, HarnessRunsToThr seed (swapFileOf m) 0
-
-/-- The sample streams (full u64-pair codec). -/
-def swapSampleStreams : List Stream := swapSampleSet.map encodePair
-
-/-- THE R5 swap STREAM-∀ STATEMENT (finite sample form). -/
-def SwapSampleStreamStatement (seed : Nat) : Prop :=
-  ∀ s ∈ swapSampleStreams, HarnessRunsToThr seed (swapFileOfStream s) 0
-
-/-- The swap plant's healthy-shaped claim — refuted by
-`HarnessRunsTo pairSwapPlantFile 9` (the mismatch-index comparator
-naming post-state cell 1's low byte: the lost update). -/
-def SwapPlantHealthyClaim (seed : Nat) : Prop :=
-  HarnessRunsToThr seed pairSwapPlantFile 0
-
 /-- THE R5 FAMILY-∀ STATEMENT (arc-18 C4 — the registered TARGET
 shape; ∀-seed AND the FULL u64-pair domain — the R5 model is Wf-free,
 the S5 record's full-domain bridge). HONESTY LABEL: UNPROVED — proof
@@ -188,13 +170,6 @@ the sample statement remains the executable-validated face. -/
 def SwapFamilyStatement : Prop :=
   ∀ (seed : Nat) (m : PairInput),
     HarnessRunsToThr seed (swapFileOf m) 0
-
-/-- The family-∀ target yields the sample statement at every seed
-(kernel-checked — the anti-vacuity link between target and
-evidence). -/
-theorem swap_sample_of_family (seed : Nat)
-    (h : SwapFamilyStatement) : SwapSampleStatement seed :=
-  fun m _ => h seed m
 
 /-! ## The file-level bridge (kernel-checked): the stream face and
     the model face build THE SAME program — Wf-FREE at this rung
@@ -208,21 +183,6 @@ theorem swapFileOfStream_encode (m : PairInput) :
   unfold swapFileOfStream
   rw [show encodePair m = encodePair m ++ [] by simp,
     decode_encode_pair m []]
-
-/-- THE R5 SAMPLE BRIDGE (kernel-checked): the model-∀ and stream-∀
-sample statements are interderivable — with no per-member Wf lemmas
-at all (contrast the S1/S2 bridges). -/
-theorem swap_sample_model_iff_stream (seed : Nat) :
-    SwapSampleStatement seed ↔ SwapSampleStreamStatement seed := by
-  constructor
-  · intro hm s hs
-    unfold swapSampleStreams at hs
-    obtain ⟨m, hmem, rfl⟩ := List.mem_map.mp hs
-    rw [swapFileOfStream_encode m]
-    exact hm m hmem
-  · intro hs m hm
-    have := hs (encodePair m) (List.mem_map.mpr ⟨m, hm, rfl⟩)
-    rwa [swapFileOfStream_encode m] at this
 
 end CnSeed
 end SpecLab

@@ -4,12 +4,12 @@
 # lean_frontend/docs/2026-08-25_reasoning-layer-contracts.md §6; the
 # arc-16 S2 record's §2.5 coexistence hazard, mechanized).
 #
-# THE CONTRACT (charter Q2 FULL, executed at C2): `CerbMemInterp` (the
-# heap RA) is the ONE state interpretation of the live route. The
-# whole-state OwnP interpretation survives only on the TRANSITIONAL
-# surface (RelSem/PerStepOwnP.lean, C5-bound) consumed by the arc-7
-# shell, the ambient family, the arc-16 smokes (retirement register
-# entry 4).
+# THE CONTRACT (charter Q2 FULL, executed at C2; COMPLETED at the
+# 2026-08-27 kill-list execution): `CerbMemInterp` (the heap RA) is
+# the ONE state interpretation, period. The transitional OwnP surface
+# and its consumers (the arc-7 shell, the ambient family, the smokes)
+# are DELETED; the retirement register below is EMPTY and any
+# OwnP-binding file anywhere is a fail-closed finding.
 #
 # Semantics (fail-closed):
 #   * LIVE-ROUTE MODULES (the contracts doc §7 non-retirements + the
@@ -25,14 +25,6 @@
 #   * A listed live module that is MISSING is fatal (the list is the
 #     gate's own registration; renames re-point it, never drop it).
 #
-# (The C2-era labeled T6 exemption is CLEARED — arc-18 R1, 2026-08-26:
-#   T6Probe migrated to the heap route via the RoundEval OPEN-MEMORY
-#   MINTING MODE, the exemption's named mover; T6Probe is now a
-#   LIVE-ROUTE module below. Record:
-#   lean_frontend/docs/2026-08-26_arc18-r1-open-memory.md.)
-#   (PerStepSmoke/PerStepTacSmoke/the arc-7 shell/the ambient family
-#   are NOT live-route modules — they are retirement-register entries
-#   1/3/4, deleted at C5 with the transitional surface.)
 
 set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -57,7 +49,6 @@ LIVE_MODULES=(
   relsem/RelSem/RoundEval/Assembly.lean
   relsem/RelSem/ConstructLaws.lean
   relsem/RelSem/LawRegistry.lean
-  relsem/RelSem/Kit/AppEq.lean
   relsem/RelSem/Kit/Audit.lean
   relsem/RelSem/Kit/Env.lean
   relsem/RelSem/Kit/Eval.lean
@@ -73,28 +64,23 @@ LIVE_MODULES=(
   relsem/RelSem/Segment.lean
   relsem/RelSem/SegmentFaces.lean
   relsemcore/RelSem/Threaded.lean
+  relsem/RelSem/T1Walks.lean
+  relsem/RelSem/T2Walks.lean
+  relsem/RelSem/T3Walks.lean
   relsem/RelSem/T1Threaded.lean
   relsem/RelSem/T2Threaded.lean
   relsem/RelSem/T3Threaded.lean
-  relsem/RelSem/T6Probe.lean
-  relsem/RelSem/T7Walks.lean
-  relsem/RelSem/T7.lean
+  relsem/RelSem/T4Walks.lean
+  relsem/RelSem/T4Threaded.lean
+  relsem/RelSem/T5Walks.lean
+  relsem/RelSem/T5Inv.lean
   relsem/RelSem/T5Seam.lean
-  # arc-18 R6: the breadth-campaign corpus (batch 1, EASY tier).
-  relsem/RelSem/Corpus/E1.lean
-  relsem/RelSem/Corpus/E2.lean
-  relsem/RelSem/Corpus/E3.lean
-  relsem/RelSem/Corpus/E4.lean
-  relsem/RelSem/Corpus/E5.lean
-  # arc-18 R6: batch 2 (CENSUS tier).
-  relsem/RelSem/Corpus/C4.lean
-  relsem/RelSem/Corpus/C5.lean
-  relsem/RelSem/Corpus/C3A.lean
-  relsem/RelSem/Corpus/C3B.lean
-  # arc-18 R6: batch 3 (edge loop rows; Corpus/C9.lean is the PARKED
-  # array-lane frontier — outside the build, not a live module).
-  relsem/RelSem/Corpus/X7.lean
-  relsem/RelSem/Corpus/X2.lean
+  relsem/RelSem/T5Spine.lean
+  relsem/RelSem/T5.lean
+  # (T6Probe/T7/T7Walks and the R6 corpus modules — 2026-08-27
+  # kill-list execution: DELETED with the concrete-input slate;
+  # T1/T2/T3Walks are the slimmed trio-clean walk supplies, formerly
+  # T?AppEq, now live-route modules.)
 )
 
 BANNED_IMPORTS='^import[[:space:]]+RelSem\.(PerStepOwnP|IrisState|IrisLang|IrisRules|IrisAdequacy|SlateWP)([[:space:]]|$)'
@@ -154,14 +140,11 @@ for f in "${LIVE_MODULES[@]}"; do
 done
 
 # The coexistence hazard: no file binds both interpretation classes
-# (comment-stripped; PerStepTacSmoke is the LABELED exception — the
-# retirement-register entry-4 smoke file hosts one OwnP smoke and one
-# heap smoke in SEPARATE theorems, never one WP statement; it deletes
-# at C5).
+# (comment-stripped; the PerStepTacSmoke labeled exception is GONE —
+# the file was deleted at the 2026-08-27 kill-list execution).
 both=""
 while IFS= read -r f; do
   [[ -z "$f" ]] && continue
-  [[ "$f" == "relsem/RelSem/PerStepTacSmoke.lean" ]] && continue
   stripped=$(strip_comments "$f")
   if grep -qE '\[CerbGS ' <<< "$stripped" \
       && grep -qE '\[CerbHeapGS' <<< "$stripped"; then
@@ -179,24 +162,13 @@ fi
 # OwnP binders must stay confined to the retirement-register surfaces
 # (drift check: a NEW OwnP-binding file is a finding even outside the
 # live list; the C2-era T6 exemption is CLEARED — R1).
-OWNP_ALLOWED=(
-  relsem/RelSem/PerStepOwnP.lean
-  relsem/RelSem/IrisState.lean
-  relsem/RelSem/IrisLang.lean
-  relsem/RelSem/IrisRules.lean
-  relsem/RelSem/IrisAdequacy.lean
-  # (IrisCoupling.lean DELETED at arc-18 R3 — zero importers; record
-  #  lean_frontend/docs/2026-08-27_arc18-r3-early-purge.md)
-  relsem/RelSem/SlateWP.lean
-  relsem/RelSem/PerStepSmoke.lean
-  relsem/RelSem/PerStepTacSmoke.lean
-  relsem/RelSem/T1.lean
-  relsem/RelSem/T2.lean
-  relsem/RelSem/T3.lean
-  relsem/RelSem/T4.lean
-  relsem/RelSem/T4Defs.lean
-  relsem/RelSem/Audit.lean
-)
+# 2026-08-27 KILL-LIST EXECUTION: the retirement register is EMPTY —
+# every OwnP-binding surface (PerStepOwnP, the arc-7 Iris shell,
+# SlateWP, the smokes, the ambient statement files) is DELETED. Any
+# OwnP-binding file ANYWHERE is now a finding (fail-closed below);
+# plant-tested at the purge (record:
+# lean_frontend/docs/2026-08-27_kill-list-execution.md).
+OWNP_ALLOWED=()
 ownp_binders=""
 while IFS= read -r f; do
   [[ -z "$f" ]] && continue
@@ -221,4 +193,4 @@ if [[ $fail -ne 0 ]]; then
   echo "check_one_route: FAILED"
   exit 1
 fi
-echo "check_one_route: OK — one state interpretation on the live route (${#LIVE_MODULES[@]} modules OwnP-free; coexistence hazard clear; OwnP binders confined to the retirement register)"
+echo "check_one_route: OK — one state interpretation on the live route (${#LIVE_MODULES[@]} modules OwnP-free; coexistence hazard clear; retirement register EMPTY — no OwnP binder anywhere)"

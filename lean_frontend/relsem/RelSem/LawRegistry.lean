@@ -31,7 +31,8 @@
   determined by the key, disambiguation only by declared variant.
   `queryUnique` enforces the same discipline at consumption time.
 
-  Relation to `@[app_eq]` (Tactics/AppEqAttr.lean): that DiscrTree
+  Relation to the retired `@[app_eq]` (Tactics/AppEqAttr.lean,
+  DELETED at the 2026-08-27 kill-list execution): that DiscrTree
   attribute is this registry's in-house DONOR (the C0 adjudication,
   contracts doc §7 entry 3) — the indexing mechanism (metavariable-
   telescope keys, scoped env extension, specificity order) is lifted

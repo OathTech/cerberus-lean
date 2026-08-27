@@ -256,31 +256,6 @@ def CallReaches (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
     (r : driver_result) (st' : driver_state) : Prop :=
   DSteps (callConfig tagDefs file1 fname args fs) ⟨.done (.value r), st'⟩
 
-/-- PROVED: every `Active` verdict the production runner enumerates for
-    a harness call is `CallReaches`-reachable (the `runNDActiveSound`
-    corollary at `callConfig`). -/
-theorem callReaches
-    (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
-    (file1 : file core_run_annotation) (fname : String)
-    (args : List value) (fs : CerbFS.FsState)
-    {r : driver_result} {tr : List String} {st' : driver_state}
-    (h : (Active r, tr, st') ∈
-      CerbND.runND (callND tagDefs file1 fname args)
-        (initial_driver_state file1 fs)) :
-    CallReaches tagDefs file1 fname args fs r st' :=
-  runND_sound _ _ _ _ _ h
-
-/-- PROVED: every observable behavior the sequential model extracts
-    from a harness configuration is `Steps`-reachable (instance
-    coherence, specialized to `callConfig`). -/
-theorem callOutcomes_sound
-    {tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)}
-    {file1 : file core_run_annotation} {fname : String}
-    {args : List value} {fs : CerbFS.FsState} {b : DriveBehavior}
-    (h : seqModel.behavior (callConfig tagDefs file1 fname args fs) b) :
-    DSteps (callConfig tagDefs file1 fname args fs) ⟨.done b.1, b.2⟩ :=
-  seqModel_behavior_sound h
-
 /-- Model-parametric adequacy of a harness call: every observable
     behavior of the call configuration satisfies `spec`. THE slate
     statements are instances of this shape (with `spec` pinning the
@@ -296,21 +271,6 @@ def CallUBFree (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
     (file1 : file core_run_annotation) (fname : String)
     (args : List value) (fs : CerbFS.FsState) : Prop :=
   seqModel.UBFree (callConfig tagDefs file1 fname args fs)
-
-/-- PROVED: Layer-2 → adequacy discharge at the harness configuration —
-    a relational proof covering every reachable terminal configuration
-    of the call discharges into `CallAdequate` (the exit ramp of the
-    S4/S5 Iris chain: WP ⇒ iris adequacy ⇒ per-trace fact ⇒ this). -/
-theorem callAdequate_of_reach
-    (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
-    (file1 : file core_run_annotation) (fname : String)
-    (args : List value) (fs : CerbFS.FsState)
-    (spec : DriveBehavior → Prop)
-    (h : ∀ b : DriveBehavior,
-      DSteps (callConfig tagDefs file1 fname args fs) ⟨.done b.1, b.2⟩ →
-      spec b) :
-    CallAdequate tagDefs file1 fname args fs spec :=
-  seqModel_adequate_of_reach _ spec h
 
 /-! ## The CerbND-shaped headline form (statement-TCB: fuel opsem only) -/
 
@@ -339,26 +299,6 @@ theorem ofStatus_value_inv {A E S : Type}
   | Active a => injection h with h; exact h ▸ rfl
   | Killed st k => cases h
 
-/-- PROVED DISCHARGE: model-parametric adequacy (at the value-shaped
-    spec) yields the CerbND-shaped headline. This is the last plumbing
-    step of the S5 chain: the ∃-fuel behavior extraction subsumes the
-    default budget (`runND = runNDFuel ndDefaultFuel` by rfl), so an
-    `Adequate` fact instantiates on every production-runner outcome. -/
-theorem callHarnessAdequate_of_adequate
-    {tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)}
-    {file1 : file core_run_annotation} {fname : String}
-    {args : List value} {fs : CerbFS.FsState}
-    {spec : driver_result → Prop}
-    (h : CallAdequate tagDefs file1 fname args fs
-      (fun b => ∃ r : driver_result, b.1 = .value r ∧ spec r)) :
-    CallHarnessAdequate tagDefs file1 fname args fs spec := by
-  intro out tr st' hmem
-  have hb : seqModel.behavior (callConfig tagDefs file1 fname args fs)
-      (Outcome.ofStatus out, st') :=
-    ⟨CerbND.ndDefaultFuel, (out, tr, st'), hmem, rfl⟩
-  obtain ⟨r, hr, hs⟩ := h _ hb
-  exact ⟨r, ofStatus_value_inv hr, hs⟩
-
 /-- CerbND-shaped UB-FREEDOM headline (arc-7 S5c, audit-1 F2): no
     outcome the production runner enumerates for the harness call is an
     `Undef0` kill. This is the statement-TCB twin of `CallUBFree`
@@ -379,97 +319,18 @@ def CallHarnessUBFree
       (ubs : List undefined_behaviour),
       out ≠ Killed stk (Undef0 loc ubs)
 
-/-- PROVED DISCHARGE (the UB face of `callHarnessAdequate_of_adequate`):
-    model-parametric UB-freedom yields the CerbND-shaped headline — a
-    runner-enumerated `Undef0` kill would be a behavior `seqModel.isUB`
-    classifies as UB. -/
-theorem callHarnessUBFree_of_ubFree
-    {tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)}
-    {file1 : file core_run_annotation} {fname : String}
-    {args : List value} {fs : CerbFS.FsState}
-    (h : CallUBFree tagDefs file1 fname args fs) :
-    CallHarnessUBFree tagDefs file1 fname args fs := by
-  intro out tr st' hmem stk loc ubs hout
-  have hb : seqModel.behavior (callConfig tagDefs file1 fname args fs)
-      (Outcome.ofStatus out, st') :=
-    ⟨CerbND.ndDefaultFuel, (out, tr, st'), hmem, rfl⟩
-  exact h _ hb ⟨loc, ubs, by rw [hout]; rfl⟩
-
-/-! ## The app-equation route to the slate conclusions (arc-7 S3).
-    On the slate corpus every harness run is ONE bind-collapsed `app`
-    computation (trace evidence, RelSem/Machine.lean § Coverage-by-
-    need), so a single ∀-quantified `app` equation determines the whole
-    behavior/outcome set. The corollaries below are the last mile from
-    that equation to every statement shape the slate uses — S5 proves
-    the equation (by WP or by direct computation) and cites these. -/
-
-/-- One active `app` equation ⇒ model-parametric adequacy at any spec
-    the terminal behavior satisfies. -/
-theorem callAdequate_of_app_active
-    {tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)}
-    {file1 : file core_run_annotation} {fname : String}
-    {args : List value} {fs : CerbFS.FsState}
-    {r : driver_result} {st' : driver_state}
-    (h : app (callND tagDefs file1 fname args)
-        (initial_driver_state file1 fs) = (NDactive r, st'))
-    {spec : DriveBehavior → Prop} (hs : spec (.value r, st')) :
-    CallAdequate tagDefs file1 fname args fs spec := by
-  intro b hb
-  have hb' : seqModel.behavior
-      (⟨.running (callND tagDefs file1 fname args),
-        initial_driver_state file1 fs⟩ : DriveConfig) b := hb
-  rw [seqModel_behavior_running_active_iff h b] at hb'
-  subst hb'
-  exact hs
-
-/-- One active `app` equation ⇒ UB-freedom of the call (a value
-    behavior is never classified UB). -/
-theorem callUBFree_of_app_active
-    {tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)}
-    {file1 : file core_run_annotation} {fname : String}
-    {args : List value} {fs : CerbFS.FsState}
-    {r : driver_result} {st' : driver_state}
-    (h : app (callND tagDefs file1 fname args)
-        (initial_driver_state file1 fs) = (NDactive r, st')) :
-    CallUBFree tagDefs file1 fname args fs :=
-  callAdequate_of_app_active h
-    (fun hub => match hub with | ⟨_, _, hh⟩ => nomatch hh)
-
-/-- One active `app` equation ⇒ the CerbND-shaped UB-freedom HEADLINE
-    (direct route; arc-7 S5c): the runner's outcome set is the `Active`
-    singleton, which is no `Undef0` kill. -/
-theorem callHarnessUBFree_of_app_active
-    {tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)}
-    {file1 : file core_run_annotation} {fname : String}
-    {args : List value} {fs : CerbFS.FsState}
-    {r : driver_result} {st' : driver_state}
-    (h : app (callND tagDefs file1 fname args)
-        (initial_driver_state file1 fs) = (NDactive r, st')) :
-    CallHarnessUBFree tagDefs file1 fname args fs := by
-  intro out tr st'' hmem stk loc ubs hout
-  rw [runND_active h] at hmem
-  cases hmem with
-  | head => cases hout
-  | tail _ h' => cases h'
-
-/-- One active `app` equation ⇒ the CerbND-shaped HEADLINE: the
-    production runner's outcome set is exactly the `Active r`
-    singleton, so every outcome is `Active` and satisfies any spec `r`
-    does (statement-TCB shape: fuel opsem only). -/
-theorem callHarnessAdequate_of_app_active
-    {tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)}
-    {file1 : file core_run_annotation} {fname : String}
-    {args : List value} {fs : CerbFS.FsState}
-    {r : driver_result} {st' : driver_state}
-    (h : app (callND tagDefs file1 fname args)
-        (initial_driver_state file1 fs) = (NDactive r, st'))
-    {spec : driver_result → Prop} (hs : spec r) :
-    CallHarnessAdequate tagDefs file1 fname args fs spec := by
-  intro out tr st'' hmem
-  rw [runND_active h] at hmem
-  cases hmem with
-  | head => exact ⟨r, rfl, hs⟩
-  | tail _ h' => cases h'
+/-! (The nine ambient harness-adequacy bridge theorems that lived
+    here — callReaches, callOutcomes_sound, callAdequate_of_reach,
+    callHarnessAdequate_of_adequate, callHarnessUBFree_of_ubFree,
+    callAdequate_of_app_active, callUBFree_of_app_active,
+    callHarnessUBFree_of_app_active, callHarnessAdequate_of_app_active
+    — were DELETED at the 2026-08-27 kill-list execution: all were
+    `runEffectful` carriers over the ambient `initial_driver_state`,
+    serving only the deleted ambient theorem family. The DEFS
+    (callND, callConfig, CallReaches, CallAdequate, CallUBFree,
+    CallHarnessAdequate, CallHarnessUBFree) and the pure lemma
+    `ofStatus_value_inv` stay: they are the statement vocabulary the
+    threaded faces (relsemcore/RelSem/Threaded.lean) quote.) -/
 
 end Cerb
 end RelSem

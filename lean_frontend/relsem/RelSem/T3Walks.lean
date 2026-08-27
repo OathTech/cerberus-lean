@@ -29,8 +29,8 @@
 -/
 
 import RelSem.SlateFiles
-import RelSem.T1AppEq
-import RelSem.T2AppEq
+import RelSem.T1Walks
+import RelSem.T2Walks
 import RelSem.ConstructLaws
 
 set_option autoImplicit false
@@ -1089,7 +1089,7 @@ theorem round22 (x : Int) (fuel : Nat) (mem : CerbMem.MemState)
   refine (app_bind_active rfl).trans ?_
   rfl
 
-/-- R23 (terminal). -/
+
 theorem round23 (x : Int) (fuel : Nat) (mem : CerbMem.MemState)
     (rs : core_run_state) (tr : List trace_event) (n : Nat) :
     app (dnms (fuel+2) fmapEmpty [0]) (mkDr (th23 x) mem rs tr n)
@@ -1114,113 +1114,8 @@ def injPhase (x : Int) : driverM driver_result :=
     (fun (bound : List (sym × value)) =>
       callFinish t3File.tagDefs 0 roundtripT3Sym arena00 bound)
 
-theorem prefix_a0 (x : Int) :
-    app (callND t3File.tagDefs t3File "roundtrip" [intValue x])
-        (initial_driver_state t3File CerbFS.fs_initial_state)
-      = app (injPhase x)
-          (mkDr thG CerbMem.initialMemState rsD3 [] 0) := by
-  refine (app_bind_active rfl).trans ?_   -- driver_globals
-  refine (app_bind_active rfl).trans ?_   -- nd_get
-  refine (app_bind_active rfl).trans ?_   -- resolveFunSym
-  refine (app_bind_active rfl).trans ?_   -- lookupFunBody
-  refine (app_bind_active rfl).trans ?_   -- lookupParamTys
-  rfl
-
-theorem prefix_a1 (x : Int) :
-    app (injPhase x) (mkDr thG CerbMem.initialMemState rsD3 [] 0)
-      = app (callFinish t3File.tagDefs 0 roundtripT3Sym arena00
-          [(symV, vPtrV)])
-          (mkDr thG (memV x) rsD3 [] 0) := by
-  apply (app_bind_active ?hinj).trans
-  case hinj =>
-    simp only [injectArgs, injectArg, mvvV_fact]
-    apply (app_bind_active (app_liftND_active _ _ _ _ ?hmv)).trans
-    case hmv =>
-      refine (app_bind_active allocV_eq).trans ?_
-      refine (app_bind_active (storeV_eq x)).trans ?_
-      exact app_nd_return (Vobject (OVpointer vPtr)) (memV x)
-    refine (app_bind_active rfl).trans ?_   -- injectArgs []
-    rfl
-  rfl
-
-theorem prefix_b (x : Int) :
-    app (callFinish t3File.tagDefs 0 roundtripT3Sym arena00
-        [(symV, vPtrV)])
-        (mkDr thG (memV x) rsD3 [] 0)
-      = app (nd_bind (driver2 t3File.tagDefs false) finTail)
-          (mkDr th00 (memD3 x) rsD3 [] 0) := by
-  refine (app_bind_active
-    (v := (mkDr thG (memV x) rsD3 [] 0).core_state0.thread_states)
-    (st' := mkDr thG (memV x) rsD3 [] 0) rfl).trans ?_
-  apply (app_bind_active (app_liftND_active _ _ _ _ ?hmem)).trans
-  case hmem =>
-    refine (app_bind_active (errAlloc_eq x)).trans ?_
-    refine (app_bind_active (errStore_eq x)).trans ?_
-    exact app_nd_return errPtr (memD3 x)
-  refine (app_bind_active rfl).trans ?_  -- driver_update_thread_state
-  rfl
-
-theorem prefix_walk (x : Int) :
-    app (callND t3File.tagDefs t3File "roundtrip" [intValue x])
-        (initial_driver_state t3File CerbFS.fs_initial_state)
-      = app (nd_bind (driver2 t3File.tagDefs false) finTail)
-          (mkDr th00 (memD3 x) rsD3 [] 0) :=
-  ((prefix_a0 x).trans (prefix_a1 x)).trans (prefix_b x)
 
 /-! ## Composition -/
-
-/-- The full dnms run: twenty-three rounds + terminal (the fuel
-    ladder matches the counters/rs/trace stages the probe recorded). -/
-theorem dnms_chain (x : Int)
-    (h1 : -2147483648 ≤ x) (h2 : x ≤ 2147483647) :
-    app (dnms lemDefaultFuel fmapEmpty [0]) (mkDr th00 (memD3 x) rsD3 [] 0)
-      = (NDactive (accDone x),
-         mkDr (th23 x) (memK x) rs5
-           [meKill, meLoadX x, meStore x, meLoadV x, meCreate] 18) :=
-  (round0 999999 (memD3 x) rsD3 [] 0).trans
-  ((round1 x 999998 rsD3 [] 1).trans
-  ((round2 x 999997 (memC x) rs1 [meCreate] 1).trans
-  ((round3 999996 (memC x) rs1 [meCreate] 2).trans
-  ((round4 999995 (memC x) rs1 [meCreate] 3).trans
-  ((round5 999994 (memC x) rs1 [meCreate] 4).trans
-  ((round6 x h1 h2 999993 rs1 [meCreate] 5).trans
-  ((round7 x 999992 (memC x) rs2 [meLoadV x, meCreate] 5).trans
-  ((round8 x 999991 (memC x) rs2 [meLoadV x, meCreate] 6).trans
-  ((round9 x h1 h2 999990 (memC x) rs2 [meLoadV x, meCreate] 7).trans
-  ((round10 x 999989 rs2 [meLoadV x, meCreate] 8).trans
-  ((round11 x 999988 (memS x) rs3 [meStore x, meLoadV x, meCreate] 8).trans
-  ((round12 x 999987 (memS x) rs3 [meStore x, meLoadV x, meCreate] 9).trans
-  ((round13 x 999986 (memS x) rs3 [meStore x, meLoadV x, meCreate] 10).trans
-  ((round14 x 999985 (memS x) rs3 [meStore x, meLoadV x, meCreate] 11).trans
-  ((round15 x h1 h2 999984 rs3 [meStore x, meLoadV x, meCreate] 12).trans
-  ((round16 x 999983 (memS x) rs4
-      [meLoadX x, meStore x, meLoadV x, meCreate] 12).trans
-  ((round17 x 999982 (memS x) rs4
-      [meLoadX x, meStore x, meLoadV x, meCreate] 13).trans
-  ((round18 x 999981 (memS x) rs4
-      [meLoadX x, meStore x, meLoadV x, meCreate] 14).trans
-  ((round19 x 999980 rs4
-      [meLoadX x, meStore x, meLoadV x, meCreate] 15).trans
-  ((round20 x 999979 (memK x) rs5
-      [meKill, meLoadX x, meStore x, meLoadV x, meCreate] 15).trans
-  ((round21 x h1 h2 999978 (memK x) rs5 rfl
-      [meKill, meLoadX x, meStore x, meLoadV x, meCreate] 16).trans
-  ((round22 x 999977 (memK x) rs5
-      [meKill, meLoadX x, meStore x, meLoadV x, meCreate] 17).trans
-  (round23 x 999975 (memK x) rs5
-      [meKill, meLoadX x, meStore x, meLoadV x, meCreate] 18)))))))))))))))))))))))
-
-/-- The scheduler sees exactly the done step. -/
-theorem ndct_eq (x : Int)
-    (h1 : -2147483648 ≤ x) (h2 : x ≤ 2147483647) :
-    app (new_drive_core_threads t3File.tagDefs ())
-        (mkDr th00 (memD3 x) rsD3 [] 0)
-      = (NDactive [(0, some (Step_done2 (loadedV x)))],
-         mkDr (th23 x) (memK x) rs5
-           [meKill, meLoadX x, meStore x, meLoadV x, meCreate] 18) := by
-  refine (app_bind_active rfl).trans ?_
-  refine (app_bind_active (dnms_chain x h1 h2)).trans ?_
-  rfl
 
 /-- The post-exit thread. -/
 def thDone (x : Int) : thread_state :=
@@ -1231,52 +1126,17 @@ def drDone (x : Int) : driver_state :=
   mkDr (thDone x) (memK x) rs5
     [meKill, meLoadX x, meStore x, meLoadV x, meCreate] 18
 
-/-- ONE driver2 iteration does the whole run (the T1 opaque
-    execution-mode dispatch). -/
-theorem driver2_iter (x : Int)
-    (h1 : -2147483648 ≤ x) (h2 : x ≤ 2147483647) :
-    app (driver2 t3File.tagDefs false) (mkDr th00 (memD3 x) rsD3 [] 0)
-      = (NDactive (), drDone x) := by
-  show app (driver2_lemFuel (999999+1) t3File.tagDefs false)
-    (mkDr th00 (memD3 x) rsD3 [] 0) = (NDactive (), drDone x)
-  change app (nd_bind _ _) _ = _
-  refine (app_bind_active (ndct_eq x h1 h2)).trans ?_
-  refine (app_bind_active rfl).trans ?_          -- nd_get
-  cases hmode : Lem_Maybe.maybeEqualBy (fun x y => x == y)
-      (CerbGlobal.current_execution_mode ())
-      (some CerbGlobal.ExecutionMode.random) with
-  | true =>
-    simp only [reduceIte, bindExhaustive]
-    apply (app_bind_active ?hpickT).trans
-    case hpickT => rfl
-    apply (app_bind_active ?hdbgT).trans
-    case hdbgT => rfl
-    rfl
-  | false =>
-    simp only [reduceIte]
-    apply (app_bind_active ?hgrd).trans
-    case hgrd => rfl
-    apply (app_bind_active ?hpickF).trans
-    case hpickF => rfl
-    apply (app_bind_active ?hdbgF).trans
-    case hdbgF => rfl
-    rfl
+/-! ## Statement vocabulary (RE-HOMED from the deleted ambient
+    statement file RelSem/T3.lean at the 2026-08-27 kill-list
+    execution — texts unchanged; every consumer resolves the same
+    `RelSem.T3.t3Fs`/`RelSem.T3.t3Spec`). -/
 
-/-- THE T3 HARNESS APP EQUATION, composed. -/
-theorem t3_app_eq (x : Int)
-    (h1 : -2147483648 ≤ x) (h2 : x ≤ 2147483647) :
-    app (callND t3File.tagDefs t3File "roundtrip" [intValue x])
-        (initial_driver_state t3File CerbFS.fs_initial_state)
-      = (NDactive (finalize t3File.tagDefs "callND" (drDone x)),
-         drDone x) := by
-  refine (prefix_walk x).trans ?_
-  refine (app_bind_active (driver2_iter x h1 h2)).trans ?_
-  refine (app_bind_active rfl).trans ?_          -- finTail's nd_get
-  rfl
+/-- The harness filesystem state (the driver default). -/
+def t3Fs : CerbFS.FsState := CerbFS.fs_initial_state
 
-/-- The finalize result carries the injected integer, Specified. -/
-theorem t3_result_eq (x : Int) :
-    (finalize t3File.tagDefs "callND" (drDone x)).dres_core_value
-      = intValue x := rfl
+/-- T3's pure spec: the result value is the injected integer,
+    Specified. -/
+def t3Spec (x : Int) (r : driver_result) : Prop :=
+  r.dres_core_value = intValue x
 
 end RelSem.T3

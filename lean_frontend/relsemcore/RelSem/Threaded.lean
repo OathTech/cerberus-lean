@@ -177,43 +177,13 @@ theorem callHarnessUBFreeThr_of_adequateThr {seed : Nat}
   rw [hout] at hr
   cases hr
 
-/-! ## The ambient bridge (DELIBERATELY impure: these mention the
-    ambient state, so they — and only they, in this file — wear the
-    boundary axiom `runEffectful`; pinned LABELED in relsem
-    RelSem/Audit.lean and registered on its no-cone carrier list).
-    They document that the ambient statements are seed-instantiated
-    images of the threaded family: nothing is lost. -/
-
-/-- `initial_core_run_state` IS the threaded form at the ambient seed
-    draw — definitionally. -/
-theorem initial_core_run_state_eq_threaded_ambient
-    (xs : Fmap sym (labeled_continuations core_run_annotation)) :
-    initial_core_run_state xs
-      = initial_core_run_state_threaded
-          (runEffectful (fun () => CerberusFresh.freshIntIO ())) xs := rfl
-
-/-- `initial_driver_state` IS the threaded form at the ambient seed
-    draw — definitionally. -/
-theorem initial_driver_state_eq_threaded_ambient
-    (file1 : file core_run_annotation) (fs : CerbFS.FsState) :
-    initial_driver_state file1 fs
-      = initial_driver_state_threaded
-          (runEffectful (fun () => CerberusFresh.freshIntIO ()))
-          file1 fs := rfl
-
-/-- The ∀-seed threaded headline face yields the ambient one at the
-    ambient draw (the "nothing is lost" direction, generic). -/
-theorem callHarnessAdequate_of_thr
-    {tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)}
-    {file1 : file core_run_annotation} {fname : String}
-    {args : List value} {fs : CerbFS.FsState}
-    {spec : driver_result → Prop}
-    (h : ∀ seed : Nat,
-      CallHarnessAdequateThr seed tagDefs file1 fname args fs spec) :
-    CallHarnessAdequate tagDefs file1 fname args fs spec := by
-  intro out tr st' hmem
-  rw [initial_driver_state_eq_threaded_ambient] at hmem
-  exact h _ out tr st' hmem
+/-! (The three ambient-bridge carriers that lived here —
+    `initial_core_run_state_eq_threaded_ambient`,
+    `initial_driver_state_eq_threaded_ambient`,
+    `callHarnessAdequate_of_thr` — were DELETED at the 2026-08-27
+    kill-list execution with the ambient theorem family they served;
+    they were the file's only `runEffectful` carriers. The threaded
+    faces above are the one statement vocabulary.) -/
 
 end Cerb
 end RelSem

@@ -45,6 +45,18 @@ set_option autoImplicit false
 open RelSem.Cerb (HarnessRunsToThr specifiedInt initial_driver_state_threaded)
 
 namespace SpecLab
+
+/-! (2026-08-27 KILL-LIST EXECUTION, operator-ratified: the finite
+    sample-∀ / concrete statement Prop defs of this rung — the
+    `*Sample*`/`*Plant*Claim`/`*Leak*` family with their pinned
+    sample sets and the sample bridges — are DELETED: quantification
+    by membership in a closed literal list is enumeration by
+    construction, and their planned proof (the exec-equation
+    campaign) is CANCELLED. The pure models, codec laws, the
+    `model_forall_iff_stream_forall` bridges, the `fileOfStream_
+    encode` program-term equalities, the family-∀ TARGET statements,
+    and the file terms (test-lane data) all STAY. Record:
+    lean_frontend/docs/2026-08-27_kill-list-execution.md.) -/
 namespace DivMod
 
 open SpecLab.DivModCore
@@ -154,36 +166,6 @@ def divmodI8FileOfStream (s : Stream) : file core_run_annotation :=
     executable-validated, not yet kernel-proved — ∀-seed closure
     arrives only with proof (the family-∀ upgrades). -/
 
-/-- The R1 sample set (the finite explicit set the S1 kernel
-statements quantify over — LABEL: this is quantification over FOUR
-concrete streams, not the i8 family; the family-∀ is the priced
-follow-on). Includes the i16-edge (-128, -1) (quotient 128 needs the
-second byte). -/
-def sampleSet : List Input :=
-  [⟨7, 2⟩, ⟨-5, 3⟩, ⟨-6, 3⟩, ⟨-128, -1⟩]
-
-/-- THE R1 MODEL-∀ STATEMENT (finite sample form, seed-parametric):
-for every model input in the explicit sample set, the healthy harness
-instance runs to verdict 0 from the seed's initial state. -/
-def DivModI8SampleStatement (seed : Nat) : Prop :=
-  ∀ m ∈ sampleSet, HarnessRunsToThr seed (divmodI8FileOf m) 0
-
-/-- The sample streams (the stream-∀ face's index set). -/
-def sampleStreams : List Stream := sampleSet.map encodeInputI8
-
-/-- THE R1 STREAM-∀ STATEMENT (finite sample form, seed-parametric):
-for every choice stream in the explicit sample-stream set, the
-harness instance built FROM THE STREAM runs to verdict 0. -/
-def DivModI8SampleStreamStatement (seed : Nat) : Prop :=
-  ∀ s ∈ sampleStreams, HarnessRunsToThr seed (divmodI8FileOfStream s) 0
-
-/-- The plant's healthy-shaped claim — the statement the plant must
-REFUTE (its refutation face is `HarnessRunsToThr seed
-divmodI8PlantFile 1`: the mismatch-index comparator names the
-diverging byte). -/
-def DivModI8PlantHealthyClaim (seed : Nat) : Prop :=
-  HarnessRunsToThr seed divmodI8PlantFile 0
-
 /-- THE R1 FAMILY-∀ STATEMENT (arc-18 C4 — the registered TARGET
 shape; ∀-seed AND ∀ over the full well-formed i8 model domain, not
 the pinned sample set). HONESTY LABEL: UNPROVED — the proof is the
@@ -195,17 +177,6 @@ guarded face per the T4-apartness pattern). -/
 def DivModI8FamilyStatement : Prop :=
   ∀ (seed : Nat) (m : Input), WfI8 m →
     HarnessRunsToThr seed (divmodI8FileOf m) 0
-
-/-- The family-∀ target yields the sample statement at every seed
-(kernel-checked: the finite validated face is the family's image —
-the anti-vacuity link between target and evidence). -/
-theorem sample_of_family (seed : Nat)
-    (h : DivModI8FamilyStatement) : DivModI8SampleStatement seed := by
-  intro m hm
-  refine h seed m ?_
-  simp only [sampleSet, List.mem_cons, List.not_mem_nil,
-    or_false] at hm
-  rcases hm with rfl | rfl | rfl | rfl <;> decide
 
 /-! ## The file-level bridge (kernel-checked): the stream face and
     the model face build THE SAME program -/
@@ -221,29 +192,6 @@ theorem fileOfStream_encode (m : Input) (h : WfI8 m) :
     decodeInputI8, ofByteI8_toByteI8 m.x hx1 hx2,
     ofByteI8_toByteI8 m.y hy1 hy2, expectedBytesI8, toBytesI16,
     List.cons_append, List.nil_append, divmodI8FileOf]
-
-/-- THE R1 SAMPLE BRIDGE (kernel-checked): the model-∀ and stream-∀
-sample statements are interderivable (at every seed). -/
-theorem sample_model_iff_stream (seed : Nat) :
-    DivModI8SampleStatement seed ↔ DivModI8SampleStreamStatement seed := by
-  constructor
-  · intro hm s hs
-    unfold sampleStreams at hs
-    obtain ⟨m, hmem, rfl⟩ := List.mem_map.mp hs
-    have hwf : WfI8 m := by
-      simp only [sampleSet, List.mem_cons, List.not_mem_nil,
-        or_false] at hmem
-      rcases hmem with rfl | rfl | rfl | rfl <;> decide
-    rw [fileOfStream_encode m hwf]
-    exact hm m hmem
-  · intro hs m hm
-    have hwf : WfI8 m := by
-      simp only [sampleSet, List.mem_cons, List.not_mem_nil,
-        or_false] at hm
-      rcases hm with rfl | rfl | rfl | rfl <;> decide
-    have := hs (encodeInputI8 m)
-      (List.mem_map.mpr ⟨m, hm, rfl⟩)
-    rwa [fileOfStream_encode m hwf] at this
 
 end DivMod
 end SpecLab

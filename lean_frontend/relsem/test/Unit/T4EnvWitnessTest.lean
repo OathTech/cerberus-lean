@@ -2,7 +2,14 @@
   Unit.T4EnvWitnessTest — arc-7 S5c (audit-1 F3): the T4EnvHyp
   FIRST-IN-PROCESS witness probe.
 
-  T4's statement (RelSem/T4.lean) holds under `T4EnvHyp` — three
+  (2026-08-27 kill-list execution note: the ambient T4 statement and
+  its `T4EnvHyp` are DELETED; the KEPT threaded T4 — RelSem/
+  T4Threaded.lean — carries the digest pin `T4EnvHypThr` and the
+  seed-apartness guard instead. This probe remains the PROCESS-GLOBAL
+  witness for the same three extern facts the threaded guard's
+  environment hypotheses rely on.)
+
+  Historically: T4's ambient statement held under `T4EnvHyp` — three
   process-global extern facts the kernel cannot see through. This exe
   witnesses, in a fresh process that mirrors the harness executable's
   startup order EXACTLY (Main.lean: the floor probe draws first, then

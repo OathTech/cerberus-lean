@@ -132,62 +132,27 @@ open Lean in
 #eval show CoreM Unit from do
   let env ← getEnv
   let statements : List Name :=
-    [`SpecLab.DivMod.DivModI8SampleStatement,
-     `SpecLab.DivMod.DivModI8SampleStreamStatement,
-     `SpecLab.DivMod.DivModI8PlantHealthyClaim,
-     -- arc-18 C4: the R1/R5 family-∀ TARGET shapes + their
-     -- family→sample links (unproved targets, gate-registered from
-     -- birth; the R5 twins are in the CnSeed section)
-     `SpecLab.DivMod.DivModI8FamilyStatement,
-     `SpecLab.DivMod.sample_of_family,
-     `SpecLab.DivMod.sample_model_iff_stream,
+    -- (2026-08-27 kill-list execution: the 23 sample/concrete
+    -- statement Prop defs + the sample bridges left this list with
+    -- their deletion; what remains: the family-∀ TARGET shapes, the
+    -- model↔stream ∀-bridges, and the fileOfStream_encode
+    -- program-term equalities.)
+    [`SpecLab.DivMod.DivModI8FamilyStatement,
      `SpecLab.DivMod.model_forall_iff_stream_forall,
      `SpecLab.DivMod.fileOfStream_encode,
      -- arc-15 S2 (R2 byte-blaster rung)
-     `SpecLab.ByteArr.MemcpySampleStatement,
-     `SpecLab.ByteArr.MemcpySampleStreamStatement,
-     `SpecLab.ByteArr.MemcpyPlantHealthyClaim,
-     `SpecLab.ByteArr.GetarrSampleStatement,
-     `SpecLab.ByteArr.GetarrPlantHealthyClaim,
-     `SpecLab.ByteArr.memcpy_sample_model_iff_stream,
      `SpecLab.ByteArr.model_forall_iff_stream_forall,
      `SpecLab.ByteArr.getarr_model_forall_iff_stream_forall,
      `SpecLab.ByteArr.memcpyFileOfStream_encode,
      -- arc-15 S3 (R3 list rung, incl. the live leak conjunct)
-     `SpecLab.ListAppend.AppendSampleStatement,
-     `SpecLab.ListAppend.AppendSampleStreamStatement,
-     `SpecLab.ListAppend.BuildOnlyStatement,
-     `SpecLab.ListAppend.AppendLinkPlantHealthyClaim,
-     `SpecLab.ListAppend.AppendElemPlantHealthyClaim,
-     `SpecLab.ListAppend.AppendSampleLeakStatement,
-     `SpecLab.ListAppend.BuildOnlyLeakStatement,
-     `SpecLab.ListAppend.LinkPlantLeakClaim,
-     `SpecLab.ListAppend.append_sample_model_iff_stream,
      `SpecLab.ListAppend.model_forall_iff_stream_forall,
      `SpecLab.ListAppend.appendFileOfStream_encode,
      -- arc-15 S4 (R4 tree rung, the reference instance)
-     `SpecLab.TreeRot.RotateSampleStatement,
-     `SpecLab.TreeRot.RotateSampleStreamStatement,
-     `SpecLab.TreeRot.RotatePathSampleStatement,
-     `SpecLab.TreeRot.BuildOnlyStatement,
-     `SpecLab.TreeRot.SwapPlantHealthyClaim,
-     `SpecLab.TreeRot.DropPlantHealthyClaim,
-     `SpecLab.TreeRot.RotateSampleLeakStatement,
-     `SpecLab.TreeRot.RotatePathSampleLeakStatement,
-     `SpecLab.TreeRot.BuildOnlyLeakStatement,
-     `SpecLab.TreeRot.SwapPlantLeakStatement,
-     `SpecLab.TreeRot.DropPlantLeakClaim,
-     `SpecLab.TreeRot.rotate_sample_model_iff_stream,
      `SpecLab.TreeRot.model_forall_iff_stream_forall,
      `SpecLab.TreeRot.rotateFileOfStream_encode,
      -- arc-15 S5 (R5 CN-seed rung: the swap statement family; lookup
      -- has no pinned layer — the CoreParser enum-ctype gap)
-     `SpecLab.CnSeed.SwapSampleStatement,
-     `SpecLab.CnSeed.SwapSampleStreamStatement,
-     `SpecLab.CnSeed.SwapPlantHealthyClaim,
      `SpecLab.CnSeed.SwapFamilyStatement,
-     `SpecLab.CnSeed.swap_sample_of_family,
-     `SpecLab.CnSeed.swap_sample_model_iff_stream,
      `SpecLab.CnSeed.model_forall_iff_stream_forall,
      `SpecLab.CnSeed.swapFileOfStream_encode]
   for n in statements do
@@ -262,24 +227,14 @@ open Lean in
 #guard_msgs in #print axioms SpecLab.DivMod.decode_encode_inputI8
 /-- info: 'SpecLab.DivMod.fileOfStream_encode' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.DivMod.fileOfStream_encode
-/-- info: 'SpecLab.DivMod.sample_model_iff_stream' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLab.DivMod.sample_model_iff_stream
 /-- info: 'SpecLab.DivMod.divmodI8File' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.DivMod.divmodI8File
 /-- info: 'SpecLab.DivMod.divmodI8PlantFile' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.DivMod.divmodI8PlantFile
 /-- info: 'SpecLab.DivMod.divmodI8FileOf' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.DivMod.divmodI8FileOf
-/-- info: 'SpecLab.DivMod.DivModI8SampleStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLab.DivMod.DivModI8SampleStatement
-/-- info: 'SpecLab.DivMod.DivModI8SampleStreamStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLab.DivMod.DivModI8SampleStreamStatement
-/-- info: 'SpecLab.DivMod.DivModI8PlantHealthyClaim' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLab.DivMod.DivModI8PlantHealthyClaim
 /-- info: 'SpecLab.DivMod.DivModI8FamilyStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.DivMod.DivModI8FamilyStatement
-/-- info: 'SpecLab.DivMod.sample_of_family' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLab.DivMod.sample_of_family
 /-- info: 'SpecLab.DivModCore.mainParamDecl' does not depend on any axioms -/
 #guard_msgs in #print axioms SpecLab.DivModCore.mainParamDecl
 /-- info: 'SpecLab.DivModCore.divisionDecl' does not depend on any axioms -/
@@ -326,18 +281,6 @@ open Lean in
 #guard_msgs in #print axioms SpecLab.ByteArr.structured_forall_of_byte_forall
 /-- info: 'SpecLab.ByteArr.memcpyFileOfStream_encode' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.ByteArr.memcpyFileOfStream_encode
-/-- info: 'SpecLab.ByteArr.memcpy_sample_model_iff_stream' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLab.ByteArr.memcpy_sample_model_iff_stream
-/-- info: 'SpecLab.ByteArr.MemcpySampleStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLab.ByteArr.MemcpySampleStatement
-/-- info: 'SpecLab.ByteArr.MemcpySampleStreamStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLab.ByteArr.MemcpySampleStreamStatement
-/-- info: 'SpecLab.ByteArr.MemcpyPlantHealthyClaim' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLab.ByteArr.MemcpyPlantHealthyClaim
-/-- info: 'SpecLab.ByteArr.GetarrSampleStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLab.ByteArr.GetarrSampleStatement
-/-- info: 'SpecLab.ByteArr.GetarrPlantHealthyClaim' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLab.ByteArr.GetarrPlantHealthyClaim
 /-- info: 'SpecLab.ByteArr.memcpyI3File' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.ByteArr.memcpyI3File
 /-- info: 'SpecLab.ByteArr.memcpyPlantFile' depends on axioms: [propext, Classical.choice, Quot.sound] -/
@@ -396,26 +339,8 @@ open Lean in
 #guard_msgs in #print axioms SpecLab.ListAppend.xorOne_ne
 /-- info: 'SpecLab.ListAppend.appendFileOfStream_encode' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.ListAppend.appendFileOfStream_encode
-/-- info: 'SpecLab.ListAppend.append_sample_model_iff_stream' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLab.ListAppend.append_sample_model_iff_stream
-/-- info: 'SpecLab.ListAppend.AppendSampleStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLab.ListAppend.AppendSampleStatement
-/-- info: 'SpecLab.ListAppend.AppendSampleStreamStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLab.ListAppend.AppendSampleStreamStatement
-/-- info: 'SpecLab.ListAppend.BuildOnlyStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLab.ListAppend.BuildOnlyStatement
-/-- info: 'SpecLab.ListAppend.AppendLinkPlantHealthyClaim' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLab.ListAppend.AppendLinkPlantHealthyClaim
-/-- info: 'SpecLab.ListAppend.AppendElemPlantHealthyClaim' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLab.ListAppend.AppendElemPlantHealthyClaim
 /-- info: 'SpecLab.ListAppend.HarnessFinalAllocs' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.ListAppend.HarnessFinalAllocs
-/-- info: 'SpecLab.ListAppend.AppendSampleLeakStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLab.ListAppend.AppendSampleLeakStatement
-/-- info: 'SpecLab.ListAppend.BuildOnlyLeakStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLab.ListAppend.BuildOnlyLeakStatement
-/-- info: 'SpecLab.ListAppend.LinkPlantLeakClaim' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLab.ListAppend.LinkPlantLeakClaim
 /-- info: 'SpecLab.ListAppend.appendI12File' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.ListAppend.appendI12File
 /-- info: 'SpecLab.ListAppend.appendLinkPlantFile' depends on axioms: [propext, Classical.choice, Quot.sound] -/
@@ -480,30 +405,6 @@ open Lean in
 #guard_msgs in #print axioms SpecLab.TreeRot.rotateAt_frame
 /-- info: 'SpecLab.TreeRot.rotateFileOfStream_encode' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.TreeRot.rotateFileOfStream_encode
-/-- info: 'SpecLab.TreeRot.rotate_sample_model_iff_stream' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLab.TreeRot.rotate_sample_model_iff_stream
-/-- info: 'SpecLab.TreeRot.RotateSampleStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLab.TreeRot.RotateSampleStatement
-/-- info: 'SpecLab.TreeRot.RotateSampleStreamStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLab.TreeRot.RotateSampleStreamStatement
-/-- info: 'SpecLab.TreeRot.RotatePathSampleStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLab.TreeRot.RotatePathSampleStatement
-/-- info: 'SpecLab.TreeRot.BuildOnlyStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLab.TreeRot.BuildOnlyStatement
-/-- info: 'SpecLab.TreeRot.SwapPlantHealthyClaim' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLab.TreeRot.SwapPlantHealthyClaim
-/-- info: 'SpecLab.TreeRot.DropPlantHealthyClaim' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLab.TreeRot.DropPlantHealthyClaim
-/-- info: 'SpecLab.TreeRot.RotateSampleLeakStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLab.TreeRot.RotateSampleLeakStatement
-/-- info: 'SpecLab.TreeRot.RotatePathSampleLeakStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLab.TreeRot.RotatePathSampleLeakStatement
-/-- info: 'SpecLab.TreeRot.BuildOnlyLeakStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLab.TreeRot.BuildOnlyLeakStatement
-/-- info: 'SpecLab.TreeRot.SwapPlantLeakStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLab.TreeRot.SwapPlantLeakStatement
-/-- info: 'SpecLab.TreeRot.DropPlantLeakClaim' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLab.TreeRot.DropPlantLeakClaim
 /-- info: 'SpecLab.TreeRot.rotateI24File' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.TreeRot.rotateI24File
 /-- info: 'SpecLab.TreeRot.rotateRootFile' depends on axioms: [propext, Classical.choice, Quot.sound] -/
@@ -566,18 +467,8 @@ open Lean in
 #guard_msgs in #print axioms SpecLab.CnSeed.lookup_inRange
 /-- info: 'SpecLab.CnSeed.swapFileOfStream_encode' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.CnSeed.swapFileOfStream_encode
-/-- info: 'SpecLab.CnSeed.swap_sample_model_iff_stream' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLab.CnSeed.swap_sample_model_iff_stream
-/-- info: 'SpecLab.CnSeed.SwapSampleStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLab.CnSeed.SwapSampleStatement
-/-- info: 'SpecLab.CnSeed.SwapSampleStreamStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLab.CnSeed.SwapSampleStreamStatement
-/-- info: 'SpecLab.CnSeed.SwapPlantHealthyClaim' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLab.CnSeed.SwapPlantHealthyClaim
 /-- info: 'SpecLab.CnSeed.SwapFamilyStatement' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.CnSeed.SwapFamilyStatement
-/-- info: 'SpecLab.CnSeed.swap_sample_of_family' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLab.CnSeed.swap_sample_of_family
 /-- info: 'SpecLab.CnSeed.swapFileOf' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLab.CnSeed.swapFileOf
 /-- info: 'SpecLab.CnSeed.pairSwapPlantFile' depends on axioms: [propext, Classical.choice, Quot.sound] -/

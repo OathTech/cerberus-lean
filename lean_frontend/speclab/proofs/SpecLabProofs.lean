@@ -78,27 +78,6 @@ theorem harnessRunsTo_exclusive (seed : Nat)
   apply specifiedInt_injective a b hab
   rw [← hv1, this, hv2]
 
-/-- THE PLANT'S REFUTATION SCHEMA (the "unprovable theorem" face at
-the logic level): once the exec equation delivers `HarnessRunsToThr
-seed divmodI8PlantFile 1` at any seed with a nonempty run (the gate
-exe already checks the verdict EXECUTABLY: Specified(1) at the
-ambient draw), the plant's healthy-shaped claim is REFUTED at that
-seed. Conditional pending the walk campaign — the schema itself is
-kernel-checked now. -/
-theorem plantClaim_refuted_of_run (seed : Nat)
-    (hne : ∃ out tr st',
-      (out, tr, st') ∈
-        CerbND.runND
-          (drive divmodI8PlantFile.tagDefs false divmodI8PlantFile
-            ["cmdname"])
-          (initial_driver_state_threaded seed divmodI8PlantFile
-            CerbFS.fs_initial_state))
-    (h1 : HarnessRunsToThr seed divmodI8PlantFile 1) :
-    ¬ DivModI8PlantHealthyClaim seed := by
-  intro h0
-  exact harnessRunsTo_exclusive seed divmodI8PlantFile 1 0 (by decide)
-    hne ⟨h1, h0⟩
-
 /-! ## arc-15 S2 (R2): the byte-blaster plants' refutation schemas.
     `harnessRunsTo_exclusive` is generic in the file — the R1 schema
     transfers to the array rung with zero new machinery (proof
@@ -108,40 +87,6 @@ theorem plantClaim_refuted_of_run (seed : Nat)
     checks them EXECUTABLY today. -/
 
 open SpecLab.ByteArr in
-/-- The memcpy off-by-one plant refutes the healthy claim once the
-exec equation delivers `HarnessRunsToThr seed memcpyPlantFile 3` (the
-mismatch-index comparator naming dst byte 0). -/
-theorem memcpyPlantClaim_refuted_of_run (seed : Nat)
-    (hne : ∃ out tr st',
-      (out, tr, st') ∈
-        CerbND.runND
-          (drive memcpyPlantFile.tagDefs false memcpyPlantFile
-            ["cmdname"])
-          (initial_driver_state_threaded seed memcpyPlantFile
-            CerbFS.fs_initial_state))
-    (h3 : HarnessRunsToThr seed memcpyPlantFile 3) :
-    ¬ MemcpyPlantHealthyClaim seed := by
-  intro h0
-  exact harnessRunsTo_exclusive seed memcpyPlantFile 3 0 (by decide)
-    hne ⟨h3, h0⟩
-
-open SpecLab.ByteArr in
-/-- The getarr wrong-index plant refutes the healthy claim once the
-exec equation delivers `HarnessRunsToThr seed getarrPlantFile 1`. -/
-theorem getarrPlantClaim_refuted_of_run (seed : Nat)
-    (hne : ∃ out tr st',
-      (out, tr, st') ∈
-        CerbND.runND
-          (drive getarrPlantFile.tagDefs false getarrPlantFile
-            ["cmdname"])
-          (initial_driver_state_threaded seed getarrPlantFile
-            CerbFS.fs_initial_state))
-    (h1 : HarnessRunsToThr seed getarrPlantFile 1) :
-    ¬ GetarrPlantHealthyClaim seed := by
-  intro h0
-  exact harnessRunsTo_exclusive seed getarrPlantFile 1 0 (by decide)
-    hne ⟨h1, h0⟩
-
 /-! ## arc-15 S3 (R3): the list plants' refutation schemas + the
     LEAK layer's exclusivity. `harnessRunsTo_exclusive` transfers
     again (rung-independent, the S2-P5b finding); the leak conjunct
@@ -149,42 +94,6 @@ theorem getarrPlantClaim_refuted_of_run (seed : Nat)
     FUNCTION of the outcome, so distinct counts refute each other on
     any nonempty run: the wrong-link plant's `baseline + 1` fact
     refutes its leak-free claim by logic, not just measurement. -/
-
-open SpecLab.ListAppend in
-/-- The wrong-link plant refutes the healthy claim once the exec
-equation delivers `HarnessRunsToThr seed appendLinkPlantFile 255`
-(the structural break's length-arm verdict; the gate exe checks it
-executably today). -/
-theorem appendLinkPlantClaim_refuted_of_run (seed : Nat)
-    (hne : ∃ out tr st',
-      (out, tr, st') ∈
-        CerbND.runND
-          (drive appendLinkPlantFile.tagDefs false appendLinkPlantFile
-            ["cmdname"])
-          (initial_driver_state_threaded seed appendLinkPlantFile
-            CerbFS.fs_initial_state))
-    (h255 : HarnessRunsToThr seed appendLinkPlantFile 255) :
-    ¬ AppendLinkPlantHealthyClaim seed := by
-  intro h0
-  exact harnessRunsTo_exclusive seed appendLinkPlantFile 255 0
-    (by decide) hne ⟨h255, h0⟩
-
-open SpecLab.ListAppend in
-/-- The wrong-element plant refutes the healthy claim once the exec
-equation delivers `HarnessRunsToThr seed appendElemPlantFile 3`. -/
-theorem appendElemPlantClaim_refuted_of_run (seed : Nat)
-    (hne : ∃ out tr st',
-      (out, tr, st') ∈
-        CerbND.runND
-          (drive appendElemPlantFile.tagDefs false appendElemPlantFile
-            ["cmdname"])
-          (initial_driver_state_threaded seed appendElemPlantFile
-            CerbFS.fs_initial_state))
-    (h3 : HarnessRunsToThr seed appendElemPlantFile 3) :
-    ¬ AppendElemPlantHealthyClaim seed := by
-  intro h0
-  exact harnessRunsTo_exclusive seed appendElemPlantFile 3 0
-    (by decide) hne ⟨h3, h0⟩
 
 open SpecLab.ListAppend in
 /-- LEAK EXCLUSIVITY: distinct final-allocation counts are mutually
@@ -203,24 +112,6 @@ theorem finalAllocs_exclusive (seed : Nat)
   exact hab ((ha out tr st' hmem).symm.trans (hb out tr st' hmem))
 
 open SpecLab.ListAppend in
-/-- The wrong-link plant's LEAK refutation: once the exec equation
-delivers the `baseline + 1` fact (the orphaned node; checked
-executably by the gate exe), the plant's leak-free claim is REFUTED
-— the teardown conjunct is anti-vacuous at the logic level. -/
-theorem linkPlantLeak_refutes_leakFree (seed : Nat)
-    (hne : ∃ out tr st',
-      (out, tr, st') ∈
-        CerbND.runND
-          (drive appendLinkPlantFile.tagDefs false appendLinkPlantFile
-            ["cmdname"])
-          (initial_driver_state_threaded seed appendLinkPlantFile
-            CerbFS.fs_initial_state))
-    (hleak : LinkPlantLeakClaim seed) :
-    ¬ HarnessFinalAllocs seed appendLinkPlantFile driverBaseline := by
-  intro h0
-  exact finalAllocs_exclusive seed appendLinkPlantFile
-    (driverBaseline + 1) driverBaseline (by decide) hne ⟨hleak, h0⟩
-
 /-! ## arc-15 S4 (R4): the tree plants' refutation schemas.
     `harnessRunsTo_exclusive` and `finalAllocs_exclusive` transfer
     once more (rung-independent — the S2-P5b finding, third
@@ -233,63 +124,6 @@ theorem linkPlantLeak_refutes_leakFree (seed : Nat)
     (Specified(7) / Specified(255) / allocations baseline+1). -/
 
 open SpecLab.TreeRot in
-/-- The wrong-child-swap plant refutes the healthy claim once the
-exec equation delivers `HarnessRunsToThr seed swapPlantFile 7` (the
-locus val's first wire byte — the mismatch index localizes the
-un-rotated node). -/
-theorem swapPlantClaim_refuted_of_run (seed : Nat)
-    (hne : ∃ out tr st',
-      (out, tr, st') ∈
-        CerbND.runND
-          (drive swapPlantFile.tagDefs false swapPlantFile
-            ["cmdname"])
-          (initial_driver_state_threaded seed swapPlantFile
-            CerbFS.fs_initial_state))
-    (h7 : HarnessRunsToThr seed swapPlantFile 7) :
-    ¬ SwapPlantHealthyClaim seed := by
-  intro h0
-  exact harnessRunsTo_exclusive seed swapPlantFile 7 0 (by decide)
-    hne ⟨h7, h0⟩
-
-open SpecLab.TreeRot in
-/-- The dropped-subtree plant refutes the healthy claim once the exec
-equation delivers `HarnessRunsToThr seed dropPlantFile 255`
-(structural breaks land in the length arm). -/
-theorem dropPlantClaim_refuted_of_run (seed : Nat)
-    (hne : ∃ out tr st',
-      (out, tr, st') ∈
-        CerbND.runND
-          (drive dropPlantFile.tagDefs false dropPlantFile
-            ["cmdname"])
-          (initial_driver_state_threaded seed dropPlantFile
-            CerbFS.fs_initial_state))
-    (h255 : HarnessRunsToThr seed dropPlantFile 255) :
-    ¬ DropPlantHealthyClaim seed := by
-  intro h0
-  exact harnessRunsTo_exclusive seed dropPlantFile 255 0 (by decide)
-    hne ⟨h255, h0⟩
-
-open SpecLab.TreeRot SpecLab.ListAppend in
-/-- The dropped-subtree plant's LEAK refutation: once the exec
-equation delivers the `baseline + 1` fact (the orphaned middle
-subtree — `TreeRot.orphanedAt` = 1 at the pinned instance, checked
-executably by the gate exe), the plant's leak-free claim is REFUTED
-— rotation's allocation-neutrality conjunct is anti-vacuous at the
-logic level. -/
-theorem dropPlantLeak_refutes_leakFree (seed : Nat)
-    (hne : ∃ out tr st',
-      (out, tr, st') ∈
-        CerbND.runND
-          (drive dropPlantFile.tagDefs false dropPlantFile
-            ["cmdname"])
-          (initial_driver_state_threaded seed dropPlantFile
-            CerbFS.fs_initial_state))
-    (hleak : DropPlantLeakClaim seed) :
-    ¬ HarnessFinalAllocs seed dropPlantFile driverBaseline := by
-  intro h0
-  exact finalAllocs_exclusive seed dropPlantFile
-    (driverBaseline + 1) driverBaseline (by decide) hne ⟨hleak, h0⟩
-
 /-! ## arc-15 S5 (R5): the CN-seed swap plant's refutation schema.
     `harnessRunsTo_exclusive` transfers a fourth time
     (rung-independent — the S2-P5b finding is now a series). The
@@ -301,25 +135,11 @@ theorem dropPlantLeak_refutes_leakFree (seed : Nat)
     (Specified(9)). -/
 
 open SpecLab.CnSeed in
-/-- The lost-update plant refutes the healthy claim once the exec
-equation delivers `HarnessRunsToThr seed pairSwapPlantFile 9` (the
-mismatch-index comparator naming post-state cell 1's low byte). Off
-the diagonal the index is structurally forced
-(`CnSeed.swapPlant_blind_iff`: verdict 0 ⟺ a = b — the
-kernel-characterized blind set). -/
-theorem pairSwapPlantClaim_refuted_of_run (seed : Nat)
-    (hne : ∃ out tr st',
-      (out, tr, st') ∈
-        CerbND.runND
-          (drive pairSwapPlantFile.tagDefs false pairSwapPlantFile
-            ["cmdname"])
-          (initial_driver_state_threaded seed pairSwapPlantFile
-            CerbFS.fs_initial_state))
-    (h9 : HarnessRunsToThr seed pairSwapPlantFile 9) :
-    ¬ SwapPlantHealthyClaim seed := by
-  intro h0
-  exact harnessRunsTo_exclusive seed pairSwapPlantFile 9 0 (by decide)
-    hne ⟨h9, h0⟩
+/-! (2026-08-27 kill-list execution: the ten per-plant refutation
+    schemas died with the concrete `*PlantHealthyClaim`/`*Leak*`
+    statement defs they refuted; the GENERIC refutation machinery —
+    `specifiedInt_injective`, `harnessRunsTo_exclusive`,
+    `finalAllocs_exclusive` — stays.) -/
 
 /-! ## In-build axiom pins (re-captured verbatim at the arc-18 C4
     threading; growth fails the build — the SpecLabAudit discipline,
@@ -331,27 +151,7 @@ theorem pairSwapPlantClaim_refuted_of_run (seed : Nat)
 #guard_msgs in #print axioms SpecLabProofs.specifiedInt_injective
 /-- info: 'SpecLabProofs.harnessRunsTo_exclusive' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLabProofs.harnessRunsTo_exclusive
-/-- info: 'SpecLabProofs.plantClaim_refuted_of_run' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLabProofs.plantClaim_refuted_of_run
-/-- info: 'SpecLabProofs.memcpyPlantClaim_refuted_of_run' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLabProofs.memcpyPlantClaim_refuted_of_run
-/-- info: 'SpecLabProofs.getarrPlantClaim_refuted_of_run' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLabProofs.getarrPlantClaim_refuted_of_run
-/-- info: 'SpecLabProofs.appendLinkPlantClaim_refuted_of_run' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLabProofs.appendLinkPlantClaim_refuted_of_run
-/-- info: 'SpecLabProofs.appendElemPlantClaim_refuted_of_run' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLabProofs.appendElemPlantClaim_refuted_of_run
 /-- info: 'SpecLabProofs.finalAllocs_exclusive' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms SpecLabProofs.finalAllocs_exclusive
-/-- info: 'SpecLabProofs.linkPlantLeak_refutes_leakFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLabProofs.linkPlantLeak_refutes_leakFree
-/-- info: 'SpecLabProofs.swapPlantClaim_refuted_of_run' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLabProofs.swapPlantClaim_refuted_of_run
-/-- info: 'SpecLabProofs.dropPlantClaim_refuted_of_run' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLabProofs.dropPlantClaim_refuted_of_run
-/-- info: 'SpecLabProofs.dropPlantLeak_refutes_leakFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLabProofs.dropPlantLeak_refutes_leakFree
-/-- info: 'SpecLabProofs.pairSwapPlantClaim_refuted_of_run' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms SpecLabProofs.pairSwapPlantClaim_refuted_of_run
 
 end SpecLabProofs

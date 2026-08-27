@@ -18,7 +18,6 @@
 
 import RelSem.Machine
 import RelSem.Cerberus
-import RelSem.Tactics.AppEqAttr
 import RelSem.LawRegistry
 
 set_option autoImplicit false
@@ -31,8 +30,7 @@ open RelSem
     computed from the pre-state (hypothesis-pinned so fixtures
     discharge the arithmetic by `decide`); the post-state appends the
     allocation and writes `sz` uninitialized bytes. -/
-@[app_eq,
-  step_law (kind := memBlock) (side := ground)
+@[  step_law (kind := memBlock) (side := ground)
   (frontier := "mem/alloc")
   (trace := "{law := mem_alloc_block, joint := mem/alloc, hyps := [hsz : ground, haddr : ground, hnz : ground]}")
   (lineage := "computed-RHS memory-op block (brick-B3 named-hypothesis shape): allocate, success path")]
@@ -66,8 +64,7 @@ theorem mem_alloc_block {tid : Nat} {pref : prefix0} {pv : CerbMem.Provenance}
     at the driver layer): non-union concrete pointer, writable
     allocation, compatible value; the post-state is the byte write
     with the funptrmap threaded (integers: unchanged). -/
-@[app_eq,
-  step_law (kind := memBlock) (side := ground)
+@[  step_law (kind := memBlock) (side := ground)
   (frontier := "mem/store")
   (trace := "{law := mem_store_block, joint := mem/store, hyps := [hcompat : ground, hget : ground, hbounds : ground, hro : ground, hatomic : ground, hbytes : ground]}")
   (lineage := "computed-RHS memory-op block: store as a folded byte write (writeBytesTo spelling preserved)")]
@@ -104,8 +101,7 @@ def selectRoKindK : prefix0 → readonly_kind
     true`, so the post-state additionally marks the target allocation
     read-only (kind from the allocation's own prefix —
     impl_mem.ml:1776-1787). -/
-@[app_eq,
-  step_law (kind := memBlock) (side := ground)
+@[  step_law (kind := memBlock) (side := ground)
   (frontier := "mem/store_lock")
   (trace := "{law := mem_store_lock_block, joint := mem/store_lock, hyps := [hcompat : ground, hget : ground, hbounds : ground, hro : ground, hatomic : ground, hbytes : ground]}")
   (lineage := "computed-RHS memory-op block: locking store as the plain store's byte write + the allocation readonly flip (const-qualified init)")]
@@ -172,8 +168,7 @@ def isBoolTy : ctype → Bool
     and the normal mechanical lanes run unchanged on a miss
     (behavior-compatible: every existing walk discharges hget as
     before). -/
-@[app_eq (fact := hget 3),
-  step_law (kind := memBlock) (side := ground)
+@[  step_law (kind := memBlock) (side := ground)
   (frontier := "mem/load")
   (trace := "{law := mem_load_block, joint := mem/load, hyps := [hdead : ground, hget : ground, hbounds : ground, hatomic : ground, hbytes : ground, hrecon : ground, hnotbool : ground]}")
   (lineage := "computed-RHS memory-op block: load, success path, state unchanged")]
@@ -203,8 +198,7 @@ theorem mem_load_block {loc : CerbLocation.Loc} {ty : ctype}
     by ground arithmetic (arc-18 R6 batch 3: the array lane's memop
     at OPEN memory; the divmod-era whole-state kernel-rfl route stays
     first in the feeder and still fires at ground memory). -/
-@[app_eq,
-  step_law (kind := memBlock) (side := ground)
+@[  step_law (kind := memBlock) (side := ground)
   (frontier := "mem/pvfd")
   (trace := "{law := mem_pvfd_block, joint := mem/pvfd, hyps := [hdead : ground, hwa : ground]}")
   (lineage := "computed-RHS memory-op block: validity read, state-preserving")]
@@ -223,8 +217,7 @@ theorem mem_pvfd_block {ty : ctype} {allocId : Int} {addr : Int}
 
 /-- Pointer prefix (a placeholder in the concrete model: always
     `none`; the trace events' pref field). -/
-@[app_eq,
-  step_law (kind := memBlock) (side := rfl)
+@[  step_law (kind := memBlock) (side := rfl)
   (frontier := "mem/prefix")
   (trace := "{law := mem_prefix_block, joint := mem/prefix, hyps := []}")
   (lineage := "concrete-model pointer prefix: always none, rfl")]
@@ -234,8 +227,7 @@ theorem mem_prefix_block {ptr : CerbMem.PointerValue}
 
 /-- KILL (object deallocation), success path: live allocation, at the
     base address, non-dynamic. -/
-@[app_eq,
-  step_law (kind := memBlock) (side := ground)
+@[  step_law (kind := memBlock) (side := ground)
   (frontier := "mem/kill")
   (trace := "{law := mem_kill_block, joint := mem/kill, hyps := [hdead : ground, hget : ground, hbase : ground]}")
   (lineage := "computed-RHS memory-op block: kill, success path")]

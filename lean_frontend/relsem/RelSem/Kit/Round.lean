@@ -37,7 +37,6 @@ import RelSem.Cerberus
 import RelSem.Call
 import RelSem.Kit.Eval
 import RelSem.Kit.Mem
-import RelSem.Tactics.AppEqAttr
 import RelSem.LawRegistry
 
 set_option autoImplicit false
@@ -51,8 +50,7 @@ open RelSem RelSem.Cerb
 /-- The advancing dnms round, fully generic (P1-probed): one fuel
     tick; the step discovery, find, and advance enter as hypotheses;
     NOWAKEUP scheduling (the single-threaded shape — every slate run). -/
-@[app_eq 1000,
-  step_law (kind := roundGlue) (variant := generic) (side := fed)
+@[  step_law (kind := roundGlue) (variant := generic) (side := fed)
   (frontier := "round/glue")
   (trace := "{law := dnms_round, joint := dnms-round, hyps := [hfuel : rfl, hlook : rfl, hsteps : rfl, hfind : rfl, hadv : fed]}")
   (lineage := "fuel-relative round glue: one tick of the generated dnms loop, hypotheses = the discovery/advance equations (arc-9 S2)")]
@@ -119,8 +117,7 @@ theorem dnms_round_computed
 /-- The terminal dnms round: no advancing step; the offered steps are
     accumulated and (at the singleton tid list) the accumulator is
     returned one tick later. -/
-@[app_eq,
-  step_law (kind := roundGlue) (variant := terminal) (side := rfl)
+@[  step_law (kind := roundGlue) (variant := terminal) (side := rfl)
   (frontier := "round/terminal")
   (trace := "{law := dnms_terminal, joint := dnms-terminal, hyps := [hfuel : rfl, hlook : rfl, hsteps : rfl, hfind : rfl]}")
   (lineage := "the no-can-advance dnms exit: accumulator returned one tick later (arc-9 S2)")]
@@ -159,8 +156,7 @@ def dnmsBump (tid : Nat) (th' : thread_state) (σ : driver_state) :
     step; the post-state is computed. Covers the design's
     round_tau_wseq / round_tau_sseq / round_tau_strip classes (their
     distinction lives in the step-DISCOVERY equation, not here). -/
-@[app_eq,
-  step_law (kind := advance) (side := rfl)
+@[  step_law (kind := advance) (side := rfl)
   (frontier := "advance/tau")
   (trace := "{law := advance_tau_misc, joint := round/tau, hyps := []}")
   (lineage := "per-class computed-RHS advance law over the generated advance_step arm (decompilation-into-logic)")]
@@ -179,8 +175,7 @@ theorem advance_tau_misc
     Kit/Eval crossings and the fixture eval ladders enter), then the
     computed thread replacement. Covers the design's round_pure_eval /
     round_run_jump classes. -/
-@[app_eq,
-  step_law (kind := advance) (side := hyp)
+@[  step_law (kind := advance) (side := hyp)
   (frontier := "advance/runstate-eval")
   (trace := "{law := advance_runstate_eval, joint := round/runstate, hyps := [hm : rfl|hyp_norm_side]}")
   (lineage := "per-class computed-RHS advance law; the Defined-verdict premise is where eval ladders enter")]
@@ -202,8 +197,7 @@ theorem advance_runstate_eval
 /-- Runstate advance, tau flavor (RSK_tau with a non-Return kind):
     same shape as the eval flavor (the Erun/Esave negative-action
     variants land here). -/
-@[app_eq,
-  step_law (kind := advance) (side := hyp)
+@[  step_law (kind := advance) (side := hyp)
   (frontier := "advance/runstate-tau")
   (trace := "{law := advance_runstate_tau_misc, joint := round/runstate, hyps := [hm : rfl|hyp_norm_side]}")
   (lineage := "per-class computed-RHS advance law, RSK_tau flavor of the eval shape")]
@@ -242,8 +236,7 @@ theorem advance_action_unfold
     (`perform_action_request2` — the per-request Kit/Mem blocks enter
     through the `hperf` hypothesis). Covers the design's round_load /
     round_store / round_create / round_kill classes. -/
-@[app_eq,
-  step_law (kind := advance) (side := fed)
+@[  step_law (kind := advance) (side := fed)
   (frontier := "advance/action-request")
   (trace := "{law := advance_action_request, joint := round/action, hyps := [hreq : rfl|hyp_norm_side, hperf : fed]}")
   (lineage := "the sequential action-request advance: draw then perform; the per-request Kit/Mem blocks enter via hperf")]
@@ -357,7 +350,6 @@ theorem liftMem_unfold {a : Type}
 
 /-- The memory-lens crossing at an active head (the `liftMem` form of
     `app_liftND_active`). -/
-@[app_eq]
 theorem app_liftMem_active {a : Type}
     {m : ndM a String mem_error (mem_constraint CerbMem.IntegerValue)
         CerbMem.MemState}
@@ -396,8 +388,7 @@ theorem advance_memop_unfold
     divmod drive walk): the memop is performed
     (`perform_memop_request2` — the per-memop laws enter through the
     `hperf` hypothesis), then NOWAKEUP. -/
-@[app_eq,
-  step_law (kind := advance) (side := fed)
+@[  step_law (kind := advance) (side := fed)
   (frontier := "advance/memop-request")
   (trace := "{law := advance_memop_request, joint := round/memop, hyps := [hperf : fed]}")
   (lineage := "the sequential memop-request advance: perform then NOWAKEUP; the per-memop laws enter via hperf")]
@@ -438,8 +429,7 @@ theorem perform_memop_pvfd_unfold
     first law; the pointer-validity read is STATE-PRESERVING, so the
     memory fact discharges by kernel rfl at ground memory: liveness +
     alignment arithmetic). -/
-@[app_eq,
-  step_law (kind := perform) (side := fed)
+@[  step_law (kind := perform) (side := fed)
   (frontier := "perform/memop-pvfd")
   (trace := "{law := perform_memop_pvfd, joint := perform/memop, hyps := [hmem : fed]}")
   (lineage := "composed memop law: state-preserving validity read through the memory lens + thread update (computed RHS)")]
@@ -470,8 +460,7 @@ theorem perform_memop_pvfd
 
 /-- CREATE round's perform (aid draw + allocate through the memory
     lens + trace/thread update). -/
-@[app_eq,
-  step_law (kind := perform) (side := fed)
+@[  step_law (kind := perform) (side := fed)
   (frontier := "perform/create")
   (trace := "{law := perform_create, joint := perform/create, hyps := [hmem : fed]}")
   (lineage := "composed request law: aid draw + allocate through the memory lens + trace/thread update (computed RHS)")]
@@ -505,8 +494,7 @@ theorem perform_create
   exact app_nd_update _ _
 
 /-- LOAD round's perform. -/
-@[app_eq,
-  step_law (kind := perform) (side := fed)
+@[  step_law (kind := perform) (side := fed)
   (frontier := "perform/load")
   (trace := "{law := perform_load, joint := perform/load, hyps := [hmem : fed, hpref : fed]}")
   (lineage := "composed request law: aid draw + load through the memory lens + trace/thread update (computed RHS)")]
@@ -542,8 +530,7 @@ theorem perform_load
   exact app_nd_update _ _
 
 /-- STORE round's perform. -/
-@[app_eq,
-  step_law (kind := perform) (side := fed)
+@[  step_law (kind := perform) (side := fed)
   (frontier := "perform/store")
   (trace := "{law := perform_store, joint := perform/store, hyps := [hmem : fed, hpref : fed]}")
   (lineage := "composed request law: aid draw + store through the memory lens + trace/thread update (computed RHS)")]
@@ -634,8 +621,7 @@ theorem ars_seqrmw_unfold (loc : CerbLocation.Loc) (tid aid : Nat)
     compute, store, trace/thread update; the `hmid`/`hout` recasts
     follow the S1 output-recast discipline (callers pass NAMED states
     + rfl). -/
-@[app_eq,
-  step_law (kind := perform) (side := fed)
+@[  step_law (kind := perform) (side := fed)
   (frontier := "perform/seqrmw")
   (trace := "{law := perform_seqrmw, joint := perform/seqrmw, hyps := [hmem : fed, hrmw : fed, hmem2 : fed]}")
   (lineage := "composed request law: the read-modify-write request (the arc-17 S2 T4 lane)")]
@@ -682,8 +668,7 @@ theorem perform_seqrmw
   exact app_nd_update _ _
 
 /-- KILL round's perform. -/
-@[app_eq,
-  step_law (kind := perform) (side := fed)
+@[  step_law (kind := perform) (side := fed)
   (frontier := "perform/kill")
   (trace := "{law := perform_kill, joint := perform/kill, hyps := [hmem : fed]}")
   (lineage := "composed request law: kill through the memory lens + trace/thread update (computed RHS)")]

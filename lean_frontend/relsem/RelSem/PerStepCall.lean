@@ -154,20 +154,5 @@ theorem callK_denote
     OwnP surface — this module is live-route (the reified harness +
     anchors) and binds no interpretation. -/
 
-/-- The value-shaped headline implies the UB-freedom headline
-    (`CallHarnessUBFree`, unchanged): an outcome that is `Active` is
-    no `Undef0` kill. Pure statement-layer plumbing, no Iris. -/
-theorem callHarnessUBFree_of_callHarnessAdequate
-    {tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)}
-    {file1 : file core_run_annotation} {fname : String}
-    {args : List value} {fs : CerbFS.FsState}
-    {spec : driver_result → Prop}
-    (h : CallHarnessAdequate tagDefs file1 fname args fs spec) :
-    CallHarnessUBFree tagDefs file1 fname args fs := by
-  intro out tr st' hmem stk loc ubs hout
-  obtain ⟨r, hr, -⟩ := h out tr st' hmem
-  rw [hout] at hr
-  cases hr
-
 end Cerb
 end RelSem

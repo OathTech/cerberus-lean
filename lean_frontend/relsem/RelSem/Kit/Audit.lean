@@ -15,7 +15,10 @@
   over equation transitivity — zero axioms").
 -/
 
-import RelSem.Kit.AppEq
+-- (RelSem.Kit.AppEq — the @[app_eq] walker-law registration surface —
+--  DELETED at the 2026-08-27 kill-list execution with the chase
+--  machinery; the spine equations it registered live in
+--  RelSem/Machine.lean, pinned by the sweep.)
 import RelSem.Kit.Eval
 import RelSem.Kit.Round
 import RelSem.Kit.Loop

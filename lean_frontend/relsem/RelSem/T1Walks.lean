@@ -1,5 +1,11 @@
 /-
-  RelSem.T1AppEq — arc-7 S5a (2026-08-20): THE T1 HARNESS APP EQUATION,
+  RelSem.T1Walks (formerly T1AppEq; renamed + slimmed at the
+  2026-08-27 kill-list execution — the ambient whole-run carriers
+  [prefix walks, dnms_chain, ndct_eq, driver2_iter, t1_app_eq,
+  t1_result_eq] are DELETED with the ambient family; what remains is
+  the trio-clean walk supply the KEPT threaded theorems consume,
+  killed-by-registration pending the B-plan re-proof) —
+  arc-7 S5a (2026-08-20): T1 harness walk supply,
   by compositional stage/round lemmas (D7/D8 discipline: no whole-run
   kernel reductions, no budget bumps — every lemma is a small closed
   reduction at default budgets).
@@ -21,7 +27,7 @@
   (memory, run-state, trace, counter) universally quantified.
 
   House rules: no sorry, no axioms, no Iris imports. Under the in-build
-  audit (imported by RelSem.T1).
+  audit (imported by RelSem.T1Threaded).
 -/
 
 import RelSem.T1File
@@ -30,15 +36,25 @@ import RelSem.Cerberus
 import RelSem.Call
 import RelSem.Kit.Eval
 import RelSem.Kit.Round
-import RelSem.Kit.AppEq
 import RelSem.ConstructLaws
-import RelSem.Tactics.AppWalk
 
 set_option autoImplicit false
 
 namespace RelSem.T1
 
 open RelSem RelSem.Cerb RelSem.Kit
+
+/-! (t1Fs/t1Spec RE-HOMED from the deleted ambient statement file
+    RelSem/T1.lean at the 2026-08-27 kill-list execution — texts
+    unchanged; every consumer resolves the same names.) -/
+
+/-- The harness filesystem state (the driver default, as Main.lean). -/
+def t1Fs : CerbFS.FsState := CerbFS.fs_initial_state
+
+/-- T1's pure spec on driver results: the result value is the injected
+    integer, Specified. -/
+def t1Spec (x : Int) (r : driver_result) : Prop :=
+  r.dres_core_value = intValue x
 
 /-! ## Shared pinned terms (from the pinned Core program + the caller
     protocol; addresses are the deterministic first/second allocations
@@ -439,57 +455,6 @@ theorem loadX_eq (x : Int) (h1 : -2147483648 ≤ x) (h2 : x ≤ 2147483647) :
     loadX_dead_fact x, loadX_bytes_fact x, reconX_eq x h1 h2]
   simp [loadX_get_fact x, loadX_bounds_fact, loadX_atomic_fact, intCty]
 
-/-- The finalization tail of callFinish (the continuation after driver2). -/
-def finTail : Unit → driverM driver_result :=
-  fun _ => nd_bind nd_get (fun (dr_st' : driver_state) =>
-    nd_return (finalize t1File.tagDefs "callND" dr_st'))
-
-/-- Prefix walk, part 1: callND's resolution/injection stages. -/
-theorem prefix_a (x : Int) :
-    app (callND t1File.tagDefs t1File "id" [intValue x])
-        (initial_driver_state t1File CerbFS.fs_initial_state)
-      = app (callFinish t1File.tagDefs 0 idT1Sym arena0 [(symX, xPtrV)])
-          (mkDr thG (memInj x) rsD3 [] 0) := by
-  refine (app_bind_active rfl).trans ?_   -- driver_globals
-  refine (app_bind_active rfl).trans ?_   -- nd_get
-  refine (app_bind_active rfl).trans ?_   -- resolveFunSym
-  refine (app_bind_active rfl).trans ?_   -- lookupFunBody
-  refine (app_bind_active rfl).trans ?_   -- lookupParamTys
-  refine (app_bind_active rfl).trans ?_   -- injectArgs
-  rfl
-
-/-- Prefix walk, part 2: callFinish's thread setup up to driver2 (the
-    memory ops go through `with_unfolding_all` — the elaborator's default
-    whnf leaves their guard `Decidable.rec`s stuck behind un-delta'd
-    instances). -/
-theorem prefix_b (x : Int) :
-    app (callFinish t1File.tagDefs 0 idT1Sym arena0 [(symX, xPtrV)])
-        (mkDr thG (memInj x) rsD3 [] 0)
-      = app (nd_bind (driver2 t1File.tagDefs false) finTail)
-          (mkDr th0 (memD3 x) rsD3 [] 0) := by
-  refine (app_bind_active
-    (v := (mkDr thG (memInj x) rsD3 [] 0).core_state0.thread_states)
-    (st' := mkDr thG (memInj x) rsD3 [] 0) rfl).trans ?_
-  -- errno alloc/store through the memory lens, composed from the two
-  -- simp-evaluated memory-op equations
-  apply (app_bind_active (app_liftND_active _ _ _ _ ?hmem)).trans
-  case hmem =>
-    refine (app_bind_active (allocErr_eq x)).trans ?_
-    refine (app_bind_active (storeErr_eq x)).trans ?_
-    exact app_nd_return errPtr (memD3 x)
-  refine (app_bind_active rfl).trans ?_  -- driver_update_thread_state
-  rfl
-
-/-- THE PREFIX WALK: callND's stages up to the driver2 iteration land on
-    the mkDr-shaped D3 state. -/
-theorem prefix_walk (x : Int) :
-    app (callND t1File.tagDefs t1File "id" [intValue x])
-        (initial_driver_state t1File CerbFS.fs_initial_state)
-      = app (nd_bind (driver2 t1File.tagDefs false) finTail)
-          (mkDr th0 (memD3 x) rsD3 [] 0) :=
-  (prefix_a x).trans (prefix_b x)
-
-
 /-- R3's trace event: the load of x's object. -/
 def meLoad (x : Int) : trace_event :=
   ME_load CerbLocation.Loc.unknown none intCty xPtr
@@ -781,32 +746,6 @@ theorem round6 (x : Int) (h1 : -2147483648 ≤ x) (h2 : x ≤ 2147483647)
 /-- The run-state after the load's action-id draw. -/
 def rsR6 : core_run_state := { rsD3 with aid_supply := rsD3.aid_supply + 1 }
 
-/-- The full dnms run at the default budget: nine rounds — the
-    mechanical seven through `app_walk` (arc-9 S2 calibration; the
-    round0-2/4-5/7-8 hand lemmas and the arena1/2/5–th1/2/5
-    intermediate transcriptions are DELETED), the two semantic rounds
-    (R3 load, R6 conv-chain) as explicit `app_walk_step`s. Statement
-    and axiom cone IDENTICAL to the arc-7 hand chain. -/
-theorem dnms_chain (x : Int) (h1 : -2147483648 ≤ x) (h2 : x ≤ 2147483647) :
-    app (dnms lemDefaultFuel fmapEmpty [0]) (mkDr th0 (memD3 x) rsD3 [] 0)
-      = (NDactive (accDone x), mkDr (th8 x) (memD3 x) rsR6 [meLoad x] 7) := by
-  app_walk
-  app_walk_step (round3 x h1 h2 999996 rsD3 [] 3)
-  app_walk
-  app_walk_step (round6 x h1 h2 999993 (memD3 x)
-    { rsD3 with aid_supply := rsD3.aid_supply + 1 } rfl [meLoad x] 5)
-  app_walk
-
-/-- The scheduler sees exactly the done step. -/
-theorem ndct_eq (x : Int) (h1 : -2147483648 ≤ x) (h2 : x ≤ 2147483647) :
-    app (new_drive_core_threads t1File.tagDefs ())
-        (mkDr th0 (memD3 x) rsD3 [] 0)
-      = (NDactive [(0, some (Step_done2 (loadedV x)))],
-         mkDr (th8 x) (memD3 x) rsR6 [meLoad x] 7) := by
-  refine (app_bind_active rfl).trans ?_          -- nd_get (tids)
-  refine (app_bind_active (dnms_chain x h1 h2)).trans ?_
-  rfl                                            -- nd_mapM pick (singleton)
-
 /-- The post-exit thread (prepare_exit's rebuild). -/
 def thDone (x : Int) : thread_state :=
   { th8 x with stack0 := Stack_empty, arena := mk_value_e (loadedV x) }
@@ -814,53 +753,5 @@ def thDone (x : Int) : thread_state :=
 /-- The final driver state of the harness run. -/
 def drDone (x : Int) : driver_state :=
   mkDr (thDone x) (memD3 x) rsR6 [meLoad x] 7
-
-/-- ONE driver2 iteration does the whole run (Step_done2 exits). The
-    execution-mode read is an OPAQUE global (CerbGlobal); both the
-    random and the exhaustive scheduling branches take the same singleton
-    step, so the opaque Bool is dispatched by cases — no axiom, no
-    assumption on the runtime configuration. -/
-theorem driver2_iter (x : Int) (h1 : -2147483648 ≤ x) (h2 : x ≤ 2147483647) :
-    app (driver2 t1File.tagDefs false) (mkDr th0 (memD3 x) rsD3 [] 0)
-      = (NDactive (), drDone x) := by
-  show app (driver2_lemFuel (999999+1) t1File.tagDefs false)
-    (mkDr th0 (memD3 x) rsD3 [] 0) = (NDactive (), drDone x)
-  change app (nd_bind _ _) _ = _
-  refine (app_bind_active (ndct_eq x h1 h2)).trans ?_
-  refine (app_bind_active rfl).trans ?_          -- nd_get
-  cases hmode : Lem_Maybe.maybeEqualBy (fun x y => x == y)
-      (CerbGlobal.current_execution_mode ())
-      (some CerbGlobal.ExecutionMode.random) with
-  | true =>
-    simp only [reduceIte, bindExhaustive]
-    apply (app_bind_active ?hpickT).trans        -- pick (singleton)
-    case hpickT => rfl
-    apply (app_bind_active ?hdbgT).trans         -- process: print_debug
-    case hdbgT => rfl
-    rfl                                          -- nd_update (prepare_exit)
-  | false =>
-    simp only [reduceIte]
-    apply (app_bind_active ?hgrd).trans          -- |non_blocked| guard
-    case hgrd => rfl
-    apply (app_bind_active ?hpickF).trans        -- pick (singleton)
-    case hpickF => rfl
-    apply (app_bind_active ?hdbgF).trans         -- process: print_debug
-    case hdbgF => rfl
-    rfl                                          -- nd_update (prepare_exit)
-
-/-- THE T1 HARNESS APP EQUATION, composed. -/
-theorem t1_app_eq (x : Int) (h1 : -2147483648 ≤ x) (h2 : x ≤ 2147483647) :
-    app (callND t1File.tagDefs t1File "id" [intValue x])
-        (initial_driver_state t1File CerbFS.fs_initial_state)
-      = (NDactive (finalize t1File.tagDefs "callND" (drDone x)), drDone x) := by
-  refine (prefix_walk x).trans ?_
-  refine (app_bind_active (driver2_iter x h1 h2)).trans ?_
-  refine (app_bind_active rfl).trans ?_          -- finTail's nd_get
-  rfl                                            -- nd_return finalize
-
-/-- The finalize result carries the injected integer, Specified. -/
-theorem t1_result_eq (x : Int) :
-    (finalize t1File.tagDefs "callND" (drDone x)).dres_core_value
-      = intValue x := rfl
 
 end RelSem.T1

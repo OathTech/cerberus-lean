@@ -23,12 +23,16 @@ is deliberately not pinned here — follow the pointers.
 
 ## Next, in sequence
 
-- **Family-∀ spec-lab endpoints** (arc-18 C4) — kernel proofs that
-  the compiled spec harnesses execute to their verdicts: upgrades the
-  spec lab's finite sample-∀ statements to family-∀ and makes the
-  plant-refutation schemas unconditional. Benchmark: the five parked
-  spec-lab campaigns (`docs/2026-08-23_arc15-results.md`, parked
-  inventory).
+- **Family-∀ spec-lab endpoints — RE-BASED ON THE VERIFIER**
+  (2026-08-27 kill-list execution: the former plan — kernel proofs
+  that compiled harnesses execute to their verdicts at pinned
+  concrete inputs, the "exec-equation campaign" — is CANCELLED as a
+  forbidden proof strategy, and the finite sample-∀ statement defs
+  are DELETED; disposition
+  `docs/2026-08-27_whole-project-assessment-disposition.md` §1). The
+  family-∀ TARGET statements stand; their proofs arrive through the
+  assessment's B0–B6 verifier plan (spec parameterizes the harness
+  argument/initial memory, not the file term).
 - **The libxml2 rung** — `uri.c` under the consolidated layer (the
   differential corpus + 16/16 gate already stand); its memory
   reasoning runs under `CerbMemInterp` and produces the
@@ -96,8 +100,8 @@ is deliberately not pinned here — follow the pointers.
   opaques, boundary-opaque gate); the threaded theorem family is
   trio-exact. Residual: `runEffectful` (LemLib, temporal — its
   deletion is lem-side surgery; carrier set pinned by the
-  no-cone-entry gate, the ambient family retires at the arc-18 C5
-  purge), and the spec-lab statement substrate still quotes the
-  ambient initial state (re-landed threaded at arc-18 C4). Full
+  no-cone-entry gate — pinned at ZERO since the 2026-08-27
+  kill-list execution: the ambient family is deleted and no theorem
+  cone in the repo carries the axiom). Full
   machine-state threading of the supply remains the cmm-arc-adjacent
   end state (PROOF.md §1).

@@ -38,6 +38,18 @@ open RelSem.Cerb (HarnessRunsToThr specifiedInt initial_driver_state_threaded)
 
 
 namespace SpecLab
+
+/-! (2026-08-27 KILL-LIST EXECUTION, operator-ratified: the finite
+    sample-∀ / concrete statement Prop defs of this rung — the
+    `*Sample*`/`*Plant*Claim`/`*Leak*` family with their pinned
+    sample sets and the sample bridges — are DELETED: quantification
+    by membership in a closed literal list is enumeration by
+    construction, and their planned proof (the exec-equation
+    campaign) is CANCELLED. The pure models, codec laws, the
+    `model_forall_iff_stream_forall` bridges, the `fileOfStream_
+    encode` program-term equalities, the family-∀ TARGET statements,
+    and the file terms (test-lane data) all STAY. Record:
+    lean_frontend/docs/2026-08-27_kill-list-execution.md.) -/
 namespace ByteArr
 
 open SpecLab.ByteArrCore
@@ -148,42 +160,6 @@ def getarrPlantFile : file core_run_annotation :=
 /-! ## The R2 exec statements (fuel opsem only; `HarnessRunsTo` is the
     R1 statement shape, reused verbatim from SpecLab.DivModFiles) -/
 
-/-- The R2 memcpy sample set (finite explicit quantification — LABEL:
-four concrete 3-byte models, not the family; family-∀ is the priced
-follow-on riding the parametric term). Includes the out-of-trio
-boundary/canary instance. -/
-def memcpySampleSet : List (List UInt8) :=
-  [[1, 2, 3], [250, 251, 252], [9, 8, 7], [0, 255, 42]]
-
-/-- THE R2 memcpy MODEL-∀ STATEMENT (finite sample form): every
-healthy pinned instance runs to verdict 0 — dst' = src' = the choice
-bytes, verbatim through the compiled copy loop. -/
-def MemcpySampleStatement (seed : Nat) : Prop :=
-  ∀ bs ∈ memcpySampleSet, HarnessRunsToThr seed (memcpyFileOf bs) 0
-
-/-- The sample streams (full codec: u16le prefix + bytes). -/
-def memcpySampleStreams : List Stream := memcpySampleSet.map encodeInput
-
-/-- THE R2 memcpy STREAM-∀ STATEMENT (finite sample form). -/
-def MemcpySampleStreamStatement (seed : Nat) : Prop :=
-  ∀ s ∈ memcpySampleStreams,
-    HarnessRunsToThr seed (memcpyFileOfStream s) 0
-
-/-- The memcpy plant's healthy-shaped claim — refuted by
-`HarnessRunsTo memcpyPlantFile 3` (the mismatch-index comparator
-names dst byte 0). -/
-def MemcpyPlantHealthyClaim (seed : Nat) : Prop :=
-  HarnessRunsToThr seed memcpyPlantFile 0
-
-/-- THE R2 getarr STATEMENT (verbatim-pinned instance pair). -/
-def GetarrSampleStatement (seed : Nat) : Prop :=
-  ∀ f ∈ [getarrFileA, getarrFileB], HarnessRunsToThr seed f 0
-
-/-- The getarr plant's healthy-shaped claim — refuted by
-`HarnessRunsTo getarrPlantFile 1`. -/
-def GetarrPlantHealthyClaim (seed : Nat) : Prop :=
-  HarnessRunsToThr seed getarrPlantFile 0
-
 /-! ## The file-level bridge (kernel-checked): the stream face and the
     model face build THE SAME program — through the FULL byte-blaster
     codec (u16 prefix decode + verbatim bytes) -/
@@ -198,29 +174,6 @@ theorem memcpyFileOfStream_encode (bs : List UInt8)
   unfold memcpyFileOfStream
   rw [show encodeInput bs = encodeInput bs ++ [] by simp,
     decode_encode_input bs hwf []]
-
-/-- THE R2 SAMPLE BRIDGE (kernel-checked): the model-∀ and stream-∀
-sample statements are interderivable. -/
-theorem memcpy_sample_model_iff_stream (seed : Nat) :
-    MemcpySampleStatement seed ↔ MemcpySampleStreamStatement seed := by
-  constructor
-  · intro hm s hs
-    unfold memcpySampleStreams at hs
-    obtain ⟨bs, hmem, rfl⟩ := List.mem_map.mp hs
-    have h3 : bs.length = 3 := by
-      simp only [memcpySampleSet, List.mem_cons, List.not_mem_nil,
-        or_false] at hmem
-      rcases hmem with rfl | rfl | rfl | rfl <;> rfl
-    rw [memcpyFileOfStream_encode bs h3]
-    exact hm bs hmem
-  · intro hs bs hm
-    have h3 : bs.length = 3 := by
-      simp only [memcpySampleSet, List.mem_cons, List.not_mem_nil,
-        or_false] at hm
-      rcases hm with rfl | rfl | rfl | rfl <;> rfl
-    have := hs (encodeInput bs)
-      (List.mem_map.mpr ⟨bs, hm, rfl⟩)
-    rwa [memcpyFileOfStream_encode bs h3] at this
 
 end ByteArr
 end SpecLab

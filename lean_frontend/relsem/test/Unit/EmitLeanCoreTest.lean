@@ -87,84 +87,12 @@ def slatePoints : List (String × file core_run_annotation × String ×
    ("t5", t5File, "sum", [0], .inl 0),
    ("t5", t5File, "sum", [1], .inl 0),
    ("t5", t5File, "sum", [10], .inl 45),
-   ("t5", t5File, "sum", [100], .inl 4950),
-   ("t6", t6File, "pick", [10], .inl 7),
-   ("t6", t6File, "pick", [4], .inl 1),
-   ("t6", t6File, "pick", [3], .inl 6),
-   ("t6", t6File, "pick", [-5], .inl (-2)),
-   ("t7", t7File, "flip", [7], .inl 0),
-   ("t7", t7File, "flip", [8], .inl 0),
-   ("t7", t7File, "flip", [2], .inl (-2)),
-   ("t7", t7File, "flip", [0], .inl 0),
-   -- arc-18 R6 breadth corpus, batch 1 (EASY tier): the
-   -- expectations.txt rows on the assembled theorem objects.
-   ("e1", e1File, "clamp0", [-3], .inl 0),
-   ("e1", e1File, "clamp0", [5], .inl 5),
-   ("e1", e1File, "clamp0", [0], .inl 0),
-   ("e1", e1File, "clamp0", [-2147483648], .inl 0),
-   ("e2", e2File, "abs3", [-5], .inl 5),
-   ("e2", e2File, "abs3", [7], .inl 7),
-   ("e2", e2File, "abs3", [0], .inl 0),
-   ("e2", e2File, "abs3", [-2147483648], .inr ()),
-   ("e3", e3File, "scale", [7], .inl 17),
-   ("e3", e3File, "scale", [0], .inl 3),
-   ("e3", e3File, "scale", [-5], .inl (-7)),
-   ("e3", e3File, "scale", [1073741822], .inl 2147483647),
-   ("e3", e3File, "scale", [2147483647], .inr ()),
-   ("e4", e4File, "is_digit", [53], .inl 1),
-   ("e4", e4File, "is_digit", [47], .inl 0),
-   ("e4", e4File, "is_digit", [48], .inl 1),
-   ("e4", e4File, "is_digit", [57], .inl 1),
-   ("e4", e4File, "is_digit", [58], .inl 0),
-   ("e5", e5File, "is_mark", [42], .inl 1),
-   ("e5", e5File, "is_mark", [45], .inl 1),
-   ("e5", e5File, "is_mark", [41], .inl 1),
-   ("e5", e5File, "is_mark", [47], .inl 0),
-   ("e5", e5File, "is_mark", [65], .inl 0),
-   -- arc-18 R6 breadth corpus, batch 2 (CENSUS tier).
-   ("c4", c4File, "hex_val", [102], .inl 15),
-   ("c4", c4File, "hex_val", [48], .inl 0),
-   ("c4", c4File, "hex_val", [57], .inl 9),
-   ("c4", c4File, "hex_val", [70], .inl 15),
-   ("c4", c4File, "hex_val", [103], .inl (-1)),
-   ("c4", c4File, "hex_val", [47], .inl (-1)),
-   ("c5", c5File, "pct_hi", [65], .inl 52),
-   ("c5", c5File, "pct_hi", [255], .inl 70),
-   ("c5", c5File, "pct_hi", [160], .inl 65),
-   ("c5", c5File, "pct_hi", [9], .inl 48),
-   ("c3a", c3aFile, "acc10", [21474836, 5], .inl 214748365),
-   ("c3a", c3aFile, "acc10", [214748364, 7], .inl 2147483647),
-   ("c3a", c3aFile, "acc10", [214748364, 8], .inl (-1)),
-   ("c3a", c3aFile, "acc10", [300000000, 0], .inl (-1)),
-   ("c3a", c3aFile, "acc10", [-1, 5], .inl (-1)),
-   ("c3a", c3aFile, "acc10", [0, 0], .inl 0),
-   ("c3b", c3bFile, "lead_digit", [273], .inl 2),
-   ("c3b", c3bFile, "lead_digit", [7], .inl 7),
-   ("c3b", c3bFile, "lead_digit", [100000], .inl 1),
-   ("c3b", c3bFile, "lead_digit", [99], .inl 9),
-   -- arc-18 R6 breadth corpus, batch 3 (edge loop rows; c9 is the
-   -- PARKED array-lane frontier — its file is assembled and pinned
-   -- but carries no slate points until the lane lands).
-   ("x7", x7File, "is_pow2", [6], .inl 0),
-   ("x7", x7File, "is_pow2", [8], .inl 1),
-   ("x7", x7File, "is_pow2", [1], .inl 1),
-   ("x7", x7File, "is_pow2", [12], .inl 0),
-   ("x7", x7File, "is_pow2", [0], .inl 1),
-   ("x2", x2File, "cap10", [273], .inl 27),
-   ("x2", x2File, "cap10", [99], .inl 99),
-   ("x2", x2File, "cap10", [100000], .inl 10),
-   ("x2", x2File, "cap10", [0], .inl 0),
-   -- arc-18 R6 batch 4: the call-rule fixture (PARKED lane — the
-   -- file object is live and its points keep it honest) + the size
-   -- ladder.
-   ("x3", x3File, "twice", [5], .inl 12),
-   ("x3", x3File, "inc3", [7], .inl 10),
-   ("z1", z1File, "chain20", [5], .inl 215),
-   ("z1", z1File, "chain20", [0], .inl 210),
-   ("z1", z1File, "chain20", [-210], .inl 0),
-   ("z2", z2File, "wide8", [1], .inl 44),
-   ("z2", z2File, "wide8", [0], .inl 36),
-   ("z2", z2File, "wide8", [-5], .inl (-4))]
+   ("t5", t5File, "sum", [100], .inl 4950)]
+   -- (2026-08-27 kill-list execution: the t6/t7/e*/c*/x*/z* rows —
+   -- concrete points serving KILLED theorems — left with their
+   -- fixtures' file terms; the T2–T5 rows above are the sanity net
+   -- under the KEPT threaded slate.)
+
 
 def main : IO UInt32 := do
   let mut failures := 0

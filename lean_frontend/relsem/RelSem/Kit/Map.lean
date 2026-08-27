@@ -25,7 +25,6 @@
 
 import RelSem.Machine
 import RelSem.Cerberus
-import RelSem.Tactics.AppEqAttr
 import RelSem.LawRegistry
 
 set_option autoImplicit false

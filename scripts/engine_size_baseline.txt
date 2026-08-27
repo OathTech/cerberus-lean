@@ -179,6 +179,12 @@ RoundEval/Rounds.lean 886
 RoundEval/Assembly.lean 647
 DeriveState.lean 260
 WpGround.lean 121
-LawRegistry.lean 342
+LawRegistry.lean 343
 SegmentFaces.lean 1176
-TOTAL 6963
+TOTAL 6964
+#
+# 2026-08-27 kill-list execution re-baseline: LawRegistry 342 -> 343
+# (total 6963 -> 6964) — one COMMENT line documenting the deletion of
+# the @[app_eq] DiscrTree attribute (Tactics/AppEqAttr.lean) whose
+# index the registry header cites; no code change. Record:
+# lean_frontend/docs/2026-08-27_kill-list-execution.md.

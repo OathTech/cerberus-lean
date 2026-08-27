@@ -126,26 +126,16 @@ import RelSem.FuelHooks
 -- DELETED at arc-18 R3: zero importers, retirement-register surface;
 -- sweep re-pinned 8404 → 8403 in the deleting commit.)
 -- arc-7 S4: the iris-lean coupling modules join the sweep + pins.
-import RelSem.IrisLang
-import RelSem.IrisState
-import RelSem.IrisRules
-import RelSem.IrisAdequacy
 import RelSem.T1Core
 import RelSem.T1File
-import RelSem.T1
+import RelSem.T1Walks
+import RelSem.T2Walks
+import RelSem.T3Walks
 -- arc-7 S5a: the slate climb (T2-T4) + the fixture-generic WP bridge.
 import RelSem.SlateCore
 import RelSem.SlateFiles
-import RelSem.SlateWP
-import RelSem.T2AppEq
-import RelSem.T2
-import RelSem.T3AppEq
-import RelSem.T3
 -- arc-9 S2: the kit exactness pins join the in-build audit.
 import RelSem.Kit.Audit
-import RelSem.T4Defs
-import RelSem.T4AppEq
-import RelSem.T4
 -- (arc-11 audit A-F1's T5 chain — T5Fixture → T5Prefix → T5Iter —
 -- RETIRED at arc-18 R4: T5-the-theorem is PROVED through the segment
 -- layer (RelSem.T5, pinned below at the trio); the ambient-era climb
@@ -156,7 +146,6 @@ import RelSem.T4
 import RelSem.PerStep
 import RelSem.PerStepIris
 import RelSem.PerStepCall
-import RelSem.PerStepSmoke
 import RelSem.MemLocal
 import RelSem.CerbHeapRA
 import RelSem.CerbHeapWP
@@ -167,12 +156,9 @@ import RelSem.CerbHeapWalk
 -- arc-16 S3: the runner-observation algebra + wp-tactics join the
 -- sweep closure + pins. (PerStepPeel + PerStepLaws DELETED at
 -- arc-18 C2, Q1 [USER] ruling — pins removed in the same commit.)
-import RelSem.PerStepRunner
 import RelSem.PerStepTactics
 -- arc-18 C2: the transitional OwnP surface (disentangled from the
 -- live route; the OwnP pins below now originate here).
-import RelSem.PerStepOwnP
-import RelSem.PerStepTacSmoke
 -- arc-17 S0: the discharge-engine substrate (named-state emitter +
 -- memoized ground-fact discharger) joins the sweep closure.
 import RelSem.DeriveState
@@ -198,7 +184,6 @@ import RelSem.T2Threaded
 import RelSem.T3Threaded
 -- arc-17 S2: the completed acceptance probe joins the sweep closure
 -- + pins (the ∀-seed t6 theorems through the round evaluator).
-import RelSem.T6Probe
 -- arc-18 R2: the segment layer (judgment + composition + FnSpec) and
 -- its faces (verify_fn/seg_auto + the seg_* registration attributes)
 -- join the sweep closure + pins.
@@ -207,7 +192,6 @@ import RelSem.SegmentFaces
 -- arc-18 R2: the branch-in-loop flagship (walks + fixture + the
 -- composed invariant proof through the layer) joins the sweep
 -- closure + pins.
-import RelSem.T7
 import RelSem.T4Threaded
 import RelSem.T5Walks
 import RelSem.T5Inv
@@ -218,21 +202,10 @@ import RelSem.T5Spine
 import RelSem.T5
 -- arc-18 R6: the breadth-campaign corpus, batch 1 (EASY tier e1–e5)
 -- joins the sweep closure + pins.
-import RelSem.Corpus.E1
-import RelSem.Corpus.E2
-import RelSem.Corpus.E3
-import RelSem.Corpus.E4
-import RelSem.Corpus.E5
 -- arc-18 R6: batch 2 (CENSUS tier c4/c5/c3a/c3b) joins the sweep
 -- closure + pins.
-import RelSem.Corpus.C4
-import RelSem.Corpus.C5
-import RelSem.Corpus.C3A
-import RelSem.Corpus.C3B
 -- arc-18 R6: batch 3 (edge loop rows x7/x2; the array-lane C9 is
 -- PARKED — not imported, see RelSem/Corpus/C9.lean's header).
-import RelSem.Corpus.X7
-import RelSem.Corpus.X2
 
 namespace RelSem.Audit
 
@@ -373,21 +346,9 @@ def sorryExceptions : List Name := []
 -- bodies (initial_driver_state carries it). Pinned exactly — growth
 -- (sorryAx above all) fails the build. `ofStatus_value_inv` is the
 -- harness's one pure lemma and is pinned axiom-FREE.
-/-- info: 'RelSem.Cerb.callReaches' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.callReaches
-/-- info: 'RelSem.Cerb.callOutcomes_sound' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.callOutcomes_sound
-/-- info: 'RelSem.Cerb.callAdequate_of_reach' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.callAdequate_of_reach
 /-- info: 'RelSem.Cerb.ofStatus_value_inv' does not depend on any axioms -/
 #guard_msgs in #print axioms RelSem.Cerb.ofStatus_value_inv
-/-- info: 'RelSem.Cerb.callHarnessAdequate_of_adequate' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.callHarnessAdequate_of_adequate
 -- arc-7 S5c (audit-1 F2): the CerbND-shaped UB-freedom surface.
-/-- info: 'RelSem.Cerb.callHarnessUBFree_of_ubFree' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.callHarnessUBFree_of_ubFree
-/-- info: 'RelSem.Cerb.callHarnessUBFree_of_app_active' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.callHarnessUBFree_of_app_active
 -- arc-7 S3: the terminal-head outcome-set characterization (the slate-
 -- path fuel-erasure instances, RelSem/RunND.lean + the model-level and
 -- callConfig faces). The RunND layer is [propext]-grade (boundary
@@ -407,12 +368,6 @@ def sorryExceptions : List Name := []
 #guard_msgs in #print axioms RelSem.Cerb.seqModel_behavior_running_active_iff
 /-- info: 'RelSem.Cerb.seqModel_behavior_running_killed_iff' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Cerb.seqModel_behavior_running_killed_iff
-/-- info: 'RelSem.Cerb.callAdequate_of_app_active' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.callAdequate_of_app_active
-/-- info: 'RelSem.Cerb.callUBFree_of_app_active' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.callUBFree_of_app_active
-/-- info: 'RelSem.Cerb.callHarnessAdequate_of_app_active' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.callHarnessAdequate_of_app_active
 /-- info: 'RelSem.FuelHooks.nd_bind_wrapper_defeq' does not depend on any axioms -/
 #guard_msgs in #print axioms RelSem.FuelHooks.nd_bind_wrapper_defeq
 -- arc-7 S4: the iris-lean coupling (RelSem/Iris{Lang,State,Rules,
@@ -427,30 +382,10 @@ def sorryExceptions : List Name := []
 #guard_msgs in #print axioms RelSem.step_running_active_inv
 /-- info: 'RelSem.step_running_killed_inv' does not depend on any axioms -/
 #guard_msgs in #print axioms RelSem.step_running_killed_inv
-/-- info: 'RelSem.Cerb.instLanguageDrive' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.instLanguageDrive
-/-- info: 'RelSem.Cerb.steps_erased' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.steps_erased
 -- (arc-9 S2 re-baseline, OwnP adoption: `stateIs_agree`/`stateIs_update`
 -- are RETIRED — agreement/update now happen inside iris-lean's
 -- `ownP_eq`/`ownP_lift_step`; the pins below cover the reworked
 -- surface. Design: docs/2026-08-20_arc9-s1-design.md §1.1.)
-/-- info: 'RelSem.Cerb.instCerbGpreS_CerbS' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.instCerbGpreS_CerbS
-/-- info: 'RelSem.Cerb.wp_app_active' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.wp_app_active
-/-- info: 'RelSem.Cerb.wp_app_killed' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.wp_app_killed
-/-- info: 'RelSem.Cerb.wp_done' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.wp_done
-/-- info: 'RelSem.Cerb.wp_callND' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.wp_callND
-/-- info: 'RelSem.Cerb.callAdequate_of_wp' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.callAdequate_of_wp
-/-- info: 'RelSem.Cerb.callHarnessAdequate_of_wp' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.callHarnessAdequate_of_wp
-/-- info: 'RelSem.Cerb.callUBFree_of_wp' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.callUBFree_of_wp
 -- arc-7 S4: T1 through the full WP route (RelSem/T1.lean), conditional
 -- on the Layer-2 residual T1AppEq (blocked on the arc-3 F8 generated-
 -- partials residue — see the T1.lean header). The program TERM
@@ -462,14 +397,6 @@ def sorryExceptions : List Name := []
 #guard_msgs in #print axioms RelSem.T1.idT1Decl
 /-- info: 'RelSem.T1.t1File' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.t1File
-/-- info: 'RelSem.T1.t1_wp' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T1.t1_wp
-/-- info: 'RelSem.T1.t1_of_app_eq' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T1.t1_of_app_eq
-/-- info: 'RelSem.T1.t1_of_app_eq_direct' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T1.t1_of_app_eq_direct
-/-- info: 'RelSem.T1.t1_ubFree_of_app_eq' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T1.t1_ubFree_of_app_eq
 
 -- Arc-7 S5a: THE F8 SWEEP LANDED — T1AppEq is a theorem and T1 is
 -- UNCONDITIONAL. The app-equation chain (RelSem/T1AppEq.lean) quotes
@@ -478,18 +405,6 @@ def sorryExceptions : List Name := []
 -- Pinned exactly; sorryAx-free by the sweep.
 /-- info: 'RelSem.T1.roundtrip_arith' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.roundtrip_arith
-/-- info: 'RelSem.T1.t1_app_eq' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T1.t1_app_eq
-/-- info: 'RelSem.T1.t1AppEq_holds' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T1.t1AppEq_holds
-/-- info: 'RelSem.T1.T1' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T1.T1
-/-- info: 'RelSem.T1.T1_direct' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T1.T1_direct
-/-- info: 'RelSem.T1.T1_ubFree' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T1.T1_ubFree
-/-- info: 'RelSem.T1.T1Outcomes' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T1.T1Outcomes
 
 
 -- Arc-7 S5a: THE SLATE CLIMB — T2 (add, the forced no-signed-overflow
@@ -497,12 +412,6 @@ def sorryExceptions : List Name := []
 -- criterion; under the harness-environment hypotheses T4EnvHyp, the
 -- three census-boundary globals surfaced). All through the
 -- fixture-generic WP bridge (RelSem/SlateWP.lean). Pinned exactly.
-/-- info: 'RelSem.Cerb.wp_of_app_active' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.wp_of_app_active
-/-- info: 'RelSem.Cerb.callHarnessAdequate_of_app_eq_wp' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.callHarnessAdequate_of_app_eq_wp
-/-- info: 'RelSem.Cerb.callUBFree_of_app_eq_wp' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.callUBFree_of_app_eq_wp
 /-- info: 'RelSem.Slate.t2File' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Slate.t2File
 /-- info: 'RelSem.Slate.t3File' depends on axioms: [propext, Classical.choice, Quot.sound] -/
@@ -511,36 +420,6 @@ def sorryExceptions : List Name := []
 #guard_msgs in #print axioms RelSem.Slate.t4File
 /-- info: 'RelSem.T2.catch_add_fact' depends on axioms: [propext] -/
 #guard_msgs in #print axioms RelSem.T2.catch_add_fact
-/-- info: 'RelSem.T2.t2_app_eq' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T2.t2_app_eq
-/-- info: 'RelSem.T2.T2' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T2.T2
-/-- info: 'RelSem.T2.T2_direct' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T2.T2_direct
-/-- info: 'RelSem.T2.T2_ubFree' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T2.T2_ubFree
-/-- info: 'RelSem.T2.T2Outcomes' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T2.T2Outcomes
-/-- info: 'RelSem.T3.t3_app_eq' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T3.t3_app_eq
-/-- info: 'RelSem.T3.T3' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T3.T3
-/-- info: 'RelSem.T3.T3_direct' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T3.T3_direct
-/-- info: 'RelSem.T3.T3_ubFree' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T3.T3_ubFree
-/-- info: 'RelSem.T3.T3Outcomes' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T3.T3Outcomes
-/-- info: 'RelSem.T4.t4_app_eq' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T4.t4_app_eq
-/-- info: 'RelSem.T4.T4' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T4.T4
-/-- info: 'RelSem.T4.T4_direct' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T4.T4_direct
-/-- info: 'RelSem.T4.T4_ubFree' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T4.T4_ubFree
-/-- info: 'RelSem.T4.T4Outcomes' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T4.T4Outcomes
 
 -- (The arc-11 A-F1 "T5 FLAGSHIPS" pin block — entry5_walk + the
 -- T5Iter env-lookup family at the clean quartet — RETIRED at arc-18
@@ -583,8 +462,11 @@ open Lean in
     relational layer incl. the seqModel route — audit-1 F2's in-tree
     finding). -/
 def stmtBannedExact : List Name :=
+  -- (`RelSem.Cerb.stateIs` left this list at the 2026-08-27
+  -- kill-list execution: its host IrisState.lean is DELETED and the
+  -- gate's existence check is fail-closed on listed names.)
   [`RelSem.Step, `RelSem.Steps, `RelSem.CsSem,
-   `RelSem.Cerb.DSteps, `RelSem.Cerb.DStep, `RelSem.Cerb.stateIs,
+   `RelSem.Cerb.DSteps, `RelSem.Cerb.DStep,
    `RelSem.Cerb.seqModel, `RelSem.ExecModel]
 
 open Lean in
@@ -594,11 +476,12 @@ open Lean in
     RelSem-rooted that is neither here nor a transparently-unfolded
     Prop-family def fails the gate. -/
 def stmtAllowed : List Name :=
+  -- (2026-08-27 kill-list execution: the ambient drDone rows and the
+  -- t6/t7/corpus fixture-data rows left with their statements; the
+  -- threaded vocabulary below is the KEEP slate's.)
   [`RelSem.Cerb.callND, `RelSem.Cerb.intValue,
-   `RelSem.T1.t1File, `RelSem.T1.t1Fs, `RelSem.T1.drDone,
-   `RelSem.T2.t2Fs, `RelSem.T2.drDone,
-   `RelSem.T3.t3Fs, `RelSem.T3.drDone,
-   `RelSem.T4.t4Fs, `RelSem.T4.drDone,
+   `RelSem.T1.t1File, `RelSem.T1.t1Fs,
+   `RelSem.T2.t2Fs, `RelSem.T3.t3Fs, `RelSem.T4.t4Fs,
    `RelSem.Slate.t2File, `RelSem.Slate.t3File, `RelSem.Slate.t4File,
    -- arc-16 S4: the threaded statement vocabulary — the
    -- seed-parametric initial state (fuel-opsem-level: mirrors the
@@ -606,15 +489,6 @@ def stmtAllowed : List Name :=
    -- terminal states.
    `RelSem.Cerb.initial_driver_state_threaded,
    `RelSem.T1.drDone_thr, `RelSem.T2.drDone_thr, `RelSem.T3.drDone_thr,
-   -- arc-17 S2: the completed acceptance probe's fixture data (the
-   -- pinned program term + its fs state — same class as the t1-t4
-   -- rows above).
-   `RelSem.Slate.t6File, `RelSem.T6.t6Fs,
-   -- arc-18 R2: the branch-in-loop fixture's data + the guarded
-   -- face's hypothesis vocabulary (digest pin + seed apartness —
-   -- first-order executable, the T4EnvHyp discipline).
-   `RelSem.Slate.t7File, `RelSem.T7W.t7Fs, `RelSem.T7.t7Spec,
-   `RelSem.T7.T7EnvHypThr, `RelSem.T7.T7SeedApart,
    -- arc-18 R4: the T5 input-family flagship's statement vocabulary
    -- (guarded ∀-seed ∀-n house shape; all first-order executable).
    `RelSem.Slate.t5File, `RelSem.T5.t5Fs, `RelSem.T5.t5Spec,
@@ -622,28 +496,7 @@ def stmtAllowed : List Name :=
    -- arc-18 R5: the T4 guarded face's apartness bound (the pinned
    -- minimum static symbol number — a Nat literal def, first-order
    -- executable; T4SeedApart's body reads it).
-   `RelSem.T4.t4MinStaticSym,
-   -- arc-18 R6: the breadth-campaign corpus fixture data (batch 1,
-   -- EASY tier — pinned program terms + fs states, the t6 row class).
-   `RelSem.Slate.e1File, `RelSem.E1.e1Fs,
-   `RelSem.Slate.e2File, `RelSem.E2.e2Fs,
-   `RelSem.Slate.e3File, `RelSem.E3.e3Fs,
-   `RelSem.Slate.e4File, `RelSem.E4.e4Fs,
-   `RelSem.Slate.e5File, `RelSem.E5.e5Fs,
-   -- arc-18 R6 batch 2: the CENSUS-tier fixture data (+ the c3b
-   -- guarded face's hypothesis vocabulary, T7 lineage).
-   `RelSem.Slate.c4File, `RelSem.C4.c4Fs,
-   `RelSem.Slate.c5File, `RelSem.C5.c5Fs,
-   `RelSem.Slate.c3aFile, `RelSem.C3A.c3aFs,
-   `RelSem.Slate.c3bFile, `RelSem.C3B.c3bFs,
-   `RelSem.C3B.c3bSpec, `RelSem.C3B.C3BEnvHypThr,
-   `RelSem.C3B.C3BSeedApart,
-   -- arc-18 R6 batch 3: the edge-tier fixture data + guarded-face
-   -- vocabulary (x7 early-return-in-loop, x2 break).
-   `RelSem.Slate.x7File, `RelSem.X7.x7Fs, `RelSem.X7.x7Spec,
-   `RelSem.X7.X7EnvHypThr, `RelSem.X7.X7SeedApart,
-   `RelSem.Slate.x2File, `RelSem.X2.x2Fs, `RelSem.X2.x2Spec,
-   `RelSem.X2.X2EnvHypThr, `RelSem.X2.X2SeedApart]
+   `RelSem.T4.t4MinStaticSym]
 
 open Lean in
 /-- Syntactic "ends in Prop" (Prop-family def: `Prop` or a pi chain
@@ -704,52 +557,20 @@ open Lean in
       | throwError "RelSem statement gate: listed name {n} is MISSING \
           (renamed without re-pointing the gate?)"
   let slate : List Name :=
-    [`RelSem.T1.T1, `RelSem.T1.T1_direct, `RelSem.T1.T1_ubFree,
-     `RelSem.T1.T1Outcomes,
-     `RelSem.T2.T2, `RelSem.T2.T2_direct, `RelSem.T2.T2_ubFree,
-     `RelSem.T2.T2Outcomes,
-     `RelSem.T3.T3, `RelSem.T3.T3_direct, `RelSem.T3.T3_ubFree,
-     `RelSem.T3.T3Outcomes,
-     `RelSem.T4.T4, `RelSem.T4.T4_direct, `RelSem.T4.T4_ubFree,
-     `RelSem.T4.T4Outcomes,
-     -- arc-16 S4: the threaded (∀-seed) family joins the gate.
-     `RelSem.T1.T1Threaded, `RelSem.T1.T1Threaded_ubFree,
+    -- 2026-08-27 KILL-LIST EXECUTION: the ambient 16-theorem family
+    -- (T1–T4 quadruples), the T6/T7 pairs and the 22 R6 corpus
+    -- theorems — all CONCRETE-INPUT or superseded-ambient — are
+    -- DELETED (operator-ratified; record
+    -- docs/2026-08-27_kill-list-execution.md). What remains is the
+    -- KEEP slate: the quantified threaded family T1–T5.
+    [`RelSem.T1.T1Threaded, `RelSem.T1.T1Threaded_ubFree,
      `RelSem.T1.T1ThreadedOutcomes,
      `RelSem.T2.T2Threaded, `RelSem.T2.T2Threaded_ubFree,
      `RelSem.T2.T2ThreadedOutcomes,
      `RelSem.T3.T3Threaded, `RelSem.T3.T3Threaded_ubFree,
      `RelSem.T3.T3ThreadedOutcomes,
-     -- arc-17 S2: the completed acceptance probe's ∀-seed family
-     -- (outcome-set companion deliberately absent: priced, not owed
-     -- — the S2 record registers it).
-     `RelSem.T6.T6Threaded, `RelSem.T6.T6Threaded_ubFree,
-     -- arc-18 R2: the branch-in-loop flagship (guarded ∀-seed
-     -- house shape; through the segment layer).
-     `RelSem.T7.T7Threaded, `RelSem.T7.T7Threaded_ubFree,
-     -- arc-18 R4: THE T5 INPUT-FAMILY LOOP FLAGSHIP (guarded ∀-seed
-     -- ∀-n; through the segment layer at the symbolic trip count).
      `RelSem.T5.T5Threaded, `RelSem.T5.T5Threaded_ubFree,
-     -- arc-18 R5: T4-APARTNESS — the guarded ∀-seed struct-member
-     -- theorem PROVED through the segment layer (the arc-16 S4 park
-     -- closed; the collision falsifier excluded by T4SeedApart).
-     `RelSem.T4.T4Threaded, `RelSem.T4.T4Threaded_ubFree,
-     -- arc-18 R6: the breadth-campaign corpus, batch 1 (EASY tier;
-     -- plain ∀-seed house shape — no loops, no fresh draws, no
-     -- guard; each with its safety twin).
-     `RelSem.E1.E1Threaded, `RelSem.E1.E1Threaded_ubFree,
-     `RelSem.E2.E2Threaded, `RelSem.E2.E2Threaded_ubFree,
-     `RelSem.E3.E3Threaded, `RelSem.E3.E3Threaded_ubFree,
-     `RelSem.E4.E4Threaded, `RelSem.E4.E4Threaded_ubFree,
-     `RelSem.E5.E5Threaded, `RelSem.E5.E5Threaded_ubFree,
-     -- arc-18 R6 batch 2 (CENSUS tier; c3b is the guarded ∀-seed
-     -- loop face, T7 lineage).
-     `RelSem.C4.C4Threaded, `RelSem.C4.C4Threaded_ubFree,
-     `RelSem.C5.C5Threaded, `RelSem.C5.C5Threaded_ubFree,
-     `RelSem.C3A.C3AThreaded, `RelSem.C3A.C3AThreaded_ubFree,
-     `RelSem.C3B.C3BThreaded, `RelSem.C3B.C3BThreaded_ubFree,
-     -- arc-18 R6 batch 3 (edge tier: multi-exit compositions).
-     `RelSem.X7.X7Threaded, `RelSem.X7.X7Threaded_ubFree,
-     `RelSem.X2.X2Threaded, `RelSem.X2.X2Threaded_ubFree]
+     `RelSem.T4.T4Threaded, `RelSem.T4.T4Threaded_ubFree]
   for n in slate do
     match stmtViolations env n with
     | .error e => throwError "{e}"
@@ -758,10 +579,13 @@ open Lean in
       throwError "RelSem statement gate: {n}'s STATEMENT mentions \
         banned constants {vs} — slate statements are fuel-opsem only"
   -- NEGATIVE TEST 1: an Iris-statement theorem must be rejected.
-  match stmtViolations env `RelSem.T1.t1_wp with
+  -- (2026-08-27 kill-list execution: the historical probe subject
+  -- `t1_wp` died with the ambient family; `wpk_load` — the heap-route
+  -- WP load rule, an Iris entailment by construction — replaces it.)
+  match stmtViolations env `RelSem.Cerb.wpk_load with
   | .error e => throwError "{e}"
   | .ok [] =>
-    throwError "RelSem statement gate NEGATIVE TEST FAILED: t1_wp's \
+    throwError "RelSem statement gate NEGATIVE TEST FAILED: wpk_load's \
       Iris statement passed the checker — the gate is not detecting"
   | .ok _ => pure ()
   -- NEGATIVE TEST 2 (permanent, audit-1 F2): the wrapper-hole probe
@@ -775,7 +599,7 @@ open Lean in
         wrapper-hole probe did not surface seqModel through the \
         Prop-def wrapper (transitive walk broken?) — got {vs}"
   logInfo s!"RelSem statement gate: {slate.length} slate statements \
-    fuel-opsem-clean (negative tests: t1_wp and the wrapper-hole probe \
+    fuel-opsem-clean (negative tests: wpk_load and the wrapper-hole probe \
     correctly rejected)"
 
 -- arc-16 S1: THE PER-STEP LANGUAGE (RelSem/PerStep*.lean — the Iris
@@ -804,30 +628,12 @@ open Lean in
 #guard_msgs in #print axioms RelSem.Cerb.instLanguageKDrive
 /-- info: 'RelSem.Cerb.ksteps_erased' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Cerb.ksteps_erased
-/-- info: 'RelSem.Cerb.ownP_lift_det_step_no_fork' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.ownP_lift_det_step_no_fork
-/-- info: 'RelSem.Cerb.wpk_seq_active' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.wpk_seq_active
-/-- info: 'RelSem.Cerb.wpk_seq_killed' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.wpk_seq_killed
 /-- info: 'RelSem.Cerb.wpk_done' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Cerb.wpk_done
-/-- info: 'RelSem.Cerb.kAdequate_of_wp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.kAdequate_of_wp
 /-- info: 'RelSem.Cerb.callFinishK_denote' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Cerb.callFinishK_denote
 /-- info: 'RelSem.Cerb.callK_denote' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.Cerb.callK_denote
-/-- info: 'RelSem.Cerb.kCallHarnessAdequate_of_wp' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.kCallHarnessAdequate_of_wp
-/-- info: 'RelSem.Cerb.kCallHarnessUBFree_of_wp' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.kCallHarnessUBFree_of_wp
-/-- info: 'RelSem.T1.t1_wpK' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T1.t1_wpK
-/-- info: 'RelSem.T1.T1_perStep' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T1.T1_perStep
-/-- info: 'RelSem.T1.T1_ubFree_perStep' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T1.T1_ubFree_perStep
 
 -- arc-16 S2: THE CERBMEM HEAP RA (RelSem/MemLocal + CerbHeapRA +
 -- CerbHeapWP + CerbHeapDemo; design record
@@ -921,24 +727,6 @@ open Lean in
 -- temporal effect boundary's runEffectful through the quoted
 -- harness substrate, IDENTICAL to the committed T1's cone. Pinned
 -- exactly.
-/-- info: 'RelSem.runNDFuel_bind_congr' depends on axioms: [propext, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.runNDFuel_bind_congr
-/-- info: 'RelSem.runNDFuel_bind_assoc' depends on axioms: [propext, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.runNDFuel_bind_assoc
-/-- info: 'RelSem.runNDFuel_bind_active' depends on axioms: [propext] -/
-#guard_msgs in #print axioms RelSem.runNDFuel_bind_active
-/-- info: 'RelSem.Cerb.wpk_seq_active_ecast' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.wpk_seq_active_ecast
-/-- info: 'RelSem.Cerb.wpk_seq_active_proj' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.wpk_seq_active_proj
-/-- info: 'RelSem.Cerb.wpk_ite_conj' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.wpk_ite_conj
-/-- info: 'RelSem.T1.t1_wpK_tac' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T1.t1_wpK_tac
-/-- info: 'RelSem.T1.T1_perStep_tac' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T1.T1_perStep_tac
-/-- info: 'RelSem.T1.two_alloc_frame_tac' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T1.two_alloc_frame_tac
 
 -- arc-16 S4: THE THREADED EFFECT STATE + THE ACCEPTANCE RE-PROOF
 -- (RelSem/Threaded.lean + the T?Threaded fixture family; record
@@ -951,10 +739,6 @@ open Lean in
 -- lemmas (and only they) mention the ambient state and wear the
 -- boundary axiom DELIBERATELY — the labeled pins below document the
 -- impure side. Pinned exactly; growth fails the build.
-/-- info: 'RelSem.Cerb.kCallHarnessAdequateThr_of_wp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.kCallHarnessAdequateThr_of_wp
-/-- info: 'RelSem.Cerb.kCallHarnessUBFreeThr_of_wp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.kCallHarnessUBFreeThr_of_wp
 /-- info: 'RelSem.T1.round0_thr' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.round0_thr
 -- arc-17 S1: the label-resolution twins (round6_thr/round13_thr/
@@ -1106,7 +890,17 @@ open Lean in
 -- array.v / caesium heap_mapsto_app lineage); the rest of the
 -- delta (C9 rework, Lanes `within` arm, C9T) was dropped
 -- per the disposition record).
-/-- info: step_law census: 328 laws [advance 5, construct 9, envAlg 3, envMap 4, evalArith 2, evalPull 2, heapWP 4, heapWalk 11, loop 5, memBlock 7, memRW 21, perform 6, roundGlue 3, segCanon 18, segEq 162, segFact 62, segPost 2, wpSeq 2] -/
+-- 328 → 166 (2026-08-27 KILL-LIST EXECUTION: the killed fixtures'
+-- per-fixture supply entries left with their files — segEq 162 → 45,
+-- segFact 62 → 32, segCanon 18 → 5 [the t1–t5 threaded supply
+-- remains, killed-by-registration pending the B-plan re-proof];
+-- segPost unchanged 2; the wpSeq lane's two OwnP faces
+-- [wpk_seq_active_ecast/_proj] left with PerStepOwnP.lean — the lane
+-- empties; ALL engine lanes unchanged: advance 5, construct 9,
+-- envAlg 3, envMap 4, evalArith 2, evalPull 2, heapWP 4, heapWalk
+-- 11, loop 5, memBlock 7, memRW 21, perform 6, roundGlue 3. Record:
+-- docs/2026-08-27_kill-list-execution.md.)
+/-- info: step_law census: 166 laws [advance 5, construct 9, envAlg 3, envMap 4, evalArith 2, evalPull 2, heapWP 4, heapWalk 11, loop 5, memBlock 7, memRW 21, perform 6, roundGlue 3, segCanon 5, segEq 45, segFact 32, segPost 2] -/
 #guard_msgs in #step_law_census
 /-- info: 'RelSem.T1.round6' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.T1.round6
@@ -1159,75 +953,15 @@ open Lean in
 
 -- arc-17 S2: the completed acceptance probe — the t6 ∀-seed family
 -- and the evaluator-emitted whole-run equations, trio-exact.
-/-- info: 'RelSem.T6.T6Threaded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T6.T6Threaded
-/-- info: 'RelSem.T6.T6Threaded_ubFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T6.T6Threaded_ubFree
 -- arc-18 R2: the branch-in-loop flagship through the segment layer
 -- (the ∃-round composition + the write1 rule + verify_fn/seg_auto),
 -- trio-exact.
-/-- info: 'RelSem.T7.T7Threaded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T7.T7Threaded
-/-- info: 'RelSem.T7.T7Threaded_ubFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T7.T7Threaded_ubFree
-/-- info: 'RelSem.T7.t7_run_seg' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T7.t7_run_seg
 -- arc-18 R6: the breadth-campaign corpus, batch 1 (EASY tier e1–e5)
 -- — every headline + safety twin trio-exact through the layer.
-/-- info: 'RelSem.E1.E1Threaded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.E1.E1Threaded
-/-- info: 'RelSem.E1.E1Threaded_ubFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.E1.E1Threaded_ubFree
-/-- info: 'RelSem.E2.E2Threaded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.E2.E2Threaded
-/-- info: 'RelSem.E2.E2Threaded_ubFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.E2.E2Threaded_ubFree
-/-- info: 'RelSem.E3.E3Threaded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.E3.E3Threaded
-/-- info: 'RelSem.E3.E3Threaded_ubFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.E3.E3Threaded_ubFree
-/-- info: 'RelSem.E4.E4Threaded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.E4.E4Threaded
-/-- info: 'RelSem.E4.E4Threaded_ubFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.E4.E4Threaded_ubFree
-/-- info: 'RelSem.E5.E5Threaded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.E5.E5Threaded
-/-- info: 'RelSem.E5.E5Threaded_ubFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.E5.E5Threaded_ubFree
 -- arc-18 R6 batch 2 (CENSUS tier): the four fixtures' headline +
 -- twin cones, + the c3b composed-loop segment (invariant route).
-/-- info: 'RelSem.C4.C4Threaded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.C4.C4Threaded
-/-- info: 'RelSem.C4.C4Threaded_ubFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.C4.C4Threaded_ubFree
-/-- info: 'RelSem.C5.C5Threaded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.C5.C5Threaded
-/-- info: 'RelSem.C5.C5Threaded_ubFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.C5.C5Threaded_ubFree
-/-- info: 'RelSem.C3A.C3AThreaded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.C3A.C3AThreaded
-/-- info: 'RelSem.C3A.C3AThreaded_ubFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.C3A.C3AThreaded_ubFree
-/-- info: 'RelSem.C3B.C3BThreaded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.C3B.C3BThreaded
-/-- info: 'RelSem.C3B.C3BThreaded_ubFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.C3B.C3BThreaded_ubFree
-/-- info: 'RelSem.C3B.c3b_run_seg' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.C3B.c3b_run_seg
 -- arc-18 R6 batch 3 (edge tier): early-return-in-loop + break —
 -- the multi-exit compositions, trio-exact.
-/-- info: 'RelSem.X7.X7Threaded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.X7.X7Threaded
-/-- info: 'RelSem.X7.X7Threaded_ubFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.X7.X7Threaded_ubFree
-/-- info: 'RelSem.X7.x7_run_seg' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.X7.x7_run_seg
-/-- info: 'RelSem.X2.X2Threaded' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.X2.X2Threaded
-/-- info: 'RelSem.X2.X2Threaded_ubFree' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.X2.X2Threaded_ubFree
-/-- info: 'RelSem.X2.x2_run_seg' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.X2.x2_run_seg
 -- arc-18 R2 [F3] acceptance: the T5 twin-spelling seam normalized
 -- through the layer — ONE declared invariant (t5SeamInv), both
 -- spellings' body obligations discharged over it, trio-exact.
@@ -1270,10 +1004,6 @@ open Lean in
 -- (arc-18 R2: the hand walk `t6_wpK_thr` is SUBSUMED by the segment
 -- route — T6Threaded's pin above covers the whole discharge; the
 -- walk lemma is deleted with its plumbing.)
-/-- info: 'RelSem.T6.r_chain' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T6.r_chain
-/-- info: 'RelSem.T6.r_driver' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T6.r_driver
 
 -- arc-17 S2: the ordered-map env algebra — the comparator-lawfulness
 -- theorem and the lookup-through-insert payoff lemmas, trio-exact.
@@ -1287,21 +1017,6 @@ open Lean in
 #guard_msgs in #print axioms RelSem.Kit.symEnvCmp_LT_of_num_lt
 -- The impure side, LABELED: the ambient bridges mention the ambient
 -- state, so they (and only they) wear the boundary axiom — by design.
-/--
-info: 'RelSem.Cerb.initial_driver_state_eq_threaded_ambient' depends on axioms: [propext,
- runEffectful,
- Classical.choice,
- Quot.sound]
--/
-#guard_msgs in #print axioms RelSem.Cerb.initial_driver_state_eq_threaded_ambient
-/-- info: 'RelSem.Cerb.callHarnessAdequate_of_thr' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.Cerb.callHarnessAdequate_of_thr
-/-- info: 'RelSem.T1.T1_of_threaded' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T1.T1_of_threaded
-/-- info: 'RelSem.T2.T2_of_threaded' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T2.T2_of_threaded
-/-- info: 'RelSem.T3.T3_of_threaded' depends on axioms: [propext, runEffectful, Classical.choice, Quot.sound] -/
-#guard_msgs in #print axioms RelSem.T3.T3_of_threaded
 
 -- arc-17 S0: the `derive_state`-emitted equation lemmas of the
 -- T1Threaded state ladder (the named-state emitter's first committed
@@ -1338,77 +1053,23 @@ info: 'RelSem.Cerb.initial_driver_state_eq_threaded_ambient' depends on axioms: 
     them, so the parent's cone contains everything theirs does — any
     acquisition surfaces at a registered (or build-failing) named
     theorem; internal names are also unstable across recompiles.
-    The registered set below is the AMBIENT family (T1–T5 chains +
-    the callND harness layer + the labeled ambient bridges) — the
-    quartet-cone theorems the arc-16 S4 pins already LABEL as the
-    impure side. The threaded family carries none of it. EXPECTED
-    END STATE: the purge (charter S5) empties most of this list.
+    THE LIST IS EMPTY since the 2026-08-27 kill-list execution (the
+    ambient family is deleted); the gate now enforces that NO theorem
+    cone in this repository carries the residual boundary axiom.
     Plant-tested both directions (transcripts:
     docs/2026-08-25_arc17-s2b-axiom-endgame.md). -/
 
 open Lean in
 /-- The registered `runEffectful` theorem carriers (see the section
-    note above; 112 names, all ambient-family — was 114 until the
-    arc-18 C2 deletion of the two `_of_wpK2` bridges with their host
-    PerStepLaws.lean, Q1 ruling). -/
-def runEffectfulCarriers : List Name :=
-  [`RelSem.Cerb.callAdequate_of_app_active,
-   `RelSem.Cerb.callAdequate_of_reach, `RelSem.Cerb.callAdequate_of_wp,
-   `RelSem.Cerb.callHarnessAdequate_of_adequate,
-   `RelSem.Cerb.callHarnessAdequate_of_app_active,
-   `RelSem.Cerb.callHarnessAdequate_of_app_eq_wp,
-   `RelSem.Cerb.callHarnessAdequate_of_thr,
-   `RelSem.Cerb.callHarnessAdequate_of_wp,
-   `RelSem.Cerb.callHarnessUBFree_of_app_active,
-   `RelSem.Cerb.callHarnessUBFree_of_callHarnessAdequate,
-   `RelSem.Cerb.callHarnessUBFree_of_ubFree,
-   `RelSem.Cerb.callOutcomes_sound, `RelSem.Cerb.callReaches,
-   `RelSem.Cerb.callUBFree_of_app_active,
-   `RelSem.Cerb.callUBFree_of_app_eq_wp,
-   `RelSem.Cerb.callUBFree_of_value_adequate,
-   `RelSem.Cerb.callUBFree_of_wp,
-   `RelSem.Cerb.initial_core_run_state_eq_threaded_ambient,
-   `RelSem.Cerb.initial_driver_state_eq_threaded_ambient,
-   `RelSem.Cerb.kCallHarnessAdequate_of_wp,
-   -- (kCallHarnessAdequate_of_wpK2/kCallHarnessUBFree_of_wpK2 removed
-   -- arc-18 C2: their host PerStepLaws.lean deleted, Q1 ruling)
-   `RelSem.Cerb.kCallHarnessUBFree_of_wp, `RelSem.Cerb.wp_callND,
-   `RelSem.Cerb.wp_callND_killed, `RelSem.Cerb.wp_of_app_active,
-   `RelSem.T1.dnms_chain, `RelSem.T1.driver2_iter,
-   `RelSem.T1.k1_globals, `RelSem.T1.k3_resolve, `RelSem.T1.k4_body,
-   `RelSem.T1.k5_ptys, `RelSem.T1.k6_inject, `RelSem.T1.k7_ths,
-   `RelSem.T1.k8_errno, `RelSem.T1.k9_update, `RelSem.T1.ndct_eq,
-   `RelSem.T1.prefix_a, `RelSem.T1.prefix_b, `RelSem.T1.prefix_walk,
-   `RelSem.T1.T1, `RelSem.T1.t1_app_eq, `RelSem.T1.t1AppEq_holds,
-   `RelSem.T1.T1_direct, `RelSem.T1.t1_of_app_eq,
-   `RelSem.T1.t1_of_app_eq_direct, `RelSem.T1.T1_of_threaded,
-   `RelSem.T1.T1Outcomes, `RelSem.T1.T1_perStep,
-   `RelSem.T1.T1_perStep_tac, `RelSem.T1.t1_result_eq,
-   `RelSem.T1.T1_ubFree, `RelSem.T1.t1_ubFree_of_app_eq,
-   `RelSem.T1.T1_ubFree_perStep, `RelSem.T1.t1_wp, `RelSem.T1.t1_wpK,
-   `RelSem.T1.t1_wpK_tac, `RelSem.T2.dnms_chain,
-   `RelSem.T2.driver2_iter, `RelSem.T2.ndct_eq, `RelSem.T2.prefix_a,
-   `RelSem.T2.prefix_a0, `RelSem.T2.prefix_a1, `RelSem.T2.prefix_b,
-   `RelSem.T2.prefix_walk, `RelSem.T2.T2, `RelSem.T2.t2_app_eq,
-   `RelSem.T2.T2_direct, `RelSem.T2.T2_of_threaded,
-   `RelSem.T2.T2Outcomes, `RelSem.T2.t2_result_eq,
-   `RelSem.T2.T2_ubFree, `RelSem.T3.dnms_chain,
-   `RelSem.T3.driver2_iter, `RelSem.T3.ndct_eq, `RelSem.T3.prefix_a0,
-   `RelSem.T3.prefix_a1, `RelSem.T3.prefix_b, `RelSem.T3.prefix_walk,
-   `RelSem.T3.T3, `RelSem.T3.t3_app_eq, `RelSem.T3.T3_direct,
-   `RelSem.T3.T3_of_threaded, `RelSem.T3.T3Outcomes,
-   `RelSem.T3.t3_result_eq, `RelSem.T3.T3_ubFree,
-   `RelSem.T4.anon1_stuck_eq, `RelSem.T4.anon2_stuck_eq,
-   `RelSem.T4.arena16_stuck, `RelSem.T4.arena33_stuck,
-   `RelSem.T4.dnms_chain, `RelSem.T4.driver2_iter, `RelSem.T4.ndct_eq,
-   `RelSem.T4.prefix_a0, `RelSem.T4.prefix_a1, `RelSem.T4.prefix_b,
-   `RelSem.T4.prefix_walk, `RelSem.T4.round15, `RelSem.T4.round32,
-   `RelSem.T4.round54, `RelSem.T4.T4, `RelSem.T4.t4_app_eq,
-   `RelSem.T4.T4_direct, `RelSem.T4.T4Outcomes,
-   `RelSem.T4.t4_result_eq, `RelSem.T4.T4_ubFree]
-   -- (the 8 ambient-era T5-chain carriers — entry5_walk, envL_*,
-   -- prefix5_* — RETIRED at arc-18 R4 with their files; the new T5
-   -- flagship is trio-clean and never enters this set)
+    note above). -/
+def runEffectfulCarriers : List Name := []
+  -- EMPTY since the 2026-08-27 kill-list execution: the ambient
+  -- theorem family (the 104 registered carriers — T1–T4 chains, the
+  -- callND ambient harness bridges, the labeled ambient bridges) is
+  -- DELETED. The gate stays, fail-closed in both directions: any
+  -- theorem cone ACQUIRING `runEffectful` is build-fatal — the
+  -- residual boundary axiom is now outside EVERY theorem cone in
+  -- this repository (record: docs/2026-08-27_kill-list-execution.md).
 
 open Lean in
 #eval show CoreM Unit from do
@@ -1683,6 +1344,13 @@ open Lean in
 -- open-memory route [spine equations + minted rounds + driver atom
 -- + ∀-seed statements + safety twin]; ALL boundary-clean, zero
 -- engine changes).
+-- 12410 → 6024 (2026-08-27 KILL-LIST EXECUTION, one commit: the
+-- ambient theorem family + AppEq carriers, the arc-7 Iris shell +
+-- SlateWP, the transitional OwnP surface + runner/smokes, the chase
+-- machinery [AppWalk/WalkTrace/AppEqAttr/Kit-AppEq], T6Probe,
+-- T7/T7Walks, the 14-file R6 corpus, and the killed SlateFiles/
+-- SlateCore fixture terms leave the closure — ~6,400 declarations;
+-- record docs/2026-08-27_kill-list-execution.md.)
 -- 12404 → 12410 (2026-08-27 delta disposition, kill-list execution
 -- commit 1: `readBytesFrom_writeBytesTo_within` [Kit/Mem] + its
 -- compiler auxiliaries — the one salvaged law from the killed
@@ -1704,7 +1372,7 @@ open Lean in
 -- capability — DELETED; T5-the-theorem stands proved through the
 -- layer at the trio. Carrier set 112 → 104 in the same commit.)
 /--
-info: RelSem audit sweep: 12410 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 6024 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do
