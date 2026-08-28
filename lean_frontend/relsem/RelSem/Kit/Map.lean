@@ -309,6 +309,49 @@ theorem fmapLookupBy_addBy_ne {α β : Type} [BEq α]
     rw [Std.TreeMap.get?_eq_getElem?, Std.TreeMap.getElem?_insert,
       if_neg hk, ← Std.TreeMap.get?_eq_getElem?]
 
+/-- Lookup respects the captured comparator's equivalence classes
+    (V2: the write rule's reverse-containment leg — a rebind's
+    cmp-equal aliases were bound before iff the rebound key was). -/
+@[step_law (kind := envMap) (variant := congr) (side := ground)
+  (frontier := "env/lookup-congr")
+  (trace := "{law := fmapLookupBy_congr, joint := env/lookup, hyps := [hm : fed, hk : ground]}")
+  (lineage := "tree-search key-congruence at the captured comparator (Std.TreeMap.get?_congr lifted through Fmap)")]
+theorem fmapLookupBy_congr {α β : Type} [BEq α]
+    {c : α → α → Ordering} [Std.TransCmp c]
+    {pcmp : α → α → LemOrdering}
+    {k k' : α} {m : Fmap α β}
+    (hm : FmapBuilt c m) (hk : c k k' = .eq) :
+    fmapLookupBy pcmp k m = fmapLookupBy pcmp k' m := by
+  cases m with
+  | empty => rfl
+  | mk c' byKey bySeq n =>
+    have hc : c' = c := hm
+    subst hc
+    simp only [fmapLookupBy]
+    rw [Std.TreeMap.get?_eq_getElem?, Std.TreeMap.get?_eq_getElem?,
+      Std.TreeMap.getElem?_congr hk]
+
+/-- Lookup after a FIRST insert (on the empty map), captured-
+    comparator-NE key: none (the singleton miss — the innermost case
+    of every fresh-frame domain argument; V2). -/
+@[step_law (kind := envMap) (variant := emptyNe) (side := ground)
+  (frontier := "env/lookup-empty-ne")
+  (trace := "{law := fmapLookupBy_addBy_empty_ne, joint := env/lookup, hyps := [hk : ground]}")
+  (lineage := "singleton-tree miss at the captured comparator")]
+theorem fmapLookupBy_addBy_empty_ne {α β : Type} [BEq α]
+    {pcmp pcmp' : α → α → LemOrdering}
+    [Std.TransCmp (lemCmpToOrd pcmp)] {k a : α} {v : β}
+    (hk : ¬ lemCmpToOrd pcmp k a = .eq) :
+    fmapLookupBy pcmp' a (fmapAddBy pcmp k v (fmapEmpty : Fmap α β))
+      = none := by
+  show (match (Std.TreeMap.empty.insert k
+      [(0, k, v)]).get? a with
+    | some ((_, _, v) :: _) => some v
+    | _ => none) = none
+  rw [Std.TreeMap.get?_eq_getElem?, Std.TreeMap.getElem?_insert,
+    if_neg hk]
+  rfl
+
 /-! ## Int-keyed TreeMap get?/insert laws (the bytemap engine) -/
 
 theorem tmInt_get?_insert_self {β : Type}

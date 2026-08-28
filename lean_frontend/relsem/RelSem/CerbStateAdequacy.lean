@@ -60,6 +60,7 @@ def CerbStS : BundledGFunctors
   | 9 => ⟨GhostVarF driver_state, by infer_instance⟩
   | 10 => ⟨GhostVarF Supplies, by infer_instance⟩
   | 11 => ⟨GhostVarF CerbMem.MemState, by infer_instance⟩
+  | 12 => ⟨GhostVarF (List Int), by infer_instance⟩
   | _ => ⟨constOF Unit, by infer_instance⟩
 
 instance instCerbStGpreS_CerbStS : CerbStGpreS CerbStS where
@@ -87,6 +88,7 @@ instance instCerbStGpreS_CerbStS : CerbStGpreS CerbStS where
   ctl_pre := @GhostVarG.mk _ _ ⟨9, rfl⟩
   sup_pre := @GhostVarG.mk _ _ ⟨10, rfl⟩
   mrest_pre := @GhostVarG.mk _ _ ⟨11, rfl⟩
+  dom_pre := @GhostVarG.mk _ _ ⟨12, rfl⟩
 
 variable {GF : BundledGFunctors}
 
@@ -135,11 +137,13 @@ theorem cerbSt_adequacy [CerbStGpreS GF] (e : KDriveExpr)
     (σ : driver_state) (φ : DriveVal → Prop)
     (hinv : MemInv σ.layout_state) (hwf : EnvWf σ)
     (e₀ : CerbStF EnvCell) (hcoh : EnvCoh σ e₀)
+    (d₀ : List Int) (hdom : EnvDom σ d₀)
     (Hwp : ∀ [CerbStGS GF],
       (iprop(([∗map] a ↦ b ∈ bytesOf σ.layout_state, (a ↦ b)) ∗
         ([∗map] aid ↦ al ∈ allocsOf σ.layout_state,
           allocIs aid (.own 1) al) ∗
         ([∗map] n ↦ c ∈ e₀, ((CerbStGS.envName GF) ↪◯MAP[n] c)) ∗
+        domIs stHalf d₀ ∗
         ctlIs stHalf (ctlOf σ) ∗
         supIs stHalf (suppliesOf σ) ∗
         mrestIs stHalf (memRestOf σ)) : IProp GF) ⊢
@@ -167,11 +171,17 @@ theorem cerbSt_adequacy [CerbStGpreS GF] (e : KDriveExpr)
     (1 : Qp).half (1 : Qp).half
   rw [Qp.half_add_half] at hsplitM
   icases hsplitM $$ Hm with ⟨Hm1, Hm2⟩
+  imod (ghost_var_alloc (GF := GF) d₀) with ⟨%γd, Hd⟩
+  have hsplitD := ghost_var_split (GF := GF) γd d₀
+    (1 : Qp).half (1 : Qp).half
+  rw [Qp.half_add_half] at hsplitD
+  icases hsplitD $$ Hd with ⟨Hd1, Hd2⟩
   imodintro
   iexists (fun σ' _ => iprop(
     genHeapInterp (G := Gb) (bytesOf σ'.layout_state) ∗
     (γa ↪●MAP allocsOf σ'.layout_state) ∗
     (∃ e' : CerbStF EnvCell, (γe ↪●MAP e') ∗ ⌜EnvCoh σ' e'⌝) ∗
+    (∃ d' : List Int, (γd ↪VAR{stHalf} d') ∗ ⌜EnvDom σ' d'⌝) ∗
     (γc ↪VAR{stHalf} ctlOf σ') ∗
     (γs ↪VAR{stHalf} suppliesOf σ') ∗
     (γm ↪VAR{stHalf} memRestOf σ') ∗
@@ -180,30 +190,33 @@ theorem cerbSt_adequacy [CerbStGpreS GF] (e : KDriveExpr)
         (pointsTo (G := Gb) a (.own 1) b)) : IProp GF)
       = iprop([∗map] a ↦ b ∈ bytesOf σ.layout_state,
           (pointsTo (G := CerbStGS.bytes
-            (self := ⟨Gb, γa, γe, γc, γs, γm⟩)) a (.own 1) b)) := rfl
+            (self := ⟨Gb, γa, γe, γc, γs, γm, γd⟩)) a (.own 1) b)) := rfl
   have hconvA : (iprop([∗map] k ↦ v ∈ allocsOf σ.layout_state,
         (γa ↪◯MAP[k] v)) : IProp GF)
       = iprop([∗map] aid ↦ al ∈ allocsOf σ.layout_state,
-          @allocIs GF ⟨Gb, γa, γe, γc, γs, γm⟩ aid (.own 1) al) := rfl
+          @allocIs GF ⟨Gb, γa, γe, γc, γs, γm, γd⟩ aid (.own 1) al) := rfl
   have hconvE : (iprop([∗map] k ↦ v ∈ e₀,
         (γe ↪◯MAP[k] v)) : IProp GF)
       = iprop([∗map] n ↦ c ∈ e₀,
-          ((CerbStGS.envName (self := ⟨Gb, γa, γe, γc, γs, γm⟩) GF)
+          ((CerbStGS.envName (self := ⟨Gb, γa, γe, γc, γs, γm, γd⟩) GF)
             ↪◯MAP[n] c)) := rfl
   have hconvC : ((γc ↪VAR{stHalf} ctlOf σ) : IProp GF)
-      = @ctlIs GF ⟨Gb, γa, γe, γc, γs, γm⟩ stHalf (ctlOf σ) := rfl
+      = @ctlIs GF ⟨Gb, γa, γe, γc, γs, γm, γd⟩ stHalf (ctlOf σ) := rfl
   have hconvS : ((γs ↪VAR{stHalf} suppliesOf σ) : IProp GF)
-      = @supIs GF ⟨Gb, γa, γe, γc, γs, γm⟩ stHalf (suppliesOf σ) := rfl
+      = @supIs GF ⟨Gb, γa, γe, γc, γs, γm, γd⟩ stHalf (suppliesOf σ) := rfl
   have hconvM : ((γm ↪VAR{stHalf} memRestOf σ) : IProp GF)
-      = @mrestIs GF ⟨Gb, γa, γe, γc, γs, γm⟩ stHalf (memRestOf σ) := rfl
+      = @mrestIs GF ⟨Gb, γa, γe, γc, γs, γm, γd⟩ stHalf (memRestOf σ) := rfl
+  have hconvD : ((γd ↪VAR{stHalf} d₀) : IProp GF)
+      = @domIs GF ⟨Gb, γa, γe, γc, γs, γm, γd⟩ stHalf d₀ := rfl
   icases hconvB $$ Hbp with Hbp
   icases hconvA $$ Hap with Hap
   icases hconvE $$ Hep with Hep
   icases hconvC $$ Hc2 with Hc2
   icases hconvS $$ Hs2 with Hs2
   icases hconvM $$ Hm2 with Hm2
-  ihave Hwpres := @Hwp ⟨Gb, γa, γe, γc, γs, γm⟩
-    $$ [$Hbp $Hap $Hep $Hc2 $Hs2 $Hm2]
+  icases hconvD $$ Hd2 with Hd2
+  ihave Hwpres := @Hwp ⟨Gb, γa, γe, γc, γs, γm, γd⟩
+    $$ [$Hbp $Hap $Hep $Hd2 $Hc2 $Hs2 $Hm2]
   simp only []
   isplitr [Hwpres]
   · iframe Hbi Hai Hc1 Hs1 Hm1
@@ -212,6 +225,11 @@ theorem cerbSt_adequacy [CerbStGpreS GF] (e : KDriveExpr)
       iframe Hei
       ipureintro
       exact hcoh
+    isplitl [Hd1]
+    · iexists d₀
+      iframe Hd1
+      ipureintro
+      exact hdom
     · ipureintro
       exact ⟨hinv, hwf⟩
   · iapply Hwpres
@@ -222,11 +240,13 @@ theorem kAdequateSt_of_wp [CerbStGpreS GF] (e : KDriveExpr)
     (σ : driver_state) (φ : DriveVal → Prop)
     (hinv : MemInv σ.layout_state) (hwf : EnvWf σ)
     (e₀ : CerbStF EnvCell) (hcoh : EnvCoh σ e₀)
+    (d₀ : List Int) (hdom : EnvDom σ d₀)
     (Hwp : ∀ [CerbStGS GF],
       (iprop(([∗map] a ↦ b ∈ bytesOf σ.layout_state, (a ↦ b)) ∗
         ([∗map] aid ↦ al ∈ allocsOf σ.layout_state,
           allocIs aid (.own 1) al) ∗
         ([∗map] n ↦ c ∈ e₀, ((CerbStGS.envName GF) ↪◯MAP[n] c)) ∗
+        domIs stHalf d₀ ∗
         ctlIs stHalf (ctlOf σ) ∗
         supIs stHalf (suppliesOf σ) ∗
         mrestIs stHalf (memRestOf σ)) : IProp GF) ⊢
@@ -235,7 +255,7 @@ theorem kAdequateSt_of_wp [CerbStGpreS GF] (e : KDriveExpr)
       (tr : List String) (σ' : driver_state),
       (out, tr, σ') ∈ CerbND.runND e.denote σ →
       φ (Outcome.ofStatus out) := by
-  have Had := cerbSt_adequacy e σ φ hinv hwf e₀ hcoh Hwp
+  have Had := cerbSt_adequacy e σ φ hinv hwf e₀ hcoh d₀ hdom Hwp
   intro out tr σ' hmem
   exact Had.adequate_result [] σ' (Outcome.ofStatus out)
     (ksteps_erased (ksteps_of_runND hmem))
@@ -271,12 +291,14 @@ theorem kCallHarnessAdequateThrSt_of_wp {GF : BundledGFunctors}
     (fun o => ∃ r : driver_result, o = Outcome.value r ∧ spec r)
     MemInv_initial (EnvWf_of_no_threads rfl)
     (∅ : CerbStF EnvCell) (EnvCoh_empty _)
+    ([] : List Int) (EnvDom_of_no_threads rfl)
     (by
       intro inst
-      iintro ⟨Hb, Ha, He, Hc, Hs, Hm⟩
+      iintro ⟨Hb, Ha, He, Hd, Hc, Hs, Hm⟩
       iclear Hb
       iclear Ha
       iclear He
+      iclear Hd
       iapply Hwp $$ [$Hc $Hs $Hm])
     out tr st' hmem
   obtain ⟨r, hr, hs⟩ := hφ
@@ -385,7 +407,8 @@ theorem kCallHarnessAdequateThrSt_of_wp2 {GF : BundledGFunctors}
         supIs stHalf
           (suppliesOf (initial_driver_state_threaded seed file1 fs)) ∗
         mrestIs stHalf
-          (memRestOf (initial_driver_state_threaded seed file1 fs))) ⊢
+          (memRestOf (initial_driver_state_threaded seed file1 fs)) ∗
+        domIs stHalf ([] : List Int)) ⊢
         WP (callK2 tagDefs file1 fname args)
           @ Stuckness.NotStuck ; ⊤
           {{ o, ⌜∃ r : driver_result, o = Outcome.value r ∧ spec r⌝ }}) :
@@ -398,13 +421,14 @@ theorem kCallHarnessAdequateThrSt_of_wp2 {GF : BundledGFunctors}
     (fun o => ∃ r : driver_result, o = Outcome.value r ∧ spec r)
     MemInv_initial (EnvWf_of_no_threads rfl)
     (∅ : CerbStF EnvCell) (EnvCoh_empty _)
+    ([] : List Int) (EnvDom_of_no_threads rfl)
     (by
       intro inst
-      iintro ⟨Hb, Ha, He, Hc, Hs, Hm⟩
+      iintro ⟨Hb, Ha, He, Hd, Hc, Hs, Hm⟩
       iclear Hb
       iclear Ha
       iclear He
-      iapply Hwp $$ [$Hc $Hs $Hm])
+      iapply Hwp $$ [$Hc $Hs $Hm $Hd])
     out tr st' hmem
   obtain ⟨r, hr, hs⟩ := hφ
   exact ⟨r, ofStatus_value_inv hr, hs⟩
@@ -424,7 +448,8 @@ theorem kCallHarnessAdequateCnsSt_of_wp2 {GF : BundledGFunctors}
         supIs stHalf
           (suppliesOf (initial_driver_state_threaded seed file1 fs)) ∗
         mrestIs stHalf
-          (memRestOf (initial_driver_state_threaded seed file1 fs))) ⊢
+          (memRestOf (initial_driver_state_threaded seed file1 fs)) ∗
+        domIs stHalf ([] : List Int)) ⊢
         WP (callK2 tagDefs file1 fname args)
           @ Stuckness.NotStuck ; ⊤
           {{ o, ⌜∃ r : driver_result, o = Outcome.value r ∧ spec r⌝ }}) :
@@ -446,7 +471,8 @@ theorem kCallHarnessUBFreeCnsSt_of_wp2 {GF : BundledGFunctors}
         supIs stHalf
           (suppliesOf (initial_driver_state_threaded seed file1 fs)) ∗
         mrestIs stHalf
-          (memRestOf (initial_driver_state_threaded seed file1 fs))) ⊢
+          (memRestOf (initial_driver_state_threaded seed file1 fs)) ∗
+        domIs stHalf ([] : List Int)) ⊢
         WP (callK2 tagDefs file1 fname args)
           @ Stuckness.NotStuck ; ⊤
           {{ o, ⌜∃ r : driver_result, o = Outcome.value r ∧ spec r⌝ }}) :

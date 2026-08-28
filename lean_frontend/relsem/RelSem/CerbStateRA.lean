@@ -278,6 +278,47 @@ theorem EnvWf_of_core_eq {σ σ' : driver_state}
   rw [h] at hf
   exact hf
 
+/-! ## THE ENV DOMAIN LEDGER (V2 — the tracking-birth design).
+
+    Mid-run tracking-birth of an env cell (`ghost_map_insert` into the
+    coherence auth) needs NEGATIVE domain information: no symbol with
+    the newborn's NUMBER may be physically bound, else the insert is
+    unsound against a frame holding that cell. The footprint cannot
+    supply this (V1's documented honest gap; coherence is
+    one-directional). Resolution: a LEDGER — an exclusive ghost cell
+    (halves) holding an OVERAPPROXIMATION `d : List Int` of the bound
+    symbol numbers, tied to the physical env by the pure invariant
+    `EnvDom σ d` (bound ⇒ listed) riding the interpretation. The
+    prover's half makes freshness DECIDABLE (`symNum x ∉ d`), and the
+    birth rule's frame-preserving update mints the cell — the exact
+    gen_heap alloc-fresh shape (HeapLang `wp_alloc`: lastAddress-style
+    ledger + freshness side condition ⇒ mint), transplanted from
+    addresses to symbol numbers. The ledger only ever GROWS (pops
+    remove bindings, which preserves an overapproximation); stale
+    entries cost only re-birth capability, never soundness. -/
+
+/-- The ledger invariant: every physically bound symbol's number is
+    listed (one direction — the ledger overapproximates). -/
+def EnvDom (σ : driver_state) (d : List Int) : Prop :=
+  ∀ (z : sym) (v : value), envLookup σ z = some v → symNum z ∈ d
+
+theorem EnvDom.of_env_eq {σ σ' : driver_state} {d : List Int}
+    (h : EnvDom σ d) (henv : thread0Env σ' = thread0Env σ) :
+    EnvDom σ' d := by
+  intro z v hz
+  refine h z v ?_
+  rw [show envLookup σ' z = envLookup σ z from by
+    unfold envLookup; rw [henv]] at hz
+  exact hz
+
+/-- No-thread states have empty ledgers (the initial harness face). -/
+theorem EnvDom_of_no_threads {σ : driver_state}
+    (h : thread0Env σ = []) : EnvDom σ [] := by
+  intro z v hz
+  unfold envLookup at hz
+  rw [h] at hz
+  cases hz
+
 /-! ## The resource classes (HeapLangGS template) -/
 
 class CerbStGpreS (GF : BundledGFunctors) extends InvGpreS GF where
@@ -287,6 +328,7 @@ class CerbStGpreS (GF : BundledGFunctors) extends InvGpreS GF where
   ctl_pre : GhostVarG GF driver_state
   sup_pre : GhostVarG GF Supplies
   mrest_pre : GhostVarG GF CerbMem.MemState
+  dom_pre : GhostVarG GF (List Int)
 
 attribute [reducible, instance] CerbStGpreS.bytes_pre
 attribute [reducible, instance] CerbStGpreS.alloc_pre
@@ -294,6 +336,7 @@ attribute [reducible, instance] CerbStGpreS.env_pre
 attribute [reducible, instance] CerbStGpreS.ctl_pre
 attribute [reducible, instance] CerbStGpreS.sup_pre
 attribute [reducible, instance] CerbStGpreS.mrest_pre
+attribute [reducible, instance] CerbStGpreS.dom_pre
 
 class CerbStGS (GF : BundledGFunctors) where
   -- not an instance on purpose (HeapLang pattern): avoids diamonds
@@ -309,6 +352,8 @@ class CerbStGS (GF : BundledGFunctors) where
   supName : GName
   [mrestG : GhostVarG GF CerbMem.MemState]
   mrestName : GName
+  [domG : GhostVarG GF (List Int)]
+  domName : GName
 
 attribute [reducible, instance] CerbStGS.bytes
 attribute [reducible, instance] CerbStGS.alloc
@@ -316,6 +361,7 @@ attribute [reducible, instance] CerbStGS.envG
 attribute [reducible, instance] CerbStGS.ctlG
 attribute [reducible, instance] CerbStGS.supG
 attribute [reducible, instance] CerbStGS.mrestG
+attribute [reducible, instance] CerbStGS.domG
 
 variable {GF : BundledGFunctors}
 
@@ -337,6 +383,11 @@ def supIs [CerbStGS GF] (dq : DFrac) (s : Supplies) : IProp GF :=
 def mrestIs [CerbStGS GF] (dq : DFrac) (mr : CerbMem.MemState) :
     IProp GF :=
   (CerbStGS.mrestName GF) ↪VAR{dq} mr
+
+/-- THE DOMAIN LEDGER token (halves): the bound-symbol-number
+    overapproximation the birth rule consults. -/
+def domIs [CerbStGS GF] (dq : DFrac) (d : List Int) : IProp GF :=
+  (CerbStGS.domName GF) ↪VAR{dq} d
 
 /-- ENV POINTS-TO: ownership of ONE local, value SYMBOLIC. The cell
     carries the full symbol; the ghost key is its number. -/
@@ -383,6 +434,8 @@ theorem pointsToBytes_cons [CerbStGS GF] {a : Int} {dq : DFrac}
     ((CerbStGS.allocName GF) ↪●MAP allocsOf σ.layout_state) ∗
     (∃ e : CerbStF EnvCell,
       ((CerbStGS.envName GF) ↪●MAP e) ∗ ⌜EnvCoh σ e⌝) ∗
+    (∃ d : List Int,
+      ((CerbStGS.domName GF) ↪VAR{stHalf} d) ∗ ⌜EnvDom σ d⌝) ∗
     ((CerbStGS.ctlName GF) ↪VAR{stHalf} ctlOf σ) ∗
     ((CerbStGS.supName GF) ↪VAR{stHalf} suppliesOf σ) ∗
     ((CerbStGS.mrestName GF) ↪VAR{stHalf} memRestOf σ) ∗
@@ -413,8 +466,8 @@ theorem interp_meminv [CerbStGS GF] {σ : driver_state} :
     CerbStInterp (GF := GF) σ ⊢
       ⌜MemInv σ.layout_state⌝ ∗ CerbStInterp σ := by
   unfold CerbStInterp
-  iintro ⟨Hb, Ha, He, Hc, Hs, Hm, %Hinv, %Hwf⟩
-  iframe Hb Ha He Hc Hs Hm
+  iintro ⟨Hb, Ha, He, Hd, Hc, Hs, Hm, %Hinv, %Hwf⟩
+  iframe Hb Ha He Hd Hc Hs Hm
   ipureintro
   exact ⟨Hinv, Hinv, Hwf⟩
 
@@ -424,8 +477,8 @@ theorem interp_envwf [CerbStGS GF] {σ : driver_state} :
     CerbStInterp (GF := GF) σ ⊢
       ⌜EnvWf σ⌝ ∗ CerbStInterp σ := by
   unfold CerbStInterp
-  iintro ⟨Hb, Ha, He, Hc, Hs, Hm, %Hinv, %Hwf⟩
-  iframe Hb Ha He Hc Hs Hm
+  iintro ⟨Hb, Ha, He, Hd, Hc, Hs, Hm, %Hinv, %Hwf⟩
+  iframe Hb Ha He Hd Hc Hs Hm
   ipureintro
   exact ⟨Hwf, Hinv, Hwf⟩
 
@@ -435,9 +488,9 @@ theorem interp_ctl_agree [CerbStGS GF] {σ : driver_state}
     CerbStInterp (GF := GF) σ ∗ ctlIs dq c ⊢
       ⌜ctlOf σ = c⌝ ∗ CerbStInterp σ ∗ ctlIs dq c := by
   unfold CerbStInterp ctlIs
-  iintro ⟨⟨Hb, Ha, He, Hc, Hs, Hm, %Hinv, %Hwf⟩, Hfrag⟩
+  iintro ⟨⟨Hb, Ha, He, Hd, Hc, Hs, Hm, %Hinv, %Hwf⟩, Hfrag⟩
   icombine Hc Hfrag gives %Hag
-  iframe Hb Ha He Hc Hs Hm Hfrag
+  iframe Hb Ha He Hd Hc Hs Hm Hfrag
   ipureintro
   exact ⟨Hag.2, Hinv, Hwf⟩
 
@@ -447,9 +500,9 @@ theorem interp_sup_agree [CerbStGS GF] {σ : driver_state}
     CerbStInterp (GF := GF) σ ∗ supIs dq s ⊢
       ⌜suppliesOf σ = s⌝ ∗ CerbStInterp σ ∗ supIs dq s := by
   unfold CerbStInterp supIs
-  iintro ⟨⟨Hb, Ha, He, Hc, Hs, Hm, %Hinv, %Hwf⟩, Hfrag⟩
+  iintro ⟨⟨Hb, Ha, He, Hd, Hc, Hs, Hm, %Hinv, %Hwf⟩, Hfrag⟩
   icombine Hs Hfrag gives %Hag
-  iframe Hb Ha He Hc Hs Hm Hfrag
+  iframe Hb Ha He Hd Hc Hs Hm Hfrag
   ipureintro
   exact ⟨Hag.2, Hinv, Hwf⟩
 
@@ -459,9 +512,9 @@ theorem interp_mrest_agree [CerbStGS GF] {σ : driver_state}
     CerbStInterp (GF := GF) σ ∗ mrestIs dq mr ⊢
       ⌜memRestOf σ = mr⌝ ∗ CerbStInterp σ ∗ mrestIs dq mr := by
   unfold CerbStInterp mrestIs
-  iintro ⟨⟨Hb, Ha, He, Hc, Hs, Hm, %Hinv, %Hwf⟩, Hfrag⟩
+  iintro ⟨⟨Hb, Ha, He, Hd, Hc, Hs, Hm, %Hinv, %Hwf⟩, Hfrag⟩
   icombine Hm Hfrag gives %Hag
-  iframe Hb Ha He Hc Hs Hm Hfrag
+  iframe Hb Ha He Hd Hc Hs Hm Hfrag
   ipureintro
   exact ⟨Hag.2, Hinv, Hwf⟩
 
@@ -472,10 +525,10 @@ theorem interp_env_lookup [CerbStGS GF] {σ : driver_state}
     CerbStInterp (GF := GF) σ ∗ envIs x dq v ⊢
       ⌜envLookup σ x = some v⌝ ∗ CerbStInterp σ ∗ envIs x dq v := by
   unfold CerbStInterp envIs
-  iintro ⟨⟨Hb, Ha, He, Hc, Hs, Hm, %Hinv, %Hwf⟩, Hfrag⟩
+  iintro ⟨⟨Hb, Ha, He, Hd, Hc, Hs, Hm, %Hinv, %Hwf⟩, Hfrag⟩
   icases He with ⟨%e, He, %Hcoh⟩
   icombine He Hfrag gives %Hlk
-  iframe Hb Ha Hc Hs Hm Hfrag
+  iframe Hb Ha Hd Hc Hs Hm Hfrag
   isplitl []
   · ipureintro
     exact (Hcoh _ _ Hlk).2
@@ -494,9 +547,9 @@ theorem interp_alloc_lookup [CerbStGS GF] {σ : driver_state}
       ⌜σ.layout_state.allocations.get? aid = some al⌝ ∗
         CerbStInterp σ ∗ allocIs aid dq al := by
   unfold CerbStInterp allocIs
-  iintro ⟨⟨Hb, Ha, He, Hc, Hs, Hm, %Hinv, %Hwf⟩, Hfrag⟩
+  iintro ⟨⟨Hb, Ha, He, Hd, Hc, Hs, Hm, %Hinv, %Hwf⟩, Hfrag⟩
   icombine Ha Hfrag gives %Hlk
-  iframe Hb Ha He Hc Hs Hm Hfrag
+  iframe Hb Ha He Hd Hc Hs Hm Hfrag
   ipureintro
   refine ⟨?_, Hinv, Hwf⟩
   rw [← toExt_get? σ.layout_state.allocations aid]
@@ -509,9 +562,9 @@ theorem interp_byte_lookup [CerbStGS GF] {σ : driver_state}
       ⌜σ.layout_state.bytemap.get? a = some b⌝ ∗
         CerbStInterp σ ∗ (a ↦{dq} b) := by
   unfold CerbStInterp genHeapInterp pointsTo
-  iintro ⟨⟨⟨%m, %Hdom, Hσ, Hm2⟩, Ha, He, Hc, Hs, Hm, %Hinv, %Hwf⟩, Hpt⟩
+  iintro ⟨⟨⟨%m, %Hdom, Hσ, Hm2⟩, Ha, He, Hd, Hc, Hs, Hm, %Hinv, %Hwf⟩, Hpt⟩
   icombine Hσ Hpt gives %Hlk
-  iframe Ha He Hc Hs Hm Hpt
+  iframe Ha He Hd Hc Hs Hm Hpt
   isplitl []
   · ipureintro
     rw [← toExt_get? σ.layout_state.bytemap a]
@@ -700,6 +753,8 @@ theorem CerbStInterp_congr [CerbStGS GF] {σ' : driver_state}
           ((CerbStGS.allocName GF) ↪●MAP A) ∗
           (∃ e : CerbStF EnvCell,
             ((CerbStGS.envName GF) ↪●MAP e) ∗ ⌜EnvCoh σ' e⌝) ∗
+          (∃ d : List Int,
+            ((CerbStGS.domName GF) ↪VAR{stHalf} d) ∗ ⌜EnvDom σ' d⌝) ∗
           ((CerbStGS.ctlName GF) ↪VAR{stHalf} C) ∗
           ((CerbStGS.supName GF) ↪VAR{stHalf} S) ∗
           ((CerbStGS.mrestName GF) ↪VAR{stHalf} MR) ∗
@@ -714,18 +769,20 @@ theorem CerbStInterp_congr [CerbStGS GF] {σ' : driver_state}
 theorem interp_ctl_move [CerbStGS GF] {σ σ' : driver_state}
     (hlay : σ'.layout_state = σ.layout_state)
     (hsup : suppliesOf σ' = suppliesOf σ)
-    (henv : ∀ x v, envLookup σ x = some v → envLookup σ' x = some v)
-    (hwfp : EnvWf σ → EnvWf σ') :
+    (henvT : thread0Env σ' = thread0Env σ) :
     CerbStInterp (GF := GF) σ ∗ ctlIs stHalf (ctlOf σ) ⊢ |==>
       (CerbStInterp σ' ∗ ctlIs stHalf (ctlOf σ')) := by
+  have henvL : ∀ x, envLookup σ' x = envLookup σ x := by
+    intro x; unfold envLookup; rw [henvT]
   rw [CerbStInterp_congr (σ' := σ')
     (B := bytesOf σ.layout_state) (A := allocsOf σ.layout_state)
     (C := ctlOf σ') (S := suppliesOf σ) (MR := memRestOf σ)
     (by rw [hlay]) (by rw [hlay]) rfl hsup
     (by unfold memRestOf; rw [hlay])]
   unfold CerbStInterp ctlIs
-  iintro ⟨⟨Hb, Ha, He, Hc, Hs, Hm, %Hinv, %Hwf⟩, Hfrag⟩
+  iintro ⟨⟨Hb, Ha, He, Hd, Hc, Hs, Hm, %Hinv, %Hwf⟩, Hfrag⟩
   icases He with ⟨%e, He, %Hcoh⟩
+  icases Hd with ⟨%d, Hd, %Hdom⟩
   imod ghost_var_update_halves (ctlOf σ') _ _ _ $$ Hc Hfrag
     with ⟨Hc, Hfrag⟩
   imodintro
@@ -734,29 +791,36 @@ theorem interp_ctl_move [CerbStGS GF] {σ σ' : driver_state}
   · iexists e
     iframe He
     ipureintro
-    exact Hcoh.mono henv
+    exact Hcoh.mono (fun x v h => (henvL x).trans h)
+  isplitl [Hd]
+  · iexists d
+    iframe Hd
+    ipureintro
+    exact Hdom.of_env_eq henvT
   · ipureintro
     rw [hlay]
-    exact ⟨Hinv, hwfp Hwf⟩
+    exact ⟨Hinv, fun f hf => Hwf f (by rwa [henvT] at hf)⟩
 
 /-- CONTROL + SUPPLY MOVE: as `interp_ctl_move`, for steps that also
     draw from the supplies (both tokens consumed and updated). -/
 theorem interp_ctl_sup_move [CerbStGS GF] {σ σ' : driver_state}
     (hlay : σ'.layout_state = σ.layout_state)
-    (henv : ∀ x v, envLookup σ x = some v → envLookup σ' x = some v)
-    (hwfp : EnvWf σ → EnvWf σ') :
+    (henvT : thread0Env σ' = thread0Env σ) :
     CerbStInterp (GF := GF) σ ∗ ctlIs stHalf (ctlOf σ)
         ∗ supIs stHalf (suppliesOf σ) ⊢ |==>
       (CerbStInterp σ' ∗ ctlIs stHalf (ctlOf σ')
         ∗ supIs stHalf (suppliesOf σ')) := by
+  have henvL : ∀ x, envLookup σ' x = envLookup σ x := by
+    intro x; unfold envLookup; rw [henvT]
   rw [CerbStInterp_congr (σ' := σ')
     (B := bytesOf σ.layout_state) (A := allocsOf σ.layout_state)
     (C := ctlOf σ') (S := suppliesOf σ') (MR := memRestOf σ)
     (by rw [hlay]) (by rw [hlay]) rfl rfl
     (by unfold memRestOf; rw [hlay])]
   unfold CerbStInterp ctlIs supIs
-  iintro ⟨⟨Hb, Ha, He, Hc, Hs, Hm, %Hinv, %Hwf⟩, Hcf, Hsf⟩
+  iintro ⟨⟨Hb, Ha, He, Hd, Hc, Hs, Hm, %Hinv, %Hwf⟩, Hcf, Hsf⟩
   icases He with ⟨%e, He, %Hcoh⟩
+  icases Hd with ⟨%d, Hd, %Hdom⟩
   imod ghost_var_update_halves (ctlOf σ') _ _ _ $$ Hc Hcf
     with ⟨Hc, Hcf⟩
   imod ghost_var_update_halves (suppliesOf σ') _ _ _ $$ Hs Hsf
@@ -767,10 +831,15 @@ theorem interp_ctl_sup_move [CerbStGS GF] {σ σ' : driver_state}
   · iexists e
     iframe He
     ipureintro
-    exact Hcoh.mono henv
+    exact Hcoh.mono (fun x v h => (henvL x).trans h)
+  isplitl [Hd]
+  · iexists d
+    iframe Hd
+    ipureintro
+    exact Hdom.of_env_eq henvT
   · ipureintro
     rw [hlay]
-    exact ⟨Hinv, hwfp Hwf⟩
+    exact ⟨Hinv, fun f hf => Hwf f (by rwa [henvT] at hf)⟩
 
 /-- ENV WRITE (the new capability's update leg): a step rebinds the
     owned cell `x` to `vNew`, every OTHER cell is preserved by
@@ -784,6 +853,8 @@ theorem interp_env_write [CerbStGS GF] {σ σ' : driver_state}
     (hnew : envLookup σ' x = some vNew)
     (hpres : ∀ y v, symNum y ≠ symNum x →
       envLookup σ y = some v → envLookup σ' y = some v)
+    (hbound : ∀ y v, envLookup σ' y = some v →
+      ∃ v₀, envLookup σ y = some v₀)
     (hwfp : EnvWf σ → EnvWf σ') :
     CerbStInterp (GF := GF) σ ∗ ctlIs stHalf (ctlOf σ)
         ∗ envIs x (.own 1) vOld ⊢ |==>
@@ -795,8 +866,9 @@ theorem interp_env_write [CerbStGS GF] {σ σ' : driver_state}
     (by rw [hlay]) (by rw [hlay]) rfl hsup
     (by unfold memRestOf; rw [hlay])]
   unfold CerbStInterp ctlIs envIs
-  iintro ⟨⟨Hb, Ha, He, Hc, Hs, Hm, %Hinv, %Hwf⟩, Hcf, Hef⟩
+  iintro ⟨⟨Hb, Ha, He, Hd, Hc, Hs, Hm, %Hinv, %Hwf⟩, Hcf, Hef⟩
   icases He with ⟨%e, He, %Hcoh⟩
+  icases Hd with ⟨%d, Hd, %Hdom⟩
   icombine He Hef gives %Hlk
   imod ghost_var_update_halves (ctlOf σ') _ _ _ $$ Hc Hcf
     with ⟨Hc, Hcf⟩
@@ -821,6 +893,13 @@ theorem interp_env_write [CerbStGS GF] {σ σ' : driver_state}
       refine ⟨h1, hpres _ _ ?_ h2⟩
       rw [h1]
       exact hn
+  isplitl [Hd]
+  · iexists d
+    iframe Hd
+    ipureintro
+    intro z v hz
+    obtain ⟨v₀, hv₀⟩ := hbound z v hz
+    exact Hdom z v₀ hv₀
   · ipureintro
     rw [hlay]
     exact ⟨Hinv, hwfp Hwf⟩
@@ -846,8 +925,9 @@ theorem interp_store_update [CerbStGS GF] {σ : driver_state}
     (ctlOf_layout _) (suppliesOf_layout _)
     (memRestOf_store σ a new)]
   unfold CerbStInterp
-  iintro ⟨⟨Hb, Ha, He, Hc, Hs, Hm, %Hinv, %Hwf⟩, Hp⟩
+  iintro ⟨⟨Hb, Ha, He, Hd, Hc, Hs, Hm, %Hinv, %Hwf⟩, Hp⟩
   icases He with ⟨%e, He, %Hcoh⟩
+  icases Hd with ⟨%d, Hd, %Hdom⟩
   imod bytes_update_ghost new hlen $$ [$Hb $Hp] with ⟨Hb, Hp⟩
   imodintro
   iframe Hb Ha Hc Hs Hm Hp
@@ -856,6 +936,11 @@ theorem interp_store_update [CerbStGS GF] {σ : driver_state}
     iframe He
     ipureintro
     exact Hcoh.mono (fun x v h => by rwa [envLookup_layout])
+  isplitl [Hd]
+  · iexists d
+    iframe Hd
+    ipureintro
+    exact Hdom.of_env_eq rfl
   · ipureintro
     exact ⟨Hinv.store hlen hold, EnvWf_of_core_eq rfl Hwf⟩
 
@@ -915,8 +1000,9 @@ theorem interp_alloc_update [CerbStGS GF] {σ : driver_state}
   have hrange : a + sz ≤ σ.layout_state.lastAddress :=
     alloc_range_le haddr hnz
   unfold CerbStInterp mrestIs allocIs
-  iintro ⟨⟨Hb, Ha, He, Hc, Hs, Hm, %Hinv, %Hwf⟩, Hmf⟩
+  iintro ⟨⟨Hb, Ha, He, Hd, Hc, Hs, Hm, %Hinv, %Hwf⟩, Hmf⟩
   icases He with ⟨%e, He, %Hcoh⟩
+  icases Hd with ⟨%d, Hd, %Hdom⟩
   have hfreshA : Std.PartialMap.get? (M := CerbStF)
       (allocsOf σ.layout_state) σ.layout_state.nextAllocId = none := by
     unfold allocsOf
@@ -945,6 +1031,11 @@ theorem interp_alloc_update [CerbStGS GF] {σ : driver_state}
     iframe He
     ipureintro
     exact Hcoh.mono (fun x v h => by rwa [envLookup_layout])
+  isplitl [Hd]
+  · iexists d
+    iframe Hd
+    ipureintro
+    exact Hdom.of_env_eq rfl
   · ipureintro
     exact ⟨Hinv.alloc hsz haddr hnz, EnvWf_of_core_eq rfl Hwf⟩
 
@@ -980,8 +1071,9 @@ theorem interp_kill_update [CerbStGS GF] {σ : driver_state}
     rfl rfl
     (by subst hmr; unfold memRestOf mrKill; rfl)]
   unfold CerbStInterp mrestIs allocIs
-  iintro ⟨⟨Hb, Ha, He, Hc, Hs, Hm, %Hinv, %Hwf⟩, Hmf, Hfrag⟩
+  iintro ⟨⟨Hb, Ha, He, Hd, Hc, Hs, Hm, %Hinv, %Hwf⟩, Hmf, Hfrag⟩
   icases He with ⟨%e, He, %Hcoh⟩
+  icases Hd with ⟨%d, Hd, %Hdom⟩
   icombine Ha Hfrag gives %Hlk
   have hget : σ.layout_state.allocations.get? aid = some al := by
     rw [← toExt_get? σ.layout_state.allocations aid]
@@ -996,8 +1088,199 @@ theorem interp_kill_update [CerbStGS GF] {σ : driver_state}
     iframe He
     ipureintro
     exact Hcoh.mono (fun x v h => by rwa [envLookup_layout])
+  isplitl [Hd]
+  · iexists d
+    iframe Hd
+    ipureintro
+    exact Hdom.of_env_eq rfl
   · ipureintro
     exact ⟨Hinv.kill hget, EnvWf_of_core_eq rfl Hwf⟩
+
+
+/-! ## THE BIRTH MOVES (V2 — the ledger's raison d'être).
+
+    A step that BINDS a previously-unbound symbol needs a
+    coherence-auth insert, which needs `get? e (symNum x) = none` —
+    NEGATIVE information. The ledger supplies it: `symNum x ∉ d` +
+    `EnvDom σ d` ⇒ no symbol numbered `symNum x` is bound ⇒ (by
+    one-directional coherence) no tracked cell at that key. The move
+    mints the cell and extends the ledger — the gen_heap alloc-fresh
+    shape (HeapLang `wp_alloc`), transplanted to symbol numbers. -/
+
+/-- Ledger agreement: the prover's half pins the interpretation's. -/
+theorem interp_dom_agree [CerbStGS GF] {σ : driver_state}
+    {dq : DFrac} {d : List Int} :
+    CerbStInterp (GF := GF) σ ∗ domIs dq d ⊢
+      ⌜EnvDom σ d⌝ ∗ CerbStInterp σ ∗ domIs dq d := by
+  unfold CerbStInterp domIs
+  iintro ⟨⟨Hb, Ha, He, Hd, Hc, Hs, Hm, %Hinv, %Hwf⟩, Hfrag⟩
+  icases Hd with ⟨%d₀, Hd, %Hdom⟩
+  icombine Hd Hfrag gives %Hag
+  iframe Hb Ha He Hc Hs Hm Hfrag
+  isplitl []
+  · ipureintro
+    exact Hag.2 ▸ Hdom
+  isplitl [Hd]
+  · iexists d₀
+    iframe Hd
+    ipureintro
+    exact Hdom
+  · ipureintro
+    exact ⟨Hinv, Hwf⟩
+
+/-- The freshness payoff, pure form: an unlisted number has no tracked
+    cell (used inside the birth moves). -/
+theorem envAuth_fresh_of_dom {σ : driver_state} {e : CerbStF EnvCell}
+    {d : List Int} {n : Int}
+    (hcoh : EnvCoh σ e) (hdom : EnvDom σ d) (hfresh : n ∉ d) :
+    Std.PartialMap.get? (M := CerbStF) e n = none := by
+  cases heq : Std.PartialMap.get? (M := CerbStF) e n with
+  | none => rfl
+  | some c =>
+    obtain ⟨h1, h2⟩ := hcoh n c heq
+    exact absurd (h1 ▸ hdom c.1 c.2 h2) hfresh
+
+/-- BIRTH of ONE cell: a control step that binds the fresh symbol `x`
+    (all previous bindings preserved; the newborn is the only
+    addition). Mints `envIs x 1 vNew`; extends the ledger. -/
+theorem interp_ctl_dom_birth1 [CerbStGS GF] {σ σ' : driver_state}
+    (x : sym) {vNew : value} {d : List Int}
+    (hlay : σ'.layout_state = σ.layout_state)
+    (hsup : suppliesOf σ' = suppliesOf σ)
+    (hfresh : symNum x ∉ d)
+    (hnew : envLookup σ' x = some vNew)
+    (hpres : ∀ z v, envLookup σ z = some v → envLookup σ' z = some v)
+    (hrev : ∀ z v, envLookup σ' z = some v →
+      (∃ v₀, envLookup σ z = some v₀) ∨ symNum z = symNum x)
+    (hwfp : EnvWf σ → EnvWf σ') :
+    CerbStInterp (GF := GF) σ ∗ ctlIs stHalf (ctlOf σ)
+        ∗ domIs stHalf d ⊢ |==>
+      (CerbStInterp σ' ∗ ctlIs stHalf (ctlOf σ')
+        ∗ domIs stHalf (symNum x :: d) ∗ envIs x (.own 1) vNew) := by
+  rw [CerbStInterp_congr (σ' := σ')
+    (B := bytesOf σ.layout_state) (A := allocsOf σ.layout_state)
+    (C := ctlOf σ') (S := suppliesOf σ) (MR := memRestOf σ)
+    (by rw [hlay]) (by rw [hlay]) rfl hsup
+    (by unfold memRestOf; rw [hlay])]
+  unfold CerbStInterp ctlIs domIs envIs
+  iintro ⟨⟨Hb, Ha, He, Hd, Hc, Hs, Hm, %Hinv, %Hwf⟩, Hcf, Hdf⟩
+  icases He with ⟨%e, He, %Hcoh⟩
+  icases Hd with ⟨%d₀, Hd, %Hdom⟩
+  icombine Hd Hdf gives %Hag
+  have hd' : d = d₀ := Hag.2.symm
+  subst hd'
+  have hnone : Std.PartialMap.get? (M := CerbStF) e (symNum x) = none :=
+    envAuth_fresh_of_dom Hcoh Hdom hfresh
+  imod ghost_var_update_halves (ctlOf σ') _ _ _ $$ Hc Hcf
+    with ⟨Hc, Hcf⟩
+  imod ghost_var_update_halves (symNum x :: d) _ _ _ $$ Hd Hdf
+    with ⟨Hd, Hdf⟩
+  imod ghost_map_insert _ _ hnone $$ He with ⟨He, Hef⟩
+  imodintro
+  iframe Hb Ha Hc Hs Hm Hcf Hd Hdf Hef
+  isplitl [He]
+  · iexists (Std.PartialMap.insert (M := CerbStF) e (symNum x)
+      ((x, vNew) : EnvCell))
+    iframe He
+    ipureintro
+    intro n c hc
+    by_cases hn : n = symNum x
+    · subst hn
+      rw [Std.LawfulPartialMap.get?_insert_eq rfl] at hc
+      cases hc
+      exact ⟨rfl, hnew⟩
+    · rw [Std.LawfulPartialMap.get?_insert_ne
+        (fun h => hn h.symm)] at hc
+      obtain ⟨h1, h2⟩ := Hcoh n c hc
+      exact ⟨h1, hpres _ _ h2⟩
+  · ipureintro
+    refine ⟨?_, by rw [hlay]; exact Hinv, hwfp Hwf⟩
+    intro z v hz
+    rcases hrev z v hz with ⟨v₀, hv₀⟩ | hzx
+    · exact List.mem_cons_of_mem _ (Hdom z v₀ hv₀)
+    · rw [hzx]; exact List.mem_cons_self ..
+
+/-- BIRTH of TWO cells in one step (the pair-pattern bind — one tau
+    round binds both components of a `weak (a, b) = unseq(…)` let). -/
+theorem interp_ctl_dom_birth2 [CerbStGS GF] {σ σ' : driver_state}
+    (x₁ x₂ : sym) {v₁ v₂ : value} {d : List Int}
+    (hlay : σ'.layout_state = σ.layout_state)
+    (hsup : suppliesOf σ' = suppliesOf σ)
+    (hfresh₁ : symNum x₁ ∉ d) (hfresh₂ : symNum x₂ ∉ d)
+    (hne : symNum x₁ ≠ symNum x₂)
+    (hnew₁ : envLookup σ' x₁ = some v₁)
+    (hnew₂ : envLookup σ' x₂ = some v₂)
+    (hpres : ∀ z v, envLookup σ z = some v → envLookup σ' z = some v)
+    (hrev : ∀ z v, envLookup σ' z = some v →
+      (∃ v₀, envLookup σ z = some v₀) ∨ symNum z = symNum x₁ ∨
+        symNum z = symNum x₂)
+    (hwfp : EnvWf σ → EnvWf σ') :
+    CerbStInterp (GF := GF) σ ∗ ctlIs stHalf (ctlOf σ)
+        ∗ domIs stHalf d ⊢ |==>
+      (CerbStInterp σ' ∗ ctlIs stHalf (ctlOf σ')
+        ∗ domIs stHalf (symNum x₁ :: symNum x₂ :: d)
+        ∗ envIs x₁ (.own 1) v₁ ∗ envIs x₂ (.own 1) v₂) := by
+  rw [CerbStInterp_congr (σ' := σ')
+    (B := bytesOf σ.layout_state) (A := allocsOf σ.layout_state)
+    (C := ctlOf σ') (S := suppliesOf σ) (MR := memRestOf σ)
+    (by rw [hlay]) (by rw [hlay]) rfl hsup
+    (by unfold memRestOf; rw [hlay])]
+  unfold CerbStInterp ctlIs domIs envIs
+  iintro ⟨⟨Hb, Ha, He, Hd, Hc, Hs, Hm, %Hinv, %Hwf⟩, Hcf, Hdf⟩
+  icases He with ⟨%e, He, %Hcoh⟩
+  icases Hd with ⟨%d₀, Hd, %Hdom⟩
+  icombine Hd Hdf gives %Hag
+  have hd' : d = d₀ := Hag.2.symm
+  subst hd'
+  have hnone₁ : Std.PartialMap.get? (M := CerbStF) e (symNum x₁)
+      = none := envAuth_fresh_of_dom Hcoh Hdom hfresh₁
+  have hnone₂ : Std.PartialMap.get? (M := CerbStF) e (symNum x₂)
+      = none := envAuth_fresh_of_dom Hcoh Hdom hfresh₂
+  imod ghost_var_update_halves (ctlOf σ') _ _ _ $$ Hc Hcf
+    with ⟨Hc, Hcf⟩
+  imod ghost_var_update_halves (symNum x₁ :: symNum x₂ :: d) _ _ _
+    $$ Hd Hdf with ⟨Hd, Hdf⟩
+  imod ghost_map_insert _ _ hnone₂ $$ He with ⟨He, Hef₂⟩
+  have hnone₁' : Std.PartialMap.get?
+      (M := CerbStF) (Std.PartialMap.insert (M := CerbStF) e
+        (symNum x₂) ((x₂, v₂) : EnvCell)) (symNum x₁) = none := by
+    rw [Std.LawfulPartialMap.get?_insert_ne (fun h => hne h.symm)]
+    exact hnone₁
+  imod ghost_map_insert _ _ hnone₁' $$ He with ⟨He, Hef₁⟩
+  imodintro
+  iframe Hb Ha Hc Hs Hm Hcf Hd Hdf Hef₁ Hef₂
+  isplitl [He]
+  · iexists (Std.PartialMap.insert (M := CerbStF)
+      (Std.PartialMap.insert (M := CerbStF) e (symNum x₂)
+        ((x₂, v₂) : EnvCell)) (symNum x₁) ((x₁, v₁) : EnvCell))
+    iframe He
+    ipureintro
+    intro n c hc
+    by_cases hn₁ : n = symNum x₁
+    · subst hn₁
+      rw [Std.LawfulPartialMap.get?_insert_eq rfl] at hc
+      cases hc
+      exact ⟨rfl, hnew₁⟩
+    · rw [Std.LawfulPartialMap.get?_insert_ne
+        (fun h => hn₁ h.symm)] at hc
+      by_cases hn₂ : n = symNum x₂
+      · subst hn₂
+        rw [Std.LawfulPartialMap.get?_insert_eq rfl] at hc
+        cases hc
+        exact ⟨rfl, hnew₂⟩
+      · rw [Std.LawfulPartialMap.get?_insert_ne
+          (fun h => hn₂ h.symm)] at hc
+        obtain ⟨h1, h2⟩ := Hcoh n c hc
+        exact ⟨h1, hpres _ _ h2⟩
+  · ipureintro
+    refine ⟨?_, by rw [hlay]; exact Hinv, hwfp Hwf⟩
+    intro z v hz
+    rcases hrev z v hz with ⟨v₀, hv₀⟩ | hzx | hzx
+    · exact List.mem_cons_of_mem _
+        (List.mem_cons_of_mem _ (Hdom z v₀ hv₀))
+    · rw [hzx]; exact List.mem_cons_self ..
+    · rw [hzx]
+      exact List.mem_cons_of_mem _ (List.mem_cons_self ..)
 
 end CerbSt
 end RelSem

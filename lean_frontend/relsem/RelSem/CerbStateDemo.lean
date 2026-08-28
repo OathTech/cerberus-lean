@@ -396,35 +396,39 @@ def updA (w : value) : driver_state → driver_state :=
 def updB (vx : value) : driver_state → driver_state :=
   updTh (arenaC vx) id
 
-theorem happA (w : value) : ∀ σ, ctlOf σ = ctlAt (arenaA w) 0 →
-    EnvWf σ →
+theorem happA (w w0 : value) : ∀ σ, ctlOf σ = ctlAt (arenaA w) 0 →
+    EnvWf σ → envLookup σ ySym = some w0 →
     app (roundM t1File.tagDefs) σ = (NDactive NOWAKEUP, updA w σ) := by
-  intro σ hσ _
+  intro σ hσ _ _
   obtain ⟨f₁, tS, aS, eS, sS, ls, rfl⟩ := ctl_inv hσ
   exact roundA_app w f₁ tS aS eS sS 0 ls
 
-theorem hctlA (w : value) : ∀ σ, ctlOf σ = ctlAt (arenaA w) 0 →
-    EnvWf σ → ctlOf (updA w σ) = ctlAt arenaB 1 := by
-  intro σ hσ _
+theorem hctlA (w w0 : value) : ∀ σ, ctlOf σ = ctlAt (arenaA w) 0 →
+    EnvWf σ → envLookup σ ySym = some w0 →
+    ctlOf (updA w σ) = ctlAt arenaB 1 := by
+  intro σ hσ _ _
   obtain ⟨f₁, tS, aS, eS, sS, ls, rfl⟩ := ctl_inv hσ
   rfl
 
-theorem hlayA (w : value) : ∀ σ, ctlOf σ = ctlAt (arenaA w) 0 →
-    EnvWf σ → (updA w σ).layout_state = σ.layout_state := by
-  intro σ hσ _
+theorem hlayA (w w0 : value) : ∀ σ, ctlOf σ = ctlAt (arenaA w) 0 →
+    EnvWf σ → envLookup σ ySym = some w0 →
+    (updA w σ).layout_state = σ.layout_state := by
+  intro σ hσ _ _
   obtain ⟨f₁, tS, aS, eS, sS, ls, rfl⟩ := ctl_inv hσ
   rfl
 
-theorem hsupA (w : value) : ∀ σ, ctlOf σ = ctlAt (arenaA w) 0 →
-    EnvWf σ → suppliesOf (updA w σ) = suppliesOf σ := by
-  intro σ hσ _
+theorem hsupA (w w0 : value) : ∀ σ, ctlOf σ = ctlAt (arenaA w) 0 →
+    EnvWf σ → envLookup σ ySym = some w0 →
+    suppliesOf (updA w σ) = suppliesOf σ := by
+  intro σ hσ _ _
   obtain ⟨f₁, tS, aS, eS, sS, ls, rfl⟩ := ctl_inv hσ
   rfl
 
 /-- The frame fact the demo consumes: after the rebind, y holds w. -/
-theorem hnewA (w : value) : ∀ σ, ctlOf σ = ctlAt (arenaA w) 0 →
-    EnvWf σ → envLookup (updA w σ) ySym = some w := by
-  intro σ hσ hwf
+theorem hnewA (w w0 : value) : ∀ σ, ctlOf σ = ctlAt (arenaA w) 0 →
+    EnvWf σ → envLookup σ ySym = some w0 →
+    envLookup (updA w σ) ySym = some w := by
+  intro σ hσ hwf _
   obtain ⟨f₁, tS, aS, eS, sS, ls, rfl⟩ := ctl_inv hσ
   have hfr : EnvWfFrame f₁ := hwf f₁ (by
     show f₁ ∈ thread0Env _
@@ -439,10 +443,11 @@ theorem hnewA (w : value) : ∀ σ, ctlOf σ = ctlAt (arenaA w) 0 →
 
 /-- PRESERVATION: every cell at a different NUMBER keeps its value
     across the y-rebind (the skip law under EnvWf built-ness). -/
-theorem hpresA (w : value) : ∀ σ, ctlOf σ = ctlAt (arenaA w) 0 →
-    EnvWf σ → ∀ z v', symNum z ≠ symNum ySym →
+theorem hpresA (w w0 : value) : ∀ σ, ctlOf σ = ctlAt (arenaA w) 0 →
+    EnvWf σ → envLookup σ ySym = some w0 →
+    ∀ z v', symNum z ≠ symNum ySym →
       envLookup σ z = some v' → envLookup (updA w σ) z = some v' := by
-  intro σ hσ hwf z v' hz hzl
+  intro σ hσ hwf _ z v' hz hzl
   obtain ⟨f₁, tS, aS, eS, sS, ls, rfl⟩ := ctl_inv hσ
   have hfr : EnvWfFrame f₁ := hwf f₁ (by
     show f₁ ∈ thread0Env _
@@ -462,9 +467,10 @@ theorem hpresA (w : value) : ∀ σ, ctlOf σ = ctlAt (arenaA w) 0 →
     exact (addBy_ne' hb (symCmpO_y_ne hz)).trans hzl
 
 /-- Well-formedness survives the rebind (comparator capture kept). -/
-theorem hwfpA (w : value) : ∀ σ, ctlOf σ = ctlAt (arenaA w) 0 →
-    EnvWf σ → EnvWf (updA w σ) := by
-  intro σ hσ hwf
+theorem hwfpA (w w0 : value) : ∀ σ, ctlOf σ = ctlAt (arenaA w) 0 →
+    EnvWf σ → envLookup σ ySym = some w0 →
+    EnvWf (updA w σ) := by
+  intro σ hσ hwf _
   obtain ⟨f₁, tS, aS, eS, sS, ls, rfl⟩ := ctl_inv hσ
   have hfr : EnvWfFrame f₁ := hwf f₁ (by
     show f₁ ∈ thread0Env _
@@ -483,6 +489,52 @@ theorem hwfpA (w : value) : ∀ σ, ctlOf σ = ctlAt (arenaA w) 0 →
       exact Or.inr (@RelSem.Kit.fmapAddBy_built sym value
         Lem_Map.instBEqOfMapKeyType _ _ _ _ _ hb)
   | tail _ h => cases h
+
+/-- Reverse containment: any binding after the rebind was bound
+    before (the rebound key's cmp-class was bound — the write rule's
+    ledger-preservation leg; V2). -/
+theorem hboundA (w w0 : value) : ∀ σ, ctlOf σ = ctlAt (arenaA w) 0 →
+    EnvWf σ → envLookup σ ySym = some w0 →
+    ∀ z v', envLookup (updA w σ) z = some v' →
+      ∃ v₀, envLookup σ z = some v₀ := by
+  intro σ hσ hwf hy z v' hz
+  obtain ⟨f₁, tS, aS, eS, sS, ls, rfl⟩ := ctl_inv hσ
+  have hfr : EnvWfFrame f₁ := hwf f₁ (by
+    show f₁ ∈ thread0Env _
+    simp [thread0Env, famσ, famTh])
+  rw [show envLookup (updA w (famσ (arenaA w) f₁ tS aS eS sS 0 ls)) z
+      = lookup_env z
+        [update_env_aux (mk_sym_pat ySym BTy_unit) w f₁] from rfl,
+    update_env_aux_sym, lookup_env_one] at hz
+  by_cases hzy : RelSem.Kit.symCmpO ySym z = .eq
+  · -- z is in y's cmp-class: y was bound (the rule's lookup fact)
+    refine ⟨w0, ?_⟩
+    rw [show envLookup (famσ (arenaA w) f₁ tS aS eS sS 0 ls) z
+        = lookup_env z [f₁] from rfl, lookup_env_one]
+    rw [show envLookup (famσ (arenaA w) f₁ tS aS eS sS 0 ls) ySym
+        = lookup_env ySym [f₁] from rfl, lookup_env_one] at hy
+    cases hfr with
+    | inl he => subst he; cases hy
+    | inr hb =>
+      rw [RelSem.Kit.fmapLookupBy_congr hb
+        (Std.OrientedCmp.eq_symm hzy)]
+      exact hy
+  · -- apart: the insert is invisible
+    cases hfr with
+    | inl he =>
+      -- y was bound (the rule's lookup fact) — impossible in an
+      -- empty frame
+      subst he
+      rw [show envLookup (famσ (arenaA w) Fmap.empty tS aS eS sS 0 ls)
+          ySym = none from (lookup_env_one ySym Fmap.empty).trans rfl]
+        at hy
+      cases hy
+    | inr hb =>
+      rw [addBy_ne' hb hzy] at hz
+      exact ⟨v', by
+        rw [show envLookup (famσ (arenaA w) f₁ tS aS eS sS 0 ls) z
+            = lookup_env z [f₁] from rfl, lookup_env_one]
+        exact hz⟩
 
 /-! ## Round B's legs -/
 
@@ -514,19 +566,12 @@ theorem hsupB (vx : value) : ∀ σ, ctlOf σ = ctlAt arenaB 1 →
   obtain ⟨f₁, tS, aS, eS, sS, ls, rfl⟩ := ctl_inv hσ
   rfl
 
-theorem henvB (vx : value) : ∀ σ, ctlOf σ = ctlAt arenaB 1 →
+theorem henvTB (vx : value) : ∀ σ, ctlOf σ = ctlAt arenaB 1 →
     EnvWf σ → envLookup σ xSym = some vx →
-    ∀ z v', envLookup σ z = some v' →
-      envLookup (updB vx σ) z = some v' := by
-  intro σ hσ _ _ z v' hz
+    thread0Env (updB vx σ) = thread0Env σ := by
+  intro σ hσ _ _
   obtain ⟨f₁, tS, aS, eS, sS, ls, rfl⟩ := ctl_inv hσ
-  exact hz
-
-theorem hwfpB (vx : value) : ∀ σ, ctlOf σ = ctlAt arenaB 1 →
-    EnvWf σ → envLookup σ xSym = some vx → EnvWf (updB vx σ) := by
-  intro σ hσ hwf _
-  obtain ⟨f₁, tS, aS, eS, sS, ls, rfl⟩ := ctl_inv hσ
-  exact hwf
+  rfl
 
 /-! ## The terminal readout leg -/
 
@@ -558,14 +603,14 @@ theorem demo_wp {GF : BundledGFunctors} [CerbStGS GF]
   -- STEP 1: rebind y. Resources: ctl + y's fragment. x's fragment is
   -- in the FRAME — the exhibit's point.
   iapply wpk_seq_env_write (x := ySym) (vOld := w0) (vNew := w)
-    (happA w) (hctlA w) (hlayA w) (hsupA w) (hnewA w) (hpresA w)
-    (hwfpA w)
+    (happA w w0) (hctlA w w0) (hlayA w w0) (hsupA w w0) (hnewA w w0)
+    (hpresA w w0) (hboundA w w0) (hwfpA w w0)
   isplitl [Hc Hy]
   · iframe Hc Hy
   iintro ⟨Hc, Hy⟩
   -- STEP 2: read x at its SYMBOLIC value.
   iapply wpk_seq_ctl_env1 (x := xSym) (vx := vx) (dq := .own 1)
-    (happB vx) (hctlB vx) (hlayB vx) (hsupB vx) (henvB vx) (hwfpB vx)
+    (happB vx) (hctlB vx) (hlayB vx) (hsupB vx) (henvTB vx)
   isplitl [Hc Hx]
   · iframe Hc Hx
   iintro ⟨Hc, Hx⟩
@@ -619,6 +664,37 @@ theorem e0demo_coh (vx w0 w : value) (tS aS eS sS : Nat) :
         Std.LawfulPartialMap.get?_empty n] at hc
       cases hc
 
+/-- The demo ledger: both locals' numbers (EnvDom witness for the
+    chosen footprint — V2's dom component). -/
+theorem demoσ0_dom (vx w0 w : value) (tS aS eS sS : Nat) :
+    EnvDom (demoσ0 vx w0 w tS aS eS sS) [101, 102] := by
+  intro z v hz
+  rw [show envLookup (demoσ0 vx w0 w tS aS eS sS) z
+      = lookup_env z [frame0 vx w0] from rfl, lookup_env_one] at hz
+  unfold frame0 at hz
+  by_cases hy : RelSem.Kit.symCmpO ySym z = .eq
+  · obtain ⟨dz, nz, sdz⟩ := z
+    obtain ⟨-, hn⟩ := (RelSem.Kit.symCmpO_eq_iff "" dz 102 nz
+      SD_None sdz).1 hy
+    simp [symNum, ← hn]
+  · have hb : RelSem.Kit.FmapBuilt RelSem.Kit.symCmpO
+        (fmapAddBy envCmp xSym vx (fmapEmpty : Fmap sym value)) :=
+      RelSem.Kit.fmapAddBy_built_empty
+    have hz' : fmapLookupBy (@Lem_Map.mapKeyCompare sym _) z
+        (fmapAddBy envCmp xSym vx (fmapEmpty : Fmap sym value))
+        = some v :=
+      (RelSem.Kit.fmapLookupBy_addBy_ne hb hy).symm.trans hz
+    by_cases hx : RelSem.Kit.symCmpO xSym z = .eq
+    · obtain ⟨dz, nz, sdz⟩ := z
+      obtain ⟨-, hn⟩ := (RelSem.Kit.symCmpO_eq_iff "" dz 101 nz
+        SD_None sdz).1 hx
+      simp [symNum, ← hn]
+    · have hnone := @RelSem.Kit.fmapLookupBy_addBy_empty_ne sym value
+        _ envCmp (@Lem_Map.mapKeyCompare sym _)
+        RelSem.Kit.instTransCmpSymCmpO xSym z vx hx
+      rw [hnone] at hz'
+      cases hz'
+
 /-- THE LAYER-1 STATEMENT: for ALL vx (and w0/w/supplies), every
     outcome the production runner enumerates for the demo fragment is
     a value whose core value is EXACTLY vx — the symbolic cell's
@@ -640,11 +716,13 @@ theorem demo_adequate (vx w0 w : value) (tS aS eS sS : Nat)
         r.dres_core_value = vx)
     MemInv_initial (demoσ0_wf vx w0 w tS aS eS sS)
     (e0demo vx w0) (e0demo_coh vx w0 w tS aS eS sS)
+    ([101, 102]) (demoσ0_dom vx w0 w tS aS eS sS)
     ?_ out tr σ' hmem
   intro inst
-  iintro ⟨Hb, Ha, He, Hc, Hs, Hm⟩
+  iintro ⟨Hb, Ha, He, Hd, Hc, Hs, Hm⟩
   iclear Hb
   iclear Ha
+  iclear Hd
   iclear Hs
   iclear Hm
   icases (BI.BigSepM.bigSepM_insert

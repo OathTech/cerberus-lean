@@ -155,9 +155,12 @@ import RelSem.Kit.Audit
 import RelSem.PerStep
 import RelSem.PerStepIris
 import RelSem.PerStepCall
+import RelSem.PerStepObs
+import RelSem.PerStepPeel
 import RelSem.MemLocal
 import RelSem.CerbStateRA
 import RelSem.CerbStateWP
+import RelSem.CerbStateStep
 import RelSem.CerbStateAdequacy
 import RelSem.CerbStateDemo
 -- arc-18 C2: the heap-route walk substrate joins the sweep closure +
@@ -1171,7 +1174,10 @@ open Lean in
 -- other engine lanes unchanged: advance 5, construct 9, envAlg 3,
 -- envMap 4, evalArith 2, evalPull 2, heapWP 4, heapWalk 11,
 -- memBlock 7, memRW 21, perform 6, roundGlue 3.)
-/-- info: step_law census: 71 laws [advance 5, construct 9, envAlg 3, envMap 4, evalArith 2, evalPull 2, heapWP 4, loop 1, memBlock 7, memRW 21, perform 6, roundGlue 3, stateWP 4] -/
+-- (71 → 82, V2 C2: envMap +2 [lookup-congr + singleton-miss], stateWP
+-- +9 [the case-split trio + read-ctl + the ctl-sup pair + the birth
+-- trio] — same-commit provenance.)
+/-- info: step_law census: 82 laws [advance 5, construct 9, envAlg 3, envMap 6, evalArith 2, evalPull 2, heapWP 4, loop 1, memBlock 7, memRW 21, perform 6, roundGlue 3, stateWP 13] -/
 #guard_msgs in #step_law_census
 -- (V0 2026-08-27, THE KILL BASKET — record
 -- docs/2026-08-27_v0-statements-and-ban.md: the T1–T5 threaded
@@ -1586,12 +1592,14 @@ open Lean in
 -- T5 chain — T5Fixture/T5Prefix/T5Iter, the arc-9→15 climb's parked
 -- capability — DELETED; T5-the-theorem stands proved through the
 -- layer at the trio. Carrier set 112 → 104 in the same commit.)
+-- 2732 → 2763 (V2 C2: the domain ledger + birth moves, the V2 rule
+-- lane [CerbStateStep], the peel modules joining the audit closure.)
 -- 2668 → 2732 (V2 C1: the observation algebra [PerStepObs] + the
 -- loop peel with anchors and the round-granular bridges
 -- [PerStepPeel, CerbStateAdequacy §V2] — the big-step↔small-step
 -- simulation infrastructure; same-commit provenance).
 /--
-info: RelSem audit sweep: 2732 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 2763 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do
