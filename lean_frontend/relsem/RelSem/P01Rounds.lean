@@ -2380,3 +2380,24 @@ theorem dbl_wfp (hwf : EnvWfFrame f) :
   birth_wfp (birth_wfp hwf)
 
 end DoubleBirth
+
+/-- Ledger-to-class emptiness: a fresh number's whole comparator
+    class is unbound (the hsh feeder for every birth leg). -/
+theorem clsNone {f : Fmap sym value} {d : List Int} {b : sym}
+    (hdm : ∀ z v, lookup_env z [f] = some v → symNum z ∈ d)
+    (hfresh : symNum b ∉ d) :
+    ∀ z : sym, RelSem.Kit.symCmpO b z = .eq →
+      lookup_env z [f] = none := by
+  intro z hz
+  cases hlk : lookup_env z [f] with
+  | none => rfl
+  | some vz =>
+    exfalso
+    have hin := hdm z vz hlk
+    obtain ⟨d1, n1, s1⟩ := b
+    obtain ⟨dz, nz, sz⟩ := z
+    obtain ⟨-, hn⟩ := (RelSem.Kit.symCmpO_eq_iff d1 dz n1 nz
+      s1 sz).1 hz
+    apply hfresh
+    rw [show symNum (Symbol d1 n1 s1) = ((n1 : Int)) from rfl, hn]
+    exact hin
