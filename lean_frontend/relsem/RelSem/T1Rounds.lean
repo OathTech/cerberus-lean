@@ -578,7 +578,7 @@ abbrev envCmp : sym → sym → LemOrdering :=
 
 /-- R0: the Ewseq's left pure operand evaluates — reads x's cell. -/
 @[seg_round]
-theorem t1r0 (x : Int) (p : T1P)
+theorem t1r0 (p : T1P)
     (hwf : EnvWfFrame p.f₁)
     (hx : envLookup (t1fam arena0 [] 0 p) symX = some xPtrV) :
     app (dnmsRoundM t1File.tagDefs 0) (t1fam arena0 [] 0 p)
@@ -615,7 +615,7 @@ theorem t1r0 (x : Int) (p : T1P)
     feeds; output lands in the `t1Th` family — the eval resets
     `current_loc`). -/
 @[seg_round]
-theorem t1r0v (x : Int) (p : T1P)
+theorem t1r0v (p : T1P)
     (hwf : EnvWfFrame p.f₁)
     (hx : envLookup (t1fam0 p) symX = some xPtrV) :
     app (dnmsRoundM t1File.tagDefs 0) (t1fam0 p)

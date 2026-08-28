@@ -252,6 +252,7 @@ def p01CtlAt (arena : RExpr) (tr : List trace_event) (n : Nat) :
   p01σ arena p.f₁ p.tS p.aS p.eS p.sS p.ls tr n
 
 /-- Control inversion at the P01 family. -/
+@[seg_inv]
 theorem p01_inv {σ : driver_state} {arena : RExpr}
     {tr : List trace_event} {n : Nat}
     (h : ctlOf σ = p01CtlAt arena tr n) :
@@ -331,6 +332,7 @@ def p01Ctl0 : driver_state :=
 @[reducible] def p01fam0 (p : T1P) : driver_state :=
   p01σ0 p.f₁ p.tS p.aS p.eS p.sS p.ls
 
+@[seg_inv]
 theorem p01_inv0 {σ : driver_state} (h : ctlOf σ = p01Ctl0) :
     ∃ p : T1P, σ = p01fam0 p := by
   obtain ⟨cf, ce, cs, crs, ls, ccs, fs0, tr', sa, bl, ctr'⟩ := σ
@@ -685,6 +687,7 @@ open RelSem.T1 (meLoad)
 
 /-- R0: the inner unseq's specified-zero operand evaluates (closed;
     STAGE-0 input — the eval resets current_loc). -/
+@[seg_round]
 theorem p01r0 (p : T1P) :
     app (dnmsRoundM p01File.tagDefs 0) (p01fam0 p)
       = (NDactive (Sum.inl NOWAKEUP), p01fam p01ar1 [] 1 p) := by
@@ -693,6 +696,7 @@ theorem p01r0 (p : T1P) :
     (rs' := (p01fam0 p).core_run_state0) rfl).trans rfl
 
 /-- R1: the outer unseq's specified-zero operand evaluates (closed). -/
+@[seg_round]
 theorem p01r1 (p : T1P) :
     app (dnmsRoundM p01File.tagDefs 0) (p01fam p01ar1 [] 1 p)
       = (NDactive (Sum.inl NOWAKEUP), p01fam p01ar2 [] 2 p) := by
@@ -701,6 +705,7 @@ theorem p01r1 (p : T1P) :
     (rs' := (p01fam p01ar1 [] 1 p).core_run_state0) rfl).trans rfl
 
 /-- R2: the Ewseq's pure operand evaluates — reads x's cell. -/
+@[seg_round]
 theorem p01r2 (p : T1P)
     (hwf : EnvWfFrame p.f₁)
     (hx : envLookup (p01fam p01ar2 [] 2 p) symX = some xPtrV) :
@@ -731,6 +736,7 @@ theorem p01r2 (p : T1P)
   · rfl
 
 /-- R3: the Ewseq binds a_534 (BIRTH). -/
+@[seg_round]
 theorem p01r3 (p : T1P) :
     app (dnmsRoundM p01File.tagDefs 0) (p01fam p01ar3 [] 3 p)
       = (NDactive (Sum.inl NOWAKEUP),
@@ -740,6 +746,7 @@ theorem p01r3 (p : T1P) :
   exact (advance_tau_misc).trans rfl
 
 /-- R4: the Load's operands evaluate — reads a_534's cell. -/
+@[seg_round]
 theorem p01r4 (p : T1P)
     (ha : envLookup (p01fam p01ar4 [] 4 p) symA534 = some xPtrV) :
     app (dnmsRoundM p01File.tagDefs 0) (p01fam p01ar4 [] 4 p)
@@ -776,6 +783,7 @@ theorem p01r4 (p : T1P)
 
 /-- R5: THE LOAD — aid drawn, x's bytes recombine to exactly x,
     ME_load traced (step counter does not move). -/
+@[seg_round]
 theorem p01r5 (x : Int) (p : T1P)
     (hget : p.ls.allocations.get? 0 = some allocX)
     (hbytes : ∀ i : Nat, (hi : i < (xBytes x).length) →
@@ -786,8 +794,8 @@ theorem p01r5 (x : Int) (p : T1P)
     (h1 : -2147483648 ≤ x) (h2 : x ≤ 2147483647) :
     app (dnmsRoundM p01File.tagDefs 0) (p01fam p01ar5 [] 5 p)
       = (NDactive (Sum.inl NOWAKEUP),
-         p01σ (p01ar6 x) p.f₁ p.tS (p.aS + 1) p.eS p.sS p.ls
-           [meLoad x] 5) := by
+         p01fam (p01ar6 x) [meLoad x] 5 { p with aS := p.aS + 1 })
+      := by
   refine dnmsRoundM_adv rfl ?_
   apply (app_bind_active ?hreq).trans
   case hreq =>
@@ -804,6 +812,7 @@ theorem p01r5 (x : Int) (p : T1P)
   rfl
 
 /-- R6: the inner Eunseq packs the tuple (tau). -/
+@[seg_round]
 theorem p01r6 (x : Int) (p : T1P) :
     app (dnmsRoundM p01File.tagDefs 0)
         (p01fam (p01ar6 x) [meLoad x] 5 p)
@@ -813,6 +822,7 @@ theorem p01r6 (x : Int) (p : T1P) :
   exact (advance_tau_misc).trans rfl
 
 /-- R7: the Ewseq tuple-binds (a_535, a_536) (BIRTH2). -/
+@[seg_round]
 theorem p01r7 (x : Int) (p : T1P) :
     app (dnmsRoundM p01File.tagDefs 0)
         (p01fam (p01ar7 x) [meLoad x] 6 p)
@@ -880,6 +890,7 @@ theorem p01ctor2_eval (x : Int) (env : List (Fmap sym value))
 
 /-- R8: the Ecase scrutinee evaluates — reads a_535's and a_536's
     cells (the tuple packs). -/
+@[seg_round]
 theorem p01r8 (x : Int) (p : T1P)
     (ha5 : envLookup (p01fam p01ar8 [meLoad x] 7 p) symA535
       = some (loadedV x))
@@ -921,6 +932,7 @@ theorem p01r8 (x : Int) (p : T1P)
   · rfl
 
 /-- R9: the Ecase picks the tuple arm and substitutes (tau). -/
+@[seg_round]
 theorem p01r9 (x : Int) (p : T1P) :
     app (dnmsRoundM p01File.tagDefs 0)
         (p01fam (p01ar9 x) [meLoad x] 8 p)
@@ -930,6 +942,7 @@ theorem p01r9 (x : Int) (p : T1P) :
   exact (advance_tau_misc).trans rfl
 
 /-- R11: the inner Eunseq packs (tau; branch-value abstract). -/
+@[seg_round]
 theorem p01r11 (c : Int) (p : T1P) {tr : List trace_event} :
     app (dnmsRoundM p01File.tagDefs 0)
         (p01fam (p01ar11 c) tr 10 p)
@@ -939,6 +952,7 @@ theorem p01r11 (c : Int) (p : T1P) {tr : List trace_event} :
   exact (advance_tau_misc).trans rfl
 
 /-- R12: the Ewseq tuple-binds (a_529, a_530) (BIRTH2). -/
+@[seg_round]
 theorem p01r12 (c : Int) (p : T1P) {tr : List trace_event} :
     app (dnmsRoundM p01File.tagDefs 0)
         (p01fam (p01ar12 c) tr 11 p)
@@ -949,6 +963,7 @@ theorem p01r12 (c : Int) (p : T1P) {tr : List trace_event} :
   exact (advance_tau_misc).trans rfl
 
 /-- R14: the Ebound wrapper strips (tau). -/
+@[seg_round]
 theorem p01r14 (c : Int) (p : T1P) {tr : List trace_event} :
     app (dnmsRoundM p01File.tagDefs 0)
         (p01fam (p01ar14 c) tr 13 p)
@@ -958,6 +973,7 @@ theorem p01r14 (c : Int) (p : T1P) {tr : List trace_event} :
   exact (advance_tau_misc).trans rfl
 
 /-- R15: the Esseq binds a_527 (BIRTH). -/
+@[seg_round]
 theorem p01r15 (c : Int) (p : T1P) {tr : List trace_event} :
     app (dnmsRoundM p01File.tagDefs 0)
         (p01fam (p01ar15 c) tr 14 p)
@@ -984,6 +1000,7 @@ def p01case2Arms :
 
 /-- R16: the second Ecase's scrutinee evaluates — reads a_527's cell
     (value abstract; both branch sides share this equation). -/
+@[seg_round]
 theorem p01r16 (c : Int) (p : T1P) {tr : List trace_event}
     (ha : envLookup (p01fam p01ar16 tr 15 p) symA527
       = some (loadedV c)) :
@@ -1020,6 +1037,7 @@ theorem p01r16 (c : Int) (p : T1P) {tr : List trace_event}
 /-- R17: the second Ecase picks the specified arm, substituting the
     payload for a_528 (tau; value abstract — the loaded shape is
     constructor-headed at any `c`). -/
+@[seg_round]
 theorem p01r17 (c : Int) (p : T1P) {tr : List trace_event} :
     app (dnmsRoundM p01File.tagDefs 0)
         (p01fam (p01ar17 c) tr 16 p)
@@ -1029,6 +1047,7 @@ theorem p01r17 (c : Int) (p : T1P) {tr : List trace_event} :
   exact (advance_tau_misc).trans rfl
 
 /-- R19: the Esseq binds the guard cell a_526 (BIRTH; vb abstract). -/
+@[seg_round]
 theorem p01r19 (vb : value) (p : T1P) {tr : List trace_event} :
     app (dnmsRoundM p01File.tagDefs 0)
         (p01fam (p01ar19 vb) tr 18 p)
@@ -1327,6 +1346,7 @@ theorem p01cmp_eval_F (x : Int) (h1 : -2147483648 ≤ x)
       (s10cF x h1 h2 hge env memo) (by rfl)))
 
 /-- R10, TRUE side: the compare round lands `loaded 1`. -/
+@[seg_round]
 theorem p01r10T (x : Int) (h1 : -2147483648 ≤ x)
     (h2 : x ≤ 2147483647) (hlt : x < 0) (p : T1P) :
     app (dnmsRoundM p01File.tagDefs 0)
@@ -1361,6 +1381,7 @@ theorem p01r10T (x : Int) (h1 : -2147483648 ≤ x)
   · rfl
 
 /-- R10, FALSE side: the compare round lands `loaded 0`. -/
+@[seg_round]
 theorem p01r10F (x : Int) (h1 : -2147483648 ≤ x)
     (h2 : x ≤ 2147483647) (hge : ¬ x < 0) (p : T1P) :
     app (dnmsRoundM p01File.tagDefs 0)
@@ -1582,6 +1603,7 @@ theorem p01eq_eval_F (env : List (Fmap sym value))
 
 /-- R13, TRUE side: the EQ-compare case evaluates (reads a_529/a_530;
     lands loaded 0). -/
+@[seg_round]
 theorem p01r13T (x : Int) (p : T1P)
     (h529 : envLookup (p01fam p01ar13 [meLoad x] 12 p) symA529
       = some (loadedV 1))
@@ -1621,6 +1643,7 @@ theorem p01r13T (x : Int) (p : T1P)
   · rfl
 
 /-- R13, FALSE side (a_529 = 0 ⇒ loaded 1). -/
+@[seg_round]
 theorem p01r13F (x : Int) (p : T1P)
     (h529 : envLookup (p01fam p01ar13 [meLoad x] 12 p) symA529
       = some (loadedV 0))
@@ -1661,6 +1684,7 @@ theorem p01r13F (x : Int) (p : T1P)
 
 /-- R18, TRUE side (a_528 substituted at 0: NOT(0=1) ⇒ Vtrue; closed
     eval). -/
+@[seg_round]
 theorem p01r18T (x : Int) (p : T1P) :
     app (dnmsRoundM p01File.tagDefs 0)
         (p01fam (p01ar18 0) [meLoad x] 17 p)
@@ -1672,6 +1696,7 @@ theorem p01r18T (x : Int) (p : T1P) :
     rfl).trans rfl
 
 /-- R18, FALSE side (a_528 at 1: NOT(1=1) ⇒ Vfalse; closed eval). -/
+@[seg_round]
 theorem p01r18F (x : Int) (p : T1P) :
     app (dnmsRoundM p01File.tagDefs 0)
         (p01fam (p01ar18 1) [meLoad x] 17 p)
@@ -1684,6 +1709,7 @@ theorem p01r18F (x : Int) (p : T1P) :
 
 /-- R20, TRUE side: the Eif reads the guard cell a_526 = Vtrue and
     picks the then-arm. -/
+@[seg_round]
 theorem p01r20T (x : Int) (p : T1P)
     (ha : envLookup (p01fam p01ar20 [meLoad x] 19 p) symA526
       = some Vtrue) :
@@ -1919,6 +1945,7 @@ theorem update_env_aux_a542 (x : Int) (f : Fmap sym value) :
 /-! ## THE TRUE-SIDE TAIL (x < 0: return 0 via the ret label) -/
 
 /-- R21T: the then-arm's specified-zero evaluates (closed). -/
+@[seg_round]
 theorem p01r21T (x : Int) (p : T1P) :
     app (dnmsRoundM p01File.tagDefs 0)
         (p01fam p01arT21 [meLoad x] 20 p)
@@ -1930,6 +1957,7 @@ theorem p01r21T (x : Int) (p : T1P) :
     rfl).trans rfl
 
 /-- R22T: the Ebound strips (tau). -/
+@[seg_round]
 theorem p01r22T (x : Int) (p : T1P) :
     app (dnmsRoundM p01File.tagDefs 0)
         (p01fam p01arT22 [meLoad x] 21 p)
@@ -1939,6 +1967,7 @@ theorem p01r22T (x : Int) (p : T1P) :
   exact (advance_tau_misc).trans rfl
 
 /-- R23T: the Esseq binds a_540 := loaded 0 (BIRTH). -/
+@[seg_round]
 theorem p01r23T (x : Int) (p : T1P) :
     app (dnmsRoundM p01File.tagDefs 0)
         (p01fam p01arT23 [meLoad x] 22 p)
@@ -1949,6 +1978,7 @@ theorem p01r23T (x : Int) (p : T1P) :
   exact (advance_tau_misc).trans rfl
 
 /-- R24T: the Erun jump — conv chain at a_540 (= 0), a_543 BORN. -/
+@[seg_round]
 theorem p01r24T (x : Int) (p : T1P)
     (ha : envLookup (p01fam p01arT24 [meLoad x] 23 p) symA540
       = some (loadedV 0)) :
@@ -1985,6 +2015,7 @@ theorem p01r24T (x : Int) (p : T1P)
   rfl
 
 /-- R25T: a_543 evaluates (the return value reaches the arena). -/
+@[seg_round]
 theorem p01r25T (x : Int) (p : T1P)
     (ha : envLookup (p01fam p01arT25 [meLoad x] 24 p) symA543
       = some (loadedV 0)) :
@@ -2023,6 +2054,7 @@ theorem p01r25T (x : Int) (p : T1P)
 
 /-- R-terminal, TRUE side: the value state offers exactly the done
     step at 0. -/
+@[seg_round]
 theorem p01r26T (x : Int) (p : T1P) :
     app (dnmsRoundM p01File.tagDefs 0)
         (p01fam p01arT26 [meLoad x] 25 p)
@@ -2035,6 +2067,7 @@ theorem p01r26T (x : Int) (p : T1P) :
     return x) -/
 
 /-- R20F: the Eif reads a_526 = Vfalse and falls through to Vunit. -/
+@[seg_round]
 theorem p01r20F (x : Int) (p : T1P)
     (ha : envLookup (p01fam p01ar20 [meLoad x] 19 p) symA526
       = some Vfalse) :
@@ -2071,6 +2104,7 @@ theorem p01r20F (x : Int) (p : T1P)
   · rfl
 
 /-- R21F: the unit Esseq consumes Vunit (tau). -/
+@[seg_round]
 theorem p01r21F (x : Int) (p : T1P) :
     app (dnmsRoundM p01File.tagDefs 0)
         (p01fam p01arF21 [meLoad x] 20 p)
@@ -2080,6 +2114,7 @@ theorem p01r21F (x : Int) (p : T1P) :
   exact (advance_tau_misc).trans rfl
 
 /-- R22F: the reload's pure operand evaluates — reads x's cell. -/
+@[seg_round]
 theorem p01r22F (x : Int) (p : T1P)
     (hx : envLookup (p01fam p01arF22 [meLoad x] 21 p) symX
       = some xPtrV) :
@@ -2116,6 +2151,7 @@ theorem p01r22F (x : Int) (p : T1P)
   · rfl
 
 /-- R23F: the Ewseq binds a_541 (BIRTH). -/
+@[seg_round]
 theorem p01r23F (x : Int) (p : T1P) :
     app (dnmsRoundM p01File.tagDefs 0)
         (p01fam p01arF23 [meLoad x] 22 p)
@@ -2126,6 +2162,7 @@ theorem p01r23F (x : Int) (p : T1P) :
   exact (advance_tau_misc).trans rfl
 
 /-- R24F: the second Load's operands evaluate — reads a_541's cell. -/
+@[seg_round]
 theorem p01r24F (x : Int) (p : T1P)
     (ha : envLookup (p01fam p01arF24 [meLoad x] 23 p) symA541
       = some xPtrV) :
@@ -2169,6 +2206,7 @@ theorem p01r24F (x : Int) (p : T1P)
   · rfl
 
 /-- R25F: THE SECOND LOAD (same owned bytes; second aid drawn). -/
+@[seg_round]
 theorem p01r25F (x : Int) (p : T1P)
     (hget : p.ls.allocations.get? 0 = some allocX)
     (hbytes : ∀ i : Nat, (hi : i < (xBytes x).length) →
@@ -2180,8 +2218,8 @@ theorem p01r25F (x : Int) (p : T1P)
     app (dnmsRoundM p01File.tagDefs 0)
         (p01fam p01arF25 [meLoad x] 24 p)
       = (NDactive (Sum.inl NOWAKEUP),
-         p01σ (p01arF26 x) p.f₁ p.tS (p.aS + 1) p.eS p.sS p.ls
-           [meLoad x, meLoad x] 24) := by
+         p01fam (p01arF26 x) [meLoad x, meLoad x] 24
+           { p with aS := p.aS + 1 }) := by
   refine dnmsRoundM_adv rfl ?_
   apply (app_bind_active ?hreq).trans
   case hreq =>
@@ -2198,6 +2236,7 @@ theorem p01r25F (x : Int) (p : T1P)
   rfl
 
 /-- R26F: the Ebound/Eannot wrapper strips (tau). -/
+@[seg_round]
 theorem p01r26F (x : Int) (p : T1P) :
     app (dnmsRoundM p01File.tagDefs 0)
         (p01fam (p01arF26 x) [meLoad x, meLoad x] 24 p)
@@ -2207,6 +2246,7 @@ theorem p01r26F (x : Int) (p : T1P) :
   exact (advance_tau_misc).trans rfl
 
 /-- R27F: the Esseq binds a_542 := loaded x (BIRTH). -/
+@[seg_round]
 theorem p01r27F (x : Int) (p : T1P) :
     app (dnmsRoundM p01File.tagDefs 0)
         (p01fam (p01arF27 x) [meLoad x, meLoad x] 25 p)
@@ -2218,6 +2258,7 @@ theorem p01r27F (x : Int) (p : T1P) :
 
 /-- R28F: the Erun jump — conv chain at a_542 (= x, range-checked),
     a_543 BORN. -/
+@[seg_round]
 theorem p01r28F (x : Int) (h1 : -2147483648 ≤ x)
     (h2 : x ≤ 2147483647) (p : T1P)
     (ha : envLookup (p01fam p01arF28 [meLoad x, meLoad x] 26 p)
@@ -2255,6 +2296,7 @@ theorem p01r28F (x : Int) (h1 : -2147483648 ≤ x)
   rfl
 
 /-- R29F: a_543 evaluates (the return value = x reaches the arena). -/
+@[seg_round]
 theorem p01r29F (x : Int) (p : T1P)
     (ha : envLookup (p01fam p01arF29 [meLoad x, meLoad x] 27 p)
       symA543 = some (loadedV x)) :
@@ -2292,6 +2334,7 @@ theorem p01r29F (x : Int) (p : T1P)
   · rfl
 
 /-- R-terminal, FALSE side: the done offer at x. -/
+@[seg_round]
 theorem p01r30F (x : Int) (p : T1P) :
     app (dnmsRoundM p01File.tagDefs 0)
         (p01fam (p01arF30 x) [meLoad x, meLoad x] 28 p)

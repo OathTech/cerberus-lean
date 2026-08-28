@@ -1243,7 +1243,9 @@ open Lean in
 -- equations] + famInv +2 [t1_inv/t1_inv0] registered as stepper
 -- supply (kinds roundEq/famInv — SUPPLY entries, not laws);
 -- same-commit provenance.)
-/-- info: step_law census: 119 laws [advance 5, construct 9, envAlg 3, envMap 7, evalArith 2, evalPull 9, famInv 2, heapWP 4, loop 1, memBlock 7, memRW 21, perform 6, roundEq 10, roundGlue 3, segLink 8, stateWP 22] -/
+-- (119 → 162, V2b P01 stepper supply: roundEq +41, famInv +2;
+-- same-commit provenance.)
+/-- info: step_law census: 162 laws [advance 5, construct 9, envAlg 3, envMap 7, evalArith 2, evalPull 9, famInv 4, heapWP 4, loop 1, memBlock 7, memRW 21, perform 6, roundEq 51, roundGlue 3, segLink 8, stateWP 22] -/
 #guard_msgs in #step_law_census
 -- (V0 2026-08-27, THE KILL BASKET — record
 -- docs/2026-08-27_v0-statements-and-ban.md: the T1–T5 threaded
@@ -1665,7 +1667,7 @@ open Lean in
 -- [PerStepPeel, CerbStateAdequacy §V2] — the big-step↔small-step
 -- simulation infrastructure; same-commit provenance).
 /--
-info: RelSem audit sweep: 3946 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 3930 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do

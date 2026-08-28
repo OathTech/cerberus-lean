@@ -170,9 +170,16 @@ private def fillHapp (happTy : Expr) (cand : Name) : MetaM Expr := do
     for marg in margs do
       let marg ← instantiateMVars marg
       if marg.isMVar then
+        let mty ← instantiateMVars (← marg.mvarId!.getType)
+        -- ONLY Prop holes are hypothesis holes; DATA holes (the
+        -- branch-valued scalars like the shared rounds' `c`) stay
+        -- flex — the canonical-context index premises disambiguate
+        -- them (solving a data hole from the local context would
+        -- grab an arbitrary same-typed term)
+        unless (← inferType mty).isProp do continue
         unless ← solveHyp xs marg.mvarId! do
           throwError "round {cand}: hypothesis has no source:\
-            {indentExpr (← instantiateMVars (← marg.mvarId!.getType))}"
+            {indentExpr mty}"
     let pf := mkAppN (mkConst cand (cinfo.levelParams.map .param)) margs
     mkLambdaFVars xs (← instantiateMVars pf)
 
@@ -252,6 +259,8 @@ private def dispatchPremise (linkC : Name) (pack0 : Expr) (m : MVarId) :
           for mm in ms do
             let mm ← instantiateMVars mm
             if mm.isMVar then
+              let mmty ← instantiateMVars (← mm.mvarId!.getType)
+              unless (← inferType mmty).isProp do continue
               unless ← solveHyp xs mm.mvarId! do failure
           mkLambdaFVars xs (← instantiateMVars (mkAppN
             (mkConst l.name (ci.levelParams.map .param)) ms))
@@ -283,7 +292,7 @@ private def dispatchPremise (linkC : Name) (pack0 : Expr) (m : MVarId) :
       let lst := gargs[gargs.size - 2]!
       let idxE ← instantiateMVars gargs[gargs.size - 1]!
       let rhsW ← instantiateMVars rhs
-      if rhsW.hasExprMVar || lst.hasExprMVar then return false
+      if lst.hasExprMVar then return false
       unless rhsW.isAppOf ``Option.some do
         throwError "seg_run [{linkC}]: index premise rhs shape:\
           {indentExpr rhsW}"
@@ -292,10 +301,22 @@ private def dispatchPremise (linkC : Name) (pack0 : Expr) (m : MVarId) :
       let key ← if pairW.isAppOfArity ``Prod.mk 4 then
           pure pairW.getAppArgs[2]!
         else mkAppM ``Prod.fst #[pairE]
+      -- the KEY must be determined; the VALUE may still be flex (a
+      -- branch-valued scalar) — the sides-unification below both
+      -- CHECKS the entry and ASSIGNS the flex value (this is what
+      -- disambiguates same-key candidates: the branch-arm rounds
+      -- differ only in cell VALUES)
+      if (← instantiateMVars key).hasExprMVar then return false
       if idxE.isMVar then
         let idx ← findPairIdx key lst
         unless ← isDefEq idxE (mkNatLit idx) do
           throwError "seg_run [{linkC}]: index assignment failed"
+      let ty' ← instantiateMVars (← m.getType)
+      let some (_, lhs', rhs') := ty'.eq?
+        | throwError "seg_run [{linkC}]: index premise shape"
+      unless ← withProbeBudget (isDefEqGuarded lhs' rhs') do
+        throwError "seg_run [{linkC}]: index premise does not hold \
+          (wrong cell value?):{indentExpr ty'}"
       let ty' ← instantiateMVars (← m.getType)
       m.assign (← mkRflHint ty')
       return true
@@ -455,6 +476,10 @@ private def buildLink (gf gs td tid : Expr) (ΓE : Expr) (cand : Name)
   let delta := concl.getAppArgs[concl.getAppNumArgs - 1]!
   if delta.hasExprMVar then
     throwError "seg_run [{linkC}]: successor context still open"
+  if (← instantiateMVars happPf).hasExprMVar then
+    throwError "seg_run [{linkC}]: round equation {cand} has an \
+      UNDETERMINED data binder (unused ∀-scalar?) — drop it from \
+      the supply statement"
   let pf ← instantiateMVars (mkAppN
     (mkConst linkC (cinfo.levelParams.map .param)) args)
   return { pf, delta }
@@ -511,17 +536,22 @@ private def roundCandidates (td tid c : Expr) :
     for{indentExpr queryE}"
   let mut out := #[]
   for l in hits do
-    let ok ← withProbeBudget <| observing? do
-      withoutModifyingState do
-        let ci ← getConstInfo l.name
-        let (_, _, cc) ← forallMetaTelescope ci.type
-        let some (_, lhsE, _) := cc.eq? | failure
-        unless ← isDefEq lhsE queryE do failure
-        -- control-image agreement: ctlOf of the equation's state
-        let σE := lhsE.appArg!
-        let ctl ← mkAppM ``ctlOf #[σE]
-        unless ← isDefEq ctl c do failure
-        pure true
+    let ok ← withProbeBudget <| tryCatchRuntimeEx
+      (observing? do
+        withoutModifyingState do
+          let ci ← getConstInfo l.name
+          let (_, _, cc) ← forallMetaTelescope ci.type
+          let some (_, lhsE, _) := cc.eq? | failure
+          unless ← isDefEq lhsE queryE do failure
+          -- control-image agreement: ctlOf of the equation's state
+          let σE := lhsE.appArg!
+          let ctl ← mkAppM ``ctlOf #[σE]
+          unless ← isDefEq ctl c do failure
+          pure true)
+      (fun ex => do
+        trace[RelSem.segRun] "roundCandidates: {l.name} runtime-ex: \
+          {ex.toMessageData}"
+        pure none)
     if ok.isSome then out := out.push l
     else trace[RelSem.segRun] "roundCandidates: {l.name} filtered \
       (LHS/ctl disagreement)"
@@ -552,48 +582,53 @@ elab "seg_run" : tactic => do
   let mut stopMsg : MessageData := m!""
   let mut running := true
   while running do
-    let comps ← ctxComponents ΓE
-    let c := comps[0]!
-    let cands ← roundCandidates parts.td parts.tid c
-    if cands.isEmpty then
-      stopMsg := m!"no registered round equation matches the \
-        control point{indentExpr c}"
-      running := false
-      continue
-    -- terminal?
-    let mut term := false
-    for l in cands do
-      if ← isTerminalCand l.name then term := true
-    if term then
-      stopMsg := m!"terminal offer round reached (apply \
-        `Seg.seg_done`)"
-      running := false
-      continue
-    -- try candidates × links
-    let mut built : Option BuiltLink := none
-    let mut failures : Array MessageData := #[]
-    for l in cands do
-      if built.isSome then continue
-      for linkC in linkConsts do
+    -- PER-ROUND BUDGET ISOLATION (the R4 discipline, one level up):
+    -- each round's whole dispatch gets a fresh heartbeat count, so
+    -- the walk's total cost scales with the ROUND COUNT and a long
+    -- straight-line run cannot exhaust one declaration budget. No
+    -- global raise: each round stays under the ambient allowance.
+    let stepRes ← Core.withCurrHeartbeats do
+      let comps ← ctxComponents ΓE
+      let c := comps[0]!
+      let cands ← roundCandidates parts.td parts.tid c
+      if cands.isEmpty then
+        return Sum.inr m!"no registered round equation matches the \
+          control point{indentExpr c}"
+      let mut term := false
+      for l in cands do
+        if ← isTerminalCand l.name then term := true
+      if term then
+        return Sum.inr m!"terminal offer round reached (apply \
+          `Seg.seg_done`)"
+      let mut built : Option BuiltLink := none
+      let mut failures : Array MessageData := #[]
+      for l in cands do
         if built.isSome then continue
-        let s0 ← saveState
-        try
-          built := some (← buildLink parts.gf parts.gs parts.td
-            parts.tid ΓE l.name linkC)
-        catch ex =>
-          s0.restore
-          failures := failures.push
-            m!"[{l.name} × {linkC}] {ex.toMessageData}"
-    match built with
-    | some b =>
+        for linkC in linkConsts do
+          if built.isSome then continue
+          let s0 ← saveState
+          try
+            built := some (← Core.withCurrHeartbeats
+              (buildLink parts.gf parts.gs parts.td
+                parts.tid ΓE l.name linkC))
+          catch ex =>
+            s0.restore
+            failures := failures.push
+              m!"[{l.name} × {linkC}] {ex.toMessageData}"
+      match built with
+      | some b => return Sum.inl b
+      | none =>
+        return Sum.inr m!"no link applies at{indentExpr c}\n\
+          {failures}\n(if two candidates differ only in a \
+          path condition, case-split first — this is a BRANCH cut \
+          point)"
+    match stepRes with
+    | Sum.inl b =>
       links := links.push b
       ΓE := b.delta
       trace[RelSem.segRun] "link {links.size}: → {b.delta}"
-    | none =>
-      stopMsg := m!"no link applies at{indentExpr c}\n\
-        {failures}\n(if two candidates differ only in a \
-        path condition, case-split first — this is a BRANCH cut \
-        point)"
+    | Sum.inr msg =>
+      stopMsg := msg
       running := false
   if links.isEmpty then
     throwError "seg_run: could not take a single step — {stopMsg}"
@@ -607,6 +642,7 @@ elab "seg_run" : tactic => do
   -- against the goal, the chain, and the literal fuel split; the
   -- `hcont` slot becomes the next goal
   let ci ← getConstInfo ``RelSem.Seg.SegStep.consume
+  Core.withCurrHeartbeats do
   let (cargs2, _, cc) ← forallMetaTelescope ci.type
   unless ← isDefEq cc (← mvarId.getType) do
     throwError "seg_run: consume conclusion does not match the goal"
