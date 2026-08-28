@@ -48,28 +48,6 @@ open Iris Iris.BI Iris.ProgramLogic
 theorem t1Proj_fam (a : RExpr) (tr : List trace_event) (n : Nat)
     (p : T1P) : t1Proj (t1fam a tr n p) = p := rfl
 
-/-! ## The bind-round family maps (named `upd` functions) -/
-
-@[reducible] def updR1 (σ : driver_state) : driver_state :=
-  t1fam arena2 [] 2
-    { t1Proj σ with
-        f₁ := update_env_aux patA499 xPtrV (t1Proj σ).f₁ }
-
-@[reducible] def updR3 (x : Int) (σ : driver_state) : driver_state :=
-  t1fam (arena4 x) [meLoad x] 3
-    { t1Proj σ with aS := (t1Proj σ).aS + 1 }
-
-@[reducible] def updR5 (x : Int) (σ : driver_state) : driver_state :=
-  t1fam bodyTail [meLoad x] 5
-    { t1Proj σ with
-        f₁ := update_env_aux patA500 (loadedV x) (t1Proj σ).f₁ }
-
-@[reducible] def updR6 (x : Int) (σ : driver_state) : driver_state :=
-  t1fam arena7 [meLoad x] 6
-    { t1Proj σ with
-        f₁ := update_env_aux
-          (mk_sym_pat symA526 (BTy_loaded OTy_integer)) (loadedV x)
-          (t1Proj σ).f₁ }
 
 /-! ## Instance-generic birth legs (the harness's setup fold inserts
     at `instBEqSym` + the ordCompare closure — a DIFFERENT elaborated
@@ -215,9 +193,108 @@ theorem wp_expr_eq {GF : BundledGFunctors} [CerbStGS GF]
   iintro H
   iexact H
 
+/-! ## The segment-layer instance data (V2b): family shapes + the
+    body context + THE BODY CHAIN — the whole straight-line run of
+    the id body as ONE composed `SegStep` fact (8 rounds; each link
+    is one registered rule fed by one T1Rounds equation). -/
+
+open RelSem.Seg in
+/-- FamShape at any T1-family instance (all rfl). -/
+def t1Shape (a : RExpr) (tr : List trace_event) (n : Nat) :
+    Seg.FamShape (t1fam a tr n) :=
+  ⟨fun _ => rfl, fun _ => rfl, fun _ => rfl, fun _ => rfl⟩
+
+/-- FamShape at the stage-0 family. -/
+def t1Shape0 : Seg.FamShape t1fam0 :=
+  ⟨fun _ => rfl, fun _ => rfl, fun _ => rfl, fun _ => rfl⟩
+
+/-- The body-entry env cells (x's parameter cell). -/
+@[reducible] def env0 : List (sym × value) := [(symX, xPtrV)]
+/-- The body-entry allocation fragments (x's object, errno). -/
+@[reducible] def al0 : List (Int × CerbMem.Allocation) :=
+  [(mr0.nextAllocId, allocXS), (mr1.nextAllocId, allocErrS)]
+/-- The body-entry byte ranges (x's bytes, errno's zeros). -/
+@[reducible] def bs0 (x : Int) : List (Int × List CerbMem.AbsByte) :=
+  [(xAddr, xBytes x), (errAddr, zeroBytes)]
+
+open RelSem.Seg in
+/-- THE T1 BODY as one segment: stage-0 → the terminal control point
+    (8 rounds — evaluate x, bind a_524, read it, THE LOAD, unwrap,
+    bind a_525, the conv jump, read a_526). -/
+theorem t1_seg_body {GF : BundledGFunctors} [CerbStGS GF]
+    (x : Int) (seed : Nat)
+    (hx1 : -2147483648 ≤ x) (hx2 : x ≤ 2147483647) :
+    SegStep (GF := GF) t1File.tagDefs 0 8
+      ⟨t1Ctl0, ⟨1, 0, 0, seed⟩, env0, mr2, al0, bs0 x⟩
+      ⟨t1CtlAt (arena8 x) [meLoad x] 7, ⟨1, 1, 0, seed⟩,
+        [(symA526, loadedV x), (symA525, loadedV x),
+         (symA524, xPtrV), (symX, xPtrV)],
+        mr2, al0, bs0 x⟩ := by
+  -- R0: evaluate x (env read at index 0)
+  refine SegStep.trans (m := 7) (link_ctl_env1 (i := 0)
+    (cO := t1CtlAt arena1 [] 1) (by rfl) t1Shape0
+    (t1Shape arena1 [] 1) (fun σ h _ => t1_inv0 h)
+    (fun p hwf hx => t1r0v x p hwf hx) (fun p => rfl)) ?_
+  -- R1: a_524 born
+  refine SegStep.trans (m := 6) (link_birth1 (x := symA524)
+    (vNew := xPtrV) (cO := t1CtlAt arena2 [] 2)
+    (by simp [Seg.domOf, env0, symNum, symX, symA524])
+    (t1Shape arena1 [] 1) (t1Shape arena2 [] 2)
+    (fun σ h _ => t1_inv h)
+    (fun p _ _ => t1r1 p) (fun p => rfl)) ?_
+  -- R2: a_524 read (index 0)
+  refine SegStep.trans (m := 5) (link_ctl_env1 (i := 0)
+    (cO := t1CtlAt arena3 [] 3) (by rfl)
+    (t1Shape arena2 [] 2) (t1Shape arena3 [] 3)
+    (fun σ h _ => t1_inv h)
+    (fun p _ ha => t1r2 p ha) (fun p => rfl)) ?_
+  -- R3: THE LOAD (x's bytes recombine to exactly x; aid draw)
+  refine SegStep.trans (m := 4) (link_load (j := 0) (jb := 0)
+    (cO := t1CtlAt (arena4 x) [meLoad x] 3) (by rfl) (by rfl)
+    (t1Shape arena3 [] 3) (t1Shape (arena4 x) [meLoad x] 3)
+    (fun σ h _ => t1_inv h)
+    (fun p hwf hget hbytes hmr hinv =>
+      t1r3 x p hget hbytes
+        (by rw [show p.ls.lastUsedUnionMembers
+            = (memRestOf (t1fam arena3 [] 3 p)).lastUsedUnionMembers
+            from rfl, hmr]; rfl)
+        (by rw [show p.ls.funptrmap
+            = (memRestOf (t1fam arena3 [] 3 p)).funptrmap
+            from rfl, hmr]; rfl)
+        hinv hx1 hx2)
+    (fun p => rfl)) ?_
+  -- R4: the Ebound wrapper strips
+  refine SegStep.trans (m := 3) (link_ctl
+    (cO := t1CtlAt (arena5 x) [meLoad x] 4)
+    (t1Shape (arena4 x) [meLoad x] 3)
+    (t1Shape (arena5 x) [meLoad x] 4) (fun σ h _ => t1_inv h)
+    (fun p _ => t1r4 x p) (fun p => rfl)) ?_
+  -- R5: a_525 born
+  refine SegStep.trans (m := 2) (link_birth1 (x := symA525)
+    (vNew := loadedV x) (cO := t1CtlAt bodyTail [meLoad x] 5)
+    (by simp [Seg.domOf, env0, symNum, symX, symA524, symA525])
+    (t1Shape (arena5 x) [meLoad x] 4)
+    (t1Shape bodyTail [meLoad x] 5) (fun σ h _ => t1_inv h)
+    (fun p _ _ => t1r5 x p) (fun p => rfl)) ?_
+  -- R6: the Erun jump (reads a_525 at index 0, births a_526; the
+  -- conv range check rides intRange x)
+  refine SegStep.trans (m := 1) (link_birth1_env1 (x := symA526)
+    (vNew := loadedV x) (iy := 0) (y := symA525) (vy := loadedV x)
+    (cO := t1CtlAt arena7 [meLoad x] 6)
+    (by simp [Seg.domOf, env0, symNum, symX, symA524, symA525,
+      symA526])
+    (by rfl) (t1Shape bodyTail [meLoad x] 5)
+    (t1Shape arena7 [meLoad x] 6) (fun σ h _ => t1_inv h)
+    (fun p _ _ ha => t1r6 x hx1 hx2 p ha) (fun p => rfl)) ?_
+  -- R7: a_526 evaluates (index 0)
+  exact link_ctl_env1 (i := 0)
+    (cO := t1CtlAt (arena8 x) [meLoad x] 7) (by rfl)
+    (t1Shape arena7 [meLoad x] 6)
+    (t1Shape (arena8 x) [meLoad x] 7) (fun σ h _ => t1_inv h)
+    (fun p _ ha => t1r7 x p ha) (fun p => rfl)
+
 /-! ## THE T1 THEOREM -/
 
-set_option maxHeartbeats 4000000 in
 theorem t1_threaded_proved : T1ThreadedStatement := by
   intro x hx
   obtain ⟨hx1, hx2⟩ := hx
@@ -399,331 +476,32 @@ theorem t1_threaded_proved : T1ThreadedStatement := by
                           (finalize t1File.tagDefs "callND"
                             dr_st'))))))) ?heq)
               case heq => rfl
-              -- R0: evaluate x (the cell READ at its symbolic value)
-              iapply (wpk_seq_ctl_env1_fam (GF := CerbStS)
-                (fam := t1fam0) (x := symX) (vx := xPtrV)
-                (c' := t1CtlAt arena1 [] 1)
-                (upd := fun σ => t1fam arena1 [] 1 (t1Proj σ))
-                (fun σ hσ hwf => t1_inv0 hσ)
-                (fun p hwf hx => t1r0v x p (t1fam0_frame hwf) hx)
-                (fun p hwf hx => rfl) (fun p hwf hx => rfl)
-                (fun p hwf hx => rfl) (fun p hwf hx => rfl))
-              isplitl [Hc HX]
-              · iframe Hc HX
-              iintro ⟨Hc, HX⟩
-              -- R1: bind the parameter copy a_524 (BORN)
-              iapply (wpk_seq_birth1_fam (GF := CerbStS)
-                (fam := t1fam arena1 [] 1) (x := symA524)
-                (vNew := xPtrV) (d := d1)
-                (c' := t1CtlAt arena2 [] 2)
-                (upd := updR1)
-                (by simp [d1, symNum, symA524, symX])
-                (fun σ hσ hwf => t1_inv hσ)
-                (fun p hwf hdm => t1r1 p)
-                (fun p hwf hdm => rfl) (fun p hwf hdm => rfl)
-                (fun p hwf hdm => rfl)
-                (fun p hwf hdm => by
-                  show lookup_env symA524
-                    [update_env_aux patA499 xPtrV p.f₁] = some xPtrV
-                  rw [update_env_aux_a524]
-                  exact birth_new (t1fam_frame hwf))
-                (fun p hwf hdm z v' hzv => by
-                  show lookup_env z
-                    [update_env_aux patA499 xPtrV p.f₁] = some v'
-                  rw [update_env_aux_a524]
-                  refine birth_pres (t1fam_frame hwf) ?_ z v' hzv
-                  intro w hw
-                  cases hlk : lookup_env w [p.f₁] with
-                  | none => rfl
-                  | some vw =>
-                    exfalso
-                    have hin := hdm w vw hlk
-                    obtain ⟨db, nb, sdb⟩ := w
-                    obtain ⟨-, hn⟩ := (RelSem.Kit.symCmpO_eq_iff
-                      _ db _ nb _ sdb).1 hw
-                    simp only [symNum] at hin
-                    rw [← hn] at hin
-                    simp [d1, symNum, symX] at hin)
-                (fun p hwf hdm z v' hzv => by
-                  have hzv' : lookup_env z
-                      [update_env_aux patA499 xPtrV p.f₁]
-                      = some v' := hzv
-                  rw [update_env_aux_a524] at hzv'
-                  exact birth_rev (t1fam_frame hwf) z v' hzv')
-                (fun p hwf hdm => by
-                  intro f hf
-                  have hf' : f ∈ [update_env_aux patA499 xPtrV p.f₁]
-                    := hf
-                  rw [update_env_aux_a524] at hf'
-                  cases hf' with
-                  | head => exact birth_wfp (t1fam_frame hwf)
-                  | tail _ h => cases h))
-              isplitl [Hc Hd]
-              · iframe Hc Hd
-              iintro ⟨Hc, Hd, HA524⟩
-              -- R2: the Load's pointer operand (a_524's cell read)
-              iapply (wpk_seq_ctl_env1_fam (GF := CerbStS)
-                (fam := t1fam arena2 [] 2) (x := symA524)
-                (vx := xPtrV) (c' := t1CtlAt arena3 [] 3)
-                (upd := fun σ => t1fam arena3 [] 3 (t1Proj σ))
-                (fun σ hσ hwf => t1_inv hσ)
-                (fun p hwf ha => t1r2 p ha)
-                (fun p hwf ha => rfl) (fun p hwf ha => rfl)
-                (fun p hwf ha => rfl) (fun p hwf ha => rfl))
-              isplitl [Hc HA524]
-              · iframe Hc HA524
-              iintro ⟨Hc, HA524⟩
-              -- R3: THE LOAD (x's bytes recombine to exactly x; one
-              -- action id drawn)
-              iapply (wpk_seq_ctl_sup_mem (GF := CerbStS)
-                (c := t1CtlAt arena3 [] 3)
-                (c' := t1CtlAt (arena4 x) [meLoad x] 3)
-                (S := ⟨1, 0, 0, seed⟩) (S' := ⟨1, 1, 0, seed⟩)
-                (mr := mr2) (aid := mr0.nextAllocId) (al := allocXS)
-                (addr := xAddr) (bs := xBytes x)
-                (upd := updR3 x)
-                (fun σ hσ hwf hsup hmr hget hbytes hinv => by
-                  obtain ⟨p, rfl⟩ := t1_inv hσ
-                  have hlum : p.ls.lastUsedUnionMembers = [] := by
-                    rw [show p.ls.lastUsedUnionMembers
-                      = (memRestOf (t1fam arena3 [] 3
-                          p)).lastUsedUnionMembers from rfl, hmr]
-                    rfl
-                  have hfpm : p.ls.funptrmap = [] := by
-                    rw [show p.ls.funptrmap
-                      = (memRestOf (t1fam arena3 [] 3 p)).funptrmap
-                      from rfl, hmr]
-                    rfl
-                  exact t1r3 x p hget hbytes hlum hfpm hinv hx1 hx2)
-                (fun σ hσ hwf hsup hmr => by
-                  obtain ⟨p, rfl⟩ := t1_inv hσ; rfl)
-                (fun σ hσ hwf hsup hmr => by
-                  obtain ⟨p, rfl⟩ := t1_inv hσ; rfl)
-                (fun σ hσ hwf hsup hmr => by
-                  obtain ⟨p, rfl⟩ := t1_inv hσ
-                  have h := hsup
-                  rw [show suppliesOf (t1fam arena3 [] 3 p)
-                    = ⟨p.tS, p.aS, p.eS, p.sS⟩ from rfl,
-                    Supplies.mk.injEq] at h
-                  obtain ⟨h1, h2, h3, h4⟩ := h
-                  show (⟨p.tS, p.aS + 1, p.eS, p.sS⟩ : Supplies) = _
-                  rw [h1, h2, h3, h4])
-                (fun σ hσ hwf hsup hmr => by
-                  obtain ⟨p, rfl⟩ := t1_inv hσ; rfl))
-              isplitl [Hc Hs Hm Hax Hpx]
-              · iframe Hc Hs Hm Hax Hpx
-              iintro ⟨Hc, Hs, Hm, Hax, Hpx⟩
-              -- R4: the Ebound wrapper strips
-              iapply (wpk_seq_ctl_fam (GF := CerbStS)
-                (fam := t1fam (arena4 x) [meLoad x] 3)
-                (c' := t1CtlAt (arena5 x) [meLoad x] 4)
-                (upd := fun σ => t1fam (arena5 x) [meLoad x] 4
-                  (t1Proj σ))
-                (fun σ hσ hwf => t1_inv hσ)
-                (fun p hwf => t1r4 x p)
-                (fun p hwf => rfl) (fun p hwf => rfl)
-                (fun p hwf => rfl) (fun p hwf => rfl))
-              isplitl [Hc]
-              · iexact Hc
-              iintro Hc
-              -- R5: bind a_525 (the loaded value BORN into a cell)
-              iapply (wpk_seq_birth1_fam (GF := CerbStS)
-                (fam := t1fam (arena5 x) [meLoad x] 4)
-                (x := symA525) (vNew := loadedV x) (d := d2)
-                (c' := t1CtlAt bodyTail [meLoad x] 5)
-                (upd := updR5 x)
-                (by simp [d2, d1, symNum, symA525, symA524, symX])
-                (fun σ hσ hwf => t1_inv hσ)
-                (fun p hwf hdm => t1r5 x p)
-                (fun p hwf hdm => rfl) (fun p hwf hdm => rfl)
-                (fun p hwf hdm => rfl)
-                (fun p hwf hdm => by
-                  show lookup_env symA525
-                    [update_env_aux patA500 (loadedV x) p.f₁]
-                    = some (loadedV x)
-                  rw [update_env_aux_a525]
-                  exact birth_new (t1fam_frame hwf))
-                (fun p hwf hdm z v' hzv => by
-                  show lookup_env z
-                    [update_env_aux patA500 (loadedV x) p.f₁]
-                    = some v'
-                  rw [update_env_aux_a525]
-                  refine birth_pres (t1fam_frame hwf) ?_ z v' hzv
-                  intro w hw
-                  cases hlk : lookup_env w [p.f₁] with
-                  | none => rfl
-                  | some vw =>
-                    exfalso
-                    have hin := hdm w vw hlk
-                    obtain ⟨db, nb, sdb⟩ := w
-                    obtain ⟨-, hn⟩ := (RelSem.Kit.symCmpO_eq_iff
-                      _ db _ nb _ sdb).1 hw
-                    simp only [symNum] at hin
-                    rw [← hn] at hin
-                    simp [d2, d1, symNum, symA524, symX] at hin)
-                (fun p hwf hdm z v' hzv => by
-                  have hzv' : lookup_env z
-                      [update_env_aux patA500 (loadedV x) p.f₁]
-                      = some v' := hzv
-                  rw [update_env_aux_a525] at hzv'
-                  exact birth_rev (t1fam_frame hwf) z v' hzv')
-                (fun p hwf hdm => by
-                  intro f hf
-                  have hf' : f ∈
-                      [update_env_aux patA500 (loadedV x) p.f₁]
-                    := hf
-                  rw [update_env_aux_a525] at hf'
-                  cases hf' with
-                  | head => exact birth_wfp (t1fam_frame hwf)
-                  | tail _ h => cases h))
-              isplitl [Hc Hd]
-              · iframe Hc Hd
-              iintro ⟨Hc, Hd, HA525⟩
-              -- R6: the Erun jump — conv_loaded_int evaluates (the
-              -- range check rides `intRange x`), a_526 BORN
-              iapply (wpk_seq_birth1_env1_fam (GF := CerbStS)
-                (fam := t1fam bodyTail [meLoad x] 5)
-                (x := symA526) (vNew := loadedV x) (d := d3)
-                (y := symA525) (vy := loadedV x)
-                (c' := t1CtlAt arena7 [meLoad x] 6)
-                (upd := updR6 x)
-                (by simp [d3, d2, d1, symNum, symA526, symA525,
-                  symA524, symX])
-                (fun σ hσ hwf => t1_inv hσ)
-                (fun p hwf hdm ha => t1r6 x hx1 hx2 p ha)
-                (fun p hwf hdm ha => rfl) (fun p hwf hdm ha => rfl)
-                (fun p hwf hdm ha => rfl)
-                (fun p hwf hdm ha => by
-                  show lookup_env symA526
-                    [update_env_aux
-                      (mk_sym_pat symA526 (BTy_loaded OTy_integer))
-                      (loadedV x) p.f₁] = some (loadedV x)
-                  rw [update_env_aux_a526]
-                  exact birth_new (t1fam_frame hwf))
-                (fun p hwf hdm ha z v' hzv => by
-                  show lookup_env z
-                    [update_env_aux
-                      (mk_sym_pat symA526 (BTy_loaded OTy_integer))
-                      (loadedV x) p.f₁] = some v'
-                  rw [update_env_aux_a526]
-                  refine birth_pres (t1fam_frame hwf) ?_ z v' hzv
-                  intro w hw
-                  cases hlk : lookup_env w [p.f₁] with
-                  | none => rfl
-                  | some vw =>
-                    exfalso
-                    have hin := hdm w vw hlk
-                    obtain ⟨db, nb, sdb⟩ := w
-                    obtain ⟨-, hn⟩ := (RelSem.Kit.symCmpO_eq_iff
-                      _ db _ nb _ sdb).1 hw
-                    simp only [symNum] at hin
-                    rw [← hn] at hin
-                    simp [d3, d2, d1, symNum, symA525, symA524,
-                      symX] at hin)
-                (fun p hwf hdm ha z v' hzv => by
-                  have hzv' : lookup_env z
-                      [update_env_aux
-                        (mk_sym_pat symA526 (BTy_loaded OTy_integer))
-                        (loadedV x) p.f₁] = some v' := hzv
-                  rw [update_env_aux_a526] at hzv'
-                  exact birth_rev (t1fam_frame hwf) z v' hzv')
-                (fun p hwf hdm ha => by
-                  intro f hf
-                  have hf' : f ∈
-                      [update_env_aux
-                        (mk_sym_pat symA526 (BTy_loaded OTy_integer))
-                        (loadedV x) p.f₁] := hf
-                  rw [update_env_aux_a526] at hf'
-                  cases hf' with
-                  | head => exact birth_wfp (t1fam_frame hwf)
-                  | tail _ h => cases h))
-              isplitl [Hc Hd HA525]
-              · iframe Hc Hd HA525
-              iintro ⟨Hc, Hd, HA526, HA525⟩
-              -- R7: a_526 evaluates (the return value reaches the
-              -- arena)
-              iapply (wpk_seq_ctl_env1_fam (GF := CerbStS)
-                (fam := t1fam arena7 [meLoad x] 6) (x := symA526)
-                (vx := loadedV x)
-                (c' := t1CtlAt (arena8 x) [meLoad x] 7)
-                (upd := fun σ => t1fam (arena8 x) [meLoad x] 7
-                  (t1Proj σ))
-                (fun σ hσ hwf => t1_inv hσ)
-                (fun p hwf ha => t1r7 x p ha)
-                (fun p hwf ha => rfl) (fun p hwf ha => rfl)
-                (fun p hwf ha => rfl) (fun p hwf ha => rfl))
-              isplitl [Hc HA526]
-              · iframe Hc HA526
-              iintro ⟨Hc, HA526⟩
-              -- R8 (terminal round): the done step is offered
-              iapply (wpk_seq_ctl_fam (GF := CerbStS)
-                (fam := t1fam (arena8 x) [meLoad x] 7)
-                (c' := t1CtlAt (arena8 x) [meLoad x] 7)
-                (upd := fun σ => σ)
-                (fun σ hσ hwf => t1_inv hσ)
-                (fun p hwf => t1r8 x p)
-                (fun p hwf => rfl) (fun p hwf => rfl)
-                (fun p hwf => rfl) (fun p hwf => rfl))
-              isplitl [Hc]
-              · iexact Hc
-              iintro Hc
-              -- the dnms residual returns the accumulator
-              iapply (wpk_seq_ctl_fam (GF := CerbStS)
-                (fam := t1fam (arena8 x) [meLoad x] 7)
-                (c' := t1CtlAt (arena8 x) [meLoad x] 7)
-                (upd := fun σ => σ)
-                (fun σ hσ hwf => t1_inv hσ)
-                (fun p hwf => dnms_nil)
-                (fun p hwf => rfl) (fun p hwf => rfl)
-                (fun p hwf => rfl) (fun p hwf => rfl))
-              isplitl [Hc]
-              · iexact Hc
-              iintro Hc
-              -- the scheduler pick (one offer)
-              iapply (wpk_seq_ctl_fam (GF := CerbStS)
-                (fam := t1fam (arena8 x) [meLoad x] 7)
-                (c' := t1CtlAt (arena8 x) [meLoad x] 7)
-                (upd := fun σ => σ)
-                (fun σ hσ hwf => t1_inv hσ)
-                (fun p hwf => ndctPick_one)
-                (fun p hwf => rfl) (fun p hwf => rfl)
-                (fun p hwf => rfl) (fun p hwf => rfl))
-              isplitl [Hc]
-              · iexact Hc
-              iintro Hc
-              -- the done processing: prepare_exit rebuilds the state
-              iapply (wpk_seq_ctl_fam (GF := CerbStS)
-                (fam := t1fam (arena8 x) [meLoad x] 7)
-                (c' := t1CtlAt (mk_value_e (loadedV x)) [meLoad x] 7)
-                (upd := fun σ =>
-                  { σ with core_state0 :=
-                      prepare_exit σ.core_state0 (loadedV x) })
-                (fun σ hσ hwf => t1_inv hσ)
-                (fun p hwf => driver2Rest_done rfl)
-                (fun p hwf => rfl) (fun p hwf => rfl)
-                (fun p hwf => rfl) (fun p hwf => rfl))
-              isplitl [Hc]
-              · iexact Hc
-              iintro Hc
-              -- THE TERMINAL READOUT: finalize reads the arena — the
-              -- result is EXACTLY intValue x
-              iclear Hs
-              iclear Hm
-              iclear Hd
-              iclear HX
-              iclear HA524
-              iclear HA525
-              iclear HA526
-              iclear Hax
-              iclear Hpx
-              iclear Hae
-              iclear Hpe
-              iapply (wpk_get_done_ctl (GF := CerbStS)
-                (c := t1CtlAt (mk_value_e (loadedV x)) [meLoad x] 7)
-                (fun σ hσ => by
-                  obtain ⟨p, rfl⟩ := t1_inv hσ
-                  exact ⟨_, rfl, rfl⟩))
-              iexact Hc
+              -- §3 THE BODY (V2b: ONE fused segment consumes the
+              -- whole 8-round run, then the fused terminal —
+              -- t1_seg_body + Seg.seg_done via SegStep.consume)
+              iapply (Seg.SegStep.consume (GF := CerbStS)
+                (t1_seg_body x seed hx1 hx2)
+                (F := 1000000) (f := 999992) rfl
+                (Seg.seg_done (f' := 999999) (F := 999992)
+                  (f := 999990)
+                  (famI := t1fam (arena8 x) [meLoad x] 7)
+                  (famO := t1fam (mk_value_e (loadedV x)) [meLoad x] 7)
+                  (cO := t1CtlAt (mk_value_e (loadedV x)) [meLoad x] 7)
+                  (rv := loadedV x)
+                  (fun σ h _ => t1_inv h)
+                  (fun σ h => t1_inv h)
+                  (fun p => rfl)
+                  (fun p _ => t1r8 x p)
+                  (t1Shape (arena8 x) [meLoad x] 7)
+                  (fun p => rfl)
+                  (fun p => rfl)
+                  (fun p => rfl)
+                  (fun p => ⟨_, rfl, rfl⟩)
+                  rfl))
+              isimp only [Seg.Ctx.interp, Seg.SegCtx, env0, al0, bs0,
+                Seg.envCells, Seg.allocCells, Seg.byteCells,
+                Seg.domOf, List.map_cons, List.map_nil]
+              iframe Hc Hs Hm Hd HX Hax Hpx Hae Hpe
             iframe Hc Hs Hm Hd HX Hax Hpx Hae Hpe
           iframe Hc Hd Hs Hm Hax Hpx
         iframe Hc Hs Hm Hd
