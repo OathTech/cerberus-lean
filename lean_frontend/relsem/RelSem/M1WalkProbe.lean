@@ -36,19 +36,3 @@ theorem m1_walk_probe (x : Int) (seed : Nat) [CerbStGS CerbStS]
   exact hclose _ _
 
 end RelSem.M1
-
-open Lean Meta in
-#eval show Lean.Elab.Command.CommandElabM Unit from
-  Lean.Elab.Command.liftTermElabM do
-    let env ← getEnv
-    logInfo s!"projInfo core_file:       {(env.getProjectionFnInfo? `driver_state.core_file).isSome}"
-    let ci ← getConstInfo
-      ``RelSem.M1.m1_walk_probe.m1_walk_probe.segCtl_1_8
-    let some v := ci.value? | throwError "no value"
-    lambdaTelescope v fun _ body => do
-      let b ← whnfCore body
-      let f0 := b.getAppArgs[0]!
-      let x := f0.appArg!
-      logInfo s!"f0 struct-arg head: {x.getAppFn.constName?}"
-      let xW ← whnfCore x
-      logInfo s!"whnfCore(struct): {xW.getAppFn.constName?}"
