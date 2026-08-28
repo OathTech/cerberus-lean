@@ -1393,3 +1393,291 @@ theorem p01r10F (x : Int) (h1 : -2147483648 ≤ x)
       rfl
     · rfl
   · rfl
+-- r13 T-side chain: 5 pulled / 4 steps; final (Vloaded (LVspecified (OVinteger (.IV .Prov_none (0)))))
+def z13Tb : generic_pexpr Unit sym :=
+  (Pexpr [] () (PEif (Pexpr aU () (PEop OpEq (Pexpr aU () (PEcall (Sym symConvInt) [(Pexpr aU () (PEval (Vctype intCty))), (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (1))))))])) (Pexpr aU () (PEcall (Sym symConvInt) [(Pexpr aU () (PEval (Vctype intCty))), (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (0))))))])))) (Pexpr aU () (PEctor Cspecified [(Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (1))))))])) (Pexpr aU () (PEctor Cspecified [(Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (0))))))]))))
+
+def z13Tc : generic_pexpr Unit sym :=
+  (Pexpr [] () (PEif (Pexpr [] () (PEop OpEq (Pexpr [] () (PEif (Pexpr aU () (PEop OpEq (Pexpr aU () (PEval (Vctype intCty))) (Pexpr aU () (PEval (Vctype (Ctype [] (Basic (Integer Bool0)))))))) (Pexpr aU () (PEif (Pexpr aU () (PEop OpEq (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (1)))))) (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (0)))))))) (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (0)))))) (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (1)))))))) (Pexpr aU () (PEif (Pexpr aU () (PEcall (Sym symIsRepr) [(Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (1)))))), (Pexpr aU () (PEval (Vctype intCty)))])) (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (1)))))) (Pexpr aU () (PEif (Pexpr aU () (PEis_unsigned (Pexpr aU () (PEval (Vctype intCty))))) (Pexpr aU () (PEcall (Sym symWrapI) [(Pexpr aU () (PEval (Vctype intCty))), (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (1))))))])) (Pexpr aU () (PEcall (Impl Integer__conv_nonrepresentable_signed_integer) [(Pexpr aU () (PEval (Vctype intCty))), (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (1))))))])))))))) (Pexpr [] () (PEif (Pexpr aU () (PEop OpEq (Pexpr aU () (PEval (Vctype intCty))) (Pexpr aU () (PEval (Vctype (Ctype [] (Basic (Integer Bool0)))))))) (Pexpr aU () (PEif (Pexpr aU () (PEop OpEq (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (0)))))) (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (0)))))))) (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (0)))))) (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (1)))))))) (Pexpr aU () (PEif (Pexpr aU () (PEcall (Sym symIsRepr) [(Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (0)))))), (Pexpr aU () (PEval (Vctype intCty)))])) (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (0)))))) (Pexpr aU () (PEif (Pexpr aU () (PEis_unsigned (Pexpr aU () (PEval (Vctype intCty))))) (Pexpr aU () (PEcall (Sym symWrapI) [(Pexpr aU () (PEval (Vctype intCty))), (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (0))))))])) (Pexpr aU () (PEcall (Impl Integer__conv_nonrepresentable_signed_integer) [(Pexpr aU () (PEval (Vctype intCty))), (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (0))))))])))))))))) (Pexpr aU () (PEctor Cspecified [(Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (1))))))])) (Pexpr aU () (PEctor Cspecified [(Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (0))))))]))))
+
+def z13Td : generic_pexpr Unit sym :=
+  (Pexpr [] () (PEif (Pexpr [] () (PEop OpEq (Pexpr [] () (PEif (Pexpr [] () (PEop OpAnd (Pexpr [] () (PEop OpLe (Pexpr [] () (PEctor Civmin [(Pexpr aU () (PEval (Vctype intCty)))])) (Pexpr [] () (PEval (Vobject (OVinteger (.IV .Prov_none (1)))))))) (Pexpr [] () (PEop OpLe (Pexpr [] () (PEval (Vobject (OVinteger (.IV .Prov_none (1)))))) (Pexpr [] () (PEctor Civmax [(Pexpr aU () (PEval (Vctype intCty)))])))))) (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (1)))))) (Pexpr aU () (PEif (Pexpr aU () (PEis_unsigned (Pexpr aU () (PEval (Vctype intCty))))) (Pexpr aU () (PEcall (Sym symWrapI) [(Pexpr aU () (PEval (Vctype intCty))), (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (1))))))])) (Pexpr aU () (PEcall (Impl Integer__conv_nonrepresentable_signed_integer) [(Pexpr aU () (PEval (Vctype intCty))), (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (1))))))])))))) (Pexpr [] () (PEif (Pexpr [] () (PEop OpAnd (Pexpr [] () (PEop OpLe (Pexpr [] () (PEctor Civmin [(Pexpr aU () (PEval (Vctype intCty)))])) (Pexpr [] () (PEval (Vobject (OVinteger (.IV .Prov_none (0)))))))) (Pexpr [] () (PEop OpLe (Pexpr [] () (PEval (Vobject (OVinteger (.IV .Prov_none (0)))))) (Pexpr [] () (PEctor Civmax [(Pexpr aU () (PEval (Vctype intCty)))])))))) (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (0)))))) (Pexpr aU () (PEif (Pexpr aU () (PEis_unsigned (Pexpr aU () (PEval (Vctype intCty))))) (Pexpr aU () (PEcall (Sym symWrapI) [(Pexpr aU () (PEval (Vctype intCty))), (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (0))))))])) (Pexpr aU () (PEcall (Impl Integer__conv_nonrepresentable_signed_integer) [(Pexpr aU () (PEval (Vctype intCty))), (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (0))))))])))))))) (Pexpr aU () (PEctor Cspecified [(Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (1))))))])) (Pexpr aU () (PEctor Cspecified [(Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (0))))))]))))
+
+-- r13 F-side chain: 5 pulled / 4 steps; final (Vloaded (LVspecified (OVinteger (.IV .Prov_none (1)))))
+def z13Fb : generic_pexpr Unit sym :=
+  (Pexpr [] () (PEif (Pexpr aU () (PEop OpEq (Pexpr aU () (PEcall (Sym symConvInt) [(Pexpr aU () (PEval (Vctype intCty))), (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (0))))))])) (Pexpr aU () (PEcall (Sym symConvInt) [(Pexpr aU () (PEval (Vctype intCty))), (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (0))))))])))) (Pexpr aU () (PEctor Cspecified [(Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (1))))))])) (Pexpr aU () (PEctor Cspecified [(Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (0))))))]))))
+
+def z13Fc : generic_pexpr Unit sym :=
+  (Pexpr [] () (PEif (Pexpr [] () (PEop OpEq (Pexpr [] () (PEif (Pexpr aU () (PEop OpEq (Pexpr aU () (PEval (Vctype intCty))) (Pexpr aU () (PEval (Vctype (Ctype [] (Basic (Integer Bool0)))))))) (Pexpr aU () (PEif (Pexpr aU () (PEop OpEq (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (0)))))) (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (0)))))))) (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (0)))))) (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (1)))))))) (Pexpr aU () (PEif (Pexpr aU () (PEcall (Sym symIsRepr) [(Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (0)))))), (Pexpr aU () (PEval (Vctype intCty)))])) (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (0)))))) (Pexpr aU () (PEif (Pexpr aU () (PEis_unsigned (Pexpr aU () (PEval (Vctype intCty))))) (Pexpr aU () (PEcall (Sym symWrapI) [(Pexpr aU () (PEval (Vctype intCty))), (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (0))))))])) (Pexpr aU () (PEcall (Impl Integer__conv_nonrepresentable_signed_integer) [(Pexpr aU () (PEval (Vctype intCty))), (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (0))))))])))))))) (Pexpr [] () (PEif (Pexpr aU () (PEop OpEq (Pexpr aU () (PEval (Vctype intCty))) (Pexpr aU () (PEval (Vctype (Ctype [] (Basic (Integer Bool0)))))))) (Pexpr aU () (PEif (Pexpr aU () (PEop OpEq (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (0)))))) (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (0)))))))) (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (0)))))) (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (1)))))))) (Pexpr aU () (PEif (Pexpr aU () (PEcall (Sym symIsRepr) [(Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (0)))))), (Pexpr aU () (PEval (Vctype intCty)))])) (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (0)))))) (Pexpr aU () (PEif (Pexpr aU () (PEis_unsigned (Pexpr aU () (PEval (Vctype intCty))))) (Pexpr aU () (PEcall (Sym symWrapI) [(Pexpr aU () (PEval (Vctype intCty))), (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (0))))))])) (Pexpr aU () (PEcall (Impl Integer__conv_nonrepresentable_signed_integer) [(Pexpr aU () (PEval (Vctype intCty))), (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (0))))))])))))))))) (Pexpr aU () (PEctor Cspecified [(Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (1))))))])) (Pexpr aU () (PEctor Cspecified [(Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (0))))))]))))
+
+def z13Fd : generic_pexpr Unit sym :=
+  (Pexpr [] () (PEif (Pexpr [] () (PEop OpEq (Pexpr [] () (PEif (Pexpr [] () (PEop OpAnd (Pexpr [] () (PEop OpLe (Pexpr [] () (PEctor Civmin [(Pexpr aU () (PEval (Vctype intCty)))])) (Pexpr [] () (PEval (Vobject (OVinteger (.IV .Prov_none (0)))))))) (Pexpr [] () (PEop OpLe (Pexpr [] () (PEval (Vobject (OVinteger (.IV .Prov_none (0)))))) (Pexpr [] () (PEctor Civmax [(Pexpr aU () (PEval (Vctype intCty)))])))))) (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (0)))))) (Pexpr aU () (PEif (Pexpr aU () (PEis_unsigned (Pexpr aU () (PEval (Vctype intCty))))) (Pexpr aU () (PEcall (Sym symWrapI) [(Pexpr aU () (PEval (Vctype intCty))), (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (0))))))])) (Pexpr aU () (PEcall (Impl Integer__conv_nonrepresentable_signed_integer) [(Pexpr aU () (PEval (Vctype intCty))), (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (0))))))])))))) (Pexpr [] () (PEif (Pexpr [] () (PEop OpAnd (Pexpr [] () (PEop OpLe (Pexpr [] () (PEctor Civmin [(Pexpr aU () (PEval (Vctype intCty)))])) (Pexpr [] () (PEval (Vobject (OVinteger (.IV .Prov_none (0)))))))) (Pexpr [] () (PEop OpLe (Pexpr [] () (PEval (Vobject (OVinteger (.IV .Prov_none (0)))))) (Pexpr [] () (PEctor Civmax [(Pexpr aU () (PEval (Vctype intCty)))])))))) (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (0)))))) (Pexpr aU () (PEif (Pexpr aU () (PEis_unsigned (Pexpr aU () (PEval (Vctype intCty))))) (Pexpr aU () (PEcall (Sym symWrapI) [(Pexpr aU () (PEval (Vctype intCty))), (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (0))))))])) (Pexpr aU () (PEcall (Impl Integer__conv_nonrepresentable_signed_integer) [(Pexpr aU () (PEval (Vctype intCty))), (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (0))))))])))))))) (Pexpr aU () (PEctor Cspecified [(Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (1))))))])) (Pexpr aU () (PEctor Cspecified [(Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none (0))))))]))))
+
+/-- The R13 redex (in-arena; the a_529/a_530 case + EQ compare). -/
+def r13redex : generic_pexpr Unit sym :=
+  Pexpr aU () (PEcase
+    (Pexpr aU () (PEctor Ctuple
+      [Pexpr aU () (PEsym symA529), Pexpr aU () (PEsym symA530)]))
+    [(Pattern aU (CaseCtor Ctuple
+        [Pattern aU (CaseCtor Cspecified
+          [Pattern aU (CaseBase ((some symA531), BTy_object OTy_integer))]),
+         Pattern aU (CaseCtor Cspecified
+          [Pattern aU (CaseBase ((some symA532), BTy_object OTy_integer))])]),
+      Pexpr aU () (PEif (Pexpr aU () (PEop OpEq
+          (Pexpr aU () (PEcall (Sym symConvInt)
+            [Pexpr aU () (PEval (Vctype intCty)),
+             Pexpr aU () (PEsym symA531)]))
+          (Pexpr aU () (PEcall (Sym symConvInt)
+            [Pexpr aU () (PEval (Vctype intCty)),
+             Pexpr aU () (PEsym symA532)]))))
+        (Pexpr aU () (PEctor Cspecified
+          [Pexpr aU () (PEval (xObjV 1))]))
+        (Pexpr aU () (PEctor Cspecified
+          [Pexpr aU () (PEval (xObjV 0))])))),
+     (Pattern aU (CaseBase (none,
+        BTy_tuple [BTy_loaded OTy_integer, BTy_loaded OTy_integer])),
+      Pexpr aU () (PEctor Cunspecified
+        [Pexpr aU () (PEval (Vctype intCty))]))]
+    )
+
+/-- The R13 arm list. -/
+def r13redexArms : List (generic_pattern sym × generic_pexpr Unit sym) :=
+  [(Pattern aU (CaseCtor Ctuple
+      [Pattern aU (CaseCtor Cspecified
+        [Pattern aU (CaseBase ((some symA531), BTy_object OTy_integer))]),
+       Pattern aU (CaseCtor Cspecified
+        [Pattern aU (CaseBase ((some symA532), BTy_object OTy_integer))])]),
+    Pexpr aU () (PEif (Pexpr aU () (PEop OpEq
+        (Pexpr aU () (PEcall (Sym symConvInt)
+          [Pexpr aU () (PEval (Vctype intCty)),
+           Pexpr aU () (PEsym symA531)]))
+        (Pexpr aU () (PEcall (Sym symConvInt)
+          [Pexpr aU () (PEval (Vctype intCty)),
+           Pexpr aU () (PEsym symA532)]))))
+      (Pexpr aU () (PEctor Cspecified
+        [Pexpr aU () (PEval (xObjV 1))]))
+      (Pexpr aU () (PEctor Cspecified
+        [Pexpr aU () (PEval (xObjV 0))])))),
+   (Pattern aU (CaseBase (none,
+      BTy_tuple [BTy_loaded OTy_integer, BTy_loaded OTy_integer])),
+    Pexpr aU () (PEctor Cunspecified
+      [Pexpr aU () (PEval (Vctype intCty))]))]
+
+/-- R13 step 1, TRUE side: case-select + substitution at the read
+    cells. -/
+theorem s13Ta (env : List (Fmap sym value))
+    (memo : Option CerbMem.MemState)
+    (h529 : lookup_env symA529 env = some (loadedV 1))
+    (h530 : lookup_env symA530 env = some (loadedV 0)) :
+    step_eval_pexpr p01File.tagDefs 0 CerbLocation.Loc.unknown
+      (some (CerbLocation.other "RelSem.callND"))
+      (create_extern_symmap p01File) env memo p01File false
+      (Pexpr [] () (PEcase
+        (Pexpr [] () (PEctor Ctuple
+          [Pexpr aU () (PEsym symA529),
+           Pexpr aU () (PEsym symA530)]))
+        r13redexArms))
+      = Result (Defined z13Tb) :=
+  se_case_sel
+    (se_ctor_tuple
+      (pes' := [Pexpr [] () (PEval (loadedV 1)),
+                Pexpr [] () (PEval (loadedV 0))])
+      (cvals := [loadedV 1, loadedV 0])
+      (eumapM_cons (se_sym_hit (fuel := 999997) rfl h529)
+        (eumapM_cons (se_sym_hit (fuel := 999997) rfl h530)
+          eumapM_nil)) rfl)
+    rfl
+
+/-- R13 step 1, FALSE side. -/
+theorem s13Fa (env : List (Fmap sym value))
+    (memo : Option CerbMem.MemState)
+    (h529 : lookup_env symA529 env = some (loadedV 0))
+    (h530 : lookup_env symA530 env = some (loadedV 0)) :
+    step_eval_pexpr p01File.tagDefs 0 CerbLocation.Loc.unknown
+      (some (CerbLocation.other "RelSem.callND"))
+      (create_extern_symmap p01File) env memo p01File false
+      (Pexpr [] () (PEcase
+        (Pexpr [] () (PEctor Ctuple
+          [Pexpr aU () (PEsym symA529),
+           Pexpr aU () (PEsym symA530)]))
+        r13redexArms))
+      = Result (Defined z13Fb) :=
+  se_case_sel
+    (se_ctor_tuple
+      (pes' := [Pexpr [] () (PEval (loadedV 0)),
+                Pexpr [] () (PEval (loadedV 0))])
+      (cvals := [loadedV 0, loadedV 0])
+      (eumapM_cons (se_sym_hit (fuel := 999997) rfl h529)
+        (eumapM_cons (se_sym_hit (fuel := 999997) rfl h530)
+          eumapM_nil)) rfl)
+    rfl
+
+/-- The R13 whole-loop evaluation, TRUE side (a_529 = 1 ⇒ EQ false
+    ⇒ loaded 0). -/
+theorem p01eq_eval_T (env : List (Fmap sym value))
+    (memo : Option CerbMem.MemState)
+    (h529 : lookup_env symA529 env = some (loadedV 1))
+    (h530 : lookup_env symA530 env = some (loadedV 0)) :
+    eval_pexpr_aux2 p01File.tagDefs CerbLocation.Loc.unknown
+        (some (CerbLocation.other "RelSem.callND"))
+        (create_extern_symmap p01File) env memo p01File r13redex
+      = Result (Defined (Sum.inr (loadedV 0))) :=
+  (aux2_step 999999 _ _ _ _ _ _ _
+      rfl
+      (by intro a xs h; cases h)
+      (s13Ta env memo h529 h530)
+      (by rfl)).trans
+  ((aux2_step 999998 _ _ _ _ _ _ _
+      (show pull_constrained 0 z13Tb = z13Tb from rfl)
+      (by intro a xs h; simp [z13Tb] at h) rfl (by rfl)).trans
+  ((aux2_step 999997 _ _ _ _ _ _ _
+      (show pull_constrained 0 z13Tc = z13Tc from rfl)
+      (by intro a xs h; simp [z13Tc] at h)
+      (show step_eval_pexpr p01File.tagDefs 0 CerbLocation.Loc.unknown
+          (some (CerbLocation.other "RelSem.callND"))
+          (create_extern_symmap p01File) env memo p01File false z13Tc
+        = Result (Defined z13Td) from rfl) (by rfl)).trans
+  (aux2_done 999996 _ _ _ _ _ _ _
+      (show pull_constrained 0 z13Td = z13Td from rfl)
+      (by intro a xs h; simp [z13Td] at h)
+      (show step_eval_pexpr p01File.tagDefs 0 CerbLocation.Loc.unknown
+          (some (CerbLocation.other "RelSem.callND"))
+          (create_extern_symmap p01File) env memo p01File false z13Td
+        = Result (Defined (Pexpr [] () (PEval (loadedV 0)))) from rfl)
+      (by rfl))))
+
+/-- The R13 whole-loop evaluation, FALSE side (a_529 = 0 ⇒ EQ true
+    ⇒ loaded 1). -/
+theorem p01eq_eval_F (env : List (Fmap sym value))
+    (memo : Option CerbMem.MemState)
+    (h529 : lookup_env symA529 env = some (loadedV 0))
+    (h530 : lookup_env symA530 env = some (loadedV 0)) :
+    eval_pexpr_aux2 p01File.tagDefs CerbLocation.Loc.unknown
+        (some (CerbLocation.other "RelSem.callND"))
+        (create_extern_symmap p01File) env memo p01File r13redex
+      = Result (Defined (Sum.inr (loadedV 1))) :=
+  (aux2_step 999999 _ _ _ _ _ _ _
+      rfl
+      (by intro a xs h; cases h)
+      (s13Fa env memo h529 h530)
+      (by rfl)).trans
+  ((aux2_step 999998 _ _ _ _ _ _ _
+      (show pull_constrained 0 z13Fb = z13Fb from rfl)
+      (by intro a xs h; simp [z13Fb] at h) rfl (by rfl)).trans
+  ((aux2_step 999997 _ _ _ _ _ _ _
+      (show pull_constrained 0 z13Fc = z13Fc from rfl)
+      (by intro a xs h; simp [z13Fc] at h)
+      (show step_eval_pexpr p01File.tagDefs 0 CerbLocation.Loc.unknown
+          (some (CerbLocation.other "RelSem.callND"))
+          (create_extern_symmap p01File) env memo p01File false z13Fc
+        = Result (Defined z13Fd) from rfl) (by rfl)).trans
+  (aux2_done 999996 _ _ _ _ _ _ _
+      (show pull_constrained 0 z13Fd = z13Fd from rfl)
+      (by intro a xs h; simp [z13Fd] at h)
+      (show step_eval_pexpr p01File.tagDefs 0 CerbLocation.Loc.unknown
+          (some (CerbLocation.other "RelSem.callND"))
+          (create_extern_symmap p01File) env memo p01File false z13Fd
+        = Result (Defined (Pexpr [] () (PEval (loadedV 1)))) from rfl)
+      (by rfl))))
+
+/-- R13, TRUE side: the EQ-compare case evaluates (reads a_529/a_530;
+    lands loaded 0). -/
+theorem p01r13T (x : Int) (p : T1P)
+    (h529 : envLookup (p01fam p01ar13 [meLoad x] 12 p) symA529
+      = some (loadedV 1))
+    (h530 : envLookup (p01fam p01ar13 [meLoad x] 12 p) symA530
+      = some (loadedV 0)) :
+    app (dnmsRoundM p01File.tagDefs 0)
+        (p01fam p01ar13 [meLoad x] 12 p)
+      = (NDactive (Sum.inl NOWAKEUP),
+         p01fam (p01ar14 0) [meLoad x] 13 p) := by
+  refine dnmsRoundM_adv rfl ?_
+  refine (advance_runstate_eval (th' := p01Th (p01ar14 0) p.f₁)
+    (rs' := (p01fam p01ar13 [meLoad x] 12 p).core_run_state0)
+    ?_).trans ?_
+  · show stExceptUndef_bind _ _ _ = _
+    refine (stub_defined
+      (z := Expr aU (Epure (Pexpr [] () (PEval (loadedV 0)))))
+      (st' := (p01fam p01ar13 [meLoad x] 12 p).core_run_state0)
+      ?_).trans rfl
+    show stExceptUndef_bind _ _ _ = _
+    refine (stub_defined (z := loadedV 0)
+      (st' := (p01fam p01ar13 [meLoad x] 12 p).core_run_state0)
+      ?_).trans rfl
+    show stExceptUndef_bind _ _ _ = _
+    refine (stub_defined (z := Sum.inr (loadedV 0))
+      (st' := (p01fam p01ar13 [meLoad x] 12 p).core_run_state0)
+      ?_).trans ?_
+    · show runEU (eval_pexpr_aux2 p01File.tagDefs
+          CerbLocation.Loc.unknown
+          (some (CerbLocation.other "RelSem.callND"))
+          (create_extern_symmap p01File) [p.f₁] (some p.ls) p01File
+          r13redex) _ = _
+      rw [p01eq_eval_T [p.f₁] (some p.ls)
+        (show lookup_env symA529 [p.f₁] = some (loadedV 1) from h529)
+        (show lookup_env symA530 [p.f₁] = some (loadedV 0) from h530)]
+      rfl
+    · rfl
+  · rfl
+
+/-- R13, FALSE side (a_529 = 0 ⇒ loaded 1). -/
+theorem p01r13F (x : Int) (p : T1P)
+    (h529 : envLookup (p01fam p01ar13 [meLoad x] 12 p) symA529
+      = some (loadedV 0))
+    (h530 : envLookup (p01fam p01ar13 [meLoad x] 12 p) symA530
+      = some (loadedV 0)) :
+    app (dnmsRoundM p01File.tagDefs 0)
+        (p01fam p01ar13 [meLoad x] 12 p)
+      = (NDactive (Sum.inl NOWAKEUP),
+         p01fam (p01ar14 1) [meLoad x] 13 p) := by
+  refine dnmsRoundM_adv rfl ?_
+  refine (advance_runstate_eval (th' := p01Th (p01ar14 1) p.f₁)
+    (rs' := (p01fam p01ar13 [meLoad x] 12 p).core_run_state0)
+    ?_).trans ?_
+  · show stExceptUndef_bind _ _ _ = _
+    refine (stub_defined
+      (z := Expr aU (Epure (Pexpr [] () (PEval (loadedV 1)))))
+      (st' := (p01fam p01ar13 [meLoad x] 12 p).core_run_state0)
+      ?_).trans rfl
+    show stExceptUndef_bind _ _ _ = _
+    refine (stub_defined (z := loadedV 1)
+      (st' := (p01fam p01ar13 [meLoad x] 12 p).core_run_state0)
+      ?_).trans rfl
+    show stExceptUndef_bind _ _ _ = _
+    refine (stub_defined (z := Sum.inr (loadedV 1))
+      (st' := (p01fam p01ar13 [meLoad x] 12 p).core_run_state0)
+      ?_).trans ?_
+    · show runEU (eval_pexpr_aux2 p01File.tagDefs
+          CerbLocation.Loc.unknown
+          (some (CerbLocation.other "RelSem.callND"))
+          (create_extern_symmap p01File) [p.f₁] (some p.ls) p01File
+          r13redex) _ = _
+      rw [p01eq_eval_F [p.f₁] (some p.ls)
+        (show lookup_env symA529 [p.f₁] = some (loadedV 0) from h529)
+        (show lookup_env symA530 [p.f₁] = some (loadedV 0) from h530)]
+      rfl
+    · rfl
+  · rfl
+
+/-- R18, TRUE side (a_528 substituted at 0: NOT(0=1) ⇒ Vtrue; closed
+    eval). -/
+theorem p01r18T (x : Int) (p : T1P) :
+    app (dnmsRoundM p01File.tagDefs 0)
+        (p01fam (p01ar18 0) [meLoad x] 17 p)
+      = (NDactive (Sum.inl NOWAKEUP),
+         p01fam (p01ar19 Vtrue) [meLoad x] 18 p) := by
+  refine dnmsRoundM_adv rfl ?_
+  exact (advance_runstate_eval (th' := p01Th (p01ar19 Vtrue) p.f₁)
+    (rs' := (p01fam (p01ar18 0) [meLoad x] 17 p).core_run_state0)
+    rfl).trans rfl
+
+/-- R18, FALSE side (a_528 at 1: NOT(1=1) ⇒ Vfalse; closed eval). -/
+theorem p01r18F (x : Int) (p : T1P) :
+    app (dnmsRoundM p01File.tagDefs 0)
+        (p01fam (p01ar18 1) [meLoad x] 17 p)
+      = (NDactive (Sum.inl NOWAKEUP),
+         p01fam (p01ar19 Vfalse) [meLoad x] 18 p) := by
+  refine dnmsRoundM_adv rfl ?_
+  exact (advance_runstate_eval (th' := p01Th (p01ar19 Vfalse) p.f₁)
+    (rs' := (p01fam (p01ar18 1) [meLoad x] 17 p).core_run_state0)
+    rfl).trans rfl

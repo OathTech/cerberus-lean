@@ -514,6 +514,11 @@ def r13pe : generic_pexpr Unit sym :=
     )
 
 #eval do
+  IO.println "##### r13 chain (c=0) #####"
+  for l in chainProbe [Lem_Map.fromList
+      [(symA529P, Vloaded (LVspecified (OVinteger (.IV .Prov_none 0)))),
+       (symA530P, Vloaded (LVspecified (OVinteger (.IV .Prov_none 0))))]]
+      (some CerbMem.initialMemState) r13pe do IO.println l
   IO.println "##### r13 chain (c=1) #####"
   for l in chainProbe [Lem_Map.fromList
       [(symA529P, Vloaded (LVspecified (OVinteger (.IV .Prov_none 1)))),
