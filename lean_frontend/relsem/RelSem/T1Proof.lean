@@ -21,6 +21,7 @@
 
 import RelSem.T1Rounds
 import RelSem.CerbStateAdequacy
+import RelSem.SegStepper
 
 set_option autoImplicit false
 
@@ -218,80 +219,37 @@ def t1Shape0 : Seg.FamShape t1fam0 :=
   [(xAddr, xBytes x), (errAddr, zeroBytes)]
 
 open RelSem.Seg in
-/-- THE T1 BODY as one segment: stage-0 → the terminal control point
-    (8 rounds — evaluate x, bind a_524, read it, THE LOAD, unwrap,
-    bind a_525, the conv jump, read a_526). -/
-theorem t1_seg_body {GF : BundledGFunctors} [CerbStGS GF]
-    (x : Int) (seed : Nat)
+/-- THE T1 BODY: ONE stepper run to the terminal cut point + the
+    fused terminal rule. Every stride is a registered link rule fed
+    by a registered T1Rounds equation (`set_option
+    trace.RelSem.segRun true` replays the dispatch). -/
+theorem t1_body (x : Int) (seed : Nat) [CerbStGS CerbStS]
     (hx1 : -2147483648 ≤ x) (hx2 : x ≤ 2147483647) :
-    SegStep (GF := GF) t1File.tagDefs 0 8
-      ⟨t1Ctl0, ⟨1, 0, 0, seed⟩, env0, mr2, al0, bs0 x⟩
-      ⟨t1CtlAt (arena8 x) [meLoad x] 7, ⟨1, 1, 0, seed⟩,
-        [(symA526, loadedV x), (symA525, loadedV x),
-         (symA524, xPtrV), (symX, xPtrV)],
-        mr2, al0, bs0 x⟩ := by
-  -- R0: evaluate x (env read at index 0)
-  refine SegStep.trans (m := 7) (link_ctl_env1 (i := 0)
-    (cO := t1CtlAt arena1 [] 1) (by rfl) t1Shape0
-    (t1Shape arena1 [] 1) (fun σ h _ => t1_inv0 h)
-    (fun p hwf hx => t1r0v x p hwf hx) (fun p => rfl)) ?_
-  -- R1: a_524 born
-  refine SegStep.trans (m := 6) (link_birth1 (x := symA524)
-    (vNew := xPtrV) (cO := t1CtlAt arena2 [] 2)
-    (by simp [Seg.domOf, env0, symNum, symX, symA524])
-    (t1Shape arena1 [] 1) (t1Shape arena2 [] 2)
-    (fun σ h _ => t1_inv h)
-    (fun p _ _ => t1r1 p) (fun p => rfl)) ?_
-  -- R2: a_524 read (index 0)
-  refine SegStep.trans (m := 5) (link_ctl_env1 (i := 0)
-    (cO := t1CtlAt arena3 [] 3) (by rfl)
-    (t1Shape arena2 [] 2) (t1Shape arena3 [] 3)
-    (fun σ h _ => t1_inv h)
-    (fun p _ ha => t1r2 p ha) (fun p => rfl)) ?_
-  -- R3: THE LOAD (x's bytes recombine to exactly x; aid draw)
-  refine SegStep.trans (m := 4) (link_load (j := 0) (jb := 0)
-    (cO := t1CtlAt (arena4 x) [meLoad x] 3) (by rfl) (by rfl)
-    (t1Shape arena3 [] 3) (t1Shape (arena4 x) [meLoad x] 3)
-    (fun σ h _ => t1_inv h)
-    (fun p hwf hget hbytes hmr hinv =>
-      t1r3 x p hget hbytes
-        (by rw [show p.ls.lastUsedUnionMembers
-            = (memRestOf (t1fam arena3 [] 3 p)).lastUsedUnionMembers
-            from rfl, hmr]; rfl)
-        (by rw [show p.ls.funptrmap
-            = (memRestOf (t1fam arena3 [] 3 p)).funptrmap
-            from rfl, hmr]; rfl)
-        hinv hx1 hx2)
-    (fun p => rfl)) ?_
-  -- R4: the Ebound wrapper strips
-  refine SegStep.trans (m := 3) (link_ctl
-    (cO := t1CtlAt (arena5 x) [meLoad x] 4)
-    (t1Shape (arena4 x) [meLoad x] 3)
-    (t1Shape (arena5 x) [meLoad x] 4) (fun σ h _ => t1_inv h)
-    (fun p _ => t1r4 x p) (fun p => rfl)) ?_
-  -- R5: a_525 born
-  refine SegStep.trans (m := 2) (link_birth1 (x := symA525)
-    (vNew := loadedV x) (cO := t1CtlAt bodyTail [meLoad x] 5)
-    (by simp [Seg.domOf, env0, symNum, symX, symA524, symA525])
-    (t1Shape (arena5 x) [meLoad x] 4)
-    (t1Shape bodyTail [meLoad x] 5) (fun σ h _ => t1_inv h)
-    (fun p _ _ => t1r5 x p) (fun p => rfl)) ?_
-  -- R6: the Erun jump (reads a_525 at index 0, births a_526; the
-  -- conv range check rides intRange x)
-  refine SegStep.trans (m := 1) (link_birth1_env1 (x := symA526)
-    (vNew := loadedV x) (iy := 0) (y := symA525) (vy := loadedV x)
-    (cO := t1CtlAt arena7 [meLoad x] 6)
-    (by simp [Seg.domOf, env0, symNum, symX, symA524, symA525,
-      symA526])
-    (by rfl) (t1Shape bodyTail [meLoad x] 5)
-    (t1Shape arena7 [meLoad x] 6) (fun σ h _ => t1_inv h)
-    (fun p _ _ ha => t1r6 x hx1 hx2 p ha) (fun p => rfl)) ?_
-  -- R7: a_526 evaluates (index 0)
-  exact link_ctl_env1 (i := 0)
-    (cO := t1CtlAt (arena8 x) [meLoad x] 7) (by rfl)
-    (t1Shape arena7 [meLoad x] 6)
-    (t1Shape (arena8 x) [meLoad x] 7) (fun σ h _ => t1_inv h)
-    (fun p _ ha => t1r7 x p ha) (fun p => rfl)
+    (Ctx.interp (GF := CerbStS)
+      ⟨t1Ctl0, ⟨1, 0, 0, seed⟩, env0, mr2, al0, bs0 x⟩) ⊢
+      WP (dnmsK t1File.tagDefs 1000000 fmapEmpty 0 []
+        (fun m => KExpr.seq (ndctPick m) (fun tid_steps =>
+          KExpr.seq (driver2Rest t1File.tagDefs false
+              (driver2_lemFuel 999999 t1File.tagDefs) tid_steps)
+            (fun _ => KExpr.seq nd_get (fun dr_st' =>
+              KExpr.done (Outcome.value
+                (finalize t1File.tagDefs "callND" dr_st')))))))
+        @ Stuckness.NotStuck ; ⊤
+        {{ o, ⌜∃ r : driver_result,
+            o = Outcome.value r ∧ t1Spec x r⌝ }} := by
+  seg_run
+  exact seg_done (f' := 999999) (f := 999990)
+    (famI := t1fam (arena8 x) [meLoad x] 7)
+    (famO := t1fam (mk_value_e (loadedV x)) [meLoad x] 7)
+    (cO := t1CtlAt (mk_value_e (loadedV x)) [meLoad x] 7)
+    (rv := loadedV x)
+    (hinv := fun σ h _ => t1_inv h) (hinvO := fun σ h => t1_inv h)
+    (hctlI := fun p => rfl)
+    (happ := fun p _ => t1r8 x p)
+    (hIn := t1Shape (arena8 x) [meLoad x] 7)
+    (hexit := fun p => rfl) (hctlO := fun p => rfl)
+    (hthO := fun p => rfl) (hF := rfl)
+    (hpost := by exact fun p => ⟨_, rfl, rfl⟩)
 
 /-! ## THE T1 THEOREM -/
 
@@ -476,28 +434,9 @@ theorem t1_threaded_proved : T1ThreadedStatement := by
                           (finalize t1File.tagDefs "callND"
                             dr_st'))))))) ?heq)
               case heq => rfl
-              -- §3 THE BODY (V2b: ONE fused segment consumes the
-              -- whole 8-round run, then the fused terminal —
-              -- t1_seg_body + Seg.seg_done via SegStep.consume)
-              iapply (Seg.SegStep.consume (GF := CerbStS)
-                (t1_seg_body x seed hx1 hx2)
-                (F := 1000000) (f := 999992) rfl
-                (Seg.seg_done (f' := 999999) (F := 999992)
-                  (f := 999990)
-                  (famI := t1fam (arena8 x) [meLoad x] 7)
-                  (famO := t1fam (mk_value_e (loadedV x)) [meLoad x] 7)
-                  (cO := t1CtlAt (mk_value_e (loadedV x)) [meLoad x] 7)
-                  (rv := loadedV x)
-                  (fun σ h _ => t1_inv h)
-                  (fun σ h => t1_inv h)
-                  (fun p => rfl)
-                  (fun p _ => t1r8 x p)
-                  (t1Shape (arena8 x) [meLoad x] 7)
-                  (fun p => rfl)
-                  (fun p => rfl)
-                  (fun p => rfl)
-                  (fun p => ⟨_, rfl, rfl⟩)
-                  rfl))
+              -- §3 THE BODY: hand off to the factored stepper-run
+              -- body lemma (one application + context assembly)
+              iapply (t1_body x seed hx1 hx2)
               isimp only [Seg.Ctx.interp, Seg.SegCtx, env0, al0, bs0,
                 Seg.envCells, Seg.allocCells, Seg.byteCells,
                 Seg.domOf, List.map_cons, List.map_nil]

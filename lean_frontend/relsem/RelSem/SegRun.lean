@@ -42,6 +42,7 @@
 
 import RelSem.CerbStateStep
 import RelSem.PerStepPeel
+import RelSem.SegReg
 
 set_option autoImplicit false
 
@@ -265,6 +266,19 @@ structure Pack where
 /-- The action-id bump (what a memory-action round draws). -/
 @[reducible] def bumpA (S : Supplies) : Supplies :=
   { S with aid := S.aid + 1 }
+
+/-- Freshness-refutation helpers (the stepper's ledger discharge —
+    membership refuted structurally; `Decidable (a ∈ l)` is absent in
+    this prelude, `Decidable (a = b)` at `Int` is kernel-decidable). -/
+theorem not_mem_nil_int (a : Int) : ¬ a ∈ ([] : List Int) :=
+  fun h => nomatch h
+
+theorem not_mem_cons_of {a b : Int} {l : List Int}
+    (h1 : a ≠ b) (h2 : ¬ a ∈ l) : ¬ a ∈ b :: l := by
+  intro h
+  cases h with
+  | head => exact h1 rfl
+  | tail _ h => exact h2 h
 
 /-- Frame well-formedness off the single-frame shape fact. -/
 theorem wfFrame_of {σ : driver_state} {f : Fmap sym value}

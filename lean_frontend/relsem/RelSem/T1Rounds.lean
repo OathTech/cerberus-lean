@@ -205,6 +205,7 @@ abbrev T1P := RelSem.Seg.Pack
 
 /-- THE CONTROL INVERSION at the T1 family (the demo `ctl_inv`
     pattern, at trace/counter parameters). -/
+@[seg_inv]
 theorem t1_inv {σ : driver_state} {arena : RExpr}
     {tr : List trace_event} {n : Nat}
     (h : ctlOf σ = t1CtlAt arena tr n) :
@@ -298,6 +299,7 @@ def t1Ctl0 : driver_state :=
   t1σ0 p.f₁ p.tS p.aS p.eS p.sS p.ls
 
 /-- Control inversion at the stage-0 family. -/
+@[seg_inv]
 theorem t1_inv0 {σ : driver_state} (h : ctlOf σ = t1Ctl0) :
     ∃ p : T1P, σ = t1fam0 p := by
   obtain ⟨cf, ce, cs, crs, ls, ccs, fs0, tr', sa, bl, ctr'⟩ := σ
@@ -575,6 +577,7 @@ abbrev envCmp : sym → sym → LemOrdering :=
   fun s1 s2 => ordCompare s1 s2
 
 /-- R0: the Ewseq's left pure operand evaluates — reads x's cell. -/
+@[seg_round]
 theorem t1r0 (x : Int) (p : T1P)
     (hwf : EnvWfFrame p.f₁)
     (hx : envLookup (t1fam arena0 [] 0 p) symX = some xPtrV) :
@@ -611,6 +614,7 @@ theorem t1r0 (x : Int) (p : T1P)
 /-- R0 at the STAGE-0 family (the round the setup state actually
     feeds; output lands in the `t1Th` family — the eval resets
     `current_loc`). -/
+@[seg_round]
 theorem t1r0v (x : Int) (p : T1P)
     (hwf : EnvWfFrame p.f₁)
     (hx : envLookup (t1fam0 p) symX = some xPtrV) :
@@ -648,6 +652,7 @@ theorem update_env_aux_a524 (f : Fmap sym value) :
           (@Lem_Map.mapKeyCompare sym _) symA524 xPtrV f := rfl
 
 /-- R1: the Ewseq binds a_524 (the birth round). -/
+@[seg_round]
 theorem t1r1 (p : T1P) :
     app (dnmsRoundM t1File.tagDefs 0) (t1fam arena1 [] 1 p)
       = (NDactive (Sum.inl NOWAKEUP),
@@ -657,6 +662,7 @@ theorem t1r1 (p : T1P) :
   exact (advance_tau_misc).trans rfl
 
 /-- R2: the Load's pointer operand evaluates — reads a_524's cell. -/
+@[seg_round]
 theorem t1r2 (p : T1P)
     (ha : envLookup (t1fam arena2 [] 2 p) symA524 = some xPtrV) :
     app (dnmsRoundM t1File.tagDefs 0) (t1fam arena2 [] 2 p)
@@ -734,6 +740,7 @@ theorem loadX_eq_facts (x : Int) (ls : CerbMem.MemState)
     value (EXACTLY x, by the roundtrip) lands in the arena, ME_load
     traced. The step counter does not move (action requests never
     bump it). -/
+@[seg_round]
 theorem t1r3 (x : Int) (p : T1P)
     (hget : p.ls.allocations.get? 0 = some allocX)
     (hbytes : ∀ i : Nat, (hi : i < (xBytes x).length) →
@@ -744,8 +751,7 @@ theorem t1r3 (x : Int) (p : T1P)
     (h1 : -2147483648 ≤ x) (h2 : x ≤ 2147483647) :
     app (dnmsRoundM t1File.tagDefs 0) (t1fam arena3 [] 3 p)
       = (NDactive (Sum.inl NOWAKEUP),
-         t1σ (arena4 x) p.f₁ p.tS (p.aS + 1) p.eS p.sS p.ls
-           [meLoad x] 3) := by
+         t1fam (arena4 x) [meLoad x] 3 { p with aS := p.aS + 1 }) := by
   refine dnmsRoundM_adv rfl ?_
   apply (app_bind_active ?hreq).trans
   case hreq =>
@@ -762,6 +768,7 @@ theorem t1r3 (x : Int) (p : T1P)
 
 
 /-- R4: the Eannot/Ebound wrapper around the loaded value strips. -/
+@[seg_round]
 theorem t1r4 (x : Int) (p : T1P) :
     app (dnmsRoundM t1File.tagDefs 0) (t1fam (arena4 x) [meLoad x] 3 p)
       = (NDactive (Sum.inl NOWAKEUP),
@@ -776,6 +783,7 @@ theorem update_env_aux_a525 (x : Int) (f : Fmap sym value) :
           (@Lem_Map.mapKeyCompare sym _) symA525 (loadedV x) f := rfl
 
 /-- R5: the Esseq binds a_525 — the body tail is exposed. -/
+@[seg_round]
 theorem t1r5 (x : Int) (p : T1P) :
     app (dnmsRoundM t1File.tagDefs 0) (t1fam (arena5 x) [meLoad x] 4 p)
       = (NDactive (Sum.inl NOWAKEUP),
@@ -1019,6 +1027,7 @@ theorem update_env_aux_a526 (x : Int) (f : Fmap sym value) :
 
 /-- R6: the Erun jump — the conv chain evaluates (reads a_525),
     the jump to ret_523's continuation binds a_526. -/
+@[seg_round]
 theorem t1r6 (x : Int) (h1 : -2147483648 ≤ x) (h2 : x ≤ 2147483647)
     (p : T1P)
     (ha : envLookup (t1fam bodyTail [meLoad x] 5 p) symA525
@@ -1053,6 +1062,7 @@ theorem t1r6 (x : Int) (h1 : -2147483648 ≤ x) (h2 : x ≤ 2147483647)
   rfl
 
 /-- R7: a_526 evaluates (the terminal value reaches the arena). -/
+@[seg_round]
 theorem t1r7 (x : Int) (p : T1P)
     (ha : envLookup (t1fam arena7 [meLoad x] 6 p) symA526
       = some (loadedV x)) :
@@ -1086,6 +1096,7 @@ theorem t1r7 (x : Int) (p : T1P)
 
 /-- R8 (terminal): the fully-evaluated thread offers exactly the done
     step. -/
+@[seg_round]
 theorem t1r8 (x : Int) (p : T1P) :
     app (dnmsRoundM t1File.tagDefs 0) (t1fam (arena8 x) [meLoad x] 7 p)
       = (NDactive (Sum.inr [Step_done2 (loadedV x)]),
