@@ -24,6 +24,7 @@ import RelSem.Kit.Round
 import RelSem.Kit.Mem
 import RelSem.PerStepPeel
 import RelSem.T1Rounds
+import RelSem.CStep
 
 set_option autoImplicit false
 
@@ -80,110 +81,11 @@ theorem intLoad_facts (v : Int) (addr : Int) (aid : Int)
     (um := none) (hinv.contains_dead_false hget) hget hbounds hty
     (readBytesFrom_of_pointwise rfl hbytes) hrecon rfl
 
-/-- The `runEU`-level face of the one-hit sym read (stated so a
-    `refine` UNIFIES the annotations/env/state before the side
-    premises elaborate). -/
-theorem runEU_aux2_sym {A : Type}
-    {tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)}
-    {loc : CerbLocation.Loc} {cloc : Option CerbLocation.Loc}
-    {ext : Fmap sym sym} {env : List (Fmap sym value)}
-    {memo : Option CerbMem.MemState}
-    {file1 : file core_run_annotation}
-    {a a' : List annot} {z : sym} {v : value} {st : A}
-    (hpull : pull_constrained 0 (Pexpr a () (PEsym z))
-      = Pexpr a' () (PEsym z))
-    (hext : fmapLookupBy
-      (fun (s1 s2 : sym) => Lem_Basic_classes.ordCompare s1 s2) z ext
-      = none)
-    (hlk : lookup_env z env = some v) :
-    runEU (eval_pexpr_aux2 tagDefs loc cloc ext env memo file1
-        (Pexpr a () (PEsym z))) st
-      = runEU (Result (Defined (Sum.inr v))) st := by
-  rw [aux2_sym_hit hpull hext hlk]
-
-/-- The `runEU` face of the two-cell Ctuple scrutinee eval (the
-    Ecase-pack round class; P01's `p01ctor2_eval` promoted generic). -/
-theorem runEU_aux2_ctor2 {A : Type}
-    {tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)}
-    {loc : CerbLocation.Loc} {cloc : Option CerbLocation.Loc}
-    {ext : Fmap sym sym} {env : List (Fmap sym value)}
-    {memo : Option CerbMem.MemState}
-    {file1 : file core_run_annotation}
-    {a a₁ a₂ : List annot} {x₁ x₂ : sym} {v₁ v₂ : value} {st : A}
-    (hpull : pull_constrained 0 (Pexpr a () (PEctor Ctuple
-        [Pexpr a₁ () (PEsym x₁), Pexpr a₂ () (PEsym x₂)]))
-      = Pexpr [] () (PEctor Ctuple
-        [Pexpr a₁ () (PEsym x₁), Pexpr a₂ () (PEsym x₂)]))
-    (hext₁ : fmapLookupBy
-      (fun (s1 s2 : sym) => Lem_Basic_classes.ordCompare s1 s2) x₁ ext
-      = none)
-    (hext₂ : fmapLookupBy
-      (fun (s1 s2 : sym) => Lem_Basic_classes.ordCompare s1 s2) x₂ ext
-      = none)
-    (hlk₁ : lookup_env x₁ env = some v₁)
-    (hlk₂ : lookup_env x₂ env = some v₂) :
-    runEU (eval_pexpr_aux2 tagDefs loc cloc ext env memo file1
-        (Pexpr a () (PEctor Ctuple
-          [Pexpr a₁ () (PEsym x₁), Pexpr a₂ () (PEsym x₂)]))) st
-      = runEU (Result (Defined (Sum.inr (Vtuple [v₁, v₂])))) st := by
-  have h : eval_pexpr_aux2 tagDefs loc cloc ext env memo file1
-      (Pexpr a () (PEctor Ctuple
-        [Pexpr a₁ () (PEsym x₁), Pexpr a₂ () (PEsym x₂)]))
-      = Result (Defined (Sum.inr (Vtuple [v₁, v₂]))) :=
-    aux2_done 999999 _ _ _ _ _ _ _ hpull
-      (by intro a' xs h; simp at h)
-      (se_ctor_tuple
-        (pes' := [Pexpr [] () (PEval v₁), Pexpr [] () (PEval v₂)])
-        (cvals := [v₁, v₂])
-        (eumapM_cons (se_sym_hit (fuel := 999998) hext₁ hlk₁)
-          (eumapM_cons (se_sym_hit (fuel := 999998) hext₂ hlk₂)
-            eumapM_nil)) rfl)
-      (by rfl)
-  rw [h]
-
-/-- `hnc` from the spine verdict. -/
-theorem hnc_of_notConstrained {peP : generic_pexpr Unit sym}
-    (h : notConstrained peP = true) :
-    ∀ (a : List annot)
-      (xs : List (mem_iv_constraint × generic_pexpr Unit sym)),
-      peP ≠ Pexpr a () (PEconstrained xs) := by
-  intro a xs he
-  subst he
-  simp [notConstrained] at h
-
-/-- THE ONE-STEP-THEN-REST SKELETON: one aux2 iteration (the pull by
-    the computable SPINE — assigns the pulled redex REDUCED; the step
-    by a per-shape `se_*` law, where the cell reads enter), then the
-    REST of the loop — which is a CLOSED computation once the read
-    values are plugged, so `rfl` at instances. This is what makes the
-    two-cell verdict/conv rounds statements-only. -/
-theorem runEU_aux2_step_then {A : Type}
-    {tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)}
-    {loc : CerbLocation.Loc} {cloc : Option CerbLocation.Loc}
-    {ext : Fmap sym sym} {env : List (Fmap sym value)}
-    {memo : Option CerbMem.MemState}
-    {file1 : file core_run_annotation}
-    {pe peP pe' : generic_pexpr Unit sym}
-    {z : Sum (generic_pexpr Unit sym) value} {st : A}
-    (hspine : pullSpine 1000000 pe = some peP)
-    (hstep : step_eval_pexpr tagDefs 0 loc cloc ext env memo file1
-        false peP = Result (Defined pe'))
-    (hnv : valueFromPexpr pe' = none)
-    (hrest : eval_pexpr_aux2_lemFuel 999999 tagDefs loc cloc ext env
-        memo file1 pe' = Result (Defined z)) :
-    runEU (eval_pexpr_aux2 tagDefs loc cloc ext env memo file1 pe) st
-      = runEU (Result (Defined z)) st := by
-  have hpull : pull_constrained 0 pe = peP := by
-    show pull_constrained_lemFuel 1000000 0 pe = peP
-    exact pull_constrained_spine 1000000 pe peP 0 hspine
-  have h : eval_pexpr_aux2 tagDefs loc cloc ext env memo file1 pe
-      = Result (Defined z) := by
-    show eval_pexpr_aux2_lemFuel (999999 + 1) tagDefs loc cloc ext env
-      memo file1 pe = _
-    exact (aux2_step 999999 _ _ _ _ _ _ _ hpull
-      (hnc_of_notConstrained (pullSpine_notConstrained hspine))
-      hstep hnv).trans hrest
-  rw [h]
+/- (The generic `runEU_aux2_sym` / `runEU_aux2_ctor2` /
+   `hnc_of_notConstrained` / `runEU_aux2_step_then` eval crossings
+   MOVED to RelSem/CStep.lean at V3a — they are construct-package
+   citizens (mechanism C), consumed both by the round tactics below
+   (names unchanged) and by the stepper's mint path.) -/
 
 /-! ## The pinned step-discovery (PERF-1 mechanism A, 2026-08-28)
 

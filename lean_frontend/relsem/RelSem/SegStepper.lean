@@ -36,6 +36,7 @@
 -/
 
 import RelSem.SegRun
+import RelSem.CStep
 
 set_option autoImplicit false
 
@@ -276,6 +277,9 @@ private structure BuiltLink where
   /-- Round count consumed by this link (1 for a round link; K for a
       PERF-1 block fact — mechanism B). -/
   n : Nat := 1
+  /-- Provenance: true when the link was MINTED from the construct
+      package (PERF-2 mechanism C) with no generated supply fact. -/
+  minted : Bool := false
   deriving Inhabited
 
 /-- Dispatch one open premise of a link by type shape. Returns true
@@ -583,6 +587,13 @@ private def buildLink (gf gs td tid : Expr) (ΓE : Expr) (cand : Name)
 private def ctlArenaKey? (c : Expr) : Option (Name × Nat) :=
   let c := c.consumeMData
   let inner := if c.isAppOf ``ctlOf then c.appArg! else c
+  -- keys exist only for the fam-builder spelling `ctlOf (fam AR TR N p)`
+  -- (const head, ≥ 4 args). Anything else — engine-minted successors
+  -- (`ctlOf (dnmsBump …)`, beta-redexes over `stateAt`), record
+  -- literals — gets NO key: the key filter is an under-approximation
+  -- of "cannot match", and a junk key would wrongly reject defeq
+  -- cross-vocabulary candidates (V3a mint-path finding).
+  if !inner.getAppFn.isConst || inner.getAppNumArgs < 4 then none else
   let args := inner.getAppArgs
   match args[0]? with
   | some a =>
@@ -680,6 +691,375 @@ private def tryBlock (gf gs td tid : Expr) (ΓE : Expr)
       return some b
     | none => s0.restore
   return none
+
+/-! ## PERF-2 mechanism C: THE MINT PATH (V3a probe, 2026-08-28).
+
+    Walk rounds with NO generated per-round supply: at the current
+    context, the stepper (i) kernel-computes the step DISCOVERY at
+    the program-blind state family `stateAt c` over an OPEN pack
+    (the `seg_discover` device — `Lean.Kernel.whnf`, re-verified by
+    the kernel at declaration add), (ii) classifies the offered
+    step's CONSTRUCTOR, and (iii) instantiates the once-proved
+    construct characterization (`cstep_tau`/`cstep_eval`/
+    `cstep_rs_tau`, RelSem/CStep.lean — the derived relational
+    presentation of the interpreter, functional-big-step lineage)
+    with the eval payload discharged through the per-construct
+    crossings (`stub_defined`, `runEU_aux2_sym`/`_ctor2`) at the
+    walk's owned env cells. Per-program content = the pinned Core
+    term inside the control image; nothing else. Classes OUTSIDE the
+    probed set (births, loads, guards at path conditions, terminals)
+    fall back LOUDLY to the registered supply — committed choice
+    throughout; every unkeyed shape is a thrown frontier, never an
+    iteration. -/
+
+private def kwhnf? (e : Expr) : MetaM (Option Expr) := do
+  match Lean.Kernel.whnf (← getEnv) (← getLCtx) e with
+  | .ok r => pure (some r)
+  | .error _ => pure none
+
+/-- Hinted refl at the LHS (the discovery-pin device: the kernel
+    re-checks `lhs ≡ rhs` at declaration add — fail-closed). -/
+private def mkLhsRflHint (lhs rhs : Expr) : MetaM Expr := do
+  mkExpectedTypeHint (← mkEqRefl lhs) (← mkEq lhs rhs)
+
+/-- Decompose a term that kernel-computes to
+    `Result (Defined z, st')`; returns `(z, st', rebuiltRhs)`. -/
+private def resultParts? (e : Expr) : MetaM (Option (Expr × Expr × Expr)) := do
+  let some r ← kwhnf? e | return none
+  unless r.isAppOfArity ``exceptM.Result 3 do return none
+  let some pr ← kwhnf? r.appArg! | return none
+  unless pr.isAppOfArity ``Prod.mk 4 do return none
+  let z0 := pr.getAppArgs[2]!
+  let st' := pr.getAppArgs[3]!
+  let some zd ← kwhnf? z0 | return none
+  unless zd.isAppOfArity ``t0.Defined 2 do return none
+  let pr' := mkApp2 pr.appFn!.appFn! zd st'
+  return some (zd.appArg!, st', mkApp r.appFn! pr')
+
+/-- Solve one leaf-lemma premise: a provided cell fact, or a
+    kernel-computable ground equation (RHS metas assigned from the
+    kernel result; certificate = hinted refl the kernel re-checks). -/
+private def mintSolvePremise (cellFVars : Array Expr) (ty : Expr) :
+    MetaM (Option Expr) := do
+  for h in cellFVars do
+    if ← withProbeBudget (isDefEqGuarded (← inferType h) ty) then
+      return some h
+  if let some (_, lhs, rhs) := ty.eq? then
+    if let some r ← kwhnf? lhs then
+      if ← withProbeBudget (isDefEqGuarded rhs r) then
+        return some (← mkLhsRflHint lhs (← instantiateMVars rhs))
+  return none
+
+/-- Apply a leaf crossing lemma (`lem : … → lhsPat = rhsPat`) at
+    `lhs`; premises via `mintSolvePremise`. Returns `(rhs, pf)`. -/
+private def applyLemmaCross (lem : Name) (cellFVars : Array Expr)
+    (lhs : Expr) : MetaM (Expr × Expr) := do
+  let ci ← getConstInfo lem
+  let (ms, _, cc) ← forallMetaTelescope ci.type
+  let some (_, lp, rp) := cc.eq?
+    | throwError "mint: crossing lemma {lem} is not an equation"
+  unless ← withProbeBudget (isDefEq lp lhs) do
+    throwError "mint: {lem} does not match the leaf:{indentExpr lhs}"
+  for m in ms do
+    let m ← instantiateMVars m
+    if m.isMVar then
+      let mty ← instantiateMVars (← m.mvarId!.getType)
+      unless (← inferType mty).isProp do continue
+      let some pf ← mintSolvePremise cellFVars mty
+        | throwError "mint: {lem} premise has no source:{indentExpr mty}"
+      unless ← isDefEq m pf do
+        throwError "mint: {lem} premise assignment failed"
+  let pf := mkAppN (mkConst lem (ci.levelParams.map .param))
+    (← ms.mapM instantiateMVars)
+  return (← instantiateMVars rp, pf)
+
+/-- THE EVAL CROSSING: prove `lhs = Result (Defined z, st')` for a
+    monadic step applied at a run state, by (a) whole-term kernel
+    computation where the step is closed at the fragments (the
+    pure-eval class — binops, ctor packs at literal operands), or
+    (b) committed structural descent: `stExceptUndef_bind` via
+    `stub_defined`, eval entries unfolded to their `runEU (aux2 …)`
+    spelling (the `seg_peels` head discipline), and the ONE
+    env-consulting leaf (`PEsym`/`Ctuple`-of-syms) crossed by the
+    registered per-construct lemma at an owned cell fact. Cheap
+    failure everywhere (Lithium's opacity-bounded-failure principle);
+    an unkeyed head is a thrown frontier. -/
+private partial def crossToResult (cellFVars : Array Expr) (lhs : Expr)
+    (fuel : Nat := 32) : MetaM (Expr × Expr × Expr × Expr) := do
+  match fuel with
+  | 0 => throwError "mint: eval-crossing depth bound exceeded"
+  | fuel + 1 =>
+  if let some (z, st', rhs) ← resultParts? lhs then
+    return (z, st', rhs, ← mkLhsRflHint lhs rhs)
+  let lhsW ← whnfCore lhs
+  let fn := lhsW.getAppFn
+  if fn.isConstOf ``stExceptUndef_bind then
+    let args := lhsW.getAppArgs
+    unless args.size ≥ 3 do
+      throwError "mint: bind arity at{indentExpr lhsW}"
+    let m := args[args.size - 3]!
+    let k := args[args.size - 2]!
+    let st := args[args.size - 1]!
+    let (z1, st1, _, pf1) ← crossToResult cellFVars (mkApp m st) fuel
+    -- stub_defined's continuation implicit `f` does not occur in its
+    -- premise, so it must be pinned by unifying the CONCLUSION (an
+    -- mkAppM would leave it a metavariable — measured probe failure)
+    let pfB ← do
+      let ci ← getConstInfo ``RelSem.Kit.stub_defined
+      let (ms, _, cc) ← forallMetaTelescope ci.type
+      let some (_, lp, _) := cc.eq?
+        | throwError "mint: stub_defined shape"
+      unless ← withProbeBudget (isDefEq lp lhsW) do
+        throwError "mint: stub_defined LHS mismatch at{indentExpr lhsW}"
+      for mm in ms do
+        let mm ← instantiateMVars mm
+        if mm.isMVar then
+          let mty ← instantiateMVars (← mm.mvarId!.getType)
+          unless (← inferType mty).isProp do continue
+          unless ← isDefEq mm pf1 do
+            throwError "mint: stub_defined premise mismatch"
+      instantiateMVars (mkAppN
+        (mkConst ``RelSem.Kit.stub_defined (ci.levelParams.map .param))
+        (← ms.mapM instantiateMVars))
+    let (z2, st2, rhs2, pf2) ← crossToResult cellFVars (mkApp2 k z1 st1) fuel
+    -- pfB : bind m k st = k z1 st1; pf2 : k z1 st1 = R — the types
+    -- meet definitionally (whnfCore deltas are defeq; the final
+    -- consumer re-hints)
+    return (z2, st2, rhs2, ← mkEqTrans pfB pf2)
+  else if fn.isConstOf ``runEU then
+    let args := lhsW.getAppArgs
+    unless args.size ≥ 2 do
+      throwError "mint: runEU arity at{indentExpr lhsW}"
+    let M ← whnfCore args[args.size - 2]!
+    let pe ←
+      if M.isAppOf ``eval_pexpr_aux2 || M.isAppOf ``eval_pexpr_aux2_lemFuel
+      then whnfCore M.getAppArgs.back!
+      else throwError "mint: runEU inner is not an aux2 entry \
+        (head {M.getAppFn})"
+    unless pe.isAppOf ``Pexpr do
+      throwError "mint: aux2 argument is not a Pexpr ctor"
+    let payload ← whnfCore pe.getAppArgs.back!
+    let lem ←
+      if payload.isAppOf ``PEsym then
+        pure ``RelSem.Seg.runEU_aux2_sym
+      else if payload.isAppOf ``PEctor then
+        pure ``RelSem.Seg.runEU_aux2_ctor2
+      else
+        throwError "mint: unkeyed eval leaf (payload head \
+          {payload.getAppFn}) — outside the construct set"
+    let (rhs, pf) ← applyLemmaCross lem cellFVars lhsW
+    let (z, st', rhs2, pf2) ← crossToResult cellFVars rhs fuel
+    return (z, st', rhs2, ← mkEqTrans pf pf2)
+  else if fn.isConst then
+    -- committed unfold toward a keyed head (the seg_peels discipline)
+    let some nxt ← withProbeBudget (Meta.unfoldDefinition? lhsW)
+      | throwError "mint: unkeyed head {fn} — outside the construct set"
+    crossToResult cellFVars nxt fuel
+  else
+    throwError "mint: non-constant head at{indentExpr lhsW}"
+
+/-- Collect the (sym, value) pairs of the context's env list. -/
+private partial def collectEnvPairs (envE : Expr)
+    (acc : Array (Expr × Expr) := #[]) :
+    MetaM (Array (Expr × Expr)) := do
+  let l ← whnf envE
+  if l.isAppOfArity ``List.cons 3 then
+    let pair ← whnf l.getAppArgs[1]!
+    if pair.isAppOfArity ``Prod.mk 4 then
+      collectEnvPairs l.getAppArgs[2]!
+        (acc.push (pair.getAppArgs[2]!, pair.getAppArgs[3]!))
+    else
+      throwError "mint: env entry is not a literal pair"
+  else if l.isAppOfArity ``List.nil 1 then
+    return acc
+  else
+    throwError "mint: env list did not reduce to a literal"
+
+private inductive MintOut where
+  | link (b : BuiltLink)
+  | terminal
+  | skip (why : MessageData)
+  deriving Inhabited
+
+/-- Build the link for a MINTED round: pre-pin `famI := stateAt c`
+    and the minted successor family, assign the construct proof into
+    the link's `happ` slot, dispatch the remaining premises through
+    the standard dispatcher (FamShape by rfl, `stateAt_inv` from the
+    famInv registry, cell indexes, the control anchor). -/
+private def buildMintedLink (gf gs td tid : Expr) (ΓE : Expr)
+    (linkC : Name) (famI famO happLam : Expr) : MetaM BuiltLink := do
+  let cinfo ← getConstInfo linkC
+  let (args, _, concl) ← forallMetaTelescope cinfo.type
+  unless concl.isAppOfArity ``RelSem.Seg.SegStep 7 do
+    throwError "mint [{linkC}]: link conclusion shape"
+  let cargs := concl.getAppArgs
+  unless (← isDefEq cargs[0]! gf) && (← isDefEq cargs[1]! gs)
+      && (← isDefEq cargs[2]! td) && (← isDefEq cargs[3]! tid) do
+    throwError "mint [{linkC}]: instance/program unification failed"
+  unless ← isDefEq cargs[5]! ΓE do
+    throwError "mint [{linkC}]: entry context does not unify"
+  -- pre-pin the fam slots (declaration order famI, famO)
+  let mut famPins := #[famI, famO]
+  let mut pinIdx := 0
+  for a in args do
+    if pinIdx ≥ famPins.size then continue
+    let a ← instantiateMVars a
+    if a.isMVar then
+      let aty ← instantiateMVars (← a.mvarId!.getType)
+      let isFamTy := aty.isArrow &&
+        aty.bindingDomain!.isConstOf ``RelSem.Seg.Pack &&
+        aty.bindingBody!.isConstOf ``driver_state
+      if isFamTy then
+        unless ← isDefEq a famPins[pinIdx]! do
+          throwError "mint [{linkC}]: fam slot {pinIdx} pre-pin failed"
+        pinIdx := pinIdx + 1
+  unless pinIdx == 2 do
+    throwError "mint [{linkC}]: fam slots not found"
+  -- assign happ
+  let mut happIdx : Option Nat := none
+  for i in [0:args.size] do
+    let ty ← instantiateMVars (← inferType args[i]!)
+    let isHapp ← forallTelescope ty fun _ body =>
+      pure (body.isEq && body.appFn!.appArg!.isAppOf ``app)
+    if isHapp && happIdx.isNone then
+      happIdx := some i
+  let some hi := happIdx
+    | throwError "mint [{linkC}]: no happ premise"
+  unless ← withProbeBudget (isDefEq args[hi]! happLam) do
+    throwError "mint [{linkC}]: minted proof does not fit the happ \
+      slot:{indentExpr (← instantiateMVars (← inferType args[hi]!))}"
+  let pack0 ← mkPack0
+  let mut progress := true
+  while progress do
+    progress := false
+    for a in args do
+      let a ← instantiateMVars a
+      if a.isMVar then
+        if ← dispatchPremise linkC pack0 a.mvarId! then
+          progress := true
+  for a in args do
+    let a ← instantiateMVars a
+    if a.isMVar then
+      throwError "mint [{linkC}]: unfilled premise:\
+        {indentExpr (← instantiateMVars (← a.mvarId!.getType))}"
+  let concl ← instantiateMVars concl
+  let delta := concl.getAppArgs[concl.getAppNumArgs - 1]!
+  if delta.hasExprMVar then
+    throwError "mint [{linkC}]: successor context still open"
+  let pf ← instantiateMVars (mkAppN
+    (mkConst linkC (cinfo.levelParams.map .param)) args)
+  return { pf, delta, minted := true }
+
+/-- THE MINT ATTEMPT at the current context. -/
+private def tryMint (gf gs td tid : Expr) (ΓE : Expr)
+    (comps : Array Expr) : MetaM MintOut := do
+  try
+    let cE ← instantiateMVars comps[0]!
+    let envE ← instantiateMVars comps[2]!
+    let cells ← collectEnvPairs envE
+    let packC := mkConst ``RelSem.Seg.Pack
+    withLocalDeclD `q packC fun q => do
+    let f1q ← mkAppM ``RelSem.Seg.Pack.f₁ #[q]
+    let hwfTy ← mkAppM ``EnvWfFrame #[f1q]
+    withLocalDeclD `hwf hwfTy fun hwf => do
+    let frameTy ← inferType f1q
+    let spineE ← mkListLit frameTy [f1q]
+    let cellTys ← cells.mapM fun (s, v) => do
+      mkEq (← mkAppM ``lookup_env #[s, spineE])
+        (← mkAppM ``Option.some #[v])
+    let decls : Array (Name × (Array Expr → MetaM Expr)) :=
+      cellTys.mapIdx fun i ty => (Name.mkSimple s!"hlk{i}", fun _ => pure ty)
+    withLocalDeclsD decls fun cellFVars => do
+    -- the kernel-computed discovery at the OPEN pack
+    let famI ← mkAppM ``RelSem.Seg.stateAt #[cE]
+    let σq := mkApp famI q
+    let discE ← mkAppM ``find_can_advance
+      #[← mkAppM ``RelSem.Cerb.dnmsDiscover #[td, tid, σq]]
+    let some stepO ← kwhnf? discE
+      | return MintOut.skip m!"kernel whnf failed on the discovery"
+    if stepO.isAppOfArity ``Option.none 1 then
+      return MintOut.terminal
+    unless stepO.isAppOfArity ``Option.some 2 do
+      return MintOut.skip
+        m!"discovery did not commit (head {stepO.getAppFn})"
+    let some stepI ← kwhnf? stepO.appArg!
+      | return MintOut.skip m!"kernel whnf failed on the step body"
+    let stepArgs := stepI.getAppArgs
+    -- purity check helper: the successor thread's env must still be
+    -- the unchanged single open frame (env-writing steps — births —
+    -- are outside the mint set and fall back to the supply)
+    let checkPureEnv (th' : Expr) : MetaM Unit := do
+      let some envThW ← kwhnf? (← mkAppM ``thread_state.env #[th'])
+        | throwError "mint: successor env did not compute"
+      unless envThW.isAppOfArity ``List.cons 3 do
+        throwError "mint: successor env shape{indentExpr envThW}"
+      let head ← instantiateMVars envThW.getAppArgs[1]!
+      unless head == f1q do
+        throwError "mint: env-writing step (birth class) — outside \
+          the probe set"
+    let pfBody ←
+      if stepI.isAppOf ``Step_tau2 && stepArgs.size ≥ 3 then do
+        let tsk ← whnfCore stepArgs[stepArgs.size - 2]!
+        unless tsk.isConstOf ``TSK_Misc do
+          throwError "mint: non-Misc tau kind"
+        let th' := stepArgs[stepArgs.size - 1]!
+        checkPureEnv th'
+        let stepI' := mkAppN stepI.getAppFn
+          (stepArgs.set! (stepArgs.size - 2) tsk)
+        let hfindPf ← mkLhsRflHint discE (mkApp stepO.appFn! stepI')
+        mkAppM ``RelSem.Seg.cstep_tau #[hfindPf]
+      else if stepI.isAppOf ``Step_with_runstate2 && stepArgs.size ≥ 2
+      then do
+        let kindE ← whnfCore stepArgs[stepArgs.size - 2]!
+        let stepM := stepArgs[stepArgs.size - 1]!
+        let lemN ←
+          if kindE.isAppOf ``RSK_eval then
+            pure ``RelSem.Seg.cstep_eval
+          else if kindE.isAppOf ``RSK_tau then do
+            let t ← whnfCore kindE.getAppArgs.back!
+            unless t.isConstOf ``TSK_Misc do
+              throwError "mint: non-Misc RSK_tau kind"
+            pure ``RelSem.Seg.cstep_rs_tau
+          else
+            throwError "mint: unkeyed runstate kind \
+              (head {kindE.getAppFn})"
+        let stepI' := mkAppN stepI.getAppFn
+          (stepArgs.set! (stepArgs.size - 2) kindE)
+        let hfindPf ← mkLhsRflHint discE (mkApp stepO.appFn! stepI')
+        let rsq ← mkAppM ``driver_state.core_run_state0 #[σq]
+        let (th', _rs', rhsR, pfHm) ←
+          crossToResult cellFVars (mkApp stepM rsq)
+        checkPureEnv th'
+        let pfHm ← mkExpectedTypeHint pfHm
+          (← mkEq (mkApp stepM rsq) rhsR)
+        mkAppM lemN #[hfindPf, pfHm]
+      else
+        throwError "mint: step class outside the construct set \
+          (head {stepI.getAppFn})"
+    -- keep only the cell binders the proof actually consumed
+    let used := cellFVars.filter fun h => pfBody.containsFVar h.fvarId!
+    let happLam ← mkLambdaFVars (#[q, hwf] ++ used) pfBody
+    -- the successor family, read off the proof's own conclusion
+    let concl ← inferType pfBody
+    let some (_, _, rhsPair) := concl.eq?
+      | throwError "mint: proof conclusion shape"
+    let rhsPair ← whnfCore rhsPair
+    unless rhsPair.isAppOfArity ``Prod.mk 4 do
+      throwError "mint: successor pair shape"
+    let succ := rhsPair.getAppArgs[3]!
+    let famO ← mkLambdaFVars #[q] succ
+    let linkC ←
+      match used.size with
+      | 0 => pure ``RelSem.Seg.link_ctl
+      | 1 => pure ``RelSem.Seg.link_ctl_env1
+      | 2 => pure ``RelSem.Seg.link_ctl_env2
+      | n => throwError "mint: {n} cell reads — no matching link"
+    let b ← buildMintedLink gf gs td tid ΓE linkC famI famO happLam
+    trace[RelSem.segRun] "mint: consumed one {linkC} round \
+      ({used.size} cells)"
+    return MintOut.link b
+  catch ex =>
+    return .skip ex.toMessageData
 
 /-- Parse the seg_run goal:
     `Ctx.interp Γ ⊢ WP (dnmsK td F acc tid xs' k) @ s ; E {{Φ}}`. -/
@@ -791,8 +1171,11 @@ private def isTerminalCand (cand : Name) : MetaM Bool := do
       return inner.isAppOf ``Sum.inr
     return false
 
-/-- THE STEPPER. -/
-elab "seg_run" : tactic => do
+/-- THE STEPPER (core; `mint` = PERF-2 mechanism C mint-first mode:
+    construct-package rounds are minted BEFORE any registered supply
+    is consulted, so probed classes ride zero generated facts;
+    unmintable classes fall back to blocks/rounds as ever). -/
+private def segRunCore (mint : Bool) : TacticM Unit := do
   let mvarId ← getMainGoal
   mvarId.withContext do
   let parts ← parseGoal (← mvarId.getType)
@@ -809,6 +1192,16 @@ elab "seg_run" : tactic => do
     let stepRes ← Core.withCurrHeartbeats do
       let comps ← ctxComponents ΓE
       let c := comps[0]!
+      -- PERF-2 mechanism C: mint-first (probe mode)
+      if mint then
+        match ← tryMint parts.gf parts.gs parts.td parts.tid ΓE comps
+        with
+        | .link b => return Sum.inl b
+        | .terminal => return Sum.inr m!"terminal offer round reached \
+            (apply `Seg.seg_done`)"
+        | .skip why =>
+          trace[RelSem.segRun] "mint skipped (falling back to the \
+            registered supply): {why}"
       -- PERF-1 mechanism B: block facts FIRST (committed choice —
       -- the block-granular default supply; per-round links are the
       -- anchor path)
@@ -908,7 +1301,19 @@ elab "seg_run" : tactic => do
     cargs2))
   let hcontM := (← instantiateMVars hC).mvarId!
   replaceMainGoal [hcontM]
-  trace[RelSem.segRun] "seg_run: consumed {n} round(s); stopped: \
-    {stopMsg}"
+  let nMinted := links.foldl (fun acc b => if b.minted then acc + b.n
+    else acc) 0
+  trace[RelSem.segRun] "seg_run: consumed {n} round(s) \
+    ({nMinted} minted, {n - nMinted} from supply); stopped: {stopMsg}"
+
+/-- THE STEPPER (registered-supply mode: blocks first, per-round
+    anchors second — PERF-1 behavior, unchanged). -/
+elab "seg_run" : tactic => segRunCore false
+
+/-- THE STEPPER, MINT-FIRST (PERF-2 mechanism C probe face): rounds
+    in the probed construct classes are proved from the once-proved
+    construct characterizations + the program's pinned Core term —
+    ZERO generated per-round supply; other classes fall back. -/
+elab "seg_run_c" : tactic => segRunCore true
 
 end RelSem.Seg.Stepper
