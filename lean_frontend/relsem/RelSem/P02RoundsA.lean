@@ -1,11 +1,17 @@
 /-
-  RelSem.P02RoundsA — V2b generated round supply (chunk
-  1/4; see P02Rounds.lean header). Statements only; proofs
-  by the class round tactics.
+  RelSem.P02RoundsA — PERF-1 generated supply (chunk
+  1/4; see P02Rounds.lean header and
+  scripts/gen_p02_supply.py). BLOCK-GRANULAR DEFAULT: @[seg_block]
+  SegStep facts for the straight-line pure-control runs (Floyd cut
+  points + the Hoare sequence rule via link_ctl/SegStep.trans),
+  @[seg_round] anchors at the cut points. NO per-round heartbeat
+  budgets (the pinned-discovery regime; a slow lemma is a loud
+  build failure, never a budget).
 -/
 
 import RelSem.P02Rounds
 import RelSem.P02Guard
+import RelSem.SegRun
 
 set_option autoImplicit false
 set_option maxHeartbeats 2000000
@@ -19,36 +25,18 @@ open RelSem.T1 (T1P RExpr aU intCty xAddr xPtr xPtrV loadedV xBytes
   mkByte allocX allocXS mr0 mr1)
 open RelSem.P01 (L0)
 
+/-- FamShape at any P02-family instance (all rfl; chunk-local copy —
+    consumed by this chunk's block facts). -/
+private def p02ShapeC (ar : RExpr) (tr : List trace_event) (n : Nat) :
+    Seg.FamShape (p02fam ar tr n) :=
+  ⟨fun _ => rfl, fun _ => rfl, fun _ => rfl, fun _ => rfl⟩
+
 @[seg_round]
 theorem p02r0_hi_lo_mA_mB_mC (p : T1P) :
     app (dnmsRoundM p02File.tagDefs 0)
         (p02fam0 p)
       = (NDactive (Sum.inl NOWAKEUP),
          p02fam p02ar1 [] 1 p) := by
-  seg_round_eval
-
-@[seg_round]
-theorem p02r1_hi_lo_mA_mB_mC (p : T1P) :
-    app (dnmsRoundM p02File.tagDefs 0)
-        (p02fam p02ar1 [] 1 p)
-      = (NDactive (Sum.inl NOWAKEUP),
-         p02fam p02ar2 [] 2 p) := by
-  seg_round_eval
-
-@[seg_round]
-theorem p02r2_hi_lo_mA_mB_mC (p : T1P) :
-    app (dnmsRoundM p02File.tagDefs 0)
-        (p02fam p02ar2 [] 2 p)
-      = (NDactive (Sum.inl NOWAKEUP),
-         p02fam p02ar3 [] 3 p) := by
-  seg_round_eval
-
-@[seg_round]
-theorem p02r3_hi_lo_mA_mB_mC (p : T1P) :
-    app (dnmsRoundM p02File.tagDefs 0)
-        (p02fam p02ar3 [] 3 p)
-      = (NDactive (Sum.inl NOWAKEUP),
-         p02fam p02ar4 [] 4 p) := by
   seg_round_eval
 
 @[seg_round]
@@ -124,7 +112,6 @@ theorem p02r11_hi_lo_mA_mB (a : Int) (p : T1P) :
          p02fam (p02ar12 a) [p02meLoadA a] 11 p) := by
   seg_round_tau
 
-set_option maxHeartbeats 16000000 in
 @[seg_round]
 theorem p02r12_hi_mA (a : Int) (ha1 : -2147483648 ≤ a) (ha2 : a ≤ 2147483647) (p : T1P)
     (hp0 : 0 < a) :
@@ -204,30 +191,6 @@ theorem p02r20_hi_mA (a : Int) (p : T1P)
   seg_round_eval
 
 @[seg_round]
-theorem p02r21_hi_mA (a : Int) (p : T1P) :
-    app (dnmsRoundM p02File.tagDefs 0)
-        (p02fam p02ar21 [p02meLoadA a] 20 p)
-      = (NDactive (Sum.inl NOWAKEUP),
-         p02fam p02ar22 [p02meLoadA a] 21 p) := by
-  seg_round_tau
-
-@[seg_round]
-theorem p02r22_hi_mA (a : Int) (p : T1P) :
-    app (dnmsRoundM p02File.tagDefs 0)
-        (p02fam p02ar22 [p02meLoadA a] 21 p)
-      = (NDactive (Sum.inl NOWAKEUP),
-         p02fam p02ar23 [p02meLoadA a] 22 p) := by
-  seg_round_tau
-
-@[seg_round]
-theorem p02r23_hi_mA (a : Int) (p : T1P) :
-    app (dnmsRoundM p02File.tagDefs 0)
-        (p02fam p02ar23 [p02meLoadA a] 22 p)
-      = (NDactive (Sum.inl NOWAKEUP),
-         p02fam p02ar24 [p02meLoadA a] 23 p) := by
-  seg_round_eval
-
-@[seg_round]
 theorem p02r24_hi_mA (a : Int) (p : T1P)
     (hrd0 : lookup_env p02s_a [p.f₁] = some (Vobject (OVpointer (.PV (.Prov_some 0) (.PVconcrete none 281474976710648))))) :
     app (dnmsRoundM p02File.tagDefs 0)
@@ -266,24 +229,6 @@ theorem p02r27_hi_mA (a : Int) (ha1 : -2147483648 ≤ a) (ha2 : a ≤ 2147483647
          p02fam (p02ar28 a) [p02meLoadA a, p02meLoadA a] 26 { p with aS := p.aS + 1 }) := by
   seg_round_load
 
-set_option maxHeartbeats 16000000 in
-@[seg_round]
-theorem p02r28_hi_mA (a : Int) (p : T1P) :
-    app (dnmsRoundM p02File.tagDefs 0)
-        (p02fam (p02ar28 a) [p02meLoadA a, p02meLoadA a] 26 p)
-      = (NDactive (Sum.inl NOWAKEUP),
-         p02fam (p02ar29 a) [p02meLoadA a, p02meLoadA a] 27 p) := by
-  seg_round_eval
-
-set_option maxHeartbeats 16000000 in
-@[seg_round]
-theorem p02r29_hi_mA (a : Int) (p : T1P) :
-    app (dnmsRoundM p02File.tagDefs 0)
-        (p02fam (p02ar29 a) [p02meLoadA a, p02meLoadA a] 27 p)
-      = (NDactive (Sum.inl NOWAKEUP),
-         p02fam (p02ar30 a) [p02meLoadA a, p02meLoadA a] 28 p) := by
-  seg_round_tau
-
 @[seg_round]
 theorem p02r30_hi_mA (a : Int) (p : T1P) :
     app (dnmsRoundM p02File.tagDefs 0)
@@ -292,7 +237,6 @@ theorem p02r30_hi_mA (a : Int) (p : T1P) :
          p02fam p02ar31 [p02meLoadA a, p02meLoadA a] 29 { p with f₁ := (@fmapAddBy sym value Lem_Map.instBEqOfMapKeyType (@Lem_Map.mapKeyCompare sym _) p02s_a_579 (Vloaded (LVspecified (OVinteger (.IV .Prov_none (2147483647))))) (@fmapAddBy sym value Lem_Map.instBEqOfMapKeyType (@Lem_Map.mapKeyCompare sym _) p02s_a_580 (Vloaded (LVspecified (OVinteger (.IV .Prov_none a)))) p.f₁)) }) := by
   seg_round_tau
 
-set_option maxHeartbeats 16000000 in
 @[seg_round]
 theorem p02r31_hi_mA (a : Int) (ha1 : -2147483648 ≤ a) (ha2 : a ≤ 2147483647) (p : T1P)
     (hrd0 : lookup_env p02s_a_579 [p.f₁] = some (Vloaded (LVspecified (OVinteger (.IV .Prov_none (2147483647))))))
@@ -377,7 +321,6 @@ theorem p02r39_hi_mA (a : Int) (b : Int) (p : T1P) :
          p02fam (p02ar40 a b) [p02meLoadB b, p02meLoadA a, p02meLoadA a] 37 p) := by
   seg_round_tau
 
-set_option maxHeartbeats 16000000 in
 @[seg_round]
 theorem p02r40_hi (a : Int) (b : Int) (ha1 : -2147483648 ≤ a) (ha2 : a ≤ 2147483647) (hb1 : -2147483648 ≤ b) (hb2 : b ≤ 2147483647) (p : T1P)
     (hp0 : 0 < a)
@@ -491,22 +434,6 @@ theorem p02r52_hi (a : Int) (b : Int) (p : T1P)
   seg_round_eval
 
 @[seg_round]
-theorem p02r53_hi (a : Int) (b : Int) (p : T1P) :
-    app (dnmsRoundM p02File.tagDefs 0)
-        (p02fam p02ar53 [p02meLoadB b, p02meLoadA a, p02meLoadA a] 50 p)
-      = (NDactive (Sum.inl NOWAKEUP),
-         p02fam p02ar54 [p02meLoadB b, p02meLoadA a, p02meLoadA a] 51 p) := by
-  seg_round_tau
-
-@[seg_round]
-theorem p02r54_hi (a : Int) (b : Int) (p : T1P) :
-    app (dnmsRoundM p02File.tagDefs 0)
-        (p02fam p02ar54 [p02meLoadB b, p02meLoadA a, p02meLoadA a] 51 p)
-      = (NDactive (Sum.inl NOWAKEUP),
-         p02fam p02ar55 [p02meLoadB b, p02meLoadA a, p02meLoadA a] 52 p) := by
-  seg_round_eval
-
-@[seg_round]
 theorem p02r55_hi (a : Int) (b : Int) (p : T1P) :
     app (dnmsRoundM p02File.tagDefs 0)
         (p02fam p02ar55 [p02meLoadB b, p02meLoadA a, p02meLoadA a] 52 p)
@@ -524,22 +451,6 @@ theorem p02r56_hi (a : Int) (b : Int) (p : T1P)
   seg_round_tau
 
 @[seg_round]
-theorem p02r57_hi (a : Int) (b : Int) (p : T1P) :
-    app (dnmsRoundM p02File.tagDefs 0)
-        (p02fam p02ar57 [p02meLoadB b, p02meLoadA a, p02meLoadA a] 54 p)
-      = (NDactive (Sum.inl NOWAKEUP),
-         p02fam p02ar58 [p02meLoadB b, p02meLoadA a, p02meLoadA a] 55 p) := by
-  seg_round_eval
-
-@[seg_round]
-theorem p02r58_hi (a : Int) (b : Int) (p : T1P) :
-    app (dnmsRoundM p02File.tagDefs 0)
-        (p02fam p02ar58 [p02meLoadB b, p02meLoadA a, p02meLoadA a] 55 p)
-      = (NDactive (Sum.inl NOWAKEUP),
-         p02fam p02ar59 [p02meLoadB b, p02meLoadA a, p02meLoadA a] 56 p) := by
-  seg_round_tau
-
-@[seg_round]
 theorem p02r59_hi (a : Int) (b : Int) (p : T1P) :
     app (dnmsRoundM p02File.tagDefs 0)
         (p02fam p02ar59 [p02meLoadB b, p02meLoadA a, p02meLoadA a] 56 p)
@@ -548,10 +459,8 @@ theorem p02r59_hi (a : Int) (b : Int) (p : T1P) :
   seg_round_tau
 
 @[seg_round]
-theorem p02r60_hi (a : Int) (b : Int) (p : T1P)
-    (hrd0 : lookup_env p02s_a_590 [p.f₁] = some (Vloaded (LVspecified (OVinteger (.IV .Prov_none (2147483647))))))
-    (hrd1 : lookup_env p02s_a [p.f₁] = some (Vobject (OVpointer (.PV (.Prov_some 0) (.PVconcrete none 281474976710648)))))
-    (hrd2 : lookup_env p02s_b [p.f₁] = some (Vobject (OVpointer (.PV (.Prov_some 1) (.PVconcrete none 281474976710644))))) :
+theorem p02r60_hi (a : Int) (b : Int) (ha1 : -2147483648 ≤ a) (ha2 : a ≤ 2147483647) (hb1 : -2147483648 ≤ b) (hb2 : b ≤ 2147483647) (p : T1P)
+    (hrd0 : lookup_env p02s_a_590 [p.f₁] = some (Vloaded (LVspecified (OVinteger (.IV .Prov_none (2147483647)))))) :
     app (dnmsRoundM p02File.tagDefs 0)
         (p02fam p02ar60 [p02meLoadB b, p02meLoadA a, p02meLoadA a] 57 p)
       = (NDactive (Sum.inl NOWAKEUP),
@@ -575,7 +484,6 @@ theorem p02term_hi (a : Int) (b : Int) (p : T1P) :
          p02fam p02ar62 [p02meLoadB b, p02meLoadA a, p02meLoadA a] 59 p) := by
   seg_round_term
 
-set_option maxHeartbeats 16000000 in
 @[seg_round]
 theorem p02r63_mA (a : Int) (b : Int) (ha1 : -2147483648 ≤ a) (ha2 : a ≤ 2147483647) (hb1 : -2147483648 ≤ b) (hb2 : b ≤ 2147483647) (p : T1P)
     (hp0 : 0 < a)
@@ -681,22 +589,6 @@ theorem p02r74_mA (a : Int) (b : Int) (p : T1P)
   seg_round_eval
 
 @[seg_round]
-theorem p02r75_mA (a : Int) (b : Int) (p : T1P) :
-    app (dnmsRoundM p02File.tagDefs 0)
-        (p02fam p02ar70 [p02meLoadB b, p02meLoadA a, p02meLoadA a] 50 p)
-      = (NDactive (Sum.inl NOWAKEUP),
-         p02fam p02ar71 [p02meLoadB b, p02meLoadA a, p02meLoadA a] 51 p) := by
-  seg_round_tau
-
-@[seg_round]
-theorem p02r76_mA (a : Int) (b : Int) (p : T1P) :
-    app (dnmsRoundM p02File.tagDefs 0)
-        (p02fam p02ar71 [p02meLoadB b, p02meLoadA a, p02meLoadA a] 51 p)
-      = (NDactive (Sum.inl NOWAKEUP),
-         p02fam p02ar72 [p02meLoadB b, p02meLoadA a, p02meLoadA a] 52 p) := by
-  seg_round_eval
-
-@[seg_round]
 theorem p02r77_mA (a : Int) (b : Int) (p : T1P) :
     app (dnmsRoundM p02File.tagDefs 0)
         (p02fam p02ar72 [p02meLoadB b, p02meLoadA a, p02meLoadA a] 52 p)
@@ -712,46 +604,6 @@ theorem p02r78_mA (a : Int) (b : Int) (p : T1P)
       = (NDactive (Sum.inl NOWAKEUP),
          p02fam p02ar73 [p02meLoadB b, p02meLoadA a, p02meLoadA a] 54 p) := by
   seg_round_tau
-
-@[seg_round]
-theorem p02r79_mA (a : Int) (b : Int) (p : T1P) :
-    app (dnmsRoundM p02File.tagDefs 0)
-        (p02fam p02ar73 [p02meLoadB b, p02meLoadA a, p02meLoadA a] 54 p)
-      = (NDactive (Sum.inl NOWAKEUP),
-         p02fam p02ar74 [p02meLoadB b, p02meLoadA a, p02meLoadA a] 55 p) := by
-  seg_round_tau
-
-@[seg_round]
-theorem p02r80_mA (a : Int) (b : Int) (p : T1P) :
-    app (dnmsRoundM p02File.tagDefs 0)
-        (p02fam p02ar74 [p02meLoadB b, p02meLoadA a, p02meLoadA a] 55 p)
-      = (NDactive (Sum.inl NOWAKEUP),
-         p02fam p02ar75 [p02meLoadB b, p02meLoadA a, p02meLoadA a] 56 p) := by
-  seg_round_eval
-
-@[seg_round]
-theorem p02r81_mA (a : Int) (b : Int) (p : T1P) :
-    app (dnmsRoundM p02File.tagDefs 0)
-        (p02fam p02ar75 [p02meLoadB b, p02meLoadA a, p02meLoadA a] 56 p)
-      = (NDactive (Sum.inl NOWAKEUP),
-         p02fam p02ar76 [p02meLoadB b, p02meLoadA a, p02meLoadA a] 57 p) := by
-  seg_round_eval
-
-@[seg_round]
-theorem p02r82_mA (a : Int) (b : Int) (p : T1P) :
-    app (dnmsRoundM p02File.tagDefs 0)
-        (p02fam p02ar76 [p02meLoadB b, p02meLoadA a, p02meLoadA a] 57 p)
-      = (NDactive (Sum.inl NOWAKEUP),
-         p02fam p02ar77 [p02meLoadB b, p02meLoadA a, p02meLoadA a] 58 p) := by
-  seg_round_eval
-
-@[seg_round]
-theorem p02r83_mA (a : Int) (b : Int) (p : T1P) :
-    app (dnmsRoundM p02File.tagDefs 0)
-        (p02fam p02ar77 [p02meLoadB b, p02meLoadA a, p02meLoadA a] 58 p)
-      = (NDactive (Sum.inl NOWAKEUP),
-         p02fam p02ar78 [p02meLoadB b, p02meLoadA a, p02meLoadA a] 59 p) := by
-  seg_round_eval
 
 @[seg_round]
 theorem p02r84_mA (a : Int) (b : Int) (p : T1P)
@@ -791,5 +643,101 @@ theorem p02r87_mA (a : Int) (b : Int) (ha1 : -2147483648 ≤ a) (ha2 : a ≤ 214
       = (NDactive (Sum.inl NOWAKEUP),
          p02fam (p02ar82 a) [p02meLoadA a, p02meLoadB b, p02meLoadA a, p02meLoadA a] 62 { p with aS := p.aS + 1 }) := by
   seg_round_load
+
+@[seg_round]
+theorem p02r88_mA (a : Int) (b : Int) (p : T1P) :
+    app (dnmsRoundM p02File.tagDefs 0)
+        (p02fam (p02ar82 a) [p02meLoadA a, p02meLoadB b, p02meLoadA a, p02meLoadA a] 62 p)
+      = (NDactive (Sum.inl NOWAKEUP),
+         p02fam (p02ar83 a) [p02meLoadA a, p02meLoadB b, p02meLoadA a, p02meLoadA a] 63 p) := by
+  seg_round_tau
+
+@[seg_round]
+theorem p02r89_mA (a : Int) (b : Int) (p : T1P) :
+    app (dnmsRoundM p02File.tagDefs 0)
+        (p02fam (p02ar83 a) [p02meLoadA a, p02meLoadB b, p02meLoadA a, p02meLoadA a] 63 p)
+      = (NDactive (Sum.inl NOWAKEUP),
+         p02fam p02ar84 [p02meLoadA a, p02meLoadB b, p02meLoadA a, p02meLoadA a] 64 { p with f₁ := (@fmapAddBy sym value Lem_Map.instBEqOfMapKeyType (@Lem_Map.mapKeyCompare sym _) p02s_a_609 (Vloaded (LVspecified (OVinteger (.IV .Prov_none a)))) (@fmapAddBy sym value Lem_Map.instBEqOfMapKeyType (@Lem_Map.mapKeyCompare sym _) p02s_a_610 (Vloaded (LVspecified (OVinteger (.IV .Prov_none (0))))) p.f₁)) }) := by
+  seg_round_tau
+
+@[seg_round]
+theorem p02r90_mA (a : Int) (b : Int) (p : T1P)
+    (hrd0 : lookup_env p02s_a_609 [p.f₁] = some (Vloaded (LVspecified (OVinteger (.IV .Prov_none a)))))
+    (hrd1 : lookup_env p02s_a_610 [p.f₁] = some (Vloaded (LVspecified (OVinteger (.IV .Prov_none (0)))))) :
+    app (dnmsRoundM p02File.tagDefs 0)
+        (p02fam p02ar84 [p02meLoadA a, p02meLoadB b, p02meLoadA a, p02meLoadA a] 64 p)
+      = (NDactive (Sum.inl NOWAKEUP),
+         p02fam (p02ar85 a) [p02meLoadA a, p02meLoadB b, p02meLoadA a, p02meLoadA a] 65 p) := by
+  seg_round_eval
+
+@[seg_round]
+theorem p02r91_mA (a : Int) (b : Int) (p : T1P) :
+    app (dnmsRoundM p02File.tagDefs 0)
+        (p02fam (p02ar85 a) [p02meLoadA a, p02meLoadB b, p02meLoadA a, p02meLoadA a] 65 p)
+      = (NDactive (Sum.inl NOWAKEUP),
+         p02fam (p02ar86 a) [p02meLoadA a, p02meLoadB b, p02meLoadA a, p02meLoadA a] 66 p) := by
+  seg_round_tau
+
+@[seg_round]
+theorem p02r92_mA (a : Int) (b : Int) (ha1 : -2147483648 ≤ a) (ha2 : a ≤ 2147483647) (hb1 : -2147483648 ≤ b) (hb2 : b ≤ 2147483647) (p : T1P)
+    (hp0 : 0 < a)
+    (hp1 : ¬ 2147483647 - a < b) :
+    app (dnmsRoundM p02File.tagDefs 0)
+        (p02fam (p02ar86 a) [p02meLoadA a, p02meLoadB b, p02meLoadA a, p02meLoadA a] 66 p)
+      = (NDactive (Sum.inl NOWAKEUP),
+         p02fam p02ar87 [p02meLoadA a, p02meLoadB b, p02meLoadA a, p02meLoadA a] 67 p) := by
+  seg_round_guard_ltF
+
+@[seg_round]
+theorem p02r93_mA (a : Int) (b : Int) (p : T1P) :
+    app (dnmsRoundM p02File.tagDefs 0)
+        (p02fam p02ar87 [p02meLoadA a, p02meLoadB b, p02meLoadA a, p02meLoadA a] 67 p)
+      = (NDactive (Sum.inl NOWAKEUP),
+         p02fam p02ar88 [p02meLoadA a, p02meLoadB b, p02meLoadA a, p02meLoadA a] 68 p) := by
+  seg_round_tau
+
+@[seg_round]
+theorem p02r94_mA (a : Int) (b : Int) (p : T1P) :
+    app (dnmsRoundM p02File.tagDefs 0)
+        (p02fam p02ar88 [p02meLoadA a, p02meLoadB b, p02meLoadA a, p02meLoadA a] 68 p)
+      = (NDactive (Sum.inl NOWAKEUP),
+         p02fam p02ar89 [p02meLoadA a, p02meLoadB b, p02meLoadA a, p02meLoadA a] 69 { p with f₁ := (@fmapAddBy sym value Lem_Map.instBEqOfMapKeyType (@Lem_Map.mapKeyCompare sym _) p02s_a_603 (Vloaded (LVspecified (OVinteger (.IV .Prov_none (0))))) (@fmapAddBy sym value Lem_Map.instBEqOfMapKeyType (@Lem_Map.mapKeyCompare sym _) p02s_a_604 (Vloaded (LVspecified (OVinteger (.IV .Prov_none (0))))) p.f₁)) }) := by
+  seg_round_tau
+
+@[seg_round]
+theorem p02r95_mA (a : Int) (b : Int) (p : T1P)
+    (hrd0 : lookup_env p02s_a_603 [p.f₁] = some (Vloaded (LVspecified (OVinteger (.IV .Prov_none (0))))))
+    (hrd1 : lookup_env p02s_a_604 [p.f₁] = some (Vloaded (LVspecified (OVinteger (.IV .Prov_none (0)))))) :
+    app (dnmsRoundM p02File.tagDefs 0)
+        (p02fam p02ar89 [p02meLoadA a, p02meLoadB b, p02meLoadA a, p02meLoadA a] 69 p)
+      = (NDactive (Sum.inl NOWAKEUP),
+         p02fam p02ar90 [p02meLoadA a, p02meLoadB b, p02meLoadA a, p02meLoadA a] 70 p) := by
+  seg_round_eval
+
+@[seg_round]
+theorem p02r96_mA (a : Int) (b : Int) (p : T1P) :
+    app (dnmsRoundM p02File.tagDefs 0)
+        (p02fam p02ar90 [p02meLoadA a, p02meLoadB b, p02meLoadA a, p02meLoadA a] 70 p)
+      = (NDactive (Sum.inl NOWAKEUP),
+         p02fam p02ar91 [p02meLoadA a, p02meLoadB b, p02meLoadA a, p02meLoadA a] 71 p) := by
+  seg_round_tau
+
+@[seg_round]
+theorem p02r97_mA (a : Int) (b : Int) (p : T1P) :
+    app (dnmsRoundM p02File.tagDefs 0)
+        (p02fam p02ar91 [p02meLoadA a, p02meLoadB b, p02meLoadA a, p02meLoadA a] 71 p)
+      = (NDactive (Sum.inl NOWAKEUP),
+         p02fam p02ar92 [p02meLoadA a, p02meLoadB b, p02meLoadA a, p02meLoadA a] 72 { p with f₁ := (@fmapAddBy sym value Lem_Map.instBEqOfMapKeyType (@Lem_Map.mapKeyCompare sym _) p02s_a_598 (Vloaded (LVspecified (OVinteger (.IV .Prov_none (1))))) (@fmapAddBy sym value Lem_Map.instBEqOfMapKeyType (@Lem_Map.mapKeyCompare sym _) p02s_a_599 (Vloaded (LVspecified (OVinteger (.IV .Prov_none (0))))) p.f₁)) }) := by
+  seg_round_tau
+
+@[seg_round]
+theorem p02r98_mA (a : Int) (b : Int) (p : T1P)
+    (hrd0 : lookup_env p02s_a_598 [p.f₁] = some (Vloaded (LVspecified (OVinteger (.IV .Prov_none (1))))))
+    (hrd1 : lookup_env p02s_a_599 [p.f₁] = some (Vloaded (LVspecified (OVinteger (.IV .Prov_none (0)))))) :
+    app (dnmsRoundM p02File.tagDefs 0)
+        (p02fam p02ar92 [p02meLoadA a, p02meLoadB b, p02meLoadA a, p02meLoadA a] 72 p)
+      = (NDactive (Sum.inl NOWAKEUP),
+         p02fam p02ar93 [p02meLoadA a, p02meLoadB b, p02meLoadA a, p02meLoadA a] 73 p) := by
+  seg_round_eval
 
 end RelSem.P02

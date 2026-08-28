@@ -1007,22 +1007,12 @@ macro "seg_round_guard_gtT" : tactic =>
              refine ((advance_runstate_eval (th' := ?_)
                (rs' := ?_) ?_).trans ?_)
              rotate_left 2
-             · refine (stub_defined (z := ?_) (st' := ?_) ?_).trans ?_
-               rotate_left 2
-               · refine (stub_defined (z := ?_) (st' := ?_)
-                   ?_).trans ?_
-                 rotate_left 2
-                 · refine (stub_defined (z := ?_) (st' := ?_)
-                     ?_).trans ?_
-                   rotate_left 2
-                   · show runEU (eval_pexpr_aux2 _ _ _ _ _ _ _ _)
-                       _ = _
-                     refine (RelSem.P02.p02cmp_gt_T _ _ ?_ ?_
-                       ?_ ?_ ?_).trans ?_
-                     all_goals first | assumption | omega | rfl
-                   · rfl
-                 · rfl
-               · rfl
+             · seg_peels
+               focus
+                 show runEU (eval_pexpr_aux2 _ _ _ _ _ _ _ _) _ = _
+                 refine (RelSem.P02.p02cmp_gt_T _ _ ?_ ?_ ?_ ?_ ?_).trans ?_
+                 all_goals first | assumption | omega | rfl
+               all_goals rfl
              · rfl))
 
 /-- Deterministic conditioned-round tactic (guard_gtF). -/
@@ -1031,22 +1021,12 @@ macro "seg_round_guard_gtF" : tactic =>
              refine ((advance_runstate_eval (th' := ?_)
                (rs' := ?_) ?_).trans ?_)
              rotate_left 2
-             · refine (stub_defined (z := ?_) (st' := ?_) ?_).trans ?_
-               rotate_left 2
-               · refine (stub_defined (z := ?_) (st' := ?_)
-                   ?_).trans ?_
-                 rotate_left 2
-                 · refine (stub_defined (z := ?_) (st' := ?_)
-                     ?_).trans ?_
-                   rotate_left 2
-                   · show runEU (eval_pexpr_aux2 _ _ _ _ _ _ _ _)
-                       _ = _
-                     refine (RelSem.P02.p02cmp_gt_F _ _ ?_ ?_
-                       ?_ ?_ ?_).trans ?_
-                     all_goals first | assumption | omega | rfl
-                   · rfl
-                 · rfl
-               · rfl
+             · seg_peels
+               focus
+                 show runEU (eval_pexpr_aux2 _ _ _ _ _ _ _ _) _ = _
+                 refine (RelSem.P02.p02cmp_gt_F _ _ ?_ ?_ ?_ ?_ ?_).trans ?_
+                 all_goals first | assumption | omega | rfl
+               all_goals rfl
              · rfl))
 
 /-- Deterministic conditioned-round tactic (guard_ltT). -/
@@ -1055,22 +1035,12 @@ macro "seg_round_guard_ltT" : tactic =>
              refine ((advance_runstate_eval (th' := ?_)
                (rs' := ?_) ?_).trans ?_)
              rotate_left 2
-             · refine (stub_defined (z := ?_) (st' := ?_) ?_).trans ?_
-               rotate_left 2
-               · refine (stub_defined (z := ?_) (st' := ?_)
-                   ?_).trans ?_
-                 rotate_left 2
-                 · refine (stub_defined (z := ?_) (st' := ?_)
-                     ?_).trans ?_
-                   rotate_left 2
-                   · show runEU (eval_pexpr_aux2 _ _ _ _ _ _ _ _)
-                       _ = _
-                     refine (RelSem.P02.p02cmp_lt_T _ _ ?_ ?_
-                       ?_ ?_ ?_).trans ?_
-                     all_goals first | assumption | omega | rfl
-                   · rfl
-                 · rfl
-               · rfl
+             · seg_peels
+               focus
+                 show runEU (eval_pexpr_aux2 _ _ _ _ _ _ _ _) _ = _
+                 refine (RelSem.P02.p02cmp_lt_T _ _ ?_ ?_ ?_ ?_ ?_).trans ?_
+                 all_goals first | assumption | omega | rfl
+               all_goals rfl
              · rfl))
 
 /-- Deterministic conditioned-round tactic (guard_ltF). -/
@@ -1079,22 +1049,12 @@ macro "seg_round_guard_ltF" : tactic =>
              refine ((advance_runstate_eval (th' := ?_)
                (rs' := ?_) ?_).trans ?_)
              rotate_left 2
-             · refine (stub_defined (z := ?_) (st' := ?_) ?_).trans ?_
-               rotate_left 2
-               · refine (stub_defined (z := ?_) (st' := ?_)
-                   ?_).trans ?_
-                 rotate_left 2
-                 · refine (stub_defined (z := ?_) (st' := ?_)
-                     ?_).trans ?_
-                   rotate_left 2
-                   · show runEU (eval_pexpr_aux2 _ _ _ _ _ _ _ _)
-                       _ = _
-                     refine (RelSem.P02.p02cmp_lt_F _ _ ?_ ?_
-                       ?_ ?_ ?_).trans ?_
-                     all_goals first | assumption | omega | rfl
-                   · rfl
-                 · rfl
-               · rfl
+             · seg_peels
+               focus
+                 show runEU (eval_pexpr_aux2 _ _ _ _ _ _ _ _) _ = _
+                 refine (RelSem.P02.p02cmp_lt_F _ _ ?_ ?_ ?_ ?_ ?_).trans ?_
+                 all_goals first | assumption | omega | rfl
+               all_goals rfl
              · rfl))
 
 /-- Deterministic conditioned-round tactic (arith_sub). -/
@@ -1103,30 +1063,20 @@ macro "seg_round_arith_sub" : tactic =>
              refine ((advance_runstate_eval (th' := ?_)
                (rs' := ?_) ?_).trans ?_)
              rotate_left 2
-             · refine (stub_defined (z := ?_) (st' := ?_) ?_).trans ?_
-               rotate_left 2
-               · refine (stub_defined (z := ?_) (st' := ?_)
-                   ?_).trans ?_
-                 rotate_left 2
-                 · refine (stub_defined (z := ?_) (st' := ?_)
-                     ?_).trans ?_
-                   rotate_left 2
-                   · show runEU (eval_pexpr_aux2 _ _ _ _ _ _ _ _)
-                       _ = _
-                     refine (RelSem.Seg.runEU_aux2_step_then
-                       (peP := ?_) (pe' := ?_) (z := ?_)
-                       ?_ ?_ ?_ ?_).trans ?_
-                     rotate_left 3
-                     · rfl
-                     · seg_se_step
-                     · rfl
-                     · refine RelSem.P02.p02arm_sub _ _ ?_ ?_
-                         ?_ ?_ ?_ ?_
-                       all_goals first | assumption | omega
-                     · rfl
-                   · rfl
+             · seg_peels
+               focus
+                 show runEU (eval_pexpr_aux2 _ _ _ _ _ _ _ _) _ = _
+                 refine (RelSem.Seg.runEU_aux2_step_then
+                   (peP := ?_) (pe' := ?_) (z := ?_)
+                   ?_ ?_ ?_ ?_).trans ?_
+                 rotate_left 3
                  · rfl
-               · rfl
+                 · seg_se_step
+                 · rfl
+                 · refine RelSem.P02.p02arm_sub _ _ ?_ ?_ ?_ ?_ ?_ ?_
+                   all_goals first | assumption | omega
+                 · rfl
+               all_goals rfl
              · rfl))
 
 /-- Deterministic conditioned-round tactic (arith_add). -/
@@ -1135,30 +1085,20 @@ macro "seg_round_arith_add" : tactic =>
              refine ((advance_runstate_eval (th' := ?_)
                (rs' := ?_) ?_).trans ?_)
              rotate_left 2
-             · refine (stub_defined (z := ?_) (st' := ?_) ?_).trans ?_
-               rotate_left 2
-               · refine (stub_defined (z := ?_) (st' := ?_)
-                   ?_).trans ?_
-                 rotate_left 2
-                 · refine (stub_defined (z := ?_) (st' := ?_)
-                     ?_).trans ?_
-                   rotate_left 2
-                   · show runEU (eval_pexpr_aux2 _ _ _ _ _ _ _ _)
-                       _ = _
-                     refine (RelSem.Seg.runEU_aux2_step_then
-                       (peP := ?_) (pe' := ?_) (z := ?_)
-                       ?_ ?_ ?_ ?_).trans ?_
-                     rotate_left 3
-                     · rfl
-                     · seg_se_step
-                     · rfl
-                     · refine RelSem.P02.p02arm_add _ _ ?_ ?_
-                         ?_ ?_ ?_ ?_
-                       all_goals first | assumption | omega
-                     · rfl
-                   · rfl
+             · seg_peels
+               focus
+                 show runEU (eval_pexpr_aux2 _ _ _ _ _ _ _ _) _ = _
+                 refine (RelSem.Seg.runEU_aux2_step_then
+                   (peP := ?_) (pe' := ?_) (z := ?_)
+                   ?_ ?_ ?_ ?_).trans ?_
+                 rotate_left 3
                  · rfl
-               · rfl
+                 · seg_se_step
+                 · rfl
+                 · refine RelSem.P02.p02arm_add _ _ ?_ ?_ ?_ ?_ ?_ ?_
+                   all_goals first | assumption | omega
+                 · rfl
+               all_goals rfl
              · rfl))
 
 /-! ### PERF-1 (2026-08-28): the ARM-FORM committed keys — the r127
@@ -1183,22 +1123,53 @@ macro "seg_round_arith_add_prim" v1:term:max v2:term:max : tactic =>
              refine ((advance_runstate_eval (th' := ?_)
                (rs' := ?_) ?_).trans ?_)
              rotate_left 2
-             · refine (stub_defined (z := ?_) (st' := ?_) ?_).trans ?_
-               rotate_left 2
-               · refine (stub_defined (z := ?_) (st' := ?_)
-                   ?_).trans ?_
-                 rotate_left 2
-                 · refine (stub_defined (z := ?_) (st' := ?_)
-                     ?_).trans ?_
-                   rotate_left 2
-                   · show runEU (eval_pexpr_aux2 _ _ _ _ _ _ _ _)
-                       _ = _
-                     refine (RelSem.P02.p02add_evalR $v1 $v2
-                       ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_).trans ?_
-                     all_goals first | assumption | omega | rfl
-                   · rfl
-                 · rfl
-               · rfl
+             · seg_peels
+               focus
+                 show runEU (eval_pexpr_aux2 _ _ _ _ _ _ _ _) _ = _
+                 refine (RelSem.P02.p02add_evalR $v1 $v2
+                   ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_).trans ?_
+                 all_goals first | assumption | omega | rfl
+               all_goals rfl
+             · rfl))
+
+/-- The zero-left face of the checked-ADD whole loop (the a = 0
+    path: the supply's successor spelling carries the PLAIN variable
+    — `0 + b` is not defeq to `b` at symbolic `b`, the generator's
+    recorded gotcha — so the face normalizes by `Int.zero_add`
+    once). -/
+theorem p02add_evalR0 {A : Type} (v2 : Int)
+    (h3 : -2147483648 ≤ v2) (h4 : v2 ≤ 2147483647)
+    {env : List (Fmap sym value)} {memo : Option CerbMem.MemState}
+    {st : A}
+    (h650 : lookup_env p02s_a_650 env = some (loadedV 0))
+    (h651 : lookup_env p02s_a_651 env = some (loadedV v2)) :
+    runEU (eval_pexpr_aux2 p02File.tagDefs L0 clocC extC env memo
+      p02File (Pexpr aL () (PEcase
+        (Pexpr aL () (PEctor Ctuple
+          [Pexpr aL () (PEsym p02s_a_650),
+           Pexpr aL () (PEsym p02s_a_651)]))
+        p02addArms))) st
+      = runEU (Result (Defined (Sum.inr (loadedV v2)))) st := by
+  have h := p02add_evalR (A := A) (env := env) (memo := memo)
+    (st := st) 0 v2 (by omega) (by omega) h3 h4
+    (by omega) (by omega) h650 h651
+  rw [show (0 : Int) + v2 = v2 from Int.zero_add v2] at h
+  exact h
+
+/-- Checked-ADD at the primitive arm, ZERO-LEFT key (the a = 0
+    path; `p02add_evalR0` leaf). -/
+macro "seg_round_arith_add_prim_z" v2:term:max : tactic =>
+  `(tactic| (seg_discover
+             refine ((advance_runstate_eval (th' := ?_)
+               (rs' := ?_) ?_).trans ?_)
+             rotate_left 2
+             · seg_peels
+               focus
+                 show runEU (eval_pexpr_aux2 _ _ _ _ _ _ _ _) _ = _
+                 refine (RelSem.P02.p02add_evalR0 $v2
+                   ?_ ?_ ?_ ?_).trans ?_
+                 all_goals first | assumption | omega | rfl
+               all_goals rfl
              · rfl))
 
 /-- The literal-first-operand unary-minus checked-SUB arm (the r257
@@ -1210,36 +1181,27 @@ macro "seg_round_neg_lit" : tactic =>
              refine ((advance_runstate_eval (th' := ?_)
                (rs' := ?_) ?_).trans ?_)
              rotate_left 2
-             · refine (stub_defined (z := ?_) (st' := ?_) ?_).trans ?_
-               rotate_left 2
-               · refine (stub_defined (z := ?_) (st' := ?_)
-                   ?_).trans ?_
-                 rotate_left 2
-                 · refine (stub_defined (z := ?_) (st' := ?_)
-                     ?_).trans ?_
-                   rotate_left 2
-                   · show runEU (eval_pexpr_aux2 _ _ _ _ _ _ _ _)
-                       _ = _
-                     refine (RelSem.Seg.runEU_aux2_step_then
-                       (peP := ?_) (pe' := ?_) (z := ?_)
-                       ?_ ?_ ?_ ?_).trans ?_
-                     rotate_left 3
-                     · rfl
-                     · refine se_case_sel (pa := ?_) (pb := ())
-                         (cval := ?_) (a2 := ?_) (b2 := ?_)
-                         (pe2 := ?_) ?_ ?_
-                       rotate_left 5
-                       · refine se_sym_hit (v := ?_) ?_ ?_
-                         rotate_left 1
-                         · assumption
-                         · rfl
-                       · rfl
-                     · rfl
-                     · rfl
+             · seg_peels
+               focus
+                 show runEU (eval_pexpr_aux2 _ _ _ _ _ _ _ _) _ = _
+                 refine (RelSem.Seg.runEU_aux2_step_then
+                   (peP := ?_) (pe' := ?_) (z := ?_)
+                   ?_ ?_ ?_ ?_).trans ?_
+                 rotate_left 3
+                 · rfl
+                 · refine se_case_sel (pa := ?_) (pb := ())
+                     (cval := ?_) (a2 := ?_) (b2 := ?_)
+                     (pe2 := ?_) ?_ ?_
+                   rotate_left 5
+                   · refine se_sym_hit (v := ?_) ?_ ?_
+                     rotate_left 1
+                     · assumption
                      · rfl
                    · rfl
                  · rfl
-               · rfl
+                 · rfl
+                 · rfl
+               all_goals rfl
              · rfl))
 
 /-- The `RS_EVAL[Erun]` ret-conv round (r130-class): the Erun jump

@@ -1544,4 +1544,21 @@ theorem p02k8_fam (x : Int) (σ : driver_state)
   exact RelSem.Laws.callND_errno halloc hstore rfl
 
 
+
+/-- The walker's canonical control-image anchor equals the named
+    ctl spelling (ONE generic shallow rfl — the ctl projection drops
+    the pack fields; PERF-1: seg_done's hinv routes through this so
+    no consumer ever defeq-bridges the two spellings). -/
+theorem p02ctl_anchor (ar : RExpr) (tr : List trace_event) (n : Nat) :
+    ctlOf (p02fam ar tr n
+      (RelSem.Seg.Pack.mk fmapEmpty 0 0 0 0 CerbMem.initialMemState))
+      = p02CtlAt ar tr n := rfl
+
+/-- The ctl projection at ANY pack (shallow — the projection drops
+    the pack fields; seg_done's control obligations route through
+    this instead of per-instance deep rfl). -/
+theorem p02ctl_any (ar : RExpr) (tr : List trace_event) (n : Nat)
+    (p : T1P) :
+    ctlOf (p02fam ar tr n p) = p02CtlAt ar tr n := rfl
+
 end RelSem.P02

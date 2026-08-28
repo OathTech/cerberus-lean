@@ -50,8 +50,8 @@ theorem intLoad_facts (v : Int) (addr : Int) (aid : Int)
       := by first | assumption | rfl)
     (hfpm : ls.funptrmap = [] := by first | assumption | rfl)
     (hinv : MemInv ls := by assumption)
-    (h1 : -2147483648 ≤ v := by assumption)
-    (h2 : v ≤ 2147483647 := by assumption) :
+    (h1 : -2147483648 ≤ v := by first | assumption | omega)
+    (h2 : v ≤ 2147483647 := by first | assumption | omega) :
     app (CerbMem.loadM CerbLocation.Loc.unknown T1.intCty
         (.PV (.Prov_some aid) (.PVconcrete none addr))) ls
       = (NDactive (CerbMem.Footprint.FP .R addr 4,
@@ -209,6 +209,8 @@ theorem runEU_aux2_step_then {A : Type}
 section Discover
 open Lean Elab Meta Tactic
 
+initialize registerTraceClass `RelSem.segPeels
+
 /-- Hinted refl: `Eq.refl lhs` cast to `lhs = rhs` (the SegStepper
     `mkRflHint` device — the kernel checks the defeq at declaration
     add; a mismatch is a loud kernel error, never a silent pass). -/
@@ -255,6 +257,83 @@ elab "seg_discover" : tactic => do
     g.assign (← instantiateMVars (mkAppN
       (mkConst ci.name (ci.levelParams.map .param)) args))
     replaceMainGoal [(← instantiateMVars hadvM).mvarId!]
+
+/-- ADAPTIVE COMMITTED PEEL (PERF-1): peel the discovered step's
+    monadic wrappers down to the `eval_pexpr20` entry, dispatching
+    each step by the GOAL HEAD alone (Lithium's lazymatch discipline
+    — committed choice by syntax, no candidate iteration, no
+    speculative defeq): `stExceptUndef_bind` → one stub peel;
+    `full_eval_pexpr` → expose its bind (one cheap `show`);
+    `E.eval_pexpr20` / `runEU` → stop (the class leaf takes over).
+    The peel DEPTH is position-dependent (Eunseq members enter
+    through `full_eval_pexpr'` directly; sseq-context evals through
+    the `eval_pexpr1` bind) — this replaces the fixed three-peel
+    scaffolds that mis-keyed the shallow forms. Leaves the leaf goal
+    FIRST; the residual wrapper equations close by `rfl` after it
+    (`all_goals rfl` in the class macros). -/
+elab "seg_peels" : tactic => do
+  let rec go (fuel : Nat) : TacticM Unit := do
+    match fuel with
+    | 0 => throwError "seg_peels: peel depth bound exceeded"
+    | fuel+1 =>
+      let g ← getMainGoal
+      let ty ← instantiateMVars (← g.getType)
+      let some (_, lhs, _) := ty.eq?
+        | throwError "seg_peels: goal is not an equation:{indentExpr ty}"
+      let lhsW ← Meta.whnfCore lhs
+      let fn := lhsW.getAppFn
+      trace[RelSem.segPeels] "iter (fuel {fuel}): head {fn}"
+      if fn.isConstOf ``runEU then
+        pure ()   -- the leaf's floor
+      else if fn.isConstOf ``E.eval_pexpr20 then
+        -- normalize the entry to its `runEU (eval_pexpr_aux2 …)`
+        -- spelling (deterministic change — the leaf `show`s are
+        -- reducible-only and cannot unfold eval_pexpr20)
+        let mut cur := lhsW
+        let mut steps := 0
+        while !(cur.getAppFn.isConstOf ``runEU) && steps < 8 do
+          let some nxt ← Meta.unfoldDefinition? cur
+            | throwError "seg_peels: eval_pexpr20 unfolding stuck at \
+                {cur.getAppFn}"
+          cur ← Meta.whnfCore nxt
+          steps := steps + 1
+        unless cur.getAppFn.isConstOf ``runEU do
+          throwError "seg_peels: eval_pexpr20 did not reach runEU \
+            (reached {cur.getAppFn})"
+        let some (_, _, rhs) := ty.eq? | unreachable!
+        let g' ← g.change (← Meta.mkEq cur rhs)
+        replaceMainGoal [g']
+      else if fn.isConstOf ``full_eval_pexpr then
+        -- expose full_eval's bind EXPLICITLY (the unifier's delta of
+        -- `full_eval_pexpr` against a bind pattern is unreliable —
+        -- measured PERF-1 build finding; a deterministic `change` at
+        -- the unfolded spelling replaces the speculative defeq)
+        let mut cur := lhsW
+        let mut steps := 0
+        while !(cur.getAppFn.isConstOf ``stExceptUndef_bind)
+            && steps < 8 do
+          let some nxt ← Meta.unfoldDefinition? cur
+            | throwError "seg_peels: full_eval unfolding stuck at \
+                {cur.getAppFn}"
+          cur ← Meta.whnfCore nxt
+          steps := steps + 1
+        unless cur.getAppFn.isConstOf ``stExceptUndef_bind do
+          throwError "seg_peels: full_eval did not expose its bind \
+            (reached {cur.getAppFn})"
+        let some (_, _, rhs) := ty.eq? | unreachable!
+        let g' ← g.change (← Meta.mkEq cur rhs)
+        replaceMainGoal [g']
+        go fuel
+      else if fn.isConstOf ``stExceptUndef_bind then
+        evalTactic (← `(tactic|
+          (refine (RelSem.Kit.stub_defined (z := ?_) (st' := ?_)
+            ?_).trans ?_
+           rotate_left 2)))
+        go fuel
+      else
+        throwError "seg_peels: unkeyed goal head {fn} — a new chain \
+          shape needs its committed key (never iterate):{indentExpr lhsW}"
+  go 12
 
 end Discover
 

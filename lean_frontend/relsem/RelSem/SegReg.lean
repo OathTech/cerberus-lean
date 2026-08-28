@@ -59,4 +59,23 @@ initialize registerBuiltinAttribute {
   add := fun declName _ kind => addSupplyEntry declName `famInv kind
 }
 
+/-- `@[seg_block]` — PERF-1 (2026-08-28), mechanism B: register a
+    fixture BLOCK FACT (`SegStep td tid K Γᵢ Γₒ` over a quantified
+    context — one lemma per maximal straight-line pure-control run
+    between cut points, proved by the once-proved sequence
+    composition `SegStep.trans` over `link_ctl`; classical: Floyd
+    1967 cut points + the Hoare 1969 sequence rule applied at
+    generation time) under kind `segBlock`. The stepper consumes
+    blocks FIRST (committed choice); per-round facts remain the
+    anchor unit at cut points and stay derivable by hand (the
+    escalation ladder). -/
+syntax (name := seg_block) "seg_block" : attr
+
+initialize registerBuiltinAttribute {
+  name := `seg_block
+  descr := "segment-stepper block-fact supply (kind segBlock in THE \
+    ONE registry; PERF-1 mechanism B, block-granular default)"
+  add := fun declName _ kind => addSupplyEntry declName `segBlock kind
+}
+
 end RelSem.Seg

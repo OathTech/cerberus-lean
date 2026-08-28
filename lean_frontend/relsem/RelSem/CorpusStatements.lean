@@ -79,14 +79,17 @@ def p02Spec (a b : Int) (r : driver_result) : Prop :=
 /-- **P02 (sat_add)** — ∀ a b ∈ intRange: outcomes =
     {Specified (satAdd a b)}, no UB (the guards' overflow-safety is
     proved, not assumed — incl. the sequenced-&& F15 forcing).
-    HONESTY LABEL: UNPROVED (V2). -/
+    HONESTY LABEL: PROVED (PERF-1 2026-08-28 —
+    RelSem.P02.p02_proved, RelSem/P02Proof.lean; cones exactly the
+    classical trio, pinned in-build). -/
 def P02Statement : Prop :=
   CorpusEnvHyp →
   ∀ (a b : Int), intRange a → intRange b →
     CallHarnessAdequateCns p02Prior p02File.tagDefs p02File "sat_add"
       [intValue a, intValue b] corpusFs (p02Spec a b)
 
-/-- P02 UB-freedom. HONESTY LABEL: UNPROVED. -/
+/-- P02 UB-freedom. HONESTY LABEL: PROVED (PERF-1 2026-08-28 —
+    RelSem.P02.p02_ubfree_proved; trio cone, pinned in-build). -/
 def P02UBFreeStatement : Prop :=
   CorpusEnvHyp →
   ∀ (a b : Int), intRange a → intRange b →

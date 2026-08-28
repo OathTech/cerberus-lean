@@ -46,7 +46,16 @@ namespace RelSem.Seg.Stepper
 
 initialize registerTraceClass `RelSem.segRun
 
-/-- Speculative-probe heartbeat isolation (the R4 move). -/
+/-- Speculative-probe heartbeat isolation (the R4 move).
+    PERF-1 finding, recorded: the `withOptions` spelling does NOT
+    update `Core.Context.maxHeartbeats` (the checker reads the
+    context field, set at elaboration entry), so probes actually run
+    at the AMBIENT limit with a fresh baseline. This is kept AS-IS
+    deliberately: heartbeats are a GLOBAL counter, so probe work
+    bills the enclosing round budget too — a probe allowed to run
+    past the ambient limit blows the round that hosts it (measured:
+    a T1Proof 200k blowout under a true-1M probe variant). The
+    honest semantics is "probe ≤ ambient, isolated baseline". -/
 private def withProbeBudget {α : Type} (x : MetaM α) : MetaM α :=
   Core.withCurrHeartbeats
     (withOptions (fun o => o.set `maxHeartbeats (1000000 : Nat)) x)
@@ -103,13 +112,14 @@ private def mkNotMemProof (ty : Expr) : MetaM Expr := do
 
 /-- Close a hypothesis hole from: the premise telescope's locals, the
     outer local context, the memory-residual gadgets, hinted `rfl`. -/
-private def solveHyp (locals : Array Expr) (m : MVarId) :
-    MetaM Bool := do
+private def solveHyp (locals : Array Expr) (m : MVarId)
+    (xsOnly : Bool := false) : MetaM Bool := do
   let ty ← instantiateMVars (← m.getType)
   for src in locals do
     if ← withProbeBudget (isDefEqGuarded (← inferType src) ty) then
       m.assign src
       return true
+  if xsOnly then return false
   for d in (← getLCtx) do
     if d.isImplementationDetail then continue
     if ← withProbeBudget (isDefEqGuarded d.type ty) then
@@ -149,7 +159,8 @@ private def solveHyp (locals : Array Expr) (m : MVarId) :
 /-- Fill a link's `happ` premise from the (pre-telescoped) round
     equation: unify sides left-to-right, close the hypothesis holes,
     package the lambda. -/
-private def fillHapp (happTy : Expr) (cand : Name) : MetaM Expr := do
+private def fillHapp (happTy : Expr) (cand : Name) :
+    MetaM (Expr × Array Expr × Array MVarId) := do
   forallTelescope happTy fun xs body => do
     let cinfo ← getConstInfo cand
     -- the candidate is telescoped INSIDE the pack binder so its own
@@ -167,6 +178,7 @@ private def fillHapp (happTy : Expr) (cand : Name) : MetaM Expr := do
     unless ← withProbeBudget (isDefEq concl body) do
       throwError "round {cand}: conclusion does not match the \
         expected step"
+    let mut deferred : Array MVarId := #[]
     for marg in margs do
       let marg ← instantiateMVars marg
       if marg.isMVar then
@@ -177,11 +189,55 @@ private def fillHapp (happTy : Expr) (cand : Name) : MetaM Expr := do
         -- them (solving a data hole from the local context would
         -- grab an arbitrary same-typed term)
         unless (← inferType mty).isProp do continue
+        if mty.hasExprMVar
+            && (mty.getAppFn.isConstOf ``LE.le
+                || mty.getAppFn.isConstOf ``LT.lt
+                || mty.getAppFn.isConstOf ``GE.ge
+                || mty.getAppFn.isConstOf ``GT.gt) then
+          -- PERF-1 (the p02r35 wrong-scalar find): a Prop hole still
+          -- carrying DATA mvars must not be closed by OUTER-context
+          -- matching unless the match is UNIQUE — an ambiguous match
+          -- (ha1 vs hb1 at two scalars) would pin the data to
+          -- whatever hypothesis comes first. Telescope-local sources
+          -- are structural (the link's own typed binders) and stay
+          -- allowed; ambiguity DEFERS until the link's determined
+          -- premises (indexes) pin the data.
+          unless ← solveHyp xs marg.mvarId! (xsOnly := true) do
+            let mut nMatch := 0
+            let mtyHead := mty.getAppFn
+            for d in (← getLCtx) do
+              if d.isImplementationDetail then continue
+              -- cheap syntactic pre-filter: only same-head
+              -- hypotheses enter the defeq probe (the context also
+              -- holds arena-sized Iris terms — probing those is the
+              -- whnf cost class PERF-1 killed)
+              unless d.type.getAppFn.constName? == mtyHead.constName?
+                  && d.type.getAppFn.constName?.isSome do continue
+              -- withoutModifyingState, NOT withNewMCtxDepth: the
+              -- probe's "match" IS an assignment of the outer data
+              -- mvar, which a deeper mctx level forbids (measured:
+              -- the depth-guarded probe counts 0 and the else-path
+              -- re-grabs the wrong scalar)
+              let hit ← withoutModifyingState <| withProbeBudget
+                (isDefEqGuarded d.type mty)
+              if hit then nMatch := nMatch + 1
+            if nMatch ≥ 2 then
+              -- MEASURED ambiguity only (the p02r35 two-scalar case)
+              -- defers; a unique or unprobed source keeps the
+              -- standing grab-first behavior
+              deferred := deferred.push marg.mvarId!
+            else
+              unless ← solveHyp xs marg.mvarId! do
+                throwError "round {cand}: hypothesis has no source:\
+                  {indentExpr mty}"
+          continue
         unless ← solveHyp xs marg.mvarId! do
           throwError "round {cand}: hypothesis has no source:\
             {indentExpr mty}"
+        trace[RelSem.segRun] "fillHapp: hole {mty} := \
+          {← instantiateMVars marg}"
     let pf := mkAppN (mkConst cand (cinfo.levelParams.map .param)) margs
-    mkLambdaFVars xs (← instantiateMVars pf)
+    return (← mkLambdaFVars xs (← instantiateMVars pf), xs, deferred)
 
 /-- Index of the entry whose FIRST component is `key` in a pair-list
     expression (whnf-driven; sees through `eraseIdx` on literals). -/
@@ -217,6 +273,9 @@ private def linkConsts : List Name :=
 private structure BuiltLink where
   pf : Expr
   delta : Expr
+  /-- Round count consumed by this link (1 for a round link; K for a
+      PERF-1 block fact — mechanism B). -/
+  n : Nat := 1
   deriving Inhabited
 
 /-- Dispatch one open premise of a link by type shape. Returns true
@@ -446,7 +505,7 @@ private def buildLink (gf gs td tid : Expr) (ΓE : Expr) (cand : Name)
   let some hi := happIdx
     | throwError "seg_run: link {linkC} has no happ premise"
   let happTy ← instantiateMVars (← inferType args[hi]!)
-  let happPf ← fillHapp happTy cand
+  let (happPf, _happXs, happDeferred) ← fillHapp happTy cand
   trace[RelSem.segRun] "buildLink [{linkC}]: happ filled: \
     {← inferType happPf}"
   trace[RelSem.segRun] "buildLink [{linkC}]: slot type: \
@@ -467,6 +526,30 @@ private def buildLink (gf gs td tid : Expr) (ΓE : Expr) (cand : Name)
           {aty}"
         if ← dispatchPremise linkC pack0 a.mvarId! then
           progress := true
+  -- deferred happ hypothesis holes: the data is pinned now (the
+  -- index premises ran) — outer-context sourcing is unambiguous
+  for dm in happDeferred do
+    -- the lambda packaging DELAY-ASSIGNS the original hole to a
+    -- fresh pi-abstracted mvar applied to the telescope — chase to
+    -- the live head before solving
+    let cur ← instantiateMVars (Expr.mvar dm)
+    let live? := if cur.isMVar then some cur.mvarId!
+      else if cur.getAppFn.isMVar then some cur.getAppFn.mvarId!
+      else none
+    if let some live := live? then
+      let dty ← instantiateMVars (← live.getType)
+      if dty.hasExprMVar then
+        throwError "seg_run [{linkC}]: deferred hypothesis still \
+          carries data mvars:{indentExpr dty}"
+      -- solve the BODY (now data-pinned, outer-sourced) under the
+      -- abstraction and re-wrap
+      let pf ← forallTelescope dty fun ys body => do
+        let m2 ← mkFreshExprMVar body
+        unless ← solveHyp #[] m2.mvarId! do
+          throwError "seg_run [{linkC}]: deferred hypothesis has \
+            no source:{indentExpr body}"
+        mkLambdaFVars ys (← instantiateMVars m2)
+      live.assign pf
   for a in args do
     let a ← instantiateMVars a
     if a.isMVar then
@@ -484,6 +567,120 @@ private def buildLink (gf gs td tid : Expr) (ΓE : Expr) (cand : Name)
     (mkConst linkC (cinfo.levelParams.map .param)) args)
   return { pf, delta }
 
+/-! PERF-1 mechanism B: consume a registered BLOCK FACT
+    (`@[seg_block]`, kind `segBlock`) at the current context —
+    committed choice, blocks BEFORE per-round links. A block lemma is
+    `SegStep td tid K Γᵢ Γₒ` quantified over the context components
+    and its data scalars; instantiation = one guarded `isDefEq` of
+    its conclusion against the current context (the data binders pin
+    through the control term), no premises (pure-control runs carry
+    none by construction). -/
+
+/-- The (arena constant, round counter) of a ctl-image spelling
+    (`ctlOf (fam AR TR N p)`-class): the cheap syntactic dispatch
+    key — both components are literal on both sides, so wrong-
+    position candidates never enter unification at all. -/
+private def ctlArenaKey? (c : Expr) : Option (Name × Nat) :=
+  let c := c.consumeMData
+  let inner := if c.isAppOf ``ctlOf then c.appArg! else c
+  let args := inner.getAppArgs
+  match args[0]? with
+  | some a =>
+    match a.getAppFn.constName? with
+    | some n =>
+      -- fam AR TR N p — the ctr is the second-to-last argument
+      if h : args.size ≥ 2 then
+        match args[args.size - 2]!.rawNatLit? with
+        | some k => some (n, k)
+        | none => some (n, 0)
+      else some (n, 0)
+    | none => none
+  | none => none
+
+private def tryBlock (gf gs td tid : Expr) (ΓE : Expr)
+    (comps : Array Expr) : MetaM (Option BuiltLink) := do
+  let ciS ← getConstInfo ``RelSem.Seg.SegStep
+  let us ← ciS.levelParams.mapM fun _ => mkFreshLevelMVar
+  let nM ← mkFreshExprMVar (mkConst ``Nat)
+  let ΔM ← mkFreshExprMVar (mkConst ``RelSem.Seg.Ctx)
+  let queryE := mkAppN (mkConst ciS.name us)
+    #[gf, gs, td, tid, nM, ΓE, ΔM]
+  -- enumerate the kind directly: the registry's DiscrTree keys come
+  -- from `forallMetaTelescopeReducing`, which unfolds `SegStep` into
+  -- its entailment form — the SegStep-app query can never tree-match
+  -- (PERF-1 finding). Block counts are small (O(cut points));
+  -- committed choice by the ARENA-CONSTANT key (cheap syntactic
+  -- dispatch — a mismatched ctl defeq falls into the ctl-projection
+  -- whnf, the cost class PERF-1 killed). A substitution instantiates
+  -- the data VARIABLES inside the arena application, never the arena
+  -- constant, so key-matching survives subst; spelling BRIDGES
+  -- (e.g. onto the mC-literal supply) happen at per-round anchors
+  -- through the round filter, never at blocks.
+  let hits ← RelSem.LawRegistry.byKind `segBlock
+  if hits.isEmpty then return none
+  let curKey := ctlArenaKey? comps[0]!
+  trace[RelSem.segRun] "tryBlock: {hits.size} candidates, arena key \
+    {curKey} at{indentExpr ΓE}"
+  let mut ordered : Array RelSem.LawRegistry.StepLaw := #[]
+  for l in hits do
+    let lKey ← try
+        withProbeBudget do
+          let ci ← getConstInfo l.name
+          forallTelescope ci.type fun _ body => do
+            let bargs := body.getAppArgs
+            if h : bargs.size = 7 then
+              let Γi ← whnfCore bargs[5]
+              if Γi.isAppOfArity ``RelSem.Seg.Ctx.mk 6 then
+                pure (ctlArenaKey? Γi.getAppArgs[0]!)
+              else pure none
+            else pure none
+      catch _ => pure none
+    if lKey.isSome && lKey == curKey then
+      ordered := ordered.push l
+  for l in ordered do
+    trace[RelSem.segRun] "tryBlock: probing {l.name}"
+    let s0 ← saveState
+    let res ← try
+        let ci ← getConstInfo l.name
+        let (args, _, concl) ← forallMetaTelescope ci.type
+        -- REDUCIBLE-ONLY: block facts are canonical-spelled by
+        -- construction (`ctlOf (fam … pack0)` everywhere); a
+        -- default-transparency fallback would re-open the
+        -- ctl-projection grind on same-arena/different-position
+        -- candidates (measured at blk5/ar70)
+        if ← withProbeBudget (withReducible
+            (isDefEqGuarded concl queryE)) then
+          -- every binder must be pinned by the context unification
+          -- (blocks are premise-free pure-control runs by
+          -- construction — a loose binder means no honest fit)
+          let argsI ← args.mapM instantiateMVars
+          if argsI.any (·.hasExprMVar) then
+            trace[RelSem.segRun] "tryBlock: {l.name} has an \
+              undetermined binder — skipped"
+            pure none
+          else
+            let concl ← instantiateMVars concl
+            -- concl = SegStep gf gs td tid K Γi Γo
+            let cargs := concl.getAppArgs
+            match ← getNatValue? (← whnf cargs[4]!) with
+            | some k =>
+              let pf ← instantiateMVars (mkAppN
+                (mkConst l.name (ci.levelParams.map .param)) argsI)
+              pure (some { pf, delta := cargs[6]!, n := k
+                : BuiltLink })
+            | none => pure none
+        else pure none
+      catch ex =>
+        trace[RelSem.segRun] "tryBlock: {l.name} failed: \
+          {ex.toMessageData}"
+        pure none
+    match res with
+    | some b =>
+      trace[RelSem.segRun] "tryBlock: consumed {l.name} ({b.n} rounds)"
+      return some b
+    | none => s0.restore
+  return none
+
 /-- Parse the seg_run goal:
     `Ctx.interp Γ ⊢ WP (dnmsK td F acc tid xs' k) @ s ; E {{Φ}}`. -/
 private structure GoalParts where
@@ -499,7 +696,7 @@ private structure GoalParts where
   wpRhs : Expr
 
 private def parseGoal (goal : Expr) : MetaM GoalParts := do
-  let goal ← instantiateMVars goal
+  let goal := (← instantiateMVars goal).consumeMData
   unless goal.isAppOfArity ``Iris.BI.BIBase.Entails 4 do
     throwError "seg_run: goal is not an entailment \
       (expected `Ctx.interp Γ ⊢ WP (dnmsK …) …`):{indentExpr goal}"
@@ -543,10 +740,32 @@ private def roundCandidates (td tid c : Expr) :
           let (_, _, cc) ← forallMetaTelescope ci.type
           let some (_, lhsE, _) := cc.eq? | failure
           unless ← isDefEq lhsE queryE do failure
-          -- control-image agreement: ctlOf of the equation's state
+          -- control-image agreement, PERF-1 discipline: (1) a cheap
+          -- syntactic ARENA-KEY comparison rejects cross-fixture /
+          -- cross-position candidates with NO defeq at all (the
+          -- default-transparency head-mismatch against a block-link
+          -- p02CtlAt spelling can fall into the ctl-projection whnf
+          -- — measured 2M grinds); (2) key matches try REDUCIBLE
+          -- defeq first (the generated spellings are reducible by
+          -- construction), then the standing default-transparency
+          -- check (the T1/P01-class spellings)
           let σE := lhsE.appArg!
+          let cKey := ctlArenaKey? c
+          if let some (cArena, _) := cKey then
+            let candKey := match σE.getAppArgs[0]? with
+              | some a => a.getAppFn.constName?
+              | none => none
+            if candKey.isSome && candKey != some cArena then failure
           let ctl ← mkAppM ``ctlOf #[σE]
-          unless ← isDefEq ctl c do failure
+          -- two-stage: REDUCIBLE first (congruence assigns the pack
+          -- mvar; a wrong same-arena candidate fails fast at the
+          -- ctr/trace literals without the ctl-projection whnf),
+          -- then the standing default check (entry-ctl spellings)
+          let fast ← withoutModifyingState <|
+            withReducible (isDefEqGuarded ctl c)
+          let ok ← if fast then withReducible (isDefEq ctl c)
+            else isDefEq ctl c
+          unless ok do failure
           pure true)
       (fun ex => do
         trace[RelSem.segRun] "roundCandidates: {l.name} runtime-ex: \
@@ -590,6 +809,12 @@ elab "seg_run" : tactic => do
     let stepRes ← Core.withCurrHeartbeats do
       let comps ← ctxComponents ΓE
       let c := comps[0]!
+      -- PERF-1 mechanism B: block facts FIRST (committed choice —
+      -- the block-granular default supply; per-round links are the
+      -- anchor path)
+      if let some b ← tryBlock parts.gf parts.gs parts.td
+          parts.tid ΓE comps then
+        return Sum.inl b
       let cands ← roundCandidates parts.td parts.tid c
       if cands.isEmpty then
         return Sum.inr m!"no registered round equation matches the \
@@ -632,11 +857,13 @@ elab "seg_run" : tactic => do
       running := false
   if links.isEmpty then
     throwError "seg_run: could not take a single step — {stopMsg}"
-  -- assemble the chain (right-nested trans with explicit counts)
-  let n := links.size
-  let mut chain := links[n - 1]!.pf
-  for i in [1:n] do
-    let idx := n - 1 - i
+  -- assemble the chain (right-nested trans with explicit counts;
+  -- n = TOTAL ROUNDS — block links carry their own counts)
+  let n := links.foldl (fun acc b => acc + b.n) 0
+  let nL := links.size
+  let mut chain := links[nL - 1]!.pf
+  for i in [1:nL] do
+    let idx := nL - 1 - i
     chain ← mkAppM ``RelSem.Seg.SegStep.trans #[links[idx]!.pf, chain]
   -- consume at the goal: telescope `SegStep.consume`, pin everything
   -- against the goal, the chain, and the literal fuel split; the
