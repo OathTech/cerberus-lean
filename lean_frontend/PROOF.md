@@ -170,13 +170,21 @@ PROVED and standing (kernel theorems, cones pinned): the
 consistency layer's ANTI-VACUITY METATHEOREM
 (`freshDrawsOf_nodup` — monotone ⇒ distinct;
 `consistentRun_of_supply_le` — below-the-vocabulary ⇒ consistent;
-exactly the classical trio), the adequacy bridges + WP rules + heap
-RA + framing demonstration (`two_alloc_frame`) of the Iris layer,
-the segment algebra (`Seg.iter`/`while_inv`/`Summary.consume`), the
+exactly the classical trio); the V1 DECOMPOSED assertion layer
+(`CerbStateRA`/`CerbStateWP`/`CerbStateAdequacy`: per-cell env
+ownership at symbolic values, control token, supply and
+memory-residual cells, the four memory-op rules at residual
+granularity, adequacy bridges to BOTH the Thr and Cns statement
+faces) with its framing anchors (`two_alloc_frame`, and the
+end-to-end symbolic-env exhibit `demo_wp`/`demo_adequate` — a real
+Core fragment where one local's symbolic assertion survives a
+different local's rebind by the frame rule, discharged through
+adequacy; record `docs/2026-08-28_v1-assertion-layer.md`); the
+segment algebra (`Seg.iter`/`while_inv`/`Summary.consume`), the
 runNDFuel soundness layer, and the spec-lab model/codec lemma
-stock. There is currently NO end-to-end adequacy INSTANCE (the
-smallest one rode the deleted walk supply — V1's re-proof is its
-return path; the V0 record states this disposition).
+stock. The V0 no-instance gap is closed at the DEMO grade by
+`demo_adequate` (an end-to-end adequacy instance over a real
+fragment); the harness-program instances return with V2's rules.
 
 **Kernel-checked statement layers for real C functions** (the spec
 lab: division/modulo, `memcpy`, array access, linked-list append,
@@ -297,9 +305,11 @@ contracts are stated normatively in
 - **iris-lean coupling**: separation-logic machinery (weakest
   preconditions, framing, invariants) used freely in proofs and
   discharged through the adequacy theorem — Iris never appears in a
-  statement. The memory-model heap RA (`CerbHeapRA`/`CerbHeapWP`:
-  byte points-to over the concrete memory model, framing) is landed
-  and becomes the sole state interpretation in the arc-18 migration.
+  statement. The decomposed machine-state RA
+  (`CerbStateRA`/`CerbStateWP`, V1 2026-08-28: byte points-to +
+  per-cell env ownership + control/supply/residual tokens) is the
+  SOLE state interpretation (one-route gate-enforced; the arc-16
+  whole-state heap RA is deleted).
 - **Pure transport**: most of a specification's intellectual content
   lives as ordinary lemmas about the pure model (cheap, parallel,
   standard Lean), connected to execution once per structure family.
