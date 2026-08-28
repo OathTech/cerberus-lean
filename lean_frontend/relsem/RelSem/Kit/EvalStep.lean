@@ -306,6 +306,76 @@ theorem se_call {fuel : Nat}
   rw [hpull]
   rfl
 
+/-- CONSTRUCT LAW `se_ctor_tuple` — the tuple constructor evaluates
+    its operands (the argument mapM — cell facts enter as in
+    `se_call`) and packs the value tuple. -/
+@[step_law (kind := evalPull) (variant := ctorTuple) (side := fed)
+  (frontier := "eval/ctor-tuple")
+  (trace := "{law := se_ctor_tuple, joint := eval/step, hyps := [hmap : fed, hvals : ground]}")
+  (lineage := "generated PEctor arm, Ctuple leg (decompilation-into-logic; V2 P01 R8)")]
+theorem se_ctor_tuple {fuel : Nat}
+    {tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)}
+    {n : Nat} {loc : CerbLocation.Loc} {cloc : Option CerbLocation.Loc}
+    {ext : Fmap sym sym} {env : List (Fmap sym value)}
+    {memo : Option CerbMem.MemState}
+    {file1 : file core_run_annotation} {b : Bool}
+    {a : List annot}
+    {pes pes' : List (generic_pexpr Unit sym)} {cvals : List value}
+    (hmap : exception_undef_mapM
+        (fun pe => step_eval_pexpr_lemFuel fuel tagDefs (n + 1) loc
+          cloc ext env memo file1 false pe) pes
+      = Result (Defined pes'))
+    (hvals : valueFromPexprs pes' = some cvals) :
+    step_eval_pexpr_lemFuel (fuel + 1) tagDefs n loc cloc ext env memo
+        file1 b (Pexpr a () (PEctor Ctuple pes))
+      = Result (Defined (Pexpr [] () (PEval (Vtuple cvals)))) := by
+  show exception_undef_fmap (Pexpr [] ())
+      (exception_undef_bind
+        (exception_undef_mapM
+          (fun pe => step_eval_pexpr_lemFuel fuel tagDefs (n + 1) loc
+            cloc ext env memo file1 false pe) pes) _) = _
+  rw [eubind_defined hmap, hvals]
+  rfl
+
+/-- CONSTRUCT LAW `se_case_sel` — the pure case: the scrutinee steps
+    to a value, `select_case` picks the arm and substitutes. -/
+@[step_law (kind := evalPull) (variant := caseSel) (side := fed)
+  (frontier := "eval/case-sel")
+  (trace := "{law := se_case_sel, joint := eval/step, hyps := [hscrut : fed, hsel : ground]}")
+  (lineage := "generated PEcase arm, value-scrutinee leg (decompilation-into-logic; V2 P01 R13)")]
+theorem se_case_sel {fuel : Nat}
+    {tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)}
+    {n : Nat} {loc : CerbLocation.Loc} {cloc : Option CerbLocation.Loc}
+    {ext : Fmap sym sym} {env : List (Fmap sym value)}
+    {memo : Option CerbMem.MemState}
+    {file1 : file core_run_annotation} {b : Bool}
+    {a pa : List annot} {pb : Unit}
+    {pe : generic_pexpr Unit sym}
+    {pat_pes : List (generic_pattern sym × generic_pexpr Unit sym)}
+    {cval : value} {a2 : List annot} {b2 : Unit}
+    {pe2 : generic_pexpr_ Unit sym}
+    (hscrut : step_eval_pexpr_lemFuel fuel tagDefs (n + 1) loc
+        cloc ext env memo file1 false pe
+      = Result (Defined (Pexpr pa pb (PEval cval))))
+    (hsel : select_case subst_sym_pexpr cval pat_pes
+      = some (Pexpr a2 b2 pe2)) :
+    step_eval_pexpr_lemFuel (fuel + 1) tagDefs n loc cloc ext env memo
+        file1 b (Pexpr a () (PEcase pe pat_pes))
+      = Result (Defined (Pexpr [] () pe2)) := by
+  show exception_undef_fmap (Pexpr [] ())
+      (exception_undef_bind
+        (step_eval_pexpr_lemFuel fuel tagDefs (n + 1) loc cloc ext env
+          memo file1 false pe) _) = _
+  rw [eubind_defined hscrut]
+  show exception_undef_fmap (Pexpr [] ())
+      (match select_case subst_sym_pexpr cval pat_pes with
+       | some pe'' =>
+         exception_undef_return
+           (match pe'' with | Pexpr _ _ pe_ => pe_)
+       | none => _) = _
+  rw [hsel]
+  rfl
+
 /-! ## The whole-loop face at a symbol (the aux2 loop completes in one
     iteration on a PEsym hit) -/
 

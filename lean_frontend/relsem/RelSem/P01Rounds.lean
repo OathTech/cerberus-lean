@@ -615,3 +615,425 @@ theorem p01k8_fam (x : Int) (σ : driver_state)
     from by rw [h0]; rfl]
   exact RelSem.Laws.callND_errno halloc hstore rfl
 
+
+/-! ## Terminal arenas (the value states the done rounds read) -/
+
+def p01arT26 : RExpr :=
+  (Expr aU (Epure (Pexpr [] () (PEval (loadedV 0)))))
+
+/-! ## Bind patterns + the env-write spellings -/
+
+def patA534 : generic_pattern sym :=
+  Pattern aU (CaseBase ((some symA534), BTy_object OTy_pointer))
+def patT3536 : generic_pattern sym :=
+  Pattern aU (CaseCtor Ctuple
+    [Pattern aU (CaseBase ((some symA535), BTy_loaded OTy_integer)),
+     Pattern aU (CaseBase ((some symA536), BTy_loaded OTy_integer))])
+def patT2930 : generic_pattern sym :=
+  Pattern aU (CaseCtor Ctuple
+    [Pattern aU (CaseBase ((some symA529), BTy_loaded OTy_integer)),
+     Pattern aU (CaseBase ((some symA530), BTy_loaded OTy_integer))])
+def patA527 : generic_pattern sym :=
+  Pattern aU (CaseBase ((some symA527), BTy_loaded OTy_integer))
+def patA526 : generic_pattern sym :=
+  Pattern aU (CaseBase ((some symA526), BTy_boolean))
+def patA540 : generic_pattern sym :=
+  Pattern aU (CaseBase ((some symA540), BTy_loaded OTy_integer))
+def patA542 : generic_pattern sym :=
+  Pattern aU (CaseBase ((some symA542), BTy_loaded OTy_integer))
+def patA541 : generic_pattern sym :=
+  Pattern aU (CaseBase ((some symA541), BTy_object OTy_pointer))
+
+theorem update_env_aux_a534 (f : Fmap sym value) :
+    update_env_aux patA534 xPtrV f
+      = @fmapAddBy sym value Lem_Map.instBEqOfMapKeyType
+          (@Lem_Map.mapKeyCompare sym _) symA534 xPtrV f := rfl
+
+/-- The tuple bind (a_535, a_536): the foldr inserts RIGHT-then-LEFT. -/
+theorem update_env_aux_3536 (x : Int) (f : Fmap sym value) :
+    update_env_aux patT3536 (Vtuple [loadedV x, loadedV 0]) f
+      = @fmapAddBy sym value Lem_Map.instBEqOfMapKeyType
+          (@Lem_Map.mapKeyCompare sym _) symA535 (loadedV x)
+          (@fmapAddBy sym value Lem_Map.instBEqOfMapKeyType
+            (@Lem_Map.mapKeyCompare sym _) symA536 (loadedV 0) f) := rfl
+
+theorem update_env_aux_2930 (c : Int) (f : Fmap sym value) :
+    update_env_aux patT2930 (Vtuple [loadedV c, loadedV 0]) f
+      = @fmapAddBy sym value Lem_Map.instBEqOfMapKeyType
+          (@Lem_Map.mapKeyCompare sym _) symA529 (loadedV c)
+          (@fmapAddBy sym value Lem_Map.instBEqOfMapKeyType
+            (@Lem_Map.mapKeyCompare sym _) symA530 (loadedV 0) f) := rfl
+
+theorem update_env_aux_a527 (c : Int) (f : Fmap sym value) :
+    update_env_aux patA527 (loadedV c) f
+      = @fmapAddBy sym value Lem_Map.instBEqOfMapKeyType
+          (@Lem_Map.mapKeyCompare sym _) symA527 (loadedV c) f := rfl
+
+theorem update_env_aux_a526 (vb : value) (f : Fmap sym value) :
+    update_env_aux patA526 vb f
+      = @fmapAddBy sym value Lem_Map.instBEqOfMapKeyType
+          (@Lem_Map.mapKeyCompare sym _) symA526 vb f := rfl
+
+theorem update_env_aux_a540 (f : Fmap sym value) :
+    update_env_aux patA540 (loadedV 0) f
+      = @fmapAddBy sym value Lem_Map.instBEqOfMapKeyType
+          (@Lem_Map.mapKeyCompare sym _) symA540 (loadedV 0) f := rfl
+
+/-! ## The rounds — shared prefix (0-9) -/
+
+open RelSem.T1 (meLoad)
+
+/-- R0: the inner unseq's specified-zero operand evaluates (closed;
+    STAGE-0 input — the eval resets current_loc). -/
+theorem p01r0 (p : T1P) :
+    app (dnmsRoundM p01File.tagDefs 0) (p01fam0 p)
+      = (NDactive (Sum.inl NOWAKEUP), p01fam p01ar1 [] 1 p) := by
+  refine dnmsRoundM_adv rfl ?_
+  exact (advance_runstate_eval (th' := p01Th p01ar1 p.f₁)
+    (rs' := (p01fam0 p).core_run_state0) rfl).trans rfl
+
+/-- R1: the outer unseq's specified-zero operand evaluates (closed). -/
+theorem p01r1 (p : T1P) :
+    app (dnmsRoundM p01File.tagDefs 0) (p01fam p01ar1 [] 1 p)
+      = (NDactive (Sum.inl NOWAKEUP), p01fam p01ar2 [] 2 p) := by
+  refine dnmsRoundM_adv rfl ?_
+  exact (advance_runstate_eval (th' := p01Th p01ar2 p.f₁)
+    (rs' := (p01fam p01ar1 [] 1 p).core_run_state0) rfl).trans rfl
+
+/-- R2: the Ewseq's pure operand evaluates — reads x's cell. -/
+theorem p01r2 (p : T1P)
+    (hwf : EnvWfFrame p.f₁)
+    (hx : envLookup (p01fam p01ar2 [] 2 p) symX = some xPtrV) :
+    app (dnmsRoundM p01File.tagDefs 0) (p01fam p01ar2 [] 2 p)
+      = (NDactive (Sum.inl NOWAKEUP), p01fam p01ar3 [] 3 p) := by
+  refine dnmsRoundM_adv rfl ?_
+  refine (advance_runstate_eval (th' := p01Th p01ar3 p.f₁)
+    (rs' := (p01fam p01ar2 [] 2 p).core_run_state0) ?_).trans ?_
+  · show stExceptUndef_bind _ _ _ = _
+    refine (stub_defined (z := Expr aU (Epure (Pexpr [] () (PEval xPtrV))))
+      (st' := (p01fam p01ar2 [] 2 p).core_run_state0) ?_).trans rfl
+    show stExceptUndef_bind _ _ _ = _
+    refine (stub_defined (z := xPtrV)
+      (st' := (p01fam p01ar2 [] 2 p).core_run_state0) ?_).trans rfl
+    show stExceptUndef_bind _ _ _ = _
+    refine (stub_defined (z := Sum.inr xPtrV)
+      (st' := (p01fam p01ar2 [] 2 p).core_run_state0) ?_).trans ?_
+    · show runEU (eval_pexpr_aux2 p01File.tagDefs
+          CerbLocation.Loc.unknown
+          (some (CerbLocation.other "RelSem.callND"))
+          (create_extern_symmap p01File) [p.f₁] (some p.ls) p01File
+          (Pexpr aU () (PEsym symX))) _ = _
+      rw [aux2_sym_hit (a := aU) (a' := []) (z := symX) (v := xPtrV)
+        (env := [p.f₁]) rfl rfl
+        (show lookup_env symX [p.f₁] = some xPtrV from hx)]
+      rfl
+    · rfl
+  · rfl
+
+/-- R3: the Ewseq binds a_534 (BIRTH). -/
+theorem p01r3 (p : T1P) :
+    app (dnmsRoundM p01File.tagDefs 0) (p01fam p01ar3 [] 3 p)
+      = (NDactive (Sum.inl NOWAKEUP),
+         p01fam p01ar4 [] 4
+           { p with f₁ := update_env_aux patA534 xPtrV p.f₁ }) := by
+  refine dnmsRoundM_adv rfl ?_
+  exact (advance_tau_misc).trans rfl
+
+/-- R4: the Load's operands evaluate — reads a_534's cell. -/
+theorem p01r4 (p : T1P)
+    (ha : envLookup (p01fam p01ar4 [] 4 p) symA534 = some xPtrV) :
+    app (dnmsRoundM p01File.tagDefs 0) (p01fam p01ar4 [] 4 p)
+      = (NDactive (Sum.inl NOWAKEUP), p01fam p01ar5 [] 5 p) := by
+  refine dnmsRoundM_adv rfl ?_
+  refine (advance_runstate_eval (th' := p01Th p01ar5 p.f₁)
+    (rs' := (p01fam p01ar4 [] 4 p).core_run_state0) ?_).trans ?_
+  · show stExceptUndef_bind _ _ _ = _
+    refine (stub_defined
+      (z := Action CerbLocation.Loc.unknown empty_annotation
+        (Load0 (mk_value_pe (Vctype intCty)) (mk_value_pe xPtrV) NA))
+      (st' := (p01fam p01ar4 [] 4 p).core_run_state0) ?_).trans rfl
+    show stExceptUndef_bind _ _ _ = _
+    refine (stub_defined (z := Vctype intCty)
+      (st' := (p01fam p01ar4 [] 4 p).core_run_state0) ?_).trans ?_
+    · rfl
+    show stExceptUndef_bind _ _ _ = _
+    refine (stub_defined (z := xPtrV)
+      (st' := (p01fam p01ar4 [] 4 p).core_run_state0) ?_).trans rfl
+    show stExceptUndef_bind _ _ _ = _
+    refine (stub_defined (z := Sum.inr xPtrV)
+      (st' := (p01fam p01ar4 [] 4 p).core_run_state0) ?_).trans ?_
+    · show runEU (eval_pexpr_aux2 p01File.tagDefs
+          CerbLocation.Loc.unknown
+          (some (CerbLocation.other "RelSem.callND"))
+          (create_extern_symmap p01File) [p.f₁] (some p.ls) p01File
+          (Pexpr aU () (PEsym symA534))) _ = _
+      rw [aux2_sym_hit (a := aU) (a' := []) (z := symA534) (v := xPtrV)
+        (env := [p.f₁]) rfl rfl
+        (show lookup_env symA534 [p.f₁] = some xPtrV from ha)]
+      rfl
+    · rfl
+  · rfl
+
+/-- R5: THE LOAD — aid drawn, x's bytes recombine to exactly x,
+    ME_load traced (step counter does not move). -/
+theorem p01r5 (x : Int) (p : T1P)
+    (hget : p.ls.allocations.get? 0 = some allocX)
+    (hbytes : ∀ i : Nat, (hi : i < (xBytes x).length) →
+      p.ls.bytemap.get? (xAddr + (i : Int)) = some (xBytes x)[i])
+    (hlum : p.ls.lastUsedUnionMembers = [])
+    (hfpm : p.ls.funptrmap = [])
+    (hinv : MemInv p.ls)
+    (h1 : -2147483648 ≤ x) (h2 : x ≤ 2147483647) :
+    app (dnmsRoundM p01File.tagDefs 0) (p01fam p01ar5 [] 5 p)
+      = (NDactive (Sum.inl NOWAKEUP),
+         p01σ (p01ar6 x) p.f₁ p.tS (p.aS + 1) p.eS p.sS p.ls
+           [meLoad x] 5) := by
+  refine dnmsRoundM_adv rfl ?_
+  apply (app_bind_active ?hreq).trans
+  case hreq =>
+    refine (app_bind_active rfl).trans ?_
+    rw [perform_unfold]
+    refine (app_bind_active aid_draw).trans ?_
+    rw [ars_load_unfold]
+    refine (app_bind_active (app_liftMem_active rfl
+      (RelSem.T1.loadX_eq_facts x p.ls hget hbytes hlum hfpm hinv
+        h1 h2))).trans ?_
+    refine (app_bind_active (app_liftMem_active rfl
+      mem_prefix_block)).trans ?_
+    exact app_nd_update _ _
+  rfl
+
+/-- R6: the inner Eunseq packs the tuple (tau). -/
+theorem p01r6 (x : Int) (p : T1P) :
+    app (dnmsRoundM p01File.tagDefs 0)
+        (p01fam (p01ar6 x) [meLoad x] 5 p)
+      = (NDactive (Sum.inl NOWAKEUP),
+         p01fam (p01ar7 x) [meLoad x] 6 p) := by
+  refine dnmsRoundM_adv rfl ?_
+  exact (advance_tau_misc).trans rfl
+
+/-- R7: the Ewseq tuple-binds (a_535, a_536) (BIRTH2). -/
+theorem p01r7 (x : Int) (p : T1P) :
+    app (dnmsRoundM p01File.tagDefs 0)
+        (p01fam (p01ar7 x) [meLoad x] 6 p)
+      = (NDactive (Sum.inl NOWAKEUP),
+         p01fam p01ar8 [meLoad x] 7
+           { p with f₁ := update_env_aux patT3536 (Vtuple [loadedV x, loadedV 0]) p.f₁ }) := by
+  refine dnmsRoundM_adv rfl ?_
+  exact (advance_tau_misc).trans rfl
+
+/-- The first expr-level Ecase's arms (the a_537/a_538 compare). -/
+def p01case1Arms :
+    List (generic_pattern sym × RExpr) :=
+  [(Pattern aU (CaseCtor Ctuple
+      [Pattern aU (CaseCtor Cspecified
+        [Pattern aU (CaseBase (some symA537, BTy_object OTy_integer))]),
+       Pattern aU (CaseCtor Cspecified
+        [Pattern aU (CaseBase (some symA538, BTy_object OTy_integer))])]),
+    Expr aU (Epure (Pexpr aU () (PEif
+      (Pexpr aU () (PEop OpLt
+        (Pexpr aU () (PEcall (Sym symConvInt)
+          [Pexpr aU () (PEval (Vctype intCty)),
+           Pexpr aU () (PEsym symA537)]))
+        (Pexpr aU () (PEcall (Sym symConvInt)
+          [Pexpr aU () (PEval (Vctype intCty)),
+           Pexpr aU () (PEsym symA538)]))))
+      (Pexpr aU () (PEctor Cspecified
+        [Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none 1))))]))
+      (Pexpr aU () (PEctor Cspecified
+        [Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none 0))))]))))
+    )),
+   (Pattern aU (CaseBase (none,
+      BTy_tuple [BTy_loaded OTy_integer, BTy_loaded OTy_integer])),
+    Expr aU (Epure (Pexpr aU () (PEctor Cunspecified
+      [Pexpr aU () (PEval (Vctype intCty))]))))]
+
+/-- The R8 scrutinee's whole-loop evaluation (tuple of two cell
+    reads; ∀-env with the two facts fed). -/
+theorem p01ctor2_eval (x : Int) (env : List (Fmap sym value))
+    (memo : Option CerbMem.MemState)
+    (ha5 : lookup_env symA535 env = some (loadedV x))
+    (ha6 : lookup_env symA536 env = some (loadedV 0)) :
+    eval_pexpr_aux2 p01File.tagDefs CerbLocation.Loc.unknown
+        (some (CerbLocation.other "RelSem.callND"))
+        (create_extern_symmap p01File) env memo p01File
+        (Pexpr aU () (PEctor Ctuple
+          [Pexpr aU () (PEsym symA535),
+           Pexpr aU () (PEsym symA536)]))
+      = Result (Defined (Sum.inr (Vtuple [loadedV x, loadedV 0]))) :=
+  aux2_done 999999 _ _ _ _ _ _ _
+    (show pull_constrained 0 (Pexpr aU () (PEctor Ctuple
+        [Pexpr aU () (PEsym symA535),
+         Pexpr aU () (PEsym symA536)]))
+      = Pexpr [] () (PEctor Ctuple
+        [Pexpr aU () (PEsym symA535),
+         Pexpr aU () (PEsym symA536)]) from rfl)
+    (by intro a xs h; simp at h)
+    (se_ctor_tuple
+      (pes' := [Pexpr [] () (PEval (loadedV x)),
+                Pexpr [] () (PEval (loadedV 0))])
+      (cvals := [loadedV x, loadedV 0])
+      (eumapM_cons (se_sym_hit (fuel := 999998) rfl ha5)
+        (eumapM_cons (se_sym_hit (fuel := 999998) rfl ha6)
+          eumapM_nil)) rfl)
+    (by rfl)
+
+/-- R8: the Ecase scrutinee evaluates — reads a_535's and a_536's
+    cells (the tuple packs). -/
+theorem p01r8 (x : Int) (p : T1P)
+    (ha5 : envLookup (p01fam p01ar8 [meLoad x] 7 p) symA535
+      = some (loadedV x))
+    (ha6 : envLookup (p01fam p01ar8 [meLoad x] 7 p) symA536
+      = some (loadedV 0)) :
+    app (dnmsRoundM p01File.tagDefs 0) (p01fam p01ar8 [meLoad x] 7 p)
+      = (NDactive (Sum.inl NOWAKEUP),
+         p01fam (p01ar9 x) [meLoad x] 8 p) := by
+  refine dnmsRoundM_adv rfl ?_
+  refine (advance_runstate_eval (th' := p01Th (p01ar9 x) p.f₁)
+    (rs' := (p01fam p01ar8 [meLoad x] 7 p).core_run_state0) ?_).trans ?_
+  · show stExceptUndef_bind _ _ _ = _
+    refine (stub_defined
+      (z := Expr aU (Ecase
+        (Pexpr [] () (PEval (Vtuple [loadedV x, loadedV 0])))
+        p01case1Arms))
+      (st' := (p01fam p01ar8 [meLoad x] 7 p).core_run_state0) ?_).trans rfl
+    show stExceptUndef_bind _ _ _ = _
+    refine (stub_defined
+      (z := (Pexpr [] () (PEval (Vtuple [loadedV x, loadedV 0]))
+        : generic_pexpr Unit sym))
+      (st' := (p01fam p01ar8 [meLoad x] 7 p).core_run_state0) ?_).trans rfl
+    show stExceptUndef_bind _ _ _ = _
+    refine (stub_defined
+      (z := Sum.inr (Vtuple [loadedV x, loadedV 0]))
+      (st' := (p01fam p01ar8 [meLoad x] 7 p).core_run_state0) ?_).trans ?_
+    · show runEU (eval_pexpr_aux2 p01File.tagDefs
+          CerbLocation.Loc.unknown
+          (some (CerbLocation.other "RelSem.callND"))
+          (create_extern_symmap p01File) [p.f₁] (some p.ls) p01File
+          (Pexpr aU () (PEctor Ctuple
+            [Pexpr aU () (PEsym symA535),
+             Pexpr aU () (PEsym symA536)]))) _ = _
+      rw [p01ctor2_eval x [p.f₁] (some p.ls)
+        (show lookup_env symA535 [p.f₁] = some (loadedV x) from ha5)
+        (show lookup_env symA536 [p.f₁] = some (loadedV 0) from ha6)]
+      rfl
+    · rfl
+  · rfl
+
+/-- R9: the Ecase picks the tuple arm and substitutes (tau). -/
+theorem p01r9 (x : Int) (p : T1P) :
+    app (dnmsRoundM p01File.tagDefs 0)
+        (p01fam (p01ar9 x) [meLoad x] 8 p)
+      = (NDactive (Sum.inl NOWAKEUP),
+         p01fam (p01ar10 x) [meLoad x] 9 p) := by
+  refine dnmsRoundM_adv rfl ?_
+  exact (advance_tau_misc).trans rfl
+
+/-- R11: the inner Eunseq packs (tau; branch-value abstract). -/
+theorem p01r11 (c : Int) (p : T1P) {tr : List trace_event} :
+    app (dnmsRoundM p01File.tagDefs 0)
+        (p01fam (p01ar11 c) tr 10 p)
+      = (NDactive (Sum.inl NOWAKEUP),
+         p01fam (p01ar12 c) tr 11 p) := by
+  refine dnmsRoundM_adv rfl ?_
+  exact (advance_tau_misc).trans rfl
+
+/-- R12: the Ewseq tuple-binds (a_529, a_530) (BIRTH2). -/
+theorem p01r12 (c : Int) (p : T1P) {tr : List trace_event} :
+    app (dnmsRoundM p01File.tagDefs 0)
+        (p01fam (p01ar12 c) tr 11 p)
+      = (NDactive (Sum.inl NOWAKEUP),
+         p01fam p01ar13 tr 12
+           { p with f₁ := update_env_aux patT2930 (Vtuple [loadedV c, loadedV 0]) p.f₁ }) := by
+  refine dnmsRoundM_adv rfl ?_
+  exact (advance_tau_misc).trans rfl
+
+/-- R14: the Ebound wrapper strips (tau). -/
+theorem p01r14 (c : Int) (p : T1P) {tr : List trace_event} :
+    app (dnmsRoundM p01File.tagDefs 0)
+        (p01fam (p01ar14 c) tr 13 p)
+      = (NDactive (Sum.inl NOWAKEUP),
+         p01fam (p01ar15 c) tr 14 p) := by
+  refine dnmsRoundM_adv rfl ?_
+  exact (advance_tau_misc).trans rfl
+
+/-- R15: the Esseq binds a_527 (BIRTH). -/
+theorem p01r15 (c : Int) (p : T1P) {tr : List trace_event} :
+    app (dnmsRoundM p01File.tagDefs 0)
+        (p01fam (p01ar15 c) tr 14 p)
+      = (NDactive (Sum.inl NOWAKEUP),
+         p01fam p01ar16 tr 15
+           { p with f₁ := update_env_aux patA527 (loadedV c) p.f₁ }) := by
+  refine dnmsRoundM_adv rfl ?_
+  exact (advance_tau_misc).trans rfl
+
+/-- The second expr-level Ecase's arms (the a_528 guard build). -/
+def p01case2Arms :
+    List (generic_pattern sym × RExpr) :=
+  [(Pattern aU (CaseCtor Cspecified
+      [Pattern aU (CaseBase ((some symA528), BTy_object OTy_integer))]),
+    Expr aU (Epure (Pexpr aU () (PEif
+      (Pexpr aU () (PEnot (Pexpr aU () (PEop OpEq
+        (Pexpr aU () (PEsym symA528))
+        (Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none 1)))))))))
+      (Pexpr aU () (PEval Vtrue)) (Pexpr aU () (PEval Vfalse)))))),
+   (Pattern aU (CaseCtor Cunspecified
+      [Pattern aU (CaseBase (none, BTy_ctype))]),
+    Expr aU (End [Expr aU (Epure (Pexpr aU () (PEval Vtrue))),
+                  Expr aU (Epure (Pexpr aU () (PEval Vfalse)))]))]
+
+/-- R16: the second Ecase's scrutinee evaluates — reads a_527's cell
+    (value abstract; both branch sides share this equation). -/
+theorem p01r16 (c : Int) (p : T1P) {tr : List trace_event}
+    (ha : envLookup (p01fam p01ar16 tr 15 p) symA527
+      = some (loadedV c)) :
+    app (dnmsRoundM p01File.tagDefs 0) (p01fam p01ar16 tr 15 p)
+      = (NDactive (Sum.inl NOWAKEUP),
+         p01fam (p01ar17 c) tr 16 p) := by
+  refine dnmsRoundM_adv rfl ?_
+  refine (advance_runstate_eval (th' := p01Th (p01ar17 c) p.f₁)
+    (rs' := (p01fam p01ar16 tr 15 p).core_run_state0) ?_).trans ?_
+  · show stExceptUndef_bind _ _ _ = _
+    refine (stub_defined
+      (z := Expr aU (Ecase
+        (Pexpr [] () (PEval (loadedV c))) p01case2Arms))
+      (st' := (p01fam p01ar16 tr 15 p).core_run_state0) ?_).trans rfl
+    show stExceptUndef_bind _ _ _ = _
+    refine (stub_defined
+      (z := (Pexpr [] () (PEval (loadedV c)) : generic_pexpr Unit sym))
+      (st' := (p01fam p01ar16 tr 15 p).core_run_state0) ?_).trans rfl
+    show stExceptUndef_bind _ _ _ = _
+    refine (stub_defined (z := Sum.inr (loadedV c))
+      (st' := (p01fam p01ar16 tr 15 p).core_run_state0) ?_).trans ?_
+    · show runEU (eval_pexpr_aux2 p01File.tagDefs
+          CerbLocation.Loc.unknown
+          (some (CerbLocation.other "RelSem.callND"))
+          (create_extern_symmap p01File) [p.f₁] (some p.ls) p01File
+          (Pexpr aU () (PEsym symA527))) _ = _
+      rw [aux2_sym_hit (a := aU) (a' := []) (z := symA527)
+        (v := loadedV c) (env := [p.f₁]) rfl rfl
+        (show lookup_env symA527 [p.f₁] = some (loadedV c) from ha)]
+      rfl
+    · rfl
+  · rfl
+
+/-- R17: the second Ecase picks the specified arm, substituting the
+    payload for a_528 (tau; value abstract — the loaded shape is
+    constructor-headed at any `c`). -/
+theorem p01r17 (c : Int) (p : T1P) {tr : List trace_event} :
+    app (dnmsRoundM p01File.tagDefs 0)
+        (p01fam (p01ar17 c) tr 16 p)
+      = (NDactive (Sum.inl NOWAKEUP),
+         p01fam (p01ar18 c) tr 17 p) := by
+  refine dnmsRoundM_adv rfl ?_
+  exact (advance_tau_misc).trans rfl
+
+/-- R19: the Esseq binds the guard cell a_526 (BIRTH; vb abstract). -/
+theorem p01r19 (vb : value) (p : T1P) {tr : List trace_event} :
+    app (dnmsRoundM p01File.tagDefs 0)
+        (p01fam (p01ar19 vb) tr 18 p)
+      = (NDactive (Sum.inl NOWAKEUP),
+         p01fam p01ar20 tr 19
+           { p with f₁ := update_env_aux patA526 vb p.f₁ }) := by
+  refine dnmsRoundM_adv rfl ?_
+  exact (advance_tau_misc).trans rfl

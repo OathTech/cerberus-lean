@@ -17,6 +17,13 @@ open RelSem RelSem.Cerb RelSem.Corpus
 namespace V2Probe
 
 def tagDefs0 : Fmap sym (CerbLocation.Loc × tag_definition) := p01File.tagDefs
+abbrev aU : List annot := [Aloc CerbLocation.Loc.unknown]
+def intCtyP : ctype := Ctype [] (Basic (Integer (Signed Int_)))
+def convIntP : sym := Symbol "" 15837442492999787586 (SD_Id "conv_int")
+def symA535P : sym := Symbol "" 15754218577363027919 (SD_Id "a_535")
+def symA536P : sym := Symbol "" 6464411467923874555 (SD_Id "a_536")
+def symA529P : sym := Symbol "" 1680278659536745755 (SD_Id "a_529")
+def symA530P : sym := Symbol "" 4915778119994869450 (SD_Id "a_530")
 
 def symStr : sym → String
   | Symbol _ n sd =>
@@ -172,6 +179,7 @@ def pSym : sym → String
     | _ => "«?SYMDESC»"
 
 def pIty : integerType → String
+  | Bool0 => "Bool0"
   | Signed Int_ => "(Signed Int_)"
   | Unsigned Int_ => "(Unsigned Int_)"
   | Signed Long => "(Signed Long)"
@@ -254,7 +262,12 @@ partial def pPe : generic_pexpr Unit sym → String
       | PEop op e1 e2 => s!"(PEop {pBinop op} {pPe e1} {pPe e2})"
       | PEcall (Sym z) args =>
         s!"(PEcall (Sym {pSym z}) [{String.intercalate ", " (args.map pPe)}])"
-      | PEcall (Impl ic) args => s!"(PEcall (Impl «?IC») [{String.intercalate ", " (args.map pPe)}])"
+      | PEcall (Impl ic) args =>
+        let icS := match ic with
+          | Integer__conv_nonrepresentable_signed_integer =>
+            "Integer__conv_nonrepresentable_signed_integer"
+          | _ => "«?IC»"
+        s!"(PEcall (Impl {icS}) [{String.intercalate ", " (args.map pPe)}])"
       | PEcase scr arms =>
         let armS := arms.map (fun (pa, e) => s!"({pPat pa}, {pPe e})")
         s!"(PEcase {pPe scr} [{String.intercalate ", " armS}])"
@@ -262,7 +275,8 @@ partial def pPe : generic_pexpr Unit sym → String
       | PEctor c args =>
         let cS := match c with
           | Ctuple => "Ctuple" | Cspecified => "Cspecified"
-          | Cunspecified => "Cunspecified" | _ => "«?CTOR»"
+          | Cunspecified => "Cunspecified"
+          | Civmin => "Civmin" | Civmax => "Civmax" | _ => "«?CTOR»"
         s!"(PEctor {cS} [{String.intercalate ", " (args.map pPe)}])"
       | PEundef l ub =>
         let ubS := match ub with
@@ -281,6 +295,8 @@ partial def pPe : generic_pexpr Unit sym → String
       | PEerror msg e => s!"(PEerror \"{msg}\" {pPe e})"
       | PEnot e => s!"(PEnot {pPe e})"
       | PEis_integer e => s!"(PEis_integer {pPe e})"
+      | PEis_unsigned e => s!"(PEis_unsigned {pPe e})"
+      | PEis_signed e => s!"(PEis_signed {pPe e})"
       | PEare_compatible e1 e2 => s!"(PEare_compatible {pPe e1} {pPe e2})"
       | PEstruct _ _ => "«?PEstruct»"
       | PElet pa e1 e2 => s!"(PElet {pPat pa} {pPe e1} {pPe e2})"
@@ -431,10 +447,88 @@ def probeLean (x : Int) (seed : Nat) : List String := Id.run do
     return hdr ++ lines ++ [s!"final: {supInfo σend}"]
   | _ => return ["probe: thread-count surprise"]
 
+
+/-! ## THE AUX2 CHAIN PROBE: per-eval-round step_eval intermediates
+    as Lean source (the z-chain discovery instrument). -/
+
+def chainProbe (env : List (Fmap sym value))
+    (memo : Option CerbMem.MemState)
+    (pe : generic_pexpr Unit sym) : List String := Id.run do
+  let ext := create_extern_symmap p01File
+  let mut cur := pe
+  let mut out : List String := []
+  for i in [0:12] do
+    let pulled := pull_constrained 0 cur
+    out := out ++ [s!"-- step {i} PULLED: {LeanPrint.pPe pulled}"]
+    match pulled with
+    | Pexpr _ _ (PEval v) =>
+      out := out ++ [s!"-- DONE value: {LeanPrint.pV v}"]
+      return out
+    | _ => pure ()
+    match step_eval_pexpr tagDefs0 0 CerbLocation.Loc.unknown
+        (some (CerbLocation.other "RelSem.callND")) ext env memo
+        p01File false pulled with
+    | Result (Defined pe') =>
+      out := out ++ [s!"   STEP => {LeanPrint.pPe pe'}"]
+      cur := pe'
+    | Result (Undef _ _) => return out ++ ["-- UNDEF"]
+    | Result (Error _ _) => return out ++ ["-- ERROR"]
+    | Exception _ => return out ++ ["-- EXC"]
+  return out ++ ["-- ...chain overflow"]
+
+def r10pe (x : Int) : generic_pexpr Unit sym :=
+  Pexpr aU () (PEif (Pexpr aU () (PEop OpLt
+      (Pexpr aU () (PEcall (Sym convIntP)
+        [Pexpr aU () (PEval (Vctype intCtyP)),
+         Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none x))))]))
+      (Pexpr aU () (PEcall (Sym convIntP)
+        [Pexpr aU () (PEval (Vctype intCtyP)),
+         Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none 0))))]))))
+    (Pexpr aU () (PEctor Cspecified
+      [Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none 1))))]))
+    (Pexpr aU () (PEctor Cspecified
+      [Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none 0))))])))
+
+def r8pe : generic_pexpr Unit sym :=
+  Pexpr aU () (PEctor Ctuple
+    [Pexpr aU () (PEsym symA535P), Pexpr aU () (PEsym symA536P)])
+
+def r13pe : generic_pexpr Unit sym :=
+  Pexpr aU () (PEcase
+    (Pexpr aU () (PEctor Ctuple
+      [Pexpr aU () (PEsym symA529P), Pexpr aU () (PEsym symA530P)]))
+    [(Pattern aU (CaseCtor Ctuple
+        [Pattern aU (CaseCtor Cspecified
+          [Pattern aU (CaseBase ((some (Symbol "" 17653705816563834534 (SD_Id "a_531"))), BTy_object OTy_integer))]),
+         Pattern aU (CaseCtor Cspecified
+          [Pattern aU (CaseBase ((some (Symbol "" 1342427191597093029 (SD_Id "a_532"))), BTy_object OTy_integer))])]),
+      Pexpr aU () (PEif (Pexpr aU () (PEop OpEq
+          (Pexpr aU () (PEcall (Sym convIntP)
+            [Pexpr aU () (PEval (Vctype intCtyP)),
+             Pexpr aU () (PEsym (Symbol "" 17653705816563834534 (SD_Id "a_531")))]))
+          (Pexpr aU () (PEcall (Sym convIntP)
+            [Pexpr aU () (PEval (Vctype intCtyP)),
+             Pexpr aU () (PEsym (Symbol "" 1342427191597093029 (SD_Id "a_532")))]))))
+        (Pexpr aU () (PEctor Cspecified [Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none 1))))]))
+        (Pexpr aU () (PEctor Cspecified [Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none 0))))]))))]
+    )
+
 #eval do
-  IO.println "########## x = -3 ##########"
-  for l in probeLean (-3) 0 do IO.println l
-  IO.println "########## x = 7 ##########"
-  for l in probeLean 7 0 do IO.println l
+  IO.println "##### r13 chain (c=1) #####"
+  for l in chainProbe [Lem_Map.fromList
+      [(symA529P, Vloaded (LVspecified (OVinteger (.IV .Prov_none 1)))),
+       (symA530P, Vloaded (LVspecified (OVinteger (.IV .Prov_none 0))))]]
+      (some CerbMem.initialMemState) r13pe do IO.println l
+  IO.println "##### r8 chain (x=-3 env) #####"
+  for l in chainProbe [Lem_Map.fromList
+      [(symA535P, Vloaded (LVspecified (OVinteger (.IV .Prov_none (-3))))),
+       (symA536P, Vloaded (LVspecified (OVinteger (.IV .Prov_none 0))))]]
+      (some CerbMem.initialMemState) r8pe do IO.println l
+  IO.println "##### r10 chain x=-3 #####"
+  for l in chainProbe [fmapEmpty] (some CerbMem.initialMemState)
+      (r10pe (-3)) do IO.println l
+  IO.println "##### r10 chain x=7 #####"
+  for l in chainProbe [fmapEmpty] (some CerbMem.initialMemState)
+      (r10pe 7) do IO.println l
 
 end V2Probe
