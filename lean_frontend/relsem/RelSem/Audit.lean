@@ -1586,8 +1586,12 @@ open Lean in
 -- T5 chain — T5Fixture/T5Prefix/T5Iter, the arc-9→15 climb's parked
 -- capability — DELETED; T5-the-theorem stands proved through the
 -- layer at the trio. Carrier set 112 → 104 in the same commit.)
+-- 2668 → 2732 (V2 C1: the observation algebra [PerStepObs] + the
+-- loop peel with anchors and the round-granular bridges
+-- [PerStepPeel, CerbStateAdequacy §V2] — the big-step↔small-step
+-- simulation infrastructure; same-commit provenance).
 /--
-info: RelSem audit sweep: 2668 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 2732 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do

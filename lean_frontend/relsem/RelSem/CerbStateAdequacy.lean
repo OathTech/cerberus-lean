@@ -28,6 +28,7 @@
 import RelSem.CerbStateWP
 import RelSem.Threaded
 import RelSem.PerStepCall
+import RelSem.PerStepPeel
 
 set_option autoImplicit false
 
@@ -362,6 +363,96 @@ theorem kCallHarnessUBFreeCnsSt_of_wp {GF : BundledGFunctors}
     CallHarnessUBFreeCns prior tagDefs file1 fname args fs :=
   callHarnessUBFreeCns_of_adequateCns
     (kCallHarnessAdequateCnsSt_of_wp prior tagDefs file1 fname args fs
+      spec Hwp)
+
+
+/-! ## The ROUND-GRANULAR bridges (V2): the same conclusions, with the
+    WP obligation at the PEELED reification `callK2`
+    (RelSem/PerStepPeel.lean) — per-round steps for the driver body;
+    the statement faces keep quantifying the untouched `callND`
+    (`runND_callND_eq_callK2` is the observation transport). -/
+
+/-- The threaded adequacy bridge at the peeled harness. -/
+theorem kCallHarnessAdequateThrSt_of_wp2 {GF : BundledGFunctors}
+    [CerbStGpreS GF] (seed : Nat)
+    (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
+    (file1 : file core_run_annotation) (fname : String)
+    (args : List value) (fs : CerbFS.FsState)
+    (spec : driver_result → Prop)
+    (Hwp : ∀ [CerbStGS GF],
+      (ctlIs (GF := GF) stHalf
+          (ctlOf (initial_driver_state_threaded seed file1 fs)) ∗
+        supIs stHalf
+          (suppliesOf (initial_driver_state_threaded seed file1 fs)) ∗
+        mrestIs stHalf
+          (memRestOf (initial_driver_state_threaded seed file1 fs))) ⊢
+        WP (callK2 tagDefs file1 fname args)
+          @ Stuckness.NotStuck ; ⊤
+          {{ o, ⌜∃ r : driver_result, o = Outcome.value r ∧ spec r⌝ }}) :
+    CallHarnessAdequateThr seed tagDefs file1 fname args fs spec := by
+  intro out tr st' hmem
+  rw [runND_callND_eq_callK2] at hmem
+  have hφ := kAdequateSt_of_wp (GF := GF)
+    (callK2 tagDefs file1 fname args)
+    (initial_driver_state_threaded seed file1 fs)
+    (fun o => ∃ r : driver_result, o = Outcome.value r ∧ spec r)
+    MemInv_initial (EnvWf_of_no_threads rfl)
+    (∅ : CerbStF EnvCell) (EnvCoh_empty _)
+    (by
+      intro inst
+      iintro ⟨Hb, Ha, He, Hc, Hs, Hm⟩
+      iclear Hb
+      iclear Ha
+      iclear He
+      iapply Hwp $$ [$Hc $Hs $Hm])
+    out tr st' hmem
+  obtain ⟨r, hr, hs⟩ := hφ
+  exact ⟨r, ofStatus_value_inv hr, hs⟩
+
+/-- THE CNS ADEQUACY BRIDGE at the peeled harness: a ∀-seed WP
+    obligation at per-round granularity discharges the V0 consistency
+    statement face. -/
+theorem kCallHarnessAdequateCnsSt_of_wp2 {GF : BundledGFunctors}
+    [CerbStGpreS GF] (prior : List Nat)
+    (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
+    (file1 : file core_run_annotation) (fname : String)
+    (args : List value) (fs : CerbFS.FsState)
+    (spec : driver_result → Prop)
+    (Hwp : ∀ (seed : Nat) [CerbStGS GF],
+      (ctlIs (GF := GF) stHalf
+          (ctlOf (initial_driver_state_threaded seed file1 fs)) ∗
+        supIs stHalf
+          (suppliesOf (initial_driver_state_threaded seed file1 fs)) ∗
+        mrestIs stHalf
+          (memRestOf (initial_driver_state_threaded seed file1 fs))) ⊢
+        WP (callK2 tagDefs file1 fname args)
+          @ Stuckness.NotStuck ; ⊤
+          {{ o, ⌜∃ r : driver_result, o = Outcome.value r ∧ spec r⌝ }}) :
+    CallHarnessAdequateCns prior tagDefs file1 fname args fs spec :=
+  callHarnessAdequateCns_of_thrAll (fun seed =>
+    kCallHarnessAdequateThrSt_of_wp2 (GF := GF) seed tagDefs file1 fname
+      args fs spec (Hwp seed))
+
+/-- The consistency UB-freedom face at the peeled harness. -/
+theorem kCallHarnessUBFreeCnsSt_of_wp2 {GF : BundledGFunctors}
+    [CerbStGpreS GF] (prior : List Nat)
+    (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
+    (file1 : file core_run_annotation) (fname : String)
+    (args : List value) (fs : CerbFS.FsState)
+    (spec : driver_result → Prop)
+    (Hwp : ∀ (seed : Nat) [CerbStGS GF],
+      (ctlIs (GF := GF) stHalf
+          (ctlOf (initial_driver_state_threaded seed file1 fs)) ∗
+        supIs stHalf
+          (suppliesOf (initial_driver_state_threaded seed file1 fs)) ∗
+        mrestIs stHalf
+          (memRestOf (initial_driver_state_threaded seed file1 fs))) ⊢
+        WP (callK2 tagDefs file1 fname args)
+          @ Stuckness.NotStuck ; ⊤
+          {{ o, ⌜∃ r : driver_result, o = Outcome.value r ∧ spec r⌝ }}) :
+    CallHarnessUBFreeCns prior tagDefs file1 fname args fs :=
+  callHarnessUBFreeCns_of_adequateCns
+    (kCallHarnessAdequateCnsSt_of_wp2 prior tagDefs file1 fname args fs
       spec Hwp)
 
 end CerbSt
