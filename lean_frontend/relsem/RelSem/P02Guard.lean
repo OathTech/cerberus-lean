@@ -977,13 +977,33 @@ theorem p02conv_chainR {A : Type} (v : Int) (h1 : -2147483648 ≤ v)
         (p02conv_s4 v h1 h2 env memo) (by rfl)))))
   rw [h]
 
+/-- The full-eval face of the ret-conv chain (T1Rounds
+    `fullEval_conv` ported to p02File: the Erun argument's
+    conv_loaded_int call at the a_657 cell, ∀-run-state; consumed by
+    `seg_round_conv_ret`). -/
+theorem p02fullEval_conv (v : Int) (h1 : -2147483648 ≤ v)
+    (h2 : v ≤ 2147483647) (ar : RExpr) (f₁ : Fmap sym value)
+    (ls : CerbMem.MemState) (st : core_run_state)
+    (ha : lookup_env p02s_a_657 [f₁] = some (loadedV v)) :
+    full_eval_pexpr p02File.tagDefs (p02Th ar f₁) extC ls p02File
+        p02convPE st
+      = Result (Defined (loadedV v), st) := by
+  show stExceptUndef_bind _ _ _ = _
+  refine (RelSem.Kit.stub_defined (z := Sum.inr (loadedV v))
+    (st' := st) ?_).trans ?_
+  · show runEU (eval_pexpr_aux2 p02File.tagDefs L0 clocC extC
+        [f₁] (some ls) p02File p02convPE) _ = _
+    rw [p02conv_chainR v h1 h2 ha]
+    rfl
+  · rfl
+
 /-! ### The class tactics (DETERMINISTIC per-variant; the
     backtracking `first`-storm over arena-sized goals is the measured
     pathology — see the slice record §5) -/
 
 /-- Deterministic conditioned-round tactic (guard_gtT). -/
 macro "seg_round_guard_gtT" : tactic =>
-  `(tactic| (refine dnmsRoundM_adv rfl ?_
+  `(tactic| (seg_discover
              refine ((advance_runstate_eval (th' := ?_)
                (rs' := ?_) ?_).trans ?_)
              rotate_left 2
@@ -1007,7 +1027,7 @@ macro "seg_round_guard_gtT" : tactic =>
 
 /-- Deterministic conditioned-round tactic (guard_gtF). -/
 macro "seg_round_guard_gtF" : tactic =>
-  `(tactic| (refine dnmsRoundM_adv rfl ?_
+  `(tactic| (seg_discover
              refine ((advance_runstate_eval (th' := ?_)
                (rs' := ?_) ?_).trans ?_)
              rotate_left 2
@@ -1031,7 +1051,7 @@ macro "seg_round_guard_gtF" : tactic =>
 
 /-- Deterministic conditioned-round tactic (guard_ltT). -/
 macro "seg_round_guard_ltT" : tactic =>
-  `(tactic| (refine dnmsRoundM_adv rfl ?_
+  `(tactic| (seg_discover
              refine ((advance_runstate_eval (th' := ?_)
                (rs' := ?_) ?_).trans ?_)
              rotate_left 2
@@ -1055,7 +1075,7 @@ macro "seg_round_guard_ltT" : tactic =>
 
 /-- Deterministic conditioned-round tactic (guard_ltF). -/
 macro "seg_round_guard_ltF" : tactic =>
-  `(tactic| (refine dnmsRoundM_adv rfl ?_
+  `(tactic| (seg_discover
              refine ((advance_runstate_eval (th' := ?_)
                (rs' := ?_) ?_).trans ?_)
              rotate_left 2
@@ -1079,7 +1099,7 @@ macro "seg_round_guard_ltF" : tactic =>
 
 /-- Deterministic conditioned-round tactic (arith_sub). -/
 macro "seg_round_arith_sub" : tactic =>
-  `(tactic| (refine dnmsRoundM_adv rfl ?_
+  `(tactic| (seg_discover
              refine ((advance_runstate_eval (th' := ?_)
                (rs' := ?_) ?_).trans ?_)
              rotate_left 2
@@ -1111,7 +1131,7 @@ macro "seg_round_arith_sub" : tactic =>
 
 /-- Deterministic conditioned-round tactic (arith_add). -/
 macro "seg_round_arith_add" : tactic =>
-  `(tactic| (refine dnmsRoundM_adv rfl ?_
+  `(tactic| (seg_discover
              refine ((advance_runstate_eval (th' := ?_)
                (rs' := ?_) ?_).trans ?_)
              rotate_left 2
@@ -1140,5 +1160,117 @@ macro "seg_round_arith_add" : tactic =>
                  · rfl
                · rfl
              · rfl))
+
+/-! ### PERF-1 (2026-08-28): the ARM-FORM committed keys — the r127
+    lesson mechanized. The dispatch key inventory goes one level
+    below op/verdict, to the arm's OPERAND FORM: primitive
+    `PEconv_int` (the checked-ADD loop — `p02add_evalR` leaf),
+    literal-first-operand unary minus (the r257 form — one
+    case-select step, GROUND rest), conv-CALL operands (the existing
+    `seg_round_arith_{sub,add}`), and the `RS_EVAL[Erun]` ret-conv
+    class (`p02fullEval_conv` leaf). Committed choice per key
+    (Lithium interpreter.v syntax-directed selection): the generator
+    reads the key AND the values off the transcript diff and feeds
+    them as tactic arguments — at most one candidate per goal shape;
+    a form the generator cannot key is a LOUD generation-time error,
+    never an iteration over wrong candidates. -/
+
+/-- Checked-ADD at the PRIMITIVE `PEconv_int` arm (r127-class).
+    Values are generator-fed (the `.trans` middle carries `v1 + v2`,
+    so the caller commits them — PERF-0 probe finding). -/
+macro "seg_round_arith_add_prim" v1:term:max v2:term:max : tactic =>
+  `(tactic| (seg_discover
+             refine ((advance_runstate_eval (th' := ?_)
+               (rs' := ?_) ?_).trans ?_)
+             rotate_left 2
+             · refine (stub_defined (z := ?_) (st' := ?_) ?_).trans ?_
+               rotate_left 2
+               · refine (stub_defined (z := ?_) (st' := ?_)
+                   ?_).trans ?_
+                 rotate_left 2
+                 · refine (stub_defined (z := ?_) (st' := ?_)
+                     ?_).trans ?_
+                   rotate_left 2
+                   · show runEU (eval_pexpr_aux2 _ _ _ _ _ _ _ _)
+                       _ = _
+                     refine (RelSem.P02.p02add_evalR $v1 $v2
+                       ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_).trans ?_
+                     all_goals first | assumption | omega | rfl
+                   · rfl
+                 · rfl
+               · rfl
+             · rfl))
+
+/-- The literal-first-operand unary-minus checked-SUB arm (the r257
+    form: single-cell case scrutinee, all values literal — one
+    case-select step at the cell read, then the rest of the loop is
+    a CLOSED computation). -/
+macro "seg_round_neg_lit" : tactic =>
+  `(tactic| (seg_discover
+             refine ((advance_runstate_eval (th' := ?_)
+               (rs' := ?_) ?_).trans ?_)
+             rotate_left 2
+             · refine (stub_defined (z := ?_) (st' := ?_) ?_).trans ?_
+               rotate_left 2
+               · refine (stub_defined (z := ?_) (st' := ?_)
+                   ?_).trans ?_
+                 rotate_left 2
+                 · refine (stub_defined (z := ?_) (st' := ?_)
+                     ?_).trans ?_
+                   rotate_left 2
+                   · show runEU (eval_pexpr_aux2 _ _ _ _ _ _ _ _)
+                       _ = _
+                     refine (RelSem.Seg.runEU_aux2_step_then
+                       (peP := ?_) (pe' := ?_) (z := ?_)
+                       ?_ ?_ ?_ ?_).trans ?_
+                     rotate_left 3
+                     · rfl
+                     · refine se_case_sel (pa := ?_) (pb := ())
+                         (cval := ?_) (a2 := ?_) (b2 := ?_)
+                         (pe2 := ?_) ?_ ?_
+                       rotate_left 5
+                       · refine se_sym_hit (v := ?_) ?_ ?_
+                         rotate_left 1
+                         · assumption
+                         · rfl
+                       · rfl
+                     · rfl
+                     · rfl
+                     · rfl
+                   · rfl
+                 · rfl
+               · rfl
+             · rfl))
+
+/-- The `RS_EVAL[Erun]` ret-conv round (r130-class): the Erun jump
+    with the conv_loaded_int argument evaluated through the PROVED
+    whole conv loop (`p02conv_chainR` via `p02fullEval_conv`). The
+    value is generator-fed; its range side conditions close by omega
+    from the round's path-condition/range hypotheses. Scaffold:
+    T1Rounds `t1r6`. -/
+macro "seg_round_conv_ret" v:term:max : tactic =>
+  `(tactic| (seg_discover
+             refine (app_bind_active rfl).trans ?_
+             apply (app_bind_active (liftCore_run_defined ?hM)).trans
+             case hM =>
+               change stExceptUndef_bind _ _ _ = _
+               apply RelSem.Laws.erun_jump_m ?hres ?hk
+               case hres => rfl
+               case hk =>
+                 change stExceptUndef_bind _ _ _ = _
+                 apply (stub_defined ?hFold).trans
+                 case hFold =>
+                   change stExceptUndef_bind _ _ _ = _
+                   apply (stub_defined ?hElem).trans
+                   case hElem =>
+                     change stExceptUndef_bind _ _ _ = _
+                     apply (stub_defined
+                       (RelSem.P02.p02fullEval_conv $v
+                         (by omega) (by omega) _ _ _ _
+                         (by assumption))).trans
+                     rfl
+                   rfl
+                 rfl
+             rfl))
 
 end RelSem.P02

@@ -185,6 +185,79 @@ theorem runEU_aux2_step_then {A : Type}
       hstep hnv).trans hrest
   rw [h]
 
+/-! ## The pinned step-discovery (PERF-1 mechanism A, 2026-08-28)
+
+    PERF-0 measured the round tactics' dominant cost INSIDE the
+    old first step (refine of `dnmsRoundM_adv` at a bare `rfl`
+    discovery premise): elaborator-side whnf of the
+    step-discovery `find_can_advance (dnmsDiscover …)` against
+    composite arenas (69 s Meta.whnf on r28's state), re-derived per
+    unification. The kernel evaluator runs the SAME computation in
+    8 ms (probe E). `seg_discover` therefore computes the discovery
+    ONCE with `Lean.Kernel.whnf` and pins it as an explicit
+    rfl-hinted equation (classical: sharing / explicit equations —
+    the plan's L2, in-tree precedent `advance_action_unfold`'s
+    "rw with the pinned equation keeps the check linear" note;
+    kernel-leaf computation per the ACL2Lean-pattern ruling — the
+    certifying artifact is an ordinary `rfl` the kernel re-verifies
+    at declaration add, no ofReduce*, fail-closed). The advance
+    chain then unifies against the CONCRETE step term, never against
+    a re-derivation. Committed choice: `some step` commits to the
+    advancing atom; `none` is a loud redirect to `seg_round_term`;
+    a kernel failure is a loud stop. -/
+
+section Discover
+open Lean Elab Meta Tactic
+
+/-- Hinted refl: `Eq.refl lhs` cast to `lhs = rhs` (the SegStepper
+    `mkRflHint` device — the kernel checks the defeq at declaration
+    add; a mismatch is a loud kernel error, never a silent pass). -/
+private def discRflHint (ty : Expr) : MetaM Expr := do
+  let some (_, lhs, _) := ty.eq?
+    | throwError "seg_discover: rfl hint on a non-equation:{indentExpr ty}"
+  mkExpectedTypeHint (← mkEqRefl lhs) ty
+
+elab "seg_discover" : tactic => do
+  let g ← getMainGoal
+  g.withContext do
+    let ci ← getConstInfo ``RelSem.Cerb.dnmsRoundM_adv
+    let (args, _, concl) ← forallMetaTelescope ci.type
+    unless ← isDefEq concl (← g.getType) do
+      throwError "seg_discover: goal is not an advancing round \
+        equation:{indentExpr (← g.getType)}"
+    let hfindM := args[args.size - 2]!
+    let hadvM := args[args.size - 1]!
+    let hfindTy ← instantiateMVars (← hfindM.mvarId!.getType)
+    let some (_, discE, rhsE) := hfindTy.eq?
+      | throwError "seg_discover: hfind premise is not an equation"
+    -- the kernel-computed discovery (8 ms where Meta.whnf is 69 s)
+    let env ← getEnv
+    let lctx ← getLCtx
+    let stepO ← match Lean.Kernel.whnf env lctx discE with
+      | .ok e => pure e
+      | .error _ => throwError "seg_discover: kernel whnf FAILED on \
+          the discovery:{indentExpr discE}"
+    unless stepO.isAppOfArity ``Option.some 2 do
+      throwError "seg_discover: discovery result is not an advancing \
+        step (head: {stepO.getAppFn}) — terminal offer round? use \
+        seg_round_term"
+    -- expose the step's constructor (the advance laws dispatch on it)
+    let stepInner ← match Lean.Kernel.whnf env lctx stepO.appArg! with
+      | .ok e => pure e
+      | .error _ => throwError "seg_discover: kernel whnf FAILED on \
+          the step body"
+    let stepOW := mkApp stepO.appFn! stepInner
+    unless ← isDefEq rhsE stepOW do
+      throwError "seg_discover: could not pin the discovered step:\
+        {indentExpr stepOW}"
+    let hfindTy ← instantiateMVars (← hfindM.mvarId!.getType)
+    hfindM.mvarId!.assign (← discRflHint hfindTy)
+    g.assign (← instantiateMVars (mkAppN
+      (mkConst ci.name (ci.levelParams.map .param)) args))
+    replaceMainGoal [(← instantiateMVars hadvM).mvarId!]
+
+end Discover
+
 /-! ## The round tactics -/
 
 /-- The eumapM element chain (closed args by rfl, sym args by the
@@ -280,7 +353,7 @@ macro_rules
 /-- TAU rounds (all `TAU[…]`/`RS_TAU[…]` classes incl. the pattern
     binds — the env write is in the successor spelling). -/
 macro "seg_round_tau" : tactic =>
-  `(tactic| (refine dnmsRoundM_adv rfl ?_
+  `(tactic| (seg_discover
              first
                | exact (advance_tau_misc).trans rfl
                | (refine ((advance_runstate_tau_misc (th' := ?_)
@@ -293,7 +366,7 @@ macro "seg_round_tau" : tactic =>
     `RS_EVAL[eval operands of Load]`, `RS_EVAL[Erun]`-simple): the
     runstate-eval advance with the stub chain. -/
 macro "seg_round_eval" : tactic =>
-  `(tactic| (refine dnmsRoundM_adv rfl ?_
+  `(tactic| (seg_discover
              refine ((advance_runstate_eval (th' := ?_)
                (rs' := ?_) ?_).trans ?_)
              rotate_left 2
@@ -305,7 +378,7 @@ macro "seg_round_eval" : tactic =>
     hypotheses feed `intLoad_facts` (get?/bytes/lum/fpm/MemInv/range —
     all by `assumption`, the residual spellings by `rfl`). -/
 macro "seg_round_load" : tactic =>
-  `(tactic| (refine dnmsRoundM_adv rfl ?_
+  `(tactic| (seg_discover
              apply (app_bind_active ?hreq).trans
              case hreq =>
                refine (app_bind_active rfl).trans ?_
