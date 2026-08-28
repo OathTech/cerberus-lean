@@ -87,6 +87,53 @@ theorem intLoad_facts (v : Int) (addr : Int) (aid : Int)
    citizens (mechanism C), consumed both by the round tactics below
    (names unchanged) and by the stepper's mint path.) -/
 
+/-- `intLoad_facts` at an ARBITRARY location (V3a: the mint path's
+    load rounds carry the round's own loc; `mem_load_block` is
+    loc-generic, so the block is too). -/
+theorem intLoad_facts_loc (loc : CerbLocation.Loc) (v : Int)
+    (addr : Int) (aid : Int)
+    (alc : CerbMem.Allocation) (ls : CerbMem.MemState)
+    (hget : ls.allocations.get? aid = some alc := by assumption)
+    (hbytes : ∀ i : Nat, (hi : i < (T1.xBytes v).length) →
+      ls.bytemap.get? (addr + (i : Int)) = some (T1.xBytes v)[i]
+      := by assumption)
+    (hbase : alc.base = addr := by rfl) (hsz : alc.size = 4 := by rfl)
+    (hty : CerbMem.isAtomicMemberAccess alc T1.intCty addr = false
+      := by rfl)
+    (hlum : ls.lastUsedUnionMembers = []
+      := by first | assumption | rfl)
+    (hfpm : ls.funptrmap = [] := by first | assumption | rfl)
+    (hinv : MemInv ls := by assumption)
+    (h1 : -2147483648 ≤ v := by first | assumption | omega)
+    (h2 : v ≤ 2147483647 := by first | assumption | omega) :
+    app (CerbMem.loadM loc T1.intCty
+        (.PV (.Prov_some aid) (.PVconcrete none addr))) ls
+      = (NDactive (CerbMem.Footprint.FP .R addr 4,
+          CerbMem.MemValue.MVinteger (Signed Int_) (.IV .Prov_none v)),
+         ls) := by
+  have hrecon : CerbMem.reconstructValue ls.lastUsedUnionMembers
+      ls.funptrmap addr T1.intCty (T1.xBytes v)
+      = CerbMem.MemValue.MVinteger (Signed Int_) (.IV .Prov_none v) := by
+    rw [hlum, hfpm]
+    show CerbMem.reconstructValue_lemFuel (999999 + 1) [] [] addr
+      (Ctype [] (Basic (Integer (Signed Int_)))) (T1.xBytes v) = _
+    rw [CerbMem.reconstructValue_lemFuel]
+    simp only [CerberusImpl.is_signed_ity]
+    rw [show T1.xBytes v
+        = [T1.mkByte v 0, T1.mkByte v 1, T1.mkByte v 2, T1.mkByte v 3]
+        from rfl,
+      T1.roundtrip_arith v h1 h2]
+    simp [CerbMem.provFromIntegerBytes, CerbMem.combineProv, T1.mkByte]
+  have hbounds : CerbMem.isInBounds alc addr
+      (CerbMem.sizeofCtype T1.intCty) = true := by
+    rw [show CerbMem.sizeofCtype T1.intCty = 4 from rfl]
+    unfold CerbMem.isInBounds
+    rw [hbase, hsz]
+    simp
+  exact Kit.mem_load_block (loc := loc)
+    (um := none) (hinv.contains_dead_false hget) hget hbounds hty
+    (readBytesFrom_of_pointwise rfl hbytes) hrecon rfl
+
 /-! ## The pinned step-discovery (PERF-1 mechanism A, 2026-08-28)
 
     PERF-0 measured the round tactics' dominant cost INSIDE the

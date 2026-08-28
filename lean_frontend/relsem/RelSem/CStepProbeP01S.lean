@@ -22,6 +22,7 @@
 
 import RelSem.T1Proof
 import RelSem.P01Proof
+import RelSem.SegRoundTac
 
 set_option autoImplicit false
 set_option maxHeartbeats 2000000  -- the tree-standing file cap
