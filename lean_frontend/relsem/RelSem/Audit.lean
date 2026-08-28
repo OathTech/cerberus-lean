@@ -168,6 +168,8 @@ import RelSem.T1Rounds
 import RelSem.T1Proof
 import RelSem.P01Rounds
 import RelSem.P01Proof
+import RelSem.T2Rounds
+import RelSem.T2Proof
 -- arc-18 C2: the heap-route walk substrate joins the sweep closure +
 -- pins (the one-route migration).
 -- arc-16 S3: the runner-observation algebra + wp-tactics join the
@@ -338,6 +340,12 @@ def sorryExceptions : List Name := []
 #guard_msgs in #print axioms RelSem.P01.p01_proved
 /-- info: 'RelSem.P01.p01_ubfree_proved' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.P01.p01_ubfree_proved
+-- V2 (2026-08-28): T2 (add) PROVED — the two-argument protocol +
+-- the checked add at range hypotheses; and its UB-freedom face.
+/-- info: 'RelSem.T2.t2_threaded_proved' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T2.t2_threaded_proved
+/-- info: 'RelSem.T2.t2_ubfree_proved' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.T2.t2_ubfree_proved
 -- Substrate-mentioning theorems: pinned exactly so any growth
 -- (sorryAx above all) is a build failure. DAEMON-free since the arc-8
 -- S3 deletion (formerly it entered through the quoted generated
@@ -1201,6 +1209,9 @@ open Lean in
 -- [ctl-sup-mem + alloc-store] — same-commit provenance.)
 -- (87 → 90, V2 C3: evalPull +2 [se_call + aux2_sym_hit], stateWP +1
 -- [read-ctl-dom] — same-commit provenance.)
+-- (95 → 96, V2 T2: stateWP +1 [alloc-store2 — the two-argument
+-- inject]; sweep 3432 → 3590 (the closure gains T2Rounds/T2Proof) —
+-- same-commit provenance.)
 -- (92 → 95, V2 P01: evalPull +2 [se_ctor_tuple + se_case_sel],
 -- stateWP +1 [ctl-env2]; sweep 3180 → 3432 (the closure gains
 -- P01Rounds/P01Proof) — same-commit provenance.)
@@ -1208,7 +1219,7 @@ open Lean in
 -- (the T1 per-round engine + proof), pulling PerStepPeel/PerStepObs
 -- in — envMap +1, stateWP +1 previously outside the closure —
 -- same-commit provenance.)
-/-- info: step_law census: 95 laws [advance 5, construct 9, envAlg 3, envMap 7, evalArith 2, evalPull 9, heapWP 4, loop 1, memBlock 7, memRW 21, perform 6, roundGlue 3, stateWP 18] -/
+/-- info: step_law census: 96 laws [advance 5, construct 9, envAlg 3, envMap 7, evalArith 2, evalPull 9, heapWP 4, loop 1, memBlock 7, memRW 21, perform 6, roundGlue 3, stateWP 19] -/
 #guard_msgs in #step_law_census
 -- (V0 2026-08-27, THE KILL BASKET — record
 -- docs/2026-08-27_v0-statements-and-ban.md: the T1–T5 threaded
@@ -1630,7 +1641,7 @@ open Lean in
 -- [PerStepPeel, CerbStateAdequacy §V2] — the big-step↔small-step
 -- simulation infrastructure; same-commit provenance).
 /--
-info: RelSem audit sweep: 3432 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 3590 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do

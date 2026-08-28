@@ -13,6 +13,7 @@
 import RelSem.P01Rounds
 import RelSem.T2Threaded
 import RelSem.RoundEval.Arith
+import RelSem.T1Proof
 
 set_option autoImplicit false
 set_option maxHeartbeats 2000000
@@ -53,13 +54,13 @@ def bPtrV : value := Vobject (OVpointer bPtr)
 def t2errPtr : CerbMem.PointerValue :=
   .PV (.Prov_some 2) (.PVconcrete none t2errAddr)
 
-def allocB : CerbMem.Allocation :=
+@[reducible] def allocB : CerbMem.Allocation :=
   { base := bAddr, size := 4, ty := some intCty,
     prefix_ := PrefOther "callND arg" }
-def allocBS : CerbMem.Allocation :=
+@[reducible] def allocBS : CerbMem.Allocation :=
   { base := bAddr, size := (4 : Nat), ty := some signed_int,
     prefix_ := PrefOther "callND arg" }
-def t2allocErrS : CerbMem.Allocation :=
+@[reducible] def t2allocErrS : CerbMem.Allocation :=
   { base := t2errAddr, size := (4 : Nat), ty := some signed_int,
     prefix_ := PrefOther "errno" }
 
@@ -1354,3 +1355,66 @@ theorem t2r15 (s : Int) (p : T1P) {tr : List trace_event} :
          t2fam (t2arDone s) tr 13 p) := by
   refine (dnmsRoundM_inr rfl).trans ?_
   rfl
+
+/-! ## Instance-generic double-birth legs (the SETUP binds two cells
+    at the harness's insert spelling) -/
+
+section GenericDoubleBirth
+
+open RelSem.T1 (birth_new' birth_pres' birth_rev' birth_wfp')
+
+variable {inst : BEq sym} {pcmp : sym → sym → LemOrdering}
+variable {b₁ b₂ : sym} {v₁ v₂ : value} {f : Fmap sym value}
+
+theorem dbl_new₁' (hpc : lemCmpToOrd pcmp = RelSem.Kit.symCmpO)
+    (hwf : EnvWfFrame f) :
+    lookup_env b₁ [@fmapAddBy sym value inst pcmp b₁ v₁
+      (@fmapAddBy sym value inst pcmp b₂ v₂ f)] = some v₁ :=
+  birth_new' hpc (birth_wfp' hpc hwf)
+
+theorem dbl_new₂' (hpc : lemCmpToOrd pcmp = RelSem.Kit.symCmpO)
+    (hwf : EnvWfFrame f)
+    (hn₁ : ∀ z : sym, RelSem.Kit.symCmpO b₁ z = .eq →
+      lookup_env z [f] = none)
+    (hnum_ne : symNum b₁ ≠ symNum b₂) :
+    lookup_env b₂ [@fmapAddBy sym value inst pcmp b₁ v₁
+      (@fmapAddBy sym value inst pcmp b₂ v₂ f)] = some v₂ := by
+  refine birth_pres' hpc (birth_wfp' hpc hwf) ?_ b₂ v₂
+    (birth_new' hpc hwf)
+  intro z hz
+  cases hlk : lookup_env z [@fmapAddBy sym value inst pcmp b₂ v₂ f]
+    with
+  | none => rfl
+  | some vz =>
+    exfalso
+    rcases birth_rev' hpc hwf z vz hlk with ⟨v₀, hv₀⟩ | hnum
+    · rw [hn₁ z hz] at hv₀; cases hv₀
+    · obtain ⟨d1, n1, s1⟩ := b₁
+      obtain ⟨d2, n2, s2⟩ := b₂
+      obtain ⟨dz, nz, sz⟩ := z
+      obtain ⟨-, hn⟩ := (RelSem.Kit.symCmpO_eq_iff d1 dz n1 nz
+        s1 sz).1 hz
+      simp [symNum] at hnum hnum_ne
+      omega
+
+theorem dbl_rev' (hpc : lemCmpToOrd pcmp = RelSem.Kit.symCmpO)
+    (hwf : EnvWfFrame f) :
+    ∀ z v', lookup_env z [@fmapAddBy sym value inst pcmp b₁ v₁
+        (@fmapAddBy sym value inst pcmp b₂ v₂ f)] = some v' →
+      (∃ v₀, lookup_env z [f] = some v₀) ∨ symNum z = symNum b₁ ∨
+        symNum z = symNum b₂ := by
+  intro z v' hz
+  rcases birth_rev' hpc (birth_wfp' hpc hwf) z v' hz
+    with ⟨v₀, hv₀⟩ | hnum
+  · rcases birth_rev' hpc hwf z v₀ hv₀ with ⟨v₁', hv₁⟩ | hnum2
+    · exact Or.inl ⟨v₁', hv₁⟩
+    · exact Or.inr (Or.inr hnum2)
+  · exact Or.inr (Or.inl hnum)
+
+theorem dbl_wfp' (hpc : lemCmpToOrd pcmp = RelSem.Kit.symCmpO)
+    (hwf : EnvWfFrame f) :
+    EnvWfFrame (@fmapAddBy sym value inst pcmp b₁ v₁
+      (@fmapAddBy sym value inst pcmp b₂ v₂ f)) :=
+  birth_wfp' hpc (birth_wfp' hpc hwf)
+
+end GenericDoubleBirth
