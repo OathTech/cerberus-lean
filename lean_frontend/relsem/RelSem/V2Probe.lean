@@ -144,9 +144,297 @@ def probe (x : Int) (seed : Nat) : List String := Id.run do
     return hdr ++ lines ++ [s!"final offered step: {stepClass offers}", s!"final: {supInfo σend}"]
   | _ => return ["probe: thread-count surprise"]
 
+
+/-! ## THE LEAN-SOURCE PRINTER (P01 round transcription instrument):
+    prints per-round arena/env/trace terms AS LEAN SOURCE, ready to
+    paste into P01Rounds. Loud fallbacks («?...») on any constructor
+    outside the corpus vocabulary. -/
+
+namespace LeanPrint
+
+def pLoc : CerbLocation.Loc → String
+  | .unknown => "L0"
+  | .other s => s!"(CerbLocation.other \"{s}\")"
+  | _ => "«?LOC»"
+
+def pAnnots (as_ : List annot) : String :=
+  match as_ with
+  | [] => "[]"
+  | [Aloc l] => s!"[(Aloc {pLoc l})]"
+  | [Aloc l, Auid u] => s!"[(Aloc {pLoc l}), (Auid \"{u}\")]"
+  | _ => s!"«?ANNOTS:{as_.length}»"
+
+def pSym : sym → String
+  | Symbol d n sd =>
+    match sd with
+    | SD_Id name => s!"(Symbol \"{d}\" {n} (SD_Id \"{name}\"))"
+    | SD_None => s!"(Symbol \"{d}\" {n} SD_None)"
+    | _ => "«?SYMDESC»"
+
+def pIty : integerType → String
+  | Signed Int_ => "(Signed Int_)"
+  | Unsigned Int_ => "(Unsigned Int_)"
+  | Signed Long => "(Signed Long)"
+  | Unsigned Long => "(Unsigned Long)"
+  | _ => "«?ITY»"
+
+def pCty : ctype → String
+  | Ctype [] (Basic (Integer it)) => s!"(Ctype [] (Basic (Integer {pIty it})))"
+  | Ctype [] Void0 => "(Ctype [] Void0)"
+  | _ => "«?CTY»"
+
+def pProv : CerbMem.Provenance → String
+  | .Prov_none => ".Prov_none"
+  | .Prov_some i => s!"(.Prov_some {i})"
+  | _ => "«?PROV»"
+
+def pIV : CerbMem.IntegerValue → String
+  | .IV pv n => s!"(.IV {pProv pv} ({n}))"
+
+def pPV : CerbMem.PointerValue → String
+  | .PV pv (.PVconcrete none a) => s!"(.PV {pProv pv} (.PVconcrete none {a}))"
+  | .PV pv (.PVnull ct) => s!"(.PV {pProv pv} (.PVnull {pCty ct}))"
+  | _ => "«?PV»"
+
+def pOV : object_value → String
+  | OVinteger iv => s!"(OVinteger {pIV iv})"
+  | OVpointer pv => s!"(OVpointer {pPV pv})"
+  | _ => "«?OV»"
+
+partial def pBty : core_base_type → String
+  | BTy_unit => "BTy_unit"
+  | BTy_boolean => "BTy_boolean"
+  | BTy_ctype => "BTy_ctype"
+  | BTy_loaded OTy_integer => "(BTy_loaded OTy_integer)"
+  | BTy_loaded OTy_pointer => "(BTy_loaded OTy_pointer)"
+  | BTy_object OTy_integer => "(BTy_object OTy_integer)"
+  | BTy_object OTy_pointer => "(BTy_object OTy_pointer)"
+  | BTy_storable => "BTy_storable"
+  | BTy_tuple btys => s!"(BTy_tuple [{String.intercalate ", " (btys.map pBty)}])"
+  | BTy_list b => s!"(BTy_list {pBty b})"
+  | _ => "«?BTY»"
+
+partial def pV : value → String
+  | Vobject ov => s!"(Vobject {pOV ov})"
+  | Vloaded (LVspecified ov) => s!"(Vloaded (LVspecified {pOV ov}))"
+  | Vloaded (LVunspecified ct) => s!"(Vloaded (LVunspecified {pCty ct}))"
+  | Vunit => "Vunit"
+  | Vtrue => "Vtrue"
+  | Vfalse => "Vfalse"
+  | Vctype ct => s!"(Vctype {pCty ct})"
+  | Vtuple vs => s!"(Vtuple [{String.intercalate ", " (vs.map pV)}])"
+  | Vlist bty vs => s!"(Vlist {pBty bty} [{String.intercalate ", " (vs.map pV)}])"
+
+partial def pPat : generic_pattern sym → String
+  | Pattern as_ (CaseBase (os, bty)) =>
+    let osS := match os with
+      | some z => s!"(some {pSym z})"
+      | none => "none"
+    s!"(Pattern {pAnnots as_} (CaseBase ({osS}, {pBty bty})))"
+  | Pattern as_ (CaseCtor c pats) =>
+    let cS := match c with
+      | Ctuple => "Ctuple"
+      | Cspecified => "Cspecified"
+      | Cunspecified => "Cunspecified"
+      | _ => "«?CTOR»"
+    s!"(Pattern {pAnnots as_} (CaseCtor {cS} [{String.intercalate ", " (pats.map pPat)}]))"
+
+def pBinop : binop → String
+  | OpAdd => "OpAdd" | OpSub => "OpSub" | OpMul => "OpMul"
+  | OpDiv => "OpDiv" | OpRem_t => "OpRem_t" | OpRem_f => "OpRem_f"
+  | OpExp => "OpExp" | OpEq => "OpEq" | OpGt => "OpGt"
+  | OpLt => "OpLt" | OpGe => "OpGe" | OpLe => "OpLe"
+  | OpAnd => "OpAnd" | OpOr => "OpOr"
+
+partial def pPe : generic_pexpr Unit sym → String
+  | Pexpr as_ () pe =>
+    let inner := match pe with
+      | PEsym z => s!"(PEsym {pSym z})"
+      | PEval v => s!"(PEval {pV v})"
+      | PEop op e1 e2 => s!"(PEop {pBinop op} {pPe e1} {pPe e2})"
+      | PEcall (Sym z) args =>
+        s!"(PEcall (Sym {pSym z}) [{String.intercalate ", " (args.map pPe)}])"
+      | PEcall (Impl ic) args => s!"(PEcall (Impl «?IC») [{String.intercalate ", " (args.map pPe)}])"
+      | PEcase scr arms =>
+        let armS := arms.map (fun (pa, e) => s!"({pPat pa}, {pPe e})")
+        s!"(PEcase {pPe scr} [{String.intercalate ", " armS}])"
+      | PEif g e1 e2 => s!"(PEif {pPe g} {pPe e1} {pPe e2})"
+      | PEctor c args =>
+        let cS := match c with
+          | Ctuple => "Ctuple" | Cspecified => "Cspecified"
+          | Cunspecified => "Cunspecified" | _ => "«?CTOR»"
+        s!"(PEctor {cS} [{String.intercalate ", " (args.map pPe)}])"
+      | PEundef l ub =>
+        let ubS := match ub with
+          | UB036_exceptional_condition => "UB036_exceptional_condition"
+          | UB038_number_of_args => "UB038_number_of_args"
+          | UB041_function_not_compatible => "UB041_function_not_compatible"
+          | UB043_indirection_invalid_value => "UB043_indirection_invalid_value"
+          | UB088_reached_end_of_function => "UB088_reached_end_of_function"
+          | UB_CERB004_unspecified ck =>
+            let ckS := match ck with
+              | UB_unspec_conditional => "UB_unspec_conditional"
+              | _ => "«?UNSPEC»"
+            s!"(UB_CERB004_unspecified {ckS})"
+          | _ => "«?UB»"
+        s!"(PEundef {pLoc l} {ubS})"
+      | PEerror msg e => s!"(PEerror \"{msg}\" {pPe e})"
+      | PEnot e => s!"(PEnot {pPe e})"
+      | PEis_integer e => s!"(PEis_integer {pPe e})"
+      | PEare_compatible e1 e2 => s!"(PEare_compatible {pPe e1} {pPe e2})"
+      | PEstruct _ _ => "«?PEstruct»"
+      | PElet pa e1 e2 => s!"(PElet {pPat pa} {pPe e1} {pPe e2})"
+      | PEmemop _ args => s!"(PEmemop «?MOP» [{String.intercalate ", " (args.map pPe)}])"
+      | _ => "«?PE»"
+    s!"(Pexpr {pAnnots as_} () {inner})"
+
+def pMo : polarity → String
+  | .Pos => "Pos"
+  | .Neg0 => "Neg0"
+
+def pAct : generic_action_ Unit sym → String
+  | Create e1 e2 pref =>
+    let prefS := match pref with
+      | PrefSource l syms => s!"(PrefSource {pLoc l} [{String.intercalate ", " (syms.map pSym)}])"
+      | PrefOther str => s!"(PrefOther \"{str}\")"
+      | _ => "«?PREF»"
+    s!"(Create {pPe e1} {pPe e2} {prefS})"
+  | Store0 lk e1 e2 e3 mo => s!"(Store0 {lk} {pPe e1} {pPe e2} {pPe e3} NA)"
+  | Load0 e1 e2 mo => s!"(Load0 {pPe e1} {pPe e2} NA)"
+  | Kill kind e =>
+    let kS := match kind with
+      | kill_kind.Dynamic0 => "Dynamic0"
+      | kill_kind.Static0 ct => s!"(Static0 {pCty ct})"
+    s!"(Kill {kS} {pPe e})"
+  | _ => "«?ACT»"
+
+partial def pE : generic_expr core_run_annotation Unit sym → String
+  | Expr as_ body =>
+    let inner := match body with
+      | Epure pe => s!"(Epure {pPe pe})"
+      | Eaction (Paction pol (Action l _a act)) =>
+        s!"(Eaction (Paction {pMo pol} (Action {pLoc l} empty_annotation {pAct act})))"
+      | Ecase scr arms =>
+        let armS := arms.map (fun (pa, e) => s!"({pPat pa}, {pE e})")
+        s!"(Ecase {pPe scr} [{String.intercalate ", " armS}])"
+      | Eif g e1 e2 => s!"(Eif {pPe g} {pE e1} {pE e2})"
+      | Eunseq es => s!"(Eunseq [{String.intercalate ", " (es.map pE)}])"
+      | Ewseq pa e1 e2 => s!"(Ewseq {pPat pa} {pE e1} {pE e2})"
+      | Esseq pa e1 e2 => s!"(Esseq {pPat pa} {pE e1} {pE e2})"
+      | Ebound e => s!"(Ebound {pE e})"
+      | Esave (z, bty) params e =>
+        let pS := params.map (fun (q : sym ×
+            ((core_base_type × Option (ctype × pass_by_value_or_pointer))
+              × generic_pexpr Unit sym)) =>
+          let octyS : String := if q.2.1.2.isSome then "«?OCTY»" else "none"
+          s!"({pSym q.1}, (({pBty q.2.1.1}, {octyS}), {pPe q.2.2}))")
+        s!"(Esave ({pSym z}, {pBty bty}) [{String.intercalate ", " pS}] {pE e})"
+      | Erun _a z pes => s!"(Erun empty_annotation {pSym z} [{String.intercalate ", " (pes.map pPe)}])"
+      | Ememop _ pes => s!"(Ememop «?MEMOP» [{String.intercalate ", " (pes.map pPe)}])"
+      | Eccall _a pe1 pe2 pes => s!"(Eccall empty_annotation {pPe pe1} {pPe pe2} [{String.intercalate ", " (pes.map pPe)}])"
+      | Eproc _a _n pes => s!"(Eproc empty_annotation «?NAME» [{String.intercalate ", " (pes.map pPe)}])"
+      | End es => s!"(End [{String.intercalate ", " (es.map pE)}])"
+      | Eannot dyns e =>
+        let dS := dyns.map (fun d => match d with
+          | DA_pos excl (CerbMem.Footprint.FP k a n) =>
+            let kS := match k with
+              | .R => ".R" | .W => ".W"
+            s!"(DA_pos [{String.intercalate ", " (excl.map toString)}] (CerbMem.Footprint.FP {kS} {a} {n}))"
+          | DA_neg i excl (CerbMem.Footprint.FP k a n) =>
+            let kS := match k with
+              | .R => ".R" | .W => ".W"
+            s!"(DA_neg {i} [{String.intercalate ", " (excl.map toString)}] (CerbMem.Footprint.FP {kS} {a} {n}))")
+        s!"(Eannot [{String.intercalate ", " dS}] {pE e})"
+      | _ => "«?E»"
+    s!"(Expr {pAnnots as_} {inner})"
+
+def pTe : trace_event → String
+  | ME_load l pref ct pv mv =>
+    let prefS := match pref with
+      | none => "none"
+      | some str => s!"(some \"{str}\")"
+    s!"(ME_load {pLoc l} {prefS} {pCty ct} {pPV pv} «MV:{match mv with | CerbMem.MemValue.MVinteger it iv => s!"MVinteger {pIty it} {pIV iv}" | _ => "?"}»)"
+  | ME_store l pref ct lk pv mv =>
+    let prefS := match pref with
+      | none => "none"
+      | some str => s!"(some \"{str}\")"
+    s!"(ME_store {pLoc l} {prefS} {pCty ct} {lk} {pPV pv} «MV:{match mv with | CerbMem.MemValue.MVinteger it iv => s!"MVinteger {pIty it} {pIV iv}" | _ => "?"}»)"
+  | _ => "«?TE»"
+
+def envTopLean (σ : driver_state) : String :=
+  match σ.core_state0.thread_states with
+  | (_, (_, th)) :: _ =>
+    match th.env with
+    | f :: _ =>
+      let es := (fmapElements f).map (fun (p : sym × value) =>
+        s!"    {pSym p.1} ↦ {pV p.2}")
+      String.intercalate "\n" es
+    | [] => "    (no frame)"
+  | [] => "    (no thread)"
+
+def arenaLean (σ : driver_state) : String :=
+  match σ.core_state0.thread_states with
+  | (_, (_, th)) :: _ => pE th.arena
+  | [] => "(no thread)"
+
+partial def walkRoundsLean (σ : driver_state) (i : Nat)
+    (acc : List String) : List String × driver_state :=
+  if i > 60 then ((("...OVERFLOW" : String) :: acc).reverse, σ)
+  else
+    let s := RelSem.Laws.stepAt tagDefs0 0 σ
+    let line := s!"===== ROUND [{i}] {stepClass s} | {supInfo σ}\nARENA := {arenaLean σ}\nENV:\n{envTopLean σ}\nTRACE({σ.trace.length}) := [{String.intercalate ", " (σ.trace.map pTe)}]"
+    if can_advance s then
+      let (_, σ') := stepA (advance_step tagDefs0 0 s) σ
+      walkRoundsLean σ' (i+1) (line :: acc)
+    else
+      ((s!"{line}\n===== STOP" :: acc).reverse, σ)
+
+end LeanPrint
+
+def probeLean (x : Int) (seed : Nat) : List String := Id.run do
+  let σ0 := initial_driver_state_threaded seed p01File corpusFs
+  let (tid0, σ1) := stepA (driver_globals tagDefs0 false p01File) σ0
+  let (fsym, σ2) := stepA (resolveFunSym σ1.core_file "clamp0") σ1
+  let (pb, σ3) := stepA (lookupFunBody σ2.core_file fsym) σ2
+  let (ptys, σ4) := stepA (lookupParamTys σ3.core_file fsym) σ3
+  let (bound, σ5) := stepA (injectArgs tagDefs0 tid0 pb.1 ptys [intValue x]) σ4
+  let (ths, σ6) := stepA (get_thread_states :
+      ndM (List (Nat × (Option thread_id × thread_state))) step_kind
+        driver_error mem_iv_constraint driver_state) σ5
+  match ths with
+  | [(_, (_, th_st))] =>
+    let env' : List (Fmap sym value) :=
+      match th_st.env with
+      | [] => [Lem_Map.fromList bound]
+      | xs :: xs' =>
+        (List.foldl (fun (m : Fmap sym value) (pv : sym × value) =>
+          fmapAddBy (fun (s1 s2 : sym) => Lem_Basic_classes.ordCompare s1 s2)
+            pv.1 pv.2 m) xs bound) :: xs'
+    let (errno_ptr, σ7) := stepA (liftMem (nd_bind
+        (CerbMem.allocateObject tid0 (PrefOther "errno")
+          (CerbMem.alignofIval signed_int) signed_int none none)
+        (fun ptr_val =>
+          nd_bind (CerbMem.storeM (CerbLocation.other "errno init")
+              signed_int false ptr_val
+              (CerbMem.integerValueMval (Signed Int_) (CerbMem.integerIval 0)))
+            (fun _ => nd_return ptr_val)))) σ6
+    let (_, σ8) := stepA (driver_update_thread_state tid0
+      ({ arena := pb.2, stack0 := Stack_empty, errno := errno_ptr,
+         current_loc := CerbLocation.other "RelSem.callND",
+         exec_loc := ELoc_normal [(fsym, CerbLocation.other "RelSem.callND")],
+         env := env', current_proc_opt := some fsym } : thread_state)) σ7
+    let hdr := [
+      s!"bound = {bound.map (fun p => LeanPrint.pSym p.1)} vals {bound.map (fun p => LeanPrint.pV p.2)}",
+      s!"errno_ptr = {LeanPrint.pPV errno_ptr}",
+      s!"post-setup mem: next={σ8.layout_state.nextAllocId} last={σ8.layout_state.lastAddress}"]
+    let (lines, σend) := LeanPrint.walkRoundsLean σ8 0 []
+    return hdr ++ lines ++ [s!"final: {supInfo σend}"]
+  | _ => return ["probe: thread-count surprise"]
+
 #eval do
-  for l in probe (-3) 0 do IO.println l
-  IO.println "==== x = 7 ===="
-  for l in probe 7 0 do IO.println l
+  IO.println "########## x = -3 ##########"
+  for l in probeLean (-3) 0 do IO.println l
+  IO.println "########## x = 7 ##########"
+  for l in probeLean 7 0 do IO.println l
 
 end V2Probe
