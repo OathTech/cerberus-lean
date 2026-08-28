@@ -242,4 +242,98 @@ theorem se_not_bool {fuel : Nat}
     rw [eubind_defined hg]
     rfl
 
+/-! ## THE CALL LAW (`se_call`) -/
+
+/-- CONSTRUCT LAW `se_call` — the one-step evaluator at `PEcall`:
+    arguments evaluate (`hmap`, fed — the chain of se laws through
+    `eumapM_cons`), values extract (`hvals`, ground), the callee
+    inlines by substitution (`hcall`, ground: `call_function` walks
+    the CONCRETE file and substitutes — it never branches on the
+    symbolic payloads), the result pulls (`hpull`, ground). -/
+@[step_law (kind := evalPull) (variant := call) (side := fed)
+  (frontier := "eval/call")
+  (trace := "{law := se_call, joint := eval/call, hyps := [hmap : fed, hvals : ground, hcall : ground, hpull : ground]}")
+  (lineage := "decompilation of the PEcall arm: mapM + call_function + pull, once")]
+theorem se_call {fuel : Nat}
+    {tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)}
+    {n : Nat} {loc : CerbLocation.Loc} {cloc : Option CerbLocation.Loc}
+    {ext : Fmap sym sym} {env : List (Fmap sym value)}
+    {memo : Option CerbMem.MemState}
+    {file1 : file core_run_annotation} {b : Bool}
+    {a a2 : List annot} {nm : generic_name sym}
+    {pes pes' : List (generic_pexpr Unit sym)} {cvals : List value}
+    {peA : List annot} {pe_' pe'' : generic_pexpr_ Unit sym}
+    (hmap : exception_undef_mapM
+        (fun pe => step_eval_pexpr_lemFuel fuel tagDefs (n + 1) loc
+          cloc ext env memo file1 false pe) pes
+      = Result (Defined pes'))
+    (hvals : valueFromPexprs pes' = some cvals)
+    (hcall : call_function file1 nm cvals = Result (Pexpr peA () pe_'))
+    (hpull : pull_constrained 0 (Pexpr [] () pe_')
+      = Pexpr a2 () pe'') :
+    step_eval_pexpr_lemFuel (fuel + 1) tagDefs n loc cloc ext env memo
+        file1 b (Pexpr a () (PEcall nm pes))
+      = Result (Defined (Pexpr [] () pe'')) := by
+  show exception_undef_fmap (Pexpr [] ())
+      (exception_undef_bind
+        (exception_undef_mapM
+          (fun pe => step_eval_pexpr_lemFuel fuel tagDefs (n + 1) loc
+            cloc ext env memo file1 false pe) pes) _) = _
+  rw [eubind_defined hmap]
+  show exception_undef_fmap (Pexpr [] ())
+      (match valueFromPexprs pes' with
+       | some cvals => exception_undef_bind
+           (except_bind (call_function file1 nm cvals)
+             (fun g => match g with
+               | Pexpr _ _ pe_ => exception_undef_return pe_))
+           (fun pe_x =>
+             match pull_constrained 0 (Pexpr [] () pe_x) with
+             | Pexpr _ _ pe_y => exception_undef_return pe_y)
+       | none => exception_undef_return (PEcall nm pes')) = _
+  rw [hvals]
+  show exception_undef_fmap (Pexpr [] ())
+      (exception_undef_bind
+        (except_bind (call_function file1 nm cvals)
+          (fun g => match g with
+            | Pexpr _ _ pe_ => exception_undef_return pe_)) _) = _
+  rw [show (except_bind (call_function file1 nm cvals)
+      (fun g => match g with
+        | Pexpr _ _ pe_ => exception_undef_return pe_))
+      = Result (Defined pe_') from by rw [hcall]; rfl]
+  show exception_undef_fmap (Pexpr [] ())
+      (match pull_constrained 0 (Pexpr [] () pe_') with
+       | Pexpr _ _ pe_y => exception_undef_return pe_y) = _
+  rw [hpull]
+  rfl
+
+/-! ## The whole-loop face at a symbol (the aux2 loop completes in one
+    iteration on a PEsym hit) -/
+
+/-- CONSTRUCT LAW `aux2_sym_hit` — the full eval loop at `PEsym z`
+    with a cell-fact hit: one iteration, value out. -/
+@[step_law (kind := evalPull) (variant := aux2Sym) (side := fed)
+  (frontier := "eval/aux2-sym")
+  (trace := "{law := aux2_sym_hit, joint := eval/aux2, hyps := [hpull : ground, hext : ground, hlk : fed(cell fact)]}")
+  (lineage := "the loop face of se_sym_hit (aux2_done at the sym-hit leaf)")]
+theorem aux2_sym_hit
+    {tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)}
+    {loc : CerbLocation.Loc} {cloc : Option CerbLocation.Loc}
+    {ext : Fmap sym sym} {env : List (Fmap sym value)}
+    {memo : Option CerbMem.MemState}
+    {file1 : file core_run_annotation}
+    {a a' : List annot} {z : sym} {v : value}
+    (hpull : pull_constrained 0 (Pexpr a () (PEsym z))
+      = Pexpr a' () (PEsym z))
+    (hext : fmapLookupBy
+      (fun (s1 s2 : sym) => ordCompare s1 s2) z ext = none)
+    (hlk : lookup_env z env = some v) :
+    eval_pexpr_aux2 tagDefs loc cloc ext env memo file1
+        (Pexpr a () (PEsym z))
+      = Result (Defined (Sum.inr v)) := by
+  show eval_pexpr_aux2_lemFuel (999999 + 1) tagDefs loc cloc ext env
+    memo file1 (Pexpr a () (PEsym z)) = _
+  exact aux2_done 999999 tagDefs loc cloc ext env memo file1 hpull
+    (by intro a' xs h; injection h with h1 h2 h3; cases h3)
+    (se_sym_hit (fuel := 999999) hext hlk) rfl
+
 end RelSem.Kit

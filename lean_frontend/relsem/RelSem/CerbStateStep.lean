@@ -129,7 +129,8 @@ theorem wpk_seq_read_ctl [CerbStGS GF] {α : Type}
     {g : driver_state → α} {k : α → KDriveExpr} {c : driver_state}
     {R : IProp GF}
     {s : Stuckness} {E : CoPset} {Φ : DriveVal → IProp GF}
-    (hread : ∀ σ, app m σ = (NDactive (g σ), σ))
+    (hread : ∀ σ, ctlOf σ = c → EnvWf σ →
+      app m σ = (NDactive (g σ), σ))
     (hwp : ∀ σv, ctlOf σv = c → EnvWf σv →
       ((ctlIs (GF := GF) stHalf c ∗ R : IProp GF) ⊢
         WP (k (g σv)) @ s ; E {{ Φ }})) :
@@ -146,12 +147,12 @@ theorem wpk_seq_read_ctl [CerbStGS GF] {α : Type}
   isplitl []
   · ipureintro
     cases s
-    · exact kreducible_of_app_active (hread σ)
+    · exact kreducible_of_app_active (hread σ h1 h2)
     · trivial
   iintro !> %e₂ %σ₂ %eₜ %Hprim Hcred
   iclear Hcred
   obtain ⟨hd, -, hefs⟩ := kPrimStep_inv Hprim
-  have hconf := kstep_seq_active_inv (hread σ) hd
+  have hconf := kstep_seq_active_inv (hread σ h1 h2) hd
   injection hconf with he hσ
   subst he; subst hσ; subst hefs
   imod Hclose
@@ -161,6 +162,53 @@ theorem wpk_seq_read_ctl [CerbStGS GF] {α : Type}
   simp only [Algebra.BigOpL.bigOpL_nil]
   iframe
   iapply hwp _ h1 h2 $$ [$Hc $HR]
+
+/-- `wpk_seq_read_ctl` with the LEDGER read along (the continuation
+    additionally learns `EnvDom σv d` — what the frame-replacing
+    thread-setup stage needs). -/
+@[step_law (kind := stateWP) (variant := readCtlDom) (side := fed)
+  (frontier := "state/read-ctl-dom")
+  (trace := "{law := wpk_seq_read_ctl_dom, joint := state/read, hyps := [hread : fed, hwp : fed(per admitted state, with the ledger fact)]}")
+  (lineage := "state-preserving read at the control token + the domain ledger")]
+theorem wpk_seq_read_ctl_dom [CerbStGS GF] {α : Type}
+    {m : ndM α step_kind driver_error mem_iv_constraint driver_state}
+    {g : driver_state → α} {k : α → KDriveExpr} {c : driver_state}
+    {d : List Int} {R : IProp GF}
+    {s : Stuckness} {E : CoPset} {Φ : DriveVal → IProp GF}
+    (hread : ∀ σ, ctlOf σ = c → EnvWf σ →
+      app m σ = (NDactive (g σ), σ))
+    (hwp : ∀ σv, ctlOf σv = c → EnvWf σv → EnvDom σv d →
+      ((ctlIs (GF := GF) stHalf c ∗ domIs stHalf d ∗ R : IProp GF) ⊢
+        WP (k (g σv)) @ s ; E {{ Φ }})) :
+    ctlIs (GF := GF) stHalf c ∗ domIs stHalf d ∗ R ⊢
+      WP (KExpr.seq m k : KDriveExpr) @ s ; E {{ Φ }} := by
+  iintro ⟨Hc, Hd, HR⟩
+  iapply wp_lift_step rfl
+  iintro %σ %ns %obs %obs' %nt Hσ
+  icases cerbStInterp_eq.1 $$ Hσ with Hσ
+  icases interp_ctl_agree $$ [$Hσ $Hc] with ⟨%h1, Hσ, Hc⟩
+  icases interp_envwf $$ Hσ with ⟨%h2, Hσ⟩
+  icases interp_dom_agree $$ [$Hσ $Hd] with ⟨%h3, Hσ, Hd⟩
+  iapply fupd_mask_intro Std.LawfulSet.empty_subset
+  iintro Hclose
+  isplitl []
+  · ipureintro
+    cases s
+    · exact kreducible_of_app_active (hread σ h1 h2)
+    · trivial
+  iintro !> %e₂ %σ₂ %eₜ %Hprim Hcred
+  iclear Hcred
+  obtain ⟨hd', -, hefs⟩ := kPrimStep_inv Hprim
+  have hconf := kstep_seq_active_inv (hread σ h1 h2) hd'
+  injection hconf with he hσ
+  subst he; subst hσ; subst hefs
+  imod Hclose
+  imodintro
+  icases cerbStInterp_eq.2 $$ Hσ with Hσ
+  iframe Hσ
+  simp only [Algebra.BigOpL.bigOpL_nil]
+  iframe
+  iapply hwp _ h1 h2 h3 $$ [$Hc $Hd $HR]
 
 /-! ## Supply-moving control rounds (body memory rounds draw action
     ids; the supply component moves with the token) -/
@@ -279,45 +327,48 @@ theorem wpk_seq_birth1 [CerbStGS GF] {α : Type}
     {c c' : driver_state} {x : sym} {vNew : value} {d : List Int}
     {s : Stuckness} {E : CoPset} {Φ : DriveVal → IProp GF}
     (hfresh : symNum x ∉ d)
-    (Happ : ∀ σ, ctlOf σ = c → EnvWf σ →
+    (Happ : ∀ σ, ctlOf σ = c → EnvWf σ → EnvDom σ d →
       app m σ = (NDactive v, upd σ))
-    (hctl' : ∀ σ, ctlOf σ = c → EnvWf σ → ctlOf (upd σ) = c')
-    (hlay : ∀ σ, ctlOf σ = c → EnvWf σ →
+    (hctl' : ∀ σ, ctlOf σ = c → EnvWf σ → EnvDom σ d → ctlOf (upd σ) = c')
+    (hlay : ∀ σ, ctlOf σ = c → EnvWf σ → EnvDom σ d →
       (upd σ).layout_state = σ.layout_state)
-    (hsup : ∀ σ, ctlOf σ = c → EnvWf σ →
+    (hsup : ∀ σ, ctlOf σ = c → EnvWf σ → EnvDom σ d →
       suppliesOf (upd σ) = suppliesOf σ)
-    (hnew : ∀ σ, ctlOf σ = c → EnvWf σ →
+    (hnew : ∀ σ, ctlOf σ = c → EnvWf σ → EnvDom σ d →
       envLookup (upd σ) x = some vNew)
-    (hpres : ∀ σ, ctlOf σ = c → EnvWf σ →
+    (hpres : ∀ σ, ctlOf σ = c → EnvWf σ → EnvDom σ d →
       ∀ z v', envLookup σ z = some v' →
         envLookup (upd σ) z = some v')
-    (hrev : ∀ σ, ctlOf σ = c → EnvWf σ →
+    (hrev : ∀ σ, ctlOf σ = c → EnvWf σ → EnvDom σ d →
       ∀ z v', envLookup (upd σ) z = some v' →
         (∃ v₀, envLookup σ z = some v₀) ∨ symNum z = symNum x)
-    (hwfp : ∀ σ, ctlOf σ = c → EnvWf σ → EnvWf (upd σ)) :
+    (hwfp : ∀ σ, ctlOf σ = c → EnvWf σ → EnvDom σ d → EnvWf (upd σ)) :
     (ctlIs (GF := GF) stHalf c ∗ domIs stHalf d) ∗
       ((ctlIs stHalf c' ∗ domIs stHalf (symNum x :: d)
           ∗ envIs x (.own 1) vNew)
         -∗ WP (k v) @ s ; E {{ Φ }}) ⊢
       WP (KExpr.seq m k : KDriveExpr) @ s ; E {{ Φ }} := by
-  refine wpk_seq_res_det (Pre := fun σ => ctlOf σ = c ∧ EnvWf σ)
-    (upd := upd) ?_ (fun σ hp => Happ σ hp.1 hp.2) ?_
+  refine wpk_seq_res_det
+    (Pre := fun σ => (ctlOf σ = c ∧ EnvWf σ) ∧ EnvDom σ d)
+    (upd := upd) ?_ (fun σ hp => Happ σ hp.1.1 hp.1.2 hp.2) ?_
   · intro σ
     iintro ⟨Hi, Hc, Hd⟩
     icases interp_ctl_agree $$ [$Hi $Hc] with ⟨%h1, Hi, Hc⟩
     icases interp_envwf $$ Hi with ⟨%h2, Hi⟩
+    icases interp_dom_agree $$ [$Hi $Hd] with ⟨%h3, Hi, Hd⟩
     iframe Hi Hc Hd
     ipureintro
-    exact ⟨h1, h2⟩
+    exact ⟨⟨h1, h2⟩, h3⟩
   · intro σ hp
     iintro ⟨Hi, Hc, Hd⟩
-    rw [show c = ctlOf σ from hp.1.symm]
-    imod interp_ctl_dom_birth1 x (hlay σ hp.1 hp.2) (hsup σ hp.1 hp.2)
-      hfresh (hnew σ hp.1 hp.2) (hpres σ hp.1 hp.2)
-      (hrev σ hp.1 hp.2) (fun _ => hwfp σ hp.1 hp.2)
+    rw [show c = ctlOf σ from hp.1.1.symm]
+    imod interp_ctl_dom_birth1 x (hlay σ hp.1.1 hp.1.2 hp.2)
+      (hsup σ hp.1.1 hp.1.2 hp.2)
+      hfresh (hnew σ hp.1.1 hp.1.2 hp.2) (hpres σ hp.1.1 hp.1.2 hp.2)
+      (hrev σ hp.1.1 hp.1.2 hp.2) (fun _ => hwfp σ hp.1.1 hp.1.2 hp.2)
       $$ [$Hi $Hc $Hd] with ⟨Hi, Hc, Hd, He⟩
     imodintro
-    rw [hctl' σ hp.1 hp.2]
+    rw [hctl' σ hp.1.1 hp.1.2 hp.2]
     iframe Hi Hc Hd He
 
 /-- BIRTH of one cell while READING one owned cell (the Erun/eval
@@ -333,23 +384,23 @@ theorem wpk_seq_birth1_env1 [CerbStGS GF] {α : Type}
     {y : sym} {vy : value} {dqy : DFrac}
     {s : Stuckness} {E : CoPset} {Φ : DriveVal → IProp GF}
     (hfresh : symNum x ∉ d)
-    (Happ : ∀ σ, ctlOf σ = c → EnvWf σ → envLookup σ y = some vy →
+    (Happ : ∀ σ, ctlOf σ = c → EnvWf σ → EnvDom σ d → envLookup σ y = some vy →
       app m σ = (NDactive v, upd σ))
-    (hctl' : ∀ σ, ctlOf σ = c → EnvWf σ → envLookup σ y = some vy →
+    (hctl' : ∀ σ, ctlOf σ = c → EnvWf σ → EnvDom σ d → envLookup σ y = some vy →
       ctlOf (upd σ) = c')
-    (hlay : ∀ σ, ctlOf σ = c → EnvWf σ → envLookup σ y = some vy →
+    (hlay : ∀ σ, ctlOf σ = c → EnvWf σ → EnvDom σ d → envLookup σ y = some vy →
       (upd σ).layout_state = σ.layout_state)
-    (hsup : ∀ σ, ctlOf σ = c → EnvWf σ → envLookup σ y = some vy →
+    (hsup : ∀ σ, ctlOf σ = c → EnvWf σ → EnvDom σ d → envLookup σ y = some vy →
       suppliesOf (upd σ) = suppliesOf σ)
-    (hnew : ∀ σ, ctlOf σ = c → EnvWf σ → envLookup σ y = some vy →
+    (hnew : ∀ σ, ctlOf σ = c → EnvWf σ → EnvDom σ d → envLookup σ y = some vy →
       envLookup (upd σ) x = some vNew)
-    (hpres : ∀ σ, ctlOf σ = c → EnvWf σ → envLookup σ y = some vy →
+    (hpres : ∀ σ, ctlOf σ = c → EnvWf σ → EnvDom σ d → envLookup σ y = some vy →
       ∀ z v', envLookup σ z = some v' →
         envLookup (upd σ) z = some v')
-    (hrev : ∀ σ, ctlOf σ = c → EnvWf σ → envLookup σ y = some vy →
+    (hrev : ∀ σ, ctlOf σ = c → EnvWf σ → EnvDom σ d → envLookup σ y = some vy →
       ∀ z v', envLookup (upd σ) z = some v' →
         (∃ v₀, envLookup σ z = some v₀) ∨ symNum z = symNum x)
-    (hwfp : ∀ σ, ctlOf σ = c → EnvWf σ → envLookup σ y = some vy →
+    (hwfp : ∀ σ, ctlOf σ = c → EnvWf σ → EnvDom σ d → envLookup σ y = some vy →
       EnvWf (upd σ)) :
     (ctlIs (GF := GF) stHalf c ∗ domIs stHalf d ∗ envIs y dqy vy) ∗
       ((ctlIs stHalf c' ∗ domIs stHalf (symNum x :: d)
@@ -357,27 +408,30 @@ theorem wpk_seq_birth1_env1 [CerbStGS GF] {α : Type}
         -∗ WP (k v) @ s ; E {{ Φ }}) ⊢
       WP (KExpr.seq m k : KDriveExpr) @ s ; E {{ Φ }} := by
   refine wpk_seq_res_det
-    (Pre := fun σ => (ctlOf σ = c ∧ EnvWf σ) ∧
+    (Pre := fun σ => ((ctlOf σ = c ∧ EnvWf σ) ∧ EnvDom σ d) ∧
       envLookup σ y = some vy)
-    (upd := upd) ?_ (fun σ hp => Happ σ hp.1.1 hp.1.2 hp.2) ?_
+    (upd := upd) ?_ (fun σ hp => Happ σ hp.1.1.1 hp.1.1.2 hp.1.2 hp.2) ?_
   · intro σ
     iintro ⟨Hi, Hc, Hd, Hy⟩
     icases interp_ctl_agree $$ [$Hi $Hc] with ⟨%h1, Hi, Hc⟩
     icases interp_envwf $$ Hi with ⟨%h2, Hi⟩
-    icases interp_env_lookup $$ [$Hi $Hy] with ⟨%h3, Hi, Hy⟩
+    icases interp_dom_agree $$ [$Hi $Hd] with ⟨%h3, Hi, Hd⟩
+    icases interp_env_lookup $$ [$Hi $Hy] with ⟨%h4, Hi, Hy⟩
     iframe Hi Hc Hd Hy
     ipureintro
-    exact ⟨⟨h1, h2⟩, h3⟩
+    exact ⟨⟨⟨h1, h2⟩, h3⟩, h4⟩
   · intro σ hp
     iintro ⟨Hi, Hc, Hd, Hy⟩
-    rw [show c = ctlOf σ from hp.1.1.symm]
-    imod interp_ctl_dom_birth1 x (hlay σ hp.1.1 hp.1.2 hp.2)
-      (hsup σ hp.1.1 hp.1.2 hp.2) hfresh (hnew σ hp.1.1 hp.1.2 hp.2)
-      (hpres σ hp.1.1 hp.1.2 hp.2) (hrev σ hp.1.1 hp.1.2 hp.2)
-      (fun _ => hwfp σ hp.1.1 hp.1.2 hp.2)
+    rw [show c = ctlOf σ from hp.1.1.1.symm]
+    imod interp_ctl_dom_birth1 x (hlay σ hp.1.1.1 hp.1.1.2 hp.1.2 hp.2)
+      (hsup σ hp.1.1.1 hp.1.1.2 hp.1.2 hp.2) hfresh
+      (hnew σ hp.1.1.1 hp.1.1.2 hp.1.2 hp.2)
+      (hpres σ hp.1.1.1 hp.1.1.2 hp.1.2 hp.2)
+      (hrev σ hp.1.1.1 hp.1.1.2 hp.1.2 hp.2)
+      (fun _ => hwfp σ hp.1.1.1 hp.1.1.2 hp.1.2 hp.2)
       $$ [$Hi $Hc $Hd] with ⟨Hi, Hc, Hd, He⟩
     imodintro
-    rw [hctl' σ hp.1.1 hp.1.2 hp.2]
+    rw [hctl' σ hp.1.1.1 hp.1.1.2 hp.1.2 hp.2]
     iframe Hi Hc Hd He Hy
 
 /-- BIRTH of two cells in one round (the pair-pattern bind). -/
@@ -392,49 +446,53 @@ theorem wpk_seq_birth2 [CerbStGS GF] {α : Type}
     {s : Stuckness} {E : CoPset} {Φ : DriveVal → IProp GF}
     (hfresh₁ : symNum x₁ ∉ d) (hfresh₂ : symNum x₂ ∉ d)
     (hne : symNum x₁ ≠ symNum x₂)
-    (Happ : ∀ σ, ctlOf σ = c → EnvWf σ →
+    (Happ : ∀ σ, ctlOf σ = c → EnvWf σ → EnvDom σ d →
       app m σ = (NDactive v, upd σ))
-    (hctl' : ∀ σ, ctlOf σ = c → EnvWf σ → ctlOf (upd σ) = c')
-    (hlay : ∀ σ, ctlOf σ = c → EnvWf σ →
+    (hctl' : ∀ σ, ctlOf σ = c → EnvWf σ → EnvDom σ d → ctlOf (upd σ) = c')
+    (hlay : ∀ σ, ctlOf σ = c → EnvWf σ → EnvDom σ d →
       (upd σ).layout_state = σ.layout_state)
-    (hsup : ∀ σ, ctlOf σ = c → EnvWf σ →
+    (hsup : ∀ σ, ctlOf σ = c → EnvWf σ → EnvDom σ d →
       suppliesOf (upd σ) = suppliesOf σ)
-    (hnew₁ : ∀ σ, ctlOf σ = c → EnvWf σ →
+    (hnew₁ : ∀ σ, ctlOf σ = c → EnvWf σ → EnvDom σ d →
       envLookup (upd σ) x₁ = some v₁)
-    (hnew₂ : ∀ σ, ctlOf σ = c → EnvWf σ →
+    (hnew₂ : ∀ σ, ctlOf σ = c → EnvWf σ → EnvDom σ d →
       envLookup (upd σ) x₂ = some v₂)
-    (hpres : ∀ σ, ctlOf σ = c → EnvWf σ →
+    (hpres : ∀ σ, ctlOf σ = c → EnvWf σ → EnvDom σ d →
       ∀ z v', envLookup σ z = some v' →
         envLookup (upd σ) z = some v')
-    (hrev : ∀ σ, ctlOf σ = c → EnvWf σ →
+    (hrev : ∀ σ, ctlOf σ = c → EnvWf σ → EnvDom σ d →
       ∀ z v', envLookup (upd σ) z = some v' →
         (∃ v₀, envLookup σ z = some v₀) ∨ symNum z = symNum x₁ ∨
           symNum z = symNum x₂)
-    (hwfp : ∀ σ, ctlOf σ = c → EnvWf σ → EnvWf (upd σ)) :
+    (hwfp : ∀ σ, ctlOf σ = c → EnvWf σ → EnvDom σ d → EnvWf (upd σ)) :
     (ctlIs (GF := GF) stHalf c ∗ domIs stHalf d) ∗
       ((ctlIs stHalf c' ∗ domIs stHalf (symNum x₁ :: symNum x₂ :: d)
           ∗ envIs x₁ (.own 1) v₁ ∗ envIs x₂ (.own 1) v₂)
         -∗ WP (k v) @ s ; E {{ Φ }}) ⊢
       WP (KExpr.seq m k : KDriveExpr) @ s ; E {{ Φ }} := by
-  refine wpk_seq_res_det (Pre := fun σ => ctlOf σ = c ∧ EnvWf σ)
-    (upd := upd) ?_ (fun σ hp => Happ σ hp.1 hp.2) ?_
+  refine wpk_seq_res_det
+    (Pre := fun σ => (ctlOf σ = c ∧ EnvWf σ) ∧ EnvDom σ d)
+    (upd := upd) ?_ (fun σ hp => Happ σ hp.1.1 hp.1.2 hp.2) ?_
   · intro σ
     iintro ⟨Hi, Hc, Hd⟩
     icases interp_ctl_agree $$ [$Hi $Hc] with ⟨%h1, Hi, Hc⟩
     icases interp_envwf $$ Hi with ⟨%h2, Hi⟩
+    icases interp_dom_agree $$ [$Hi $Hd] with ⟨%h3, Hi, Hd⟩
     iframe Hi Hc Hd
     ipureintro
-    exact ⟨h1, h2⟩
+    exact ⟨⟨h1, h2⟩, h3⟩
   · intro σ hp
     iintro ⟨Hi, Hc, Hd⟩
-    rw [show c = ctlOf σ from hp.1.symm]
-    imod interp_ctl_dom_birth2 x₁ x₂ (hlay σ hp.1 hp.2)
-      (hsup σ hp.1 hp.2) hfresh₁ hfresh₂ hne (hnew₁ σ hp.1 hp.2)
-      (hnew₂ σ hp.1 hp.2) (hpres σ hp.1 hp.2) (hrev σ hp.1 hp.2)
-      (fun _ => hwfp σ hp.1 hp.2)
+    rw [show c = ctlOf σ from hp.1.1.symm]
+    imod interp_ctl_dom_birth2 x₁ x₂ (hlay σ hp.1.1 hp.1.2 hp.2)
+      (hsup σ hp.1.1 hp.1.2 hp.2) hfresh₁ hfresh₂ hne
+      (hnew₁ σ hp.1.1 hp.1.2 hp.2)
+      (hnew₂ σ hp.1.1 hp.1.2 hp.2) (hpres σ hp.1.1 hp.1.2 hp.2)
+      (hrev σ hp.1.1 hp.1.2 hp.2)
+      (fun _ => hwfp σ hp.1.1 hp.1.2 hp.2)
       $$ [$Hi $Hc $Hd] with ⟨Hi, Hc, Hd, He₁, He₂⟩
     imodintro
-    rw [hctl' σ hp.1 hp.2]
+    rw [hctl' σ hp.1.1 hp.1.2 hp.2]
     iframe Hi Hc Hd He₁ He₂
 
 /-! ## MEMORY-FACT ROUNDS: the body's action rounds — control+supply
@@ -740,59 +798,59 @@ theorem wpk_seq_ctl_env1_fam {x : sym} {vx : value} {dq : DFrac}
 theorem wpk_seq_birth1_fam {x : sym} {vNew : value} {d : List Int}
     (hfresh : symNum x ∉ d)
     (hinv : ∀ σ, ctlOf σ = c → EnvWf σ → ∃ p, σ = fam p)
-    (happ : ∀ p, EnvWf (fam p) →
+    (happ : ∀ p, EnvWf (fam p) → EnvDom (fam p) d →
       app m (fam p) = (NDactive v, upd (fam p)))
-    (hctl' : ∀ p, EnvWf (fam p) → ctlOf (upd (fam p)) = c')
-    (hlay : ∀ p, EnvWf (fam p) →
+    (hctl' : ∀ p, EnvWf (fam p) → EnvDom (fam p) d → ctlOf (upd (fam p)) = c')
+    (hlay : ∀ p, EnvWf (fam p) → EnvDom (fam p) d →
       (upd (fam p)).layout_state = (fam p).layout_state)
-    (hsup : ∀ p, EnvWf (fam p) →
+    (hsup : ∀ p, EnvWf (fam p) → EnvDom (fam p) d →
       suppliesOf (upd (fam p)) = suppliesOf (fam p))
-    (hnew : ∀ p, EnvWf (fam p) →
+    (hnew : ∀ p, EnvWf (fam p) → EnvDom (fam p) d →
       envLookup (upd (fam p)) x = some vNew)
-    (hpres : ∀ p, EnvWf (fam p) →
+    (hpres : ∀ p, EnvWf (fam p) → EnvDom (fam p) d →
       ∀ z v', envLookup (fam p) z = some v' →
         envLookup (upd (fam p)) z = some v')
-    (hrev : ∀ p, EnvWf (fam p) →
+    (hrev : ∀ p, EnvWf (fam p) → EnvDom (fam p) d →
       ∀ z v', envLookup (upd (fam p)) z = some v' →
         (∃ v₀, envLookup (fam p) z = some v₀) ∨ symNum z = symNum x)
-    (hwfp : ∀ p, EnvWf (fam p) → EnvWf (upd (fam p))) :
+    (hwfp : ∀ p, EnvWf (fam p) → EnvDom (fam p) d → EnvWf (upd (fam p))) :
     (ctlIs (GF := GF) stHalf c ∗ domIs stHalf d) ∗
       ((ctlIs stHalf c' ∗ domIs stHalf (symNum x :: d)
           ∗ envIs x (.own 1) vNew)
         -∗ WP (k v) @ s ; E {{ Φ }}) ⊢
       WP (KExpr.seq m k : KDriveExpr) @ s ; E {{ Φ }} :=
   wpk_seq_birth1 hfresh
-    (fun σ hσ hwf => by obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact happ p hwf)
-    (fun σ hσ hwf => by obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact hctl' p hwf)
-    (fun σ hσ hwf => by obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact hlay p hwf)
-    (fun σ hσ hwf => by obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact hsup p hwf)
-    (fun σ hσ hwf => by obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact hnew p hwf)
-    (fun σ hσ hwf => by obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact hpres p hwf)
-    (fun σ hσ hwf => by obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact hrev p hwf)
-    (fun σ hσ hwf => by obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact hwfp p hwf)
+    (fun σ hσ hwf hdm => by obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact happ p hwf hdm)
+    (fun σ hσ hwf hdm => by obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact hctl' p hwf hdm)
+    (fun σ hσ hwf hdm => by obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact hlay p hwf hdm)
+    (fun σ hσ hwf hdm => by obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact hsup p hwf hdm)
+    (fun σ hσ hwf hdm => by obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact hnew p hwf hdm)
+    (fun σ hσ hwf hdm => by obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact hpres p hwf hdm)
+    (fun σ hσ hwf hdm => by obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact hrev p hwf hdm)
+    (fun σ hσ hwf hdm => by obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact hwfp p hwf hdm)
 
 /-- `wpk_seq_birth1_env1` at a control family. -/
 theorem wpk_seq_birth1_env1_fam {x : sym} {vNew : value} {d : List Int}
     {y : sym} {vy : value} {dqy : DFrac}
     (hfresh : symNum x ∉ d)
     (hinv : ∀ σ, ctlOf σ = c → EnvWf σ → ∃ p, σ = fam p)
-    (happ : ∀ p, EnvWf (fam p) → envLookup (fam p) y = some vy →
+    (happ : ∀ p, EnvWf (fam p) → EnvDom (fam p) d → envLookup (fam p) y = some vy →
       app m (fam p) = (NDactive v, upd (fam p)))
-    (hctl' : ∀ p, EnvWf (fam p) → envLookup (fam p) y = some vy →
+    (hctl' : ∀ p, EnvWf (fam p) → EnvDom (fam p) d → envLookup (fam p) y = some vy →
       ctlOf (upd (fam p)) = c')
-    (hlay : ∀ p, EnvWf (fam p) → envLookup (fam p) y = some vy →
+    (hlay : ∀ p, EnvWf (fam p) → EnvDom (fam p) d → envLookup (fam p) y = some vy →
       (upd (fam p)).layout_state = (fam p).layout_state)
-    (hsup : ∀ p, EnvWf (fam p) → envLookup (fam p) y = some vy →
+    (hsup : ∀ p, EnvWf (fam p) → EnvDom (fam p) d → envLookup (fam p) y = some vy →
       suppliesOf (upd (fam p)) = suppliesOf (fam p))
-    (hnew : ∀ p, EnvWf (fam p) → envLookup (fam p) y = some vy →
+    (hnew : ∀ p, EnvWf (fam p) → EnvDom (fam p) d → envLookup (fam p) y = some vy →
       envLookup (upd (fam p)) x = some vNew)
-    (hpres : ∀ p, EnvWf (fam p) → envLookup (fam p) y = some vy →
+    (hpres : ∀ p, EnvWf (fam p) → EnvDom (fam p) d → envLookup (fam p) y = some vy →
       ∀ z v', envLookup (fam p) z = some v' →
         envLookup (upd (fam p)) z = some v')
-    (hrev : ∀ p, EnvWf (fam p) → envLookup (fam p) y = some vy →
+    (hrev : ∀ p, EnvWf (fam p) → EnvDom (fam p) d → envLookup (fam p) y = some vy →
       ∀ z v', envLookup (upd (fam p)) z = some v' →
         (∃ v₀, envLookup (fam p) z = some v₀) ∨ symNum z = symNum x)
-    (hwfp : ∀ p, EnvWf (fam p) → envLookup (fam p) y = some vy →
+    (hwfp : ∀ p, EnvWf (fam p) → EnvDom (fam p) d → envLookup (fam p) y = some vy →
       EnvWf (upd (fam p))) :
     (ctlIs (GF := GF) stHalf c ∗ domIs stHalf d ∗ envIs y dqy vy) ∗
       ((ctlIs stHalf c' ∗ domIs stHalf (symNum x :: d)
@@ -800,62 +858,62 @@ theorem wpk_seq_birth1_env1_fam {x : sym} {vNew : value} {d : List Int}
         -∗ WP (k v) @ s ; E {{ Φ }}) ⊢
       WP (KExpr.seq m k : KDriveExpr) @ s ; E {{ Φ }} :=
   wpk_seq_birth1_env1 hfresh
-    (fun σ hσ hwf hy => by
-      obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact happ p hwf hy)
+    (fun σ hσ hwf hdm hy => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact happ p hwf hdm hy)
     (fun σ hσ hwf hy => by
       obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact hctl' p hwf hy)
-    (fun σ hσ hwf hy => by
-      obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact hlay p hwf hy)
-    (fun σ hσ hwf hy => by
-      obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact hsup p hwf hy)
-    (fun σ hσ hwf hy => by
-      obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact hnew p hwf hy)
-    (fun σ hσ hwf hy => by
-      obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact hpres p hwf hy)
-    (fun σ hσ hwf hy => by
-      obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact hrev p hwf hy)
-    (fun σ hσ hwf hy => by
-      obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact hwfp p hwf hy)
+    (fun σ hσ hwf hdm hy => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact hlay p hwf hdm hy)
+    (fun σ hσ hwf hdm hy => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact hsup p hwf hdm hy)
+    (fun σ hσ hwf hdm hy => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact hnew p hwf hdm hy)
+    (fun σ hσ hwf hdm hy => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact hpres p hwf hdm hy)
+    (fun σ hσ hwf hdm hy => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact hrev p hwf hdm hy)
+    (fun σ hσ hwf hdm hy => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact hwfp p hwf hdm hy)
 
 /-- `wpk_seq_birth2` at a control family. -/
 theorem wpk_seq_birth2_fam {x₁ x₂ : sym} {v₁ v₂ : value} {d : List Int}
     (hfresh₁ : symNum x₁ ∉ d) (hfresh₂ : symNum x₂ ∉ d)
     (hne : symNum x₁ ≠ symNum x₂)
     (hinv : ∀ σ, ctlOf σ = c → EnvWf σ → ∃ p, σ = fam p)
-    (happ : ∀ p, EnvWf (fam p) →
+    (happ : ∀ p, EnvWf (fam p) → EnvDom (fam p) d →
       app m (fam p) = (NDactive v, upd (fam p)))
-    (hctl' : ∀ p, EnvWf (fam p) → ctlOf (upd (fam p)) = c')
-    (hlay : ∀ p, EnvWf (fam p) →
+    (hctl' : ∀ p, EnvWf (fam p) → EnvDom (fam p) d → ctlOf (upd (fam p)) = c')
+    (hlay : ∀ p, EnvWf (fam p) → EnvDom (fam p) d →
       (upd (fam p)).layout_state = (fam p).layout_state)
-    (hsup : ∀ p, EnvWf (fam p) →
+    (hsup : ∀ p, EnvWf (fam p) → EnvDom (fam p) d →
       suppliesOf (upd (fam p)) = suppliesOf (fam p))
-    (hnew₁ : ∀ p, EnvWf (fam p) →
+    (hnew₁ : ∀ p, EnvWf (fam p) → EnvDom (fam p) d →
       envLookup (upd (fam p)) x₁ = some v₁)
-    (hnew₂ : ∀ p, EnvWf (fam p) →
+    (hnew₂ : ∀ p, EnvWf (fam p) → EnvDom (fam p) d →
       envLookup (upd (fam p)) x₂ = some v₂)
-    (hpres : ∀ p, EnvWf (fam p) →
+    (hpres : ∀ p, EnvWf (fam p) → EnvDom (fam p) d →
       ∀ z v', envLookup (fam p) z = some v' →
         envLookup (upd (fam p)) z = some v')
-    (hrev : ∀ p, EnvWf (fam p) →
+    (hrev : ∀ p, EnvWf (fam p) → EnvDom (fam p) d →
       ∀ z v', envLookup (upd (fam p)) z = some v' →
         (∃ v₀, envLookup (fam p) z = some v₀) ∨ symNum z = symNum x₁ ∨
           symNum z = symNum x₂)
-    (hwfp : ∀ p, EnvWf (fam p) → EnvWf (upd (fam p))) :
+    (hwfp : ∀ p, EnvWf (fam p) → EnvDom (fam p) d → EnvWf (upd (fam p))) :
     (ctlIs (GF := GF) stHalf c ∗ domIs stHalf d) ∗
       ((ctlIs stHalf c' ∗ domIs stHalf (symNum x₁ :: symNum x₂ :: d)
           ∗ envIs x₁ (.own 1) v₁ ∗ envIs x₂ (.own 1) v₂)
         -∗ WP (k v) @ s ; E {{ Φ }}) ⊢
       WP (KExpr.seq m k : KDriveExpr) @ s ; E {{ Φ }} :=
   wpk_seq_birth2 hfresh₁ hfresh₂ hne
-    (fun σ hσ hwf => by obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact happ p hwf)
-    (fun σ hσ hwf => by obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact hctl' p hwf)
-    (fun σ hσ hwf => by obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact hlay p hwf)
-    (fun σ hσ hwf => by obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact hsup p hwf)
-    (fun σ hσ hwf => by obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact hnew₁ p hwf)
-    (fun σ hσ hwf => by obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact hnew₂ p hwf)
-    (fun σ hσ hwf => by obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact hpres p hwf)
-    (fun σ hσ hwf => by obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact hrev p hwf)
-    (fun σ hσ hwf => by obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact hwfp p hwf)
+    (fun σ hσ hwf hdm => by obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact happ p hwf hdm)
+    (fun σ hσ hwf hdm => by obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact hctl' p hwf hdm)
+    (fun σ hσ hwf hdm => by obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact hlay p hwf hdm)
+    (fun σ hσ hwf hdm => by obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact hsup p hwf hdm)
+    (fun σ hσ hwf hdm => by obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact hnew₁ p hwf hdm)
+    (fun σ hσ hwf hdm => by obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact hnew₂ p hwf hdm)
+    (fun σ hσ hwf hdm => by obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact hpres p hwf hdm)
+    (fun σ hσ hwf hdm => by obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact hrev p hwf hdm)
+    (fun σ hσ hwf hdm => by obtain ⟨p, rfl⟩ := hinv σ hσ hwf; exact hwfp p hwf hdm)
 
 end FamilyFaces
 
@@ -872,7 +930,8 @@ open Lean in
      ``RelSem.CerbSt.wpk_seq_birth1_env1,
      ``RelSem.CerbSt.wpk_seq_birth2,
      ``RelSem.CerbSt.wpk_seq_ctl_sup_mem,
-     ``RelSem.CerbSt.wpk_seq_alloc_store]
+     ``RelSem.CerbSt.wpk_seq_alloc_store,
+     ``RelSem.CerbSt.wpk_seq_read_ctl_dom]
   for n in backing do
     let some _ ← RelSem.LawRegistry.byName? n
       | throwError "CerbStateStep registry-backing check: the V2 rule {n} is NOT registered (R4)"

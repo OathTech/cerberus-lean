@@ -238,6 +238,37 @@ theorem dnmsK_obs (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)) :
         | NOWAKEUP => exact ih acc tid xs' k F' (by omega) σ'
         | WAKEUP b tids => cases b <;> rfl
 
+/-! ## Round-atom app equations (what the per-round wpk instances
+    feed: discovery + dispatch composed) -/
+
+/-- The ADVANCING round atom: discovery finds `step1`, the advance
+    yields NOWAKEUP. -/
+theorem dnmsRoundM_adv
+    {tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)}
+    {tid : Nat} {σ σ' : driver_state} {step1 : core_step2}
+    (hfind : find_can_advance (dnmsDiscover tagDefs tid σ) = some step1)
+    (hadv : app (advance_step tagDefs tid step1) σ
+      = (NDactive NOWAKEUP, σ')) :
+    app (dnmsRoundM tagDefs tid) σ
+      = (NDactive (Sum.inl NOWAKEUP), σ') := by
+  show app (nd_bind (dnmsReadM tagDefs tid) _) σ = _
+  refine (app_bind_active (app_nd_read (dnmsDiscover tagDefs tid) σ)).trans ?_
+  simp only [hfind]
+  refine (app_bind_active hadv).trans ?_
+  exact app_nd_return _ _
+
+/-- The TERMINAL round atom: no advancing step; the offers return. -/
+theorem dnmsRoundM_inr
+    {tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)}
+    {tid : Nat} {σ : driver_state}
+    (hfind : find_can_advance (dnmsDiscover tagDefs tid σ) = none) :
+    app (dnmsRoundM tagDefs tid) σ
+      = (NDactive (Sum.inr (dnmsDiscover tagDefs tid σ)), σ) := by
+  show app (nd_bind (dnmsReadM tagDefs tid) _) σ = _
+  refine (app_bind_active (app_nd_read (dnmsDiscover tagDefs tid) σ)).trans ?_
+  simp only [hfind]
+  exact app_nd_return _ _
+
 /-! ## The driver2 iteration peel -/
 
 /-- The scheduler's per-thread offer pick (ndct's mapM stage — the
