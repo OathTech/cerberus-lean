@@ -2299,3 +2299,84 @@ theorem p01r30F (x : Int) (p : T1P) :
          p01fam (p01arF30 x) [meLoad x, meLoad x] 28 p) := by
   refine (dnmsRoundM_inr rfl).trans ?_
   rfl
+
+/-! ## DOUBLE-BIRTH LEGS (the tuple-bind rounds insert two cells:
+    `ins b₁ v₁ (ins b₂ v₂ f)`; the ledger certifies both classes) -/
+
+section DoubleBirth
+
+/-- Insert shorthand at the machine spelling. -/
+local notation "ins" => @fmapAddBy sym value Lem_Map.instBEqOfMapKeyType
+  (@Lem_Map.mapKeyCompare sym _)
+
+variable {b₁ b₂ : sym} {v₁ v₂ : value} {f : Fmap sym value}
+
+theorem dbl_new₁ (hwf : EnvWfFrame f) :
+    lookup_env b₁ [ins b₁ v₁ (ins b₂ v₂ f)] = some v₁ :=
+  birth_new (birth_wfp hwf)
+
+theorem dbl_new₂ (hwf : EnvWfFrame f)
+    (hn₁ : ∀ z : sym, RelSem.Kit.symCmpO b₁ z = .eq →
+      lookup_env z [f] = none)
+    (hnum_ne : symNum b₁ ≠ symNum b₂) :
+    lookup_env b₂ [ins b₁ v₁ (ins b₂ v₂ f)] = some v₂ := by
+  refine birth_pres (birth_wfp hwf) ?_ b₂ v₂ (birth_new hwf)
+  intro z hz
+  cases hlk : lookup_env z [ins b₂ v₂ f] with
+  | none => rfl
+  | some vz =>
+    exfalso
+    rcases birth_rev hwf z vz hlk with ⟨v₀, hv₀⟩ | hnum
+    · rw [hn₁ z hz] at hv₀; cases hv₀
+    · obtain ⟨d1, n1, s1⟩ := b₁
+      obtain ⟨d2, n2, s2⟩ := b₂
+      obtain ⟨dz, nz, sz⟩ := z
+      obtain ⟨-, hn⟩ := (RelSem.Kit.symCmpO_eq_iff d1 dz n1 nz
+        s1 sz).1 hz
+      simp [symNum] at hnum hnum_ne
+      omega
+
+theorem dbl_pres (hwf : EnvWfFrame f)
+    (hn₁ : ∀ z : sym, RelSem.Kit.symCmpO b₁ z = .eq →
+      lookup_env z [f] = none)
+    (hn₂ : ∀ z : sym, RelSem.Kit.symCmpO b₂ z = .eq →
+      lookup_env z [f] = none)
+    (hnum_ne : symNum b₁ ≠ symNum b₂) :
+    ∀ z v', lookup_env z [f] = some v' →
+      lookup_env z [ins b₁ v₁ (ins b₂ v₂ f)] = some v' := by
+  intro z v' hz
+  refine birth_pres (birth_wfp hwf) ?_ z v'
+    (birth_pres hwf hn₂ z v' hz)
+  intro w hw
+  cases hlk : lookup_env w [ins b₂ v₂ f] with
+  | none => rfl
+  | some vw =>
+    exfalso
+    rcases birth_rev hwf w vw hlk with ⟨v₀, hv₀⟩ | hnum
+    · rw [hn₁ w hw] at hv₀; cases hv₀
+    · -- w in b₁'s cmp-class and b₂'s num-class: then a b₂-num sym
+      -- would be f-bound at z... derive via hn₁ again
+      obtain ⟨d1, n1, s1⟩ := b₁
+      obtain ⟨d2, n2, s2⟩ := b₂
+      obtain ⟨dw, nw, sw⟩ := w
+      obtain ⟨-, hnw⟩ := (RelSem.Kit.symCmpO_eq_iff d1 dw n1 nw
+        s1 sw).1 hw
+      simp [symNum] at hnum hnum_ne
+      omega
+
+theorem dbl_rev (hwf : EnvWfFrame f) :
+    ∀ z v', lookup_env z [ins b₁ v₁ (ins b₂ v₂ f)] = some v' →
+      (∃ v₀, lookup_env z [f] = some v₀) ∨ symNum z = symNum b₁ ∨
+        symNum z = symNum b₂ := by
+  intro z v' hz
+  rcases birth_rev (birth_wfp hwf) z v' hz with ⟨v₀, hv₀⟩ | hnum
+  · rcases birth_rev hwf z v₀ hv₀ with ⟨v₁', hv₁⟩ | hnum2
+    · exact Or.inl ⟨v₁', hv₁⟩
+    · exact Or.inr (Or.inr hnum2)
+  · exact Or.inr (Or.inl hnum)
+
+theorem dbl_wfp (hwf : EnvWfFrame f) :
+    EnvWfFrame (ins b₁ v₁ (ins b₂ v₂ f)) :=
+  birth_wfp (birth_wfp hwf)
+
+end DoubleBirth
