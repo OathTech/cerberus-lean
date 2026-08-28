@@ -145,6 +145,7 @@ import RelSem.CorpusBFiles
 import RelSem.CorpusBStatements
 -- arc-9 S2: the kit exactness pins join the in-build audit.
 import RelSem.Kit.Audit
+import RelSem.Kit.EvalStep
 -- (arc-11 audit A-F1's T5 chain — T5Fixture → T5Prefix → T5Iter —
 -- RETIRED at arc-18 R4: T5-the-theorem is PROVED through the segment
 -- layer (RelSem.T5, pinned below at the trio); the ambient-era climb
@@ -1177,7 +1178,10 @@ open Lean in
 -- (71 → 82, V2 C2: envMap +2 [lookup-congr + singleton-miss], stateWP
 -- +9 [the case-split trio + read-ctl + the ctl-sup pair + the birth
 -- trio] — same-commit provenance.)
-/-- info: step_law census: 82 laws [advance 5, construct 9, envAlg 3, envMap 6, evalArith 2, evalPull 2, heapWP 4, loop 1, memBlock 7, memRW 21, perform 6, roundGlue 3, stateWP 13] -/
+-- (82 → 87, V2 C2b: evalPull +3 [se_sym_hit + the boolean-guard
+-- fusions — Kit/EvalStep, the pure-eval construct laws], stateWP +2
+-- [ctl-sup-mem + alloc-store] — same-commit provenance.)
+/-- info: step_law census: 87 laws [advance 5, construct 9, envAlg 3, envMap 6, evalArith 2, evalPull 5, heapWP 4, loop 1, memBlock 7, memRW 21, perform 6, roundGlue 3, stateWP 15] -/
 #guard_msgs in #step_law_census
 -- (V0 2026-08-27, THE KILL BASKET — record
 -- docs/2026-08-27_v0-statements-and-ban.md: the T1–T5 threaded
@@ -1599,7 +1603,7 @@ open Lean in
 -- [PerStepPeel, CerbStateAdequacy §V2] — the big-step↔small-step
 -- simulation infrastructure; same-commit provenance).
 /--
-info: RelSem audit sweep: 2763 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 2794 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do

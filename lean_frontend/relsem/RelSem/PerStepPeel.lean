@@ -107,6 +107,16 @@ theorem runNDFuel_ndbind_assoc (F : Nat) (hF : F ≤ lemDefaultFuel)
       = CerbND.runNDFuel F (nd_bind m (fun x => nd_bind (f x) g)) σ :=
   runNDFuel_bind_assoc F hF hF hF hF m f g σ
 
+/-- Return elimination at the observation (the fused-round anchor's
+    glue: `bind (return v) k` observes as `k v`). -/
+theorem runNDFuel_bind_return (F : Nat) {v : A}
+    {k : A → ndM B I E C S} {σ : S} :
+    CerbND.runNDFuel F (nd_bind (nd_return v) k) σ
+      = CerbND.runNDFuel F (k v) σ := by
+  cases F with
+  | zero => rfl
+  | succ F => exact runNDFuel_succ_congr F (app_bind_active rfl)
+
 /-- Congruence wrapper at the production bind. -/
 theorem runNDFuel_ndbind_congr (F : Nat) (hF : F ≤ lemDefaultFuel)
     (m : ndM A I E C S) (f g : A → ndM B I E C S) (σ : S)
@@ -118,12 +128,27 @@ theorem runNDFuel_ndbind_congr (F : Nat) (hF : F ≤ lemDefaultFuel)
 
 end ObsWrappers
 
-/-! ## The dnms peel: one scheduler round per `KExpr` joint -/
+/-! ## The dnms peel: ONE FUSED SCHEDULER ROUND per `KExpr` joint
+    (discovery + advance in one atom — the round classes of
+    Kit/Round.lean apply verbatim to the atom's app equation). -/
 
-/-- The peeled dnms loop: fuel-indexed, one `seq` joint per round.
+/-- ONE scheduler round as an atom: discover, then either advance
+    (value `inl wakeups`) or report the terminal offers (`inr`). -/
+def dnmsRoundM (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
+    (tid : Nat) :
+    ndM (advance_info ⊕ List core_step2) step_kind driver_error
+      mem_iv_constraint driver_state :=
+  nd_bind (dnmsReadM tagDefs tid) (fun steps =>
+    match find_can_advance steps with
+    | none => nd_return (Sum.inr steps)
+    | some step1 =>
+        nd_bind (advance_step tagDefs tid step1)
+          (fun wakeups => nd_return (Sum.inl wakeups)))
+
+/-- The peeled dnms loop: fuel-indexed, one fused round per joint.
     Advancing rounds recurse (NOWAKEUP — the single-threaded shape);
-    every other path falls back to the COARSE atom (the residual loop
-    itself), so the observation anchor closes on all inputs. -/
+    every other path falls back to the COARSE atom (the residual
+    loop), so the observation anchor closes on all inputs. -/
 def dnmsK (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)) :
     Nat → Fmap thread_id (List core_step2) → Nat → List Nat →
       (Fmap thread_id (List core_step2) → KDriveExpr) → KDriveExpr
@@ -131,20 +156,17 @@ def dnmsK (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)) :
       .seq (drive_nonmemory_steps_aux2_lemFuel 0 tagDefs acc
         (tid :: xs')) k
   | f + 1, acc, tid, xs', k =>
-      .seq (dnmsReadM tagDefs tid) (fun steps =>
-        match find_can_advance steps with
-        | none => .seq (drive_nonmemory_steps_aux2_lemFuel f tagDefs
-            (fmapAddBy defaultCompare tid steps acc) xs') k
-        | some step1 =>
-            .seq (advance_step tagDefs tid step1) (fun wakeups =>
-              match wakeups with
-              | NOWAKEUP => dnmsK tagDefs f acc tid xs' k
-              | WAKEUP false tids =>
-                  .seq (drive_nonmemory_steps_aux2_lemFuel f tagDefs acc
-                    (tid :: list_inserts tids xs')) k
-              | WAKEUP true tids =>
-                  .seq (drive_nonmemory_steps_aux2_lemFuel f tagDefs acc
-                    (list_inserts tids xs')) k))
+      .seq (dnmsRoundM tagDefs tid) (fun r =>
+        match r with
+        | Sum.inr steps => .seq (drive_nonmemory_steps_aux2_lemFuel f
+            tagDefs (fmapAddBy defaultCompare tid steps acc) xs') k
+        | Sum.inl NOWAKEUP => dnmsK tagDefs f acc tid xs' k
+        | Sum.inl (WAKEUP false tids) =>
+            .seq (drive_nonmemory_steps_aux2_lemFuel f tagDefs acc
+              (tid :: list_inserts tids xs')) k
+        | Sum.inl (WAKEUP true tids) =>
+            .seq (drive_nonmemory_steps_aux2_lemFuel f tagDefs acc
+              (list_inserts tids xs')) k)
 
 /-- THE dnms PEEL ANCHOR (observation-level): the peeled expression
     enumerates exactly as the coarse `bind` of the generated loop, at
@@ -169,40 +191,49 @@ theorem dnmsK_obs (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)) :
       have hread : app (dnmsReadM tagDefs tid) σ
           = (NDactive (dnmsDiscover tagDefs tid σ), σ) :=
         app_nd_read (dnmsDiscover tagDefs tid) σ
-      calc CerbND.runNDFuel (F + 1)
-            (dnmsK tagDefs (f + 1) acc tid xs' k).denote σ
-          = CerbND.runNDFuel (F + 1)
-              ((match find_can_advance (dnmsDiscover tagDefs tid σ) with
-                | none => KExpr.seq (drive_nonmemory_steps_aux2_lemFuel f
-                    tagDefs (fmapAddBy defaultCompare tid
-                      (dnmsDiscover tagDefs tid σ) acc) xs') k
-                | some step1 =>
-                    KExpr.seq (advance_step tagDefs tid step1)
-                      (fun wakeups =>
-                        match wakeups with
-                        | NOWAKEUP => dnmsK tagDefs f acc tid xs' k
-                        | WAKEUP false tids =>
-                            KExpr.seq (drive_nonmemory_steps_aux2_lemFuel
-                              f tagDefs acc (tid :: list_inserts tids xs')) k
-                        | WAKEUP true tids =>
-                            KExpr.seq (drive_nonmemory_steps_aux2_lemFuel
-                              f tagDefs acc (list_inserts tids xs')) k)
-                : KDriveExpr).denote) σ :=
-            runNDFuel_bind_step_active F hread
-        _ = CerbND.runNDFuel (F + 1)
-              (nd_bind (drive_nonmemory_steps_aux2_lemFuel (f + 1) tagDefs
-                acc (tid :: xs')) (fun r => (k r).denote)) σ := ?_
+      -- LHS: expose the fused atom's inner bind, reassociate, step
+      -- through the (always-active) discovery
+      rw [show (dnmsK tagDefs (f + 1) acc tid xs' k).denote
+          = nd_bind (dnmsRoundM tagDefs tid) (fun r =>
+              ((match r with
+                | Sum.inr steps => KExpr.seq
+                    (drive_nonmemory_steps_aux2_lemFuel f tagDefs
+                      (fmapAddBy defaultCompare tid steps acc) xs') k
+                | Sum.inl NOWAKEUP => dnmsK tagDefs f acc tid xs' k
+                | Sum.inl (WAKEUP false tids) =>
+                    KExpr.seq (drive_nonmemory_steps_aux2_lemFuel f
+                      tagDefs acc (tid :: list_inserts tids xs')) k
+                | Sum.inl (WAKEUP true tids) =>
+                    KExpr.seq (drive_nonmemory_steps_aux2_lemFuel f
+                      tagDefs acc (list_inserts tids xs')) k)
+                : KDriveExpr).denote) from rfl,
+        show (dnmsRoundM tagDefs tid)
+          = nd_bind (dnmsReadM tagDefs tid) (fun steps =>
+              match find_can_advance steps with
+              | none => nd_return (Sum.inr steps)
+              | some step1 =>
+                  nd_bind (advance_step tagDefs tid step1)
+                    (fun wakeups => nd_return (Sum.inl wakeups)))
+          from rfl,
+        runNDFuel_ndbind_assoc (F + 1) hF _ _ _ σ,
+        runNDFuel_bind_step_active F hread]
+      -- RHS: unfold one loop level, reassociate, step through
       rw [dnms_succ_unfold,
         runNDFuel_ndbind_assoc (F + 1) hF _ _ _ σ,
         runNDFuel_bind_step_active F hread]
       cases hfind : find_can_advance (dnmsDiscover tagDefs tid σ) with
-      | none => simp only [denote_seq]
+      | none =>
+        simp only [denote_seq]
+        rw [runNDFuel_bind_return (F + 1)]
+        rfl
       | some step1 =>
         simp only [denote_seq]
-        rw [runNDFuel_ndbind_assoc (F + 1) hF _ _ _ σ]
+        rw [runNDFuel_ndbind_assoc (F + 1) hF _ _ _ σ,
+          runNDFuel_ndbind_assoc (F + 1) hF _ _ _ σ]
         refine (runNDFuel_ndbind_congr (F + 1) hF
           (advance_step tagDefs tid step1) _ _ σ ?_)
         intro F' hF' w σ'
+        rw [runNDFuel_bind_return F']
         cases w with
         | NOWAKEUP => exact ih acc tid xs' k F' (by omega) σ'
         | WAKEUP b tids => cases b <;> rfl
