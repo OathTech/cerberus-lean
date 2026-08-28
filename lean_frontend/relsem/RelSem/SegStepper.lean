@@ -46,6 +46,7 @@ open RelSem RelSem.Cerb RelSem.CerbSt
 namespace RelSem.Seg.Stepper
 
 initialize registerTraceClass `RelSem.segRun
+initialize registerTraceClass `RelSem.segRun.detail
 
 /-- Speculative-probe heartbeat isolation (the R4 move).
     PERF-1 finding, recorded: the `withOptions` spelling does NOT
@@ -235,7 +236,7 @@ private def fillHapp (happTy : Expr) (cand : Name) :
         unless ← solveHyp xs marg.mvarId! do
           throwError "round {cand}: hypothesis has no source:\
             {indentExpr mty}"
-        trace[RelSem.segRun] "fillHapp: hole {mty} := \
+        trace[RelSem.segRun.detail] "fillHapp: hole {mty} := \
           {← instantiateMVars marg}"
     let pf := mkAppN (mkConst cand (cinfo.levelParams.map .param)) margs
     return (← mkLambdaFVars xs (← instantiateMVars pf), xs, deferred)
@@ -510,9 +511,9 @@ private def buildLink (gf gs td tid : Expr) (ΓE : Expr) (cand : Name)
     | throwError "seg_run: link {linkC} has no happ premise"
   let happTy ← instantiateMVars (← inferType args[hi]!)
   let (happPf, _happXs, happDeferred) ← fillHapp happTy cand
-  trace[RelSem.segRun] "buildLink [{linkC}]: happ filled: \
+  trace[RelSem.segRun.detail] "buildLink [{linkC}]: happ filled: \
     {← inferType happPf}"
-  trace[RelSem.segRun] "buildLink [{linkC}]: slot type: \
+  trace[RelSem.segRun.detail] "buildLink [{linkC}]: slot type: \
     {← instantiateMVars (← inferType args[hi]!)}"
   unless ← isDefEq args[hi]! happPf do
     throwError "seg_run [{linkC}]: happ assignment failed"
@@ -526,7 +527,7 @@ private def buildLink (gf gs td tid : Expr) (ΓE : Expr) (cand : Name)
       let a ← instantiateMVars a
       if a.isMVar then
         let aty ← instantiateMVars (← a.mvarId!.getType)
-        trace[RelSem.segRun] "buildLink [{linkC}]: dispatch on \
+        trace[RelSem.segRun.detail] "buildLink [{linkC}]: dispatch on \
           {aty}"
         if ← dispatchPremise linkC pack0 a.mvarId! then
           progress := true
@@ -630,7 +631,7 @@ private def tryBlock (gf gs td tid : Expr) (ΓE : Expr)
   let hits ← RelSem.LawRegistry.byKind `segBlock
   if hits.isEmpty then return none
   let curKey := ctlArenaKey? comps[0]!
-  trace[RelSem.segRun] "tryBlock: {hits.size} candidates, arena key \
+  trace[RelSem.segRun.detail] "tryBlock: {hits.size} candidates, arena key \
     {curKey} at{indentExpr ΓE}"
   let mut ordered : Array RelSem.LawRegistry.StepLaw := #[]
   for l in hits do
@@ -712,6 +713,7 @@ private def tryBlock (gf gs td tid : Expr) (ΓE : Expr)
     throughout; every unkeyed shape is a thrown frontier, never an
     iteration. -/
 
+
 private def kwhnf? (e : Expr) : MetaM (Option Expr) := do
   match Lean.Kernel.whnf (← getEnv) (← getLCtx) e with
   | .ok r => pure (some r)
@@ -773,7 +775,7 @@ private def applyLemmaCross (lem : Name) (cellFVars : Array Expr)
     (← ms.mapM instantiateMVars)
   return (← instantiateMVars rp, pf)
 
-/-- THE EVAL CROSSING: prove `lhs = Result (Defined z, st')` for a
+/-! THE EVAL CROSSING: prove `lhs = Result (Defined z, st')` for a
     monadic step applied at a run state, by (a) whole-term kernel
     computation where the step is closed at the fragments (the
     pure-eval class — binops, ctor packs at literal operands), or
@@ -784,16 +786,59 @@ private def applyLemmaCross (lem : Name) (cellFVars : Array Expr)
     registered per-construct lemma at an owned cell fact. Cheap
     failure everywhere (Lithium's opacity-bounded-failure principle);
     an unkeyed head is a thrown frontier. -/
+
+/-- Payload SAFETY for kernel evaluation (committed classification —
+    the r127 lesson at the mint path): a pexpr may be handed to
+    `Lean.Kernel.whnf` only when every `PE*` constructor in it lies in
+    the safe set — constructs whose evaluation at symbolic data never
+    cases on that data (sym reads, values, ctor packs, plain ops).
+    Guard chains, conv/call forms, case-splits at symbolic data would
+    send the UNBOUNDED, UNINTERRUPTIBLE kernel evaluator into a
+    runaway (measured: 16G OOM at P01's verdict round). -/
+private def peSafePayload (e : Expr) : Bool :=
+  (e.find? (fun s =>
+    match s.getAppFn.constName? with
+    | some n =>
+      let short := n.componentsRev.head!.toString
+      short.startsWith "PE"
+        && !(["PEsym", "PEval", "PEctor", "PEop"].contains short)
+    | none => false)).isNone
+
+/-- The eval-entry constants (a pexpr argument rides them into the
+    evaluator). -/
+private def evalEntryConsts : List Name :=
+  [``full_eval_pexpr, ``full_eval_pexpr_lemFuel, ``E.eval_pexpr20,
+   ``eval_pexpr_aux2, ``eval_pexpr_aux2_lemFuel]
+
+/-- The pexpr argument of an eval-entry application, if any. -/
+private def evalPexprArg? (e : Expr) : MetaM (Option Expr) := do
+  for a in e.getAppArgs.reverse do
+    let aW ← whnfCore a
+    if aW.isAppOf ``Pexpr then return some aW
+  return none
+
 private partial def crossToResult (cellFVars : Array Expr) (lhs : Expr)
     (fuel : Nat := 32) : MetaM (Expr × Expr × Expr × Expr) := do
   match fuel with
   | 0 => throwError "mint: eval-crossing depth bound exceeded"
   | fuel + 1 =>
-  if let some (z, st', rhs) ← resultParts? lhs then
-    return (z, st', rhs, ← mkLhsRflHint lhs rhs)
   let lhsW ← whnfCore lhs
   let fn := lhsW.getAppFn
-  if fn.isConstOf ``stExceptUndef_bind then
+  -- committed kernel-evaluation guard over the ATOMIC unit: bind
+  -- heads always descend (each inner unit gets its own
+  -- classification); any other unit goes to the kernel only when
+  -- every PE* constructor in it is in the safe set
+  let isBind := fn.isConstOf ``stExceptUndef_bind
+  let safe := peSafePayload lhsW
+  if !isBind && safe then
+    if let some (z, st', rhs) ← resultParts? lhsW then
+      return (z, st', rhs, ← mkLhsRflHint lhs rhs)
+  if fn.isConst && evalEntryConsts.contains fn.constName! && !safe then
+    -- an eval entry at a guard/conv/case redex: NEVER single-step it
+    -- through elaborator unfolds (the r127 grind) — fall back loudly
+    throwError "mint: eval payload outside the construct set \
+      (guard/conv/case class) — supply fallback"
+  if isBind then
     let args := lhsW.getAppArgs
     unless args.size ≥ 3 do
       throwError "mint: bind arity at{indentExpr lhsW}"
@@ -887,7 +932,8 @@ private inductive MintOut where
     the standard dispatcher (FamShape by rfl, `stateAt_inv` from the
     famInv registry, cell indexes, the control anchor). -/
 private def buildMintedLink (gf gs td tid : Expr) (ΓE : Expr)
-    (linkC : Name) (famI famO happLam : Expr) : MetaM BuiltLink := do
+    (linkC : Name) (famI famO happLam : Expr)
+    (birthPins : Array (Expr × Expr) := #[]) : MetaM BuiltLink := do
   let cinfo ← getConstInfo linkC
   let (args, _, concl) ← forallMetaTelescope cinfo.type
   unless concl.isAppOfArity ``RelSem.Seg.SegStep 7 do
@@ -898,6 +944,25 @@ private def buildMintedLink (gf gs td tid : Expr) (ΓE : Expr)
     throwError "mint [{linkC}]: instance/program unification failed"
   unless ← isDefEq cargs[5]! ΓE do
     throwError "mint [{linkC}]: entry context does not unify"
+  -- pre-pin the birth slots (x/vNew, outermost first, declaration
+  -- order — committed choice; the env1-cell y/vy slots are pinned by
+  -- the happ unification afterward)
+  if !birthPins.isEmpty then
+    let mut symSlots : Array Expr := #[]
+    let mut valSlots : Array Expr := #[]
+    for a in args do
+      let a ← instantiateMVars a
+      if a.isMVar then
+        let aty ← instantiateMVars (← a.mvarId!.getType)
+        if aty.isConstOf ``sym then symSlots := symSlots.push a
+        else if aty.isConstOf ``value then valSlots := valSlots.push a
+    for i in [0:birthPins.size] do
+      if h1 : i < symSlots.size then
+        unless ← isDefEq symSlots[i] birthPins[i]!.1 do
+          throwError "mint [{linkC}]: birth sym pre-pin failed"
+      if h2 : i < valSlots.size then
+        unless ← isDefEq valSlots[i] birthPins[i]!.2 do
+          throwError "mint [{linkC}]: birth value pre-pin failed"
   -- pre-pin the fam slots (declaration order famI, famO)
   let mut famPins := #[famI, famO]
   let mut pinIdx := 0
@@ -950,8 +1015,7 @@ private def buildMintedLink (gf gs td tid : Expr) (ΓE : Expr)
     (mkConst linkC (cinfo.levelParams.map .param)) args)
   return { pf, delta, minted := true }
 
-/-- THE MINT ATTEMPT at the current context. -/
-private def tryMint (gf gs td tid : Expr) (ΓE : Expr)
+private def tryMintCore (gf gs td tid : Expr) (ΓE : Expr)
     (comps : Array Expr) : MetaM MintOut := do
   try
     let cE ← instantiateMVars comps[0]!
@@ -964,6 +1028,18 @@ private def tryMint (gf gs td tid : Expr) (ΓE : Expr)
     withLocalDeclD `hwf hwfTy fun hwf => do
     let frameTy ← inferType f1q
     let spineE ← mkListLit frameTy [f1q]
+    -- the birth links' domain-ledger premise (unused by the construct
+    -- proofs themselves; bound to match the birth happ telescopes)
+    let hdomTy ← do
+      let domE ← mkAppM ``RelSem.Seg.domOf #[envE]
+      withLocalDeclD `z (mkConst ``sym) fun z => do
+      withLocalDeclD `v' (mkConst ``value) fun v' => do
+        let lk ← mkAppM ``lookup_env #[z, spineE]
+        let prem ← mkEq lk (← mkAppM ``Option.some #[v'])
+        let concl ← mkAppM ``Membership.mem
+          #[domE, ← mkAppM ``RelSem.CerbSt.symNum #[z]]
+        mkForallFVars #[z, v'] (← mkArrow prem concl)
+    withLocalDeclD `hdom hdomTy fun hdom => do
     let cellTys ← cells.mapM fun (s, v) => do
       mkEq (← mkAppM ``lookup_env #[s, spineE])
         (← mkAppM ``Option.some #[v])
@@ -985,29 +1061,16 @@ private def tryMint (gf gs td tid : Expr) (ΓE : Expr)
     let some stepI ← kwhnf? stepO.appArg!
       | return MintOut.skip m!"kernel whnf failed on the step body"
     let stepArgs := stepI.getAppArgs
-    -- purity check helper: the successor thread's env must still be
-    -- the unchanged single open frame (env-writing steps — births —
-    -- are outside the mint set and fall back to the supply)
-    let checkPureEnv (th' : Expr) : MetaM Unit := do
-      let some envThW ← kwhnf? (← mkAppM ``thread_state.env #[th'])
-        | throwError "mint: successor env did not compute"
-      unless envThW.isAppOfArity ``List.cons 3 do
-        throwError "mint: successor env shape{indentExpr envThW}"
-      let head ← instantiateMVars envThW.getAppArgs[1]!
-      unless head == f1q do
-        throwError "mint: env-writing step (birth class) — outside \
-          the probe set"
-    let pfBody ←
+    let (pfBody, th') ←
       if stepI.isAppOf ``Step_tau2 && stepArgs.size ≥ 3 then do
         let tsk ← whnfCore stepArgs[stepArgs.size - 2]!
         unless tsk.isConstOf ``TSK_Misc do
           throwError "mint: non-Misc tau kind"
         let th' := stepArgs[stepArgs.size - 1]!
-        checkPureEnv th'
         let stepI' := mkAppN stepI.getAppFn
           (stepArgs.set! (stepArgs.size - 2) tsk)
         let hfindPf ← mkLhsRflHint discE (mkApp stepO.appFn! stepI')
-        mkAppM ``RelSem.Seg.cstep_tau #[hfindPf]
+        pure (← mkAppM ``RelSem.Seg.cstep_tau #[hfindPf], th')
       else if stepI.isAppOf ``Step_with_runstate2 && stepArgs.size ≥ 2
       then do
         let kindE ← whnfCore stepArgs[stepArgs.size - 2]!
@@ -1029,16 +1092,68 @@ private def tryMint (gf gs td tid : Expr) (ΓE : Expr)
         let rsq ← mkAppM ``driver_state.core_run_state0 #[σq]
         let (th', _rs', rhsR, pfHm) ←
           crossToResult cellFVars (mkApp stepM rsq)
-        checkPureEnv th'
         let pfHm ← mkExpectedTypeHint pfHm
           (← mkEq (mkApp stepM rsq) rhsR)
-        mkAppM lemN #[hfindPf, pfHm]
+        pure (← mkAppM lemN #[hfindPf, pfHm], th')
       else
         throwError "mint: step class outside the construct set \
           (head {stepI.getAppFn})"
+    -- ENV-SHAPE classification of the successor thread: the unchanged
+    -- open frame (pure), or one/two fresh binds over it (the BIRTH
+    -- classes — the `ins`/fmapAddBy spelling is preserved: committed
+    -- unfolds stop at `fmapAddBy` heads). Anything else is a thrown
+    -- frontier.
+    let reduceEnvHead (e0 : Expr) : MetaM Expr := do
+      let mut cur ← whnfCore e0
+      let mut fuel := 24
+      while fuel > 0 do
+        if cur == f1q || cur.getAppFn.isConstOf ``fmapAddBy then
+          return cur
+        unless cur.getAppFn.isConst do return cur
+        let some nxt ← withProbeBudget (Meta.unfoldDefinition? cur)
+          | return cur
+        cur ← whnfCore nxt
+        fuel := fuel - 1
+      return cur
+    let reduceToCons (e0 : Expr) : MetaM Expr := do
+      let mut cur ← whnfCore e0
+      let mut fuel := 24
+      while fuel > 0 && !(cur.isAppOfArity ``List.cons 3)
+          && !(cur.isAppOfArity ``List.nil 1) do
+        unless cur.getAppFn.isConst do return cur
+        let some nxt ← withProbeBudget (Meta.unfoldDefinition? cur)
+          | return cur
+        cur ← whnfCore nxt
+        fuel := fuel - 1
+      return cur
+    let births ← do
+      let envList ← reduceToCons (← mkAppM ``thread_state.env #[th'])
+      unless envList.isAppOfArity ``List.cons 3 do
+        throwError "mint: successor env spine shape{indentExpr envList}"
+      let tail ← whnfCore envList.getAppArgs[2]!
+      unless tail.isAppOfArity ``List.nil 1 do
+        throwError "mint: successor env is not single-frame"
+      let mut head := envList.getAppArgs[1]!
+      let mut acc : Array (Expr × Expr) := #[]
+      let mut done := false
+      for _ in [0:3] do
+        unless !done do continue
+        head ← reduceEnvHead head
+        if head == f1q then
+          done := true
+        else if head.getAppFn.isConstOf ``fmapAddBy
+            && head.getAppNumArgs ≥ 4 then
+          let hargs := head.getAppArgs
+          acc := acc.push (hargs[hargs.size - 3]!, hargs[hargs.size - 2]!)
+          head := hargs[hargs.size - 1]!
+        else
+          throwError "mint: successor env head outside the construct \
+            set{indentExpr head}"
+      unless done do
+        throwError "mint: successor env bind depth > 2"
+      pure acc
     -- keep only the cell binders the proof actually consumed
     let used := cellFVars.filter fun h => pfBody.containsFVar h.fvarId!
-    let happLam ← mkLambdaFVars (#[q, hwf] ++ used) pfBody
     -- the successor family, read off the proof's own conclusion
     let concl ← inferType pfBody
     let some (_, _, rhsPair) := concl.eq?
@@ -1047,19 +1162,194 @@ private def tryMint (gf gs td tid : Expr) (ΓE : Expr)
     unless rhsPair.isAppOfArity ``Prod.mk 4 do
       throwError "mint: successor pair shape"
     let succ := rhsPair.getAppArgs[3]!
-    let famO ← mkLambdaFVars #[q] succ
-    let linkC ←
-      match used.size with
-      | 0 => pure ``RelSem.Seg.link_ctl
-      | 1 => pure ``RelSem.Seg.link_ctl_env1
-      | 2 => pure ``RelSem.Seg.link_ctl_env2
-      | n => throwError "mint: {n} cell reads — no matching link"
+    -- THE BIRTH SUCCESSOR FAMILY, by env-slot surgery: rebuild the
+    -- successor with the thread's env field literally `[p.f₁]`, so
+    -- `famO {p with f₁ := ins x v p.f₁}` matches the step's successor
+    -- by SHALLOW projection reduction only. (A pack0-substituted twin
+    -- instead forces arena-deep defeq — measured 2M blowout at P01's
+    -- arena sizes.)
+    let mkBirthFamO : MetaM Expr := do
+      unless succ.isAppOf ``RelSem.Kit.dnmsBump
+          && succ.getAppNumArgs == 3 do
+        throwError "mint: birth successor is not dnmsBump-formed:\
+          {indentExpr succ}"
+      let sargs := succ.getAppArgs
+      -- reduce the successor thread to constructor form
+      let mut thMk ← whnfCore sargs[1]!
+      let mut fuel := 24
+      while fuel > 0 && !(thMk.isAppOfArity ``thread_state.mk 7) do
+        unless thMk.getAppFn.isConst do break
+        let some nxt ← withProbeBudget (Meta.unfoldDefinition? thMk)
+          | break
+        thMk ← whnfCore nxt
+        fuel := fuel - 1
+      unless thMk.isAppOfArity ``thread_state.mk 7 do
+        throwError "mint: birth thread did not reach constructor \
+          form{indentExpr thMk}"
+      -- env is field 3 (arena, stack0, errno, env, proc, exec, loc)
+      let thNew := mkAppN thMk.getAppFn (thMk.getAppArgs.set! 3 spineE)
+      let succNew := mkApp3 succ.getAppFn sargs[0]! thNew sargs[2]!
+      mkLambdaFVars #[q] succNew
+    let (linkC, happLam, famO) ←
+      match births.size, used.size with
+      | 0, 0 => pure (``RelSem.Seg.link_ctl,
+          ← mkLambdaFVars (#[q, hwf]) pfBody,
+          ← mkLambdaFVars #[q] succ)
+      | 0, 1 => pure (``RelSem.Seg.link_ctl_env1,
+          ← mkLambdaFVars (#[q, hwf] ++ used) pfBody,
+          ← mkLambdaFVars #[q] succ)
+      | 0, 2 => pure (``RelSem.Seg.link_ctl_env2,
+          ← mkLambdaFVars (#[q, hwf] ++ used) pfBody,
+          ← mkLambdaFVars #[q] succ)
+      | 1, 0 => pure (``RelSem.Seg.link_birth1,
+          ← mkLambdaFVars (#[q, hwf, hdom]) pfBody, ← mkBirthFamO)
+      | 1, 1 => pure (``RelSem.Seg.link_birth1_env1,
+          ← mkLambdaFVars (#[q, hwf, hdom] ++ used) pfBody,
+          ← mkBirthFamO)
+      | 2, 0 => pure (``RelSem.Seg.link_birth2,
+          ← mkLambdaFVars (#[q, hwf, hdom]) pfBody, ← mkBirthFamO)
+      | nb, nc => throwError
+          "mint: {nb} births × {nc} cell reads — no matching link"
     let b ← buildMintedLink gf gs td tid ΓE linkC famI famO happLam
+      births
     trace[RelSem.segRun] "mint: consumed one {linkC} round \
-      ({used.size} cells)"
+      ({births.size} births, {used.size} cells)"
     return MintOut.link b
   catch ex =>
     return .skip ex.toMessageData
+
+/-- THE MINT ATTEMPT at the current context. Every failure — ordinary
+    OR runtime (a deterministic-timeout inside a defeq probe) — is a
+    traced skip to the registered-supply path, never an escape. -/
+private def tryMint (gf gs td tid : Expr) (ΓE : Expr)
+    (comps : Array Expr) : MetaM MintOut :=
+  tryCatchRuntimeEx (tryMintCore gf gs td tid ΓE comps)
+    (fun ex => return .skip m!"runtime: {ex.toMessageData}")
+
+/-! NAMED-STATE COMPACTION of minted successors (the [USER
+    2026-08-24] S3 ruling applied mid-walk: giant terms in goals are
+    a representation smell — reflect the state ONCE into a named
+    constant and reference it by name, the `derive_state`
+    discipline). Two halves, both required (measured):
+    * FLATTEN the control image to a record LITERAL — the successor
+      otherwise spells "ctlOf (dnmsBump … (stateAt cPrev …))", and
+      every later kernel/elaborator computation re-reduces the whole
+      chain from round 0 (measured: 16-48G OOM by P01's else arm).
+      Flattening is pure whnf/committed-unfold — defeq-preserving —
+      and its work is bounded by PROGRAM size, not walk length: the
+      new arena is `apply_ctx` over pieces of the previous FLAT
+      arena (shared subterms), exactly the generated supply's
+      normal form.
+    * NAME the flat image as an auxiliary definition (kernel-checked,
+      fvar-closed, uncompiled), so goals carry a small constant. -/
+
+/-- Wrapper constants the field chase may unfold (state-builder
+    layers only — data constants like the arena/labeled bases are
+    deliberately NOT here, so the chase stops at them). -/
+private def chaseWhitelist : List Name :=
+  [``RelSem.Seg.stateAt, ``RelSem.Seg.threadAt, ``ctlOf,
+   ``RelSem.Kit.dnmsBump, ``eraseEnvs, ``eraseThreadEnv,
+   ``update_thread_state, ``update_core_state, ``List.map]
+
+/-- Chase a field term through the state-builder wrappers to a flat
+    subterm (whnfCore + committed whitelist unfolds; stops at
+    constructors, data constants, fvars). -/
+private def chaseField (e0 : Expr) (fuel : Nat := 32) : MetaM Expr := do
+  let mut cur ← whnfCore e0
+  let mut fuel := fuel
+  while fuel > 0 do
+    let fn := cur.getAppFn
+    unless fn.isConst && chaseWhitelist.contains fn.constName! do
+      return cur
+    let some nxt ← withProbeBudget (Meta.unfoldDefinition? cur)
+      | return cur
+    cur ← whnfCore nxt
+    fuel := fuel - 1
+  return cur
+
+/-- Chase to a specific constructor (record spines; unfolds ANY
+    constant head — records only, bounded). -/
+private def chaseToCtor (e0 : Expr) (ctor : Name) (arity : Nat)
+    (fuel : Nat := 32) : MetaM Expr := do
+  let mut cur ← whnfCore e0
+  let mut fuel := fuel
+  while fuel > 0 && !cur.isAppOfArity ctor arity do
+    unless cur.getAppFn.isConst do break
+    let some nxt ← withProbeBudget (Meta.unfoldDefinition? cur)
+      | break
+    cur ← whnfCore nxt
+    fuel := fuel - 1
+  unless cur.isAppOfArity ctor arity do
+    throwError "seg_run compact: could not flatten to {ctor}:\
+      {indentExpr e0}"
+  return cur
+
+/-- Nat fields (counters/supplies): kernel-evaluate to literals. -/
+private def chaseNat (e : Expr) : MetaM Expr := do
+  match ← kwhnf? e with
+  | some r => pure r
+  | none => pure e
+
+/-- Flatten a driver_state CONTROL IMAGE to a record literal (defeq-
+    preserving; bounded by program size). -/
+private def flattenCtl (e : Expr) : MetaM Expr := do
+  let ds ← chaseToCtor e ``driver_state.mk 11
+  let mut f := ds.getAppArgs
+  -- core_state0
+  let cs ← chaseToCtor f[2]! ``core_state.mk 2
+  let mut csf := cs.getAppArgs
+  -- thread_states: single-thread spine
+  let ths ← chaseToCtor csf[0]! ``List.cons 3
+  let mut thsA := ths.getAppArgs
+  let pair ← chaseToCtor thsA[1]! ``Prod.mk 4
+  let mut pairA := pair.getAppArgs
+  let inner ← chaseToCtor pairA[3]! ``Prod.mk 4
+  let mut innerA := inner.getAppArgs
+  let th ← chaseToCtor innerA[3]! ``thread_state.mk 7
+  let mut thA := th.getAppArgs
+  for i in [0:7] do
+    if i == 3 then
+      -- the env spine (erased frames)
+      thA := thA.set! 3 (← chaseField thA[3]! (fuel := 48))
+    else
+      thA := thA.set! i (← chaseField thA[i]!)
+  innerA := innerA.set! 3 (mkAppN th.getAppFn thA)
+  pairA := pairA.set! 2 (← chaseField pairA[2]!)
+  pairA := pairA.set! 3 (mkAppN inner.getAppFn innerA)
+  thsA := thsA.set! 1 (mkAppN pair.getAppFn pairA)
+  thsA := thsA.set! 2 (← chaseField thsA[2]!)
+  csf := csf.set! 0 (mkAppN ths.getAppFn thsA)
+  csf := csf.set! 1 (← chaseField csf[1]!)
+  f := f.set! 2 (mkAppN cs.getAppFn csf)
+  -- core_run_state0: supplies to literals, labeled chased-not-expanded
+  let crs ← chaseToCtor f[3]! ``core_run_state.mk 5
+  let mut crsA := crs.getAppArgs
+  for i in [0:4] do
+    crsA := crsA.set! i (← chaseNat crsA[i]!)
+  crsA := crsA.set! 4 (← chaseField crsA[4]!)
+  f := f.set! 3 (mkAppN crs.getAppFn crsA)
+  -- the remaining fields
+  for i in [0:11] do
+    if i == 2 || i == 3 then continue
+    if i == 10 then
+      f := f.set! i (← chaseNat f[i]!)   -- dr_step_counter
+    else
+      f := f.set! i (← chaseField f[i]!)
+  return mkAppN ds.getAppFn f
+
+private def compactLink (base : Name) (b : BuiltLink) :
+    MetaM BuiltLink := do
+  let Δw ← whnfCore b.delta
+  unless Δw.isAppOfArity ``RelSem.Seg.Ctx.mk 6 do return b
+  let comps := Δw.getAppArgs
+  let c ← instantiateMVars comps[0]!
+  if c.getAppFn.isConst && c.getAppNumArgs ≤ 4 then return b
+  let cFlat ← flattenCtl c
+  let n ← mkAuxDeclName (kind := base.componentsRev.head! ++ `segCtl)
+  let cAux ← mkAuxDefinition n (mkConst ``driver_state) cFlat
+    (compile := false)
+  let delta := mkAppN (mkConst ``RelSem.Seg.Ctx.mk) (comps.set! 0 cAux)
+  return { b with delta }
 
 /-- Parse the seg_run goal:
     `Ctx.interp Γ ⊢ WP (dnmsK td F acc tid xs' k) @ s ; E {{Φ}}`. -/
@@ -1236,15 +1526,27 @@ private def segRunCore (mint : Bool) : TacticM Unit := do
       match built with
       | some b => return Sum.inl b
       | none =>
-        return Sum.inr m!"no link applies at{indentExpr c}\n\
-          {failures}\n(if two candidates differ only in a \
-          path condition, case-split first — this is a BRANCH cut \
-          point)"
+        -- the context/failure DETAILS render giant mint-spelled
+        -- terms (measured 48G OOM at trace time) — they live behind
+        -- the detail class; the standing message stays cheap
+        trace[RelSem.segRun.detail] "no link applies at\
+          {indentExpr c}\n{failures}"
+        return Sum.inr m!"no link applies \
+          ({cands.size} round candidates; enable \
+          trace.RelSem.segRun.detail for the per-candidate reasons) \
+          — if two candidates differ only in a path condition, \
+          case-split first: this is a BRANCH cut point"
     match stepRes with
     | Sum.inl b =>
+      let b ← if b.minted then do
+          let base := (← Elab.Term.getDeclName?).getD `segRun
+          compactLink base b
+        else pure b
       links := links.push b
       ΓE := b.delta
-      trace[RelSem.segRun] "link {links.size}: → {b.delta}"
+      trace[RelSem.segRun] "link {links.size}: +{b.n} round(s)\
+        {if b.minted then " (minted)" else ""}"
+      trace[RelSem.segRun.detail] "link {links.size}: → {b.delta}"
     | Sum.inr msg =>
       stopMsg := msg
       running := false
