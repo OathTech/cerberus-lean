@@ -824,20 +824,36 @@ private partial def crossToResult (cellFVars : Array Expr) (lhs : Expr)
   | fuel + 1 =>
   let lhsW ← whnfCore lhs
   let fn := lhsW.getAppFn
-  -- committed kernel-evaluation guard over the ATOMIC unit: bind
-  -- heads always descend (each inner unit gets its own
-  -- classification); any other unit goes to the kernel only when
-  -- every PE* constructor in it is in the safe set
+  -- committed kernel-evaluation guard: bind heads always DESCEND
+  -- (each inner unit gets its own classification); EVAL-ENTRY heads
+  -- go to the kernel only when their REDEX's PE* constructors lie in
+  -- the safe set (program syntax carried as DATA — result values,
+  -- read continuations — is harmless: only the evaluator applied to
+  -- a guard/conv/case redex can run the fuel loop away)
   let isBind := fn.isConstOf ``stExceptUndef_bind
-  let safe := peSafePayload lhsW
+  let isEntry := fn.isConst && evalEntryConsts.contains fn.constName!
+  let safe ←
+    if isEntry then do
+      -- the redex = the last pexpr-TYPED argument (spellings vary:
+      -- bare `Pexpr …` or `convert_pexpr …`; the PE* scan sees
+      -- through both)
+      let mut pe? : Option Expr := none
+      for a in lhsW.getAppArgs.reverse do
+        if pe?.isNone then
+          let aTy ← whnf (← inferType a)
+          if aTy.isAppOf ``generic_pexpr then pe? := some a
+      match pe? with
+      | some pe => pure (peSafePayload pe)
+      | none => pure false
+    else pure true
   if !isBind && safe then
     if let some (z, st', rhs) ← resultParts? lhsW then
       return (z, st', rhs, ← mkLhsRflHint lhs rhs)
-  if fn.isConst && evalEntryConsts.contains fn.constName! && !safe then
+  if isEntry && !safe then
     -- an eval entry at a guard/conv/case redex: NEVER single-step it
     -- through elaborator unfolds (the r127 grind) — fall back loudly
     throwError "mint: eval payload outside the construct set \
-      (guard/conv/case class) — supply fallback"
+      (guard/conv/case class) — supply fallback:{indentExpr lhsW}"
   if isBind then
     let args := lhsW.getAppArgs
     unless args.size ≥ 3 do
@@ -876,13 +892,24 @@ private partial def crossToResult (cellFVars : Array Expr) (lhs : Expr)
     unless args.size ≥ 2 do
       throwError "mint: runEU arity at{indentExpr lhsW}"
     let M ← whnfCore args[args.size - 2]!
-    let pe ←
+    let pe0 ←
       if M.isAppOf ``eval_pexpr_aux2 || M.isAppOf ``eval_pexpr_aux2_lemFuel
       then whnfCore M.getAppArgs.back!
       else throwError "mint: runEU inner is not an aux2 entry \
         (head {M.getAppFn})"
+    -- chase annotation-conversion wrappers (convert_pexpr spellings)
+    -- to the Pexpr constructor
+    let mut pe := pe0
+    let mut peFuel := 12
+    while peFuel > 0 && !pe.isAppOf ``Pexpr do
+      unless pe.getAppFn.isConst do break
+      let some nxt ← withProbeBudget (Meta.unfoldDefinition? pe)
+        | break
+      pe ← whnfCore nxt
+      peFuel := peFuel - 1
     unless pe.isAppOf ``Pexpr do
-      throwError "mint: aux2 argument is not a Pexpr ctor"
+      throwError "mint: aux2 argument is not a Pexpr ctor \
+        (head {pe.getAppFn})"
     let payload ← whnfCore pe.getAppArgs.back!
     let lem ←
       if payload.isAppOf ``PEsym then
@@ -898,7 +925,8 @@ private partial def crossToResult (cellFVars : Array Expr) (lhs : Expr)
   else if fn.isConst then
     -- committed unfold toward a keyed head (the seg_peels discipline)
     let some nxt ← withProbeBudget (Meta.unfoldDefinition? lhsW)
-      | throwError "mint: unkeyed head {fn} — outside the construct set"
+      | throwError "mint: unkeyed head {fn} — outside the construct \
+          set:{indentExpr lhsW}"
     crossToResult cellFVars nxt fuel
   else
     throwError "mint: non-constant head at{indentExpr lhsW}"
@@ -1027,16 +1055,28 @@ private def chaseWhitelist : List Name :=
 /-- Chase a field term through the state-builder wrappers to a flat
     subterm (whnfCore + committed whitelist unfolds; stops at
     constructors, data constants, fvars). -/
-private def chaseField (e0 : Expr) (fuel : Nat := 32) : MetaM Expr := do
+private partial def chaseField (e0 : Expr) (fuel : Nat := 32) :
+    MetaM Expr := do
   let mut cur ← whnfCore e0
   let mut fuel := fuel
   while fuel > 0 do
     let fn := cur.getAppFn
-    unless fn.isConst && chaseWhitelist.contains fn.constName! do
+    let isSegCtlAux := fn.isConst
+      && (fn.constName!.toString.splitOn "segCtl").length > 1
+    if fn.isConst
+        && (chaseWhitelist.contains fn.constName! || isSegCtlAux) then
+      let some nxt ← withProbeBudget (Meta.unfoldDefinition? cur)
+        | return cur
+      cur ← whnfCore nxt
+    else if fn.isConst && cur.getAppNumArgs ≥ 1
+        && ((← getEnv).getProjectionFnInfo? fn.constName!).isSome then
+      -- a stuck projection: chase its STRUCT argument (the builder
+      -- layers live there), rebuild, and reduce again
+      let inner ← chaseField cur.appArg! fuel
+      if inner == cur.appArg! then return cur
+      cur ← whnfCore (mkApp cur.appFn! inner)
+    else
       return cur
-    let some nxt ← withProbeBudget (Meta.unfoldDefinition? cur)
-      | return cur
-    cur ← whnfCore nxt
     fuel := fuel - 1
   return cur
 
@@ -1816,7 +1856,8 @@ private def segRunCore (mint : Bool) : TacticM Unit := do
         -- the detail class; the standing message stays cheap
         trace[RelSem.segRun.detail] "no link applies at\
           {indentExpr c}\n{failures}"
-        return Sum.inr m!"no link applies \
+        return Sum.inr m!"no link applies at Γ = \
+          {ΓE} \
           ({cands.size} round candidates; enable \
           trace.RelSem.segRun.detail for the per-candidate reasons) \
           — if two candidates differ only in a path condition, \

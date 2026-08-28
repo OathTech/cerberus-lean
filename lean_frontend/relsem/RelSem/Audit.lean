@@ -876,6 +876,7 @@ open Lean in
      (`RelSem.Slate.t3File, RelSem.Slate.t3Prior, "t3Prior"),
      (`RelSem.Slate.t4File, RelSem.Slate.t4Prior, "t4Prior"),
      (`RelSem.Slate.t5File, RelSem.Slate.t5Prior, "t5Prior"),
+     (`RelSem.Slate.m1File, RelSem.Slate.m1Prior, "m1Prior"),
      (`RelSem.Corpus.p01File, RelSem.Corpus.p01Prior, "p01Prior"),
      (`RelSem.Corpus.p02File, RelSem.Corpus.p02Prior, "p02Prior"),
      (`RelSem.Corpus.p03File, RelSem.Corpus.p03Prior, "p03Prior"),
@@ -1678,7 +1679,7 @@ open Lean in
 -- [PerStepPeel, CerbStateAdequacy §V2] — the big-step↔small-step
 -- simulation infrastructure; same-commit provenance).
 /--
-info: RelSem audit sweep: 5050 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 5056 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do

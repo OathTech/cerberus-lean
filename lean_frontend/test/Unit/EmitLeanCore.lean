@@ -582,7 +582,10 @@ def slatePlan : List (String × String × String) :=
   [("t2_add", "add", "addT2"),
    ("t3_roundtrip", "roundtrip", "roundtripT3"),
    ("t4_struct_member", "memb", "membT4"),
-   ("t5_sum", "sum", "sumT5")]
+   ("t5_sum", "sum", "sumT5"),
+   -- V3a (2026-08-28): the PERF-2 tightened-exit pre-registered
+   -- program (docs/2026-08-29_v3a-loops-mechC.md §2)
+   ("m1_sgn", "sgn", "sgnM1")]
 
 def slateHeader : String :=
 "/-
