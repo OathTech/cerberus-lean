@@ -39,6 +39,7 @@ import RelSem.Threaded
 import RelSem.T1Threaded
 import RelSem.CerbStateRA
 import RelSem.CerbStateStep
+import RelSem.SegRun
 
 set_option autoImplicit false
 
@@ -191,14 +192,11 @@ theorem ctlOf_t1σ (arena : RExpr) (f₁ : Fmap sym value)
     (tr : List trace_event) (n : Nat) :
     ctlOf (t1σ arena f₁ tS aS eS sS ls tr n) = t1CtlAt arena tr n := rfl
 
-/-- The family parameter pack. -/
-structure T1P where
-  f₁ : Fmap sym value
-  tS : Nat
-  aS : Nat
-  eS : Nat
-  sS : Nat
-  ls : CerbMem.MemState
+/-- The family parameter pack (V2b: re-homed to the engine's
+    `Seg.Pack` — same fields, so every pack literal and `{p with …}`
+    update below is unchanged; the segment links are generic over
+    the ONE pack shape). -/
+abbrev T1P := RelSem.Seg.Pack
 
 /-- The family, packaged (what the `_fam` rules consume). -/
 @[reducible] def t1fam (arena : RExpr) (tr : List trace_event) (n : Nat)

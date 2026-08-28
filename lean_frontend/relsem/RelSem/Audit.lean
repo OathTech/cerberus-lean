@@ -1235,7 +1235,11 @@ open Lean in
 -- (the T1 per-round engine + proof), pulling PerStepPeel/PerStepObs
 -- in — envMap +1, stateWP +1 previously outside the closure —
 -- same-commit provenance.)
-/-- info: step_law census: 99 laws [advance 5, construct 9, envAlg 3, envMap 7, evalArith 2, evalPull 9, heapWP 4, loop 1, memBlock 7, memRW 21, perform 6, roundGlue 3, stateWP 22] -/
+-- (99 → 107, V2b segment layer: segLink +8 [link_ctl/env1/env2/
+-- birth1/birth1_env1/birth2/load + seg_done] — the block-fused
+-- link rules over the canonical context (RelSem/SegRun.lean);
+-- same-commit provenance.)
+/-- info: step_law census: 107 laws [advance 5, construct 9, envAlg 3, envMap 7, evalArith 2, evalPull 9, heapWP 4, loop 1, memBlock 7, memRW 21, perform 6, roundGlue 3, segLink 8, stateWP 22] -/
 #guard_msgs in #step_law_census
 -- (V0 2026-08-27, THE KILL BASKET — record
 -- docs/2026-08-27_v0-statements-and-ban.md: the T1–T5 threaded
@@ -1657,7 +1661,7 @@ open Lean in
 -- [PerStepPeel, CerbStateAdequacy §V2] — the big-step↔small-step
 -- simulation infrastructure; same-commit provenance).
 /--
-info: RelSem audit sweep: 3769 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 3865 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do
