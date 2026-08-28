@@ -22,6 +22,7 @@
 import RelSem.P01Rounds
 import RelSem.T1Proof
 import RelSem.CorpusStatements
+import RelSem.SegmentFaces
 
 set_option autoImplicit false
 
@@ -1361,22 +1362,26 @@ theorem p01_wp (x : Int) (hx1 : -2147483648 ≤ x)
 
 /-! ## THE P01 THEOREMS -/
 
-/-- **P01 (clamp) PROVED** — the registered statement, discharged
-    through the per-round assertion layer. -/
+/-- P01's spec as an `FnSpec` — `verify_fn`'s role-1 object (V2
+    revival at the Cns faces; must be reducible for the bridge's
+    unification against the byte-stable statement text). -/
+abbrev p01FnSpec : Seg.FnSpec Int :=
+  { fname := "clamp0",
+    args := fun x => [intValue x],
+    pre := fun x => T1.intRange x,
+    post := fun x r => p01Spec x r }
+
+/-- **P01 (clamp) PROVED** — the registered statement, bridged by
+    `verify_fn` (statement → the ∀-seed callK2 ledger sequent),
+    discharged by the per-round assertion layer. -/
 theorem p01_proved : P01Statement := by
-  intro henv x hx
-  obtain ⟨hx1, hx2⟩ := hx
-  exact kCallHarnessAdequateCnsSt_of_wp2 (GF := CerbStS) p01Prior
-    p01File.tagDefs p01File "clamp0" [intValue x] corpusFs
-    (p01Spec x) (fun seed inst => p01_wp x hx1 hx2 seed)
+  verify_fn p01FnSpec
+  exact p01_wp a ha.1 ha.2 seed
 
 /-- **P01 UB-freedom PROVED** (the same WP discharges it). -/
 theorem p01_ubfree_proved : P01UBFreeStatement := by
-  intro henv x hx
-  obtain ⟨hx1, hx2⟩ := hx
-  exact kCallHarnessUBFreeCnsSt_of_wp2 (GF := CerbStS) p01Prior
-    p01File.tagDefs p01File "clamp0" [intValue x] corpusFs
-    (p01Spec x) (fun seed inst => p01_wp x hx1 hx2 seed)
+  verify_fn p01FnSpec
+  exact p01_wp a ha.1 ha.2 seed
 
 end RelSem.P01
 

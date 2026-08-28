@@ -466,6 +466,65 @@ theorem FnSpec.dischargeUBThr {A : Type} {S : FnSpec A}
   intro _
   exact Hwp seed a hg ha
 
+/-! ### Role 1 at the Cns faces (V2 re-target, 2026-08-28): the
+    registered statements live at the consistency quantification
+    (`CallHarnessAdequateCns`, V0 restatement) — `verify_fn` bridges
+    them to ONE ∀-seed WP obligation at the ledger-carrying `callK2`
+    sequent (the per-round assertion layer's entry form). The Thr
+    faces above remain for the legacy seed-guarded shapes until their
+    last consumer retires. -/
+
+/-- Role 1 at the Cns face: Verified over consistent executions at
+    every spec parameter (guard field unused — env pins enter as the
+    statement's leading hypothesis, discarded by the bridge). -/
+def FnSpec.VerifiedCns {A : Type} (S : FnSpec A) (prior : List Nat)
+    (file1 : file core_run_annotation) (fs : CerbFS.FsState) : Prop :=
+  ∀ a : A, S.pre a →
+    CallHarnessAdequateCns prior file1.tagDefs file1 S.fname
+      (S.args a) fs (S.post a)
+
+/-- The Cns UB-freedom companion. -/
+def FnSpec.VerifiedUBCns {A : Type} (S : FnSpec A) (prior : List Nat)
+    (file1 : file core_run_annotation) (fs : CerbFS.FsState) : Prop :=
+  ∀ a : A, S.pre a →
+    CallHarnessUBFreeCns prior file1.tagDefs file1 S.fname
+      (S.args a) fs
+
+/-- The Cns WP obligation: the `callK2` sequent with the domain
+    ledger seeded empty (what the per-round proofs discharge). -/
+def FnSpec.WpObCns {A : Type} (S : FnSpec A)
+    (file1 : file core_run_annotation) (fs : CerbFS.FsState)
+    (GF : BundledGFunctors) [CerbStGpreS GF] : Prop :=
+  ∀ (seed : Nat) (a : A), S.pre a → ∀ [CerbStGS GF],
+    (ctlIs (GF := GF) stHalf
+        (ctlOf (initial_driver_state_threaded seed file1 fs)) ∗
+      supIs stHalf
+        (suppliesOf (initial_driver_state_threaded seed file1 fs)) ∗
+      mrestIs stHalf
+        (memRestOf (initial_driver_state_threaded seed file1 fs)) ∗
+      domIs stHalf ([] : List Int)) ⊢
+      WP (callK2 file1.tagDefs file1 S.fname (S.args a))
+        @ Stuckness.NotStuck ; ⊤
+        {{ o, ⌜∃ r : driver_result, o = Outcome.value r ∧ S.post a r⌝ }}
+
+/-- ROLE 1 DISCHARGE at the Cns face (proved once). -/
+theorem FnSpec.dischargeCns {A : Type} {S : FnSpec A}
+    {prior : List Nat} {file1 : file core_run_annotation}
+    {fs : CerbFS.FsState} {GF : BundledGFunctors} [CerbStGpreS GF]
+    (Hwp : S.WpObCns file1 fs GF) : S.VerifiedCns prior file1 fs := by
+  intro a ha
+  exact kCallHarnessAdequateCnsSt_of_wp2 (GF := GF) prior file1.tagDefs
+    file1 S.fname (S.args a) fs (S.post a) (fun seed => Hwp seed a ha)
+
+/-- The Cns UB-freedom twin (same `Hwp`). -/
+theorem FnSpec.dischargeUBCns {A : Type} {S : FnSpec A}
+    {prior : List Nat} {file1 : file core_run_annotation}
+    {fs : CerbFS.FsState} {GF : BundledGFunctors} [CerbStGpreS GF]
+    (Hwp : S.WpObCns file1 fs GF) : S.VerifiedUBCns prior file1 fs := by
+  intro a ha
+  exact kCallHarnessUBFreeCnsSt_of_wp2 (GF := GF) prior file1.tagDefs
+    file1 S.fname (S.args a) fs (S.post a) (fun seed => Hwp seed a ha)
+
 /-! ### Role 2 — the call-boundary segment (the Hoare procedure rule)
 
     A call boundary (`SegPoint.call f`) consumes the callee's SUMMARY:

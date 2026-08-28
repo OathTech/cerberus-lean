@@ -580,8 +580,11 @@ elab "seg_env_lookup" : tactic => do
 /-! ## §4 `verify_fn` -/
 
 /-! `verify_fn <spec>`: statement → WP obligation through the FnSpec
-    (role 1) + threaded heap-route adequacy. Handles the closed and
-    one/two-parameter, unguarded and guarded statement shapes, and
+    (role 1) + threaded heap-route adequacy. Handles the V2 Cns
+    statement shapes (EnvHyp → params → ranges → CallHarness…Cns;
+    bridges to the ∀-seed `callK2` ledger sequent, left RAW for an
+    `exact <whole-fn wp lemma>`) and the legacy Thr closed and
+    one/two-parameter, unguarded and guarded shapes, and
     both the adequacy and UB-freedom faces. The fixture's spec must
     be REDUCIBLE (`abbrev`) — its projections are unified against the
     byte-stable statement text. Leaves the WP obligation introduced,
@@ -592,6 +595,7 @@ elab "seg_env_lookup" : tactic => do
     against the whole adequacy statement and burn real budget. -/
 private inductive StmtShape
   | closed | closedGuarded | oneParam | oneParamGuarded | twoParam
+  | cnsClosed | cnsOneParam | cnsTwoParam
 
 private def classifyStmt : TacticM StmtShape := do
   let tgt ← getMainTarget
@@ -603,9 +607,30 @@ private def classifyStmt : TacticM StmtShape := do
     let isP (e : Expr) : MetaM Bool := do pure (← inferType e).isProp
     if h0 : 0 < doms.size then
       if ← isP doms[0] then
-        -- guarded family: EnvHyp → ∀ seed, Apart → …
-        if h3 : 3 < doms.size then
-          if isInt doms[3] then return .oneParamGuarded
+        -- leading Prop: either the Cns family (EnvHyp → ∀ params,
+        -- ranges → CallHarness…Cns; V2 re-target — the param binders
+        -- are Ints IMMEDIATELY after the hyp, no seed binder) or the
+        -- legacy Thr guarded family (EnvHyp → ∀ seed, Apart → …;
+        -- seed : Nat right after the hyp).
+        if h1 : 1 < doms.size then
+          if isInt doms[1] then
+            if h2 : 2 < doms.size then
+              if isInt doms[2] then return .cnsTwoParam
+              else return .cnsOneParam
+            else return .cnsOneParam
+          else if isNat doms[1] then
+            if h2 : 2 < doms.size then
+              if ← isP doms[2] then
+                -- Thr guarded family: EnvHyp → ∀ seed, Apart → …
+                if h3 : 3 < doms.size then
+                  if isInt doms[3] then return .oneParamGuarded
+                  else return .closedGuarded
+                else return .closedGuarded
+              else
+                -- the Cns face's own seed binder (the statement body
+                -- unfolded): EnvHyp → ∀ seed out …
+                return .cnsClosed
+            else return .closedGuarded
           else return .closedGuarded
         else return .closedGuarded
       else if isNat doms[0] then
@@ -630,12 +655,18 @@ elab "verify_fn" spec:term : tactic => do
     | .oneParam => `(tactic| refine fun seed a ha => RelSem.Seg.FnSpec.dischargeThr (S := $spec) (GF := RelSem.CerbSt.CerbStS) ?_ seed a trivial ha)
     | .oneParamGuarded => `(tactic| refine fun henv seed hap a ha => RelSem.Seg.FnSpec.dischargeThr (S := $spec) (GF := RelSem.CerbSt.CerbStS) ?_ seed a ⟨henv, hap⟩ ha)
     | .twoParam => `(tactic| refine fun seed x y h1 h2 h3 => RelSem.Seg.FnSpec.dischargeThr (S := $spec) (GF := RelSem.CerbSt.CerbStS) ?_ seed (x, y) trivial ⟨h1, h2, h3⟩)
+    | .cnsClosed => `(tactic| refine fun henv => RelSem.Seg.FnSpec.dischargeCns (S := $spec) (GF := RelSem.CerbSt.CerbStS) ?_ () trivial)
+    | .cnsOneParam => `(tactic| refine fun henv a ha => RelSem.Seg.FnSpec.dischargeCns (S := $spec) (GF := RelSem.CerbSt.CerbStS) ?_ a ha)
+    | .cnsTwoParam => `(tactic| refine fun henv x y hx hy => RelSem.Seg.FnSpec.dischargeCns (S := $spec) (GF := RelSem.CerbSt.CerbStS) ?_ (x, y) ⟨hx, hy⟩)
   let altB : TSyntax `tactic ← match shape with
     | .closed => `(tactic| refine fun seed => RelSem.Seg.FnSpec.dischargeUBThr (S := $spec) (GF := RelSem.CerbSt.CerbStS) ?_ seed () trivial trivial)
     | .closedGuarded => `(tactic| refine fun henv seed hap => RelSem.Seg.FnSpec.dischargeUBThr (S := $spec) (GF := RelSem.CerbSt.CerbStS) ?_ seed () ⟨henv, hap⟩ trivial)
     | .oneParam => `(tactic| refine fun seed a ha => RelSem.Seg.FnSpec.dischargeUBThr (S := $spec) (GF := RelSem.CerbSt.CerbStS) ?_ seed a trivial ha)
     | .oneParamGuarded => `(tactic| refine fun henv seed hap a ha => RelSem.Seg.FnSpec.dischargeUBThr (S := $spec) (GF := RelSem.CerbSt.CerbStS) ?_ seed a ⟨henv, hap⟩ ha)
     | .twoParam => `(tactic| refine fun seed x y h1 h2 h3 => RelSem.Seg.FnSpec.dischargeUBThr (S := $spec) (GF := RelSem.CerbSt.CerbStS) ?_ seed (x, y) trivial ⟨h1, h2, h3⟩)
+    | .cnsClosed => `(tactic| refine fun henv => RelSem.Seg.FnSpec.dischargeUBCns (S := $spec) (GF := RelSem.CerbSt.CerbStS) ?_ () trivial)
+    | .cnsOneParam => `(tactic| refine fun henv a ha => RelSem.Seg.FnSpec.dischargeUBCns (S := $spec) (GF := RelSem.CerbSt.CerbStS) ?_ a ha)
+    | .cnsTwoParam => `(tactic| refine fun henv x y hx hy => RelSem.Seg.FnSpec.dischargeUBCns (S := $spec) (GF := RelSem.CerbSt.CerbStS) ?_ (x, y) ⟨hx, hy⟩)
   let mut bridged := false
   for t in [altA, altB] do
     if !bridged then
@@ -644,8 +675,19 @@ elab "verify_fn" spec:term : tactic => do
     throwError "verify_fn: the goal is not a recognized threaded \
       statement shape for this spec (closed/guarded, one/two-parameter, \
       adequacy or UB-freedom face)"
-  evalTactic (← `(tactic| intro seed a hg ha _inst))
-  evalTactic (← `(tactic| iintro Hst))
+  match shape with
+  | .cnsClosed | .cnsOneParam | .cnsTwoParam =>
+    -- Cns modes leave the RAW callK2 sequent (∀ seed a intro'd — via
+    -- mkIdent, so the names are user-accessible): the per-round
+    -- layer's whole-function WP lemma plugs by `exact`.
+    let seedId := mkIdent `seed
+    let aId := mkIdent `a
+    let haId := mkIdent `ha
+    let instId := mkIdent `_inst
+    evalTactic (← `(tactic| intro $seedId:ident $aId:ident $haId:ident $instId:ident))
+  | _ =>
+    evalTactic (← `(tactic| intro seed a hg ha _inst))
+    evalTactic (← `(tactic| iintro Hst))
 
 /-! ## (§5 — `seg_auto`, the registry-driven segment walker —
     DELETED at V1 2026-08-28: its applier set was exactly the

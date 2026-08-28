@@ -1217,6 +1217,10 @@ open Lean in
 -- [ctl-sup-mem + alloc-store] — same-commit provenance.)
 -- (87 → 90, V2 C3: evalPull +2 [se_call + aux2_sym_hit], stateWP +1
 -- [read-ctl-dom] — same-commit provenance.)
+-- (sweep 3752 → 3769, V2 verify_fn revival: the FnSpec Cns role
+-- [VerifiedCns/VerifiedUBCns/WpObCns/dischargeCns/dischargeUBCns] +
+-- the Cns statement shapes + p01FnSpec; p01_proved/p01_ubfree_proved
+-- re-routed THROUGH verify_fn — same-commit provenance.)
 -- (96 → 99, V2 T3: stateWP +3 [ctl-sup-alloc + ctl-sup-store +
 -- ctl-sup-kill — the memory-writing round classes]; sweep
 -- 3590 → 3752 (the closure gains T3Rounds/T3Proof) — same-commit
@@ -1653,7 +1657,7 @@ open Lean in
 -- [PerStepPeel, CerbStateAdequacy §V2] — the big-step↔small-step
 -- simulation infrastructure; same-commit provenance).
 /--
-info: RelSem audit sweep: 3752 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 3769 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do
