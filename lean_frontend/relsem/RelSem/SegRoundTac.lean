@@ -141,7 +141,105 @@ theorem runEU_aux2_ctor2 {A : Type}
       (by rfl)
   rw [h]
 
+/-- `hnc` from the spine verdict. -/
+theorem hnc_of_notConstrained {peP : generic_pexpr Unit sym}
+    (h : notConstrained peP = true) :
+    ∀ (a : List annot)
+      (xs : List (mem_iv_constraint × generic_pexpr Unit sym)),
+      peP ≠ Pexpr a () (PEconstrained xs) := by
+  intro a xs he
+  subst he
+  simp [notConstrained] at h
+
+/-- THE ONE-STEP-THEN-REST SKELETON: one aux2 iteration (the pull by
+    the computable SPINE — assigns the pulled redex REDUCED; the step
+    by a per-shape `se_*` law, where the cell reads enter), then the
+    REST of the loop — which is a CLOSED computation once the read
+    values are plugged, so `rfl` at instances. This is what makes the
+    two-cell verdict/conv rounds statements-only. -/
+theorem runEU_aux2_step_then {A : Type}
+    {tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)}
+    {loc : CerbLocation.Loc} {cloc : Option CerbLocation.Loc}
+    {ext : Fmap sym sym} {env : List (Fmap sym value)}
+    {memo : Option CerbMem.MemState}
+    {file1 : file core_run_annotation}
+    {pe peP pe' : generic_pexpr Unit sym}
+    {z : Sum (generic_pexpr Unit sym) value} {st : A}
+    (hspine : pullSpine 1000000 pe = some peP)
+    (hstep : step_eval_pexpr tagDefs 0 loc cloc ext env memo file1
+        false peP = Result (Defined pe'))
+    (hnv : valueFromPexpr pe' = none)
+    (hrest : eval_pexpr_aux2_lemFuel 999999 tagDefs loc cloc ext env
+        memo file1 pe' = Result (Defined z)) :
+    runEU (eval_pexpr_aux2 tagDefs loc cloc ext env memo file1 pe) st
+      = runEU (Result (Defined z)) st := by
+  have hpull : pull_constrained 0 pe = peP := by
+    show pull_constrained_lemFuel 1000000 0 pe = peP
+    exact pull_constrained_spine 1000000 pe peP 0 hspine
+  have h : eval_pexpr_aux2 tagDefs loc cloc ext env memo file1 pe
+      = Result (Defined z) := by
+    show eval_pexpr_aux2_lemFuel (999999 + 1) tagDefs loc cloc ext env
+      memo file1 pe = _
+    exact (aux2_step 999999 _ _ _ _ _ _ _ hpull
+      (hnc_of_notConstrained (pullSpine_notConstrained hspine))
+      hstep hnv).trans hrest
+  rw [h]
+
 /-! ## The round tactics -/
+
+/-- The eumapM element chain (closed args by rfl, sym args by the
+    hit law at the round's cell facts). -/
+syntax "seg_eumapM" : tactic
+macro_rules
+  | `(tactic| seg_eumapM) =>
+    `(tactic| first
+        | exact eumapM_nil
+        | (refine eumapM_cons (b := ?_) (bs := ?_) ?_ ?_
+           rotate_left 2
+           · first
+             | rfl
+             | (refine se_sym_hit (v := ?_) ?_ ?_
+                rotate_left 1
+                · rfl
+                · assumption)
+           · seg_eumapM))
+
+/-- The scrutinee/operand sub-eval solver: closed by rfl, a sym cell
+    hit, or a Ctuple of sym cells. -/
+syntax "seg_se_scrut" : tactic
+macro_rules
+  | `(tactic| seg_se_scrut) =>
+    `(tactic| first
+        | rfl
+        | (refine se_sym_hit (v := ?_) ?_ ?_
+           rotate_left 1
+           · rfl
+           · assumption)
+        | (refine se_ctor_tuple (pes' := ?_) (cvals := ?_) ?_ ?_
+           rotate_left 2
+           · seg_eumapM
+           · rfl))
+
+/-- The per-shape single-step solver (the `hstep` of the skeleton):
+    closed steps by rfl; the case with cell-fed scrutinee + arm
+    select; the call with cell-fed args. -/
+syntax "seg_se_step" : tactic
+macro_rules
+  | `(tactic| seg_se_step) =>
+    `(tactic| first
+        | rfl
+        | (refine se_case_sel (pa := ?_) (pb := ()) (cval := ?_)
+            (a2 := ?_) (b2 := ?_) (pe2 := ?_) ?_ ?_
+           rotate_left 5
+           · seg_se_scrut
+           · rfl)
+        | (refine se_call (pes' := ?_) (cvals := ?_) (peA := ?_)
+            (pe_' := ?_) (a2 := ?_) (pe'' := ?_) ?_ ?_ ?_ ?_
+           rotate_left 6
+           · seg_eumapM
+           · rfl
+           · rfl
+           · rfl))
 
 /-- The eval sub-chain: peel `stExceptUndef_bind` stubs (values forced
     by unification), close leaves by `rfl` or the one-hit `aux2` sym
@@ -164,6 +262,15 @@ macro_rules
              ?_ ?_ ?_ ?_ ?_).trans ?_
            rotate_left 2
            all_goals first | assumption | rfl)
+        | (show runEU (eval_pexpr_aux2 _ _ _ _ _ _ _ _) _ = _
+           refine (RelSem.Seg.runEU_aux2_step_then (peP := ?_)
+             (pe' := ?_) (z := ?_) ?_ ?_ ?_ ?_).trans ?_
+           rotate_left 3
+           · rfl
+           · seg_se_step
+           · rfl
+           · rfl
+           · first | assumption | rfl)
         | (show stExceptUndef_bind _ _ _ = _
            refine (stub_defined (z := ?_) (st' := ?_) ?_).trans ?_
            rotate_left 2
