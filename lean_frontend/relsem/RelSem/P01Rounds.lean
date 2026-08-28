@@ -1681,3 +1681,352 @@ theorem p01r18F (x : Int) (p : T1P) :
   exact (advance_runstate_eval (th' := p01Th (p01ar19 Vfalse) p.f₁)
     (rs' := (p01fam (p01ar18 1) [meLoad x] 17 p).core_run_state0)
     rfl).trans rfl
+
+/-- R20, TRUE side: the Eif reads the guard cell a_526 = Vtrue and
+    picks the then-arm. -/
+theorem p01r20T (x : Int) (p : T1P)
+    (ha : envLookup (p01fam p01ar20 [meLoad x] 19 p) symA526
+      = some Vtrue) :
+    app (dnmsRoundM p01File.tagDefs 0)
+        (p01fam p01ar20 [meLoad x] 19 p)
+      = (NDactive (Sum.inl NOWAKEUP),
+         p01fam p01arT21 [meLoad x] 20 p) := by
+  refine dnmsRoundM_adv rfl ?_
+  refine (advance_runstate_tau_misc (th' := p01Th p01arT21 p.f₁)
+    (rs' := (p01fam p01ar20 [meLoad x] 19 p).core_run_state0)
+    ?_).trans ?_
+  · show stExceptUndef_bind _ _ _ = _
+    refine (stub_defined (z := ([p.f₁], p01ArmT))
+      (st' := (p01fam p01ar20 [meLoad x] 19 p).core_run_state0)
+      ?_).trans rfl
+    show stExceptUndef_bind _ _ _ = _
+    refine (stub_defined (z := Vtrue)
+      (st' := (p01fam p01ar20 [meLoad x] 19 p).core_run_state0)
+      ?_).trans ?_
+    · show stExceptUndef_bind _ _ _ = _
+      refine (stub_defined (z := Sum.inr Vtrue)
+        (st' := (p01fam p01ar20 [meLoad x] 19 p).core_run_state0)
+        ?_).trans rfl
+      show runEU (eval_pexpr_aux2 p01File.tagDefs
+          CerbLocation.Loc.unknown
+          (some (CerbLocation.other "RelSem.callND"))
+          (create_extern_symmap p01File) [p.f₁] (some p.ls) p01File
+          (Pexpr aU () (PEsym symA526))) _ = _
+      rw [aux2_sym_hit (a := aU) (a' := []) (z := symA526)
+        (v := Vtrue) (env := [p.f₁]) rfl rfl
+        (show lookup_env symA526 [p.f₁] = some Vtrue from ha)]
+      rfl
+    · rfl
+  · rfl
+
+/-! ## The Erun conv chains (conv_loaded_int at the jump argument;
+    the T1 z-chain reused — its terms are file-independent) -/
+
+open RelSem.T1 (z0 z1 z2 z3 xIntV)
+
+/-- The jump argument at cell `b`. -/
+def p01convPE (b : sym) : generic_pexpr Unit sym :=
+  Pexpr aU () (PEcall (Sym RelSem.T1.convLoadedIntSym)
+    [Pexpr aU () (PEval (Vctype intCty)), Pexpr aU () (PEsym b)])
+
+/-- s0 at p01File/cell `b`: the conv call inlines (the cell read). -/
+theorem p01s0_eq (b : sym) (x : Int) (env : List (Fmap sym value))
+    (memo : Option CerbMem.MemState)
+    (hb : fmapLookupBy
+      (fun (s1 s2 : sym) => ordCompare s1 s2) b
+      (create_extern_symmap p01File) = none)
+    (ha : lookup_env b env = some (loadedV x)) :
+    step_eval_pexpr p01File.tagDefs 0 CerbLocation.Loc.unknown
+      (some (CerbLocation.other "RelSem.callND"))
+      (create_extern_symmap p01File) env memo p01File false
+      (Pexpr [] () (PEcall (Sym RelSem.T1.convLoadedIntSym)
+        [Pexpr aU () (PEval (Vctype intCty)),
+         Pexpr aU () (PEsym b)]))
+      = Result (Defined (z0 x)) := by
+  show step_eval_pexpr_lemFuel (999999 + 1) _ _ _ _ _ _ _ _ _ _ = _
+  refine se_call (pes' := [Pexpr [] () (PEval (Vctype intCty)),
+      Pexpr [] () (PEval (loadedV x))])
+    (cvals := [Vctype intCty, loadedV x]) ?_ rfl rfl rfl
+  exact eumapM_cons rfl
+    (eumapM_cons (se_sym_hit (fuel := 999998) hb ha) eumapM_nil)
+
+theorem p01s1_eq (x : Int) (env : List (Fmap sym value))
+    (memo : Option CerbMem.MemState) :
+    step_eval_pexpr p01File.tagDefs 0 CerbLocation.Loc.unknown
+      (some (CerbLocation.other "RelSem.callND"))
+      (create_extern_symmap p01File) env memo p01File false (z0 x)
+      = Result (Defined (z1 x)) := rfl
+
+theorem p01s2_eq (x : Int) (env : List (Fmap sym value))
+    (memo : Option CerbMem.MemState) :
+    step_eval_pexpr p01File.tagDefs 0 CerbLocation.Loc.unknown
+      (some (CerbLocation.other "RelSem.callND"))
+      (create_extern_symmap p01File) env memo p01File false (z1 x)
+      = Result (Defined (z2 x)) := rfl
+
+theorem p01s3_eq (x : Int) (env : List (Fmap sym value))
+    (memo : Option CerbMem.MemState) :
+    step_eval_pexpr p01File.tagDefs 0 CerbLocation.Loc.unknown
+      (some (CerbLocation.other "RelSem.callND"))
+      (create_extern_symmap p01File) env memo p01File false (z2 x)
+      = Result (Defined (z3 x)) := rfl
+
+/-- s4 at p01File: the range check (path hypotheses enter). -/
+theorem p01s4_eq (x : Int) (h1 : -2147483648 ≤ x)
+    (h2 : x ≤ 2147483647)
+    (env : List (Fmap sym value)) (memo : Option CerbMem.MemState) :
+    step_eval_pexpr p01File.tagDefs 0 CerbLocation.Loc.unknown
+      (some (CerbLocation.other "RelSem.callND"))
+      (create_extern_symmap p01File) env memo p01File false (z3 x)
+      = Result (Defined (Pexpr [] () (PEval (loadedV x)))) := by
+  have hd1 : decide ((-2147483648:Int) ≤ x) = true := decide_eq_true h1
+  have hd2 : decide (x ≤ (2147483647:Int)) = true := decide_eq_true h2
+  change exception_undef_bind _ _ = _
+  refine (eubind_defined
+    (z := (PEval (loadedV x) : generic_pexpr_ Unit sym)) ?hBody).trans ?_
+  case hBody =>
+    change exception_undef_bind _ _ = _
+    refine (eubind_defined
+      (z := [(Pexpr [] () (PEval (xIntV x)) : generic_pexpr Unit sym)])
+      ?hMap).trans ?_
+    case hMap =>
+      apply eumapM_one ?hIf
+      case hIf =>
+        change exception_undef_bind _ _ = _
+        refine (eubind_defined
+          (z := (PEval (xIntV x) : generic_pexpr_ Unit sym)) ?hIfBody).trans ?_
+        case hIfBody =>
+          change exception_undef_bind _ _ = _
+          refine (eubind_defined
+            (z := (Pexpr [] () (PEval Vtrue) : generic_pexpr Unit sym))
+            ?hCond).trans ?_
+          case hCond =>
+            change exception_undef_bind _ _ = _
+            refine (eubind_defined
+              (z := (PEval Vtrue : generic_pexpr_ Unit sym)) ?hCondBody).trans ?_
+            case hCondBody =>
+              change exception_undef_bind _ _ = _
+              refine (eubind_defined
+                (z := (Pexpr [] () (PEval Vtrue) : generic_pexpr Unit sym))
+                ?hLe1).trans ?_
+              case hLe1 =>
+                show step_eval_pexpr_lemFuel 999997 p01File.tagDefs (0+1+1+1)
+                  CerbLocation.Loc.unknown (some (CerbLocation.other "RelSem.callND"))
+                  (create_extern_symmap p01File) env memo p01File false
+                  (Pexpr [] () (PEop OpLe
+                    (Pexpr [] () (PEctor Civmin [Pexpr aU () (PEval (Vctype intCty))]))
+                    (Pexpr [] () (PEval (xIntV x)))))
+                  = Result (Defined (Pexpr [] () (PEval Vtrue)))
+                have harm : (if (decide ((-2147483648:Int) ≤ x)) = true
+                    then Vtrue else Vfalse) = Vtrue := by rw [hd1]; simp
+                conv => rhs; rw [← harm]
+                rfl
+              change exception_undef_bind _ _ = _
+              refine (eubind_defined
+                (z := (Pexpr [] () (PEval Vtrue) : generic_pexpr Unit sym))
+                ?hLe2).trans ?_
+              case hLe2 =>
+                show step_eval_pexpr_lemFuel 999997 p01File.tagDefs (0+1+1+1)
+                  CerbLocation.Loc.unknown (some (CerbLocation.other "RelSem.callND"))
+                  (create_extern_symmap p01File) env memo p01File false
+                  (Pexpr [] () (PEop OpLe
+                    (Pexpr [] () (PEval (xIntV x)))
+                    (Pexpr [] () (PEctor Civmax [Pexpr aU () (PEval (Vctype intCty))]))))
+                  = Result (Defined (Pexpr [] () (PEval Vtrue)))
+                have harm : (if (decide (x ≤ (2147483647:Int))) = true
+                    then Vtrue else Vfalse) = Vtrue := by rw [hd2]; simp
+                conv => rhs; rw [← harm]
+                rfl
+              rfl
+            rfl
+          rfl
+        rfl
+    rfl
+  rfl
+
+/-- The whole conv loop at p01File (cell `b`, range-checked value). -/
+theorem p01conv_eval (b : sym) (x : Int) (h1 : -2147483648 ≤ x)
+    (h2 : x ≤ 2147483647)
+    (env : List (Fmap sym value)) (memo : Option CerbMem.MemState)
+    (hb : fmapLookupBy
+      (fun (s1 s2 : sym) => ordCompare s1 s2) b
+      (create_extern_symmap p01File) = none)
+    (ha : lookup_env b env = some (loadedV x)) :
+    eval_pexpr_aux2 p01File.tagDefs CerbLocation.Loc.unknown
+        (some (CerbLocation.other "RelSem.callND"))
+        (create_extern_symmap p01File) env memo p01File (p01convPE b)
+      = Result (Defined (Sum.inr (loadedV x))) :=
+  (aux2_step 999999 _ _ _ _ _ _ _ rfl
+      (by intro a xs h; cases h) (p01s0_eq b x env memo hb ha)
+      (by rfl)).trans
+  ((aux2_step 999998 _ _ _ _ _ _ _
+      (show pull_constrained 0 (z0 x) = z0 x from rfl)
+      (by intro a xs h; simp [z0] at h) (p01s1_eq x env memo)
+      (by rfl)).trans
+  ((aux2_step 999997 _ _ _ _ _ _ _
+      (show pull_constrained 0 (z1 x) = z1 x from rfl)
+      (by intro a xs h; simp [z1] at h) (p01s2_eq x env memo)
+      (by rfl)).trans
+  ((aux2_step 999996 _ _ _ _ _ _ _
+      (show pull_constrained 0 (z2 x) = z2 x from rfl)
+      (by intro a xs h; simp [z2] at h) (p01s3_eq x env memo)
+      (by rfl)).trans
+  (aux2_done 999995 _ _ _ _ _ _ _
+      (show pull_constrained 0 (z3 x) = z3 x from rfl)
+      (by intro a xs h; simp [z3] at h)
+      (p01s4_eq x h1 h2 env memo) (by rfl)))))
+
+/-- The full-eval face of the conv chain (∀-run-state, arena-generic
+    thread). -/
+theorem p01fullEval_conv (arena : RExpr) (b : sym) (x : Int)
+    (h1 : -2147483648 ≤ x) (h2 : x ≤ 2147483647)
+    (f₁ : Fmap sym value) (ls : CerbMem.MemState)
+    (st : core_run_state)
+    (hb : fmapLookupBy
+      (fun (s1 s2 : sym) => ordCompare s1 s2) b
+      (create_extern_symmap p01File) = none)
+    (ha : lookup_env b [f₁] = some (loadedV x)) :
+    full_eval_pexpr p01File.tagDefs (p01Th arena f₁)
+        (create_extern_symmap p01File) ls p01File (p01convPE b) st
+      = Result (Defined (loadedV x), st) := by
+  show stExceptUndef_bind _ _ _ = _
+  refine (stub_defined (z := Sum.inr (loadedV x)) (st' := st) ?_).trans ?_
+  · show runEU (eval_pexpr_aux2 p01File.tagDefs
+        CerbLocation.Loc.unknown
+        (some (CerbLocation.other "RelSem.callND"))
+        (create_extern_symmap p01File) [f₁] (some ls) p01File
+        (p01convPE b)) _ = _
+    rw [p01conv_eval b x h1 h2 [f₁] (some ls) hb ha]
+    rfl
+  · rfl
+
+/-- The a_543 jump bind (compiled-matcher spelling). -/
+theorem update_env_aux_a543 (v : value) (f : Fmap sym value) :
+    update_env_aux (mk_sym_pat symA543 (BTy_loaded OTy_integer)) v f
+      = @fmapAddBy sym value Lem_Map.instBEqOfMapKeyType
+          (@Lem_Map.mapKeyCompare sym _) symA543 v f := rfl
+
+theorem update_env_aux_a541 (f : Fmap sym value) :
+    update_env_aux patA541 xPtrV f
+      = @fmapAddBy sym value Lem_Map.instBEqOfMapKeyType
+          (@Lem_Map.mapKeyCompare sym _) symA541 xPtrV f := rfl
+
+theorem update_env_aux_a542 (x : Int) (f : Fmap sym value) :
+    update_env_aux patA542 (loadedV x) f
+      = @fmapAddBy sym value Lem_Map.instBEqOfMapKeyType
+          (@Lem_Map.mapKeyCompare sym _) symA542 (loadedV x) f := rfl
+
+/-! ## THE TRUE-SIDE TAIL (x < 0: return 0 via the ret label) -/
+
+/-- R21T: the then-arm's specified-zero evaluates (closed). -/
+theorem p01r21T (x : Int) (p : T1P) :
+    app (dnmsRoundM p01File.tagDefs 0)
+        (p01fam p01arT21 [meLoad x] 20 p)
+      = (NDactive (Sum.inl NOWAKEUP),
+         p01fam p01arT22 [meLoad x] 21 p) := by
+  refine dnmsRoundM_adv rfl ?_
+  exact (advance_runstate_eval (th' := p01Th p01arT22 p.f₁)
+    (rs' := (p01fam p01arT21 [meLoad x] 20 p).core_run_state0)
+    rfl).trans rfl
+
+/-- R22T: the Ebound strips (tau). -/
+theorem p01r22T (x : Int) (p : T1P) :
+    app (dnmsRoundM p01File.tagDefs 0)
+        (p01fam p01arT22 [meLoad x] 21 p)
+      = (NDactive (Sum.inl NOWAKEUP),
+         p01fam p01arT23 [meLoad x] 22 p) := by
+  refine dnmsRoundM_adv rfl ?_
+  exact (advance_tau_misc).trans rfl
+
+/-- R23T: the Esseq binds a_540 := loaded 0 (BIRTH). -/
+theorem p01r23T (x : Int) (p : T1P) :
+    app (dnmsRoundM p01File.tagDefs 0)
+        (p01fam p01arT23 [meLoad x] 22 p)
+      = (NDactive (Sum.inl NOWAKEUP),
+         p01fam p01arT24 [meLoad x] 23
+           { p with f₁ := update_env_aux patA540 (loadedV 0) p.f₁ }) := by
+  refine dnmsRoundM_adv rfl ?_
+  exact (advance_tau_misc).trans rfl
+
+/-- R24T: the Erun jump — conv chain at a_540 (= 0), a_543 BORN. -/
+theorem p01r24T (x : Int) (p : T1P)
+    (ha : envLookup (p01fam p01arT24 [meLoad x] 23 p) symA540
+      = some (loadedV 0)) :
+    app (dnmsRoundM p01File.tagDefs 0)
+        (p01fam p01arT24 [meLoad x] 23 p)
+      = (NDactive (Sum.inl NOWAKEUP),
+         p01fam p01arT25 [meLoad x] 24
+           { p with f₁ :=
+               (update_env_aux
+                 (mk_sym_pat symA543 (BTy_loaded OTy_integer))
+                 (loadedV 0) p.f₁) }) := by
+  refine dnmsRoundM_adv rfl ?_
+  refine (app_bind_active rfl).trans ?_
+  apply (app_bind_active (liftCore_run_defined ?hM)).trans
+  case hM =>
+    change stExceptUndef_bind _ _ _ = _
+    apply RelSem.Laws.erun_jump_m ?hres ?hk
+    case hres => rfl
+    case hk =>
+      change stExceptUndef_bind _ _ _ = _
+      apply (stub_defined ?hFold).trans
+      case hFold =>
+        change stExceptUndef_bind _ _ _ = _
+        apply (stub_defined ?hElem).trans
+        case hElem =>
+          change stExceptUndef_bind _ _ _ = _
+          apply (stub_defined (p01fullEval_conv p01arT24 symA540 0
+            (by decide) (by decide) p.f₁ p.ls _ rfl
+            (show lookup_env symA540 [p.f₁] = some (loadedV 0)
+              from ha))).trans
+          rfl
+        rfl
+      rfl
+  rfl
+
+/-- R25T: a_543 evaluates (the return value reaches the arena). -/
+theorem p01r25T (x : Int) (p : T1P)
+    (ha : envLookup (p01fam p01arT25 [meLoad x] 24 p) symA543
+      = some (loadedV 0)) :
+    app (dnmsRoundM p01File.tagDefs 0)
+        (p01fam p01arT25 [meLoad x] 24 p)
+      = (NDactive (Sum.inl NOWAKEUP),
+         p01fam p01arT26 [meLoad x] 25 p) := by
+  refine dnmsRoundM_adv rfl ?_
+  refine (advance_runstate_eval (th' := p01Th p01arT26 p.f₁)
+    (rs' := (p01fam p01arT25 [meLoad x] 24 p).core_run_state0)
+    ?_).trans ?_
+  · show stExceptUndef_bind _ _ _ = _
+    refine (stub_defined
+      (z := Expr aU (Epure (Pexpr [] () (PEval (loadedV 0)))))
+      (st' := (p01fam p01arT25 [meLoad x] 24 p).core_run_state0)
+      ?_).trans rfl
+    show stExceptUndef_bind _ _ _ = _
+    refine (stub_defined (z := loadedV 0)
+      (st' := (p01fam p01arT25 [meLoad x] 24 p).core_run_state0)
+      ?_).trans rfl
+    show stExceptUndef_bind _ _ _ = _
+    refine (stub_defined (z := Sum.inr (loadedV 0))
+      (st' := (p01fam p01arT25 [meLoad x] 24 p).core_run_state0)
+      ?_).trans ?_
+    · show runEU (eval_pexpr_aux2 p01File.tagDefs
+          CerbLocation.Loc.unknown
+          (some (CerbLocation.other "RelSem.callND"))
+          (create_extern_symmap p01File) [p.f₁] (some p.ls) p01File
+          (Pexpr aU () (PEsym symA543))) _ = _
+      rw [aux2_sym_hit (a := aU) (a' := []) (z := symA543)
+        (v := loadedV 0) (env := [p.f₁]) rfl rfl
+        (show lookup_env symA543 [p.f₁] = some (loadedV 0) from ha)]
+      rfl
+    · rfl
+  · rfl
+
+/-- R-terminal, TRUE side: the value state offers exactly the done
+    step at 0. -/
+theorem p01r26T (x : Int) (p : T1P) :
+    app (dnmsRoundM p01File.tagDefs 0)
+        (p01fam p01arT26 [meLoad x] 25 p)
+      = (NDactive (Sum.inr [Step_done2 (loadedV 0)]),
+         p01fam p01arT26 [meLoad x] 25 p) := by
+  refine (dnmsRoundM_inr rfl).trans ?_
+  rfl
