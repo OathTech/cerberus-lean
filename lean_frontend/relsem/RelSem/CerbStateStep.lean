@@ -621,6 +621,286 @@ theorem wpk_seq_ctl_sup_mem [CerbStGS GF] {α : Type}
       hsup' σ hp.1.1.1.1 hp.1.1.1.2 hp.1.1.2 hp.1.2]
     iframe Hi Hc Hs Hm Ha Hp
 
+/-- ctl/sup tokens are layout-blind (rfl casts for the composed
+    memory+control rounds). -/
+theorem ctlIs_layout_cast [CerbStGS GF] (σ : driver_state)
+    (ls : CerbMem.MemState) :
+    (ctlIs (GF := GF) stHalf (ctlOf σ) : IProp GF)
+      = ctlIs stHalf (ctlOf { σ with layout_state := ls }) := rfl
+
+theorem supIs_layout_cast [CerbStGS GF] (σ : driver_state)
+    (ls : CerbMem.MemState) :
+    (supIs (GF := GF) stHalf (suppliesOf σ) : IProp GF)
+      = supIs stHalf (suppliesOf { σ with layout_state := ls }) := rfl
+
+/-! ## MEMORY-WRITING ROUNDS (V2 T3): the body's create/store/kill
+    action rounds — control+supply move WITH a layout change, the
+    fragments minted/updated/consumed (HeapLang wp_alloc/wp_store/
+    wp_free at ROUND granularity). -/
+
+/-- CREATE round: ctl+supply move + a fresh object (uninitialized
+    range minted). -/
+@[step_law (kind := stateWP) (variant := ctlSupAlloc) (side := fed)
+  (frontier := "state/ctl-sup-alloc")
+  (trace := "{law := wpk_seq_ctl_sup_alloc, joint := state/ctl-sup-alloc, hyps := [Happ : fed(residual facts), grounds]}")
+  (lineage := "HeapLang wp_alloc at ROUND granularity (the Create action round; V2 T3)")]
+theorem wpk_seq_ctl_sup_alloc [CerbStGS GF] {α : Type}
+    {m : ndM α step_kind driver_error mem_iv_constraint driver_state}
+    {k : α → KDriveExpr} {v : α} {upd : driver_state → driver_state}
+    {c c' : driver_state} {S S' : Supplies}
+    {mr : CerbMem.MemState} {ty : ctype} {pref : prefix0}
+    {alignN : Int} {sz : Nat} {aNew : Int}
+    {s : Stuckness} {E : CoPset} {Φ : DriveVal → IProp GF}
+    (hsz : (CerbMem.sizeofCtype ty).max 1 = sz)
+    (haddr : ((CerbMem.alignDown (mr.lastAddress - sz).toNat
+        (alignN.toNat.max 1) : Nat) : Int) = aNew)
+    (hnz : (aNew == (0 : Int)) = false)
+    (Happ : ∀ σ, ctlOf σ = c → EnvWf σ → suppliesOf σ = S →
+      memRestOf σ = mr → MemInv σ.layout_state →
+      app m σ = (NDactive v, upd σ))
+    (hlayC : ∀ σ, ctlOf σ = c → EnvWf σ → suppliesOf σ = S →
+      memRestOf σ = mr →
+      (upd σ).layout_state = (CerbMem.writeBytesTo
+        ({ σ.layout_state with
+            nextAllocId := σ.layout_state.nextAllocId + 1,
+            lastAddress := aNew,
+            allocations := σ.layout_state.allocations.insert
+              σ.layout_state.nextAllocId
+              { base := aNew, size := sz, ty := some ty,
+                prefix_ := pref } })
+        aNew (List.replicate sz
+          { prov := .Prov_none, copyOffset := none, value := none })))
+    (hctl' : ∀ σ, ctlOf σ = c → EnvWf σ → suppliesOf σ = S →
+      memRestOf σ = mr → ctlOf (upd σ) = c')
+    (hsup' : ∀ σ, ctlOf σ = c → EnvWf σ → suppliesOf σ = S →
+      memRestOf σ = mr → suppliesOf (upd σ) = S')
+    (henvT : ∀ σ, ctlOf σ = c → EnvWf σ → suppliesOf σ = S →
+      memRestOf σ = mr → thread0Env (upd σ) = thread0Env σ) :
+    (ctlIs (GF := GF) stHalf c ∗ supIs stHalf S ∗ mrestIs stHalf mr) ∗
+      ((ctlIs stHalf c' ∗ supIs stHalf S'
+          ∗ mrestIs stHalf (mrAlloc mr aNew)
+          ∗ allocIs mr.nextAllocId (.own 1)
+              { base := aNew, size := sz, ty := some ty,
+                prefix_ := pref }
+          ∗ pointsToBytes aNew (.own 1)
+              (List.replicate sz
+                { prov := .Prov_none, copyOffset := none,
+                  value := none }))
+        -∗ WP (k v) @ s ; E {{ Φ }}) ⊢
+      WP (KExpr.seq m k : KDriveExpr) @ s ; E {{ Φ }} := by
+  refine wpk_seq_res_det
+    (Pre := fun σ => (((ctlOf σ = c ∧ EnvWf σ) ∧ suppliesOf σ = S) ∧
+      memRestOf σ = mr) ∧ MemInv σ.layout_state)
+    (upd := upd)
+    ?_ (fun σ hp => Happ σ hp.1.1.1.1 hp.1.1.1.2 hp.1.1.2 hp.1.2
+      hp.2) ?_
+  · intro σ
+    iintro ⟨Hi, Hc, Hs, Hm⟩
+    icases interp_ctl_agree $$ [$Hi $Hc] with ⟨%h1, Hi, Hc⟩
+    icases interp_envwf $$ Hi with ⟨%h2, Hi⟩
+    icases interp_sup_agree $$ [$Hi $Hs] with ⟨%h3, Hi, Hs⟩
+    icases interp_mrest_agree $$ [$Hi $Hm] with ⟨%h4, Hi, Hm⟩
+    icases interp_meminv $$ Hi with ⟨%h5, Hi⟩
+    iframe Hi Hc Hs Hm
+    ipureintro
+    exact ⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩
+  · intro σ hp
+    obtain ⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩ := hp
+    iintro ⟨Hi, Hc, Hs, Hm⟩
+    have haddrσ : ((CerbMem.alignDown
+        (σ.layout_state.lastAddress - sz).toNat
+        (alignN.toNat.max 1) : Nat) : Int) = aNew := by
+      rw [show σ.layout_state.lastAddress = mr.lastAddress from by
+        rw [← h4]; rfl]
+      exact haddr
+    imod interp_alloc_update (pref := pref) (ty := ty)
+      (alignN := alignN) h4 hsz haddrσ hnz
+      $$ [$Hi $Hm] with ⟨Hi, Hm, Ha, Hp⟩
+    rw [show c = ctlOf σ from h1.symm, show S = suppliesOf σ from
+      h3.symm]
+    icases (ctlIs_layout_cast (GF := GF) σ (CerbMem.writeBytesTo
+        ({ σ.layout_state with
+            nextAllocId := σ.layout_state.nextAllocId + 1,
+            lastAddress := aNew,
+            allocations := σ.layout_state.allocations.insert
+              σ.layout_state.nextAllocId
+              { base := aNew, size := sz, ty := some ty,
+                prefix_ := pref } })
+        aNew (List.replicate sz
+          { prov := .Prov_none, copyOffset := none, value := none })))
+      $$ Hc with Hc
+    icases (supIs_layout_cast (GF := GF) σ (CerbMem.writeBytesTo
+        ({ σ.layout_state with
+            nextAllocId := σ.layout_state.nextAllocId + 1,
+            lastAddress := aNew,
+            allocations := σ.layout_state.allocations.insert
+              σ.layout_state.nextAllocId
+              { base := aNew, size := sz, ty := some ty,
+                prefix_ := pref } })
+        aNew (List.replicate sz
+          { prov := .Prov_none, copyOffset := none, value := none })))
+      $$ Hs with Hs
+    imod (interp_ctl_sup_move (GF := GF) (σ' := upd σ)
+        (by rw [hlayC σ h1 h2 h3 h4])
+        (by rw [henvT σ h1 h2 h3 h4]; rfl))
+      $$ [$Hi $Hc $Hs] with ⟨Hi, Hc, Hs⟩
+    have heqA : (allocIs (GF := GF) σ.layout_state.nextAllocId
+          (.own 1) ({ base := aNew, size := (sz : Int), ty := some ty, prefix_ := pref } : CerbMem.Allocation) : IProp GF)
+        = allocIs mr.nextAllocId (.own 1)
+            ({ base := aNew, size := (sz : Int), ty := some ty, prefix_ := pref } : CerbMem.Allocation) := by
+      rw [memRestOf_nextAllocId h4]
+    icases heqA $$ Ha with Ha
+    imodintro
+    rw [hctl' σ h1 h2 h3 h4, hsup' σ h1 h2 h3 h4]
+    iframe Hi Hc Hs Hm Ha Hp
+
+/-- STORE round: ctl+supply move + the owned byte range rewritten. -/
+@[step_law (kind := stateWP) (variant := ctlSupStore) (side := fed)
+  (frontier := "state/ctl-sup-store")
+  (trace := "{law := wpk_seq_ctl_sup_store, joint := state/ctl-sup-store, hyps := [Happ : fed(byte facts), transports : fed]}")
+  (lineage := "HeapLang wp_store at ROUND granularity (the Store action round; V2 T3)")]
+theorem wpk_seq_ctl_sup_store [CerbStGS GF] {α : Type}
+    {m : ndM α step_kind driver_error mem_iv_constraint driver_state}
+    {k : α → KDriveExpr} {v : α} {upd : driver_state → driver_state}
+    {c c' : driver_state} {S S' : Supplies}
+    {addr : Int} {old new : List CerbMem.AbsByte}
+    {s : Stuckness} {E : CoPset} {Φ : DriveVal → IProp GF}
+    (hlen : new.length = old.length)
+    (Happ : ∀ σ, ctlOf σ = c → EnvWf σ → suppliesOf σ = S →
+      (∀ i : Nat, (hi : i < old.length) →
+        σ.layout_state.bytemap.get? (addr + (i : Int)) = some old[i]) →
+      MemInv σ.layout_state →
+      app m σ = (NDactive v, upd σ))
+    (hlayC : ∀ σ, ctlOf σ = c → EnvWf σ → suppliesOf σ = S →
+      (upd σ).layout_state
+        = CerbMem.writeBytesTo σ.layout_state addr new)
+    (hctl' : ∀ σ, ctlOf σ = c → EnvWf σ → suppliesOf σ = S →
+      ctlOf (upd σ) = c')
+    (hsup' : ∀ σ, ctlOf σ = c → EnvWf σ → suppliesOf σ = S →
+      suppliesOf (upd σ) = S')
+    (henvT : ∀ σ, ctlOf σ = c → EnvWf σ → suppliesOf σ = S →
+      thread0Env (upd σ) = thread0Env σ) :
+    (ctlIs (GF := GF) stHalf c ∗ supIs stHalf S
+        ∗ pointsToBytes addr (.own 1) old) ∗
+      ((ctlIs stHalf c' ∗ supIs stHalf S'
+          ∗ pointsToBytes addr (.own 1) new)
+        -∗ WP (k v) @ s ; E {{ Φ }}) ⊢
+      WP (KExpr.seq m k : KDriveExpr) @ s ; E {{ Φ }} := by
+  refine wpk_seq_res_det
+    (Pre := fun σ => (((ctlOf σ = c ∧ EnvWf σ) ∧ suppliesOf σ = S) ∧
+      (∀ i : Nat, (hi : i < old.length) →
+        σ.layout_state.bytemap.get? (addr + (i : Int))
+          = some old[i])) ∧ MemInv σ.layout_state)
+    (upd := upd)
+    ?_ (fun σ hp => Happ σ hp.1.1.1.1 hp.1.1.1.2 hp.1.1.2 hp.1.2
+      hp.2) ?_
+  · intro σ
+    iintro ⟨Hi, Hc, Hs, Hp⟩
+    icases interp_ctl_agree $$ [$Hi $Hc] with ⟨%h1, Hi, Hc⟩
+    icases interp_envwf $$ Hi with ⟨%h2, Hi⟩
+    icases interp_sup_agree $$ [$Hi $Hs] with ⟨%h3, Hi, Hs⟩
+    icases interp_bytes_lookup $$ [$Hi $Hp] with ⟨%h4, Hi, Hp⟩
+    icases interp_meminv $$ Hi with ⟨%h5, Hi⟩
+    iframe Hi Hc Hs Hp
+    ipureintro
+    exact ⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩
+  · intro σ hp
+    obtain ⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩ := hp
+    iintro ⟨Hi, Hc, Hs, Hp⟩
+    imod (interp_store_update (GF := GF) new
+        (by rw [hlen]) h4)
+      $$ [$Hi $Hp] with ⟨Hi, Hp⟩
+    rw [show c = ctlOf σ from h1.symm, show S = suppliesOf σ from
+      h3.symm]
+    icases (ctlIs_layout_cast (GF := GF) σ
+      (CerbMem.writeBytesTo σ.layout_state addr new)) $$ Hc with Hc
+    icases (supIs_layout_cast (GF := GF) σ
+      (CerbMem.writeBytesTo σ.layout_state addr new)) $$ Hs with Hs
+    imod (interp_ctl_sup_move (GF := GF) (σ' := upd σ)
+        (by rw [hlayC σ h1 h2 h3])
+        (by rw [henvT σ h1 h2 h3]; rfl))
+      $$ [$Hi $Hc $Hs] with ⟨Hi, Hc, Hs⟩
+    imodintro
+    rw [hctl' σ h1 h2 h3, hsup' σ h1 h2 h3]
+    iframe Hi Hc Hs Hp
+
+/-- KILL round: ctl+supply move + the allocation freed (the fragment
+    consumed; the dead list moves; the byte capital stays). -/
+@[step_law (kind := stateWP) (variant := ctlSupKill) (side := fed)
+  (frontier := "state/ctl-sup-kill")
+  (trace := "{law := wpk_seq_ctl_sup_kill, joint := state/ctl-sup-kill, hyps := [Happ : fed(alloc fact), transports : fed]}")
+  (lineage := "HeapLang wp_free at ROUND granularity (the Kill action round; V2 T3)")]
+theorem wpk_seq_ctl_sup_kill [CerbStGS GF] {α : Type}
+    {m : ndM α step_kind driver_error mem_iv_constraint driver_state}
+    {k : α → KDriveExpr} {v : α} {upd : driver_state → driver_state}
+    {c c' : driver_state} {S S' : Supplies}
+    {mr : CerbMem.MemState} {aid : Int} {al : CerbMem.Allocation}
+    {s : Stuckness} {E : CoPset} {Φ : DriveVal → IProp GF}
+    (Happ : ∀ σ, ctlOf σ = c → EnvWf σ → suppliesOf σ = S →
+      memRestOf σ = mr →
+      σ.layout_state.allocations.get? aid = some al →
+      MemInv σ.layout_state →
+      app m σ = (NDactive v, upd σ))
+    (hlayC : ∀ σ, ctlOf σ = c → EnvWf σ → suppliesOf σ = S →
+      memRestOf σ = mr →
+      (upd σ).layout_state
+        = { σ.layout_state with
+            deadAllocations := aid :: σ.layout_state.deadAllocations,
+            allocations := σ.layout_state.allocations.erase aid })
+    (hctl' : ∀ σ, ctlOf σ = c → EnvWf σ → suppliesOf σ = S →
+      memRestOf σ = mr → ctlOf (upd σ) = c')
+    (hsup' : ∀ σ, ctlOf σ = c → EnvWf σ → suppliesOf σ = S →
+      memRestOf σ = mr → suppliesOf (upd σ) = S')
+    (henvT : ∀ σ, ctlOf σ = c → EnvWf σ → suppliesOf σ = S →
+      memRestOf σ = mr → thread0Env (upd σ) = thread0Env σ) :
+    (ctlIs (GF := GF) stHalf c ∗ supIs stHalf S ∗ mrestIs stHalf mr
+        ∗ allocIs aid (.own 1) al) ∗
+      ((ctlIs stHalf c' ∗ supIs stHalf S'
+          ∗ mrestIs stHalf (mrKill mr aid))
+        -∗ WP (k v) @ s ; E {{ Φ }}) ⊢
+      WP (KExpr.seq m k : KDriveExpr) @ s ; E {{ Φ }} := by
+  refine wpk_seq_res_det
+    (Pre := fun σ => ((((ctlOf σ = c ∧ EnvWf σ) ∧ suppliesOf σ = S) ∧
+      memRestOf σ = mr) ∧
+      σ.layout_state.allocations.get? aid = some al) ∧
+      MemInv σ.layout_state)
+    (upd := upd)
+    ?_ (fun σ hp => Happ σ hp.1.1.1.1.1 hp.1.1.1.1.2 hp.1.1.1.2
+      hp.1.1.2 hp.1.2 hp.2) ?_
+  · intro σ
+    iintro ⟨Hi, Hc, Hs, Hm, Ha⟩
+    icases interp_ctl_agree $$ [$Hi $Hc] with ⟨%h1, Hi, Hc⟩
+    icases interp_envwf $$ Hi with ⟨%h2, Hi⟩
+    icases interp_sup_agree $$ [$Hi $Hs] with ⟨%h3, Hi, Hs⟩
+    icases interp_mrest_agree $$ [$Hi $Hm] with ⟨%h4, Hi, Hm⟩
+    icases interp_alloc_lookup $$ [$Hi $Ha] with ⟨%h5, Hi, Ha⟩
+    icases interp_meminv $$ Hi with ⟨%h6, Hi⟩
+    iframe Hi Hc Hs Hm Ha
+    ipureintro
+    exact ⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩
+  · intro σ hp
+    obtain ⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩ := hp
+    iintro ⟨Hi, Hc, Hs, Hm, Ha⟩
+    imod (interp_kill_update (GF := GF) (aid := aid) (al := al) h4)
+      $$ [$Hi $Hm $Ha] with ⟨Hi, Hm⟩
+    rw [show c = ctlOf σ from h1.symm, show S = suppliesOf σ from
+      h3.symm]
+    icases (ctlIs_layout_cast (GF := GF) σ ({ σ.layout_state with
+        deadAllocations := aid :: σ.layout_state.deadAllocations,
+        allocations := σ.layout_state.allocations.erase aid }))
+      $$ Hc with Hc
+    icases (supIs_layout_cast (GF := GF) σ ({ σ.layout_state with
+        deadAllocations := aid :: σ.layout_state.deadAllocations,
+        allocations := σ.layout_state.allocations.erase aid }))
+      $$ Hs with Hs
+    imod (interp_ctl_sup_move (GF := GF) (σ' := upd σ)
+        (by rw [hlayC σ h1 h2 h3 h4])
+        (by rw [henvT σ h1 h2 h3 h4]; rfl))
+      $$ [$Hi $Hc $Hs] with ⟨Hi, Hc, Hs⟩
+    imodintro
+    rw [hctl' σ h1 h2 h3 h4, hsup' σ h1 h2 h3 h4]
+    iframe Hi Hc Hs Hm
+
 /-! ## THE ALLOC+STORE COMPOSITE (the caller-protocol atoms:
     `injectArgs` at one scalar argument, the errno block — allocate a
     fresh object then overwrite it, in ONE atom; layout-only). -/
