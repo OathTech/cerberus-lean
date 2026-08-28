@@ -101,6 +101,46 @@ theorem runEU_aux2_sym {A : Type}
       = runEU (Result (Defined (Sum.inr v))) st := by
   rw [aux2_sym_hit hpull hext hlk]
 
+/-- The `runEU` face of the two-cell Ctuple scrutinee eval (the
+    Ecase-pack round class; P01's `p01ctor2_eval` promoted generic). -/
+theorem runEU_aux2_ctor2 {A : Type}
+    {tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)}
+    {loc : CerbLocation.Loc} {cloc : Option CerbLocation.Loc}
+    {ext : Fmap sym sym} {env : List (Fmap sym value)}
+    {memo : Option CerbMem.MemState}
+    {file1 : file core_run_annotation}
+    {a a₁ a₂ : List annot} {x₁ x₂ : sym} {v₁ v₂ : value} {st : A}
+    (hpull : pull_constrained 0 (Pexpr a () (PEctor Ctuple
+        [Pexpr a₁ () (PEsym x₁), Pexpr a₂ () (PEsym x₂)]))
+      = Pexpr [] () (PEctor Ctuple
+        [Pexpr a₁ () (PEsym x₁), Pexpr a₂ () (PEsym x₂)]))
+    (hext₁ : fmapLookupBy
+      (fun (s1 s2 : sym) => Lem_Basic_classes.ordCompare s1 s2) x₁ ext
+      = none)
+    (hext₂ : fmapLookupBy
+      (fun (s1 s2 : sym) => Lem_Basic_classes.ordCompare s1 s2) x₂ ext
+      = none)
+    (hlk₁ : lookup_env x₁ env = some v₁)
+    (hlk₂ : lookup_env x₂ env = some v₂) :
+    runEU (eval_pexpr_aux2 tagDefs loc cloc ext env memo file1
+        (Pexpr a () (PEctor Ctuple
+          [Pexpr a₁ () (PEsym x₁), Pexpr a₂ () (PEsym x₂)]))) st
+      = runEU (Result (Defined (Sum.inr (Vtuple [v₁, v₂])))) st := by
+  have h : eval_pexpr_aux2 tagDefs loc cloc ext env memo file1
+      (Pexpr a () (PEctor Ctuple
+        [Pexpr a₁ () (PEsym x₁), Pexpr a₂ () (PEsym x₂)]))
+      = Result (Defined (Sum.inr (Vtuple [v₁, v₂]))) :=
+    aux2_done 999999 _ _ _ _ _ _ _ hpull
+      (by intro a' xs h; simp at h)
+      (se_ctor_tuple
+        (pes' := [Pexpr [] () (PEval v₁), Pexpr [] () (PEval v₂)])
+        (cvals := [v₁, v₂])
+        (eumapM_cons (se_sym_hit (fuel := 999998) hext₁ hlk₁)
+          (eumapM_cons (se_sym_hit (fuel := 999998) hext₂ hlk₂)
+            eumapM_nil)) rfl)
+      (by rfl)
+  rw [h]
+
 /-! ## The round tactics -/
 
 /-- The eval sub-chain: peel `stExceptUndef_bind` stubs (values forced
@@ -116,6 +156,13 @@ macro_rules
            refine (RelSem.Seg.runEU_aux2_sym (a' := []) (v := ?_)
              ?_ ?_ ?_).trans ?_
            rotate_left 1
+           all_goals first | assumption | rfl)
+        | (show runEU (eval_pexpr_aux2 _ _ _ _ _ _ _
+              (Pexpr _ () (PEctor Ctuple
+                [Pexpr _ () (PEsym _), Pexpr _ () (PEsym _)]))) _ = _
+           refine (RelSem.Seg.runEU_aux2_ctor2 (v₁ := ?_) (v₂ := ?_)
+             ?_ ?_ ?_ ?_ ?_).trans ?_
+           rotate_left 2
            all_goals first | assumption | rfl)
         | (show stExceptUndef_bind _ _ _ = _
            refine (stub_defined (z := ?_) (st' := ?_) ?_).trans ?_
@@ -165,11 +212,17 @@ macro "seg_round_load" : tactic =>
                exact app_nd_update _ _
              rfl))
 
+/-- TERMINAL rounds (the done-offer `Sum.inr` step). -/
+macro "seg_round_term" : tactic =>
+  `(tactic| (refine (dnmsRoundM_inr rfl).trans ?_
+             rfl))
+
 /-- The one-face round tactic (dispatch by trial — the classes are
     mutually exclusive; failures are cheap and the final failure is
     the ordinary loud one). -/
 macro "seg_round_tac" : tactic =>
   `(tactic| first
+      | seg_round_term
       | seg_round_tau
       | seg_round_eval
       | seg_round_load)
