@@ -313,6 +313,55 @@ theorem wpk_seq_ctl_sup_env1 [CerbStGS GF] {α : Type}
       hsup' σ hp.1.1.1 hp.1.1.2 hp.1.2 hp.2]
     iframe Hi Hc Hs He
 
+/-- CONTROL + SUPPLY STEP at LOOKUP-POINTWISE env equality (the
+    frame-creating class — the globals stage). -/
+@[step_law (kind := stateWP) (variant := ctlSupLk) (side := fed)
+  (frontier := "state/ctl-sup-lk")
+  (trace := "{law := wpk_seq_ctl_sup_lk, joint := state/ctl-sup, hyps := [Happ : fed, henvL : fed(pointwise), transports : fed]}")
+  (lineage := "control+supply step with lookup-pointwise env equality (frame installation is lookup-invisible)")]
+theorem wpk_seq_ctl_sup_lk [CerbStGS GF] {α : Type}
+    {m : ndM α step_kind driver_error mem_iv_constraint driver_state}
+    {k : α → KDriveExpr} {v : α} {upd : driver_state → driver_state}
+    {c c' : driver_state} {S S' : Supplies}
+    {s : Stuckness} {E : CoPset} {Φ : DriveVal → IProp GF}
+    (Happ : ∀ σ, ctlOf σ = c → EnvWf σ → suppliesOf σ = S →
+      app m σ = (NDactive v, upd σ))
+    (hctl' : ∀ σ, ctlOf σ = c → EnvWf σ → suppliesOf σ = S →
+      ctlOf (upd σ) = c')
+    (hlay : ∀ σ, ctlOf σ = c → EnvWf σ → suppliesOf σ = S →
+      (upd σ).layout_state = σ.layout_state)
+    (hsup' : ∀ σ, ctlOf σ = c → EnvWf σ → suppliesOf σ = S →
+      suppliesOf (upd σ) = S')
+    (henvL : ∀ σ, ctlOf σ = c → EnvWf σ → suppliesOf σ = S →
+      ∀ z, envLookup (upd σ) z = envLookup σ z)
+    (hwfp : ∀ σ, ctlOf σ = c → EnvWf σ → suppliesOf σ = S →
+      EnvWf (upd σ)) :
+    (ctlIs (GF := GF) stHalf c ∗ supIs stHalf S) ∗
+      ((ctlIs stHalf c' ∗ supIs stHalf S')
+        -∗ WP (k v) @ s ; E {{ Φ }}) ⊢
+      WP (KExpr.seq m k : KDriveExpr) @ s ; E {{ Φ }} := by
+  refine wpk_seq_res_det
+    (Pre := fun σ => (ctlOf σ = c ∧ EnvWf σ) ∧ suppliesOf σ = S)
+    (upd := upd) ?_ (fun σ hp => Happ σ hp.1.1 hp.1.2 hp.2) ?_
+  · intro σ
+    iintro ⟨Hi, Hc, Hs⟩
+    icases interp_ctl_agree $$ [$Hi $Hc] with ⟨%h1, Hi, Hc⟩
+    icases interp_envwf $$ Hi with ⟨%h2, Hi⟩
+    icases interp_sup_agree $$ [$Hi $Hs] with ⟨%h3, Hi, Hs⟩
+    iframe Hi Hc Hs
+    ipureintro
+    exact ⟨⟨h1, h2⟩, h3⟩
+  · intro σ hp
+    iintro ⟨Hi, Hc, Hs⟩
+    rw [show c = ctlOf σ from hp.1.1.symm,
+      show S = suppliesOf σ from hp.2.symm]
+    imod interp_ctl_sup_move_lk (hlay σ hp.1.1 hp.1.2 hp.2)
+      (henvL σ hp.1.1 hp.1.2 hp.2) (fun _ => hwfp σ hp.1.1 hp.1.2 hp.2)
+      $$ [$Hi $Hc $Hs] with ⟨Hi, Hc, Hs⟩
+    imodintro
+    rw [hctl' σ hp.1.1 hp.1.2 hp.2, hsup' σ hp.1.1 hp.1.2 hp.2]
+    iframe Hi Hc Hs
+
 /-! ## BIRTH rounds: a step that binds a FRESH local mints its cell
     against the domain ledger (RelSem/CerbStateRA §BIRTH). -/
 
@@ -931,7 +980,8 @@ open Lean in
      ``RelSem.CerbSt.wpk_seq_birth2,
      ``RelSem.CerbSt.wpk_seq_ctl_sup_mem,
      ``RelSem.CerbSt.wpk_seq_alloc_store,
-     ``RelSem.CerbSt.wpk_seq_read_ctl_dom]
+     ``RelSem.CerbSt.wpk_seq_read_ctl_dom,
+     ``RelSem.CerbSt.wpk_seq_ctl_sup_lk]
   for n in backing do
     let some _ ← RelSem.LawRegistry.byName? n
       | throwError "CerbStateStep registry-backing check: the V2 rule {n} is NOT registered (R4)"

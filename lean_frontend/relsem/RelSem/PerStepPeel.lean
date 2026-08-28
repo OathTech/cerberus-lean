@@ -149,7 +149,7 @@ def dnmsRoundM (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
     Advancing rounds recurse (NOWAKEUP — the single-threaded shape);
     every other path falls back to the COARSE atom (the residual
     loop), so the observation anchor closes on all inputs. -/
-def dnmsK (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)) :
+@[reducible] def dnmsK (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)) :
     Nat → Fmap thread_id (List core_step2) → Nat → List Nat →
       (Fmap thread_id (List core_step2) → KDriveExpr) → KDriveExpr
   | 0, acc, tid, xs', k =>
@@ -344,7 +344,7 @@ theorem driver2_succ_unfold
 /-- THE BODY PEEL: one driver2 iteration, the dnms rounds as per-round
     joints; every non-singleton thread shape falls back to coarse
     atoms (the anchor closes on all inputs). -/
-def bodyK (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
+@[reducible] def bodyK (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
     (f' : Nat) (k : Unit → KDriveExpr) : KDriveExpr :=
   .seq nd_get (fun (dr_st : driver_state) =>
     match List.map Prod.fst dr_st.core_state0.thread_states with
@@ -404,6 +404,57 @@ theorem bodyK_obs
       | cons t2 rest2 =>
         simp only [denote_seq]
 
+
+/-! ## Terminal-path app equations (the done iteration's atoms) -/
+
+/-- The dnms residual at an EMPTY worklist: the accumulator returns. -/
+theorem dnms_nil
+    {tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)}
+    {f : Nat} {acc : Fmap thread_id (List core_step2)}
+    {σ : driver_state} :
+    app (drive_nonmemory_steps_aux2_lemFuel (f + 1) tagDefs acc []) σ
+      = (NDactive acc, σ) := rfl
+
+/-- The scheduler pick at ONE offered step (state-preserving). -/
+theorem ndctPick_one {s1 : core_step2} {σ : driver_state} :
+    app (ndctPick (fmapAddBy defaultCompare 0 [s1] fmapEmpty)) σ
+      = (NDactive [(0, some s1)], σ) := rfl
+
+/-- The done-processing driver2 remainder: the pick takes the done
+    offer, `prepare_exit` rebuilds the core state (both execution
+    modes — the opaque mode read is CASED once, here; the
+    `driver2_done` recipe at the peel's tail atom). -/
+theorem driver2Rest_done
+    {tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)}
+    {recur : Bool → ndM Unit step_kind driver_error mem_iv_constraint
+      driver_state}
+    {v : value} {σ σ' : driver_state}
+    (hout : { σ with core_state0 := prepare_exit σ.core_state0 v }
+      = σ') :
+    app (driver2Rest tagDefs false recur [(0, some (Step_done2 v))]) σ
+      = (NDactive (), σ') := by
+  subst hout
+  show app (nd_bind nd_get _) σ = _
+  refine (app_bind_active (app_nd_get σ)).trans ?_
+  cases hmode : Lem_Maybe.maybeEqualBy (fun x y => x == y)
+      (CerbGlobal.current_execution_mode ())
+      (some CerbGlobal.ExecutionMode.random) with
+  | true =>
+    simp only [hmode, reduceIte, bindExhaustive]
+    apply (app_bind_active ?hpickT).trans
+    case hpickT => rfl
+    apply (app_bind_active ?hdbgT).trans
+    case hdbgT => rfl
+    rfl
+  | false =>
+    simp only [hmode, reduceIte]
+    apply (app_bind_active ?hgrd).trans
+    case hgrd => rfl
+    apply (app_bind_active ?hpickF).trans
+    case hpickF => rfl
+    apply (app_bind_active ?hdbgF).trans
+    case hdbgF => rfl
+    rfl
 
 /-! ## The round-granular reified harness -/
 

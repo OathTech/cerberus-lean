@@ -841,6 +841,47 @@ theorem interp_ctl_sup_move [CerbStGS GF] {σ σ' : driver_state}
     rw [hlay]
     exact ⟨Hinv, fun f hf => Hwf f (by rwa [henvT] at hf)⟩
 
+/-- CONTROL + SUPPLY MOVE at LOOKUP-POINTWISE env equality (the
+    frame-CREATING step class — the globals stage installs an empty
+    frame: the spine changes, every lookup is unchanged). -/
+theorem interp_ctl_sup_move_lk [CerbStGS GF] {σ σ' : driver_state}
+    (hlay : σ'.layout_state = σ.layout_state)
+    (henvL : ∀ z, envLookup σ' z = envLookup σ z)
+    (hwfp : EnvWf σ → EnvWf σ') :
+    CerbStInterp (GF := GF) σ ∗ ctlIs stHalf (ctlOf σ)
+        ∗ supIs stHalf (suppliesOf σ) ⊢ |==>
+      (CerbStInterp σ' ∗ ctlIs stHalf (ctlOf σ')
+        ∗ supIs stHalf (suppliesOf σ')) := by
+  rw [CerbStInterp_congr (σ' := σ')
+    (B := bytesOf σ.layout_state) (A := allocsOf σ.layout_state)
+    (C := ctlOf σ') (S := suppliesOf σ') (MR := memRestOf σ)
+    (by rw [hlay]) (by rw [hlay]) rfl rfl
+    (by unfold memRestOf; rw [hlay])]
+  unfold CerbStInterp ctlIs supIs
+  iintro ⟨⟨Hb, Ha, He, Hd, Hc, Hs, Hm, %Hinv, %Hwf⟩, Hcf, Hsf⟩
+  icases He with ⟨%e, He, %Hcoh⟩
+  icases Hd with ⟨%d, Hd, %Hdom⟩
+  imod ghost_var_update_halves (ctlOf σ') _ _ _ $$ Hc Hcf
+    with ⟨Hc, Hcf⟩
+  imod ghost_var_update_halves (suppliesOf σ') _ _ _ $$ Hs Hsf
+    with ⟨Hs, Hsf⟩
+  imodintro
+  iframe Hb Ha Hc Hs Hm Hcf Hsf
+  isplitl [He]
+  · iexists e
+    iframe He
+    ipureintro
+    exact Hcoh.mono (fun x v h => (henvL x).trans h)
+  isplitl [Hd]
+  · iexists d
+    iframe Hd
+    ipureintro
+    intro z v hz
+    exact Hdom z v ((henvL z).symm.trans hz)
+  · ipureintro
+    rw [hlay]
+    exact ⟨Hinv, hwfp Hwf⟩
+
 /-- ENV WRITE (the new capability's update leg): a step rebinds the
     owned cell `x` to `vNew`, every OTHER cell is preserved by
     NUMBER-APARTNESS (`hpres`); the control token moves; the owned

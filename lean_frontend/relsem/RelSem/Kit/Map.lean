@@ -352,6 +352,25 @@ theorem fmapLookupBy_addBy_empty_ne {α β : Type} [BEq α]
     if_neg hk]
   rfl
 
+/-- Lookup after a FIRST insert, captured-comparator-EQ key: the
+    inserted value (the singleton hit). -/
+@[step_law (kind := envMap) (variant := emptyEq) (side := ground)
+  (frontier := "env/lookup-empty-eq")
+  (trace := "{law := fmapLookupBy_addBy_empty_eq, joint := env/lookup, hyps := [hk : ground]}")
+  (lineage := "singleton-tree hit at the captured comparator")]
+theorem fmapLookupBy_addBy_empty_eq {α β : Type} [BEq α]
+    {pcmp pcmp' : α → α → LemOrdering}
+    [Std.TransCmp (lemCmpToOrd pcmp)] {k a : α} {v : β}
+    (hk : lemCmpToOrd pcmp k a = .eq) :
+    fmapLookupBy pcmp' a (fmapAddBy pcmp k v (fmapEmpty : Fmap α β))
+      = some v := by
+  show (match (Std.TreeMap.empty.insert k
+      [(0, k, v)]).get? a with
+    | some ((_, _, v) :: _) => some v
+    | _ => none) = some v
+  rw [Std.TreeMap.get?_eq_getElem?, Std.TreeMap.getElem?_insert,
+    if_pos hk]
+
 /-! ## Int-keyed TreeMap get?/insert laws (the bytemap engine) -/
 
 theorem tmInt_get?_insert_self {β : Type}

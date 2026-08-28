@@ -38,6 +38,7 @@ import RelSem.PerStepPeel
 import RelSem.Threaded
 import RelSem.T1Threaded
 import RelSem.CerbStateRA
+import RelSem.CerbStateStep
 
 set_option autoImplicit false
 
@@ -150,7 +151,7 @@ def arena8 (v : Int) : RExpr :=
 /-! ## The control family: one thread over `t1File`, arena + trace +
     counter CONTROL, frame/supplies/layout ABSTRACT -/
 
-def t1Th (arena : RExpr) (f₁ : Fmap sym value) : thread_state :=
+@[reducible] def t1Th (arena : RExpr) (f₁ : Fmap sym value) : thread_state :=
   { arena := arena,
     stack0 := Stack_empty,
     errno := errPtr,
@@ -159,7 +160,7 @@ def t1Th (arena : RExpr) (f₁ : Fmap sym value) : thread_state :=
     env := [f₁],
     current_proc_opt := some idT1Sym }
 
-def t1σ (arena : RExpr) (f₁ : Fmap sym value)
+@[reducible] def t1σ (arena : RExpr) (f₁ : Fmap sym value)
     (tS aS eS sS : Nat) (ls : CerbMem.MemState)
     (tr : List trace_event) (n : Nat) : driver_state :=
   { core_file := t1File,
@@ -200,7 +201,7 @@ structure T1P where
   ls : CerbMem.MemState
 
 /-- The family, packaged (what the `_fam` rules consume). -/
-def t1fam (arena : RExpr) (tr : List trace_event) (n : Nat)
+@[reducible] def t1fam (arena : RExpr) (tr : List trace_event) (n : Nat)
     (p : T1P) : driver_state :=
   t1σ arena p.f₁ p.tS p.aS p.eS p.sS p.ls tr n
 
@@ -256,6 +257,86 @@ theorem t1fam_lookup (arena : RExpr) (tr : List trace_event) (n : Nat)
   cases h : fmapLookupBy (@Lem_Map.mapKeyCompare sym _) z p.f₁ <;>
     simp [lookup_env, h]
 
+
+/-! ## The STAGE-0 family: the state the harness setup writes.
+    `current_loc` is `other "RelSem.callND"` (callFinishK's record);
+    the first eval round resets it to `Loc.unknown` — every later
+    stage lives in the `t1Th` family. -/
+
+@[reducible] def t1Th0 (arena : RExpr) (f₁ : Fmap sym value) :
+    thread_state :=
+  { arena := arena,
+    stack0 := Stack_empty,
+    errno := errPtr,
+    current_loc := CerbLocation.other "RelSem.callND",
+    exec_loc := ELoc_normal [(idT1Sym, CerbLocation.other "RelSem.callND")],
+    env := [f₁],
+    current_proc_opt := some idT1Sym }
+
+@[reducible] def t1σ0 (f₁ : Fmap sym value)
+    (tS aS eS sS : Nat) (ls : CerbMem.MemState) : driver_state :=
+  { core_file := t1File,
+    core_extern := create_extern_symmap t1File,
+    core_state0 :=
+      { thread_states := [(0, (none, t1Th0 arena0 f₁))],
+        io := initial_io_state },
+    core_run_state0 :=
+      { tid_supply := tS, aid_supply := aS, excluded_supply := eS,
+        sym_supply := sS,
+        labeled := (initial_core_run_state_threaded 0
+          (collect_labeled_continuations_NEW t1File)).labeled },
+    layout_state := ls,
+    concurrency_state := symInitialState symInitialPre,
+    fs_state0 := CerbFS.fs_initial_state,
+    trace := [],
+    symbolic_assoc := fmapEmpty,
+    blocked := false,
+    dr_step_counter := 0 }
+
+def t1Ctl0 : driver_state :=
+  ctlOf (t1σ0 fmapEmpty 0 0 0 0 CerbMem.initialMemState)
+
+@[reducible] def t1fam0 (p : T1P) : driver_state :=
+  t1σ0 p.f₁ p.tS p.aS p.eS p.sS p.ls
+
+/-- Control inversion at the stage-0 family. -/
+theorem t1_inv0 {σ : driver_state} (h : ctlOf σ = t1Ctl0) :
+    ∃ p : T1P, σ = t1fam0 p := by
+  obtain ⟨cf, ce, cs, crs, ls, ccs, fs0, tr', sa, bl, ctr'⟩ := σ
+  obtain ⟨ths, io⟩ := cs
+  obtain ⟨tS, aS, eS, sS, lab⟩ := crs
+  have h' := h
+  simp only [t1Ctl0, ctlOf, t1σ0, eraseEnvs, driver_state.mk.injEq,
+    core_state.mk.injEq, core_run_state.mk.injEq] at h'
+  obtain ⟨hcf, hce, ⟨hths, hio⟩, ⟨-, -, -, -, hlab⟩, -, hccs, hfs,
+    htr, hsa, hbl, hctr⟩ := h'
+  cases ths with
+  | nil => simp at hths
+  | cons t rest =>
+    obtain ⟨tid, pp, th⟩ := t
+    obtain ⟨arena', stack', errno', env', proc', exec', loc'⟩ := th
+    simp only [List.map_cons, List.map_nil, List.cons.injEq,
+      List.map_eq_nil_iff, Prod.mk.injEq, eraseThreadEnv, t1Th0,
+      thread_state.mk.injEq] at hths
+    obtain ⟨⟨htid0, hp, harena, hstack, herrno, henv, hproc, hexec,
+      hloc⟩, hrest⟩ := hths
+    cases env' with
+    | nil => simp at henv
+    | cons f₁ fr =>
+      simp only [List.map_cons, List.map_nil, List.cons.injEq,
+        List.map_eq_nil_iff] at henv
+      obtain ⟨-, hfr⟩ := henv
+      refine ⟨⟨f₁, tS, aS, eS, sS, ls⟩, ?_⟩
+      subst hcf hce htid0 hp harena hstack herrno hproc hexec hloc
+        hccs hfs htr hsa hbl hctr hio hrest hfr hlab
+      rfl
+
+/-- Frame well-formedness from the stage-0 family's `EnvWf`. -/
+theorem t1fam0_frame {p : T1P} (hwf : EnvWf (t1fam0 p)) :
+    EnvWfFrame p.f₁ :=
+  hwf p.f₁ (by
+    show p.f₁ ∈ thread0Env _
+    simp [thread0Env, t1fam0, t1σ0, t1Th0])
 
 /-! ## Argument bytes and the roundtrip (S5a salvage, revalidated) -/
 
@@ -315,12 +396,12 @@ def zeroBytes : List CerbMem.AbsByte :=
   [zeroByte, zeroByte, zeroByte, zeroByte]
 
 /-- The initial memory residual. -/
-def mr0 : CerbMem.MemState := memRestOf
+@[reducible] def mr0 : CerbMem.MemState := memRestOf
   (initial_driver_state_threaded 0 t1File t1Fs)
 /-- After the argument allocation. -/
-def mr1 : CerbMem.MemState := mrAlloc mr0 xAddr
+@[reducible] def mr1 : CerbMem.MemState := mrAlloc mr0 xAddr
 /-- After the errno allocation. -/
-def mr2 : CerbMem.MemState := mrAlloc mr1 errAddr
+@[reducible] def mr2 : CerbMem.MemState := mrAlloc mr1 errAddr
 
 theorem sizeof_int_eq : CerbMem.sizeofCtype signed_int = 4 := rfl
 theorem sizeof_intCty_eq : CerbMem.sizeofCtype intCty = 4 := rfl
@@ -349,7 +430,7 @@ def t1Init (seed : Nat) (ls : CerbMem.MemState) : driver_state :=
 
 /-- The globals thread at frame `f₀` (post-globals; the frame content
     is what ctl erases). -/
-def thGf (f₀ : Fmap sym value) : thread_state :=
+@[reducible] def thGf (f₀ : Fmap sym value) : thread_state :=
   { arena := Expr [] (Epure (Pexpr [] () (PEval Vunit))),
     stack0 := Stack_empty,
     errno := .PV .Prov_none (.PVnull intCty),
@@ -359,7 +440,7 @@ def thGf (f₀ : Fmap sym value) : thread_state :=
     current_proc_opt := none }
 
 /-- The post-globals family. -/
-def dGσ (f₀ : Fmap sym value) (tS aS eS sS : Nat)
+@[reducible] def dGσ (f₀ : Fmap sym value) (tS aS eS sS : Nat)
     (ls : CerbMem.MemState) : driver_state :=
   { core_file := t1File,
     core_extern := create_extern_symmap t1File,
@@ -391,7 +472,7 @@ structure DGP where
   sS : Nat
   ls : CerbMem.MemState
 
-def dGfam (p : DGP) : driver_state :=
+@[reducible] def dGfam (p : DGP) : driver_state :=
   dGσ p.f₀ p.tS p.aS p.eS p.sS p.ls
 
 theorem ctlOf_dGσ (f₀ : Fmap sym value) (tS aS eS sS : Nat)
@@ -519,6 +600,38 @@ theorem t1r0 (x : Int) (p : T1P)
       show runEU (eval_pexpr_aux2 t1File.tagDefs
           CerbLocation.Loc.unknown
           (some (CerbLocation.other "RelSem.callND"))
+          (create_extern_symmap t1File) [p.f₁] (some p.ls) t1File
+          (Pexpr aU () (PEsym symX))) _ = _
+      rw [aux2_sym_hit (a := aU) (a' := []) (z := symX) (v := xPtrV)
+        (env := [p.f₁]) rfl rfl
+        (show lookup_env symX [p.f₁] = some xPtrV from hx)]
+      rfl
+    · rfl
+  · rfl
+
+
+/-- R0 at the STAGE-0 family (the round the setup state actually
+    feeds; output lands in the `t1Th` family — the eval resets
+    `current_loc`). -/
+theorem t1r0v (x : Int) (p : T1P)
+    (hwf : EnvWfFrame p.f₁)
+    (hx : envLookup (t1fam0 p) symX = some xPtrV) :
+    app (dnmsRoundM t1File.tagDefs 0) (t1fam0 p)
+      = (NDactive (Sum.inl NOWAKEUP),
+         t1fam arena1 [] 1 { p with }) := by
+  refine dnmsRoundM_adv rfl ?_
+  refine (advance_runstate_eval (th' := t1Th arena1 p.f₁)
+    (rs' := (t1fam0 p).core_run_state0) ?_).trans ?_
+  · show stExceptUndef_bind _ _ _ = _
+    refine (stub_defined (z := Expr aU (Epure (Pexpr [] () (PEval xPtrV))))
+      (st' := (t1fam0 p).core_run_state0) ?_).trans rfl
+    show stExceptUndef_bind _ _ _ = _
+    refine (stub_defined (z := xPtrV)
+      (st' := (t1fam0 p).core_run_state0) ?_).trans rfl
+    show stExceptUndef_bind _ _ _ = _
+    refine (stub_defined (z := Sum.inr xPtrV)
+      (st' := (t1fam0 p).core_run_state0) ?_).trans ?_
+    · show runEU (eval_pexpr_aux2 t1File.tagDefs _ _
           (create_extern_symmap t1File) [p.f₁] (some p.ls) t1File
           (Pexpr aU () (PEsym symX))) _ = _
       rw [aux2_sym_hit (a := aU) (a' := []) (z := symX) (v := xPtrV)
@@ -981,5 +1094,267 @@ theorem t1r8 (x : Int) (p : T1P) :
          t1fam (arena8 x) [meLoad x] 7 p) := by
   refine (dnmsRoundM_inr rfl).trans ?_
   rfl
+
+
+/-! ## BIRTH LEGS (generic over the born symbol; promoted to a Kit
+    home when a second program consumes them) -/
+
+/-- Comparator reflexivity (digest+number agree with themselves). -/
+theorem symCmpO_refl (z : sym) : RelSem.Kit.symCmpO z z = .eq := by
+  obtain ⟨d, n, sd⟩ := z
+  exact (RelSem.Kit.symCmpO_eq_iff d d n n sd sd).2 ⟨rfl, rfl⟩
+
+/-- The captured comparator of the generated bind's insert. -/
+theorem mapKeyCompare_is_symCmpO :
+    lemCmpToOrd (@Lem_Map.mapKeyCompare sym _) = RelSem.Kit.symCmpO :=
+  rfl
+
+/-- Birth NEW: the just-bound cell reads back. -/
+theorem birth_new {b : sym} {v : value} {f : Fmap sym value}
+    (hb : EnvWfFrame f) :
+    lookup_env b [@fmapAddBy sym value Lem_Map.instBEqOfMapKeyType
+      (@Lem_Map.mapKeyCompare sym _) b v f] = some v := by
+  rw [show lookup_env b [@fmapAddBy sym value Lem_Map.instBEqOfMapKeyType
+      (@Lem_Map.mapKeyCompare sym _) b v f]
+    = fmapLookupBy (@Lem_Map.mapKeyCompare sym _) b
+        (@fmapAddBy sym value Lem_Map.instBEqOfMapKeyType
+          (@Lem_Map.mapKeyCompare sym _) b v f) from by
+    cases h : fmapLookupBy (@Lem_Map.mapKeyCompare sym _) b
+        (@fmapAddBy sym value Lem_Map.instBEqOfMapKeyType
+          (@Lem_Map.mapKeyCompare sym _) b v f) <;>
+      simp [lookup_env, h]]
+  cases hb with
+  | inl he =>
+    subst he
+    exact @RelSem.Kit.fmapLookupBy_addBy_empty_eq sym value
+      Lem_Map.instBEqOfMapKeyType (@Lem_Map.mapKeyCompare sym _)
+      (@Lem_Map.mapKeyCompare sym _) RelSem.Kit.instTransCmpSymCmpO
+      b b v (by rw [mapKeyCompare_is_symCmpO]; exact
+        symCmpO_refl b)
+  | inr hbuilt =>
+    exact @RelSem.Kit.fmapLookupBy_addBy_eq sym value
+      Lem_Map.instBEqOfMapKeyType RelSem.Kit.symCmpO
+      RelSem.Kit.instTransCmpSymCmpO _ _ b b v f hbuilt
+      (symCmpO_refl b)
+
+/-- Birth PRESERVE: every binding survives the insert (the born
+    symbol's cmp-class is UNBOUND — supplied from the ledger). -/
+theorem birth_pres {b : sym} {v : value} {f : Fmap sym value}
+    (hb : EnvWfFrame f)
+    (hsh : ∀ z : sym, RelSem.Kit.symCmpO b z = .eq →
+      lookup_env z [f] = none) :
+    ∀ z v', lookup_env z [f] = some v' →
+      lookup_env z [@fmapAddBy sym value Lem_Map.instBEqOfMapKeyType
+        (@Lem_Map.mapKeyCompare sym _) b v f] = some v' := by
+  intro z v' hz
+  have hlk : ∀ (g : Fmap sym value) (w : Option value),
+      (fmapLookupBy (@Lem_Map.mapKeyCompare sym _) z g = w) →
+      lookup_env z [g] = w := by
+    intro g w hw
+    cases h : fmapLookupBy (@Lem_Map.mapKeyCompare sym _) z g <;>
+      simp [lookup_env, h] <;> simp [h] at hw <;> exact hw
+  have hzf : fmapLookupBy (@Lem_Map.mapKeyCompare sym _) z f
+      = some v' := by
+    cases h : fmapLookupBy (@Lem_Map.mapKeyCompare sym _) z f
+    · simp [lookup_env, h] at hz
+    · simp [lookup_env, h] at hz; rw [hz]
+  by_cases hcmp : RelSem.Kit.symCmpO b z = .eq
+  · exact absurd (hsh z hcmp) (by rw [hz]; simp)
+  · cases hb with
+    | inl he =>
+      subst he
+      rw [show fmapLookupBy (@Lem_Map.mapKeyCompare sym _) z
+          (Fmap.empty : Fmap sym value) = none from rfl] at hzf
+      cases hzf
+    | inr hbuilt =>
+      refine hlk _ (some v') ?_
+      rw [@RelSem.Kit.fmapLookupBy_addBy_ne sym value
+        Lem_Map.instBEqOfMapKeyType RelSem.Kit.symCmpO
+        RelSem.Kit.instTransCmpSymCmpO _ _ b z v f hbuilt hcmp]
+      exact hzf
+
+/-- Birth REVERSE: every binding after the insert was bound before,
+    or is in the born symbol's number class. -/
+theorem birth_rev {b : sym} {v : value} {f : Fmap sym value}
+    (hb : EnvWfFrame f) :
+    ∀ z v', lookup_env z
+        [@fmapAddBy sym value Lem_Map.instBEqOfMapKeyType
+          (@Lem_Map.mapKeyCompare sym _) b v f] = some v' →
+      (∃ v₀, lookup_env z [f] = some v₀) ∨ symNum z = symNum b := by
+  intro z v' hz
+  by_cases hcmp : RelSem.Kit.symCmpO b z = .eq
+  · right
+    obtain ⟨d1, n1, sd1⟩ := b
+    obtain ⟨d2, n2, sd2⟩ := z
+    obtain ⟨-, hn⟩ := (RelSem.Kit.symCmpO_eq_iff d1 d2 n1 n2
+      sd1 sd2).1 hcmp
+    simp [symNum, hn]
+  · left
+    have hzin : fmapLookupBy (@Lem_Map.mapKeyCompare sym _) z
+        (@fmapAddBy sym value Lem_Map.instBEqOfMapKeyType
+          (@Lem_Map.mapKeyCompare sym _) b v f) = some v' := by
+      cases h : fmapLookupBy (@Lem_Map.mapKeyCompare sym _) z
+          (@fmapAddBy sym value Lem_Map.instBEqOfMapKeyType
+            (@Lem_Map.mapKeyCompare sym _) b v f)
+      · simp [lookup_env, h] at hz
+      · simp [lookup_env, h] at hz; rw [hz]
+    cases hb with
+    | inl he =>
+      subst he
+      rw [show (Fmap.empty : Fmap sym value) = fmapEmpty from rfl,
+        @RelSem.Kit.fmapLookupBy_addBy_empty_ne sym value
+          Lem_Map.instBEqOfMapKeyType (@Lem_Map.mapKeyCompare sym _)
+          (@Lem_Map.mapKeyCompare sym _) RelSem.Kit.instTransCmpSymCmpO
+          b z v (by rw [mapKeyCompare_is_symCmpO]; exact hcmp)] at hzin
+      cases hzin
+    | inr hbuilt =>
+      rw [@RelSem.Kit.fmapLookupBy_addBy_ne sym value
+        Lem_Map.instBEqOfMapKeyType RelSem.Kit.symCmpO
+        RelSem.Kit.instTransCmpSymCmpO _ _ b z v f hbuilt hcmp] at hzin
+      exact ⟨v', by simp [lookup_env, hzin]⟩
+
+/-- Birth WF: well-formedness survives the insert. -/
+theorem birth_wfp {b : sym} {v : value} {f : Fmap sym value}
+    (hb : EnvWfFrame f) :
+    EnvWfFrame (@fmapAddBy sym value Lem_Map.instBEqOfMapKeyType
+      (@Lem_Map.mapKeyCompare sym _) b v f) := by
+  cases hb with
+  | inl he =>
+    subst he
+    exact Or.inr (by
+      rw [← mapKeyCompare_is_symCmpO,
+        show (Fmap.empty : Fmap sym value) = fmapEmpty from rfl]
+      exact @RelSem.Kit.fmapAddBy_built_empty sym value
+        Lem_Map.instBEqOfMapKeyType (@Lem_Map.mapKeyCompare sym _)
+        b v)
+  | inr hbuilt =>
+    exact Or.inr (@RelSem.Kit.fmapAddBy_built sym value
+      Lem_Map.instBEqOfMapKeyType RelSem.Kit.symCmpO
+      (@Lem_Map.mapKeyCompare sym _) b v f hbuilt)
+
+
+/-! ## The memory-stage Happ equations (residual-fact conditioned;
+    what the `wpk_seq_alloc_store` instances feed) -/
+
+@[reducible] def allocXS : CerbMem.Allocation :=
+  { base := xAddr, size := (4 : Nat), ty := some signed_int,
+    prefix_ := PrefOther "callND arg" }
+@[reducible] def allocErrS : CerbMem.Allocation :=
+  { base := errAddr, size := (4 : Nat), ty := some signed_int,
+    prefix_ := PrefOther "errno" }
+
+/-- k6: the argument injection at residual facts — allocate x's
+    object, store the serialized argument, bind the pointer. -/
+theorem k6_fam (x : Int) (σ : driver_state)
+    (hmr : memRestOf σ = mr0) (hinv : MemInv σ.layout_state) :
+    app (injectArgs t1File.tagDefs 0
+          [(symX, BTy_object OTy_pointer)] [signed_int] [intValue x]) σ
+      = (NDactive [(symX, xPtrV)],
+         { σ with layout_state :=
+             (layoutAllocStore σ.layout_state xAddr 4 allocXS
+               (xBytes x)) }) := by
+  have hlast : σ.layout_state.lastAddress = mr0.lastAddress := by
+    rw [show σ.layout_state.lastAddress = (memRestOf σ).lastAddress
+      from rfl, hmr]
+  have h0 : σ.layout_state.nextAllocId = 0 := by
+    rw [show σ.layout_state.nextAllocId = (memRestOf σ).nextAllocId
+      from rfl, hmr]
+    rfl
+  have halloc := Kit.mem_alloc_block (tid := 0)
+    (pref := PrefOther "callND arg") (pv := .Prov_none)
+    (alignN := 4) (ty := signed_int) (mem := σ.layout_state)
+    (addrOpt := none) (sz := 4) (a := xAddr)
+    rfl (by rw [hlast]; rfl) rfl
+  have hget1 : (CerbMem.writeBytesTo
+      ({ σ.layout_state with
+          nextAllocId := σ.layout_state.nextAllocId + 1,
+          lastAddress := xAddr,
+          allocations := σ.layout_state.allocations.insert
+            σ.layout_state.nextAllocId allocXS })
+      xAddr (List.replicate 4 uninitB)).allocations.get?
+        σ.layout_state.nextAllocId
+      = some allocXS := by
+    rw [Kit.writeBytesTo_allocations]
+    exact Kit.tm_get?_insert_eq _ _ _
+  have hstore := Kit.mem_store_block
+    (loc := CerbLocation.other "callND arg init") (ty := signed_int)
+    (allocId := σ.layout_state.nextAllocId) (addr := xAddr)
+    (alloc := allocXS)
+    (mem := CerbMem.writeBytesTo
+      ({ σ.layout_state with
+          nextAllocId := σ.layout_state.nextAllocId + 1,
+          lastAddress := xAddr,
+          allocations := σ.layout_state.allocations.insert
+            σ.layout_state.nextAllocId allocXS })
+      xAddr (List.replicate 4 uninitB))
+    (mv := CerbMem.integerValueMval (Signed Int_)
+      (CerbMem.integerIval x))
+    rfl hget1 rfl rfl rfl
+    (by rw [Kit.writeBytesTo_funptrmap])
+  rw [show xPtrV = Vobject (OVpointer
+      (.PV (.Prov_some σ.layout_state.nextAllocId)
+        (.PVconcrete none xAddr))) from by rw [h0]; rfl]
+  exact RelSem.Laws.inject_ptr_arg1 (memValueFromValue_int x)
+    halloc hstore rfl
+
+/-- k8: the errno block at residual facts. -/
+theorem k8_fam (x : Int) (σ : driver_state)
+    (hmr : memRestOf σ = mr1) (hinv : MemInv σ.layout_state) :
+    app (liftMem (nd_bind
+        (CerbMem.allocateObject 0 (PrefOther "errno")
+          (CerbMem.alignofIval signed_int) signed_int none none)
+        (fun (ptr_val : CerbMem.PointerValue) =>
+          let zero := CerbMem.integerValueMval (Signed Int_)
+            (CerbMem.integerIval (0 : Int))
+          nd_bind
+            (CerbMem.storeM (CerbLocation.other "errno init")
+              signed_int false ptr_val zero)
+            (fun (_ : CerbMem.Footprint) => nd_return ptr_val)))) σ
+      = (NDactive errPtr,
+         { σ with layout_state :=
+             (layoutAllocStore σ.layout_state errAddr 4 allocErrS
+               zeroBytes) }) := by
+  have hlast : σ.layout_state.lastAddress = mr1.lastAddress := by
+    rw [show σ.layout_state.lastAddress = (memRestOf σ).lastAddress
+      from rfl, hmr]
+  have h0 : σ.layout_state.nextAllocId = 1 := by
+    rw [show σ.layout_state.nextAllocId = (memRestOf σ).nextAllocId
+      from rfl, hmr]
+    rfl
+  have halloc := Kit.mem_alloc_block (tid := 0)
+    (pref := PrefOther "errno") (pv := .Prov_none)
+    (alignN := 4) (ty := signed_int) (mem := σ.layout_state)
+    (addrOpt := none) (sz := 4) (a := errAddr)
+    rfl (by rw [hlast]; rfl) rfl
+  have hget1 : (CerbMem.writeBytesTo
+      ({ σ.layout_state with
+          nextAllocId := σ.layout_state.nextAllocId + 1,
+          lastAddress := errAddr,
+          allocations := σ.layout_state.allocations.insert
+            σ.layout_state.nextAllocId allocErrS })
+      errAddr (List.replicate 4 uninitB)).allocations.get?
+        σ.layout_state.nextAllocId
+      = some allocErrS := by
+    rw [Kit.writeBytesTo_allocations]
+    exact Kit.tm_get?_insert_eq _ _ _
+  have hstore := Kit.mem_store_block
+    (loc := CerbLocation.other "errno init") (ty := signed_int)
+    (allocId := σ.layout_state.nextAllocId) (addr := errAddr)
+    (alloc := allocErrS)
+    (mem := CerbMem.writeBytesTo
+      ({ σ.layout_state with
+          nextAllocId := σ.layout_state.nextAllocId + 1,
+          lastAddress := errAddr,
+          allocations := σ.layout_state.allocations.insert
+            σ.layout_state.nextAllocId allocErrS })
+      errAddr (List.replicate 4 uninitB))
+    (mv := CerbMem.integerValueMval (Signed Int_)
+      (CerbMem.integerIval 0))
+    rfl hget1 rfl rfl rfl
+    (by rw [Kit.writeBytesTo_funptrmap])
+  rw [show errPtr = (.PV (.Prov_some σ.layout_state.nextAllocId)
+      (.PVconcrete none errAddr) : CerbMem.PointerValue)
+    from by rw [h0]; rfl]
+  exact RelSem.Laws.callND_errno halloc hstore rfl
 
 end RelSem.T1
