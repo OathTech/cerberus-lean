@@ -420,7 +420,7 @@ def arenaLean (σ : driver_state) : String :=
 
 partial def walkRoundsLean (tagDefs0 : Fmap sym (CerbLocation.Loc × tag_definition)) (σ : driver_state) (i : Nat)
     (acc : List String) : List String × driver_state :=
-  if i > 60 then ((("...OVERFLOW" : String) :: acc).reverse, σ)
+  if i > 130 then ((("...OVERFLOW" : String) :: acc).reverse, σ)
   else
     let s := RelSem.Laws.stepAt tagDefs0 0 σ
     let line := s!"===== ROUND [{i}] {stepClass s} | {supInfo σ}\nARENA := {arenaLean σ}\nENV:\n{envTopLean σ}\nTRACE({σ.trace.length}) := [{String.intercalate ", " (σ.trace.map pTe)}]"
@@ -561,20 +561,13 @@ def t2r10pe : generic_pexpr Unit sym :=
       Pexpr aU () (PEundef CerbLocation.Loc.unknown UB036_exceptional_condition))])
 
 #eval do
-  IO.println "##### t2 r10 chain (3,5) #####"
-  for l in chainProbe [Lem_Map.fromList
-      [((Symbol "" 4915778119994869450 (SD_Id "a_530")),
-        Vloaded (LVspecified (OVinteger (.IV .Prov_none 3)))),
-       ((Symbol "" 17653705816563834534 (SD_Id "a_531")),
-        Vloaded (LVspecified (OVinteger (.IV .Prov_none 5))))]]
-      (some CerbMem.initialMemState) t2r10pe do IO.println l
-  IO.println "@@@@@ T2 add(3,5) @@@@@"
-  for l in probeLeanG RelSem.Slate.t2File "add" [intValue 3, intValue 5] 0 do IO.println l
-  IO.println "@@@@@ T2 add(-4,7) @@@@@"
-  for l in probeLeanG RelSem.Slate.t2File "add" [intValue (-4), intValue 7] 0 do IO.println l
-  IO.println "@@@@@ T3 roundtrip(7) @@@@@"
-  for l in probeLeanG RelSem.Slate.t3File "roundtrip" [intValue 7] 0 do IO.println l
-  IO.println "@@@@@ T3 roundtrip(-4) @@@@@"
-  for l in probeLeanG RelSem.Slate.t3File "roundtrip" [intValue (-4)] 0 do IO.println l
+  IO.println "@@@@@ P02 sat(3,5) @@@@@"
+  for l in probeLeanG p02File "sat_add" [intValue 3, intValue 5] 0 do IO.println l
+  IO.println "@@@@@ P02 sat(-4,7) @@@@@"
+  for l in probeLeanG p02File "sat_add" [intValue (-4), intValue 7] 0 do IO.println l
+  IO.println "@@@@@ P02 sat(2147483647,1) @@@@@"
+  for l in probeLeanG p02File "sat_add" [intValue 2147483647, intValue 1] 0 do IO.println l
+  IO.println "@@@@@ P02 satm(-2147483648,-1) @@@@@"
+  for l in probeLeanG p02File "sat_add" [intValue (-2147483648), intValue (-1)] 0 do IO.println l
 
 end V2Probe

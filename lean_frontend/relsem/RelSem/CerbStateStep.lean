@@ -763,10 +763,14 @@ theorem wpk_seq_ctl_sup_store [CerbStGS GF] {α : Type}
     {m : ndM α step_kind driver_error mem_iv_constraint driver_state}
     {k : α → KDriveExpr} {v : α} {upd : driver_state → driver_state}
     {c c' : driver_state} {S S' : Supplies}
+    {mr : CerbMem.MemState} {aid : Int} {al : CerbMem.Allocation}
+    {dqm dqa : DFrac}
     {addr : Int} {old new : List CerbMem.AbsByte}
     {s : Stuckness} {E : CoPset} {Φ : DriveVal → IProp GF}
     (hlen : new.length = old.length)
     (Happ : ∀ σ, ctlOf σ = c → EnvWf σ → suppliesOf σ = S →
+      memRestOf σ = mr →
+      σ.layout_state.allocations.get? aid = some al →
       (∀ i : Nat, (hi : i < old.length) →
         σ.layout_state.bytemap.get? (addr + (i : Int)) = some old[i]) →
       MemInv σ.layout_state →
@@ -780,33 +784,39 @@ theorem wpk_seq_ctl_sup_store [CerbStGS GF] {α : Type}
       suppliesOf (upd σ) = S')
     (henvT : ∀ σ, ctlOf σ = c → EnvWf σ → suppliesOf σ = S →
       thread0Env (upd σ) = thread0Env σ) :
-    (ctlIs (GF := GF) stHalf c ∗ supIs stHalf S
+    (ctlIs (GF := GF) stHalf c ∗ supIs stHalf S ∗ mrestIs dqm mr
+        ∗ allocIs aid dqa al
         ∗ pointsToBytes addr (.own 1) old) ∗
-      ((ctlIs stHalf c' ∗ supIs stHalf S'
+      ((ctlIs stHalf c' ∗ supIs stHalf S' ∗ mrestIs dqm mr
+          ∗ allocIs aid dqa al
           ∗ pointsToBytes addr (.own 1) new)
         -∗ WP (k v) @ s ; E {{ Φ }}) ⊢
       WP (KExpr.seq m k : KDriveExpr) @ s ; E {{ Φ }} := by
   refine wpk_seq_res_det
-    (Pre := fun σ => (((ctlOf σ = c ∧ EnvWf σ) ∧ suppliesOf σ = S) ∧
+    (Pre := fun σ => (((((ctlOf σ = c ∧ EnvWf σ) ∧ suppliesOf σ = S) ∧
+      memRestOf σ = mr) ∧
+      σ.layout_state.allocations.get? aid = some al) ∧
       (∀ i : Nat, (hi : i < old.length) →
         σ.layout_state.bytemap.get? (addr + (i : Int))
           = some old[i])) ∧ MemInv σ.layout_state)
     (upd := upd)
-    ?_ (fun σ hp => Happ σ hp.1.1.1.1 hp.1.1.1.2 hp.1.1.2 hp.1.2
-      hp.2) ?_
+    ?_ (fun σ hp => Happ σ hp.1.1.1.1.1.1 hp.1.1.1.1.1.2 hp.1.1.1.1.2
+      hp.1.1.1.2 hp.1.1.2 hp.1.2 hp.2) ?_
   · intro σ
-    iintro ⟨Hi, Hc, Hs, Hp⟩
+    iintro ⟨Hi, Hc, Hs, Hm, Ha, Hp⟩
     icases interp_ctl_agree $$ [$Hi $Hc] with ⟨%h1, Hi, Hc⟩
     icases interp_envwf $$ Hi with ⟨%h2, Hi⟩
     icases interp_sup_agree $$ [$Hi $Hs] with ⟨%h3, Hi, Hs⟩
+    icases interp_mrest_agree $$ [$Hi $Hm] with ⟨%h3b, Hi, Hm⟩
+    icases interp_alloc_lookup $$ [$Hi $Ha] with ⟨%h3c, Hi, Ha⟩
     icases interp_bytes_lookup $$ [$Hi $Hp] with ⟨%h4, Hi, Hp⟩
     icases interp_meminv $$ Hi with ⟨%h5, Hi⟩
-    iframe Hi Hc Hs Hp
+    iframe Hi Hc Hs Hm Ha Hp
     ipureintro
-    exact ⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩
+    exact ⟨⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h3b⟩, h3c⟩, h4⟩, h5⟩
   · intro σ hp
-    obtain ⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩ := hp
-    iintro ⟨Hi, Hc, Hs, Hp⟩
+    obtain ⟨⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h3b⟩, h3c⟩, h4⟩, h5⟩ := hp
+    iintro ⟨Hi, Hc, Hs, Hm, Ha, Hp⟩
     imod (interp_store_update (GF := GF) new
         (by rw [hlen]) h4)
       $$ [$Hi $Hp] with ⟨Hi, Hp⟩
@@ -822,7 +832,7 @@ theorem wpk_seq_ctl_sup_store [CerbStGS GF] {α : Type}
       $$ [$Hi $Hc $Hs] with ⟨Hi, Hc, Hs⟩
     imodintro
     rw [hctl' σ h1 h2 h3, hsup' σ h1 h2 h3]
-    iframe Hi Hc Hs Hp
+    iframe Hi Hc Hs Hm Ha Hp
 
 /-- KILL round: ctl+supply move + the allocation freed (the fragment
     consumed; the dead list moves; the byte capital stays). -/
