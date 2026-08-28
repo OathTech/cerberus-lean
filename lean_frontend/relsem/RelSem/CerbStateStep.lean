@@ -656,6 +656,110 @@ def layoutAllocStore (ls : CerbMem.MemState) (aNew : Int) (sz : Nat)
         { prov := .Prov_none, copyOffset := none, value := none }))
     aNew newBytes
 
+/-- THE ALLOC+STORE GHOST UPDATE (factored from the wpk rule so the
+    two-argument inject can apply it twice): at residual facts, the
+    interpretation moves to the alloc+store image and the fragments
+    mint. -/
+theorem interp_alloc_store_bupd [CerbStGS GF]
+    {σ : driver_state} {mr : CerbMem.MemState} {ty : ctype}
+    {pref : prefix0} {alignN : Int} {sz : Nat} {aNew : Int}
+    {newBytes : List CerbMem.AbsByte}
+    (hmr : memRestOf σ = mr)
+    (hsz : (CerbMem.sizeofCtype ty).max 1 = sz)
+    (haddr : ((CerbMem.alignDown (mr.lastAddress - sz).toNat
+        (alignN.toNat.max 1) : Nat) : Int) = aNew)
+    (hnz : (aNew == (0 : Int)) = false)
+    (hlen : newBytes.length = sz) :
+    (CerbStInterp (GF := GF) σ ∗ mrestIs stHalf mr : IProp GF) ⊢
+    |==> (CerbStInterp
+        { σ with layout_state :=
+            (layoutAllocStore σ.layout_state aNew sz
+              ({ base := aNew, size := sz, ty := some ty,
+                 prefix_ := pref } : CerbMem.Allocation) newBytes) } ∗
+      (mrestIs stHalf (mrAlloc mr aNew)
+        ∗ allocIs mr.nextAllocId (.own 1)
+            ({ base := aNew, size := sz, ty := some ty,
+               prefix_ := pref } : CerbMem.Allocation)
+        ∗ pointsToBytes aNew (.own 1) newBytes)) := by
+  show (CerbStInterp (GF := GF) σ ∗ mrestIs stHalf mr : IProp GF) ⊢
+    |==> (CerbStInterp
+      { stateAlloc σ aNew sz
+          ({ base := aNew, size := sz, ty := some ty, prefix_ := pref } : CerbMem.Allocation) with
+        layout_state := CerbMem.writeBytesTo
+          (stateAlloc σ aNew sz
+            ({ base := aNew, size := sz, ty := some ty, prefix_ := pref } : CerbMem.Allocation)).layout_state
+          aNew newBytes } ∗
+      (mrestIs stHalf (mrAlloc mr aNew)
+        ∗ allocIs mr.nextAllocId (.own 1)
+            ({ base := aNew, size := sz, ty := some ty, prefix_ := pref } : CerbMem.Allocation)
+        ∗ pointsToBytes aNew (.own 1) newBytes))
+  iintro ⟨Hi, Hm⟩
+  have haddrσ : ((CerbMem.alignDown
+      (σ.layout_state.lastAddress - sz).toNat
+      (alignN.toNat.max 1) : Nat) : Int) = aNew := by
+    rw [show σ.layout_state.lastAddress = mr.lastAddress from by
+      rw [← hmr]; rfl]
+    exact haddr
+  imod interp_alloc_update (pref := pref) (ty := ty)
+    (alignN := alignN) hmr hsz haddrσ hnz
+    $$ [$Hi $Hm] with ⟨Hi, Hm, Ha, Hp⟩
+  have hfold : (CerbStInterp (GF := GF)
+      { σ with layout_state := (CerbMem.writeBytesTo
+          ({ σ.layout_state with
+              nextAllocId := σ.layout_state.nextAllocId + 1,
+              lastAddress := aNew,
+              allocations := σ.layout_state.allocations.insert
+                σ.layout_state.nextAllocId
+                ({ base := aNew, size := sz, ty := some ty, prefix_ := pref } : CerbMem.Allocation) })
+          aNew (List.replicate sz
+            ({ prov := .Prov_none, copyOffset := none, value := none } : CerbMem.AbsByte))) }
+        : IProp GF)
+      = CerbStInterp (stateAlloc σ aNew sz
+          ({ base := aNew, size := sz, ty := some ty, prefix_ := pref } : CerbMem.Allocation)) := rfl
+  icases hfold $$ Hi with Hi
+  -- the initializing overwrite of the freshly minted range
+  have hold : ∀ i : Nat,
+      (hi : i < (List.replicate sz
+        ({ prov := .Prov_none, copyOffset := none, value := none }
+          : CerbMem.AbsByte)).length) →
+      (CerbMem.writeBytesTo
+        ({ σ.layout_state with
+            nextAllocId := σ.layout_state.nextAllocId + 1,
+            lastAddress := aNew,
+            allocations := σ.layout_state.allocations.insert
+              σ.layout_state.nextAllocId
+              { base := aNew, size := sz, ty := some ty,
+                prefix_ := pref } })
+        aNew (List.replicate sz
+          { prov := .Prov_none, copyOffset := none,
+            value := none })).bytemap.get? (aNew + (i : Int))
+        = some (List.replicate sz
+            ({ prov := .Prov_none, copyOffset := none, value := none }
+              : CerbMem.AbsByte))[i] := by
+    intro i hi
+    rw [List.length_replicate] at hi
+    rw [writeBytesTo_eq]
+    show (writeList _ aNew _).get? (aNew + (i : Int)) = _
+    rw [writeList_get?_in _ _ aNew (aNew + (i : Int)) (by omega)
+      (by rw [List.length_replicate]; omega)]
+    rw [show ((aNew + (i : Int)) - aNew).toNat = i by omega]
+    rw [List.getElem?_eq_getElem (by rw [List.length_replicate]; omega)]
+  imod (interp_store_update (GF := GF)
+      (σ := stateAlloc σ aNew sz
+        ({ base := aNew, size := sz, ty := some ty, prefix_ := pref } : CerbMem.Allocation))
+      newBytes (by rw [hlen, List.length_replicate]) hold)
+    $$ [$Hi $Hp] with ⟨Hi, Hp⟩
+  imodintro
+  have heqA : (allocIs (GF := GF) σ.layout_state.nextAllocId
+        (.own 1) ({ base := aNew, size := (sz : Int), ty := some ty, prefix_ := pref } : CerbMem.Allocation) : IProp GF)
+      = allocIs mr.nextAllocId (.own 1)
+          ({ base := aNew, size := (sz : Int), ty := some ty, prefix_ := pref } : CerbMem.Allocation) := by
+    rw [memRestOf_nextAllocId hmr]
+  icases heqA $$ Ha with Ha
+  iframe Hm Ha Hp
+  iexact Hi
+
+
 /-- ALLOC+STORE atom (layout-only; ctl/env/supplies untouched):
     consumes the residual half; mints the allocation fragment and the
     INITIALIZED byte range. -/
@@ -702,82 +806,89 @@ theorem wpk_seq_alloc_store [CerbStGS GF] {α : Type}
     ipureintro
     exact ⟨h1, h2⟩
   · intro σ hp
-    show (CerbStInterp (GF := GF) σ ∗ mrestIs stHalf mr : IProp GF) ⊢
-      |==> (CerbStInterp
-        { stateAlloc σ aNew sz
-            ({ base := aNew, size := sz, ty := some ty, prefix_ := pref } : CerbMem.Allocation) with
-          layout_state := CerbMem.writeBytesTo
-            (stateAlloc σ aNew sz
-              ({ base := aNew, size := sz, ty := some ty, prefix_ := pref } : CerbMem.Allocation)).layout_state
-            aNew newBytes } ∗
-        (mrestIs stHalf (mrAlloc mr aNew)
+    exact interp_alloc_store_bupd (alignN := alignN)
+      hp.1 hsz haddr hnz hlen
+
+/-- ALLOC+STORE ×2 (the TWO-argument inject stage: one atom, two
+    fresh objects — apply the factored ghost update twice). -/
+@[step_law (kind := stateWP) (variant := allocStore2) (side := fed)
+  (frontier := "state/alloc-store2")
+  (trace := "{law := wpk_seq_alloc_store2, joint := state/alloc-store, hyps := [Happ : fed(residual facts), grounds ×8]}")
+  (lineage := "the alloc_store composite at two arguments (V2 T2/P02; inject_ptr_arg2's resource layer)")]
+theorem wpk_seq_alloc_store2 [CerbStGS GF] {α : Type}
+    {m : ndM α step_kind driver_error mem_iv_constraint driver_state}
+    {k : α → KDriveExpr} {v : α}
+    {mr : CerbMem.MemState} {tyA tyB : ctype} {prefA prefB : prefix0}
+    {alignA alignB : Int} {szA szB : Nat} {aA aB : Int}
+    {bytesA bytesB : List CerbMem.AbsByte}
+    {s : Stuckness} {E : CoPset} {Φ : DriveVal → IProp GF}
+    (hszA : (CerbMem.sizeofCtype tyA).max 1 = szA)
+    (haddrA : ((CerbMem.alignDown (mr.lastAddress - szA).toNat
+        (alignA.toNat.max 1) : Nat) : Int) = aA)
+    (hnzA : (aA == (0 : Int)) = false)
+    (hlenA : bytesA.length = szA)
+    (hszB : (CerbMem.sizeofCtype tyB).max 1 = szB)
+    (haddrB : ((CerbMem.alignDown ((mrAlloc mr aA).lastAddress
+        - szB).toNat (alignB.toNat.max 1) : Nat) : Int) = aB)
+    (hnzB : (aB == (0 : Int)) = false)
+    (hlenB : bytesB.length = szB)
+    (Happ : ∀ σ, memRestOf σ = mr → MemInv σ.layout_state →
+      app m σ = (NDactive v,
+        { σ with layout_state :=
+            (layoutAllocStore
+              (layoutAllocStore σ.layout_state aA szA
+                ({ base := aA, size := szA, ty := some tyA,
+                   prefix_ := prefA } : CerbMem.Allocation) bytesA)
+              aB szB
+              ({ base := aB, size := szB, ty := some tyB,
+                 prefix_ := prefB } : CerbMem.Allocation) bytesB) })) :
+    mrestIs (GF := GF) stHalf mr ∗
+      ((mrestIs stHalf (mrAlloc (mrAlloc mr aA) aB)
           ∗ allocIs mr.nextAllocId (.own 1)
-              ({ base := aNew, size := sz, ty := some ty, prefix_ := pref } : CerbMem.Allocation)
-          ∗ pointsToBytes aNew (.own 1) newBytes))
+              { base := aA, size := szA, ty := some tyA,
+                prefix_ := prefA }
+          ∗ pointsToBytes aA (.own 1) bytesA
+          ∗ allocIs (mrAlloc mr aA).nextAllocId (.own 1)
+              { base := aB, size := szB, ty := some tyB,
+                prefix_ := prefB }
+          ∗ pointsToBytes aB (.own 1) bytesB)
+        -∗ WP (k v) @ s ; E {{ Φ }}) ⊢
+      WP (KExpr.seq m k : KDriveExpr) @ s ; E {{ Φ }} := by
+  refine wpk_seq_res_det
+    (Pre := fun σ => memRestOf σ = mr ∧ MemInv σ.layout_state)
+    (upd := fun σ => { σ with layout_state :=
+        (layoutAllocStore
+          (layoutAllocStore σ.layout_state aA szA
+            ({ base := aA, size := szA, ty := some tyA,
+               prefix_ := prefA } : CerbMem.Allocation) bytesA)
+          aB szB
+          ({ base := aB, size := szB, ty := some tyB,
+             prefix_ := prefB } : CerbMem.Allocation) bytesB) })
+    ?_ (fun σ hp => Happ σ hp.1 hp.2) ?_
+  · intro σ
     iintro ⟨Hi, Hm⟩
-    have haddrσ : ((CerbMem.alignDown
-        (σ.layout_state.lastAddress - sz).toNat
-        (alignN.toNat.max 1) : Nat) : Int) = aNew := by
-      rw [show σ.layout_state.lastAddress = mr.lastAddress from by
-        rw [← hp.1]; rfl]
-      exact haddr
-    imod interp_alloc_update (pref := pref) (ty := ty)
-      (alignN := alignN) hp.1 hsz haddrσ hnz
-      $$ [$Hi $Hm] with ⟨Hi, Hm, Ha, Hp⟩
-    have hfold : (CerbStInterp (GF := GF)
-        { σ with layout_state := (CerbMem.writeBytesTo
-            ({ σ.layout_state with
-                nextAllocId := σ.layout_state.nextAllocId + 1,
-                lastAddress := aNew,
-                allocations := σ.layout_state.allocations.insert
-                  σ.layout_state.nextAllocId
-                  ({ base := aNew, size := sz, ty := some ty, prefix_ := pref } : CerbMem.Allocation) })
-            aNew (List.replicate sz
-              ({ prov := .Prov_none, copyOffset := none, value := none } : CerbMem.AbsByte))) }
-          : IProp GF)
-        = CerbStInterp (stateAlloc σ aNew sz
-            ({ base := aNew, size := sz, ty := some ty, prefix_ := pref } : CerbMem.Allocation)) := rfl
-    icases hfold $$ Hi with Hi
-    -- the initializing overwrite of the freshly minted range
-    have hold : ∀ i : Nat,
-        (hi : i < (List.replicate sz
-          ({ prov := .Prov_none, copyOffset := none, value := none }
-            : CerbMem.AbsByte)).length) →
-        (CerbMem.writeBytesTo
-          ({ σ.layout_state with
-              nextAllocId := σ.layout_state.nextAllocId + 1,
-              lastAddress := aNew,
-              allocations := σ.layout_state.allocations.insert
-                σ.layout_state.nextAllocId
-                { base := aNew, size := sz, ty := some ty,
-                  prefix_ := pref } })
-          aNew (List.replicate sz
-            { prov := .Prov_none, copyOffset := none,
-              value := none })).bytemap.get? (aNew + (i : Int))
-          = some (List.replicate sz
-              ({ prov := .Prov_none, copyOffset := none, value := none }
-                : CerbMem.AbsByte))[i] := by
-      intro i hi
-      rw [List.length_replicate] at hi
-      rw [writeBytesTo_eq]
-      show (writeList _ aNew _).get? (aNew + (i : Int)) = _
-      rw [writeList_get?_in _ _ aNew (aNew + (i : Int)) (by omega)
-        (by rw [List.length_replicate]; omega)]
-      rw [show ((aNew + (i : Int)) - aNew).toNat = i by omega]
-      rw [List.getElem?_eq_getElem (by rw [List.length_replicate]; omega)]
-    imod (interp_store_update (GF := GF)
-        (σ := stateAlloc σ aNew sz
-          ({ base := aNew, size := sz, ty := some ty, prefix_ := pref } : CerbMem.Allocation))
-        newBytes (by rw [hlen, List.length_replicate]) hold)
-      $$ [$Hi $Hp] with ⟨Hi, Hp⟩
+    icases interp_mrest_agree $$ [$Hi $Hm] with ⟨%h1, Hi, Hm⟩
+    icases interp_meminv $$ Hi with ⟨%h2, Hi⟩
+    iframe Hi Hm
+    ipureintro
+    exact ⟨h1, h2⟩
+  · intro σ hp
+    iintro ⟨Hi, Hm⟩
+    imod (interp_alloc_store_bupd (GF := GF) (alignN := alignA)
+        (pref := prefA) hp.1 hszA haddrA hnzA hlenA)
+      $$ [$Hi $Hm] with ⟨Hi, Hm, HaA, HpA⟩
+    have hmr2 : memRestOf
+        { σ with layout_state :=
+            (layoutAllocStore σ.layout_state aA szA
+              ({ base := aA, size := szA, ty := some tyA,
+                 prefix_ := prefA } : CerbMem.Allocation) bytesA) }
+        = mrAlloc mr aA := by
+      rw [← hp.1]; rfl
+    imod (interp_alloc_store_bupd (GF := GF) (alignN := alignB)
+        (pref := prefB) hmr2 hszB haddrB hnzB hlenB)
+      $$ [$Hi $Hm] with ⟨Hi, Hm, HaB, HpB⟩
     imodintro
-    have heqA : (allocIs (GF := GF) σ.layout_state.nextAllocId
-          (.own 1) ({ base := aNew, size := (sz : Int), ty := some ty, prefix_ := pref } : CerbMem.Allocation) : IProp GF)
-        = allocIs mr.nextAllocId (.own 1)
-            ({ base := aNew, size := (sz : Int), ty := some ty, prefix_ := pref } : CerbMem.Allocation) := by
-      rw [memRestOf_nextAllocId hp.1]
-    icases heqA $$ Ha with Ha
-    iframe Hm Ha Hp
+    iframe Hm HaA HpA HaB HpB
     iexact Hi
 
 /-! ## FAMILY FACES: each rule above, with the ∀σ premises factored

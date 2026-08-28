@@ -9,6 +9,9 @@ import RelSem.Threaded
 import RelSem.CorpusFiles
 import RelSem.ConstructLaws
 import RelSem.PerStepCall
+import RelSem.SlateFiles
+import RelSem.T2Threaded
+import RelSem.T3Threaded
 
 set_option autoImplicit false
 
@@ -254,6 +257,11 @@ def pBinop : binop → String
   | OpLt => "OpLt" | OpGe => "OpGe" | OpLe => "OpLe"
   | OpAnd => "OpAnd" | OpOr => "OpOr"
 
+def pIop : iop → String
+  | IOpAdd => "IOpAdd" | IOpSub => "IOpSub" | IOpMul => "IOpMul"
+  | IOpShl => "IOpShl" | IOpShr => "IOpShr" | IOpDiv => "IOpDiv"
+  | IOpRem_t => "IOpRem_t"
+
 partial def pPe : generic_pexpr Unit sym → String
   | Pexpr as_ () pe =>
     let inner := match pe with
@@ -276,7 +284,9 @@ partial def pPe : generic_pexpr Unit sym → String
         let cS := match c with
           | Ctuple => "Ctuple" | Cspecified => "Cspecified"
           | Cunspecified => "Cunspecified"
-          | Civmin => "Civmin" | Civmax => "Civmax" | _ => "«?CTOR»"
+          | Civmin => "Civmin" | Civmax => "Civmax"
+          | Civsizeof => "Civsizeof" | Civalignof => "Civalignof"
+          | _ => "«?CTOR»"
         s!"(PEctor {cS} [{String.intercalate ", " (args.map pPe)}])"
       | PEundef l ub =>
         let ubS := match ub with
@@ -300,6 +310,11 @@ partial def pPe : generic_pexpr Unit sym → String
       | PEare_compatible e1 e2 => s!"(PEare_compatible {pPe e1} {pPe e2})"
       | PEstruct _ _ => "«?PEstruct»"
       | PElet pa e1 e2 => s!"(PElet {pPat pa} {pPe e1} {pPe e2})"
+      | PEwrapI ity iop1 e1 e2 =>
+        s!"(PEwrapI {pIty ity} {pIop iop1} {pPe e1} {pPe e2})"
+      | PEcatch_exceptional_condition ity iop1 e1 e2 =>
+        s!"(PEcatch_exceptional_condition {pIty ity} {pIop iop1} {pPe e1} {pPe e2})"
+      | PEconv_int ity e => s!"(PEconv_int {pIty ity} {pPe e})"
       | PEmemop _ args => s!"(PEmemop «?MOP» [{String.intercalate ", " (args.map pPe)}])"
       | _ => "«?PE»"
     s!"(Pexpr {pAnnots as_} () {inner})"
@@ -375,6 +390,16 @@ def pTe : trace_event → String
       | none => "none"
       | some str => s!"(some \"{str}\")"
     s!"(ME_store {pLoc l} {prefS} {pCty ct} {lk} {pPV pv} «MV:{match mv with | CerbMem.MemValue.MVinteger it iv => s!"MVinteger {pIty it} {pIV iv}" | _ => "?"}»)"
+  | ME_allocate_object tid pref alignIv cty init pv =>
+    let prefS := match pref with
+      | PrefOther str => s!"(PrefOther \"{str}\")"
+      | PrefSource l syms =>
+        s!"(PrefSource {pLoc l} [{String.intercalate ", " (syms.map pSym)}])"
+      | _ => "«?PREF»"
+    let initS := match init with
+      | none => "none" | some _ => "«?SOMEINIT»"
+    s!"(ME_allocate_object {tid} {prefS} {pIV alignIv} {pCty cty} {initS} {pPV pv})"
+  | ME_kill l b pv => s!"(ME_kill {pLoc l} {b} {pPV pv})"
   | _ => "«?TE»"
 
 def envTopLean (σ : driver_state) : String :=
@@ -393,7 +418,7 @@ def arenaLean (σ : driver_state) : String :=
   | (_, (_, th)) :: _ => pE th.arena
   | [] => "(no thread)"
 
-partial def walkRoundsLean (σ : driver_state) (i : Nat)
+partial def walkRoundsLean (tagDefs0 : Fmap sym (CerbLocation.Loc × tag_definition)) (σ : driver_state) (i : Nat)
     (acc : List String) : List String × driver_state :=
   if i > 60 then ((("...OVERFLOW" : String) :: acc).reverse, σ)
   else
@@ -401,19 +426,21 @@ partial def walkRoundsLean (σ : driver_state) (i : Nat)
     let line := s!"===== ROUND [{i}] {stepClass s} | {supInfo σ}\nARENA := {arenaLean σ}\nENV:\n{envTopLean σ}\nTRACE({σ.trace.length}) := [{String.intercalate ", " (σ.trace.map pTe)}]"
     if can_advance s then
       let (_, σ') := stepA (advance_step tagDefs0 0 s) σ
-      walkRoundsLean σ' (i+1) (line :: acc)
+      walkRoundsLean tagDefs0 σ' (i+1) (line :: acc)
     else
       ((s!"{line}\n===== STOP" :: acc).reverse, σ)
 
 end LeanPrint
 
-def probeLean (x : Int) (seed : Nat) : List String := Id.run do
-  let σ0 := initial_driver_state_threaded seed p01File corpusFs
-  let (tid0, σ1) := stepA (driver_globals tagDefs0 false p01File) σ0
-  let (fsym, σ2) := stepA (resolveFunSym σ1.core_file "clamp0") σ1
+def probeLeanG (file1 : file core_run_annotation) (fname : String)
+    (args : List value) (seed : Nat) : List String := Id.run do
+  let tagDefs0 := file1.tagDefs
+  let σ0 := initial_driver_state_threaded seed file1 corpusFs
+  let (tid0, σ1) := stepA (driver_globals tagDefs0 false file1) σ0
+  let (fsym, σ2) := stepA (resolveFunSym σ1.core_file fname) σ1
   let (pb, σ3) := stepA (lookupFunBody σ2.core_file fsym) σ2
   let (ptys, σ4) := stepA (lookupParamTys σ3.core_file fsym) σ3
-  let (bound, σ5) := stepA (injectArgs tagDefs0 tid0 pb.1 ptys [intValue x]) σ4
+  let (bound, σ5) := stepA (injectArgs tagDefs0 tid0 pb.1 ptys args) σ4
   let (ths, σ6) := stepA (get_thread_states :
       ndM (List (Nat × (Option thread_id × thread_state))) step_kind
         driver_error mem_iv_constraint driver_state) σ5
@@ -443,7 +470,7 @@ def probeLean (x : Int) (seed : Nat) : List String := Id.run do
       s!"bound = {bound.map (fun p => LeanPrint.pSym p.1)} vals {bound.map (fun p => LeanPrint.pV p.2)}",
       s!"errno_ptr = {LeanPrint.pPV errno_ptr}",
       s!"post-setup mem: next={σ8.layout_state.nextAllocId} last={σ8.layout_state.lastAddress}"]
-    let (lines, σend) := LeanPrint.walkRoundsLean σ8 0 []
+    let (lines, σend) := LeanPrint.walkRoundsLean tagDefs0 σ8 0 []
     return hdr ++ lines ++ [s!"final: {supInfo σend}"]
   | _ => return ["probe: thread-count surprise"]
 
@@ -513,27 +540,41 @@ def r13pe : generic_pexpr Unit sym :=
         (Pexpr aU () (PEctor Cspecified [Pexpr aU () (PEval (Vobject (OVinteger (.IV .Prov_none 0))))]))))]
     )
 
+def t2r10pe : generic_pexpr Unit sym :=
+  Pexpr aU () (PEcase
+    (Pexpr aU () (PEctor Ctuple
+      [Pexpr aU () (PEsym (Symbol "" 4915778119994869450 (SD_Id "a_530"))),
+       Pexpr aU () (PEsym (Symbol "" 17653705816563834534 (SD_Id "a_531")))]))
+    [(Pattern aU (CaseCtor Ctuple
+        [Pattern aU (CaseCtor Cspecified
+          [Pattern aU (CaseBase ((some (Symbol "" 1342427191597093029 (SD_Id "a_532"))), BTy_object OTy_integer))]),
+         Pattern aU (CaseCtor Cspecified
+          [Pattern aU (CaseBase ((some (Symbol "" 18213349194842787190 (SD_Id "a_533"))), BTy_object OTy_integer))])]),
+      Pexpr aU () (PEctor Cspecified
+        [Pexpr aU () (PEcatch_exceptional_condition (Signed Int_) IOpAdd
+          (Pexpr aU () (PEconv_int (Signed Int_)
+            (Pexpr aU () (PEsym (Symbol "" 1342427191597093029 (SD_Id "a_532"))))))
+          (Pexpr aU () (PEconv_int (Signed Int_)
+            (Pexpr aU () (PEsym (Symbol "" 18213349194842787190 (SD_Id "a_533")))))))])),
+     (Pattern aU (CaseBase (none,
+        BTy_tuple [BTy_loaded OTy_integer, BTy_loaded OTy_integer])),
+      Pexpr aU () (PEundef CerbLocation.Loc.unknown UB036_exceptional_condition))])
+
 #eval do
-  IO.println "##### r13 chain (c=0) #####"
+  IO.println "##### t2 r10 chain (3,5) #####"
   for l in chainProbe [Lem_Map.fromList
-      [(symA529P, Vloaded (LVspecified (OVinteger (.IV .Prov_none 0)))),
-       (symA530P, Vloaded (LVspecified (OVinteger (.IV .Prov_none 0))))]]
-      (some CerbMem.initialMemState) r13pe do IO.println l
-  IO.println "##### r13 chain (c=1) #####"
-  for l in chainProbe [Lem_Map.fromList
-      [(symA529P, Vloaded (LVspecified (OVinteger (.IV .Prov_none 1)))),
-       (symA530P, Vloaded (LVspecified (OVinteger (.IV .Prov_none 0))))]]
-      (some CerbMem.initialMemState) r13pe do IO.println l
-  IO.println "##### r8 chain (x=-3 env) #####"
-  for l in chainProbe [Lem_Map.fromList
-      [(symA535P, Vloaded (LVspecified (OVinteger (.IV .Prov_none (-3))))),
-       (symA536P, Vloaded (LVspecified (OVinteger (.IV .Prov_none 0))))]]
-      (some CerbMem.initialMemState) r8pe do IO.println l
-  IO.println "##### r10 chain x=-3 #####"
-  for l in chainProbe [fmapEmpty] (some CerbMem.initialMemState)
-      (r10pe (-3)) do IO.println l
-  IO.println "##### r10 chain x=7 #####"
-  for l in chainProbe [fmapEmpty] (some CerbMem.initialMemState)
-      (r10pe 7) do IO.println l
+      [((Symbol "" 4915778119994869450 (SD_Id "a_530")),
+        Vloaded (LVspecified (OVinteger (.IV .Prov_none 3)))),
+       ((Symbol "" 17653705816563834534 (SD_Id "a_531")),
+        Vloaded (LVspecified (OVinteger (.IV .Prov_none 5))))]]
+      (some CerbMem.initialMemState) t2r10pe do IO.println l
+  IO.println "@@@@@ T2 add(3,5) @@@@@"
+  for l in probeLeanG RelSem.Slate.t2File "add" [intValue 3, intValue 5] 0 do IO.println l
+  IO.println "@@@@@ T2 add(-4,7) @@@@@"
+  for l in probeLeanG RelSem.Slate.t2File "add" [intValue (-4), intValue 7] 0 do IO.println l
+  IO.println "@@@@@ T3 roundtrip(7) @@@@@"
+  for l in probeLeanG RelSem.Slate.t3File "roundtrip" [intValue 7] 0 do IO.println l
+  IO.println "@@@@@ T3 roundtrip(-4) @@@@@"
+  for l in probeLeanG RelSem.Slate.t3File "roundtrip" [intValue (-4)] 0 do IO.println l
 
 end V2Probe
