@@ -721,6 +721,7 @@ def runPipeline (runtimeDir : String) (batch : Bool) (ppCore : Bool)
     (firstTrace : Bool)
     (callFn : Option (String × List Int)) (traceNodes : Bool)
     (libc : Option (String × List String))
+    (progArgs : List String)
     (tunits : List (String × translation_unit)) : IO UInt8 := do
   -- Progress chatter: human mode only (batch and pp-core keep stdout clean)
   let quiet := batch || ppCore
@@ -862,8 +863,11 @@ def runPipeline (runtimeDir : String) (batch : Bool) (ppCore : Bool)
     -- designated function on the injected argument values via
     -- RelSem.Cerb.callND (the drive-generalization the slate theorems
     -- quantify over) instead of drive's main-startup path.
+    -- argv — pipeline.ml:598,602: ("cmdname" :: args) both batch and
+    -- non-batch; progArgs is the parsed --args list (empty without the
+    -- flag, so the historical ["cmdname"] argv is byte-unchanged).
     let driverAction := match callFn with
-      | none => drive (CerbTags.tagDefs ()) false runFile ["cmdname"]
+      | none => drive (CerbTags.tagDefs ()) false runFile ("cmdname" :: progArgs)
       | some (fname, argInts) =>
         RelSem.Cerb.callND (CerbTags.tagDefs ()) runFile fname
           (argInts.map RelSem.Cerb.intValue)
@@ -993,6 +997,7 @@ def main (args : List String) : IO Unit := do
   let mut libcTus : List String := []
   let mut callName : Option String := none
   let mut callArgsStr : Option String := none
+  let mut progArgsStr : Option String := none
   let mut traceNodes : Bool := false
   let mut restArgs : List String := []
   let mut pending := rest1
@@ -1003,12 +1008,23 @@ def main (args : List String) : IO Unit := do
     | "--libc-tu" :: v :: rest => libcTus := libcTus ++ [v]; pending := rest
     | "--call" :: v :: rest => callName := some v; pending := rest
     | "--call-args" :: v :: rest => callArgsStr := some v; pending := rest
+    | "--args" :: v :: rest => progArgsStr := some v; pending := rest
     | "--trace-nodes" :: rest => traceNodes := true; pending := rest
-    | ["--libc"] | ["--libc-tu"] | ["--call"] | ["--call-args"] =>
-      IO.eprintln "cerberus-lean: --libc/--libc-tu/--call/--call-args \
-        require an argument"
+    | ["--libc"] | ["--libc-tu"] | ["--call"] | ["--call-args"]
+    | ["--args"] =>
+      IO.eprintln "cerberus-lean: --libc/--libc-tu/--call/--call-args/\
+        --args require an argument"
       IO.Process.exit 1
     | a :: rest => restArgs := restArgs ++ [a]; pending := rest
+  -- --args "ARG1 ARG2 ..." — the oracle's flag of the same name
+  -- (backend/driver/main.ml:512-514): one string, split on whitespace
+  -- runs (main.ml:111-113, Str.split "[ \t]+" — empty pieces dropped,
+  -- leading/trailing whitespace ignored). Extra argv entries for the
+  -- executed program's main; "cmdname" is always prepended at the
+  -- drive call (pipeline.ml:598,602 mirror in runPipeline).
+  let progArgs : List String := match progArgsStr with
+    | none => []
+    | some s => ((s.replace "\t" " ").splitOn " ").filter (· ≠ "")
   let callFn : Option (String × List Int) ← match callName, callArgsStr with
     | none, none => pure none
     | none, some _ => do
@@ -1118,6 +1134,6 @@ def main (args : List String) : IO Unit := do
       IO.Process.exit 1
     | .ok tunit => tunits := tunits ++ [(content, tunit)]
   let code ← runPipeline runtimeDir batchMode ppCoreMode firstTrace
-    callFn traceNodes libc tunits
+    callFn traceNodes libc progArgs tunits
   if code != 0 then
     IO.Process.exit code
