@@ -5,10 +5,11 @@ C semantics. It is generated from the **same Lem model** as Cerberus's
 OCaml implementation, so the two share one semantics by construction;
 the Lean side is then **differentially validated** against the OCaml
 implementation (the "oracle") on every test corpus we can get our
-hands on. The point of having the semantics in Lean is that you can
-**prove theorems about the execution of real C programs**, checked by
-the Lean kernel, with no gap between the semantics you test and the
-semantics you reason about.
+hands on. The result is an executable, rigorously defined C semantics
+that lives natively in Lean: parse real C (via the upstream front
+end), elaborate it to Cerberus's Core language, and execute it —
+undefined-behaviour verdicts included — inside a Lean artifact whose
+execution path is total, effect-honest, and axiom-clean.
 
 **Provenance.** This port was developed primarily by AI agents
 (Claude, Anthropic) operating under the direction and review of a
@@ -20,9 +21,9 @@ Who this is for:
 
 - You want to **run C** through an executable, rigorously defined
   semantics from inside Lean (undefined-behaviour verdicts included).
-- You want to **verify C programs** against the semantics — see
-  [PROOF.md](PROOF.md) for exactly what can be proved today and how
-  the trust story works.
+- You want to know **why you should trust it** — see
+  [VALIDATION.md](VALIDATION.md) for the differential-validation
+  story and the gate list.
 - You want to understand **how the port works** — see
   [DESIGN.md](DESIGN.md).
 
@@ -33,13 +34,13 @@ lean_frontend/
 ├── generated/        # Lean code generated from the Lem model (do not edit)
 ├── *.lean            # hand-written "seam" files (memory model, ND runner,
 │                     #   parsers, implementation-defined behaviour, ...)
-├── relsem/           # the proof package: relational semantics, iris-lean
-│                     #   coupling, proof machinery, the theorems
-├── relsemcore/       # exec-facing proof-support modules (root package side)
-├── speclab/          # the spec lab: harness-based specification of real C
-│                     #   functions (models, codecs, statements, proofs)
+├── relsemcore/       # a small relational layer over the driver (runner
+│                     #   soundness) + the --call entry point (RelSem.Call)
+├── speclab/          # harness-family differential lanes: models, codecs,
+│                     #   and a C harness renderer (see speclab/README.md)
+├── corpus/           # pinned differential-fixture programs (hash-frozen)
 ├── test/             # unit tests + gate executables
-├── docs/             # dated design records and results (the project history)
+├── docs/             # dated design records and results (the port's history)
 └── lembugs/          # bug reports against the Lem backend, with reproducers
 ```
 
@@ -70,49 +71,50 @@ cd .. && ./scripts/test_exec.sh tests/minimal/001-return-literal.c
 
 The full test surface — unit gates plus the per-corpus differential
 scripts ("lanes") and their pinned baselines — is catalogued in
-`scripts/LADDER.md`; the agent-facing operating manual with all build
-gotchas is [CLAUDE.md](CLAUDE.md).
+`scripts/LADDER.md` and summarized in [VALIDATION.md](VALIDATION.md);
+the agent-facing operating manual with all build gotchas is
+[CLAUDE.md](CLAUDE.md).
 
-## What are we proving? A two-minute tour
+## What you can do with it
 
-Two concrete examples, with every artifact's actual location. The
-guiding question for any claim here is *"where is the C, what is the
-statement, and how do I check it?"* — if you can't answer all three
-from the files below, that's a documentation bug.
+- **Batch execution with verdicts.** `cerberus-lean --batch <cabs-json>`
+  runs a program's `main` and reports the Cerberus verdict — a
+  `Defined` value (with stdout/stderr), a specific undefined-behaviour
+  code, or an error — exhaustively over the nondeterministic branch
+  structure or as a single trace (`--first`).
+- **Function-level execution.** `--call <f> [--call-args <ints>]`
+  calls an individual function with injected arguments (the caller
+  protocol mirrors elaborated call sites), used by the fixture lanes
+  to compare individual functions against the oracle point-by-point.
+- **Libc-linked and multi-TU programs.** The Lean pipeline links
+  multiple translation units and can load the C standard library the
+  oracle ships, so real multi-file programs (libxml2 slices, the CN
+  corpus, csmith output) run under both implementations.
+- **Semantics-level differential testing of C tooling.** The lanes in
+  `scripts/` are reusable instruments: point them at a corpus and any
+  divergence between the two implementations — or between either and
+  a recorded expectation — fails loudly.
 
-**A proved kernel theorem** (struct member write/read):
+## The headline validation numbers
 
-| Artifact | Where |
-|---|---|
-| The C program | `../tests/verify/t4_struct_member.c` |
-| Its elaborated (Core) form, pinned | `../tests/verify/t4_struct_member.core` (oracle dump), parsed into pinned terms in `relsem/RelSem/SlateCore.lean`; term↔pin byte-checked by the `emit-lean-core-test` gate, pin↔C re-derived from the `.c` by `test_verify.sh` (the three-link chain: PROOF.md §3) |
-| The statement | `T4Statement` in `relsem/RelSem/T4.lean` — quantified, mentions only the executable semantics and the program |
-| The proof | `theorem T4 : T4Statement`, same file — an ordinary kernel-checked theorem |
-| Its exact axioms | `#print axioms RelSem.T4.T4` = `[propext, runEffectful, Classical.choice, Quot.sound]`, pinned in-build in `relsem/RelSem/Audit.lean` |
-| The differential check | `../scripts/test_verify.sh` — runs the same C on both implementations and against the recorded spec points |
+Byte-level verdict agreement with the OCaml oracle across (see
+[VALIDATION.md](VALIDATION.md) for the full lane list, semantics, and
+run tiers):
 
-**A specified real C function** (binary-tree rotation, the
-harness style of PROOF.md §2):
+- 106/106 upstream `tests/minimal` programs (plus the coverage,
+  debug, and float suites at pinned baselines);
+- 213/213 programs of the CN test corpus (multi-TU, libc proxies);
+- 16/16 URIs through libxml2's `xmlParseURISafe` (5 translation
+  units, libc-linked, byte-identical output) plus a 1,354-point
+  libxml2 `chvalid` boundary battery;
+- a 1,669-program csmith corpus at a pinned classified baseline, and
+  a 2,186-file sweep of the upstream CI suite (zero mismatches among
+  the 1,316 comparable);
+- ~2,000 rendered harness-program executions across the five
+  spec-lab differential families;
+- per-function call-point differentials over the `tests/verify` and
+  `corpus/` fixture sets.
 
-| Artifact | Where |
-|---|---|
-| The target C + its harness | `../tests/speclab/rotate_a.c` (a closed, runnable program: the target function, the compiled-in choice/expected arrays, builder, comparator) |
-| The pure model + spec | `Tree`/`rotateAt` in `speclab/SpecLab/TreeRot.lean` |
-| The statement | `RotateSampleStatement` in `speclab/SpecLab/TreeRotFiles.lean` — note its status: *defined and differentially validated*; the kernel proof of the execution itself is the in-flight campaign (PROOF.md §3 states exactly what is and isn't proved) |
-| What IS kernel-checked today | the model lemmas, codec round-trips, model↔stream bridges, and plant-refutation schemas — `speclab/proofs/SpecLabProofs.lean`, cones pinned in `speclab/SpecLabAudit.lean` |
-| The differential check | `../scripts/test_speclab_tree.sh --gate` (and `--plant`: deliberately broken targets must go red at the predicted index) |
-
-## Where the proofs live
-
-- `relsem/` — the theorem substrate: a relational layer over the
-  executable semantics, iris-lean based proof machinery, and the
-  current theorems. Build: `cd relsem && ../../scripts/capped
-  lake build` (the build itself runs the proof-integrity gates).
-- `speclab/` — specifications of real C functions in the
-  "harnesses are programs" style, with their models, differential
-  lanes, and kernel-checked statement layers.
-
-Start with [PROOF.md](PROOF.md) for the capabilities and the precise
-status of what is proved; [DESIGN.md](DESIGN.md) for architecture;
-[TODO.md](TODO.md) for the roadmap and backlog; `docs/` for the dated
-record of how everything got here.
+Start with [VALIDATION.md](VALIDATION.md) for the trust story;
+[DESIGN.md](DESIGN.md) for architecture; [TODO.md](TODO.md) for the
+backlog; `docs/` for the dated record of how everything got here.

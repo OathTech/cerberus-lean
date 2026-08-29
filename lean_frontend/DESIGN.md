@@ -82,17 +82,16 @@ compared across the whole enumeration in differential runs.
 run through a small effect-erasure boundary: `BaseIO` externs behind
 `LemLib.runEffectful` — a declared *temporal* axiom living in the
 `lem-lean` dependency, not this repository (which declares zero
-axioms), consumed only by the ambient/compiled driver paths; the
-threaded theorem family avoids it entirely (see PROOF.md §1 for the
-full axiom story and the gates that constrain it).
+axioms; see VALIDATION.md §3 for the census and cone gates). The two
+former in-repo boundary axioms (`with_tagDefs`, `forceIO`) are
+kernel-checked opaques with native `@[implemented_by]` bindings.
 
-**Totality.** Proof-bearing code must not contain `partial`
-definitions the kernel cannot reason about. Every function on the
-execution path is fuel-totalized: structural recursion over an
-explicit fuel argument, with loud failure at exhaustion. A build gate
-enforces an empty `partial`-allowlist for the execution slice, and
-kernel-checked "wrapper defeq" lemmas connect the fueled functions to
-their intended equations.
+**Totality.** The execution path contains no `partial` definitions:
+every function on it is fuel-totalized — structural recursion over an
+explicit fuel argument, with loud failure at exhaustion — so the
+executable semantics is a total Lean artifact the kernel can evaluate
+and future consumers can reason about. A build gate enforces an empty
+`partial`-allowlist for the execution slice.
 
 ## 5. Differential validation: the oracle, lanes, baselines, plants
 
@@ -121,26 +120,26 @@ boundary, and the comparison is industrialized.
   attributed, not conflated. A fork-drift gate pins the fork's
   oracle-side surface to a reviewed manifest.
 
-## 6. The two-package structure (and the intended split)
+## 6. Package structure
 
-The Lean build is organized as separate Lake packages with a strictly
-one-way dependency:
+The Lean build is organized as Lake packages with a strictly one-way
+dependency:
 
 - the **semantics package** (this directory's root build): generated
-  model + seams + the executable driver;
-- **`relsem/`**: the proof layer — relational semantics over the
-  executable semantics, iris-lean machinery, theorems, and the
-  in-build proof-integrity gates;
-- **`speclab/`**: specifications of real C functions, consuming the
-  semantics (and relsem's proof library) the same one-way way.
+  model + seams + the executable driver, plus the small `RelSemCore`
+  lib (`relsemcore/`) — a relational presentation of the driver's
+  execution with a proved runner-soundness bridge, and the `--call`
+  entry point (`RelSem.Call`) the fixture lanes use;
+- **`speclab/`**: the harness-family differential-lane package
+  (models, codecs, the `mkHarness` renderer, and the lane gate exes —
+  see `speclab/README.md`), consuming the semantics one-way.
 
-Nothing under the semantics surface may reference the proof layers;
-the constraint is gate-enforced. The intended end-state is a real
-repository split — "the semantics" as a consumable artifact, "the
-verification layer" pinning it like any dependency, and per-target
-example repositories (including GPL-licensed ones) as a third layer.
-Until the split happens, the package structure rehearses it, and
-anything that would make the split harder is treated as a defect.
+Nothing under the semantics surface may reference speclab. Any
+verification layer built on this semantics is intended to live
+downstream, pinning this repository like any dependency (per-target
+example repositories, including GPL-licensed ones, likewise);
+anything that would make that consumption harder is treated as a
+defect.
 
 ## 7. Offline, pinning, reproducibility
 
@@ -162,11 +161,8 @@ generated trees.
 
 ## 8. Where to read more
 
-- Proof capabilities and trust story: [PROOF.md](PROOF.md)
+- The trust story (differential validation + gates): [VALIDATION.md](VALIDATION.md)
 - Agent-facing operating manual (build mechanics, gates, gotchas):
   [CLAUDE.md](CLAUDE.md)
-- The specification style (harnesses as programs, choice streams):
-  `docs/2026-08-22_harness-statement-template.md`, with the worked
-  example in `docs/2026-08-23_arc15-s4-r4-tree-worked-example.md`
 - Dated design records and results: `docs/` (start with the most
   recent `*-results.md`)

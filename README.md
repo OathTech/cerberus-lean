@@ -3,9 +3,10 @@
 [![CI](https://github.com/rems-project/cerberus/actions/workflows/ci.yml/badge.svg)](https://github.com/rems-project/cerberus/actions/workflows/ci.yml) [![CI-CHERI](https://github.com/rems-project/cerberus/actions/workflows/ci-cheri.yml/badge.svg)](https://github.com/rems-project/cerberus/actions/workflows/ci-cheri.yml)
 
 **This fork adds a Lean 4 port of the semantics** — generated from the
-same Lem model, differentially validated against the OCaml
-implementation, and usable as a substrate for kernel-checked theorems
-about C programs: see [lean_frontend/README.md](lean_frontend/README.md).
+same Lem model and differentially validated against the OCaml
+implementation across every corpus in the tree: an executable C
+semantics living natively in Lean 4. See
+[lean_frontend/README.md](lean_frontend/README.md).
 The port was developed primarily by AI agents (Claude, Anthropic)
 working under the direction and review of Mike Dodds; the upstream
 Cerberus semantics is by the people listed below.

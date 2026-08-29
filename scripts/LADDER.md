@@ -11,7 +11,7 @@ Order is the conventional run order; all are fail-closed gates.
 
 | # | Command | Bar |
 |---|---------|-----|
-| 1 | `./scripts/test_unit.sh` | 6/6 exes (incl. 280 parser tests + pp-test, arc-10 S3) + sync gate + census + exec-purity/totality + theorem-axiom cones + fork-drift gate (`check_fork_drift.sh` — oracle-surface manifest + hash-pinned generated-OCaml deltas; arc-10 audit follow-up) |
+| 1 | `./scripts/test_unit.sh` | 5/5 exes (incl. 280 parser tests + pp-test) + sync gate + axiom censuses/cones + exec-purity/totality + lem-sync + fork-drift gate (`check_fork_drift.sh` — oracle-surface manifest + hash-pinned generated-OCaml deltas) + fixture-freeze (`check_fixture_freeze.sh` — the corpus/ hash manifest) |
 | 2 | `./scripts/test_exec.sh --check-baseline` | tests/minimal vs `scripts/exec_baseline.txt`, rc 0 |
 | 3 | `./scripts/test_exec.sh --check-baseline=scripts/exec_coverage_baseline.txt tests/coverage` | rc 0 (recorded DIFFs unchanged) |
 | 4 | `./scripts/test_exec.sh --check-baseline=scripts/exec_debug_baseline.txt tests/debug` | rc 0 |
@@ -39,6 +39,9 @@ Everything in Tier A, plus:
 | 1 | `./scripts/test_libxml2.sh` | full chvalid battery, 4 slices × (1354-point set), byte-equal verdicts both sides + oracle == `tests/libxml2/chvalid_baseline.txt`; ~8 min |
 | 2 | `./scripts/test_parse.sh tests/ci` | 100% |
 | 3 | `./scripts/test_core.sh tests/ci` | at recorded state (all parse) |
+| 4 | `./scripts/test_verify.sh` | fixture differentials (tests/verify + corpus/): pin provenance + main-mode + call-point oracle-differentials, 0 failed |
+| 5 | `./scripts/test_immaculate.sh` | at baseline |
+| 6 | `./scripts/test_speclab.sh --selftest` + `--plant`; `./scripts/test_speclab_{divmod,bytearr,list,tree,seed}.sh --gate` | all PASS (harness-family differential lanes; sweep/fuzz modes are reporting-tier extras) |
 
 **Battery placement decision [AGENT:S4]:** `test_libxml2.sh` was
 out-of-ladder in arc 5 (~35 min, 28 slices). After the arc-6 S3

@@ -1,113 +1,47 @@
-# TODO — roadmap and backlog
+# TODO — semantics roadmap and backlog
 
 Grouped by horizon. One line per item; depth lives in the pointed-at
-records. Status that moves fast (proof-round counts, in-flight work)
-is deliberately not pinned here — follow the pointers.
-
-## In flight
-
-- **Arc 18 — the coherence consolidation**: one reasoning route
-  survives (the law-driven round evaluator minting equations, the
-  per-step WP layer consuming them, `CerbMemInterp` as the sole state
-  interpretation, one attribute-indexed law registry as the public
-  interface), the superseded routes are purged, and a playbook makes
-  the layer explainable to a fresh agent. Charter (slice ladder
-  C0–C6, operator-blessed):
-  `docs/2026-08-25_arc18-coherence-charter.md`; layer contracts:
-  `docs/2026-08-25_reasoning-layer-contracts.md`. T4-threaded and T5
-  (the first bounded-loop theorem) complete on the consolidated
-  substrate at C3. (The previously headlined in-chase sealing/stepper
-  plan was falsified and superseded — post-mortem:
-  `docs/2026-08-24_chase-era-postmortem.md`; the design note
-  `docs/2026-08-23_stepper-arc-design.md` is superseded history.)
-
-## Next, in sequence
-
-- **Family-∀ spec-lab endpoints — RE-BASED ON THE VERIFIER**
-  (2026-08-27 kill-list execution: the former plan — kernel proofs
-  that compiled harnesses execute to their verdicts at pinned
-  concrete inputs, the "exec-equation campaign" — is CANCELLED as a
-  forbidden proof strategy, and the finite sample-∀ statement defs
-  are DELETED; disposition
-  `docs/2026-08-27_whole-project-assessment-disposition.md` §1). The
-  family-∀ TARGET statements stand; their proofs arrive through the
-  assessment's B0–B6 verifier plan (spec parameterizes the harness
-  argument/initial memory, not the file term).
-- **The libxml2 rung** — `uri.c` under the consolidated layer (the
-  differential corpus + 16/16 gate already stand); its memory
-  reasoning runs under `CerbMemInterp` and produces the
-  Lithium-parity-distance table.
-- **Arc 19 — goal-directed search** over the arc-18 registry (the
-  Lithium parity floor; charter to be written against the post-arc-18
-  tree).
-
-## Targets (once the automation framework sets the proof economics)
-
-- **WireGuard ladder** — `docs/2026-08-20_wireguard-target-scoping.md`.
-- **pKVM buddy allocator** — reference: the CN pKVM buddy-allocator
-  case study (github.com/rems-project/CN-pKVM-buddy-allocator-case-study);
-  GPL-derived fixtures stay out of this repository (they go in a
-  separate example repository, for licence separation).
+records. (Verification-layer work is out of scope for this branch —
+the semantics is the product here; a verification layer consumes it
+downstream.)
 
 ## Queued larger work
 
-- **Concurrency (cmm) instantiation** — choice streams become
-  schedules. Concurrency is currently stubbed (a declared, documented
-  boundary); this is the work that removes the stub.
-- **The repo split** — "the semantics" vs "the verification layer" as
-  separate repositories; the package structure already rehearses it
-  (DESIGN.md §6).
+- **Concurrency (cmm) instantiation** — concurrency is currently
+  stubbed (a declared, documented boundary); this is the work that
+  removes the stub and instantiates Cerberus's concurrency model on
+  the Lean side.
+- **A-road polish basket** — backend/semantics cleanups (pure-render
+  emission split, remaining audit L-slice gaps, ott finish);
+  itemized with prices in the latest `docs/*-results.md`;
+  deliberately parked behind the substantive track.
 
 ## Small items (independent; can ride along with any fix batch)
 
 - `pr44468.c` offsetof unknown-tag panic (the CI sweep's one new
   defect): `docs/2026-08-22_ci-sweep-results.md`.
-- CoreParser `enum TAG` ctype-literal arm — DEMOTED to a
-  parser-completeness item (V0 register edit, 2026-08-27: the
-  spec-lab statement layer it unblocked was superseded by the
-  frozen-corpus slate; the gap remains a CoreParser coverage hole
-  worth closing on its own merits; reproducers in `tests/speclab/`).
-- Oracle `--batch` allocation-census line — SCHEDULED AT V5 (V0
-  register edit, 2026-08-27: the leak conjunct's differential leg is
-  P13/P07/P08 territory — the V5 heap-structures slice consumes it;
-  a candidate patch for upstream Cerberus).
-- Lean driver `--args` flag — ICEBOX (V0 register edit, 2026-08-27:
-  the ∀-inputs statement form it was to unlock is superseded by the
-  call-boundary + splice routes the corpus slate uses; revive only
-  if a future target genuinely needs argv-carried inputs).
-- DivMod local-canonicity consolidation into `Codec.Canonical`
-  (noted in `speclab/SpecLab/Codec.lean`).
+- CoreParser `enum TAG` ctype-literal arm — a parser-completeness
+  hole worth closing on its own merits (reproducers in
+  `tests/speclab/`).
 - Step-runner stack-ceiling guard (known limitation: loops of a few
   thousand iterations can overflow the process stack in the step/ND
   recursion; `docs/2026-08-19_arc6-s0-survey.md`).
-
-## Deferred polish
-
-- Backend/semantics cleanups (pure-render emission split, remaining
-  audit gaps) — itemized in the latest `docs/*-results.md`;
-  deliberately parked behind the substantive track.
+- Oracle `--batch` allocation-census line — would give the speclab
+  leak checks an oracle-differential leg (today they are in-Lean
+  only); a candidate patch for upstream Cerberus.
+- DivMod local-canonicity consolidation into `Codec.Canonical`
+  (noted in `speclab/SpecLab/Codec.lean`).
 
 ## Needs maintainer action or network access
 
-- Patches queued for upstream Cerberus: a tray of drafted bug
-  reports and prepared PR branches, maintained operator-side and
-  filed as network windows allow (several findings from the
-  differential campaigns; two already have ready branches).
+- **Upstream filing tray** — drafted bug reports and prepared PR
+  branches from the differential campaigns (several oracle-wrong
+  findings pinned Lean-right), maintained operator-side and filed as
+  network windows allow.
 - Decide the fate of the earlier prototype interpreter (reduce to a
   test oracle vs archive) — open decision.
-- **Elaboration-in-statement probe** — start theorem statements from
-  the pinned parsed C AST with elaboration inside the kernel-checked
-  claim (shrinks the trusted C-to-Core link to the parser alone;
-  PROOF.md §3). Unpriced until the kernel-side elaboration cost is
-  probed; natural once the consolidated automation layer (arc 18) is
-  in place.
-- **Kill the effect axioms** — LARGELY DONE (arc-17 S2b):
-  `with_tagDefs`/`forceIO` are DELETED as axioms (kernel-checked
-  opaques, boundary-opaque gate); the threaded theorem family is
-  trio-exact. Residual: `runEffectful` (LemLib, temporal — its
-  deletion is lem-side surgery; carrier set pinned by the
-  no-cone-entry gate — pinned at ZERO since the 2026-08-27
-  kill-list execution: the ambient family is deleted and no theorem
-  cone in the repo carries the axiom). Full
-  machine-state threading of the supply remains the cmm-arc-adjacent
-  end state (PROOF.md §1).
+- **Kill the residual effect axiom** — `with_tagDefs`/`forceIO` are
+  already kernel-checked opaques (zero axioms in this repository);
+  the residual is `runEffectful` (LemLib, temporal — its deletion is
+  lem-side surgery; end state is the fresh-symbol supply threaded
+  through the machine state, natural alongside the cmm work).

@@ -20,49 +20,29 @@ cerberus (OCaml)                    cerberus-lean (Lean)
 
 **Core text parser:** Lean parses `.core` and `.impl` files directly using `Std.Internal.Parsec`.
 
-**Proof layer:** see [PROOF.md](PROOF.md) for capabilities/trust story
-and [DESIGN.md](DESIGN.md) for architecture. Operational map:
+**Trust story:** see [VALIDATION.md](VALIDATION.md) (differential
+validation + gates) and [DESIGN.md](DESIGN.md) for architecture.
+Operational map:
 
-- `relsem/` is its OWN Lake package (requires the semantics package by
-  path; git deps shared via `packagesDir = "../.lake/packages"`). It
-  holds the relational layer + iris-lean coupling (per-step language +
-  CerbMem heap RA, the ONE state interpretation) + the quantified
-  threaded theorem slate T1–T5 with its walk supplies + the segment
-  layer (`Segment.lean`/`SegmentFaces.lean`) + the law registry and
-  round evaluator (`LawRegistry`/`RoundEval/`) + the Kit/ lemma kits +
-  the in-build gates (`RelSem/Audit.lean`: axiom sweeps,
-  statement-TCB, absence gates — fail the build, plant-tested). (The
-  chase-era `@[app_eq]` walker workbench and the ambient family were
-  DELETED at the 2026-08-27 kill-list execution.)
-- The exec-facing core (Call/Machine/RunND/ExecModel/Cerberus) stays
-  ROOT-side as the `RelSemCore` lib (`relsemcore/`).
-- `speclab/` is a further package (same pattern): spec-lab models,
-  codecs, mkHarness, statements + `SpecLabAudit.lean` gates, proofs in
-  `speclab/proofs/`.
-- `test_unit.sh` builds all packages; RelSem-importing test exes live
-  in `relsem/test/Unit/`; probes run via `lake lean <file>` FROM
-  `relsem/` (through scripts/capped).
-- PROBE RECIPE (V0 2026-08-27, the FF-1 fix): ad-hoc probes of
-  RelSem-importing files run via `scripts/lean_probe.sh` FROM the
-  owning package dir (e.g. from `relsem/`:
-  `../../scripts/lean_probe.sh RelSem/MyProbe.lean`) — it drives
-  `lake setup-file` (the COMPLETE per-module artifact map) + `lean
-  --setup` under the memory cap. Neither `lake lean` nor
-  `lake env lean` is correct for this repo's two-package layout
-  (diagnosed at V0, record docs/2026-08-27_v0-statements-and-ban.md
-  §FF-1): `lake lean` pins only DIRECT imports and transitive
-  modules fall to LEAN_PATH search, and Lean's search commits per
-  ROOT COMPONENT (`RelSem/`) to ONE path entry — with the RelSem
-  prefix split across the two packages, whichever tree wins loses
-  the other's modules. `lake build RelSem.<Mod>` remains correct
-  for lib members (full pinning). After moving modules between
+- The root package builds the semantics: generated model + seams +
+  the `cerberus-lean` driver exe, plus the `RelSemCore` lib
+  (`relsemcore/` — the relational execution model with runner
+  soundness, and `RelSem.Call`, the driver's `--call` engine).
+- `speclab/` is a second Lake package (requires the semantics by
+  path; git deps shared via `packagesDir = "../.lake/packages"`): the
+  harness-family models/codecs/renderer and the gate exes the
+  `test_speclab*.sh` differential lanes consume (`speclab/README.md`).
+- PROBE RECIPE: ad-hoc probes of package files run via
+  `scripts/lean_probe.sh` FROM the owning package dir (e.g. from
+  `lean_frontend/`: `../scripts/lean_probe.sh MyProbe.lean`) — it
+  drives `lake setup-file` (the complete per-module artifact map) +
+  `lean --setup` under the memory cap. `lake build <lib>.<Mod>`
+  remains correct for lib members. After moving modules between
   packages, delete the orphaned artifacts stranded in the other
   package's `.lake` tree (a stale-shadowed probe is a doctored
-  instrument; the arc-11-era root-tree orphans were purged at V0).
-  Details: `docs/2026-08-22_arc11-s4-package-rehearsal.md` + the V0
-  record.
-- Lake deps: `LemLib` (lem-lean pin) + `iris`/`Qq`/`batteries`
-  (pinned revs, resolved offline via deps/gitconfig redirects).
+  instrument).
+- Lake deps: `LemLib` (lem-lean pin), resolved offline via
+  deps/gitconfig redirects.
 
 ## Build
 
@@ -78,10 +58,9 @@ make lean-prelude-src
 # session kill; CERB_MEM_MAX overrides the 64G default)
 cd lean_frontend && ../scripts/capped lake build cerberus-lean
 
-# Build the relsem PROOF package (arc-11 S4 two-package structure;
-# carries the in-build proof gates — test_unit.sh builds both
-# packages fail-closed)
-cd lean_frontend/relsem && ../../scripts/capped lake build
+# Build the speclab differential-lane package (the lane scripts build
+# it themselves; by hand:)
+cd lean_frontend/speclab && ../../scripts/capped lake build
 
 # Build OCaml driver (for --cabs-json). cerberus-lib.install must be
 # built explicitly: `dune install cerberus-lib` does NOT build it (fails
@@ -124,56 +103,35 @@ Each is a `[[lean_exe]]` in `lakefile.toml` that exits 0 on pass.
 ```
 
 Current unit tests:
-- `effects-proof-test` / `totality-proof-test` — kernel-checked proof exemplars for the effect-erasure and totality machinery
+- `effects-proof-test` / `totality-proof-test` — kernel-checked exemplars for the effect-erasure and totality machinery
 - `core-parser-test` — 280 tests for `CoreParser.lean`
 - `fresh-int-test` — verifies `fresh_int`/`Symbol.fresh` generate unique values (+ the native-obj fresh-counter floor probe)
-- `emit-lean-core-test` — arc-7: byte drift gate for the emitted slate program terms (`relsem/RelSem/T1Core.lean`, `SlateCore.lean` vs a fresh parse of the pinned oracle Core dumps) + concrete differential points on the assembled theorem objects
 - `pp-test` — arc-10 S3: pretty-printer mirrors (ctype/value shapes + float formatting vs an OCaml 5.4.0 reference transcript, in-file)
 
-(The former `app-walk-test` exe — the chase-era walker contract
-table — was deleted at the 2026-08-27 kill-list execution with
-`Tactics/AppWalk`; record `docs/2026-08-27_kill-list-execution.md`.)
-
-(The former `t5-probe` exe — the arc-9 round-census instrument — was
-deleted at arc-18 R3: zero importers, retirement-register entry 3;
-record `docs/2026-08-27_arc18-r3-early-purge.md`.)
-
 `test_unit.sh` also runs the gate scripts: the hand-written↔generated
-sync gate, the hand-written-axiom census (exactly 2),
-`check_exec_purity.sh`, `check_exec_totality.sh` (16 generated modules
-+ CerbND since arc-7 S5a), `check_theorem_axioms.sh` (theorem-axiom
-cones + the D14 non-kernel-proof-method ban), and
+sync gate, `check_exec_purity.sh`, `check_theorem_axioms.sh`
+(hand-written axiom census — exactly 0 — + generated-tree census +
+exemplar/driver2 axiom cones + the D14 non-kernel-proof-method ban),
+`check_exec_totality.sh` (20 generated modules + CerbND, empty
+allowlist), the lem-sync content-hash gate,
 `check_fork_drift.sh` (arc-10 audit follow-up, [USER] mandate: the
 oracle surface must equal the reviewed manifest
 `scripts/fork_drift_manifest.txt`, and the generated-OCaml
-fork-vs-upstream deltas must match their pinned hashes — spec:
-`notes/2026-08-21_fork-drift-review.md` §6; loud SKIP when the
-upstream remote or a generated tree is absent, fail-closed otherwise;
-manifest state since arc-13 S1: `renumber=arc13` meta, 56 [files]
-entries incl. `ocaml_frontend/fork_renumber.ml`, the review's F-D
-SUSPECT family hashes re-pinned to the re-convergence deltas, and
-driver.ml reclassified cosmetic→semantic),
-and `check_proof_size.sh` (arc-9 S2: slate proof files within the
-250-line/40-manual-step bar, Kit files fixture-free — the mega-lemma
-counter; the debug-only walker-surface ban rows survive the walker's
-deletion as a reintroduction guard;
-registered slate files listed in the script). Two further gates are
-IN-BUILD (fail the `lake build` itself, arc 7): the RelSem axiom audit
-and the slate statement-TCB gate — both in `relsem/RelSem/Audit.lean`
-(slate statements must be fuel-opsem-only: no Iris/RelSem-relation
-names; negative-tested in-build).
+fork-vs-upstream deltas must match their pinned hashes; loud SKIP
+when the upstream remote or a generated tree is absent, fail-closed
+otherwise), and `check_fixture_freeze.sh` (the `corpus/`
+differential-fixture set must match its hash manifest exactly).
 
-### Verification fixtures
+### Fixture differentials
 
 ```bash
-./scripts/test_verify.sh   # tests/verify: T1-T5 fixture differentials —
-                           # 5/5 main-mode vs the OCaml oracle + 18/18
-                           # harness concrete points vs recorded specs
-                           # + (arc-7 S5c) 5/5 pin-provenance checks
-                           # (oracle --pp=core re-derivation byte-equal
-                           # to the pinned .core dumps) + the
-                           # t4-env-witness probe (T4EnvHyp conjuncts +
-                           # first-in-process fresh-draw ordering)
+./scripts/test_verify.sh   # tests/verify + corpus/ fixture
+                           # differentials: pin provenance (oracle
+                           # --pp=core re-derivation byte-equal /
+                           # content-hash vs the pinned dumps) +
+                           # main-mode differentials + call-point
+                           # differentials (Lean --call vs oracle
+                           # wrapper TU vs recorded pin) — 117 checks
 ```
 
 ### Integration tests (C → JSON → Lean, per parser)
@@ -358,13 +316,13 @@ dated records — do not maintain status lists here. Start points:
 
 - Latest arc results: `docs/` (most recent `*-results.md`; arc index
   in the container `ROADMAP.md`).
-- Proof capabilities + exactly-what-is-proved: [PROOF.md](PROOF.md).
-- Declared boundary: concurrency stubs (temporal, cmm arc is the
-  mover) + the axiom story of PROOF.md §1 (arc-17 S2b end state:
-  ZERO axioms in this repo — the former with_tagDefs/forceIO axioms
-  are kernel-checked opaques, gate-enforced; the one residual,
-  LemLib's `runEffectful`, is temporal and no-cone-gated). No sorried
-  target_reps outside that boundary; any new one is a finding.
+- Trust story + gate list: [VALIDATION.md](VALIDATION.md).
+- Declared boundary: concurrency stubs (temporal, the cmm
+  instantiation is the mover) + the axiom story (ZERO axioms in this
+  repo — the former with_tagDefs/forceIO axioms are kernel-checked
+  opaques, gate-enforced; the one residual, LemLib's `runEffectful`,
+  is temporal, lem-side). No sorried target_reps outside that
+  boundary; any new one is a finding.
 - Known operational residuals (step-runner stack ceiling, oracle
   allocation-census gap, etc.): registered with prices in the latest
   results docs.

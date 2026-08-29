@@ -1,6 +1,7 @@
 #!/bin/bash
-# lean_probe.sh — V0 (2026-08-27): THE PROBE RECIPE (FF-1 fix; record
-# docs/2026-08-27_v0-statements-and-ban.md §FF-1).
+# lean_probe.sh — THE PROBE RECIPE (born 2026-08-27 as the FF-1 fix
+# for the then-two-package RelSem prefix split; still the correct way
+# to elaborate a package file with a fully-pinned module setup).
 #
 # Elaborate a single .lean file of a Lake package with a FULLY-PINNED
 # module setup. Why `lake lean` cannot be the recipe for this repo's
