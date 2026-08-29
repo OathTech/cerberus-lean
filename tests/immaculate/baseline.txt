@@ -39,6 +39,9 @@
 #     decimal read back through the octal decoder corrupts the printf %c
 #     round-trip upstream — oracle-wrong, upstream-tray #11. Never fix-to-match.
 #   g6-hash-collision -> TRIPWIRE (CoreParser fail-stops on hash collisions, F3).
+argv1-args MATCH | L=VAL:Specified(3)
+argv2-args MATCH | L=VAL:Specified(97)
+argv3-args MATCH | L=VAL:Specified(11)
 g1-ge-funptr MATCH | L=ERR:Memory WIP: ge_ptrval
 g1-lt-null MATCH | L=ERR:Memory WIP: lt_ptrval ==> one null pointer
 g2-memcmp-uninit MATCH | L=CRASH

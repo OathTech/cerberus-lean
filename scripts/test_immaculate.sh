@@ -105,10 +105,14 @@ classify() {
 : > "$OUTPUT_DIR/baseline.new"
 declare -A CUR
 
-run_c_case() {  # $1=name $2=cfile $3=libc(0/1)
-    local name="$1" c="$2" libc="$3" orc=0 lrc=0
+run_c_case() {  # $1=name $2=cfile $3=libc(0/1) [$4=--args string]
+    local name="$1" c="$2" libc="$3" xargs="${4:-}" orc=0 lrc=0
     local oflags=(--exec --batch)
     [[ "$libc" -eq 0 ]] && oflags+=(--nolibc)
+    # argv rows (2026-09-01 S-basket item 7): the same --args string goes
+    # to both sides (oracle backend/driver/main.ml:512-514; Lean driver
+    # Main.lean --args). Empty string = no flag (the historical argv).
+    [[ -n "$xargs" ]] && oflags+=(--args "$xargs")
     ( ulimit -v $ULIMIT_KB; exec timeout "${TIMEOUT_SECS}s" \
         opam exec --switch="$PROJECT_ROOT" -- \
         "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" "${oflags[@]}" "$c" \
@@ -122,6 +126,7 @@ run_c_case() {  # $1=name $2=cfile $3=libc(0/1)
         > "$OUTPUT_DIR/$name.json" 2>/dev/null ) || fail "cabs-json failed for $name"
     [[ -s "$OUTPUT_DIR/$name.json" ]] || fail "empty cabs-json for $name"
     local largs=(--batch --first)
+    [[ -n "$xargs" ]] && largs+=(--args "$xargs")
     [[ "$libc" -eq 1 ]] && largs+=("${LIBC_ARGS[@]}")
     ( ulimit -v $ULIMIT_KB; exec timeout "${TIMEOUT_SECS}s" \
         env LEAN_ABORT_ON_PANIC=1 "$CERBERUS_LEAN_BIN" "${largs[@]}" \
@@ -147,6 +152,16 @@ echo "======================================"
 echo "[nolibc]"
 for c in "$CORPUS"/nolibc/*.c; do
     run_c_case "$(basename "$c" .c)" "$c" 0
+done
+
+echo "[argv]"
+# --args differential rows (2026-09-01 S-basket item 7; probe set =
+# arc-15 S0 preliminaries probe (b), values hand-checked there). Each
+# row runs BOTH sides with --args "ab cd" — argv becomes
+# ["cmdname","ab","cd"], exercising prepare_main_args' argv object
+# initialization (generated/Driver.lean) through the CLI.
+for c in "$CORPUS"/argv/*.c; do
+    run_c_case "$(basename "$c" .c)-args" "$c" 0 "ab cd"
 done
 
 echo "[libc]"
