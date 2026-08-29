@@ -399,7 +399,11 @@ private def dispatchPremise (linkC : Name) (pack0 : Expr) (m : MVarId) :
         let famApp ← instantiateMVars lhsC.appArg!
         let anchorArg := (famApp.abstract xs).instantiateRev
           #[pack0]
-        if anchorArg.hasAnyFVar (fun f => xs.any (·.fvarId! == f)) then
+        -- ONE cached fvar pass (V3a-continuation): `hasAnyFVar` is an
+        -- uncached traversal — exponential on the DAG-shared flat
+        -- successor literals (same class as the containsFVar find)
+        let fvSt := Lean.collectFVars {} anchorArg
+        if xs.any (fun x => fvSt.fvarSet.contains x.fvarId!) then
           throwError "seg_run [{linkC}]: control image depends on \
             the pack in a non-erasable position"
         let anchor ← mkAppM ``ctlOf #[anchorArg]
@@ -775,6 +779,234 @@ private def applyLemmaCross (lem : Name) (cellFVars : Array Expr)
     (← ms.mapM instantiateMVars)
   return (← instantiateMVars rp, pf)
 
+/-! V3a-continuation (2026-08-28): the DEEP KERNEL PIN + the one-step
+    leaf builders for env-consulting call/case payloads whose
+    POST-SUBSTITUTION remainder is ground (the m1 arm classes:
+    `run ret(conv_loaded_int(sym))`, `pure(case syms of … ground)`).
+    Shape: `runEU_aux2_step_then` (the one-step-then-rest skeleton,
+    RelSem/CStep.lean) with the step by the registered `se_*`
+    construct law at the walk's cell facts and every ground side
+    condition kernel-pinned (`seg_discover`'s device: hinted rfl the
+    kernel re-checks at declaration add; no ofReduce*). Committed
+    choice throughout — an unkeyed element/head is a thrown frontier,
+    and a sym-carrying remainder (T5's symbolic rets) refuses the
+    kernel and falls back loudly. -/
+
+/-- Deep kernel pin: unify a (possibly mvar-carrying) constructor
+    PATTERN against the kernel normal form of a term, kernel-whnf-ing
+    on demand and descending only where the pattern is concrete
+    (mvar leaves take the kernel form as-is). -/
+private partial def kMatchAssign (pat res : Expr) : MetaM Bool := do
+  let patI ← instantiateMVars pat
+  if patI.isMVar then
+    isDefEq patI res
+  else do
+    let resW ← match ← kwhnf? res with
+      | some r => pure r
+      | none => pure res
+    let pf := patI.getAppFn
+    let rf := resW.getAppFn
+    if pf.isConst && rf.isConst && pf.constName! == rf.constName!
+        && patI.getAppNumArgs == resW.getAppNumArgs then
+      let pas := patI.getAppArgs
+      let ras := resW.getAppArgs
+      for i in [0:pas.size] do
+        unless ← kMatchAssign pas[i]! ras[i]! do return false
+      return true
+    else
+      withProbeBudget (isDefEqGuarded patI resW)
+
+/-- Close a ground-equation premise mvar by the deep kernel pin
+    (certificate: hinted rfl at the LHS). -/
+private def kpinEqPremise (m : Expr) : MetaM Unit := do
+  let ty ← instantiateMVars (← m.mvarId!.getType)
+  let some (_, lhs, rhs) := ty.eq?
+    | throwError "mint: kpin premise is not an equation:{indentExpr ty}"
+  unless ← kMatchAssign rhs lhs do
+    throwError "mint: ground premise did not kernel-pin (sym-carrying \
+      remainder? — supply fallback):{indentExpr ty}"
+  let ty ← instantiateMVars ty
+  let some (_, lhs, rhs) := ty.eq? | unreachable!
+  unless ← isDefEq m (← mkLhsRflHint lhs rhs) do
+    throwError "mint: kpin certificate assignment failed"
+
+/-- The Prop-typed premise holes of a telescoped application, in
+    declaration order. -/
+private def propHoles (ms : Array Expr) : MetaM (Array Expr) := do
+  let mut props : Array Expr := #[]
+  for m in ms do
+    let m ← instantiateMVars m
+    if m.isMVar then
+      if (← inferType (← instantiateMVars (← m.mvarId!.getType))).isProp
+      then props := props.push m
+  return props
+
+/-- Chase a list-valued term to its cons/nil spine (committed unfolds
+    through `List.map`-style converter wrappers). -/
+private def chaseListSpine (e0 : Expr) : MetaM Expr := do
+  let mut cur ← whnfCore e0
+  let mut fuel := 24
+  while fuel > 0 && !(cur.isAppOfArity ``List.cons 3)
+      && !(cur.isAppOfArity ``List.nil 1) do
+    unless cur.getAppFn.isConst do break
+    let some nxt ← withProbeBudget (Meta.unfoldDefinition? cur) | break
+    cur ← whnfCore nxt
+    fuel := fuel - 1
+  return cur
+
+mutual
+
+/-- Build a proof of a `step_eval_pexpr… pe = Result (Defined ?pe')`
+    premise, dispatched by the (chased) payload head: closed payloads
+    kernel-pin; `PEsym` crosses by `se_sym_hit` at a cell fact;
+    `PEctor Ctuple` by `se_ctor_tuple` over the element chain;
+    `PEcase` by `se_case_sel` (scrutinee recursively, selection
+    kernel-pinned); `PEcall` by `se_call` (argument chain + ground
+    inline). -/
+private partial def buildSeStep (cellFVars : Array Expr) (m : Expr) :
+    MetaM Unit := do
+  let ty ← instantiateMVars (← m.mvarId!.getType)
+  let some (_, lhs, _) := ty.eq?
+    | throwError "mint: se-step premise is not an equation"
+  -- closed payload: try the kernel first (observing? restores state
+  -- on failure — a partial pin never leaks)
+  if (← observing? (kpinEqPremise m)).isSome then
+    return
+  let lhsW ← whnfCore lhs
+  -- the payload = the last pexpr-valued argument
+  let mut pe? : Option Expr := none
+  for a in lhsW.getAppArgs.reverse do
+    if pe?.isNone then
+      let aTy ← whnf (← inferType a)
+      if aTy.isAppOf ``generic_pexpr then pe? := some a
+  let some pe0 := pe?
+    | throwError "mint: se-step has no pexpr payload:{indentExpr lhsW}"
+  -- chase converter wrappers to the Pexpr constructor
+  let mut pe ← whnfCore pe0
+  let mut peFuel := 12
+  while peFuel > 0 && !pe.isAppOf ``Pexpr do
+    unless pe.getAppFn.isConst do break
+    let some nxt ← withProbeBudget (Meta.unfoldDefinition? pe) | break
+    pe ← whnfCore nxt
+    peFuel := peFuel - 1
+  unless pe.isAppOf ``Pexpr do
+    throwError "mint: se-step payload is not a Pexpr ctor \
+      (head {pe.getAppFn})"
+  let payload ← whnfCore pe.getAppArgs.back!
+  let lem ←
+    if payload.isAppOf ``PEsym then pure ``RelSem.Kit.se_sym_hit
+    else if payload.isAppOf ``PEctor then pure ``RelSem.Kit.se_ctor_tuple
+    else if payload.isAppOf ``PEcase then pure ``RelSem.Kit.se_case_sel
+    else if payload.isAppOf ``PEcall then pure ``RelSem.Kit.se_call
+    else throwError "mint: unkeyed se-step payload (head \
+      {payload.getAppFn}) — outside the construct set"
+  let ci ← getConstInfo lem
+  let (ms, _, cc) ← forallMetaTelescope ci.type
+  let some (_, cl, _) := cc.eq? | throwError "mint: {lem} shape"
+  unless ← withProbeBudget (isDefEq cl lhs) do
+    throwError "mint: {lem} does not match the se-step:{indentExpr lhs}"
+  let props ← propHoles ms
+  if lem == ``RelSem.Kit.se_sym_hit then
+    -- hext (ground), hlk (cell fact)
+    unless props.size == 2 do throwError "mint: se_sym_hit premises"
+    kpinEqPremise props[0]!
+    let hlkTy ← instantiateMVars (← props[1]!.mvarId!.getType)
+    let some pf ← mintSolvePremise cellFVars hlkTy
+      | throwError "mint: sym cell fact has no source:{indentExpr hlkTy}"
+    unless ← isDefEq props[1]! pf do
+      throwError "mint: sym cell fact assignment failed"
+  else if lem == ``RelSem.Kit.se_ctor_tuple then
+    -- hmap (chain), hvals (ground)
+    unless props.size == 2 do throwError "mint: se_ctor_tuple premises"
+    buildEumapChain cellFVars props[0]!
+    kpinEqPremise props[1]!
+  else if lem == ``RelSem.Kit.se_case_sel then
+    -- hscrut (recursive se-step), hsel (ground)
+    unless props.size == 2 do throwError "mint: se_case_sel premises"
+    buildSeStep cellFVars props[0]!
+    kpinEqPremise props[1]!
+  else
+    -- se_call: hmap (chain), hvals, hcall, hpull (ground)
+    unless props.size == 4 do throwError "mint: se_call premises"
+    buildEumapChain cellFVars props[0]!
+    kpinEqPremise props[1]!
+    kpinEqPremise props[2]!
+    kpinEqPremise props[3]!
+  let pf ← instantiateMVars (mkAppN
+    (mkConst lem (ci.levelParams.map .param)) ms)
+  unless ← isDefEq m pf do
+    throwError "mint: se-step assignment failed at {lem}"
+
+/-- Build the element chain of an `exception_undef_mapM` premise:
+    closed elements kernel-pin, sym elements cross by `se_sym_hit`
+    (via `buildSeStep`), assembled by `eumapM_cons`/`eumapM_nil`. -/
+private partial def buildEumapChain (cellFVars : Array Expr)
+    (m : Expr) : MetaM Unit := do
+  let ty ← instantiateMVars (← m.mvarId!.getType)
+  let some (_, lhs, _) := ty.eq?
+    | throwError "mint: eumapM premise is not an equation"
+  let lhsW ← whnfCore lhs
+  unless lhsW.isAppOf ``exception_undef_mapM do
+    throwError "mint: not an eumapM premise:{indentExpr lhsW}"
+  let args := lhsW.getAppArgs
+  let f := args[args.size - 2]!
+  let pes := args[args.size - 1]!
+  let spine ← chaseListSpine pes
+  if spine.isAppOfArity ``List.nil 1 then
+    let ci ← getConstInfo ``RelSem.Kit.eumapM_nil
+    let (ms, _, cc) ← forallMetaTelescope ci.type
+    unless ← withProbeBudget (isDefEq cc ty) do
+      throwError "mint: eumapM_nil does not close the chain"
+    let pf ← instantiateMVars (mkAppN
+      (mkConst ``RelSem.Kit.eumapM_nil (ci.levelParams.map .param)) ms)
+    unless ← isDefEq m pf do
+      throwError "mint: eumapM_nil assignment failed"
+  else if spine.isAppOfArity ``List.cons 3 then
+    let ci ← getConstInfo ``RelSem.Kit.eumapM_cons
+    let (ms, _, cc) ← forallMetaTelescope ci.type
+    let some (_, ccl, _) := cc.eq? | throwError "mint: eumapM_cons shape"
+    unless ← withProbeBudget (isDefEq ccl lhs) do
+      throwError "mint: eumapM_cons does not match:{indentExpr lhs}"
+    let props ← propHoles ms
+    unless props.size == 2 do throwError "mint: eumapM_cons premises"
+    buildSeStep cellFVars props[0]!
+    buildEumapChain cellFVars props[1]!
+    let pf ← instantiateMVars (mkAppN
+      (mkConst ``RelSem.Kit.eumapM_cons (ci.levelParams.map .param)) ms)
+    unless ← isDefEq m pf do
+      throwError "mint: eumapM_cons assignment failed"
+  else
+    throwError "mint: eumapM list did not reach a literal spine:\
+      {indentExpr spine}"
+
+end
+
+/-- The step-then leaf (`PEcall`/`PEcase` payloads): ONE registered
+    `se_*` step at the cell facts, then the REST of the aux2 loop
+    kernel-pinned at the (now ground) remainder. Returns (rhs, pf)
+    with `pf : lhs = rhs`, `rhs = runEU (Result (Defined z)) st`. -/
+private def mintStepThenLeaf (cellFVars : Array Expr) (lhsW : Expr) :
+    MetaM (Expr × Expr) := do
+  let ci ← getConstInfo ``RelSem.Seg.runEU_aux2_step_then
+  let (ms, _, cc) ← forallMetaTelescope ci.type
+  let some (_, lp, rp) := cc.eq?
+    | throwError "mint: step_then shape"
+  unless ← withProbeBudget (isDefEq lp lhsW) do
+    throwError "mint: step_then does not match the leaf:{indentExpr lhsW}"
+  let props ← propHoles ms
+  unless props.size == 4 do
+    throwError "mint: step_then premise count {props.size}"
+  -- hspine (ground), hstep (se law), hnv (ground), hrest (ground —
+  -- the committed boundary: a sym-carrying remainder throws here)
+  kpinEqPremise props[0]!
+  buildSeStep cellFVars props[1]!
+  kpinEqPremise props[2]!
+  kpinEqPremise props[3]!
+  let pf ← instantiateMVars (mkAppN
+    (mkConst ``RelSem.Seg.runEU_aux2_step_then
+      (ci.levelParams.map .param)) ms)
+  return (← instantiateMVars rp, pf)
+
 /-! THE EVAL CROSSING: prove `lhs = Result (Defined z, st')` for a
     monadic step applied at a run state, by (a) whole-term kernel
     computation where the step is closed at the fragments (the
@@ -804,6 +1036,27 @@ private def peSafePayload (e : Expr) : Bool :=
         && !(["PEsym", "PEval", "PEctor", "PEop"].contains short)
     | none => false)).isNone
 
+/-- The unsafe PE* constructor names occurring in a payload (loud-
+    fallback diagnostics: the full entry term renders the whole state
+    and is useless in a message; the offender list is the datum). -/
+private partial def peUnsafeHeads (e : Expr) (acc : Array Name := #[]) :
+    Array Name :=
+  let acc := match e.getAppFn.constName? with
+    | some n =>
+      let short := n.componentsRev.head!.toString
+      if short.startsWith "PE"
+          && !(["PEsym", "PEval", "PEctor", "PEop"].contains short)
+          && !acc.contains n then
+        acc.push n
+      else acc
+    | none => acc
+  let acc := e.getAppArgs.foldl (fun a s => peUnsafeHeads s a) acc
+  match e with
+  | .lam _ _ b _ | .forallE _ _ b _ => peUnsafeHeads b acc
+  | .letE _ _ v b _ => peUnsafeHeads b (peUnsafeHeads v acc)
+  | .mdata _ b | .proj _ _ b => peUnsafeHeads b acc
+  | _ => acc
+
 /-- The eval-entry constants (a pexpr argument rides them into the
     evaluator). -/
 private def evalEntryConsts : List Name :=
@@ -832,6 +1085,7 @@ private partial def crossToResult (cellFVars : Array Expr) (lhs : Expr)
   -- a guard/conv/case redex can run the fuel loop away)
   let isBind := fn.isConstOf ``stExceptUndef_bind
   let isEntry := fn.isConst && evalEntryConsts.contains fn.constName!
+  let mut payload? : Option Expr := none
   let safe ←
     if isEntry then do
       -- the redex = the last pexpr-TYPED argument (spellings vary:
@@ -842,18 +1096,84 @@ private partial def crossToResult (cellFVars : Array Expr) (lhs : Expr)
         if pe?.isNone then
           let aTy ← whnf (← inferType a)
           if aTy.isAppOf ``generic_pexpr then pe? := some a
+      payload? := pe?
       match pe? with
-      | some pe => pure (peSafePayload pe)
+      | some pe =>
+        -- V3a-continuation (2026-08-28), the GROUND-REDEX prong of
+        -- the kernel-evaluation guard: the banked doctrine forbids
+        -- kernel-evaluating a guard/conv/case redex AT SYMBOLIC DATA
+        -- — and symbolic data in a redex means FREE VARIABLES (the
+        -- walk's Int fvars ride in as `PEval (OVinteger … x)`) or
+        -- ENV/MEM consults at the open pack (`PEsym`/`PEmemop`/
+        -- `PEcfunction` — a stuck lookup inside the fuel loop is the
+        -- measured 16G expansion). A payload that is CLOSED and
+        -- consult-free evaluates to completion on ground data (the
+        -- PERF-1 "literal value → eval skeleton" regime): the m1
+        -- arms' post-branch conv/guard chains at literals. The
+        -- syntactic PE* scan stays the rule otherwise (fail-closed:
+        -- a converter residual that hides constructors classifies
+        -- unsafe, never the reverse).
+        let consults := (pe.find? (fun s =>
+          match s.getAppFn.constName? with
+          | some n =>
+            ["PEsym", "PEmemop", "PEcfunction"].contains
+              n.componentsRev.head!.toString
+          | none => false)).isSome
+        pure (peSafePayload pe
+          || (!pe.hasFVar && !pe.hasExprMVar && !consults))
       | none => pure false
     else pure true
   if !isBind && safe then
     if let some (z, st', rhs) ← resultParts? lhsW then
       return (z, st', rhs, ← mkLhsRflHint lhs rhs)
   if isEntry && !safe then
-    -- an eval entry at a guard/conv/case redex: NEVER single-step it
-    -- through elaborator unfolds (the r127 grind) — fall back loudly
-    throwError "mint: eval payload outside the construct set \
-      (guard/conv/case class) — supply fallback:{indentExpr lhsW}"
+    -- an eval entry whose payload is outside the kernel-safe set:
+    -- NEVER kernel-evaluate it (the r127/fuel-runaway guard), and
+    -- NEVER descend it through elaborator unfolds either (measured
+    -- V3a-continuation: the committed-unfold descent at a converter-
+    -- residual payload grinds >10 min where the throw-and-stop walk
+    -- is 14 s). Instead: DIRECT LEAF DISPATCH at the entry spelling —
+    -- chase the payload to its Pexpr constructor (the residual
+    -- reduces there), commit on the head, and apply the registered
+    -- leaf lemma/builder whose LHS pattern unifies through the
+    -- entry's own unfolding with a concrete target. Unkeyed heads
+    -- (guard/conv chains at symbolic data) throw the classification
+    -- error with the offender list — the supply/anchor fallback.
+    if fn.constName! == ``full_eval_pexpr
+        || fn.constName! == ``full_eval_pexpr_lemFuel then
+      -- expose the underlying bind (ONE committed unfold step; the
+      -- bind branch then classifies the inner entry) — the seg_peels
+      -- head discipline
+      let some nxt ← withProbeBudget (Meta.unfoldDefinition? lhsW)
+        | throwError "mint: full_eval entry did not unfold"
+      return ← crossToResult cellFVars nxt fuel
+    let some pe0 := payload?
+      | throwError "mint: eval entry has no payload:{indentExpr lhsW}"
+    -- chase converter wrappers to the Pexpr constructor
+    let mut pe ← whnfCore pe0
+    let mut peFuel := 12
+    while peFuel > 0 && !pe.isAppOf ``Pexpr do
+      unless pe.getAppFn.isConst do break
+      let some nxt ← withProbeBudget (Meta.unfoldDefinition? pe) | break
+      pe ← whnfCore nxt
+      peFuel := peFuel - 1
+    unless pe.isAppOf ``Pexpr do
+      throwError "mint: eval payload did not chase to a Pexpr ctor \
+        (head {pe.getAppFn}) — outside the construct set"
+    let payload ← whnfCore pe.getAppArgs.back!
+    let (rhs, pf) ←
+      if payload.isAppOf ``PEsym then
+        applyLemmaCross ``RelSem.Seg.runEU_aux2_sym cellFVars lhsW
+      else if payload.isAppOf ``PEctor then
+        applyLemmaCross ``RelSem.Seg.runEU_aux2_ctor2 cellFVars lhsW
+      else if payload.isAppOf ``PEcall || payload.isAppOf ``PEcase then
+        mintStepThenLeaf cellFVars lhsW
+      else
+        throwError "mint: eval payload outside the construct set \
+          (guard/conv/case class; payload head {payload.getAppFn}; \
+          offenders: {(peUnsafeHeads pe).toList}) — supply fallback"
+    let (z, st', rhs2, pf2) ← crossToResult cellFVars rhs fuel
+    return (z, st', rhs2, ← mkEqTrans pf pf2)
   if isBind then
     let args := lhsW.getAppArgs
     unless args.size ≥ 3 do
@@ -911,6 +1231,12 @@ private partial def crossToResult (cellFVars : Array Expr) (lhs : Expr)
       throwError "mint: aux2 argument is not a Pexpr ctor \
         (head {pe.getAppFn})"
     let payload ← whnfCore pe.getAppArgs.back!
+    if payload.isAppOf ``PEcall || payload.isAppOf ``PEcase then
+      -- V3a-continuation: the one-step-then-ground-rest leaf
+      -- (`run ret(conv(sym))` / `pure(case syms of … ground)`)
+      let (rhs, pf) ← mintStepThenLeaf cellFVars lhsW
+      let (z, st', rhs2, pf2) ← crossToResult cellFVars rhs fuel
+      return (z, st', rhs2, ← mkEqTrans pf pf2)
     let lem ←
       if payload.isAppOf ``PEsym then
         pure ``RelSem.Seg.runEU_aux2_sym
@@ -1542,7 +1868,8 @@ private def tryMintCore (gf gs td tid : Expr) (ΓE : Expr)
         fuel := fuel - 1
       return cur
     let births ← do
-      let envList ← reduceToCons (← mkAppM ``thread_state.env #[th'])
+      let envProj ← mkAppM ``thread_state.env #[th']
+      let envList ← reduceToCons envProj
       unless envList.isAppOfArity ``List.cons 3 do
         throwError "mint: successor env spine shape{indentExpr envList}"
       let tail ← whnfCore envList.getAppArgs[2]!
@@ -1567,8 +1894,15 @@ private def tryMintCore (gf gs td tid : Expr) (ΓE : Expr)
       unless done do
         throwError "mint: successor env bind depth > 2"
       pure acc
-    -- keep only the cell binders the proof actually consumed
-    let used := cellFVars.filter fun h => pfBody.containsFVar h.fvarId!
+    -- keep only the cell binders the proof actually consumed.
+    -- ONE cached collectFVars pass (V3a-continuation): per-fvar
+    -- `containsFVar` re-traverses the proof term per cell with no
+    -- visited set — measured EXPONENTIAL blowup on the DAG-shared
+    -- kernel-expanded terms of the Ecase-scrutinee round (>3 min at
+    -- round 9 vs 14 s whole-walk baseline); collectFVars visits each
+    -- shared node once.
+    let fvSt := Lean.collectFVars {} pfBody
+    let used := cellFVars.filter fun h => fvSt.fvarSet.contains h.fvarId!
     -- the successor family, read off the proof's own conclusion
     let concl ← inferType pfBody
     let some (_, _, rhsPair) := concl.eq?
@@ -1605,17 +1939,27 @@ private def tryMintCore (gf gs td tid : Expr) (ΓE : Expr)
       let thNew := mkAppN thMk.getAppFn (thMk.getAppArgs.set! 3 spineE)
       let succNew := mkApp3 succ.getAppFn sargs[0]! thNew sargs[2]!
       mkLambdaFVars #[q] succNew
+    -- the pure-control successor family: PROGRAM-BLIND stateAt at the
+    -- FLATTENED successor control image (the tryMintLoad shape; V3a-
+    -- continuation fix — a lazily-spelled `mkLambdaFVars [q] succ`
+    -- famO sends every link premise dispatch through Meta-whnf of the
+    -- unflattened wrapper nest: measured multi-minute grind at the
+    -- Ecase-scrutinee round vs the flat image's shallow projections)
+    let mkCtlFamO : MetaM Expr := do
+      let succ0 := succ.replaceFVar q (← mkPack0)
+      mkAppM ``RelSem.Seg.stateAt
+        #[← flattenCtl (← mkAppM ``ctlOf #[succ0])]
     let (linkC, happLam, famO) ←
       match births.size, used.size with
       | 0, 0 => pure (``RelSem.Seg.link_ctl,
           ← mkLambdaFVars (#[q, hwf]) pfBody,
-          ← mkLambdaFVars #[q] succ)
+          ← mkCtlFamO)
       | 0, 1 => pure (``RelSem.Seg.link_ctl_env1,
           ← mkLambdaFVars (#[q, hwf] ++ used) pfBody,
-          ← mkLambdaFVars #[q] succ)
+          ← mkCtlFamO)
       | 0, 2 => pure (``RelSem.Seg.link_ctl_env2,
           ← mkLambdaFVars (#[q, hwf] ++ used) pfBody,
-          ← mkLambdaFVars #[q] succ)
+          ← mkCtlFamO)
       | 1, 0 => pure (``RelSem.Seg.link_birth1,
           ← mkLambdaFVars (#[q, hwf, hdom]) pfBody, ← mkBirthFamO)
       | 1, 1 => pure (``RelSem.Seg.link_birth1_env1,
@@ -1866,7 +2210,8 @@ private def segRunCore (mint : Bool) : TacticM Unit := do
     | Sum.inl b =>
       let b ← if b.minted then do
           let base := (← Elab.Term.getDeclName?).getD `segRun
-          compactLink base b
+          let r ← compactLink base b
+          pure r
         else pure b
       links := links.push b
       ΓE := b.delta
