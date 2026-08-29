@@ -376,6 +376,18 @@ private def pIntegerType : P integerType :=
   <|> (attempt (lexKw "ptrdiff_t") *> pure Ptrdiff_t)
   <|> (attempt (do lexKw "signed"; let ibty ← pIntegerBaseType; return (Signed ibty)))
   <|> (attempt (do lexKw "unsigned"; let ibty ← pIntegerBaseType; return (Unsigned ibty)))
+  -- `enum TAG` (2026-09-01 S-basket item 2): both printer dialects emit
+  -- it — Pp_core_ctype.pp_integer_ctype (pp_core_ctype.ml:42,
+  -- `| Enum sym -> !^ "enum" ^^^ pp_symbol sym`) and Pp_ail
+  -- (pp_ail.ml:190-191). Tag symbol interned by name like the
+  -- struct/union tag arms (pCtypeAtom; same to_string_pretty channel).
+  -- DELIBERATE DIVERGENCE NOTE: upstream's own Core text parser has NO
+  -- enum arm (core_lexer.mll:20 keeps the "enum" token commented out),
+  -- so `--pp core` output containing enum ctypes is not
+  -- oracle-reparseable; this parser consumes the pp output and accepts
+  -- it (a documented superset of the OCaml core grammar, not a mirror
+  -- gap).
+  <|> (attempt (do lexKw "enum"; let tag ← lexIdent; return (Enum0 (mkSym tag))))
 
 /-- Parse a floating type. "long_double" is the Pp_core_ctype spelling
     (pp_core_ctype.ml:57); "long double" (space) is the Pp_ail spelling

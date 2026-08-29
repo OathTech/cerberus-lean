@@ -175,6 +175,18 @@ def testTypes : TestM Unit := do
   assertOk "ctype int[10]" (run CoreParser.pCtype "signed int[10]")
   assertOk "ctype struct tag" (run CoreParser.pCtype "struct foo")
   assertOk "ctype union tag" (run CoreParser.pCtype "union bar")
+  -- enum ctype literal (2026-09-01 S-basket item 2; pp_core_ctype.ml:42
+  -- emits `enum TAG` but upstream's core parser can't re-read it —
+  -- see the pIntegerType arm's divergence note)
+  (do -- structural check (no Repr for ctype; BEq is ctypeEqual)
+    let expected : ctype :=
+      Ctype [] (Basic (Integer (Enum0 (CoreParser.internSym "size"))))
+    match run CoreParser.pCtype "enum size" with
+    | .ok v =>
+      if v == expected then pass "ctype enum tag"
+      else fail_ "ctype enum tag" "parsed, but not Enum0 'size'"
+    | .error e => fail_ "ctype enum tag" e)
+  assertOk "ctype enum tag pointer" (run CoreParser.pCtype "enum size*")
   assertOk "ctype int8_t" (run CoreParser.pCtype "int8_t")
   assertOk "ctype uint64_t" (run CoreParser.pCtype "uint64_t")
   assertOk "ctype size_t" (run CoreParser.pCtype "size_t")
