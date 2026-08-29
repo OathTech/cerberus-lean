@@ -48,6 +48,17 @@ namespace RelSem.Seg.Stepper
 initialize registerTraceClass `RelSem.segRun
 initialize registerTraceClass `RelSem.segRun.detail
 
+/-- Live-file debug print (per-command stream capture hides in-flight
+    output; committed instrument, enabled by the env var
+    SEGDBG_LIVE). -/
+private def segdbg (msg : String) : CoreM Unit := do
+  if (← IO.getEnv "SEGDBG_LIVE").isSome then
+    let h ← IO.FS.Handle.mk
+      "/home/dev/projects/cerberus-lean-proj/.v3a-logs/segdbg.live"
+      .append
+    h.putStrLn msg
+    h.flush
+
 /-- Speculative-probe heartbeat isolation (the R4 move).
     PERF-1 finding, recorded: the `withOptions` spelling does NOT
     update `Core.Context.maxHeartbeats` (the checker reads the
@@ -1524,7 +1535,8 @@ private inductive MintOut where
     famInv registry, cell indexes, the control anchor). -/
 private def buildMintedLink (gf gs td tid : Expr) (ΓE : Expr)
     (linkC : Name) (famI famO happLam : Expr)
-    (birthPins : Array (Expr × Expr) := #[]) : MetaM BuiltLink := do
+    (birthPins : Array (Expr × Expr) := #[])
+    (natPins : Array Nat := #[]) : MetaM BuiltLink := do
   let cinfo ← getConstInfo linkC
   let (args, _, concl) ← forallMetaTelescope cinfo.type
   unless concl.isAppOfArity ``RelSem.Seg.SegStep 7 do
@@ -1554,6 +1566,18 @@ private def buildMintedLink (gf gs td tid : Expr) (ΓE : Expr)
       if h2 : i < valSlots.size then
         unless ← isDefEq valSlots[i] birthPins[i]!.2 do
           throwError "mint [{linkC}]: birth value pre-pin failed"
+  -- pre-pin Nat data slots (the draw link's deltas — declaration
+  -- order; the conclusion unification cannot solve `x + ?d ≟ x`)
+  if !natPins.isEmpty then
+    let mut ni := 0
+    for a in args do
+      let a ← instantiateMVars a
+      if a.isMVar && ni < natPins.size then
+        let aty ← instantiateMVars (← a.mvarId!.getType)
+        if aty.isConstOf ``Nat then
+          unless ← isDefEq a (mkNatLit natPins[ni]!) do
+            throwError "mint [{linkC}]: Nat delta pre-pin failed"
+          ni := ni + 1
   -- pre-pin the fam slots (declaration order famI, famO)
   let mut famPins := #[famI, famO]
   let mut pinIdx := 0
@@ -1581,9 +1605,83 @@ private def buildMintedLink (gf gs td tid : Expr) (ΓE : Expr)
       happIdx := some i
   let some hi := happIdx
     | throwError "mint [{linkC}]: no happ premise"
-  unless ← withProbeBudget (isDefEq args[hi]! happLam) do
-    throwError "mint [{linkC}]: minted proof does not fit the happ \
-      slot:{indentExpr (← instantiateMVars (← inferType args[hi]!))}"
+  let fit1 ← withProbeBudget (isDefEq args[hi]! happLam)
+  unless fit1 do
+    segdbg s!"[dbg] happ budgeted-fit FAILED for {linkC}; retrying \
+      unbudgeted"
+    unless ← isDefEq args[hi]! happLam do
+      -- field-diff diagnostic (env-gated): flatten both successor
+      -- images at the shared telescope and name the first differing
+      -- field
+      if (← IO.getEnv "SEGDBG_LIVE").isSome then
+        let slotTy ← instantiateMVars (← inferType args[hi]!)
+        let builtTy ← inferType happLam
+        forallTelescope slotTy fun xs sBody => do
+          let bBody ← instantiateForall builtTy xs
+          match sBody.eq?, bBody.eq? with
+          | some (_, _, sR), some (_, _, bR) =>
+            let sSucc := (← whnfCore sR).getAppArgs.back!
+            let bSucc := (← whnfCore bR).getAppArgs.back!
+            for fld in [``driver_state.core_file,
+                ``driver_state.core_extern,
+                ``driver_state.core_state0,
+                ``driver_state.core_run_state0,
+                ``driver_state.layout_state,
+                ``driver_state.concurrency_state,
+                ``driver_state.fs_state0, ``driver_state.trace,
+                ``driver_state.symbolic_assoc,
+                ``driver_state.blocked,
+                ``driver_state.dr_step_counter] do
+              let sP ← mkAppM fld #[sSucc]
+              let bP ← mkAppM fld #[bSucc]
+              let same ← withProbeBudget (isDefEqGuarded sP bP)
+              segdbg s!"[dbg] happ field {fld}: \
+                {if same then "OK" else "DIFF"}"
+            for fld in [``core_run_state.tid_supply,
+                ``core_run_state.aid_supply,
+                ``core_run_state.excluded_supply,
+                ``core_run_state.sym_supply,
+                ``core_run_state.labeled] do
+              let sP ← mkAppM fld
+                #[← mkAppM ``driver_state.core_run_state0 #[sSucc]]
+              let bP ← mkAppM fld
+                #[← mkAppM ``driver_state.core_run_state0 #[bSucc]]
+              let same ← withProbeBudget (isDefEqGuarded sP bP)
+              segdbg s!"[dbg] happ crs {fld}: \
+                {if same then "OK" else "DIFF"}"
+              unless same do
+                let sK ← kwhnf? sP
+                let bK ← kwhnf? bP
+                segdbg s!"[dbg]   slot={(sK.getD sP).getAppFn} \
+                  built={(bK.getD bP).getAppFn}"
+            -- thread-level drill
+            let getTh (x : Expr) : MetaM (Array Expr) := do
+              let ths ← mkAppM ``core_state.thread_states
+                #[← mkAppM ``driver_state.core_state0 #[x]]
+              let some l ← kwhnf? ths | return #[]
+              unless l.isAppOfArity ``List.cons 3 do return #[]
+              let some pair ← kwhnf? l.getAppArgs[1]! | return #[]
+              unless pair.isAppOfArity ``Prod.mk 4 do return #[]
+              let some inner ← kwhnf? pair.getAppArgs[3]! | return #[]
+              unless inner.isAppOfArity ``Prod.mk 4 do return #[]
+              let some th ← kwhnf? inner.getAppArgs[3]! | return #[]
+              unless th.isAppOfArity ``thread_state.mk 7 do return #[]
+              return th.getAppArgs
+            let sT ← getTh sSucc
+            let bT ← getTh bSucc
+            if sT.size == 7 && bT.size == 7 then
+              for i in [0:7] do
+                let same ← withProbeBudget
+                  (isDefEqGuarded sT[i]! bT[i]!)
+                segdbg s!"[dbg] happ thread field {i}: \
+                  {if same then "OK" else "DIFF"}"
+            else
+              segdbg s!"[dbg] happ thread drill failed \
+                {sT.size}/{bT.size}"
+          | _, _ => segdbg "[dbg] happ diag: no eq bodies"
+      throwError "mint [{linkC}]: minted proof does not fit the happ \
+        slot:{indentExpr (← instantiateMVars (← inferType args[hi]!))}"
+    segdbg s!"[dbg] happ unbudgeted-fit OK for {linkC}"
   let pack0 ← mkPack0
   let mut progress := true
   while progress do
@@ -1999,7 +2097,8 @@ private def mintReqOf (stepI : Expr) : MetaM Expr := do
 
 /-- Decompose a concrete `PV (Prov_some aid) (PVconcrete _ addr)`
     pointer into (aid, addr). -/
-private def mintPtrParts (ptrE : Expr) : MetaM (Expr × Expr) := do
+private def mintPtrParts (ptrE : Expr) :
+    MetaM (Expr × Expr × Expr) := do
   let some ptr0 ← kwhnf? ptrE
     | throwError "mint: pointer did not compute"
   unless ptr0.getAppNumArgs ≥ 2 do
@@ -2008,9 +2107,11 @@ private def mintPtrParts (ptrE : Expr) : MetaM (Expr × Expr) := do
     | throwError "mint: provenance did not compute"
   let some pvc ← kwhnf? ptr0.getAppArgs[ptr0.getAppNumArgs - 1]!
     | throwError "mint: address did not compute"
-  unless prov.getAppNumArgs ≥ 1 && pvc.getAppNumArgs ≥ 1 do
+  unless prov.getAppNumArgs ≥ 1 && pvc.getAppNumArgs ≥ 2 do
     throwError "mint: pointer parts shape"
-  return (prov.getAppArgs.back!, pvc.getAppArgs.back!)
+  return (prov.getAppArgs.back!,
+    pvc.getAppArgs.back!,
+    pvc.getAppArgs[pvc.getAppNumArgs - 2]!)
 
 /-- Build the happ premise of a memory link by conclusion-unifying
     the standard chain (discovery pin → advance_action_request →
@@ -2279,7 +2380,7 @@ private def tryMintStore (gf gs td tid : Expr) (ΓE : Expr)
     throwError "mint: store request shape"
   let ptrE := rArgs[rArgs.size - 3]!
   let mvalE := rArgs[rArgs.size - 2]!
-  let (aidE, addrE) ← mintPtrParts ptrE
+  let (aidE, addrE, _umE) ← mintPtrParts ptrE
   let alcE ← findPairVal aidE comps[4]!
   let oldE ← findPairVal addrE comps[5]!
   -- the new bytes: memValueToBytes at the (data) funptrmap []
@@ -2375,7 +2476,7 @@ private def tryMintKill (gf gs td tid : Expr) (ΓE : Expr)
   unless req0.isAppOf ``KillRequest2 && rArgs.size ≥ 3 do
     throwError "mint: kill request shape"
   let ptrE := rArgs[rArgs.size - 2]!
-  let (aidE, addrE) ← mintPtrParts ptrE
+  let (aidE, addrE, umE) ← mintPtrParts ptrE
   let alcE ← findPairVal aidE comps[4]!
   let linkC := ``RelSem.Seg.link_kill
   let cinfo ← getConstInfo linkC
@@ -2437,8 +2538,8 @@ private def tryMintKill (gf gs td tid : Expr) (ΓE : Expr)
         | throwError "mint: kill MemInv hypothesis missing"
       let hdead ← mkAppM ``MemInv.contains_dead_false #[hinv, hget]
       let fn ← mkAppOptM ``RelSem.Kit.mem_kill_block
-        #[some locE, some aidE, some addrE, none, some alcE, some lsE,
-          some hdead, some hget]
+        #[some locE, some aidE, some addrE, some umE, some alcE,
+          some lsE, some hdead, some hget]
       applyWithPremises fn xs)
   mintMemFinish gf gs td tid ΓE linkC args concl cinfo famI happLam
     succ0
@@ -2489,7 +2590,7 @@ private def tryMintCore (gf gs td tid : Expr) (ΓE : Expr)
     let some stepI ← kwhnf? stepO.appArg!
       | return MintOut.skip m!"kernel whnf failed on the step body"
     let stepArgs := stepI.getAppArgs
-    let (pfBody, th') ←
+    let (pfBody, th', dT, dA, dE, dS) ←
       if stepI.isAppOf ``Step_tau2 && stepArgs.size ≥ 3 then do
         let tsk ← whnfCore stepArgs[stepArgs.size - 2]!
         unless tsk.isConstOf ``TSK_Misc do
@@ -2498,7 +2599,8 @@ private def tryMintCore (gf gs td tid : Expr) (ΓE : Expr)
         let stepI' := mkAppN stepI.getAppFn
           (stepArgs.set! (stepArgs.size - 2) tsk)
         let hfindPf ← mkLhsRflHint discE (mkApp stepO.appFn! stepI')
-        pure (← mkAppM ``RelSem.Seg.cstep_tau #[hfindPf], th')
+        pure (← mkAppM ``RelSem.Seg.cstep_tau #[hfindPf], th', 0, 0,
+          0, 0)
       else if stepI.isAppOf ``Step_with_runstate2 && stepArgs.size ≥ 2
       then do
         let kindE ← whnfCore stepArgs[stepArgs.size - 2]!
@@ -2518,11 +2620,34 @@ private def tryMintCore (gf gs td tid : Expr) (ΓE : Expr)
           (stepArgs.set! (stepArgs.size - 2) kindE)
         let hfindPf ← mkLhsRflHint discE (mkApp stepO.appFn! stepI')
         let rsq ← mkAppM ``driver_state.core_run_state0 #[σq]
-        let (th', _rs', rhsR, pfHm) ←
+        let (th', rs', rhsR, pfHm) ←
           crossToResult cellFVars (mkApp stepM rsq)
         let pfHm ← mkExpectedTypeHint pfHm
           (← mkEq (mkApp stepM rsq) rhsR)
-        pure (← mkAppM lemN #[hfindPf, pfHm], th')
+        -- SUPPLY-DELTA classification (V3a continuation, item (iii)):
+        -- a draw-carrying round (the NEG rewrite) bumps the fresh
+        -- supplies in rs' — detect the per-field deltas (q.field or
+        -- q.field + k; anything else is a thrown frontier)
+        let fieldDelta (proj : Name) : MetaM Nat := do
+          let some fv ← kwhnf? (← mkAppM proj #[rs'])
+            | throwError "mint: supply field did not compute"
+          -- the kernel normal form of `x + k` at open x is a
+          -- `Nat.succ` tower — count the layers
+          let mut cur := fv
+          let mut k := 0
+          while cur.isAppOfArity ``Nat.succ 1 do
+            k := k + 1
+            cur := cur.appArg!
+          if cur.isAppOfArity ``HAdd.hAdd 6 then
+            let some k2 ← getNatValue? cur.getAppArgs[5]!
+              | throwError "mint: supply delta is not a literal"
+            return k + k2
+          return k
+        let dT ← fieldDelta ``core_run_state.tid_supply
+        let dA ← fieldDelta ``core_run_state.aid_supply
+        let dE ← fieldDelta ``core_run_state.excluded_supply
+        let dS ← fieldDelta ``core_run_state.sym_supply
+        pure (← mkAppM lemN #[hfindPf, pfHm], th', dT, dA, dE, dS)
       else if stepI.isAppOf ``Step_action_request2 then do
         -- memory-action rounds mint through their own links
         -- (V3a continuation: the full load/store/create/kill set)
@@ -2679,7 +2804,124 @@ private def tryMintCore (gf gs td tid : Expr) (ΓE : Expr)
             unless found do ok := false
           | none => ok := false
       if ok then rebindHlks := some hlks
+    let hasDelta := dT + dA + dE + dS > 0
     let (linkC, happLam, famO) ←
+      if hasDelta then do
+        unless births.isEmpty && used.isEmpty do
+          throwError "mint: draw-carrying round with births/cells — \
+            outside the construct set (the pinned-draw frontier)"
+        -- THE PINNED-DRAW SUCCESSOR (item (iii)): the drawn ids sit
+        -- IN the successor arena — abstract the flattened image over
+        -- the pack's supply projections into a TEMPLATE, and spell
+        -- the family at the (definitionally-cancelling) subtracted
+        -- post-supplies; the link pins the image constant through
+        -- the supply agreement
+        segdbg "[dbg] draw: flatten begin"
+        let fCtlq0 ← flattenCtl (← mkAppM ``ctlOf #[succ])
+        -- deep-normalize the ARENA field (kernel-per-node): the
+        -- drawn ids ride in as unreduced projection chains over the
+        -- open state — the abstraction below matches their NORMAL
+        -- forms (Pack-projections)
+        let fCtlq ← do
+          unless fCtlq0.isAppOfArity ``driver_state.mk 11 do
+            throwError "mint: draw image not in mk form"
+          let mut f := fCtlq0.getAppArgs
+          let cs := f[2]!
+          unless cs.isAppOfArity ``core_state.mk 2 do
+            throwError "mint: draw core_state not in mk form"
+          let mut csf := cs.getAppArgs
+          let ths := csf[0]!
+          unless ths.isAppOfArity ``List.cons 3 do
+            throwError "mint: draw thread spine shape"
+          let mut thsA := ths.getAppArgs
+          let pair := thsA[1]!
+          unless pair.isAppOfArity ``Prod.mk 4 do
+            throwError "mint: draw thread pair shape"
+          let mut pairA := pair.getAppArgs
+          let inner := pairA[3]!
+          unless inner.isAppOfArity ``Prod.mk 4 do
+            throwError "mint: draw thread inner shape"
+          let mut innerA := inner.getAppArgs
+          let th := innerA[3]!
+          unless th.isAppOfArity ``thread_state.mk 7 do
+            throwError "mint: draw thread not in mk form"
+          let mut thA := th.getAppArgs
+          thA := thA.set! 0 (← chaseAstDeep thA[0]! (fuel := 256))
+          innerA := innerA.set! 3 (mkAppN th.getAppFn thA)
+          pairA := pairA.set! 3 (mkAppN inner.getAppFn innerA)
+          thsA := thsA.set! 1 (mkAppN pair.getAppFn pairA)
+          csf := csf.set! 0 (mkAppN ths.getAppFn thsA)
+          f := f.set! 2 (mkAppN cs.getAppFn csf)
+          pure (mkAppN fCtlq0.getAppFn f)
+        segdbg "[dbg] draw: flatten done"
+        let natTy := mkConst ``Nat
+        let eProj ← mkAppM ``RelSem.Seg.Pack.eS #[q]
+        let sProj ← mkAppM ``RelSem.Seg.Pack.sS #[q]
+        segdbg "[dbg] draw: abstract begin"
+        -- STRUCTURAL abstraction (kabstract's defeq search is the
+        -- measured grind on the flat image): replace both spellings
+        -- of the projections — const-app and primitive proj
+        let eProjP := Expr.proj ``RelSem.Seg.Pack 3 q
+        let sProjP := Expr.proj ``RelSem.Seg.Pack 4 q
+        let replaceProj (body : Expr) (cApp pApp : Expr) (v : Expr) :
+            Expr :=
+          body.replace (fun t =>
+            if t == cApp || t == pApp then some v else none)
+        let cT ← withLocalDeclD `eArg natTy fun eV => do
+          let b := replaceProj fCtlq eProj eProjP eV
+          withLocalDeclD `sArg natTy fun sV => do
+            let b2 := replaceProj b sProj sProjP sV
+            -- residual q-occurrences are PHANTOM (ctl-erased fields
+            -- spelled as projections on `stateAt … q` — their values
+            -- are q-independent); pin them at the canonical pack. A
+            -- missed genuine draw spelling would fail the happ defeq
+            -- loudly downstream (fail-closed).
+            let b2 := b2.replaceFVar q (← mkPack0)
+            mkLambdaFVars #[eV, sV] b2
+        -- the template must close over NOTHING else from the pack
+        let fvs := (Lean.collectFVars {} cT).fvarSet
+        if fvs.contains q.fvarId! then
+          let qHeads := fun (t0 : Expr) => Id.run do
+            let mut acc : List String := []
+            let mut stack : List Expr := [t0]
+            let mut fuel := 100000
+            while fuel > 0 && !stack.isEmpty do
+              fuel := fuel - 1
+              match stack with
+              | [] => pure ()
+              | t :: rest =>
+                stack := rest
+                if t.isApp && t.appArg! == q then
+                  acc := s!"app:{t.getAppFn}" :: acc
+                if t.isProj && t.projExpr! == q then
+                  acc := s!"proj:{t.projIdx!}" :: acc
+                stack := t.getAppArgs.toList ++ stack
+                match t with
+                | .lam _ _ b _ | .forallE _ _ b _ =>
+                  stack := b :: stack
+                | .letE _ _ v b _ => stack := v :: b :: stack
+                | .mdata _ b | .proj _ _ b => stack := b :: stack
+                | _ => pure ()
+            return acc
+          segdbg s!"[dbg] draw residual q-heads: {qHeads cT}"
+          throwError "mint: draw successor depends on the pack \
+            beyond the supplies — outside the construct set"
+        let famO ← withLocalDeclD `q2 (mkConst ``RelSem.Seg.Pack)
+          fun q2 => do
+            let e2 ← mkAppM ``RelSem.Seg.Pack.eS #[q2]
+            let s2 ← mkAppM ``RelSem.Seg.Pack.sS #[q2]
+            let eArg ← mkAppM ``HSub.hSub #[e2, mkNatLit dE]
+            let sArg ← mkAppM ``HSub.hSub #[s2, mkNatLit dS]
+            mkLambdaFVars #[q2] (← mkAppM ``RelSem.Seg.stateAt
+              #[mkApp2 cT eArg sArg, q2])
+        segdbg "[dbg] draw: famO built"
+        let b ← buildMintedLink gf gs td tid ΓE
+          ``RelSem.Seg.link_ctl_sup_draw famI famO
+          (← mkLambdaFVars (#[q, hwf]) pfBody) #[] #[dT, dA, dE, dS]
+        trace[RelSem.segRun] "mint: consumed one draw round \
+          (deltas {dT},{dA},{dE},{dS})"
+        return MintOut.link b
+      else
       match rebindHlks with
       | some hlks =>
         pure ((if births.size == 1 then ``RelSem.Seg.link_ctl_rebind1
@@ -2886,6 +3128,7 @@ private def segRunCore (mint : Bool) : TacticM Unit := do
     -- straight-line run cannot exhaust one declaration budget. No
     -- global raise: each round stays under the ambient allowance.
     let stepRes ← Core.withCurrHeartbeats do
+      segdbg s!"[dbg] round {links.size + 1}"
       let comps ← ctxComponents ΓE
       let c := comps[0]!
       -- PERF-2 mechanism C: mint-first (probe mode)

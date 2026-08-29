@@ -1263,6 +1263,77 @@ theorem link_ctl_sup {dT dA dE dS : Nat}
   isimp only [Ctx.interp, SegCtx]
   iframe Hc Hs Hd He Hm Ha Hb
 
+/-- SUPPLY-DRAW TAU LINK (V3a continuation, item (iii) — the NEG
+    rewrite): the drawn ids ENTER THE ARENA, so the successor control
+    image is a TEMPLATE over the pre-draw supplies; the context's
+    supply component pins the pack (the state interpretation's
+    supplies-agreement), which makes the output image the constant
+    `cO` — the hctlO premise is stated at the S-spelled pack, where
+    it is `rfl` per instance. -/
+@[step_law (kind := segLink) (variant := ctlSupDraw) (side := fed)
+  (frontier := "seg/link-ctl-sup-draw")
+  (trace := "{law := link_ctl_sup_draw, joint := seg/link, hyps := [happ : fed(round eq, drawn ids in the successor image)]}")
+  (lineage := "the NEG-rewrite class: fresh draws embedded in control, pinned through the supply agreement; delegates to wpk_seq_ctl_sup")]
+theorem link_ctl_sup_draw {dT dA dE dS : Nat}
+    (hIn : FamShape famI) (hOut : FamShape famO)
+    (hinv : ∀ σ, ctlOf σ = cI → EnvWf σ → ∃ p, σ = famI p)
+    (happ : ∀ p, EnvWfFrame p.f₁ →
+      app (dnmsRoundM td tid) (famI p)
+        = (NDactive (Sum.inl NOWAKEUP),
+           famO { p with
+                    tS := p.tS + dT, aS := p.aS + dA,
+                    eS := p.eS + dE, sS := p.sS + dS }))
+    (hctlO : ∀ p : Pack, ctlOf (famO { p with
+        tS := S.tid + dT, aS := S.aid + dA,
+        eS := S.exc + dE, sS := S.symc + dS }) = cO) :
+    SegStep (GF := GF) td tid 1 ⟨cI, S, env, mr, al, bs⟩
+      ⟨cO, ⟨S.tid + dT, S.aid + dA, S.exc + dE, S.symc + dS⟩,
+        env, mr, al, bs⟩ := by
+  intro F f hF acc xs' k s E Φ
+  subst hF
+  show SegCtx cI S env mr al bs ∗ _ ⊢
+    WP (KExpr.seq (dnmsRoundM td tid) _) @ s ; E {{ Φ }}
+  iintro ⟨⟨Hc, Hs, Hd, He, Hm, Ha, Hb⟩, Hk⟩
+  iapply (wpk_seq_ctl_sup (GF := GF)
+    (c := cI) (c' := cO) (S := S)
+    (S' := ⟨S.tid + dT, S.aid + dA, S.exc + dE, S.symc + dS⟩)
+    (upd := fun σ =>
+      famO { packProj σ with
+        tS := (packProj σ).tS + dT, aS := (packProj σ).aS + dA,
+        eS := (packProj σ).eS + dE, sS := (packProj σ).sS + dS })
+    (fun σ hσ hwf hsup => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf
+      rw [hIn.proj p]
+      exact happ p (wfFrame_of (hIn.th p) hwf))
+    (fun σ hσ hwf hsup => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf
+      rw [hIn.proj p]
+      rw [hIn.sup p] at hsup
+      have hT : p.tS = S.tid := by rw [← hsup]
+      have hA : p.aS = S.aid := by rw [← hsup]
+      have hE : p.eS = S.exc := by rw [← hsup]
+      have hS : p.sS = S.symc := by rw [← hsup]
+      rw [hT, hA, hE, hS]
+      exact hctlO p)
+    (fun σ hσ hwf hsup => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf
+      rw [hIn.proj p, hOut.lay, hIn.lay p])
+    (fun σ hσ hwf hsup => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf
+      rw [hIn.proj p, hOut.sup]
+      rw [hIn.sup p] at hsup
+      cases hsup
+      rfl)
+    (fun σ hσ hwf hsup => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf
+      rw [hIn.proj p, hOut.th, hIn.th p]))
+  isplitl [Hc Hs]
+  · iframe Hc Hs
+  iintro ⟨Hc, Hs⟩
+  iapply Hk
+  isimp only [Ctx.interp, SegCtx]
+  iframe Hc Hs Hd He Hm Ha Hb
+
 /-- STORE LINK (V3a continuation, work-order item (ii)): the Store
     action round — one focused allocation (read) and one focused byte
     range REWRITTEN; the action-id supply bumps; the touched byte

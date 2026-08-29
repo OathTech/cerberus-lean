@@ -1,7 +1,7 @@
 -- V3a continuation probe (measurement instrument; not registered):
 -- the T5 body walk under mint-first — stop points + fallback classes
 -- toward the loop machinery (work-order items ii/iii/iv).
-import RelSem.M1Guard
+import RelSem.T5Guard
 set_option autoImplicit false
 set_option maxHeartbeats 2000000
 set_option trace.RelSem.segRun true
@@ -76,7 +76,11 @@ theorem t5_walk_probe (n : Int) (seed : Nat) [CerbStGS CerbStS]
         @ Stuckness.NotStuck ; ⊤
         {{ o, ⌜o = o⌝ }} := by
   seg_run_c
-  exact hclose _ _
+  by_cases h0n : (0 : Int) < n
+  · seg_run_c
+    exact hclose _ _
+  · seg_run_c
+    exact hclose _ _
 
 end RelSem.T5W
 
@@ -111,3 +115,4 @@ run_cmd liftTermElabM do
       h.putStrLn s!"ARENA:"
       h.putStrLn (toString (← Lean.Meta.ppExpr (← normAst 200 th.getAppArgs[0]!)))
       h.flush
+
