@@ -241,10 +241,30 @@ def combineProv : Provenance → Provenance → Provenance
 
 /-! ## Layout computation — impl_mem.ml:98-273 (offsetsof / sizeof / alignof)
 
-    OCaml's offsetsof/sizeof/alignof take `?(tagDefs= Tags.tagDefs ())` and
-    every call site in impl_mem.ml uses the default, so the Lean versions
-    read `CerbTags.tagDefs ()` at their struct/union arms (the same ambient
-    tag-state pattern already used by memberShiftPtrval below).
+    OCaml's sizeof/alignof take `?(tagDefs= Tags.tagDefs ())` (optional,
+    defaulting to the global) and offsetsof takes tagDefs explicitly;
+    the family THREADS `~tagDefs` through every recursive call
+    (impl_mem.ml:111-119 `sizeof ~tagDefs`/`alignof ~tagDefs`, :150
+    :160 :168-169 :214 :226 etc.). The Lean workers mirror that: an
+    explicit `tagDefs` parameter threaded through the mutual block; the
+    default-budget wrappers supply `CerbTags.tagDefs ()`, mirroring the
+    OCaml optional-arg default (every impl_mem-internal NON-layout call
+    site uses the default).
+    The threading is semantically LIVE at elaboration time: the
+    AilEoffsetof fold (translation.lem:2730 → offsetof_ival,
+    impl_mem.ml:2193) runs BEFORE the Tags global is populated
+    (main.ml:304-305 sets it post-elaboration), so nested-struct
+    offsetof resolves ONLY through the threaded map. The pre-fix Lean
+    ambient-read shortcut panicked exactly there (pr44468, the CI
+    sweep's finding; 2026-09-01 S-basket item 1).
+    UPSTREAM ASYMMETRY, MIRRORED DELIBERATELY: the Union arms of both
+    sizeof and alignof look the tag up in the GLOBAL
+    (`Pmap.find tag_sym (Tags.tagDefs ())`, impl_mem.ml:173, :255)
+    even though their member folds thread ~tagDefs — so
+    elaboration-time offsetof over a union-containing struct CRASHES
+    upstream (probed 2026-09-01: oracle exit 125, "Tags definitions
+    must be set"; Lean mirrors with the unknown-tag panic — immaculate
+    row offsetof-union-member pins the pair). Upstream-tray candidate.
 
     Integer/float leaf sizes come from CerberusImpl (the DefaultImpl port),
     exactly like OCaml routes them through `(Ocaml_implementation.get ())`
@@ -252,7 +272,12 @@ def combineProv : Provenance → Provenance → Provenance
 
 def targetPtrSize : Nat := 8  -- DefaultImpl.sizeof_pointer/alignof_pointer = Some 8
 
-private abbrev TagDefs := List (sym × (CerbLocation.Loc × tag_definition))
+/- The threaded tag environment is the Fmap itself (the same value the
+   ambient global holds); enumeration-spine conversion happens only at
+   the tag-LOOKUP arms (`fmapElements … |>.find? symbolEquality` — the
+   exact pre-threading per-arm lookup, so leaf-type sizeof/alignof pay
+   no conversion). -/
+private abbrev TagDefs := CerbTags.TagDefsMap
 
 /-! ARC-7 S4 TOTALIZATION (fuel; arc-3 pattern): the layout oracles and
     the (de)serializers below were `partial def`s — kernel-opaque, no
@@ -273,15 +298,15 @@ mutual
     impl_mem.ml:115-122 (the align_opt match inside offsetsof; the same
     three-way match is repeated verbatim at impl_mem.ml:179-186 for union
     sizeof and inside the struct/union alignof folds). -/
-def memberAlign_lemFuel (lemFuel : Nat) (alignOpt : Option alignment)
-    (ty : ctype) : Nat :=
+def memberAlign_lemFuel (lemFuel : Nat) (tagDefs : TagDefs)
+    (alignOpt : Option alignment) (ty : ctype) : Nat :=
   match lemFuel with
   | 0 => fuelExhaustedWith "CerbMem.memberAlign: fuel exhausted" 1
   | lemFuel + 1 =>
     match alignOpt with
-    | none => alignofCtype_lemFuel lemFuel ty
+    | none => alignofCtype_lemFuel lemFuel tagDefs ty
     | some (AlignInteger al_n) => al_n.toNat
-    | some (AlignType al_ty) => alignofCtype_lemFuel lemFuel al_ty
+    | some (AlignType al_ty) => alignofCtype_lemFuel lemFuel tagDefs al_ty
 
 /-- THE struct-layout oracle: fold over the raw member quadruples,
     padding each member up to its (possibly _Alignas-overridden)
@@ -291,7 +316,7 @@ def memberAlign_lemFuel (lemFuel : Nat) (alignOpt : Option alignment)
     (Alignment 0 is impossible for valid C members; Lean's `% 0 = id` +
     truncated subtraction make it degrade to pad = 0 instead of OCaml's
     Division_by_zero.) -/
-def offsetsofMembers_lemFuel (lemFuel : Nat)
+def offsetsofMembers_lemFuel (lemFuel : Nat) (tagDefs : TagDefs)
     (members : List (identifier × (attributes × Option alignment × qualifiers × ctype)))
     : List (identifier × ctype × Nat) × Nat :=
   match lemFuel with
@@ -301,8 +326,8 @@ def offsetsofMembers_lemFuel (lemFuel : Nat)
       fun (acc : List (identifier × ctype × Nat) × Nat) memb =>
         let (xs, lastOffset) := acc
         let (ident, (_, alignOpt, _, ty)) := memb
-        let size := sizeofCtype_lemFuel lemFuel ty          -- impl_mem.ml:114
-        let align := memberAlign_lemFuel lemFuel alignOpt ty -- impl_mem.ml:115-122
+        let size := sizeofCtype_lemFuel lemFuel tagDefs ty          -- impl_mem.ml:112 (sizeof ~tagDefs)
+        let align := memberAlign_lemFuel lemFuel tagDefs alignOpt ty -- impl_mem.ml:113-119 (alignof ~tagDefs)
         let x := lastOffset % align                   -- impl_mem.ml:123
         let pad := if x == 0 then 0 else align - x    -- impl_mem.ml:124
         ((ident, ty, lastOffset + pad) :: xs, lastOffset + pad + size)  -- impl_mem.ml:125
@@ -323,7 +348,7 @@ def offsetsof_lemFuel (lemFuel : Nat) (tagDefs : TagDefs) (tagSym : sym)
   match lemFuel with
   | 0 => fuelExhaustedWith "CerbMem.offsetsof: fuel exhausted" ([], 0)
   | lemFuel + 1 =>
-    match tagDefs.find? (fun (s, _) => symbolEquality s tagSym) with
+    match (fmapElements tagDefs).find? (fun (s, _) => symbolEquality s tagSym) with
     | none => panic! "CerbMem.offsetsof: unknown tag (OCaml: Pmap.find Not_found)"
     | some (_, (_, StructDef membrs_ flexibleOpt)) =>
       let membrs := match flexibleOpt with
@@ -331,7 +356,7 @@ def offsetsof_lemFuel (lemFuel : Nat) (tagDefs : TagDefs) (tagSym : sym)
         | some (FlexibleArrayMember attrs ident qs ty) =>
           if ignoreFlexible then membrs_
           else membrs_ ++ [(ident, (attrs, none, qs, ty))]  -- impl_mem.ml:107-108 (raw stored ctype)
-      offsetsofMembers_lemFuel lemFuel membrs
+      offsetsofMembers_lemFuel lemFuel tagDefs membrs
     | some (_, (_, UnionDef membrs)) =>
       (membrs.map (fun (ident, (_, _, _, ty)) => (ident, ty, 0)), 0)
 
@@ -345,7 +370,7 @@ def offsetsof_lemFuel (lemFuel : Nat) (tagDefs : TagDefs) (tagSym : sym)
     (impl_mem.ml:134-135) — a 0-sized value flowing onward is the
     panic-optimized-into-value hazard (arc-14 S1 F1, sem:S7; the previous
     "return 0" divergence carried provenance, not a rationale). -/
-def sizeofCtype_lemFuel (lemFuel : Nat) (cty : ctype) : Nat :=
+def sizeofCtype_lemFuel (lemFuel : Nat) (tagDefs : TagDefs) (cty : ctype) : Nat :=
   match lemFuel with
   | 0 => fuelExhaustedWith "CerbMem.sizeofCtype: fuel exhausted" 0
   | lemFuel + 1 =>
@@ -364,23 +389,26 @@ def sizeofCtype_lemFuel (lemFuel : Nat) (cty : ctype) : Nat :=
         match CerberusImpl.sizeof_fty fty with      -- impl_mem.ml:143-148
         | some n => n
         | none => panic! "the concrete memory model requires a complete implementation sizeof FLOAT"
-      | .Array0 elemCty (some n) => n.toNat * sizeofCtype_lemFuel lemFuel elemCty  -- impl_mem.ml:150-151
+      | .Array0 elemCty (some n) => n.toNat * sizeofCtype_lemFuel lemFuel tagDefs elemCty  -- impl_mem.ml:150-151 (sizeof ~tagDefs)
       | .Pointer _ _ => targetPtrSize               -- impl_mem.ml:153-158
-      | .Atomic innerCty => sizeofCtype_lemFuel lemFuel innerCty    -- impl_mem.ml:160-161
+      | .Atomic innerCty => sizeofCtype_lemFuel lemFuel tagDefs innerCty    -- impl_mem.ml:160-161 (sizeof ~tagDefs)
       | .Struct tagSym =>                           -- impl_mem.ml:162-171
-        let (_, maxOffset) := offsetsof_lemFuel lemFuel (fmapElements (CerbTags.tagDefs ())) tagSym (ignoreFlexible := true)
-        let align := alignofCtype_lemFuel lemFuel cty
+        let (_, maxOffset) := offsetsof_lemFuel lemFuel tagDefs tagSym (ignoreFlexible := true)  -- impl_mem.ml:168 (threaded)
+        let align := alignofCtype_lemFuel lemFuel tagDefs cty  -- impl_mem.ml:169 (alignof ~tagDefs)
         let x := maxOffset % align
         if x == 0 then maxOffset else maxOffset + (align - x)
       | .Union0 tagSym =>                           -- impl_mem.ml:172-192
+        -- GLOBAL read, deliberately: impl_mem.ml:173 is
+        -- `Pmap.find tag_sym (Tags.tagDefs ())` — NOT ~tagDefs (the
+        -- upstream asymmetry; see the section header note).
         match (fmapElements (CerbTags.tagDefs ())).find? (fun (s, _) => symbolEquality s tagSym) with
         | some (_, (_, UnionDef membrs)) =>
           let (maxSize, maxAlign) := membrs.foldl (init := ((0 : Nat), (0 : Nat)))
             fun (acc : Nat × Nat) memb =>
               let (accSize, accAlign) := acc
               let (_, (_, alignOpt, _, ty)) := memb
-              (max accSize (sizeofCtype_lemFuel lemFuel ty),
-               max accAlign (memberAlign_lemFuel lemFuel alignOpt ty))
+              (max accSize (sizeofCtype_lemFuel lemFuel tagDefs ty),
+               max accAlign (memberAlign_lemFuel lemFuel tagDefs alignOpt ty))
           -- trailing padding up to the max alignment — impl_mem.ml:189-191
           let x := maxSize % maxAlign
           if x == 0 then maxSize else maxSize + (maxAlign - x)
@@ -395,7 +423,7 @@ def sizeofCtype_lemFuel (lemFuel : Nat) (cty : ctype) : Nat :=
     Void/Function PANIC, mirroring OCaml `assert false` (impl_mem.ml:
     198-199, 216-218) — arc-14 S1 F1, sem:S7 (was: silent 1,
     provenance-only). -/
-def alignofCtype_lemFuel (lemFuel : Nat) (cty : ctype) : Nat :=
+def alignofCtype_lemFuel (lemFuel : Nat) (tagDefs : TagDefs) (cty : ctype) : Nat :=
   match lemFuel with
   | 0 => fuelExhaustedWith "CerbMem.alignofCtype: fuel exhausted" 1
   | lemFuel + 1 =>
@@ -413,53 +441,59 @@ def alignofCtype_lemFuel (lemFuel : Nat) (cty : ctype) : Nat :=
         match CerberusImpl.alignof_fty fty with     -- impl_mem.ml:207-213
         | some n => n
         | none => panic! "the concrete memory model requires a complete implementation alignof FLOATING"
-      | .Array0 elemCty _ => alignofCtype_lemFuel lemFuel elemCty   -- impl_mem.ml:214-215
+      | .Array0 elemCty _ => alignofCtype_lemFuel lemFuel tagDefs elemCty   -- impl_mem.ml:214-215 (alignof ~tagDefs)
       | .Pointer _ _ => targetPtrSize               -- impl_mem.ml:219-225
-      | .Atomic innerCty => alignofCtype_lemFuel lemFuel innerCty   -- impl_mem.ml:226-227
+      | .Atomic innerCty => alignofCtype_lemFuel lemFuel tagDefs innerCty   -- impl_mem.ml:226-227 (alignof ~tagDefs)
       | .Struct tagSym =>                           -- impl_mem.ml:228-252
-        match (fmapElements (CerbTags.tagDefs ())).find? (fun (s, _) => symbolEquality s tagSym) with
+        -- threaded lookup: impl_mem.ml:229 is `Pmap.find tag_sym tagDefs`
+        match (fmapElements tagDefs).find? (fun (s, _) => symbolEquality s tagSym) with
         | some (_, (_, StructDef membrs flexibleOpt)) =>
           let init := match flexibleOpt with        -- impl_mem.ml:234-239
             | none => 0
             | some (FlexibleArrayMember _ _ _ elemTy) =>
-              alignofCtype_lemFuel lemFuel (mkCtype (.Array0 elemTy none))
+              alignofCtype_lemFuel lemFuel tagDefs (mkCtype (.Array0 elemTy none))
           membrs.foldl (init := init) fun acc memb =>
             let (_, (_, alignOpt, _, ty)) := memb
-            max (memberAlign_lemFuel lemFuel alignOpt ty) acc  -- impl_mem.ml:242-251
+            max (memberAlign_lemFuel lemFuel tagDefs alignOpt ty) acc  -- impl_mem.ml:242-251
         | _ => panic! "CerbMem.alignofCtype: Struct tag not a StructDef (OCaml: assert false / Not_found)"
       | .Union0 tagSym =>                           -- impl_mem.ml:253-271
+        -- GLOBAL read, deliberately: impl_mem.ml:255 is
+        -- `Pmap.find tag_sym (Tags.tagDefs ())` — NOT ~tagDefs (the
+        -- upstream asymmetry; see the section header note).
         match (fmapElements (CerbTags.tagDefs ())).find? (fun (s, _) => symbolEquality s tagSym) with
         | some (_, (_, UnionDef membrs)) =>
           membrs.foldl (init := (0 : Nat)) fun acc memb =>
             let (_, (_, alignOpt, _, ty)) := memb
-            max (memberAlign_lemFuel lemFuel alignOpt ty) acc
+            max (memberAlign_lemFuel lemFuel tagDefs alignOpt ty) acc
         | _ => panic! "CerbMem.alignofCtype: Union tag not a UnionDef (OCaml: assert false / Not_found)"
       | .Byte => 1                                  -- impl_mem.ml:272-273
 
 end
 
-/-- Default-budget wrapper (rfl-defeq to the worker; arc-3 discipline). -/
+/-- Default-budget + default-tagDefs wrapper (fuel: rfl-defeq to the
+    worker, arc-3 discipline; tagDefs: the ambient global, mirroring
+    OCaml's `?(tagDefs= Tags.tagDefs ())` optional-arg default). -/
 def memberAlign (alignOpt : Option alignment) (ty : ctype) : Nat :=
-  memberAlign_lemFuel lemDefaultFuel alignOpt ty
+  memberAlign_lemFuel lemDefaultFuel (CerbTags.tagDefs ()) alignOpt ty
 
-/-- Default-budget wrapper. -/
+/-- Default-budget + default-tagDefs wrapper (see memberAlign). -/
 def offsetsofMembers
     (members : List (identifier × (attributes × Option alignment × qualifiers × ctype)))
     : List (identifier × ctype × Nat) × Nat :=
-  offsetsofMembers_lemFuel lemDefaultFuel members
+  offsetsofMembers_lemFuel lemDefaultFuel (CerbTags.tagDefs ()) members
 
-/-- Default-budget wrapper. -/
+/-- Default-budget wrapper (tagDefs explicit, like OCaml offsetsof). -/
 def offsetsof (tagDefs : TagDefs) (tagSym : sym)
     (ignoreFlexible : Bool := false) : List (identifier × ctype × Nat) × Nat :=
   offsetsof_lemFuel lemDefaultFuel tagDefs tagSym ignoreFlexible
 
-/-- Default-budget wrapper. -/
+/-- Default-budget + default-tagDefs wrapper (see memberAlign). -/
 def sizeofCtype (cty : ctype) : Nat :=
-  sizeofCtype_lemFuel lemDefaultFuel cty
+  sizeofCtype_lemFuel lemDefaultFuel (CerbTags.tagDefs ()) cty
 
-/-- Default-budget wrapper. -/
+/-- Default-budget + default-tagDefs wrapper (see memberAlign). -/
 def alignofCtype (cty : ctype) : Nat :=
-  alignofCtype_lemFuel lemDefaultFuel cty
+  alignofCtype_lemFuel lemDefaultFuel (CerbTags.tagDefs ()) cty
 
 /-! ## Byte-level serialization
 
@@ -613,7 +647,7 @@ def memValueToBytes_lemFuel (lemFuel : Nat) (funptrmap : Funptrmap)
     -- impl_mem.ml:1202-1214: pad from the previous member's end up to
     -- each member's offsetsof offset (unspecified bytes), then the
     -- member's bytes; then trailing padding out to sizeof(struct).
-    let (offs, lastOff) := offsetsof (fmapElements (CerbTags.tagDefs ())) tagSym (ignoreFlexible := true)
+    let (offs, lastOff) := offsetsof (CerbTags.tagDefs ()) tagSym (ignoreFlexible := true)
     let finalPad := sizeofCtype (mkCtype (.Struct tagSym)) - lastOff  -- impl_mem.ml:1205
     -- fold2 over layout and members (impl_mem.ml:1207-1212); lengths
     -- coincide for well-typed values (OCaml fold_left2 would raise
@@ -735,7 +769,7 @@ def reconstructValue_lemFuel (lemFuel : Nat)
     -- PADDING before the member only, not by the member offset
     -- (impl_mem.ml:1063-1067) — mirrored quirk; addr is only consulted
     -- by nested union lookups.
-    let (offs, _) := offsetsof (fmapElements (CerbTags.tagDefs ())) tagSym (ignoreFlexible := true)
+    let (offs, _) := offsetsof (CerbTags.tagDefs ()) tagSym (ignoreFlexible := true)
     let (revXs, _) := offs.foldl
       (init := (([] : List (identifier × ctype × MemValue)), (0 : Nat)))
       fun (acc : List (identifier × ctype × MemValue) × Nat) (memb : identifier × ctype × Nat) =>
@@ -993,9 +1027,10 @@ def opIval (op : integer_operator) (v1 v2 : IntegerValue) : IntegerValue :=
     (the previous code silently returned 0 and compared identifiers
     location-sensitively with BEq). -/
 def offsetofIval (tagDefsMap : CerbTags.TagDefsMap) (tag : sym) (memb : identifier) : IntegerValue :=
-  -- target_rep for lem offsetof_ival (mem.lem:257): the lem-side argument is
-  -- the tag map; scan its enumeration spine (arc-6 S3 — same list as before)
-  let (xs, _) := offsetsof (fmapElements tagDefsMap) tag
+  -- target_rep for lem offsetof_ival (mem.lem:257): the lem-side argument
+  -- is the tag map, threaded through the whole layout family (2026-09-01
+  -- S-basket item 1 — the elaboration-time fold's only tag source)
+  let (xs, _) := offsetsof tagDefsMap tag
   match xs.find? (fun (ident, _, _) => idEqual ident memb) with
   | some (_, _, off) => integerIval off
   | none => panic! "Concrete.offsetof_ival: invalid memb_ident"
