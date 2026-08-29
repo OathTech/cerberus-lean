@@ -188,6 +188,20 @@ CUR["g6-hash-collision"]="$g6_status"
 printf "  %-14s %-20s\n" "$g6_status" "g6-hash-collision"
 echo "g6-hash-collision $g6_status" >> "$OUTPUT_DIR/baseline.new"
 
+# Ill-typed-store kill (2026-09-01 S-basket item 5): CerbMem.storeM's
+# internal-invariant guard (impl_mem.ml:1673-1681 mirror) is
+# unreachable from typed C through either pipeline, so its pin is an
+# in-Lean probe (probe header has the reachability argument); expected
+# status KILL.
+it_out="$(cd "$PROJECT_ROOT/lean_frontend" && \
+    "$PROJECT_ROOT/scripts/capped" lake env lean --run \
+    "$CORPUS/illtyped-store.lean" 2>/dev/null | grep -v 'env:')"
+it_status="$(sed -n 's/^ILLTYPED_STATUS=//p' <<<"$it_out")"
+[[ -n "$it_status" ]] || fail "illtyped-store probe produced no ILLTYPED_STATUS line (output: $it_out)"
+CUR["illtyped-store"]="$it_status"
+printf "  %-14s %-20s\n" "$it_status" "illtyped-store"
+echo "illtyped-store $it_status" >> "$OUTPUT_DIR/baseline.new"
+
 echo ""
 if $RECORD_BASELINE; then
     sort "$OUTPUT_DIR/baseline.new" -o "$OUTPUT_DIR/baseline.new"

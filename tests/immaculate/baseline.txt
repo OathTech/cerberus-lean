@@ -59,6 +59,9 @@ g5-decode-multichar MATCH | L=CRASH
 g5-decode-question ORACLE_CRASH | L=VAL:Specified(63)
 g5-escape-roundtrip DIFF | L=VAL:Specified(127)
 g6-hash-collision TRIPWIRE
+illtyped-store KILL
+lock-const-global MATCH | L=UB:UB064_modifying_const
+lock-string-literal MATCH | L=UB:UB033_modifying_string_literal
 s4b-memcmp-hugesize ORACLE_CRASH | L=UB:UB_CERB002a_out_of_bound_load
 s9-enum-signedness MATCH | L=VAL:Specified(2)
 s9-enum-sizeof-route MATCH | L=VAL:Specified(4)
