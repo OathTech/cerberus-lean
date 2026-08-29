@@ -247,7 +247,7 @@ If you skip this step, Lake will compile the stale `generated/` copy and your ch
 | `scripts/fuzz_csmith.sh` | csmith differential fuzz kit (arc-4 port; csmith + creduce are INSTALLED locally — gen + test_exec.sh differential; deterministic via `CSMITH_SEED_START`). Arc-10 S4 lane portfolio + seed ranges: `docs/2026-08-20_arc10-s4-csmith-campaign.md` |
 | `scripts/csmith_explore.sh` | Arc-10 S4: oracle-only per-configuration yield + construct-coverage measurement (the exploration instrument behind the lane portfolio) |
 | `scripts/creduce` + `scripts/creduce_interestingness.sh` | Arc-10 S0: creduce wrapper (project-local clang-format shim, no global state) + generic interestingness predicate against test_exec.sh single-file mode (`INTERESTING_REGEX` + `EXPECT_SNIPPET` signature pinning) |
-| `scripts/test_verify.sh` | Arc-7 S3: verification-fixture differentials (tests/verify T1-T5) — main-mode vs oracle + harness concrete points vs recorded specs (23 checks, fail-closed) |
+| `scripts/test_verify.sh` | Fixture differentials (tests/verify + corpus/): main-mode vs oracle, plus call-point rows checked three ways — Lean `--call` == an oracle-run wrapper TU == the recorded pin (117 checks, fail-closed, vacuous-pass guarded) |
 | `scripts/capped` | Arc-7 D7: run any command under a cgroup memory cap (default 64G; `CERB_MEM_MAX` override, `=none` loud opt-out). ALL lake/lean invocations go through it |
 
 ## Lem backend interaction
@@ -273,9 +273,8 @@ Lem is pinned to `https://github.com/septract/lem-lean#mdd/lean-backend`.
   FAIL-CLOSED: an underivable type gets NO instance — a demand on it is
   a generation-time error naming the type and the escape hatches
   (`skip_instances` + hand target_rep). Reintroduction is
-  build-fatal: the in-build RelSem absence gate (Audit.lean) bans any
-  constant named DAEMON/DAEMON1, and check_theorem_axioms.sh treats
-  DAEMON as unconditionally fatal in every probed cone
+  build-fatal: check_theorem_axioms.sh treats DAEMON as
+  unconditionally fatal in every probed cone
 - Comparison instances (arc-10 S2b; replaces the old sorried
   BEq/Ord/SetType/Eq0/Ord0 bodies — 1134 sites → 0): the backend
   derives total structural `beq_derived`/`compare_derived` per mutual

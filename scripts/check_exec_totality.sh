@@ -16,7 +16,7 @@
 # list below covers GENERATED modules; since arc-7 S2 the gate ALSO scans
 # the hand-written runner CerbND.lean (totalized by the operator's Q1
 # AMENDED ruling — partial runND/runND1 are gone and may not return: the
-# runner-soundness theorems in lean_frontend/relsem/RelSem/RunND.lean are
+# runner-soundness theorems in lean_frontend/relsemcore/RelSem/RunND.lean are
 # stated against it, and `partial` would silently re-opacify them).
 # CerbND thereby LEAVES the arc-4 G3 declared boundary. Still OUTSIDE the
 # gate and NOT partial-free: CerbMem.lean carries ONE partial def
