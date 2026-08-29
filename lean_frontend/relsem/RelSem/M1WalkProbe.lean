@@ -1,6 +1,7 @@
 -- V3a probe (measurement instrument; not registered): the m1 body
--- walk under mint-first — stop points + fallback classes.
-import RelSem.M1Proof
+-- walk under mint-first — stage 3: all four anchors registered; every
+-- path should reach its terminal offer.
+import RelSem.M1Guard
 set_option autoImplicit false
 set_option maxHeartbeats 2000000
 set_option trace.RelSem.segRun true
@@ -33,6 +34,14 @@ theorem m1_walk_probe (x : Int) (seed : Nat) [CerbStGS CerbStS]
         {{ o, ⌜∃ r : driver_result,
             o = Outcome.value r ∧ sgnSpec x r⌝ }} := by
   seg_run_c
-  exact hclose _ _
+  by_cases hlt : x < 0
+  · seg_run_c
+    exact hclose _ _
+  · seg_run_c
+    by_cases hgt : 0 < x
+    · seg_run_c
+      exact hclose _ _
+    · seg_run_c
+      exact hclose _ _
 
 end RelSem.M1

@@ -160,6 +160,29 @@ open Lean Elab Meta Tactic
 
 initialize registerTraceClass `RelSem.segPeels
 
+/-- `seg_pin_eq name : a = b` — declare `name : a = b` certified by a
+    hinted `Eq.refl a` the KERNEL re-checks at declaration add (the
+    `seg_discover` device at the command level). Use case (V3a
+    continuation): provenance pins tying a pasted LITERAL spelling to
+    its generated-projection origin — the elaborator's defeq on
+    file-lookup projections is the measured explosion (32 G OOM at
+    the m1 anchor candidates), while the kernel computes the same
+    normal forms in milliseconds. Fail-closed: a wrong literal is a
+    loud kernel error at this very command. -/
+elab "seg_pin_eq" n:ident a:ident b:ident : command =>
+  Command.liftTermElabM do
+    let aE ← Term.elabTerm a none
+    Term.synthesizeSyntheticMVarsNoPostponing
+    let aE ← instantiateMVars aE
+    let bE ← Term.elabTerm b (some (← inferType aE))
+    Term.synthesizeSyntheticMVarsNoPostponing
+    let bE ← instantiateMVars bE
+    let ty ← mkEq aE bE
+    let val ← mkExpectedTypeHint (← mkEqRefl aE) ty
+    let name := (← getCurrNamespace) ++ n.getId
+    addDecl (.thmDecl {
+      name, levelParams := [], type := ty, value := val })
+
 /-- Hinted refl: `Eq.refl lhs` cast to `lhs = rhs` (the SegStepper
     `mkRflHint` device — the kernel checks the defeq at declaration
     add; a mismatch is a loud kernel error, never a silent pass). -/

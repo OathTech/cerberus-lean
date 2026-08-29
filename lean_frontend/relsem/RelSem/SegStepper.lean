@@ -1070,6 +1070,34 @@ private def evalPexprArg? (e : Expr) : MetaM (Option Expr) := do
     if aW.isAppOf ``Pexpr then return some aW
   return none
 
+/-- Deep AST normalization: per-node KERNEL whnf with constructor-
+    head recursion (the extraction probe's `normAst` device, V3a
+    continuation). Program syntax as DATA — converter residuals
+    (`convert_pexpr` match nests) reduce to constructor spines; the
+    evaluator is never applied, so the fuel-runaway guard is
+    untouched. Bounded by payload size; the kernel computes these
+    normal forms in milliseconds where the elaborator's whnf is the
+    measured explosion. -/
+private partial def chaseAstDeep (e : Expr) (fuel : Nat := 64) :
+    MetaM Expr := do
+  match fuel with
+  | 0 => return e
+  | fuel + 1 =>
+    let e' ← match ← kwhnf? e with
+      | some r => pure r
+      | none => pure e
+    let isCtorHead ←
+      if e'.getAppFn.isConst then do
+        pure (match (← getEnv).find? e'.getAppFn.constName! with
+          | some (.ctorInfo _) => true
+          | _ => false)
+      else pure false
+    if isCtorHead then
+      let args ← e'.getAppArgs.mapM (chaseAstDeep · fuel)
+      return mkAppN e'.getAppFn args
+    else
+      return e'
+
 private partial def crossToResult (cellFVars : Array Expr) (lhs : Expr)
     (fuel : Nat := 32) : MetaM (Expr × Expr × Expr × Expr) := do
   match fuel with
@@ -1096,8 +1124,8 @@ private partial def crossToResult (cellFVars : Array Expr) (lhs : Expr)
         if pe?.isNone then
           let aTy ← whnf (← inferType a)
           if aTy.isAppOf ``generic_pexpr then pe? := some a
-      payload? := pe?
-      match pe? with
+      payload? := (← pe?.mapM (chaseAstDeep ·))
+      match payload? with
       | some pe =>
         -- V3a-continuation (2026-08-28), the GROUND-REDEX prong of
         -- the kernel-evaluation guard: the banked doctrine forbids
@@ -1113,6 +1141,9 @@ private partial def crossToResult (cellFVars : Array Expr) (lhs : Expr)
         -- syntactic PE* scan stays the rule otherwise (fail-closed:
         -- a converter residual that hides constructors classifies
         -- unsafe, never the reverse).
+        -- pe is DEEP-NORMALIZED: the scans see actual program
+        -- syntax, never converter-residual match nests (the measured
+        -- all-ctors false positive, twice)
         let consults := (pe.find? (fun s =>
           match s.getAppFn.constName? with
           | some n =>
@@ -1139,39 +1170,39 @@ private partial def crossToResult (cellFVars : Array Expr) (lhs : Expr)
     -- entry's own unfolding with a concrete target. Unkeyed heads
     -- (guard/conv chains at symbolic data) throw the classification
     -- error with the offender list — the supply/anchor fallback.
-    if fn.constName! == ``full_eval_pexpr
-        || fn.constName! == ``full_eval_pexpr_lemFuel then
-      -- expose the underlying bind (ONE committed unfold step; the
-      -- bind branch then classifies the inner entry) — the seg_peels
-      -- head discipline
-      let some nxt ← withProbeBudget (Meta.unfoldDefinition? lhsW)
-        | throwError "mint: full_eval entry did not unfold"
-      return ← crossToResult cellFVars nxt fuel
-    let some pe0 := payload?
+    -- CLASSIFY FIRST (V3a-continuation, second measurement): the
+    -- payload chase + head keying is cheap and entry-independent, so
+    -- unkeyed payloads (guard/conv chains) throw HERE — before any
+    -- full_eval unfold. (The doomed guard-round mint attempt on the
+    -- post-branch spelling OOM'd inside that unfold; the outcome was
+    -- always going to be the supply fallback.)
+    let some pe := payload?
       | throwError "mint: eval entry has no payload:{indentExpr lhsW}"
-    -- chase converter wrappers to the Pexpr constructor
-    let mut pe ← whnfCore pe0
-    let mut peFuel := 12
-    while peFuel > 0 && !pe.isAppOf ``Pexpr do
-      unless pe.getAppFn.isConst do break
-      let some nxt ← withProbeBudget (Meta.unfoldDefinition? pe) | break
-      pe ← whnfCore nxt
-      peFuel := peFuel - 1
+    -- payload? is deep-normalized (chaseAstDeep at classification)
     unless pe.isAppOf ``Pexpr do
       throwError "mint: eval payload did not chase to a Pexpr ctor \
         (head {pe.getAppFn}) — outside the construct set"
     let payload ← whnfCore pe.getAppArgs.back!
+    unless payload.isAppOf ``PEsym || payload.isAppOf ``PEctor
+        || payload.isAppOf ``PEcall || payload.isAppOf ``PEcase do
+      throwError "mint: eval payload outside the construct set \
+        (guard/conv/case class; payload head {payload.getAppFn}; \
+        offenders: {(peUnsafeHeads pe).toList}) — supply fallback"
+    if fn.constName! == ``full_eval_pexpr
+        || fn.constName! == ``full_eval_pexpr_lemFuel then
+      -- keyed payload behind a full_eval entry: expose the underlying
+      -- bind (ONE committed unfold; the bind branch then reaches the
+      -- aux2 leaf) — the seg_peels head discipline
+      let some nxt ← withProbeBudget (Meta.unfoldDefinition? lhsW)
+        | throwError "mint: full_eval entry did not unfold"
+      return ← crossToResult cellFVars nxt fuel
     let (rhs, pf) ←
       if payload.isAppOf ``PEsym then
         applyLemmaCross ``RelSem.Seg.runEU_aux2_sym cellFVars lhsW
       else if payload.isAppOf ``PEctor then
         applyLemmaCross ``RelSem.Seg.runEU_aux2_ctor2 cellFVars lhsW
-      else if payload.isAppOf ``PEcall || payload.isAppOf ``PEcase then
-        mintStepThenLeaf cellFVars lhsW
       else
-        throwError "mint: eval payload outside the construct set \
-          (guard/conv/case class; payload head {payload.getAppFn}; \
-          offenders: {(peUnsafeHeads pe).toList}) — supply fallback"
+        mintStepThenLeaf cellFVars lhsW
     let (z, st', rhs2, pf2) ← crossToResult cellFVars rhs fuel
     return (z, st', rhs2, ← mkEqTrans pf pf2)
   if isBind then

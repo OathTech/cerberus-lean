@@ -169,6 +169,7 @@ import RelSem.T1Proof
 import RelSem.P01Rounds
 import RelSem.P01Proof
 import RelSem.P02Proof
+import RelSem.M1Body
 import RelSem.T2Rounds
 import RelSem.T2Proof
 import RelSem.T3Rounds
@@ -351,6 +352,12 @@ def sorryExceptions : List Name := []
 #guard_msgs in #print axioms RelSem.P02.p02_proved
 /-- info: 'RelSem.P02.p02_ubfree_proved' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in #print axioms RelSem.P02.p02_ubfree_proved
+-- V3a continuation (2026-08-29): m1 (sgn) PROVED — THE PERF-2
+-- TIGHTENED EXIT (never-seen branching program; construct-package
+-- mint walk + 5 registered anchors, within the pre-registered ≤ 6
+-- bound). Pinned exactly.
+/-- info: 'RelSem.M1.m1_proved' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms RelSem.M1.m1_proved
 -- V2 (2026-08-28): T2 (add) PROVED — the two-argument protocol +
 -- the checked add at range hypotheses; and its UB-freedom face.
 /-- info: 'RelSem.T2.t2_threaded_proved' depends on axioms: [propext, Classical.choice, Quot.sound] -/
@@ -1257,7 +1264,7 @@ open Lean in
 -- NEW segBlock kind +18 — the block-fused default; prior 119 → 162,
 -- V2b P01 stepper supply: roundEq +41, famInv +2;
 -- same-commit provenance.)
-/-- info: step_law census: 487 laws [advance 5, construct 12, envAlg 3, envMap 7, evalArith 2, evalPull 9, famInv 7, heapWP 4, loop 1, memBlock 7, memRW 21, perform 6, roundEq 352, roundGlue 3, segBlock 18, segLink 8, stateWP 22] -/
+/-- info: step_law census: 492 laws [advance 5, construct 12, envAlg 3, envMap 7, evalArith 2, evalPull 9, famInv 8, heapWP 4, loop 1, memBlock 7, memRW 21, perform 6, roundEq 356, roundGlue 3, segBlock 18, segLink 8, stateWP 22] -/
 #guard_msgs in #step_law_census
 -- (V0 2026-08-27, THE KILL BASKET — record
 -- docs/2026-08-27_v0-statements-and-ban.md: the T1–T5 threaded
@@ -1679,7 +1686,7 @@ open Lean in
 -- [PerStepPeel, CerbStateAdequacy §V2] — the big-step↔small-step
 -- simulation infrastructure; same-commit provenance).
 /--
-info: RelSem audit sweep: 5070 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 5275 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do
