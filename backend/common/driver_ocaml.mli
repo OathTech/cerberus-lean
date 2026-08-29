@@ -23,8 +23,11 @@ type batch_output =
 val string_of_batch_exit: batch_exit -> string
 val string_of_batch_output: ?json:bool -> ?is_charon:bool -> int option -> (string list * batch_output) -> string
 
+(* the third component is the per-execution allocation census
+   (live, dead) from the final memory state — None when the memory
+   model doesn't support it (fork addition, 2026-09-01) *)
 val batch_drive:
-  'a Core.file -> string list -> Sibylfs.fs_state -> driver_conf -> (string list * batch_output) list
+  'a Core.file -> string list -> Sibylfs.fs_state -> driver_conf -> (string list * batch_output * (int * int) option) list
 
 val drive:
   'a Core.file -> string list -> Sibylfs.fs_state -> driver_conf -> execution_result

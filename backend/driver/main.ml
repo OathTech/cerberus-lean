@@ -96,7 +96,7 @@ let cerberus debug_level progress core_obj
              runtime_path_opt incl_dirs incl_files cpp_only
              link_lib_path link_core_obj
              impl_name
-             exec exec_mode iso_switches switches batch concurrency
+             exec exec_mode iso_switches switches batch batch_alloc_census concurrency
              astprints pprints ppflags pp_ail_out pp_core_out
              sequentialise_core rewrite_core typecheck_core defacto permissive ignore_bitfields
              fs_dump fs trace
@@ -189,7 +189,7 @@ let cerberus debug_level progress core_obj
         let exit =
           let open Driver_ocaml in
           match execs with
-            | [(_, Defined {exit= Specified n; _})] ->
+            | [(_, Defined {exit= Specified n; _}, _)] ->
                 begin try
                   if is_charon then
                     Z.to_int n
@@ -200,18 +200,29 @@ let cerberus debug_level progress core_obj
                       Cerb_debug.warn [] (fun () -> "Return value overlows (wrapping it down to 255)");
                       Z .(to_int (n mod (of_int 256)))
                 end
-            | [(_, (Undefined _ | Error _))] ->
+            | [(_, (Undefined _ | Error _), _)] ->
                 1
             | _ ->
                 0
           in
         let has_multiple = List.length execs > 1 in
-        List.iteri (fun i (z3_strs, exec) ->
+        List.iteri (fun i (z3_strs, exec, census_opt) ->
           let open Driver_ocaml in
           print_string begin
             string_of_batch_output ~json:(batch = `JsonBatch) ~is_charon
               (if has_multiple then Some i else None) (z3_strs, exec)
-          end
+          end;
+          (* fork addition (2026-09-01): opt-in allocation-census line
+             (--batch-alloc-census); plain-batch mode only, printed
+             AFTER the execution's verdict line so all default output
+             is byte-unchanged. An unsupported model reports loudly. *)
+          if batch_alloc_census && batch = `Batch then
+            print_string begin match census_opt with
+              | Some (live, dead) ->
+                  Printf.sprintf "AllocCensus {live: %d, dead: %d}\n" live dead
+              | None ->
+                  "AllocCensus {unsupported}\n"
+            end
         ) execs;
         epilogue exit
     | Exception.Result (Either.Right n) ->
@@ -507,6 +518,11 @@ let batch =
                                   (`CharonBatch, info["charon-batch"] ~doc:(doc^" (for Charon)"));
                                   (`JsonBatch, info["json-batch"] ~doc:"outputs the executions in json") ])
 
+let batch_alloc_census =
+  let doc = "(fork addition) with --batch: append a per-execution AllocCensus \
+             {live: N, dead: M} line from the final memory state" in
+  Arg.(value & flag & info["batch-alloc-census"] ~doc)
+
 let typecheck_core =
   let doc = "typecheck the elaborated Core program" in
   Arg.(value & flag & info["typecheck-core"] ~doc)
@@ -547,6 +563,7 @@ let () =
                          link_lib_path $ link_core_obj $
                          impl $
                          exec $ exec_mode $ iso $ switches $ batch $
+                         batch_alloc_census $
                          concurrency $
                          astprints $ pprints $ ppflags $ pp_ail_out $ pp_core_out $
                          sequentialise $ rewrite $ typecheck_core $ defacto $ permissive $ ignore_bitfields $

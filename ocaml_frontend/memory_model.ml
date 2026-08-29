@@ -241,6 +241,13 @@ module type Memory = sig
 
   (* JSON serialisation *)
   val serialise_mem_state: Digest.t -> mem_state -> Cerb_json.json
+
+  (* Allocation census (fork addition, 2026-09-01; upstream-patch
+     candidate): (live, dead) allocation counts of a memory state, for
+     the driver's opt-in --batch-alloc-census reporting line. None =
+     the model does not support the census (reported loudly, never
+     silently elided). *)
+  val alloc_census_opt: mem_state -> (int * int) option
   
   
   

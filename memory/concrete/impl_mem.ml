@@ -2996,6 +2996,11 @@ VIP:type pointer_value =
     `Assoc [("map", serialise_map (fun id alloc -> serialise_ui_alloc st @@ mk_ui_alloc st id alloc) allocs);
             ("last_used", Cerb_json.of_option (fun v -> `Int (Z.to_int v)) st.last_used);]
 
+  (* fork addition (2026-09-01): kill/free move an allocation OUT of
+     st.allocations and onto st.dead_allocations (see kill above), so
+     live = cardinal allocations, dead = length dead_allocations. *)
+  let alloc_census_opt (st: mem_state) : (int * int) option =
+    Some (IntMap.cardinal st.allocations, List.length st.dead_allocations)
 
 end
 

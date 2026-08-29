@@ -78,13 +78,31 @@
 # declares) was already manifested. Generated OCaml verified
 # BYTE-IDENTICAL again (sha256 over all 86 files, both rounds), so no
 # [expected-*] hash moves: .lem-source-only divergence.
+# NOTE (S-basket item 8, 2026-09-01; record
+# lean_frontend/docs/2026-09-01_s-basket.md): the --batch-alloc-census
+# oracle output mode (upstream-patch candidate; the speclab leak
+# checks' oracle-differential leg). NEW [files] entries:
+# ocaml_frontend/memory_model.ml (Memory signature gains
+# alloc_census_opt), memory/{concrete,vip,symbolic,cheri-coq}/
+# impl_mem.ml (concrete implements live/dead counts; the other three
+# return None — reported LOUDLY as "AllocCensus {unsupported}", never
+# silently elided), backend/common/driver_ocaml.{ml,mli} (batch_drive
+# returns the per-execution census from the final driver state) +
+# backend/common/pipeline.mli (type only). backend/driver/main.ml
+# (already manifested) grew the flag + the census printing, plain
+# --batch only, AFTER the verdict line. OFF BY DEFAULT: all default
+# output byte-unchanged (proof: full Tier A zero-movement at the
+# item-8 commit).
 [meta]
 merge-base=b9aeedcb4dd438763b0eef7f95ac19e93875d7de
 lem-pin=11d4b4c
 renumber=arc13
 [files]
 backend/common/ail_sym_hwm.ml
+backend/common/driver_ocaml.ml
+backend/common/driver_ocaml.mli
 backend/common/pipeline.ml
+backend/common/pipeline.mli
 backend/driver/dune
 backend/driver/main.ml
 backend/lean_export/cabs_json.ml
@@ -142,8 +160,13 @@ frontend/model/translation_aux.lem
 frontend/model/translation_effect.lem
 frontend/model/translation.lem
 frontend/model/utils.lem
+memory/cheri-coq/impl_mem.ml
+memory/concrete/impl_mem.ml
+memory/symbolic/impl_mem.ml
+memory/vip/impl_mem.ml
 ocaml_frontend/dune
 ocaml_frontend/fork_renumber.ml
+ocaml_frontend/memory_model.ml
 runtime/libc/dune
 runtime/libcore/impls/i686-apple-darwin10-gcc-4.2.1.impl
 util/cerb_fresh.ml

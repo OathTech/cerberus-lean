@@ -1447,3 +1447,7 @@ let serialise_mem_state dig (st: mem_state) : Cerb_json.json =
   `Assoc [ ("map", serialise_int_map (fun id alloc -> serialise_ui_alloc @@ mk_ui_alloc st id alloc) allocs)
          ; ("last_used", Cerb_json.of_option (fun v -> `Int (Z.to_int v)) st.last_used); ]
   (* not_implemented "VIP.serialise_mem_state" *)
+
+(* fork addition (2026-09-01): census not wired for VIP — reported
+   loudly as unsupported by the driver, never silently elided. *)
+let alloc_census_opt (_: mem_state) : (int * int) option = None

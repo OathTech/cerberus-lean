@@ -183,7 +183,11 @@ let batch_drive (file: 'a Core.file) args fs_state conf =
           let stderr = String.concat "" (Dlist.toList dr_st.Driver.core_state.Core_run.io.Core_run.stderr) in
           Error { msg= string_of_driver_error dr_err; stderr }
     end in
-    (z3_strs, result)
+    (* fork addition (2026-09-01): per-execution allocation census from
+       the FINAL driver state (nd_st, Smt2.runND's st'); consumed only
+       by the opt-in --batch-alloc-census reporting line. *)
+    let census_opt = Impl_mem.alloc_census_opt nd_st.Driver.layout_state in
+    (z3_strs, result, census_opt)
   ) values
 
 let drive file args fs_state conf : execution_result =

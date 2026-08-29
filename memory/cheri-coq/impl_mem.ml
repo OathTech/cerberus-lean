@@ -1435,6 +1435,10 @@ module CHERIMorello : Memory = struct
   let serialise_mem_state dig (st: mem_state) : Cerb_json.json
     = `Assoc [] (* TODO: not implemented *)
 
+  (* fork addition (2026-09-01): census not wired for CHERI —
+     reported loudly as unsupported by the driver. *)
+  let alloc_census_opt (_: mem_state) : (int * int) option = None
+
 end
 
 include CHERIMorello

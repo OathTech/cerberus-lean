@@ -688,6 +688,10 @@ let serialise_mem_state _ (m:mem_state) =
   `Assoc [("kind", `String "symbolic");
           ("allocations", serialise_map serialise_storage allocs)]
 
+(* fork addition (2026-09-01): census not wired for the symbolic
+   model — reported loudly as unsupported by the driver. *)
+let alloc_census_opt (_: mem_state) : (int * int) option = None
+
 let string_of_integer_value ival =
   Pp_utils.to_plain_string (pp_integer_value ival)
 
