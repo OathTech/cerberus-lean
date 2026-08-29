@@ -70,6 +70,14 @@
 # so no [expected-*] hash moves: the divergence is .lem-source-only.
 # (ailTypesAux.lem + core_run_aux.lem also carry this slice's declares
 # but were already manifested.)
+# NOTE (S-basket item 3, 2026-09-01; record
+# lean_frontend/docs/2026-09-01_s-basket.md): NEW [files] entry
+# frontend/model/monadic_parsing.lem — Lean-target-only totality
+# declares (string automatic; many/many1 mutual fuel), the parked
+# printf/Monadic_parsing census tail. formatted.lem (same slice's
+# declares) was already manifested. Generated OCaml verified
+# BYTE-IDENTICAL again (sha256 over all 86 files, both rounds), so no
+# [expected-*] hash moves: .lem-source-only divergence.
 [meta]
 merge-base=b9aeedcb4dd438763b0eef7f95ac19e93875d7de
 lem-pin=11d4b4c
@@ -122,6 +130,7 @@ frontend/model/implementation.lem
 frontend/model/loc.lem
 frontend/model/mem.lem
 frontend/model/mini_pipeline.lem
+frontend/model/monadic_parsing.lem
 frontend/model/nondeterminism.lem
 frontend/model/pp.lem
 frontend/model/state_exception.lem

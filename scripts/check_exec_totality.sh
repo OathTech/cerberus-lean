@@ -50,11 +50,19 @@ ENFORCE="${ENFORCE:-0}"
 # Cerb_attributes are now partial-free and may not regress — the V4
 # call rules need are_compatible's (and the folds') kernel equations.
 # Record: lean_frontend/docs/2026-08-29_threadB-totalization.md.
+# The 2026-09-01 S-basket (item 3) totalizes the parked printf/
+# Monadic_parsing tail (frontend/model/{formatted,monadic_parsing}.lem:
+# string/printf_aux/store_chars_in_array automatic; many+many1 mutual
+# fuel, showNonNegativeWithBasis_aux + load_character_array_aux fuel):
+# Formatted and Monadic_parsing are now partial-free and may not
+# regress — this closes the exec-cone census to zero partials in the
+# listed modules. Record: docs/2026-09-01_s-basket.md.
 EXEC_MODULES=(Core_run Core_reduction Core_eval Driver Core_run_aux
               Core_aux Defacto_memory Defacto_memory_aux Ctype_aux
               Nondeterminism Mem_aux
               Utils Annot Ctype Core State_exception_undefined
-              State State_exception Translation_aux Cerb_attributes)
+              State State_exception Translation_aux Cerb_attributes
+              Formatted Monadic_parsing)
 
 declare -A allowed=()
 if [[ -f "$ALLOW" ]]; then

@@ -320,6 +320,13 @@ let rec showNonNegativeWithBasis_aux acc useUpper b n =
   else
     showNonNegativeWithBasis_aux (charFromDigit useUpper d :: acc) useUpper b r
 
+(* === V0 exec-cone opaque census, printf tail (2026-09-01 S-basket
+   item 3; threadB recipe): Lean-target-only; OCaml byte-identical.
+   Recursion on n/b (numeric division, no structural decrease Lean can
+   see): fuel; the digit count of any natural is microscopic against
+   lemDefaultFuel; exhaustion is the LOUD fuelExhausted panic. === *)
+declare {lean} fuel val showNonNegativeWithBasis_aux = `fuelExhausted []`
+
 val showNonNegativeWithBasis: bool -> natural -> natural -> list char
 let showNonNegativeWithBasis useUpper b n =
   if n < 0 then
@@ -384,6 +391,12 @@ let rec load_character_array_aux elem_ty ptrval prec_n_opt acc =
           (fun _ _ -> error "Formatted.load_character_array, found a union")
       )
   end
+
+(* Unbounded memory-walk recursion (reads until NUL or the precision
+   bound; no structural decrease): fuel, threadB recipe. Sentinel =
+   the empty-result memM, reached only through the LOUD fuelExhausted
+   panic. *)
+declare {lean} fuel val load_character_array_aux = `fuelExhausted (nd_return [])`
 val load_character_array: Ctype.ctype -> Mem.pointer_value -> maybe nat -> Mem.memM (list char)
 let load_character_array elem_ty ptrval prec_n_opt =
   Mem.bind
@@ -758,6 +771,11 @@ let rec printf_aux loc eval_conv acc fs ty_ptrvals =
           Right (U.return acc)
   end
 
+(* Structural on the format list `fs` (both recursive calls pass a
+   tail); recursion under monadic continuations — Lean derives it
+   (threadB finding 3). *)
+declare {lean} termination_argument printf_aux = automatic
+
 
 val     store_chars_in_array: bool -> Mem.pointer_value -> list char -> Mem.memM unit
 let rec store_chars_in_array zero_terminated ptrval = function
@@ -781,6 +799,10 @@ let rec store_chars_in_array zero_terminated ptrval = function
       end >>= fun ptrval' ->
       store_chars_in_array zero_terminated ptrval' cs
 end
+
+(* Structural on the char list (tail per step, pointer re-bound);
+   recursion under monadic continuations — Lean derives it. *)
+declare {lean} termination_argument store_chars_in_array = automatic
 
 
 val vsnprintf: Loc.t ->

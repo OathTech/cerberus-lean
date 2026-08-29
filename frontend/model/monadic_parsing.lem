@@ -90,6 +90,13 @@ let rec string cs =
         return (c::cs')
   end
 
+(* === V0 exec-cone opaque census, printf/Monadic_parsing tail
+   (2026-09-01 S-basket item 3; recipe = the threadB totalization,
+   docs/2026-08-29_threadB-totalization.md): Lean-target-only; OCaml
+   output byte-identical. `string` is list-structural (Lean derives
+   termination). === *)
+declare {lean} termination_argument string = automatic
+
 val     many:  forall 'a. parserM 'a -> parserM (list 'a)
 val     many1: forall 'a. parserM 'a -> parserM (list 'a)
 let rec many p = many1 p <|> return []
@@ -97,3 +104,12 @@ and     many1 p =
   p      >>= fun a   ->
   many p >>= fun _as ->
   return (a::_as)
+
+(* many/many1 are genuinely mutual with NO structural decrease (the
+   grammar-recursion terminates only through input consumption): fuel,
+   all-or-none across the mutual block (backend requirement). The
+   sentinel is the always-failing parser (empty result list) — reached
+   only through the LOUD fuelExhausted panic, never a silent default.
+   lemDefaultFuel dominates any real parse depth. *)
+declare {lean} fuel val many = `fuelExhausted (ParserM (fun _ => []))`
+declare {lean} fuel val many1 = `fuelExhausted (ParserM (fun _ => []))`
