@@ -147,6 +147,14 @@ if ! bash "$LEMSYNC_SH" --check; then
     echo "test_unit: lem-sync gate FAILED"
     exit 1
 fi
+# Lean-side lem-sync stamp (S-basket item 6, 2026-09-01): the same
+# staleness class for lean_frontend/generated — the semantics-first
+# split's finding 6 (a stale primed tree masked a real debug-lane
+# movement). Recorded by `make lean-prelude-src`; fail-closed here.
+if ! bash "$LEMSYNC_SH" --check-lean; then
+    echo "test_unit: Lean lem-sync gate FAILED"
+    exit 1
+fi
 
 # Fork-drift gate (arc-10 audit follow-up, [USER] mandate): the oracle
 # surface (frontend model, ocaml_frontend, memory, util, parsers,

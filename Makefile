@@ -333,6 +333,8 @@ lean-prelude-src: $(LEM_SRC)
 	$(Q)sed -i'' -e '/^import Operators$$/d' $(LEAN_SRC_DIR)/Core_run.lean
 	@echo "[COPY] hand-written Lean files into [$(LEAN_SRC_DIR)]"
 	$(Q)cp $(addprefix lean_frontend/,$(LEAN_HANDWRITTEN)) $(LEAN_SRC_DIR)/
+	@echo "[STAMP] recording Lean lem-sync content stamp"
+	$(Q)tools/check_lem_sync.sh --record-lean
 
 # Native C objects linked into lean_frontend executables (lakefile.toml
 # moreLinkArgs). Compiled with the toolchain's leanc (hermetic clang).
@@ -357,7 +359,7 @@ lean-build: lean-prelude-src lean-native-obj
 .PHONY: clean-lean
 clean-lean:
 	$(Q)rm -rf $(LEAN_SRC_DIR)
-	$(Q)rm -f lean_frontend/lem.log
+	$(Q)rm -f lean_frontend/lem.log lean_frontend/lem_sync.sha256
 ####
 
 .PHONY: clean-web distclean-web
