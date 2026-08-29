@@ -37,6 +37,9 @@ namespace RelSem.M1
 
 open RelSem RelSem.Cerb RelSem.Kit RelSem.CerbSt RelSem.Seg
   RelSem.Slate
+-- spot-audit F3 (2026-08-29): m1File re-homed RelSem.Slate →
+-- RelSem.Corpus (statement-side, with the corpus program terms).
+open RelSem.Corpus (m1File)
 open Lem_Basic_classes (ordCompare)
 open RelSem.T1 (T1P RExpr aU intCty xAddr loadedV meLoad errPtr
   xPtrV)

@@ -7,6 +7,9 @@ set_option maxHeartbeats 2000000
 set_option trace.RelSem.segRun true
 namespace RelSem.M1
 open RelSem RelSem.Cerb RelSem.CerbSt RelSem.Seg RelSem.T1 RelSem.Slate
+-- spot-audit F3 (2026-08-29): m1File re-homed RelSem.Slate →
+-- RelSem.Corpus (statement-side, with the corpus program terms).
+open RelSem.Corpus (m1File)
 open RelSem.M1
 open Iris Iris.BI Iris.ProgramLogic
 

@@ -36,7 +36,7 @@ set_option autoImplicit false
 
 namespace RelSem.Corpus
 
-open RelSem.Slate (intParam funinfoOf slateFileU)
+open RelSem.Slate (intParam funinfoOf slateFileU sgnM1Sym sgnM1Decl)
 
 /-- The corpus stdlib: the T1 closure + the ccall-protocol params trio
     (the internal harness→callee calls evaluate params_length/
@@ -423,5 +423,43 @@ def p12Prior : List Nat :=
    17840318322355223988, 17974446748927791988, 18018519801630002214,
    18170357822945634772, 18178186032496362180, 18299737999929047716,
    18372201142006049300]
+
+/-! ## m1 (V3a, 2026-08-28): the PERF-2 tightened-exit pre-registered
+    program (never-seen scalar; docs/2026-08-29_v3a-loops-mechC.md §2;
+    tests/verify/m1_sgn.{c,core}). NOT a frozen-corpus row — a V3a
+    exit instrument in the corpus statement shape. RE-HOMED here from
+    RelSem.Slate (RelSem/SlateFiles.lean) at the spot-audit F3 fix
+    (2026-08-29): M1Statement's file term + prior are statement
+    vocabulary, homed with the corpus program terms exactly as
+    p01File for P01Statement; def texts byte-preserved modulo the
+    namespace move (the T1-closure slateFileU stdlib is deliberate —
+    sgn has no internal callees, so the params trio is not needed;
+    the emitted decl sgnM1Sym/sgnM1Decl stays in RelSem/SlateCore,
+    generated + drift-gated). -/
+
+def m1FileU : file Unit :=
+  slateFileU (Lem_Map.fromList [(sgnM1Sym, sgnM1Decl)])
+    (Lem_Map.fromList [(sgnM1Sym, funinfoOf [intParam])])
+    fmapEmpty
+
+/-- THE m1 file. -/
+def m1File : file core_run_annotation := convert_file m1FileU
+
+/-- m1's prior vocabulary (PriorCensus-validated; V3a). -/
+def m1Prior : List Nat :=
+  [362773788461399393, 1656971181475828259, 1862827267035441118,
+   2392343549473636477, 2433340024454083569, 2905319918966306201,
+   3766081930734261399, 4998152064567917579, 5991727426051750857,
+   6806144180337321293, 7363042538087792746, 7457282682047707106,
+   7499171796590179012, 7590096031763635132, 7764867060197914680,
+   8148669997605808657, 9265274797817290020, 11067898428807828624,
+   12129931134301626842, 12833257241435994544, 13039610436516453285,
+   13392900619715012771, 14329421068334193232, 14386475981198921378,
+   14409079311899709851, 14641249357205542421, 14671517598387306907,
+   15836592521936022799, 15837442492999787586, 15936767184861729128,
+   16217071427669230452, 16264240517835081145, 16397053867550904782,
+   16496410563140706571, 16562859848569467201, 16629223912856532319,
+   16930491615947487770, 17206061397319244606, 17306733169765808126,
+   17489985924624673497, 17765704775598467422]
 
 end RelSem.Corpus

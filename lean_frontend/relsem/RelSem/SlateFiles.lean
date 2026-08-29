@@ -108,34 +108,13 @@ def t5FileU : file Unit :=
 /-- THE T5 file. -/
 def t5File : file core_run_annotation := convert_file t5FileU
 
-/-! ## m1 (V3a, 2026-08-28): the PERF-2 tightened-exit pre-registered
-    program (never-seen scalar; docs/2026-08-29_v3a-loops-mechC.md §2;
-    tests/verify/m1_sgn.{c,core}). -/
-
-def m1FileU : file Unit :=
-  slateFileU (Lem_Map.fromList [(sgnM1Sym, sgnM1Decl)])
-    (Lem_Map.fromList [(sgnM1Sym, funinfoOf [intParam])])
-    fmapEmpty
-
-/-- THE m1 file. -/
-def m1File : file core_run_annotation := convert_file m1FileU
-
-/-- m1's prior vocabulary (PriorCensus-validated; V3a). -/
-def m1Prior : List Nat :=
-  [362773788461399393, 1656971181475828259, 1862827267035441118,
-   2392343549473636477, 2433340024454083569, 2905319918966306201,
-   3766081930734261399, 4998152064567917579, 5991727426051750857,
-   6806144180337321293, 7363042538087792746, 7457282682047707106,
-   7499171796590179012, 7590096031763635132, 7764867060197914680,
-   8148669997605808657, 9265274797817290020, 11067898428807828624,
-   12129931134301626842, 12833257241435994544, 13039610436516453285,
-   13392900619715012771, 14329421068334193232, 14386475981198921378,
-   14409079311899709851, 14641249357205542421, 14671517598387306907,
-   15836592521936022799, 15837442492999787586, 15936767184861729128,
-   16217071427669230452, 16264240517835081145, 16397053867550904782,
-   16496410563140706571, 16562859848569467201, 16629223912856532319,
-   16930491615947487770, 17206061397319244606, 17306733169765808126,
-   17489985924624673497, 17765704775598467422]
+/-! (m1 — the V3a PERF-2 exit program's fixture data — RE-HOMED to
+    RelSem.Corpus in RelSem/CorpusFiles.lean at the spot-audit F3 fix
+    2026-08-29: M1Statement is a corpus-shape statement, so its file
+    term + prior are statement vocabulary homed with the corpus
+    program terms, exactly as p01File for P01Statement. The emitted
+    decl (sgnM1Sym/sgnM1Decl) stays in RelSem/SlateCore.lean —
+    generated, drift-gated.) -/
 
 /-! ## Prior vocabularies (V0, consistency-freshness statement layer)
 

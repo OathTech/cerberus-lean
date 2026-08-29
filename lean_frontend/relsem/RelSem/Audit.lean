@@ -567,7 +567,12 @@ def stmtAllowed : List Name :=
    `RelSem.Corpus.p06Prior, `RelSem.Corpus.p14Prior,
    `RelSem.Corpus.p15Prior,
    `RelSem.Corpus.p07FileOf, `RelSem.Corpus.p08FileOf,
-   `RelSem.Corpus.p07Prior, `RelSem.Corpus.p08Prior]
+   `RelSem.Corpus.p07Prior, `RelSem.Corpus.p08Prior,
+   -- spot-audit F3 (2026-08-29): the m1 (V3a PERF-2 exit) fixture
+   -- data — re-homed RelSem.Slate → RelSem.Corpus (statement-side,
+   -- RelSem/CorpusFiles.lean, the corpus-file pattern) so
+   -- M1Statement registers cleanly.
+   `RelSem.Corpus.m1File, `RelSem.Corpus.m1Prior]
 
 open Lean in
 /-- Syntactic "ends in Prop" (Prop-family def: `Prop` or a pi chain
@@ -805,7 +810,13 @@ open Lean in
      `RelSem.Corpus.P04Statement, `RelSem.Corpus.P05Statement,
      `RelSem.Corpus.P06Statement, `RelSem.Corpus.P14Statement,
      `RelSem.Corpus.P15Statement,
-     `RelSem.Corpus.P07Statement, `RelSem.Corpus.P08Statement]
+     `RelSem.Corpus.P07Statement, `RelSem.Corpus.P08Statement,
+     -- spot-audit F3 (2026-08-29): the V3a PERF-2 exit program's
+     -- statement (PROVED — RelSem.M1.m1_proved, trio cone pinned
+     -- above), registered after its re-home to the statement-side
+     -- RelSem/M1Statement.lean + RelSem/CorpusFiles.lean (the
+     -- corpus statement-homing pattern). m1 has no UBFree twin.
+     `RelSem.M1.M1Statement]
   for n in concreteInputWaivers do
     let some _ := env.find? n
       | throwError "concrete-input ban: waived name {n} is MISSING \
@@ -883,7 +894,7 @@ open Lean in
      (`RelSem.Slate.t3File, RelSem.Slate.t3Prior, "t3Prior"),
      (`RelSem.Slate.t4File, RelSem.Slate.t4Prior, "t4Prior"),
      (`RelSem.Slate.t5File, RelSem.Slate.t5Prior, "t5Prior"),
-     (`RelSem.Slate.m1File, RelSem.Slate.m1Prior, "m1Prior"),
+     (`RelSem.Corpus.m1File, RelSem.Corpus.m1Prior, "m1Prior"),
      (`RelSem.Corpus.p01File, RelSem.Corpus.p01Prior, "p01Prior"),
      (`RelSem.Corpus.p02File, RelSem.Corpus.p02Prior, "p02Prior"),
      (`RelSem.Corpus.p03File, RelSem.Corpus.p03Prior, "p03Prior"),

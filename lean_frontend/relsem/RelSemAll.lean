@@ -84,6 +84,9 @@ import RelSem.CorpusStatements
 import RelSem.CorpusBCore
 import RelSem.CorpusBFiles
 import RelSem.CorpusBStatements
+-- spot-audit F3 (2026-08-29): the m1 exit-instrument statement,
+-- homed statement-side (fixture data in CorpusFiles).
+import RelSem.M1Statement
 -- arc-18: the segment layer + faces (KEEP chassis).
 import RelSem.M1Guard
 import RelSem.M1Body

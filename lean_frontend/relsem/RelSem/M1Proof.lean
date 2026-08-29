@@ -26,6 +26,7 @@
 import RelSem.P01Proof
 import RelSem.SegRoundTac
 import RelSem.CorpusStatements
+import RelSem.M1Statement
 
 set_option autoImplicit false
 set_option maxHeartbeats 2000000
@@ -43,23 +44,12 @@ open RelSem.T1 (T1P RExpr aU intCty xAddr errAddr xPtr errPtr xPtrV
   DGP env0 al0 bs0)
 open Iris Iris.BI Iris.ProgramLogic
 
-/-! ## Statement data -/
-
-/-- m1's pure model: sgn(x). -/
-def sgnSpec (x : Int) (r : driver_result) : Prop :=
-  r.dres_core_value
-    = intValue (if x < 0 then -1 else if 0 < x then 1 else 0)
-
-/-- **M1 (sgn)** — the canonical property at the house Cns shape:
-    ∀ x ∈ intRange, every consistent outcome of callND(sgn, [x]) is
-    Specified (sgn x). (The PERF-2 exit's target; a V3a exit
-    instrument in the corpus statement SHAPE, not a frozen-corpus
-    row.) -/
-def M1Statement : Prop :=
-  CorpusEnvHyp →
-  ∀ (x : Int), intRange x →
-    CallHarnessAdequateCns m1Prior m1File.tagDefs m1File "sgn"
-      [intValue x] corpusFs (sgnSpec x)
+/-! ## Statement data — spot-audit F3 (2026-08-29): `sgnSpec` +
+    `M1Statement` are RE-HOMED statement-side to
+    RelSem/M1Statement.lean (names unchanged), and the m1 fixture
+    data (`m1File`, `m1Prior`) to RelSem/CorpusFiles.lean
+    (RelSem.Corpus) — the corpus statement-homing pattern; the
+    statement is registered in the Audit slate. -/
 
 /-! ## The m1 program projections (NO transcription: the entry arena
     and parameter symbol are read off the emitted decl) -/
