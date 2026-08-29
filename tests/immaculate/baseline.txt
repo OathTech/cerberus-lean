@@ -62,3 +62,5 @@ g6-hash-collision TRIPWIRE
 s4b-memcmp-hugesize ORACLE_CRASH | L=UB:UB_CERB002a_out_of_bound_load
 s9-enum-signedness MATCH | L=VAL:Specified(2)
 s9-enum-sizeof-route MATCH | L=VAL:Specified(4)
+trap-bool-uninit MATCH | L=UB:UB012_lvalue_read_trap_representation
+trap-bool-write MATCH | L=UB:UB012_lvalue_read_trap_representation
