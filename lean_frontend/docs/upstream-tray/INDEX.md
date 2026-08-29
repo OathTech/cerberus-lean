@@ -1,0 +1,246 @@
+# Upstream report drafts — index
+
+Drafts of issue reports for `rems-project/cerberus`, from this project's
+recorded findings. All cited file:line references verified against
+upstream `master` @ `b9aeedcb4` (the merge base of our tree; every cited
+OCaml file is byte-identical to it). **Filing is the operator's call** —
+it needs a networked window and a GitHub account; nothing here has been
+submitted. Report 07 is drafted for the record by default (see below).
+
+Per operator directive [USER, 2026-08-19]: every report carries a
+concrete proposed remedy and a classification (TRUE BUG / INTENDED GAP /
+UNCLEAR) with justification; this ranking puts true bugs first and
+questions last.
+
+## Ranking (by upstream value)
+
+1. **01-float-mul-is-addition.md** — TRUE BUG. `Cerb_floating.mul` is
+   literally `(+.)` (util/cerb_floating.ml:5): every OCaml-side use of
+   Lem-level float multiplication (defacto memory model) computes x+y.
+   One-line fix proposed. **FILED as
+   https://github.com/rems-project/cerberus/issues/1009** (operator,
+   2026-08-19; open as of 2026-08-23, unfixed on master).
+2. **02-pp-core-unparseable-forms.md** — TRUE BUG (conditional on
+   round-trip intent). `--pp core` prints bodyless `proc` declarations
+   the grammar cannot parse (and drops their return type), and
+   `Cfunction(f)` values re-parse to null pointers (grammar TODO punt).
+   Grammar production + `fun_ptrval` fix proposed.
+3. **03-pp-core-ambiguous-output.md** — TRUE BUG (same conditionality).
+   Unparenthesised `PEif` operands and layout-only `;`-sequences make
+   `--pp core` output re-parse to a *different* tree, silently.
+   Printer parenthesisation rules proposed.
+4. **04-null-pointer-arith-crash.md** — INTENDED GAP (literal TODO), but
+   crash-severity: `p + 1` on a null pointer crashes the tool with an
+   uncaught `Failure` (impl_mem.ml:2217) instead of a UB verdict; the
+   effectful sibling already does the right thing (`fail ~loc
+   MerrArrayShift`, :2252). 6-line reproducer; interface-level remedy
+   proposed.
+5. **05-va-arg-missing-type-check.md** — INTENDED GAP (TODO at
+   impl_mem.ml:2731), confirmed observable: our differential port shows
+   the missing `va_arg` type check is load-bearing (adding it changes
+   verdicts on programs that currently run). Check proposed, guarded or
+   with a changelog note.
+6. **06-funinfo-has-proto-question.md** — UNCLEAR / minor, framed as a
+   question: `funinfo.has_proto` diverges between decl-TU and def-TU
+   entries yet all 221 `cfunction`-tuple bindings in the libc dump bind
+   it dead. Normalise or drop — upstream's call.
+7. **07-symbol-identity-fragility.md** — UNCLEAR, question / **for the
+   record only** by default: symbol equality ignores names and
+   uniqueness rests on an implicit shared-global-counter invariant. Our
+   observed collision required our own modification (0-based desugar
+   supply), so unmodified upstream is not shown to misbehave — the draft
+   says so explicitly and proposes documentation / a debug assertion /
+   stream offsets (our 2^20 fix as evidence). File only if the operator
+   wants the design question raised. [arc-12 update: the fork-side
+   consequences are now measured at scale (margin 483, fork libc
+   beyond it) and repaired by fail-stop — see cerberus-lean
+   lean_frontend/docs/2026-08-21_arc12-renumbering-case.md; the
+   upstream-facing question is unchanged.]
+
+Added 2026-08-21 (arc-12 S3 — the F-A/F-B campaign findings, un-forked
+repros re-verified against deps/cerberus-upstream @ b9aeedcb4 on this
+date; slots between 01 and 04 in bug-value):
+
+8. **08-desugar-nested-init-internal-error.md** — TRUE BUG. Nested
+   braced initializers (3-D scalar arrays; a struct-nesting class)
+   desugar to AilEinvalid and die as an uncaught internal-error
+   exception (exit 125, OCaml backtrace) instead of a diagnostic;
+   killed ~52% of csmith default-config programs in our campaign.
+   Two minimized native-verified reproducers + two-level remedy.
+9. **09-address-constant-member-rejected.md** — TRUE BUG. C11 §6.6p9
+   address constants combining array subscript + member designator
+   (`&arr[i].field` on static storage) rejected as "not a compile-time
+   constant" while each designator ALONE is accepted (`&arr[i]` and
+   `&obj.field` both run); clean 1-D fixture + two accepted controls
+   isolating the composition boundary (revised per the arc-12 audit
+   B-F3 — the earlier 2-D witness kept only as a secondary note, its
+   nested initializer being near draft 08's class); remedy proposed.
+
+10. **10-decode-rejects-question-escape.md** — TRUE BUG (arc-14). The
+    C11 simple-escape `'\?'` (§6.4.4.4#4, value 63; gcc agrees) has no
+    arm in `decode_character_constant_aux`, falls into the octal
+    validator, and the tool dies on an uncaught `Failure` — a crash on
+    strictly-conforming input. One-line remedy (+ the octal validator's
+    `'8'` off-by-one noted). Repro verbatim 2026-08-22; decode.ml
+    byte-identical to master @ b9aeedcb4.
+11. **11-escaped-char-octal-roundtrip-corruption.md** — TRUE BUG
+    (arc-14). `store_chars_in_array` round-trips every printf-stored
+    char through `decode_character_constant (escaped_char c)`, but
+    `Char.escaped`'s DECIMAL `\ddd` is read back by the OCTAL decoder:
+    `snprintf("%c", 127)` stores 87 ('W'). Silent formatted-path data
+    corruption; gcc (and our Lean port) return 127. Octal-emitting
+    `escaped_char` remedy proposed. Repro verbatim 2026-08-22.
+
+12. **12-bswap64-overflow-crash.md** — TRUE BUG (arc-14 re-mark).
+    `__builtin_bswap64` starts with `Z.to_int64`, which RAISES
+    `Z.Overflow` for every argument >= 2^63 — half the uint64_t domain,
+    legal C — killing the tool with an internal error (gcc returns the
+    swapped value). Z-native remedy proposed (also removes the signed
+    Z.of_int64 result wart). Repro verbatim 2026-08-22; file
+    byte-identical to master @ b9aeedcb4.
+
+13. **13-memcmp-hugesize-overflow-crash.md** — TRUE BUG (arc-14 S4b,
+    professor B'). `Concrete.memcmp` converts the C-controlled size with
+    `Z.to_int` (impl_mem.ml:2660), which raises uncaught `Z.Overflow`
+    for e.g. `memcmp(a, b, (size_t)-1)` — a tool crash where a UB
+    verdict belongs (the checked per-byte load right below already
+    produces the correct out-of-bound UB; our Lean port reports it).
+    Z-native loop remedy + a `Z.to_int` family audit suggested (cf. 12).
+    Repro verbatim 2026-08-22.
+
+Added 2026-08-22 (arc/cn-differential — CN-tutorial warm-up lane S0):
+
+14. **14-ailname-proxy-shadows-user-functions.md** — TRUE BUG. The Core
+    stdlib claims plain C names via `[ailname = ...]` proxies (`read`,
+    `write`, `open`, `stat`, ...) and translation.lem:245/:4317
+    redirect ANY identifier of that name to the proxy WITHOUT checking
+    whether the program defines its own function — a program-defined
+    `read` is silently hijacked: ill-formed-program refusal under
+    --nolibc, spurious UB038 wrong-arity with libc (gcc runs it fine;
+    2-line repro). Hit 6/106 cn-tutorial exercises. Guarded-lookup
+    remedy proposed. Repro verbatim 2026-08-22 vs upstream @ b9aeedcb4.
+
+## Filed / duplicate-search status (2026-08-23, read-only gh session)
+
+- **01 → FILED as issues/1009** (operator, 2026-08-19, open). Also filed
+  outside this tray: **issues/1010** "Core binary-expression checker
+  ignores the expected result type" (core_typing.lem:1025; operator,
+  2026-08-19, open — no tray draft; finding predates the tray format).
+- **Duplicate search (drafts 02-14): NO duplicates found** — 2-4 keyword
+  variants each, issues + PRs, open + closed. Near-misses checked and
+  ruled distinct: #198 (pointer-byte repro, not 04), #97 (fn-ptr struct
+  init, not 08), CN memcmp/multidim issues (not 13/08).
+- **Related, cite when filing:** #154 (open, 2020) — escape-sequence
+  char-constant VALUE semantics; same code region as 10/11, different
+  defect. #370 (closed) — lexer crash on `\e`; precedent that
+  crash-instead-of-diagnostic on escapes is bug-classed upstream.
+- **Master spot-check (2026-08-23):** cerb_floating.ml mul still `(+.)`,
+  bswap64 still `Z.to_int64`-first, decode.ml still missing the `'\?'`
+  arm and still using `escaped_char` — drafts 01/10/11/12 all still live
+  on current master.
+- Caveat: GitHub search is text-match; a very differently-worded
+  duplicate could hide. Re-run step (2) at actual filing time.
+
+## Near-at-hand audit around the PR branches (2026-08-23)
+
+Each PR branch's code neighborhood was audited for adjacent defects
+that should roll into the same PR. Result: all three branches are
+complete as scoped; the audits are recorded in each branch's
+PR-DESCRIPTION.md. Specifics (probes run against the local
+deps/cerberus-upstream build @ b9aeedcb4):
+
+- ocaml_gcc_builtins.ml (bswap64 PR): `ctz` has the same `Z.to_int64`
+  opening but is UNREACHABLE with 64-bit args — only `__builtin_ctz`
+  (unsigned int, zero-guarded in the std.core proxy) maps to it; no
+  `__builtin_ctzl/ctzll` exists upstream. bswap16/32 args pre-bounded
+  (asserts intentional); generic_ffs pure-Z. No rollups.
+- decode.ml (char-escapes PR): all other C11 simple escapes have arms;
+  hex validator correct; `encode_character_constant`'s `Z.to_int` gets
+  only char-range values (callers checked: formatted.lem:375/:617,
+  core_run.lem:1017, core_reduction_aux.lem:49). No rollups.
+  NEW FIND: upstream OPEN issue #154 ('\xFF' should be -1, signed
+  char) appears ALREADY FIXED by the current wrapI — probe
+  `('\xFF' == -1)` returns Specified(42)=true at b9aeedcb4. Courtesy
+  note drafted into the PR description; #154 may be closable.
+- impl_mem.ml (memcmp draft 13, future PR): REFUTED the IntExp
+  suspicion — `Z.pow n1 (Z.to_int n2)` at :2490 ("TODO: fail properly
+  when y is too big?") is defended: shifts by 64 and by 2^62 both give
+  `Undefined {ub: "UB51b_shift_too_large"}` BEFORE IntExp evaluates
+  (verbatim probe outputs, 2026-08-23). The remaining Z.to_int sites
+  are sizeof-driven and carry upstream's own TODO comments (known
+  gap). memcmp stays the only C-value-controlled crash site → draft 13
+  remains a correctly-scoped standalone PR.
+
+## Standard-citation validation pass (2026-08-23, trust-surface grade)
+
+Every semantically relevant claim on the three PR branches was
+validated against primary evidence. Authority: Cerberus's own embedded
+N1570 text (`tools/n1570.json` — the copy the tool's UB machinery
+cites), cross-checked with gcc 's actual behavior and the GCC/Zarith
+documentation online. VERIFIED (evidence in parentheses):
+- `\?` accepted by the C lexer (c_lexer.mll:417); value 63 (gcc run:
+  exit 63); simple-escape grammar §6.4.4.4#1; representability #3-4.
+- Octal escapes: ≤3 digits + maximal munch (#1 grammar, #7); all 0344
+  boundary expectations pass under gcc -std=c11 -Wall; `'\377' ==
+  (char)0xff` matches #10's char-object-converted-to-int rule.
+- `%c` stores the int arg converted to unsigned char (§7.21.6.1#8);
+  0343 compiles AS WRITTEN under gcc (builtin declaration included)
+  and passes; `Char.escaped` decimal rendering confirmed empirically
+  ("\\127", "\\129"), 0o127=87 corruption arithmetic checked.
+- bswap64: GCC docs give `uint64_t __builtin_bswap64(uint64_t)`, NO
+  domain restriction (full-domain-legal claim exact); repro exit 8
+  under gcc; all 5 test vectors verified by independent computation;
+  Zarith `signed_extract`/`extract`/`to_int64` semantics verified
+  from docs AND empirically via the project switch (the fixed
+  pipeline reproduces every expected value). `__builtin_ctz(0)`
+  documented undefined by GCC — proxy undef verdict correct.
+- pp-roundtrip: no ISO citations; semantic-preservation evidence is
+  the differential lanes already in its PR description.
+DEFECTS FOUND AND FIXED (2 citations, char-escapes): "#4 lists the
+simple escapes" (the list is #1's grammar) and "octal-digit ...
+(§6.4.4.4#1)" (production is §6.4.4.1#1). Fixed in PR-DESCRIPTION.md,
+the decode.ml comment, and the 0342/0344 headers; the octal commit's
+message reworded in the same pass. Surgery (autosquash + reword)
+operator-approved and executed 2026-08-23 — final tree verified
+byte-identical at each step, trailers intact — and force-pushed
+(--force-with-lease) to OathTech. char-escapes head: da993e5a0.
+
+## Provenance labeling policy ([USER 2026-08-23])
+
+The Cerberus team requires AI-derived code to be labeled as such. For
+everything filed from this tray:
+- ISSUE and PR bodies carry an explicit AI-provenance note (pattern:
+  the "Provenance" section now in each PR-DESCRIPTION.md; issue-side
+  precedent: #1009's "Bug detected by Claude Fable" line).
+- COMMITS carry `Co-Authored-By: Claude ... <noreply@anthropic.com>`
+  trailers. Status: ALL THREE branches conform. pp-roundtrip's 14 code
+  commits were rewritten 2026-08-23 with operator approval (never
+  pushed, so safe) to add generic `Claude` trailers — generic because
+  the authoring model session is not attestable; commits whose
+  authoring session is known use the specific model name.
+- The CODE ITSELF stays clean and idiomatic to the surrounding style —
+  no AI-generation residue in comments or structure. (Audited
+  2026-08-23: all three branches' diffs conform.)
+
+## Filing checklist (operator; needs network + GitHub)
+
+For each draft, in ranking order (10, 11, 12, 13, 14, 08, 09, 02, 03,
+04, 05, 06; 07 on request; 01 done): (1) re-verify the repro against CURRENT upstream master
+(ours is pinned at b9aeedcb4); (2) search the upstream issue tracker
+for duplicates; (3) file with the draft's title, repro, verbatim
+output, classification and remedy sections; (4) record the issue URL
+back into the draft's header and this index; (5) apply the provenance
+labeling policy above (AI note in the body; trailers on commits). F-D (symbol collisions)
+is NOT filed — fork-side, repaired by fail-stop; the upstream-facing
+design question stays draft 07.
+
+## Evidencing caveats (honesty notes)
+
+- 01: found by code audit; not executed through an upstream
+  defacto-model build (data flow is direct and unconditional).
+- 05: the "adding the check would change behaviour" claim rests on the
+  arc-6 decision-log D11 record and the S2 mirror-port corpus results,
+  not on a preserved side-by-side run with the check enabled.
+- 07: reclassified during drafting from "upstream-reportable" (arc-4 D6)
+  to record-only/question after verifying the colliding stream was
+  introduced by our commit 8923d6436 — see the provenance footer there.
