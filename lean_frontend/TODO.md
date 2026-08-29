@@ -18,17 +18,24 @@ downstream.)
 
 ## Small items (independent; can ride along with any fix batch)
 
-- `pr44468.c` offsetof unknown-tag panic (the CI sweep's one new
-  defect): `docs/2026-08-22_ci-sweep-results.md`.
-- CoreParser `enum TAG` ctype-literal arm — a parser-completeness
-  hole worth closing on its own merits (reproducers in
-  `tests/speclab/`).
 - Step-runner stack-ceiling guard (known limitation: loops of a few
   thousand iterations can overflow the process stack in the step/ND
   recursion; `docs/2026-08-19_arc6-s0-survey.md`).
-- Oracle `--batch` allocation-census line — would give the speclab
-  leak checks an oracle-differential leg (today they are in-Lean
-  only); a candidate patch for upstream Cerberus.
+- Speclab leak checks' oracle-differential leg: wire the new oracle
+  `--batch-alloc-census` line (landed 2026-09-01,
+  `docs/2026-09-01_s-basket.md`) into the speclab lanes.
+- Upstream-tray candidate (found 2026-09-01, S-basket item 1): the
+  sizeof/alignof Union arms read the Tags GLOBAL (impl_mem.ml:173,
+  :255) while the rest of the layout family threads ~tagDefs —
+  elaboration-time offsetof over a union-containing struct crashes
+  upstream (probed, exit 125); pinned as a crash pair
+  (tests/immaculate/nolibc/offsetof-union-member.c).
+
+(2026-09-01: the pr44468 offsetof panic, the CoreParser `enum TAG`
+arm, the `--args` flag, the allocation-census line, the DivMod
+canonicity consolidation, the printf/Monadic_parsing totalization
+tail, and the Lean-side lem-sync freshness stamp all closed in the
+S-basket slice — `docs/2026-09-01_s-basket.md`.)
 
 ## Needs maintainer action or network access
 
