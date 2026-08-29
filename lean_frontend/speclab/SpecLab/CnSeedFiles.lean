@@ -1,6 +1,6 @@
 /-
-SpecLab.CnSeedFiles — arc-15 S5: the R5 swap FILE TERMS and the
-exec-level STATEMENTS.
+SpecLab.CnSeedFiles — arc-15 S5: the R5 swap FILE TERMS
+(differential-lane data).
 
 Assembly follows the S1 DivModFiles pattern (itself the arc-7 T1File
 pattern): pinned parsed declarations (SpecLab/CnSeedCore.lean,
@@ -21,9 +21,6 @@ THE LOOKUP FAMILY HAS NO FILE TERMS: parked on the CoreParser
 enum-ctype gap (registered S5 finding; see the seed plan in
 SLUnit/EmitCore.lean). Its differential lanes are green without a
 pinned layer.
-
-STATEMENT DISCIPLINE: statement surface (gate-scanned) — fuel-opsem
-vocabulary only.
 -/
 
 import Core_run_aux
@@ -32,29 +29,12 @@ import CerbND
 import SpecLab.CnSeed
 import SpecLab.CnSeedHarness
 import SpecLab.CnSeedCore
-import RelSem.Threaded
 import SpecLab.DivModFiles
 
 set_option autoImplicit false
 
--- Arc-18 C4 (R6 homing): the homed threaded statement vocabulary —
--- exactly these names are gate-allowlisted (see SpecLab/DivModFiles.lean).
-open RelSem.Cerb (HarnessRunsToThr specifiedInt initial_driver_state_threaded)
-
-
 namespace SpecLab
 
-/-! (2026-08-27 KILL-LIST EXECUTION, operator-ratified: the finite
-    sample-∀ / concrete statement Prop defs of this rung — the
-    `*Sample*`/`*Plant*Claim`/`*Leak*` family with their pinned
-    sample sets and the sample bridges — are DELETED: quantification
-    by membership in a closed literal list is enumeration by
-    construction, and their planned proof (the exec-equation
-    campaign) is CANCELLED. The pure models, codec laws, the
-    `model_forall_iff_stream_forall` bridges, the `fileOfStream_
-    encode` program-term equalities, the family-∀ TARGET statements,
-    and the file terms (test-lane data) all STAY. Record:
-    lean_frontend/docs/2026-08-27_kill-list-execution.md.) -/
 namespace CnSeed
 
 open SpecLab.CnSeedCore
@@ -158,27 +138,6 @@ def swapFileOfStream (s : Stream) : file core_run_annotation :=
   match decodePair s with
   | some (m, []) => swapFileOf m
   | _ => swapFileOfBytes []
-
-/-! ## The R5 exec statements (fuel opsem only; `HarnessRunsTo` is
-    the R1 statement shape, reused verbatim) -/
-
-/-! (`SwapFamilyStatement` — the R5-era family-∀ TARGET — DELETED at
-    V0 2026-08-27, kill basket (c): SUPERSEDED by the frozen-corpus
-    statement slate. The codec/model/bridge layer stays. Record:
-    docs/2026-08-27_v0-statements-and-ban.md.) -/
-
-/-! ## The file-level bridge (kernel-checked): the stream face and
-    the model face build THE SAME program — Wf-FREE at this rung
-    (the full-domain novelty: no side conditions anywhere) -/
-
-/-- The stream-indexed file at any encoded pair IS the model-indexed
-file — no hypotheses (`decode ∘ encode = id` is unconditional for
-the u64-pair codec). -/
-theorem swapFileOfStream_encode (m : PairInput) :
-    swapFileOfStream (encodePair m) = swapFileOf m := by
-  unfold swapFileOfStream
-  rw [show encodePair m = encodePair m ++ [] by simp,
-    decode_encode_pair m []]
 
 end CnSeed
 end SpecLab

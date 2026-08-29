@@ -30,9 +30,7 @@ register, S1.
 PURE MODEL: C `/` truncates toward zero and `%` takes the dividend's
 sign (C11 6.5.5p5-6) — exactly `Int.tdiv` / `Int.tmod`.
 
-This file is STATEMENT SURFACE (scanned by
-scripts/check_speclab_statements.sh): computable pure functions +
-first-order data only.
+House style: computable pure functions + first-order data only.
 -/
 
 import SpecLab.Codec

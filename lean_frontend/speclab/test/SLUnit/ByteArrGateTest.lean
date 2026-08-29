@@ -20,8 +20,8 @@ Checks (all fail-closed, exit 1 on any failure):
      Specified(0) at both pinned instances, Specified(1) at the
      wrong-index plant.
 
-EPISTEMIC LABEL: this is a TEST (untrusted-evaluator); the
-kernel-checked layer is the lemma set in SpecLab/ByteArrFiles.lean.
+EPISTEMIC LABEL: this is a TEST (untrusted-evaluator) — a
+differential drift/exec gate, never a kernel-checked claim.
 -/
 import SpecLab
 import SLUnit.EmitCore

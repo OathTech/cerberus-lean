@@ -1,21 +1,23 @@
-# THE TARGET CORPUS — FROZEN
+# The differential-fixture corpus
 
-STATUS: FROZEN AND CANONIZED [USER 2026-08-27 sign-off: "the corpus
-as proposed looks good"]. Per the restart plan step 4: ALL CHANGES TO
-THIS CORPUS ARE FORBIDDEN WITHOUT USER-LEVEL SIGN-OFF. The freeze is
-enforced by the hash manifest scripts/target_corpus.sha256, checked
-in-gate (check_proof_size.sh); updating the manifest is itself a
-corpus change and carries the same sign-off requirement.
+Fifteen small C programs (+ 1 marked alternate, p10alt) exercising a
+spread of C constructs — scalar arithmetic, saturating/guarded
+arithmetic, aliasing, arrays, linked lists, recursion, iteration,
+structs, scan/classify loops. They serve as differential test
+fixtures for the Lean semantics: `scripts/test_verify.sh` re-derives
+each fixture's pinned Core dump from the OCaml oracle
+(byte-identical / content-hash provenance, `tests/corpus/`), runs the
+batch-A programs' `main` through both pipelines (oracle vs Lean,
+verdicts compared), and checks the Lean driver's `--call` mode at the
+concrete points of `tests/corpus/expectations.txt`.
 
-These 15 programs (+ 1 marked alternate, p10alt) define SUCCESS for
-the verification framework: each carries a canonical-property theorem
-(∀ init, args — see the catechism §II) that today's substrate cannot
-prove; the infrastructure build (restart step 5) is judged against
-them. Specification + coverage matrix + theorem statements:
-docs/2026-08-27_target-corpus.md. Adversarial review + freeze
-conditions: docs/2026-08-27_target-corpus-review.md. The normative
-doctrine: docs/2026-08-27_design-catechism.md.
+Fixture-set integrity: the file set is pinned by the hash manifest
+`scripts/target_corpus.sha256`, checked by
+`scripts/check_fixture_freeze.sh` (rides `test_unit.sh`). Changing a
+fixture invalidates its pinned Core dumps and expectation rows —
+update the manifest, the `tests/corpus/` pins, and the expectations
+together, in one commit, with the change's rationale.
 
-P10 = p10_gcd_rec (operator-confirmed recommended form);
-p10alt_rsum_rec is the retained ALTERNATE (not part of the frozen 15;
-its model is the natural warm-up instance during the build).
+Provenance: the set was assembled 2026-08-27 ([USER] sign-off) and is
+re-roled here as a differential fixture set ([USER 2026-08-31],
+semantics-first split).

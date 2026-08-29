@@ -977,8 +977,8 @@ namespace SpecLab.ListAppendCore
 def listModuleFooter : String := "\nend SpecLab.ListAppendCore\n"
 
 /-- Emit the struct int_list tag definition (sym + tag_definition;
-the parsed Loc must be unknown — assembled with `Loc.unknown` in
-SpecLab/ListAppendFiles.lean). -/
+the parsed Loc must be unknown — consumers reassemble with
+`Loc.unknown`). -/
 def emitIntListTagDef (cf : CoreFile) : Except String String := do
   match cf.tagDefs with
   | [(s, (loc, td))] =>

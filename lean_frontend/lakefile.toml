@@ -1,49 +1,6 @@
 name = "CerberusLean"
-# RelSem in defaultTargets since arc-7 S1: `lake build` elaborates
-# relsem/RelSem/Audit.lean (the in-build axiom audit), so plain builds
-# carry the gate (golean in-build audit property).
 defaultTargets = ["CerberusLean", "RelSemCore", "cerberus-lean"]
-# (arc-11 S4, the package rehearsal: the PROOF layers moved to the
-# nested `relsem/` PACKAGE — its in-build audits ride `lake build`
-# there, driven by the gate scripts (see relsem/lakefile.toml). The
-# EXEC-FACING RelSem core (Call/Machine/RunND/ExecModel/Cerberus —
-# the driver's verify-harness closure, measured: Main imports
-# RelSem.Call) stays ROOT-side as the RelSemCore lib below — the
-# rehearsal's boundary finding.)
 moreLeanArgs = ["-DautoImplicit=false"]
-
-# arc-7 S0 toolchain bump: batteries as a plain git require (the scoped
-# Reservoir form needs network to resolve; the git URL is redirected to
-# deps/mirrors/batteries.git by deps/gitconfig). Pinned at v4.32.0 =
-# 023ce7d62a0531e22a5331e20b587817a80d49ff — the exact rev iris-lean's
-# 4.32.2 build vendored (deps/iris-lean/Iris/lake-manifest.json), so the
-# S4 iris-lean require will inherit a matching batteries.
-[[require]]
-name = "batteries"
-git = "https://github.com/leanprover-community/batteries"
-rev = "v4.32.0"
-
-# arc-7 S4: iris-lean, the Layer-3 program logic (ProgramLogic WP/adequacy,
-# proof mode, GenHeap/GhostVar). Pinned to the exact rev the local build at
-# deps/iris-lean is at (resolved offline via the deps/gitconfig redirect;
-# mirror TODO recorded there for the next network window). The package
-# lives in the repo's Iris/ subdir. Its own scoped requires (batteries,
-# Qq @ v4.32.0) are shadowed by the direct git requires here so resolution
-# never touches the Reservoir API (offline discipline; batteries rev above
-# is already the iris-vendored one).
-[[require]]
-name = "iris"
-git = "https://github.com/leanprover-community/iris-lean"
-rev = "34390a0133986385c62bf59a6eb01938945b48ec"
-subDir = "Iris"
-
-# Qq pinned at iris-lean's vendored rev (deps/iris-lean/Iris/lake-manifest.json);
-# direct git require so the scoped form never needs the network (mirror:
-# deps/mirrors/quote4.git).
-[[require]]
-name = "Qq"
-git = "https://github.com/leanprover-community/quote4"
-rev = "38d591e778f100aec9762bb582f9c7f55f50e9dc"
 
 # LemLib is the Lem runtime library for Lean, from the septract/lem-lean fork.
 # arc-8 close: pinned to the MERGED mdd/lean-backend head (arc-8 pin dance;
@@ -160,13 +117,14 @@ roots = [
   "CerbND",
 ]
 
-# arc-11 S4: the exec-facing RelSem core (module names unchanged —
-# `RelSem.*`); the nested relsem package imports these via the path
-# require.
+# The exec-facing RelSem core: the relational execution model over the
+# driver (Machine/RunND/ExecModel/Cerberus — runner soundness lives
+# here) + the function-call entry point (Call.lean, the driver's
+# --call mode; Main imports RelSem.Call).
 [[lean_lib]]
 name = "RelSemCore"
 srcDir = "relsemcore"
-roots = ["RelSem.Call", "RelSem.Machine", "RelSem.RunND", "RelSem.ExecModel", "RelSem.Cerberus", "RelSem.Threaded"]
+roots = ["RelSem.Call", "RelSem.Machine", "RelSem.RunND", "RelSem.ExecModel", "RelSem.Cerberus"]
 
 [[lean_exe]]
 name = "cerberus-lean"
@@ -211,13 +169,3 @@ name = "pp-test"
 srcDir = "test"
 root = "Unit.PPTest"
 moreLinkArgs = ["native/fresh_int.o", "native/debug.o", "native/tags.o", "native/md5.o"]
-
-# arc-7 S4: the term-emission instrument (parsed Core → Lean source terms;
-# regenerates relsem/RelSem/T1Core.lean — see that file's header).
-[[lean_exe]]
-name = "emit-lean-core"
-srcDir = "test"
-root = "Unit.EmitLeanCoreMain"
-moreLinkArgs = ["native/fresh_int.o", "native/debug.o", "native/tags.o", "native/md5.o"]
-
-

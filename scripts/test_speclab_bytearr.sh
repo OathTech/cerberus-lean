@@ -46,8 +46,6 @@ SPECLAB_TEST_BIN="$PROJECT_ROOT/lean_frontend/speclab/.lake/build/bin/speclab-te
 
 fail() { echo "test_speclab_bytearr: FAIL — $*" >&2; exit 1; }
 
-"$SCRIPT_DIR/check_speclab_statements.sh" || fail "statement gate red"
-
 MODE="${1:-}"
 [[ -n "$MODE" ]] || fail "usage: test_speclab_bytearr.sh --sweep | --getsweep | --fuzz N [SEED] | --plant | --gate"
 

@@ -1,6 +1,6 @@
 /-
-SpecLab.ByteArrFiles — arc-15 S2: the R2 byte-blaster FILE TERMS and
-the exec-level STATEMENTS (memcpy + getarr).
+SpecLab.ByteArrFiles — arc-15 S2: the R2 byte-blaster FILE TERMS
+(memcpy + getarr; differential-lane data).
 
 Assembly follows the S1 DivModFiles pattern (itself the arc-7 T1File
 pattern): pinned parsed declarations (SpecLab/ByteArrCore.lean,
@@ -16,9 +16,6 @@ generated module, pins `memcpyMainParamDecl` back to all four memcpy
 dumps (incl. the out-of-trio c), and runs the assembled files through
 `drive` at the pinned verdicts — plus the .c twins run through BOTH
 pipelines by scripts/test_speclab_bytearr.sh.
-
-STATEMENT DISCIPLINE: statement surface (gate-scanned) — fuel-opsem
-vocabulary only.
 -/
 
 import Core_run_aux
@@ -27,29 +24,12 @@ import CerbND
 import SpecLab.ByteArr
 import SpecLab.ByteArrHarness
 import SpecLab.ByteArrCore
-import RelSem.Threaded
 import SpecLab.DivModFiles
 
 set_option autoImplicit false
 
--- Arc-18 C4 (R6 homing): the homed threaded statement vocabulary —
--- exactly these names are gate-allowlisted (see SpecLab/DivModFiles.lean).
-open RelSem.Cerb (HarnessRunsToThr specifiedInt initial_driver_state_threaded)
-
-
 namespace SpecLab
 
-/-! (2026-08-27 KILL-LIST EXECUTION, operator-ratified: the finite
-    sample-∀ / concrete statement Prop defs of this rung — the
-    `*Sample*`/`*Plant*Claim`/`*Leak*` family with their pinned
-    sample sets and the sample bridges — are DELETED: quantification
-    by membership in a closed literal list is enumeration by
-    construction, and their planned proof (the exec-equation
-    campaign) is CANCELLED. The pure models, codec laws, the
-    `model_forall_iff_stream_forall` bridges, the `fileOfStream_
-    encode` program-term equalities, the family-∀ TARGET statements,
-    and the file terms (test-lane data) all STAY. Record:
-    lean_frontend/docs/2026-08-27_kill-list-execution.md.) -/
 namespace ByteArr
 
 open SpecLab.ByteArrCore
@@ -156,24 +136,6 @@ def getarrFileB : file core_run_annotation :=
 /-- The getarr WRONG-INDEX PLANT file (pinned verbatim; "hellohello"). -/
 def getarrPlantFile : file core_run_annotation :=
   convert_file (getarrFileU getarrMainPlantDecl getFromArrPlantDecl)
-
-/-! ## The R2 exec statements (fuel opsem only; `HarnessRunsTo` is the
-    R1 statement shape, reused verbatim from SpecLab.DivModFiles) -/
-
-/-! ## The file-level bridge (kernel-checked): the stream face and the
-    model face build THE SAME program — through the FULL byte-blaster
-    codec (u16 prefix decode + verbatim bytes) -/
-
-/-- On 3-byte models, the stream-indexed file at the encoded stream IS
-the model-indexed file (`decode ∘ encode = id` at the file level; the
-S0 array codec's round trip is the load-bearing step). -/
-theorem memcpyFileOfStream_encode (bs : List UInt8)
-    (h : bs.length = 3) :
-    memcpyFileOfStream (encodeInput bs) = memcpyFileOf bs := by
-  have hwf : Wf bs := by unfold Wf cap; omega
-  unfold memcpyFileOfStream
-  rw [show encodeInput bs = encodeInput bs ++ [] by simp,
-    decode_encode_input bs hwf []]
 
 end ByteArr
 end SpecLab

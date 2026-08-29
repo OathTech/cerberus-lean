@@ -17,8 +17,8 @@ Checks (all fail-closed, exit 1 on any failure):
      i.e. the statement objects agree with what both C pipelines
      produce for the same programs (scripts/test_speclab_divmod.sh).
 
-EPISTEMIC LABEL: this is a TEST (untrusted-evaluator); the
-kernel-checked layer is the lemma set in SpecLab/DivModFiles.lean.
+EPISTEMIC LABEL: this is a TEST (untrusted-evaluator) — a
+differential drift/exec gate, never a kernel-checked claim.
 -/
 import SpecLab
 import SLUnit.EmitCore

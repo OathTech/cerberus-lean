@@ -79,20 +79,6 @@ for cfile in "$VERIFY_DIR"/*.c; do
 done
 
 # ---------------------------------------------------------------------------
-# T4EnvHyp witness probe (arc-7 S5c, audit-1 F3): first-in-process
-# fresh-draw ordering + the three T4EnvHyp conjunct values + the t4 run
-# on the witnessed state (its own exe BY DESIGN — draw ordering is the
-# probe's subject; see test/Unit/T4EnvWitnessTest.lean).
-# ---------------------------------------------------------------------------
-# arc-11 S4: t4-env-witness lives in the nested relsem package.
-(cd "$PROJECT_ROOT/lean_frontend/relsem" && "$SCRIPT_DIR/capped" lake build t4-env-witness 2>&1 | tail -2)
-if env LEAN_ABORT_ON_PANIC=1 "$PROJECT_ROOT/lean_frontend/relsem/.lake/build/bin/t4-env-witness"; then
-    pass "t4-env-witness: T4EnvHyp gate-witnessed (draw ordering + 3 conjuncts + t4 run)"
-else
-    fail "t4-env-witness: T4EnvHyp witness probe FAILED"
-fi
-
-# ---------------------------------------------------------------------------
 # Per-fixture: cabs-json + main-mode differential
 # ---------------------------------------------------------------------------
 declare -A JSON_OF

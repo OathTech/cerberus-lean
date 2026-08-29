@@ -25,8 +25,8 @@ Checks (all fail-closed, exit 1 on any failure):
      plant at baseline (it corrupts content, not structure — teardown
      still reaches every node).
 
-EPISTEMIC LABEL: this is a TEST (untrusted-evaluator); the
-kernel-checked layer is the lemma set in SpecLab/ListAppendFiles.lean.
+EPISTEMIC LABEL: this is a TEST (untrusted-evaluator) — a
+differential drift/exec gate, never a kernel-checked claim.
 -/
 import SpecLab
 import SLUnit.EmitCore

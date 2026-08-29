@@ -19,27 +19,7 @@ UNIT_TESTS=(
     "fresh-int-test"
     # arc-10 S3: pretty-printer mirrors vs recorded oracle outputs
     "pp-test"
-    # (app-walk-test — the chase-era walker contract table — DELETED
-    # at the 2026-08-27 kill-list execution with Tactics/AppWalk.)
-    # arc-7 S4: T1 program-term drift gate (emit-lean-core byte-identity
-    # against relsem/RelSem/T1Core.lean) + concrete differential of the
-    # assembled theorem object (RelSem.T1.t1File) through callND.
-    "emit-lean-core-test"
 )
-
-# arc-11 S4 (the package rehearsal): tests living in the nested
-# `relsem` PACKAGE (lean_frontend/relsem/lakefile.toml) — built and
-# run from that package's workspace.
-RELSEM_TESTS=(
-    "emit-lean-core-test"
-)
-is_relsem_test() {
-    local t
-    for t in "${RELSEM_TESTS[@]}"; do
-        [[ "$t" == "$1" ]] && return 0
-    done
-    return 1
-}
 
 # ---------------------------------------------------------------------------
 # Sync gate (arc-4 S5f, audit G2). Lake compiles from lean_frontend/generated/
@@ -108,27 +88,11 @@ fi
 total_pass=0
 total_fail=0
 
-# arc-11 S4: THE RE-HOMED IN-BUILD AUDIT GATE — a plain `lake build`
-# of the nested relsem package elaborates RelSem/Audit.lean +
-# Kit/Audit (fail-closed); run before the test loop so the gate fires
-# even under a filtered test selection.
-echo
-echo "=== relsem package build (in-build audits) ==="
-if ! (cd relsem && "$SCRIPT_DIR/capped" lake build 2>&1 | tail -4); then  # -4: keep the DAEMON absence gate line visible (audit B-F5)
-    echo "${RED}test_unit: relsem package build FAILED (in-build audit gate)${NC}"
-    exit 1
-fi
-
 for test in "${TESTS[@]}"; do
     echo
     echo "=== $test ==="
-    if is_relsem_test "$test"; then
-        (cd relsem && "$SCRIPT_DIR/capped" lake build "$test" 2>&1 | tail -3)
-        bin="./relsem/.lake/build/bin/$test"
-    else
-        "$SCRIPT_DIR/capped" lake build "$test" 2>&1 | tail -3
-        bin="./.lake/build/bin/$test"
-    fi
+    "$SCRIPT_DIR/capped" lake build "$test" 2>&1 | tail -3
+    bin="./.lake/build/bin/$test"
     if "$bin"; then
         echo "${GREEN}✓ $test PASSED${NC}"
         total_pass=$((total_pass + 1))
@@ -199,32 +163,13 @@ if ! "$DRIFT_SH"; then
     exit 1
 fi
 
-# Proof-size gate (arc-9 S2, design §4): slate proof files within the
-# 250-line/40-step bar; Kit files fixture-free; app_walk? banned.
+# Fixture-freeze gate (2026-08-31 semantics-first split; formerly the
+# corpus-freeze leg of check_proof_size.sh — the proof-layer legs of
+# that gate left with the proof packages): the lean_frontend/corpus
+# differential-fixture set must match its pinned manifest exactly.
 # ENFORCING and fail-closed like the gates above.
-PROOFSIZE_SH="$(dirname "$PURITY_SH")/check_proof_size.sh"
-if ! "$PROOFSIZE_SH"; then
-    echo "test_unit: proof-size gate FAILED"
+FREEZE_SH="$(dirname "$PURITY_SH")/check_fixture_freeze.sh"
+if ! "$FREEZE_SH"; then
+    echo "test_unit: fixture-freeze gate FAILED"
     exit 1
 fi
-
-# (The chase-freeze gate — check_chase_freeze.sh, arc-16 S0a — was
-# DELETED at the 2026-08-27 kill-list execution: its entire allowlist
-# emptied (AppWalk/WalkTrace/AppEqAttr/Kit-AppEq/T1AppEq/AppWalkTest
-# all deleted) and the frozen surfaces no longer exist to guard; the
-# one-route gate below still bans any OwnP/arc-7-shell reintroduction,
-# plant-tested at the purge. Record:
-# lean_frontend/docs/2026-08-27_kill-list-execution.md.)
-
-# Single-interpretation gate (arc-18 C2; register row R2): the live
-# route binds only CerbMemInterp — no OwnP imports/tokens on the
-# live-module list, no both-binding file, OwnP binders confined to
-# the retirement register + the labeled T6 exemption (fail-closed;
-# plant-tested both directions — the C2 record carries transcripts).
-"$(dirname "$PURITY_SH")/check_one_route.sh" || { echo "test_unit: single-interpretation gate FAILED"; exit 1; }
-
-# Engine-size watch (arc-18 C1; the R3 down-pressure register's ENGINE
-# row): WARN-level reporting instrument — exit != 0 only means the
-# instrument itself is broken (missing baseline/module), which IS
-# fail-closed.
-"$(dirname "$PURITY_SH")/check_engine_size.sh" || { echo "test_unit: engine-size watch BROKEN (instrument failure, not a size warning)"; exit 1; }

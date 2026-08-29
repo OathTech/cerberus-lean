@@ -57,9 +57,7 @@ on the heap); the pure layer records that the CN postconditions'
 functional content COLLAPSES INTO the model definition for a verbatim
 copy — the P5 datapoint of this rung (proof register S2-P5).
 
-This file is STATEMENT SURFACE (scanned by
-scripts/check_speclab_statements.sh): computable pure functions +
-first-order data only.
+House style: computable pure functions + first-order data only.
 -/
 
 import SpecLab.Codec

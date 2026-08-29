@@ -23,9 +23,8 @@ comparator idiom"), as reusable template-composable C fragments:
 TEARDOWN + THE LEAK CONJUNCT (live this rung): phase 4 frees the
 result list by walking it — the healthy target REUSES every input
 node (alloc/free balance, `ListAppend.alloc_free_balance`), so after
-teardown the harness owns no heap. The exec-level observable (final
-allocation map at the driver's baseline) is stated in
-SpecLab/ListAppendFiles.lean; the wrong-link plant orphans
+teardown the harness owns no heap. The exec-level observable is the
+final allocation map at the driver's baseline; the wrong-link plant orphans
 `xs.length - 1` nodes and is the leak lane's red witness.
 
 VERDICT SPACE (Form 1, extended for the heap rung):

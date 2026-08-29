@@ -1,9 +1,7 @@
 /-
-SpecLab.TreeRotFiles — arc-15 S4: the R4 tree-rotation FILE TERMS and
-the exec-level STATEMENTS (rotate_right — THE REFERENCE INSTANCE),
-including the leak conjunct (the R3 observable, reused) and the
-POINTER-SELECTION STATEMENT FAMILY (the path is model/stream data:
-the parametric family quantifies vals at the pinned path, and the
+SpecLab.TreeRotFiles — arc-15 S4: the R4 tree-rotation FILE TERMS
+(rotate_right; differential-lane data — the path is model/stream
+data: the parametric file takes vals at the pinned path, and the
 verbatim path instances pin further paths — root and depth-2).
 
 Assembly follows the S1-S3 pattern (arc-7 T1File lineage): pinned
@@ -16,18 +14,14 @@ helper: the root/deep/build TUs are assembled entirely from their own
 dumps' decls; the plant TUs share the healthy helper decls (asserted
 byte-identical at emission).
 
-THE LEAK OBSERVABLE: `ListAppend.HarnessFinalAllocs` +
-`ListAppend.driverBaseline` REUSED VERBATIM (the R3 observable is
-target-independent — idiom library). Rotation is ALLOCATION-NEUTRAL
-(`TreeRot.rotateAt_size` is the pure face), so every healthy
-statement pins the driver baseline; the DROPPED-SUBTREE plant pins
-baseline + 1 (the orphaned middle subtree at the pinned instance,
-`orphanedAt = 1`), and the WRONG-CHILD-SWAP plant pins the BASELINE
-itself — a broken-but-leak-free target, the observable's green
-contrast (its pure face: `TreeRot.swapPlant_size`).
-
-STATEMENT DISCIPLINE: statement surface (gate-scanned) — fuel-opsem
-vocabulary only.
+THE LEAK OBSERVABLE: `ListAppend.driverBaseline` REUSED VERBATIM
+(the R3 observable is target-independent). Rotation is
+ALLOCATION-NEUTRAL (`TreeRot.rotateAt_size` is the pure face), so
+every healthy run pins the driver baseline; the DROPPED-SUBTREE
+plant pins baseline + 1 (the orphaned middle subtree at the pinned
+instance), and the WRONG-CHILD-SWAP plant pins the BASELINE itself —
+a broken-but-leak-free target, the observable's green contrast (its
+pure face: `TreeRot.swapPlant_size`).
 -/
 
 import Core_run_aux
@@ -36,30 +30,13 @@ import CerbND
 import SpecLab.TreeRot
 import SpecLab.TreeRotHarness
 import SpecLab.TreeRotCore
-import RelSem.Threaded
 import SpecLab.DivModFiles
 import SpecLab.ListAppendFiles
 
 set_option autoImplicit false
 
--- Arc-18 C4 (R6 homing): the homed threaded statement vocabulary —
--- exactly these names are gate-allowlisted (see SpecLab/DivModFiles.lean).
-open RelSem.Cerb (HarnessRunsToThr specifiedInt initial_driver_state_threaded)
-
-
 namespace SpecLab
 
-/-! (2026-08-27 KILL-LIST EXECUTION, operator-ratified: the finite
-    sample-∀ / concrete statement Prop defs of this rung — the
-    `*Sample*`/`*Plant*Claim`/`*Leak*` family with their pinned
-    sample sets and the sample bridges — are DELETED: quantification
-    by membership in a closed literal list is enumeration by
-    construction, and their planned proof (the exec-equation
-    campaign) is CANCELLED. The pure models, codec laws, the
-    `model_forall_iff_stream_forall` bridges, the `fileOfStream_
-    encode` program-term equalities, the family-∀ TARGET statements,
-    and the file terms (test-lane data) all STAY. Record:
-    lean_frontend/docs/2026-08-27_kill-list-execution.md.) -/
 namespace TreeRot
 
 open SpecLab.TreeRotCore
@@ -244,23 +221,6 @@ def rotateFileOfStream (s : Stream) : file core_run_annotation :=
   match decodeInput s with
   | some (m, []) => rotateFileOf m
   | _ => junkFile
-
-/-! ## The R4 exec statements (fuel opsem only; `DivMod.HarnessRunsTo`
-    and the R3 leak observable reused verbatim) -/
-
-/-! ## The leak conjunct (the R3 observable, reused verbatim) -/
-
-/-! ## The file-level bridge (kernel-checked): the stream face and
-    the model face build THE SAME program — through the recursive
-    tree codec -/
-
-/-- On pinned-shape in-range models, the stream-indexed file at the
-encoded stream IS the model-indexed file. -/
-theorem rotateFileOfStream_encode (m : Input) (h : Wf m) :
-    rotateFileOfStream (encodeInput m) = rotateFileOf m := by
-  unfold rotateFileOfStream
-  rw [show encodeInput m = encodeInput m ++ [] by simp,
-    decode_encode_input m h []]
 
 end TreeRot
 end SpecLab

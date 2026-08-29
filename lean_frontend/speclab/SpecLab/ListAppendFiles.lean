@@ -1,7 +1,7 @@
 /-
-SpecLab.ListAppendFiles — arc-15 S3: the R3 linked-list FILE TERMS and
-the exec-level STATEMENTS (IntList_append), including THE LEAK
-CONJUNCT (live this rung).
+SpecLab.ListAppendFiles — arc-15 S3: the R3 linked-list FILE TERMS
+(IntList_append; differential-lane data), including the allocation
+baseline the leak-checking gate exe pins.
 
 Assembly follows the S1/S2 pattern (arc-7 T1File lineage): pinned
 parsed declarations (SpecLab/ListAppendCore.lean, generated +
@@ -20,23 +20,17 @@ CerbMem.MemState` carries the allocation map (`allocations :
 Std.TreeMap Int Allocation`; `Kill` ERASES — CerbMem.lean kill path).
 The template note's sanctioned form ("a single scalar fact about the
 final state, no contents/shape vocabulary") is therefore stateable
-TODAY with zero semantics-surface changes: `HarnessFinalAllocs f n`
-below. What remains MISSING is the ORACLE-DIFFERENTIAL leg: the OCaml
-driver prints no allocation census in batch mode, so the leak
-conjunct is checked in-Lean (gate exe, executable) and stated
-in-logic, but not oracle-compared — priced note in the S3 record
-(an oracle `--batch` allocation-census switch, est. S, upstream/fork
-filing candidate).
+TODAY with zero semantics-surface changes; the gate exe checks it
+executably. What remains MISSING is the ORACLE-DIFFERENTIAL leg: the
+OCaml driver prints no allocation census in batch mode, so the leak
+check is in-Lean only, not oracle-compared (an oracle `--batch`
+allocation-census switch is a priced upstream/fork filing candidate).
 
 BASELINE HONESTY: a leak-free run's final map is NOT empty — the
 driver's own ERRNO allocation (harness-independent, see
 `driverBaseline`) remains. The conjunct is stated against that pinned
 baseline; "leak-free" = final size equals the baseline, and the
-wrong-link plant exceeds it by exactly `linkPlantLeaked` (the
-orphaned nodes).
-
-STATEMENT DISCIPLINE: statement surface (gate-scanned) — fuel-opsem
-vocabulary only.
+wrong-link plant exceeds it by exactly the orphaned nodes.
 -/
 
 import Core_run_aux
@@ -45,29 +39,12 @@ import CerbND
 import SpecLab.ListAppend
 import SpecLab.ListAppendHarness
 import SpecLab.ListAppendCore
-import RelSem.Threaded
 import SpecLab.DivModFiles
 
 set_option autoImplicit false
 
--- Arc-18 C4 (R6 homing): the homed threaded statement vocabulary —
--- exactly these names are gate-allowlisted (see SpecLab/DivModFiles.lean).
-open RelSem.Cerb (HarnessRunsToThr specifiedInt initial_driver_state_threaded)
-
-
 namespace SpecLab
 
-/-! (2026-08-27 KILL-LIST EXECUTION, operator-ratified: the finite
-    sample-∀ / concrete statement Prop defs of this rung — the
-    `*Sample*`/`*Plant*Claim`/`*Leak*` family with their pinned
-    sample sets and the sample bridges — are DELETED: quantification
-    by membership in a closed literal list is enumeration by
-    construction, and their planned proof (the exec-equation
-    campaign) is CANCELLED. The pure models, codec laws, the
-    `model_forall_iff_stream_forall` bridges, the `fileOfStream_
-    encode` program-term equalities, the family-∀ TARGET statements,
-    and the file terms (test-lane data) all STAY. Record:
-    lean_frontend/docs/2026-08-27_kill-list-execution.md.) -/
 namespace ListAppend
 
 open SpecLab.ListAppendCore
@@ -199,25 +176,6 @@ def appendFileOfStream (s : Stream) : file core_run_annotation :=
   | some (m, []) => appendFileOf m
   | _ => appendI12File 0 0 0 0 0 0 0 0 0 0 0 0
 
-/-! ## The R3 exec statements (fuel opsem only; `HarnessRunsTo` is
-    the R1 statement shape, reused verbatim from SpecLab.DivModFiles) -/
-
-/-! ## THE LEAK CONJUNCT (exec-level, live this rung) -/
-
-/-- Final-allocation-count observable: every outcome of the
-production runner leaves exactly `n` allocations in the final
-memory state's allocation map. A single scalar fact about the final
-state — no contents/shape vocabulary (the template note's sanctioned
-leak form). -/
-def HarnessFinalAllocs (seed : Nat) (f : file core_run_annotation)
-    (n : Nat) : Prop :=
-  ∀ (out : nd_status driver_result driver_error driver_state)
-    (tr : List String) (st' : driver_state),
-    (out, tr, st') ∈
-      CerbND.runND (drive f.tagDefs false f ["cmdname"])
-        (initial_driver_state_threaded seed f CerbFS.fs_initial_state) →
-    st'.layout_state.allocations.size = n
-
 /-- The driver's own baseline, DISCOVERED EXECUTABLY at S3 and pinned
 here: exactly 1 allocation — the driver's ERRNO object (Driver.lean
 drive: "allocating and initialising errno", never freed by design).
@@ -227,18 +185,6 @@ arm never fires. The gate exe (SLUnit.ListGateTest) re-checks this
 number on every run — drift here means the driver's startup footprint
 changed. -/
 def driverBaseline : Nat := 1
-
-/-! ## The file-level bridge (kernel-checked): the stream face and
-    the model face build THE SAME program — through the full two-list
-    codec -/
-
-/-- On (2,1)-length in-range models, the stream-indexed file at the
-encoded stream IS the model-indexed file. -/
-theorem appendFileOfStream_encode (m : Input) (h : Wf m) :
-    appendFileOfStream (encodeInput m) = appendFileOf m := by
-  unfold appendFileOfStream
-  rw [show encodeInput m = encodeInput m ++ [] by simp,
-    decode_encode_input m h []]
 
 end ListAppend
 end SpecLab

@@ -41,9 +41,7 @@ self-delimiting; then the path as u8(count) ++ one 0/1 byte per step.
 Observation = the post-rotation tree re-encoded with the SAME tree
 codec (one wire vocabulary).
 
-This file is STATEMENT SURFACE (scanned by
-scripts/check_speclab_statements.sh): computable pure functions +
-first-order data only.
+House style: computable pure functions + first-order data only.
 -/
 
 import SpecLab.Codec

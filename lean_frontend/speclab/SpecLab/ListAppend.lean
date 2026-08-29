@@ -56,9 +56,7 @@ SAME array codec — `expectedBytes = encodeResult (modelFn m)` with
 `encodeResult = the list codec` (observation layout = codec layout,
 one vocabulary).
 
-This file is STATEMENT SURFACE (scanned by
-scripts/check_speclab_statements.sh): computable pure functions +
-first-order data only.
+House style: computable pure functions + first-order data only.
 -/
 
 import SpecLab.Codec
@@ -378,8 +376,7 @@ harness allocates one node per input element and its teardown walk
 frees one node per RESULT element; for the healthy target these
 counts agree (append REUSES every node: nothing to leak, nothing to
 double-free). The exec-level twin (final allocation map at the
-driver's baseline) is stated in SpecLab/ListAppendFiles.lean and
-checked executably by the gate exe. -/
+driver's baseline) is checked executably by the gate exe. -/
 theorem alloc_free_balance (m : Input) :
     m.xs.length + m.ys.length = (modelFn m).length := by
   simp [modelFn]

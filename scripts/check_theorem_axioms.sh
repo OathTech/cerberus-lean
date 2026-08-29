@@ -25,10 +25,7 @@
 #      still binds native/md5.c cerb_force_thunk — re-verified by
 #      test/Unit/FreshIntTest.lean testDigestGlobal.
 # Neither constant can appear in ANY axiom cone anymore (opaque
-# definitions are not axioms); the in-build gate in
-# relsem/RelSem/Audit.lean additionally asserts the AXIOM-FORM ABSENCE
-# (either name existing as an axiom fails the build — no sanctioned
-# path back without deliberate re-registration).
+# definitions are not axioms).
 # A cheap CENSUS below counts '^axiom' across the hand-written .lean
 # files and fails if the count differs from 0 (fail-closed: any new
 # axiom must be consciously registered here). sorryAx remains forbidden
@@ -36,14 +33,10 @@
 # 2026-08-19_arc5-results.md, 2026-08-20_arc7-results.md,
 # 2026-08-25_arc17-s2b-axiom-endgame.md (the deletion).
 #
-# SCOPE COMPANION (arc-7): the RelSem/proof-layer cones (slate theorems
-# T1-T4, adequacy, the coupling) are NOT probed here — they are covered
-# by the IN-BUILD audit lean_frontend/relsem/RelSem/Audit.lean (golean
-# pattern: exhaustive sweep + exact #guard_msgs pins, build-failing,
-# runs on plain `lake build` via defaultTargets) plus the in-build
-# statement-TCB gate in the same file. This script's probes remain the
-# generated-exemplar + driver2 legs, and its D14 grep leg scans
-# lean_frontend/relsem/ (below).
+# (2026-08-31 semantics-first split: the proof packages and their
+# in-build audit gates left with the reasoning layer — this script's
+# probes are the generated-exemplar + driver2 legs, and its D14 grep
+# leg scans lean_frontend/test + lean_frontend/relsemcore.)
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -194,11 +187,10 @@ echo "check_theorem_axioms: generated-tree census OK ($GEN_SCANNED files: 0 axio
 # ---------------------------------------------------------------------------
 # D14 ban (arc-6): non-kernel proof methods (native_decide / bv_decide).
 # Two legs, both fail-closed:
-#   * grep leg (here): the banned tactics may not occur in the test/proof
-#     sources — lean_frontend/test/**, lean_frontend/relsem/** (if that
-#     tree exists on this branch), and the LemLib package's
-#     lean-lib/LemLibTest.lean (the copy the build actually compiles).
-#     Mandatory paths missing = FAIL, not skip.
+#   * grep leg (here): the banned tactics may not occur in the test
+#     sources — lean_frontend/test/**, lean_frontend/relsemcore/**,
+#     and the LemLib package's lean-lib/LemLibTest.lean (the copy the
+#     build actually compiles). Mandatory paths missing = FAIL, not skip.
 #   * axiom leg (with the cone probes below): Lean.ofReduceBool /
 #     Lean.ofReduceNat — the axioms those tactics introduce — are
 #     ALWAYS-FATAL in every probed cone, alongside sorryAx.
@@ -210,11 +202,7 @@ if [[ ! -d "$D14_ROOT/lean_frontend/test" ]]; then
   exit 1
 fi
 D14_SCAN_PATHS+=("$D14_ROOT/lean_frontend/test")
-# relsem/ is optional per-branch; scan it iff present (absence is not a skip
-# of a mandatory path — the tree simply doesn't exist on this branch).
-if [[ -d "$D14_ROOT/lean_frontend/relsem" ]]; then
-  D14_SCAN_PATHS+=("$D14_ROOT/lean_frontend/relsem")
-fi
+D14_SCAN_PATHS+=("$D14_ROOT/lean_frontend/relsemcore")
 D14_LEMLIB_TEST="$D14_ROOT/lean_frontend/.lake/packages/LemLib/lean-lib/LemLibTest.lean"
 if [[ ! -f "$D14_LEMLIB_TEST" ]]; then
   echo "check_theorem_axioms: FAIL — D14 grep-ban: $D14_LEMLIB_TEST missing (fail-closed)"

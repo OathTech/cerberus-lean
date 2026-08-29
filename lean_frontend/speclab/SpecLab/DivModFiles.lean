@@ -1,6 +1,6 @@
 /-
 SpecLab.DivModFiles — arc-15 S1: the divmod i8 kernel-instance FILE
-TERMS and the R1 exec-level STATEMENTS.
+TERMS (differential-lane data).
 
 Assembly follows the arc-7 T1File pattern (the relsem package's
 T1File module, attributed): pinned parsed declarations (SpecLab/DivModCore.lean,
@@ -17,46 +17,19 @@ generated module, pins `mainParamDecl` back to all four dumps, and
 runs the assembled files through `drive` at the pinned verdicts
 (0/0/0/0 healthy, 1 plant) — plus the .c twins run through BOTH
 pipelines by scripts/test_speclab_divmod.sh.
-
-STATEMENT DISCIPLINE: this file is statement surface (gate-scanned).
-Everything below is fuel-opsem vocabulary only: the generated `drive`
-+ `CerbND.runND` + pinned first-order data. No relational/proof-layer
-names.
 -/
 
 import Core_run_aux
 import Driver
 import CerbND
-import RelSem.Threaded
 import SpecLab.DivMod
 import SpecLab.DivModHarness
 import SpecLab.DivModCore
 
 set_option autoImplicit false
 
--- Arc-18 C4 (R6 homing): the threaded statement vocabulary lives
--- SEMANTICS-SIDE (relsemcore …/Threaded.lean — the exec-facing
--- RelSemCore lib of the root package, NOT the proof package). This
--- `open` brings exactly the three homed statement names; the
--- statement gates (scripts/check_speclab_statements.sh + the in-build
--- SpecLabAudit walk) allowlist exactly these — any other proof-layer-rooted
--- name remains banned. Provenance: the blessed arc-18 charter C4 +
--- contracts §6 R6 ([USER 2026-08-25] charter blessing).
-open RelSem.Cerb (HarnessRunsToThr specifiedInt initial_driver_state_threaded)
-
 namespace SpecLab
 
-/-! (2026-08-27 KILL-LIST EXECUTION, operator-ratified: the finite
-    sample-∀ / concrete statement Prop defs of this rung — the
-    `*Sample*`/`*Plant*Claim`/`*Leak*` family with their pinned
-    sample sets and the sample bridges — are DELETED: quantification
-    by membership in a closed literal list is enumeration by
-    construction, and their planned proof (the exec-equation
-    campaign) is CANCELLED. The pure models, codec laws, the
-    `model_forall_iff_stream_forall` bridges, the `fileOfStream_
-    encode` program-term equalities, the family-∀ TARGET statements,
-    and the file terms (test-lane data) all STAY. Record:
-    lean_frontend/docs/2026-08-27_kill-list-execution.md.) -/
 namespace DivMod
 
 open SpecLab.DivModCore
@@ -147,46 +120,6 @@ def divmodI8FileOfStream (s : Stream) : file core_run_annotation :=
     divmodI8File (byteToInt c0) (byteToInt c1)
       (byteToInt e0) (byteToInt e1) (byteToInt e2) (byteToInt e3)
   | _, _ => divmodI8File 0 1 0 0 0 0
-
-/-! ## The R1 exec statements (fuel opsem only)
-
-    THREADED at arc-18 C4: the exec headline shape is the homed
-    whole-program face `HarnessRunsToThr`
-    (relsemcore …/Threaded.lean — the ambient `HarnessRunsTo`
-    that lived here, arc-15 S1..arc-18 C3b, is REPLACED, not aliased:
-    an alias would re-import the ambient initial state's
-    `runEffectful` cone, which this threading removes). `specifiedInt`
-    moved with it (one definition, one home). Every statement takes
-    the fresh-symbol supply SEED as an explicit parameter — the
-    ambient originals are the images at the ambient draw
-    (`initial_driver_state_eq_threaded_ambient`). The statements
-    deliberately do NOT ∀-quantify the seed: unrestricted ∀-seed
-    claims are false for some program shapes (the arc-16 S4 T4
-    hash-collision finding), and these statements' healthy faces are
-    executable-validated, not yet kernel-proved — ∀-seed closure
-    arrives only with proof (the family-∀ upgrades). -/
-
-/-! (`DivModI8FamilyStatement` — the R1/R5-era family-∀ TARGET —
-    DELETED at V0 2026-08-27, kill basket (c): SUPERSEDED by the
-    frozen-corpus statement slate (docs/2026-08-27_target-corpus.md;
-    registered V0 targets in relsem). The codec/model/bridge layer
-    below stays — it is the splice machinery the corpus memory-input
-    rows consume. Record: docs/2026-08-27_v0-statements-and-ban.md.) -/
-
-/-! ## The file-level bridge (kernel-checked): the stream face and
-    the model face build THE SAME program -/
-
-/-- On well-formed inputs, the stream-indexed file at the encoded
-stream IS the model-indexed file (`decode ∘ encode = id` at the file
-level — the i8 analogue of `model_forall_iff_stream_forall`'s
-load-bearing step). -/
-theorem fileOfStream_encode (m : Input) (h : WfI8 m) :
-    divmodI8FileOfStream (encodeInputI8 m) = divmodI8FileOf m := by
-  obtain ⟨hx1, hx2, hy1, hy2, hy0⟩ := h
-  simp only [divmodI8FileOfStream, encodeInputI8, expectedOfStreamI8,
-    decodeInputI8, ofByteI8_toByteI8 m.x hx1 hx2,
-    ofByteI8_toByteI8 m.y hy1 hy2, expectedBytesI8, toBytesI16,
-    List.cons_append, List.nil_append, divmodI8FileOf]
 
 end DivMod
 end SpecLab

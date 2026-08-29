@@ -28,9 +28,6 @@
 #       TARGET function (not just expected[]), confirm the
 #       differential goes red and the theorem becomes unprovable.
 #
-# Also runs scripts/check_speclab_statements.sh (the statement-TCB
-# grep extension) up front — fail-closed.
-#
 # Exit: 0 = agreement + expected verdict (+ gate OK); 1 = any failure.
 # NOTE: no `set -e` — exit codes are data here (house pattern).
 
@@ -42,9 +39,6 @@ RUNTIME_DIR="$PROJECT_ROOT/_build/install/default"
 SPECLAB_TEST_BIN="$PROJECT_ROOT/lean_frontend/speclab/.lake/build/bin/speclab-test"
 
 fail() { echo "test_speclab: FAIL — $*" >&2; exit 1; }
-
-# ---- gate: statement-TCB grep extension (fail-closed) ---------------
-"$SCRIPT_DIR/check_speclab_statements.sh" || fail "statement gate red"
 
 # ---- resolve mode ---------------------------------------------------
 MODE="file"

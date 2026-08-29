@@ -51,9 +51,7 @@ switch (12/8/2/0). Both CN postconditions' functional content is
 DEFINITIONAL on the model (`swap_post`, `lookup_is_model` — the
 fourth and fifth collapse datapoints, proof register S5).
 
-This file is STATEMENT SURFACE (scanned by
-scripts/check_speclab_statements.sh): computable pure functions +
-first-order data only.
+House style: computable pure functions + first-order data only.
 -/
 
 import SpecLab.Codec

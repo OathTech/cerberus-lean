@@ -1,20 +1,14 @@
 /-
-  RelSem.Call — arc-7 S3 (2026-08-20): THE SYMBOLIC-ARGUMENT HARNESS.
+  RelSem.Call — THE FUNCTION-CALL ENTRY POINT (born arc-7 S3,
+  2026-08-20).
 
-  The verification slate's quantification vehicle (charter
-  docs/2026-08-19_arc7-layer2-charter.md, "Verification-target slate",
-  operator ruling (1): theorems are QUANTIFIED over all possible inputs
-  to the function). The slate statement template
-
-    ∀ args, P args → every outcome of run(compile(f), inject args)
-                      is Specified (s args)
-
-  needs a Core-level function-call entry point: given a compiled Core
-  file and a designated function `f`, an initial configuration that
-  calls `f` with caller-supplied Core VALUES as arguments. Lean-level
-  universal quantification then enters by quantifying the `args` list
-  (e.g. `∀ x : Int, … callConfig … [intValue x] …`) — the arguments are
-  data of the statement, never constants of the program.
+  Given a compiled Core file and a designated function `f`, `callND`
+  builds the driver computation that calls `f` with caller-supplied
+  Core VALUES as arguments. This is the engine behind the driver
+  executable's `--call <f> [--call-args <ints>]` mode (Main.lean runs
+  `CerbND.runND` on this same `callND` — one artifact), which the
+  differential test lanes use to exercise individual functions at
+  concrete argument points (scripts/test_verify.sh).
 
   DESIGN ([AGENT:S3], the drive-generalization):
   * `callND` mirrors the generated `drive` (Driver.lean:500) exactly,
@@ -35,21 +29,11 @@
     bound to the injected value directly (Core-level `fun`s /
     Inner_arg-style params). Fidelity note: the call-site `conv_int`
     range conversion is NOT reproduced — an injected integer must fit
-    the parameter type, which is exactly the slate's range
-    precondition (`P args`); `memValueFromValue` returning `none`
+    the parameter type (out-of-range injections are the caller's
+    responsibility); `memValueFromValue` returning `none`
     (ill-typed value) is an explicit `kill`, never a silent coercion.
-  * PARAMETRICITY: the harness produces a `DriveConfig` — the `Config`
-    of THE sequential `ExecModel` instance (`seqModel`,
-    RelSem/Cerberus.lean) — and every statement shape below speaks
-    through the interface (`seqModel.Adequate`/`.UBFree`); Layer 3
-    consumes `callConfig` as an ExecModel configuration, never the
-    driver types directly. Nothing here is driver-executable-specific:
-    Main.lean's `--call` mode runs `CerbND.runND` on this same `callND`
-    (one artifact, arc-7 S2 doctrine).
 
-  House rules: no sorry, no axioms declared here (the generated
-  substrate's declared boundary enters through the quoted code);
-  no Iris imports. Under the in-build audit (RelSem/Audit.lean).
+  House rules: no sorry, no axioms.
 -/
 
 import Driver
@@ -67,11 +51,10 @@ open Lem_Basic_classes (ordCompare)
 namespace RelSem
 namespace Cerb
 
-/-! ## Argument injection helpers (the Lean-∀ → Core-value boundary) -/
+/-! ## Argument injection helpers (the Lean-value → Core-value boundary) -/
 
 /-- A C `int`-shaped Core argument value: the loaded specified integer
-    carrying `n`. This is the injection point for integer-typed
-    universally-quantified arguments (`∀ n : Int, … [intValue n] …`). -/
+    carrying `n` — the injection point for integer arguments. -/
 def intValue (n : Int) : value :=
   Vloaded (LVspecified (OVinteger (CerbMem.integerIval n)))
 
@@ -124,8 +107,7 @@ def injectArgs (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
     nd_return ((psym, cval) :: rest)))
   | _, _, _ => kill (Other (DErr_other "callND: argument count mismatch"))
 
-/-! ## The harness computation, in named stages (each stage a small
-    def: proof units for the S4/S5 walk stay combinator-sized) -/
+/-! ## The call computation, in named stages -/
 
 /-- Stage: resolve the designated name to its unique function symbol
     (no match / ambiguity are explicit `kill`s, never silent picks). -/
@@ -211,7 +193,7 @@ def callFinish (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
     | _ => kill (Other (DErr_other
         "callND: not exactly one thread after globals")))
 
-/-- THE SYMBOLIC-ARGUMENT HARNESS at the ND-computation level: run the
+/-- THE FUNCTION-CALL ENTRY POINT at the ND-computation level: run the
     globals, resolve `fname`, inject `args` per the caller protocol,
     set thread 0's arena to the designated function's body with the
     parameters bound, run the driver loop, finalize. Structure is
@@ -232,105 +214,5 @@ def callND (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
   nd_bind (injectArgs tagDefs tid0 pb.1 ptys args)
     (fun (bound : List (sym × value)) =>
   callFinish tagDefs tid0 fsym pb.2 bound))))))
-
-/-- THE HARNESS CONFIGURATION — the `initConfig` generalization the
-    slate quantifies over: the initial `seqModel` configuration whose
-    run calls `fname` on `args`. Universally-quantified Lean values
-    enter as `args` entries (e.g. `[intValue x]` under `∀ x`). -/
-def callConfig (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
-    (file1 : file core_run_annotation) (fname : String)
-    (args : List value) (fs : CerbFS.FsState) : DriveConfig :=
-  ⟨.running (callND tagDefs file1 fname args),
-   initial_driver_state file1 fs⟩
-
-/-! ## Reachability + adequacy corollaries at the harness configuration
-    (shapes [AGENT:S3] — the callConfig-specialized plumbing S5's
-    adequacy discharge consumes; all proved, all through the interface). -/
-
-/-- Relation-level reachability of a result from a harness call (proof
-    infrastructure — never a headline statement, statement-TCB
-    doctrine as for `DriveReaches`). -/
-def CallReaches (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
-    (file1 : file core_run_annotation) (fname : String)
-    (args : List value) (fs : CerbFS.FsState)
-    (r : driver_result) (st' : driver_state) : Prop :=
-  DSteps (callConfig tagDefs file1 fname args fs) ⟨.done (.value r), st'⟩
-
-/-- Model-parametric adequacy of a harness call: every observable
-    behavior of the call configuration satisfies `spec`. THE slate
-    statements are instances of this shape (with `spec` pinning the
-    `Specified` result and `¬ isUB`). -/
-def CallAdequate (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
-    (file1 : file core_run_annotation) (fname : String)
-    (args : List value) (fs : CerbFS.FsState)
-    (spec : DriveBehavior → Prop) : Prop :=
-  seqModel.Adequate (callConfig tagDefs file1 fname args fs) spec
-
-/-- Model-parametric UB-freedom of a harness call. -/
-def CallUBFree (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
-    (file1 : file core_run_annotation) (fname : String)
-    (args : List value) (fs : CerbFS.FsState) : Prop :=
-  seqModel.UBFree (callConfig tagDefs file1 fname args fs)
-
-/-! ## The CerbND-shaped headline form (statement-TCB: fuel opsem only) -/
-
-/-- HEADLINE SHAPE for a harness call (the `HarnessAdequate` analogue):
-    quantifies the production runner's outcome set only — no Iris, no
-    `Step`, no `seqModel`. The slate theorems' statements are instances
-    of this with `spec r` = "r's value is the specified image of the
-    quantified arguments". -/
-def CallHarnessAdequate
-    (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
-    (file1 : file core_run_annotation) (fname : String)
-    (args : List value) (fs : CerbFS.FsState)
-    (spec : driver_result → Prop) : Prop :=
-  ∀ (out : nd_status driver_result driver_error driver_state)
-    (tr : List String) (st' : driver_state),
-    (out, tr, st') ∈
-      CerbND.runND (callND tagDefs file1 fname args)
-        (initial_driver_state file1 fs) →
-    ∃ r : driver_result, out = Active r ∧ spec r
-
-/-- Status-injection inversion for the discharge below. -/
-theorem ofStatus_value_inv {A E S : Type}
-    {out : nd_status A E S} {r : A}
-    (h : Outcome.ofStatus out = Outcome.value r) : out = Active r := by
-  cases out with
-  | Active a => injection h with h; exact h ▸ rfl
-  | Killed st k => cases h
-
-/-- CerbND-shaped UB-FREEDOM headline (arc-7 S5c, audit-1 F2): no
-    outcome the production runner enumerates for the harness call is an
-    `Undef0` kill. This is the statement-TCB twin of `CallUBFree`
-    (which is `seqModel.UBFree` — a relational-layer object): the slate
-    `T?_ubFree` theorems STATE this form, so their statements mention
-    the fuel opsem only; the seqModel form remains the proof route's
-    intermediate (WP ⇒ `CallUBFree` ⇒ this, `callHarnessUBFree_of_ubFree`). -/
-def CallHarnessUBFree
-    (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
-    (file1 : file core_run_annotation) (fname : String)
-    (args : List value) (fs : CerbFS.FsState) : Prop :=
-  ∀ (out : nd_status driver_result driver_error driver_state)
-    (tr : List String) (st' : driver_state),
-    (out, tr, st') ∈
-      CerbND.runND (callND tagDefs file1 fname args)
-        (initial_driver_state file1 fs) →
-    ∀ (stk : driver_state) (loc : CerbLocation.Loc)
-      (ubs : List undefined_behaviour),
-      out ≠ Killed stk (Undef0 loc ubs)
-
-/-! (The nine ambient harness-adequacy bridge theorems that lived
-    here — callReaches, callOutcomes_sound, callAdequate_of_reach,
-    callHarnessAdequate_of_adequate, callHarnessUBFree_of_ubFree,
-    callAdequate_of_app_active, callUBFree_of_app_active,
-    callHarnessUBFree_of_app_active, callHarnessAdequate_of_app_active
-    — were DELETED at the 2026-08-27 kill-list execution: all were
-    `runEffectful` carriers over the ambient `initial_driver_state`,
-    serving only the deleted ambient theorem family. The DEFS
-    (callND, callConfig, CallReaches, CallAdequate, CallUBFree,
-    CallHarnessAdequate, CallHarnessUBFree) and the pure lemma
-    `ofStatus_value_inv` stay: they are the statement vocabulary the
-    threaded faces (relsemcore/RelSem/Threaded.lean) quote.) -/
-
 end Cerb
 end RelSem
