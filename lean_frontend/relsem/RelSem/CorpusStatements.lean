@@ -48,15 +48,18 @@ def p01Spec (x : Int) (r : driver_result) : Prop :=
   r.dres_core_value = intValue (max x 0)
 
 /-- **P01 (clamp)** — ∀ x ∈ intRange: outcomes = {Specified (max x 0)}.
-    HONESTY LABEL: UNPROVED (first provable after V2 — the first
-    symbolic data-dependent branch; the plan's defining checkpoint). -/
+    HONESTY LABEL: PROVED (V2 2026-08-28 — RelSem.P01.p01_proved,
+    RelSem/P01Proof.lean; the first symbolic data-dependent branch,
+    the plan's defining checkpoint; cone exactly the classical trio,
+    pinned in-build). -/
 def P01Statement : Prop :=
   CorpusEnvHyp →
   ∀ (x : Int), intRange x →
     CallHarnessAdequateCns p01Prior p01File.tagDefs p01File "clamp0"
       [intValue x] corpusFs (p01Spec x)
 
-/-- P01 UB-freedom. HONESTY LABEL: UNPROVED. -/
+/-- P01 UB-freedom. HONESTY LABEL: PROVED (V2 2026-08-28 —
+    RelSem.P01.p01_ubfree_proved; trio cone, pinned in-build). -/
 def P01UBFreeStatement : Prop :=
   CorpusEnvHyp →
   ∀ (x : Int), intRange x →

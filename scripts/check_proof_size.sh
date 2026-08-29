@@ -177,4 +177,16 @@ if ! (cd "$CORPUS_DIR" 2>/dev/null && sha256sum -c "$SCRIPT_DIR/target_corpus.sh
   echo "check_proof_size: FAIL — TARGET CORPUS FROZEN: hash mismatch vs scripts/target_corpus.sha256 (corpus changes require operator sign-off; see lean_frontend/corpus/README.md)"
   exit 1
 fi
-echo "check_proof_size: target-corpus freeze OK (16 files match the pinned manifest)"
+# Addition-blindness closure (pre-merge audit 2026-08-29, observation (b)):
+# `sha256sum -c` catches modification/deletion of the 16 pinned files but NOT
+# a NEW file added to corpus/. The directory's name set must be EXACTLY the
+# manifest's files + README.md — anything extra (including dotfiles and
+# subdirectories, hence `ls -A`) is the same FROZEN failure.
+expected_names=$( { awk '{print $2}' "$SCRIPT_DIR/target_corpus.sha256"; echo "README.md"; } | LC_ALL=C sort)
+actual_names=$(cd "$CORPUS_DIR" && ls -A | LC_ALL=C sort)
+if [[ "$expected_names" != "$actual_names" ]]; then
+  echo "check_proof_size: FAIL — TARGET CORPUS FROZEN: corpus/ name set differs from scripts/target_corpus.sha256 + README.md (corpus changes require operator sign-off; see lean_frontend/corpus/README.md)"
+  diff <(echo "$expected_names") <(echo "$actual_names") | sed 's/^/check_proof_size:   /'
+  exit 1
+fi
+echo "check_proof_size: target-corpus freeze OK (16 files match the pinned manifest; name set exact)"

@@ -138,35 +138,58 @@ concrete-input theorem (the former T6/T7 pairs and the 22-theorem R6
 corpus slate) together with the superseded ambient family; there is
 deliberately NO concrete-theorem inventory to report.
 
-**THE STATEMENT SLATE IS HONEST-UNPROVED (V0, 2026-08-27 — record
-`docs/2026-08-27_v0-statements-and-ban.md`).** The repository holds
-ZERO proved flagship theorems — ratified and intentional: the former
-T1–T5 threaded proofs rode the whole-run walk/mint machinery
-(assessment class K-2b — per-round kernel equations of concrete
-executions wearing quantified statements), and the operator-ratified
-V0 kill basket deleted the machinery AND the proofs together. What
-stands is the REGISTERED TARGET SLATE, every row honest-unproved and
-statement-gate-registered (fuel-opsem-only + the concrete-input ban;
-31 rows):
+**PROVED — the flagship slate (truth pass 2026-08-29, pre-merge
+audit of arc/segment-ladder).** The V0 slate (restated 2026-08-27 in
+the CONSISTENCY-FRESHNESS house shape — quantification over
+consistent executions, `relsemcore/RelSem/Threaded.lean`
+§CONSISTENCY; record `docs/2026-08-27_v0-statements-and-ban.md`) now
+carries PROVED kernel theorems at frozen, statement-gate-registered
+∀-input statements (32 registered slate rows; fuel-opsem-only + the
+concrete-input ban). Every proved cone is pinned in-build
+(`relsem/RelSem/Audit.lean`) to exactly
+`{propext, Classical.choice, Quot.sound}`:
 
-- **T1–T5** (`tests/verify/t1..t5`): the five KEEP anchors, restated
-  at V0 in the CONSISTENCY-FRESHNESS house shape — quantification
-  over consistent executions (non-capturing draw windows against the
-  pinned prior vocabulary; `relsemcore/RelSem/Threaded.lean`
-  §CONSISTENCY) replaces the ∀-seed + SeedApart-guard shape. Headline
-  + UB-freedom statement defs per fixture
-  (`relsem/RelSem/T?Threaded.lean`, `T5.lean`).
-- **The frozen target corpus, 14 of 15 rows**
-  (`docs/2026-08-27_target-corpus.md`; `relsem/RelSem/Corpus*.lean`):
-  P01/P02/P03/P09/P10/P11/P12 at the call-boundary face (headline +
-  UB-freedom each), P04/P05/P06/P07/P08/P14/P15 at the whole-program
-  family face (`∀ m, wf m → HarnessRunsToCns prior (fileOf m) 0` —
-  the parametric splice families). P13 (cell_alloc) is an OPEN
+- **T1 (id)** — `t1_threaded_proved` (V2, 2026-08-28). No UB-freedom
+  twin theorem exists yet; that statement row stands unproved.
+- **T2 (add)** — `t2_threaded_proved` + `t2_ubfree_proved` (V2).
+- **T3 (roundtrip)** — `t3_threaded_proved` + `t3_ubfree_proved`
+  (V2).
+- **The frozen target corpus, 2 of 15 programs**: **P01 (clamp)** —
+  `p01_proved` + `p01_ubfree_proved` (V2 — the first symbolic
+  data-dependent branch); **P02 (sat_add)** — `p02_proved` +
+  `p02_ubfree_proved` (PERF-1).
+- **m1 (sgn)** — `m1_proved` (V3a2, 2026-08-29): the V3a PERF-2 exit
+  specimen, slate-registered at the 2026-08-29 spot-audit (no
+  UB-freedom twin is defined for m1).
+
+(Derived tally: 9 proved theorems over the T/corpus rows + the m1
+specimen.) The proof route is the verifier, never concrete
+execution: caller protocol + the WP/assertion layer, body walks
+discharged by minted instances of once-proved construct
+characterizations, landed on the fuel-opsem statements through
+adequacy (records: `docs/2026-08-28_v1-assertion-layer.md`, the
+V2/V2b/PERF records, `docs/2026-08-29_v3a-loops-mechC.md`,
+`docs/2026-08-29_v3a2-loop-theorems.md`).
+
+**Every other slate row is HONEST-UNPROVED** — a registered target
+under the statement gate, not a claim:
+
+- **T4/T5**: statements stand (`relsem/RelSem/T4Threaded.lean`,
+  `T5.lean`); proofs PARKED at the consistency-conditioned bridge
+  gap (the v3a2 record §4): the frozen Cns faces need a
+  guarded-Thr→Cns adequacy transport — the unconditional ∀-seed WPs
+  are genuinely FALSE at capturing seeds (the arc-16 T4
+  hash-collision diagnosis, reproduced on T5's critical path). The
+  draw-bound route (A: window-apartness) is the ratified design.
+- **The remaining corpus rows**: P03/P09/P10/P11/P12 at the
+  call-boundary face (headline + UB-freedom each),
+  P04/P05/P06/P07/P08/P14/P15 at the whole-program family face
+  (`∀ m, wf m → HarnessRunsToCns prior (fileOf m) 0` — the
+  parametric splice families). P13 (cell_alloc) remains an OPEN
   OPERATOR FINDING (malloc linkage at the statement layer; V0 record
-  §findings). ZERO of these are provable today — the corpus defines
-  the V1–V5 build.
+  §findings).
 
-PROVED and standing (kernel theorems, cones pinned): the
+ALSO PROVED and standing (kernel theorems, cones pinned): the
 consistency layer's ANTI-VACUITY METATHEOREM
 (`freshDrawsOf_nodup` — monotone ⇒ distinct;
 `consistentRun_of_supply_le` — below-the-vocabulary ⇒ consistent;
@@ -182,9 +205,10 @@ different local's rebind by the frame rule, discharged through
 adequacy; record `docs/2026-08-28_v1-assertion-layer.md`); the
 segment algebra (`Seg.iter`/`while_inv`/`Summary.consume`), the
 runNDFuel soundness layer, and the spec-lab model/codec lemma
-stock. The V0 no-instance gap is closed at the DEMO grade by
+stock. The V0 no-instance gap is CLOSED: first at the demo grade by
 `demo_adequate` (an end-to-end adequacy instance over a real
-fragment); the harness-program instances return with V2's rules.
+fragment), then by the flagship harness-program instances above
+(V2 onward, 2026-08-28/29).
 
 **Kernel-checked statement layers for real C functions** (the spec
 lab: division/modulo, `memcpy`, array access, linked-list append,
@@ -258,8 +282,8 @@ TODO.md).
 
 "Boring executable specs in the front, Iris party in the back": proof
 *construction* is unrestricted, so long as every step lands as an
-ordinary kernel-checked declaration. The route a landed theorem
-would take is: **per-construct rules + the WP
+ordinary kernel-checked declaration. The route the landed theorems
+take (§3) is: **per-construct rules + the WP
 layer; adequacy lands the fuel-opsem statement** (V0 NOTE: the
 former whole-run mint route — evaluator-minted per-round equations
 consumed by walks — is DELETED with its theorems; the RoundEval

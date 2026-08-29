@@ -53,14 +53,18 @@ def t1Spec (x : Int) (r : driver_result) : Prop :=
     CONSISTENT outcome of `callND(id, [intValue x])` — any counter
     seed, the execution's own draw window non-capturing against
     `t1Prior` — is `Active r` with `r.dres_core_value = intValue x`.
-    HONESTY LABEL: UNPROVED (V0 target; the proof arrives with the
-    V1 assertion layer + V2 per-construct rules). -/
+    HONESTY LABEL: PROVED (V2 2026-08-28 —
+    RelSem.T1.t1_threaded_proved, RelSem/T1Proof.lean; cone exactly
+    the classical trio, pinned in-build). -/
 def T1ThreadedStatement : Prop :=
   ∀ (x : Int), intRange x →
     CallHarnessAdequateCns t1Prior t1File.tagDefs t1File "id"
       [intValue x] t1Fs (t1Spec x)
 
-/-- The UB-freedom companion. HONESTY LABEL: UNPROVED. -/
+/-- The UB-freedom companion. HONESTY LABEL: UNPROVED (truth pass
+    2026-08-29: unlike T2/T3, no t1 UB-freedom theorem exists — this
+    row is the slate's one remaining un-proved twin at the proved
+    fixtures). -/
 def T1ThreadedUBFreeStatement : Prop :=
   ∀ (x : Int), intRange x →
     CallHarnessUBFreeCns t1Prior t1File.tagDefs t1File "id"

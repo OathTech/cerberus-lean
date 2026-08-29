@@ -45,14 +45,17 @@ def t2Spec (x y : Int) (r : driver_result) : Prop :=
 /-- THE T2 HEADLINE (fuel opsem only): for every in-range x, y with
     in-range sum, every CONSISTENT outcome of
     `callND(add, [intValue x, intValue y])` is `Active (x + y)`,
-    Specified. HONESTY LABEL: UNPROVED (V0 target). -/
+    Specified. HONESTY LABEL: PROVED (V2 2026-08-28 —
+    RelSem.T2.t2_threaded_proved, RelSem/T2Proof.lean; trio cone,
+    pinned in-build). -/
 def T2ThreadedStatement : Prop :=
   ∀ (x y : Int),
     intRange x → intRange y → intRange (x + y) →
     CallHarnessAdequateCns t2Prior t2File.tagDefs t2File "add"
       [intValue x, intValue y] t2Fs (t2Spec x y)
 
-/-- The UB-freedom companion. HONESTY LABEL: UNPROVED. -/
+/-- The UB-freedom companion. HONESTY LABEL: PROVED (V2 2026-08-28 —
+    RelSem.T2.t2_ubfree_proved; trio cone, pinned in-build). -/
 def T2ThreadedUBFreeStatement : Prop :=
   ∀ (x y : Int),
     intRange x → intRange y → intRange (x + y) →

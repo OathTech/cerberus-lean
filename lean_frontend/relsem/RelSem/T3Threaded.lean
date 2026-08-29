@@ -44,13 +44,16 @@ def t3Spec (x : Int) (r : driver_result) : Prop :=
 
 /-- THE T3 HEADLINE (fuel opsem only): for every int-range x, every
     CONSISTENT outcome of `callND(roundtrip, [intValue x])` is
-    `Active x`, Specified. HONESTY LABEL: UNPROVED (V0 target). -/
+    `Active x`, Specified. HONESTY LABEL: PROVED (V2 2026-08-28 —
+    RelSem.T3.t3_threaded_proved, RelSem/T3Proof.lean; trio cone,
+    pinned in-build). -/
 def T3ThreadedStatement : Prop :=
   ∀ (x : Int), intRange x →
     CallHarnessAdequateCns t3Prior t3File.tagDefs t3File "roundtrip"
       [intValue x] t3Fs (t3Spec x)
 
-/-- The UB-freedom companion. HONESTY LABEL: UNPROVED. -/
+/-- The UB-freedom companion. HONESTY LABEL: PROVED (V2 2026-08-28 —
+    RelSem.T3.t3_ubfree_proved; trio cone, pinned in-build). -/
 def T3ThreadedUBFreeStatement : Prop :=
   ∀ (x : Int), intRange x →
     CallHarnessUBFreeCns t3Prior t3File.tagDefs t3File "roundtrip"

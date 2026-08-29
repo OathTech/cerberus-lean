@@ -43,6 +43,10 @@ open Iris Iris.BI Iris.ProgramLogic
 
 /-! ## THE T3 WP -/
 
+-- HEARTBEAT BUMP (REGISTERED): 8000000 vs the walk-file-standard
+-- 2000000 — register entry docs/2026-08-29_v3a2-loop-theorems.md §6;
+-- expected remover: the segment-stepper repricing (the V2b P01
+-- retrofit pattern, commit 62056e7cb).
 set_option maxHeartbeats 8000000 in
 theorem t3_wp (x : Int)
     (hx1 : -2147483648 ≤ x) (hx2 : x ≤ 2147483647)

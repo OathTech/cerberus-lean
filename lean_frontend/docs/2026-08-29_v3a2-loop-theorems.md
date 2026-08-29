@@ -159,3 +159,28 @@ convention). No build over the tripwire (longest single artifact:
 the T5 probe at ~3 min; full relsem package well under). Logs at
 container `.v3a-logs/`; no probe litter in-repo (T5WalkProbe.lean is
 a committed instrument).
+
+## 6. Registered heartbeat bumps (pre-merge audit, 2026-08-29)
+
+[AGENT, closing the pre-merge audit's MINOR-3] Two committed proof
+sites carry `set_option maxHeartbeats 8000000`, above the
+slice-standard walk-file 2000000, and were UNREGISTERED until this
+audit (a doctrine violation: bumps are by-definition defects —
+register entry + expected remover):
+
+- `relsem/RelSem/T2Proof.lean:46` (`t2_wp`) — introduced with the
+  V2 T2 proof (commit `88c363c38`, 2026-08-28).
+- `relsem/RelSem/T3Proof.lean:46` (`t3_wp`) — introduced with the
+  V2 T3 proof (commit `055a1834b`, 2026-08-28).
+
+Both bumps predate this slice (§5's "no raises" line describes the
+V3a2 slice itself and stands). The proofs ride the bumps today —
+they are NOT removed here, only registered.
+
+EXPECTED REMOVER: the segment-stepper repricing. Precedent: the V2b
+P01 retrofit (commit `62056e7cb`, 2026-08-28) removed P01Proof's
+identical 8000000 bump by rerouting the body walk through `seg_run`
+(per-ROUND heartbeat isolation — fresh count per round, walk cost
+scaling with round count, no global raise) and repriced T1. T2/T3's
+WPs still ride the pre-stepper linear round chains; the same
+retrofit removes both bumps.

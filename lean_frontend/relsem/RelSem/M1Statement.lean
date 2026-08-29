@@ -38,7 +38,9 @@ def sgnSpec (x : Int) (r : driver_result) : Prop :=
     ∀ x ∈ intRange, every consistent outcome of callND(sgn, [x]) is
     Specified (sgn x). (The PERF-2 exit's target; a V3a exit
     instrument in the corpus statement SHAPE, not a frozen-corpus
-    row.) -/
+    row.) HONESTY LABEL: PROVED (V3a2 2026-08-29 —
+    RelSem.M1.m1_proved, RelSem/M1Body.lean; trio cone, pinned
+    in-build). -/
 def M1Statement : Prop :=
   CorpusEnvHyp →
   ∀ (x : Int), intRange x →
