@@ -86,6 +86,43 @@ theorem mem_store_block {loc : CerbLocation.Loc} {ty : ctype}
     hbytes, Bool.not_true, Bool.false_eq_true, if_false, if_true,
     reduceIte, Bool.not_false]
 
+/-! ## The mr-spelled allocate block (V3a continuation, item (ii)):
+    `mem_alloc_block` with the identity data (nextAllocId,
+    lastAddress) REROUTED through the memory residual — the walk's
+    packs are open, so the minted create rounds pin these against the
+    context's `mr` component (data), exactly as the caller protocol's
+    k6/k8 blocks do by hand. -/
+
+theorem alloc_block_mr {tid : Nat} {pref : prefix0}
+    {pv : CerbMem.Provenance}
+    {alignN : Int} {ty : ctype} {ls : CerbMem.MemState}
+    {mr : CerbMem.MemState} {sz : Nat} {a : Int}
+    (hmr : { ls with
+               bytemap := Std.TreeMap.empty,
+               allocations := Std.TreeMap.empty } = mr)
+    (hsz : (CerbMem.sizeofCtype ty).max 1 = sz)
+    (haddr : ((CerbMem.alignDown (mr.lastAddress - sz).toNat
+        (alignN.toNat.max 1) : Nat) : Int) = a)
+    (hnz : (a == (0 : Int)) = false) :
+    app (CerbMem.allocateObject tid pref (.IV pv alignN) ty none none)
+        ls
+      = (NDactive (.PV (.Prov_some mr.nextAllocId)
+          (.PVconcrete none a)),
+         CerbMem.writeBytesTo
+           { ls with
+               nextAllocId := mr.nextAllocId + 1,
+               lastAddress := a,
+               allocations := ls.allocations.insert mr.nextAllocId
+                 { base := a, size := sz, ty := some ty,
+                   prefix_ := pref } }
+           a (List.replicate sz
+               { prov := .Prov_none, copyOffset := none,
+                 value := none })) := by
+  have hid : ls.nextAllocId = mr.nextAllocId := by rw [← hmr]
+  have hla : ls.lastAddress = mr.lastAddress := by rw [← hmr]
+  rw [← hid]
+  exact mem_alloc_block hsz (by rw [hla]; exact haddr) hnz
+
 /-- The readonly kind a locking store selects from the allocation's
     prefix (CerbMem.storeM's local `selectRoKind`, top-level —
     mirrors impl_mem.ml:1704-1710 select_ro_kind). -/

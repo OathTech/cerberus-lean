@@ -91,7 +91,18 @@ private partial def buildNotMem (a : Expr) (l : Expr) : MetaM Expr := do
   else if l.isAppOfArity ``List.cons 3 then
     let b := l.getAppArgs[1]!
     let rest := l.getAppArgs[2]!
-    let neP ← mkDecideProof (← mkAppM ``Ne #[a, b])
+    let neTy ← mkAppM ``Ne #[a, b]
+    -- verify the decide FIRST (mkDecideProof does not evaluate; an
+    -- unverified proof at equal keys is the kernel-caught T5 bug)
+    let d ← mkDecide neTy
+    let r ← match Lean.Kernel.whnf (← getEnv) (← getLCtx) d with
+      | .ok r => pure r
+      | .error _ =>
+        throwError "seg_run: freshness decide did not compute"
+    unless r.isConstOf ``Bool.true do
+      throwError "seg_run: freshness REFUTED (the key is present — \
+        rebind class, not a birth):{indentExpr neTy}"
+    let neP ← mkDecideProof neTy
     mkAppM ``RelSem.Seg.not_mem_cons_of #[neP, ← buildNotMem a rest]
   else
     throwError "seg_run: freshness list did not reduce to a \
@@ -111,6 +122,55 @@ private def mkNotMemProof (ty : Expr) : MetaM Expr := do
   let l0 ← withProbeBudget <| reduce args[3]! (explicitOnly := false)
     (skipTypes := true) (skipProofs := true)
   mkExpectedTypeHint (← buildNotMem a l0) ty
+
+private def kwhnf? (e : Expr) : MetaM (Option Expr) := do
+  match Lean.Kernel.whnf (← getEnv) (← getLCtx) e with
+  | .ok r => pure (some r)
+  | .error _ => pure none
+
+/-- Hinted refl at the LHS (the discovery-pin device: the kernel
+    re-checks `lhs ≡ rhs` at declaration add — fail-closed). -/
+private def mkLhsRflHint (lhs rhs : Expr) : MetaM Expr := do
+  mkExpectedTypeHint (← mkEqRefl lhs) (← mkEq lhs rhs)
+
+/-- Deep kernel pin: unify a (possibly mvar-carrying) constructor
+    PATTERN against the kernel normal form of a term, kernel-whnf-ing
+    on demand and descending only where the pattern is concrete
+    (mvar leaves take the kernel form as-is). -/
+private partial def kMatchAssign (pat res : Expr) : MetaM Bool := do
+  let patI ← instantiateMVars pat
+  if patI.isMVar then
+    isDefEq patI res
+  else do
+    let resW ← match ← kwhnf? res with
+      | some r => pure r
+      | none => pure res
+    let pf := patI.getAppFn
+    let rf := resW.getAppFn
+    if pf.isConst && rf.isConst && pf.constName! == rf.constName!
+        && patI.getAppNumArgs == resW.getAppNumArgs then
+      let pas := patI.getAppArgs
+      let ras := resW.getAppArgs
+      for i in [0:pas.size] do
+        unless ← kMatchAssign pas[i]! ras[i]! do return false
+      return true
+    else
+      withProbeBudget (isDefEqGuarded patI resW)
+
+/-- Close a ground-equation premise mvar by the deep kernel pin
+    (certificate: hinted rfl at the LHS). -/
+private def kpinEqPremise (m : Expr) : MetaM Unit := do
+  let ty ← instantiateMVars (← m.mvarId!.getType)
+  let some (_, lhs, rhs) := ty.eq?
+    | throwError "mint: kpin premise is not an equation:{indentExpr ty}"
+  unless ← kMatchAssign rhs lhs do
+    throwError "mint: ground premise did not kernel-pin (sym-carrying \
+      remainder? — supply fallback):{indentExpr ty}"
+  let ty ← instantiateMVars ty
+  let some (_, lhs, rhs) := ty.eq? | unreachable!
+  unless ← isDefEq m (← mkLhsRflHint lhs rhs) do
+    throwError "mint: kpin certificate assignment failed"
+
 
 /-- Close a hypothesis hole from: the premise telescope's locals, the
     outer local context, the memory-residual gadgets, hinted `rfl`. -/
@@ -270,7 +330,9 @@ private def linkConsts : List Name :=
   [``RelSem.Seg.link_ctl, ``RelSem.Seg.link_ctl_env1,
    ``RelSem.Seg.link_ctl_env2, ``RelSem.Seg.link_birth1,
    ``RelSem.Seg.link_birth1_env1, ``RelSem.Seg.link_birth2,
-   ``RelSem.Seg.link_load]
+   ``RelSem.Seg.link_load,
+   ``RelSem.Seg.link_store, ``RelSem.Seg.link_create,
+   ``RelSem.Seg.link_kill, ``RelSem.Seg.link_ctl_sup]
 
 private structure BuiltLink where
   pf : Expr
@@ -342,6 +404,14 @@ private def dispatchPremise (linkC : Name) (pack0 : Expr) (m : MVarId) :
   -- apartness symNum _ ≠ symNum _
   if ty.isAppOf ``Ne then
     if ty.hasExprMVar then return false
+    -- VERIFY the decide before assigning (V3a continuation: MVarId
+    -- .assign is unchecked — an unverified decide-proof at a FALSE
+    -- apartness reached the kernel as an ill-typed term at the T5
+    -- save round; the kernel caught it — this keeps the failure at
+    -- the dispatch, where the link falls through loudly)
+    let d ← mkDecide ty
+    let some r ← kwhnf? d | return false
+    unless r.isConstOf ``Bool.true do return false
     m.assign (← mkDecideProof ty)
     return true
   -- index premises: _[i]? = some (k, v)
@@ -384,6 +454,11 @@ private def dispatchPremise (linkC : Name) (pack0 : Expr) (m : MVarId) :
       let ty' ← instantiateMVars (← m.getType)
       m.assign (← mkRflHint ty')
       return true
+    -- ground equation premises (the memory links' hsz/haddr/hnz
+    -- class): closed on both sides — kernel-pin (V3a continuation)
+    if !ty.hasExprMVar then
+      if (← observing? (kpinEqPremise (Expr.mvar m))).isSome then
+        return true
     return false
   -- control transport ∀ p, ctlOf (famO …) = cO
   let isCtl ← forallTelescope ty fun _ body =>
@@ -718,15 +793,7 @@ private def tryBlock (gf gs td tid : Expr) (ΓE : Expr)
     iteration. -/
 
 
-private def kwhnf? (e : Expr) : MetaM (Option Expr) := do
-  match Lean.Kernel.whnf (← getEnv) (← getLCtx) e with
-  | .ok r => pure (some r)
-  | .error _ => pure none
 
-/-- Hinted refl at the LHS (the discovery-pin device: the kernel
-    re-checks `lhs ≡ rhs` at declaration add — fail-closed). -/
-private def mkLhsRflHint (lhs rhs : Expr) : MetaM Expr := do
-  mkExpectedTypeHint (← mkEqRefl lhs) (← mkEq lhs rhs)
 
 /-- Decompose a term that kernel-computes to
     `Result (Defined z, st')`; returns `(z, st', rebuiltRhs)`. -/
@@ -792,43 +859,7 @@ private def applyLemmaCross (lem : Name) (cellFVars : Array Expr)
     and a sym-carrying remainder (T5's symbolic rets) refuses the
     kernel and falls back loudly. -/
 
-/-- Deep kernel pin: unify a (possibly mvar-carrying) constructor
-    PATTERN against the kernel normal form of a term, kernel-whnf-ing
-    on demand and descending only where the pattern is concrete
-    (mvar leaves take the kernel form as-is). -/
-private partial def kMatchAssign (pat res : Expr) : MetaM Bool := do
-  let patI ← instantiateMVars pat
-  if patI.isMVar then
-    isDefEq patI res
-  else do
-    let resW ← match ← kwhnf? res with
-      | some r => pure r
-      | none => pure res
-    let pf := patI.getAppFn
-    let rf := resW.getAppFn
-    if pf.isConst && rf.isConst && pf.constName! == rf.constName!
-        && patI.getAppNumArgs == resW.getAppNumArgs then
-      let pas := patI.getAppArgs
-      let ras := resW.getAppArgs
-      for i in [0:pas.size] do
-        unless ← kMatchAssign pas[i]! ras[i]! do return false
-      return true
-    else
-      withProbeBudget (isDefEqGuarded patI resW)
 
-/-- Close a ground-equation premise mvar by the deep kernel pin
-    (certificate: hinted rfl at the LHS). -/
-private def kpinEqPremise (m : Expr) : MetaM Unit := do
-  let ty ← instantiateMVars (← m.mvarId!.getType)
-  let some (_, lhs, rhs) := ty.eq?
-    | throwError "mint: kpin premise is not an equation:{indentExpr ty}"
-  unless ← kMatchAssign rhs lhs do
-    throwError "mint: ground premise did not kernel-pin (sym-carrying \
-      remainder? — supply fallback):{indentExpr ty}"
-  let ty ← instantiateMVars ty
-  let some (_, lhs, rhs) := ty.eq? | unreachable!
-  unless ← isDefEq m (← mkLhsRflHint lhs rhs) do
-    throwError "mint: kpin certificate assignment failed"
 
 /-- The Prop-typed premise holes of a telescoped application, in
     declaration order. -/
@@ -1098,6 +1129,119 @@ private partial def chaseAstDeep (e : Expr) (fuel : Nat := 64) :
     else
       return e'
 
+/-- ExceptM-level crossing (V3a continuation — the save/run label
+    machinery): prove `e = rhs` for an `exceptM`-valued computation
+    whose leaves are ground label lookups (kernel-pinned) and
+    env-reading pexpr evals (the `aux2_sym_hit` law at the walk's
+    cell facts). Matcher residuals step by CONGRUENCE on the
+    discriminant (the read is propositional, not defeq). Committed
+    choice; unkeyed heads throw. -/
+private partial def crossExceptM (cellFVars : Array Expr) (e : Expr)
+    (fuel : Nat := 96) : MetaM (Expr × Expr) := do
+  match fuel with
+  | 0 => throwError "mint: exceptM-crossing depth bound exceeded"
+  | fuel + 1 =>
+  let eW ← whnfCore e
+  let fn := eW.getAppFn
+  -- ground leaf: kernel to a Result-headed constructor
+  if !(fn.isConstOf ``except_bind) then
+    if let some r ← kwhnf? eW then
+      if r.isAppOfArity ``exceptM.Result 3 then
+        -- kernel-normalize one level in (the t0 wrapper)
+        let some inner ← kwhnf? r.appArg! | pure ()
+        let r := mkApp r.appFn! ((← kwhnf? r.appArg!).getD r.appArg!)
+        let _ := inner
+        return (r, ← mkLhsRflHint e r)
+  if fn.isConstOf ``except_bind then
+    let args := eW.getAppArgs
+    unless args.size ≥ 2 do
+      throwError "mint: except_bind arity at{indentExpr eW}"
+    let m := args[args.size - 2]!
+    let k := args[args.size - 1]!
+    let (rhs1, pf1) ← crossExceptM cellFVars m fuel
+    let reb := mkAppN fn ((args.set! (args.size - 2) rhs1))
+    let lam ← withLocalDeclD `x (← inferType m) fun x =>
+      mkLambdaFVars #[x] (mkAppN fn (args.set! (args.size - 2) x))
+    let pfC ← mkCongrArg lam pf1
+    let pfC ← mkExpectedTypeHint pfC (← mkEq eW reb)
+    -- force the bind's own reduction at the Result (whnfCore does not
+    -- δ-unfold except_bind — the measured self-loop)
+    let mut rebR ← whnfCore reb
+    if rebR.getAppFn.isConstOf ``except_bind then
+      let some u ← withProbeBudget (Meta.unfoldDefinition? rebR)
+        | throwError "mint: except_bind did not unfold"
+      rebR ← whnfCore u
+    let (rhs2, pf2) ← crossExceptM cellFVars rebR fuel
+    return (rhs2, ← mkEqTrans pfC pf2)
+  if fn.isConst
+      && [``eval_pexpr_aux2, ``eval_pexpr_aux2_lemFuel].contains
+        fn.constName! then
+    -- chase the payload; PEsym crosses by the aux2 sym-hit law
+    let mut pe ← whnfCore eW.getAppArgs.back!
+    let mut peFuel := 12
+    while peFuel > 0 && !pe.isAppOf ``Pexpr do
+      unless pe.getAppFn.isConst do break
+      let some nxt ← withProbeBudget (Meta.unfoldDefinition? pe) | break
+      pe ← whnfCore nxt
+      peFuel := peFuel - 1
+    unless pe.isAppOf ``Pexpr do
+      throwError "mint: exceptM eval payload not a Pexpr ctor"
+    let payload ← whnfCore pe.getAppArgs.back!
+    unless payload.isAppOf ``PEsym do
+      throwError "mint: exceptM eval leaf (payload head \
+        {payload.getAppFn}) — outside the construct set"
+    let ci ← getConstInfo ``RelSem.Kit.aux2_sym_hit
+    let (ms, _, cc) ← forallMetaTelescope ci.type
+    let some (_, lp, rp) := cc.eq?
+      | throwError "mint: aux2_sym_hit shape"
+    unless ← withProbeBudget (isDefEq lp eW) do
+      throwError "mint: aux2_sym_hit does not match:{indentExpr eW}"
+    for m in ms do
+      let m ← instantiateMVars m
+      if m.isMVar then
+        let mty ← instantiateMVars (← m.mvarId!.getType)
+        unless (← inferType mty).isProp do continue
+        let some pf ← mintSolvePremise cellFVars mty
+          | throwError "mint: aux2_sym_hit premise has no source:\
+              {indentExpr mty}"
+        unless ← isDefEq m pf do
+          throwError "mint: aux2_sym_hit premise assignment failed"
+    let pf := mkAppN (mkConst ``RelSem.Kit.aux2_sym_hit
+      (ci.levelParams.map .param)) (← ms.mapM instantiateMVars)
+    let pf ← mkExpectedTypeHint (← instantiateMVars pf)
+      (← mkEq e (← instantiateMVars rp))
+    return (← instantiateMVars rp, pf)
+  if fn.isConst then
+    if let some mi ← Meta.getMatcherInfo? fn.constName! then
+      let args := eW.getAppArgs
+      let start := mi.numParams + 1
+      let mut di : Option Nat := none
+      for i in [start : start + mi.numDiscrs] do
+        if _h : i < args.size then
+          if di.isNone then
+            let dW ← whnfCore args[i]!
+            unless dW.getAppFn.isConstOf ``exceptM.Result do
+              di := some i
+      match di with
+      | some i =>
+        let (rhsD, pfD) ← crossExceptM cellFVars args[i]! fuel
+        let reb := mkAppN fn (args.set! i rhsD)
+        let lam ← withLocalDeclD `x (← inferType args[i]!) fun x =>
+          mkLambdaFVars #[x] (mkAppN fn (args.set! i x))
+        let pfC ← mkCongrArg lam pfD
+        let pfC ← mkExpectedTypeHint pfC (← mkEq eW reb)
+        let (rhs2, pf2) ← crossExceptM cellFVars reb fuel
+        return (rhs2, ← mkEqTrans pfC pf2)
+      | none =>
+        match ← Meta.reduceMatcher? eW with
+        | .reduced nxt => return ← crossExceptM cellFVars nxt fuel
+        | _ => throwError "mint: exceptM matcher stuck:{indentExpr eW}"
+    let some nxt ← withProbeBudget (Meta.unfoldDefinition? eW)
+      | throwError "mint: unkeyed exceptM head {fn} — outside the \
+          construct set"
+    return ← crossExceptM cellFVars nxt fuel
+  throwError "mint: non-constant exceptM head at{indentExpr eW}"
+
 private partial def crossToResult (cellFVars : Array Expr) (lhs : Expr)
     (fuel : Nat := 32) : MetaM (Expr × Expr × Expr × Expr) := do
   match fuel with
@@ -1281,10 +1425,59 @@ private partial def crossToResult (cellFVars : Array Expr) (lhs : Expr)
     return (z, st', rhs2, ← mkEqTrans pf pf2)
   else if fn.isConst then
     -- committed unfold toward a keyed head (the seg_peels discipline)
-    let some nxt ← withProbeBudget (Meta.unfoldDefinition? lhsW)
-      | throwError "mint: unkeyed head {fn} — outside the construct \
-          set:{indentExpr lhsW}"
-    crossToResult cellFVars nxt fuel
+    match ← withProbeBudget (Meta.unfoldDefinition? lhsW) with
+    | some nxt => crossToResult cellFVars nxt fuel
+    | none =>
+      -- matcher residual (V3a continuation: the save/run label
+      -- machinery surfaces `except_bind.match_1`-class matchers whose
+      -- discriminants are GROUND label lookups — kernel-force the
+      -- discriminants, then reduce the matcher; a genuinely stuck
+      -- discriminant stays a loud frontier)
+      let some mi ← Meta.getMatcherInfo? fn.constName!
+        | throwError "mint: unkeyed head {fn} — outside the construct \
+            set:{indentExpr lhsW}"
+      let nxt? ← do
+        match ← Meta.reduceMatcher? lhsW with
+        | .reduced nxt => pure (some nxt)
+        | _ =>
+          let mut args := lhsW.getAppArgs
+          let start := mi.numParams + 1
+          for i in [start : start + mi.numDiscrs] do
+            if h : i < args.size then
+              if let some d ← kwhnf? args[i] then
+                args := args.set! i d
+          let lhs2 := mkAppN fn args
+          match ← Meta.reduceMatcher? lhs2 with
+          | .reduced nxt => pure (some nxt)
+          | _ => pure none
+      match nxt? with
+      | some nxt => crossToResult cellFVars nxt fuel
+      | none =>
+        -- propositional discriminant (an env-reading label-arg eval):
+        -- cross it in the except monad and step the matcher by
+        -- congruence (V3a continuation, the save/run class)
+        let args := lhsW.getAppArgs
+        let start := mi.numParams + 1
+        let mut di : Option Nat := none
+        for i in [start : start + mi.numDiscrs] do
+          if _h : i < args.size then
+            if di.isNone then
+              let dW ← whnfCore args[i]!
+              unless dW.getAppFn.isConst
+                  && (dW.getAppFn.constName!.componentsRev.head!
+                    |>.toString.startsWith "Result") do
+                di := some i
+        let some i := di
+          | throwError "mint: matcher {fn} stuck (no crossable \
+              discriminant):{indentExpr lhsW}"
+        let (rhsD, pfD) ← crossExceptM cellFVars args[i]!
+        let reb := mkAppN fn (args.set! i rhsD)
+        let lam ← withLocalDeclD `x (← inferType args[i]!) fun x =>
+          mkLambdaFVars #[x] (mkAppN fn (args.set! i x))
+        let pfC ← mkCongrArg lam pfD
+        let pfC ← mkExpectedTypeHint pfC (← mkEq lhsW reb)
+        let (z, st', rhs2, pf2) ← crossToResult cellFVars reb fuel
+        return (z, st', rhs2, ← mkEqTrans pfC pf2)
   else
     throwError "mint: non-constant head at{indentExpr lhsW}"
 
@@ -1779,6 +1972,459 @@ private def tryMintLoad (gf gs td tid : Expr) (ΓE : Expr)
     (mkConst linkC (cinfo.levelParams.map .param)) args)
   return { pf, delta, minted := true }
 
+/-- Parse a return-drawn action request; give back the (kernel-
+    computed) request constructor application. -/
+private def mintReqOf (stepI : Expr) : MetaM Expr := do
+  let stepArgs := stepI.getAppArgs
+  let mReq0 ← whnfCore stepArgs[stepArgs.size - 1]!
+  unless mReq0.isAppOf ``stExceptUndef_return do
+    throwError "mint: action request is not a return draw \
+      (head {mReq0.getAppFn}) — outside the construct set"
+  let some req0 ← kwhnf? mReq0.getAppArgs.back!
+    | throwError "mint: request payload did not compute"
+  return req0
+
+/-- Decompose a concrete `PV (Prov_some aid) (PVconcrete _ addr)`
+    pointer into (aid, addr). -/
+private def mintPtrParts (ptrE : Expr) : MetaM (Expr × Expr) := do
+  let some ptr0 ← kwhnf? ptrE
+    | throwError "mint: pointer did not compute"
+  unless ptr0.getAppNumArgs ≥ 2 do
+    throwError "mint: pointer shape{indentExpr ptr0}"
+  let some prov ← kwhnf? ptr0.getAppArgs[ptr0.getAppNumArgs - 2]!
+    | throwError "mint: provenance did not compute"
+  let some pvc ← kwhnf? ptr0.getAppArgs[ptr0.getAppNumArgs - 1]!
+    | throwError "mint: address did not compute"
+  unless prov.getAppNumArgs ≥ 1 && pvc.getAppNumArgs ≥ 1 do
+    throwError "mint: pointer parts shape"
+  return (prov.getAppArgs.back!, pvc.getAppArgs.back!)
+
+/-- Build the happ premise of a memory link by conclusion-unifying
+    the standard chain (discovery pin → advance_action_request →
+    perform_* → the per-class memory block), with the block's own
+    premises solved from the telescope's hypotheses and deep kernel
+    pins. Returns (happLam, succ0). Shared by the create/store/kill
+    minters (the load minter predates it and keeps its own body). -/
+private def mintMemHapp (td tid : Expr) (famI happTy : Expr)
+    (performC : Name)
+    (mkBlock : Array Expr → Expr → Expr → Expr → MetaM Expr) :
+    MetaM (Expr × Expr) := do
+  forallTelescope happTy fun xs _body => do
+    let p := xs[0]!
+    let σp := mkApp famI p
+    let discE ← mkAppM ``find_can_advance
+      #[← mkAppM ``RelSem.Cerb.dnmsDiscover #[td, tid, σp]]
+    let some stepOp ← kwhnf? discE
+      | throwError "mint: discovery did not compute at the happ pack"
+    unless stepOp.isAppOfArity ``Option.some 2 do
+      throwError "mint: discovery shape at the happ pack"
+    let some stepIp ← kwhnf? stepOp.appArg!
+      | throwError "mint: step body did not compute at the happ pack"
+    let hfindP ← mkLhsRflHint discE (mkApp stepOp.appFn! stepIp)
+    let spArgs := stepIp.getAppArgs
+    unless spArgs.size ≥ 5 do
+      throwError "mint: action step arity at the happ pack"
+    let locE := spArgs[spArgs.size - 4]!
+    let mReqP := spArgs[spArgs.size - 1]!
+    -- the request draw (a return: state-preserving, kernel-pinned)
+    let reqApp ← mkAppM ``app
+      #[← mkAppM ``liftCore_run #[mReqP], σp]
+    let some reqPair ← kwhnf? reqApp
+      | throwError "mint: request draw did not compute"
+    unless reqPair.isAppOfArity ``Prod.mk 4 do
+      throwError "mint: request draw shape{indentExpr reqPair}"
+    let some ndv ← kwhnf? reqPair.getAppArgs[2]!
+      | throwError "mint: request value did not compute"
+    let reqPair := mkAppN reqPair.getAppFn
+      (reqPair.getAppArgs.set! 2 ndv)
+    let hreq ← mkLhsRflHint reqApp reqPair
+    let lsE ← mkAppM ``driver_state.layout_state #[σp]
+    let some reqP ← kwhnf? ndv.getAppArgs.back!
+      | throwError "mint: request ctor did not compute at the pack"
+    -- the memory block (per class)
+    let hmem ← mkBlock xs lsE locE reqP
+    -- perform_*, conclusion-unified
+    let hperf ← do
+      let ci ← getConstInfo performC
+      let (ms, _, cc) ← forallMetaTelescope ci.type
+      let some (_, lhsP, _) := (← instantiateMVars cc).eq?
+        | throwError "mint: {performC} conclusion shape"
+      unless ← withProbeBudget (isDefEq lhsP
+          (← mkAppM ``app #[← mkAppM ``perform_action_request2
+            #[mkConst ``Bool.false, locE,
+              spArgs[spArgs.size - 3]!, reqP], σp])) do
+        throwError "mint: {performC} conclusion does not match the \
+          drawn request"
+      let props ← propHoles ms
+      -- premises in order: hmem first; any residual premise closed
+      -- from the telescope/kernel
+      unless props.size ≥ 1 do
+        throwError "mint: {performC} premise count"
+      unless ← isDefEq props[0]! hmem do
+        throwError "mint: {performC} hmem assignment failed"
+      for i in [1:props.size] do
+        let m ← instantiateMVars props[i]!
+        if m.isMVar then
+          let mty ← instantiateMVars (← m.mvarId!.getType)
+          let some pf ← mintSolvePremise xs mty
+            | throwError "mint: {performC} residual premise has no \
+                source:{indentExpr mty}"
+          unless ← isDefEq m pf do
+            throwError "mint: {performC} residual assignment failed"
+      instantiateMVars (mkAppN
+        (mkConst performC (ci.levelParams.map .param))
+        (← ms.mapM instantiateMVars))
+    -- the advance, conclusion-unified
+    let hadv ← do
+      let ci ← getConstInfo ``RelSem.Kit.advance_action_request
+      let (ms, _, cc) ← forallMetaTelescope ci.type
+      let some (_, lhsA, _) := (← instantiateMVars cc).eq?
+        | throwError "mint: advance_action_request conclusion shape"
+      let tgt ← mkAppM ``app
+        #[← mkAppM ``advance_step #[td, tid, stepIp], σp]
+      unless ← withProbeBudget (isDefEq lhsA tgt) do
+        throwError "mint: advance_action_request LHS mismatch"
+      let props ← propHoles ms
+      unless props.size == 2 do
+        throwError "mint: advance premise count {props.size}"
+      unless ← isDefEq props[0]! hreq do
+        throwError "mint: advance hreq assignment failed"
+      unless ← isDefEq props[1]! hperf do
+        throwError "mint: advance hperf assignment failed"
+      instantiateMVars (mkAppN
+        (mkConst ``RelSem.Kit.advance_action_request
+          (ci.levelParams.map .param)) (← ms.mapM instantiateMVars))
+    let body ← mkAppM ``RelSem.Cerb.dnmsRoundM_adv #[hfindP, hadv]
+    let some (_, _, rhs) := (← inferType body).eq?
+      | throwError "mint: memory round conclusion shape"
+    let rhsW ← whnfCore rhs
+    unless rhsW.isAppOfArity ``Prod.mk 4 do
+      throwError "mint: memory round successor pair shape"
+    let succ := rhsW.getAppArgs[3]!
+    let succ0 := succ.replaceFVar p (← mkPack0)
+    pure (← mkLambdaFVars xs body, succ0)
+
+/-- The shared tail of the memory minters: pre-pin famI/famO and the
+    happ lambda into `linkC`'s telescope, dispatch the residual
+    premises, return the link. -/
+private def mintMemFinish (gf gs td tid : Expr) (ΓE : Expr)
+    (linkC : Name) (args : Array Expr) (concl : Expr)
+    (cinfo : ConstantInfo) (famI happLam succ0 : Expr) :
+    MetaM BuiltLink := do
+  let famO ← mkAppM ``RelSem.Seg.stateAt
+    #[← flattenCtl (← mkAppM ``ctlOf #[succ0])]
+  -- famI was pinned by the caller; every REMAINING fam-typed hole is
+  -- the successor family
+  for a in args do
+    let a ← instantiateMVars a
+    if a.isMVar then
+      let aty ← instantiateMVars (← a.mvarId!.getType)
+      if aty.isArrow && aty.bindingDomain!.isConstOf ``RelSem.Seg.Pack
+          && aty.bindingBody!.isConstOf ``driver_state then
+        unless ← isDefEq a famO do
+          throwError "mint [{linkC}]: famO pre-pin failed"
+  let mut happIdx : Option Nat := none
+  for i in [0:args.size] do
+    let ty ← instantiateMVars (← inferType args[i]!)
+    let isHapp ← forallTelescope ty fun _ body =>
+      pure (body.isEq && body.appFn!.appArg!.isAppOf ``app)
+    if isHapp && happIdx.isNone then
+      happIdx := some i
+  let some hi := happIdx
+    | throwError "mint [{linkC}]: no happ premise"
+  unless ← withProbeBudget (isDefEq args[hi]! happLam) do
+    throwError "mint [{linkC}]: minted proof does not fit the happ \
+      slot; slot:{indentExpr (← instantiateMVars (← inferType args[hi]!))}\nbuilt:{indentExpr (← inferType happLam)}"
+  let pack0 ← mkPack0
+  let mut progress := true
+  while progress do
+    progress := false
+    for a in args do
+      let a ← instantiateMVars a
+      if a.isMVar then
+        if ← dispatchPremise linkC pack0 a.mvarId! then
+          progress := true
+  for a in args do
+    let a ← instantiateMVars a
+    if a.isMVar then
+      throwError "mint [{linkC}]: unfilled premise:\
+        {indentExpr (← instantiateMVars (← a.mvarId!.getType))}"
+  let concl ← instantiateMVars concl
+  let delta := concl.getAppArgs[concl.getAppNumArgs - 1]!
+  if delta.hasExprMVar then
+    throwError "mint [{linkC}]: successor context still open"
+  let pf ← instantiateMVars (mkAppN
+    (mkConst linkC (cinfo.levelParams.map .param)) args)
+  return { pf, delta, minted := true }
+
+/-- CREATE-round minting: `link_create` at kernel-computed ground
+    data (sizeof/alignDown/base address off the context's `mr`), the
+    memory block `alloc_block_mr` (identity data rerouted through the
+    residual — open packs). -/
+private def tryMintCreate (gf gs td tid : Expr) (ΓE : Expr)
+    (comps : Array Expr) (cE : Expr) (stepI : Expr) :
+    MetaM BuiltLink := do
+  let req0 ← mintReqOf stepI
+  let rArgs := req0.getAppArgs
+  unless req0.isAppOf ``CreateRequest2 && rArgs.size ≥ 6 do
+    throwError "mint: create request shape"
+  let prefE := rArgs[rArgs.size - 6]!
+  let some alignE ← kwhnf? rArgs[rArgs.size - 5]!
+    | throwError "mint: create align did not compute"
+  unless alignE.getAppNumArgs ≥ 2 do
+    throwError "mint: create align shape"
+  let alignNE := alignE.getAppArgs.back!
+  let pvE := alignE.getAppArgs[alignE.getAppNumArgs - 2]!
+  let tyE := rArgs[rArgs.size - 4]!
+  let mrE := comps[3]!
+  let some szE ← kwhnf? (← mkAppM ``Nat.max
+      #[← mkAppM ``CerbMem.sizeofCtype #[tyE], mkNatLit 1])
+    | throwError "mint: sizeof did not compute"
+  let some aNewE ← kwhnf? (← mkAppM ``Int.ofNat
+      #[← mkAppM ``CerbMem.alignDown
+        #[← mkAppM ``Int.toNat
+          #[← mkAppM ``HSub.hSub
+            #[← mkAppM ``CerbMem.MemState.lastAddress #[mrE],
+              ← mkAppM ``Int.ofNat #[szE]]],
+          ← mkAppM ``Nat.max
+            #[← mkAppM ``Int.toNat #[alignNE], mkNatLit 1]]])
+    | throwError "mint: create address did not compute"
+  let linkC := ``RelSem.Seg.link_create
+  let cinfo ← getConstInfo linkC
+  let (args, _, concl) ← forallMetaTelescope cinfo.type
+  unless concl.isAppOfArity ``RelSem.Seg.SegStep 7 do
+    throwError "mint [{linkC}]: link conclusion shape"
+  let cargs := concl.getAppArgs
+  unless (← isDefEq cargs[0]! gf) && (← isDefEq cargs[1]! gs)
+      && (← isDefEq cargs[2]! td) && (← isDefEq cargs[3]! tid) do
+    throwError "mint [{linkC}]: instance/program unification failed"
+  unless ← isDefEq cargs[5]! ΓE do
+    throwError "mint [{linkC}]: entry context does not unify"
+  -- pin the ground data slots by TYPE (declaration order:
+  -- {ty : ctype} {pref : prefix0} {alignN : Int} {sz : Nat}
+  -- {aNew : Int})
+  let mut intPins := #[alignNE, aNewE]
+  let mut intIdx := 0
+  for a in args do
+    let a ← instantiateMVars a
+    if a.isMVar then
+      let aty ← instantiateMVars (← a.mvarId!.getType)
+      if aty.isConstOf ``ctype then
+        unless ← isDefEq a tyE do
+          throwError "mint [{linkC}]: ty pre-pin failed"
+      else if aty.isConstOf ``prefix0 then
+        unless ← isDefEq a prefE do
+          throwError "mint [{linkC}]: pref pre-pin failed"
+      else if aty.isConstOf ``Int && intIdx < intPins.size then
+        unless ← isDefEq a intPins[intIdx]! do
+          throwError "mint [{linkC}]: Int slot pre-pin failed"
+        intIdx := intIdx + 1
+      else if aty.isConstOf ``Nat then
+        -- the sz slot (tid was pinned by the conclusion)
+        unless ← isDefEq a szE do
+          throwError "mint [{linkC}]: sz pre-pin failed"
+  let famI ← mkAppM ``RelSem.Seg.stateAt #[cE]
+  -- the happ slot's TYPE (after the pins)
+  let mut happIdx : Option Nat := none
+  for i in [0:args.size] do
+    let ty ← instantiateMVars (← inferType args[i]!)
+    let isHapp ← forallTelescope ty fun _ body =>
+      pure (body.isEq && body.appFn!.appArg!.isAppOf ``app)
+    if isHapp && happIdx.isNone then happIdx := some i
+  let some hi := happIdx
+    | throwError "mint [{linkC}]: no happ premise"
+  -- famI must be pinned before the happ telescope is taken
+  for a in args do
+    let a ← instantiateMVars a
+    if a.isMVar then
+      let aty ← instantiateMVars (← a.mvarId!.getType)
+      if aty.isArrow && aty.bindingDomain!.isConstOf ``RelSem.Seg.Pack
+          && aty.bindingBody!.isConstOf ``driver_state then
+        unless ← isDefEq a famI do
+          throwError "mint [{linkC}]: famI pre-pin failed"
+        break
+  let happTy ← instantiateMVars (← inferType args[hi]!)
+  let (happLam, succ0) ← mintMemHapp td tid famI happTy
+    ``RelSem.Kit.perform_create
+    (fun xs lsE _locE _reqP => do
+      let fn ← mkAppOptM ``RelSem.Kit.alloc_block_mr
+        #[some tid, some prefE, some pvE, some alignNE, some tyE,
+          some lsE, some mrE, some szE, some aNewE]
+      applyWithPremises fn xs)
+  mintMemFinish gf gs td tid ΓE linkC args concl cinfo famI happLam
+    succ0
+
+/-- STORE-round minting: `link_store` at the request's concrete
+    pointer, the new bytes kernel-computed from the stored value, the
+    memory block `mem_store_block` at the link's footprint facts. -/
+private def tryMintStore (gf gs td tid : Expr) (ΓE : Expr)
+    (comps : Array Expr) (cE : Expr) (stepI : Expr) :
+    MetaM BuiltLink := do
+  let req0 ← mintReqOf stepI
+  let rArgs := req0.getAppArgs
+  unless req0.isAppOf ``StoreRequest2 && rArgs.size ≥ 6 do
+    throwError "mint: store request shape"
+  let ptrE := rArgs[rArgs.size - 3]!
+  let mvalE := rArgs[rArgs.size - 2]!
+  let (aidE, addrE) ← mintPtrParts ptrE
+  let alcE ← findPairVal aidE comps[4]!
+  let oldE ← findPairVal addrE comps[5]!
+  -- the new bytes: memValueToBytes at the (data) funptrmap []
+  let fpmElemTy := Lean.mkApp2 (Lean.mkConst ``Prod [.zero, .zero])
+    (Lean.mkConst ``Int)
+    (Lean.mkApp2 (Lean.mkConst ``Prod [.zero, .zero])
+      (Lean.mkConst ``String) (Lean.mkConst ``String))
+  let some bytesPair ← kwhnf? (← mkAppM ``CerbMem.memValueToBytes
+      #[← mkAppOptM ``List.nil #[some fpmElemTy], mvalE])
+    | throwError "mint: store bytes did not compute"
+  unless bytesPair.isAppOfArity ``Prod.mk 4 do
+    throwError "mint: store bytes pair shape"
+  let newE := bytesPair.getAppArgs[3]!
+  let linkC := ``RelSem.Seg.link_store
+  let cinfo ← getConstInfo linkC
+  let (args, _, concl) ← forallMetaTelescope cinfo.type
+  unless concl.isAppOfArity ``RelSem.Seg.SegStep 7 do
+    throwError "mint [{linkC}]: link conclusion shape"
+  let cargs := concl.getAppArgs
+  unless (← isDefEq cargs[0]! gf) && (← isDefEq cargs[1]! gs)
+      && (← isDefEq cargs[2]! td) && (← isDefEq cargs[3]! tid) do
+    throwError "mint [{linkC}]: instance/program unification failed"
+  unless ← isDefEq cargs[5]! ΓE do
+    throwError "mint [{linkC}]: entry context does not unify"
+  -- data pins: {aid : Int} {alc} {addr : Int} {old new : List AbsByte}
+  let mut intPins := #[aidE, addrE]
+  let mut intIdx := 0
+  let mut listPins := #[oldE, newE]
+  let mut listIdx := 0
+  for a in args do
+    let a ← instantiateMVars a
+    if a.isMVar then
+      let aty ← instantiateMVars (← a.mvarId!.getType)
+      if aty.isConstOf ``Int && intIdx < intPins.size then
+        unless ← isDefEq a intPins[intIdx]! do
+          throwError "mint [{linkC}]: Int slot pre-pin failed"
+        intIdx := intIdx + 1
+      else if aty.isConstOf ``CerbMem.Allocation then
+        unless ← isDefEq a alcE do
+          throwError "mint [{linkC}]: alloc slot pre-pin failed"
+      else if aty.isAppOf ``List
+          && aty.appArg!.isConstOf ``CerbMem.AbsByte
+          && listIdx < listPins.size then
+        unless ← isDefEq a listPins[listIdx]! do
+          throwError "mint [{linkC}]: byte slot pre-pin failed"
+        listIdx := listIdx + 1
+  let famI ← mkAppM ``RelSem.Seg.stateAt #[cE]
+  for a in args do
+    let a ← instantiateMVars a
+    if a.isMVar then
+      let aty ← instantiateMVars (← a.mvarId!.getType)
+      if aty.isArrow && aty.bindingDomain!.isConstOf ``RelSem.Seg.Pack
+          && aty.bindingBody!.isConstOf ``driver_state then
+        unless ← isDefEq a famI do
+          throwError "mint [{linkC}]: famI pre-pin failed"
+        break
+  let mut happIdx : Option Nat := none
+  for i in [0:args.size] do
+    let ty ← instantiateMVars (← inferType args[i]!)
+    let isHapp ← forallTelescope ty fun _ body =>
+      pure (body.isEq && body.appFn!.appArg!.isAppOf ``app)
+    if isHapp && happIdx.isNone then happIdx := some i
+  let some hi := happIdx
+    | throwError "mint [{linkC}]: no happ premise"
+  let happTy ← instantiateMVars (← inferType args[hi]!)
+  let (happLam, succ0) ← mintMemHapp td tid famI happTy
+    ``RelSem.Kit.perform_store
+    (fun xs lsE locE reqP => do
+      -- StoreRequest2 mo ty isLocking ptr mval mk
+      let rA := reqP.getAppArgs
+      let tyS := rA[rA.size - 5]!
+      let fpmE ← mkAppM ``CerbMem.MemState.funptrmap #[lsE]
+      let fn ← mkAppOptM ``RelSem.Kit.mem_store_block
+        #[some locE, some tyS, some aidE, some addrE, some alcE,
+          some lsE, some mvalE, some fpmE, some newE]
+      applyWithPremises fn xs)
+  mintMemFinish gf gs td tid ΓE linkC args concl cinfo famI happLam
+    succ0
+
+/-- KILL-round minting: `link_kill` at the request's concrete
+    pointer; the block's dead-list premise from the walk's `MemInv`
+    (contains_dead_false at the alloc fact). -/
+private def tryMintKill (gf gs td tid : Expr) (ΓE : Expr)
+    (comps : Array Expr) (cE : Expr) (stepI : Expr) :
+    MetaM BuiltLink := do
+  let req0 ← mintReqOf stepI
+  let rArgs := req0.getAppArgs
+  unless req0.isAppOf ``KillRequest2 && rArgs.size ≥ 3 do
+    throwError "mint: kill request shape"
+  let ptrE := rArgs[rArgs.size - 2]!
+  let (aidE, addrE) ← mintPtrParts ptrE
+  let alcE ← findPairVal aidE comps[4]!
+  let linkC := ``RelSem.Seg.link_kill
+  let cinfo ← getConstInfo linkC
+  let (args, _, concl) ← forallMetaTelescope cinfo.type
+  unless concl.isAppOfArity ``RelSem.Seg.SegStep 7 do
+    throwError "mint [{linkC}]: link conclusion shape"
+  let cargs := concl.getAppArgs
+  unless (← isDefEq cargs[0]! gf) && (← isDefEq cargs[1]! gs)
+      && (← isDefEq cargs[2]! td) && (← isDefEq cargs[3]! tid) do
+    throwError "mint [{linkC}]: instance/program unification failed"
+  unless ← isDefEq cargs[5]! ΓE do
+    throwError "mint [{linkC}]: entry context does not unify"
+  let mut intIdx := 0
+  for a in args do
+    let a ← instantiateMVars a
+    if a.isMVar then
+      let aty ← instantiateMVars (← a.mvarId!.getType)
+      if aty.isConstOf ``Int && intIdx == 0 then
+        unless ← isDefEq a aidE do
+          throwError "mint [{linkC}]: aid pre-pin failed"
+        intIdx := 1
+      else if aty.isConstOf ``CerbMem.Allocation then
+        unless ← isDefEq a alcE do
+          throwError "mint [{linkC}]: alloc slot pre-pin failed"
+  let famI ← mkAppM ``RelSem.Seg.stateAt #[cE]
+  for a in args do
+    let a ← instantiateMVars a
+    if a.isMVar then
+      let aty ← instantiateMVars (← a.mvarId!.getType)
+      if aty.isArrow && aty.bindingDomain!.isConstOf ``RelSem.Seg.Pack
+          && aty.bindingBody!.isConstOf ``driver_state then
+        unless ← isDefEq a famI do
+          throwError "mint [{linkC}]: famI pre-pin failed"
+        break
+  let mut happIdx : Option Nat := none
+  for i in [0:args.size] do
+    let ty ← instantiateMVars (← inferType args[i]!)
+    let isHapp ← forallTelescope ty fun _ body =>
+      pure (body.isEq && body.appFn!.appArg!.isAppOf ``app)
+    if isHapp && happIdx.isNone then happIdx := some i
+  let some hi := happIdx
+    | throwError "mint [{linkC}]: no happ premise"
+  let happTy ← instantiateMVars (← inferType args[hi]!)
+  let (happLam, succ0) ← mintMemHapp td tid famI happTy
+    ``RelSem.Kit.perform_kill
+    (fun xs lsE locE _reqP => do
+      -- hdead from MemInv.contains_dead_false at the alloc fact
+      let hgetTy ← mkEq
+        (← mkAppM ``Std.TreeMap.get?
+          #[← mkAppM ``CerbMem.MemState.allocations #[lsE], aidE])
+        (← mkAppM ``Option.some #[alcE])
+      let some hget ← mintSolvePremise xs hgetTy
+        | throwError "mint: kill alloc fact has no source"
+      let mut hinv? : Option Expr := none
+      for h in xs do
+        if (← instantiateMVars (← inferType h)).isAppOf ``MemInv then
+          hinv? := some h
+      let some hinv := hinv?
+        | throwError "mint: kill MemInv hypothesis missing"
+      let hdead ← mkAppM ``MemInv.contains_dead_false #[hinv, hget]
+      let fn ← mkAppOptM ``RelSem.Kit.mem_kill_block
+        #[some locE, some aidE, some addrE, none, some alcE, some lsE,
+          some hdead, some hget]
+      applyWithPremises fn xs)
+  mintMemFinish gf gs td tid ΓE linkC args concl cinfo famI happLam
+    succ0
+
 private def tryMintCore (gf gs td tid : Expr) (ΓE : Expr)
     (comps : Array Expr) : MetaM MintOut := do
   try
@@ -1860,12 +2506,22 @@ private def tryMintCore (gf gs td tid : Expr) (ΓE : Expr)
           (← mkEq (mkApp stepM rsq) rhsR)
         pure (← mkAppM lemN #[hfindPf, pfHm], th')
       else if stepI.isAppOf ``Step_action_request2 then do
-        -- memory-action rounds: the LOAD class mints through
-        -- link_load (its own builder — footprint premises, no env
-        -- work); other requests fall back to the supply
-        let b ← tryMintLoad gf gs td tid ΓE comps cE stepI
-        trace[RelSem.segRun] "mint: consumed one \
-          {``RelSem.Seg.link_load} round (load)"
+        -- memory-action rounds mint through their own links
+        -- (V3a continuation: the full load/store/create/kill set)
+        let req0 ← mintReqOf stepI
+        let b ←
+          if req0.isAppOf ``LoadRequest2 then
+            tryMintLoad gf gs td tid ΓE comps cE stepI
+          else if req0.isAppOf ``StoreRequest2 then
+            tryMintStore gf gs td tid ΓE comps cE stepI
+          else if req0.isAppOf ``CreateRequest2 then
+            tryMintCreate gf gs td tid ΓE comps cE stepI
+          else if req0.isAppOf ``KillRequest2 then
+            tryMintKill gf gs td tid ΓE comps cE stepI
+          else
+            throwError "mint: request class {req0.getAppFn} — \
+              outside the construct set"
+        trace[RelSem.segRun] "mint: consumed one memory-action round"
         return MintOut.link b
       else
         throwError "mint: step class outside the construct set \

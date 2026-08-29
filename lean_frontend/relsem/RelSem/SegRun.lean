@@ -990,6 +990,320 @@ theorem link_load {j jb : Nat} {aid : Int} {alc : CerbMem.Allocation}
   isimp only [Ctx.interp, SegCtx]
   iframe Hc Hs Hd He Hm Ha Hb
 
+/-- SUPPLY-DELTA TAU LINK (V3a continuation — the NEG-transform
+    round class): a control move that also DRAWS from the fresh
+    supplies (the negative-action rewrite draws one excluded id and
+    one symbol; `Erun` argument folds can draw likewise). The four
+    deltas are per-class constants; the context's supply component
+    moves by exactly them. Lineage: link_ctl + the ghost supply
+    counters (the arc-13 threading); delegates to wpk_seq_ctl_sup. -/
+@[step_law (kind := segLink) (variant := ctlSup) (side := fed)
+  (frontier := "seg/link-ctl-sup")
+  (trace := "{law := link_ctl_sup, joint := seg/link, hyps := [happ : fed(round eq with supply delta)]}")
+  (lineage := "sequence-rule link with a fresh-supply delta (NEG rewrite class); delegates to wpk_seq_ctl_sup")]
+theorem link_ctl_sup {dT dA dE dS : Nat}
+    (hIn : FamShape famI) (hOut : FamShape famO)
+    (hinv : ∀ σ, ctlOf σ = cI → EnvWf σ → ∃ p, σ = famI p)
+    (happ : ∀ p, EnvWfFrame p.f₁ →
+      app (dnmsRoundM td tid) (famI p)
+        = (NDactive (Sum.inl NOWAKEUP),
+           famO { p with
+               tS := p.tS + dT, aS := p.aS + dA,
+               eS := p.eS + dE, sS := p.sS + dS }))
+    (hctlO : ∀ p, ctlOf (famO p) = cO) :
+    SegStep (GF := GF) td tid 1 ⟨cI, S, env, mr, al, bs⟩
+      ⟨cO, ⟨S.tid + dT, S.aid + dA, S.exc + dE, S.symc + dS⟩,
+        env, mr, al, bs⟩ := by
+  intro F f hF acc xs' k s E Φ
+  subst hF
+  show SegCtx cI S env mr al bs ∗ _ ⊢
+    WP (KExpr.seq (dnmsRoundM td tid) _) @ s ; E {{ Φ }}
+  iintro ⟨⟨Hc, Hs, Hd, He, Hm, Ha, Hb⟩, Hk⟩
+  iapply (wpk_seq_ctl_sup (GF := GF)
+    (c := cI) (c' := cO) (S := S)
+    (S' := ⟨S.tid + dT, S.aid + dA, S.exc + dE, S.symc + dS⟩)
+    (upd := fun σ =>
+      famO { packProj σ with
+               tS := (packProj σ).tS + dT, aS := (packProj σ).aS + dA,
+               eS := (packProj σ).eS + dE, sS := (packProj σ).sS + dS })
+    (fun σ hσ hwf hsup => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf
+      rw [hIn.proj p]
+      exact happ p (wfFrame_of (hIn.th p) hwf))
+    (fun σ hσ hwf hsup => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf
+      rw [hIn.proj p]; exact hctlO _)
+    (fun σ hσ hwf hsup => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf
+      rw [hIn.proj p, hOut.lay, hIn.lay p])
+    (fun σ hσ hwf hsup => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf
+      rw [hIn.proj p, hOut.sup]
+      rw [hIn.sup p] at hsup
+      cases hsup
+      rfl)
+    (fun σ hσ hwf hsup => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf
+      rw [hIn.proj p, hOut.th, hIn.th p]))
+  isplitl [Hc Hs]
+  · iframe Hc Hs
+  iintro ⟨Hc, Hs⟩
+  iapply Hk
+  isimp only [Ctx.interp, SegCtx]
+  iframe Hc Hs Hd He Hm Ha Hb
+
+/-- STORE LINK (V3a continuation, work-order item (ii)): the Store
+    action round — one focused allocation (read) and one focused byte
+    range REWRITTEN; the action-id supply bumps; the touched byte
+    cell moves to the context front (cons-of-eraseIdx spelling — the
+    definitional re-assembly, no list surgery lemmas). -/
+@[step_law (kind := segLink) (variant := store) (side := fed)
+  (frontier := "seg/link-store")
+  (trace := "{law := link_store, joint := seg/link, hyps := [hj/hb/hlen : ground, happ : fed(round eq at footprint facts)]}")
+  (lineage := "HeapLang wp_store at the segment link; delegates to wpk_seq_ctl_sup_store")]
+theorem link_store {j jb : Nat} {aid : Int} {alc : CerbMem.Allocation}
+    {addr : Int} {old new : List CerbMem.AbsByte}
+    (hj : al[j]? = some (aid, alc))
+    (hb : bs[jb]? = some (addr, old))
+    (hlen : new.length = old.length)
+    (hIn : FamShape famI) (hOut : FamShape famO)
+    (hinv : ∀ σ, ctlOf σ = cI → EnvWf σ → ∃ p, σ = famI p)
+    (happ : ∀ p, EnvWfFrame p.f₁ →
+      p.ls.allocations.get? aid = some alc →
+      (∀ i : Nat, (hi : i < old.length) →
+        p.ls.bytemap.get? (addr + (i : Int)) = some old[i]) →
+      memRestOf (famI p) = mr → MemInv p.ls →
+      app (dnmsRoundM td tid) (famI p)
+        = (NDactive (Sum.inl NOWAKEUP),
+           famO { p with
+                    aS := p.aS + 1,
+                    ls := CerbMem.writeBytesTo p.ls addr new }))
+    (hctlO : ∀ p, ctlOf (famO p) = cO) :
+    SegStep (GF := GF) td tid 1 ⟨cI, S, env, mr, al, bs⟩
+      ⟨cO, bumpA S, env, mr, al,
+        (addr, new) :: bs.eraseIdx jb⟩ := by
+  intro F f hF acc xs' k s E Φ
+  subst hF
+  show SegCtx cI S env mr al bs ∗ _ ⊢
+    WP (KExpr.seq (dnmsRoundM td tid) _) @ s ; E {{ Φ }}
+  iintro ⟨⟨Hc, Hs, Hd, He, Hm, Ha, Hb⟩, Hk⟩
+  icases (allocCells_focus hj).1 $$ Ha with ⟨Haj, Ha⟩
+  icases (byteCells_focus hb).1 $$ Hb with ⟨Hbj, Hb⟩
+  iapply (wpk_seq_ctl_sup_store (GF := GF)
+    (c := cI) (c' := cO) (S := S) (S' := bumpA S)
+    (mr := mr) (aid := aid) (al := alc) (addr := addr)
+    (old := old) (new := new) (dqm := stHalf) (dqa := .own 1)
+    (upd := fun σ =>
+      famO { packProj σ with
+               aS := (packProj σ).aS + 1,
+               ls := CerbMem.writeBytesTo σ.layout_state addr new })
+    hlen
+    (fun σ hσ hwf hsup hmr hget hbytes hminv => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf
+      rw [hIn.proj p]
+      have hls : (famI p).layout_state = p.ls := hIn.lay p
+      rw [show CerbMem.writeBytesTo (famI p).layout_state addr new
+        = CerbMem.writeBytesTo p.ls addr new from by rw [hls]]
+      refine happ p (wfFrame_of (hIn.th p) hwf) ?_ ?_ hmr ?_
+      · rw [← hIn.lay p]; exact hget
+      · intro i hi
+        rw [← hIn.lay p]; exact hbytes i hi
+      · rw [← hIn.lay p]; exact hminv)
+    (fun σ hσ hwf hsup => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf
+      rw [hIn.proj p, hOut.lay, hIn.lay p])
+    (fun σ hσ hwf hsup => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf
+      rw [hIn.proj p]; exact hctlO _)
+    (fun σ hσ hwf hsup => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf
+      rw [hIn.proj p, hOut.sup]
+      rw [hIn.sup p] at hsup
+      cases hsup
+      rfl)
+    (fun σ hσ hwf hsup => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf
+      rw [hIn.proj p, hOut.th, hIn.th p]))
+  isplitl [Hc Hs Hm Haj Hbj]
+  · iframe Hc Hs Hm Haj Hbj
+  iintro ⟨Hc, Hs, Hm, Haj, Hbj⟩
+  iapply Hk
+  isimp only [Ctx.interp, SegCtx, byteCells, allocCells]
+  icases (allocCells_focus hj).2 $$ [$Haj $Ha] with Ha
+  iframe Hc Hs Hd He Hm Ha Hbj Hb
+
+/-- CREATE LINK (V3a continuation, work-order item (ii)): the Create
+    action round — a fresh object minted (uninitialized bytes); new
+    allocation and byte cells enter at the context front; the
+    memory residual moves by `mrAlloc`. -/
+@[step_law (kind := segLink) (variant := create) (side := fed)
+  (frontier := "seg/link-create")
+  (trace := "{law := link_create, joint := seg/link, hyps := [hsz/haddr/hnz : ground, happ : fed(round eq)]}")
+  (lineage := "HeapLang wp_alloc at the segment link; delegates to wpk_seq_ctl_sup_alloc")]
+theorem link_create {ty : ctype} {pref : prefix0}
+    {alignN : Int} {sz : Nat} {aNew : Int}
+    (hsz : (CerbMem.sizeofCtype ty).max 1 = sz)
+    (haddr : ((CerbMem.alignDown (mr.lastAddress - sz).toNat
+        (alignN.toNat.max 1) : Nat) : Int) = aNew)
+    (hnz : (aNew == (0 : Int)) = false)
+    (hIn : FamShape famI) (hOut : FamShape famO)
+    (hinv : ∀ σ, ctlOf σ = cI → EnvWf σ → ∃ p, σ = famI p)
+    (happ : ∀ p, EnvWfFrame p.f₁ →
+      memRestOf (famI p) = mr → MemInv p.ls →
+      app (dnmsRoundM td tid) (famI p)
+        = (NDactive (Sum.inl NOWAKEUP),
+           famO { p with
+                    aS := p.aS + 1,
+                    ls := CerbMem.writeBytesTo
+                      ({ p.ls with
+                          nextAllocId := mr.nextAllocId + 1,
+                          lastAddress := aNew,
+                          allocations := p.ls.allocations.insert
+                            mr.nextAllocId
+                            { base := aNew, size := sz, ty := some ty,
+                              prefix_ := pref } })
+                      aNew (List.replicate sz
+                        { prov := .Prov_none, copyOffset := none,
+                          value := none }) }))
+    (hctlO : ∀ p, ctlOf (famO p) = cO) :
+    SegStep (GF := GF) td tid 1 ⟨cI, S, env, mr, al, bs⟩
+      ⟨cO, bumpA S, env, mrAlloc mr aNew,
+        (mr.nextAllocId,
+          ({ base := aNew, size := sz, ty := some ty,
+             prefix_ := pref } : CerbMem.Allocation)) :: al,
+        (aNew, List.replicate sz
+          ({ prov := .Prov_none, copyOffset := none,
+             value := none } : CerbMem.AbsByte)) :: bs⟩ := by
+  intro F f hF acc xs' k s E Φ
+  subst hF
+  show SegCtx cI S env mr al bs ∗ _ ⊢
+    WP (KExpr.seq (dnmsRoundM td tid) _) @ s ; E {{ Φ }}
+  iintro ⟨⟨Hc, Hs, Hd, He, Hm, Ha, Hb⟩, Hk⟩
+  iapply (wpk_seq_ctl_sup_alloc (GF := GF)
+    (c := cI) (c' := cO) (S := S) (S' := bumpA S)
+    (mr := mr) (ty := ty) (pref := pref) (alignN := alignN)
+    (sz := sz) (aNew := aNew)
+    (upd := fun σ =>
+      famO { packProj σ with
+               aS := (packProj σ).aS + 1,
+               ls := CerbMem.writeBytesTo
+                 ({ σ.layout_state with
+                     nextAllocId := mr.nextAllocId + 1,
+                     lastAddress := aNew,
+                     allocations := σ.layout_state.allocations.insert
+                       mr.nextAllocId
+                       { base := aNew, size := sz, ty := some ty,
+                         prefix_ := pref } })
+                 aNew (List.replicate sz
+                   { prov := .Prov_none, copyOffset := none,
+                     value := none }) })
+    hsz haddr hnz
+    (fun σ hσ hwf hsup hmr hminv => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf
+      rw [hIn.proj p]
+      have hls : (famI p).layout_state = p.ls := hIn.lay p
+      rw [hls]
+      refine happ p (wfFrame_of (hIn.th p) hwf) hmr ?_
+      · rw [← hIn.lay p]; exact hminv)
+    (fun σ hσ hwf hsup hmr => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf
+      have hid : (famI p).layout_state.nextAllocId = mr.nextAllocId := by
+        rw [show (famI p).layout_state.nextAllocId
+          = (memRestOf (famI p)).nextAllocId from rfl, hmr]
+      rw [hIn.proj p, hOut.lay, hIn.lay p]
+      rw [show (famI p).layout_state = p.ls from hIn.lay p] at hid
+      rw [hid])
+    (fun σ hσ hwf hsup hmr => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf
+      rw [hIn.proj p]; exact hctlO _)
+    (fun σ hσ hwf hsup hmr => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf
+      rw [hIn.proj p, hOut.sup]
+      rw [hIn.sup p] at hsup
+      cases hsup
+      rfl)
+    (fun σ hσ hwf hsup hmr => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf
+      rw [hIn.proj p, hOut.th, hIn.th p]))
+  isplitl [Hc Hs Hm]
+  · iframe Hc Hs Hm
+  iintro ⟨Hc, Hs, Hm, Ha2, Hb2⟩
+  iapply Hk
+  isimp only [Ctx.interp, SegCtx, byteCells, allocCells]
+  iframe Hc Hs Hd He Hm Ha2 Ha Hb2 Hb
+
+/-- KILL LINK (V3a continuation, work-order item (ii)): the Kill
+    action round — the focused allocation fragment CONSUMED (freed);
+    the memory residual moves by `mrKill`; the byte capital stays in
+    the context. -/
+@[step_law (kind := segLink) (variant := kill) (side := fed)
+  (frontier := "seg/link-kill")
+  (trace := "{law := link_kill, joint := seg/link, hyps := [hj : ground(index), happ : fed(round eq at the alloc fact)]}")
+  (lineage := "HeapLang wp_free at the segment link; delegates to wpk_seq_ctl_sup_kill")]
+theorem link_kill {j : Nat} {aid : Int} {alc : CerbMem.Allocation}
+    (hj : al[j]? = some (aid, alc))
+    (hIn : FamShape famI) (hOut : FamShape famO)
+    (hinv : ∀ σ, ctlOf σ = cI → EnvWf σ → ∃ p, σ = famI p)
+    (happ : ∀ p, EnvWfFrame p.f₁ →
+      p.ls.allocations.get? aid = some alc →
+      memRestOf (famI p) = mr → MemInv p.ls →
+      app (dnmsRoundM td tid) (famI p)
+        = (NDactive (Sum.inl NOWAKEUP),
+           famO { p with
+                    aS := p.aS + 1,
+                    ls := { p.ls with
+                        deadAllocations := aid :: p.ls.deadAllocations,
+                        allocations := p.ls.allocations.erase aid } }))
+    (hctlO : ∀ p, ctlOf (famO p) = cO) :
+    SegStep (GF := GF) td tid 1 ⟨cI, S, env, mr, al, bs⟩
+      ⟨cO, bumpA S, env, mrKill mr aid, al.eraseIdx j, bs⟩ := by
+  intro F f hF acc xs' k s E Φ
+  subst hF
+  show SegCtx cI S env mr al bs ∗ _ ⊢
+    WP (KExpr.seq (dnmsRoundM td tid) _) @ s ; E {{ Φ }}
+  iintro ⟨⟨Hc, Hs, Hd, He, Hm, Ha, Hb⟩, Hk⟩
+  icases (allocCells_focus hj).1 $$ Ha with ⟨Haj, Ha⟩
+  iapply (wpk_seq_ctl_sup_kill (GF := GF)
+    (c := cI) (c' := cO) (S := S) (S' := bumpA S)
+    (mr := mr) (aid := aid) (al := alc)
+    (upd := fun σ =>
+      famO { packProj σ with
+               aS := (packProj σ).aS + 1,
+               ls := { σ.layout_state with
+                   deadAllocations :=
+                     aid :: σ.layout_state.deadAllocations,
+                   allocations :=
+                     σ.layout_state.allocations.erase aid } })
+    (fun σ hσ hwf hsup hmr hget hminv => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf
+      rw [hIn.proj p]
+      have hls : (famI p).layout_state = p.ls := hIn.lay p
+      rw [hls]
+      refine happ p (wfFrame_of (hIn.th p) hwf) ?_ hmr ?_
+      · rw [← hIn.lay p]; exact hget
+      · rw [← hIn.lay p]; exact hminv)
+    (fun σ hσ hwf hsup hmr => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf
+      rw [hIn.proj p, hOut.lay, hIn.lay p])
+    (fun σ hσ hwf hsup hmr => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf
+      rw [hIn.proj p]; exact hctlO _)
+    (fun σ hσ hwf hsup hmr => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf
+      rw [hIn.proj p, hOut.sup]
+      rw [hIn.sup p] at hsup
+      cases hsup
+      rfl)
+    (fun σ hσ hwf hsup hmr => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf
+      rw [hIn.proj p, hOut.th, hIn.th p]))
+  isplitl [Hc Hs Hm Haj]
+  · iframe Hc Hs Hm Haj
+  iintro ⟨Hc, Hs, Hm⟩
+  iapply Hk
+  isimp only [Ctx.interp, SegCtx]
+  iframe Hc Hs Hd He Hm Ha Hb
+
 /-! ## §6 The fused TERMINAL rule: the done-offer round, the dnms
     residual, the scheduler pick, the exit rebuild, and the readout —
     one application (the five-block coda of every V2 proof). -/

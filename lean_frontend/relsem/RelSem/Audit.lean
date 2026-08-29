@@ -1264,7 +1264,7 @@ open Lean in
 -- NEW segBlock kind +18 — the block-fused default; prior 119 → 162,
 -- V2b P01 stepper supply: roundEq +41, famInv +2;
 -- same-commit provenance.)
-/-- info: step_law census: 492 laws [advance 5, construct 12, envAlg 3, envMap 7, evalArith 2, evalPull 9, famInv 8, heapWP 4, loop 1, memBlock 7, memRW 21, perform 6, roundEq 356, roundGlue 3, segBlock 18, segLink 8, stateWP 22] -/
+/-- info: step_law census: 496 laws [advance 5, construct 12, envAlg 3, envMap 7, evalArith 2, evalPull 9, famInv 8, heapWP 4, loop 1, memBlock 7, memRW 21, perform 6, roundEq 356, roundGlue 3, segBlock 18, segLink 12, stateWP 22] -/
 #guard_msgs in #step_law_census
 -- (V0 2026-08-27, THE KILL BASKET — record
 -- docs/2026-08-27_v0-statements-and-ban.md: the T1–T5 threaded
@@ -1686,7 +1686,7 @@ open Lean in
 -- [PerStepPeel, CerbStateAdequacy §V2] — the big-step↔small-step
 -- simulation infrastructure; same-commit provenance).
 /--
-info: RelSem audit sweep: 5275 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
+info: RelSem audit sweep: 5292 declarations (module-of-origin root RelSem, within RelSem.Audit's import closure — NOT the whole tree), all within the declared axiom boundary (0 recorded sorryAx exceptions)
 -/
 #guard_msgs in
 #eval show CoreM Unit from do
