@@ -63,6 +63,7 @@ def t5Ctl0 : driver_state :=
 
 theorem t5_walk_probe (n : Int) (seed : Nat) [CerbStGS CerbStS]
     (hn1 : 0 ≤ n) (hn2 : n ≤ 100)
+    (hw1 : -2147483648 ≤ n) (hw2 : n ≤ 2147483647)
     (hclose : ∀ (Γ' : Ctx) (F : Nat),
       Ctx.interp (GF := CerbStS) Γ' ⊢
         WP (dnmsK t5File.tagDefs F fmapEmpty 0 [] t5K)

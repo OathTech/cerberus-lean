@@ -216,6 +216,18 @@ private def solveHyp (locals : Array Expr) (m : MVarId)
       if ← withProbeBudget (isDefEqGuarded lhs rhs) then
         m.assign (← mkRflHint ty)
         return true
+  -- ground decidable Props (the load/store range side conditions at
+  -- literal values): kernel-verified decide (V3a continuation)
+  if !ty.hasExprMVar && !ty.hasFVar then
+    if let some pf ← observing? (do
+        let d ← mkDecide ty
+        let r ← match Lean.Kernel.whnf (← getEnv) (← getLCtx) d with
+          | .ok r => pure r
+          | .error _ => failure
+        unless r.isConstOf ``Bool.true do failure
+        mkDecideProof ty) then
+      m.assign pf
+      return true
   return false
 
 /-- Fill a link's `happ` premise from the (pre-telescoped) round
@@ -332,7 +344,8 @@ private def linkConsts : List Name :=
    ``RelSem.Seg.link_birth1_env1, ``RelSem.Seg.link_birth2,
    ``RelSem.Seg.link_load,
    ``RelSem.Seg.link_store, ``RelSem.Seg.link_create,
-   ``RelSem.Seg.link_kill, ``RelSem.Seg.link_ctl_sup]
+   ``RelSem.Seg.link_kill, ``RelSem.Seg.link_ctl_sup,
+   ``RelSem.Seg.link_ctl_rebind1, ``RelSem.Seg.link_ctl_rebind2]
 
 private structure BuiltLink where
   pf : Expr
@@ -2270,16 +2283,21 @@ private def tryMintStore (gf gs td tid : Expr) (ΓE : Expr)
   let alcE ← findPairVal aidE comps[4]!
   let oldE ← findPairVal addrE comps[5]!
   -- the new bytes: memValueToBytes at the (data) funptrmap []
-  let fpmElemTy := Lean.mkApp2 (Lean.mkConst ``Prod [.zero, .zero])
-    (Lean.mkConst ``Int)
-    (Lean.mkApp2 (Lean.mkConst ``Prod [.zero, .zero])
-      (Lean.mkConst ``String) (Lean.mkConst ``String))
-  let some bytesPair ← kwhnf? (← mkAppM ``CerbMem.memValueToBytes
-      #[← mkAppOptM ``List.nil #[some fpmElemTy], mvalE])
-    | throwError "mint: store bytes did not compute"
-  unless bytesPair.isAppOfArity ``Prod.mk 4 do
-    throwError "mint: store bytes pair shape"
-  let newE := bytesPair.getAppArgs[3]!
+  -- the new bytes in the CANONICAL int-cell spelling (T1.xBytes v —
+  -- definitionally the serializer's output; keeps the context's byte
+  -- cells mintable by the LOAD class downstream)
+  let some mval0 ← kwhnf? mvalE
+    | throwError "mint: store value did not compute"
+  unless mval0.isAppOf ``CerbMem.MemValue.MVinteger
+      && mval0.getAppNumArgs ≥ 2 do
+    throwError "mint: store value class {mval0.getAppFn} — outside \
+      the construct set"
+  let some iv0 ← kwhnf? mval0.getAppArgs.back!
+    | throwError "mint: store integer value did not compute"
+  unless iv0.getAppNumArgs ≥ 1 do
+    throwError "mint: store integer shape"
+  let vE := iv0.getAppArgs.back!
+  let newE ← mkAppM `RelSem.T1.xBytes #[vE]
   let linkC := ``RelSem.Seg.link_store
   let cinfo ← getConstInfo linkC
   let (args, _, concl) ← forallMetaTelescope cinfo.type
@@ -2636,7 +2654,39 @@ private def tryMintCore (gf gs td tid : Expr) (ΓE : Expr)
       let succ0 := succ.replaceFVar q (← mkPack0)
       mkAppM ``RelSem.Seg.stateAt
         #[← flattenCtl (← mkAppM ``ctlOf #[succ0])]
+    -- REBIND detection FIRST (V3a continuation): a "birth" whose
+    -- keys are all already bound at the SAME values is the label-
+    -- jump respell class — it must not enter the birth arms (their
+    -- freshness premises are false there, loudly)
+    let mut rebindHlks : Option (Array Expr) := none
+    if births.size == 1 || births.size == 2 then do
+      let envList := comps[2]!
+      let mut hlks : Array Expr := #[]
+      let mut ok := true
+      for bi in births do
+        if ok then
+          match ← observing? (findPairVal bi.1 envList) with
+          | some vcell =>
+            unless ← withProbeBudget (isDefEqGuarded bi.2 vcell) do
+              ok := false
+            let mut found := false
+            for j in [0:cells.size] do
+              if !found then
+                if ← withProbeBudget
+                    (isDefEqGuarded cells[j]!.1 bi.1) then
+                  hlks := hlks.push cellFVars[j]!
+                  found := true
+            unless found do ok := false
+          | none => ok := false
+      if ok then rebindHlks := some hlks
     let (linkC, happLam, famO) ←
+      match rebindHlks with
+      | some hlks =>
+        pure ((if births.size == 1 then ``RelSem.Seg.link_ctl_rebind1
+            else ``RelSem.Seg.link_ctl_rebind2),
+          ← mkLambdaFVars (#[q, hwf] ++ hlks) pfBody,
+          ← mkBirthFamO)
+      | none =>
       match births.size, used.size with
       | 0, 0 => pure (``RelSem.Seg.link_ctl,
           ← mkLambdaFVars (#[q, hwf]) pfBody,

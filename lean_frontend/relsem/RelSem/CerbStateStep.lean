@@ -1299,6 +1299,133 @@ theorem wpk_seq_ctl_env2 [CerbStGS GF] {α : Type}
     rw [hctl' σ hp.1.1.1 hp.1.1.2 hp.1.2 hp.2]
     iframe Hi Hc He₁ He₂
 
+/-- CONTROL MOVE with two env-cell reads at LOOKUP-POINTWISE env
+    preservation (V3a continuation — the label-jump REBIND class:
+    `save`/`run L(i,s)` re-bind EXISTING keys to their current cell
+    values; the spine respells, every lookup is unchanged, no ghost
+    change). Delegates to `interp_ctl_sup_move_lk` — the frame-
+    creating machinery the caller protocol already uses. -/
+@[step_law (kind := stateWP) (variant := ctlEnv2Lk) (side := fed)
+  (frontier := "state/ctl-env2-lk")
+  (trace := "{law := wpk_seq_ctl_env2_lk, joint := state/ctl-env2-lk, hyps := [Happ : fed(two-cell lookups), henvL : fed(pointwise), hwfp : fed]}")
+  (lineage := "lookup-preserving env respell (rebind) with two owned cells; interp_ctl_sup_move_lk underneath")]
+theorem wpk_seq_ctl_env2_lk [CerbStGS GF] {α : Type}
+    {m : ndM α step_kind driver_error mem_iv_constraint driver_state}
+    {k : α → KDriveExpr} {v : α} {upd : driver_state → driver_state}
+    {c c' : driver_state} {S : Supplies} {x₁ x₂ : sym}
+    {vx₁ vx₂ : value} {dq₁ dq₂ : DFrac}
+    {s : Stuckness} {E : CoPset} {Φ : DriveVal → IProp GF}
+    (Happ : ∀ σ, ctlOf σ = c → EnvWf σ → suppliesOf σ = S →
+      envLookup σ x₁ = some vx₁ → envLookup σ x₂ = some vx₂ →
+      app m σ = (NDactive v, upd σ))
+    (hctl' : ∀ σ, ctlOf σ = c → EnvWf σ → suppliesOf σ = S →
+      envLookup σ x₁ = some vx₁ → envLookup σ x₂ = some vx₂ →
+      ctlOf (upd σ) = c')
+    (hlay : ∀ σ, ctlOf σ = c → EnvWf σ → suppliesOf σ = S →
+      envLookup σ x₁ = some vx₁ → envLookup σ x₂ = some vx₂ →
+      (upd σ).layout_state = σ.layout_state)
+    (hsup : ∀ σ, ctlOf σ = c → EnvWf σ → suppliesOf σ = S →
+      envLookup σ x₁ = some vx₁ → envLookup σ x₂ = some vx₂ →
+      suppliesOf (upd σ) = S)
+    (henvL : ∀ σ, ctlOf σ = c → EnvWf σ → suppliesOf σ = S →
+      envLookup σ x₁ = some vx₁ → envLookup σ x₂ = some vx₂ →
+      ∀ z, envLookup (upd σ) z = envLookup σ z)
+    (hwfp : ∀ σ, ctlOf σ = c → EnvWf σ → suppliesOf σ = S →
+      envLookup σ x₁ = some vx₁ → envLookup σ x₂ = some vx₂ →
+      EnvWf (upd σ)) :
+    (ctlIs (GF := GF) stHalf c ∗ supIs stHalf S
+        ∗ envIs x₁ dq₁ vx₁ ∗ envIs x₂ dq₂ vx₂) ∗
+      ((ctlIs stHalf c' ∗ supIs stHalf S
+          ∗ envIs x₁ dq₁ vx₁ ∗ envIs x₂ dq₂ vx₂)
+        -∗ WP (k v) @ s ; E {{ Φ }}) ⊢
+      WP (KExpr.seq m k : KDriveExpr) @ s ; E {{ Φ }} := by
+  refine wpk_seq_res_det
+    (Pre := fun σ => ((((ctlOf σ = c ∧ EnvWf σ) ∧ suppliesOf σ = S) ∧
+      envLookup σ x₁ = some vx₁) ∧ envLookup σ x₂ = some vx₂))
+    (upd := upd) ?_
+    (fun σ hp => Happ σ hp.1.1.1.1 hp.1.1.1.2 hp.1.1.2 hp.1.2 hp.2) ?_
+  · intro σ
+    iintro ⟨Hi, Hc, Hs, He₁, He₂⟩
+    icases interp_ctl_agree $$ [$Hi $Hc] with ⟨%h1, Hi, Hc⟩
+    icases interp_envwf $$ Hi with ⟨%h1b, Hi⟩
+    icases interp_sup_agree $$ [$Hi $Hs] with ⟨%h1c, Hi, Hs⟩
+    icases interp_env_lookup $$ [$Hi $He₁] with ⟨%h2, Hi, He₁⟩
+    icases interp_env_lookup $$ [$Hi $He₂] with ⟨%h3, Hi, He₂⟩
+    iframe Hi Hc Hs He₁ He₂
+    ipureintro
+    exact ⟨⟨⟨⟨h1, h1b⟩, h1c⟩, h2⟩, h3⟩
+  · intro σ hp
+    obtain ⟨⟨⟨⟨h1, h1b⟩, h1c⟩, h2⟩, h3⟩ := hp
+    iintro ⟨Hi, Hc, Hs, He₁, He₂⟩
+    rw [show c = ctlOf σ from h1.symm,
+      show S = suppliesOf σ from h1c.symm]
+    imod interp_ctl_sup_move_lk (hlay σ h1 h1b h1c h2 h3)
+      (henvL σ h1 h1b h1c h2 h3) (fun _ => hwfp σ h1 h1b h1c h2 h3)
+      $$ [$Hi $Hc $Hs] with ⟨Hi, Hc, Hs⟩
+    imodintro
+    rw [hctl' σ h1 h1b h1c h2 h3,
+      show suppliesOf (upd σ) = suppliesOf σ from by
+        rw [hsup σ h1 h1b h1c h2 h3, h1c]]
+    iframe Hi Hc Hs He₁ He₂
+
+/-- One-cell variant of `wpk_seq_ctl_env2_lk` (single-key rebind). -/
+@[step_law (kind := stateWP) (variant := ctlEnv1Lk) (side := fed)
+  (frontier := "state/ctl-env1-lk")
+  (trace := "{law := wpk_seq_ctl_env1_lk, joint := state/ctl-env1-lk, hyps := [Happ : fed(one-cell lookup), henvL : fed(pointwise), hwfp : fed]}")
+  (lineage := "lookup-preserving env respell (rebind), one owned cell; interp_ctl_sup_move_lk underneath")]
+theorem wpk_seq_ctl_env1_lk [CerbStGS GF] {α : Type}
+    {m : ndM α step_kind driver_error mem_iv_constraint driver_state}
+    {k : α → KDriveExpr} {v : α} {upd : driver_state → driver_state}
+    {c c' : driver_state} {S : Supplies} {x : sym}
+    {vx : value} {dq : DFrac}
+    {s : Stuckness} {E : CoPset} {Φ : DriveVal → IProp GF}
+    (Happ : ∀ σ, ctlOf σ = c → EnvWf σ → suppliesOf σ = S →
+      envLookup σ x = some vx →
+      app m σ = (NDactive v, upd σ))
+    (hctl' : ∀ σ, ctlOf σ = c → EnvWf σ → suppliesOf σ = S →
+      envLookup σ x = some vx → ctlOf (upd σ) = c')
+    (hlay : ∀ σ, ctlOf σ = c → EnvWf σ → suppliesOf σ = S →
+      envLookup σ x = some vx →
+      (upd σ).layout_state = σ.layout_state)
+    (hsup : ∀ σ, ctlOf σ = c → EnvWf σ → suppliesOf σ = S →
+      envLookup σ x = some vx → suppliesOf (upd σ) = S)
+    (henvL : ∀ σ, ctlOf σ = c → EnvWf σ → suppliesOf σ = S →
+      envLookup σ x = some vx →
+      ∀ z, envLookup (upd σ) z = envLookup σ z)
+    (hwfp : ∀ σ, ctlOf σ = c → EnvWf σ → suppliesOf σ = S →
+      envLookup σ x = some vx → EnvWf (upd σ)) :
+    (ctlIs (GF := GF) stHalf c ∗ supIs stHalf S ∗ envIs x dq vx) ∗
+      ((ctlIs stHalf c' ∗ supIs stHalf S ∗ envIs x dq vx)
+        -∗ WP (k v) @ s ; E {{ Φ }}) ⊢
+      WP (KExpr.seq m k : KDriveExpr) @ s ; E {{ Φ }} := by
+  refine wpk_seq_res_det
+    (Pre := fun σ => (((ctlOf σ = c ∧ EnvWf σ) ∧ suppliesOf σ = S) ∧
+      envLookup σ x = some vx))
+    (upd := upd) ?_
+    (fun σ hp => Happ σ hp.1.1.1 hp.1.1.2 hp.1.2 hp.2) ?_
+  · intro σ
+    iintro ⟨Hi, Hc, Hs, He⟩
+    icases interp_ctl_agree $$ [$Hi $Hc] with ⟨%h1, Hi, Hc⟩
+    icases interp_envwf $$ Hi with ⟨%h1b, Hi⟩
+    icases interp_sup_agree $$ [$Hi $Hs] with ⟨%h1c, Hi, Hs⟩
+    icases interp_env_lookup $$ [$Hi $He] with ⟨%h2, Hi, He⟩
+    iframe Hi Hc Hs He
+    ipureintro
+    exact ⟨⟨⟨h1, h1b⟩, h1c⟩, h2⟩
+  · intro σ hp
+    obtain ⟨⟨⟨h1, h1b⟩, h1c⟩, h2⟩ := hp
+    iintro ⟨Hi, Hc, Hs, He⟩
+    rw [show c = ctlOf σ from h1.symm,
+      show S = suppliesOf σ from h1c.symm]
+    imod interp_ctl_sup_move_lk (hlay σ h1 h1b h1c h2)
+      (henvL σ h1 h1b h1c h2) (fun _ => hwfp σ h1 h1b h1c h2)
+      $$ [$Hi $Hc $Hs] with ⟨Hi, Hc, Hs⟩
+    imodintro
+    rw [hctl' σ h1 h1b h1c h2,
+      show suppliesOf (upd σ) = suppliesOf σ from by
+        rw [hsup σ h1 h1b h1c h2, h1c]]
+    iframe Hi Hc Hs He
+
 /-- `wpk_seq_ctl_env2` at a control family. -/
 theorem wpk_seq_ctl_env2_fam {x₁ x₂ : sym} {vx₁ vx₂ : value}
     {dq₁ dq₂ : DFrac}

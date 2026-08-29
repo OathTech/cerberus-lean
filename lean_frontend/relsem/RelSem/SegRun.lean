@@ -430,6 +430,52 @@ theorem birth_wfp (hb : EnvWfFrame f) : EnvWfFrame (ins b v f) := by
       Lem_Map.instBEqOfMapKeyType RelSem.Kit.symCmpO
       (@Lem_Map.mapKeyCompare sym _) b v f hbuilt)
 
+/-- REBIND preserve (V3a continuation — the label-jump rebind
+    class): re-inserting a key at its CURRENT value changes no
+    lookup. With `fmapLookupBy_congr` this is the "cmp-equal aliases"
+    leg the V2 write rule anticipated. -/
+theorem rebind_pres (hb : EnvWfFrame f)
+    (hself : lookup_env b [f] = some v) :
+    ∀ z, lookup_env z [ins b v f] = lookup_env z [f] := by
+  intro z
+  have hshim : ∀ (m : Fmap sym value), lookup_env z [m]
+      = fmapLookupBy (@Lem_Map.mapKeyCompare sym _) z m := by
+    intro m
+    cases h : fmapLookupBy (@Lem_Map.mapKeyCompare sym _) z m <;>
+      simp [lookup_env, h]
+  have hshimb : lookup_env b [f]
+      = fmapLookupBy (@Lem_Map.mapKeyCompare sym _) b f := by
+    cases h : fmapLookupBy (@Lem_Map.mapKeyCompare sym _) b f <;>
+      simp [lookup_env, h]
+  have hbuilt : RelSem.Kit.FmapBuilt RelSem.Kit.symCmpO f := by
+    cases hb with
+    | inl he =>
+      subst he
+      rw [hshimb] at hself
+      exact absurd hself (by
+        rw [RelSem.Kit.fmapLookupBy_empty]; simp)
+    | inr h => exact h
+  by_cases hz : RelSem.Kit.symCmpO b z = .eq
+  · have hzb : RelSem.Kit.symCmpO z b = .eq := by
+      obtain ⟨d1, n1, s1⟩ := b
+      obtain ⟨d2, n2, s2⟩ := z
+      obtain ⟨hd, hn⟩ := (RelSem.Kit.symCmpO_eq_iff d1 d2 n1 n2
+        s1 s2).1 hz
+      exact (RelSem.Kit.symCmpO_eq_iff d2 d1 n2 n1 s2 s1).2
+        ⟨hd.symm, hn.symm⟩
+    rw [hshim, hshim,
+      @RelSem.Kit.fmapLookupBy_addBy_eq sym value
+        Lem_Map.instBEqOfMapKeyType RelSem.Kit.symCmpO
+        RelSem.Kit.instTransCmpSymCmpO _ _ b z v f hbuilt hz,
+      @RelSem.Kit.fmapLookupBy_congr sym value
+        Lem_Map.instBEqOfMapKeyType RelSem.Kit.symCmpO
+        RelSem.Kit.instTransCmpSymCmpO _ z b f hbuilt hzb,
+      ← hshimb, hself]
+  · rw [hshim, hshim]
+    exact @RelSem.Kit.fmapLookupBy_addBy_ne sym value
+      Lem_Map.instBEqOfMapKeyType RelSem.Kit.symCmpO
+      RelSem.Kit.instTransCmpSymCmpO _ _ b z v f hbuilt hz
+
 /-- Ledger-to-class emptiness (the `hsh` feeder). -/
 theorem clsNone {d : List Int}
     (hdm : ∀ z v', lookup_env z [f] = some v' → symNum z ∈ d)
@@ -677,6 +723,171 @@ theorem link_ctl_env2 {i₁ i₂ : Nat} {x₁ x₂ : sym} {vx₁ vx₂ : value}
   iintro ⟨Hc, Hx₁, Hx₂⟩
   icases (envCells_focus hcell₂).2 $$ [$Hx₂ $He] with He
   icases (envCells_focus hcell₁).2 $$ [$Hx₁ $He] with He
+  iapply Hk
+  isimp only [Ctx.interp, SegCtx]
+  iframe Hc Hs Hd He Hm Ha Hb
+
+/-- REBIND LINK (V3a continuation — the label-jump class:
+    `save`/`run L(x₁,x₂)` re-bind EXISTING keys to their current cell
+    values; the spine respells, every lookup is preserved, the ghost
+    env is untouched). Two cells READ; delegates to
+    `wpk_seq_ctl_env2_lk`. -/
+@[step_law (kind := segLink) (variant := rebind2) (side := fed)
+  (frontier := "seg/link-rebind2")
+  (trace := "{law := link_ctl_rebind2, joint := seg/link, hyps := [hcell : ground(index), happ : fed(round eq at the reinsert spelling)]}")
+  (lineage := "lookup-preserving env respell at the label jump; rebind_pres legs; delegates to wpk_seq_ctl_env2_lk")]
+theorem link_ctl_rebind2 {i₁ i₂ : Nat} {x₁ x₂ : sym} {vx₁ vx₂ : value}
+    (hcell₁ : env[i₁]? = some (x₁, vx₁))
+    (hcell₂ : (env.eraseIdx i₁)[i₂]? = some (x₂, vx₂))
+    (hIn : FamShape famI) (hOut : FamShape famO)
+    (hinv : ∀ σ, ctlOf σ = cI → EnvWf σ → ∃ p, σ = famI p)
+    (happ : ∀ p, EnvWfFrame p.f₁ → lookup_env x₁ [p.f₁] = some vx₁ →
+      lookup_env x₂ [p.f₁] = some vx₂ →
+      app (dnmsRoundM td tid) (famI p)
+        = (NDactive (Sum.inl NOWAKEUP),
+           famO { p with f₁ := ins x₁ vx₁ (ins x₂ vx₂ p.f₁) }))
+    (hctlO : ∀ p, ctlOf (famO p) = cO) :
+    SegStep (GF := GF) td tid 1 ⟨cI, S, env, mr, al, bs⟩
+      ⟨cO, S, env, mr, al, bs⟩ := by
+  intro F f hF acc xs' k s E Φ
+  subst hF
+  show SegCtx cI S env mr al bs ∗ _ ⊢
+    WP (KExpr.seq (dnmsRoundM td tid) _) @ s ; E {{ Φ }}
+  iintro ⟨⟨Hc, Hs, Hd, He, Hm, Ha, Hb⟩, Hk⟩
+  icases (envCells_focus hcell₁).1 $$ He with ⟨Hx₁, He⟩
+  icases (envCells_focus hcell₂).1 $$ He with ⟨Hx₂, He⟩
+  iapply (wpk_seq_ctl_env2_lk (GF := GF)
+    (c := cI) (c' := cO) (S := S)
+    (x₁ := x₁) (x₂ := x₂) (vx₁ := vx₁) (vx₂ := vx₂)
+    (dq₁ := .own 1) (dq₂ := .own 1)
+    (upd := fun σ =>
+      famO { packProj σ with
+        f₁ := ins x₁ vx₁ (ins x₂ vx₂ (packProj σ).f₁) })
+    (fun σ hσ hwf hsup hx₁ hx₂ => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf
+      rw [hIn.proj p]
+      exact happ p (wfFrame_of (hIn.th p) hwf)
+        (envLk_of (hIn.th p) hx₁) (envLk_of (hIn.th p) hx₂))
+    (fun σ hσ hwf hsup hx₁ hx₂ => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf
+      rw [hIn.proj p]; exact hctlO _)
+    (fun σ hσ hwf hsup hx₁ hx₂ => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf
+      rw [hIn.proj p, hOut.lay, hIn.lay p])
+    (fun σ hσ hwf hsup hx₁ hx₂ => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf
+      rw [hIn.proj p, hOut.sup]
+      rw [hIn.sup p] at hsup
+      cases hsup
+      rfl)
+    (fun σ hσ hwf hsup hx₁ hx₂ => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf
+      intro z
+      rw [hIn.proj p]
+      have hf : EnvWfFrame p.f₁ := wfFrame_of (hIn.th p) hwf
+      have h1 : lookup_env x₁ [p.f₁] = some vx₁ :=
+        envLk_of (hIn.th p) hx₁
+      have h2 : lookup_env x₂ [p.f₁] = some vx₂ :=
+        envLk_of (hIn.th p) hx₂
+      show envLookup (famO { p with
+          f₁ := ins x₁ vx₁ (ins x₂ vx₂ p.f₁) }) z
+        = envLookup (famI p) z
+      rw [show envLookup (famO { p with
+            f₁ := ins x₁ vx₁ (ins x₂ vx₂ p.f₁) }) z
+          = lookup_env z (thread0Env (famO { p with
+              f₁ := ins x₁ vx₁ (ins x₂ vx₂ p.f₁) })) from rfl,
+        hOut.th,
+        show envLookup (famI p) z
+          = lookup_env z (thread0Env (famI p)) from rfl,
+        hIn.th p]
+      have h1' : lookup_env x₁ [ins x₂ vx₂ p.f₁] = some vx₁ := by
+        rw [rebind_pres hf h2 x₁]; exact h1
+      rw [rebind_pres (birth_wfp hf) h1' z, rebind_pres hf h2 z])
+    (fun σ hσ hwf hsup hx₁ hx₂ => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf
+      rw [hIn.proj p]
+      have hf : EnvWfFrame p.f₁ := wfFrame_of (hIn.th p) hwf
+      exact envWf_of_frame (hOut.th _)
+        (birth_wfp (birth_wfp hf))))
+  isplitl [Hc Hs Hx₁ Hx₂]
+  · iframe Hc Hs Hx₁ Hx₂
+  iintro ⟨Hc, Hs, Hx₁, Hx₂⟩
+  icases (envCells_focus hcell₂).2 $$ [$Hx₂ $He] with He
+  icases (envCells_focus hcell₁).2 $$ [$Hx₁ $He] with He
+  iapply Hk
+  isimp only [Ctx.interp, SegCtx]
+  iframe Hc Hs Hd He Hm Ha Hb
+
+/-- One-cell REBIND LINK. -/
+@[step_law (kind := segLink) (variant := rebind1) (side := fed)
+  (frontier := "seg/link-rebind1")
+  (trace := "{law := link_ctl_rebind1, joint := seg/link, hyps := [hcell : ground(index), happ : fed(round eq at the reinsert spelling)]}")
+  (lineage := "lookup-preserving env respell, one cell; delegates to wpk_seq_ctl_env1_lk")]
+theorem link_ctl_rebind1 {i : Nat} {x : sym} {vx : value}
+    (hcell : env[i]? = some (x, vx))
+    (hIn : FamShape famI) (hOut : FamShape famO)
+    (hinv : ∀ σ, ctlOf σ = cI → EnvWf σ → ∃ p, σ = famI p)
+    (happ : ∀ p, EnvWfFrame p.f₁ → lookup_env x [p.f₁] = some vx →
+      app (dnmsRoundM td tid) (famI p)
+        = (NDactive (Sum.inl NOWAKEUP),
+           famO { p with f₁ := ins x vx p.f₁ }))
+    (hctlO : ∀ p, ctlOf (famO p) = cO) :
+    SegStep (GF := GF) td tid 1 ⟨cI, S, env, mr, al, bs⟩
+      ⟨cO, S, env, mr, al, bs⟩ := by
+  intro F f hF acc xs' k s E Φ
+  subst hF
+  show SegCtx cI S env mr al bs ∗ _ ⊢
+    WP (KExpr.seq (dnmsRoundM td tid) _) @ s ; E {{ Φ }}
+  iintro ⟨⟨Hc, Hs, Hd, He, Hm, Ha, Hb⟩, Hk⟩
+  icases (envCells_focus hcell).1 $$ He with ⟨Hx, He⟩
+  iapply (wpk_seq_ctl_env1_lk (GF := GF)
+    (c := cI) (c' := cO) (S := S)
+    (x := x) (vx := vx) (dq := .own 1)
+    (upd := fun σ =>
+      famO { packProj σ with f₁ := ins x vx (packProj σ).f₁ })
+    (fun σ hσ hwf hsup hx => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf
+      rw [hIn.proj p]
+      exact happ p (wfFrame_of (hIn.th p) hwf)
+        (envLk_of (hIn.th p) hx))
+    (fun σ hσ hwf hsup hx => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf
+      rw [hIn.proj p]; exact hctlO _)
+    (fun σ hσ hwf hsup hx => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf
+      rw [hIn.proj p, hOut.lay, hIn.lay p])
+    (fun σ hσ hwf hsup hx => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf
+      rw [hIn.proj p, hOut.sup]
+      rw [hIn.sup p] at hsup
+      cases hsup
+      rfl)
+    (fun σ hσ hwf hsup hx => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf
+      intro z
+      rw [hIn.proj p]
+      have hf : EnvWfFrame p.f₁ := wfFrame_of (hIn.th p) hwf
+      have h1 : lookup_env x [p.f₁] = some vx :=
+        envLk_of (hIn.th p) hx
+      show envLookup (famO { p with f₁ := ins x vx p.f₁ }) z
+        = envLookup (famI p) z
+      rw [show envLookup (famO { p with f₁ := ins x vx p.f₁ }) z
+          = lookup_env z (thread0Env (famO { p with
+              f₁ := ins x vx p.f₁ })) from rfl,
+        hOut.th,
+        show envLookup (famI p) z
+          = lookup_env z (thread0Env (famI p)) from rfl,
+        hIn.th p]
+      exact rebind_pres hf h1 z)
+    (fun σ hσ hwf hsup hx => by
+      obtain ⟨p, rfl⟩ := hinv σ hσ hwf
+      rw [hIn.proj p]
+      have hf : EnvWfFrame p.f₁ := wfFrame_of (hIn.th p) hwf
+      exact envWf_of_frame (hOut.th _) (birth_wfp hf)))
+  isplitl [Hc Hs Hx]
+  · iframe Hc Hs Hx
+  iintro ⟨Hc, Hs, Hx⟩
+  icases (envCells_focus hcell).2 $$ [$Hx $He] with He
   iapply Hk
   isimp only [Ctx.interp, SegCtx]
   iframe Hc Hs Hd He Hm Ha Hb
