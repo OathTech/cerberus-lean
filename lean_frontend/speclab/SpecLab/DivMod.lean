@@ -128,66 +128,12 @@ theorem decode_encode_i32le (n : Int) (h : inI32 n) (rest : Stream) :
   simp only [decodeI32LE, encodeI32LE, decode_encode_u32le (toU32 n) rest,
     ofU32_toU32 n h]
 
-/-- Encode-after-decode canonicity at the u16 wire level: a stream a
-decode consumes IS the encoding of the decoded value. -/
-theorem encode_decode_u16le (s rest : Stream) (u : UInt16)
-    (h : decodeU16LE s = some (u, rest)) :
-    s = encodeU16LE u ++ rest := by
-  match s with
-  | b0 :: b1 :: s' =>
-    have hb0 := b0.toNat_lt
-    have hb1 := b1.toNat_lt
-    simp only [decodeU16LE, Option.some.injEq, Prod.mk.injEq] at h
-    obtain ⟨hu, hrest⟩ := h
-    subst hrest
-    have h16 : u.toNat = b0.toNat + 256 * b1.toNat := by
-      rw [← hu]
-      simp
-      omega
-    have hb0' : b0 = UInt8.ofNat (u.toNat % 256) := by
-      apply UInt8.toNat_inj.mp
-      simp
-      omega
-    have hb1' : b1 = UInt8.ofNat (u.toNat / 256) := by
-      apply UInt8.toNat_inj.mp
-      simp
-      omega
-    simp [encodeU16LE, hb0', hb1']
-  | [] => simp [decodeU16LE] at h
-  | [_] => simp [decodeU16LE] at h
-
-/-- Encode-after-decode canonicity at the u32 wire level (composes the
-u16 halves). -/
-theorem encode_decode_u32le (s rest : Stream) (u : UInt32)
-    (h : decodeU32LE s = some (u, rest)) :
-    s = encodeU32LE u ++ rest := by
-  cases h1 : decodeU16LE s with
-  | none => simp [decodeU32LE, h1] at h
-  | some p =>
-    obtain ⟨lo, s1⟩ := p
-    cases h2 : decodeU16LE s1 with
-    | none => simp [decodeU32LE, h1, h2] at h
-    | some q =>
-      obtain ⟨hi, s2⟩ := q
-      simp only [decodeU32LE, h1, h2, Option.some.injEq,
-        Prod.mk.injEq] at h
-      obtain ⟨hu, hrest⟩ := h
-      rw [hrest] at h2
-      have hlo' := lo.toNat_lt
-      have hhi' := hi.toNat_lt
-      have e1 := encode_decode_u16le s s1 lo h1
-      have e2 := encode_decode_u16le s1 rest hi h2
-      have hlo : u32lo u = lo := by
-        apply UInt16.toNat_inj.mp
-        rw [← hu]
-        simp only [u32lo, UInt32.toNat_ofNat', UInt16.toNat_ofNat']
-        omega
-      have hhi : u32hi u = hi := by
-        apply UInt16.toNat_inj.mp
-        rw [← hu]
-        simp only [u32hi, UInt32.toNat_ofNat', UInt16.toNat_ofNat']
-        omega
-      rw [e1, e2, encodeU32LE, hlo, hhi, List.append_assoc]
+/- Wire-level encode-after-decode canonicity (the S1 local lemmas
+`encode_decode_u16le`/`encode_decode_u32le`) was CONSOLIDATED into the
+idiom library as `Codec.canonical_u16le`/`Codec.canonical_u32le`
+(texts preserved there verbatim; the S1-E2 "ship both laws"
+recommendation). The i32-layer lift below now derives from the
+library copy. TODO item closed in the 2026-09-01 S-basket slice. -/
 
 /-! ## Input/result codecs -/
 
@@ -257,7 +203,7 @@ theorem encode_decode_i32le' (s rest : Stream) (x : Int)
     simp only [decodeI32LE, hu, Option.some.injEq, Prod.mk.injEq] at h
     obtain ⟨hx, hs⟩ := h
     rw [hs] at hu
-    have e := encode_decode_u32le s rest u hu
+    have e := canonical_u32le s u rest hu
     rw [e, encodeI32LE, ← hx, toU32_ofU32]
 
 /-- Stream canonicity at the input codec: any stream `decodeInput`

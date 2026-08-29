@@ -204,8 +204,9 @@ with the OPERATIONAL stream-validity form needs BOTH codec laws:
 "codecs should ship BOTH laws from the start" — is adopted here:
 `Canonical` is the second idiom-library law, with instances for the
 S0 codecs the byte-blaster rung consumes. (The u16 canonicity proof
-shape follows the S1 i32-layer proofs in SpecLab/DivMod.lean, which
-predate this contract and stay as-is — churn isolation.) -/
+shape follows the S1 i32-layer proofs in SpecLab/DivMod.lean; the S1
+wire-level local copies were consolidated into this library in the
+2026-09-01 S-basket slice — DivMod keeps only its i32-layer lift.) -/
 
 /-- The canonicity contract: any stream a decoder consumes a prefix of
 IS the encoding of the decoded value followed by the rest — every
@@ -249,10 +250,11 @@ theorem canonical_u16le : Canonical encodeU16LE decodeU16LE := by
   | [_] => simp [decodeU16LE] at h
 
 /-- Canonicity at the u32 wire (arc-15 S5: the CN-seed rung's swap
-codec is u64le, whose canonicity composes from this; proof shape =
+codec is u64le, whose canonicity composes from this; proof text =
 the S1 `DivMod.encode_decode_u32le`, re-homed to the library per the
-S1-E2 "ship both laws" recommendation — the DivMod local copy stays,
-consolidation parked). -/
+S1-E2 "ship both laws" recommendation — the DivMod local copies are
+DELETED as of the 2026-09-01 S-basket consolidation; DivMod's
+i32-layer `encode_decode_i32le'` derives from this lemma). -/
 theorem canonical_u32le : Canonical encodeU32LE decodeU32LE := by
   intro s a rest h
   cases h1 : decodeU16LE s with

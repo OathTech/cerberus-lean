@@ -29,8 +29,6 @@ downstream.)
 - Oracle `--batch` allocation-census line — would give the speclab
   leak checks an oracle-differential leg (today they are in-Lean
   only); a candidate patch for upstream Cerberus.
-- DivMod local-canonicity consolidation into `Codec.Canonical`
-  (noted in `speclab/SpecLab/Codec.lean`).
 
 ## Needs maintainer action or network access
 
