@@ -100,3 +100,10 @@ let put st =
 (* HACK: inline only added to prevent Lem's renaming *)
 let inline fmap = state_fmap
 let inline replicateM = state_replicateM
+
+(* === Totality declares (thread-B lem totalization, 2026-08-29):
+   Lean-target only; OCaml output byte-identical. List-structural
+   recursion — 'automatic' lets Lean derive termination (arc-3
+   convention; V0 exec-cone census 2026-08-27 flags foldlM). === *)
+declare {lean} termination_argument foldlM = automatic
+declare {lean} termination_argument foldrM = automatic

@@ -1322,3 +1322,17 @@ let rec agnostic_alignment_requirement_ord ((Ctype.Ctype _ ty1_) as ty1) ((Ctype
     | _ ->
         Nothing
   end
+
+(* === Totality declares (thread-B lem totalization, 2026-08-29):
+   Lean-target only; OCaml output byte-identical. The are_compatible
+   mutual family recurses through ctype subterms carried in pairs and
+   pair-lists — beyond Lean's automatic termination derivation (the
+   arc-3 pair-list finding, see core_run_aux.lem): fuel, all-or-none
+   across the mutual block (backend requirement). lemDefaultFuel (10^6)
+   dominates any real ctype depth by orders of magnitude; exhaustion is
+   LOUD (fuelExhausted panics — fail-closed, never a silent default).
+   Ruling [USER, V2 close 2026-08-28]: "make the model total in the
+   proper way", signed off as lem-side fuel. === *)
+declare {lean} fuel val are_compatible = `fuelExhausted false`
+declare {lean} fuel val are_compatible_params_aux = `fuelExhausted (fun _ => false)`
+declare {lean} fuel val are_compatible_params = `fuelExhausted false`

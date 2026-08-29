@@ -108,6 +108,14 @@ let decode_with_address (Attrs xs) =
           get_with_address annots'
     end
 
+  (* === Totality declare (thread-B lem totalization, 2026-08-29):
+     Lean-target only; OCaml output byte-identical (declare placed
+     inline — the file's EOF is unterminated and must stay so). List-
+     structural recursion — 'automatic' lets Lean derive termination
+     (arc-3 convention; V0 exec-cone census 2026-08-27, call-plumbing
+     row). === *)
+  declare {lean} termination_argument get_with_address = automatic
+
 
 (* This implements the 'cerb::hidden' attributes which tells the pprint
    functions to hide declarations/definitions (for debug level < 4) *)

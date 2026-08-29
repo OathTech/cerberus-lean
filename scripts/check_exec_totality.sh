@@ -41,10 +41,20 @@ ENFORCE="${ENFORCE:-0}"
 # State_exception_undefined are now partial-free and may not regress —
 # the slate theorems' app-equation computations (RelSem/T1.lean etc.)
 # need their kernel equations.
+# Thread-B lem totalization (2026-08-29) extends the gate over the four
+# modules freed by the V0 exec-cone-census E-slice declares
+# (frontend/model/{state,state_exception,translation_aux,
+# cerb_attributes}.lem; are_compatible's fuel family lives in
+# ail/ailTypesAux.lem, whose module is NOT gate-listed — it retains 7
+# unrelated partials): State, State_exception, Translation_aux,
+# Cerb_attributes are now partial-free and may not regress — the V4
+# call rules need are_compatible's (and the folds') kernel equations.
+# Record: lean_frontend/docs/2026-08-29_threadB-totalization.md.
 EXEC_MODULES=(Core_run Core_reduction Core_eval Driver Core_run_aux
               Core_aux Defacto_memory Defacto_memory_aux Ctype_aux
               Nondeterminism Mem_aux
-              Utils Annot Ctype Core State_exception_undefined)
+              Utils Annot Ctype Core State_exception_undefined
+              State State_exception Translation_aux Cerb_attributes)
 
 declare -A allowed=()
 if [[ -f "$ALLOW" ]]; then

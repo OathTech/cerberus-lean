@@ -144,3 +144,10 @@ let inline foldlM = stExcept_foldlM
 let inline return = stExpect_return
 let inline bind = stExpect_bind
 let inline mapM = stExpect_mapM
+
+(* === Totality declares (thread-B lem totalization, 2026-08-29):
+   Lean-target only; OCaml output byte-identical. List-structural
+   recursion — 'automatic' lets Lean derive termination (arc-3
+   convention; V0 exec-cone census 2026-08-27, monadic-folds row). === *)
+declare {lean} termination_argument stExcept_foldlM = automatic
+declare {lean} termination_argument foldrM = automatic

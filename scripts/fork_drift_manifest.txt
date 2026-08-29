@@ -61,6 +61,15 @@
 # backend/lean_export/dune were already [files] entries; their deltas
 # grew the flag plumbing and the c_parser library dependency
 # respectively.
+# NOTE (thread-B lem totalization, 2026-08-29; record
+# lean_frontend/docs/2026-08-29_threadB-totalization.md): NEW [files]
+# entries frontend/model/{state,state_exception,translation_aux,
+# cerb_attributes}.lem — Lean-target-only totality declares
+# (termination_argument = automatic), V0 exec-cone-census E-slice.
+# Generated OCaml verified BYTE-IDENTICAL (sha256 over all 86 files),
+# so no [expected-*] hash moves: the divergence is .lem-source-only.
+# (ailTypesAux.lem + core_run_aux.lem also carry this slice's declares
+# but were already manifested.)
 [meta]
 merge-base=b9aeedcb4dd438763b0eef7f95ac19e93875d7de
 lem-pin=11d4b4c
@@ -87,6 +96,7 @@ frontend/model/boot.lem
 frontend/model/builtins.lem
 frontend/model/cabs_to_ail_effect.lem
 frontend/model/cabs_to_ail.lem
+frontend/model/cerb_attributes.lem
 frontend/model/cn.lem
 frontend/model/core_aux.lem
 frontend/model/core_eval.lem
@@ -114,9 +124,12 @@ frontend/model/mem.lem
 frontend/model/mini_pipeline.lem
 frontend/model/nondeterminism.lem
 frontend/model/pp.lem
+frontend/model/state_exception.lem
 frontend/model/state_exception_undefined.lem
+frontend/model/state.lem
 frontend/model/std.lem
 frontend/model/symbol.lem
+frontend/model/translation_aux.lem
 frontend/model/translation_effect.lem
 frontend/model/translation.lem
 frontend/model/utils.lem
