@@ -6,10 +6,17 @@
 #   cause and fix as the 5 coverage varargs files (CerbMem varargs memops
 #   were stubs; now mirror impl_mem.ml:2698-2764, prototype port
 #   Step.lean:1441-1513 attributed; see exec_coverage_baseline.txt note).
+# 2026-08-31 semantics-first split: compat-04-funcptr-enum-int.c
+#   DIFF -> UB_MATCH — attributed to the threadB E-slice totalization
+#   (commit ee02f3031, are_compatible by lem-side fuel; record
+#   lean_frontend/docs/2026-08-29_threadB-totalization.md). The
+#   movement was masked at threadB time by a stale generated tree in
+#   this worktree (remediated at the split, split record §6.6);
+#   re-recorded here in a dedicated baseline commit per house rule.
 # Per-category summary (regenerate via docs/2026-08-19_arc4-s4b-corpus-scoreboard.md recipe):
 #   alias      n=3   MATCH=1 UB_MATCH=2
 #   align      n=4   MATCH=4
-#   compat     n=4   DIFF=1 MATCH=3
+#   compat     n=4   DIFF=1 MATCH=3   (2026-08-31: now UB_MATCH=1 MATCH=3, see below)
 #   conv       n=9   MATCH=9
 #   div        n=3   MATCH=3
 #   float      n=7   MATCH=7
@@ -32,7 +39,7 @@ align-04-no-globals.c MATCH
 compat-01-funcall-types.c MATCH
 compat-02-size-t.c MATCH
 compat-03-enum-int.c MATCH
-compat-04-funcptr-enum-int.c DIFF
+compat-04-funcptr-enum-int.c UB_MATCH
 conv-01-neg-to-unsigned.c MATCH
 conv-02-unsigned-cmp-self.c MATCH
 conv-03-neg-cmp-umax.c MATCH
