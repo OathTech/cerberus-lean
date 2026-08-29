@@ -1,13 +1,12 @@
-# tests/corpus concrete sample rows (V0, 2026-08-27 — the frozen
-# target corpus's family→sample pattern; record
-# lean_frontend/docs/2026-08-27_v0-statements-and-ban.md).
+# tests/corpus call-point expectation pins (fixtures:
+# lean_frontend/corpus, hash-gated by check_fixture_freeze.sh).
 # Format: <corpus-stem> <function> <args-csv> <expected>
-# These run the LEAN PIPELINE's call harness (--batch --call) at
-# concrete points of each registered batch-A P-statement's family and
-# compare against the PURE SPEC's value — the executable sanity net
-# UNDER the honest-unproved corpus targets, never a substitute.
-# (The emitted-term twin points live in Unit.EmitLeanCoreTest's
-# corpusPoints — same values, run on the assembled theorem objects.)
+# PROVENANCE (re-based 2026-08-31, semantics-first split): each row is
+# run as an ORACLE-DIFFERENTIAL by test_verify.sh — the Lean driver's
+# --call mode vs the oracle on a rendered wrapper TU (main returning
+# f(args)) — and both must equal the pin recorded here (drift
+# detection on previously recorded verdicts). Rows born 2026-08-27
+# with the corpus.
 p01_clamp clamp0 -3 Specified(0)
 p01_clamp clamp0 5 Specified(5)
 p01_clamp clamp0 -2147483648 Specified(0)

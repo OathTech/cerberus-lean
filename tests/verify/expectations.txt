@@ -1,19 +1,16 @@
-# 2026-08-27 KILL-LIST EXECUTION (operator-ratified; record
-# lean_frontend/docs/2026-08-27_kill-list-execution.md): the
-# harness-point rows for the killed concrete-input theorems (t6, t7,
-# e1-e5, c4, c5, c3a, c3b, x7, x2, c9, x3, z1, z2 — 70 rows) are
-# DELETED with their theorems; the .c fixtures and their pinned .core
-# dumps STAY on the test ledger (pin-provenance + main-mode
-# differential rows are per-fixture and unaffected). The rows below
-# are the T1-T5 sanity points under the KEPT threaded slate.
-# tests/verify concrete-instance expectations (arc-7 S3).
+# tests/verify call-point expectation pins.
 # Format: <fixture-stem> <function> <args-csv|-> <expected>
-#   expected = Specified(N) — harness verdict value must match, or
-#              UB<code>     — harness must report exactly this UB.
-# These are the CONCRETE sanity points under the slate theorems (T1-T5,
-# charter "Verification-target slate") — never a substitute for them.
-# The UB rows document the spec-discovery the theorems must exclude by
-# precondition (T2: signed-overflow is UB — UB036).
+#   expected = Specified(N) — the verdict value, or
+#              UB<code>     — exactly this UB.
+# PROVENANCE (re-based 2026-08-31, semantics-first split): each row is
+# run as an ORACLE-DIFFERENTIAL by test_verify.sh — the Lean driver's
+# --call mode vs the oracle on a rendered wrapper TU (main returning
+# f(args)) — and both must equal the pin recorded here; the pin's role
+# is drift detection on previously recorded verdicts. The UB rows
+# record spec-discovery points (e.g. t2_add: signed-overflow UB036).
+# (History: rows born arc-7 S3 as concrete sanity points under the
+# then-theorem slate; 70 concrete-input rows deleted at the 2026-08-27
+# kill-list execution; m1_sgn rows added 2026-08-28.)
 t1_id id 5 Specified(5)
 t1_id id -7 Specified(-7)
 t1_id id 2147483647 Specified(2147483647)

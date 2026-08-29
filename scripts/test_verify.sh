@@ -1,28 +1,32 @@
 #!/bin/bash
-# test_verify.sh — arc-7 S3: the verification-slate fixture net
-# (tests/verify/, charter "Verification-target slate" T1-T5).
+# test_verify.sh — the fixture-differential net (tests/verify/ +
+# lean_frontend/corpus via tests/corpus pins).
 #
-# Two fail-closed checks per fixture:
+# Fail-closed checks per fixture:
 #
-#   1. MAIN-MODE DIFFERENTIAL — OCaml oracle (--nolibc --exec --batch
+#   1. PIN PROVENANCE — the pinned Core dump (tests/verify/*.core,
+#      tests/corpus/*.core[.sha256]) must be re-derivable from the .c
+#      source via the oracle, byte-identically (or by content hash for
+#      the large dumps).
+#
+#   2. MAIN-MODE DIFFERENTIAL — OCaml oracle (--nolibc --exec --batch
 #      --mode=exhaustive) vs the Lean pipeline (--batch <cabs-json>) on
-#      the fixture's concrete main(), full-stdout verdict comparison
+#      the fixture's concrete main(), full verdict-line comparison
 #      (these are single-verdict programs; any difference is a FAIL).
 #
-#   2. CALL-HARNESS CONCRETE INSTANCES — the symbolic-argument harness
+#   3. CALL-POINT DIFFERENTIAL — the Lean driver's --call mode
 #      (cerberus-lean --call <f> --call-args <ints>, RelSem.Cerb.callND)
-#      run at the concrete points of tests/verify/expectations.txt; the
-#      verdict (Specified value / UB code) must equal the recorded pure
-#      spec. The oracle has no call harness, so these rows check the
-#      harness against the SPEC the theorems quantify — including the
-#      UB rows that document T2's forced no-signed-overflow
-#      precondition.
-#
-# This is the CONCRETE sanity net UNDER the slate theorems (operator
-# ruling: a concrete run validates plumbing, never the logic) — the
-# theorems remain the deliverable. Ladder placement: reporting-tier
-# instrument until the orchestrator promotes it (fail-closed exit
-# either way; runtime is a few seconds).
+#      at the concrete points of the expectations files, compared
+#      against the ORACLE run at the same point: the oracle has no
+#      --call mode, so the script renders a wrapper TU (the fixture
+#      with `main` preprocessor-renamed + a fresh `main` returning
+#      `f(args)`) and runs it main-mode. Both verdicts (Specified
+#      value / UB code) must equal each other AND the recorded
+#      expectation pin (drift detection on the recorded rows).
+#      (Re-based 2026-08-31, semantics-first split: these rows
+#      formerly compared against theorem-spec values; they are now
+#      pure oracle-differential rows with the pins as recorded
+#      provenance.)
 #
 # Usage: ./scripts/test_verify.sh [-v]
 
@@ -46,6 +50,29 @@ build_lean
 
 PASS=0
 FAIL=0
+
+# Render the oracle wrapper TU for a call point: the fixture with
+# `main` preprocessor-renamed out of the way + a fresh main returning
+# f(args). Emits the wrapper path on stdout.
+render_wrapper() {  # <fixture.c> <fname> <args-csv|->  -> wrapper path
+    local cfile="$1" fname="$2" argscsv="$3"
+    local wpath="$WORK_DIR/wrap_${fname}_$(echo "$argscsv" | tr ',-' '_m').c"
+    local callargs=""
+    [[ "$argscsv" != "-" ]] && callargs="$argscsv"
+    printf '#define main cerb_fixture_main_\n#include "%s"\n#undef main\nint main(void) { return %s(%s); }\n' \
+        "$cfile" "$fname" "$callargs" > "$wpath"
+    echo "$wpath"
+}
+
+# Extract the verdict token (Specified(N)/Unspecified value, or the
+# UB code) from a batch verdict line.
+verdict_of() {  # <line>
+    case "$1" in
+        Defined*)   sed -n 's/^Defined {value: "\([^"]*\)".*/\1/p' <<<"$1" ;;
+        Undefined*) sed -n 's/^Undefined {ub: "\([^"]*\)".*/\1/p' <<<"$1" ;;
+        *)          echo "<no verdict: $1>" ;;
+    esac
+}
 
 fail() { echo -e "${RED}FAIL${NC} $1"; FAIL=$((FAIL + 1)); }
 pass() { PASS=$((PASS + 1)); $VERBOSE && echo -e "${GREEN}ok${NC}   $1"; }
@@ -119,7 +146,9 @@ if [[ $fixture_count -eq 0 ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Call-harness concrete instances (expectations.txt)
+# Call-point differentials (expectations.txt): Lean --call vs the
+# oracle on a rendered wrapper TU vs the recorded pin — all three must
+# agree (fail-closed; a wrapper the oracle cannot run is a FAIL).
 # ---------------------------------------------------------------------------
 row_count=0
 while read -r stem fname argscsv expected; do
@@ -137,18 +166,17 @@ while read -r stem fname argscsv expected; do
         out=$(timeout 30 env LEAN_ABORT_ON_PANIC=1 "$CERBERUS_LEAN_BIN" \
             --batch --call "$fname" --call-args "$argscsv" "$json" 2>&1 | head -1)
     fi
-    # Extract the verdict token: Specified(N)/Unspecified from a Defined
-    # line's value field, or the UB code from an Undefined line.
-    got=""
-    case "$out" in
-        Defined*)   got=$(sed -n 's/^Defined {value: "\([^"]*\)".*/\1/p' <<<"$out") ;;
-        Undefined*) got=$(sed -n 's/^Undefined {ub: "\([^"]*\)".*/\1/p' <<<"$out") ;;
-        *)          got="<no verdict: $out>" ;;
-    esac
-    if [[ "$got" == "$expected" ]]; then
-        pass "$stem: $fname($argscsv) = $expected"
+    lean_got=$(verdict_of "$out")
+    wrapper=$(render_wrapper "$VERIFY_DIR/$stem.c" "$fname" "$argscsv")
+    oracle_line=$(timeout 30 bash -c '
+        source "'"$SCRIPT_DIR"'/common.sh"
+        run_cerberus --nolibc --exec --batch --mode=exhaustive "'"$wrapper"'" 2>/dev/null' \
+        | grep -E '^(Defined|Undefined|Error)' | head -1 || true)
+    oracle_got=$(verdict_of "$oracle_line")
+    if [[ "$lean_got" == "$oracle_got" && "$lean_got" == "$expected" ]]; then
+        pass "$stem: $fname($argscsv) = $expected (oracle-differential)"
     else
-        fail "$stem: $fname($argscsv) — expected $expected, got $got"
+        fail "$stem: $fname($argscsv) — pin $expected, lean $lean_got, oracle $oracle_got"
     fi
 done < "$EXPECT_FILE"
 
@@ -158,20 +186,16 @@ if [[ $row_count -eq 0 ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# THE CORPUS SAMPLE LANE (V0, 2026-08-27 — the frozen target corpus's
-# family→sample rows; record docs/2026-08-27_v0-statements-and-ban.md).
-# The corpus .c sources are FROZEN (lean_frontend/corpus, hash-gated by
-# check_proof_size.sh); dumps pinned under tests/corpus:
-#   * batch A + p14: in-tree pins, byte-identical re-derivation;
+# THE CORPUS FIXTURE LANE (lean_frontend/corpus — the pinned
+# differential-fixture set, hash-gated by check_fixture_freeze.sh);
+# dumps pinned under tests/corpus:
+#   * the small programs: in-tree pins, byte-identical re-derivation;
 #   * the arena programs (p04/p05/p06/p07/p08/p15 — 16–94 MB dumps):
 #     CONTENT-HASH pins (the libc.core B-F5 pattern), re-derived and
-#     sha256-compared here;
-#   * batch A: main-mode differential + call-harness rows
-#     (tests/corpus/expectations.txt);
-#   * the arena programs' main-mode Lean-exec rows arrive with the
-#     batch-B statement slice (the 4 MB-arena exec cost is priced in
-#     the V0 record; the oracle sample validation is the corpus
-#     freeze's 15/15 record).
+#     sha256-compared here (their main-mode Lean-exec rows are
+#     unpriced — the MB-arena exec cost — and not run);
+#   * the small programs: main-mode differential + call-point
+#     differential rows (tests/corpus/expectations.txt).
 # ---------------------------------------------------------------------------
 CORPUS_SRC_DIR="$PROJECT_ROOT/lean_frontend/corpus"
 CORPUS_PIN_DIR="$PROJECT_ROOT/tests/corpus"
@@ -286,16 +310,17 @@ if [[ -f "$CORPUS_EXPECT" ]]; then
         fi
         out=$(timeout 30 env LEAN_ABORT_ON_PANIC=1 "$CERBERUS_LEAN_BIN" \
             --batch --call "$fname" --call-args "$argscsv" "$json" 2>&1 | head -1)
-        got=""
-        case "$out" in
-            Defined*)   got=$(sed -n 's/^Defined {value: "\([^"]*\)".*/\1/p' <<<"$out") ;;
-            Undefined*) got=$(sed -n 's/^Undefined {ub: "\([^"]*\)".*/\1/p' <<<"$out") ;;
-            *)          got="<no verdict: $out>" ;;
-        esac
-        if [[ "$got" == "$expected" ]]; then
-            pass "corpus/$stem: $fname($argscsv) = $expected"
+        lean_got=$(verdict_of "$out")
+        wrapper=$(render_wrapper "$CORPUS_SRC_DIR/$stem.c" "$fname" "$argscsv")
+        oracle_line=$(timeout 30 bash -c '
+            source "'"$SCRIPT_DIR"'/common.sh"
+            run_cerberus --nolibc --exec --batch --mode=exhaustive "'"$wrapper"'" 2>/dev/null' \
+            | grep -E '^(Defined|Undefined|Error)' | head -1 || true)
+        oracle_got=$(verdict_of "$oracle_line")
+        if [[ "$lean_got" == "$oracle_got" && "$lean_got" == "$expected" ]]; then
+            pass "corpus/$stem: $fname($argscsv) = $expected (oracle-differential)"
         else
-            fail "corpus/$stem: $fname($argscsv) — expected $expected, got $got"
+            fail "corpus/$stem: $fname($argscsv) — pin $expected, lean $lean_got, oracle $oracle_got"
         fi
     done < "$CORPUS_EXPECT"
 fi
@@ -305,6 +330,6 @@ if [[ $corpus_row_count -eq 0 ]]; then
 fi
 
 echo ""
-echo "test_verify: $PASS passed, $FAIL failed ($fixture_count fixtures, $row_count harness points, $corpus_fixture_count corpus fixtures, $corpus_row_count corpus points)"
+echo "test_verify: $PASS passed, $FAIL failed ($fixture_count fixtures, $row_count call points, $corpus_fixture_count corpus fixtures, $corpus_row_count corpus points)"
 [[ $FAIL -eq 0 ]] || exit 1
 exit 0
