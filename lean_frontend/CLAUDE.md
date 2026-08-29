@@ -154,7 +154,8 @@ Golden fixtures live under `tests/fixtures/<name>/`:
 - (intermediate goldens for each stage as they come online)
 
 ```bash
-./scripts/test_golden.sh return42   # run the return42 fixture
+./scripts/test_golden.sh                     # run all fixtures
+./scripts/test_golden.sh 001-return-literal  # run one fixture
 ```
 
 ### Self-test
