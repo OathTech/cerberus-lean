@@ -78,8 +78,21 @@ build_cerberus() {
     # missing"), and building it is also what stages
     # _build/install/default/lib/cerberus-lib (std.core etc.), which
     # every --runtime=_build/install/default invocation needs.
-    (cd "$PROJECT_ROOT" && opam exec --switch="$PROJECT_ROOT" -- \
-        dune build backend/driver/main.exe cerberus-lib.install 2>&1 | tail -3)
+    # Trust-basket item d follow-up: gate on dune's exit status (same
+    # defect shape as build_lean's `| tail -3`); with the item-a
+    # freshness stamp auto-recorded below, a swallowed build failure
+    # would otherwise RECORD a stamp binding the old binary to the new
+    # tree — fabricated freshness. Fail here instead.
+    local _dlog="$TMP_DIR/build_cerberus.$$.log"
+    if ! (cd "$PROJECT_ROOT" && opam exec --switch="$PROJECT_ROOT" -- \
+        dune build backend/driver/main.exe cerberus-lib.install) > "$_dlog" 2>&1; then
+        echo "Error: cerberus build FAILED (dune exit nonzero); last 40 lines:" >&2
+        tail -40 "$_dlog" >&2
+        rm -f "$_dlog"
+        exit 1
+    fi
+    tail -3 "$_dlog"
+    rm -f "$_dlog"
     if [[ ! -f "$CERBERUS_BIN" ]]; then
         echo "Error: Cerberus build failed" >&2
         exit 1
@@ -106,8 +119,15 @@ build_cerberus() {
     # this step a post-`dune clean` rebuild leaves the path missing and
     # every libc-mode oracle invocation dies at startup
     # (Failure("file libc.co not found"), exit 125).
-    (cd "$PROJECT_ROOT" && opam exec --switch="$PROJECT_ROOT" -- \
-        dune build cerberus.install 2>&1 | tail -3)
+    if ! (cd "$PROJECT_ROOT" && opam exec --switch="$PROJECT_ROOT" -- \
+        dune build cerberus.install) > "$_dlog" 2>&1; then
+        echo "Error: cerberus.install build FAILED (dune exit nonzero); last 40 lines:" >&2
+        tail -40 "$_dlog" >&2
+        rm -f "$_dlog"
+        exit 1
+    fi
+    tail -3 "$_dlog"
+    rm -f "$_dlog"
     local staged_co="$PROJECT_ROOT/_build/install/default/lib/cerberus/runtime/libc/libc.co"
     if [[ ! -e "$staged_co" ]]; then
         echo "Error: cerberus install staging failed: $staged_co missing" >&2
