@@ -140,3 +140,116 @@ mention) is an operator decision at merge.
   runs (`--max`, explicit dirs) are smoke instruments and will also
   trip the (global) stale-triage check when the triaged files are out
   of corpus — loud, not silent.
+
+## Addendum (2026-08-30): pre-merge audit response
+
+Worker: gcc-oracle follow-up, on the branch rebased onto mainline
+`8fb380c9c` (parity-detective; purely additive, clean rebase, no
+conflicts). Quoted outputs are verbatim.
+
+**Audit verdict**: professor-class audit returned MERGE-SAFE-WITH-NOTES
+with two minor findings, both fixed here:
+
+1. **Triage ledger now pins values** (audit finding 1): each entry
+   carries machine-checked `gcc=<exit>` / `lean={<byte-set>}` fields;
+   an entry applies only when the observed pair equals the pins, and
+   on drift the row surfaces as an unresolved DISAGREE (rc 1, row
+   named). Design note §4 updated.
+2. **Signal/exit-conflation caveat stated at the soundness claim**
+   (audit finding 2): design note §2.1/§3.1 now state, where the
+   "can hide a disagreement, never fabricate one" claim is made, that
+   a native signal-`k` death whose `128+k` collides with the expected
+   exit byte counts AGREE — the lane's one false-AGREE channel (rare,
+   real, recorded, not defended).
+
+Also from audit notes: `timeout -k 1s` on native runs (a
+SIGTERM-ignoring program can no longer hang the lane; the resulting
+exit-137-past-deadline is folded into the elapsed-time timeout
+discriminator), and the same-rank skip-class-churn rc-0 behavior is
+now acknowledged in the design note §6 (deliberate test_exec.sh
+mirror, unchanged).
+
+**The determinism defect chain the pinning fix exposed** (two
+stop-and-reports, each ruled on before proceeding):
+
+- *Env byte-size* (stop-and-report 1): the first post-fix full run
+  failed — 5 stack-local-address pins drifted (e.g.
+  `intfromptr-05-to-long.c: gcc=52` vs pinned `gcc=20`) because, even
+  with ASLR off, the kernel places environ+argv at the stack top;
+  probe: same binary, exits 212/180/164 under three environment
+  sizes. The lane had been reproducible only while harness
+  invocations carried byte-identical environments.
+- *AT_EXECFN* (stop-and-report 2): env normalization alone left the
+  pins checkout-path-dependent — the kernel also copies the execve
+  path string onto the stack and bash's `exec` absolutizes it; probe:
+  same binary, normalized env, exits 148 (short path) vs 116 (long
+  path). Full byte-stable recipe (env `SHLVL=0` only, argv
+  `cmdname`, exec via `/proc/self/fd/9`): probe exit 244 invariant
+  across outer envs, cwds and path lengths. Design note §2.1 records
+  the full account.
+
+**Rulings** (provenance):
+
+- [AGENT] orchestrator ruling 1 (after stop-and-report 1): adopt the
+  normalized native-run environment — the only fail-closed option,
+  and it brings the code into conformance with the design note's
+  existing §2.1 "no further env" claim (code-satisfies-committed-
+  design, not a comparability-criteria change). Operator may override
+  at the merge gate.
+- [AGENT] orchestrator ruling 2 (after stop-and-report 2): adopt the
+  fully byte-stable exec chain; AMEND triage to BY-FILE semantics — a
+  ledger entry declares the file a divergence-class observer, always
+  `TRIAGED_*` even when values coincide (a layout coincidence is not
+  agreement; counting it AGREE would inflate the metric and arm a
+  flip-to-DISAGREE trap), with the pin check unchanged; re-key the O2
+  spot tier on `cksum(row key) mod stride` (phase-stable under status
+  flips and corpus insertions), with ONE sanctioned baseline
+  regeneration whose diff must be O2-columns only. Operator may
+  override at the merge gate. Under the normalized stack, three
+  entries (align-04, intfromptr-05, intfromptr-10) coincide at
+  `gcc=244 lean={244}` and remain triaged per the by-file rule; all
+  9 pins re-captured under the byte-stable recipe.
+
+**Baseline regeneration check** (the sanctioned rewrite; mechanical
+status-column identity against the previously committed baseline):
+
+```
+=== status-column identity check (committed vs regenerated):
+STATUS COLUMNS BYTE-IDENTICAL
+```
+
+(`diff` of `awk '{print $1,$2}'` over both files, comments stripped —
+zero status changes; the delta is O2-column-only, 333 rows re-phased,
+sampled tier 187 -> 190, all `O2_AGREE`, zero `O2_SKIP_*`, zero
+`O2_DISAGREE` — no new finding among the newly sampled files.)
+
+**Plant tests** (instrument certification of the pin mechanism):
+
+- Pin drift: doctored `align-02` pin `gcc=64`→`65` → run fails rc 1
+  naming the row: `DISAGREE tests/debug/align-02-print-addr.c:
+  gcc=64 lean={223} (TRIAGE PIN MISMATCH: ledger pins gcc=65 …)`;
+  ledger restored byte-identical, clean run confirmed.
+- By-file precedence: doctored `align-04` pin `gcc=244`→`245` — the
+  observed value 244 lies inside `lean={244}`, yet the row correctly
+  fails instead of falling back to AGREE: rc 1,
+  `DISAGREE tests/debug/align-04-no-globals.c: gcc=244 lean={244}
+  (TRIAGE PIN MISMATCH: ledger pins gcc=245 …)`. Restored, clean.
+- Pin-mismatch fatality was additionally witnessed live (not
+  planted) on real drift during the defect chain above.
+
+**Final gate** — two consecutive full `--check-baseline` runs against
+the regenerated baseline, both rc 0, `0 regression(s), 0
+improvement(s)`, per-file output identical line-for-line across the
+two runs (all 1,953 rows — the determinism demonstration), plus two
+consecutive tests/debug runs likewise identical. Both full-run
+summary lines, verbatim:
+
+```
+SUMMARY: total=1953 compared=1879 agree=1870 agree_nd=0 triaged=9 disagree=0 o2_agree=190 skip_lean_crash=10 skip_lean_fail=7 skip_lean_timeout=11 skip_oracle=3 skip_ub=43 triaged_addr=9
+SUMMARY: total=1953 compared=1879 agree=1870 agree_nd=0 triaged=9 disagree=0 o2_agree=190 skip_lean_crash=10 skip_lean_fail=7 skip_lean_timeout=11 skip_oracle=3 skip_ub=43 triaged_addr=9
+```
+
+Status-column numbers are unchanged from the original slice
+(`compared=1879 agree=1870 triaged=9 disagree=0`); `o2_agree` is 190
+under the name-keyed sample (was 187 under the compared-index
+stride). Gating status remains an operator decision at merge.

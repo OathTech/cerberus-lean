@@ -24,8 +24,10 @@
 #     Specified(n) in the verdict set }. Singleton+equal -> AGREE;
 #     member of larger set -> AGREE_ND; else DISAGREE (fatal unless
 #     carried by the fail-closed triage ledger);
-#   * -O2 spot tier: every O2_STRIDEth compared file additionally at
-#     gcc -O2 -fno-strict-aliasing (rationale: note §3.4).
+#   * -O2 spot tier: ~1-in-O2_STRIDE of the agreeing files (name-keyed:
+#     cksum(row key) mod O2_STRIDE == 0, phase-stable under status flips
+#     and corpus insertions) additionally at gcc -O2
+#     -fno-strict-aliasing (rationale: note §3.4).
 #
 # Row keys: corpus files are keyed by their PROJECT_ROOT-relative path
 # (basenames collide across corpora — e.g. 013-compare-lt.c in both
@@ -38,10 +40,17 @@
 #   AGREE AGREE_ND                          — compared, agreeing
 #   DISAGREE                                — compared, disagreeing (FATAL)
 #   TRIAGED_ADDR TRIAGED_FLOAT TRIAGED_UB TRIAGED_ORDER
-#     — a DISAGREE carried by a justified entry in the triage ledger
-#       (scripts/gcc_oracle_triage.txt); classes = design note §4.
-#       Fail-closed both ways: unlisted DISAGREE is fatal; a listed file
-#       that no longer disagrees (stale entry) is fatal.
+#     — the file is declared a divergence-class observer by a justified
+#       entry in the triage ledger (scripts/gcc_oracle_triage.txt);
+#       classes = design note §4. BY-FILE semantics (2026-08-30 audit
+#       follow-up + ruling): a listed file is ALWAYS TRIAGED_*, even if
+#       its values happen to coincide (layout coincidence is not
+#       agreement). Each entry PINS the observed value pair (mandatory
+#       'gcc=<exit>' and 'lean={<byte-set>}' fields); on any drift from
+#       the pins the row surfaces as an unresolved DISAGREE (fatal, row
+#       named) forcing re-triage. Fail-closed both ways: unlisted
+#       DISAGREE is fatal; a listed file that no longer reaches the
+#       compare stage (stale entry) is fatal.
 #   SKIP_UB          — Lean verdict contains UB (UB-in-test: native run
 #                      is unconstrained by the standard)
 #   SKIP_UNSPEC      — Lean verdict has an Unspecified value
@@ -74,7 +83,8 @@
 #                            (sia_/sa_/smx_ prefixes, Lean --first)
 #   --no-csmith              default corpus without the csmith tier
 #   --max N                  first N files of each tier (smoke)
-#   --o2-stride N            -O2 spot tier stride (default 10; 0 = off)
+#   --o2-stride N            -O2 spot tier density: file selected iff
+#                            cksum(key) mod N == 0 (default 10; 0 = off)
 #   --write-baseline[=FILE]  write scripts/gcc_oracle_baseline.txt
 #   --check-baseline[=FILE]  fail-closed compare (full runs only)
 #   -h, --help
@@ -90,7 +100,7 @@
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 set -uo pipefail
 
-usage() { sed -n '2,96p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0; }
+usage() { sed -n '2,98p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0; }
 
 command -v timeout &>/dev/null || { echo "Error: 'timeout' not found" >&2; exit 1; }
 command -v setarch &>/dev/null || { echo "Error: 'setarch' not found (needed for ASLR-off native runs)" >&2; exit 1; }
@@ -176,18 +186,26 @@ cd "$PROJECT_ROOT" || { echo "Error: cannot cd $PROJECT_ROOT" >&2; exit 1; }
 # ---------------------------------------------------------------------------
 # Triage ledger (fail-closed both directions, design note §4)
 # ---------------------------------------------------------------------------
-declare -A TRIAGE TRIAGE_USED
+declare -A TRIAGE TRIAGE_GCC TRIAGE_LEAN TRIAGE_USED
 if [[ -f "$TRIAGE_FILE" ]]; then
     while IFS= read -r line; do
         [[ -z "$line" || "$line" == \#* ]] && continue
         set -- $line
-        [[ $# -ge 3 ]] || { echo "HARNESS ERROR: triage line needs '<key> <CLASS> <rationale>': $line" >&2; exit 1; }
+        # Mandatory pinned-value fields (audit follow-up, design note §4):
+        # <key> <CLASS> gcc=<exit> lean={<byte-set>} <rationale...>
+        [[ $# -ge 5 ]] || { echo "HARNESS ERROR: triage line needs '<key> <CLASS> gcc=<exit> lean={<set>} <rationale>': $line" >&2; exit 1; }
         case "$2" in
             TRIAGED_ADDR|TRIAGED_FLOAT|TRIAGED_UB|TRIAGED_ORDER) ;;
             *) echo "HARNESS ERROR: unknown triage class '$2' in: $line" >&2; exit 1 ;;
         esac
+        [[ "$3" =~ ^gcc=[0-9]{1,3}$ ]] \
+            || { echo "HARNESS ERROR: triage field 3 must be gcc=<exit-byte>, got '$3' in: $line" >&2; exit 1; }
+        [[ "$4" =~ ^lean=\{[0-9]{1,3}(,[0-9]{1,3})*\}$ ]] \
+            || { echo "HARNESS ERROR: triage field 4 must be lean={<byte-set>}, got '$4' in: $line" >&2; exit 1; }
         [[ -n "${TRIAGE[$1]+x}" ]] && { echo "HARNESS ERROR: duplicate triage entry for $1" >&2; exit 1; }
         TRIAGE["$1"]="$2"
+        TRIAGE_GCC["$1"]="${3#gcc=}"
+        TRIAGE_LEAN["$1"]="${4#lean=}"
     done < "$TRIAGE_FILE"
 fi
 
@@ -299,6 +317,23 @@ gcc_run() {
     #    rows oscillate between SKIP_NATIVE_NONDET and the stable
     #    deterministic DISAGREE that the D2/ADDR triage class records.
     #    The double-run check stays as the backstop.
+    #  * initial stack fully NORMALIZED, byte-constant (audit follow-up,
+    #    design note §2.1): even with ASLR off, the kernel places
+    #    environ+argv AND the execve path string (AT_EXECFN) at the top
+    #    of the stack, so stack-local address observations are a
+    #    function of (a) the invoking process's environment byte-size
+    #    (found live when the triage-ledger value pins drifted between
+    #    harness invocations differing only in env) and (b) the
+    #    binary's path length (bash's `exec` absolutizes the path;
+    #    found live when pins captured by hand differed from the
+    #    lane's). Recipe: `env -i` + `unset PWD OLDPWD SHLVL _` leaves
+    #    exactly ONE environment entry, the byte-constant `SHLVL=0`
+    #    (bash re-exports it at exec; value fixed); argv[0] is the
+    #    fixed `cmdname`; and the binary is exec'd via the byte-constant
+    #    path /proc/self/fd/9 (fexecve idiom — the harness opens the
+    #    real binary on fd 9). The binary's initial stack contents are
+    #    therefore invocation-, session- AND checkout-path-independent,
+    #    which is what makes the ledger's pinned values portable.
     # timeout(1) reports a kill as exit 124, but a program may LEGITIMATELY
     # exit(124) — found live: the csmith checksum byte
     # (0xAE355683 ^ 0xFFFFFFFF) & 0xFF == 124 (sa_csmith_79 et al.), which
@@ -307,20 +342,27 @@ gcc_run() {
     # under it is the program's own. Margin 500 ms; the residual edge (a
     # genuine exit-124 slower than that) degrades to a VISIBLE skip, never
     # to a silent wrong comparison (fail-closed direction).
+    # `-k 1s` (audit follow-up): a SIGTERM-ignoring program gets SIGKILL 1 s
+    # after the deadline instead of hanging the lane; timeout then reports
+    # 137 (128+KILL), so the elapsed-time discriminator accepts 137 past the
+    # deadline as a timeout too (same-status-early — a fast genuine
+    # signal-9/exit-137 death — still flows to comparison as before).
     local e1=0 e2=0 t0 t1 elapsed_ms
     local threshold_ms=$(( GCC_RUN_TIMEOUT * 1000 - 500 ))
     t0=$(date +%s%N)
-    ( ulimit -v $ULIMIT_KB; exec timeout "${GCC_RUN_TIMEOUT}s" \
-        setarch -R bash -c 'exec -a cmdname "$0"' "$bin" > "$WORK/run1.out" 2>/dev/null ) || e1=$?
+    ( ulimit -v $ULIMIT_KB; exec timeout -k 1s "${GCC_RUN_TIMEOUT}s" \
+        setarch -R /usr/bin/env -i bash -c 'unset PWD OLDPWD SHLVL _; exec -a cmdname /proc/self/fd/9' \
+        9< "$bin" > "$WORK/run1.out" 2>/dev/null ) || e1=$?
     t1=$(date +%s%N)
     elapsed_ms=$(( (t1 - t0) / 1000000 ))
-    [[ $e1 -eq 124 && $elapsed_ms -ge $threshold_ms ]] && { G_STATUS=timeout; return 0; }
+    [[ ( $e1 -eq 124 || $e1 -eq 137 ) && $elapsed_ms -ge $threshold_ms ]] && { G_STATUS=timeout; return 0; }
     t0=$(date +%s%N)
-    ( ulimit -v $ULIMIT_KB; exec timeout "${GCC_RUN_TIMEOUT}s" \
-        setarch -R bash -c 'exec -a cmdname "$0"' "$bin" > /dev/null 2>&1 ) || e2=$?
+    ( ulimit -v $ULIMIT_KB; exec timeout -k 1s "${GCC_RUN_TIMEOUT}s" \
+        setarch -R /usr/bin/env -i bash -c 'unset PWD OLDPWD SHLVL _; exec -a cmdname /proc/self/fd/9' \
+        9< "$bin" > /dev/null 2>&1 ) || e2=$?
     t1=$(date +%s%N)
     elapsed_ms=$(( (t1 - t0) / 1000000 ))
-    [[ $e2 -eq 124 && $elapsed_ms -ge $threshold_ms ]] && { G_STATUS=timeout; return 0; }
+    [[ ( $e2 -eq 124 || $e2 -eq 137 ) && $elapsed_ms -ge $threshold_ms ]] && { G_STATUS=timeout; return 0; }
     [[ $e1 -ne $e2 ]] && { G_STATUS=nondet; return 0; }
     [[ -s "$WORK/run1.out" ]] && { G_STATUS=stdout; return 0; }
     G_EXIT=$e1
@@ -328,7 +370,6 @@ gcc_run() {
 }
 
 file_num=0
-compared_idx=0
 while IFS=$'\t' read -r c_file mode key; do
     file_num=$((file_num + 1))
     base_c="$key"
@@ -407,25 +448,43 @@ while IFS=$'\t' read -r c_file mode key; do
         *) echo "HARNESS ERROR: gcc_run status '$G_STATUS'" >&2; exit 1 ;;
     esac
 
-    if [[ -n "${EXPECT[$G_EXIT]+x}" ]]; then
+    # BY-FILE triage semantics (2026-08-30 orchestrator ruling, design
+    # note §4): a ledger entry declares the file a divergence-class
+    # observer (e.g. address-observing) — checked FIRST, so its status is
+    # TRIAGED_* whenever the observed pair equals the pins, EVEN IF the
+    # values happen to coincide (a layout coincidence is not agreement:
+    # counting it AGREE would inflate the metric and arm a
+    # flip-to-DISAGREE trap if either side's layout changes). Pin drift
+    # is a loud unresolved DISAGREE (fail-on-drift).
+    if [[ -n "${TRIAGE[$base_c]+x}" ]]; then
+        TRIAGE_USED["$base_c"]=1
+        if [[ "${TRIAGE_GCC[$base_c]}" == "$G_EXIT" \
+              && "${TRIAGE_LEAN[$base_c]}" == "{$expect_list}" ]]; then
+            status="${TRIAGE[$base_c]}"
+            detail="gcc=$G_EXIT lean={$expect_list} (ledger-declared observer)"
+        else
+            status=DISAGREE
+            detail="gcc=$G_EXIT lean={$expect_list} (TRIAGE PIN MISMATCH: ledger pins gcc=${TRIAGE_GCC[$base_c]} lean=${TRIAGE_LEAN[$base_c]} — values drifted, entry does not apply; re-triage required)"
+        fi
+    elif [[ -n "${EXPECT[$G_EXIT]+x}" ]]; then
         [[ ${#EXPECT[@]} -eq 1 ]] && status=AGREE || status=AGREE_ND
         detail="gcc=$G_EXIT lean={$expect_list}"
     else
-        if [[ -n "${TRIAGE[$base_c]+x}" ]]; then
-            status="${TRIAGE[$base_c]}"
-            TRIAGE_USED["$base_c"]=1
-            detail="gcc=$G_EXIT lean={$expect_list} (ledger-carried)"
-        else
-            status=DISAGREE
-            detail="gcc=$G_EXIT lean={$expect_list}"
-        fi
+        status=DISAGREE
+        detail="gcc=$G_EXIT lean={$expect_list}"
     fi
 
     # ---- -O2 spot tier ----------------------------------------------------
+    # Name-keyed selection (2026-08-30 orchestrator ruling): membership in
+    # the O2 tier is a pure function of the row key (CRC32 via cksum,
+    # mod O2_STRIDE), so a status flip elsewhere or a corpus insertion can
+    # never re-phase WHICH files carry the O2 column (the previous
+    # compared-index stride re-keyed ~every O2 row on any upstream change).
     o2="-"
     if [[ "$status" == AGREE || "$status" == AGREE_ND ]]; then
-        compared_idx=$((compared_idx + 1))
-        if [[ $O2_STRIDE -gt 0 && $((compared_idx % O2_STRIDE)) -eq 1 ]]; then
+        key_crc=$(printf '%s' "$base_c" | cksum)
+        key_crc=${key_crc%% *}
+        if [[ $O2_STRIDE -gt 0 && $((key_crc % O2_STRIDE)) -eq 0 ]]; then
             gcc_run "$c_file" "$bin.o2" -O2 -fno-strict-aliasing -w
             case "$G_STATUS" in
                 compile) o2=O2_SKIP_COMPILE ;;
@@ -449,11 +508,12 @@ done < "$LIST"
 [[ $STATUS_LINES -eq $file_num && $file_num -eq $TOTAL ]] \
     || { echo "HARNESS ERROR: $TOTAL files, processed $file_num, recorded $STATUS_LINES" >&2; exit 1; }
 
-# Stale triage entries are fatal (a fixed divergence forces ledger cleanup)
+# Stale triage entries are fatal (a listed file that no longer reaches the
+# -O0 compare stage — skipped or absent — forces ledger cleanup)
 stale=0
 for f in "${!TRIAGE[@]}"; do
     if [[ -z "${TRIAGE_USED[$f]+x}" ]]; then
-        echo "STALE TRIAGE ENTRY: $f (${TRIAGE[$f]}) — file did not DISAGREE in this run" >&2
+        echo "STALE TRIAGE ENTRY: $f (${TRIAGE[$f]}) — file did not reach the -O0 compare stage in this run" >&2
         stale=$((stale + 1))
     fi
 done

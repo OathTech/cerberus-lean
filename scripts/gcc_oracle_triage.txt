@@ -1,27 +1,39 @@
 # gcc second-oracle triage ledger — scripts/test_gcc_oracle.sh
 #
-# Format: <row-key> <TRIAGED_CLASS> <rationale...>
-# Classes + triage procedure: design note
-# lean_frontend/docs/2026-08-30_gcc-second-oracle-design.md §4.
-# FAIL-CLOSED both directions: an entry applies only to a file whose
-# current status is DISAGREE (a stale entry is a lane failure, forcing
-# cleanup when a divergence disappears); an unlisted DISAGREE is fatal.
+# Format: <row-key> <TRIAGED_CLASS> gcc=<exit> lean={<byte-set>} <rationale...>
+# BY-FILE semantics (2026-08-30 audit follow-up + orchestrator ruling):
+# an entry declares the file a divergence-class observer — the file is
+# ALWAYS TRIAGED_<CLASS>, even when the two values happen to coincide
+# (a layout coincidence is not agreement; counting it AGREE would
+# inflate the metric and arm a flip-to-DISAGREE trap if either side's
+# layout changes). Fields 3-4 are MACHINE-CHECKED PINS of the observed
+# value pair (gcc = native exit byte under the §2.1 byte-stable
+# execution recipe; lean = the expected-byte set exactly as the harness
+# prints it). On any drift from the pins the row surfaces as an
+# unresolved DISAGREE (fatal, row named), forcing re-triage. Classes +
+# procedure: lean_frontend/docs/2026-08-30_gcc-second-oracle-design.md
+# §4. FAIL-CLOSED both directions: unlisted DISAGREE is fatal; a
+# listed file that no longer reaches the compare stage is fatal.
 #
-# [AGENT 2026-08-30] Initial entries from the tier-1 baseline run
-# (D2/ADDR, design note §2.3 "allocation addresses" row): each program
-# observes object-address bits (low byte / mod / division / alignment
-# residue). Cerberus's abstract concrete-allocator addresses and gcc's
-# native layout (ASLR disabled via setarch -R, so deterministic) are
-# both conforming; neither side is indicted. gcc/lean values below are
-# verbatim from the ASLR-off recorded run (gcc=native exit,
-# lean=expected byte set).
+# [AGENT 2026-08-30] Entries from the tier-1 baseline run (D2/ADDR,
+# design note §2.3 "allocation addresses" row): each program observes
+# object-address bits (low byte / mod / division / alignment residue).
+# Cerberus's abstract concrete-allocator addresses and gcc's native
+# layout (ASLR off, byte-constant initial stack per §2.1) are both
+# conforming; neither side is indicted. Pins captured under the §2.1
+# normalized execution recipe (audit-response re-capture; the stack
+# observers' values changed from the originally recorded ones when the
+# environment/execfn normalization landed — see the design note §2.1
+# determinism account). Three entries (align-04, intfromptr-05,
+# intfromptr-10) coincide with the Lean value under the normalized
+# stack — they remain triaged per the by-file rule above.
 #
-tests/debug/align-01-char-array-addr.c TRIAGED_ADDR observes (unsigned long)&B % 8 of a char[32] global: gcc=1 (native globals 8-aligned), lean={0} (allocator gives a non-8-aligned address; char alignment 1 requires none)
-tests/debug/align-02-print-addr.c TRIAGED_ADDR observes &B & 0xFF of a char[32] global: gcc=64 lean={223} — raw address low byte, layout-defined on both sides
-tests/debug/align-03-single-global.c TRIAGED_ADDR observes &B & 0xFF of a char[1] global: gcc=17 lean={254}
-tests/debug/align-04-no-globals.c TRIAGED_ADDR observes &x & 0xFF of a stack local: gcc=36 lean={244}
-tests/debug/intfromptr-05-to-long.c TRIAGED_ADDR observes (int)(long)&a of a stack local: gcc=20 lean={244}
-tests/debug/intfromptr-07-check-addr.c TRIAGED_ADDR observes (long)&a % 1000000 of a stack local: gcc=12 lean={244}
-tests/debug/intfromptr-08-full-addr.c TRIAGED_ADDR observes (long)&a / 1000000000 of a stack local: gcc=193 lean={130} (native stack ~0x7ffd..., allocator addresses differ)
-tests/debug/intfromptr-09-first-alloc.c TRIAGED_ADDR observes (long)&a % 1000000 of a stack local: gcc=12 lean={244}
-tests/debug/intfromptr-10-minimal.c TRIAGED_ADDR observes (int)((unsigned long)&a % 1000000) of a stack local: gcc=20 lean={244}
+tests/debug/align-01-char-array-addr.c TRIAGED_ADDR gcc=1 lean={0} observes (unsigned long)&B % 8 of a char[32] global: gcc native globals 8-aligned; lean allocator gives a non-8-aligned address (char alignment 1 requires none)
+tests/debug/align-02-print-addr.c TRIAGED_ADDR gcc=64 lean={223} observes &B & 0xFF of a char[32] global — raw address low byte, layout-defined on both sides
+tests/debug/align-03-single-global.c TRIAGED_ADDR gcc=17 lean={254} observes &B & 0xFF of a char[1] global
+tests/debug/align-04-no-globals.c TRIAGED_ADDR gcc=244 lean={244} observes &x & 0xFF of a stack local (values coincide under the normalized stack — layout coincidence, still an observer)
+tests/debug/intfromptr-05-to-long.c TRIAGED_ADDR gcc=244 lean={244} observes (int)(long)&a of a stack local (values coincide under the normalized stack — layout coincidence, still an observer)
+tests/debug/intfromptr-07-check-addr.c TRIAGED_ADDR gcc=236 lean={244} observes (long)&a % 1000000 of a stack local
+tests/debug/intfromptr-08-full-addr.c TRIAGED_ADDR gcc=193 lean={130} observes (long)&a / 1000000000 of a stack local (native stack ~0x7ffd..., allocator addresses differ)
+tests/debug/intfromptr-09-first-alloc.c TRIAGED_ADDR gcc=236 lean={244} observes (long)&a % 1000000 of a stack local
+tests/debug/intfromptr-10-minimal.c TRIAGED_ADDR gcc=244 lean={244} observes (int)((unsigned long)&a % 1000000) of a stack local (values coincide under the normalized stack — layout coincidence, still an observer)

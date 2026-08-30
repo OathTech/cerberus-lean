@@ -42,10 +42,19 @@ Consequences, all deliberate:
   native stdout is outside the modeled observable and is skipped
   (`SKIP_GCC_STDOUT`), not silently accepted.
 - **mod-256 aliasing.** Two differing values congruent mod 256 compare
-  equal. This is a sensitivity limitation, not a soundness one: it can
-  hide a disagreement, never fabricate one. (The csmith checksum is
-  already reduced to its low byte by `platform_main_end` in
-  `tests/csmith/csmith_cerberus.h`, so nothing is lost there.)
+  equal. This is a sensitivity limitation: it can hide a disagreement.
+  (The csmith checksum is already reduced to its low byte by
+  `platform_main_end` in `tests/csmith/csmith_cerberus.h`, so nothing
+  is lost there.)
+- **Signal/exit conflation — the one false-AGREE channel.** bash
+  cannot distinguish `exit(128+k)` from death-by-signal-`k`: both
+  surface as status `128+k`. So a native crash whose `128+k` collides
+  with the expected exit byte counts AGREE — a fabricated agreement,
+  not merely a hidden disagreement. It is rare (it requires the Lean
+  expected byte to be ≥ 128 AND to equal `128 + <the fatal signal
+  number>`) but real; recorded in the script header, not defended.
+  With this exception, the channel can hide a disagreement but not
+  fabricate one.
 - **argv is aligned to the modeled convention**: Cerberus supplies
   `argv = ["cmdname"]` when no `--args` are given; the native binary
   is invoked via `exec -a cmdname` so argv[0]-observing programs
@@ -55,6 +64,42 @@ Consequences, all deliberate:
   locale, signals, or filesystem: programs exercising those are
   outside the lane (they surface as skips or triaged rows, never as
   silent passes).
+- **The native binary's initial stack is NORMALIZED to byte-constant
+  contents, and that recipe is part of the lane's specification**
+  (2026-08-30 audit follow-up). Even with ASLR disabled, the kernel
+  places environ, argv AND the execve path string (`AT_EXECFN`) at the
+  top of the initial stack, so every stack-local address observation
+  is a function of the invoking process's environment **byte-size**
+  and of the **binary's path length**. Both were demonstrated live
+  with `tests/debug/intfromptr-05-to-long.c` (returns
+  `(int)(long)&a` of a stack local), ASLR off, identical binary:
+
+  * environment byte-size: the inherited session environment gave
+    exit 212; adding `SKIP_BUILD=1` gave 180; adding one more
+    variable gave 164 (this is why the lane's original runs were
+    reproducible only while successive harness invocations happened
+    to carry byte-identical environments — exposed the moment the
+    triage ledger's value pins (§4) landed);
+  * path length (after env normalization alone): the same binary at a
+    short path gave exit 148, at a longer path 116 — bash's `exec`
+    absolutizes the exec path, so `AT_EXECFN` carries the
+    checkout/scratch path onto the stack, and pins captured in one
+    checkout would fail loudly in any checkout of different path
+    length.
+
+  The specified execution recipe is therefore: `env -i` with bash's
+  auto-exports removed (`unset PWD OLDPWD SHLVL _`), leaving exactly
+  one byte-constant environment entry, verbatim `SHLVL=0` (bash
+  unconditionally re-exports `SHLVL` at exec; the value is fixed);
+  fixed `argv = ["cmdname"]` via `exec -a`; and the binary exec'd
+  through the byte-constant path `/proc/self/fd/9` (the fexecve
+  idiom — the harness opens the real binary on fd 9), giving
+  byte-constant `AT_EXECFN`. Under this recipe the probe binary's
+  exit is invariant across outer environments, working directories
+  and binary path lengths (244 in every trial), i.e. the initial
+  stack is invocation-, session- and checkout-independent — which is
+  what makes the ledger's pinned values (§4) portable. Pinned values
+  are captured under, and only meaningful under, this recipe.
 
 ### 2.2 Determinism / definedness requirements
 
@@ -130,8 +175,9 @@ Per program (all inside the worktree; scratch under `.tmp/`):
 
 1. **Native side.** `gcc -O0 -w -o <bin> <file.c>` (csmith tier adds
    `-I <stage>`), compile timeout enforced. Run under `timeout`
-   (default 5 s) + `ulimit -v`, twice (§2.2.4), capturing exit status
-   and stdout. `timeout`'s kill report (exit 124) collides with a
+   (with `-k`: a SIGTERM-ignoring program is SIGKILLed rather than
+   hanging the lane) + `ulimit -v`, in the §2.1 normalized
+   environment, twice (§2.2.4), capturing exit status and stdout. `timeout`'s kill report (exit 124) collides with a
    program legitimately calling `exit(124)` — found live on the csmith
    corpus (checksum byte 124); the harness disambiguates by elapsed
    time, and the residual edge degrades to a visible skip, never a
@@ -139,7 +185,11 @@ Per program (all inside the worktree; scratch under `.tmp/`):
    `SKIP_GCC_TIMEOUT`; nonempty stdout → `SKIP_GCC_STDOUT`. A native
    **signal** death (exit ≥ 128) while the Lean side says `Defined`
    is NOT a skip — it is a DISAGREE (a defined program must not
-   crash).
+   crash) — EXCEPT when the crash's `128+k` status happens to equal
+   the expected exit byte, which counts AGREE (bash cannot
+   distinguish `exit(128+k)` from death-by-signal-`k`; the §2.1
+   signal/exit-conflation caveat — the lane's one false-AGREE
+   channel).
 2. **Lean side.** Cabs JSON via the in-repo OCaml frontend
    (`--cabs-json`, exactly as test_exec.sh — the C parser is on the
    declared trust boundary, VALIDATION.md §5), then
@@ -152,9 +202,15 @@ Per program (all inside the worktree; scratch under `.tmp/`):
    the native exit status: singleton+equal → `AGREE`; member of a
    larger set → `AGREE_ND`; else → `DISAGREE` (fatal in default mode
    unless carried by the triage ledger, §4).
-4. **-O2 spot tier.** Every Nth file (default stride 10) that compared
-   at -O0 is additionally compiled `gcc -O2 -fno-strict-aliasing -w`
-   and re-compared (recorded as a third baseline column). Rationale
+4. **-O2 spot tier.** A name-keyed ~1-in-N sample (default N=10) of
+   the files that AGREE at -O0 is additionally compiled
+   `gcc -O2 -fno-strict-aliasing -w` and re-compared (recorded as a
+   third baseline column). Selection is `cksum(row key) mod N == 0`
+   (2026-08-30 ruling): membership is a pure function of the file's
+   own key, so a status change elsewhere or a corpus insertion can
+   never re-phase which files carry the O2 column (the original
+   compared-index stride re-keyed essentially every O2 row on any
+   upstream status flip). Rationale
    for `-fno-strict-aliasing`: the Cerberus concrete memory model does
    not implement effective-type (TBAA) restrictions, so the UB filter
    cannot exclude aliasing-UB programs; letting gcc exploit TBAA would
@@ -203,12 +259,30 @@ keep accumulating):
   value is a member of the full set → `TRIAGED_ORDER` (and note the
   csmith order-independence assumption failed for this file).
 
-**The triage ledger** (`scripts/gcc_oracle_triage.txt`) is fail-closed
-in both directions: every entry names its class and rationale; the
-harness applies an entry only to a file whose *current* status is
-DISAGREE (a stale entry — listed but no longer disagreeing — is a
-fatal error, so fixed divergences force ledger cleanup); an unlisted
-DISAGREE stays fatal.
+**The triage ledger** (`scripts/gcc_oracle_triage.txt`) applies
+**by file** (2026-08-30 orchestrator ruling): an entry declares the
+file a divergence-class observer, and a listed file is *always*
+`TRIAGED_<CLASS>` — even when the two observed values happen to
+coincide. **A layout coincidence is not agreement**: counting it
+`AGREE` would inflate the agreement metric with a value that neither
+side's semantics forces, and would arm a flip-to-DISAGREE trap the
+moment either allocator/layout changes. (This became live, not
+hypothetical, when stack normalization (§2.1) made three
+address-observing files' native low bytes coincide with the Lean
+allocator's.) An unlisted DISAGREE stays fatal; a listed file that no
+longer reaches the compare stage (a stale entry) is fatal, so
+out-of-corpus rot forces ledger cleanup.
+
+**Every entry pins the observed values, and drift fails loudly**
+(2026-08-30 audit follow-up): each ledger line carries machine-checked
+`gcc=<exit>` and `lean={<byte-set>}` fields — the exact value pair
+(under the §2.1 byte-stable recipe) the triage rationale was written
+about. At apply time the harness compares the currently observed pair
+against the pins; on any mismatch the entry does NOT apply and the row
+surfaces as an unresolved DISAGREE (fatal, row named, pin-mismatch
+detail printed). A triage entry therefore justifies one specific
+divergence, not a blanket waiver: a Lean- or gcc-side value change on
+a triaged file forces re-triage instead of silently staying carried.
 
 ## 5. Corpus selection
 
@@ -277,6 +351,10 @@ It does NOT establish:
   proves equivalence.
 - csmith-tier order-independence is assumed (by csmith's design
   guarantee), not enumerated.
+- A same-rank status change under `--check-baseline` (e.g. one skip
+  class churning into another) is reported but not fatal (rc 0) —
+  deliberately mirroring the test_exec.sh rank idiom; only
+  rank-decreasing movement fails.
 
 The lane is **reporting-first**: its baseline is a committed
 scoreboard (Tier-C style, scripts/LADDER.md), and wiring it into any
