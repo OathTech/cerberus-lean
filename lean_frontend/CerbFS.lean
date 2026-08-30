@@ -5,11 +5,33 @@
   The OCaml backend uses SibylFS, a formal POSIX filesystem model.
   For the Lean port we provide a minimal in-memory implementation
   sufficient for the corpus's file-I/O smoke tests ONLY — NOT a faithful
-  fs model (re-mark honesty; sem:S13 residual): lseek maintains offsets
-  that read/write IGNORE (read from 0, write appends), pread/pwrite
-  ignore their offset, open ignores flags (no O_TRUNC) — a
-  seek-then-read program gets silently wrong data. The registered mover:
-  per-fd offsets or loud enosys + a CerbPP-style divergence table.
+  fs model. DELIBERATE DIVERGENCE from the OCaml side (SibylFS models
+  offsets correctly); this is the sem:S13 residual, half-closed by the
+  trust-basket fail-closed pass (2026-08-31; the mover to full parity
+  remains real per-fd offset semantics incl. open flags/O_TRUNC —
+  priced M, parity-detective report §3 RC-1).
+
+  FAIL-CLOSED REGIME (trust-basket item b): the model now tracks per-fd
+  offsets honestly (reads/writes advance them, lseek always did) and
+  serves ONLY the patterns it can answer CORRECTLY:
+    - read  at offset 0 (whole-prefix read), or at EOF (empty result);
+    - write at offset == file length (pure append; a fresh file starts
+      at 0 == 0, so sequential writes on a newly opened file work);
+    - pread at offset 0 or EOF; pwrite at offset == file length.
+  Every other offset combination — the cases the old model answered
+  with SILENTLY WRONG DATA (fgetc-until-EOF looping forever,
+  seek-then-read returning the byte at 0: parity-detective RC-1,
+  wrong answers on programs both engines accept) — now PANICS with a
+  named CerbFS-refusal message instead of returning data.
+
+  Refusal mechanism [deliberate]: `panic!`, not an FsError. An FsError
+  is converted by the driver into errno + a -1 return
+  (frontend/model/driver.lem store_error/store_buffer, ~:211-247) which
+  the C program can absorb (e.g. fgetc mapping the error to EOF) —
+  still a wrong answer, just a different one. `panic!` is the house
+  fail-stop sentinel (cf. CerbMem/CerbUtils; harnesses run with
+  LEAN_ABORT_ON_PANIC=1 via scripts/common.sh run_cerberus_lean), so a
+  refusal is a loud LEAN-side failure attributed to this boundary.
   This is a leaf module.
 -/
 
@@ -45,6 +67,11 @@ inductive FsError where
   | enosys : FsError    -- Not implemented
   | other : String → FsError
   deriving Inhabited, BEq
+
+/-- `panic!` needs an inhabitant at the refusal sites below; the
+    default is an enosys error (never observed: under
+    LEAN_ABORT_ON_PANIC=1 the panic aborts first). -/
+instance (α : Type) : Inhabited (Sum FsError α) := ⟨Sum.inl .enosys⟩
 
 /-- In-memory filesystem state -/
 structure FsState where
@@ -110,17 +137,29 @@ def fs_close (st : FsState) (fd : Int) : FsState × (Sum FsError Nat) :=
     let st' := { st with fds := st.fds.filter (fun (n, _) => n != fdN) }
     (st', .inr 0)
 
+-- Helper: replace one fd's entry (identity if the fd is absent)
+private def setFd (st : FsState) (fdN : Nat) (entry' : FdEntry) : FsState :=
+  { st with fds := st.fds.map (fun (f, e) => if f == fdN then (f, entry') else (f, e)) }
+
 def fs_write (st : FsState) (fd : Int) (data : List Char) (_ : Int) : FsState × (Sum FsError Nat) :=
   let fdN := fd.toNat
   match lookupFd st fdN with
   | none => (st, .inl .ebadf)
   | some entry =>
-    let newContents := match lookupFile st entry.path with
-      | some existing => existing ++ data
-      | none => data
-    let files' := (entry.path, newContents) :: st.files.filter (fun (p, _) => p != entry.path)
-    let st' := { st with files := files' }
-    (st', .inr data.length)
+    let contents := (lookupFile st entry.path).getD []
+    -- Fail-closed (header): the model can only APPEND. That is correct
+    -- exactly when the fd's offset sits at the current end of file
+    -- (fresh file: 0 == 0; sequential writes maintain the invariant).
+    -- Anywhere else (seek-then-write, reopened non-empty file where
+    -- POSIX open flags would decide truncate/append) the old model
+    -- silently appended wrong data — refuse instead.
+    if entry.offset == contents.length then
+      let newContents := contents ++ data
+      let files' := (entry.path, newContents) :: st.files.filter (fun (p, _) => p != entry.path)
+      let st' := setFd { st with files := files' } fdN { entry with offset := newContents.length }
+      (st', .inr data.length)
+    else
+      panic! s!"CerbFS refusal (fail-closed fs-model boundary): write on fd {fd} at offset {entry.offset} of {contents.length}-byte file '{entry.path}' — the minimal fs model can only append at end-of-file; answering would write WRONG data (CerbFS.lean header; mover: real per-fd offset semantics)"
 
 def fs_read (st : FsState) (fd : Int) (count : Int) : FsState × (Sum FsError (List Char)) :=
   let fdN := fd.toNat
@@ -130,17 +169,57 @@ def fs_read (st : FsState) (fd : Int) (count : Int) : FsState × (Sum FsError (L
     match lookupFile st entry.path with
     | none => (st, .inl .enoent)
     | some contents =>
-      let data := contents.take count.toNat
-      (st, .inr data)
+      -- Fail-closed (header): serve only the two patterns the model
+      -- answers correctly — a read at offset 0 (prefix of the file,
+      -- advancing the offset so a later mid-file read cannot lie) and
+      -- a read at EOF (zero bytes). Everything else is the RC-1
+      -- wrong-answer channel (fgetc-until-EOF, seek-then-read) — refuse.
+      if entry.offset == contents.length then
+        (st, .inr [])  -- at EOF: correct empty read, no state change
+      else if entry.offset == 0 then
+        let data := contents.take count.toNat
+        (setFd st fdN { entry with offset := data.length }, .inr data)
+      else
+        panic! s!"CerbFS refusal (fail-closed fs-model boundary): read on fd {fd} at offset {entry.offset} of {contents.length}-byte file '{entry.path}' — the minimal fs model can only serve whole-prefix (offset 0) or at-EOF reads; answering would return WRONG data (CerbFS.lean header; mover: real per-fd offset semantics)"
 
 def fs_mkdir (st : FsState) (_ : String) (_ : Int) : FsState × (Sum FsError Nat) :=
   (st, .inr 0)  -- No-op for directories in our minimal model
 
 def fs_pwrite (st : FsState) (fd : Int) (data : List Char) (_ offset : Int) : FsState × (Sum FsError Nat) :=
-  fs_write st fd data offset  -- Simplified: same as write
+  let fdN := fd.toNat
+  match lookupFd st fdN with
+  | none => (st, .inl .ebadf)
+  | some entry =>
+    let contents := (lookupFile st entry.path).getD []
+    -- Fail-closed (header): pwrite is correct here only as an append at
+    -- the exact end of file; POSIX pwrite does NOT move the fd offset,
+    -- so the entry is left untouched. Any other offset — refuse (the
+    -- old model appended regardless of the requested offset).
+    if offset == (contents.length : Int) then
+      let newContents := contents ++ data
+      let files' := (entry.path, newContents) :: st.files.filter (fun (p, _) => p != entry.path)
+      ({ st with files := files' }, .inr data.length)
+    else
+      panic! s!"CerbFS refusal (fail-closed fs-model boundary): pwrite on fd {fd} at requested offset {offset} of {contents.length}-byte file '{entry.path}' — the minimal fs model can only append at end-of-file; answering would write WRONG data (CerbFS.lean header; mover: real per-fd offset semantics)"
 
-def fs_pread (st : FsState) (fd : Int) (count _ : Int) : FsState × (Sum FsError (List Char)) :=
-  fs_read st fd count  -- Simplified: ignore offset
+def fs_pread (st : FsState) (fd : Int) (count off : Int) : FsState × (Sum FsError (List Char)) :=
+  let fdN := fd.toNat
+  match lookupFd st fdN with
+  | none => (st, .inl .ebadf)
+  | some entry =>
+    match lookupFile st entry.path with
+    | none => (st, .inl .enoent)
+    | some contents =>
+      -- Fail-closed (header): pread at offset 0 (prefix) or at EOF
+      -- (empty) are the two patterns the model answers correctly; POSIX
+      -- pread never moves the fd offset, so no state change. Any other
+      -- offset — refuse (the old model read from 0 regardless).
+      if off == (contents.length : Int) then
+        (st, .inr [])
+      else if off == 0 then
+        (st, .inr (contents.take count.toNat))
+      else
+        panic! s!"CerbFS refusal (fail-closed fs-model boundary): pread on fd {fd} at requested offset {off} of {contents.length}-byte file '{entry.path}' — the minimal fs model can only serve whole-prefix (offset 0) or at-EOF reads; answering would return WRONG data (CerbFS.lean header; mover: real per-fd offset semantics)"
 
 def fs_rename (st : FsState) (oldP newP : String) : FsState × (Sum FsError Nat) :=
   match lookupFile st oldP with
