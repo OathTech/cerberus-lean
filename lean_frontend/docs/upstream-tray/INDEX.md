@@ -120,6 +120,43 @@ Added 2026-08-22 (arc/cn-differential — CN-tutorial warm-up lane S0):
     2-line repro). Hit 6/106 cn-tutorial exercises. Guarded-lookup
     remedy proposed. Repro verbatim 2026-08-22 vs upstream @ b9aeedcb4.
 
+Added 2026-08-30 (parity-detective beyond-testset probe campaign +
+gcc second-oracle lane — `lean_frontend/docs/2026-08-30_parity-detective-report.md`,
+`…_gcc-oracle-lane-record.md`; repros re-verified against
+deps/cerberus-upstream binary + runtime @ b9aeedcb4 on this date; NOT
+covered by the 2026-08-23 duplicate search — search at filing time):
+
+15. **15-bool-float-conversion-truncation.md** — TRUE BUG. Floating→
+    `_Bool` conversion truncates BEFORE the §6.3.1.2#1
+    compare-to-zero test (std.core:83 guards on the truncated `n`,
+    not the floating value): `_Bool b = 0.5` yields 0 where every
+    conforming compiler gives 1; non-finite operands crash the tool
+    (uncaught `Z.Overflow` at impl_mem.ml:2554, exit 125) on
+    defined-behavior C. Both our Lean port and the oracle agree
+    (deliberately mirrored — the defect is in the shared Core
+    stdlib); gcc gives the ISO value. One-branch std.core remedy.
+    Repro `tests/parity-probes/probes/bool_conv.c`, verbatim
+    2026-08-30.
+16. **16-snprintf-truncation-return-length.md** — TRUE BUG.
+    `snprintf` on truncation returns the truncated length
+    (formatted.lem:799-801 returns `length cs'`, the `List.take
+    (n-1)` list) instead of §7.21.6.5#3's would-have-been length;
+    the `n = 0` path returns 0 without formatting. Inverts the
+    standard's completeness test (`ret < n`) and breaks the
+    two-pass sizing idiom; stored bytes + NUL are correct — return
+    value only. Mirrored by our Lean port (both return 9 on the
+    probe; gcc: 15). Repro
+    `tests/parity-probes/probes/snprintf_trunc.c`, verbatim
+    2026-08-30.
+
+Amended 2026-08-30: draft 08 gains reproducer 3 (2-D array of
+struct, 3 lines, `probes/oracle_2d_struct_init.c` — the scalar 2-D
+control works; measured as 58% of 320 fresh-seed csmith programs,
+the dominant oracle-skip cause); draft 10 gains the gcc-lane
+mechanical confirmation of the `\?` = 63 pin (`AGREE gcc=63
+lean={63}` — the first oracle-independent referee for an
+oracle-wrong pin).
+
 ## Filed / duplicate-search status (2026-08-23, read-only gh session)
 
 - **01 → FILED as issues/1009** (operator, 2026-08-19, open). Also filed
@@ -224,8 +261,8 @@ everything filed from this tray:
 
 ## Filing checklist (operator; needs network + GitHub)
 
-For each draft, in ranking order (10, 11, 12, 13, 14, 08, 09, 02, 03,
-04, 05, 06; 07 on request; 01 done): (1) re-verify the repro against CURRENT upstream master
+For each draft, in ranking order (10, 11, 12, 13, 14, 15, 16, 08, 09,
+02, 03, 04, 05, 06; 07 on request; 01 done): (1) re-verify the repro against CURRENT upstream master
 (ours is pinned at b9aeedcb4); (2) search the upstream issue tracker
 for duplicates; (3) file with the draft's title, repro, verbatim
 output, classification and remedy sections; (4) record the issue URL

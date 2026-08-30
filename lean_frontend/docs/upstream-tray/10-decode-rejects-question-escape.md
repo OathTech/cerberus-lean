@@ -78,3 +78,11 @@ Lean port (targeted decode-edge tests, S0 baseline 2026-08-22); the
 Lean side now decodes `\?` to 63 as a documented deliberate divergence
 from the oracle (tests/immaculate/nolibc/g5-decode-question.c pins the
 three-way verdict).
+
+[2026-08-30 update: the `\?` = 63 pin is now also confirmed by an
+oracle-independent instrument — the gcc second-oracle differential
+lane runs g5-decode-question as `AGREE gcc=63 lean={63}`: gcc-compiled
+native execution sides with the Lean semantics against the OCaml
+oracle, by instrument rather than by hand. Record:
+`lean_frontend/docs/2026-08-30_gcc-oracle-lane-record.md` (headline
+run, "mechanical referee" bullet).]
