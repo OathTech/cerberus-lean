@@ -1,0 +1,19 @@
+# csmith fresh-seed lanes, parity-detective slice 2026-08-30 (verbatim tails of the three fuzz logs; full logs were container-ephemeral per doctrine)
+
+## lane1 (.tmp/pd/csmith-fresh.log)
+Match rate:   100% (of comparable; UB_DIFF counts as match, per prototype)
+SUMMARY: total=80 match=12 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 lean_error=0 timeout=0 cerb_skip=68 cerb_floor=0 cerb_inconsistent=0
+  Bugs (FAIL/MISMATCH/DIFF/LEAN_CRASH): 0  -> .tmp/pd/csmith_fresh/bugs/
+  Timeouts:                             0  -> .tmp/pd/csmith_fresh/timeouts/
+
+## lane2 (.tmp/pd/csmith-fresh2.log)
+Match rate:   100% (of comparable; UB_DIFF counts as match, per prototype)
+SUMMARY: total=160 match=25 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 lean_error=0 timeout=0 cerb_skip=135 cerb_floor=0 cerb_inconsistent=0
+  Bugs (FAIL/MISMATCH/DIFF/LEAN_CRASH): 0  -> .tmp/pd/csmith_fresh2/bugs/
+  Timeouts:                             0  -> .tmp/pd/csmith_fresh2/timeouts/
+
+## lane3 (.tmp/pd/csmith-fresh3.log)
+Match rate:   100% (of comparable; UB_DIFF counts as match, per prototype)
+SUMMARY: total=80 match=17 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 lean_error=0 timeout=0 cerb_skip=63 cerb_floor=0 cerb_inconsistent=0
+  Bugs (FAIL/MISMATCH/DIFF/LEAN_CRASH): 0  -> .tmp/pd/csmith_fresh3/bugs/
+  Timeouts:                             0  -> .tmp/pd/csmith_fresh3/timeouts/

@@ -1,0 +1,145 @@
+suite	tests/suite/concurrency/dummy.c	MATCH	VAL:Specified(11)
+suite	tests/suite/concurrency/IRIW+rel+rel+acq_acq+acq_acq.c	MATCH	VAL:Specified(0)
+suite	tests/suite/concurrency/LB+acq_rel+acq_rel.c	MATCH	VAL:Specified(1)
+suite	tests/suite/concurrency/MP+na_rel+acq_na.c	MATCH	VAL:Specified(2)
+suite	tests/suite/concurrency/SB+rel_acq+rel_acq.c	MATCH	VAL:Specified(1)
+suite	tests/suite/concurrency/treiber.c	MATCH	VAL:Specified(0)
+suite	tests/suite/concurrency/WRC+rel+acq_rel+acq_acq.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/concurrency/WRC+rel+acq_rel+acq_acq.c:5:14: error: unexpected token after 'atomic_int' and before 'x'
+suite	tests/suite/constraints/assignment_in_constant_expression.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/constraints/assignment_in_constant_expression.c:3:16: error: constraint violation: initializer element is not a compile-time constant
+suite	tests/suite/desugaring/01-typedef_valid_redecl.noexec.c	CERB_ERROR	msg: "no startup function was declared"
+suite	tests/suite/desugaring/02-typedef_invalid_redecl.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/desugaring/02-typedef_invalid_redecl.error.c:2:14: error: constraint violation: typedef redefinition with different types
+suite	tests/suite/desugaring/03-typedef_variably_redecl.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/desugaring/03-typedef_variably_redecl.error.c:5:15: error: feature not yet supported: variable length array type 2
+suite	tests/suite/desugaring/04-atomic_specifer_array.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/desugaring/04-atomic_specifer_array.error.c:1:7: error: constraint violation: invalid use of _Atomic
+suite	tests/suite/desugaring/05-const_ptr.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/desugaring/05-const_ptr.error.c:4:3: error: constraint violation: expression is not assignable
+suite	tests/suite/desugaring/06-const_ptr_param.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/desugaring/06-const_ptr_param.error.c:3:3: error: constraint violation: expression is not assignable
+suite	tests/suite/desugaring/07-ptr_to_const.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/desugaring/07-ptr_to_const.error.c:4:3: error: constraint violation: expression is not assignable
+suite	tests/suite/desugaring/08-ptr_to_const_param.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/desugaring/08-ptr_to_const_param.error.c:3:3: error: constraint violation: expression is not assignable
+suite	tests/suite/desugaring/09-ptr_to_const.c	MATCH	VAL:Specified(0)
+suite	tests/suite/desugaring/10-ptr_to_const_param.c	CERB_ERROR	msg: "no startup function was declared"
+suite	tests/suite/desugaring/11-valid_const_pointer.c	CERB_ERROR	msg: "no startup function was declared"
+suite	tests/suite/desugaring/12-valid_const_pointer_pointer.c	UB_MATCH	UB:UB043_indirection_invalid_value
+suite	tests/suite/desugaring/13-non_anonymous_empty_sdecltors.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/desugaring/13-non_anonymous_empty_sdecltors.error.c:2:13: error: constraint violation: non-anonymous struct/union must contain a declarator list
+suite	tests/suite/desugaring/14-parameter_type_list.c	CERB_ERROR	msg: "no startup function was declared"
+suite	tests/suite/desugaring/15-parameter_type_list_incomplete.error.c	CERB_INCONSISTENT	exec succeeded but cabs-json failed
+suite	tests/suite/desugaring/16-parameter_type_list_incomplete_fundef.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/desugaring/16-parameter_type_list_incomplete_fundef.error.c:1:13: error: constraint violation: argument may not have 'void' type
+suite	tests/suite/desugaring/17-parameter_type_list_not_only_void.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/desugaring/17-parameter_type_list_not_only_void.error.c:1:15: error: constraint violation: 'void' must be the first and only parameter if specified
+suite	tests/suite/desugaring/18-enum_constants_different_scopes.c	MATCH	VAL:Specified(2)
+suite	tests/suite/desugaring/19-enum_constants_redefinition.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/desugaring/19-enum_constants_redefinition.error.c:2:8: error: redefinition of 'A'
+suite	tests/suite/desugaring/20-enum_incomplete.error.c	CERB_REJECT	exit 125: cerberus: internal error, [31muncaught exception[m:
+suite	tests/suite/desugaring/21-enum_constants_scope.c	MATCH	VAL:Specified(42)
+suite	tests/suite/desugaring/22-incomplete_array_external_implicit.c	MATCH	VAL:Specified(0)
+suite	tests/suite/desugaring/different_typedef_redefinition.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/desugaring/different_typedef_redefinition.error.c:2:14: error: constraint violation: typedef redefinition with different types
+suite	tests/suite/desugaring/non_unique_label.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/desugaring/non_unique_label.error.c:5:2: error: constraint violation: redefinition of 'l'
+suite	tests/suite/desugaring/struct_incomplete.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/desugaring/struct_incomplete.error.c:4:12: error: constraint violation: member has incomplete type 'struct T'
+suite	tests/suite/desugaring/struct_nested_redefinition.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/desugaring/struct_nested_redefinition.error.c:1:8: error: constraint violation: redefinition of 'T'
+suite	tests/suite/desugaring/union_incomplete.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/desugaring/union_incomplete.error.c:4:11: error: constraint violation: member has incomplete type 'union T'
+suite	tests/suite/desugaring/union_nested_redefinition.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/desugaring/union_nested_redefinition.error.c:1:7: error: constraint violation: redefinition of 'T'
+suite	tests/suite/dynamic_semantics/side_effect_globals.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/dynamic_semantics/side_effect_globals.c:3:9: error: constraint violation: initializer element is not a compile-time constant
+suite	tests/suite/fs/cat.c	MATCH	VAL:Specified(1)
+suite	tests/suite/fs/echo.c	MATCH	VAL:Specified(0)
+suite	tests/suite/fs/fprintf_then_fscanf.c	UB_MATCH	UB:UB048_disjoint_array_pointers_subtraction
+suite	tests/suite/fs/grep.c	MATCH	VAL:Specified(0)
+suite	tests/suite/fs/ln.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/fs/ln.c:12:6: error: use of undeclared identifier 'link'
+suite	tests/suite/fs/ls.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/fs/ls.c:65:10: error: constraint violation: no member named 'd_ino' in 'struct dirent'
+suite	tests/suite/fs/mkdir.c	MATCH	VAL:Specified(0)
+suite	tests/suite/fs/open.c	CERB_REJECT	exit 125: internal error: Formatted.load_character_array, unspecified
+suite	tests/suite/fs/opendir.c	CERB_REJECT	exit 125: internal error: can_advance: Step_error2 ==> /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/fs/opendir.c:27:3-31the value of a store(signed int*) didn't match the lvalue type: Specified(1)
+suite	tests/suite/fs/putc_then_getc.c	MATCH	VAL:Specified(0)
+suite	tests/suite/fs/readdir.c	CERB_REJECT	exit 125: internal error: can_advance: Step_error2 ==> /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/fs/readdir.c:6:3-28the value of a store(signed int*) didn't match the lvalue type: Specified(1)
+suite	tests/suite/fs/readlink.c	CERB_REJECT	exit 125: internal error: Formatted.load_character_array, unspecified
+suite	tests/suite/fs/stat.c	STDOUT_DIFF	values equal; Lean=Defined {value: "Specified(0)", stdout: "0 0 420 1 0 0 0 10\n", stderr: "", blocked: "false"} Cerberus=Defined {value: "Specified(0)", stdout: "2049 1 33261 1 0 0 0 10\n", stderr: "", blocked: "false"}
+suite	tests/suite/fs/stdin.c	CERB_REJECT	exit 125: internal error: Formatted.load_character_array, unspecified
+suite	tests/suite/fs/stdout.c	MATCH	VAL:Specified(4)
+suite	tests/suite/initialisation/constraints_vs_semantics.c	CERB_INCONSISTENT	exec succeeded but cabs-json failed
+suite	tests/suite/initialisation/several_identifiers.c	MATCH	VAL:Specified(0)
+suite	tests/suite/libc/abort.c	MATCH	VAL:Specified(127)
+suite	tests/suite/libc/at_exit.c	MATCH	VAL:Specified(1)
+suite	tests/suite/libc/at_quick_exit.c	MATCH	VAL:Specified(1)
+suite	tests/suite/libc/qsort.c	MATCH	VAL:Specified(0)
+suite	tests/suite/libc/simple.c	CERB_TIMEOUT	>15s
+suite	tests/suite/libc/string.c	CERB_ERROR	msg: "ill-formed program: `calling an unknown procedure: Symbol(707, SD_Id("
+suite	tests/suite/memory/a.c	MATCH	VAL:Specified(0)|VAL:Specified(0)|VAL:Specified(0)|VAL:Specified(0)
+suite	tests/suite/memory/b.c	MATCH	VAL:Specified(220)|VAL:Specified(220)|VAL:Specified(220)|VAL:Specified(220)
+suite	tests/suite/memory/malloc_arr.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/memory/malloc_arr.c:12:3: error: use of undeclared identifier 'f1'
+suite	tests/suite/parsing/array.c	LEAN_CRASH	exit 134: INTERNAL PANIC: out of memory
+suite	tests/suite/parsing/attributes.c	CERB_REJECT	exit 1: (debug 0): TODO(attributes ignored) -- TSpec_struct 3 => x
+suite	tests/suite/parsing/bitfield_declaration_ambiguity.unsup.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/parsing/bitfield_declaration_ambiguity.unsup.c:6:14: error: feature not yet supported: bit-fields
+suite	tests/suite/parsing/block_scope.c	CERB_ERROR	msg: "no startup function was declared"
+suite	tests/suite/parsing/conflicting_label_var.c	MATCH	VAL:Unspecified('signed int')
+suite	tests/suite/parsing/dangling_else.c	CERB_ERROR	msg: "no startup function was declared"
+suite	tests/suite/parsing/dangling_else_lookahead.c	CERB_ERROR	msg: "no startup function was declared"
+suite	tests/suite/parsing/dangling_else_misleading.fail.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/parsing/dangling_else_misleading.fail.c:10:11: error: unexpected token after 'T' and before 'x'
+suite	tests/suite/parsing/declaration_ambiguity.c	CERB_ERROR	msg: "no startup function was declared"
+suite	tests/suite/parsing/declarator_ident_list.fail.c	MATCH	VAL:Specified(0)
+suite	tests/suite/parsing/declarator_visibility.c	CERB_ERROR	msg: "no startup function was declared"
+suite	tests/suite/parsing/enum_constant_visibility.c	CERB_ERROR	msg: "no startup function was declared"
+suite	tests/suite/parsing/enum_shadows_typedef.c	CERB_ERROR	msg: "no startup function was declared"
+suite	tests/suite/parsing/function_argument.c	CERB_TIMEOUT	>15s
+suite	tests/suite/parsing/function_parameter_scope_extends.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/parsing/function_parameter_scope_extends.c:6:12: error: unexpected token after 'T' and before 'T'
+suite	tests/suite/parsing/function_parameter_scope.unsup.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/parsing/function_parameter_scope.unsup.c:5:35: error: feature not yet supported: variable length array type 2
+suite	tests/suite/parsing/function_vs_var.c	UB_MATCH	UB:UB024_out_of_range_pointer_to_integer_conversion
+suite	tests/suite/parsing/global_prototype_def.fail.c	CERB_INCONSISTENT	exec succeeded but cabs-json failed
+suite	tests/suite/parsing/identical_formals.fail.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/parsing/identical_formals.fail.c:1:18: error: constraint violation: multiple declaration of 'b'
+suite	tests/suite/parsing/if_scopes.unsup.c	CERB_ERROR	msg: "no startup function was declared"
+suite	tests/suite/parsing/local_scope.c	CERB_ERROR	msg: "no startup function was declared"
+suite	tests/suite/parsing/multiple_decls.fail.c	CERB_REJECT	exit 125: internal error: annotate_definition: symbol not found in the context
+suite	tests/suite/parsing/multiple_function_defs.fail.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/parsing/multiple_function_defs.fail.c:3:1: error: found K&R-style declaration (unsupported)
+suite	tests/suite/parsing/namespaces.c	CERB_ERROR	msg: "no startup function was declared"
+suite	tests/suite/parsing/negative_size_array.unsup.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/parsing/negative_size_array.unsup.c:3:7: error: feature not yet supported: variable length array type 2
+suite	tests/suite/parsing/no_local_scope.c	CERB_ERROR	msg: "no startup function was declared"
+suite	tests/suite/parsing/no_main.c	CERB_ERROR	msg: "no startup function was declared"
+suite	tests/suite/parsing/parameter_declaration_ambiguity.c	CERB_ERROR	msg: "no startup function was declared"
+suite	tests/suite/parsing/parens_pointer.fail.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/parsing/parens_pointer.fail.c:2:11: error: constraint violation: initializing 'signed int' with an expression with a non arithmetic type 'signed int*'
+suite	tests/suite/parsing/redefinition.fail.c	MATCH	VAL:Specified(0)
+suite	tests/suite/parsing/switch_without_cases.c	MATCH	VAL:Specified(0)
+suite	tests/suite/parsing/typedef_star.c	CERB_ERROR	msg: "no startup function was declared"
+suite	tests/suite/parsing/typedef_vs_var.c	MATCH	VAL:Specified(0)
+suite	tests/suite/parsing/type_specifier_order.c	MATCH	VAL:Specified(0)
+suite	tests/suite/parsing/variable_star.c	CERB_ERROR	msg: "no startup function was declared"
+suite	tests/suite/parsing/wrong_number_of_args.fail.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/parsing/wrong_number_of_args.fail.c:4:10: error: constraint violation: too few arguments to function call, expected 2, have 1
+suite	tests/suite/pointers/char_pointer.c	UB_MATCH	UB:UB_CERB002a_out_of_bound_load
+suite	tests/suite/pointers/int_pointer.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/pointers/int_pointer.c:5:28: error: unexpected token after '(' and before 'unsigned'
+suite	tests/suite/pointers/longint.c	MATCH	VAL:Specified(0)
+suite	tests/suite/races/add_race.c	UB_MATCH	UB:UB036_exceptional_condition
+suite	tests/suite/races/call_race.c	UB_MATCH	UB:UB035_unsequenced_race
+suite	tests/suite/sequencing/declarator_initialiser.c	MATCH	VAL:Specified(0)
+suite	tests/suite/sequencing/mutually_recursive_decls.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/sequencing/mutually_recursive_decls.c:2:11: error: use of undeclared identifier 'b'
+suite	tests/suite/sequencing/presentation1.c	UB_MATCH	UB:UB035_unsequenced_race
+suite	tests/suite/sequencing/presentation2.c	MATCH	VAL:Specified(0)|VAL:Specified(0)|VAL:Specified(0)|VAL:Specified(0)|VAL:Specified(0)|VAL:Specified(0)|VAL:Specified(0)|VAL:Specified(0)|VAL:Specified(0)|VAL:Specified(0)|VAL:Specified(0)|VAL:Specified(0)|VAL:Specified(0)|VAL:Specified(0)|VAL:Specified(0)|VAL:Specified(0)|VAL:Specified(0)|VAL:Specifi
+suite	tests/suite/typing/assign.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/typing/assign.c:6:8: error: constraint violation: assigning to 'signed int*' from 'const signed int*' discards qualifiers
+suite	tests/suite/typing/cond_int_float_pt.c	MATCH	VAL:Specified(0)
+suite	tests/suite/typing/int_to_long.c	MATCH	VAL:Specified(0)
+suite	tests/suite/typing/lvalues.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/typing/lvalues.c:8:12: error: constraint violation: initializing 'signed int*' with an expression of incompatible type 'usual arithmetic conversions with type [integer promotion of [signed int] a
+suite	tests/suite/typing/memberof_qualifiers.printtype.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/typing/memberof_qualifiers.printtype.c:9:3: error: use of undeclared identifier '__CERB_PRINT_TYPE'
+suite	tests/suite/typing/non-lvalue_array.c	MATCH	VAL:Specified(0)
+suite	tests/suite/typing/restrict_function_pointer.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/typing/restrict_function_pointer.error.c:2:10: error: constraint violation: restrict requires a pointer
+suite	tests/suite/typing/restrict_not_pointer.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/typing/restrict_not_pointer.error.c:2:10: error: constraint violation: restrict requires a pointer
+suite	tests/suite/typing/sizeof_function.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/typing/sizeof_function.error.c:3:9: error: constraint violation: invalid application of 'sizeof' to a function type
+suite	tests/suite/typing/sizeof_incomplete.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/typing/sizeof_incomplete.error.c:1:12: error: constraint violation: invalid application of 'sizeof' to an incomplete type 'array  of signed int'
+suite	tests/suite/typing/void_indir.c	CERB_INCONSISTENT	exec succeeded but cabs-json failed
+suite	tests/suite/typing/void_obj.c	MATCH	VAL:Specified(0)
+suite	tests/suite/typing/write.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/suite/typing/write.c:5:10: error: constraint violation: expression is not assignable
+suite	tests/suite/undefined/01-overflow_unary_minus.undef.c	UB_MATCH	UB:UB036_exceptional_condition
+suite	tests/suite/undefined/02-overflow_postfix_incr.undef.c	UB_MATCH	UB:UB036_exceptional_condition
+suite	tests/suite/undefined/03-overflow_postfix_decr.undef.c	UB_MATCH	UB:UB036_exceptional_condition
+suite	tests/suite/undefined/04-overflow_add.undef.c	UB_MATCH	UB:UB036_exceptional_condition
+suite	tests/suite/undefined/05-overflow_sub.undef.c	UB_MATCH	UB:UB036_exceptional_condition
+suite	tests/suite/undefined/06-overflow_mul.undef.c	UB_MATCH	UB:UB036_exceptional_condition
+suite	tests/suite/undefined/07-overflow_div.undef.c	UB_MATCH	UB:UB045c_quotient_not_representable
+suite	tests/suite/undefined/08-overflow_mod.undef.c	UB_MATCH	UB:UB045c_quotient_not_representable
+suite	tests/suite/undefined/09-overflow_shl.undef.c	UB_MATCH	UB:UB052b_non_representable_left_shift
+suite	tests/suite/undefined/10-overflow_add_assign.undef.c	UB_MATCH	UB:UB036_exceptional_condition
+suite	tests/suite/undefined/11-overflow_sub_assign.undef.c	UB_MATCH	UB:UB036_exceptional_condition
+suite	tests/suite/undefined/12-overflow_mul_assign.undef.c	UB_MATCH	UB:UB036_exceptional_condition
+suite	tests/suite/undefined/13-overflow_div_assign.undef.c	UB_MATCH	UB:UB045c_quotient_not_representable
+suite	tests/suite/undefined/14-overflow_mod_assign.undef.c	UB_MATCH	UB:UB045c_quotient_not_representable
+suite	tests/suite/undefined/15-overflow_shl_assign.undef.c	UB_MATCH	UB:UB052b_non_representable_left_shift
+suite	tests/suite/undefined/cmp_always_true.c	UB_MATCH	UB:UB036_exceptional_condition
+suite	tests/suite/undefined/UB008_multiple_linkage.c	CERB_INCONSISTENT	exec succeeded but cabs-json failed
+suite	tests/suite/undefined/unspec_vs_undef.c	UB_MATCH	UB:UB035_unsequenced_race|VAL:Specified(0)
+suite	tests/suite/unspecified/01-uplus_unspec.c	MATCH	VAL:Unspecified('signed int')
+suite	tests/suite/unspecified/02-uminus_unspec.c	MATCH	VAL:Unspecified('signed int')
+suite	tests/suite/unspecified/cond_call_unspec.c	UB_MATCH	UB:UB_CERB004_unspecified__conditional
+suite	tests/suite/unspecified/cond_unspec.c	UB_MATCH	UB:UB_CERB004_unspecified__conditional
+suite	tests/suite/unspecified/indet_plus_complement.c	UB_MATCH	UB:UB_CERB004_unspecified__conditional
+# SWEEP SUMMARY suite=suite mode=libc total=144 match=38 ub_match=27 ub_diff=0 stdout_diff=1 diff=0 mismatch=0 lean_fail=0 lean_crash=1 lean_error=0 lean_timeout=0 cerb_reject=50 cerb_error=20 cerb_timeout=2 cerb_crash=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=5

@@ -1,0 +1,45 @@
+pnvi	tests/pnvi_testsuite/cheri_03_ii.c	MATCH	VAL:Specified(0)
+pnvi	tests/pnvi_testsuite/pointer_arith_algebraic_properties_2_global.c	UB_MATCH	UB:UB043_indirection_invalid_value
+pnvi	tests/pnvi_testsuite/pointer_arith_algebraic_properties_3_global.c	UB_MATCH	UB:UB043_indirection_invalid_value
+pnvi	tests/pnvi_testsuite/pointer_copy_memcpy.c	MATCH	VAL:Specified(0)
+pnvi	tests/pnvi_testsuite/pointer_copy_user_ctrlflow_bitwise.c	UB_MATCH	UB:UB043_indirection_invalid_value
+pnvi	tests/pnvi_testsuite/pointer_copy_user_ctrlflow_bytewise.c	UB_MATCH	UB:UB043_indirection_invalid_value|UB:UB043_indirection_invalid_value|UB:UB043_indirection_invalid_value|UB:UB043_indirection_invalid_value|UB:UB043_indirection_invalid_value|UB:UB043_indirection_invalid_value|UB:UB043_indirection_invalid_value|UB:UB043_indirection_invalid_value|UB:UB043_indirection
+pnvi	tests/pnvi_testsuite/pointer_copy_user_dataflow_direct_bytewise.c	MATCH	VAL:Specified(0)
+pnvi	tests/pnvi_testsuite/pointer_from_int_disambiguation_1.c	UB_MATCH	UB:UB_CERB002b_out_of_bound_store
+pnvi	tests/pnvi_testsuite/pointer_from_int_disambiguation_2.c	MATCH	VAL:Specified(0)
+pnvi	tests/pnvi_testsuite/pointer_from_int_disambiguation_3.c	UB_MATCH	UB:UB_CERB002b_out_of_bound_store
+pnvi	tests/pnvi_testsuite/pointer_from_integer_1i.c	UB_MATCH	UB:UB043_indirection_invalid_value
+pnvi	tests/pnvi_testsuite/pointer_from_integer_1ie.c	UB_MATCH	UB:UB043_indirection_invalid_value
+pnvi	tests/pnvi_testsuite/pointer_from_integer_1ig.c	MATCH	VAL:Specified(0)|VAL:Specified(0)
+pnvi	tests/pnvi_testsuite/pointer_from_integer_1p.c	UB_MATCH	UB:UB043_indirection_invalid_value
+pnvi	tests/pnvi_testsuite/pointer_from_integer_1pg.c	MATCH	VAL:Specified(0)|VAL:Specified(0)
+pnvi	tests/pnvi_testsuite/pointer_from_integer_2.c	UB_MATCH	UB:UB043_indirection_invalid_value
+pnvi	tests/pnvi_testsuite/pointer_from_integer_2g.c	STDOUT_DIFF	values equal; Lean=Defined {value: "Specified(0)", stdout: "j=5 &j=(@70, 0xffffffffedec)\n", stderr: "", blocked: "false"} Cerberus=Defined {value: "Specified(0)", stdout: "j=5 &j=(@70, 0xffffffffede8)\n", stderr: "", blocked: "false"}
+pnvi	tests/pnvi_testsuite/pointer_offset_from_int_subtraction_auto_xy.c	UB_MATCH	UB:UB043_indirection_invalid_value
+pnvi	tests/pnvi_testsuite/pointer_offset_from_int_subtraction_auto_yx.c	UB_MATCH	UB:UB043_indirection_invalid_value
+pnvi	tests/pnvi_testsuite/pointer_offset_from_int_subtraction_global_xy.c	UB_MATCH	UB:UB043_indirection_invalid_value
+pnvi	tests/pnvi_testsuite/pointer_offset_from_int_subtraction_global_yx.c	UB_MATCH	UB:UB043_indirection_invalid_value
+pnvi	tests/pnvi_testsuite/pointer_offset_from_ptr_subtraction_auto_xy.c	UB_MATCH	UB:UB048_disjoint_array_pointers_subtraction
+pnvi	tests/pnvi_testsuite/pointer_offset_from_ptr_subtraction_auto_yx.c	UB_MATCH	UB:UB048_disjoint_array_pointers_subtraction
+pnvi	tests/pnvi_testsuite/pointer_offset_from_ptr_subtraction_global_xy.c	UB_MATCH	UB:UB048_disjoint_array_pointers_subtraction
+pnvi	tests/pnvi_testsuite/pointer_offset_from_ptr_subtraction_global_yx.c	UB_MATCH	UB:UB048_disjoint_array_pointers_subtraction
+pnvi	tests/pnvi_testsuite/pointer_offset_xor_auto.c	UB_MATCH	UB:UB_CERB002b_out_of_bound_store
+pnvi	tests/pnvi_testsuite/pointer_offset_xor_global.c	UB_MATCH	UB:UB_CERB002b_out_of_bound_store
+pnvi	tests/pnvi_testsuite/provenance_basic_auto_yx.c	UB_MATCH	UB:UB_CERB002b_out_of_bound_store
+pnvi	tests/pnvi_testsuite/provenance_basic_global_yx.c	UB_MATCH	UB:UB_CERB002b_out_of_bound_store
+pnvi	tests/pnvi_testsuite/provenance_basic_using_uintptr_t_auto_yx.c	UB_MATCH	UB:UB043_indirection_invalid_value
+pnvi	tests/pnvi_testsuite/provenance_basic_using_uintptr_t_global_yx.c	UB_MATCH	UB:UB043_indirection_invalid_value
+pnvi	tests/pnvi_testsuite/provenance_equality_auto_yx.c	STDOUT_DIFF	values equal; Lean=Defined {value: "Specified(0)", stdout: "Addresses: p=(@74, 0xffffffffedcc) q=(@73, 0xffffffffedcc)\n(p==q) = true\n", stderr: "", blocked: "false"} Cerberus=Defined {value: "Specified(0)", stdout: "Addresses: p=(@74, 0xffffffffedc8) q=(@73, 0xffffffffedc8)\n(p==q) = true\n", stde
+pnvi	tests/pnvi_testsuite/provenance_equality_global_fn_yx.c	STDOUT_DIFF	values equal; Lean=Defined {value: "Specified(0)", stdout: "Addresses: p=(@73, 0xffffffffedd0) q=(@72, 0xffffffffedd0)\n(p==q) = true\n", stderr: "", blocked: "false"} Cerberus=Defined {value: "Specified(0)", stdout: "Addresses: p=(@1, 0xfffffffffff8) q=(@0, 0xfffffffffff8)\n(p==q) = true\n", stderr
+pnvi	tests/pnvi_testsuite/provenance_equality_global_yx.c	STDOUT_DIFF	values equal; Lean=Defined {value: "Specified(0)", stdout: "Addresses: p=(@73, 0xffffffffedd0) q=(@72, 0xffffffffedd0)\n(p==q) = true\n", stderr: "", blocked: "false"} Cerberus=Defined {value: "Specified(0)", stdout: "Addresses: p=(@69, 0xffffffffedfc) q=(@68, 0xffffffffedfc)\n(p==q) = true\n", stde
+pnvi	tests/pnvi_testsuite/provenance_equality_uintptr_t_auto_yx.c	MATCH	VAL:Specified(0)
+pnvi	tests/pnvi_testsuite/provenance_equality_uintptr_t_global_yx.c	STDOUT_DIFF	values equal; Lean=Defined {value: "Specified(0)", stdout: "Addresses: p=ffffffffedcc q=ffffffffedcc\n(p==q) = true\n", stderr: "", blocked: "false"} Cerberus=Defined {value: "Specified(0)", stdout: "Addresses: p=fffffffff3a0 q=fffffffff3a0\n(p==q) = true\n", stderr: "", blocked: "false"}
+pnvi	tests/pnvi_testsuite/provenance_lost_escape_1.c	STDOUT_DIFF	values equal; Lean=Defined {value: "Specified(0)", stdout: "Addresses: p=(@70, 0xffffffffedd8)\n", stderr: "", blocked: "false"} Cerberus=Defined {value: "Specified(0)", stdout: "Addresses: p=(@17, 0xfffffffff4cc)\n", stderr: "", blocked: "false"}
+pnvi	tests/pnvi_testsuite/provenance_roundtrip_via_intptr_t.c	MATCH	VAL:Specified(0)
+pnvi	tests/pnvi_testsuite/provenance_roundtrip_via_intptr_t_onepast.c	MATCH	VAL:Specified(0)
+pnvi	tests/pnvi_testsuite/provenance_tag_bits_via_repr_byte_1.c	MATCH	VAL:Specified(0)
+pnvi	tests/pnvi_testsuite/provenance_tag_bits_via_uintptr_t_1.c	MATCH	VAL:Specified(0)
+pnvi	tests/pnvi_testsuite/provenance_union_punning_2_auto_yx.c	UB_MATCH	UB:UB043_indirection_invalid_value
+pnvi	tests/pnvi_testsuite/provenance_union_punning_2_global_yx.c	UB_MATCH	UB:UB043_indirection_invalid_value
+pnvi	tests/pnvi_testsuite/provenance_union_punning_3_global.c	MATCH	VAL:Specified(0)
+# SWEEP SUMMARY suite=pnvi mode=libc total=44 match=12 ub_match=26 ub_diff=0 stdout_diff=6 diff=0 mismatch=0 lean_fail=0 lean_crash=0 lean_error=0 lean_timeout=0 cerb_reject=0 cerb_error=0 cerb_timeout=0 cerb_crash=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0

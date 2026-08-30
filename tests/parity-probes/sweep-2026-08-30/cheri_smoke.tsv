@@ -1,0 +1,241 @@
+cheri_smoke	tests/cheri-ci/0001-emptymain.c	MATCH	VAL:Specified(0)
+cheri_smoke	tests/cheri-ci/0002-return_const.c	MATCH	VAL:Specified(150)
+cheri_smoke	tests/cheri-ci/0003-return_arith.c	MATCH	VAL:Specified(3)
+cheri_smoke	tests/cheri-ci/0004-return_var.c	MATCH	VAL:Specified(18)
+cheri_smoke	tests/cheri-ci/0005-return_var_arith.c	MATCH	VAL:Specified(192)
+cheri_smoke	tests/cheri-ci/0006-return_var_unspec.c	MATCH	VAL:Unspecified('signed int')
+cheri_smoke	tests/cheri-ci/0007-inits.c	MATCH	VAL:Unspecified('signed int')
+cheri_smoke	tests/cheri-ci/0008-cond_integer.c	MATCH	VAL:Specified(45)
+cheri_smoke	tests/cheri-ci/0009-cond-pointer.c	MATCH	VAL:Specified(86)
+cheri_smoke	tests/cheri-ci/0010-if_int.c	MATCH	VAL:Specified(10)
+cheri_smoke	tests/cheri-ci/0011-if_pointer.c	MATCH	VAL:Specified(10)
+cheri_smoke	tests/cheri-ci/0012-incr_integer.c	MATCH	VAL:Specified(10)
+cheri_smoke	tests/cheri-ci/0013-incr_pointer.c	MATCH	VAL:Specified(0)
+cheri_smoke	tests/cheri-ci/0015-while_break.c	MATCH	VAL:Specified(10)
+cheri_smoke	tests/cheri-ci/0016-do_break.c	MATCH	VAL:Specified(10)
+cheri_smoke	tests/cheri-ci/0017-for_simple.c	MATCH	VAL:Specified(11)
+cheri_smoke	tests/cheri-ci/0018-lt_promotion.c	MATCH	VAL:Specified(0)
+cheri_smoke	tests/cheri-ci/0019-arith_promotion.c	MATCH	VAL:Specified(100)
+cheri_smoke	tests/cheri-ci/0020-end_of_lifetime.undef.c	UB_MATCH	UB:UB043_indirection_invalid_value
+cheri_smoke	tests/cheri-ci/0021-fact.c	MATCH	VAL:Specified(120)
+cheri_smoke	tests/cheri-ci/0022-while_continue.c	MATCH	VAL:Specified(25)
+cheri_smoke	tests/cheri-ci/0023-jump1.c	CERB_TIMEOUT	>15s
+cheri_smoke	tests/cheri-ci/0024-jump2.c	MATCH	VAL:Specified(0)
+cheri_smoke	tests/cheri-ci/0025-jump3.c	CERB_TIMEOUT	>15s
+cheri_smoke	tests/cheri-ci/0026-jump4.c	MATCH	VAL:Specified(0)
+cheri_smoke	tests/cheri-ci/0027-jump5.c	MATCH	VAL:Specified(3)
+cheri_smoke	tests/cheri-ci/0028-division_by_zero.undef.c	UB_MATCH	UB:UB045a_division_by_zero
+cheri_smoke	tests/cheri-ci/0029-modulo_by_zero.undef.c	UB_MATCH	UB:UB045b_modulo_by_zero
+cheri_smoke	tests/cheri-ci/0030-call_arith.c	MATCH	VAL:Specified(22)
+cheri_smoke	tests/cheri-ci/0031-global.c	MATCH	VAL:Specified(0)
+cheri_smoke	tests/cheri-ci/0032-empty_struct_decl.c	MATCH	VAL:Specified(0)
+cheri_smoke	tests/cheri-ci/0033-duplicate.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0033-duplicate.error.c:1:18: error: constraint violation: multiple declaration of 'n'
+cheri_smoke	tests/cheri-ci/0034-duplicate_proto.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0034-duplicate_proto.error.c:1:18: error: constraint violation: multiple declaration of 'n'
+cheri_smoke	tests/cheri-ci/0035-thread_local_function.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0035-thread_local_function.error.c:12:1: error: constraint violation: illegal storage class
+cheri_smoke	tests/cheri-ci/0036-auto_register_function.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0036-auto_register_function.error.c:2:10: error: constraint violation: illegal storage class
+cheri_smoke	tests/cheri-ci/0037-function_conflicting_types.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0037-function_conflicting_types.error.c:3:5: error: constraint violation: multiple declarations in the same scope with incompatible types
+cheri_smoke	tests/cheri-ci/0038-function_redefinition.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0038-function_redefinition.error.c:3:6: error: constraint violation: multiple declarations in the same scope with incompatible types
+cheri_smoke	tests/cheri-ci/0039-struct_imcomplete.undef.c	CERB_INCONSISTENT	exec succeeded but cabs-json failed
+cheri_smoke	tests/cheri-ci/0040-struct_redefinition.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0040-struct_redefinition.error.c:8:8: error: constraint violation: redefinition of 'T'
+cheri_smoke	tests/cheri-ci/0041-struct_incompatible.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0041-struct_incompatible.error.c:7:8: error: constraint violation: assigning to 'struct T' from incompatible type 'struct T'
+cheri_smoke	tests/cheri-ci/0042-struct_namespace.c	MATCH	VAL:Specified(0)
+cheri_smoke	tests/cheri-ci/0044-init_scalar_enclosed.c	MATCH	VAL:Specified(0)
+cheri_smoke	tests/cheri-ci/0045-global_postinit.c	MATCH	VAL:Specified(13)
+cheri_smoke	tests/cheri-ci/0046-jump_inside_lifetime.c	MATCH	VAL:Unspecified('signed int')
+cheri_smoke	tests/cheri-ci/0047-conditional_eq.c	MATCH	VAL:Specified(42)
+cheri_smoke	tests/cheri-ci/0048-conditional_eq_else.c	MATCH	VAL:Specified(42)
+cheri_smoke	tests/cheri-ci/0049-void_return_empty.c	MATCH	VAL:Specified(10)
+cheri_smoke	tests/cheri-ci/0050-void_return_arith.c	MATCH	VAL:Specified(10)
+cheri_smoke	tests/cheri-ci/0051-global_non_startup.c	MATCH	VAL:Specified(42)
+cheri_smoke	tests/cheri-ci/0052-global_not_constant.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0052-global_not_constant.error.c:2:9: error: constraint violation: initializer element is not a compile-time constant
+cheri_smoke	tests/cheri-ci/0053-recursive_factorial5.c	MATCH	VAL:Specified(120)|VAL:Specified(120)|VAL:Specified(120)|VAL:Specified(120)|VAL:Specified(120)|VAL:Specified(120)|VAL:Specified(120)|VAL:Specified(120)|VAL:Specified(120)|VAL:Specified(120)|VAL:Specified(120)|VAL:Specified(120)|VAL:Specified(120)|VAL:Specified(120)|VAL:Specified(120)|VAL:Specified(1
+cheri_smoke	tests/cheri-ci/0054-while_factorial5.c	MATCH	VAL:Specified(120)
+cheri_smoke	tests/cheri-ci/0055-while_acc.c	MATCH	VAL:Specified(10)
+cheri_smoke	tests/cheri-ci/0056-unary_plus.c	MATCH	VAL:Specified(-2147483648)
+cheri_smoke	tests/cheri-ci/0057-std_footnote_118.c	MATCH	VAL:Specified(0)
+cheri_smoke	tests/cheri-ci/0058-pointer_zero_init.c	MATCH	VAL:Specified(0)
+cheri_smoke	tests/cheri-ci/0059-glob_coretyping.c	MATCH	VAL:Specified(0)
+cheri_smoke	tests/cheri-ci/0060-emptydecl.c	MATCH	VAL:Specified(0)
+cheri_smoke	tests/cheri-ci/0061-cond_call_e.c	MATCH	VAL:Specified(10)
+cheri_smoke	tests/cheri-ci/0062-cond_call_e2.c	MATCH	VAL:Specified(20)
+cheri_smoke	tests/cheri-ci/0063-cond_e.c	MATCH	VAL:Specified(10)
+cheri_smoke	tests/cheri-ci/0064-cond_e2.c	MATCH	VAL:Specified(20)
+cheri_smoke	tests/cheri-ci/0065-const1.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0065-const1.error.c:6:3: error: constraint violation: expression is not assignable
+cheri_smoke	tests/cheri-ci/0066-const2.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0066-const2.error.c:6:3: error: constraint violation: expression is not assignable
+cheri_smoke	tests/cheri-ci/0067-band1.c	MATCH	VAL:Specified(8)
+cheri_smoke	tests/cheri-ci/0068-bor1.c	MATCH	VAL:Specified(138)
+cheri_smoke	tests/cheri-ci/0069-const_expr.c	CERB_INCONSISTENT	exec succeeded but cabs-json failed
+cheri_smoke	tests/cheri-ci/0070-do-while1.c	MATCH	VAL:Specified(0)
+cheri_smoke	tests/cheri-ci/0071-do-while2.c	MATCH	VAL:Specified(1)
+cheri_smoke	tests/cheri-ci/0072-example03.c	MATCH	VAL:Specified(0)
+cheri_smoke	tests/cheri-ci/0073-example03.c	MATCH	VAL:Specified(0)
+cheri_smoke	tests/cheri-ci/0074-fun_returns.undef.c	UB_MATCH	UB:UB088_reached_end_of_function
+cheri_smoke	tests/cheri-ci/0075-funscoped_static.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0075-funscoped_static.error.c:14:10: error: use of undeclared identifier 'y'
+cheri_smoke	tests/cheri-ci/0076-odd_even.c	MATCH	VAL:Specified(0)
+cheri_smoke	tests/cheri-ci/0077-register_arg.c	MATCH	VAL:Specified(0)
+cheri_smoke	tests/cheri-ci/0078-struct1.c	MATCH	VAL:Specified(0)
+cheri_smoke	tests/cheri-ci/0079-struct2.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0079-struct2.error.c:7:8: error: constraint violation: redefinition of 'T1'
+cheri_smoke	tests/cheri-ci/0080-struct3.c	MATCH	VAL:Specified(0)
+cheri_smoke	tests/cheri-ci/0081-struct4.c	MATCH	VAL:Specified(0)
+cheri_smoke	tests/cheri-ci/0082-OK1.c	MATCH	VAL:Specified(0)
+cheri_smoke	tests/cheri-ci/0083-array_initializers.c	MATCH	VAL:Specified(0)
+cheri_smoke	tests/cheri-ci/0084-KO1.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0084-KO1.error.c:1:19: error: unexpected token after '{' and before '}'
+cheri_smoke	tests/cheri-ci/0085-excess_array_initializer.c	MATCH	VAL:Specified(3)
+cheri_smoke	tests/cheri-ci/0086-literal_access.undef.c	UB_MATCH	UB:UB033_modifying_string_literal
+cheri_smoke	tests/cheri-ci/0087-array_with_delayed_size.c	MATCH	VAL:Specified(12)
+cheri_smoke	tests/cheri-ci/0101-sym_cfunction.c	CERB_ERROR	msg: "ill-formed program: `calling an unknown procedure: Symbol(502, SD_Id("
+cheri_smoke	tests/cheri-ci/0105-incr.c	MATCH	VAL:Specified(0)
+cheri_smoke	tests/cheri-ci/0108-shifts.c	MATCH	VAL:Specified(0)
+cheri_smoke	tests/cheri-ci/0109-promotion_lt.c	MATCH	VAL:Specified(0)
+cheri_smoke	tests/cheri-ci/0110-loop_in_loop.c	MATCH	VAL:Specified(0)
+cheri_smoke	tests/cheri-ci/0111-skipped_label.c	MATCH	VAL:Specified(0)
+cheri_smoke	tests/cheri-ci/0112-call_in_label.c	MATCH	VAL:Specified(0)
+cheri_smoke	tests/cheri-ci/0113-cast_assign_parsing.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0113-cast_assign_parsing.error.c:4:10: error: unexpected token after 'x' and before '='
+cheri_smoke	tests/cheri-ci/0114-const_return.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0114-const_return.error.c:8:3: error: constraint violation: expression is not assignable
+cheri_smoke	tests/cheri-ci/0115-hex_char_const.c	MATCH	VAL:Specified(1)
+cheri_smoke	tests/cheri-ci/0116-enum_constants.c	MATCH	VAL:Specified(0)
+cheri_smoke	tests/cheri-ci/0117-global_array_init_incomplete.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0117-global_array_init_incomplete.error.c:1:6: error: constraint violation: invalid application of 'sizeof' to an incomplete type 'array  of char'
+cheri_smoke	tests/cheri-ci/0118-block_array_init_incomplete.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0118-block_array_init_incomplete.error.c:3:8: error: constraint violation: invalid application of 'sizeof' to an incomplete type 'array  of char'
+cheri_smoke	tests/cheri-ci/0119-block_array_init_rec.c	MATCH	VAL:Specified(0)
+cheri_smoke	tests/cheri-ci/0120-addition_null_pointer.error.c	CERB_REJECT	exit 125: cerberus: internal error, [31muncaught exception[m:
+cheri_smoke	tests/cheri-ci/0121-addition_null_pointer_zero.error.c	CERB_REJECT	exit 125: cerberus: internal error, [31muncaught exception[m:
+cheri_smoke	tests/cheri-ci/0122-incr_overflow.undef.c	UB_MATCH	UB:UB036_exceptional_condition
+cheri_smoke	tests/cheri-ci/0123-decr_underflow.undef.c	UB_MATCH	UB:UB036_exceptional_condition
+cheri_smoke	tests/cheri-ci/0124-incr_wrap.c	MATCH	VAL:Specified(0)
+cheri_smoke	tests/cheri-ci/0125-decr_wrap.c	MATCH	VAL:Specified(0)
+cheri_smoke	tests/cheri-ci/0126-duff_device.c	MATCH	VAL:Specified(0)
+cheri_smoke	tests/cheri-ci/0127-function-pointer.c	MATCH	VAL:Specified(42)
+cheri_smoke	tests/cheri-ci/0128-function-pointer-void-cast.c	MATCH	VAL:Specified(42)
+cheri_smoke	tests/cheri-ci/0129-function-pointer-wrong-args.undef.c	UB_MATCH	UB:UB038_number_of_args
+cheri_smoke	tests/cheri-ci/0201-main-return-type.undef.c	CERB_INCONSISTENT	exec succeeded but cabs-json failed
+cheri_smoke	tests/cheri-ci/0202-main-not-function.undef.c	CERB_INCONSISTENT	exec succeeded but cabs-json failed
+cheri_smoke	tests/cheri-ci/0203-main-params1.undef.c	CERB_INCONSISTENT	exec succeeded but cabs-json failed
+cheri_smoke	tests/cheri-ci/0204-main-params2.undef.c	CERB_INCONSISTENT	exec succeeded but cabs-json failed
+cheri_smoke	tests/cheri-ci/0205-illegal-storage-class.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0205-illegal-storage-class.error.c:1:10: error: constraint violation: illegal storage class
+cheri_smoke	tests/cheri-ci/0206-no-linkage-block-incomplete.undef.c	CERB_INCONSISTENT	exec succeeded but cabs-json failed
+cheri_smoke	tests/cheri-ci/0207-incomplete-internal-linkage.undef.c	CERB_INCONSISTENT	exec succeeded but cabs-json failed
+cheri_smoke	tests/cheri-ci/0208-static-assert-not-integral-constant.undef.c	CERB_INCONSISTENT	exec succeeded but cabs-json failed
+cheri_smoke	tests/cheri-ci/0209-static-assert-failed.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0209-static-assert-failed.error.c:2:18: error: constraint violation: static assert expression failed: failed miserably!
+cheri_smoke	tests/cheri-ci/0210-illegal-storage-class-function.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0210-illegal-storage-class-function.error.c:1:1: error: constraint violation: illegal storage class
+cheri_smoke	tests/cheri-ci/0211-function-id-not-function-type.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0211-function-id-not-function-type.error.c:3:5: error: constraint violation: function identifier must have a function type
+cheri_smoke	tests/cheri-ci/0212-function-redefinition.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0212-function-redefinition.error.c:2:7: error: constraint violation: redefinition of 'foo'
+cheri_smoke	tests/cheri-ci/0213-label-statement-outside-switch.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0213-label-statement-outside-switch.error.c:2:8: error: constraint violation: label statement outside switch
+cheri_smoke	tests/cheri-ci/0214-illegal-storage-class-for-statement.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0214-illegal-storage-class-for-statement.error.c:2:19: error: constraint violation: illegal storage class
+cheri_smoke	tests/cheri-ci/0215-continue-outside-loop.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0215-continue-outside-loop.error.c:2:3: error: constraint violation: continue statement outside a loop
+cheri_smoke	tests/cheri-ci/0216-break-outside-loop.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0216-break-outside-loop.error.c:2:3: error: constraint violation: break statement outside a switch or a loop
+cheri_smoke	tests/cheri-ci/0217-non-void-function-return.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0217-non-void-function-return.error.c:1:12: error: constraint violation: non-void function should return a value
+cheri_smoke	tests/cheri-ci/0218-multiple-storage-class.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0218-multiple-storage-class.error.c:2:19: error: constraint violation: multiple incompatible storage class specifiers
+cheri_smoke	tests/cheri-ci/0219-thread-local-function-declaration.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0219-thread-local-function-declaration.error.c:1:19: error: constraint violation: _Thread_local in function declaration
+cheri_smoke	tests/cheri-ci/0220-thread-local-auto.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0220-thread-local-auto.error.c:2:21: error: constraint violation: multiple incompatible storage class specifiers
+cheri_smoke	tests/cheri-ci/0221-block-scoped-function-decl-illegal-storage-class.undef.c	CERB_INCONSISTENT	exec succeeded but cabs-json failed
+cheri_smoke	tests/cheri-ci/0222-scalar-init-not-single-expr.undef.c	CERB_INCONSISTENT	exec succeeded but cabs-json failed
+cheri_smoke	tests/cheri-ci/0223-illegal-storage-class-static-init.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0223-illegal-storage-class-static-init.error.c:3:20: error: constraint violation: initializer element is not a compile-time constant
+cheri_smoke	tests/cheri-ci/0224-enum-not-int.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0224-enum-not-int.error.c:2:5: error: constraint violation: expression is not an integer constant expression
+cheri_smoke	tests/cheri-ci/0225-incomplete-field.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0225-incomplete-field.error.c:2:12: error: constraint violation: member has incomplete type 'struct S'
+cheri_smoke	tests/cheri-ci/0226-function-field.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0226-function-field.error.c:3:7: error: constraint violation: member 'f' declared as a function
+cheri_smoke	tests/cheri-ci/0227-illegal-type-specs.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0227-illegal-type-specs.error.c:2:3: error: constraint violation: illegal combination of type specifiers
+cheri_smoke	tests/cheri-ci/0228-tag-redecl.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0228-tag-redecl.error.c:2:7: error: constraint violation: use of 'S' with tag type that does not match previous declaration
+cheri_smoke	tests/cheri-ci/0229-illegal-enum-construction.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0229-illegal-enum-construction.error.c:1:6: error: such construction is not allowed for enumerators
+cheri_smoke	tests/cheri-ci/0230-enum-incomplete.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0230-enum-incomplete.error.c:1:1: error: constraint violation: incomplete enum type
+cheri_smoke	tests/cheri-ci/0231-tag-redefinition.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0231-tag-redefinition.error.c:2:8: error: constraint violation: redefinition of 'T'
+cheri_smoke	tests/cheri-ci/0232-invalid-use-Atomic.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0232-invalid-use-Atomic.error.c:2:3: error: constraint violation: invalid use of _Atomic
+cheri_smoke	tests/cheri-ci/0233-undeclared-identifier.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0233-undeclared-identifier.error.c:2:3: error: use of undeclared identifier 'x'
+cheri_smoke	tests/cheri-ci/0234-array-static-outside-fun-proto.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0234-array-static-outside-fun-proto.error.c:1:6: error: constraint violation: type qualifiers or 'static' used in array declarator outside of function prototype
+cheri_smoke	tests/cheri-ci/0235-array-static-innermost.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0235-array-static-innermost.error.c:1:14: error: constraint violation: type qualifiers or 'static' used in array declarator outside of function prototype
+cheri_smoke	tests/cheri-ci/0236-array-size-zero.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0236-array-size-zero.error.c:1:6: error: constraint violation: array declared with a negative or zero size
+cheri_smoke	tests/cheri-ci/0237-array-star-illegal-scope.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0237-array-star-illegal-scope.error.c:1:6: error: star modifier used outside of function prototype
+cheri_smoke	tests/cheri-ci/0238-storage-class-function-decl.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0238-storage-class-function-decl.error.c:1:22: error: constraint violation: invalid storage class specifier in function declarator
+cheri_smoke	tests/cheri-ci/0239-parameter-type-void.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0239-parameter-type-void.error.c:1:16: error: constraint violation: argument may not have 'void' type
+cheri_smoke	tests/cheri-ci/0240-incomplete-adust-parameter.undef.c	CERB_INCONSISTENT	exec succeeded but cabs-json failed
+cheri_smoke	tests/cheri-ci/0241-fundef-with-params-void-int.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0241-fundef-with-params-void-int.error.c:1:17: error: constraint violation: 'void' must be the first and only parameter if specified
+cheri_smoke	tests/cheri-ci/0242-array-designator-wrong-type.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0242-array-designator-wrong-type.error.c:1:15: error: constraint violation: expression is not an integer constant expression
+cheri_smoke	tests/cheri-ci/0243-array-designator-wrong-size.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0243-array-designator-wrong-size.error.c:1:15: error: constraint violation: array designator value is negative
+cheri_smoke	tests/cheri-ci/0244-literal-type-array-char.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0244-literal-type-array-char.error.c:1:17: error: constraint violation: initializing 'signed int' with an expression with a non arithmetic type 'char*'
+cheri_smoke	tests/cheri-ci/0245-storage-class-void-param.undef.c	CERB_INCONSISTENT	exec succeeded but cabs-json failed
+cheri_smoke	tests/cheri-ci/0246-block-scoped-function.undef.c	CERB_INCONSISTENT	exec succeeded but cabs-json failed
+cheri_smoke	tests/cheri-ci/0247-illegal-typedef-initializer.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0247-illegal-typedef-initializer.error.c:1:13: error: illegal initializer in type definition (unknown ISO C reference)
+cheri_smoke	tests/cheri-ci/0248-typedef-redefinition.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0248-typedef-redefinition.error.c:2:15: error: constraint violation: typedef redefinition with different types
+cheri_smoke	tests/cheri-ci/0249-multiple-declaration.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0249-multiple-declaration.error.c:3:7: error: constraint violation: multiple declaration of 'bar'
+cheri_smoke	tests/cheri-ci/0250-redefinition-enum-id.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0250-redefinition-enum-id.error.c:2:10: error: redefinition of 'x'
+cheri_smoke	tests/cheri-ci/0251-function-redeclaration.undef.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0251-function-redeclaration.undef.c:2:6: error: constraint violation: multiple declarations in the same scope with incompatible types
+cheri_smoke	tests/cheri-ci/0252-thread-local-redeclaration.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0252-thread-local-redeclaration.error.c:2:5: error: constraint violation: non-thread-local declaration follows a thread-local declaration
+cheri_smoke	tests/cheri-ci/0253-label-redefinition.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0253-label-redefinition.error.c:3:1: error: constraint violation: redefinition of 'foo'
+cheri_smoke	tests/cheri-ci/0254-undeclared-label.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0254-undeclared-label.error.c:2:8: error: constraint violation: use of undeclared label 'foo'
+cheri_smoke	tests/cheri-ci/0255-indirection-wrong-type.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0255-indirection-wrong-type.error.c:3:4: error: constraint violation: the * operator expects a pointer operand
+cheri_smoke	tests/cheri-ci/0256-untypable-constant.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0256-untypable-constant.error.c:1:16: error: integer constant cannot be represented by any type
+cheri_smoke	tests/cheri-ci/0257-array-incomplete-type.error.c	CERB_INCONSISTENT	exec succeeded but cabs-json failed
+cheri_smoke	tests/cheri-ci/0258-array-function-type.error.c	CERB_REJECT	exit 125: internal error: AilTypesAux.is_complete: called an a function type
+cheri_smoke	tests/cheri-ci/0259-invalid-return-type.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0259-invalid-return-type.error.c:2:1: error: constraint violation: function cannot return a function type or an array type
+cheri_smoke	tests/cheri-ci/0260-pointer-to-restrict.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0260-pointer-to-restrict.error.c:2:11: error: constraint violation: pointer to type 'void ()(void)' may not be restrict qualified
+cheri_smoke	tests/cheri-ci/0261-restrict-requires-pointer.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0261-restrict-requires-pointer.error.c:1:11: error: constraint violation: restrict requires a pointer
+cheri_smoke	tests/cheri-ci/0262-parameter-qualified-void.error.c	CERB_INCONSISTENT	exec succeeded but cabs-json failed
+cheri_smoke	tests/cheri-ci/0263-parameter-incomplete-type.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0263-parameter-incomplete-type.error.c:1:16: error: constraint violation: incomplete type
+cheri_smoke	tests/cheri-ci/0264-if-expression-scalar.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0264-if-expression-scalar.error.c:4:7: error: constraint violation: statement requires expression of scalar type
+cheri_smoke	tests/cheri-ci/0265-loop-expression-not-scalar.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0265-loop-expression-not-scalar.error.c:4:10: error: constraint violation: statement requires expression of scalar type
+cheri_smoke	tests/cheri-ci/0266-switch-expression-not-integer.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0266-switch-expression-not-integer.error.c:4:11: error: constraint violation: statement requires expression of integer type
+cheri_smoke	tests/cheri-ci/0267-invalid-unary-type.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0267-invalid-unary-type.error.c:4:5: error: constraint violation: invalid argument type 'struct s' to unary expression
+cheri_smoke	tests/cheri-ci/0268-address-invalid-type.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0268-address-invalid-type.error.c:1:10: error: constraint violation: cannot take address of an rvalue of type 'signed int'
+cheri_smoke	tests/cheri-ci/0269-register-address.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0269-register-address.error.c:3:4: error: constraint violation: address of lvalue declared with register storage-class specifier
+cheri_smoke	tests/cheri-ci/0270-invalid-compound-literal.error.c	CERB_REJECT	exit 125: internal error: Desugaring_init.lookup_struct_members: Nothing or empty Struct definition
+cheri_smoke	tests/cheri-ci/0271-assigning-incompatible-types.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0271-assigning-incompatible-types.error.c:6:7: error: constraint violation: assigning to 'struct a' from incompatible type 'signed int'
+cheri_smoke	tests/cheri-ci/0272-assigning-incompatible-pointer-types.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0272-assigning-incompatible-pointer-types.error.c:6:7: error: constraint violation: incompatible pointer types assigning to 'float*' from 'const signed int*'
+cheri_smoke	tests/cheri-ci/0273-assignment-discards-qualifiers.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0273-assignment-discards-qualifiers.error.c:6:7: error: constraint violation: assigning to 'signed int*' from 'const signed int*' discards qualifiers
+cheri_smoke	tests/cheri-ci/0274-conditional-operator-scalar.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0274-conditional-operator-scalar.error.c:4:3: error: constraint violation: 'struct s' is not a  scalar type
+cheri_smoke	tests/cheri-ci/0275-conditional-incompatible-operands.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0275-conditional-incompatible-operands.error.c:5:5: error: constraint violation: type mismatch in conditional expression ('struct s' and 'void')
+cheri_smoke	tests/cheri-ci/0276-calling-function-incomplete-type.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0276-calling-function-incomplete-type.error.c:6:3: error: constraint violation: calling function with incomplete return type 'struct foo'
+cheri_smoke	tests/cheri-ci/0277-calling-non-function-identifier.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0277-calling-non-function-identifier.error.c:4:3: error: constraint violation: called object type is not a function or function pointer
+cheri_smoke	tests/cheri-ci/0278-assert-scalar-expression.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0278-assert-scalar-expression.error.c:4:3: error: constraint violation: assert expression should have scalar type
+cheri_smoke	tests/cheri-ci/0279-memberof-first-operand.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0279-memberof-first-operand.error.c:5:3: error: constraint violation: member reference base type 'signed int' is not a structure or union
+cheri_smoke	tests/cheri-ci/0280-incompatible-parameters.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0280-incompatible-parameters.error.c:4:7: error: constraint violation: incompatible pointer types passing 'struct (unnamed tag at /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-
+cheri_smoke	tests/cheri-ci/0281-incompatuble-type-return.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0281-incompatuble-type-return.error.c:3:10: error: constraint violation: incompatible pointer types returning 'struct s*' from a function with result type 'signed int*'
+cheri_smoke	tests/cheri-ci/0282-memberof-no-member.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0282-memberof-no-member.error.c:4:3: error: constraint violation: no member named 'y' in 'struct s'
+cheri_smoke	tests/cheri-ci/0283-memberptr-not-a-pointer.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0283-memberptr-not-a-pointer.error.c:3:3: error: constraint violation: member reference type 'struct S' is not a pointer; did you mean to use '.'?
+cheri_smoke	tests/cheri-ci/0284-memberptrof-no-member.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0284-memberptrof-no-member.error.c:3:3: error: constraint violation: no member named 'y' in 'struct S'
+cheri_smoke	tests/cheri-ci/0285-assignment-not-lvalue.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0285-assignment-not-lvalue.error.c:2:3: error: constraint violation: expression is not assignable
+cheri_smoke	tests/cheri-ci/0286-binary-operator.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0286-binary-operator.error.c:3:5: error: constraint violation: invalid operands to binary expression ('struct (unnamed tag at /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-prob
+cheri_smoke	tests/cheri-ci/0287-equality.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0287-equality.error.c:3:5: error: constraint violation: invalid operands to binary expression ('struct (unnamed tag at /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parit
+cheri_smoke	tests/cheri-ci/0288-sizeof-function-type.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0288-sizeof-function-type.error.c:4:9: error: constraint violation: invalid application of 'sizeof' to a function type
+cheri_smoke	tests/cheri-ci/0289-sizeof-incomplete-type.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0289-sizeof-incomplete-type.error.c:3:10: error: constraint violation: invalid application of 'sizeof' to an incomplete type 'void'
+cheri_smoke	tests/cheri-ci/0290-Alignof-incomplete-type.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0290-Alignof-incomplete-type.error.c:3:12: error: constraint violation: invalid application of '_Alignof' to an incomplete type 'void'
+cheri_smoke	tests/cheri-ci/0291-cast-not-scalar-type.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0291-cast-not-scalar-type.error.c:5:14: error: constraint violation: used type 'struct s' where scalar type is required
+cheri_smoke	tests/cheri-ci/0292-cast-pointer-to-float.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0292-cast-pointer-to-float.error.c:4:11: error: constraint violation: pointer cannot be cast to type 'float'
+cheri_smoke	tests/cheri-ci/0293-compound-assignment.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0293-compound-assignment.error.c:5:5: error: constraint violation: invalid operands to binary expression ('signed int' and 'struct s')
+cheri_smoke	tests/cheri-ci/0294-va_start-arg-type.error.c	CERB_ERROR	msg: "no startup function was declared"
+cheri_smoke	tests/cheri-ci/0295-global_const_int.undef.c	UB_MATCH	UB:UB064_modifying_const
+cheri_smoke	tests/cheri-ci/0296-global_const_array.undef.c	UB_MATCH	UB:UB064_modifying_const
+cheri_smoke	tests/cheri-ci/0297-atomic_memberof.undef.c	UB_MATCH	UB:UB042_access_atomic_structUnion_member
+cheri_smoke	tests/cheri-ci/0298-atomic_memberofptr.undef.c	UB_MATCH	UB:UB043_indirection_invalid_value
+cheri_smoke	tests/cheri-ci/0299-qualified_ptrdiff.c	MATCH	VAL:Specified(0)
+cheri_smoke	tests/cheri-ci/0300-unseq_race_ko01.undef.c	UB_MATCH	UB:UB035_unsequenced_race
+cheri_smoke	tests/cheri-ci/0301-unseq_race_ko02.undef.c	UB_MATCH	UB:UB035_unsequenced_race
+cheri_smoke	tests/cheri-ci/0302-unseq_race_ko03.undef.c	UB_MATCH	UB:UB035_unsequenced_race
+cheri_smoke	tests/cheri-ci/0303-unseq_race_ko04.undef.c	UB_MATCH	UB:UB035_unsequenced_race
+cheri_smoke	tests/cheri-ci/0304-unseq_race_ko05.undef.c	UB_MATCH	UB:UB035_unsequenced_race
+cheri_smoke	tests/cheri-ci/0305-unseq_race_ko06.undef.c	UB_MATCH	UB:UB035_unsequenced_race
+cheri_smoke	tests/cheri-ci/0306-unseq_race_ko07.undef.c	UB_MATCH	UB:UB035_unsequenced_race
+cheri_smoke	tests/cheri-ci/0308-struct_global_with_dep.c	MATCH	VAL:Specified(0)
+cheri_smoke	tests/cheri-ci/0309-comma_void_operand.c	MATCH	VAL:Specified(10)
+cheri_smoke	tests/cheri-ci/0310-funcall_sequencing.c	MATCH	VAL:Specified(200)
+cheri_smoke	tests/cheri-ci/0311-unseq_race_ok01.c	MATCH	VAL:Specified(0)
+cheri_smoke	tests/cheri-ci/0312-unseq_race_ok02.c	MATCH	VAL:Specified(0)
+cheri_smoke	tests/cheri-ci/0313-unseq_race_ok03.c	MATCH	VAL:Specified(0)
+cheri_smoke	tests/cheri-ci/0314-nonarray-incomplete-lvalue-conversion.undef.c	CERB_INCONSISTENT	exec succeeded but cabs-json failed
+cheri_smoke	tests/cheri-ci/0315-duplicate_member.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0315-duplicate_member.error.c:10:9: error: TODO: duplicate member: xx (unknown ISO C reference)
+cheri_smoke	tests/cheri-ci/0316-declaration_struct_pointer.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0316-declaration_struct_pointer.error.c:9:17: error: constraint violation: initializing 'struct T' with an expression of incompatible type 'struct T*'
+cheri_smoke	tests/cheri-ci/0317-compound-literal-lifetime.c	MATCH	VAL:Specified(1)
+cheri_smoke	tests/cheri-ci/0318-compound-interal-in_global.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0318-compound-interal-in_global.c:6:3: error: constraint violation: initializer element is not a compile-time constant
+cheri_smoke	tests/cheri-ci/0320-invalid_function_declarators.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0320-invalid_function_declarators.error.c:3:39: error: constraint violation: multiple declaration of 'x'
+cheri_smoke	tests/cheri-ci/0321-invalid_function_declarators.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0321-invalid_function_declarators.error.c:3:40: error: constraint violation: multiple declaration of 'x'
+cheri_smoke	tests/cheri-ci/0322-invalid_function_declarators.error.c	CERB_REJECT	exit 1: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-probe/parity-detective/tests/cheri-ci/0322-invalid_function_declarators.error.c:2:3: error: use of undeclared identifier 'not_arg'
+cheri_smoke	tests/cheri-ci/0324-atomics.c	MATCH	VAL:Specified(160)
+cheri_smoke	tests/cheri-ci/0328-indeterminate_block_declaration.c	MATCH	VAL:Specified(0)
+cheri_smoke	tests/cheri-ci/0329-rvalue-temporary-lifetime.undef.c	UB_MATCH	UB:UB043_indirection_invalid_value
+cheri_smoke	tests/cheri-ci/0331-modifying-rvalue-temporary-lifetime.undef.c	UB_MATCH	UB:UB_modifying_temporary_lifetime
+cheri_smoke	tests/cheri-ci/0332-rvalue-temporary-lifetime-pointer-zap.c	MATCH	VAL:Specified(0)
+cheri_smoke	tests/cheri-ci/0333-shifts_non_representable.undef.c	UB_MATCH	UB:UB052b_non_representable_left_shift
+cheri_smoke	tests/cheri-ci/0336-memcpy-ovelap.undef.c	MATCH	VAL:Specified(0)
+cheri_smoke	tests/cheri-ci/0337-CHERI_const1.undef.c	UB_MATCH	UB:UB064_modifying_const
+cheri_smoke	tests/cheri-ci/0338-CHERI_const2.undef.c	UB_MATCH	UB:UB064_modifying_const
+cheri_smoke	tests/cheri-ci/0339-CHERI_const3.undef.c	UB_MATCH	UB:UB064_modifying_const
+cheri_smoke	tests/cheri-ci/0340-CHERI_string-literal.undef.c	UB_MATCH	UB:UB033_modifying_string_literal
+# SWEEP SUMMARY suite=cheri_smoke mode=libc total=240 match=88 ub_match=26 ub_diff=0 stdout_diff=0 diff=0 mismatch=0 lean_fail=0 lean_crash=0 lean_error=0 lean_timeout=0 cerb_reject=105 cerb_error=2 cerb_timeout=2 cerb_crash=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=17
