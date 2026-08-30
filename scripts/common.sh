@@ -131,7 +131,21 @@ build_lean() {
     # Arc-7 S5c (audit-1 F4): ALL lake/lean invocations run under the
     # cgroup memory cap (D7 rule; scripts/capped falls back loudly if
     # systemd-run is absent).
-    (cd "$PROJECT_ROOT/lean_frontend" && "$SCRIPT_DIR/capped" lake build cerberus-lean 2>&1 | tail -3)
+    # Trust-basket item d (gcc-lane audit note 6): gate on the BUILD'S
+    # exit status, not just binary existence — the old
+    # `... | tail -3` swallowed lake's failure and a broken incremental
+    # build over a pre-existing stale binary passed silently (the lane
+    # then ran STALE semantics). Full log kept for the failure path
+    # (tail -3 would truncate real errors).
+    local _log="$TMP_DIR/build_lean.$$.log"
+    if ! (cd "$PROJECT_ROOT/lean_frontend" && "$SCRIPT_DIR/capped" lake build cerberus-lean) > "$_log" 2>&1; then
+        echo "Error: cerberus-lean build FAILED (lake build exit nonzero); last 40 lines:" >&2
+        tail -40 "$_log" >&2
+        rm -f "$_log"
+        exit 1
+    fi
+    tail -3 "$_log"
+    rm -f "$_log"
     if [[ ! -f "$CERBERUS_LEAN_BIN" ]]; then
         echo "Error: cerberus-lean build failed" >&2
         exit 1
