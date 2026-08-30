@@ -18,9 +18,16 @@ downstream.)
 
 ## Small items (independent; can ride along with any fix batch)
 
-- Step-runner stack-ceiling guard (known limitation: loops of a few
-  thousand iterations can overflow the process stack in the step/ND
-  recursion; `docs/2026-08-19_arc6-s0-survey.md`).
+- Step-runner execution ceiling (RE-CHARACTERIZED 2026-08-30: the
+  old process-stack overflow no longer reproduces — stack use is now
+  iteration-independent down to a 1 MB limit; the binding ceiling is
+  the `lemDefaultFuel` = 10^6 totalization budget of
+  `drive_nonmemory_steps_aux2`, loud + fail-closed, onset ~1.7e4
+  plain loop iterations / ~6e4 C-recursion depth. Correct raise is
+  lem-side (per-declaration fuel budgets, or a deliberate constant
+  move) → next lem arc; full evidence + design space:
+  `docs/2026-08-31_stack-ceiling-design.md`; history:
+  `docs/2026-08-19_arc6-s0-survey.md`).
 - Speclab leak checks' oracle-differential leg: wire the new oracle
   `--batch-alloc-census` line (landed 2026-09-01,
   `docs/2026-09-01_s-basket.md`) into the speclab lanes.
