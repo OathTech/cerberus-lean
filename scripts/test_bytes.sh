@@ -22,15 +22,18 @@
 #     fails loudly here → extend the renderer then).
 #
 #   NEG leg (non-exec .c whose committed .elab records
-#     "return code: 1", 5 files): the oracle front-end rejects these at
-#     DESUGAR level BEFORE the Cabs-JSON boundary (verified 2026-08-20:
-#     `--cabs-json` exits 1 with the same constraint-violation text as
-#     the committed .elab body), so the Lean pipeline is UNREACHABLE
-#     for them — the Lean desugar's own byte-typing rules are not
-#     probed (recorded residual, arc-10 S3b record). The leg pins the
-#     boundary: --cabs-json must FAIL for each (agreeing with the
-#     expected rc 1). If a future oracle emits JSON here, this lane
-#     FAILS LOUDLY → extend the leg to Lean-side desugar rejection.
+#     "return code: 1", 5 files): these are desugar/Ail-typing-level
+#     rejects. Until 2026-08-31, `--cabs-json` ran the full c_frontend
+#     and so failed on them BEFORE emitting JSON; the leg pinned that
+#     boundary and carried a recorded residual ("the Lean desugar's own
+#     byte-typing rules are not probed"). The trust-basket item-c
+#     parse-only `--cabs-json` (backend/driver/main.ml) now emits JSON
+#     for them, so — per this leg's own original instruction — the leg
+#     is EXTENDED to the Lean side, closing the residual: the Lean
+#     pipeline must REJECT the JSON (rc 1, matching the committed .elab
+#     rc) with a desugaring/typechecking Error at the same source line
+#     as the committed oracle diagnostic. A Lean accept, crash, or
+#     wrong-line rejection fails loudly.
 #
 # The 9 positives' .elab records (rc 0, `--typecheck-core`) are
 # subsumed by the EXEC leg: the Lean pipeline desugars, typechecks and
@@ -117,11 +120,27 @@ for src in "$BYTES_DIR"/*.c; do
     if timeout "$TIMEOUT_SECS" opam exec --switch="$PROJECT_ROOT" -- \
         "$CERBERUS_BIN" --runtime="$PROJECT_ROOT/_build/install/default" \
         --nolibc --cabs-json "$src" > "$json" 2>/dev/null && [[ -s "$json" ]]; then
-        echo "[FAIL] $name: oracle now EMITS Cabs-JSON for an expected-reject file — extend the NEG leg to Lean-side desugar rejection"
-        fail=$((fail + 1))
+        # Parse-only --cabs-json (2026-08-31): the rejection moved to
+        # the Lean side — pin it there (see header).
+        exp_line=$(sed -n '2s/^[^:]*\.c:\([0-9][0-9]*\):.*/\1/p' "$expect_file")
+        if [[ -z "$exp_line" ]]; then
+            echo "[FAIL] $name: cannot extract the pinned diagnostic line from $expect_file (extend the lane)"
+            fail=$((fail + 1)); continue
+        fi
+        lean_out=$(timeout "$TIMEOUT_SECS" env LEAN_ABORT_ON_PANIC=1 \
+            "$CERBERUS_LEAN_BIN" --batch "$json" 2>&1)
+        lean_rc=$?
+        if [[ "$lean_rc" == "1" ]] && printf '%s\n' "$lean_out" \
+            | grep -qE "^Error \{msg: \"(desugaring|typechecking) failed at [^\"]*/$(basename "$src"):$exp_line:"; then
+            echo "[NEG_OK] $name: Lean-side desugar/typing rejection at the committed diagnostic line $exp_line (rc 1)"
+            neg=$((neg + 1))
+        else
+            echo "[FAIL] $name: JSON emitted but the Lean pipeline did not reject as pinned (rc=$lean_rc, wanted rc 1 + Error at line $exp_line): $(printf '%s\n' "$lean_out" | head -1)"
+            fail=$((fail + 1))
+        fi
     else
-        echo "[NEG_OK] $name: front-end reject pinned (committed .elab rc 1)"
-        neg=$((neg + 1))
+        echo "[FAIL] $name: --cabs-json no longer emits JSON for this file (parse-only export regressed, or the file now fails at PARSE level — re-pin the boundary)"
+        fail=$((fail + 1))
     fi
 done
 

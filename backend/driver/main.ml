@@ -250,11 +250,22 @@ let cerberus debug_level progress core_obj
             return ()
           ) () files >>= fun () ->
         return success
-      (* Export Cabs as JSON for Lean backend *)
+      (* Export Cabs as JSON for Lean backend. Stops after
+         parse+serialize (trust-basket item c, 2026-08-31): the old
+         path ran the full c_frontend (desugar + Ail typing) and used
+         only the cabs_tunit — a file that parses but trips an
+         oracle-side desugar limit produced NO JSON, blocking 43
+         differential rows on exactly the translation-time-UB set
+         (docs/2026-08-30_parity-detective-report.md §2). Mirrors the
+         cn_spec_json parse-only path below; Cerb_fresh.set_digest
+         mirrors c_frontend (backend/common/pipeline.ml:181). No core
+         stdlib prelude needed: nothing before desugar consumes it.
+         Fork-local flag (not upstream), so no tray entry. *)
       else if cabs_json then
-        prelude >>= fun core_std ->
         Exception.except_mapM (fun filename ->
-          c_frontend (conf, io) core_std ~filename >>= fun (cabs_tunit, _) ->
+          Cerb_fresh.set_digest filename;
+          cpp (conf, io) ~filename >>= fun file_content ->
+          C_parser_driver.parse_from_string ~filename file_content >>= fun cabs_tunit ->
           let json = Lean_export.Cabs_json.to_json cabs_tunit in
           print_string (Yojson.pretty_to_string ~std:true (json :> Yojson.t));
           print_newline ();
