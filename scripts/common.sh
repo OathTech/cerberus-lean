@@ -116,6 +116,12 @@ build_cerberus() {
         echo "per the documented recipe, lean_frontend/CLAUDE.md Build)" >&2
         exit 1
     fi
+    # Driver-freshness stamp (trust-basket item a): a successful build IS
+    # the freshness witness — record it so SKIP_BUILD lanes can verify.
+    "$PROJECT_ROOT/tools/check_driver_fresh.sh" --record-oracle || {
+        echo "Error: driver freshness stamp recording failed (oracle)" >&2
+        exit 1
+    }
 }
 
 # Build Lean cerberus-lean executable
@@ -130,6 +136,11 @@ build_lean() {
         echo "Error: cerberus-lean build failed" >&2
         exit 1
     fi
+    # Driver-freshness stamp (trust-basket item a): see build_cerberus.
+    "$PROJECT_ROOT/tools/check_driver_fresh.sh" --record-lean || {
+        echo "Error: driver freshness stamp recording failed (lean)" >&2
+        exit 1
+    }
 }
 
 # Run cerberus with correct opam switch and runtime path
@@ -145,6 +156,25 @@ run_cerberus() {
 run_cerberus_lean() {
     LEAN_ABORT_ON_PANIC=1 "$CERBERUS_LEAN_BIN" "$@"
 }
+
+# Driver-binary freshness gate (trust-basket item a, 2026-08-31;
+# parity-detective §1: primed worktree binaries silently lag their
+# checkout — a sweep against them fabricates results). When a lane is
+# invoked with SKIP_BUILD=1 (the only common.sh path that USES a binary
+# without rebuilding it), verify each PRESENT binary against its
+# build-time stamp before anything runs. A missing binary is left to
+# the lane's own fail-closed existence checks — it cannot fabricate
+# results. Missing/mismatched stamp = loud fail (tools/
+# check_driver_fresh.sh). Intentional cross-version runs only:
+# CERB_DRIVER_FRESH_OVERRIDE=1 (loud on every use).
+if [[ "${SKIP_BUILD:-0}" == "1" ]]; then
+    if [[ -f "$CERBERUS_BIN" ]]; then
+        "$PROJECT_ROOT/tools/check_driver_fresh.sh" --check-oracle >&2 || exit 1
+    fi
+    if [[ -f "$CERBERUS_LEAN_BIN" ]]; then
+        "$PROJECT_ROOT/tools/check_driver_fresh.sh" --check-lean >&2 || exit 1
+    fi
+fi
 
 # Produce an 8-character hash of a string (works on both macOS and Linux)
 portable_hash() {
