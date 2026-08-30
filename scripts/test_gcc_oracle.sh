@@ -190,7 +190,15 @@ declare -A TRIAGE TRIAGE_GCC TRIAGE_LEAN TRIAGE_USED
 if [[ -f "$TRIAGE_FILE" ]]; then
     while IFS= read -r line; do
         [[ -z "$line" || "$line" == \#* ]] && continue
+        # Word-split the ledger line WITHOUT pathname expansion
+        # (trust-basket item e, audit note): unquoted $line is the
+        # intended field splitter, but a glob character in the
+        # free-text rationale (e.g. '*' or '?') would silently expand
+        # against the cwd and corrupt the parsed fields. set -f scopes
+        # globbing off around exactly this split.
+        set -f
         set -- $line
+        set +f
         # Mandatory pinned-value fields (audit follow-up, design note §4):
         # <key> <CLASS> gcc=<exit> lean={<byte-set>} <rationale...>
         [[ $# -ge 5 ]] || { echo "HARNESS ERROR: triage line needs '<key> <CLASS> gcc=<exit> lean={<set>} <rationale>': $line" >&2; exit 1; }
@@ -592,7 +600,7 @@ if [[ -n "$CHECK_BASELINE" ]]; then
     bcount=0
     while IFS= read -r line; do
         [[ -z "$line" || "$line" == \#* ]] && continue
-        set -- $line
+        set -f; set -- $line; set +f   # no glob expansion (item e, see triage parser)
         [[ $# -eq 3 ]] || { echo "HARNESS ERROR: malformed baseline line: '$line'" >&2; exit 1; }
         status_rank "$2" >/dev/null || exit 1
         o2_rank "$3" >/dev/null || exit 1
@@ -602,7 +610,7 @@ if [[ -n "$CHECK_BASELINE" ]]; then
 
     declare -A C_S C_O2
     while IFS= read -r line; do
-        set -- $line
+        set -f; set -- $line; set +f   # no glob expansion (item e, see triage parser)
         [[ $# -eq 3 ]] || { echo "HARNESS ERROR: malformed status line: '$line'" >&2; exit 1; }
         C_S["$1"]="$2"; C_O2["$1"]="$3"
     done < "$STATUS_FILE"
