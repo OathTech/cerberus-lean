@@ -72,21 +72,50 @@ opaque setDigestIO : @& String → BaseIO Unit
     call sites (`Symbol.fresh` etc. call `CerberusFresh.digest ()` in
     pure position — symbol.lem:44-46 declares no effect annotation, and
     OCaml's `Cerb_fresh.digest` is likewise an ordinary pure-typed ref
-    read). Armoring is the CerbTags.lean pattern exactly:
-    @[never_extract, noinline] on the impl and never_extract on the
-    opaque, so a closed application `digest ()` can neither be cached as
-    a startup constant (it would freeze the pre-set "" value) nor be
-    CSE-hoisted across the per-TU set sites. Within one TU the value is
-    constant, so intra-TU sharing — the only sharing never_extract
-    permits inside a single evaluation — is semantically harmless.
-    Normative soundness invariant: docs/2026-08-22_arc14-effect-erasure-
-    invariant.md (arc-14 S1 F5, sem:S17). -/
+    read).
+
+    KERNEL-CHECKED-OPAQUE CONVERSION (effect-retirement C2, the Q4
+    ruling's promoted deliverable — charter section 7.2; the last
+    `unsafeBaseIO` of the C2-convert class leaves with it): the chain
+    is now the forceIO/with_tagDefs pattern exactly — an unsafe extern
+    opaque carrying an EXPLICIT kernel-checked witness, wrapped by a
+    @[never_extract, noinline] impl, bound to the public constant via
+    @[implemented_by] on a kernel-checked `opaque` that also carries
+    its witness. Nothing is postulated: `digest` can NEVER appear in
+    an axiom cone (opaque, not axiom); its runtime trust is exactly
+    the declared implemented_by/extern boundary. The witness
+    `fun _ => ""` is the C side's own pre-set state (native/md5.c:
+    get before any set returns "").
+
+    ARMOUR PLACEMENT (the L2-audit F1 lesson, lem-lean
+    doc/lean-backend/2026-09-01_L2-deletion-record.md addendum:
+    closed-term extraction reaches THROUGH outer attributes — the
+    extracted closed term mentions only the INNER names, so the inner
+    names must carry @[never_extract, noinline] themselves):
+    `digestPure` is marked never_extract/noinline so the closed
+    application `digestPure ()` inside `digest_impl` cannot be cached
+    as a module-init constant (it would freeze the pre-set "" value),
+    and never_extract on `digest` keeps every generated call site a
+    real call, never CSE-hoisted across the per-TU setDigestIO sites.
+    Within one TU the value is constant, so intra-TU sharing — the
+    only sharing never_extract permits inside a single evaluation —
+    is semantically harmless. Behavior re-verified:
+    test/Unit/FreshIntTest.lean testDigestGlobal (per-TU pickup under
+    two set sites) + the C2 differential spot-run (byte-identical
+    pre/post conversion). Normative soundness invariant:
+    docs/2026-08-22_arc14-effect-erasure-invariant.md (arc-14 S1 F5,
+    sem:S17 — still governing this seam). -/
+@[extern "cerb_digest_get", never_extract, noinline]
+private unsafe opaque digestPure : @& Unit → String :=
+  fun _ => ""  -- explicit witness (C2): the C global's initial value
+
 @[never_extract, noinline]
 private unsafe def digest_impl (_ : Unit) : String :=
-  unsafeBaseIO (digestIO ())
+  digestPure ()
 
 @[implemented_by digest_impl]
-opaque digest : Unit → String
+opaque digest : Unit → String :=
+  fun _ => ""  -- explicit witness (C2), kernel-checked
 attribute [never_extract] digest
 
 /-- IO-positioned evaluation barrier (native/md5.c cerb_force_thunk).

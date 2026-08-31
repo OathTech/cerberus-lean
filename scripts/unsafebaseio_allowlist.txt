@@ -32,8 +32,14 @@ lean_frontend/CerbGlobal.lean	getConf	temporal(post-arc-parameter-plumbing-slice
 lean_frontend/CerbGlobal.lean	has_switch_impl	temporal(post-arc-parameter-plumbing-slice)	KEEP (read of switchesRef)
 lean_frontend/CerberusImpl.lean	typeof_enum_impl	temporal(reader/supply-machinery-follow-up-slice, explicitly NOT in-arc)	KEEP (enum registry read; genuinely stateful seam mirroring OCaml DefaultImpl ref)
 lean_frontend/CerberusImpl.lean	register_enum_impl	temporal(reader/supply-machinery-follow-up-slice, explicitly NOT in-arc)	KEEP (enum registry write during elaboration)
-# --- converted at C2 (leaves the allowlist there) ---
-lean_frontend/CerberusFresh.lean	digest_impl	C2-convert	CONVERT at C2 to the kernel-checked-opaque with_tagDefs pattern (Q4 ruling's promoted deliverable); allowlist row exists only until C2
+# --- converted at C2 (left the allowlist, 2026-09-01) ---
+# lean_frontend/CerberusFresh.lean digest_impl — CONVERTED at C2 to the
+# kernel-checked-opaque forceIO/with_tagDefs pattern (Q4 ruling's promoted
+# deliverable): unsafe extern opaque `digestPure` (explicit witness,
+# never_extract/noinline per the L2-audit armor lesson) + impl + kernel-
+# checked `opaque digest := fun _ => ""`. CerberusFresh now has ZERO
+# unsafeBaseIO occurrences; differential spot-run byte-identical pre/post
+# (C2 record). The new unsafe decls are pinned in the population section.
 # --- deleted by this arc (rows retained so the S0→C2 diff is checkable) ---
 lean_frontend/CerbTags.lean	tagDefs_impl	in-arc-delete	DELETE (§4 tagDefs loop closure)
 lean_frontend/CerbTags.lean	set_tagDefs_impl	in-arc-delete	DELETE (§4)
@@ -46,3 +52,93 @@ lem-lean/lean-lib/LemLib.lean	runEffectful_impl	L2-delete	DELETE (the axiom scaf
 # NOTE: generated/ copies of the hand-written files above carry the same
 # sites at the same identifiers (sync-gate mirrored); the gate scans both
 # trees against the SAME identifier rows.
+#
+# =====================================================================
+# C2 RATCHET POPULATION PIN (charter section 7.2 leg 3, as amended by
+# the accepted L2-audit ratchet legs; 2026-09-01). Machine-readable:
+# check_theorem_axioms.sh parses the `PIN` lines below and asserts the
+# comment-stripped census of @[implemented_by] targets, `unsafe
+# def/opaque/abbrev` declarations, and `unsafeBaseIO` occurrences
+# (keyed by enclosing declaration) over the ban surface — hand-written
+# lean_frontend/*.lean + generated/*.lean + the consumed LemLib copy
+# (.lake/packages/LemLib/lean-lib/**, recursive) — EQUALS this set
+# exactly, both directions: any NEW site fails naming itself; any
+# MISSING pinned row fails as scanner/copy-pipeline drift. This is the
+# leg that bans an axiom-free reintroduction of the effect projection
+# via opaque + implemented_by + unsafeBaseIO (the L2 audit's accepted
+# proposal). Format: PIN <KIND> <file-basename> <identifier>, KIND in
+# {IMPLBY, UNSAFEDECL, UNSAFEBASEIO}; hand-written files and their
+# generated/ copies share the basename row (sync-gate byte-mirrored).
+# =====================================================================
+# LemLib survivors (the L2 record's enumerated pair)
+PIN UNSAFEDECL LemLib.lean failwithIImpl
+PIN IMPLBY LemLib.lean failwithIImpl
+PIN UNSAFEDECL LemLib.lean fuelExhaustedWithImpl
+PIN IMPLBY LemLib.lean fuelExhaustedWithImpl
+# CerberusFresh — the digest/forceIO boundary (post-C2-conversion:
+# zero unsafeBaseIO; kernel-checked opaques with native bindings)
+PIN UNSAFEDECL CerberusFresh.lean digestPure
+PIN UNSAFEDECL CerberusFresh.lean digest_impl
+PIN IMPLBY CerberusFresh.lean digest_impl
+PIN UNSAFEDECL CerberusFresh.lean forceThunkIO
+PIN UNSAFEDECL CerberusFresh.lean forceIO_impl
+PIN IMPLBY CerberusFresh.lean forceIO_impl
+# CerberusImpl — enum registry (temporal; mover = reader/supply
+# machinery follow-up slice, explicitly NOT in-arc)
+PIN UNSAFEDECL CerberusImpl.lean typeof_enum_impl
+PIN IMPLBY CerberusImpl.lean typeof_enum_impl
+PIN UNSAFEBASEIO CerberusImpl.lean typeof_enum_impl
+PIN UNSAFEDECL CerberusImpl.lean register_enum_impl
+PIN IMPLBY CerberusImpl.lean register_enum_impl
+PIN UNSAFEBASEIO CerberusImpl.lean register_enum_impl
+# CerbGlobal — config/switch refs (temporal; mover = post-arc
+# parameter-plumbing slice) + their read-only safe wrappers
+PIN UNSAFEDECL CerbGlobal.lean confRef
+PIN UNSAFEBASEIO CerbGlobal.lean confRef
+PIN UNSAFEDECL CerbGlobal.lean switchesRef
+PIN UNSAFEBASEIO CerbGlobal.lean switchesRef
+PIN UNSAFEDECL CerbGlobal.lean getConf
+PIN UNSAFEBASEIO CerbGlobal.lean getConf
+PIN UNSAFEDECL CerbGlobal.lean backend_name_impl
+PIN IMPLBY CerbGlobal.lean backend_name_impl
+PIN UNSAFEDECL CerbGlobal.lean current_execution_mode_impl
+PIN IMPLBY CerbGlobal.lean current_execution_mode_impl
+PIN UNSAFEDECL CerbGlobal.lean using_concurrency_impl
+PIN IMPLBY CerbGlobal.lean using_concurrency_impl
+PIN UNSAFEDECL CerbGlobal.lean isDefacto_impl
+PIN IMPLBY CerbGlobal.lean isDefacto_impl
+PIN UNSAFEDECL CerbGlobal.lean isPermissive_impl
+PIN IMPLBY CerbGlobal.lean isPermissive_impl
+PIN UNSAFEDECL CerbGlobal.lean isAgnostic_impl
+PIN IMPLBY CerbGlobal.lean isAgnostic_impl
+PIN UNSAFEDECL CerbGlobal.lean isIgnoreBitfields_impl
+PIN IMPLBY CerbGlobal.lean isIgnoreBitfields_impl
+PIN UNSAFEDECL CerbGlobal.lean has_switch_impl
+PIN IMPLBY CerbGlobal.lean has_switch_impl
+PIN UNSAFEBASEIO CerbGlobal.lean has_switch_impl
+PIN UNSAFEDECL CerbGlobal.lean is_CHERI_impl
+PIN IMPLBY CerbGlobal.lean is_CHERI_impl
+PIN UNSAFEDECL CerbGlobal.lean is_PNVI_impl
+PIN IMPLBY CerbGlobal.lean is_PNVI_impl
+PIN UNSAFEDECL CerbGlobal.lean has_strict_pointer_arith_impl
+PIN IMPLBY CerbGlobal.lean has_strict_pointer_arith_impl
+# CerbUtils — no-op timing/log refs + deterministic stub
+# (permanent-declared family, Q4)
+PIN UNSAFEDECL CerbUtils.lean timingStackRef
+PIN UNSAFEBASEIO CerbUtils.lean timingStackRef
+PIN UNSAFEDECL CerbUtils.lean begin_timing_impl
+PIN IMPLBY CerbUtils.lean begin_timing_impl
+PIN UNSAFEDECL CerbUtils.lean end_timing_impl
+PIN IMPLBY CerbUtils.lean end_timing_impl
+PIN UNSAFEDECL CerbUtils.lean logRef
+PIN UNSAFEBASEIO CerbUtils.lean logRef
+PIN UNSAFEDECL CerbUtils.lean STD_impl
+PIN IMPLBY CerbUtils.lean STD_impl
+PIN UNSAFEBASEIO CerbUtils.lean STD_impl
+PIN UNSAFEDECL CerbUtils.lean boundedIntegerImpl
+PIN IMPLBY CerbUtils.lean boundedIntegerImpl
+PIN UNSAFEBASEIO CerbUtils.lean boundedIntegerImpl
+# CerbMem — BEq shortcut (safe perf seam: opaque + implemented_by,
+# no unsafeBaseIO; pinned because the population census is total)
+PIN UNSAFEDECL CerbMem.lean beqMemValueImpl
+PIN IMPLBY CerbMem.lean beqMemValueImpl
