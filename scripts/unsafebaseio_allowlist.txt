@@ -1,0 +1,48 @@
+# unsafeBaseIO survivor allowlist — effect-retirement S0 deliverable
+# (charter §7.2 grep-ban leg / §8.1 S0 item ii; Q4 ruling [USER 2026-08-31],
+# sharpened per-survivor form). This file becomes the C2 ratchet's input:
+# after the arc's deletions, `unsafeBaseIO` may occur in hand-written
+# lean_frontend sources (and their generated/ copies) ONLY at the rows
+# marked KEEP below; any other occurrence fails the gate.
+#
+# Census provenance: [AGENT] S0 re-verification 2026-08-31 on
+# arc/effect-retirement @ 913ee31d1 (worktree grep over
+# lean_frontend/*.lean, lean_frontend/generated/*.lean, and LemLib as
+# consumed at lean_frontend/.lake/packages/LemLib/lean-lib/**).
+# Result: the census MATCHES the charter's Q4 table EXACTLY — zero
+# out-of-table sites. Comment-only mentions (not code sites, listed for
+# grep-leg design): CerbGlobal.lean:51, CerbTags.lean:28, LemLib.lean:36,
+# plus doc mentions of `runEffectful` in CerbTags.lean:6,46,
+# CerberusFresh.lean:139, CerbDebug.lean:48. The C2 grep leg must either
+# strip comments or count these rows explicitly.
+#
+# Format: TSV — file<TAB>identifier<TAB>class<TAB>disposition
+# Classes are the Q4 ruling's: permanent-declared | temporal(<mover>) |
+# C2-convert | in-arc-delete | L2-delete.
+# Line numbers are advisory (drift with edits); identifier is normative.
+#
+# --- survivors after C2 (the standing allowlist) ---
+lean_frontend/CerbUtils.lean	timingStackRef	permanent-declared	KEEP (no-op timing ref, intentionally unread; OCaml module-shape parity)
+lean_frontend/CerbUtils.lean	logRef	permanent-declared	KEEP (write-only log ref, nothing reads it; shape parity)
+lean_frontend/CerbUtils.lean	STD_impl	permanent-declared	KEEP (writes logRef only; value-identity otherwise)
+lean_frontend/CerbUtils.lean	boundedIntegerImpl	permanent-declared	KEEP (deterministic stub `pure lo`; documented residual with named mover in-file — RNG threading iff load-bearing)
+lean_frontend/CerbGlobal.lean	confRef	temporal(post-arc-parameter-plumbing-slice)	KEEP (config ref; written once by Main at startup, reader-shaped after)
+lean_frontend/CerbGlobal.lean	switchesRef	temporal(post-arc-parameter-plumbing-slice)	KEEP (switches ref; same discipline)
+lean_frontend/CerbGlobal.lean	getConf	temporal(post-arc-parameter-plumbing-slice)	KEEP (read of confRef)
+lean_frontend/CerbGlobal.lean	has_switch_impl	temporal(post-arc-parameter-plumbing-slice)	KEEP (read of switchesRef)
+lean_frontend/CerberusImpl.lean	typeof_enum_impl	temporal(reader/supply-machinery-follow-up-slice, explicitly NOT in-arc)	KEEP (enum registry read; genuinely stateful seam mirroring OCaml DefaultImpl ref)
+lean_frontend/CerberusImpl.lean	register_enum_impl	temporal(reader/supply-machinery-follow-up-slice, explicitly NOT in-arc)	KEEP (enum registry write during elaboration)
+# --- converted at C2 (leaves the allowlist there) ---
+lean_frontend/CerberusFresh.lean	digest_impl	C2-convert	CONVERT at C2 to the kernel-checked-opaque with_tagDefs pattern (Q4 ruling's promoted deliverable); allowlist row exists only until C2
+# --- deleted by this arc (rows retained so the S0→C2 diff is checkable) ---
+lean_frontend/CerbTags.lean	tagDefs_impl	in-arc-delete	DELETE (§4 tagDefs loop closure)
+lean_frontend/CerbTags.lean	set_tagDefs_impl	in-arc-delete	DELETE (§4)
+lean_frontend/CerbTags.lean	with_tagDefs_impl	in-arc-delete	DELETE (§4; boundary-opaque expectation list shrinks)
+lean_frontend/CerbTags.lean	reset_tagDefs_impl	in-arc-delete	DELETE (§4)
+lean_frontend/CerbDebug.lean	get_level_impl	in-arc-delete	DELETE (§5 CerbDebug level machinery)
+lean_frontend/CerbDebug.lean	set_level_impl	in-arc-delete	DELETE (§5)
+# --- lem-side (LemLib as consumed; deleted at L2) ---
+lem-lean/lean-lib/LemLib.lean	runEffectful_impl	L2-delete	DELETE (the axiom scaffold; §7.1)
+# NOTE: generated/ copies of the hand-written files above carry the same
+# sites at the same identifiers (sync-gate mirrored); the gate scans both
+# trees against the SAME identifier rows.
