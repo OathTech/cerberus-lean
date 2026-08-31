@@ -872,8 +872,11 @@ let translate_function_call loc annots is_used translate_expr stdlib e es =
   (* elaborate the expression that denotes the called function *)
   translate_expr e >>= fun core_e ->
   (* symbolic names for the arguments temporary objects *)
+  (* C1 m1: the mapi-lambda draws become a monadic map over the indexed
+     list (charter section 3.4 b); LIST order preserved. *)
   let n_args = List.length es in
-  let arg_ptr_syms = mapi (fun i arg_e -> Symbol.fresh_funarg (locOf arg_e) i) es in
+  E.mapM (fun (i, arg_e) -> E.fresh_elab_sym (Symbol.SD_FunArg (locOf arg_e) i))
+    (mapi (fun i arg_e -> (i, arg_e)) es) >>= fun arg_ptr_syms ->
   let arg_ptr_sym_pats = List.map (fun sym -> Caux.mk_sym_pat sym (C.BTy_object C.OTy_pointer)) arg_ptr_syms in
   let arg_ptr_sym_pes = List.map Caux.mk_sym_pe arg_ptr_syms in
   (* elaborate each argument *)
@@ -1868,7 +1871,7 @@ end                       end))) ) ]
           E.wrapped_fresh_symbol (C.BTy_object oTy) >>= fun obj_wrp ->
           (* STD §6.3.2.1#2 "lvalue conversion" *)
           self e    >>= fun core_e  ->
-          let let_sym = Symbol.fresh () in
+          E.fresh_elab_sym Symbol.SD_None >>= fun let_sym ->
           E.return $
             Caux.add_std "§6.5.4" (
 if AilTypesAux.is_void cast_ty then
@@ -3295,17 +3298,37 @@ let collect_cases s =
 type erase_loop_control_state = <|
   elc_continue: maybe Symbol.sym;
   elc_break: maybe Symbol.sym;
+  (* C1 m1b (charter section 3.4 b'): the pass's own supply component.
+     DEAD on the OCaml target (elc_fresh_int redirects to the ambient
+     counter); on Lean it is seeded from the elaboration supply at the
+     erase_loop_control call and returned to it. *)
+  elc_supply: nat;
 |>
+
+val elc_fresh_int: St.stateM nat erase_loop_control_state
+let elc_fresh_int =
+  fun st ->
+    let n = st.elc_supply in
+    (n, <| st with elc_supply= n+1 |>)
+declare ocaml target_rep function elc_fresh_int = `Fork_renumber.elc_fresh_int`
 
 val     erase_loop_control_aux: A.statement GenTypes.genTypeCategory -> St.stateM (A.statement GenTypes.genTypeCategory) erase_loop_control_state
 let rec erase_loop_control_aux stmt =
   let loc = stmt.A.loc in
   let with_fresh_labels mf =
     fun st ->
-      let continue_sym = Symbol.fresh_pretty_with_id (fun x -> "continue_" ^ show x) in
-      let break_sym    = Symbol.fresh_pretty_with_id (fun x -> "break_" ^ show x) in
-      let (ret, st')   = mf <| elc_continue= Just continue_sym; elc_break= Just break_sym |> in
-      ((continue_sym, break_sym, ret), st) in 
+      (* C1 m1b: the label mints draw from the pass's supply at the same
+         run-time firing point as the former ambient draws (continue
+         then break); the inner run inherits the advanced supply and
+         hands its final supply back to the outer state (the original
+         code discarded the inner state entirely — the label fields are
+         still discarded, only the supply flows back). *)
+      let (nc, st_c) = elc_fresh_int st in
+      let (nb, st_b) = elc_fresh_int st_c in
+      let continue_sym = Symbol.set_symbol_description (Symbol.fresh_given_int nc) (Symbol.SD_Id ("continue_" ^ show nc)) in
+      let break_sym    = Symbol.set_symbol_description (Symbol.fresh_given_int nb) (Symbol.SD_Id ("break_" ^ show nb)) in
+      let (ret, st')   = mf <| elc_continue= Just continue_sym; elc_break= Just break_sym; elc_supply= st_b.elc_supply |> in
+      ((continue_sym, break_sym, ret), <| st_b with elc_supply= st'.elc_supply |>) in
   A.mk_statement_full loc stmt.A.desug_info stmt.A.attrs <$> match stmt.A.node with
     | A.AilSskip ->
         St.return stmt.A.node
@@ -3381,11 +3404,19 @@ let rec erase_loop_control_aux stmt =
         A.AilSmarker id <$> erase_loop_control_aux s
   end
 
+(* C1 m1b: the pass runs to completion atomically from the fn-def
+   elaboration prefix; its supply is seeded from the elaboration supply
+   and the final value is returned to it (the pass's draws stay a
+   contiguous block — contiguity only, per charter section 3.4 b'). *)
+val erase_loop_control: A.statement GenTypes.genTypeCategory -> E.elabM (A.statement GenTypes.genTypeCategory)
 let erase_loop_control stmt =
-  let (stmt', _) = State.runStateM (erase_loop_control_aux stmt) <|
-    elc_continue= Nothing;
-    elc_break= Nothing;
-  |> in stmt'
+  E.with_fresh_supply (fun sup ->
+    let (stmt', elc_st) = State.runStateM (erase_loop_control_aux stmt) <|
+      elc_continue= Nothing;
+      elc_break= Nothing;
+      elc_supply= sup;
+    |> in
+    (stmt', elc_st.elc_supply))
 
 
 type collect_visibles_state = <|
@@ -3797,7 +3828,7 @@ let rec translate_stmt stdlib tagDefs f env stmt : E.elabM (C.expr unit) =
     
     | A.AilSwhile e s loop_id ->
         (* NOTE: the object type is OTy_integer since we are using mkTestExpression which turns [e] into [e == 0] *)
-        let sym_loop = Symbol.fresh_pretty_with_id (fun x ->  "while_" ^ show x) in
+        E.fresh_elab_pretty_with_id (fun x ->  "while_" ^ show x) >>= fun sym_loop ->
         E.wrapped_fresh_symbol C.BTy_boolean                  >>= fun do_loop_wrp  ->
         E.wrapped_fresh_symbol (C.BTy_loaded C.OTy_integer)   >>= fun test_wrp     ->
         E.wrapped_fresh_symbol (C.BTy_object C.OTy_integer)   >>= fun case_wrp     ->
@@ -3833,9 +3864,9 @@ let rec translate_stmt stdlib tagDefs f env stmt : E.elabM (C.expr unit) =
     
     | A.AilSdo s e loop_id ->
         (* TODO: make the elab of AilSdo use mkTestExpression *)
-        let sym_loop = Symbol.fresh_pretty_with_id (fun x ->  "do_" ^ show x) in
-        let sym_case = Symbol.fresh () in
-        let sym_e    = Symbol.fresh () in
+        E.fresh_elab_pretty_with_id (fun x ->  "do_" ^ show x) >>= fun sym_loop ->
+        E.fresh_elab_sym Symbol.SD_None >>= fun sym_case ->
+        E.fresh_elab_sym Symbol.SD_None >>= fun sym_e    ->
         translate_expression true e >>= fun core_e       ->
         self s                      >>= fun core_s       ->
         E.get_visible_objects       >>= fun visible_syms ->
@@ -3951,8 +3982,11 @@ let rec translate_stmt stdlib tagDefs f env stmt : E.elabM (C.expr unit) =
         (* Create case symbols and translate cases block *)
         let cases    = collect_cases s in
         let nb_cases = List.length (cases.case_csts) + List.length (cases.case_ranges) in
-        let case_syms = list_init nb_cases (fun _ -> Symbol.fresh_pretty_with_id (fun x -> "case_" ^ show x)) in
-        let default_sym = Symbol.fresh_pretty_with_id (fun x -> "default_" ^ show x) in
+        (* C1 m1: the list_init batch becomes a threaded monadic build
+           (contiguous mints at the same chain position, list order kept) *)
+        E.mapM (fun _ -> E.fresh_elab_pretty_with_id (fun x -> "case_" ^ show x))
+          (list_init nb_cases (fun i -> i)) >>= fun case_syms ->
+        E.fresh_elab_pretty_with_id (fun x -> "default_" ^ show x) >>= fun default_sym ->
         let case_labs =
           List.zip
             begin
@@ -4232,7 +4266,9 @@ let translate_program stdlib (startup_sym_opt, sigm) =
               | _ ->
                   (fun z -> z)
             end (Caux.pcreate loc align_ival core_ty (Symbol.PrefSource loc [sym])) in
-          let sym_global  = Symbol.fresh () in
+          (* C1 m1: the mint stays UNCONDITIONAL (it is unused on the
+             external-object branch — kept to preserve numbering) *)
+          E.fresh_elab_sym Symbol.SD_None >>= fun sym_global ->
 
           match List.lookup sym sigm.A.object_definitions with
             | Nothing ->
@@ -4262,7 +4298,7 @@ let translate_program stdlib (startup_sym_opt, sigm) =
                       Caux.mk_sseqs lit_pats_core_creates core
                     )
                 end >>= fun (e_bTy, core_e) ->
-                let e_sym = Symbol.fresh () in
+                E.fresh_elab_sym Symbol.SD_None >>= fun e_sym ->
                 let core_init_e =
                   if AilTypesAux.is_integer ty || AilTypesAux.is_floating ty then
                     conv_loaded_arith stdlib (ctype_of expr) ty (Caux.mk_sym_pe e_sym)
@@ -4351,18 +4387,23 @@ let translate_program stdlib (startup_sym_opt, sigm) =
                           (Just sym, ty)
                       ) (List.zip param_syms params)
                   , is_variadic, has_proto ) in
-                let ret_label = Symbol.fresh_pretty_with_id (fun x -> "ret_" ^ show x) in
-                let stmt = erase_loop_control stmt in
+                (* C1 m1: fn-def prefix mints in prefix order (ret_label,
+                   then the erase pass's contiguous block, then the
+                   variadic mint) *)
+                E.fresh_elab_pretty_with_id (fun x -> "ret_" ^ show x) >>= fun ret_label ->
+                erase_loop_control stmt >>= fun stmt ->
                 let visibles = collect_visibles stmt in
-                let (variadic_sym_opt, last_arg_sym_opt) =
+                begin
                   if is_variadic then
                     match List.reverse param_syms with
                       | [] -> error "variadic functions need to have at least one parameter"
-                      | sym::_ -> (Just (Symbol.fresh ()), Just sym)
+                      | sym::_ ->
+                          E.fresh_elab_sym Symbol.SD_None >>= fun variadic_sym ->
+                          E.return (Just variadic_sym, Just sym)
                     end
                   else
-                    (Nothing, Nothing)
-                in
+                    E.return (Nothing, Nothing)
+                end >>= fun (variadic_sym_opt, last_arg_sym_opt) ->
                 let (mk_body_wrapper, label_visibles) =
                   if is_using_inner_arg_temps then
                     let xs = List.map (fun (sym, (_, ty, _)) -> (sym, ty)) (List.zip param_syms params) in
@@ -4411,7 +4452,7 @@ let translate_program stdlib (startup_sym_opt, sigm) =
                     z in
                 (* let is_used_sym = Symbol.fresh () in
                 let is_used_arg_type = (is_used_sym, C.BTy_boolean) in *)
-                let ret_sym = Symbol.fresh () in
+                E.fresh_elab_sym Symbol.SD_None >>= fun ret_sym ->
                 let core_return =
                   let ret_pe =
                     if startup_sym_opt = Just sym then
@@ -4511,19 +4552,28 @@ let translate_extern_map (_, sigm) =
     end) sigm.A.extern_idmap
 
 
-(* This is the entry function (called from main.ml) *)
+(* This is the entry function (called from main.ml).
+   C1 m1 (charter sections 1.3/3.4): the entry carries the fresh-symbol
+   supply explicitly — it takes the pipeline's current supply, seeds
+   elab_init with it, and returns the elaboration's final supply beside
+   the Core file (entry shape (b): supply-parameterized, no baked
+   seed). On the OCaml target the supply argument and returned value
+   are DEAD (the elaboration mints redirect to the single ambient
+   counter): main.ml/pipeline.ml pass 0 and drop the second component
+   — documented divergence, see ocaml_frontend/fork_renumber.ml. *)
 val translate:
+    nat ->
     (map string Symbol.sym) * C.fun_map unit ->
     C.calling_convention ->
-    C.impl -> 
+    C.impl ->
     A.ail_program GenTypes.genTypeCategory ->
-    C.file unit
-let translate (ailnames, stdlib_fun_map) callconv impl prog =
+    (C.file unit * nat)
+let translate sup (ailnames, stdlib_fun_map) callconv impl prog =
   let translation_stdlib = mk_translation_stdlib (ailnames, stdlib_fun_map) in
   let ((core_tagDefs, cglobs, (*cdecls, *) cfuns, funinfo), st) =
-    E.runStateM_errors (translate_program translation_stdlib prog) (E.elab_init callconv)
+    E.runStateM_errors (translate_program translation_stdlib prog) (E.elab_init sup callconv)
   in
-  <| C.main= fst prog;
+  (<| C.main= fst prog;
      C.calling_convention= callconv;
      C.tagDefs= core_tagDefs;
      C.stdlib= stdlib_fun_map;
@@ -4532,6 +4582,6 @@ let translate (ailnames, stdlib_fun_map) callconv impl prog =
      C.funs= cfuns;
      C.extern = translate_extern_map prog;
      C.funinfo= funinfo;
-     C.loop_attributes= (snd prog).A.loop_attributes; 
+     C.loop_attributes= (snd prog).A.loop_attributes;
      C.visible_objects_env= st.E.visible_objects_types_markers_env;
-  |>
+  |>, st.E.fresh_supply)

@@ -225,10 +225,21 @@ type prefix =
   | PrefOther of string
 
 (* TODO: "nat", "int" *)
+(* effect-retirement C1 (charter section 3.4 a): on the Lean target
+   fresh_int is a SUPPLY — every transitive caller is supply-lifted
+   (takes the current counter, returns the next one); the entry points
+   seed it explicitly (entry shape (b)). The OCaml target keeps the
+   single ambient counter (Cerb_fresh.int), byte-identical to
+   un-forked upstream. The former `effectful` declare + the
+   CerberusFresh.freshIntIO extern (native/fresh_int.c) are retired. *)
 val fresh_int: unit -> nat
 declare ocaml target_rep function fresh_int = `Cerb_fresh.int`
-declare lean target_rep function fresh_int u = `CerberusFresh.freshIntIO` u
-declare {lean} effectful val fresh_int
+(* the Lean rep satisfies target-coverage checking but is never emitted
+   at applied call sites: every draw is rewritten to LemLib.supplySplit
+   on the threaded parameter (bare references are a generation-time
+   error, so the rep is unreachable outside dead text) *)
+declare lean target_rep function fresh_int u = 0
+declare {lean} supply val fresh_int
 
 val digest_of_sym: sym -> digest
 let digest_of_sym (Symbol dig _ _) = dig
@@ -251,10 +262,13 @@ let fresh_pretty_with_id mkStr =
   Symbol (digest()) id (SD_Id (mkStr id))
 
 val fresh_fancy : maybe string -> sym
-let fresh_fancy = function
-  | Just str -> fresh_pretty str
-  | Nothing  -> fresh ()
-end
+(* C1: eta-expanded (was `function`-sugar, a lambda — the supply
+   transform's G-lambda guard rejects draws under lambdas) *)
+let fresh_fancy str_opt =
+  match str_opt with
+    | Just str -> fresh_pretty str
+    | Nothing  -> fresh ()
+  end
 
 (* Build a symbol from an EXPLICITLY SUPPLIED id (arc-2 S1): the pure
    counterpart of fresh, for callers that thread their own supply (see

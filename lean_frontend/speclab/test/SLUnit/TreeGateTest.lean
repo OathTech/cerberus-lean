@@ -40,13 +40,12 @@ def ppOfT (d : generic_fun_map_decl Unit Unit) : Except String String :=
   SpecLabEmitCore.ppFunMapDecl d
 
 /-- Run the assembled file through the production driver entry and
-project (verdict, final allocation-map size). Ambient CerbTags
-set/reset per the S3/T4 precedent (nonempty tagDefs). -/
+project (verdict, final allocation-map size). Effect-retirement C1:
+no ambient CerbTags set/reset — layouts reach CerbMem by value via the
+`drive` reader seed; supply-parameterized entry (seed 0). -/
 def runFileT (f : file core_run_annotation) : IO (Sum (Int × Nat) String) := do
-  let _ ← (CerbTags.resetTagDefsIO () : BaseIO Unit)
-  let _ ← (CerbTags.setTagDefsIO f.tagDefs : BaseIO Unit)
   return match CerbND.runND (drive f.tagDefs false f ["cmdname"])
-      (initial_driver_state f CerbFS.fs_initial_state) with
+      ((initial_driver_state 0 f CerbFS.fs_initial_state).1) with
   | [(Active r, _, st)] =>
     match r.dres_core_value with
     | Vloaded (LVspecified (OVinteger (CerbMem.IntegerValue.IV _ n))) =>

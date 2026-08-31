@@ -1128,8 +1128,15 @@ val evaluate_integer_constant_expression: Loc.t -> maybe Ctype.ctype -> expressi
 let evaluate_integer_constant_expression loc ty_opt expr =
   E.get_core_eval_stuff >>= fun core_env ->
   E.get_sigma_sofar >>= fun sigm ->
+  (* C1 m2: the const-expr mini-run draws the supply from the desugar
+     state and restores the final value to it (S1 single stream; DEAD
+     round-trip on the OCaml target, where the mini-run draws
+     ambiently) *)
+  E.get_fresh_sym_supply >>= fun sup ->
   E.liftException
-      (Mini_pipeline.evalIntegerConstantExpression loc core_env sigm ty_opt expr)
+      (Mini_pipeline.evalIntegerConstantExpression sup loc core_env sigm ty_opt expr) >>= fun (n, sup') ->
+  E.set_fresh_sym_supply sup' >>
+  E.return n
 
 
 
@@ -4958,9 +4965,14 @@ let register_additional_cn_var id = E.register_cn_ident CN_vars id
 
 
 import Core
-val desugar: (map string Symbol.sym) * Core.fun_map unit * Core.impl -> Cn_desugaring.init_scope -> string -> translation_unit ->
-  Exception.exceptM (E.fin_markers_env * ail_program unit) Errors.error
-let desugar core_eval_stuff cn_eval_stuff startup_str (TUnit edecls) =
+(* C1 (effect retirement): the entry threads the pipeline's single
+   fresh-symbol stream (S1) — takes the current supply, seeds the
+   desugar state with it, and returns the final supply beside the
+   result. DEAD on the OCaml target (ambient counter; callers pass 0
+   and ignore the returned component). *)
+val desugar: nat -> (map string Symbol.sym) * Core.fun_map unit * Core.impl -> Cn_desugaring.init_scope -> string -> translation_unit ->
+  Exception.exceptM (E.fin_markers_env * ail_program unit * nat) Errors.error
+let desugar sup core_eval_stuff cn_eval_stuff startup_str (TUnit edecls) =
 (*
   E.eval sym_counter core_eval_stuff cn_eval_stuff (
     E.under_scope E.Scope_file (
@@ -5035,7 +5047,7 @@ let desugar core_eval_stuff cn_eval_stuff startup_str (TUnit edecls) =
     )
   ) 
 *)
-  E.eval core_eval_stuff cn_eval_stuff (
+  E.eval sup core_eval_stuff cn_eval_stuff (
     E.under_scope E.Scope_file (
       register_cn_predicate_names edecls                       >>= fun () ->
       register_cn_function_names edecls                        >>= fun () ->

@@ -133,11 +133,13 @@ opaque forceIO {b : Type} : (Unit → b) → BaseIO b :=
   fun f => pure (f ())
 attribute [never_extract] forceIO
 
-/-- Fresh integer counter.
-    Corresponds to: Cerb_fresh.int (uses a mutable ref cell in OCaml).
-    Returns BaseIO Nat (effectful). The Lem `effectful` annotation wraps
-    each call site in `runEffectful(...)` to prevent Lean's CSE. -/
-@[extern "cerb_fresh_int_io"]
-opaque freshIntIO : @& Unit → BaseIO Nat
+/- freshIntIO DELETED (effect-retirement C1, charter sections 3.4/7.1):
+   the fresh counter is no longer an extern — `fresh_int` is a lem
+   SUPPLY on the Lean target (every transitive caller threads the
+   counter explicitly; entry points are supply-parameterized, Main
+   seeds the single stream). native/fresh_int.c, the 2^20 ambient-base
+   stratification, and the Main startup floor probe are gone with it.
+   The digest machinery above stays — its opaque conversion is a C2
+   deliverable (Q4 ruling). -/
 
 end CerberusFresh

@@ -51,7 +51,6 @@ roots = [
   "Core_sequentialise", "Core_sequentialise_auxiliary",
   "Core_typing", "Core_typing_aux", "Core_typing_aux_auxiliary", "Core_typing_auxiliary",
   "Core_typing_effect", "Core_typing_effect_auxiliary",
-  "Core_unstruct", "Core_unstruct_auxiliary",
   "Ctype", "Ctype_aux", "Ctype_aux_auxiliary", "Ctype_auxiliary",
   "Debug", "Debug_auxiliary",
   "Decode", "Decode_auxiliary",
@@ -132,7 +131,7 @@ roots = ["RelSem.Call", "RelSem.Machine", "RelSem.RunND", "RelSem.ExecModel", "R
 [[lean_exe]]
 name = "cerberus-lean"
 root = "Main"
-moreLinkArgs = ["native/fresh_int.o", "native/debug.o", "native/tags.o", "native/md5.o"]
+moreLinkArgs = ["native/md5.o"]
 
 # Test library: tests live under lean_frontend/test/ and import from
 # the main CerberusLean lib. Each test exe has root "Unit.<Name>Test".
@@ -145,25 +144,25 @@ globs = ["Unit.+"]
 name = "core-parser-test"
 srcDir = "test"
 root = "Unit.CoreParserTest"
-moreLinkArgs = ["native/fresh_int.o", "native/debug.o", "native/tags.o", "native/md5.o"]
+moreLinkArgs = ["native/md5.o"]
 
 [[lean_exe]]
 name = "effects-proof-test"
 srcDir = "test"
 root = "Unit.EffectsProofTest"
-moreLinkArgs = ["native/fresh_int.o", "native/debug.o", "native/tags.o", "native/md5.o"]
+moreLinkArgs = ["native/md5.o"]
 
 [[lean_exe]]
 name = "totality-proof-test"
 srcDir = "test"
 root = "Unit.TotalityProofTest"
-moreLinkArgs = ["native/fresh_int.o", "native/debug.o", "native/tags.o", "native/md5.o"]
+moreLinkArgs = ["native/md5.o"]
 
 [[lean_exe]]
 name = "fresh-int-test"
 srcDir = "test"
 root = "Unit.FreshIntTest"
-moreLinkArgs = ["native/fresh_int.o", "native/debug.o", "native/tags.o", "native/md5.o"]
+moreLinkArgs = ["native/md5.o"]
 
 # arc-10 S3: pretty-printer mirrors vs recorded oracle outputs (OCaml
 # string_of_float / %.*f transcript + Pp_core_ctype / pp_value shapes).
@@ -171,4 +170,4 @@ moreLinkArgs = ["native/fresh_int.o", "native/debug.o", "native/tags.o", "native
 name = "pp-test"
 srcDir = "test"
 root = "Unit.PPTest"
-moreLinkArgs = ["native/fresh_int.o", "native/debug.o", "native/tags.o", "native/md5.o"]
+moreLinkArgs = ["native/md5.o"]

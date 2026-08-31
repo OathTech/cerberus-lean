@@ -5,6 +5,30 @@
 # Every entry is a reviewed claim about the oracle: additions/removals
 # and hash moves go through the gate's refresh recipe with a commit
 # message stating the justification.
+# NOTE (effect-retirement C1, 2026-08-31 — charter section 3.4/6.4,
+# Q1b TOLERATED [USER 2026-08-31]): lem-pin -> af5df71 (supply/
+# reader_consumer/fuel-budget backend features; the pin bump alone was
+# byte-identical on this tree). The m1/m1b/m2 model accommodations
+# change generated-OCaml TEXT in 9 modules: 7 moved
+# [expected-semantic] hashes (symbol.ml declare swap + eta-expanded
+# fresh_fancy; translation_effect.ml elab_state.fresh_supply + monadic
+# mints + with_block_objects fold threading; cabs_to_ail_effect.ml
+# seeded initial_state + eval supply round-trip + get/set helpers;
+# cabs_to_ail.ml desugar supply entry + const-expr round-trip;
+# mini_pipeline.ml explicit-supply const-expr seam;
+# core_run_aux.ml initial_core_run_state_given factoring;
+# driver.ml initial_driver_state_with/_given factoring) and 2 NEW
+# [expected-semantic] entries (ctype_aux.ml: with_tagDefs gains a lem
+# body `f ()` behind the unchanged Tags.with_tagDefs redirect,
+# set/reset_tagDefs lose their Lean-only declares; translation.ml:
+# the 15 elaboration-site mints + the m1b erase_loop_control supply
+# component + the supply-parameterized translate entry). Oracle
+# BEHAVIOR moves only in the S0-enumerated renumbering class (the
+# elaboration draw sequence; docs/2026-08-31_S0-scan-record.md); the
+# arc-13 check_ail_window backstop still refuses a re-threaded
+# desugar supply. Hand [files] entries pipeline.ml/fork_renumber.ml
+# carry the corresponding driver-side call-site adaptations
+# (supply args dead on OCaml, ambient mint shims).
 # [files] = oracle-surface files allowed to differ from upstream/master;
 # [expected-semantic]/[expected-cosmetic] = generated .ml allowed to
 # differ, pinned by sha256 of their label-normalized unified diff.
@@ -95,7 +119,7 @@
 # item-8 commit).
 [meta]
 merge-base=b9aeedcb4dd438763b0eef7f95ac19e93875d7de
-lem-pin=11d4b4c
+lem-pin=af5df71
 renumber=arc13
 [files]
 backend/common/ail_sym_hwm.ml
@@ -171,15 +195,17 @@ runtime/libc/dune
 runtime/libcore/impls/i686-apple-darwin10-gcc-4.2.1.impl
 util/cerb_fresh.ml
 [expected-semantic]
-3765f211968f713c112938562485b00054380e780eb552632ec5cf370b9298ba cabs_to_ail_effect.ml
-12e6d9cf3322e34f00dd4c51f2cd985e7b000746b8ebb1cab056c725ffd0c86b cabs_to_ail.ml
+d252a154bca00b92a9dbe4422e40849d361bf1ad48dfc033be718aefb7e9f05d cabs_to_ail_effect.ml
+4e43f561d853351c040b4a53fc03636c3e869c62ff727db49584a22bdb89ea08 cabs_to_ail.ml
 22b0b094c6622a92dfdff511a05f19de93f445c5f47d149deec3ed223e582f98 core_reduction.ml
-92e86efb5652fd8ed18a43a234a384389d2fa999ec96a34b685be66e7ad9684d core_run_aux.ml
+64b9df673bdfa8e3051c8b7d392b4c02a11f89d1f72ab3055c533626cae09151 core_run_aux.ml
 7d4e9c99b3954e7c103d98b371dfd3f9e56c4fb22f32886db3f5382d66db6fa9 core_run.ml
-05ccb517cf967dd47e5cb07efd09bbdbe6973a4c52c43d03496852c2e6259e17 mini_pipeline.ml
-fa837fef5ca985fcd56b737b2b99f74314f98e94f03cdbf7b922f87fb5199eed symbol.ml
-db00c33b9928bab5e428ac2d859367f5cd40de2c01f8867be2c9f1fe8f1b2446 translation_effect.ml
-9c9cda701c571f11b8d29f94933e4428ad1b76bdb61ecc5232708a27248dbec8 driver.ml
+75e92ed1280fc1c45fd3e1d3e1c023467aa7542526dba4f2193485f123277cc6 mini_pipeline.ml
+51f56677431b4c6095ef8523761c5879f7fe0f1b20f882977bf6555184f2d2e8 symbol.ml
+4af72185cf6ea64c94506ded11858db5884ecaed067b20dd9dcaf4a6aed31418 translation_effect.ml
+405c834f7108e9ae3614f74ab51089947539f9800c419738e61f056bcc97aa13 driver.ml
+8882e41d9366569a3f76bed5d93c0aac7f622b7acf421807179e1bfc585be0cb ctype_aux.ml
+6ba1f4842fe4d8ef55b6405b6c2f1b88f20fc0e2b245230d680314ad0e6cb59f translation.ml
 [expected-cosmetic]
 75dbb3f1b524df384b8783896995e45dbee6f6c123a990b2d5848c23595f9131 ailSyntax.ml
 f353c48b912b1f5ac4a73b42b981d01c38ac19760867ad8e043072e9489b383c cn.ml

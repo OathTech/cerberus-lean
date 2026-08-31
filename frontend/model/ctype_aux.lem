@@ -13,22 +13,28 @@ val with_tagDefs: forall 'a. map Symbol.sym (Loc.t * tag_definition) -> (unit ->
 
 declare ocaml target_rep function tagDefs = `Tags.tagDefs`
 declare ocaml target_rep function set_tagDefs = `Tags.set_tagDefs`
+(* C1 (effect retirement, charter section 4): on the Lean target the
+   tag-definition GLOBAL is gone — the linked table is passed as a
+   value. tagDefs stays an ambient READER (arc-1 ruling 2026-08-18):
+   every def that transitively reads it takes '_lemReader_tagDefs' as
+   a leading parameter, seeded by the hand-written entry points; the
+   stub rep below satisfies lem's target-coverage check but is never
+   emitted at applied call sites (fail-closed panic if it ever is).
+   The write scaffold (set_tagDefs/reset_tagDefs) and the CerbTags IO
+   externs are DELETED on Lean (no Lean rep — no .lem code calls them
+   and Main no longer does either); the OCaml oracle keeps its Tags
+   module untouched. with_tagDefs keeps its whole-extent role on the
+   OCaml target via the redirect; on Lean its lem body is the plain
+   application (the reader seeding carries the value instead — see
+   mini_pipeline.run_const_expr_driver). *)
+let with_tagDefs tds f = f ()
 declare ocaml target_rep function with_tagDefs = `Tags.with_tagDefs`
 
 declare hol target_rep function tagDefs = `tagDefs`
-(* Lean: tagDefs is an ambient READER (arc-1 ruling 2026-08-18, see
-   lean_frontend/docs/2026-08-18_effects-totality-design.md): every def that
-   transitively reads it takes '_lemReader_tagDefs' as a leading parameter,
-   seeded by the hand-written entry points. The target_rep below satisfies
-   lem's target-coverage check but is never emitted at applied call sites.
-   Writes (set_tagDefs/reset_tagDefs) remain execution-only scaffold. *)
-declare lean target_rep function tagDefs u = `CerbTags.tagDefsIO` u
+declare lean target_rep function tagDefs u = `CerbTags.tagDefsUnreachable` u
 declare {lean} reader val tagDefs
 declare hol target_rep function set_tagDefs = `set_tagDefs`
-declare lean target_rep function set_tagDefs tds = `CerbTags.setTagDefsIO` tds
-declare {lean} effectful val set_tagDefs
 declare hol target_rep function with_tagDefs = `with_tagDefs`
-declare lean target_rep function with_tagDefs = `CerbTags.with_tagDefs`
 
 val get_membersDefs: Symbol.sym -> tag_definition
 let get_membersDefs tag_sym =
@@ -74,8 +80,6 @@ let get_unionDef tag_sym =
 
 val reset_tagDefs: unit -> unit
 declare ocaml target_rep function reset_tagDefs = `Tags.reset_tagDefs`
-declare lean target_rep function reset_tagDefs u = `CerbTags.resetTagDefsIO` u
-declare {lean} effectful val reset_tagDefs
 
 
 

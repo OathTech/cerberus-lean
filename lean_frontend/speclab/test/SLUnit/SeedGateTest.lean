@@ -37,7 +37,7 @@ def ppOf (d : generic_fun_map_decl Unit Unit) : Except String String :=
 project the single-execution verdict. -/
 def runFile (f : file core_run_annotation) : Sum Int String :=
   match CerbND.runND (drive f.tagDefs false f ["cmdname"])
-      (initial_driver_state f CerbFS.fs_initial_state) with
+      ((initial_driver_state 0 f CerbFS.fs_initial_state).1) with
   | [(Active r, _, _)] =>
     match r.dres_core_value with
     | Vloaded (LVspecified (OVinteger (CerbMem.IntegerValue.IV _ n))) =>

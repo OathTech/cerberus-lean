@@ -199,8 +199,12 @@ let c_frontend ?(cn_init_scope=Cn_desugaring.empty_init) (conf, io) (core_stdlib
     ret in
   let desugar cabs_tunit =
     let (ailnames, core_stdlib_fun_map) = core_stdlib in
-    Cabs_to_ail.desugar (ailnames, core_stdlib_fun_map, core_impl) cn_init_scope
-      "main" cabs_tunit >>= fun (markers_env, ail_prog) ->
+    (* effect-retirement C1: the desugar entry threads the Lean-side
+       fresh-symbol stream explicitly; on this target the supply
+       argument and the returned final-supply component are DEAD (the
+       ambient Cerb_fresh.int is the counter) — pass 0, drop it. *)
+    Cabs_to_ail.desugar 0 (ailnames, core_stdlib_fun_map, core_impl) cn_init_scope
+      "main" cabs_tunit >>= fun (markers_env, ail_prog, _dead_supply) ->
           (* arc-13 single-supply backstop: every current-digest symbol in
              the desugared program must have been minted by Cerb_fresh.int
              inside this TU's window — a re-threaded supply (the F-D-era
@@ -261,7 +265,9 @@ let c_frontend_and_elaboration ?(cn_init_scope=Cn_desugaring.empty_init) (conf, 
   Tags.reset_tagDefs ();
   let calling_convention =
     Core.(if Switches.has_switch SW_inner_arg_temps then Inner_arg_callconv else Normal_callconv) in
-  let core_file = Translation.translate core_stdlib calling_convention core_impl ailtau_prog in
+  (* effect-retirement C1: translate is supply-parameterized (Lean-side
+     stream); DEAD on this target — pass 0, drop the returned supply. *)
+  let (core_file, _dead_supply) = Translation.translate 0 core_stdlib calling_convention core_impl ailtau_prog in
   io.set_progress "ELABO" >>= fun () ->
   io.pass_message "Translation to Core completed!" >>= fun () ->
   return (Some cabs_tunit, Some (markers_env, ailtau_prog), core_file)

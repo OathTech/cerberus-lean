@@ -26,8 +26,10 @@
 #     byte-codec functions are fuel'd); ONE partial def remains
 #     (stringFromMemValue, pp-only) plus panic! sites; outside both
 #     scans (extending the totality scanner over it is a priced item).
-#   CerbTags.lean — the with_tagDefs opaque (an AXIOM until arc-17
-#     S2b — now a kernel-checked opaque witness) + BaseIO externs;
+#   CerbTags.lean — shrunk to the TagDefsMap TYPE + a fail-closed
+#     coverage stub (effect-retirement C1: the global, its BaseIO
+#     externs, and the with_tagDefs opaque are DELETED — the linked
+#     table is passed by value; charter section 4);
 #   CerbFloat/CerbUtils/... — unchanged.
 # Declared-boundary records: 2026-08-19_arc4-results.md, updated by
 # 2026-08-20_arc7-results.md (CerbND left the boundary; CerbMem's leg

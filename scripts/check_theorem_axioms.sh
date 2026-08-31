@@ -14,12 +14,12 @@
 # probe here. ZERO hand-written axioms exist in this repository: the
 # two former declared-boundary axioms were DELETED (arc-17 S2b, the
 # [USER 2026-08-24] temporal-mover execution):
-#   1. CerbTags.with_tagDefs — was an `axiom` (arc-4 S1r), now an
-#      `opaque` with the kernel-checked inhabitation witness
-#      `fun _ f => f ()` (the effect-erased meaning). @[implemented_by]
-#      still binds the C-side set/restore extent (native/tags.c
-#      cerb_tags_with) — runtime behavior unchanged, re-verified by
-#      the differential lanes.
+#   1. CerbTags.with_tagDefs — was an `axiom` (arc-4 S1r), then an
+#      `opaque` with a kernel-checked witness (arc-17 S2b), now
+#      DELETED OUTRIGHT (effect-retirement C1, charter section 4): the
+#      CerbTags global is gone; the linked table is passed as a value
+#      (reader_consumer) and with_tagDefs's Lean meaning is the plain
+#      application, a lem body in ctype_aux.lem.
 #   2. CerberusFresh.forceIO — was an `axiom` (arc-5 S2), now an
 #      `opaque` with witness `fun f => pure (f ())`. @[implemented_by]
 #      still binds native/md5.c cerb_force_thunk — re-verified by
@@ -139,7 +139,7 @@ for path in files:
     for m in re.finditer(r'\baxiom\s+([A-Za-z_0-9α-ω.\']+)', clean):
         line = clean.count('\n', 0, m.start()) + 1
         print(f"AXIOM {base}:{line}:{m.group(1)}")
-    for m in re.finditer(r'\bopaque\s+(with_tagDefs|forceIO)\b', clean):
+    for m in re.finditer(r'\bopaque\s+(forceIO)\b', clean):
         line = clean.count('\n', 0, m.start()) + 1
         print(f"OPAQUE {base}:{line}:{m.group(1)}")
     for m in re.finditer(r'\bunsafeCast\b', clean):
@@ -167,9 +167,13 @@ if [[ -n "$GEN_AXIOMS" ]]; then
   echo "$GEN_AXIOMS"
   exit 1
 fi
-# Scanner/copy-pipeline liveness (fail-closed): the two converted
-# opaques must each be present exactly once in their build copies.
-for want in 'CerbTags\.lean:[0-9]+:with_tagDefs' 'CerberusFresh\.lean:[0-9]+:forceIO'; do
+# Scanner/copy-pipeline liveness (fail-closed): the surviving converted
+# opaque must be present exactly once in its build copy.
+# (Effect-retirement C1: with_tagDefs LEFT the boundary list — the
+# CerbTags global and its whole-extent opaque are deleted; charter
+# section 7.2 "boundary-opaque expectation list shrinks". forceIO
+# stays exactly-once; the digest opaque conversion is C2.)
+for want in 'CerberusFresh\.lean:[0-9]+:forceIO'; do
   cnt=$(grep -cE "^OPAQUE ${want}$" <<<"$GEN_OPAQUES" || true)
   if [[ "$cnt" -ne 1 ]]; then
     echo "check_theorem_axioms: FAIL — generated-tree census: converted boundary opaque /${want}/ found $cnt times, expected exactly 1 (copy pipeline or scanner drift; fail-closed)"

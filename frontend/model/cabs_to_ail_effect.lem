@@ -568,12 +568,18 @@ let empty_switch_info =
 
 
 (* ========================================================================== *)
-val initial_state: (map string Symbol.sym) * Core.fun_map unit * Core.impl -> Cn_desugaring.init_scope -> state_with_markers
-let initial_state core_eval_stuff cn_eval_stuff = <|
+(* C1 (effect retirement, S1 single-stream ruling): the desugar state's
+   fresh_sym_supply is seeded from the pipeline's single stream (the
+   entry's explicit supply parameter) instead of a fixed 0 — one
+   stream: Main seeds it once; desugar, const-expr mini-runs,
+   elaboration and the run-init seed all draw from and return to it.
+   On the OCaml target the field stays DEAD (arc-13 scheme R-B). *)
+val initial_state: nat -> (map string Symbol.sym) * Core.fun_map unit * Core.impl -> Cn_desugaring.init_scope -> state_with_markers
+let initial_state fresh_sym_supply_seed core_eval_stuff cn_eval_stuff = <|
   inner= <|
     aux_supply=      0;
     scope_id_supply= 0;
-    fresh_sym_supply= 0;
+    fresh_sym_supply= fresh_sym_supply_seed;
     
     registered_external_identifiers= Map.empty;
     registered_identifiers=      Scope_table.empty;
@@ -682,13 +688,25 @@ let fin_markers_env () =
   State_exception.return (id, st.markers_env)
 
 
-val eval: forall 'a. (map string Symbol.sym) * Core.fun_map unit * Core.impl -> Cn_desugaring.init_scope -> desugM 'a -> Exception.exceptM (fin_markers_env * 'a) Errors.error
-let cabs_to_ail_effect_eval core_eval_stuff cn_eval_stuff m =
+(* C1: the desugar supply threads in and out of the evaluation (S1
+   single stream) — the caller passes the current stream value and
+   receives the final one beside the result. *)
+val get_fresh_sym_supply: desugM nat
+let get_fresh_sym_supply =
+  modify_inner (fun st -> (st.fresh_sym_supply, st))
+
+val set_fresh_sym_supply: nat -> desugM unit
+let set_fresh_sym_supply n =
+  modify_inner (fun st -> ((), <| st with fresh_sym_supply= n |>))
+
+val eval: forall 'a. nat -> (map string Symbol.sym) * Core.fun_map unit * Core.impl -> Cn_desugaring.init_scope -> desugM 'a -> Exception.exceptM (fin_markers_env * 'a * nat) Errors.error
+let cabs_to_ail_effect_eval sup core_eval_stuff cn_eval_stuff m =
   State_exception.eval begin
     m >>= fun res ->
     fin_markers_env () >>= fun markers ->
-    State_exception.return (markers, res)
-  end (initial_state core_eval_stuff cn_eval_stuff)
+    get_fresh_sym_supply >>= fun sup' ->
+    State_exception.return (markers, res, sup')
+  end (initial_state sup core_eval_stuff cn_eval_stuff)
 let inline eval = cabs_to_ail_effect_eval
 
 

@@ -32,16 +32,24 @@ type elab_state = <|
 
   cheri_const_alias: map Symbol.sym Symbol.sym;
 
+  (* effect-retirement C1 (charter m1): the fresh-symbol supply for the
+     elaboration cone, threaded through elabM. On the OCaml target this
+     field is DEAD — the mints below redirect to the single ambient
+     counter (Fork_renumber, arc-13 scheme R-B) — it serves the LEAN
+     target only, seeded by the entry (translation.lem translate /
+     mini_pipeline's local run) from the pipeline's single stream. *)
+  fresh_supply: nat;
+
   errors: list string;
-  
+
   (* readonly *)
   calling_convention: C.calling_convention;
 |>
 
 type elabM 'a = stateM 'a elab_state
 
-val elab_init: C.calling_convention -> elab_state
-let elab_init callconv = <|
+val elab_init: nat -> C.calling_convention -> elab_state
+let elab_init fresh_supply_seed callconv = <|
   visible_objects_types= Map.empty;
   visible_objects= [[]];
   string_literals= [];
@@ -49,6 +57,7 @@ let elab_init callconv = <|
   temporary_objects= [];
   visible_objects_types_markers_env = Map.empty;
   cheri_const_alias= Map.empty;
+  fresh_supply= fresh_supply_seed;
   errors = [];
   calling_convention= callconv;
 |>
@@ -57,18 +66,54 @@ val get_calling_convention: elabM C.calling_convention
 let get_calling_convention =
   fun st -> (st.calling_convention, st)
 
+(* effect-retirement C1 (charter m1): the monadic fresh mints for the
+   elaboration cone, replacing the ambient Symbol.fresh* draws at the
+   19 live sites. The lem bodies thread elab_state.fresh_supply (the
+   LEAN scheme, built on the pure Symbol.fresh_given_int exactly like
+   core_run.lem's fresh_symbol'); the OCaml target redirects the int
+   mint to the single ambient counter (Fork_renumber.fresh_elab_int),
+   keeping the oracle on Cerb_fresh.int at the migrated positions.
+   The oracle's dynamic draw SEQUENCE moves per the tolerated
+   S0-measured class (charter section 3.6.1, Q1b TOLERATED). *)
+val fresh_elab_int: elabM nat
+let fresh_elab_int =
+  fun st ->
+    let n = st.fresh_supply in
+    (n, <| st with fresh_supply= n+1 |>)
+declare ocaml target_rep function fresh_elab_int = `Fork_renumber.fresh_elab_int`
+
+val fresh_elab_sym: Symbol.symbol_description -> elabM Symbol.sym
+let fresh_elab_sym descr =
+  bind fresh_elab_int (fun n ->
+  return (Symbol.set_symbol_description (Symbol.fresh_given_int n) descr))
+
+val fresh_elab_pretty_with_id: (nat -> string) -> elabM Symbol.sym
+let fresh_elab_pretty_with_id mkStr =
+  bind fresh_elab_int (fun n ->
+  return (Symbol.set_symbol_description (Symbol.fresh_given_int n) (Symbol.SD_Id (mkStr n))))
+
+(* Run a supply-consuming sub-computation against the elaboration
+   supply: f receives the current supply and returns (result, final
+   supply). Used by the erase_loop_control pass (m1b). Pure threading —
+   on OCaml this shuttles the dead field (the sub-computation's own
+   mints redirect ambiently). *)
+val with_fresh_supply: forall 'a. (nat -> ('a * nat)) -> elabM 'a
+let with_fresh_supply f =
+  fun st ->
+    let (a, sup') = f st.fresh_supply in
+    (a, <| st with fresh_supply= sup' |>)
 
 (* TODO: this does not need to be in the monad, but it is useful to unsure
    proper ordering (for "intuitive" sym number) *)
 val wrapped_fresh_symbol: C.core_base_type -> elabM wrapped_symbol
 let wrapped_fresh_symbol bTy =
-  let sym = Symbol.fresh () in
-  return <|sym_sym= sym; sym_pat= Caux.mk_sym_pat sym bTy; sym_pe= Caux.mk_sym_pe sym |>
+  bind (fresh_elab_sym Symbol.SD_None) (fun sym ->
+  return <|sym_sym= sym; sym_pat= Caux.mk_sym_pat sym bTy; sym_pe= Caux.mk_sym_pe sym |>)
 
 val wrapped_fresh_symbol_: Symbol.symbol_description -> C.core_base_type -> elabM (Symbol.sym * C.pattern * C.pexpr)
 let wrapped_fresh_symbol_ descr bTy =
-  let sym = Symbol.fresh_description descr in
-  return (sym, Caux.mk_sym_pat sym bTy, Caux.mk_sym_pe sym)
+  bind (fresh_elab_sym descr) (fun sym ->
+  return (sym, Caux.mk_sym_pat sym bTy, Caux.mk_sym_pe sym))
 
 
 (* TODO: this does not need to be in the monad *)
@@ -101,15 +146,21 @@ let cheri_const_alias_map = fun st ->
 val with_block_objects: forall 'a. list (Symbol.sym * (Ctype.qualifiers * Ctype.ctype)) -> elabM 'a ->
   elabM (list (Symbol.sym * (Ctype.qualifiers * Ctype.ctype * Symbol.sym)) * list compound_literal_info * 'a)
 let with_block_objects binds ma = fun st ->
-  let (new_aliases, cheri_const_alias) = List.foldl (fun (xs_acc, map_acc) (sym, (qs, ty)) ->
+  (* C1 m1: the const-alias mints draw from the threaded supply (the
+     fold threads the elab_state through fresh_elab_int; on OCaml the
+     redirected mint draws ambiently and returns the state unchanged).
+     The mints keep their run-time firing position (inside this state
+     function); the fold's LIST order is unchanged. *)
+  let (new_aliases, cheri_const_alias, st0) = List.foldl (fun (xs_acc, map_acc, stx) (sym, (qs, ty)) ->
     (* TODO: fail if sym IN acc *)
     if qs.Ctype.const then
-      let sym' = Symbol.fresh () in
-      ((sym, (qs, ty, sym')) :: xs_acc, Map.insert sym sym' map_acc)
+      let (n, stx') = fresh_elab_int stx in
+      let sym' = Symbol.fresh_given_int n in
+      ((sym, (qs, ty, sym')) :: xs_acc, Map.insert sym sym' map_acc, stx')
     else
-      (xs_acc, map_acc)
-  ) ([], st.cheri_const_alias) binds in
-  let st' = <| st with
+      (xs_acc, map_acc, stx)
+  ) ([], st.cheri_const_alias, st) binds in
+  let st' = <| st0 with
     visible_objects_types= List.foldl (fun acc (sym, qs_ty) -> Map.insert sym qs_ty acc) st.visible_objects_types binds;
     visible_objects= (List.map fst binds) :: st.visible_objects;
     compound_literals= [];
@@ -174,8 +225,8 @@ let resolve_object_type sym = fun st ->
 
 (* similar to Cabs_to_ail_effect.record_marker *)
 val record_object_types_marker: unit -> elabM nat
-let record_object_types_marker () = 
-  let marker_id = Symbol.fresh_int () in
+let record_object_types_marker () =
+  bind fresh_elab_int (fun marker_id ->
   begin
     if Global.backend_name () = "Cn" then
       get_visible_objects >>= fun visible_objects ->
@@ -191,7 +242,7 @@ let record_object_types_marker () =
     else
       return ()
   end >>
-  return marker_id
+  return marker_id)
 
 
 (* record that an (unrecoverable) error occured, but don't abandon

@@ -268,6 +268,7 @@ end
 val initial_io_state: io_state
 val initial_core_state: core_state
 val initial_core_run_state: map Symbol.sym (labeled_continuations core_run_annotation) -> core_run_state
+val initial_core_run_state_given: nat -> map Symbol.sym (labeled_continuations core_run_annotation) -> core_run_state
 
 let initial_io_state = <|
   stdout= Dlist.nil;
@@ -279,16 +280,24 @@ let initial_core_state = <|
   io= initial_io_state;
 |>
 
-let initial_core_run_state xs = <|
+(* C1 (effect retirement): the pure explicit-seed constructor — the
+   run-state builder for callers that thread their own supply (the
+   const-expr mini-run seeds it from the desugar-held stream). *)
+let initial_core_run_state_given sup xs = <|
   tid_supply=      0;
   aid_supply=      0;
   excluded_supply= 0;
-  (* the ONE ambient read: everything after init is threaded *)
-  sym_supply=      Symbol.fresh_int ();
-  
+  sym_supply=      sup;
+
   (*env=     [Map.empty];*)
   labeled= xs;
 |>
+
+(* the ONE former-ambient read, now a supply draw (Lean: supply-lifted
+   by the fresh_int supply declare — takes the current supply, returns
+   the next; everything after init is threaded) *)
+let initial_core_run_state xs =
+  initial_core_run_state_given (Symbol.fresh_int ()) xs
 (* arc-13 D1 (renumbering, scheme R-B): on the OCaml target the run
    state carries NO seed draw (sym_supply dead — run symbols are minted
    ambiently, see core_run.lem fresh_symbol'); the seed above is the

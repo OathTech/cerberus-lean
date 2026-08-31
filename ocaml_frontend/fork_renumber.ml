@@ -61,3 +61,22 @@ let initial_core_run_state xs : Core_run_aux.core_run_state = {
   sym_supply = 0;
   labeled = xs;
 }
+
+(* Effect-retirement C1 (charter m1/m1b): elaboration-cone minting.
+   Upstream draws every elaboration symbol from the one ambient counter
+   (Symbol.fresh* -> Cerb_fresh.int); the .lem bodies these shims
+   replace thread elab_state.fresh_supply / erase_loop_control_state.
+   elc_supply instead — the LEAN-target scheme only. On this target the
+   threaded fields are DEAD and each mint is one ambient draw at the
+   migrated call position (the dynamic draw SEQUENCE moves per the
+   tolerated S0-measured class; charter section 3.6.1, ruling Q1b
+   TOLERATED [USER 2026-08-31]).
+   Seams served:
+   - Translation_effect.fresh_elab_int  (translation_effect.lem)
+   - Translation.elc_fresh_int          (translation.lem, m1b)        *)
+
+(* elabM nat: elab_state -> nat * elab_state *)
+let fresh_elab_int st = (Cerb_fresh.int (), st)
+
+(* St.stateM nat erase_loop_control_state *)
+let elc_fresh_int st = (Cerb_fresh.int (), st)

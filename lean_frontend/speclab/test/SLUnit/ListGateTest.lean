@@ -40,16 +40,14 @@ def ppOfL (d : generic_fun_map_decl Unit Unit) : Except String String :=
   SpecLabEmitCore.ppFunMapDecl d
 
 /-- Run the assembled file through the production driver entry and
-project (verdict, final allocation-map size). IO: the exec path reads
-struct layouts through the AMBIENT CerbTags state (the CerbTags
-effect boundary), so the tag defs must be installed first — the Main.lean
-set/reset pattern (arc-4 S3b; relsem EmitLeanCoreTest T4 precedent).
-R3 is the first speclab rung where this bites (nonempty tagDefs). -/
+project (verdict, final allocation-map size). Effect-retirement C1:
+the CerbTags global is GONE — struct layouts reach CerbMem by VALUE
+(reader_consumer), so `f.tagDefs` in the drive seed below is the whole
+story; the entry is supply-parameterized (seed 0 — authored-Core ids
+are name-hash interned, not drawn). -/
 def runFileL (f : file core_run_annotation) : IO (Sum (Int × Nat) String) := do
-  let _ ← (CerbTags.resetTagDefsIO () : BaseIO Unit)
-  let _ ← (CerbTags.setTagDefsIO f.tagDefs : BaseIO Unit)
   return match CerbND.runND (drive f.tagDefs false f ["cmdname"])
-      (initial_driver_state f CerbFS.fs_initial_state) with
+      ((initial_driver_state 0 f CerbFS.fs_initial_state).1) with
   | [(Active r, _, st)] =>
     match r.dres_core_value with
     | Vloaded (LVspecified (OVinteger (CerbMem.IntegerValue.IV _ n))) =>

@@ -1506,12 +1506,19 @@ let finalize debug_str dr_st =
 
 (* TODO: it is problematic for proofy backend that this function may diverge *)
 (* TODO: HACK *)
-let initial_driver_state file fs_state =
+(* C1 (effect retirement): the record builder is factored out so the
+   const-expr mini-run can build the state from an EXPLICITLY threaded
+   supply (initial_driver_state_given) while the production entry
+   below keeps the one supply draw (Lean: supply-lifted via
+   initial_core_run_state — signature Nat -> file -> fs_state ->
+   driver_state * Nat, entry shape (b); OCaml: unchanged behavior, the
+   run-state redirect carries no draw). *)
+let initial_driver_state_with run_st file fs_state =
   <|
     core_file=         file;
     core_extern=       Core_linking.create_extern_symmap file;
     core_state=        Core_run.initial_core_state;
-    core_run_state=    Core_run.initial_core_run_state (Caux.collect_labeled_continuations_NEW file);
+    core_run_state=    run_st;
     layout_state=      Mem.initial_mem_state;
     concurrency_state= Cmm_op.symInitialState Cmm_op.symInitialPre;
     fs_state=          fs_state;
@@ -1520,6 +1527,15 @@ let initial_driver_state file fs_state =
     blocked=           false;
     dr_step_counter=   0;
   |>
+
+let initial_driver_state file fs_state =
+  initial_driver_state_with (Core_run.initial_core_run_state (Caux.collect_labeled_continuations_NEW file)) file fs_state
+
+(* the explicit-supply variant for the const-expr mini-run: consumes
+   exactly one draw (the run-seed), mirroring the lifted entry above *)
+let initial_driver_state_given sup file fs_state =
+  ( initial_driver_state_with (Core_run.initial_core_run_state_given sup (Caux.collect_labeled_continuations_NEW file)) file fs_state
+  , sup+1 )
 
 
 val spawn_thread: maybe Mem.thread_id -> Core_run.thread_state -> driverM Mem.thread_id

@@ -496,22 +496,29 @@ def findRuntimeDir : IO String := do
     would be let-SUNK past the NEXT TU's `setDigestIO`, stamping this
     TU's symbols with the wrong digest (see CerberusFresh.forceIO and
     test/Unit/FreshIntTest.lean testDigestGlobal). -/
-def frontendTU (quiet : Bool)
+def frontendTU (quiet : Bool) (supply : Nat)
     (coreEvalStuff : Fmap String sym × fun_map Unit × impl)
     (ailnames : Fmap String sym) (stdFunMap : fun_map Unit) (coreImpl : impl)
-    (tunit : translation_unit) : IO (Except UInt8 (file Unit)) := do
+    (tunit : translation_unit) : IO (Except UInt8 (file Unit × Nat)) := do
   let say (s : String) : IO Unit := unless quiet do IO.println s
   -- Desugar Cabs → AIL
   say "  desugaring Cabs → AIL..."
   let cnInit := empty_init
-  -- arc-2 S6: desugar is no longer reader-lifted — the constant-expression
-  -- driver (its only tagDefs consumer) now seeds itself lexically with the
-  -- translated definitions inside Mini_pipeline.run_const_expr_driver, so
-  -- the desugar chain takes no reader parameter at all.
+  -- Effect-retirement C1: `supply` is the pipeline's SINGLE fresh-symbol
+  -- stream (S1 ruling) — threaded through desugar (incl. its const-expr
+  -- mini-runs), elaboration, and back out to the caller.
+  -- desugar/translate are reader-lifted since C1 (the reader_consumer
+  -- mem-ops in their cones, mem.lem): the reader argument is the
+  -- PHASE-APPROPRIATE tag table — EMPTY during desugar/typing/
+  -- elaboration, mirroring the oracle's empty Tags global there
+  -- (pipeline.ml:253 resets before translate; the union-arm asymmetry
+  -- mirror, charter section 4.2 — the offsetof-union-member crash pair
+  -- pins this). The mini-run's own extent still sees the translated
+  -- definitions via the reader_seed run_const_expr_driver.
   let desugRes ← (CerberusFresh.forceIO
-    (fun () => desugar coreEvalStuff cnInit "main" tunit) : BaseIO _)
+    (fun () => desugar fmapEmpty supply coreEvalStuff cnInit "main" tunit) : BaseIO _)
   match desugRes with
-  | .Result (_, (mainSym, ailProg)) =>
+  | .Result (_, (mainSym, ailProg), supplyAfterDesugar) =>
     say s!"  desugaring succeeded!"
     say s!"    main symbol: {match mainSym with | some _ => "found" | none => "not found"}"
     say s!"    declarations: {List.length ailProg.declarations}"
@@ -543,22 +550,19 @@ def frontendTU (quiet : Bool)
 
       -- Step 3: Translate AIL → Core
       say "  translating AIL → Core..."
-      -- Per-TU tag reset: pipeline.ml:253 ("the elaboration sets the
-      -- struct/union tag definitions, so to allow the frontend to be
-      -- used more than once, we need to do reset here").
-      -- NOTE: must use the BaseIO variant here: the pure wrapper's result is
-      -- unused, and `let _ := CerbTags.reset_tagDefs ()` gets dead-code
-      -- eliminated (found in arc-4 S3b: the sibling set_tagDefs below was
-      -- being dropped, leaving the global EMPTY throughout execution).
-      let _ ← (CerbTags.resetTagDefsIO () : BaseIO Unit)
+      -- C1: the per-TU CerbTags reset (pipeline.ml:253 mirror) is GONE —
+      -- there is no global to reset; translate's reader argument below is
+      -- the empty table, which IS the oracle's reset-then-elaborate state
+      -- (documented divergence from the driver-level bookkeeping, mirror
+      -- doctrine; the value-passing replaces the write scaffold).
       let callconv := Normal_callconv
-      let coreFile ← (CerberusFresh.forceIO (fun () =>
-        translate (ailnames, stdFunMap) callconv coreImpl typedProg) : BaseIO _)
+      let (coreFile, supplyAfterTranslate) ← (CerberusFresh.forceIO (fun () =>
+        translate fmapEmpty supplyAfterDesugar (ailnames, stdFunMap) callconv coreImpl typedProg) : BaseIO _)
       say s!"  translation succeeded!"
       say s!"    main: {match coreFile.main with | some _ => "found" | none => "not found"}"
       say s!"    funs: {List.length (fmapElements coreFile.funs)}"
       say s!"    globs: {List.length coreFile.globs}"
-      return .ok coreFile
+      return .ok (coreFile, supplyAfterTranslate)
   | .Exception (loc, cause) =>
     if quiet then
       -- OCaml parity (main.ml runM): desugar-level UB gets a batch Undefined line
@@ -590,13 +594,13 @@ def frontendTU (quiet : Bool)
 
 /-- Load and assemble the libc library Core file (see the module note at
     "C-libc loading" above). -/
-def loadLibc (quiet : Bool)
+def loadLibc (quiet : Bool) (supply0 : Nat)
     (coreEvalStuff : Fmap String sym × fun_map Unit × impl)
     (ailnames : Fmap String sym) (stdFunMap : fun_map Unit) (coreImpl : impl)
     (libcCorePath : String) (libcTuJsons : List String) :
-    IO (Except UInt8 (file Unit)) := do
+    IO (Except UInt8 (file Unit × Nat)) := do
   let say (s : String) : IO Unit := unless quiet do IO.println s
-  let bail (msg : String) : IO (Except UInt8 (file Unit)) := do
+  let bail (msg : String) : IO (Except UInt8 (file Unit × Nat)) := do
     if quiet then IO.println s!"Error \{msg: \"libc load failed: {batchEscape msg}\"}"
     else IO.println s!"  libc load failed: {msg}"
     return .error 1
@@ -615,15 +619,16 @@ def loadLibc (quiet : Bool)
   --    driver fold, main.ml:153-156) and link them.
   say s!"  loading libc metadata from {libcTuJsons.length} TUs..."
   let mut metaFiles : List (file Unit) := []
+  let mut supply := supply0
   for j in libcTuJsons do
     let content ← IO.FS.readFile ⟨j⟩
     let tunit ← match CabsImport.parseJson content with
       | .ok t => pure t
       | .error e => return (← bail s!"cabs-json parse error in {j}: {e}")
     let _ ← (CerberusFresh.setDigestIO (CerberusFresh.md5Hex content) : BaseIO Unit)
-    match ← frontendTU true coreEvalStuff ailnames stdFunMap coreImpl tunit with
+    match ← frontendTU true supply coreEvalStuff ailnames stdFunMap coreImpl tunit with
     | .error _ => return (← bail s!"frontend failed for libc metadata TU {j}")
-    | .ok f => metaFiles := f :: metaFiles
+    | .ok (f, supply') => metaFiles := f :: metaFiles; supply := supply'
   let metaFile ← match link metaFiles with
     | .Result f => pure f
     | .Exception (_, _) => return (← bail "linking the libc metadata TUs failed")
@@ -685,7 +690,7 @@ def loadLibc (quiet : Bool)
       | _, _ => pure ()
   say s!"    metadata: {tagDefs.length} tagDefs, {ext.length} extern, {funinfo.length} funinfo"
   -- 5. Assemble (read_core_object mirror, pipeline.ml:655-663).
-  return .ok {
+  return .ok ({
     main := none
     calling_convention0 := metaFile.calling_convention0
     tagDefs := fmapOfSpine libcSymMapCmp tagDefs
@@ -697,7 +702,7 @@ def loadLibc (quiet : Bool)
     funinfo := fmapOfSpine libcSymMapCmp funinfo
     loop_attributes1 := fmapEmpty
     visible_objects_env0 := fmapEmpty
-  }
+  }, supply)
 
 
 
@@ -776,11 +781,17 @@ def runPipeline (runtimeDir : String) (batch : Bool) (ppCore : Bool)
   -- (main.ml:150-156) — so it ends up LAST in the reverse-consed list
   -- handed to Core_linking.link, mirroring the oracle's link order.
   let mut coreFiles : List (file Unit) := []
+  -- Effect-retirement C1 (S1 ruling [USER 2026-08-31]): the ONE
+  -- fresh-symbol stream, seeded here and threaded through every phase
+  -- (per-TU desugar + const-expr mini-runs + elaboration) and into the
+  -- run-init seed below — collisions impossible by construction; the
+  -- former 2^20 desugar/ambient stratification is gone.
+  let mut supply : Nat := 0
   match libc with
   | some (libcCore, libcTus) =>
-    match ← loadLibc quiet coreEvalStuff ailnames stdFunMap coreImpl libcCore libcTus with
+    match ← loadLibc quiet supply coreEvalStuff ailnames stdFunMap coreImpl libcCore libcTus with
     | .error code => return code
-    | .ok libcFile => coreFiles := [libcFile]
+    | .ok (libcFile, supply') => coreFiles := [libcFile]; supply := supply'
   | none => pure ()
   for (content, tunit) in tunits do
     -- Per-TU digest, before the TU's frontend stages — mirror of
@@ -794,9 +805,9 @@ def runPipeline (runtimeDir : String) (batch : Bool) (ppCore : Bool)
     -- BaseIO variant: a discarded pure call is dead-code-eliminated
     -- (CerbTags set/reset pattern, arc-4 S3b).
     let _ ← (CerberusFresh.setDigestIO (CerberusFresh.md5Hex content) : BaseIO Unit)
-    match ← frontendTU quiet coreEvalStuff ailnames stdFunMap coreImpl tunit with
+    match ← frontendTU quiet supply coreEvalStuff ailnames stdFunMap coreImpl tunit with
     | .error code => return code
-    | .ok coreFile => coreFiles := coreFile :: coreFiles
+    | .ok (coreFile, supply') => coreFiles := coreFile :: coreFiles; supply := supply'
 
   -- Link the translated Core files — main.ml:278-281:
   --   prelude >>= main >>= begin function
@@ -833,11 +844,11 @@ def runPipeline (runtimeDir : String) (batch : Bool) (ppCore : Bool)
     -- output stays byte-identical to the pre-multi-TU driver
     if tunits.length != 1 then
       say s!"  linking succeeded! ({tunits.length} translation units)"
-    -- Tag definitions from the LINKED file — main.ml:284-285:
-    --   let () = Tags.reset_tagDefs () in
-    --   let () = Tags.set_tagDefs core_file.tagDefs in
-    let _ ← (CerbTags.resetTagDefsIO () : BaseIO Unit)
-    let _ ← (CerbTags.setTagDefsIO coreFile.tagDefs : BaseIO Unit)
+    -- C1: the driver-level tag bookkeeping (main.ml:284-285
+    -- reset+set from the LINKED file) is GONE — the load→seed loop is
+    -- closed: the value in hand (runFile.tagDefs below) seeds the
+    -- execution directly (documented divergence from the OCaml driver's
+    -- global writes, mirror doctrine).
 
     -- --pp-core: signature-level dump of the (linked) Core, then stop
     -- (no execution). See the ppCoreSignature module note for the
@@ -849,16 +860,16 @@ def runPipeline (runtimeDir : String) (batch : Bool) (ppCore : Bool)
     -- Step 4: Prepare for execution (mirrors driver_ocaml.ml)
     say "  preparing for execution..."
     let runFile := convert_file coreFile
-    -- BaseIO variant — a discarded pure `set_tagDefs` call is dead-code
-    -- eliminated (see reset above); CerbMem's struct/union layout
-    -- (sizeof/alignof/offsetsof) reads this global during execution.
-    let _ ← (CerbTags.setTagDefsIO runFile.tagDefs : BaseIO Unit)
+    -- C1: CerbMem's struct/union layout reads receive runFile.tagDefs by
+    -- VALUE (reader_consumer, mem.lem) — no global set is needed or
+    -- possible.
     let fsState := CerbFS.fs_initial_state
-    let drSt := initial_driver_state runFile fsState
+    -- Entry shape (b), charter section 1.3: the supply-parameterized
+    -- pure constructor — one draw (the run-init seed) from the stream.
+    let (drSt, _supplyFinal) := initial_driver_state supply runFile fsState
     say s!"  executing Core..."
-    -- Reader seed: execution-slice entry; tagDefs are fully registered by now
-    -- (Main itself set them above via CerbTags.setTagDefsIO), so the live
-    -- global is the correct value.
+    -- Reader seed: execution-slice entry — the linked table, passed as
+    -- the value in hand (the load→seed loop is closed).
     -- --call (arc-7 S3): the symbolic-argument harness entry — run the
     -- designated function on the injected argument values via
     -- RelSem.Cerb.callND (the drive-generalization the slate theorems
@@ -867,9 +878,9 @@ def runPipeline (runtimeDir : String) (batch : Bool) (ppCore : Bool)
     -- non-batch; progArgs is the parsed --args list (empty without the
     -- flag, so the historical ["cmdname"] argv is byte-unchanged).
     let driverAction := match callFn with
-      | none => drive (CerbTags.tagDefs ()) false runFile ("cmdname" :: progArgs)
+      | none => drive runFile.tagDefs false runFile ("cmdname" :: progArgs)
       | some (fname, argInts) =>
-        RelSem.Cerb.callND (CerbTags.tagDefs ()) runFile fname
+        RelSem.Cerb.callND runFile.tagDefs runFile fname
           (argInts.map RelSem.Cerb.intValue)
     -- --first (arc-5 S3): single-trace runner for programs whose exhaustive
     -- trace set is combinatorially large (libxml2-scale differentials);
@@ -1053,27 +1064,15 @@ def main (args : List String) : IO Unit := do
     | none, _ :: _ => do
       IO.eprintln "cerberus-lean: --libc-tu without --libc"
       IO.Process.exit 1
-  -- Set debug level for Core evaluation tracing (0=off, 2=basic, 5=verbose).
-  -- Batch/pp-core modes match the OCaml driver default (0): keeps stderr
-  -- clean for the harness's crash classification.
-  -- BaseIO variant (arc-14 S1 F5, sem:S11): the pure `set_level`'s result
-  -- is unused, so `let _ := CerbDebug.set_level …` is dead-code
-  -- eliminated (the exact arc-4 S3b hazard the CerbTags reset/set sites
-  -- were fixed for; see the warnings at :545-549 and :789-791). Call the
-  -- BaseIO extern directly so the write actually happens.
-  let _ ← CerbDebug.setLevelIO (if batchMode || ppCoreMode then 0 else 2)
-  -- Sym non-escape floor assertion (arc-2 Phase-2 obligation, closed arc-4
-  -- S5; invariant record: docs/2026-08-19_arc4-s0-frontier.md addendum).
-  -- CURRENT invariant (post arc-4 S3a): desugar-threaded ids < 2^20 ≤
-  -- ambient (translation/exec) ids; std.core symbols are interned by name
-  -- hash (CoreParser.mkSym), not drawn from the counter. This probe draws
-  -- ONE ambient id and fail-stops if the floor regressed (e.g. a stale
-  -- native/fresh_int.o with a different CERB_FRESH_BASE). Downstream id
-  -- streams are insensitive to the one consumed id (id-canonicalized
-  -- differentials; ids are compared only for equality within a run).
-  let floorProbe ← CerberusFresh.freshIntIO ()
-  if floorProbe < (1 <<< 20) then
-    throw (IO.userError s!"FATAL: ambient fresh-id floor violated: first draw {floorProbe} < 2^20; desugar/ambient sym streams may collide (native/fresh_int.c CERB_FRESH_BASE, arc-4 S3a invariant)")
+  -- Effect-retirement C1 (charter section 5): the debug-level global is
+  -- DELETED — the model returns values, the driver prints; the former
+  -- human-mode level-2 write here was already vestigial (its only
+  -- reader, the dbg_trace print_debug, was referenced by nothing).
+  -- Also gone (charter sections 3.4/7.1): the ambient fresh counter and
+  -- its 2^20 floor probe — the fresh-symbol supply is a SINGLE stream
+  -- threaded explicitly from runPipeline (S1 ruling); collisions are
+  -- impossible by construction, so there is no stratification invariant
+  -- left to probe.
   if args.length == 0 then
     selfTest
     return

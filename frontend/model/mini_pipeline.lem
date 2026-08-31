@@ -77,13 +77,22 @@ let run_const_expr_driver tds dr_st =
   Ctype_aux.with_tagDefs tds (fun () -> runND_proxy driver_action dr_st)
 declare {lean} reader_seed val run_const_expr_driver
 
+(* C1 m2 (charter section 3.4 c): the const-expr seam carries the
+   fresh-symbol supply EXPLICITLY — it takes the pipeline's current
+   supply (the desugar-held stream, S1 single-stream ruling), seeds the
+   local elab_init and the mini-run's driver state from it, and returns
+   the final supply beside the value through the Eff (exception-monad)
+   binds. On the OCaml target the threaded values are DEAD (the mints
+   redirect ambiently); the desugM caller draws/restores the dead
+   field — behavior unchanged. *)
 val evalConstantExpressionAux:
+  nat ->
   Loc.t -> (map string Symbol.sym) * C.fun_map unit * C.impl ->
   A.sigma unit ->
   (GenTypes.genTypeCategory -> Eff.exceptM unit Errors.error) ->
-  maybe Ctype.ctype -> A.expression unit -> Eff.exceptM C.value Errors.error
+  maybe Ctype.ctype -> A.expression unit -> Eff.exceptM (C.value * nat) Errors.error
 
-let evalConstantExpressionAux loc (*TODO*)(ailnames, stdlib_fun_map, impl) sigm typing_guard ty_opt expr =
+let evalConstantExpressionAux sup loc (*TODO*)(ailnames, stdlib_fun_map, impl) sigm typing_guard ty_opt expr =
   let toAilTau: A.expression unit -> ErrorMonad.errorM (A.expression GenTypes.genTypeCategory) =
     GenTyping.annotate_expression (GenTyping.annotate_block Nothing) sigm [] (*TODO: check*)GenTyping.CTXother in
   
@@ -129,10 +138,13 @@ let evalConstantExpressionAux loc (*TODO*)(ailnames, stdlib_fun_map, impl) sigm 
         let callconv =
           if Global.has_switch Global.SW_inner_arg_temps then Core.Inner_arg_callconv else Core.Normal_callconv in
         
-        (* elaborate the typed expression into Core *)
-        let (core_expr, translate_final_st) = TranslateEff.runStateM (toCore a_expr) (TranslateEff.elab_init callconv) in
-        
-        let dr_st =
+        (* elaborate the typed expression into Core (seeded from the
+           threaded supply; the elaboration's final supply continues
+           into the mini-run's seed below) *)
+        let (core_expr, translate_final_st) = TranslateEff.runStateM (toCore a_expr) (TranslateEff.elab_init sup callconv) in
+        let sup_after_elab = translate_final_st.TranslateEff.fresh_supply in
+
+        let (dr_st, sup_after_init) =
           (* this just builds the shell of the driver state *)
           let dummy_core_file = Core_run_aux.convert_file
             <| C.main= Nothing
@@ -148,7 +160,7 @@ let evalConstantExpressionAux loc (*TODO*)(ailnames, stdlib_fun_map, impl) sigm 
              ; C.visible_objects_env = Map.empty
            |> 
           in
-          let init_dr_st = Driver.initial_driver_state dummy_core_file Fs.fs_initial_state in
+          let (init_dr_st, sup') = Driver.initial_driver_state_given sup_after_elab dummy_core_file Fs.fs_initial_state in
           (* spawning a thread with the Core expression we just generated as it's arena *)
           let ((tid, core_st), run_st) = State.runStateM (
             Core_run.spawn_thread Nothing <|
@@ -162,10 +174,11 @@ let evalConstantExpressionAux loc (*TODO*)(ailnames, stdlib_fun_map, impl) sigm 
             |> init_dr_st.Driver.core_state
           ) init_dr_st.Driver.core_run_state in
           (* now we can build the actual driver's initial state *)
-          <| init_dr_st with
-           Driver.core_state= core_st;
-           Driver.core_run_state= run_st |> in
-        
+          ( <| init_dr_st with
+             Driver.core_state= core_st;
+             Driver.core_run_state= run_st |>
+          , sup' ) in
+
         (* run the evaluator (arc-2 S6: built AND run inside
            run_const_expr_driver so the Lean reader seeding covers the
            action's construction — see that function's comment) *)
@@ -174,7 +187,7 @@ let evalConstantExpressionAux loc (*TODO*)(ailnames, stdlib_fun_map, impl) sigm 
                       dr_st in
         match execs with
           | [(ND.Active dres, _, _ )] ->
-              Eff.return dres.Driver.dres_core_value
+              Eff.return (dres.Driver.dres_core_value, sup_after_init)
           | [(ND.Killed _ (ND.Undef ub_loc [ub]), _, _)] ->
               Eff.fail (ub_loc, Errors.DESUGAR (Errors.Desugar_UndefinedBehaviour ub))
           | [(ND.Killed _ (ND.Error loc "§6.6#4 failed"), _, _)] ->
@@ -186,10 +199,11 @@ let evalConstantExpressionAux loc (*TODO*)(ailnames, stdlib_fun_map, impl) sigm 
 
 
 val evalIntegerConstantExpression:
+  nat ->
   Loc.t -> (map string Symbol.sym) * C.fun_map unit * C.impl -> A.sigma unit ->
-  maybe Ctype.ctype -> A.expression unit -> Eff.exceptM integer Errors.error
+  maybe Ctype.ctype -> A.expression unit -> Eff.exceptM (integer * nat) Errors.error
 
-let evalIntegerConstantExpression loc core_env sigm ty_opt expr =
+let evalIntegerConstantExpression sup loc core_env sigm ty_opt expr =
   let typing_guard gtc =
     let do_fail =
       Eff.fail (loc, Errors.DESUGAR (Errors.Desugar_UndefinedBehaviour Undefined.UB055_invalid_integer_constant_expression))
@@ -204,15 +218,15 @@ let evalIntegerConstantExpression loc core_env sigm ty_opt expr =
             do_fail
     end in
   
-  evalConstantExpressionAux loc core_env sigm typing_guard ty_opt expr >>= function
-    | C.Vloaded (C.LVspecified (C.OVinteger ival)) ->
+  evalConstantExpressionAux sup loc core_env sigm typing_guard ty_opt expr >>= function
+    | (C.Vloaded (C.LVspecified (C.OVinteger ival)), sup') ->
         match Mem.eval_integer_value ival with
           | Just n ->
-              Eff.return n
+              Eff.return (n, sup')
           | Nothing ->
               error "TODO error: the memory model failed to concretise the integer value (was impl dependent?)"
         end
-    | cval ->
+    | (cval, _) ->
         let () = Debug.print_debug 1 [] (fun () ->
           "cval: " ^ Pp.stringFromCore_value cval
         ) in

@@ -191,6 +191,14 @@ LEM_SRC_NOT_RENAMED = $(addprefix frontend/model/, $(LEM_SRC_AUX)) \
 
 LEM_SRC = $(LEM_SRC_RENAMED) \
 					$(LEM_SRC_NOT_RENAMED)
+
+# Lean generation list (effect-retirement C1, charter section 3.4 e):
+# the Core_unstruct pair is Lean-dead (imported by nothing in the Lean
+# build; its two Symbol.fresh sites sit inside foldl/map lambdas that
+# would trip the supply transform's G-lambda guard). It stays in
+# LEM_SRC for the OCaml target (upstream's sequentialisation pass,
+# untouched).
+LEM_SRC_LEAN = $(filter-out frontend/model/core_unstruct.lem,$(LEM_SRC))
 ####
 
 PRELUDE_SRC_DIR = ocaml_frontend/generated
@@ -325,10 +333,14 @@ rebuild-lem:
 lean-prelude-src: $(LEM_SRC)
 	@echo "[MKDIR] $(LEAN_SRC_DIR)"
 	$(Q)mkdir -p $(LEAN_SRC_DIR)
+	@# effect-retirement C1: the Core_unstruct pair leaves the Lean build
+	@# (LEM_SRC_LEAN); stale generated copies are removed fail-closed so a
+	@# lingering artifact cannot shadow the build-list drop.
+	$(Q)rm -f $(LEAN_SRC_DIR)/Core_unstruct.lean $(LEAN_SRC_DIR)/Core_unstruct_auxiliary.lean
 	@echo "[LEM] generating Lean files in [$(LEAN_SRC_DIR)] (log in [lean_frontend/lem.log])"
 	$(Q)lem -wl ign -wl_rename warn -wl_pat_red err -wl_pat_exh warn \
     -outdir $(LEAN_SRC_DIR) -cerberus_pp -lean \
-    $(LEM_SRC) 2> lean_frontend/lem.log || (>&2 cat lean_frontend/lem.log; exit 1)
+    $(LEM_SRC_LEAN) 2> lean_frontend/lem.log || (>&2 cat lean_frontend/lem.log; exit 1)
 	@# Workaround: Lem generates bogus `import Operators` from `open SEU.Operators` in core_run.lem
 	$(Q)sed -i'' -e '/^import Operators$$/d' $(LEAN_SRC_DIR)/Core_run.lean
 	@echo "[COPY] hand-written Lean files into [$(LEAN_SRC_DIR)]"
@@ -340,7 +352,10 @@ lean-prelude-src: $(LEM_SRC)
 # moreLinkArgs). Compiled with the toolchain's leanc (hermetic clang).
 # Lake does NOT track these .o files as link inputs, so after recompiling we
 # delete the linked executables to force a relink on the next lake build.
-LEAN_NATIVE = fresh_int debug tags md5
+# effect-retirement C1: fresh_int/debug/tags retired with their externs
+# (supply threading / value passing / driver-local verbosity); md5 stays
+# — the digest boundary remains (its opaque conversion is C2).
+LEAN_NATIVE = md5
 .PHONY: lean-native-obj
 lean-native-obj:
 	@echo "[LEANC] compiling lean_frontend/native objects"

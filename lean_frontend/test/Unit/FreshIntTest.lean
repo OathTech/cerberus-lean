@@ -1,9 +1,13 @@
 /-
-  Test: Symbol.fresh and CerberusFresh.fresh_int generate unique values.
+  Test: supply-threaded fresh symbols + the digest boundary.
 
-  Lean 4.29 CSEs pure opaque functions. This test verifies the fix using
-  Lem's `effectful` annotation + `runEffectful (fun () => ...)` — each
-  call should return a different value.
+  Effect-retirement C1 rewrite (charter section 7.1): the old
+  runEffectful/freshIntIO distinctness probes died with the mechanism —
+  `fresh_int` is a lem SUPPLY on the Lean target, so `Symbol.fresh` is
+  the pure lifted `fresh : Nat → Unit → sym × Nat`. The tests now pin
+  the THREADING LAWS (monotonicity + distinctness through a lifted
+  chain, kernel-visible) and keep the surviving digest-barrier tests
+  (the digest global remains; its opaque conversion is C2).
 -/
 
 import Symbol
@@ -17,49 +21,52 @@ def assertNotEqual {α : Type} [BEq α] [Repr α] (label : String) (a b : α) : 
   else
     return true
 
-def testFreshInt : IO Bool := do
-  IO.println "test: CerberusFresh.fresh_int generates unique values"
-  -- fresh_int has target_rep `fresh_int u = CerberusFresh.freshIntIO u`
-  -- with `effectful` annotation, generated code wraps in runEffectful thunks
-  let n1 := runEffectful (fun () => CerberusFresh.freshIntIO ())
-  let n2 := runEffectful (fun () => CerberusFresh.freshIntIO ())
-  let n3 := runEffectful (fun () => CerberusFresh.freshIntIO ())
-  IO.println s!"  got: {n1}, {n2}, {n3}"
-  let ok12 ← assertNotEqual "n1 vs n2" n1 n2
-  let ok23 ← assertNotEqual "n2 vs n3" n2 n3
-  let ok13 ← assertNotEqual "n1 vs n3" n1 n3
-  if ok12 && ok23 && ok13 then
-    IO.println "  ✓ PASS"
-    return true
-  else
-    return false
-
-def testSymbolFresh : IO Bool := do
-  IO.println "test: Symbol.fresh generates unique symbols"
-  -- Symbol.fresh is generated from symbol.lem and internally calls
-  -- fresh_int via runEffectful. Three calls should give three different IDs.
-  let s1 := fresh ()
-  let s2 := fresh ()
-  let s3 := fresh ()
-  let id : sym → Nat := fun | Symbol _ n _ => n
-  let n1 := id s1
-  let n2 := id s2
-  let n3 := id s3
-  IO.println s!"  got: Symbol(_, {n1}, _), Symbol(_, {n2}, _), Symbol(_, {n3}, _)"
-  let ok12 ← assertNotEqual "s1 vs s2" n1 n2
-  let ok23 ← assertNotEqual "s2 vs s3" n2 n3
-  let ok13 ← assertNotEqual "s1 vs s3" n1 n3
-  if ok12 && ok23 && ok13 then
-    IO.println "  ✓ PASS"
-    return true
-  else
-    return false
-
 def assertEqual {α : Type} [BEq α] [Repr α] (label : String) (got expected : α) : IO Bool := do
   if got == expected then
     return true
   else
     IO.println s!"  ✗ FAIL {label}: got {repr got}, expected {repr expected}"
+    return false
+
+/-- Kernel-checked threading laws: the exact draw sequence of a lifted
+    chain is a defeq fact (the L1 supply pins' pattern, TestSupplyCheck):
+    each draw returns the current supply and advances by one. -/
+example : LemLib.supplySplit 100 = (100, 101) := rfl
+
+def symId : sym → Nat := fun | Symbol _ n _ => n
+
+def testSupplyThreading : IO Bool := do
+  IO.println "test: Symbol.fresh threads the supply (monotone, distinct, returned)"
+  let (s1, sup1) := fresh 500 ()
+  let (s2, sup2) := fresh sup1 ()
+  let (s3, sup3) := fresh sup2 ()
+  IO.println s!"  got ids: {symId s1}, {symId s2}, {symId s3}; final supply {sup3}"
+  let okA ← assertEqual "first draw uses the seed" (symId s1) 500
+  let okB ← assertEqual "supply advances by one per draw" (sup1, sup2, sup3) (501, 502, 503)
+  let ok12 ← assertNotEqual "s1 vs s2" (symId s1) (symId s2)
+  let ok23 ← assertNotEqual "s2 vs s3" (symId s2) (symId s3)
+  let ok13 ← assertNotEqual "s1 vs s3" (symId s1) (symId s3)
+  if okA && okB && ok12 && ok23 && ok13 then
+    IO.println "  ✓ PASS"
+    return true
+  else
+    return false
+
+def testSupplyFamily : IO Bool := do
+  IO.println "test: the fresh* family draws exactly one id each and composes"
+  -- fresh_pretty_with_id bakes the drawn id into the description
+  let (sp, supP) := fresh_pretty_with_id 700 (fun n => s!"while_{n}")
+  let okP ← assertEqual "fresh_pretty_with_id id" (symId sp) 700
+  let okP2 ← assertEqual "fresh_pretty_with_id supply" supP 701
+  let okP3 ← assertEqual "fresh_pretty_with_id descr"
+    (match sp with | Symbol _ _ (SD_Id s) => s | _ => "<not SD_Id>") "while_700"
+  -- fresh_given_int is pure (no draw): the explicit-seed builder
+  let sg := fresh_given_int 900
+  let okG ← assertEqual "fresh_given_int id" (symId sg) 900
+  if okP && okP2 && okP3 && okG then
+    IO.println "  ✓ PASS"
+    return true
+  else
     return false
 
 def testMd5Hex : IO Bool := do
@@ -109,28 +116,29 @@ def testDigestGlobal : IO Bool := do
   let d0 ← CerberusFresh.digestIO ()
   let ok0 ← assertEqual "initial digest" d0 ""
   -- Symbol.fresh must pick up the CURRENT digest at each draw
-  -- (symbol.lem:238: Symbol (digest()) (fresh_int()) SD_None). Two draws
-  -- under different set_digest values must carry different digests — this
-  -- is exactly the CSE/startup-freeze hazard the never_extract armoring
-  -- in CerberusFresh.lean guards against (a frozen `digest ()` returns ""
-  -- or the first value for both).
+  -- (symbol.lem: Symbol (digest()) id SD_None). Two draws under
+  -- different set_digest values must carry different digests — this is
+  -- exactly the CSE/startup-freeze hazard the never_extract armoring in
+  -- CerberusFresh.lean guards against (a frozen `digest ()` returns ""
+  -- or the first value for both). The supply argument is now explicit
+  -- (C1), but the DIGEST read inside fresh remains ambient — the
+  -- barrier discipline is unchanged.
   -- The draws are IO-positioned via CerberusFresh.forceIO — a plain pure
-  -- `let s1 := fresh ()` here gets let-SUNK to its first use (below both
-  -- sets) and observes dB for both draws (empirically confirmed: the
-  -- first build of this test, without forceIO, failed exactly that way).
-  -- The multi-TU pipeline loop (Main.lean) uses the same barrier around
-  -- each per-TU stage.
+  -- `let s1 := fresh 0 ()` here gets let-SUNK to its first use (below
+  -- both sets) and observes dB for both draws (empirically confirmed on
+  -- the pre-C1 form of this test). The multi-TU pipeline loop
+  -- (Main.lean) uses the same barrier around each per-TU stage.
   let dA := CerberusFresh.md5Hex "tu-A"
   let dB := CerberusFresh.md5Hex "tu-B"
   let _ ← (CerberusFresh.setDigestIO dA : BaseIO Unit)
-  let s1 ← (CerberusFresh.forceIO (fun () => fresh ()) : BaseIO sym)
+  let s1 ← (CerberusFresh.forceIO (fun () => (fresh 0 ()).1) : BaseIO sym)
   let _ ← (CerberusFresh.setDigestIO dB : BaseIO Unit)
-  let s2 ← (CerberusFresh.forceIO (fun () => fresh ()) : BaseIO sym)
+  let s2 ← (CerberusFresh.forceIO (fun () => (fresh 1 ()).1) : BaseIO sym)
   let ok1 ← assertEqual "digest of fresh under A" (digest_of_sym s1) dA
   let ok2 ← assertEqual "digest of fresh under B" (digest_of_sym s2) dB
   let ok3 ← assertEqual "cross-TU from_same_translation_unit"
               (from_same_translation_unit s1 s2) false
-  let s3 ← (CerberusFresh.forceIO (fun () => fresh ()) : BaseIO sym)
+  let s3 ← (CerberusFresh.forceIO (fun () => (fresh 2 ()).1) : BaseIO sym)
   let ok4 ← assertEqual "same-TU from_same_translation_unit"
               (from_same_translation_unit s2 s3) true
   -- restore the pristine "" for any later test
@@ -144,7 +152,7 @@ def testDigestGlobal : IO Bool := do
 def main : IO UInt32 := do
   let mut passed := 0
   let mut failed := 0
-  for test in [testFreshInt, testSymbolFresh, testMd5Hex, testDigestGlobal] do
+  for test in [testSupplyThreading, testSupplyFamily, testMd5Hex, testDigestGlobal] do
     if ← test then
       passed := passed + 1
     else

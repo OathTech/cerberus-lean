@@ -83,10 +83,10 @@ def injectArg (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
         "callND: argument value does not fit the parameter type"))
     | some mval =>
       liftMem (nd_bind
-        (CerbMem.allocateObject tid0 (PrefOther "callND arg")
-          (CerbMem.alignofIval ty) ty none none)
+        (CerbMem.allocateObject tagDefs tid0 (PrefOther "callND arg")
+          (CerbMem.alignofIval tagDefs ty) ty none none)
         (fun (ptr : CerbMem.PointerValue) => nd_bind
-        (CerbMem.storeM (CerbLocation.other "callND arg init") ty false
+        (CerbMem.storeM tagDefs (CerbLocation.other "callND arg init") ty false
           ptr mval)
         (fun (_ : CerbMem.Footprint) =>
         nd_return (Vobject (OVpointer ptr)))))
@@ -167,13 +167,13 @@ def callFinish (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
                 pv.1 pv.2 m) xs bound) :: xs'
         nd_bind
           (liftMem (nd_bind
-            (CerbMem.allocateObject tid0 (PrefOther "errno")
-              (CerbMem.alignofIval signed_int) signed_int none none)
+            (CerbMem.allocateObject tagDefs tid0 (PrefOther "errno")
+              (CerbMem.alignofIval tagDefs signed_int) signed_int none none)
             (fun (ptr_val : CerbMem.PointerValue) =>
               let zero := CerbMem.integerValueMval (Signed Int_)
                 (CerbMem.integerIval (0 : Int))
               nd_bind
-                (CerbMem.storeM (CerbLocation.other "errno init")
+                (CerbMem.storeM tagDefs (CerbLocation.other "errno init")
                   signed_int false ptr_val zero)
                 (fun (_ : CerbMem.Footprint) => nd_return ptr_val))))
           (fun (errno_ptr_val : CerbMem.PointerValue) =>

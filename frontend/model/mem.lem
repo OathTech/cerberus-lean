@@ -76,6 +76,20 @@ val kill: Loc.t -> bool -> pointer_value -> memM unit
 val load: Loc.t -> Ctype.ctype -> pointer_value -> memM (footprint * mem_value)
 val store: Loc.t -> Ctype.ctype -> (* is_locking *)bool -> pointer_value -> mem_value -> memM footprint
 
+(* C1 (effect retirement, charter section 4.2): the mem-ops whose
+   hand-written CerbMem implementations read the tag-definition GLOBAL
+   are declared READER CONSUMERS — their generated call sites pass the
+   reader parameters (the linked table, or the phase-appropriate empty
+   map at elaboration-time entries) as extra leading arguments, and the
+   CerbMem implementations take them explicitly. The set below is the
+   measured global-read closure of CerbMem.lean (16 vals: the
+   load/store/allocate family, the shift/diff/align/deref group, the
+   memcpy/memcmp/realloc group, and the sizeof/alignof/offsetof ival
+   entries). OCaml (Impl_mem) is untouched. *)
+declare {lean} reader_consumer val allocate_object
+declare {lean} reader_consumer val load
+declare {lean} reader_consumer val store
+
 declare ocaml target_rep function allocate_object = `Impl_mem.allocate_object`
 declare lean target_rep function allocate_object = `CerbMem.allocateObject`
 declare ocaml target_rep function allocate_region = `Impl_mem.allocate_region`
@@ -133,6 +147,7 @@ declare ocaml target_rep function ge_ptrval = `Impl_mem.ge_ptrval`
 declare lean target_rep function ge_ptrval = `CerbMem.gePtrval`
 declare ocaml target_rep function diff_ptrval = `Impl_mem.diff_ptrval`
 declare lean target_rep function diff_ptrval = `CerbMem.diffPtrval`
+declare {lean} reader_consumer val diff_ptrval
 
 val update_prefix: (Symbol.prefix * mem_value) -> memM unit
 val prefix_of_pointer: pointer_value -> memM (maybe string)
@@ -144,10 +159,12 @@ declare lean target_rep function prefix_of_pointer = `CerbMem.prefixOfPointer`
 val validForDeref_ptrval: Ctype.ctype -> pointer_value -> memM bool
 declare ocaml target_rep function validForDeref_ptrval = `Impl_mem.validForDeref_ptrval`
 declare lean target_rep function validForDeref_ptrval = `CerbMem.validForDerefPtrval`
+declare {lean} reader_consumer val validForDeref_ptrval
 
 val isWellAligned_ptrval: Ctype.ctype -> pointer_value -> memM bool
 declare ocaml target_rep function isWellAligned_ptrval = `Impl_mem.isWellAligned_ptrval`
 declare lean target_rep function isWellAligned_ptrval = `CerbMem.isWellAlignedPtrval`
+declare {lean} reader_consumer val isWellAligned_ptrval
 
 (* Casting operations *)
 (* the first ctype is the original integer type, the second is the target referenced type *)
@@ -177,16 +194,20 @@ val array_shift_ptrval:  pointer_value -> Ctype.ctype -> integer_value -> pointe
 val member_shift_ptrval: pointer_value -> Symbol.sym -> Symbol.identifier -> pointer_value
 declare ocaml target_rep function array_shift_ptrval = `Impl_mem.array_shift_ptrval`
 declare lean target_rep function array_shift_ptrval = `CerbMem.arrayShiftPtrval`
+declare {lean} reader_consumer val array_shift_ptrval
 declare ocaml target_rep function member_shift_ptrval = `Impl_mem.member_shift_ptrval`
 declare lean target_rep function member_shift_ptrval = `CerbMem.memberShiftPtrval`
+declare {lean} reader_consumer val member_shift_ptrval
 
 (* Effectfull version of pointer shifting constructors *)
 val eff_array_shift_ptrval: Loc.t -> pointer_value -> Ctype.ctype -> integer_value -> memM pointer_value
 val eff_member_shift_ptrval: Loc.t -> pointer_value -> Symbol.sym -> Symbol.identifier -> memM pointer_value
 declare ocaml target_rep function eff_array_shift_ptrval = `Impl_mem.eff_array_shift_ptrval`
 declare lean target_rep function eff_array_shift_ptrval = `CerbMem.effArrayShiftPtrval`
+declare {lean} reader_consumer val eff_array_shift_ptrval
 declare ocaml target_rep function eff_member_shift_ptrval = `Impl_mem.eff_member_shift_ptrval`
 declare lean target_rep function eff_member_shift_ptrval = `CerbMem.effMemberShiftPtrval`
+declare {lean} reader_consumer val eff_member_shift_ptrval
 
 
 val memcpy: Loc.t -> pointer_value -> pointer_value -> integer_value -> memM pointer_value
@@ -195,10 +216,13 @@ val realloc: Loc.t -> Mem_common.thread_id -> integer_value -> pointer_value -> 
 
 declare ocaml target_rep function memcpy = `Impl_mem.memcpy`
 declare lean target_rep function memcpy = `CerbMem.memcpyM`
+declare {lean} reader_consumer val memcpy
 declare ocaml target_rep function memcmp = `Impl_mem.memcmp`
 declare lean target_rep function memcmp = `CerbMem.memcmpM`
+declare {lean} reader_consumer val memcmp
 declare ocaml target_rep function realloc = `Impl_mem.realloc`
 declare lean target_rep function realloc = `CerbMem.reallocM`
+declare {lean} reader_consumer val realloc
 
 val va_start: list (Ctype.ctype * pointer_value) -> memM integer_value
 val va_copy: integer_value -> memM integer_value
@@ -255,10 +279,13 @@ declare ocaml target_rep function op_ival = `Impl_mem.op_ival`
 declare lean target_rep function op_ival = `CerbMem.opIval`
 declare ocaml target_rep function offsetof_ival = `Impl_mem.offsetof_ival`
 declare lean target_rep function offsetof_ival = `CerbMem.offsetofIval`
+declare {lean} reader_consumer val offsetof_ival
 declare ocaml target_rep function sizeof_ival = `Impl_mem.sizeof_ival`
 declare lean target_rep function sizeof_ival = `CerbMem.sizeofIval`
+declare {lean} reader_consumer val sizeof_ival
 declare ocaml target_rep function alignof_ival = `Impl_mem.alignof_ival`
 declare lean target_rep function alignof_ival = `CerbMem.alignofIval`
+declare {lean} reader_consumer val alignof_ival
 declare ocaml target_rep function bitwise_complement_ival = `Impl_mem.bitwise_complement_ival`
 declare lean target_rep function bitwise_complement_ival = `CerbMem.bitwiseComplementIval`
 declare ocaml target_rep function bitwise_and_ival = `Impl_mem.bitwise_and_ival`

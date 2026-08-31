@@ -63,9 +63,14 @@ abbrev DSteps : DriveConfig → DriveConfig → Prop := Steps γexh
     concurrency path is the declared boundary (CONCURRENCY IS BROKEN,
     Driver.lean:512 region). -/
 def initConfig (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
+    (supply : Nat)
     (file1 : file core_run_annotation) (args : List String)
     (fs : CerbFS.FsState) : DriveConfig :=
-  ⟨.running (drive tagDefs false file1 args), initial_driver_state file1 fs⟩
+  -- Effect-retirement C1: `initial_driver_state` is the shape-(b)
+  -- supply-parameterized entry (Nat → file → fs_state → state × Nat);
+  -- the configuration takes the seed as a ∀-quantified parameter (the
+  -- consumer-ratified strengthening) and projects the state.
+  ⟨.running (drive tagDefs false file1 args), (initial_driver_state supply file1 fs).1⟩
 
 /-! ## Proved micro-lemmas: the relation computes on real driver objects -/
 
@@ -252,9 +257,10 @@ theorem runNDActiveSound : RunNDActiveSound :=
     infrastructure — never a headline statement, per the golean
     statement-TCB doctrine). -/
 def DriveReaches (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
+    (supply : Nat)
     (file1 : file core_run_annotation) (args : List String)
     (fs : CerbFS.FsState) (r : driver_result) (st' : driver_state) : Prop :=
-  DSteps (initConfig tagDefs file1 args fs) ⟨.done (.value r), st'⟩
+  DSteps (initConfig tagDefs supply file1 args fs) ⟨.done (.value r), st'⟩
 
 /-- ADEQUACY DISCHARGE SHAPE for a library-function harness (the arc-6
     libxml2 `xmlParseURISafe` shape): the headline statement quantifies
@@ -266,13 +272,14 @@ def DriveReaches (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
     `adequate` over `DStep` ⇒ (RunNDActiveSound-style soundness) every
     runner verdict is a relational trace ⇒ this statement. -/
 def HarnessAdequate (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
+    (supply : Nat)
     (file1 : file core_run_annotation) (args : List String)
     (fs : CerbFS.FsState) (spec : driver_result → Prop) : Prop :=
   ∀ (out : nd_status driver_result driver_error driver_state)
     (tr : List String) (st' : driver_state),
     (out, tr, st') ∈
       CerbND.runND (drive tagDefs false file1 args)
-        (initial_driver_state file1 fs) →
+        ((initial_driver_state supply file1 fs).1) →
     ∃ r : driver_result, out = Active r ∧ spec r
 
 /-! ## The parametric adequacy interface, instantiated
@@ -399,16 +406,18 @@ theorem seqModel_adequate_of_reach
     the CerbND-shaped headline is recovered per-instance. -/
 def HarnessAdequateM
     (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
+    (supply : Nat)
     (file1 : file core_run_annotation) (args : List String)
     (fs : CerbFS.FsState) (spec : DriveBehavior → Prop) : Prop :=
-  seqModel.Adequate (initConfig tagDefs file1 args fs) spec
+  seqModel.Adequate (initConfig tagDefs supply file1 args fs) spec
 
 /-- Model-parametric UB-freedom of a harness. -/
 def HarnessUBFree
     (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
+    (supply : Nat)
     (file1 : file core_run_annotation) (args : List String)
     (fs : CerbFS.FsState) : Prop :=
-  seqModel.UBFree (initConfig tagDefs file1 args fs)
+  seqModel.UBFree (initConfig tagDefs supply file1 args fs)
 
 /-! ## Memory: the points-to base over CerbMem.MemState -/
 

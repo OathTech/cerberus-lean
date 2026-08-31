@@ -22,8 +22,9 @@
 # gate and NOT partial-free: CerbMem.lean carries ONE partial def
 # (stringFromMemValue, pp-only — the nine exec-path functions were
 # fuel-totalized in arc-7 S4, escalation event 1) and panic! sites;
-# CerbTags.lean carries the with_tagDefs opaque (an axiom until
-# arc-17 S2b — now a kernel-checked opaque witness).
+# CerbTags.lean is shrunk to the TagDefsMap type + a fail-closed
+# coverage stub (effect-retirement C1: the with_tagDefs opaque and the
+# tag global are DELETED — value passing via reader_consumer).
 # Declared-boundary record: 2026-08-19_arc4-results.md (CerbND exit to be
 # recorded in the arc-7 results doc at close). Expanding the gate to the
 # remaining hand-written seams is a priced next-arc item.

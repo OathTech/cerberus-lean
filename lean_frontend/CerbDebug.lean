@@ -1,6 +1,17 @@
 /-
-  Debug output and debug level.
+  Debug output — pure stubs only.
   Corresponds to: util/cerb_debug.ml
+
+  Effect-retirement C1 (charter section 5, [USER 2026-08-31] decision
+  2): debug output is OUT of the semantics cone — the model returns
+  values, the driver prints. The model's debug path has been stubbed
+  pure since arc-1 (debug.lem: `get_level u = 0` on Lean;
+  `print_debug -> print_debug_pure`); this slice deletes the vestigial
+  level machinery (the C global + getLevelIO/setLevelIO externs +
+  armoured wrappers + the dbg_trace print_debug, native/debug.c). The
+  driver's verbosity choice is ordinary driver-local state in Main; if
+  Core-step tracing is wanted later it is a driver feature over
+  returned values (the --trace-nodes pattern), not a model effect.
 -/
 
 import CerbLocation
@@ -9,55 +20,16 @@ set_option autoImplicit true
 
 namespace CerbDebug
 
-/-- Debug level stored in a C global to avoid Lean's CSE on pure functions. -/
-@[extern "cerb_debug_get_level"]
-opaque getLevelIO : @& Unit → BaseIO Nat
-
-@[extern "cerb_debug_set_level"]
-opaque setLevelIO : @& Nat → BaseIO Unit
-
-/-- Pure wrappers used by hand-written code (Main.lean etc.).
-    Generated code uses the IO versions via effectful target_rep.
-    @[never_extract, noinline] (arc-14 S1 F5, sem:S11): matches the
-    CerbTags armour — without it the compiler may cache/CSE a closed
-    `get_level ()` read (evaluated before any `set_level`) or drop the
-    `set_level` effect. `set_level` is ALSO effect-discarding in pure
-    position (its result is Unit), so hand-written call sites that need
-    the write to happen MUST use the BaseIO extern `setLevelIO` directly
-    (see the effect-erasure invariant page); the pure wrapper stays for
-    generated read paths. -/
-@[never_extract, noinline]
-private unsafe def get_level_impl (_ : Unit) : Nat :=
-  unsafeBaseIO (getLevelIO ())
-
-@[never_extract, noinline]
-private unsafe def set_level_impl (n : Nat) : Unit :=
-  unsafeBaseIO (setLevelIO n)
-
-@[implemented_by get_level_impl]
-opaque get_level : Unit → Nat
-attribute [never_extract] get_level
-
-@[implemented_by set_level_impl]
-opaque set_level : Nat → Unit
-attribute [never_extract] set_level
+/-- The debug level, pure and constant: the generated model is compiled
+    at level 0 (debug.lem's Lean target_rep for the model path is the
+    literal 0; this def backs the residual hand-written readers in
+    CerbMem, whose oracle counterparts read a level the batch driver
+    leaves at 0). -/
+def get_level (_ : Unit) : Nat := 0
 
 def output_string (_ : String) : Unit := ()
 
-/-- print_debug — effectful version for generated code.
-    Returns BaseIO Unit so runEffectful wrapping prevents CSE. -/
-def printDebugIO (level : Nat) (_ : List d) (msg : Unit → String) : BaseIO Unit := do
-  let n ← getLevelIO ()
-  if level ≤ n then
-    dbg_trace (msg ()); pure ()
-  else
-    pure ()
-
-def print_debug (level : Nat) (ds : List d) (msg : Unit → String) : Unit :=
-  if level ≤ get_level () then dbg_trace (msg ()); () else ()
-
 def print_debug_located (_ : Nat) (_ : List d) (_ : CerbLocation.Loc) (_ : Unit → String) : Unit := ()
-
 
 /-- Pure no-op replacement for the debug print path (arc-1 ruling 2026-08-18:
     debug is stubbed everywhere; the proof path must not see IO). -/
