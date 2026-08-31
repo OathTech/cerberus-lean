@@ -31,7 +31,10 @@ def intTy : ctype := Ctype [] (.Basic (.Integer (.Signed .Int_)))
 def runStore (mv : MemValue) :
     nd_action Footprint String mem_error
       (mem_constraint IntegerValue) MemState :=
-  match storeM (CerbLocation.other "illtyped-store probe") intTy false
+  -- effect-retirement C1: storeM takes the tag table by value
+  -- (reader_consumer); this probe stores a scalar with no tag in
+  -- scope — the empty map is the pre-C1 (unset-global) state.
+  match storeM fmapEmpty (CerbLocation.other "illtyped-store probe") intTy false
       (nullPtrval intTy) mv with
   | ND f => (f initialMemState).1
 
