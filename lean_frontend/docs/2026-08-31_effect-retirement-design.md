@@ -1,8 +1,9 @@
 # Effect retirement: deleting `runEffectful` from the semantics (design note)
 
 Date: 2026-08-31. Branch `arc/effect-retirement` (base: mainline
-`58ec50779`). Status: SETTLED CHARTER (R3 — pending its fresh
-pre-C1 review) — the fresh adversarial
+`58ec50779`). Status: SETTLED CHARTER (R3.1 — the R3 pre-C1 review
+returned CLEAR-WITH-AMENDMENTS, applied; C1 briefs from this
+revision) — the fresh adversarial
 review returned RATIFY-WITH-AMENDMENTS (applied in R1), the consumer
 review returned RATIFY (absorbed in R2, §10 pointer), and all five
 operator questions are CLOSED with [USER 2026-08-31] rulings (§9,
@@ -49,6 +50,20 @@ analysis (§3.6) shows one site with **unavoidable oracle
 draw-sequence movement**, which amends Q1 into an explicit operator
 decision about tolerated, adjudicated oracle renumbering.
 
+Revision R3.1 (same date; the R3 fresh review returned
+CLEAR-WITH-AMENDMENTS — no ruling re-opened, no design change):
+propagation fixes only — the three live withdrawn-scope sentences
+re-grounded on the rescoped O2/O6 (§3.5 preamble, §3.4 framing,
+§8.4 R1 row); the Q1b-rescope notice to the lem-side external-review
+record registered as an L2 erratum rider (§3.2); cite and label
+corrections (§8.5 num.lem line, §7.2 CerbUtils row, §1.3 measured
+census, §6.3 manual deferral); the topo_order two-source
+adjudication note (§8.1 gate item a); the O2 base-drift C1 duty; the
+fuel-note flag closed BLESSED with the named C1-brief budget-sizing
+item (§8.3); NOTE-1 provenance upgraded to the committed audit log
+(§3.2); the §8.5 CerbMem `Int.tdiv` verification resolved. C1 is
+briefed from this revision.
+
 Revision R3 (same date; supersedes R2's "final"): (1) Q1b receives
 its FINAL ruling — **TOLERATED** [USER 2026-08-31] — together with an
 operator PRINCIPLE on order-dependent output (§9, §3.6); the R2
@@ -59,7 +74,7 @@ record, commit `156e57cb8`,
 one site; O2 is REPLACED for the tolerated route by a one-time
 adjudicated rebaseline obligation and O6 absorbs the re-emission
 procedure. (3) Three new named C1 gate items (§8.1). (4) The §8.3 M2
-rider is WITHDRAWN as an erratum (§8.4 — L0 verified NO defect).
+rider is WITHDRAWN as an erratum (§8.5 — L0 verified NO defect).
 (5) L0/L1 outcomes absorbed: slices DONE, deviations adjudicated,
 L2 riders registered, §3.2/§4.2 status implemented-and-audited.
 (6) S0 census absorbed: the C2 gate-design caveat (partial-def
@@ -258,7 +273,10 @@ Expectation from the static census: `initial_driver_state` and the
 frontend entries are dirty (via `Symbol.fresh*` and the
 `initial_core_run_state` seed); `driver2` may already be clean (the
 run-time mint is threaded, §2.3); the gate covers the whole entry set
-either way.
+either way. [R3.1: MEASURED at S0, §8.1 — dirty kernel cones:
+`initial_driver_state` and `translate` only; the other seven clean,
+with the partial-def-opacity caveat of §7.2 (desugar is
+clean-kernel but dirty-compiled).]
 
 ### 1.4 Explicit non-goals (R2 — consumer assumptions made checkable)
 
@@ -560,10 +578,21 @@ target_rep are EXCLUDED from supply lifting (their bodies are dead
 text and their call sites emit the rep, which cannot take a supply)
 — a deliberate, documented divergence from the reader pre-pass,
 blessed (the alternative silently injects state into a hand-written
-rep). **L2 riders registered:** the paren-split application-spine
-strictness pin + in-code note (the L1 delta audit's NOTE-1, relayed
-— to land as a lem-side test + comment in L2), and the lem-side
-review-doc erratum of §8.5.
+rep). **L1 deviation adjudications above are [AGENT] (orchestrator
+absorption ruling, R3), operator-overridable at the merge gates.**
+**L2 riders registered:** (i) the paren-split application-spine
+strictness pin + in-code note (the L1 delta audit's NOTE-1 —
+record: lem-lean `doc/lean-backend/2026-08-31_arc-audit-log.md` @
+`af5df71`, which carries the rider text in-repo); (ii) the lem-side
+review-doc erratum of §8.5; (iii) R3.1: the **Q1b-rescope notice to
+the lem-side external-review record**
+(`doc/lean-backend/2026-08-31_effect-retirement-external-review.md`
+— its §2 still reads "one order-moved site" / "behavior preserved
+(O2/O6)" / the escalation clause, and the consumer read that text;
+the L2 erratum commit carries a dated notice pointing at this
+charter's §3.6.1/O2/O6 as the correction of record — chosen over
+the C1 change-manifest because both erratum duties land in the same
+lem-side docs commit).
 
 **Annotation surface.** `declare {lean} supply val f`, target-scoped
 exactly like `reader`. Requirement: `f : unit -> nat` (generation-
@@ -747,8 +776,9 @@ monadic boundaries, on the in-tree precedent. Framing per R1 A4,
 stated once and relied on throughout: the accommodations change
 generated-OCaml **text** — the §6.4 diff is nonempty by design,
 every hunk manifest-recorded — while oracle dynamic **behavior** is
-a separately-gated property (O2/O6, with the §3.6 per-site analysis
-and its one movement site). "OCaml-output-preserving" is not claimed
+a separately-gated property: under the Q1b TOLERATED ruling, the
+S0-measured movement class rebaselines once under the rescoped
+O2/O6 (§3.5, §3.6.1). "OCaml-output-preserving" is not claimed
 of the accommodations as a class.
 
 **(a) Backend feature (zero model delta).** `declare {lean} supply
@@ -800,8 +830,12 @@ erase_loop_control stmt in`), so its draws are a contiguous block in
 the dynamic sequence. Treatment: the pass's state threads the supply
 too (a supply component beside `erase_loop_control_state`, seeded
 from the elaboration supply at the 4355 call — which becomes a
-monadic position — and returned to it). Order-preserved: the pass's
-draws stay contiguous at the same position (§3.6 table).
+monadic position — and returned to it). R3.1: the claim here is
+CONTIGUITY ONLY — the pass's draws stay a contiguous block
+(S0-witnessed: the two-loop probe shows the `continue`/`break`
+mints contiguous); the block's POSITION in the overall sequence
+shifts with the tolerated movement class like everything else
+(§3.6.1), and no same-position claim is made.
 
 **(c) Model accommodation m2 — the const-expr seam.**
 `evalConstantExpression`/`evalConstantExpressionAux` carry the supply
@@ -831,16 +865,17 @@ claim "no observable output depends on the old stratification" must
 be earned by the full battery, and any baseline movement is a
 finding). Option S2 (two streams, conservative): keep desugar
 0-based per TU; `desugM` gains a second field for the ambient stream
-seeded at 2^20. R1 correction (A1-iv): S2's numbering is
-byte-identical to today **as a measured expectation, not by
-construction** — the §3.6 movement site reorders draws within the
-ambient stream regardless of stream count, and every other site's
-construct/run adjacency is an argued property the battery confirms,
-not a syntactic identity. S2's real content is narrower: it avoids
-the *cross-stream* renumbering S1 adds on top (desugar ids shifting
-into the unified stream). Cost: the stratification invariant
-survives as a proof obligation on the seeding instead of dying, and
-two supplies thread where one would do.
+seeded at 2^20. R3.1 re-grounding (record hygiene — the decision is
+RULED S1, so this paragraph is the record of the rejected option's
+honest assessment, not a live comparison): S2 would NOT have been
+byte-stable either — the S0-measured movement class reorders draws
+within the ambient stream regardless of stream count (R1's
+"byte-identical by construction" claim was already corrected to a
+measured expectation at R1, and S0 then measured the movement as a
+class). S2's only real content was avoiding the *cross-stream*
+renumbering S1 adds on top (desugar ids shifting into the unified
+stream), at the cost of keeping the stratification invariant as a
+live seeding obligation and threading two supplies where one does.
 
 **(e) Core_unstruct**: drop the PAIR `Core_unstruct` +
 `Core_unstruct_auxiliary` from the Lean generation/build lists
@@ -874,11 +909,13 @@ arc-13 scheme R-B, Lean-side desugar ids are deliberately 0-based
 per TU while the oracle draws ambiently
 (`cabs_to_ail_effect.lem:240` comment, `native/fresh_int.c`), and
 the differentials are id-canonicalized (`Main.lean:1071-1073`). The
-precise obligation is therefore two-sided: the oracle's dynamic draw
-sequence is preserved exactly (O2), and the Lean side reproduces its
-own current validated dynamic sequence — the OCaml counter's
-*semantics* (sequential distinct draws in call order), not its
-values (O1, O3).
+precise obligation is therefore two-sided, in its R3 form: the Lean
+side reproduces the OCaml counter's *semantics* — sequential
+distinct draws in dynamic call order — not its values, with
+transform-local order fidelity (O1) and the Lean-side renumbering
+measured (O3); and the oracle side undergoes the ONE-TIME
+adjudicated rebaseline of the S0-measured movement class (O2/O6 —
+per-site oracle sequence preservation is withdrawn, §3.6.1).
 
 - **O1 (transform-local).** The feature's A-normal sequencing emits
   draws in the evaluation order of the pre-transform generated code
@@ -911,6 +948,11 @@ values (O1, O3).
   load-bearing for the lem feature itself (transform-local order
   fidelity — exactly the obligation the L1 audit's MAJOR-1
   short-circuit finding was a defect against, fixed at `4bff8b7`).
+  R3.1 base-drift caveat, a C1 duty (S0 record §7: the scan ran at
+  the branch tree, base `58ec50779`, while mainline has advanced):
+  **re-run the S0 scanner at the rebased C1 base** before the
+  rebaseline — the enumeration must cover any growth in the
+  symbol-visible pin set; new rows join the adjudication.
 - **O3 (Lean-side renumbering, iff S1).** No observable output
   depends on the retired 2^20 stratification or on today's exact id
   values. Discharged only by the FULL battery including Tier B
@@ -1285,7 +1327,11 @@ already have):
   variant.
 - Documentation: `doc/lean-backend/DESIGN.md` section (replacing the
   "one axiom, by design" paragraph at end state), lem manual entry
-  beside the reader declare.
+  beside the reader declare. [R3.1: the manual entry is DEFERRED per
+  L1 deviation 1 (adjudicated) — the reader itself has no manual
+  entry; `doc/manual/backend_lean.md` is the review's m5
+  registered-stale item and its rewrite is a priced item of its own;
+  DESIGN.md is the documentation home the features actually use.]
 - No cerberus entanglement: names, tests, and docs speak of supplies
   and counters, not symbols; `reader_consumer` (§4.2) is specified
   the same way.
@@ -1409,9 +1455,12 @@ cerberus-lean:
     **temporal**; named mover: this arc's reader/supply machinery,
     applied in a FOLLOW-UP slice (explicitly NOT in-arc; the
     consumer confirmed no need to accelerate it on their account);
-  - `CerbUtils.lean:19,38,41,79` (no-op timing/log refs,
-    intentionally unread — retained for OCaml module-shape parity) —
-    **permanent-declared**.
+  - `CerbUtils.lean:19,38,41,79` — label refined per the committed
+    allowlist (R3.1): `timingStackRef`/`logRef`/`STD_impl` are the
+    no-op timing/log refs (intentionally unread — OCaml module-shape
+    parity); `boundedIntegerImpl` is a deterministic `pure lo` stub
+    with its own in-file mover note, not a timing/log ref —
+    **permanent-declared** as a family.
   Any occurrence outside the enumerated list fails.
   `check_exec_purity.sh`'s boundary-honesty header updates to the
   shrunk seam list.
@@ -1517,7 +1566,14 @@ lands in two phases:
   sets) is verified semantically-equivalent-up-to-permutation across
   the rebaseline, and each site where output DOES depend on symbol
   order is registered per the §9 operator principle (a finding and
-  an upstream candidate, never accommodated);
+  an upstream candidate, never accommodated). R3.1 note: at C1 the
+  `topo_order`/linked-definition-emission observable has TWO
+  independent movement sources — the tolerated renumbering AND L0's
+  M4 fix (`setChoose` now comparator-minimum, lem-lean `70873ce`),
+  which changes `choose`-dependent order on its own; the C1
+  adjudication must SEPARATE the two (the L0 record item 7 already
+  recommends a differential pin on topo_order-affected output for
+  exactly this — cite and execute it here);
   **(b) the L1 deviation-4 cone check** — an explicit check that NO
   supply-lifted `Let_def`-bound top-level VALUE sits in the adopted
   lifted cone (a drawing value binding has per-use state-passing
@@ -1574,9 +1630,13 @@ feature gets its **own design note before L1 is briefed** (R3
 status note: L1 implemented it @ `40df3a8` along the review's
 attachment-point analysis, documented in the L1 record's feature
 section + DESIGN.md; NO standalone design note was written — the
-L1 record is the de-facto note. FLAGGED for the pre-C1 review
-rather than silently blessed: the charter requirement was met in
-substance, not in form); this
+L1 record is the de-facto note. R3.1: the flag is CLOSED — the R3
+review adjudicated it BLESSED, met-in-substance. The residue is a
+named C1-brief item: **the budget-sizing decision for the
+step-runner client** (the `drive_nonmemory_steps_aux2` family),
+justified against `docs/2026-08-31_stack-ceiling-design.md`, with
+the exported-statement `lemDefaultFuel` side-condition impact
+stated for the consumer); this
 note's only constraints on it: it rides L1 (one pin bump, one
 review), its tests join the same suite, and it must not interact
 with supply lifting beyond the composition case already covered
@@ -1602,7 +1662,7 @@ any slice.
 
 | # | Risk | Mitigation |
 |---|---|---|
-| R1 | Call-order divergence (transform or migration reorders draws) | O1/O2 structural rules incl. the construct/run adjacency argument (§3.6 table re-verified at implementation) + pinned-order lem test + full battery byte-identity; the ONE known movement site handled per Q1b under O6's adjudication discipline; oracle side additionally `check_ail_window` (refuses loudly) |
+| R1 | Call-order divergence (transform or migration reorders draws beyond the tolerated class) | O1 transform-local fidelity (pinned-order lem test + the L1 MAJOR-1 exhibit) + the rescoped O2/O6 one-time adjudicated rebaseline (every delta row-by-row, unexplained delta = finding) + full battery; oracle side additionally `check_ail_window` (refuses loudly) |
 | R2 | Lean-side renumbering shift (S1) surfaces an iteration-order-observable | O3: full battery incl. Tier B/C before any claim; baselines fail closed in both directions; fallback = S2 (two streams) is a contained retreat, decided by measurement not re-design |
 | R3 | Reader/supply composition bug (binder order, double injection) | fixed binder order in the spec; dedicated composition test; the exec slice exercises it for real in the mini-run (reader_seed + supply) |
 | R4 | Instance-method gap (the old `lean_backend.ml:1546-1548` limitation: attributes can't be emitted on instance fields, so effectful calls in instance methods were only one-level protected) | post-retirement the hazard class is deleted with the mechanism — there is nothing to protect; verified: no effectful call site sits in a generated instance method today (all 9 applied sites are in plain `Val_def`s); G-inst keeps the supply analog fail-closed rather than silently under-protected |
@@ -1618,7 +1678,9 @@ The review's M2 and this charter's former §8.3 rider asserted lem
 item 5, VERIFIED-NO-DEFECT; record: lem-lean
 `doc/lean-backend/2026-08-31_L0-fix-first-record.md` §"Item 5",
 commit `9614621`): the chain is `integerDiv` → `Nat_big_num.div`
-(`library/num.lem:1405`) → `Big_int_Z.div_big_int` (zarith's
+(`library/num.lem:1403` — the OCaml declare; `:1405` is the COQ
+`Z.div` line, itself a plausible source of the original confusion)
+→ `Big_int_Z.div_big_int` (zarith's
 num-compat layer) — **Euclidean**, agreeing with Lean's `Int.ediv`
 at every signed corner (measured verbatim both targets, incl.
 compiled binaries; `integerMod` likewise). Applying the review's
@@ -1637,9 +1699,14 @@ ported. [AGENT] verification note, flagged not silently folded: the
 same grep shows the class also includes the pointer-difference
 divisions `memory/vip/impl_mem.ml:718` and
 `memory/concrete/impl_mem.ml:1967` (`Z.div` on a possibly-negative
-address difference — the ported CerbMem mirror of the concrete
-site should be checked for truncation-vs-Euclidean parity as part
-of the same obligation).
+address difference). R3.1, the check RESOLVED (R3 review
+verification, re-confirmed against this tree): the ported CerbMem
+mirror already handles the class correctly — `CerbMem.lean:985`
+defines `integerDiv_t := Int.tdiv` (docstring citing the truncating
+`Z.div`), used at `:1013` (the `IntDiv` op path, with the explicit
+zero guard) and `:1868` (`diffPtrval`) — so the C1 parity check on
+these seams is an expected-pass confirmation, not open work; the
+vip model is unported and its obligation attaches at porting time.
 
 The review document itself is a committed verbatim record; its copy
 on the lem-lean arc branch
