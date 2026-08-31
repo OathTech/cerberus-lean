@@ -11,18 +11,38 @@
   remains real per-fd offset semantics incl. open flags/O_TRUNC —
   priced M, parity-detective report §3 RC-1).
 
-  FAIL-CLOSED REGIME (trust-basket item b): the model now tracks per-fd
-  offsets honestly (reads/writes advance them, lseek always did) and
-  serves ONLY the patterns it can answer CORRECTLY:
+  FAIL-CLOSED REGIME (trust-basket item b + audit-F1 response): the
+  model tracks per-fd offsets honestly (reads/writes advance them,
+  lseek always did) and open is flag-aware enough to refuse content
+  states it cannot track. Precisely:
+
+  SERVED (content-correct):
+    - open of a path with no existing file (created empty, offset 0);
+    - read-only reopen of an existing file (no write/trunc flag bits);
     - read  at offset 0 (whole-prefix read), or at EOF (empty result);
     - write at offset == file length (pure append; a fresh file starts
       at 0 == 0, so sequential writes on a newly opened file work);
     - pread at offset 0 or EOF; pwrite at offset == file length.
-  Every other offset combination — the cases the old model answered
-  with SILENTLY WRONG DATA (fgetc-until-EOF looping forever,
-  seek-then-read returning the byte at 0: parity-detective RC-1,
-  wrong answers on programs both engines accept) — now PANICS with a
-  named CerbFS-refusal message instead of returning data.
+
+  REFUSED (loud panic, named reason):
+    - open of an EXISTING file with write or truncate intent
+      (O_WRONLY/O_RDWR/O_TRUNC — the audit-F1 truncate-on-reopen shape
+      previously served STALE data with no refused op on the path);
+      this includes O_APPEND reopen (refused, not served);
+    - every other read/write/pread/pwrite offset combination — the
+      cases the old model answered with SILENTLY WRONG DATA
+      (fgetc-until-EOF looping forever, seek-then-read returning the
+      byte at 0: parity-detective RC-1).
+
+  KNOWN-DIVERGENT AND STILL SERVED (named residuals, part of the same
+  registered mover — this list is the honesty bound; the served set
+  above is correct only OUTSIDE these):
+    - open of a MISSING file without O_CREAT succeeds and creates an
+      empty file (POSIX: ENOENT — a missing-file read-open observes
+      fopen != NULL and empty-EOF reads);
+    - O_EXCL is ignored (no EEXIST);
+    - stat/lstat return zeroed fields except size (suite/fs/stat.c
+      STDOUT_DIFF).
 
   Refusal mechanism [deliberate]: `panic!`, not an FsError. An FsError
   is converted by the driver into errno + a -1 return
@@ -119,15 +139,33 @@ private def lookupFd (st : FsState) (fd : Nat) : Option FdEntry :=
 
 -- FS operations return (new_state, Either error result)
 
-def fs_open (st : FsState) (path : String) (_ : Int) (_ : Option Int) : FsState × (Sum FsError Nat) :=
-  let fd := st.nextFd
-  let entry : FdEntry := { path := path }
-  let st' := { st with fds := (fd, entry) :: st.fds, nextFd := fd + 1 }
-  -- Create file if it doesn't exist
-  let st' := if (lookupFile st path).isNone
-    then { st' with files := (path, []) :: st'.files }
-    else st'
-  (st', .inr fd)
+def fs_open (st : FsState) (path : String) (oflag : Int) (_ : Option Int) : FsState × (Sum FsError Nat) :=
+  let mkFd (st : FsState) : FsState × (Sum FsError Nat) :=
+    let fd := st.nextFd
+    let entry : FdEntry := { path := path }
+    ({ st with fds := (fd, entry) :: st.fds, nextFd := fd + 1 }, .inr fd)
+  match lookupFile st path with
+  | none =>
+    -- Created empty regardless of O_CREAT — a named KNOWN-DIVERGENT
+    -- residual (header): POSIX gives ENOENT without O_CREAT.
+    mkFd { st with files := (path, []) :: st.files }
+  | some contents =>
+    -- Fail-closed (audit F1): the model ignores open flags' content
+    -- effects (O_TRUNC truncation, write positioning/modes), so
+    -- reopening an EXISTING file with write or truncate intent leaves
+    -- content state the model cannot track — the truncate-on-reopen
+    -- shape served STALE data later with no refused op on the path.
+    -- Flag encoding is SibylFS fs_spec.lem's (mirrored by
+    -- runtime/libc/include/posix/fcntl.h:27-45): O_WRONLY=0o4,
+    -- O_RDWR=0o10, O_TRUNC=0o400. Read-only reopen is content-correct
+    -- and stays served. Deliberate divergence from the OCaml side
+    -- (SibylFS models open flags faithfully); mover: real open-flag
+    -- semantics — the same M-priced item as the header's.
+    let flags := oflag.toNat
+    if flags &&& 0o4 != 0 || flags &&& 0o10 != 0 || flags &&& 0o400 != 0 then
+      panic! s!"CerbFS refusal (fail-closed fs-model boundary): open of existing {contents.length}-byte file '{path}' with write/truncate intent (oflag {oflag}) — the minimal fs model cannot track the resulting content state (O_TRUNC/write modes ignored); serving this fd would answer with WRONG data (CerbFS.lean header; mover: real open-flag semantics)"
+    else
+      mkFd st
 
 def fs_close (st : FsState) (fd : Int) : FsState × (Sum FsError Nat) :=
   let fdN := fd.toNat

@@ -96,11 +96,16 @@ scenario). Not versionable here.
 
 The detective's S-priced half-fix, exactly (the M-priced real-offset
 implementation deliberately NOT attempted). `CerbFS.lean` now tracks
-per-fd offsets honestly and serves only patterns it answers
-correctly: read at offset 0 (whole prefix, advances offset) or at EOF
-(empty); write/pwrite as pure append at end-of-file; pread at 0/EOF.
+per-fd offsets honestly; the served set at this commit was: read at
+offset 0 (whole prefix, advances offset) or at EOF (empty);
+write/pwrite as pure append at end-of-file; pread at 0/EOF.
 Everything else panics with a named `CerbFS refusal (fail-closed
-fs-model boundary)` message. `panic!` rather than an `FsError` is
+fs-model boundary)` message. **Precision correction (audit F1, §7):
+"serves only patterns it answers correctly" was an overstatement at
+this commit — flag-blind `fs_open` left truncate-on-reopen serving
+stale data with no refused op on the path. Closed by the §7
+audit-response commit; the precise served/refused/known-divergent
+partition now lives in the CerbFS.lean header and §7.** `panic!` rather than an `FsError` is
 deliberate and documented in-code: `driver.lem`'s `store_error`
 (~:211) turns an FsError into errno + −1, which the C program can
 absorb into a *different* wrong answer; `panic!` is the house
@@ -343,7 +348,91 @@ paths csmith programs never take; (c) is JSON-byte-identical on
 succeeding files and the lane's `CERB_SKIP` classes derive from
 oracle exec, not cabs-json); any movement is a finding.
 
-## 7. Provenance
+## 7. Audit response addendum (2026-08-31)
+
+Pre-merge audit verdict: **MERGE-SAFE-WITH-NOTES**; one moderate
+finding (F1) required this audit-response pass before the merge ask.
+Ruling provenance: [AGENT] orchestrator ruling (fail-closed doctrine;
+operator can override at the merge gate).
+
+### F1 (MODERATE) — flag-blind fs_open left a silent wrong-answer path
+
+Auditor's finding: `fs_open` ignored open flags, so truncate-on-reopen
+(write → close → `fopen("w")` on the existing file → close → reopen
+"r" → read) served STALE contents with no refused op on the path —
+exactly the class item (b) claimed closed — and the item-(b) header's
+"serves ONLY the patterns it can answer CORRECTLY" was false as an
+absolute. Reproduced pre-fix with the auditor's probe (now committed
+as `tests/parity-probes/probes/fopen_trunc_reopen.c`), verbatim:
+
+    === ORACLE (exit 0) ===
+    Defined {value: "Specified(5)", stdout: "", stderr: "", blocked: "false"}
+    === LEAN (exit 0) ===
+    Defined {value: "Specified(97)", stdout: "", stderr: "", blocked: "false"}
+
+Fix, both ruled halves:
+
+1. **Refusal widened**: `fs_open` is now flag-aware enough to refuse
+   opening an ALREADY-EXISTING file with write or truncate intent
+   (O_WRONLY=0o4 / O_RDWR=0o10 / O_TRUNC=0o400; encoding is SibylFS
+   `fs_spec.lem`'s, mirrored by
+   `runtime/libc/include/posix/fcntl.h:27-45`, cited in-code with the
+   deliberate-divergence note — SibylFS models open flags faithfully).
+   Read-only reopen of an existing file stays served
+   (content-correct). O_APPEND reopen is refused, not served. The
+   M-priced real-implementation mover stays registered.
+2. **Overstatement fixed**: the CerbFS.lean header now states the
+   exact served / refused / KNOWN-DIVERGENT-AND-STILL-SERVED
+   partition (the named residuals: missing-file open without O_CREAT
+   mis-creates instead of ENOENT; O_EXCL ignored; zeroed stat
+   fields), and §2 of this record carries the precision correction.
+
+Post-fix probe evidence (verbatim):
+
+    ##### fopen_trunc_reopen.c
+    === ORACLE (exit 0) ===
+    Defined {value: "Specified(5)", stdout: "", stderr: "", blocked: "false"}
+    === LEAN (exit 134) ===
+    PANIC at CerbFS.fs_open CerbFS:166:6: CerbFS refusal (fail-closed fs-model boundary): open of existing 2-byte file 't.txt' with write/truncate intent (oflag 292) — the minimal fs model cannot track the resulting content state (O_TRUNC/write modes ignored); serving this fd would answer with WRONG data (CerbFS.lean header; mover: real open-flag semantics)
+
+Re-verified unchanged (verbatim one-liners): the auditor's
+seek-then-write shape refuses at the write
+(`PANIC at CerbFS.fs_write CerbFS:200:6: … write on fd 3 at offset 1
+of 4-byte file 's.txt' …`); `fgetc_eof.c` `AGREE VAL:Specified(2)`;
+`fseek_read.c` / `fread_seq.c` refuse at `CerbFS.fs_read` as recorded;
+`tests/tcc/40_stdio.c` terminates immediately with the read refusal
+(exit 134).
+
+### Re-run battery (fresh stamped binaries)
+
+Tier A in full (13/13 PASS, bytes included: `SUMMARY: exec_match=9
+neg_pinned=5 fail=0`) + immaculate (PASS at committed baseline) + gcc
+lane `--check-baseline` PASS rc 0, SUMMARY (verbatim, unchanged from
+§6 — the ruling's expected line):
+
+    SUMMARY: total=1953 compared=1880 agree=1871 agree_nd=0 triaged=9 disagree=0 o2_agree=190 skip_lean_crash=9 skip_lean_fail=9 skip_lean_timeout=11 skip_ub=44 triaged_addr=9
+
+(`Baseline check: 0 regression(s), 1 improvement(s)` — the §5
+offsetof improvement line reappears every run by design, un-regenerated.)
+
+### Other audit notes (recorded, no action this pass)
+
+- **F2**: the refusal's fail-closure is conditional on
+  `LEAN_ABORT_ON_PANIC=1` (a bare `panic!` prints and continues with
+  the Inhabited default). All harness paths set it
+  (`common.sh run_cerberus_lean`); documented, no action.
+- **F3**: served-subset positive coverage is thin (zero corpus files
+  exercise file ops — which is also why the lanes could not catch
+  F1). Registered as an S-priced candidate: a small served-pattern
+  probe family (create-write-close-reopen-read, full-read-then-EOF,
+  rewind-reread, read-only reopen) under `tests/parity-probes/`.
+- **F5**: worker-era `.tmp/scripts/` csmith staging residue (167M
+  measured at deletion, 8 staging dirs + smoke files) deleted —
+  ephemeral discipline at slice end.
+- The item-(e) 4-row baseline-regeneration diff remains enumerated
+  and UN-applied, awaiting operator sanction at the merge gate.
+
+## 8. Provenance
 
 - [USER via brief] the basket itself, item order, the S-not-M scoping
   of (b), the no-tray ruling on (c).
