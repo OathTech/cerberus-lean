@@ -1,12 +1,12 @@
 -- Fun map
 proc scan_classify (s: pointer): eff loaded integer :=
   let strong c: pointer = create(Ivalignof('signed int'), 'signed int') in
-  let strong a_631: loaded integer = bound(pure(Specified(0))) in
-  store('signed int', c, conv_loaded_int('signed int', a_631)) ;
+  let strong a_629: loaded integer = bound(pure(Specified(0))) in
+  store('signed int', c, conv_loaded_int('signed int', a_629)) ;
   let strong i: pointer = create(Ivalignof('signed int'), 'signed int') in
-  let strong a_632: loaded integer = bound(pure(Specified(0))) in
-  store('signed int', i, conv_loaded_int('signed int', a_632)) ;
-  save while_629: unit (i: pointer:= i, c: pointer:= c) in
+  let strong a_630: loaded integer = bound(pure(Specified(0))) in
+  store('signed int', i, conv_loaded_int('signed int', a_630)) ;
+  save while_631: unit (i: pointer:= i, c: pointer:= c) in
     let strong a_633: loaded integer =
       bound(
         let weak (a_635: loaded integer, a_636: loaded integer) =
@@ -75,14 +75,14 @@ proc scan_classify (s: pointer): eff loaded integer :=
           end
         )
       ) in
-    let strong a_630: boolean =
+    let strong a_632: boolean =
       case a_633 of
         | Specified(a_634: integer) =>
             pure(if not(a_634 = 1) then True else False)
         | Unspecified(_: ctype) =>
             nd(pure(True), pure(False))
       end in
-    if a_630 then
+    if a_632 then
       let strong a_667: loaded integer =
         bound(
           let weak a_666: pointer =
@@ -215,7 +215,7 @@ proc scan_classify (s: pointer): eff loaded integer :=
       pure(Unit) ;
       save continue_625: unit (i: pointer:= i, c: pointer:= c) in  pure(Unit) ;
       pure(Unit) ;
-      run while_629(i, c)
+      run while_631(i, c)
     else
       pure(Unit) ;
   save break_626: unit (i: pointer:= i, c: pointer:= c) in  pure(Unit) ;
@@ -236,9 +236,9 @@ proc scan_classify (s: pointer): eff loaded integer :=
 
 proc main (): eff loaded integer :=
   let strong i: pointer = create(Ivalignof('signed int'), 'signed int') in
-  let strong a_548: loaded integer = bound(pure(Specified(0))) in
-  store('signed int', i, conv_loaded_int('signed int', a_548)) ;
-  save do_545: unit (i: pointer:= i) in
+  let strong a_545: loaded integer = bound(pure(Specified(0))) in
+  store('signed int', i, conv_loaded_int('signed int', a_545)) ;
+  save do_546: unit (i: pointer:= i) in
     let strong _: loaded integer =
       bound(
         let weak (a_568: pointer, a_592: loaded integer) =
@@ -314,7 +314,7 @@ proc main (): eff loaded integer :=
     pure(Unit) ;
     save continue_543: unit (i: pointer:= i) in  pure(Unit) ;
     pure(Unit) ;
-    let strong a_547: loaded integer =
+    let strong a_548: loaded integer =
       bound(
         let weak (a_549: loaded integer, a_550: loaded integer) =
           unseq(
@@ -373,9 +373,9 @@ proc main (): eff loaded integer :=
           end
         )
       ) in
-    case a_547 of
-      | Specified(a_546: integer) =>
-          if not(a_546 = 0) then run do_545(i) else pure(Unit)
+    case a_548 of
+      | Specified(a_547: integer) =>
+          if not(a_547 = 0) then run do_546(i) else pure(Unit)
       | Unspecified(_: ctype) =>
           pure(undef(<<DUMMY(unspecified AilSdo)>>))
     end ;

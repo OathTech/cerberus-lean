@@ -2,29 +2,29 @@
 proc arr_reverse (a: pointer, n: pointer): eff unit :=
   let strong i: pointer = create(Ivalignof('signed int'), 'signed int') in
   let strong j: pointer = create(Ivalignof('signed int'), 'signed int') in
-  let strong a_697: loaded integer = bound(pure(Specified(0))) in
-  store('signed int', i, conv_loaded_int('signed int', a_697)) ;
-  let strong a_698: loaded integer =
+  let strong a_695: loaded integer = bound(pure(Specified(0))) in
+  store('signed int', i, conv_loaded_int('signed int', a_695)) ;
+  let strong a_696: loaded integer =
     bound(
-      let weak (a_700: loaded integer, a_701: loaded integer) =
+      let weak (a_698: loaded integer, a_699: loaded integer) =
         unseq(
-          let weak a_699: pointer = pure(n) in
-          load('signed int', a_699)
+          let weak a_697: pointer = pure(n) in
+          load('signed int', a_697)
         ,
           pure(Specified(1))
         ) in
       pure(
-        case (a_700, a_701) of
-          | (Specified(a_702: integer), Specified(a_703: integer)) =>
+        case (a_698, a_699) of
+          | (Specified(a_700: integer), Specified(a_701: integer)) =>
               Specified(catch_exceptional_condition_sub('signed int', conv_int('signed int',
-              a_702), conv_int('signed int', a_703)))
+              a_700), conv_int('signed int', a_701)))
           | _: (loaded integer,loaded integer) =>
               undef(<<UB036_exceptional_condition>>)
         end
       )
     ) in
-  store('signed int', j, conv_loaded_int('signed int', a_698)) ;
-  save while_695: unit (i: pointer:= i, j: pointer:= j) in
+  store('signed int', j, conv_loaded_int('signed int', a_696)) ;
+  save while_703: unit (i: pointer:= i, j: pointer:= j) in
     let strong a_705: loaded integer =
       bound(
         let weak (a_707: loaded integer, a_708: loaded integer) =
@@ -64,14 +64,14 @@ proc arr_reverse (a: pointer, n: pointer): eff unit :=
           end
         )
       ) in
-    let strong a_696: boolean =
+    let strong a_704: boolean =
       case a_705 of
         | Specified(a_706: integer) =>
             pure(if not(a_706 = 1) then True else False)
         | Unspecified(_: ctype) =>
             nd(pure(True), pure(False))
       end in
-    if a_696 then
+    if a_704 then
       let strong t: pointer = create(Ivalignof('signed int'), 'signed int') in
       let strong a_719: loaded integer =
         bound(
@@ -276,7 +276,7 @@ proc arr_reverse (a: pointer, n: pointer): eff unit :=
       pure(Unit) ;
       save continue_693: unit (i: pointer:= i, j: pointer:= j) in  pure(Unit) ;
       pure(Unit) ;
-      run while_695(i, j)
+      run while_703(i, j)
     else
       pure(Unit) ;
   save break_694: unit (i: pointer:= i, j: pointer:= j) in  pure(Unit) ;
@@ -288,60 +288,60 @@ proc arr_reverse (a: pointer, n: pointer): eff unit :=
 
 proc main (): eff loaded integer :=
   let strong n: pointer = create(Ivalignof('signed int'), 'signed int') in
-  let strong a_538: loaded integer =
+  let strong a_534: loaded integer =
     bound(
-      let weak a_549: pointer =
-        let weak a_539: loaded pointer =
-          let weak (a_542: loaded pointer, a_544: loaded integer) =
+      let weak a_545: pointer =
+        let weak a_535: loaded pointer =
+          let weak (a_538: loaded pointer, a_540: loaded integer) =
             unseq(
-              let weak a_547: pointer = pure(choices) in
-              pure(Specified(array_shift(a_547, 'signed int', 0)))
+              let weak a_543: pointer = pure(choices) in
+              pure(Specified(array_shift(a_543, 'signed int', 0)))
             ,
               pure(Specified(0))
             ) in
-          case (a_542, a_544) of
-            | (Specified(a_543: pointer), Specified(a_545: integer)) =>
-                pure(Specified(array_shift(a_543, 'signed int', a_545)))
+          case (a_538, a_540) of
+            | (Specified(a_539: pointer), Specified(a_541: integer)) =>
+                pure(Specified(array_shift(a_539, 'signed int', a_541)))
             | _: (loaded pointer,loaded integer) =>
                 pure(undef(<<UB_CERB004_unspecified__pointer_add>>))
           end in
-        case a_539 of
-          | Specified(a_540: pointer) =>
-              let weak a_541: boolean =
-                memop(PtrValidForDeref, 'signed int', a_540) in
+        case a_535 of
+          | Specified(a_536: pointer) =>
+              let weak a_537: boolean =
+                memop(PtrValidForDeref, 'signed int', a_536) in
               pure(
-                if a_541 then
-                  a_540
+                if a_537 then
+                  a_536
                 else
                   undef(<<UB043_indirection_invalid_value>>)
               )
           | Unspecified(_: ctype) =>
               pure(undef(<<UB043_indirection_invalid_value>>))
         end in
-      load('signed int', a_549)
+      load('signed int', a_545)
     ) in
-  store('signed int', n, conv_loaded_int('signed int', a_538)) ;
+  store('signed int', n, conv_loaded_int('signed int', a_534)) ;
   let strong i: pointer = create(Ivalignof('signed int'), 'signed int') in
-  let strong a_550: loaded integer = bound(pure(Specified(0))) in
-  store('signed int', i, conv_loaded_int('signed int', a_550)) ;
-  save while_536: unit (i: pointer:= i, n: pointer:= n) in
-    let strong a_551: loaded integer =
+  let strong a_546: loaded integer = bound(pure(Specified(0))) in
+  store('signed int', i, conv_loaded_int('signed int', a_546)) ;
+  save while_547: unit (i: pointer:= i, n: pointer:= n) in
+    let strong a_549: loaded integer =
       bound(
-        let weak (a_553: loaded integer, a_554: loaded integer) =
+        let weak (a_551: loaded integer, a_552: loaded integer) =
           unseq(
-            let weak (a_560: loaded integer, a_561: loaded integer) =
+            let weak (a_558: loaded integer, a_559: loaded integer) =
               unseq(
-                let weak a_558: pointer = pure(i) in
-                load('signed int', a_558)
+                let weak a_556: pointer = pure(i) in
+                load('signed int', a_556)
               ,
-                let weak a_559: pointer = pure(n) in
-                load('signed int', a_559)
+                let weak a_557: pointer = pure(n) in
+                load('signed int', a_557)
               ) in
-            case (a_560, a_561) of
-              | (Specified(a_562: integer), Specified(a_563: integer)) =>
+            case (a_558, a_559) of
+              | (Specified(a_560: integer), Specified(a_561: integer)) =>
                   pure(
-                    if conv_int('signed int', a_562) <
-                    conv_int('signed int', a_563) then
+                    if conv_int('signed int', a_560) <
+                    conv_int('signed int', a_561) then
                       Specified(1)
                     else
                       Specified(0)
@@ -353,9 +353,9 @@ proc main (): eff loaded integer :=
             pure(Specified(0))
           ) in
         pure(
-          case (a_553, a_554) of
-            | (Specified(a_555: integer), Specified(a_556: integer)) =>
-                if conv_int('signed int', a_555) = conv_int('signed int', a_556) then
+          case (a_551, a_552) of
+            | (Specified(a_553: integer), Specified(a_554: integer)) =>
+                if conv_int('signed int', a_553) = conv_int('signed int', a_554) then
                   Specified(1)
                 else
                   Specified(0)
@@ -364,40 +364,40 @@ proc main (): eff loaded integer :=
           end
         )
       ) in
-    let strong a_537: boolean =
-      case a_551 of
-        | Specified(a_552: integer) =>
-            pure(if not(a_552 = 1) then True else False)
+    let strong a_548: boolean =
+      case a_549 of
+        | Specified(a_550: integer) =>
+            pure(if not(a_550 = 1) then True else False)
         | Unspecified(_: ctype) =>
             nd(pure(True), pure(False))
       end in
-    if a_537 then
+    if a_548 then
       let strong _: loaded integer =
         bound(
-          let weak (a_565: pointer, a_594: loaded integer) =
+          let weak (a_563: pointer, a_592: loaded integer) =
             unseq(
-              let weak a_566: loaded pointer =
-                let weak (a_569: loaded pointer, a_571: loaded integer) =
+              let weak a_564: loaded pointer =
+                let weak (a_567: loaded pointer, a_569: loaded integer) =
                   unseq(
-                    let weak a_574: pointer = pure(buf) in
-                    pure(Specified(array_shift(a_574, 'signed int', 0)))
+                    let weak a_572: pointer = pure(buf) in
+                    pure(Specified(array_shift(a_572, 'signed int', 0)))
                   ,
-                    let weak a_576: pointer = pure(i) in
-                    load('signed int', a_576)
+                    let weak a_574: pointer = pure(i) in
+                    load('signed int', a_574)
                   ) in
-                case (a_569, a_571) of
-                  | (Specified(a_570: pointer), Specified(a_572: integer)) =>
-                      pure(Specified(array_shift(a_570, 'signed int', a_572)))
+                case (a_567, a_569) of
+                  | (Specified(a_568: pointer), Specified(a_570: integer)) =>
+                      pure(Specified(array_shift(a_568, 'signed int', a_570)))
                   | _: (loaded pointer,loaded integer) =>
                       pure(undef(<<UB_CERB004_unspecified__pointer_add>>))
                 end in
-              case a_566 of
-                | Specified(a_567: pointer) =>
-                    let weak a_568: boolean =
-                      memop(PtrValidForDeref, 'signed int', a_567) in
+              case a_564 of
+                | Specified(a_565: pointer) =>
+                    let weak a_566: boolean =
+                      memop(PtrValidForDeref, 'signed int', a_565) in
                     pure(
-                      if a_568 then
-                        a_567
+                      if a_566 then
+                        a_565
                       else
                         undef(<<UB043_indirection_invalid_value>>)
                     )
@@ -405,89 +405,89 @@ proc main (): eff loaded integer :=
                     pure(undef(<<UB043_indirection_invalid_value>>))
               end
             ,
-              let weak a_593: pointer =
-                let weak a_577: loaded pointer =
-                  let weak (a_580: loaded pointer, a_582: loaded integer) =
+              let weak a_591: pointer =
+                let weak a_575: loaded pointer =
+                  let weak (a_578: loaded pointer, a_580: loaded integer) =
                     unseq(
-                      let weak a_585: pointer = pure(choices) in
-                      pure(Specified(array_shift(a_585, 'signed int', 0)))
+                      let weak a_583: pointer = pure(choices) in
+                      pure(Specified(array_shift(a_583, 'signed int', 0)))
                     ,
-                      let weak (a_587: loaded integer, a_588: loaded integer) =
+                      let weak (a_585: loaded integer, a_586: loaded integer) =
                         unseq(
-                          let weak a_592: pointer = pure(i) in
-                          load('signed int', a_592)
+                          let weak a_590: pointer = pure(i) in
+                          load('signed int', a_590)
                         ,
                           pure(Specified(1))
                         ) in
                       pure(
-                        case (a_587, a_588) of
-                          | (Specified(a_589: integer),
-                          Specified(a_590: integer)) =>
-                              Specified(catch_exceptional_condition_add('signed int', __conv_int__('signed int', a_589), __conv_int__('signed int', a_590)))
+                        case (a_585, a_586) of
+                          | (Specified(a_587: integer),
+                          Specified(a_588: integer)) =>
+                              Specified(catch_exceptional_condition_add('signed int', __conv_int__('signed int', a_587), __conv_int__('signed int', a_588)))
                           | _: (loaded integer,loaded integer) =>
                               undef(<<UB036_exceptional_condition>>)
                         end
                       )
                     ) in
-                  case (a_580, a_582) of
-                    | (Specified(a_581: pointer), Specified(a_583: integer)) =>
-                        pure(Specified(array_shift(a_581, 'signed int', a_583)))
+                  case (a_578, a_580) of
+                    | (Specified(a_579: pointer), Specified(a_581: integer)) =>
+                        pure(Specified(array_shift(a_579, 'signed int', a_581)))
                     | _: (loaded pointer,loaded integer) =>
                         pure(undef(<<UB_CERB004_unspecified__pointer_add>>))
                   end in
-                case a_577 of
-                  | Specified(a_578: pointer) =>
-                      let weak a_579: boolean =
-                        memop(PtrValidForDeref, 'signed int', a_578) in
+                case a_575 of
+                  | Specified(a_576: pointer) =>
+                      let weak a_577: boolean =
+                        memop(PtrValidForDeref, 'signed int', a_576) in
                       pure(
-                        if a_579 then
-                          a_578
+                        if a_577 then
+                          a_576
                         else
                           undef(<<UB043_indirection_invalid_value>>)
                       )
                   | Unspecified(_: ctype) =>
                       pure(undef(<<UB043_indirection_invalid_value>>))
                 end in
-              load('signed int', a_593)
+              load('signed int', a_591)
             ) in
           let weak _: unit =
-            neg(store('signed int', a_565, conv_loaded_int('signed int', a_594))) in
-          pure(conv_loaded_int('signed int', a_594))
+            neg(store('signed int', a_563, conv_loaded_int('signed int', a_592))) in
+          pure(conv_loaded_int('signed int', a_592))
         ) in
       pure(Unit) ;
       save __cerb_continue1: unit (i: pointer:= i, n: pointer:= n) in
         let strong _: loaded integer =
           bound(
-            let weak (a_595: pointer, a_602: loaded integer) =
+            let weak (a_593: pointer, a_600: loaded integer) =
               unseq(
                 pure(i)
               ,
-                let weak (a_596: loaded integer, a_597: loaded integer) =
+                let weak (a_594: loaded integer, a_595: loaded integer) =
                   unseq(
-                    let weak a_601: pointer = pure(i) in
-                    load('signed int', a_601)
+                    let weak a_599: pointer = pure(i) in
+                    load('signed int', a_599)
                   ,
                     pure(Specified(1))
                   ) in
                 pure(
-                  case (a_596, a_597) of
-                    | (Specified(a_598: integer), Specified(a_599: integer)) =>
-                        Specified(catch_exceptional_condition_add('signed int', __conv_int__('signed int', a_598), __conv_int__('signed int', a_599)))
+                  case (a_594, a_595) of
+                    | (Specified(a_596: integer), Specified(a_597: integer)) =>
+                        Specified(catch_exceptional_condition_add('signed int', __conv_int__('signed int', a_596), __conv_int__('signed int', a_597)))
                     | _: (loaded integer,loaded integer) =>
                         undef(<<UB036_exceptional_condition>>)
                   end
                 )
               ) in
             let weak _: unit =
-              neg(store('signed int', a_595,
-              conv_loaded_int('signed int', a_602))) in
-            pure(conv_loaded_int('signed int', a_602))
+              neg(store('signed int', a_593,
+              conv_loaded_int('signed int', a_600))) in
+            pure(conv_loaded_int('signed int', a_600))
           ) in
         pure(Unit) ;
       pure(Unit) ;
       save continue_530: unit (i: pointer:= i, n: pointer:= n) in  pure(Unit) ;
       pure(Unit) ;
-      run while_536(i, n)
+      run while_547(i, n)
     else
       pure(Unit) ;
   save break_531: unit (i: pointer:= i, n: pointer:= n) in  pure(Unit) ;
@@ -495,56 +495,56 @@ proc main (): eff loaded integer :=
   kill('signed int', i) ;
   pure(Unit) ;
   bound(
-    let strong ((a_604: loaded pointer,
-    (a_605: ctype, a_606: [ctype], a_607: boolean, a_608: boolean)),
-    a_611: loaded pointer, a_614: loaded integer) =
+    let strong ((a_602: loaded pointer,
+    (a_603: ctype, a_604: [ctype], a_605: boolean, a_606: boolean)),
+    a_609: loaded pointer, a_612: loaded integer) =
       unseq(
-        let strong a_603: loaded pointer =
+        let strong a_601: loaded pointer =
           pure(Specified(Cfunction(arr_reverse))) in
-        pure((a_603, cfunction(a_603)))
+        pure((a_601, cfunction(a_601)))
       ,
-        let weak a_612: pointer = pure(buf) in
-        pure(Specified(array_shift(a_612, 'signed int', 0)))
+        let weak a_610: pointer = pure(buf) in
+        pure(Specified(array_shift(a_610, 'signed int', 0)))
       ,
-        let weak a_615: pointer = pure(n) in
-        load('signed int', a_615)
+        let weak a_613: pointer = pure(n) in
+        load('signed int', a_613)
       ) in
-    if not(params_length(a_606) = 2) then
+    if not(params_length(a_604) = 2) then
       pure(undef(<<UB038_number_of_args>>))
     else
-      if a_607 \/ not(are_compatible ('void', a_605)) then
+      if a_605 \/ not(are_compatible ('void', a_603)) then
         pure(undef(<<UB041_function_not_compatible>>))
       else
-        let strong a_610: pointer =
-          let a_616: ctype = params_nth(a_606, 0) in
-          if not(are_compatible ('signed int*', a_616)) then
+        let strong a_607: pointer =
+          let a_614: ctype = params_nth(a_604, 0) in
+          if not(are_compatible ('signed int*', a_614)) then
+            pure(undef(<<UB041_function_not_compatible>>))
+          else
+            let weak a_615: pointer =
+              create(Ivalignof('signed int*'), 'signed int*') in
+            let weak _: unit = store('signed int*', a_615, a_609) in
+            pure(a_615) in
+        let strong a_608: pointer =
+          let a_616: ctype = params_nth(a_604, 1) in
+          if not(are_compatible ('signed int', a_616)) then
             pure(undef(<<UB041_function_not_compatible>>))
           else
             let weak a_617: pointer =
-              create(Ivalignof('signed int*'), 'signed int*') in
-            let weak _: unit = store('signed int*', a_617, a_611) in
-            pure(a_617) in
-        let strong a_609: pointer =
-          let a_618: ctype = params_nth(a_606, 1) in
-          if not(are_compatible ('signed int', a_618)) then
-            pure(undef(<<UB041_function_not_compatible>>))
-          else
-            let weak a_619: pointer =
               create(Ivalignof('signed int'), 'signed int') in
             let weak _: unit =
-              store('signed int', a_619, conv_loaded_int('signed int', a_614)) in
-            pure(a_619) in
-        let strong a_620: unit =
-          ccall('void (*) (signed int*, signed int)', a_604, a_610, a_609) in
+              store('signed int', a_617, conv_loaded_int('signed int', a_612)) in
+            pure(a_617) in
+        let strong a_618: unit =
+          ccall('void (*) (signed int*, signed int)', a_602, a_607, a_608) in
         let strong _: (unit,unit) =
-          unseq(kill('signed int*', a_610), kill('signed int', a_609)) in
-        pure(a_620)
+          unseq(kill('signed int*', a_607), kill('signed int', a_608)) in
+        pure(a_618)
   ) ;
   pure(Unit) ;
   let strong i: pointer = create(Ivalignof('signed int'), 'signed int') in
-  let strong a_621: loaded integer = bound(pure(Specified(0))) in
-  store('signed int', i, conv_loaded_int('signed int', a_621)) ;
-  save while_534: unit (i: pointer:= i, n: pointer:= n) in
+  let strong a_619: loaded integer = bound(pure(Specified(0))) in
+  store('signed int', i, conv_loaded_int('signed int', a_619)) ;
+  save while_620: unit (i: pointer:= i, n: pointer:= n) in
     let strong a_622: loaded integer =
       bound(
         let weak (a_624: loaded integer, a_625: loaded integer) =
@@ -584,14 +584,14 @@ proc main (): eff loaded integer :=
           end
         )
       ) in
-    let strong a_535: boolean =
+    let strong a_621: boolean =
       case a_622 of
         | Specified(a_623: integer) =>
             pure(if not(a_623 = 1) then True else False)
         | Unspecified(_: ctype) =>
             nd(pure(True), pure(False))
       end in
-    if a_535 then
+    if a_621 then
       let strong a_637: loaded integer =
         bound(
           let weak (a_639: loaded integer, a_640: loaded integer) =
@@ -755,7 +755,7 @@ proc main (): eff loaded integer :=
       pure(Unit) ;
       save continue_532: unit (i: pointer:= i, n: pointer:= n) in  pure(Unit) ;
       pure(Unit) ;
-      run while_534(i, n)
+      run while_620(i, n)
     else
       pure(Unit) ;
   save break_533: unit (i: pointer:= i, n: pointer:= n) in  pure(Unit) ;

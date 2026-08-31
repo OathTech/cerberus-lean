@@ -6,9 +6,9 @@ def struct node :=
 -- Fun map
 proc list_sum (p: pointer): eff loaded integer :=
   let strong s: pointer = create(Ivalignof('signed int'), 'signed int') in
-  let strong a_686: loaded integer = bound(pure(Specified(0))) in
-  store('signed int', s, conv_loaded_int('signed int', a_686)) ;
-  save while_684: unit (s: pointer:= s) in
+  let strong a_684: loaded integer = bound(pure(Specified(0))) in
+  store('signed int', s, conv_loaded_int('signed int', a_684)) ;
+  save while_685: unit (s: pointer:= s) in
     let strong a_687: loaded integer =
       bound(
         let weak a_690: loaded pointer =
@@ -23,14 +23,14 @@ proc list_sum (p: pointer): eff loaded integer :=
               pure(undef(<<UB_CERB004_unspecified__equality_ptr_vs_NULL>>))
         end
       ) in
-    let strong a_685: boolean =
+    let strong a_686: boolean =
       case a_687 of
         | Specified(a_688: integer) =>
             pure(if not(a_688 = 1) then True else False)
         | Unspecified(_: ctype) =>
             nd(pure(True), pure(False))
       end in
-    if a_685 then
+    if a_686 then
       let strong _: loaded integer =
         bound(
           let weak (a_693: pointer, a_706: loaded integer) =
@@ -93,7 +93,7 @@ proc list_sum (p: pointer): eff loaded integer :=
       pure(Unit) ;
       save continue_682: unit (s: pointer:= s) in  pure(Unit) ;
       pure(Unit) ;
-      run while_684(s)
+      run while_685(s)
     else
       pure(Unit) ;
   save break_683: unit (s: pointer:= s) in  pure(Unit) ;
@@ -113,62 +113,62 @@ proc list_sum (p: pointer): eff loaded integer :=
 proc main (): eff loaded integer :=
   let strong n: pointer = create(Ivalignof('signed int'), 'signed int') in
   let strong hd: pointer = create(Ivalignof('struct node*'), 'struct node*') in
-  let strong a_530: loaded integer =
+  let strong a_528: loaded integer =
     bound(
-      let weak a_541: pointer =
-        let weak a_531: loaded pointer =
-          let weak (a_534: loaded pointer, a_536: loaded integer) =
+      let weak a_539: pointer =
+        let weak a_529: loaded pointer =
+          let weak (a_532: loaded pointer, a_534: loaded integer) =
             unseq(
-              let weak a_539: pointer = pure(choices) in
-              pure(Specified(array_shift(a_539, 'signed int', 0)))
+              let weak a_537: pointer = pure(choices) in
+              pure(Specified(array_shift(a_537, 'signed int', 0)))
             ,
               pure(Specified(0))
             ) in
-          case (a_534, a_536) of
-            | (Specified(a_535: pointer), Specified(a_537: integer)) =>
-                pure(Specified(array_shift(a_535, 'signed int', a_537)))
+          case (a_532, a_534) of
+            | (Specified(a_533: pointer), Specified(a_535: integer)) =>
+                pure(Specified(array_shift(a_533, 'signed int', a_535)))
             | _: (loaded pointer,loaded integer) =>
                 pure(undef(<<UB_CERB004_unspecified__pointer_add>>))
           end in
-        case a_531 of
-          | Specified(a_532: pointer) =>
-              let weak a_533: boolean =
-                memop(PtrValidForDeref, 'signed int', a_532) in
+        case a_529 of
+          | Specified(a_530: pointer) =>
+              let weak a_531: boolean =
+                memop(PtrValidForDeref, 'signed int', a_530) in
               pure(
-                if a_533 then
-                  a_532
+                if a_531 then
+                  a_530
                 else
                   undef(<<UB043_indirection_invalid_value>>)
               )
           | Unspecified(_: ctype) =>
               pure(undef(<<UB043_indirection_invalid_value>>))
         end in
-      load('signed int', a_541)
+      load('signed int', a_539)
     ) in
-  store('signed int', n, conv_loaded_int('signed int', a_530)) ;
+  store('signed int', n, conv_loaded_int('signed int', a_528)) ;
   store('struct node*', hd, Specified(NULL(struct node))) ;
   let strong i: pointer = create(Ivalignof('signed int'), 'signed int') in
-  let strong a_543: loaded integer =
+  let strong a_541: loaded integer =
     bound(
-      let weak (a_545: loaded integer, a_546: loaded integer) =
+      let weak (a_543: loaded integer, a_544: loaded integer) =
         unseq(
-          let weak a_544: pointer = pure(n) in
-          load('signed int', a_544)
+          let weak a_542: pointer = pure(n) in
+          load('signed int', a_542)
         ,
           pure(Specified(1))
         ) in
       pure(
-        case (a_545, a_546) of
-          | (Specified(a_547: integer), Specified(a_548: integer)) =>
+        case (a_543, a_544) of
+          | (Specified(a_545: integer), Specified(a_546: integer)) =>
               Specified(catch_exceptional_condition_sub('signed int', conv_int('signed int',
-              a_547), conv_int('signed int', a_548)))
+              a_545), conv_int('signed int', a_546)))
           | _: (loaded integer,loaded integer) =>
               undef(<<UB036_exceptional_condition>>)
         end
       )
     ) in
-  store('signed int', i, conv_loaded_int('signed int', a_543)) ;
-  save while_528: unit (i: pointer:= i, n: pointer:= n, hd: pointer:= hd) in
+  store('signed int', i, conv_loaded_int('signed int', a_541)) ;
+  save while_548: unit (i: pointer:= i, n: pointer:= n, hd: pointer:= hd) in
     let strong a_550: loaded integer =
       bound(
         let weak (a_552: loaded integer, a_553: loaded integer) =
@@ -207,14 +207,14 @@ proc main (): eff loaded integer :=
           end
         )
       ) in
-    let strong a_529: boolean =
+    let strong a_549: boolean =
       case a_550 of
         | Specified(a_551: integer) =>
             pure(if not(a_551 = 1) then True else False)
         | Unspecified(_: ctype) =>
             nd(pure(True), pure(False))
       end in
-    if a_529 then
+    if a_549 then
       let strong slot: pointer =
         create(Ivalignof('signed int'), 'signed int') in
       let strong a_563: loaded integer =
@@ -471,7 +471,7 @@ proc main (): eff loaded integer :=
       save continue_526: unit (i: pointer:= i, n: pointer:= n, hd: pointer:= hd) in
         pure(Unit) ;
       pure(Unit) ;
-      run while_528(i, n, hd)
+      run while_548(i, n, hd)
     else
       pure(Unit) ;
   save break_527: unit (i: pointer:= i, n: pointer:= n, hd: pointer:= hd) in
