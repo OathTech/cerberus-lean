@@ -7,11 +7,18 @@ LemLib @ `af5df71` (L0+L1 features). Provenance [AGENT]; signatures
 below are quoted from the generated/hand-written tree at the C1
 adoption commit. Finalized again at C2 for the deletion-slice deltas.
 
-STATUS CAVEAT: C1's instrument REBASELINE is stopped-and-reported
-(finding C1-F1, see `2026-09-01_C1-adoption-record.md`): the oracle
-renumbering class is broader than the S0 row enumeration. The
-SIGNATURES and cone changes below are final for the adoption pin and
-independent of that adjudication.
+STATUS: finding C1-F1 was ADJUDICATED and the rebaseline EXECUTED
+([USER 2026-09-01]: Q1b re-affirmed over the enlarged class, O6(v)
+re-ruled, admission basis = re-derive-and-verify via the committed
+`scripts/check_renumber_only.py` instrument — 70/70 moved rows
+admitted, 0 findings among them; record §§10-12). One registered
+gate-(a) finding stands: C1-F2, the libxml2-uri LEAN_NOLIBC
+diagnostic embedding a raw symbol id (re-pinned as an instrument
+change; upstream candidate). Consumer-relevant addendum: the enlarged
+renumbering class means ORACLE-side symbol ids in pinned Core dumps
+moved on most multi-draw TUs (call-argument batches included), all
+permutation-only — consumer-invisible per non-goal 3 (§1.4), but any
+consumer artifact caching oracle dump text should re-derive.
 
 ## 1. The headline: `runEffectful` is out of the generated tree
 

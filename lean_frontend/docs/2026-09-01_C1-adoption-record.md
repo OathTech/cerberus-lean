@@ -1,4 +1,9 @@
-# C1 adoption slice record — effect retirement (STOPPED-AND-REPORTED at the rebaseline)
+# C1 adoption slice record — effect retirement
+
+> RESOLVED: the §5 stop was adjudicated and the slice RESUMED — see
+> §10 (the C1-F1 resolution, [USER 2026-09-01]) and §11 (the executed
+> rebaseline + close-out). §§1-9 are the pre-adjudication record,
+> kept verbatim.
 
 Date: 2026-08-31/09-01. Branch `arc/effect-retirement`, worktree
 `worktrees/cerberus-lean-arc/effect-retirement`, base `64dd6efeb`
@@ -225,7 +230,7 @@ included if the O6(v) clause is re-ruled to match the corrected class.
 | `test_verify.sh` | 1 | §5 — the finding (all failures pin-provenance; 0 behavioral) |
 | speclab gates, libc_exec, libxml2 lanes, csmith shards | not run | consume moved pins / Tier B-C close-out — blocked behind the C1-F1 adjudication |
 
-## 8. Blocked / remaining work (post-adjudication)
+## 8. Blocked / remaining work (post-adjudication) — RESOLVED, executed in §§10-12 (items 1-3); item 4 remains C2's
 
 1. Step 4 per-family instrument commits (speclab dumps + SpecLab
    re-emission; corpus pins + fixture-freeze manifest; libc.core hash;
@@ -238,7 +243,124 @@ included if the O6(v) clause is re-ruled to match the corrected class.
    now-DELETED CerbTags ×4 / CerbDebug ×2 rows (S0 wrote it as the
    C2 ratchet input; shrinking it is C2's job with the ratchet).
 
-## 9. Ephemera
+## 10. C1-F1 resolution ([USER 2026-09-01], relayed via the orchestrator) — slice RESUMED
+
+Ruling verbatim: "yes, agree on the resume per your recommendation" —
+three connected pieces, all [USER 2026-09-01]:
+
+1. **Q1b's TOLERATED ruling RE-AFFIRMED over the enlarged movement
+   class** (the call-argument-position eager-batch reversal included);
+   the operator's up-to-renaming rationale applies unchanged — the
+   delta is quantitative.
+2. **O6(v) RE-RULED**: the 7 moved tests/verify pins (c3a/c4/c5/
+   m1_sgn/t2/t5/t6) rebaseline with the rest as pin-provenance
+   instrument changes; the verify lane's behavioral 90 remain the
+   canary.
+3. **The adjudication basis UPGRADED** from static-S0-list membership
+   to RE-DERIVE-AND-VERIFY: each moved artifact is admitted only on
+   demonstrated same-draw-count + permutation-only equivalence vs its
+   predecessor, implemented as a committable scripted instrument. An
+   artifact failing the property check remains a FINDING and a stop
+   condition.
+
+## 11. The executed rebaseline (per-family instrument commits)
+
+The instrument: `scripts/check_renumber_only.py` (commit `b3a121686`;
+plant-tested on all legs — count mismatch, appended line, token
+change, section reorder — and upgraded at `034ab57de` with the
+class=LAYOUT leg after speclab surfaced renaming-induced
+pretty-printer re-wraps: 21 rows whose canonical texts differ only in
+line breaks, whitespace-collapsed forms byte-equal at equal id
+counts; the reorder/token/count plants still fail after
+ws-normalization). Canonical byte-equality requires identical token
+sequence and EMISSION ORDER, so every ADMIT row is simultaneously the
+gate-item-(a) dump-level permutation review for that artifact.
+
+| Family | Commit | Rows | Property-check outcome |
+|---|---|---|---|
+| (v) tests/verify pins | `102e95753` | 7 | 7/7 ADMIT (STRICT); other 16 verify pins byte-unmoved |
+| (ii) tests/corpus pins | `49502c1b5` | 20 (7 text + 6 sha256 + 7 funs; 13 families) | 20/20 ADMIT (STRICT). The 6 hash-only predecessors RECONSTRUCTED by rebuilding the pre-C1 oracle at `90c82505d` and validated 6/6 against the pinned sha256s before checking |
+| (i) speclab dumps + terms | `ed7c98da3` | 39 dumps + 5 SpecLab modules | 39/39 ADMIT (18 STRICT, 21 LAYOUT; all 39 moved — S0 predicted 34, the 5 divmod dumps join under the enlarged class); re-emitted via standing speclab-emit-*; family gates selftest/plant/divmod/bytearr/list/tree/seed all =0 |
+| (iii) libc.core hash | `2c5b818c3` | 1 | ADMIT STRICT ids=24117 moved=15220; re-pinned via `libc_prep.sh --record`, `--check` green |
+| (iv) fixture goldens | `b4af8ca59` | 3 core.txt (regen, no adjudication; evidence anyway: 3/3 ADMIT STRICT) | regenerated cabs.json NOT committed — machine-path noise only |
+| uri baseline + probe | `c12a69776` | 1 baseline row + 1 probe file | **finding C1-F2** (below) + storeM-arity probe fix |
+
+**Derived totals: 70 property-checked rows, 70 ADMIT (49 STRICT /
+21 LAYOUT), 0 FINDINGS** among the admitted set.
+
+**Finding C1-F2 (gate item a — the one registered
+numbering-dependent output site).** The libxml2-uri LEAN_NOLIBC
+baseline row embeds a raw symbol id in its diagnostic ("calling an
+unknown procedure: Symbol(118→968, SD_Id(memset))"); the S1 Lean-side
+renumbering moved it. Registered per the §9 operator principle as a
+defect-class finding + upstream candidate (the oracle's own row
+prints Symbol(1451) in the same format); NOT accommodated; the row
+re-pinned as an instrument change (message identical modulo the id;
+all other rows of the 4-lane baseline byte-unmoved; 16/16 URI corpus
+byte-identical LEAN vs ORACLE). No OTHER gated observable showed any
+numbering-dependent output: every dump admit is order-strict, and
+the multi-TU/exhaustive/elab/gcc lanes sit at their baselines.
+
+Gate item (a) is thereby COMPLETE: dump-level permutation review =
+the 70 admit rows (emission order proven preserved); order-sensitive
+verdict observables = the lane scoreboard; the two movement sources
+(renumbering vs L0 setChoose) remain separated by the Step-0
+isolation (setChoose landed alone, Lean-only, all gates green before
+any renumbering existed).
+
+**test_verify at the rebaselined tree (verbatim):**
+
+    test_verify: 117 passed, 0 failed (23 fixtures, 22 call points, 14 corpus fixtures, 21 corpus points)
+
+## 12. Close-out battery (final tree; run under capped/ce; exits verbatim)
+
+(Grind-rule note, written before launch: the csmith corpus pass is a
+measurement sweep over a differential corpus — the sanctioned >1hr
+category — run sharded per the brief.)
+
+All binaries fresh from this session's builds (oracle: DUNE_CACHE=
+disabled clean-regenerated tree; Lean: full capped lake builds; the
+freshness/stamp gates run inside test_unit/the lane preambles).
+
+**Tier A (all exit 0):** test_unit=0 exec_minimal=0 exec_coverage=0
+exec_debug=0 exec_float=0 bytes=0 libc_exec=0 multi_tu=0 parse=0
+core=0 elab=0 libxml2_uri=0 cn_coverage=0
+(coverage/debug verbatim: `Baseline check: 0 regression(s), 0
+improvement(s)`; elab at its recorded state
+`total=106 same=103 diff=3`; uri `GATE PASS: all lane expectations
+pinned-green + baseline unchanged (16/16)`.)
+
+**Tier B:** libxml2_full=0 — verbatim
+`SUMMARY: total=4 match=4 fail=0 (points: 1354, 22 observations each)`;
+parse_ci=0; core_ci=0; test_verify (§11)
+`117 passed, 0 failed`; immaculate=0 (incl. the offsetof-union-member
+crash pair and both illtyped-store probe legs); speclab
+selftest/plant + 5 family gates all =0.
+
+**Second-oracle gcc lane** (run at `61170b4c8`; its inputs — .c
+corpus, gcc, the Lean driver — unchanged by the subsequent pin-only
+commits), verbatim:
+`SUMMARY: total=1953 compared=1880 agree=1871 agree_nd=0 triaged=9 disagree=0 o2_agree=190 skip_lean_crash=9 skip_lean_fail=7 skip_lean_timeout=11 skip_oracle=3 skip_ub=43 triaged_addr=9`
+— baseline UNMOVED (the lane never sees symbol numbers).
+
+**Tier C:** csmith corpus, all 6 shards
+`--check-baseline --shard k/6`: BASELINE OK, exit 0, k=1..6 (1669
+files total; two background-runner restarts at the harness's ~2h
+task ceiling — shards re-run whole, no partial credit taken); ci
+scoreboard no-regression probe
+(`--check-baseline=scripts/exec_ci_baseline.txt tests/ci`): exit 0,
+`Baseline check: 0 regression(s), 0 improvement(s)`.
+
+**O3 disposition (S1 Lean-side renumbering):** discharged — the full
+battery incl. Tier B and the Tier C instruments moved NO verdict
+baseline; the single observable that depended on the retired
+stratification's id values was the C1-F2 diagnostic row (registered
+finding, re-pinned, upstream candidate). O1-O7 now all discharged or
+carried per §6/§11; the O2/O6 rebaseline is complete pending the
+arc-close operator sanction of the instrument-commit set (§11 table —
+sanction is the merge gates' business, not this slice's).
+
+## 13. Ephemera
 
 `.c1-scratch/` (container scratch: pre/post generated-tree snapshots,
 build/lane logs, probe TUs, the re-scan TSV) is ephemeral and deleted
