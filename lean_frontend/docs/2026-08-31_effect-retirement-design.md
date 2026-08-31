@@ -1,10 +1,13 @@
 # Effect retirement: deleting `runEffectful` from the semantics (design note)
 
 Date: 2026-08-31. Branch `arc/effect-retirement` (base: mainline
-`58ec50779`). Status: DRAFT — core document, pending fresh adversarial
-review, then governs the combined lem-lean/cerberus-lean implementation
-arc. §1 is written to be consumable standalone by the refined-cerberus
-project.
+`58ec50779`). Status: SETTLED CHARTER (R2) — the fresh adversarial
+review returned RATIFY-WITH-AMENDMENTS (applied in R1), the consumer
+review returned RATIFY (absorbed in R2, §10 pointer), and all five
+operator questions are CLOSED with [USER 2026-08-31] rulings (§9,
+now the decision log). This document governs the combined
+lem-lean/cerberus-lean implementation arc. §1 is written to be
+consumable standalone by the refined-cerberus project.
 
 Operator-ratified constraints this note works under, verbatim
 provenance [USER 2026-08-31]:
@@ -44,6 +47,17 @@ wrong in general, and the corrected construct-time/run-time site
 analysis (§3.6) shows one site with **unavoidable oracle
 draw-sequence movement**, which amends Q1 into an explicit operator
 decision about tolerated, adjudicated oracle renumbering.
+
+Revision R2 (same date, final): (1) all five operator questions are
+RULED [USER 2026-08-31] — §9 is now the decision log (Q1a/Q1b/Q2/Q3
+ratified as recommended; Q4 ratified in a sharpened per-survivor
+form); (2) the consumer review (refined-cerberus, verdict RATIFY
+from the consumer seat; lem-lean
+`doc/lean-backend/2026-08-31_effect-retirement-external-review.md`
+@ `582d901`) is absorbed: the entry-shape decision (§1.3, §3.4 a),
+the Lean-side change manifest deliverable (§8.1 C1/C2), the fuel
+opt-in classification (§8.3), and the explicit non-goals incl. the
+new grep-able obligation O7 (§1.4, §3.5).
 
 Headline findings of the census/analysis (details in §2–§3; also
 reported to the orchestrator):
@@ -189,6 +203,20 @@ customer cannot absorb.
   strictly larger "no impure pure-signature constants" is put to the
   operator as §9 Q4.)
 - Non-kernel proof methods remain gate-banned (D14) — unchanged.
+- **Entry shape (R2 — the consumer review's A1 shape question,
+  answered as a design decision).** The retired production entry
+  (`initial_driver_state` / `initial_core_run_state`) lands as
+  **shape (b): a SUPPLY-PARAMETERIZED pure constructor** —
+  `initial_driver_state : Nat → … → driver_state × Nat` — with Main
+  supplying the concrete initial value. No seed constant is baked
+  into the entry. Rationale: matches the driver-seeds-from-
+  initial-state design already in the seeding scheme (§3.2, §3.4 a),
+  and the consumer states (b) is free for them (their
+  never-reads-the-seam property is proved; their theorems gain a
+  ∀-supply quantifier they consider a strengthening of the exported
+  statements). Provenance: [AGENT] (orchestrator ruling,
+  consumer-agreed; the operator can override at the arc's merge
+  gates).
 
 **Acceptance criterion, stated as a checkable gate:** the arc is done
 when the ratcheted `check_theorem_axioms.sh` (§7.2) passes — LemLib
@@ -206,6 +234,29 @@ frontend entries are dirty (via `Symbol.fresh*` and the
 `initial_core_run_state` seed); `driver2` may already be clean (the
 run-time mint is threaded, §2.3); the gate covers the whole entry set
 either way.
+
+### 1.4 Explicit non-goals (R2 — consumer assumptions made checkable)
+
+Recorded verbatim-in-substance from the consumer review's A4, so a
+future reviewer can check each cheaply:
+
+1. **Entry purity.** The production entry remains a pure,
+   termination-checked, CLOSED constructor — modulo exactly the
+   shape-(b) supply parameter (§1.3) — with **no IO-flavored
+   wrapper**: any such wrapper reintroduces the class of thing this
+   arc deletes. The consumer quantifies over the entry verbatim.
+2. **No new nondeterminism.** Supply threading is deterministic
+   state-passing and must introduce **no new ND branch points** —
+   stated as obligation **O7** (§3.5), checkable by grep on the ND
+   structure: the arc's diffs add no new applications of the ND
+   node/branch builders (the `ND.bind` fanout / `nd`/`msum`-family
+   constructors) anywhere in the migrated cone. The consumer's
+   production equation rests on proved singleton step lists +
+   `runND` collapse on the positive sequential path.
+3. **Symbol-numbering shifts are consumer-invisible.** Their
+   theorems are over authored Core with directly-constructed
+   symbols; elaboration-side numbering is invisible to them today —
+   consumer-confirmed (review A4.3), already governed by O3/O6.
 
 ## 2. Client census, with call-graph evidence
 
@@ -649,7 +700,9 @@ Generated signatures: e.g.
 `Symbol.fresh : Nat → Unit → sym × Nat`,
 `initial_driver_state : Nat → file' → fs_state → driver_state × Nat`.
 Hand-written `Main.lean:857` passes and receives the supply
-explicitly.
+explicitly. This IS the §1.3 entry-shape decision (R2): shape (b),
+a supply-parameterized pure constructor with no baked seed — the
+form the consumer's re-export consumes statement-visibly.
 
 **(b) Model accommodation m1 — the elaboration monad.** `elab_state`
 (`translation_effect.lem:24-40`) gains a `fresh_supply : nat` field;
@@ -698,7 +751,8 @@ the supply from and restores it to the desugar state via
 ambient supply to be **one stream** (next paragraph), or a second
 `desugM` field.
 
-**(d) The stream-unification decision** (§9 Q2). Option S1 (single
+**(d) The stream-unification decision** (§9 Q2 — RULED
+[USER 2026-08-31]: S1, single-stream). Option S1 (single
 stream, recommended): the Lean pipeline threads ONE supply — Main
 seeds it once, desugar's existing `fresh_sym_supply` becomes that
 stream, const-expr mini-runs and elaboration and the run-init seed
@@ -816,7 +870,18 @@ values (O1, O3).
   claims) is enumerated, adjudicated, and rebaselined as an
   instrument change with its own commit and justification, never
   absorbed. The S0 corpus scan (§3.6) bounds the affected input set
-  before any code moves.
+  before any code moves. Ruling received: Q1b, §9 —
+  tolerated-with-scan, escalating to a staged pre-slice if the scan
+  shows nontrivial fixture churn.
+- **O7 (R2: no new nondeterminism — non-goal 2 of §1.4, stated as a
+  checkable obligation).** The supply transform and the m1/m1b/m2
+  migrations add **zero** new ND branch points: a grep over the
+  arc's diffs for the ND node/branch builders (`ND.bind` fanout,
+  `nd`/`msum`-family constructors) shows no new applications in the
+  migrated cone; discharged at each C-slice gate alongside O1-O6 and
+  recorded in the slice's gate log. Supply threading is
+  deterministic state-passing — an ND-visible change is a defect,
+  not a tuning point.
 
 ### 3.6 Construct-time vs run-time draws: the site analysis (R1, A1)
 
@@ -1161,17 +1226,29 @@ cerberus-lean:
   allowlisted at exactly the **enumerated survivor list** (R1, A5 —
   the draft's digest-only allowlist under-censused the population).
   Current hand-written census (S0 re-verifies and finalizes it; the
-  CerbDebug and CerbTags entries are deleted by this arc):
-  `CerberusFresh.lean:86` (digest read);
-  `CerbGlobal.lean:64,68,74,101` (config + switches refs — written
-  once by Main at startup, reader-shaped after);
-  `CerberusImpl.lean:56,222` (the enum registry — a genuinely
-  stateful seam: `register_enum` writes during elaboration,
-  `typeof_enum` reads later, mirroring OCaml DefaultImpl's ref);
-  `CerbUtils.lean:19,38,41,79` (no-op timing/log refs, intentionally
-  unread — retained for OCaml module-shape parity). Any occurrence
-  outside the enumerated list fails. `check_exec_purity.sh`'s
-  boundary-honesty header updates to the shrunk seam list.
+  CerbDebug and CerbTags entries are deleted by this arc), with the
+  per-survivor classification RULED [USER 2026-08-31] (Q4 sharpened
+  form, §9 — every allowlist row carries its class, per the
+  no-internal-trust-gaps boundary-list discipline):
+  - `CerberusFresh.lean:86` (digest read) — **converted in C2**: the
+    kernel-checked-opaque treatment (the `with_tagDefs` pattern,
+    house-proven per the consumer review) is a C2 deliverable, not a
+    standing allowlist row;
+  - `CerbGlobal.lean:64,68,74,101` (config + switches refs — written
+    once by Main at startup, reader-shaped after) — **temporal**;
+    named mover: a post-arc parameter-plumbing slice;
+  - `CerberusImpl.lean:56,222` (the enum registry — a genuinely
+    stateful seam: `register_enum` writes during elaboration,
+    `typeof_enum` reads later, mirroring OCaml DefaultImpl's ref) —
+    **temporal**; named mover: this arc's reader/supply machinery,
+    applied in a FOLLOW-UP slice (explicitly NOT in-arc; the
+    consumer confirmed no need to accelerate it on their account);
+  - `CerbUtils.lean:19,38,41,79` (no-op timing/log refs,
+    intentionally unread — retained for OCaml module-shape parity) —
+    **permanent-declared**.
+  Any occurrence outside the enumerated list fails.
+  `check_exec_purity.sh`'s boundary-honesty header updates to the
+  shrunk seam list.
 - Boundary-opaque expectation list shrinks: `with_tagDefs` leaves
   (deleted); `forceIO` stays exactly-once.
 
@@ -1241,19 +1318,37 @@ lands in two phases:
   and `effectful` remain. Gate: lem suite + lean-lib build + the
   §6.4 byte-identity probe against cerberus @ S0.
 - **C1 (cerberus adoption).** Pin bump to L1; `symbol.lem` declare
-  swap; m1/m1b/m2 migrations (+ S1/S2 stream decision as ratified;
-  + the Q1b movement-site handling as ratified — if (i) staged, the
-  pre-slice runs FIRST with its own oracle rebaseline);
-  Core_unstruct pair build-list drop; Main threading; tagDefs loop
-  closure + CerbMem re-plumb + union-arm seeding (§4); CerbDebug
-  cleanup (§5). Gate: FULL battery (Tier A+B, test_verify, speclab,
-  Tier C reporting for O3), fork-drift manifest review, O1-O6
-  discharged and recorded.
+  swap; m1/m1b/m2 migrations under the ratified rulings (§9): Q2 =
+  single-stream (S1); Q1b = tolerated-with-scan (escalate to the
+  staged pre-slice, run FIRST with its own oracle rebaseline, iff
+  the S0 scan shows nontrivial fixture churn); Core_unstruct pair
+  build-list drop; Main threading (entry shape (b), §1.3); tagDefs
+  loop closure + CerbMem re-plumb + union-arm seeding (§4);
+  CerbDebug cleanup (§5). Gate: FULL battery (Tier A+B, test_verify,
+  speclab, Tier C reporting for O3), fork-drift manifest review,
+  O1-O7 discharged and recorded.
+  **Close-out deliverable (R2, consumer request; recipient:
+  refined-cerberus): the LEAN-SIDE CHANGE MANIFEST at the adoption
+  pin** — the Lean analog of the §6.4 OCaml-text manifest: an
+  enumerated list of changed/renamed definitions in the exec cone,
+  specifically covering the entry constructors
+  (`initial_driver_state`/`initial_core_run_state`), the driver
+  round path (`Driver.lean:273-351` today), `step_ctx`'s cone, the
+  memory ops (`loadM`/`storeM`/`allocateObject`), and
+  `finalize`/`Driver.hack`, plus the FINAL SIGNATURES of `drive` and
+  the entry (including their tagDefs argument's fate) — so the
+  consumer's re-certification is scoped, not discovered. Finalized
+  again at C2 for the deletion-slice deltas.
 - **L2 (lem-lean, deletion).** §7.1 lem-side deletions (axiom +
   effectful class); DESIGN.md rewrite. Gate: lem suite (now with
   P1) + lean-lib.
 - **C2 (cerberus, ratchet).** Pin bump to L2; §7.1 cerberus-side
-  deletions; §7.2 ratchet + §7.3 plants red-green. Gate: full
+  deletions; §7.2 ratchet + §7.3 plants red-green; the **digest
+  kernel-checked-opaque conversion** (the Q4 ruling's promoted
+  deliverable — the `with_tagDefs`-pattern explicit-witness
+  treatment for `CerberusFresh.digest`, §7.2); the Lean-side change
+  manifest finalized for the deletion-slice deltas (recipient:
+  refined-cerberus). Gate: full
   battery + the new legs. Arc closes when branch heads = opam pin =
   Lake pin (both repos), per the standing dance; merges ff-only on
   explicit per-merge sign-off; pre-merge audit ASK is unconditional.
@@ -1277,7 +1372,14 @@ note's only constraints on it: it rides L1 (one pin bump, one
 review), its tests join the same suite, and it must not interact
 with supply lifting beyond the composition case already covered
 (§3.2: fuel self-calls thread the supply like they re-inject
-readers). The review additionally locates the attachment point
+readers). R2 classification (the consumer review's fuel flag,
+adopted as a constraint on the fuel design note): **per-declaration
+fuel budgets are OPT-IN ANNOTATION ONLY** — unannotated declarations
+keep `lemDefaultFuel` semantics byte-for-byte unchanged (the
+consumer's exported statements carry fuel side conditions stated
+against `lemDefaultFuel`, and their size accounting tracks the
+current plumbing). If the L1 implementation cannot honor that, it is
+a **stop-and-report event**, never a silent change. The review additionally locates the attachment point
 (budget = one `Targetmap` field beside `fuel_sentinel`, replacing
 the hardcoded `lemDefaultFuel` at `lean_backend.ml:2504`) and
 mandates adding `lemDefaultFuel` + the budget binder to the
@@ -1302,9 +1404,16 @@ must not be tangled into the supply slices' diffs.
 | R6 | Mid-arc window where lem has the feature and cerberus still uses `effectful` | legal by construction (L1 deletes nothing); the transitional both-annotations error (§3.2) prevents mixing on one val |
 | R7 | Grind risk: m1 is ~25 mechanical edits with a full battery per boundary | slice budget per the grind ban; the battery runs are differential-corpus measurement (the sanctioned category), builds stay capped via `scripts/capped` |
 
-## 9. Open questions for the operator
+## 9. Decision log: the operator questions, all CLOSED (R2)
 
-Genuinely open — each blocks a slice from being briefed:
+Every question below is RULED [USER 2026-08-31] (relayed via the
+orchestrator). Summary — Q1a: ratified. Q1b: ratified,
+tolerated-with-scan with the staged escalation. Q2: ratified,
+single-stream. Q3: ratified, reader_consumer rides the arc. Q4:
+ratified in the sharpened per-survivor form ([USER 2026-08-31]
+verbatim on the sharpened package: "yeah, this all seems
+reasonable"). The question texts are kept as the record; each
+carries its ruling inline:
 
 - **Q1 (blocks L1/C1 scope; AMENDED in R1).** Two rulings in one,
   because the second is entailed by the first:
@@ -1337,6 +1446,10 @@ Genuinely open — each blocks a slice from being briefed:
   numbering-identity claim carries the recorded caveat. [AGENT]
   recommends (ii) with the scan in hand, (i) if the scan shows
   nontrivial fixture churn.
+  **RULING [USER 2026-08-31]: Q1a RATIFIED** (the split, with the
+  text-vs-behavior framing). **Q1b RATIFIED as recommended**:
+  tolerated-with-scan, escalating to the staged pre-slice iff the
+  S0 corpus scan shows nontrivial fixture churn.
 - **Q2 (blocks C1 design; framing corrected in R1 per A1-iv).**
   Stream unification: S1 (single threaded supply, structural
   collision-impossibility, deletes the 2^20 machinery) vs S2 (two
@@ -1349,6 +1462,7 @@ Genuinely open — each blocks a slice from being briefed:
   change to the ambient stream. §3.4 (d); [AGENT] still recommends
   S1 — the structural invariant is worth the one-time measured
   shift, and both options pay the same O6 toll.
+  **RULING [USER 2026-08-31]: RATIFIED — single-stream (S1).**
 - **Q3 (blocks L1 scope).** Include `reader_consumer` (§4.2, now
   specified to §3.2 grade per R1 A6 — guards, tests, and the
   reader_seed injection-routing analysis are in the spec block) in
@@ -1356,6 +1470,8 @@ Genuinely open — each blocks a slice from being briefed:
   CerbMem global's retirement; the alternative (model-visible
   tagDefs parameters on the mem.lem vals) touches shared signatures
   far more broadly. [AGENT] recommends inclusion.
+  **RULING [USER 2026-08-31]: RATIFIED — `reader_consumer` rides
+  the arc (joins L1 per §8.1).**
 - **Q4 (blocks the arc's success criterion; raised by the
   2026-08-31 backend quality review, deletion-readiness item c).**
   The arc's bar: **"axiom gone"** or **"no impure pure-signature
@@ -1382,12 +1498,23 @@ Genuinely open — each blocks a slice from being briefed:
   survivors named in the §7.2 ratchet's allowlist (so Option B, if
   ever wanted, starts from an enumerated boundary), and the digest
   threading recorded as a possible later arc (§1.3 adjacency note).
-  The ruling is the operator's.
+  **RULING [USER 2026-08-31]: RATIFIED in the SHARPENED form**
+  (operator verbatim on the sharpened package: "yeah, this all seems
+  reasonable"): the bar is **axiom gone**, AND the ratchet
+  classifies every survivor explicitly — `digest` → kernel-checked
+  opaque IN C2 (promoted from allowlist row to a C2 deliverable,
+  §7.2/§8.1); CerbUtils no-op refs → permanent-declared; CerbGlobal
+  config refs → temporal, mover = a post-arc parameter-plumbing
+  slice; CerberusImpl enum registry → temporal, mover = this arc's
+  reader/supply machinery applied in a follow-up slice (NOT in-arc;
+  the consumer confirmed no need to accelerate).
 
-(Not operator questions, carried as [AGENT] recommendations subject
-to the adversarial review: Core_unstruct build-list drop (§3.4 e);
-the union-arm phase-appropriate seeding (§4.2); the FreshIntTest
-rewrite (§7.1).)
+(Not operator questions — [AGENT] recommendations that stood
+through the R1 adversarial review and are carried into the slices:
+the Core_unstruct pair build-list drop (§3.4 e); the union-arm
+phase-appropriate seeding (§4.2); the FreshIntTest rewrite (§7.1).
+The R2 entry-shape decision (§1.3) is likewise [AGENT],
+consumer-agreed, overridable at the merge gates.)
 
 ## 10. Cross-references
 
@@ -1410,3 +1537,10 @@ rewrite (§7.1).)
 - The 2026-08-31 backend quality review (L0 mandates, feature
   constraints, deletion completeness, Q4): lem-lean
   `doc/lean-backend/2026-08-31_backend-quality-review.md`.
+- The external review record incl. the consumer review
+  (refined-cerberus / cerberus-heaplang, verdict **RATIFY from the
+  consumer seat**; source of the §1.3 entry-shape question, the
+  §8.1 change-manifest deliverable, the §8.3 fuel flag, and the
+  §1.4 non-goals): lem-lean
+  `doc/lean-backend/2026-08-31_effect-retirement-external-review.md`
+  @ commit `582d901`.
