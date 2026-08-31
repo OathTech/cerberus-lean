@@ -34,8 +34,18 @@ Usage:
 
 Evidence row (machine-consumable, quoted verbatim in rebaseline
 commits):
-  RENUMBER-ONLY ADMIT <label> ids=<n> moved=<m> canon=<sha256[:12]>
+  RENUMBER-ONLY ADMIT <label> class=<STRICT|LAYOUT> ids=<n> moved=<m> canon=<sha256[:12]>
 where moved = ids whose value changed under the bijection.
+
+Admission classes (both are permutation-only; the class is reported so
+reviewers see which rows re-wrapped):
+  STRICT — canonical texts byte-identical (layout untouched);
+  LAYOUT — canonical texts identical after whitespace normalization
+           (s/\\s+/ /g). The oracle pretty-printer breaks lines by
+           WIDTH, so a renamed id with a different digit count moves
+           wrap points; the token sequence — content, structure, and
+           emission order — is still required identical, so section
+           reordering and any token change keep failing (plant-tested).
 """
 
 import argparse
@@ -95,20 +105,27 @@ def main():
             file=sys.stderr,
         )
         return 1
+    cls = "STRICT"
     if canon_old != canon_new:
-        div = first_divergence(canon_old, canon_new)
-        where = f"first divergence at canonical line {div[0]}:\n  old: {div[1][:160]}\n  new: {div[2][:160]}" if div else "(?)"
-        print(
-            f"RENUMBER-ONLY FINDING {label}: NON-PERMUTATION DELTA — stop condition\n  {where}",
-            file=sys.stderr,
-        )
-        return 1
+        # renaming-induced re-wrap: compare with whitespace normalized
+        ws_old = re.sub(r"\s+", " ", canon_old)
+        ws_new = re.sub(r"\s+", " ", canon_new)
+        if ws_old != ws_new:
+            div = first_divergence(canon_old, canon_new)
+            where = f"first divergence at canonical line {div[0]}:\n  old: {div[1][:160]}\n  new: {div[2][:160]}" if div else "(?)"
+            print(
+                f"RENUMBER-ONLY FINDING {label}: NON-PERMUTATION DELTA — stop condition\n  {where}",
+                file=sys.stderr,
+            )
+            return 1
+        cls = "LAYOUT"
+        canon_old = ws_old  # digest over the form that proved equal
 
     # the induced bijection: k-th first-use id in old <-> k-th in new
     inv_new = {rank: ident for ident, rank in map_new.items()}
     moved = sum(1 for ident, rank in map_old.items() if inv_new[rank] != ident)
     digest = hashlib.sha256(canon_old.encode()).hexdigest()[:12]
-    print(f"RENUMBER-ONLY ADMIT {label} ids={len(map_old)} moved={moved} canon={digest}")
+    print(f"RENUMBER-ONLY ADMIT {label} class={cls} ids={len(map_old)} moved={moved} canon={digest}")
     return 0
 
 
