@@ -1,8 +1,8 @@
 proc main (): eff loaded integer :=
   let strong i: pointer = create(Ivalignof('signed int'), 'signed int') in
-  let strong a_514: loaded integer = bound(pure(Specified(0))) in
-  store('signed int', i, conv_loaded_int('signed int', a_514)) ;
-  save while_512: unit (i: pointer:= i) in
+  let strong a_512: loaded integer = bound(pure(Specified(0))) in
+  store('signed int', i, conv_loaded_int('signed int', a_512)) ;
+  save while_513: unit (i: pointer:= i) in
     let strong a_515: loaded integer =
       bound(
         let weak (a_517: loaded integer, a_518: loaded integer) =
@@ -41,14 +41,14 @@ proc main (): eff loaded integer :=
           end
         )
       ) in
-    let strong a_513: boolean =
+    let strong a_514: boolean =
       case a_515 of
         | Specified(a_516: integer) =>
             pure(if not(a_516 = 1) then True else False)
         | Unspecified(_: ctype) =>
             nd(pure(True), pure(False))
       end in
-    if a_513 then
+    if a_514 then
       let strong _: loaded integer =
         bound(
           let weak (a_528: pointer, a_535: loaded integer) =
@@ -79,7 +79,7 @@ proc main (): eff loaded integer :=
       pure(Unit) ;
       save continue_510: unit (i: pointer:= i) in  pure(Unit) ;
       pure(Unit) ;
-      run while_512(i)
+      run while_513(i)
     else
       pure(Unit) ;
   save break_511: unit (i: pointer:= i) in  pure(Unit) ;

@@ -43,7 +43,7 @@ proc main (): eff loaded integer :=
         if a_514 \/ not(are_compatible ('signed int', a_512)) then
           pure(undef(<<UB041_function_not_compatible>>))
         else
-          let strong a_517: pointer =
+          let strong a_516: pointer =
             let a_520: ctype = params_nth(a_513, 0) in
             if not(are_compatible ('signed int', a_520)) then
               pure(undef(<<UB041_function_not_compatible>>))
@@ -53,7 +53,7 @@ proc main (): eff loaded integer :=
               let weak _: unit =
                 store('signed int', a_521, conv_loaded_int('signed int', a_518)) in
               pure(a_521) in
-          let strong a_516: pointer =
+          let strong a_517: pointer =
             let a_522: ctype = params_nth(a_513, 1) in
             if not(are_compatible ('signed int', a_522)) then
               pure(undef(<<UB041_function_not_compatible>>))
@@ -64,9 +64,9 @@ proc main (): eff loaded integer :=
                 store('signed int', a_523, conv_loaded_int('signed int', a_519)) in
               pure(a_523) in
           let strong a_524: loaded integer =
-            ccall('signed int (*) (signed int, signed int)', a_511, a_517, a_516) in
+            ccall('signed int (*) (signed int, signed int)', a_511, a_516, a_517) in
           let strong _: (unit,unit) =
-            unseq(kill('signed int', a_517), kill('signed int', a_516)) in
+            unseq(kill('signed int', a_516), kill('signed int', a_517)) in
           pure(a_524)
     ) in
   run ret_509(conv_loaded_int('signed int', a_525)) ;
