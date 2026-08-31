@@ -1670,7 +1670,7 @@ csmith/smx_csmith_2.c AGREE -
 csmith/smx_csmith_3.c AGREE -
 csmith/smx_csmith_4.c AGREE -
 csmith/smx_csmith_5.c AGREE -
-csmith/smx_csmith_6.c SKIP_ORACLE -
+csmith/smx_csmith_6.c SKIP_LEAN_FAIL -
 csmith/smx_csmith_7.c AGREE -
 tests/debug/alias-01-int-to-struct.c SKIP_UB -
 tests/debug/alias-02-simple-cast.c SKIP_UB -
@@ -1737,9 +1737,9 @@ tests/debug/struct-04-array-member.c AGREE -
 tests/debug/struct-05-array-direct.c AGREE -
 tests/debug/struct-06-local-struct-array.c AGREE -
 tests/debug/struct-07-pass-int-array.c AGREE -
-tests/debug/ub-inconsistent.c SKIP_ORACLE -
+tests/debug/ub-inconsistent.c SKIP_UB -
 tests/debug/ub-runtime-detect.c SKIP_UB -
-tests/debug/ub-static-reject.c SKIP_ORACLE -
+tests/debug/ub-static-reject.c SKIP_LEAN_FAIL -
 tests/debug/unseq-01-exact-0301.c SKIP_UB -
 tests/debug/unseq-02-simple-double-write.c SKIP_UB -
 tests/debug/unseq-03-write-then-read.c SKIP_UB -
@@ -1844,7 +1844,7 @@ tests/immaculate/nolibc/g5-decode-multichar.c SKIP_LEAN_CRASH -
 tests/immaculate/nolibc/g5-decode-question.c AGREE -
 tests/immaculate/nolibc/lock-const-global.c SKIP_UB -
 tests/immaculate/nolibc/lock-string-literal.c SKIP_UB -
-tests/immaculate/nolibc/offsetof-nested-struct.c SKIP_LEAN_CRASH -
+tests/immaculate/nolibc/offsetof-nested-struct.c AGREE -
 tests/immaculate/nolibc/offsetof-union-member.c SKIP_LEAN_CRASH -
 tests/immaculate/nolibc/s9-enum-signedness.c AGREE -
 tests/immaculate/nolibc/s9-enum-sizeof-route.c AGREE -
