@@ -1,11 +1,11 @@
 proc sum (n: pointer): eff loaded integer :=
   let strong s: pointer = create(Ivalignof('signed int'), 'signed int') in
-  let strong a_533: loaded integer = bound(pure(Specified(0))) in
-  store('signed int', s, conv_loaded_int('signed int', a_533)) ;
+  let strong a_531: loaded integer = bound(pure(Specified(0))) in
+  store('signed int', s, conv_loaded_int('signed int', a_531)) ;
   let strong i: pointer = create(Ivalignof('signed int'), 'signed int') in
-  let strong a_534: loaded integer = bound(pure(Specified(0))) in
-  store('signed int', i, conv_loaded_int('signed int', a_534)) ;
-  save while_531: unit (i: pointer:= i, s: pointer:= s) in
+  let strong a_532: loaded integer = bound(pure(Specified(0))) in
+  store('signed int', i, conv_loaded_int('signed int', a_532)) ;
+  save while_533: unit (i: pointer:= i, s: pointer:= s) in
     let strong a_535: loaded integer =
       bound(
         let weak (a_537: loaded integer, a_538: loaded integer) =
@@ -45,14 +45,14 @@ proc sum (n: pointer): eff loaded integer :=
           end
         )
       ) in
-    let strong a_532: boolean =
+    let strong a_534: boolean =
       case a_535 of
         | Specified(a_536: integer) =>
             pure(if not(a_536 = 1) then True else False)
         | Unspecified(_: ctype) =>
             nd(pure(True), pure(False))
       end in
-    if a_532 then
+    if a_534 then
       let strong _: loaded integer =
         bound(
           let weak (a_549: pointer, a_557: loaded integer) =
@@ -113,7 +113,7 @@ proc sum (n: pointer): eff loaded integer :=
       pure(Unit) ;
       save continue_529: unit (i: pointer:= i, s: pointer:= s) in  pure(Unit) ;
       pure(Unit) ;
-      run while_531(i, s)
+      run while_533(i, s)
     else
       pure(Unit) ;
   save break_530: unit (i: pointer:= i, s: pointer:= s) in  pure(Unit) ;

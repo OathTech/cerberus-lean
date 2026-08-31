@@ -1,20 +1,20 @@
 proc sgn (x: pointer): eff loaded integer :=
-  let strong a_544: loaded integer =
+  let strong a_543: loaded integer =
     bound(
-      let weak (a_546: loaded integer, a_547: loaded integer) =
+      let weak (a_545: loaded integer, a_546: loaded integer) =
         unseq(
-          let weak (a_552: loaded integer, a_553: loaded integer) =
+          let weak (a_551: loaded integer, a_552: loaded integer) =
             unseq(
-              let weak a_551: pointer = pure(x) in
-              load('signed int', a_551)
+              let weak a_550: pointer = pure(x) in
+              load('signed int', a_550)
             ,
               pure(Specified(0))
             ) in
-          case (a_552, a_553) of
-            | (Specified(a_554: integer), Specified(a_555: integer)) =>
+          case (a_551, a_552) of
+            | (Specified(a_553: integer), Specified(a_554: integer)) =>
                 pure(
-                  if conv_int('signed int', a_554) <
-                  conv_int('signed int', a_555) then
+                  if conv_int('signed int', a_553) <
+                  conv_int('signed int', a_554) then
                     Specified(1)
                   else
                     Specified(0)
@@ -26,9 +26,9 @@ proc sgn (x: pointer): eff loaded integer :=
           pure(Specified(0))
         ) in
       pure(
-        case (a_546, a_547) of
-          | (Specified(a_548: integer), Specified(a_549: integer)) =>
-              if conv_int('signed int', a_548) = conv_int('signed int', a_549) then
+        case (a_545, a_546) of
+          | (Specified(a_547: integer), Specified(a_548: integer)) =>
+              if conv_int('signed int', a_547) = conv_int('signed int', a_548) then
                 Specified(1)
               else
                 Specified(0)
@@ -37,28 +37,28 @@ proc sgn (x: pointer): eff loaded integer :=
         end
       )
     ) in
-  let strong a_543: boolean =
-    case a_544 of
-      | Specified(a_545: integer) =>
-          pure(if not(a_545 = 1) then True else False)
+  let strong a_542: boolean =
+    case a_543 of
+      | Specified(a_544: integer) =>
+          pure(if not(a_544 = 1) then True else False)
       | Unspecified(_: ctype) =>
           nd(pure(True), pure(False))
     end in
-  if a_543 then
-    let strong a_559: loaded integer =
+  if a_542 then
+    let strong a_558: loaded integer =
       bound(
-        let weak a_558: loaded integer = pure(Specified(1)) in
+        let weak a_557: loaded integer = pure(Specified(1)) in
         pure(
-          case a_558 of
-            | Specified(a_557: integer) =>
+          case a_557 of
+            | Specified(a_556: integer) =>
                 Specified(catch_exceptional_condition_sub('signed int', 0, conv_int('signed int',
-                a_557)))
+                a_556)))
             | Unspecified(_: ctype) =>
                 Unspecified('signed int')
           end
         )
       ) in
-    run ret_541(conv_loaded_int('signed int', a_559)) ;
+    run ret_541(conv_loaded_int('signed int', a_558)) ;
     pure(Unit)
   else
     pure(Unit) ;
@@ -100,14 +100,14 @@ proc sgn (x: pointer): eff loaded integer :=
         end
       )
     ) in
-  let strong a_542: boolean =
+  let strong a_559: boolean =
     case a_560 of
       | Specified(a_561: integer) =>
           pure(if not(a_561 = 1) then True else False)
       | Unspecified(_: ctype) =>
           nd(pure(True), pure(False))
     end in
-  if a_542 then
+  if a_559 then
     let strong a_573: loaded integer = bound(pure(Specified(1))) in
     run ret_541(conv_loaded_int('signed int', a_573)) ;
     pure(Unit)

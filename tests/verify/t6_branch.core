@@ -1,7 +1,7 @@
 proc pick (x: pointer): eff loaded integer :=
   let strong t: pointer = create(Ivalignof('signed int'), 'signed int') in
-  let strong a_526: loaded integer = bound(pure(Specified(3))) in
-  store('signed int', t, conv_loaded_int('signed int', a_526)) ;
+  let strong a_525: loaded integer = bound(pure(Specified(3))) in
+  store('signed int', t, conv_loaded_int('signed int', a_525)) ;
   let strong a_527: loaded integer =
     bound(
       let weak (a_529: loaded integer, a_530: loaded integer) =
@@ -41,14 +41,14 @@ proc pick (x: pointer): eff loaded integer :=
         end
       )
     ) in
-  let strong a_525: boolean =
+  let strong a_526: boolean =
     case a_527 of
       | Specified(a_528: integer) =>
           pure(if not(a_528 = 1) then True else False)
       | Unspecified(_: ctype) =>
           nd(pure(True), pure(False))
     end in
-  if a_525 then
+  if a_526 then
     let strong a_548: loaded integer =
       bound(
         let weak (a_543: loaded integer, a_544: loaded integer) =

@@ -1,38 +1,38 @@
 proc pct_hi (v: pointer): eff loaded integer :=
   let strong hi: pointer = create(Ivalignof('signed int'), 'signed int') in
-  let strong a_526: loaded integer =
+  let strong a_525: loaded integer =
     bound(
-      let weak (a_528: loaded integer, a_529: loaded integer) =
+      let weak (a_527: loaded integer, a_528: loaded integer) =
         unseq(
-          let weak a_527: pointer = pure(v) in
-          load('signed int', a_527)
+          let weak a_526: pointer = pure(v) in
+          load('signed int', a_526)
         ,
           pure(Specified(16))
         ) in
       pure(
-        case (a_528, a_529) of
-          | (Unspecified(_: ctype), Specified(a_531: integer)) =>
-              let a_533: integer = conv_int('signed int', a_531) in
-              if a_533 = 0 then
+        case (a_527, a_528) of
+          | (Unspecified(_: ctype), Specified(a_530: integer)) =>
+              let a_532: integer = conv_int('signed int', a_530) in
+              if a_532 = 0 then
                 undef(<<UB045a_division_by_zero>>)
               else
                 undef(<<UB036_exceptional_condition>>)
           | (_: loaded integer, Unspecified(_: ctype)) =>
               undef(<<UB045a_division_by_zero>>)
-          | (Specified(a_530: integer), Specified(a_531: integer)) =>
+          | (Specified(a_529: integer), Specified(a_530: integer)) =>
+              let a_531: integer = conv_int('signed int', a_529) in
               let a_532: integer = conv_int('signed int', a_530) in
-              let a_533: integer = conv_int('signed int', a_531) in
-              if a_533 = 0 then
+              if a_532 = 0 then
                 undef(<<UB045a_division_by_zero>>)
               else
-                if is_representable_integer(a_532 / a_533, 'signed int') then
-                  Specified(a_532 / a_533)
+                if is_representable_integer(a_531 / a_532, 'signed int') then
+                  Specified(a_531 / a_532)
                 else
                   undef(<<UB045c_quotient_not_representable>>)
         end
       )
     ) in
-  store('signed int', hi, conv_loaded_int('signed int', a_526)) ;
+  store('signed int', hi, conv_loaded_int('signed int', a_525)) ;
   let strong a_534: loaded integer =
     bound(
       let weak (a_536: loaded integer, a_537: loaded integer) =
@@ -71,14 +71,14 @@ proc pct_hi (v: pointer): eff loaded integer :=
         end
       )
     ) in
-  let strong a_525: boolean =
+  let strong a_533: boolean =
     case a_534 of
       | Specified(a_535: integer) =>
           pure(if not(a_535 = 1) then True else False)
       | Unspecified(_: ctype) =>
           nd(pure(True), pure(False))
     end in
-  if a_525 then
+  if a_533 then
     let strong a_553: loaded integer =
       bound(
         let weak (a_547: loaded integer, a_548: loaded integer) =
