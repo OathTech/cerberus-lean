@@ -1,21 +1,16 @@
-{
-  "version": "1.2.0",
-  "packagesDir": ".lake/packages",
-  "packages": [
-    {
-      "url": "https://github.com/septract/lem-lean",
-      "type": "git",
-      "subDir": "lean-lib",
-      "scope": "",
-      "rev": "861ed814f178a40a28616326378ae2f38bf79b4a",
-      "name": "LemLib",
-      "manifestFile": "lake-manifest.json",
-      "inputRev": "861ed814f178a40a28616326378ae2f38bf79b4a",
-      "inherited": false,
-      "configFile": "lakefile.lean"
-    }
-  ],
-  "name": "CerberusLean",
-  "lakeDir": ".lake",
-  "fixedToolchain": false
-}
+{"version": "1.2.0",
+ "packagesDir": ".lake/packages",
+ "packages":
+ [{"url": "https://github.com/septract/lem-lean",
+   "type": "git",
+   "subDir": "lean-lib",
+   "scope": "",
+   "rev": "af5df7116525a4c6fdb7ab3d78644becc83040c9",
+   "name": "LemLib",
+   "manifestFile": "lake-manifest.json",
+   "inputRev": "af5df7116525a4c6fdb7ab3d78644becc83040c9",
+   "inherited": false,
+   "configFile": "lakefile.lean"}],
+ "name": "CerberusLean",
+ "lakeDir": ".lake",
+ "fixedToolchain": false}

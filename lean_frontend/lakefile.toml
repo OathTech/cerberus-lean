@@ -7,10 +7,13 @@ moreLeanArgs = ["-DautoImplicit=false"]
 # DAEMON/DAEMON1/legacy failwith removed from LemLib in this lineage);
 # arc-10 S2: bumped to the arc/robustness lem head (Sum BEq/Ord, R1 +
 # comparison derivation backend); re-pin to the merged head at arc close.
+# effect-retirement C1: bumped to the arc/effect-retirement lem head
+# (L0 fix-first + L1 supply/reader_consumer/fuel-budget features +
+# audit response); re-pin to the merged head at arc close (pin dance).
 [[require]]
 name = "LemLib"
 git = "https://github.com/septract/lem-lean"
-rev = "861ed814f178a40a28616326378ae2f38bf79b4a"
+rev = "af5df7116525a4c6fdb7ab3d78644becc83040c9"
 subDir = "lean-lib"
 
 [[lean_lib]]
