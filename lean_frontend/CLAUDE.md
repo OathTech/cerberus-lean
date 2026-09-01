@@ -318,11 +318,14 @@ dated records — do not maintain status lists here. Start points:
   in the container `ROADMAP.md`).
 - Trust story + gate list: [VALIDATION.md](VALIDATION.md).
 - Declared boundary: concurrency stubs (temporal, the cmm
-  instantiation is the mover) + the axiom story (ZERO axioms in this
-  repo — the former with_tagDefs/forceIO axioms are kernel-checked
-  opaques, gate-enforced; the one residual, LemLib's `runEffectful`,
-  is temporal, lem-side). No sorried target_reps outside that
-  boundary; any new one is a finding.
+  instantiation is the mover) + CerbFS + the CerbDebug no-op stubs,
+  and the axiom story is CLOSED (effect-retirement arc, 2026-09-01):
+  ZERO axiom declarations anywhere — this repo AND LemLib,
+  recursively, gate-enforced; `runEffectful` is deleted and lem
+  refuses `declare {lean} effectful`; the surviving runtime seams are
+  kernel-checked opaques machine-pinned in
+  `scripts/unsafebaseio_allowlist.txt` (Q4 classes). No sorried
+  target_reps outside that boundary; any new one is a finding.
 - Known operational residuals (step-runner stack ceiling, oracle
   allocation-census gap, etc.): registered with prices in the latest
   results docs.

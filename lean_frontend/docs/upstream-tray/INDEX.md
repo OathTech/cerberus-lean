@@ -149,6 +149,19 @@ covered by the 2026-08-23 duplicate search — search at filing time):
     `tests/parity-probes/probes/snprintf_trunc.c`, verbatim
     2026-08-30.
 
+Added 2026-09-01 (effect-retirement arc close-out — the C1-F2
+finding registered per the standing numbering-independence principle
+[USER 2026-08-31]):
+
+17. **17-diagnostic-embeds-symbol-id.md** — TRUE BUG (minor,
+    diagnostic quality). The unknown-procedure diagnostic
+    (core_run.lem:69) embeds the raw fresh-symbol counter value
+    (`show psym`), making user-facing error text depend on symbol
+    allocation history — non-reproducible under semantically-neutral
+    renumbering (our libxml2-uri lane pins it modulo the id;
+    upstream's own value differs from every fork's). Remedy: render
+    the symbol description only in user-facing diagnostics.
+
 Amended 2026-08-30: draft 08 gains reproducer 3 (2-D array of
 struct, 3 lines, `probes/oracle_2d_struct_init.c` — the scalar 2-D
 control works; measured as 58% of 320 fresh-seed csmith programs,

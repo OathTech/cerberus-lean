@@ -23,9 +23,27 @@
 # set/reset_tagDefs lose their Lean-only declares; translation.ml:
 # the 15 elaboration-site mints + the m1b erase_loop_control supply
 # component + the supply-parameterized translate entry). Oracle
-# BEHAVIOR moves only in the S0-enumerated renumbering class (the
-# elaboration draw sequence; docs/2026-08-31_S0-scan-record.md); the
-# arc-13 check_ail_window backstop still refuses a re-threaded
+# BEHAVIOR moves only in the tolerated RENUMBERING class — FINALIZED
+# at C2 (2026-09-01) per the C1-F1 adjudication [USER 2026-09-01]:
+# the class is BROADER than the S0 D1/D2 enumeration (eager-batch
+# dispersal at statement lists, call-argument batches, bind-head
+# prefixes and cross-definition elaboration prefixes — the S0 record
+# + C1 record section 5 are the mechanism analysis), and its artifact
+# scope is defined OPERATIONALLY, not by static list: every pinned
+# oracle dump that moves under re-derivation is admitted only on
+# machine-checked same-draw-count + permutation-only equivalence
+# (scripts/check_renumber_only.py; plant battery
+# scripts/test_renumber_plants.sh). Rebaselined set: 70 rows across
+# tests/verify (7), tests/corpus (20), tests/speclab (39),
+# tests/libc/libc.core (1), tests/fixtures goldens (3) — the C1
+# family commits + the C2 re-check carry the row-by-row evidence.
+# Consequence for upstream byte-fidelity (accepted knowingly, Q1b
+# ruling): the fork's oracle Core dumps diverge from un-forked
+# upstream TEXTUALLY, UP-TO-RENAMING of symbol ids, on inputs
+# triggering the class; verdicts are everywhere unmoved, and the one
+# numbering-dependent output row found is registered as finding C1-F2
+# (upstream-tray draft 17), never accommodated. The arc-13
+# check_ail_window backstop still refuses a re-threaded
 # desugar supply. Hand [files] entries pipeline.ml/fork_renumber.ml
 # carry the corresponding driver-side call-site adaptations
 # (supply args dead on OCaml, ambient mint shims).

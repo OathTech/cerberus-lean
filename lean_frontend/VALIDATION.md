@@ -76,6 +76,29 @@ Lane semantics worth knowing:
   refuse loudly rather than compare wrongly, and the lem-sync
   content-hash gate makes a stale generated tree a build failure on
   both the OCaml and Lean sides.
+- **The tolerated renumbering class (upstream divergence, declared).**
+  The effect-retirement arc replaced the ambient fresh-symbol counter
+  with explicit supply threading; the oracle's dynamic draw SEQUENCE
+  moved on affected inputs (eager-batch dispersal — statement lists,
+  call-argument batches, elaboration prefixes), so the fork's oracle
+  Core dumps diverge from un-forked upstream **textually,
+  up-to-renaming of symbol ids, on affected inputs** — same term,
+  bijectively renamed, verdicts everywhere unmoved. Ruled TOLERATED
+  [USER 2026-08-31, re-affirmed over the enlarged class 2026-09-01]
+  with a standing operator principle: output depending on symbol
+  numbering beyond binding identity is itself a defect (registered
+  finding + upstream candidate, never accommodated). The affected pin
+  set and its one-time rebaseline: every moved artifact was admitted
+  only on machine-checked same-draw-count + permutation-only
+  equivalence (`scripts/check_renumber_only.py`, itself plant-tested
+  by `scripts/test_renumber_plants.sh`); the enumeration lives in the
+  C1/C2 rebaseline commits and `scripts/fork_drift_manifest.txt`'s
+  header note. One numbering-dependent output site was found and
+  registered (finding C1-F2: a libxml2-uri diagnostic embedding a raw
+  symbol id — upstream candidate; the oracle's own diagnostic does
+  the same). Records: `docs/2026-08-31_effect-retirement-design.md`
+  §3.6/§9, `docs/2026-09-01_C1-adoption-record.md`,
+  `docs/2026-09-01_C2-ratchet-record.md`.
 
 ## 3. The build-time gates (`scripts/test_unit.sh`)
 
@@ -87,11 +110,12 @@ proof exemplars), then the gate scripts — all fail-closed:
 |---|---|
 | sync gate | every hand-written file byte-identical to its compiled `generated/` copy (the binary corresponds to the sources) |
 | `check_exec_purity.sh` | the execution slice is free of unsanctioned IO/effects |
-| `check_theorem_axioms.sh` | hand-written axiom census **zero**; generated-tree census: zero axioms, the two boundary opaques (`with_tagDefs`/`forceIO` — kernel-checked inhabitants with native `@[implemented_by]` bindings) present exactly once, zero `unsafeCast`; exemplar + `driver2` axiom cones free of `sorryAx`/`ofReduce*`/DAEMON; non-kernel decision procedures (`native_decide`/`bv_decide`) grep-banned |
+| `check_theorem_axioms.sh` | **zero `axiom` declarations anywhere** — hand-written census, generated-tree census, and the recursive census of the consumed LemLib package copy (the effect-retirement end state: `runEffectful` is deleted, `declare {lean} effectful` is refused by lem itself); `runEffectful` token-banned (comment-stripped) across all three trees; the `@[implemented_by]`/`unsafe`/`unsafeBaseIO` seam population pinned to `scripts/unsafebaseio_allowlist.txt`'s PIN rows exactly, both directions (a new seam fails naming itself — this bans an axiom-free reintroduction of the effect projection); the boundary opaque `forceIO` present exactly once; zero `unsafeCast`; exemplar + `driver2` cones free of `sorryAx`/`ofReduce*`/DAEMON; the full exec-entry set (`driver2`, `drive`, `initial_driver_state`, `desugar`, `annotate_program`, `translate`, `link`, `convert_file`, `RelSem.Cerb.callND`) at the **exact** axiom allowlist `[propext, Classical.choice, Quot.sound]`; non-kernel decision procedures (`native_decide`/`bv_decide`) grep-banned. Source-scan legs are the primary evidence; the `#print axioms` probes are end-to-end spot checks (they underreport across `partial def` boundaries) |
 | `check_exec_totality.sh` | zero `partial` definitions on the execution path (empty allowlist; fuel-totalized recursion with loud exhaustion) |
 | lem-sync gate | generated trees content-in-sync with the `.lem` sources (stamped; also wired into the dune graph for the libc `.co` artifacts) |
 | `check_fork_drift.sh` | the fork's oracle-side surface equals a reviewed manifest, and generated-OCaml fork-vs-upstream deltas match pinned hashes |
 | `check_fixture_freeze.sh` | the `corpus/` differential-fixture set matches its hash manifest exactly (additions included) |
+| `test_renumber_plants.sh` | the rebaseline-admission instrument (`check_renumber_only.py`) refuses what it must: committed adversarial pairs (string-content/comment-boundary holes + count/token/order plants) fail, positive controls admit with their declared class |
 
 Certification-integrity rules ride the gates: validation of
 build-rule-affecting changes is cache-disabled from re-derived
@@ -122,12 +146,42 @@ The claims this validation surface supports are exactly:
 3. The execution path is total, effect-honest, and axiom-clean as a
    Lean artifact (§3) — properties of this port, checked by the
    build, independent of the oracle.
+4. **The customer contract (effect retirement, universal form) is
+   MET, with the §3 gate as its standing enforcement**: every
+   constant elaborated from this repository and from LemLib has axiom
+   cone ⊆ `[propext, Classical.choice, Quot.sound]`. This is derived,
+   not sampled — zero `axiom` declarations exist anywhere on the
+   scanned surface (hand-written, generated, and the LemLib package,
+   recursively), and the standing bans exclude the tactic-introduced
+   axioms — with the exec-entry probes as end-to-end spot checks.
+   `runEffectful` does not exist under any name; reintroducing
+   `declare {lean} effectful` is a lem generation-time refusal.
+   (Charter: `docs/2026-08-31_effect-retirement-design.md` §1.3.)
 
 What remains on the trust boundary: the OCaml oracle itself (and
 upstream's correctness), the C parser (shared, upstream), the Lem
 compiler and its Lean backend (attacked structurally by the shared
 model + the mirror discipline + these differentials), the Lean
-toolchain, and the native externs behind the two boundary opaques.
-Known limitations are tracked in [TODO.md](TODO.md) (e.g. the
-step-runner stack ceiling; concurrency is a stubbed, documented
-boundary).
+toolchain, and the declared RUNTIME seams — not axioms, enumerated
+and machine-pinned (`scripts/unsafebaseio_allowlist.txt`, gate-
+enforced both directions), each with its ruled classification
+[USER 2026-08-31]:
+
+- the digest boundary (`CerberusFresh.digest`/`forceIO`/`md5Hex`) —
+  kernel-checked opaques with native `@[implemented_by]`/`@[extern]`
+  bindings (the C2 conversion; nothing postulated, no proof can
+  unfold them);
+- `CerbGlobal` config/switch refs — temporal; mover: a post-arc
+  parameter-plumbing slice;
+- `CerberusImpl`'s enum registry — temporal; mover: the arc's
+  reader/supply machinery in a follow-up slice;
+- `CerbUtils` no-op timing/log refs + the `boundedIntegerImpl` stub —
+  permanent-declared (OCaml module-shape parity);
+- LemLib's `failwithIImpl`/`fuelExhaustedWithImpl` panic bindings
+  (runtime behavior of the axiom-free failure/fuel constants).
+
+The remaining declared MODEL boundary: the in-memory filesystem model
+(`CerbFS`), the debug no-op stubs (`CerbDebug` — the model returns
+values, the driver prints), and the concurrency stubs (temporal, the
+cmm instantiation is the mover). Known limitations are tracked in
+[TODO.md](TODO.md) (e.g. the step-runner stack ceiling).

@@ -199,3 +199,40 @@ N`) are **NOT applied in C1** — decision RECORD-AND-DEFER, [AGENT]:
 4. Axiom-cone expectation: `initial_driver_state` and `translate` are
    now clean of `runEffectful` (kernel cone ⊆ the standard three);
    the LemLib axiom deletion itself is L2/C2.
+
+## C2 finalization addendum (2026-09-01, the deletion-slice deltas)
+
+Lem pin: LemLib @ `045dcb0` (L2 deletion head). Provenance [AGENT]
+(C2 worker). The C2 slice changes NOTHING the consumer quantifies
+over — the full delta, enumerated:
+
+1. **Generated Lean tree: byte-identical** under the L2 lem (verified
+   by clean re-derivation + diff at the C2 pin bump). No definition
+   in the exec cone changed name, type, or body. The C1 signatures
+   quoted above are final for the arc.
+2. **LemLib now declares ZERO axioms** — `runEffectful` and its
+   scaffold are deleted (L2 `faa9fe4` + `045dcb0`); the universal
+   contract form (charter §1.3) holds and is gate-enforced
+   consumer-side: every constant in this repo and in LemLib has axiom
+   cone ⊆ [propext, Classical.choice, Quot.sound]
+   (check_theorem_axioms.sh C2 ratchet — recursive LemLib census,
+   runEffectful token ban, seam-population pin, 9-entry exact
+   census). `LemLib.supplySplit` is unchanged.
+3. **`CerberusFresh.digest` is now a kernel-checked opaque** (was
+   opaque + unsafeBaseIO impl): name and type unchanged
+   (`digest : Unit → String`), explicit witness `fun _ => ""`;
+   compiled behavior verified byte-identical (differential spot-run,
+   C2 record §2). Consumer proofs cannot unfold it — same as before;
+   nothing postulated — same as before (it was never an axiom).
+4. **`declare {lean} effectful` is a lem generation-time refusal**
+   (the L2 refusal decision) — reintroduction of the deleted
+   mechanism is structurally impossible without a conscious lem-side
+   revert.
+5. The rebaseline-admission instrument was hardened (string/comment
+   aware; scripts/check_renumber_only.py) with all 70 C1-admitted
+   rows re-verified verdict-unchanged — no pinned artifact moved at
+   C2.
+
+Acceptance: the §1.3 customer contract is declared MET at this pin
+(VALIDATION.md §5 item 4 is the standing statement; the gate is its
+enforcement).

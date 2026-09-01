@@ -78,13 +78,22 @@ trace; verdicts (defined result / undefined behaviour / error) are
 compared across the whole enumeration in differential runs.
 
 **Effects.** The OCaml model uses mutable references for ambient state
-(fresh-name counters, tag definitions, debug output). In Lean these
-run through a small effect-erasure boundary: `BaseIO` externs behind
-`LemLib.runEffectful` — a declared *temporal* axiom living in the
-`lem-lean` dependency, not this repository (which declares zero
-axioms; see VALIDATION.md §3 for the census and cone gates). The two
-former in-repo boundary axioms (`with_tagDefs`, `forceIO`) are
-kernel-checked opaques with native `@[implemented_by]` bindings.
+(fresh-name counters, tag definitions, debug output). The Lean port
+carries NONE of that as effects — the effect-retirement arc
+(2026-08/09, `docs/2026-08-31_effect-retirement-design.md`) ended the
+effect-erasure era: the fresh-symbol counter is an explicit threaded
+SUPPLY (lem's `declare {lean} supply` state-passing transform for the
+first-order region + supply fields in the desugar/elaboration monads
+the model already threads; one stream, seeded by the driver); the tag
+table is passed by value (reader lifting + `reader_consumer`); debug
+output returns values, the driver prints. `LemLib.runEffectful` — the
+old effect-projection axiom — is DELETED, and lem refuses
+`declare {lean} effectful` outright. Zero `axiom` declarations exist
+in this repository OR in LemLib (gate-enforced recursively; see
+VALIDATION.md §3). The surviving pure-signature runtime seams (the
+per-TU digest read, config refs, the enum registry) are kernel-checked
+opaques on the declared `@[implemented_by]`/`@[extern]` boundary,
+machine-pinned in `scripts/unsafebaseio_allowlist.txt`.
 
 **Totality.** The execution path contains no `partial` definitions:
 every function on it is fuel-totalized — structural recursion over an

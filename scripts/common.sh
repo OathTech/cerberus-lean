@@ -60,6 +60,26 @@ require_cerberus() {
     fi
 }
 
+# SKIP_BUILD freshness verification (effect-retirement C2; closes the
+# C1-audit note-2 residue of the s-basket item-6 stamp gate):
+# SKIP_BUILD=1 lanes previously asserted only that the binaries EXIST —
+# a binary built from a stale generated tree over changed .lem sources
+# would run differential lanes against the wrong semantics (the
+# split-record finding-6 shape the stamps were built for). Every
+# SKIP_BUILD entry point now also verifies BOTH lem-sync freshness
+# stamps (OCaml + Lean generated trees vs the .lem sources).
+# Fail-closed: a missing stamp or any drift is an error, never a skip.
+verify_skip_build_freshness() {
+    if ! "$PROJECT_ROOT/tools/check_lem_sync.sh" --check; then
+        echo "Error: SKIP_BUILD=1 but the OCaml lem-sync stamp check failed (stale generated tree / stale driver hazard — rebuild, don't skip)" >&2
+        exit 1
+    fi
+    if ! "$PROJECT_ROOT/tools/check_lem_sync.sh" --check-lean; then
+        echo "Error: SKIP_BUILD=1 but the Lean lem-sync stamp check failed (stale generated tree / stale driver hazard — rebuild, don't skip)" >&2
+        exit 1
+    fi
+}
+
 # Check Lean prerequisites
 require_lean() {
     if ! command -v lake &>/dev/null; then

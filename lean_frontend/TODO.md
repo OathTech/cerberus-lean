@@ -52,8 +52,13 @@ S-basket slice — `docs/2026-09-01_s-basket.md`.)
   network windows allow.
 - Decide the fate of the earlier prototype interpreter (reduce to a
   test oracle vs archive) — open decision.
-- **Kill the residual effect axiom** — `with_tagDefs`/`forceIO` are
-  already kernel-checked opaques (zero axioms in this repository);
-  the residual is `runEffectful` (LemLib, temporal — its deletion is
-  lem-side surgery; end state is the fresh-symbol supply threaded
-  through the machine state, natural alongside the cmm work).
+- ~~**Kill the residual effect axiom**~~ — DONE (effect-retirement
+  arc, 2026-09-01 C2): `runEffectful` is deleted from LemLib, the
+  fresh-symbol supply is threaded explicitly (single stream), the
+  digest read is a kernel-checked opaque, and zero `axiom`
+  declarations exist anywhere (this repo + LemLib, recursively,
+  gate-enforced). Remaining temporal seams with named movers (Q4
+  ruling, machine-pinned in `scripts/unsafebaseio_allowlist.txt`):
+  CerbGlobal config/switch refs (mover: a parameter-plumbing slice)
+  and CerberusImpl's enum registry (mover: the arc's reader/supply
+  machinery, follow-up slice).

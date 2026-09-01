@@ -9,7 +9,11 @@ hands on. The result is an executable, rigorously defined C semantics
 that lives natively in Lean: parse real C (via the upstream front
 end), elaborate it to Cerberus's Core language, and execute it —
 undefined-behaviour verdicts included — inside a Lean artifact whose
-execution path is total, effect-honest, and axiom-clean.
+execution path is total, pure (state is threaded, never ambient —
+the effect-retirement arc deleted the last effect-projection axiom),
+and axiom-free: zero `axiom` declarations exist in this repository or
+its LemLib runtime, so every constant's axiom cone bottoms out in
+Lean's three standard axioms (gate-enforced; VALIDATION.md).
 
 **Provenance.** This port was developed primarily by AI agents
 (Claude, Anthropic) operating under the direction and review of a

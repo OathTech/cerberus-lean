@@ -58,6 +58,7 @@ esac
 if [[ "${SKIP_BUILD:-0}" == "1" ]]; then
     [[ -f "$CERBERUS_BIN" ]] || fail "SKIP_BUILD=1 but $CERBERUS_BIN missing"
     [[ -f "$CERBERUS_LEAN_BIN" ]] || fail "SKIP_BUILD=1 but $CERBERUS_LEAN_BIN missing"
+    verify_skip_build_freshness   # C2: stale-driver hazard — stamps must be fresh (fail-closed)
 else
     build_cerberus
     build_lean

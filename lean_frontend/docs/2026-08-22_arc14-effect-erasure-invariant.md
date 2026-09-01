@@ -1,5 +1,20 @@
 # The effect-erasure soundness invariant (arc-14 S1 F5, sem:S17)
 
+> **SCOPE-SHRINK ADDENDUM (effect-retirement C2, 2026-09-01 — charter
+> §7.1: addendum, not deletion).** The effect-retirement arc deleted
+> most of the seam table below: `CerbTags.*` (the tag table is passed
+> by value), the fresh counter (`fresh_int` is an explicit threaded
+> supply; `native/fresh_int.c` is gone), `CerbDebug`'s level globals,
+> and `LemLib.runEffectful` itself (deleted at L2; lem now REFUSES
+> `declare {lean} effectful`). The invariant below REMAINS NORMATIVE
+> for the surviving pure-signature seams — the per-TU DIGEST read
+> (`CerberusFresh.digest`, since C2 a kernel-checked opaque chain over
+> a pure `@[extern]` binding, with the never-relate-across-`setDigestIO`
+> obligation unchanged), the `CerbGlobal` config/switch refs, and
+> `CerberusImpl`'s enum registry — all machine-pinned in
+> `scripts/unsafebaseio_allowlist.txt` with their Q4 classifications.
+> The table below is the 2026-08-22 record, kept verbatim.
+
 Date: 2026-08-22. Status: normative. This page states, ONCE, the
 soundness invariant governing every seam that gives a PURE-typed Lean
 signature to a read or write of mutable native/global state. It replaces
