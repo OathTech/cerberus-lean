@@ -189,6 +189,218 @@ fi
 echo "check_theorem_axioms: generated-tree census OK ($GEN_SCANNED files: 0 axioms, boundary opaques present, 0 unsafeCast)"
 
 # ---------------------------------------------------------------------------
+# EFFECT-RETIREMENT C2 RATCHET (charter section 7.2 as amended by the
+# accepted L2-audit ratchet legs; 2026-09-01). SOURCE-SCAN census is the
+# PRIMARY evidence that the effect machinery is gone — the kernel-cone
+# probes below are SECONDARY spot checks only (#print axioms
+# UNDERREPORTS across partial-def/opaque boundaries: S0 measured
+# desugar's kernel cone clean while its COMPILED path reached
+# runEffectful; charter 7.2 caveat). Four legs, each fail-closed on
+# missing dirs / empty inputs:
+#   (1) LemLib recursive zero-axiom census — the consumed package copy
+#       (.lake/packages/LemLib/lean-lib/**/*.lean, RECURSIVE per
+#       charter A3: the subdirectory sources LemLib/Num.lean etc. are
+#       in scope, and their presence in the file list is asserted so a
+#       flat-glob regression is loud), comment-stripped (the L2
+#       HISTORY comment naming the deleted axiom must NOT trip — the
+#       DAEMON-precedent adjudication the L2 record flagged).
+#   (2) runEffectful token ban, comment-stripped, over the LemLib copy
+#       + generated/ + ALL hand-written lean_frontend sources
+#       (test/relsemcore/speclab included; .lake trees excluded).
+#   (3) @[implemented_by]/unsafe/unsafeBaseIO POPULATION pin: the
+#       comment-stripped census of implemented_by targets, unsafe
+#       declarations, and unsafeBaseIO occurrences (keyed by enclosing
+#       declaration) must EQUAL the PIN rows of
+#       scripts/unsafebaseio_allowlist.txt exactly, both directions —
+#       any NEW site fails naming itself; any missing pinned row fails
+#       as scanner/copy drift. This is the leg that bans an AXIOM-FREE
+#       reintroduction of the effect projection via
+#       opaque + implemented_by + unsafeBaseIO (the L2 audit's
+#       accepted proposal). LemLib survivors: failwithIImpl +
+#       fuelExhaustedWithImpl; cerberus survivors: the Q4-classified
+#       allowlist (digest converted at C2 — zero unsafeBaseIO in
+#       CerberusFresh).
+#   (4) ban-surface assertion: the lem-lean tests/ scaffolds are
+#       OUTSIDE the surface DELIBERATELY (they hand-write unsafe
+#       externs by design — TupleLetTick.lean, the m7 pin). Asserted,
+#       not assumed: the package clone must contain the scaffold tree
+#       WITH at least one would-trip token, and the scan list must
+#       contain nothing under the package outside lean-lib/.
+# ---------------------------------------------------------------------------
+LEMLIB_PKG=lean_frontend/.lake/packages/LemLib
+LEMLIB_LIB="$LEMLIB_PKG/lean-lib"
+ALLOWLIST=scripts/unsafebaseio_allowlist.txt
+
+if [[ ! -d "$LEMLIB_LIB" ]]; then
+  echo "check_theorem_axioms: FAIL — C2 ratchet: $LEMLIB_LIB missing (fail-closed; is the LemLib package materialized?)"
+  exit 1
+fi
+if [[ ! -f "$ALLOWLIST" ]]; then
+  echo "check_theorem_axioms: FAIL — C2 ratchet: $ALLOWLIST missing (fail-closed; leg 3 has no pin input)"
+  exit 1
+fi
+
+# file lists (fail-closed on empty; NUL-separated for the scanner)
+LEMLIB_LIST=$(find "$LEMLIB_LIB" -name '*.lean' | sort)
+HW_LIST=$(find lean_frontend -name '*.lean' -not -path '*/.lake/*' | sort)
+if [[ -z "$LEMLIB_LIST" ]]; then
+  echo "check_theorem_axioms: FAIL — C2 ratchet: recursive LemLib file list is EMPTY (fail-closed)"
+  exit 1
+fi
+if [[ -z "$HW_LIST" ]]; then
+  echo "check_theorem_axioms: FAIL — C2 ratchet: lean_frontend file list is EMPTY (fail-closed)"
+  exit 1
+fi
+# recursive-glob liveness (charter A3 / plant P3): the LemLib list must
+# reach the subdirectory sources, or the census is silently flat.
+if ! grep -q "lean-lib/LemLib/" <<<"$LEMLIB_LIST"; then
+  echo "check_theorem_axioms: FAIL — C2 ratchet: LemLib file list has NO lean-lib/LemLib/ subdirectory entries (recursive glob broken — a flat glob would miss subdirectory axioms; fail-closed)"
+  exit 1
+fi
+# leg (4): the scaffold exclusion is deliberate and non-vacuous.
+if [[ ! -d "$LEMLIB_PKG/tests/comprehensive" ]]; then
+  echo "check_theorem_axioms: FAIL — C2 ratchet leg 4: $LEMLIB_PKG/tests/comprehensive missing (the asserted-outside-the-surface scaffold tree is gone; re-adjudicate the surface, don't skip)"
+  exit 1
+fi
+if ! grep -rq "unsafeBaseIO" "$LEMLIB_PKG/tests/" 2>/dev/null; then
+  echo "check_theorem_axioms: FAIL — C2 ratchet leg 4: lem tests/ contain no would-trip token (the exclusion assertion is VACUOUS — re-verify the surface)"
+  exit 1
+fi
+if grep -v "^$LEMLIB_PKG/lean-lib/" <<<"$LEMLIB_LIST" | grep -q .; then
+  echo "check_theorem_axioms: FAIL — C2 ratchet leg 4: scan list reaches package paths outside lean-lib/:"
+  grep -v "^$LEMLIB_PKG/lean-lib/" <<<"$LEMLIB_LIST"
+  exit 1
+fi
+
+RATCHET_LIST_FILE=$(mktemp)
+printf '%s\n%s\n' "$LEMLIB_LIST" "$HW_LIST" > "$RATCHET_LIST_FILE"
+RATCHET_SCAN=$(python3 - "$RATCHET_LIST_FILE" <<'PYEOF'
+import os, re, sys
+
+# comment/string/char-literal stripper — same discipline as the
+# generated-tree census scanner above (newlines preserved for line nos)
+def strip(src):
+    cur = []
+    depth = 0
+    i = 0
+    n = len(src)
+    while i < n:
+        two = src[i:i+2]
+        if depth > 0:
+            if two == '/-': depth += 1; i += 2; continue
+            if two == '-/': depth -= 1; i += 2; continue
+            if src[i] == '\n': cur.append('\n')
+            i += 1; continue
+        if two == '/-':
+            depth += 1; i += 2; continue
+        if two == '--':
+            j = src.find('\n', i)
+            i = n if j == -1 else j
+            continue
+        c = src[i]
+        if c == '"':
+            cur.append(' '); i += 1
+            while i < n:
+                if src[i] == '\\': i += 2; continue
+                if src[i] == '"': i += 1; break
+                if src[i] == '\n': cur.append('\n')
+                i += 1
+            continue
+        if c == '\'' and i + 1 < n and (src[i+1] == '\\' or (i + 2 < n and src[i+2] == '\'')):
+            j = src.find('\'', i + 2 if src[i+1] != '\\' else i + 3)
+            i = (j + 1) if j != -1 else n
+            cur.append(' ')
+            continue
+        cur.append(c); i += 1
+    return ''.join(cur)
+
+DECL = re.compile(r"\b(?:def|opaque|abbrev|theorem|instance)\s+([A-Za-z_0-9α-ω.']+)")
+UNSAFEDECL = re.compile(r"\bunsafe\s+(?:def|opaque|abbrev|instance|inductive|structure)\s+([A-Za-z_0-9α-ω.']+)")
+files = [l for l in open(sys.argv[1]).read().splitlines() if l]
+print(f"SCANNED {len(files)}")
+for path in sorted(files):
+    clean = strip(open(path).read())
+    base = os.path.basename(path)
+    def line(pos): return clean.count('\n', 0, pos) + 1
+    for m in re.finditer(r"\baxiom\s+([A-Za-z_0-9α-ω.']+)", clean):
+        print(f"AXIOM {path}:{line(m.start())}:{m.group(1)}")
+    for m in re.finditer(r"\brunEffectful\b", clean):
+        print(f"RUNEFF {path}:{line(m.start())}")
+    for m in re.finditer(r"\bimplemented_by\s+([A-Za-z_0-9α-ω.']+)", clean):
+        print(f"IMPLBY {base} {m.group(1)} {path}:{line(m.start())}")
+    unsafedecl_spans = []
+    for m in UNSAFEDECL.finditer(clean):
+        unsafedecl_spans.append(m.span())
+        print(f"UNSAFEDECL {base} {m.group(1)} {path}:{line(m.start())}")
+    for m in re.finditer(r"\bunsafe\b", clean):
+        if not any(s <= m.start() < e for s, e in unsafedecl_spans):
+            print(f"UNSAFEOTHER {base} - {path}:{line(m.start())}")
+    for m in re.finditer(r"\bunsafeBaseIO\b", clean):
+        decls = [d for d in DECL.finditer(clean) if d.start() < m.start()]
+        encl = decls[-1].group(1) if decls else '<none>'
+        print(f"UNSAFEBASEIO {base} {encl} {path}:{line(m.start())}")
+PYEOF
+) || {
+  echo "check_theorem_axioms: FAIL — C2 ratchet: scanner failed (fail-closed)"
+  rm -f "$RATCHET_LIST_FILE"
+  exit 1
+}
+rm -f "$RATCHET_LIST_FILE"
+if ! grep -q '^SCANNED ' <<<"$RATCHET_SCAN"; then
+  echo "check_theorem_axioms: FAIL — C2 ratchet: scanner produced no SCANNED marker (fail-closed)"
+  exit 1
+fi
+RATCHET_NSCANNED=$(grep '^SCANNED ' <<<"$RATCHET_SCAN" | awk '{print $2}')
+
+# leg (1): zero axiom declarations anywhere on the surface (LemLib copy
+# recursive + all hand-written/generated lean_frontend sources).
+RATCHET_AXIOMS=$(grep '^AXIOM ' <<<"$RATCHET_SCAN" || true)
+if [[ -n "$RATCHET_AXIOMS" ]]; then
+  echo "check_theorem_axioms: FAIL — C2 ratchet leg 1: axiom declaration(s) on the zero-axiom surface (LemLib declares ZERO axioms since L2; cerberus since arc-17 S2b):"
+  echo "$RATCHET_AXIOMS"
+  exit 1
+fi
+
+# leg (2): runEffectful is a banned token (comment-stripped, so the L2
+# HISTORY comment does not trip; a live reintroduction under the same
+# name does).
+RATCHET_RUNEFF=$(grep '^RUNEFF ' <<<"$RATCHET_SCAN" || true)
+if [[ -n "$RATCHET_RUNEFF" ]]; then
+  echo "check_theorem_axioms: FAIL — C2 ratchet leg 2: runEffectful token in non-comment position (the effect projection was DELETED by the effect-retirement arc; charter section 7):"
+  echo "$RATCHET_RUNEFF"
+  exit 1
+fi
+
+# leg (3): population pin, both directions.
+PIN_EXPECTED=$(grep -E '^PIN (IMPLBY|UNSAFEDECL|UNSAFEBASEIO) ' "$ALLOWLIST" | awk '{print $2" "$3" "$4}' | sort -u || true)
+if [[ -z "$PIN_EXPECTED" ]]; then
+  echo "check_theorem_axioms: FAIL — C2 ratchet leg 3: no PIN rows in $ALLOWLIST (fail-closed; the population pin has no input)"
+  exit 1
+fi
+RATCHET_UNSAFEOTHER=$(grep '^UNSAFEOTHER ' <<<"$RATCHET_SCAN" || true)
+if [[ -n "$RATCHET_UNSAFEOTHER" ]]; then
+  echo "check_theorem_axioms: FAIL — C2 ratchet leg 3: 'unsafe' token outside a pinnable declaration form (extend the scanner/pin consciously, never ignore):"
+  echo "$RATCHET_UNSAFEOTHER"
+  exit 1
+fi
+PIN_FOUND=$(grep -E '^(IMPLBY|UNSAFEDECL|UNSAFEBASEIO) ' <<<"$RATCHET_SCAN" | awk '{print $1" "$2" "$3}' | sort -u || true)
+PIN_NEW=$(comm -13 <(echo "$PIN_EXPECTED") <(echo "$PIN_FOUND"))
+PIN_MISSING=$(comm -23 <(echo "$PIN_EXPECTED") <(echo "$PIN_FOUND"))
+if [[ -n "$PIN_NEW" ]]; then
+  echo "check_theorem_axioms: FAIL — C2 ratchet leg 3: NEW implemented_by/unsafe/unsafeBaseIO site(s) not in the pinned population ($ALLOWLIST PIN rows). Every such seam is a declared-boundary decision — register it there with its Q4 class, or remove it:"
+  echo "$PIN_NEW"
+  grep -E '^(IMPLBY|UNSAFEDECL|UNSAFEBASEIO) ' <<<"$RATCHET_SCAN" | awk -v new="$PIN_NEW" 'BEGIN{split(new,a,"\n"); for(i in a) want[a[i]]=1} { key=$1" "$2" "$3; if (key in want) print "  at "$4 }'
+  exit 1
+fi
+if [[ -n "$PIN_MISSING" ]]; then
+  echo "check_theorem_axioms: FAIL — C2 ratchet leg 3: pinned population row(s) NOT FOUND by the scan (scanner or copy-pipeline drift, or a survivor deleted without updating the pin — update $ALLOWLIST consciously):"
+  echo "$PIN_MISSING"
+  exit 1
+fi
+PIN_COUNT=$(wc -l <<<"$PIN_EXPECTED")
+echo "check_theorem_axioms: C2 ratchet OK ($RATCHET_NSCANNED files scanned recursively: 0 axioms, 0 runEffectful, seam population = the $PIN_COUNT pinned rows exactly; lem tests/ scaffolds asserted outside the surface)"
+
+# ---------------------------------------------------------------------------
 # D14 ban (arc-6): non-kernel proof methods (native_decide / bv_decide).
 # Two legs, both fail-closed:
 #   * grep leg (here): the banned tactics may not occur in the test
@@ -320,4 +532,65 @@ if grep -q "DAEMON" <<<"$OUT2"; then
 fi
 echo "check_theorem_axioms: driver2 cone sorryAx-free + ofReduce*-free + DAEMON-free (arc-8 S3 bar)"
 
-echo "check_theorem_axioms: OK (arc-8 S3 bar: DAEMON-free cones everywhere)"
+# ---------------------------------------------------------------------------
+# C2 ratchet leg (5): exec-entry EXACT axiom census (charter sections
+# 1.3/7.2). The full customer-contract entry set, tightened from
+# ban-lists to an exact allowlist: every reported axiom must be one of
+# propext / Classical.choice / Quot.sound; anything else fails with the
+# constant named. These probes are END-TO-END SPOT CHECKS of the
+# census-derived universal claim, NOT primary evidence (#print axioms
+# underreports across partial-def/opaque boundaries — the source-scan
+# legs above are the load-bearing gate; charter 7.2 caveat). Fail-closed:
+# each entry must produce exactly one probe line.
+# ---------------------------------------------------------------------------
+PROBE3=lean_frontend/.axiom-probe-entries.lean
+ENTRIES=(driver2 drive initial_driver_state desugar annotate_program
+         translate link convert_file RelSem.Cerb.callND)
+{
+  cat <<'EOF'
+import Driver
+import Cabs_to_ail
+import GenTyping
+import Translation
+import Core_linking
+import Core_run_aux
+import RelSem.Call
+EOF
+  for name in "${ENTRIES[@]}"; do
+    echo "#print axioms $name"
+  done
+} > "$PROBE3"
+OUT3=$(cd lean_frontend && "$SCRIPT_DIR/capped" lake env lean .axiom-probe-entries.lean 2>&1 | grep -v -i warning || true)
+rm -f "$PROBE3"
+echo "$OUT3"
+for name in "${ENTRIES[@]}"; do
+  esc=${name//./\\.}
+  n=$(grep -cE "'${esc}' (depends on axioms|does not depend on any axioms)" <<<"$OUT3" || true)
+  if [[ "$n" -ne 1 ]]; then
+    echo "check_theorem_axioms: FAIL — C2 entry census: probe for '$name' did not run cleanly (matched $n lines; fail-closed)"
+    exit 1
+  fi
+done
+# exact allowlist: parse each axiom list; any member outside the three
+# standard axioms fails naming the entry and the axiom.
+ENTRY_BAD=$(python3 - <<PYEOF
+import re, sys
+out = """$OUT3"""
+ok = {"propext", "Classical.choice", "Quot.sound"}
+bad = []
+for m in re.finditer(r"'([^']+)' depends on axioms: \[([^\]]*)\]", out):
+    entry, axs = m.group(1), [a.strip() for a in m.group(2).split(',') if a.strip()]
+    for a in axs:
+        if a not in ok:
+            bad.append(f"{entry}: {a}")
+print("\n".join(bad))
+PYEOF
+)
+if [[ -n "$ENTRY_BAD" ]]; then
+  echo "check_theorem_axioms: FAIL — C2 entry census: axiom outside the exact allowlist [propext, Classical.choice, Quot.sound]:"
+  echo "$ENTRY_BAD"
+  exit 1
+fi
+echo "check_theorem_axioms: C2 entry census OK (${#ENTRIES[@]} entries, every cone ⊆ [propext, Classical.choice, Quot.sound])"
+
+echo "check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)"

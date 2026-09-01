@@ -30,11 +30,25 @@
 #     coverage stub (effect-retirement C1: the global, its BaseIO
 #     externs, and the with_tagDefs opaque are DELETED — the linked
 #     table is passed by value; charter section 4);
-#   CerbFloat/CerbUtils/... — unchanged.
+#   CerberusFresh.lean — the digest read is a KERNEL-CHECKED OPAQUE
+#     since effect-retirement C2 (2026-09-01, the Q4 promoted
+#     deliverable): unsafe extern opaque digestPure (explicit witness)
+#     + impl + implemented_by on `opaque digest := fun _ => ""`; ZERO
+#     unsafeBaseIO left in the file. The full surviving seam list is
+#     MACHINE-PINNED: scripts/unsafebaseio_allowlist.txt PIN rows,
+#     enforced both-directions by check_theorem_axioms.sh's C2 ratchet
+#     leg 3 (any new implemented_by/unsafe/unsafeBaseIO site fails
+#     naming itself).
+#   CerbFloat/CerbUtils/... — unchanged (CerbUtils no-op timing/log
+#     refs + boundedIntegerImpl stub: permanent-declared, Q4;
+#     CerbGlobal config/switch refs + CerberusImpl enum registry:
+#     temporal with named movers, Q4).
 # Declared-boundary records: 2026-08-19_arc4-results.md, updated by
 # 2026-08-20_arc7-results.md (CerbND left the boundary; CerbMem's leg
-# partially discharged). Expanding this purity gate to the hand-written
-# seams remains a priced next-arc item.
+# partially discharged), and the effect-retirement charter section 7.2
+# (docs/2026-08-31_effect-retirement-design.md) + the C2 ratchet
+# record (docs/2026-09-01_C2-ratchet-record.md). Expanding this purity
+# gate to the hand-written seams remains a priced next-arc item.
 set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
