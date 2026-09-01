@@ -72,3 +72,12 @@ S-basket slice — `docs/2026-09-01_s-basket.md`.)
   `lake-manifest.json` (both packages), asserts the package set is
   exactly the reviewed list, and fails on non-manifest directories in
   the shared packagesDir.
+- **Raw-string awareness for the census stripper** (C2 delta-audit
+  note, registered 2026-09-01): the shared comment/string stripper in
+  `check_theorem_axioms.sh` does not know Lean raw string literals
+  (`r#"..."#`) — a banned token inside one would be treated as code
+  (over-trip, safe) but a `"` inside one could desync the string
+  lexer. Zero raw strings exist on the scanned surface today
+  (grep-verified at registration). Wanted: stripper hardening, or a
+  cheap raw-string ban probe (`r#"` fails until the stripper learns
+  the form).

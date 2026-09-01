@@ -572,18 +572,33 @@ The sentence now states the exec-lane rule and the gcc-lane exception
 with its rationale.
 
 Topology note surfaced by the audit (registered here as a CORRECTION
-to the C1/C2 records' "baseline UNMOVED" phrasing): the gcc lane's
-standing improvement row — `offsetof-nested-struct`
-SKIP_LEAN_CRASH→AGREE — is the mainline-sanctioned trust-basket regen
-row (mainline `df63018e3`), which post-dates this branch's base
-(`58ec50779`) and therefore does not appear in this branch's runs;
-it reconciles at the arc-close rebase. Arithmetic (audit-relayed via
-the orchestrator, stated as the post-rebase expectation): the
-recorded `agree=1871 ... skip_lean_crash=9` becomes
-`agree=1872 ... skip_lean_crash=8` when that row flips. The C1/C2
-phrasing "baseline UNMOVED" is corrected to: **unmoved at this
-branch's base; one known mainline-sanctioned improvement row
-(offsetof-nested-struct) pending the arc-close rebase.**
+to the C1/C2 records' "baseline UNMOVED" phrasing), **as corrected by
+the delta audit — this paragraph is a correction-of-a-correction**:
+this addendum's first version misstated the arithmetic ("becomes
+agree=1872/skip_lean_crash=8 post-rebase" and "does not appear in
+this branch's runs" — both WRONG). Measured reality (delta audit +
+worker re-measurement agree): the `offsetof-nested-struct` flip
+SKIP_LEAN_CRASH→AGREE is ALREADY inside the printed
+`agree=1871 ... skip_lean_crash=9` — the SUMMARY counts CURRENT
+actuals, and the Lean side already returns
+`Defined {value: "Specified(0)", ...}` on that file at this tree
+(worker-re-measured via the lane's own oracle-cabs-json →
+`cerberus-lean --batch` path; the immaculate lane's committed
+baseline row 65 `offsetof-nested-struct MATCH | L=VAL:Specified(0)`
+says the same). What is STALE is the baseline FILE row
+(`scripts/gcc_oracle_baseline.txt:1847
+tests/immaculate/nolibc/offsetof-nested-struct.c SKIP_LEAN_CRASH`),
+and the visible signature in this branch's runs is the per-row check:
+`improvement: ...` +
+`Baseline check: 0 regression(s), 1 improvement(s)` at rc 0 (the
+lane's audited improvements-warn design). Post-rebase expectation:
+the SUMMARY **stays** `agree=1871/skip_lean_crash=9` and the
+improvement line DISAPPEARS when the mainline-sanctioned baseline-row
+re-record (the trust-basket regen, mainline `df63018e3`) reconciles.
+The C1/C2 phrasing "baseline UNMOVED" is corrected to: **the SUMMARY
+actuals are unmoved; one stale baseline-FILE row
+(offsetof-nested-struct) is surfaced as the lane's standing
+improvement warning, reconciling at the arc-close rebase.**
 
 ### Notes registered (no code this slice)
 
@@ -617,6 +632,71 @@ branch's base; one known mainline-sanctioned improvement row
   libxml2_uri `GATE PASS ... (16/16)`, cn_coverage).
 - gcc second-oracle lane: exit 0, SUMMARY verbatim
   `SUMMARY: total=1953 compared=1880 agree=1871 agree_nd=0 triaged=9 disagree=0 o2_agree=190 skip_lean_crash=9 skip_lean_fail=7 skip_lean_timeout=11 skip_oracle=3 skip_ub=43 triaged_addr=9`
-  — unmoved at this branch's base, incl. the known topology row
-  (offsetof-nested-struct in skip_lean_crash; flips to AGREE at the
-  arc-close rebase per the minor-2 note above).
+  — SUMMARY actuals unmoved (the offsetof-nested-struct row is
+  already AGREE inside these actuals; the stale baseline-FILE row
+  surfaces as the lane's standing rc-0 improvement warning — see the
+  corrected minor-2 note above).
+
+---
+
+## Addendum 2 (delta-audit response, 2026-09-01): the residual IMPLBY asymmetry closed
+
+[AGENT] (C2 worker; the delta audit of `04dffcc9d` returned NOT-CLEAR
+on one residual MAJOR-class hole — the MAJOR-1 fix was asymmetric).
+One commit.
+
+**The hole:** the IMPLBY census still required whitespace after the
+keyword (`\bimplemented_by\s+NAME`), so `@[implemented_by«name»]` —
+NO whitespace — escaped the census entirely while axiom got
+keyword-alone matching and extern/unsafe got catch-alls. The spelling
+is LIVE Lean (worker re-verified on the project toolchain 4.32.2:
+`@[implemented_by«realImpl»] opaque probeA : Unit → Nat` with
+`def realImpl (_ : Unit) : Nat := 42` compiles and `#eval probeA ()`
+returns **42** — a working behavior redirect). The
+`attribute [implemented_by ...]` spelling was probed too: it
+ELABORATES (exit 0) but is behaviorally INERT post-hoc on 4.32.2
+(`#eval` returns the opaque's default 0, not the impl's 43) — banned
+anyway (a future toolchain might honor it, and the token has no
+honest reason to appear outside the pinned forms).
+
+**The fix (symmetric now):** the IMPLBY emission takes OPTIONAL
+whitespace (`\bimplemented_by\b\s*` + the wide name class), and an
+attribute-position IMPLBYOTHER catch-all mirrors EXTERNOTHER — any
+`@[...implemented_by...]` / `attribute [...implemented_by...]` block
+not consumed by a pinnable IMPLBY census match fails naming itself.
+Every implemented_by attribute occurrence is now either a pinned
+IMPLBY row or a red IMPLBYOTHER.
+
+**Plants (each red verbatim, reverted, clean-tree green):**
+
+- the auditor's exact shape (`def realImpl ...` +
+  `@[implemented_by«realImpl»] opaque c2PlantIB2 : Unit → Nat` in
+  hand-written CerbUtils.lean):
+  `IMPLBY lean_frontend/CerbUtils.lean «realImpl» 1` — leg 3 red
+  (population mismatch, the no-whitespace census row now fires);
+- the `attribute [implemented_by realImpl2] c2PlantIB3` spelling:
+  `IMPLBY lean_frontend/CerbUtils.lean realImpl2 1` — leg 3 red (the
+  keyword+optional-ws emission fires inside the attribute block; red
+  via the census row, with IMPLBYOTHER as the net behind it);
+- IMPLBYOTHER leg vacuity-tested with the degenerate
+  `@[implemented_by]` (no target — name capture cannot fire):
+  `IMPLBYOTHER lean_frontend/CerbUtils.lean - lean_frontend/CerbUtils.lean:190`
+  — its own red message, proving the catch-all leg is live.
+
+**Erratum to Addendum 1's minor-2 note (correction-of-a-correction,
+provenance in place):** the topology arithmetic is corrected in the
+minor-2 section above — the flip is already inside the printed
+SUMMARY actuals (worker re-measured the row's current Lean behavior
+directly), the stale artifact is the baseline FILE row
+(`gcc_oracle_baseline.txt:1847`), the visible signature is the rc-0
+`Baseline check: 0 regression(s), 1 improvement(s)` warning, and the
+post-rebase expectation is an UNCHANGED summary with the warning
+disappearing — not "1872/8".
+
+**Registered (TODO.md, beside the Lake-pin follow-up):** the census
+stripper does not know Lean raw string literals (`r#"..."#`); zero
+exist on the scanned surface today (grep-verified); stripper
+hardening or a raw-string ban probe is the named follow-up.
+
+**Close-out at this tree:** full ratcheted gate green (verbatim
+below) + `test_unit.sh` exit 0.

@@ -369,8 +369,21 @@ for path in sorted(files):
         print(f"AXIOM {path}:{line(m.start())}:{m.group(1) or '<unnamed>'}")
     for m in re.finditer(r"\brunEffectful\b", clean):
         print(f"RUNEFF {path}:{line(m.start())}")
-    for m in re.finditer(r"\bimplemented_by\s+" + NAME, clean):
+    # delta-audit MAJOR fix (04dffcc9d was asymmetric): the old \s+
+    # required whitespace after the keyword, so @[implemented_by«x»]
+    # — live Lean, a working behavior redirect — escaped the census.
+    # Emission now takes OPTIONAL whitespace, and an attribute-position
+    # catch-all (mirroring EXTERNOTHER) fails any implemented_by
+    # attribute occurrence not consumed by a pinnable IMPLBY match
+    # (covers the 'attribute [implemented_by ...]' spelling — which
+    # elaborates on 4.32.2, behaviorally inert post-hoc, still banned).
+    implby_spans = []
+    for m in re.finditer(r"\bimplemented_by\b\s*" + NAME, clean):
+        implby_spans.append(m.span())
         print(f"IMPLBY {key} {m.group(1)} {path}:{line(m.start())}")
+    for m in re.finditer(r"(?:@|attribute\s*)\[[^\]]*\bimplemented_by\b[^\]]*\]", clean):
+        if not any(m.start() <= s < m.end() for s, e in implby_spans):
+            print(f"IMPLBYOTHER {key} - {path}:{line(m.start())}")
     unsafedecl_spans = []
     for m in UNSAFEDECL.finditer(clean):
         unsafedecl_spans.append(m.span())
@@ -456,6 +469,12 @@ RATCHET_EXTERNOTHER=$(grep '^EXTERNOTHER ' <<<"$RATCHET_SCAN" || true)
 if [[ -n "$RATCHET_EXTERNOTHER" ]]; then
   echo "check_theorem_axioms: FAIL — C2 ratchet leg 3: 'extern' token outside a pinnable @[extern] declaration form (e.g. the 'attribute [extern ...]' spelling — extend the scanner/pin consciously, never ignore):"
   echo "$RATCHET_EXTERNOTHER"
+  exit 1
+fi
+RATCHET_IMPLBYOTHER=$(grep '^IMPLBYOTHER ' <<<"$RATCHET_SCAN" || true)
+if [[ -n "$RATCHET_IMPLBYOTHER" ]]; then
+  echo "check_theorem_axioms: FAIL — C2 ratchet leg 3: 'implemented_by' attribute occurrence outside a pinnable IMPLBY census form (e.g. the 'attribute [implemented_by ...]' spelling — extend the scanner/pin consciously, never ignore):"
+  echo "$RATCHET_IMPLBYOTHER"
   exit 1
 fi
 PIN_FOUND=$(grep -E '^(IMPLBY|UNSAFEDECL|UNSAFEBASEIO|EXTERN) ' <<<"$RATCHET_SCAN" | awk '{print $1" "$2" "$3}' | sort | uniq -c | awk '{print $2" "$3" "$4" "$1}' || true)
