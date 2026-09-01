@@ -43,6 +43,11 @@ pretty-printer's dump syntax and the SpecLab .lean re-emissions use
     into or out of a comment (the l3/l4 holes).
   * FAIL-CLOSED preconditions: an unterminated string literal refuses
     the pair loudly (exit 1) rather than guessing.
+  * LINE ENDINGS are read RAW (newline='' — C2 audit minor-3): a CRLF
+    rewrite inside a string literal REFUSES (verbatim contract); a
+    pure code/comment-side CRLF rewrite is a whitespace-only change
+    and admits as class=LAYOUT, never STRICT (ruling [AGENT], stated
+    at the open() call; plant-tested both directions).
 
 Symbol-token shape: the oracle's pretty-printers render symbols as
 <prefix>_<digits> (a_517, while_518, ret_512, case_1024, ...). The
@@ -167,7 +172,10 @@ def layout_stream(segs):
         if kind == "code":
             stream.extend(("w", w) for w in content.split())
         elif kind == "comment":
-            stream.append(("c", re.sub(r"\s+", " ", content)))
+            # inner whitespace collapses AND boundary whitespace strips:
+            # a \r sitting before the comment-terminating \n (CRLF
+            # input) is layout, not comment content
+            stream.append(("c", re.sub(r"\s+", " ", content).strip()))
         else:
             stream.append(("s", content))
     return stream
@@ -192,8 +200,18 @@ def main():
     label = args.label or args.new
 
     try:
-        old = open(args.old, encoding="utf-8", errors="strict").read()
-        new = open(args.new, encoding="utf-8", errors="strict").read()
+        # newline='' (C2 audit minor-3): Python's universal-newline
+        # default silently translated \r\n -> \n on read, so a full
+        # CRLF rewrite — INCLUDING inside string literals — admitted
+        # as STRICT, contradicting the strings-verbatim contract. With
+        # raw newlines: CR inside a STRING differs verbatim -> REFUSE;
+        # CR in code/comments is whitespace -> a pure code-side CRLF
+        # rewrite admits as class=LAYOUT (ruled [AGENT]: it IS a
+        # whitespace-only layout change — tokens, strings, comment
+        # extents and emission order all still required identical, and
+        # the LAYOUT class in the evidence row surfaces it for review).
+        old = open(args.old, encoding="utf-8", errors="strict", newline="").read()
+        new = open(args.new, encoding="utf-8", errors="strict", newline="").read()
     except OSError as e:
         print(f"RENUMBER-ONLY ERROR {label}: {e}", file=sys.stderr)
         return 1

@@ -1,0 +1,3 @@
+proc s (a_600: pointer): eff unit :=
+  seq(log("crlf probe
+text"), kill(a_600))

@@ -43,6 +43,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/.."
 
 # Hand-written axiom census (arc-5 audit 2, F3; end state arc-17 S2b):
+# C2-audit note (registered, kept as-is): this line-anchored '^axiom'
+# grep is REDUNDANT with the C2 ratchet leg 1 below (comment-stripped
+# \baxiom\b over a superset surface); it stays as an independent cheap
+# tripwire, but the ratchet leg is the load-bearing census.
 # everything under lean_frontend/ EXCEPT generated/ and the build dir
 # is hand-written. ZERO axioms may exist (the former two
 # declared-boundary axioms are now kernel-checked opaques — header
@@ -136,9 +140,14 @@ for path in files:
         cur.append(c); i += 1
     clean = ''.join(cur)
     base = os.path.basename(path)
-    for m in re.finditer(r'\baxiom\s+([A-Za-z_0-9α-ω.\']+)', clean):
+    # C2 audit MAJOR-1 fix: match the KEYWORD alone — the old name
+    # class [A-Za-z_0-9α-ω.'] required >=1 matching char, so a
+    # non-ASCII declaration name (axiom «evil» : False) made the whole
+    # match fail and the axiom INVISIBLE (fail-open). The name capture
+    # is now report-only (\S+, optional).
+    for m in re.finditer(r'\baxiom\b(?:\s+(\S+))?', clean):
         line = clean.count('\n', 0, m.start()) + 1
-        print(f"AXIOM {base}:{line}:{m.group(1)}")
+        print(f"AXIOM {base}:{line}:{m.group(1) or '<unnamed>'}")
     for m in re.finditer(r'\bopaque\s+(forceIO)\b', clean):
         line = clean.count('\n', 0, m.start()) + 1
         print(f"OPAQUE {base}:{line}:{m.group(1)}")
@@ -266,6 +275,9 @@ if ! grep -rq "unsafeBaseIO" "$LEMLIB_PKG/tests/" 2>/dev/null; then
   echo "check_theorem_axioms: FAIL — C2 ratchet leg 4: lem tests/ contain no would-trip token (the exclusion assertion is VACUOUS — re-verify the surface)"
   exit 1
 fi
+# (C2-audit note, registered: this third assertion is tautological
+# TODAY — the list is built by find over lean-lib/ — it guards future
+# edits to the list construction, not the present one.)
 if grep -v "^$LEMLIB_PKG/lean-lib/" <<<"$LEMLIB_LIST" | grep -q .; then
   echo "check_theorem_axioms: FAIL — C2 ratchet leg 4: scan list reaches package paths outside lean-lib/:"
   grep -v "^$LEMLIB_PKG/lean-lib/" <<<"$LEMLIB_LIST"
@@ -314,31 +326,77 @@ def strip(src):
         cur.append(c); i += 1
     return ''.join(cur)
 
-DECL = re.compile(r"\b(?:def|opaque|abbrev|theorem|instance)\s+([A-Za-z_0-9α-ω.']+)")
-UNSAFEDECL = re.compile(r"\bunsafe\s+(?:def|opaque|abbrev|instance|inductive|structure)\s+([A-Za-z_0-9α-ω.']+)")
+# C2 audit MAJOR-1 fix (name classes): every load-bearing keyword match
+# fires on the KEYWORD alone; name captures use a wide class
+# ([^\s\]\[,:(){}]+) so a non-ASCII name («evil») still produces a row
+# (which then mismatches the ASCII pin set and FAILS) instead of
+# silently defeating the regex (fail-open).
+NAME = r"([^\s\]\[,:(){}]+)"
+DECL = re.compile(r"\b(?:def|opaque|abbrev|theorem|instance)\s+" + NAME)
+UNSAFEDECL = re.compile(r"\bunsafe\s+(?:def|opaque|abbrev|instance|inductive|structure)\s+" + NAME)
+# C2 audit MAJOR-2 fix: the bare-@[extern] class joins the pinned
+# population — a pure-signature extern is exactly as much a native
+# seam as an unsafeBaseIO impl (the digestIO/setDigestIO/md5Hex
+# shape). The regex tolerates further attributes in the same block,
+# stacked attribute blocks, and modifier prefixes.
+EXTERNDECL = re.compile(
+    r"@\[[^\]]*\bextern\b[^\]]*\]\s*(?:@\[[^\]]*\]\s*)*"
+    r"(?:private\s+|protected\s+|noncomputable\s+|partial\s+|unsafe\s+)*"
+    r"(?:def|opaque|abbrev)\s+" + NAME)
+
+def norm(path):
+    # minor-1 fix: PATH-QUALIFIED pin keys (a pinned pair reused from a
+    # different directory must be visible). The generated/ copy of a
+    # hand-written file normalizes onto its source (byte-identity is
+    # the sync gate's job; the pin carries the occurrence COUNT, 2 for
+    # mirrored files); the consumed LemLib copy normalizes onto its
+    # repo-side path.
+    lem = 'lean_frontend/.lake/packages/LemLib/lean-lib/'
+    gen = 'lean_frontend/generated/'
+    if path.startswith(lem):
+        return 'lem-lean/lean-lib/' + path[len(lem):]
+    if path.startswith(gen):
+        return 'lean_frontend/' + path[len(gen):]
+    return path
+
 files = [l for l in open(sys.argv[1]).read().splitlines() if l]
 print(f"SCANNED {len(files)}")
 for path in sorted(files):
     clean = strip(open(path).read())
-    base = os.path.basename(path)
+    key = norm(path)
     def line(pos): return clean.count('\n', 0, pos) + 1
-    for m in re.finditer(r"\baxiom\s+([A-Za-z_0-9α-ω.']+)", clean):
-        print(f"AXIOM {path}:{line(m.start())}:{m.group(1)}")
+    for m in re.finditer(r"\baxiom\b(?:\s+(\S+))?", clean):
+        print(f"AXIOM {path}:{line(m.start())}:{m.group(1) or '<unnamed>'}")
     for m in re.finditer(r"\brunEffectful\b", clean):
         print(f"RUNEFF {path}:{line(m.start())}")
-    for m in re.finditer(r"\bimplemented_by\s+([A-Za-z_0-9α-ω.']+)", clean):
-        print(f"IMPLBY {base} {m.group(1)} {path}:{line(m.start())}")
+    for m in re.finditer(r"\bimplemented_by\s+" + NAME, clean):
+        print(f"IMPLBY {key} {m.group(1)} {path}:{line(m.start())}")
     unsafedecl_spans = []
     for m in UNSAFEDECL.finditer(clean):
         unsafedecl_spans.append(m.span())
-        print(f"UNSAFEDECL {base} {m.group(1)} {path}:{line(m.start())}")
+        print(f"UNSAFEDECL {key} {m.group(1)} {path}:{line(m.start())}")
+    extern_spans = []
+    for m in EXTERNDECL.finditer(clean):
+        extern_spans.append(m.span())
+        print(f"EXTERN {key} {m.group(1)} {path}:{line(m.start())}")
+    # catch-all restricted to ATTRIBUTE-position extern ('extern' is
+    # also a legitimate model identifier — the Core file record's
+    # extern field — which the bare-token form would false-positive
+    # on): any @[...extern...] / attribute [...extern...] block not
+    # consumed by a pinnable EXTERNDECL match fails (this covers the
+    # 'attribute [extern ...]' spelling and externs on declaration
+    # kinds outside def/opaque/abbrev).
+    for m in re.finditer(r"(?:@|attribute\s*)\[[^\]]*\bextern\b[^\]]*\]", clean):
+        if not any(s <= m.start() < e for s, e in extern_spans):
+            print(f"EXTERNOTHER {key} - {path}:{line(m.start())}")
     for m in re.finditer(r"\bunsafe\b", clean):
-        if not any(s <= m.start() < e for s, e in unsafedecl_spans):
-            print(f"UNSAFEOTHER {base} - {path}:{line(m.start())}")
+        if not any(s <= m.start() < e for s, e in unsafedecl_spans) \
+           and not any(s <= m.start() < e for s, e in extern_spans):
+            print(f"UNSAFEOTHER {key} - {path}:{line(m.start())}")
     for m in re.finditer(r"\bunsafeBaseIO\b", clean):
         decls = [d for d in DECL.finditer(clean) if d.start() < m.start()]
         encl = decls[-1].group(1) if decls else '<none>'
-        print(f"UNSAFEBASEIO {base} {encl} {path}:{line(m.start())}")
+        print(f"UNSAFEBASEIO {key} {encl} {path}:{line(m.start())}")
 PYEOF
 ) || {
   echo "check_theorem_axioms: FAIL — C2 ratchet: scanner failed (fail-closed)"
@@ -371,10 +429,21 @@ if [[ -n "$RATCHET_RUNEFF" ]]; then
   exit 1
 fi
 
-# leg (3): population pin, both directions.
-PIN_EXPECTED=$(grep -E '^PIN (IMPLBY|UNSAFEDECL|UNSAFEBASEIO) ' "$ALLOWLIST" | awk '{print $2" "$3" "$4}' | sort -u || true)
+# leg (3): population pin, both directions, PATH-QUALIFIED + COUNTED
+# (C2 audit minor-1: basename+set keying let a pinned pair reappear
+# from a different directory invisibly; keys are now normalized paths
+# — generated/ copies fold onto their hand-written source, the LemLib
+# copy onto its repo path — and every row pins its occurrence COUNT,
+# so duplication in place is visible too). C2 audit MAJOR-2: the
+# EXTERN kind (bare pure/BaseIO @[extern] declarations) joins the pin.
+PIN_EXPECTED=$(grep -E '^PIN (IMPLBY|UNSAFEDECL|UNSAFEBASEIO|EXTERN) ' "$ALLOWLIST" | awk '{print $2" "$3" "$4" "$5}' | sort -u || true)
 if [[ -z "$PIN_EXPECTED" ]]; then
   echo "check_theorem_axioms: FAIL — C2 ratchet leg 3: no PIN rows in $ALLOWLIST (fail-closed; the population pin has no input)"
+  exit 1
+fi
+if grep -Ev '^[A-Z]+ [^ ]+ [^ ]+ [0-9]+$' <<<"$PIN_EXPECTED" | grep -q .; then
+  echo "check_theorem_axioms: FAIL — C2 ratchet leg 3: malformed PIN row(s) in $ALLOWLIST (expected: PIN KIND PATH NAME COUNT):"
+  grep -Ev '^[A-Z]+ [^ ]+ [^ ]+ [0-9]+$' <<<"$PIN_EXPECTED"
   exit 1
 fi
 RATCHET_UNSAFEOTHER=$(grep '^UNSAFEOTHER ' <<<"$RATCHET_SCAN" || true)
@@ -383,22 +452,28 @@ if [[ -n "$RATCHET_UNSAFEOTHER" ]]; then
   echo "$RATCHET_UNSAFEOTHER"
   exit 1
 fi
-PIN_FOUND=$(grep -E '^(IMPLBY|UNSAFEDECL|UNSAFEBASEIO) ' <<<"$RATCHET_SCAN" | awk '{print $1" "$2" "$3}' | sort -u || true)
+RATCHET_EXTERNOTHER=$(grep '^EXTERNOTHER ' <<<"$RATCHET_SCAN" || true)
+if [[ -n "$RATCHET_EXTERNOTHER" ]]; then
+  echo "check_theorem_axioms: FAIL — C2 ratchet leg 3: 'extern' token outside a pinnable @[extern] declaration form (e.g. the 'attribute [extern ...]' spelling — extend the scanner/pin consciously, never ignore):"
+  echo "$RATCHET_EXTERNOTHER"
+  exit 1
+fi
+PIN_FOUND=$(grep -E '^(IMPLBY|UNSAFEDECL|UNSAFEBASEIO|EXTERN) ' <<<"$RATCHET_SCAN" | awk '{print $1" "$2" "$3}' | sort | uniq -c | awk '{print $2" "$3" "$4" "$1}' || true)
 PIN_NEW=$(comm -13 <(echo "$PIN_EXPECTED") <(echo "$PIN_FOUND"))
 PIN_MISSING=$(comm -23 <(echo "$PIN_EXPECTED") <(echo "$PIN_FOUND"))
 if [[ -n "$PIN_NEW" ]]; then
-  echo "check_theorem_axioms: FAIL — C2 ratchet leg 3: NEW implemented_by/unsafe/unsafeBaseIO site(s) not in the pinned population ($ALLOWLIST PIN rows). Every such seam is a declared-boundary decision — register it there with its Q4 class, or remove it:"
+  echo "check_theorem_axioms: FAIL — C2 ratchet leg 3: implemented_by/unsafe/unsafeBaseIO/extern census row(s) not matching the pinned population ($ALLOWLIST PIN rows; format KIND PATH NAME COUNT). Every such seam is a declared-boundary decision — register it there with its Q4 class, or remove it:"
   echo "$PIN_NEW"
-  grep -E '^(IMPLBY|UNSAFEDECL|UNSAFEBASEIO) ' <<<"$RATCHET_SCAN" | awk -v new="$PIN_NEW" 'BEGIN{split(new,a,"\n"); for(i in a) want[a[i]]=1} { key=$1" "$2" "$3; if (key in want) print "  at "$4 }'
+  grep -E '^(IMPLBY|UNSAFEDECL|UNSAFEBASEIO|EXTERN) ' <<<"$RATCHET_SCAN" | awk -v new="$PIN_NEW" 'BEGIN{split(new,a,"\n"); for(i in a){ n=split(a[i],b," "); if(n>=3) want[b[1]" "b[2]" "b[3]]=1 }} { key=$1" "$2" "$3; if (key in want) print "  at "$4 }'
   exit 1
 fi
 if [[ -n "$PIN_MISSING" ]]; then
-  echo "check_theorem_axioms: FAIL — C2 ratchet leg 3: pinned population row(s) NOT FOUND by the scan (scanner or copy-pipeline drift, or a survivor deleted without updating the pin — update $ALLOWLIST consciously):"
+  echo "check_theorem_axioms: FAIL — C2 ratchet leg 3: pinned population row(s) NOT FOUND at their pinned count (scanner or copy-pipeline drift, or a survivor deleted/duplicated without updating the pin — update $ALLOWLIST consciously):"
   echo "$PIN_MISSING"
   exit 1
 fi
 PIN_COUNT=$(wc -l <<<"$PIN_EXPECTED")
-echo "check_theorem_axioms: C2 ratchet OK ($RATCHET_NSCANNED files scanned recursively: 0 axioms, 0 runEffectful, seam population = the $PIN_COUNT pinned rows exactly; lem tests/ scaffolds asserted outside the surface)"
+echo "check_theorem_axioms: C2 ratchet OK ($RATCHET_NSCANNED files scanned recursively: 0 axioms, 0 runEffectful, seam population = the $PIN_COUNT pinned path-qualified counted rows exactly incl. the extern class; lem tests/ scaffolds asserted outside the surface)"
 
 # ---------------------------------------------------------------------------
 # D14 ban (arc-6): non-kernel proof methods (native_decide / bv_decide).

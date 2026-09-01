@@ -62,3 +62,13 @@ S-basket slice — `docs/2026-09-01_s-basket.md`.)
   CerbGlobal config/switch refs (mover: a parameter-plumbing slice)
   and CerberusImpl's enum registry (mover: the arc's reader/supply
   machinery, follow-up slice).
+- **Pin the Lake dependency SET** (C2 audit follow-up, registered
+  2026-09-01): no gate asserts the lake-manifest package set, so a
+  future `require` would join the built surface outside every census
+  (the C2 ratchet scans the LemLib copy because it KNOWS about it);
+  relatedly, `.lake/packages` can carry stale non-manifest package
+  dirs (worktree-priming leftovers) that a path-glob gate could
+  mistake for consumed code. Wanted: a leg that reads
+  `lake-manifest.json` (both packages), asserts the package set is
+  exactly the reviewed list, and fails on non-manifest directories in
+  the shared packagesDir.

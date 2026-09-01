@@ -469,3 +469,154 @@ the stop-and-report condition never fired.
 6. LAYOUT-class canon digests are not comparable across the step-3
    hardening (serialization changed); STRICT digests are, and were
    verified identical (§5).
+
+---
+
+## Addendum (audit response, 2026-09-01): the C2 fresh audit's two MAJOR fail-open gaps fixed + minors
+
+[AGENT] (C2 worker, responding to the C2 fresh audit — verdict
+MERGE-SAFE-WITH-NOTES with two MAJOR fail-open findings demonstrated
+live, orchestrator-relayed; fix-pre-merge ruling [AGENT,
+orchestrator]: the ratchet is the contract's enforcement, a fail-open
+gate is a defect as such). One audit-response commit.
+
+### MAJOR-1 (fail-open): non-ASCII declaration names invisible to the censuses — FIXED
+
+The name class `[A-Za-z_0-9α-ω.']+` required ≥1 matching character,
+so `axiom «auditEvil» : False` made the WHOLE regex fail and the
+axiom invisible to ratchet leg 1 AND the generated-tree census (the
+auditor elaborated a `False` theorem from it in the project toolchain
+— a live fail-open demonstration; the legacy `^axiom` grep only sees
+line-anchored spellings). Fix: every load-bearing keyword match fires
+on the KEYWORD alone (`\baxiom\b`, name report-only `\S+`); the
+IMPLBY/UNSAFEDECL/DECL name captures widened to `[^\s\]\[,:(){}]+` so
+a non-ASCII name still PRODUCES a census row (which then mismatches
+the ASCII pin set and fails) instead of defeating the match.
+
+Plants (each red observed verbatim, reverted, green re-verified):
+
+- indented `  axiom «auditEvil» : False` in hand-written
+  CerbUtils.lean (invisible to the legacy line-anchored grep — the
+  audited shape):
+  `AXIOM lean_frontend/CerbUtils.lean:190:«auditEvil»` (leg 1 red);
+- same shape in generated/Core_indet.lean:
+  `AXIOM Core_indet.lean:44:«auditEvil»` (generated census red);
+- ASCII control `axiom c2AsciiCtrl : True` still red;
+- non-ASCII implemented_by target `@[implemented_by «evilImpl»]`:
+  leg 3 red naming `IMPLBY lean_frontend/CerbUtils.lean «evilImpl» 1`.
+
+### MAJOR-2 (fail-open): the bare-@[extern] class was outside the population pin — FIXED
+
+A non-unsafe `@[extern "sym"] opaque` (exactly the existing
+digestIO/setDigestIO/md5Hex shape) passed the leg-3 pin. Fix: an
+EXTERN row kind joins the scanner (attribute-tolerant regex over
+stacked attribute blocks + modifier prefixes) and the pin; a
+catch-all fails any ATTRIBUTE-position `extern` not consumed by a
+pinnable declaration match (covers the `attribute [extern ...]`
+spelling; the catch-all is attribute-scoped because bare `extern` is
+also a legitimate model identifier — the Core file record's `extern`
+field — which a token-level ban would false-positive on, measured:
+21 identifier sites). Pinned extern population (all
+CerberusFresh.lean, count 2 = hand-written + generated copy): `md5Hex`
+(pure MD5 extern), `digestIO`/`setDigestIO` (BaseIO digest externs,
+honest IO signatures), `digestPure`/`forceThunkIO` (the
+kernel-checked opaque chains' inner externs). Zero externs elsewhere
+(LemLib copy included), scan-verified.
+
+Plants: `@[extern "c2_plant_sym"] opaque c2PlantExtern` → leg 3 red
+naming `EXTERN lean_frontend/CerbUtils.lean c2PlantExtern 1`;
+`attribute [extern "c2_plant_sym2"] c2PlantExtern2` → red
+`EXTERNOTHER lean_frontend/CerbUtils.lean - ...:191`.
+
+### minor-1: pin keys path-qualified + counted — FIXED
+
+Old keying was basename + set semantics (a pinned pair reappearing
+from a different directory was invisible — auditor's plantsub demo).
+PIN rows are now `PIN KIND PATH NAME COUNT` with normalized
+path-qualified keys (generated/ copies fold onto their hand-written
+source at count 2; the LemLib copy onto `lem-lean/lean-lib/` at count
+1); malformed rows fail; the census compares at exact counts. 66 rows
+(61 prior + 5 EXTERN). Plants, both directions:
+`lean_frontend/plantsub/CerbGlobal.lean` reusing the pinned
+confRef pair → red naming the path-qualified rows at count 1; a
+duplicate `logRef` occurrence in the hand-written file → red
+(`UNSAFEDECL lean_frontend/CerbUtils.lean logRef 3` vs pinned 2, all
+six sites listed).
+
+### minor-3: check_renumber_only.py CRLF — FIXED, ruling [AGENT]
+
+Universal-newline reads translated `\r\n`→`\n`, so a full CRLF
+rewrite (including INSIDE string literals) admitted as STRICT,
+contradicting the strings-verbatim docstring. Fix: `newline=''` both
+sides. Ruling [AGENT] on the residual class: CR inside a STRING
+refuses (verbatim contract); a pure code/comment-side CRLF rewrite
+admits as class=LAYOUT, never STRICT — it is a whitespace-only layout
+change (tokens, strings, comment extents, emission order all still
+required identical) and the LAYOUT class in the evidence row surfaces
+it for review. Comment tokens additionally strip boundary whitespace
+(a `\r` before the comment-terminating `\n` is layout, not content).
+Docstring corrected. New committed fixtures: `crlf_string`
+(CRLF inside a multi-line string literal → REFUSE; note the fixture's
+string must itself span a newline — the first attempt with a
+single-line string correctly admitted LAYOUT, since no string byte
+changed) and `crlf_code` (string-free CRLF rewrite + consistent
+renumber → ADMIT class=LAYOUT). Battery now 12 plants, verbatim:
+`test_renumber_plants: OK (12 plants: refusals refuse, admits admit with declared class)`.
+
+### minor-2: the improvement-asymmetry claim + the gcc topology row — RECONCILED (record-integrity correction)
+
+VALIDATION.md §2 claimed baselines fail closed in both directions
+universally; `test_gcc_oracle.sh` fails on regressions only and
+surfaces improvements loudly at rc 0 (the lane's own audited design).
+The sentence now states the exec-lane rule and the gcc-lane exception
+with its rationale.
+
+Topology note surfaced by the audit (registered here as a CORRECTION
+to the C1/C2 records' "baseline UNMOVED" phrasing): the gcc lane's
+standing improvement row — `offsetof-nested-struct`
+SKIP_LEAN_CRASH→AGREE — is the mainline-sanctioned trust-basket regen
+row (mainline `df63018e3`), which post-dates this branch's base
+(`58ec50779`) and therefore does not appear in this branch's runs;
+it reconciles at the arc-close rebase. Arithmetic (audit-relayed via
+the orchestrator, stated as the post-rebase expectation): the
+recorded `agree=1871 ... skip_lean_crash=9` becomes
+`agree=1872 ... skip_lean_crash=8` when that row flips. The C1/C2
+phrasing "baseline UNMOVED" is corrected to: **unmoved at this
+branch's base; one known mainline-sanctioned improvement row
+(offsetof-nested-struct) pending the arc-close rebase.**
+
+### Notes registered (no code this slice)
+
+- **Lake dependency-set pin (follow-up, TODO.md):** no gate asserts
+  the lake-manifest package set (a future `require` joins the built
+  surface outside every census), and the shared packagesDir can carry
+  stale non-manifest package dirs; a manifest-driven package-set leg
+  is the named follow-up.
+- Leg 4's third assertion is tautological today (the list is built by
+  find over lean-lib/) — kept as a guard on future list-construction
+  edits, annotated in-script.
+- The legacy line-anchored `^axiom` hand-written census is redundant
+  with ratchet leg 1 — kept as an independent cheap tripwire,
+  annotated in-script.
+
+### Re-verification at the audit-response tree (exits verbatim)
+
+- Ratcheted gate green, verbatim:
+  `check_theorem_axioms: C2 ratchet OK (290 files scanned recursively: 0 axioms, 0 runEffectful, seam population = the 66 pinned path-qualified counted rows exactly incl. the extern class; lem tests/ scaffolds asserted outside the surface)`;
+  `check_theorem_axioms: C2 entry census OK (9 entries, every cone ⊆ [propext, Classical.choice, Quot.sound])`.
+- Instrument plant battery:
+  `test_renumber_plants: OK (12 plants: refusals refuse, admits admit with declared class)` (wired in test_unit).
+- **The 70-row re-check re-run under the audit-fixed instrument:
+  70/70 ADMIT (49 STRICT / 21 LAYOUT), ids/moved identical to the C1
+  evidence rows on every row, STRICT canon digests identical**
+  (predecessors for the 6 hash rows re-reconstructed: pre-C1 oracle
+  rebuilt at `90c82505d`, RECON-OK 6/6; successors NEW-OK 6/6; the 6
+  checker rows byte-identical to §5's).
+- Full Tier A re-run: 13/13 exit 0 (unit, exec minimal/coverage/
+  debug/float, bytes, libc_exec, multi_tu, parse, core, elab,
+  libxml2_uri `GATE PASS ... (16/16)`, cn_coverage).
+- gcc second-oracle lane: exit 0, SUMMARY verbatim
+  `SUMMARY: total=1953 compared=1880 agree=1871 agree_nd=0 triaged=9 disagree=0 o2_agree=190 skip_lean_crash=9 skip_lean_fail=7 skip_lean_timeout=11 skip_oracle=3 skip_ub=43 triaged_addr=9`
+  — unmoved at this branch's base, incl. the known topology row
+  (offsetof-nested-struct in skip_lean_crash; flips to AGREE at the
+  arc-close rebase per the minor-2 note above).

@@ -1,0 +1,3 @@
+-- Fun map
+proc c (a_600: pointer): eff unit :=
+  kill(a_600)

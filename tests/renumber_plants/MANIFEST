@@ -16,3 +16,5 @@ token_change FAIL
 section_reorder FAIL
 strict_renumber ADMIT-STRICT
 layout_rewrap ADMIT-LAYOUT
+crlf_string FAIL
+crlf_code ADMIT-LAYOUT

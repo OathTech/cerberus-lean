@@ -55,90 +55,104 @@ lem-lean/lean-lib/LemLib.lean	runEffectful_impl	L2-delete	DELETE (the axiom scaf
 #
 # =====================================================================
 # C2 RATCHET POPULATION PIN (charter section 7.2 leg 3, as amended by
-# the accepted L2-audit ratchet legs; 2026-09-01). Machine-readable:
+# the accepted L2-audit ratchet legs AND the C2 fresh audit's
+# MAJOR-2/minor-1 fixes; 2026-09-01). Machine-readable:
 # check_theorem_axioms.sh parses the `PIN` lines below and asserts the
 # comment-stripped census of @[implemented_by] targets, `unsafe
-# def/opaque/abbrev` declarations, and `unsafeBaseIO` occurrences
-# (keyed by enclosing declaration) over the ban surface — hand-written
-# lean_frontend/*.lean + generated/*.lean + the consumed LemLib copy
-# (.lake/packages/LemLib/lean-lib/**, recursive) — EQUALS this set
-# exactly, both directions: any NEW site fails naming itself; any
-# MISSING pinned row fails as scanner/copy-pipeline drift. This is the
-# leg that bans an axiom-free reintroduction of the effect projection
-# via opaque + implemented_by + unsafeBaseIO (the L2 audit's accepted
-# proposal). Format: PIN <KIND> <file-basename> <identifier>, KIND in
-# {IMPLBY, UNSAFEDECL, UNSAFEBASEIO}; hand-written files and their
-# generated/ copies share the basename row (sync-gate byte-mirrored).
-# =====================================================================
-# LemLib survivors (the L2 record's enumerated pair)
-PIN UNSAFEDECL LemLib.lean failwithIImpl
-PIN IMPLBY LemLib.lean failwithIImpl
-PIN UNSAFEDECL LemLib.lean fuelExhaustedWithImpl
-PIN IMPLBY LemLib.lean fuelExhaustedWithImpl
-# CerberusFresh — the digest/forceIO boundary (post-C2-conversion:
-# zero unsafeBaseIO; kernel-checked opaques with native bindings)
-PIN UNSAFEDECL CerberusFresh.lean digestPure
-PIN UNSAFEDECL CerberusFresh.lean digest_impl
-PIN IMPLBY CerberusFresh.lean digest_impl
-PIN UNSAFEDECL CerberusFresh.lean forceThunkIO
-PIN UNSAFEDECL CerberusFresh.lean forceIO_impl
-PIN IMPLBY CerberusFresh.lean forceIO_impl
-# CerberusImpl — enum registry (temporal; mover = reader/supply
-# machinery follow-up slice, explicitly NOT in-arc)
-PIN UNSAFEDECL CerberusImpl.lean typeof_enum_impl
-PIN IMPLBY CerberusImpl.lean typeof_enum_impl
-PIN UNSAFEBASEIO CerberusImpl.lean typeof_enum_impl
-PIN UNSAFEDECL CerberusImpl.lean register_enum_impl
-PIN IMPLBY CerberusImpl.lean register_enum_impl
-PIN UNSAFEBASEIO CerberusImpl.lean register_enum_impl
-# CerbGlobal — config/switch refs (temporal; mover = post-arc
-# parameter-plumbing slice) + their read-only safe wrappers
-PIN UNSAFEDECL CerbGlobal.lean confRef
-PIN UNSAFEBASEIO CerbGlobal.lean confRef
-PIN UNSAFEDECL CerbGlobal.lean switchesRef
-PIN UNSAFEBASEIO CerbGlobal.lean switchesRef
-PIN UNSAFEDECL CerbGlobal.lean getConf
-PIN UNSAFEBASEIO CerbGlobal.lean getConf
-PIN UNSAFEDECL CerbGlobal.lean backend_name_impl
-PIN IMPLBY CerbGlobal.lean backend_name_impl
-PIN UNSAFEDECL CerbGlobal.lean current_execution_mode_impl
-PIN IMPLBY CerbGlobal.lean current_execution_mode_impl
-PIN UNSAFEDECL CerbGlobal.lean using_concurrency_impl
-PIN IMPLBY CerbGlobal.lean using_concurrency_impl
-PIN UNSAFEDECL CerbGlobal.lean isDefacto_impl
-PIN IMPLBY CerbGlobal.lean isDefacto_impl
-PIN UNSAFEDECL CerbGlobal.lean isPermissive_impl
-PIN IMPLBY CerbGlobal.lean isPermissive_impl
-PIN UNSAFEDECL CerbGlobal.lean isAgnostic_impl
-PIN IMPLBY CerbGlobal.lean isAgnostic_impl
-PIN UNSAFEDECL CerbGlobal.lean isIgnoreBitfields_impl
-PIN IMPLBY CerbGlobal.lean isIgnoreBitfields_impl
-PIN UNSAFEDECL CerbGlobal.lean has_switch_impl
-PIN IMPLBY CerbGlobal.lean has_switch_impl
-PIN UNSAFEBASEIO CerbGlobal.lean has_switch_impl
-PIN UNSAFEDECL CerbGlobal.lean is_CHERI_impl
-PIN IMPLBY CerbGlobal.lean is_CHERI_impl
-PIN UNSAFEDECL CerbGlobal.lean is_PNVI_impl
-PIN IMPLBY CerbGlobal.lean is_PNVI_impl
-PIN UNSAFEDECL CerbGlobal.lean has_strict_pointer_arith_impl
-PIN IMPLBY CerbGlobal.lean has_strict_pointer_arith_impl
-# CerbUtils — no-op timing/log refs + deterministic stub
-# (permanent-declared family, Q4)
-PIN UNSAFEDECL CerbUtils.lean timingStackRef
-PIN UNSAFEBASEIO CerbUtils.lean timingStackRef
-PIN UNSAFEDECL CerbUtils.lean begin_timing_impl
-PIN IMPLBY CerbUtils.lean begin_timing_impl
-PIN UNSAFEDECL CerbUtils.lean end_timing_impl
-PIN IMPLBY CerbUtils.lean end_timing_impl
-PIN UNSAFEDECL CerbUtils.lean logRef
-PIN UNSAFEBASEIO CerbUtils.lean logRef
-PIN UNSAFEDECL CerbUtils.lean STD_impl
-PIN IMPLBY CerbUtils.lean STD_impl
-PIN UNSAFEBASEIO CerbUtils.lean STD_impl
-PIN UNSAFEDECL CerbUtils.lean boundedIntegerImpl
-PIN IMPLBY CerbUtils.lean boundedIntegerImpl
-PIN UNSAFEBASEIO CerbUtils.lean boundedIntegerImpl
-# CerbMem — BEq shortcut (safe perf seam: opaque + implemented_by,
-# no unsafeBaseIO; pinned because the population census is total)
-PIN UNSAFEDECL CerbMem.lean beqMemValueImpl
-PIN IMPLBY CerbMem.lean beqMemValueImpl
+# def/opaque/abbrev/...` declarations, `unsafeBaseIO` occurrences
+# (keyed by enclosing declaration), and @[extern]-attributed
+# declarations (the MAJOR-2 class: a pure/BaseIO-signature extern is a
+# native seam exactly like an unsafeBaseIO impl) over the ban surface
+# — hand-written lean_frontend sources + generated/ + the consumed
+# LemLib copy (recursive) — EQUALS this set exactly, both directions
+# and at the pinned COUNT: any new/moved/duplicated site fails naming
+# itself; any missing row fails as scanner/copy drift.
+#
+# Format: PIN <KIND> <PATH> <IDENTIFIER> <COUNT>, KIND in
+# {IMPLBY, UNSAFEDECL, UNSAFEBASEIO, EXTERN}. PATH is the NORMALIZED
+# key (minor-1 fix — path-qualified, so a pinned pair reused from a
+# different directory is visible): generated/ copies fold onto their
+# lean_frontend/ hand-written source (hence COUNT 2 for mirrored
+# files; byte-identity of the copies is the sync gate's job), the
+# consumed LemLib package copy folds onto lem-lean/lean-lib/ (COUNT 1).
+#
+# Q4 classes (the ruling [USER 2026-08-31], rows grouped):
+# - lem-lean/lean-lib/LemLib.lean failwithIImpl/fuelExhaustedWithImpl:
+#   the L2 record's enumerated survivor pair (panic bindings of the
+#   axiom-free failure/fuel constants).
+# - CerberusFresh: the digest boundary — kernel-checked opaque chain
+#   (digestPure/digest_impl/digest + forceThunkIO/forceIO_impl/forceIO)
+#   + the pure md5Hex extern + the BaseIO digestIO/setDigestIO externs
+#   (IO-typed, honest signatures; driver-side callers).
+# - CerbGlobal (temporal; mover: post-arc parameter-plumbing slice).
+# - CerberusImpl enum registry (temporal; mover: reader/supply
+#   machinery follow-up slice, explicitly NOT in-arc).
+# - CerbUtils no-op timing/log refs + boundedIntegerImpl stub
+#   (permanent-declared family).
+# - CerbMem beqMemValueImpl (safe perf seam: opaque + implemented_by).
+PIN IMPLBY lem-lean/lean-lib/LemLib.lean failwithIImpl 1
+PIN IMPLBY lem-lean/lean-lib/LemLib.lean fuelExhaustedWithImpl 1
+PIN UNSAFEDECL lem-lean/lean-lib/LemLib.lean failwithIImpl 1
+PIN UNSAFEDECL lem-lean/lean-lib/LemLib.lean fuelExhaustedWithImpl 1
+PIN EXTERN lean_frontend/CerberusFresh.lean digestIO 2
+PIN EXTERN lean_frontend/CerberusFresh.lean digestPure 2
+PIN EXTERN lean_frontend/CerberusFresh.lean forceThunkIO 2
+PIN EXTERN lean_frontend/CerberusFresh.lean md5Hex 2
+PIN EXTERN lean_frontend/CerberusFresh.lean setDigestIO 2
+PIN IMPLBY lean_frontend/CerberusFresh.lean digest_impl 2
+PIN IMPLBY lean_frontend/CerberusFresh.lean forceIO_impl 2
+PIN UNSAFEDECL lean_frontend/CerberusFresh.lean digest_impl 2
+PIN UNSAFEDECL lean_frontend/CerberusFresh.lean digestPure 2
+PIN UNSAFEDECL lean_frontend/CerberusFresh.lean forceIO_impl 2
+PIN UNSAFEDECL lean_frontend/CerberusFresh.lean forceThunkIO 2
+PIN IMPLBY lean_frontend/CerberusImpl.lean register_enum_impl 2
+PIN IMPLBY lean_frontend/CerberusImpl.lean typeof_enum_impl 2
+PIN UNSAFEBASEIO lean_frontend/CerberusImpl.lean register_enum_impl 2
+PIN UNSAFEBASEIO lean_frontend/CerberusImpl.lean typeof_enum_impl 2
+PIN UNSAFEDECL lean_frontend/CerberusImpl.lean register_enum_impl 2
+PIN UNSAFEDECL lean_frontend/CerberusImpl.lean typeof_enum_impl 2
+PIN IMPLBY lean_frontend/CerbGlobal.lean backend_name_impl 2
+PIN IMPLBY lean_frontend/CerbGlobal.lean current_execution_mode_impl 2
+PIN IMPLBY lean_frontend/CerbGlobal.lean has_strict_pointer_arith_impl 2
+PIN IMPLBY lean_frontend/CerbGlobal.lean has_switch_impl 2
+PIN IMPLBY lean_frontend/CerbGlobal.lean isAgnostic_impl 2
+PIN IMPLBY lean_frontend/CerbGlobal.lean is_CHERI_impl 2
+PIN IMPLBY lean_frontend/CerbGlobal.lean isDefacto_impl 2
+PIN IMPLBY lean_frontend/CerbGlobal.lean isIgnoreBitfields_impl 2
+PIN IMPLBY lean_frontend/CerbGlobal.lean isPermissive_impl 2
+PIN IMPLBY lean_frontend/CerbGlobal.lean is_PNVI_impl 2
+PIN IMPLBY lean_frontend/CerbGlobal.lean using_concurrency_impl 2
+PIN UNSAFEBASEIO lean_frontend/CerbGlobal.lean confRef 2
+PIN UNSAFEBASEIO lean_frontend/CerbGlobal.lean getConf 2
+PIN UNSAFEBASEIO lean_frontend/CerbGlobal.lean has_switch_impl 2
+PIN UNSAFEBASEIO lean_frontend/CerbGlobal.lean switchesRef 2
+PIN UNSAFEDECL lean_frontend/CerbGlobal.lean backend_name_impl 2
+PIN UNSAFEDECL lean_frontend/CerbGlobal.lean confRef 2
+PIN UNSAFEDECL lean_frontend/CerbGlobal.lean current_execution_mode_impl 2
+PIN UNSAFEDECL lean_frontend/CerbGlobal.lean getConf 2
+PIN UNSAFEDECL lean_frontend/CerbGlobal.lean has_strict_pointer_arith_impl 2
+PIN UNSAFEDECL lean_frontend/CerbGlobal.lean has_switch_impl 2
+PIN UNSAFEDECL lean_frontend/CerbGlobal.lean isAgnostic_impl 2
+PIN UNSAFEDECL lean_frontend/CerbGlobal.lean is_CHERI_impl 2
+PIN UNSAFEDECL lean_frontend/CerbGlobal.lean isDefacto_impl 2
+PIN UNSAFEDECL lean_frontend/CerbGlobal.lean isIgnoreBitfields_impl 2
+PIN UNSAFEDECL lean_frontend/CerbGlobal.lean isPermissive_impl 2
+PIN UNSAFEDECL lean_frontend/CerbGlobal.lean is_PNVI_impl 2
+PIN UNSAFEDECL lean_frontend/CerbGlobal.lean switchesRef 2
+PIN UNSAFEDECL lean_frontend/CerbGlobal.lean using_concurrency_impl 2
+PIN IMPLBY lean_frontend/CerbUtils.lean begin_timing_impl 2
+PIN IMPLBY lean_frontend/CerbUtils.lean boundedIntegerImpl 2
+PIN IMPLBY lean_frontend/CerbUtils.lean end_timing_impl 2
+PIN IMPLBY lean_frontend/CerbUtils.lean STD_impl 2
+PIN UNSAFEBASEIO lean_frontend/CerbUtils.lean boundedIntegerImpl 2
+PIN UNSAFEBASEIO lean_frontend/CerbUtils.lean logRef 2
+PIN UNSAFEBASEIO lean_frontend/CerbUtils.lean STD_impl 2
+PIN UNSAFEBASEIO lean_frontend/CerbUtils.lean timingStackRef 2
+PIN UNSAFEDECL lean_frontend/CerbUtils.lean begin_timing_impl 2
+PIN UNSAFEDECL lean_frontend/CerbUtils.lean boundedIntegerImpl 2
+PIN UNSAFEDECL lean_frontend/CerbUtils.lean end_timing_impl 2
+PIN UNSAFEDECL lean_frontend/CerbUtils.lean logRef 2
+PIN UNSAFEDECL lean_frontend/CerbUtils.lean STD_impl 2
+PIN UNSAFEDECL lean_frontend/CerbUtils.lean timingStackRef 2
+PIN IMPLBY lean_frontend/CerbMem.lean beqMemValueImpl 2
+PIN UNSAFEDECL lean_frontend/CerbMem.lean beqMemValueImpl 2

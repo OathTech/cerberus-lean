@@ -63,9 +63,19 @@ lanes, with their recorded states:
 
 Lane semantics worth knowing:
 
-- **Baselines fail closed in both directions.** A regression fails;
-  an unexplained improvement also fails (silent movement is how
-  errors hide). Baseline updates are instrument changes: dedicated
+- **Baselines fail closed in both directions** — with one audited,
+  deliberate exception. In the oracle-differential exec lanes
+  (`test_exec.sh --check-baseline` and friends) a regression fails
+  AND an unexplained improvement fails (silent movement is how errors
+  hide). The gcc SECOND-oracle lane (`test_gcc_oracle.sh`) fails on
+  regressions only and surfaces improvements loudly at rc 0 (by the
+  lane's own audited design: its rows classify oracle-INDEPENDENT
+  gcc-agreement, where an improvement is a skip-class row starting to
+  agree with gcc — e.g. after an unrelated fix lands on mainline —
+  and blocking every commit on re-recording a reporting-flavored
+  scoreboard would invert the lane's Tier placement; the improvement
+  is still printed, and re-records remain dedicated instrument
+  commits). Baseline updates are instrument changes: dedicated
   commit, justification in the header.
 - **Plant tests.** Gates and lanes are themselves tested by
   deliberate sabotage: break the thing the gate should catch, watch
