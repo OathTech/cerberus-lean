@@ -1,0 +1,2 @@
+proc k (a_5: pointer): eff unit :=
+  kill(a_5)

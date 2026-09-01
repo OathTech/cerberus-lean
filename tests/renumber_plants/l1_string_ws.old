@@ -1,0 +1,3 @@
+proc g (a_517: pointer): eff unit :=
+  seq(log("two  spaces here"),
+      kill(a_517))

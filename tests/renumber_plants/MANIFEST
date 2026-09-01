@@ -1,0 +1,18 @@
+# check_renumber_only.py plant fixtures (effect-retirement C2, step 3).
+# Format: <name> <expected>, expected in {FAIL, ADMIT-STRICT, ADMIT-LAYOUT}.
+# The s5/l1/l3/l4 pairs realize the C1 audit's minor-1 admitted-corner
+# holes (string-literal content changes on both legs; newline-collapse
+# across `--` comment boundaries); pair CONTENT reconstructed from the
+# hole descriptions in the C2 brief [AGENT] (the audit's own pair files
+# were not committed). The other FAIL pairs re-commit the C1-era
+# ephemeral plants; the ADMIT pairs are the positive controls.
+s5_string_content FAIL
+l1_string_ws FAIL
+l3_comment_absorb FAIL
+l4_comment_release FAIL
+count_mismatch FAIL
+appended_line FAIL
+token_change FAIL
+section_reorder FAIL
+strict_renumber ADMIT-STRICT
+layout_rewrap ADMIT-LAYOUT

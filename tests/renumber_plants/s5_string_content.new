@@ -1,0 +1,3 @@
+proc f (a_600: pointer): eff loaded integer :=
+  let strong a_601: pointer = pure(a_600) in
+  error("missing sym a_600")

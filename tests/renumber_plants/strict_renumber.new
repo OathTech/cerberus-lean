@@ -1,0 +1,3 @@
+-- Fun map
+proc m (a_216: pointer): eff unit :=
+  seq(log("fixed text"), kill(a_216))

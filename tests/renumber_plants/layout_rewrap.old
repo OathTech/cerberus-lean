@@ -1,0 +1,3 @@
+-- Fun map with a_9 note
+proc w (a_9: pointer, b_10: pointer): eff unit :=
+  seq(log("fixed text"), seq(kill(a_9), kill(b_10)))

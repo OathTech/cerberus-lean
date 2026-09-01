@@ -181,3 +181,14 @@ if ! "$FREEZE_SH"; then
     echo "test_unit: fixture-freeze gate FAILED"
     exit 1
 fi
+
+# Renumber-instrument plant battery (effect-retirement C2 step 3):
+# check_renumber_only.py adjudicates rebaseline admissions, so its
+# refusal legs are TRUST properties — the committed adversarial pairs
+# (string/comment holes s5/l1/l3/l4 + the C1-era plants) must refuse
+# and the positive controls must admit, forever.
+RENUM_PLANTS_SH="$(dirname "$PURITY_SH")/test_renumber_plants.sh"
+if ! "$RENUM_PLANTS_SH"; then
+    echo "test_unit: renumber-instrument plant battery FAILED"
+    exit 1
+fi

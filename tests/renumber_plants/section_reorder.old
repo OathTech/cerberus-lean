@@ -1,0 +1,3 @@
+-- Fun map
+proc one (a_1: pointer): eff unit := kill(a_1)
+proc two (b_2: pointer): eff unit := kill(b_2)
