@@ -13,6 +13,22 @@
 #   movement was masked at threadB time by a stale generated tree in
 #   this worktree (remediated at the split, split record §6.6);
 #   re-recorded here in a dedicated baseline commit per house rule.
+# 2026-09-01 exec-lane re-record (cabs-json parse-only fix):
+#   ub-inconsistent.c CERB_INCONSISTENT -> UB_MATCH — attributed to the
+#   trust-basket oracle driver fix 80e674ee2 (backend/driver/main.ml:
+#   --cabs-json now stops after parse+serialize, mirroring the in-file
+#   cn_spec_json parse-only path). Pre-fix the oracle's exec succeeded
+#   (with UB) but its cabs-json ran the full c_frontend and produced no
+#   JSON, so the row was CERB_INCONSISTENT ("exec succeeded but cabs-json
+#   failed", test_exec.sh:475-478); the bridge now exists and the Lean
+#   pipeline classifies the same UB. Run row verbatim:
+#   "[66/90] UB_MATCH ub-inconsistent: UB:UB061_no_named_members";
+#   pre-record check "0 regression(s), 1 improvement(s)" — the only
+#   movement in the debug lane. Sibling ub-static-reject.c stays
+#   CERB_SKIP (oracle exec fails — different class). Sanctioned
+#   [USER 2026-09-01]; record lean_frontend/docs/
+#   2026-09-01_C2-ratchet-record.md Addendum 3 (closing note).
+#   Re-recorded in a dedicated baseline commit per house rule.
 # Per-category summary (regenerate via docs/2026-08-19_arc4-s4b-corpus-scoreboard.md recipe):
 #   alias      n=3   MATCH=1 UB_MATCH=2
 #   align      n=4   MATCH=4
@@ -25,7 +41,7 @@
 #   ptr        n=9   MATCH=9
 #   rec        n=6   MATCH=6
 #   struct     n=8   MATCH=8
-#   ub         n=3   CERB_INCONSISTENT=1 CERB_SKIP=1 UB_MATCH=1
+#   ub         n=3   CERB_INCONSISTENT=1 CERB_SKIP=1 UB_MATCH=1   (2026-09-01: now CERB_SKIP=1 UB_MATCH=2, see below)
 #   unseq      n=16  MATCH=5 UB_MATCH=11
 #   valid      n=5   CERB_SKIP=1 MATCH=2 UB_MATCH=2
 #   varargs    n=1   MATCH=1
@@ -94,7 +110,7 @@ struct-04-array-member.c MATCH
 struct-05-array-direct.c MATCH
 struct-06-local-struct-array.c MATCH
 struct-07-pass-int-array.c MATCH
-ub-inconsistent.c CERB_INCONSISTENT
+ub-inconsistent.c UB_MATCH
 ub-runtime-detect.c UB_MATCH
 ub-static-reject.c CERB_SKIP
 unseq-01-exact-0301.c UB_MATCH

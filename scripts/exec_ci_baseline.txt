@@ -14,6 +14,32 @@
 #   Unspecified payload prints "Unspecified('<ctype>')" per
 #   pp_core.ml:304-308 (was "Unspecified(<ctype>)" placeholder text).
 #   Only movement in the ci sweep (0 regressions, 3 improvements).
+# 2026-09-01 exec-lane re-record (cabs-json parse-only fix): the 18
+#   CERB_INCONSISTENT rows -> UB_MATCH — 0039-struct_imcomplete.undef.c,
+#   0069-const_expr.c, 0201-main-return-type.undef.c,
+#   0202-main-not-function.undef.c, 0203-main-params1.undef.c,
+#   0204-main-params2.undef.c, 0206-no-linkage-block-incomplete.undef.c,
+#   0207-incomplete-internal-linkage.undef.c,
+#   0208-static-assert-not-integral-constant.undef.c,
+#   0221-block-scoped-function-decl-illegal-storage-class.undef.c,
+#   0222-scalar-init-not-single-expr.undef.c,
+#   0240-incomplete-adust-parameter.undef.c,
+#   0245-storage-class-void-param.undef.c,
+#   0246-block-scoped-function.undef.c, 0257-array-incomplete-type.error.c,
+#   0262-parameter-qualified-void.error.c,
+#   0314-nonarray-incomplete-lvalue-conversion.undef.c,
+#   0337-scalar-init-with_braces.undef.c. Attributed to the trust-basket
+#   oracle driver fix 80e674ee2 (backend/driver/main.ml: --cabs-json now
+#   stops after parse+serialize, mirroring the in-file cn_spec_json
+#   parse-only path). Pre-fix the oracle's exec succeeded (with
+#   translation-time UB) but its cabs-json ran the full c_frontend and
+#   produced no JSON, so each row was CERB_INCONSISTENT ("exec succeeded
+#   but cabs-json failed", test_exec.sh:475-478); the bridge now exists
+#   and the Lean pipeline classifies the same UB. Pre-record check
+#   "0 regression(s), 18 improvement(s)" — the only movement in the ci
+#   sweep; cerb_inconsistent now 0. Sanctioned [USER 2026-09-01]; record
+#   lean_frontend/docs/2026-09-01_C2-ratchet-record.md Addendum 3
+#   (closing note). Re-recorded in a dedicated baseline commit per house rule.
 0001-emptymain.c MATCH
 0002-return_const.c MATCH
 0003-return_arith.c MATCH
@@ -51,7 +77,7 @@
 0036-auto_register_function.error.c CERB_SKIP
 0037-function_conflicting_types.error.c CERB_SKIP
 0038-function_redefinition.error.c CERB_SKIP
-0039-struct_imcomplete.undef.c CERB_INCONSISTENT
+0039-struct_imcomplete.undef.c UB_MATCH
 0040-struct_redefinition.error.c CERB_SKIP
 0041-struct_incompatible.error.c CERB_SKIP
 0042-struct_namespace.c MATCH
@@ -80,7 +106,7 @@
 0066-const2.error.c CERB_SKIP
 0067-band1.c MATCH
 0068-bor1.c MATCH
-0069-const_expr.c CERB_INCONSISTENT
+0069-const_expr.c UB_MATCH
 0070-do-while1.c MATCH
 0071-do-while2.c MATCH
 0072-example03.c MATCH
@@ -123,14 +149,14 @@
 0127-function-pointer.c MATCH
 0128-function-pointer-void-cast.c MATCH
 0129-function-pointer-wrong-args.undef.c UB_MATCH
-0201-main-return-type.undef.c CERB_INCONSISTENT
-0202-main-not-function.undef.c CERB_INCONSISTENT
-0203-main-params1.undef.c CERB_INCONSISTENT
-0204-main-params2.undef.c CERB_INCONSISTENT
+0201-main-return-type.undef.c UB_MATCH
+0202-main-not-function.undef.c UB_MATCH
+0203-main-params1.undef.c UB_MATCH
+0204-main-params2.undef.c UB_MATCH
 0205-illegal-storage-class.error.c CERB_SKIP
-0206-no-linkage-block-incomplete.undef.c CERB_INCONSISTENT
-0207-incomplete-internal-linkage.undef.c CERB_INCONSISTENT
-0208-static-assert-not-integral-constant.undef.c CERB_INCONSISTENT
+0206-no-linkage-block-incomplete.undef.c UB_MATCH
+0207-incomplete-internal-linkage.undef.c UB_MATCH
+0208-static-assert-not-integral-constant.undef.c UB_MATCH
 0209-static-assert-failed.error.c CERB_SKIP
 0210-illegal-storage-class-function.error.c CERB_SKIP
 0211-function-id-not-function-type.error.c CERB_SKIP
@@ -143,8 +169,8 @@
 0218-multiple-storage-class.error.c CERB_SKIP
 0219-thread-local-function-declaration.error.c CERB_SKIP
 0220-thread-local-auto.error.c CERB_SKIP
-0221-block-scoped-function-decl-illegal-storage-class.undef.c CERB_INCONSISTENT
-0222-scalar-init-not-single-expr.undef.c CERB_INCONSISTENT
+0221-block-scoped-function-decl-illegal-storage-class.undef.c UB_MATCH
+0222-scalar-init-not-single-expr.undef.c UB_MATCH
 0223-illegal-storage-class-static-init.error.c CERB_SKIP
 0224-enum-not-int.error.c CERB_SKIP
 0225-incomplete-field.error.c CERB_SKIP
@@ -162,13 +188,13 @@
 0237-array-star-illegal-scope.error.c CERB_SKIP
 0238-storage-class-function-decl.error.c CERB_SKIP
 0239-parameter-type-void.error.c CERB_SKIP
-0240-incomplete-adust-parameter.undef.c CERB_INCONSISTENT
+0240-incomplete-adust-parameter.undef.c UB_MATCH
 0241-fundef-with-params-void-int.error.c CERB_SKIP
 0242-array-designator-wrong-type.error.c CERB_SKIP
 0243-array-designator-wrong-size.error.c CERB_SKIP
 0244-literal-type-array-char.error.c CERB_SKIP
-0245-storage-class-void-param.undef.c CERB_INCONSISTENT
-0246-block-scoped-function.undef.c CERB_INCONSISTENT
+0245-storage-class-void-param.undef.c UB_MATCH
+0246-block-scoped-function.undef.c UB_MATCH
 0247-illegal-typedef-initializer.error.c CERB_SKIP
 0248-typedef-redefinition.error.c CERB_SKIP
 0249-multiple-declaration.error.c CERB_SKIP
@@ -179,12 +205,12 @@
 0254-undeclared-label.error.c CERB_SKIP
 0255-indirection-wrong-type.error.c CERB_SKIP
 0256-untypable-constant.error.c CERB_SKIP
-0257-array-incomplete-type.error.c CERB_INCONSISTENT
+0257-array-incomplete-type.error.c UB_MATCH
 0258-array-function-type.error.c CERB_SKIP
 0259-invalid-return-type.error.c CERB_SKIP
 0260-pointer-to-restrict.error.c CERB_SKIP
 0261-restrict-requires-pointer.error.c CERB_SKIP
-0262-parameter-qualified-void.error.c CERB_INCONSISTENT
+0262-parameter-qualified-void.error.c UB_MATCH
 0263-parameter-incomplete-type.error.c CERB_SKIP
 0264-if-expression-scalar.error.c CERB_SKIP
 0265-loop-expression-not-scalar.error.c CERB_SKIP
@@ -235,7 +261,7 @@
 0311-unseq_race_ok01.c MATCH
 0312-unseq_race_ok02.c MATCH
 0313-unseq_race_ok03.c MATCH
-0314-nonarray-incomplete-lvalue-conversion.undef.c CERB_INCONSISTENT
+0314-nonarray-incomplete-lvalue-conversion.undef.c UB_MATCH
 0315-duplicate_member.error.c CERB_SKIP
 0316-declaration_struct_pointer.error.c CERB_SKIP
 0317-compound-literal-lifetime.c MATCH
@@ -251,7 +277,7 @@
 0333-shifts_non_representable.undef.c UB_MATCH
 0334-non_decimal_long_int_constants.c MATCH
 0335-non_decimal_unsigned_long_int_constants.c MATCH
-0337-scalar-init-with_braces.undef.c CERB_INCONSISTENT
+0337-scalar-init-with_braces.undef.c UB_MATCH
 0338-cast-pointer-to-_Bool.c MATCH
 0339-invalid-string-character.error.c CERB_SKIP
 0340-shl_promotion_to_signed.undef.c UB_MATCH

@@ -859,3 +859,72 @@ clean; pins `045dcb0` everywhere; both driver-freshness stamps
 recorded from this session's builds. The `.tmp/rebase-battery/`
 scratch dir (lane logs, probe outputs) is ephemeral and deleted at
 slice end; every load-bearing output is quoted verbatim above.
+
+### Closing note (2026-09-01): the flagged reconciliation-(d) rows re-recorded
+
+[USER 2026-09-01] sanction, verbatim: "great, let's run the regen".
+[AGENT] (baseline-regen worker, branch `fix/exec-regen` from mainline
+`bbdbacaff`; NO merge, NO push). The 19 exec-lane rows flagged above
+under reconciliation (d) are re-recorded in one dedicated baseline
+commit, attributed to the trust-basket oracle driver fix `80e674ee2`
+(`backend/driver/main.ml` `--cabs-json` stops after parse+serialize;
+its own message names the class: "parity-detective §2,
+CERB_INCONSISTENT class", 43 blocked rows unlocked, 43/43 AGREE).
+
+- Pre-flight: fresh builds through the helpers — oracle
+  `DUNE_CACHE=disabled` via `build_cerberus` (bin `c93bbfebd196…`,
+  stamp recorded); Lean via `build_lean` under `CERB_MEM_MAX=32G`
+  (bin `91c805fb050f…` — byte-identical to the bin recorded in this
+  Addendum, stamp recorded). lem-sync `--check` OK (gen
+  `295e4f8291c9…`, as above) and `--check-lean` OK (gen
+  `6c2ae2041cce…` — NOT the `580dab66f849…` recorded above; explained
+  below). Pins unchanged (`045dcb0`).
+- Step 1, check mode BEFORE any edit, verbatim: debug lane
+  `Baseline check: 0 regression(s), 1 improvement(s)` / `BASELINE OK`
+  rc 0, the one line `improvement: ub-inconsistent.c
+  baseline=CERB_INCONSISTENT current=UB_MATCH` (run row `[66/90]
+  UB_MATCH ub-inconsistent: UB:UB061_no_named_members`); ci scoreboard
+  `Baseline check: 0 regression(s), 18 improvement(s)` / `BASELINE OK`
+  rc 0, all 18 `baseline=CERB_INCONSISTENT current=UB_MATCH`, and the
+  18 names are set-equal to the baseline's CERB_INCONSISTENT rows
+  (diff empty). 1 + 18 = 19, all improvement-direction, one class.
+- Step 2: `--write-baseline` to scratch paths, row-set delta vs the
+  committed files = exactly those 19 rows (`diff` of non-comment
+  lines), then spliced into the committed files (precedent
+  `acf65b54c` / `e0d3ad1f7`: hand-maintained header blocks preserved,
+  dated attribution notes prepended, the debug `ub n=3` summary line
+  annotated). `git diff -U0` row lines: -19/+19, nothing else.
+- Step 3, check mode AFTER: debug `Baseline check: 0 regression(s),
+  0 improvement(s)` / `BASELINE OK` rc 0, `SUMMARY: total=90 match=66
+  ub_match=20 … cerb_inconsistent=0`; ci `Baseline check:
+  0 regression(s), 0 improvement(s)` / `BASELINE OK` rc 0, `SUMMARY:
+  total=242 match=91 ub_match=41 … cerb_skip=110 cerb_inconsistent=0`.
+  test_unit on the committed tree: rc 0 (`check_theorem_axioms: C2
+  ratchet OK (292 files scanned recursively: …)`, `C2 entry census OK
+  (9 entries, …)`, `test_renumber_plants: OK (12 plants: …)`).
+
+**[AGENT] finding (observation, no action taken; for the operator):
+stale primed files in the git-ignored Lean generated tree.** The gen
+stamp `6c2ae2041cce…` (193 files) vs this Addendum's `580dab66f849…`,
+and the ratchet's `292 files scanned` vs the `290` above, are the same
+2-file delta: `lean_frontend/generated/CerbCoreInstances.lean` and
+`CerbInhabitedInstances.lean` — retired by `fc7c5b0eb` (2026-08-20,
+Arc-8 S4), never produced by lem at this commit (verified by a fresh
+`lem` run into a temp outdir: 170 files, every one byte-identical to
+the worktree's copy; +21 hand-written copies = 191; the worktree's 2
+extras are dated Aug 20 and are also present in the primary checkout,
+i.e. worktree priming carries them). They are INERT: no Lake root, no
+import, no Makefile entry (the identical Lean binary hash corroborates).
+But the `lean-prelude-src` recipe only `rm -f`s the Core_unstruct pair
+(C1), so retired generated files persist in a git-ignored directory
+and are then INCLUDED in both the lem-sync gen stamp and the
+driver-fresh Lean src hash — the stamps bless whatever is present.
+Not remediated in this slice (deleting them invalidates both stamps
+and forces a rebuild cascade — out of the sanctioned scope); left for
+an operator decision (candidate: make the recipe wipe
+`lean_frontend/generated/*.lean` before generating, mirroring
+`clean-prelude-src`).
+
+State at close: `fix/exec-regen` = mainline `bbdbacaff` + this one
+commit; worktree clean; `.tmp/` scratch (lane logs, scratch baselines)
+deleted at slice end; every load-bearing output quoted verbatim above.
