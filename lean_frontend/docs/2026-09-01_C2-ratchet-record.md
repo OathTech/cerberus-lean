@@ -700,3 +700,162 @@ hardening or a raw-string ban probe is the named follow-up.
 
 **Close-out at this tree:** full ratcheted gate green (verbatim
 below) + `test_unit.sh` exit 0.
+
+---
+
+## Addendum 3 (arc-close rebase, 2026-09-01): rebase onto the trust-basket mainline `df63018e3`
+
+[AGENT] (rebase worker; the ff-merge itself remains the operator's —
+NO merge, NO push performed). The arc (26 commits, based
+`58ec50779`, old tip `d0165cfed`) was rebased onto mainline
+`df63018e3` (the 9-commit trust-basket slice + the sanctioned gcc
+baseline regeneration). New tip after rebase: `7a9fec9e2` (26
+commits, count preserved); this record commit rides on top.
+
+### Conflict log
+
+`git rebase df63018e3` completed with ZERO textual conflicts. The
+file-overlap audit (not assumed from the clean rebase): the
+intersection of basket-touched and arc-touched file sets is exactly
+one file, `scripts/common.sh`, which git auto-merged; the merged
+result was reviewed line-by-line and carries BOTH intents:
+
+- basket side (items a/d): `build_cerberus`/`build_lean` gate on the
+  build's exit status; driver-freshness stamps recorded on success
+  (`tools/check_driver_fresh.sh --record-*`); the `SKIP_BUILD=1`
+  driver-stamp check block (`--check-oracle`/`--check-lean`);
+- C2 side: `verify_skip_build_freshness` (both lem-sync stamps,
+  fail-closed) — still defined and still invoked by all 6 lanes
+  (`test_exec.sh`, `test_ci_sweep.sh`, `test_speclab{,_list,_seed,
+  _tree}.sh`).
+
+Non-conflicts by construction, verified: `lean_frontend/CerbFS.lean`
+was never touched by the arc — the basket's fail-closed refusals ride
+through intact; `VALIDATION.md`/`TODO.md` were never touched by the
+basket — the C2 rewrites stand with nothing to absorb. The
+old-tip→new-tip diff is exactly the basket's 10 files (nothing else
+moved in the replay).
+
+### Re-derivation + rebuild at the rebased head
+
+- `make prelude-src` + `make lean-prelude-src` from the rebased
+  `.lem` sources (lem @ `045dcb0`): `git status --porcelain` EMPTY on
+  both generated trees — the committed trees are byte-identical to
+  the re-derivation. Stamps: src `f4c0096697fb…`, OCaml gen
+  `295e4f8291c9…`, Lean gen `580dab66f849…`.
+- Fresh builds through the (merged) helpers: oracle
+  `DUNE_CACHE=disabled` via `build_cerberus` (stamp recorded, bin
+  `c30d4d43accb…`); Lean via `build_lean` capped (stamp recorded, bin
+  `91c805fb050f…`).
+- Pins verified `045dcb0d57a171eb4fb3a6eb5abe288c227270ce`
+  everywhere: `deps/lem-pinned` HEAD = opam lem pin source = root
+  Lake manifest (rev + inputRev) = speclab manifest (rev + inputRev).
+
+### Battery at the rebased head (grind note, written before launch: the gcc + csmith passes are measurement sweeps over differential corpora — the sanctioned category — run sharded)
+
+**Tier A (13/13, every rc 0):** test_unit (full ratcheted gate,
+verbatim: `check_theorem_axioms: C2 ratchet OK (290 files scanned
+recursively: 0 axioms, 0 runEffectful, seam population = the 66
+pinned path-qualified counted rows exactly incl. the extern class;
+lem tests/ scaffolds asserted outside the surface)`;
+`check_theorem_axioms: C2 entry census OK (9 entries, every cone ⊆
+[propext, Classical.choice, Quot.sound])` — all 9 entry lines
+re-observed at exactly `[propext, Classical.choice, Quot.sound]`;
+`test_renumber_plants: OK (12 plants: refusals refuse, admits admit
+with declared class)`); exec minimal/coverage/float `Baseline check:
+0 regression(s), 0 improvement(s)`; exec debug `0 regression(s), 1
+improvement(s)` rc 0 — the attributed reconciliation, below; bytes
+`SUMMARY: exec_match=9 neg_pinned=5 fail=0` (the basket's extended
+NEG leg, green); libc_exec `SUMMARY: match=7 diff=0`; multi_tu
+`SUMMARY: total=2 match=2 fail=0`; parse + core 100%; elab
+`SUMMARY: total=106 same=103 diff=3 ocaml_fail=0 lean_fail=0`
+(recorded state); libxml2_uri `GATE PASS: all lane expectations
+pinned-green + baseline unchanged (16/16)`; cn_coverage
+`BASELINE OK (213 entries, exact match)`.
+
+**Tier B (12/12, every rc 0):** libxml2 full
+`SUMMARY: total=4 match=4 fail=0 (points: 1354, 22 observations
+each)`; parse tests/ci; core tests/ci; verify `test_verify: 117
+passed, 0 failed (23 fixtures, 22 call points, 14 corpus fixtures,
+21 corpus points)`; immaculate at the committed baseline incl. both
+offsetof rows (verbatim: `MATCH offsetof-nested-struct
+O[VAL:Specified(0)] L[VAL:Specified(0)]` and
+`MATCH offsetof-union-member O[CRASH] L[CRASH]`); speclab
+`--selftest` + `--plant` + divmod/bytearr/list/tree/seed `--gate`.
+
+**gcc second-oracle lane** (rc 0, `gcc second-oracle lane OK`),
+SUMMARY verbatim:
+
+```
+SUMMARY: total=1953 compared=1880 agree=1871 agree_nd=0 triaged=9 disagree=0 o2_agree=190 skip_lean_crash=9 skip_lean_fail=9 skip_lean_timeout=11 skip_ub=44 triaged_addr=9
+```
+
+with `Baseline check: 0 regression(s), 0 improvement(s)` — the
+per-run improvement warning of the C1/C2 era is GONE, exactly the
+Addendum-2 erratum's post-rebase expectation (the regenerated
+baseline `df63018e3` absorbed the four adjudicated rows; skip_oracle
+is 0 and no longer printed).
+
+**Tier C:** csmith corpus, all 6 shards
+`--check-baseline --shard k/6`, k=1..6: each
+`Baseline check: 0 regression(s), 0 improvement(s)` + `BASELINE OK`,
+rc 0 (1669 files; one background-runner kill at the harness's task
+ceiling interrupted shard 2 mid-run — re-run WHOLE, no partial
+credit, the C1/C2 precedent). ci scoreboard no-regression probe
+(`--check-baseline=scripts/exec_ci_baseline.txt tests/ci`): rc 0,
+`Baseline check: 0 regression(s), 18 improvement(s)` — the
+attributed reconciliation, below.
+
+**Probes (reconciliation (b), values verbatim):** `fgetc_eof.c`
+`AGREE VAL:Specified(2)`; `fseek_read.c` + `fread_seq.c` +
+`fopen_trunc_reopen.c` all refuse loudly (lean exit 134), the
+trunc-reopen refusal re-observed verbatim (`PANIC at CerbFS.fs_open
+CerbFS:166:6: CerbFS refusal (fail-closed fs-model boundary): open
+of existing 2-byte file 't.txt' with write/truncate intent (oflag
+292) …`). P1 lem refusal re-run against the installed lem @
+`045dcb0` on the committed suite plant
+(`negative/neg_effectful_retired.lem`): exit 1, the retirement
+message re-observed verbatim.
+
+### Reconciliation vs the briefed expectations
+
+- (a) gcc lane: EXACT — SUMMARY matches the briefed expectation
+  field-for-field, `0 regression(s), 0 improvement(s)`.
+- (b) CerbFS probes: refusals re-observed, fgetc_eof AGREE — met.
+- (c) immaculate offsetof pair: both MATCH at baseline — met.
+- (d) "everything else byte-at-baseline": met with ONE attributed
+  exception class, reported here for operator adjudication
+  ([AGENT] finding, not in the briefed list): the mainline
+  `--cabs-json` stop-after-parse fix (`80e674ee2`) also unblocks
+  exec-lane rows whose oracle EXEC succeeds (with UB) but whose
+  cabs-json previously failed — every such row was
+  `CERB_INCONSISTENT` ("exec succeeded but cabs-json failed") and now
+  compares. Movement observed: `tests/debug/ub-inconsistent.c`
+  `CERB_INCONSISTENT → UB_MATCH` (Tier A debug lane, 1 improvement,
+  rc 0; run row verbatim `[66/90] UB_MATCH ub-inconsistent:
+  UB:UB061_no_named_members`) and 18 tests/ci rows
+  `CERB_INCONSISTENT → UB_MATCH` (Tier C scoreboard probe, rc 0; all
+  18 are `.undef.c`/`.error.c`-class files). This is the exec-lane
+  echo of expectation (a)'s root cause, anticipated as a class by the
+  basket record §3(c) ("these rows move in the first full post-(c)
+  run"); it PRE-EXISTS the rebase on mainline (fix + untouched
+  baselines both in `df63018e3`). Its sibling
+  `tests/debug/ub-static-reject.c` stays `CERB_SKIP` (oracle exec
+  fails — different class), and the csmith corpus baseline is
+  untouched (its skip rows are oracle-EXEC failures), both as the
+  basket record predicted. Baselines deliberately NOT regenerated
+  [AGENT], matching the basket worker's own disposition: the lanes
+  are rc 0, the movement stays visible on every run, and re-recording
+  (exec_debug_baseline.txt row 97 + the 18 exec_ci_baseline.txt rows)
+  is an operator decision at merge.
+- Beyond the above: NOTHING moved — no baseline, pin, or recorded
+  state was modified by this rebase pass.
+
+### State at close
+
+`arc/effect-retirement` @ `7a9fec9e2` + this record commit;
+`df63018e3..HEAD` = the same 26 arc commits + the record; worktree
+clean; pins `045dcb0` everywhere; both driver-freshness stamps
+recorded from this session's builds. The `.tmp/rebase-battery/`
+scratch dir (lane logs, probe outputs) is ephemeral and deleted at
+slice end; every load-bearing output is quoted verbatim above.
