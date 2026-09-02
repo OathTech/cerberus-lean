@@ -55,7 +55,10 @@ set -uo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
 TIMEOUT_SECS="${TIMEOUT_SECS:-300}"
-ULIMIT_KB=4000000
+# Per-test memory cap: `scripts/capped` at CERB_TEST_MEM_MAX (default 4G,
+# cgroup RSS; common.sh CAPPED_TEST) — mem-scale S2 (2026-09-02, Q2 [USER
+# 2026-09-02]) replacing the arc-5 `ulimit -v 4000000`; exit 137 = killed
+# (rc_label below), a lane FAIL.
 N_URIS=16   # corpus-size pin: must match NTESTS in tests/libxml2/uri_harness.c
 
 RECORD_BASELINE=false
@@ -101,7 +104,7 @@ echo "[prep] pins verified; 5 TUs"
 run_capped() { # <out> <err> <cmd...>
     local out="$1" err="$2"; shift 2
     local rc=0
-    ( ulimit -v $ULIMIT_KB; exec timeout "${TIMEOUT_SECS}s" /usr/bin/time -v "$@" \
+    ( "${CAPPED_TEST[@]}" timeout "${TIMEOUT_SECS}s" /usr/bin/time -v "$@" \
         > "$out" 2> "$err" ) || rc=$?
     return $rc
 }
@@ -116,7 +119,7 @@ rc_label() { # <rc>
     case "$1" in
         124) echo "timeout after ${TIMEOUT_SECS}s (exit 124)" ;;
         125) echo "internal error (exit 125 — cerberus's uncaught-exception exit, NOT a timeout; check the lane's stderr)" ;;
-        137) echo "killed by SIGKILL (exit 137 — likely the memory cap)" ;;
+        137) echo "killed by SIGKILL (exit 137 — the per-test cgroup memory cap CERB_TEST_MEM_MAX=$TEST_MEM_MAX, or an external kill; capped prints a KILLED banner on the lane's stderr when it is the cap)" ;;
         *)   echo "crash (exit $1)" ;;
     esac
 }
@@ -171,7 +174,7 @@ declare -a JSONS=()
 for t in "${TUS[@]}"; do
     j="$OUTPUT_DIR/$(basename "$t" .c).json"
     rc=0
-    ( ulimit -v $ULIMIT_KB; exec timeout "${TIMEOUT_SECS}s" \
+    ( "${CAPPED_TEST[@]}" timeout "${TIMEOUT_SECS}s" \
         "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" --cabs-json "${FLAGS[@]}" "$t" \
         > "$j" 2> "$OUTPUT_DIR/json.err" ) || rc=$?
     [[ $rc -eq 0 && -s "$j" ]] || fail "cabs-json failed for $(basename "$t") (exit $rc)"

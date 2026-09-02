@@ -43,7 +43,10 @@
 # => exit 1.
 #
 # Resource bounds (operator directive, arc-5): every cerberus invocation on
-# libxml2-sized inputs runs under `ulimit -v 4000000` + timeout; per-slice
+# libxml2-sized inputs runs under the per-test cgroup cap (`scripts/capped`,
+# CERB_TEST_MEM_MAX default 4G RSS — mem-scale S2, 2026-09-02, Q2 [USER
+# 2026-09-02], replacing the arc-5 `ulimit -v 4000000`; a cap kill is exit
+# 137 + capped's KILLED banner, reported as FAIL … KILLED) + timeout; per-slice
 # wall/maxRSS are reported.
 #
 # Usage: ./scripts/test_libxml2.sh [--record-baseline] [slice-name ...]
@@ -60,7 +63,6 @@ set -uo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
 TIMEOUT_SECS="${TIMEOUT_SECS:-300}"
-ULIMIT_KB=4000000
 
 RECORD_BASELINE=false
 declare -a ONLY=()
@@ -138,7 +140,7 @@ fi
 # --- 4. chvalid.c cabs-json (once) ------------------------------------------
 CHVALID_JSON="$OUTPUT_DIR/chvalid.json"
 jexit=0
-( ulimit -v $ULIMIT_KB; exec timeout "${TIMEOUT_SECS}s" \
+( "${CAPPED_TEST[@]}" timeout "${TIMEOUT_SECS}s" \
     "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" --cabs-json "${FLAGS[@]}" "$CHVALID_TU" \
     > "$CHVALID_JSON" 2> "$OUTPUT_DIR/json.err" ) || jexit=$?
 [[ $jexit -eq 0 && -s "$CHVALID_JSON" ]] || fail "cabs-json failed for chvalid.c (exit $jexit): $(tail -2 "$OUTPUT_DIR/json.err" | tr '\n' ' ')"
@@ -156,11 +158,15 @@ for slice in "${SLICES[@]}"; do
 
     # OCaml oracle (single-trace random mode)
     cerb_exit=0
-    ( ulimit -v $ULIMIT_KB; exec timeout "${TIMEOUT_SECS}s" /usr/bin/time -v \
+    ( "${CAPPED_TEST[@]}" timeout "${TIMEOUT_SECS}s" /usr/bin/time -v \
         "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" --nolibc --exec --batch \
         "${FLAGS[@]}" "$slice" "$CHVALID_TU" \
         > "$OUTPUT_DIR/$sname.ocaml.out" 2> "$OUTPUT_DIR/$sname.ocaml.err" ) || cerb_exit=$?
     cerb_output=$(cat "$OUTPUT_DIR/$sname.ocaml.out")
+    if [[ $cerb_exit -eq 137 ]]; then
+        echo "[$sname] FAIL: OCaml $(kill_label 137 "$OUTPUT_DIR/$sname.ocaml.err")"
+        FAIL_CNT=$((FAIL_CNT+1)); continue
+    fi
     if [[ $cerb_exit -ge 124 || -z "$cerb_output" ]]; then
         echo "[$sname] FAIL: OCaml timeout/crash (exit $cerb_exit): $(tail -2 "$OUTPUT_DIR/$sname.ocaml.err" | tr '\n' ' ')"
         FAIL_CNT=$((FAIL_CNT+1)); continue
@@ -188,7 +194,7 @@ for slice in "${SLICES[@]}"; do
 
     # slice cabs-json
     jexit=0
-    ( ulimit -v $ULIMIT_KB; exec timeout "${TIMEOUT_SECS}s" \
+    ( "${CAPPED_TEST[@]}" timeout "${TIMEOUT_SECS}s" \
         "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" --cabs-json "${FLAGS[@]}" "$slice" \
         > "$OUTPUT_DIR/$sname.json" 2> "$OUTPUT_DIR/json.err" ) || jexit=$?
     if [[ $jexit -ne 0 || ! -s "$OUTPUT_DIR/$sname.json" ]]; then
@@ -198,11 +204,15 @@ for slice in "${SLICES[@]}"; do
 
     # Lean pipeline (single-trace)
     lean_exit=0
-    ( ulimit -v $ULIMIT_KB; exec timeout "${TIMEOUT_SECS}s" /usr/bin/time -v \
+    ( "${CAPPED_TEST[@]}" timeout "${TIMEOUT_SECS}s" /usr/bin/time -v \
         env LEAN_ABORT_ON_PANIC=1 "$CERBERUS_LEAN_BIN" --batch --first \
         "$OUTPUT_DIR/$sname.json" "$CHVALID_JSON" \
         > "$OUTPUT_DIR/$sname.lean.out" 2> "$OUTPUT_DIR/$sname.lean.err" ) || lean_exit=$?
     lean_output=$(cat "$OUTPUT_DIR/$sname.lean.out")
+    if [[ $lean_exit -eq 137 ]]; then
+        echo "[$sname] FAIL: Lean $(kill_label 137 "$OUTPUT_DIR/$sname.lean.err")"
+        FAIL_CNT=$((FAIL_CNT+1)); continue
+    fi
     if [[ $lean_exit -ge 124 ]]; then
         echo "[$sname] FAIL: Lean timeout/crash (exit $lean_exit): $(tail -2 "$OUTPUT_DIR/$sname.lean.err" | tr '\n' ' ')"
         FAIL_CNT=$((FAIL_CNT+1)); continue

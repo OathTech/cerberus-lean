@@ -35,8 +35,13 @@
 #      into CERB_SKIP): CERB_TIMEOUT / CERB_CRASH / CERB_ERROR (Error{}
 #      verdict) / CERB_REJECT (nonzero exit, no verdict = front-end
 #      rejection) / CERB_SKIP (exit 0, no verdict). Triage needs the split.
-#   4. Per-test memory cap BOTH sides: ulimit -v (default 4000000 KB, the
-#      test_libc_exec.sh:82 value) around oracle, cabs-json and Lean runs.
+#   4. Per-test memory cap BOTH sides: `scripts/capped` at
+#      CERB_TEST_MEM_MAX (default 4G, cgroup RSS) around oracle, cabs-json
+#      and Lean runs — mem-scale S2 (2026-09-02, Q2 [USER 2026-09-02])
+#      replacing the arc-5 `ulimit -v 4000000` (virtual-address-space cap;
+#      common.sh header). A cap kill is exit 137 + capped's KILLED banner
+#      on stderr: rows LEAN_KILL / CERB_KILL, distinct from *_CRASH,
+#      never agreement, never a skip.
 #   5. Checkpointed TSV + --resume: one row appended per file
 #      (suite<TAB>relpath<TAB>status<TAB>detail); an interrupted sweep
 #      rerun with --resume skips already-recorded files.
@@ -59,8 +64,8 @@
 #
 # Statuses (superset of the test_exec.sh taxonomy):
 #   MATCH UB_MATCH UB_DIFF STDOUT_DIFF DIFF MISMATCH
-#   LEAN_FAIL LEAN_CRASH LEAN_ERROR LEAN_TIMEOUT LEAN_HANG
-#   CERB_REJECT CERB_ERROR CERB_TIMEOUT CERB_HANG CERB_CRASH CERB_SKIP
+#   LEAN_FAIL LEAN_CRASH LEAN_KILL LEAN_ERROR LEAN_TIMEOUT LEAN_HANG
+#   CERB_REJECT CERB_ERROR CERB_TIMEOUT CERB_HANG CERB_CRASH CERB_KILL CERB_SKIP
 #   CERB_FLOOR CERB_INCONSISTENT
 #
 # Usage:
@@ -69,13 +74,12 @@
 #   ./scripts/test_ci_sweep.sh --list-suites
 # Environment:
 #   TIMEOUT_SECS    per-side per-test timeout (default 15)
-#   SWEEP_ULIMIT_KB per-test virtual-memory cap in KB (default 4000000)
+#   CERB_TEST_MEM_MAX per-test resident-memory cap (default 4G; common.sh)
 #   SKIP_BUILD=1    skip no-op build steps (binaries must exist)
 set -uo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
 TIMEOUT_SECS="${TIMEOUT_SECS:-15}"
-SWEEP_ULIMIT_KB="${SWEEP_ULIMIT_KB:-4000000}"
 
 command -v timeout &>/dev/null || { echo "Error: 'timeout' not found" >&2; exit 1; }
 require_time_bin   # HANG classification needs GNU time (common.sh; fail-closed)
@@ -201,13 +205,13 @@ for suite in "${SUITES[@]}"; do
     [[ $total -gt 0 ]] || { echo "Error: empty suite $suite (empty corpus is a failure)" >&2; exit 1; }
     if [[ $MAX_TESTS -gt 0 ]]; then files=("${files[@]:0:$MAX_TESTS}"); fi
     echo ""
-    echo "=== SWEEP suite=$suite mode=$mode files=${#files[@]} (of $total) timeout=${TIMEOUT_SECS}s ulimit=${SWEEP_ULIMIT_KB}KB ==="
+    echo "=== SWEEP suite=$suite mode=$mode files=${#files[@]} (of $total) timeout=${TIMEOUT_SECS}s cap=${TEST_MEM_MAX} (cgroup RSS, per test) ==="
 
     # counters
     declare -A C=()
     for k in MATCH UB_MATCH UB_DIFF STDOUT_DIFF DIFF MISMATCH LEAN_FAIL LEAN_CRASH \
-             LEAN_ERROR LEAN_TIMEOUT LEAN_HANG CERB_REJECT CERB_ERROR CERB_TIMEOUT \
-             CERB_HANG CERB_CRASH CERB_SKIP CERB_FLOOR CERB_INCONSISTENT; do C[$k]=0; done
+             LEAN_KILL LEAN_ERROR LEAN_TIMEOUT LEAN_HANG CERB_REJECT CERB_ERROR CERB_TIMEOUT \
+             CERB_HANG CERB_CRASH CERB_KILL CERB_SKIP CERB_FLOOR CERB_INCONSISTENT; do C[$k]=0; done
     n=0; nfiles=${#files[@]}
 
     ORACLE_FLAGS=(--exec --batch --mode=exhaustive)
@@ -232,15 +236,20 @@ for suite in "${SUITES[@]}"; do
         # --- oracle ---------------------------------------------------------
         cerb_exit=0
         cerb_time="$WORK_DIR/cerb.time"
-        cerb_out=$( (ulimit -v "$SWEEP_ULIMIT_KB"; exec "$TIME_BIN" -v -o "$cerb_time" timeout "${TIMEOUT_SECS}s" \
-            "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" "${ORACLE_FLAGS[@]}" "$f") 2>&1 ) \
+        cerb_out=$( "${CAPPED_TEST[@]}" "$TIME_BIN" -v -o "$cerb_time" timeout "${TIMEOUT_SECS}s" \
+            "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" "${ORACLE_FLAGS[@]}" "$f" 2>&1 ) \
             || cerb_exit=$?
         if [[ $cerb_exit -eq 124 ]]; then
             cerb_124=$(classify_exit124 "$cerb_time" "$TIMEOUT_SECS") || exit 1
             if [[ "$cerb_124" == HANG* ]]; then row CERB_HANG "$cerb_124"; else row CERB_TIMEOUT "$cerb_124"; fi
             continue
         fi
-        if [[ $cerb_exit -eq 134 || $cerb_exit -eq 137 || $cerb_exit -eq 139 ]]; then
+        if [[ $cerb_exit -eq 137 ]]; then
+            if [[ "$cerb_out" == *"capped: KILLED"* ]]; then row CERB_KILL "exit 137, capped KILLED banner (memory cap $TEST_MEM_MAX)"
+            else row CERB_KILL "exit 137 (SIGKILL, no capped banner)"; fi
+            continue
+        fi
+        if [[ $cerb_exit -eq 134 || $cerb_exit -eq 139 ]]; then
             row CERB_CRASH "signal exit $cerb_exit"; continue; fi
         if [[ "$cerb_out" == *CERB_FRESH_FLOOR_VIOLATION* ]]; then
             row CERB_FLOOR "exit $cerb_exit"; continue; fi
@@ -266,19 +275,27 @@ for suite in "${SUITES[@]}"; do
 
         # --- cabs-json ------------------------------------------------------
         json="$WORK_DIR/tu.json"
-        if ! (ulimit -v "$SWEEP_ULIMIT_KB"; exec timeout "${TIMEOUT_SECS}s" \
-                "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" --cabs-json "$f") > "$json" 2>/dev/null; then
-            row CERB_INCONSISTENT "exec succeeded but cabs-json failed"; continue; fi
+        json_rc=0
+        "${CAPPED_TEST[@]}" timeout "${TIMEOUT_SECS}s" \
+                "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" --cabs-json "$f" > "$json" 2> "$WORK_DIR/json.err" || json_rc=$?
+        if [[ $json_rc -eq 137 ]]; then row CERB_KILL "cabs-json exit 137 ($(kill_label 137 "$WORK_DIR/json.err"))"; continue; fi
+        if [[ $json_rc -ne 0 ]]; then
+            row CERB_INCONSISTENT "exec succeeded but cabs-json failed (exit $json_rc)"; continue; fi
 
         # --- Lean pipeline --------------------------------------------------
         lean_exit=0
         lean_time="$WORK_DIR/lean.time"
-        lean_out=$( (ulimit -v "$SWEEP_ULIMIT_KB"; exec env LEAN_ABORT_ON_PANIC=1 \
+        lean_out=$( "${CAPPED_TEST[@]}" env LEAN_ABORT_ON_PANIC=1 \
             "$TIME_BIN" -v -o "$lean_time" timeout "${TIMEOUT_SECS}s" "$CERBERUS_LEAN_BIN" --batch \
-            ${LEAN_MODE_ARGS[@]+"${LEAN_MODE_ARGS[@]}"} "$json") 2>&1 ) || lean_exit=$?
+            ${LEAN_MODE_ARGS[@]+"${LEAN_MODE_ARGS[@]}"} "$json" 2>&1 ) || lean_exit=$?
         if [[ $lean_exit -eq 124 ]]; then
             lean_124=$(classify_exit124 "$lean_time" "$TIMEOUT_SECS") || exit 1
             if [[ "$lean_124" == HANG* ]]; then row LEAN_HANG "$lean_124"; else row LEAN_TIMEOUT "$lean_124"; fi
+            continue
+        fi
+        if [[ $lean_exit -eq 137 ]]; then
+            if [[ "$lean_out" == *"capped: KILLED"* ]]; then row LEAN_KILL "exit 137, capped KILLED banner (memory cap $TEST_MEM_MAX)"
+            else row LEAN_KILL "exit 137 (SIGKILL, no capped banner)"; fi
             continue
         fi
         if [[ $lean_exit -ge 128 ]]; then
@@ -335,8 +352,8 @@ for suite in "${SUITES[@]}"; do
     done < "$tsv"
     summary="SWEEP SUMMARY suite=$suite mode=$mode total=$tsv_rows"
     for k in MATCH UB_MATCH UB_DIFF STDOUT_DIFF DIFF MISMATCH LEAN_FAIL LEAN_CRASH \
-             LEAN_ERROR LEAN_TIMEOUT LEAN_HANG CERB_REJECT CERB_ERROR CERB_TIMEOUT \
-             CERB_HANG CERB_CRASH CERB_SKIP CERB_FLOOR CERB_INCONSISTENT; do
+             LEAN_KILL LEAN_ERROR LEAN_TIMEOUT LEAN_HANG CERB_REJECT CERB_ERROR CERB_TIMEOUT \
+             CERB_HANG CERB_CRASH CERB_KILL CERB_SKIP CERB_FLOOR CERB_INCONSISTENT; do
         summary+=" ${k,,}=${T[$k]:-0}"
     done
     echo ""

@@ -44,7 +44,11 @@ set -uo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
 TIMEOUT_SECS="${TIMEOUT_SECS:-60}"
-ULIMIT_KB=4000000
+# Per-test memory cap: `scripts/capped` at CERB_TEST_MEM_MAX (default 4G,
+# cgroup RSS; common.sh CAPPED_TEST) — mem-scale S2 (2026-09-02, Q2 [USER
+# 2026-09-02]) replacing the arc-5 `ulimit -v 4000000`. A cap kill (exit
+# 137) is token KILL on that side and lane status KILL — two KILL tokens
+# never MATCH (classify below).
 
 RECORD_BASELINE=false
 [[ "${1:-}" == "--record-baseline" ]] && RECORD_BASELINE=true
@@ -74,6 +78,11 @@ cd "$PROJECT_ROOT" || fail "cannot cd to $PROJECT_ROOT"
 # empty / uncaught exception / panic (with nonzero/crash exit) -> CRASH
 verdict() {
     local line="$1" rc="$2"
+    if [[ "$rc" -eq 137 ]]; then
+        # memory-cap kill (exit 137, capped KILLED banner on stderr): its own
+        # token, so it can never read as a verdict on either side
+        echo "KILL"; return
+    fi
     if [[ -z "$line" ]]; then
         # empty stdout: an oracle-side uncaught exception (exit 125/2) or a
         # timeout — either way, no verdict was produced.
@@ -97,7 +106,8 @@ verdict() {
 # Classify oracle-token vs lean-token into a lane status.
 classify() {
     local o="$1" l="$2"
-    if [[ "$o" == "$l" ]]; then echo "MATCH"
+    if [[ "$o" == "KILL" || "$l" == "KILL" ]]; then echo "KILL"
+    elif [[ "$o" == "$l" ]]; then echo "MATCH"
     elif [[ "$o" == "CRASH" ]]; then echo "ORACLE_CRASH"
     else echo "DIFF"; fi
 }
@@ -113,14 +123,14 @@ run_c_case() {  # $1=name $2=cfile $3=libc(0/1) [$4=--args string]
     # to both sides (oracle backend/driver/main.ml:512-514; Lean driver
     # Main.lean --args). Empty string = no flag (the historical argv).
     [[ -n "$xargs" ]] && oflags+=(--args "$xargs")
-    ( ulimit -v $ULIMIT_KB; exec timeout "${TIMEOUT_SECS}s" \
+    ( "${CAPPED_TEST[@]}" timeout "${TIMEOUT_SECS}s" \
         opam exec --switch="$PROJECT_ROOT" -- \
         "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" "${oflags[@]}" "$c" \
         > "$OUTPUT_DIR/$name.o" 2>/dev/null ) || orc=$?
     local oline; oline="$(head -1 "$OUTPUT_DIR/$name.o")"
     local otok; otok="$(verdict "$oline" "$orc")"
     # cabs-json (no --nolibc; the cpp side is identical between sides)
-    ( ulimit -v $ULIMIT_KB; exec timeout "${TIMEOUT_SECS}s" \
+    ( "${CAPPED_TEST[@]}" timeout "${TIMEOUT_SECS}s" \
         opam exec --switch="$PROJECT_ROOT" -- \
         "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" --cabs-json "$c" \
         > "$OUTPUT_DIR/$name.json" 2>/dev/null ) || fail "cabs-json failed for $name"
@@ -128,7 +138,7 @@ run_c_case() {  # $1=name $2=cfile $3=libc(0/1) [$4=--args string]
     local largs=(--batch --first)
     [[ -n "$xargs" ]] && largs+=(--args "$xargs")
     [[ "$libc" -eq 1 ]] && largs+=("${LIBC_ARGS[@]}")
-    ( ulimit -v $ULIMIT_KB; exec timeout "${TIMEOUT_SECS}s" \
+    ( "${CAPPED_TEST[@]}" timeout "${TIMEOUT_SECS}s" \
         env LEAN_ABORT_ON_PANIC=1 "$CERBERUS_LEAN_BIN" "${largs[@]}" \
         "$OUTPUT_DIR/$name.json" \
         > "$OUTPUT_DIR/$name.l" 2>"$OUTPUT_DIR/$name.lerr" ) || lrc=$?

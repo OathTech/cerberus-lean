@@ -39,26 +39,32 @@ else
     for j in "$LIBCJSON"/*.json; do LEAN_ARGS+=(--libc-tu "$j"); done
 fi
 
+# Per-test memory cap: `scripts/capped` at CERB_TEST_MEM_MAX (default 4G,
+# cgroup RSS) — mem-scale S2 (2026-09-02, Q2 [USER 2026-09-02]) replacing
+# the arc-5 `ulimit -v 4000000`; exit 137 (+ capped's KILLED banner in the
+# captured output) is reported as KILLED, never as a verdict.
+CAPPED=(env "CERB_MEM_MAX=${CERB_TEST_MEM_MAX:-4G}" "$ROOT/scripts/capped")
+kill_note() { [[ "$1" -eq 137 ]] && echo " KILLED (exit 137 — memory cap ${CERB_TEST_MEM_MAX:-4G} or SIGKILL)"; return 0; }
 cerb_exit=0
-cerb_out=$( (ulimit -v 4000000; exec timeout "${TIMEOUT_SECS}s" \
-    "$CERB" --runtime="$RUNTIME" "${ORACLE_FLAGS[@]}" "$F") 2>&1 ) || cerb_exit=$?
-echo "=== ORACLE (exit $cerb_exit) ==="
+cerb_out=$( "${CAPPED[@]}" timeout "${TIMEOUT_SECS}s" \
+    "$CERB" --runtime="$RUNTIME" "${ORACLE_FLAGS[@]}" "$F" 2>&1 ) || cerb_exit=$?
+echo "=== ORACLE (exit $cerb_exit)$(kill_note $cerb_exit) ==="
 printf '%s\n' "$cerb_out" | grep -v '^Time spent'
 
 json=$(mktemp "$ROOT/.tmp/pd/probe.XXXXXX.json")
 trap 'rm -f "$json"' EXIT
 json_ok=true
-(ulimit -v 4000000; exec timeout "${TIMEOUT_SECS}s" \
-    "$CERB" --runtime="$RUNTIME" --cabs-json "$F") > "$json" 2>/dev/null || json_ok=false
+"${CAPPED[@]}" timeout "${TIMEOUT_SECS}s" \
+    "$CERB" --runtime="$RUNTIME" --cabs-json "$F" > "$json" 2>/dev/null || json_ok=false
 
 lean_exit=0
 if $json_ok; then
-    lean_out=$( (ulimit -v 4000000; exec env LEAN_ABORT_ON_PANIC=1 timeout "${TIMEOUT_SECS}s" \
-        "$LEAN" --batch ${LEAN_ARGS[@]+"${LEAN_ARGS[@]}"} "$json") 2>&1 ) || lean_exit=$?
+    lean_out=$( "${CAPPED[@]}" env LEAN_ABORT_ON_PANIC=1 timeout "${TIMEOUT_SECS}s" \
+        "$LEAN" --batch ${LEAN_ARGS[@]+"${LEAN_ARGS[@]}"} "$json" 2>&1 ) || lean_exit=$?
 else
     lean_out="(cabs-json failed)"; lean_exit=98
 fi
-echo "=== LEAN (exit $lean_exit) ==="
+echo "=== LEAN (exit $lean_exit)$(kill_note $lean_exit) ==="
 printf '%s\n' "$lean_out"
 
 seq() { printf '%s\n' "$1" | grep -oE 'Undefined \{ub: "[^"]*"|Defined \{value: "[^"]*"' \

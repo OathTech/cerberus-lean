@@ -272,6 +272,36 @@ fi
 # child). NEVER a stack-size knob: a bumped budget only moves the silent
 # ceiling (the registered-defect shape).
 TIME_BIN=/usr/bin/time
+# ---------------------------------------------------------------------------
+# Per-test memory cap (mem-scale S2, 2026-09-02; Q2 RULED [USER 2026-09-02]
+# "Q2 agree" — charter 2026-09-01_mem-scale-design.md §0/§6.4; LADDER.md
+# "Conventions"). SUPERSEDES the arc-5 operator directive `ulimit -v
+# 4000000`: `ulimit -v` limits VIRTUAL address space, and Lean's virtual
+# footprint is ~2-3.6x its RSS, so the old cap killed Lean at ~1.7 GB RSS
+# while the oracle ran to 3.1 GB (profile §2). The cap is now RESIDENT
+# memory via a per-test cgroup (`scripts/capped`, the same mechanism every
+# lake/lean build runs under), keeping the intended 4 GB blast radius per
+# test on BOTH sides. On breach the kernel SIGKILLs inside the cgroup:
+# the wrapped command exits 137 and `capped` prints its KILLED banner on
+# stderr. Every harness classifies 137 as its own KILL class — never as
+# agreement, never as a skip (see each harness's header).
+#   CERB_TEST_MEM_MAX  per-test cap (default 4G; `none` = loud opt-out)
+# Usage in a harness (replaces `( ulimit -v $ULIMIT_KB; exec timeout … )`):
+#   "${CAPPED_TEST[@]}" timeout "${TIMEOUT_SECS}s" <cmd…>
+CAPPED_BIN="$SCRIPT_DIR/capped"
+TEST_MEM_MAX="${CERB_TEST_MEM_MAX:-4G}"
+CAPPED_TEST=(env "CERB_MEM_MAX=$TEST_MEM_MAX" "$CAPPED_BIN")
+[[ -x "$CAPPED_BIN" ]] || { echo "Error: $CAPPED_BIN missing or not executable (per-test memory cap; fail-closed)" >&2; exit 1; }
+# kill_label <rc> [<stderr-file>]: the one-line reading of an exit 137
+# (the cgroup kill / SIGKILL class), with the capped banner as witness.
+kill_label() {
+    local rc="$1" errf="${2:-}"
+    if [[ -n "$errf" && -f "$errf" ]] && grep -q "capped: KILLED" "$errf"; then
+        echo "KILLED (exit $rc; capped KILLED banner present — cgroup memory cap CERB_TEST_MEM_MAX=$TEST_MEM_MAX or SIGKILL)"
+    else
+        echo "KILLED (exit $rc — SIGKILL; memory cap CERB_TEST_MEM_MAX=$TEST_MEM_MAX or external kill)"
+    fi
+}
 require_time_bin() {   # fail-closed: no /usr/bin/time = no HANG instrument
     if [[ ! -x "$TIME_BIN" ]]; then
         echo "Error: $TIME_BIN not found or not executable — the HANG classification needs GNU time (fail-closed, not skipped)" >&2

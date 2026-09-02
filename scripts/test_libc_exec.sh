@@ -35,7 +35,10 @@ set -uo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
 TIMEOUT_SECS="${TIMEOUT_SECS:-300}"
-ULIMIT_KB=4000000
+# Per-test memory cap: `scripts/capped` at CERB_TEST_MEM_MAX (default 4G,
+# cgroup RSS; common.sh CAPPED_TEST) — mem-scale S2 (2026-09-02, Q2 [USER
+# 2026-09-02]) replacing the arc-5 `ulimit -v 4000000`. A cap kill (exit
+# 137 + capped's KILLED banner) is status KILL, never MATCH.
 
 RECORD_BASELINE=false
 [[ "${1:-}" == "--record-baseline" ]] && RECORD_BASELINE=true
@@ -79,27 +82,36 @@ for tu in "$PROJECT_ROOT"/tests/libc_exec/*.c; do
     name="$(basename "$tu" .c)"
     # OCaml side: WITH libc (no --nolibc)
     rc=0
-    ( ulimit -v $ULIMIT_KB; exec timeout "${TIMEOUT_SECS}s" \
+    ( "${CAPPED_TEST[@]}" timeout "${TIMEOUT_SECS}s" \
         opam exec --switch="$PROJECT_ROOT" -- \
         "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" --exec --batch "$tu" \
         > "$OUTPUT_DIR/$name.ocaml" 2> "$OUTPUT_DIR/$name.ocaml.err" ) || rc=$?
+    ocaml_rc=$rc
     ocaml_line="$(head -1 "$OUTPUT_DIR/$name.ocaml")"
     # cabs-json (same flags as the standing harnesses: no --nolibc — the
     # cpp side is identical between oracle and Lean, S0 survey §b)
     rc=0
-    ( ulimit -v $ULIMIT_KB; exec timeout "${TIMEOUT_SECS}s" \
+    ( "${CAPPED_TEST[@]}" timeout "${TIMEOUT_SECS}s" \
         opam exec --switch="$PROJECT_ROOT" -- \
         "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" --cabs-json "$tu" \
         > "$OUTPUT_DIR/$name.json" 2> /dev/null ) || rc=$?
     [[ $rc -eq 0 && -s "$OUTPUT_DIR/$name.json" ]] || fail "cabs-json failed for $name"
     # Lean side: --libc mode
     rc=0
-    ( ulimit -v $ULIMIT_KB; exec timeout "${TIMEOUT_SECS}s" \
+    ( "${CAPPED_TEST[@]}" timeout "${TIMEOUT_SECS}s" \
         env LEAN_ABORT_ON_PANIC=1 "$CERBERUS_LEAN_BIN" --batch --first \
         "${LIBC_ARGS[@]}" "$OUTPUT_DIR/$name.json" \
         > "$OUTPUT_DIR/$name.lean" 2> "$OUTPUT_DIR/$name.lean.err" ) || rc=$?
     lean_line="$(head -1 "$OUTPUT_DIR/$name.lean")"
-    if [[ "$ocaml_line" == "$lean_line" && -n "$ocaml_line" ]]; then
+    if [[ $rc -eq 137 || $ocaml_rc -eq 137 ]]; then
+        # memory-cap kill on either side: its own status, never MATCH
+        status="KILL"
+        failcnt=$((failcnt+1))
+        killed_side=""
+        [[ $ocaml_rc -eq 137 ]] && killed_side="oracle: $(kill_label $ocaml_rc "$OUTPUT_DIR/$name.ocaml.err")"
+        [[ $rc -eq 137 ]] && killed_side="${killed_side:+$killed_side; }lean: $(kill_label $rc "$OUTPUT_DIR/$name.lean.err")"
+        echo "  KILL  $name: oracle exit $ocaml_rc, lean exit $rc — $killed_side"
+    elif [[ "$ocaml_line" == "$lean_line" && -n "$ocaml_line" ]]; then
         status="MATCH"
         pass=$((pass+1))
         echo "  MATCH $name: $(head -c 80 <<<"$ocaml_line")"

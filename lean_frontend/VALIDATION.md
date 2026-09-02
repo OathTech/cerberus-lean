@@ -110,6 +110,20 @@ Lane semantics worth knowing:
   §3.6/§9, `docs/2026-09-01_C1-adoption-record.md`,
   `docs/2026-09-01_C2-ratchet-record.md`.
 
+**Per-test resource limits (all differential harnesses).** Every
+oracle, cabs-json and Lean invocation runs under `timeout` (lane-
+specific, 15–30 s) and — since mem-scale S2 (2026-09-02, Q2 [USER
+2026-09-02]) — under a per-test cgroup RESIDENT-memory cap,
+`scripts/common.sh` `CAPPED_TEST` → `scripts/capped` with
+`CERB_TEST_MEM_MAX` (default 4G), replacing the arc-5 `ulimit -v 4000000`
+(a virtual-address-space cap that killed Lean at ~1.7 GB RSS while the
+oracle ran to 3.1 GB — record `docs/2026-09-01_mem-scale-profile.md` §2).
+The two failure classes are LOUD and distinct in every lane: exit 124 with
+CPU/wall < 0.1 is `HANG` (S0), exit 137 (+ capped's KILLED banner) is the
+lane's KILL class (`LEAN_KILL`/`CERB_KILL`, `KILL`, `SKIP_LEAN_KILL`,
+"FAIL: … KILLED") — never agreement, never a skip. Plants:
+`scripts/test_hang_plant.sh`, `scripts/test_kill_plant.sh`.
+
 ## 3. The build-time gates (`scripts/test_unit.sh`)
 
 Unit executables (parser tests, pretty-printer mirrors vs recorded
