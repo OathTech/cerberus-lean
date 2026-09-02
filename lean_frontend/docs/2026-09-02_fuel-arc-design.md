@@ -2,10 +2,16 @@
 
 Date: 2026-09-02. Branch `arc/fuel` off mainline `2c7c9347b`. Docs-only
 slice (this note); the implementation slice is §6. Revisions: **R1**
-absorbed the fresh review of `dd61ab87a` (F1-F8, Q1-Q6); **R2** absorbs
-the operator's DESIGN CHANGE to Option C (below), which retires the
-reserved-literal apparatus R1 had built. §8 lists both deltas; every
-cite was re-verified against the tree at absorption.
+absorbed the fresh review of `dd61ab87a` (F1-F8, Q1-Q6); **R2** absorbed
+the operator's DESIGN CHANGE to Option C (below), which retired the
+reserved-literal apparatus R1 had built; **R3** absorbs the consumer's
+review of R2 (`refined-cerberus/worktrees/fuel-design-review/docs/
+2026-09-02_review-of-cerberus-lean-fuel-arc-design.md` — verdict "ACCEPT
+with three consumer requirements and one wording suggestion"): the
+fuel-parametric `drive` (§1.6), the pinned-lemma gate (§6), the budget
+side condition (§4.3), and the parametricity wording (§1.3, §2). §8
+lists all deltas; every cite was re-verified against the tree at
+absorption.
 
 Request (verbatim source, read first):
 `refined-cerberus/worktrees/audit-response-3/docs/2026-09-02_request-cerberus-lean-fuel-exhaustion-outcome.md`
@@ -41,8 +47,16 @@ Rulings logged in this note:
 - [AGENT 2026-09-02, orchestrator, R1 Q-rulings; operator-overridable]:
   Q1 keep `CerbFuel` + `CerbND`, re-export in `CerbND`; Q2 no change;
   Q3 YES — the runner leaf becomes the same kill (after `prune/relsem`
-  lands, subject to consumer ack); Q4 family = the six; Q5 erratum
-  CONFIRMED; Q6 no `DecidableEq` promised (restated for C in §7).
+  lands); Q4 family = the six; Q5 erratum CONFIRMED; Q6 no
+  `DecidableEq` promised (restated for C in §7).
+- [refined-cerberus review 2026-09-02] (verbatim, their §3-§4): "(i)
+  Q3, the runner leaf — ACK." "(ii) The opaque-atom design — ACK,
+  including that no distinctness-from-genuine-`Error` lemma ships. …
+  No distinctness, no decidability, no `DecidableEq` needed." "(iii)
+  … `∃ r, o.1 = Active r ∧ post r o.2.2` matches how we read the final
+  state". And (their §1): "we withdraw our request's suggestion of a
+  new `kill_reason` constructor." Their three requirements R1-R3 are
+  absorbed in §1.6, §6 and §4.3 respectively.
 
 Facts below were re-verified in the worktree at `2c7c9347b`; every
 cite is file:line in that tree unless stated.
@@ -148,6 +162,16 @@ export CerbFuel (fuelExhaustedLoc fuelExhaustedMsg driverFuel)   -- one namespac
     (`kill_reason driver_error`) and `impl_memM` (`kill_reason mem_error`). -/
 def fuelExhaustedKill {err : Type} : kill_reason err :=
   Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg
+
+/-- The fuel-parametric shipped pipeline (§1.6): the generated `drive`
+    (Driver.lean:518-531) with its ONE `driver2` call taking `fuel`
+    instead of the fixed wrapper. Hand-written mirror; pinned to the
+    generated text by `drive_wrapper_defeq` (kernel-checked). -/
+def drive_lemFuel (fuel : Nat) (tds : Fmap sym (CerbLocation.Loc × tag_definition))
+    (with_concurrency : Bool) (file : generic_file Unit core_run_annotation)
+    (arg_strs : List String) : driverM driver_result :=
+  <the generated body of `drive`, verbatim, with `driver2 tds with_concurrency`
+   replaced by `driver2_lemFuel fuel tds with_concurrency`>
 end CerbND
 ```
 
@@ -228,8 +252,15 @@ theorem driver2_wrapper_defeq : driver2 = driver2_lemFuel CerbFuel.driverFuel :=
 theorem nd_bind_wrapper_defeq : @nd_bind = @nd_bind_lemFuel CerbFuel.driverFuel := rfl
 theorem runND_eq (m) (st0) : runND m st0 = runNDFuel CerbFuel.driverFuel m st0 := rfl
 theorem driverFuel_eq : CerbFuel.driverFuel = 100000000 := rfl
+
+-- the fuel-parametric pipeline (§1.6): the SYNC GUARANTEE
+theorem drive_wrapper_defeq : drive = drive_lemFuel CerbFuel.driverFuel := rfl
 end CerbND
 ```
+
+There is deliberately NO `drive_lemFuel_zero` sentinel lemma: `drive_lemFuel
+0 …` is not the kill term — fuel 0 does not short-circuit the setup
+phase (§1.6). What it returns is stated there.
 
 (Implicit type arguments are elaborated; exact binder names follow the
 generated signatures at implementation and are recorded in the change
@@ -248,51 +279,49 @@ fueled worker — at the consumer's quantified fuel or at the fixed
 budget of the workers beneath it — produces the SAME value, one kill
 covers all fuels in a run.
 
-### 1.3 What distinguishes the kill — soundness by construction
+### 1.3 What distinguishes the kill — parametricity in the opaque
 
-**Unforgeable by construction.** `fuelExhaustedLoc` is a Lean constant
-in the hand-written `CerbFuel` seam. The semantics' only `Error` kill
-site is core_eval.lem:605-606 (`PEerror str _ -> Undefined.error loc
-str`), lifted by the four `ND.kill (ND.Error loc str)` at driver.lem:182,
-:411, :432, :443; its `loc` is `th_st.current_loc` (core_run.lem:165,
-:171), which takes values from the model's own `Loc` literals
-(driver.lem:502, :1572, :1600, :1876, :141, :1448) and from `Aloc`
-annotations (core_run.lem:776-784) that originate in C source positions
-(cabs JSON, CabsImport.lean:125: `Loc_unknown | Loc_other s | Loc_point
-| …`) or in Core text (CoreParser.lean:201-204: always `loc0 =
-CerbLocation.unknown`). None of these can denote `fuelExhaustedLoc`: it
-is not in the model's vocabulary — no `.lem` term, no Core text, no
-JSON string names a Lean constant. A forged `error("lem: fuel
-exhausted", pe)` in a Core file yields `Error0 CerbLocation.unknown
-"lem: fuel exhausted"` (or `Error0 (Loc.other s) …` with `s` from a
-JSON `Loc_other`), a SYNTACTICALLY DIFFERENT term from `Error0
-fuelExhaustedLoc "…"`: the kernel does not identify an opaque constant
-with any constructor application. So the only way a run's status can be
-`Killed st fuelExhaustedKill` is through a fuel-zero arm (or, after Q3,
-a runner leaf).
+**The argument (adopted from [refined-cerberus review 2026-09-02] §2).**
+`fuelExhaustedLoc` is an `opaque` with no equations. Therefore every
+theorem proved about runs is UNIFORM in its interpretation: a proof
+never depends on what the atom is, only that it is some `Loc`. A proved
+theorem of the acceptance shape — "every outcome is `Killed _
+fuelExhaustedKill` or good" — consequently holds under the reading in
+which `fuelExhaustedLoc` is a location that no model term denotes, which
+is precisely the intended meaning: the sentinel is a fresh location for
+every provable statement. And for a program that genuinely kills
+(forged message or not), the left disjunct is UNPROVABLE (the opaque
+cannot be shown equal to any model-produced location) while the right
+disjunct is false, so the theorem is unprovable: **no false theorem can
+be proved.** This is why no distinctness lemma is needed — BECAUSE of
+parametricity, not despite its absence. The consumer confirms their
+induction consumes no distinctness fact (review §3(ii): "fuel-zero arm
+→ left disjunct by the `_zero` lemma; `Nat.succ` arm → one engine round
+→ postcondition or the inductive hypothesis; an exhausted worker beneath
+→ the same kill → left disjunct").
 
-**How the consumer's proof uses it.** In the ∀-fuel induction, the
-fuel-zero arm closes the LEFT disjunct by `rfl` (via the `_zero`
-lemmas); every other arm is closed by the postcondition (or, when a
-worker beneath the quantified one exhausts at its fixed budget, again
-by the left disjunct — same value). No distinctness fact is consumed.
+**Corollary (the syntactic remark, no longer the argument).** No `.lem`
+term, Core text, or JSON input can denote a Lean constant. The
+semantics' only `Error` kill site is core_eval.lem:605-606 (`PEerror str
+_ -> Undefined.error loc str`), lifted by the four `ND.kill (ND.Error
+loc str)` at driver.lem:182, :411, :432, :443; its `loc` is
+`th_st.current_loc` (core_run.lem:165, :171), fed by model literals
+(driver.lem:502, :1572, :1600, :1876, :141, :1448), C-source `Aloc`s
+(CabsImport.lean:125) or Core text (CoreParser.lean:201-204, always
+`loc0`). A forged `error("lem: fuel exhausted", pe)` in a Core file
+yields `Error0 CerbLocation.unknown "…"` — a syntactically different
+term, which the kernel does not identify with `Error0 fuelExhaustedLoc
+"…"`.
 
-**Caveats, stated honestly (what C does NOT give):**
-- The kernel cannot prove the sentinel UNEQUAL to a genuine `Error0`
-  kill: `fuelExhaustedLoc` is opaque, so `fuelExhaustedKill ≠ Error0 loc
-  msg` is not provable for any `loc`. No such distinctness lemma ships.
-  The acceptance shape does not need one: for a program that can
-  genuinely `Error`-kill, neither disjunct holds on that outcome and
-  the theorem is unprovable — which is the correct meaning of a partial-
-  correctness statement (the program is not correct). What DOES ship
-  for free, by constructor disjointness, is `fuelExhaustedKill ≠ Undef0
-  loc ubs` and `fuelExhaustedKill ≠ Other e`; these are not distinctness
-  from a genuine `Error` kill and are documented as such.
-- `isFuelExhaustedKill` is NOT decidable by comparing locations
-  (`fuelExhaustedLoc` has no equations). Consumers state the STRUCTURAL
-  equation `o.1 = Killed st fuelExhaustedKill` and discharge it with the
-  `_zero` lemmas (Q6 restated for C: no decidable predicate and no
-  `DecidableEq` is promised or needed).
+**What ships, and what does not:**
+- `fuelExhaustedKill ≠ Undef0 loc ubs` and `fuelExhaustedKill ≠ Other e`
+  — free, by constructor disjointness; documented as NOT distinctness
+  from a genuine `Error` kill.
+- No `fuelExhaustedKill ≠ Error0 loc msg` for any `loc` (unprovable, and
+  by the argument above unnecessary).
+- No decidable `isFuelExhaustedKill`, no `DecidableEq` (Q6): consumers
+  state the STRUCTURAL equation `o.1 = Killed st fuelExhaustedKill` and
+  discharge it with the `_zero` lemmas.
 - Runtime classification (§3) is by the printed message; the harness's
   copy of the string is reporting-only and never enters a proof.
 
@@ -300,26 +329,25 @@ by the left disjunct — same value). No distinctness fact is consumed.
 
 `CerbND.runND` returns `List (nd_status a err st × List String × st)`
 with `nd_status = Active a | Killed st (kill_reason err)`
-(Nondeterminism.lean:584-590; CerbND.lean:136-138). The request's
-
-    theorem <program>_certified_shipped (fuel : Nat) … :
-      ∀ o ∈ runND (driver2_lemFuel fuel fmapEmpty false) dst₀,
-        o.status = NDkilled FuelExhausted ∨ (o is Active-done ∧ post o.state)
-
-becomes, over the shipped names,
+(Nondeterminism.lean:584-590; CerbND.lean:136-138). The consumer's
+production statements are over the shipped PIPELINE `runND (drive tds
+conc file args) dst₀` (ProdEntry.lean:8-9; `drive : bool -> Core.file …
+-> list string -> driverM driver_result`, driver.lem:1726, returning
+`driver_result` through `finalize`), not over `driver2`. The statement
+they will export when this lands, in their own words (review §6):
 
 ```lean
 theorem <program>_certified_shipped (fuel : Nat) … :
-  ∀ o ∈ CerbND.runND (driver2_lemFuel fuel fmapEmpty false) dst₀,
+  ∀ o ∈ CerbND.runND (CerbND.drive_lemFuel fuel fmapEmpty false file args) dst₀,
     (∃ st, o.1 = Killed st CerbND.fuelExhaustedKill) ∨ (∃ r, o.1 = Active r ∧ post r o.2.2)
 ```
 
-with `dst₀ := (initial_driver_state sup file fs).1` (the consumer's own
-production entry, ProdEntry.lean:8-9), and `driveU` deleted from every
-export. The `∀ fuel` induction is the consumer's (request item 4).
-After Q3 lands, runner exhaustion ALSO appears as a `Killed _
-fuelExhaustedKill` element, so the left disjunct covers both fuels.
-An in-repo exemplar in exactly this shape is a slice deliverable (§6).
+with `dst₀ := (initial_driver_state sup file fs).1`, `driveU` deleted
+from every export, and the total-lane equations kept with `driverFuel`
+in the side condition. The `∀ fuel` induction is the consumer's (request
+item 4). Runner exhaustion (Q3) appears as a `Killed _ fuelExhaustedKill`
+element, so the left disjunct covers both fuels. The in-repo exemplar
+(§6) is stated over `drive_lemFuel` in exactly this shape.
 
 ### 1.5 Not provided
 
@@ -329,12 +357,108 @@ An in-repo exemplar in exactly this shape is a slice deliverable (§6).
 - **A distinguished runtime EXIT CODE**: the kill exits 1 like every
   `Error` kill, mirroring OCaml (Main.lean:925-928).
 - **Distinctness from a genuine `Error0` kill; `DecidableEq`; a
-  decidable `isFuelExhaustedKill`** (§1.3 caveats).
+  decidable `isFuelExhaustedKill`** (§1.3).
+- **A `drive_lemFuel_zero` sentinel lemma** (§1.6: fuel 0 does not
+  short-circuit setup).
 - **The pure-return workers** (`hack`, driver.lem:1905 `fuelExhausted
   Vunit`; the ~58 others across frontend/model, e.g. Defacto_memory.lean:
   285, :735) keep the opaque `fuelExhausted` sentinel and its panic
   (request item 3). Their exhaustion is a `PANIC` (exit 134, message on
   stderr), never a kill.
+
+### 1.6 The fuel-parametric `drive` (consumer requirement R1) — design
+
+**The problem.** `drive` (driver.lem:1726-1891; generated Driver.lean:
+518-531, 14 lines / ~10,000 chars, one `nd_bind` chain) is NOT
+recursive: it is setup (`driver_globals`, the main-symbol lookup, the
+`argc`/`argv` allocation) → `driver2 with_concurrency` (:1884) → `finalize`
+(:1889). It reaches `driver2` through the FIXED wrapper (`driver2 =
+driver2_lemFuel <budget>`), so at the level the consumer states, fuel is
+not a parameter.
+
+**Fact (a): `drive` is not recursive** — a plain `let` (driver.lem:1727),
+emitted as a plain `def` (Driver.lean:518).
+
+**Fact (b): the L1 fuel mechanism threads fuel through SELF- and
+BLOCK-member calls only, never into callees reached through their
+wrappers.** Evidence: lean_backend.ml:2852-2863 builds the `fuel_plan`
+per `let rec … and …` clause block ("every fuel'd def of this block, so
+cross-member calls inside a fuel'd mutual block rewrite to `(worker
+lemFuel)` … All-or-none per mutual block: a non-fuel'd member calling a
+fuel'd sibling would use the wrapper and reset the fuel"); the call-site
+rewrite at :4088-4097 fires only for members of `St.fuel_workers` (that
+plan). Generated confirmation: `driver2`'s body refers to itself as
+`driver2_lemFuel lemFuel` (2 occurrences, Driver.lean:383-385), while
+`drive_nonmemory_steps_aux` — a different block — calls the
+`drive_nonmemory_steps_aux2` WRAPPER (Driver.lean:358), not the worker.
+DESIGN.md:236-237 states the contract the same way (worker + "a wrapper
+at the library default fuel").
+
+**Routes.**
+- (i) `declare {lean} fuel val drive = …` on the non-recursive def.
+  The backend would accept it (single-clause, non-mutual: lean_backend.ml:
+  2876-2890) and emit `drive_lemFuel (lemFuel) … := match lemFuel with |
+  0 => sentinel | succ lemFuel => body` — but `body` still calls the
+  `driver2` WRAPPER (fact b; `driver2` is in a different block). The
+  fuel would be consumed only by the zero test. **Fails.**
+- (ii) A HAND-WRITTEN `CerbND.drive_lemFuel` mirroring the generated
+  `drive` body verbatim, with its ONE `driver2 _lemReader_tagDefs
+  with_concurrency` occurrence (the body has exactly one: measured)
+  replaced by `driver2_lemFuel fuel tds with_concurrency`. **Chosen.**
+  SYNC GUARANTEE: `drive_wrapper_defeq : drive = drive_lemFuel
+  CerbFuel.driverFuel := rfl` — both sides delta-unfold to the same
+  term (the generated `drive` unfolds its `driver2` wrapper to
+  `driver2_lemFuel <budget>`; `driverFuel` unfolds to the same numeral).
+  Any drift in the generated `drive` — a regenerated body, a renamed
+  binder, a moved bind — breaks this `rfl`, so OUR build goes red; no
+  separate gate is needed (§6 plant). Cost: one ~10 KB hand-written
+  definition, mechanical to produce (copy + one substitution), kept in
+  `CerbND.lean` (already imports Driver; already on the hand-written
+  manifest). Factoring assessed and REJECTED: the `driver2` call sits
+  inside the innermost continuation of the setup binds (after the
+  `params` match and the `argc`/`argv` allocations), so `drive_lemFuel
+  fuel = setup >>= fun _ => driver2_lemFuel fuel >> finish` is NOT the
+  generated nesting and would need `nd_bind` associativity — a lemma
+  about a FUELED bind, not available by `rfl`; the verbatim mirror is
+  the only `rfl`-pinnable form. Trust class **0** (Lean-only hand-
+  written text, kernel-pinned to the generated text).
+- (iii) A lem-backend feature threading a caller's fuel into callee
+  workers across blocks. The principled coupled-family fix (the whole
+  driver family would share ONE fuel, which the stack-ceiling coupling
+  analysis — docs/2026-08-31_stack-ceiling-design.md:139-146 — is
+  really asking for), but it changes exhaustion budgets across the whole
+  call graph and every consumer side condition. OUT of this arc;
+  REGISTERED as a next-lem-arc candidate (class 0, Lean emission only)
+  with that analysis as motivation.
+
+**Which `driver2` call gets the fuel — decision [AGENT], consumer-
+checkable.** `drive` runs the driver loop TWICE: `driver_globals`
+(driver.lem:1564-, generated Driver.lean:473-487) calls `driver2
+with_concurrency` at driver.lem:1609 to execute the global initialisers,
+and `drive` calls it again at :1884 for `main`. `drive_lemFuel fuel`
+threads `fuel` into the MAIN call only; the globals phase runs at the
+fixed `driverFuel` through the unchanged `driver_globals`. Reasons: the
+consumer's induction is "one engine round per `Nat.succ`" over the main
+program, and a fuel-INDEPENDENT setup phase is what lets them evaluate
+setup once on the concrete program; globals-phase exhaustion at the
+fixed budget still produces `fuelExhaustedKill` (left disjunct), so
+soundness of the ∀-fuel shape is unaffected. The alternative (thread
+into both, via a second ~4 KB mirror `driver_globals_lemFuel` pinned the
+same way) costs a second copy for no statement the consumer has asked
+for; recorded as available.
+
+**What `drive_lemFuel 0 tds c file args` returns.** Not the kill term:
+the setup phase runs first, at fixed budgets (`nd_bind`, `driver_globals`
+at `driverFuel`). Its outcomes are, per branch: a setup-phase kill
+(genuine — `Other (DErr_other "no startup function was declared")`,
+driver.lem:1738; `"couldn't find the startup function"`, :1744; UB or
+`Error` from a global initialiser; or `fuelExhaustedKill` if the globals
+phase exhausts `driverFuel`) — or, when setup reaches `main`, `Killed st
+fuelExhaustedKill` from `driver2_lemFuel 0` propagated by the `>>`
+(`nd_bind`'s `NDkilled` arm). Hence no `drive_lemFuel_zero` `rfl`
+lemma; the consumer's base case is discharged on the concrete program
+by evaluating its (fuel-independent) setup phase, as their total-lane
+proofs already do, then `driver2_lemFuel_zero`.
 
 ## 2. TRUST-STORY ANALYSIS
 
@@ -412,6 +536,14 @@ C wins every column except the last, which nobody needs (§1.3
 caveats). Under the ordering rule it is the smallest trust-surface
 movement with the same performance.
 
+**Why it is sound — parametricity in the opaque (§1.3).** Every proof
+about runs is uniform in the interpretation of `fuelExhaustedLoc`
+(an `opaque` with no equations); a provable theorem of the acceptance
+shape therefore holds under the reading where the atom is a location no
+model term denotes, and a program that genuinely kills makes the
+theorem unprovable rather than false. No distinctness lemma is needed
+because of this.
+
 **The residual risk, named.** C's soundness rests on ONE Lean fact —
 `fuelExhaustedLoc` is opaque — pinned by the census (a definitional
 unfolding would break the argument silently to the kernel; the census
@@ -429,11 +561,16 @@ class to FAIL-class rows — loud, never a soundness matter.
 >   CerbND.fuelExhaustedKill` = `Error0 CerbFuel.fuelExhaustedLoc "lem:
 >   fuel exhausted"`, where `fuelExhaustedLoc` is a pure, kernel-checked
 >   `opaque` constant on the boundary-opaque census (present exactly
->   once; no native binding). Unforgeable by construction: no `.lem`
->   term, Core text, or JSON input can denote it, so a run's status is
->   `Killed _ fuelExhaustedKill` only through a fuel-zero arm; the kernel
->   cannot (and need not) prove it unequal to a genuine `Error` kill.
->   `_zero` lemmas hold by `rfl`. Budgets: the coupled driver family
+>   once; no native binding). Every proof is uniform in the opaque
+>   atom; the sentinel is a fresh location for every provable statement
+>   — a theorem "every outcome is `Killed _ fuelExhaustedKill` or good"
+>   holds under the reading where the atom is a location no model term
+>   denotes, and a program that genuinely kills makes it unprovable, not
+>   false; so no distinctness lemma is needed (corollary: no `.lem`
+>   term, Core text, or JSON input can denote the atom). `_zero` lemmas
+>   hold by `rfl`; the fuel-parametric pipeline `CerbND.drive_lemFuel`
+>   is pinned to the generated `drive` by `drive = drive_lemFuel
+>   driverFuel := rfl`. Budgets: the coupled driver family
 >   (`driver2`, `drive_nonmemory_steps_aux2`, `print_eval_conv_aux`,
 >   `hack`, `nd_bind`, `CerbND.ndDefaultFuel`) runs at
 >   `CerbFuel.driverFuel` = 10^8; every other fueled declaration keeps
@@ -630,7 +767,16 @@ consumer's manifest: **every exported statement over the drive cone
 condition remains `lemDefaultFuel` (= 10^6) verbatim.** Their `driver2 =
 driver2_lemFuel lemDefaultFuel` `rfl`s (the shape of relsemcore/RelSem/
 Cerberus.lean:183-184, which the prune retires) stop being `rfl` and are
-re-stated against `driverFuel`.
+re-stated against `driverFuel`. Consumer requirement R3 ([refined-
+cerberus review 2026-09-02] §4: "our `k + 2 ≤ lemDefaultFuel` premises
+and any `driver2 = driver2_lemFuel lemDefaultFuel` `rfl` become
+`driverFuel` at our re-pin. Weaker, hence fine; we only ask that
+`driverFuel` be the citable name (it is) and that the wrapper `rfl`s be
+among the shipped lemmas (they are)") is therefore ALREADY SATISFIED by
+§1.1-§1.2: `CerbFuel.driverFuel` is the citable name, `driverFuel_eq`
+gives the numeral, and `driver2_wrapper_defeq`/`nd_bind_wrapper_defeq`/
+`runND_eq`/`drive_wrapper_defeq` are shipped; their premise shape
+becomes `k + 2 ≤ CerbFuel.driverFuel`.
 
 ### 4.4 Expected differential effect
 
@@ -718,7 +864,8 @@ Riders bundled with the slice:
 - **Commit 1 — mechanism**: §1 (`CerbFuel.lean` with the opaque atom,
   the message and budget constants; nine sentinels; `CerbND` exports,
   `fuelExhaustedKill`, the `_zero` lemmas, the two constructor-
-  disjointness lemmas; the Q3 runner leaves), §2 (census registration
+  disjointness lemmas, `drive_lemFuel` + `drive_wrapper_defeq` (§1.6);
+  the Q3 runner leaves), §2 (census registration
   of `fuelExhaustedLoc`), §3 (FUEL class in the five classifying lanes,
   `common.sh` classifier + selftest), the `sorry` closure + token leg
   (§5), the exemplar (below), VALIDATION/LADDER/TODO text, and the C1
@@ -733,17 +880,36 @@ Riders bundled with the slice:
 
 **Exemplar deliverable (commit 1):** `lean_frontend/test/Unit/
 FuelExemplar.lean` — a minimal Core program (a `main` returning a
-constant, parsed from an in-repo fixture via `CoreParser.parseFile`) and
-the theorem in EXACTLY the consumer's shape (§1.4), kernel-checked:
-`∀ fuel, ∀ o ∈ CerbND.runND (driver2_lemFuel fuel fmapEmpty false) dst₀,
-(∃ st, o.1 = Killed st fuelExhaustedKill) ∨ (∃ r, o.1 = Active r ∧ post r
-o.2.2)` with `post` the returned value. Proof by cases on `fuel`: the
-zero case by `driver2_lemFuel_zero`/`runNDFuel_zero`; the successor case
-by evaluation of the single step. It must be `sorryAx`-free and inside
+constant, no globals, parsed from an in-repo fixture via
+`CoreParser.parseFile`) and the theorem in EXACTLY the consumer's §6
+shape (§1.4), over the PIPELINE, kernel-checked:
+```lean
+theorem exemplar_certified_shipped (fuel : Nat) :
+  ∀ o ∈ CerbND.runND (CerbND.drive_lemFuel fuel fmapEmpty false exemplarFile ["cmdname"]) dst₀,
+    (∃ st, o.1 = Killed st CerbND.fuelExhaustedKill) ∨ (∃ r, o.1 = Active r ∧ post r o.2.2)
+```
+with `post r _ := r.dres_core_value = <the constant>` and `dst₀ :=
+(initial_driver_state sup exemplarFile fs).1`. Proof: evaluate the
+fuel-independent setup phase once on the concrete program; then cases
+on `fuel` — zero by `driver2_lemFuel_zero` (+ `runNDFuel_zero` where the
+runner's own leaf is reached), successor by evaluation of the single
+step and `finalize`. It must be `sorryAx`-free and inside
 the axiom allowlist (probed by the cone leg); if it does not close
 within the tripwire on the minimal program, that is a STOP-AND-REPORT
 finding for the second review (it would mean the shape is not
 provable in practice with the shipped lemmas), never a grind.
+
+**The pinned-lemma gate (consumer requirement R2).** Every lemma of
+§1.2 and `drive_lemFuel` itself live in the hand-written `CerbND.lean`,
+which is compiled in OUR build (`lake build` of the `lean_frontend`
+package; `scripts/test_unit.sh:58` builds the test executables against
+it, and `scripts/common.sh build_lean` is the precondition of every
+lane). So a renamed generated binder, an arity change, a moved
+`_lemFuel` worker, or a regenerated `drive` body fails OUR build first —
+before any consumer re-pin. That IS the gate; nothing further is
+built. Plant (§6 table): rename a `_lemFuel` binder (or the `driver2`
+occurrence inside `drive`) in a scratch copy of the generated file →
+our build red at the `_zero` / `drive_wrapper_defeq` lemma.
 
 **Second design review (operator-ruled, before merge).** A FRESH
 reviewer (not the R1 reviewer, not the author) checks at the commit-2
@@ -755,9 +921,11 @@ reporting-only and documented as such), no gate machinery beyond the
 census row, `fuelExhaustedLoc` pinned exactly-once on the census, the
 nine arms + three runner leaves identical in shape and unwrapped;
 (b) it serves refined-cerberus's needs — the acceptance theorem is
-provable in shape, exhibited by the exemplar, stated exactly in their
-form, kernel-checked; the consumer's own review of §1 (Q3 ack, §7) is
-on record.
+provable in shape over the PIPELINE (`drive_lemFuel`), exhibited by the
+exemplar, stated exactly in their §6 form, kernel-checked; `drive =
+drive_lemFuel driverFuel` is `rfl`; the consumer's review (ACK of Q3,
+of the opaque atom, of the `post` shape; R1-R3) is on record and R1-R3
+are each visibly met.
 The review's ASK precedes the merge audit ask (both unconditional).
 
 Dependency, precisely: `prune/relsem` (worktree present at `2c7c9347b`,
@@ -775,7 +943,9 @@ the prune), scripts/common.sh + the four lane scripts + tests/mem-scale-
 probes/measure.sh, NEW scripts/check_sorry_token.sh, NEW test/Unit/
 FuelExemplar.lean + fixture, the two csmith baselines + the gcc ledger
 taxonomy, VALIDATION.md, LADDER.md, TODO.md (the ceiling entry :21-30
-re-stated), the two C1 records (labeled errata).
+re-stated; two NEW entries: the `finalize`/`hack` leaf and the
+cross-block fuel-threading lem feature, §7), the two C1 records (labeled
+errata).
 
 Gates (full battery per scripts/LADDER.md Tier A+B, plus the gcc lane
 and the csmith corpus lane), and the plants:
@@ -783,7 +953,8 @@ and the csmith corpus lane), and the plants:
 | gate | red-plant |
 |---|---|
 | boundary-opaque census (check_theorem_axioms.sh:180-191, scanner :151 extended to `fuelExhaustedLoc`): `CerbFuel\.lean:[0-9]+:fuelExhaustedLoc` present exactly once in the build copy | change `opaque` to `def` in a scratch copy → count 0 → red; duplicate the line → count 2 → red |
-| the nine `_zero` lemmas, three runner-leaf lemmas, two disjointness lemmas, the exemplar theorem — in the cone probe (no `sorryAx`, no `ofReduce*`, exact axiom allowlist) | replace a `rfl` with `sorry` in a scratch → red |
+| the nine `_zero` lemmas, three runner-leaf lemmas, two disjointness lemmas, `drive_wrapper_defeq`, the exemplar theorem — in the cone probe (no `sorryAx`, no `ofReduce*`, exact axiom allowlist) | replace a `rfl` with `sorry` in a scratch → red |
+| pinned-lemma gate = our own build of `CerbND.lean` (consumer R2) | rename a `_lemFuel` binder / the `driver2` occurrence in `drive` in a scratch copy of the generated file → build red |
 | `check_fork_drift.sh` Layer 2 byte-green with ZERO manifest change | (the OCaml-neutrality proof; already plant-tested) |
 | `check_handwritten_sync.sh` — `CerbFuel.lean` in the manifest and byte-pinned | unlisted file → red (existing behaviour) |
 | `unsafebaseio_allowlist.txt` pin unchanged (the opaque is NOT a seam) | (existing gate; a new `implemented_by` would fail naming itself) |
@@ -793,7 +964,8 @@ and the csmith corpus lane), and the plants:
 
 Consumer change manifest (what the re-export carries):
 - names: `CerbFuel.fuelExhaustedLoc` (opaque), `CerbFuel.fuelExhaustedMsg`,
-  `CerbFuel.driverFuel`, `CerbND.fuelExhaustedKill`,
+  `CerbFuel.driverFuel`, `CerbND.fuelExhaustedKill`, `CerbND.drive_lemFuel`
+  + `CerbND.drive_wrapper_defeq`,
   `CerbND.fuelExhaustedKill_ne_Undef0`, `CerbND.fuelExhaustedKill_ne_Other`
   (constructor disjointness only), the nine `CerbND.<worker>_lemFuel_zero`
   (§1.2, fully applied), `CerbND.runNDFuel_zero`/`runND1Fuel_zero`/
@@ -831,15 +1003,61 @@ Consumer change manifest (what the re-export carries):
   procedure); the consumer uses the structural equation and the `_zero`
   lemmas, which is all the acceptance shape needs.
 
-Still open for the CONSUMER's review of this note: (i) ack Q3's runner
-leaf; (ii) ack the opaque-atom design — in particular that NO
-distinctness-from-genuine-`Error` lemma ships (§1.3) and that their
-induction never needs one; (iii) the exemplar's `post` shape (§6) —
-does `∃ r, o.1 = Active r ∧ post r o.2.2` match how their exports
-project the final state, or do they want the state component named
-differently.
+Consumer answers on record — [refined-cerberus review 2026-09-02] §3,
+verbatim: "(i) Q3, the runner leaf — ACK. Our theorems are stated over
+`runND`; the runner's own fuel (`ndDefaultFuel`, moving to `driverFuel`)
+must exhaust to the same kill or the ∀-fuel statement is vacuous past
+that depth." "(ii) The opaque-atom design — ACK, including that no
+distinctness-from-genuine-`Error` lemma ships." "(iii) … `∃ r, o.1 =
+Active r ∧ post r o.2.2` matches how we read the final state (`o.2.2 :
+driver_state`, of which we project `layout_state` and read the value
+with `finalize`)." Their remaining requirements R1-R3 are met in §1.6,
+§6, §4.3. One point for their next look: §1.6's decision to thread the
+quantified fuel into the MAIN `driver2` call only (globals phase at the
+fixed budget) — sound either way; they may prefer both.
+
+REGISTERED follow-ups (TODO.md "Small items", commit 1), not in this
+arc:
+- **The `finalize`/`hack` leaf** — source: [refined-cerberus review
+  2026-09-02] §5: "Pure-return workers keep the panicking sentinel
+  (`hack` among them, which `finalize` uses): acceptable for us …
+  but we note it is the one remaining opaque leaf inside a shipped-
+  pipeline export's evaluation, and a `finalize` that never panics on a
+  terminal state would close it." Fact: `finalize` (driver.lem:1473-1476)
+  calls `hack` (:1446, a step-until-value loop on a pure expression;
+  sentinel `fuelExhausted Vunit`, :1905) on `Core_aux.to_pure` of the
+  terminal arena. Price: S — the cheap closure is a LEMMA, not a code
+  change: on a terminal state the arena is already a value, so `hack`
+  takes zero steps and its result is fuel-independent at every positive
+  fuel — the FUEL-ERASURE pattern already proved for `step_eval_pexpr`
+  (relsemcore/RelSem/Cerberus.lean:186-192, `rfl`). A `hack_val_fuel_indep`
+  lemma of that shape lets the consumer's `finalize` evaluation never
+  touch the opaque leaf. Changing `hack`'s type (ND-typed) is a `.lem`
+  change → OCaml text → not the route.
+- **Cross-block fuel threading in the lem backend** (§1.6 route iii) —
+  a caller's fuel passed into callee workers across `let rec` blocks;
+  motivation: the coupled-family analysis (stack-ceiling design
+  :139-146) and this arc's need for a hand-written `drive_lemFuel`
+  mirror. Class 0 (Lean emission only); changes every budget and side
+  condition in the call graph — next-lem-arc candidate, own design pass.
 
 ## 8. Revision deltas
+
+**R3 (consumer review of `ae9a8784f`, ACCEPT + R1-R3 + wording):** R1
+→ §1.6 the fuel-parametric `drive`: route (ii) hand-written
+`CerbND.drive_lemFuel` (verbatim mirror of Driver.lean:518-531, one
+substitution) pinned by `drive = drive_lemFuel driverFuel := rfl`;
+routes (i) and (iii) rejected/registered with backend evidence
+(lean_backend.ml:2852-2863, :4088-4097; Driver.lean:358 vs :383-385);
+fuel threaded into the MAIN `driver2` call only (globals at fixed
+budget; driver.lem:1609 vs :1884); `drive_lemFuel 0` characterised, no
+`_zero` lemma; §1.4 and the exemplar restated over `drive_lemFuel` in
+the consumer's §6 form. R2 → the pinned-lemma gate is our own build of
+`CerbND.lean` (+ plant). R3 → already satisfied; stated with their
+premise shape. WORDING → parametricity in the opaque is now THE
+argument (§1.3, §2, VALIDATION paragraph); the syntactic remark is a
+corollary. Consumer ACKs quoted with provenance; Option B withdrawn by
+the consumer. Two follow-ups registered for TODO.md (§7).
 
 **R2 (Option C, [USER 2026-09-02]):** the reserved-literal apparatus of
 R1 is DELETED — `check_fuel_literal.sh` and its `.lem`/Core-text scan,
