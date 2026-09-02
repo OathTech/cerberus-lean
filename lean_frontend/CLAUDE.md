@@ -320,7 +320,7 @@ outputs, not the lem version.
   generation-time error
 - The instance-priority LATTICE (arc-14 B4; be:G1/sem:S2): every
   generated/library instance priority is assigned from ONE normative
-  table (lem-lean doc/lean-backend/2026-08-22_arc14-instance-priority-
+  table (lem-lean doc/notes/2026-08-22_arc14-instance-priority-
   lattice.md): model/override + derived BEq/Ord at default (1000), the
   auto SetType/Eq0/Ord0 trio at 500, generic defaults/residuals at low
   (100), open-tyvar fallbacks at 50 — so a model's own instance beats

@@ -14,6 +14,11 @@
 # wall with the staged csmith tier. Asymmetric contract kept by audited
 # design (VALIDATION.md §2): regressions + DISAGREE are fatal; improvements
 # are printed loudly at rc 0 and re-recorded in a dedicated commit.
+# LOAD CAVEAT (audit 2026-09-02): TIMEOUT-class rows are wall-clock
+# sensitive (TIMEOUT_SECS=30; the slowest csmith rows hand-time at ~17 s on
+# a quiet box; load ~12 pushed csmith/sa_csmith_85.c over) — a REGRESSION
+# whose only movement is into SKIP_LEAN_TIMEOUT is re-run on a quiet box
+# before it is read as red. No code change.
 #
 # Mechanism per file (design note §3):
 #   * native: gcc -O0 -w, run twice under timeout + the per-test memory cap (exit status =
