@@ -191,9 +191,19 @@ provenance note), same filing checklist and labeling policy:
   (`write(2)` + `abort`). Record: `docs/2026-09-01_mem-scale-profile.md`
   §6.2–6.3; charter C9.
 
-Also upstream-facing from the same arc (cerberus-side, S1' when it
-lands): the accumulate-and-reverse rewrite of `ailErr_mapM` /
-`foldrM` / `sequence` — see draft 18 below once added.
+Added 2026-09-02 (arc/mem-scale S1' — cerberus-side, upstream-facing):
+
+18. **18-monadic-list-combinators-non-tail.md** — TRUE BUG
+    (robustness). `ailErr_mapM` (`ail/errorMonad.lem:86-92`),
+    `state_exception.lem` `sequence`/`foldrM`, `undefined.lem`
+    `sequence` (and the same shape across the sibling monad modules,
+    listed) recurse in NON-tail position of a function-typed monad:
+    one stack frame per list element, reached from an N-element
+    zero-initialised static aggregate via `cabs_to_ail_aux.lem:124` →
+    `genTyping.lem:484`. Loud on OCaml with a bounded stack (exit 125,
+    `Lem_list.replicate` backtrace), a silent hang on our Lean target.
+    Remedy: accumulate-and-reverse (effect order, short-circuit and
+    result preserved — argued in the draft); our fork carries it.
 
 ## Filed / duplicate-search status (2026-08-23, read-only gh session)
 

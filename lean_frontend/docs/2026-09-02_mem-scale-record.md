@@ -331,3 +331,196 @@ csmith_4of6                  rc=0     801s  Baseline check: 0 regression(s), 0 i
 ```
 
 Every lane rc 0; every baseline check `0 regression(s), 0 improvement(s)`; libxml2 `total=4 match=4`; cn_coverage `BASELINE OK (213`; gcc second-oracle lane `0 regression(s)` (1953 files). Byte-at-baseline.
+
+## S1' — C9 at source (`.lem` accumulate-and-reverse) — STOP-AND-REPORT (completion gate fails at 10 M; passes at 8 M; cause located in the Lean runtime's closure application)
+
+Status: work applied in the working tree, NOT committed (the slice's
+gate is not green; charter §6.3 / brief: "If the Lean→C toolchain does
+not realise the tail call and the gate fails: STOP-AND-REPORT — backend
+fallback is a separate slice needing a ruling"). Snapshot of the
+uncommitted tree: `.tmp/memscale/s1p/s1prime-worktree.patch` (ephemeral)
+— files: `frontend/model/ail/errorMonad.lem`,
+`frontend/model/state_exception.lem`, `frontend/model/undefined.lem`,
+`scripts/fork_drift_manifest.txt`, `lean_frontend/docs/upstream-tray/
+INDEX.md`, new `lean_frontend/docs/upstream-tray/18-monadic-list-
+combinators-non-tail.md`.
+
+### What was done
+
+- `.lem` rewrites (each with an in-code semantics argument — action
+  order, state threading, first-failure short-circuit and result list
+  unchanged): `ailErr_mapM` → tail-position `ailErr_mapM_aux` +
+  `List.reverse`; `state_exception.lem` `sequence` (:50) →
+  `stExpect_sequence_aux`; `foldrM` (:79) → `stExcept_foldlM` over the
+  reversed list (a right fold runs the last element first — preserved);
+  `undefined.lem` `sequence` → `sequence_aux`. Lean-target-only
+  `termination_argument = automatic` declares for the three new aux
+  functions (all three render as total `def`s; `foldrM`'s declare removed
+  since it is no longer recursive). Regenerated BOTH trees (`make
+  prelude-src`, `make lean-prelude-src`; lem-sync stamps recorded);
+  oracle rebuilt cache-disabled (`DUNE_CACHE=disabled dune build --force
+  …` then `build_cerberus`), Lean driver rebuilt via `build_lean`.
+  Post-S1' binaries: oracle `7cdafba40004e924`, Lean `16772ec9b0a9d8f5`.
+- Generated-OCaml text changes in exactly 3 modules (errorMonad.ml,
+  state_exception.ml, undefined.ml); fork-drift manifest hand-edited
+  (2 new `[files]`, 3 new `[expected-semantic]` hashes, NOTE with the
+  justification; `--refresh` was NOT taken wholesale — it strips the
+  manifest's documented header and rewrites `[meta]`): gate verbatim
+  `check_fork_drift: OK — layer 1: 74 oracle-surface files = manifest;
+  layer 2: 25 differing generated files, all hash-pinned`.
+- Tray draft 18 (upstream-facing; INDEX entry).
+
+### Completion gate (`CERB_MEM_MAX=32G`, `measure.sh --nolibc --timeout 900`; verdict equality, never timing)
+
+Pre-fix plant (S0 section, Lean `91c805fb050f76be`, verbatim):
+`[1/1] HANG a_zero_global_10000000 (Lean HANG(cpu 3.29s of 400.12s wall; timeout 400s))`.
+
+Post-fix rows, verbatim (probe mode engine exit wall_s maxrss_kb verdict note cpu_s):
+
+```
+a_zero_global_10000000	nolibc	oracle	0	75.84	7811460	VAL:Specified(7)	-	73.43
+a_zero_global_8000000	nolibc	oracle	0	45.63	6284928	VAL:Specified(7)	-	45.62
+a_zero_global_8000000	nolibc	lean-first	0	20.28	5651660	VAL:Specified(7)	-	20.27
+a_zero_global_10000000	nolibc	lean-first	124	900.09	3087260	NONE	HANG(cpu 6.76s of 900.09s wall; timeout 900s);	6.76
+```
+
+- 8 M: COMPLETES on both engines with equal verdict (`VAL:Specified(7)`,
+  exit 0) — pre-fix this input hung (profile §6.3 bisect row: exit 124).
+  GATE MET for the 8 M variant.
+- 10 M: oracle completes (`VAL:Specified(7)`; note the oracle is itself
+  3× faster than pre-fix — 75.8 s vs 246 s — the OCaml `List.fold_right`
+  / non-tail recursion was on its path too); Lean still HANGs. GATE NOT
+  MET for the 10 M input. (The 8 M probe file is the bisect text
+  `char g[8000000]; int main(void) { g[8000000 - 1] = 7; return
+  g[8000000 - 1] + g[0]; }`, ephemeral in `.tmp/memscale/s1p/probes/`.)
+
+### Where the residual recursion is (first-hand)
+
+- Stage: human-mode stage markers on the 10 M input (verbatim last
+  lines of stdout before the park: `desugaring succeeded! …
+  typechecking AIL...`, then nothing; `/usr/bin/time`: User 3.49 s,
+  System 0.52 s, wall 2:30.08, RSS 3089620 kB, exit 124). `--pp-core`
+  alone: exit 124, 5.84 s + 0.89 s CPU of 400 s wall, RSS 3087316 kB.
+  So it is still the Ail typing stage, whose only N-element traversal
+  is `E.mapM (typecheck_constant loc) csts` (genTyping.lem:484) — the
+  site that was rewritten.
+- Per-element stack arithmetic (DERIVED; 1 GiB runtime-thread stack):
+  pre-fix 7 M completes / 8 M hangs ⇒ 134 B < S_old < 153 B per element;
+  post-fix 8 M completes / 10 M hangs ⇒ 107 B < S_new < 134 B. The
+  rewrite removed only ~20–45 B per element: one small frame per
+  element REMAINS.
+- Our emitted C is tail-shaped: `objdump -d` of the driver, verbatim —
+  `lp_CerberusLean_bind3___redArg___lam__0`: `c1b143: jmp 4dadef0
+  <lean_apply_2>`; `lp_CerberusLean_ailErr__mapM__aux___redArg___lam__1`:
+  `c1b81e: jmp 4dac4e0 <lean_apply_1>` (the C source: `return
+  lean_apply_2(v_f_186_, v_fst_198_, v_snd_199_)` / `return
+  lean_apply_1(...)`).
+- The RUNTIME's closure application is NOT a tail call. Census of the
+  `call`/`jmp` instructions inside `libleanshared.so` (Lean 4.32.2)
+  `lean_apply_1` and `lean_apply_2`, verbatim (`objdump -d`, counted):
+
+```
+=== lean_apply_1: call/jmp instruction census
+     22 call   *0x8(%rbx)
+      2 jmp    *%rcx
+      2 call <lean_dec_ref_cold@@Base>
+      1 call <mi_heap_malloc_small@@Base+0x47600>
+      1 call <mi_heap_malloc_small@@Base+0x47460>
+      1 call <lean_free_object@@Base>
+      1 call <lean_apply_m@@Base+0x3c0>
+      1 call   *0x8(%rcx)
+=== lean_apply_2: call/jmp instruction census
+     19 call   *0x8(%rax)
+      4 call <lean_dec_ref_cold@@Base>
+      3 call   *0x8(%rbx)
+      2 jmp    *%rdi
+      1 call <_ZN4lean5curryEPvjPP11lean_object@@Base>
+      1 call <lean_free_object@@Base>
+      1 call <lean_apply_n@@Base>
+      1 call <lean_apply_m@@Base+0x3c0>
+```
+
+  `*0x8(%rbx)` / `*0x8(%rax)` is the closure's function pointer
+  (`lean_closure_object.m_fun`): on 22 of 24 arity paths in
+  `lean_apply_1` (and 22 of 24 in `lean_apply_2`) the closure body is
+  entered by CALL, with runtime work after it (the exclusive-closure
+  paths free the closure / adjust counts after the callee returns), so
+  each closure application through the runtime costs one `lean_apply_*`
+  frame. A function-typed monad's run loop (`bind`'s continuation
+  applied per element) therefore accumulates one runtime frame per
+  element no matter how the `.lem` is shaped — the frame our tail-shaped
+  C still pays. This is exactly the charter §6.0 fallback condition
+  ("the tail call through the closure application in bind's run
+  function is not, in practice, compiled as a tail call by the Lean → C
+  → clang pipeline"), located one level lower than anticipated (in
+  `lean_apply_*`, not in clang's treatment of our C).
+
+### Behaviour preservation evidence on the S1' tree (partial; the full battery was NOT run — stop-and-report)
+
+Tier-A smoke on the stamped S1' binaries (verbatim lane summaries):
+
+```
+unit           rc=0  check_theorem_axioms: mem-scale S1 leg OK (6 C1/C3 equality theorems, every cone ⊆ [propext, Classical.choice, Quot.sound]) check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ th
+exec_minimal   rc=0  Baseline check: 0 regression(s), 0 improvement(s) BASELINE OK
+libc_exec      rc=0  SUMMARY: match=7 diff=0
+cn_coverage    rc=0  SUMMARY: total=213 match=207 ub_match=6 ub_diff=0 reject_match=0 diff=0 mismatch=0 reject_diff=0 lean_fail=0 lean_crash=0 lean_error=0 lean_timeout=0 oracle_fail=0 oracle_timeout=0 oracle_inconsistent=0 BASELINE OK (213 entries, e
+```
+
+(`test_unit.sh` includes the lem-sync stamp gate on both re-derived
+trees and the fork-drift gate with the hand-edited manifest.)
+
+### Options for the ruling (not decided here)
+
+1. Commit S1' as a PARTIAL slice ("ceiling moved 7–8 M → 8–10 M
+   elements; behaviour preserved" — requires the full battery first)
+   and open the backend/runtime fallback slice.
+2. Revert S1' (drop the `.lem` changes) and go straight to the
+   fallback design.
+3. The fallback itself is a two-repo/runtime question: (a) a lem-backend
+   rendering of monadic list combinators for function-typed monads as
+   an explicit RUN LOOP (interpret the list in the `run` function
+   directly, no per-element closure application), or (b) a Lean-runtime
+   change making `lean_apply_*`'s exact-arity paths tail calls
+   (upstream) — (b) would also close the fail-open handler class if
+   combined with the lean4/01 report. Either is a new charter item with
+   its own ruling; NOT a stack-size knob.
+
+### Not started because of the stop
+
+S2 (C2 harness migration + parity confirmation) and the close-out
+battery were not started; the brief's "stop-and-report on the
+completion gate failing" governs.
+
+### Ruling and revert (appended after the stop)
+
+[USER 2026-09-02], verbatim as relayed by the orchestrator: "yeah,
+revert S1' I think - poor roi for a change to the trust surface".
+Rationale as relayed: the rewrite touches three model `.lem` files
+(oracle text moves in 3 generated modules) for an onset move from ~7 M
+to ~9 M elements, with the actual ceiling in the Lean runtime; the
+ceiling is now loud (S0) and registered (VALIDATION.md §5, TODO.md) and
+the fallback (lem-backend run-loop rendering, Lean-emission-only) is
+queued for a lem arc with its own ruling.
+
+Revert executed: `git checkout` of `frontend/model/ail/errorMonad.lem`,
+`frontend/model/state_exception.lem`, `frontend/model/undefined.lem`,
+`scripts/fork_drift_manifest.txt`; both trees regenerated from the
+reverted `.lem` (`make prelude-src` / `make lean-prelude-src`) — lem-sync
+stamps back to the S1 values (verbatim: `check_lem_sync: recorded
+lean_frontend/lem_sync.sha256 (src f4c0096697fb68c508acbe35423ed0fce77c6988ceafcaffe772924358e8a624,
+gen 6c2ae2041cceb0aed61cae04917144131fe96940e2aec6213d43b13b9d8fd5e7)`,
+identical to the S1 battery's `speclab_selftest` line); fork-drift gate
+back to its pre-S1' shape (verbatim: `check_fork_drift: OK — layer 1:
+72 oracle-surface files = manifest; layer 2: 22 differing generated
+files, all hash-pinned`); `ailErr_mapM_aux` absent from both generated
+trees (grep count 0/0); oracle rebuilt cache-disabled (`--force`) and
+Lean driver rebuilt via `build_lean`, stamps re-recorded: Lean bin
+`406960e92de44c2f` — BYTE-IDENTICAL to the S1 binary; oracle bin
+`77de74dcb4872e03` with source-set hash `a54c0b1f…` identical to the
+pre-S1' oracle stamp (the forced cache-disabled rebuild is not
+bit-reproducible; the source hash is the identity). KEPT from S1': tray draft 18 + its INDEX entry
+(upstream-facing; the OCaml side would also benefit — the oracle ran the
+10 M input 3× faster under the rewrite).
+
+Cap-rule reminder acknowledged [orchestrator]: every driver/lake/lean
+invocation — ad-hoc reproducers included — goes through `scripts/capped`.

@@ -195,3 +195,28 @@ The remaining declared MODEL boundary: the in-memory filesystem model
 values, the driver prints), and the concurrency stubs (temporal, the
 cmm instantiation is the mover). Known limitations are tracked in
 [TODO.md](TODO.md) (e.g. the step-runner stack ceiling).
+
+**Known, LOUD limits of the Lean driver** (both reported by the lanes,
+never absorbed as a skip; neither is a memory-model limit):
+
+- `lemDefaultFuel` = 10^6 (the fuel-totalisation budget): ~1.7e4
+  plain loop iterations / ~6e4 C-recursion depth; exhaustion aborts
+  with `lem: fuel exhausted` (LEAN_CRASH class). Raise is lem-side —
+  TODO.md "Step-runner execution ceiling".
+- Zero-initialised static aggregates above ~8 × 10^6 ELEMENTS
+  (element-count driven: `char g[8000000]` completes, `char g[10000000]`
+  does not; `int g[2500000]` completes) overflow the 1 GiB runtime-
+  thread stack in the Ail typing stage. Mechanism, located first-hand
+  (record `docs/2026-09-02_mem-scale-record.md` §S1'): each per-element
+  closure application in a function-typed monad's run loop costs one
+  Lean-runtime `lean_apply_*` frame (~110 B) because the runtime enters
+  closures by CALL, not tail jump — the cost is in the Lean runtime, not
+  in our C or the `.lem`; a source-level tail rewrite only moved the
+  onset from ~7 M to ~9 M and was reverted [USER 2026-09-02]. The
+  runtime's overflow handler then deadlocks (upstream report drafted:
+  `docs/upstream-tray/lean4/01-…`), so this limit surfaces as a HANG:
+  exit 124 with CPU/wall < 0.1, classified `HANG` by `test_exec.sh` /
+  `LEAN_HANG` by `test_ci_sweep.sh` (mem-scale S0), fatal. The oracle
+  completes these inputs (10 M: ~76–246 s, 7.7 GB). Not a knob to
+  turn: a bigger stack only moves the silent onset; the fallback design
+  (lem-backend run-loop rendering) is registered in TODO.md.

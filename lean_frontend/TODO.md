@@ -65,6 +65,28 @@ downstream.)
   is not realised — charter §6.0/§6.3); plant-tested completion gate
   = a_zero_global_10000000 Lean --first completes with the oracle's
   verdict, asserted as status, never timing.
+  OUTCOME (mem-scale S1', 2026-09-02; record
+  `docs/2026-09-02_mem-scale-record.md` §S1'): the `.lem`
+  accumulate-and-reverse rewrite was built and measured — it moved the
+  onset (8 M elements now COMPLETE with the oracle's verdict; 10 M
+  still hang) — and then REVERTED per [USER 2026-09-02] ("revert S1'
+  I think - poor roi for a change to the trust surface"). Mechanism
+  located first-hand: our emitted C is tail-shaped (`jmp lean_apply_*`),
+  but the Lean 4.32.2 RUNTIME's `lean_apply_1/2` enter the closure by
+  indirect CALL on 22 of 24 arity paths, so every per-element closure
+  application in a function-typed monad's run loop costs one
+  `lean_apply_*` frame (~110 B/element; 1 GiB thread stack ⇒ ~8 M
+  elements). STANDING CEILING, now LOUD (S0 HANG class); registered in
+  VALIDATION.md §5. FALLBACK CANDIDATE for the next lem arc (class 0,
+  Lean-emission-only, needs its own ruling): a lem-backend RUN-LOOP
+  rendering of the monadic list combinators (`mapM`/`sequence`/`foldrM`)
+  for function-typed monads — interpret the list inside the `run`
+  function directly, no per-element closure application — so the
+  OCaml text is untouched and the Lean side stops paying the runtime
+  frame. Companion (runtime-side, upstream): make `lean_apply_*`'s
+  exact-arity paths tail calls — noted in
+  `docs/upstream-tray/lean4/01-stack-overflow-handler-deadlock.md`.
+  Upstream-facing source fix drafted regardless: tray draft 18.
 - Harness memory limits use `ulimit -v` (virtual address space) in
   SEVEN harnesses: `scripts/test_ci_sweep.sh:222,252,258`,
   `scripts/test_libc_exec.sh:82,90,97`, `tests/parity-probes/
