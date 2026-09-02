@@ -1,0 +1,25 @@
+# mem-scale S1 micro-benchmark before/after (2026-09-02; memscale-micro built against pre-fix lib 91c805fb050f76be then post-fix 406960e92de44c2f; cap=32G; raw lines as printed: prebuilt=N result=R <case> <N> <ms> result=R)
+# before
+prebuilt=16384 result=16384 reconstruct_chararray	16384	111	result=16384
+prebuilt=65536 result=65536 reconstruct_chararray	65536	1829	result=65536
+prebuilt=262144 result=262144 reconstruct_chararray	262144	28097	result=262144
+prebuilt=16384 result=4096 reconstruct_intarray	16384	29	result=4096
+prebuilt=65536 result=16384 reconstruct_intarray	65536	454	result=16384
+prebuilt=262144 result=65536 reconstruct_intarray	262144	6983	result=65536
+prebuilt=16384 result=32768 copy_chararray	16384	114	result=32768
+prebuilt=65536 result=131072 copy_chararray	65536	1744	result=131072
+prebuilt=262144 result=524288 copy_chararray	262144	28582	result=524288
+prebuilt=524288 result=524288 reconstruct_chararray	524288	113235	result=524288
+# after
+prebuilt=16384 result=16384 reconstruct_chararray	16384	2	result=16384
+prebuilt=65536 result=65536 reconstruct_chararray	65536	6	result=65536
+prebuilt=262144 result=262144 reconstruct_chararray	262144	32	result=262144
+prebuilt=16384 result=4096 reconstruct_intarray	16384	1	result=4096
+prebuilt=65536 result=16384 reconstruct_intarray	65536	4	result=16384
+prebuilt=262144 result=65536 reconstruct_intarray	262144	18	result=65536
+prebuilt=16384 result=32768 copy_chararray	16384	6	result=32768
+prebuilt=65536 result=131072 copy_chararray	65536	22	result=131072
+prebuilt=262144 result=524288 copy_chararray	262144	119	result=524288
+prebuilt=524288 result=524288 reconstruct_chararray	524288	70	result=524288
+prebuilt=1048576 result=1048576 reconstruct_chararray	1048576	138	result=1048576
+prebuilt=4194304 result=4194304 reconstruct_chararray	4194304	550	result=4194304

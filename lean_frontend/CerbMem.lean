@@ -651,17 +651,26 @@ def memValueToBytes_lemFuel (lemFuel : Nat) (ambient : TagDefs) (funptrmap : Fun
     let finalPad := sizeofCtype ambient (mkCtype (.Struct tagSym)) - lastOff  -- impl_mem.ml:1205
     -- fold2 over layout and members (impl_mem.ml:1207-1212); lengths
     -- coincide for well-typed values (OCaml fold_left2 would raise
-    -- Invalid_argument otherwise — zip truncates instead)
-    let (fpm, _, bs) := (offs.zip members).foldl
-      (init := (funptrmap, (0 : Nat), ([] : List AbsByte)))
-      fun (acc : Funptrmap × Nat × List AbsByte)
+    -- Invalid_argument otherwise — zip truncates instead).
+    -- DOCUMENTED DIVERGENCE (mem-scale C3, 2026-09-02): the OCaml
+    -- accumulates `acc @ List.init pad padding_byte @ bs` inside the
+    -- left fold (impl_mem.ml:1211) — a List.append of the growing
+    -- accumulator per member, quadratic in members × bytes; we instead
+    -- cons each member's chunk (padding ++ bytes) onto a REVERSED chunk
+    -- list and flatten once at the end (linear). Same result list:
+    -- `memValueToBytes_lemFuel_eq_append` below is the kernel-checked
+    -- equality with the append-accumulating reference form
+    -- (`memValueToBytes_append_lemFuel`, the pre-C3 text).
+    let (fpm, _, revChunks) := (offs.zip members).foldl
+      (init := (funptrmap, (0 : Nat), ([] : List (List AbsByte))))
+      fun (acc : Funptrmap × Nat × List (List AbsByte))
           (p : (identifier × ctype × Nat) × (identifier × ctype × MemValue)) =>
-        let (fpm, lastOff, accBs) := acc
+        let (fpm, lastOff, revChunks) := acc
         let ((_, ty, off), (_, _, mval)) := p
         let pad := off - lastOff
         let (fpm', bs) := memValueToBytes_lemFuel lemFuel ambient fpm mval
-        (fpm', off + sizeofCtype ambient ty, accBs ++ List.replicate pad paddingByte ++ bs)
-    (fpm, bs ++ List.replicate finalPad paddingByte)  -- impl_mem.ml:1214
+        (fpm', off + sizeofCtype ambient ty, (List.replicate pad paddingByte ++ bs) :: revChunks)
+    (fpm, revChunks.reverse.flatten ++ List.replicate finalPad paddingByte)  -- impl_mem.ml:1214
   | .MVunion tagSym _ mval =>
     -- impl_mem.ml:1216-1219: the active member's bytes, padded out with
     -- unspecified bytes to sizeof(union).
@@ -674,10 +683,189 @@ def memValueToBytes (ambient : TagDefs) (funptrmap : Funptrmap) (val_ : MemValue
     Funptrmap × List AbsByte :=
   memValueToBytes_lemFuel lemDefaultFuel ambient funptrmap val_
 
+/-! ### C3 reference form + equality theorem (mem-scale S1, 2026-09-02)
+
+`memValueToBytes_append_lemFuel` is the PRE-C3 text of
+`memValueToBytes_lemFuel` verbatim (only the name and the recursive
+calls renamed): the struct arm accumulates with `accBs ++ pad ++ bs`
+inside the left fold, mirroring `impl_mem.ml:1207-1212` shape-for-shape.
+It is NOT executed by the driver; it exists so the divergence is a
+kernel-checked equality (`memValueToBytes_lemFuel_eq_append`) rather
+than a claim. Charter §1 carve-out [R1/F5]. -/
+
+/-- Reference form (pre-C3): append-accumulating struct arm. -/
+def memValueToBytes_append_lemFuel (lemFuel : Nat) (ambient : TagDefs) (funptrmap : Funptrmap)
+    (val_ : MemValue) : Funptrmap × List AbsByte :=
+  match lemFuel with
+  | 0 => fuelExhaustedWith "CerbMem.memValueToBytes: fuel exhausted" (funptrmap, [])
+  | lemFuel + 1 =>
+  match val_ with
+  | .MVunspecified ty =>
+    let sz := sizeofCtype ambient ty
+    (funptrmap, List.replicate sz paddingByte)
+  | .MVinteger ity (.IV prov n) =>
+    let sz := match CerberusImpl.sizeof_ity ity with
+      | some n => n
+      | none => panic! "the concrete memory model requires a complete implementation sizeof INTEGER"
+    let rawBytes := intToBytes n sz
+    (funptrmap, rawBytes.map fun v =>
+      { prov := prov, copyOffset := none, value := v })
+  | .MVfloating fty fv =>
+    let sz := match CerberusImpl.sizeof_fty fty with
+      | some n => n
+      | none => panic! "the concrete memory model requires a complete implementation sizeof FLOAT"
+    let bits := fv.toBits.toNat
+    let rawBytes := intToBytes bits sz
+    (funptrmap, rawBytes.map fun v => { prov := .Prov_none, copyOffset := none, value := v })
+  | .MVpointer _ (.PV prov base) =>
+    match base with
+    | .PVnull _ =>
+      let rawBytes := intToBytes 0 targetPtrSize
+      (funptrmap, rawBytes.map fun v =>
+        { prov := .Prov_none, copyOffset := none, value := v })
+    | .PVfunction (Symbol fileDig n optName) =>
+      let funptrmap' := match optName with
+        | SD_Id name =>
+          ((n : Int), (fileDig, name)) ::
+            funptrmap.filter (fun (a, _) => a != (n : Int))
+        | _ => funptrmap
+      let rawBytes := intToBytes n targetPtrSize
+      (funptrmap', rawBytes.map fun v =>
+        { prov := prov, copyOffset := none, value := v })
+    | .PVconcrete _ addr =>
+      let rawBytes := intToBytes addr targetPtrSize
+      (funptrmap, (rawBytes.zip (List.range rawBytes.length)).map fun (v, i) =>
+        { prov := prov, copyOffset := some i, value := v })
+  | .MVarray elems =>
+    let (fpm, bss) := elems.foldl (init := (funptrmap, ([] : List (List AbsByte))))
+      fun (acc : Funptrmap × List (List AbsByte)) mval =>
+        let (fpm, bss) := acc
+        let (fpm', bs) := memValueToBytes_append_lemFuel lemFuel ambient fpm mval
+        (fpm', bs :: bss)
+    (fpm, bss.reverse.flatten)
+  | .MVstruct tagSym members =>
+    let (offs, lastOff) := offsetsof ambient ambient tagSym (ignoreFlexible := true)
+    let finalPad := sizeofCtype ambient (mkCtype (.Struct tagSym)) - lastOff
+    let (fpm, _, bs) := (offs.zip members).foldl
+      (init := (funptrmap, (0 : Nat), ([] : List AbsByte)))
+      fun (acc : Funptrmap × Nat × List AbsByte)
+          (p : (identifier × ctype × Nat) × (identifier × ctype × MemValue)) =>
+        let (fpm, lastOff, accBs) := acc
+        let ((_, ty, off), (_, _, mval)) := p
+        let pad := off - lastOff
+        let (fpm', bs) := memValueToBytes_append_lemFuel lemFuel ambient fpm mval
+        (fpm', off + sizeofCtype ambient ty, accBs ++ List.replicate pad paddingByte ++ bs)
+    (fpm, bs ++ List.replicate finalPad paddingByte)
+  | .MVunion tagSym _ mval =>
+    let size := sizeofCtype ambient (mkCtype (.Union0 tagSym))
+    let (fpm, bs) := memValueToBytes_append_lemFuel lemFuel ambient funptrmap mval
+    (fpm, bs ++ List.replicate (size - bs.length) paddingByte)
+
+/-- The list fact behind C3: a left fold that APPENDS each step's chunk to
+    the accumulator (third component) equals the fold that CONSES the
+    chunks and flattens the reversed list at the end. Stated over the
+    exact accumulator shape of the struct arm (`γ × Nat × List α`, the
+    funptrmap × running offset × bytes triple) and an arbitrary per-step
+    function `step`, generalised over the starting chunk list. -/
+theorem foldl_append_eq_flatten_reverse_aux {γ β α : Type}
+    (step : γ → Nat → β → γ × Nat × List α) (l : List β) (g : γ) (n : Nat)
+    (acc : List (List α)) :
+    l.foldl (fun (p : γ × Nat × List α) b =>
+        ((step p.1 p.2.1 b).1, (step p.1 p.2.1 b).2.1, p.2.2 ++ (step p.1 p.2.1 b).2.2))
+      (g, n, acc.reverse.flatten) =
+    ((l.foldl (fun (p : γ × Nat × List (List α)) b =>
+        ((step p.1 p.2.1 b).1, (step p.1 p.2.1 b).2.1, (step p.1 p.2.1 b).2.2 :: p.2.2)) (g, n, acc)).1,
+     (l.foldl (fun (p : γ × Nat × List (List α)) b =>
+        ((step p.1 p.2.1 b).1, (step p.1 p.2.1 b).2.1, (step p.1 p.2.1 b).2.2 :: p.2.2)) (g, n, acc)).2.1,
+     (l.foldl (fun (p : γ × Nat × List (List α)) b =>
+        ((step p.1 p.2.1 b).1, (step p.1 p.2.1 b).2.1, (step p.1 p.2.1 b).2.2 :: p.2.2)) (g, n, acc)).2.2.reverse.flatten) := by
+  induction l generalizing g n acc with
+  | nil => rfl
+  | cons b l ih =>
+    simp only [List.foldl_cons]
+    have h : acc.reverse.flatten ++ (step g n b).2.2 = ((step g n b).2.2 :: acc).reverse.flatten := by
+      simp [List.reverse_cons, List.flatten_append]
+    rw [h]
+    exact ih _ _ _
+
+/-- Starting-from-empty instance of the aux lemma (`[] = [].reverse.flatten`). -/
+theorem foldl_append_eq_flatten_reverse {γ β α : Type}
+    (step : γ → Nat → β → γ × Nat × List α) (l : List β) (g : γ) (n : Nat) :
+    l.foldl (fun (p : γ × Nat × List α) b =>
+        ((step p.1 p.2.1 b).1, (step p.1 p.2.1 b).2.1, p.2.2 ++ (step p.1 p.2.1 b).2.2))
+      (g, n, []) =
+    ((l.foldl (fun (p : γ × Nat × List (List α)) b =>
+        ((step p.1 p.2.1 b).1, (step p.1 p.2.1 b).2.1, (step p.1 p.2.1 b).2.2 :: p.2.2)) (g, n, [])).1,
+     (l.foldl (fun (p : γ × Nat × List (List α)) b =>
+        ((step p.1 p.2.1 b).1, (step p.1 p.2.1 b).2.1, (step p.1 p.2.1 b).2.2 :: p.2.2)) (g, n, [])).2.1,
+     (l.foldl (fun (p : γ × Nat × List (List α)) b =>
+        ((step p.1 p.2.1 b).1, (step p.1 p.2.1 b).2.1, (step p.1 p.2.1 b).2.2 :: p.2.2)) (g, n, [])).2.2.reverse.flatten) :=
+  foldl_append_eq_flatten_reverse_aux step l g n []
+
+/-- C3 equality: the linear serialisation equals the append-accumulating
+    reference form at every fuel, on every input. Induction on fuel; every
+    arm but the struct arm is textually identical once the recursive calls
+    are rewritten by the induction hypothesis; the struct arm is
+    `foldl_append_eq_flatten_reverse`. -/
+theorem memValueToBytes_lemFuel_eq_append :
+    ∀ (lemFuel : Nat) (ambient : TagDefs) (funptrmap : Funptrmap) (val_ : MemValue),
+      memValueToBytes_lemFuel lemFuel ambient funptrmap val_ =
+        memValueToBytes_append_lemFuel lemFuel ambient funptrmap val_ := by
+  intro lemFuel
+  induction lemFuel with
+  | zero => intros; rfl
+  | succ lemFuel ih =>
+    intro ambient funptrmap val_
+    have hf : memValueToBytes_lemFuel lemFuel = memValueToBytes_append_lemFuel lemFuel := by
+      funext a f v; exact ih a f v
+    unfold memValueToBytes_lemFuel memValueToBytes_append_lemFuel
+    rw [hf]
+    cases val_ with
+    | MVstruct tagSym members =>
+      dsimp only
+      -- `++` is left-associative: the reference arm is `(accBs ++ pad) ++ bs`;
+      -- re-associate so the step's chunk is `pad ++ bs`, then `step` in
+      -- projection form (the shape `dsimp` leaves the two folds in):
+      -- funptrmap' , next running offset , this member's chunk.
+      simp only [List.append_assoc]
+      rw [foldl_append_eq_flatten_reverse
+        (step := fun (fpm : Funptrmap) (lastOff : Nat)
+            (p : (identifier × ctype × Nat) × (identifier × ctype × MemValue)) =>
+          ((memValueToBytes_append_lemFuel lemFuel ambient fpm p.2.2.2).1,
+           p.1.2.2 + sizeofCtype ambient p.1.2.1,
+           List.replicate (p.1.2.2 - lastOff) paddingByte ++
+             (memValueToBytes_append_lemFuel lemFuel ambient fpm p.2.2.2).2))]
+    | _ => rfl
+
+theorem memValueToBytes_eq_append (ambient : TagDefs) (funptrmap : Funptrmap) (val_ : MemValue) :
+    memValueToBytes ambient funptrmap val_ =
+      memValueToBytes_append_lemFuel lemDefaultFuel ambient funptrmap val_ :=
+  memValueToBytes_lemFuel_eq_append lemDefaultFuel ambient funptrmap val_
+
+/-- `chunksOf e n l`: the `n` successive `e`-element slices of `l`
+    (consume-and-return-rest; a slice past the end is short/empty, as
+    `take`/`drop` are). One pass, linear in `e * n`. -/
+def chunksOf (e : Nat) : Nat → List α → List (List α)
+  | 0, _ => []
+  | n + 1, l => l.take e :: chunksOf e n (l.drop e)
+
+/-- Each chunk is the corresponding index-slice: `chunksOf` computes exactly
+    the per-element slices `(l.drop (i*e)).take e` for `i < n`. -/
+theorem chunksOf_eq_range_map (e n : Nat) (l : List α) :
+    chunksOf e n l = (List.range n).map fun i => (l.drop (i * e)).take e := by
+  induction n generalizing l with
+  | zero => rfl
+  | succ n ih =>
+    rw [List.range_succ_eq_map, List.map_cons, List.map_map]
+    simp only [chunksOf, ih, Nat.zero_mul, List.drop_zero, Function.comp_def, List.drop_drop,
+      Nat.succ_mul, Nat.add_comm]
+
 /-- Reconstruct a MemValue from bytes — abst, impl_mem.ml:916-1095.
-    INVARIANT (differs from OCaml's consume-and-return-rest shape):
-    `bytes` is exactly the sizeof(ty) slice for this value; recursive
-    calls re-slice. `unionmap` is mem_state.last_used_union_members and
+    INVARIANT (differs from OCaml's consume-and-return-rest shape at the
+    LEAVES): `bytes` is exactly the sizeof(ty) slice for this value; the
+    array arm hands each element exactly its slice in one linear pass
+    (C1, see the arm), the struct/union arms re-slice per member.
+    `unionmap` is mem_state.last_used_union_members and
     `addr` the value's address — consulted ONLY by the Union arm
     (impl_mem.ml:1080-1087); `funptrmap` is mem_state.funptrmap —
     consulted ONLY by the Pointer-to-Function arm (impl_mem.ml:1004-1016)
@@ -744,15 +932,25 @@ def reconstructValue_lemFuel (lemFuel : Nat) (ambient : TagDefs)
     -- impl_mem.ml:986-994; NOTE OCaml's `self elem_ty cs` does NOT
     -- advance ~addr per element — every element sees the array's addr
     -- (mirrored: nested-union lookups use the array base address).
+    -- SHAPE (mem-scale C1, 2026-09-02): ONE consume-and-return-rest pass
+    -- over the bytes (`chunksOf`: take elemSize, recurse on the rest),
+    -- which is the OCaml `aux`'s shape (impl_mem.ml:987-993: `self
+    -- elem_ty cs` returns the unconsumed suffix `cs'`), minus the OCaml's
+    -- per-call guard `if List.length bs < sizeof cty then failwith`
+    -- (impl_mem.ml:929-930) — DELIBERATELY NOT MIRRORED: that guard
+    -- re-walks the remaining list on every recursive call and is what
+    -- makes the oracle quadratic in the element count on aggregate
+    -- loads (upstream-tray item). The pre-C1 Lean text re-sliced from
+    -- the array's start per element (`bytes.drop (i*elemSize) |>.take
+    -- elemSize`), also quadratic; `reconstructValue_lemFuel_eq_indexed`
+    -- below is the kernel-checked equality with that reference form
+    -- (`reconstructValue_indexed_lemFuel`). Linear in |bytes|.
     let nNat := n.toNat
     let elemSize := sizeofCtype ambient elemCty
     if elemSize == 0 then .MVarray []
     else
-      let elems := List.range nNat |>.map fun i =>
-        let start := i * elemSize
-        let elemBytes := bytes.drop start |>.take elemSize
-        reconstructValue_lemFuel lemFuel ambient unionmap funptrmap addr elemCty elemBytes
-      .MVarray elems
+      .MVarray ((chunksOf elemSize nNat bytes).map fun elemBytes =>
+        reconstructValue_lemFuel lemFuel ambient unionmap funptrmap addr elemCty elemBytes)
   | Ctype _ (.Atomic innerCty) =>
     -- impl_mem.ml:1058-1060 (same repr as the non-atomic version)
     reconstructValue_lemFuel lemFuel ambient unionmap funptrmap addr innerCty bytes
@@ -809,6 +1007,146 @@ def reconstructValue (ambient : TagDefs) (unionmap : List (Int × identifier))
     (funptrmap : Funptrmap) (addr : Int)
     (ty : ctype) (bytes : List AbsByte) : MemValue :=
   reconstructValue_lemFuel lemDefaultFuel ambient unionmap funptrmap addr ty bytes
+
+/-! ### C1 reference form + equality theorem (mem-scale S1, 2026-09-02)
+
+`reconstructValue_indexed_lemFuel` is the PRE-C1 text of
+`reconstructValue_lemFuel` verbatim (name and recursive calls renamed;
+the doc comments of the arms are in the live definition above): its
+array arm re-slices from the array's start per element,
+`bytes.drop (i * elemSize) |>.take elemSize` — the index-slicing form,
+Θ(n²·e). NOT executed by the driver; it exists so that the C1 shape
+change is a kernel-checked equality (`reconstructValue_lemFuel_eq_indexed`).
+Charter §1 carve-out [R1/F5]; consumer note: refined-cerberus unfolds
+`reconstructValue_lemFuel` at pointer/struct-typed nodes only
+(TreeRotExhibit.lean:148, ListRevExhibit.lean:260), arms C1 leaves
+textually intact. -/
+
+/-- Reference form (pre-C1): index-slicing array arm. -/
+def reconstructValue_indexed_lemFuel (lemFuel : Nat) (ambient : TagDefs)
+    (unionmap : List (Int × identifier))
+    (funptrmap : Funptrmap) (addr : Int)
+    (ty : ctype) (bytes : List AbsByte) : MemValue :=
+  match lemFuel with
+  | 0 => fuelExhaustedWith "CerbMem.reconstructValue: fuel exhausted" (.MVunspecified ty)
+  | lemFuel + 1 =>
+  match ty with
+  | Ctype _ (.Basic (.Integer ity)) =>
+    let signed := CerberusImpl.is_signed_ity ity
+    match bytesToInt bytes signed with
+    | some n => .MVinteger ity (.IV (provFromIntegerBytes bytes) n)
+    | none => .MVunspecified ty
+  | Ctype _ (.Basic (.Floating fty)) =>
+    match bytesToInt bytes false with
+    | some n =>
+      let bits : UInt64 := n.toNat.toUInt64
+      .MVfloating fty (Float.ofBits bits)
+    | none => .MVunspecified ty
+  | Ctype _ (.Pointer _ pointeeCty) =>
+    match bytesToInt bytes false with
+    | some 0 =>
+      .MVpointer pointeeCty (.PV .Prov_none (.PVnull pointeeCty))
+    | some ptrAddr =>
+      let (prov, _validPtrProv) := splitBytesProv bytes
+      match pointeeCty with
+      | Ctype _ (.Function _ _ _) =>
+        match funptrmap.find? (fun (a, _) => a == ptrAddr) with
+        | some (_, (fileDig, name)) =>
+          .MVpointer pointeeCty (.PV prov (.PVfunction (Symbol fileDig ptrAddr.toNat (SD_Id name))))
+        | none => panic! s!"unknown function pointer: {ptrAddr}"
+      | _ =>
+        .MVpointer pointeeCty (.PV prov (.PVconcrete none ptrAddr.toNat))
+    | none => .MVunspecified ty
+  | Ctype _ (.Array0 elemCty (some n)) =>
+    let nNat := n.toNat
+    let elemSize := sizeofCtype ambient elemCty
+    if elemSize == 0 then .MVarray []
+    else
+      let elems := List.range nNat |>.map fun i =>
+        let start := i * elemSize
+        let elemBytes := bytes.drop start |>.take elemSize
+        reconstructValue_indexed_lemFuel lemFuel ambient unionmap funptrmap addr elemCty elemBytes
+      .MVarray elems
+  | Ctype _ (.Atomic innerCty) =>
+    reconstructValue_indexed_lemFuel lemFuel ambient unionmap funptrmap addr innerCty bytes
+  | Ctype _ .Byte =>
+    match bytesToInt (bytes.take 1) false with
+    | some n => .MVinteger .Char0 (.IV (provFromIntegerBytes (bytes.take 1)) n)
+    | none => .MVunspecified ty
+  | Ctype _ (.Struct tagSym) =>
+    let (offs, _) := offsetsof ambient ambient tagSym (ignoreFlexible := true)
+    let (revXs, _) := offs.foldl
+      (init := (([] : List (identifier × ctype × MemValue)), (0 : Nat)))
+      fun (acc : List (identifier × ctype × MemValue) × Nat) (memb : identifier × ctype × Nat) =>
+        let (revXs, prevEnd) := acc
+        let (ident, membTy, off) := memb
+        let pad := off - prevEnd
+        let membBytes := bytes.drop off |>.take (sizeofCtype ambient membTy)
+        let mval := reconstructValue_indexed_lemFuel lemFuel ambient unionmap funptrmap (addr + (pad : Int)) membTy membBytes
+        ((ident, membTy, mval) :: revXs, off + sizeofCtype ambient membTy)
+    .MVstruct tagSym revXs.reverse
+  | Ctype _ (.Union0 tagSym) =>
+    match (fmapElements ambient).find? (fun (s, _) => symbolEquality s tagSym) with
+    | some (_, (_, UnionDef membrs)) =>
+      match membrs with
+      | [] => panic! "CerbMem.reconstructValue: empty UnionDef (OCaml: match failure)"
+      | (firstIdent, (_, _, _, firstTy)) :: _ =>
+        let (membIdent, membTy) :=
+          match unionmap.find? (fun (a, _) => a == addr) with
+          | none => (firstIdent, firstTy)
+          | some (_, membr) =>
+            match membrs.find? (fun (i, _) => idEqual i membr) with
+            | some (i, (_, _, _, t)) => (i, t)
+            | none => panic! "CerbMem.reconstructValue: recorded union member not in UnionDef (OCaml: assert false)"
+        let mval := reconstructValue_indexed_lemFuel lemFuel ambient unionmap funptrmap addr membTy
+          (bytes.take (sizeofCtype ambient membTy))
+        .MVunion tagSym membIdent mval
+    | _ => panic! "CerbMem.reconstructValue: Union tag not a UnionDef (OCaml: assert false)"
+  | _ => .MVunspecified ty
+
+/-- C1 equality: the linear (consume-and-return-rest) reconstruction equals
+    the index-slicing reference form at every fuel, on every input.
+    Induction on fuel; every arm but the array arm is textually identical
+    once the recursive calls are rewritten by the induction hypothesis;
+    the array arm is `chunksOf_eq_range_map` + `List.map_map`. -/
+theorem reconstructValue_lemFuel_eq_indexed :
+    ∀ (lemFuel : Nat) (ambient : TagDefs) (unionmap : List (Int × identifier))
+      (funptrmap : Funptrmap) (addr : Int) (ty : ctype) (bytes : List AbsByte),
+      reconstructValue_lemFuel lemFuel ambient unionmap funptrmap addr ty bytes =
+        reconstructValue_indexed_lemFuel lemFuel ambient unionmap funptrmap addr ty bytes := by
+  intro lemFuel
+  induction lemFuel with
+  | zero => intros; rfl
+  | succ lemFuel ih =>
+    intro ambient unionmap funptrmap addr ty bytes
+    have hf : reconstructValue_lemFuel lemFuel = reconstructValue_indexed_lemFuel lemFuel := by
+      funext a u f ad t b; exact ih a u f ad t b
+    unfold reconstructValue_lemFuel reconstructValue_indexed_lemFuel
+    rw [hf]
+    -- `panic!` expands to `panicWithPosWithDecl <module> <DECL NAME> <line>
+    -- <col> msg`, so the two definitions' panic sites differ textually;
+    -- every such term is definitionally `default`, and normalising both
+    -- sides to it makes the unchanged arms syntactically equal.
+    have hp : ∀ {α : Type} [Inhabited α] (m d : String) (l c : Nat) (msg : String),
+        (panicWithPosWithDecl m d l c msg : α) = default := fun _ _ _ _ _ => rfl
+    simp only [hp]
+    rcases ty with ⟨_, ty⟩
+    cases ty with
+    | Array0 elemCty n =>
+      cases n with
+      | none => rfl
+      | some n =>
+        dsimp only
+        rw [chunksOf_eq_range_map, List.map_map]
+        rfl
+    | Basic bt => cases bt <;> rfl   -- the outer match is stuck until the basic type is split
+    | _ => rfl
+
+theorem reconstructValue_eq_indexed (ambient : TagDefs) (unionmap : List (Int × identifier))
+    (funptrmap : Funptrmap) (addr : Int) (ty : ctype) (bytes : List AbsByte) :
+    reconstructValue ambient unionmap funptrmap addr ty bytes =
+      reconstructValue_indexed_lemFuel lemDefaultFuel ambient unionmap funptrmap addr ty bytes :=
+  reconstructValue_lemFuel_eq_indexed lemDefaultFuel ambient unionmap funptrmap addr ty bytes
 
 /-! ## Memory-value typing — the store guard's helpers (audit-2 C3) -/
 

@@ -687,4 +687,60 @@ if [[ -n "$ENTRY_BAD" ]]; then
 fi
 echo "check_theorem_axioms: C2 entry census OK (${#ENTRIES[@]} entries, every cone ⊆ [propext, Classical.choice, Quot.sound])"
 
+# ---------------------------------------------------------------------------
+# mem-scale S1 leg (2026-09-02; charter 2026-09-01_mem-scale-design.md
+# §1 carve-out [R1/F5], §6.2): the hand-written memory model's two
+# documented algorithmic divergences (C1 linear `reconstructValue` array
+# arm, C3 linear `memValueToBytes` struct arm) are admitted ONLY as
+# kernel-checked equalities with their pre-change reference forms. The
+# theorems live in CerbMem.lean next to the definitions; this leg asserts
+# they exist, elaborate, and sit in the clean cone — exact allowlist
+# [propext, Classical.choice, Quot.sound]; sorryAx / ofReduce* / DAEMON
+# fatal as everywhere. Fail-closed: each name must produce exactly one
+# probe line (a renamed or deleted theorem fails here, not silently).
+# ---------------------------------------------------------------------------
+PROBE4=lean_frontend/.axiom-probe-memscale.lean
+MEMSCALE_THMS=(CerbMem.chunksOf_eq_range_map
+               CerbMem.reconstructValue_lemFuel_eq_indexed
+               CerbMem.reconstructValue_eq_indexed
+               CerbMem.foldl_append_eq_flatten_reverse
+               CerbMem.memValueToBytes_lemFuel_eq_append
+               CerbMem.memValueToBytes_eq_append)
+{
+  echo "import CerbMem"
+  for name in "${MEMSCALE_THMS[@]}"; do
+    echo "#print axioms $name"
+  done
+} > "$PROBE4"
+OUT4=$(cd lean_frontend && "$SCRIPT_DIR/capped" lake env lean .axiom-probe-memscale.lean 2>&1 | grep -v -i warning || true)
+rm -f "$PROBE4"
+echo "$OUT4"
+for name in "${MEMSCALE_THMS[@]}"; do
+  esc=${name//./\\.}
+  n=$(grep -cE "'${esc}' (depends on axioms|does not depend on any axioms)" <<<"$OUT4" || true)
+  if [[ "$n" -ne 1 ]]; then
+    echo "check_theorem_axioms: FAIL — mem-scale S1 leg: probe for '$name' did not run cleanly (matched $n lines; fail-closed)"
+    exit 1
+  fi
+done
+MEMSCALE_BAD=$(python3 - <<PYEOF
+import re
+out = """$OUT4"""
+ok = {"propext", "Classical.choice", "Quot.sound"}
+bad = []
+for m in re.finditer(r"'([^']+)' depends on axioms: \[([^\]]*)\]", out):
+    entry, axs = m.group(1), [a.strip() for a in m.group(2).split(',') if a.strip()]
+    for a in axs:
+        if a not in ok:
+            bad.append(f"{entry}: {a}")
+print("\n".join(bad))
+PYEOF
+)
+if [[ -n "$MEMSCALE_BAD" ]]; then
+  echo "check_theorem_axioms: FAIL — mem-scale S1 leg: axiom outside the exact allowlist [propext, Classical.choice, Quot.sound]:"
+  echo "$MEMSCALE_BAD"
+  exit 1
+fi
+echo "check_theorem_axioms: mem-scale S1 leg OK (${#MEMSCALE_THMS[@]} C1/C3 equality theorems, every cone ⊆ [propext, Classical.choice, Quot.sound])"
+
 echo "check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)"

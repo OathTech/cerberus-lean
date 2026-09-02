@@ -1,0 +1,14 @@
+# mem-scale S1 c_struct probes before/after (2026-09-02; measure.sh --nolibc --engines lean-first, cap=32G, timeout 600s; Lean pre-fix 91c805fb050f76be / post-fix 406960e92de44c2f)
+probe	mode	engine	exit	wall_s	maxrss_kb	verdict	note	cpu_s
+# before
+c_struct_ret_16384	nolibc	lean-first	0	0.33	89668	VAL:Specified(7)	-	0.32
+c_struct_ret_65536	nolibc	lean-first	0	4.26	149244	VAL:Specified(7)	-	4.26
+c_struct_ret_262144	nolibc	lean-first	0	62.97	375464	VAL:Specified(7)	-	62.96
+c_struct_arg_16384	nolibc	lean-first	0	0.37	90884	VAL:Specified(0)	-	0.37
+c_struct_arg_65536	nolibc	lean-first	0	4.47	147252	VAL:Specified(0)	-	4.47
+# after
+c_struct_ret_16384	nolibc	lean-first	0	0.09	94004	VAL:Specified(7)	-	0.08
+c_struct_ret_65536	nolibc	lean-first	0	0.28	153020	VAL:Specified(7)	-	0.28
+c_struct_ret_262144	nolibc	lean-first	0	1.18	379004	VAL:Specified(7)	-	1.18
+c_struct_arg_16384	nolibc	lean-first	0	0.08	94856	VAL:Specified(0)	-	0.08
+c_struct_arg_65536	nolibc	lean-first	0	0.27	151228	VAL:Specified(0)	-	0.26
