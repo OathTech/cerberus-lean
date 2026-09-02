@@ -46,9 +46,9 @@ source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 TIMEOUT_SECS="${TIMEOUT_SECS:-60}"
 # Per-test memory cap: `scripts/capped` at CERB_TEST_MEM_MAX (default 4G,
 # cgroup RSS; common.sh CAPPED_TEST) — mem-scale S2 (2026-09-02, Q2 [USER
-# 2026-09-02]) replacing the arc-5 `ulimit -v 4000000`. A cap kill (exit
-# 137) is token KILL on that side and lane status KILL — two KILL tokens
-# never MATCH (classify below).
+# 2026-09-02]) replacing the arc-5 `ulimit -v 4000000`. A cap breach (exit
+# 137 + capped's OOM-KILLED witness) is token KILL on that side and lane
+# status KILL — two KILL tokens never MATCH (classify below).
 
 RECORD_BASELINE=false
 [[ "${1:-}" == "--record-baseline" ]] && RECORD_BASELINE=true
@@ -76,11 +76,11 @@ cd "$PROJECT_ROOT" || fail "cannot cd to $PROJECT_ROOT"
 # Defined   {value: "VAL", ...}-> VAL:VAL
 # Error     {msg: "MSG"}       -> ERR:MSG
 # empty / uncaught exception / panic (with nonzero/crash exit) -> CRASH
-verdict() {
-    local line="$1" rc="$2"
-    if [[ "$rc" -eq 137 ]]; then
-        # memory-cap kill (exit 137, capped KILLED banner on stderr): its own
-        # token, so it can never read as a verdict on either side
+verdict() {   # <first-line> <rc> [<stderr-file>]
+    local line="$1" rc="$2" errf="${3:-}"
+    if is_cap_kill "$rc" "$errf"; then
+        # memory-cap breach (exit 137 + capped's OOM-KILLED witness on
+        # stderr): its own token, so it can never read as a verdict
         echo "KILL"; return
     fi
     if [[ -z "$line" ]]; then
@@ -126,9 +126,9 @@ run_c_case() {  # $1=name $2=cfile $3=libc(0/1) [$4=--args string]
     ( "${CAPPED_TEST[@]}" timeout "${TIMEOUT_SECS}s" \
         opam exec --switch="$PROJECT_ROOT" -- \
         "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" "${oflags[@]}" "$c" \
-        > "$OUTPUT_DIR/$name.o" 2>/dev/null ) || orc=$?
+        > "$OUTPUT_DIR/$name.o" 2>"$OUTPUT_DIR/$name.oerr" ) || orc=$?
     local oline; oline="$(head -1 "$OUTPUT_DIR/$name.o")"
-    local otok; otok="$(verdict "$oline" "$orc")"
+    local otok; otok="$(verdict "$oline" "$orc" "$OUTPUT_DIR/$name.oerr")"
     # cabs-json (no --nolibc; the cpp side is identical between sides)
     ( "${CAPPED_TEST[@]}" timeout "${TIMEOUT_SECS}s" \
         opam exec --switch="$PROJECT_ROOT" -- \
@@ -144,7 +144,7 @@ run_c_case() {  # $1=name $2=cfile $3=libc(0/1) [$4=--args string]
         > "$OUTPUT_DIR/$name.l" 2>"$OUTPUT_DIR/$name.lerr" ) || lrc=$?
     local lline; lline="$(head -1 "$OUTPUT_DIR/$name.l")"
     [[ -z "$lline" ]] && lline="$(head -1 "$OUTPUT_DIR/$name.lerr")"
-    local ltok; ltok="$(verdict "$lline" "$lrc")"
+    local ltok; ltok="$(verdict "$lline" "$lrc" "$OUTPUT_DIR/$name.lerr")"
     local status; status="$(classify "$otok" "$ltok")"
     # The Lean token is PART of the recorded state (F2 lane hardening):
     # on ORACLE_CRASH rows the status alone cannot see a Lean-side value

@@ -45,8 +45,8 @@
 # Resource bounds (operator directive, arc-5): every cerberus invocation on
 # libxml2-sized inputs runs under the per-test cgroup cap (`scripts/capped`,
 # CERB_TEST_MEM_MAX default 4G RSS — mem-scale S2, 2026-09-02, Q2 [USER
-# 2026-09-02], replacing the arc-5 `ulimit -v 4000000`; a cap kill is exit
-# 137 + capped's KILLED banner, reported as FAIL … KILLED) + timeout; per-slice
+# 2026-09-02], replacing the arc-5 `ulimit -v 4000000`; a cap breach is exit
+# 137 + capped's OOM-KILLED witness, reported as FAIL … OOM-KILLED) + timeout; per-slice
 # wall/maxRSS are reported.
 #
 # Usage: ./scripts/test_libxml2.sh [--record-baseline] [slice-name ...]
@@ -163,7 +163,7 @@ for slice in "${SLICES[@]}"; do
         "${FLAGS[@]}" "$slice" "$CHVALID_TU" \
         > "$OUTPUT_DIR/$sname.ocaml.out" 2> "$OUTPUT_DIR/$sname.ocaml.err" ) || cerb_exit=$?
     cerb_output=$(cat "$OUTPUT_DIR/$sname.ocaml.out")
-    if [[ $cerb_exit -eq 137 ]]; then
+    if is_cap_kill $cerb_exit "$OUTPUT_DIR/$sname.ocaml.err"; then
         echo "[$sname] FAIL: OCaml $(kill_label 137 "$OUTPUT_DIR/$sname.ocaml.err")"
         FAIL_CNT=$((FAIL_CNT+1)); continue
     fi
@@ -209,7 +209,7 @@ for slice in "${SLICES[@]}"; do
         "$OUTPUT_DIR/$sname.json" "$CHVALID_JSON" \
         > "$OUTPUT_DIR/$sname.lean.out" 2> "$OUTPUT_DIR/$sname.lean.err" ) || lean_exit=$?
     lean_output=$(cat "$OUTPUT_DIR/$sname.lean.out")
-    if [[ $lean_exit -eq 137 ]]; then
+    if is_cap_kill $lean_exit "$OUTPUT_DIR/$sname.lean.err"; then
         echo "[$sname] FAIL: Lean $(kill_label 137 "$OUTPUT_DIR/$sname.lean.err")"
         FAIL_CNT=$((FAIL_CNT+1)); continue
     fi

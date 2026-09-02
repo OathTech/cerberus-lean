@@ -44,6 +44,14 @@ fi
 # child must SHOUT. 137 = 128+SIGKILL (cgroup/OOM kill lands here),
 # 143 = 128+SIGTERM. The banner goes to stderr and the exit code is
 # propagated unchanged — this is a loudness feature, never a rescue.
+# OOM WITNESS (mem-scale S2, 2026-09-02): exit 137 alone is NOT evidence of
+# a cap breach — `timeout -k` SIGKILLs and a program's own `exit(137)`
+# (found live: four csmith checksums, gcc-lane baseline rows) look the
+# same. In cgroup-direct mode the kernel's own counter is read before the
+# cgroup is removed (`memory.events` `oom_kill N`, cgroup v2): a breach
+# prints the distinct OOM-KILLED banner the harnesses key their KILL
+# classes on; any other 137/143 keeps the generic banner. Never a rescue.
+CAPPED_OOM_KILLS=""
 run_reporting_kills() {
   local rc=0
   "$@" || rc=$?
@@ -52,7 +60,11 @@ run_reporting_kills() {
   if declare -F capped_cleanup >/dev/null 2>&1; then capped_cleanup; fi
   if [[ $rc -eq 137 || $rc -eq 143 ]]; then
     echo "==============================================================" >&2
-    echo "capped: KILLED (exit $rc — cgroup/OOM or signal; NOT a pass)" >&2
+    if [[ -n "$CAPPED_OOM_KILLS" && "$CAPPED_OOM_KILLS" != "0" ]]; then
+      echo "capped: OOM-KILLED (exit $rc — cgroup memory cap CERB_MEM_MAX=$MEM breached; memory.events oom_kill=$CAPPED_OOM_KILLS; NOT a pass)" >&2
+    else
+      echo "capped: KILLED (exit $rc — signal death, NOT a cap breach: no cgroup OOM event recorded${CAPPED_OOM_KILLS:+ (oom_kill=$CAPPED_OOM_KILLS)}; e.g. timeout -k SIGKILL or the program's own exit status; NOT a pass)" >&2
+    fi
     echo "==============================================================" >&2
   fi
   exit $rc
@@ -111,6 +123,8 @@ cgroup_direct_try() {
 }
 if cgroup_direct_try; then
   capped_cleanup() {
+    # the OOM witness, read while the cgroup still exists
+    CAPPED_OOM_KILLS="$(sed -n 's/^oom_kill //p' "$CAPPED_CG/memory.events" 2>/dev/null)"
     echo $$ > "$CAPPED_ORIG/cgroup.procs" 2>/dev/null || true
     rmdir "$CAPPED_CG" 2>/dev/null \
       || echo "capped: WARNING — could not remove cgroup $CAPPED_CG (processes still inside?)" >&2

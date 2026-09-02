@@ -54,8 +54,9 @@
 #   SKIP_UB          — Lean verdict contains UB (UB-in-test: native run
 #                      is unconstrained by the standard)
 #   SKIP_UNSPEC      — Lean verdict has an Unspecified value
-#   SKIP_LEAN_FAIL / SKIP_LEAN_CRASH / SKIP_LEAN_KILL / SKIP_LEAN_TIMEOUT / SKIP_LEAN_EXIT
-#   SKIP_GCC_KILL (native run killed by the per-test memory cap — S2)
+#   SKIP_LEAN_FAIL / SKIP_LEAN_CRASH / SKIP_LEAN_TIMEOUT / SKIP_LEAN_EXIT
+#   SKIP_GCC_KILL (native run breached the per-test memory cap — capped's
+#   OOM-KILLED witness; a program's own exit(137) still flows to comparison)
 #                    — Lean side unavailable (error / crash / timeout /
 #                      exit-verdict inconsistency)
 #   SKIP_ORACLE      — cabs-json frontend failed (incl. floor refusal)
@@ -118,9 +119,11 @@ GCC_COMPILE_TIMEOUT=30
 # Per-test memory cap on the native runs: `scripts/capped` at
 # CERB_TEST_MEM_MAX (default 4G, cgroup RSS; common.sh CAPPED_TEST) —
 # mem-scale S2 (2026-09-02, Q2 [USER 2026-09-02]) replacing the arc-5
-# `ulimit -v 4000000`. The native stderr is now captured so a cap kill
-# (capped's KILLED banner) is a VISIBLE skip (SKIP_GCC_KILL), never a
-# comparison against exit 137.
+# `ulimit -v 4000000`. The native stderr is now captured so a cap BREACH
+# (capped's OOM-KILLED witness banner — the cgroup's memory.events
+# oom_kill counter) is a VISIBLE skip (SKIP_GCC_KILL); a program's own
+# exit(137) (four csmith checksums in the ledger) still flows to
+# comparison exactly as before.
 
 WRITE_BASELINE=""
 CHECK_BASELINE=""
@@ -369,7 +372,7 @@ gcc_run() {
         9< "$bin" > "$WORK/run1.out" 2> "$WORK/run1.err" ) || e1=$?
     t1=$(date +%s%N)
     elapsed_ms=$(( (t1 - t0) / 1000000 ))
-    [[ $e1 -eq 137 ]] && grep -q "capped: KILLED" "$WORK/run1.err" && { G_STATUS=killed; return 0; }
+    [[ $e1 -eq 137 ]] && grep -q "capped: OOM-KILLED" "$WORK/run1.err" && { G_STATUS=killed; return 0; }
     [[ ( $e1 -eq 124 || $e1 -eq 137 ) && $elapsed_ms -ge $threshold_ms ]] && { G_STATUS=timeout; return 0; }
     t0=$(date +%s%N)
     ( "${CAPPED_TEST[@]}" timeout -k 1s "${GCC_RUN_TIMEOUT}s" \
@@ -377,7 +380,7 @@ gcc_run() {
         9< "$bin" > /dev/null 2> "$WORK/run2.err" ) || e2=$?
     t1=$(date +%s%N)
     elapsed_ms=$(( (t1 - t0) / 1000000 ))
-    [[ $e2 -eq 137 ]] && grep -q "capped: KILLED" "$WORK/run2.err" && { G_STATUS=killed; return 0; }
+    [[ $e2 -eq 137 ]] && grep -q "capped: OOM-KILLED" "$WORK/run2.err" && { G_STATUS=killed; return 0; }
     [[ ( $e2 -eq 124 || $e2 -eq 137 ) && $elapsed_ms -ge $threshold_ms ]] && { G_STATUS=timeout; return 0; }
     [[ $e1 -ne $e2 ]] && { G_STATUS=nondet; return 0; }
     [[ -s "$WORK/run1.out" ]] && { G_STATUS=stdout; return 0; }
@@ -411,7 +414,6 @@ while IFS=$'\t' read -r c_file mode key; do
         "$CERBERUS_LEAN_BIN" "${lean_flags[@]}" "$json" 2>&1) || lean_exit=$?
 
     if [[ $lean_exit -eq 124 ]]; then record "$base_c" SKIP_LEAN_TIMEOUT -; continue; fi
-    if [[ $lean_exit -eq 137 ]]; then record "$base_c" SKIP_LEAN_KILL - "(exit 137 — SIGKILL/memory cap; never compared)"; continue; fi
     if [[ $lean_exit -ge 128 ]]; then
         crash=$(echo "$lean_output" | grep -m1 -E 'PANIC|fuel exhausted' | cut -c1-100)
         record "$base_c" SKIP_LEAN_CRASH - "(exit $lean_exit) $crash"

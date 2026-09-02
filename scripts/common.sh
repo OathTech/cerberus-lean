@@ -292,15 +292,19 @@ CAPPED_BIN="$SCRIPT_DIR/capped"
 TEST_MEM_MAX="${CERB_TEST_MEM_MAX:-4G}"
 CAPPED_TEST=(env "CERB_MEM_MAX=$TEST_MEM_MAX" "$CAPPED_BIN")
 [[ -x "$CAPPED_BIN" ]] || { echo "Error: $CAPPED_BIN missing or not executable (per-test memory cap; fail-closed)" >&2; exit 1; }
-# kill_label <rc> [<stderr-file>]: the one-line reading of an exit 137
-# (the cgroup kill / SIGKILL class), with the capped banner as witness.
+# is_cap_kill <rc> <stderr-file-or-text-file>: true iff the run breached
+# the per-test cap — exit 137 AND capped's OOM-KILLED banner (the kernel's
+# memory.events oom_kill counter, read by capped). A bare 137 is NOT a cap
+# kill (timeout -k SIGKILL, or a program's own exit(137) — found live in
+# the gcc lane's csmith rows) and keeps its pre-S2 classification.
+is_cap_kill() {
+    local rc="$1" f="${2:-}"
+    [[ "$rc" -eq 137 && -n "$f" && -f "$f" ]] && grep -q "capped: OOM-KILLED" "$f"
+}
+# kill_label <rc> <stderr-file>: the one-line reading of a cap kill.
 kill_label() {
-    local rc="$1" errf="${2:-}"
-    if [[ -n "$errf" && -f "$errf" ]] && grep -q "capped: KILLED" "$errf"; then
-        echo "KILLED (exit $rc; capped KILLED banner present — cgroup memory cap CERB_TEST_MEM_MAX=$TEST_MEM_MAX or SIGKILL)"
-    else
-        echo "KILLED (exit $rc — SIGKILL; memory cap CERB_TEST_MEM_MAX=$TEST_MEM_MAX or external kill)"
-    fi
+    local rc="$1" f="${2:-}"
+    echo "OOM-KILLED (exit $rc; cgroup memory cap CERB_TEST_MEM_MAX=$TEST_MEM_MAX breached — $(grep -m1 -o 'memory.events oom_kill=[0-9]*' "$f" 2>/dev/null))"
 }
 require_time_bin() {   # fail-closed: no /usr/bin/time = no HANG instrument
     if [[ ! -x "$TIME_BIN" ]]; then

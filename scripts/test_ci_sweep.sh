@@ -39,9 +39,10 @@
 #      CERB_TEST_MEM_MAX (default 4G, cgroup RSS) around oracle, cabs-json
 #      and Lean runs — mem-scale S2 (2026-09-02, Q2 [USER 2026-09-02])
 #      replacing the arc-5 `ulimit -v 4000000` (virtual-address-space cap;
-#      common.sh header). A cap kill is exit 137 + capped's KILLED banner
-#      on stderr: rows LEAN_KILL / CERB_KILL, distinct from *_CRASH,
-#      never agreement, never a skip.
+#      common.sh header). A cap breach is exit 137 + capped's OOM-KILLED
+#      banner (the cgroup's memory.events oom_kill witness): rows
+#      LEAN_KILL / CERB_KILL, distinct from *_CRASH, never agreement,
+#      never a skip. A bare 137 (no OOM event) stays *_CRASH as before.
 #   5. Checkpointed TSV + --resume: one row appended per file
 #      (suite<TAB>relpath<TAB>status<TAB>detail); an interrupted sweep
 #      rerun with --resume skips already-recorded files.
@@ -244,12 +245,9 @@ for suite in "${SUITES[@]}"; do
             if [[ "$cerb_124" == HANG* ]]; then row CERB_HANG "$cerb_124"; else row CERB_TIMEOUT "$cerb_124"; fi
             continue
         fi
-        if [[ $cerb_exit -eq 137 ]]; then
-            if [[ "$cerb_out" == *"capped: KILLED"* ]]; then row CERB_KILL "exit 137, capped KILLED banner (memory cap $TEST_MEM_MAX)"
-            else row CERB_KILL "exit 137 (SIGKILL, no capped banner)"; fi
-            continue
-        fi
-        if [[ $cerb_exit -eq 134 || $cerb_exit -eq 139 ]]; then
+        if [[ $cerb_exit -eq 137 && "$cerb_out" == *"capped: OOM-KILLED"* ]]; then
+            row CERB_KILL "exit 137, capped OOM-KILLED (memory cap $TEST_MEM_MAX breached)"; continue; fi
+        if [[ $cerb_exit -eq 134 || $cerb_exit -eq 137 || $cerb_exit -eq 139 ]]; then
             row CERB_CRASH "signal exit $cerb_exit"; continue; fi
         if [[ "$cerb_out" == *CERB_FRESH_FLOOR_VIOLATION* ]]; then
             row CERB_FLOOR "exit $cerb_exit"; continue; fi
@@ -278,7 +276,7 @@ for suite in "${SUITES[@]}"; do
         json_rc=0
         "${CAPPED_TEST[@]}" timeout "${TIMEOUT_SECS}s" \
                 "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" --cabs-json "$f" > "$json" 2> "$WORK_DIR/json.err" || json_rc=$?
-        if [[ $json_rc -eq 137 ]]; then row CERB_KILL "cabs-json exit 137 ($(kill_label 137 "$WORK_DIR/json.err"))"; continue; fi
+        if is_cap_kill $json_rc "$WORK_DIR/json.err"; then row CERB_KILL "cabs-json $(kill_label 137 "$WORK_DIR/json.err")"; continue; fi
         if [[ $json_rc -ne 0 ]]; then
             row CERB_INCONSISTENT "exec succeeded but cabs-json failed (exit $json_rc)"; continue; fi
 
@@ -293,11 +291,8 @@ for suite in "${SUITES[@]}"; do
             if [[ "$lean_124" == HANG* ]]; then row LEAN_HANG "$lean_124"; else row LEAN_TIMEOUT "$lean_124"; fi
             continue
         fi
-        if [[ $lean_exit -eq 137 ]]; then
-            if [[ "$lean_out" == *"capped: KILLED"* ]]; then row LEAN_KILL "exit 137, capped KILLED banner (memory cap $TEST_MEM_MAX)"
-            else row LEAN_KILL "exit 137 (SIGKILL, no capped banner)"; fi
-            continue
-        fi
+        if [[ $lean_exit -eq 137 && "$lean_out" == *"capped: OOM-KILLED"* ]]; then
+            row LEAN_KILL "exit 137, capped OOM-KILLED (memory cap $TEST_MEM_MAX breached)"; continue; fi
         if [[ $lean_exit -ge 128 ]]; then
             kind=$(echo "$lean_out" | grep -m1 -E 'PANIC|fuel exhausted' | cut -c1-120)
             [[ -z "$kind" ]] && kind="(no PANIC line captured)"

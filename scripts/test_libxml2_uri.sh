@@ -119,7 +119,7 @@ rc_label() { # <rc>
     case "$1" in
         124) echo "timeout after ${TIMEOUT_SECS}s (exit 124)" ;;
         125) echo "internal error (exit 125 — cerberus's uncaught-exception exit, NOT a timeout; check the lane's stderr)" ;;
-        137) echo "killed by SIGKILL (exit 137 — the per-test cgroup memory cap CERB_TEST_MEM_MAX=$TEST_MEM_MAX, or an external kill; capped prints a KILLED banner on the lane's stderr when it is the cap)" ;;
+        137) echo "killed by SIGKILL (exit 137 — the per-test cgroup memory cap CERB_TEST_MEM_MAX=$TEST_MEM_MAX if the lane's stderr carries capped's OOM-KILLED witness banner, otherwise an external SIGKILL)" ;;
         *)   echo "crash (exit $1)" ;;
     esac
 }

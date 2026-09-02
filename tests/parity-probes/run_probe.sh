@@ -41,16 +41,18 @@ fi
 
 # Per-test memory cap: `scripts/capped` at CERB_TEST_MEM_MAX (default 4G,
 # cgroup RSS) — mem-scale S2 (2026-09-02, Q2 [USER 2026-09-02]) replacing
-# the arc-5 `ulimit -v 4000000`; exit 137 (+ capped's KILLED banner in the
-# captured output) is reported as KILLED, never as a verdict.
+# the arc-5 `ulimit -v 4000000`; a cap breach (exit 137 + capped's
+# OOM-KILLED witness in the captured output) is reported as OOM-KILLED,
+# never as a verdict.
 CAPPED=(env "CERB_MEM_MAX=${CERB_TEST_MEM_MAX:-4G}" "$ROOT/scripts/capped")
-kill_note() { [[ "$1" -eq 137 ]] && echo " KILLED (exit 137 — memory cap ${CERB_TEST_MEM_MAX:-4G} or SIGKILL)"; return 0; }
+kill_note() { [[ "$1" -eq 137 && "$2" == *"capped: OOM-KILLED"* ]] && echo " OOM-KILLED (exit 137 — memory cap ${CERB_TEST_MEM_MAX:-4G} breached)"; return 0; }
 cerb_exit=0
 cerb_out=$( "${CAPPED[@]}" timeout "${TIMEOUT_SECS}s" \
     "$CERB" --runtime="$RUNTIME" "${ORACLE_FLAGS[@]}" "$F" 2>&1 ) || cerb_exit=$?
-echo "=== ORACLE (exit $cerb_exit)$(kill_note $cerb_exit) ==="
+echo "=== ORACLE (exit $cerb_exit)$(kill_note $cerb_exit "$cerb_out") ==="
 printf '%s\n' "$cerb_out" | grep -v '^Time spent'
 
+mkdir -p "$ROOT/.tmp/pd" || { echo "run_probe.sh: cannot create $ROOT/.tmp/pd" >&2; exit 2; }
 json=$(mktemp "$ROOT/.tmp/pd/probe.XXXXXX.json")
 trap 'rm -f "$json"' EXIT
 json_ok=true
@@ -64,7 +66,7 @@ if $json_ok; then
 else
     lean_out="(cabs-json failed)"; lean_exit=98
 fi
-echo "=== LEAN (exit $lean_exit)$(kill_note $lean_exit) ==="
+echo "=== LEAN (exit $lean_exit)$(kill_note $lean_exit "$lean_out") ==="
 printf '%s\n' "$lean_out"
 
 seq() { printf '%s\n' "$1" | grep -oE 'Undefined \{ub: "[^"]*"|Defined \{value: "[^"]*"' \

@@ -12,8 +12,12 @@
 #   test_immaculate.sh    -> KILL statuses, nonzero exit
 #   test_libxml2_uri.sh   -> "killed by SIGKILL (exit 137" lane FAIL
 #   test_libxml2.sh       -> "[<slice>] FAIL: Lean KILLED" (one slice)
-#   test_gcc_oracle.sh    -> SKIP_LEAN_KILL (its Lean run is not capped —
-#                            the stub there kills itself with SIGKILL)
+#   test_gcc_oracle.sh    -> a native run's own exit(137) must still flow
+#                            to comparison (never SKIP_GCC_KILL)
+# NEGATIVE leg: a stub that SIGKILLs itself (exit 137, NO cgroup OOM event)
+# must NOT read as the cap class — ci_sweep LEAN_CRASH "signal exit 137",
+# libc_exec DIFF — because capped's OOM-KILLED witness (memory.events
+# oom_kill) is what the KILL classes key on, not the bare exit status.
 # The oracle-side KILL paths mirror the Lean ones textually; they are not
 # plantable without replacing the oracle binary and are not asserted here.
 # Nothing here touches the semantics.
@@ -44,26 +48,36 @@ expect_nonzero() { [[ "$2" -ne 0 ]] || { echo "PLANT FAIL [$1]: lane exited 0 on
 
 # first: the cap really kills the stub (no harness in between)
 "${CAPPED_TEST[@]}" "$WORK/stub_alloc" > "$WORK/direct.out" 2> "$WORK/direct.err"; rc=$?
-[[ $rc -eq 137 ]] && grep -q "capped: KILLED" "$WORK/direct.err" \
-    && echo "PLANT OK   [cap kills a 5 GiB allocator]: exit $rc, capped KILLED banner present" \
+[[ $rc -eq 137 ]] && grep -q "capped: OOM-KILLED" "$WORK/direct.err" \
+    && echo "PLANT OK   [cap kills a 5 GiB allocator]: exit $rc, $(grep -o 'capped: OOM-KILLED[^;]*; memory.events oom_kill=[0-9]*' "$WORK/direct.err")" \
     || { echo "PLANT FAIL [cap kills a 5 GiB allocator]: exit $rc; stderr: $(tail -2 "$WORK/direct.err")" >&2; fail=1; }
 
 export SKIP_BUILD=1
 # --- test_ci_sweep.sh -> LEAN_KILL --------------------------------------
 CERB_LEAN_BIN_OVERRIDE="$WORK/stub_alloc" "$SCRIPT_DIR/test_ci_sweep.sh" --suite ci --max 1 --out "$WORK/sweep" > "$WORK/sweep.log" 2>&1
 cat "$WORK/sweep/ci.tsv" >> "$WORK/sweep.log" 2>/dev/null
-check "ci_sweep -> LEAN_KILL" $'^ci\ttests/ci/0001-emptymain.c\tLEAN_KILL\texit 137, capped KILLED banner' "$WORK/sweep.log"
+check "ci_sweep -> LEAN_KILL" $'^ci\ttests/ci/0001-emptymain.c\tLEAN_KILL\texit 137, capped OOM-KILLED' "$WORK/sweep.log"
+# negative: SIGKILL stub -> LEAN_CRASH, not LEAN_KILL
+CERB_LEAN_BIN_OVERRIDE="$WORK/stub_sigkill" "$SCRIPT_DIR/test_ci_sweep.sh" --suite ci --max 1 --out "$WORK/sweep2" > "$WORK/sweep2.log" 2>&1
+cat "$WORK/sweep2/ci.tsv" >> "$WORK/sweep2.log" 2>/dev/null
+check "ci_sweep SIGKILL stub -> LEAN_CRASH (not the cap class)" $'^ci\ttests/ci/0001-emptymain.c\tLEAN_CRASH\texit 137' "$WORK/sweep2.log"
 
 # --- test_libc_exec.sh -> KILL ------------------------------------------
 CERB_LEAN_BIN_OVERRIDE="$WORK/stub_alloc" "$SCRIPT_DIR/test_libc_exec.sh" > "$WORK/libc.log" 2>&1; rc=$?
 expect_nonzero "libc_exec" $rc
-check "libc_exec -> KILL row" '^  KILL  [0-9a-z_-]+: oracle exit 0, lean exit 137 — lean: KILLED \(exit 137; capped KILLED banner present' "$WORK/libc.log"
+check "libc_exec -> KILL row" '^  KILL  [0-9a-z_-]+: oracle exit 0, lean exit 137 — lean: OOM-KILLED \(exit 137; cgroup memory cap' "$WORK/libc.log"
 check "libc_exec no MATCH" '^SUMMARY: match=0 ' "$WORK/libc.log"
+# negative: SIGKILL stub -> DIFF rows, no KILL
+CERB_LEAN_BIN_OVERRIDE="$WORK/stub_sigkill" "$SCRIPT_DIR/test_libc_exec.sh" > "$WORK/libc2.log" 2>&1; rc=$?
+expect_nonzero "libc_exec/sigkill" $rc
+if grep -qE '^  KILL ' "$WORK/libc2.log"; then echo "PLANT FAIL [libc_exec SIGKILL stub]: bare exit 137 read as the cap class" >&2; fail=1; else check "libc_exec SIGKILL stub -> DIFF (not KILL)" '^SUMMARY: match=0 diff=' "$WORK/libc2.log"; fi
 
 # --- test_immaculate.sh -> KILL -----------------------------------------
 CERB_LEAN_BIN_OVERRIDE="$WORK/stub_alloc" "$SCRIPT_DIR/test_immaculate.sh" > "$WORK/imm.log" 2>&1; rc=$?
 expect_nonzero "immaculate" $rc
-check "immaculate -> KILL status" '^  KILL ' "$WORK/imm.log"
+# a REAL C row must carry L[KILL] (illtyped-store is KILL by design and
+# must not be the only KILL — that was a vacuous pass once)
+check "immaculate -> KILL status on a C row" '^  KILL +g1-ge-funptr .*L\[KILL\]' "$WORK/imm.log"
 if grep -qE '^  MATCH ' "$WORK/imm.log"; then echo "PLANT FAIL [immaculate]: a killed Lean run read as MATCH" >&2; fail=1; else echo "PLANT OK   [immaculate no MATCH]"; fi
 
 # --- test_libxml2_uri.sh -> lane FAIL with the 137 label ----------------
@@ -74,11 +88,15 @@ check "libxml2_uri -> killed label" 'LEAN_NOLIBC killed by SIGKILL \(exit 137 �
 # --- test_libxml2.sh (one slice) -> FAIL: Lean KILLED -------------------
 CERB_LEAN_BIN_OVERRIDE="$WORK/stub_alloc" "$SCRIPT_DIR/test_libxml2.sh" chvalid_battery_00 > "$WORK/xml.log" 2>&1; rc=$?
 expect_nonzero "libxml2" $rc
-check "libxml2 -> Lean KILLED" '^\[chvalid_battery_00\] FAIL: Lean KILLED \(exit 137; capped KILLED banner present' "$WORK/xml.log"
+check "libxml2 -> Lean OOM-KILLED" '^\[chvalid_battery_00\] FAIL: Lean OOM-KILLED \(exit 137; cgroup memory cap' "$WORK/xml.log"
 
-# --- test_gcc_oracle.sh -> SKIP_LEAN_KILL (Lean run uncapped: SIGKILL stub)
-CERB_LEAN_BIN_OVERRIDE="$WORK/stub_sigkill" "$SCRIPT_DIR/test_gcc_oracle.sh" --max 1 > "$WORK/gcc.log" 2>&1
-check "gcc_oracle -> SKIP_LEAN_KILL" 'SKIP_LEAN_KILL' "$WORK/gcc.log"
+# --- test_gcc_oracle.sh: a native program's OWN exit(137) still compares -
+# (the ledger has four such csmith rows; `--max 1` on a one-file dir with a
+# program that exits 137 — the Lean side is the real driver here)
+mkdir -p "$WORK/gcc137"; printf 'int main(void) { return 137; }\n' > "$WORK/gcc137/exit137.c"
+"$SCRIPT_DIR/test_gcc_oracle.sh" "$WORK/gcc137" > "$WORK/gcc.log" 2>&1
+check "gcc_oracle exit(137) native -> compared (AGREE gcc=137 lean={137}), not SKIP_GCC_KILL" 'AGREE +\S*exit137\.c: gcc=137 lean=\{137\}' "$WORK/gcc.log"
+if grep -q SKIP_GCC_KILL "$WORK/gcc.log"; then echo "PLANT FAIL [gcc_oracle]: exit(137) read as a cap kill" >&2; fail=1; fi
 
 if [[ $fail -ne 0 ]]; then echo "test_kill_plant: FAILED"; exit 1; fi
-echo "test_kill_plant: all plants read as expected (cap kills; ci_sweep LEAN_KILL, libc_exec KILL, immaculate KILL, uri/libxml2 FAIL-killed, gcc SKIP_LEAN_KILL; no MATCH anywhere)"
+echo "test_kill_plant: all plants read as expected (cap breach -> OOM-KILLED witness; ci_sweep LEAN_KILL, libc_exec KILL, immaculate KILL, uri/libxml2 FAIL-killed; SIGKILL stub NOT the cap class; native exit(137) still compared; no MATCH anywhere)"

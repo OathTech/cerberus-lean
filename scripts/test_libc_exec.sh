@@ -37,8 +37,8 @@ source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 TIMEOUT_SECS="${TIMEOUT_SECS:-300}"
 # Per-test memory cap: `scripts/capped` at CERB_TEST_MEM_MAX (default 4G,
 # cgroup RSS; common.sh CAPPED_TEST) — mem-scale S2 (2026-09-02, Q2 [USER
-# 2026-09-02]) replacing the arc-5 `ulimit -v 4000000`. A cap kill (exit
-# 137 + capped's KILLED banner) is status KILL, never MATCH.
+# 2026-09-02]) replacing the arc-5 `ulimit -v 4000000`. A cap breach (exit
+# 137 + capped's OOM-KILLED witness banner) is status KILL, never MATCH.
 
 RECORD_BASELINE=false
 [[ "${1:-}" == "--record-baseline" ]] && RECORD_BASELINE=true
@@ -103,13 +103,14 @@ for tu in "$PROJECT_ROOT"/tests/libc_exec/*.c; do
         "${LIBC_ARGS[@]}" "$OUTPUT_DIR/$name.json" \
         > "$OUTPUT_DIR/$name.lean" 2> "$OUTPUT_DIR/$name.lean.err" ) || rc=$?
     lean_line="$(head -1 "$OUTPUT_DIR/$name.lean")"
-    if [[ $rc -eq 137 || $ocaml_rc -eq 137 ]]; then
-        # memory-cap kill on either side: its own status, never MATCH
+    if is_cap_kill $rc "$OUTPUT_DIR/$name.lean.err" || is_cap_kill $ocaml_rc "$OUTPUT_DIR/$name.ocaml.err"; then
+        # memory-cap breach on either side (capped OOM-KILLED witness): its
+        # own status, never MATCH
         status="KILL"
         failcnt=$((failcnt+1))
         killed_side=""
-        [[ $ocaml_rc -eq 137 ]] && killed_side="oracle: $(kill_label $ocaml_rc "$OUTPUT_DIR/$name.ocaml.err")"
-        [[ $rc -eq 137 ]] && killed_side="${killed_side:+$killed_side; }lean: $(kill_label $rc "$OUTPUT_DIR/$name.lean.err")"
+        is_cap_kill $ocaml_rc "$OUTPUT_DIR/$name.ocaml.err" && killed_side="oracle: $(kill_label $ocaml_rc "$OUTPUT_DIR/$name.ocaml.err")"
+        is_cap_kill $rc "$OUTPUT_DIR/$name.lean.err" && killed_side="${killed_side:+$killed_side; }lean: $(kill_label $rc "$OUTPUT_DIR/$name.lean.err")"
         echo "  KILL  $name: oracle exit $ocaml_rc, lean exit $rc — $killed_side"
     elif [[ "$ocaml_line" == "$lean_line" && -n "$ocaml_line" ]]; then
         status="MATCH"
