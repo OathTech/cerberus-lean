@@ -2,8 +2,9 @@
 SpecLab.DivModFiles — arc-15 S1: the divmod i8 kernel-instance FILE
 TERMS (differential-lane data).
 
-Assembly follows the arc-7 T1File pattern (the relsem package's
-T1File module, attributed): pinned parsed declarations (SpecLab/DivModCore.lean,
+Assembly follows the arc-7 T1File pattern (the parked reasoning-era
+package's T1File module — tag park/reasoning-era-20260831 — attributed):
+pinned parsed declarations (SpecLab/DivModCore.lean,
 generated + drift-gated) + hand-pinned funinfo metadata, `globs`
 empty (the kernel-instance template deliberately uses block-scope
 arrays), `main := some mainSym` — the file the generated `drive`

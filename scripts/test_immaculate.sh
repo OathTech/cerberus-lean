@@ -187,8 +187,9 @@ done
 
 echo "[in-lean probe]"
 # G6: CoreParser symbol-hash conflation. Run the probe under lake env lean
-# from lean_frontend (root package; NOT a RelSem import — lake env lean is
-# correct here). scripts/capped enforces the memory cap.
+# from lean_frontend (root package; the probe imports only root-package
+# modules, so lake env lean is correct here — no cross-package prefix).
+# scripts/capped enforces the memory cap.
 g6_out="$(cd "$PROJECT_ROOT/lean_frontend" && \
     "$PROJECT_ROOT/scripts/capped" lake env lean --run \
     "$CORPUS/g6-hash-collision.lean" 2>/dev/null | grep -v 'env:')"

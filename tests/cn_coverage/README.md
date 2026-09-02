@@ -78,7 +78,8 @@ shadowing workaround (rename in driver) is not needed here; the single
   `undef(<<DUMMY(align_alloc)>>)` in `aligned_alloc`). Mirror-OCaml
   seam fix in CoreParser (bimap lookup + DUMMY-unwrap + loud failure
   on unknown names), with the designed downstream re-pin of the
-  emit-lean-core drift gate (relsem T1Core/SlateCore re-emitted; the
+  emit-lean-core drift gate (the then-present proof package's pinned
+  Core terms re-emitted — since parked, tag park/reasoning-era-20260831; the
   pinned proof terms' `DUMMY "UB036/UB088"` literals became the real
   constructors — byte-identical to the fresh emitter output). The row
   is UB_MATCH in `baseline.txt`.

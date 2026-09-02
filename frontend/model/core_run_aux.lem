@@ -306,30 +306,6 @@ let initial_core_run_state xs =
    See lean_frontend/docs/2026-08-22_arc13-s0-scheme-decision.md. *)
 declare ocaml target_rep function initial_core_run_state = `Fork_renumber.initial_core_run_state`
 
-(* Thread-B lem totalization slice (2026-08-29), effect-wrapper census
-   item 1 (docs/2026-08-27_v0-statements-and-ban.md §5.2; the wrapper's
-   NAME is deliberately not written here — the exec-purity gate greps
-   generated comments too, fail-closed): the
-   SEED-EXPLICIT initial state, generated for the Lean target only
-   (~{ocaml}: the OCaml scheme keeps sym_supply dead per arc-13 D1
-   above; no val spec, so no OCaml comment emission — the OCaml output
-   stays byte-identical). This is the effect-spike route (branch
-   effect-spike @ 7f4100a5c) landed as a GENERATED def: statements
-   thread the seed here instead of the ambient draw; the hand twin
-   RelSem.Cerb.initial_core_run_state_threaded (relsemcore
-   RelSem/Threaded.lean) now agrees with it BY THEOREM
-   (RelSem.TotalizationSmoke). The ambient initial_core_run_state
-   above is UNTOUCHED: it remains the executable/differential face's
-   one ambient read (census site 1, now bypassable at
-   statement level without any hand mirror). *)
-let ~{ocaml} initial_core_run_state_seeded (seed : nat) xs = <|
-  tid_supply=      0;
-  aid_supply=      0;
-  excluded_supply= 0;
-  sym_supply=      seed;
-  labeled= xs;
-|>
-
 
 let empty_annotation = <|
   sb_before  = {};

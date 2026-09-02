@@ -1,6 +1,7 @@
 /-
 Unit.CoreGateTest (speclab) — arc-15 S1: the DivModCore drift +
-adequacy gate (the relsem Unit.EmitLeanCoreTest pattern, attributed).
+adequacy gate (the parked reasoning-era Unit.EmitLeanCoreTest pattern —
+tag park/reasoning-era-20260831 — attributed).
 
 Checks (all fail-closed, exit 1 on any failure):
   1. DRIFT: re-parse the pinned inputs (tests/speclab/*.core +

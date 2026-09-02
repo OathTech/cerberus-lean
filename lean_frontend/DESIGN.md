@@ -135,10 +135,13 @@ The Lean build is organized as Lake packages with a strictly one-way
 dependency:
 
 - the **semantics package** (this directory's root build): generated
-  model + seams + the executable driver, plus the small `RelSemCore`
-  lib (`relsemcore/`) — a relational presentation of the driver's
-  execution with a proved runner-soundness bridge, and the `--call`
-  entry point (`RelSem.Call`) the fixture lanes use;
+  model + seams + the executable driver, including the `--call` entry
+  the fixture lanes use (`CerbCall.lean`, a hand-written seam: `drive`
+  started at a named function with injected arguments). The Cerberus
+  operational semantics is the ONLY semantics this repository carries
+  ([USER 2026-09-02]); the reasoning-era relational presentation
+  (`RelSemCore`) was removed from mainline on 2026-09-02 and lives on
+  the park branch (`docs/2026-09-02_relsem-prune-record.md`);
 - **`speclab/`**: the harness-family differential-lane package
   (models, codecs, the `mkHarness` renderer, and the lane gate exes —
   see `speclab/README.md`), consuming the semantics one-way.

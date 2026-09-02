@@ -25,9 +25,11 @@ validation + gates) and [DESIGN.md](DESIGN.md) for architecture.
 Operational map:
 
 - The root package builds the semantics: generated model + seams +
-  the `cerberus-lean` driver exe, plus the `RelSemCore` lib
-  (`relsemcore/` — the relational execution model with runner
-  soundness, and `RelSem.Call`, the driver's `--call` engine).
+  the `cerberus-lean` driver exe (incl. `CerbCall.lean`, the driver's
+  `--call` engine — a hand-written seam, not a separate lib). There is
+  NO second semantics package: the reasoning-era `RelSemCore` lib was
+  removed 2026-09-02 (`docs/2026-09-02_relsem-prune-record.md`; park
+  tag `park/reasoning-era-20260831`).
 - `speclab/` is a second Lake package (requires the semantics by
   path; git deps shared via `packagesDir = "../.lake/packages"`): the
   harness-family models/codecs/renderer and the gate exes the
@@ -222,7 +224,8 @@ a binary built from the old copy.
 | `CerbCabsInstances.lean` | BEq for Cabs enum types |
 | `CabsImport.lean` | JSON → Cabs AST deserializer |
 | `CoreParser.lean` | Core text parser (Parsec). Arc-14 F3: pre-parse symbol-hash collision TRIPWIRE (String.hash is MurmurHash64A(11) — collisions constructible; parseFile fail-stops, tests/immaculate/g6 pins it) |
-| `CerbND.lean` | Exhaustive ND runner (+ runND1 single-trace, arc-5 `--first`); fuel-TOTALIZED in arc-7 S2 (runNDFuel + wrappers, loud panic at exhaustion) — no `partial` allowed (totality gate scans it; RelSem/RunND.lean states soundness against it) |
+| `CerbND.lean` | Exhaustive ND runner (+ runND1 single-trace, arc-5 `--first`); fuel-TOTALIZED in arc-7 S2 (runNDFuel + wrappers, loud panic at exhaustion) — no `partial` allowed (totality gate scans it) |
+| `CerbCall.lean` | The `--call <f> [--call-args <ints>]` entry (`CerbCall.driveCall`): `drive` with the startup symbol resolved by name + the elaborated-call-site caller protocol for the parameters. Port-side harness entry (the OCaml driver has no such mode; test_verify.sh checks it against an oracle-run wrapper TU). Relocated 2026-09-02 from the removed `relsemcore/` |
 | `CerbFunMapInstances.lean` | Arc-7 S2: real SetType instance for generic_fun_map_decl (evicts the lem backend's sorried fallback from initial_driver_state's cone) |
 | `CerbStepInstances.lean` | OCaml-poly-eq-parity instances for core_step2 (arc 4) |
 | `CerbLocation.lean` | Source location type; structural lawful Ord (arc-14 F4; was repr-string compare) |

@@ -40,7 +40,7 @@
 #   lean:   lean_frontend/lean-toolchain + lean_frontend/{lakefile.toml,
 #           lake-manifest.json, handwritten_copy.manifest} +
 #           lean_frontend/*.lean (hand-written) + generated/**.lean +
-#           relsemcore/**.lean + native/*.{c,o}
+#           native/*.{c,o}
 #           (the untracked-.o gotcha: a native/*.c edit or a rebuilt .o
 #           changes the hash and demands a relink+re-record).
 #
@@ -109,7 +109,7 @@ lean_src_hash() {
     printf 'lean_frontend/lake-manifest.json\0'; \
     printf 'lean_frontend/handwritten_copy.manifest\0'; \
     find lean_frontend -maxdepth 1 -type f -name '*.lean' -print0; \
-    find lean_frontend/generated lean_frontend/relsemcore \
+    find lean_frontend/generated \
       -type f -name '*.lean' -print0 2>/dev/null; \
     find lean_frontend/native -type f \( -name '*.c' -o -name '*.o' \) \
       -print0 2>/dev/null; } | hash_files)

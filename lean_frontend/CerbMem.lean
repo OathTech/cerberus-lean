@@ -562,9 +562,10 @@ def splitBytesProv (bytes : List AbsByte) : Provenance × Bool :=
 /-- An unspecified padding byte — OCaml's `padding_byte` / `AbsByte.v
     Prov_none None` (impl_mem.ml:1200). -/
 -- NOTE (arc-7 S5a): the byte/allocation helpers below were `private`;
--- they are now public so the T1 slate's memory-op equation lemmas
--- (lean_frontend/relsem/RelSem/T1AppEq.lean) can unfold them by name.
--- No behavior change.
+-- they were made public so equation lemmas could unfold them by name
+-- (the reasoning-era consumers are parked: tag
+-- park/reasoning-era-20260831). Kept public — no behavior change, and
+-- downstream verification layers consume this module by name.
 def paddingByte : AbsByte :=
   { prov := .Prov_none, copyOffset := none, value := none }
 
@@ -1822,9 +1823,10 @@ def isInBounds (alloc : Allocation) (addr size : Int) : Bool :=
     A NAMED helper (not an inline match in allocateObject, arc-10 S2):
     the extra nested match on `initOpt`/`pref` inside allocateObject's
     already match-heavy body pushed Lean's equation-lemma generation for
-    allocateObject past maxRecDepth, breaking the frozen
-    relsem/RelSem/T1AppEq.lean `simp only [CerbMem.allocateObject]`
-    proofs. Semantics identical to the inline arc-10 S1 form. -/
+    allocateObject past maxRecDepth, breaking downstream
+    `simp only [CerbMem.allocateObject]` proofs (found by the since-
+    parked reasoning-era equation lemmas). Semantics identical to the
+    inline arc-10 S1 form. -/
 def readonlyStatusForAlloc (pref : prefix0) (initOpt : Option MemValue) : ReadonlyStatus :=
   match initOpt with
   | none => .IsWritable
@@ -1834,7 +1836,7 @@ def readonlyStatusForAlloc (pref : prefix0) (initOpt : Option MemValue) : Readon
       | _ => readonly_kind.ReadonlyConstQualified)
 
 /-- Uninitialized allocations are writable (impl_mem.ml:1306); @[simp] so
-    the relsem closed-run proofs (full-`simp` steps) reduce it without
+    downstream closed-run proofs (full-`simp` steps) reduce it without
     naming it. -/
 @[simp] theorem readonlyStatusForAlloc_none (pref : prefix0) :
     readonlyStatusForAlloc pref none = .IsWritable := rfl

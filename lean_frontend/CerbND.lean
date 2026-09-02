@@ -21,9 +21,12 @@
   arc-3 wrapper pattern) with default-fuel wrappers keeping the caller
   signature unchanged. `partial` had made the production runner opaque
   to the kernel (no equations — the arc-3 pathology at the top of the
-  stack); with fuel, the runner-vs-Step soundness theorem is proved
-  against THIS code (RelSem/RunND.lean `runND_sound`): the executable
-  and the proof object are the same artifact.
+  stack); with fuel, the runner has kernel equations, so any downstream
+  theorem about it is stated against THIS code — the executable and the
+  proof object are the same artifact. (The reasoning-era soundness
+  theorem that first used this is parked: tag
+  park/reasoning-era-20260831; check_exec_totality.sh keeps this file
+  partial-free regardless.)
 
   EXHAUSTION MARKER ([AGENT:S2] design decision): the fuel-0 leaf is
   `panic!` returning `[]` — the "panic-marker" option, chosen over an

@@ -10,9 +10,10 @@
   cannot derive a comparator for. That sorried instance is picked up by
   `Core_aux.collect_labeled_continuations_NEW`, whose call
   `Lem_Map_extra.fold` DEMANDS `[SetType v]` in its SIGNATURE, and so
-  `sorryAx` sat in the cone of `initial_driver_state` (and of every
-  RelSem def mentioning `initConfig` — the arc-7 D3 ARC-BLOCKING
-  finding: the exit theorem mentions initConfig).
+  `sorryAx` sat in the cone of `initial_driver_state` — an exec-entry
+  cone the axiom census pins to the exact allowlist (the arc-7 D3
+  ARC-BLOCKING finding, found through a since-parked reasoning-era
+  theorem that mentioned the initial configuration).
 
   THE REQUIREMENT IS PHANTOM at the only live site:
   `Lem_Map_extra.fold` (LemLib/Map_extra.lean:36) is
@@ -45,8 +46,8 @@
   on, which this file cannot all replace without an import cycle. Any
   NEW generated module that demands `SetType (generic_fun_map_decl …)`
   must also extra_import this file, or it will silently get the sorry
-  fallback again — the RelSem in-build audit (fail-closed on sorryAx)
-  and check_theorem_axioms.sh are the tripwires.
+  fallback again — check_theorem_axioms.sh (the C2 entry census, exact
+  allowlist, sorryAx fatal) is the tripwire.
 -/
 import Core
 

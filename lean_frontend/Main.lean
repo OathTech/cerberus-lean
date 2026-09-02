@@ -12,10 +12,10 @@ import Translation
 import Core_run_aux
 import Driver
 import CerbND
--- arc-7 S3: the symbolic-argument harness (RelSem.Cerb.callND) — the
--- `--call` mode runs THE SAME artifact the slate theorems quantify
--- over (one-artifact doctrine; RelSem is a sibling lib of this package)
-import RelSem.Call
+-- the `--call` mode's entry (CerbCall.driveCall): `drive` started at a
+-- designated function with injected arguments — a port-side harness
+-- entry over the generated driver (see CerbCall.lean's header)
+import CerbCall
 
 set_option autoImplicit true
 
@@ -870,18 +870,18 @@ def runPipeline (runtimeDir : String) (batch : Bool) (ppCore : Bool)
     say s!"  executing Core..."
     -- Reader seed: execution-slice entry — the linked table, passed as
     -- the value in hand (the load→seed loop is closed).
-    -- --call (arc-7 S3): the symbolic-argument harness entry — run the
-    -- designated function on the injected argument values via
-    -- RelSem.Cerb.callND (the drive-generalization the slate theorems
-    -- quantify over) instead of drive's main-startup path.
+    -- --call: run the designated function on the injected argument
+    -- values via CerbCall.driveCall (drive with the startup symbol
+    -- resolved by name + the caller protocol for the parameters)
+    -- instead of drive's main-startup path.
     -- argv — pipeline.ml:598,602: ("cmdname" :: args) both batch and
     -- non-batch; progArgs is the parsed --args list (empty without the
     -- flag, so the historical ["cmdname"] argv is byte-unchanged).
     let driverAction := match callFn with
       | none => drive runFile.tagDefs false runFile ("cmdname" :: progArgs)
       | some (fname, argInts) =>
-        RelSem.Cerb.callND runFile.tagDefs runFile fname
-          (argInts.map RelSem.Cerb.intValue)
+        CerbCall.driveCall runFile.tagDefs runFile fname
+          (argInts.map CerbCall.intValue)
     -- --first (arc-5 S3): single-trace runner for programs whose exhaustive
     -- trace set is combinatorially large (libxml2-scale differentials);
     -- see CerbND.runND1 for the OCaml counterpart + divergence record.
@@ -998,10 +998,10 @@ def main (args : List String) : IO Unit := do
   -- runs are NEW harness modes per the arc-6 charter; standing corpora
   -- must be byte-for-byte unaffected, which an auto-load could silently
   -- break.
-  -- --call <fname> [--call-args <int,int,…>] (arc-7 S3): the symbolic-
-  -- argument harness mode — execute the designated function on the given
-  -- integer arguments (injected as Core values via RelSem.Cerb.callND)
-  -- instead of drive's main-startup path. --trace-nodes additionally
+  -- --call <fname> [--call-args <int,int,…>]: the function-call harness
+  -- mode — execute the designated function on the given integer
+  -- arguments (injected as Core values via CerbCall.driveCall) instead
+  -- of drive's main-startup path. --trace-nodes additionally
   -- prints the branch-0 ND-node labels (Step-coverage evidence; works in
   -- the main-startup mode too).
   let mut libcCore : Option String := none

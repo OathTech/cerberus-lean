@@ -15,7 +15,7 @@
 #      (these are single-verdict programs; any difference is a FAIL).
 #
 #   3. CALL-POINT DIFFERENTIAL — the Lean driver's --call mode
-#      (cerberus-lean --call <f> --call-args <ints>, RelSem.Cerb.callND)
+#      (cerberus-lean --call <f> --call-args <ints>, CerbCall.driveCall)
 #      at the concrete points of the expectations files, compared
 #      against the ORACLE run at the same point: the oracle has no
 #      --call mode, so the script renders a wrapper TU (the fixture

@@ -1,5 +1,5 @@
 name = "CerberusLean"
-defaultTargets = ["CerberusLean", "RelSemCore", "cerberus-lean"]
+defaultTargets = ["CerberusLean", "cerberus-lean"]
 moreLeanArgs = ["-DautoImplicit=false"]
 
 # LemLib is the Lem runtime library for Lean, from the septract/lem-lean fork.
@@ -119,16 +119,8 @@ roots = [
   "CabsImport",
   "CoreParser",
   "CerbND",
+  "CerbCall",
 ]
-
-# The exec-facing RelSem core: the relational execution model over the
-# driver (Machine/RunND/ExecModel/Cerberus — runner soundness lives
-# here) + the function-call entry point (Call.lean, the driver's
-# --call mode; Main imports RelSem.Call).
-[[lean_lib]]
-name = "RelSemCore"
-srcDir = "relsemcore"
-roots = ["RelSem.Call", "RelSem.Machine", "RelSem.RunND", "RelSem.ExecModel", "RelSem.Cerberus"]
 
 [[lean_exe]]
 name = "cerberus-lean"

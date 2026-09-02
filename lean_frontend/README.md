@@ -38,8 +38,6 @@ lean_frontend/
 ├── generated/        # Lean code generated from the Lem model (do not edit)
 ├── *.lean            # hand-written "seam" files (memory model, ND runner,
 │                     #   parsers, implementation-defined behaviour, ...)
-├── relsemcore/       # a small relational layer over the driver (runner
-│                     #   soundness) + the --call entry point (RelSem.Call)
 ├── speclab/          # harness-family differential lanes: models, codecs,
 │                     #   and a C harness renderer (see speclab/README.md)
 ├── corpus/           # pinned differential-fixture programs (hash-frozen)
@@ -88,8 +86,11 @@ the agent-facing operating manual with all build gotchas is
   structure or as a single trace (`--first`).
 - **Function-level execution.** `--call <f> [--call-args <ints>]`
   calls an individual function with injected arguments (the caller
-  protocol mirrors elaborated call sites), used by the fixture lanes
-  to compare individual functions against the oracle point-by-point.
+  protocol mirrors elaborated call sites; `CerbCall.lean`, a port-side
+  harness entry over the generated driver — the oracle has no such
+  mode, so the lanes run it on a rendered wrapper TU), used by the
+  fixture lanes to compare individual functions against the oracle
+  point-by-point.
 - **Libc-linked and multi-TU programs.** The Lean pipeline links
   multiple translation units and can load the C standard library the
   oracle ships, so real multi-file programs (libxml2 slices, the CN

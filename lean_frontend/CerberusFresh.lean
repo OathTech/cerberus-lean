@@ -145,8 +145,10 @@ attribute [never_extract] digest
     re-verified by test/Unit/FreshIntTest.lean testDigestGlobal — the
     test that found the original sinking bug). Result: this constant
     can NEVER appear in any axiom cone; the runtime trust is exactly
-    the implemented_by boundary (declared, gated — RelSem/Audit.lean
-    asserts the axiom-form absence build-fatally). -/
+    the implemented_by boundary (declared, gated — check_theorem_axioms.sh
+    pins the implemented_by/unsafe seam population to
+    scripts/unsafebaseio_allowlist.txt exactly and asserts zero axiom
+    declarations, fail-closed). -/
 @[extern "cerb_force_thunk"]
 private unsafe opaque forceThunkIO {b : Type} : (@& (Unit → b)) → BaseIO b :=
   fun f => pure (f ())  -- explicit witness (arc-17 S2b): kills the

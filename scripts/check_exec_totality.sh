@@ -15,9 +15,11 @@
 # BOUNDARY HONESTY (arc-4 S5f, audit G3; amended arc-7 S2): the 11-module
 # list below covers GENERATED modules; since arc-7 S2 the gate ALSO scans
 # the hand-written runner CerbND.lean (totalized by the operator's Q1
-# AMENDED ruling — partial runND/runND1 are gone and may not return: the
-# runner-soundness theorems in lean_frontend/relsemcore/RelSem/RunND.lean are
-# stated against it, and `partial` would silently re-opacify them).
+# AMENDED ruling — partial runND/runND1 are gone and may not return: a
+# `partial` runner is opaque to the kernel (no equations), and the
+# totality of the production runner is an opsem property in its own
+# right, kept regardless of the reasoning-era theorems that once cited
+# it — those left with the parked reasoning layer, 2026-08-31/09-02).
 # CerbND thereby LEAVES the arc-4 G3 declared boundary. Still OUTSIDE the
 # gate and NOT partial-free: CerbMem.lean carries ONE partial def
 # (stringFromMemValue, pp-only — the nine exec-path functions were
@@ -39,9 +41,10 @@ ENFORCE="${ENFORCE:-0}"
 # (only) over the five modules totalized by the F8 declares sweep
 # (D6 gating item; declares in frontend/model/{utils,annot,ctype,core,
 # state_exception_undefined}.lem): Utils, Annot, Ctype, Core,
-# State_exception_undefined are now partial-free and may not regress —
-# the slate theorems' app-equation computations (RelSem/T1.lean etc.)
-# need their kernel equations.
+# State_exception_undefined are now partial-free and may not regress
+# (originally so the reasoning-era app-equation computations had kernel
+# equations; the partial-freedom of the exec cone is kept as an opsem
+# property in its own right).
 # Thread-B lem totalization (2026-08-29) extends the gate over the four
 # modules freed by the V0 exec-cone-census E-slice declares
 # (frontend/model/{state,state_exception,translation_aux,

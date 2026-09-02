@@ -1,29 +1,29 @@
 #!/bin/bash
-# lean_probe.sh — THE PROBE RECIPE (born 2026-08-27 as the FF-1 fix
-# for the then-two-package RelSem prefix split; still the correct way
-# to elaborate a package file with a fully-pinned module setup).
+# lean_probe.sh — THE PROBE RECIPE (born 2026-08-27; still the correct
+# way to elaborate a package file with a fully-pinned module setup).
 #
 # Elaborate a single .lean file of a Lake package with a FULLY-PINNED
-# module setup. Why `lake lean` cannot be the recipe for this repo's
-# two-package layout (diagnosed at V0):
+# module setup. Why `lake lean` is not the recipe for a multi-package
+# layout (this repo: the root semantics package + speclab/):
 #
 #   * `lake lean FILE` pins only the file's DIRECT imports in the
 #     module setup; TRANSITIVE modules resolve via LEAN_PATH search.
-#   * Lean's module-path search commits per ROOT COMPONENT: for any
-#     `RelSem.*` module it selects the FIRST LEAN_PATH entry that
-#     carries a `RelSem/` directory and never falls back. With the
-#     RelSem prefix SPLIT across two packages (root RelSemCore:
-#     Call/Machine/RunND/ExecModel/Cerberus/Threaded; relsem: the
-#     proof layer), any transitive module living in the OTHER tree
-#     fails with "object file ... does not exist" — whichever tree
-#     is listed first loses the other's modules.
+#   * Lean's module-path search commits per ROOT COMPONENT: for a
+#     module prefix it selects the FIRST LEAN_PATH entry that carries
+#     that directory and never falls back. If a prefix is ever split
+#     across two packages, any transitive module living in the OTHER
+#     tree fails with "object file ... does not exist" — whichever
+#     tree is listed first loses the other's modules (observed
+#     2026-08-27 on a since-parked two-package split; see the
+#     reasoning-era archive, tag park/reasoning-era-20260831).
 #   * `lake setup-file FILE` computes the COMPLETE per-module
-#     artifact map (both trees, correctly attributed).
+#     artifact map (all trees, correctly attributed).
 #
 # So the recipe is: setup-file + lean --setup. Run from the PACKAGE
-# DIRECTORY that owns the file (e.g. lean_frontend/relsem):
+# DIRECTORY that owns the file (e.g. lean_frontend/ or
+# lean_frontend/speclab):
 #
-#   ../../scripts/lean_probe.sh RelSem/MyProbe.lean
+#   ../scripts/lean_probe.sh MyProbe.lean
 #
 # Memory-capped via scripts/capped (the D7 rule). Exit = lean's exit.
 set -uo pipefail

@@ -35,8 +35,10 @@
 #
 # (2026-08-31 semantics-first split: the proof packages and their
 # in-build audit gates left with the reasoning layer — this script's
-# probes are the generated-exemplar + driver2 legs, and its D14 grep
-# leg scans lean_frontend/test + lean_frontend/relsemcore.)
+# probes are the generated-exemplar + driver2 legs. 2026-09-02 RelSem
+# prune: the last reasoning-era package, relsemcore/, is gone too; the
+# D14 grep leg scans lean_frontend/test + the hand-written
+# lean_frontend/*.lean seams.)
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -215,7 +217,7 @@ echo "check_theorem_axioms: generated-tree census OK ($GEN_SCANNED files: 0 axio
 #       DAEMON-precedent adjudication the L2 record flagged).
 #   (2) runEffectful token ban, comment-stripped, over the LemLib copy
 #       + generated/ + ALL hand-written lean_frontend sources
-#       (test/relsemcore/speclab included; .lake trees excluded).
+#       (test/speclab included; .lake trees excluded).
 #   (3) @[implemented_by]/unsafe/unsafeBaseIO POPULATION pin: the
 #       comment-stripped census of implemented_by targets, unsafe
 #       declarations, and unsafeBaseIO occurrences (keyed by enclosing
@@ -498,7 +500,9 @@ echo "check_theorem_axioms: C2 ratchet OK ($RATCHET_NSCANNED files scanned recur
 # D14 ban (arc-6): non-kernel proof methods (native_decide / bv_decide).
 # Two legs, both fail-closed:
 #   * grep leg (here): the banned tactics may not occur in the test
-#     sources — lean_frontend/test/**, lean_frontend/relsemcore/**,
+#     sources — lean_frontend/test/**, the hand-written top-level
+#     lean_frontend/*.lean seams (where the mem-scale S1 theorems
+#     live; formerly lean_frontend/relsemcore/**, removed 2026-09-02),
 #     and the LemLib package's lean-lib/LemLibTest.lean (the copy the
 #     build actually compiles). Mandatory paths missing = FAIL, not skip.
 #   * axiom leg (with the cone probes below): Lean.ofReduceBool /
@@ -512,19 +516,28 @@ if [[ ! -d "$D14_ROOT/lean_frontend/test" ]]; then
   exit 1
 fi
 D14_SCAN_PATHS+=("$D14_ROOT/lean_frontend/test")
-D14_SCAN_PATHS+=("$D14_ROOT/lean_frontend/relsemcore")
+# The hand-written seams (top level only — generated/ carries copies of
+# these plus the lem output, and .lake is not source). Fail-closed on an
+# empty set: an empty glob would make this leg vacuous.
+D14_HW=()
+while IFS= read -r -d '' f; do D14_HW+=("$f"); done \
+  < <(find "$D14_ROOT/lean_frontend" -maxdepth 1 -type f -name '*.lean' -print0 | LC_ALL=C sort -z)
+if [[ ${#D14_HW[@]} -eq 0 ]]; then
+  echo "check_theorem_axioms: FAIL — D14 grep-ban: no hand-written lean_frontend/*.lean found (fail-closed; vacuous scan)"
+  exit 1
+fi
 D14_LEMLIB_TEST="$D14_ROOT/lean_frontend/.lake/packages/LemLib/lean-lib/LemLibTest.lean"
 if [[ ! -f "$D14_LEMLIB_TEST" ]]; then
   echo "check_theorem_axioms: FAIL — D14 grep-ban: $D14_LEMLIB_TEST missing (fail-closed)"
   exit 1
 fi
-D14_HITS=$(grep -rnE 'native_decide|bv_decide' "${D14_SCAN_PATHS[@]}" "$D14_LEMLIB_TEST" || true)
+D14_HITS=$(grep -rnE 'native_decide|bv_decide' "${D14_SCAN_PATHS[@]}" "${D14_HW[@]}" "$D14_LEMLIB_TEST" || true)
 if [[ -n "$D14_HITS" ]]; then
   echo "check_theorem_axioms: FAIL — D14 ban: native_decide/bv_decide found in test/proof sources:"
   echo "$D14_HITS"
   exit 1
 fi
-echo "check_theorem_axioms: D14 grep-ban OK (no native_decide/bv_decide in ${#D14_SCAN_PATHS[@]} tree(s) + LemLibTest.lean)"
+echo "check_theorem_axioms: D14 grep-ban OK (no native_decide/bv_decide in ${#D14_SCAN_PATHS[@]} tree(s) + ${#D14_HW[@]} hand-written seam files + LemLibTest.lean)"
 
 # DAEMON is DELETED (arc-8 S3): lem's DAEMON axiom family was removed
 # from LemLib (it was logically inconsistent as declared — arc-7
@@ -639,7 +652,7 @@ echo "check_theorem_axioms: driver2 cone sorryAx-free + ofReduce*-free + DAEMON-
 # ---------------------------------------------------------------------------
 PROBE3=lean_frontend/.axiom-probe-entries.lean
 ENTRIES=(driver2 drive initial_driver_state desugar annotate_program
-         translate link convert_file RelSem.Cerb.callND)
+         translate link convert_file CerbCall.driveCall)
 {
   cat <<'EOF'
 import Driver
@@ -648,7 +661,7 @@ import GenTyping
 import Translation
 import Core_linking
 import Core_run_aux
-import RelSem.Call
+import CerbCall
 EOF
   for name in "${ENTRIES[@]}"; do
     echo "#print axioms $name"
