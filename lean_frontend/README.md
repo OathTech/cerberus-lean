@@ -106,8 +106,10 @@ Byte-level verdict agreement with the OCaml oracle across (see
 [VALIDATION.md](VALIDATION.md) for the full lane list, semantics, and
 run tiers):
 
-- 106/106 upstream `tests/minimal` programs (plus the coverage,
-  debug, and float suites at pinned baselines);
+- 106/106 upstream `tests/minimal` programs at the pinned baseline —
+  exactly 85 MATCH + 18 UB_MATCH + 3 CERB_SKIP (rows the oracle itself
+  cannot run: recorded, never counted as agreement) — plus the
+  coverage, debug, and float suites at their pinned baselines;
 - 213/213 programs of the CN test corpus (multi-TU, libc proxies);
 - 16/16 URIs through libxml2's `xmlParseURISafe` (5 translation
   units, libc-linked, byte-identical output) plus a 1,354-point

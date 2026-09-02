@@ -13,7 +13,8 @@ downstream.)
   the Lean side.
 - **A-road polish basket** — backend/semantics cleanups (pure-render
   emission split, remaining audit L-slice gaps, ott finish);
-  itemized with prices in the latest `docs/*-results.md`;
+  itemized with prices in
+  `docs/2026-08-31_semantics-forward-assessment.md` (the F-axes);
   deliberately parked behind the substantive track.
 
 ## Small items (independent; can ride along with any fix batch)
@@ -115,7 +116,10 @@ downstream.)
   :255) while the rest of the layout family threads ~tagDefs —
   elaboration-time offsetof over a union-containing struct crashes
   upstream (probed, exit 125); pinned as a crash pair
-  (tests/immaculate/nolibc/offsetof-union-member.c).
+  (tests/immaculate/nolibc/offsetof-union-member.c). NO TRAY DRAFT
+  YET (stated explicitly 2026-09-02): drafting is S — repro from the
+  pinned pair + the impl_mem.ml cites — mover: the next tray-drafting
+  pass (`docs/upstream-tray/INDEX.md` filing checklist).
 
 (2026-09-01: the pr44468 offsetof panic, the CoreParser `enum TAG`
 arm, the `--args` flag, the allocation-census line, the DivMod
@@ -129,8 +133,6 @@ S-basket slice — `docs/2026-09-01_s-basket.md`.)
   branches from the differential campaigns (several oracle-wrong
   findings pinned Lean-right), maintained operator-side and filed as
   network windows allow.
-- Decide the fate of the earlier prototype interpreter (reduce to a
-  test oracle vs archive) — open decision.
 - ~~**Kill the residual effect axiom**~~ — DONE (effect-retirement
   arc, 2026-09-01 C2): `runEffectful` is deleted from LemLib, the
   fresh-symbol supply is threaded explicitly (single stream), the

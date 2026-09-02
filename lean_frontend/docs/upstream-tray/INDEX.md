@@ -315,8 +315,10 @@ everything filed from this tray:
 
 ## Filing checklist (operator; needs network + GitHub)
 
-For each draft, in ranking order (10, 11, 12, 13, 14, 15, 16, 08, 09,
-02, 03, 04, 05, 06; 07 on request; 01 done): (1) re-verify the repro against CURRENT upstream master
+For each draft, in ranking order (10, 11, 12, 13, 14, 15, 16, 18, 08, 09,
+17, 02, 03, 04, 05, 06; 07 on request; 01 done — 17 and 18 slotted
+2026-09-02 [AGENT]: 18 (true bug, robustness) with the true-bug tier,
+17 (minor, diagnostic quality) with the minor tier): (1) re-verify the repro against CURRENT upstream master
 (ours is pinned at b9aeedcb4); (2) search the upstream issue tracker
 for duplicates; (3) file with the draft's title, repro, verbatim
 output, classification and remedy sections; (4) record the issue URL

@@ -324,15 +324,20 @@ ifeq (,$(LEAN_HANDWRITTEN))
 $(error "lean_frontend: hand-written copy manifest $(LEAN_HANDWRITTEN_MANIFEST) missing or empty (fail-closed; nothing would be copied into generated/)")
 endif
 
-# Update and reinstall lem via opam.  Lem is pinned to
-# https://github.com/septract/lem-lean#mdd/lean-backend via `opam pin`.
-# `opam update lem` fetches the latest from the pinned branch;
-# `opam upgrade lem` rebuilds and installs if the source changed.
+# Reinstall lem via opam.  Lem is opam-pinned in the LOCAL switch to the
+# container worktree deps/lem-pinned (lem-lean fork, branch cerberus-pin):
+#   opam pin list --switch=.  ->  git+file:///.../deps/lem-pinned#cerberus-pin
+# To move the pin, FIRST move that worktree (git -C ../deps/lem-pinned
+# reset --hard <lem-lean commit>), then run this target: `opam upgrade`
+# rebuilds and installs if the pinned source changed. Path form because the
+# switch is local; --no-depexts because system-package detection fails in
+# the sandbox (container CLAUDE.md, "opam in the sandbox"). Afterwards
+# regenerate both trees (prelude-src, lean-prelude-src): the lem-sync
+# stamps hash sources + outputs, not the lem version.
 .PHONY: rebuild-lem
 rebuild-lem:
-	@echo "[LEM] updating lem from pinned branch"
-	$(Q)opam update lem
-	$(Q)opam upgrade lem -y
+	@echo "[LEM] reinstalling lem from the pinned local source (deps/lem-pinned#cerberus-pin)"
+	$(Q)opam upgrade --switch=. --no-depexts -y lem
 	@echo "[LEM] installed $$(lem -v 2>&1)"
 
 .PHONY: lean-prelude-src

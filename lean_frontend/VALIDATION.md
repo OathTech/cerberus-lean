@@ -55,6 +55,7 @@ lanes, with their recorded states:
 | `test_libxml2.sh` | libxml2 `chvalid` battery | 4 slices × 1,354 points, byte-equal verdicts (slow tier) |
 | `test_cn_coverage.sh` | `deps/cn/tests/cn` | **213/213** at the exact-match baseline (multi-TU drivers, reject lane, manifest bijection) |
 | `test_immaculate.sh` | curated pin suite | at baseline (incl. adversarial pins, e.g. the symbol-hash-collision tripwire) |
+| `test_gcc_oracle.sh --check-baseline` | tests/minimal + debug + float + immaculate/nolibc + the staged csmith tier (1,953 rows) | gcc SECOND oracle (oracle-independent): native `gcc -O0` exit status vs the Lean verdict set, `-O2` spot tier, fail-closed triage ledger; at the pinned skip ledger `scripts/gcc_oracle_baseline.txt` (regressions fatal; improvements printed at rc 0). Tier B GATE since 2026-09-02 [USER] |
 | `test_verify.sh` | `tests/verify` + `corpus/` | pin provenance (oracle `--pp=core` re-derivation byte-identical / content-hash) + main-mode differentials + per-function call-point differentials (Lean `--call` vs oracle wrapper TU vs recorded pin) — currently 117 checks |
 | `test_speclab*.sh` (6 scripts) | rendered harness families | five families (scalar/bytes/list/tree/CN-seed): sweeps, deterministic fuzz with byte-wise shrinking, plant tests, pinned-term gates — ~2,000 recorded differential executions, all agreeing |
 | `test_csmith_corpus.sh` | 1,669 in-tree csmith programs | classified pinned baseline (sharded; reporting tier full-pass) |
@@ -72,11 +73,13 @@ Lane semantics worth knowing:
   lane's own audited design: its rows classify oracle-INDEPENDENT
   gcc-agreement, where an improvement is a skip-class row starting to
   agree with gcc — e.g. after an unrelated fix lands on mainline —
-  and blocking every commit on re-recording a reporting-flavored
-  scoreboard would invert the lane's Tier placement; the improvement
-  is still printed, and re-records remain dedicated instrument
-  commits). Baseline updates are instrument changes: dedicated
-  commit, justification in the header.
+  and blocking every commit on re-recording that scoreboard would
+  make the gate fire on good news; the improvement is still printed,
+  and re-records remain dedicated instrument commits). Since
+  2026-09-02 [USER] the lane is a Tier B GATE on that asymmetric
+  contract: rc must be 0 at slice boundaries / pre-merge. Baseline
+  updates are instrument changes: dedicated commit, justification in
+  the header.
 - **Plant tests.** Gates and lanes are themselves tested by
   deliberate sabotage: break the thing the gate should catch, watch
   it go red, revert, re-verify green. A gate that has never caught a
@@ -129,8 +132,12 @@ a bare 137 without the witness keeps its crash/compare class. Plants:
 ## 3. The build-time gates (`scripts/test_unit.sh`)
 
 Unit executables (parser tests, pretty-printer mirrors vs recorded
-OCaml output, fresh-symbol/native-extern probes, effect/totality
-proof exemplars), then the gate scripts — all fail-closed:
+OCaml output, fresh-symbol/native-extern probes, and the compile-time
+totality/reader-lifting exemplars `effects-proof-test` /
+`totality-proof-test`: every fuel'd wrapper rfl-defeq to its worker at
+`lemDefaultFuel`, symbolic equations on the total layout defs,
+`tagDefs` an honest parameter — properties of the exec cone as built),
+then the gate scripts — all fail-closed:
 
 | Gate | Guarantee |
 |---|---|
@@ -153,10 +160,16 @@ loads (the libc.co staging pattern); quoted outputs are verbatim.
 Per `scripts/LADDER.md`: Tier A (every commit) = `test_unit.sh` +
 the exec baselines + bytes + libc_exec + multi_tu + parse + core +
 elab + the uri gate + cn_coverage; Tier B (slice boundaries,
-pre-merge) adds the full libxml2 battery and the tests/ci suites;
-Tier C are the committed reporting instruments (ci sweep, csmith
-full pass, fuzz). `test_verify.sh` and the speclab lanes run with
-the full battery at boundary claims.
+pre-merge) adds the full libxml2 battery, the tests/ci suites,
+`test_verify.sh`, `test_immaculate.sh`, the speclab gate lanes, the
+gcc second-oracle lane (`test_gcc_oracle.sh --check-baseline` — a
+GATE since 2026-09-02 [USER]) and the harness plant batteries
+(`test_hang_plant.sh`, `test_kill_plant.sh`; `test_renumber_plants.sh`
+rides `test_unit.sh`); Tier C are the committed reporting
+instruments (`test_ci_sweep.sh`, the csmith full pass, fuzz). Probe
+corpora that are neither gates nor scoreboards (`tests/parity-probes`,
+`tests/mem-scale-probes` incl. its `micro/` Lake package,
+`tests/csmith_findings`) are enumerated in LADDER.md as instruments.
 
 ## 5. What this does and does not establish
 

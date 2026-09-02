@@ -86,8 +86,10 @@ opam exec -- dune install cerberus-lib  # for runtime files
 # + this recipe recovers a tampered _build.
 opam exec -- dune build cerberus.install
 
-# Update lem (pinned to GitHub branch)
-make rebuild-lem
+# Reinstall lem after moving its pin (the opam pin is the container's
+# deps/lem-pinned worktree of lem-lean, branch cerberus-pin):
+#   git -C ../deps/lem-pinned reset --hard <lem-lean commit>
+make rebuild-lem     # = opam upgrade --switch=. --no-depexts lem
 ```
 
 ## Testing
@@ -105,7 +107,7 @@ Each is a `[[lean_exe]]` in `lakefile.toml` that exits 0 on pass.
 ```
 
 Current unit tests:
-- `effects-proof-test` / `totality-proof-test` — kernel-checked exemplars for the effect-erasure and totality machinery
+- `effects-proof-test` / `totality-proof-test` — compile-time checks on the exec cone, as it is today: every fuel'd wrapper is rfl-defeq to its worker at `lemDefaultFuel`, symbolic equations hold on the total layout/typing defs, and `tagDefs` is an honest reader parameter (no hidden extern read) — i.e. totality + reader lifting, properties of this port checked by the build (not a verification layer; exe names kept for build stability)
 - `core-parser-test` — 280 tests for `CoreParser.lean`
 - `fresh-int-test` — verifies `fresh_int`/`Symbol.fresh` generate unique values (+ the native-obj fresh-counter floor probe)
 - `pp-test` — arc-10 S3: pretty-printer mirrors (ctype/value shapes + float formatting vs an OCaml 5.4.0 reference transcript, in-file)
@@ -270,9 +272,22 @@ a binary built from the old copy.
 
 ## Lem backend interaction
 
-Lem is pinned to `https://github.com/septract/lem-lean#mdd/lean-backend`.
+Lem is the OCaml tool `lem` from the lem-lean fork
+(`https://github.com/OathTech/lem-lean`, mainline `mdd/lean-backend`),
+opam-pinned in the LOCAL switch to the container worktree
+`deps/lem-pinned` (branch `cerberus-pin`; `opam pin list --switch=.`
+shows `git+file:///…/deps/lem-pinned#cerberus-pin`). The Lake dep
+`LemLib` is the same repo's `lean-lib/` at the rev in `lakefile.toml`;
+an arc closes only when opam pin = Lake pin = the lem-lean branch head
+(the two-repo pin dance, container CLAUDE.md).
 
-**Updating lem:** `make rebuild-lem` runs `opam update lem && opam upgrade lem`.
+**Updating lem:** move the pin, then reinstall — `git -C
+../deps/lem-pinned reset --hard <lem-lean commit>`, then `make
+rebuild-lem` (= `opam upgrade --switch=. --no-depexts lem`; the path
+form because the switch is local, `--no-depexts` because system-package
+detection fails in the sandbox). Then regenerate both trees (`make
+prelude-src lean-prelude-src`): the lem-sync stamps hash sources and
+outputs, not the lem version.
 
 **Key Lem mechanisms:**
 - `declare lean target_rep function f = \`Lean.Name\`` — maps lem function to Lean
@@ -305,7 +320,7 @@ Lem is pinned to `https://github.com/septract/lem-lean#mdd/lean-backend`.
   generation-time error
 - The instance-priority LATTICE (arc-14 B4; be:G1/sem:S2): every
   generated/library instance priority is assigned from ONE normative
-  table (lem-lean doc/notes/2026-08-22_arc14-instance-priority-
+  table (lem-lean doc/lean-backend/2026-08-22_arc14-instance-priority-
   lattice.md): model/override + derived BEq/Ord at default (1000), the
   auto SetType/Eq0/Ord0 trio at 500, generic defaults/residuals at low
   (100), open-tyvar fallbacks at 50 — so a model's own instance beats
@@ -331,8 +346,10 @@ Lem is pinned to `https://github.com/septract/lem-lean#mdd/lean-backend`.
 Current state, boundary list, and per-capability status live in the
 dated records — do not maintain status lists here. Start points:
 
-- Latest arc results: `docs/` (most recent `*-results.md`; arc index
-  in the container `ROADMAP.md`).
+- Latest records: `docs/` (dated `*-record.md` / `*-results.md`). The
+  arc index that lived in the container's `ROADMAP.md` is archived at
+  `docs/2026-08-31_container-roadmap-archive.md`; forward options:
+  `docs/2026-08-31_semantics-forward-assessment.md`; backlog: [TODO.md](TODO.md).
 - Trust story + gate list: [VALIDATION.md](VALIDATION.md).
 - Declared boundary: concurrency stubs (temporal, the cmm
   instantiation is the mover) + CerbFS + the CerbDebug no-op stubs,

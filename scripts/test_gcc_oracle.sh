@@ -8,9 +8,12 @@
 # taxonomy, and honest scoping:
 #   lean_frontend/docs/2026-08-30_gcc-second-oracle-design.md
 #
-# REPORTING-TIER lane (LADDER.md Tier-C style): NOT wired into
-# test_unit.sh or any gating battery — gating status is an operator
-# decision at merge.
+# TIER B GATE since 2026-09-02 [USER 2026-09-02] (LADDER.md Tier B; born
+# reporting-tier 2026-08-30): `--check-baseline` must exit 0 at slice
+# boundaries / close-out / pre-merge. Not in test_unit.sh (Tier A): ~24 min
+# wall with the staged csmith tier. Asymmetric contract kept by audited
+# design (VALIDATION.md §2): regressions + DISAGREE are fatal; improvements
+# are printed loudly at rc 0 and re-recorded in a dedicated commit.
 #
 # Mechanism per file (design note §3):
 #   * native: gcc -O0 -w, run twice under timeout + the per-test memory cap (exit status =

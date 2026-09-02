@@ -11,7 +11,7 @@ Order is the conventional run order; all are fail-closed gates.
 
 | # | Command | Bar |
 |---|---------|-----|
-| 1 | `./scripts/test_unit.sh` | 5/5 exes (incl. 280 parser tests + pp-test) + sync gate + axiom censuses/cones + exec-purity/totality + lem-sync + fork-drift gate (`check_fork_drift.sh` — oracle-surface manifest + hash-pinned generated-OCaml deltas) + fixture-freeze (`check_fixture_freeze.sh` — the corpus/ hash manifest) |
+| 1 | `./scripts/test_unit.sh` | 5/5 exes (incl. 280 parser tests + pp-test) + sync gate + axiom censuses/cones + exec-purity/totality + lem-sync + fork-drift gate (`check_fork_drift.sh` — oracle-surface manifest + hash-pinned generated-OCaml deltas) + fixture-freeze (`check_fixture_freeze.sh` — the corpus/ hash manifest) + the renumber-instrument plant battery (`test_renumber_plants.sh` RIDES this row: it is invoked by test_unit.sh, not run separately) |
 | 2 | `./scripts/test_exec.sh --check-baseline` | tests/minimal vs `scripts/exec_baseline.txt`, rc 0 |
 | 3 | `./scripts/test_exec.sh --check-baseline=scripts/exec_coverage_baseline.txt tests/coverage` | rc 0 (recorded DIFFs unchanged) |
 | 4 | `./scripts/test_exec.sh --check-baseline=scripts/exec_debug_baseline.txt tests/debug` | rc 0 |
@@ -42,6 +42,8 @@ Everything in Tier A, plus:
 | 4 | `./scripts/test_verify.sh` | fixture differentials (tests/verify + corpus/): pin provenance + main-mode + call-point oracle-differentials, 0 failed |
 | 5 | `./scripts/test_immaculate.sh` | at baseline |
 | 6 | `./scripts/test_speclab.sh --selftest` + `--plant`; `./scripts/test_speclab_{divmod,bytearr,list,tree,seed}.sh --gate` | all PASS (harness-family differential lanes; sweep/fuzz modes are reporting-tier extras) |
+| 7 | `./scripts/test_gcc_oracle.sh --check-baseline` | **GATE since 2026-09-02 [USER 2026-09-02]** (born reporting-tier 2026-08-30; design `lean_frontend/docs/2026-08-30_gcc-second-oracle-design.md`): the gcc SECOND-oracle lane over tests/minimal + debug + float + immaculate/nolibc + the staged csmith tier, rc 0 vs the 1,953-row skip ledger `scripts/gcc_oracle_baseline.txt` + the fail-closed triage ledger `scripts/gcc_oracle_triage.txt`. Asymmetric by audited design (VALIDATION.md §2): any DISAGREE or regression is fatal; improvements print loudly at rc 0 and are re-recorded in a dedicated instrument commit. ~24 min wall (csmith tier incl.) — Tier B, never Tier A |
+| 8 | `./scripts/test_hang_plant.sh`; `./scripts/test_kill_plant.sh` | plant batteries for the harness failure CLASSIFICATIONS (mem-scale S0/S2): a sleeping Lean-driver stub must read HANG and a busy-looping one TIMEOUT in test_exec.sh + test_ci_sweep.sh; a 5 GiB-resident stub must read each capped harness's own KILL class (exit 137 + capped's OOM-KILLED witness). Loud plant banner on every run; rc 0 |
 
 **Battery placement decision [AGENT:S4]:** `test_libxml2.sh` was
 out-of-ladder in arc 5 (~35 min, 28 slices). After the arc-6 S3
@@ -65,6 +67,19 @@ block a merge by themselves.
 | `./scripts/test_exec.sh --write-baseline=scripts/exec_ci_baseline.txt tests/ci` | tests/ci exec differential scoreboard (arc-6 S4 rider; see `lean_frontend/docs/2026-08-19_arc6-s4-ci-scoreboard.md`). NOTE: default-mode exit is nonzero while known mismatches exist — the artifact is the baseline file, not the exit code. A CHECK against this baseline (`--check-baseline=scripts/exec_ci_baseline.txt tests/ci`) may be used as a no-regression probe, but tier-C status means running it is optional, not part of certification. |
 | `./scripts/fuzz_csmith.sh` | csmith differential fuzzing (csmith + creduce installed locally since arc-10; lane portfolio + deterministic seed ranges: `lean_frontend/docs/2026-08-20_arc10-s4-csmith-campaign.md`) |
 | `./scripts/test_csmith_corpus.sh --check-baseline` | 1669-file in-tree csmith corpus lane vs `scripts/exec_csmith_corpus_baseline.txt` (arc-10 S4; classified baseline — 15 DIFF are the F-D fork-oracle class, see baseline header). Full pass ~2.7 h: run `--shard K/6` sharded (shard-aware fail-closed baseline check, arc-10 S5). Reporting-tier: full pass at close-out/pre-merge boundaries, spot shard otherwise |
+| `./scripts/test_ci_sweep.sh` | full-upstream-CI-sweep scoreboard (ci-sweep stream, 2026-08-22): differential sweep of the big heterogeneous corpora under tests/ (gcc-torture breakdown classes, ci, tcc, suite, pnvi, hacl-star, freebsd, examples) with checkpointed per-corpus TSVs committed under `tests/ci_sweep/results/` (15 TSVs). Enforces NO baseline, exits 0 unless the harness itself breaks; the committed TSVs move only by a deliberate re-record (TODO.md registers the pending one) |
+
+### Instruments (neither gates nor scoreboards)
+
+Runnable artifacts kept so that recorded claims stay reproducible. They
+have no baseline, no tier, no wiring; running one produces evidence for
+a record, never a pass/fail for the tree.
+
+| Path | What |
+|------|------|
+| `tests/parity-probes/` | the parity-detective lane (2026-08-30): `run_probe.sh` single-file differential runner + `probes/*.c` beyond-testset probes + the `sweep-2026-08-30/` TSVs; every claim of `lean_frontend/docs/2026-08-30_parity-detective-report.md` has a runnable artifact here |
+| `tests/mem-scale-probes/` | the memory-scale arc's probe corpus (`gen_probes.sh`, `measure.sh`, `run_all.sh`, `summarize.py`, `probes/`, `results/`) and `micro/` — a THIRD Lake package (`memscale-micro`, own `lakefile.toml` + `lake-manifest.json`, requires CerberusLean by path, shares the workspace package store) timing CerbMem byte-path primitives in isolation. Measurement only; the third manifest is registered in TODO.md's package-set-pin item |
+| `tests/csmith_findings/` | the arc-10 S4 csmith campaign's committed reproducer artifacts (all ORACLE-side findings) with regeneration recipes; index in its README |
 
 ## Conventions
 
