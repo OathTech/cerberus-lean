@@ -445,3 +445,20 @@ offsetof improvement line reappears every run by design, un-regenerated.)
 - Run logs for this slice lived under `.tmp/tb/` (ephemeral,
   container discipline); everything load-bearing is quoted verbatim
   above or committed.
+
+## 9. Closing note (2026-09-02, release-hygiene G7)
+
+The §5 disposition ("baseline deliberately NOT regenerated [AGENT] …
+re-recording is an operator decision at merge") and the §7 line ("the
+item-(e) 4-row baseline-regeneration diff remains enumerated and
+UN-applied, awaiting operator sanction at the merge gate") are CLOSED:
+the regeneration was sanctioned [USER 2026-08-31] ("baseline regen
+approved") and APPLIED on mainline as `df63018e3` ("gcc lane:
+sanctioned baseline regeneration — the four adjudicated rows";
+`scripts/gcc_oracle_baseline.txt`, 4 insertions / 4 deletions — the
+exact enumerated set: 3× SKIP_ORACLE reclassified by the `--cabs-json`
+parse-only fix, `offsetof-nested-struct` SKIP_LEAN_CRASH → AGREE; the
+`offsetof-union-member` pair still crashes as pinned). The lane has
+since been ruled a Tier B GATE [USER 2026-09-02] (`scripts/LADDER.md`
+Tier B row 7). Note appended by the release-hygiene worker [AGENT];
+the body above is unchanged.

@@ -108,6 +108,51 @@ downstream.)
   with `CERB_MEM_MAX=4G`; LADDER.md:73 text updated; migration of the
   seven harnesses + dedicated baseline-instrument commit = mem-scale
   S2 (charter §6.4); then re-run the class-(b) rows.
+- **Tier-C ci-sweep re-record (M)** — registered 2026-09-02 (release-
+  hygiene sweep): 14 of the 15 committed scoreboard TSVs under
+  `tests/ci_sweep/results/` are the 2026-08-22-era run (commits
+  `8663f1f79`/`406560515`); only `tcc.tsv` was re-recorded (mem-scale
+  S2, `de574fbc8`). A fresh full sweep at mainline `a8f86112d` exists as
+  an instrument snapshot (`tests/parity-probes/sweep-2026-08-30/`, not
+  the scoreboard). Mover: a dedicated instrument commit re-running
+  `scripts/test_ci_sweep.sh` on fresh stamped binaries after the next
+  semantics-affecting merge (hours of wall; measurement sweep, tripwire-
+  justified in advance per the grind rule).
+- **CerbFS real-fs mover + served-pattern probe family (S)** —
+  registered 2026-09-02. `CerbFS` is a declared MODEL boundary
+  (VALIDATION.md §5: in-memory filesystem; fail-closed since trust-
+  basket item (b), `docs/2026-08-31_trust-basket.md` §2/§7 F1) whose
+  served-subset POSITIVE coverage is thin (trust-basket §7 F3: zero
+  corpus files exercise the served patterns). Two items: (i) a small
+  served-pattern probe family (read, rewind-reread, read-only reopen)
+  under `tests/parity-probes/` with recorded verdicts — S; (ii) the
+  boundary's mover — either real-fs backing behind the same seam or an
+  explicit refusal of every unserved op — S-M; the boundary stays
+  declared until then.
+- **Clean Lake packaging (M)** — forward-assessment F4.1
+  (`docs/2026-08-31_semantics-forward-assessment.md`): a stable,
+  documented exec-facing module surface, consumer-facing lakefile
+  targets that do not drag the test exes, version tags, a one-page API
+  doc. Customer #1 is `refined-cerberus` (pins this repo by path today).
+  Registered here 2026-09-02 so the item has a home in the backlog.
+- **Regeneration recipe: wipe the generated dir first (S)** — registered
+  2026-09-02. `make lean-prelude-src` / `make prelude-src` regenerate
+  INTO the existing `lean_frontend/generated/` / `ocaml_frontend/
+  generated/` without clearing them; a file left behind by a removed
+  `.lem` module lingers (the recipe hand-`rm -f`s the two known names
+  from C1, `Core_unstruct*.lean`) and — because the lem-sync stamp is
+  recorded over whatever the directory holds after the recipe — would be
+  STAMPED as legitimate output (fail-open shape). Wanted: wipe-then-
+  regenerate (hand-written copies re-copied by the same recipe), so the
+  stamp covers exactly the recipe's output. Companion: Lake's
+  `.lake/build` keeps orphaned artifacts too (the RelSem prune found
+  pre-split ones) — a clean-build leg at boundaries.
+- **lem-side: refuse a target_rep spelled `sorry`** — lives in lem-lean's
+  register (`lem-lean/doc/lean-backend/TODO.md` item 2, S): the backend
+  still special-cases a user-written `sorry` rep; the one live consumer
+  use is `frontend/concurrency/cmm_csem.lem` `observable_filter`
+  (registered temporal boundary, mover = the concurrency arc above).
+  Cross-referenced here 2026-09-02; discharged in the next lem arc.
 - Speclab leak checks' oracle-differential leg: wire the new oracle
   `--batch-alloc-census` line (landed 2026-09-01,
   `docs/2026-09-01_s-basket.md`) into the speclab lanes.
@@ -150,9 +195,12 @@ S-basket slice — `docs/2026-09-01_s-basket.md`.)
   relatedly, `.lake/packages` can carry stale non-manifest package
   dirs (worktree-priming leftovers) that a path-glob gate could
   mistake for consumed code. Wanted: a leg that reads
-  `lake-manifest.json` (both packages), asserts the package set is
-  exactly the reviewed list, and fails on non-manifest directories in
-  the shared packagesDir.
+  `lake-manifest.json` (ALL THREE packages — `lean_frontend/`,
+  `lean_frontend/speclab/`, and the measurement package
+  `tests/mem-scale-probes/micro/`, added 2026-09-02 to this item: it
+  requires CerberusLean by path and shares the workspace package
+  store), asserts the package set is exactly the reviewed list, and
+  fails on non-manifest directories in the shared packagesDir.
 - **Raw-string awareness for the census stripper** (C2 delta-audit
   note, registered 2026-09-01): the shared comment/string stripper in
   `check_theorem_axioms.sh` does not know Lean raw string literals
