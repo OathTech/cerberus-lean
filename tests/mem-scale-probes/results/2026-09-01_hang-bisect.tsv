@@ -1,0 +1,14 @@
+a_zero_global_2000000	nolibc	lean-first	0	5.76	1452000	VAL:Specified(7)	-
+a_zero_global_3000000	nolibc	lean-first	0	8.12	2139376	VAL:Specified(7)	-
+a_zero_global_5000000	nolibc	lean-first	0	14.38	3558348	VAL:Specified(7)	-
+a_zero_global_7000000	nolibc	lean-first	0	20.86	4951452	VAL:Specified(7)	-
+a_zero_global_8000000	nolibc	lean-first	124	90.20	2658428	NONE	TIMEOUT(90s);
+a_zero_global_9000000	nolibc	lean-first	124	90.09	2682528	NONE	TIMEOUT(90s);
+a_zero_global_int_1750000	nolibc	lean-first	0	9.67	2730676	VAL:Specified(7)	-
+a_zero_global_int_2500000	nolibc	lean-first	0	13.90	3939528	VAL:Specified(7)	-
+Command exited with non-zero status 124
+noabort wall=90.09 maxrss=2719368 exit=124
+stackexp	8M	LEAN_STACK_SIZE_KB=1048576	Command exited with non-zero status 124 wall=90.09 maxrss=2658956 exit=124 
+stackexp	8M	LEAN_STACK_SIZE_KB=4194304	Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"} wall=22.50 maxrss=5967020 exit=0 
+stackexp	5M	LEAN_STACK_SIZE_KB=2048	Command exited with non-zero status 124 wall=90.00 maxrss=235232 exit=124 
+stackexp	5M	LEAN_STACK_SIZE_KB=512	Command exited with non-zero status 124 wall=90.00 maxrss=231716 exit=124 

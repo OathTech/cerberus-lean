@@ -28,6 +28,29 @@ downstream.)
   move) → next lem arc; full evidence + design space:
   `docs/2026-08-31_stack-ceiling-design.md`; history:
   `docs/2026-08-19_arc6-s0-survey.md`).
+- KNOWN HANG — stack-depth ceiling with a SILENT overflow (found
+  2026-09-01, arc/mem-scale P0; profile
+  `docs/2026-09-01_mem-scale-profile.md` §6.2-6.3): the Lean driver
+  neither completes nor fails on a zero-initialised static aggregate
+  of more than ~7-8 million ELEMENTS
+  (`tests/mem-scale-probes/probes/a_zero_global_10000000.c`;
+  `char g[8000000]` hangs, `char g[7000000]` and `int g[2500000]`
+  complete) — all threads futex-blocked after ~4 s CPU at a constant
+  ~2.7 GB, deterministic. `LEAN_STACK_SIZE_KB=4194304` makes the 8 M
+  case complete (22.5 s), so a non-tail recursion over the element
+  list overflows the `lean_run_main` thread stack and the runtime
+  hangs instead of printing "Stack overflow detected. Aborting.".
+  The oracle completes the 10 M case (246 s / 7.7 GB). Two items:
+  locate + tail-recursive rewrite with an equality proof (charter C9,
+  `docs/2026-09-01_mem-scale-design.md`); the silent overflow is a
+  Lean-runtime report. Fail-open-by-silence until fixed.
+- Harness memory limits use `ulimit -v` (virtual address space):
+  `scripts/test_ci_sweep.sh:222,252,258`, `scripts/test_libc_exec.sh:
+  82,90,97`, `tests/parity-probes/run_probe.sh:43,51`. Lean's virtual
+  footprint is ~2-3.6x its RSS, so a 4 GB `-v` kills Lean at ~1.7 GB
+  RSS while the oracle runs to 3.1 GB — the detective's two "OOM" rows
+  were this artefact (profile §2). Replace with `scripts/capped` (RSS,
+  cgroup) — charter C2; then re-run the class-(b) rows.
 - Speclab leak checks' oracle-differential leg: wire the new oracle
   `--batch-alloc-census` line (landed 2026-09-01,
   `docs/2026-09-01_s-basket.md`) into the speclab lanes.

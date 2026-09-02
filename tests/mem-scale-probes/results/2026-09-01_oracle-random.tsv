@@ -1,0 +1,8 @@
+c_struct_arg_1024	nolibc	oracle-random	0	0.03	44740	VAL:Specified(0)	-
+c_struct_arg_4096	nolibc	oracle-random	0	0.06	49272	VAL:Specified(0)	-
+c_struct_arg_16384	nolibc	oracle-random	0	0.32	62916	VAL:Specified(0)	-
+c_struct_arg_65536	nolibc	oracle-random	0	4.03	129292	VAL:Specified(0)	-
+c_struct_arg_262144	nolibc	oracle-random	0	74.39	359492	VAL:Specified(0)	-
+c_struct_ret_65536	nolibc	oracle-random	0	5.80	129536	VAL:Specified(7)	-
+c_struct_ret_262144	nolibc	oracle-random	0	72.73	389484	VAL:Specified(7)	-
+det_pr20621-1	libc	oracle-random	0	1.40	142940	VAL:Specified(0)	-

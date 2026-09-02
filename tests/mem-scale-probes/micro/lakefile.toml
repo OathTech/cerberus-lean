@@ -1,0 +1,21 @@
+# memscale-micro — the MEMORY-SCALE arc's micro-benchmark executable
+# (arc/mem-scale, 2026-09-01): times the CerbMem byte-path primitives in
+# isolation (allocation list, per-byte map insert/lookup, memValueToBytes,
+# reconstructValue, bytesToInt) so the scaling study's per-class costs can
+# be attributed to a named code path. Measurement instrument only — NOT a
+# gate, NOT part of the semantics. Same one-way dependency shape as
+# speclab: requires CerberusLean by path, shares the workspace package
+# store (offline-safe; no re-clone).
+name = "memscale-micro"
+defaultTargets = ["memscale-micro"]
+moreLeanArgs = ["-DautoImplicit=false"]
+packagesDir = "../../../lean_frontend/.lake/packages"
+
+[[require]]
+name = "CerberusLean"
+path = "../../../lean_frontend"
+
+[[lean_exe]]
+name = "memscale-micro"
+root = "Micro"
+moreLinkArgs = ["../../../lean_frontend/native/md5.o"]
