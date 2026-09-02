@@ -2,7 +2,7 @@
 # format: <file.c> <STATUS>   (see test_exec.sh header for the taxonomy)
 # corpus: tests/float (69 files, ported verbatim from the prototype in
 #   arc 4, wired arc-10 S3b — the last dangling arc-4 corpus deferral;
-#   see notes/2026-08-20_prototype-test-migration-survey.md §4.1).
+#   see lean_frontend/docs/2026-08-20_prototype-test-migration-survey.md §4.1).
 # First sweep 2026-08-20 (post-S3 pp mirrors): 69/69 MATCH, no fixes
 #   needed. NOTE the upstream float-mul oracle bug
 #   (lembugs/2026-08-19_upstream-float-mul.md, declared TEMPORAL

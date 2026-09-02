@@ -2,7 +2,8 @@
 SpecLab.MkHarness — the harness source splicer, v1 (arc-15 S0).
 
 Mechanism A of the harness statement template
-(notes/2026-08-22_harness-statement-template.md, [USER 2026-08-22]
+(the reasoning-era harness statement template — PARKED, deliberately not
+restored: `park/reasoning-era-20260831:lean_frontend/docs/reasoning-era/2026-08-22_harness-statement-template.md`; [USER 2026-08-22]
 ratified): `mkHarness` splices two byte-array literals — `choices[]`
 (the resolved choice stream) and `expected[]` (the pure-side-computed
 expected observation) — into a FIXED C template. Every instance is a

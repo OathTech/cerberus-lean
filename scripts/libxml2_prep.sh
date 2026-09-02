@@ -2,8 +2,10 @@
 # libxml2_prep.sh — deterministic, no-autogen preparation of libxml2 TUs for
 # Cerberus (arc-5 S3).
 #
-# Provenance: notes/2026-08-19_libxml2-probe.md, Part B "Preprocessing recipe
-# (reusable; no autogen, no cmake, no network)". The probe established that
+# Provenance: the arc-5 libxml2 probe (2026-08-19), Part B "Preprocessing recipe
+# (reusable; no autogen, no cmake, no network)". The probe note itself was a
+# container-side scratch note and is in NO commit (not on the park tag either);
+# what it established is restated here in full. The probe established that
 # Cerberus's BUILT-IN cpp (`cc -std=c11 -E -CC ... -nostdinc -undef -D__cerb__`
 # + its shipped libc headers) handles libxml2 directly — no external `cc -E`
 # step. The only build-system artifacts libxml2 needs are two generated

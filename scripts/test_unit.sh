@@ -125,7 +125,7 @@ fi
 # backend/{common,driver,lean_export}, runtime, opam files) must equal
 # the reviewed manifest scripts/fork_drift_manifest.txt, and the
 # generated-OCaml fork-vs-upstream deltas must match their pinned
-# hashes (spec: notes/2026-08-21_fork-drift-review.md §6). Fail-closed
+# hashes (spec: lean_frontend/docs/2026-08-21_fork-drift-review.md §6). Fail-closed
 # like the gates above (a missing script/manifest fails the suite; the
 # gate itself only SKIPs — loudly, rc 0 — when the upstream remote or
 # a generated tree is absent).

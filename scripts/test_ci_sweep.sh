@@ -6,7 +6,7 @@
 # with scoreboard classification and checkpointed per-file TSVs. It
 # enforces NO baseline and always exits 0 unless the harness itself
 # breaks (fail-closed on harness-internal errors only). Survey basis:
-# notes/2026-08-20_prototype-test-migration-survey.md §3.4/§6.4.
+# lean_frontend/docs/2026-08-20_prototype-test-migration-survey.md §3.4/§6 item 4.
 #
 # Relationship to test_exec.sh (NOT modified — additive-file rule):
 # the comparison semantics are REPLICATED from scripts/test_exec.sh with

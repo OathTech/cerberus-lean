@@ -1,6 +1,6 @@
 # fork-drift manifest — the reviewed oracle-surface drift set
 # (gate: scripts/check_fork_drift.sh; review + per-hunk classification:
-# notes/2026-08-21_fork-drift-review.md — [files] classes DECL/DELIB/
+# lean_frontend/docs/2026-08-21_fork-drift-review.md — [files] classes DECL/DELIB/
 # SUSPECT are per that review's §2/§5 tables).
 # Every entry is a reviewed claim about the oracle: additions/removals
 # and hash moves go through the gate's refresh recipe with a commit

@@ -2,7 +2,8 @@
 SpecLab.Codec — self-delimiting byte codecs, first cut (arc-15 S0).
 
 The choice-stream substrate of the harness statement template
-(notes/2026-08-22_harness-statement-template.md): pure `encode : M →
+(the reasoning-era harness statement template — PARKED, deliberately
+not restored: `park/reasoning-era-20260831:lean_frontend/docs/reasoning-era/2026-08-22_harness-statement-template.md`): pure `encode : M →
 Stream` / `decode : Stream → M` pairs with kernel-checked
 decode∘encode=id round-trip lemmas. `decode` here IS a free generator
 in the generators-as-parsers sense (Goldstein & Pierce; Hypothesis's

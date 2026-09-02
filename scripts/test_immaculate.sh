@@ -4,8 +4,10 @@
 #
 # Targeted probes for the latent-wrong-answer GRAVE/SERIOUS items of the
 # two grumpy-professor registers
-# (notes/2026-08-21_grumpy-audit-cerberus-semantics.md and
-#  .../grumpy-audit-lem-backend.md). These findings were latent precisely
+# (lean_frontend/docs/2026-08-21_grumpy-audit-cerberus-semantics.md, restored
+#  2026-09-02; and the lem-backend register, PARKED — not restored — at tag
+#  park/reasoning-era-20260831:lean_frontend/docs/reasoning-era/2026-08-21_grumpy-audit-lem-backend.md).
+# These findings were latent precisely
 # because the standing corpora never exercised the failing inputs; this
 # lane exercises them permanently.
 #
@@ -235,7 +237,7 @@ if $RECORD_BASELINE; then
         echo "#   CONFLATED    G6 in-Lean probe: two distinct hash-colliding identifiers"
         echo "#                intern to the SAME symbol (silent conflation)."
         echo "#"
-        echo "# Finding -> row map (registers: notes/2026-08-21_grumpy-audit-*.md):"
+        echo "# Finding -> row map (register: lean_frontend/docs/2026-08-21_grumpy-audit-cerberus-semantics.md; the lem-backend register is parked on tag park/reasoning-era-20260831):"
         echo "#   G1 semantics: g1-lt-null, g1-ge-funptr (relational kill-path -> value-path)"
         echo "#   G2 semantics: g2-memcpy-oob, g2-memcpy-readonly, g2-memcmp-uninit (checked-path bypass)"
         echo "#   G3 semantics: g3-realloc-non-heap (UB179c), g3-realloc-dead (UB179d) (wrong UB family)"

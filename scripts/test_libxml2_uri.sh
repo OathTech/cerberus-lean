@@ -2,8 +2,9 @@
 # test_libxml2_uri.sh — arc-6 S4 GATE (charter success condition 1;
 # formerly the arc-5 S3 stretch harness / arc-6 S1 reporting baseline).
 #
-# The probe's 4-TU xmlParseURISafe execution datapoint
-# (notes/2026-08-19_libxml2-probe.md, "Execution datapoint"), extended to a
+# The arc-5 libxml2 probe's execution datapoint — xmlParseURISafe run as a
+# 4-TU program through both implementations (the probe note itself is in no
+# commit; this lane is its committed successor) — extended to a
 # 16-URI corpus (tests/libxml2/uri_harness.c: valid / invalid / edge cases;
 # arc-6 S4 grew it 10 → 16 with RFC 3986 edge classes — IPv6 literal,
 # empty components, scheme-only, lone fragment, pct-encoded reserved chars,
