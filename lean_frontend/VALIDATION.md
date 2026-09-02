@@ -119,9 +119,11 @@ specific, 15–30 s) and — since mem-scale S2 (2026-09-02, Q2 [USER
 (a virtual-address-space cap that killed Lean at ~1.7 GB RSS while the
 oracle ran to 3.1 GB — record `docs/2026-09-01_mem-scale-profile.md` §2).
 The two failure classes are LOUD and distinct in every lane: exit 124 with
-CPU/wall < 0.1 is `HANG` (S0), exit 137 (+ capped's KILLED banner) is the
-lane's KILL class (`LEAN_KILL`/`CERB_KILL`, `KILL`, `SKIP_LEAN_KILL`,
-"FAIL: … KILLED") — never agreement, never a skip. Plants:
+CPU/wall < 0.1 is `HANG` (S0); a cap breach is exit 137 WITH capped's
+OOM-KILLED witness banner (the cgroup's `memory.events oom_kill`
+counter) and is the lane's KILL class (`LEAN_KILL`/`CERB_KILL`, `KILL`,
+`SKIP_GCC_KILL`, "FAIL: … OOM-KILLED") — never agreement, never a skip;
+a bare 137 without the witness keeps its crash/compare class. Plants:
 `scripts/test_hang_plant.sh`, `scripts/test_kill_plant.sh`.
 
 ## 3. The build-time gates (`scripts/test_unit.sh`)

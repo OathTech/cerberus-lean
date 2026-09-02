@@ -30,7 +30,8 @@ battery length (arc-5 measured, Lean --first: 100 pts 139 s), forcing
 (LemLib Fmap + CerbMem bytemap/allocations -> tree maps; lem-lean
 arc/libc-load), a 339-point slice runs in ~100 s / ~205 MB on the Lean
 side (OCaml oracle ~15 s), comfortably inside the standing caps
-(300 s / ulimit -v 4000000). The slices partition the same 1354-point
+(300 s / a 4 GB per-test resident-memory cap — `scripts/capped`, mem-scale
+S2; formerly `ulimit -v 4000000`). The slices partition the same 1354-point
 set; each slice accumulates its own checksum, so the union of slice
 verdicts covers the full battery. NOTE the per-slice checksums differ
 from the 28-slice partition's — the baseline was re-recorded at the

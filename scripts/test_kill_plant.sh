@@ -4,7 +4,8 @@
 # 2026-09-02]). Vacuity must be loud: the Lean driver is replaced by a stub
 # (common.sh plant hook CERB_LEAN_BIN_OVERRIDE — banner on every use) that
 # allocates 5 GiB of resident memory, so under the 4G per-test cgroup cap
-# the kernel SIGKILLs it (exit 137, capped's KILLED banner). Each harness
+# the kernel SIGKILLs it (exit 137 + capped's OOM-KILLED witness banner, the
+# cgroup's memory.events oom_kill counter). Each harness
 # that carries the cap must then read its own KILL class — never MATCH,
 # never a skip. Assertions are on the harnesses' own output.
 #   test_ci_sweep.sh      -> row LEAN_KILL
@@ -21,6 +22,9 @@
 # The oracle-side KILL paths mirror the Lean ones textually; they are not
 # plantable without replacing the oracle binary and are not asserted here.
 # Nothing here touches the semantics.
+# Also plants capped itself (audit m1/m2): an UNREADABLE witness must not be
+# reported as "not a cap breach", and a grandchild's OOM kill is bannered
+# even when the direct child exits with another status.
 # Usage: ./scripts/test_kill_plant.sh   (needs env: scripts/ce; ~5 min)
 set -uo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
@@ -51,6 +55,23 @@ expect_nonzero() { [[ "$2" -ne 0 ]] || { echo "PLANT FAIL [$1]: lane exited 0 on
 [[ $rc -eq 137 ]] && grep -q "capped: OOM-KILLED" "$WORK/direct.err" \
     && echo "PLANT OK   [cap kills a 5 GiB allocator]: exit $rc, $(grep -o 'capped: OOM-KILLED[^;]*; memory.events oom_kill=[0-9]*' "$WORK/direct.err")" \
     || { echo "PLANT FAIL [cap kills a 5 GiB allocator]: exit $rc; stderr: $(tail -2 "$WORK/direct.err")" >&2; fail=1; }
+
+# capped's two honesty paths (audit m1/m2):
+# (a) witness UNAVAILABLE — a scratch copy of capped whose memory.events
+#     path is bogus must NOT assert "not a cap breach" on a SIGKILL
+sed 's|"$CAPPED_CG/memory.events"|"$CAPPED_CG/memory.events.DOES_NOT_EXIST"|' "$CAPPED_BIN" > "$WORK/capped_nowitness"
+chmod +x "$WORK/capped_nowitness"
+grep -q 'memory.events.DOES_NOT_EXIST' "$WORK/capped_nowitness" || { echo "PLANT FAIL [capped witness-unavailable]: scratch copy did not take the bogus path" >&2; fail=1; }
+CERB_MEM_MAX=1G "$WORK/capped_nowitness" sh -c 'kill -KILL $$' > /dev/null 2> "$WORK/nowit.err"; rc=$?
+[[ $rc -eq 137 ]] && grep -q "capped: KILLED, OOM witness UNAVAILABLE" "$WORK/nowit.err" \
+    && echo "PLANT OK   [capped witness unavailable -> honest banner]: $(grep -o 'capped: KILLED, OOM witness UNAVAILABLE[^;]*' "$WORK/nowit.err")" \
+    || { echo "PLANT FAIL [capped witness unavailable]: exit $rc; stderr: $(grep capped: "$WORK/nowit.err")" >&2; fail=1; }
+# (b) grandchild OOM — the direct child exits 1 after its own child was
+#     OOM-killed: the cgroup still records the event and capped says so
+CERB_MEM_MAX=1G "$CAPPED_BIN" sh -c 'python3 -c "b = bytearray(2 * 1024 ** 3)"; exit 1' > /dev/null 2> "$WORK/grand.err"; rc=$?
+[[ $rc -eq 1 ]] && grep -q "capped: OOM event recorded in cgroup (memory.events oom_kill=[1-9][0-9]*.*though the command exited rc=1" "$WORK/grand.err" \
+    && echo "PLANT OK   [capped grandchild OOM -> bannered despite rc=1]: $(grep -o 'capped: OOM event recorded[^—]*' "$WORK/grand.err" | cut -c1-120)" \
+    || { echo "PLANT FAIL [capped grandchild OOM]: exit $rc; stderr: $(grep capped: "$WORK/grand.err")" >&2; fail=1; }
 
 export SKIP_BUILD=1
 # --- test_ci_sweep.sh -> LEAN_KILL --------------------------------------

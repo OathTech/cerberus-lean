@@ -78,14 +78,17 @@ block a merge by themselves.
   the old cap killed Lean at ~1.7 GB RSS while the oracle ran to
   3.1 GB (record: `lean_frontend/docs/2026-09-01_mem-scale-profile.md`
   §2; ruling: `docs/2026-09-01_mem-scale-design.md` §0/Q2). MIGRATED
-  (mem-scale S2, 2026-09-02): all 22 `ulimit -v` sites in the seven
+  (mem-scale S2, 2026-09-02): all 22 `ulimit -v` sites — 20 code sites
+  + 2 header comments, derived tally — in the seven
   harnesses (`test_ci_sweep`, `test_libc_exec`, `test_libxml2`,
   `test_libxml2_uri`, `test_immaculate`, `test_gcc_oracle`,
   `tests/parity-probes/run_probe.sh`) now run each test under
   `scripts/common.sh`'s `CAPPED_TEST` (`scripts/capped`,
-  `CERB_TEST_MEM_MAX`, default 4G); a cap kill is exit 137 + capped's
-  KILLED banner and every harness classifies it as its own KILL class
-  (never agreement, never a skip); plant: `scripts/test_kill_plant.sh`.
+  `CERB_TEST_MEM_MAX`, default 4G); a cap breach is exit 137 + capped's
+  OOM-KILLED witness banner (the cgroup's `memory.events oom_kill`
+  counter) and every harness classifies it as its own KILL class (never
+  agreement, never a skip; a bare 137 keeps its crash class); plant:
+  `scripts/test_kill_plant.sh`.
   Baselines re-derived in the dedicated instrument commit recorded in
   `lean_frontend/docs/2026-09-02_mem-scale-record.md` §S2.
 * Close-out certification = Tier B green + Tier C artifacts current +

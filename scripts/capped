@@ -58,13 +58,24 @@ run_reporting_kills() {
   # cgroup-direct mode registers a cleanup hook (migrate back + rmdir);
   # it must run BEFORE exit and never alters rc.
   if declare -F capped_cleanup >/dev/null 2>&1; then capped_cleanup; fi
+  # Three witness states: N>0 (breach), "0" (read, no breach), "" (NOT
+  # READABLE — systemd-run fallback has no cgroup path, or memory.events
+  # could not be read): the banner never asserts "not a breach" without
+  # the counter (audit m1). A breach whose direct child exited otherwise
+  # (a grandchild OOM'd, the parent exited 1) is bannered too (audit m2).
   if [[ $rc -eq 137 || $rc -eq 143 ]]; then
     echo "==============================================================" >&2
     if [[ -n "$CAPPED_OOM_KILLS" && "$CAPPED_OOM_KILLS" != "0" ]]; then
       echo "capped: OOM-KILLED (exit $rc — cgroup memory cap CERB_MEM_MAX=$MEM breached; memory.events oom_kill=$CAPPED_OOM_KILLS; NOT a pass)" >&2
+    elif [[ -z "$CAPPED_OOM_KILLS" ]]; then
+      echo "capped: KILLED, OOM witness UNAVAILABLE (exit $rc — cannot distinguish a cap breach from a signal death: no readable cgroup memory.events on this path; NOT a pass)" >&2
     else
-      echo "capped: KILLED (exit $rc — signal death, NOT a cap breach: no cgroup OOM event recorded${CAPPED_OOM_KILLS:+ (oom_kill=$CAPPED_OOM_KILLS)}; e.g. timeout -k SIGKILL or the program's own exit status; NOT a pass)" >&2
+      echo "capped: KILLED (exit $rc — signal death, NOT a cap breach: cgroup memory.events oom_kill=0; e.g. timeout -k SIGKILL or the program's own exit status; NOT a pass)" >&2
     fi
+    echo "==============================================================" >&2
+  elif [[ -n "$CAPPED_OOM_KILLS" && "$CAPPED_OOM_KILLS" != "0" ]]; then
+    echo "==============================================================" >&2
+    echo "capped: OOM event recorded in cgroup (memory.events oom_kill=$CAPPED_OOM_KILLS, cap CERB_MEM_MAX=$MEM) though the command exited rc=$rc — a descendant was killed by the cap; NOT a clean pass" >&2
     echo "==============================================================" >&2
   fi
   exit $rc
@@ -123,8 +134,10 @@ cgroup_direct_try() {
 }
 if cgroup_direct_try; then
   capped_cleanup() {
-    # the OOM witness, read while the cgroup still exists
-    CAPPED_OOM_KILLS="$(sed -n 's/^oom_kill //p' "$CAPPED_CG/memory.events" 2>/dev/null)"
+    # the OOM witness, read while the cgroup still exists ("" if unreadable)
+    # (`|| true`: under `set -e` an unreadable file must yield "" — the
+    # UNAVAILABLE banner — not abort capped and replace the child's rc)
+    CAPPED_OOM_KILLS="$(sed -n 's/^oom_kill //p' "$CAPPED_CG/memory.events" 2>/dev/null || true)"
     echo $$ > "$CAPPED_ORIG/cgroup.procs" 2>/dev/null || true
     rmdir "$CAPPED_CG" 2>/dev/null \
       || echo "capped: WARNING — could not remove cgroup $CAPPED_CG (processes still inside?)" >&2

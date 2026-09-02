@@ -399,7 +399,8 @@ separate two-repo slice.
 ### 6.4 S2 — C2 harness migration + parity confirmation (cerberus-only)
 
 Per the Q2 ruling: replace `ulimit -v` with per-test `scripts/capped`
-at `CERB_MEM_MAX=4G` in the seven harnesses (22 sites, §3 C2);
+at `CERB_MEM_MAX=4G` in the seven harnesses (22 sites, §3 C2 — [erratum,
+S2 audit m5, AGENT]: = 20 code sites + 2 header comments, raw grep count);
 `scripts/LADDER.md:73` text already carries the new directive (R1.1);
 re-derive every affected baseline as a DEDICATED instrument commit
 with the before/after rows quoted (LADDER's rule); then run the

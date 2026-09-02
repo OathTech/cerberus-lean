@@ -1,5 +1,16 @@
 # Draft 18 — Non-tail monadic list combinators in the front-end monads make the stack depth proportional to aggregate size (8 M-element static initialiser overflows)
 
+> ERRATUM (2026-09-02, [AGENT], found by the arc audit — record-integrity
+> defect M1): an earlier revision of this draft said the fork "carries"
+> the rewrite and had validated it with "the full differential battery …
+> byte-identical" plus "a completion gate on the 8 M / 10 M inputs". That
+> was FALSE after the same day's revert: the fork PROTOTYPED the rewrite,
+> measured it (8 M completes; 10 M still hangs), ran only a Tier-A smoke
+> on that tree, and REVERTED it ([USER 2026-09-02], poor ROI against
+> trust-surface stability). The passages below now say so; the draft is
+> offered to upstream as a SUGGESTION with the measured evidence, not as
+> a carried fix. Record: `lean_frontend/docs/2026-09-02_mem-scale-record.md` §S1'.
+
 Target: `rems-project/cerberus` (`frontend/model/ail/errorMonad.lem`,
 `frontend/model/state_exception.lem`, `frontend/model/undefined.lem`;
 same shape in the sibling monad modules — see "Scope"). Drafted
@@ -64,7 +75,7 @@ int main(void) { g[8000000 - 1] = 7; return g[8000000 - 1] + g[0]; }
   so the tool hangs silently. Record: cerberus-lean
   `lean_frontend/docs/2026-09-01_mem-scale-profile.md` §6.2–6.3.
 
-## Remedy (semantics-preserving; the change our fork carries)
+## Suggested remedy (semantics-preserving; prototyped and measured by our fork, NOT carried — see below)
 
 Accumulate-and-reverse: run each element's action, cons the result onto
 an accumulator, recurse in tail position of the continuation, reverse
@@ -89,10 +100,24 @@ equivalent is `foldrM f a l = foldlM (fun acc x -> f x acc) a (List.reverse l)`
 result — using the already tail-position `stExcept_foldlM`. For the
 `sequence`s the same accumulate-and-reverse form replaces the `foldr`.
 
-Our fork's validation of the rewrite: the full differential battery
-(both targets re-derived from the changed `.lem`) byte-identical to its
-baselines, plus a completion gate on the 8 M / 10 M inputs; see the
-arc record `lean_frontend/docs/2026-09-02_mem-scale-record.md` §S1'.
+What our fork actually did with this rewrite (2026-09-02; arc record
+`lean_frontend/docs/2026-09-02_mem-scale-record.md` §S1'): prototyped it
+in the three `.lem` files, regenerated both targets, and measured it —
+the 8 M-element input then COMPLETED with the oracle's verdict (Lean
+`--first` 20.3 s, `VAL:Specified(7)`), the 10 M input STILL HUNG, and
+the residual one-frame-per-element cost was located in the Lean 4.32.2
+RUNTIME: `lean_apply_1`/`lean_apply_2` enter closures by indirect CALL
+on 22 of 24 arity paths (only 2 tail jumps), so every per-element
+closure application in a function-typed monad costs a runtime frame no
+matter how the `.lem` is shaped. Only a Tier-A smoke (not the full
+battery) was run on that tree before the fork REVERTED the rewrite
+([USER 2026-09-02]: poor ROI for a change to the trust surface). The
+fork does NOT carry it. The semantics-preservation argument above is
+therefore a claim for upstream to validate, not a validated fact; the
+evidence offered is the measured onset move and the OCaml-side
+observation that the oracle ran the 10 M input ~3× faster under the
+rewrite (75.8 s vs 240–246 s, same 7.7 GB) — the non-tail
+`List.fold_right`/recursion is on the OCaml path too.
 
 ## Scope
 

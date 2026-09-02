@@ -10,7 +10,7 @@
 #   probe  mode  engine  exit  wall_s  maxrss_kb  verdict  note  cpu_s
 #
 # exit: the wrapped command's exit (124 = timeout, 137 = cgroup kill —
-# the capped KILLED banner is preserved in the .err file), verdict: the
+# capped's OOM-KILLED/KILLED banner is preserved in the .err file), verdict: the
 # batch verdict sequence (VAL:/UB: like tests/parity-probes/run_probe.sh),
 # note: INTERNAL PANIC / KILLED / TIMEOUT / HANG markers from stderr and
 # the time record; cpu_s: User+System seconds from /usr/bin/time -v.
@@ -103,7 +103,9 @@ run_one() {
         wall=$(awk -F: -v w="$w" 'BEGIN{n=split(w,a,":"); s=0; for(i=1;i<=n;i++) s=s*60+a[i]; printf "%.2f", s}')
     fi
     local note=""
-    grep -q "capped: KILLED" "$err" && note="${note}KILLED;"
+    # capped's banners: "capped: OOM-KILLED" (cap breach, the witness) or
+    # "capped: KILLED" (signal death / witness unavailable) — both count
+    grep -qE "capped: (OOM-)?KILLED" "$err" && note="${note}KILLED;"
     grep -q "INTERNAL PANIC" "$err" && note="${note}PANIC:$(grep -m1 -oE 'INTERNAL PANIC[^\n]*' "$err" | cut -c1-60 | tr '\t' ' ');"
     if [[ $rc -eq 124 ]]; then
         if [[ -n "$cpu" && -n "$wall" ]] && awk -v c="$cpu" -v w="$wall" 'BEGIN{exit !(w > 0 && c / w < 0.1)}'; then
@@ -133,3 +135,4 @@ if want lean-first || want lean-exh; then
     want lean-first && run_one lean-first env LEAN_ABORT_ON_PANIC=1 "$LEAN" --batch --first ${LEAN_ARGS[@]+"${LEAN_ARGS[@]}"} "$json"
     want lean-exh   && run_one lean-exh   env LEAN_ABORT_ON_PANIC=1 "$LEAN" --batch ${LEAN_ARGS[@]+"${LEAN_ARGS[@]}"} "$json"
 fi
+exit 0   # the last `want … &&` must not set a spurious exit 1 when that engine is not requested

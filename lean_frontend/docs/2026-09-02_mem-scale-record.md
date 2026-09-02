@@ -537,7 +537,9 @@ baseline instrument `de574fbc8`. Binaries throughout: oracle
   scripts/capped)` with `CERB_TEST_MEM_MAX` (default 4G, cgroup RSS);
   `is_cap_kill <rc> <stderr-file>` (exit 137 AND capped's `OOM-KILLED`
   witness), `kill_label`.
-- All 22 `ulimit -v 4000000` sites replaced: `test_ci_sweep.sh` (3),
+- All 22 `ulimit -v 4000000` sites replaced (DERIVED tally: 20 code
+  sites + 2 header comments — `test_libxml2.sh:46`, `test_ci_sweep.sh:38`
+  — the charter's "22" was the raw grep count): `test_ci_sweep.sh` (3),
   `test_libc_exec.sh` (3), `test_libxml2.sh` (4), `test_libxml2_uri.sh`
   (2), `test_immaculate.sh` (3), `test_gcc_oracle.sh` (2, the native
   runs — stderr now captured), `tests/parity-probes/run_probe.sh` (3).
@@ -797,3 +799,55 @@ tripwire's measurement-sweep carve-out, run in the background).
 Not merged, not pushed (operator-gated). Ephemeral scratch under
 `.tmp/memscale/` is deleted at slice end per the container's
 doctrine; everything cited above is committed.
+
+## Audit response (2026-09-02) — verdict MERGE-SAFE-WITH-NOTES; 1 MAJOR + 5 minors, all addressed in one commit
+
+- **M1 (MAJOR, record integrity)** — tray draft 18 and its INDEX entry
+  claimed the fork "carries" the rewrite and had validated it with the
+  full battery + the 8 M/10 M gate. FALSE post-revert. Rewritten
+  truthfully (prototyped, measured — 8 M completes, 10 M still hangs,
+  cause the Lean runtime's `lean_apply_*` call-not-jump on 22/24 arity
+  paths — Tier-A smoke only, REVERTED [USER 2026-09-02]; offered as a
+  suggestion with the measured evidence), with a dated erratum note
+  ([AGENT], audit-found) at the top of the draft and in the INDEX entry.
+- **m1 (capped)** — three witness states now: breach (`OOM-KILLED
+  … oom_kill=N`), read-and-zero (`KILLED … NOT a cap breach`), and
+  UNREADABLE/absent (systemd-run fallback, unreadable `memory.events`):
+  `KILLED, OOM witness UNAVAILABLE (… cannot distinguish a cap breach
+  from a signal death …)`. Found while planting: under `set -e` the
+  failing witness read ABORTED capped with exit 2 (replacing the
+  child's status) — fixed (`|| true`).
+- **m2 (capped)** — `oom_kill>0` with any rc is bannered: `OOM event
+  recorded in cgroup (memory.events oom_kill=N …) though the command
+  exited rc=…`.
+- **m3 (measure.sh)** — KILLED note matches `capped: (OOM-)?KILLED`;
+  the spurious exit 1 when `lean-exh` is not requested is gone (`exit 0`).
+- **m4 (doc drift)** — VALIDATION.md §2 (`SKIP_GCC_KILL`, OOM-witness
+  wording), LADDER.md Conventions, `test_kill_plant.sh` header, TODO.md
+  `ulimit -v` item closed as DONE with the commit cites,
+  `tests/libxml2/gen_chvalid_battery.py` docstring.
+- **m5 (tally)** — "22 sites" = 20 code sites + 2 header comments
+  (`test_libxml2.sh:46`, `test_ci_sweep.sh:38`), stated where the
+  number appears (LADDER.md, record §S2, charter §6.4 erratum).
+
+Plants at this commit, verbatim (`scripts/test_kill_plant.sh`, incl. the
+two new capped legs):
+
+```
+PLANT OK   [cap kills a 5 GiB allocator]: exit 137, capped: OOM-KILLED (exit 137 — cgroup memory cap CERB_MEM_MAX=4G breached; memory.events oom_kill=1
+PLANT OK   [capped witness unavailable -> honest banner]: capped: KILLED, OOM witness UNAVAILABLE (exit 137 — cannot distinguish a cap breach from a signal death: no readable cgroup memory.events on this path
+PLANT OK   [capped grandchild OOM -> bannered despite rc=1]: capped: OOM event recorded in cgroup (memory.events oom_kill=1, cap CERB_MEM_MAX=1G) though the command exited rc=1 
+PLANT OK   [ci_sweep -> LEAN_KILL]: ci	tests/ci/0001-emptymain.c	LEAN_KILL	exit 137, capped OOM-KILLED (memory cap 4G breached)
+PLANT OK   [ci_sweep SIGKILL stub -> LEAN_CRASH (not the cap class)]: ci	tests/ci/0001-emptymain.c	LEAN_CRASH	exit 137: (no PANIC line captured)
+PLANT OK   [libc_exec -> KILL row]:   KILL  001-exit: oracle exit 0, lean exit 137 — lean: OOM-KILLED (exit 137; cgroup memory cap CERB_TEST_MEM_MAX=4G breached — memory.events oom_kill=1)
+PLANT OK   [libc_exec no MATCH]: SUMMARY: match=0 diff=7
+PLANT OK   [libc_exec SIGKILL stub -> DIFF (not KILL)]: SUMMARY: match=0 diff=7
+PLANT OK   [immaculate -> KILL status on a C row]:   KILL           g1-ge-funptr          O[ERR:Memory WIP: ge_ptrval] L[KILL]
+PLANT OK   [immaculate no MATCH]
+PLANT OK   [libxml2_uri -> killed label]: FAIL: LEAN_NOLIBC killed by SIGKILL (exit 137 — the per-test cgroup memory cap CERB_TEST_MEM_MAX=4G if the lane's stderr carries capped's OOM-KILLED witness banner, otherwise an external SIGKILL): c
+PLANT OK   [libxml2 -> Lean OOM-KILLED]: [chvalid_battery_00] FAIL: Lean OOM-KILLED (exit 137; cgroup memory cap CERB_TEST_MEM_MAX=4G breached — memory.events oom_kill=1)
+PLANT OK   [gcc_oracle exit(137) native -> compared (AGREE gcc=137 lean={137}), not SKIP_GCC_KILL]: [1/1] AGREE  .tmp/scripts/kill-plant.qzrgQrPBwU/gcc137/exit137.c: gcc=137 lean={137}
+test_kill_plant: all plants read as expected (cap breach -> OOM-KILLED witness; ci_sweep LEAN_KILL, libc_exec KILL, immaculate KILL, uri/libxml2 FAIL-killed; SIGKILL stub NOT the cap class; native exit(137) still compared; no MATCH anywhere)
+```
+
+`test_unit.sh` at this commit: rc 0 (check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three); check_fork_drift: OK — layer 1: 72 oracle-surface files = manifest; layer 2: 22 differing generated files, all hash-pinned).

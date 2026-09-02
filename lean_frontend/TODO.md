@@ -87,7 +87,12 @@ downstream.)
   exact-arity paths tail calls — noted in
   `docs/upstream-tray/lean4/01-stack-overflow-handler-deadlock.md`.
   Upstream-facing source fix drafted regardless: tray draft 18.
-- Harness memory limits use `ulimit -v` (virtual address space) in
+- ~~Harness memory limits use `ulimit -v`~~ — DONE (mem-scale S2,
+  2026-09-02: `e02d4105a` migration of all 20 code sites + 2 header
+  comments to per-test `scripts/capped` at `CERB_TEST_MEM_MAX=4G`;
+  `e866357c6` OOM-witness classification; `de574fbc8` baseline
+  instrument; record `docs/2026-09-02_mem-scale-record.md` §S2). The
+  original item, for the record: `ulimit -v` (virtual address space) in
   SEVEN harnesses: `scripts/test_ci_sweep.sh:222,252,258`,
   `scripts/test_libc_exec.sh:82,90,97`, `tests/parity-probes/
   run_probe.sh:43,51,56`, `scripts/test_gcc_oracle.sh:361,368`,

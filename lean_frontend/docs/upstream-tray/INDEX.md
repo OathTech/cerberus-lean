@@ -202,8 +202,14 @@ Added 2026-09-02 (arc/mem-scale S1' — cerberus-side, upstream-facing):
     zero-initialised static aggregate via `cabs_to_ail_aux.lem:124` →
     `genTyping.lem:484`. Loud on OCaml with a bounded stack (exit 125,
     `Lem_list.replicate` backtrace), a silent hang on our Lean target.
-    Remedy: accumulate-and-reverse (effect order, short-circuit and
-    result preserved — argued in the draft); our fork carries it.
+    Suggested remedy: accumulate-and-reverse (effect order,
+    short-circuit and result preserved — argued in the draft). Our
+    fork PROTOTYPED and MEASURED it (8 M completes; 10 M still hangs —
+    the residual frame is the Lean runtime's `lean_apply_*` entering
+    closures by call) and REVERTED it [USER 2026-09-02] as poor ROI
+    against trust-surface stability; the fork does NOT carry it.
+    (Erratum 2026-09-02 [AGENT], audit M1: an earlier entry said
+    "our fork carries it" — corrected.)
 
 ## Filed / duplicate-search status (2026-08-23, read-only gh session)
 
