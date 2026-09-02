@@ -329,9 +329,8 @@ declare ocaml target_rep function is_power_of_two = `Cerb_util.is_power_of_two`
 declare lean target_rep function is_power_of_two = `CerbUtils.is_power_of_two`
 
 (* === Totality declares (arc 7 S5a, 2026-08-20): Lean-target only.
-   The arc-3 F8 call-graph escapees on the slate theorems' kernel path
-   (S4 record §6.3 event 2: assoc_insert/remove/adjust) + the rest of
-   the module so the totality gate can adopt Utils whole.
+   The execution-path entries (assoc_insert/remove/adjust) + the rest
+   of the module so the totality gate can adopt Utils whole.
    Structural recursions -> termination_argument automatic.
    Fuel cases (fuelExhausted witness panics at runtime, typing only):
    mkListN_aux / mkListFromTo_aux count an integer UP to a bound

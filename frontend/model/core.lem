@@ -461,8 +461,7 @@ instance (SetType polarity)
 end
 
 (* === Totality declares (arc 7 S5a, 2026-08-20): Lean-target only.
-   eq_core_object_type is an arc-3 F8 call-graph escapee on the slate
-   theorems' kernel path (S4 record §6.3 event 2, via Core_aux);
+   eq_core_object_type is on the execution path (via Core_aux);
    eq_core_base_type is the module's only other partial (totality-gate
    adoption of Core). eq_core_object_type: structural pair-component
    recursion -> automatic. eq_core_base_type: the BTy_tuple arm passes
