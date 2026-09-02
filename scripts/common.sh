@@ -33,6 +33,19 @@ fi
 # Binary paths
 CERBERUS_BIN="$PROJECT_ROOT/_build/default/backend/driver/main.exe"
 CERBERUS_LEAN_BIN="$PROJECT_ROOT/lean_frontend/.lake/build/bin/cerberus-lean"
+# PLANT HOOK (mem-scale S0, 2026-09-02): substitute a stub for the Lean
+# driver so a harness's failure CLASSIFICATION can be plant-tested
+# (scripts/test_hang_plant.sh: a sleeping stub must read HANG, a
+# busy-looping stub TIMEOUT). Loud on every use; results under an
+# override are never evidence about the semantics. The SKIP_BUILD
+# freshness check below is skipped for the overridden side — loudly.
+if [[ -n "${CERB_LEAN_BIN_OVERRIDE:-}" ]]; then
+    CERBERUS_LEAN_BIN="$CERB_LEAN_BIN_OVERRIDE"
+    echo "==============================================================" >&2
+    echo "CERB_LEAN_BIN_OVERRIDE ACTIVE: Lean driver replaced by $CERBERUS_LEAN_BIN" >&2
+    echo "PLANT MODE — this run's rows are NOT evidence about the semantics" >&2
+    echo "==============================================================" >&2
+fi
 
 # Colors
 if [[ -t 1 ]]; then
@@ -225,10 +238,80 @@ if [[ "${SKIP_BUILD:-0}" == "1" ]]; then
     if [[ -f "$CERBERUS_BIN" ]]; then
         "$PROJECT_ROOT/tools/check_driver_fresh.sh" --check-oracle >&2 || exit 1
     fi
-    if [[ -f "$CERBERUS_LEAN_BIN" ]]; then
+    if [[ -n "${CERB_LEAN_BIN_OVERRIDE:-}" ]]; then
+        echo "CERB_LEAN_BIN_OVERRIDE ACTIVE: Lean driver freshness check SKIPPED (plant stub, not the driver)" >&2
+    elif [[ -f "$CERBERUS_LEAN_BIN" ]]; then
         "$PROJECT_ROOT/tools/check_driver_fresh.sh" --check-lean >&2 || exit 1
     fi
 fi
+
+# ---------------------------------------------------------------------------
+# Timed runs + the HANG classification (mem-scale S0, 2026-09-02; charter
+# lean_frontend/docs/2026-09-01_mem-scale-design.md C9 / §6.1; the
+# classification was first verified in tests/mem-scale-probes/measure.sh).
+#
+# THE DEFECT SHAPE: a process that stops consuming CPU long before the
+# timeout fires — the >7 M-element front-end recursion parks every thread
+# on a futex after ~3-4 s of CPU (profile §6.3.1: guard-page SIGSEGV, then
+# FUTEX_WAIT_PRIVATE inside the overflow handler, forever). Every lane
+# read that as TIMEOUT, indistinguishable from a slow-but-working run:
+# fail-open by silence. The rule: exit 124 AND (User+System)/wall < 0.1
+# is a HANG, a DISTINCT class that is never counted as a completed run,
+# never a skip, never a plain timeout. The ratio is timeout-relative
+# (a hang that burns 4 s of CPU before parking needs a timeout >= 40 s to
+# fall under 0.1); a lane's TIMEOUT_SECS is therefore part of the
+# instrument and is quoted in the note.
+#
+# Mechanism: every driver run is wrapped as
+#   $TIME_BIN -v -o <timefile> timeout Ns <cmd>
+# GNU time propagates the child's exit status unchanged (124 for
+# timeout, 128+sig for signal deaths — verified 2026-09-02: 139/134/124/
+# 70 all pass through), writes the rusage record to the -o file (so the
+# captured stdout+stderr stream is untouched), and its User/System
+# figures include the waited-for descendants (timeout waits for the
+# child). NEVER a stack-size knob: a bumped budget only moves the silent
+# ceiling (the registered-defect shape).
+TIME_BIN=/usr/bin/time
+require_time_bin() {   # fail-closed: no /usr/bin/time = no HANG instrument
+    if [[ ! -x "$TIME_BIN" ]]; then
+        echo "Error: $TIME_BIN not found or not executable — the HANG classification needs GNU time (fail-closed, not skipped)" >&2
+        exit 1
+    fi
+}
+# time_record_cpu_wall <timefile>: prints "<cpu_s> <wall_s>" (2 decimals)
+# from a `time -v -o` record; rc 1 (with a HARNESS ERROR line) if the
+# record is missing or unparseable — callers must treat that as fatal.
+time_record_cpu_wall() {
+    local tf="$1" ut st_ w cpu wall
+    if [[ ! -f "$tf" ]]; then
+        echo "HARNESS ERROR: time record $tf missing" >&2; return 1
+    fi
+    ut=$(sed -n 's/.*User time (seconds): //p' "$tf")
+    st_=$(sed -n 's/.*System time (seconds): //p' "$tf")
+    w=$(sed -n 's/.*Elapsed (wall clock) time (h:mm:ss or m:ss): //p' "$tf")
+    if [[ -z "$ut" || -z "$st_" || -z "$w" ]]; then
+        echo "HARNESS ERROR: time record $tf unparseable (User/System/Elapsed missing)" >&2; return 1
+    fi
+    cpu=$(awk -v u="$ut" -v s="$st_" 'BEGIN{printf "%.2f", u+s}')
+    # h:mm:ss.ss or m:ss.ss -> seconds
+    wall=$(awk -F: -v w="$w" 'BEGIN{n=split(w,a,":"); s=0; for(i=1;i<=n;i++) s=s*60+a[i]; printf "%.2f", s}')
+    echo "$cpu $wall"
+}
+# classify_exit124 <timefile> <timeout_secs>: for a run that exited 124,
+# prints "HANG(cpu Xs of Ys wall; timeout Ns)" when cpu/wall < 0.1, else
+# "TIMEOUT(cpu Xs of Ys wall; timeout Ns)". rc 1 = unreadable record
+# (fatal for the caller — an unclassifiable timeout is never TIMEOUT by
+# default).
+classify_exit124() {
+    local tf="$1" tsecs="$2" cw cpu wall
+    cw=$(time_record_cpu_wall "$tf") || return 1
+    cpu="${cw% *}"; wall="${cw#* }"
+    if awk -v c="$cpu" -v w="$wall" 'BEGIN{exit !(w > 0 && c / w < 0.1)}'; then
+        echo "HANG(cpu ${cpu}s of ${wall}s wall; timeout ${tsecs}s)"
+    else
+        echo "TIMEOUT(cpu ${cpu}s of ${wall}s wall; timeout ${tsecs}s)"
+    fi
+}
 
 # Produce an 8-character hash of a string (works on both macOS and Linux)
 portable_hash() {

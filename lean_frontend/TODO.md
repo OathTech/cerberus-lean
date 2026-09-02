@@ -51,9 +51,14 @@ downstream.)
   completion + battery; (b) Lean upstream bug report (signal-handler
   deadlock after guard-page SIGSEGV) with the strace excerpt; (c)
   interim LOUDNESS: HANG classification (exit 124 with CPU/wall <
-  0.1) — in `tests/mem-scale-probes/measure.sh` now, to be added to
-  `scripts/test_exec.sh`/`test_ci_sweep.sh` with baselines. Never a
-  stack-size knob (charter C9, `docs/2026-09-01_mem-scale-design.md`).
+  0.1) — DONE in S0 (2026-09-02): `scripts/common.sh classify_exit124`
+  shared by `scripts/test_exec.sh` (status `HANG`, fatal) and
+  `scripts/test_ci_sweep.sh` (`LEAN_HANG`/`CERB_HANG`); plant
+  `scripts/test_hang_plant.sh` (sleep→HANG, busy→TIMEOUT, both lanes);
+  the 10 M probe reads `HANG(cpu 3.29s of 400.12s wall)` in
+  test_exec.sh; no committed row changed class. Item (b) drafted:
+  `docs/upstream-tray/lean4/01-stack-overflow-handler-deadlock.md`.
+  Never a stack-size knob (charter C9, `docs/2026-09-01_mem-scale-design.md`).
   RULED [AGENT 2026-09-02, orchestrator, operator-informed] (Q5): fix
   at source in the cerberus `.lem` (accumulate-and-reverse mapM; NOT a
   lem-backend change unless the completion gate shows the tail call

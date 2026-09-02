@@ -45,11 +45,22 @@
 #      surface honestly as UB_* / DIFF rows).
 #   7. Timeout default 15 s per side (sweep discipline; prototype
 #      test_interp.sh used 10 s, our gate lanes use 30 s).
+#   8. HANG classification (mem-scale S0, 2026-09-02; common.sh
+#      classify_exit124, shared with test_exec.sh): an exit 124 whose
+#      (User+System)/wall < 0.1 is LEAN_HANG / CERB_HANG, distinct from
+#      LEAN_TIMEOUT / CERB_TIMEOUT — the process stopped consuming CPU
+#      long before the timeout (no output, no exit; charter C9). Both
+#      driver runs are wrapped in `/usr/bin/time -v -o <record>`; an
+#      unreadable record is a harness error, never a TIMEOUT. NOTE the
+#      rule is timeout-relative: at this lane's 15 s default a hang that
+#      burns >1.5 s of CPU before parking still reads TIMEOUT — the
+#      classification is exact only for TIMEOUT_SECS >= 10x the CPU a
+#      hang burns (>= 60 s for the C9 shape); the note carries both.
 #
 # Statuses (superset of the test_exec.sh taxonomy):
 #   MATCH UB_MATCH UB_DIFF STDOUT_DIFF DIFF MISMATCH
-#   LEAN_FAIL LEAN_CRASH LEAN_ERROR LEAN_TIMEOUT
-#   CERB_REJECT CERB_ERROR CERB_TIMEOUT CERB_CRASH CERB_SKIP
+#   LEAN_FAIL LEAN_CRASH LEAN_ERROR LEAN_TIMEOUT LEAN_HANG
+#   CERB_REJECT CERB_ERROR CERB_TIMEOUT CERB_HANG CERB_CRASH CERB_SKIP
 #   CERB_FLOOR CERB_INCONSISTENT
 #
 # Usage:
@@ -67,6 +78,7 @@ TIMEOUT_SECS="${TIMEOUT_SECS:-15}"
 SWEEP_ULIMIT_KB="${SWEEP_ULIMIT_KB:-4000000}"
 
 command -v timeout &>/dev/null || { echo "Error: 'timeout' not found" >&2; exit 1; }
+require_time_bin   # HANG classification needs GNU time (common.sh; fail-closed)
 
 # --- suite registry ---------------------------------------------------------
 # name => "dir|mode"  (mode: libc | nolibc; dir relative to PROJECT_ROOT)
@@ -194,8 +206,8 @@ for suite in "${SUITES[@]}"; do
     # counters
     declare -A C=()
     for k in MATCH UB_MATCH UB_DIFF STDOUT_DIFF DIFF MISMATCH LEAN_FAIL LEAN_CRASH \
-             LEAN_ERROR LEAN_TIMEOUT CERB_REJECT CERB_ERROR CERB_TIMEOUT CERB_CRASH \
-             CERB_SKIP CERB_FLOOR CERB_INCONSISTENT; do C[$k]=0; done
+             LEAN_ERROR LEAN_TIMEOUT LEAN_HANG CERB_REJECT CERB_ERROR CERB_TIMEOUT \
+             CERB_HANG CERB_CRASH CERB_SKIP CERB_FLOOR CERB_INCONSISTENT; do C[$k]=0; done
     n=0; nfiles=${#files[@]}
 
     ORACLE_FLAGS=(--exec --batch --mode=exhaustive)
@@ -219,10 +231,15 @@ for suite in "${SUITES[@]}"; do
 
         # --- oracle ---------------------------------------------------------
         cerb_exit=0
-        cerb_out=$( (ulimit -v "$SWEEP_ULIMIT_KB"; exec timeout "${TIMEOUT_SECS}s" \
+        cerb_time="$WORK_DIR/cerb.time"
+        cerb_out=$( (ulimit -v "$SWEEP_ULIMIT_KB"; exec "$TIME_BIN" -v -o "$cerb_time" timeout "${TIMEOUT_SECS}s" \
             "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" "${ORACLE_FLAGS[@]}" "$f") 2>&1 ) \
             || cerb_exit=$?
-        if [[ $cerb_exit -eq 124 ]]; then row CERB_TIMEOUT ">${TIMEOUT_SECS}s"; continue; fi
+        if [[ $cerb_exit -eq 124 ]]; then
+            cerb_124=$(classify_exit124 "$cerb_time" "$TIMEOUT_SECS") || exit 1
+            if [[ "$cerb_124" == HANG* ]]; then row CERB_HANG "$cerb_124"; else row CERB_TIMEOUT "$cerb_124"; fi
+            continue
+        fi
         if [[ $cerb_exit -eq 134 || $cerb_exit -eq 137 || $cerb_exit -eq 139 ]]; then
             row CERB_CRASH "signal exit $cerb_exit"; continue; fi
         if [[ "$cerb_out" == *CERB_FRESH_FLOOR_VIOLATION* ]]; then
@@ -255,10 +272,15 @@ for suite in "${SUITES[@]}"; do
 
         # --- Lean pipeline --------------------------------------------------
         lean_exit=0
+        lean_time="$WORK_DIR/lean.time"
         lean_out=$( (ulimit -v "$SWEEP_ULIMIT_KB"; exec env LEAN_ABORT_ON_PANIC=1 \
-            timeout "${TIMEOUT_SECS}s" "$CERBERUS_LEAN_BIN" --batch \
+            "$TIME_BIN" -v -o "$lean_time" timeout "${TIMEOUT_SECS}s" "$CERBERUS_LEAN_BIN" --batch \
             ${LEAN_MODE_ARGS[@]+"${LEAN_MODE_ARGS[@]}"} "$json") 2>&1 ) || lean_exit=$?
-        if [[ $lean_exit -eq 124 ]]; then row LEAN_TIMEOUT ">${TIMEOUT_SECS}s"; continue; fi
+        if [[ $lean_exit -eq 124 ]]; then
+            lean_124=$(classify_exit124 "$lean_time" "$TIMEOUT_SECS") || exit 1
+            if [[ "$lean_124" == HANG* ]]; then row LEAN_HANG "$lean_124"; else row LEAN_TIMEOUT "$lean_124"; fi
+            continue
+        fi
         if [[ $lean_exit -ge 128 ]]; then
             kind=$(echo "$lean_out" | grep -m1 -E 'PANIC|fuel exhausted' | cut -c1-120)
             [[ -z "$kind" ]] && kind="(no PANIC line captured)"
@@ -313,8 +335,8 @@ for suite in "${SUITES[@]}"; do
     done < "$tsv"
     summary="SWEEP SUMMARY suite=$suite mode=$mode total=$tsv_rows"
     for k in MATCH UB_MATCH UB_DIFF STDOUT_DIFF DIFF MISMATCH LEAN_FAIL LEAN_CRASH \
-             LEAN_ERROR LEAN_TIMEOUT CERB_REJECT CERB_ERROR CERB_TIMEOUT CERB_CRASH \
-             CERB_SKIP CERB_FLOOR CERB_INCONSISTENT; do
+             LEAN_ERROR LEAN_TIMEOUT LEAN_HANG CERB_REJECT CERB_ERROR CERB_TIMEOUT \
+             CERB_HANG CERB_CRASH CERB_SKIP CERB_FLOOR CERB_INCONSISTENT; do
         summary+=" ${k,,}=${T[$k]:-0}"
     done
     echo ""

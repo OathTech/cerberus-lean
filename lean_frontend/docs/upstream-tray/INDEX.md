@@ -170,6 +170,31 @@ mechanical confirmation of the `\?` = 63 pin (`AGREE gcc=63
 lean={63}` — the first oracle-independent referee for an
 oracle-wrong pin).
 
+## Other upstreams — `lean4/` subdirectory (added 2026-09-02, arc/mem-scale S0)
+
+The tray above targets `rems-project/cerberus`. Reports for OTHER
+upstreams live in per-target subdirectories with their own numbering,
+same draft format (classification, verbatim evidence, remedy,
+provenance note), same filing checklist and labeling policy:
+
+- **lean4/01-stack-overflow-handler-deadlock.md** — target
+  `leanprover/lean4` (runtime). TRUE BUG (fail-open by silence): a
+  stack overflow on the `lean_run_main` thread takes the guard-page
+  `SIGSEGV` and then blocks forever on a contended futex INSIDE the
+  handler instead of printing "Stack overflow detected. Aborting." —
+  no output, no exit. First-hand strace excerpt; onset moves with
+  `LEAN_STACK_SIZE_KB` in both directions; the plain overflow path
+  aborts loudly in a standalone program (negative result recorded), so
+  the in-project driver + `tests/mem-scale-probes/probes/
+  a_zero_global_10000000.c` is the deterministic reproducer until a
+  standalone trigger is isolated. Remedy: async-signal-safe handler
+  (`write(2)` + `abort`). Record: `docs/2026-09-01_mem-scale-profile.md`
+  §6.2–6.3; charter C9.
+
+Also upstream-facing from the same arc (cerberus-side, S1' when it
+lands): the accumulate-and-reverse rewrite of `ailErr_mapM` /
+`foldrM` / `sequence` — see draft 18 below once added.
+
 ## Filed / duplicate-search status (2026-08-23, read-only gh session)
 
 - **01 → FILED as issues/1009** (operator, 2026-08-19, open). Also filed

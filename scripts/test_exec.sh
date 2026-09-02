@@ -44,6 +44,18 @@
 #                     timeouts/signals 124/134/137/139 stay CERB_SKIP)
 #   * Lean TIMEOUT, LEAN_CRASH and LEAN_ERROR are fatal in default mode
 #     (the prototype only counted timeouts). Fail-closed house rule.
+#   * HANG (mem-scale S0, 2026-09-02; common.sh classify_exit124): a Lean
+#     exit 124 whose (User+System)/wall < 0.1 — the process stopped
+#     consuming CPU long before the timeout (the >7 M-element front-end
+#     recursion parks all threads on a futex after ~3-4 s; charter C9).
+#     A DISTINCT status from TIMEOUT: fatal in default mode, rank 0 in the
+#     baseline, fatal on a new file; never folded into TIMEOUT or a skip.
+#     Both driver runs are wrapped in `/usr/bin/time -v -o <record>` so
+#     the CPU figure exists; a missing/unparseable record is a harness
+#     error, not a TIMEOUT. The oracle side keeps its CERB_SKIP class on
+#     exit 124 (the oracle fails LOUDLY on its own stack ceiling — profile
+#     §6.3.2 contrast datum) but the CPU/wall ratio is printed in the
+#     skip line so an oracle-side hang would be visible in the log.
 #   * Default mode with ZERO comparisons (all files skipped) is a FAILURE,
 #     not a vacuous pass.
 #   * Baseline tracking: --write-baseline / --check-baseline against
@@ -69,8 +81,9 @@
 #     cannot match. Recorded, not defended further.
 #
 # Per-file statuses (baseline taxonomy):
-#   MATCH UB_MATCH UB_DIFF MISMATCH DIFF FAIL TIMEOUT LEAN_CRASH LEAN_ERROR
-#   CERB_SKIP CERB_INCONSISTENT UNSUPPORTED UNSUPPORTED_PASS CERB_FLOOR
+#   MATCH UB_MATCH UB_DIFF MISMATCH DIFF FAIL TIMEOUT HANG LEAN_CRASH
+#   LEAN_ERROR CERB_SKIP CERB_INCONSISTENT UNSUPPORTED UNSUPPORTED_PASS
+#   CERB_FLOOR
 #
 #   CERB_FLOOR (arc-12): the oracle REFUSED the TU via the F-D fail-stop
 #   floor (stderr token CERB_FRESH_FLOOR_VIOLATION, exit 70 — the TU's
@@ -127,6 +140,7 @@ if ! command -v timeout &>/dev/null; then
     echo "Error: 'timeout' command not found" >&2
     exit 1
 fi
+require_time_bin   # HANG classification needs GNU time (common.sh; fail-closed)
 
 DEFAULT_BASELINE="$SCRIPT_DIR/exec_baseline.txt"
 
@@ -298,17 +312,21 @@ fi
 # Runners
 # ---------------------------------------------------------------------------
 # Direct binary invocation (opam exec not needed: --runtime is passed
-# explicitly) so `timeout` wraps the real process.
-run_ocaml_exec() {  # <file.c>
-    timeout "${TIMEOUT_SECS}s" "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" \
+# explicitly) so `timeout` wraps the real process. Both driver runs are
+# wrapped in `$TIME_BIN -v -o <record>` (mem-scale S0): the rusage record
+# feeds the HANG classification; GNU time propagates the exit status
+# unchanged (common.sh header) so every classification below is
+# untouched.
+run_ocaml_exec() {  # <file.c> <time-record>
+    "$TIME_BIN" -v -o "$2" timeout "${TIMEOUT_SECS}s" "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" \
         --nolibc --exec --batch --mode=exhaustive "$1" 2>&1
 }
 run_cabs_json() {   # <file.c> <out.json>
     timeout "${TIMEOUT_SECS}s" "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" \
         --cabs-json "$1" > "$2" 2>/dev/null
 }
-run_lean_batch() {  # <file.json>
-    LEAN_ABORT_ON_PANIC=1 timeout "${TIMEOUT_SECS}s" \
+run_lean_batch() {  # <file.json> <time-record>
+    LEAN_ABORT_ON_PANIC=1 "$TIME_BIN" -v -o "$2" timeout "${TIMEOUT_SECS}s" \
         "$CERBERUS_LEAN_BIN" --batch "$1" 2>&1
 }
 
@@ -361,6 +379,7 @@ CERB_FLOOR_COUNT=0
 LEAN_OK=0
 LEAN_FAIL=0
 LEAN_TIMEOUT_COUNT=0
+LEAN_HANG_COUNT=0
 LEAN_CRASH_COUNT=0
 LEAN_ERROR_COUNT=0
 CERB_INCONSISTENT_COUNT=0
@@ -394,11 +413,15 @@ for c_file in "${TEST_FILES[@]}"; do
 
     # --- OCaml cerberus: --exec --batch (exhaustive, nolibc) ---------------
     cerberus_shell_exit=0
-    cerberus_output=$(run_ocaml_exec "$c_file") || cerberus_shell_exit=$?
+    cerb_time="$OUTPUT_DIR/$filename.cerb.time"
+    cerberus_output=$(run_ocaml_exec "$c_file" "$cerb_time") || cerberus_shell_exit=$?
 
     if [[ $cerberus_shell_exit -eq 124 ]]; then
+        # Class stays CERB_SKIP (header); the CPU/wall ratio is made
+        # visible so an oracle-side hang cannot pass unremarked.
+        cerb_124=$(classify_exit124 "$cerb_time" "$TIMEOUT_SECS") || exit 1
         CERB_SKIP_COUNT=$((CERB_SKIP_COUNT + 1))
-        echo "[$file_num/$total_to_test] CERB_SKIP $filename (Cerberus timeout)"
+        echo "[$file_num/$total_to_test] CERB_SKIP $filename (Cerberus timeout: $cerb_124)"
         record_status "$base_c" CERB_SKIP
         continue
     fi
@@ -481,16 +504,26 @@ for c_file in "${TEST_FILES[@]}"; do
 
     # --- Lean pipeline: --batch --------------------------------------------
     lean_exit=0
-    lean_output=$(run_lean_batch "$json_file") || lean_exit=$?
+    lean_time="$OUTPUT_DIR/$filename.lean.time"
+    lean_output=$(run_lean_batch "$json_file" "$lean_time") || lean_exit=$?
 
     if [[ $lean_exit -eq 124 ]]; then
-        if $expect_unsupported; then
+        # HANG vs TIMEOUT (header; common.sh classify_exit124). An
+        # unreadable time record is a harness error, never a TIMEOUT.
+        lean_124=$(classify_exit124 "$lean_time" "$TIMEOUT_SECS") || exit 1
+        if [[ "$lean_124" == HANG* ]]; then
+            # A hang is a defect even on an *.unsupported.c file: no
+            # output, no exit is never "expected".
+            LEAN_HANG_COUNT=$((LEAN_HANG_COUNT + 1))
+            echo "[$file_num/$total_to_test] HANG $filename (Lean $lean_124)"
+            record_status "$base_c" HANG
+        elif $expect_unsupported; then
             UNSUPPORTED_EXPECTED=$((UNSUPPORTED_EXPECTED + 1))
-            echo "[$file_num/$total_to_test] UNSUPPORTED $filename (timeout, expected)"
+            echo "[$file_num/$total_to_test] UNSUPPORTED $filename (timeout, expected: $lean_124)"
             record_status "$base_c" UNSUPPORTED
         else
             LEAN_TIMEOUT_COUNT=$((LEAN_TIMEOUT_COUNT + 1))
-            echo "[$file_num/$total_to_test] TIMEOUT $filename (Lean >${TIMEOUT_SECS}s)"
+            echo "[$file_num/$total_to_test] TIMEOUT $filename (Lean $lean_124)"
             record_status "$base_c" TIMEOUT
         fi
         continue
@@ -665,6 +698,7 @@ echo "  Failed:     $LEAN_FAIL"
 echo "  Crashed:    $LEAN_CRASH_COUNT"
 echo "  ExitErr:    $LEAN_ERROR_COUNT (exit code inconsistent with parsed verdict)"
 echo "  Timeout:    $LEAN_TIMEOUT_COUNT"
+echo "  Hang:       $LEAN_HANG_COUNT (exit 124 with CPU/wall < 0.1 — no output, no exit)"
 echo ""
 echo "Comparison (of both successes):"
 echo "  Match:      $MATCH"
@@ -693,7 +727,7 @@ fi
 
 # One-line machine-grepable summary
 echo ""
-echo "SUMMARY: total=$file_num match=$MATCH ub_match=$UB_MATCH ub_diff=$UB_CODE_DIFF mismatch=$MISMATCH fail=$LEAN_FAIL crash=$LEAN_CRASH_COUNT lean_error=$LEAN_ERROR_COUNT timeout=$LEAN_TIMEOUT_COUNT cerb_skip=$CERB_SKIP_COUNT cerb_floor=$CERB_FLOOR_COUNT cerb_inconsistent=$CERB_INCONSISTENT_COUNT"
+echo "SUMMARY: total=$file_num match=$MATCH ub_match=$UB_MATCH ub_diff=$UB_CODE_DIFF mismatch=$MISMATCH fail=$LEAN_FAIL crash=$LEAN_CRASH_COUNT lean_error=$LEAN_ERROR_COUNT timeout=$LEAN_TIMEOUT_COUNT hang=$LEAN_HANG_COUNT cerb_skip=$CERB_SKIP_COUNT cerb_floor=$CERB_FLOOR_COUNT cerb_inconsistent=$CERB_INCONSISTENT_COUNT"
 
 # ---------------------------------------------------------------------------
 # Baseline write / check
@@ -703,7 +737,7 @@ status_rank() {   # rank per status; unknown status = harness error
         MATCH|UB_MATCH|UNSUPPORTED_PASS) echo 3 ;;
         UB_DIFF) echo 2 ;;
         MISMATCH|DIFF|UNSUPPORTED) echo 1 ;;
-        FAIL|TIMEOUT|LEAN_CRASH|LEAN_ERROR|CERB_SKIP|CERB_INCONSISTENT|CERB_FLOOR) echo 0 ;;
+        FAIL|TIMEOUT|HANG|LEAN_CRASH|LEAN_ERROR|CERB_SKIP|CERB_INCONSISTENT|CERB_FLOOR) echo 0 ;;
         *) echo "HARNESS ERROR: unknown status '$1'" >&2; exit 1 ;;
     esac
 }
@@ -777,7 +811,7 @@ if [[ -n "$CHECK_BASELINE" ]]; then
     for f in "${!cur_map[@]}"; do
         if [[ -z "${base_map[$f]+x}" ]]; then
             case "${cur_map[$f]}" in
-                MISMATCH|DIFF|FAIL|LEAN_CRASH|LEAN_ERROR|TIMEOUT|CERB_FLOOR)
+                MISMATCH|DIFF|FAIL|LEAN_CRASH|LEAN_ERROR|TIMEOUT|HANG|CERB_FLOOR)
                     echo "REGRESSION: new file (not in baseline) with failing status: $f ${cur_map[$f]}"
                     regressions=$((regressions + 1))
                     ;;
@@ -820,6 +854,11 @@ fi
 if [[ $LEAN_TIMEOUT_COUNT -gt 0 ]]; then
     echo ""
     echo -e "${RED}FAILED: $LEAN_TIMEOUT_COUNT Lean timeout(s)${NC}"
+    FATAL=1
+fi
+if [[ $LEAN_HANG_COUNT -gt 0 ]]; then
+    echo ""
+    echo -e "${RED}FAILED: $LEAN_HANG_COUNT Lean HANG(s) — exit 124 with CPU/wall < 0.1: no output, no exit (charter C9 shape)${NC}"
     FATAL=1
 fi
 if [[ $MISMATCH -gt 0 ]]; then
