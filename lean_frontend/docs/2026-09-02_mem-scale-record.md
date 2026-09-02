@@ -524,3 +524,207 @@ bit-reproducible; the source hash is the identity). KEPT from S1': tray draft 18
 
 Cap-rule reminder acknowledged [orchestrator]: every driver/lake/lean
 invocation — ad-hoc reproducers included — goes through `scripts/capped`.
+
+## S2 — C2 harness migration (Q2) + baselines + parity confirmation — DONE
+
+Commits: harness migration `e02d4105a`; fix-up (OOM witness) `e866357c6`;
+baseline instrument `de574fbc8`. Binaries throughout: oracle
+`77de74dcb4872e03`, Lean `406960e92de44c2f` (the S1 binary, byte-identical).
+
+### What changed
+
+- `scripts/common.sh`: `CAPPED_TEST=(env CERB_MEM_MAX=$TEST_MEM_MAX
+  scripts/capped)` with `CERB_TEST_MEM_MAX` (default 4G, cgroup RSS);
+  `is_cap_kill <rc> <stderr-file>` (exit 137 AND capped's `OOM-KILLED`
+  witness), `kill_label`.
+- All 22 `ulimit -v 4000000` sites replaced: `test_ci_sweep.sh` (3),
+  `test_libc_exec.sh` (3), `test_libxml2.sh` (4), `test_libxml2_uri.sh`
+  (2), `test_immaculate.sh` (3), `test_gcc_oracle.sh` (2, the native
+  runs — stderr now captured), `tests/parity-probes/run_probe.sh` (3).
+  `grep ulimit` over the seven files now hits comments only.
+- KILL classes (never agreement, never a skip): ci_sweep `LEAN_KILL` /
+  `CERB_KILL` (distinct from `*_CRASH`); libc_exec `KILL`; immaculate
+  token `KILL` (two KILLs never MATCH); libxml2 / uri `FAIL: … OOM-KILLED`;
+  gcc_oracle `SKIP_GCC_KILL` (native breach); run_probe `OOM-KILLED` note.
+- `scripts/capped` (fix-up): reads the cgroup's `memory.events oom_kill`
+  before removing the cgroup and prints `capped: OOM-KILLED (… memory.events
+  oom_kill=N …)` on a breach; any other 137/143 keeps a generic
+  `KILLED (… NOT a cap breach …)` banner. Verified (verbatim):
+
+```
+capped: OOM-KILLED (exit 137 — cgroup memory cap CERB_MEM_MAX=1G breached; memory.events oom_kill=1; NOT a pass)
+capped: KILLED (exit 137 — signal death, NOT a cap breach: no cgroup OOM event recorded (oom_kill=0); e.g. timeout -k SIGKILL or the program's own exit status; NOT a pass)
+capped: KILLED (exit 137 — signal death, NOT a cap breach: no cgroup OOM event recorded (oom_kill=0); e.g. timeout -k SIGKILL or the program's own exit status; NOT a pass)
+```
+
+  (a 2 GiB allocator under 1G; `sh -c 'exit 137'`; `sh -c 'kill -KILL $$'`.)
+- `scripts/LADDER.md` Conventions → MIGRATED; `VALIDATION.md` §2 gains
+  the per-test resource-limits paragraph (HANG + KILL, both loud).
+
+### Two findings during the slice (both fixed before any baseline moved)
+
+1. Exit 137 is not a witness. The first re-derivation of the gcc lane
+   read 4 rows `SKIP_GCC_KILL` where the ledger says `AGREE gcc=137
+   lean={137}` — `sa_csmith_77`, `sia_csmith_1001`, `sia_csmith_345`,
+   `sia_csmith_878` exit with THEIR OWN status 137 (checksum byte) in
+   0.00 s at 2 MB RSS, and `capped` bannered every 137. Fixed at the
+   source of truth (the kernel's `memory.events oom_kill` counter);
+   the four rows AGREE again (gcc lane below: 0 regressions).
+2. A vacuous plant pass. The first `test_kill_plant.sh` "immaculate →
+   KILL" leg matched only the by-design `KILL` of the in-Lean
+   `illtyped-store` probe: the LEAN-side `verdict` call did not receive
+   its stderr file, so a killed Lean read as `CRASH` — and against the
+   oracle-CRASH rows (`g4-bswap64-overflow`, `g5-decode-*`,
+   `offsetof-union-member`, `g2-memcmp-uninit`, `s4b-memcmp-hugesize`)
+   that read `MATCH`: exactly the laundering the plant exists for. The
+   "no MATCH" leg caught it; fixed (`verdict … "$OUTPUT_DIR/$name.lerr"`),
+   the plant now names a real C row.
+
+### Plant evidence (verbatim, `scripts/test_kill_plant.sh`, final code)
+
+```
+PLANT OK   [cap kills a 5 GiB allocator]: exit 137, capped: OOM-KILLED (exit 137 — cgroup memory cap CERB_MEM_MAX=4G breached; memory.events oom_kill=1
+PLANT OK   [ci_sweep -> LEAN_KILL]: ci	tests/ci/0001-emptymain.c	LEAN_KILL	exit 137, capped OOM-KILLED (memory cap 4G breached)
+PLANT OK   [ci_sweep SIGKILL stub -> LEAN_CRASH (not the cap class)]: ci	tests/ci/0001-emptymain.c	LEAN_CRASH	exit 137: (no PANIC line captured)
+PLANT OK   [libc_exec -> KILL row]:   KILL  001-exit: oracle exit 0, lean exit 137 — lean: OOM-KILLED (exit 137; cgroup memory cap CERB_TEST_MEM_MAX=4G breached — memory.events oom_kill=1)
+PLANT OK   [libc_exec no MATCH]: SUMMARY: match=0 diff=7
+PLANT OK   [libc_exec SIGKILL stub -> DIFF (not KILL)]: SUMMARY: match=0 diff=7
+PLANT OK   [immaculate -> KILL status on a C row]:   KILL           g1-ge-funptr          O[ERR:Memory WIP: ge_ptrval] L[KILL]
+PLANT OK   [immaculate no MATCH]
+PLANT OK   [libxml2_uri -> killed label]: FAIL: LEAN_NOLIBC killed by SIGKILL (exit 137 — the per-test cgroup memory cap CERB_TEST_MEM_MAX=4G if the lane's stderr carries capped's OOM-KILLED witness banner, otherwise an external SIGKILL): c
+PLANT OK   [libxml2 -> Lean OOM-KILLED]: [chvalid_battery_00] FAIL: Lean OOM-KILLED (exit 137; cgroup memory cap CERB_TEST_MEM_MAX=4G breached — memory.events oom_kill=1)
+PLANT OK   [gcc_oracle exit(137) native -> compared (AGREE gcc=137 lean={137}), not SKIP_GCC_KILL]: [1/1] AGREE O2_AGREE .tmp/scripts/kill-plant.r5ZXx31jsh/gcc137/exit137.c: gcc=137 lean={137}
+test_kill_plant: all plants read as expected (cap breach -> OOM-KILLED witness; ci_sweep LEAN_KILL, libc_exec KILL, immaculate KILL, uri/libxml2 FAIL-killed; SIGKILL stub NOT the cap class; native exit(137) still compared; no MATCH anywhere)
+```
+
+### Baseline re-derivation under the cap — enumeration (verbatim lane lines; final harness code)
+
+```
+libc_exec        rc=0      14s  SUMMARY: match=7 diff=0
+libxml2_uri      rc=0      12s  libxml2 uri 5-TU harness (arc-6 S4 GATE, 16-URI corpus) GATE PASS: all lane expectations pinned-green + baseline unchanged (16/16)
+immaculate       rc=0      25s  OK: lane matches the committed post-S1 baseline (mostly MATCH; the intended non-MATCH rows: g5-decode-question ORACLE_CRASH/L=63 and g5-escape-roundtrip DIFF/L=127 are oracle-wrong — upstream-tray #10/#11 — and g6 is TRIPWIRE).
+gcc_oracle       rc=0    1158s  SUMMARY: total=1953 compared=1880 agree=1871 agree_nd=0 triaged=9 disagree=0 o2_agree=190 skip_lean_crash=9 skip_lean_fail=9 skip_lean_timeout=11 skip_ub=44 triaged_addr=9 Baseline check: 0 regression(s), 0 improvement(s)
+libxml2          rc=0     661s  SUMMARY: total=4 match=4 fail=0 (points: 1354, 22 observations each) ALL PASSED
+```
+
+(libxml2 ran on the migration commit's code; its 137 paths were not
+exercised and are textually the only S2 delta since.) MOVED rows: none
+in any gate baseline. The expected class (rows that died under `ulimit
+-v` and now complete) has no members in the committed baselines — the
+libxml2 lanes were already green (the charter's "biased against Lean"
+concern did not manifest as rows) — and its two known instances are the
+detective's non-baselined rows, re-run through the migrated
+`run_probe.sh` (libc mode, 4G resident cap), verbatim:
+
+```
+=== det_array (run_probe.sh libc mode, cap 4G)
+=== ORACLE (exit 0) ===
+=== LEAN (exit 0) ===
+=== VERDICT ===
+AGREE VAL:Specified(0)
+=== det_pr20621-1 (run_probe.sh libc mode, cap 4G)
+=== ORACLE (exit 0) ===
+=== LEAN (exit 0) ===
+=== VERDICT ===
+AGREE VAL:Specified(0)|VAL:Specified(0)|VAL:Specified(0)|VAL:Specified(0)|VAL:Specified(0)|VAL:Specified(0)|VAL:Specified(0)|VAL:Specified(0)|VAL:Specified(0)|V
+```
+
+Tier-C sweep artifact re-recorded in the instrument commit
+(`tests/ci_sweep/results/tcc.tsv`, full tcc suite, 70 rows before and
+after; `SWEEP SUMMARY suite=tcc mode=libc total=70 match=62 ub_match=2
+… lean_crash=1 lean_kill=0 … cerb_kill=0`): ONE class move —
+`tests/tcc/40_stdio.c LEAN_TIMEOUT → LEAN_CRASH` (`exit 134: PANIC at
+CerbFS.fs_read CerbFS:221:8: CerbFS refusal (fail-closed fs-model
+boundary): read on fd 4 at offset 5 of 12-byte file 'fred.txt'`),
+attributed to the trust-basket CerbFS fail-closed change `9152d2afe`
+(postdates the recorded sweep; stale row, not a cap effect). Detail-only:
+`15_recursion.c CERB_TIMEOUT >15s → TIMEOUT(cpu 15.03s of 15.03s wall;
+timeout 15s)` (S0's note); `24_math_library.c`, `81_types.c`,
+`82_attribs_position.c` CERB_REJECT details embed the recording
+worktree path (cosmetic). The other 14 sweep TSVs are not re-recorded
+(separate deliberate instrument run).
+
+### Parity confirmation (charter §4, F4 rules) — `tests/mem-scale-probes/results/2026-09-02_s2-parity.tsv`
+
+Run: `run_all.sh --engines oracle-random,lean-first --timeout 600`,
+`CERB_MEM_MAX=32G`, box otherwise idle; oracle bin `986d9fa7f5dde61e`
+(source-set hash `a54c0b1f…` — the harnesses' own `build_cerberus` relinks
+the oracle non-reproducibly; the source hash is the identity), Lean
+`406960e92de44c2f`. Method (DERIVED, `.tmp/memscale/parity_table.py`,
+ephemeral; the table is reproduced here in full): ratios on the
+INCREMENTAL cost over the same-mode/engine `z_base` row (the profile §3
+method), fixed startup reported separately; rows whose oracle increment
+is below resolution (<0.5 s and <32 MB) are labelled, not scored;
+non-completing rows are attributed blockers or out of domain, never
+counted. Every Lean exit-134 row was checked for its marker: all six read
+`lem: fuel exhausted` (C8).
+
+Fixed startup cost (z_base, both engines):
+  libc    lean-first     wall 2.51 s  RSS 223 MB
+  libc    oracle-random  wall 0.48 s  RSS 108 MB
+  nolibc  lean-first     wall 0.05 s  RSS 74 MB
+  nolibc  oracle-random  wall 0.07 s  RSS 43 MB
+
+| probe | mode | oracle Δwall s / ΔRSS MB / verdict | lean Δwall s / ΔRSS MB / verdict | Δwall ratio | ΔRSS ratio | raw wall / RSS ratio | status |
+|---|---|---|---|---|---|---|---|
+| a_uninit_local_1000 | nolibc | 0.00 / -0 / VAL:Specified(7) | 0.00 / 0 / VAL:Specified(7) | — | — | 0.71 / 1.75 | below resolution (oracle increment <0.5 s, <32 MB) |
+| a_uninit_local_10000 | nolibc | 0.01 / 2 / VAL:Specified(7) | 0.00 / 0 / VAL:Specified(7) | — | — | 0.62 / 1.65 | below resolution (oracle increment <0.5 s, <32 MB) |
+| a_uninit_local_100000 | nolibc | 0.13 / 22 / VAL:Specified(7) | 0.17 / 19 / VAL:Specified(7) | — | — | 1.10 / 1.44 | below resolution (oracle increment <0.5 s, <32 MB) |
+| a_uninit_local_1000000 | nolibc | 0.63 / 220 / VAL:Specified(7) | 0.81 / 213 / VAL:Specified(7) | 1.29 | 0.97 | 1.23 / 1.09 | MET |
+| a_uninit_local_10000000 | nolibc | 12.71 / 2218 / VAL:Specified(7) | 18.33 / 2137 / VAL:Specified(7) | 1.44 | 0.96 | 1.44 / 0.98 | MET |
+| a_zero_global_1000 | nolibc | 0.00 / 0 / VAL:Specified(7) | 0.00 / 0 / VAL:Specified(7) | — | — | 0.71 / 1.72 | below resolution (oracle increment <0.5 s, <32 MB) |
+| a_zero_global_10000 | nolibc | 0.05 / 8 / VAL:Specified(7) | 0.03 / 6 / VAL:Specified(7) | — | — | 0.67 / 1.57 | below resolution (oracle increment <0.5 s, <32 MB) |
+| a_zero_global_100000 | nolibc | 0.54 / 95 / VAL:Specified(7) | 0.38 / 66 / VAL:Specified(7) | 0.70 | 0.69 | 0.70 / 1.02 | MET |
+| a_zero_global_1000000 | nolibc | 4.28 / 879 / VAL:Specified(7) | 2.53 / 669 / VAL:Specified(7) | 0.59 | 0.76 | 0.59 / 0.81 | MET |
+| a_zero_global_10000000 | nolibc | 240.60 s / 7517 MB / VAL:Specified(7) | 600.09 s / 2656 MB / NONE HANG(cpu 3.23s of 600.09s wall; timeout 600s); | — | — | — | BLOCKER: C9 (HANG) |
+| b_zero_local_1000 | nolibc | 0.03 / 4 / VAL:Specified(7) | 0.12 / 2 / VAL:Specified(7) | — | — | 1.70 / 1.64 | below resolution (oracle increment <0.5 s, <32 MB) |
+| b_zero_local_10000 | nolibc | 0.26 / 44 / VAL:Specified(7) | 0.58 / 28 / VAL:Specified(7) | 2.23 | 0.64 | 1.91 / 1.18 | MET |
+| b_zero_local_100000 | nolibc | 3.22 / 434 / VAL:Specified(7) | 8.19 / 297 / VAL:Specified(7) | 2.54 | 0.68 | 2.50 / 0.78 | MET |
+| b_zero_local_1000000 | nolibc | 22.04 s / 4478 MB / VAL:Specified(7) | 1.10 s / 103 MB / NONE | — | — | — | BLOCKER: C8 (fuel) |
+| b_zero_local_10000000 | nolibc | 601.01 s / 17449 MB / NONE TIMEOUT(600s); | 1.10 s / 100 MB / NONE | — | — | — | OUT OF DOMAIN: oracle exit 124 TIMEOUT(600s);; Lean exit 134 - |
+| c_struct_arg_1024 | nolibc | 0.00 / 1 / VAL:Specified(0) | 0.02 / 0 / VAL:Specified(0) | — | — | 1.00 / 1.68 | below resolution (oracle increment <0.5 s, <32 MB) |
+| c_struct_arg_4096 | nolibc | 0.06 / 5 / VAL:Specified(0) | 0.07 / 5 / VAL:Specified(0) | — | — | 0.92 / 1.63 | below resolution (oracle increment <0.5 s, <32 MB) |
+| c_struct_arg_16384 | nolibc | 0.44 / 18 / VAL:Specified(0) | 0.11 / 18 / VAL:Specified(0) | — | — | 0.31 / 1.52 | below resolution (oracle increment <0.5 s, <32 MB) |
+| c_struct_arg_65536 | nolibc | 5.42 / 80 / VAL:Specified(0) | 0.65 / 72 / VAL:Specified(0) | 0.12 | 0.89 | 0.13 / 1.19 | MET |
+| c_struct_arg_262144 | nolibc | 56.87 / 317 / VAL:Specified(0) | 1.08 / 293 / VAL:Specified(0) | 0.02 | 0.92 | 0.02 / 1.02 | MET |
+| c_struct_ret_1024 | nolibc | 0.01 / 1 / VAL:Specified(7) | 0.03 / -0 / VAL:Specified(7) | — | — | 1.00 / 1.67 | below resolution (oracle increment <0.5 s, <32 MB) |
+| c_struct_ret_4096 | nolibc | 0.08 / 6 / VAL:Specified(7) | 0.05 / 4 / VAL:Specified(7) | — | — | 0.67 / 1.58 | below resolution (oracle increment <0.5 s, <32 MB) |
+| c_struct_ret_16384 | nolibc | 0.45 / 19 / VAL:Specified(7) | 0.16 / 15 / VAL:Specified(7) | — | — | 0.40 / 1.43 | below resolution (oracle increment <0.5 s, <32 MB) |
+| c_struct_ret_65536 | nolibc | 5.37 / 84 / VAL:Specified(7) | 0.63 / 73 / VAL:Specified(7) | 0.12 | 0.88 | 0.12 / 1.17 | MET |
+| c_struct_ret_262144 | nolibc | 57.02 / 338 / VAL:Specified(7) | 1.22 / 296 / VAL:Specified(7) | 0.02 | 0.88 | 0.02 / 0.97 | MET |
+| d_loop_1000 | nolibc | 0.21 / 3 / VAL:Specified(-25) | 0.62 / 13 / VAL:Specified(-25) | — | — | 2.39 / 1.90 | below resolution (oracle increment <0.5 s, <32 MB) |
+| d_loop_10000 | nolibc | 1.86 / 22 / VAL:Specified(15) | 6.50 / 167 / VAL:Specified(15) | 3.49 | 7.59 | 3.39 / 3.71 | UNMET (wall RSS) |
+| d_loop_100000 | nolibc | 17.24 s / 277 MB / VAL:Specified(-97) | 5.84 s / 321 MB / NONE | — | — | — | BLOCKER: C8 (fuel) |
+| d_loop_1000000 | nolibc | 131.56 s / 2439 MB / VAL:Specified(63) | 11.46 s / 441 MB / NONE | — | — | — | BLOCKER: C8 (fuel) |
+| e_memcpy_1000 | libc | 0.19 / -1 / VAL:Specified(7) | 0.43 / 2 / VAL:Specified(7) | — | — | 4.39 / 2.09 | below resolution (oracle increment <0.5 s, <32 MB) |
+| e_memcpy_10000 | libc | 1.34 / 19 / VAL:Specified(7) | 4.27 / 15 / VAL:Specified(7) | 3.19 | 0.77 | 3.73 / 1.86 | UNMET (wall) |
+| e_memcpy_100000 | libc | 7.29 s / 392 MB / VAL:Specified(7) | 7.21 s / 450 MB / NONE | — | — | — | BLOCKER: C8 (fuel) |
+| e_memcpy_1000000 | libc | 114.37 s / 3058 MB / VAL:Specified(7) | 26.12 s / 1248 MB / NONE | — | — | — | BLOCKER: C8 (fuel) |
+
+DERIVED: both-complete rows above resolution: MET=10, UNMET/mismatch=2; below resolution=14; blockers (oracle completes, Lean does not)=6 [('a_zero_global_10000000', 'nolibc', 'C9 (HANG)'), ('b_zero_local_1000000', 'nolibc', 'C8 (fuel)'), ('d_loop_100000', 'nolibc', 'C8 (fuel)'), ('d_loop_1000000', 'nolibc', 'C8 (fuel)'), ('e_memcpy_100000', 'libc', 'C8 (fuel)'), ('e_memcpy_1000000', 'libc', 'C8 (fuel)')]; out of domain (oracle does not complete)=1
+
+Reading [AGENT]:
+- Target MET on 10 of the 12 scorable both-complete rows; Lean's
+  incremental RSS is ≤ the oracle's on EVERY scorable row (ΔRSS ratio
+  0.64–0.97), and after S1 the aggregate-load rows are 8–50× FASTER than
+  the oracle (`c_struct_*` 64K/256K: Δwall ratio 0.12 / 0.02 — the
+  oracle's own `List.length` guard is now the only quadratic left, tray
+  item).
+- UNMET, both outside the memory model: `d_loop_10000` (Δwall 3.49×,
+  ΔRSS 7.59× — the interpreter's per-step retention, charter C7,
+  flagged out of this arc; 10^4 stores of one byte each) and
+  `e_memcpy_10000` (Δwall 3.19× vs the 3.0 bound — marginal; libc-mode
+  `memset`+`memcpy` through the Core libc, the interpreter again).
+- Fixed startup cost is the dominant term on every small row and is
+  NOT the memory model: libc mode Lean 2.51 s / 223 MB vs oracle
+  0.48 s / 108 MB (loading the 12 libc metadata cabs-jsons + the pinned
+  `libc.core` text); nolibc 0.05 s / 74 MB vs 0.07 s / 43 MB. Raw
+  ratios on the tiny rows (up to 5.2× wall in libc mode) are this
+  constant.
+- Blockers (oracle completes, Lean does not): C9 `a_zero_global_10000000`
+  (HANG — the registered ceiling, S1' reverted); C8 fuel ×5
+  (`b_zero_local_1000000`, `d_loop_100000`, `d_loop_1000000`,
+  `e_memcpy_100000`, `e_memcpy_1000000`) — `lemDefaultFuel` binds first
+  on every long execution, as the charter predicted. Out of domain:
+  `b_zero_local_10000000` (oracle TIMEOUT at 600 s / 17.4 GB; Lean fuel).
+- Verdicts equal on every both-complete row.
