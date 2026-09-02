@@ -1,5 +1,5 @@
 /-
-SLUnit.ListGateTest — arc-15 S3: the ListAppendCore drift + adequacy
+SLUnit.ListGateTest — arc-15 S3: the ListAppendCore drift + exec
 + LEAK gate (the S1/S2 gate pattern, extended by the leak
 observable).
 
@@ -11,8 +11,8 @@ Checks (all fail-closed, exit 1 on any failure):
      vectors of ALL FOUR pinned healthy dumps (a, b, d, AND the
      out-of-trio c = [0,-1]++[INT_MIN]) pp-prints byte-identically to
      the freshly parsed `main` of each dump.
-  3. EXEC: `CerbND.runND ∘ drive` on the ASSEMBLED THEOREM OBJECTS
-     returns the pinned verdicts — append Specified(0) at the four
+  3. EXEC: `CerbND.runND ∘ drive` on the ASSEMBLED FILE TERMS (the
+     pinned Core terms) returns the pinned verdicts — append Specified(0) at the four
      samples, Specified(255) at the wrong-link plant, Specified(3) at
      the wrong-element plant, Specified(0) at the build-only
      instance.
@@ -148,7 +148,7 @@ def main : IO UInt32 := do
     | .error e =>
       IO.println s!"  FAIL  param pin [{label}]: {e}"
       failures := failures + 1
-  -- 3+4. exec + leak on the assembled theorem objects
+  -- 3+4. exec + leak on the assembled file terms
   for (label, m) in appendExecPoints do
     failures := failures +
       (← checkRun s!"append {label}" (appendFileOf m) 0 driverBaseline "")

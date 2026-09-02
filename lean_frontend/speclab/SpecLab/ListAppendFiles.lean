@@ -6,8 +6,8 @@ baseline the leak-checking gate exe pins.
 Assembly follows the S1/S2 pattern (arc-7 T1File lineage): pinned
 parsed declarations (SpecLab/ListAppendCore.lean, generated +
 drift-gated) + hand-pinned funinfo metadata, `main := some mainSym` —
-with two R3 firsts: `tagDefs` NONEMPTY (`struct int_list`, the T4
-slate precedent) and the std closure extended by the ALLOCATOR
+with two R3 firsts: `tagDefs` NONEMPTY (`struct int_list`, the
+t4_struct_member fixture precedent) and the std closure extended by the ALLOCATOR
 PROXIES (malloc_proxy/free_proxy — the allocation closure; the
 harness's extern malloc/free resolve to them by std.core ailname, and
 the pinned dumps reference them by symbol as `Cfunction(malloc_proxy)`).
@@ -59,7 +59,7 @@ def intListPtr : ctype :=
 def voidPtr : ctype := mk_ctype_pointer no_qualifiers void
 
 /-- The `struct int_list` tag map (first nonempty `tagDefs` of the
-speclab families; the T4 slate precedent). -/
+speclab families; the t4_struct_member fixture precedent). -/
 def intListTagDefs : Fmap sym (CerbLocation.Loc × tag_definition) :=
   Lem_Map.fromList
     [(intListSym, (CerbLocation.Loc.unknown, intListTagDef))]

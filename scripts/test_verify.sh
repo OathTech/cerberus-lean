@@ -78,10 +78,10 @@ fail() { echo -e "${RED}FAIL${NC} $1"; FAIL=$((FAIL + 1)); }
 pass() { PASS=$((PASS + 1)); $VERBOSE && echo -e "${GREEN}ok${NC}   $1"; }
 
 # ---------------------------------------------------------------------------
-# Pin-provenance check (arc-7 S5c, audit-1 F6): the pinned Core dumps the
-# theorems' program terms are transcribed from (tests/verify/*.core) must
+# Pin-provenance check (arc-7 S5c, audit-1 F6): the pinned Core dumps
+# (tests/verify/*.core — the recorded provenance of the fixture rows) must
 # be re-derivable from the .c fixtures via the oracle, byte-identically.
-# Fail-closed: a drifted pin means the theorem objects describe a program
+# Fail-closed: a drifted pin means the recorded rows describe a program
 # the oracle no longer produces.
 # ---------------------------------------------------------------------------
 for cfile in "$VERIFY_DIR"/*.c; do

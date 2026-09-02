@@ -26,7 +26,7 @@
 #       that comes back Specified(0) means the harness is vacuous:
 #       loud red. Later rungs extend this hook per-template: break the
 #       TARGET function (not just expected[]), confirm the
-#       differential goes red and the theorem becomes unprovable.
+#       differential goes red on both pipelines.
 #
 # Exit: 0 = agreement + expected verdict (+ gate OK); 1 = any failure.
 # NOTE: no `set -e` — exit codes are data here (house pattern).

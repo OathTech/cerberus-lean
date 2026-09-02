@@ -6,10 +6,9 @@ ONE template family per target (Form 1, the S1-confirmed default:
 expected-array + generic mismatch-index comparator), plus the plant
 twins. R2 DELIBERATELY COLLAPSES the S1 production/kernel-instance
 split: at this rung the TARGET itself loops, so a loop-free harness
-buys no walk (the walk is parked on T5 loop tech either way) — the
-looped production template IS the pinned statement instance (register
-S2-E4). Block-scope const arrays throughout (the S1-E4 finding:
-`globs = []`, arc-7 slate file shape).
+buys nothing — the looped production template IS the pinned fixture
+instance (register S2-E4). Block-scope const arrays throughout (the
+S1-E4 finding: `globs = []`, the arc-7 tests/verify fixture shape).
 
 VERDICT SPACE (the Form 1 mismatch-index comparator, extended):
     0       agreement

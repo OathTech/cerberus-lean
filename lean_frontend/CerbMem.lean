@@ -281,8 +281,8 @@ private abbrev TagDefs := CerbTags.TagDefsMap
 
 /-! ARC-7 S4 TOTALIZATION (fuel; arc-3 pattern): the layout oracles and
     the (de)serializers below were `partial def`s — kernel-opaque, no
-    equations, so NO slate app-equation could compute through a memory
-    operation (S4 record, escalation event 1). Each is now a fuel'd
+    equations: nothing could compute through a memory operation by
+    unfolding, and the exec-totality gate requires equations. Each is now a fuel'd
     worker `*_lemFuel` (fuel decremented once per recursion layer;
     exhaustion = the OPAQUE `fuelExhaustedWith` sentinel, LemLib —
     a fake value provable equal to something would be a lie, D4

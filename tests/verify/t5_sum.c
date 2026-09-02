@@ -1,4 +1,4 @@
-/* T5 (arc-7 verification slate): bounded loop; loop-invariant rule + fuel
+/* T5 (arc-7 fixture): bounded loop; loop-invariant rule + fuel
    erasure. Theorem shape: forall n in a stated range (0 <= n <= 100),
    outcomes = {Specified(n*(n-1)/2)}, no UB. */
 int sum(int n) {

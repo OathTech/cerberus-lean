@@ -12,7 +12,7 @@ verdicts compared), and checks the Lean driver's `--call` mode at the
 concrete points of `tests/corpus/expectations.txt`.
 
 Fixture-set integrity: the file set is pinned by the hash manifest
-`scripts/target_corpus.sha256`, checked by
+`scripts/fixture_corpus.sha256`, checked by
 `scripts/check_fixture_freeze.sh` (rides `test_unit.sh`). Changing a
 fixture invalidates its pinned Core dumps and expectation rows —
 update the manifest, the `tests/corpus/` pins, and the expectations

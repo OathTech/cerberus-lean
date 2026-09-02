@@ -1,5 +1,5 @@
 #!/bin/bash
-# test_speclab_seed.sh — arc-15 S5 (R5, the CN-slate seed rung): the
+# test_speclab_seed.sh — arc-15 S5 (R5, the CN-seed rung): the
 # swap_pair + lookup_size_shift harness-family differential lanes.
 #
 # Targets: deps/cn/tests/cn/swap_pair.c (the swap family's substantive
@@ -25,7 +25,7 @@
 #                      diagonal — the kernel-characterized blind set;
 #                      lookup non-medium arms); malformed twins at 254.
 #   --gate             the pinned-term gate (drift + param pins +
-#                      in-Lean exec on the assembled theorem objects).
+#                      in-Lean exec on the assembled file terms).
 #
 # Exit: 0 = lane green; 1 = any failure. NOTE: no `set -e` — exit
 # codes are data here (house pattern).

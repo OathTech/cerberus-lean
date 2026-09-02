@@ -1,5 +1,5 @@
 /-
-SpecLab.CnSeed — arc-15 S5 (R5, the CN-slate seed rung): swap_pair +
+SpecLab.CnSeed — arc-15 S5 (R5, the CN-seed rung): swap_pair +
 lookup_size_shift, the first post-ladder CN corpus instantiations —
 built to MEASURE how cheap a new target is once the R1-R4 library
 exists (the amortization number is the deliverable; S5 record).

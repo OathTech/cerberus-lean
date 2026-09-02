@@ -15,8 +15,9 @@
 
   Symbolic execution is NOT supported.
 
-  TOTALIZED (arc-7 S2, 2026-08-19 — the operator's Q1 AMENDED ruling,
-  docs/2026-08-19_relsem-spike.md): the former `partial def runND`/
+  TOTALIZED (arc-7 S2, 2026-08-19 — the operator's Q1 AMENDED ruling;
+  its record is parked: tag park/reasoning-era-20260831,
+  lean_frontend/docs/2026-08-19_relsem-spike.md): the former `partial def runND`/
   `runND1` are now fuel-totalized workers (`runNDFuel`/`runND1Fuel`,
   arc-3 wrapper pattern) with default-fuel wrappers keeping the caller
   signature unchanged. `partial` had made the production runner opaque

@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
-# Axiom-cone gate for the proof-test theorems (arc 2, S5a tripwire).
+# Axiom-cone gate for the exec cone (arc 2, S5a tripwire): zero axiom
+# declarations anywhere + every exec entry's #print axioms cone inside the
+# standard three.
 #
-# Asserts the axiom dependencies of the exemplar definitions/theorems via
-# #print axioms, so any change to the inhabitation machinery is measured,
-# not narrated. (History: installed guardrail-first before the arc-2 S5
+# Asserts the axiom dependencies of the exec entries and of the unit-test
+# exemplars via #print axioms, so any change to the inhabitation/effect
+# machinery is measured, not narrated. (History: installed guardrail-first before the arc-2 S5
 # failwith change with an EXPECT staging toggle; since arc-8 S3 the
 # DAEMON axiom family is DELETED from LemLib and the toggle is gone —
 # DAEMON is unconditionally fatal in every probed cone.)

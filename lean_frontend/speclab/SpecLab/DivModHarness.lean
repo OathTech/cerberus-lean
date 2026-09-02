@@ -21,9 +21,9 @@ spec style, build the contenders"):
     mod-256 collision), fully UNROLLED loop-free body. This is the
     R1 concrete-walk surface: measured Core sizes (oracle --pp=core)
     are 823 lines for the i8 divmod instance vs 2866 for the looped
-    i32 form vs 76/172 for the arc-7 t2/t5 slate fixtures — the
-    loop-free i8 reduction is what keeps a kernel walk conceivable
-    at this rung (spec register, S1).
+    i32 form vs 76/172 for the arc-7 t2/t5 fixtures (tests/verify) —
+    the loop-free i8 reduction keeps the pinned Core term small
+    (spec register, S1).
 
 PLANT TEMPLATES (template-note §plant-test, mandatory): same forms
 with the `division` TARGET broken (`x * y` — the wrong-operator
@@ -338,9 +338,8 @@ def divmodForm2PlantTemplate : HarnessTemplate where
 /-- The i8 kernel-instance `pre` tail + `mid`: BLOCK-SCOPE const
 arrays (deliberate deviation from the template note's file-scope
 `static` spelling, register-logged: block scope keeps the pinned
-file's `globs` EMPTY, so the statement file term stays in the arc-7
-slate shape — the drive prefix walks identically to the T1/T5 prefix
-pattern). -/
+file's `globs` EMPTY, so the pinned file term keeps the arc-7
+tests/verify fixture shape — the same drive prefix as t1/t5). -/
 def i8PreTail : String :=
 "
 int main(void)

@@ -43,7 +43,8 @@ srcDir = "test"
 globs = ["SLUnit.+"]
 
 # arc-15 S1: the divmod kernel-instance term-emission instrument
-# (adapted from the former root emit-lean-core, attributed in-file).
+# (adapted from the reasoning-era root emit-lean-core instrument — parked
+# on tag park/reasoning-era-20260831 — attributed in-file).
 # Imports CoreParser (the semantics package), hence the native link
 # args.
 [[lean_exe]]

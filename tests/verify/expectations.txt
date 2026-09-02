@@ -8,8 +8,8 @@
 # f(args)) — and both must equal the pin recorded here; the pin's role
 # is drift detection on previously recorded verdicts. The UB rows
 # record spec-discovery points (e.g. t2_add: signed-overflow UB036).
-# (History: rows born arc-7 S3 as concrete sanity points under the
-# then-theorem slate; 70 concrete-input rows deleted at the 2026-08-27
+# (History: rows born arc-7 S3 as concrete sanity points next to the
+# reasoning-era fixture set; 70 concrete-input rows deleted at the 2026-08-27
 # kill-list execution; m1_sgn rows added 2026-08-28.)
 t1_id id 5 Specified(5)
 t1_id id -7 Specified(-7)

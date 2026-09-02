@@ -3,11 +3,13 @@
   TERM-EMISSION INSTRUMENT.
 
   ADAPTED, WITH ATTRIBUTION, from the arc-7 S4 root instrument
-  lean_frontend/test/Unit/EmitLeanCore.lean (same fidelity contract:
+  test/Unit/EmitLeanCore.lean — PARKED with the reasoning layer (tag
+  park/reasoning-era-20260831; gone from mainline since the 2026-08-31
+  split) (same fidelity contract:
   the printed term is EXACTLY the parsed AST, every literal evaluated
   at emission time; unhandled constructors ERROR LOUDLY, never
   guess). Speclab-owned copy per the package-churn-isolation charter
-  decision (D2) — the root instrument stays untouched.
+  decision (D2); the root instrument no longer exists on mainline.
 
   Additions over the root instrument (S1 dump surface):
     * `Ememop` (PtrValidForDeref — array-subscript deref checks),
@@ -283,7 +285,7 @@ def ppBinop : binop → Except String String
   | OpAnd => pure "OpAnd" | OpOr => pure "OpOr"
 
 /-- Integer-op selector of the PEwrapI/PEcatch_exceptional_condition
-    builtins (arc-7 S5a: the T2/T5 slate bodies carry
+    builtins (arc-7 S5a: the t2/t5 fixture bodies carry
     `catch_exceptional_condition_add`, parsed to
     `PEcatch_exceptional_condition ity IOpAdd` — CoreParser.lean
     pIopFromStr). -/
@@ -531,8 +533,8 @@ def ppFunMapDecl : generic_fun_map_decl Unit Unit → Except String String
     pure s!"(Proc {← ppLoc l} {← ppOpt (fun n => pure (ppNat n)) marker} {← ppCbt cbt} {← ppList (ppProd ppSym ppCbt) params} {← ppExpr e})"
   | _ => throw "ppFunMapDecl: unhandled declaration form"
 
-/-! ## Tag definitions (arc-7 S5a: the T4 slate program's struct
-    layout enters the theorem statement through file.tagDefs) -/
+/-! ## Tag definitions (arc-7 S5a: the t4 fixture's struct layout
+    enters the file term through file.tagDefs) -/
 
 /-- A struct/union field entry, exactly as pDefField builds it
     (no_attributes, no alignment, no_qualifiers — CoreParser.lean). -/

@@ -10,7 +10,7 @@ empty (the kernel-instance template deliberately uses block-scope
 arrays), `main := some mainSym` — the file the generated `drive`
 consumes.
 
-HONESTY NOTE (statement data, mirroring T1File's): each file value is
+HONESTY NOTE (fixture data, mirroring T1File's): each file value is
 the pinned oracle Core dump's three procs + the REACHED std.core
 closure, not the whole linked pipeline file. The drift gate
 (Unit.CoreGateTest) re-parses the pinned dumps, byte-compares the

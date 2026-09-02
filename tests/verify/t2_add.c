@@ -1,4 +1,4 @@
-/* T2 (arc-7 verification slate): pure-step + bind; the no-signed-overflow
+/* T2 (arc-7 fixture): pure-step + bind; the no-signed-overflow
    precondition is FORCED by the UB-freedom obligation.
    Theorem shape: forall a b with INT_MIN <= a+b <= INT_MAX,
    outcomes = {Specified(a+b)}, no UB. */

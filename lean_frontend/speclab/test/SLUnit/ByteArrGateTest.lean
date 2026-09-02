@@ -1,5 +1,5 @@
 /-
-SLUnit.ByteArrGateTest — arc-15 S2: the ByteArrCore drift + adequacy
+SLUnit.ByteArrGateTest — arc-15 S2: the ByteArrCore drift + exec
 gate (the S1 CoreGateTest pattern, attributed).
 
 Checks (all fail-closed, exit 1 on any failure):
@@ -14,8 +14,8 @@ Checks (all fail-closed, exit 1 on any failure):
      fidelity, checked at a point NOT used to derive it; the pp of
      the instantiated value also re-flattens the hoisted helpers —
      the composition's fidelity).
-  3. EXEC: `CerbND.runND ∘ drive` on the ASSEMBLED THEOREM OBJECTS
-     returns the pinned verdicts — memcpy Specified(0) at the four
+  3. EXEC: `CerbND.runND ∘ drive` on the ASSEMBLED FILE TERMS (the
+     pinned Core terms) returns the pinned verdicts — memcpy Specified(0) at the four
      samples, Specified(3) at the off-by-one plant; getarr
      Specified(0) at both pinned instances, Specified(1) at the
      wrong-index plant.
@@ -107,7 +107,7 @@ def main : IO UInt32 := do
     | .error e =>
       IO.println s!"  FAIL  param pin [{label}]: {e}"
       failures := failures + 1
-  -- 3. exec checks on the assembled theorem objects
+  -- 3. exec checks on the assembled file terms
   for (label, bs, want) in memcpyExecPoints do
     match runFileB (memcpyFileOf bs) with
     | .inl n =>

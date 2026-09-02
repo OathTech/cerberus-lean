@@ -1,6 +1,6 @@
 /-
 SLUnit.SeedGateTest (speclab) — arc-15 S5: the CnSeedCore drift +
-adequacy gate (the S1 CoreGateTest pattern).
+exec gate (the S1 CoreGateTest pattern).
 
 Checks (all fail-closed, exit 1 on any failure):
   1. DRIFT: re-parse the pinned inputs (tests/speclab/pairswap_*.core),
@@ -10,8 +10,9 @@ Checks (all fail-closed, exit 1 on any failure):
      of ALL FOUR pinned healthy dumps (a, b, d, AND the out-of-trio
      c = (2^64−1, 0)) pp-prints byte-identically to the freshly
      parsed `main` of each dump.
-  3. EXEC: `CerbND.runND ∘ drive` on the ASSEMBLED THEOREM OBJECTS
-     (swapFileOf / pairSwapPlantFile) returns the pinned verdicts —
+  3. EXEC: `CerbND.runND ∘ drive` on the ASSEMBLED FILE TERMS (the
+     pinned Core terms: swapFileOf / pairSwapPlantFile) returns the
+     pinned verdicts —
      Specified(0) at the four samples, Specified(9) at the
      lost-update plant.
 
@@ -132,7 +133,7 @@ def main : IO UInt32 := do
     | .error e =>
       IO.println s!"  FAIL  param pin [{label}]: {e}"
       failures := failures + 1
-  -- 3. exec checks on the assembled theorem objects
+  -- 3. exec checks on the assembled file terms
   for (label, m, want) in execPoints do
     match runFile (swapFileOf m) with
     | .inl n =>

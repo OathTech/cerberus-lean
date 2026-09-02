@@ -1,6 +1,6 @@
 /-
 Unit.CoreGateTest (speclab) — arc-15 S1: the DivModCore drift +
-adequacy gate (the parked reasoning-era Unit.EmitLeanCoreTest pattern —
+exec gate (the parked reasoning-era Unit.EmitLeanCoreTest pattern —
 tag park/reasoning-era-20260831 — attributed).
 
 Checks (all fail-closed, exit 1 on any failure):
@@ -12,11 +12,11 @@ Checks (all fail-closed, exit 1 on any failure):
      c=(-128,-1)) pp-prints byte-identically to the freshly parsed
      `main` of each dump (the parameterization's fidelity, checked at
      a point NOT used to derive it).
-  3. EXEC: `CerbND.runND ∘ drive` on the ASSEMBLED THEOREM OBJECTS
-     (divmodI8FileOf / divmodI8PlantFile) returns the pinned verdicts
-     — Specified(0) at the four samples, Specified(1) at the plant —
-     i.e. the statement objects agree with what both C pipelines
-     produce for the same programs (scripts/test_speclab_divmod.sh).
+  3. EXEC: `CerbND.runND ∘ drive` on the ASSEMBLED FILE TERMS (the
+     pinned Core terms: divmodI8FileOf / divmodI8PlantFile) returns the
+     pinned verdicts — Specified(0) at the four samples, Specified(1) at
+     the plant — i.e. the pinned Core terms agree with what both C
+     pipelines produce for the same programs (scripts/test_speclab_divmod.sh).
 
 EPISTEMIC LABEL: this is a TEST (untrusted-evaluator) — a
 differential drift/exec gate, never a kernel-checked claim.
@@ -112,7 +112,7 @@ def main : IO UInt32 := do
     | .error e =>
       IO.println s!"  FAIL  param pin [{label}]: {e}"
       failures := failures + 1
-  -- 3. exec checks on the assembled theorem objects
+  -- 3. exec checks on the assembled file terms
   for (label, m, want) in execPoints do
     match runFile (divmodI8FileOf m) with
     | .inl n =>

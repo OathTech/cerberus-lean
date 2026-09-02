@@ -1,5 +1,5 @@
 /-
-SLUnit.TreeGateTest — arc-15 S4: the TreeRotCore drift + adequacy +
+SLUnit.TreeGateTest — arc-15 S4: the TreeRotCore drift + exec +
 LEAK gate (the S3 ListGateTest pattern at the tree rung).
 
 Checks (all fail-closed, exit 1 on any failure):
@@ -11,8 +11,8 @@ Checks (all fail-closed, exit 1 on any failure):
      out-of-trio c = [0, -1, INT_MIN, INT_MAX, 1, -INT_MAX])
      pp-prints byte-identically to the freshly parsed `main` of each
      dump.
-  3. EXEC: `CerbND.runND ∘ drive` on the ASSEMBLED THEOREM OBJECTS
-     returns the pinned verdicts — rotate Specified(0) at the four
+  3. EXEC: `CerbND.runND ∘ drive` on the ASSEMBLED FILE TERMS (the
+     pinned Core terms) returns the pinned verdicts — rotate Specified(0) at the four
      samples + the root-path + deep-path instances, Specified(7) at
      the wrong-child-swap plant (the locus val's first wire byte),
      Specified(255) at the dropped-subtree plant (the structural
@@ -152,7 +152,7 @@ def main : IO UInt32 := do
     | .error e =>
       IO.println s!"  FAIL  param pin [{label}]: {e}"
       failures := failures + 1
-  -- 3+4. exec + leak on the assembled theorem objects
+  -- 3+4. exec + leak on the assembled file terms
   for (label, m) in rotateExecPoints do
     failures := failures +
       (← checkRunT s!"rotate {label}" (rotateFileOf m) 0

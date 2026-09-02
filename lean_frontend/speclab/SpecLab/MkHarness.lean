@@ -29,8 +29,9 @@ must be obviously faithful. Design rules, obvious over clever:
 
 Attribution (idiom lineage): the three-phase harness shape (setup →
 call under test → observation/verdict) is golean's harness ruling
-(deps/golean docs/2026-08-12_example-spec-form.md §11, gallery
-docs/verified-examples.md). Where golean parameterizes structures by
+(the golean project's example-spec-form note §11 and its
+verified-examples gallery — a container-side reference checkout, not
+resolvable from this repo). Where golean parameterizes structures by
 SCALAR harness arguments (input families, honestly weaker than
 ∀-data) and left its choice-consuming input pick DESIGNED, NOT BUILT,
 this template builds the input channel as the compiled-in choice

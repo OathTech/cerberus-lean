@@ -135,9 +135,8 @@ if ! "$DRIFT_SH"; then
     exit 1
 fi
 
-# Fixture-freeze gate (2026-08-31 semantics-first split; formerly the
-# corpus-freeze leg of check_proof_size.sh — the proof-layer legs of
-# that gate left with the proof packages): the lean_frontend/corpus
+# Fixture-freeze gate (2026-08-31 semantics-first split; the manifest is
+# scripts/fixture_corpus.sha256): the lean_frontend/corpus
 # differential-fixture set must match its pinned manifest exactly.
 # ENFORCING and fail-closed like the gates above.
 FREEZE_SH="$(dirname "$PURITY_SH")/check_fixture_freeze.sh"

@@ -1,4 +1,4 @@
-/* T3 (arc-7 verification slate): alloc, store, load points-to, frame.
+/* T3 (arc-7 fixture): alloc, store, load points-to, frame.
    Theorem shape: forall v, outcomes = {Specified(v)}, no UB. */
 int roundtrip(int v) { int x = v; return x; }
 

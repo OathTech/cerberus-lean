@@ -145,7 +145,7 @@ downstream.)
   STAMPED as legitimate output (fail-open shape). Wanted: wipe-then-
   regenerate (hand-written copies re-copied by the same recipe), so the
   stamp covers exactly the recipe's output. Companion: Lake's
-  `.lake/build` keeps orphaned artifacts too (the RelSem prune found
+  `.lake/build` keeps orphaned artifacts too (the 2026-09-02 prune record found
   pre-split ones) — a clean-build leg at boundaries.
 - **lem-side: refuse a target_rep spelled `sorry`** — lives in lem-lean's
   register (`lem-lean/doc/lean-backend/TODO.md` item 2, S): the backend
