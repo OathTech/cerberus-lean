@@ -54,6 +54,12 @@ downstream.)
   0.1) — in `tests/mem-scale-probes/measure.sh` now, to be added to
   `scripts/test_exec.sh`/`test_ci_sweep.sh` with baselines. Never a
   stack-size knob (charter C9, `docs/2026-09-01_mem-scale-design.md`).
+  RULED [AGENT 2026-09-02, orchestrator, operator-informed] (Q5): fix
+  at source in the cerberus `.lem` (accumulate-and-reverse mapM; NOT a
+  lem-backend change unless the completion gate shows the tail call
+  is not realised — charter §6.0/§6.3); plant-tested completion gate
+  = a_zero_global_10000000 Lean --first completes with the oracle's
+  verdict, asserted as status, never timing.
 - Harness memory limits use `ulimit -v` (virtual address space) in
   SEVEN harnesses: `scripts/test_ci_sweep.sh:222,252,258`,
   `scripts/test_libc_exec.sh:82,90,97`, `tests/parity-probes/
@@ -64,10 +70,11 @@ downstream.)
   directive, arc 5). Lean's virtual footprint is ~2-3.6x its RSS, so
   a 4 GB `-v` kills Lean at ~1.7 GB RSS while the oracle runs to
   3.1 GB — the detective's two "OOM" rows were this artefact (profile
-  §2); the libxml2 lanes are biased against Lean today. Replacement
-  (per-test `scripts/capped` with `CERB_MEM_MAX=4G`) REQUIRES a [USER]
-  ruling superseding LADDER:73 plus a dedicated baseline-instrument
-  commit — charter C2 / Q2; then re-run the class-(b) rows.
+  §2); the libxml2 lanes are biased against Lean today. RULED [USER
+  2026-09-02] ("Q2 agree"): superseded by per-test `scripts/capped`
+  with `CERB_MEM_MAX=4G`; LADDER.md:73 text updated; migration of the
+  seven harnesses + dedicated baseline-instrument commit = mem-scale
+  S2 (charter §6.4); then re-run the class-(b) rows.
 - Speclab leak checks' oracle-differential leg: wire the new oracle
   `--batch-alloc-census` line (landed 2026-09-01,
   `docs/2026-09-01_s-basket.md`) into the speclab lanes.

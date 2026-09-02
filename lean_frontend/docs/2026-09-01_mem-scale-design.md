@@ -1,8 +1,11 @@
-# MEMORY-SCALE arc — draft charter v0-R1 (design only; no code in this slice)
+# MEMORY-SCALE arc — charter v0-R1.1 (RULED; class-0 scope; refinement PARKED)
 
-Date: 2026-09-01; R1 2026-09-02. Branch `arc/mem-scale` @ mainline
-`bbdbacaff`. Author: P0 worker. Status: **DRAFT v0-R1 for operator
-ruling** — nothing here is dispatched. R1 absorbs the fresh review of
+Date: 2026-09-01; R1 2026-09-02; R1.1 2026-09-02 (rulings folded).
+Branch `arc/mem-scale` @ mainline `bbdbacaff`. Author: P0 worker.
+Status: **RULED — the arc's scope is the class-0 set (§"Slices");
+the refinement design (§5) is PARKED with this document as its
+record.** Nothing is dispatched by this document; slices are
+dispatched by the orchestrator against §"Slices". R1 absorbs the fresh review of
 `9502522e8` (RATIFY-WITH-AMENDMENTS, F1–F9): every reviewer claim was
 re-verified against the tree before absorption; deltas from the
 reviewer's statements are marked `[AGENT R1]`. Grounding: the measurement record
@@ -30,6 +33,26 @@ orchestrator: "Generally we should order these by (performance) *
 (trust impact) i.e high performance, low impact on trust would be
 best. We should work very hard to keep our trust surface stable i.e
 'obviously right' wrt upstream Cerberus."
+
+[USER 2026-09-02], verbatim as relayed by the orchestrator: **"Q2
+agree, Q3 agree, park."** Rulings as logged by the orchestrator:
+- Q2 RULED [USER 2026-09-02]: the arc-5 `ulimit -v 4000000` operator
+  directive (`scripts/LADDER.md:73`) is SUPERSEDED by per-test
+  `scripts/capped` with `CERB_MEM_MAX=4G` across all seven harnesses;
+  baselines re-derived as an instrument commit per LADDER's rule;
+  LADDER.md:73's text updated to the new directive with this
+  provenance (done in R1.1, marked "migration pending S2" until the
+  harnesses are changed).
+- Q3 RULED [USER 2026-09-02]: the refinement track (C4/C5, α, per-op
+  theorems, both-instance battery) is PARKED — this charter is its
+  record; the design (§5) stays ready; re-opening requires a new
+  operator ruling. The arc's scope is therefore the class-0 set only.
+- Q1/Q4/Q5/Q6 [AGENT 2026-09-02, orchestrator, operator-informed]:
+  adopted per the reviewer's recommendations — Q1 parity target with
+  the F4 rules (§4); Q4 moot (parked); Q5 fix at source in `.lem`
+  (accumulate-and-reverse `mapM`, tray item) + HANG loudness interim,
+  no stack knob, plus the Lean upstream report; Q6 `--mode=random` in
+  the reporting lane only.
 
 Consequences adopted here (orchestrator's reading, adopted as the
 charter's structure): every candidate is scored on two axes —
@@ -196,7 +219,10 @@ Scale BEYOND the oracle's reach (the oracle bounds every differential
 lane at ~3 GB per 13 MB object and ~4.5 KB/byte on `= {0}` locals) is
 a values call, Q3 — not a parity measurement.
 
-## 5. If refinement is opened: the design (per the ratified shape)
+## 5. PARKED [USER 2026-09-02, Q3]: the refinement design, kept ready as the record (per the ratified shape)
+
+Nothing in this section is in the arc's scope. It is retained
+unchanged as the design record for a future ruling.
 
 ### 5.1 The parametric interface (mirrors Cerberus's own `Memory` signature)
 
@@ -278,40 +304,118 @@ surface; only if C4 leaves the target unmet.
   lemmas; any class-1 work must leave all of the above textually
   intact. The manifest is delivered before the merge ask.
 
-## 6. Slice plan (sequenced by the ranking)
+## 6. Slices — the class-0 arc (RULED scope)
 
-- S1 (class 0, this arc's first code slice): C2 (after the Q2 ruling;
-  dedicated baseline-instrument commit) + C1 + C3, each of C1/C3 with
-  its equality theorem; re-run the detective's
-  class-(b) rows and the `c_struct_*`/`reconstruct_*` probes; record
-  before/after tables. Expected: quadratic → linear on aggregate
-  loads; the harness's two false OOM rows gone. Gate: full battery
-  green, theorems kernel-checked, `rfl`-compatibility with
-  refined-cerberus's `Heap.lean` uses re-checked (or the equality
-  theorem supplied to them).
-- S2 (measurement): the §4 target lane, both engines, under the cap.
-  Decision point: refinement track opens ONLY on a measured "unmet".
-- S3 (class 1, conditional): the interface + simple-instance bundle
-  (no behaviour change; battery must be byte-identical); then C4 with
-  α, per-op theorems, the bind lemma, the plant, both-instance
-  battery.
-- S4 (conditional on S3 evidence): C5.
-- S0 (before S1, small, cerberus-only): LOUDNESS — add the HANG
-  classification (exit 124 ∧ CPU/wall < 0.1, from `/usr/bin/time -v`
-  User+System) to `scripts/test_exec.sh` and `scripts/test_ci_sweep.sh`
-  (today: `test_exec` treats exit 124 as TIMEOUT, fatal except for
-  `*.unsupported.c`; `test_ci_sweep` pins `overall_rc=0` at :169 and
-  never fails; the gcc lane ledgers `SKIP_LEAN_TIMEOUT` at :405 — 11
-  csmith rows, none C9-shaped; no lane has a CPU-time column) with
-  their baseline commits; file the Lean upstream report (handler
-  deadlock after the guard-page `SIGSEGV`, strace excerpt in the
-  profile). C9's FIX is a separate two-repo slice (lem/.lem shape,
-  §3 C9): confirm the recursion by `--pp-core` under a small
-  `LEAN_STACK_SIZE_KB` stage-by-stage, then accumulate-and-reverse
-  `ailErr_mapM`/`foldrM` in `.lem` (tray) or a tail-recursive backend
-  rendering; gate = completion of the 8 M/10 M probes on both engines
-  + the full battery. No equality theorem is available (`partial def`).
-- Not in this arc: C7, C8 (separate arcs; C8 is lem-side).
+### 6.0 Where the C9 fix lives — determination [AGENT 2026-09-02]
+
+The recursion sites are CERBERUS `.lem` model sources, all tracked in
+this repo: `frontend/model/ail/errorMonad.lem:86-92` (`ailErr_mapM`),
+`frontend/model/state_exception.lem:79` (`foldrM`),
+`frontend/model/undefined.lem` (`sequence`, rendered as
+`generated/Undefined.lean:1390` `sequence0`). None is in the lem
+backend or in LemLib. The error monad is function-typed
+(`errorMonad.lem:41` `let bind (ErrorM m) f = ErrorM (fun ts -> …)`;
+generated `ErrorMonad.lean:89` `bind3`), so an accumulate-and-reverse
+`mapM` puts the recursive `run` call in TAIL position of the
+continuation, which is what removes the per-element frame. Therefore:
+
+- **Purely a `.lem` model change on the cerberus side; the lem pin is
+  untouched and NO lem-backend change is required by the rewrite.**
+  It regenerates BOTH targets (`make prelude-src` and
+  `make lean-prelude-src`), so the OCaml generated text changes too;
+  the OCaml-output-preservation objective is met at the level of
+  BEHAVIOUR (same function, different recursion shape), verified by
+  the full differential battery on both re-derived trees and by the
+  cache-disabled certification recipe (`DUNE_CACHE=disabled` +
+  `--force`, re-derived generated trees). Upstream-facing: the
+  rewrite is a tray item (`lean_frontend/docs/upstream-tray/`).
+- A lem-BACKEND change becomes necessary ONLY IF the tail call through
+  the closure application in `bind`'s run function is not, in
+  practice, compiled as a tail call by the Lean → C → clang pipeline
+  (Lean gives no TCO guarantee; the emitted `return lean_apply_…`
+  usually sibling-calls under `-O3`). That is an empirical question the
+  completion gate (§6.3) answers directly; the fallback is a
+  loop/fuel-indexed rendering of the monadic list combinators in the
+  backend (two-repo pin dance), NOT a stack knob.
+- Separate, not blocking, lem-side: the ORACLE's own loud overflow
+  site is `Lem_list.replicate` in lem's OCaml runtime library
+  (`lem-lean/ocaml-lib/lem_list.ml:341`, non-tail `replicate`) — an
+  upstream-lem note for the tray, since the oracle currently
+  completes the 10 M case at the default stack.
+
+### 6.1 S0 — loudness (cerberus-only, small)
+
+Add the HANG classification (exit 124 ∧ CPU/wall < 0.1 from
+`/usr/bin/time -v` User+System; already in
+`tests/mem-scale-probes/measure.sh`) to `scripts/test_exec.sh` and
+`scripts/test_ci_sweep.sh`, with their baseline commits; file the
+Lean upstream report (signal-handler deadlock after the guard-page
+`SIGSEGV`; strace excerpt in the profile §6.3.1). Gate: the 8 M-
+element probe reads HANG (not TIMEOUT) in every lane that runs it;
+plant: a deliberately sleeping stub must ALSO read HANG and a
+deliberately busy-looping stub must read TIMEOUT (both loud).
+
+### 6.2 S1 — the in-place fixes (cerberus-only)
+
+- C1: linear `reconstructValue` array arm (consume-and-return-rest
+  minus upstream's `List.length` guard) + kernel-checked
+  `reconstructValue'_lemFuel = reconstructValue_lemFuel` (induction on
+  the element count from `(l.drop (i*e)).take e = chunk i`); in-code
+  divergence note with the OCaml cite; the two refined-cerberus
+  `unfold` sites (`TreeRotExhibit.lean:148`, `ListRevExhibit.lean:260`)
+  re-checked and listed in the consumer manifest.
+- C3: `memValueToBytes` struct arm as reversed-chunk accumulation +
+  one `flatten` + `foldl_append_eq_flatten_reverse` equality theorem;
+  in-code note (shared upstream shape, `impl_mem.ml:1207-1212`).
+- Consumer change-manifest for refined-cerberus (§5.4 list: the
+  `unfold` sites of `readBytesFrom`, `storeM`,
+  `reconstructValue_lemFuel`, and the by-name uses of
+  `memValueToBytes`/`allocateObject`), delivered before the merge ask.
+Gates: full battery (`scripts/LADDER.md` tiers, `VALIDATION.md`)
+green on the re-derived tree; theorems kernel-checked and
+axiom-audited (`scripts/check_theorem_axioms.sh`; no `native_decide`
+etc.); before/after rows on `c_struct_*` and `reconstruct_*` (wall
+exponent ≈ 2 → ≈ 1; label absolute times environment-dependent).
+
+### 6.3 S1' — the C9 fix at source (cerberus `.lem`; tray item)
+
+Accumulate-and-reverse `ailErr_mapM` (and `foldrM`/`sequence` where
+the same shape is reached), regenerate both targets, rebuild both
+drivers via `scripts/common.sh` (stamps). Gates: full battery on
+both re-derived trees, cache-disabled; the differential lanes
+byte-identical to their baselines (behaviour preserved); the
+**completion gate**: `tests/mem-scale-probes/probes/
+a_zero_global_10000000.c` (and the 8 M variant) under
+`CERB_MEM_MAX=32G scripts/capped`, Lean `--batch --first`, COMPLETES
+with the oracle's verdict — asserted as a STATUS/verdict equality
+(`exit 0` ∧ `VAL:Specified(7)` on both engines), never as a timing.
+**Plant-tested**: run the gate against the pre-fix binary (the
+current tree) and quote its loud failure (`HANG(cpu …)`) verbatim in
+the slice record before the fixed binary is accepted. If the gate
+still fails on the fixed `.lem` (tail call not realised), stop and
+report: that is the trigger for the backend fallback in §6.0, a
+separate two-repo slice.
+
+### 6.4 S2 — C2 harness migration + parity confirmation (cerberus-only)
+
+Per the Q2 ruling: replace `ulimit -v` with per-test `scripts/capped`
+at `CERB_MEM_MAX=4G` in the seven harnesses (22 sites, §3 C2);
+`scripts/LADDER.md:73` text already carries the new directive (R1.1);
+re-derive every affected baseline as a DEDICATED instrument commit
+with the before/after rows quoted (LADDER's rule); then run the
+parity confirmation on the mem-scale corpus with the F4 rules (§4:
+both-complete rows only; C8/C9 rows reported as attributed blockers;
+`--first` vs `--mode=random`; Q6 reporting lane, never a gate,
+mismatches re-run exhaustively before counting). Gates: full battery
+green under the new caps; the detective's two class-(b) OOM rows
+gone; the libxml2 lanes' status quoted before/after.
+
+### 6.5 Out of this arc
+
+C7 (interpreter per-step retention; upstream-shaped), C8
+(`lemDefaultFuel`; lem-side, registered), C4/C5/C6 (PARKED by Q3).
+Any `maxRecDepth`/fuel/stack-size bump anywhere in these slices is a
+defect by definition (registered-defect shape), never a fix.
 
 ## 7. Risks
 
@@ -334,7 +438,7 @@ surface; only if C4 leaves the target unmet.
   without leaving `Z`'s shape; accepted as inherited unless folded
   into an instance.
 
-## 8. Open questions for the operator (with the reviewer's recommendations, for confirmation)
+## 8. Questions — RULED 2026-09-02 (see §0 for the verbatim ruling and provenance; the recommendations below are the adopted positions)
 
 1. Q1 — target: confirm the §4 PARITY target (kernel-shaped corpus +
    large-static lane; wall ≤ 3×, RSS ≤ 1.5× oracle; `--first` vs

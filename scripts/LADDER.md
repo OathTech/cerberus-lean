@@ -70,8 +70,16 @@ block a merge by themselves.
 
 * Baseline updates are instrument changes: never silent, always a
   dedicated commit with justification (house rule since arc 4).
-* Per-invocation resource caps on libxml2-sized inputs: `ulimit -v
-  4000000` + timeout (operator directive, arc 5) — the harnesses apply
-  these themselves.
+* Per-invocation resource caps on libxml2-sized inputs: per-test
+  `scripts/capped` with `CERB_MEM_MAX=4G` (cgroup RSS) + timeout —
+  [USER 2026-09-02] ("Q2 agree"), SUPERSEDING the arc-5 operator
+  directive `ulimit -v 4000000`. Why: `ulimit -v` limits VIRTUAL
+  address space, and Lean's virtual footprint is ~2–3.6× its RSS, so
+  the old cap killed Lean at ~1.7 GB RSS while the oracle ran to
+  3.1 GB (record: `lean_frontend/docs/2026-09-01_mem-scale-profile.md`
+  §2; ruling: `docs/2026-09-01_mem-scale-design.md` §0/Q2). MIGRATION
+  PENDING (mem-scale S2): the seven harnesses still apply `ulimit -v`
+  until that slice lands, with baselines re-derived as a dedicated
+  instrument commit per the rule above.
 * Close-out certification = Tier B green + Tier C artifacts current +
   the arc's charter-specific bars (see the arc merge checklist).
