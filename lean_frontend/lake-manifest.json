@@ -1,7 +1,7 @@
 {"version": "1.2.0",
  "packagesDir": ".lake/packages",
  "packages":
- [{"url": "https://github.com/septract/lem-lean",
+ [{"url": "https://github.com/OathTech/lem-lean",
    "type": "git",
    "subDir": "lean-lib",
    "scope": "",

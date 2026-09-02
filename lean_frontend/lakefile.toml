@@ -2,7 +2,9 @@ name = "CerberusLean"
 defaultTargets = ["CerberusLean", "cerberus-lean"]
 moreLeanArgs = ["-DautoImplicit=false"]
 
-# LemLib is the Lem runtime library for Lean, from the septract/lem-lean fork.
+# LemLib is the Lem runtime library for Lean, from the lem-lean fork
+# (repo migrated septract -> OathTech 2026-08 [USER 2026-09-02]; the offline
+# redirect in deps/gitconfig covers both spellings, so resolution is unchanged).
 # arc-8 close: pinned to the MERGED mdd/lean-backend head (arc-8 pin dance;
 # DAEMON/DAEMON1/legacy failwith removed from LemLib in this lineage);
 # arc-10 S2: bumped to the arc/robustness lem head (Sum BEq/Ord, R1 +
@@ -14,7 +16,7 @@ moreLeanArgs = ["-DautoImplicit=false"]
 # re-pin to the merged head at arc close (pin dance).
 [[require]]
 name = "LemLib"
-git = "https://github.com/septract/lem-lean"
+git = "https://github.com/OathTech/lem-lean"
 rev = "045dcb0d57a171eb4fb3a6eb5abe288c227270ce"
 subDir = "lean-lib"
 
