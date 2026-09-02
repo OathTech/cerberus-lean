@@ -92,17 +92,19 @@
 # (verified hunk-by-hunk). Deliberate single-line refresh (the
 # --refresh recipe was NOT used wholesale — it strips this documented
 # header; only the one hash was edited).
-# NOTE (CN-0 spec exporter, branch cn-spec-export, 2026-08-24):
-# backend/lean_export/cn_spec_json.ml is a NEW [files] entry — the
-# --cn-spec-json output mode (CN spec-AST export; design:
-# lean_frontend/docs/2026-08-24_cn0-spec-export.md). Additive oracle
-# surface: a new flag + a new parse-only export module; the mode
-# implies at_magic_comments ONLY within its own branch, no default-path
-# behavior change (proof: test_exec 106 zero-movement + cn_coverage 213
-# baseline, run at the CN-0 gate). backend/driver/main.ml and
-# backend/lean_export/dune were already [files] entries; their deltas
-# grew the flag plumbing and the c_parser library dependency
-# respectively.
+# NOTE (CN-0 spec exporter, 2026-08-24 — PARKED 2026-09-02 [USER],
+# release-hygiene G5): backend/lean_export/cn_spec_json.ml was a [files]
+# entry from 2026-08-24 (the --cn-spec-json output mode; design record
+# lean_frontend/docs/2026-08-24_cn0-spec-export.md) and is REMOVED from
+# the tree with its flag plumbing in backend/driver/main.ml, its lane
+# (scripts/test_cn_spec_export.sh) and fixtures (tests/cn_spec_export/).
+# Layer-1 file-set change: -1 [files] entry; main.ml and
+# backend/lean_export/dune stay [files] entries (still carry --cabs-json)
+# with their deltas shrunk back (flag plumbing gone; the c_parser library
+# dependency the exporter alone needed dropped). No lem-generated module
+# is involved, so no [expected-*] hash moves. Archaeology: mainline
+# 90e341db2 (the last commit carrying the exporter); record
+# lean_frontend/docs/2026-09-02_release-hygiene-record.md §G5.
 # NOTE (thread-B lem totalization, 2026-08-29; record
 # lean_frontend/docs/2026-08-29_threadB-totalization.md): NEW [files]
 # entries frontend/model/{state,state_exception,translation_aux,
@@ -148,7 +150,6 @@ backend/common/pipeline.mli
 backend/driver/dune
 backend/driver/main.ml
 backend/lean_export/cabs_json.ml
-backend/lean_export/cn_spec_json.ml
 backend/lean_export/dune
 cerberus-lib.opam
 cerberus.opam

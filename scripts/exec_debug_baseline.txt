@@ -16,8 +16,9 @@
 # 2026-09-01 exec-lane re-record (cabs-json parse-only fix):
 #   ub-inconsistent.c CERB_INCONSISTENT -> UB_MATCH — attributed to the
 #   trust-basket oracle driver fix 80e674ee2 (backend/driver/main.ml:
-#   --cabs-json now stops after parse+serialize, mirroring the in-file
-#   cn_spec_json parse-only path). Pre-fix the oracle's exec succeeded
+#   --cabs-json now stops after parse+serialize, mirroring the then-in-file
+#   cn_spec_json parse-only path — that exporter was itself removed
+#   2026-09-02; the cabs-json path stands on its own). Pre-fix the oracle's exec succeeded
 #   (with UB) but its cabs-json ran the full c_frontend and produced no
 #   JSON, so the row was CERB_INCONSISTENT ("exec succeeded but cabs-json
 #   failed", test_exec.sh:475-478); the bridge now exists and the Lean

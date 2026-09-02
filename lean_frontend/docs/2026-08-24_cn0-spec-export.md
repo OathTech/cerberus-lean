@@ -1,5 +1,7 @@
 # CN-0 — the CN spec-AST exporter (`--cn-spec-json`)
 
+> PARKED 2026-09-02 [USER 2026-09-02, release-hygiene item 2]: the exporter (`backend/lean_export/cn_spec_json.ml`, the `--cn-spec-json` flag, `scripts/test_cn_spec_export.sh`, `tests/cn_spec_export/`) was removed from mainline; last commit carrying it: `90e341db2`. This record is kept as the dated design record; nothing below is live.
+
 Date: 2026-08-24. Provenance: [AGENT:cn0-spec-export] throughout;
 design written BEFORE code per the charter discipline. Parent design:
 `notes/2026-08-24_cn-on-iris-investigation.md` (container repo) — this
