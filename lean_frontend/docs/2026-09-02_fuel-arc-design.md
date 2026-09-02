@@ -1,11 +1,11 @@
 # FUEL arc — design note: a kernel-transparent, distinguished fuel-exhaustion outcome
 
 Date: 2026-09-02. Branch `arc/fuel` off mainline `2c7c9347b`. Docs-only
-slice (this note); the implementation slice is §6. **Revision R1**
-(same day): the fresh review of `dd61ab87a` returned
-RATIFY-WITH-AMENDMENTS (F1-F8 + Q-rulings); every amendment was
-re-verified against the tree before absorption; the R1 delta is listed
-in §8.
+slice (this note); the implementation slice is §6. Revisions: **R1**
+absorbed the fresh review of `dd61ab87a` (F1-F8, Q1-Q6); **R2** absorbs
+the operator's DESIGN CHANGE to Option C (below), which retires the
+reserved-literal apparatus R1 had built. §8 lists both deltas; every
+cite was re-verified against the tree at absorption.
 
 Request (verbatim source, read first):
 `refined-cerberus/worktrees/audit-response-3/docs/2026-09-02_request-cerberus-lean-fuel-exhaustion-outcome.md`
@@ -18,33 +18,34 @@ genuine, legitimate, original Cerberus one").
 
 Rulings logged in this note:
 
-- [USER 2026-09-02] mechanism = OPTION A: "Very good, A sounds
-  reasonable, go ahead". A = the existing `kill_reason` constructor
-  `Error of Loc.t * string` with a RESERVED message, unwrapped (no
-  opaque sentinel). Option B (a new `kill_reason` constructor) REJECTED:
-  it changes the shared `.lem` type and therefore the generated-OCaml
-  text / fork-drift surface, for a constructor the oracle never uses.
+- [USER 2026-09-02] Option A (superseded in mechanism by C, same
+  constructor discipline): "Very good, A sounds reasonable, go ahead" —
+  the existing `kill_reason` constructor `Error of Loc.t * string`,
+  unwrapped; Option B (a new `kill_reason` constructor) REJECTED: it
+  changes the shared `.lem` type and therefore the generated-OCaml text
+  / fork-drift surface, for a constructor the oracle never uses.
+- [USER 2026-09-02] **OPTION C** (R2): "Yes, this seems reasonable. But
+  we'll want to do a 2nd design review before merge to make sure we
+  actually achieved this cleaner picture and it serves the
+  refined-cerberus project needs." C = the sentinel's distinguishing
+  atom is a kernel-checked OPAQUE constant (a pure `opaque … := v`, no
+  `unsafe`/`implemented_by`/`extern`), not a reserved string. The second
+  design review is a §6 deliverable.
 - [USER 2026-09-01] standing ordering rule: "order these by
   (performance) * (trust impact) … keep our trust surface stable i.e
   'obviously right' wrt upstream Cerberus".
 - [AGENT 2026-09-02, orchestrator; operator-overridable — FLAGGED]: the
   per-declaration fuel BUDGET application (C1 manifest §8's deferred
   item) is BUNDLED into this arc (§4), as the SECOND of two commits
-  (§6, F2).
-- [AGENT 2026-09-02, orchestrator, R1 F1(d); within the operator's
-  Option A — still the existing `Error` constructor, unwrapped;
-  operator-overridable]: the sentinel's LOCATION is `Loc.other
-  fuelExhaustedMsg`, not `Loc.unknown` — the structural closure of the
-  distinctness argument (§1.3, §2).
+  (§6).
 - [AGENT 2026-09-02, orchestrator, R1 Q-rulings; operator-overridable]:
   Q1 keep `CerbFuel` + `CerbND`, re-export in `CerbND`; Q2 no change;
   Q3 YES — the runner leaf becomes the same kill (after `prune/relsem`
   lands, subject to consumer ack); Q4 family = the six; Q5 erratum
-  CONFIRMED; Q6 decidable predicate suffices. Details §7.
+  CONFIRMED; Q6 no `DecidableEq` promised (restated for C in §7).
 
 Facts below were re-verified in the worktree at `2c7c9347b`; every
-cite is file:line in that tree unless stated. §0 lists where the
-verified tree contradicts the brief this note was written from.
+cite is file:line in that tree unless stated.
 
 ## 0. Brief-vs-tree corrections (headline)
 
@@ -56,75 +57,60 @@ verified tree contradicts the brief this note was written from.
    defacto_memory.lem:2674 `find_array_index`, :2675
    `easy_update_mem_value_aux`, :2676 `memcmp_load_aux` (generated
    Defacto_memory.lean:806, :821, :900). They are `impl_memM`-typed
-   (defacto_memory.lem:84-85: `ndM 'a string mem_error (mem_constraint
-   impl_integer_value) impl_mem_state`), lifted into the driver by
-   `liftND`, and their exhaustion is a driver outcome exactly as
-   `nd_bind`'s is. All nine are in scope (§1.2).
+   (defacto_memory.lem:84-85), lifted into the driver by `liftND`, and
+   their exhaustion is a driver outcome exactly as `nd_bind`'s is. All
+   nine are in scope (§1.2).
 2. **The driver's `'err` is `driver_error`, not `mem_error`.**
    driver.lem:116: `type driverM 'a = ND.ndM 'a step_kind driver_error
    Mem.mem_iv_constraint driver_state`; `mem_error` appears only wrapped
-   (`DErr_memory of Mem_common.mem_error`, driver.lem:57). The export is
-   therefore `'err`-POLYMORPHIC (§1.1) — it never mentions `'err`.
-3. **The reserved literal cannot be written in the `declare`.** The lem
-   backtick lexer excludes `"` (lem-lean `src/lexer.mll:172` `let quote
-   = [^'\t''\n''`''"']`, :246 the `BacktickString` rule; LemLib.lean:189-190
-   records the same constraint). The sentinel must reference a NAMED
-   constant (§1.1 mechanism).
+   (`DErr_memory`, driver.lem:57). The export is `'err`-POLYMORPHIC.
+3. **A string literal cannot be written in the `declare`.** The lem
+   backtick lexer excludes `"` (lem-lean `src/lexer.mll:172`, :246;
+   LemLib.lean:189-190 records the same constraint). The arm references
+   NAMED constants (§1.2).
 4. **The gcc ledger's fuel rows are `SKIP_LEAN_CRASH`, not
    `SKIP_LEAN_FAIL`**: `scripts/gcc_oracle_baseline.txt:1145`
-   `csmith/sia_csmith_477.c SKIP_LEAN_CRASH -`, :1437
-   `csmith/sia_csmith_769.c SKIP_LEAN_CRASH -` (the ledger carries 9
-   SKIP_LEAN_CRASH rows today; the lane record's "10" at
-   docs/2026-08-30_gcc-oracle-lane-record.md:71 is that record's date);
-   :71 names them as the fuel deaths ("csmith sia_477/769 (`lem: fuel
-   exhausted` = the committed LEAN_CRASH rows)"). The same two files are
-   `LEAN_CRASH` in `scripts/exec_csmith_corpus_baseline.txt:1177,1469`.
-5. **Erratum, CONFIRMED (two independent verifications, R1 F7).** The
-   C1 manifest's apply-condition statement
+   (`csmith/sia_csmith_477.c`), :1437 (`sia_csmith_769.c`); 9
+   SKIP_LEAN_CRASH rows today; the lane record names the two as fuel
+   deaths (docs/2026-08-30_gcc-oracle-lane-record.md:71). The same two
+   are `LEAN_CRASH` in `scripts/exec_csmith_corpus_baseline.txt:1177,1469`.
+5. **Erratum, CONFIRMED (two independent verifications).** The C1
+   manifest's apply-condition statement
    (docs/2026-08-31_C1-change-manifest.md:171-176, "zero current lane
-   baselines contain a fuel-exhaustion row (measured: grep …)") and the
-   adoption record's (d) (docs/2026-09-01_C1-adoption-record.md:183-191)
-   are contradicted by the committed rows. Verification 1 (this note's
-   author): the four rows in §0.4 at `2c7c9347b`. Verification 2 (the
-   R1 reviewer): at the C1 manifest commit `c7cb5380d` both baselines
-   ALREADY carried the rows (`git show c7cb5380d:scripts/
-   gcc_oracle_baseline.txt` :1145/:1437 SKIP_LEAN_CRASH; `…exec_csmith_
-   corpus_baseline.txt` :1177/:1469 LEAN_CRASH — re-run and confirmed
-   here), and the fuel attribution predates C1 in three records
-   (docs/2026-08-21_arc10-results.md:365 "CEILING_FUEL … sia_csmith_477/
-   769", docs/2026-08-20_arc10-s4-csmith-campaign.md:434 "2 LEAN_CRASH —
-   CEILING_FUEL: sia_csmith_477/769", the gcc lane record :71). The C1
-   measurement was VACUOUS: no fuel class existed to grep for, and the
-   glob did not include `gcc_oracle_baseline.txt`. Disposition: the
-   implementation slice adds a labeled erratum to BOTH records (§6).
-6. LemLib cites: `fuelExhaustedWith` is at `lean-lib/LemLib.lean:184-187`,
-   `fuelExhausted` at :192-193, `lemDefaultFuel := 1000000` at :56
-   (brief said ~170-186).
+   baselines contain a fuel-exhaustion row") and the adoption record's
+   (d) (docs/2026-09-01_C1-adoption-record.md:183-191) are contradicted
+   by the committed rows. Verification 1 (this note's author): §0.4 at
+   `2c7c9347b`. Verification 2 (the R1 reviewer, re-run here): at the
+   C1 commit `c7cb5380d` both baselines ALREADY carried the rows
+   (`git show c7cb5380d:scripts/gcc_oracle_baseline.txt` :1145/:1437;
+   `…exec_csmith_corpus_baseline.txt` :1177/:1469), and the fuel
+   attribution predates C1 (docs/2026-08-21_arc10-results.md:365,
+   docs/2026-08-20_arc10-s4-csmith-campaign.md:434, the gcc record :71).
+   The C1 measurement was VACUOUS (no fuel class existed to grep for;
+   the glob excluded `gcc_oracle_baseline.txt`). Disposition: labeled
+   errata to BOTH records in commit 1 (§6).
+6. LemLib cites: `fuelExhaustedWith` at `lean-lib/LemLib.lean:184-187`,
+   `fuelExhausted` at :192-193, `lemDefaultFuel := 1000000` at :56.
 7. Main.lean has TWO kill-printing paths: batch (`Error {msg: "…"}`,
    Main.lean:918-919 — what every harness parses) and non-batch
-   (`result: Killed (error: {msg})`, :947-949). The brief cited only the
-   latter. Batch exit code for a single Killed execution is 1
-   (Main.lean:925-928, mirroring OCaml main.ml runM).
+   (`result: Killed (error: {msg})`, :947-949). Batch exit code for a
+   single Killed execution is 1 (:925-928, mirroring OCaml main.ml runM).
 8. The lem backend still has a `sorry` target_rep special case
-   (lem-lean `src/lean_backend.ml:4044-4050`: "sorry is a term, not a
-   function — drop applied arguments … `(sorry : T)`"), while the same
-   file's header claims "sorry-emission paths are gone (fail-closed,
-   arc-8 S2)" (:84). §5 rider.
-9. A second candidate rep for the `sorry` already exists:
-   `CerbPP.lean:228` `def pretty_stringFromMem_mem_value {α : Type}
-   (_ : α) : String := "<mem_value>"  -- [PRETTY]`, the rep pp.lem:104
-   uses. It is a stub; §5 chooses the real printer.
+   (lem-lean `src/lean_backend.ml:4044-4050`) while its header claims
+   "sorry-emission paths are gone" (:84). §5 rider.
+9. A stub rep for the `sorry` already exists (`CerbPP.lean:228`,
+   `"<mem_value>"`, `[PRETTY]`); §5 chooses the real printer.
 10. The L1 budget form takes an INTEGER LITERAL only (lem-lean
-    `src/ast.ml:516` `Decl_fuel_budget_decl … (Z.t * string)`); the
-    wrapper is emitted with the numeral, not a named constant. §4.3.
-11. `prune/relsem` exists as a worktree
-    (`worktrees/cerberus-lean-prune/relsem`) at `2c7c9347b` with NO
-    commits yet; the §6 dependency is on work not yet landed.
-12. (R1) `Loc.unknown` is NOT a discriminator for kills — §1.3 / §2
-    below; the R0 mitigation that relied on it is deleted.
+    `src/ast.ml:516`); the wrapper is emitted with the numeral. §4.3.
+11. `prune/relsem` exists as a worktree at `2c7c9347b` with NO commits
+    yet; the §6 dependency is on work not yet landed.
+12. (R1, retained as fact) `Loc.unknown` is NOT a discriminator for
+    kills: `current_loc` is initialised `Loc.unknown` (driver.lem:502,
+    :1572) and a library-Core `error(…)` before the first located
+    expression kills there. Under C this fact no longer bears on
+    soundness (§2), but it is why the R0 argument was wrong.
 13. (R1) 10^8 fuel is UNREACHABLE inside every gate lane's timeout —
-    §3.3 / §4.5 below; R0's expected-movement table was wrong for the
-    post-budget column.
+    §3.3 / §4.5.
 
 ## 1. CUSTOMER CONTRACT (standalone for refined-cerberus)
 
@@ -136,24 +122,32 @@ is invited to object before the implementation slice.
 
 ```lean
 -- lean_frontend/CerbFuel.lean  (hand-written seam, imported by the
--- generated Nondeterminism.lean via `declare {lean} extra_import`;
--- THE occurrence of the literal in Lean/lem/Core-text sources)
+-- generated Nondeterminism.lean via `declare {lean} extra_import`)
 namespace CerbFuel
+/-- The distinguishing atom of the fuel-exhaustion kill. A pure, kernel-
+    checked `opaque` WITH a value: it inhabits `Loc`, it compiles to
+    `Loc.other "lem: fuel exhausted"` at runtime, and NO proof can unfold
+    it. It is not in the model's vocabulary: no `.lem` term, no Core text,
+    no JSON input can mention it. Registered on the boundary-opaque census
+    (check_theorem_axioms.sh; VALIDATION.md). -/
+opaque fuelExhaustedLoc : CerbLocation.Loc := CerbLocation.Loc.other "lem: fuel exhausted"
+/-- The kill's message. A plain `def` — REPORTING-ONLY (it is what Main
+    prints and what the harnesses classify on); it carries no soundness.
+    It exists as a named constant only because a lem `declare` cannot
+    carry a string literal. -/
 def fuelExhaustedMsg : String := "lem: fuel exhausted"
 def driverFuel : Nat := 100000000        -- §4; = 10^8
 end CerbFuel
 
 -- lean_frontend/CerbND.lean  (hand-written seam; already home of runND)
 namespace CerbND
-export CerbFuel (fuelExhaustedMsg driverFuel)   -- one namespace for the consumer
+export CerbFuel (fuelExhaustedLoc fuelExhaustedMsg driverFuel)   -- one namespace for the consumer
 
 /-- The distinguished fuel-exhaustion kill. `'err`-polymorphic: it never
     mentions the error type, so it is the same value in `driverM`
-    (`kill_reason driver_error`) and `impl_memM` (`kill_reason mem_error`).
-    BOTH components carry the reserved message: the location is
-    `Loc.other fuelExhaustedMsg`, never `Loc.unknown` (§1.3). -/
+    (`kill_reason driver_error`) and `impl_memM` (`kill_reason mem_error`). -/
 def fuelExhaustedKill {err : Type} : kill_reason err :=
-  Error0 (CerbLocation.Loc.other CerbFuel.fuelExhaustedMsg) CerbFuel.fuelExhaustedMsg
+  Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg
 end CerbND
 ```
 
@@ -162,31 +156,35 @@ constructors `Undef0 | Error0 | Other`, the lem-mangled names of
 nondeterminism.lem:19-22 `Undef | Error | Other`; the OCaml side carries
 the same mangled names, backend/common/driver_ocaml.ml:173-179).
 `CerbLocation.Loc` is the hand-written location type (CerbLocation.lean:
-29-35: `unknown | other : String → Loc | point | region | regions`;
-`CerbLocation.unknown` at :78 is a `def` alias of the constructor). The
+29-35: `unknown | other : String → Loc | point | region | regions`). The
 `'err` instantiation the consumer's driver theorems need is
 `driver_error` (driver.lem:116); nothing in the contract depends on it.
 
 ### 1.2 The guarantee (the fuel-zero arms)
 
 For each of the NINE ND-typed fueled workers, the generated fuel-zero
-arm is, with NO opaque wrapper,
+arm is, with NO opaque wrapper around the monadic value,
 
 ```lean
-| 0 => ND (fun st => (NDkilled (Error0 (CerbLocation.Loc.other CerbFuel.fuelExhaustedMsg) CerbFuel.fuelExhaustedMsg), st))
+| 0 => ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))
 ```
 
 (`liftAction` returns `nd_action`, not `ndM`, and is curried on its
-scrutinee, so its arm is `fun _ => NDkilled (Error0 (…) …)`;
-`drive_nonmemory_steps_aux2` has a trailing curried list argument, so
-its arm is `fun _ => ND (fun st => …)`. These are the SAME shapes the
-arms have today, minus `fuelExhausted (…)`.)
+scrutinee, so its arm is `fun _ => NDkilled (Error0 CerbFuel.fuelExhaustedLoc
+CerbFuel.fuelExhaustedMsg)`; `drive_nonmemory_steps_aux2` has a trailing
+curried list argument, so its arm is `fun _ => ND (fun st => …)`. These
+are the SAME shapes the arms have today, minus `fuelExhausted (…)`.)
+The arm spells the two constants rather than `fuelExhaustedKill` because
+`kill_reason` is DEFINED in the generated Nondeterminism.lean, which no
+seam it imports can mention; the `_zero` lemmas close that gap by `rfl`
+(one delta step on a plain `def`) — the kernel sees the same term.
 
-Shipped, kernel-checked (`rfl`), one per worker, FULLY APPLIED (the
-generated workers take the reader argument `_lemReader_tagDefs` where
-their lem definition reads `tagDefs`; signatures at Driver.lean:231,
-:346, :380, Nondeterminism.lean:188, :306, :309, Defacto_memory.lean:805,
-:820, :899). The consumer should cite these rather than the generated
+Shipped, kernel-checked (`rfl`), one per worker, FULLY APPLIED against
+the generated signatures (Driver.lean:231, :346, :380;
+Nondeterminism.lean:188, :306, :309; Defacto_memory.lean:805, :820,
+:899 — the generated workers take the reader argument
+`_lemReader_tagDefs`, here `tds`, where their lem definition reads
+`tagDefs`). The consumer should cite these rather than the generated
 text:
 
 ```lean
@@ -216,143 +214,87 @@ theorem easy_update_mem_value_aux_lemFuel_zero (tds) (loc) (is_strong) (write_ty
 theorem memcmp_load_aux_lemFuel_zero (tds) (ptrval) (offset) (max_offset) (acc) :
     memcmp_load_aux_lemFuel 0 tds ptrval offset max_offset acc
       = ND (fun st => (NDkilled fuelExhaustedKill, st)) := rfl
+
+-- the runner leaves (Q3; lands after prune/relsem, subject to consumer ack)
+theorem runNDFuel_zero (m) (st0) :
+    runNDFuel 0 m st0 = [(Killed st0 fuelExhaustedKill, [], st0)] := rfl
+theorem runND1Fuel_zero (m) (st0) :
+    runND1Fuel 0 m st0 = [(Killed st0 fuelExhaustedKill, [], st0)] := rfl
+theorem runND1TraceFuel_zero (showInfo) (m) (st0) :
+    runND1TraceFuel showInfo 0 m st0 = ([], [(Killed st0 fuelExhaustedKill, [], st0)]) := rfl
+
+-- the wrappers (§4; budget = CerbFuel.driverFuel for the drive family)
+theorem driver2_wrapper_defeq : driver2 = driver2_lemFuel CerbFuel.driverFuel := rfl
+theorem nd_bind_wrapper_defeq : @nd_bind = @nd_bind_lemFuel CerbFuel.driverFuel := rfl
+theorem runND_eq (m) (st0) : runND m st0 = runNDFuel CerbFuel.driverFuel m st0 := rfl
+theorem driverFuel_eq : CerbFuel.driverFuel = 100000000 := rfl
 end CerbND
 ```
 
-(Implicit type arguments are elaborated; the exact binder names follow
-the generated signatures at implementation and are recorded in the
-change manifest.) Note for `liftAction_lemFuel_zero`: the fuel-0 arm
-DISCARDS the incoming action — including a genuine kill it was lifting
-— and reports exhaustion; that is the correct reading (the lift did not
-complete), and it is the shape the type forces (Q2).
-
-Why the arm names the message constant and not `fuelExhaustedKill`
-itself: `kill_reason` is DEFINED in the generated Nondeterminism.lean,
-so no hand-written seam imported by that file can mention it; and the
-literal cannot appear in a `declare` (§0.3). The `_zero` lemmas close
-the gap by `rfl` (one delta step on a plain `def`); the kernel sees the
-same term either way.
-
-The wrappers are unchanged in kind: `driver2 = driver2_lemFuel <budget>`
-(Driver.lean:386 today: `driver2_lemFuel lemDefaultFuel`; after §4 the
-family's budget is `CerbFuel.driverFuel`), so a statement over the
-shipped `driver2` is a statement over `driver2_lemFuel` at a known
-fuel, and a `∀ fuel` statement over `driver2_lemFuel` specialises to it.
-
-### 1.3 Distinctness — the lemmas and the invariant
-
-```lean
-namespace CerbND
-theorem fuelExhaustedKill_ne_Undef0 : fuelExhaustedKill (err := err) ≠ Undef0 loc ubs
-theorem fuelExhaustedKill_ne_Other  : fuelExhaustedKill (err := err) ≠ Other e
-/-- Matches `Error0 (.other s₁) s₂` and decides `s₁ = fuelExhaustedMsg ∧ s₂ = fuelExhaustedMsg`
-    (constructor match on `Loc.other`; String has decidable equality). -/
-def  isFuelExhaustedKill : kill_reason err → Bool
-theorem isFuelExhaustedKill_iff : isFuelExhaustedKill r = true ↔ r = fuelExhaustedKill
-instance : DecidablePred (fun r : kill_reason err => r = fuelExhaustedKill)
-end CerbND
-```
-
-The first two are by constructor disjointness; the `iff` is by cases.
-This is the "decidable equality on status" the request asks for,
-delivered as the decidable predicate actually needed. A full
-`DecidableEq (kill_reason driver_error)` is NOT promised (Q6): the type
-derives only `BEq, Ord` (Nondeterminism.lean:62) and a full instance
-would need `DecidableEq` on `Loc` and `undefined_behaviour`.
-
-**How an `Error` kill arises in the semantics (verified, R1 F1).** Every
-`Error0` kill originates at ONE site: core_eval.lem:605-606, `PEerror
-str debug_pe -> Exception.return (Undefined.error loc str)`
-(`Undefined.error loc str = Error loc str`, undefined.lem:1453-1454),
-lifted into the ND monad by the four `ND.kill (ND.Error loc str)` at
-driver.lem:182, :411, :432, :443. Its two components:
-
-- `str` is the string of a `PEerror` Core expression. Those come from
-  exactly two producers: (i) the shipped C→Core translation —
-  `Caux.mk_error_pe` (core_aux.lem:382) at translation.lem:2699, :2702,
-  :2712, :2717, :3129, :3142, three distinct literals (`"assert()
-  failure"`, `"assert() unspecified"`, `"__bmc_assume() unspecified"`);
-  (ii) Core TEXT parsed at runtime — `runtime/libcore/std.core` (9
-  `error(<<<…>>>)` occurrences), `std_inner_arg_temps.core` (9),
-  `impls/gcc_4.9.0_x86_64-apple-darwin10.8.0.impl` (2; the i686 impl
-  has 0), `tests/libc/libc.core` (12 quoted `error("…")` occurrences) —
-  ELEVEN distinct literals in total across (i)+(ii) (`align_alloc_proxy`,
-  `decodeTwos`, `encodeTwos`, `integerDecode`, `integerEncode`,
-  `is_representable_floating`, `malloc_proxy`, `params_nth`, `wrapI`,
-  and the two `assert()` strings shared with (i)); all fixed text.
-  Substitution and rewriting preserve the string (core_aux.lem:954,
-  :1226; core_rewrite2.lem:439, :566).
-- `loc` is `th_st.current_loc` (core_run.lem:165, :171), initialised
-  `Loc.unknown` (driver.lem:502, :1572) or `Loc.other "global(…)"` /
-  `Loc.other "Driver.drive"` (:1600, :1876), updated ONLY by
-  non-library `Aloc` annotations (core_run.lem:776-784); two further
-  evaluator entries pass a fixed `Loc.other` (`"Driver.print_eval_conv_
-  aux"` driver.lem:141, `"Driver.hack"` :1448). So **`Loc.unknown` is
-  NOT a discriminator**: a library-Core `error(…)` evaluated before the
-  first located expression kills at `Loc.unknown`. (R0's "mitigation 4"
-  relied on it and is deleted.) The model's many other `Loc.other`
-  strings (`"update errno"`, `"argv init"`, `"printf()"`, … —
-  driver.lem, formatted.lem, defacto_memory.lem) are MEMORY-OP
-  locations and never enter a `kill_reason`.
-
-**The distinctness INVARIANT, scoped exactly:** for Core produced by
-the shipped C→Core translation together with the pinned runtime Core
-libraries (std.core, std_inner_arg_temps.core, the impls, libc.core),
-**no execution produces `fuelExhaustedKill` other than by fuel
-exhaustion** — by FINITE ENUMERATION of the eleven `PEerror` literals
-above, none of which is `lem: fuel exhausted`, gate-enforced
-(`check_fuel_literal.sh`, §6: a comment-stripped token scan of the
-reserved literal over `frontend/**/*.lem`, `runtime/libcore/**`,
-`tests/libc/libc.core`, `lean_frontend/*.lean`, `lean_frontend/
-generated/*.lean` — expected hits: `CerbFuel.lean` and its `generated/`
-copy only). The LemLib panic message of the pure-worker sentinel
-(`fuelExhausted`, LemLib.lean:192-193) is the same string but is a
-runtime STDERR text of an opaque constant, never a `kill_reason` value;
-it is outside the invariant's scope and stays. The harness's own copy of
-the literal (`scripts/common.sh`, §3) is outside the Lean/lem/Core-text
-scope and is pinned to `CerbFuel.lean` by a selftest (§3.4, F6).
-
-**Against ARBITRARY Core text the string invariant is FALSE, stated
-honestly (R1 F1c):** `CoreParser.lean:1103-1114` accepts any
-`error("…", pe)` — it is how libc.core's `error("assert() failure", …)`
-is read — at `loc0 = CerbLocation.unknown` (:201-204), and Main parses
-Core files from disk (`--libc`, Main.lean:611-613). A hand-written Core
-file may therefore contain `error("lem: fuel exhausted", …)`. Two
-closures are shipped, structural and independent:
-
-1. **The location component (adopted, [AGENT] R1 F1d).** The kill's
-   location is `Loc.other fuelExhaustedMsg`. `CoreParser` emits only
-   `loc0` (verified: no other `Loc` construction in CoreParser.lean);
-   the model's `.other` strings that can reach a kill are the four
-   literals above; `CabsImport.lean:125` can carry a JSON `Loc_other`
-   string into an Ail location (and thence, via `Aloc`, into
-   `current_loc`) but never into a `PEerror` string. Forging the full
-   `fuelExhaustedKill` therefore needs an adversarial cabs-JSON AND an
-   adversarial Core file at once. Zero runtime or consumer cost; the
-   `_zero` lemmas and `isFuelExhaustedKill` are unchanged in shape.
-2. **A per-file structural side condition** for consumers who run Core
-   text from disk:
-   ```lean
-   namespace CerbFuel
-   /-- Decidable over syntax: every `PEerror s _` in the file has `s ≠ fuelExhaustedMsg`. -/
-   def noReservedPEerror (f : file α) : Bool
-   theorem noReservedPEerror_iff :
-       noReservedPEerror f = true ↔ ∀ s pe, PEerror s pe ∈ₚ f → s ≠ fuelExhaustedMsg
-   end CerbFuel
-   ```
-   (`∈ₚ` = the pexpr-occurrence relation the implementation defines
-   over the Core AST.) NOT provided: the semantic bridge "the file's
-   run produces an `Error0`-kill with message `m` only if some
-   `PEerror m _` occurs in the file or the pinned libraries" — it is a
-   preservation theorem over the whole evaluator; the consumer does not
-   need it once closure 1 holds, and it is not promised.
+(Implicit type arguments are elaborated; exact binder names follow the
+generated signatures at implementation and are recorded in the change
+manifest.) Note for `liftAction_lemFuel_zero`: the fuel-0 arm DISCARDS
+the incoming action — including a genuine kill it was lifting — and
+reports exhaustion; that is the correct reading (the lift did not
+complete) and the shape the type forces (Q2).
 
 Propagation: `nd_bind`'s `NDkilled` arm re-emits the kill unchanged
 (nondeterminism.lem:57-, generated :190); `liftAction`'s `Error` arm
 is the identity (`Error loc str -> Error loc str`, nondeterminism.lem:
 249-257). So the kill is stable under bind and under lifting from
 `impl_memM` into `driverM`: an exhausted memory worker surfaces as the
-driver's `fuelExhaustedKill`, not as a rewritten message.
+driver's `fuelExhaustedKill`, not as a rewritten value. And since every
+fueled worker — at the consumer's quantified fuel or at the fixed
+budget of the workers beneath it — produces the SAME value, one kill
+covers all fuels in a run.
+
+### 1.3 What distinguishes the kill — soundness by construction
+
+**Unforgeable by construction.** `fuelExhaustedLoc` is a Lean constant
+in the hand-written `CerbFuel` seam. The semantics' only `Error` kill
+site is core_eval.lem:605-606 (`PEerror str _ -> Undefined.error loc
+str`), lifted by the four `ND.kill (ND.Error loc str)` at driver.lem:182,
+:411, :432, :443; its `loc` is `th_st.current_loc` (core_run.lem:165,
+:171), which takes values from the model's own `Loc` literals
+(driver.lem:502, :1572, :1600, :1876, :141, :1448) and from `Aloc`
+annotations (core_run.lem:776-784) that originate in C source positions
+(cabs JSON, CabsImport.lean:125: `Loc_unknown | Loc_other s | Loc_point
+| …`) or in Core text (CoreParser.lean:201-204: always `loc0 =
+CerbLocation.unknown`). None of these can denote `fuelExhaustedLoc`: it
+is not in the model's vocabulary — no `.lem` term, no Core text, no
+JSON string names a Lean constant. A forged `error("lem: fuel
+exhausted", pe)` in a Core file yields `Error0 CerbLocation.unknown
+"lem: fuel exhausted"` (or `Error0 (Loc.other s) …` with `s` from a
+JSON `Loc_other`), a SYNTACTICALLY DIFFERENT term from `Error0
+fuelExhaustedLoc "…"`: the kernel does not identify an opaque constant
+with any constructor application. So the only way a run's status can be
+`Killed st fuelExhaustedKill` is through a fuel-zero arm (or, after Q3,
+a runner leaf).
+
+**How the consumer's proof uses it.** In the ∀-fuel induction, the
+fuel-zero arm closes the LEFT disjunct by `rfl` (via the `_zero`
+lemmas); every other arm is closed by the postcondition (or, when a
+worker beneath the quantified one exhausts at its fixed budget, again
+by the left disjunct — same value). No distinctness fact is consumed.
+
+**Caveats, stated honestly (what C does NOT give):**
+- The kernel cannot prove the sentinel UNEQUAL to a genuine `Error0`
+  kill: `fuelExhaustedLoc` is opaque, so `fuelExhaustedKill ≠ Error0 loc
+  msg` is not provable for any `loc`. No such distinctness lemma ships.
+  The acceptance shape does not need one: for a program that can
+  genuinely `Error`-kill, neither disjunct holds on that outcome and
+  the theorem is unprovable — which is the correct meaning of a partial-
+  correctness statement (the program is not correct). What DOES ship
+  for free, by constructor disjointness, is `fuelExhaustedKill ≠ Undef0
+  loc ubs` and `fuelExhaustedKill ≠ Other e`; these are not distinctness
+  from a genuine `Error` kill and are documented as such.
+- `isFuelExhaustedKill` is NOT decidable by comparing locations
+  (`fuelExhaustedLoc` has no equations). Consumers state the STRUCTURAL
+  equation `o.1 = Killed st fuelExhaustedKill` and discharge it with the
+  `_zero` lemmas (Q6 restated for C: no decidable predicate and no
+  `DecidableEq` is promised or needed).
+- Runtime classification (§3) is by the printed message; the harness's
+  copy of the string is reporting-only and never enters a proof.
 
 ### 1.4 The acceptance criterion, restated against these names
 
@@ -375,25 +317,24 @@ theorem <program>_certified_shipped (fuel : Nat) … :
 with `dst₀ := (initial_driver_state sup file fs).1` (the consumer's own
 production entry, ProdEntry.lean:8-9), and `driveU` deleted from every
 export. The `∀ fuel` induction is the consumer's (request item 4).
-After Q3 lands (§7), runner exhaustion ALSO appears as a `Killed _
+After Q3 lands, runner exhaustion ALSO appears as a `Killed _
 fuelExhaustedKill` element, so the left disjunct covers both fuels.
+An in-repo exemplar in exactly this shape is a slice deliverable (§6).
 
 ### 1.5 Not provided
 
-- **Fuel monotonicity** for the driver workers: not provided (request
-  item 4: "welcome but not required"). The runner has `runNDFuel_mono`
-  for ITS fuel (CerbND.lean header).
-- **A distinguished runtime EXIT CODE** for fuel exhaustion: not
-  provided; the kill exits 1 like every `Error` kill, mirroring OCaml
-  (Main.lean:925-928). Classification is by the message (§3).
-- **`DecidableEq (kill_reason driver_error)`**: not provided (Q6).
-- **The semantic bridge lemma** for arbitrary Core text (§1.3 item 2).
+- **Fuel monotonicity** for the driver workers (request item 4:
+  "welcome but not required"). The runner has `runNDFuel_mono` for ITS
+  fuel (CerbND.lean header).
+- **A distinguished runtime EXIT CODE**: the kill exits 1 like every
+  `Error` kill, mirroring OCaml (Main.lean:925-928).
+- **Distinctness from a genuine `Error0` kill; `DecidableEq`; a
+  decidable `isFuelExhaustedKill`** (§1.3 caveats).
 - **The pure-return workers** (`hack`, driver.lem:1905 `fuelExhausted
-  Vunit`; the ~58 others across frontend/model, e.g. the
-  `Core_reduction`/`Defacto_memory` pure arms at Defacto_memory.lean:285,
-  :735) keep the opaque `fuelExhausted` sentinel and its panic (request
-  item 3). Their exhaustion is a `PANIC` (exit 134, message on stderr),
-  never a kill.
+  Vunit`; the ~58 others across frontend/model, e.g. Defacto_memory.lean:
+  285, :735) keep the opaque `fuelExhausted` sentinel and its panic
+  (request item 3). Their exhaustion is a `PANIC` (exit 134, message on
+  stderr), never a kill.
 
 ## 2. TRUST-STORY ANALYSIS
 
@@ -404,107 +345,105 @@ upstream Cerberus? Answer by parts.
 model's recursion (`let rec driver2`, driver.lem:1369; `let rec
 nd_bind`, nondeterminism.lem:57) is unbounded; OCaml runs it as is. The
 Lean target makes it total by fuel (arc-3), via `declare {lean} fuel
-val f = \`<lean expr>\`` — 67 such declares in `frontend/` (grep
-`declare {lean} fuel val`), all `{lean}`-scoped, all rendered ONLY in
-the Lean emission. The sentinel text is written verbatim in the
-declare; the lem backend does not synthesize it (lean_backend.ml
-`fuel_sentinel` map; the L1 record §Feature 3).
+val f = \`<lean expr>\`` — 67 such declares in `frontend/`, all
+`{lean}`-scoped, rendered ONLY in the Lean emission; the sentinel text
+is written verbatim in the declare, not synthesized by the backend.
 
-**The mirrored semantics and the OCaml text are unchanged — by
-construction, and gate-verified.** Every edit in §1 is in a `{lean}`
-declare (nine sentinel bodies, one `declare {lean} extra_import
-\`CerbFuel\`` in nondeterminism.lem — the mechanism debug.lem:4 already
-uses) or in hand-written Lean. The OCaml emission does not read them.
-Verification is not "we believe so": the standing fork-drift gate
-(`scripts/check_fork_drift.sh`, Layer 2) diffs this repo's
-`ocaml_frontend/generated` against the upstream-pristine tree and
-requires the differing set to equal the manifest's hash-pinned entries.
-This arc adds ZERO entries to `scripts/fork_drift_manifest.txt`; the
-gate staying green at the implementation head is the byte-identity
-proof. (Contrast B: a new `kill_reason` constructor lands in
-nondeterminism.ml, breaks exhaustiveness at driver_ocaml.ml:173-182,
-and requires a manifest entry — oracle-surface movement for a value the
-oracle never constructs. Under (performance)×(trust impact) A and B
-have the same kernel transparency and the same runtime cost; B's trust
-impact is strictly larger. Rejected.)
+**No shared-type change; the OCaml text is untouched — by construction,
+and gate-verified.** Every edit is in a `{lean}` declare (nine sentinel
+bodies, one `declare {lean} extra_import \`CerbFuel\`` in
+nondeterminism.lem — the mechanism debug.lem:4 already uses) or in
+hand-written Lean (`CerbFuel.lean`, `CerbND.lean`). The OCaml emission
+does not read them. Verification: the standing fork-drift gate
+(`scripts/check_fork_drift.sh`, Layer 2) diffs `ocaml_frontend/generated`
+against the upstream-pristine tree and requires the differing set to
+equal the manifest's hash-pinned entries; this arc adds ZERO entries to
+`scripts/fork_drift_manifest.txt`, and the gate staying green at the
+implementation head is the byte-identity proof.
+
+**No new impure seam.** `opaque fuelExhaustedLoc : Loc := Loc.other "…"`
+is a bare opaque WITH a kernel-checked value: pure, axiom-free, no
+`unsafe`, no `@[implemented_by]`, no `@[extern]` — so it is NOT a member
+of the `implemented_by`/`unsafe`/`unsafeBaseIO` seam population pinned
+by `scripts/unsafebaseio_allowlist.txt` (VALIDATION.md:139), and it
+introduces no runtime behaviour the kernel does not see (the compiler
+uses the given value). What it IS: an abstraction barrier — a constant
+with no equations — and the tree already keeps a census of those. The
+boundary-opaque census (check_theorem_axioms.sh:180-191: each listed
+opaque "must be present exactly once in its build copy", scanner regex
+at :151, list `CerberusFresh\.lean:[0-9]+:forceIO` at :185; VALIDATION.md:
+195-199 the digest boundary) REGISTERS `CerbFuel.lean:…:fuelExhaustedLoc`
+with rationale "fuel-exhaustion atom: pure opaque, value-carrying, no
+native binding; exists to be unforgeable, not to hide an effect". Its
+cone contributes no axiom (the exec-entry set stays at the exact
+allowlist `[propext, Classical.choice, Quot.sound]`, VALIDATION.md:139).
 
 **Sufficient-fuel behaviour is unchanged.** The `Nat.succ` arms are
 untouched; every run that completes today completes with the same
-verdict. The differential battery (§6) is the check, at its committed
-baselines, byte-at-baseline except the enumerated FUEL rows (§3.3).
+verdict. The differential battery (§6) is the check, byte-at-baseline
+except the enumerated FUEL rows (§3.3).
 
 **Exhaustion behaviour changes, from a crash to a typed kill.** Today: a
-driver fuel death is `fuelExhausted (ND …)` → `fuelExhaustedWithImpl`
-panics (LemLib.lean:184-187) → exit 134 under `LEAN_ABORT_ON_PANIC=1`,
-`lem: fuel exhausted` on stderr, classified LEAN_CRASH. After: the
-driver returns `Killed st fuelExhaustedKill`, Main prints `Error {msg:
-"lem: fuel exhausted"}` (batch) and exits 1. Loudness is preserved at
-the HARNESS level (request item 2): the classifying lanes assign FUEL,
-fail-noisy, never agreement; the byte-compare lanes report DIFF/FAIL
-(§3). Nothing becomes quieter; what was a crash is now a reported,
-typed outcome that the harness can also count.
+driver fuel death panics via `fuelExhaustedWithImpl` (LemLib.lean:184-
+187) → exit 134, `lem: fuel exhausted` on stderr, classified LEAN_CRASH.
+After: the driver returns `Killed st fuelExhaustedKill`, Main prints
+`Error {msg: "lem: fuel exhausted"}` (batch) and exits 1. Loudness is
+preserved at the HARNESS level (request item 2): the classifying lanes
+assign FUEL, fail-noisy, never agreement; the byte-compare lanes report
+DIFF/FAIL (§3). Nothing becomes quieter.
 
-**The new risk, named: distinctness is by CONVENTION** (a reserved
-string on a general-purpose constructor), where B would have made it
-STRUCTURAL. Mitigations, each independently checkable (R1: mitigation 4
-of R0 — `Loc.unknown` as discriminator — DELETED as false, §1.3):
-1. the reserved-literal gate over the `PEerror`-literal sources
-   (§1.3 invariant; §6 plants) — the literal occurs once, by
-   construction of the scan, and the eleven model/runtime `PEerror`
-   literals are enumerated in the gate's own output;
-2. the LOCATION component `Loc.other fuelExhaustedMsg` — structural:
-   the Core parser cannot produce it, the translation cannot produce it,
-   forging needs two adversarial inputs at once;
-3. the named export + `_zero` lemmas — consumers never spell the
-   string; a change to it is a change to one definition and its gate;
-4. the FUEL harness class is never counted as agreement, so a
-   mis-classified fuel death cannot pass a lane silently;
-5. for Core text from disk, `noReservedPEerror` (decidable) as a
-   consumer side condition.
-Residual: a future model edit that constructs a `PEerror` whose string
-is COMPUTED (today all are literals) would be caught only at review
-time, not by the token gate; and the semantic bridge for arbitrary Core
-text is unproved. Accepted, recorded.
+**Why C, against B and A' (the ordering rule: (performance) × (trust
+impact)).** B = a new `kill_reason` constructor. A' = R1's design: the
+existing constructor + a reserved string + a `Loc.other` tag + a
+source-scan gate over `.lem`/Core text + a per-file structural lemma
+for the consumer.
 
-**A second fuel exists; Q3 brings it under the same contract.**
-`CerbND.runND` is itself fuel-totalized (`runNDFuel`, budget
-`ndDefaultFuel := lemDefaultFuel`, CerbND.lean:71, :89-134); its
-fuel-zero leaf is today `panic!` returning `[]` (:93; likewise
-`runND1Fuel` :182, `runND1TraceFuel` :232) — proof-transparent, "an
-exhausted leaf CLAIMS no behaviors" (CerbND header). Under the
-consumer's `∀ o ∈ runND …` shape that makes ∀-fuel theorems VACUOUS
-beyond `ndDefaultFuel` depth. Ruling [AGENT, orchestrator, Q3]: the
-leaves become `[(Killed st0 fuelExhaustedKill, [], st0)]` (`runND1Trace`:
-`([], [(Killed …)])`), after `prune/relsem` lands (the RelSem layer
-states `runND_sound` against the `[]` leaf) and subject to the
-consumer's ack in their review of this note. Main's "runND returned no
-executions" guard (Main.lean:900-902) then becomes unreachable for fuel
-and stays as a fail-closed guard.
+| | B (constructor) | A' (reserved literal + tag + gate + lemma) | C (opaque atom) |
+|---|---|---|---|
+| mechanism count | 1 type change + OCaml match fixes | 1 def + 1 tag + 1 gate + 1 enumeration + 1 consumer lemma + 1 harness drift leg | 1 opaque + 1 census row |
+| forgeability from inputs (Core text / JSON) | impossible (no syntax) | possible for arbitrary Core text; closed by convention (gate) + tag + side condition | impossible: not in the model's vocabulary |
+| shared `.lem` type change | YES — generated OCaml text moves, fork-drift manifest entry, `driver_ocaml.ml:173-182` exhaustiveness | no | no |
+| trust class | oracle-surface movement | convention-based; correctness of an enumeration | kernel-checked pure opaque; existing census |
+| consumer statement shape | `Killed st FuelExhausted` | `Killed st fuelExhaustedKill` + `noReservedPEerror file` side condition | `Killed st fuelExhaustedKill`, no side condition |
+| kernel-provable distinctness from a genuine `Error` kill | yes | yes (`Error0 (.other msg) msg` vs enumerated literals) | NO (opaque) — and the acceptance shape does not use it |
+| runtime / consumer cost | none | none | none |
+
+C wins every column except the last, which nobody needs (§1.3
+caveats). Under the ordering rule it is the smallest trust-surface
+movement with the same performance.
+
+**The residual risk, named.** C's soundness rests on ONE Lean fact —
+`fuelExhaustedLoc` is opaque — pinned by the census (a definitional
+unfolding would break the argument silently to the kernel; the census
+makes its presence-as-opaque a gate). Runtime classification rests on
+the printed message, which is reporting-only: a drift between
+`CerbFuel.fuelExhaustedMsg` and the harness's copy degrades the FUEL
+class to FAIL-class rows — loud, never a soundness matter.
 
 **VALIDATION.md — the paragraph that replaces today's fuel text**
-(VALIDATION.md:218-221, "`lemDefaultFuel` = 10^6 … exhaustion aborts
-with `lem: fuel exhausted` (LEAN_CRASH class). Raise is lem-side"):
+(VALIDATION.md:218-221):
 
 > - **Fuel exhaustion is a typed, distinguished outcome** for the ND
 >   monad's fueled workers (the driver loop family, the memory-model ND
 >   workers, and the `CerbND` runners): the fuel-zero arm is `NDkilled
->   CerbND.fuelExhaustedKill` (= `Error0 (Loc.other "lem: fuel
->   exhausted") "lem: fuel exhausted"`, transparent to the kernel;
->   `_zero` lemmas by `rfl`; distinctness lemmas + the reserved-literal
->   gate `check_fuel_literal.sh` over the `PEerror`-literal sources make
->   it a kill that Core produced by the shipped translation with the
->   pinned runtime libraries cannot produce; for Core text from disk the
->   decidable side condition `CerbFuel.noReservedPEerror` and the
->   `Loc.other` component are the closure). Budgets: the coupled driver
->   family (`driver2`, `drive_nonmemory_steps_aux2`,
->   `print_eval_conv_aux`, `hack`, `nd_bind`, `CerbND.ndDefaultFuel`)
->   runs at `CerbFuel.driverFuel` = 10^8; every other fueled declaration
->   keeps `lemDefaultFuel` = 10^6 (the L1 opt-in guarantee). Pure-return
+>   CerbND.fuelExhaustedKill` = `Error0 CerbFuel.fuelExhaustedLoc "lem:
+>   fuel exhausted"`, where `fuelExhaustedLoc` is a pure, kernel-checked
+>   `opaque` constant on the boundary-opaque census (present exactly
+>   once; no native binding). Unforgeable by construction: no `.lem`
+>   term, Core text, or JSON input can denote it, so a run's status is
+>   `Killed _ fuelExhaustedKill` only through a fuel-zero arm; the kernel
+>   cannot (and need not) prove it unequal to a genuine `Error` kill.
+>   `_zero` lemmas hold by `rfl`. Budgets: the coupled driver family
+>   (`driver2`, `drive_nonmemory_steps_aux2`, `print_eval_conv_aux`,
+>   `hack`, `nd_bind`, `CerbND.ndDefaultFuel`) runs at
+>   `CerbFuel.driverFuel` = 10^8; every other fueled declaration keeps
+>   `lemDefaultFuel` = 10^6 (the L1 opt-in guarantee). Pure-return
 >   workers keep the opaque panicking sentinel (exit 134, `lem: fuel
 >   exhausted` on stderr). The classifying lanes (`test_exec.sh` and its
 >   csmith wrapper, `test_gcc_oracle.sh`, `test_ci_sweep.sh`,
 >   `test_cn_coverage.sh`, `tests/mem-scale-probes/measure.sh`) assign
->   the FUEL class to both forms (fail-noisy, never agreement); the
+>   the FUEL class to both forms by the printed message (fail-noisy,
+>   never agreement; reporting-only, no soundness rests on it); the
 >   byte-compare lanes (`test_libc_exec.sh`, `test_multi_tu.sh`,
 >   `test_verify.sh`, `test_immaculate.sh`, `test_libxml2_uri.sh`,
 >   `test_bytes.sh`) report DIFF/FAIL. A 10^8 budget is unreachable
@@ -525,8 +464,8 @@ with `lem: fuel exhausted` (LEAN_CRASH class). Raise is lem-side"):
 
 ### 3.2 Where today's classifiers would put it, and the fix
 
-Which scripts classify at all (R1 F5): of the ~20 scripts that invoke
-the binary, FIVE classify outcomes — `scripts/test_exec.sh` (and
+Which scripts classify at all: of the ~20 scripts that invoke the
+binary, FIVE classify outcomes — `scripts/test_exec.sh` (and
 `test_csmith_corpus.sh`, which `exec`s it, :130), `test_gcc_oracle.sh`,
 `test_ci_sweep.sh`, `test_cn_coverage.sh`, and
 `tests/mem-scale-probes/measure.sh`. The byte-compare lanes
@@ -550,40 +489,41 @@ fuel exhausted"}` never reaches them; it falls through to:
 - measure.sh:80-86 `verdict_of` maps `Error {msg: …}` to `ERR:<msg>`,
   so the row would read `ERR:lem: fuel exhausted` as its verdict and
   carry no FUEL note (:106-112 tag only `capped: (OOM-)?KILLED`,
-  `INTERNAL PANIC`, HANG) — a completed-looking row with an ERR verdict.
+  `INTERNAL PANIC`, HANG).
 
 So the class is inserted, in every classifying lane, keyed on the
-EXACT reserved message (never the loose `fuel exhausted` regex on
-stdout), at two points: (a) in the exit ≥ 128 branch, when the capture
-carries the panic marker → `FUEL` (sub-kind `panic`); (b) BEFORE the
-`Error {` / `SKIP_LEAN_FAIL` fall-through, when the capture carries
-`Error {msg: "lem: fuel exhausted"}` → `FUEL` (sub-kind `kill`). Row
-names per lane: `FUEL` (test_exec/csmith, test_ci_sweep,
-test_cn_coverage; measure.sh note `FUEL(kill|panic);`),
-`SKIP_LEAN_FUEL` (gcc ledger taxonomy, `scripts/gcc_oracle_baseline.txt`
-header + docs/2026-08-30_gcc-second-oracle-design.md's class table).
-Semantics, uniform: fail-noisy (fatal in default mode exactly as
-LEAN_CRASH is: test_exec.sh:814 status list gains `FUEL`); baselined
-rows are honoured only by the `--check-baseline` machinery; NEVER
-counted as MATCH/AGREE, never as "completed" in measure.sh's parity
-tallies.
+EXACT message (never the loose `fuel exhausted` regex on stdout), at two
+points: (a) in the exit ≥ 128 branch, when the capture carries the
+panic marker → `FUEL` (sub-kind `panic`); (b) BEFORE the `Error {` /
+`SKIP_LEAN_FAIL` fall-through, when the capture carries `Error {msg:
+"lem: fuel exhausted"}` → `FUEL` (sub-kind `kill`). Row names per lane:
+`FUEL` (test_exec/csmith, test_ci_sweep, test_cn_coverage; measure.sh
+note `FUEL(kill|panic);`), `SKIP_LEAN_FUEL` (gcc ledger taxonomy,
+`scripts/gcc_oracle_baseline.txt` header +
+docs/2026-08-30_gcc-second-oracle-design.md's class table). Semantics,
+uniform: fail-noisy (fatal in default mode exactly as LEAN_CRASH is:
+test_exec.sh:814 status list gains `FUEL`); baselined rows are honoured
+only by the `--check-baseline` machinery; NEVER counted as MATCH/AGREE,
+never as "completed" in measure.sh's parity tallies.
 
 The classifier is factored once into `scripts/common.sh`:
 `classify_fuel_outcome <exit> <capture>` over a SINGLE text argument —
 the four lane scripts capture `2>&1` merged (test_exec.sh:329-330,
 test_gcc_oracle.sh:413-414, test_ci_sweep.sh:287-288,
 test_cn_coverage.sh:226/:234) and pass the merged capture; measure.sh
-and test_libc_exec.sh split streams (measure.sh:135-136 `time -v -o`
-+ `2>&1` into the .err file; test_libc_exec.sh:104 `2> …lean.err`) and
-pass the concatenation of their files. Output: `FUEL:kill`,
-`FUEL:panic`, or empty (not fuel). `common.sh` therefore carries the
-SECOND copy of the literal (R1 F6) — see §3.4 for the drift leg.
+and test_libc_exec.sh split streams (measure.sh:135-136; test_libc_exec.
+sh:104) and pass the concatenation of their files. Output: `FUEL:kill`,
+`FUEL:panic`, or empty. **The string in `common.sh` is REPORTING-ONLY**:
+it is a copy of what Main prints, it never enters a proof, and a drift
+between it and `CerbFuel.fuelExhaustedMsg` degrades classification
+loudly (fuel kills fall back to FAIL-class rows) — never soundness. No
+drift gate is built for it (R2 deleted R1's); the classifier selftest
+(§3.4) is the discipline.
 
 Main.lean is NOT changed by the mechanism: the existing `Error0` arms
-print the message. (A driver-side "FUEL" banner would be a second
-convention to keep in sync; declined.)
+print the message.
 
-### 3.3 Baseline movement expected (enumerated; R1 F2 corrected)
+### 3.3 Baseline movement expected (enumerated)
 
 The arithmetic that governs it: gate lanes run `TIMEOUT_SECS` 30
 (test_exec.sh:154, test_gcc_oracle.sh:116, test_cn_coverage.sh:81) or
@@ -605,16 +545,14 @@ one per commit (§6):
 
 Every other committed baseline has zero fuel rows (`LEAN_CRASH` counts:
 exec_baseline 0, exec_ci 0, exec_coverage 0, exec_debug 0, cn_coverage
-0, immaculate 0; exec_debug_baseline.txt:11 mentions "fuel" only in a
-header comment). Any row moving that is not in this table is a
+0, immaculate 0). Any row moving that is not in this table is a
 FINDING, not a re-baseline.
 
-Consequence, stated plainly (F2 ii): **after commit 2 no standing
-baseline row exercises `FUEL(kill)`** — the class is kept honest only by
-the classifier selftest, the pinned-literal drift leg (§3.4), and the
-commit-1 witness rows recorded in the slice record. That is why the
-slice is two commits: commit 1's lane runs are the only time the FUEL
-rows appear in real lanes at a committed head.
+Consequence, stated plainly: **after commit 2 no standing baseline row
+exercises `FUEL(kill)`** — the class is kept honest only by the
+classifier selftest and the commit-1 witness rows recorded in the slice
+record. That is why the slice is two commits: commit 1's lane runs are
+the only time the FUEL rows appear in real lanes at a committed head.
 
 Whether the two csmith rows were driver-fuel deaths (→ kill) or
 pure-worker deaths (→ still a panic, now classed FUEL(panic)) is
@@ -627,12 +565,6 @@ determined at commit 1; either way they leave LEAN_CRASH.
   {msg: …}` → not fuel, a PANIC without the marker → not fuel, a stdout
   line containing the words "fuel exhausted" in a program's own output →
   not fuel).
-- **Literal-drift leg (R1 F6):** the selftest EXTRACTS the literal from
-  `lean_frontend/CerbFuel.lean` (`def fuelExhaustedMsg : String :=
-  "…"`) and compares it byte-for-byte to `common.sh`'s constant and to
-  every fixture; a mismatch is FAIL. Without it, drift would not break
-  any lane — a fuel kill would silently fall back to FAIL-class (noisy)
-  while the FUEL class died unnoticed.
 - Commit-1 witness: the gcc lane and the csmith corpus lane run at the
   commit-1 head; the four FUEL rows are recorded VERBATIM in the slice
   record as the class's real-lane witness (§3.3).
@@ -690,12 +622,10 @@ revisited on evidence.
 The budget form emits the NUMERAL into the wrapper (`def driver2 … :=
 driver2_lemFuel 100000000`), not a name (§0.10). To give the consumer a
 citable constant, `CerbFuel.driverFuel : Nat := 100000000` (§1.1) and
-`CerbND` ships `driver2_wrapper_defeq : driver2 = driver2_lemFuel
-CerbFuel.driverFuel := rfl` (and siblings for the quartet + `nd_bind`,
-and `runND_eq : runND m st = runNDFuel CerbFuel.driverFuel m st := rfl`),
-with `driverFuel_eq : CerbFuel.driverFuel = 100000000 := rfl`. Statement
-for the consumer's manifest: **every exported statement over the drive
-cone (`drive`, `driver2`, `nd_bind`, `runND`) has fuel side condition
+the wrapper `rfl`s of §1.2 (`driver2_wrapper_defeq`, siblings for the
+quartet + `nd_bind`, `runND_eq`, `driverFuel_eq`). Statement for the
+consumer's manifest: **every exported statement over the drive cone
+(`drive`, `driver2`, `nd_bind`, `runND`) has fuel side condition
 `CerbFuel.driverFuel` (= 10^8); every other declaration's side
 condition remains `lemDefaultFuel` (= 10^6) verbatim.** Their `driver2 =
 driver2_lemFuel lemDefaultFuel` `rfl`s (the shape of relsemcore/RelSem/
@@ -712,7 +642,7 @@ memcpy and zero-local rows are the same order. The two csmith rows
 cannot reach 10^8 inside 15-30 s: they become TIMEOUT rows unless they
 complete (§3.3). No sufficient-fuel verdict changes (§2).
 
-### 4.5 The grind tripwire (R1 F2 iv)
+### 4.5 The grind tripwire
 
 A 10^8 exhaustion costs ~7 min at the loop-shape rate and ~55 min at
 the rec-shape rate — the latter AT the ~1 h tripwire. Where it can
@@ -780,24 +710,55 @@ Riders bundled with the slice:
   header's :84 claim true. Registered here; not in this arc (two-repo
   pin dance).
 
-## 6. SLICES + GATES
+## 6. SLICES, GATES, AND THE SECOND DESIGN REVIEW
 
-**One implementation slice, TWO commits** (R1 F2 iii), dispatched AFTER
+**One implementation slice, TWO commits**, dispatched AFTER
 `prune/relsem` merges:
 
-- **Commit 1 — mechanism**: §1 (nine sentinels, `CerbFuel.lean`,
-  `CerbND` exports/lemmas, `noReservedPEerror`), §3 (FUEL class in the
-  five classifying lanes, `common.sh` classifier + selftest + drift
-  leg), the reserved-literal gate, the `sorry` closure + token leg (§5),
-  VALIDATION/LADDER/TODO text, the C1 errata (§0.5), and the Q3 runner
-  leaves. Gate run at this head INCLUDES the gcc lane and the csmith
-  corpus lane so the FUEL rows appear in real lanes and are RECORDED
-  verbatim (the witness); the four baseline rows move to their
+- **Commit 1 — mechanism**: §1 (`CerbFuel.lean` with the opaque atom,
+  the message and budget constants; nine sentinels; `CerbND` exports,
+  `fuelExhaustedKill`, the `_zero` lemmas, the two constructor-
+  disjointness lemmas; the Q3 runner leaves), §2 (census registration
+  of `fuelExhaustedLoc`), §3 (FUEL class in the five classifying lanes,
+  `common.sh` classifier + selftest), the `sorry` closure + token leg
+  (§5), the exemplar (below), VALIDATION/LADDER/TODO text, and the C1
+  errata (§0.5). Gate run at this head INCLUDES the gcc lane and the
+  csmith corpus lane so the FUEL rows appear in real lanes and are
+  RECORDED verbatim (the witness); the four baseline rows move to their
   commit-1 column (§3.3).
 - **Commit 2 — budget**: the six L1 declares + `ndDefaultFuel`, the
   `driverFuel` wrapper `rfl`s, the mem-scale re-measurement; the four
   rows move again to their commit-2 column, enumerated; the consumer
   side-condition statement (§4.3) is final at this head.
+
+**Exemplar deliverable (commit 1):** `lean_frontend/test/Unit/
+FuelExemplar.lean` — a minimal Core program (a `main` returning a
+constant, parsed from an in-repo fixture via `CoreParser.parseFile`) and
+the theorem in EXACTLY the consumer's shape (§1.4), kernel-checked:
+`∀ fuel, ∀ o ∈ CerbND.runND (driver2_lemFuel fuel fmapEmpty false) dst₀,
+(∃ st, o.1 = Killed st fuelExhaustedKill) ∨ (∃ r, o.1 = Active r ∧ post r
+o.2.2)` with `post` the returned value. Proof by cases on `fuel`: the
+zero case by `driver2_lemFuel_zero`/`runNDFuel_zero`; the successor case
+by evaluation of the single step. It must be `sorryAx`-free and inside
+the axiom allowlist (probed by the cone leg); if it does not close
+within the tripwire on the minimal program, that is a STOP-AND-REPORT
+finding for the second review (it would mean the shape is not
+provable in practice with the shipped lemmas), never a grind.
+
+**Second design review (operator-ruled, before merge).** A FRESH
+reviewer (not the R1 reviewer, not the author) checks at the commit-2
+head:
+(a) the implementation achieved the cleaner picture — no reserved-
+literal residue (no `check_fuel_literal.sh`, no `noReservedPEerror`, no
+`Loc.other` tag, no harness drift leg; the string constant is
+reporting-only and documented as such), no gate machinery beyond the
+census row, `fuelExhaustedLoc` pinned exactly-once on the census, the
+nine arms + three runner leaves identical in shape and unwrapped;
+(b) it serves refined-cerberus's needs — the acceptance theorem is
+provable in shape, exhibited by the exemplar, stated exactly in their
+form, kernel-checked; the consumer's own review of §1 (Q3 ack, §7) is
+on record.
+The review's ASK precedes the merge audit ask (both unconditional).
 
 Dependency, precisely: `prune/relsem` (worktree present at `2c7c9347b`,
 no commits yet) will touch the RelSem-referencing set — Main.lean
@@ -808,39 +769,36 @@ retires `runND_sound`, which is why Q3 waits for it. This arc touches:
 frontend/model/{nondeterminism,driver,defacto_memory}.lem (declares
 only), frontend/concurrency/cmm_op.lem:17, NEW lean_frontend/
 CerbFuel.lean + handwritten_copy.manifest, lean_frontend/CerbND.lean,
-scripts/common.sh + the four lane scripts + tests/mem-scale-probes/
-measure.sh, NEW scripts/check_fuel_literal.sh (+ the sorry leg, kept in
-its own script to stay out of check_theorem_axioms.sh), the two csmith
-baselines + the gcc ledger taxonomy, VALIDATION.md, LADDER.md (Tier A
-row for the new gate), TODO.md (the ceiling entry :21-30 re-stated),
-docs/2026-08-31_C1-change-manifest.md + docs/2026-09-01_C1-adoption-
-record.md (labeled errata, §0.5). Overlap is avoided by design
-(Main.lean untouched; census script untouched); the ordering is still
-required because the full battery must be run at a head that contains
-both, and Q3 edits the file `runND_sound` is stated against.
+scripts/check_theorem_axioms.sh (the census row — the ONE shared file
+with the prune; a one-line addition to the `want` list, rebased after
+the prune), scripts/common.sh + the four lane scripts + tests/mem-scale-
+probes/measure.sh, NEW scripts/check_sorry_token.sh, NEW test/Unit/
+FuelExemplar.lean + fixture, the two csmith baselines + the gcc ledger
+taxonomy, VALIDATION.md, LADDER.md, TODO.md (the ceiling entry :21-30
+re-stated), the two C1 records (labeled errata).
 
 Gates (full battery per scripts/LADDER.md Tier A+B, plus the gcc lane
 and the csmith corpus lane), and the plants:
 
 | gate | red-plant |
 |---|---|
-| `check_fuel_literal.sh` — reserved-literal token count over `frontend/**/*.lem`, `runtime/libcore/**`, `tests/libc/libc.core`, `lean_frontend/*.lean`, `lean_frontend/generated/*.lean` == the `CerbFuel.lean` def + its `generated/` copy; ALSO prints the enumerated `PEerror`/`error(` literal set (§1.3) so the enumeration is a gate output, not prose | (a) plant `error("lem: fuel exhausted", …)` in a scratch copy of std.core → red; (b) plant the literal in a model `.lem` body → red; (c) delete the `CerbFuel` def → count 0 → red (vacuity) |
-| the nine `_zero` lemmas + distinctness lemmas + `noReservedPEerror_iff`, in a `check_theorem_axioms.sh`-style cone probe kept in the new script (no `sorryAx`, no `ofReduce*`) | replace a `rfl` with `sorry` in a scratch → red |
-| `check_fork_drift.sh` Layer 2 byte-green with ZERO manifest change | (the OCaml-neutrality proof; a planted `.lem` body edit → red, already plant-tested) |
+| boundary-opaque census (check_theorem_axioms.sh:180-191, scanner :151 extended to `fuelExhaustedLoc`): `CerbFuel\.lean:[0-9]+:fuelExhaustedLoc` present exactly once in the build copy | change `opaque` to `def` in a scratch copy → count 0 → red; duplicate the line → count 2 → red |
+| the nine `_zero` lemmas, three runner-leaf lemmas, two disjointness lemmas, the exemplar theorem — in the cone probe (no `sorryAx`, no `ofReduce*`, exact axiom allowlist) | replace a `rfl` with `sorry` in a scratch → red |
+| `check_fork_drift.sh` Layer 2 byte-green with ZERO manifest change | (the OCaml-neutrality proof; already plant-tested) |
 | `check_handwritten_sync.sh` — `CerbFuel.lean` in the manifest and byte-pinned | unlisted file → red (existing behaviour) |
-| FUEL classifier selftest + literal-drift leg (§3.4) | fixture negatives; a one-byte change to `common.sh`'s constant → red |
+| `unsafebaseio_allowlist.txt` pin unchanged (the opaque is NOT a seam) | (existing gate; a new `implemented_by` would fail naming itself) |
+| FUEL classifier selftest (§3.4) | fixture negatives |
 | `sorry`-token leg | planted token → red; empty set → red |
 | Differential: Tier A+B byte-at-baseline; gcc lane + csmith corpus lane at baseline with exactly the §3.3 movement for the respective commit | any other row moving is a finding |
 
 Consumer change manifest (what the re-export carries):
-- names: `CerbFuel.fuelExhaustedMsg`, `CerbFuel.driverFuel`,
-  `CerbFuel.noReservedPEerror(_iff)`, `CerbND.fuelExhaustedKill`,
-  `CerbND.fuelExhaustedKill_ne_Undef0`, `CerbND.fuelExhaustedKill_ne_Other`,
-  `CerbND.isFuelExhaustedKill(_iff)`, the decidable-predicate instance,
-  the nine `CerbND.<worker>_lemFuel_zero` (§1.2, fully applied), the
-  wrapper `rfl`s `CerbND.<member>_wrapper_defeq` + `runND_eq` against
-  `driverFuel`, the Q3 runner-leaf lemmas `runNDFuel_zero`,
-  `runND1Fuel_zero`, `runND1TraceFuel_zero`;
+- names: `CerbFuel.fuelExhaustedLoc` (opaque), `CerbFuel.fuelExhaustedMsg`,
+  `CerbFuel.driverFuel`, `CerbND.fuelExhaustedKill`,
+  `CerbND.fuelExhaustedKill_ne_Undef0`, `CerbND.fuelExhaustedKill_ne_Other`
+  (constructor disjointness only), the nine `CerbND.<worker>_lemFuel_zero`
+  (§1.2, fully applied), `CerbND.runNDFuel_zero`/`runND1Fuel_zero`/
+  `runND1TraceFuel_zero`, the wrapper `rfl`s against `driverFuel`, the
+  exemplar `FuelExemplar.<program>_certified_shipped`;
 - the fuel side-condition statement of §4.3;
 - the deleted-`driveU` expectation: the consumer's partial-correctness
   exports (API.lean:77-78, TotalAdequacy.lean:36-39, PROVISIONAL over
@@ -848,69 +806,60 @@ Consumer change manifest (what the re-export carries):
   response-3 head) are re-stated over `driver2_lemFuel` per §1.4 and
   the PROVISIONAL label is removed by the consumer.
 
-## 7. QUESTIONS — R1 rulings [AGENT, orchestrator, operator-overridable]
+## 7. QUESTIONS — rulings [AGENT, orchestrator, operator-overridable] and what stays open
 
 - **Q1 — two namespaces.** RULED: keep `CerbFuel` (pre-Nondeterminism:
-  message + budget constants + `noReservedPEerror`) and `CerbND`
-  (post: the kill, lemmas, runners); `CerbND` carries `export CerbFuel
-  (fuelExhaustedMsg driverFuel)` so the consumer imports ONE namespace.
-- **Q2 — `liftAction`'s arm shape.** RULED: no change (forced by type:
-  it returns `nd_action`, curried on its scrutinee). Documented in
-  §1.2: the fuel-0 arm discards the incoming action, including a
-  genuine kill it was lifting, and reports exhaustion.
-- **Q3 — the runner's own fuel.** RULED YES: `runNDFuel 0 m st0 =
-  [(Killed st0 fuelExhaustedKill, [], st0)]`, likewise `runND1Fuel`
-  (CerbND.lean:182) and `runND1TraceFuel` (:232, `([], [(Killed …)])`),
-  AFTER `prune/relsem` lands (it retires `runND_sound`, stated against
-  the `[]` leaf) and SUBJECT TO the consumer's ack in their review of
-  this note. Reason: the `[]` leaf makes ∀-fuel theorems vacuous beyond
-  `ndDefaultFuel` depth.
+  the opaque atom, message, budget) and `CerbND` (post: the kill,
+  lemmas, runners); `CerbND` carries `export CerbFuel (fuelExhaustedLoc
+  fuelExhaustedMsg driverFuel)` so the consumer imports ONE namespace.
+- **Q2 — `liftAction`'s arm shape.** RULED: no change (forced by type).
+  Documented in §1.2: the fuel-0 arm discards the incoming action,
+  including a genuine kill it was lifting, and reports exhaustion.
+- **Q3 — the runner's own fuel.** RULED YES: the three runner leaves
+  become the same kill (§1.2 lemmas), AFTER `prune/relsem` lands (it
+  retires `runND_sound`, stated against the `[]` leaf) and SUBJECT TO
+  the consumer's ack. Reason: the `[]` leaf makes ∀-fuel theorems
+  vacuous beyond `ndDefaultFuel` depth.
 - **Q4 — budget family membership.** RULED: the six; the defacto trio
   and `liftND`/`liftAction` stay at 10^6 (operand-bounded measures; the
   FUEL class will surface any death; revisit on evidence).
 - **Q5 — erratum to C1 §8.** CONFIRMED by second verification (§0.5);
   both records get a labeled erratum in commit 1.
-- **Q6 — `DecidableEq`.** RULED: the decidable predicate `r =
-  fuelExhaustedKill` suffices; `DecidableEq (kill_reason driver_error)`
-  is NOT promised.
+- **Q6 — decidability.** RULED (restated for C): no `DecidableEq
+  (kill_reason driver_error)` and — under C — no decidable
+  `isFuelExhaustedKill` either (an opaque location has no decision
+  procedure); the consumer uses the structural equation and the `_zero`
+  lemmas, which is all the acceptance shape needs.
 
 Still open for the CONSUMER's review of this note: (i) ack Q3's runner
-leaf; (ii) ack the `Loc.other fuelExhaustedMsg` location (it changes
-nothing in the lemma shapes but is visible in the value); (iii) whether
-`noReservedPEerror` is wanted at all for their exhibits (they run Core
-produced by the shipped translation + pinned libraries, for which the
-finite enumeration already closes the invariant).
+leaf; (ii) ack the opaque-atom design — in particular that NO
+distinctness-from-genuine-`Error` lemma ships (§1.3) and that their
+induction never needs one; (iii) the exemplar's `post` shape (§6) —
+does `∃ r, o.1 = Active r ∧ post r o.2.2` match how their exports
+project the final state, or do they want the state component named
+differently.
 
-## 8. R1 delta (review of `dd61ab87a`, absorbed; each cite re-verified)
+## 8. Revision deltas
 
-- F1 (HIGH): `Loc.unknown` mitigation deleted; invariant re-scoped to
-  the `PEerror`-literal enumeration (translation + pinned Core text;
-  eleven literals, counts per file in §1.3); gate scan moved onto those
-  sources; "kill-site enumeration" dropped (it would pass vacuously —
-  there is one site); arbitrary-Core falsity stated with
-  `noReservedPEerror` as the structural side condition; F1(d)
-  `Loc.other fuelExhaustedMsg` adopted — definition, lemmas,
-  `isFuelExhaustedKill`, gate, §1 text updated. Reviewer's "impls (2)"
-  refined: `gcc_4.9.0…impl` 2, `i686…impl` 0; libc.core carries 12
-  quoted `error("…")` occurrences (two literals) among 16 `error(`
-  tokens.
-- F2 (HIGH): 10^8 unreachable in gate lanes (15-30 s ⇒ ≤ 7×10^6 fuel);
-  §3.3 now has per-commit columns with TIMEOUT/AGREE as the post-budget
-  destinations; the "no standing FUEL(kill) row" consequence is stated;
-  the slice is two commits; §4.5 reworded (55 min rec-shape edge = at
-  the tripwire; reachable only in measure.sh / unbounded probes).
-- F3: all nine `_zero` lemmas stated fully applied against the
-  generated signatures (reader `tagDefs` argument included).
-- F4: measure.sh verdict is `ERR:lem: fuel exhausted` (not "NONE");
-  classifier is over a single merged capture; split-stream callers pass
-  a concatenation.
-- F5: "every lane" → the five classifying lanes assign FUEL; the six
-  byte-compare lanes report DIFF/FAIL; VALIDATION paragraph updated.
-- F6: literal's second copy in `common.sh` acknowledged; "exactly one
-  place" scoped to Lean/lem/Core-text sources; drift leg added.
-- F7: Q5 erratum confirmed with two independent verifications; both C1
-  records get labeled errata in commit 1.
-- F8: cites fixed — mem-scale `b_zero_local_10000000` row :686; Main
-  non-batch `Error0` print :947-949; gcc ledger has 9 SKIP_LEAN_CRASH
-  today.
-- Q1-Q6 rulings logged (§7) with [AGENT, orchestrator] provenance.
+**R2 (Option C, [USER 2026-09-02]):** the reserved-literal apparatus of
+R1 is DELETED — `check_fuel_literal.sh` and its `.lem`/Core-text scan,
+the `PEerror`-literal enumeration as a soundness argument, the
+`Loc.other fuelExhaustedMsg` tag, `CerbFuel.noReservedPEerror(_iff)`,
+the "exactly one place" invariant and the harness drift leg. Replaced
+by: `opaque fuelExhaustedLoc` (pure, value-carrying, census-pinned),
+`fuelExhaustedKill := Error0 fuelExhaustedLoc fuelExhaustedMsg`, the
+unforgeability argument and its caveats (§1.3), the B/A'/C table (§2),
+the census registration (§2, §6), the second design review + exemplar
+deliverable (§6), Q6 restated. Kept from R1: the fully-applied `_zero`
+lemmas (F3), Q1's namespace decision, the FUEL class with F4/F5 wording
+(the harness string now explicitly reporting-only), the mechanism-then-
+budget split (F2), the erratum (F7), Q2/Q4 rulings, §0 facts (the
+`Loc.unknown` fact retained as history, no longer load-bearing).
+
+**R1 (review of `dd61ab87a`):** F1 `Loc.unknown` mitigation deleted and
+the invariant re-scoped (now superseded by C); F2 10^8 unreachable in
+gate lanes, per-commit movement columns, two-commit split, §4.5
+reworded; F3 lemmas fully applied; F4 `ERR:` verdict + merged-capture
+classifier; F5 five classifying vs six byte-compare lanes; F6 harness
+copy acknowledged; F7 erratum confirmed with two verifications; F8
+cites (:686, :947-949, 9 SKIP_LEAN_CRASH); Q1-Q6 rulings logged.
