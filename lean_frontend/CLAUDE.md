@@ -187,6 +187,20 @@ make lean-prelude-src   # from project root
 
 If you skip this step, Lake will compile the stale `generated/` copy and your changes will have no effect. Do NOT use symlinks — they break `lake update`.
 
+**Since 2026-09-02 this is GATED, not just documented** (hotfix
+`fix/freshness-copy-gap`, `docs/2026-09-02_freshness-copy-gap.md`): the
+copy set is `lean_frontend/handwritten_copy.manifest` — the one list the
+Makefile copies from — and `tools/check_handwritten_sync.sh` requires
+every listed file to be byte-identical to its `generated/` copy (and
+every `lean_frontend/*.lean` to be listed; empty manifest = FAIL). It
+runs as a precondition of `scripts/common.sh build_lean` (refuses to
+build), inside `tools/check_driver_fresh.sh --record-lean/--check` (no
+freshness stamp over a stale copy), and as `test_unit.sh`'s sync gate.
+Adding a hand-written file = add it to the manifest, or the gate names
+it. The gap it closed: a merge changed `CerbMem.lean`, `build_lean` ran
+without `make lean-prelude-src`, and the freshness stamp read green over
+a binary built from the old copy.
+
 ## Key files
 
 ### Hand-written Lean (in `lean_frontend/`, copied to `generated/` by Makefile)

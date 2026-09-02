@@ -25,57 +25,21 @@ UNIT_TESTS=(
 # Sync gate (arc-4 S5f, audit G2). Lake compiles from lean_frontend/generated/
 # (srcDir), NOT from lean_frontend/ — a stale generated/ copy of a
 # hand-written file silently launders edits out of the binary (observed:
-# generated/Main.lean lacked the S1r floor probe). Every file in the
-# Makefile's LEAN_HANDWRITTEN list (which includes Main.lean) must be
-# byte-identical to its generated/ copy. Fail-closed: an unparseable
-# Makefile list, a missing file on either side, or any byte drift fails
-# the suite. Absolute paths throughout.
+# generated/Main.lean lacked the S1r floor probe; 2026-09-02: a merged
+# CerbMem.lean change never reached the binary while the driver-freshness
+# stamp read green). Since hotfix fix/freshness-copy-gap the gate is
+# tools/check_handwritten_sync.sh — the copy set is enumerated from
+# lean_frontend/handwritten_copy.manifest, the SAME file the Makefile
+# recipe copies from (the inline awk parse of the Makefile that lived
+# here was a second, drift-prone reader). Fail-closed: missing/empty
+# manifest, a missing file on either side, any byte drift, or an
+# unlisted lean_frontend/*.lean fails the suite. The same tool gates
+# check_driver_fresh --record-lean/--check and common.sh build_lean.
 # ---------------------------------------------------------------------------
-SYNC_MAKEFILE="$PROJECT_ROOT/Makefile"
-SYNC_SRC_DIR="$PROJECT_ROOT/lean_frontend"
-SYNC_GEN_DIR="$PROJECT_ROOT/lean_frontend/generated"
-sync_list=$(awk '
-    /^LEAN_HANDWRITTEN[[:space:]]*=/ { inlist=1 }
-    inlist {
-        line=$0
-        sub(/^LEAN_HANDWRITTEN[[:space:]]*=/, "", line)
-        cont = (line ~ /\\[[:space:]]*$/)
-        gsub(/\\[[:space:]]*$/, "", line)
-        printf "%s ", line
-        if (!cont) exit
-    }' "$SYNC_MAKEFILE")
-# shellcheck disable=SC2206
-sync_files=($sync_list)
-if [[ ${#sync_files[@]} -eq 0 ]]; then
-    echo "${RED}test_unit: sync gate FAILED — could not parse LEAN_HANDWRITTEN from $SYNC_MAKEFILE (fail-closed)${NC}"
+if ! "$PROJECT_ROOT/tools/check_handwritten_sync.sh"; then
+    echo "${RED}test_unit: sync gate FAILED — hand-written/generated drift; the built binary does not correspond to the sources${NC}"
     exit 1
 fi
-# Main.lean is in LEAN_HANDWRITTEN since S5f; keep the belt-and-braces
-# append in case the Makefile list regresses to not covering it.
-case " ${sync_files[*]} " in
-    *" Main.lean "*) ;;
-    *) sync_files+=("Main.lean") ;;
-esac
-sync_drift=0
-for f in "${sync_files[@]}"; do
-    src="$SYNC_SRC_DIR/$f"
-    gen="$SYNC_GEN_DIR/$f"
-    if [[ ! -f "$src" ]]; then
-        echo "  SYNC: hand-written file missing: $src"
-        sync_drift=$((sync_drift + 1))
-    elif [[ ! -f "$gen" ]]; then
-        echo "  SYNC: generated copy missing: $gen (run 'make lean-prelude-src')"
-        sync_drift=$((sync_drift + 1))
-    elif ! cmp -s "$src" "$gen"; then
-        echo "  SYNC: DRIFT between $src and $gen (run 'make lean-prelude-src')"
-        sync_drift=$((sync_drift + 1))
-    fi
-done
-if [[ $sync_drift -gt 0 ]]; then
-    echo "${RED}test_unit: sync gate FAILED — $sync_drift hand-written/generated drift(s); the built binary does not correspond to the sources${NC}"
-    exit 1
-fi
-echo "test_unit: sync gate OK (${#sync_files[@]} hand-written files byte-identical to generated/)"
 
 cd "$PROJECT_ROOT/lean_frontend"
 

@@ -63,7 +63,17 @@
 #        hand-written copies (files whose basename exists at
 #        lean_frontend/<base>.lean — those may legitimately be
 #        re-copied by hand between regenerations and are byte-pinned
-#        by test_unit's sync gate instead)>
+#        against their sources by tools/check_handwritten_sync.sh
+#        instead — wired into check_driver_fresh --record-lean/--check,
+#        common.sh build_lean and test_unit.sh since hotfix
+#        fix/freshness-copy-gap 2026-09-02)>
+# The copy set is DELIBERATELY not folded into this stamp: a stamp is
+# for a derivation whose input (.lem) is not directly comparable to its
+# output; the hand-written copies have their source present next to
+# them, so a byte comparison is strictly stronger than any recorded
+# hash and carries no stamp state that can itself go stale. (The
+# 2026-09-02 fail-open was exactly a hash that covered both sides and
+# could not see them differ.)
 #
 # Usage: tools/check_lem_sync.sh [--root DIR] --record|--check|--record-lean|--check-lean
 

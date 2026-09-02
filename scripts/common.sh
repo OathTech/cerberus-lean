@@ -190,6 +190,26 @@ build_lean() {
     # build over a pre-existing stale binary passed silently (the lane
     # then ran STALE semantics). Full log kept for the failure path
     # (tail -3 would truncate real errors).
+    # Copy-set precondition (hotfix fix/freshness-copy-gap, 2026-09-02):
+    # Lake compiles from lean_frontend/generated/, where the hand-written
+    # lean_frontend/*.lean files exist only as COPIES made by `make
+    # lean-prelude-src`. A build here without that recipe (observed after
+    # a mainline merge touched CerbMem.lean) compiled the STALE copy, and
+    # the freshness stamp below then recorded the new source hash over the
+    # unchanged binary — check_driver_fresh --check said `lean OK`
+    # (fail-open). Refuse up front instead: every copy must be
+    # byte-identical to its source (tools/check_handwritten_sync.sh, the
+    # manifest the Makefile itself reads; empty set = FAIL).
+    # REFUSE-ONLY, deliberately (not auto-propagate): (1) the copy step
+    # has exactly one authority, the Makefile recipe — a second cp path
+    # here is a mirror that can drift from it; (2) a stale copy set is the
+    # SYMPTOM of a skipped regeneration, and the lem-derived files may be
+    # stale with it — the remedy is the whole recipe, which the message
+    # names. Cost when in sync: ~21 cmp calls.
+    if ! "$PROJECT_ROOT/tools/check_handwritten_sync.sh" --quiet; then
+        echo "Error: build_lean REFUSED — hand-written lean_frontend/*.lean not propagated to lean_frontend/generated/ (run: make lean-prelude-src, then build_lean); building now would produce a binary that does not correspond to its sources" >&2
+        exit 1
+    fi
     local _log="$TMP_DIR/build_lean.$$.log"
     if ! (cd "$PROJECT_ROOT/lean_frontend" && "$SCRIPT_DIR/capped" lake build cerberus-lean) > "$_log" 2>&1; then
         echo "Error: cerberus-lean build FAILED (lake build exit nonzero); last 40 lines:" >&2

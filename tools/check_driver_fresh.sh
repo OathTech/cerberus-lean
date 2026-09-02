@@ -38,10 +38,23 @@
 #           backend/ frontend/ memory/ ocaml_frontend/ parsers/
 #           sibylfs/ util/ (includes the lem-generated OCaml tree).
 #   lean:   lean_frontend/lean-toolchain + lean_frontend/{lakefile.toml,
-#           lake-manifest.json} + lean_frontend/*.lean (hand-written) +
-#           generated/**.lean + relsemcore/**.lean + native/*.{c,o}
+#           lake-manifest.json, handwritten_copy.manifest} +
+#           lean_frontend/*.lean (hand-written) + generated/**.lean +
+#           relsemcore/**.lean + native/*.{c,o}
 #           (the untracked-.o gotcha: a native/*.c edit or a rebuilt .o
 #           changes the hash and demands a relink+re-record).
+#
+# COPY-SET LEG (hotfix fix/freshness-copy-gap, 2026-09-02): the lean
+# source hash covers BOTH a hand-written lean_frontend/X.lean and its
+# generated/X.lean copy (Lake compiles the copy) but a hash cannot see
+# that the two DIFFER. Observed: a merge changed CerbMem.lean; build_lean
+# ran without `make lean-prelude-src`; the binary (built from the stale
+# copy) was unchanged, --record-lean stamped the NEW source hash over it,
+# and --check reported `lean OK` — a green stamp attesting a binary that
+# did not correspond to its sources (fail-open). Now both the lean record
+# path and every lean check first require tools/check_handwritten_sync.sh
+# (byte-identity of every copy, manifest-enumerated, vacuity = FAIL): no
+# stamp is recorded, and no check passes, over a drifted copy set.
 # Declared non-goals (same class as the lem-sync stamp's): the opam
 # switch / Lean toolchain binaries and the Lake packages tree are not
 # hashed (the manifest pin is the identity); runtime files staged under
@@ -94,6 +107,7 @@ lean_src_hash() {
   (cd "$ROOT" && { printf 'lean_frontend/lean-toolchain\0'; \
     printf 'lean_frontend/lakefile.toml\0'; \
     printf 'lean_frontend/lake-manifest.json\0'; \
+    printf 'lean_frontend/handwritten_copy.manifest\0'; \
     find lean_frontend -maxdepth 1 -type f -name '*.lean' -print0; \
     find lean_frontend/generated lean_frontend/relsemcore \
       -type f -name '*.lean' -print0 2>/dev/null; \
@@ -110,8 +124,22 @@ commit_id() {
   echo "$c$dirty"
 }
 
+COPY_SYNC_SH="$ROOT/tools/check_handwritten_sync.sh"
+# Copy-set leg (see header): the hand-written->generated/ copies must be
+# byte-identical BEFORE a lean stamp may be recorded or trusted. The
+# tool exits 1 with CERB_DRIVER_STALE naming the file; a missing tool is
+# itself a FAIL (fail-closed, never a skipped leg).
+require_copy_sync() {  # <verb: record|check>
+  [[ -x "$COPY_SYNC_SH" ]] || { echo "CERB_DRIVER_STALE: lean driver $1 refused — $COPY_SYNC_SH missing or not executable (copy-set leg cannot run; fail-closed)" >&2; exit 1; }
+  if ! "$COPY_SYNC_SH" --root "$ROOT" --quiet; then
+    echo "CERB_DRIVER_STALE: lean driver $1 refused — hand-written sources not propagated to lean_frontend/generated/ (no stamp is recorded over a stale copy set; run make lean-prelude-src, then rebuild)" >&2
+    exit 1
+  fi
+}
+
 record() {  # <side> <bin> <stamp> <src_hash_fn>
   local side="$1" bin="$2" stamp="$3" srcfn="$4"
+  [[ "$side" != lean ]] || require_copy_sync record
   [[ -f "$bin" ]] || { echo "check_driver_fresh: cannot record $side — binary missing: $bin" >&2; exit 1; }
   local b s
   b="$(bin_hash "$bin")"
@@ -132,6 +160,8 @@ their checkout). Remediate by rebuilding the stale side:
               cerberus-lib.install && opam exec --switch=. -- dune install \
               cerberus-lib && opam exec --switch=. -- dune build cerberus.install
     lean:   make lean-prelude-src && cd lean_frontend && ../scripts/capped lake build
+            (lean-prelude-src is NOT optional: Lake compiles the generated/
+            COPIES of the hand-written files — the 2026-09-02 fail-open)
 then re-record: tools/check_driver_fresh.sh --record-oracle / --record-lean
 (scripts/common.sh build_cerberus/build_lean do build+record in one step).
 For an INTENTIONAL cross-version run only: CERB_DRIVER_FRESH_OVERRIDE=1
@@ -146,6 +176,7 @@ check_side() {  # <side> <bin> <stamp> <src_hash_fn>
     echo "CERB_DRIVER_FRESH_OVERRIDE ACTIVE: skipping $side driver freshness check — results are only meaningful for a deliberate cross-version run" >&2
     return 0
   fi
+  [[ "$side" != lean ]] || require_copy_sync check
   [[ -f "$bin" ]] || fail_stale "$side" "binary missing: $bin"
   [[ -f "$stamp" ]] || fail_stale "$side" "stamp $(basename "$stamp") missing — binary provenance unknown (primed tree or build outside scripts/common.sh; a missing stamp is a FAIL, not a pass)"
   local want_bin want_src have_bin have_src

@@ -306,17 +306,23 @@ clean-sibylfs-src:
 #### Lean frontend (generated from the same LEM_SRC as the OCaml frontend)
 LEAN_SRC_DIR = lean_frontend/generated
 
-# Hand-written Lean files symlinked into generated/ so they're importable
+# Hand-written Lean files copied into generated/ so they're importable
 # by the generated code (which references them via declare lean target_rep).
-LEAN_HANDWRITTEN = CerberusImpl.lean CerbLocation.lean CerberusFresh.lean \
-    CerbGlobal.lean CerbFloat.lean CerbUtils.lean CerbPP.lean CerbMem.lean \
-    CerbFS.lean CerbConcurrency.lean CerbCtypeInstances.lean CerbStepInstances.lean CerbFunMapInstances.lean CerbCabsInstances.lean \
-    CerbTags.lean CerbDebug.lean CerbDecode.lean CabsImport.lean CoreParser.lean \
-    CerbND.lean Main.lean
+# THE LIST LIVES IN lean_frontend/handwritten_copy.manifest (hotfix
+# fix/freshness-copy-gap, 2026-09-02): one authority shared with
+# tools/check_handwritten_sync.sh, which byte-pins every copy against its
+# source (via check_driver_fresh --record-lean/--check, common.sh
+# build_lean, test_unit.sh). Entries are the lines starting with a letter
+# (comment lines start with '#'). Fail-closed: a missing or empty manifest
+# is a parse-time error, never an empty copy.
 # Main.lean is in the list since arc-4 S5f: it was previously copied only
 # by hand, and a stale generated/Main.lean silently dropped the S1r floor
-# probe from the built binary (audit-2 G2). test_unit.sh's sync gate now
-# asserts byte-identity of every file above against its generated/ copy.
+# probe from the built binary (audit-2 G2).
+LEAN_HANDWRITTEN_MANIFEST = lean_frontend/handwritten_copy.manifest
+LEAN_HANDWRITTEN := $(strip $(shell sed -n '/^[A-Za-z]/p' $(LEAN_HANDWRITTEN_MANIFEST) 2>/dev/null))
+ifeq (,$(LEAN_HANDWRITTEN))
+$(error "lean_frontend: hand-written copy manifest $(LEAN_HANDWRITTEN_MANIFEST) missing or empty (fail-closed; nothing would be copied into generated/)")
+endif
 
 # Update and reinstall lem via opam.  Lem is pinned to
 # https://github.com/septract/lem-lean#mdd/lean-backend via `opam pin`.
@@ -343,8 +349,9 @@ lean-prelude-src: $(LEM_SRC)
     $(LEM_SRC_LEAN) 2> lean_frontend/lem.log || (>&2 cat lean_frontend/lem.log; exit 1)
 	@# Workaround: Lem generates bogus `import Operators` from `open SEU.Operators` in core_run.lem
 	$(Q)sed -i'' -e '/^import Operators$$/d' $(LEAN_SRC_DIR)/Core_run.lean
-	@echo "[COPY] hand-written Lean files into [$(LEAN_SRC_DIR)]"
+	@echo "[COPY] $(words $(LEAN_HANDWRITTEN)) hand-written Lean files ($(LEAN_HANDWRITTEN_MANIFEST)) into [$(LEAN_SRC_DIR)]"
 	$(Q)cp $(addprefix lean_frontend/,$(LEAN_HANDWRITTEN)) $(LEAN_SRC_DIR)/
+	$(Q)tools/check_handwritten_sync.sh
 	@echo "[STAMP] recording Lean lem-sync content stamp"
 	$(Q)tools/check_lem_sync.sh --record-lean
 
