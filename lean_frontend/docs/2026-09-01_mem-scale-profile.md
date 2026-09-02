@@ -3,7 +3,13 @@
 Date: 2026-09-01. Branch `arc/mem-scale` @ mainline `bbdbacaff`.
 Worker: P0 (measurement-first slice). Companion: the draft charter
 `2026-09-01_mem-scale-design.md`. Status: **investigation only — no
-code changes to the semantics in this slice.**
+code changes to the semantics in this slice.** R1 (2026-09-02):
+amended per the fresh review of `9502522e8` (RATIFY-WITH-AMENDMENTS,
+F1–F9); every reviewer claim re-verified before absorption; R1 text
+is marked `[R1]`. Ephemeral raw run files under `.tmp/memscale/`
+(cited in a few places below) were deleted at slice end per the
+container rule; the committed TSVs under
+`tests/mem-scale-probes/results/` are the record.
 
 Provenance convention: `[AGENT]` = this worker's judgement;
 `[USER …]` = operator ruling as transmitted by the orchestrator;
@@ -57,9 +63,17 @@ and (ii) a NEW, deterministic, SILENT hang on zero-initialised static
 aggregates of more than ~7–8 million elements (`char g[8000000]`
 hangs; `char g[7000000]` and `int g[2500000]` complete; the oracle
 completes the 10 M-byte case in 246 s / 7.7 GB), shown by experiment
-to be a stack-depth ceiling — a non-tail recursion over the element
-list whose overflow the runtime does not report (§6.2–6.3). That one
-is a fail-open-by-silence defect and is registered in TODO.md.
+to be a stack-depth ceiling in the FRONT END (`--pp-core` alone
+hangs) — a non-tail monadic recursion over the element list whose
+guard-page `SIGSEGV` the runtime's handler turns into a futex
+deadlock instead of the "Stack overflow detected. Aborting." message
+(§6.2–6.3, strace evidence). That one is a fail-open-by-silence
+defect and is registered in TODO.md. [R1] Absolute wall-time and
+µs-per-byte figures throughout are environment-dependent (the
+reviewer's re-run of the same rows on the same box observed a
+uniform ≈ 2× drift); RSS figures, RSS/wall RATIOS between the two
+engines on the same run, and growth EXPONENTS are the robust
+quantities — read the tables for those.
 
 ## 1. Method
 
@@ -147,6 +161,12 @@ exit=0 VmPeak=6247084 KB
 Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
 wall=18.29 s maxrss=3098436 KB exit=0
 ```
+
+[R1/F8] The `exit=0` on the first line is a `/usr/bin/time -f %x`
+artefact: `%x` is the child's exit STATUS, undefined when the child
+dies by signal (here SIGABRT, "terminated by signal 6" — the abort
+under `LEAN_ABORT_ON_PANIC` after `INTERNAL PANIC: out of memory`);
+the death is the signal line, not the status.
 
 Lean dies at 1.73 GB *resident* because its *virtual* footprint
 (6.25 GB peak) crosses the 4 GB address-space limit; the oracle at
@@ -454,6 +474,15 @@ from them as their captions state.
 | e_memcpy | oracle | 10000→100000 | 0.64 | 1.15 |
 | e_memcpy | oracle | 100000→1000000 | 1.08 | 1.02 |
 
+### 3.0 What is robust in these tables [R1/F7]
+
+Absolute wall times and the derived µs/byte are environment-dependent
+(shared 32-core box; the reviewer's re-run of the same rows observed
+a uniform ≈ 2× drift, e.g. a single-trace Lean/oracle ratio of 1.08×
+where this sweep recorded 1.53×). Peak RSS, the Lean/oracle RATIOS
+measured in the same session, and the growth EXPONENTS are stable
+across re-runs and are what the conclusions rest on.
+
 ### 3.1 Reading the sweep [AGENT]
 
 Fixed costs (`z_base`): nolibc oracle 43.8 MB / Lean 77.8 MB; libc
@@ -475,7 +504,18 @@ are within 5 % in memory.
 (`memValueToBytes` of an N-element `MVarray` then per-byte insert).
 Linear, larger constant, ORACLE heavier: oracle 921–1001 B/byte,
 Lean 685–699 B/byte; wall oracle 5.4–9.0 µs/byte, Lean 3.9–6.2. At
-10 M bytes the oracle takes 5:14.6 and 7.70 GB; Lean HANGS (§6.2).
+10 M bytes the oracle takes 245.7 s and 7.70 GB (600 s re-run row;
+an earlier run in the stopped sweep read 5:14.6 — wall drift);
+Lean HANGS (§6.2). [R1/F8] A large part of (a') on BOTH engines is
+FRONT-END cost, not memory-model cost: the zero initialiser of a
+static `char g[N]` is desugared into an N-element constant array
+(`frontend/model/cabs_to_ail_aux.lem:124` `List.replicate n
+(mk_zeroInit_aux …)`) that is then typechecked element-wise
+(`ail/genTyping.lem:484`) before any allocation happens — the same
+structure that hangs Lean past ~7 M elements (§6.3). The (a') − (a)
+delta therefore over-states the serialisation cost; the isolated
+`serialize_chararray` figure in §4 (≈ 131 B/byte, 135 ns/byte) is
+the memory-model share.
 
 (b) Zero-initialised LOCAL array (`= {0}`) — the initialiser goes
 through the front end as an N-element list and then the store path.
@@ -836,7 +876,7 @@ has the same 10^6 shape. Fuel is lem-side; out of this arc; it is,
 however, the first wall a kernel-shaped program hits on the Lean
 driver, well before memory does.
 
-### 6.2 A Lean-side HANG on a ≥ 8 M-element zero-initialised global (new; fail-closed violated)
+### 6.2 A Lean-side HANG on a ≥ 8 M-element zero-initialised global (new; fail-closed violated) — FRONT END [R1/F1]
 
 `a_zero_global_10000000` (`char g[10000000];` at file scope, touch
 two elements): the oracle completes (5:14.59 wall, 7,696,892 KB).
@@ -859,20 +899,22 @@ All three threads blocked (main and the worker that did the work
 both on futexes; the third is the libuv poller); cgroup
 `memory.events` shows `max 0 oom 0` (no memory pressure; cap 32 G);
 no output, no panic, no message. `Main.lean` spawns no tasks. This
-is a runtime-level deadlock candidate (Lean runs `main` on a worker
-thread; the worker parked on a futex after ~3.8 s of work), and it
-is a **fail-open-by-silence** defect regardless of cause: the driver
-neither completes nor fails noisily. §6.3 below records the
-standalone reproduction / size bisection performed after the sweep.
-It is NOT the detective's case (that one completes, §2) and it is not
-memory exhaustion; it is filed as its own item for the charter
-(C9) and TODO.
+is a **fail-open-by-silence** defect: the driver neither completes
+nor fails noisily. §6.3 below records the standalone reproduction,
+the size bisection, the stack-size experiment and the strace
+evidence. It is NOT the detective's case (that one completes, §2),
+it is not memory exhaustion, and — [R1] — it is NOT in `CerbMem`:
+`--pp-core` ALONE (front end only, no execution) hangs on `char
+g[8000000]` (re-verified: 30 s wall, 2.57 s user + 1.00 s system,
+exit 124), while the UNINITIALISED 10 M array completes under a 1 MB
+main-thread stack (`LEAN_STACK_SIZE_KB=1024`: `Specified(7)`, 9.28 s
+wall, 8.74 s user). Filed as charter C9 and in TODO.md.
 
 ### 6.3 Hang reproduction and onset (standalone runs after the sweep)
 
-Deterministic: reproduced 3/3 (sweep `--first`, sweep exhaustive,
+Deterministic: reproduced 3/3 in the sweep (`--first`, exhaustive,
 re-run `--first` with a 300 s timeout — all three parked at 2.72 GB
-RSS with ~3–5 s CPU). Size bisection, Lean `--first`, verbatim rows
+RSS with ~3–5 s CPU) and 5/5 more in the standalone runs below. Size bisection, Lean `--first`, verbatim rows
 (`results/2026-09-01_hang-bisect.tsv`):
 
 ```
@@ -911,7 +953,9 @@ stack moves the onset up and a smaller one moves it down, the cause
 is a non-tail recursion over the element list whose overflow handler
 deadlocks instead of printing "Stack overflow detected. Aborting."
 (the message the runtime carries); see the rows for the outcome
-— OUTCOME: at 1 GB (`LEAN_STACK_SIZE_KB=1048576`) the 8 M case
+(the `stackexp` and `noabort` free-text lines now live in
+`results/2026-09-02_hang-stackexp.txt`; the TSV keeps only the
+tabular rows [R1/F8]) — OUTCOME: at 1 GB (`LEAN_STACK_SIZE_KB=1048576`) the 8 M case
 still hangs (2.66 GB plateau); at 4 GB it COMPLETES (`Specified(7)`,
 22.5 s, 5.97 GB); and the 5 M case, which completes at the default,
 HANGS at both 2 MB and 0.5 MB — parking at ~235 MB, i.e. very early.
@@ -924,9 +968,109 @@ recursion (class-0 fix: tail-recursive rewrite + `f = fTR` equality
 theorem, once the function is located by running the 8 M input
 stage-by-stage under a small `LEAN_STACK_SIZE_KB`), and the runtime's
 silent overflow on that thread (a Lean upstream report). The
-implied default main-thread stack must be large (7 M frames fit) —
-consistent with Lean sizing that thread from the unlimited hard
-`RLIMIT_STACK`; that is a runtime detail to confirm, not assumed here. Without `perf`,
+implied default main-thread stack must be large (7 M frames fit): the
+strace below shows it — 1 GiB.
+
+#### 6.3.1 Mechanism, first-hand [R1/F1] (`strace -f -e trace=futex,rt_sigaction,mmap,mprotect`, 8 M input, `--batch --first`, 25 s timeout; excerpt verbatim, tid 2456378 = main thread, 2456380 = the runtime thread running `main`)
+
+```
+2456378 mmap(NULL, 1073745920, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_STACK, -1, 0) = 0x7f31b2516000
+2456378 mprotect(0x7f31b2517000, 1073741824, PROT_READ|PROT_WRITE) = 0
+2456379 mmap(NULL, 134217728, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f31aa400000
+2456379 mprotect(0x7f31ac000000, 135168, PROT_READ|PROT_WRITE) = 0
+2456378 mmap(NULL, 1073745920, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_STACK, -1, 0) = 0x7f316bfff000
+2456378 mprotect(0x7f316c000000, 1073741824, PROT_READ|PROT_WRITE) = 0
+2456378 futex(0x7f31abfff990, FUTEX_WAIT_BITSET|FUTEX_CLOCK_REALTIME, 2456380, NULL, FUTEX_BITSET_MATCH_ANY <unfinished ...>
+2456380 mmap(0x415e8000000, 1073741824, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE, -1, 0) = 0x415e8000000
+2456380 --- SIGSEGV {si_signo=SIGSEGV, si_code=SEGV_ACCERR, si_addr=0x7f316bfffff8} ---
+2456380 futex(0x7f3164000030, FUTEX_WAIT_PRIVATE, 2, NULL <unfinished ...>
+2456378 <... futex resumed>)            = ? ERESTARTSYS (To be restarted if SA_RESTART is set)
+2456380 <... futex resumed>)            = ? ERESTARTSYS (To be restarted if SA_RESTART is set)
+```
+
+Reading: the runtime allocates a 1 GiB `MAP_STACK` region with a
+`PROT_NONE` guard page below it (`mmap(NULL, 1073745920, PROT_NONE,
+… MAP_STACK) = 0x7f316bfff000`; `mprotect(0x7f316c000000,
+1073741824, RW)` — so the guard page is 0x7f316bfff000–0x7f316c000000)
+and joins the worker (`futex(… FUTEX_WAIT_BITSET …, 2456380 …)`). The
+worker faults with `SIGSEGV {si_code=SEGV_ACCERR, si_addr=
+0x7f316bfffff8}` — 8 bytes INSIDE the guard page, i.e. a stack
+overflow of the 1 GiB stack — and its very next syscall, from inside
+the signal handler, is `futex(0x7f3164000030, FUTEX_WAIT_PRIVATE, 2,
+NULL)`: a wait on a contended lock (value 2) that never returns.
+That is a signal-handler deadlock: the overflow handler that should
+print "Stack overflow detected. Aborting." (the string is in the
+binary) blocks on a lock the faulting code path holds. Both threads
+then sit in `futex` until SIGTERM. This is a Lean-runtime defect to
+report upstream (registered in TODO.md); it is independent of what
+recursed.
+
+#### 6.3.2 Where the recursion is (front end) [R1/F1]
+
+`--pp-core` alone hangs (above), so the recursion is in the Cabs →
+Ail → Core front end, before `CerbMem` is touched. Prime candidate,
+by reading (sites verified in the tree): the zero initialiser of a
+static array is expanded to an N-element constant array at
+`frontend/model/cabs_to_ail_aux.lem:124` (`A.ConstantArray elem_ty
+(List.replicate (natFromInteger n) (mk_zeroInit_aux tagDefs
+elem_ty))`); Ail typing then maps over it at
+`frontend/model/ail/genTyping.lem:484` (`E.mapM (typecheck_constant
+loc) csts`), where `E.mapM` is `frontend/model/ail/errorMonad.lem:
+86-92`:
+
+```
+let rec ailErr_mapM f ys =
+  match ys with
+  | []      -> return []
+  | (x::xs) -> f x       >>= fun z  ->
+               ailErr_mapM f xs >>= fun zs ->
+               return (z::zs)
+```
+
+— non-tail (the recursive call sits under a bind whose continuation
+conses the result), emitted by the Lean backend as a `partial def`
+(`lean_frontend/generated/ErrorMonad.lean:121`), so it is BOTH deep
+(one frame per element) and kernel-opaque (no equality theorem can be
+stated about it — the `f = fTR` obligation in v0 of the charter is
+withdrawn). The same shape recurs at `frontend/model/state_exception.
+lem:79` (`foldrM`) and `lean_frontend/generated/Undefined.lean:1390`
+(`sequence0` via `List.foldr`). Naming the exact frame that overflows
+is the first step of the fix slice (charter C9: `--pp-core` under a
+small `LEAN_STACK_SIZE_KB`, stage by stage). The fix is a `.lem`
+change (accumulate-and-reverse — upstream-facing, tray item) or a
+lem-backend change (tail-recursive rendering) — a two-repo shape.
+
+Contrast datum [R1], re-verified: the ORACLE has the same ceiling
+class and fails LOUDLY — with the OCaml stack limited
+(`OCAMLRUNPARAM=l=200000`) on the same `char g[8000000]` input it
+exits 125 in 0.03 s with a backtrace ending
+`Called from Lem_list.replicate in file "lem_list.ml", line 341,
+characters 46-61` (repeated). Same recursion family, opposite
+loudness: that is the defect, not the depth.
+
+#### 6.3.3 Loudness interim: the HANG classification [R1]
+
+Never a stack-size knob (a bumped budget is the registered defect
+shape). `tests/mem-scale-probes/measure.sh` now records `cpu_s`
+(User + System from `/usr/bin/time -v`) and classifies exit 124 with
+`cpu_s / wall_s < 0.1` as **HANG**, distinct from TIMEOUT; verified
+on the 8 M input (verbatim row, `results/2026-09-02_hang-
+classification.tsv`):
+
+```
+a_zero_global_8000000	nolibc	lean-first	124	60.09	2658352	NONE	HANG(cpu 3.17s of 60.09s wall; timeout 60s);	3.17
+```
+
+The rule is timeout-relative (a genuine hang here burns ~3–4 s of CPU
+before parking, so the timeout must be ≥ 10× that — the 30 s
+`--pp-core` run above has a ratio of 0.12 and would read TIMEOUT).
+The same classification belongs in the gating lanes (charter S0):
+today `scripts/test_exec.sh` treats exit 124 as TIMEOUT (fatal except
+for `*.unsupported.c`, :392-393/:487), `scripts/test_ci_sweep.sh`
+pins `overall_rc=0` (:169) and never fails, and `scripts/
+test_gcc_oracle.sh` ledgers `SKIP_LEAN_TIMEOUT` (:405; 11 csmith
+rows, none C9-shaped) — no lane has a CPU-time column, so a hang and
+a slow run are indistinguishable in every lane today [R1/F6]. Without `perf`,
 `gdb` or `/proc/PID/syscall` (ptrace-scoped) the blocked futex
 cannot be attributed further in this environment; the two live
 threads' state is recorded verbatim in §6.2. Candidate mechanisms
@@ -953,14 +1097,24 @@ silence — and belongs on TODO with the reproduction recipe:
 
 The two ceilings the Lean driver ACTUALLY hits before memory, in
 order of onset: the `lemDefaultFuel` totalisation budget (§6.1;
-~1.7e4 loop iterations / 10^6-element initialisers) and the 10 M-byte
-zero-initialised-global hang (§6.2–6.3). Neither is the memory
-representation.
+~1.7e4 loop iterations / 10^6-element initialisers) and the
+front-end stack-depth hang past ~7–8 M elements with its silent
+overflow (§6.2–6.3). Neither is the memory representation; both are
+lem/front-end/runtime items with two-repo or upstream fix paths.
 
-Harness follow-up (charter C2): replace `ulimit -v` with
-`scripts/capped` in `tests/parity-probes/run_probe.sh:43,51`,
-`scripts/test_ci_sweep.sh:222,252,258`,
-`scripts/test_libc_exec.sh:82,90,97`; then re-run the detective's
-class-(b) rows. The detective's honest-bounds line "KNOWN-DIVERGENT
+Harness follow-up (charter C2) [R1/F2]: `ulimit -v` is in SEVEN
+harnesses — `scripts/test_ci_sweep.sh:222,252,258`,
+`scripts/test_libc_exec.sh:82,90,97`,
+`tests/parity-probes/run_probe.sh:43,51,56`,
+`scripts/test_gcc_oracle.sh:361,368`,
+`scripts/test_libxml2.sh:141,159,191,201`,
+`scripts/test_libxml2_uri.sh:104,174`,
+`scripts/test_immaculate.sh:116,123,131` — and `scripts/LADDER.md:73`
+makes it normative ("operator directive, arc 5"). Replacing it
+(recommended: per-test `scripts/capped` with `CERB_MEM_MAX=4G`) is
+therefore a [USER] ruling plus a dedicated baseline-instrument commit
+(charter Q2), after which the detective's class-(b) rows and the
+libxml2 lanes (the kernel-shaped target, biased against Lean today)
+are re-run. The detective's honest-bounds line "KNOWN-DIVERGENT
 at … multi-MB objects / >64KB by-value aggregates" should be amended
 by that re-run, not by this record.

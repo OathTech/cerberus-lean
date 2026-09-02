@@ -32,7 +32,7 @@ if [[ ! -s "$OUT" ]]; then
     printf '# oracle=%s\n# lean=%s\n' \
         "$(sha256sum "$ROOT/_build/default/backend/driver/main.exe" | cut -c1-16)" \
         "$(sha256sum "$ROOT/lean_frontend/.lake/build/bin/cerberus-lean" | cut -c1-16)" >> "$OUT"
-    printf 'probe\tmode\tengine\texit\twall_s\tmaxrss_kb\tverdict\tnote\n' >> "$OUT"
+    printf 'probe\tmode\tengine\texit\twall_s\tmaxrss_kb\tverdict\tnote\tcpu_s\n' >> "$OUT"
 fi
 # size-ascending order within a class so a killed big case comes last
 for f in $(ls "$SCRIPT_DIR"/probes/$ONLY.c 2>/dev/null | awk -F_ '{n=$NF; sub(/\.c$/,"",n); print n"\t"$0}' | sort -k1,1n -s | cut -f2); do

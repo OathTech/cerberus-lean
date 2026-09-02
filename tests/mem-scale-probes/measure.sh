@@ -7,12 +7,22 @@
 # each under `scripts/capped` (cgroup RSS cap, CERB_MEM_MAX, default 32G)
 # and `/usr/bin/time -v`, and emits one TSV row per engine run:
 #
-#   probe  mode  engine  exit  wall_s  maxrss_kb  verdict  note
+#   probe  mode  engine  exit  wall_s  maxrss_kb  verdict  note  cpu_s
 #
 # exit: the wrapped command's exit (124 = timeout, 137 = cgroup kill —
 # the capped KILLED banner is preserved in the .err file), verdict: the
 # batch verdict sequence (VAL:/UB: like tests/parity-probes/run_probe.sh),
-# note: INTERNAL PANIC / KILLED / TIMEOUT markers from stderr.
+# note: INTERNAL PANIC / KILLED / TIMEOUT / HANG markers from stderr and
+# the time record; cpu_s: User+System seconds from /usr/bin/time -v.
+#
+# HANG classification (R1 amendment, charter C9 loudness interim — never
+# a stack-size knob): exit 124 with cpu_s / wall_s < 0.1 is a HANG, not a
+# slow run — the process stopped consuming CPU long before the timeout
+# (the >7M-element front-end hang parks all threads on futexes after ~4 s
+# of CPU). The rule is timeout-relative: use a timeout of at least 10x the
+# CPU a genuine hang burns before parking (>= 60 s here), or a slow-but-
+# working run and a hang are indistinguishable by this ratio. Fail-closed:
+# a HANG row is never counted as a completed run.
 #
 # Usage: measure.sh [--nolibc|--libc] [--timeout N] [--engines LIST]
 #                   [--outdir DIR] file.c
@@ -83,9 +93,11 @@ run_one() {
     local rc=0
     CERB_MEM_MAX="${CERB_MEM_MAX:-32G}" "$CAPPED" "$TIME" -v -o "$tf" \
         timeout "${TIMEOUT_SECS}s" "$@" > "$out" 2> "$err" || rc=$?
-    local rss="" wall=""
+    local rss="" wall="" cpu=""
     if [[ -f "$tf" ]]; then
         rss=$(sed -n 's/.*Maximum resident set size (kbytes): //p' "$tf")
+        local ut st_; ut=$(sed -n 's/.*User time (seconds): //p' "$tf"); st_=$(sed -n 's/.*System time (seconds): //p' "$tf")
+        [[ -n "$ut" && -n "$st_" ]] && cpu=$(awk -v u="$ut" -v s="$st_" 'BEGIN{printf "%.2f", u+s}')
         local w; w=$(sed -n 's/.*Elapsed (wall clock) time (h:mm:ss or m:ss): //p' "$tf")
         # h:mm:ss.ss or m:ss.ss -> seconds
         wall=$(awk -F: -v w="$w" 'BEGIN{n=split(w,a,":"); s=0; for(i=1;i<=n;i++) s=s*60+a[i]; printf "%.2f", s}')
@@ -93,10 +105,16 @@ run_one() {
     local note=""
     grep -q "capped: KILLED" "$err" && note="${note}KILLED;"
     grep -q "INTERNAL PANIC" "$err" && note="${note}PANIC:$(grep -m1 -oE 'INTERNAL PANIC[^\n]*' "$err" | cut -c1-60 | tr '\t' ' ');"
-    [[ $rc -eq 124 ]] && note="${note}TIMEOUT(${TIMEOUT_SECS}s);"
+    if [[ $rc -eq 124 ]]; then
+        if [[ -n "$cpu" && -n "$wall" ]] && awk -v c="$cpu" -v w="$wall" 'BEGIN{exit !(w > 0 && c / w < 0.1)}'; then
+            note="${note}HANG(cpu ${cpu}s of ${wall}s wall; timeout ${TIMEOUT_SECS}s);"
+        else
+            note="${note}TIMEOUT(${TIMEOUT_SECS}s);"
+        fi
+    fi
     grep -q "Out of memory\|Fatal error" "$err" "$out" 2>/dev/null && note="${note}OCAML-FATAL:$(grep -m1 -hoE '(Out of memory|Fatal error[^\n]*)' "$err" "$out" | head -1 | cut -c1-60);"
     local v; v=$(verdict_of "$out")
-    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$name" "$MODE" "$eng" "$rc" "${wall:-NA}" "${rss:-NA}" "${v:-NONE}" "${note:--}"
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$name" "$MODE" "$eng" "$rc" "${wall:-NA}" "${rss:-NA}" "${v:-NONE}" "${note:--}" "${cpu:-NA}"
 }
 
 IFS=, read -ra ENG <<< "$ENGINES"

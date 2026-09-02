@@ -1,0 +1,7 @@
+# stack-size experiment 2026-09-02 (arc/mem-scale P0): Lean --batch --first on the a_zero_global_8000000 / _5000000 cabs-json, capped 32G, timeout 90s, LEAN_STACK_SIZE_KB varied (honoured by lean_run_main). Free-text /usr/bin/time -f lines, verbatim. 'noabort' = LEAN_ABORT_ON_PANIC unset, 10M input.
+Command exited with non-zero status 124
+noabort wall=90.09 maxrss=2719368 exit=124
+stackexp	8M	LEAN_STACK_SIZE_KB=1048576	Command exited with non-zero status 124 wall=90.09 maxrss=2658956 exit=124 
+stackexp	8M	LEAN_STACK_SIZE_KB=4194304	Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"} wall=22.50 maxrss=5967020 exit=0 
+stackexp	5M	LEAN_STACK_SIZE_KB=2048	Command exited with non-zero status 124 wall=90.00 maxrss=235232 exit=124 
+stackexp	5M	LEAN_STACK_SIZE_KB=512	Command exited with non-zero status 124 wall=90.00 maxrss=231716 exit=124 

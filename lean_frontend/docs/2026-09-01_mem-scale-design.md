@@ -1,8 +1,11 @@
-# MEMORY-SCALE arc — draft charter v0 (design only; no code in this slice)
+# MEMORY-SCALE arc — draft charter v0-R1 (design only; no code in this slice)
 
-Date: 2026-09-01. Branch `arc/mem-scale` @ mainline `bbdbacaff`.
-Author: P0 worker. Status: **DRAFT v0 for operator review** — nothing
-here is dispatched. Grounding: the measurement record
+Date: 2026-09-01; R1 2026-09-02. Branch `arc/mem-scale` @ mainline
+`bbdbacaff`. Author: P0 worker. Status: **DRAFT v0-R1 for operator
+ruling** — nothing here is dispatched. R1 absorbs the fresh review of
+`9502522e8` (RATIFY-WITH-AMENDMENTS, F1–F9): every reviewer claim was
+re-verified against the tree before absorption; deltas from the
+reviewer's statements are marked `[AGENT R1]`. Grounding: the measurement record
 `2026-09-01_mem-scale-profile.md` (same slice); read it first — every
 ranking below cites a table there.
 
@@ -32,9 +35,12 @@ Consequences adopted here (orchestrator's reading, adopted as the
 charter's structure): every candidate is scored on two axes —
 measured/estimated performance gain, and TRUST IMPACT as distance
 from the "obviously right" mirror of upstream Cerberus's memory
-model: **(0)** pure algorithmic fix inside the mirrored
-representation, equality-proved, observable model untouched, code
-still line-mirrors the OCaml; **(1)** representation change hidden
+model: **(0)** same representation, same function (equality-proved),
+observable model untouched; a SHAPE divergence from the OCaml text is
+permitted only as an in-code documented divergence with the OCaml
+cite — the mirror doctrine's existing clause (`CLAUDE.md` "Mirror-
+OCaml doctrine": "mirror the OCaml with file:line cites, or document
+the divergence in-code as deliberate") [R1/F3]; **(1)** representation change hidden
 behind the interface with kernel-checked refinement to the untouched
 simple model (the simple model remains the mirror; the fast instance
 is a proven-equal implementation detail); **(2)** anything that
@@ -74,6 +80,16 @@ ranking ruling]:
   proved-equal replacement (`rfl`-compatible where the consumer
   unfolds by `rfl`, or accompanied by the equality theorem), and every
   class-(1) change leaves the simple instance textually intact.
+- Carve-out [R1/F5], so that S1 does not violate the invariant as
+  literally stated: a DOCUMENTED ALGORITHMIC DIVERGENCE — a
+  definition replaced by a functionally equal one, with the equality
+  theorem kernel-checked and the in-code divergence note carrying the
+  OCaml cite — does not move the trust surface. C1 and C3 are of this
+  kind. C1 in fact REDUCES divergence: today's Lean already diverges
+  from `abst` in shape (`CerbMem.lean:678` INVARIANT note: "differs
+  from OCaml's consume-and-return-rest shape … recursive calls
+  re-slice"); C1 adopts consume-and-return-rest, minus upstream's
+  per-call `List.length` guard.
 - Any candidate that requires the reference model to change is
   listed (§3, marked class 2) and is out of scope without a ruling.
 
@@ -118,14 +134,14 @@ items only if §4's target is unmet after class 0.
 
 | # | Candidate | Mechanism (classic name) | Gain (measured / est.) | Trust impact | Proof obligation | Rank |
 |---|-----------|--------------------------|------------------------|--------------|------------------|------|
-| C1 | `reconstructValue` array arm: single linear chunking pass (consume-and-return-rest, OCaml `abst`'s shape minus its per-call `List.length` guard) instead of per-element `drop (i·e) |>.take e` | replace Θ(n²·e) re-slicing with one Θ(n·e) pass | measured: wall exponent ≈ 2.0 on aggregate loads at 16K→256K bytes (profile §3 fits; Lean `--first` 5.85 s → 114 s for 64 KB → 256 KB struct-by-value); in isolation (profile §4) `reconstruct_chararray` 16 K → 64 K → 256 K → 512 K = 0.11 → 1.80 → 28.4 → 113.5 s, exponents 2.02/1.99/2.00, so a 1 MB `char` aggregate load is ~450 s today and ~0.1 s linear. NOTE the oracle is Θ(n²) here too by its own mechanism (impl_mem.ml:929 `List.length bs` per recursive call) — so this fix takes Lean BELOW the oracle's complexity class on aggregate loads; the upstream counterpart is a tray item | **0** — same representation, same observable result; the in-code note must record that the OCaml's guard is deliberately not mirrored (mirror doctrine: documented divergence) | `theorem reconstructValue_lemFuel_chunk_eq : reconstructValue'_lemFuel … = reconstructValue_lemFuel …` by induction on the element count from the list lemma `(l.drop (i*e)).take e = (chunks e l)[i]` | 1 |
-| C2 | Detective-runner and sweep harness memory limit: replace `ulimit -v` by `scripts/capped` (RSS) in `tests/parity-probes/run_probe.sh:43,51`, `scripts/test_ci_sweep.sh:222,252,258`, `scripts/test_libc_exec.sh:82-97` | measurement correctness (the artefact biases the harness against Lean, whose virtual footprint is ~2–3.6× its RSS) | removes 2 false LEAN_CRASH/OOM rows; the >64 KB-aggregate "KNOWN-DIVERGENT" band in the detective's honest-bounds statement is withdrawn | **0** — harness only, no model text | none (harness); re-run the class-(b) rows | 1 (cheap, do first) |
+| C1 | `reconstructValue` array arm: single linear chunking pass (consume-and-return-rest, OCaml `abst`'s shape minus its per-call `List.length` guard) instead of per-element `drop (i·e) |>.take e` | replace Θ(n²·e) re-slicing with one Θ(n·e) pass | measured: wall exponent ≈ 2.0 on aggregate loads at 16K→256K bytes (profile §3 fits; Lean `--first` 5.85 s → 114 s for 64 KB → 256 KB struct-by-value); in isolation (profile §4) `reconstruct_chararray` 16 K → 64 K → 256 K → 512 K = 0.11 → 1.80 → 28.4 → 113.5 s, exponents 2.02/1.99/2.00, so a 1 MB `char` aggregate load is ~450 s today and ~0.1 s linear. NOTE the oracle is Θ(n²) here too by its own mechanism (impl_mem.ml:929 `List.length bs` per recursive call) — so this fix takes Lean BELOW the oracle's complexity class on aggregate loads; the upstream counterpart is a tray item | **0** — same representation, same observable result; REDUCES divergence (see §1 carve-out); the in-code note must record that the OCaml's `List.length` guard is deliberately not mirrored (documented divergence). Consumer safety [AGENT R1, corrects the reviewer's "nothing unfolds reconstructValue"]: refined-cerberus unfolds `CerbMem.reconstructValue_lemFuel` at `cerberus-heaplang/CerberusHeapLang/TreeRotExhibit.lean:148` and `ListRevExhibit.lean:260` (struct/pointer-typed nodes, then `rfl`-from-`lemDefaultFuel`); those two proofs must be re-checked after C1 (the array arm changes; the struct/pointer arms do not) | `theorem reconstructValue_lemFuel_chunk_eq : reconstructValue'_lemFuel … = reconstructValue_lemFuel …` by induction on the element count from the list lemma `(l.drop (i*e)).take e = (chunks e l)[i]` | 1 |
+| C2 | Harness memory limit: `ulimit -v` (virtual address space) is in SEVEN harnesses — `scripts/test_ci_sweep.sh:222,252,258`, `scripts/test_libc_exec.sh:82,90,97`, `tests/parity-probes/run_probe.sh:43,51,56`, `scripts/test_gcc_oracle.sh:361,368`, `scripts/test_libxml2.sh:141,159,191,201`, `scripts/test_libxml2_uri.sh:104,174`, `scripts/test_immaculate.sh:116,123,131` — and `scripts/LADDER.md:73` makes it NORMATIVE ("`ulimit -v 4000000` + timeout (operator directive, arc 5)") [R1/F2, all lines re-verified] | replace by per-test `scripts/capped` with `CERB_MEM_MAX=4G` (RSS via cgroup) — keeps the intended 4 GB blast radius per test, removes the virtual-vs-resident bias (Lean's virtual footprint is ~2–3.6× its RSS: a 4 GB `-v` kills Lean at ~1.7 GB RSS while the oracle runs to 3.1 GB) | removes the detective's two false OOM rows; the libxml2 lanes — exactly the kernel-shaped target of §4 — are biased against Lean today | **0** — harness only, no model text; BUT it supersedes an operator directive, so it REQUIRES a [USER] ruling (Q2) and, per LADDER's own rule ("Baseline updates are instrument changes: never silent, always a dedicated commit with justification"), a dedicated baseline-instrument commit with the before/after rows | none (harness); re-run the class-(b) rows and the libxml2 lanes | 1 (cheap; gated on Q2) |
 | C3 | `memValueToBytes` struct arm: reversed-chunk accumulation + one `flatten` instead of `acc ++ pad ++ bs` in the left fold | remove `List.append` in a left fold (quadratic in members × bytes) | est. only — probes here are single-member; matters for kernel structs (tens–hundreds of members) | **0** (note: this is a shared upstream shape, `impl_mem.ml:1207-1212` has the same `acc @ …`; the in-code divergence note is mandatory per mirror doctrine) | `foldl_append_eq_flatten_reverse` — a standard list lemma; result list equal | 3 |
 | C4 | Sparse bytemap instance: do not materialise unspecified bytes at allocation (both engines' `fetch_bytes`/`readBytesFrom` already default absent keys to unspecified) | sparse map with implicit default (a classic data refinement) | uninitialised allocation → O(1) instead of ~220 B and ~1.9 µs per byte (profile §3 class a; 10 M bytes: Lean 18.8 s / 2.19 GB → ~0); but zero-initialised statics (the kernel's `.bss`/`.data`, heap `calloc`) still pay ~700 B/byte unless runs are compressed too (profile §3 class a'); NOTE the oracle pays the same or more on both classes, so this widens the Lean–oracle gap in Lean's favour and does not change the differential corpus's economics, which the oracle bounds | **1** — MemState changes (`bytemap` sparser), so it must be a SECOND instance behind an interface; the simple model stays THE semantics; the OCaml mirror of the fast instance is deliberately absent (documented divergence) | α : fill every allocated, absent address with the unspecified byte; per-op `α (fastOp s) = simpleOp (α s)` for the 20-odd `memM` ops; one `nd_bind` composition lemma | 4 (only if §4 target unmet) |
 | C5 | Chunked-bytes instance: per-allocation `ByteArray` of values + a shadow map for provenance/`copyOffset` (only pointer-bearing bytes carry metadata) | CompCert-style split of contents vs. metadata; run-length/implicit default for unspecified and zero regions | est. resident ≤ 2–10 B/byte for both uninitialised AND zero-initialised objects; removes the big-integer key per byte (keys become allocation id + `Nat` offset) | **1** — same interface/refinement discipline as C4, larger α and larger proof surface | α : Πalloc, byte i ↦ ⟨prov(meta i), copyOffset(meta i), some (arr[i])⟩ / default; all per-op theorems; the `nd_bind` lemma | 5 (after C4 evidence) |
 | C6 | Address keys as `Nat` (scalar up to 2^63) instead of `Int` | avoid heap big-integers per key/step | measured in isolation: 48 → 110 B/byte for the bare bytemap at the real address range (profile §4 `alloc lo` vs `alloc hi`), plus one heap allocation per address arithmetic step | **2 if done in the reference model** (`Address := Int` is the mirrored signature, `impl_mem.ml` uses `Z`); **1 if done inside a C4/C5 instance** (keys are the instance's business) | folds into C4/C5's α | listed; NOT standalone |
 | C7 | Interpreter per-step retention (~2.5 KB and ~90 µs per Core step on Lean; the ORACLE retains ~2.5 KB/step too, at ~180–200 µs) and the exhaustive runner's ~5× constant | driver/ND runner (trace/history retention), not the memory model; upstream-shaped | large on long-running programs — but bounded by the oracle's identical retention in any differential lane | 0 (interpreter) — a DIFFERENT arc | its own profile first | out of this arc; flagged |
-| C9 | The >7 M-ELEMENT aggregate HANG (profile §6.2–6.3): a zero-initialised `char g[8000000]` parks all threads on futexes after ~4 s CPU at a constant 2.66–2.72 GB; deterministic (6/6); `int g[2500000]` (10 M bytes, 2.5 M elements) completes; with `LEAN_STACK_SIZE_KB=4194304` the 8 M case COMPLETES (22.5 s / 5.97 GB), with 1 GB it still hangs | **stack-depth ceiling**: a non-tail recursion over the aggregate's element list (depth ∝ elements) overflows the `lean_run_main` thread stack, and the overflow is not reported — the runtime hangs instead of printing its "Stack overflow detected. Aborting." | unblocks ≥ 8 M-element static aggregates (the oracle completes them); more importantly turns a silent hang into a loud failure | **0** for the recursion (a tail-recursive rewrite of the offending function with an equality proof — the standard `foo = fooTR` shape; the function is to be located by bisecting the pipeline stage with the 8 M input under a small `LEAN_STACK_SIZE_KB`) ; the silent-overflow half is a Lean-runtime issue (upstream report) and, until fixed, a **trust item**: fail-open-by-silence is a defect class the working practices forbid | `theorem f_eq_fTR : f = fTR` (functional equality, induction on the list) | 2 (defect with a located cause class; own small slice) |
+| C9 | The >7 M-ELEMENT aggregate HANG — RE-SCOPED [R1/F1]: it is in the FRONT END, not `CerbMem`. `--pp-core` alone (no execution) hangs on `char g[8000000]` (re-verified: 30 s wall / 3.6 s CPU, exit 124); the uninitialised 10 M array completes under a 1 MB stack (9.3 s). Mechanism, first-hand (`strace -f`, profile §6.3): the working thread takes `SIGSEGV {si_code=SEGV_ACCERR}` and its very next syscall is `futex(…, FUTEX_WAIT_PRIVATE, 2, NULL)` that never returns — Lean's stack-overflow handler blocks on a contended lock inside the signal handler (signal-handler deadlock) instead of printing "Stack overflow detected. Aborting." Prime candidate recursion: `frontend/model/cabs_to_ail_aux.lem:124` `List.replicate n (mk_zeroInit_aux …)` builds an N-element `ConstantArray`; `frontend/model/ail/genTyping.lem:484` `E.mapM (typecheck_constant loc) csts` → `frontend/model/ail/errorMonad.lem:86-92` `ailErr_mapM` (non-tail: `f x >>= fun z -> ailErr_mapM f xs >>= fun zs -> return (z::zs)`), generated as `partial def` (`generated/ErrorMonad.lean:121`); same shape at `frontend/model/state_exception.lem:79` `foldrM` and `generated/Undefined.lean:1390` `sequence0` (`List.foldr`). Contrast datum (re-verified): the ORACLE under `OCAMLRUNPARAM=l=200000` fails LOUDLY in 0.03 s (`Called from Lem_list.replicate in file "lem_list.ml", line 341`, exit 125) — the same ceiling class, opposite loudness | non-tail monadic `mapM`/`foldrM` over the element list, depth ∝ elements, overflowing the runtime thread's 1 GiB stack (`mmap(NULL, 1073745920, PROT_NONE, … MAP_STACK)` + `mprotect(…, 1073741824, PROT_READ|PROT_WRITE)` in the trace), the overflow unreported | unblocks ≥ 8 M-element static aggregates (the oracle completes them); more importantly turns a silent hang into a loud failure | **0** (front end, no model text) — but the FIX IS A TWO-REPO SHAPE: either a `.lem` change (accumulate-and-reverse `ailErr_mapM`/`foldrM` — upstream-facing → upstream-tray item) or a lem-backend change (tail-recursive rendering), so it follows the two-repo pin dance, not a cerberus-only slice. The `theorem f = fTR` obligation promised in v0 is WITHDRAWN: the generated function is a `partial def` (kernel-opaque), so no equality theorem is available; validation = the differential battery + a COMPLETION gate (the 8 M/10 M probes must complete on both engines). INTERIM = LOUDNESS ONLY, never a stack-size knob (a bumped budget is the registered defect shape): the HANG classification (exit 124 with CPU/wall < 0.1) now in `tests/mem-scale-probes/measure.sh` (verified on the 8 M input: `HANG(cpu 3.17s of 60.09s wall)`), to be added to `scripts/test_exec.sh` and `scripts/test_ci_sweep.sh` in S0 with their baselines. Also: a Lean upstream bug report (signal-handler deadlock after the guard-page `SIGSEGV`) with the strace excerpt | none available (partial def); completion gate + differential | 2 (defect with a located cause class and a two-repo fix path; own slice) |
 | C8 | `lemDefaultFuel` ceiling | fuel-totalisation budget (lem-side) | unblocks ≥ 1.7e4-iteration loops / 100 KB memset | 0 (lem arc; already registered in TODO.md with a design doc) | none here | out of this arc; the binding ceiling |
 
 [AGENT] Reading of the table: after C1–C3 the Lean memory model has
@@ -150,21 +166,35 @@ if the §4 target is measured unmet after S1 — and if the operator
 wants Lean to outrun the oracle at Linux scale, which is a
 north-star question, not a parity one.
 
-## 4. Target, and the "unmet" test for opening the refinement track
+## 4. Target — a PARITY target, already met on every both-complete row [R1/F4]
 
-Proposed target (for operator confirmation): the kernel-shaped
+Proposed target (for operator confirmation, Q1): the kernel-shaped
 differential corpus — `deps/CN-pKVM-buddy-allocator-case-study` and
 the libxml2 lanes (`scripts/test_libxml2*.sh`) — plus a synthetic
 "large static object" lane (`a_zero_global_{1M,10M}`,
 `a_uninit_local_10M`) runs on the Lean driver under
 `CERB_MEM_MAX=32G` with wall ≤ 3× the oracle's and RSS ≤ 1.5× the
-oracle's, in `--first` mode. "Unmet" = any lane exceeds either bound
-after C1–C3 land. This makes the refinement decision a measurement,
-not a taste.
+oracle's, in `--first` mode (oracle `--mode=random`).
 
-Note the target deliberately excludes what the memory model cannot
-fix: fuel (C8) and the interpreter constant (C7) are separate arcs
-and would otherwise be charged to this one.
+**Status: MET on every row where both engines complete** (profile §3,
+§3b): the recorded single-trace wall ratio is ≤ 1.53× (the reviewer's
+re-run of the same rows observed 1.08×; absolute wall figures are
+environment-dependent, ratios and exponents are robust — profile
+§3.0), and Lean's peak RSS is ≤ the oracle's on every both-complete
+row. So this is a PARITY target and S2 is a CONFIRMATION run on the
+kernel-shaped lanes, not a search for a gap.
+
+Rule for non-completing rows (fail-closed, never undefined): the
+target is evaluated on both-complete rows ONLY. A row that completes
+on neither engine is out of the target's domain and reported as such;
+a row that completes on the oracle and dies on Lean of fuel (C8) or
+the hang (C9) is reported as a **BLOCKER attributed to C8/C9**, not as
+a target miss and not silently dropped. The memory model is not
+charged for either.
+
+Scale BEYOND the oracle's reach (the oracle bounds every differential
+lane at ~3 GB per 13 MB object and ~4.5 KB/byte on `= {0}` locals) is
+a values call, Q3 — not a parity measurement.
 
 ## 5. If refinement is opened: the design (per the ratified shape)
 
@@ -230,15 +260,29 @@ surface; only if C4 leaves the target unmet.
   gains an uninitialised-read UB probe for this). The plant is run
   and its two loud failures are quoted verbatim in the slice record
   before the instance is accepted.
-- Change manifest for refined-cerberus: the interface introduction
-  and the (unchanged) simple-instance definitions listed by name,
-  with a note that their theorems remain over the simple instance;
-  delivered before the merge ask.
+- Change manifest for refined-cerberus [R1/F5, sites re-verified]:
+  the consumer today `unfold`s `CerbMem.readBytesFrom`
+  (`cerberus-heaplang/CerberusHeapLang/Exhibit.lean:121`,
+  `ProdExhibit.lean:86`, `ProdEntry.lean:168`,
+  `ProdLoopExhibit.lean:428`, `Heap.lean:377`), `CerbMem.storeM`
+  (`Heap.lean:324`) and `CerbMem.reconstructValue_lemFuel`
+  (`TreeRotExhibit.lean:148`, `ListRevExhibit.lean:260`); it uses
+  `CerbMem.memValueToBytes` (`ProdExhibit.lean:103,153`, `Heap.lean:
+  122-134`, …) and `CerbMem.allocateObject` (`Exhibit.lean:40,43`,
+  `ProdEntry.lean:142,155`, `ProdExhibit.lean:47-64`,
+  `ProdLoopExhibit.lean:370-387`) by name. Consequences: C1 touches
+  only the array arm of `reconstructValue_lemFuel` — safe for every
+  site except the two `unfold`s, which are re-checked; C3 touches only
+  the struct arm of `memValueToBytes` — the consumer's uses are
+  scalar (`sevenMval`, `longMval`) and go through `.2`/`.length`
+  lemmas; any class-1 work must leave all of the above textually
+  intact. The manifest is delivered before the merge ask.
 
 ## 6. Slice plan (sequenced by the ranking)
 
-- S1 (class 0, this arc's first code slice): C2 harness fix + C1 +
-  C3, each with its equality theorem; re-run the detective's
+- S1 (class 0, this arc's first code slice): C2 (after the Q2 ruling;
+  dedicated baseline-instrument commit) + C1 + C3, each of C1/C3 with
+  its equality theorem; re-run the detective's
   class-(b) rows and the `c_struct_*`/`reconstruct_*` probes; record
   before/after tables. Expected: quadratic → linear on aggregate
   loads; the harness's two false OOM rows gone. Gate: full battery
@@ -252,12 +296,21 @@ surface; only if C4 leaves the target unmet.
   α, per-op theorems, the bind lemma, the plant, both-instance
   battery.
 - S4 (conditional on S3 evidence): C5.
-- S0 (before S1, small): C9 — locate the non-tail recursion by
-  running the 8 M-element probe stage-by-stage under a small
-  `LEAN_STACK_SIZE_KB` (the cause class is attributed; the function is
-  not yet named), rewrite it tail-recursively with the equality
-  theorem, and file the silent-overflow behaviour of `lean_run_main`'s
-  thread upstream (Lean). Registered in TODO.md with the recipe.
+- S0 (before S1, small, cerberus-only): LOUDNESS — add the HANG
+  classification (exit 124 ∧ CPU/wall < 0.1, from `/usr/bin/time -v`
+  User+System) to `scripts/test_exec.sh` and `scripts/test_ci_sweep.sh`
+  (today: `test_exec` treats exit 124 as TIMEOUT, fatal except for
+  `*.unsupported.c`; `test_ci_sweep` pins `overall_rc=0` at :169 and
+  never fails; the gcc lane ledgers `SKIP_LEAN_TIMEOUT` at :405 — 11
+  csmith rows, none C9-shaped; no lane has a CPU-time column) with
+  their baseline commits; file the Lean upstream report (handler
+  deadlock after the guard-page `SIGSEGV`, strace excerpt in the
+  profile). C9's FIX is a separate two-repo slice (lem/.lem shape,
+  §3 C9): confirm the recursion by `--pp-core` under a small
+  `LEAN_STACK_SIZE_KB` stage-by-stage, then accumulate-and-reverse
+  `ailErr_mapM`/`foldrM` in `.lem` (tray) or a tail-recursive backend
+  rendering; gate = completion of the 8 M/10 M probes on both engines
+  + the full battery. No equality theorem is available (`partial def`).
 - Not in this arc: C7, C8 (separate arcs; C8 is lem-side).
 
 ## 7. Risks
@@ -281,27 +334,34 @@ surface; only if C4 leaves the target unmet.
   without leaving `Z`'s shape; accepted as inherited unless folded
   into an instance.
 
-## 8. Open questions for the operator
+## 8. Open questions for the operator (with the reviewer's recommendations, for confirmation)
 
-1. Confirm the §4 target (kernel-shaped corpus + large-static lane,
-   wall ≤ 3×, RSS ≤ 1.5× oracle, `--first`), or set different bounds.
-2. C2 touches the standing harnesses (`test_ci_sweep.sh`,
-   `test_libc_exec.sh`): is a per-test cgroup via `scripts/capped`
-   acceptable inside the sweep (one cgroup per file), or should the
-   sweep run whole under one cap with per-file timeouts only?
-3. If C1–C3 meet the target on the kernel-shaped corpus, does the
-   refinement track stay parked (with this charter as its record), or
-   is a sparse instance wanted anyway for the north-star scale?
-4. C6: is `Address := Nat` inside a fast instance acceptable, given
-   the simple model keeps `Int` (mirroring `Z`)?
-5. C9: the stack-depth cause is attributed by experiment, the
-   recursion is not yet named. Is a driver flag / lane default of
-   `LEAN_STACK_SIZE_KB` acceptable as an interim (it makes the hang a
-   completion at 8 M but only moves the silent ceiling), or must the
-   arc wait for the tail-recursive fix? [AGENT] recommends the fix,
-   not the knob (a bumped budget is the registered defect shape).
-6. The exhaustive-mode fan-out (4,620 executions for two unsequenced
-   by-value calls) is upstream semantics; should the corpus lanes
-   compare `--first` vs `--mode=random` for large-aggregate programs
-   to keep sweep economics sane (a harness policy, not a model
-   change)?
+1. Q1 — target: confirm the §4 PARITY target (kernel-shaped corpus +
+   large-static lane; wall ≤ 3×, RSS ≤ 1.5× oracle; `--first` vs
+   `--mode=random`; both-complete rows only; C8/C9 rows reported as
+   blockers). Recommendation: confirm as stated; it is already met on
+   every both-complete row, S2 is confirmation.
+2. Q2 — C2 supersedes `scripts/LADDER.md:73` ("operator directive,
+   arc 5"): a [USER] ruling is required. Recommended form: per-test
+   `scripts/capped` with `CERB_MEM_MAX=4G` (one cgroup per test,
+   keeping the intended 4 GB blast radius), NOT one cap per sweep; a
+   dedicated baseline-instrument commit per LADDER's own rule; the
+   libxml2 lanes re-run first (they are the kernel-shaped target and
+   are biased against Lean today).
+3. Q3 — values call: if C1–C3 meet the target, PARK the refinement
+   track with this charter as its record. Recommendation: PARK — the
+   oracle bounds the differential corpus (~3 GB per 13 MB object), so
+   a sparse/chunked Lean instance cannot be differentially validated
+   beyond the oracle's reach, and C8 (fuel) binds first on
+   kernel-shaped programs. Reopen only with a north-star ruling that
+   Lean should outrun the oracle.
+4. Q4 — `Address := Nat` inside a fast instance: yes in principle
+   (class 1, the instance's business); moot unless Q3 opens.
+5. Q5 — C9: fix in `.lem` (accumulate-and-reverse, tray) or the lem
+   backend (tail-recursive rendering) via the two-repo pin dance;
+   interim = LOUDNESS (HANG classification in the lanes), NO stack-
+   size knob. Recommendation: exactly that; the knob is the
+   registered-defect shape and only moves the silent ceiling.
+6. Q6 — `--mode=random` vs `--first` for large-aggregate programs: a
+   REPORTING lane only, never a gate; any mismatch is re-run
+   exhaustively on both engines before it is counted.

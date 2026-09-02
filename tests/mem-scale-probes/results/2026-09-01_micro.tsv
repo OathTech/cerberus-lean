@@ -1,4 +1,4 @@
-# memscale-micro 2026-09-02T01:22:38Z cap=32G; columns: case N base wall_ms maxrss_kb result (ms from the in-process monotonic clock around the timed call; maxrss from /usr/bin/time -v over the whole process incl. pre-built inputs)
+# memscale-micro run 2026-09-02T01:22:38Z UTC (file named for the slice date 2026-09-01; the timed re-run after the timing-window fix) cap=32G; columns: case N base wall_ms maxrss_kb result (ms from the in-process monotonic clock around the timed call; maxrss from /usr/bin/time -v over the whole process incl. pre-built inputs)
 case	N	base	ms	maxrss_kb	result
 replicate	100000	lo	1	11164	result=100000
 replicate	1000000	lo	7	39724	result=1000000

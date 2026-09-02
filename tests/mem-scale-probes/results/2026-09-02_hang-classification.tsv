@@ -1,0 +1,2 @@
+# HANG classification check 2026-09-02 (R1): measure.sh on the 8M-element input, timeout 60s. Columns: probe mode engine exit wall_s maxrss_kb verdict note cpu_s
+a_zero_global_8000000	nolibc	lean-first	124	60.09	2658352	NONE	HANG(cpu 3.17s of 60.09s wall; timeout 60s);	3.17
