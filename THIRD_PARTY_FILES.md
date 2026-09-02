@@ -83,3 +83,21 @@ In the test/ directory:
 | BSD 2-Clause | tests/csmith/runtime/custom_stdint_x86.h        | Csmith                               |
 | LGPL         | tests/csmith/runtime/custom_limits.h            | Csmith                               |
 | BSD 2-Clause | tests/csmith/runtime/safe_math.h                | Csmith                               |
+
+---
+
+Native helpers of the Lean frontend (`lean_frontend/native/`):
+
+| License                                   | Files                        | From                                                                 |
+| ----------------------------------------- | ---------------------------- | -------------------------------------------------------------------- |
+| Cerberus (this repository's LICENSE)      | lean_frontend/native/md5.c   | written in this repository (commit 8c4fbdd8b, arc 5 S2, 2026-08)     |
+
+Provenance as verifiable from the file and its history (entry added
+2026-09-02): `md5.c` is an in-repo, single-shot implementation of the MD5
+algorithm as specified in RFC 1321 (the 64-entry T table and the per-round
+rotation amounts are the algorithm's published constants), mirroring OCaml's
+`Digest.string`/`Digest.to_hex` for the per-TU digest seam. It is NOT a copy
+of the RSA Data Security, Inc. reference implementation (no `MD5_CTX` /
+`MD5Init`/`MD5Update`/`MD5Final`, no `FF`/`GG`/`HH`/`II` macros, no RSA
+copyright notice) and carries no third-party notice of any kind; it is
+covered by this repository's license like the rest of the Lean frontend.
