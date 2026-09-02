@@ -728,3 +728,72 @@ Reading [AGENT]:
   on every long execution, as the charter predicted. Out of domain:
   `b_zero_local_10000000` (oracle TIMEOUT at 600 s / 17.4 GB; Lean fuel).
 - Verdicts equal on every both-complete row.
+
+## CLOSE-OUT — full battery at the final head (fresh stamped binaries)
+
+Binaries: Lean `406960e92de44c2f` (src `9099c2a8…`; byte-identical since
+S1 — the S1' revert restored it exactly); oracle bin `d2fefcddc16abcd3`
+(src `a54c0b1f…`, the pre-S1' source set; the oracle binary hash drifts on
+every harness-driven `build_cerberus` relink, the source-set hash is its
+identity). Lem-sync stamps: OCaml `src f4c0096…`, Lean `gen 6c2ae204…`
+(the S1 values). Only docs/results commits follow the last code change
+(`e866357c6`), so this battery is the final head's.
+
+Battery (LADDER Tier A + Tier B + gcc second-oracle lane + csmith corpus
+FULL 6/6 shards; `SKIP_BUILD=1` where honoured; verbatim per-lane
+summary, columns: lane rc wall-s last-summary-lines):
+
+```
+unit                         rc=0      16s    OK (admitted as declared): crlf_code [RENUMBER-ONLY ADMIT plant/crlf_code class=LAYOUT ids=1 moved=1 canon=8c8910c71fce] test_renumber_plants: OK (12 plants: refusals refuse, admits admit with declared class) 
+exec_minimal                 rc=0      11s  Baseline check: 0 regression(s), 0 improvement(s) BASELINE OK 
+exec_coverage                rc=0      21s  Baseline check: 0 regression(s), 0 improvement(s) BASELINE OK 
+exec_debug                   rc=0       9s  Baseline check: 0 regression(s), 0 improvement(s) BASELINE OK 
+exec_float                   rc=0       8s  Baseline check: 0 regression(s), 0 improvement(s) BASELINE OK 
+bytes                        rc=0       4s  [NEG_OK] only_unsigned_char.c: Lean-side desugar/typing rejection at the committed diagnostic line 1 (rc 1) SUMMARY: exec_match=9 neg_pinned=5 fail=0 
+libc_exec                    rc=0      14s  check_driver_fresh: lean OK (bin 406960e92de44c2f42d1680095bc1527b4516854b59d9a79f327bdb869c234d7, src 9099c2a8cf348ee28dc1da206b3c4c9b62962ecf2b6bfcc442f22116ddde22a6) SUMMARY: match=7 diff=0 
+multi_tu                     rc=0       2s  SUMMARY: total=2 match=2 fail=0 ALL PASSED 
+parse_minimal                rc=0      11s  Lean parse:     106 ok, 0 failed ALL PASSED 
+core_minimal                 rc=0      14s  Lean parse:     106 ok, 0 failed ALL PASSED 
+elab                         rc=0      15s    LEAN_FAIL:  0 SUMMARY: total=106 same=103 diff=3 ocaml_fail=0 lean_fail=0 
+libxml2_uri                  rc=0      12s  check_driver_fresh: lean OK (bin 406960e92de44c2f42d1680095bc1527b4516854b59d9a79f327bdb869c234d7, src 9099c2a8cf348ee28dc1da206b3c4c9b62962ecf2b6bfcc442f22116ddde22a6) GATE PASS: all lane expectations pinned-green + bas
+cn_coverage                  rc=0      26s  SUMMARY: total=213 match=207 ub_match=6 ub_diff=0 reject_match=0 diff=0 mismatch=0 reject_diff=0 lean_fail=0 lean_crash=0 lean_error=0 lean_timeout=0 oracle_fail=0 oracle_timeout=0 oracle_inconsistent=0 BASELINE OK (213 
+libxml2                      rc=0     648s  SUMMARY: total=4 match=4 fail=0 (points: 1354, 22 observations each) ALL PASSED 
+parse_ci                     rc=0      77s  Lean parse:     247 ok, 0 failed ALL PASSED 
+core_ci                      rc=0      14s  Lean parse:     128 ok, 0 failed ALL PASSED 
+verify                       rc=0      49s  check_driver_fresh: lean OK (bin 406960e92de44c2f42d1680095bc1527b4516854b59d9a79f327bdb869c234d7, src 9099c2a8cf348ee28dc1da206b3c4c9b62962ecf2b6bfcc442f22116ddde22a6) test_verify: 117 passed, 0 failed (23 fixtures, 22 
+immaculate                   rc=0      23s  check_driver_fresh: lean OK (bin 406960e92de44c2f42d1680095bc1527b4516854b59d9a79f327bdb869c234d7, src 9099c2a8cf348ee28dc1da206b3c4c9b62962ecf2b6bfcc442f22116ddde22a6) OK: lane matches the committed post-S1 baseline (mo
+speclab_selftest             rc=0      93s  check_lem_sync: lean OK (src f4c0096697fb68c508acbe35423ed0fce77c6988ceafcaffe772924358e8a624, gen 6c2ae2041cceb0aed61cae04917144131fe96940e2aec6213d43b13b9d8fd5e7) test_speclab: PASS (both pipelines agree on Specified(0
+speclab_plant                rc=0       0s  check_lem_sync: lean OK (src f4c0096697fb68c508acbe35423ed0fce77c6988ceafcaffe772924358e8a624, gen 6c2ae2041cceb0aed61cae04917144131fe96940e2aec6213d43b13b9d8fd5e7) test_speclab: PASS (both pipelines agree on Specified(2
+speclab_divmod               rc=0       3s  CoreGateTest: ALL PASSED test_speclab_divmod: PASS (--gate) 
+speclab_bytearr              rc=0       2s  ByteArrGateTest: ALL PASSED test_speclab_bytearr: PASS (--gate) 
+speclab_list                 rc=0       2s  ListGateTest: ALL PASSED test_speclab_list: PASS (--gate) 
+speclab_tree                 rc=0       3s  TreeGateTest: ALL PASSED test_speclab_tree: PASS (--gate) 
+speclab_seed                 rc=0       1s  SeedGateTest: ALL PASSED test_speclab_seed: PASS (--gate) 
+gcc_oracle                   rc=0    1137s  Baseline check: 0 regression(s), 0 improvement(s) gcc second-oracle lane OK 
+csmith_1of6                  rc=0    2352s  Baseline check: 0 regression(s), 0 improvement(s) BASELINE OK 
+csmith_2of6                  rc=0    1960s  Baseline check: 0 regression(s), 0 improvement(s) BASELINE OK 
+csmith_3of6                  rc=0    2138s  Baseline check: 0 regression(s), 0 improvement(s) BASELINE OK 
+csmith_4of6                  rc=0     801s  Baseline check: 0 regression(s), 0 improvement(s) BASELINE OK 
+csmith_5of6                  rc=0     226s  Baseline check: 0 regression(s), 0 improvement(s) BASELINE OK 
+csmith_6of6                  rc=0     766s  Baseline check: 0 regression(s), 0 improvement(s) BASELINE OK 
+```
+
+Every lane rc 0; every baseline check `0 regression(s), 0
+improvement(s)`; libxml2 `total=4 match=4`; cn_coverage `BASELINE OK
+(213`; verify `117 passed, 0 failed`; gcc lane `0 regression(s)` over
+1953 rows; csmith corpus 6/6 shards `BASELINE OK` (1669 files, the
+Tier-C full pass at a close-out boundary — the ~2.5 h sweep is the
+tripwire's measurement-sweep carve-out, run in the background).
+
+## Arc summary (dispositions and provenance)
+
+| Slice | Commits | Disposition |
+|---|---|---|
+| S0 loudness | `4dcf1eb50` | DONE — HANG class in `test_exec.sh` / `test_ci_sweep.sh`, plant-tested; 10 M probe reads `HANG(cpu 3.29s of 400.12s wall)`; no committed row changed class; Lean runtime report drafted (`upstream-tray/lean4/01`) |
+| S1 C1+C3 | `41ef263fb` | DONE — linear array/struct arms, 6 kernel-checked equality theorems (cones ⊆ propext/Classical.choice/Quot.sound), gate leg added; exponents 2.0 → ~1.0; battery byte-at-baseline; consumer manifest delivered |
+| S1' C9 at source | `135997c1b` (revert + ceiling docs) | BUILT, MEASURED, REVERTED [USER 2026-09-02] "poor roi for a change to the trust surface": 8 M completes, 10 M still hangs — cause is the Lean runtime's `lean_apply_*` (CALL, not tail jump, 22/24 arity paths); ceiling registered LOUD in VALIDATION.md §5 + TODO.md with the lem-backend run-loop fallback candidate; tray draft 18 kept |
+| S2 C2 harness + baselines + parity | `e02d4105a`, `e866357c6`, `de574fbc8`, `cff5ccb8f` | DONE — 22 `ulimit -v` sites → per-test cgroup cap (4G RSS), KILL classes keyed on the cgroup OOM witness (two findings fixed: exit(137) ≠ cap kill; a vacuous plant leg), plant-tested; one moved committed row (stale `40_stdio` sweep row, attributed to CerbFS fail-closed `9152d2afe`), every gate baseline unmoved; parity MET 10/12 scorable rows, 2 UNMET attributed to the interpreter (C7), blockers C9 ×1 / C8 ×5 |
+
+Not merged, not pushed (operator-gated). Ephemeral scratch under
+`.tmp/memscale/` is deleted at slice end per the container's
+doctrine; everything cited above is committed.
