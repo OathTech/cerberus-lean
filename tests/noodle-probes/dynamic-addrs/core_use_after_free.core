@@ -1,0 +1,8 @@
+-- consequence: after the accepted free(x), x is dead — a load is UB (use
+-- after free of an automatic object, reported as a dead-pointer load).
+proc main (): eff loaded integer :=
+  let strong x_ptr: pointer = create(16, 'signed int') in
+  store('signed int', x_ptr, Specified(1)) ;
+  let strong q: pointer = alloc(8, 0) in
+  free(x_ptr) ;
+  load('signed int', x_ptr)

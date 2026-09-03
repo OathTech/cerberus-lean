@@ -1,0 +1,9 @@
+-- duplicate-address, second kill of the same zero-size region is UB179b
+-- (dead) — the alloc ids are distinct, so freeing q1 twice is caught.
+proc main (): eff loaded integer :=
+  let strong x_ptr: pointer = create(16, 'signed int') in
+  let strong q1: pointer = alloc(8, 0) in
+  let strong q2: pointer = alloc(8, 0) in
+  free(q1) ;
+  free(q1) ;
+  pure(Specified(0))

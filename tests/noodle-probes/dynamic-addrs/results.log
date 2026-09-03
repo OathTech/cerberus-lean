@@ -1,0 +1,155 @@
+# run_dynaddr.sh: fork=git-cn-pin-609-g72164481a upstream=git-cn-pin-18-gb9aeedcb4 gcc=gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0 timeout=60s cap=16G
+##### da_control.c
+--- FORK ORACLE exit=1
+Undefined {ub: "UB179a_non_matching_allocation_free", stderr: "", loc: "<6:3--6:11>"}
+--- UPSTREAM ORACLE exit=1
+Undefined {ub: "UB179a_non_matching_allocation_free", stderr: "", loc: "<6:3--6:11>"}
+--- LEAN --batch exit=1
+Undefined {ub: "UB179a_non_matching_allocation_free", stderr: "", loc: "unknown location"}
+--- LEAN --batch --first exit=1
+Undefined {ub: "UB179a_non_matching_allocation_free", stderr: "", loc: "unknown location"}
+--- GCC exit=134 stdout+stderr=munmap_chunk(): invalid pointer timeout: the monitored command dumped core
+##### da_bug.c
+--- FORK ORACLE exit=1
+Undefined {ub: "UB179a_non_matching_allocation_free", stderr: "", loc: "<12:3--12:11>"}
+--- UPSTREAM ORACLE exit=1
+Undefined {ub: "UB179a_non_matching_allocation_free", stderr: "", loc: "<12:3--12:11>"}
+--- LEAN --batch exit=1
+Undefined {ub: "UB179a_non_matching_allocation_free", stderr: "", loc: "unknown location"}
+--- LEAN --batch --first exit=1
+Undefined {ub: "UB179a_non_matching_allocation_free", stderr: "", loc: "unknown location"}
+--- GCC exit=139 stdout+stderr=timeout: the monitored command dumped core
+##### da_offset.c
+--- FORK ORACLE exit=0
+Defined {value: "Specified(8)", stdout: "", stderr: "", blocked: "false"}
+--- UPSTREAM ORACLE exit=0
+Defined {value: "Specified(8)", stdout: "", stderr: "", blocked: "false"}
+--- LEAN --batch exit=0
+Defined {value: "Specified(16)", stdout: "", stderr: "", blocked: "false"}
+--- LEAN --batch --first exit=0
+Defined {value: "Specified(16)", stdout: "", stderr: "", blocked: "false"}
+--- GCC exit=192 stdout+stderr=
+##### da_align16.c
+--- FORK ORACLE exit=0
+Defined {value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}
+--- UPSTREAM ORACLE exit=0
+Defined {value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}
+--- LEAN --batch exit=0
+Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+--- LEAN --batch --first exit=0
+Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+--- GCC exit=3 stdout+stderr=
+##### da_malloc0_nonnull.c
+--- FORK ORACLE exit=0
+Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+--- UPSTREAM ORACLE exit=0
+Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+--- LEAN --batch exit=0
+Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+--- LEAN --batch --first exit=0
+Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+--- GCC exit=1 stdout+stderr=
+# run_dynaddr.sh: fork=git-cn-pin-609-g72164481a upstream=git-cn-pin-18-gb9aeedcb4 gcc=gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0 timeout=60s cap=16G
+##### core_control.core
+--- FORK ORACLE exit=1
+Undefined {ub: "UB179a_non_matching_allocation_free", stderr: "", loc: "<5:3--5:14>"}
+--- UPSTREAM ORACLE exit=1
+Undefined {ub: "UB179a_non_matching_allocation_free", stderr: "", loc: "<5:3--5:14>"}
+--- LEAN n/a (no .core runner; see --inject)
+##### core_bug.core
+--- FORK ORACLE exit=0
+Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+--- UPSTREAM ORACLE exit=0
+Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+--- LEAN n/a (no .core runner; see --inject)
+##### core_ptreq.core
+--- FORK ORACLE exit=0
+EXECUTION 0:
+Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+EXECUTION 1:
+Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+--- UPSTREAM ORACLE exit=0
+EXECUTION 0:
+Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+EXECUTION 1:
+Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+--- LEAN n/a (no .core runner; see --inject)
+##### core_dup.core
+--- FORK ORACLE exit=0
+Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+--- UPSTREAM ORACLE exit=0
+Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+--- LEAN n/a (no .core runner; see --inject)
+##### core_dup_dead.core
+--- FORK ORACLE exit=1
+Undefined {ub: "UB179b_dead_allocation_free", stderr: "", loc: "<8:3--8:11>"}
+--- UPSTREAM ORACLE exit=1
+Undefined {ub: "UB179b_dead_allocation_free", stderr: "", loc: "<8:3--8:11>"}
+--- LEAN n/a (no .core runner; see --inject)
+##### core_use_after_free.core
+--- FORK ORACLE exit=1
+Undefined {ub: "UB010_pointer_to_dead_object", stderr: "", loc: "<8:3--8:28>"}
+--- UPSTREAM ORACLE exit=1
+Undefined {ub: "UB010_pointer_to_dead_object", stderr: "", loc: "<8:3--8:28>"}
+--- LEAN n/a (no .core runner; see --inject)
+##### core_bug_then_kill.core
+--- FORK ORACLE exit=125
+cerberus: internal error, [31muncaught exception[m:
+          Failure("Concrete: FREE was called on a dead allocation")
+          Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 64, characters 26-31
+          Called from Cerb_frontend__Nondeterminism.liftND.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 257, characters 22-36
+          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 62, characters 11-19
+--- UPSTREAM ORACLE exit=125
+cerberus: internal error, [31muncaught exception[m:
+          Failure("Concrete: FREE was called on a dead allocation")
+          Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 66, characters 26-31
+          Called from Cerb_frontend__Nondeterminism.liftND.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 259, characters 22-36
+          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 64, characters 11-19
+--- LEAN n/a (no .core runner; see --inject)
+##### core_maxalign.core
+--- FORK ORACLE exit=0
+Defined {value: "Specified(8)", stdout: "", stderr: "", blocked: "false"}
+--- UPSTREAM ORACLE exit=0
+Defined {value: "Specified(8)", stdout: "", stderr: "", blocked: "false"}
+--- LEAN n/a (no .core runner; see --inject)
+# run_dynaddr.sh: fork=git-cn-pin-609-g72164481a upstream=git-cn-pin-18-gb9aeedcb4 gcc=gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0 timeout=60s cap=16G inject=inject_rand_control.core
+##### inj_bug.c (Lean --libc inject_rand_control.core)
+--- LEAN --batch exit=1
+Undefined {ub: "UB179a_non_matching_allocation_free", stderr: "", loc: "unknown location"}
+--- LEAN --batch --first exit=1
+Undefined {ub: "UB179a_non_matching_allocation_free", stderr: "", loc: "unknown location"}
+##### inj_bug_bexit.c (Lean --libc inject_rand_control.core)
+--- LEAN --batch exit=1
+Undefined {ub: "UB179a_non_matching_allocation_free", stderr: "", loc: "unknown location"}
+--- LEAN --batch --first exit=1
+Undefined {ub: "UB179a_non_matching_allocation_free", stderr: "", loc: "unknown location"}
+# run_dynaddr.sh: fork=git-cn-pin-609-g72164481a upstream=git-cn-pin-18-gb9aeedcb4 gcc=gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0 timeout=60s cap=16G inject=inject_rand.core
+##### inj_bug.c (Lean --libc inject_rand.core)
+--- LEAN --batch exit=1
+Undefined {ub: "UB179b_dead_allocation_free", stderr: "", loc: "tests/noodle-probes/dynamic-addrs/inj_bug.c:10:3-12"}
+--- LEAN --batch --first exit=1
+Undefined {ub: "UB179b_dead_allocation_free", stderr: "", loc: "tests/noodle-probes/dynamic-addrs/inj_bug.c:10:3-12"}
+##### inj_bug_bexit.c (Lean --libc inject_rand.core)
+--- LEAN --batch exit=0
+Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+--- LEAN --batch --first exit=0
+Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+# run_dynaddr.sh: fork=git-cn-pin-609-g72164481a upstream=git-cn-pin-18-gb9aeedcb4 gcc=gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0 timeout=60s cap=16G inject=inject_rand_dup.core
+##### inj_bug.c (Lean --libc inject_rand_dup.core)
+--- LEAN --batch exit=1
+Undefined {ub: "UB179b_dead_allocation_free", stderr: "", loc: "tests/noodle-probes/dynamic-addrs/inj_bug.c:10:3-12"}
+--- LEAN --batch --first exit=1
+Undefined {ub: "UB179b_dead_allocation_free", stderr: "", loc: "tests/noodle-probes/dynamic-addrs/inj_bug.c:10:3-12"}
+##### inj_bug_bexit.c (Lean --libc inject_rand_dup.core)
+--- LEAN --batch exit=0
+Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+--- LEAN --batch --first exit=0
+Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+# run_dynaddr.sh: fork=git-cn-pin-609-g72164481a upstream=git-cn-pin-18-gb9aeedcb4 gcc=gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0 timeout=60s cap=16G inject=inject_maxalign.core
+##### inj_maxalign.c (Lean --libc inject_maxalign.core)
+--- LEAN --batch exit=0
+Defined {value: "Specified(16)", stdout: "", stderr: "", blocked: "false"}
+--- LEAN --batch --first exit=0
+Defined {value: "Specified(16)", stdout: "", stderr: "", blocked: "false"}

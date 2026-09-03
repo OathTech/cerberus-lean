@@ -1,0 +1,3 @@
+-- Direct read of the Core constant IvMaxAlignment (OCaml oracles).
+proc main (): eff loaded integer :=
+  pure(Specified(IvMaxAlignment))

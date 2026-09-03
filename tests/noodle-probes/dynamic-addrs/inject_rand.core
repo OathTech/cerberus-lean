@@ -1,0 +1,7 @@
+-- Injected libc body for the Lean-side Core-level instrument: rand() with
+-- a ZERO-size dynamic allocation (align 8 = the model's max alignment)
+-- and no other effect. Linked via cerberus-lean --libc in place of
+-- tests/libc/libc.core.
+proc rand (): eff loaded integer :=
+  let strong q: pointer = alloc(8, 0) in
+  pure(Specified(0))

@@ -1,0 +1,12 @@
+-- duplicate-address case: TWO zero-size regions at the same base B (= x's
+-- base); free both; then free(x). Each free of a zero-size region kills its
+-- own allocation id; B stays in dynamic_addrs twice; free(x) then passes.
+proc main (): eff loaded integer :=
+  let strong x_ptr: pointer = create(16, 'signed int') in
+  store('signed int', x_ptr, Specified(1)) ;
+  let strong q1: pointer = alloc(8, 0) in
+  let strong q2: pointer = alloc(8, 0) in
+  free(q1) ;
+  free(q2) ;
+  free(x_ptr) ;
+  pure(Specified(0))

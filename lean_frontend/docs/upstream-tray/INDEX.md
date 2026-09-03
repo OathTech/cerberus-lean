@@ -219,6 +219,27 @@ Added 2026-09-02 (arc/mem-scale S1' — cerberus-side, upstream-facing):
     (Erratum 2026-09-02 [AGENT], audit M1: an earlier entry said
     "our fork carries it" — corrected.)
 
+Added 2026-09-03 (probe/dynamic-addrs — the refined-cerberus consumer's
+note `refined-cerberus/docs/2026-09-03_upstream-note-dynamic-addrs.md`,
+reproduced on deps/cerberus-upstream @ b9aeedcb4 and on the fork; record
+`lean_frontend/docs/2026-09-03_dynamic-addrs-investigation.md`):
+
+19. **19-dynamic-addrs-never-cleaned.md** — TRUE BUG (memory-model
+    soundness gap; low C exposure). The concrete model records dynamic
+    allocations by ADDRESS (`dynamic_addrs`, impl_mem.ml:497; prepended
+    :1433, never removed; `is_dynamic` = `List.mem` :661-663) and
+    admits zero-size regions, so a `alloc(8, 0)` issued at the base of
+    a live created object lets `free` of that AUTOMATIC object pass the
+    dynamic check: no UB179a, `Specified(0)`; the object's later
+    scope-exit kill then dies on an internal `failwith`. Core-level
+    reproducer (both oracles verbatim, 2026-09-03); NOT reachable from C
+    through malloc/aligned_alloc/realloc on any engine (argument
+    temporaries, translation.lem:4435 — the draft says so). Our Lean
+    port mirrors it (libc-injection instrument). Remedy: track dynamic
+    allocations by allocation ID, not address (the note's two fixes
+    assessed and shown not verdict-preserving as stated). Probes:
+    `tests/noodle-probes/dynamic-addrs/`.
+
 ## Filed / duplicate-search status (2026-08-23, read-only gh session)
 
 - **01 → FILED as issues/1009** (operator, 2026-08-19, open). Also filed
@@ -323,10 +344,12 @@ everything filed from this tray:
 
 ## Filing checklist (operator; needs network + GitHub)
 
-For each draft, in ranking order (10, 11, 12, 13, 14, 15, 16, 18, 08, 09,
+For each draft, in ranking order (10, 11, 12, 13, 14, 15, 16, 19, 18, 08, 09,
 17, 02, 03, 04, 05, 06; 07 on request; 01 done — 17 and 18 slotted
 2026-09-02 [AGENT]: 18 (true bug, robustness) with the true-bug tier,
-17 (minor, diagnostic quality) with the minor tier): (1) re-verify the repro against CURRENT upstream master
+17 (minor, diagnostic quality) with the minor tier; 19 slotted 2026-09-03
+[AGENT] with the true-bug tier after 16 — a soundness gap, but Core-level
+only, so behind the C-reachable ones): (1) re-verify the repro against CURRENT upstream master
 (ours is pinned at b9aeedcb4); (2) search the upstream issue tracker
 for duplicates; (3) file with the draft's title, repro, verbatim
 output, classification and remedy sections; (4) record the issue URL

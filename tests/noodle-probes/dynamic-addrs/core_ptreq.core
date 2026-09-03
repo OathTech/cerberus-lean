@@ -1,0 +1,6 @@
+-- base coincidence via pointer equality: 0 => x_ptr and q have the same address.
+proc main (): eff loaded integer :=
+  let strong x_ptr: pointer = create(16, 'signed int') in
+  let strong q: pointer = alloc(8, 0) in
+  let strong b: boolean = memop(PtrEq, x_ptr, q) in
+  pure(Specified(if b then 0 else 1))

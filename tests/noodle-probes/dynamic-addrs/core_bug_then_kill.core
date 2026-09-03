@@ -1,0 +1,9 @@
+-- the C shape's tail: after the accepted free(x), the automatic object's
+-- scope-exit kill (static) finds a dead allocation.
+proc main (): eff loaded integer :=
+  let strong x_ptr: pointer = create(16, 'signed int') in
+  store('signed int', x_ptr, Specified(1)) ;
+  let strong q: pointer = alloc(8, 0) in
+  free(x_ptr) ;
+  kill('signed int', x_ptr) ;
+  pure(Specified(0))

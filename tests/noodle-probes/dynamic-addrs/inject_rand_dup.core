@@ -1,0 +1,9 @@
+-- duplicate-address injected body: two zero-size regions at the same base,
+-- both freed (each kill removes its own allocation; the base stays in
+-- dynamicAddrs twice).
+proc rand (): eff loaded integer :=
+  let strong q1: pointer = alloc(8, 0) in
+  let strong q2: pointer = alloc(8, 0) in
+  free(q1) ;
+  free(q2) ;
+  pure(Specified(0))

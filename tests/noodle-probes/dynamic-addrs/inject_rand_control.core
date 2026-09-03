@@ -1,0 +1,3 @@
+-- CONTROL injected body: no allocation.
+proc rand (): eff loaded integer :=
+  pure(Specified(0))
