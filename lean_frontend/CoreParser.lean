@@ -1279,7 +1279,16 @@ partial def pPexprAtom (minPrec : Nat := 0) : P PE := do
         return (mkPE (PEval (Vobject (OVpointer (CerbMem.funPtrval s)))))
       | Impl _ => fail "Cfunction of an impl constant"
     | some "IvMaxAlignment" =>
-      return (mkPE (PEval (Vobject (OVinteger (CerbMem.integerIval 16)))))
+      -- core_parser.mly:1536-1537: `integer_ival (Z.of_int
+      -- (Ocaml_implementation.(get ()).max_alignment))` — the IMPLEMENTATION
+      -- record's value (DefaultImpl.max_alignment = 8,
+      -- ocaml_implementation.ml:151-152; MorelloImpl's 16 only under CHERI,
+      -- refused). Zero-discrepancy Z-76 (dynamic-addrs record §6): this was
+      -- the literal 16 while CerberusImpl.max_alignment declared 8, so every
+      -- Lean malloc/realloc (std.core `alloc(IvMaxAlignment, …)`) was
+      -- 16-aligned against the oracle's 8 (da_offset.c 16 vs 8).
+      return (mkPE (PEval (Vobject (OVinteger
+        (CerbMem.integerIval (CerberusImpl.max_alignment : Int))))))
     -- Expression keywords
     | some "cfunction" =>
       lexSym "("
