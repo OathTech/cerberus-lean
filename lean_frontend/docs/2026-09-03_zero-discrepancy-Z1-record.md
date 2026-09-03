@@ -709,3 +709,52 @@ d2d710659 zero-discrepancy: the census charter (docs/2026-09-03_zero-discrepancy
 ```
 
 Provenance: every ruling cited is [USER 2026-09-03] as relayed in the brief and the charter (§1, §7); every classification, cite, measurement and text here is [AGENT] (the Z1 worker), quoted outputs verbatim, tallies marked derived. Nothing merged, nothing pushed; the primary checkout, `deps/`, `lem-lean/` and other worktrees untouched; the only scratch (`.tmp/z1/`, git-ignored) is ephemeral and will be deleted at slice end.
+
+
+## 10. Orchestrator boundary review [AGENT, orchestrator, 2026-09-03]
+
+Independent re-verification at the slice boundary (worker-claimed green
+is never accepted). In this worktree at head `8827a433f` (rebased on
+`3d1883644`): `make lean-prelude-src`; `DUNE_CACHE=disabled build_cerberus`
+(oracle stamp bin `5b62df0de1e3…` — a fresh cache-disabled build, hence a
+different binary hash from the worker's `69e16259…`; same source hash);
+`CERB_MEM_MAX=32G build_lean` (lean stamp bin `4ebda58b7d04…` — identical
+to the worker's, so the Lean binary is bit-for-bit the one the worker
+gated); `check_driver_fresh --check` OK. Then every gate lane SERIALLY
+(the worker's operating note about concurrent lanes → oracle `CERB_SKIP`
+noise was respected): 19 lanes, 19 × rc 0, no baseline movement anywhere.
+Verbatim closing lines of the three load-bearing lanes (the re-run log
+kept each lane's last four lines, so the per-class SUMMARY counts of the
+exec and gcc lanes are not in it — their baseline verdict lines are):
+
+```
+exec minimal:  Baseline check: 0 regression(s), 0 improvement(s)
+               BASELINE OK
+libxml2:       SUMMARY: total=4 match=4 fail=0 (points: 1354, 22 observations each)
+gcc lane:      Baseline check: 0 regression(s), 0 improvement(s)
+               gcc second-oracle lane OK
+```
+
+The full log is ephemeral (`.tmp/z1-reverify.log`, container scratch,
+deleted at slice end); every SUMMARY/BASELINE line matched the worker's
+§9 verbatim where both were recorded.
+
+Decision confirmed [AGENT, orchestrator]: Z-01's std.core stamping with
+`Loc.region ⟨file,0,0⟩ ⟨file,0,0⟩` (file tracked, line/column not) is
+ACCEPTED as a documented Pos-payload divergence under the mirror-or-
+document clause — the only execution-path consumer of a std.core
+position is `is_library_location` (file), and the oracle substitutes the
+C call-site loc for every library-located UB before printing. Registered
+as a Z2 fix-phase row: if the Parsec parser can carry a line table
+cheaply (S), mirror the positions; otherwise the declaration stands and
+the edge (a library-located UB with NO C call site available for
+substitution would print `<0:0--0:0>` here vs the oracle's std.core
+position) is probed and recorded.
+
+Spot re-runs by the orchestrator earlier the same day (before Z1 acted)
+confirmed the two relayed Z2 rows on stamped binaries: `stdout_escape.c`
+(oracle `stdout: "a\bb\007\127\195\169\011\012\027|\n"` vs Lean raw
+bytes) and `aligned_alloc_zero_nolibc.c` (oracles exit 125
+`Division_by_zero`, Lean a UB verdict) — the latter is Z2's, not fixed
+here. Consumer change manifest for this slice:
+`docs/2026-09-03_zero-discrepancy-Z1-change-manifest.md`.
