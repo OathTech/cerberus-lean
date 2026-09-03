@@ -306,3 +306,111 @@ no referee. Not a finding.
 | Floating point (`float/`) | 11 | 10/10 AGREE + 1 both-crash | D1, O1, F1, F2 |
 | Pointers/layout/provenance (`ptr/`) | 19 | 18/18 accepted AGREE, 1 oracle-crash (Lean right) | D2, P1, P2, E2, O2 |
 | Allocation/string.h (`mem/`) | 11 | 9/9 completing AGREE, 2 Lean OOM (RC-3) | L1, L2, R1 |
+
+## 3. Shards 3-5 — control/evaluation (`ctl/`), library (`lib/`), elaboration (`elab/`), verdict surface (`out/`)
+
+Control flow, evaluation order and the verdict surface are clean: 15/15
+`ctl/` probes and 4/4 `out/` probes agree three ways (incl. the
+two-outcome unsequenced SET and trace counts). The library and
+elaboration surfaces produced a cluster of oracle-shared defects, each
+re-verified on un-forked upstream @ b9aeedcb4 and each mirrored exactly
+by Lean.
+
+### L3 — ORACLE-SUSPECT (TRUE BUG, upstream-confirmed): FILE-buffered stdout is dropped at termination and reordered against the printf proxy
+
+    tests/noodle-probes/lib/lib_stdio_unflushed_lost.c   fputs("out", stdout); return 0;
+    oracle/Lean: Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}      gcc: out
+    lib_stdio_exit_unflushed_lost.c (… exit(0))           oracle/Lean stdout " 5\n"          gcc: out 5
+    lib_stdio_puts_after_putchar.c  putchar('\n'); puts("xy");  oracle/Lean stdout "\n"     gcc: \nxy\n
+
+Controls that DO work: newline-terminated `fputs("out\n")`, explicit
+`fflush`, `puts` alone, `fputs; fputc; fwrite; putc; putchar('\n')`
+(`lib_stdio_fflush_control.c` and scratch Q1-Q3, Q7, Q8, P1, P2).
+ISO C11 7.22.4.4p4 (exit flushes all streams), 5.1.2.2.3, 7.21.3.
+[AGENT] mechanism sketch, oracle-side: `printf`/`putchar` are std.core
+proxies writing straight into the driver's stdout record, while
+`fputs`/`puts`/`fputc` go through the C libc's FILE buffer
+(`runtime/libc/src/stdio.c`, `puts` = `fputs` + `putc_unlocked`,
+:813-818) whose contents reach the record only on a flush; neither
+`return` from main nor `exit()` flushes it, and the `putchar` proxy
+leaves the FILE in a state where the next buffered write is lost. Not
+localized further (libc + driver interplay). Fix (upstream, S-M): flush
+all FILEs on the exit path; route the proxies through the same buffer
+or flush it before proxy writes. Trust-story note: harness stdout
+comparisons cannot see any `fputs`/`puts` output that is not
+newline-terminated — a coverage hole that hides on both sides equally.
+
+### L4 — ORACLE-SUSPECT (TRUE BUG, upstream-confirmed): atexit handlers do not run on return from main
+
+`lib_atexit_order.c`: oracle/Lean stdout `m`, value 4; gcc `m21`.
+Control `lib_atexit_exit_control.c` (`exit(4)`): all engines `m1`. ISO
+C11 5.1.2.2.3 (return from main ≡ `exit(status)`), 7.22.4.4p3. Fix
+(upstream, S): the driver's main-return path must call libc `exit`.
+
+### L5 — ORACLE-SUSPECT (crash on legal input, upstream-confirmed): `%*d` kills both engines
+
+`lib_printf_star_width.c`: oracle `Failure("internal error: TODO:
+formatted.lem 6")` exit 125; Lean `PANIC at _private.LemLib.0.
+failwithIImpl LemLib:171:2: TODO: formatted.lem 6` exit 134
+(message-level parity); gcc `[   9]`. ISO C11 7.21.6.1p5. Not on any
+register (tray 16 is the snprintf return value). Tray candidate; fix
+(upstream, S): implement `*` width/precision from the argument list in
+formatted.lem.
+
+### L6 — ORACLE-SUSPECT (over-strict, upstream-confirmed): `%x`/`%X`/`%o` with an `int` argument are UB153b
+
+`lib_printf_hex_int_arg.c` (`printf("[%x][%X][%o]\n", 255, 255, 8)`):
+oracle/Lean `UB153b_illtyped_argument_for_format`; gcc `[ff][FF][10]`.
+Every real C program does this; ISO C11 7.21.6.1p9 with 6.5.2.2p6
+(signed/unsigned interchangeable as arguments when the value is
+representable in both) makes it well-defined. `%u` with -1
+(`lib_printf_uint_neg_arg.c`) is the strict-UB control (both UB153b,
+defensible). Fix (upstream, S): accept the signed counterpart when the
+value is representable. Note: `%hhd`/`%hd` with int arguments are
+accepted (correct).
+
+### E3 — ORACLE-SUSPECT (TRUE BUG, upstream-confirmed): `?:` in a static-storage initialiser is "not a compile-time constant"
+
+`elab/elab_const_expr_ternary_init.c` (`static int a = (3 > 2) ? 10 :
+20;`): oracle `constraint violation: initializer element is not a
+compile-time constant` (desugaring); Lean `Error {msg: "desugaring
+failed at …"}`; gcc 10. `1 ? 10 : 20` and a block-scope static behave
+the same (CE10, CE14); `?:` in enum constants, array sizes and case
+labels is accepted (`elab_const_expr_ternary_contexts.c`, CE11/12/15).
+ISO C11 6.6p3, p6, p7. Fix (upstream, S): add the conditional arm to
+the desugarer's initializer constant evaluator.
+
+### E4 — ORACLE-SUSPECT (TRUE BUG, upstream-confirmed): string literals cannot initialise char-array members/elements
+
+`elab/elab_string_member_init.c` (`char a[2][3] = {"ab", "cd"};`) and
+`elab_string_struct_member_init.c` (`struct W { char c[3]; } w =
+{{"ab"}};`): oracle `constraint violation: initializing 'char' with an
+expression with a non arithmetic type 'char*'` (typing); Lean
+`typechecking failed`; gcc 99 / 98. All six shapes tried reject
+(scratch SI1-SI6: struct member with/without braces, member followed
+by another member, nested struct, 2-D array, array of structs). Only a
+TOP-LEVEL `char s[3] = "abc"` works. ISO C11 6.7.9p14 (+p20). This is
+a very common idiom (`char names[][8] = {...}`) — likely a visible
+slice of the 766 oracle-reject rows in the ci sweep. Fix (upstream,
+S-M): the initializer typing must treat a string literal against an
+array-of-char (sub)object as p14, before brace elision.
+
+### E5 — ORACLE-SUSPECT (tray-09-adjacent, upstream-confirmed): `"hello" + 1` is not an address constant
+
+`elab/elab_addr_const_string_plus.c`: both reject "not a compile-time
+constant"; gcc 101. `static int *q = arr + 2;` and `&arr[1]` are
+accepted (`elab_const_expr_static_init.c`), so the gap is the
+string-literal base. ISO C11 6.6p9. Addendum candidate for tray 09.
+
+### E6/E7 — controls, by design: K&R definitions ("found K&R-style declaration (unsupported)") and implicit int (parse error) are both-reject on both engines; gcc accepts both as extensions/obsolescent forms. Not findings.
+
+### O3 — ODDITY: `strtok` is absent from the Cerberus libc (both engines: unknown procedure). O4 — ODDITY: `strtol`-family calls make exhaustive mode explode (libc-internal nondeterminism): `lib_strtol_edges.c` completes in 0.3 s single-trace on both engines with gcc's values, but no engine finishes exhaustive enumeration in 60 s. D3 — documented divergence, not a finding: `Error {msg:}` text for `Illformed_program` differs by design (`Main.lean:389-391` declares it; oracle `pp_errors.ml:501`).
+
+## Coverage after shards 3-5
+
+| Area | Probes | oracle==Lean | Findings |
+|---|---|---|---|
+| Control/evaluation (`ctl/`) | 15 | 15/15 AGREE (3-way) | — |
+| Library, libc mode (`lib/`) | 24 | 22/22 completing AGREE; 1 both-crash; 1 both-timeout | L3, L4, L5, L6, O3, O4 |
+| Elaboration (`elab/`) | 18 | 12/12 accepted AGREE; 6 both-reject | E3, E4, E5, (E6, E7 controls) |
+| Verdict surface (`out/`) | 4 | 4/4 AGREE | — |
