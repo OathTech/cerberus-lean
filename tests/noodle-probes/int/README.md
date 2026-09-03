@@ -27,3 +27,10 @@ agreed UB code.
 | int_shift_right_toolarge.c | UB51b >> by width (6.5.7p3) | AGREE UB51b | exec UB_MATCH |
 | int_mod_zero.c | UB045b unsigned % 0 (6.5.5p5) | AGREE UB045b | exec UB_MATCH |
 | int_enum_underlying.c | enum constant not representable as int (6.7.2.2p2 constraint) | BOTH REJECT (oracle constraint violation, Lean "desugaring failed"); gcc accepts as extension. ODDITY: oracle is ISO-correct | reporting-only (both-reject control) |
+
+## Added in shard 2 (the size_t rank finding, record §U1)
+
+| Probe | Corner (ISO C11) | Result | Integration |
+|---|---|---|---|
+| int_size_t_uac_rank.c | UAC between size_t and int/char/short/unsigned (6.3.1.8p1) | oracle==Lean `705032705 1410065408 352516353 5000000001 705032705 705032705 1 705032705 705032705`; gcc `5000000001 10000000000 2500000001 5000000001 5000000001 5000000001 0 5000000001 5000000001` — ORACLE-SUSPECT U1 (macro-type rank; upstream-confirmed) | exec MATCH (both engines); gcc-lane pinned DISAGREE pair (new triage class: U1) — the pin that flips when upstream fixes ailTypesAux rank |
+| int_size_t_minus_one_idiom.c | `(size_t)-1` sentinel with n-1 for n==0 (6.2.5p9) | AGREE 3-way (control: result re-wrapped in size_t) | exec MATCH, gcc AGREE, gate-worthy |

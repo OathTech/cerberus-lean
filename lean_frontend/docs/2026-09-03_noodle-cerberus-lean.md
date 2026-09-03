@@ -137,3 +137,172 @@ consistent. Not a finding.
 | Floating point | 11 (`tests/noodle-probes/float/`) | 10/10 AGREE + 1 both-crash | D1, O1, F1, F2 |
 
 (continued below as shards complete)
+
+## 2. Shard 2 — pointers, layout, provenance (`ptr/`, nolibc) and allocation/string.h (`mem/`, libc)
+
+### U1 — ORACLE-SUSPECT (TRUE BUG, upstream-confirmed): usual arithmetic conversions with `size_t` compute at 32 bits
+
+`tests/noodle-probes/int/int_size_t_uac_rank.c` (`size_t n = 5000000000`):
+
+    oracle/Lean: Defined {value: "Specified(0)", stdout: "705032705 1410065408 352516353 5000000001 705032705 705032705 1 705032705 705032705\n", ...}
+    gcc:         5000000001 10000000000 2500000001 5000000001 5000000001 5000000001 0 5000000001 5000000001
+    upstream @ b9aeedcb4 (SZ.c scratch): identical to the fork oracle
+
+`n + 1`, `n * 2`, `n / 2 + 1`, `u + n` (unsigned int on the left),
+`n + c`, `s + n`, `1 + n` are all wrong; `n + u` (size_t on the left) is
+right; and `n == 705032704` is TRUE — a comparison, so control flow
+diverges from every conforming compiler. Unaffected operand types
+(SZ2.c scratch): `uintptr_t`, `unsigned long`, `long`, `ptrdiff_t`,
+`intptr_t`, `intmax_t`, `int64_t`/`uint64_t` (typedef'd to long long in
+the libc headers). The operand truncation only bites for operand values
+>= 2^32; the RESULT is re-wrapped in size_t (so `n - 1` for n == 0 is
+correct: `int_size_t_minus_one_idiom.c`, control).
+
+Mechanism [AGENT, localized, oracle-side]: `frontend/model/ail/
+ailTypesAux.lem` `lt_integer_rank_ISO` ends with `| _ -> (* TODO: this
+is probably wrong for macro types *) false`, so `Size_t` (Cerberus's
+own `integerType` constructor, not `Unsigned Long`) has no rank
+relative to `int`/`unsigned int`/`char`/`short` in either direction.
+`frontend/model/translation.lem:1444-1477` (`usual_arithmetic_
+conversion_aux`) therefore skips the "unsigned operand of >= rank"
+branch and falls to the last resort: both operands are converted to
+`make_corresponding_unsigned` of the SIGNED operand's type — `unsigned
+int`. Verbatim Core (oracle `--pp=core`, `size_t k = SIZE_MAX + 3`):
+
+    Specified(wrapI_add('size_t', if all_values_representable_in('size_t', 'signed int') then
+      __conv_int__('signed int', a_679) else __conv_int__('unsigned int', a_679), ...))
+
+ISO C11 6.3.1.8p1 (rank of size_t = rank of its underlying unsigned
+long > int). Both engines mirror (shared .lem). Fix (upstream, S):
+give the macro types their implementation's rank in
+`lt_integer_rank_ISO` (Size_t/Ptrdiff_t/Intptr_t/… via the impl's
+underlying type); the differential lanes will not move (both sides
+change together); the gcc lane's pinned pair flips to AGREE.
+Trust-story note: this is the largest class found — `size_t`
+arithmetic is ubiquitous in the libxml2/CN targets, where operand
+values stay < 2^32 so the lanes never see it.
+
+### P1 — ORACLE-SUSPECT (TRUE BUG, upstream-confirmed): pointer difference over pointers-to-arrays divides by the INNER element size
+
+`tests/noodle-probes/ptr/ptr_array_ptrdiff_scaling.c`:
+
+    oracle/Lean: Defined {value: "Specified(0)", stdout: "8 3 2 2 4 8\n", ...}
+    gcc:         2 1 2 2 1 8
+    upstream:    8 3 2 2 4 8
+
+`&a[2] - &a[0]` on `int a[3][4]` is 8 (32 bytes / sizeof(int)), `(p+1)
+- p` on `int (*p)[4]` is 4, `&c[1]-&c[0]` on `char c[2][3]` is 3;
+struct/scalar element arrays are correct. Mechanism: `translation.lem:
+2189-2191` passes the pointee type (`int[4]`), and `memory/concrete/
+impl_mem.ml:1961-1967` (`diff_ptrval` `valid_postcond`) strips one
+`Array` layer before dividing; `lean_frontend/CerbMem.lean:2184-2187`
+mirrors it with a cite ("strip ONE Array layer off diff_ty"). ISO C11
+6.5.6p9 (difference in units of the pointed-to type). Fix (upstream,
+S): do not strip; the translation already provides the pointed-to
+type. Lean: delete the mirrored strip in the same slice.
+
+### P2 — ORACLE-SUSPECT (TRUE BUG vs the PVI model, upstream-confirmed): provenance is lost through ANY integer arithmetic
+
+`tests/noodle-probes/ptr/ptr_intptr_arith_roundtrip.c`
+(`unsigned long u = (unsigned long)&a[0]; int *q = (int*)(u + 4ul);`):
+
+    oracle/Lean: Undefined {ub: "UB043_indirection_invalid_value", ...}
+    gcc: 20        upstream (prov3.c scratch): UB043
+
+Same with `+ 0`, `^ 0`, `* 1`, via an intermediate variable, and with
+matched `unsigned long` operands (so it is independent of U1). Only
+the arithmetic-free `(int*)(unsigned long)p` round trip works (the
+parity-detective's `intptr_roundtrip.c`). Mechanism [AGENT]:
+`impl_mem.ml:2464-2490` `op_ival` carefully `combine_prov`s, but the
+elaboration routes every C arithmetic operator through
+`__conv_int__`/`wrapI_*`, whose evaluators `mk_conv_int`
+(`frontend/model/core_eval.lem:57-80`) and `mk_wrapI` (`:29-46`)
+rebuild the result with `Mem.integer_ival n` — a fresh `IV (Prov_none,
+n)` — even when the value is in range. The default model is PVI
+(`impl_mem.ml:627` `is_PNVI` false without `SW_PNVI`), i.e. exactly
+the model whose point is provenance through integers. Fix (upstream,
+S-M): in-range `mk_conv_int` returns the original `ival`; `mk_wrapI`
+re-attaches the operand provenance (or use `Mem.op_ival` results
+directly). Upstream should rule whether exec-PVI is meant to be this
+lossy; if it is, document it — today `p = (T*)(((uintptr_t)p + 15) &
+~15)` is UB043 under Cerberus.
+
+### L1 — ORACLE-SUSPECT (TRUE BUG, upstream-confirmed): `strncmp(s1, s2, 0)` compares one character
+
+`tests/noodle-probes/mem/mem_strncmp_zero.c`: oracle/Lean
+`Specified(2)`, gcc 1; `mem_strlen_strcmp_edges.c` prints `-23` in the
+strncmp column. `runtime/libc/src/string.c:85-90`:
+`while ((*s1 && *s1 == *s2) && --n > 0) ...; return (*s1 - *s2);` —
+the n test is after the first character compare (and `--n` on 0 wraps).
+ISO C11 7.24.4.4p2-3. Fix (upstream libc, S): `if (n == 0) return 0;`.
+
+### L2 — ORACLE-SUSPECT (minor): libc `calloc` has no nmemb*size overflow check
+
+`runtime/libc/src/stdlib.c:125-134`: `malloc(nmemb * size)` — C17
+7.22.3.2 requires NULL on overflow. `mem_calloc_overflow.c` also shows
+the U1 truncation of `SIZE_MAX / 2 + 2` (the product becomes
+4294967298 rather than 2) and then RC-3 on the Lean side (below).
+
+### R1 — EXCLUDED-KNOWN (RC-3 with a new trigger): 4 GiB `malloc` never touched is OOM-KILLED on Lean, lazy on the oracle
+
+`mem_malloc_4gb_lazy.c`: oracle `Specified(2)`, gcc 2, Lean exit 137
+(capped OOM witness at 6G). The parity-detective RC-3 byte-list
+representation; recorded because the trigger (a legal, untouched
+large allocation whose SIZE is program-computed) is a different shape
+from the multi-MB static arrays already on the register. No new
+mechanism.
+
+### D2 — DISCREPANCY (diagnostic field): UB024's `loc` is `other_location(Concrete)` on Lean
+
+`tests/noodle-probes/ptr/ptr_to_int_narrow_ub.c` (`int i = (int)p;`):
+
+    oracle: Undefined {ub: "UB024_out_of_range_pointer_to_integer_conversion", stderr: "", loc: "<7:11--7:17>"}
+    Lean:   Undefined {ub: "UB024_out_of_range_pointer_to_integer_conversion", stderr: "", loc: "other_location(Concrete)"}
+
+Different mechanism from D1: `lean_frontend/CerbMem.lean:2297`
+`memFail (MerrIntFromPtr)` drops the `loc` parameter that `intfromptr`
+receives, taking `memFail`'s default `CerbLocation.other "Concrete"`
+(`:1787`); the OCaml is `fail ~loc MerrIntFromPtr` (`impl_mem.ml:
+2459`). Fix (S): `memFail MerrIntFromPtr loc`. Sibling default-loc
+`memFail` sites (`:2226-2233` isWellAligned, `:2499-2528` va_*) map to
+non-UB `Other` errors and never print a loc, so UB024 is the only
+verdict-line consequence found.
+
+### E2 — EXCLUDED-KNOWN (tray 10, string-literal form): oracle crashes on `"\?"` inside a string literal; Lean and gcc agree
+
+`ptr_string_literals.c`: oracle exit 125 `Failure("decode_character_
+constant, started like an octal constant, but failed: ?")` from
+`translation.ml:3032` (string-literal path); Lean prints the gcc
+output byte-for-byte (`... 39 63 0 4`). Tray 10 records the
+character-constant form; this is the same decoder reached from string
+literals — addendum candidate. Immaculate ORACLE_CRASH pair.
+
+### O2 — ODDITY: relational comparison of pointers to distinct objects yields a value, not UB
+
+`ptr_cross_object_lt_ub.c`: oracle/Lean `Specified(2)` (i.e. `&a < &b`
+is 0 — address order in the concrete allocator), gcc exit 1. ISO
+6.5.8p5 makes it UB; the PVI concrete model compares addresses
+(`impl_mem.ml` `lt_ptrval`, `PERMISSIVE` default). Known model stance;
+no referee. Not a finding.
+
+### Non-findings worth recording (so nobody re-chases them)
+
+- Exhaustive-mode trace COUNTS agree on every probe that completes on
+  both engines (8/8, 2/2, 40/40, 140/140, 280/280, 67650/67650). The
+  `ptr_struct_assign.c` unsequenced form looked like a count divergence
+  (Lean timeout vs "10" oracle lines) — the 10 was this runner's
+  20-line display truncation; the oracle completes 67,650 traces in
+  ~100 s, Lean does not finish in 60 s: RC-4 perf class.
+- `_Bool` from 256/65536/2^32/pointers, `_Bool` ++/-- : all correct
+  (only the float→_Bool case, tray 15, is wrong).
+- `free(NULL)`: no `UB_CERB005_free_nullptr` is raised (correct).
+- `(unsigned)-0.5` → 0 (correct; `(unsigned)-1.5` → UB017, correct).
+
+## Coverage after shard 2
+
+| Area | Probes | oracle==Lean | Findings |
+|---|---|---|---|
+| Integer semantics (`int/`) | 19 | 18/18 accepted AGREE, 1 both-reject | U1 (via int_size_t_uac_rank), E1 |
+| Floating point (`float/`) | 11 | 10/10 AGREE + 1 both-crash | D1, O1, F1, F2 |
+| Pointers/layout/provenance (`ptr/`) | 19 | 18/18 accepted AGREE, 1 oracle-crash (Lean right) | D2, P1, P2, E2, O2 |
+| Allocation/string.h (`mem/`) | 11 | 9/9 completing AGREE, 2 Lean OOM (RC-3) | L1, L2, R1 |
