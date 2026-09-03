@@ -44,6 +44,18 @@
 #                     timeouts/signals 124/134/137/139 stay CERB_SKIP)
 #   * Lean TIMEOUT, LEAN_CRASH and LEAN_ERROR are fatal in default mode
 #     (the prototype only counted timeouts). Fail-closed house rule.
+#   * FUEL (FUEL arc, 2026-09-03; common.sh/fuel_classify.sh
+#     classify_fuel_outcome; design lean_frontend/docs/2026-09-02_fuel-arc-
+#     design.md §3): a Lean run whose merged output carries the EXACT
+#     fuel-exhaustion message as a whole line — the typed kill
+#     `Error {msg: "lem: fuel exhausted"}` (an ND-typed fueled worker or
+#     the CerbND runner exhausted; exit 1) or, at exit >= 128, the bare
+#     panic line `lem: fuel exhausted` (a pure-return worker) — is FUEL,
+#     classified AHEAD of the crash / `Error {` branches (it would
+#     otherwise read LEAN_CRASH / FAIL). Fatal in default mode, rank 0 in
+#     the baseline, fatal on a new file, never MATCH; the .unsupported.c
+#     convention does NOT absorb it (a fuel death is never "expected").
+#     The message string is reporting-only (no soundness rests on it).
 #   * HANG (mem-scale S0, 2026-09-02; common.sh classify_exit124): a Lean
 #     exit 124 whose (User+System)/wall < 0.1 — the process stopped
 #     consuming CPU long before the timeout (the >7 M-element front-end
@@ -83,7 +95,7 @@
 # Per-file statuses (baseline taxonomy):
 #   MATCH UB_MATCH UB_DIFF MISMATCH DIFF FAIL TIMEOUT HANG LEAN_CRASH
 #   LEAN_ERROR CERB_SKIP CERB_INCONSISTENT UNSUPPORTED UNSUPPORTED_PASS
-#   CERB_FLOOR
+#   CERB_FLOOR FUEL
 #
 #   CERB_FLOOR (arc-12): the oracle REFUSED the TU via the F-D fail-stop
 #   floor (stderr token CERB_FRESH_FLOOR_VIOLATION, exit 70 — the TU's
@@ -381,6 +393,7 @@ LEAN_FAIL=0
 LEAN_TIMEOUT_COUNT=0
 LEAN_HANG_COUNT=0
 LEAN_CRASH_COUNT=0
+LEAN_FUEL_COUNT=0
 LEAN_ERROR_COUNT=0
 CERB_INCONSISTENT_COUNT=0
 MATCH=0
@@ -526,6 +539,17 @@ for c_file in "${TEST_FILES[@]}"; do
             echo "[$file_num/$total_to_test] TIMEOUT $filename (Lean $lean_124)"
             record_status "$base_c" TIMEOUT
         fi
+        continue
+    fi
+
+    # FUEL (header; fuel_classify.sh): classified AHEAD of the crash and
+    # `Error {` branches, keyed on the exact message. Never absorbed by
+    # the .unsupported.c convention.
+    fuel_kind=$(classify_fuel_outcome "$lean_exit" "$lean_output")
+    if [[ -n "$fuel_kind" ]]; then
+        LEAN_FUEL_COUNT=$((LEAN_FUEL_COUNT + 1))
+        echo "[$file_num/$total_to_test] FUEL $filename ($fuel_kind, exit $lean_exit): lem: fuel exhausted"
+        record_status "$base_c" FUEL
         continue
     fi
 
@@ -696,6 +720,7 @@ echo "Lean pipeline (of Cerberus successes):"
 echo "  Compared:   $LEAN_OK"
 echo "  Failed:     $LEAN_FAIL"
 echo "  Crashed:    $LEAN_CRASH_COUNT"
+echo "  Fuel:       $LEAN_FUEL_COUNT (fuel exhaustion — typed kill or pure-worker panic; never agreement)"
 echo "  ExitErr:    $LEAN_ERROR_COUNT (exit code inconsistent with parsed verdict)"
 echo "  Timeout:    $LEAN_TIMEOUT_COUNT"
 echo "  Hang:       $LEAN_HANG_COUNT (exit 124 with CPU/wall < 0.1 — no output, no exit)"
@@ -727,7 +752,7 @@ fi
 
 # One-line machine-grepable summary
 echo ""
-echo "SUMMARY: total=$file_num match=$MATCH ub_match=$UB_MATCH ub_diff=$UB_CODE_DIFF mismatch=$MISMATCH fail=$LEAN_FAIL crash=$LEAN_CRASH_COUNT lean_error=$LEAN_ERROR_COUNT timeout=$LEAN_TIMEOUT_COUNT hang=$LEAN_HANG_COUNT cerb_skip=$CERB_SKIP_COUNT cerb_floor=$CERB_FLOOR_COUNT cerb_inconsistent=$CERB_INCONSISTENT_COUNT"
+echo "SUMMARY: total=$file_num match=$MATCH ub_match=$UB_MATCH ub_diff=$UB_CODE_DIFF mismatch=$MISMATCH fail=$LEAN_FAIL crash=$LEAN_CRASH_COUNT fuel=$LEAN_FUEL_COUNT lean_error=$LEAN_ERROR_COUNT timeout=$LEAN_TIMEOUT_COUNT hang=$LEAN_HANG_COUNT cerb_skip=$CERB_SKIP_COUNT cerb_floor=$CERB_FLOOR_COUNT cerb_inconsistent=$CERB_INCONSISTENT_COUNT"
 
 # ---------------------------------------------------------------------------
 # Baseline write / check
@@ -737,7 +762,7 @@ status_rank() {   # rank per status; unknown status = harness error
         MATCH|UB_MATCH|UNSUPPORTED_PASS) echo 3 ;;
         UB_DIFF) echo 2 ;;
         MISMATCH|DIFF|UNSUPPORTED) echo 1 ;;
-        FAIL|TIMEOUT|HANG|LEAN_CRASH|LEAN_ERROR|CERB_SKIP|CERB_INCONSISTENT|CERB_FLOOR) echo 0 ;;
+        FAIL|TIMEOUT|HANG|LEAN_CRASH|FUEL|LEAN_ERROR|CERB_SKIP|CERB_INCONSISTENT|CERB_FLOOR) echo 0 ;;
         *) echo "HARNESS ERROR: unknown status '$1'" >&2; exit 1 ;;
     esac
 }
@@ -811,7 +836,7 @@ if [[ -n "$CHECK_BASELINE" ]]; then
     for f in "${!cur_map[@]}"; do
         if [[ -z "${base_map[$f]+x}" ]]; then
             case "${cur_map[$f]}" in
-                MISMATCH|DIFF|FAIL|LEAN_CRASH|LEAN_ERROR|TIMEOUT|HANG|CERB_FLOOR)
+                MISMATCH|DIFF|FAIL|LEAN_CRASH|FUEL|LEAN_ERROR|TIMEOUT|HANG|CERB_FLOOR)
                     echo "REGRESSION: new file (not in baseline) with failing status: $f ${cur_map[$f]}"
                     regressions=$((regressions + 1))
                     ;;
@@ -844,6 +869,11 @@ fi
 if [[ $LEAN_CRASH_COUNT -gt 0 ]]; then
     echo ""
     echo -e "${RED}FAILED: $LEAN_CRASH_COUNT Lean crash(es)${NC}"
+    FATAL=1
+fi
+if [[ $LEAN_FUEL_COUNT -gt 0 ]]; then
+    echo ""
+    echo -e "${RED}FAILED: $LEAN_FUEL_COUNT Lean fuel exhaustion(s) — the fuel budget is a port artifact; a FUEL row is never agreement${NC}"
     FATAL=1
 fi
 if [[ $LEAN_ERROR_COUNT -gt 0 ]]; then

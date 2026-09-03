@@ -136,15 +136,19 @@ OCaml output, fresh-symbol/native-extern probes, and the compile-time
 totality/reader-lifting exemplars `effects-proof-test` /
 `totality-proof-test`: every fuel'd wrapper rfl-defeq to its worker at
 `lemDefaultFuel`, symbolic equations on the total layout defs,
-`tagDefs` an honest parameter — properties of the exec cone as built),
+`tagDefs` an honest parameter — properties of the exec cone as built;
+and `fuel-exemplar-test`, the FUEL arc's consumer-shaped ∀-fuel theorem
+over the shipped fuel-parametric pipeline `CerbND.drive_lemFuel`, §5),
 then the gate scripts — all fail-closed:
 
 | Gate | Guarantee |
 |---|---|
 | sync gate (`tools/check_handwritten_sync.sh`) | every hand-written file byte-identical to its compiled `generated/` copy (the binary corresponds to the sources); copy set enumerated from `lean_frontend/handwritten_copy.manifest`, the same list the Makefile copies from; every `lean_frontend/*.lean` must be listed; empty set = FAIL. Also a precondition of `build_lean` and of the driver-freshness stamp's Lean record/check (2026-09-02 gap: a green stamp over a stale-copy binary) |
 | `check_exec_purity.sh` | the execution slice is free of unsanctioned IO/effects |
-| `check_theorem_axioms.sh` | **zero `axiom` declarations anywhere** — hand-written census, generated-tree census, and the recursive census of the consumed LemLib package copy (the effect-retirement end state: `runEffectful` is deleted, `declare {lean} effectful` is refused by lem itself); `runEffectful` token-banned (comment-stripped) across all three trees; the `@[implemented_by]`/`unsafe`/`unsafeBaseIO` seam population pinned to `scripts/unsafebaseio_allowlist.txt`'s PIN rows exactly, both directions (a new seam fails naming itself — this bans an axiom-free reintroduction of the effect projection); the boundary opaque `forceIO` present exactly once; zero `unsafeCast`; exemplar + `driver2` cones free of `sorryAx`/`ofReduce*`/DAEMON; the full exec-entry set (`driver2`, `drive`, `initial_driver_state`, `desugar`, `annotate_program`, `translate`, `link`, `convert_file`, `CerbCall.driveCall`) at the **exact** axiom allowlist `[propext, Classical.choice, Quot.sound]`; non-kernel decision procedures (`native_decide`/`bv_decide`) grep-banned. Source-scan legs are the primary evidence; the `#print axioms` probes are end-to-end spot checks (they underreport across `partial def` boundaries) |
-| `check_exec_totality.sh` | zero `partial` definitions on the execution path (empty allowlist; fuel-totalized recursion with loud exhaustion) |
+| `check_theorem_axioms.sh` | **zero `axiom` declarations anywhere** — hand-written census, generated-tree census, and the recursive census of the consumed LemLib package copy (the effect-retirement end state: `runEffectful` is deleted, `declare {lean} effectful` is refused by lem itself); `runEffectful` token-banned (comment-stripped) across all three trees; the `@[implemented_by]`/`unsafe`/`unsafeBaseIO` seam population pinned to `scripts/unsafebaseio_allowlist.txt`'s PIN rows exactly, both directions (a new seam fails naming itself — this bans an axiom-free reintroduction of the effect projection); the boundary-OPAQUE POPULATION pinned exactly-once, both directions (26 registered rows — the digest/config/util/enum/MemValue seams and the FUEL arc's pure `CerbFuel.fuelExhaustedLoc`; an unregistered `opaque` fails naming itself); zero `unsafeCast`; exemplar + `driver2` cones free of `sorryAx`/`ofReduce*`/DAEMON; the FUEL arc's contract lemmas (`CerbND.*_lemFuel_zero`, runner leaves, wrapper `rfl`s, `drive_wrapper_defeq`) and the exemplar theorem at the exact allowlist; the full exec-entry set (`driver2`, `drive`, `initial_driver_state`, `desugar`, `annotate_program`, `translate`, `link`, `convert_file`, `CerbCall.driveCall`) at the **exact** axiom allowlist `[propext, Classical.choice, Quot.sound]`; non-kernel decision procedures (`native_decide`/`bv_decide`) grep-banned. Source-scan legs are the primary evidence; the `#print axioms` probes are end-to-end spot checks (they underreport across `partial def` boundaries) |
+| `check_sorry_token.sh` | zero `sorry` TOKENS in source text — comment- and string-stripped — over `generated/`, the hand-written seams + tests, and the consumed LemLib copy (the axiom gate probes `sorryAx` in cones only; the tree's last `sorry`, cmm_op.lem's target_rep, was closed by the FUEL arc). Empty scan set = FAIL |
+| `test_fuel_classifier.sh` | the one FUEL classifier (`scripts/fuel_classify.sh classify_fuel_outcome`) reads its fixture captures correctly: both fuel forms positive; a genuine `Error` kill, a PANIC without the marker, and program stdout carrying the words all negative (§5) |
+| `check_exec_totality.sh` | zero `partial` definitions on the execution path (empty allowlist; fuel-totalized recursion with the distinguished fuel-exhaustion outcome, §5) |
 | lem-sync gate | generated trees content-in-sync with the `.lem` sources (stamped; also wired into the dune graph for the libc `.co` artifacts) |
 | `check_fork_drift.sh` | the fork's oracle-side surface equals a reviewed manifest, and generated-OCaml fork-vs-upstream deltas match pinned hashes |
 | `check_fixture_freeze.sh` | the `corpus/` differential-fixture set matches its hash manifest exactly (additions included) |
@@ -229,10 +233,41 @@ cmm instantiation is the mover). Known limitations are tracked in
 **Known, LOUD limits of the Lean driver** (both reported by the lanes,
 never absorbed as a skip; neither is a memory-model limit):
 
-- `lemDefaultFuel` = 10^6 (the fuel-totalisation budget): ~1.7e4
-  plain loop iterations / ~6e4 C-recursion depth; exhaustion aborts
-  with `lem: fuel exhausted` (LEAN_CRASH class). Raise is lem-side —
-  TODO.md "Step-runner execution ceiling".
+- **Fuel exhaustion is a typed, distinguished outcome** for the ND
+  monad's fueled workers (the driver loop family, the memory-model ND
+  workers, and the `CerbND` runners): the fuel-zero arm is `NDkilled
+  CerbND.fuelExhaustedKill` = `Error0 CerbFuel.fuelExhaustedLoc "lem:
+  fuel exhausted"`, where `fuelExhaustedLoc` is a pure, kernel-checked
+  `opaque` constant on the boundary-opaque census (present exactly
+  once; no native binding). Every proof is uniform in the opaque
+  atom; the sentinel is a fresh location for every provable statement
+  — a theorem "every outcome is `Killed _ fuelExhaustedKill` or good"
+  holds under the reading where the atom is a location no model term
+  denotes, and a program that genuinely kills makes it unprovable, not
+  false; so no distinctness lemma is needed (corollary: no `.lem`
+  term, Core text, or JSON input can denote the atom). `_zero` lemmas
+  hold by `rfl`; the fuel-parametric pipeline `CerbND.drive_lemFuel`
+  is pinned to the generated `drive` by `drive = drive_lemFuel
+  driverFuel := rfl`. Budgets: the coupled driver family
+  (`driver2`, `drive_nonmemory_steps_aux2`, `print_eval_conv_aux`,
+  `hack`, `nd_bind`, `CerbND.ndDefaultFuel`) runs at
+  `CerbFuel.driverFuel` = 10^6 (the mechanism commit; = the library
+  default — the budget commit moves it to 10^8, ~1.7e4 plain loop
+  iterations / ~6e4 C-recursion depth today); every other fueled
+  declaration keeps `lemDefaultFuel` = 10^6 (the L1 opt-in
+  guarantee). Pure-return workers keep the opaque panicking sentinel
+  (exit 134, `lem: fuel exhausted` on stderr). The classifying lanes
+  (`test_exec.sh` and its csmith wrapper, `test_gcc_oracle.sh`,
+  `test_ci_sweep.sh`, `test_cn_coverage.sh`,
+  `tests/mem-scale-probes/measure.sh`) assign the FUEL class to both
+  forms by the printed message (fail-noisy, never agreement;
+  reporting-only, no soundness rests on it); the byte-compare lanes
+  (`test_libc_exec.sh`, `test_multi_tu.sh`, `test_verify.sh`,
+  `test_immaculate.sh`, `test_libxml2_uri.sh`, `test_bytes.sh`) report
+  DIFF/FAIL. A 10^8 budget is unreachable inside any gate lane's
+  timeout (15-30 s ⇒ ≤ 7×10^6 fuel per invocation); it is exercised
+  only by `measure.sh` (600 s) and unbounded single probes. Record:
+  `docs/2026-09-02_fuel-arc-design.md`.
 - Zero-initialised static aggregates above ~8 × 10^6 ELEMENTS
   (element-count driven: `char g[8000000]` completes, `char g[10000000]`
   does not; `int g[2500000]` completes) overflow the 1 GiB runtime-

@@ -22,13 +22,48 @@ downstream.)
 - Step-runner execution ceiling (RE-CHARACTERIZED 2026-08-30: the
   old process-stack overflow no longer reproduces — stack use is now
   iteration-independent down to a 1 MB limit; the binding ceiling is
-  the `lemDefaultFuel` = 10^6 totalization budget of
-  `drive_nonmemory_steps_aux2`, loud + fail-closed, onset ~1.7e4
-  plain loop iterations / ~6e4 C-recursion depth. Correct raise is
-  lem-side (per-declaration fuel budgets, or a deliberate constant
-  move) → next lem arc; full evidence + design space:
+  the fuel-totalization budget of the coupled driver family —
+  `CerbFuel.driverFuel`, = 10^6 at the FUEL arc's mechanism commit,
+  moving to 10^8 in its budget commit — onset ~1.7e4 plain loop
+  iterations / ~6e4 C-recursion depth at 10^6. Since the FUEL arc
+  (2026-09-03, `docs/2026-09-02_fuel-arc-design.md`) exhaustion is a
+  TYPED outcome (`CerbND.fuelExhaustedKill`, the harness FUEL class),
+  no longer a crash; full evidence + design space:
   `docs/2026-08-31_stack-ceiling-design.md`; history:
   `docs/2026-08-19_arc6-s0-survey.md`).
+- The `finalize`/`hack` leaf (FUEL arc follow-up, source: the
+  refined-cerberus review 2026-09-02 §5): `finalize` (driver.lem:1473-
+  1476) calls the pure-return worker `hack` (sentinel `fuelExhausted
+  Vunit`, driver.lem:1905) on `Core_aux.to_pure` of the terminal arena
+  — the one remaining opaque leaf inside a shipped-pipeline export's
+  evaluation. Price S; the cheap closure is a LEMMA, not a code change:
+  on a terminal state the arena is already a value, so `hack` takes
+  zero steps and its result is fuel-independent at every positive fuel
+  (the fuel-erasure `rfl` pattern) — a `hack_val_fuel_indep` lemma lets
+  a consumer's `finalize` evaluation never touch the opaque leaf.
+  Changing `hack`'s type is a `.lem` change → OCaml text → not the
+  route. Design note §7.
+- Cross-block fuel threading in the lem backend (FUEL arc follow-up,
+  design note §1.6 route iii): a caller's fuel passed into callee
+  workers across `let rec` blocks (today the L1 mechanism threads fuel
+  through self/block-member calls only — lean_backend.ml:2852-2863,
+  :4088-4097 — which is why `drive_lemFuel` is a hand-written mirror).
+  Motivation: the coupled-family analysis (stack-ceiling design
+  :139-146). Class 0 (Lean emission only) but it changes every budget
+  and consumer side condition in the call graph → next-lem-arc
+  candidate, own design pass.
+- Backend `sorry` target_rep refusal (FUEL arc rider, design note §5):
+  lean_backend.ml:4044-4050 still renders a `target_rep … = \`sorry\``
+  as `(sorry : <type>)` while the file header (:84) claims the
+  sorry-emission paths are gone. Delete the special case and fail
+  closed ("Lean backend: target_rep `sorry` refused"). Class 0, next
+  lem arc (two-repo pin dance). FINDING recorded with it (arc record):
+  frontend/concurrency/cmm_csem.lem carries 24 further `declare lean
+  target_rep function … = \`sorry\`` declares (observable_filter,
+  behaviour, …, overlap_behaviour) that are UNREFERENCED in the Lean
+  build today (zero `sorry` tokens in the generated tree — gate
+  `check_sorry_token.sh`); a refusing backend must either see them
+  unreferenced or they must get real reps/`skip` before the pin moves.
 - KNOWN HANG — FRONT-END stack-depth ceiling with a SILENT overflow
   (found 2026-09-01, arc/mem-scale P0; re-scoped R1 2026-09-02;
   profile `docs/2026-09-01_mem-scale-profile.md` §6.2-6.3): the Lean

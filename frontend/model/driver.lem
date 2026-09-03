@@ -1893,13 +1893,17 @@ end
 
 (* === Totality declares (arc 3 sweep, 2026-08-18, final batch): Lean-target only.
    find_can_advance: structural list recursion -> automatic.
-   Fuel cases (fuelExhausted witness panics at runtime, typing only):
-   print_eval_conv_aux / driver2 are driver loops returning ndM -> ND-killed
-   witness; drive_nonmemory_steps_aux2 has a trailing curried list arg, so
-   the witness is a lambda to the ND-killed value; hack is a step-until-value
-   loop returning a bare value -> witness Vunit. === *)
+   Fuel cases: print_eval_conv_aux / driver2 are driver loops returning
+   ndM; drive_nonmemory_steps_aux2 has a trailing curried list arg, so its
+   arm is a lambda to the ND-killed value; hack is a step-until-value loop
+   returning a bare value -> the opaque `fuelExhausted Vunit` sentinel
+   (panics at runtime; a pure-return worker, request item 3).
+   FUEL ARC (2026-09-03, docs/2026-09-02_fuel-arc-design.md section 1.2):
+   the three ND-typed arms are the DISTINGUISHED kernel-transparent kill
+   `NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg)`
+   (= CerbND.fuelExhaustedKill), unwrapped — see nondeterminism.lem. === *)
 declare {lean} termination_argument find_can_advance = automatic
-declare {lean} fuel val print_eval_conv_aux = `fuelExhausted (ND (fun st => (NDkilled (Undef0 CerbLocation.Loc.unknown []), st)))`
-declare {lean} fuel val drive_nonmemory_steps_aux2 = `fuelExhausted (fun _ => ND (fun st => (NDkilled (Undef0 CerbLocation.Loc.unknown []), st)))`
-declare {lean} fuel val driver2 = `fuelExhausted (ND (fun st => (NDkilled (Undef0 CerbLocation.Loc.unknown []), st)))`
+declare {lean} fuel val print_eval_conv_aux = `ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
+declare {lean} fuel val drive_nonmemory_steps_aux2 = `fun _ => ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
+declare {lean} fuel val driver2 = `ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
 declare {lean} fuel val hack = `fuelExhausted Vunit`

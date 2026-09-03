@@ -63,9 +63,15 @@
 #      classification is exact only for TIMEOUT_SECS >= 10x the CPU a
 #      hang burns (>= 60 s for the C9 shape); the note carries both.
 #
+#   9. LEAN_FUEL (FUEL arc, 2026-09-03; common.sh/fuel_classify.sh
+#      classify_fuel_outcome): the typed fuel-exhaustion kill
+#      `Error {msg: "lem: fuel exhausted"}` or the pure-worker panic line
+#      at exit >= 128, classified AHEAD of LEAN_CRASH / LEAN_FAIL on the
+#      exact message; never agreement.
+#
 # Statuses (superset of the test_exec.sh taxonomy):
 #   MATCH UB_MATCH UB_DIFF STDOUT_DIFF DIFF MISMATCH
-#   LEAN_FAIL LEAN_CRASH LEAN_KILL LEAN_ERROR LEAN_TIMEOUT LEAN_HANG
+#   LEAN_FAIL LEAN_CRASH LEAN_KILL LEAN_FUEL LEAN_ERROR LEAN_TIMEOUT LEAN_HANG
 #   CERB_REJECT CERB_ERROR CERB_TIMEOUT CERB_HANG CERB_CRASH CERB_KILL CERB_SKIP
 #   CERB_FLOOR CERB_INCONSISTENT
 #
@@ -293,6 +299,9 @@ for suite in "${SUITES[@]}"; do
         fi
         if [[ $lean_exit -eq 137 && "$lean_out" == *"capped: OOM-KILLED"* ]]; then
             row LEAN_KILL "exit 137, capped OOM-KILLED (memory cap $TEST_MEM_MAX breached)"; continue; fi
+        fuel_kind=$(classify_fuel_outcome "$lean_exit" "$lean_out")
+        if [[ -n "$fuel_kind" ]]; then
+            row LEAN_FUEL "$fuel_kind, exit $lean_exit: lem: fuel exhausted"; continue; fi
         if [[ $lean_exit -ge 128 ]]; then
             kind=$(echo "$lean_out" | grep -m1 -E 'PANIC|fuel exhausted' | cut -c1-120)
             [[ -z "$kind" ]] && kind="(no PANIC line captured)"

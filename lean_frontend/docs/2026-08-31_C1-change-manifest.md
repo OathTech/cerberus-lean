@@ -157,6 +157,29 @@ structural (one stream).
 
 ## 8. The fuel side-condition statement (gate item d)
 
+> **ERRATUM (2026-09-03, FUEL arc; two independent verifications).**
+> The apply-condition statement below — "**zero** current lane
+> baselines contain a fuel-exhaustion row (measured: grep over every
+> `exec_*baseline*.txt` + expectations — no fuel classification
+> exists)" — was FALSE when written. At the C1 commit `c7cb5380d` the
+> committed baselines already carried fuel-death rows:
+> `scripts/gcc_oracle_baseline.txt:1145` (`csmith/sia_csmith_477.c
+> SKIP_LEAN_CRASH`) and `:1437` (`csmith/sia_csmith_769.c
+> SKIP_LEAN_CRASH`), and `scripts/exec_csmith_corpus_baseline.txt:1177`
+> / `:1469` (the same two files, `LEAN_CRASH`), whose fuel attribution
+> predates C1 (`docs/2026-08-21_arc10-results.md:365`,
+> `docs/2026-08-20_arc10-s4-csmith-campaign.md:434`,
+> `docs/2026-08-30_gcc-oracle-lane-record.md:71`). The measurement was
+> VACUOUS: no fuel class existed to grep for, and the glob
+> `exec_*baseline*.txt` excluded `gcc_oracle_baseline.txt`.
+> Verification 1: the FUEL-arc design note's author, at `2c7c9347b`
+> (`docs/2026-09-02_fuel-arc-design.md` §0.4/§0.5). Verification 2:
+> the R1 reviewer, re-run via `git show c7cb5380d:scripts/…` (same
+> note, §0.5). The deferral decision itself is superseded: the budget
+> is applied by the FUEL arc (design note §4); the rows above move to
+> the FUEL class (§3.3). The text below is kept verbatim as the record
+> of what was decided at the time.
+
 Per-declaration fuel budgets (L1 feature `declare {lean} fuel val f =
 N`) are **NOT applied in C1** — decision RECORD-AND-DEFER, [AGENT]:
 

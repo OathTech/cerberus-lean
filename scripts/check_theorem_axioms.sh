@@ -152,7 +152,11 @@ for path in files:
     for m in re.finditer(r'\baxiom\b(?:\s+(\S+))?', clean):
         line = clean.count('\n', 0, m.start()) + 1
         print(f"AXIOM {base}:{line}:{m.group(1) or '<unnamed>'}")
-    for m in re.finditer(r'\bopaque\s+(forceIO)\b', clean):
+    # FUEL arc (2026-09-03): EVERY opaque declaration is reported (the
+    # keyword alone fires; modifiers tolerated; wide name class so a
+    # non-ASCII name still produces a row) — the boundary-opaque census
+    # below is a POPULATION PIN, both directions.
+    for m in re.finditer(r'\b(?:private\s+|protected\s+|noncomputable\s+|unsafe\s+)*opaque\s+([^\s\]\[,:(){}]+)', clean):
         line = clean.count('\n', 0, m.start()) + 1
         print(f"OPAQUE {base}:{line}:{m.group(1)}")
     for m in re.finditer(r'\bunsafeCast\b', clean):
@@ -180,26 +184,77 @@ if [[ -n "$GEN_AXIOMS" ]]; then
   echo "$GEN_AXIOMS"
   exit 1
 fi
-# Scanner/copy-pipeline liveness (fail-closed): the surviving converted
-# opaque must be present exactly once in its build copy.
-# (Effect-retirement C1: with_tagDefs LEFT the boundary list — the
-# CerbTags global and its whole-extent opaque are deleted; charter
-# section 7.2 "boundary-opaque expectation list shrinks". forceIO
-# stays exactly-once; the digest opaque conversion is C2.)
-for want in 'CerberusFresh\.lean:[0-9]+:forceIO'; do
-  cnt=$(grep -cE "^OPAQUE ${want}$" <<<"$GEN_OPAQUES" || true)
+# BOUNDARY-OPAQUE CENSUS — a POPULATION PIN, both directions (FUEL arc,
+# 2026-09-03; was the single forceIO liveness row). Every `opaque` in the
+# build tree is a constant with NO equations — an abstraction barrier the
+# kernel cannot see through — so each one is a declared-boundary decision
+# registered HERE with its class, exactly once in its build copy:
+#   * a registered opaque found 0 times = copy pipeline / scanner drift, or
+#     someone turned it into a `def` (for fuelExhaustedLoc that would
+#     silently break the FUEL arc's parametricity argument — design note
+#     §1.3/§2 "the residual risk, named");
+#   * found 2+ times = duplicated in place;
+#   * an opaque NOT registered here = FAIL naming itself (a new barrier
+#     must be consciously registered, never absorbed).
+# Classes: [seam] = a native/IO binding behind @[implemented_by]/@[extern]
+# (ALSO pinned by the C2 ratchet leg 3 population, scripts/
+# unsafebaseio_allowlist.txt); [pure] = a value-carrying opaque with NO
+# native binding, existing only to be unforgeable/unfoldable.
+# (History: with_tagDefs LEFT the list at effect-retirement C1 — charter
+# section 7.2 "boundary-opaque expectation list shrinks"; the digest
+# opaque conversion was C2.)
+OPAQUE_WANT=(
+  # CerberusFresh — the digest boundary (VALIDATION.md §4), [seam]
+  'CerberusFresh.lean:md5Hex' 'CerberusFresh.lean:digestIO' 'CerberusFresh.lean:setDigestIO'
+  'CerberusFresh.lean:digestPure' 'CerberusFresh.lean:digest' 'CerberusFresh.lean:forceThunkIO'
+  'CerberusFresh.lean:forceIO'
+  # CerbGlobal — config/switch refs, temporal (mover: parameter plumbing), [seam]
+  'CerbGlobal.lean:backend_name' 'CerbGlobal.lean:current_execution_mode'
+  'CerbGlobal.lean:using_concurrency' 'CerbGlobal.lean:isDefacto' 'CerbGlobal.lean:isPermissive'
+  'CerbGlobal.lean:isAgnostic' 'CerbGlobal.lean:isIgnoreBitfields' 'CerbGlobal.lean:has_switch'
+  'CerbGlobal.lean:is_CHERI' 'CerbGlobal.lean:is_PNVI' 'CerbGlobal.lean:has_strict_pointer_arith'
+  # CerbUtils — no-op timing/log refs + boundedIntegerImpl stub, permanent-declared, [seam]
+  'CerbUtils.lean:begin_timing' 'CerbUtils.lean:end_timing' 'CerbUtils.lean:STD_'
+  'CerbUtils.lean:bounded_integer'
+  # CerberusImpl — enum registry, temporal (mover: reader/supply follow-up), [seam]
+  'CerberusImpl.lean:typeof_enum' 'CerberusImpl.lean:register_enum'
+  # CerbMem — the safe structural BEq on MemValue (implemented_by), [seam]
+  'CerbMem.lean:beqMemValueSafe'
+  # CerbFuel — the fuel-exhaustion atom (FUEL arc, docs/2026-09-02_fuel-arc-
+  # design.md §1.1/§2): [pure] — value-carrying, NO native binding, no
+  # unsafe/implemented_by/extern; exists to be unforgeable, not to hide an
+  # effect. Its presence-AS-OPAQUE is what the arc's soundness rests on.
+  'CerbFuel.lean:fuelExhaustedLoc'
+)
+OPAQUE_FOUND=$(sed -E 's/^OPAQUE ([^:]+):[0-9]+:(.*)$/\1:\2/' <<<"$GEN_OPAQUES" | grep . | sort | uniq -c | awk '{print $2" "$1}' || true)
+OPAQUE_BAD=0
+for want in "${OPAQUE_WANT[@]}"; do
+  cnt=$(awk -v w="$want" '$1==w {print $2}' <<<"$OPAQUE_FOUND")
+  cnt=${cnt:-0}
   if [[ "$cnt" -ne 1 ]]; then
-    echo "check_theorem_axioms: FAIL — generated-tree census: converted boundary opaque /${want}/ found $cnt times, expected exactly 1 (copy pipeline or scanner drift; fail-closed)"
-    echo "$GEN_OPAQUES"
-    exit 1
+    echo "check_theorem_axioms: FAIL — boundary-opaque census: registered opaque $want found $cnt time(s) in the build copy, expected exactly 1 (0 = copy-pipeline/scanner drift or opaque->def; 2+ = duplicated; fail-closed)"
+    OPAQUE_BAD=1
   fi
 done
+while read -r key cnt; do
+  [[ -z "$key" ]] && continue
+  registered=0
+  for want in "${OPAQUE_WANT[@]}"; do [[ "$want" == "$key" ]] && { registered=1; break; }; done
+  if [[ $registered -eq 0 ]]; then
+    echo "check_theorem_axioms: FAIL — boundary-opaque census: UNREGISTERED opaque $key (x$cnt) in the build tree — every opaque is a declared-boundary decision; register it in OPAQUE_WANT with its class, or remove it"
+    OPAQUE_BAD=1
+  fi
+done <<<"$OPAQUE_FOUND"
+if [[ $OPAQUE_BAD -ne 0 ]]; then
+  echo "$GEN_OPAQUES"
+  exit 1
+fi
 if [[ -n "$GEN_UNSAFE" ]]; then
   echo "check_theorem_axioms: FAIL — generated-tree census: unsafeCast in generated code (banned, no allowlist):"
   echo "$GEN_UNSAFE"
   exit 1
 fi
-echo "check_theorem_axioms: generated-tree census OK ($GEN_SCANNED files: 0 axioms, boundary opaques present, 0 unsafeCast)"
+echo "check_theorem_axioms: generated-tree census OK ($GEN_SCANNED files: 0 axioms, boundary-opaque population = the ${#OPAQUE_WANT[@]} registered rows exactly-once (incl. CerbFuel.fuelExhaustedLoc), 0 unsafeCast)"
 
 # ---------------------------------------------------------------------------
 # EFFECT-RETIREMENT C2 RATCHET (charter section 7.2 as amended by the
@@ -757,5 +812,70 @@ if [[ -n "$MEMSCALE_BAD" ]]; then
   exit 1
 fi
 echo "check_theorem_axioms: mem-scale S1 leg OK (${#MEMSCALE_THMS[@]} C1/C3 equality theorems, every cone ⊆ [propext, Classical.choice, Quot.sound])"
+
+# ---------------------------------------------------------------------------
+# FUEL arc leg (2026-09-03; design docs/2026-09-02_fuel-arc-design.md §1.2,
+# §6 "pinned-lemma gate"): the customer contract shipped in the hand-
+# written CerbND.lean — the nine worker `_zero` lemmas, the three runner
+# leaves, the two constructor-disjointness lemmas, the wrapper/budget
+# `rfl`s and the SYNC GUARANTEE `drive_wrapper_defeq` — plus the exemplar
+# instances over the shipped pipeline (test/Unit/FuelExemplar.lean: the
+# consumer shape at fuel 0 and at fuel 1; the ∀-fuel statement is the
+# slice's STOP-AND-REPORT item, see that file's header), each
+# in the clean cone: exact allowlist [propext, Classical.choice,
+# Quot.sound]; sorryAx / ofReduce* / DAEMON fatal as everywhere. That the
+# lemmas ELABORATE at all is the pinned-lemma gate (a renamed generated
+# binder or a regenerated `drive` body fails our build first); this leg
+# additionally pins their axiom cones. Fail-closed: each name must
+# produce exactly one probe line.
+# ---------------------------------------------------------------------------
+PROBE5=lean_frontend/.axiom-probe-fuel.lean
+FUEL_THMS=(CerbND.nd_bind_lemFuel_zero CerbND.liftND_lemFuel_zero CerbND.liftAction_lemFuel_zero
+           CerbND.print_eval_conv_aux_lemFuel_zero CerbND.drive_nonmemory_steps_aux2_lemFuel_zero
+           CerbND.driver2_lemFuel_zero CerbND.find_array_index_lemFuel_zero
+           CerbND.easy_update_mem_value_aux_lemFuel_zero CerbND.memcmp_load_aux_lemFuel_zero
+           CerbND.runNDFuel_zero CerbND.runND1Fuel_zero CerbND.runND1TraceFuel_zero
+           CerbND.fuelExhaustedKill_ne_Undef0 CerbND.fuelExhaustedKill_ne_Other
+           CerbND.driverFuel_eq CerbND.driver2_wrapper_defeq CerbND.nd_bind_wrapper_defeq
+           CerbND.runND_eq CerbND.drive_wrapper_defeq CerbND.drive_lemFuel
+           FuelExemplar.exemplar_certified_shipped_zero FuelExemplar.exemplar_run_one_kernel
+           FuelExemplar.exemplar_certified_shipped_one)
+{
+  echo "import CerbND"
+  echo "import Unit.FuelExemplar"
+  for name in "${FUEL_THMS[@]}"; do
+    echo "#print axioms $name"
+  done
+} > "$PROBE5"
+OUT5=$(cd lean_frontend && "$SCRIPT_DIR/capped" lake env lean .axiom-probe-fuel.lean 2>&1 | grep -v -i warning || true)
+rm -f "$PROBE5"
+echo "$OUT5"
+for name in "${FUEL_THMS[@]}"; do
+  esc=${name//./\\.}
+  n=$(grep -cE "'${esc}' (depends on axioms|does not depend on any axioms)" <<<"$OUT5" || true)
+  if [[ "$n" -ne 1 ]]; then
+    echo "check_theorem_axioms: FAIL — FUEL arc leg: probe for '$name' did not run cleanly (matched $n lines; fail-closed)"
+    exit 1
+  fi
+done
+FUEL_BAD=$(python3 - <<PYEOF
+import re
+out = """$OUT5"""
+ok = {"propext", "Classical.choice", "Quot.sound"}
+bad = []
+for m in re.finditer(r"'([^']+)' depends on axioms: \[([^\]]*)\]", out):
+    entry, axs = m.group(1), [a.strip() for a in m.group(2).split(',') if a.strip()]
+    for a in axs:
+        if a not in ok:
+            bad.append(f"{entry}: {a}")
+print("\n".join(bad))
+PYEOF
+)
+if [[ -n "$FUEL_BAD" ]]; then
+  echo "check_theorem_axioms: FAIL — FUEL arc leg: axiom outside the exact allowlist [propext, Classical.choice, Quot.sound]:"
+  echo "$FUEL_BAD"
+  exit 1
+fi
+echo "check_theorem_axioms: FUEL arc leg OK (${#FUEL_THMS[@]} contract lemmas + drive_lemFuel + the exemplar instances, every cone ⊆ [propext, Classical.choice, Quot.sound])"
 
 echo "check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)"

@@ -191,6 +191,15 @@ included if the O6(v) clause is re-ruled to match the corrected class.
   file), so application moves no lane row oracle-ward while re-stating
   the consumer's exported `lemDefaultFuel` side conditions. Full
   statement: change manifest §8.
+  **ERRATUM (2026-09-03, FUEL arc; two independent verifications —
+  change manifest §8 erratum box):** "zero fuel-exhaustion rows exist
+  in any lane baseline" was FALSE when written — rows
+  `sia_csmith_477`/`769` existed at the C1 commit in both
+  `scripts/gcc_oracle_baseline.txt` (SKIP_LEAN_CRASH, :1145/:1437) and
+  `scripts/exec_csmith_corpus_baseline.txt` (LEAN_CRASH, :1177/:1469);
+  the grep was vacuous (no fuel class to grep for; the glob excluded
+  the gcc ledger). Superseded by the FUEL arc
+  (`docs/2026-09-02_fuel-arc-design.md` §0.5, §4).
 - **(e) O7/O1 + S0 re-scan** — O7 DISCHARGED: the arc diffs contain
   4 `+`/4 `-` paired `nd_bind` lines (argument-only edits); zero new
   ND node/branch-builder applications in the migrated cone. O1 is

@@ -2671,8 +2671,13 @@ declare {lean} termination_argument silly_sh_eq = automatic
 declare {lean} fuel val has_concurRead = `fuelExhausted false`
 declare {lean} termination_argument anyM = automatic
 declare {lean} termination_argument fold_memcmp_compare = automatic
-declare {lean} fuel val find_array_index = `fuelExhausted (ND (fun st => (NDkilled (Undef0 CerbLocation.Loc.unknown []), st)))`
-declare {lean} fuel val easy_update_mem_value_aux = `fuelExhausted (ND (fun st => (NDkilled (Undef0 CerbLocation.Loc.unknown []), st)))`
-declare {lean} fuel val memcmp_load_aux = `fuelExhausted (ND (fun st => (NDkilled (Undef0 CerbLocation.Loc.unknown []), st)))`
+(* FUEL ARC (2026-09-03, docs/2026-09-02_fuel-arc-design.md section 1.2):
+   the three impl_memM-typed fueled workers' fuel-zero arms are the same
+   DISTINGUISHED kill as the driver family's (`CerbND.fuelExhaustedKill`,
+   'err-polymorphic), unwrapped; liftND/liftAction propagate it unchanged
+   into driverM. Budget stays lemDefaultFuel (design note Q4). *)
+declare {lean} fuel val find_array_index = `ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
+declare {lean} fuel val easy_update_mem_value_aux = `ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
+declare {lean} fuel val memcmp_load_aux = `ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
 declare {lean} termination_argument memcmp_compare = automatic
 declare {lean} fuel val mkUnspec = `fuelExhausted (MVarray [])`

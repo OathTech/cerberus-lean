@@ -67,6 +67,12 @@
 #   OOM-KILLED witness; a program's own exit(137) still flows to comparison)
 #                    — Lean side unavailable (error / crash / timeout /
 #                      exit-verdict inconsistency)
+#   SKIP_LEAN_FUEL   — Lean fuel exhaustion (FUEL arc, 2026-09-03;
+#                      common.sh/fuel_classify.sh classify_fuel_outcome):
+#                      the typed kill `Error {msg: "lem: fuel exhausted"}`
+#                      or the pure-worker panic line at exit >= 128,
+#                      classified AHEAD of SKIP_LEAN_CRASH/SKIP_LEAN_FAIL
+#                      on the exact message; never compared, rank 0
 #   SKIP_ORACLE      — cabs-json frontend failed (incl. floor refusal)
 #   SKIP_GCC_COMPILE / SKIP_GCC_TIMEOUT / SKIP_GCC_STDOUT / SKIP_NATIVE_NONDET
 #   SKIP_VALUE_RANGE — Specified payload not a parseable 64-bit integer
@@ -422,6 +428,10 @@ while IFS=$'\t' read -r c_file mode key; do
         "$CERBERUS_LEAN_BIN" "${lean_flags[@]}" "$json" 2>&1) || lean_exit=$?
 
     if [[ $lean_exit -eq 124 ]]; then record "$base_c" SKIP_LEAN_TIMEOUT -; continue; fi
+    # SKIP_LEAN_FUEL (header; fuel_classify.sh): ahead of the crash / fail
+    # branches, keyed on the exact message.
+    fuel_kind=$(classify_fuel_outcome "$lean_exit" "$lean_output")
+    if [[ -n "$fuel_kind" ]]; then record "$base_c" SKIP_LEAN_FUEL - "($fuel_kind, exit $lean_exit) lem: fuel exhausted"; continue; fi
     if [[ $lean_exit -ge 128 ]]; then
         crash=$(echo "$lean_output" | grep -m1 -E 'PANIC|fuel exhausted' | cut -c1-100)
         record "$base_c" SKIP_LEAN_CRASH - "(exit $lean_exit) $crash"

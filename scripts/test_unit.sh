@@ -19,6 +19,10 @@ UNIT_TESTS=(
     "fresh-int-test"
     # arc-10 S3: pretty-printer mirrors vs recorded oracle outputs
     "pp-test"
+    # FUEL arc (2026-09-03): the consumer-shaped exemplar theorem over the
+    # shipped pipeline (test/Unit/FuelExemplar.lean) — compile-time proof,
+    # main reports success; its cone is probed by check_theorem_axioms.sh
+    "fuel-exemplar-test"
 )
 
 # ---------------------------------------------------------------------------
@@ -85,6 +89,26 @@ fi
 AXIOM_SH="$(dirname "$PURITY_SH")/check_theorem_axioms.sh"
 if ! "$AXIOM_SH"; then
     echo "test_unit: axiom-cone gate FAILED"
+    exit 1
+fi
+
+# `sorry`-token SOURCE census (FUEL arc rider, 2026-09-03; design
+# lean_frontend/docs/2026-09-02_fuel-arc-design.md §5): comment-stripped
+# scan of generated/ + hand-written + test + the LemLib copy, expected 0
+# (the axiom gate probes sorryAx in CONES only; this sees the text).
+# Fail-closed: empty scan set = FAIL.
+SORRY_SH="$(dirname "$PURITY_SH")/check_sorry_token.sh"
+if ! "$SORRY_SH"; then
+    echo "test_unit: sorry-token gate FAILED"
+    exit 1
+fi
+
+# FUEL classifier selftest (FUEL arc, 2026-09-03; design §3.4): the one
+# classify_fuel_outcome every classifying lane uses, against fixture
+# captures incl. the three mandated negatives. Fail-closed.
+FUELCLS_SH="$(dirname "$PURITY_SH")/test_fuel_classifier.sh"
+if ! "$FUELCLS_SH"; then
+    echo "test_unit: FUEL classifier selftest FAILED"
     exit 1
 fi
 

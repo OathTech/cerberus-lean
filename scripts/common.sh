@@ -47,6 +47,14 @@ if [[ -n "${CERB_LEAN_BIN_OVERRIDE:-}" ]]; then
     echo "==============================================================" >&2
 fi
 
+# Fuel-exhaustion classifier (FUEL arc, 2026-09-03): ONE function,
+# `classify_fuel_outcome <exit> <merged-capture>` -> FUEL:kill | FUEL:panic
+# | "" — shared by every classifying lane; lives in its own side-effect-
+# free file so tests/mem-scale-probes/measure.sh can source the same
+# definition without this file's env guard. Fail-closed: missing = exit.
+# shellcheck source=fuel_classify.sh
+source "$SCRIPT_DIR/fuel_classify.sh" || { echo "Error: $SCRIPT_DIR/fuel_classify.sh missing (fuel classifier; fail-closed)" >&2; exit 1; }
+
 # Colors
 if [[ -t 1 ]]; then
     RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'

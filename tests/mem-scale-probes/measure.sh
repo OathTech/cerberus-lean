@@ -12,8 +12,18 @@
 # exit: the wrapped command's exit (124 = timeout, 137 = cgroup kill —
 # capped's OOM-KILLED/KILLED banner is preserved in the .err file), verdict: the
 # batch verdict sequence (VAL:/UB: like tests/parity-probes/run_probe.sh),
-# note: INTERNAL PANIC / KILLED / TIMEOUT / HANG markers from stderr and
-# the time record; cpu_s: User+System seconds from /usr/bin/time -v.
+# note: INTERNAL PANIC / KILLED / TIMEOUT / HANG / FUEL(kill|panic) markers
+# from stderr and the time record; cpu_s: User+System seconds from
+# /usr/bin/time -v.
+#
+# FUEL (FUEL arc, 2026-09-03; scripts/fuel_classify.sh
+# classify_fuel_outcome, the same function every classifying lane uses):
+# a Lean run that exhausted its fuel reads verdict `ERR:lem: fuel exhausted`
+# (the typed kill `Error {msg: "lem: fuel exhausted"}`, exit 1) or exit 134
+# with the bare `lem: fuel exhausted` panic line (a pure-return worker);
+# the note carries `FUEL(kill);` / `FUEL(panic);` so the row is never read
+# as a completed run and never enters a parity tally as one. The C8 rows
+# of docs/2026-09-02_mem-scale-record.md are this class.
 #
 # HANG classification (R1 amendment, charter C9 loudness interim — never
 # a stack-size knob): exit 124 with cpu_s / wall_s < 0.1 is a HANG, not a
@@ -38,8 +48,18 @@
 set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+# shellcheck source=../../scripts/fuel_classify.sh
+source "$ROOT/scripts/fuel_classify.sh" || { echo "measure.sh: $ROOT/scripts/fuel_classify.sh missing (fuel classifier; fail-closed)" >&2; exit 2; }
 CERB="$ROOT/_build/default/backend/driver/main.exe"
 LEAN="$ROOT/lean_frontend/.lake/build/bin/cerberus-lean"
+# PLANT HOOK (FUEL arc, 2026-09-03; the common.sh hook's twin): substitute
+# a stub for the Lean driver so this instrument's FUEL note can be
+# plant-tested (scripts/test_fuel_plant.sh). Loud on every use; rows under
+# an override are never evidence about the semantics.
+if [[ -n "${CERB_LEAN_BIN_OVERRIDE:-}" ]]; then
+    LEAN="$CERB_LEAN_BIN_OVERRIDE"
+    echo "CERB_LEAN_BIN_OVERRIDE ACTIVE: Lean driver replaced by $LEAN — PLANT MODE, rows are NOT evidence about the semantics" >&2
+fi
 RUNTIME="$ROOT/_build/install/default"
 CAPPED="$ROOT/scripts/capped"
 TIME=/usr/bin/time
@@ -107,6 +127,9 @@ run_one() {
     # "capped: KILLED" (signal death / witness unavailable) — both count
     grep -qE "capped: (OOM-)?KILLED" "$err" && note="${note}KILLED;"
     grep -q "INTERNAL PANIC" "$err" && note="${note}PANIC:$(grep -m1 -oE 'INTERNAL PANIC[^\n]*' "$err" | cut -c1-60 | tr '\t' ' ');"
+    # FUEL (header): both streams concatenated, exact-message classifier
+    local fuel_kind; fuel_kind=$(classify_fuel_outcome "$rc" "$(cat "$out" "$err" 2>/dev/null)")
+    [[ -n "$fuel_kind" ]] && note="${note}FUEL(${fuel_kind#FUEL:});"
     if [[ $rc -eq 124 ]]; then
         if [[ -n "$cpu" && -n "$wall" ]] && awk -v c="$cpu" -v w="$wall" 'BEGIN{exit !(w > 0 && c / w < 0.1)}'; then
             note="${note}HANG(cpu ${cpu}s of ${wall}s wall; timeout ${TIMEOUT_SECS}s);"

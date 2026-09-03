@@ -14,7 +14,18 @@ open import {hol} `pp_memTheory` `utilTheory`
 val pretty_stringFromMem_mem_value: forall 'a. 'a -> string
 declare ocaml target_rep function pretty_stringFromMem_mem_value = `String_mem.string_pretty_of_mem_value_decimal`
 declare hol  target_rep function pretty_stringFromMem_mem_value = `util$emptyString`
-declare lean target_rep function pretty_stringFromMem_mem_value = `sorry`
+(* Lean rep (FUEL arc rider, docs/2026-09-02_fuel-arc-design.md section 5;
+   closes the tree's last `sorry`): the val is 'a-polymorphic only because
+   Mem.mem_value did not typecheck here (comment above); its ONLY use site
+   (below, the "CONCUR CHOSE ==> " debug-log string) applies it to
+   Mem.mem_value pairs, so the monomorphic CerbMem.MemValue -> String
+   printer typechecks at both applications. MIRROR-OCAML NOTE: the OCaml
+   rep is the PRETTY decimal printer String_mem.string_pretty_of_mem_value
+   _decimal; CerbMem.stringFromMemValue mirrors String_mem.string_of_mem
+   _value instead — a deliberate, recorded divergence confined to a
+   concurrency-model debug-log string (never oracle-compared; the
+   concurrency model is a declared stub boundary). *)
+declare lean target_rep function pretty_stringFromMem_mem_value = `CerbMem.stringFromMemValue`
 
 import Loc (* Somebody is going to hate me for this *)
 

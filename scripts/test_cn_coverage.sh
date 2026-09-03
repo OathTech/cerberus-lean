@@ -29,7 +29,12 @@
 # Per-file statuses:
 #   agreement:  MATCH UB_MATCH UB_DIFF REJECT_MATCH
 #   divergence: DIFF (one-sided UB) MISMATCH (value/shape) REJECT_DIFF
-#   lean-side:  LEAN_FAIL LEAN_CRASH LEAN_ERROR LEAN_TIMEOUT
+#   lean-side:  LEAN_FAIL LEAN_CRASH LEAN_ERROR LEAN_TIMEOUT FUEL
+#               (FUEL: fuel exhaustion — the typed kill `Error {msg: "lem:
+#               fuel exhausted"}` or the pure-worker panic line at exit >=
+#               128, classified AHEAD of LEAN_CRASH / the Error branch on
+#               the exact message; FUEL arc 2026-09-03, common.sh/
+#               fuel_classify.sh classify_fuel_outcome; never agreement)
 #   oracle-side (no comparison possible): ORACLE_FAIL ORACLE_TIMEOUT
 #               ORACLE_INCONSISTENT
 #
@@ -387,6 +392,12 @@ for rel in "${RUN_ROWS[@]}"; do
         record_status "$rel" LEAN_TIMEOUT
         continue
     fi
+    fuel_kind=$(classify_fuel_outcome "$lean_exit" "$lean_out")
+    if [[ -n "$fuel_kind" ]]; then
+        echo "[$file_num/$total] FUEL $rel ($fuel_kind, exit $lean_exit): lem: fuel exhausted"
+        record_status "$rel" FUEL
+        continue
+    fi
     if [[ $lean_exit -ge 128 ]]; then
         crash_kind=$(echo "$lean_out" | grep -m1 -E 'PANIC|fuel exhausted' | cut -c1-120)
         [[ -z "$crash_kind" ]] && crash_kind="(no PANIC line captured)"
@@ -486,7 +497,7 @@ fi
 g() { echo "${COUNT[$1]:-0}"; }
 AGREE=$(( $(g MATCH) + $(g UB_MATCH) + $(g UB_DIFF) + $(g REJECT_MATCH) ))
 DIVERGE=$(( $(g DIFF) + $(g MISMATCH) + $(g REJECT_DIFF) ))
-LEAN_SIDE=$(( $(g LEAN_FAIL) + $(g LEAN_CRASH) + $(g LEAN_ERROR) + $(g LEAN_TIMEOUT) ))
+LEAN_SIDE=$(( $(g LEAN_FAIL) + $(g LEAN_CRASH) + $(g FUEL) + $(g LEAN_ERROR) + $(g LEAN_TIMEOUT) ))
 ORACLE_SIDE=$(( $(g ORACLE_FAIL) + $(g ORACLE_TIMEOUT) + $(g ORACLE_INCONSISTENT) ))
 COMPARED=$(( AGREE + DIVERGE ))
 
@@ -504,13 +515,13 @@ echo "  DIFF:          $(g DIFF) (one-sided UB)"
 echo "  MISMATCH:      $(g MISMATCH)"
 echo "  REJECT_DIFF:   $(g REJECT_DIFF) (one side refuses, other runs)"
 echo "Lean-side failures:"
-echo "  LEAN_FAIL:     $(g LEAN_FAIL)  LEAN_CRASH: $(g LEAN_CRASH)  LEAN_ERROR: $(g LEAN_ERROR)  LEAN_TIMEOUT: $(g LEAN_TIMEOUT)"
+echo "  LEAN_FAIL:     $(g LEAN_FAIL)  LEAN_CRASH: $(g LEAN_CRASH)  FUEL: $(g FUEL)  LEAN_ERROR: $(g LEAN_ERROR)  LEAN_TIMEOUT: $(g LEAN_TIMEOUT)"
 echo "Oracle-side (no comparison possible):"
 echo "  ORACLE_FAIL:   $(g ORACLE_FAIL)  ORACLE_TIMEOUT: $(g ORACLE_TIMEOUT)  ORACLE_INCONSISTENT: $(g ORACLE_INCONSISTENT)"
 echo ""
 echo "Agreement tally: $AGREE/$COMPARED compared ($file_num run, $ORACLE_SIDE oracle-side unobservable)"
 echo ""
-echo "SUMMARY: total=$file_num match=$(g MATCH) ub_match=$(g UB_MATCH) ub_diff=$(g UB_DIFF) reject_match=$(g REJECT_MATCH) diff=$(g DIFF) mismatch=$(g MISMATCH) reject_diff=$(g REJECT_DIFF) lean_fail=$(g LEAN_FAIL) lean_crash=$(g LEAN_CRASH) lean_error=$(g LEAN_ERROR) lean_timeout=$(g LEAN_TIMEOUT) oracle_fail=$(g ORACLE_FAIL) oracle_timeout=$(g ORACLE_TIMEOUT) oracle_inconsistent=$(g ORACLE_INCONSISTENT)"
+echo "SUMMARY: total=$file_num match=$(g MATCH) ub_match=$(g UB_MATCH) ub_diff=$(g UB_DIFF) reject_match=$(g REJECT_MATCH) diff=$(g DIFF) mismatch=$(g MISMATCH) reject_diff=$(g REJECT_DIFF) lean_fail=$(g LEAN_FAIL) lean_crash=$(g LEAN_CRASH) fuel=$(g FUEL) lean_error=$(g LEAN_ERROR) lean_timeout=$(g LEAN_TIMEOUT) oracle_fail=$(g ORACLE_FAIL) oracle_timeout=$(g ORACLE_TIMEOUT) oracle_inconsistent=$(g ORACLE_INCONSISTENT)"
 
 # ---------------------------------------------------------------------------
 # Baseline write / exact-match check

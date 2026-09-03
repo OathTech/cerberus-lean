@@ -110,6 +110,7 @@ roots = [
   "CerbPP",
   "CerbMem",
   "CerbFS",
+  "CerbFuel",
   "CerbConcurrency",
   "CerbCtypeInstances",
   "CerbStepInstances",
@@ -166,4 +167,14 @@ moreLinkArgs = ["native/md5.o"]
 name = "pp-test"
 srcDir = "test"
 root = "Unit.PPTest"
+moreLinkArgs = ["native/md5.o"]
+
+# FUEL arc (2026-09-03): the consumer-shaped exemplar theorem over the
+# shipped fuel-parametric pipeline (CerbND.drive_lemFuel), kernel-checked
+# at compile time; main reports success. Design:
+# docs/2026-09-02_fuel-arc-design.md §1.4/§6.
+[[lean_exe]]
+name = "fuel-exemplar-test"
+srcDir = "test"
+root = "Unit.FuelExemplar"
 moreLinkArgs = ["native/md5.o"]

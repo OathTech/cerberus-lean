@@ -197,7 +197,10 @@ Per program (all inside the worktree; scratch under `.tmp/`):
    tier), `LEAN_ABORT_ON_PANIC=1`, per-side timeout. Verdict-token
    extraction and exit/verdict-consistency checking mirror
    test_exec.sh (S5f hardening); any Lean-side failure is
-   `SKIP_LEAN_{FAIL,CRASH,TIMEOUT,EXIT}` — enumerated, never compared.
+   `SKIP_LEAN_{FAIL,CRASH,TIMEOUT,EXIT}` — enumerated, never compared
+   (FUEL arc, 2026-09-03: plus `SKIP_LEAN_FUEL`, fuel exhaustion by the
+   exact printed message, classified ahead of CRASH/FAIL; design
+   `docs/2026-09-02_fuel-arc-design.md` §3).
 3. **Compare.** Expected-byte set from the `Specified(n)` tokens vs
    the native exit status: singleton+equal → `AGREE`; member of a
    larger set → `AGREE_ND`; else → `DISAGREE` (fatal in default mode

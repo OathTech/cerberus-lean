@@ -13,6 +13,11 @@ open import Pervasives
 open import Utils Debug
 import Undefined
 
+(* Lean-target only (debug.lem:4 mechanism): the fuel-exhaustion atom /
+   message / budget seam the `declare {lean} fuel val` sentinels below
+   name (FUEL arc, docs/2026-09-02_fuel-arc-design.md section 1.1). *)
+declare {lean} extra_import `CerbFuel`
+
 
 
 (* Cause of an execution path termination *)
@@ -546,13 +551,21 @@ type nd_status 'a 'err 'st =
 
 (* === Totality declares (arc 3 sweep, 2026-08-18): Lean-target only.
    nd_bind: recursion on the result of applying a stored function
-   (m_act st), not a subterm -> fuel; witness is a minimal killed
-   computation (fuelExhausted panics at runtime, the witness only
-   discharges typing).
+   (m_act st), not a subterm -> fuel.
    nd_foldlM: structural on its list argument -> automatic.
    liftND/liftAction: genuinely cyclic mutual pair, recursion through
-   stored-function application -> fuel both (all-or-none). === *)
-declare {lean} fuel val nd_bind = `fuelExhausted (ND (fun st => (NDkilled (Undef0 CerbLocation.Loc.unknown []), st)))`
+   stored-function application -> fuel both (all-or-none).
+   FUEL ARC (2026-09-03, docs/2026-09-02_fuel-arc-design.md section 1.2):
+   the fuel-zero arm of every ND-typed fueled worker is the DISTINGUISHED,
+   kernel-transparent kill `NDkilled (Error0 CerbFuel.fuelExhaustedLoc
+   CerbFuel.fuelExhaustedMsg)` (= CerbND.fuelExhaustedKill) with NO opaque
+   `fuelExhausted` wrapper around the monadic value — exhaustion is a typed
+   outcome the kernel can recognise (the `_zero` lemmas in CerbND.lean hold
+   by rfl), printed by Main as `Error {msg: "lem: fuel exhausted"}` and
+   classified FUEL by the harnesses. The atom `fuelExhaustedLoc` is a pure
+   opaque (CerbFuel.lean, imported via the extra_import above). liftAction
+   returns nd_action, so its arm is the curried action-shaped value. === *)
+declare {lean} fuel val nd_bind = `ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
 declare {lean} termination_argument nd_foldlM = automatic
-declare {lean} fuel val liftND = `fuelExhausted (ND (fun st => (NDkilled (Undef0 CerbLocation.Loc.unknown []), st)))`
-declare {lean} fuel val liftAction = `fuelExhausted (fun _ => NDkilled (Undef0 CerbLocation.Loc.unknown []))`
+declare {lean} fuel val liftND = `ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
+declare {lean} fuel val liftAction = `fun _ => NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg)`
