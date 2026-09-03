@@ -191,6 +191,29 @@ provenance note), same filing checklist and labeling policy:
   (`write(2)` + `abort`). Record: `docs/2026-09-01_mem-scale-profile.md`
   §6.2–6.3; charter C9.
 
+- **lem/** — target `rems-project/lem` (added 2026-09-03; landing note
+  `lem/README.md`, which also points Lem-side readers at the lem-lean
+  repository for the Lean backend itself — a feature contribution, not
+  a report). **lem/01-polymorphic-compare-on-set-values.md** — KNOWN
+  LIMITATION / question: on the OCaml target a Lem `set`/`map` is a
+  record carrying its comparator closure (`ocaml-lib/pset.ml:299`,
+  `pmap.ml:280`), so Lem's default `=` (`unsafe_structural_equality` =
+  OCaml `=`, `library/basic_classes.lem:58/:70-71` @ `3802cb0`) on any
+  user record or variant containing a set or map raises `Invalid_argument
+  "compare: functional value"` at run time, where Lem's semantics, its
+  prover targets and our Lean target compute the value. Minimal Lem
+  reproducer included; its verbatim-output section is marked TO BE RUN
+  BEFORE FILING (not executed in the drafting slice). Source: lem-lean
+  `doc/lean-backend/2026-09-03_exception-case-rulings.md` §2 X1 and
+  `2026-09-03_parity-fix-record.md` §2 row X1 [USER 2026-09-03 ruling
+  wording = the classification]. The parity record's census was checked
+  for other findings classed as defects in UPSTREAM lem's OCaml library:
+  none — the nearest is F9 (`List.genlist` quadratic on the OCaml
+  target, `library/list.lem:590-591`), classed performance-only and
+  registered in lem-lean `doc/lean-backend/TODO.md` item 7, not drafted.
+  The 63-bit `nat`/`int` item is a documented upstream compromise, not a
+  bug (ruling §2 X3/N4); noted in `lem/README.md` only.
+
 Added 2026-09-02 (arc/mem-scale S1' — cerberus-side, upstream-facing):
 
 18. **18-monadic-list-combinators-non-tail.md** — TRUE BUG
