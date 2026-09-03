@@ -27,6 +27,10 @@ lem fix; anything unattributable is a STOP.
   baseline changes; the one measured movement is outside every gate
   and toward the oracle (`--pp-core` enumeration order, F10), found by
   a cross-version probe.
+- mem-scale (§5.4): one non-gating row changed SURFACING, not class —
+  `d_loop_1000000` lean-first, the recorded process-stack ceiling, now
+  parks in the runtime's overflow handler (HANG) instead of aborting;
+  reproduced 2+2 against the old binary; flagged for the orchestrator.
 - Census (§7): the brief's `CerbMem.lean:1352` Z-class row is NOT a
   divergence — the oracle has the same zero guard (impl_mem.ml:2479-2480,
   quoted); registered as an erratum against the lem record §5 instead.
@@ -186,11 +190,114 @@ docs — NO baseline, pin or TSV file was modified by any lane.
 
 ### 5.3 Tier C — csmith corpus shards
 
-TBD
+Grind-tripwire note, written BEFORE the run [AGENT]: the six shards of
+`test_csmith_corpus.sh --check-baseline --shard K/6` are a ~2.7 h
+sequential differential-corpus MEASUREMENT sweep (LADDER.md Tier C:
+"Full pass ~2.7 h: run --shard K/6 sharded"), requested by the brief
+("csmith shards") — the category the tripwire names as qualifying
+("measurement sweeps over differential corpora may qualify"); it is not
+a build or proof pass and no code is iterated while it runs. Started
+07:21:21 UTC after Tier B; shards run one at a time (box discipline).
 
-### 5.4 mem-scale corpus
+Run: shard 1 in the harness-backgrounded runner (07:21:21-08:00:43);
+the runner was then KILLED by the agent harness mid shard 2 (129/279 —
+an environment event, not a lane failure; the partial log is kept as
+`C-csmith-shard-2.killed-partial.log`), and shards 2-6 re-ran from
+scratch in a detached runner (08:23:11-10:01:23; shard 2 restarted in
+full — the lane is deterministic). Every shard `--check-baseline`
+rc=0. Verbatim per shard:
 
-TBD
+| Shard | SUMMARY (verbatim) | Baseline |
+|---|---|---|
+| 1/6 | `SUMMARY: total=279 match=127 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=1 hang=0 cerb_skip=151 cerb_floor=0 cerb_inconsistent=0` | `Baseline check: 0 regression(s), 0 improvement(s)` / `BASELINE OK` |
+| 2/6 | `SUMMARY: total=279 match=159 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=3 hang=0 cerb_skip=117 cerb_floor=0 cerb_inconsistent=0` | same |
+| 3/6 | `SUMMARY: total=279 match=144 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=2 hang=0 cerb_skip=133 cerb_floor=0 cerb_inconsistent=0` | same |
+| 4/6 | `SUMMARY: total=279 match=234 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=45 cerb_floor=0 cerb_inconsistent=0` | same |
+| 5/6 | `SUMMARY: total=279 match=268 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=1 hang=0 cerb_skip=10 cerb_floor=0 cerb_inconsistent=0` | same |
+| 6/6 | `SUMMARY: total=274 match=229 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=2 hang=0 cerb_skip=43 cerb_floor=0 cerb_inconsistent=0` | same |
+
+Derived tally over the union (= the full 1669-file corpus): match 1161,
+mismatch 0, fail 0, crash 0, fuel 0, lean_error 0, hang 0, timeout 9,
+cerb_skip 499, cerb_floor 0; every shard at the committed
+`scripts/exec_csmith_corpus_baseline.txt` with 0 regressions and 0
+improvements. (The `timeout` rows are the baseline's recorded
+TIMEOUT-class rows — wall-clock sensitive by the lane's own caveat; they
+did not move.)
+
+### 5.4 mem-scale corpus (non-gating instrument; `tests/mem-scale-probes/run_all.sh`)
+
+Configuration = the committed `2026-09-02_s2-parity.tsv` sweep's
+(`--engines oracle-random,lean-first`, 600 s, cap 32G) so rows compare
+like-for-like; 10:01:23-10:40:35 UTC for the nolibc classes, then the
+libc class after `scripts/libc_prep.sh --jsons .tmp/memscale/libcjson`
+(the first pass had printed `measure.sh: libc jsons missing at …
+(scripts/libc_prep.sh --jsons)` for every `--libc` row and continued —
+the instrument is fail-noisy, non-gating; the e_*/z_base libc rows were
+then run with `--only`). Result TSV committed as
+`tests/mem-scale-probes/results/2026-09-03_pin-bump-sweep.tsv` (70
+distinct (probe, mode, engine) rows; z_base nolibc appears twice,
+identical).
+
+Comparison [AGENT, `.tmp/pinbump-logs/memscale_compare.py`: same key ⇒
+compare exit, verdict, note] against the two recorded sweeps:
+
+vs `2026-09-02_s2-parity.tsv` (recorded at the 10^6 fuel budget):
+`MEMSCALE COMPARE: common=70 same=63 moved=7 only_old=0 only_new=0`. The
+seven, attributed:
+- `a_zero_global_10000000 lean-first`: HANG both times; only the cpu
+  figure inside the note differs (3.23 s → 3.19 s). NOT a movement.
+- `b_zero_local_1000000` / `b_zero_local_10000000 lean-first`: exit 134,
+  1.10 s both times; the note gained `FUEL(panic);` — the FUEL arc's
+  classifier (added after s2-parity). Identical to the fuel-arc record's
+  own rows (`134 1.10 … FUEL(panic); 0.02`). NOT a pin-bump movement.
+- `d_loop_100000` and `e_memcpy_100000 lean-first`: 134 → 0 with the
+  oracle's value (`VAL:Specified(-97)`, `VAL:Specified(7)`): the FUEL arc's
+  10^8 budget (the fuel-arc record shows these completing at
+  `18ceb18b2`+budget); identical to the fuel-arc record rows. NOT a
+  pin-bump movement.
+- `e_memcpy_1000000 lean-first`: 134 both times; the note gained
+  `STACK_OVERFLOW;` (measure.sh marker added at `f95ef8d9c`, after the
+  fuel-arc rows were recorded); wall 99.84 s → 42.35 s is load. Same
+  class (the recorded process-stack ceiling). NOT a movement.
+- `d_loop_1000000 lean-first`: **MOVED — same limit, different
+  surfacing.** Fuel-arc record: `134 44.58 … NONE - ` ("Stack overflow
+  detected. Aborting."); now `124 600.08 2183036 NONE HANG(cpu 36.66s of
+  600.08s wall; timeout 600s); 36.66`. Oracle: `0 110.61 … VAL:Specified(63)`.
+  Reproduced four times at a 120 s timeout [AGENT]: NEW binary ×2 →
+  `124 120.10 … TIMEOUT(120s); 33.56` / `… 33.40` (parks after ~33.5 s
+  CPU — the same event the 600 s run classifies HANG); OLD binary
+  (primary checkout, mainline `f95ef8d9c`, via the loud
+  `CERB_LEAN_BIN_OVERRIDE` hook — a runtime probe, not a semantics
+  claim) ×2 → `134 39.06 … STACK_OVERFLOW; 37.98` / `134 39.16 …
+  STACK_OVERFLOW; 38.08` with `Stack overflow detected. Aborting.` on
+  stderr. So: deterministic per binary; the pin bump changed the
+  outcome of the SAME process-stack overflow from a clean abort to the
+  runtime overflow handler's deadlock (the mechanism VALIDATION.md
+  already documents for the >7 M-element aggregates: guard-page SIGSEGV,
+  then FUTEX_WAIT inside the handler; upstream report drafted). Both
+  outcomes are the recorded resource-limit class (b) — Lean fails where
+  the oracle succeeds, TODO.md "Step-runner execution ceiling" — neither
+  is agreement, neither is a verdict change. Attribution: the bump
+  re-renders the driver loop's recursion (`nd_mapM` folds with
+  `lemListFoldr`, F7; the thread-state `Fmap`s are the Pmap port,
+  F3/F10), which moves WHICH frame hits the guard page; which way the
+  runtime handler then goes (abort vs deadlock) is the handler's known
+  position-dependence, not a named lem fix — flagged for the
+  orchestrator as the one movement in the whole battery whose
+  attribution is mechanism-level rather than fix-level. Registered in
+  TODO.md (the ceiling item).
+
+vs the fuel-arc record's rows (lean engines at the 10^8 budget, 6
+lean-first rows in common): `same=4` (`b_zero_local_1000000`,
+`b_zero_local_10000000`, `d_loop_100000`, `e_memcpy_100000`) and the two
+rows discussed above (`d_loop_1000000` surfacing; `e_memcpy_1000000`
+note only).
+
+Every oracle-vs-Lean VERDICT agreement in the corpus is unchanged: all
+rows where both sides complete agree on the value (a/b/c classes to the
+sizes the recorded ceilings allow, d_loop ≤ 10^5, e_memcpy ≤ 10^5,
+z_base both modes); the rows where Lean fails are the recorded (b)-class
+rows only.
 
 ## 6. Moved-row enumeration — the predicted movements vs. what happened
 
@@ -305,4 +412,16 @@ improvement in principle; no corpus input reaches it (no row moved).
 
 ## 9. Worktree state at close
 
-TBD
+Branch `arc/pin-bump`, two commits on top of mainline `f95ef8d9c`:
+commit 1 (pin + seams + manifest + record draft + TODO, on Tier A+B
+green) and commit 2 (this record's Tier C sections, the committed
+mem-scale sweep TSV, the TODO ceiling note). No merge, no push. Working
+tree clean apart from the ephemeral `.tmp/` (gitignored): the pre-bump
+snapshots, per-row lane logs, the probe scripts and the run
+artefacts — deleted at slice end per the container rule once the
+orchestrator has re-verified. The shared opam switch carries lem
+`3c88f0d` (a machine-visible effect of this slice, sanctioned in the
+brief; the primary checkout `cerberus-lean/` on mainline still has
+generated trees and binaries from `045dcb0` — its next `make
+prelude-src` will regenerate byte-identical OCaml, and its Lean tree
+must be regenerated + rebuilt before use).

@@ -36,7 +36,16 @@ downstream.)
   the transitive `Std.Data.TreeMap` import and proof-term dependence on
   `List.foldr` reduction (`test/Unit/FuelExemplar.lean`); `Utils.default0`
   did not revert to `default`.
-- Step-runner execution ceiling — the PROCESS-STACK ceiling is BINDING
+- Step-runner execution ceiling — SURFACING NOTE (pin bump 3c88f0d,
+  2026-09-03, record §5.4): `d_loop_1000000.c` lean-first now parks in
+  the Lean runtime's stack-overflow handler (exit 124, `HANG(cpu 36.66s
+  of 600.08s wall)`) instead of `Stack overflow detected. Aborting.`
+  (exit 134) — reproduced 2+2 against the old-pin binary; same ceiling,
+  same (b) class, different failure surfacing (the handler deadlock
+  VALIDATION.md documents for the >7 M aggregates). `e_memcpy_1000000`
+  still aborts (134, `STACK_OVERFLOW;`). The rest of this item is as
+  measured at the FUEL arc:
+  the PROCESS-STACK ceiling is BINDING
   AGAIN (measured 2026-09-03, FUEL arc record §6): at the coupled driver
   family's budget `CerbFuel.driverFuel` = 10^8 (the FUEL arc's budget
   commit), `tests/mem-scale-probes/probes/d_loop_1000000.c` and
