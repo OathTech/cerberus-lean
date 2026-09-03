@@ -180,41 +180,24 @@ same draft format (classification, verbatim evidence, remedy,
 provenance note), same filing checklist and labeling policy:
 
 - **lean4/01-stack-overflow-handler-deadlock.md** — target
-  `leanprover/lean4` (runtime). TRUE BUG (fail-open by silence): a
-  stack overflow on the `lean_run_main` thread takes the guard-page
-  `SIGSEGV` and then blocks forever on a contended futex INSIDE the
-  handler instead of printing "Stack overflow detected. Aborting." —
-  no output, no exit. First-hand strace excerpt; onset moves with
-  `LEAN_STACK_SIZE_KB` in both directions; the plain overflow path
-  aborts loudly in a standalone program (negative result recorded), so
-  the in-project driver + `tests/mem-scale-probes/probes/
-  a_zero_global_10000000.c` is the deterministic reproducer until a
-  standalone trigger is isolated. Remedy: async-signal-safe handler
-  (`write(2)` + `abort`). Record: `docs/2026-09-01_mem-scale-profile.md`
-  §6.2–6.3; charter C9.
-
-- **lem/** — target `rems-project/lem` (added 2026-09-03; landing note
-  `lem/README.md`, which also points Lem-side readers at the lem-lean
-  repository for the Lean backend itself — a feature contribution, not
-  a report). **lem/01-polymorphic-compare-on-set-values.md** — KNOWN
-  LIMITATION / question: on the OCaml target a Lem `set`/`map` is a
-  record carrying its comparator closure (`ocaml-lib/pset.ml:299`,
-  `pmap.ml:280`), so Lem's default `=` (`unsafe_structural_equality` =
-  OCaml `=`, `library/basic_classes.lem:58/:70-71` @ `3802cb0`) on any
-  user record or variant containing a set or map raises `Invalid_argument
-  "compare: functional value"` at run time, where Lem's semantics, its
-  prover targets and our Lean target compute the value. Minimal Lem
-  reproducer included; its verbatim-output section is marked TO BE RUN
-  BEFORE FILING (not executed in the drafting slice). Source: lem-lean
-  `doc/lean-backend/2026-09-03_exception-case-rulings.md` §2 X1 and
-  `2026-09-03_parity-fix-record.md` §2 row X1 [USER 2026-09-03 ruling
-  wording = the classification]. The parity record's census was checked
-  for other findings classed as defects in UPSTREAM lem's OCaml library:
-  none — the nearest is F9 (`List.genlist` quadratic on the OCaml
-  target, `library/list.lem:590-591`), classed performance-only and
-  registered in lem-lean `doc/lean-backend/TODO.md` item 7, not drafted.
-  The 63-bit `nat`/`int` item is a documented upstream compromise, not a
-  bug (ruling §2 X3/N4); noted in `lem/README.md` only.
+  `leanprover/lean4` (runtime, `src/runtime/stack_overflow.cpp`). TRUE
+  BUG, NOT FIXED as of nightly-2026-08-02: the stack-overflow `SIGSEGV`
+  handler calls `pthread_getattr_np` (which mallocs / takes locks) before
+  it writes anything, so an overflow whose deepest frame is inside glibc
+  `malloc`/`realloc`/`free` — every Lean bignum operation — blocks the
+  handler on the arena mutex forever: no "Stack overflow detected"
+  line, no exit. STANDALONE REPRODUCER (2026-09-03): `lean4/repro/
+  OverflowInMalloc.lean`, 28 lines, no dependencies, `lean -c` + `leanc`;
+  control `PlainRecursion.lean` aborts loudly. Hangs on v4.28.0, v4.32.2,
+  v4.33.0 and the nightly (matrix in the draft); mechanism first-hand from
+  `strace -f -k` (`segv_handler → pthread_getattr_np → malloc →
+  __lll_lock_wait_private` on `arena->mutex`), the same on our driver's
+  original trigger (`tests/mem-scale-probes/probes/a_zero_global_10000000.c`,
+  now secondary evidence). Remedy: record stack bounds per thread outside
+  signal context; handler = loads + `write(2)` + `abort()`. Records:
+  `docs/2026-09-03_lean4-runtime-repro-record.md` (experiments incl.
+  negatives); `docs/2026-09-01_mem-scale-profile.md` §6.2–6.3 (original
+  observation).
 
 Added 2026-09-02 (arc/mem-scale S1' — cerberus-side, upstream-facing):
 
