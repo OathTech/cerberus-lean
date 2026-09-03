@@ -1,7 +1,13 @@
 # tests/verify call-point expectation pins.
 # Format: <fixture-stem> <function> <args-csv|-> <expected>
 #   expected = Specified(N) — the verdict value, or
-#              UB<code>     — exactly this UB.
+#              {ub: "UB<code>", stderr: "S", loc: "L"} — the WHOLE Undefined
+#              payload (ub code, the killed state's stderr, the loc rendered
+#              as Cerb_location.simple_location) — zero-discrepancy Z1
+#              (2026-09-03, charter §4.1 / §1.3 "UB location is behaviour"):
+#              test_verify.sh verdict_of compares whole Undefined lines, so
+#              the UB pins carry the loc; re-recorded from the agreeing
+#              Lean/oracle lines (both `<5:32--5:37>`, the add() body).
 # PROVENANCE (re-based 2026-08-31, semantics-first split): each row is
 # run as an ORACLE-DIFFERENTIAL by test_verify.sh — the Lean driver's
 # --call mode vs the oracle on a rendered wrapper TU (main returning
@@ -18,8 +24,8 @@ t1_id id -2147483648 Specified(-2147483648)
 t2_add add 7,35 Specified(42)
 t2_add add -1,-41 Specified(-42)
 t2_add add 0,0 Specified(0)
-t2_add add 2147483647,1 UB036_exceptional_condition
-t2_add add -2147483648,-1 UB036_exceptional_condition
+t2_add add 2147483647,1 {ub: "UB036_exceptional_condition", stderr: "", loc: "<5:32--5:37>"}
+t2_add add -2147483648,-1 {ub: "UB036_exceptional_condition", stderr: "", loc: "<5:32--5:37>"}
 t3_roundtrip roundtrip 42 Specified(42)
 t3_roundtrip roundtrip -2147483648 Specified(-2147483648)
 t4_struct_member memb 11 Specified(11)

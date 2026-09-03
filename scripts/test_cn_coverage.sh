@@ -240,8 +240,8 @@ run_lean_batch() {  # <file.json...>
 }
 extract_verdict_seq() {
     printf '%s\n' "$1" \
-        | grep -oE 'Undefined \{ub: "[^"]*"|Defined \{value: "[^"]*"' \
-        | sed -e 's/^Undefined {ub: "\(.*\)"$/UB:\1/' \
+        | grep -oE '^Undefined \{.*\}$|^Defined \{value: "[^"]*"' \
+        | sed -e 's/^Undefined \(.*\)$/UB:\1/' \
               -e 's/^Defined {value: "\(.*\)"$/VAL:\1/'
     return 0
 }

@@ -346,15 +346,23 @@ run_lean_batch() {  # <file.json> <time-record>
 # Verdict-sequence extraction + exit-code expectation (S5f hardening)
 # ---------------------------------------------------------------------------
 # One canonical token per per-execution verdict line, in output order:
-#   Undefined {ub: "X", ...}   -> UB:X
+#   Undefined {ub: "X", stderr: "S", loc: "L"} -> UB:{ub: "X", stderr: "S", loc: "L"}
 #   Defined {value: "V", ...}  -> VAL:V   (V = Specified(n)/Unspecified(t)/...)
-# Anchored on the line-leading 'Undefined {'/'Defined {' markers, so the
-# quote-escaped stdout/stderr fields inside a Defined line cannot yield
-# tokens (see the spoofing caveat in the header).
+# The UB token is the WHOLE Undefined line since the zero-discrepancy arc
+# (2026-09-03, charter lean_frontend/docs/2026-09-03_zero-discrepancy-design.md
+# §1.3/§4.1; [USER 2026-09-03] "UB location is behaviour"): the ub code,
+# the killed state's stderr AND the loc are compared byte-for-byte —
+# Lean renders all three exactly as the oracle (CerbLocation.simpleLocation
+# = Cerb_location.simple_location; Main.lean batch printer =
+# driver_ocaml.ml:173-181). Until then only the ub code was kept — the
+# instrument blind spot behind noodle D1/D2 and the charter's Z-72.
+# Both patterns are ^-anchored to the line start, so the quote-escaped
+# stdout/stderr fields inside a Defined line cannot yield tokens (see the
+# spoofing caveat in the header). Status-only baselines do not move.
 extract_verdict_seq() {   # <output>  → token lines on stdout
     printf '%s\n' "$1" \
-        | grep -oE 'Undefined \{ub: "[^"]*"|Defined \{value: "[^"]*"' \
-        | sed -e 's/^Undefined {ub: "\(.*\)"$/UB:\1/' \
+        | grep -oE '^Undefined \{.*\}$|^Defined \{value: "[^"]*"' \
+        | sed -e 's/^Undefined \(.*\)$/UB:\1/' \
               -e 's/^Defined {value: "\(.*\)"$/VAL:\1/'
     return 0
 }

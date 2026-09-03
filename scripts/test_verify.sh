@@ -64,12 +64,13 @@ render_wrapper() {  # <fixture.c> <fname> <args-csv|->  -> wrapper path
     echo "$wpath"
 }
 
-# Extract the verdict token (Specified(N)/Unspecified value, or the
-# UB code) from a batch verdict line.
+# Extract the verdict token (Specified(N)/Unspecified value, or the WHOLE
+# Undefined payload — ub code, stderr, loc; zero-discrepancy arc, charter
+# §4.1) from a batch verdict line.
 verdict_of() {  # <line>
     case "$1" in
         Defined*)   sed -n 's/^Defined {value: "\([^"]*\)".*/\1/p' <<<"$1" ;;
-        Undefined*) sed -n 's/^Undefined {ub: "\([^"]*\)".*/\1/p' <<<"$1" ;;
+        Undefined*) sed -n 's/^Undefined \(.*\)$/\1/p' <<<"$1" ;;
         *)          echo "<no verdict: $1>" ;;
     esac
 }

@@ -99,8 +99,8 @@ fi
 
 verdict_of() {  # batch output -> run-length-summarised verdict multiset,
                  # e.g. VAL:Specified(0)x4620 (exhaustive fan-outs repeat one verdict)
-    grep -oE 'Undefined \{ub: "[^"]*"|Defined \{value: "[^"]*"|Error \{msg: "[^"]*"' "$1" \
-      | sed -e 's/^Undefined {ub: "\(.*\)"$/UB:\1/' -e 's/^Defined {value: "\(.*\)"$/VAL:\1/' \
+    grep -oE '^Undefined \{.*\}$|^Defined \{value: "[^"]*"|^Error \{msg: "[^"]*"' "$1" \
+      | sed -e 's/^Undefined \(.*\)$/UB:\1/' -e 's/^Defined {value: "\(.*\)"$/VAL:\1/' \
             -e 's/^Error {msg: "\(.*\)"$/ERR:\1/' \
       | sort | uniq -c | awk '{c=$1; $1=""; sub(/^ /,""); printf "%s%s|", $0, (c>1? "x" c : "")}' \
       | sed 's/|$//'; return 0; }

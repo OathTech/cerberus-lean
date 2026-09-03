@@ -107,11 +107,12 @@ if [[ ${#TEST_DIRS[@]} -eq 0 ]]; then
     exit 1
 fi
 
-# Verdict-sequence extraction — lifted from test_exec.sh (S5f full-sequence)
+# Verdict-sequence extraction — lifted from test_exec.sh (S5f full-sequence;
+# whole Undefined line since the zero-discrepancy arc, charter §4.1)
 extract_verdict_seq() {
     printf '%s\n' "$1" \
-        | grep -oE 'Undefined \{ub: "[^"]*"|Defined \{value: "[^"]*"' \
-        | sed -e 's/^Undefined {ub: "\(.*\)"$/UB:\1/' \
+        | grep -oE '^Undefined \{.*\}$|^Defined \{value: "[^"]*"' \
+        | sed -e 's/^Undefined \(.*\)$/UB:\1/' \
               -e 's/^Defined {value: "\(.*\)"$/VAL:\1/'
     return 0
 }

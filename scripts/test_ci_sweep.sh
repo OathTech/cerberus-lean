@@ -28,9 +28,9 @@
 #      format) differ => STDOUT_DIFF. The --nolibc harness never needed
 #      this (programs cannot write to stdout there, test_exec.sh header
 #      "stdout-text spoofing" note); with libc it is a real divergence
-#      channel. Undefined lines are still compared by ub code only
-#      (loc strings deliberately differ across the two pipelines,
-#      Main.lean:344 "harness never compares loc").
+#      channel. Undefined lines are compared WHOLE (ub code, the killed
+#      state's stderr and the loc — zero-discrepancy arc 2026-09-03, charter
+#      §4.1; Lean renders them exactly as the oracle).
 #   3. Oracle-failure buckets are SUBDIVIDED (test_exec.sh folds them all
 #      into CERB_SKIP): CERB_TIMEOUT / CERB_CRASH / CERB_ERROR (Error{}
 #      verdict) / CERB_REJECT (nonzero exit, no verdict = front-end
@@ -167,10 +167,10 @@ fi
 cd "$PROJECT_ROOT" || { echo "Error: cannot cd to $PROJECT_ROOT" >&2; exit 1; }
 
 # --- replicated helpers (citations in header) ------------------------------
-extract_verdict_seq() {   # test_exec.sh:322-334, verbatim semantics
+extract_verdict_seq() {   # test_exec.sh extract_verdict_seq, verbatim semantics (whole Undefined line)
     printf '%s\n' "$1" \
-        | grep -oE 'Undefined \{ub: "[^"]*"|Defined \{value: "[^"]*"' \
-        | sed -e 's/^Undefined {ub: "\(.*\)"$/UB:\1/' \
+        | grep -oE '^Undefined \{.*\}$|^Defined \{value: "[^"]*"' \
+        | sed -e 's/^Undefined \(.*\)$/UB:\1/' \
               -e 's/^Defined {value: "\(.*\)"$/VAL:\1/'
     return 0
 }

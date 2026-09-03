@@ -87,14 +87,14 @@ run_pair() {
     oout=$(timeout "${TIMEOUT_SECS}s" "$CERBERUS_BIN" \
         --runtime="$RUNTIME_DIR" --nolibc --exec --batch --mode=exhaustive \
         "$src" 2>&1)
-    ORACLE_VERDICT=$(echo "$oout" | grep -o 'Defined {value: "[^"]*"' | head -1 | sed 's/Defined {value: "//;s/"$//')
+    ORACLE_VERDICT=$(echo "$oout" | grep -oE '^Defined \{value: "[^"]*"|^Undefined \{.*\}$' | head -1 | sed 's/^Defined {value: "//;s/"$//')
     timeout "${TIMEOUT_SECS}s" "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" \
         --cabs-json "$src" > "$OUTPUT_DIR/$tag.json" 2>"$OUTPUT_DIR/$tag.cabs.err" \
         || fail "cabs-json refused $tag: $(cat "$OUTPUT_DIR/$tag.cabs.err")"
     lout=$(cd "$PROJECT_ROOT" && LEAN_ABORT_ON_PANIC=1 \
         timeout "${TIMEOUT_SECS}s" "$CERBERUS_LEAN_BIN" --batch \
         "$OUTPUT_DIR/$tag.json" 2>&1)
-    LEAN_VERDICT=$(echo "$lout" | grep -o 'Defined {value: "[^"]*"' | head -1 | sed 's/Defined {value: "//;s/"$//')
+    LEAN_VERDICT=$(echo "$lout" | grep -oE '^Defined \{value: "[^"]*"|^Undefined \{.*\}$' | head -1 | sed 's/^Defined {value: "//;s/"$//')
 }
 
 # ---- sweeps ---------------------------------------------------------

@@ -94,7 +94,7 @@ oracle_out=$(timeout "${TIMEOUT_SECS}s" "$CERBERUS_BIN" \
     --runtime="$RUNTIME_DIR" --nolibc --exec --batch --mode=exhaustive \
     "$HARNESS_SRC" 2>&1)
 oracle_exit=$?
-oracle_verdict=$(echo "$oracle_out" | grep -o 'Defined {value: "[^"]*"' | head -1 | sed 's/Defined {value: "//;s/"$//')
+oracle_verdict=$(echo "$oracle_out" | grep -oE '^Defined \{value: "[^"]*"|^Undefined \{.*\}$' | head -1 | sed 's/^Defined {value: "//;s/"$//')
 
 timeout "${TIMEOUT_SECS}s" "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" \
     --cabs-json "$HARNESS_SRC" > "$OUTPUT_DIR/harness.json" 2>"$OUTPUT_DIR/cabs.err" \
@@ -104,7 +104,7 @@ lean_out=$(cd "$PROJECT_ROOT" && LEAN_ABORT_ON_PANIC=1 \
     timeout "${TIMEOUT_SECS}s" "$CERBERUS_LEAN_BIN" --batch \
     "$OUTPUT_DIR/harness.json" 2>&1)
 lean_exit=$?
-lean_verdict=$(echo "$lean_out" | grep -o 'Defined {value: "[^"]*"' | head -1 | sed 's/Defined {value: "//;s/"$//')
+lean_verdict=$(echo "$lean_out" | grep -oE '^Defined \{value: "[^"]*"|^Undefined \{.*\}$' | head -1 | sed 's/^Defined {value: "//;s/"$//')
 
 echo "test_speclab [$MODE] $HARNESS_SRC"
 echo "  oracle: exit=$oracle_exit verdict=${oracle_verdict:-<none>}"

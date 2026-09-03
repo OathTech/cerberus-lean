@@ -69,8 +69,9 @@ fi
 echo "=== LEAN (exit $lean_exit)$(kill_note $lean_exit "$lean_out") ==="
 printf '%s\n' "$lean_out"
 
-seq() { printf '%s\n' "$1" | grep -oE 'Undefined \{ub: "[^"]*"|Defined \{value: "[^"]*"' \
-    | sed -e 's/^Undefined {ub: "\(.*\)"$/UB:\1/' -e 's/^Defined {value: "\(.*\)"$/VAL:\1/'; return 0; }
+# whole Undefined line (ub, stderr, loc) since the zero-discrepancy arc (charter §4.1)
+seq() { printf '%s\n' "$1" | grep -oE '^Undefined \{.*\}$|^Defined \{value: "[^"]*"' \
+    | sed -e 's/^Undefined \(.*\)$/UB:\1/' -e 's/^Defined {value: "\(.*\)"$/VAL:\1/'; return 0; }
 cs=$(seq "$cerb_out"); ls_=$(seq "$lean_out")
 dc=$(printf '%s\n' "$cerb_out" | grep -E '^Defined \{' || true)
 dl=$(printf '%s\n' "$lean_out" | grep -E '^Defined \{' || true)

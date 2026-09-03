@@ -48,7 +48,8 @@ else
 fi
 CAPPED=(env "CERB_MEM_MAX=${CERB_TEST_MEM_MAX:-4G}" "$ROOT/scripts/capped")
 mkdir -p "$ROOT/.tmp/pd"
-seqof() { printf '%s\n' "$1" | grep -oE 'Undefined \{ub: "[^"]*"|Defined \{value: "[^"]*"|Error \{msg: "[^"]*"|Killed \{msg: "[^"]*"' ; return 0; }
+# whole Undefined line (ub, stderr, loc) since the zero-discrepancy arc (charter §4.1)
+seqof() { printf '%s\n' "$1" | grep -oE '^Undefined \{.*\}$|^Defined \{value: "[^"]*"|^Error \{msg: "[^"]*"|^Killed \{msg: "[^"]*"' ; return 0; }
 for F in "${FILES[@]}"; do
     [[ -f "$F" ]] || { echo "no such file: $F" >&2; continue; }
     echo "##### $F ($MODE)"
