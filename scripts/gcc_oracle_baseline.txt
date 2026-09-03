@@ -1142,7 +1142,7 @@ csmith/sia_csmith_473.c AGREE -
 csmith/sia_csmith_474.c AGREE -
 csmith/sia_csmith_475.c AGREE -
 csmith/sia_csmith_476.c AGREE -
-csmith/sia_csmith_477.c SKIP_LEAN_FUEL -
+csmith/sia_csmith_477.c AGREE -
 csmith/sia_csmith_478.c AGREE -
 csmith/sia_csmith_479.c AGREE -
 csmith/sia_csmith_480.c AGREE -
@@ -1434,7 +1434,7 @@ csmith/sia_csmith_765.c AGREE -
 csmith/sia_csmith_766.c AGREE -
 csmith/sia_csmith_767.c AGREE -
 csmith/sia_csmith_768.c AGREE -
-csmith/sia_csmith_769.c SKIP_LEAN_FUEL -
+csmith/sia_csmith_769.c AGREE -
 csmith/sia_csmith_770.c AGREE -
 csmith/sia_csmith_771.c AGREE -
 csmith/sia_csmith_772.c AGREE O2_AGREE

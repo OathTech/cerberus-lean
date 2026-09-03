@@ -1174,7 +1174,7 @@ sia_csmith_473.c MATCH
 sia_csmith_474.c MATCH
 sia_csmith_475.c MATCH
 sia_csmith_476.c MATCH
-sia_csmith_477.c FUEL
+sia_csmith_477.c TIMEOUT
 sia_csmith_478.c MATCH
 sia_csmith_479.c MATCH
 sia_csmith_480.c MATCH
@@ -1466,7 +1466,7 @@ sia_csmith_765.c MATCH
 sia_csmith_766.c MATCH
 sia_csmith_767.c MATCH
 sia_csmith_768.c MATCH
-sia_csmith_769.c FUEL
+sia_csmith_769.c MATCH
 sia_csmith_770.c MATCH
 sia_csmith_771.c MATCH
 sia_csmith_772.c MATCH
