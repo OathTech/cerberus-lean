@@ -114,9 +114,13 @@ value that can be quantified over by a context / theorem is fine.
 Defaults that are chosen eg. in test suites are fine. Any and all magic
 values that are hardcoded and can't be quantified over are definitionally
 bugs (unless they mirror lem or ISO-C design choices)" — for this
-repository the mirrored source is upstream Cerberus's OCaml. A bound
-computed inside a definition is hardcoded in that sense, unless the
-calling context passes it in or a termination proof removes it.
+repository the mirrored source is upstream Cerberus's OCaml. The aim, stated by the operator the same day: "to forbid values that
+limit the semantics or limit the ways the customer can reason about the
+semantics". So a bound CHOSEN inside a definition is forbidden (it limits
+both), while structural recursion on a measure that IS the data (the AVL
+height stored in a node) is admissible — nothing is chosen, nothing is
+bounded, and a proof can unfold it; a caller-passed parameter or a
+termination proof are the other admissible forms.
 The fuel story as of this writing violates this (`driverFuel = 10^8`,
 `lemDefaultFuel = 10^6` in every generated fuel wrapper); the
 fuel-parameter arc removes it: lem-lean
