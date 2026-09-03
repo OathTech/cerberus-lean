@@ -44,8 +44,9 @@
 # loc — byte-for-byte; a loc-rendering or stderr difference is a DIFF,
 # never normalised away. (Until then the token was the ub code alone,
 # "normalized to ignore source locations" — the instrument blind spot
-# the charter closed.) Defined rows compare the value field (the libc
-# stdout/stderr channels are the exec/libc_exec lanes' business).
+# the charter closed.) Defined rows likewise carry the WHOLE payload
+# (value, stdout, stderr, blocked): the escaping of the stdout/stderr
+# fields is verdict content too (Z2 audit row Z2-P-01).
 #
 # Usage: ./scripts/test_immaculate.sh [--record-baseline]
 set -uo pipefail
@@ -81,7 +82,7 @@ cd "$PROJECT_ROOT" || fail "cannot cd to $PROJECT_ROOT"
 
 # --- Normalize a batch first-line into a verdict token. ---
 # Undefined {ub: "CODE", stderr: "S", loc: "L"} -> UB:{ub: "CODE", stderr: "S", loc: "L"}
-# Defined   {value: "VAL", ...}-> VAL:VAL
+# Defined   {value: "VAL", stdout: "S", stderr: "E", blocked: "B"} -> VAL:{value: "VAL", stdout: "S", stderr: "E", blocked: "B"}
 # Error     {msg: "MSG"}       -> ERR:{msg: "MSG"}
 # empty / uncaught exception / panic (with nonzero/crash exit) -> CRASH
 verdict() {   # <first-line> <rc> [<stderr-file>]
@@ -103,7 +104,10 @@ verdict() {   # <first-line> <rc> [<stderr-file>]
         # whole payload: {ub: "…", stderr: "…", loc: "…"} (charter §4.1)
         echo "UB:$(sed -n 's/^Undefined \(.*\)$/\1/p' <<<"$line")"
     elif [[ "$line" == Defined* ]]; then
-        echo "VAL:$(sed -n 's/.*value: "\([^"]*\)".*/\1/p' <<<"$line")"
+        # whole payload: {value: "…", stdout: "…", stderr: "…", blocked: "…"}
+        # — the stdout/stderr fields are verdict content (Z2-P-01: their
+        # escaping differed byte-for-byte and no value-only token saw it)
+        echo "VAL:$(sed -n 's/^Defined \(.*\)$/\1/p' <<<"$line")"
     elif [[ "$line" == Error* ]]; then
         # whole payload too: the oracle's MerrOther messages embed unescaped
         # quotes (`Error {msg: "MerrOther "…""}`), which a `[^"]*` field
