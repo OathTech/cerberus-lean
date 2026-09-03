@@ -202,6 +202,35 @@ The claims this validation surface supports are exactly:
    `declare {lean} effectful` is a lem generation-time refusal.
    (Charter: `docs/2026-08-31_effect-retirement-design.md` §1.3.)
 
+## ISO-fix register
+
+The zero-discrepancy rule ([USER 2026-09-03], charter
+`docs/2026-09-03_zero-discrepancy-design.md` §1.1): every Lean-vs-oracle
+EXECUTION discrepancy on a program both engines run in matched mode is a
+bug — mirror the OCaml. The ONE licence for a deliberate Lean deviation
+TOWARD ISO C is this register ([USER 2026-09-03]: "a short listed set of
+fixes is in keeping for the purpose of cerberus-lean but the bar for such
+a fix must be extremely high"; criteria (i)–(vii) and the tightened (ii′)
+RATIFIED, charter §1.4/§7 Q2/Q3). Each entry: an unambiguous oracle bug
+against a cited ISO clause, a second independent oracle agreeing with
+Lean, filed upstream, pinned in the immaculate lane as a Lean-right/
+oracle-wrong pair that flips to MATCH — retiring the entry — when upstream
+fixes it, individually [USER]-ruled, soft cap ≤ 10, and a grep-able code
+marker `-- ISO-fix register R<n>` at the Lean site. Anything not listed
+here is a BUG-FIX (mirror + tray), whatever a comment used to call it.
+
+| entry | oracle behaviour (site) | ISO clause | 2nd oracle | tray | immaculate pin(s) | Lean code site | ruling |
+|---|---|---|---|---|---|---|---|
+| **R1** | `'\?'` / `"\?"` make `decode_character_constant` FAILWITH (decode.ml has no `\?` arm; `translation.ml:3032` for the string-literal form): uncaught exception, exit 125 | C11 §6.4.4.4#1 (`\?` is a simple escape sequence), #4 (value = `'?'` = 63) | gcc exit 63; `"a\?b"` → bytes `97 63 98 0`; `ptr_string_literals.c` output = gcc byte-for-byte | 10 (+ string-literal addendum, noodle E2) | `g5-decode-question` ORACLE_CRASH / L=Specified(63); `zd-e2-ptr-string-literals` ORACLE_CRASH / L=Specified(0) + the gcc byte string | `CerbDecode.lean` `| "\\?" => 63` (marker `-- ISO-fix register R1`) | **ADMITTED** [USER 2026-09-03] |
+| **R2** | `%c`-stored char round-trips through `Decode.escaped_char` (= `Char.escaped`, decimal `\ddd`, decode.ml:221-222) then the OCTAL reader (decode.ml:184-197) inside `formatted.lem:769-771` `store_chars_in_array`: 127 is stored as 87 | C11 §7.21.6.1#8 (`%c`: the `int` argument converted to `unsigned char` is written) | gcc 127 | 11 | `g5-escape-roundtrip` DIFF / L=Specified(127) | `CerbDecode.escaped_char` (hex `\xNN`, exact round-trip; marker `-- ISO-fix register R2`) | **ADMITTED** [USER 2026-09-03] |
+| **R3** | `memcmp` with a huge size: uncaught `Z.Overflow` at `impl_mem.ml:2660` `Z.to_int` — a host-int conversion raised BEFORE the semantic path | (ii′) shape: no ISO answer for a UB program; the semantics' own checked per-byte load yields `UB_CERB002a` | pending: the oracle itself with tray 13's Z-native remedy on a scratch build ((ii′)(3), produced by Z4) | 13 | `s4b-memcmp-hugesize` ORACLE_CRASH / L=UB_CERB002a (stays as recorded) | `CerbMem.lean` memcmp (line-mirror minus the conversion; marker added when (3) lands) | **ADMITTED CONDITIONAL** on Z4's (ii′)(3) evidence [USER 2026-09-03] |
+
+R4 (`dynamic_addrs`, tray 19) is DEFERRED [USER 2026-09-03] — mirrored,
+not admitted (charter §2.6). Every other former "deliberate divergence" /
+"never fix-to-match" label in this repository was revoked on 2026-09-03
+and either mirrored (the Z1 slice: `docs/2026-09-03_zero-discrepancy-Z1-record.md`)
+or is a census row awaiting its slice (charter §2).
+
 What remains on the trust boundary: the OCaml oracle itself (and
 upstream's correctness), the C parser (shared, upstream), the Lem
 compiler and its Lean backend (attacked structurally by the shared

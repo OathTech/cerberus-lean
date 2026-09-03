@@ -81,13 +81,18 @@ private def decode_character_constant_aux (str : String) : Int :=
   | "\\\\" => 92
   | "\\'" => 39
   | "\\\"" => 34
-  -- '\?' — STD §6.4.4.4#4 lists \? among the simple-escape-sequences
-  -- (value '?' = 63; gcc agrees). DELIBERATE DIVERGENCE from upstream:
-  -- decode.ml has NO "\\?" arm, so its catch-all routes '?' into the
-  -- octal validator and FAILWITHS on legal C — an upstream bug
-  -- (three-way classified oracle-wrong at arc-14 S0; upstream-tray
-  -- candidate, see tests/immaculate g5-decode-question and the arc-14
-  -- records). We decode it correctly rather than mirror a crash.
+  -- ISO-fix register R1 (VALIDATION.md "ISO-fix register", [USER
+  -- 2026-09-03]): '\?' — ISO C11 §6.4.4.4#1 lists \? among the simple
+  -- escape sequences, #4 gives the value of '?' = 63; gcc agrees (exit 63;
+  -- "a\?b" = 97 63 98 0). The oracle's decode.ml has NO "\\?" arm, so its
+  -- catch-all routes '?' into the octal validator and FAILWITHS on legal C
+  -- (uncaught exception, exit 125) — upstream tray 10 (+ the string-
+  -- literal form, noodle E2). Pinned Lean-right/oracle-wrong in
+  -- tests/immaculate: g5-decode-question, zd-e2-ptr-string-literals
+  -- (ORACLE_CRASH pairs; they flip to MATCH and the entry RETIRES when
+  -- upstream fixes tray 10). Under the zero-discrepancy rule this is the
+  -- ONLY licence for a Lean≠oracle answer: the register entry, not a
+  -- "deliberate divergence" label.
   | "\\?" => 63
   | _ =>
     if str.length == 1 then
@@ -137,8 +142,9 @@ def decode_character_constant (str : String) : Int :=
     store_chars_in_array, which round-trips every printf-stored char
     through `decode_character_constant (escaped_char c)`.
 
-    DELIBERATE DIVERGENCE from upstream (arc-14 S1 F2, sem:S12; the old
-    comment MIScited this as "= Char.escaped in OCaml"): upstream's
+    DIVERGENCE from upstream, licensed by the ISO-fix register (below;
+    arc-14 S1 F2, sem:S12; the old comment MIScited this as "= Char.escaped
+    in OCaml"): upstream's
     escaped_char IS `Char.escaped` (decode.ml:221-222), which renders
     non-printables as DECIMAL "\ddd" — and decode's octal reader then
     reads that back as OCTAL, silently corrupting the round-trip for
@@ -147,9 +153,17 @@ def decode_character_constant (str : String) : Int :=
     `snprintf(buf, 8, "%c", 127); return buf[0];` returns 87 on the
     oracle (Char.escaped 127 = "\127" → 0o127 = 87) but 127 on BOTH gcc
     and this backend (hex \xNN round-trips exactly).
-    Lean-right/oracle-wrong — upstream-tray candidate (arc-14 records);
-    never "fix" this to match the oracle. -/
+    Lean-right/oracle-wrong — upstream tray 11.
+    ISO-fix register R2 (VALIDATION.md "ISO-fix register", [USER 2026-09-03]):
+    this is THE Lean-side round-trip site — `escaped_char` renders
+    non-printables as hex `\xNN`, which `decode_character_constant` reads
+    back exactly, so `%c` of 127 stores 127 (ISO C11 §7.21.6.1#8: the int
+    argument converted to unsigned char is written unchanged); the oracle
+    stores 87. Pinned Lean-right/oracle-wrong in tests/immaculate
+    g5-escape-roundtrip (DIFF; flips to MATCH and the entry RETIRES when
+    upstream fixes tray 11). -/
 def escaped_char (c : Char) : String :=
+  -- ISO-fix register R2
   match c with
   | '\n' => "\\n"
   | '\t' => "\\t"

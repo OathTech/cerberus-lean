@@ -34,10 +34,15 @@
 #   G1/G2/G3/G4 rows and 'ab' -> MATCH (fixed in S1 F1/F2).
 #   g5-decode-question -> ORACLE_CRASH with L pinned Specified(63):
 #     '\?' is legal C11 (= 63, gcc agrees); the ORACLE failwiths — oracle-wrong,
-#     upstream-tray #10. Never fix-to-match.
+#     upstream-tray #10. ISO-fix register R1 (VALIDATION.md; code marker in
+#     CerbDecode.lean) — the pin RETIRES the entry when upstream fixes it.
 #   g5-escape-roundtrip -> DIFF, Lean-right (127 vs oracle 87): Char.escaped
 #     decimal read back through the octal decoder corrupts the printf %c
-#     round-trip upstream — oracle-wrong, upstream-tray #11. Never fix-to-match.
+#     round-trip upstream — oracle-wrong, upstream-tray #11. ISO-fix register R2
+#     (VALIDATION.md; code marker CerbDecode.escaped_char) — retires likewise.
+#   s4b-memcmp-hugesize -> ORACLE_CRASH with L pinned UB_CERB002a: ISO-fix
+#     register R3, ADMITTED CONDITIONAL (pending Z4's scratch-oracle evidence).
+#   zd-e2-ptr-string-literals -> ORACLE_CRASH (the string-literal form of R1).
 #   g6-hash-collision -> TRIPWIRE (CoreParser fail-stops on hash collisions, F3).
 #
 # zero-discrepancy Z1 pins (2026-09-03; charter docs/2026-09-03_zero-discrepancy-design.md

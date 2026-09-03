@@ -18,9 +18,13 @@
 # records the post-fix shape — MATCH on the fixed rows, plus the
 # documented-deliberate rows that are NOT MATCH by design:
 #   g5-decode-question   ORACLE_CRASH, Lean pinned at 63 ('\?' is legal
-#                        C11; the ORACLE is wrong — upstream-tray #10)
+#                        C11; the ORACLE is wrong — upstream-tray #10;
+#                        ISO-fix register R1, VALIDATION.md)
 #   g5-escape-roundtrip  DIFF, Lean-right 127 vs oracle 87 (Char.escaped
-#                        decimal read back as octal — upstream-tray #11)
+#                        decimal read back as octal — upstream-tray #11;
+#                        ISO-fix register R2)
+#   s4b-memcmp-hugesize  ORACLE_CRASH, Lean UB_CERB002a (tray #13; ISO-fix
+#                        register R3, admitted conditional on Z4)
 #   g6-hash-collision    TRIPWIRE (parseFile fail-stops on constructed
 #                        hash collisions)
 # The script is fail-closed BOTH directions against that baseline: any
@@ -269,10 +273,15 @@ if $RECORD_BASELINE; then
         echo "#   G1/G2/G3/G4 rows and 'ab' -> MATCH (fixed in S1 F1/F2)."
         echo "#   g5-decode-question -> ORACLE_CRASH with L pinned Specified(63):"
         echo "#     '\\?' is legal C11 (= 63, gcc agrees); the ORACLE failwiths — oracle-wrong,"
-        echo "#     upstream-tray #10. Never fix-to-match."
+        echo "#     upstream-tray #10. ISO-fix register R1 (VALIDATION.md; code marker in"
+        echo "#     CerbDecode.lean) — the pin RETIRES the entry when upstream fixes it."
         echo "#   g5-escape-roundtrip -> DIFF, Lean-right (127 vs oracle 87): Char.escaped"
         echo "#     decimal read back through the octal decoder corrupts the printf %c"
-        echo "#     round-trip upstream — oracle-wrong, upstream-tray #11. Never fix-to-match."
+        echo "#     round-trip upstream — oracle-wrong, upstream-tray #11. ISO-fix register R2"
+        echo "#     (VALIDATION.md; code marker CerbDecode.escaped_char) — retires likewise."
+        echo "#   s4b-memcmp-hugesize -> ORACLE_CRASH with L pinned UB_CERB002a: ISO-fix"
+        echo "#     register R3, ADMITTED CONDITIONAL (pending Z4's scratch-oracle evidence)."
+        echo "#   zd-e2-ptr-string-literals -> ORACLE_CRASH (the string-literal form of R1)."
         echo "#   g6-hash-collision -> TRIPWIRE (CoreParser fail-stops on hash collisions, F3)."
         echo "#"
         echo "# zero-discrepancy Z1 pins (2026-09-03; charter docs/2026-09-03_zero-discrepancy-design.md"
@@ -310,7 +319,7 @@ for name in "${!BASE[@]}"; do
 done
 
 if [[ $rc -eq 0 ]]; then
-    echo "OK: lane matches the committed post-S1 baseline (mostly MATCH; the intended non-MATCH rows: g5-decode-question ORACLE_CRASH/L=63 and g5-escape-roundtrip DIFF/L=127 are oracle-wrong — upstream-tray #10/#11 — and g6 is TRIPWIRE)."
+    echo "OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip DIFF, R3 s4b-memcmp-hugesize ORACLE_CRASH — VALIDATION.md 'ISO-fix register' — and the in-Lean probes g6 TRIPWIRE / illtyped-store KILL)."
 else
     echo "" >&2
     echo "A deviation means either a regression OR a fix flipped a row." >&2

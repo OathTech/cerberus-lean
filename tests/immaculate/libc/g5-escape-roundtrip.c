@@ -5,7 +5,9 @@
 // renders 127 as decimal "\127", decode's octal reader reads it back
 // as 0o127 = 87 — silent corruption, upstream-tray candidate);
 // Lean = 127 (hex \xNN round-trip is exact).
-// EXPECTED: DIFF, Lean-right. Never fix-to-match.
+// EXPECTED: DIFF, Lean-right — ISO-fix register R2 (VALIDATION.md; code site
+// CerbDecode.escaped_char, marker `-- ISO-fix register R2`; upstream tray 11).
+// The row flips to MATCH and the entry RETIRES when upstream fixes tray 11.
 #include <stdio.h>
 int main(void) {
   char buf[8];
