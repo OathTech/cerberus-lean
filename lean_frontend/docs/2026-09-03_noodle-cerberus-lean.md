@@ -414,3 +414,180 @@ string-literal base. ISO C11 6.6p9. Addendum candidate for tray 09.
 | Library, libc mode (`lib/`) | 24 | 22/22 completing AGREE; 1 both-crash; 1 both-timeout | L3, L4, L5, L6, O3, O4 |
 | Elaboration (`elab/`) | 18 | 12/12 accepted AGREE; 6 both-reject | E3, E4, E5, (E6, E7 controls) |
 | Verdict surface (`out/`) | 4 | 4/4 AGREE | — |
+
+## 4. Seam read — `CerbMem.lean` vs `impl_mem.ml` (delegated line-by-line audit, then probe-confirmed)
+
+An Explore agent read both files fully for load/store/alloc/kill/
+memcpy/memcmp/realloc/ptr-comparison/ptrfromint/intfromptr/shift/
+copy_alloc_id and reported 18 candidate divergences (its verbatim list
+is condensed here; its verified-matching list covered `abst`/`repr`
+provenance handling, load/store arm order, eq/lt/diff_ptrval, memcpy/
+memcmp/realloc, varargs, max/min_ival, op_ival). I probed every
+C-observable claim; five reproduce and are Lean-side (un-forked
+upstream == fork oracle on all five). `tests/noodle-probes/seam/`.
+
+### D4 — DISCREPANCY (VALUE-LEVEL): `__cerbvar_copy_alloc_id` returns the wrong pointer
+
+    seam_copy_alloc_id.c:  int x = 1, y = 2; int *p = __cerbvar_copy_alloc_id((uintptr_t)&y, &x); return *p;
+    oracle (fork and upstream): Defined {value: "Specified(2)", ...}
+    Lean:                        Defined {value: "Specified(1)", ...}
+
+`impl_mem.ml:2766-2770` runs `intfromptr` on the pointer only for its
+range check and returns `ptrfromint ival` — address AND provenance
+come from the integer. `CerbMem.lean:2547` `def copyAllocId (_ :
+IntegerValue) (pv : PointerValue) := memReturn pv` returns the pointer
+unchanged (no comment, under a bare `Misc` header). This is the
+RefinedC builtin (`builtins.lem:470`) — i.e. the one the successor
+verifier (`refined-cerberus`) is most likely to lean on. Fix (S):
+mirror the two-call OCaml; also the UB024 failure path.
+
+### D5 — DISCREPANCY (verdict class): device-range integer→pointer casts
+
+    seam_device_range_load.c:  int *p = (int*)0xABC; int y = *p; return 3;
+    oracle: Defined {value: "Specified(3)", ...}        Lean: Undefined {ub: "UB043_indirection_invalid_value", ...}
+
+`impl_mem.ml:620-624` hard-codes `device_ranges = [(0x40000000,
+0x40000004); (0xABC, 0xAC0)]`; `ptrfromint` (`:2164-2167`) yields
+`Prov_device`, and load/store (`:1611-1617`, `:1718-1724`) accept via
+`is_within_device`. `CerbMem.lean:2275-2283` has no device arm, and
+its comments at `:1940-1942`, `:1985-1988`, `:2048-2050` assert "the
+device_ranges list is empty in this pipeline" — false as written.
+Fix (S): port the device arms (or, if the ranges are judged an upstream
+artefact, declare the divergence in-code with the correct fact).
+
+### D6 — DISCREPANCY (verdict class): `free` of provenance-less / device pointers
+
+    seam_free_no_provenance.c: free((int*)0x1234)
+    oracle: Error {msg: "MerrOther "attempted to kill with a pointer lacking a provenance""}
+    Lean:   Undefined {ub: "UB179a_non_matching_allocation_free", stderr: "", loc: "unknown location"}
+    seam_free_device_pointer.c: free((int*)0xABC)
+    oracle: Defined {value: "Specified(3)", ...}     Lean: Undefined {ub: "UB179a_non_matching_allocation_free", ...}
+
+`impl_mem.ml:1470-1476`: function pointer → `MerrOther`; `Prov_none`
+concrete → `MerrOther "...lacking a provenance"`; `Prov_device` →
+`return ()`. `CerbMem.lean:1904` and the catch-all `:1920` map all of
+these to `Free_non_matching` (UB179a). `MerrOther` is not UB-mapped
+(`mem_common.lem`), so the oracle's verdict is an Error line. Fix (S):
+mirror the three arms. (The `loc: "unknown location"` is D1 again —
+the `free` proxy lives in std.core.)
+
+### D7 — DISCREPANCY (verdict class): `free(p + 1)` on a live block
+
+    seam_free_interior_pointer.c: char *p = malloc(8); free(p + 1);
+    oracle: Undefined {ub: "UB179a_non_matching_allocation_free", stderr: "", loc: "<2:39--2:50>"}
+    Lean:   Error {msg: "MerrUndefinedFree Free_out_of_bound"}
+
+`impl_mem.ml:1515-1549` tests `is_dynamic addr` FIRST (→
+`Free_non_matching` → UB179a), then dead, then lookup, then `addr =
+alloc.base`. `CerbMem.lean:1905-1914` does dead → lookup → `addr !=
+alloc.base → Free_out_of_bound` (which `mem_common.lem:283-284` maps
+to a non-UB Other error) → only then the dynamic test, and tests
+`dynamicAddrs.contains alloc.base` where the OCaml tests the pointer's
+`addr`. Fix (S): reorder to the OCaml's check sequence.
+
+### Seam candidates NOT observable from C today (recorded for the mirror doctrine; each is an undeclared divergence in the Lean text)
+
+- `ptrfromint` maps `n = 0` to NULL even with a provenance (`CerbMem.lean:2282` vs `impl_mem.ml:2163-2173`) — unobservable because P2 strips provenance on every arithmetic path before the cast (probe S2: both `1`).
+- `killM`: dead-allocation arm ignores `isDynamic` (OCaml `failwith`s for static kills); missing allocation → UB179a where OCaml → UB009 via `get_allocation` (`:1906-1909` vs `:1527-1534`, `:669-675`); non-dynamic kill of NULL fails where OCaml succeeds (`:1901-1903` vs `:1465-1469`).
+- `allocateObject`/`allocateRegion` clamp size/align to ≥ 1 (`:1849-1850`, `:1877` vs `:1290`, `:1247-1258`) — `int a[0]` is rejected by the front end (probe S8), so unreachable; `req_addr_opt` ignored where OCaml `failwith`s (`:1845` vs `:1291-1297`); `allocateRegion` stores the caller's `pref` where OCaml hard-codes `PrefMalloc` (`:1884` vs `:1428-1429`).
+- `memValueToBytes` integer arm wraps silently where `bytes_of_int` asserts (`:591-602`/`:504-510` vs `:1096-1113`) — `conv_int` precedes every store.
+- `effArrayShiftPtrval` delegates to the pure shift (`:2303-2304` vs `:2244-2356`): no null→UB046 arm (Lean panics `:1506-1507`), void-element GNU case differs, union-member tag kept where OCaml drops it — unreachable (`PtrArrayShift` is emitted only under strict/PNVI/CHERI, `translation.lem:2112-2119`).
+- `reconstructValue`: zero-sized-element array short-circuit (`:951` vs `:986-994`); unspecified pointer ctype keeps pointee qualifiers (`:931` vs `:1056-1057`).
+- `reallocM`'s `get_allocation` failure passes no loc though its own comment quotes `other "Concrete.realloc"` (`:2402-2403` vs `:2683`).
+- `isWellAlignedPtrval` splits one OCaml message into two and adds a `FunctionNoParams` arm (`:2225-2228` vs `:2067-2070`) — message text only.
+- CHERI stubs return values where OCaml `assert false` (`:1759-1764`, `:2548` vs `:2175-2191`).
+- Stale cites (low): `:2425` (→ `impl_mem.ml:1704-1710`, `1776-1787`), `:563` (→ `:1202`), `:2175` (→ `1954-2063`), `:2389` (→ `:2679`), `:2344` (→ `:2664-2666`), `:2311` (→ `2635-2645`), and the false "device_ranges is empty" statement at `:1940-1942`.
+
+## 5. Shards 6-7 — misc corners (`misc/`) and multi-TU (`mtu/`)
+
+13 misc probes + 3 two-TU probes: all agree oracle==Lean (see the two
+READMEs). Notables: O5 — `scanf` is unusable in libc mode (`vscanf`
+unknown procedure); O6 — `(x & 0) + 3` with indeterminate `x` is
+`UB036_exceptional_condition` on both engines (an unspecified operand
+of signed `+` is classified as an exceptional condition rather than
+producing an Unspecified value; gcc 3) — oracle-side classification
+oddity, worth an upstream question.
+
+## 6. Final ranking, counts and integration
+
+### Counts (derived, this record)
+
+- Probes committed: 141 C files in 10 directories (`int` 19, `float` 11,
+  `ptr` 19, `mem` 11, `ctl` 15, `lib` 24, `elab` 18, `out` 4, `misc` 13,
+  `seam` 5, `mtu` 3×2 files) + ~90 scratch bisection probes (not
+  committed; the record quotes them where load-bearing).
+- DISCREPANCY (Lean != oracle): **7** — D4 (value-level), D5, D6, D7
+  (verdict class), D1, D2 (diagnostic `loc` field). [D3 is documented
+  and excluded.]
+- ORACLE-SUSPECT (both engines != ISO/gcc, upstream-confirmed): **14**
+  — U1, P1, P2, L1, L2, L3, L4, L5, L6, E3, E4, E5, F1, (F2 excluded as
+  tray-15 class).
+- ODDITY: O1, O2, O3, O4, O5, O6, E1, E6, E7.
+- EXCLUDED-KNOWN: F2 (tray 15 class), E2 (tray 10 string-literal form
+  — addendum), R1 (RC-3 new trigger), D3 (declared).
+
+### Ranked
+
+1. **D4** `__cerbvar_copy_alloc_id` returns the input pointer (value
+   divergence; RefinedC builtin) — S.
+2. **U1** `size_t` (and `uint64_t` typedef'd to unsigned long long is
+   fine; `Size_t` the macro type) arithmetic with `int`/`char`/`short`/
+   left-`unsigned` computes at 32 bits, incl. comparisons — upstream
+   `ailTypesAux.lem` rank TODO — S upstream; Lean moves with it.
+3. **P2** provenance lost through any integer arithmetic under PVI
+   (`mk_conv_int`/`mk_wrapI`) — S-M upstream.
+4. **P1** pointer-to-array difference divides by the inner element —
+   S upstream + delete the mirrored strip in `CerbMem.lean:2184-2187`.
+5. **D5/D6/D7** CerbMem `free`/device-pointer verdict classes — S each.
+6. **E4** string literals cannot initialise char-array members/elements
+   (very common idiom; likely a slice of the 766 oracle rejects) — S-M
+   upstream.
+7. **L3/L4** stdio flush and atexit on return from main — S-M upstream;
+   also a harness coverage hole (unflushed `fputs` output invisible).
+8. **L5** `%*d` crash; **L6** `%x` with int argument UB; **E3** `?:` in
+   static initialisers; **E5** `"lit" + 1`; **L1** strncmp n=0; **L2**
+   calloc overflow — S each, upstream.
+9. **D1/D2** UB `loc` field (CoreParser stamps `Loc.unknown`; `memFail
+   MerrIntFromPtr` drops loc) — S each, Lean-side.
+10. **F1** float-as-double / `sizeof(float)=8` — upstream TODO:hack, M.
+
+### INTEGRATION column (summary; per-probe rows are in each directory README)
+
+| Class of probe | Count (derived) | Target lane | Expected class | Gate-worthy? |
+|---|---|---|---|---|
+| 3-way AGREE, deterministic, UB-free, prints or returns | ~78 | `tests/minimal`-style exec lane (`test_exec.sh`) for nolibc; `tests/libc_exec` for libc; return-value-only ones also into the gcc second-oracle corpus | MATCH / AGREE | yes |
+| oracle==Lean agreed UB code | 12 | exec lane | UB_MATCH | yes |
+| oracle==Lean, differs from gcc (U1, P1, F1, L1, L3, L4, L6 witnesses, long-double/max_align_t/rand impl observers) | ~20 | exec/libc_exec MATCH; gcc lane as pinned TRIAGED pairs (new classes U1/P1/F1/L*) that flip to AGREE on the upstream fix | MATCH + pinned DISAGREE | MATCH side yes; gcc side pin |
+| Lean != oracle (D4-D7; D1/D2 loc reproducers) | 5 (+2) | `tests/immaculate/` DIFF rows with the Lean pin (D4-D7); D1/D2 need a loc-aware harness — reporting-only until then | DIFF → MATCH on fix | pinned pair |
+| both-reject / both-crash (E1-E7, F2, L5, `%*d`, strtok/vscanf) | 12 | immaculate crash pairs (L5, F2) / reporting-only both-reject controls | CRASH-pair / SKIP | pins only |
+| both-slow in exhaustive mode (strtol) | 1 | `--first` reporting lane | — | no |
+| Lean OOM (RC-3 witnesses) | 2 | mem-scale probe family | LEAN_KILL | no |
+
+### What I did NOT get to
+
+- `--call` lane (CerbCall per-function differentials), `--args`/argv
+  corners beyond the existing parity probe, `CerbPP` (`--pp-core`)
+  round-trip corners, CerbND ordering beyond count/set checks.
+- Float printf (`%f/%e/%g`) — oracle Invalid_format (known ceiling);
+  FLT_EVAL_METHOD questions are moot under F1.
+- Realloc/memmove overlap variants beyond the parity probes; `aligned_
+  alloc`; `qsort` with non-transitive comparators (UB); errno beyond
+  strtol (strtol exhaustive-mode explosion blocks the lane shape).
+- A second seam pass over `CerbCall`/`CerbND`/`CerbPP` at the depth
+  given to `CerbMem` (the CerbMem pass alone yielded 4 of the 7
+  discrepancies — the same method on the other seams is the obvious
+  next hunt).
+- Tray drafting for the 14 oracle-suspects (each has a minimized
+  reproducer and file:line here; drafting is the tray's own slice).
+
+## 7. Provenance
+
+[USER 2026-09-03] the charge and the suite-ready addendum (top).
+[AGENT] everything else: probe design, minimization, classification,
+localization, pricing, the delegated seam read (an Explore agent, whose
+18 items I re-verified by probe where C-observable and otherwise
+report as "not observable"), and the upstream attributions (deps/
+cerberus-upstream binary @ b9aeedcb4, same libc runtime). Quoted
+engine lines are verbatim from `results.log` files or the scratch
+runs named inline; tallies are derived. No product code, gate,
+baseline or non-record doc was modified; nothing was pushed.
