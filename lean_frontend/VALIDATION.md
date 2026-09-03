@@ -265,7 +265,20 @@ never absorbed as a skip; neither is a memory-model limit):
   `test_immaculate.sh`, `test_libxml2_uri.sh`, `test_bytes.sh`) report
   DIFF/FAIL. A 10^8 budget is unreachable inside any gate lane's
   timeout (15-30 s ⇒ ≤ 7×10^6 fuel per invocation); it is exercised
-  only by `measure.sh` (600 s) and unbounded single probes. Record:
+  only by `measure.sh` (600 s) and unbounded single probes. Why a
+  fuel row is an accepted Lean-vs-oracle discrepancy at all — [USER
+  2026-09-03]: "fuel is a reasonable exception because we could always
+  just run the semantics with more fuel." That ruling's frame: ALL
+  Lean-vs-oracle execution discrepancies are bugs, with exactly two
+  accepted exception classes — (a) failure-path message text may
+  differ (failure-vs-success classification must match), (b) resource
+  limits: Lean must not fail where the oracle succeeds. Fuel
+  exhaustion is accepted under (b) with the rationale that the bound
+  is a PARAMETER of the port, not a semantic limit: for any oracle-
+  terminating run there is a fuel at which Lean agrees. This is the
+  design rationale, not a shipped theorem — fuel monotonicity for the
+  driver workers is NOT provided (design note §1.5), and a FUEL row
+  is never counted as agreement. Record:
   `docs/2026-09-02_fuel-arc-design.md`.
 - Zero-initialised static aggregates above ~8 × 10^6 ELEMENTS
   (element-count driven: `char g[8000000]` completes, `char g[10000000]`

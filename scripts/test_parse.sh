@@ -4,6 +4,18 @@
 # Usage: ./scripts/test_parse.sh [options] [test_dir_or_file ...]
 #
 # With no arguments, runs tests/minimal/
+#
+# Lean side runs `cerberus-lean --pp-core <json>` (FUEL arc budget commit,
+# 2026-09-03): deserialize + the whole front end (desugar, typing,
+# translation, link) and STOP before execution. Before the budget commit
+# this lane ran the default mode — parse AND execute — with no timeout,
+# and was bounded only by the 10^6 fuel ceiling acting as an implicit
+# timeout (a looping program died of fuel in seconds); at 10^8 an
+# executing lane is unbounded (measured: tests/ci/0025-jump3.c, CERB_SKIP
+# in the exec lane, ran > 4 min before being stopped). Execution was never
+# this lane's purpose; the bar ("no `parse error`") is unchanged. A per-
+# file TIMEOUT (default 60 s, TIMEOUT_SECS) is fail-NOISY: counted as its
+# own class and fatal — never folded into "ok".
 
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 set -euo pipefail
@@ -74,6 +86,8 @@ echo ""
 
 # Counters
 total=0
+lean_timeout=0
+TIMEOUT_SECS="${TIMEOUT_SECS:-60}"   # per-file Lean-side cap (header); fail-noisy
 cerb_ok=0
 cerb_fail=0
 parse_ok=0
@@ -106,10 +120,17 @@ for cfile in "${test_files[@]}"; do
     fi
     cerb_ok=$((cerb_ok + 1))
 
-    # Step 2: Lean deserialize JSON
-    result=$(run_cerberus_lean "$json_file" 2>&1) || true
+    # Step 2: Lean deserialize JSON (+ front end, no execution — header)
+    lean_rc=0
+    result=$(timeout "${TIMEOUT_SECS}s" env LEAN_ABORT_ON_PANIC=1 "$CERBERUS_LEAN_BIN" --pp-core "$json_file" 2>&1) || lean_rc=$?
 
-    if echo "$result" | grep -q "parse error"; then
+    if [[ $lean_rc -eq 124 ]]; then
+        lean_timeout=$((lean_timeout + 1))
+        echo "$name: TIMEOUT (>${TIMEOUT_SECS}s, --pp-core)" >> "$ERROR_LOG"
+        if $VERBOSE; then
+            echo -e "${RED}TIMEOUT${NC} $name (>${TIMEOUT_SECS}s)"
+        fi
+    elif echo "$result" | grep -q "parse error"; then
         parse_fail=$((parse_fail + 1))
         error_msg=$(echo "$result" | grep "parse error" | head -1)
         echo "$name: $error_msg" >> "$ERROR_LOG"
@@ -138,7 +159,7 @@ echo "Results ($elapsed seconds)"
 echo "================================"
 echo "Total:          $total"
 echo "Cerberus parse: $cerb_ok ok, $cerb_fail failed"
-echo "Lean parse:     $parse_ok ok, $parse_fail failed"
+echo "Lean parse:     $parse_ok ok, $parse_fail failed, $lean_timeout timeout (>${TIMEOUT_SECS}s; fatal)"
 
 if [[ $cerb_ok -gt 0 ]]; then
     rate=$((parse_ok * 100 / cerb_ok))
@@ -154,8 +175,8 @@ if [[ -s "$ERROR_LOG" ]]; then
 fi
 
 echo ""
-if [[ $parse_fail -gt 0 ]]; then
-    echo -e "${RED}FAILED: $parse_fail parse error(s)${NC}"
+if [[ $parse_fail -gt 0 || $lean_timeout -gt 0 ]]; then
+    echo -e "${RED}FAILED: $parse_fail parse error(s), $lean_timeout timeout(s)${NC}"
     echo "Error log: $ERROR_LOG"
     exit 1
 else

@@ -67,10 +67,16 @@ for cfile in "${FILES[@]}"; do
         echo "---"
     fi
 
-    # Step 2: Lean reads JSON → Cabs
-    result=$(run_cerberus_lean "$json_file" 2>&1) || true
+    # Step 2: Lean reads JSON → Cabs (+ front end, no execution: --pp-core
+    # — the FUEL arc budget commit made an executing no-timeout smoke
+    # unbounded; see test_parse.sh's header). A timeout is a FAIL.
+    lean_rc=0
+    result=$(timeout "${TIMEOUT_SECS:-60}s" env LEAN_ABORT_ON_PANIC=1 "$CERBERUS_LEAN_BIN" --pp-core "$json_file" 2>&1) || lean_rc=$?
 
-    if echo "$result" | grep -q "parse error"; then
+    if [[ $lean_rc -eq 124 ]]; then
+        echo -e "${RED}FAIL${NC} $name: lean TIMEOUT (>${TIMEOUT_SECS:-60}s)"
+        fail=$((fail + 1))
+    elif echo "$result" | grep -q "parse error"; then
         echo -e "${RED}FAIL${NC} $name: lean parse error"
         echo "  $result"
         fail=$((fail + 1))
