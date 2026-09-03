@@ -61,8 +61,10 @@
   | fs_lseek fd ≥ 3, SEEK_SET/CUR/END, result in    | new offset                               | SERVED        |
   |          [0, size]                              |                                          |               |
   | fs_lseek negative result                        | EINVAL                                   | SERVED        |
-  | fs_lseek result past EOF / invalid whence       | offset past EOF (later read → 0 or the   | REFUSED (was: accepted / offset kept) |
-  |                                                 | hole) / EINVAL                           |               |
+  | fs_lseek invalid whence (not 0/1/2)            | EINVAL (fs_spec.lem:5084, posix/lseek.md | SERVED (Z2-F-01; was: offset kept, then REFUSED after Z1) |
+  |                                                 | EINVAL:1), before any offset work         |               |
+  | fs_lseek result past EOF                        | offset past EOF (later read → 0 or the   | REFUSED (was: accepted) |
+  |                                                 | hole)                                    |               |
   | fs_lseek, fs_close on fd 0,1,2                  | performed on the std fd (open in the     | REFUSED (was: EBADF) |
   |                                                 | initial state, fs_spec.lem:5690-5696)    |               |
   | fs_umask                                        | previous mask; new mask applies to modes | SERVED (the mode it would affect is only observable through stat/open, refused/served as above) |
@@ -458,23 +460,28 @@ def fs_lseek (st : FsState) (fd offset whence : Int) : FsState × (Sum FsError N
     panic! (refusal s!"lseek on fd {fd}" "fds 0,1,2 are SibylFS's std fds; this model has no entry for them and answered EBADF" moverStdFds)
   else
   match st.fds.find? (fun (f, _) => f == fdOf fd) with
-  | none => (st, .inl .ebadf)   -- EBADF, as SibylFS
+  | none => (st, .inl .ebadf)   -- EBADF, as SibylFS (fs_spec.lem:5075, posix/lseek.md EBADF:1)
   | some (_, entry) =>
+    -- sibylfs fs_spec.lem:5084 `| Nothing -> Error EINVAL (* posix/lseek.md
+    -- EINVAL:1 *)`: an int whence that is not SEEK_SET/SEEK_CUR/SEEK_END
+    -- (0/1/2 — SEEK_DATA/SEEK_HOLE have no int code, :5100) is EINVAL,
+    -- checked right after the fd lookup and BEFORE any size/offset work.
+    -- Zero-discrepancy Z2-F-01: this arm was `| _ => entry.offset` (success
+    -- with the current offset) at the Z2 audit, then a loud refusal after
+    -- Z1's Z-27 pass; now the SibylFS answer
+    -- (pin tests/immaculate/libc/zd-z2f01-lseek-whence.c: oracle `Specified(9)`).
+    if whence != 0 && whence != 1 && whence != 2 then (st, .inl (.other "EINVAL"))
+    else
     match lookupFile st entry.path with
     | none =>
       panic! (refusal s!"lseek on fd {fd} whose file '{entry.path}' is gone" "the model's file table lost the fd's file" moverOffsets)
     | some contents =>
       let size : Int := contents.length
-      let newOffset : Option Int := match whence with
-        | 0 => some offset
-        | 1 => some ((entry.offset : Int) + offset)
-        | 2 => some (size + offset)
-        | _ => none
-      match newOffset with
-      | none =>
-        panic! (refusal s!"lseek on fd {fd} with whence {whence}" "SibylFS answers EINVAL for an invalid whence; this model silently kept the offset" moverOffsets)
-      | some newOffset =>
-        if newOffset < 0 then (st, .inl (.other "EINVAL"))   -- EINVAL, as SibylFS
+      let newOffset : Int := match whence with
+        | 0 => offset                              -- SEEK_SET
+        | 1 => (entry.offset : Int) + offset       -- SEEK_CUR
+        | _ => size + offset                       -- SEEK_END (whence = 2, the only value left)
+      if newOffset < 0 then (st, .inl (.other "EINVAL"))   -- EINVAL, as SibylFS (fs_spec.lem:5119, EINVAL:2)
         else if newOffset > size then
           panic! (refusal s!"lseek on fd {fd} to offset {newOffset} past the end of the {size}-byte file '{entry.path}'"
             "POSIX allows it (a later read answers 0 bytes, a later write creates a hole); this model would then refuse or serve EOF inconsistently" moverOffsets)

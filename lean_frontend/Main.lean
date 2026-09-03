@@ -335,7 +335,7 @@ def selfTest : IO Unit := do
   let minInt := CerbMem.minIval (Signed Int_)
   let (.IV _ minN) := minInt
   IO.println s!"  min(signed int) = {minN}"
-  let bytes := CerbMem.intToBytes 42 4
+  let bytes := CerbMem.intToBytes true 42 4
   let byteStrs := bytes.map fun b => match b with
     | some v => toString v.toNat | none => "?"
   IO.println s!"  intToBytes(42, 4) = {byteStrs}"

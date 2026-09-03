@@ -139,6 +139,11 @@ structure MemState where
   lastUsedUnionMembers : List (Int × identifier) := []
   deadAllocations : List StorageInstanceId := []
   dynamicAddrs : List Address := []
+  -- last_used — impl_mem.ml:492; written by allocator (:1260), kill
+  -- (:1541), load (:1567) and store (:1687), mirrored at each (zero-
+  -- discrepancy Z2-M-16 / Z1 audit N2: it was never written here). Its
+  -- only READER is the UI state dump `serialise_mem_state` (:2997) —
+  -- no batch-path consumer.
   lastUsed : Option StorageInstanceId := none
   requested : List (Address × Int) := []
   deriving Inhabited
@@ -274,7 +279,21 @@ def combineProv : Provenance → Provenance → Provenance
 
     Integer/float leaf sizes come from CerberusImpl (the DefaultImpl port),
     exactly like OCaml routes them through `(Ocaml_implementation.get ())`
-    — no local size constants are kept here. -/
+    — no local size constants are kept here.
+
+    DECLARED (zero-discrepancy Z2-M-11): the layout family computes on
+    Nat where the OCaml computes on Z — `al_n.toNat` (memberAlign's
+    _Alignas arm, impl_mem.ml:118 `al_n`; :247/:268 `Z.to_int al_n` would
+    raise Overflow on a huge _Alignas), `lastOffset % align` /
+    `maxOffset % align` / `maxSize % maxAlign` (:123/:169-171/:189-191
+    `Z.modulus … 0` raises Division_by_zero where Lean's `% 0` is the
+    identity), `n.toNat * sizeof` (:151 `Z.mul n`). Reachability of any
+    difference: an alignment of 0 or a negative array size. Alignments
+    come from alignof (≥ 1 for every complete type) or from a front-end-
+    validated `_Alignas` (≥ 1 or a type); array sizes are front-end
+    non-negative; the member-less struct that would make an alignment 0
+    is UB061 on the shared front end (tests/z2-probes/mem/empty_struct.c:
+    UB061 on fork, upstream and Lean). Unreachable by construction. -/
 
 def targetPtrSize : Nat := 8  -- DefaultImpl.sizeof_pointer/alignof_pointer = Some 8
 
@@ -507,16 +526,40 @@ def alignofCtype (ambient : TagDefs) (cty : ctype) : Nat :=
     DefaultImpl port) — the local isSignedIty duplicate that disagreed on
     Wchar_t/Enum is deleted (survey finding 17). -/
 
-def intToBytes (val_ : Int) (size : Nat) : List (Option UInt8) :=
+/-- bytes_of_int — impl_mem.ml:1096-1113: `size` little-endian bytes of
+    `val_`'s two's complement (`Z.extract i (8*n) 8`, :1110-1112), AFTER
+    the range assert (:1105-1109): `assert false` — preceded by a
+    diagnostic `Printf.printf "failed: bytes_of_int…"` on the TOOL's
+    stdout, not mirrored — unless `min ≤ i ≤ max` for the signedness
+    (`[-2^(nbits-1), 2^(nbits-1)-1]` signed, `[0, 2^nbits-1]` unsigned)
+    and `nbits ≤ 128`. Zero-discrepancy Z-16: the assert is mirrored as a
+    fail-stop (Q4); this used to wrap silently. Unreachable from C
+    (`conv_int` precedes every store; every repr call site passes the
+    OCaml's own signedness, :1147/:1153/:1183/:1189). -/
+def intToBytes (signed : Bool) (val_ : Int) (size : Nat) : List (Option UInt8) :=
   let totalBits := size * 8
   let modulusVal : Int := 1 <<< totalBits
+  let half : Int := (1 : Int) <<< (totalBits - 1)
+  let lo : Int := if signed then -half else 0
+  let hi : Int := (if signed then half else modulusVal) - 1
+  if !(lo ≤ val_ && val_ ≤ hi) || totalBits > 128 then
+    panic! s!"failed: bytes_of_int({if signed then "signed" else "unsigned"}), i= {val_}, nbits= {totalBits}, [{lo} ... {hi}] (impl_mem.ml:1105-1109 assert false)"
+  else
   let unsigned : Int := if val_ < 0 then modulusVal + val_ else val_
   List.range size |>.map fun i =>
     let shifted := unsigned >>> (i * 8)
     some (shifted.toNat % 256).toUInt8
 
+/-- int_of_bytes — impl_mem.ml:739-760 (called only on fully specified
+    byte lists: abst's `extract_unspec` returns `None` first, :951-958,
+    which is the `none` arm here). OCaml `assert false` on `[]` (:742-743)
+    and on more than 16 bytes (:744-745) — mirrored as fail-stops
+    (zero-discrepancy Z-16, Q4); unreachable by construction (every
+    integer type has 1 ≤ sizeof ≤ 8, and loads are sizeof-sliced). -/
 def bytesToInt (bytes : List AbsByte) (signed : Bool) : Option Int :=
   if bytes.any (·.value.isNone) then none
+  else if bytes.isEmpty then panic! "Concrete.int_of_bytes: [] (impl_mem.ml:742-743 assert false)"
+  else if bytes.length > 16 then panic! "Concrete.int_of_bytes: more than 16 bytes (impl_mem.ml:744-745 assert false)"
   else
     let rec go (bs : List AbsByte) (i : Nat) (acc : Int) : Int :=
       match bs with
@@ -566,7 +609,7 @@ def splitBytesProv (bytes : List AbsByte) : Provenance × Bool :=
     (prov, validPtr)
 
 /-- An unspecified padding byte — OCaml's `padding_byte` / `AbsByte.v
-    Prov_none None` (impl_mem.ml:1200). -/
+    Prov_none None` (impl_mem.ml:1202; zero-discrepancy Z-23 re-cite). -/
 -- NOTE (arc-7 S5a): the byte/allocation helpers below were `private`;
 -- they were made public so equation lemmas could unfold them by name
 -- (the reasoning-era consumers are parked: tag
@@ -603,7 +646,9 @@ def memValueToBytes_lemFuel (lemFuel : Nat) (ambient : TagDefs) (funptrmap : Fun
     let sz := match CerberusImpl.sizeof_ity ity with
       | some n => n
       | none => panic! "the concrete memory model requires a complete implementation sizeof INTEGER"
-    let rawBytes := intToBytes n sz
+    -- :1147 `AilTypesAux.is_signed_ity ity` = `Implementation.is_signed_ity`
+    -- (ailTypesAux.lem:28) = the CerberusImpl mirror
+    let rawBytes := intToBytes (CerberusImpl.is_signed_ity ity) n sz
     (funptrmap, rawBytes.map fun v =>
       { prov := prov, copyOffset := none, value := v })
   | .MVfloating fty fv =>
@@ -613,15 +658,18 @@ def memValueToBytes_lemFuel (lemFuel : Nat) (ambient : TagDefs) (funptrmap : Fun
     let sz := match CerberusImpl.sizeof_fty fty with
       | some n => n
       | none => panic! "the concrete memory model requires a complete implementation sizeof FLOAT"
-    let bits := fv.toBits.toNat
-    let rawBytes := intToBytes bits sz
+    -- :1153-1155 `bytes_of_int true 8 (Z.of_int64 (Int64.bits_of_float fval))`:
+    -- the SIGNED int64 reading of the bit pattern (so the assert's range
+    -- is [-2^63, 2^63-1]); the bytes are the same two's complement
+    let bits : Int := fv.toBits.toInt64.toInt
+    let rawBytes := intToBytes true bits sz
     (funptrmap, rawBytes.map fun v => { prov := .Prov_none, copyOffset := none, value := v })
   | .MVpointer _ (.PV prov base) =>
     -- impl_mem.ml:1157-1192
     match base with
     | .PVnull _ =>
       -- impl_mem.ml:1165-1167: all-zero bytes, Prov_none, NO copy_offset
-      let rawBytes := intToBytes 0 targetPtrSize
+      let rawBytes := intToBytes false 0 targetPtrSize
       (funptrmap, rawBytes.map fun v =>
         { prov := .Prov_none, copyOffset := none, value := v })
     | .PVfunction (Symbol fileDig n optName) =>
@@ -634,12 +682,12 @@ def memValueToBytes_lemFuel (lemFuel : Nat) (ambient : TagDefs) (funptrmap : Fun
           ((n : Int), (fileDig, name)) ::
             funptrmap.filter (fun (a, _) => a != (n : Int))  -- IntMap.add = replace-or-insert
         | _ => funptrmap
-      let rawBytes := intToBytes n targetPtrSize
+      let rawBytes := intToBytes false n targetPtrSize   -- :1183 `bytes_of_int false`
       (funptrmap', rawBytes.map fun v =>
         { prov := prov, copyOffset := none, value := v })
     | .PVconcrete _ addr =>
       -- impl_mem.ml:1186-1191: bytes carry prov AND copy_offset
-      let rawBytes := intToBytes addr targetPtrSize
+      let rawBytes := intToBytes false addr targetPtrSize   -- :1189 "we model address as unsigned"
       (funptrmap, (rawBytes.zip (List.range rawBytes.length)).map fun (v, i) =>
         { prov := prov, copyOffset := some i, value := v })
   | .MVarray elems =>
@@ -714,20 +762,25 @@ def memValueToBytes_append_lemFuel (lemFuel : Nat) (ambient : TagDefs) (funptrma
     let sz := match CerberusImpl.sizeof_ity ity with
       | some n => n
       | none => panic! "the concrete memory model requires a complete implementation sizeof INTEGER"
-    let rawBytes := intToBytes n sz
+    -- :1147 `AilTypesAux.is_signed_ity ity` = `Implementation.is_signed_ity`
+    -- (ailTypesAux.lem:28) = the CerberusImpl mirror
+    let rawBytes := intToBytes (CerberusImpl.is_signed_ity ity) n sz
     (funptrmap, rawBytes.map fun v =>
       { prov := prov, copyOffset := none, value := v })
   | .MVfloating fty fv =>
     let sz := match CerberusImpl.sizeof_fty fty with
       | some n => n
       | none => panic! "the concrete memory model requires a complete implementation sizeof FLOAT"
-    let bits := fv.toBits.toNat
-    let rawBytes := intToBytes bits sz
+    -- :1153-1155 `bytes_of_int true 8 (Z.of_int64 (Int64.bits_of_float fval))`:
+    -- the SIGNED int64 reading of the bit pattern (so the assert's range
+    -- is [-2^63, 2^63-1]); the bytes are the same two's complement
+    let bits : Int := fv.toBits.toInt64.toInt
+    let rawBytes := intToBytes true bits sz
     (funptrmap, rawBytes.map fun v => { prov := .Prov_none, copyOffset := none, value := v })
   | .MVpointer _ (.PV prov base) =>
     match base with
     | .PVnull _ =>
-      let rawBytes := intToBytes 0 targetPtrSize
+      let rawBytes := intToBytes false 0 targetPtrSize
       (funptrmap, rawBytes.map fun v =>
         { prov := .Prov_none, copyOffset := none, value := v })
     | .PVfunction (Symbol fileDig n optName) =>
@@ -736,11 +789,11 @@ def memValueToBytes_append_lemFuel (lemFuel : Nat) (ambient : TagDefs) (funptrma
           ((n : Int), (fileDig, name)) ::
             funptrmap.filter (fun (a, _) => a != (n : Int))
         | _ => funptrmap
-      let rawBytes := intToBytes n targetPtrSize
+      let rawBytes := intToBytes false n targetPtrSize   -- :1183 `bytes_of_int false`
       (funptrmap', rawBytes.map fun v =>
         { prov := prov, copyOffset := none, value := v })
     | .PVconcrete _ addr =>
-      let rawBytes := intToBytes addr targetPtrSize
+      let rawBytes := intToBytes false addr targetPtrSize   -- :1189 "we model address as unsigned"
       (funptrmap, (rawBytes.zip (List.range rawBytes.length)).map fun (v, i) =>
         { prov := prov, copyOffset := some i, value := v })
   | .MVarray elems =>
@@ -934,7 +987,12 @@ def reconstructValue_lemFuel (lemFuel : Nat) (ambient : TagDefs)
         | none => panic! s!"unknown function pointer: {ptrAddr}"
       | _ =>
         .MVpointer pointeeCty (.PV prov (.PVconcrete none ptrAddr.toNat))
-    | none => .MVunspecified ty
+    | none =>
+      -- impl_mem.ml:1056-1057 `MVunspecified (Ctype ([], Pointer (no_qualifiers,
+      -- ref_ty)))`: the pointee QUALIFIERS are dropped (zero-discrepancy
+      -- Z-19: this kept `ty` verbatim; the ctype text is a verdict value
+      -- wherever an unspecified pointer is printed)
+      .MVunspecified (Ctype [] (.Pointer no_qualifiers pointeeCty))
   | Ctype _ (.Array0 elemCty (some n)) =>
     -- impl_mem.ml:986-994; NOTE OCaml's `self elem_ty cs` does NOT
     -- advance ~addr per element — every element sees the array's addr
@@ -952,11 +1010,14 @@ def reconstructValue_lemFuel (lemFuel : Nat) (ambient : TagDefs)
     -- elemSize`), also quadratic; `reconstructValue_lemFuel_eq_indexed`
     -- below is the kernel-checked equality with that reference form
     -- (`reconstructValue_indexed_lemFuel`). Linear in |bytes|.
+    -- Zero-discrepancy Z-18: no zero-sized-element short-circuit — OCaml's
+    -- `aux (Z.to_int n)` (:987-993) builds n elements whatever sizeof
+    -- elem_ty is; `chunksOf 0 n` yields n empty slices, the same shape.
+    -- (A zero-sized element type is anyway rejected by the shared front
+    -- end: tests/z2-probes/mem/empty_struct.c is UB061 on all engines.)
     let nNat := n.toNat
     let elemSize := sizeofCtype ambient elemCty
-    if elemSize == 0 then .MVarray []
-    else
-      .MVarray ((chunksOf elemSize nNat bytes).map fun elemBytes =>
+    .MVarray ((chunksOf elemSize nNat bytes).map fun elemBytes =>
         reconstructValue_lemFuel lemFuel ambient unionmap funptrmap addr elemCty elemBytes)
   | Ctype _ (.Atomic innerCty) =>
     -- impl_mem.ml:1058-1060 (same repr as the non-atomic version)
@@ -1063,17 +1124,20 @@ def reconstructValue_indexed_lemFuel (lemFuel : Nat) (ambient : TagDefs)
         | none => panic! s!"unknown function pointer: {ptrAddr}"
       | _ =>
         .MVpointer pointeeCty (.PV prov (.PVconcrete none ptrAddr.toNat))
-    | none => .MVunspecified ty
+    | none =>
+      -- impl_mem.ml:1056-1057 `MVunspecified (Ctype ([], Pointer (no_qualifiers,
+      -- ref_ty)))`: the pointee QUALIFIERS are dropped (zero-discrepancy
+      -- Z-19: this kept `ty` verbatim; the ctype text is a verdict value
+      -- wherever an unspecified pointer is printed)
+      .MVunspecified (Ctype [] (.Pointer no_qualifiers pointeeCty))
   | Ctype _ (.Array0 elemCty (some n)) =>
     let nNat := n.toNat
     let elemSize := sizeofCtype ambient elemCty
-    if elemSize == 0 then .MVarray []
-    else
-      let elems := List.range nNat |>.map fun i =>
+    let elems := List.range nNat |>.map fun i =>
         let start := i * elemSize
         let elemBytes := bytes.drop start |>.take elemSize
         reconstructValue_indexed_lemFuel lemFuel ambient unionmap funptrmap addr elemCty elemBytes
-      .MVarray elems
+    .MVarray elems
   | Ctype _ (.Atomic innerCty) =>
     reconstructValue_indexed_lemFuel lemFuel ambient unionmap funptrmap addr innerCty bytes
   | Ctype _ .Byte =>
@@ -1263,10 +1327,11 @@ def caseFunsymOpt (st : MemState) (pv : PointerValue) : Option sym :=
 def integerIval (n : Int) : IntegerValue := .IV .Prov_none n
 
 /-- max_ival — impl_mem.ml:2367-2402. Enum is normalized through
-    typeof_enum FIRST (impl_mem.ml:2369-2372; the CerberusImpl stub
-    returns Signed Int_ — the real per-program enum registry is survey
-    finding 18b, deliberately left a stub: nothing in tests/minimal
-    declares an enum whose underlying type differs from int).
+    typeof_enum FIRST (impl_mem.ml:2369-2372; `CerberusImpl.typeof_enum`
+    is the real per-program registry mirror of ocaml_implementation.ml:
+    124-150 — zero-discrepancy Z2-M-14: the "stub returns Signed Int_"
+    statement that stood here was stale; probe
+    tests/z2-probes/mem/enum_conv.c AGREE on all three engines).
     Bool: OCaml uses unsigned_max = 255 (its own "TODO: not sure about
     this (maybe it should be 1 ...)" at impl_mem.ml:2385-2387 — mirrored
     as-is). Char: signed (DefaultImpl char_is_signed = true,
@@ -1314,7 +1379,13 @@ def minIval (ity : integerType) : IntegerValue :=
 def sizeofIval (tagDefs : TagDefs) (ty : ctype) : IntegerValue := integerIval (sizeofCtype tagDefs ty)
 def alignofIval (tagDefs : TagDefs) (ty : ctype) : IntegerValue := integerIval (alignofCtype tagDefs ty)
 
-def concurReadIval (_ : integerType) (_ : sym) : IntegerValue := integerIval 0
+/-- concurRead_ival — impl_mem.ml:2361-2362 `failwith "TODO: concurRead_ival"`,
+    mirrored as a fail-stop with the OCaml text (zero-discrepancy Z2-M-07:
+    this returned `integerIval 0`, a dead fail-OPEN path). Reachability:
+    only through the concurrency mode, which is REFUSED (Z-24/Z-25) and
+    non-functional on the oracle itself. -/
+def concurReadIval (_ : integerType) (_ : sym) : IntegerValue :=
+  panic! "TODO: concurRead_ival"
 
 /-! ### Integer division/remainder helpers
 
@@ -1329,21 +1400,35 @@ def concurReadIval (_ : integerType) (_ : sym) : IntegerValue := integerIval 0
                      flooring): mod_big_int (-7) 2 = 1,
                      mod_big_int (-7) (-2) = 1 (floor would give -1)
     Lean's Int `/`/`%` are ediv/emod — NOT these; use the explicit forms.
-    Zero divisor: zarith raises Division_by_zero where impl_mem.ml has no
-    guard (IntRem_t/IntRem_f, impl_mem.ml:2481-2484); that is unreachable
-    behind Core's division-by-zero UB guards (UB045), and Lean's total
-    tdiv/tmod/emod return their `_ 0 = dividend`/`0` defaults instead —
-    deliberate divergence on an unreachable input, recorded here. -/
+    Zero divisor: zarith raises `Division_by_zero` (z.mli:158-168; the
+    Big_int_Z mod likewise) and impl_mem.ml has NO guard on IntRem_t /
+    IntRem_f (impl_mem.ml:2481-2484) — an UNCAUGHT exception on the oracle
+    (exit 125). Mirrored as a fail-stop carrying the OCaml exception text
+    (zero-discrepancy Z2-M-01, ruling Q4 [USER 2026-09-03]). REACHABLE
+    FROM C: `runtime/libcore/std.core:385` (aligned_alloc_proxy) evaluates
+    `size rem_t align` with no UB045 guard, so `aligned_alloc(0, n)`
+    crashes the oracle (fork AND upstream; tray candidate for Z4) — the
+    text that stood here before ("unreachable behind Core's
+    division-by-zero UB guards") was FALSE; pins
+    tests/immaculate/{libc,nolibc}/zd-z2m01-*. IntDiv keeps the oracle's
+    own explicit zero guard (:2479-2480); diff_ptrval's divisor is
+    sizeof(elem) ≥ 1 for every complete type (:1961-1967). -/
 
-/-- Z.div — truncating quotient (zarith z.mli:155-162). -/
-def integerDiv_t (a b : Int) : Int := Int.tdiv a b
+/-- Z.div — truncating quotient (zarith z.mli:155-162); `Division_by_zero`
+    on a zero divisor (z.mli:161), mirrored as a fail-stop (Z2-M-01). -/
+def integerDiv_t (a b : Int) : Int :=
+  if b == 0 then panic! "Division_by_zero" else Int.tdiv a b
 /-- Z.integerRem_t = Z.rem — truncating remainder, sign of dividend
-    (impl_mem.ml:11, zarith z.mli:164-168). -/
-def integerRem_t (a b : Int) : Int := Int.tmod a b
+    (impl_mem.ml:11, zarith z.mli:164-168); `Division_by_zero` on a zero
+    divisor (z.mli:165), mirrored as a fail-stop (Z2-M-01). -/
+def integerRem_t (a b : Int) : Int :=
+  if b == 0 then panic! "Division_by_zero" else Int.tmod a b
 /-- Z.integerRem_f = Big_int_Z.mod_big_int — euclidean remainder,
     always non-negative (impl_mem.ml:12). Lean's Int.emod is exactly
-    euclidean remainder. -/
-def integerRem_f (a b : Int) : Int := Int.emod a b
+    euclidean remainder; `Division_by_zero` on a zero divisor, mirrored
+    as a fail-stop (Z2-M-01). -/
+def integerRem_f (a b : Int) : Int :=
+  if b == 0 then panic! "Division_by_zero" else Int.emod a b
 
 /-- op_ival — impl_mem.ml:2464-2490 -/
 def opIval (op : integer_operator) (v1 v2 : IntegerValue) : IntegerValue :=
@@ -1369,10 +1454,14 @@ def opIval (op : integer_operator) (v1 v2 : IntegerValue) : IntegerValue :=
     | .IntRem_f => .IV (combineProv prov1 prov2) (integerRem_f n1 n2)  -- impl_mem.ml:2483-2484
     | .IntExp =>
       -- impl_mem.ml:2485-2490: Prov_none (shift elaboration forwards the
-      -- LEFT operand's provenance elsewhere); Z.pow with Z.to_int n2 —
-      -- negative n2 raises in zarith (unreachable: shifts guard
-      -- negative counts upstream); Lean's toNat clamps to 0 instead.
-      .IV Provenance.Prov_none (n1 ^ n2.toNat)
+      -- LEFT operand's provenance elsewhere); `Z.pow n1 (Z.to_int n2)` —
+      -- a negative exponent raises `Invalid_argument` in zarith
+      -- (z.mli:636), mirrored as a fail-stop (zero-discrepancy Z2: the
+      -- `.toNat` clamp that stood here was the fail-open shape).
+      -- Unreachable from C: the shift elaboration guards negative counts
+      -- (UB) before the `^` (std.core shift procs).
+      if n2 < 0 then panic! "Z.pow: exponent must be nonnegative"
+      else .IV Provenance.Prov_none (n1 ^ n2.toNat)
 
 /-- offsetof_ival — impl_mem.ml:2193-2201: offsetsof (WITHOUT
     ignore_flexible — OCaml uses the default there), member found by NAME
@@ -1389,52 +1478,68 @@ def offsetofIval (tagDefs : TagDefs) (tagDefsMap : CerbTags.TagDefsMap) (tag : s
   | some (_, _, off) => integerIval off
   | none => panic! "Concrete.offsetof_ival: invalid memb_ident"
 
-/-! ## Bitwise operations — impl_mem.ml:2497-2511 -/
+/-! ## Bitwise operations — impl_mem.ml:2497-2511: pure two's-complement
+    arithmetic on unbounded Z — `Z.(sub (neg n) (of_int 1))`, `Z.logand`,
+    `Z.logor`, `Z.logxor` — and the integerType argument is IGNORED
+    (`_`). Lean's `Int.not`/`Int.land`/`Int.lor`/`Int.xor` are the same
+    infinite two's-complement operations. Zero-discrepancy Z2-M-08 (audit
+    §2.1.1 / literal census #3): this used to re-normalise the operands
+    through a `sizeof_ity` width with a fail-OPEN `| none => 4` default
+    the OCaml never reads; value-equal for in-range operands, deleted. -/
 
-private def toUnsigned (v : Int) (bits : Nat) : Nat :=
-  let modulus : Int := 2 ^ bits
-  if v < 0 then (modulus + v).toNat else v.toNat % modulus.toNat
+/-- Infinite two's-complement bitwise ops on Int (zarith `Z.logand`/`Z.logor`/
+    `Z.logxor` = GMP `mpz_and/ior/xor` semantics), which Lean 4.32 core does
+    not provide for `Int` (only `Int.not`/shifts). Written on Nat via the
+    standard identities with `~n = -n-1`: for a, b ≥ 0 the Nat ops; with
+    a' = ~a ≥ 0 for a negative operand, `a & b = b - (b & a')`,
+    `a | b = ~(a' - (a' & b))`, `a ^ b = ~(a' ^ b)`; both negative:
+    `a & b = ~(a' | b')`, `a | b = ~(a' & b')`, `a ^ b = a' ^ b'`.
+    Checked below on signed examples by `decide`. -/
+private def zNot (a : Int) : Int := -a - 1
+def zLogand (a b : Int) : Int :=
+  match a, b with
+  | .ofNat m, .ofNat n => .ofNat (m &&& n)
+  | .ofNat m, .negSucc n => .ofNat (m - (m &&& n))
+  | .negSucc m, .ofNat n => .ofNat (n - (n &&& m))
+  | .negSucc m, .negSucc n => zNot (.ofNat (m ||| n))
+def zLogor (a b : Int) : Int :=
+  match a, b with
+  | .ofNat m, .ofNat n => .ofNat (m ||| n)
+  | .ofNat m, .negSucc n => zNot (.ofNat (n - (n &&& m)))
+  | .negSucc m, .ofNat n => zNot (.ofNat (m - (m &&& n)))
+  | .negSucc m, .negSucc n => zNot (.ofNat (m &&& n))
+def zLogxor (a b : Int) : Int :=
+  match a, b with
+  | .ofNat m, .ofNat n => .ofNat (m ^^^ n)
+  | .ofNat m, .negSucc n => zNot (.ofNat (m ^^^ n))
+  | .negSucc m, .ofNat n => zNot (.ofNat (m ^^^ n))
+  | .negSucc m, .negSucc n => .ofNat (m ^^^ n)
+-- reference values: GMP two's complement (-6 = …11111010, 3 = …00000011, -3 = …11111101)
+example : zLogand (-6) 3 = 2 := by decide
+example : zLogand (-6) (-3) = -8 := by decide
+example : zLogand 5 (-1) = 5 := by decide
+example : zLogor (-6) 3 = -5 := by decide
+example : zLogor (-6) (-3) = -1 := by decide
+example : zLogor 5 (-8) = -3 := by decide
+example : zLogxor (-6) 3 = -7 := by decide
+example : zLogxor (-6) (-3) = 7 := by decide
+example : zLogxor 5 (-1) = -6 := by decide
 
-private def toSigned (v : Nat) (bits : Nat) (signed : Bool) : Int :=
-  if signed then
-    let signBit := 2 ^ (bits - 1)
-    if v >= signBit then Int.ofNat v - Int.ofNat (2 ^ bits)
-    else Int.ofNat v
-  else Int.ofNat v
-
-def bitwiseComplementIval (ity : integerType) (v : IntegerValue) : IntegerValue :=
+def bitwiseComplementIval (_ : integerType) (v : IntegerValue) : IntegerValue :=
   match v with
-  | .IV prov n =>
-    let size := match CerberusImpl.sizeof_ity ity with | some n => n | none => 4
-    let bits := size * 8
-    let mask := 2 ^ bits - 1
-    let unsigned := toUnsigned n bits
-    let result := unsigned ^^^ mask
-    .IV prov (toSigned result bits (CerberusImpl.is_signed_ity ity))
+  | .IV prov n => .IV prov (-n - 1)                               -- :2500
 
-def bitwiseAndIval (ity : integerType) (v1 v2 : IntegerValue) : IntegerValue :=
+def bitwiseAndIval (_ : integerType) (v1 v2 : IntegerValue) : IntegerValue :=
   match v1, v2 with
-  | .IV prov1 n1, .IV prov2 n2 =>
-    let size := match CerberusImpl.sizeof_ity ity with | some n => n | none => 4
-    let bits := size * 8
-    let result := toUnsigned n1 bits &&& toUnsigned n2 bits
-    .IV (combineProv prov1 prov2) (toSigned result bits (CerberusImpl.is_signed_ity ity))
+  | .IV prov1 n1, .IV prov2 n2 => .IV (combineProv prov1 prov2) (zLogand n1 n2)   -- :2504
 
-def bitwiseOrIval (ity : integerType) (v1 v2 : IntegerValue) : IntegerValue :=
+def bitwiseOrIval (_ : integerType) (v1 v2 : IntegerValue) : IntegerValue :=
   match v1, v2 with
-  | .IV prov1 n1, .IV prov2 n2 =>
-    let size := match CerberusImpl.sizeof_ity ity with | some n => n | none => 4
-    let bits := size * 8
-    let result := toUnsigned n1 bits ||| toUnsigned n2 bits
-    .IV (combineProv prov1 prov2) (toSigned result bits (CerberusImpl.is_signed_ity ity))
+  | .IV prov1 n1, .IV prov2 n2 => .IV (combineProv prov1 prov2) (zLogor n1 n2)    -- :2507
 
-def bitwiseXorIval (ity : integerType) (v1 v2 : IntegerValue) : IntegerValue :=
+def bitwiseXorIval (_ : integerType) (v1 v2 : IntegerValue) : IntegerValue :=
   match v1, v2 with
-  | .IV prov1 n1, .IV prov2 n2 =>
-    let size := match CerberusImpl.sizeof_ity ity with | some n => n | none => 4
-    let bits := size * 8
-    let result := toUnsigned n1 bits ^^^ toUnsigned n2 bits
-    .IV (combineProv prov1 prov2) (toSigned result bits (CerberusImpl.is_signed_ity ity))
+  | .IV prov1 n1, .IV prov2 n2 => .IV (combineProv prov1 prov2) (zLogxor n1 n2)   -- :2510
 
 /-! ## Integer value destructors — impl_mem.ml:2513-2562 -/
 
@@ -1452,6 +1557,22 @@ def ltIval (v1 v2 : IntegerValue) : Option Bool :=
   match v1, v2 with | .IV _ n1, .IV _ n2 => some (n1 < n2)
 def leIval (v1 v2 : IntegerValue) : Option Bool :=
   match v1, v2 with | .IV _ n1, .IV _ n2 => some (n1 ≤ n2)
+
+/-! TRIPWIRE (zero-discrepancy Z-59 / Z2-M-19, charter §2.7): the three
+    comparisons above are TOTAL `some`, mirroring impl_mem.ml:2556-2562
+    (`Some (Z.equal …)` / `Some (Z.compare … = -1)` / `Some (cmp = -1 ||
+    cmp = 0)`). This is the premise of CerbND's no-`NDguard` argument
+    (CerbND.lean header): `PEconstrained` arises only from a `Nothing`
+    here (core_eval.lem:352-378), so `addConstraints` (driver.lem:148)
+    never runs and the oracle's `with_constraints`/`check_sat`
+    (smt2.ml:42-44) is never reached. If any of these ever returns
+    `none`, these theorems fail to build and the SMT path must be ported. -/
+theorem eqIval_isSome (v1 v2 : IntegerValue) : (eqIval v1 v2).isSome = true := by
+  cases v1; cases v2; rfl
+theorem ltIval_isSome (v1 v2 : IntegerValue) : (ltIval v1 v2).isSome = true := by
+  cases v1; cases v2; rfl
+theorem leIval_isSome (v1 v2 : IntegerValue) : (leIval v1 v2).isSome = true := by
+  cases v1; cases v2; rfl
 
 /-! ## Floating value operations — impl_mem.ml:2519-2554 -/
 
@@ -1513,22 +1634,26 @@ def caseMemValue {α : Type} (mv : MemValue)
 
 /-! ## Pure pointer operations — impl_mem.ml -/
 
-/-- array_shift_ptrval — shift pointer by array index.
-    Matches impl_mem.ml:2203-2221: GNU extension lets void be byte-granular;
-    null/function pointer arithmetic panics (per OCaml, UB in ISO C). -/
+/-- array_shift_ptrval (the PURE shift) — impl_mem.ml:2203-2221, arm for
+    arm: `sz = if is_void ty then 1 else sizeof ty` (:2206, the GNU
+    byte-granular extension), `offset = sz * ival` (:2207); a Prov_symbolic
+    provenance → failwith (:2209-2211); null → failwith (:2214-2217);
+    PVfunction → failwith (:2218-2219); concrete → the shifted address with
+    the union-member tag KEPT (:2220-2221). The failwiths are fail-stops
+    with the OCaml texts (Q4). -/
 def arrayShiftPtrval (tagDefs : TagDefs) (pv : PointerValue) (elemTy : ctype) (iv : IntegerValue) : PointerValue :=
   match pv, iv with
-  | .PV _ (.PVnull _), _ =>
-    panic! "array_shift_ptrval: shift on null pointer is UB"
-  | .PV _ (.PVfunction _), _ =>
-    panic! "array_shift_ptrval: PVfunction"
-  | .PV prov (.PVconcrete um addr), .IV _ n =>
-    -- GNU extension: void element type → byte-granular shift (sz = 1)
-    let elemSize : Int := match elemTy with
+  | .PV prov base, .IV _ ival =>
+    let sz : Int := match elemTy with
       | Ctype _ .Void0 => 1
       | _ => Int.ofNat (sizeofCtype tagDefs elemTy)
-    let offset := n * elemSize
-    .PV prov (.PVconcrete um (addr + offset))
+    let offset := sz * ival
+    match prov, base with
+    | .Prov_symbolic _, _ => panic! "Concrete.array_shift_ptrval found a Prov_symbolic"
+    | _, .PVnull _ =>
+      panic! s!"TODO(pure shift a null pointer should be undefined behaviour), offset:{offset}"
+    | _, .PVfunction _ => panic! "Concrete.array_shift_ptrval, PVfunction"
+    | _, .PVconcrete um addr => .PV prov (.PVconcrete um (addr + offset))
 
 /-- member_shift_ptrval — impl_mem.ml:2223-2242.
     Shift pointer to struct/union member. Uses CerbTags.tagDefs () to look up
@@ -1769,14 +1894,29 @@ def ppMemValueMembers : List (identifier × ctype × MemValue) → String
       ++ ppMemValueMembers rest
 end
 
-/-! ## CHERI stubs (not used in concrete model) -/
+/-! ## CHERI intrinsics — impl_mem.ml:2175-2191: in the concrete model every
+    one is `assert false (* CHERI only *)`. Mirrored as fail-stops with
+    the OCaml text (zero-discrepancy Z-22, ruling Q4): the value-returning
+    stubs that stood here were the banned fail-OPEN shape (a value where
+    the oracle crashes). Reachability: `is_CHERI` is false on the matched
+    default switch set and CHERI is a REFUSED mode (Z-24); the elaboration
+    emits the CHERI memops/intrinsics only under it, so no matched-mode
+    program reaches these. `cheriPointerHashPrintf` has no impl_mem.ml
+    counterpart at all (a lem-side target_rep with no OCaml body in the
+    concrete model) — fail-stop likewise. -/
 
-def deriveCap (_ : Bool) (_ : derivecap_op) (v1 _ : IntegerValue) : IntegerValue := v1
-def capAssignValue (_ : CerbLocation.Loc) (_ v : IntegerValue) : IntegerValue := v
-def nullCap (_ : Bool) : IntegerValue := integerIval 0
-def ptrTIntValue (iv : IntegerValue) : IntegerValue := iv
-def cheriPointerHashPrintf (_ : Bool) (_ : PointerValue) : String := ""
-def getIntrinsicTypeSpec (_ : String) : Option intrinsics_signature := none
+def deriveCap (_ : Bool) (_ : derivecap_op) (_ _ : IntegerValue) : IntegerValue :=
+  panic! "assert false (* CHERI only *): Concrete.derive_cap (impl_mem.ml:2175-2176)"
+def capAssignValue (_ : CerbLocation.Loc) (_ _ : IntegerValue) : IntegerValue :=
+  panic! "assert false (* CHERI only *): Concrete.cap_assign_value (impl_mem.ml:2178-2179)"
+def nullCap (_ : Bool) : IntegerValue :=
+  panic! "assert false (* CHERI only *): Concrete.null_cap (impl_mem.ml:2184-2185)"
+def ptrTIntValue (_ : IntegerValue) : IntegerValue :=
+  panic! "assert false (* CHERI only *): Concrete.ptr_t_int_value (impl_mem.ml:2181-2182)"
+def cheriPointerHashPrintf (_ : Bool) (_ : PointerValue) : String :=
+  panic! "CHERI only: cheri_pointer_hash_printf has no concrete-model body"
+def getIntrinsicTypeSpec (_ : String) : Option intrinsics_signature :=
+  panic! "assert false (* CHERI only *): Concrete.get_intrinsic_type_spec (impl_mem.ml:2187-2188)"
 
 /-! ## Monadic operations -/
 
@@ -1856,54 +1996,101 @@ def readonlyStatusForAlloc (pref : prefix0) (initOpt : Option MemValue) : Readon
 @[simp] theorem readonlyStatusForAlloc_none (pref : prefix0) :
     readonlyStatusForAlloc pref none = .IsWritable := rfl
 
+/-- allocator — impl_mem.ml:1247-1262, the arithmetic verbatim on Z (Int):
+    `z = last_address - sz` (:1251); `(q, m) = quomod z align` (:1252) where
+    `Z.quomod = ediv_rem` (impl_mem.ml:9) — Lean's Int `/` and `%` ARE
+    ediv/emod — and RAISES `Division_by_zero` when `align = 0`, mirrored
+    as a fail-stop with the OCaml text (Q4; reachable only from
+    hand-written Core such as `alloc(0, 0)`: the C route through
+    std.core:385 crashes at the `rem_t` first, Z2-M-01);
+    `z' = z - (if q < 0 then -m else m)` (:1253); `z' ≤ 0` →
+    `fail (MerrOther "Concrete.allocator: failed (out of memory)")`
+    (:1254-1255; text mirrored — zero-discrepancy Z2-M-03); else
+    `next_alloc_id` bumped, `last_used = Some alloc_id`, `last_address =
+    addr` (:1259-1262).
+    Zero-discrepancy Z-13 / Z2-M-05: the two callers used to clamp
+    size and align with `.max 1` and map a negative size to 0 through
+    `.toNat` — silent normalisations the OCaml has nowhere; both gone. -/
+def allocator (sz align : Int) : memM (StorageInstanceId × Address) :=
+  ND fun st =>
+    let allocId := st.nextAllocId
+    if align == 0 then panic! "Division_by_zero"
+    else
+      let z := st.lastAddress - sz
+      let q := z / align
+      let m := z % align
+      let z' := z - (if q < 0 then -m else m)
+      if z' ≤ 0 then
+        (NDkilled (Other (MerrOther "Concrete.allocator: failed (out of memory)")), st)
+      else
+        (NDactive (allocId, z'),
+         { st with nextAllocId := allocId + 1, lastUsed := some allocId, lastAddress := z' })
+
+/-- allocate_object — impl_mem.ml:1288-1347. `size = sizeof ty` (:1289, no
+    clamp); `req_addr_opt = Some _` → `failwith "TODO: cerb::with_address()
+    is yet implemented"` (:1293-1295) — mirrored as a fail-stop (zero-
+    discrepancy Z-14: the argument was silently ignored; reachable only via
+    the fork-only `cerb::with_address` attribute, never on upstream inputs);
+    then `allocator size align`. `init_opt = None` (:1303-1319): a writable
+    allocation with `ty = Some ty`, and the bytemap receives `repr
+    (MVunspecified ty)` = sizeof padding bytes (:1315-1319; the
+    `SW_zero_initialised` arm :1308-1314 is switch-conditioned, the switch
+    set is refused — Z-24 — so the default arm is the only reachable one).
+    `init_opt = Some mval` (:1320-1345): readonly kind by prefix
+    (`readonlyStatusForAlloc`), `repr` threading the funptrmap. -/
 def allocateObject (tagDefs : TagDefs) (_ : Nat) (pref : prefix0) (alignIv : IntegerValue)
-    (ty : ctype) (_ : Option Int) (initOpt : Option MemValue) : memM PointerValue :=
+    (ty : ctype) (reqAddrOpt : Option Int) (initOpt : Option MemValue) : memM PointerValue :=
   match alignIv with
   | .IV _ alignN =>
+  let size : Int := sizeofCtype tagDefs ty                                       -- :1289
+  match reqAddrOpt with
+  | some _ => panic! "TODO: cerb::with_address() is yet implemented"           -- :1293-1295
+  | none =>
+  nd_bind (allocator size alignN) fun (idAddr : StorageInstanceId × Address) =>  -- :1291-1292
+  let (allocId, addr) := idAddr
   ND fun st =>
-    let align := alignN.toNat.max 1
-    let size := (sizeofCtype tagDefs ty).max 1
-    let addrAfterSize := st.lastAddress - size
-    let alignedAddr := (alignDown addrAfterSize.toNat align : Int)
-    if alignedAddr == 0 then (NDkilled (Other (MerrOther "out of memory")), st)
-    else
-      let allocId := st.nextAllocId
-      -- readonly_status per init_opt — impl_mem.ml:1304-1333 (see
-      -- readonlyStatusForAlloc above)
-      let alloc : Allocation := { base := alignedAddr, size := size, ty := some ty,
-                                  isReadonly := readonlyStatusForAlloc pref initOpt,
-                                  prefix_ := pref }
-      let st' := { st with
-        nextAllocId := allocId + 1, lastAddress := alignedAddr
-        allocations := st.allocations.insert allocId alloc }
-      let st' := match initOpt with
-        | some val_ =>
-          -- repr threads the funptrmap into the state — impl_mem.ml:1336-1344
-          let (fpm, bs) := memValueToBytes tagDefs st'.funptrmap val_
-          writeBytesTo { st' with funptrmap := fpm } alignedAddr bs
-        | none => writeBytesTo st' alignedAddr
-            (List.replicate size { prov := .Prov_none, copyOffset := none, value := none })
-      (NDactive (.PV (.Prov_some allocId) (.PVconcrete none alignedAddr)), st')
+    -- readonly_status per init_opt — impl_mem.ml:1304-1333 (see
+    -- readonlyStatusForAlloc above)
+    let alloc : Allocation := { base := addr, size := size, ty := some ty,
+                                isReadonly := readonlyStatusForAlloc pref initOpt,
+                                prefix_ := pref }
+    let st' := { st with allocations := st.allocations.insert allocId alloc }
+    let st' := match initOpt with
+      | some val_ =>
+        -- repr threads the funptrmap into the state — impl_mem.ml:1336-1344
+        let (fpm, bs) := memValueToBytes tagDefs st'.funptrmap val_
+        writeBytesTo { st' with funptrmap := fpm } addr bs
+      | none =>
+        -- :1315-1319 `repr st.funptrmap (MVunspecified ty)` (funptrmap
+        -- result discarded, `let (_, pre_bs)`)
+        let (_, bs) := memValueToBytes tagDefs st'.funptrmap (.MVunspecified ty)
+        writeBytesTo st' addr bs
+    (NDactive (.PV (.Prov_some allocId) (.PVconcrete none addr)), st')
 
-def allocateRegion (_ : Nat) (pref : prefix0) (alignIv sizeIv : IntegerValue) : memM PointerValue :=
+/-- allocate_region — impl_mem.ml:1420-1435: `allocator size_n align_n`
+    (:1421, no clamp, a negative size flows through the Z arithmetic —
+    Allocation.size is Int here too), then the allocation record with
+    `prefix= Symbol.PrefMalloc` UNCONDITIONALLY (:1429; the `pref`
+    argument is unused, `:1428 (* TODO: why aren't we using the argument
+    pref? *)` — zero-discrepancy Z-15: this stored the caller's prefix),
+    `ty= None`, `is_readonly= IsWritable`; `dynamic_addrs` gains the base
+    (:1433). NO bytemap write (zero-discrepancy Z2-M-04): `fetch_bytes`
+    (:708-722) defaults an absent byte to `AbsByte.v Prov_none None`,
+    exactly as `readBytesFrom` does here — the eager `List.replicate size`
+    materialisation that stood here was behaviour-preserving and the
+    one-line cause of the Z-30 malloc OOM class
+    (tests/z2-probes/mem/malloc_oom_msg.c). -/
+def allocateRegion (_ : Nat) (_pref : prefix0) (alignIv sizeIv : IntegerValue) : memM PointerValue :=
   match alignIv, sizeIv with
   | .IV _ alignN, .IV _ sizeN =>
+  nd_bind (allocator sizeN alignN) fun (idAddr : StorageInstanceId × Address) =>   -- :1421
+  let (allocId, addr) := idAddr
   ND fun st =>
-    let align := alignN.toNat.max 1
-    let size := sizeN.toNat
-    let addrAfterSize := st.lastAddress - size
-    let alignedAddr := (alignDown addrAfterSize.toNat align : Int)
-    if alignedAddr == 0 then (NDkilled (Other (MerrOther "out of memory")), st)
-    else
-      let allocId := st.nextAllocId
-      let alloc : Allocation := { base := alignedAddr, size := size, prefix_ := pref }
-      let st' := { st with
-        nextAllocId := allocId + 1, lastAddress := alignedAddr
-        allocations := st.allocations.insert allocId alloc
-        dynamicAddrs := alignedAddr :: st.dynamicAddrs }
-      let st' := writeBytesTo st' alignedAddr
-          (List.replicate size { prov := .Prov_none, copyOffset := none, value := none })
-      (NDactive (.PV (.Prov_some allocId) (.PVconcrete none alignedAddr)), st')
+    let alloc : Allocation := { base := addr, size := sizeN, ty := none,
+                                isReadonly := .IsWritable, prefix_ := PrefMalloc }  -- :1429
+    (NDactive (.PV (.Prov_some allocId) (.PVconcrete none addr)),
+     { st with allocations := st.allocations.insert allocId alloc,
+               dynamicAddrs := addr :: st.dynamicAddrs })                            -- :1430-1434
 
 /-! ### Kill — impl_mem.ml:1464-1550 (zero-discrepancy Z-07/Z-08/Z-10, noodle
     D6/D7; the arms and their ORDER mirror `kill loc is_dyn` exactly — the
@@ -1959,6 +2146,7 @@ def killM (loc : CerbLocation.Loc) (isDynamic : Bool) (pv : PointerValue) : memM
           if addr == alloc.base then                                             -- :1535-1546
             let st' := { st with
               deadAllocations := allocId :: st.deadAllocations
+              lastUsed := some allocId                                             -- :1541
               allocations := st.allocations.erase allocId }
             -- :1543-1546 SW_zap_dead_pointers → zap_pointers (:1447-1462, not
             -- ported): the switch set is refused (Z-24), so the OCaml default
@@ -1991,7 +2179,22 @@ def killM (loc : CerbLocation.Loc) (isDynamic : Bool) (pv : PointerValue) : memM
                              :1718-1724) — zero-discrepancy Z-06 (noodle D5);
                              this file used to assert the ranges were empty
     Not ported: Prov_symbolic iota resolution (PNVI-ae-udi; the concrete
-    Lean model never mints Prov_symbolic). -/
+    Lean model never mints Prov_symbolic).
+
+    DECLARED (zero-discrepancy Z2-M-20) — the SWITCH-CONDITIONED arms of
+    impl_mem.ml are not ported; each is reachable only when its switch is
+    set, and the switch set is REFUSED by this port (Z-24, VALIDATION.md
+    "Refused command-line flags"), so on the matched default set
+    (`Switches.set []`, main.ml:129-143 — every `has_switch` false,
+    `is_PNVI ()` false; Z2 audit §2.9 table) the default arm is the only
+    one either engine executes: `SW_strict_pointer_equality` (eq_ptrval
+    :1852-1853), `SW_strict_pointer_relationals` (lt/gt/le/ge_ptrval
+    :1889-1939), `SW_pointer_arith PERMISSIVE/STRICT` (diff_ptrval
+    :1970-1975; eff_array_shift_ptrval :2265-2350), `SW_forbid_nullptr_free`
+    (kill :1466 — the set case is loud here), `SW_zap_dead_pointers` (kill
+    :1511/:1547 — loud), `SW_zero_initialised` (allocate_object :1310),
+    `SW_strict_reads` (load :1593), and the `is_PNVI ()` arms of
+    ptrfromint/intfromptr (:2147-2160, :2445-2452). -/
 
 /-- device_ranges — impl_mem.ml:620-624, verbatim: two hard-coded ranges
     ("to match the Charon tests"; each 4 bytes). An integer in a range casts
@@ -2009,7 +2212,12 @@ def isWithinDevice (tagDefs : TagDefs) (ty : ctype) (addr : Int) : Bool :=
 
 /-- is_atomic_member_access — impl_mem.ml:689-706: accessing a PART of an
     atomic allocation (not the whole object with the same type) is an
-    AtomicMemberof error. -/
+    AtomicMemberof error. INSTRUMENT note (zero-discrepancy Z2-M-17): the
+    OCaml additionally prints two diagnostic lines on the TOOL's stderr
+    (:698-702 `addr: … <--> alloc.base: …` / `|lvalue_ty|: … <--> |alloc|:
+    …`) — the tool stream, not the program's `stderr:` verdict field; not
+    mirrored (tests/z2-probes/mem/atomic_member_stderr.c: identical
+    UB042 verdict lines on all three engines). -/
 def isAtomicMemberAccess (tagDefs : TagDefs) (alloc : Allocation) (lvalueTy : ctype) (addr : Int) : Bool :=
   match alloc.ty with
   | some allocTy =>
@@ -2025,9 +2233,10 @@ def isAtomicMemberAccess (tagDefs : TagDefs) (alloc : Allocation) (lvalueTy : ct
 def loadM (tagDefs : TagDefs) (loc : CerbLocation.Loc) (ty : ctype) (pv : PointerValue) : memM (Footprint × MemValue) :=
   ND fun st =>
     let fail_ (err : mem_error) := (NDkilled (failReason err loc), st)
-    -- do_load — impl_mem.ml:1556-1603 (PNVI expose/last_used bookkeeping
-    -- not ported; SW_strict_reads never set here)
-    let doLoad (addr : Int) :=
+    -- do_load — impl_mem.ml:1556-1603 (`last_used= alloc_id_opt` :1567
+    -- mirrored — Z2-M-16; the PNVI `expose_allocations` arm :1562-1566 and
+    -- SW_strict_reads :1593-1598 are switch-conditioned, refused set — Z-24)
+    let doLoad (allocOpt : Option StorageInstanceId) (addr : Int) :=
       let size := sizeofCtype tagDefs ty
       let bytes := readBytesFrom st addr size
       let fp : Footprint := .FP .R addr size
@@ -2041,14 +2250,14 @@ def loadM (tagDefs : TagDefs) (loc : CerbLocation.Loc) (ty : ctype) (pv : Pointe
         | .MVunspecified _ => true
         | _ => false
       if isTrap then fail_ (MerrTrapRepresentation LoadAccess)
-      else (NDactive (fp, mv), st)
+      else (NDactive (fp, mv), { st with lastUsed := allocOpt })
     match pv with
     | .PV _ (.PVnull _) => fail_ (MerrAccess LoadAccess NullPtr)          -- impl_mem.ml:1605-1606
     | .PV _ (.PVfunction _) => fail_ (MerrAccess LoadAccess FunctionPtr)  -- impl_mem.ml:1607-1608
     | .PV .Prov_none _ => fail_ (MerrAccess LoadAccess OutOfBoundPtr)     -- impl_mem.ml:1609-1610
     | .PV .Prov_device (.PVconcrete _ addr) =>
       -- impl_mem.ml:1611-1617: is_within_device → do_load None addr
-      if isWithinDevice tagDefs ty addr then doLoad addr
+      if isWithinDevice tagDefs ty addr then doLoad none addr
       else fail_ (MerrAccess LoadAccess OutOfBoundPtr)
     | .PV (.Prov_symbolic _) _ =>
       (NDkilled (kill_reason.Other
@@ -2066,7 +2275,7 @@ def loadM (tagDefs : TagDefs) (loc : CerbLocation.Loc) (ty : ctype) (pv : Pointe
             fail_ (MerrAccess LoadAccess OutOfBoundPtr)                   -- impl_mem.ml:1651-1656
           else if isAtomicMemberAccess tagDefs alloc ty addr then
             fail_ (MerrAccess LoadAccess AtomicMemberof)                  -- impl_mem.ml:1658-1660
-          else doLoad addr
+          else doLoad (some allocId) addr
 
 def storeM (tagDefs : TagDefs) (loc : CerbLocation.Loc) (ty : ctype) (isLocking : Bool) (pv : PointerValue) (mv : MemValue) : memM Footprint :=
   ND fun st =>
@@ -2095,14 +2304,14 @@ def storeM (tagDefs : TagDefs) (loc : CerbLocation.Loc) (ty : ctype) (isLocking 
       let st' := match allocOpt with
         | some (allocId, alloc) =>
           if isLocking then
-            { st' with allocations := st'.allocations.map fun id a =>
+            { st' with allocations := st'.allocations.map fun (id : Int) (a : Allocation) =>
                 if id == allocId then
                   { a with isReadonly := .IsReadOnly (selectRoKind alloc.prefix_) }
                 else a }
           else st'
         | none => st'
       let fp : Footprint := .FP .W addr (sizeofCtype tagDefs ty)
-      (NDactive fp, st')
+      (NDactive fp, { st' with lastUsed := allocOpt.map Prod.fst })                 -- :1687 last_used
     -- ill-typed-store guard — impl_mem.ml:1673-1681: checked BEFORE the
     -- provenance/pointer-kind match (so it wins over NullPtr etc.);
     -- OCaml's diagnostic printfs (:1674-1680) are not mirrored, the
@@ -2287,22 +2496,28 @@ private def unatomic_ : ctype → ctype_
   | Ctype _ (.Atomic inner) => match inner with | Ctype _ t => t
   | Ctype _ t => t
 
-/-- isWellAligned_ptrval — impl_mem.ml:2065-2083.
-    Fails on void or function ref_ty. Fails on function pointers.
-    True for null pointers. For concrete: checks addr % alignof == 0. -/
+/-- isWellAligned_ptrval — impl_mem.ml:2065-2083, arm for arm.
+    `unatomic_ ref_ty` = `Void | Function _` → ONE MerrOther message
+    (:2067-2069; zero-discrepancy Z-21/Z2-M-09: this had two messages and
+    put `FunctionNoParams` in the arm — the OCaml `Function _` does NOT
+    match `FunctionNoParams`, which falls to the `_` arm: a null pointer
+    answers `true`, a concrete one reaches `alignof ref_ty` = `assert
+    false` (:216-218) — here alignofCtype's function-type panic — and no
+    accepted C shape reaches it, tests/z2-probes/mem/funptr_noparams_*).
+    Null → true (:2072-2073); function pointer → MerrOther (:2074-2075);
+    concrete → `modulus addr (alignof ref_ty) = 0` (:2080) — no `.max 1`
+    (Z2-M-10: alignof ≥ 1 for every type that reaches this arm). -/
 def isWellAlignedPtrval (tagDefs : TagDefs) (ty : ctype) (pv : PointerValue) : memM Bool :=
   match unatomic_ ty with
-  | .Void0 =>
-    memFail (MerrOther "called isWellAligned_ptrval on void")
-  | .Function _ _ _ | .FunctionNoParams _ =>
-    memFail (MerrOther "called isWellAligned_ptrval on a function type")
+  | .Void0 | .Function _ _ _ =>
+    memFail (MerrOther "called isWellAligned_ptrval on void or a function type")
   | _ =>
     match pv with
     | .PV _ (.PVnull _) => memReturn true
     | .PV _ (.PVfunction _) =>
       memFail (MerrOther "called isWellAligned_ptrval on function pointer")
     | .PV _ (.PVconcrete _ addr) =>
-      memReturn (addr % (alignofCtype tagDefs ty).max 1 == 0)
+      memReturn (addr % (alignofCtype tagDefs ty : Int) == 0)
 
 /-- validForDeref_ptrval — impl_mem.ml:2086-2123 (§6.5.3.3 footnote 102).
     Null/function pointer → false.
@@ -2385,8 +2600,37 @@ def intfromptr (loc : CerbLocation.Loc) (_ : ctype) (ity : integerType)
 
 /-! ### Effectful pointer shifts -/
 
-def effArrayShiftPtrval (tagDefs : TagDefs) (_ : CerbLocation.Loc) (pv : PointerValue) (elemTy : ctype) (iv : IntegerValue) : memM PointerValue :=
-  memReturn (arrayShiftPtrval tagDefs pv elemTy iv)
+/-- eff_array_shift_ptrval — impl_mem.ml:2244-2356 (zero-discrepancy Z-17:
+    this used to delegate to the PURE `array_shift_ptrval`, whose null arm
+    panics where this one fails UB046, whose GNU void-byte arm this one
+    lacks — `sizeof void` is `assert false`, :134-135, so a void element
+    type panics in sizeofCtype here as it does there — and which keeps the
+    union-member tag this one DROPS).
+    `offset = sizeof ty * ival` (:2246); null → `fail ~loc MerrArrayShift`
+    = UB046 (:2247-2251); PVfunction → `failwith` (:2252-2253, fail-stop,
+    Q4); `Prov_symbolic` (:2256-2323) → never minted by this model (PNVI is
+    refused, Z-24) — loud; `Prov_some` (:2325-2337) → `PV (Prov_some id,
+    PVconcrete (None, addr + offset))`; `Prov_none` (:2338-2343) → likewise
+    with `Prov_none`; `Prov_device` (:2344-2346) → likewise. The
+    `SW_pointer_arith STRICT`/`is_PNVI` bounds arms (:2327-2335, :2339-2341)
+    are switch-conditioned — refused set, default arm only (Z2-M-20 note).
+    REACHABILITY: `PtrArrayShift` is emitted only under strict/PNVI/CHERI
+    (translation.lem:2112-2119), all refused — this port retires a dead
+    panic-vs-UB046 divergence rather than carrying it. Evaluation-order
+    note: the OCaml computes `offset` (hence `sizeof ty`) BEFORE matching
+    the pointer, so a void element type asserts even for a null pointer;
+    here `offset` is computed in the concrete arms only (a null pointer
+    with a void element type fails UB046 instead of asserting — a corner
+    inside the refused region, recorded). -/
+def effArrayShiftPtrval (tagDefs : TagDefs) (loc : CerbLocation.Loc) (pv : PointerValue) (elemTy : ctype) (iv : IntegerValue) : memM PointerValue :=
+  match pv, iv with
+  | .PV _ (.PVnull _), _ => memFail MerrArrayShift loc                             -- :2247-2251
+  | .PV _ (.PVfunction _), _ => panic! "Concrete.eff_array_shift_ptrval, PVfunction"  -- :2252-2253
+  | .PV (.Prov_symbolic _) _, _ =>
+    kill (kill_reason.Other (MerrOther "effArrayShiftPtrval: Prov_symbolic in concrete model"))
+  | .PV prov (.PVconcrete _ addr), .IV _ ival =>
+    let offset : Int := (sizeofCtype tagDefs elemTy : Int) * ival               -- :2246
+    memReturn (.PV prov (.PVconcrete none (addr + offset)))                     -- :2336/:2343/:2346
 
 def effMemberShiftPtrval (tagDefs : TagDefs) (_ : CerbLocation.Loc) (pv : PointerValue) (tag : sym) (member : identifier) : memM PointerValue :=
   memReturn (memberShiftPtrval tagDefs pv tag member)
@@ -2427,13 +2671,16 @@ def memcpyM (tagDefs : TagDefs) (loc : CerbLocation.Loc) (dst src : PointerValue
     not improved; see tests/immaculate g2-memcmp-uninit).
     Byte comparison is on the loaded integer VALUES (Z.compare upstream,
     :2662-2664), fold stopping at the first nonzero.
-    DOCUMENTED DIVERGENCE (re-mark R4): the size argument goes through
-    `Int.toNat`, which CLAMPS a negative size_n to 0 (empty comparison,
-    result 0) — upstream `Z.to_int` keeps the negative and get_bytes'
-    `| size` arm then recurses on size-1 forever (non-termination).
-    Unreachable from C (memcmp's size_t is non-negative after
-    conversion); the clamp is the total-function rendering of an
-    upstream divergence-by-nontermination, deliberately not mirrored. -/
+    DECLARED (zero-discrepancy Z2-M-13): the size argument goes through
+    `Int.toNat`, which maps a negative size_n to 0 (empty comparison,
+    result 0) — upstream `Z.to_int size_n` (:2660) keeps the negative and
+    get_bytes' `| size` arm (:2652-2659) then recurses on size-1 forever
+    (non-termination, no verdict). Reachability: memcmp's `size_t` is
+    non-negative after conv_int, so no C program reaches a negative size;
+    a non-terminating mirror would be a FUEL kill (EXC(b)) here — the
+    total rendering is kept and declared. (memcpy, :2637-2644 `Z.lt i
+    size_n`, runs ZERO iterations on a negative size on both sides — no
+    difference there.) -/
 def memcmpM (tagDefs : TagDefs) (pv1 pv2 : PointerValue) (sizeIv : IntegerValue) : memM IntegerValue :=
   match sizeIv with
   | .IV _ size_n =>
@@ -2483,9 +2730,13 @@ def reallocM (tagDefs : TagDefs) (loc : CerbLocation.Loc) (tid : Nat) (align : I
       else match st.allocations.get? allocId with
         | none =>
           -- get_allocation ~loc:(other "Concrete.realloc") — :2683 (fails
-          -- MerrOutsideLifetime via get_allocation, impl_mem.ml:669-675)
+          -- MerrOutsideLifetime via get_allocation, impl_mem.ml:669-675,
+          -- with THAT loc — zero-discrepancy Z-20: the default loc was
+          -- passed here; unreachable — a dynamic, non-dead address always
+          -- has its allocation — mirrored anyway)
           (NDkilled (failReason
-            (MerrOutsideLifetime s!"Concrete.get_allocation, alloc_id={allocId}")), st)
+            (MerrOutsideLifetime s!"Concrete.get_allocation, alloc_id={allocId}")
+            (CerbLocation.other "Concrete.realloc")), st)
         | some alloc =>
           if alloc.base == addr then
             -- impl_mem.ml:2685-2691: allocate_region >>= memcpy (the
@@ -2521,6 +2772,15 @@ def updatePrefix : prefix0 × MemValue → memM Unit
           allocations := st.allocations.insert allocId { alloc with prefix_ := pref } })
       | none => (NDactive (), st)                                -- :1356-1358 (warn)
   | _ => memReturn ()                                            -- :1360-1362 (warn)
+/-- prefix_of_pointer — impl_mem.ml:1364-1418 computes `Some (string_of_prefix
+    alloc.prefix ^ …)` (base / `.member` / `[index]` forms) for a Prov_some
+    pointer, `None` otherwise.
+    DECLARED (zero-discrepancy Z2-M-06): NOT ported — returns `none`.
+    Reachability argument: the only callers are driver.lem:689, :702 and
+    :714, which store the result in `dr_st.trace` (`ME_load`/`ME_store`/
+    `ME_seq_rmw` entries) consumed only by `--trace` and the web UI — never
+    by the batch verdict line, the exit code, stdout or stderr. Port (S-M)
+    when `--trace` parity is wanted. -/
 def prefixOfPointer (_ : PointerValue) : memM (Option String) := memReturn none
 
 /-! ### Varargs
@@ -2614,17 +2874,17 @@ def vaEnd (va : IntegerValue) : memM Unit :=
 
 /-- va_list — impl_mem.ml:2756-2764: retrieve the argument list for an id
     (the variadic-call consumer, formatted.lem:799 vsnprintf). OCaml
-    `assert (n = 0)` ("not sure what happens with n <> 0"): the assert is
-    an oracle-side hard crash on a branch unreachable from generated code
-    (va_list is only applied to a fresh va_start id) — mirrored as a
-    MerrOther kill rather than a panic (same observable on the reachable
-    surface: none). -/
+    `assert (n = 0)` (:2760, "not sure what happens with n <> 0") is an
+    uncaught exception on the oracle — mirrored as a fail-stop (zero-
+    discrepancy Z2-M-12, ruling Q4; this was a typed MerrOther kill, a
+    different failure class). Unreachable from generated code: va_list is
+    only applied to a fresh va_start id (index 0). -/
 def vaList (vaIdx : Int) : memM (List (ctype × PointerValue)) :=
   ND fun st =>
     match st.varargs.find? (fun e => e.1 == vaIdx) with
     | some (_, (n, args)) =>
       if n == 0 then (NDactive args, st)
-      else (NDkilled (Other (MerrOther "va_list: index <> 0 (OCaml assert, impl_mem.ml:2760)")), st)
+      else panic! "va_list: assert (n = 0) failed (impl_mem.ml:2760)"
     | none => (NDkilled (failReason (MerrWIP "va_list")), st)
 
 /-! ### Misc -/
@@ -2640,7 +2900,10 @@ def vaList (vaIdx : Int) : memM (List (ctype × PointerValue)) :=
 def copyAllocId (iv : IntegerValue) (pv : PointerValue) : memM PointerValue :=
   nd_bind (intfromptr (CerbLocation.other "copy_alloc_id") void (.Unsigned .Intptr_t) pv)
     (fun _ => ptrfromint (CerbLocation.other "copy_alloc_id") (.Unsigned .Intptr_t) void iv)
-def callIntrinsic (_ : CerbLocation.Loc) (_ : String) (_ : List MemValue) : memM (Option MemValue) := memReturn none
+/-- call_intrinsic — impl_mem.ml:2190-2191 `assert false (* CHERI only *)`
+    (zero-discrepancy Z-22; see the CHERI section note). -/
+def callIntrinsic (_ : CerbLocation.Loc) (_ : String) (_ : List MemValue) : memM (Option MemValue) :=
+  panic! "assert false (* CHERI only *): Concrete.call_intrinsic (impl_mem.ml:2190-2191)"
 
 /-- Fuel-exhaustion sentinel for the fuel-threaded `Core_aux.zeros_aux`
     (arc-1): reached only past the default fuel's type-nesting depth, i.e.

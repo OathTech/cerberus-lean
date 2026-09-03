@@ -206,6 +206,12 @@ private def annots0 : List annot := [Aloc loc0]
 /-- Parse an identifier into a `sym`. -/
 private def lexSymId : P sym := do
   let name ← lexIdent
+  -- TRIPWIRE (zero-discrepancy Z2-CP-01): in atom position `inf`/`nan` are
+  -- the pp's spellings of the IEEE infinities/NaN (pPexprAtom below), so a
+  -- BINDER or declared name spelled that way would be silently shadowed
+  -- by a float value — refuse the parse instead.
+  if name == "inf" || name == "nan" then
+    fail s!"CoreParser: the name `{name}` is reserved — the pretty-printer renders the float infinities/NaN as this identifier (pp_core.ml:279-282 string_of_float; zero-discrepancy Z2-CP-01)"
   return mkSym name
 
 /-- Parse a comma-separated list using the given element parser. -/
@@ -724,6 +730,16 @@ private def pCtorKw : P ctor :=
   <|> (attempt (lexKw "Unspecified") *> pure Cunspecified)
   <|> (attempt (lexKw "Fvfromint") *> pure Cfvfromint)
   <|> (attempt (lexKw "Ivfromfloat") *> pure Civfromfloat)
+  -- Zero-discrepancy Z2-CP-21 (found by the Z2 fix phase): the pretty-printer
+  -- spells these two ctors `Cfvfromint`/`Civfromfloat` (pp_core.ml:367-370
+  -- pp_datactor) while the OCaml lexer's keywords are `Fvfromint`/
+  -- `Ivfromfloat` (core_lexer.mll:83-84) — the oracle cannot re-read its
+  -- own dump here (tray candidate). The pinned dump tests/libc/libc.core
+  -- carries the pp spelling at 29 sites (e.g. :53901 `Cfvfromint(a_26866)`
+  -- in proc decfloat); the oracle's in-memory libc.co holds `PEctor
+  -- Cfvfromint`, so the pp spelling is given that AST here.
+  <|> (attempt (lexKw "Cfvfromint") *> pure Cfvfromint)
+  <|> (attempt (lexKw "Civfromfloat") *> pure Civfromfloat)
   <|> (attempt (lexKw "IvCOMPL") *> pure CivCOMPL)
   <|> (attempt (lexKw "IvAND") *> pure CivAND)
   <|> (attempt (lexKw "IvOR") *> pure CivOR)
@@ -979,6 +995,16 @@ private partial def pPexprParen : P PE := do
 
 private partial def pPexprMinus : P PE := do
   lexSym "-"
+  -- Zero-discrepancy Z2-CP-01: `-inf` / `-nan` are single float VALUES in the
+  -- pp's output (`string_of_float neg_infinity` = "-inf"), not `0 - inf`.
+  let special ← attempt (do
+      let id ← lexIdent
+      if id == "inf" then pure (some (-(1.0 / 0.0 : Float)))
+      else if id == "nan" then pure (some (-(0.0 / 0.0 : Float)))
+      else fail "not a float special") <|> pure none
+  match special with
+  | some f => return (mkPE (PEval (Vobject (OVfloating f))))
+  | none =>
   let pe ← pPexprAtom
   return (mkPE (PEop OpSub (mkPE (PEval (Vobject (OVinteger (CerbMem.integerIval 0))))) pe))
 
@@ -1243,12 +1269,12 @@ partial def pPexprAtom (minPrec : Nat := 0) : P PE := do
       let pes ← sepByComma pPexpr
       lexSym ")"
       return (mkPE (PEctor CivXOR pes))
-    | some "Fvfromint" =>
+    | some "Fvfromint" | some "Cfvfromint" =>   -- `Cfvfromint` = the pp spelling (Z2-CP-21, see pCtorName)
       lexSym "("
       let pes ← sepByComma pPexpr
       lexSym ")"
       return (mkPE (PEctor Cfvfromint pes))
-    | some "Ivfromfloat" =>
+    | some "Ivfromfloat" | some "Civfromfloat" =>   -- `Civfromfloat` = the pp spelling (Z2-CP-21)
       lexSym "("
       let pes ← sepByComma pPexpr
       lexSym ")"
@@ -1296,8 +1322,24 @@ partial def pPexprAtom (minPrec : Nat := 0) : P PE := do
       lexSym ")"
       return (mkPE (PEcfunction pe))
     | some id =>
+      -- Zero-discrepancy Z2-CP-01: the pp prints an `OVfloating` through
+      -- OCaml `string_of_float` (pp_core.ml:279-282), which renders the
+      -- IEEE infinities and NaN as the IDENTIFIER-shaped `inf`, `-inf`,
+      -- `nan`; the OCaml Core grammar has NO float literal at all
+      -- (core_lexer.mll:290-291 — the oracle never re-reads its own dumps,
+      -- it runs the in-memory libc.co), so the pinned `--pp=core` dump
+      -- tests/libc/libc.core carries `pure(Specified(inf))` at
+      -- :53897/:53906/:64081/:64090 (proc decfloat's overflow path) and this
+      -- parser lexed it as an UNBOUND symbol — every strtod/strtof overflow
+      -- in libc mode was `Error {msg: "Unresolved_symbol: …"}` where the
+      -- oracle answers a value (pin tests/immaculate/libc/zd-z2cp01-strtod-inf.c).
+      -- Mapped to the value the oracle's AST holds. NaN payload/sign are not
+      -- recoverable from the text (the pp loses them) — the sign of a printed
+      -- `nan` is taken as positive, `-nan` as negative (pPexprMinus).
+      if id == "inf" then return (mkPE (PEval (Vobject (OVfloating (1.0 / 0.0 : Float)))))
+      else if id == "nan" then return (mkPE (PEval (Vobject (OVfloating (0.0 / 0.0 : Float)))))
       -- Handle __conv_int__
-      if id == "__conv_int__" then
+      else if id == "__conv_int__" then
         lexSym "("
         let ity ← pCoreIntegerType
         lexSym ","
