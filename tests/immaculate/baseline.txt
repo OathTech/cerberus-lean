@@ -94,6 +94,7 @@ zd-d7-free-interior-pointer MATCH | L=UB:{ub: "UB179a_non_matching_allocation_fr
 zd-da-align16 MATCH | L=VAL:{value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}
 zd-da-offset MATCH | L=VAL:{value: "Specified(8)", stdout: "", stderr: "", blocked: "false"}
 zd-e2-ptr-string-literals ORACLE_CRASH | L=VAL:{value: "Specified(0)", stdout: "98 65 66 4 83 52 3 10 9 92 34 39 63 0 4\n", stderr: "", blocked: "false"}
+zd-f1-truncate-negative-length MATCH | L=VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
 zd-z2m02-device-funptr-call MATCH | L=CRASH
 zd-z2p01-stderr_escape MATCH | L=VAL:{value: "Specified(0)", stdout: "", stderr: "E\b\007\255|", blocked: "false"}
 zd-z2p01-stdout_escape MATCH | L=VAL:{value: "Specified(0)", stdout: "a\bb\007\127\195\169\011\012\027|\n", stderr: "", blocked: "false"}

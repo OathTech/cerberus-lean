@@ -1082,7 +1082,9 @@ def main (args : List String) : IO Unit := do
   -- --first (optional, after --batch/--pp-core): single-trace execution —
   -- the Lean-side analogue of OCaml `--mode=random` (one trace instead of
   -- the exhaustive set). See CerbND.runND1 (arc-5 S3 seam).
-  let firstTrace := rest0.head? == some "--first"
+  -- audit F3: a bare leading `--first` (no `--batch`/`--pp-core`) is NOT
+  -- the single-trace switch — it stays in the scan and is refused
+  let firstTrace := (batchMode || ppCoreMode) && rest0.head? == some "--first"
   let rest1 := if firstTrace then rest0.drop 1 else rest0
   -- --libc <pinned.core> --libc-tu <json> … (arc-6 S1): additive libc
   -- mode — load the pinned libc Core text dump plus the 12 metadata TU
@@ -1178,6 +1180,10 @@ def main (args : List String) : IO Unit := do
   -- --parse-core: test the Core text parser
   if args.head? == some "--parse-core" then
     let files := args.drop 1
+    -- audit F2 (Z-24 contract): this branch consumed every token as a file
+    -- name; a `--` token here is refused like everywhere else
+    for a in files do
+      if a.startsWith "--" && a != "--stdin" then refuseFlag a
     let mut failures := 0
     for file in files do
       let input ← if file == "--stdin" then do

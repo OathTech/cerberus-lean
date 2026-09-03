@@ -28,7 +28,7 @@ one signature gained an instance binder (`casePtrval`).
 | `CerbLocation.simpleLocation` | NEW; the oracle's `<L:C--L:C>` / `<unknown location>` / `<other location: s>` rendering, used by every batch `loc:` field | `lean_frontend/CerbLocation.lean:222` ↔ `util/cerb_location.ml:476-491` |
 | `CerbLocation.isLibraryLocation` | runtime-relative SUFFIX test (`runtime/libc/include`, `runtime/libcore`, `runtime/libcore/impls`); the any-segment heuristic is gone | `lean_frontend/CerbLocation.lean:205` ↔ `util/cerb_location.ml:512-520` |
 | `CerbFS.fs_*` (25 ops) | every op the model cannot answer as SibylFS does now REFUSES (`panic!`, attributed) instead of serving a default; served set = the op-by-op table in the header | `lean_frontend/CerbFS.lean` header table |
-| `Main.refuseFlag`, startup `LEAN_ABORT_ON_PANIC` check, `Main.batchEscape` | BINARY ONLY: unknown/misplaced flags → exit 2; refuses to start without `LEAN_ABORT_ON_PANIC`; batch `stdout:`/`stderr:` fields escaped as OCaml `String.escaped`; killed-state stderr rendered on Undefined lines; zero-executions refusal declared (Q8 = A) | `lean_frontend/Main.lean:1038`, `:1057`, `:359` |
+| `Main.refuseFlag`, startup `LEAN_ABORT_ON_PANIC` check, `Main.batchEscape` | BINARY ONLY: unknown/misplaced flags → exit 2; refuses to start without `LEAN_ABORT_ON_PANIC`; batch `stdout:`/`stderr:` fields escaped as OCaml `String.escaped`; killed-state stderr rendered on Undefined lines; zero-executions refusal declared (Q8 = A) | `lean_frontend/Main.lean:1038` (`def refuseFlag`), `:1063` (the `IO.getEnv "LEAN_ABORT_ON_PANIC"` check), `:387` (`def batchEscape`) — recomputed after the audit-response edits |
 
 ## 2. What you will observe on re-pin
 

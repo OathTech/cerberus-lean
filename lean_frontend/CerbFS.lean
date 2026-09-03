@@ -36,6 +36,10 @@
   | fs_open  missing file WITHOUT O_CREAT           | ENOENT (fopen → NULL)                    | REFUSED (was: created empty) |
   | fs_open  any O_EXCL                             | EEXIST if it exists, else create+mode    | REFUSED (was: ignored) |
   | fs_open  existing file with write/trunc/append   | truncation / positioning per flags       | REFUSED       |
+  | fs_open  negative oflag                          | Nat_big_num.to_int32 → a negative flag   | REFUSED (was: .toNat = 0, read-only open) |
+  |                                                 | word (sibylfs.ml run_open)               |               |
+  | (every fd argument)                             | fd_of_int n = FD (abs n) (sibylfs.ml:169-170): a NEGATIVE fd denotes |fd| | MIRRORED (fd.natAbs; was: .toNat = 0) |
+  | (every read/write count)                        | abs (to_int size) (sibylfs.ml run_read/run_write/…): a negative count denotes |count| | MIRRORED (natAbs; was: .toNat = 0) |
   | fs_close fd ≥ 3 open / unknown                  | 0 / EBADF                                | SERVED        |
   | fs_read  offset 0 (prefix) / at EOF             | bytes / 0 bytes                          | SERVED        |
   | fs_read  any other offset                       | bytes from the offset                    | REFUSED       |
@@ -43,11 +47,14 @@
   |                                                 | fid with NO O_RDONLY/O_RDWR flag         |               |
   |                                                 | (fs_spec.lem:4949-4956, :5806-5812)      |               |
   | fs_read  unknown fd                             | EBADF                                    | SERVED        |
-  | fs_write fd ≥ 3 at offset == size (append)      | n, offset advances                       | SERVED        |
+  | fs_write fd ≥ 3 at offset == size (append),     | n, offset advances                       | SERVED        |
+  |          |count| ≤ |buf|                        |                                          |               |
+  | fs_write |count| > |buf|                        | fs_spec write of len bytes from a shorter buffer | REFUSED (unread SibylFS arm) |
   | fs_write any other offset                       | overwrite/extend                         | REFUSED       |
   | fs_write unknown fd                             | EBADF                                    | SERVED        |
   | (fs_write on fd 0,1,2 never reaches Fs: driver.lem:352-359 routes 1/2 to the stdout/stderr records and 0 to `error`) |
   | fs_pread offset 0 / at EOF; fs_pwrite at size   | as read/write, fd offset untouched       | SERVED        |
+  | fs_pread/fs_pwrite NEGATIVE offset              | EINVAL (fs_spec.lem:3392 pread, :4287 pwrite) | SERVED (was: REFUSED) |
   | fs_pread/fs_pwrite other offsets                |                                          | REFUSED       |
   | fs_pread/fs_pwrite fd 0,1,2                     | EBADF (no read/write flag on the dummy   | SERVED        |
   |                                                 | fid; fs_spec.lem:4949-4956/:5006-5012)   |               |
@@ -59,8 +66,10 @@
   | fs_lseek, fs_close on fd 0,1,2                  | performed on the std fd (open in the     | REFUSED (was: EBADF) |
   |                                                 | initial state, fs_spec.lem:5690-5696)    |               |
   | fs_umask                                        | previous mask; new mask applies to modes | SERVED (the mode it would affect is only observable through stat/open, refused/served as above) |
-  | fs_truncate no open fd on the path, len ≤ size  | shrink                                   | SERVED        |
+  | fs_truncate NEGATIVE len                        | EINVAL (fs_spec.lem:4020, posix/truncate.md EINVAL:1), file untouched | SERVED (audit F1: was `take len.toNat` = EMPTIED the file and returned 0) |
+  | fs_truncate no open fd on the path, 0 ≤ len ≤ size | shrink                                | SERVED        |
   | fs_truncate open fd on the path, or len > size  | fd offsets keep; zero-extension          | REFUSED (was: List.take) |
+  | fs_truncate/fs_unlink/fs_rename on a DIRECTORY path | EISDIR (fs_spec.lem:4025) / …          | NOT DISTINGUISHED: this model has no directories, a directory path reads as a missing file (ENOENT) — audit N-note; a refusal would need a path classifier the model lacks |
   | fs_unlink  no open fd on the path               | removed                                  | SERVED        |
   | fs_unlink  open fd on the path                  | the file persists until the last close   | REFUSED (was: removed) |
   | fs_rename  no open fd on either path            | renamed                                  | SERVED        |
@@ -186,12 +195,23 @@ private def lookupFd (st : FsState) (fd : Nat) : Option FdEntry :=
 private def anyFdOn (st : FsState) (path : String) : Bool :=
   st.fds.any (fun (_, e) => e.path == path)
 
-/-- fds 0,1,2 are SibylFS's std fds, OPEN in its initial state on a dummy
-    fid (fs_spec.lem:5690-5696, :5806-5812): read/pread/pwrite on them are
-    EBADF there too (no access flag on the dummy fid) and stay served;
-    lseek/close are PERFORMED on the dummy fd there, where this model,
-    having no entry, answered EBADF — a different answer, refused. -/
-private def isStdFd (fd : Int) : Bool := fd == 0 || fd == 1 || fd == 2
+/-- SibylFS's fd argument conversion: `fd_of_int n = FD (abs n)`
+    (sibylfs/generated/sibylfs.ml:169-170) — a negative fd denotes |fd|.
+    Mirrored everywhere an fd is looked up (audit-response: `.toNat` mapped
+    every negative fd to 0). -/
+private def fdOf (fd : Int) : Nat := fd.natAbs
+
+/-- `abs (Nat_big_num.to_int size)` — SibylFS's count conversion
+    (sibylfs.ml run_read/run_pread/run_write/run_pwrite). -/
+private def countOf (n : Int) : Nat := n.natAbs
+
+/-- fds 0,1,2 (after the abs mapping) are SibylFS's std fds, OPEN in its
+    initial state on a dummy fid (fs_spec.lem:5690-5696, :5806-5812):
+    read/pread/pwrite on them are EBADF there too (no access flag on the
+    dummy fid) and stay served; lseek/close are PERFORMED on the dummy fd
+    there, where this model, having no entry, answered EBADF — a different
+    answer, refused. -/
+private def isStdFd (fd : Int) : Bool := fdOf fd ≤ 2
 
 -- FS operations return (new_state, Either error result)
 
@@ -203,6 +223,10 @@ def fs_open (st : FsState) (path : String) (oflag : Int) (_ : Option Int) : FsSt
   -- Flag encoding is SibylFS fs_spec.lem's (mirrored by
   -- runtime/libc/include/posix/fcntl.h:27-45): O_WRONLY=0o4, O_RDWR=0o10,
   -- O_CREAT=0o40, O_EXCL=0o100, O_TRUNC=0o400, O_APPEND=0o1000.
+  if oflag < 0 then
+    panic! (refusal s!"open of '{path}' with the NEGATIVE oflag {oflag}"
+      "SibylFS converts it with Nat_big_num.to_int32 to a negative flag word and tests the bits of that; this model's Nat conversion would read it as no flags (a read-only open)" moverFlags)
+  else
   let flags := oflag.toNat
   if flags &&& 0o100 != 0 then
     panic! (refusal s!"open of '{path}' with O_EXCL (oflag {oflag})"
@@ -233,7 +257,7 @@ def fs_close (st : FsState) (fd : Int) : FsState × (Sum FsError Nat) :=
   if isStdFd fd then
     panic! (refusal s!"close of fd {fd}" "fds 0,1,2 are open in SibylFS's initial state; this model has no entry for them and answered EBADF" moverStdFds)
   else
-  let fdN := fd.toNat
+  let fdN := fdOf fd
   match lookupFd st fdN with
   | none => (st, .inl .ebadf)   -- EBADF, as SibylFS
   | some _ =>
@@ -244,9 +268,19 @@ def fs_close (st : FsState) (fd : Int) : FsState × (Sum FsError Nat) :=
 private def setFd (st : FsState) (fdN : Nat) (entry' : FdEntry) : FsState :=
   { st with fds := st.fds.map (fun (f, e) => if f == fdN then (f, entry') else (f, e)) }
 
-def fs_write (st : FsState) (fd : Int) (data : List Char) (_ : Int) : FsState × (Sum FsError Nat) :=
+def fs_write (st : FsState) (fd : Int) (data : List Char) (count : Int) : FsState × (Sum FsError Nat) :=
   -- fds 0,1,2 never reach here: driver.lem:352-359 routes them itself
-  let fdN := fd.toNat
+  let fdN := fdOf fd
+  -- sibylfs.ml run_write: `OS_WRITE (fd, of_list buf, abs size)` — the
+  -- count is |count| bytes of buf (the libc builds buf with exactly `size`
+  -- chars, so the two agree; the shorter-buffer arm of fs_spec's write is
+  -- not mirrored — refused, never clamped)
+  let n := countOf count
+  if n > data.length then
+    panic! (refusal s!"write on fd {fd} of {n} bytes from a {data.length}-byte buffer"
+      "SibylFS writes `abs size` bytes from the buffer; this model has not mirrored the shorter-buffer arm" moverOffsets)
+  else
+  let data := data.take n
   match lookupFd st fdN with
   | none => (st, .inl .ebadf)   -- EBADF, as SibylFS
   | some entry =>
@@ -267,7 +301,7 @@ def fs_write (st : FsState) (fd : Int) (data : List Char) (_ : Int) : FsState ×
         "the minimal fs model can only append at end-of-file; answering would write WRONG data" moverOffsets)
 
 def fs_read (st : FsState) (fd : Int) (count : Int) : FsState × (Sum FsError (List Char)) :=
-  let fdN := fd.toNat
+  let fdN := fdOf fd
   match lookupFd st fdN with
   | none =>
     -- EBADF, as SibylFS — for an unknown fd (fs_spec.lem:4946-4947) AND for
@@ -289,7 +323,7 @@ def fs_read (st : FsState) (fd : Int) (count : Int) : FsState × (Sum FsError (L
       if entry.offset == contents.length then
         (st, .inr [])  -- at EOF: correct empty read, no state change
       else if entry.offset == 0 then
-        let data := contents.take count.toNat
+        let data := contents.take (countOf count)   -- sibylfs.ml run_read: abs size
         (setFd st fdN { entry with offset := data.length }, .inr data)
       else
         panic! (refusal s!"read on fd {fd} at offset {entry.offset} of the {contents.length}-byte file '{entry.path}'"
@@ -298,12 +332,20 @@ def fs_read (st : FsState) (fd : Int) (count : Int) : FsState × (Sum FsError (L
 def fs_mkdir (st : FsState) (path : String) (mode : Int) : FsState × (Sum FsError Nat) :=
   panic! (refusal s!"mkdir '{path}' (mode {mode})" "SibylFS creates a directory (EEXIST/ENOENT/EACCES per POSIX); this model has no directories and answered a success-returning no-op" moverDirs)
 
-def fs_pwrite (st : FsState) (fd : Int) (data : List Char) (_ offset : Int) : FsState × (Sum FsError Nat) :=
-  let fdN := fd.toNat
+def fs_pwrite (st : FsState) (fd : Int) (data : List Char) (count offset : Int) : FsState × (Sum FsError Nat) :=
+  let fdN := fdOf fd
+  let n := countOf count   -- sibylfs.ml run_pwrite: abs size
+  if n > data.length then
+    panic! (refusal s!"pwrite on fd {fd} of {n} bytes from a {data.length}-byte buffer"
+      "SibylFS writes `abs size` bytes from the buffer; this model has not mirrored the shorter-buffer arm" moverOffsets)
+  else
+  let data := data.take n
   match lookupFd st fdN with
   | none => (st, .inl .ebadf)   -- EBADF, as SibylFS (unknown fd, or a std fd: no write flag on the dummy fid, fs_spec.lem:5006-5012)
   | some entry =>
     let contents := (lookupFile st entry.path).getD []
+    -- fs_spec.lem:4287 fsop_pwrite_checks: `fsm_cond_raise EINVAL (ofs < 0)`
+    if offset < 0 then (st, .inl (.other "EINVAL")) else
     -- Fail-closed (header): pwrite is correct here only as an append at
     -- the exact end of file; POSIX pwrite does NOT move the fd offset,
     -- so the entry is left untouched. Any other offset — refuse (the
@@ -317,7 +359,7 @@ def fs_pwrite (st : FsState) (fd : Int) (data : List Char) (_ offset : Int) : Fs
         "the minimal fs model can only append at end-of-file; answering would write WRONG data" moverOffsets)
 
 def fs_pread (st : FsState) (fd : Int) (count off : Int) : FsState × (Sum FsError (List Char)) :=
-  let fdN := fd.toNat
+  let fdN := fdOf fd
   match lookupFd st fdN with
   | none => (st, .inl .ebadf)   -- EBADF, as SibylFS (unknown fd, or a std fd: no read flag on the dummy fid, fs_spec.lem:4949-4956)
   | some entry =>
@@ -329,10 +371,12 @@ def fs_pread (st : FsState) (fd : Int) (count off : Int) : FsState × (Sum FsErr
       -- (empty) are the two patterns the model answers correctly; POSIX
       -- pread never moves the fd offset, so no state change. Any other
       -- offset — refuse (the old model read from 0 regardless).
-      if off == (contents.length : Int) then
+      -- fs_spec.lem:3392 fsop_pread_checks: `fsm_cond_raise EINVAL (ofs < 0)`
+      if off < 0 then (st, .inl (.other "EINVAL"))
+      else if off == (contents.length : Int) then
         (st, .inr [])
       else if off == 0 then
-        (st, .inr (contents.take count.toNat))
+        (st, .inr (contents.take (countOf count)))   -- sibylfs.ml run_pread: abs size
       else
         panic! (refusal s!"pread on fd {fd} at requested offset {off} of the {contents.length}-byte file '{entry.path}'"
           "the minimal fs model can only serve whole-prefix (offset 0) or at-EOF reads; answering would return WRONG data" moverOffsets)
@@ -376,8 +420,15 @@ def fs_rmdir (st : FsState) (path : String) : FsState × (Sum FsError Nat) :=
   panic! (refusal s!"rmdir '{path}'" "SibylFS removes a directory (ENOENT/ENOTEMPTY/ENOTDIR per POSIX); this model has no directories and answered a success-returning no-op" moverDirs)
 
 def fs_truncate (st : FsState) (path : String) (len : Int) : FsState × (Sum FsError Nat) :=
+  -- fs_spec.lem:4020 fsop_truncate_checks: `fsm_cond_raise EINVAL (len < 0)`
+  -- (posix/truncate.md EINVAL:1) is the FIRST check, before the path
+  -- resolution (:4022-4026 ENOENT/EISDIR). Audit F1 (2026-09-03): this
+  -- arm was missing — `contents.take len.toNat` EMPTIED the file and
+  -- returned 0 for a negative length (Lean Specified(2) vs the oracle's
+  -- Specified(1) on tests/immaculate/libc/zd-f1-truncate-negative-length.c).
+  if len < 0 then (st, .inl (.other "EINVAL")) else
   match lookupFile st path with
-  | none => (st, .inl .enoent)  -- ENOENT, as SibylFS
+  | none => (st, .inl .enoent)  -- ENOENT, as SibylFS (:4024; a directory path would be EISDIR :4025 — not distinguished, header)
   | some contents =>
     if anyFdOn st path then
       panic! (refusal s!"truncate '{path}' to {len} while an fd is open on it"
@@ -406,7 +457,7 @@ def fs_lseek (st : FsState) (fd offset whence : Int) : FsState × (Sum FsError N
   if isStdFd fd then
     panic! (refusal s!"lseek on fd {fd}" "fds 0,1,2 are SibylFS's std fds; this model has no entry for them and answered EBADF" moverStdFds)
   else
-  match st.fds.find? (fun (f, _) => f == fd.toNat) with
+  match st.fds.find? (fun (f, _) => f == fdOf fd) with
   | none => (st, .inl .ebadf)   -- EBADF, as SibylFS
   | some (_, entry) =>
     match lookupFile st entry.path with
@@ -430,7 +481,7 @@ def fs_lseek (st : FsState) (fd offset whence : Int) : FsState × (Sum FsError N
         else
           let entry' := { entry with offset := newOffset.toNat }
           let fds' := st.fds.map (fun (f, e) =>
-            if f == fd.toNat then (f, entry') else (f, e))
+            if f == fdOf fd then (f, entry') else (f, e))
           ({ st with fds := fds' }, .inr newOffset.toNat)
 
 def fs_stat (st : FsState) (path : String) : FsState × (Sum FsError FsStat) :=

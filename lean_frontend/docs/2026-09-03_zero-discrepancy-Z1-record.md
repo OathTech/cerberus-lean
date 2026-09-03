@@ -57,7 +57,7 @@ the discrepancies below are all Lean-side).
 | census rows fixed (mirror + cite) | — | Z-05, Z-06, Z-07, Z-08, Z-10, Z-01, Z-02, Z-03, Z-67, Z-72, Z-76 (+ the same-hunk seam rows Z-09, Z-11, Z-12; + Z2 audit rows Z2-M-02, Z2-P-01, Z2-FL-03) |
 | refusal hygiene | flags became file names; panics could continue to a value; CerbFS served silently-divergent answers | Z-24/Z-25 attributed refusals (exit 2); LEAN_ABORT_ON_PANIC required; CerbFS op-by-op table, every non-SibylFS answer refuses |
 | instrument | every lane kept the UB code alone | every extractor compares the whole `Undefined {…}` line; immaculate compares whole Defined/Undefined/Error payloads |
-| immaculate pins | 31 rows | 44 rows; 15 flips DIFF→MATCH by fixes, 8 pre-existing UB rows gained the oracle's `<L:C--L:C>` |
+| immaculate pins | 31 rows | 46 rows (derived, `grep -vc '^#\|^$'`: 31 + 11 at `37d205a0e` + 1 `zd-z2m02` + 2 `zd-z2p01-*` + 1 `zd-f1` at the audit response; the first draft said 44 — audit F4); 20 flips DIFF→MATCH across the slice (derived from the per-commit baseline diffs: 1 + 3 + 14 + 2; the first draft said 15), of which 12 are `zd-*` pins and 8 are pre-existing UB rows that gained the oracle's `<L:C--L:C>` |
 | register | "DELIBERATE DIVERGENCE"/"never fix-to-match" labels | ISO-fix register R1, R2 ADMITTED, R3 ADMITTED CONDITIONAL; `-- ISO-fix register R<n>` markers |
 
 ## 1. Findings are claims — the pre-fix measurements
@@ -225,7 +225,7 @@ comment). Lean after `Defined {value: "Specified(2)", stdout: "", stderr:
   byte so the output is pure ASCII (no UTF-8 re-encoding of bytes ≥ 0x80).
   After: `stdout: "a\bb\007\127\195\169\011\012\027|\n"` and `stderr:
   "E\b\007\255|"` — identical to the oracle.
-- Baseline: 15 immaculate rows DIFF→MATCH (zd-d1, zd-d2, zd-d7,
+- Baseline: 14 immaculate rows DIFF→MATCH (derived by recount, audit F4; the first draft said 15: zd-d1, zd-d2, zd-d7,
   zd-z72-stderr-ub, both zd-z2p01, and the 8 pre-existing UB rows now
   carrying the oracle's `<L:C--L:C>`).
 
@@ -491,6 +491,26 @@ erratum of count, not of substance.
 7. **Same-hunk seam rows** Z-09, Z-11, Z-12 (Z2's list) were fixed inside
    Z1's Z-06/Z-07/Z-08 mirrors (they are the same OCaml arms); recorded in
    the census as FIXED with the hunk cite rather than left for Z2.
+9. **Line-number drift of quoted PANIC witnesses** (audit F5): the `PANIC at
+   CerbMem.killM CerbMem:1944:10` line in §2 was verbatim on the PRE-rebase
+   build; the stamped binary after the rebase and the audit response prints
+   `CerbMem:1953:10` (re-measured on `inj_bug.c` + `inject_rand.core`,
+   verbatim: `PANIC at CerbMem.killM CerbMem:1953:10: Concrete: FREE was
+   called on a dead allocation`). Verbatim-then, not a defect; quoted line
+   numbers in panic texts are build-relative.
+10. **`zd-d5` `TRIAGED_UB` is provisional** (audit F6): the D3(a)
+   "documented model choice" rests on impl_mem.ml:620-624's own `TODO …
+   hardcoded ranges` comment; the charter's Z-06 makes the ranges a tray
+   question and no draft exists yet. The triage row now says so; Z4 drafts
+   the tray question and decides whether the row stays `TRIAGED_UB` or
+   moves to the `PINNED_TRAY_<n>` class of charter §4.2.
+11. **gcc lane load caveat fired for the auditor** (audit F7): two auditor
+   runs at box load 20–30 went red on the single row `csmith/sia_csmith_477.c
+   AGREE → SKIP_LEAN_TIMEOUT`; hand-retimed at load 2.4 it completes in
+   17.96 s (bound 30 s) with `Specified(132)` = gcc 132 → AGREE. This is
+   LADDER.md Tier B row 7's recorded caveat firing, not a regression; no
+   baseline change. Z4's Z-31 measurement should add this row's 18 s / 30 s
+   margin to the recorded set.
 8. **Speclab derived pin encoded the wrong alignment**: `SpecLab/
    ListAppendCore.lean` (generated from the parsed std.core closure) had
    `alloc((16 : Int), size)`; regenerated (commit `8442a67d8`). Any other
@@ -512,7 +532,7 @@ probe integration beyond the 14 files pinned here (Z4).
 | tests/immaculate | zd-d4-copy-alloc-id | DIFF → MATCH | `768be3698` (Z-05) |
 | tests/immaculate | zd-d5-device-range-load, zd-d6-free-device-pointer, zd-d6-free-no-provenance | DIFF → MATCH; zd-d7 DIFF (token ERR → UB179a@unknown); + zd-z2m02-device-funptr-call MATCH\|L=CRASH (new) | `c61b78f70` (Z-06/07/08/10, Z2-M-02) |
 | tests/immaculate | zd-z2p01-stdout_escape, zd-z2p01-stderr_escape (new) | DIFF; 21 VAL rows reshape to the whole Defined payload (all MATCH) | `cf664a2c4` pin commit |
-| tests/immaculate | zd-d1, zd-d2, zd-d7, zd-z72-stderr-ub, zd-z2p01 ×2 + the 8 pre-existing UB rows above | DIFF → MATCH (15 rows); s4b-memcmp-hugesize token loc "unknown location" → "<unknown location>" | `1c1311a57` (Z-01/02/03/67/72, Z2-P-01) |
+| tests/immaculate | zd-d1, zd-d2, zd-d7, zd-z72-stderr-ub, zd-z2p01 ×2 + the 8 pre-existing UB rows above | DIFF → MATCH (14 rows — recounted, audit F4); s4b-memcmp-hugesize token loc "unknown location" → "<unknown location>" | `1c1311a57` (Z-01/02/03/67/72, Z2-P-01) |
 | tests/immaculate | zd-da-offset, zd-da-align16 | DIFF → MATCH | `8da338f42` (Z-76) |
 | tests/immaculate | header only (register wording; rows unchanged) | — | register commit |
 | tests/verify/expectations.txt | t2_add ×2 UB pins | code-only → whole payload (Lean == oracle, unchanged verdict) | `666694a07` (§4.1) |
@@ -758,3 +778,144 @@ bytes) and `aligned_alloc_zero_nolibc.c` (oracles exit 125
 `Division_by_zero`, Lean a UB verdict) — the latter is Z2's, not fixed
 here. Consumer change manifest for this slice:
 `docs/2026-09-03_zero-discrepancy-Z1-change-manifest.md`.
+
+## 11. Audit response (pre-merge audit `docs/2026-09-03_zero-discrepancy-Z1-audit.md` @ `audit/z1-premerge` `7f8549fe7`: MERGE-WITH-FIXES)
+
+One audit-response commit on top of the orchestrator's boundary review
+`e6f86bdcb`. Findings are claims: F1 was re-measured on the stamped
+binaries (oracle `6e63ade6…`, lean `4ebda58b…`) BEFORE any change.
+
+**F1 (MAJOR) — `CerbFS.fs_truncate` served a negative length.** Auditor's
+probe (libc; `create+write "hello"; close; int r = truncate("t.txt", -1);
+return r == -1 ? 1 : 2;`, user-declared prototype), verbatim:
+
+```
+before  fork-oracle rc=0: Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+        upstream    rc=0: Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+        Lean        rc=0: Defined {value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}
+after   Lean        rc=0: Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+```
+
+REPRODUCED (the served arm `contents.take len.toNat` emptied the file and
+returned 0). Mirror: `fs_spec.lem:4020` `fsm_cond_raise EINVAL (len < 0)`
+(posix/truncate.md EINVAL:1) as the FIRST check — `(st, .inl (.other
+"EINVAL"))`, the shape `fs_lseek` already used; `driver.lem store_error`
+turns it into errno + −1 exactly as for the oracle. Header row now reads
+"0 ≤ len ≤ size → SERVED; negative → EINVAL SERVED". Pin
+`tests/immaculate/libc/zd-f1-truncate-negative-length.c`, measured in the
+lane on the pre-fix binary then after the fix:
+
+```
+before  DIFF   zd-f1-truncate-negative-length  O[VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}] L[VAL:{value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}]
+after   (see §11.1 — re-recorded MATCH)
+```
+
+Same-shape re-check of every signed argument the code converted with
+`.toNat` (each now MIRRORED or REFUSED, never clamped; cites in-code and
+in the header table): every fd → `fd.natAbs` (`sibylfs.ml:169-170`
+`fd_of_int n = FD (abs n)`; `.toNat` mapped every negative fd to 0, so
+`close(-1)`/`lseek(-1,…)` answered EBADF where SibylFS acts on fd 1) —
+`isStdFd` now tests the abs value; every read/write count → `natAbs`
+(`sibylfs.ml run_read/run_pread/run_write/run_pwrite` `abs (to_int size)`);
+`fs_write`/`fs_pwrite` write exactly |count| bytes of the buffer and REFUSE
+when |count| exceeds the buffer (the shorter-buffer arm is not mirrored);
+`fs_pread` negative offset → EINVAL (`fs_spec.lem:3392`); `fs_pwrite`
+negative offset → EINVAL (`:4287`); `fs_open` negative oflag → REFUSED
+(SibylFS tests the bits of `Nat_big_num.to_int32 oflag`; `.toNat` read it
+as no flags = a read-only open); `fs_lseek` fd → natAbs (its negative
+result was already EINVAL, `:5119`); `fs_umask` `old.toNat` untouched (the
+previous mask is never negative; a negative NEW mask is observable only
+through stat/open modes, refused). The auditor's N-grade directory-PATH
+residual (EISDIR at `:4025` vs this model's ENOENT for `truncate`/
+`unlink`/`rename` on a directory path; `open` with O_CREAT on a directory
+path) is stated in the header table as NOT DISTINGUISHED (the model has no
+path classifier) — not fixed here.
+
+**F2 (MINOR) — `--parse-core` bypassed `refuseFlag`.** The branch now runs
+`refuseFlag` over every `--` token in its file list (`--stdin` excepted).
+Plants, verbatim (rc and first line):
+
+```
+--parse-core runtime/libcore/std.core --frobnicate → cerberus-lean: refused — --frobnicate: unknown flag; this port accepts only … rc=2
+--parse-core --batch runtime/libcore/std.core       → cerberus-lean: refused — --batch: known flag out of its canonical position (…) rc=2
+--parse-core runtime/libcore/std.core               → runtime/libcore/std.core: Core file: 22 fun, 52 proc, 0 def/impl, 0 struct/union, 0 glob, 36 builtin rc=0
+```
+
+**F3 (MINOR) — bare leading `--first` accepted in human mode.**
+`firstTrace := (batchMode || ppCoreMode) && rest0.head? == some "--first"`;
+a bare `--first` reaches the scan and is refused. Plants, verbatim:
+
+```
+--first fnb.json          → cerberus-lean: refused — --first: known flag out of its canonical position (…) rc=2
+--batch --first fnb.json  → Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"} rc=0
+--pp-core --first fnb.json → (signature dump) rc=0;   --batch fnb.json → Defined {value: "Specified(7)", …} rc=0
+```
+
+**F4 (MINOR) — tallies** recounted (derived, labelled) and corrected in
+§0/§2/§8: 46 immaculate rows after this commit (45 at the audit; the
+first draft said 44), 14 flips at `1c1311a57` (not 15), 20 flips across
+the slice.
+
+**F5 (MINOR) — cites**: the change manifest's `Main.lean:1057`/`:359` →
+`:1063` (the `IO.getEnv` check) / `:387` (`def batchEscape`), recomputed
+after this commit's edits (`refuseFlag` stays `:1038`; `firstTrace` is
+`:1087`); the `CerbMem:1944:10` witness is annotated as pre-rebase (§7.9),
+re-measured `CerbMem:1953:10`.
+
+**F6** — provisional note added to the `zd-d5` triage row and §7.10.
+**F7** — recorded in §7.11 (LADDER row-7 load caveat; no baseline change).
+**N-notes** — left as the auditor recorded them.
+
+### 11.1 Gates after the audit-response commit (serial, capped 32G, fresh stamps)
+
+Freshness (`--check`, verbatim) and every lane line (`rc`, wall, verbatim SUMMARY/baseline line), from the serial gate run after the edits (lean stamp `ba5a7ec0…`):
+
+```
+check_driver_fresh: oracle OK (bin 6e63ade67b7395d50e0345ccc84eefe97b0a99cdba94439831d9ff1a4e2f1217, src c9c1a7067139b3ceb4eb0ad6870b93d8d0dbbaa9bd39e0397f11e8c975737a3b)
+check_driver_fresh: lean OK (bin ba5a7ec0229f9a9c9d0964add550e14eeb289ec5a5ee2d03ee67c78daaf20b80, src 9e8574f24e59a6e94cdfa4921fa6e49490a1ee6397ff0c0f30382ae0c96008cc)
+### imm check rc=1 ::
+      DEVIATION: zd-f1-truncate-negative-length expected [<absent>] got [MATCH | L=VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}] 
+### ./scripts/test_immaculate.sh --record-baseline rc=0 (37s) ::
+      BASELINE RECORDED: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/zero-discrepancy/tests/immaculate/baseline.txt 
+### ./scripts/test_immaculate.sh rc=0 (38s) ::
+      OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip DIFF, R3 s4b-memcmp-hugesize ORACLE_CRASH — VALIDATION.md 'ISO-fix register' — and the in-Lean probes g6 TRIPWIRE / illtyped-store KILL). 
+### ./scripts/test_unit.sh rc=0 (12s) ::
+      All PP tests passed Total: 6 passed, 0 failed 
+### ./scripts/test_exec.sh --check-baseline rc=0 (12s) ::
+      Baseline check: 0 regression(s), 0 improvement(s) BASELINE OK 
+### ./scripts/test_exec.sh --check-baseline=scripts/exec_coverage_baseline.txt tests/coverage rc=0 (22s) ::
+      Baseline check: 0 regression(s), 0 improvement(s) BASELINE OK 
+### ./scripts/test_exec.sh --check-baseline=scripts/exec_debug_baseline.txt tests/debug rc=0 (10s) ::
+      Baseline check: 0 regression(s), 0 improvement(s) BASELINE OK 
+### ./scripts/test_exec.sh --check-baseline=scripts/exec_float_baseline.txt tests/float rc=0 (8s) ::
+      Baseline check: 0 regression(s), 0 improvement(s) BASELINE OK 
+### ./scripts/test_bytes.sh rc=0 (2s) ::
+      SUMMARY: exec_match=9 neg_pinned=5 fail=0 
+### ./scripts/test_libc_exec.sh rc=0 (13s) ::
+      SUMMARY: match=7 diff=0 ALL MATCH RECORDED BASELINE 
+### ./scripts/test_multi_tu.sh rc=0 (2s) ::
+      SUMMARY: total=2 match=2 fail=0 ALL PASSED 
+### ./scripts/test_parse.sh rc=0 (10s) ::
+      Lean parse:     106 ok, 0 failed, 0 timeout (>60s; fatal), 0 lean failure(s) (crash / nonzero exit without a printed verdict; fatal) ALL PASSED 
+### ./scripts/test_core.sh rc=0 (8s) ::
+      Lean parse:     106 ok, 0 failed ALL PASSED 
+### ./scripts/test_elab.sh rc=0 (18s) ::
+      SUMMARY: total=106 same=103 diff=3 ocaml_fail=0 lean_fail=0 
+### ./scripts/test_libxml2_uri.sh rc=0 (21s) ::
+      GATE PASS: all lane expectations pinned-green + baseline unchanged (16/16) 
+### ./scripts/test_cn_coverage.sh --check-baseline rc=0 (56s) ::
+      SUMMARY: total=213 match=207 ub_match=6 ub_diff=0 reject_match=0 diff=0 mismatch=0 reject_diff=0 lean_fail=0 lean_crash=0 fuel=0 lean_error=0 lean_timeout=0 oracle_fail=0 oracle_timeout=0 oracle_inconsistent=0 BASELINE OK (213 entries, exact match) 
+### ./scripts/test_verify.sh rc=0 (76s) ::
+      test_verify: 117 passed, 0 failed (23 fixtures, 22 call points, 14 corpus fixtures, 21 corpus points) 
+### ./scripts/test_hang_plant.sh rc=0 (13s) ::
+      
+### ./scripts/test_kill_plant.sh rc=0 (171s) ::
+      PLANT OK   [libc_exec no MATCH]: SUMMARY: match=0 diff=7 PLANT OK   [libc_exec SIGKILL stub -> DIFF (not KILL)]: SUMMARY: match=0 diff=7 
+### ./scripts/test_fuel_plant.sh rc=0 (5s) ::
+      PLANT OK   [parse/abort -> LEAN_FAILURE counted]: Lean parse:     0 ok, 0 failed, 0 timeout (>60s; fatal), 1 lean failure(s) (crash / nonzero exit without a printed verdict; fatal) test_fuel_plant: ALL PLANTS OK (FUEL classification live in exec/gcc/ci_sweep/cn_coverage/measure; negatives not FUEL) 
+### ./scripts/test_gcc_oracle.sh --check-baseline rc=0 (1278s) ::
+      SUMMARY: total=1960 compared=1885 agree=1873 agree_nd=0 triaged=12 disagree=0 o2_agree=190 skip_gcc_stdout=1 skip_lean_crash=8 skip_lean_fail=9 skip_lean_timeout=11 skip_ub=46 triaged_addr=11 triaged_ub=1 Baseline check: 0 regression(s), 0 improvement(s) 
++zd-f1-truncate-negative-length MATCH | L=VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}   (the only baseline row change; 46 rows)
+```
+
+The gcc lane went green first time here (box load 0.5–9 at the start); the auditor's load-caveat row `csmith/sia_csmith_477.c` stayed AGREE (skip_lean_timeout=11 = the baseline's 11). Every other Tier A/B row unmoved. Scratch `.tmp/z1a/` deleted at the end of this response.
