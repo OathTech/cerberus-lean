@@ -55,10 +55,10 @@ g1-ge-funptr MATCH | L=ERR:{msg: "Memory WIP: ge_ptrval"}
 g1-lt-null MATCH | L=ERR:{msg: "Memory WIP: lt_ptrval ==> one null pointer"}
 g2-memcmp-uninit MATCH | L=CRASH
 g2-memcpy-ok MATCH | L=VAL:{value: "Specified(4)", stdout: "", stderr: "", blocked: "false"}
-g2-memcpy-oob DIFF | L=UB:{ub: "UB_CERB002b_out_of_bound_store", stderr: "", loc: "unknown location"}
-g2-memcpy-readonly DIFF | L=UB:{ub: "UB064_modifying_const", stderr: "", loc: "unknown location"}
-g3-realloc-dead DIFF | L=UB:{ub: "UB179d_dead_allocation_realloc", stderr: "", loc: "unknown location"}
-g3-realloc-non-heap DIFF | L=UB:{ub: "UB179c_non_matching_allocation_realloc", stderr: "", loc: "unknown location"}
+g2-memcpy-oob MATCH | L=UB:{ub: "UB_CERB002b_out_of_bound_store", stderr: "", loc: "<8:3--8:22>"}
+g2-memcpy-readonly MATCH | L=UB:{ub: "UB064_modifying_const", stderr: "", loc: "<7:3--7:29>"}
+g3-realloc-dead MATCH | L=UB:{ub: "UB179d_dead_allocation_realloc", stderr: "", loc: "<7:12--7:39>"}
+g3-realloc-non-heap MATCH | L=UB:{ub: "UB179c_non_matching_allocation_realloc", stderr: "", loc: "<7:12--7:40>"}
 g4-bswap64-overflow MATCH | L=CRASH
 g4-bswap-controls MATCH | L=VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
 g4-ctz-nonzero MATCH | L=VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
@@ -69,27 +69,27 @@ g5-decode-question ORACLE_CRASH | L=VAL:{value: "Specified(63)", stdout: "", std
 g5-escape-roundtrip DIFF | L=VAL:{value: "Specified(127)", stdout: "", stderr: "", blocked: "false"}
 g6-hash-collision TRIPWIRE
 illtyped-store KILL
-lock-const-global DIFF | L=UB:{ub: "UB064_modifying_const", stderr: "", loc: "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/zero-discrepancy/tests/immaculate/nolibc/lock-const-global.c:4:3-17"}
-lock-string-literal DIFF | L=UB:{ub: "UB033_modifying_string_literal", stderr: "", loc: "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/zero-discrepancy/tests/immaculate/nolibc/lock-string-literal.c:4:3-13"}
+lock-const-global MATCH | L=UB:{ub: "UB064_modifying_const", stderr: "", loc: "<4:3--4:17>"}
+lock-string-literal MATCH | L=UB:{ub: "UB033_modifying_string_literal", stderr: "", loc: "<4:3--4:13>"}
 offsetof-nested-struct MATCH | L=VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
 offsetof-union-member MATCH | L=CRASH
 pr44468 MATCH | L=VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
-s4b-memcmp-hugesize ORACLE_CRASH | L=UB:{ub: "UB_CERB002a_out_of_bound_load", stderr: "", loc: "unknown location"}
+s4b-memcmp-hugesize ORACLE_CRASH | L=UB:{ub: "UB_CERB002a_out_of_bound_load", stderr: "", loc: "<unknown location>"}
 s9-enum-signedness MATCH | L=VAL:{value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}
 s9-enum-sizeof-route MATCH | L=VAL:{value: "Specified(4)", stdout: "", stderr: "", blocked: "false"}
-trap-bool-uninit DIFF | L=UB:{ub: "UB012_lvalue_read_trap_representation", stderr: "", loc: "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/zero-discrepancy/tests/immaculate/nolibc/trap-bool-uninit.c:4:10-11"}
-trap-bool-write DIFF | L=UB:{ub: "UB012_lvalue_read_trap_representation", stderr: "", loc: "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/zero-discrepancy/tests/immaculate/nolibc/trap-bool-write.c:6:10-11"}
-zd-d1-float-inf-to-int-ub DIFF | L=UB:{ub: "UB017_out_of_range_floating_integer_conversion", stderr: "", loc: "unknown location"}
-zd-d2-ptr-to-int-narrow-ub DIFF | L=UB:{ub: "UB024_out_of_range_pointer_to_integer_conversion", stderr: "", loc: "other_location(Concrete)"}
+trap-bool-uninit MATCH | L=UB:{ub: "UB012_lvalue_read_trap_representation", stderr: "", loc: "<4:10--4:11>"}
+trap-bool-write MATCH | L=UB:{ub: "UB012_lvalue_read_trap_representation", stderr: "", loc: "<6:10--6:11>"}
+zd-d1-float-inf-to-int-ub MATCH | L=UB:{ub: "UB017_out_of_range_floating_integer_conversion", stderr: "", loc: "<7:11--7:19>"}
+zd-d2-ptr-to-int-narrow-ub MATCH | L=UB:{ub: "UB024_out_of_range_pointer_to_integer_conversion", stderr: "", loc: "<8:11--8:17>"}
 zd-d4-copy-alloc-id MATCH | L=VAL:{value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}
 zd-d5-device-range-load MATCH | L=VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 zd-d6-free-device-pointer MATCH | L=VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 zd-d6-free-no-provenance MATCH | L=ERR:{msg: "MerrOther "attempted to kill with a pointer lacking a provenance""}
-zd-d7-free-interior-pointer DIFF | L=UB:{ub: "UB179a_non_matching_allocation_free", stderr: "", loc: "unknown location"}
+zd-d7-free-interior-pointer MATCH | L=UB:{ub: "UB179a_non_matching_allocation_free", stderr: "", loc: "<6:39--6:50>"}
 zd-da-align16 DIFF | L=VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 zd-da-offset DIFF | L=VAL:{value: "Specified(16)", stdout: "", stderr: "", blocked: "false"}
 zd-e2-ptr-string-literals ORACLE_CRASH | L=VAL:{value: "Specified(0)", stdout: "98 65 66 4 83 52 3 10 9 92 34 39 63 0 4\n", stderr: "", blocked: "false"}
 zd-z2m02-device-funptr-call MATCH | L=CRASH
-zd-z2p01-stderr_escape DIFF | L=VAL:{value: "Specified(0)", stdout: "", stderr: "Eÿ|", blocked: "false"}
-zd-z2p01-stdout_escape DIFF | L=VAL:{value: "Specified(0)", stdout: "abÃ©|\n", stderr: "", blocked: "false"}
-zd-z72-stderr-ub DIFF | L=UB:{ub: "UB043_indirection_invalid_value", stderr: "", loc: "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/zero-discrepancy/tests/immaculate/libc/zd-z72-stderr-ub.c:6:62-64"}
+zd-z2p01-stderr_escape MATCH | L=VAL:{value: "Specified(0)", stdout: "", stderr: "E\b\007\255|", blocked: "false"}
+zd-z2p01-stdout_escape MATCH | L=VAL:{value: "Specified(0)", stdout: "a\bb\007\127\195\169\011\012\027|\n", stderr: "", blocked: "false"}
+zd-z72-stderr-ub MATCH | L=UB:{ub: "UB043_indirection_invalid_value", stderr: "E1", loc: "<6:62--6:64>"}

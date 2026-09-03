@@ -352,8 +352,13 @@ the format the prototype's `test_interp.sh` parses:
   Error {msg: "..."}
 
 Multiple executions get `EXECUTION i:` header lines, like OCaml.
+The `loc:` field is `CerbLocation.simpleLocation` (= `Cerb_location.
+simple_location`, driver_ocaml.ml:113/127), the `stderr:` field of an
+Undefined line is the KILLED state's accumulated stderr (batch_drive,
+driver_ocaml.ml:173-181) and the stdout/stderr fields are `String.escaped`
+(batchEscape) — all byte-for-byte with the oracle since the zero-discrepancy
+arc (Z-03, Z-72, Z2-P-01; UB location is behaviour [USER 2026-09-03]).
 Deviations from OCaml (hand-written latitude, documented):
-  - loc strings use CerbLocation.stringFromLocation (harness never compares loc)
   - Unspecified/OtherValue payloads print via the arc-10 S3 REAL mirrors of
     String_core.string_of_value (CerbPP.stringFromCore_value; residual
     divergences are enumerated in CerbPP.lean and stay "<...>"-bracketed)
@@ -362,15 +367,28 @@ Deviations from OCaml (hand-written latitude, documented):
   - runND returning zero executions emits `Error {msg: ...}` + exit 1
     (OCaml prints nothing and exits 0 — we refuse to look like success) -/
 
-/-- OCaml String.escaped (subset: the characters that occur in practice). -/
+/-- OCaml `String.escaped` = `Bytes.unsafe_escape` (the switch's
+    `lib/ocaml/bytes.ml:170-212`), by BYTE class: `"` `\\` `\n` `\t` `\r` `\b`
+    → the two-character short form; `' ' .. '~'` (32..126) verbatim; every
+    other byte → `\ddd`, three DECIMAL digits (`48 + a/100`, `48 + (a/10)
+    mod 10`, `48 + a mod 10`). The driver's io strings hold one Char per
+    program BYTE (0..255), so the char code IS the byte; the result is pure
+    ASCII, hence no UTF-8 re-encoding of bytes >= 0x80 can occur. Zero-
+    discrepancy Z2-P-01: the previous subset passed control bytes raw,
+    dropped `\b`, and re-encoded 0xC3 0xA9 as four UTF-8 bytes
+    (tests/immaculate/libc/zd-z2p01-{stdout,stderr}_escape.c). -/
 def batchEscape (s : String) : String :=
   s.foldl (fun acc c =>
-    acc ++ (if c == '"' then "\\\""
-      else if c == '\\' then "\\\\"
+    let a := c.toNat
+    acc ++ (if c == '"' || c == '\\' then "\\" ++ String.singleton c
       else if c == '\n' then "\\n"
       else if c == '\t' then "\\t"
       else if c == '\r' then "\\r"
-      else String.singleton c)) ""
+      else if a == 8 then "\\b"
+      else if 32 ≤ a && a ≤ 126 then String.singleton c
+      else "\\" ++ String.singleton (Char.ofNat (48 + a / 100))
+                ++ String.singleton (Char.ofNat (48 + (a / 10) % 10))
+                ++ String.singleton (Char.ofNat (48 + a % 10)))) ""
 
 /-- Batch rendering of the final core value — mirrors OCaml's exit
     selection in batch_drive (driver_ocaml.ml:162-171) composed with
@@ -550,7 +568,8 @@ def frontendTU (quiet : Bool) (supply : Nat)
         -- OCaml parity: typing-level UB gets a batch Undefined line (main.ml runM)
         match cause with
         | .AIL_TYPING (.TError_UndefinedBehaviour ub) =>
-          IO.println s!"Undefined \{ub: \"{stringFromUndefined_behaviour ub}\", stderr: \"\", loc: \"{CerbLocation.stringFromLocation loc}\"}"
+          -- main.ml:173-177: `Undefined { ub; stderr= ""; loc }` through string_of_batch_output
+          IO.println s!"Undefined \{ub: \"{stringFromUndefined_behaviour ub}\", stderr: \"\", loc: \"{CerbLocation.simpleLocation loc}\"}"
         | _ =>
           IO.println s!"Error \{msg: \"typechecking failed at {CerbLocation.stringFromLocation loc}\"}"
         return .error 1
@@ -581,7 +600,8 @@ def frontendTU (quiet : Bool) (supply : Nat)
       -- OCaml parity (main.ml runM): desugar-level UB gets a batch Undefined line
       match cause with
       | .DESUGAR (.Desugar_UndefinedBehaviour ub) =>
-        IO.println s!"Undefined \{ub: \"{stringFromUndefined_behaviour ub}\", stderr: \"\", loc: \"{CerbLocation.stringFromLocation loc}\"}"
+        -- main.ml:166-170: `Undefined { ub; stderr= ""; loc }` through string_of_batch_output
+        IO.println s!"Undefined \{ub: \"{stringFromUndefined_behaviour ub}\", stderr: \"\", loc: \"{CerbLocation.simpleLocation loc}\"}"
       | _ =>
         IO.println s!"Error \{msg: \"desugaring failed at {CerbLocation.stringFromLocation loc}\"}"
       return .error 1
@@ -756,8 +776,12 @@ def runPipeline (runtimeDir : String) (batch : Bool) (ppCore : Bool)
   -- are interned with digest "" by CoreParser.mkSym, matching OCaml where
   -- the prelude parse happens before any Cerb_fresh.set_digest)
   say "  loading core stdlib..."
-  let stdContent ← IO.FS.readFile (runtimeDir ++ "/std.core")
-  let stdFile ← match CoreParser.parseFile stdContent with
+  -- Z-01: the library file is stamped with its path so that
+  -- CerbLocation.isLibraryLocation holds for its nodes (pipeline.ml:29-34
+  -- loads `in_runtime "libcore" / std.core`; core_parser.mly:1571 regions)
+  let stdCorePath := runtimeDir ++ "/std.core"
+  let stdContent ← IO.FS.readFile stdCorePath
+  let stdFile ← match CoreParser.parseLibraryFile stdCorePath stdContent with
     | .ok f => pure f
     | .error e => throw (IO.Error.userError s!"failed to parse std.core: {e}")
   let allStdDecls := stdFile.funs ++ stdFile.procs ++ stdFile.builtins
@@ -769,8 +793,10 @@ def runPipeline (runtimeDir : String) (batch : Bool) (ppCore : Bool)
 
   -- Load implementation file
   say "  loading implementation..."
-  let implContent ← IO.FS.readFile (runtimeDir ++ "/impls/gcc_4.9.0_x86_64-apple-darwin10.8.0.impl")
-  let implFile ← match CoreParser.parseFile implContent with
+  -- pipeline.ml:47 `impls/<impl>.impl` under the same runtime tree (Z-01)
+  let implPath := runtimeDir ++ "/impls/gcc_4.9.0_x86_64-apple-darwin10.8.0.impl"
+  let implContent ← IO.FS.readFile implPath
+  let implFile ← match CoreParser.parseLibraryFile implPath implContent with
     | .ok f => pure f
     | .error e => throw (IO.Error.userError s!"failed to parse impl file: {e}")
   let coreImpl := loadCoreImpl implFile
@@ -920,14 +946,22 @@ def runPipeline (runtimeDir : String) (batch : Bool) (ppCore : Bool)
         match status with
         | .Active result =>
           IO.println s!"Defined \{value: \"{batchExitValue result.dres_core_value}\", stdout: \"{batchEscape result.dres_stdout}\", stderr: \"{batchEscape result.dres_stderr}\", blocked: \"{if result.dres_blocked then "true" else "false"}\"}"
-        | .Killed _st reason =>
+        | .Killed st reason =>
+          -- batch_drive (driver_ocaml.ml:173-181): every Killed arm carries
+          -- `String.concat "" (Dlist.toList dr_st.core_state.io.stderr)` —
+          -- the KILLED state's accumulated stderr; the plain batch printer
+          -- renders it on the Undefined line only (:127 `String.escaped
+          -- stderr`; the Error line :138 prints msg alone). Zero-discrepancy
+          -- Z-72: this printed `stderr: ""` literally.
+          let killedStderr := batchEscape
+            (lemListFoldr String.append "" (toList st.core_state0.io.stderr))
           match reason with
           | .Undef0 _loc [] =>
             -- OCaml batch_drive parity: empty UB list is an Error
             IO.println "Error {msg: \"[empty UB, probably a cerberus BUG]\"}"
           | .Undef0 loc (ub :: _) =>
-            -- OCaml batch_drive parity: first UB only
-            IO.println s!"Undefined \{ub: \"{stringFromUndefined_behaviour ub}\", stderr: \"\", loc: \"{CerbLocation.stringFromLocation loc}\"}"
+            -- OCaml batch_drive parity: first UB only; loc via simple_location (Z-03)
+            IO.println s!"Undefined \{ub: \"{stringFromUndefined_behaviour ub}\", stderr: \"{killedStderr}\", loc: \"{CerbLocation.simpleLocation loc}\"}"
           | .Error0 _loc msg =>
             IO.println s!"Error \{msg: \"{msg}\"}"
           | .Other err =>

@@ -2376,7 +2376,10 @@ def intfromptr (loc : CerbLocation.Loc) (_ : ctype) (ity : integerType)
     let (.IV _ ityMin) := minIval ity
     let (.IV _ ityMax) := maxIval ity
     if addr < ityMin || ityMax < addr then
-      memFail (MerrIntFromPtr)
+      -- impl_mem.ml:2459 `fail ~loc MerrIntFromPtr` — the C cast site; the
+      -- loc was dropped here (memFail's `other "Concrete"` default), so UB024
+      -- printed `other_location(Concrete)` (zero-discrepancy Z-02, noodle D2)
+      memFail MerrIntFromPtr loc
     else
       memReturn (.IV prov addr)
 

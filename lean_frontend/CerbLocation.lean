@@ -165,27 +165,67 @@ def getFilename : Loc → Option String
   | .other _ => some "<internal>"
   | .point pos | .region pos _ _ | .regions ((pos, _) :: _) _ => some pos.file
 
-/-- Match OCaml is_library_location (cerb_location.ml:512-522): location is
-    "library" iff the file's directory is runtime/libc/include, runtime/libcore,
-    or runtime/libcore/impls. We don't have the runtime root at this point, so
-    approximate by checking if the path contains those path fragments. -/
--- APPROXIMATION ENVELOPE (sem:N9, documented arc-14 S1 F6): "library"
--- is decided by any PATH SEGMENT equal to libcore/include/impls, so a
--- user file under a directory named e.g. `include/` is a false positive
--- (classified library). Accepted: the only effect is suppressing the
--- per-thread current-loc update (loc stays at the previous non-library
--- location, cosmetic on the batch path); no value semantics depend on
--- it. A path-based flag threaded from the CLI would remove the envelope
--- (mover, if ever load-bearing).
+/-- OCaml `Filename.dirname` (Unix): strip trailing slashes, then drop the
+    last component; a bare name gives "."; a root-level name gives "/". -/
+private def dirname (p : String) : String :=
+  let trimmed := (p.dropRightWhile (· == '/'))
+  if trimmed.isEmpty then (if p.isEmpty then "." else "/")
+  else
+    let dir := (trimmed.dropRightWhile (· != '/')).dropRightWhile (· == '/')
+    if !trimmed.contains '/' then "." else if dir.isEmpty then "/" else dir
+
+/-- The three library directories of `util/cerb_location.ml:512-520`,
+    runtime-relative: `Cerb_runtime.in_runtime "libc/include"`, `… "libcore"`,
+    `… "libcore/impls"` — the cerberus-lib RUNTIME tree
+    (`<prefix>/lib/cerberus-lib/runtime/…`, or `<sourceroot>/runtime/…`). -/
+private def libraryDirs : List String :=
+  ["runtime/libc/include", "runtime/libcore", "runtime/libcore/impls"]
+
+/-- is_library_location — util/cerb_location.ml:512-520: the location is
+    "library" iff `Filename.dirname path` IS one of the three runtime-prefixed
+    directories above (an exact string test on the oracle). Behaviour-bearing
+    on every UB-location path: `core_eval.lem:602` and `core_run.lem:476`
+    substitute the enclosing C location for a library-located UB, and
+    `core_run.lem:781` refuses to overwrite a thread's `current_loc` with a
+    library location.
+    MIRROR WITH ONE DOCUMENTED RESIDUAL (zero-discrepancy Z-67, charter
+    §2.7): the Lean process has no `Cerb_runtime` — the runtime ROOT is not
+    plumbed — so the directory is tested to END WITH the runtime-relative
+    path (or equal it when relative, as for the `runtime/libcore/std.core`
+    Main.findRuntimeDir loads). The oracle's own paths always satisfy this
+    (the cpp step prefixes header locations with the same runtime tree the
+    `--cabs-json` bridge hands us); the residual is a USER file under a
+    directory literally named `runtime/libcore` (or the other two), which
+    Lean classifies library and the oracle does not. Mover: plumb the
+    runtime root from Main (the CerbGlobal parameter-plumbing slice).
+    The previous implementation matched ANY path segment equal to
+    `libcore`/`include`/`impls` — a user file under any `include/` directory
+    was library-classified (wrong), and std.core itself was never classified
+    because CoreParser stamped no file at all (Z-01). -/
 def isLibraryLocation (loc : Loc) : Bool :=
   match getFilename loc with
   | none => false
   | some path =>
-    path.splitOn "/" |>.any (fun seg =>
-      seg == "libcore" || seg == "include" || seg == "impls")
+    let dir := dirname path
+    libraryDirs.any (fun d => dir == d || dir.endsWith ("/" ++ d))
 
 /-! ## String conversion
-    Corresponds to: cerb_location.ml:188-237 -/
+    Corresponds to: cerb_location.ml:188-237 (location_to_string) and
+    :476-491 (simple_location) -/
+
+/-- simple_location — util/cerb_location.ml:476-491 verbatim: the renderer
+    of the batch verdict `loc:` field (driver_ocaml.ml:113/127). Zero-
+    discrepancy Z-03 (noodle O1): the batch lines used `stringFromLocation`
+    (`file:L:C-C`) — the UB location is behaviour [USER 2026-09-03], so its
+    rendering must agree byte-for-byte. An empty `Loc_regions` list makes
+    the OCaml `List.hd` raise `Failure "hd"`; mirrored as a fail-stop. -/
+def simpleLocation : Loc → String
+  | .unknown => "<unknown location>"
+  | .other str => s!"<other location: {str}>"
+  | .point pos => s!"{pos.line}:{pos.col}"
+  | .region s e _ => s!"<{s.line}:{s.col}--{e.line}:{e.col}>"
+  | .regions ((s, e) :: _) _ => s!"<{s.line}:{s.col}--{e.line}:{e.col}>"
+  | .regions [] _ => panic! "hd"
 
 private def stringOfPos (pos : Pos) : String :=
   s!"{pos.file}:{pos.line}:{pos.col}"

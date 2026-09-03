@@ -2150,6 +2150,180 @@ def parseFile (input : String) : Except String CoreFile :=
     | .ok cf => .ok cf
     | .error e => .error s!"parse error: {e}"
 
+/-! ## Library-file location stamping (zero-discrepancy Z-01, noodle D1)
+
+The OCaml Core parser stamps every node of a parsed `.core` file with a
+region located IN that file: `core_parser.mly:1571` `Aloc (region
+($startpos, $endpos) NoCursor)` / `PEundef (region …, ub)`, `:1744/1746`
+`Action (region …)`, and the `decl_loc`s of `Proc`/`ProcDecl`/tag
+definitions. std.core is loaded from `Cerb_runtime.in_runtime
+"libcore/std.core"`, so `Loc.is_library_location` holds for its nodes and
+the shared model (a) substitutes the enclosing C location for a
+library-located UB (`core_eval.lem:602`, `core_run.lem:476`) and (b)
+refuses to overwrite a thread's `current_loc` with a library location
+(`core_run.lem:781`). This parser stamped `Loc.unknown` everywhere
+(`loc0`/`annots0`), so `isLibraryLocation` was false, (a) kept `unknown`
+and (b) overwrote `current_loc` with `unknown` whenever std.core code ran:
+every UB raised while executing std.core — UB017 (`loaded_ivfromfloat`),
+the printf family (UB153a/b, UB158), the free proxy's UB179*, the 47
+`undef(<<DUMMY>>)` sites, every memory-op UB inside a std.core proc —
+reported `unknown location` where the oracle reports the C site.
+
+`stampLibraryFile` is the post-parse mirror: every `Aloc unknown`,
+`PEundef unknown`, `Action unknown`, `Proc`/`ProcDecl`/`BuiltinDecl` loc
+and tag-definition loc of the parsed file becomes `Loc.region p p
+.noCursor` with `p` in `file`. DOCUMENTED DIVERGENCE (deliberate, in the
+Pos payload only): line and column are NOT tracked — the Parsec iterator
+carries no line table and this parse is on every driver run's hot path —
+so `p = ⟨file, 0, 0⟩`. Only the FILE component is behaviour-bearing:
+`is_library_location` tests the path's directory alone
+(`util/cerb_location.ml:512-520`), every execution-path consumer of a
+library-located loc dispatches on that predicate (the three cites above),
+and no std.core position is ever printed on the batch path. Not stamped:
+`Symbol.Identifier` locs inside member names/ctypes (never consulted on an
+execution path). `--libc` bodies are NOT stamped (the oracle's libc.co
+carries the libc C-source locations, which the Core text dump does not
+preserve — a separate, recorded gap: UB raised inside a libc body prints
+`unknown location` on Lean; both sides classify those locs non-library).
+-/
+
+private def libLoc (file : String) : CerbLocation.Loc :=
+  let p : CerbLocation.Pos := { file := file, line := 0, col := 0 }
+  .region p p .noCursor
+
+private def relocLoc (file : String) : CerbLocation.Loc → CerbLocation.Loc
+  | .unknown => libLoc file
+  | l => l
+
+private def relocAnnots (file : String) (annots : List annot) : List annot :=
+  annots.map fun a => match a with
+    | Aloc l => Aloc (relocLoc file l)
+    | a => a
+
+private partial def relocPat (file : String) : Pat → Pat
+  | Pattern annots pat_ =>
+    Pattern (relocAnnots file annots) (match pat_ with
+      | CaseBase x => CaseBase x
+      | CaseCtor c pats => CaseCtor c (pats.map (relocPat file)))
+
+private partial def relocPE (file : String) : PE → PE
+  | Pexpr annots bty pe_ =>
+    let r := relocPE file
+    Pexpr (relocAnnots file annots) bty (match pe_ with
+      | PEsym s => PEsym s
+      | PEimpl c => PEimpl c
+      | PEval v => PEval v
+      | PEconstrained xs => PEconstrained (xs.map fun (c, pe) => (c, r pe))
+      | PEundef loc ub => PEundef (relocLoc file loc) ub
+      | PEerror str pe => PEerror str (r pe)
+      | PEctor c pes => PEctor c (pes.map r)
+      | PEcase pe alts => PEcase (r pe) (alts.map fun (pat, pe) => (relocPat file pat, r pe))
+      | PEarray_shift pe1 ty pe2 => PEarray_shift (r pe1) ty (r pe2)
+      | PEmember_shift pe s id => PEmember_shift (r pe) s id
+      | PEmemop op pes => PEmemop op (pes.map r)
+      | PEnot pe => PEnot (r pe)
+      | PEop op pe1 pe2 => PEop op (r pe1) (r pe2)
+      | PEconv_int ity pe => PEconv_int ity (r pe)
+      | PEwrapI ity iop pe1 pe2 => PEwrapI ity iop (r pe1) (r pe2)
+      | PEcatch_exceptional_condition ity iop pe1 pe2 =>
+        PEcatch_exceptional_condition ity iop (r pe1) (r pe2)
+      | PEstruct s fields => PEstruct s (fields.map fun (id, pe) => (id, r pe))
+      | PEunion s id pe => PEunion s id (r pe)
+      | PEcfunction pe => PEcfunction (r pe)
+      | PEmemberof s id pe => PEmemberof s id (r pe)
+      | PEcall nm pes => PEcall nm (pes.map r)
+      | PElet pat pe1 pe2 => PElet (relocPat file pat) (r pe1) (r pe2)
+      | PEif pe1 pe2 pe3 => PEif (r pe1) (r pe2) (r pe3)
+      | PEis_scalar pe => PEis_scalar (r pe)
+      | PEis_integer pe => PEis_integer (r pe)
+      | PEis_signed pe => PEis_signed (r pe)
+      | PEis_unsigned pe => PEis_unsigned (r pe)
+      | PEbmc_assume pe => PEbmc_assume (r pe)
+      | PEare_compatible pe1 pe2 => PEare_compatible (r pe1) (r pe2))
+
+private def relocAct (file : String) (act : Act) : Act :=
+  let r := relocPE file
+  match act with
+  | Create pe1 pe2 pref => Create (r pe1) (r pe2) pref
+  | CreateReadOnly pe1 pe2 pe3 pref => CreateReadOnly (r pe1) (r pe2) (r pe3) pref
+  | Alloc0 pe1 pe2 pref => Alloc0 (r pe1) (r pe2) pref
+  | Kill k pe => Kill k (r pe)
+  | Store0 b pe1 pe2 pe3 mo => Store0 b (r pe1) (r pe2) (r pe3) mo
+  | Load0 pe1 pe2 mo => Load0 (r pe1) (r pe2) mo
+  | SeqRMW b pe1 pe2 s pe3 => SeqRMW b (r pe1) (r pe2) s (r pe3)
+  | RMW0 pe1 pe2 pe3 pe4 mo1 mo2 => RMW0 (r pe1) (r pe2) (r pe3) (r pe4) mo1 mo2
+  | Fence0 mo => Fence0 mo
+  | CompareExchangeStrong pe1 pe2 pe3 pe4 mo1 mo2 =>
+    CompareExchangeStrong (r pe1) (r pe2) (r pe3) (r pe4) mo1 mo2
+  | CompareExchangeWeak pe1 pe2 pe3 pe4 mo1 mo2 =>
+    CompareExchangeWeak (r pe1) (r pe2) (r pe3) (r pe4) mo1 mo2
+  | LinuxFence mo => LinuxFence mo
+  | LinuxLoad pe1 pe2 mo => LinuxLoad (r pe1) (r pe2) mo
+  | LinuxStore pe1 pe2 pe3 mo => LinuxStore (r pe1) (r pe2) (r pe3) mo
+  | LinuxRMW pe1 pe2 pe3 mo => LinuxRMW (r pe1) (r pe2) (r pe3) mo
+
+private def relocAction (file : String) : generic_action Unit Unit sym → generic_action Unit Unit sym
+  | Action loc a act => Action (relocLoc file loc) a (relocAct file act)
+
+private partial def relocE (file : String) : Expr' → Expr'
+  | Expr annots e_ =>
+    let r := relocE file
+    let rp := relocPE file
+    Expr (relocAnnots file annots) (match e_ with
+      | Epure pe => Epure (rp pe)
+      | Ememop op pes => Ememop op (pes.map rp)
+      | Eaction (Paction pol act) => Eaction (Paction pol (relocAction file act))
+      | Ecase pe alts => Ecase (rp pe) (alts.map fun (pat, e) => (relocPat file pat, r e))
+      | Elet pat pe e => Elet (relocPat file pat) (rp pe) (r e)
+      | Eif pe e1 e2 => Eif (rp pe) (r e1) (r e2)
+      | Eccall a pe1 pe2 pes => Eccall a (rp pe1) (rp pe2) (pes.map rp)
+      | Eproc a nm pes => Eproc a nm (pes.map rp)
+      | Eunseq es => Eunseq (es.map r)
+      | Ewseq pat e1 e2 => Ewseq (relocPat file pat) (r e1) (r e2)
+      | Esseq pat e1 e2 => Esseq (relocPat file pat) (r e1) (r e2)
+      | Ebound e => Ebound (r e)
+      | End es => End (es.map r)
+      | Esave sb params e =>
+        Esave sb (params.map fun (s, (tyinfo, pe)) => (s, (tyinfo, rp pe))) (r e)
+      | Erun a s pes => Erun a s (pes.map rp)
+      | Epar es => Epar (es.map r)
+      | Ewait tid => Ewait tid
+      | Eannot dyns e => Eannot dyns (r e)
+      | Eexcluded n act => Eexcluded n (relocAction file act))
+
+private def relocFunDecl (file : String) : generic_fun_map_decl Unit Unit → generic_fun_map_decl Unit Unit
+  | Fun bty params pe => Fun bty params (relocPE file pe)
+  | Proc loc me bty params e => Proc (relocLoc file loc) me bty params (relocE file e)
+  | ProcDecl loc bty tys => ProcDecl (relocLoc file loc) bty tys
+  | BuiltinDecl loc bty tys => BuiltinDecl (relocLoc file loc) bty tys
+
+private def relocImplDecl (file : String) : generic_impl_decl Unit → generic_impl_decl Unit
+  | Def bty pe => Def bty (relocPE file pe)
+  | IFun bty params pe => IFun bty params (relocPE file pe)
+
+private def relocGlob (file : String) : generic_globs Unit Unit → generic_globs Unit Unit
+  | GlobalDef tys e => GlobalDef tys (relocE file e)
+  | GlobalDecl tys => GlobalDecl tys
+
+/-- Stamp every unknown location of a parsed file with a region in `file`
+    (see the section comment). -/
+def stampLibraryFile (file : String) (cf : CoreFile) : CoreFile :=
+  let fd := fun (p : sym × generic_fun_map_decl Unit Unit) => (p.1, relocFunDecl file p.2)
+  { cf with
+    funs := cf.funs.map fd
+    procs := cf.procs.map fd
+    builtins := cf.builtins.map fd
+    impls := cf.impls.map fun (n, d) => (n, relocImplDecl file d)
+    tagDefs := cf.tagDefs.map fun (s, (loc, td)) => (s, (relocLoc file loc, td))
+    globs := cf.globs.map fun (s, g) => (s, relocGlob file g) }
+
+/-- Parse a LIBRARY `.core`/`.impl` file loaded from `file` (the runtime
+    tree: std.core, the impl file) and stamp its nodes with that file
+    — the mirror of the OCaml parser's `region ($startpos, $endpos)` at the
+    granularity that is behaviour-bearing (the section comment). -/
+def parseLibraryFile (file : String) (input : String) : Except String CoreFile :=
+  (parseFile input).map (stampLibraryFile file)
+
 /-- Parse a .core file and return a human-readable summary. -/
 def parseFileSummary (input : String) : Except String String :=
   match parseFile input with
