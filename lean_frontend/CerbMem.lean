@@ -1229,7 +1229,7 @@ def concretePtrval (allocId : Int) (addr : Int) : PointerValue :=
   .PV (.Prov_some allocId) (.PVconcrete none addr)
 
 /-- case_ptrval — impl_mem.ml:1808-1814 -/
-def casePtrval {α : Type} (pv : PointerValue)
+def casePtrval {α : Type} [Inhabited α] (pv : PointerValue)
     (onNull : ctype → α) (onFun : Option sym → α)
     (onConcrete : Option Int → Int → α) : α :=
   match pv with
@@ -1237,7 +1237,16 @@ def casePtrval {α : Type} (pv : PointerValue)
   | .PV _ (.PVfunction f) => onFun (some f)
   | .PV .Prov_none (.PVconcrete _ addr) => onConcrete none addr
   | .PV (.Prov_some i) (.PVconcrete _ addr) => onConcrete (some i) addr
-  | .PV _ (.PVconcrete _ addr) => onConcrete none addr -- fallback
+  | .PV _ (.PVconcrete _ _) =>
+    -- impl_mem.ml:1814 `| _ -> failwith "case_ptrval"` (a Prov_device or
+    -- Prov_symbolic concrete pointer): an UNCAUGHT exception on the oracle
+    -- (exit 125), mirrored as a fail-stop with the OCaml text (Q4). This
+    -- used to be a fail-OPEN `onConcrete none addr` fallback — dead while no
+    -- Prov_device pointer was ever minted, and a crash-to-VALUE conversion
+    -- the moment Z-06 mirrored the device ranges (Z2-M-02, Z2 audit;
+    -- tests/z2-probes/mem/device_funptr_call.c: calling through
+    -- `(void(*)(void))0xABC` reaches this arm from core_eval.lem:920).
+    panic! "case_ptrval"
 
 /-- case_funsym_opt — impl_mem.ml:1816-1827 -/
 def caseFunsymOpt (st : MemState) (pv : PointerValue) : Option sym :=
@@ -1896,34 +1905,68 @@ def allocateRegion (_ : Nat) (pref : prefix0) (alignIv sizeIv : IntegerValue) : 
           (List.replicate size { prov := .Prov_none, copyOffset := none, value := none })
       (NDactive (.PV (.Prov_some allocId) (.PVconcrete none alignedAddr)), st')
 
-/-! ### Kill — impl_mem.ml:1464+ -/
+/-! ### Kill — impl_mem.ml:1464-1550 (zero-discrepancy Z-07/Z-08/Z-10, noodle
+    D6/D7; the arms and their ORDER mirror `kill loc is_dyn` exactly — the
+    charter's Z-09/Z-11/Z-12 seam rows fall inside the same hunk) -/
 
 def killM (loc : CerbLocation.Loc) (isDynamic : Bool) (pv : PointerValue) : memM Unit :=
   ND fun st =>
-    -- errors route through the fail mapping (impl_mem.ml:540-546), so
-    -- Free_non_matching/Free_dead_allocation surface as UB179a/UB179b
+    -- every `fail ~loc` routes through the fail mapping (impl_mem.ml:540-546):
+    -- Free_non_matching/Free_dead_allocation → UB179a/UB179b, MerrOther and
+    -- Free_out_of_bound → Other (a batch Error line, not UB)
     let fail_ (err : mem_error) := (NDkilled (failReason err loc), st)
     match pv with
     | .PV _ (.PVnull _) =>
-      if isDynamic then (NDactive (), st)
-      else fail_ (MerrUndefinedFree Free_non_matching)
-    | .PV _ (.PVfunction _) => fail_ (MerrUndefinedFree Free_non_matching)
+      -- :1465-1469 — NOT conditional on is_dyn: a null kill succeeds unless
+      -- SW_forbid_nullptr_free is set (the switch set is refused, Z-24)
+      if CerbGlobal.has_switch .forbid_nullptr_free then fail_ MerrFreeNullPtr
+      else (NDactive (), st)
+    | .PV _ (.PVfunction _) =>
+      fail_ (MerrOther "attempted to kill with a function pointer")             -- :1470-1471
+    | .PV .Prov_none (.PVconcrete _ _) =>
+      fail_ (MerrOther "attempted to kill with a pointer lacking a provenance")  -- :1472-1473
+    | .PV .Prov_device (.PVconcrete _ _) =>
+      (NDactive (), st)                                                          -- :1474-1476 ("TODO: should that be an error ??")
+    | .PV (.Prov_symbolic _) _ =>
+      -- :1479-1513 PNVI-ae-udi arm: the concrete Lean model never mints
+      -- Prov_symbolic (PNVI is a refused switch, Z-24) — loud, never absorbed
+      (NDkilled (Other (MerrOther "killM: Prov_symbolic in concrete model")), st)
     | .PV (.Prov_some allocId) (.PVconcrete _ addr) =>
-      if st.deadAllocations.contains allocId then
-        fail_ (MerrUndefinedFree Free_dead_allocation)
+      -- :1515-1549 in THIS order: is_dynamic addr (the POINTER's address, not
+      -- alloc.base) → is_dead → get_allocation → addr = alloc.base
+      if isDynamic && !st.dynamicAddrs.contains addr then
+        fail_ (MerrUndefinedFree Free_non_matching)                              -- :1518-1525
+      else if st.deadAllocations.contains allocId then
+        if isDynamic then fail_ (MerrUndefinedFree Free_dead_allocation)         -- :1529-1530
+        else
+          -- :1531-1532 `failwith "Concrete: FREE was called on a dead allocation"`
+          -- — an UNCAUGHT exception on the oracle (exit 125), mirrored as a
+          -- fail-stop carrying the OCaml text (Q4 ruling, charter §7; Z-10).
+          -- REACHABILITY: a static (scope-exit) kill finds its allocation dead
+          -- only after an ACCEPTED wrong free of the same object — i.e. only
+          -- through the tray-19 dynamic_addrs address-keying defect (Z-77: a
+          -- zero-size `alloc` minted at a live object's base; dynamic-addrs
+          -- record rows k/n', witnessed on both oracles as this failwith and
+          -- on Lean via libc-body injection) or the fork-only
+          -- `cerb::with_address` attribute. Unreachable from C through
+          -- malloc/free (argument temporaries, translation.lem:4435).
+          panic! "Concrete: FREE was called on a dead allocation"
       else match st.allocations.get? allocId with
-        | none => fail_ (MerrUndefinedFree Free_non_matching)
+        | none =>
+          -- :1534 get_allocation ~loc → :669-675 MerrOutsideLifetime (UB009)
+          fail_ (MerrOutsideLifetime s!"Concrete.get_allocation, alloc_id={allocId}")
         | some alloc =>
-          if addr != alloc.base then
-            fail_ (MerrUndefinedFree Free_out_of_bound)
-          else if isDynamic && !st.dynamicAddrs.contains alloc.base then
-            fail_ (MerrUndefinedFree Free_non_matching)
-          else
+          if addr == alloc.base then                                             -- :1535-1546
             let st' := { st with
               deadAllocations := allocId :: st.deadAllocations
               allocations := st.allocations.erase allocId }
-            (NDactive (), st')
-    | _ => fail_ (MerrUndefinedFree Free_non_matching)
+            -- :1543-1546 SW_zap_dead_pointers → zap_pointers (:1447-1462, not
+            -- ported): the switch set is refused (Z-24), so the OCaml default
+            -- arm `return ()` is the only reachable one; the set case is loud
+            if CerbGlobal.has_switch .zap_dead_pointers then
+              (NDkilled (Other (MerrOther "killM: SW_zap_dead_pointers is set but zap_pointers (impl_mem.ml:1447-1462) is not ported — switches are refused (Z-24)")), st)
+            else (NDactive (), st')
+          else fail_ (MerrUndefinedFree Free_out_of_bound)                       -- :1547-1548
 
 /-! ### Load / Store — impl_mem.ml:1552-1789
 
@@ -1943,11 +1986,26 @@ def killM (loc : CerbLocation.Loc) (isDynamic : Bool) (pv : PointerValue) : memM
                              impl_mem.ml:669-675)
     Every failure goes through the fail mapping (failReason,
     impl_mem.ml:540-546), so UB-classed errors surface as Undef0.
-    Not ported: Prov_device is_within_device (the device_ranges list is
-    empty in this pipeline — no device allocations exist, so the OCaml
-    check always returns false → OutOfBoundPtr, which is what we emit
-    directly); Prov_symbolic iota resolution (PNVI-ae-udi; the concrete
+      Prov_device            → is_within_device (deviceRanges, impl_mem.ml:620-624)
+                             ? do_load/do_store : OutOfBoundPtr (:1611-1617,
+                             :1718-1724) — zero-discrepancy Z-06 (noodle D5);
+                             this file used to assert the ranges were empty
+    Not ported: Prov_symbolic iota resolution (PNVI-ae-udi; the concrete
     Lean model never mints Prov_symbolic). -/
+
+/-- device_ranges — impl_mem.ml:620-624, verbatim: two hard-coded ranges
+    ("to match the Charon tests"; each 4 bytes). An integer in a range casts
+    to a `Prov_device` pointer (ptrfromint :2165-2167) whose loads/stores
+    and kills succeed. Zero-discrepancy Z-06: the previous comments here
+    claimed the list was empty in this pipeline — false; the oracle's
+    behaviour is mirrored (if judged an upstream artefact it is a tray
+    question, never a silent Lean deviation). -/
+def deviceRanges : List (Int × Int) :=
+  [(0x40000000, 0x40000004), (0xABC, 0xAC0)]
+
+/-- is_within_device — impl_mem.ml:681-686. -/
+def isWithinDevice (tagDefs : TagDefs) (ty : ctype) (addr : Int) : Bool :=
+  deviceRanges.any (fun (lo, hi) => lo ≤ addr && addr + (sizeofCtype tagDefs ty : Int) ≤ hi)
 
 /-- is_atomic_member_access — impl_mem.ml:689-706: accessing a PART of an
     atomic allocation (not the whole object with the same type) is an
@@ -1988,10 +2046,10 @@ def loadM (tagDefs : TagDefs) (loc : CerbLocation.Loc) (ty : ctype) (pv : Pointe
     | .PV _ (.PVnull _) => fail_ (MerrAccess LoadAccess NullPtr)          -- impl_mem.ml:1605-1606
     | .PV _ (.PVfunction _) => fail_ (MerrAccess LoadAccess FunctionPtr)  -- impl_mem.ml:1607-1608
     | .PV .Prov_none _ => fail_ (MerrAccess LoadAccess OutOfBoundPtr)     -- impl_mem.ml:1609-1610
-    | .PV .Prov_device (.PVconcrete _ _) =>
-      -- impl_mem.ml:1611-1617: is_within_device over the (empty) device
-      -- ranges → always false here
-      fail_ (MerrAccess LoadAccess OutOfBoundPtr)
+    | .PV .Prov_device (.PVconcrete _ addr) =>
+      -- impl_mem.ml:1611-1617: is_within_device → do_load None addr
+      if isWithinDevice tagDefs ty addr then doLoad addr
+      else fail_ (MerrAccess LoadAccess OutOfBoundPtr)
     | .PV (.Prov_symbolic _) _ =>
       (NDkilled (kill_reason.Other
         (MerrOther "loadM: Prov_symbolic in concrete model")), st)
@@ -2023,7 +2081,9 @@ def storeM (tagDefs : TagDefs) (loc : CerbLocation.Loc) (ty : ctype) (isLocking 
     -- funptrmap from repr; then the last_used_union_members update iff
     -- the pointer is PVconcrete (Some membr, _) (union member_shift,
     -- impl_mem.ml:1694-1701)
-    let doStore (allocId : Int) (alloc : Allocation) (unionMem : Option identifier) (addr : Int) :=
+    -- `allocOpt` is the OCaml `alloc_id_opt`: None on the device path
+    -- (:1723 `do_store None addr`), so no is_locking readonly update there
+    let doStore (allocOpt : Option (Int × Allocation)) (unionMem : Option identifier) (addr : Int) :=
       let (fpm, bytes) := memValueToBytes tagDefs st.funptrmap mv
       let st' := writeBytesTo { st with funptrmap := fpm } addr bytes
       let st' := match unionMem with
@@ -2032,12 +2092,15 @@ def storeM (tagDefs : TagDefs) (loc : CerbLocation.Loc) (ty : ctype) (isLocking 
         | none => st'
       -- is_locking — impl_mem.ml:1776-1787: readonly kind from the
       -- allocation's prefix
-      let st' := if isLocking then
-        { st' with allocations := st'.allocations.map fun id a =>
-            if id == allocId then
-              { a with isReadonly := .IsReadOnly (selectRoKind alloc.prefix_) }
-            else a }
-        else st'
+      let st' := match allocOpt with
+        | some (allocId, alloc) =>
+          if isLocking then
+            { st' with allocations := st'.allocations.map fun id a =>
+                if id == allocId then
+                  { a with isReadonly := .IsReadOnly (selectRoKind alloc.prefix_) }
+                else a }
+          else st'
+        | none => st'
       let fp : Footprint := .FP .W addr (sizeofCtype tagDefs ty)
       (NDactive fp, st')
     -- ill-typed-store guard — impl_mem.ml:1673-1681: checked BEFORE the
@@ -2051,9 +2114,10 @@ def storeM (tagDefs : TagDefs) (loc : CerbLocation.Loc) (ty : ctype) (isLocking 
     | .PV _ (.PVnull _) => fail_ (MerrAccess StoreAccess NullPtr)          -- impl_mem.ml:1712-1713 (order per :1711-1717)
     | .PV _ (.PVfunction _) => fail_ (MerrAccess StoreAccess FunctionPtr)  -- impl_mem.ml:1714-1715
     | .PV .Prov_none _ => fail_ (MerrAccess StoreAccess OutOfBoundPtr)     -- impl_mem.ml:1716-1717
-    | .PV .Prov_device (.PVconcrete _ _) =>
-      -- impl_mem.ml:1718-1724: empty device ranges → always out of bounds
-      fail_ (MerrAccess StoreAccess OutOfBoundPtr)
+    | .PV .Prov_device (.PVconcrete unionMem addr) =>
+      -- impl_mem.ml:1718-1724: is_within_device → do_store None addr
+      if isWithinDevice tagDefs ty addr then doStore none unionMem addr
+      else fail_ (MerrAccess StoreAccess OutOfBoundPtr)
     | .PV (.Prov_symbolic _) _ =>
       (NDkilled (kill_reason.Other
         (MerrOther "storeM: Prov_symbolic in concrete model")), st)
@@ -2074,7 +2138,7 @@ def storeM (tagDefs : TagDefs) (loc : CerbLocation.Loc) (ty : ctype) (isLocking 
               -- NOTE: OCaml reports LoadAccess here (impl_mem.ml:1772-1774
               -- — looks like an upstream copy-paste; mirrored as-is)
               fail_ (MerrAccess LoadAccess AtomicMemberof)
-            else doStore allocId alloc unionMem addr
+            else doStore (some (allocId, alloc)) unionMem addr
 
 /-! ### Pointer comparisons — impl_mem.ml:1830+ -/
 
@@ -2275,18 +2339,30 @@ private def wrapI (n : Int) (lo hi : Int) : Int :=
   let r := if r < 0 then r + dlt else r
   if r <= hi then r else r - dlt
 
-/-- ptrfromint — impl_mem.ml:2126-2173.
-    Wrap to pointer range, preserve provenance. n==0 → null pointer.
-    (Skips the PNVI allocation-finding — concrete model uses PVI.) -/
+/-- ptrfromint — impl_mem.ml:2126-2173. wrapI into the pointer range
+    (:2132-2145), then the PVI arm structure (:2163-2173) — zero-discrepancy
+    Z-06 (noodle D5): a provenance-less integer inside `deviceRanges` becomes
+    a `Prov_device` pointer (:2165-2167); NULL only for a provenance-less
+    zero (:2168-2169; an integer CARRYING a provenance keeps it and yields a
+    concrete pointer even at 0, :2172-2173 — the charter's Z-09). The
+    is_PNVI arm (:2146-2162, allocation finding) is refused, not ported:
+    PNVI is a refused switch (Z-24). -/
 def ptrfromint (_ : CerbLocation.Loc) (_ : integerType) (refTy : ctype)
     (iv : IntegerValue) : memM PointerValue :=
   match iv with
   | .IV prov nRaw =>
-    -- Wrap to [0, 2^(8*ptrSize) - 1]
+    -- :2132-2145 wrapI to [0, 2^(8*sizeof_pointer) - 1]
     let hi : Int := (2 : Int) ^ (targetPtrSize * 8) - 1
     let n := wrapI nRaw 0 hi
-    if n == 0 then memReturn (.PV .Prov_none (.PVnull refTy))
-    else memReturn (.PV prov (.PVconcrete none n))
+    if CerbGlobal.is_PNVI () then
+      kill (Other (MerrOther "ptrfromint: the PNVI arm (impl_mem.ml:2146-2162) is not ported — --switches=PNVI is refused by this port (Z-24)"))
+    else match prov with
+    | .Prov_none =>
+      if deviceRanges.any (fun (lo, hi) => lo ≤ n && n ≤ hi) then
+        memReturn (.PV .Prov_device (.PVconcrete none n))                 -- :2165-2167
+      else if n == 0 then memReturn (.PV .Prov_none (.PVnull refTy))     -- :2168-2169
+      else memReturn (.PV .Prov_none (.PVconcrete none n))              -- :2170-2171
+    | _ => memReturn (.PV prov (.PVconcrete none n))                     -- :2172-2173
 
 /-- intfromptr — impl_mem.ml:2439-2461.
     For concrete pointer: validate address fits in target integer type,
