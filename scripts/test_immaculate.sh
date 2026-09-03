@@ -36,10 +36,16 @@
 #   tests/immaculate/g6-hash-collision.lean — in-Lean CoreParser symbol
 #                                  conflation probe (no oracle side)
 #
-# Comparison is on the SEMANTIC VERDICT TOKEN (UB code / value / error /
-# crash), normalized to ignore source locations and timing (the loc field
-# legitimately differs — Lean emits "unknown location"). This mirrors
-# test_exec.sh's token approach.
+# Comparison is on the SEMANTIC VERDICT TOKEN (UB verdict / value / error /
+# crash). Since the zero-discrepancy arc (2026-09-03, charter
+# lean_frontend/docs/2026-09-03_zero-discrepancy-design.md §1.3/§4.1,
+# [USER 2026-09-03] "UB location is behaviour") the UB token is the WHOLE
+# `Undefined {…}` payload — ub code, the killed state's stderr AND the
+# loc — byte-for-byte; a loc-rendering or stderr difference is a DIFF,
+# never normalised away. (Until then the token was the ub code alone,
+# "normalized to ignore source locations" — the instrument blind spot
+# the charter closed.) Defined rows compare the value field (the libc
+# stdout/stderr channels are the exec/libc_exec lanes' business).
 #
 # Usage: ./scripts/test_immaculate.sh [--record-baseline]
 set -uo pipefail
@@ -73,10 +79,10 @@ OUTPUT_DIR=$(mktemp -d "$TMP_DIR/immaculate.XXXXXXXXXX") || fail "mktemp failed"
 register_cleanup "$OUTPUT_DIR"
 cd "$PROJECT_ROOT" || fail "cannot cd to $PROJECT_ROOT"
 
-# --- Normalize a batch first-line into a location/timing-free token. ---
-# Undefined {ub: "CODE", ...}  -> UB:CODE
+# --- Normalize a batch first-line into a verdict token. ---
+# Undefined {ub: "CODE", stderr: "S", loc: "L"} -> UB:{ub: "CODE", stderr: "S", loc: "L"}
 # Defined   {value: "VAL", ...}-> VAL:VAL
-# Error     {msg: "MSG"}       -> ERR:MSG
+# Error     {msg: "MSG"}       -> ERR:{msg: "MSG"}
 # empty / uncaught exception / panic (with nonzero/crash exit) -> CRASH
 verdict() {   # <first-line> <rc> [<stderr-file>]
     local line="$1" rc="$2" errf="${3:-}"
@@ -94,11 +100,15 @@ verdict() {   # <first-line> <rc> [<stderr-file>]
         *"uncaught exception"*|*"panic"*|*"PANIC"*) echo "CRASH"; return ;;
     esac
     if [[ "$line" == Undefined* ]]; then
-        echo "UB:$(sed -n 's/.*ub: "\([^"]*\)".*/\1/p' <<<"$line")"
+        # whole payload: {ub: "…", stderr: "…", loc: "…"} (charter §4.1)
+        echo "UB:$(sed -n 's/^Undefined \(.*\)$/\1/p' <<<"$line")"
     elif [[ "$line" == Defined* ]]; then
         echo "VAL:$(sed -n 's/.*value: "\([^"]*\)".*/\1/p' <<<"$line")"
     elif [[ "$line" == Error* ]]; then
-        echo "ERR:$(sed -n 's/.*msg: "\([^"]*\)".*/\1/p' <<<"$line")"
+        # whole payload too: the oracle's MerrOther messages embed unescaped
+        # quotes (`Error {msg: "MerrOther "…""}`), which a `[^"]*` field
+        # extractor truncated to `MerrOther ` (found while pinning Z-07)
+        echo "ERR:$(sed -n 's/^Error \(.*\)$/\1/p' <<<"$line")"
     else
         # exit code disambiguates a bare/odd line
         [[ "$rc" -ge 2 ]] && echo "CRASH" || echo "OTHER:$line"
@@ -260,6 +270,15 @@ if $RECORD_BASELINE; then
         echo "#     decimal read back through the octal decoder corrupts the printf %c"
         echo "#     round-trip upstream — oracle-wrong, upstream-tray #11. Never fix-to-match."
         echo "#   g6-hash-collision -> TRIPWIRE (CoreParser fail-stops on hash collisions, F3)."
+        echo "#"
+        echo "# zero-discrepancy Z1 pins (2026-09-03; charter docs/2026-09-03_zero-discrepancy-design.md"
+        echo "# §4.2 rows 'Lean != oracle: D4-D7 (+ D1/D2 loc)', E2 and the R2 da_* rows; record"
+        echo "# docs/2026-09-03_zero-discrepancy-Z1-record.md): the zd-* rows are the census's"
+        echo "# Lean-vs-oracle reproducers, pinned at the CURRENT Lean value before each fix"
+        echo "# (DIFF) and re-recorded MATCH by the fix commit that cites them. The UB token"
+        echo "# is loc+stderr-inclusive since this pin commit (header), so every UB row"
+        echo "# carries the oracle's <L:C--L:C> loc once Z-03 lands; zd-e2-ptr-string-literals"
+        echo "# is the register-R1 ORACLE_CRASH pair and stays as recorded."
         cat "$OUTPUT_DIR/baseline.new"
     } > "$BASELINE"
     echo "BASELINE RECORDED: $BASELINE"

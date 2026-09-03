@@ -99,6 +99,12 @@
 #   struct     n=10  MATCH=10
 #   union3     n=7   CERB_SKIP=2 MATCH=5
 #   varargs    n=5   MATCH=5
+# 2026-09-03 zero-discrepancy Z1 (charter docs/2026-09-03_zero-discrepancy-design.md
+#   §4.2 R2 row; record docs/2026-09-03_zero-discrepancy-Z1-record.md): three
+#   tests/coverage/dynaddr/ rows added from tests/noodle-probes/dynamic-addrs/
+#   (da_control.c, da_bug.c, da_malloc0_nonnull.c) — UB_MATCH, UB_MATCH, MATCH as
+#   measured on fork oracle, upstream @ b9aeedcb4 and Lean (verbatim lines in the
+#   record). Rows hand-inserted: --write-baseline would drop this header.
 arith3-001-unsigned-div.c MATCH
 arith3-002-unsigned-mod.c MATCH
 arith3-003-unsigned-shl.c MATCH
@@ -161,6 +167,9 @@ ctrl3-002-null-funcptr-call.c CERB_SKIP
 ctrl3-003-funcptr-void-cast.c MATCH
 ctrl3-004-falloff-nonvoid.c UB_MATCH
 ctrl3-005-unseq-neg-pos.c UB_MATCH
+dynaddr-001-free-automatic-control.c UB_MATCH
+dynaddr-002-malloc0-then-free-automatic.c UB_MATCH
+dynaddr-003-malloc0-nonnull.c MATCH
 eval2-001-struct-member-value.c MATCH
 eval2-002-union-member-value.c MATCH
 eval2-003-nested-member-value.c MATCH
