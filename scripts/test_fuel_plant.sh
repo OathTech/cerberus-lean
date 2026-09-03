@@ -21,6 +21,7 @@
 #   test_ci_sweep.sh     LEAN_FUEL row; LEAN_FAIL for assert
 #   test_cn_coverage.sh  FUEL; REJECT_* (Lean refuses) for assert
 #   measure.sh           note FUEL(kill;) / FUEL(panic;); no FUEL for assert
+#   test_parse.sh        a crashing stub (exit 134) -> LEAN_FAILURE, fatal (not parse_ok)
 # Nothing here touches the semantics; the oracle runs unchanged on the
 # smallest real inputs. Usage: ./scripts/test_fuel_plant.sh (env: scripts/ce;
 # binaries fresh — SKIP_BUILD=1 freshness stamps must pass)
@@ -114,6 +115,21 @@ done
 check "cn_coverage/kill -> FUEL" '^\[1/1\] FUEL alloc_create\.c \(FUEL:kill, exit 1\): lem: fuel exhausted$' "$WORK/cn_kill.log"
 check "cn_coverage/assert -> REJECT (not FUEL)" '^\[1/1\] REJECT_(DIFF|MATCH) alloc_create\.c' "$WORK/cn_assert.log"
 check_not "cn_coverage/assert no FUEL row" '^\[1/1\] FUEL ' "$WORK/cn_assert.log"
+
+# --- test_parse.sh: a crashing Lean stub (exit 134, no 'parse error' text) must
+#     be LEAN_FAILURE and fatal, never parse_ok (second design review 2026-09-03)
+cat > "$WORK/stub_abort" <<'EOS'
+#!/bin/sh
+echo 'Stack overflow detected. Aborting.' >&2
+exit 134
+EOS
+chmod +x "$WORK/stub_abort"
+log="$WORK/parse_abort.log"
+CERB_LEAN_BIN_OVERRIDE="$WORK/stub_abort" "$SCRIPT_DIR/test_parse.sh" "$MIN" > "$log" 2>&1
+echo "rc=$?" >> "$log"
+check "parse/abort -> LEAN_FAILURE counted" '^Lean parse: +0 ok, 0 failed, 0 timeout .*, 1 lean failure' "$log"
+check "parse/abort fatal"                   '^FAILED: 0 parse error\(s\), 0 timeout\(s\), 1 lean failure\(s\)' "$log"
+expect_nonzero "parse/abort" "$(sed -n 's/^rc=//p' "$log")"
 
 # --- measure.sh (instrument) --------------------------------------------------
 for kind in kill panic assert; do

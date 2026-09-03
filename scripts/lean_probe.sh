@@ -44,4 +44,9 @@ if [[ ! -s "$SETUP" ]]; then
     echo "lean_probe: empty setup for $FILE (lake setup-file produced no JSON)" >&2
     exit 1
 fi
-exec "$SCRIPT_DIR/capped" lean -DautoImplicit=false --setup "$SETUP" "$FILE" "$@"
+# No `exec`: it replaced this shell, so the EXIT trap never fired and the
+# setup JSON leaked into the package dir (second design review 2026-09-03).
+"$SCRIPT_DIR/capped" lean -DautoImplicit=false --setup "$SETUP" "$FILE" "$@"
+rc=$?
+rm -f "$SETUP"
+exit $rc

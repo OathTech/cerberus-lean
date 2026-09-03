@@ -188,65 +188,65 @@ PLANT OK   [measure/assert no FUEL]: no /FUEL\(/
 test_fuel_plant: ALL PLANTS OK (FUEL classification live in exec/gcc/ci_sweep/cn_coverage/measure; negatives not FUEL)
 ```
 
-## 4. STOP-AND-REPORT: the ∀-fuel exemplar theorem
+## 4. The ∀-fuel exemplar theorem — RESOLVED at the second design review (route iii)
 
 Statement (design §1.4/§6, the consumer's §6 shape), over the program of
 `test/Unit/FuelExemplar.lean` (`main` returning `Specified(42)`, no
 globals; `dst₀ := (initial_driver_state 0 exemplarFile fs_initial_state).1`):
 
 ```lean
-theorem exemplar_certified_shipped (fuel : Nat) :
-  ∀ o ∈ CerbND.runND (CerbND.drive_lemFuel fuel fmapEmpty false exemplarFile ["cmdname"]) dst₀,
+theorem exemplar_certified_shipped_forall (fuel : Nat) :
+  ∀ o ∈ CerbND.runND (CerbND.drive_lemFuel fuel fmapEmpty false exemplarFile ["cmdname"]) (dst₀ 0),
     (∃ st, o.1 = Killed st CerbND.fuelExhaustedKill) ∨ (∃ r, o.1 = Active r ∧ post r o.2.2)
 ```
 
-What was established (scratch probes via `scripts/lean_probe.sh`, this
-file's definitions verbatim, `CERB_MEM_MAX=32G`, default heartbeats
-unless stated):
+SHIPPED at the close-out head (`test/Unit/FuelExemplar.lean`), by the
+consumer's SYMBOLIC route — design §1.6 route (iii), left as a working
+proof by the second reviewer and absorbed as proof devices of the test
+file (the `FuelExemplar.Round` namespace: `runOne` + its `nd_return`/
+`nd_get`/`nd_update`/`nd_read`/`nd_bind`/`liftMem`/`runND` equations at
+`CerbFuel.driverFuel`, `prepare_exit_single`, `loop_step_done`,
+`process_done`, `driver2_done` (CASES on the opaque scheduler-mode test),
+`finalize_done`, `budget_succ : CerbFuel.driverFuel = Nat.succ 99999999 :=
+rfl`) plus the exemplar-specific `S₁` (the post-setup state by PROJECTION
+from the shipped fuel-0 run), `drive_after_setup` (one `rfl` per setup
+bind on a concrete state) and `round_done` (PROGRAM-DONE in one round at
+any positive fuel). The library is test-local; the `CerbND` contract is
+unchanged (it stays test-local unless the consumer asks). Verified in this
+tree at DEFAULT heartbeats:
 
-- Exploration (`#eval`, instrument only): fuel 0 → `Killed(Error0 lem:
-  fuel exhausted)`; fuel 1,2,3,4,10 → `Active(steps=0, val=Specified(42))`
-  — the program completes in ONE driver round.
-- Fuel 0, consumer shape: closes by `intro o ho; have h :=
-  List.mem_singleton.mp ho; subst h; exact Or.inl ⟨_, rfl⟩` in < 1 s wall
-  (whole file). SHIPPED as `exemplar_certified_shipped_zero`.
-- Fuel `n+1`, `n` SYMBOLIC, consumer shape, canon route (`unfold run
-  CerbND.drive_lemFuel at ho; rw [driver2_lemFuel.eq_2] at ho; generalize
-  hm : CerbGlobal.current_execution_mode () = m at ho; cases m …; List.mem_
-  singleton.mp; subst; exact ⟨_, rfl, rfl⟩`): the `generalize` FINDS the
-  opaque read (the round's one configuration read) and the proof CLOSES
-  with `set_option maxHeartbeats 0` — 25.4 s wall for the file
-  (`24.85s user 0.45s system 99% cpu 25.359 total`); with the default
-  200000: `(deterministic) timeout at whnf`; at 400000: timeout; at
-  800000: timeout (`20.81s user … 21.332 total` before the cut). The
-  `length = 1` variant by `rfl` per branch, uncapped: 70.6 s.
-- The same round evaluated by the KERNEL (closed instance, fuel 1,
-  `decide +kernel` per scheduler-mode branch, shape-only predicate):
-  `0.43s user 0.25s system 91% cpu 0.737 total` for the whole file;
-  `'P.k3' depends on axioms: [propext, Classical.choice, Quot.sound]`.
-  SHIPPED as `exemplar_run_one_kernel` → `exemplar_certified_shipped_one`.
-- `decide +kernel` refuses the open term ("Expected type must not contain
-  free variables"; `+revert` would need `Decidable (∀ n, …)`, which does
-  not exist).
+```
+✔ [231/233] Built Unit.FuelExemplar (479ms)
+✔ [232/233] Built Unit.FuelExemplar:c.o (283ms)
+✔ [233/233] Built «fuel-exemplar-test»:exe (180ms)
+Build completed successfully (233 jobs).
+../scripts/capped lake build fuel-exemplar-test  1.69s user 0.46s system 161% cpu 1.328 total
+'FuelExemplar.exemplar_certified_shipped_forall' depends on axioms: [propext, Classical.choice, Quot.sound]
+'FuelExemplar.S₁' depends on axioms: [propext, Classical.choice, Quot.sound]
+'FuelExemplar.Round.driver2_done' depends on axioms: [propext, Classical.choice, Quot.sound]
+```
 
-Reading: the shape IS provable in practice with the shipped lemmas — the
-block is the ELABORATOR's (Meta-level) evaluation of one driver round on
-the open term, ~100× the kernel's cost and above the default heartbeat
-budget by more than 4×. No heartbeat bump was applied (registered-defect
-shape; the brief's hard invariant). Remedies, each a ruling for the
-second design review: (a) a kernel-only reflexivity elaboration (the
-`decide +kernel` mechanism applied to an open `Eq.refl`, e.g. `∀ n,
-run (n+1) = run 1` — ~10 lines of meta code; kernel-trusted; a NEW
-proof-method mechanism in the tree); (b) a per-theorem heartbeat budget
-registered as a defect with a named remover; (c) symbolic round lemmas
-(the consumer's DriverCollapse discipline, ~1.6 kLOC on their side). The
-consumer's own ∀-fuel proofs are unaffected in shape: their `n+1` case
-already `cases` the same opaque read.
+The instances `exemplar_certified_shipped_zero` (fuel 0, `rfl`; the base
+case) and `exemplar_certified_shipped_one` (fuel 1 via the kernel-evaluated
+closed instance `exemplar_run_one_kernel`, `decide +kernel` per
+scheduler-mode branch) remain shipped.
 
-Also measured: with the supply seed `sup` SYMBOLIC in `dst₀ sup`, the fuel-0
-unification (`List.mem_singleton.mp ho`) does not see a singleton
-("Application type mismatch … expected `?m ∈ [?m]`"); the shipped
-instances fix `sup = 0`. Not investigated further in this slice.
+DIAGNOSIS (why the implementation slice's first route failed, kept as the
+lesson): the brute route — `unfold`, expose the opaque read with
+`driver2_lemFuel.eq_2`, `generalize`/`cases`, then `List.mem_singleton.mp`
++ `rfl` — times out at the default 200000 heartbeats (`(deterministic)
+timeout at whnf`) EVEN AT THE LITERAL FUEL 1 (`example : (run 1).length =
+1 := rfl`, and the `List.mem_singleton.mp` step at fuel 1 both measured),
+and at 400000/800000 for the open `n+1`; uncapped it closes in 25 s. So the
+blow-up is the ELABORATOR's (Meta) whnf of ONE CONCRETE DRIVER ROUND, not
+the open fuel variable; the KERNEL evaluates the same round in well under
+a second (`decide +kernel` on the closed fuel-1 instance: 0.74 s for the
+whole probe file). The consumer's symbolic method — one lemma per engine
+round shape, states threaded explicitly, the opaque read cased once — is
+the only viable shape, and it scales. Exploration facts retained: `#eval`
+showed fuel 0 → the kill, fuel ≥ 1 → `Active(steps=0, val=Specified(42))`
+(one round); with the supply seed `sup` symbolic the fuel-0 unification
+does not see a singleton — the shipped statements fix `sup = 0`.
 
 ## 5. Baseline movement, commit 1 (the FUEL witness rows)
 
@@ -516,12 +516,14 @@ never completed before (both at Lean `--first`, the csmith tier's mode).
 
 ## 9. Findings and residuals (for the second design review)
 
-1. §4: the ∀-fuel exemplar theorem — provable, over budget in the
-   elaborator; ruling needed on the remedy.
+1. §4: the ∀-fuel exemplar theorem — RESOLVED by route (iii) at the
+   second design review; shipped. Lesson: Meta-level evaluation of a
+   concrete driver round is out of budget; symbolic round lemmas are the
+   shape.
 2. §5: `b_zero_local_*` are pure-worker (front-end `mkListN`) panics, not
    driver kills; the design's "expected to complete" prediction for them
    was wrong; the d_loop/e_memcpy rows are driver kills as predicted.
-3. `frontend/concurrency/cmm_csem.lem` carries 24 `declare lean target_rep
+3. `frontend/concurrency/cmm_csem.lem` carries 23 `declare lean target_rep
    function … = \`sorry\`` declares (observable_filter … overlap_behaviour)
    that are UNREFERENCED in the Lean build — zero `sorry` tokens in the
    generated tree (`check_sorry_token.sh`), so the design's "exactly one
@@ -530,7 +532,8 @@ never completed before (both at Lean `--first`, the csmith tier's mode).
 4. `nd_bind_wrapper_defeq` is fully applied (implicit-binder order), not
    the design's point-free spelling (manifest §2).
 5. The exemplar's supply seed is fixed at 0 (§4, last paragraph).
-6. `scripts/test_parse.sh` (and the `test_cabs_json.sh` smoke) ran the
+6. (Superseded in part by §10.4, which added the nonzero-exit classes.)
+   `scripts/test_parse.sh` (and the `test_cabs_json.sh` smoke) ran the
    Lean driver in its DEFAULT mode — parse AND execute — with no timeout;
    the 10^6 fuel ceiling was that lane's implicit bound. At 10^8 the
    close-out battery's Tier B row 2 (`test_parse.sh tests/ci`) stalled on
@@ -550,3 +553,112 @@ never completed before (both at Lean `--first`, the csmith tier's mode).
    and a lane refused (`CERB_DRIVER_STALE`, twice) until the side was
    rebuilt/re-recorded; the lanes in this record all ran on re-stamped
    binaries. Working as designed.
+
+## 10. Second design review (2026-09-03) — verdict and close-out items
+
+Verdict relayed by the orchestrator: **MERGE-SAFE-WITH-NOTES** — check (a)
+"the cleaner picture achieved" YES; check (b) "serves refined-cerberus's
+needs" YES; the §4 STOP resolved by route (iii) with the reviewer's
+working proof (268-line probe, absorbed then deleted). Items, one commit
+(the close-out-2 commit — the branch head at review time):
+
+1. EXEMPLAR — absorbed as test-local proof devices (`FuelExemplar.Round`
+   + `S₁`/`drive_after_setup`/`round_done`/`exemplar_certified_shipped_
+   forall`); the `CerbND` contract is unchanged. Built at default
+   heartbeats (§4: `Built Unit.FuelExemplar (479ms)`, 1.33 s wall for the
+   `lake build`), cone the standard three. STOP/remedy sentences removed
+   from the file header, this record and the manifest; the diagnosis
+   recorded (§4). Probe file deleted after absorption.
+2. FUEL cone leg — the four omitted sibling `rfl`s added (`CerbND.print_
+   eval_conv_aux_wrapper_defeq`, `drive_nonmemory_steps_aux2_wrapper_
+   defeq`, `hack_wrapper_defeq`, `runND1_eq`) plus the ∀-fuel theorem
+   (FUEL_THMS now 28 names).
+3. TODO.md — the "Step-runner execution ceiling" entry rewritten: the
+   process-stack ceiling is BINDING AGAIN at 10^8 (measured §6: `Stack
+   overflow detected. Aborting.`, exit 134, `d_loop_1000000`/
+   `e_memcpy_1000000`; onset between 10^5 and 10^6 loop iterations); the
+   front-end `mkListN_aux_lemFuel` ceiling registered (10^6-element zero
+   initialiser → `FUEL(panic)`); `measure.sh` gains a `STACK_OVERFLOW;`
+   note for the exit-134 "Stack overflow detected" signature
+   (classification unchanged: the crash class, fatal, never agreement).
+4. `test_parse.sh` — a nonzero Lean exit WITHOUT the `parse error` text
+   was counted `parse_ok` (a pre-existing fail-open shape in a block this
+   arc edited). Now three VISIBLE classes, measured on tests/ci at the
+   close-out head (`--pp-core` exits 1 on any front-end verdict):
+   `REJECTED` (exit 1..127 + a printed `Error {msg: …}` or `Undefined {ub:
+   …}` verdict — a front-end refusal after a successful parse; 117 rows,
+   mostly `*.error.c`/`*.undef.c` intended; counted, non-fatal, logged),
+   `INTERNAL_ERROR_EXPECTED` (exit ≥ 128 with LemLib's `failwithIImpl`
+   PANIC on an `*.error.c` input — the model's fail-closed internal error
+   on an intended-error program, MIRRORED by the oracle; 2 rows:
+   `0258-array-function-type.error.c` "AilTypesAux.is_complete: called an
+   a function type" and `0270-invalid-compound-literal.error.c`
+   "Desugaring_init.lookup_struct_members: Nothing or empty Struct
+   definition" — the oracle: `CERB_REJECT exit 125: internal error: …`,
+   same message, tests/ci_sweep/results/ci.tsv:167/:179; counted,
+   non-fatal, logged), and `LEAN_FAILURE` (any other crash or verdict-
+   less nonzero exit — FATAL; the requested class). Plant added to
+   `test_fuel_plant.sh`: a stub exiting 134 with `Stack overflow
+   detected. Aborting.` → `LEAN_FAILURE`, lane rc ≠ 0 (§10.1). A
+   blanket-fatal reading would have turned Tier B row 2 permanently red
+   on the 119 mirrored/intended rows — recorded as the [AGENT] shaping of
+   the item, reviewable. Two latent bugs surfaced and fixed while doing
+   it: a no-match `grep` inside `first_line=$(…)` aborted the lane under
+   `set -e`/pipefail (`|| true`), and the "Top error categories" pipeline
+   died of SIGPIPE (rc 141) once the log exceeded 10 lines (`head -10`
+   closing the pipe on `sort`) — materialised before the `head`.
+   Results: tests/minimal `106 ok … ALL PASSED`; tests/ci `128 ok, 0
+   failed, 0 timeout, 0 lean failure(s) / 117 rejected, 2 internal-error-
+   expected / ALL PASSED`, rc 0 (§10.1).
+5. Docs — `CerbND.lean` DriveMirror comment: drift shows as
+   `(deterministic) timeout at whnf` in `drive_wrapper_defeq` — re-mirror,
+   never bump; cmm_csem.lem carries 23 (not 24) `sorry` target_reps (§9.3,
+   TODO.md); manifest §1 cites `CerbFuel.lean:71` at HEAD; the consumer
+   review is cited at `refined-cerberus/docs/2026-09-02_review-of-
+   cerberus-lean-fuel-arc-design.md` in the design note and the manifest
+   (the `fuel-design-review` worktree is gone).
+6. `scripts/lean_probe.sh` — the `exec` replaced the shell so the EXIT trap
+   never removed the `.lean_probe.*.json` setup file (twenty leaked into
+   `lean_frontend/` during this slice); now runs `capped lean` as a child,
+   removes the file, propagates the exit code (verified: no leftover
+   after a probe).
+
+### 10.1 Close-out gates at the close-out-2 head (verbatim)
+
+```
+scripts/test_unit.sh (rc 0):
+Total: 6 passed, 0 failed
+check_theorem_axioms: generated-tree census OK (193 files: 0 axioms, boundary-opaque population = the 26 registered rows exactly-once (incl. CerbFuel.fuelExhaustedLoc), 0 unsafeCast)
+'CerbND.print_eval_conv_aux_wrapper_defeq' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbND.drive_nonmemory_steps_aux2_wrapper_defeq' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbND.hack_wrapper_defeq' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbND.runND1_eq' does not depend on any axioms
+'FuelExemplar.exemplar_certified_shipped_forall' depends on axioms: [propext, Classical.choice, Quot.sound]
+check_theorem_axioms: FUEL arc leg OK (28 contract lemmas + drive_lemFuel + the ∀-fuel exemplar and its instances, every cone ⊆ [propext, Classical.choice, Quot.sound])
+check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)
+check_sorry_token: OK (255 files scanned comment-stripped — generated 193, hand-written+test 29, LemLib 33; 0 sorry tokens)
+test_fuel_classifier: 18 fixtures, ALL OK
+check_exec_totality: CLEAN (22 generated modules + hand-written CerbND, 0 allowlisted)
+check_fork_drift: OK — layer 1: 71 oracle-surface files = manifest; layer 2: 22 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de)
+check_fixture_freeze: OK (16 fixture files match the pinned manifest; name set exact)
+
+exemplar build (lake build fuel-exemplar-test, default heartbeats):
+✔ [231/233] Built Unit.FuelExemplar (479ms)
+../scripts/capped lake build fuel-exemplar-test  1.69s user 0.46s system 161% cpu 1.328 total
+'FuelExemplar.exemplar_certified_shipped_forall' depends on axioms: [propext, Classical.choice, Quot.sound]
+
+scripts/test_parse.sh (rc 0): Total: 106 / Lean parse: 106 ok, 0 failed, 0 timeout (>60s; fatal), 0 lean failure(s) (crash / nonzero exit without a printed verdict; fatal) / ALL PASSED
+scripts/test_parse.sh tests/ci (rc 0):
+Total:          250
+Cerberus parse: 247 ok, 3 failed
+Lean parse:     128 ok, 0 failed, 0 timeout (>60s; fatal), 0 lean failure(s) (crash / nonzero exit without a printed verdict; fatal)
+Lean front end: 117 rejected (exit 1 + a printed Error/Undefined verdict; not a parse failure), 2 internal-error-expected (failwithI panic on an *.error.c input, oracle-mirrored)
+ALL PASSED
+
+scripts/test_fuel_plant.sh (rc 0), the new parse legs:
+PLANT OK   [parse/abort -> LEAN_FAILURE counted]: Lean parse:     0 ok, 0 failed, 0 timeout (>60s; fatal), 1 lean failure(s) (crash / nonzero exit without a printed verdict; fatal)
+PLANT OK   [parse/abort fatal]: FAILED: 0 parse error(s), 0 timeout(s), 1 lean failure(s)
+test_fuel_plant: ALL PLANTS OK (FUEL classification live in exec/gcc/ci_sweep/cn_coverage/measure; negatives not FUEL)
+
+scripts/lean_probe.sh: a probe run leaves 0 `.lean_probe.*.json` files in lean_frontend/.
+```

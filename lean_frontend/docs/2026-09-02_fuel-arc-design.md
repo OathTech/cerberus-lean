@@ -5,7 +5,7 @@ slice (this note); the implementation slice is §6. Revisions: **R1**
 absorbed the fresh review of `dd61ab87a` (F1-F8, Q1-Q6); **R2** absorbed
 the operator's DESIGN CHANGE to Option C (below), which retired the
 reserved-literal apparatus R1 had built; **R3** absorbs the consumer's
-review of R2 (`refined-cerberus/worktrees/fuel-design-review/docs/
+review of R2 (`refined-cerberus/docs/
 2026-09-02_review-of-cerberus-lean-fuel-arc-design.md` — verdict "ACCEPT
 with three consumer requirements and one wording suggestion"): the
 fuel-parametric `drive` (§1.6), the pinned-lemma gate (§6), the budget

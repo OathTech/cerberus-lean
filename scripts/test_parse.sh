@@ -15,7 +15,12 @@
 # in the exec lane, ran > 4 min before being stopped). Execution was never
 # this lane's purpose; the bar ("no `parse error`") is unchanged. A per-
 # file TIMEOUT (default 60 s, TIMEOUT_SECS) is fail-NOISY: counted as its
-# own class and fatal — never folded into "ok".
+# own class and fatal — never folded into "ok". Nonzero Lean exits without
+# the `parse error` text are classified (second design review 2026-09-03;
+# the per-file block below): REJECTED (printed front-end Error, exit 1;
+# counted, visible), INTERNAL_ERROR_EXPECTED (failwithI panic on an
+# *.error.c input, oracle-mirrored; counted, visible), LEAN_FAILURE (any
+# other crash or verdict-less exit; FATAL — plant: test_fuel_plant.sh).
 
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 set -euo pipefail
@@ -87,6 +92,9 @@ echo ""
 # Counters
 total=0
 lean_timeout=0
+lean_failure=0
+lean_rejected=0
+lean_internal_expected=0
 TIMEOUT_SECS="${TIMEOUT_SECS:-60}"   # per-file Lean-side cap (header); fail-noisy
 cerb_ok=0
 cerb_fail=0
@@ -137,6 +145,49 @@ for cfile in "${test_files[@]}"; do
         if $VERBOSE; then
             echo -e "${RED}FAIL${NC} $name: $error_msg"
         fi
+    elif [[ $lean_rc -ne 0 ]]; then
+        # Nonzero Lean exit WITHOUT the `parse error` text (second design
+        # review 2026-09-03: this was counted parse_ok — fail-open). Three
+        # classes, every one VISIBLE in the summary + the error log:
+        #   REJECTED        exit 1..127 + a printed front-end VERDICT line
+        #                   (`Error {msg: …}` — desugaring/typing refusal —
+        #                   or `Undefined {ub: …}` — front-end UB detection):
+        #                   the front end refused the program after a
+        #                   successful parse (--pp-core exits 1 on it;
+        #                   tests/ci carries 117 such rows, mostly *.error.c
+        #                   / *.undef.c intended ones). Not a parse failure;
+        #                   counted, non-fatal.
+        #   INTERNAL_ERROR  exit >= 128 with LemLib's `failwithIImpl` PANIC
+        #   _EXPECTED       line on a *.error.c input — the model's own
+        #                   fail-closed internal error on an intended-error
+        #                   program, MIRRORED by the oracle (tests/ci 0258/
+        #                   0270: oracle `exit 125: internal error: …`, the
+        #                   same message). Counted, non-fatal, listed.
+        #   LEAN_FAILURE    anything else — a crash (SIGABRT/SIGSEGV/stack
+        #                   overflow, a failwithI panic on a non-error
+        #                   input) or a nonzero exit with no printed
+        #                   verdict. FATAL. Plant: scripts/test_fuel_plant.sh
+        #                   (a stub exiting 134 -> red).
+        first_line=$(echo "$result" | grep -m1 -E 'PANIC|Stack overflow|Error \{|Undefined \{|error' | cut -c1-120 || true)   # set -e/pipefail: a no-match grep must not abort the lane
+        if [[ $lean_rc -lt 128 ]] && echo "$result" | grep -qE '^(Error \{msg: |Undefined \{ub: )'; then
+            lean_rejected=$((lean_rejected + 1))
+            echo "$name: REJECTED (exit $lean_rc): $first_line" >> "$ERROR_LOG"
+            if $VERBOSE; then
+                echo -e "${YELLOW}REJECTED${NC} $name (exit $lean_rc): $first_line"
+            fi
+        elif [[ $lean_rc -ge 128 && "$name" == *.error.c ]] && echo "$result" | grep -q 'PANIC at .*failwithIImpl'; then
+            lean_internal_expected=$((lean_internal_expected + 1))
+            echo "$name: INTERNAL_ERROR_EXPECTED (exit $lean_rc, failwithI on an intended-error input): $first_line" >> "$ERROR_LOG"
+            if $VERBOSE; then
+                echo -e "${YELLOW}INTERNAL_ERROR_EXPECTED${NC} $name (exit $lean_rc): $first_line"
+            fi
+        else
+            lean_failure=$((lean_failure + 1))
+            echo "$name: LEAN_FAILURE (exit $lean_rc, no 'parse error' text): $first_line" >> "$ERROR_LOG"
+            if $VERBOSE; then
+                echo -e "${RED}LEAN_FAILURE${NC} $name (exit $lean_rc): $first_line"
+            fi
+        fi
     else
         parse_ok=$((parse_ok + 1))
         if $VERBOSE; then
@@ -159,7 +210,8 @@ echo "Results ($elapsed seconds)"
 echo "================================"
 echo "Total:          $total"
 echo "Cerberus parse: $cerb_ok ok, $cerb_fail failed"
-echo "Lean parse:     $parse_ok ok, $parse_fail failed, $lean_timeout timeout (>${TIMEOUT_SECS}s; fatal)"
+echo "Lean parse:     $parse_ok ok, $parse_fail failed, $lean_timeout timeout (>${TIMEOUT_SECS}s; fatal), $lean_failure lean failure(s) (crash / nonzero exit without a printed verdict; fatal)"
+echo "Lean front end: $lean_rejected rejected (exit 1 + a printed Error/Undefined verdict; not a parse failure), $lean_internal_expected internal-error-expected (failwithI panic on an *.error.c input, oracle-mirrored)"
 
 if [[ $cerb_ok -gt 0 ]]; then
     rate=$((parse_ok * 100 / cerb_ok))
@@ -169,14 +221,20 @@ fi
 if [[ -s "$ERROR_LOG" ]]; then
     echo ""
     echo "Top error categories:"
-    sed 's/^[^:]*: //' "$ERROR_LOG" | sort | uniq -c | sort -rn | head -10 | while IFS= read -r line; do
+    # Materialised first: under `set -o pipefail`, `head -10` closing the
+    # pipe early gave `sort` SIGPIPE (rc 141) and `set -e` killed the lane
+    # before its verdict whenever the log had > 10 lines — a latent bug,
+    # first hit when tests/ci's 117 REJECTED rows became logged
+    # (second design review close-out, 2026-09-03).
+    TOP_CATS=$(sed 's/^[^:]*: //' "$ERROR_LOG" | sort | uniq -c | sort -rn || true)
+    printf '%s\n' "$TOP_CATS" | head -10 | while IFS= read -r line; do
         printf "  %s\n" "$line"
     done
 fi
 
 echo ""
-if [[ $parse_fail -gt 0 || $lean_timeout -gt 0 ]]; then
-    echo -e "${RED}FAILED: $parse_fail parse error(s), $lean_timeout timeout(s)${NC}"
+if [[ $parse_fail -gt 0 || $lean_timeout -gt 0 || $lean_failure -gt 0 ]]; then
+    echo -e "${RED}FAILED: $parse_fail parse error(s), $lean_timeout timeout(s), $lean_failure lean failure(s)${NC}"
     echo "Error log: $ERROR_LOG"
     exit 1
 else

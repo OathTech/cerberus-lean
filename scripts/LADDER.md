@@ -19,7 +19,7 @@ Order is the conventional run order; all are fail-closed gates.
 | 4c | `./scripts/test_bytes.sh` | rc 0 — 9/9 exec files at the COMMITTED `.exec` expecteds (oracle-independent reference) + 5/5 front-end-reject pins (arc-10 S3b; script header has the leg semantics) |
 | 5 | `./scripts/test_libc_exec.sh` | all MATCH recorded baseline (`tests/libc_exec/baseline.txt`) |
 | 6 | `./scripts/test_multi_tu.sh` | all corpus entries pass |
-| 7 | `./scripts/test_parse.sh` | tests/minimal 100% (FUEL arc budget commit, 2026-09-03: Lean side runs `--pp-core` — front end, NO execution — under a fail-noisy per-file timeout; the 10^6 fuel ceiling had been this lane's implicit bound) |
+| 7 | `./scripts/test_parse.sh` | tests/minimal 100% (FUEL arc budget commit, 2026-09-03: Lean side runs `--pp-core` — front end, NO execution — under a fail-noisy per-file timeout; the 10^6 fuel ceiling had been this lane's implicit bound. Nonzero Lean exits are classified REJECTED (printed verdict) / INTERNAL_ERROR_EXPECTED (failwithI on `*.error.c`, oracle-mirrored) / LEAN_FAILURE (fatal) — never `ok`) |
 | 8 | `./scripts/test_core.sh` | tests/minimal 100% (078 is GREEN since arc-6 S1 — any red is a regression) |
 | 9 | `./scripts/test_elab.sh` | recorded same/diff state, rc 0 |
 | 10 | `./scripts/test_libxml2_uri.sh` | **GATING since arc-6 S4** (charter success condition 1): 16/16 byte-identical LEAN_LIBC vs ORACLE_LIBC + pinned per-lane expectations + baseline drift check (`tests/libxml2/uri_baseline.txt`), fail-closed both directions |

@@ -819,9 +819,9 @@ echo "check_theorem_axioms: mem-scale S1 leg OK (${#MEMSCALE_THMS[@]} C1/C3 equa
 # written CerbND.lean — the nine worker `_zero` lemmas, the three runner
 # leaves, the two constructor-disjointness lemmas, the wrapper/budget
 # `rfl`s and the SYNC GUARANTEE `drive_wrapper_defeq` — plus the exemplar
-# instances over the shipped pipeline (test/Unit/FuelExemplar.lean: the
-# consumer shape at fuel 0 and at fuel 1; the ∀-fuel statement is the
-# slice's STOP-AND-REPORT item, see that file's header), each
+# theorem over the shipped pipeline (test/Unit/FuelExemplar.lean: the
+# consumer's ∀-fuel shape by the symbolic round library, plus its fuel-0
+# and kernel-evaluated fuel-1 instances), each
 # in the clean cone: exact allowlist [propext, Classical.choice,
 # Quot.sound]; sorryAx / ofReduce* / DAEMON fatal as everywhere. That the
 # lemmas ELABORATE at all is the pinned-lemma gate (a renamed generated
@@ -837,9 +837,11 @@ FUEL_THMS=(CerbND.nd_bind_lemFuel_zero CerbND.liftND_lemFuel_zero CerbND.liftAct
            CerbND.runNDFuel_zero CerbND.runND1Fuel_zero CerbND.runND1TraceFuel_zero
            CerbND.fuelExhaustedKill_ne_Undef0 CerbND.fuelExhaustedKill_ne_Other
            CerbND.driverFuel_eq CerbND.driver2_wrapper_defeq CerbND.nd_bind_wrapper_defeq
-           CerbND.runND_eq CerbND.drive_wrapper_defeq CerbND.drive_lemFuel
+           CerbND.print_eval_conv_aux_wrapper_defeq CerbND.drive_nonmemory_steps_aux2_wrapper_defeq
+           CerbND.hack_wrapper_defeq CerbND.runND_eq CerbND.runND1_eq
+           CerbND.drive_wrapper_defeq CerbND.drive_lemFuel
            FuelExemplar.exemplar_certified_shipped_zero FuelExemplar.exemplar_run_one_kernel
-           FuelExemplar.exemplar_certified_shipped_one)
+           FuelExemplar.exemplar_certified_shipped_one FuelExemplar.exemplar_certified_shipped_forall)
 {
   echo "import CerbND"
   echo "import Unit.FuelExemplar"
@@ -876,6 +878,6 @@ if [[ -n "$FUEL_BAD" ]]; then
   echo "$FUEL_BAD"
   exit 1
 fi
-echo "check_theorem_axioms: FUEL arc leg OK (${#FUEL_THMS[@]} contract lemmas + drive_lemFuel + the exemplar instances, every cone ⊆ [propext, Classical.choice, Quot.sound])"
+echo "check_theorem_axioms: FUEL arc leg OK (${#FUEL_THMS[@]} contract lemmas + drive_lemFuel + the ∀-fuel exemplar and its instances, every cone ⊆ [propext, Classical.choice, Quot.sound])"
 
 echo "check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)"

@@ -426,7 +426,11 @@ VERBATIM (binder names, comments, spacing included) plus that single
 substitution — nothing else is touched, so a reviewer can `diff` it
 against the generated text. The SYNC GUARANTEE is `drive_wrapper_defeq`
 below: `drive = drive_lemFuel driverFuel` by `rfl`. Any drift in the
-generated `drive` breaks that `rfl` and OUR build goes red.
+generated `drive` breaks that `rfl` and OUR build goes red — it shows as
+`(deterministic) timeout at whnf` in `drive_wrapper_defeq` (the two ~10 KB
+bodies stop being syntactically identical and the elaborator falls back
+to evaluating them). The remedy is to RE-MIRROR (copy the regenerated
+body + the one substitution), never a heartbeat bump.
 
 `drive_lemFuel 0 …` is NOT the kill term (no `_zero` lemma): fuel 0 does
 not short-circuit the setup phase, which runs at fixed budgets first;

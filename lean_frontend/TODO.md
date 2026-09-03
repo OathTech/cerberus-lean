@@ -19,18 +19,36 @@ downstream.)
 
 ## Small items (independent; can ride along with any fix batch)
 
-- Step-runner execution ceiling (RE-CHARACTERIZED 2026-08-30: the
-  old process-stack overflow no longer reproduces — stack use is now
-  iteration-independent down to a 1 MB limit; the binding ceiling is
-  the fuel-totalization budget of the coupled driver family —
-  `CerbFuel.driverFuel` = 10^8 since the FUEL arc's budget commit
-  (onset was ~1.7e4 plain loop iterations / ~6e4 C-recursion depth at
-  the former 10^6; ~100× that now). Since the FUEL arc
-  (2026-09-03, `docs/2026-09-02_fuel-arc-design.md`) exhaustion is a
-  TYPED outcome (`CerbND.fuelExhaustedKill`, the harness FUEL class),
-  no longer a crash; full evidence + design space:
-  `docs/2026-08-31_stack-ceiling-design.md`; history:
-  `docs/2026-08-19_arc6-s0-survey.md`).
+- Step-runner execution ceiling — the PROCESS-STACK ceiling is BINDING
+  AGAIN (measured 2026-09-03, FUEL arc record §6): at the coupled driver
+  family's budget `CerbFuel.driverFuel` = 10^8 (the FUEL arc's budget
+  commit), `tests/mem-scale-probes/probes/d_loop_1000000.c` and
+  `e_memcpy_1000000.c` die with `Stack overflow detected. Aborting.`
+  (exit 134, after 44.6 s / 99.8 s) while `d_loop_100000`/
+  `e_memcpy_100000` complete with the oracle's values — onset between
+  10^5 and 10^6 loop iterations for loop shapes. The 2026-08-30 re-
+  characterisation ("the old process-stack overflow no longer
+  reproduces; the binding ceiling is the fuel budget") described the
+  10^6-fuel regime, where fuel exhaustion (~1.7e4 plain loop iterations
+  / ~6e4 C-recursion depth) masked the stack. Harness reading: LEAN_CRASH
+  (exit ≥ 128, `(no PANIC line captured)`), measure.sh note
+  `STACK_OVERFLOW;` — fatal, never agreement, never FUEL. NEVER a stack-
+  size knob (registered-defect shape); the structural fix is the
+  stack-ceiling design's route: `docs/2026-08-31_stack-ceiling-design.md`;
+  history: `docs/2026-08-19_arc6-s0-survey.md`. Fuel exhaustion itself
+  is a TYPED outcome since the FUEL arc (`CerbND.fuelExhaustedKill`, the
+  harness FUEL class; `docs/2026-09-02_fuel-arc-design.md`).
+- Front-end `mkListN` ceiling (FUEL arc record §5, 2026-09-03): a zero-
+  initialised local aggregate of 10^6 elements
+  (`tests/mem-scale-probes/probes/b_zero_local_1000000.c`, and
+  `_10000000`) dies in the FRONT END — `mkListN_aux_lemFuel` (called from
+  `constructValue_aux` ← `wip_desugar_initializer`, symbolised from the
+  panic backtrace) exhausts `lemDefaultFuel` = 10^6 building the
+  n-element list — as a pure-return-worker PANIC (exit 134, harness
+  `FUEL(panic)`), unchanged by the driver-family budget (it is outside
+  the coupled six; Q4). Evidence for a per-declaration budget declare on
+  `mkListN_aux` (an operand-bounded measure: n elements) — a ruling item,
+  not applied.
 - The `finalize`/`hack` leaf (FUEL arc follow-up, source: the
   refined-cerberus review 2026-09-02 §5): `finalize` (driver.lem:1473-
   1476) calls the pure-return worker `hack` (sentinel `fuelExhausted
@@ -58,7 +76,7 @@ downstream.)
   sorry-emission paths are gone. Delete the special case and fail
   closed ("Lean backend: target_rep `sorry` refused"). Class 0, next
   lem arc (two-repo pin dance). FINDING recorded with it (arc record):
-  frontend/concurrency/cmm_csem.lem carries 24 further `declare lean
+  frontend/concurrency/cmm_csem.lem carries 23 further `declare lean
   target_rep function … = \`sorry\`` declares (observable_filter,
   behaviour, …, overlap_behaviour) that are UNREFERENCED in the Lean
   build today (zero `sorry` tokens in the generated tree — gate

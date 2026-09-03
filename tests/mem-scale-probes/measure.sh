@@ -12,9 +12,9 @@
 # exit: the wrapped command's exit (124 = timeout, 137 = cgroup kill —
 # capped's OOM-KILLED/KILLED banner is preserved in the .err file), verdict: the
 # batch verdict sequence (VAL:/UB: like tests/parity-probes/run_probe.sh),
-# note: INTERNAL PANIC / KILLED / TIMEOUT / HANG / FUEL(kill|panic) markers
-# from stderr and the time record; cpu_s: User+System seconds from
-# /usr/bin/time -v.
+# note: INTERNAL PANIC / KILLED / TIMEOUT / HANG / FUEL(kill|panic) /
+# STACK_OVERFLOW markers from stderr and the time record; cpu_s:
+# User+System seconds from /usr/bin/time -v.
 #
 # FUEL (FUEL arc, 2026-09-03; scripts/fuel_classify.sh
 # classify_fuel_outcome, the same function every classifying lane uses):
@@ -127,6 +127,12 @@ run_one() {
     # "capped: KILLED" (signal death / witness unavailable) — both count
     grep -qE "capped: (OOM-)?KILLED" "$err" && note="${note}KILLED;"
     grep -q "INTERNAL PANIC" "$err" && note="${note}PANIC:$(grep -m1 -oE 'INTERNAL PANIC[^\n]*' "$err" | cut -c1-60 | tr '\t' ' ');"
+    # STACK_OVERFLOW (FUEL arc record §6, 2026-09-03): the Lean runtime's
+    # exit-134 "Stack overflow detected. Aborting." signature — the process-
+    # stack ceiling, unmasked at the 10^8 driver budget on ≥~10^6-iteration
+    # loop shapes. Note only: the classification stays the crash class
+    # (LEAN_CRASH in the lanes; never a completed run, never agreement).
+    grep -q "Stack overflow detected" "$err" && note="${note}STACK_OVERFLOW;"
     # FUEL (header): both streams concatenated, exact-message classifier
     local fuel_kind; fuel_kind=$(classify_fuel_outcome "$rc" "$(cat "$out" "$err" 2>/dev/null)")
     [[ -n "$fuel_kind" ]] && note="${note}FUEL(${fuel_kind#FUEL:});"

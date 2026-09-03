@@ -2,7 +2,7 @@
 
 Date: 2026-09-03. Branch `arc/fuel`. Design: `docs/2026-09-02_fuel-arc-design.md`
 (R3; Option C [USER 2026-09-02]); consumer review on record:
-`refined-cerberus/worktrees/fuel-design-review/docs/2026-09-02_review-of-cerberus-lean-fuel-arc-design.md`
+`refined-cerberus/docs/2026-09-02_review-of-cerberus-lean-fuel-arc-design.md`
 (ACCEPT + R1-R3). Arc record: `docs/2026-09-03_fuel-arc-record.md`.
 
 This manifest is what the re-pin carries. Every name below is in the
@@ -18,7 +18,7 @@ commit.
 |---|---|---|
 | `CerbFuel.fuelExhaustedLoc` | `opaque … : CerbLocation.Loc := CerbLocation.Loc.other "lem: fuel exhausted"` — pure, value-carrying, NO `unsafe`/`implemented_by`/`extern`; boundary-opaque census row | `lean_frontend/CerbFuel.lean:42` |
 | `CerbFuel.fuelExhaustedMsg` | `def … : String := "lem: fuel exhausted"` — REPORTING-ONLY | `CerbFuel.lean:49` |
-| `CerbFuel.driverFuel` | `def … : Nat` — the coupled driver family's budget; the citable side-condition constant (§4) | `CerbFuel.lean:67` |
+| `CerbFuel.driverFuel` | `def … : Nat` — the coupled driver family's budget; the citable side-condition constant (§4) | `CerbFuel.lean:71` (at the budget head; `:67` at commit 1) |
 | `CerbND.fuelExhaustedKill` | `def fuelExhaustedKill {err : Type} : kill_reason err := Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg` | `lean_frontend/CerbND.lean:80` |
 | `CerbND.ndDefaultFuel` | `:= CerbFuel.driverFuel` (the runners' budget) | `CerbND.lean:85` |
 | `CerbND.drive_lemFuel` | the fuel-parametric shipped pipeline (§3) | `CerbND.lean:446` |
@@ -181,24 +181,31 @@ disjunct. No distinctness lemma, no `DecidableEq`, no decidable
 
 ## 6. The in-repo exemplar (`lean_frontend/test/Unit/FuelExemplar.lean`)
 
-Shipped, kernel-checked, cone = the standard three (probed):
-`FuelExemplar.exemplar_certified_shipped_zero` (the consumer shape at fuel
-0 — the kill, by `rfl` evaluation of the fuel-independent setup +
-`driver2_lemFuel_zero`) and `FuelExemplar.exemplar_certified_shipped_one`
-(the consumer shape at fuel 1 — `Active` with `Specified(42)`, via the
-kernel-evaluated closed instance `exemplar_run_one_kernel`: the round's
-one opaque read `CerbGlobal.current_execution_mode ()` is exposed with
-`driver2_lemFuel.eq_2`, CASED, and each branch closed by `decide +kernel`).
-The ∀-fuel statement itself is the slice's STOP-AND-REPORT item (the
-file header; arc record): it closes with canon tactics only above the
-default heartbeat budget (25 s at `maxHeartbeats 0`; red at 200k/400k/
-800k) because the ELABORATOR's evaluation of one driver round on the
-open term is ~100× the kernel's — remedies need a ruling.
+Shipped, kernel-checked, cone = the standard three (probed by the FUEL
+leg): **`FuelExemplar.exemplar_certified_shipped_forall (fuel : Nat)`** —
+the ∀-fuel theorem in EXACTLY the consumer's §6 shape, proved by the
+consumer's SYMBOLIC route (design §1.6 route iii, adopted at the second
+design review 2026-09-03): a test-local round library (`FuelExemplar.
+Round`: `runOne` + its `nd_return`/`nd_get`/`nd_update`/`nd_read`/`nd_bind`
+/`liftMem`/`runND` equations at `CerbFuel.driverFuel`, `prepare_exit_
+single`, `loop_step_done`, `process_done`, `driver2_done` — CASES on the
+opaque `CerbGlobal.current_execution_mode ()` — `finalize_done`,
+`budget_succ : CerbFuel.driverFuel = Nat.succ 99999999 := rfl`), the post-
+setup state `S₁` named by PROJECTION from the shipped fuel-0 run,
+`drive_after_setup`, `round_done`; closes in under a second at default
+heartbeats. The library is a PROOF DEVICE of the test file, not part of the
+`CerbND` contract (test-local unless the consumer asks for it). Also
+shipped: `exemplar_certified_shipped_zero` (fuel 0, `rfl`; the base case)
+and `exemplar_certified_shipped_one` (fuel 1 via the kernel-evaluated
+closed instance `exemplar_run_one_kernel`, `decide +kernel` per
+scheduler-mode branch).
 
-Practical note for the consumer's own ∀-fuel proofs: the `n+1` case
-requires `cases` on `CerbGlobal.current_execution_mode ()` (an `opaque`
-seam; both scheduler branches take the same singleton-pick path) —
-exactly the consumer's existing DriverCollapse discipline.
+Practical note for the consumer's own ∀-fuel proofs: the brute route
+(unfold + `cases` on the opaque + `List.mem_singleton.mp`/`rfl`) times out
+at default heartbeats even at the literal fuel 1 — the elaborator's whnf
+of a concrete driver round, not the open fuel variable, is the cost — so
+the symbolic round-lemma method is the viable shape (exactly the
+consumer's existing DriverCollapse discipline).
 
 ## 7. The harness FUEL class (reporting-only; no soundness rests on it)
 
