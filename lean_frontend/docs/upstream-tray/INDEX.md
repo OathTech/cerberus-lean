@@ -1,5 +1,7 @@
 # Upstream report drafts — index
 
+> Cerberus developers: start with [README.md](README.md), the reader's guide to this directory.
+
 Drafts of issue reports for `rems-project/cerberus`, from this project's
 recorded findings. All cited file:line references verified against
 upstream `master` @ `b9aeedcb4` (the merge base of our tree; every cited

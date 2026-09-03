@@ -123,4 +123,6 @@ run tiers):
 
 Start with [VALIDATION.md](VALIDATION.md) for the trust story;
 [DESIGN.md](DESIGN.md) for architecture; [TODO.md](TODO.md) for the
-backlog; `docs/` for the dated record of how everything got here.
+backlog; `docs/` for the dated record of how everything got here;
+[docs/upstream-tray/README.md](docs/upstream-tray/README.md) if you
+maintain Cerberus or Lem and were sent here to triage our bug reports.
