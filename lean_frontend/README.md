@@ -42,8 +42,7 @@ lean_frontend/
 │                     #   and a C harness renderer (see speclab/README.md)
 ├── corpus/           # pinned differential-fixture programs (hash-frozen)
 ├── test/             # unit tests + gate executables
-├── docs/             # dated design records and results (the port's history)
-└── lembugs/          # bug reports against the Lem backend, with reproducers
+└── docs/             # dated design records and results (the port's history)
 ```
 
 The C parser stays in OCaml: `cerberus --cabs-json` parses C and emits

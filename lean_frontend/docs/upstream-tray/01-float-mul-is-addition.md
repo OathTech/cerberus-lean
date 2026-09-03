@@ -65,7 +65,7 @@ let mul = ( *. )
 the intent unambiguous; the behaviour contradicts it.
 
 <!-- internal provenance:
-  cerberus-lean/lean_frontend/lembugs/2026-08-19_upstream-float-mul.md
+  cerberus-lean/lean_frontend/docs/2026-08-19_upstream-float-mul.md
   (arc-4 S5 adversarial audit, fix item C4);
   arc-4 results doc, audit disposition C4
   (cerberus-lean/lean_frontend/docs/2026-08-19_arc4-results.md).

@@ -296,7 +296,7 @@ outputs, not the lem version.
 - `declare {lean} rename module = Name` — renames generated module
 - Inhabited handling (arc-8; replaces the old DAEMON axiom fallback,
   which was logically inconsistent and is DELETED —
-  lembugs/2026-08-20_daemon-inconsistent-axiom.md, RESOLVED): the
+  docs/2026-08-20_daemon-inconsistent-axiom.md, RESOLVED): the
   backend DERIVES real bounded `Inhabited` instances per generated type
   (tier-1 nullary + tier-2 per-constructor with `[Inhabited tv]` bounds,
   in the type's own module); every failure site emits axiom-free
@@ -339,7 +339,10 @@ outputs, not the lem version.
   reentrancy hook). Effect-free emission is the registered L-priced
   residual
 
-**Bug reports:** `lean_frontend/lembugs/` — dated markdown files with reproducers.
+**Bug reports:** lem-backend defects are reported in the lem-lean repo
+(`doc/lean-backend/` dated records + `tests/comprehensive` reproducers);
+upstream-facing reports (Cerberus, Lem, Lean) go in
+`lean_frontend/docs/upstream-tray/<target>/` (see its INDEX.md).
 
 ## Status
 
@@ -370,4 +373,4 @@ dated records — do not maintain status lists here. Start points:
 - `set_option autoImplicit true` in hand-written files (project default is false)
 - Follow OCaml implementation as reference, with lean-c-semantics as secondary reference
 - No sorry in hand-written code — use `fail`, `panic!`, or real implementations
-- Bug reports for Lem issues go in `lean_frontend/lembugs/` with date prefix and reproducers
+- Bug reports: lem-backend defects → the lem-lean repo (`doc/lean-backend/` records, `tests/comprehensive` reproducers); upstream-facing reports → `lean_frontend/docs/upstream-tray/<target>/`
