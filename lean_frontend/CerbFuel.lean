@@ -57,13 +57,17 @@ def fuelExhaustedMsg : String := "lem: fuel exhausted"
     generated wrappers to this constant, and `driverFuel_eq` gives the
     numeral.
 
-    COMMIT-1 VALUE (mechanism commit, §6): equal to `lemDefaultFuel`
-    (= 10^6, lem-lean lean-lib/LemLib.lean) so that the generated
-    wrappers — still emitted at the library default in this commit —
-    are `rfl`-equal to `driverFuel` and the FUEL harness class is
-    witnessed by real lane rows before the budget moves. The budget
-    commit changes this numeral to 100000000 (= 10^8) together with the
-    six L1 budget declares. -/
-def driverFuel : Nat := 1000000
+    VALUE: 10^8 (the budget commit; the mechanism commit carried
+    `1000000` = `lemDefaultFuel` so the FUEL class was witnessed by real
+    lane rows first). The six L1 budget declares (`declare {lean} fuel val
+    X = 100000000` in driver.lem / nondeterminism.lem) emit this numeral
+    into the generated wrappers; the wrapper `rfl`s hold because both
+    sides unfold to the same literal. Sizing (C1 manifest §8 / stack-
+    ceiling design §6b): at measured fuel rates the loud edge is ~7 min
+    (loop shape) to ~55 min (recursion shape) of single-invocation
+    stepping; 10^9+ would be past the grind horizon. A 10^8 budget is
+    unreachable inside any gate lane's timeout (15-30 s ⇒ ≤ 7×10^6 fuel);
+    it is exercised only by measure.sh (600 s) and unbounded probes. -/
+def driverFuel : Nat := 100000000
 
 end CerbFuel

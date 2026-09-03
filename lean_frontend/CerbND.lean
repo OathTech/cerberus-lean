@@ -386,7 +386,7 @@ theorem fuelExhaustedKill_ne_Other {err : Type} (e : err) :
 
 /-! ### The wrappers pinned to the budget constant (design note §4.3) -/
 
-theorem driverFuel_eq : CerbFuel.driverFuel = 1000000 := rfl
+theorem driverFuel_eq : CerbFuel.driverFuel = 100000000 := rfl
 
 theorem driver2_wrapper_defeq : driver2 = driver2_lemFuel CerbFuel.driverFuel := rfl
 

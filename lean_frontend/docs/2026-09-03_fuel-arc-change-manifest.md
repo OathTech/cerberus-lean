@@ -85,7 +85,7 @@ theorem fuelExhaustedKill_ne_Other {err : Type} (e : err) :
     (fuelExhaustedKill : kill_reason err) ≠ Other e                   -- by intro h; cases h
 
 -- wrappers pinned to the budget constant
-theorem driverFuel_eq : CerbFuel.driverFuel = 1000000                 -- commit 1; commit 2: = 100000000
+theorem driverFuel_eq : CerbFuel.driverFuel = 100000000               -- commit 2 (commit 1 carried 1000000)
 theorem driver2_wrapper_defeq : driver2 = driver2_lemFuel CerbFuel.driverFuel
 theorem print_eval_conv_aux_wrapper_defeq : print_eval_conv_aux = print_eval_conv_aux_lemFuel CerbFuel.driverFuel
 theorem drive_nonmemory_steps_aux2_wrapper_defeq : drive_nonmemory_steps_aux2 = drive_nonmemory_steps_aux2_lemFuel CerbFuel.driverFuel

@@ -251,10 +251,9 @@ never absorbed as a skip; neither is a memory-model limit):
   driverFuel := rfl`. Budgets: the coupled driver family
   (`driver2`, `drive_nonmemory_steps_aux2`, `print_eval_conv_aux`,
   `hack`, `nd_bind`, `CerbND.ndDefaultFuel`) runs at
-  `CerbFuel.driverFuel` = 10^6 (the mechanism commit; = the library
-  default — the budget commit moves it to 10^8, ~1.7e4 plain loop
-  iterations / ~6e4 C-recursion depth today); every other fueled
-  declaration keeps `lemDefaultFuel` = 10^6 (the L1 opt-in
+  `CerbFuel.driverFuel` = 10^8 (the ceiling was ~1.7e4 plain loop
+  iterations / ~6e4 C-recursion depth at the former 10^6); every other
+  fueled declaration keeps `lemDefaultFuel` = 10^6 (the L1 opt-in
   guarantee). Pure-return workers keep the opaque panicking sentinel
   (exit 134, `lem: fuel exhausted` on stderr). The classifying lanes
   (`test_exec.sh` and its csmith wrapper, `test_gcc_oracle.sh`,

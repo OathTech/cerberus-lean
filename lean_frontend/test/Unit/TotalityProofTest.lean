@@ -2,7 +2,11 @@
   Arc-3 totality proofs (S3).
 
   Part 1 — wrapper defeq: for EVERY fuel'd def in the sweep, the point-free
-  wrapper is definitionally the worker at lemDefaultFuel. Provable by rfl
+  wrapper is definitionally the worker at its budget — lemDefaultFuel for
+  every declaration except the coupled driver family (print_eval_conv_aux,
+  drive_nonmemory_steps_aux2, driver2, hack, nd_bind), which runs at
+  CerbFuel.driverFuel since the FUEL arc's budget commit (L1 opt-in budget
+  declares; docs/2026-09-02_fuel-arc-design.md section 4). Provable by rfl
   only because both exist as total defs with equations; each `example` is
   universally quantified over the def's actual arguments (reader parameters
   included — they are honest leading arguments of the wrapper type).
@@ -13,6 +17,7 @@
 -/
 
 import LemLib
+import CerbFuel
 import Core_aux
 import Core_eval
 import Core_reduction
@@ -73,11 +78,11 @@ example : ∀ x1 x2 x3, tmp_AND_aux x1 x2 x3 = tmp_AND_aux_lemFuel lemDefaultFue
 example : ∀ x1 x2 x3, tmp_OR_aux x1 x2 x3 = tmp_OR_aux_lemFuel lemDefaultFuel x1 x2 x3 := fun _ _ _ => rfl
 example : ∀ x1 x2 x3, tmp_XOR_aux x1 x2 x3 = tmp_XOR_aux_lemFuel lemDefaultFuel x1 x2 x3 := fun _ _ _ => rfl
 example : ∀ x1 x2, simplify_integer_value_base x1 x2 = simplify_integer_value_base_lemFuel lemDefaultFuel x1 x2 := fun _ _ => rfl
-example : ∀ x1 x2 x3 x4, print_eval_conv_aux x1 x2 x3 x4 = print_eval_conv_aux_lemFuel lemDefaultFuel x1 x2 x3 x4 := fun _ _ _ _ => rfl
-example : ∀ x1 x2 x3, drive_nonmemory_steps_aux2 x1 x2 x3 = drive_nonmemory_steps_aux2_lemFuel lemDefaultFuel x1 x2 x3 := fun _ _ _ => rfl
-example : ∀ x1 x2, driver2 x1 x2 = driver2_lemFuel lemDefaultFuel x1 x2 := fun _ _ => rfl
-example : ∀ x1 x2 x3 x4 x5 x6 x7, hack x1 x2 x3 x4 x5 x6 x7 = hack_lemFuel lemDefaultFuel x1 x2 x3 x4 x5 x6 x7 := fun _ _ _ _ _ _ _ => rfl
-example {a : Type} {b : Type} {c : Type} {d : Type} {e : Type} {f : Type} : ∀ x1 x2, nd_bind (a := a) (b := b) (c := c) (d := d) (e := e) (f := f) x1 x2 = nd_bind_lemFuel (a := a) (b := b) (c := c) (d := d) (e := e) (f := f) lemDefaultFuel x1 x2 := fun _ _ => rfl
+example : ∀ x1 x2 x3 x4, print_eval_conv_aux x1 x2 x3 x4 = print_eval_conv_aux_lemFuel CerbFuel.driverFuel x1 x2 x3 x4 := fun _ _ _ _ => rfl
+example : ∀ x1 x2 x3, drive_nonmemory_steps_aux2 x1 x2 x3 = drive_nonmemory_steps_aux2_lemFuel CerbFuel.driverFuel x1 x2 x3 := fun _ _ _ => rfl
+example : ∀ x1 x2, driver2 x1 x2 = driver2_lemFuel CerbFuel.driverFuel x1 x2 := fun _ _ => rfl
+example : ∀ x1 x2 x3 x4 x5 x6 x7, hack x1 x2 x3 x4 x5 x6 x7 = hack_lemFuel CerbFuel.driverFuel x1 x2 x3 x4 x5 x6 x7 := fun _ _ _ _ _ _ _ => rfl
+example {a : Type} {b : Type} {c : Type} {d : Type} {e : Type} {f : Type} : ∀ x1 x2, nd_bind (a := a) (b := b) (c := c) (d := d) (e := e) (f := f) x1 x2 = nd_bind_lemFuel (a := a) (b := b) (c := c) (d := d) (e := e) (f := f) CerbFuel.driverFuel x1 x2 := fun _ _ => rfl
 example {a : Type} {cs : Type} {err1 : Type} {err2 : Type} {info1 : Type} {info2 : Type} {st1 : Type} {st2 : Type} : ∀ x1 x2 x3 x4 x5, liftND (a := a) (cs := cs) (err1 := err1) (err2 := err2) (info1 := info1) (info2 := info2) (st1 := st1) (st2 := st2) x1 x2 x3 x4 x5 = liftND_lemFuel (a := a) (cs := cs) (err1 := err1) (err2 := err2) (info1 := info1) (info2 := info2) (st1 := st1) (st2 := st2) lemDefaultFuel x1 x2 x3 x4 x5 := fun _ _ _ _ _ => rfl
 example {a : Type} {cs : Type} {err1 : Type} {err2 : Type} {info1 : Type} {info2 : Type} {st1 : Type} {st2 : Type} : ∀ x1 x2 x3 x4 x5, liftAction (a := a) (cs := cs) (err1 := err1) (err2 := err2) (info1 := info1) (info2 := info2) (st1 := st1) (st2 := st2) x1 x2 x3 x4 x5 = liftAction_lemFuel (a := a) (cs := cs) (err1 := err1) (err2 := err2) (info1 := info1) (info2 := info2) (st1 := st1) (st2 := st2) lemDefaultFuel x1 x2 x3 x4 x5 := fun _ _ _ _ _ => rfl
 

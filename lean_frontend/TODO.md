@@ -23,9 +23,9 @@ downstream.)
   old process-stack overflow no longer reproduces — stack use is now
   iteration-independent down to a 1 MB limit; the binding ceiling is
   the fuel-totalization budget of the coupled driver family —
-  `CerbFuel.driverFuel`, = 10^6 at the FUEL arc's mechanism commit,
-  moving to 10^8 in its budget commit — onset ~1.7e4 plain loop
-  iterations / ~6e4 C-recursion depth at 10^6. Since the FUEL arc
+  `CerbFuel.driverFuel` = 10^8 since the FUEL arc's budget commit
+  (onset was ~1.7e4 plain loop iterations / ~6e4 C-recursion depth at
+  the former 10^6; ~100× that now). Since the FUEL arc
   (2026-09-03, `docs/2026-09-02_fuel-arc-design.md`) exhaustion is a
   TYPED outcome (`CerbND.fuelExhaustedKill`, the harness FUEL class),
   no longer a crash; full evidence + design space:
