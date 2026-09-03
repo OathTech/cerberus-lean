@@ -2550,7 +2550,17 @@ def vaList (vaIdx : Int) : memM (List (ctype × PointerValue)) :=
 
 /-! ### Misc -/
 
-def copyAllocId (_ : IntegerValue) (pv : PointerValue) : memM PointerValue := memReturn pv
+/-- copy_alloc_id — impl_mem.ml:2766-2770 (the RefinedC builtin,
+    builtins.lem:470): the result pointer takes ADDRESS and PROVENANCE from
+    the INTEGER — `intfromptr` runs on the pointer only for its range check
+    (UB024 failure path included; both calls carry the OCaml's
+    `Cerb_location.other "copy_alloc_id"`), then `ptrfromint ival`.
+    zero-discrepancy Z-05 (noodle D4): this used to return `pv` unchanged
+    (`Specified(1)` vs the oracle's `Specified(2)` on
+    tests/immaculate/libc/zd-d4-copy-alloc-id.c). -/
+def copyAllocId (iv : IntegerValue) (pv : PointerValue) : memM PointerValue :=
+  nd_bind (intfromptr (CerbLocation.other "copy_alloc_id") void (.Unsigned .Intptr_t) pv)
+    (fun _ => ptrfromint (CerbLocation.other "copy_alloc_id") (.Unsigned .Intptr_t) void iv)
 def callIntrinsic (_ : CerbLocation.Loc) (_ : String) (_ : List MemValue) : memM (Option MemValue) := memReturn none
 
 /-- Fuel-exhaustion sentinel for the fuel-threaded `Core_aux.zeros_aux`
