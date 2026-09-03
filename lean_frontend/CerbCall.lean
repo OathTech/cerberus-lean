@@ -74,7 +74,11 @@ def intValue (n : Int) : value :=
 def funSymsNamed (file1 : file core_run_annotation) (fname : String) :
     List sym :=
   let dom := fmapDomainBy (fun (s1 s2 : sym) => ordCompare s1 s2) file1.funs
-  setToList (Lem_Set.filter (fun (s : sym) =>
+  -- pin-bump 2026-09-03 (LemLib 3c88f0d): `set 'a` is `Pset` and lem's
+  -- `Set.filter` is comparator-keyed `setFilterBy` (pset.ml `filter`);
+  -- the same `Ord0 sym` comparator keys the domain set above. Ascending
+  -- symbol order, as the OCaml `Pset.elements` would give.
+  setToList (setFilterBy (fun (s1 s2 : sym) => ordCompare s1 s2) (fun (s : sym) =>
     match s with
     | Symbol _ _ (SD_Id n) => n == fname
     | _ => false) dom)

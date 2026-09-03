@@ -279,6 +279,19 @@ private def libcIdentMapCmp : identifier → identifier → LemOrdering := fun i
   match i1, i2 with
   | Identifier _ s1, Identifier _ s2 => defaultCompare s1 s2
 
+/-- `map_from_assoc` mirror — backend/common/pipeline.ml:653-654:
+    `List.fold_left (fun acc (k, v) -> Pmap.add k v acc) (Pmap.empty compare)`
+    — a LEFT fold of `Pmap.add`, so on a duplicate key the later binding
+    wins, as in the OCaml. Pin-bump 2026-09-03 (LemLib 3c88f0d): LemLib's
+    `fmapOfSpine` (a foldr — first key won) was removed with the list-
+    backed Fmap; the four assoc lists it built below are duplicate-free
+    by construction (`libcInsertChecked`, the `funs` find?-dedup, the
+    `fmapElements` walk of a map), so the fold direction is unobservable
+    here and the OCaml direction is mirrored regardless. -/
+private def libcMapFromAssoc {α β : Type} (cmp : α → α → LemOrdering)
+    (l : List (α × β)) : Fmap α β :=
+  l.foldl (fun acc (k, v) => fmapAddBy cmp k v acc) fmapEmpty
+
 /-! ## Helpers -/
 
 /-- Read all input files' contents. Multi-TU: one cabs-json per
@@ -693,13 +706,13 @@ def loadLibc (quiet : Bool) (supply0 : Nat)
   return .ok ({
     main := none
     calling_convention0 := metaFile.calling_convention0
-    tagDefs := fmapOfSpine libcSymMapCmp tagDefs
+    tagDefs := libcMapFromAssoc libcSymMapCmp tagDefs
     stdlib := stdFunMap
     impl0 := coreImpl
     globs := parsed.globs
-    funs := fmapOfSpine libcSymMapCmp funs
-    extern := fmapOfSpine libcIdentMapCmp ext
-    funinfo := fmapOfSpine libcSymMapCmp funinfo
+    funs := libcMapFromAssoc libcSymMapCmp funs
+    extern := libcMapFromAssoc libcIdentMapCmp ext
+    funinfo := libcMapFromAssoc libcSymMapCmp funinfo
     loop_attributes1 := fmapEmpty
     visible_objects_env0 := fmapEmpty
   }, supply)

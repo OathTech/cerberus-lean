@@ -53,13 +53,6 @@ def list_remove_assoc {α β : Type} [BEq α] (key : α) : List (α × β) → L
   | [] => []
   | (k, v) :: rest => if k == key then rest else (k, v) :: list_remove_assoc key rest
 
-/-! ## Set fold
-    Corresponds to: Pset.fold in OCaml -/
-
--- Lem sets are sorted lists via LemSet. Fold follows OCaml Pset.fold order.
-def set_fold {α β : Type} (f : α → β → β) (s : List α) (init : β) : β :=
-  s.foldl (fun acc x => f x acc) init
-
 /-! ## Random bounded integer
     Corresponds to: Cerb_any.bounded_integer in cerb_any.ml (linked into
     core_run). OCaml draws Random.int64 in [lo, hi].

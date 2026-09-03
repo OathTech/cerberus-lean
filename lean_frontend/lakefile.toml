@@ -14,10 +14,14 @@ moreLeanArgs = ["-DautoImplicit=false"]
 # audit response); C2: bumped to the L2 deletion head (runEffectful
 # axiom + effectful mechanism retired — LemLib declares ZERO axioms);
 # re-pin to the merged head at arc close (pin dance).
+# pin-bump 2026-09-03: bumped to the merged mdd/lean-backend head 3c88f0d
+# (the parity-fix arc: OCaml-order derived Ord, Pset/Pmap verbatim ports,
+# right-to-left draw order, lem* deep-list rewrites, division-by-zero
+# panics; lem-lean doc/lean-backend/2026-09-03_parity-fix-record.md).
 [[require]]
 name = "LemLib"
 git = "https://github.com/OathTech/lem-lean"
-rev = "045dcb0d57a171eb4fb3a6eb5abe288c227270ce"
+rev = "3c88f0d7e5556491d733932c503c1637ae186f54"
 subDir = "lean-lib"
 
 [[lean_lib]]

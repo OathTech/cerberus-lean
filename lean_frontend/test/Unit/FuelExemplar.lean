@@ -55,6 +55,12 @@ import CerbND
 import Core
 import Core_run_aux
 import Driver
+-- pin-bump 2026-09-03 (LemLib 3c88f0d, parity-fix F7): the generated
+-- `nd_mapM` folds with the tail-recursive `lemListFoldr` (an Array.foldr
+-- under the hood), which does not reduce by `dsimp` the way `List.foldr`
+-- did; LemLib ships the kernel-checked equation `lemListFoldr_eq`
+-- (LemLibTheorems.lean) and the proof below rewrites through it.
+import LemLibTheorems
 
 open Lem_Num Lem_Pervasives Lem_List Lem_Set Lem_Map Lem_Maybe Lem_Function
   Lem_Show Lem_Show_extra Lem_Bool Lem_Basic_classes Lem_Map_extra
@@ -330,7 +336,9 @@ theorem driver2_done (fl : Nat)
     rw [show fmapElements (fmapAddBy defaultCompare (0 : Nat) [Step_done2 v]
       fmapEmpty) = [((0 : Nat), [Step_done2 v])] from rfl]
     unfold nd_mapM
-    dsimp only [List.map, List.foldr]
+    dsimp only [List.map]
+    rw [LemLibTheorems.lemListFoldr_eq]
+    dsimp only [List.foldr]
     refine (runOne_bind_active (z := ((0 : Nat), some (Step_done2 v)))
       (s' := dstF) ?_).trans ?_
     · refine (runOne_bind_active (z := Step_done2 v) (s' := dstF)

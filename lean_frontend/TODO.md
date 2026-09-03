@@ -19,6 +19,23 @@ downstream.)
 
 ## Small items (independent; can ride along with any fix batch)
 
+- **core_linking.lem's dangling `set_fold` declare (S)** — registered
+  2026-09-03 (pin-bump record §8): `frontend/model/core_linking.lem:61-63`
+  declares an UNUSED `val set_fold` with an OCaml rep `Pset.fold` and a
+  Lean rep `CerbUtils.set_fold`; the Lean def was deleted at the 3c88f0d
+  pin bump (dead, and its "sets are sorted lists" premise false). Remove
+  the three lines in a slice allowed to touch the `.lem` (expected OCaml
+  rendering delta: none — a target_rep'd val emits no definition — but
+  the lem-sync source hash moves and the fork-drift review must re-run).
+- **Lem-side record errata to carry to lem-lean (S, operator/orchestrator)**
+  — from the 3c88f0d pin bump (record §7/§8): `doc/lean-backend/
+  2026-09-03_parity-fix-record.md` §5's `CerbMem.lean:1352` "returns 0
+  where the oracle RAISES" claim is false (impl_mem.ml:2479-2480 has the
+  same zero guard); "CerbMem.lean (22) now render through lemNatDiv/…"
+  is inaccurate (hand-written, not re-rendered); the impact list missed
+  the transitive `Std.Data.TreeMap` import and proof-term dependence on
+  `List.foldr` reduction (`test/Unit/FuelExemplar.lean`); `Utils.default0`
+  did not revert to `default`.
 - Step-runner execution ceiling — the PROCESS-STACK ceiling is BINDING
   AGAIN (measured 2026-09-03, FUEL arc record §6): at the coupled driver
   family's budget `CerbFuel.driverFuel` = 10^8 (the FUEL arc's budget

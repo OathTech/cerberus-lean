@@ -7,6 +7,12 @@
   compared to the defacto model's symbolic types.
 -/
 
+-- pin-bump 2026-09-03 (LemLib 3c88f0d): the MemState maps below are
+-- `Std.TreeMap` (arc-6 S3, mirroring impl_mem.ml:93's IntMap = Map.Make(Z));
+-- LemLib used to import Std.Data.TreeMap for its own Fmap internals and
+-- this file rode on that transitive import. LemLib's Fmap is now the
+-- verbatim Pmap port (no Std.TreeMap), so the import is explicit here.
+import Std.Data.TreeMap
 import IntegerType
 import Ctype
 import Symbol

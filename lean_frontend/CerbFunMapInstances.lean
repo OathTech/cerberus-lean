@@ -15,13 +15,24 @@
   ARC-BLOCKING finding, found through a since-parked reasoning-era
   theorem that mentioned the initial configuration).
 
-  THE REQUIREMENT IS PHANTOM at the only live site:
-  `Lem_Map_extra.fold` (LemLib/Map_extra.lean:36) is
-      setFold (fun (k,v) r => f k v r) (fmapElements m) v1
-  — a foldr over the map's spine list; neither `setFold` nor
-  `fmapElements` touches `setElemCompare`. The instance is required,
-  never applied. (Same on the OCaml side: lem's `Map_extra.fold` is
-  target_rep'd to `Pmap.fold`; no value comparator exists there at all.)
+  THE VALUE-COMPARATOR LEG IS UNREACHABLE at the live sites (pin-bump
+  2026-09-03, LemLib 3c88f0d — before it the requirement was phantom
+  outright: `fold` was a foldr over `fmapElements`, never touching
+  `setElemCompare`). `Lem_Map_extra.fold` (LemLib/Map_extra.lean:36) is
+  now
+      setFold (fun (k,v) r => f k v r)
+        (fmapToSetBy (pairCompare setElemCompare setElemCompare) m) v1
+  — the map's ascending binding spine is rebuilt into a `Pset` under the
+  PAIR comparator, so this instance's `setElemCompare` IS passed, and
+  `pairCompare` applies it only when two bindings' KEYS compare EQ under
+  the `SetType sym` comparator. That comparator is `symbol_compare`
+  (symbol.lem's own SetType instance, priority 1000, beats the auto trio
+  at 500 — the arc-14 lattice), the same comparator every `Fmap sym _`
+  captures, under which a map's bindings are pairwise distinct: the
+  value leg is never applied, and the fold visits keys ascending exactly
+  as `Pmap.fold` does. (Same on the OCaml side: lem's `Map_extra.fold`
+  is target_rep'd to `Pmap.fold`; no value comparator exists there at
+  all.)
 
   Semantics of the override (OCaml polymorphic-compare parity, honest at
   the reachable depth):
@@ -69,7 +80,7 @@ instance {bty : Type} {a : Type} :
     else if ty < tx then LemOrdering.GT
     else
       -- Same constructor: OCaml would compare fields structurally; no
-      -- call site can reach this (phantom requirement — file header).
+      -- call site can reach this (value leg unreachable — file header).
       (failwithI "SetType generic_fun_map_decl: same-constructor compare \
                   (phantom instance requirement reached — see \
                   CerbFunMapInstances.lean)" : LemOrdering)
