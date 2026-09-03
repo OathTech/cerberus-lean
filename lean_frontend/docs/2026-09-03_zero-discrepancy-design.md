@@ -28,6 +28,13 @@ the mode-flag probes of §2.3 (`.zd-scratch/probes/`, ephemeral — the
 verbatim lines are quoted where used) and one run of `test_elab.sh` to
 name its three recorded DIFF rows.
 
+Revision R1 (2026-09-03, same day): the orchestrator's fresh review of
+`6a55dc74d` returned RATIFY-WITH-AMENDMENTS (F1–F11 + register + refusal
++ Q recommendations + scope). Every amendment was applied only after its
+cite was re-verified in this worktree (file:line read, or probe re-run
+and quoted verbatim); the reviewer's probes were re-run, not trusted.
+Row ids Z-72…Z-75 are new; changed rows say "(R1)".
+
 Terminology, fixed for the whole document:
 
 - **oracle** — the OCaml Cerberus built from this repository's `.lem`
@@ -45,23 +52,24 @@ Terminology, fixed for the whole document:
 
 ## 0. Headline
 
-Under the rule of §1 the census of §2 has **71 rows**. Derived totals by
+Under the rule of §1 the census of §2 has **75 rows** (R1: 71 + 4). Derived totals by
 class (the class vocabulary is §1.5):
 
 | Class | Rows | What it means |
 |---|---|---|
-| BUG-FIX | 24 | Lean ≠ oracle, or a refusal that is not loud-and-attributed, or a fail-open path; mirror the oracle (Z1–Z3) |
-| EXCEPTION (a) message text | 5 | failure class identical, text differs; declared |
-| EXCEPTION (b) resource | 3 | 2 are (b)-VIOLATIONS (Lean fails where the oracle succeeds — BUG with a named mover), 1 is a tolerated lane bound |
+| BUG-FIX | 25 | Lean ≠ oracle, or a refusal that is not loud-and-attributed, or a fail-open path; mirror the oracle (Z1–Z3) |
+| EXCEPTION (a) message text | 6 | failure class identical, text differs; declared (Z-38's claim must still be MEASURED, R1 F10) |
+| EXCEPTION (b) resource | 3 | 2 are (b)-VIOLATIONS (Lean fails where the oracle succeeds — BUG with a named mover), 1 is a lane bound tolerated only per row with measured completion evidence (Q5) |
 | EXCEPTION (b)/fuel | 1 | fuel exhaustion, accepted verbatim |
 | EXCEPTION (c) missing feature | 2 | loud, feature-attributed refusal verified (CerbFS refused set); concurrency (once the Z-24 refusal lands) |
 | ORACLE-SUSPECT → mirrored + tray | 16 | Lean == oracle ≠ ISO/gcc; correct under the rule; tray draft |
-| REGISTER CANDIDATE (class (d)) | 4 rows / 3 candidates | existing Lean-right/oracle-wrong pins adjudicated against the proposed bar; operator rules per entry |
+| REGISTER CANDIDATE (class (d)) | 4 rows / 3 candidates | existing Lean-right/oracle-wrong pins; reviewer recommends ADMIT R1/R2/R3 (R3 under the tightened (ii')); operator rules per entry |
+| RULING PENDING | 1 | Z-73: a failure-vs-success class difference Lean introduced deliberately (fail-closed over an oracle silent-success) — Q8 |
 | Z2-DISPOSED | 6 | header-declared seam divergences the audit must mirror or declare-with-reachability-argument (none may stay "recorded") |
-| INSTRUMENT / OUT-OF-SCOPE | 7 | not Lean-vs-oracle execution content (native layout; pp-filter granularity; stale cites; stale sweep snapshot; bridge; debug stubs) |
+| INSTRUMENT / OUT-OF-SCOPE | 8 | not Lean-vs-oracle execution content (native layout; pp-filter granularity; stale cites; stale sweep snapshot incl. the 43 `CERB_INCONSISTENT` rows; bridge; debug stubs) |
 | SEAM INDEX | 3 | §2.7 pointers from a seam file to rows above (not counted twice) |
 
-Derived: 24+5+3+1+2+16+4+6+7+3 = 71.
+Derived: 25+6+3+1+2+16+4+1+6+8+3 = 75.
 
 The three most consequential findings of the census itself (beyond the
 noodler's D1–D7): (i) the Lean driver has NO switch/mode plumbing and
@@ -159,8 +167,17 @@ criteria, each concrete and checkable:
 - **(ii) A second, independent oracle agrees with Lean** on a
   deterministic, UB-free reproducer: native `gcc -O0` (the second-oracle
   lane's recipe, `docs/2026-08-30_gcc-second-oracle-design.md` §2.1) and,
-  where available, clang. Where the reproducer is a UB program (so no
-  native answer exists), see §7 Q3 for the proposed substitute (ii').
+  where available, clang.
+- **(ii') Substitute for UB reproducers (R1 review, tightened):** where
+  no native answer exists, ALL THREE must hold: (1) the oracle failure
+  is a NON-SEMANTIC HOST EXCEPTION (`Z.Overflow`/`Not_found`/`assert` on
+  a host-int conversion) raised BEFORE the semantic path; (2) the Lean
+  code is a line-mirror of the OCaml path MINUS that conversion; (3) the
+  SECOND ORACLE is the oracle itself with the tray draft's remedy
+  applied to a scratch build, shown to produce the Lean verdict.
+  Consequence: F2 `(int)NaN` (tray 15's non-finite class) is eligible
+  under the same shape; `g4-bswap64-overflow` is NOT (no ISO clause — a
+  GNU builtin).
 - **(iii) Filed upstream**: a tray draft exists and the register entry
   cross-references it (and the issue URL once filed).
 - **(iv) Pinned in the immaculate lane** as a Lean-right/oracle-wrong
@@ -172,6 +189,11 @@ criteria, each concrete and checkable:
 - **(vi) Soft cap ≤ 10 entries.** Growth toward the cap is itself a
   signal to escalate upstream (file, or carry the fix as an upstream
   PR branch under `upstream-pr/*`), not to widen the register.
+- **(vii) Grep-able code marker.** Each entry names its Lean code site,
+  and that site carries the literal comment `-- ISO-fix register R<n>`
+  (replacing any "DELIBERATE DIVERGENCE"/"never fix-to-match" wording,
+  e.g. `CerbDecode.lean:84-91` → R1). A gate can then assert the
+  register and the marker set are in bijection.
 
 Register entry shape (one line each, in `VALIDATION.md` §"ISO-fix
 register"): `R<n> | <oracle behaviour, file:line> | <ISO clause> | <2nd
@@ -201,9 +223,12 @@ charter's probes; tallies are derived.
 | Z-02 (D2) | noodle §2 D2; `ptr/ptr_to_int_narrow_ub.c` | `Undefined {ub: "UB024_out_of_range_pointer_to_integer_conversion", stderr: "", loc: "<7:11--7:17>"}` | `… loc: "other_location(Concrete)"` | **BUG-FIX** (§1.3) | `CerbMem.lean:2297` `memFail (MerrIntFromPtr)` → `memFail MerrIntFromPtr loc` (mirror `impl_mem.ml:2459` `fail ~loc`). **S** |
 | Z-03 (O1) | noodle §0 O1; this charter's probe P-C3 | `loc: "<6:10--6:12>"` (`Cerb_location.simple_location`) | `loc: ".zd-scratch/probes/pnvi.c:6:10-12"` (`CerbLocation.stringFromLocation`) | **BUG-FIX** — the `loc` field is behaviour (§1.3); its RENDERING must agree byte-wise or no lane can compare it. Cheaper and doctrinally right to mirror the printer than to normalise in every harness | `CerbLocation.lean` batch renderer mirrors `simple_location` (`util/cerb_location.ml`), cite. **S** (prerequisite of §4.1) |
 | Z-04 (D3) | noodle §3 D3; `Main.lean:389-391`; `tests/libxml2/uri_baseline.txt` | `Error {msg: "ill-formed program: \`calling an unknown procedure: Symbol(1451, SD_Id("memset"))'"}` | `Error {msg: "Illformed_program: calling an unknown procedure: Symbol(968, SD_Id("memset"))"}` | **EXC(a)** — both `Error`, text differs; declared in-code (`driverErrorBatchMsg` "DELIBERATE divergence, documented"). The embedded symbol id is tray 17 (oracle-side defect, mirrored) | none required; optional mirror of `pp_errors.ml:501` if the Pp machinery is ever ported |
+| Z-73 (R1 F2a) | `Main.lean:349` (declared-deviation list) + `:900-902` | `runND` returning ZERO executions: the oracle prints nothing and exits 0 | `Error {msg: "cerberus-lean: runND returned no executions"}`, exit 1 ("we refuse to look like success") | **RULING PENDING (Q8)** — a deliberate failure-vs-success CLASS difference, which (a) does not cover; either keep the fail-closed refusal and DECLARE it as a class-(c)-style loud boundary, or mirror the oracle's silent success. Interaction: the fuel arc's `runNDFuel` exhaustion leaf yields exactly this shape (fuel design §3.1 "runner, today"), so Q8's answer decides that row's post-fuel classification too | none until ruled; **S** either way |
+| Z-74 (R1 F2b) | `Main.lean:347` | non-UB front-end failures: diagnostic on STDERR only, exit non-zero | `Error {msg: …}` line on STDOUT, exit non-zero | **EXC(a)** — channel/text differ; Z1 must SHOW (not assume) the exit class is identical on the reject corpora (`tests/bytes` NEG leg, the `.error.c` rows) | none; Z1 evidence row |
 | Z-05 (D4) | noodle §4 D4; `seam/seam_copy_alloc_id.c` | `Defined {value: "Specified(2)", …}` (upstream identical) | `Defined {value: "Specified(1)", …}` — `copyAllocId` returns the pointer unchanged | **BUG-FIX** (value-level; the RefinedC builtin `builtins.lem:470`) | `CerbMem.lean:2547` mirror `impl_mem.ml:2766-2770` (intfromptr range check, then `ptrfromint ival`), incl. the UB024 failure path. **S** |
 | Z-06 (D5) | noodle §4 D5; `seam/seam_device_range_load.c` | `Defined {value: "Specified(3)", …}` — `device_ranges = [(0x40000000,0x40000004);(0xABC,0xAC0)]` (`impl_mem.ml:620-624`), `Prov_device` via `ptrfromint` (`:2164-2167`), load/store accept `is_within_device` (`:1611-1617`, `:1718-1724`) | `Undefined {ub: "UB043_indirection_invalid_value", …}` — no device arm; comments at `CerbMem.lean:1940-1942/1985-1988/2048-2050` assert "the device_ranges list is empty in this pipeline" (false) | **BUG-FIX** — the oracle's behaviour is mirrored, however odd; if judged an upstream artefact it is ALSO a tray question, never a silent Lean deviation | `CerbMem.lean:2275-2283` + load/store/kill device arms; delete the false comments. **S** |
 | Z-07 (D6) | noodle §4 D6; `seam/seam_free_no_provenance.c`, `seam_free_device_pointer.c` | `Error {msg: "MerrOther "attempted to kill with a pointer lacking a provenance""}`; device pointer → `Defined {value: "Specified(3)"}` (`impl_mem.ml:1470-1476`) | both → `Undefined {ub: "UB179a_non_matching_allocation_free", …, loc: "unknown location"}` (`CerbMem.lean:1904`, catch-all `:1920`) | **BUG-FIX** (verdict class: Error vs UB; Defined vs UB) | mirror the three arms (function ptr → MerrOther; `Prov_none` concrete → MerrOther "…lacking a provenance"; `Prov_device` → return). **S** (the `loc` is Z-01) |
+| Z-72 (R1 F1) | probe (this charter, R1): `fprintf(stderr,"E1"); int *p = 0; return *p;` libc mode | `Undefined {ub: "UB043_indirection_invalid_value", stderr: "E1", loc: "<2:62--2:64>"}` — the killed state's accumulated stderr (`driver_ocaml.ml:176-178` `String.concat "" (Dlist.toList dr_st.…io.stderr)` → printer `:123`) | `Undefined {ub: "UB043_indirection_invalid_value", stderr: "", loc: ".zd-scratch/p/se1.c:2:62-64"}` — `Main.lean:917` prints `stderr: \"\"` LITERALLY on every Undefined line. Control `fprintf(stderr,"E2"); return 3;` agrees on both (`Defined {value: "Specified(3)", stdout: "", stderr: "E2", blocked: "false"}`) | **BUG-FIX** (stderr bytes are part of the verdict; invisible today only because every extractor keeps `ub:` alone) | `Main.lean:917` (and the `Error0`/empty-UB arms, `driver_ocaml.ml:173-181`): render the killed state's stderr. **S**, Z1, MUST land with Z-01/02/03 — it trips the moment whole lines are compared |
 | Z-08 (D7) | noodle §4 D7; `seam/seam_free_interior_pointer.c` | `Undefined {ub: "UB179a_non_matching_allocation_free", stderr: "", loc: "<2:39--2:50>"}` — `is_dynamic addr` FIRST (`impl_mem.ml:1515-1549`) | `Error {msg: "MerrUndefinedFree Free_out_of_bound"}` — dead → lookup → `addr != base` → dynamic, and tests `alloc.base` where OCaml tests the pointer's `addr` | **BUG-FIX** (verdict class) | `CerbMem.lean:1905-1914` reorder to the OCaml check sequence; test `addr`. **S** |
 
 ### 2.2 The CerbMem seam read — the undeclared divergences, each disposed
@@ -222,7 +247,7 @@ reachability argument, and the seam audit (§3) verifies which.
 | Z-10 | `CerbMem.lean:1906-1909` vs `impl_mem.ml:1527-1534` | dead-allocation arm: `failwith` for a non-dynamic kill of a dead allocation | UB179b regardless of `isDynamic` | **BUG-FIX** — a verdict where the oracle fail-stops is the forbidden shape (a failure-class difference, not (a)) | mirror as a fail-stop (`panic!` with the OCaml text). **S** |
 | Z-11 | `CerbMem.lean:1909` vs `impl_mem.ml:669-675` (`get_allocation`) | missing allocation → UB009 (via `get_allocation`) | UB179a | **BUG-FIX** (UB code) | mirror. **S** |
 | Z-12 | `CerbMem.lean:1901-1903` vs `impl_mem.ml:1465-1469` | non-dynamic kill of NULL succeeds | fails (UB179a) | **BUG-FIX** (verdict class) | mirror. **S** |
-| Z-13 | `CerbMem.lean:1849-1850`, `:1877` vs `impl_mem.ml:1290`, `:1247-1258` | no clamp: size/align 0 flow through | `.max 1` clamps size and align to ≥ 1 | **BUG-FIX** — unreachable today (`int a[0]` rejected by the shared front end, probe S8) but a silent normalisation with no cite; mirror or declare with the reachability argument in-code | mirror (delete the clamps, keep the OCaml arithmetic). **S** |
+| Z-13 (R1) | `CerbMem.lean:1849-1850`, `:1877-1878` vs `impl_mem.ml:1290`, `:1247-1258` | no clamp: size/align 0 flow through; negative sizes are the OCaml's own arithmetic | TWO distinct silent normalisations: `allocateObject` clamps BOTH size and align with `.max 1` (`:1849-1850`); `allocateRegion` clamps only align (`:1877`) and `size := sizeN.toNat` (`:1878`) silently maps a NEGATIVE size to 0 | **BUG-FIX** — unreachable today (`int a[0]` rejected by the shared front end, probe S8) but a silent normalisation with no cite; mirror or declare with the reachability argument in-code | mirror (delete the clamps, keep the OCaml arithmetic). **S** |
 | Z-14 | `CerbMem.lean:1845` vs `impl_mem.ml:1291-1297` | `req_addr_opt = Some _` → `failwith` | argument ignored | **BUG-FIX** (silent absorption of a fail-stop) | mirror the fail-stop. **S** |
 | Z-15 | `CerbMem.lean:1884` vs `impl_mem.ml:1428-1429` | `allocate_region` records `PrefMalloc` unconditionally | stores the caller's `pref` | **BUG-FIX** — the prefix is printed by the mirrored `pp_prefix` (`CerbPP.stringFromSymbol_prefix`) on pointer-value renderings; observable wherever a malloc'd pointer value is printed with its prefix | mirror. **S** |
 | Z-16 | `CerbMem.lean:591-602/504-510` vs `impl_mem.ml:1096-1113` | `bytes_of_int` asserts on out-of-range | wraps silently | **BUG-FIX** (silent absorption of a fail-stop); unreachable today (`conv_int` precedes every store) — mirror the assert anyway | mirror. **S** |
@@ -238,14 +263,14 @@ reachability argument, and the seam audit (§3) verifies which.
 
 | id | boundary | oracle | Lean (today, verified) | class | fix + price |
 |---|---|---|---|---|---|
-| Z-24 | **PVI vs PNVI** (VALIDATION.md §5 does not name it; `CerbGlobal.lean:is_PNVI_impl := false`, `has_strict_pointer_arith_impl := false`, `switchesRef` permanently `[]` — no setter exists) | `--switches=PNVI` CHANGES the answer: probe P-C1 default `Undefined {ub: "UB043_indirection_invalid_value", stderr: "", loc: "<6:10--6:12>"}`; P-C2 with `--switches=PNVI` `Defined {value: "Specified(20)", stdout: "", stderr: "", blocked: "false"}` | matched (default) mode agrees: P-C3 `Undefined {ub: "UB043_indirection_invalid_value", stderr: "", loc: ".zd-scratch/probes/pnvi.c:6:10-12"}`. The FLAG is not refused: `Main.lean:1024-1027` treats any unknown token as a file name → P-A1 `uncaught exception: no such file or directory (error code: 4294967294)` / `file: --switches=PNVI`, rc 1 | **BUG-FIX → then EXC(c)**. Loud but NOT feature-attributed (§1.2(c)); a harness that ever passed a switch would get a misleading error, and a MISORDERED legitimate flag is silently a file name (`Main.lean:980-982` admits it). Under the rule a fail-open CLI is a defect | `Main.lean` arg loop: any `--`-prefixed token not in the accepted set → `cerberus-lean: refused — <flag>: semantics switches / concurrency / <x> are not supported by this port (VALIDATION.md §<census>)`, exit 2. Plant: the P-A probes. **S** (plumbing the switches for real is M and NOT proposed — mode parity is the harness contract) |
-| Z-25 | **Concurrency stubs** (VALIDATION.md §5 "temporal, the cmm instantiation is the mover"; `CerbConcurrency.lean` `statically_satisfied := true`; `CerbGlobal.using_concurrency := false`; TODO.md "Concurrency (cmm) instantiation") | `--concurrency` on ANY program: probe P-B3 `internal error: CONCURRENCY IS BROKEN` … `Failure("internal error: CONCURRENCY IS BROKEN")` (raised from `nondeterminism.ml:64` via `smt2.ml:38`) — the oracle has no working concurrency mode; the shared `.lem` hard-codes `perform_action_request2 false (*TODO!!! with_concurrency*)` (`driver.lem:980`). Matched (default) mode: atomics run sequentially and AGREE (noodle `elab/elab_atomic_qualifier_seq.c` "AGREE 3-way 8"; charter probe `atomic.c` both-reject identically under `--nolibc`: `use of undeclared identifier 'atomic_fetch_add'`) | a program reaching the stubs in matched mode computes what the oracle computes (`Global.using_concurrency ()` gates only the `core_run_aux.lem:342/411/429/494` bookkeeping, false on both sides). The FLAG is not refused: P-A2 `uncaught exception: no such file or directory` / `file: --concurrency` | **EXC(c) once Z-24's refusal lands** — no silent computation exists: with the flag the oracle itself fail-stops, without it both engines agree. The stub is therefore NOT a BUG row; the refusal quality is (Z-24). VALIDATION.md must say "concurrency: not supported; the oracle's own mode is non-functional at `b9aeedcb4`" — the "temporal" label and the cmm mover become OPTIONAL | rides Z-24. **S** |
-| Z-26 | **CerbFS — refused set** (trust-basket §2/§7; `CerbFS.lean` header) | SibylFS answers | five refusal sites, all `panic!` with a named reason, e.g. `CerbFS.lean:221`: `PANIC at CerbFS.fs_read CerbFS:221:8: CerbFS refusal (fail-closed fs-model boundary): read on fd 4 at offset 5 of 12-byte file …` (verbatim in `tests/ci_sweep/results/tcc.tsv` for `tests/tcc/40_stdio.c`); `fs_open :166` (write/truncate intent), `fs_write :200`, `fs_pwrite :241`, `fs_pread :260` | **EXC(c) — VERIFIED loud and feature-attributed** on every refused path (5/5 sites carry "CerbFS refusal (fail-closed fs-model boundary)" + the operation + the header/mover cite; harnesses run `LEAN_ABORT_ON_PANIC=1`) | none; the real-fs mover (TODO.md, priced M) becomes OPTIONAL |
-| Z-27 | **CerbFS — served-but-divergent residuals** (header "KNOWN-DIVERGENT AND STILL SERVED"; `fs_open :148-151` missing file created without `O_CREAT`; `O_EXCL` ignored; `fs_stat :3xx` zeroed fields except size; plus, un-named in the header: `fs_mkdir/fs_chmod/fs_chdir/fs_chown/fs_rmdir` return success as no-ops, `fs_link/fs_readlink/fs_symlink` return `ENOSYS` which `driver.lem store_error` turns into errno + −1 for the C program to absorb) | POSIX/SibylFS answers: ENOENT, EEXIST, real stat fields, real directory state | silently served different answers. Witnesses: `tests/suite/fs/stat.c` STDOUT_DIFF (`Lean=… stdout: "0 0 420 1 0 0 0 10\n"` vs the oracle's SibylFS values); `tests/freebsd/cat.c` LEAN_FAIL `msg: "assert() failure"` (oracle `Specified(1)`) | **BUG-FIX** — exactly the silent absorption (c) forbids ("a different answer or a silent absorption never is"). Every op the model cannot answer as SibylFS does must REFUSE like the five refused sites | `CerbFS.lean`: refuse missing-file open without `O_CREAT`, any `O_EXCL`, `stat`/`lstat` (zeroed fields), the directory no-ops and the `ENOSYS` trio — or implement them (M). **S** for the refusals; the served-pattern probe family (TODO.md item (i)) pins the served set |
+| Z-24 | **PVI vs PNVI** (VALIDATION.md §5 does not name it; `CerbGlobal.lean:is_PNVI_impl := false`, `has_strict_pointer_arith_impl := false`, `switchesRef` permanently `[]` — no setter exists) | `--switches=PNVI` CHANGES the answer: probe P-C1 default `Undefined {ub: "UB043_indirection_invalid_value", stderr: "", loc: "<6:10--6:12>"}`; P-C2 with `--switches=PNVI` `Defined {value: "Specified(20)", stdout: "", stderr: "", blocked: "false"}` | matched (default) mode agrees: P-C3 `Undefined {ub: "UB043_indirection_invalid_value", stderr: "", loc: ".zd-scratch/probes/pnvi.c:6:10-12"}`. The FLAG is not refused: `Main.lean:1024-1027` treats any unknown token as a file name → P-A1 `uncaught exception: no such file or directory (error code: 4294967294)` / `file: --switches=PNVI`, rc 1 | **BUG-FIX → then EXC(c)**. Loud but NOT feature-attributed (§1.2(c)); a harness that ever passed a switch would get a misleading error, and a MISORDERED legitimate flag is a file name (`Main.lean:980-982` admits it; R1 probe, verbatim: `cerberus-lean --batch at.json --first` → `uncaught exception: no such file or directory (error code: 4294967294)` / `file: --first`, rc 1). Under the rule a fail-open CLI is a defect; the refusal must also reject KNOWN flags out of canonical position | `Main.lean` arg loop: any `--`-prefixed token not in the accepted set → `cerberus-lean: refused — <flag>: semantics switches / concurrency / <x> are not supported by this port (VALIDATION.md §<census>)`, exit 2. Plant: the P-A probes. **S** (plumbing the switches for real is M and NOT proposed — mode parity is the harness contract) |
+| Z-25 | **Concurrency stubs** (VALIDATION.md §5 "temporal, the cmm instantiation is the mover"; `CerbConcurrency.lean` `statically_satisfied := true`; `CerbGlobal.using_concurrency := false`; TODO.md "Concurrency (cmm) instantiation") | `--concurrency` on ANY program: probe P-B3 `internal error: CONCURRENCY IS BROKEN` … `Failure("internal error: CONCURRENCY IS BROKEN")` (raised from `nondeterminism.ml:64` via `smt2.ml:38`) — the oracle has no working concurrency mode; the shared `.lem` hard-codes `perform_action_request2 false (*TODO!!! with_concurrency*)` (`driver.lem:980`). Matched (default) mode: atomics run sequentially and AGREE (noodle `elab/elab_atomic_qualifier_seq.c` "AGREE 3-way 8"; R1 probe `_Atomic int a = 5; a += 2; a++; return a;` — oracle `Defined {value: "Specified(8)", stdout: "", stderr: "", blocked: "false"}`, Lean identical, gcc exit 8; the earlier `atomic_fetch_add`-under-`--nolibc` probe was vacuous (both-reject on an undeclared identifier) and is withdrawn) | a program reaching the stubs in matched mode computes what the oracle computes (`Global.using_concurrency ()` gates only the `core_run_aux.lem:342/411/429/494` bookkeeping, false on both sides). The FLAG is not refused: P-A2 `uncaught exception: no such file or directory` / `file: --concurrency` | **EXC(c) once Z-24's refusal lands** — no silent computation exists: with the flag the oracle itself fail-stops, without it both engines agree. The stub is therefore NOT a BUG row; the refusal quality is (Z-24). VALIDATION.md must say "concurrency: not supported; the oracle's own mode is non-functional at `b9aeedcb4`". Whether the cmm instantiation mover becomes OPTIONAL is a PRODUCT-SCOPE change → operator ASK, §7 Q9 (R1) | rides Z-24. **S** |
+| Z-26 | **CerbFS — refused set** (trust-basket §2/§7; `CerbFS.lean` header) | SibylFS answers | five refusal sites, all `panic!` with a named reason, e.g. `CerbFS.lean:221`: `PANIC at CerbFS.fs_read CerbFS:221:8: CerbFS refusal (fail-closed fs-model boundary): read on fd 4 at offset 5 of 12-byte file …` (verbatim in `tests/ci_sweep/results/tcc.tsv` for `tests/tcc/40_stdio.c`); `fs_open :166` (write/truncate intent), `fs_write :200`, `fs_pwrite :241`, `fs_pread :260` | **EXC(c) — VERIFIED loud and feature-attributed** on every refused path (5/5 sites carry "CerbFS refusal (fail-closed fs-model boundary)" + the operation + the header/mover cite; harnesses run `LEAN_ABORT_ON_PANIC=1`) | none for the refused set; whether the real-fs mover (TODO.md, priced M) becomes OPTIONAL is a PRODUCT-SCOPE change → operator ASK, §7 Q10 (R1) |
+| Z-27 | **CerbFS — served-but-divergent residuals** (header "KNOWN-DIVERGENT AND STILL SERVED"; `fs_open :148-151` missing file created without `O_CREAT`; `O_EXCL` ignored; `fs_stat :3xx` zeroed fields except size; plus, un-named in the header: `fs_mkdir/fs_chmod/fs_chdir/fs_chown/fs_rmdir` return success as no-ops, `fs_link/fs_readlink/fs_symlink` return `ENOSYS` which `driver.lem store_error` turns into errno + −1 for the C program to absorb) | POSIX/SibylFS answers: ENOENT, EEXIST, real stat fields, real directory state | silently served different answers. Witnesses: `tests/suite/fs/stat.c` STDOUT_DIFF (`Lean=… stdout: "0 0 420 1 0 0 0 10\n"` vs the oracle's SibylFS values); `tests/freebsd/cat.c` LEAN_FAIL `msg: "assert() failure"` (oracle `Specified(1)`) | **BUG-FIX** — exactly the silent absorption (c) forbids ("a different answer or a silent absorption never is"). Every op the model cannot answer as SibylFS does must REFUSE like the five refused sites. R1 F9 completes the residual list: `fs_opendir` (`:335` always a fresh fd, no directory check), `fs_readdir` (`:339` always empty), `fs_rewinddir`/`fs_closedir`, `fs_truncate`/`fs_unlink`/`fs_rename` on the in-memory table (no fd/offset interaction), `fs_lseek` past EOF (accepted, later read refuses or serves EOF), `fs_lstat` = `fs_stat` | `CerbFS.lean`: the Z1 deliverable is an OP-BY-OP served/refused table for all 24 `fs_*` entry points (each op: SibylFS behaviour → Lean behaviour → SERVED-correct / REFUSED-loud, nothing else), committed into the header and this census; refuse missing-file open without `O_CREAT`, any `O_EXCL`, `stat`/`lstat`, the directory ops, the `ENOSYS` trio and every table op the model cannot answer as SibylFS does — or implement them (M). **S** for the refusals; the served-pattern probe family (TODO.md item (i)) pins the served set |
 | Z-28 | **libc-mode allocation-address ordering** (detective RC-2; 6 `tests/pnvi_testsuite` STDOUT_DIFF rows in `tests/ci_sweep/results/pnvi.tsv`: `pointer_from_integer_2g.c`, `provenance_equality_auto_yx.c`, `…global_fn_yx.c`, `…global_yx.c`, `…uintptr_t_global_yx.c`, `provenance_lost_escape_1.c`) | `g1=(@54, 0xfffffffff1d8)` — program globals interleaved among the libc TUs' globals | `g1=(@69, 0xffffffffede4)` — all libc TU globals first, program globals after; locals identical; nolibc layout byte-identical | **BUG-FIX** (stdout bytes differ; addresses are values under PVI — `(long)&g` is a `Defined` value) | `Main.lean` multi-TU link: mirror the oracle's TU/global ordering (`pipeline.ml` link order); the comparison harness gives the exact oracle trace. **S-M** (= Z3) |
 | Z-29 | **~8 M-element zero-init static hang** (VALIDATION.md §5 "Known, LOUD limits"; mem-scale record §S1'; `tests/mem-scale-probes/probes/a_zero_global_10000000.c`) | completes (10 M: ~76–246 s, 7.7 GB) | HANG (exit 124, CPU/wall < 0.1) — Lean-runtime `lean_apply_*` frames in the Ail typing monad's run loop + the runtime's overflow-handler deadlock (tray lean4/01) | **EXC(b) VIOLATION = BUG** — (b) says "Lean must not fail where the oracle succeeds"; loudness (HANG class, S0) is necessary, not sufficient. A named mover is mandatory: the lem-backend run-loop rendering (mem-scale record §S1' options; TODO.md), tail-position rendering of function-typed monads so the runtime does not stack a frame per element | lem-arc (lem-lean `mdd/lean-backend`), **L**; cross-ref TODO.md + tray 18 (upstream `.lem` shape) + tray lean4/01 |
 | Z-30 | **byte-list memory representation OOM** (detective RC-3; `tests/suite/parsing/array.c` `LEAN_CRASH exit 134: INTERNAL PANIC: out of memory`; `pr20621-1.c` LEAN_TIMEOUT = OOM-in-disguise; noodle R1 `mem/mem_malloc_4gb_lazy.c` and `mem_calloc_overflow.c` OOM-KILLED at 6G ON THE POST-MEM-SCALE BINARY) | answers immediately (lazy allocation) | OOM-KILLED / out-of-memory panic | **EXC(b) VIOLATION = BUG** with a named mover: the mem-scale arc's C1+C3 landed (record §S1) and the residual is measured by R1 on `72164481a`; the mover is the representation change (chunked/sparse bytes with a compact unspecified-region form — detective RC-3 fix direction; profile first) | `CerbMem.lean` byte path. **M**; the sweep rows re-measure in Z4's instrument re-run |
-| Z-31 | **exhaustive-mode wall-clock margins** (detective RC-4: `pr63209.c`, `pr69320-4.c` AGREE at 60–90 s; csmith baseline 8 `TIMEOUT` rows `sa_197/419/435, sia_072/161/169/976/996`; gcc lane 11 `SKIP_LEAN_TIMEOUT`; noodle `ptr_struct_assign.c` unsequenced form 67,650 traces oracle ~100 s / Lean > 60 s; `lib_strtol_edges.c` both-timeout) | completes within the lane bound | ~15–20× slower on recursion-heavy shapes; same verdicts when the bound is raised | **EXC(b) — tolerated** by the operator's own fuel argument (more time = same answer; the lane bound is an instrument constant, not a failure of the semantics). Flagged §7 Q5 for confirmation | none for parity; perf is "profile before optimizing", L, not a census item |
+| Z-31 | **exhaustive-mode wall-clock margins** (detective RC-4: `pr63209.c`, `pr69320-4.c` AGREE at 60–90 s; csmith baseline 8 `TIMEOUT` rows `sa_197/419/435, sia_072/161/169/976/996`; gcc lane 11 `SKIP_LEAN_TIMEOUT`; noodle `ptr_struct_assign.c` unsequenced form 67,650 traces oracle ~100 s / Lean > 60 s; `lib_strtol_edges.c` both-timeout) | completes within the lane bound | ~15–20× slower on recursion-heavy shapes; same verdicts when the bound is raised | **EXC(b) — tolerated ONLY PER ROW with measured completion at a larger bound** (R1 Q5): `pr63209.c`/`pr69320-4.c` have it (detective RC-4, AGREE at 60–90 s); the 8 csmith `TIMEOUT` rows and the 11 gcc-lane `SKIP_LEAN_TIMEOUT` rows do NOT — until each is shown to complete and agree at a larger bound it is a (b)-VIOLATION pending evidence, not a tolerated bound | Z4: one uncapped-timeout measurement per undemonstrated row (verdict equality, recorded per row); perf itself is "profile before optimizing", L |
 | Z-32 | **fuel exhaustion** (`sia_csmith_477.c`, `sia_csmith_769.c` `LEAN_CRASH` = `lem: fuel exhausted`; gcc lane `SKIP_LEAN_CRASH` same two; VALIDATION.md `lemDefaultFuel` = 10^6) | completes | exit 134 `lem: fuel exhausted` today; after the fuel arc a typed `Error {msg: "lem: fuel exhausted"}` / FUEL class | **EXC(b)/fuel** — accepted verbatim: "fuel is a reasonable exception because we could always just run the semantics with more fuel" | none; the fuel arc's harness FUEL class (fuel design §3) makes the rows self-describing |
 
 ### 2.4 Lane baselines, sweeps and pins — every row whose class means "Lean differs"
@@ -265,11 +290,12 @@ and `test_verify` have no recorded non-agreement. The rows that remain:
 | Z-35 | `s4b-memcmp-hugesize ORACLE_CRASH \| L=UB:UB_CERB002a_out_of_bound_load` | uncaught `Z.Overflow` at `impl_mem.ml:2660` `Z.to_int` (tray 13) | the UB verdict the oracle's own checked per-byte load produces | **REG-CAND R3** (§2.6) — criterion (ii) is not satisfiable as written (the program is UB, native has no answer); §7 Q3 proposes (ii') | rule; else mirror the `Z.to_int` crash as a fail-stop (**S**) — which deletes a correct UB verdict, hence the ask |
 | Z-36 | noodle E2 `ptr/ptr_string_literals.c` (`"\?"` in a STRING literal) | exit 125 `Failure("decode_character_constant, started like an octal constant, but failed: ?")` (`translation.ml:3032`) | `98 65 66 4 83 52 3 10 9 92 34 39 63 0 4` = gcc byte-for-byte | **REG-CAND R1** (same decoder as Z-33; one register entry covers both) + tray 10 addendum; pin as immaculate `ORACLE_CRASH` pair | as Z-33 |
 | Z-37 | immaculate `MATCH \| L=CRASH` rows: `g2-memcmp-uninit`, `g4-bswap64-overflow` (tray 12), `g5-decode-multichar`, `offsetof-union-member` (`PANIC at CerbMem.sizeofCtype_lemFuel CerbMem:415:15: CerbMem.sizeofCtype: Union tag not a UnionDef`); gcc lane `SKIP_LEAN_CRASH` for the same + `tests/minimal/097-null-ptr-arith.undef.c` (tray 04) and `csmith/sa_csmith_002/003/005` ("translation failwithI; `CERB_SKIP` upstream-baseline class") | uncaught exception / `failwith` | `panic!` with the mirrored text | **EXC(a)** — identical failure class, text differs. Z2 verifies each pair is a genuine both-crash (the offsetof-union-member oracle side must be shown to fail too, not merely `CERB_SKIP` for another reason) | none; Z2 evidence row |
-| Z-38 | gcc lane `SKIP_LEAN_FAIL` rows: `073-exit.libc.c`, `074-abort.libc.c`, `tests/debug/libc-01/02`, `valid-04-exit-before-oob.c`, `ub-static-reject.c`, `csmith/smx_csmith_6.c`, immaculate `g1-ge-funptr`/`g1-lt-null` (`L=ERR:Memory WIP: …`) | `CERB_SKIP` / reject / `Memory WIP` error in the same mode | reject / error | **EXC(a)** (agreement in failure class; the gcc lane's SKIP is oracle-independent bookkeeping) | none |
+| Z-38 | gcc lane `SKIP_LEAN_FAIL` rows: `073-exit.libc.c`, `074-abort.libc.c`, `tests/debug/libc-01/02`, `valid-04-exit-before-oob.c`, `ub-static-reject.c`, `csmith/smx_csmith_6.c`, immaculate `g1-ge-funptr`/`g1-lt-null` (`L=ERR:Memory WIP: …`) | `CERB_SKIP` / reject / `Memory WIP` error in the same mode | reject / error | **EXC(a) — CLAIMED, not measured** (R1 F10): the claim rests on two lanes' skip bookkeeping (`CERB_SKIP` in exec + `SKIP_LEAN_FAIL` in gcc), which is not a witnessed both-fail on the same input in the same mode. Z2 imposes Z-37's verification: run each pair, quote both failure lines | Z2 evidence row |
 | Z-39 | `tests/libxml2/uri_baseline.txt` `OCAML_NOLIBC` vs `LEAN_NOLIBC` | `Error {msg: "ill-formed program: \`calling an unknown procedure: Symbol(1451, SD_Id("memset"))'"}` exit 1 | `Error {msg: "Illformed_program: calling an unknown procedure: Symbol(968, SD_Id("memset"))"}` exit 1 | **EXC(a)** (= Z-04) + tray 17 (the embedded id) | none |
 | Z-40 | `test_elab.sh` 3 recorded DIFF rows (`SUMMARY: total=106 same=103 diff=3`; named by this charter's run): `073-exit.libc`, `074-abort.libc` (+42 `procdecl` lines on the Lean side: `abort`, `abs`, `aligned_alloc`, `atexit`, …), `098-cross-alloc-ptrdiff.undef` (`+tagdef struct __cerbty_unnamed_tag_0 members=__dummy_max_align_t`) | `--pp core` prints only MAIN-file-located declarations (`pp_core.ml pp_cond`) | `--pp-core` prints header-located libc declarations / `max_align_t` too | **INSTRUMENT** — a pretty-printer FILTER difference at signature level, no execution content (the same program's exec rows MATCH/CERB_SKIP). Worth fixing so `DIFF` in this lane means something: apply the main-file filter on the Lean side (mirror `pp_cond`) | `Main.lean ppCoreSignature`. **S** (Z4) |
 | Z-41 | `scripts/gcc_oracle_triage.txt` 9 `TRIAGED_ADDR` rows (`tests/debug/align-01…04`, `intfromptr-05/07/08/09/10`) | (oracle == Lean; nolibc layout byte-identical — detective RC-2) | — | **OUT-OF-SCOPE** — these compare Cerberus's abstract allocator against gcc's NATIVE layout; both conforming; not Lean-vs-oracle. Stay triaged by-file | none |
 | Z-42 | `tests/ci_sweep/results/*.tsv` rows already covered: `suite/fs/stat.c` STDOUT_DIFF and `freebsd/cat.c` LEAN_FAIL (→ Z-27), `tcc/40_stdio.c` LEAN_CRASH refusal (→ Z-26, correct), `suite/parsing/array.c` + `pr20621-1.c` (→ Z-30), 6 pnvi STDOUT_DIFF (→ Z-28), `pr63209.c`/`pr69320-4.c` (→ Z-31), `pr44468.c` LEAN_CRASH (STALE — fixed `ba24da12e`; the committed TSVs predate it) | | | **INSTRUMENT** — the committed sweep TSVs are a 2026-08-22 snapshot; TODO.md registers the pending re-record | Z4 re-run after Z1–Z3 (measurement sweep; tripwire-justified in advance) |
+| Z-75 (R1 F7) | `tests/ci_sweep/results/{ci,cheri_smoke,suite,torture_not_std_compliant}.tsv`: 43 `CERB_INCONSISTENT` rows (derived count; "exec succeeded but `--cabs-json` failed") | exec verdict OK | Lean never reached at recording time. STALE like `pr44468.c`: trust-basket item (c) made `--cabs-json` parse-only; R1 probe `tests/ci/0069-const_expr.c` → `--cabs-json` rc 0 and Lean `Undefined {ub: "UB084", …}` = oracle `Undefined {ub: "UB084", stderr: "", loc: "<5:5--5:6>"}` (trust-basket §3 (ii) recorded 43/43 AGREE) | **INSTRUMENT (stale)** with a RULE for the re-record: any row that SURVIVES the Z4 re-record as `CERB_INCONSISTENT` is a class-(c) BRIDGE-ATTRIBUTION question (Z-70: is the refusal loud and attributed to the bridge?), never INSTRUMENT by default | Z4 re-record |
 
 ### 2.5 ORACLE-SUSPECTs — Lean == oracle ≠ ISO/gcc: mirrored (correct) + tray
 
@@ -293,7 +319,7 @@ on `deps/cerberus-upstream` @ `b9aeedcb4` by the noodler.
 | Z-52 | E5 `"hello" + 1` not an address constant | reject | gcc 101; 6.6p9 | string-literal base in address-constant folding (tray-09-adjacent) | 28 |
 | Z-53 | L1 `strncmp(s1, s2, 0)` compares one character | `Specified(2)` | gcc 1; 7.24.4.4p2-3 | `runtime/libc/src/string.c:85-90` | 29 |
 | Z-54 | L2 libc `calloc` has no `nmemb*size` overflow check | (masked by Z-43 truncation, then Z-30 OOM on Lean) | C17 7.22.3.2 | `runtime/libc/src/stdlib.c:125-134` | 30 |
-| Z-55 | F1 `float` evaluated and stored as double; `sizeof(float) == 8` | `0 100000000 1 16777217 1 0 1 0`; sizeof 8 | gcc `1 100000001 0 16777216 0 0 1 1`; 4; 6.3.1.5, 5.2.4.2.2 | `ocaml_implementation.ml:206-208` `RealFloating Float -> Some 8 (* TODO:hack ==> 4 *)`; `impl_mem.ml:1155`; `CerberusImpl.lean` mirrors | 31 (M upstream; see §7 Q6) |
+| Z-55 | F1 `float` evaluated and stored as double; `sizeof(float) == 8` | `0 100000000 1 16777217 1 0 1 0`; sizeof 8 | gcc `1 100000001 0 16777216 0 0 1 1`; 4; 6.3.1.5, 5.2.4.2.2 | `ocaml_implementation.ml:206-208` `RealFloating Float -> Some 8 (* TODO:hack ==> 4 *)`; `impl_mem.ml:1155`; `CerberusImpl.lean` mirrors. R1 F6: the ISO case is NOT "unambiguous" — 6.2.5p10 permits `float`'s value set to equal `double`'s, and then 6.3.1.5 requires no rounding; the actual defect is INCONSISTENCY with `runtime/libc/include/float.h:4` `FLT_MANT_DIG 24` (5.2.4.2.2). gcc-lane class stays D2 `TRIAGED_FLOAT` (design §2.3), not a shared-source pin | 31 (M upstream; see §7 Q6) |
 | Z-56 | O6 `(x & 0) + 3` with indeterminate `x` → UB036 | `UB036_exceptional_condition` | gcc 3 | classification of an unspecified operand of signed `+` | 32 (question) |
 | Z-57 | prior tray items already mirrored: 15 `_Bool b = 0.5` → 0; 16 `snprintf` truncation return; 04 null-pointer-arith crash (both crash); 05 `va_arg` type check absent | mirrored | ISO | tray 15/16/04/05 | existing |
 | Z-58 | F2 `(int)NaN` crashes both (`Z.Overflow` / `PANIC at CerbFloat.truncToInt`) | both fail | UB017 would be the verdict | tray 15's non-finite class | existing (immaculate crash-pair candidate, §4.2) |
@@ -315,9 +341,9 @@ ruling:
 
 | cand. | pin | (i) unambiguous clause | (ii) second oracle | (iii) tray | (iv) pinned | verdict [AGENT] |
 |---|---|---|---|---|---|---|
-| **R1** | `g5-decode-question` (+ E2 string-literal form, Z-36) | YES — 6.4.4.4#1 lists `\?` as a simple escape; #4 gives 63; upstream's own lexer accepts it (`c_lexer.mll:417`, tray validation pass) | YES — gcc exit 63 (`AGREE gcc=63 lean={63}`); E2: Lean == gcc byte-for-byte | YES — tray 10 (+ addendum for the string-literal form) | YES — `ORACLE_CRASH \| L=VAL:Specified(63)`; E2 pin to be added | **meets (i)–(iv)**; propose ADMIT |
-| **R2** | `g5-escape-roundtrip` | YES — 7.21.6.1#8 `%c` writes the `int` converted to `unsigned char`; the oracle stores 87 for 127 (decimal-vs-octal re-read, a data-corruption bug, not a reading) | YES — gcc 127 (tray 11 records "gcc (and our Lean port) return 127") | YES — tray 11 | YES — `DIFF \| L=VAL:Specified(127)` | **meets (i)–(iv)**; propose ADMIT |
-| **R3** | `s4b-memcmp-hugesize` | PARTIAL — the program is UB (7.24.1p2 pointer validity); the "unambiguous" part is that a TOOL CRASH (`Z.Overflow`) is never a semantics; the oracle's own checked path (`impl_mem.ml` per-byte load) yields `UB_CERB002a` | NOT AS WRITTEN — no native answer exists for a UB program | YES — tray 13 | YES — `ORACLE_CRASH \| L=UB:UB_CERB002a_out_of_bound_load` | **fails (ii) literally**; admissible only under the (ii') substitute of §7 Q3. Propose: ADMIT under (ii') if ratified, else MIRROR the crash |
+| **R1** | `g5-decode-question` (+ E2 string-literal form, Z-36) | YES — 6.4.4.4#1 lists `\?` as a simple escape; #4 gives 63; upstream's own lexer accepts it (`c_lexer.mll:417`, tray validation pass) | YES — gcc exit 63 (`AGREE gcc=63 lean={63}`; reviewer's gcc: `"a\?b"` bytes `97 63 98 0`); E2: Lean == gcc byte-for-byte | YES — tray 10 (+ addendum for the string-literal form) | YES — `ORACLE_CRASH \| L=VAL:Specified(63)`; E2 pin to be added | **meets (i)–(iv)**; reviewer: **ADMIT**; the entry must cite the code site `CerbDecode.lean:91` (`\| "\\?" => 63`) and carry the (vii) marker |
+| **R2** | `g5-escape-roundtrip` | YES — 7.21.6.1#8 `%c` writes the `int` converted to `unsigned char`; the oracle stores 87 for 127 (decimal-vs-octal re-read, a data-corruption bug, not a reading) | YES — gcc 127 (tray 11 records "gcc (and our Lean port) return 127") | YES — tray 11 | YES — `DIFF \| L=VAL:Specified(127)` | **meets (i)–(iv)**; reviewer: **ADMIT**; the entry names the exact escape round-trip site on the Lean side (the `%c` store path that does NOT re-decode through the octal reader — Z2 locates and marks it per (vii)) |
+| **R3** | `s4b-memcmp-hugesize` | PARTIAL — the program is UB (7.24.1p2 pointer validity); the "unambiguous" part is that a TOOL CRASH (`Z.Overflow`) is never a semantics; the oracle's own checked path (`impl_mem.ml` per-byte load) yields `UB_CERB002a` | NOT AS WRITTEN — no native answer exists for a UB program | YES — tray 13 | YES — `ORACLE_CRASH \| L=UB:UB_CERB002a_out_of_bound_load` | **fails (ii) literally**; reviewer: **ADMIT under the TIGHTENED (ii')** of §1.4 — (1) `Z.Overflow` is a host-int conversion raised before the semantic path (`impl_mem.ml:2660` `Z.to_int`), (2) `CerbMem` memcmp is the line-mirror minus that conversion, (3) the second oracle is a scratch oracle build with tray 13's Z-native remedy shown to give `UB_CERB002a`. Z4 produces (3); until then the pin stays as recorded |
 
 Everything else on the immaculate baseline is `MATCH` (incl. the
 both-crash rows, Z-37) or the in-Lean `TRIPWIRE`/`KILL` probes (no
@@ -328,7 +354,7 @@ R1–R3.
 
 | id | seam | divergence as declared today | class | disposition |
 |---|---|---|---|---|
-| Z-59 | `CerbND.lean` header: "NDguard always continues … pruning is simply not implemented here yet (recorded divergence — survey finding 23)" vs `impl_mem.ml:321-361` `cs_module` `with_constraints`/`check_sat` | **unreachable in the exec cone**: no producer of `NDguard` exists outside `nondeterminism.lem:221-224` (`nd_guard`) — grep of `frontend/model/*.lem`, `impl_mem.ml`, `smt2.ml` finds no caller (this charter); noodle: trace COUNTS agree on every completing probe (8/8, 2/2, 40/40, 140/140, 280/280, 67650/67650) | Z2-DISPOSED: BUG-FIX (mirror `with_constraints` evaluation, **S**) or DECLARE with the grep as evidence and a tripwire (a `#guard`-style or script check that no `nd_guard` caller appears) — Z2 decides; the row cannot stay "recorded divergence" | Z2 |
+| Z-59 (R1 F3 — evidence corrected, conclusion survives) | `CerbND.lean` header + `:127` ("same no-pruning divergence as NDguard" for `NDbranch`) vs `smt2.ml` `runND` applying `with_constraints`/`check_sat` (`impl_mem.ml:321-361` `cs_module`) | The first draft's evidence was WRONG: `nd_guard` (`nondeterminism.lem:222-223`) produces `kill`, not `NDguard`. `NDguard` is produced by `addConstraints` (`nondeterminism.lem:234-237`, `:499-502`), which IS called in the exec cone: `driver.lem:148` (the `PEconstrained` arm of `print_eval_conv_aux`) and `defacto_memory.lem:513/517` (defacto model, not linked). `PEconstrained` arises only when `Mem.eq_ival`/`lt_ival`/`le_ival` return `Nothing` (`core_eval.lem:352-378`), and the Concrete model ALWAYS returns `Some` (`impl_mem.ml:2556-2562`) — so `NDguard` is unreachable by that argument, not by "no caller". `NDbranch`: produced at `nondeterminism.lem:422` (`msum`, `NDbranch empty …`) with EMPTY constraints (`:465` variant commented out) → `with_constraints` on the oracle side is trivially SAT → exploring both sides is exactly what the oracle does. Noodle: trace COUNTS agree on every completing probe (8/8, 2/2, 40/40, 140/140, 280/280, 67650/67650) | Z2-DISPOSED: DECLARE with the corrected argument in-code, plus the TRIPWIRE stated as a mirror check — "`CerbMem.eqIval`/`ltIval`/`leIval` (`CerbMem.lean:1434-1439`) are total `some`, mirroring `impl_mem.ml:2556-2562`" (a unit test or `#guard`); if any of them ever returns `none`, mirror `with_constraints` evaluation (**S**) | Z2 |
 | Z-60 | `CerbCall.lean` header: "the call-site `conv_int` range conversion is NOT reproduced — an injected integer must fit the parameter type (out-of-range injections are the caller's responsibility)" | a fail-OPEN instrument contract; oracle twin = the rendered wrapper TU (`test_verify.sh render_wrapper`) which DOES convert | **BUG-FIX** (instrument fail-closed rule): refuse out-of-range injections loudly (`kill`) or reproduce `conv_int`. **S** | Z2 |
 | Z-61 | `CerbPP.lean` "Residual placeholders" (`<...>`-bracketed) | reach no compared text by design ("an honest mismatch, never oracle-shaped") | INSTRUMENT — Z2 verifies by grep that no residual printer is on a batch-verdict path (`Main.lean` batch renderers) | Z2 |
 | Z-62 | `CerbFloat.lean` `Ord Float`: "+0.0/-0.0 compare equal here — OCaml's compare distinguishes them" | value-visible only if a float keys a set/map on an exec path | Z2-DISPOSED: prove unreachable (no `Set Float` in the exec cone) or mirror `Stdlib.compare`. **S** | Z2 |
@@ -336,7 +362,7 @@ R1–R3.
 | Z-64 | `CerberusFresh.lean` digest in hex form vs OCaml raw 16-byte `Digest.t` | equality-preserving (injective); only `compare = 0` is consumed | Z2-DISPOSED: declared and argued in-code; confirm no ORDER on digests reaches an exec path (an order on hex ≠ order on raw bytes) | Z2 |
 | Z-65 | `CerberusImpl.lean` LP64 table vs `ocaml_implementation.ml` `DefaultImpl` | mirrors incl. F1's `float = 8` | Z2-DISPOSED: diff the two tables entry by entry (sizeof/alignof/`is_signed`/`char` signedness/`max_align_t`) | Z2 |
 | Z-66 | `CerbGlobal.lean` (Z-24), `CerbConcurrency.lean` (Z-25), `CerbDebug.lean`/`CerbUtils.lean` no-op stubs | debug/profiling not on any differential path (effect retirement C1) | INSTRUMENT; Z2 confirms the debug level is 0 on the oracle in matched mode (`Cerb_debug` default) so `print_debug` output cannot differ | Z2 |
-| Z-67 | `CerbLocation.lean` vs `util/cerb_location.ml` | Z-03 rendering; `isLibraryLocation` (`:180-185`) correct but starved by Z-01 | SEAM INDEX → BUG-FIX rows Z-01/Z-03 | Z1 |
+| Z-67 (R1) | `CerbLocation.lean` vs `util/cerb_location.ml` | Z-03 rendering; `isLibraryLocation` (`:180-185`) is NOT correct (the first draft said so wrongly): it matches ANY path segment equal to `libcore`/`include`/`impls`, where the oracle's `is_library_location` (`util/cerb_location.ml:512-520`) tests the RUNTIME-prefixed paths `Cerb_runtime.in_runtime "libc/include"`/`"libcore"`/`"libcore/impls"` — a user file under a directory named `include/` is library-classified on Lean only (D1's substitution then fires wrongly). Added to Z-01's scope: mirror the runtime-prefix check | SEAM INDEX → BUG-FIX rows Z-01 (widened)/Z-03 | Z1 |
 | Z-68 | `CoreParser.lean` vs `parsers/core/core_parser.mly` | Z-01 loc stamping; G6 hash-collision TRIPWIRE (Lean fail-stops where the oracle's digest-keyed symbols cannot collide) | SEAM INDEX → BUG-FIX Z-01; the tripwire is an unreachable-by-construction divergence, declared | Z1 / Z2 |
 | Z-69 | `Main.lean` driver glue vs `backend/driver/main.ml` + `pipeline.ml` | Z-24 (flag handling), Z-28 (link order), Z-04 (error text), `--args` mirrored with cites | SEAM INDEX → BUG-FIX Z-24/Z-28 | Z1 / Z3 |
 | Z-70 | `CabsImport.lean` vs `backend/lean_export/cabs_json.ml` | strict schema, hard errors — the bridge; its failures are `CERB_INCONSISTENT`/bridge classes, never a Lean verdict | INSTRUMENT (bridge); Z2 confirms every parse failure is loud | Z2 |
@@ -380,33 +406,45 @@ the stale-cite pass (Z-23).
 
 ## 4. INSTRUMENT CHANGES
 
-### 4.1 Close the loc blind spot (after Z-01/Z-02/Z-03 land)
+### 4.1 Close the loc (and stderr) blind spot (after Z-01/02/03/72 land)
 
-The `loc` field becomes part of the compared verdict in every lane that
-compares UB verdicts. Sites (enumerated; one baseline instrument commit
-with the justification in its header — LADDER.md convention):
+The `loc` and `stderr` fields become part of the compared verdict in
+every lane that extracts UB verdicts. R1 F4 corrected the first draft:
+the byte-compare lanes do NOT already see loc — `test_multi_tu.sh`,
+`test_verify.sh` and `test_cn_coverage.sh` also run ub-only extractors.
+Sites (enumerated and re-verified; one baseline instrument commit with
+the justification in its header — LADDER.md convention):
 
-- `scripts/test_exec.sh` `extract_verdict_seq` (`:322-334`): grep the
-  whole `Undefined {…}` line, not `ub:` only; also the newline-in-ub
-  hardening (detective §4 "Harness fragility") since it touches the
-  same lines. Baselines `exec_*_baseline.txt` are status-only and do
-  not move; the csmith wrapper inherits.
-- `scripts/test_ci_sweep.sh` `:146-152` — same extractor.
+- `scripts/test_exec.sh` `extract_verdict_seq` (`:337-347`, the
+  `grep -oE 'Undefined \{ub: "[^"]*"|Defined \{value: "[^"]*"'`
+  shape): compare the whole `Undefined {…}` line; also the
+  newline-in-ub hardening (detective §4) since it is the same lines.
+  Status-only baselines do not move; the csmith wrapper inherits.
+- `scripts/test_ci_sweep.sh` `:165-170` — same extractor; DELETE the
+  legacy comment `:32-33` ("loc strings deliberately differ across the
+  two pipelines, Main.lean:344 'harness never compares loc'").
+- `scripts/test_cn_coverage.sh:238`, `scripts/test_multi_tu.sh:113`
+  (same `grep -oE` shape), `scripts/test_verify.sh:72`
+  (`sed -n 's/^Undefined {ub: "\([^"]*\)".*/\1/p'`),
+  `tests/mem-scale-probes/measure.sh:82` (adds `Error {msg: …}`),
+  `tests/parity-probes/run_probe.sh` `seq()`,
+  `tests/noodle-probes/run_noodle.sh`: same change.
+- the speclab family's verdict extractor (reviewer-cited as
+  `test_speclab.sh` `seqof`; this charter's grep of that file finds no
+  `Undefined` extractor and `:51` is the usage text — Z1 locates the
+  actual site in the speclab scripts before changing it).
 - `scripts/test_immaculate.sh` normaliser (`:78-104`): stop stripping
-  the location; re-record `tests/immaculate/baseline.txt` (rows are
-  status + Lean token; UB rows gain the loc in the token).
-- `tests/parity-probes/run_probe.sh` `seq()` and
-  `tests/noodle-probes/run_noodle.sh`: same.
+  the location; re-record `tests/immaculate/baseline.txt` (UB rows gain
+  the loc in the token).
+- `lean_frontend/Main.lean:344` — delete the declared deviation "loc
+  strings use CerbLocation.stringFromLocation (harness never compares
+  loc)" once Z-03 mirrors `simple_location`; the remaining three
+  declared deviations are census rows (Z-61, Z-74, Z-73).
 - `scripts/test_gcc_oracle.sh`: unaffected (oracle-independent; UB rows
   are `SKIP_UB`).
-- Byte-compare lanes (`test_libc_exec.sh`, `test_multi_tu.sh`,
-  `test_verify.sh`, `test_libxml2_uri.sh`, `test_bytes.sh`,
-  `test_cn_coverage.sh`): Z1 audits whether any strips or truncates
-  the line; where they compare full lines they already see loc and
-  the Z-03 printer fix is what makes them agree.
-- Plant: a deliberate one-column loc perturbation in a Lean-side
-  reproducer (D1's `float_inf_to_int_ub.c`) must turn the exec lane
-  red; the D1/D2 probes must be MATCH after the fix and DIFF before.
+- Plants: a one-column loc perturbation in D1's reproducer
+  (`float_inf_to_int_ub.c`) must turn the exec lane red; Z-72's `se1.c`
+  must be DIFF before and MATCH after; D1/D2 probes likewise.
 
 ### 4.2 Integrate the 145 noodle probes per their INTEGRATION columns
 
@@ -417,7 +455,8 @@ Counts are the record's (derived); the per-probe rows are in each
 |---|---|---|---|---|
 | 3-way AGREE, deterministic, UB-free, prints/returns | ~78 | `tests/minimal`-style exec lane (nolibc) / `tests/libc_exec` (libc); return-value-only ones also into the gcc second-oracle corpus | MATCH / AGREE | yes |
 | oracle == Lean agreed UB code | 12 | exec lane | UB_MATCH (now loc-inclusive) | yes |
-| oracle == Lean ≠ gcc (U1, P1, F1, L1, L3, L4, L6 witnesses; long-double / `max_align_t` / `rand` observers) | ~20 | exec/libc_exec MATCH; gcc lane as pinned `TRIAGED_<CLASS>` pairs with NEW classes (`TRIAGED_U1`, `_P1`, `_F1`, `_LIBC` …) that flip to AGREE on the upstream fix (the lane refuses unlisted DISAGREE, so each needs a triage row citing its tray draft) | MATCH + pinned pair | MATCH yes; gcc pin |
+| oracle == Lean ≠ gcc (U1, P1, L1, L3, L4, L6 witnesses) | ~14 | exec/libc_exec MATCH; gcc lane as pinned pairs in a NEW, DISTINCT class `PINNED_TRAY_<n>` (R1 F5: the first draft's `TRIAGED_U1/_P1/_F1/_LIBC` CONTRADICTED the lane's design — `docs/2026-08-30_gcc-second-oracle-design.md` §4 reserves `TRIAGED_*` for D2/D3(a)/D4 "neither side wrong", and an OCaml-agrees-with-Lean disagreement is the D1 shared-source class: stop/report/file). `PINNED_TRAY_<n>` = a CONFIRMED shared-source oracle bug with a tray draft; contract: the pin flips to AGREE on the upstream fix, any other movement is a regression. Amend design §4 and the acceptance lists `test_gcc_oracle.sh:223` and `:582` (`TRIAGED_ADDR\|TRIAGED_FLOAT\|TRIAGED_UB\|TRIAGED_ORDER`) in the same instrument commit | MATCH + `PINNED_TRAY_<n>` | MATCH yes; gcc pin |
+| oracle == Lean ≠ gcc on FLOAT WIDTH / long double / `max_align_t` / `rand` observers (F1 witnesses) | ~6 | already the design's D2 class `TRIAGED_FLOAT` (§2.3 implementation-profile table); F1 is reconciled as D2 (impl-defined value set, F6), with tray 31 recording the `FLT_MANT_DIG` inconsistency | MATCH + `TRIAGED_FLOAT` | MATCH yes; gcc pin |
 | Lean ≠ oracle: D4–D7 (+ D1/D2 loc reproducers) | 5 (+2) | `tests/immaculate/` DIFF rows with the Lean pin — RED until Z1 fixes them, then re-recorded MATCH (the immaculate-style pinned pair: the lane fails closed both ways, so the fix commit MUST re-record) | DIFF → MATCH | pinned pair |
 | both-reject / both-crash controls (E1, E3–E7, F2, L5, `strtok`, `vscanf`) | 12 | immaculate crash pairs (L5, F2 — `MATCH \| L=CRASH`); both-reject controls reporting-only | CRASH-pair / SKIP | pins only |
 | both-slow exhaustive (`strtol`) | 1 | `--first` reporting lane | — | no |
@@ -438,9 +477,15 @@ rewritten from "declared MODEL boundary" language to the class
 vocabulary: CerbFS = (c) with the refused set enumerated; concurrency
 = (c) "not supported; the oracle's mode is non-functional"; switches =
 (c) refused; fuel = (b)/fuel; the 8 M hang and the byte-list OOM =
-(b)-VIOLATIONS with named movers. "Never fix-to-match" is deleted from
-`tests/immaculate/baseline.txt` and `test_immaculate.sh` in favour of
-register citations.
+(b)-VIOLATIONS with named movers. "Never fix-to-match" is deleted in favour of register citations at
+every site (R1 F11, verified): `tests/immaculate/baseline.txt:37` and
+`:40`; `scripts/test_immaculate.sh:258` and `:261` (the writer template
+that regenerates the header); `tests/immaculate/libc/g5-escape-roundtrip.c:8`;
+`CerbDecode.lean:84-91` ("DELIBERATE DIVERGENCE from upstream" → the R1
+register cite + (vii) marker). Doc integrity in the same slice:
+`scripts/LADDER.md:69` "15 DIFF are the F-D fork-oracle class" is stale
+(the csmith baseline has 0 DIFF rows: 1160 MATCH / 499 CERB_SKIP /
+8 TIMEOUT / 2 LEAN_CRASH) — rewrite.
 
 ## 5. UPSTREAM TRAY — drafts to add (Z4)
 
@@ -481,7 +526,7 @@ commits.
 
 | Slice | Scope (census rows) | Gate bar | Price |
 |---|---|---|---|
-| **Z1 — the D-fixes + loc instrument + refusal hygiene** (AFTER the fuel arc merges: shared `Main.lean` and harness files) | Z-05 (D4, value-level, FIRST), Z-06/07/08 (D5–D7 verdict class), Z-01/02/03 (D1/D2/O1 loc + renderer), Z-24 (CLI refusal, feature-attributed; covers Z-25), Z-27 (CerbFS silent residuals → loud refusals), then §4.1 (loc-aware lanes, one instrument commit) and the seven immaculate-style pins (§4.2 row 4) added RED before the fixes and re-recorded MATCH after | Tier A+B green; the 7 pins flip DIFF→MATCH; loc plant red/green; P-A/P-C probes refuse with the attributed text; `stat.c`/`cat.c` move from STDOUT_DIFF/LEAN_FAIL to a `CerbFS refusal` (loud) in a spot sweep of `tests/suite/fs` + `tests/freebsd` | S × 10 ≈ 3–4 days |
+| **Z1 — the D-fixes + loc/stderr instrument + refusal hygiene** (AFTER the fuel arc merges: shared `Main.lean` and harness files) | Z-05 (D4, value-level, FIRST), Z-06/07/08 (D5–D7 verdict class), Z-01/02/03 (D1/D2/O1 loc + renderer; Z-01 widened to the `isLibraryLocation` runtime-prefix mirror, Z-67), Z-72 (stderr on Undefined lines — must land with Z-01/02/03), Z-24 (CLI refusal, feature-attributed, incl. known flags out of position; covers Z-25), Z-27 (CerbFS op-by-op served/refused table + loud refusals), Z-74 (exit-class evidence), Z-73 per the Q8 ruling, then §4.1 (loc-aware lanes, one instrument commit) and the seven immaculate-style pins (§4.2 row 4) added RED before the fixes and re-recorded MATCH after | Tier A+B green; the 7 pins flip DIFF→MATCH; loc plant red/green; P-A/P-C probes refuse with the attributed text; `stat.c`/`cat.c` move from STDOUT_DIFF/LEAN_FAIL to a `CerbFS refusal` (loud) in a spot sweep of `tests/suite/fs` + `tests/freebsd` | S × 10 ≈ 3–4 days |
 | **Z2 — the seam-by-seam audit** (§3) | read-only pass → census rows (appended "Z2 additions") → fixes: Z-09…Z-22 (14 S mirrors), Z-59…Z-65, Z-70/71 dispositions, Z-23 cites, Z-60 fail-closed injection | every new row disposed in-code; three-engine probe per C-observable candidate, pinned; Tier A+B green; no row left "unobservable" | M (≈ 1 week; the CerbMem re-read dominates) |
 | **Z3 — libc allocation-order mirror** | Z-28 | the 6 pnvi rows MATCH in a `tests/pnvi_testsuite` spot sweep; `addr_layout.c`-style probe pinned in libc_exec; Tier A+B green | S-M |
 | **Z4 — probe integration + tray + VALIDATION rewrite + re-sweep** | §4.2 (145 probes into lanes; new gcc triage classes), §5 (14 drafts + INDEX), §4.3 (VALIDATION.md headline + register instantiation per the §7 rulings; `tests/immaculate` header rewrite), Z-40 (elab main-file filter), Z-42 (the `test_ci_sweep.sh` re-record — measurement sweep, tripwire justification written in advance) | Tier A+B green at the new baselines; the sweep TSVs re-recorded in a dedicated instrument commit; INDEX consistent | M |
@@ -497,49 +542,71 @@ a commit that cites its evidence.
 
 ## 7. OPEN QUESTIONS FOR THE OPERATOR
 
-Only genuine ones. Q1 is recorded as ruled; Q2–Q3 are the register
-asks; Q4–Q7 are candidates that fit none of (a)–(d) cleanly or where
-the [AGENT] reading of a ruling should be confirmed.
+Only genuine ones. Q1 is recorded as ruled. Each of Q2–Q10 carries the
+R1 reviewer's RECOMMENDATION [AGENT, orchestrator review of `6a55dc74d`]
+for the operator to accept or override.
 
 - **Q1 (RULED — recorded).** UB location is behaviour: [USER
   2026-09-03] "(1) agree". Applied throughout (Z-01/02/03/20, §4.1).
-- **Q2 — ratify the class-(d) register and rule R1–R3 individually
-  ((v)).** Criteria (i)–(vi) as in §1.4; soft cap 10. [AGENT] proposes
-  ADMIT R1 (`'\?'` / `"\?"`, tray 10) and R2 (`%c` 127→87, tray 11);
-  R3 depends on Q3. Anything refused becomes a mirror commit in Z1
-  (the pins turn `MATCH | L=CRASH`).
-- **Q3 — criterion (ii) for UB reproducers (R3).** Native gcc has no
-  answer for a UB program, so (ii) cannot be met literally by
-  `s4b-memcmp-hugesize` (a `Z.Overflow` TOOL CRASH where the oracle's
-  own checked path gives `UB_CERB002a`). Proposed substitute (ii'):
-  "where the reproducer is UB, the Lean verdict must be the one the
-  ORACLE'S OWN SEMANTICS produces on its non-crashing path (cite the
-  OCaml path), and the deviation must be crash→verdict only, never
-  verdict→different verdict." Ratify (ii') or refuse R3.
-- **Q4 — tool crashes as behaviour.** Rule 2(a) makes a both-sides
-  crash acceptable (text may differ). Where the oracle crashes and
-  Lean can answer (R1, R3, E2), the strict reading of §1.1 says mirror
-  the crash; the register is the only alternative. Confirm that
-  OUTSIDE the register a Lean fail-stop mirroring an oracle uncaught
-  exception is the required shape (Z-10/14/16/22 apply it to CerbMem's
+- **Q2 — ratify the class-(d) register criteria (i)–(vii) and rule
+  R1/R2 individually ((v)).** RECOMMENDATION: ratify (i)–(vii); ADMIT
+  R1 (`'\?'`/`"\?"` = 63; gcc exit 63 and `"a\?b"` bytes `97 63 98 0`;
+  tray 10; code site `CerbDecode.lean:91`) and R2 (`%c` 127 vs oracle
+  87; gcc exit 127; tray 11; entry names the exact escape round-trip
+  site). Anything refused becomes a mirror commit in Z1 (pins turn
+  `MATCH | L=CRASH`).
+- **Q3 — ratify the TIGHTENED (ii') for UB reproducers and rule R3.**
+  (ii') = §1.4: (1) non-semantic host exception raised before the
+  semantic path; (2) Lean is the line-mirror minus that conversion;
+  (3) second oracle = the oracle with the tray remedy applied to a
+  scratch build. RECOMMENDATION: ratify; ADMIT R3 (`s4b-memcmp-hugesize`,
+  tray 13) once Z4 produces (3). Consequence noted: F2 `(int)NaN` is
+  eligible under the same shape; `g4-bswap64-overflow` is not.
+- **Q4 — tool crashes as behaviour.** RECOMMENDATION: confirm that a
+  ONE-SIDED oracle crash (uncaught exception) outside the register
+  requires a Lean fail-stop carrying the OCaml text; (a) covers
+  BOTH-side crashes only (Z-10/14/16/22 apply this to CerbMem's
   `failwith`/`assert false` arms).
-- **Q5 — wall-clock margins under (b).** Z-31: Lean ~15–20× slower on
-  recursion-heavy shapes trips 15–30 s lane bounds where the oracle
-  finishes; verdicts agree at larger bounds. [AGENT] reads (b) by the
-  fuel argument (more time = same answer) as TOLERATED; confirm, or
-  rule it a (b)-violation with the perf constant as the mover.
+- **Q5 — wall-clock margins under (b).** RECOMMENDATION: TOLERATED
+  conditional on PER-ROW measured completion (verdict equality) at a
+  larger bound. `pr63209.c`/`pr69320-4.c` have it; the 8 csmith
+  `TIMEOUT` rows and the 11 gcc-lane `SKIP_LEAN_TIMEOUT` rows do not —
+  undemonstrated rows are (b)-VIOLATIONS pending evidence (Z4 measures
+  each once).
 - **Q6 — F1 (`float` as double, `sizeof(float) == 8`) and the
-  register.** It formally meets (i) (6.3.1.5 / 5.2.4.2.2, unambiguous),
-  (ii) (gcc), and will meet (iii) (tray 31); but it is an upstream
-  `TODO:hack` of size M and the register is "a short listed set of
-  fixes". [AGENT] recommends NOT admitting (mirror, wait for upstream
-  or carry an `upstream-pr/*` branch) — confirm.
-- **Q7 — mode flags: refuse or plumb?** Z-24 proposes REFUSING
-  `--switches`/`--concurrency`/unknown flags (S, class (c)); plumbing
-  the switch set into `CerbGlobal` (a setter + `Switches.set` mirror)
-  is M and would make mode-matched PNVI/strict runs possible as new
-  lane modes. Refuse now is the recommendation; confirm that plumbing
-  is not wanted in this arc.
+  register.** RECOMMENDATION: do NOT admit. The premise "(i)
+  unambiguous" was overstated: ISO 6.2.5p10 permits `float`'s value
+  set to be `double`'s, and 6.3.1.5 then requires no rounding; the real
+  defect is the inconsistency with `runtime/libc/include/float.h:4`
+  `FLT_MANT_DIG 24` (5.2.4.2.2) — an upstream `TODO:hack` of size M.
+  Mirror; tray 31; gcc-lane class stays `TRIAGED_FLOAT`.
+- **Q7 — mode flags: refuse or plumb?** RECOMMENDATION: REFUSE now
+  (Z-24, S, class (c); includes known flags out of canonical position);
+  plumbing the switch set into `CerbGlobal` (M) is not wanted in this
+  arc.
+- **Q8 (NEW, R1 F2a) — `runND` returning zero executions (Z-73).**
+  Lean prints `Error {msg: "cerberus-lean: runND returned no
+  executions"}` and exits 1 where the oracle prints nothing and exits 0
+  — a deliberate failure-vs-success class difference (a) does not
+  cover. Options: (A) keep the fail-closed refusal and DECLARE it as a
+  loud boundary (the fuel arc's `runNDFuel` exhaustion leaf has the
+  same shape, so this also fixes that row's classification); (B)
+  mirror the oracle's silent success. RECOMMENDATION [AGENT]: (A) —
+  a silent exit 0 with no verdict is the fail-open shape the working
+  practices ban; the oracle's behaviour is an upstream question (tray
+  candidate), not a behaviour to reproduce.
+- **Q9 (NEW, R1 scope) — is the concurrency (cmm) instantiation mover
+  now OPTIONAL?** The first draft DECIDED this (Z-25); it is a
+  product-scope change and is therefore an ASK. Evidence: the oracle's
+  own `--concurrency` mode fail-stops (`CONCURRENCY IS BROKEN`) at
+  `b9aeedcb4`; matched mode agrees. RECOMMENDATION: optional (TODO.md
+  "Queued larger work" entry re-labelled "optional; blocked on upstream
+  having a working mode to mirror").
+- **Q10 (NEW, R1 scope) — is the CerbFS real-fs mover now OPTIONAL?**
+  Same shape as Q9 (first draft decided it at Z-26). Evidence: the
+  refused set is loud and attributed; Z-27 makes the residuals loud.
+  RECOMMENDATION: optional once Z-27 lands (the served set is then
+  exactly the correct-answer set and every other op refuses).
 
 ## 8. Provenance
 
@@ -547,12 +614,19 @@ the [AGENT] reading of a ruling should be confirmed.
 (§1.2), the fuel quote, the UB-location ruling ("(1) agree", §1.3), the
 class-(d) ruling quote (§1.4). [USER 2026-08-31 / 2026-09-02] rulings
 cited from `VALIDATION.md` and the trust-basket record where quoted.
-[AGENT] (this charter): the register criteria (i)–(vi) as a proposal,
+[AGENT, orchestrator review of `6a55dc74d`, applied as R1]: findings
+F1–F11, the register recommendations, the refusal-verdict corrections,
+the Q recommendations and the Q9/Q10 scope re-framing — each applied
+only after this worker re-verified the cite or re-ran the probe
+(quoted verbatim; probes `.zd-scratch/p/`, ephemeral).
+[AGENT] (this charter): the register criteria (i)–(vii) as a proposal,
 every census row's class and price, the R1–R3 adjudication, the
 seam-audit mandate, the instrument plan, the tray plan, the slice
 order, the probes of §2.3 (`.zd-scratch/probes/`, ephemeral; quoted
 lines verbatim from this charter's runs), and the elab-lane row naming
-(one harness run). Derived tallies are labelled derived; quoted engine
+(one harness run); R1 probes: `se1.c`/`se2.c` (stderr), `at.c`
+(atomics, three engines), `at.json --first` (misordered flag),
+`tests/ci/0069-const_expr.c` (stale `CERB_INCONSISTENT`). Derived tallies are labelled derived; quoted engine
 lines are verbatim from the cited records or runs. No product code,
 gate, baseline or other document was modified in this slice; nothing
 was merged or pushed.
