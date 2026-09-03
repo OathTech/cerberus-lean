@@ -102,6 +102,26 @@ executable semantics is a total Lean artifact the kernel can evaluate
 and future consumers can reason about. A build gate enforces an empty
 `partial`-allowlist for the execution slice.
 
+**No magic values.** [USER 2026-09-03]: a fuel budget, a bound, a
+default, or any "magical" choice among nondeterministic alternatives
+that upstream Cerberus does not fix "are absolutely completely
+forbidden and are definitionally bugs". Every such choice is a
+QUANTIFIED PARAMETER of the semantics, threaded from the entry point
+(`drive fuel …`), so a consumer's theorem can range over it; a numeral
+may live only in the binary's command-line default (`--fuel`), never in
+a definition. The general form [USER 2026-09-03], verbatim: "any instance of a
+value that can be quantified over by a context / theorem is fine.
+Defaults that are chosen eg. in test suites are fine. Any and all magic
+values that are hardcoded and can't be quantified over are definitionally
+bugs (unless they mirror lem or ISO-C design choices)" — for this
+repository the mirrored source is upstream Cerberus's OCaml. A bound
+computed inside a definition is hardcoded in that sense, unless the
+calling context passes it in or a termination proof removes it.
+The fuel story as of this writing violates this (`driverFuel = 10^8`,
+`lemDefaultFuel = 10^6` in every generated fuel wrapper); the
+fuel-parameter arc removes it: lem-lean
+`doc/lean-backend/2026-09-03_fuel-parameter-design.md`.
+
 ## 5. Differential validation: the oracle, lanes, baselines, plants
 
 The OCaml implementation is **the oracle**: it cannot be reasoned
