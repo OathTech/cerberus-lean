@@ -43,6 +43,26 @@ number 19, so this charter's planned drafts renumber to 20–33). Cites
 re-read in this worktree; quoted lines verbatim from that branch's
 `results.log`. New rows Z-76, Z-77; Z-10 amended; R4 added to §2.6.
 
+Revision R3 (2026-09-03): the §7 asks are RULED. [USER 2026-09-03],
+verbatim: "Agree re lem. Agree re Q2-10 and R4". Every Q2–Q10
+RECOMMENDATION and the R4 DEFER recommendation is thereby adopted as the
+ruling; §7 is retitled and each recommendation stands as ruled.
+Consequences applied in this revision (annotations only; no row's
+evidence is rewritten): register criteria (i)–(vii) and the tightened
+(ii′) RATIFIED (§1.4); R1 and R2 ADMITTED; R3 ADMITTED conditional on Z4
+producing (ii′)(3); R4 DEFERRED (§2.6); Z-73 → EXC, a DECLARED loud
+boundary (Q8 = A); F1 NOT admitted — mirror + tray 32 (Q6); mode flags
+REFUSED, not plumbed (Q7); a one-sided oracle crash → Lean fail-stop
+carrying the OCaml text (Q4); wall-clock rows tolerated only per row with
+measured completion (Q5); the cmm and CerbFS movers are OPTIONAL
+(Q9/Q10). §0's class table reads with these resolutions: RULING PENDING 1
+→ EXC (declared); REGISTER CANDIDATE 4 → R1/R2 admitted, R3 conditional,
+R4 deferred. The "re lem" half of the ruling concerns lem-lean's parity
+record §4 (X1 polymorphic compare, X3/N4 63-bit `nat`/`int`) and is
+recorded in lem-lean `doc/lean-backend/2026-09-03_exception-case-rulings.md`
+(disposition: OCaml-backend deviations from lem's own prover-side
+semantics; the Lean target follows lem; not exceptions to the rule).
+
 Terminology, fixed for the whole document:
 
 - **oracle** — the OCaml Cerberus built from this repository's `.lem`
@@ -161,8 +181,8 @@ Operator ruling, verbatim:
 > purpose of cerberus-lean but the bar for such a fix must be extremely
 > high."
 
-Design [AGENT, for ratification at §7 Q2]: an explicit **ISO-fix
-register** in `VALIDATION.md` — a short, enumerated list of the places
+Design [AGENT], RATIFIED [USER 2026-09-03] (R3; §7 Q2 for (i)–(vii),
+Q3 for (ii′)): an explicit **ISO-fix register** in `VALIDATION.md` — a short, enumerated list of the places
 where Lean deliberately deviates from the oracle TOWARD ISO C. Anything
 not on the register is BUG-FIX (mirror the oracle + tray). Admission
 criteria, each concrete and checkable:
@@ -231,7 +251,7 @@ charter's probes; tallies are derived.
 | Z-02 (D2) | noodle §2 D2; `ptr/ptr_to_int_narrow_ub.c` | `Undefined {ub: "UB024_out_of_range_pointer_to_integer_conversion", stderr: "", loc: "<7:11--7:17>"}` | `… loc: "other_location(Concrete)"` | **BUG-FIX** (§1.3) | `CerbMem.lean:2297` `memFail (MerrIntFromPtr)` → `memFail MerrIntFromPtr loc` (mirror `impl_mem.ml:2459` `fail ~loc`). **S** |
 | Z-03 (O1) | noodle §0 O1; this charter's probe P-C3 | `loc: "<6:10--6:12>"` (`Cerb_location.simple_location`) | `loc: ".zd-scratch/probes/pnvi.c:6:10-12"` (`CerbLocation.stringFromLocation`) | **BUG-FIX** — the `loc` field is behaviour (§1.3); its RENDERING must agree byte-wise or no lane can compare it. Cheaper and doctrinally right to mirror the printer than to normalise in every harness | `CerbLocation.lean` batch renderer mirrors `simple_location` (`util/cerb_location.ml`), cite. **S** (prerequisite of §4.1) |
 | Z-04 (D3) | noodle §3 D3; `Main.lean:389-391`; `tests/libxml2/uri_baseline.txt` | `Error {msg: "ill-formed program: \`calling an unknown procedure: Symbol(1451, SD_Id("memset"))'"}` | `Error {msg: "Illformed_program: calling an unknown procedure: Symbol(968, SD_Id("memset"))"}` | **EXC(a)** — both `Error`, text differs; declared in-code (`driverErrorBatchMsg` "DELIBERATE divergence, documented"). The embedded symbol id is tray 17 (oracle-side defect, mirrored) | none required; optional mirror of `pp_errors.ml:501` if the Pp machinery is ever ported |
-| Z-73 (R1 F2a) | `Main.lean:349` (declared-deviation list) + `:900-902` | `runND` returning ZERO executions: the oracle prints nothing and exits 0 | `Error {msg: "cerberus-lean: runND returned no executions"}`, exit 1 ("we refuse to look like success") | **RULING PENDING (Q8)** — a deliberate failure-vs-success CLASS difference, which (a) does not cover; either keep the fail-closed refusal and DECLARE it as a class-(c)-style loud boundary, or mirror the oracle's silent success. Interaction: the fuel arc's `runNDFuel` exhaustion leaf yields exactly this shape (fuel design §3.1 "runner, today"), so Q8's answer decides that row's post-fuel classification too | none until ruled; **S** either way |
+| Z-73 (R1 F2a) | `Main.lean:349` (declared-deviation list) + `:900-902` | `runND` returning ZERO executions: the oracle prints nothing and exits 0 | `Error {msg: "cerberus-lean: runND returned no executions"}`, exit 1 ("we refuse to look like success") | **RULED (R3, Q8 = A): EXC — a DECLARED loud boundary.** Keep the fail-closed refusal; declare it in-code (`Main.lean`) and in VALIDATION.md; the oracle's silent exit 0 with no verdict is a tray candidate. The fuel arc's exhaustion leaf inherits this classification. Was: RULING PENDING (Q8) — a deliberate failure-vs-success CLASS difference, which (a) does not cover; either keep the fail-closed refusal and DECLARE it as a class-(c)-style loud boundary, or mirror the oracle's silent success. Interaction: the fuel arc's `runNDFuel` exhaustion leaf yields exactly this shape (fuel design §3.1 "runner, today"), so Q8's answer decides that row's post-fuel classification too | none until ruled; **S** either way |
 | Z-74 (R1 F2b) | `Main.lean:347` | non-UB front-end failures: diagnostic on STDERR only, exit non-zero | `Error {msg: …}` line on STDOUT, exit non-zero | **EXC(a)** — channel/text differ; Z1 must SHOW (not assume) the exit class is identical on the reject corpora (`tests/bytes` NEG leg, the `.error.c` rows) | none; Z1 evidence row |
 | Z-05 (D4) | noodle §4 D4; `seam/seam_copy_alloc_id.c` | `Defined {value: "Specified(2)", …}` (upstream identical) | `Defined {value: "Specified(1)", …}` — `copyAllocId` returns the pointer unchanged | **BUG-FIX** (value-level; the RefinedC builtin `builtins.lem:470`) | `CerbMem.lean:2547` mirror `impl_mem.ml:2766-2770` (intfromptr range check, then `ptrfromint ival`), incl. the UB024 failure path. **S** |
 | Z-06 (D5) | noodle §4 D5; `seam/seam_device_range_load.c` | `Defined {value: "Specified(3)", …}` — `device_ranges = [(0x40000000,0x40000004);(0xABC,0xAC0)]` (`impl_mem.ml:620-624`), `Prov_device` via `ptrfromint` (`:2164-2167`), load/store accept `is_within_device` (`:1611-1617`, `:1718-1724`) | `Undefined {ub: "UB043_indirection_invalid_value", …}` — no device arm; comments at `CerbMem.lean:1940-1942/1985-1988/2048-2050` assert "the device_ranges list is empty in this pipeline" (false) | **BUG-FIX** — the oracle's behaviour is mirrored, however odd; if judged an upstream artefact it is ALSO a tray question, never a silent Lean deviation | `CerbMem.lean:2275-2283` + load/store/kill device arms; delete the false comments. **S** |
@@ -352,11 +372,11 @@ ruling:
 
 | cand. | pin | (i) unambiguous clause | (ii) second oracle | (iii) tray | (iv) pinned | verdict [AGENT] |
 |---|---|---|---|---|---|---|
-| **R1** | `g5-decode-question` (+ E2 string-literal form, Z-36) | YES — 6.4.4.4#1 lists `\?` as a simple escape; #4 gives 63; upstream's own lexer accepts it (`c_lexer.mll:417`, tray validation pass) | YES — gcc exit 63 (`AGREE gcc=63 lean={63}`; reviewer's gcc: `"a\?b"` bytes `97 63 98 0`); E2: Lean == gcc byte-for-byte | YES — tray 10 (+ addendum for the string-literal form) | YES — `ORACLE_CRASH \| L=VAL:Specified(63)`; E2 pin to be added | **meets (i)–(iv)**; reviewer: **ADMIT**; the entry must cite the code site `CerbDecode.lean:91` (`\| "\\?" => 63`) and carry the (vii) marker |
-| **R2** | `g5-escape-roundtrip` | YES — 7.21.6.1#8 `%c` writes the `int` converted to `unsigned char`; the oracle stores 87 for 127 (decimal-vs-octal re-read, a data-corruption bug, not a reading) | YES — gcc 127 (tray 11 records "gcc (and our Lean port) return 127") | YES — tray 11 | YES — `DIFF \| L=VAL:Specified(127)` | **meets (i)–(iv)**; reviewer: **ADMIT**; the entry names the exact escape round-trip site on the Lean side (the `%c` store path that does NOT re-decode through the octal reader — Z2 locates and marks it per (vii)) |
-| **R3** | `s4b-memcmp-hugesize` | PARTIAL — the program is UB (7.24.1p2 pointer validity); the "unambiguous" part is that a TOOL CRASH (`Z.Overflow`) is never a semantics; the oracle's own checked path (`impl_mem.ml` per-byte load) yields `UB_CERB002a` | NOT AS WRITTEN — no native answer exists for a UB program | YES — tray 13 | YES — `ORACLE_CRASH \| L=UB:UB_CERB002a_out_of_bound_load` | **fails (ii) literally**; reviewer: **ADMIT under the TIGHTENED (ii')** of §1.4 — (1) `Z.Overflow` is a host-int conversion raised before the semantic path (`impl_mem.ml:2660` `Z.to_int`), (2) `CerbMem` memcmp is the line-mirror minus that conversion, (3) the second oracle is a scratch oracle build with tray 13's Z-native remedy shown to give `UB_CERB002a`. Z4 produces (3); until then the pin stays as recorded |
+| **R1** | `g5-decode-question` (+ E2 string-literal form, Z-36) | YES — 6.4.4.4#1 lists `\?` as a simple escape; #4 gives 63; upstream's own lexer accepts it (`c_lexer.mll:417`, tray validation pass) | YES — gcc exit 63 (`AGREE gcc=63 lean={63}`; reviewer's gcc: `"a\?b"` bytes `97 63 98 0`); E2: Lean == gcc byte-for-byte | YES — tray 10 (+ addendum for the string-literal form) | YES — `ORACLE_CRASH \| L=VAL:Specified(63)`; E2 pin to be added | **RULED [USER 2026-09-03] (R3): ADMIT.** meets (i)–(iv); reviewer: ADMIT; the entry must cite the code site `CerbDecode.lean:91` (`\| "\\?" => 63`) and carry the (vii) marker |
+| **R2** | `g5-escape-roundtrip` | YES — 7.21.6.1#8 `%c` writes the `int` converted to `unsigned char`; the oracle stores 87 for 127 (decimal-vs-octal re-read, a data-corruption bug, not a reading) | YES — gcc 127 (tray 11 records "gcc (and our Lean port) return 127") | YES — tray 11 | YES — `DIFF \| L=VAL:Specified(127)` | **RULED [USER 2026-09-03] (R3): ADMIT.** meets (i)–(iv); reviewer: ADMIT; the entry names the exact escape round-trip site on the Lean side (the `%c` store path that does NOT re-decode through the octal reader — Z2 locates and marks it per (vii)) |
+| **R3** | `s4b-memcmp-hugesize` | PARTIAL — the program is UB (7.24.1p2 pointer validity); the "unambiguous" part is that a TOOL CRASH (`Z.Overflow`) is never a semantics; the oracle's own checked path (`impl_mem.ml` per-byte load) yields `UB_CERB002a` | NOT AS WRITTEN — no native answer exists for a UB program | YES — tray 13 | YES — `ORACLE_CRASH \| L=UB:UB_CERB002a_out_of_bound_load` | **RULED [USER 2026-09-03] (R3): ADMIT under (ii′), conditional on Z4 producing (3); the pin stays as recorded until then.** fails (ii) literally; reviewer: ADMIT under the TIGHTENED (ii') of §1.4 — (1) `Z.Overflow` is a host-int conversion raised before the semantic path (`impl_mem.ml:2660` `Z.to_int`), (2) `CerbMem` memcmp is the line-mirror minus that conversion, (3) the second oracle is a scratch oracle build with tray 13's Z-native remedy shown to give `UB_CERB002a`. Z4 produces (3); until then the pin stays as recorded |
 
-| **R4** (R2) | `dynamic_addrs` (Z-77, tray 19): Lean `killM` would key the dynamic check on allocation IDENTITY instead of `dynamicAddrs.contains base` | YES — 7.22.3.3p2; Cerberus's own UB179a names the case | PARTLY — glibc rejects `free(&x)` (rows a/b: SIGSEGV/abort) but only on the C shape, which Cerberus already rejects; no native oracle runs the Core shape; (ii') (3) would need a scratch oracle build with the tray-19 id-keyed remedy | drafted (19), not filed | NOT POSSIBLE with today's lanes — no single input reproduces the defect on both engines (Core-only; C blocked by temporaries); the oracle side needs a `.core` runner, the Lean side injection | **FOR admission**: the semantics ACCEPTS a UB program (the class a verifier consumer cares about most); the id-keyed fix is small and verdict-preserving on non-colliding programs; the consumer works at Core level where the shape IS reachable. **AGAINST**: (iv) is unmeetable today (an unpinned deviation is exactly the trust gap the bar excludes); C exposure nil (UB179a on all engines); refined-cerberus's logic is sound regardless (its `free` precondition implies the engine's check); mirror doctrine prefers upstream-first; the fix sits next to Z-07/Z-08's check-order alignment. [AGENT] recommendation: **DEFER** — file tray 19, keep mirroring, revisit if upstream declines/stalls AND a Core-level differential lane exists (see §4.2 instrument gap) |
+| **R4** (R2) | `dynamic_addrs` (Z-77, tray 19): Lean `killM` would key the dynamic check on allocation IDENTITY instead of `dynamicAddrs.contains base` | YES — 7.22.3.3p2; Cerberus's own UB179a names the case | PARTLY — glibc rejects `free(&x)` (rows a/b: SIGSEGV/abort) but only on the C shape, which Cerberus already rejects; no native oracle runs the Core shape; (ii') (3) would need a scratch oracle build with the tray-19 id-keyed remedy | drafted (19), not filed | NOT POSSIBLE with today's lanes — no single input reproduces the defect on both engines (Core-only; C blocked by temporaries); the oracle side needs a `.core` runner, the Lean side injection | **FOR admission**: the semantics ACCEPTS a UB program (the class a verifier consumer cares about most); the id-keyed fix is small and verdict-preserving on non-colliding programs; the consumer works at Core level where the shape IS reachable. **AGAINST**: (iv) is unmeetable today (an unpinned deviation is exactly the trust gap the bar excludes); C exposure nil (UB179a on all engines); refined-cerberus's logic is sound regardless (its `free` precondition implies the engine's check); mirror doctrine prefers upstream-first; the fix sits next to Z-07/Z-08's check-order alignment. [AGENT] recommendation: **DEFER** — file tray 19, keep mirroring, revisit if upstream declines/stalls AND a Core-level differential lane exists (see §4.2 instrument gap). **RULED [USER 2026-09-03] (R3): DEFER.** |
 
 Everything else on the immaculate baseline is `MATCH` (incl. the
 both-crash rows, Z-37) or the in-Lean `TRIPWIRE`/`KILL` probes (no
@@ -557,11 +577,15 @@ dated `docs/2026-09-xx_zero-discrepancy-Z<n>-record.md`; the census
 table in this file is the living register — rows change class only by
 a commit that cites its evidence.
 
-## 7. OPEN QUESTIONS FOR THE OPERATOR
+## 7. QUESTIONS FOR THE OPERATOR — ALL RULED (R3)
 
 Only genuine ones. Q1 is recorded as ruled. Each of Q2–Q10 carries the
-R1 reviewer's RECOMMENDATION [AGENT, orchestrator review of `6a55dc74d`]
-for the operator to accept or override.
+R1 reviewer's RECOMMENDATION [AGENT, orchestrator review of `6a55dc74d`];
+[USER 2026-09-03] ruled on all of them at once — verbatim: "Agree re
+Q2-10 and R4" — so **every RECOMMENDATION below is the RULING**, with
+[USER 2026-09-03] provenance, and the slices of §6 execute it as
+written. The per-item text is kept unchanged as the record of what was
+asked and recommended.
 
 - **Q1 (RULED — recorded).** UB location is behaviour: [USER
   2026-09-03] "(1) agree". Applied throughout (Z-01/02/03/20, §4.1).
