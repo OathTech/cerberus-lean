@@ -3,12 +3,15 @@
 # design + triage classes: lean_frontend/docs/2026-08-30_gcc-second-oracle-design.md)
 # Every corpus file has exactly one row; every skip carries its reason class.
 # TRIAGED_* rows are justified per-file in scripts/gcc_oracle_triage.txt.
+# 2026-09-03 zero-discrepancy Z1: 7 rows for the new tests/immaculate/nolibc/zd-*.c pins hand-inserted (sorted by key)
+#   at their observed statuses (3 TRIAGED via gcc_oracle_triage.txt; record docs/2026-09-03_zero-discrepancy-Z1-record.md §9).
 csmith/sa_csmith_001.c AGREE O2_AGREE
 csmith/sa_csmith_002.c SKIP_LEAN_CRASH -
 csmith/sa_csmith_003.c SKIP_LEAN_CRASH -
 csmith/sa_csmith_004.c AGREE -
 csmith/sa_csmith_005.c SKIP_LEAN_CRASH -
 csmith/sa_csmith_006.c AGREE -
+csmith/sa_csmith_10.c AGREE -
 csmith/sa_csmith_100.c AGREE -
 csmith/sa_csmith_101.c AGREE -
 csmith/sa_csmith_102.c AGREE -
@@ -19,7 +22,7 @@ csmith/sa_csmith_106.c AGREE -
 csmith/sa_csmith_107.c AGREE -
 csmith/sa_csmith_108.c AGREE -
 csmith/sa_csmith_109.c AGREE -
-csmith/sa_csmith_10.c AGREE -
+csmith/sa_csmith_11.c AGREE -
 csmith/sa_csmith_110.c AGREE -
 csmith/sa_csmith_111.c AGREE -
 csmith/sa_csmith_112.c AGREE -
@@ -30,7 +33,7 @@ csmith/sa_csmith_116.c AGREE -
 csmith/sa_csmith_117.c AGREE -
 csmith/sa_csmith_118.c AGREE -
 csmith/sa_csmith_119.c AGREE -
-csmith/sa_csmith_11.c AGREE -
+csmith/sa_csmith_12.c AGREE -
 csmith/sa_csmith_120.c AGREE -
 csmith/sa_csmith_121.c AGREE O2_AGREE
 csmith/sa_csmith_122.c AGREE -
@@ -41,7 +44,7 @@ csmith/sa_csmith_126.c AGREE -
 csmith/sa_csmith_127.c AGREE -
 csmith/sa_csmith_128.c AGREE -
 csmith/sa_csmith_129.c AGREE -
-csmith/sa_csmith_12.c AGREE -
+csmith/sa_csmith_13.c AGREE -
 csmith/sa_csmith_130.c AGREE -
 csmith/sa_csmith_131.c AGREE -
 csmith/sa_csmith_132.c AGREE -
@@ -52,7 +55,7 @@ csmith/sa_csmith_136.c AGREE -
 csmith/sa_csmith_137.c AGREE -
 csmith/sa_csmith_138.c AGREE -
 csmith/sa_csmith_139.c AGREE -
-csmith/sa_csmith_13.c AGREE -
+csmith/sa_csmith_14.c AGREE -
 csmith/sa_csmith_140.c AGREE -
 csmith/sa_csmith_141.c AGREE -
 csmith/sa_csmith_142.c AGREE -
@@ -63,7 +66,7 @@ csmith/sa_csmith_146.c AGREE O2_AGREE
 csmith/sa_csmith_147.c AGREE -
 csmith/sa_csmith_148.c AGREE -
 csmith/sa_csmith_149.c AGREE -
-csmith/sa_csmith_14.c AGREE -
+csmith/sa_csmith_15.c AGREE -
 csmith/sa_csmith_150.c AGREE -
 csmith/sa_csmith_151.c AGREE O2_AGREE
 csmith/sa_csmith_152.c AGREE O2_AGREE
@@ -74,7 +77,7 @@ csmith/sa_csmith_156.c AGREE -
 csmith/sa_csmith_157.c AGREE -
 csmith/sa_csmith_158.c AGREE -
 csmith/sa_csmith_159.c AGREE -
-csmith/sa_csmith_15.c AGREE -
+csmith/sa_csmith_16.c AGREE -
 csmith/sa_csmith_160.c AGREE -
 csmith/sa_csmith_161.c AGREE -
 csmith/sa_csmith_162.c AGREE -
@@ -85,7 +88,7 @@ csmith/sa_csmith_166.c AGREE -
 csmith/sa_csmith_167.c AGREE -
 csmith/sa_csmith_168.c AGREE -
 csmith/sa_csmith_169.c AGREE -
-csmith/sa_csmith_16.c AGREE -
+csmith/sa_csmith_17.c AGREE -
 csmith/sa_csmith_170.c AGREE -
 csmith/sa_csmith_171.c AGREE -
 csmith/sa_csmith_172.c AGREE -
@@ -96,7 +99,7 @@ csmith/sa_csmith_176.c AGREE -
 csmith/sa_csmith_177.c AGREE O2_AGREE
 csmith/sa_csmith_178.c AGREE -
 csmith/sa_csmith_179.c AGREE O2_AGREE
-csmith/sa_csmith_17.c AGREE -
+csmith/sa_csmith_18.c AGREE -
 csmith/sa_csmith_180.c AGREE -
 csmith/sa_csmith_181.c AGREE -
 csmith/sa_csmith_182.c AGREE -
@@ -107,7 +110,7 @@ csmith/sa_csmith_186.c AGREE -
 csmith/sa_csmith_187.c AGREE -
 csmith/sa_csmith_188.c AGREE -
 csmith/sa_csmith_189.c AGREE O2_AGREE
-csmith/sa_csmith_18.c AGREE -
+csmith/sa_csmith_19.c AGREE -
 csmith/sa_csmith_190.c AGREE -
 csmith/sa_csmith_191.c AGREE -
 csmith/sa_csmith_192.c AGREE -
@@ -118,7 +121,7 @@ csmith/sa_csmith_196.c AGREE -
 csmith/sa_csmith_197.c AGREE -
 csmith/sa_csmith_198.c AGREE O2_AGREE
 csmith/sa_csmith_199.c AGREE -
-csmith/sa_csmith_19.c AGREE -
+csmith/sa_csmith_20.c AGREE -
 csmith/sa_csmith_200.c AGREE -
 csmith/sa_csmith_201.c AGREE -
 csmith/sa_csmith_202.c AGREE -
@@ -129,7 +132,7 @@ csmith/sa_csmith_206.c AGREE -
 csmith/sa_csmith_207.c AGREE -
 csmith/sa_csmith_208.c AGREE -
 csmith/sa_csmith_209.c AGREE -
-csmith/sa_csmith_20.c AGREE -
+csmith/sa_csmith_21.c AGREE -
 csmith/sa_csmith_210.c AGREE -
 csmith/sa_csmith_211.c AGREE -
 csmith/sa_csmith_212.c AGREE -
@@ -140,7 +143,7 @@ csmith/sa_csmith_216.c AGREE O2_AGREE
 csmith/sa_csmith_217.c AGREE -
 csmith/sa_csmith_218.c AGREE -
 csmith/sa_csmith_219.c AGREE -
-csmith/sa_csmith_21.c AGREE -
+csmith/sa_csmith_22.c AGREE -
 csmith/sa_csmith_220.c AGREE -
 csmith/sa_csmith_221.c AGREE O2_AGREE
 csmith/sa_csmith_222.c AGREE -
@@ -151,7 +154,7 @@ csmith/sa_csmith_226.c AGREE -
 csmith/sa_csmith_227.c AGREE O2_AGREE
 csmith/sa_csmith_228.c AGREE -
 csmith/sa_csmith_229.c AGREE -
-csmith/sa_csmith_22.c AGREE -
+csmith/sa_csmith_23.c AGREE -
 csmith/sa_csmith_230.c AGREE -
 csmith/sa_csmith_231.c AGREE -
 csmith/sa_csmith_232.c AGREE -
@@ -162,7 +165,7 @@ csmith/sa_csmith_236.c AGREE -
 csmith/sa_csmith_237.c AGREE -
 csmith/sa_csmith_238.c AGREE -
 csmith/sa_csmith_239.c AGREE -
-csmith/sa_csmith_23.c AGREE -
+csmith/sa_csmith_24.c AGREE -
 csmith/sa_csmith_240.c AGREE -
 csmith/sa_csmith_241.c AGREE -
 csmith/sa_csmith_242.c AGREE -
@@ -173,7 +176,7 @@ csmith/sa_csmith_246.c AGREE O2_AGREE
 csmith/sa_csmith_247.c AGREE -
 csmith/sa_csmith_248.c AGREE O2_AGREE
 csmith/sa_csmith_249.c AGREE -
-csmith/sa_csmith_24.c AGREE -
+csmith/sa_csmith_25.c AGREE -
 csmith/sa_csmith_250.c AGREE -
 csmith/sa_csmith_251.c AGREE O2_AGREE
 csmith/sa_csmith_252.c AGREE -
@@ -184,7 +187,7 @@ csmith/sa_csmith_256.c AGREE -
 csmith/sa_csmith_257.c AGREE -
 csmith/sa_csmith_258.c AGREE -
 csmith/sa_csmith_259.c AGREE -
-csmith/sa_csmith_25.c AGREE -
+csmith/sa_csmith_26.c AGREE -
 csmith/sa_csmith_260.c AGREE -
 csmith/sa_csmith_261.c AGREE -
 csmith/sa_csmith_262.c AGREE -
@@ -195,7 +198,7 @@ csmith/sa_csmith_266.c AGREE -
 csmith/sa_csmith_267.c AGREE -
 csmith/sa_csmith_268.c AGREE -
 csmith/sa_csmith_269.c AGREE -
-csmith/sa_csmith_26.c AGREE -
+csmith/sa_csmith_27.c AGREE -
 csmith/sa_csmith_270.c AGREE -
 csmith/sa_csmith_271.c AGREE -
 csmith/sa_csmith_272.c AGREE -
@@ -206,7 +209,7 @@ csmith/sa_csmith_276.c AGREE -
 csmith/sa_csmith_277.c AGREE -
 csmith/sa_csmith_278.c AGREE -
 csmith/sa_csmith_279.c AGREE -
-csmith/sa_csmith_27.c AGREE -
+csmith/sa_csmith_28.c AGREE O2_AGREE
 csmith/sa_csmith_280.c AGREE -
 csmith/sa_csmith_281.c AGREE -
 csmith/sa_csmith_282.c AGREE -
@@ -217,7 +220,7 @@ csmith/sa_csmith_286.c AGREE -
 csmith/sa_csmith_287.c AGREE -
 csmith/sa_csmith_288.c AGREE -
 csmith/sa_csmith_289.c AGREE O2_AGREE
-csmith/sa_csmith_28.c AGREE O2_AGREE
+csmith/sa_csmith_29.c AGREE -
 csmith/sa_csmith_290.c AGREE O2_AGREE
 csmith/sa_csmith_291.c AGREE -
 csmith/sa_csmith_292.c AGREE -
@@ -228,7 +231,7 @@ csmith/sa_csmith_296.c AGREE -
 csmith/sa_csmith_297.c AGREE -
 csmith/sa_csmith_298.c AGREE -
 csmith/sa_csmith_299.c AGREE -
-csmith/sa_csmith_29.c AGREE -
+csmith/sa_csmith_30.c AGREE -
 csmith/sa_csmith_300.c AGREE -
 csmith/sa_csmith_301.c AGREE O2_AGREE
 csmith/sa_csmith_302.c AGREE -
@@ -239,7 +242,7 @@ csmith/sa_csmith_306.c AGREE -
 csmith/sa_csmith_307.c AGREE -
 csmith/sa_csmith_308.c AGREE -
 csmith/sa_csmith_309.c AGREE O2_AGREE
-csmith/sa_csmith_30.c AGREE -
+csmith/sa_csmith_31.c AGREE O2_AGREE
 csmith/sa_csmith_310.c AGREE O2_AGREE
 csmith/sa_csmith_311.c AGREE -
 csmith/sa_csmith_312.c AGREE -
@@ -250,7 +253,7 @@ csmith/sa_csmith_316.c AGREE -
 csmith/sa_csmith_317.c AGREE -
 csmith/sa_csmith_318.c AGREE -
 csmith/sa_csmith_319.c AGREE -
-csmith/sa_csmith_31.c AGREE O2_AGREE
+csmith/sa_csmith_32.c AGREE O2_AGREE
 csmith/sa_csmith_320.c AGREE -
 csmith/sa_csmith_321.c AGREE -
 csmith/sa_csmith_322.c AGREE -
@@ -261,7 +264,7 @@ csmith/sa_csmith_326.c AGREE -
 csmith/sa_csmith_327.c AGREE -
 csmith/sa_csmith_328.c AGREE -
 csmith/sa_csmith_329.c AGREE O2_AGREE
-csmith/sa_csmith_32.c AGREE O2_AGREE
+csmith/sa_csmith_33.c AGREE -
 csmith/sa_csmith_330.c AGREE -
 csmith/sa_csmith_331.c AGREE -
 csmith/sa_csmith_332.c AGREE -
@@ -272,7 +275,7 @@ csmith/sa_csmith_336.c AGREE -
 csmith/sa_csmith_337.c AGREE -
 csmith/sa_csmith_338.c AGREE -
 csmith/sa_csmith_339.c AGREE -
-csmith/sa_csmith_33.c AGREE -
+csmith/sa_csmith_34.c AGREE O2_AGREE
 csmith/sa_csmith_340.c AGREE -
 csmith/sa_csmith_341.c SKIP_LEAN_TIMEOUT -
 csmith/sa_csmith_342.c AGREE -
@@ -283,7 +286,7 @@ csmith/sa_csmith_346.c AGREE -
 csmith/sa_csmith_347.c AGREE -
 csmith/sa_csmith_348.c SKIP_LEAN_TIMEOUT -
 csmith/sa_csmith_349.c AGREE -
-csmith/sa_csmith_34.c AGREE O2_AGREE
+csmith/sa_csmith_35.c AGREE -
 csmith/sa_csmith_350.c AGREE -
 csmith/sa_csmith_351.c AGREE O2_AGREE
 csmith/sa_csmith_352.c AGREE -
@@ -294,7 +297,7 @@ csmith/sa_csmith_356.c AGREE -
 csmith/sa_csmith_357.c AGREE -
 csmith/sa_csmith_358.c AGREE -
 csmith/sa_csmith_359.c AGREE -
-csmith/sa_csmith_35.c AGREE -
+csmith/sa_csmith_36.c AGREE -
 csmith/sa_csmith_360.c AGREE -
 csmith/sa_csmith_361.c AGREE -
 csmith/sa_csmith_362.c AGREE -
@@ -305,7 +308,7 @@ csmith/sa_csmith_366.c AGREE -
 csmith/sa_csmith_367.c AGREE -
 csmith/sa_csmith_368.c AGREE -
 csmith/sa_csmith_369.c AGREE -
-csmith/sa_csmith_36.c AGREE -
+csmith/sa_csmith_37.c AGREE -
 csmith/sa_csmith_370.c AGREE -
 csmith/sa_csmith_371.c AGREE -
 csmith/sa_csmith_372.c AGREE O2_AGREE
@@ -316,7 +319,7 @@ csmith/sa_csmith_376.c AGREE -
 csmith/sa_csmith_377.c AGREE -
 csmith/sa_csmith_378.c AGREE -
 csmith/sa_csmith_379.c AGREE -
-csmith/sa_csmith_37.c AGREE -
+csmith/sa_csmith_38.c AGREE -
 csmith/sa_csmith_380.c AGREE -
 csmith/sa_csmith_381.c AGREE O2_AGREE
 csmith/sa_csmith_382.c AGREE -
@@ -327,7 +330,7 @@ csmith/sa_csmith_386.c AGREE -
 csmith/sa_csmith_387.c AGREE -
 csmith/sa_csmith_388.c AGREE -
 csmith/sa_csmith_389.c AGREE -
-csmith/sa_csmith_38.c AGREE -
+csmith/sa_csmith_39.c AGREE -
 csmith/sa_csmith_390.c AGREE -
 csmith/sa_csmith_391.c AGREE -
 csmith/sa_csmith_392.c AGREE -
@@ -338,7 +341,7 @@ csmith/sa_csmith_396.c AGREE -
 csmith/sa_csmith_397.c AGREE -
 csmith/sa_csmith_398.c AGREE -
 csmith/sa_csmith_399.c AGREE -
-csmith/sa_csmith_39.c AGREE -
+csmith/sa_csmith_40.c AGREE -
 csmith/sa_csmith_400.c AGREE -
 csmith/sa_csmith_401.c AGREE -
 csmith/sa_csmith_402.c AGREE -
@@ -349,7 +352,7 @@ csmith/sa_csmith_406.c AGREE -
 csmith/sa_csmith_407.c AGREE -
 csmith/sa_csmith_408.c AGREE -
 csmith/sa_csmith_409.c AGREE -
-csmith/sa_csmith_40.c AGREE -
+csmith/sa_csmith_41.c AGREE -
 csmith/sa_csmith_410.c AGREE -
 csmith/sa_csmith_411.c AGREE -
 csmith/sa_csmith_412.c AGREE -
@@ -360,7 +363,7 @@ csmith/sa_csmith_416.c AGREE -
 csmith/sa_csmith_417.c AGREE -
 csmith/sa_csmith_418.c AGREE -
 csmith/sa_csmith_419.c AGREE -
-csmith/sa_csmith_41.c AGREE -
+csmith/sa_csmith_42.c AGREE -
 csmith/sa_csmith_420.c AGREE -
 csmith/sa_csmith_421.c AGREE -
 csmith/sa_csmith_422.c AGREE -
@@ -371,7 +374,7 @@ csmith/sa_csmith_426.c AGREE -
 csmith/sa_csmith_427.c AGREE -
 csmith/sa_csmith_428.c AGREE -
 csmith/sa_csmith_429.c AGREE -
-csmith/sa_csmith_42.c AGREE -
+csmith/sa_csmith_43.c AGREE -
 csmith/sa_csmith_430.c AGREE -
 csmith/sa_csmith_431.c AGREE -
 csmith/sa_csmith_432.c AGREE -
@@ -382,7 +385,7 @@ csmith/sa_csmith_436.c AGREE -
 csmith/sa_csmith_437.c AGREE -
 csmith/sa_csmith_438.c AGREE -
 csmith/sa_csmith_439.c AGREE -
-csmith/sa_csmith_43.c AGREE -
+csmith/sa_csmith_44.c AGREE O2_AGREE
 csmith/sa_csmith_440.c AGREE -
 csmith/sa_csmith_441.c AGREE -
 csmith/sa_csmith_442.c AGREE -
@@ -393,7 +396,7 @@ csmith/sa_csmith_446.c AGREE -
 csmith/sa_csmith_447.c AGREE -
 csmith/sa_csmith_448.c AGREE -
 csmith/sa_csmith_449.c AGREE -
-csmith/sa_csmith_44.c AGREE O2_AGREE
+csmith/sa_csmith_45.c AGREE -
 csmith/sa_csmith_450.c AGREE -
 csmith/sa_csmith_451.c AGREE -
 csmith/sa_csmith_452.c AGREE O2_AGREE
@@ -404,7 +407,7 @@ csmith/sa_csmith_456.c AGREE -
 csmith/sa_csmith_457.c AGREE -
 csmith/sa_csmith_458.c AGREE -
 csmith/sa_csmith_459.c AGREE -
-csmith/sa_csmith_45.c AGREE -
+csmith/sa_csmith_46.c AGREE -
 csmith/sa_csmith_460.c AGREE -
 csmith/sa_csmith_461.c AGREE -
 csmith/sa_csmith_462.c AGREE -
@@ -415,9 +418,8 @@ csmith/sa_csmith_466.c AGREE -
 csmith/sa_csmith_467.c AGREE -
 csmith/sa_csmith_468.c AGREE -
 csmith/sa_csmith_469.c AGREE -
-csmith/sa_csmith_46.c AGREE -
-csmith/sa_csmith_470.c AGREE -
 csmith/sa_csmith_47.c AGREE -
+csmith/sa_csmith_470.c AGREE -
 csmith/sa_csmith_48.c AGREE -
 csmith/sa_csmith_49.c AGREE O2_AGREE
 csmith/sa_csmith_50.c AGREE O2_AGREE
@@ -440,6 +442,7 @@ csmith/sa_csmith_66.c AGREE -
 csmith/sa_csmith_67.c AGREE -
 csmith/sa_csmith_68.c AGREE -
 csmith/sa_csmith_69.c AGREE -
+csmith/sa_csmith_7.c AGREE -
 csmith/sa_csmith_70.c SKIP_LEAN_TIMEOUT -
 csmith/sa_csmith_71.c AGREE -
 csmith/sa_csmith_72.c AGREE -
@@ -450,7 +453,7 @@ csmith/sa_csmith_76.c AGREE -
 csmith/sa_csmith_77.c AGREE -
 csmith/sa_csmith_78.c AGREE -
 csmith/sa_csmith_79.c AGREE -
-csmith/sa_csmith_7.c AGREE -
+csmith/sa_csmith_8.c AGREE -
 csmith/sa_csmith_80.c AGREE -
 csmith/sa_csmith_81.c AGREE -
 csmith/sa_csmith_82.c AGREE -
@@ -461,7 +464,7 @@ csmith/sa_csmith_86.c AGREE -
 csmith/sa_csmith_87.c AGREE -
 csmith/sa_csmith_88.c AGREE -
 csmith/sa_csmith_89.c AGREE -
-csmith/sa_csmith_8.c AGREE -
+csmith/sa_csmith_9.c AGREE -
 csmith/sa_csmith_90.c AGREE -
 csmith/sa_csmith_91.c AGREE O2_AGREE
 csmith/sa_csmith_92.c AGREE O2_AGREE
@@ -472,7 +475,6 @@ csmith/sa_csmith_96.c AGREE -
 csmith/sa_csmith_97.c AGREE O2_AGREE
 csmith/sa_csmith_98.c AGREE -
 csmith/sa_csmith_99.c AGREE -
-csmith/sa_csmith_9.c AGREE -
 csmith/sia_csmith_001.c AGREE -
 csmith/sia_csmith_002.c AGREE -
 csmith/sia_csmith_003.c AGREE -
@@ -572,6 +574,7 @@ csmith/sia_csmith_096.c AGREE -
 csmith/sia_csmith_097.c AGREE -
 csmith/sia_csmith_098.c AGREE -
 csmith/sia_csmith_099.c AGREE -
+csmith/sia_csmith_100.c AGREE -
 csmith/sia_csmith_1000.c AGREE -
 csmith/sia_csmith_1001.c AGREE -
 csmith/sia_csmith_1002.c AGREE -
@@ -582,7 +585,7 @@ csmith/sia_csmith_1006.c AGREE O2_AGREE
 csmith/sia_csmith_1007.c AGREE -
 csmith/sia_csmith_1008.c AGREE O2_AGREE
 csmith/sia_csmith_1009.c AGREE -
-csmith/sia_csmith_100.c AGREE -
+csmith/sia_csmith_101.c AGREE -
 csmith/sia_csmith_1010.c AGREE -
 csmith/sia_csmith_1011.c AGREE -
 csmith/sia_csmith_1012.c AGREE -
@@ -593,7 +596,7 @@ csmith/sia_csmith_1016.c AGREE -
 csmith/sia_csmith_1017.c AGREE -
 csmith/sia_csmith_1018.c AGREE -
 csmith/sia_csmith_1019.c AGREE O2_AGREE
-csmith/sia_csmith_101.c AGREE -
+csmith/sia_csmith_102.c AGREE -
 csmith/sia_csmith_1020.c AGREE O2_AGREE
 csmith/sia_csmith_1021.c AGREE -
 csmith/sia_csmith_1022.c AGREE -
@@ -604,7 +607,7 @@ csmith/sia_csmith_1026.c AGREE -
 csmith/sia_csmith_1027.c AGREE -
 csmith/sia_csmith_1028.c AGREE -
 csmith/sia_csmith_1029.c AGREE -
-csmith/sia_csmith_102.c AGREE -
+csmith/sia_csmith_103.c AGREE -
 csmith/sia_csmith_1030.c AGREE -
 csmith/sia_csmith_1031.c AGREE -
 csmith/sia_csmith_1032.c AGREE -
@@ -615,7 +618,7 @@ csmith/sia_csmith_1036.c AGREE -
 csmith/sia_csmith_1037.c AGREE -
 csmith/sia_csmith_1038.c AGREE -
 csmith/sia_csmith_1039.c AGREE -
-csmith/sia_csmith_103.c AGREE -
+csmith/sia_csmith_104.c AGREE -
 csmith/sia_csmith_1040.c AGREE -
 csmith/sia_csmith_1041.c AGREE -
 csmith/sia_csmith_1042.c AGREE -
@@ -626,7 +629,7 @@ csmith/sia_csmith_1046.c AGREE -
 csmith/sia_csmith_1047.c AGREE O2_AGREE
 csmith/sia_csmith_1048.c AGREE -
 csmith/sia_csmith_1049.c AGREE O2_AGREE
-csmith/sia_csmith_104.c AGREE -
+csmith/sia_csmith_105.c AGREE -
 csmith/sia_csmith_1050.c AGREE -
 csmith/sia_csmith_1051.c AGREE -
 csmith/sia_csmith_1052.c AGREE -
@@ -637,7 +640,7 @@ csmith/sia_csmith_1056.c AGREE -
 csmith/sia_csmith_1057.c AGREE -
 csmith/sia_csmith_1058.c SKIP_LEAN_TIMEOUT -
 csmith/sia_csmith_1059.c AGREE -
-csmith/sia_csmith_105.c AGREE -
+csmith/sia_csmith_106.c AGREE -
 csmith/sia_csmith_1060.c AGREE -
 csmith/sia_csmith_1061.c AGREE O2_AGREE
 csmith/sia_csmith_1062.c AGREE O2_AGREE
@@ -648,7 +651,7 @@ csmith/sia_csmith_1066.c AGREE -
 csmith/sia_csmith_1067.c AGREE -
 csmith/sia_csmith_1068.c AGREE -
 csmith/sia_csmith_1069.c AGREE O2_AGREE
-csmith/sia_csmith_106.c AGREE -
+csmith/sia_csmith_107.c AGREE -
 csmith/sia_csmith_1070.c AGREE -
 csmith/sia_csmith_1071.c AGREE -
 csmith/sia_csmith_1072.c AGREE -
@@ -659,7 +662,7 @@ csmith/sia_csmith_1076.c AGREE -
 csmith/sia_csmith_1077.c AGREE -
 csmith/sia_csmith_1078.c AGREE -
 csmith/sia_csmith_1079.c AGREE -
-csmith/sia_csmith_107.c AGREE -
+csmith/sia_csmith_108.c AGREE -
 csmith/sia_csmith_1080.c AGREE O2_AGREE
 csmith/sia_csmith_1081.c AGREE -
 csmith/sia_csmith_1082.c AGREE -
@@ -670,7 +673,7 @@ csmith/sia_csmith_1086.c AGREE -
 csmith/sia_csmith_1087.c AGREE -
 csmith/sia_csmith_1088.c AGREE -
 csmith/sia_csmith_1089.c AGREE -
-csmith/sia_csmith_108.c AGREE -
+csmith/sia_csmith_109.c AGREE -
 csmith/sia_csmith_1090.c AGREE -
 csmith/sia_csmith_1091.c AGREE O2_AGREE
 csmith/sia_csmith_1092.c AGREE O2_AGREE
@@ -681,7 +684,7 @@ csmith/sia_csmith_1096.c AGREE -
 csmith/sia_csmith_1097.c AGREE -
 csmith/sia_csmith_1098.c AGREE -
 csmith/sia_csmith_1099.c AGREE -
-csmith/sia_csmith_109.c AGREE -
+csmith/sia_csmith_110.c AGREE -
 csmith/sia_csmith_1100.c AGREE -
 csmith/sia_csmith_1101.c AGREE -
 csmith/sia_csmith_1102.c AGREE -
@@ -692,7 +695,7 @@ csmith/sia_csmith_1106.c AGREE O2_AGREE
 csmith/sia_csmith_1107.c AGREE -
 csmith/sia_csmith_1108.c AGREE -
 csmith/sia_csmith_1109.c AGREE -
-csmith/sia_csmith_110.c AGREE -
+csmith/sia_csmith_111.c AGREE -
 csmith/sia_csmith_1110.c AGREE -
 csmith/sia_csmith_1111.c AGREE -
 csmith/sia_csmith_1112.c AGREE -
@@ -703,7 +706,7 @@ csmith/sia_csmith_1116.c AGREE -
 csmith/sia_csmith_1117.c AGREE -
 csmith/sia_csmith_1118.c AGREE -
 csmith/sia_csmith_1119.c AGREE -
-csmith/sia_csmith_111.c AGREE -
+csmith/sia_csmith_112.c AGREE -
 csmith/sia_csmith_1120.c AGREE -
 csmith/sia_csmith_1121.c AGREE -
 csmith/sia_csmith_1122.c AGREE -
@@ -714,7 +717,7 @@ csmith/sia_csmith_1126.c AGREE -
 csmith/sia_csmith_1127.c AGREE -
 csmith/sia_csmith_1128.c AGREE -
 csmith/sia_csmith_1129.c AGREE -
-csmith/sia_csmith_112.c AGREE -
+csmith/sia_csmith_113.c AGREE -
 csmith/sia_csmith_1130.c AGREE -
 csmith/sia_csmith_1131.c AGREE -
 csmith/sia_csmith_1132.c AGREE O2_AGREE
@@ -725,7 +728,7 @@ csmith/sia_csmith_1136.c AGREE -
 csmith/sia_csmith_1137.c AGREE -
 csmith/sia_csmith_1138.c AGREE -
 csmith/sia_csmith_1139.c AGREE -
-csmith/sia_csmith_113.c AGREE -
+csmith/sia_csmith_114.c AGREE -
 csmith/sia_csmith_1140.c AGREE -
 csmith/sia_csmith_1141.c AGREE -
 csmith/sia_csmith_1142.c AGREE -
@@ -736,7 +739,7 @@ csmith/sia_csmith_1146.c AGREE -
 csmith/sia_csmith_1147.c AGREE -
 csmith/sia_csmith_1148.c AGREE -
 csmith/sia_csmith_1149.c AGREE -
-csmith/sia_csmith_114.c AGREE -
+csmith/sia_csmith_115.c AGREE -
 csmith/sia_csmith_1150.c AGREE -
 csmith/sia_csmith_1151.c AGREE -
 csmith/sia_csmith_1152.c AGREE -
@@ -747,7 +750,7 @@ csmith/sia_csmith_1156.c AGREE -
 csmith/sia_csmith_1157.c AGREE -
 csmith/sia_csmith_1158.c AGREE O2_AGREE
 csmith/sia_csmith_1159.c AGREE -
-csmith/sia_csmith_115.c AGREE -
+csmith/sia_csmith_116.c AGREE -
 csmith/sia_csmith_1160.c AGREE -
 csmith/sia_csmith_1161.c AGREE -
 csmith/sia_csmith_1162.c AGREE -
@@ -758,7 +761,7 @@ csmith/sia_csmith_1166.c AGREE -
 csmith/sia_csmith_1167.c AGREE -
 csmith/sia_csmith_1168.c AGREE -
 csmith/sia_csmith_1169.c AGREE -
-csmith/sia_csmith_116.c AGREE -
+csmith/sia_csmith_117.c AGREE -
 csmith/sia_csmith_1170.c AGREE -
 csmith/sia_csmith_1171.c AGREE -
 csmith/sia_csmith_1172.c AGREE -
@@ -769,7 +772,7 @@ csmith/sia_csmith_1176.c AGREE -
 csmith/sia_csmith_1177.c AGREE -
 csmith/sia_csmith_1178.c AGREE -
 csmith/sia_csmith_1179.c AGREE -
-csmith/sia_csmith_117.c AGREE -
+csmith/sia_csmith_118.c AGREE -
 csmith/sia_csmith_1180.c AGREE -
 csmith/sia_csmith_1181.c AGREE -
 csmith/sia_csmith_1182.c AGREE -
@@ -780,11 +783,10 @@ csmith/sia_csmith_1186.c AGREE -
 csmith/sia_csmith_1187.c AGREE -
 csmith/sia_csmith_1188.c AGREE -
 csmith/sia_csmith_1189.c AGREE -
-csmith/sia_csmith_118.c AGREE -
+csmith/sia_csmith_119.c AGREE -
 csmith/sia_csmith_1190.c AGREE -
 csmith/sia_csmith_1191.c AGREE -
 csmith/sia_csmith_1192.c AGREE -
-csmith/sia_csmith_119.c AGREE -
 csmith/sia_csmith_120.c AGREE -
 csmith/sia_csmith_121.c AGREE O2_AGREE
 csmith/sia_csmith_122.c AGREE -
@@ -1835,8 +1837,8 @@ tests/immaculate/nolibc/g1-ge-funptr.c SKIP_LEAN_FAIL -
 tests/immaculate/nolibc/g1-lt-null.c SKIP_LEAN_FAIL -
 tests/immaculate/nolibc/g3-realloc-dead.c SKIP_UB -
 tests/immaculate/nolibc/g3-realloc-non-heap.c SKIP_UB -
-tests/immaculate/nolibc/g4-bswap64-overflow.c SKIP_LEAN_CRASH -
 tests/immaculate/nolibc/g4-bswap-controls.c AGREE -
+tests/immaculate/nolibc/g4-bswap64-overflow.c SKIP_LEAN_CRASH -
 tests/immaculate/nolibc/g4-ctz-nonzero.c AGREE -
 tests/immaculate/nolibc/g4-ffs-intmin.c AGREE -
 tests/immaculate/nolibc/g4-ffs-negative.c AGREE -
@@ -1850,6 +1852,13 @@ tests/immaculate/nolibc/s9-enum-signedness.c AGREE -
 tests/immaculate/nolibc/s9-enum-sizeof-route.c AGREE -
 tests/immaculate/nolibc/trap-bool-uninit.c SKIP_UB -
 tests/immaculate/nolibc/trap-bool-write.c SKIP_UB -
+tests/immaculate/nolibc/zd-d1-float-inf-to-int-ub.c SKIP_UB -
+tests/immaculate/nolibc/zd-d2-ptr-to-int-narrow-ub.c SKIP_UB -
+tests/immaculate/nolibc/zd-d5-device-range-load.c TRIAGED_UB -
+tests/immaculate/nolibc/zd-da-align16.c TRIAGED_ADDR -
+tests/immaculate/nolibc/zd-da-offset.c TRIAGED_ADDR -
+tests/immaculate/nolibc/zd-e2-ptr-string-literals.c SKIP_GCC_STDOUT -
+tests/immaculate/nolibc/zd-z2m02-device-funptr-call.c SKIP_LEAN_CRASH -
 tests/minimal/001-return-literal.c AGREE -
 tests/minimal/002-return-zero.c AGREE O2_AGREE
 tests/minimal/003-arith-add.c AGREE -

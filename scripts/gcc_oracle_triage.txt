@@ -37,3 +37,10 @@ tests/debug/intfromptr-07-check-addr.c TRIAGED_ADDR gcc=236 lean={244} observes 
 tests/debug/intfromptr-08-full-addr.c TRIAGED_ADDR gcc=193 lean={130} observes (long)&a / 1000000000 of a stack local (native stack ~0x7ffd..., allocator addresses differ)
 tests/debug/intfromptr-09-first-alloc.c TRIAGED_ADDR gcc=236 lean={244} observes (long)&a % 1000000 of a stack local
 tests/debug/intfromptr-10-minimal.c TRIAGED_ADDR gcc=244 lean={244} observes (int)((unsigned long)&a % 1000000) of a stack local (values coincide under the normalized stack — layout coincidence, still an observer)
+#
+# [AGENT 2026-09-03] zero-discrepancy Z1 (record docs/2026-09-03_zero-discrepancy-Z1-record.md
+# §9): the Z1 pins added to tests/immaculate/nolibc/ enter this lane's corpus.
+# Three are divergence-class observers, not semantics disagreements:
+tests/immaculate/nolibc/zd-da-offset.c TRIAGED_ADDR gcc=64 lean={8} observes (uintptr_t)&x - (uintptr_t)malloc(0) in bytes (mod 256): Cerberus's abstract allocator (8-aligned malloc region directly below the size_t argument temporary; = the oracle's 8 since Z-76) vs glibc's heap-to-stack distance — layout on both sides, D2 (design §2.3 "allocation addresses"/max_alignment row)
+tests/immaculate/nolibc/zd-da-align16.c TRIAGED_ADDR gcc=3 lean={2} observes malloc(0) % 16 == 0 (+2 for &x % 16 == 0): Cerberus's IvMaxAlignment = DefaultImpl.max_alignment = 8 (core_parser.mly:1536-1537; = the oracle since Z-76) vs glibc's 16-byte malloc alignment — D2 (design §2.3 max_alignment row: gcc's 16 vs Cerberus's 8; the gcc lane referees ISO values, not layout)
+tests/immaculate/nolibc/zd-d5-device-range-load.c TRIAGED_UB gcc=139 lean={3} `int *p = (int*)0xABC; int y = *p;` is UB natively (invalid pointer deref, SIGSEGV exit 139) but DEFINED by the Cerberus memory model: 0xABC lies in its hard-coded device_ranges (impl_mem.ml:620-624), ptrfromint mints Prov_device (:2165-2167) and the load succeeds via is_within_device (:1611-1617) — the oracle AND Lean answer Specified(3) (Z-06 mirror). D3(a) per design §4: UB the model deliberately defines, cite given; the ranges themselves are a tray question (charter Z-06)
