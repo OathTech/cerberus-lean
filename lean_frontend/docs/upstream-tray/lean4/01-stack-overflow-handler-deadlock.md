@@ -1,173 +1,233 @@
-# Draft — Lean 4 runtime: stack overflow on the `lean_run_main` thread can deadlock inside the SIGSEGV handler instead of aborting
+# Draft — Lean 4 runtime: the stack-overflow `SIGSEGV` handler calls `pthread_getattr_np`, which mallocs; an overflow inside glibc `malloc` therefore deadlocks silently instead of aborting
 
-Target: `leanprover/lean4` (runtime). Drafted 2026-09-02 (arc/mem-scale
-S0); NOT filed — filing is the operator's call (network + GitHub).
-Classification: **TRUE BUG (runtime; fail-open by silence)** — a stack
-overflow that should end the process with "Stack overflow detected.
-Aborting." instead leaves it blocked forever on a futex with no output
-and no exit. Evidence: `lean_frontend/docs/2026-09-01_mem-scale-profile.md`
-§6.2–6.3 (first-hand strace, size bisection, stack-size experiment).
+Target: `leanprover/lean4` (runtime, `src/runtime/stack_overflow.cpp`).
+Drafted 2026-09-02, rewritten 2026-09-03 with a standalone reproducer;
+NOT filed — filing is the operator's call (network + GitHub).
+Classification [AGENT 2026-09-03]: **TRUE BUG (runtime; silent hang in
+place of the designed abort), NOT FIXED** — reproduced on v4.28.0,
+v4.32.2, v4.33.0 and nightly-2026-08-02 (4.34.0-nightly); the offending
+call is present in every toolchain inspected back to v4.13.0.
+Reproducer + verbatim outputs: `lean4/repro/` (this directory); full
+experiment log: `lean_frontend/docs/2026-09-03_lean4-runtime-repro-record.md`.
 
-## Environment
+## Summary
 
-- Lean `leanprover/lean4:v4.32.2` (release toolchain, x86_64 Linux,
-  glibc; kernel 7.0.0), executable built by `lake build` from a
-  compiled-to-C Lean program (this project's `cerberus-lean` driver).
-- Deterministic: 8/8 reproductions across two sessions (5 standalone
-  runs + 3 sweep runs), independent of `LEAN_ABORT_ON_PANIC`.
+The runtime installs `segv_handler` (on an alternate signal stack) to
+turn a guard-page fault into `Stack overflow detected. Aborting.` +
+`abort()`. To decide whether the fault address is in the guard page the
+handler calls `pthread_attr_init` / `pthread_self` /
+`pthread_getattr_np` / `pthread_attr_getstack` / `sysconf` FROM INSIDE
+THE SIGNAL HANDLER, and only then `write(2, msg)` and `abort()` (call
+sequence read off `libleanrt.a`'s `stack_overflow.cpp.o`, identical in
+every toolchain checked). `pthread_getattr_np` is not async-signal-safe:
+on glibc 2.39 it takes the thread descriptor's low-level lock and calls
+`realloc`/`free` for the affinity cpuset, and for the initial thread it
+additionally `fopen`s `/proc/self/maps` (`getline`, `sscanf`, `fclose`).
+If the overflowing frame was inside glibc `malloc`/`realloc`/`free` — the
+arena mutex held — the handler's own allocation waits on that mutex
+forever. Nothing is printed (the `write` comes after), nothing exits.
 
-## What happens
+Any program whose deepest recursion frame allocates through glibc
+`malloc` hits this deterministically; in Lean that is every bignum
+(`Nat`/`Int` beyond 63 bits: GMP uses `__gmp_default_reallocate` →
+`realloc`) operation, since the glibc frames are then the deepest point
+of every recursion level.
 
-A deeply non-tail-recursive computation (one closure-application frame
-per list element, ~8 × 10^6 elements) overflows the 1 GiB stack of the
-thread that `lean_run_main` spawns to run `main`. The runtime's
-guard-page `SIGSEGV` fires as designed — and then the handler blocks on
-a contended lock and never returns. Both threads sit in `futex` until
-killed. `strace -f -e trace=futex,rt_sigaction,mmap,mprotect`, excerpt
-verbatim (tid 2456378 = process main thread, 2456380 = the runtime
-thread running `main`):
+## Standalone reproducer (primary evidence)
 
-```
-2456378 mmap(NULL, 1073745920, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_STACK, -1, 0) = 0x7f316bfff000
-2456378 mprotect(0x7f316c000000, 1073741824, PROT_READ|PROT_WRITE) = 0
-2456378 futex(0x7f31abfff990, FUTEX_WAIT_BITSET|FUTEX_CLOCK_REALTIME, 2456380, NULL, FUTEX_BITSET_MATCH_ANY <unfinished ...>
-2456380 mmap(0x415e8000000, 1073741824, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE, -1, 0) = 0x415e8000000
-2456380 --- SIGSEGV {si_signo=SIGSEGV, si_code=SEGV_ACCERR, si_addr=0x7f316bfffff8} ---
-2456380 futex(0x7f3164000030, FUTEX_WAIT_PRIVATE, 2, NULL <unfinished ...>
-2456378 <... futex resumed>)            = ? ERESTARTSYS (To be restarted if SA_RESTART is set)
-2456380 <... futex resumed>)            = ? ERESTARTSYS (To be restarted if SA_RESTART is set)
-```
-
-Reading: the 1 GiB `MAP_STACK` region has its guard page at
-`0x7f316bfff000–0x7f316c000000`; the fault address `0x7f316bfffff8` is
-8 bytes inside that page — a genuine stack overflow. The faulting
-thread's very next syscall, from inside the signal handler, is a
-`FUTEX_WAIT_PRIVATE` on a lock word in state 2 (glibc lowlevellock
-"locked with waiters") that is never released. The string "Stack
-overflow detected. Aborting." IS present in `libleanshared.so` and is
-printed on the ordinary overflow path (see "What works" below), so the
-handler is being entered but blocks before/while printing.
-
-Working hypothesis (not confirmed — we could not attach a debugger in
-this sandbox): the fault landed while the thread held a non-reentrant
-lock (the glibc malloc arena lock or a stdio `FILE` lock are the usual
-suspects; `lean_alloc_object` for objects above the small-object limit
-goes through `malloc`), and the handler's report path re-acquires the
-same lock — a classic async-signal-safety violation in a SIGSEGV
-handler. The handler should use only async-signal-safe calls
-(`write(2)` to a pre-formatted buffer, then `_exit`/`abort`), never
-`std::cerr`/`fprintf`/anything that may allocate or lock.
-
-## Onset moves with the stack size (so it is the overflow path, not a resource limit)
-
-Size bisection on the same program shape (`char g[N]` static
-zero-initialised array; our front end maps over its N elements with a
-non-tail monadic `mapM`), Lean `--first`, rows verbatim from
-`tests/mem-scale-probes/results/2026-09-01_hang-bisect.tsv` and
-`…/2026-09-02_hang-stackexp.txt`:
-
-```
-a_zero_global_7000000	nolibc	lean-first	0	20.86	4951452	VAL:Specified(7)	-
-a_zero_global_8000000	nolibc	lean-first	124	90.20	2658428	NONE	TIMEOUT(90s);
-stackexp	8M	LEAN_STACK_SIZE_KB=1048576	Command exited with non-zero status 124 wall=90.09 maxrss=2658956 exit=124
-stackexp	8M	LEAN_STACK_SIZE_KB=4194304	Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"} wall=22.50 maxrss=5967020 exit=0
-stackexp	5M	LEAN_STACK_SIZE_KB=2048	Command exited with non-zero status 124 wall=90.00 maxrss=235232 exit=124
-stackexp	5M	LEAN_STACK_SIZE_KB=512	Command exited with non-zero status 124 wall=90.00 maxrss=231716 exit=124
-```
-
-At the default 1 GiB stack 7 M elements complete and 8 M hang; at 4 GiB
-(`LEAN_STACK_SIZE_KB=4194304`) 8 M completes; at 2 MB / 0.5 MB the 5 M
-case (which completes at the default) hangs instead — parking after
-~0.2 GB RSS, i.e. very early. The hung processes burn ~3–4 s of CPU
-and then zero (`HANG(cpu 3.29s of 400.12s wall)` under our harness's
-classifier); RSS plateaus at a size-independent ~2.7 GB.
-
-## What works (the loud path) — standalone attempt, negative result
-
-A minimal standalone program with the same recursion shape overflows
-and aborts LOUDLY as designed, so the deadlock is NOT the plain
-overflow path; it needs the fault to land while a lock is held. Kept
-here because it is the shape the report is about and because the
-negative result narrows the search:
+`lean4/repro/OverflowInMalloc.lean` — 30 lines, no dependencies, built
+with `lean -c` + `leanc -O3` (`repro/build.sh`):
 
 ```lean
--- Repro.lean — lakefile: [[lean_exe]] name = "repro", root = "Repro"
-structure M (α : Type) where
-  run : Nat → Except String (α × Nat)
-instance : Inhabited (M α) := ⟨⟨fun _ => .error "uninhabited"⟩⟩
+def big : Nat := 2 ^ 10000   -- 157 limbs = 1256 bytes of limb storage
 
-@[inline] def M.pure (a : α) : M α := ⟨fun s => .ok (a, s)⟩
-def M.bind (m : M α) (f : α → M β) : M β :=
-  ⟨fun s => match m.run s with
-    | .error e => .error e
-    | .ok (a, s') => (f a).run s'⟩
-
-partial def mapM (f : α → M β) : List α → M (List β)
-  | [] => M.pure []
-  | x :: xs => M.bind (f x) fun z => M.bind (mapM f xs) fun zs => M.pure (z :: zs)
+@[export repro_deep] partial def deep (n : Nat) (x : Nat) : Nat :=
+  if n == 0 then x
+  else deep (n - 1) (x + 1) + 1
 
 def main (args : List String) : IO Unit := do
-  let n := args.head!.toNat!
-  match (mapM (fun (i : Nat) => M.pure (i + 1)) (List.replicate n 0)).run 0 with
-  | .ok (l, _) => IO.println s!"ok {l.length}"
-  | .error e => IO.println s!"error {e}"
+  let n := (args.head? >>= String.toNat?).getD 1000000000
+  IO.println s!"depth {n}"
+  (← IO.getStdout).flush
+  IO.println s!"result {deep n big}"
 ```
 
+(`@[export]` makes the parameters owned so each frame frees its bignum
+before recursing — memory stays constant; the bignum is wider than
+glibc's tcache limit so every `realloc`/`free` takes the arena lock.)
+`repro/PlainRecursion.lean` is the same recursion with `deep n 0` — no
+allocation per frame — and is the control.
+
+Lean 4.32.2, default settings (1 GiB stack for the thread running
+`main`), `repro/run.sh 60 ./<binary>`, verbatim:
+
 ```
-$ .lake/build/bin/repro 1000000
-ok 1000000
-$ .lake/build/bin/repro 10000000
+$ ./PlainRecursion
+depth 1000000000
 
 Stack overflow detected. Aborting.
-Command terminated by signal 6
+.../run.sh: line 15: 1812202 Aborted                 (core dumped) "$@"
+exit=134
+
+$ ./OverflowInMalloc
+depth 1000000000
+TIMEOUT after 60s; threads of pid 1812250:
+  tid=1812250 state=S utime_ticks=0 stime_ticks=0 wchan=futex_do_wait
+  tid=1812252 state=S utime_ticks=0 stime_ticks=0 wchan=ep_poll
+  tid=1812253 state=S utime_ticks=590 stime_ticks=34 wchan=futex_do_wait
+  VmRSS:	 1057264 kB
+  Threads:	3
+exit=124
 ```
 
-A variant allocating a large `ByteArray` (8 KB–70 KB, malloc path) per
-element also did not deadlock in 3 trials each (it ran out the 60 s
-timeout page-faulting at 35–94 GB RSS, cpu/wall 0.4–0.9 — slow, not
-hung). So the deadlock needs a specific interleaving that our driver
-hits deterministically and this toy does not.
+The thread running `main` burns 5.9 s of CPU (derived: 590 ticks at
+CLK_TCK 100) recursing, then parks in `futex` with the process alive and
+silent.
 
-## Reproducer (in-project, deterministic)
+### Mechanism, first-hand (`strace -f -k`)
 
-Until a standalone trigger is isolated, the reproducer is this
-project's driver at the commit named in the arc record
-(`lean_frontend/docs/2026-09-02_mem-scale-record.md`, "pre-fix
-binary"), which the same record shows COMPLETING after the recursion
-is made tail-position (the arc's S1' fix) — i.e. the recursion is ours
-to fix, the silent handler is the runtime's:
+`LEAN_STACK_SIZE_KB=65536 strace -f -k -e trace=futex,rt_sigaction,mprotect ./OverflowInMalloc`,
+excerpt verbatim (tid 1800904 runs `main`; the first stack is the
+faulting context, the second the handler's):
 
 ```
-$ cat tests/mem-scale-probes/probes/a_zero_global_10000000.c
-char g[10000000];
-int main(void) {
-  g[10000000 - 1] = 7;
-  return g[10000000 - 1] + g[0];
-}
-$ _build/default/backend/driver/main.exe --runtime=_build/install/default --cabs-json a_zero_global_10000000.c > g.json
-$ timeout 400s lean_frontend/.lake/build/bin/cerberus-lean --batch --first g.json
-(no output; exit 124 after 400 s; ~3.3 s of CPU consumed in total)
+1800904 --- SIGSEGV {si_signo=SIGSEGV, si_code=SEGV_ACCERR, si_addr=0x73a14bfdfff8} ---
+ > /usr/lib/x86_64-linux-gnu/libc.so.6(__default_morecore+0xd5f) [0xab84f]
+ > /usr/lib/x86_64-linux-gnu/libc.so.6(__default_morecore+0x2635) [0xad125]
+ > /usr/lib/x86_64-linux-gnu/libc.so.6(realloc+0x146) [0xae2e6]
+ > .../OverflowInMalloc(__gmp_default_reallocate+0x14) [0x193864]
+1800904 futex(0x73a144000030, FUTEX_WAIT_PRIVATE, 2, NULL <unfinished ...>
+1800902 <... futex resumed>)            = ? ERESTARTSYS (To be restarted if SA_RESTART is set)
+ > /usr/lib/x86_64-linux-gnu/libc.so.6(__nptl_death_event+0x181) [0x98e51]
+ > /usr/lib/x86_64-linux-gnu/libc.so.6(pthread_join+0x173) [0x9e883]
+ > .../OverflowInMalloc(lean_run_main+0x107) [0x186427]
+1800904 <... futex resumed>)            = ? ERESTARTSYS (To be restarted if SA_RESTART is set)
+ > /usr/lib/x86_64-linux-gnu/libc.so.6(__lll_lock_wait_private+0x2b) [0x98feb]
+ > /usr/lib/x86_64-linux-gnu/libc.so.6(malloc+0x2d0) [0xada20]
+ > /usr/lib/x86_64-linux-gnu/libc.so.6(pthread_getattr_np+0x12a) [0x9e05a]
+ > .../OverflowInMalloc(segv_handler+0x35) [0x201ca5]
 ```
 
-For contrast, OCaml on the equivalent recursion with a limited stack
-(`OCAMLRUNPARAM=l=200000`) fails in 0.03 s with a backtrace (exit 125):
-same ceiling class, opposite loudness.
+- Faulting frame: glibc `realloc` → `_int_realloc`/`_int_malloc` (the
+  `__default_morecore+…` names are strace's nearest-exported-symbol
+  labels for glibc's unexported malloc internals), called from GMP's
+  `__gmp_default_reallocate` for the bignum add. `si_addr` is 8 bytes
+  inside the guard page of the 64 MiB thread stack
+  (`mprotect(0x73a14bfe0000, 67239936, PROT_READ|PROT_WRITE)` earlier in
+  the same trace).
+- Lock: the mutex of the thread's glibc malloc arena. The arena's heap
+  is at `0x73a144000000` (created by the thread's first `malloc`, visible
+  in the trace as `mprotect(0x73a144000000, 135168, …)` from
+  `stack_guard::stack_guard()`); `struct malloc_state` follows the
+  0x30-byte `heap_info`, so `arena->mutex` is at `+0x30` =
+  `0x73a144000030`, and `2` is glibc's "locked with waiters".
+- Handler frame: `segv_handler+0x35` → `pthread_getattr_np+0x12a` →
+  `malloc` (the `realloc(NULL, 32)` for the cpuset) →
+  `__lll_lock_wait_private`.
+
+Initial-thread variant (`LEAN_MAIN_USE_THREAD=0`, or Lean ≤ 4.28 where
+`main` still runs on the initial thread): the fault is `SEGV_MAPERR`
+below the 8 MiB main stack and the handler blocks via
+`pthread_getattr_np+0x266` → `fopen64` → `malloc` →
+`__lll_lock_wait_private` on `main_arena.mutex`
+(`futex(0x79f2ef603ac0, FUTEX_WAIT_PRIVATE, 2, NULL)`; full excerpt in
+`repro/README.md`).
+
+### Toolchain matrix (same source, same recipe, default settings, one run each)
+
+| Toolchain | `PlainRecursion` | `OverflowInMalloc` |
+|-----------|------------------|--------------------|
+| v4.28.0 (`main` on the initial thread, 8 MiB) | abort, exit 134 | HANG: exit 124, utime_ticks=5, 2 threads, VmRSS 15240 kB |
+| v4.32.2 | abort, exit 134 | HANG: exit 124, utime_ticks=590, VmRSS 1057264 kB |
+| v4.33.0 | abort, exit 134 | HANG: exit 124, utime_ticks=599, VmRSS 1057348 kB |
+| nightly-2026-08-02 (4.34.0-nightly) | abort, exit 134 | HANG: exit 124, utime_ticks=580, VmRSS 1057260 kB |
+
+Not a regression range: the defect is present in the oldest and the
+newest toolchain we can run. The `segv_handler` → `pthread_getattr_np`
+call sequence is identical in the `stack_overflow.cpp.o` of every
+toolchain from v4.13.0 to the nightly (by `objdump -r`).
+
+### What decides hang vs. abort (variants, Lean 4.32.2, `repro/Variants.lean`)
+
+| Per-frame work | Outcome |
+|----------------|---------|
+| none (`plain`) | abort, exit 134 |
+| bignum add (`bignum`) | HANG |
+| bignum add on a `Task.spawn` worker thread (`task`) | HANG |
+| bignum add through a function-typed monad, one closure application per bind (`cps`, 64 MiB stack) | HANG |
+| fresh 2 KB `ByteArray` per frame — Lean's own allocator, mimalloc (`bytes`) | abort, exit 134 |
+| `IO.Ref.modify` per frame (`ref`) | abort, exit 134 |
+| `OverflowInMalloc` with `LEAN_STACK_SIZE_KB=8192`, or built `-O0` | HANG |
+| `lean --run OverflowInMalloc.lean` (interpreter) | `deep recursion was detected at 'interpreter'`, exit 1 — the interpreter's own depth check fires first |
+
+So neither the recursion shape, the thread, the stack size nor the
+optimisation level matters; only whether the frame that touches the guard
+page holds glibc's arena lock. (Which frame that is depends on the
+per-level stack layout — which is why, in our own program, a rebuild
+that changed frame sizes moved the SAME overflow from a clean abort to a
+hang: see the secondary evidence.)
+
+## Secondary evidence: the program in which it was found
+
+This project's Lean-compiled C front end, on a translation unit
+declaring `char g[10000000];`, recurses once per array element. Run
+under `strace -f -k -e trace=futex,rt_sigaction` (2026-09-03, Lean
+4.32.2, 300 s timeout, no output, exit 124), excerpt verbatim (tid
+1811517 runs `main`):
+
+```
+1811517 --- SIGSEGV {si_signo=SIGSEGV, si_code=SEGV_ACCERR, si_addr=0x7f355bfffff8} ---
+ > /usr/lib/x86_64-linux-gnu/libc.so.6(__default_morecore+0x262c) [0xad11c]
+ > /usr/lib/x86_64-linux-gnu/libc.so.6(realloc+0x146) [0xae2e6]
+ > .../cerberus-lean(__gmp_default_reallocate+0x14) [0x4d03994]
+1811517 futex(0x7f3554000030, FUTEX_WAIT_PRIVATE, 2, NULL <unfinished ...>
+1811515 <... futex resumed>)            = ? ERESTARTSYS (To be restarted if SA_RESTART is set)
+ > /usr/lib/x86_64-linux-gnu/libc.so.6(__nptl_death_event+0x181) [0x98e51]
+ > /usr/lib/x86_64-linux-gnu/libc.so.6(pthread_join+0x173) [0x9e883]
+ > .../cerberus-lean(lean_run_main+0x107) [0x4d01e37]
+1811517 <... futex resumed>)            = ? ERESTARTSYS (To be restarted if SA_RESTART is set)
+ > /usr/lib/x86_64-linux-gnu/libc.so.6(__lll_lock_wait_private+0x2b) [0x98feb]
+ > /usr/lib/x86_64-linux-gnu/libc.so.6(__libc_calloc+0x3b0) [0xaec50]
+ > /usr/lib/x86_64-linux-gnu/libc.so.6(pthread_attr_destroy+0x6b) [0x99f5b]
+ > /usr/lib/x86_64-linux-gnu/libc.so.6(pthread_attr_setaffinity_np+0x60) [0x9a2a0]
+ > /usr/lib/x86_64-linux-gnu/libc.so.6(pthread_getattr_np+0x1b8) [0x9e0e8]
+ > .../cerberus-lean(segv_handler+0x35) [0x4d7fda5]
+```
+
+Same fault site (`realloc` from `__gmp_default_reallocate`, guard page
+of the 1 GiB stack), same lock (`+0x30` of a fresh arena heap), same
+handler path — here blocking one call later, in
+`pthread_attr_setaffinity_np`'s `calloc`. This is the run recorded
+earlier by `/proc` and a futex-only strace (all threads parked, ~3 s of
+CPU, RSS plateau 2.7 GB, 8/8 reproductions across two sessions;
+`lean_frontend/docs/2026-09-01_mem-scale-profile.md` §6.3). The earlier
+observation that the onset moved with `LEAN_STACK_SIZE_KB` in both
+directions (rows in that record) is consistent: the depth is the
+program's, the silence is the handler's.
 
 ## Proposed remedy
 
-1. Make the stack-overflow `SIGSEGV` handler async-signal-safe: report
-   via `write(2)` of a static message and terminate with `_exit`/
-   `abort()`; do not allocate, do not take stdio or allocator locks. If
-   the handler currently formats through `std::cerr` (or any locked
-   stream), that is the likely culprit.
-2. Optionally, as defence in depth: a watchdog that converts "handler
-   did not terminate the process within N ms" into `abort()`, so a
-   second-order failure inside the handler can never be silent.
+1. Do not call `pthread_getattr_np` (or any allocating/locking function)
+   in `segv_handler`. Compute the thread's stack bounds once, where the
+   runtime already has a per-thread hook outside signal context — the
+   `stack_guard` constructor that installs the alternate stack for each
+   `lthread` (and `initialize_stack_overflow` for the initial thread) —
+   and keep them in a thread-local; the handler then compares
+   `info->si_addr` against the stored guard range using only plain
+   loads.
+2. Keep the report path to `write(2, static_msg, len)` + `abort()`
+   (already the case once the check passes).
+3. Defence in depth: if the handler cannot decide (no recorded bounds
+   for this thread), still `write` a fixed message and `abort()` rather
+   than restore `SIG_DFL` and return silently; and/or arm `alarm()` on
+   entry so a second-order block inside the handler terminates the
+   process.
 
 ## Provenance
 
 Found and analysed by an AI agent (Claude) working on this project's
-differential-validation harness; the strace excerpt and all measured
-rows are verbatim from recorded runs (files cited above). Per this
+differential-validation harness; the reproducer, matrix and every quoted
+trace are verbatim from runs on 2026-09-03 (Ubuntu glibc 2.39, kernel
+7.0.0-30-generic, x86_64; toolchains from `~/.elan/toolchains`). Per this
 tray's labeling policy, the filed issue body must carry an explicit
 AI-provenance note.
