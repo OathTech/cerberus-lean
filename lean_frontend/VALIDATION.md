@@ -230,8 +230,34 @@ values, the driver prints), and the concurrency stubs (temporal, the
 cmm instantiation is the mover). Known limitations are tracked in
 [TODO.md](TODO.md) (e.g. the step-runner stack ceiling).
 
-**Known, LOUD limits of the Lean driver** (both reported by the lanes,
-never absorbed as a skip; neither is a memory-model limit):
+**Known, LOUD limits of the Lean driver** (all reported by the lanes,
+never absorbed as a skip; none is a memory-model limit):
+
+- **Refused command-line flags** (zero-discrepancy Z-24/Z-25, exception
+  class (c), [USER 2026-09-03] Q7 "REFUSE now … plumbing … is not wanted"):
+  `cerberus-lean` accepts exactly `--batch | --pp-core | --parse-core`
+  (argv[0]), `--first`, `--stdin`, `--libc`/`--libc-tu`, `--call`/
+  `--call-args`, `--args`, `--trace-nodes`. Any other `--` token — the
+  oracle's `--switches=…` (semantics switches: PVI/PNVI/strict/CHERI;
+  matched default-switch mode is the harness contract), `--concurrency`
+  (not supported; the oracle's own mode is non-functional at `b9aeedcb4`,
+  `CONCURRENCY IS BROKEN`), an unknown flag, or a KNOWN flag out of its
+  canonical position — is refused loudly: `cerberus-lean: refused — <flag>:
+  <feature> … (see VALIDATION.md, zero-discrepancy Z-24)`, exit 2, never
+  treated as a file name (it used to be).
+- **`LEAN_ABORT_ON_PANIC` is required** (Z2 audit row Z2-FL-03): the driver
+  refuses to start (exit 2) unless the variable is set, because a Lean
+  `panic!` — the port's fail-stop mirror of every OCaml failwith/assert/
+  uncaught exception — would otherwise print and CONTINUE with a default
+  value (a crash-to-value conversion). Every harness sets it
+  (`scripts/common.sh run_cerberus_lean`).
+- **Zero executions from `runND`** (zero-discrepancy Z-73, RULED [USER
+  2026-09-03] Q8 = A): the driver prints `Error {msg: "cerberus-lean: runND
+  returned no executions"}` and exits 1 where the oracle prints nothing and
+  exits 0 — a DECLARED loud boundary (a silent success with no verdict is
+  the fail-open shape the working practices ban; the oracle's behaviour is
+  a tray candidate). The fuel arc's exhaustion leaf has the same shape and
+  inherits the classification.
 
 - **Fuel exhaustion is a typed, distinguished outcome** for the ND
   monad's fueled workers (the driver loop family, the memory-model ND

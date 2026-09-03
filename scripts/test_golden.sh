@@ -30,7 +30,9 @@ run_one() {
     fi
 
     local actual
-    actual=$("$CERBERUS_LEAN_BIN" "$cabs" 2>&1 || true)
+    # LEAN_ABORT_ON_PANIC: the driver REFUSES to run without it (Main.lean,
+    # zero-discrepancy Z2-FL-03) — a panic must fail-stop, never continue
+    actual=$(LEAN_ABORT_ON_PANIC=1 "$CERBERUS_LEAN_BIN" "$cabs" 2>&1 || true)
     local got
     got=$(echo "$actual" | grep -oE "return value: [-0-9]+" | awk '{print $3}' | head -1)
     local want

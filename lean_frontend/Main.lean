@@ -364,8 +364,15 @@ Deviations from OCaml (hand-written latitude, documented):
     divergences are enumerated in CerbPP.lean and stay "<...>"-bracketed)
   - non-UB frontend failures emit an `Error {msg: ...}` line on stdout
     (OCaml puts them on stderr only); fail-closed either way
-  - runND returning zero executions emits `Error {msg: ...}` + exit 1
-    (OCaml prints nothing and exits 0 — we refuse to look like success) -/
+  - runND returning zero executions emits `Error {msg: "cerberus-lean:
+    runND returned no executions"}` + exit 1 where OCaml prints nothing and
+    exits 0. DECLARED loud boundary — zero-discrepancy Z-73, RULED
+    [USER 2026-09-03] Q8 = A ("Agree re Q2-10"): keep the fail-closed
+    refusal (a silent exit 0 with no verdict is the fail-open shape the
+    working practices ban); the oracle's silent success is an upstream
+    question (tray candidate). The fuel arc's `runNDFuel` exhaustion leaf
+    has the same shape and inherits this classification. Also declared in
+    VALIDATION.md ("Known, LOUD limits of the Lean driver"). -/
 
 /-- OCaml `String.escaped` = `Bytes.unsafe_escape` (the switch's
     `lib/ocaml/bytes.ml:170-212`), by BYTE class: `"` `\\` `\n` `\t` `\r` `\b`
@@ -1019,18 +1026,58 @@ def runPipeline (runtimeDir : String) (batch : Bool) (ppCore : Bool)
 
 /-! ## Entry point -/
 
+/-- Zero-discrepancy Z-24/Z-25 (charter §2.3; [USER 2026-09-03] Q7: REFUSE,
+    do not plumb): every `--`-prefixed token the positional parser does not
+    accept is REFUSED — loud (exit 2) and feature-ATTRIBUTED (exception class
+    (c): "a LOUD, feature-attributed refusal where the oracle answers is
+    allowed; a different answer, or a silent absorption, never is"). It used
+    to become a FILE NAME (`uncaught exception: no such file or directory …
+    file: --switches=PNVI`, rc 1 — loud but not attributed; the same for
+    `--concurrency` and for a KNOWN flag out of its canonical position,
+    e.g. `--batch x.json --first`). -/
+def refuseFlag (flag : String) : IO Unit := do
+  let feature :=
+    if flag.startsWith "--switches" then
+      "semantics switches (PVI/PNVI/strict_pointer_arith/CHERI/…) are not supported by this port — matched (default-switch) mode is the harness contract and CerbGlobal's switch set is permanently empty; the oracle's `--switches=…` changes the answer (e.g. PNVI turns an integer→pointer UB043 into a value)"
+    else if flag == "--concurrency" then
+      "concurrency is not supported by this port (the oracle's own --concurrency mode is non-functional at b9aeedcb4: `internal error: CONCURRENCY IS BROKEN`); matched mode runs atomics sequentially on both engines"
+    else if flag == "--batch" || flag == "--pp-core" || flag == "--parse-core" || flag == "--first" then
+      "known flag out of its canonical position (`--batch`, `--pp-core` or `--parse-core` must be argv[0]; `--first` must immediately follow `--batch`/`--pp-core`)"
+    else
+      "unknown flag; this port accepts only --batch | --pp-core | --parse-core (argv[0]), --first, --stdin, --libc <core> --libc-tu <json>, --call <f> [--call-args <ints>], --args <str>, --trace-nodes"
+  IO.eprintln s!"cerberus-lean: refused — {flag}: {feature} (see VALIDATION.md, zero-discrepancy Z-24)"
+  IO.Process.exit 2
+
 def main (args : List String) : IO Unit := do
-  -- CLI ORDER CONTRACT (sem:N7, documented arc-14 S1 F6): this is a
-  -- POSITIONAL flag parser (not cmdliner like the oracle). The contract:
-  -- `--batch` or `--pp-core` must be argv[0]; `--first` must immediately
-  -- follow it; `--parse-core` is matched against the raw args head. A
-  -- misordered flag is silently treated as a filename. This is
-  -- acceptable for a test-harness binary (the harnesses always pass the
-  -- canonical order); a real CLI would use a proper parser.
+  -- Zero-discrepancy Z2-FL-03 (Z2 audit @ 9e86fe67c; fail-closed hygiene):
+  -- a Lean `panic!` — this port's fail-stop mirror of every OCaml
+  -- failwith/assert/uncaught exception (CerbFloat.truncToInt, CerbMem.killM
+  -- and casePtrval, CerbUtils builtins, CerbDecode, LemLib.failwithI) —
+  -- PRINTS and CONTINUES with `default` unless the runtime aborts: without
+  -- LEAN_ABORT_ON_PANIC, `(int)NaN` printed `Defined {value: "Specified(0)",
+  -- …}` exit 0 where the oracle is an uncaught Z.Overflow, exit 125 — a
+  -- crash-to-VALUE conversion, the banned fail-open shape. The runtime tests
+  -- PRESENCE of the variable (measured: "1", "0" and "" all abort; unset
+  -- continues). Every harness sets it (scripts/common.sh run_cerberus_lean;
+  -- LEAN_ABORT_ON_PANIC=1 at each direct invocation) — refuse otherwise.
+  match ← IO.getEnv "LEAN_ABORT_ON_PANIC" with
+  | some _ => pure ()
+  | none =>
+    IO.eprintln "cerberus-lean: refused — LEAN_ABORT_ON_PANIC is not set: a Lean panic! (this port's fail-stop mirror of every OCaml failwith/assert/uncaught exception) would print and then CONTINUE with a default value, converting a crash into a verdict; set LEAN_ABORT_ON_PANIC=1 (every harness does: scripts/common.sh run_cerberus_lean; see VALIDATION.md, zero-discrepancy Z2-FL-03)"
+    IO.Process.exit 2
+  -- CLI ORDER CONTRACT (sem:N7, arc-14 S1 F6; zero-discrepancy Z-24): this
+  -- is a POSITIONAL flag parser (not cmdliner like the oracle). The
+  -- contract: `--batch` or `--pp-core` must be argv[0]; `--first` must
+  -- immediately follow it; `--parse-core` is matched against the raw args
+  -- head. Any other `--`-prefixed token — an unknown flag, an oracle flag
+  -- this port does not support, or a KNOWN flag out of position — is
+  -- REFUSED by `refuseFlag` (loud, attributed, exit 2); it used to be
+  -- silently treated as a filename. `--stdin` is the one `--` positional.
   -- --batch: machine-parseable output for the differential harness
   -- --pp-core: signature-level elaborated-Core dump (test_elab.sh)
   let batchMode := args.head? == some "--batch"
   let ppCoreMode := args.head? == some "--pp-core"
+  let parseCoreMode := args.head? == some "--parse-core"
   let rest0 := if batchMode || ppCoreMode then args.drop 1 else args
   -- --first (optional, after --batch/--pp-core): single-trace execution —
   -- the Lean-side analogue of OCaml `--mode=random` (one trace instead of
@@ -1058,7 +1105,8 @@ def main (args : List String) : IO Unit := do
   let mut progArgsStr : Option String := none
   let mut traceNodes : Bool := false
   let mut restArgs : List String := []
-  let mut pending := rest1
+  -- --parse-core consumes its file list itself (below); nothing to scan
+  let mut pending := if parseCoreMode then [] else rest1
   while true do
     match pending with
     | [] => break
@@ -1073,7 +1121,10 @@ def main (args : List String) : IO Unit := do
       IO.eprintln "cerberus-lean: --libc/--libc-tu/--call/--call-args/\
         --args require an argument"
       IO.Process.exit 1
-    | a :: rest => restArgs := restArgs ++ [a]; pending := rest
+    | a :: rest =>
+      -- Z-24: a `--` token here is not a file name (except `--stdin`)
+      if a.startsWith "--" && a != "--stdin" then refuseFlag a
+      restArgs := restArgs ++ [a]; pending := rest
   -- --args "ARG1 ARG2 ..." — the oracle's flag of the same name
   -- (backend/driver/main.ml:512-514): one string, split on whitespace
   -- runs (main.ml:111-113, Str.split "[ \t]+" — empty pieces dropped,
