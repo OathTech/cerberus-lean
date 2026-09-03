@@ -919,3 +919,35 @@ check_driver_fresh: lean OK (bin ba5a7ec0229f9a9c9d0964add550e14eeb289ec5a5ee2d0
 ```
 
 The gcc lane went green first time here (box load 0.5–9 at the start); the auditor's load-caveat row `csmith/sia_csmith_477.c` stayed AGREE (skip_lean_timeout=11 = the baseline's 11). Every other Tier A/B row unmoved. Scratch `.tmp/z1a/` deleted at the end of this response.
+
+
+## 12. Orchestrator boundary review, second pass (after the audit response) [AGENT, orchestrator, 2026-09-03]
+
+Head `e14436ccd`. Independent rebuild in this worktree (`make
+lean-prelude-src`; `DUNE_CACHE=disabled build_cerberus` → oracle stamp bin
+`0a7728ed83d0…`; `CERB_MEM_MAX=32G build_lean` → lean stamp bin
+`ba5a7ec0229f…`, identical to the worker's audit-response stamp, so the
+gated Lean binary is bit-for-bit the same); `check_driver_fresh --check`
+OK. Then 23 lanes SERIALLY, every one rc 0, no baseline movement: Tier A
+in full (unit, exec minimal/coverage/debug/float, bytes, libc_exec,
+multi_tu, parse, core, elab, uri, cn_coverage), verify, immaculate,
+speclab selftest + plant, hang/kill/fuel plants, libxml2, gcc lane. Box
+load at the gcc lane's start: `load average: 2.77, 3.20, 6.10` (quiet;
+the auditor's two red runs were at load 20–30 — F7). Verbatim:
+
+```
+gcc lane:   SUMMARY: total=1960 compared=1885 agree=1873 agree_nd=0 triaged=12 disagree=0 o2_agree=190 skip_gcc_stdout=1 skip_lean_crash=8 skip_lean_fail=9 skip_lean_timeout=11 skip_ub=46 triaged_addr=11 triaged_ub=1
+            Baseline check: 0 regression(s), 0 improvement(s)
+            gcc second-oracle lane OK
+immaculate: OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip DIFF, R3 s4b-memcmp-hugesize ORACLE_CRASH — VALIDATION.md 'ISO-fix register' — and the in-Lean probes g6 TRIPWIRE / illtyped-store KILL).
+```
+
+Audit-response cites spot-checked by the orchestrator against the tree:
+`sibylfs/generated/sibylfs.ml:169-170` `fd_of_int n = FD (abs
+(Nat_big_num.to_int n))`; `:196/:199/:202/:205` `run_write`/`run_read`/
+`run_pwrite`/`run_pread` take `abs (Nat_big_num.to_int size)` — the
+`natAbs` mirrors are exact. Audit: `docs/2026-09-03_zero-discrepancy-Z1-audit.md`
+(branch `audit/z1-premerge` @ `7f8549fe7`; MERGE-WITH-FIXES → fixes
+applied in `e14436ccd`, §11). Merge ask goes to the operator on this
+head; the audit document itself is merged with the arc (cherry-picked
+below) so the record is complete on the mainline.
