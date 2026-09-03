@@ -512,9 +512,9 @@ oddity, worth an upstream question.
 
 ### Counts (derived, this record)
 
-- Probes committed: 141 C files in 10 directories (`int` 19, `float` 11,
+- Probes committed: 145 C files in 11 directories (`int` 19, `float` 11,
   `ptr` 19, `mem` 11, `ctl` 15, `lib` 24, `elab` 18, `out` 4, `misc` 13,
-  `seam` 5, `mtu` 3×2 files) + ~90 scratch bisection probes (not
+  `seam` 5, `mtu` 3 dirs × 2 files) + ~90 scratch bisection probes (not
   committed; the record quotes them where load-bearing).
 - DISCREPANCY (Lean != oracle): **7** — D4 (value-level), D5, D6, D7
   (verdict class), D1, D2 (diagnostic `loc` field). [D3 is documented
