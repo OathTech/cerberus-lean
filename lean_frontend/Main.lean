@@ -59,9 +59,11 @@ def loadCoreStdlib (stdFile : CoreParser.CoreFile) :
 def loadCoreImpl (implFile : CoreParser.CoreFile) : impl :=
   implFile.impls.foldl
     (fun acc (name, d) =>
-      -- the name was already validated against Implementation.impl_map when
-      -- the `def <name>` declaration was parsed (CoreParser.pDefDecl →
-      -- pImplConstant, Z2-CP-08), so the error arm is unreachable here
+      -- the name was validated against Implementation.impl_map when the
+      -- `def <name>` / `fun <name>` declaration was parsed (CoreParser.pDefDecl
+      -- and pFunDecl call pImplConstant on the lexeme — the mirror of scan_impl,
+      -- which validates every `<…>` lexeme at the lexer; Z2-CP-08, pre-merge
+      -- audit F2), so the error arm is unreachable here
       let ic := match CoreParser.pImplConstant name with
         | .ok ic => ic
         | .error e => panic! e

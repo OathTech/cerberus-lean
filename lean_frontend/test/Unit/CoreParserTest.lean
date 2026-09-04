@@ -650,6 +650,31 @@ def testLibcProductions : TestM Unit := do
     | _ => fail_ "zero-arg full proc still Proc" "unexpected shape"
   | .error e => fail_ "zero-arg full proc still Proc" e
 
+  -- Z2-CP-13 (pre-merge audit F7): an anonymous tag in OTy position (`a_N`, the
+  -- pp's `to_string` spelling) interns to the file's declared
+  -- `__cerbty_unnamed_tag_N`; a NAMED tag `a` printed `a_5` must NOT be captured
+  -- by a declared anonymous tag 50 (exact-token match, not substring)
+  match CoreParser.parseFile ("def struct __cerbty_unnamed_tag_50 :=\n  x: 'signed int'\n\n" ++
+      "def struct a :=\n  y: 'signed int'\n\n" ++
+      "proc f (p: pointer): eff loaded integer :=\n" ++
+      "  let strong v: loaded struct a_5 = load('struct a', p) in\n" ++
+      "  let strong w: loaded struct a_50 = load('struct __cerbty_unnamed_tag_50', p) in\n" ++
+      "  pure(Specified(0))\n") with
+  | .ok cf =>
+    match cf.procs with
+    | [(_, Proc _ _ _ _ (Expr _ (Esseq (Pattern _ (CaseBase (_, BTy_loaded (OTy_struct s1)))) _
+          (Expr _ (Esseq (Pattern _ (CaseBase (_, BTy_loaded (OTy_struct s2)))) _ _)))))] =>
+      if s1 == CoreParser.internSym "a" then pass "CP-13 named tag a_5 → a (tag 50 coexists)"
+      else fail_ "CP-13 named tag a_5 → a (tag 50 coexists)" "a_5 captured by the anonymous tag"
+      if s2 == CoreParser.internSym "__cerbty_unnamed_tag_50" then pass "CP-13 anonymous a_50 → __cerbty_unnamed_tag_50"
+      else fail_ "CP-13 anonymous a_50 → __cerbty_unnamed_tag_50" "not resolved to the declared tag"
+    | _ => fail_ "CP-13 tags 5/50" "unexpected AST shape"
+  | .error e => fail_ "CP-13 tags 5/50" e
+  -- an invalid impl-constant declaration is a lexer error on the oracle
+  -- (scan_impl, core_lexer.mll:218) — refused at the declaration here too (audit F2)
+  assertErr "impl decl <bogus> refused" (CoreParser.parseFile "def <bogus>: integer := 0\n")
+  assertOk "impl decl <sizeof> accepted" (CoreParser.parseFile "def <sizeof>: integer := 0\n")
+
   -- glob with function-pointer-array ail_ctype (the sighandler/funcs globs)
   assertCounts "glob fn-ptr array ail_ctype"
     "glob sighandler: pointer [ail_ctype = 'void (signed int)*[8]'] := pure(Unit)\n" (0, 0, 0, 0, 1, 0)

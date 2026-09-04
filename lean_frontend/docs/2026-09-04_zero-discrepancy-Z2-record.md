@@ -234,7 +234,7 @@ elaborated call site — `mkCallSite` builds what `translate_call` emits for
 per-argument `create` at `alignof` with a `PrefFunArg` prefix + `store` of
 `conv_loaded_int('T', n)` — the SAME std.core function the oracle calls,
 `stdlib.mkcall_conv_loaded_int_` translation_aux.lem:347-348, resolved in
-the linked file's `stdlib` — bound by `wseq`; `:1082-1112` `mk_sseqs` of the
+the linked file's `stdlib` — bound by `wseq`; `:1126-1155` (the NON-variadic `Normal_callconv` branch of `if expect_is_variadic` :1035; the variadic branch :1082-1108 appends a varargs list — pre-merge audit F3 corrected the cite) `mk_sseqs` of the
 creates, `mk_sseq_e` of the `Eccall` on the LOADED function-pointer value
 (core_run.lem:944 matches `Vloaded (LVspecified (OVpointer pv))`), the
 `killall` unit/tuple pattern, `mk_unseq` of the `pkill (Static ty)`s,
@@ -476,11 +476,13 @@ stays in `tests/z2-probes/` only.
 | call/bool_param.c (+ wrapper) | BUG-FIX Z2-C-01 | VERIFY `z2_bool_param` rows f 0/1/2/-7 | pass (Lean = wrapper = pin) | yes |
 | call/errno_order.c (+ wrapper) | BUG-FIX Z2-C-02 | VERIFY `z2_errno_order` rows f 1/-7 | pass | yes |
 
-Derived tallies: 34 probes; 26 integrated into gate lanes (14 IMM incl.
-Z1's 4, 10 COV, 4 LIBC, 2 VERIFY — the two `call/*_wrapper.c` files are the
-oracle side of the two VERIFY rows, not separate probes), 7 REPORT (5
-both-reject/not-settled + 1 duplicate + the 2 wrappers counted with their
-probes), and every confirmed Lean≠oracle probe (9 distinct findings) is
+Derived tallies (recounted, pre-merge audit F5): 34 probe rows (36 probe
+files = 34 + the 2 `call/*_wrapper.c`, the oracle side of the two VERIFY
+rows, not separate probes); 26 integrated into gate lanes = 13 IMM (of which
+3 are Z1's: device_funptr_call, stdout_escape, stderr_escape — Z2's own IMM
+pins are 10: 6 in `112c0e98b` + 4 in `bef08dcf4`) + 10 COV + 4 LIBC + 2
+VERIFY; 5 REPORT (3 both-reject + 1 not-settled + 1 duplicate); 13 + 10 +
+4 + 2 + 5 = 34; and every confirmed Lean≠oracle probe (9 distinct findings) is
 pinned: 6 findings RED→MATCH, the Z-07 re-witness MATCH, and the Z2-M-01
 witnesses as visible PENDING pairs (§10.1).
 
@@ -508,7 +510,7 @@ changes in the hand-written seams (the in-process consumer imports these):
 
 | module | change |
 |---|---|
-| `CerbMem` | `intToBytes` gains a leading `(signed : Bool)` parameter (`intToBytes signed val size`); NEW public `allocator : Int → Int → memM (StorageInstanceId × Address)`, `zLogand/zLogor/zLogxor : Int → Int → Int`, theorems `eqIval_isSome`/`ltIval_isSome`/`leIval_isSome`; `allocateObject`'s 6th parameter (`reqAddrOpt : Option Int`) is now consumed (fail-stop on `some`); `allocateRegion`'s `pref` argument is ignored (PrefMalloc recorded); `integerDiv_t`/`integerRem_t`/`integerRem_f` panic on a zero divisor (same types); `effArrayShiftPtrval` now uses its `loc`; `bitwise*Ival` ignore their `integerType` (same types); `deriveCap`/`capAssignValue`/`nullCap`/`ptrTIntValue`/`cheriPointerHashPrintf`/`getIntrinsicTypeSpec`/`callIntrinsic`/`concurReadIval` panic (same types); `targetPtrSize` reads `CerberusImpl.sizeof_pointer` (value 8 unchanged); private `toUnsigned`/`toSigned` deleted |
+| `CerbMem` | `intToBytes` gains a leading `(signed : Bool)` parameter (`intToBytes signed val size`); NEW public `allocator : Int → Int → memM (StorageInstanceId × Address)`, `zLogand/zLogor/zLogxor : Int → Int → Int`, theorems `eqIval_isSome`/`ltIval_isSome`/`leIval_isSome`; `allocateObject`'s 6th parameter (`reqAddrOpt : Option Int`) is now consumed (fail-stop on `some`); `allocateRegion`'s `pref` argument is ignored (PrefMalloc recorded); `integerDiv_t`/`integerRem_t`/`integerRem_f` are TOTAL (unchanged from mainline — the fix-group-1 panics were reverted; a zero divisor is the pending §10.1 decision); `effArrayShiftPtrval` now uses its `loc`; `bitwise*Ival` ignore their `integerType` (same types); `deriveCap`/`capAssignValue`/`nullCap`/`ptrTIntValue`/`cheriPointerHashPrintf`/`getIntrinsicTypeSpec`/`callIntrinsic`/`concurReadIval` panic (same types); `targetPtrSize` reads `CerberusImpl.sizeof_pointer` (value 8 unchanged); private `toUnsigned`/`toSigned` deleted |
 | `CerberusImpl` | NEW `n_t_aliases`, `aux_ibty`, `sizeof_pointer`, `alignof_pointer`; `sizeof_integerBaseType` DELETED; `normalise_integerType` moved before `sizeof_ity` (same type, new arms); `sizeof_ity`/`alignof_ity` same types, panic on un-normalisable arms |
 | `CoreParser` | `pImplConstant : String → Except String implementation_constant` (was `→ implementation_constant`); `stampLibraryFile (file input : String) (cf : CoreFile)` (was `(file) (cf)`); NEW `RelocCtx`, `relocFile`, `lineTable`, `resolveByte`; `parseFile`/`parseLibraryFile`/`internSym` signatures unchanged (the parsed `PEundef`/`Action` locations of LIBRARY files now carry line/column; an OTy `a_N` anonymous tag now interns to the same symbol as its `__cerbty_unnamed_tag_N` ctype spelling — Z2-CP-13); `pIopFromStr`, `resolveOTyTag`, `anonymousTagDigits` private |
 | `CerbCall` | `driveCall` signature UNCHANGED; NEW `funSymsNamedIn`, `resolveSymIn`, `argCreate`, `mkSseqs`, `mkUnseq`, `mkCallSite`, `lookupFunParams`, `lookupSignature`, `checkSignature`, `allocErrno`, `callLoc`; DELETED `injectArg`, `injectArgs`, `lookupFunBody`, `lookupParamTys`; `callFinish` re-typed (`(tagDefs) (tid0) (fsym) (callExpr) (errno_ptr)`) |
@@ -538,6 +540,10 @@ changes in the hand-written seams (the in-process consumer imports these):
    binder/param/proc is a keyword") would refuse the libc pin (`glob
    builtin`, `alloc:` parameters) — the tripwire is narrowed here to the
    three value keywords, with the argument in-code.
+7. (pre-merge audit N4) `scripts/test_verify.sh:130/289` discard the Lean
+   binary's stderr (`2>/dev/null`) — PRE-EXISTING, not a Z2 change; the
+   lane classifies by rc and verdict token, so no fail-open today; a Z4
+   instrument candidate (surface the stderr in the FAIL line).
 6. Charter §2.7 Z-61: the audit verified (by reading) that no residual
    printer reaches a batch verdict; no code change was needed here.
 
@@ -762,3 +768,58 @@ Consumer change manifest for this slice:
 decisions go to the operator with the merge ask; the pre-merge audit
 follows this review (its document is cherry-picked onto the branch
 before the merge, as for Z1).
+
+## 14. Audit response (pre-merge audit `docs/2026-09-04_zero-discrepancy-Z2-audit-premerge.md` @ `audit/z2-premerge` `0bac11267`: MERGE-WITH-FIXES, 0 MAJOR / 7 MINOR / 5 NOTE)
+
+One audit-response commit on top of the orchestrator's `a751e748e`. Binary
+after the code fixes: `check_driver_fresh: lean OK (bin 99912f86b9e98dfb415af071138058e0f004b26e760c5a99941475e055332d83, src f3d5b4b4fb5503daea6da931b6c73cf61bd0f3bf2fc412c698f9a53333e855bd)`.
+
+- **F1** (consumer-facing): record §7 and the manifest §1 no longer list
+  `integerDiv_t`/`integerRem_t`/`integerRem_f` as kind-1 panics — they are
+  TOTAL (the code at `CerbMem.lean`, reverted in `5ed6c4a0a`); both now say
+  so and point at §10.1.
+- **F2**: `pDefDecl` and `pFunDecl` now run `pImplConstant` on the `<name>`
+  lexeme (the mirror of `scan_impl`, which validates every `<…>` lexeme at
+  the lexer, `core_lexer.mll:209-218`); `Main.loadCoreImpl`'s comment states
+  the true argument. Probe (a copy of the gcc impl with `def <bogus>: integer
+  := 0` appended, placed as `impls/bogus_z2.impl` for the oracle run only,
+  then deleted), verbatim:
+  `ORACLE --impl=bogus_z2 tests/minimal/001-return-literal.c → ERROR: while parsing the Core impl, the parser didn't recognise it as an impl .` rc=1;
+  `LEAN --parse-core bogus_z2.impl → ERROR: parse error: offset 1584: expected 'builtin', got 'def'` (nonzero exit) — same failure class, refused at
+  the declaration on both. Unit cases added: `impl decl <bogus> refused`,
+  `impl decl <sizeof> accepted`.
+- **F3**: `CerbCall.lean` header and `mkCallSite` doc, record §2.4 and the
+  charter §2.4c row cite `translation.lem:1126-1155` (the non-variadic
+  `Normal_callconv` branch; `:1082-1108` is the variadic one).
+- **F4**: charter §2.4c CP-13 row now cites `096d8930e` (+ this commit).
+- **F5**: §5 tallies recounted and labelled derived: 13 IMM (3 Z1's; Z2's
+  own 10 = 6 + 4), 10 COV, 4 LIBC, 2 VERIFY, 5 REPORT (3 both-reject + 1
+  not-settled + 1 duplicate); 36 files = 34 rows + 2 wrappers.
+- **F6**: the neg-action region now spans `neg ( … )` (`$startpos` before
+  `neg`, `$endpos` after `)`), cited `.mly:1745-1746`; `grep -n "neg(" runtime/libcore/std.core runtime/libcore/impls/*.impl`
+  → no match (verified here), so no library node carried the old span.
+- **F7**: `resolveOTyTag` matches the declared anonymous tag as a WHOLE
+  token (`mentionsAnonymousTag`: an occurrence not continued by a digit) —
+  `__cerbty_unnamed_tag_5` no longer matches inside `…tag_50`; unit case
+  `CP-13 tags 5/50`: a named `struct a` (`a_5` in OTy position) coexisting
+  with anonymous tag 50 interns to `internSym "a"` and `a_50` to
+  `internSym "__cerbty_unnamed_tag_50"`.
+- **N1–N5**: no action; N4 recorded in §8.7 for Z4.
+
+Gates after the code fixes (serial, capped 32G), verbatim:
+
+```
+### ./scripts/test_unit.sh                       first run rc=1: Done: 290 passed, 1 failed (✗ CP-13 tags 5/50: unexpected AST shape — the test pattern
+                                                 said Ewseq for a `let strong`, which is Esseq; test pattern corrected, binary unchanged) →
+                                                 rc=0: Done: 292 passed, 0 failed / 4 passed, 0 failed / All PP tests passed / Total: 6 passed, 0 failed
+### ./scripts/test_core.sh rc=0 (14s) ::          Total: 106 / Lean parse: 106 ok, 0 failed
+### ./scripts/test_core.sh tests/ci rc=0 (15s) :: Total: 250 / Lean parse: 128 ok, 0 failed
+### ./scripts/test_parse.sh rc=0 (10s) ::         Total: 106 / Lean parse: 106 ok, 0 failed, 0 timeout (>60s; fatal), 0 lean failure(s) (crash / nonzero exit without a printed verdict; fatal)
+### ./scripts/test_exec.sh --check-baseline rc=0 (12s) ::
+SUMMARY: total=106 match=85 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=3 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+### ./scripts/test_verify.sh rc=0 (41s) ::        test_verify: 127 passed, 0 failed (25 fixtures, 28 call points, 14 corpus fixtures, 21 corpus points)
+### ./scripts/test_immaculate.sh rc=0 (54s) ::    OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip DIFF, R3 s4b-memcmp-hugesize ORACLE_CRASH — VALIDATION.md 'ISO-fix register' — and the in-Lean probes g6 TRIPWIRE / illtyped-store KILL).
+```
+

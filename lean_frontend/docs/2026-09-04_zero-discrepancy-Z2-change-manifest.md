@@ -27,11 +27,14 @@ in-code declaration with its reachability argument (`grep
   loc, the `MerrOther` texts).
 - **Deliberate model fail-stops are now `panic!` where they were
   values** (kind 1): `allocate_object` with a requested address,
-  `bytes_of_int` out of range, the CHERI intrinsics, `concurReadIval`,
-  `integerDiv_t`/`integerRem_t`/`integerRem_f` on a zero divisor — in
+  `bytes_of_int` out of range, the CHERI intrinsics, `concurReadIval` — in
   process these DENOTE the `Inhabited` default until the typed-outcome
   pass (`docs/2026-09-03_typed-failure-outcomes-ruling.md`); treat inputs
   reaching them as PROVISIONAL, as before.
+- **`integerDiv_t`/`integerRem_t`/`integerRem_f` are TOTAL** (unchanged from
+  mainline: `Int.tdiv`/`Int.tmod`/`Int.emod`, `CerbMem.lean` — the fix-group-1
+  panics were reverted in `5ed6c4a0a`); a zero divisor is the pending §10.1
+  decision, not a kind-1 fail-stop (pre-merge audit F1).
 - **`aligned_alloc(0, n)` is a PENDING decision** (record §10.1): the
   oracle's `Division_by_zero` is kind 2, so it is NOT mirrored; Lean
   currently answers `Undefined DUMMY(align_alloc)` for `(0, 8)` and a

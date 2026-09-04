@@ -31,7 +31,8 @@
     `int f(_Bool b)` trapped UB012 where the wrapper answers
     `Specified(1)`). Now `mkCallSite` builds exactly what
     translation.lem's `translate_call` emits for `f(<int literal>…)`
-    under `Normal_callconv` (translation.lem:940-975, :1082-1112):
+    under `Normal_callconv` (translation.lem:940-975, :1126-1155 — the
+    NON-variadic branch; pre-merge audit F3):
     per argument `create` of the parameter's C type at its alignment
     with a `PrefFunArg` prefix, then `store` of
     `conv_loaded_int('T', n)` — the SAME std.core function the oracle
@@ -168,7 +169,9 @@ def mkUnseq : List CE → CE
   | [e] => e
   | es => mkE (Eunseq es)
 
-/-- THE CALL SITE for `f(args)` — translation.lem:1082-1112 (Normal_callconv):
+/-- THE CALL SITE for `f(args)` — translation.lem:1126-1155 (Normal_callconv,
+    the non-variadic branch of `if expect_is_variadic` :1035; the variadic
+    branch :1082-1108 appends a varargs list — not rendered):
     `mk_sseqs (zip arg_ptr_pats creates) (mk_sseq_e call_ret_pat (mk_ccall_e_
     annots ret_ty_pe fun_pe arg_ptr_pes) (mk_sseq_e killall_pat (mk_unseq
     kills) (mk_pure_e call_ret_pe)))`, where `fun_pe` is the loaded

@@ -820,12 +820,19 @@ private def stripRawSymSuffix (s : String) : String :=
     | '_' :: rest => if rest.isEmpty then s else String.mk rest.reverse
     | _ => s
 
+/-- Does `input` mention the anonymous tag `anon` as a WHOLE token, i.e. an
+    occurrence not continued by another digit (`__cerbty_unnamed_tag_5` must
+    not be found inside `__cerbty_unnamed_tag_50` — pre-merge audit F7)? -/
+private def mentionsAnonymousTag (input anon : String) : Bool :=
+  ((input.splitOn anon).drop 1).any fun rest =>
+    rest.isEmpty || !(rest.get 0).isDigit
+
 /-- The OTy tag resolution of Z2-CP-13 (doc above `anonymousTagDigits`). -/
 private def resolveOTyTag (tag : String) : P sym := fun it =>
   match anonymousTagDigits tag with
   | some digits =>
     let anon := "__cerbty_unnamed_tag_" ++ digits
-    if (it.1.splitOn anon).length > 1 then .success it (mkSym anon)
+    if mentionsAnonymousTag it.1 anon then .success it (mkSym anon)
     else .success it (mkSym (stripRawSymSuffix tag))
   | none => .success it (mkSym (stripRawSymSuffix tag))
 
@@ -1808,14 +1815,17 @@ private partial def pAction : P Act := do
 /-- Parse a paction (action with polarity). -/
 private partial def pPaction : P PAct :=
       (attempt (do
+        let startB ← getByte
         lexKw "neg"
         lexSym "("
-        let startB ← getByte
         let act ← pAction
-        let endB ← lastTokenEndByte
-        lexSym ")"
-        -- core_parser.mly:1744 `Action (region ($startpos, $endpos) NoCursor, (), act)`
-        -- — the ACTION's own region (Z-01 Pos row; was `loc0`)
+        let _ ← pstring ")"
+        let endB ← getByte   -- `$endpos` = just after `)`
+        lexWs
+        -- core_parser.mly:1745-1746 `NEG _act= delimited(LPAREN, action, RPAREN)
+        -- { Paction (Neg, Action (region ($startpos, $endpos) NoCursor, (), _act)) }`
+        -- — the region spans `neg ( … )` (Z-01 Pos row; pre-merge audit F6: this
+        -- spanned the inner action only; no `neg(` occurs in std.core/impls)
         return (Paction Neg0 (Action (markerLoc startB endB) () act))))
   <|> (do
         let startB ← getByte
@@ -1971,13 +1981,14 @@ private partial def pExprPar : P Expr' := do
   return (mkE (Epar es))
 
 private partial def pExprNeg : P Expr' := do
+  let startB ← getByte
   lexKw "neg"
   lexSym "("
-  let startB ← getByte
   let act ← pAction
-  let endB ← lastTokenEndByte
-  lexSym ")"
-  return (mkE (Eaction (Paction Neg0 (Action (markerLoc startB endB) () act))))   -- .mly:1744
+  let _ ← pstring ")"
+  let endB ← getByte
+  lexWs
+  return (mkE (Eaction (Paction Neg0 (Action (markerLoc startB endB) () act))))   -- .mly:1745-1746, spans `neg ( … )`
 
 private partial def pExprAction : P Expr' := do
   let pact ← pPaction
@@ -2113,6 +2124,13 @@ private partial def pFunDecl : P Decl := do
   match c? with
   | some '<' =>
     let iCst ← lexImpl
+    -- the oracle's LEXER validates every `<…>` lexeme (scan_impl, core_lexer.mll:
+    -- 209-218 — Core_lexer_invalid_implname), declaration position included;
+    -- mirror that here (pre-merge audit F2: this arm stored the raw name and
+    -- Main.loadCoreImpl's fail-stop was reachable on an invalid `.impl` name)
+    match pImplConstant iCst with
+    | .error e => fail e
+    | .ok _ => pure ()
     let params ← pParamList
     lexSym ":"
     let bTy ← pCoreBaseType
@@ -2214,6 +2232,9 @@ private partial def pDefDecl : P Decl := do
   match c? with
   | some '<' =>
     let iCst ← lexImpl
+    match pImplConstant iCst with   -- scan_impl at the declaration too (audit F2, see pFunDecl)
+    | .error e => fail e
+    | .ok _ => pure ()
     lexSym ":"
     let bTy ← pCoreBaseType
     lexSym ":="
