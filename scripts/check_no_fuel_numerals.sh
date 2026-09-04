@@ -46,6 +46,18 @@
 # Vacuity guards: ≥ MIN_FILES files scanned and ≥ one `_lemFuel` worker seen,
 # else FAIL (not scanning real generated code is a failure, not a pass).
 #
+# WHAT THIS GATE IS (pre-merge audit M2, 2026-09-04): a plant-tested
+# SPEEDBUMP over the enumerated idiomatic shapes above (bare/hex/ascribed/
+# parenthesised numerals, the instance-carrying worker form `f_lemFuel ⟨i⟩ 5`,
+# `{ fuel := N }`, `LemFuel.mk (…)`). It is NOT a proof that no fuel numeral
+# exists: arithmetic (`⟨10^8⟩`, `LemFuel.mk (10^8)` is caught only by its
+# `mk (` shape) and indirection through a non-fuel-named constant
+# (`def budget := 100000000; @f ⟨budget⟩`) are not regex-closable and remain
+# review discipline. The BACKSTOP is the typing: every fuel'd function
+# demands a `[LemFuel]` instance, no instance exists in library/generated/
+# seam code, and a measured wrapper carries its sufficiency obligation — a
+# numeral can only enter where a human writes an instance.
+#
 # --selftest: plant each shape (F1–F6) into a scratch COPY of the scan set,
 # assert red with the right label, then assert the unplanted set is green
 # (loud plant banner; the test_unit.sh wiring runs the gate AND the selftest).
@@ -99,9 +111,18 @@ run_gate() {  # <repo root>; prints verdict lines; returns 0/1
   }
   report F1 'lemDefaultFuel|driverFuel|ndDefaultFuel'
   report F2 ':[[:space:]]*(@\[[^]]*\][[:space:]]*)?(scoped |local )?instance[^:]*:[[:space:]]*LemFuel\b'
-  report F3 '_lemFuel[[:space:]]+[1-9][0-9]*([^0-9A-Za-z_.'"'"']|$)|_lemFuel[[:space:]]*\([[:space:]]*[1-9][0-9]*[[:space:]]*\)'
-  report F4 'LemFuel[[:space:]]*:=[[:space:]]*⟨|LemFuel\.mk[[:space:]]+[0-9]'
-  report F5 '⟨[[:space:]]*[1-9][0-9]*[[:space:]]*⟩'
+  # F3: a worker applied to a literal counter — bare, parenthesised, hex, and
+  # the instance-carrying shape `f_lemFuel ⟨inst⟩ 5 …` (pre-merge audit M2)
+  report F3 '_lemFuel[[:space:]]+(0x[0-9a-fA-F]+|[1-9][0-9]*)([^0-9A-Za-z_.'"'"']|$)|_lemFuel[[:space:]]*\([[:space:]]*(0x[0-9a-fA-F]+|[1-9][0-9]*)[[:space:]]*\)|_lemFuel[[:space:]]*⟨[^⟩]*⟩[[:space:]]+(\(?[[:space:]]*)?(0x[0-9a-fA-F]+|[1-9][0-9]*)'
+  # F4: an instance built from a literal — `⟨…⟩`, `{ fuel := … }`, `LemFuel.mk N`,
+  # `LemFuel.mk (…)` (audit M2: the structure-instance and parenthesised forms)
+  report F4 'LemFuel[[:space:]]*:=[[:space:]]*⟨|LemFuel[[:space:]]*:=[[:space:]]*\{|LemFuel\.mk[[:space:]]*\(|LemFuel\.mk[[:space:]]+(0x[0-9a-fA-F]+|[0-9])'
+  # F5: an anonymous constructor whose payload STARTS with a numeral — `⟨N⟩`,
+  # `⟨(N : Nat)⟩`, `⟨0x…⟩`, `⟨10^8⟩` (audit M2 E1–E3) — SINGLE-component only
+  # (no top-level comma), so a numeral-led tuple `⟨7, 2⟩` (speclab's Input
+  # literals) is not a hit; `LemFuel` has one field, so a fuel instance is
+  # always single-component
+  report F5 '⟨[[:space:]]*(\([[:space:]]*)?(0x[0-9a-fA-F]+|[1-9][0-9]*)[^,⟩]*⟩'
   report F6 '^[^:]*:[0-9]+:[[:space:]]*(private[[:space:]]+|protected[[:space:]]+|noncomputable[[:space:]]+)*(def|abbrev|let|letI)[[:space:]]+[^:=]*[Ff]uel[^:=]*(:[^=]*)?:=[[:space:]]*[0-9]+[[:space:]]*$'
   if [[ $status -eq 0 ]]; then
     echo "check_no_fuel_numerals: OK ($n files scanned comment-stripped; no lemDefaultFuel/driverFuel/ndDefaultFuel, no LemFuel instance, no literal fuel (F1-F6); allowed Main.lean sites seen: $allowed_hits of $((2 * ${#ALLOW_MAIN[@]})) (hand-written + generated copy))"
@@ -139,10 +160,25 @@ if [[ "${1:-}" == "--selftest" ]]; then
   plant "F6 in a speclab gate test"       F6 speclab/test/SLUnit/CoreGateTest.lean 'def gateFuel := 500'
   plant "F6 in a generated copy of Main"  F6 generated/Main.lean 'def defaultFuel2 : Nat := 100000000'
   plant "F5 in an immaculate Lean probe"  F5 ../tests/immaculate/illtyped-store.lean 'def plant5b := @runStore ⟨1000000⟩'
+  # pre-merge audit M2: the instance-carrying worker literal + the six evasion spellings
+  plant "M2 F3 instance-carrying worker literal" F3 CerbND.lean 'def auditP1 := @driver2_lemFuel ⟨fuelVar⟩ 5 fmapEmpty false'
+  plant "M2 E1 hex literal ⟨0x5F5E100⟩"          F5 CerbND.lean 'def auditE1 := @driver2 ⟨0x5F5E100⟩ fmapEmpty false'
+  plant "M2 E2 ascribed literal ⟨(N : Nat)⟩"     F5 CerbND.lean 'def auditE2 := @driver2 ⟨(100000000 : Nat)⟩ fmapEmpty false'
+  plant "M2 E4 structure instance { fuel := N }" F4 CerbND.lean 'def auditE4 := (letI : LemFuel := { fuel := 100000000 }; 0)'
+  plant "M2 E6 LemFuel.mk (expr)"                F4 CerbND.lean 'def auditE6 : LemFuel := LemFuel.mk (10^8)'
+  plant "M2 E7 worker at a hex literal"          F3 CerbND.lean 'def auditE7 := @driver2_lemFuel ⟨fuelVar⟩ 0x5F5E100 fmapEmpty false'
+  plant "M2 E3 arithmetic ⟨10^8⟩"                F5 CerbND.lean 'def auditE3 := @driver2 ⟨10^8⟩ fmapEmpty false'
+  # E5 — indirection through a non-fuel-named constant — is NOT regex-closable
+  # (no shape distinguishes `budget` from any other Nat); the selftest records
+  # that the gate stays GREEN on it, so the limit is visible, never silent
+  cp "$LF/CerbND.lean" "$W/saved"; printf '%s\n' 'def auditBudget : Nat := 100000000' 'def auditE5 := @driver2 ⟨auditBudget⟩ fmapEmpty false' >> "$LF/CerbND.lean"
+  out=$(run_gate "$R"); rc=$?; cp "$W/saved" "$LF/CerbND.lean"
+  if [[ $rc -eq 0 ]]; then echo "  KNOWN GAP  [M2 E5 indirection via a non-fuel-named constant] -> stays GREEN (not regex-closable; review discipline + the [LemFuel] typing backstop)"
+  else echo "  PLANT NOTE [M2 E5]: the gate went red on the indirection plant (rc=$rc) — a regex now catches it; update this note" ; fi
   echo "  REVERTED (unplanted scratch copy):"
   out=$(run_gate "$R"); rc=$?; echo "  $out"
   if [[ $rc -ne 0 ]]; then echo "  PLANT FAIL [green baseline]: the unplanted scan set is not green" >&2; fail=1; fi
-  if [[ $fail -eq 0 ]]; then echo "check_no_fuel_numerals: SELFTEST OK (13 plants red with the declared label; unplanted set green)"; else echo "check_no_fuel_numerals: SELFTEST FAILED" >&2; fi
+  if [[ $fail -eq 0 ]]; then echo "check_no_fuel_numerals: SELFTEST OK (20 plants red with the declared label; E5 indirection a recorded known gap; unplanted set green)"; else echo "check_no_fuel_numerals: SELFTEST FAILED" >&2; fi
   exit $fail
 fi
 

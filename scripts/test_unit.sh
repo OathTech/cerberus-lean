@@ -127,6 +127,18 @@ if ! "$NOFUEL_SH"; then
     exit 1
 fi
 
+# Fuel-parametricity pin set (fuel-parameter arc, pre-merge audit M1): the
+# generated tree's ambient fuel wrappers must equal the set pinned by the
+# 64 `∀ n, @f ⟨n⟩ = f_lemFuel n` examples of TotalityProofTest.lean Part 1,
+# both directions (a new fuel'd function without a pin is RED; regenerate
+# with scripts/gen_fuel_parametricity.py --emit). Fail-closed (vacuity
+# guard inside the script).
+GENPIN_PY="$(dirname "$PURITY_SH")/gen_fuel_parametricity.py"
+if ! python3 "$GENPIN_PY" --check; then
+    echo "test_unit: fuel-parametricity pin-set check FAILED"
+    exit 1
+fi
+
 # Lakefile-roots gate (fuel-parameter arc, 2026-09-04; lem-lean fuel-measure
 # record §6.4 item 8): every generated module — the `_auxiliary` obligation
 # carriers included — is a Lake root, both directions; plant-tested by its

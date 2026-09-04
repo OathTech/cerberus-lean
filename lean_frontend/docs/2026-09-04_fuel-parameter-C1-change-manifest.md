@@ -22,8 +22,14 @@ D2 enablers). The record's pass-1 blocker (four lem refusals at
   anywhere in the library, the generated code, the seams, the tests or
   speclab (gate `scripts/check_no_fuel_numerals.sh`); the executable
   builds one from `--fuel N` (`Main.lean`: `letI : LemFuel := ⟨fuel⟩`
-  around `runPipeline`; default `defaultFuel = 100000000`, the ONLY fuel
-  numeral in the repository's Lean text).
+  around `runPipeline`; default `defaultFuel = 100000000`, the one fuel
+  numeral the repository's Lean text is MEANT to carry — the gate
+  `scripts/check_no_fuel_numerals.sh` is a plant-tested speedbump over the
+  idiomatic spellings, not a proof: indirection through a non-fuel-named
+  constant is not regex-closable (audit M2); the backstop you can rely on
+  is the typing — no `LemFuel` instance exists anywhere in the library,
+  the generated code or the seams, so every fuel'd function is
+  quantifiable at your use site).
 - Wrapper shape: `def f [LemFuel] : T := f_lemFuel LemFuel.fuel`;
   `@f ⟨n⟩ = f_lemFuel n` by `rfl` for every `n` (a worker that passes the
   ambient on carries the instance too: `@f ⟨n⟩ = @f_lemFuel ⟨n⟩ n`).

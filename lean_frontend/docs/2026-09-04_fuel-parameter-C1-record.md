@@ -25,8 +25,8 @@ before this slice). Nothing merged, nothing pushed.
   measures, fuel-lifted `inductive R [LemFuel]`): the REAL tree generates
   with THREE one-line Lean-only `fuel_measure` declares and nothing for
   `monStep`; the three sufficiency obligations are proved by hand
-  (§3.5); every gate and the whole battery run on the real, stamped tree
-  (§5, §11). The scratch evidence is superseded wherever this record says
+  (§3.1); every gate and the whole battery run on the real, stamped tree
+  (§5, §6). The scratch evidence is superseded wherever this record says
   "real tree".
 - The OCaml generated tree is BYTE-IDENTICAL to the pre-arc (lem
   `3c88f0d`) snapshot after every `.lem` edit (§2.2) — and so is the
@@ -40,14 +40,14 @@ before this slice). Nothing merged, nothing pushed.
   (default `defaultFuel = 100000000`, the ONE numeral) builds the
   instance once; 19 `mem.lem` reps are `fuel_consumer`; `ctypeEqual`,
   `eq_core_base_type`, `fake_mem_value_eq` are MEASURED (fuel-free for
-  callers, kernel-computable; §3.5).
+  callers, kernel-computable; §3.1).
 - Gates/tests (§4): `totality-proof-test` = fuel parametricity for all 64
   ambient wrappers (∀ n, rfl); `FuelExemplar` over `@drive ⟨fuel⟩`
   (∀ fuel; a Lean 4.32.2 finding on div/mod folding at a symbolic fuel,
   §4.3); NEW gates `check_no_fuel_numerals.sh` (F1–F6, 13 plants) and
   `check_lakefile_roots.sh` (3 plants), both in `test_unit.sh`; the axiom
-  gate's FUEL leg re-pinned (31 names incl. the 3 obligations).
-- Battery on the real tree at the default fuel (§11): ZERO baseline
+  gate's FUEL leg re-pinned (34 names incl. the 3 obligations).
+- Battery on the real tree at the default fuel (§5, §6): ZERO baseline
   movement, Tier A + Tier B, the plant batteries included; the design's
   own csmith test agrees with the oracle at the default and at 10^9.
 - Commits: §12.
@@ -263,10 +263,16 @@ the enablers record's §4.5 checklist:
 - Oracle rebuilt `DUNE_CACHE=disabled`: `check_driver_fresh: recorded
   oracle stamp (bin 4b00af5cab3dd39f88de3140f358fbe4dc9a0ae6227ffb4dc5dde3dbb48e808c,
   src 7c9a3b9dbc6d1cbc124dd986ef3239d5159456128138b3df116e1e77bd210b09)`
-  — the SAME binary hash as pass 1's cache-disabled build (`bin
-  4b00af5c…`): byte-identical OCaml sources give a bit-identical
-  executable; the `src` stamp moves with the `.lem` text by construction
-  (§2.2's note).
+  — the same binary hash as pass 1's cache-disabled build happened to
+  come out (`bin 4b00af5c…`), but the orchestrator's re-verify rebuild on
+  the SAME `src` stamped `bin bc1bee7b…` (pre-merge audit N2): OCaml
+  binaries are NOT reproducible byte-for-byte here (dune/ocamlopt link
+  nondeterminism) and no claim rests on the binary hash. The load-bearing
+  invariant is the GENERATED OCaml tree's byte identity — lem-sync `gen
+  295e4f82…` unchanged and `diff -rq` empty against the pre-arc snapshot,
+  verified here (§2.2, twice) and by the auditor against the mainline
+  primary's tree (audit §2: three ways). The `src` stamp moves with the
+  `.lem` text by construction (§2.2's note).
 - Census of the real tree (derived, `grep`, 170 generated model files
   excluding the 26 seam copies): 397 `[LemFuel]` binders (the scratch
   tree's 396 + `monTrace`'s parameter), 64 ambient wrappers
@@ -279,7 +285,7 @@ the enablers record's §4.5 checklist:
   monTrace  [LemFuel]`. The pass-1 full build of this tree failed on
   exactly the three auxiliary shells (`unknown module prefix
   'Ctype_lemMeasureProofs'` etc.) — the fuel-measure slice's fail-closed
-  design — and on nothing else; with the proofs (§3.5) the whole tree
+  design — and on nothing else; with the proofs (§3.1) the whole tree
   builds: `Build completed successfully (384 jobs).` (lib + driver + the
   6 unit exes), speclab `Build completed successfully (301 jobs).`, micro
   `Build completed successfully (136 jobs).`
@@ -298,9 +304,9 @@ All cites are the files as edited (`git diff` is the authoritative text).
 | 6 | `Main.lean` | `def defaultFuel : Nat := 100000000  -- FUEL-DEFAULT (the one allowed fuel numeral)` with its doc; `--fuel N` parsed in the positional scan (same class as `--libc`/`--call`; `["--fuel"]` → "require an argument", exit 1); `0` → `cerberus-lean: refused — --fuel 0: the fuel must be a positive integer (fuel 0 kills at the first bind: never a verdict; see VALIDATION.md, fuel)`, exit 2; non-numeral → `refused — --fuel abc: not a decimal numeral (…default 100000000…)`, exit 2; `refuseFlag`'s accepted-list text gains `--fuel <N>`; `runPipeline`, `frontendTU`, `loadLibc` take `[LemFuel]`; the ONE instantiation: `let code ← (letI : LemFuel := ⟨fuel⟩; runPipeline …)`. Measured on `tests/minimal/001-return-literal.c` (§4.5) | |
 | 7 | `speclab/` | `SpecLab/*Files.lean`: 20 `*File`/`*FileOf*` constructors (+ `junkFile`) take `[LemFuel]` (`convert_file [LemFuel]`); the five `SLUnit/*GateTest.lean`: `runFile*`/`checkRun*` take `[LemFuel]`, `main` → `mainAt [LemFuel]` + a new `main (args)` that REQUIRES `--fuel N` (NEW `SLUnit/Fuel.lean` `fuelFromArgs`: absent/0/non-numeral → exit 2); the five `test_speclab_*.sh` pass `--fuel "$CERB_TEST_FUEL"`; `scripts/common.sh` defines `CERB_TEST_FUEL="${CERB_TEST_FUEL:-100000000}"` (a test-suite choice, outside the scanned Lean text — [USER 2026-09-03] "Defaults that are chosen eg. in test suites are fine") | the gate binaries: `CoreGateTest: ALL PASSED` … `SeedGateTest: ALL PASSED` at `--fuel 100000000`; without: `gate test: refused — usage: <gate-test> --fuel <N> …`, rc 2 |
 | 8 | `lakefile.toml` | pin (`742506d` in pass 1, `ecf75b4` in pass 2) + comment; the three `*_lemMeasureProofs` roots (row 9) | |
-| 9 | `frontend/model/{ctype,core,defacto_memory_aux}.lem` + `lean_frontend/{Ctype,Core,Defacto_memory_aux}_lemMeasureProofs.lean` (NEW, pass 2) | the three `fuel_measure` declares (§2.5) and their obligation proofs (§3.5); `handwritten_copy.manifest` lists the three proof modules; `lakefile.toml` roots gain them (the generated `*_auxiliary.lean` shells import them) | Lean-only; OCaml byte-identical |
+| 9 | `frontend/model/{ctype,core,defacto_memory_aux}.lem` + `lean_frontend/{Ctype,Core,Defacto_memory_aux}_lemMeasureProofs.lean` (NEW, pass 2) | the three `fuel_measure` declares (§2.5) and their obligation proofs (§3.1); `handwritten_copy.manifest` lists the three proof modules; `lakefile.toml` roots gain them (the generated `*_auxiliary.lean` shells import them) | Lean-only; OCaml byte-identical |
 
-### 3.5 The three `fuel_measure` obligation proofs (pass 2; the first three of C2's 38)
+### 3.1 The three `fuel_measure` obligation proofs (pass 2; the first three of C2's 38)
 
 Each `<Module>_lemMeasureProofs.lean` proves exactly the theorem the
 generated `<Module>_auxiliary.lean` states and delegates
@@ -723,3 +729,94 @@ commits produce together (the intermediate trees are not individually
 buildable: 1/5 references the proof roots of 3/5 and 2/5's seams need
 the regenerated tree of 1/5 — the groups follow the brief's grouping, not
 bisectability).
+
+## 13. Pre-merge audit response (audit `2026-09-04_fuel-parameter-C1-audit-premerge.md` @ `2b73014e0`, verdict MERGE-WITH-FIXES, no MAJOR)
+
+One commit on `arc/fuel-parameter-cerberus`; each item as the auditor asked.
+
+- **M1** (static parametricity list, uncommitted generator): the generator
+  is committed as `scripts/gen_fuel_parametricity.py` (`--emit` regenerates
+  Part 1 — its output is byte-identical to the committed 64 examples,
+  checked with `diff`; `--check` compares the tree's ambient-wrapper SET
+  with the pins of `TotalityProofTest.lean` both directions, vacuity-guarded)
+  and `test_unit.sh` runs `--check` before the lakefile-roots gate. Plants
+  (on the real test file, reverted), verbatim:
+
+  ```
+  PLANT A (fake pin added):
+  gen_fuel_parametricity: FAIL — pin(s) in TotalityProofTest.lean with no wrapper in the tree: plant_fake_wrapper
+    regenerate Part 1: scripts/gen_fuel_parametricity.py --emit
+  rc=1
+  PLANT B (nd_bind pin removed):
+  gen_fuel_parametricity: FAIL — fuel'd wrapper(s) in the tree with NO parametricity pin in TotalityProofTest.lean: nd_bind
+    regenerate Part 1: scripts/gen_fuel_parametricity.py --emit
+  rc=1
+  REVERTED:
+  gen_fuel_parametricity: OK (64 ambient fuel wrappers in the generated tree = the 64 pins of TotalityProofTest.lean Part 1, both directions)
+  ```
+- **M2** (the gate's misses): F3 gains the instance-carrying worker form
+  `_lemFuel ⟨…⟩ <numeral>` and hex; F4 gains `LemFuel := {` and
+  `LemFuel.mk (`; F5 becomes "a SINGLE-component anonymous constructor led
+  by a numeral" (`⟨N⟩`, `⟨(N : Nat)⟩`, `⟨0x…⟩`, `⟨10^8⟩`; the first attempt
+  — any numeral-led `⟨` — false-positived on speclab's `⟨7, 2⟩` Input
+  literals, so the no-top-level-comma restriction is deliberate: `LemFuel`
+  has one field). The seven audit plants added to the selftest, verbatim:
+
+  ```
+    PLANT OK   [M2 F3 instance-carrying worker literal] -> check_no_fuel_numerals: FAIL (F3): fuel numeral shape found:
+    PLANT OK   [M2 E1 hex literal ⟨0x5F5E100⟩] -> check_no_fuel_numerals: FAIL (F5): fuel numeral shape found:
+    PLANT OK   [M2 E2 ascribed literal ⟨(N : Nat)⟩] -> check_no_fuel_numerals: FAIL (F5): fuel numeral shape found:
+    PLANT OK   [M2 E4 structure instance { fuel := N }] -> check_no_fuel_numerals: FAIL (F4): fuel numeral shape found:
+    PLANT OK   [M2 E6 LemFuel.mk (expr)] -> check_no_fuel_numerals: FAIL (F4): fuel numeral shape found:
+    PLANT OK   [M2 E7 worker at a hex literal] -> check_no_fuel_numerals: FAIL (F3): fuel numeral shape found:
+    PLANT OK   [M2 E3 arithmetic ⟨10^8⟩] -> check_no_fuel_numerals: FAIL (F5): fuel numeral shape found:
+    KNOWN GAP  [M2 E5 indirection via a non-fuel-named constant] -> stays GREEN (not regex-closable; review discipline + the [LemFuel] typing backstop)
+  check_no_fuel_numerals: SELFTEST OK (20 plants red with the declared label; E5 indirection a recorded known gap; unplanted set green)
+  ```
+
+  E5 (indirection through a non-fuel-named constant) is, as the auditor
+  said, not regex-closable; the selftest now RECORDS the gap (a `KNOWN GAP`
+  line, and a `PLANT NOTE` if a future regex ever catches it) so it is
+  visible on every run, never silent. `VALIDATION.md` §3's row and the
+  manifest §1 are softened to what the gate guarantees: a plant-tested
+  speedbump over the enumerated idiomatic shapes, with the `[LemFuel]`
+  typing (no instance anywhere in library/generated/seams) and the
+  measured wrappers' obligations as the backstop. The gate script's header
+  says the same.
+- **M3** (`[LemFuel] [LemFuel]` at `DivModFiles.lean:102,118`): one binder
+  dropped on each; speclab rebuilt (`Build completed successfully (301
+  jobs).`); the five gates re-run (below).
+- **N1**: record §0 "31 names" → 34; the two "§11" cross-references → §5/§6;
+  §3.5 renumbered §3.1.
+- **N2**: the "bit-identical executable" sentence replaced (§2.5): the
+  binary hash is not reproducible here (the orchestrator's rebuild stamped
+  `bin bc1bee7b…` on the same `src`); the load-bearing invariant is the
+  generated OCaml tree's byte identity (`gen 295e4f82…`, verified three
+  ways).
+- **N3**: TODO.md row added — comment-only `.lem` cleanup of the three
+  stale `lemDefaultFuel` mentions at the next `.lem`-touching
+  upstream-facing change (left now for byte identity).
+- N4–N9: acknowledged; no change (N7's "301 files" C2-ratchet count is the
+  unpinned LemLib copy count, as the auditor says).
+
+Gates after the response commit (serial, capped 32G, `SKIP_BUILD=1` on
+the stamped binaries), verbatim:
+
+```
+test_unit.sh: ✓ effects-proof-test PASSED … ✓ fuel-exemplar-test PASSED / Total: 6 passed, 0 failed
+  gen_fuel_parametricity: OK (64 ambient fuel wrappers in the generated tree = the 64 pins of TotalityProofTest.lean Part 1, both directions)
+  check_no_fuel_numerals: SELFTEST OK (20 plants red with the declared label; E5 indirection a recorded known gap; unplanted set green)
+  check_no_fuel_numerals: OK (267 files scanned comment-stripped; no lemDefaultFuel/driverFuel/ndDefaultFuel, no LemFuel instance, no literal fuel (F1-F6); allowed Main.lean sites seen: 4 of 4 (hand-written + generated copy))
+  check_lakefile_roots: SELFTEST OK (3 plants red, baseline green) / OK (195 roots = 195 generated modules + the exe root Main; 85 auxiliary modules all built)
+  check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)   [rc 0, every gate through test_renumber_plants]
+test_speclab.sh --selftest: test_speclab: PASS (both pipelines agree on Specified(0))
+test_speclab.sh --plant:    test_speclab: PASS (both pipelines agree on Specified(2))
+test_speclab_divmod.sh --gate:  CoreGateTest: ALL PASSED / test_speclab_divmod: PASS (--gate)
+test_speclab_bytearr.sh --gate: ByteArrGateTest: ALL PASSED / test_speclab_bytearr: PASS (--gate)
+test_speclab_list.sh --gate:    ListGateTest: ALL PASSED / test_speclab_list: PASS (--gate)
+test_speclab_tree.sh --gate:    TreeGateTest: ALL PASSED / test_speclab_tree: PASS (--gate)
+test_speclab_seed.sh --gate:    SeedGateTest: ALL PASSED / test_speclab_seed: PASS (--gate)
+test_verify.sh: test_verify: 127 passed, 0 failed (25 fixtures, 28 call points, 14 corpus fixtures, 21 corpus points)
+test_immaculate.sh: OK: lane matches the committed baseline (MATCH except the ISO-fix register pins …)
+test_exec.sh --check-baseline: SUMMARY: total=106 match=85 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=3 cerb_floor=0 cerb_inconsistent=0 / Baseline check: 0 regression(s), 0 improvement(s) / BASELINE OK
+```

@@ -90,6 +90,14 @@ downstream.)
   a consumer's `finalize` evaluation never touch the opaque leaf.
   Changing `hack`'s type is a `.lem` change → OCaml text → not the
   route. Design note §7.
+- Comment-only `.lem` cleanup (fuel-parameter C1, pre-merge audit N3):
+  `frontend/model/defacto_memory.lem:2678`, `formatted.lem:327`,
+  `monadic_parsing.lem:113` still name the deleted `lemDefaultFuel` in
+  COMMENTS. Left deliberately: lem copies comments into the generated
+  OCaml text, so fixing them moves `ocaml_frontend/generated` and breaks
+  the C1 byte-identity invariant. Do it at the next `.lem`-touching
+  upstream-facing change (or as a comment-only delta with the lem-sync
+  stamp re-recorded, by operator ruling).
 - Cross-block fuel threading in the lem backend (FUEL arc follow-up,
   design note §1.6 route iii): a caller's fuel passed into callee
   workers across `let rec` blocks (today the L1 mechanism threads fuel
