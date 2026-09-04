@@ -84,6 +84,29 @@ inductive MemValue where
   | MVunion (tag : sym) (member : identifier) (val_ : MemValue)
   deriving Inhabited
 
+/-! Computable structural size of a `MemValue` (fuel-parameter arc C2,
+    2026-09-04): the `fuel_measure` of the generated `loadedValueFromMemValue`
+    (core_aux.lem) — a hand-written type has no backend-derived `lemSize`, so
+    this is its hand-written twin, in the derived sizes' shape (one per node,
+    one per list cons, leaves 0). Kernel-computable; the obligation in
+    Core_aux_lemMeasureProofs.lean is proved against it. -/
+mutual
+def memValueSize : MemValue → Nat
+  | .MVunspecified _ => 1
+  | .MVinteger _ _ => 1
+  | .MVfloating _ _ => 1
+  | .MVpointer _ _ => 1
+  | .MVarray vals => 1 + memValueListSize vals
+  | .MVstruct _ members => 1 + memValueMembersSize members
+  | .MVunion _ _ v => 1 + memValueSize v
+def memValueListSize : List MemValue → Nat
+  | [] => 0
+  | v :: vs => 1 + memValueSize v + memValueListSize vs
+def memValueMembersSize : List (identifier × ctype × MemValue) → Nat
+  | [] => 0
+  | (_, _, v) :: vs => 1 + memValueSize v + memValueMembersSize vs
+end
+
 /-- footprint = FP of [`W | `R] * address * N.num — impl_mem.ml:523-525 -/
 inductive FootprintAccess where | W | R
   deriving BEq, Inhabited, Repr, Ord

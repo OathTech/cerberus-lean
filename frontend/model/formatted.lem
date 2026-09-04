@@ -396,7 +396,10 @@ let rec load_character_array_aux elem_ty ptrval prec_n_opt acc =
    bound; no structural decrease): fuel, threadB recipe. Sentinel =
    the empty-result memM, reached only through the LOUD fuelExhausted
    panic. *)
-declare {lean} fuel val load_character_array_aux = `fuelExhausted (nd_return [])`
+(* FUEL-PARAMETER ARC C2 (2026-09-04; Lean-only): the memory walk's exhaustion
+   payload is the ND monad's ABSORBING kill at the fuel atom (as the driver
+   family's), never `nd_return []` — a value printf would continue with. *)
+declare {lean} fuel val load_character_array_aux = `ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
 val load_character_array: Ctype.ctype -> Mem.pointer_value -> maybe nat -> Mem.memM (list char)
 let load_character_array elem_ty ptrval prec_n_opt =
   Mem.bind

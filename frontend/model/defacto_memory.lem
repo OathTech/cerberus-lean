@@ -2669,6 +2669,9 @@ declare {lean} termination_argument impl_sizeof_ival_aux = automatic
 declare {lean} termination_argument isBeginningShift = automatic
 declare {lean} termination_argument silly_sh_eq = automatic
 declare {lean} fuel val has_concurRead = `fuelExhausted false`
+(* FUEL MEASURE (fuel-parameter arc C2, 2026-09-04; Lean-only): structural on the
+   integer value's derived size; proved in lean_frontend/Defacto_memory_lemMeasureProofs.lean. *)
+declare {lean} fuel_measure val has_concurRead = `lemSize ival_`
 declare {lean} termination_argument anyM = automatic
 declare {lean} termination_argument fold_memcmp_compare = automatic
 (* FUEL ARC (2026-09-03, docs/2026-09-02_fuel-arc-design.md section 1.2):
@@ -2677,7 +2680,14 @@ declare {lean} termination_argument fold_memcmp_compare = automatic
    'err-polymorphic), unwrapped; liftND/liftAction propagate it unchanged
    into driverM. Budget stays lemDefaultFuel (design note Q4). *)
 declare {lean} fuel val find_array_index = `ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
+(* FUEL MEASURE (fuel-parameter arc C2, 2026-09-04; Lean-only): the index i climbs
+   to size (ND-typed but data-bounded); the shift path sh is consumed one
+   element per step; offset climbs to max_offset. Proofs in
+   lean_frontend/Defacto_memory_lemMeasureProofs.lean. *)
+declare {lean} fuel_measure val find_array_index = `size - i + 1`
 declare {lean} fuel val easy_update_mem_value_aux = `ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
+declare {lean} fuel_measure val easy_update_mem_value_aux = `List.length sh + 1`
 declare {lean} fuel val memcmp_load_aux = `ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
+declare {lean} fuel_measure val memcmp_load_aux = `Int.toNat (max_offset - offset) + 1`
 declare {lean} termination_argument memcmp_compare = automatic
 declare {lean} fuel val mkUnspec = `fuelExhausted (MVarray [])`

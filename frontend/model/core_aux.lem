@@ -2535,21 +2535,44 @@ declare {lean} termination_argument select_case = automatic
 declare {lean} termination_argument lookup_env = automatic
 declare {lean} termination_argument collect_labeled_continuations = automatic
 declare {lean} fuel val in_pattern = `fuelExhausted false`
+(* FUEL MEASURE (fuel-parameter arc C2, 2026-09-04; Lean-only): each measure is the
+   derived structural size of the argument the recursion descends
+   (pattern/pexpr/expr; `CerbMem.memValueSize` for the hand-written MemValue;
+   the ctype for memValueFromValue); to_pures shares to_pure's counter and
+   starts from the derived list helper. Proofs in
+   lean_frontend/Core_aux_lemMeasureProofs.lean. *)
+declare {lean} fuel_measure val in_pattern = `lemSize g`
 declare {lean} fuel val subst_wait = `fuelExhausted g`
+declare {lean} fuel_measure val subst_wait = `lemSize g`
 declare {lean} fuel val find_labeled_continuation2_aux = `fuelExhausted acc`
+declare {lean} fuel_measure val find_labeled_continuation2_aux = `lemSize g`
 declare {lean} fuel val loadedValueFromMemValue = `fuelExhausted (OTy_integer, LVunspecified (Ctype [] Void0))`
+declare {lean} fuel_measure val loadedValueFromMemValue = `CerbMem.memValueSize mem_val`
 declare {lean} fuel val memValueFromValue = `fuelExhausted none`
+declare {lean} fuel_measure val memValueFromValue = `lemSize ty1`
 declare {lean} fuel val subst_sym_pexpr = `fuelExhausted g`
+declare {lean} fuel_measure val subst_sym_pexpr = `lemSize g`
 declare {lean} fuel val subst_sym_expr = `fuelExhausted g`
+declare {lean} fuel_measure val subst_sym_expr = `lemSize g`
 declare {lean} fuel val subst_pattern_val = `fuelExhausted expr1`
+declare {lean} fuel_measure val subst_pattern_val = `lemSize g`
 declare {lean} fuel val unsafe_subst_sym_pexpr = `fuelExhausted g0`
+declare {lean} fuel_measure val unsafe_subst_sym_pexpr = `lemSize g0`
 declare {lean} fuel val unsafe_subst_sym_expr = `fuelExhausted g`
+declare {lean} fuel_measure val unsafe_subst_sym_expr = `lemSize g`
 declare {lean} fuel val unsafe_subst_pattern = `fuelExhausted expr1`
+declare {lean} fuel_measure val unsafe_subst_pattern = `lemSize g`
 declare {lean} fuel val subst_pattern = `fuelExhausted none`
+declare {lean} fuel_measure val subst_pattern = `lemSize g`
 declare {lean} fuel val match_pattern = `fuelExhausted none`
+declare {lean} fuel_measure val match_pattern = `lemSize g`
 declare {lean} fuel val to_pure = `fuelExhausted none`
 declare {lean} fuel val to_pures = `fuelExhausted none`
 declare {lean} fuel val collect_saves_aux = `fuelExhausted st`
+declare {lean} fuel_measure val collect_saves_aux = `lemSize g`
 declare {lean} fuel val m_collect_saves_aux = `fuelExhausted st`
+declare {lean} fuel_measure val m_collect_saves_aux = `lemSize g`
 declare {lean} fuel val find_labeled_continuation = `fuelExhausted none`
+declare {lean} fuel_measure val find_labeled_continuation = `lemSize g`
 declare {lean} fuel val update_env_aux = `fuelExhausted env1`
+declare {lean} fuel_measure val update_env_aux = `lemSize g`

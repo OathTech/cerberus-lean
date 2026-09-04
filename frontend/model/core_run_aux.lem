@@ -743,14 +743,21 @@ declare {lean} termination_argument subst_wait_stack = automatic
 (* pair-list (Ecase) recursion is beyond Lean's automatic derivation
    (arc-3 design note): fuel with the input expression as witness. *)
 declare {lean} fuel val add_to_sb = `fuelExhausted g`
+(* FUEL MEASURE (fuel-parameter arc C2, 2026-09-04; Lean-only): structural on the
+   expression's derived size; obligations proved in
+   lean_frontend/Core_run_aux_lemMeasureProofs.lean. *)
+declare {lean} fuel_measure val add_to_sb = `lemSize g`
 declare {lean} termination_argument add_to_sb_continuation = automatic
 declare {lean} termination_argument add_to_sb_stack = automatic
 declare {lean} fuel val add_to_asw = `fuelExhausted g`
+declare {lean} fuel_measure val add_to_asw = `lemSize g`
 declare {lean} termination_argument add_to_asw_continuation = automatic
 declare {lean} termination_argument add_to_asw_stack = automatic
 declare {lean} termination_argument comma_list = automatic
 declare {lean} fuel val convert_pexpr = `fuelExhausted (Pexpr [] () (PEval Vunit))`
+declare {lean} fuel_measure val convert_pexpr = `lemSize g`
 declare {lean} fuel val convert_expr = `fuelExhausted (Expr [] (Epure (Pexpr [] () (PEval Vunit))))`
+declare {lean} fuel_measure val convert_expr = `lemSize g`
 declare {lean} termination_argument convert_action_ = automatic
 declare {lean} termination_argument convert_action = automatic
 declare {lean} termination_argument convert_paction = automatic

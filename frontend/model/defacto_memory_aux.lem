@@ -462,9 +462,16 @@ let lifted_simplify_integer_value_base ival_ =
    simplify_integer_value_base: SOFT sentinel — on fuel exhaustion it
    returns its input unsimplified (Sum.inr ival_), semantically clean. === *)
 declare {lean} fuel val tmp_compl_aux = `fuelExhausted ((0 : Int))`
+(* FUEL MEASURE (fuel-parameter arc C2, 2026-09-04; Lean-only): nbits counts down to 0
+   (the four bit-twiddling helpers); obligations proved in
+   lean_frontend/Defacto_memory_aux_lemMeasureProofs.lean. *)
+declare {lean} fuel_measure val tmp_compl_aux = `nbits + 1`
 declare {lean} fuel val tmp_AND_aux = `fuelExhausted ((0 : Int))`
+declare {lean} fuel_measure val tmp_AND_aux = `nbits + 1`
 declare {lean} fuel val tmp_OR_aux = `fuelExhausted ((0 : Int))`
+declare {lean} fuel_measure val tmp_OR_aux = `nbits + 1`
 declare {lean} fuel val tmp_XOR_aux = `fuelExhausted ((0 : Int))`
+declare {lean} fuel_measure val tmp_XOR_aux = `nbits + 1`
 declare {lean} fuel val fake_mem_value_eq = `fuelExhausted false`
 (* FUEL MEASURE (fuel-parameter arc C1 / D2 enablers, 2026-09-04; Lean-only):
    `fake_mem_value_eq` is an `Eq` instance method; its counter starts from the

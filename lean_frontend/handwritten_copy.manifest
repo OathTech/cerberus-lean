@@ -46,3 +46,10 @@ Core_lemMeasureProofs.lean
 Ctype_lemMeasureProofs.lean
 Defacto_memory_aux_lemMeasureProofs.lean
 Main.lean
+Utils_lemMeasureProofs.lean
+Core_eval_lemMeasureProofs.lean
+Core_aux_lemMeasureProofs.lean
+Defacto_memory_lemMeasureProofs.lean
+Core_reduction_lemMeasureProofs.lean
+Core_run_aux_lemMeasureProofs.lean
+CerbMeasureLemmas.lean

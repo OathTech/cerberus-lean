@@ -1508,6 +1508,9 @@ let step_ctx mem_st file core_extern current_tid (parent_tid_opt, th_st) =
    lem-lane fix (parenthesize the succ-arm body) before it can be fueled. === *)
 declare {lean} fuel val one_step_unseq_aux = `fuelExhausted (fun _ => none)`
 declare {lean} fuel val has_ccall = `fuelExhausted false`
+(* FUEL MEASURE (fuel-parameter arc C2, 2026-09-04; Lean-only): structural on the
+   expression's derived size; proved in lean_frontend/Core_reduction_lemMeasureProofs.lean. *)
+declare {lean} fuel_measure val has_ccall = `lemSize g`
 declare {lean} termination_argument is_unseq_with_ccall_aux = automatic
 declare {lean} fuel val get_ctx = `fuelExhausted []`
 declare {lean} fuel val get_ctx_unseq_aux = `fuelExhausted (fun _ => acc)`
@@ -1517,4 +1520,10 @@ declare {lean} termination_argument break_at_bound_and_sseq = automatic
 declare {lean} termination_argument pull_dyn_annotations = automatic
 declare {lean} termination_argument add_exclusion = automatic
 (* un-parked after the lem succ-arm parenthesization fix (arc-3 batch E) *)
-declare {lean} fuel val full_eval_pexpr = `fuelExhausted (fun st => Result (Undef CerbLocation.Loc.unknown [], st))`
+(* FUEL-PARAMETER ARC C2 (2026-09-04; Lean-only): the exhaustion payload of the
+   step-until-value loop is the ABSORBING element of its monad — the
+   undefined-monad `Error` outcome at the fuel atom, which every
+   `stExceptUndef_bind` propagates and the driver turns into
+   `kill (Error0 CerbFuel.fuelExhaustedLoc ...)` — never a value the run
+   continues with (consumer requirement (B); C2 record). *)
+declare {lean} fuel val full_eval_pexpr = `fun st => Result (Error CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg, st)`
