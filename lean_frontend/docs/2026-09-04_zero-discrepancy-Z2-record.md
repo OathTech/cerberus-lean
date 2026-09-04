@@ -823,3 +823,30 @@ BASELINE OK
 ### ./scripts/test_immaculate.sh rc=0 (54s) ::    OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip DIFF, R3 s4b-memcmp-hugesize ORACLE_CRASH — VALIDATION.md 'ISO-fix register' — and the in-Lean probes g6 TRIPWIRE / illtyped-store KILL).
 ```
 
+
+
+## 15. Orchestrator boundary review, second pass (after the audit response) [AGENT, orchestrator, 2026-09-04]
+
+Head `8914467fc` (audit response `08d4ffb1a` + the audit document
+`0bac11267` cherry-picked). Independent rebuild in this worktree
+(`make lean-prelude-src`; `DUNE_CACHE=disabled build_cerberus` → `recorded oracle stamp (bin b364239ed657…`;
+`CERB_MEM_MAX=32G build_lean` → lean stamp bin `99912f86b9e9…`, IDENTICAL to
+the worker's audit-response stamp (`99912f86…`, §14), so the gated Lean
+binary is bit-for-bit the same; `check_driver_fresh
+--check` OK. Then 25 lanes SERIALLY (the run was launched detached after
+two harness-side interruptions of the same script; the log is complete
+from `=== rebuild` to `=== DONE`), every one rc 0, no baseline movement:
+Tier A in full, parse/core over `tests/ci`, verify, immaculate, speclab
+selftest + plant, hang/kill/fuel plants, libxml2, gcc lane. `03:40:51 up 11 days, 13:11,  ? user,  load average: 4.17, 9.17, 11.96`.
+Verbatim:
+
+```
+           SUMMARY: total=1963 compared=1885 agree=1873 agree_nd=0 triaged=12 disagree=0 o2_agree=190 skip_gcc_compile=1 skip_gcc_stdout=1 skip_lean_crash=9 skip_lean_fail=9 skip_lean_timeout=11 skip_ub=47 triaged_addr=11 triaged_ub=1
+           Baseline check: 0 regression(s), 0 improvement(s)
+           gcc second-oracle lane OK
+verify:    test_verify: 127 passed, 0 failed (25 fixtures, 28 call points, 14 corpus fixtures, 21 corpus points)
+```
+
+Pre-merge audit `2026-09-04_zero-discrepancy-Z2-audit-premerge.md`
+(MERGE-WITH-FIXES, 0 MAJOR → F1–F7 fixed in `08d4ffb1a`, §14). Merge ask
+goes to the operator on this head.
