@@ -112,6 +112,35 @@ if ! "$FUELCLS_SH"; then
     exit 1
 fi
 
+# No-fuel-numerals gate (fuel-parameter arc, 2026-09-04): no fuel numeral
+# in the Lean text a consumer reasons against (seams, generated, tests,
+# speclab) except Main.lean's `--fuel` default; the gate's own plant
+# battery (--selftest: F1-F6 planted red, unplanted green) runs first so
+# a silently vacuous gate cannot pass. Fail-closed.
+NOFUEL_SH="$(dirname "$PURITY_SH")/check_no_fuel_numerals.sh"
+if ! "$NOFUEL_SH" --selftest; then
+    echo "test_unit: no-fuel-numerals gate SELFTEST FAILED"
+    exit 1
+fi
+if ! "$NOFUEL_SH"; then
+    echo "test_unit: no-fuel-numerals gate FAILED"
+    exit 1
+fi
+
+# Lakefile-roots gate (fuel-parameter arc, 2026-09-04; lem-lean fuel-measure
+# record §6.4 item 8): every generated module — the `_auxiliary` obligation
+# carriers included — is a Lake root, both directions; plant-tested by its
+# --selftest. Fail-closed.
+ROOTS_SH="$(dirname "$PURITY_SH")/check_lakefile_roots.sh"
+if ! "$ROOTS_SH" --selftest; then
+    echo "test_unit: lakefile-roots gate SELFTEST FAILED"
+    exit 1
+fi
+if ! "$ROOTS_SH"; then
+    echo "test_unit: lakefile-roots gate FAILED"
+    exit 1
+fi
+
 # Totality gate (arc 3): the exec slice is partial-free (empty allowlist).
 # ENFORCING and fail-closed like the gates above.
 TOTALITY_SH="$(dirname "$PURITY_SH")/check_exec_totality.sh"

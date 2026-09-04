@@ -815,36 +815,49 @@ echo "check_theorem_axioms: mem-scale S1 leg OK (${#MEMSCALE_THMS[@]} C1/C3 equa
 
 # ---------------------------------------------------------------------------
 # FUEL arc leg (2026-09-03; design docs/2026-09-02_fuel-arc-design.md §1.2,
-# §6 "pinned-lemma gate"): the customer contract shipped in the hand-
-# written CerbND.lean — the nine worker `_zero` lemmas, the three runner
-# leaves, the two constructor-disjointness lemmas, the wrapper/budget
-# `rfl`s and the SYNC GUARANTEE `drive_wrapper_defeq` — plus the exemplar
-# theorem over the shipped pipeline (test/Unit/FuelExemplar.lean: the
-# consumer's ∀-fuel shape by the symbolic round library, plus its fuel-0
-# and kernel-evaluated fuel-1 instances), each
-# in the clean cone: exact allowlist [propext, Classical.choice,
-# Quot.sound]; sorryAx / ofReduce* / DAEMON fatal as everywhere. That the
-# lemmas ELABORATE at all is the pinned-lemma gate (a renamed generated
-# binder or a regenerated `drive` body fails our build first); this leg
-# additionally pins their axiom cones. Fail-closed: each name must
+# §6 "pinned-lemma gate"; restated for the fuel-parameter arc 2026-09-04,
+# docs/2026-09-04_fuel-parameter-C1-record.md): the customer contract shipped
+# in the hand-written CerbND.lean — the three runner leaves, the two
+# constructor-disjointness lemmas, the kill-spelling bridge and the
+# FUEL-PARAMETRICITY pins (`@X ⟨n⟩ = X_lemFuel n` for every n: the driver
+# family, nd_bind/liftND/liftAction, the three runners) — plus the nine
+# GENERATED worker `_zero` lemmas that replaced their hand-written
+# duplicates, plus the exemplar theorems over the shipped fuel-parametric
+# pipeline `@drive ⟨fuel⟩` (test/Unit/FuelExemplar.lean: the consumer's
+# ∀-fuel shape by the symbolic round library, its fuel-0 instance and the
+# kill-at-one lemma), plus the three `fuel_measure` sufficiency obligations
+# (the generated statements in *_auxiliary.lean and their hand-written proofs
+# in *_lemMeasureProofs.lean — the D2 enablers), each in the clean cone: exact allowlist [propext,
+# Classical.choice, Quot.sound]; sorryAx / ofReduce* / DAEMON fatal as
+# everywhere. That the lemmas ELABORATE at all is the pinned-lemma gate (a
+# renamed generated binder or a moved worker fails our build first); this
+# leg additionally pins their axiom cones. Fail-closed: each name must
 # produce exactly one probe line.
 # ---------------------------------------------------------------------------
 PROBE5=lean_frontend/.axiom-probe-fuel.lean
-FUEL_THMS=(CerbND.nd_bind_lemFuel_zero CerbND.liftND_lemFuel_zero CerbND.liftAction_lemFuel_zero
-           CerbND.print_eval_conv_aux_lemFuel_zero CerbND.drive_nonmemory_steps_aux2_lemFuel_zero
-           CerbND.driver2_lemFuel_zero CerbND.find_array_index_lemFuel_zero
-           CerbND.easy_update_mem_value_aux_lemFuel_zero CerbND.memcmp_load_aux_lemFuel_zero
+FUEL_THMS=(nd_bind_lemFuel_zero liftND_lemFuel_zero liftAction_lemFuel_zero
+           print_eval_conv_aux_lemFuel_zero drive_nonmemory_steps_aux2_lemFuel_zero
+           driver2_lemFuel_zero find_array_index_lemFuel_zero
+           easy_update_mem_value_aux_lemFuel_zero memcmp_load_aux_lemFuel_zero
+           CerbND.fuelExhaustedKill_eq
            CerbND.runNDFuel_zero CerbND.runND1Fuel_zero CerbND.runND1TraceFuel_zero
            CerbND.fuelExhaustedKill_ne_Undef0 CerbND.fuelExhaustedKill_ne_Other
-           CerbND.driverFuel_eq CerbND.driver2_wrapper_defeq CerbND.nd_bind_wrapper_defeq
-           CerbND.print_eval_conv_aux_wrapper_defeq CerbND.drive_nonmemory_steps_aux2_wrapper_defeq
-           CerbND.hack_wrapper_defeq CerbND.runND_eq CerbND.runND1_eq
-           CerbND.drive_wrapper_defeq CerbND.drive_lemFuel
-           FuelExemplar.exemplar_certified_shipped_zero FuelExemplar.exemplar_run_one_kernel
-           FuelExemplar.exemplar_certified_shipped_one FuelExemplar.exemplar_certified_shipped_forall)
+           CerbND.driver2_wrapper_defeq CerbND.print_eval_conv_aux_wrapper_defeq
+           CerbND.drive_nonmemory_steps_aux2_wrapper_defeq CerbND.hack_wrapper_defeq
+           CerbND.nd_bind_wrapper_defeq CerbND.liftND_wrapper_defeq CerbND.liftAction_wrapper_defeq
+           CerbND.runND_eq CerbND.runND1_eq CerbND.runND1Trace_eq
+           FuelExemplar.exemplar_certified_shipped_zero FuelExemplar.exemplar_killed_at_one
+           FuelExemplar.exemplar_certified_shipped_forall
+           Ctype_lemMeasureProofs.ctypeEqual_measure_sufficient
+           Core_lemMeasureProofs.eq_core_base_type_measure_sufficient
+           Defacto_memory_aux_lemMeasureProofs.fake_mem_value_eq_measure_sufficient
+           ctypeEqual_measure_sufficient eq_core_base_type_measure_sufficient fake_mem_value_eq_measure_sufficient)
 {
   echo "import CerbND"
   echo "import Unit.FuelExemplar"
+  echo "import Ctype_auxiliary"
+  echo "import Core_auxiliary"
+  echo "import Defacto_memory_aux_auxiliary"
   for name in "${FUEL_THMS[@]}"; do
     echo "#print axioms $name"
   done
@@ -878,6 +891,6 @@ if [[ -n "$FUEL_BAD" ]]; then
   echo "$FUEL_BAD"
   exit 1
 fi
-echo "check_theorem_axioms: FUEL arc leg OK (${#FUEL_THMS[@]} contract lemmas + drive_lemFuel + the ∀-fuel exemplar and its instances, every cone ⊆ [propext, Classical.choice, Quot.sound])"
+echo "check_theorem_axioms: FUEL arc leg OK (${#FUEL_THMS[@]} contract lemmas — 9 generated _zero + the CerbND runner leaves/parametricity pins + the ∀-fuel exemplar and its instances + the 3 fuel_measure sufficiency obligations (generated statement + hand-written proof), every cone ⊆ [propext, Classical.choice, Quot.sound])"
 
 echo "check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)"

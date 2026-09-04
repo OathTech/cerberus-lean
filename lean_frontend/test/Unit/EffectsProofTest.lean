@@ -51,8 +51,10 @@ example :
 
 /-! ### Fuel threading: `zeros_aux` is total with explicit fuel -/
 
-/-- The wrapper is definitionally the worker at the default fuel. -/
-example : @zeros_aux a = @zeros_aux_lemFuel a lemDefaultFuel := rfl
+/-- The wrapper at ANY instance fuel is definitionally the worker started
+    there (fuel-parameter arc: `∀ n, @f ⟨n⟩ = f_lemFuel n`; no default
+    constant exists). -/
+example (n : Nat) : @zeros_aux a ⟨n⟩ = @zeros_aux_lemFuel a n := rfl
 
 /-- At any nonzero fuel, the integer case computes — SYMBOLIC in the fuel,
     the tagDefs map, the annotations, and the integer type. Impossible over
@@ -85,6 +87,6 @@ def main : IO UInt32 := do
   IO.println "effects-proof-test: all theorems checked at compile time"
   IO.println "  total core_object_type_of_ctype: 3 symbolic rfl theorems"
   IO.println "  reader-lifted get_membersDefs: 1 concrete lookup theorem"
-  IO.println "  fuel-threaded zeros_aux: wrapper defeq + symbolic integer case"
+  IO.println "  fuel-threaded zeros_aux: wrapper fuel-parametric (∀ n) + symbolic integer case"
   IO.println "  threaded sym_supply: id/advance/distinctness, symbolic in the state"
   return 0

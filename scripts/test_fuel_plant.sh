@@ -142,6 +142,54 @@ check "measure/kill -> FUEL(kill) note"   $'\tlean-first\t1\t[0-9.]+\t[0-9]+\tER
 check "measure/panic -> FUEL(panic) note" $'\tlean-first\t134\t[0-9.]+\t[0-9]+\tNONE\t[^\t]*FUEL\\(panic\\);' "$WORK/measure_panic.log"
 check_not "measure/assert no FUEL" 'FUEL\(' "$WORK/measure_assert.log"
 
+# --- the REAL driver at a tiny fuel (fuel-parameter arc, 2026-09-04) -----------
+#     The fuel is the caller's parameter (`--fuel N`, default Main.lean
+#     `defaultFuel`). A stub that runs the REAL binary with `--fuel 1`
+#     prepended (through the same CERB_LEAN_BIN_OVERRIDE hook — banner on
+#     every use; the freshness check is skipped for stubs, so the real
+#     binary is asserted fresh first) must make the lane read FUEL:kill —
+#     the errno allocation's liftMem exhausts at fuel 1, before any
+#     verdict — and the same program at the default must read MATCH. Also
+#     the refusals: fuel 0 and a non-numeral exit 2 with the attributed
+#     message; `--fuel` before the mode flag is refused as an unknown flag
+#     (the positional contract, Z-24).
+if [[ -z "${CERB_LEAN_BIN_OVERRIDE:-}" ]]; then
+    "$PROJECT_ROOT/tools/check_driver_fresh.sh" --check-lean || { echo "PLANT FAIL [tiny-fuel]: the real Lean driver is not fresh" >&2; fail=1; }
+    REAL_LEAN="$CERBERUS_LEAN_BIN"
+    cat > "$WORK/stub_fuel1" <<EOS
+#!/bin/sh
+# real driver, --fuel 1 spliced after the mode flag
+mode="\$1"; shift
+exec "$REAL_LEAN" "\$mode" --fuel 1 "\$@"
+EOS
+    chmod +x "$WORK/stub_fuel1"
+    log="$WORK/exec_fuel1.log"
+    CERB_LEAN_BIN_OVERRIDE="$WORK/stub_fuel1" "$SCRIPT_DIR/test_exec.sh" "$MIN" > "$log" 2>&1; echo "rc=$?" >> "$log"
+    # (measured at C1: at fuel 1 the FRONT END's pure fuel'd workers exhaust first — the opaque
+    #  sentinel, FUEL:panic exit 134 — before any ND kill; both sub-kinds are the lane's FUEL class)
+    check "exec/real driver at --fuel 1 -> FUEL" '^\[1/1\] FUEL 001-return-literal \(FUEL:(kill|panic), exit (1|134)\): lem: fuel exhausted$' "$log"
+    expect_nonzero "exec/real driver at --fuel 1" "$(sed -n 's/^rc=//p' "$log")"
+    log="$WORK/exec_default.log"
+    "$SCRIPT_DIR/test_exec.sh" "$MIN" > "$log" 2>&1; echo "rc=$?" >> "$log"
+    check "exec/real driver at the default fuel -> MATCH" '^\[1/1\] MATCH 001-return-literal' "$log"
+    # the refusals, on the real binary directly (LEAN_ABORT_ON_PANIC set as every harness does)
+    json="$WORK/min.json"
+    "$CERBERUS_BIN" --runtime="$PROJECT_ROOT/_build/install/default" --cabs-json "$MIN" > "$json" 2>/dev/null || { echo "PLANT FAIL [tiny-fuel]: cabs-json of $MIN failed" >&2; fail=1; }
+    for bad in 0 abc; do
+        out=$(LEAN_ABORT_ON_PANIC=1 "$REAL_LEAN" --batch --fuel "$bad" "$json" 2>&1); rc=$?
+        if [[ $rc -eq 2 ]] && grep -q "cerberus-lean: refused — --fuel $bad:" <<<"$out"; then echo "PLANT OK   [--fuel $bad refused, exit 2]: $(head -c 120 <<<"$out")"
+        else echo "PLANT FAIL [--fuel $bad]: rc=$rc out=$(head -c 200 <<<"$out")" >&2; fail=1; fi
+    done
+    out=$(LEAN_ABORT_ON_PANIC=1 "$REAL_LEAN" --fuel 5 --batch "$json" 2>&1); rc=$?
+    if [[ $rc -eq 2 ]] && grep -q "refused — --batch: known flag out of its canonical position" <<<"$out"; then echo "PLANT OK   [--fuel before the mode flag refused (positional contract)]"
+    else echo "PLANT FAIL [--fuel out of position]: rc=$rc out=$(head -c 200 <<<"$out")" >&2; fail=1; fi
+    out=$(LEAN_ABORT_ON_PANIC=1 "$REAL_LEAN" --batch "$json" --fuel 2>&1); rc=$?
+    if [[ $rc -eq 1 ]] && grep -q "require an argument" <<<"$out"; then echo "PLANT OK   [--fuel without an argument refused]"
+    else echo "PLANT FAIL [--fuel without argument]: rc=$rc out=$(head -c 200 <<<"$out")" >&2; fail=1; fi
+else
+    echo "PLANT SKIP [tiny-fuel]: CERB_LEAN_BIN_OVERRIDE is set by the caller; the real-driver plant needs the real binary" >&2; fail=1
+fi
+
 echo ""
-if [[ $fail -eq 0 ]]; then echo "test_fuel_plant: ALL PLANTS OK (FUEL classification live in exec/gcc/ci_sweep/cn_coverage/measure; negatives not FUEL)"; else echo "test_fuel_plant: PLANT FAILURES" >&2; fi
+if [[ $fail -eq 0 ]]; then echo "test_fuel_plant: ALL PLANTS OK (FUEL classification live in exec/gcc/ci_sweep/cn_coverage/measure; negatives not FUEL; the real driver at --fuel 1 reads FUEL and at the default MATCH; --fuel 0/non-numeral/out-of-position/missing refused)"; else echo "test_fuel_plant: PLANT FAILURES" >&2; fi
 exit $fail
