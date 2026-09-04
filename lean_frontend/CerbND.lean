@@ -4,14 +4,27 @@
 
   This runner implements exhaustive evaluation of all nondeterministic
   branches, with NO constraint tracking: NDguard always continues and
-  NDbranch explores both sides. NOTE this is a divergence from OCaml,
-  where guards/branches go through `with_constraints ... check_sat` and
-  the CONCRETE model's cs_module (impl_mem.ml:321-361) really does
-  evaluate the accumulated constraints (its `with_constraints` runs
-  `eval_cs` over MC_eq/MC_le/MC_lt/... and `check_sat` reports UNSAT if
-  any constraint evaluated false, pruning that branch). Constraints are
-  NOT trivially satisfiable in the concrete model; pruning is simply not
-  implemented here yet (recorded divergence — survey finding 23).
+  NDbranch explores both sides. UNREACHABLE BY CONSTRUCTION, not a
+  divergence (zero-discrepancy Z-59 / Z2-N-03, charter §2.7 — the first
+  draft's "recorded divergence — survey finding 23" is REVOKED): on the
+  oracle, guards/branches go through `with_constraints … check_sat`
+  (smt2.ml:42-44) and the CONCRETE model's cs_module (impl_mem.ml:321-361)
+  does evaluate the accumulated constraints. But (1) `NDguard` is produced
+  only by `addConstraints` (nondeterminism.lem:234-237, :499-502), whose
+  sole exec-cone caller is driver.lem:148 under a `PEconstrained`, which
+  arises only from the `Nothing` arms of `Mem.eq_ival`/`lt_ival`/`le_ival`
+  (core_eval.lem:352-378) — and the concrete model returns `Some` ALWAYS,
+  impl_mem.ml:2556-2562 ↔ `CerbMem.eqIval/ltIval/leIval` (the TRIPWIRE
+  theorems `CerbMem.eqIval_isSome`/`ltIval_isSome`/`leIval_isSome` fail
+  the build if that ever changes); (2) `NDbranch` is produced only at
+  nondeterminism.lem:422 (`msum`) with EMPTY constraints (:465 variant
+  commented out), so `with_constraints` there is trivially SAT and
+  exploring both sides is exactly what the oracle does (and `NDbranch`'s
+  other producer `ifM` lives in defacto_memory.lem, not linked). Probe
+  evidence: trace COUNTS and ORDER agree on every completing program
+  (tests/z2-probes/nd/order3.c 6-way `129,138,219,237,318,327` on fork,
+  upstream and Lean; the noodle's 8/8, 40/40, 67650/67650). Should any
+  `NDguard` ever be produced, port `with_constraints` evaluation.
 
   Symbolic execution is NOT supported.
 
@@ -125,14 +138,15 @@ def runNDFuel (fuel : Nat)
         ) []
 
       | (NDguard _info _constraint continuation, st') =>
-        -- DIVERGENCE: no constraint pruning (OCaml would eval the constraint
-        -- via the concrete cs_module, impl_mem.ml:321-361, and backtrack on
-        -- UNSAT); we always continue.
+        -- UNREACHABLE by construction (header, Z-59): no `NDguard` is ever
+        -- produced with the concrete model's total eq/lt/le_ival; the
+        -- oracle's cs_module evaluation (impl_mem.ml:321-361) is not ported.
         runNDFuel fuel continuation st'
 
       | (NDbranch _info _constraint left right, st') =>
         -- Both sides explored, left-then-right (mirrors smt2.ml:117-132
-        -- `xs1 @ xs2`); same no-pruning divergence as NDguard.
+        -- `xs1 @ xs2`); the constraints are EMPTY at the only producer
+        -- (nondeterminism.lem:422), so the oracle explores both too (Z-59).
         runNDFuel fuel left st' ++ runNDFuel fuel right st'
 
       | (NDstep _info branches, st') =>

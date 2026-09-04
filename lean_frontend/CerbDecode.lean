@@ -5,6 +5,7 @@
 -/
 
 import AilSyntax
+import CerberusImpl
 
 namespace CerbDecode
 
@@ -27,6 +28,18 @@ private def readDigit (c : Char) : Nat :=
     Corresponds to: Decode.decode_integer_constant in decode.ml -/
 def decode_integer_constant (str : String) : basis × Int :=
   let chars := str.toList
+  -- decode.ml:7-8/:18 `str.[0]`: an EMPTY constant raises `Invalid_argument`
+  -- on the oracle (its own comment: "TODO: this explodes if the string is
+  -- empty") — a KIND-2 OCaml-execution artifact (the logical-semantics
+  -- referent ruling), NOT mirrored as such; the model gives an empty
+  -- constant no meaning, so this is a loud refusal (zero-discrepancy
+  -- Z2-DC-01: this decoded "" to (Decimal, 0), a fail-open default).
+  -- Reachable only through the fork-only `[[cerb::with_address("")]]`
+  -- attribute (cerb_attributes.lem:38,74); the C lexer never yields an
+  -- empty integer constant. Listed in the Z2 record §10.
+  if chars.isEmpty then
+    panic! "Decode.decode_integer_constant: empty constant has no meaning (decode.ml:7-8 str.[0] raises — an OCaml-execution artifact, not the referent); zero-discrepancy Z2-DC-01"
+  else
   let (digits, basisN, b) := match chars with
     | '0' :: 'x' :: rest | '0' :: 'X' :: rest => (rest, 16, Hexadecimal)
     | '0' :: 'b' :: rest | '0' :: 'B' :: rest => (rest, 2, Binary)
@@ -44,8 +57,13 @@ def decode_integer_constant (str : String) : basis × Int :=
     the modulus when r > max. E.g. '\xFF' → 255 → -1 (survey finding 26;
     previously the wrap was missing entirely). -/
 private def wrapChar (n : Int) : Int :=
-  let min : Int := -(2 ^ (8 - 1))          -- decode.ml:208
-  let max : Int := (2 ^ (8 - 1)) - 1
+  -- decode.ml:204-210: the range is READ from the implementation record —
+  -- `if impl.is_signed_ity Ctype.Char then (-(2^(8-1)), 2^(8-1)-1) else
+  -- (0, 2^8-1)`; routed through the same CerberusImpl mirror here
+  -- (zero-discrepancy literal census #8: the signed range was a literal)
+  let (min, max) : Int × Int :=
+    if CerberusImpl.is_signed_ity .Char0 then (-(2 ^ (8 - 1)), (2 ^ (8 - 1)) - 1)
+    else (0, (2 ^ 8) - 1)
   let dlt := max - min + 1                 -- decode.ml:211
   let r := Int.emod n dlt                  -- decode.ml:212 (mod_big_int)
   if r ≤ max then r else r - dlt           -- decode.ml:213-217

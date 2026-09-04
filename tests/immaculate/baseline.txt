@@ -55,11 +55,15 @@
 # is the register-R1 ORACLE_CRASH pair and stays as recorded.
 #
 # zero-discrepancy Z2 pins (2026-09-03; Z2 seam audit docs/2026-09-03_zero-discrepancy-Z2-audit.md
-# §4/§5, record docs/2026-09-04_zero-discrepancy-Z2-record.md): zd-z2m01-* (aligned_alloc(0,·):
-# oracle Division_by_zero at std.core:385 rem_t), zd-z2cp01-strtod-inf (libc.core `inf` literal),
-# zd-z2i01-cerbty-int32-uac (IntN_t aliasing), zd-z2f01-lseek-whence (SibylFS EINVAL) — each pinned
-# at the CURRENT Lean token BEFORE its fix (ORACLE_CRASH / DIFF) and re-recorded by the fix commit
-# that cites it (MATCH, or MATCH | L=CRASH for the both-crash rows).
+# §4/§5, record docs/2026-09-04_zero-discrepancy-Z2-record.md): zd-z2cp01-strtod-inf (libc.core `inf`
+# literal), zd-z2i01-cerbty-int32-uac (IntN_t aliasing), zd-z2f01-lseek-whence (SibylFS EINVAL) — each
+# pinned at the CURRENT Lean token BEFORE its fix (DIFF) and re-recorded MATCH by the fix commit.
+# zd-z2m01-* (aligned_alloc(0,·): oracle Division_by_zero at std.core:385 rem_t) stay ORACLE_CRASH /
+# MATCH|L=CRASH as PENDING rows: the oracle's crash is a KIND-2 OCaml-execution artifact, not mirrored
+# ([USER 2026-09-03] docs/2026-09-03_logical-semantics-referent-ruling.md); the logical meaning of a Core
+# rem_t by zero is an operator decision (record §10). Z2 probe-integration pins
+# (record §5): zd-z2-free-funptr (Z-07 re-witness, MATCH), zd-z2m03-malloc-oom-msg (MATCH — Lean runs
+# it since Z2-M-04), zd-z2fl03-nan-to-int and zd-z2f04-closedir (both-crash MATCH | L=CRASH pairs).
 argv1-args MATCH | L=VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 argv2-args MATCH | L=VAL:{value: "Specified(97)", stdout: "", stderr: "", blocked: "false"}
 argv3-args MATCH | L=VAL:{value: "Specified(11)", stdout: "", stderr: "", blocked: "false"}
@@ -105,8 +109,8 @@ zd-f1-truncate-negative-length MATCH | L=VAL:{value: "Specified(1)", stdout: "",
 zd-z2cp01-strtod-inf MATCH | L=VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
 zd-z2f01-lseek-whence MATCH | L=VAL:{value: "Specified(9)", stdout: "", stderr: "", blocked: "false"}
 zd-z2i01-cerbty-int32-uac MATCH | L=VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
-zd-z2m01-aligned-alloc-zero MATCH | L=CRASH
-zd-z2m01-aligned-alloc-zero-nolibc MATCH | L=CRASH
+zd-z2m01-aligned-alloc-zero-nolibc ORACLE_CRASH | L=UB:{ub: "DUMMY(align_alloc)", stderr: "", loc: "<8:28--8:47>"}
+zd-z2m01-aligned-alloc-zero ORACLE_CRASH | L=UB:{ub: "DUMMY(align_alloc)", stderr: "", loc: "<12:28--12:47>"}
 zd-z2m01-aligned-alloc-zero-zero MATCH | L=CRASH
 zd-z2m02-device-funptr-call MATCH | L=CRASH
 zd-z2p01-stderr_escape MATCH | L=VAL:{value: "Specified(0)", stdout: "", stderr: "E\b\007\255|", blocked: "false"}

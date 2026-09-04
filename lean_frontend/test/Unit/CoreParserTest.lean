@@ -109,7 +109,14 @@ def testLexer : TestM Unit := do
 
   -- Strings
   assertEq "string simple" (run CoreParser.lexStr "\"hello\"") "hello"
-  assertEq "string escape" (run CoreParser.lexStr "\"a\\nb\"") "a\nb"
+  -- escape sequences are kept VERBATIM, as the OCaml lexer's `cstring` keeps
+  -- its lexemes (core_lexer.mll:257-274, :296-297; zero-discrepancy Z2-CP-07 —
+  -- this used to decode `\n` to a newline)
+  assertEq "string escape kept verbatim" (run CoreParser.lexStr "\"a\\nb\"") "a\\nb"
+  assertEq "string escape \\\" kept" (run CoreParser.lexStr "\"a\\\"b\"") "a\\\"b"
+  -- fail-closed: an escape outside the mll set, or a raw newline, is a lexer error
+  assertErr "string unknown escape" (run CoreParser.lexStr "\"a\\qb\"")
+  assertErr "string raw newline" (run CoreParser.lexStr "\"a\nb\"")
 
   -- Symbols
   assertOk "sym paren" (run (CoreParser.lexSym "(") "(")
@@ -578,15 +585,27 @@ def testDeclarations : TestM Unit := do
   -- <builtin_X> impl tokens strip the prefix (OCaml scan_impl,
   -- core_lexer.mll:209-219): run-time dispatch matches the stripped name
   match CoreParser.pImplConstant "builtin_printf" with
-  | BuiltinFunction "printf" => pass "impl builtin_ prefix stripped"
+  | .ok (BuiltinFunction "printf") => pass "impl builtin_ prefix stripped"
   | _ => fail_ "impl builtin_ prefix stripped" "unexpected constant"
   match CoreParser.pImplConstant "builtin_generic_ffs" with
-  | BuiltinFunction "generic_ffs" => pass "impl builtin_generic_ffs"
+  | .ok (BuiltinFunction "generic_ffs") => pass "impl builtin_generic_ffs"
   | _ => fail_ "impl builtin_generic_ffs" "unexpected constant"
-  -- named impl-map constants unaffected
+  -- named impl-map constants resolve through the GENERATED Implementation.impl_map
+  -- (zero-discrepancy Z2-CP-08): the keys are the OCaml lexemes, e.g. `<sizeof>`
+  match CoreParser.pImplConstant "sizeof" with
+  | .ok Sizeof => pass "impl <sizeof> via impl_map"
+  | _ => fail_ "impl <sizeof> via impl_map" "unexpected constant"
+  match CoreParser.pImplConstant "Ctype.min" with
+  | .ok Ctype_min => pass "impl <Ctype.min> via impl_map"
+  | _ => fail_ "impl <Ctype.min> via impl_map" "unexpected constant"
+  -- fail-closed: an unknown name is Core_lexer_invalid_implname on the oracle
+  -- (core_lexer.mll:209-219) — including the pre-Z2 hand table's `Sizeof` spelling
   match CoreParser.pImplConstant "Sizeof" with
-  | Sizeof => pass "impl Sizeof unaffected"
-  | _ => fail_ "impl Sizeof unaffected" "unexpected constant"
+  | .error _ => pass "impl <Sizeof> refused (not an impl_map key)"
+  | .ok _ => fail_ "impl <Sizeof> refused" "accepted a non-key"
+  match CoreParser.pImplConstant "frobnicate" with
+  | .error _ => pass "impl <frobnicate> refused"
+  | .ok _ => fail_ "impl <frobnicate> refused" "accepted an unknown name"
 
   -- [ailname = "..."] attribute capture (OCaml: core_parser.mly:157-159,
   -- :1037-1041 — attribute string ↦ proc symbol, procs only)

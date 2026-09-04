@@ -35,6 +35,12 @@ def print_debug_located (_ : Nat) (_ : List d) (_ : CerbLocation.Loc) (_ : Unit 
     debug is stubbed everywhere; the proof path must not see IO). -/
 def print_debug_pure (_ : Nat) (_ : List d) (_ : Unit → String) : Unit := ()
 
+/-- `Cerb_debug.print_unsupported` — cerb_debug.ml:43-45 prints
+    `"unsupported: " ^ msg` on the TOOL's stderr UNCONDITIONALLY (not
+    level-gated). DECLARED EXC(a) (zero-discrepancy Z2-U-01): its only
+    callers are translation_effect.lem:250-265 `record_error` paths that
+    end in an `error` crash on both engines — tool-stderr text on a
+    both-crash path. -/
 def print_unsupported (_ : String) : Unit := ()
 
 def warn (_ : List d) (_ : Unit → String) : Unit := ()

@@ -108,7 +108,12 @@ private def beqObjectValue : object_value → object_value → Bool
 
 private def beqLoadedValue : loaded_value → loaded_value → Bool
   | .LVspecified ov1, .LVspecified ov2 => beqObjectValue ov1 ov2
-  | .LVunspecified ty1, .LVunspecified ty2 => ty1 == ty2
+  -- OCaml poly `=` on a ctype is STRUCTURAL (annotations included) — the
+  -- generated `ctype.beq_derived`, named explicitly (zero-discrepancy
+  -- Z2-Q-01: a bare `==` here resolved to the annotation-INSENSITIVE
+  -- `ctypeEqual` dictionary via the import graph; unreachable — driver.lem:
+  -- 1376/1410 compare only against the nullary Step_blocked2 — mirrored anyway)
+  | .LVunspecified ty1, .LVunspecified ty2 => ctype.beq_derived ty1 ty2
   | _, _ => false
 
 private def beqLoadedValueList : List loaded_value → List loaded_value → Bool
@@ -127,7 +132,7 @@ private def beqCoreValue : value → value → Bool
   | .Vunit, .Vunit => true
   | .Vtrue, .Vtrue => true
   | .Vfalse, .Vfalse => true
-  | .Vctype ty1, .Vctype ty2 => ty1 == ty2
+  | .Vctype ty1, .Vctype ty2 => ctype.beq_derived ty1 ty2   -- structural, as OCaml `=` (Z2-Q-01)
   | .Vlist bty1 vs1, .Vlist bty2 vs2 => bty1 == bty2 && beqCoreValueList vs1 vs2
   | .Vtuple vs1, .Vtuple vs2 => beqCoreValueList vs1 vs2
   | _, _ => false

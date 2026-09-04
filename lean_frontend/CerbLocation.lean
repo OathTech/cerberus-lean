@@ -113,13 +113,24 @@ def withCursorFrom (loc1 loc2 : Loc) : Loc :=
 /-! ## Bounding box
     Corresponds to: cerb_location.ml:103-149 -/
 
+/-- `pos_lt` — cerb_location.ml:109-114: same line → compare `pos_cnum`
+    (the ABSOLUTE byte offset), else the line. DECLARED (zero-discrepancy
+    Z2-L-02): `Pos` carries the column, not `pos_cnum`; the two orders
+    coincide unless two positions share a `source_line` from different
+    PREPROCESSED lines (a `#line`-remapped pair) — cosmetic (bounding boxes
+    feed `location_to_string`, an EXC(a) text channel), no verdict path. -/
 private def posLt (p1 p2 : Pos) : Bool :=
   if p1.line == p2.line then p1.col < p2.col
   else p1.line < p2.line
 
+/-- `outer_bbox` — cerb_location.ml:105-118: `[] -> assert false` (:109-110),
+    mirrored as a fail-stop (zero-discrepancy Z2-L-02: this answered
+    `(default, default)`); unreachable — `regions [] _` is refused at
+    construction on both sides (`Cerb_location.regions` failwith :33-36;
+    `CabsImport.jsonToLoc` rejects an empty `Loc_regions` list). -/
 private def outerBbox (xs : List (Pos × Pos)) : Pos × Pos :=
   match xs with
-  | [] => (default, default)
+  | [] => panic! "Cerb_location.outer_bbox: [] (cerb_location.ml:109-110 assert false)"
   | (b0, e0) :: rest =>
     rest.foldl (fun (bAcc, eAcc) (b, e) =>
       ((if posLt b bAcc then b else bAcc), (if posLt e eAcc then eAcc else e))
@@ -230,14 +241,24 @@ def simpleLocation : Loc → String
 private def stringOfPos (pos : Pos) : String :=
   s!"{pos.file}:{pos.line}:{pos.col}"
 
+/-- The cursor suffix of `location_to_string` — cerb_location.ml:219-223:
+    `" (cursor: " ^ string_of_pos ~shrink:true pos ^ ")"` /
+    `" (cursor: " ^ b ^ " - " ^ e ^ ")"`, where `~shrink:true` prints
+    `line:col` without the file (:189-191). Zero-discrepancy Z2-P-04 / Z2-L-01:
+    this suffix was dropped (an EXC(a) text gap, closed). -/
+private def cursorSuffix : Cursor → String
+  | .noCursor => ""
+  | .pointCursor p => s!" (cursor: {p.line}:{p.col})"
+  | .regionCursor b e => s!" (cursor: {b.line}:{b.col} - {e.line}:{e.col})"
+
 def stringFromLocation : Loc → String
   | .unknown => "unknown location"
   | .other str => s!"other_location({str})"
   | .point pos => s!"{stringOfPos pos}:"
-  | .region p1 p2 _ =>
+  | .region p1 p2 cur =>
     let fileStr := if p1.file == p2.file then "" else p2.file
     let lineStr := if p1.line == p2.line then "" else s!"{p2.line}:"
-    s!"{stringOfPos p1}-{fileStr}{lineStr}{p2.col}"
+    s!"{stringOfPos p1}-{fileStr}{lineStr}{p2.col}{cursorSuffix cur}"
   | .regions xs _ =>
     let (p1, p2) := outerBbox xs
     let fileStr := if p1.file == p2.file then "" else p2.file

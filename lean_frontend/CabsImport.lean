@@ -17,6 +17,23 @@
   - Locations: tagged (Loc_unknown/Loc_other/Loc_point/Loc_region/Loc_regions)
   - Cursors: tagged (NoCursor/PointCursor/RegionCursor)
   - CN declarations: filtered out by OCaml serializer (never appear in JSON)
+
+  Bridge notes (zero-discrepancy Z2-J-01/J-02, audit §2.15; the bridge is
+  fork-side OCaml, backend/lean_export/cabs_json.ml — a fork-drift-manifest
+  surface, not touched by the Lean slice):
+  - Z2-J-01: `json_of_external_declaration` (cabs_json.ml:621-633) maps the
+    CN declaration constructors to `None` and `filter_map`s them away — a
+    fail-OPEN shape on the OCaml side. UNREACHABLE in matched mode: plain
+    cerberus's C parser emits `EDecl_magic` for `/*@ … @*/` blocks, never
+    the `EDecl_*CN` constructors (only the CN frontend produces them). The
+    fail-closed remedy (a `failwith` there) is an oracle-surface change for
+    Z4/the tray.
+  - Z2-J-02: a C string literal with non-UTF-8 bytes is written raw by
+    `json_of_string` (cabs_json.ml:118-119), so the JSON is not UTF-8 and
+    `IO.FS.readFile` fails loudly ("containing non UTF-8 data") — while the
+    ORACLE also fails on such literals (decode.ml:199-200 failwith): a
+    both-fail today (EXC(a)), a latent bridge fail-point if the decoder ever
+    accepts them (remedy: escape bytes ≥ 0x80 as `\u00XX` in the bridge).
 -/
 
 import Lean.Data.Json
@@ -128,14 +145,18 @@ def jsonToLoc (j : Json) : Except String CerbLocation.Loc := do
       (← jsonToPos (← getField j "begin"))
       (← jsonToPos (← getField j "end"))
       (← jsonToCursor (← getField j "cursor")))
-  | "Loc_regions" => .ok (.regions
-      (← getList (fun rj => do
+  | "Loc_regions" =>
+    let rs ← getList (fun rj => do
         let arr ← getArr rj
         if h : arr.size = 2 then
           .ok ((← jsonToPos arr[0]), (← jsonToPos arr[1]))
         else err "Loc_regions" "expected 2-element region pair"
-      ) (← getField j "regions"))
-      (← jsonToCursor (← getField j "cursor")))
+      ) (← getField j "regions")
+    -- `Cerb_location.regions [] _` is a failwith on the oracle (cerb_location.ml:
+    -- 33-36), so no emitted JSON carries an empty list; refuse it here rather
+    -- than build a value the OCaml constructor refuses (zero-discrepancy Z2-L-02)
+    if rs.isEmpty then err "Loc_regions" "empty region list (Cerb_location.regions refuses [], cerb_location.ml:33-36)"
+    else .ok (.regions rs (← jsonToCursor (← getField j "cursor")))
   | t => err "jsonToLoc" s!"unknown tag '{t}' in {j}"
 
 /-! ## Identifier -/

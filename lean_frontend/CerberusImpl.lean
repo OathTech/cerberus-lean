@@ -16,8 +16,15 @@ namespace CerberusImpl
 /-! ## Target Configuration -/
 
 /-- Maximum alignment in bytes (LP64).
-    Corresponds to: DefaultImpl.max_alignment in ocaml_implementation.ml -/
+    Corresponds to: DefaultImpl.max_alignment in ocaml_implementation.ml:151-152 -/
 def max_alignment : Nat := 8
+
+/-- DefaultImpl.sizeof_pointer / alignof_pointer — ocaml_implementation.ml:
+    117-121 `Some 8` (the record fields impl_mem.ml reads at :153-158,
+    :219-225, :1160-1164, :2134; zero-discrepancy literal census #2 — CerbMem
+    reads these instead of its own literal). -/
+def sizeof_pointer : Option Nat := some 8
+def alignof_pointer : Option Nat := some 8
 
 /-! ## Integer Type Properties -/
 
@@ -127,7 +134,12 @@ def aux_ibty : integerBaseType → integerBaseType
   | .IntN_t n | .Int_leastN_t n | .Int_fastN_t n =>
     match n_t_aliases n with
     | some ibty => ibty
-    | none => panic! s!"Option.get: type_alias_map has no alias for an N-family width of {n} (ocaml_implementation.ml:39-44, :155-160 — Invalid_argument on the oracle)"
+    -- KIND classification left to the operator (Z2 record §10): the model
+    -- WRITES `Option.get` on its own alias table (a deliberate "must be
+    -- aliased" assertion, kind 1) but the missing entry is a width the
+    -- implementation never defined (kind 2 shape); either reading gives no
+    -- meaning to `__cerbty_int128_t` on DefaultImpl — a loud fail-stop
+    | none => panic! s!"DefaultImpl.type_alias_map has no alias for an N-family width of {n} (ocaml_implementation.ml:39-44, :155-160: Option.get raises on the oracle); zero-discrepancy Z2-I-03"
   | .Intmax_t => .Long     -- :45-46, :162
   | .Intptr_t => .Long     -- :47-48, :163
   | ibty => ibty           -- :49-50

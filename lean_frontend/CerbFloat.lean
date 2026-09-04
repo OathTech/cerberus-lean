@@ -11,9 +11,14 @@
 -- comparison, including `compare nan nan` — irreflexive, an unlawful
 -- order once a float keys a set). Mirrors OCaml Stdlib.compare's key
 -- properties: NaN equals itself and sorts below every non-NaN value
--- (+0.0/-0.0 compare equal here — OCaml's compare distinguishes them,
--- a documented finer-point divergence not observed on any float-keyed
--- differential path).
+-- (+0.0/-0.0 compare equal here — OCaml's compare distinguishes them).
+-- DECLARED UNREACHABLE (zero-discrepancy Z-62, charter §2.7): this instance
+-- and the `floatMul/Add/Sub/Div/of_int/floatEq/Lt/Le` helpers are referenced
+-- only from generated/Defacto_memory.lean and generated/Float.lean (grep),
+-- never from the concrete exec cone (`CerbMem.opFval` uses the Float ops
+-- directly); no `Set Float`/`compare` on floats exists in the exec cone
+-- (AilSyntax compares the literal STRING). Mirror `Stdlib.compare`'s ±0.0
+-- distinction if a float-keyed set ever enters an exec path.
 instance : Ord Float where
   compare x y :=
     if x < y then .lt

@@ -57,8 +57,14 @@ def list_remove_assoc {α β : Type} [BEq α] (key : α) : List (α × β) → L
     Corresponds to: Cerb_any.bounded_integer in cerb_any.ml (linked into
     core_run). OCaml draws Random.int64 in [lo, hi].
 
-    DIVERGENCE ENVELOPE (sem:S14, documented arc-14 S1 F6): we return
-    `lo` deterministically. Call site: the Core `Ndollar`/`bounded`
+    DECLARED (zero-discrepancy Z2-U-02; formerly the sem:S14 "divergence
+    envelope"): we return `lo` deterministically where the ORACLE draws
+    `Random.int64` from a `Random.self_init`-seeded PRNG
+    (util/cerb_any.ml:1-9) — the oracle's own value is NOT reproducible
+    run to run, so no matchable oracle value exists for this primitive; a
+    Lean value is chosen and stated. The call site is `any_bounded_int`
+    (core_run.lem:1063-1068, `<any.h>`), reached only by programs that use
+    it explicitly (none in the corpora). Call site: the Core `Ndollar`/`bounded`
     nondeterminism primitive, reachable only for programs that invoke it
     explicitly. In EXHAUSTIVE mode the oracle's differential story is that
     the RNG draw is one of a range while we pin one endpoint — so a

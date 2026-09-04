@@ -84,3 +84,14 @@ instance {bty : Type} {a : Type} :
       (failwithI "SetType generic_fun_map_decl: same-constructor compare \
                   (phantom instance requirement reached — see \
                   CerbFunMapInstances.lean)" : LemOrdering)
+
+/-! DECLARED (zero-discrepancy Z2-Q-02, audit "not settled" item): the one
+    generated consumer that folds a fun map WITHOUT importing this module —
+    `Core_typing.typecheck_program` (generated/Core_typing.lean:136,
+    core_typing.lem:1875 `Lem_Map_extra.fold`/`mapMapM` over `file1.stdlib`
+    and `file1.funs`) — iterates by KEY order (`Ord0 sym`, the same
+    `symbol_compare` both engines use) and never builds a set of
+    (key, value) pairs (no `fmapToSetBy`/`SetType` demand on the value
+    type, grep of generated/Core_typing.lean), so the value comparator this
+    file provides is not resolved there at all; nothing to agree or
+    disagree. -/

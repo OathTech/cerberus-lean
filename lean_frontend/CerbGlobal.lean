@@ -26,6 +26,13 @@ inductive CerbSwitch where
   | zap_dead_pointers
   | inner_arg_temps
   | permissive_printf
+  -- DECLARED (zero-discrepancy Z2-G-02, INSTRUMENT): the lem model's
+  -- `SW_no_integer_provenance` (global.lem:66) names `Switches.SW_no_integer_
+  -- provenance` as its OCaml target_rep (global.lem:81) — a constructor
+  -- ABSENT from switches.ml:1-44 (a lem-side inconsistency, tray candidate);
+  -- this Lean constructor is its target_rep (global.lem:82). No generated
+  -- module references it (grep), and the switch set is refused (Z-24) — a
+  -- dead constructor kept so the lem declaration stays resolvable.
   | no_integer_provenance
   | cheri
   deriving BEq, Inhabited, Repr
@@ -35,6 +42,13 @@ inductive CerbSwitch where
 
 structure CerbConf where
   backendName : String := "cerberus-lean"
+  -- DECLARED (zero-discrepancy Z2-G-01, INSTRUMENT): the oracle's
+  -- `current_execution_mode` is `Some Exhaustive` under `--mode=exhaustive`
+  -- and `Some Random` under the bare default (main.ml:438-441); its ONE live
+  -- exec-cone read, driver.lem:1380, takes the same branch for `none` and
+  -- `Some Exhaustive`. Two lanes run the oracle without `--mode` (single-
+  -- verdict programs: the unique step is picked either way). Mode flags are
+  -- refused by this port (Z-24), so the value is never set.
   execMode : Option ExecutionMode := none
   concurrency : Bool := false
   defacto : Bool := false

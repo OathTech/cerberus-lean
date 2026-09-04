@@ -59,7 +59,12 @@ def loadCoreStdlib (stdFile : CoreParser.CoreFile) :
 def loadCoreImpl (implFile : CoreParser.CoreFile) : impl :=
   implFile.impls.foldl
     (fun acc (name, d) =>
-      let ic := CoreParser.pImplConstant name
+      -- the name was already validated against Implementation.impl_map when
+      -- the `def <name>` declaration was parsed (CoreParser.pDefDecl →
+      -- pImplConstant, Z2-CP-08), so the error arm is unreachable here
+      let ic := match CoreParser.pImplConstant name with
+        | .ok ic => ic
+        | .error e => panic! e
       fmapAddBy implementation_constant_compare ic d acc)
     fmapEmpty
 
@@ -258,7 +263,16 @@ private def libcFuninfoEq
 
 /-- Checked insert into an assoc list (converted to an Fmap once assembly is
     complete — arc-6 S3: Fmap is no longer the raw list): duplicate keys must
-    agree structurally (fail-closed name-join). -/
+    agree structurally (fail-closed name-join).
+    DECLARED (zero-discrepancy Z2-T-01): the oracle's `Core_linking.link`
+    merges the libc TUs' tagDefs/funinfo with lem `union` (core_linking.lem:
+    294/298 → `fmapUnionBy` → `Pmap.union`, pmap.ml:290-294: the SECOND
+    map's datum wins on a common key — LemLib.lean:981 mirrors it), silently
+    picking the later TU's definition where two TUs disagree; this join
+    REFUSES on any disagreement instead. On the
+    pinned 12 metadata TUs no duplicate key disagrees (the lane loads),
+    so the two agree on every current input; a disagreeing future pin would
+    surface here as a loud load failure rather than a silent pick. -/
 private def libcInsertChecked {β : Type} (what : String) (eqv : β → β → Bool)
     (m : List (sym × β)) (k : sym) (v : β)
     (dbg : β → β → String := fun _ _ => "") : Except String (List (sym × β)) :=
@@ -362,6 +376,9 @@ Deviations from OCaml (hand-written latitude, documented):
   - Unspecified/OtherValue payloads print via the arc-10 S3 REAL mirrors of
     String_core.string_of_value (CerbPP.stringFromCore_value; residual
     divergences are enumerated in CerbPP.lean and stay "<...>"-bracketed)
+  - the oracle also prints `Time spent: %f seconds` on the TOOL's stderr
+    (main.ml:159-160) — not behaviour, not mirrored (zero-discrepancy
+    Z2-P-08; every lane filters `^Time spent`)
   - non-UB frontend failures emit an `Error {msg: ...}` line on stdout
     (OCaml puts them on stderr only); fail-closed either way
   - runND returning zero executions emits `Error {msg: "cerberus-lean:
@@ -423,19 +440,26 @@ def batchExitValue (v : value) : String :=
     lines agree textually with the oracle (arc-14 S1 F1: the previous
     hand-rolled "memory error" summaries were an undocumented divergence,
     visible on the G1 relational kill-paths).
-    DELIBERATE divergence, documented: the DErr_core_run arm keeps a local
-    rendering (upstream routes through Pp_errors.string_of_core_run_cause,
-    pp_errors.ml, which pretty-prints via the Pp machinery not ported to
-    the batch path); no standing harness compares these strings. -/
+    The DErr_core_run arm mirrors `Pp_errors.string_of_core_run_cause`
+    (pp_errors.ml:499-509) text for text (zero-discrepancy Z2-P-05; the
+    previous local `Illformed_program: …` renderings were an EXC(a)
+    divergence, closed): the four constant strings, and `Unresolved_symbol`
+    as `"unresolved symbol: " ^ Pp_ail.pp_id sym ^ " at " ^
+    Cerb_location.location_to_string loc` — `pp_id` is
+    `Pp_symbol.to_string_pretty` (pp_ail.ml:96; `CerbMem.ppSymbol` is its
+    mirror) and `location_to_string` is `CerbLocation.stringFromLocation`.
+    The embedded symbol NUMBER inside an Illformed_program payload differs
+    by construction (the two supplies' absolute numbering — Z-04/tray 17,
+    EXC(a) text). -/
 def driverErrorBatchMsg : driver_error → String
   | .DErr_core_run cause =>
     match cause with
-    | .Illformed_program s => s!"Illformed_program: {s}"
-    | .Found_empty_stack s => s!"Found_empty_stack: {s}"
-    | .Reached_end_of_proc => "Reached_end_of_proc"
-    | .Unknown_impl => "Unknown_impl"
-    | .Unresolved_symbol loc (Symbol _ n _) =>
-      s!"Unresolved_symbol: Symbol(_, {n}, _) at {CerbLocation.stringFromLocation loc}"
+    | .Illformed_program s => s!"ill-formed program: `{s}'"        -- pp_errors.ml:500-501
+    | .Found_empty_stack s => s!"found an empty stack: `{s}'"      -- :502-503
+    | .Reached_end_of_proc => "reached the end of a procedure"     -- :504-505
+    | .Unknown_impl => "unknown implementation constant"           -- :506-507
+    | .Unresolved_symbol loc sym =>
+      s!"unresolved symbol: {CerbMem.ppSymbol sym} at {CerbLocation.stringFromLocation loc}"  -- :508-509
   | .DErr_memory merr => Lem_Show.show0 merr    -- driver_ocaml.ml:25-26
   | .DErr_concurrency s => s!"Concurrency error: {s}"
   | .DErr_other s => s

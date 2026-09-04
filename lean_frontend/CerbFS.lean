@@ -286,7 +286,14 @@ def fs_write (st : FsState) (fd : Int) (data : List Char) (count : Int) : FsStat
   match lookupFd st fdN with
   | none => (st, .inl .ebadf)   -- EBADF, as SibylFS
   | some entry =>
-    let contents := (lookupFile st entry.path).getD []
+    -- an open fd whose path no longer resolves cannot arise: unlink/rename
+    -- with an open fd on the path REFUSE (header table) — so the `getD []`
+    -- that stood here (a write after unlink would have RE-CREATED the path
+    -- where POSIX keeps the inode) is replaced by a refusal (zero-discrepancy
+    -- Z2-F-03; fail-closed, never a default)
+    match lookupFile st entry.path with
+    | none => panic! (refusal s!"write on fd {fd} whose file '{entry.path}' is gone" "the model's file table lost the fd's file" moverOffsets)
+    | some contents =>
     -- Fail-closed (header): the model can only APPEND. That is correct
     -- exactly when the fd's offset sits at the current end of file
     -- (fresh file: 0 == 0; sequential writes maintain the invariant).
@@ -345,7 +352,9 @@ def fs_pwrite (st : FsState) (fd : Int) (data : List Char) (count offset : Int) 
   match lookupFd st fdN with
   | none => (st, .inl .ebadf)   -- EBADF, as SibylFS (unknown fd, or a std fd: no write flag on the dummy fid, fs_spec.lem:5006-5012)
   | some entry =>
-    let contents := (lookupFile st entry.path).getD []
+    match lookupFile st entry.path with   -- Z2-F-03 (see fs_write)
+    | none => panic! (refusal s!"pwrite on fd {fd} whose file '{entry.path}' is gone" "the model's file table lost the fd's file" moverOffsets)
+    | some contents =>
     -- fs_spec.lem:4287 fsop_pwrite_checks: `fsm_cond_raise EINVAL (ofs < 0)`
     if offset < 0 then (st, .inl (.other "EINVAL")) else
     -- Fail-closed (header): pwrite is correct here only as an append at

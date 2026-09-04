@@ -89,7 +89,17 @@ inductive NumLit where
 /-- Parse a numeric literal (integer or float).
     Integer: [0-9]+
     Float: [0-9]+.[0-9]* or [0-9]+[eE][+-]?[0-9]+ or [0-9]+.[0-9]*[eE][+-]?[0-9]+
-    Matches what OCaml's string_of_float produces: 0., 3.14, 1e-06, 1e+308, etc. -/
+    Matches what OCaml's string_of_float produces: 0., 3.14, 1e-06, 1e+308, etc.
+    (The OCaml Core grammar has NO float literal — core_lexer.mll:290-291 lexes
+    digits only; floats reach this parser solely through the pp dump.)
+    DECLARED INSTRUMENT boundary (zero-discrepancy Z2-CP-02): `string_of_float`
+    is `%.12g` (pp_core.ml:282), so the pinned dump is LOSSY for floats needing
+    more than 12 significant digits — tests/libc/libc.core:41698
+    `Specified(3.40282347e+38)` is FLT_MAX with digits lost; the value parsed
+    here is then not the oracle's in-memory double. Not settled by probe
+    (tests/z2-probes/coreparser/strtof_fltmax.c: all three engines exceed
+    60 s exhaustive); mover: regenerate the pin with an exact printer
+    (`%.17g`/`%h`) in scripts/libc_prep.sh — Z4 measurement lane. -/
 partial def lexNumLit : P NumLit := do
   let neg ← match ← peek? with
     | some '-' => skip; pure true
@@ -128,15 +138,24 @@ def lexInt : P Int := do
   | .int n => return n
   | .float _ => fail "expected integer, got float"
 
-/-- Helper for lexStr: parse string body after opening quote -/
+/-- Helper for lexStr: parse string body after opening quote — mirrors
+    core_lexer.mll:257-274 `cstring`: an `s_char` is any char but `"`, `\\`
+    and NEWLINE, or one of the escape sequences `\' \" \? \\ \a \b \f \n
+    \r \t \v` (:257-259), each kept VERBATIM (the token is the concatenation
+    of the lexemes, :296-297 — no decoding). Zero-discrepancy Z2-CP-07: this
+    decoded `\n \t \\ \"` to their characters, mapped any other `\c` to `c`
+    and accepted raw newlines. Fail-closed now: an unlisted escape or a
+    newline is a lexer error, as on the oracle. -/
 private partial def lexStrGo (acc : String) : P String := do
   let c ← any
   if c == '"' then lexWs; return acc
+  else if c == '\n' then fail "CoreParser: newline inside a string literal (core_lexer.mll:266 s_char excludes '\\n'; zero-discrepancy Z2-CP-07)"
   else if c == '\\' then
     let c2 ← any
-    let esc := match c2 with
-      | 'n' => '\n' | 't' => '\t' | '\\' => '\\' | '"' => '"' | c => c
-    lexStrGo (acc.push esc)
+    if c2 == '\'' || c2 == '"' || c2 == '?' || c2 == '\\' || c2 == 'a' || c2 == 'b'
+        || c2 == 'f' || c2 == 'n' || c2 == 'r' || c2 == 't' || c2 == 'v' then
+      lexStrGo ((acc.push '\\').push c2)
+    else fail s!"CoreParser: unknown escape sequence \\{c2} in a string literal (core_lexer.mll:257-259; zero-discrepancy Z2-CP-07)"
   else lexStrGo (acc.push c)
 
 /-- Parse a double-quoted string -/
@@ -184,6 +203,38 @@ private partial def colOfAux (s : String) (p : _root_.String.Pos.Raw) (n : Nat) 
 private def getCol : P Nat := fun it =>
   .success it (colOfAux it.1 it.2.offset 0)
 
+/-- Current BYTE offset (zero-discrepancy Z-01 Pos row): the position the
+    OCaml lexer's `pos_cnum` would report here — whitespace/comments before
+    the next token were consumed by the previous token's trailing lexWs. -/
+private def getByte : P Nat := fun it => .success it it.2.offset.byteIdx
+
+/-- The byte offset just AFTER the last token (menhir's `$endpos`): the
+    current position minus the trailing whitespace the last token's lexWs
+    consumed. Exact whenever that trailing run is whitespace only; a `--`
+    comment between the token and here would be included (the `$endpos`
+    of a Core action in std.core is never followed by a comment on the same
+    line — grep-verified on std.core; a corner inside the Z-01 residual). -/
+private def backOverWs (s : String) (p : _root_.String.Pos.Raw) (fuel : Nat) : Nat :=
+  match fuel with
+  | 0 => p.byteIdx
+  | fuel + 1 =>
+    if p.byteIdx == 0 then 0
+    else
+      let p' := s.prev p
+      let c := s.get p'
+      if c == ' ' || c == '\t' || c == '\n' || c == '\r' then backOverWs s p' fuel else p.byteIdx
+
+private def lastTokenEndByte : P Nat := fun it =>
+  .success it (backOverWs it.1 it.2.offset it.2.offset.byteIdx)
+
+/-- A position MARKER: `file = ""`, `line = 0`, `col = <byte offset>` — the
+    parse-time form of a `region ($startpos, $endpos)`; resolved to
+    (line, column) against the input's newline table by `stampLibraryFile`
+    (library files) or erased back to `Loc.unknown` by `parseFile` (see
+    the Z-01 section below). -/
+private def markerLoc (b e : Nat) : CerbLocation.Loc :=
+  .region { file := "", line := 0, col := b } { file := "", line := 0, col := e } .noCursor
+
 /-- Construct a symbol from a parsed identifier string.
     Uses the string's hash as the number so distinct names get distinct
     IDs (symbol equality ignores the description — see symbolEqual in
@@ -203,9 +254,25 @@ private def loc0 : CerbLocation.Loc := CerbLocation.unknown
 /-- Default annotation list with unknown location. -/
 private def annots0 : List annot := [Aloc loc0]
 
+/-- The VALUE keywords — `True`/`False`/`Unit` (core_lexer.mll:70-72), the
+    spellings that pPexprAtom reads as the constants `Vtrue`/`Vfalse`/`Vunit`.
+    (Not the whole keyword table: the pretty-printer prints every symbol
+    PLAIN (`to_string_pretty`), so a C identifier that happens to be a Core
+    keyword is a legitimate binder in the dump — tests/libc/libc.core has
+    `glob builtin` and 57 parameters named `alloc` — and the oracle never
+    re-lexes the dump; refusing those would refuse the libc pin. Only the
+    value keywords change a program's MEANING silently in atom position.) -/
+private def coreValueKeywords : List String := ["True", "False", "Unit"]
+
 /-- Parse an identifier into a `sym`. -/
 private def lexSymId : P sym := do
   let name ← lexIdent
+  -- TRIPWIRE (zero-discrepancy Z2-CP-17): a binder/declaration spelled
+  -- `True`/`False`/`Unit` (a C identifier reaching the dump plain) would be
+  -- read as the VALUE wherever it is used in atom position — a silently
+  -- different program; refuse the name instead.
+  if coreValueKeywords.contains name then
+    fail s!"CoreParser: the name `{name}` is a Core value keyword (core_lexer.mll:70-72) — its uses would parse as the constant, not the symbol (zero-discrepancy Z2-CP-17)"
   -- TRIPWIRE (zero-discrepancy Z2-CP-01): in atom position `inf`/`nan` are
   -- the pp's spellings of the IEEE infinities/NaN (pPexprAtom below), so a
   -- BINDER or declared name spelled that way would be silently shadowed
@@ -236,18 +303,47 @@ private partial def sepByComma1 (p : P α) : P (List α) := do
     | none => break
   return acc
 
-/-- Extract inner type from BTy_list. -/
+/-- Extract the element type of an annotated list type. OCaml
+    `ensure_list_core_base_type` (core_parser.mly:68-71) FAILS on a non-list
+    annotation; DECLARED divergence (zero-discrepancy Z2-CP-11, the one arm
+    kept): the pretty-printer prints a `Cnil` as `[]: <ELEMENT bTy>`
+    (pp_core.ml:464, `pp_core_base_type bTy` of the ctor's element type —
+    libc.core ×3), which the oracle's own grammar would reject, so the
+    element-type spelling MUST be accepted for the dump to load; the
+    fallback is exactly that case. -/
 private def ensureListBTy : core_base_type → core_base_type
   | BTy_list bTy => bTy
-  | bTy => bTy  -- fallback: just use it as-is
+  | bTy => bTy
 
 /-- Build a list pattern from a list of patterns. -/
 private def mkListPat (bTy : core_base_type) : List (generic_pattern sym) → generic_pattern sym
   | [] => Pattern [] (CaseCtor (Cnil bTy) [])
   | p :: ps => Pattern [] (CaseCtor Ccons [p, mkListPat bTy ps])
 
-/-- Map an impl constant name string to implementation_constant. -/
-def pImplConstant (s : String) : implementation_constant :=
+/-- Map an impl constant name string to implementation_constant — the mirror
+    of `scan_impl` (parsers/core/core_lexer.mll:209-219): the FULL lexeme
+    `<name>` is looked up in `Implementation.impl_map` (implementation.lem:
+    306-337, the generated `impl_map` — the same table both backends read);
+    otherwise a `<builtin_…>` lexeme is `BuiltinFunction` of the stripped
+    name (`remove_prefix ~prefix:"<builtin_" ~trim_end:1`); anything else
+    raises `Core_lexer_invalid_implname` there and is an error here.
+    Zero-discrepancy Z2-CP-08 / literal census #19: the hand table that stood
+    here FAILED OPEN (an unknown name became `BuiltinFunction s`) and
+    mis-mapped several impl_map keys (`<sizeof>`, `<Ctype.min>`, the dotted
+    `<Characters.*>`/`<Environment.*>` forms, …) — unreachable on the
+    shipped std.core/impl/libc.core token sets (arc-5 audit 1), fixed at the
+    source now. -/
+def pImplConstant (s : String) : Except String implementation_constant :=
+  match fmapLookupBy defaultCompare ("<" ++ s ++ ">") impl_map with
+  | some ic => .ok ic
+  | none =>
+    if s.startsWith "builtin_" then .ok (BuiltinFunction (s.drop "builtin_".length).toString)
+    else .error s!"CoreParser: invalid implementation-constant name <{s}> (core_lexer.mll:209-219 Core_lexer_invalid_implname; zero-discrepancy Z2-CP-08)"
+
+/-- The pre-Z2 hand table, kept ONLY as a cross-check of the generated
+    map's coverage of the spellings the shipped std.core/.impl use
+    (see `implTableAgrees`). -/
+private def pImplConstantLegacy (s : String) : implementation_constant :=
   if s == "Sizeof" then Sizeof
   else if s == "Alignof" then Alignof
   else if s == "Ctype_min" then Ctype_min
@@ -310,14 +406,21 @@ private def strContains (haystack needle : String) : Bool :=
   let nLen := n.length
   h.length >= nLen && strContainsGo h n nLen
 
-/-- Helper: parse iop from wrapI/catch token suffix. -/
-private def pIopFromStr (s : String) : iop :=
-  if strContains s "_add" then IOpAdd
-  else if strContains s "_sub" then IOpSub
-  else if strContains s "_mul" then IOpMul
-  else if strContains s "_shl" then IOpShl
-  else if strContains s "_shr" then IOpShr
-  else IOpAdd
+/-- The iop of a `wrapI_*` / `catch_exceptional_condition_*` keyword — EXACT
+    suffix table, mirroring the five keywords of core_lexer.mll:119-128
+    (`_add _sub _mul _shl _shr`, WRAPI/CATCH_EXCEPTIONAL_CONDITION tokens).
+    Any other spelling — including the `_div`/`_rem_t` the pretty-printer
+    CAN emit (pp_core.ml:418-419, a pp/lexer mismatch upstream) — lexes as
+    a plain SYM on the oracle (an unbound call, `Core_parser_unresolved_
+    symbol`) and is refused here. Zero-discrepancy Z2-CP-09: the previous
+    substring match defaulted anything unknown to `IOpAdd` (fail-open). -/
+private def pIopFromStr (kw : String) (s : String) : Except String iop :=
+  if s == kw ++ "_add" then .ok IOpAdd
+  else if s == kw ++ "_sub" then .ok IOpSub
+  else if s == kw ++ "_mul" then .ok IOpMul
+  else if s == kw ++ "_shl" then .ok IOpShl
+  else if s == kw ++ "_shr" then .ok IOpShr
+  else .error s!"CoreParser: `{s}` is not one of the five {kw}_(add|sub|mul|shl|shr) keywords (core_lexer.mll:119-128; zero-discrepancy Z2-CP-09)"
 
 -- Type abbreviations for readability
 private abbrev PE := generic_pexpr Unit sym
@@ -380,6 +483,32 @@ private def pIntegerType : P integerType :=
   <|> (attempt (lexKw "uintptr_t") *> pure (Unsigned Intptr_t))
   <|> (attempt (lexKw "size_t") *> pure Size_t)
   <|> (attempt (lexKw "ptrdiff_t") *> pure Ptrdiff_t)
+  -- Zero-discrepancy Z2-CP-16: the rest of `Builtins.translate_builtin_typenames`
+  -- (builtins.lem:11-69), which the grammar applies to any SYM in ctype
+  -- position with the `__cerbty_` prefix (core_parser.mly:1331-1338), and
+  -- which pp_core_ctype.ml:25-27/44-47/89-90 prints back in exactly these
+  -- spellings. None occurs in the shipped std.core/impl/libc.core.
+  <|> (attempt (lexKw "int128_t") *> pure (Signed (IntN_t 128)))
+  <|> (attempt (lexKw "uint128_t") *> pure (Unsigned (IntN_t 128)))
+  <|> (attempt (lexKw "int_fast8_t") *> pure (Signed (Int_fastN_t 8)))
+  <|> (attempt (lexKw "int_fast16_t") *> pure (Signed (Int_fastN_t 16)))
+  <|> (attempt (lexKw "int_fast32_t") *> pure (Signed (Int_fastN_t 32)))
+  <|> (attempt (lexKw "int_fast64_t") *> pure (Signed (Int_fastN_t 64)))
+  <|> (attempt (lexKw "uint_fast8_t") *> pure (Unsigned (Int_fastN_t 8)))
+  <|> (attempt (lexKw "uint_fast16_t") *> pure (Unsigned (Int_fastN_t 16)))
+  <|> (attempt (lexKw "uint_fast32_t") *> pure (Unsigned (Int_fastN_t 32)))
+  <|> (attempt (lexKw "uint_fast64_t") *> pure (Unsigned (Int_fastN_t 64)))
+  <|> (attempt (lexKw "int_least8_t") *> pure (Signed (Int_leastN_t 8)))
+  <|> (attempt (lexKw "int_least16_t") *> pure (Signed (Int_leastN_t 16)))
+  <|> (attempt (lexKw "int_least32_t") *> pure (Signed (Int_leastN_t 32)))
+  <|> (attempt (lexKw "int_least64_t") *> pure (Signed (Int_leastN_t 64)))
+  <|> (attempt (lexKw "uint_least8_t") *> pure (Unsigned (Int_leastN_t 8)))
+  <|> (attempt (lexKw "uint_least16_t") *> pure (Unsigned (Int_leastN_t 16)))
+  <|> (attempt (lexKw "uint_least32_t") *> pure (Unsigned (Int_leastN_t 32)))
+  <|> (attempt (lexKw "uint_least64_t") *> pure (Unsigned (Int_leastN_t 64)))
+  <|> (attempt (lexKw "wchar_t") *> pure Wchar_t)
+  <|> (attempt (lexKw "wint_t") *> pure Wint_t)
+  <|> (attempt (lexKw "ptraddr_t") *> pure Ptraddr_t)
   <|> (attempt (do lexKw "signed"; let ibty ← pIntegerBaseType; return (Signed ibty)))
   <|> (attempt (do lexKw "unsigned"; let ibty ← pIntegerBaseType; return (Unsigned ibty)))
   -- `enum TAG` (2026-09-01 S-basket item 2): both printer dialects emit
@@ -479,6 +608,7 @@ mutual
     the caller (pCtypeQ). -/
 partial def pCtypeAtom (ail : Bool) : P ctype :=
       (attempt (lexKw "void") *> pure (Ctype [] Void0))
+  <|> (attempt (lexKw "byte") *> pure (Ctype [] Byte))   -- pp_core_ctype.ml:89-90 (Z2-CP-16)
   <|> (attempt (do
         lexKw "_Atomic"
         lexSym "("
@@ -650,6 +780,17 @@ private partial def pCoreIntegerType : P integerType := do
   lexSym "'"
   return ity
 
+/-- TRIPWIRE (zero-discrepancy Z2-CP-13): the pp prints an anonymous tag
+    (`SD_unnamed_tag`) as `a_N` in OTy_struct position (pp_symbol.ml:9-10
+    `to_string`) and as `__cerbty_unnamed_tag_N` in ctype position, so
+    by-name interning would (a) collapse every anonymous tag to `a` after
+    the suffix strip and (b) split the two positions' symbols. No Core text
+    this parser loads has one (std.core, the impl, tests/libc/libc.core:
+    all tags named — grep-verified); refuse loudly if one ever appears. -/
+private def isAnonymousTagSpelling (s : String) : Bool :=
+  (s.startsWith "a_" && (s.drop 2).toString.all Char.isDigit && s.length > 2)
+  || s.startsWith "__cerbty_unnamed_tag_"
+
 /-- Strip the `_<num>` suffix from a raw-printed symbol name.
     OTy_struct/OTy_union tags print via Pp_symbol.to_string
     (pp_core.ml:186-189), which is `name ^ "_" ^ string_of_int n`
@@ -682,10 +823,12 @@ partial def pCoreObjectType : P core_object_type :=
   <|> (attempt (do
         lexKw "struct"
         let tag ← lexIdent
+        if isAnonymousTagSpelling tag then fail s!"CoreParser: anonymous tag spelling `{tag}` in a Core object type — by-name interning cannot represent SD_unnamed_tag symbols (zero-discrepancy Z2-CP-13)"
         return (OTy_struct (mkSym (stripRawSymSuffix tag)))))
   <|> (attempt (do
         lexKw "union"
         let tag ← lexIdent
+        if isAnonymousTagSpelling tag then fail s!"CoreParser: anonymous tag spelling `{tag}` in a Core object type (zero-discrepancy Z2-CP-13)"
         return (OTy_union (mkSym (stripRawSymSuffix tag)))))
 
 /-- Parse a core base type. -/
@@ -751,7 +894,9 @@ private def pCtorKw : P ctor :=
 private partial def pName : P (generic_name sym) :=
       (attempt (do
         let iCst ← lexImpl
-        return (Impl (pImplConstant iCst))))
+        match pImplConstant iCst with
+        | .ok ic => return (Impl ic)
+        | .error e => fail e))
   <|> (do
         let s ← lexSymId
         return (generic_name.Sym s))
@@ -863,28 +1008,19 @@ partial def pValue : P value :=
       (attempt (do lexKw "Unit"; return Vunit))
   <|> (attempt (do lexKw "True"; return Vtrue))
   <|> (attempt (do lexKw "False"; return Vfalse))
+  -- (zero-discrepancy Z2-CP-18: a dead `lexKw "Cfunction_value"` arm — a
+  -- misspelling of the `Cfunction` keyword, core_lexer.mll:80 — was deleted here)
   <|> (attempt (do
         lexKw "NULL"
         lexSym "("
         let ty ← pCtype
         lexSym ")"
         return (Vobject (OVpointer (CerbMem.nullPtrval ty)))))
-  <|> (attempt (do
-        lexKw "Cfunction_value"
-        lexSym "("
-        let nm ← pName
-        lexSym ")"
-        -- grammar-form function pointer value (core_parser.mly:1540);
-        -- note upstream's own semantic action punts to null_ptrval
-        -- (mly:1541 TODO) — we build the real PVfunction instead, since
-        -- exec depends on it (arc-6 S1)
-        match nm with
-        | generic_name.Sym s =>
-          return (Vobject (OVpointer (CerbMem.funPtrval s)))
-        | Impl _ => fail "Cfunction_value of an impl constant"))
-  <|> (attempt (do
-        lexKw "Ivmax_alignment"
-        return (Vobject (OVinteger (CerbMem.integerIval 16)))))
+  -- (zero-discrepancy Z2-CP-18: two DEAD value arms were deleted here — a
+  -- `lexKw "Cfunction_value"` arm (the keyword is `Cfunction`, core_lexer.mll:80;
+  -- the live arm is pPexprAtom's) and a `lexKw "Ivmax_alignment"` arm
+  -- (the keyword is `IvMaxAlignment`, :88) that returned the pre-Z-76
+  -- literal 16 — fail-open if ever reached)
   <|> (attempt (do
         let ty ← pCoreCtypeAil
         return (Vctype ty)))
@@ -1005,7 +1141,14 @@ private partial def pPexprMinus : P PE := do
   match special with
   | some f => return (mkPE (PEval (Vobject (OVfloating f))))
   | none =>
-  let pe ← pPexprAtom
+  -- core_parser.mly:1595-1597 `MINUS _pe= pexpr`: the production's precedence
+  -- is MINUS's (`%left PLUS MINUS`, :1192), so the operand extends over
+  -- every HIGHER-precedence operator — `::` (:1193), `* / rem_t rem_f`
+  -- (:1194), `^` (:1195) — and stops at `+ -`, the comparisons and the
+  -- logical ops: `- a rem_f b` = `0 - (a rem_f b)`, `- a + b` = `(0 - a) + b`.
+  -- Zero-discrepancy Z2-CP-03: this took an ATOM only. Precedence 5 is
+  -- `::`'s level in opPrecInfo (everything tighter than `+ -`).
+  let pe ← pPexprPrec 5
   return (mkPE (PEop OpSub (mkPE (PEval (Vobject (OVinteger (CerbMem.integerIval 0))))) pe))
 
 private partial def pPexprStruct : P PE := do
@@ -1084,7 +1227,9 @@ partial def pPexprAtom (minPrec : Nat := 0) : P PE := do
   | some '<' =>
       -- Fix 4: impl constant or impl function call <name>(args)
       let iCst ← lexImpl
-      let ic := pImplConstant iCst
+      let ic ← match pImplConstant iCst with
+        | .ok ic => pure ic
+        | .error e => fail e
       match ← peek? with
       | some '(' =>
         lexSym "("
@@ -1095,12 +1240,20 @@ partial def pPexprAtom (minPrec : Nat := 0) : P PE := do
   | some '\'' => pPexprValue  -- ctype value in quotes
   | _ =>
     -- Keyword-based dispatch
+    let startB ← getByte   -- `$startpos` of the production (Z-01 Pos row)
     let id ← attempt (some <$> lexIdent) <|> pure none
     match id with
     | some "undef" =>
       lexSym "("
       let ubStr ← lexDoubleAngle
-      lexSym ")"
+      let _ ← pstring ")"
+      let endB ← getByte     -- `$endpos` = just after `)`
+      lexWs
+      -- core_parser.mly:1571 `PEundef (region ($startpos, $endpos) NoCursor, ub)`:
+      -- the node carries ITS OWN region (Z-01 Pos row: it was `loc0`,
+      -- resolved to a file-only region by stampLibraryFile) — resolved to
+      -- line/column against the input's newline table at stamping.
+      let undefLoc := markerLoc startB endB
       -- Mirror OCaml scan_ub (parsers/core/core_lexer.mll:221-232): the
       -- <<...>> payload is first looked up in Undefined.ub_str_bimap (known
       -- UB names round-trip to their constructors); an unknown name is
@@ -1120,10 +1273,10 @@ partial def pPexprAtom (minPrec : Nat := 0) : P PE := do
       -- string contains '>' (tree-wide sweep, 2026-08-22 cn-coverage
       -- audit), and the failure mode is fail-closed, never silent.
       match lookupR ubStr ub_str_bimap with
-      | some ub => return (mkPE (PEundef loc0 ub))
+      | some ub => return (mkPE (PEundef undefLoc ub))
       | none =>
         if ubStr.startsWith "DUMMY(" && ubStr.endsWith ")" then
-          return (mkPE (PEundef loc0 (DUMMY ((ubStr.drop 6).dropRight 1).toString)))
+          return (mkPE (PEundef undefLoc (DUMMY ((ubStr.drop 6).dropRight 1).toString)))
         else
           fail s!"invalid ub name: <<{ubStr}>>"
     | some "error" =>
@@ -1336,7 +1489,11 @@ partial def pPexprAtom (minPrec : Nat := 0) : P PE := do
       -- Mapped to the value the oracle's AST holds. NaN payload/sign are not
       -- recoverable from the text (the pp loses them) — the sign of a printed
       -- `nan` is taken as positive, `-nan` as negative (pPexprMinus).
-      if id == "inf" then return (mkPE (PEval (Vobject (OVfloating (1.0 / 0.0 : Float)))))
+      -- core_lexer.mll:328 `"_" { T.UNDERSCORE }`: a bare `_` is a PATTERN
+      -- token, a Parser.Error in pexpr position (zero-discrepancy Z2-CP-11:
+      -- this made it `PEsym "_"`).
+      if id == "_" then fail "CoreParser: `_` is not a pexpr (core_lexer.mll:328 UNDERSCORE; zero-discrepancy Z2-CP-11)"
+      else if id == "inf" then return (mkPE (PEval (Vobject (OVfloating (1.0 / 0.0 : Float)))))
       else if id == "nan" then return (mkPE (PEval (Vobject (OVfloating (0.0 / 0.0 : Float)))))
       -- Handle __conv_int__
       else if id == "__conv_int__" then
@@ -1348,7 +1505,9 @@ partial def pPexprAtom (minPrec : Nat := 0) : P PE := do
         return (mkPE (PEconv_int ity pe))
       -- Handle wrapI_* and catch_exceptional_condition_* variants
       else if id.startsWith "wrapI_" then
-        let iop' := pIopFromStr id
+        let iop' ← match pIopFromStr "wrapI" id with
+          | .ok i => pure i
+          | .error e => fail e
         lexSym "("
         let ity ← pCoreIntegerType
         lexSym ","
@@ -1358,7 +1517,9 @@ partial def pPexprAtom (minPrec : Nat := 0) : P PE := do
         lexSym ")"
         return (mkPE (PEwrapI ity iop' pe1 pe2))
       else if id.startsWith "catch_exceptional_condition_" then
-        let iop' := pIopFromStr id
+        let iop' ← match pIopFromStr "catch_exceptional_condition" id with
+          | .ok i => pure i
+          | .error e => fail e
         lexSym "("
         let ity ← pCoreIntegerType
         lexSym ","
@@ -1399,7 +1560,14 @@ and no `if if`), but DOES have if-branches that are binop expressions
 (`else 2^width + n`, std.core:143), so if-branches must stay greedy by
 default. Resolution: an `if` parsed as a binop operand (minPrec > 0) or
 as the leading atom of an if-CONDITION gets ATOM-BOUNDED branches
-(pPexprPrec 8 — no binops, no cons); all other ifs parse greedily. -/
+(pPexprPrec 8 — no binops, no cons); all other ifs parse greedily.
+DECLARED (zero-discrepancy Z2-CP-05): the OCaml grammar resolves the SAME
+ambiguity the other way — `%nonassoc ELSE` is the LOWEST precedence
+(core_parser.mly:1118), so `a + if c then x else y * 2` has else-branch
+`y * 2` there; the two readings differ only on hand-written Core that mixes
+a binop operand with an unparenthesised `if` (no corpus does — the pp never
+parenthesises, and the elaborator's output shapes are the ones enumerated
+above). -/
 
 /-- Parse `cond then e1 else e2` after the `if` keyword; `bounded`
     restricts the branches to atoms (see the ambiguity note above). -/
@@ -1442,7 +1610,15 @@ private partial def pPexprBinopLoop (lhs0 : PE) (minPrec : Nat) : P PE := do
       let rhs ← pPexprPrec nextMin
       match opOpt with
       | none => lhs := mkPE (PEctor Ccons [lhs, rhs])
-      | some op => lhs := mkPE (PEop op lhs rhs)
+      | some op =>
+        -- core_parser.mly:1195 `%nonassoc CARET`: a chained `a ^ b ^ c` is a
+        -- Parser.Error on the oracle (zero-discrepancy Z2-CP-04: this
+        -- accepted it left-associated) — refuse the second `^`.
+        if op == OpExp then
+          match ← peek? with
+          | some '^' => fail "CoreParser: chained `^` is non-associative (core_parser.mly:1195 %nonassoc CARET; zero-discrepancy Z2-CP-04)"
+          | _ => pure ()
+        lhs := mkPE (PEop op lhs rhs)
   return lhs
 
 /-- Precedence climbing parser for binary operators and :: cons. -/
@@ -1551,6 +1727,13 @@ private partial def pActionSeqRMW : P Act := do
   lexSym "=>"
   let pe3 ← pPexpr
   lexSym ")"
+  -- DECLARED (zero-discrepancy Z2-CP-15, SUSPECT → tray candidate for Z4):
+  -- this is the faithful `SeqRMW (b, pe1, pe2, sym, pe3)`; the ORACLE's own
+  -- grammar action (core_parser.mly:767-774) builds `SeqRMW (b, pe1, pe3, sym,
+  -- pe3)` — it DROPS pe2 (an upstream parser bug). Unreachable in the pipeline:
+  -- the 199 `seq_rmw` of tests/libc/libc.core are pp → THIS parser, matching
+  -- the oracle's in-memory (elaborated, not parsed) AST; hand-written Core
+  -- with seq_rmw exists in no corpus.
   return (SeqRMW false pe1 pe2 s pe3)
 
 private partial def pActionSeqRMWForward : P Act := do
@@ -1609,12 +1792,18 @@ private partial def pPaction : P PAct :=
       (attempt (do
         lexKw "neg"
         lexSym "("
+        let startB ← getByte
         let act ← pAction
+        let endB ← lastTokenEndByte
         lexSym ")"
-        return (Paction Neg0 (Action loc0 () act))))
+        -- core_parser.mly:1744 `Action (region ($startpos, $endpos) NoCursor, (), act)`
+        -- — the ACTION's own region (Z-01 Pos row; was `loc0`)
+        return (Paction Neg0 (Action (markerLoc startB endB) () act))))
   <|> (do
+        let startB ← getByte
         let act ← pAction
-        return (Paction Pos (Action loc0 () act)))
+        let endB ← lastTokenEndByte
+        return (Paction Pos (Action (markerLoc startB endB) () act)))   -- .mly:1746
 
 -- Expr helpers
 
@@ -1766,9 +1955,11 @@ private partial def pExprPar : P Expr' := do
 private partial def pExprNeg : P Expr' := do
   lexKw "neg"
   lexSym "("
+  let startB ← getByte
   let act ← pAction
+  let endB ← lastTokenEndByte
   lexSym ")"
-  return (mkE (Eaction (Paction Neg0 (Action loc0 () act))))
+  return (mkE (Eaction (Paction Neg0 (Action (markerLoc startB endB) () act))))   -- .mly:1744
 
 private partial def pExprAction : P Expr' := do
   let pact ← pPaction
@@ -1816,7 +2007,13 @@ into the else branch — wrong AST, wrong execution (found via the libc
 fwrite path, arc-6 S1). RULE: a `;`-sequel is consumed only if its
 first token's column is ≥ the column at which the current sequence's
 first expression started; otherwise the `;` is left for the enclosing
-(shallower) sequence. -/
+(shallower) sequence.
+DECLARED (zero-discrepancy Z2-CP-06): the OCaml grammar is layout-blind —
+`%right SEMICOLON` (core_parser.mly:1134) with ELSE lowest (:1118) puts an
+OUTDENTED `; e3` after an `if` INSIDE the else branch; this parser reads the
+pp's layout instead (the dump is only ever pp output, where indentation and
+structure agree by construction). Hand-written std.core has zero `;`
+sequencing; the readings differ only on hand-written Core. -/
 
 -- Handle semicolon sequencing: e1 ; e2 (layout rule above)
 private partial def pExprSeq (startCol : Nat) (lhs : Expr') : P Expr' := do
@@ -1880,6 +2077,9 @@ private partial def pDefFields : P (List (identifier × (attributes × Option al
     match ← attempt (some <$> pDefField) <|> pure none with
     | some f => fields := fields ++ [f]
     | none => break
+  -- core_parser.mly:1759-1761 `def_fields` is NON-EMPTY (zero-discrepancy
+  -- Z2-CP-11: zero fields were accepted here)
+  if fields.isEmpty then fail "CoreParser: `def struct/union` needs at least one field (core_parser.mly:1759-1761; zero-discrepancy Z2-CP-11)"
   -- Check if last field is a flexible array member
   match fields.getLast? with
   | some (ident, (attrs, _, qs, Ctype _ (Array0 elemTy none))) =>
@@ -1972,12 +2172,20 @@ private partial def pDefStruct : P Decl := do
   let (fields, flexOpt) ← pDefFields
   return (Decl.tagDecl tag (loc0, StructDef fields flexOpt))
 
-/-- Parse a union definition: def union name := fields -/
+/-- Parse a union definition: def union name := fields —
+    core_parser.mly:1775-1777 `UnionDef (xs @ [last])`: for a UNION the
+    last field is an ordinary member even when its type is an incomplete
+    array (the flexible-array rule :1765-1770 is the STRUCT arm's).
+    Zero-discrepancy Z2-CP-11: this dropped a trailing `T x[]` member. -/
 private partial def pDefUnion : P Decl := do
   lexKw "union"
   let tag ← lexSymId
   lexSym ":="
-  let (fields, _) ← pDefFields
+  let (fields, flexOpt) ← pDefFields
+  let fields := match flexOpt with
+    | none => fields
+    | some (FlexibleArrayMember attrs ident qs elemTy) =>
+      fields ++ [(ident, (attrs, none, qs, Ctype [] (Array0 elemTy none)))]
   return (Decl.tagDecl tag (loc0, UnionDef fields))
 
 /-- Parse a def declaration (impl constant or struct/union). -/
@@ -2084,9 +2292,16 @@ private partial def pCoreFileGo (result : CoreFile) : P CoreFile := do
     pCoreFileGo result
 
 /-- Parse all declarations and collect into a CoreFile.
-    Dies loudly if any declaration fails to parse. -/
-private partial def pCoreFile : P CoreFile :=
-  pCoreFileGo {}
+    Dies loudly if any declaration fails to parse. core_parser.mly:1215-1217
+    `start: decls= nonempty_list(declaration) EOF` — an EMPTY input is a
+    Parser.Error on the oracle (zero-discrepancy Z2-CP-11: this returned an
+    empty CoreFile). -/
+private partial def pCoreFile : P CoreFile := do
+  let cf ← pCoreFileGo {}
+  if cf.funs.isEmpty && cf.procs.isEmpty && cf.impls.isEmpty && cf.tagDefs.isEmpty
+      && cf.globs.isEmpty && cf.builtins.isEmpty then
+    fail "CoreParser: a Core file needs at least one declaration (core_parser.mly:1215-1217 nonempty_list; zero-discrepancy Z2-CP-11)"
+  return cf
 
 /-! ## Entry point -/
 
@@ -2107,6 +2322,17 @@ token — including the SUFFIX-STRIPPED tag names minted via
 `mkSym (stripRawSymSuffix tag)`, whose stripped form is scanned
 alongside the raw token (R1, arc-14 re-mark); the extra tokens scanned
 (keywords, impl-constant bodies) only make the check stricter.
+DECLARED (zero-discrepancy Z2-CP-12, Z2-CP-20): interning is by NAME with no
+scoping, arity, duplicate or startup checks — the OCaml parser's scoped
+`register_sym`/`lookup_sym` and its `Core_parser_*` errors (core_parser.mly:
+182-227, :236, :330, :364-496) refuse malformed text this parser accepts,
+and two nested binders of the SAME name (`Esseq(Esseq(pat,e1,body), rest)` vs
+`Esseq(pat,e1,Esseq(body,rest))` print identically) would be conflated. The
+inputs are the shipped std.core/impl and the pp dump, where the elaborator's
+fresh symbols are unique per proc (probed on the dump: no repeated
+`create`/`alloc`/`create_readonly` binder within a proc, none shadowing a
+parameter or glob). A malformed hand-written file is a fail-open
+acceptance, not an execution discrepancy on a program both engines run.
 SCOPE (the second-preimage boundary, stated precisely): the tripwire
 quantifies over ONE parseFile input — it rules out silent conflation
 WITHIN each scanned file. A hash second preimage split ACROSS parseFile
@@ -2187,12 +2413,11 @@ private def scanStep (fuel : Nat) (st : ScanSt) (l : List Char) : ScanSt :=
 private def scanHashCollisions (input : String) : Option (String × String) :=
   (scanStep (input.length + 1) {} input.toList).collision
 
-/-- Parse a .core file and return a CoreFile with all declarations.
-    Fails if parsing produces an error or if a non-empty file yields zero
-    declarations. FAIL-STOPS (arc-14 F3, sem:G6) if the input contains
-    two distinct hash-colliding identifiers — see the tripwire note
-    above. -/
-def parseFile (input : String) : Except String CoreFile :=
+/-- The raw parse (markers unresolved) — use `parseFile`/`parseLibraryFile`.
+    Fails if parsing produces an error (an EMPTY file is a parse error,
+    Z2-CP-11). FAIL-STOPS (arc-14 F3, sem:G6) if the input contains two
+    distinct hash-colliding identifiers — see the tripwire note above. -/
+private def parseRaw (input : String) : Except String CoreFile :=
   match scanHashCollisions input with
   | some (a, b) =>
     .error s!"SYMBOL-HASH COLLISION (fail-stop): distinct Core identifiers '{a}' and '{b}' share String.hash {a.hash}; CoreParser symbol identity (mkSym) would silently conflate them (arc-14 F3 tripwire, cf. the CERB_FRESH_BASE floor probe)"
@@ -2200,6 +2425,7 @@ def parseFile (input : String) : Except String CoreFile :=
     match pCoreFile.run input with
     | .ok cf => .ok cf
     | .error e => .error s!"parse error: {e}"
+
 
 /-! ## Library-file location stamping (zero-discrepancy Z-01, noodle D1)
 
@@ -2223,14 +2449,24 @@ reported `unknown location` where the oracle reports the C site.
 `stampLibraryFile` is the post-parse mirror: every `Aloc unknown`,
 `PEundef unknown`, `Action unknown`, `Proc`/`ProcDecl`/`BuiltinDecl` loc
 and tag-definition loc of the parsed file becomes `Loc.region p p
-.noCursor` with `p` in `file`. DOCUMENTED DIVERGENCE (deliberate, in the
-Pos payload only): line and column are NOT tracked — the Parsec iterator
-carries no line table and this parse is on every driver run's hot path —
-so `p = ⟨file, 0, 0⟩`. Only the FILE component is behaviour-bearing:
-`is_library_location` tests the path's directory alone
-(`util/cerb_location.ml:512-520`), every execution-path consumer of a
-library-located loc dispatches on that predicate (the three cites above),
-and no std.core position is ever printed on the batch path. Not stamped:
+.noCursor` with `p` in `file`.
+Zero-discrepancy Z2 (the Z-01 Pos row, Z1 record §10): the `PEundef` and
+`Action` nodes — the two classes whose OWN location can reach a verdict —
+now carry the OCaml's exact `region ($startpos, $endpos)` line/column
+(byte-offset markers captured at parse time, `markerLoc`, resolved against
+the input's newline table in `stampLibraryFile`; `Cerb_position` line =
+`pos_lnum`, column = `1 + pos_cnum - pos_bol`). DECLARED residual (Pos
+payload only): every OTHER node's region is `⟨file, 0, 0⟩` — for those,
+only the FILE component is behaviour-bearing: `is_library_location` tests
+the path's directory alone (`util/cerb_location.ml:512-520`), every
+execution-path consumer of a library-located loc dispatches on that
+predicate (the three cites above), and the shared model substitutes the
+enclosing C location before any std.core position is printed
+(`core_eval.lem:602`, `core_run.lem:476`); the EDGE where a PEundef/Action
+position itself would print — a library-located UB whose evaluation
+context carries no C location — is exactly what the exact positions now
+cover (no C-reachable instance is known: the driver's own startup runs no
+std.core code before main's first C-located node). Not stamped:
 `Symbol.Identifier` locs inside member names/ctypes (never consulted on an
 execution path). `--libc` bodies are NOT stamped (the oracle's libc.co
 carries the libc C-source locations, which the Core text dump does not
@@ -2238,37 +2474,54 @@ preserve — a separate, recorded gap: UB raised inside a libc body prints
 `unknown location` on Lean; both sides classify those locs non-library).
 -/
 
+/-- The relocation context: `none` = a NON-library parse (`parseFile`): the
+    parse-time position markers are erased back to `Loc.unknown` (the
+    `--libc` dump keeps the recorded Z1-A1 behaviour — its bodies are not
+    library-located on either side); `some (file, resolve)` = a library
+    parse (`parseLibraryFile`): markers resolve to (line, column) in `file`
+    and every remaining `unknown` becomes the file-only region. -/
+structure RelocCtx where
+  lib : Option (String × (Nat → Nat × Nat))
+
 private def libLoc (file : String) : CerbLocation.Loc :=
   let p : CerbLocation.Pos := { file := file, line := 0, col := 0 }
   .region p p .noCursor
 
-private def relocLoc (file : String) : CerbLocation.Loc → CerbLocation.Loc
-  | .unknown => libLoc file
+private def relocLoc (ctx : RelocCtx) : CerbLocation.Loc → CerbLocation.Loc
+  | .unknown => match ctx.lib with
+    | some (file, _) => libLoc file
+    | none => .unknown
+  | .region ⟨"", 0, b⟩ ⟨"", 0, e⟩ cur => match ctx.lib with
+    | some (file, resolve) =>
+      let (l1, c1) := resolve b
+      let (l2, c2) := resolve e
+      .region { file := file, line := l1, col := c1 } { file := file, line := l2, col := c2 } cur
+    | none => .unknown
   | l => l
 
-private def relocAnnots (file : String) (annots : List annot) : List annot :=
+private def relocAnnots (ctx : RelocCtx) (annots : List annot) : List annot :=
   annots.map fun a => match a with
-    | Aloc l => Aloc (relocLoc file l)
+    | Aloc l => Aloc (relocLoc ctx l)
     | a => a
 
-private partial def relocPat (file : String) : Pat → Pat
+private partial def relocPat (ctx : RelocCtx) : Pat → Pat
   | Pattern annots pat_ =>
-    Pattern (relocAnnots file annots) (match pat_ with
+    Pattern (relocAnnots ctx annots) (match pat_ with
       | CaseBase x => CaseBase x
-      | CaseCtor c pats => CaseCtor c (pats.map (relocPat file)))
+      | CaseCtor c pats => CaseCtor c (pats.map (relocPat ctx)))
 
-private partial def relocPE (file : String) : PE → PE
+private partial def relocPE (ctx : RelocCtx) : PE → PE
   | Pexpr annots bty pe_ =>
-    let r := relocPE file
-    Pexpr (relocAnnots file annots) bty (match pe_ with
+    let r := relocPE ctx
+    Pexpr (relocAnnots ctx annots) bty (match pe_ with
       | PEsym s => PEsym s
       | PEimpl c => PEimpl c
       | PEval v => PEval v
       | PEconstrained xs => PEconstrained (xs.map fun (c, pe) => (c, r pe))
-      | PEundef loc ub => PEundef (relocLoc file loc) ub
+      | PEundef loc ub => PEundef (relocLoc ctx loc) ub
       | PEerror str pe => PEerror str (r pe)
       | PEctor c pes => PEctor c (pes.map r)
-      | PEcase pe alts => PEcase (r pe) (alts.map fun (pat, pe) => (relocPat file pat, r pe))
+      | PEcase pe alts => PEcase (r pe) (alts.map fun (pat, pe) => (relocPat ctx pat, r pe))
       | PEarray_shift pe1 ty pe2 => PEarray_shift (r pe1) ty (r pe2)
       | PEmember_shift pe s id => PEmember_shift (r pe) s id
       | PEmemop op pes => PEmemop op (pes.map r)
@@ -2283,7 +2536,7 @@ private partial def relocPE (file : String) : PE → PE
       | PEcfunction pe => PEcfunction (r pe)
       | PEmemberof s id pe => PEmemberof s id (r pe)
       | PEcall nm pes => PEcall nm (pes.map r)
-      | PElet pat pe1 pe2 => PElet (relocPat file pat) (r pe1) (r pe2)
+      | PElet pat pe1 pe2 => PElet (relocPat ctx pat) (r pe1) (r pe2)
       | PEif pe1 pe2 pe3 => PEif (r pe1) (r pe2) (r pe3)
       | PEis_scalar pe => PEis_scalar (r pe)
       | PEis_integer pe => PEis_integer (r pe)
@@ -2292,8 +2545,8 @@ private partial def relocPE (file : String) : PE → PE
       | PEbmc_assume pe => PEbmc_assume (r pe)
       | PEare_compatible pe1 pe2 => PEare_compatible (r pe1) (r pe2))
 
-private def relocAct (file : String) (act : Act) : Act :=
-  let r := relocPE file
+private def relocAct (ctx : RelocCtx) (act : Act) : Act :=
+  let r := relocPE ctx
   match act with
   | Create pe1 pe2 pref => Create (r pe1) (r pe2) pref
   | CreateReadOnly pe1 pe2 pe3 pref => CreateReadOnly (r pe1) (r pe2) (r pe3) pref
@@ -2313,25 +2566,25 @@ private def relocAct (file : String) (act : Act) : Act :=
   | LinuxStore pe1 pe2 pe3 mo => LinuxStore (r pe1) (r pe2) (r pe3) mo
   | LinuxRMW pe1 pe2 pe3 mo => LinuxRMW (r pe1) (r pe2) (r pe3) mo
 
-private def relocAction (file : String) : generic_action Unit Unit sym → generic_action Unit Unit sym
-  | Action loc a act => Action (relocLoc file loc) a (relocAct file act)
+private def relocAction (ctx : RelocCtx) : generic_action Unit Unit sym → generic_action Unit Unit sym
+  | Action loc a act => Action (relocLoc ctx loc) a (relocAct ctx act)
 
-private partial def relocE (file : String) : Expr' → Expr'
+private partial def relocE (ctx : RelocCtx) : Expr' → Expr'
   | Expr annots e_ =>
-    let r := relocE file
-    let rp := relocPE file
-    Expr (relocAnnots file annots) (match e_ with
+    let r := relocE ctx
+    let rp := relocPE ctx
+    Expr (relocAnnots ctx annots) (match e_ with
       | Epure pe => Epure (rp pe)
       | Ememop op pes => Ememop op (pes.map rp)
-      | Eaction (Paction pol act) => Eaction (Paction pol (relocAction file act))
-      | Ecase pe alts => Ecase (rp pe) (alts.map fun (pat, e) => (relocPat file pat, r e))
-      | Elet pat pe e => Elet (relocPat file pat) (rp pe) (r e)
+      | Eaction (Paction pol act) => Eaction (Paction pol (relocAction ctx act))
+      | Ecase pe alts => Ecase (rp pe) (alts.map fun (pat, e) => (relocPat ctx pat, r e))
+      | Elet pat pe e => Elet (relocPat ctx pat) (rp pe) (r e)
       | Eif pe e1 e2 => Eif (rp pe) (r e1) (r e2)
       | Eccall a pe1 pe2 pes => Eccall a (rp pe1) (rp pe2) (pes.map rp)
       | Eproc a nm pes => Eproc a nm (pes.map rp)
       | Eunseq es => Eunseq (es.map r)
-      | Ewseq pat e1 e2 => Ewseq (relocPat file pat) (r e1) (r e2)
-      | Esseq pat e1 e2 => Esseq (relocPat file pat) (r e1) (r e2)
+      | Ewseq pat e1 e2 => Ewseq (relocPat ctx pat) (r e1) (r e2)
+      | Esseq pat e1 e2 => Esseq (relocPat ctx pat) (r e1) (r e2)
       | Ebound e => Ebound (r e)
       | End es => End (es.map r)
       | Esave sb params e =>
@@ -2340,40 +2593,80 @@ private partial def relocE (file : String) : Expr' → Expr'
       | Epar es => Epar (es.map r)
       | Ewait tid => Ewait tid
       | Eannot dyns e => Eannot dyns (r e)
-      | Eexcluded n act => Eexcluded n (relocAction file act))
+      | Eexcluded n act => Eexcluded n (relocAction ctx act))
 
-private def relocFunDecl (file : String) : generic_fun_map_decl Unit Unit → generic_fun_map_decl Unit Unit
-  | Fun bty params pe => Fun bty params (relocPE file pe)
-  | Proc loc me bty params e => Proc (relocLoc file loc) me bty params (relocE file e)
-  | ProcDecl loc bty tys => ProcDecl (relocLoc file loc) bty tys
-  | BuiltinDecl loc bty tys => BuiltinDecl (relocLoc file loc) bty tys
+private def relocFunDecl (ctx : RelocCtx) : generic_fun_map_decl Unit Unit → generic_fun_map_decl Unit Unit
+  | Fun bty params pe => Fun bty params (relocPE ctx pe)
+  | Proc loc me bty params e => Proc (relocLoc ctx loc) me bty params (relocE ctx e)
+  | ProcDecl loc bty tys => ProcDecl (relocLoc ctx loc) bty tys
+  | BuiltinDecl loc bty tys => BuiltinDecl (relocLoc ctx loc) bty tys
 
-private def relocImplDecl (file : String) : generic_impl_decl Unit → generic_impl_decl Unit
-  | Def bty pe => Def bty (relocPE file pe)
-  | IFun bty params pe => IFun bty params (relocPE file pe)
+private def relocImplDecl (ctx : RelocCtx) : generic_impl_decl Unit → generic_impl_decl Unit
+  | Def bty pe => Def bty (relocPE ctx pe)
+  | IFun bty params pe => IFun bty params (relocPE ctx pe)
 
-private def relocGlob (file : String) : generic_globs Unit Unit → generic_globs Unit Unit
-  | GlobalDef tys e => GlobalDef tys (relocE file e)
+private def relocGlob (ctx : RelocCtx) : generic_globs Unit Unit → generic_globs Unit Unit
+  | GlobalDef tys e => GlobalDef tys (relocE ctx e)
   | GlobalDecl tys => GlobalDecl tys
 
-/-- Stamp every unknown location of a parsed file with a region in `file`
+/-- Stamp every unknown location of a parsed ctx with a region in `ctx`
     (see the section comment). -/
-def stampLibraryFile (file : String) (cf : CoreFile) : CoreFile :=
-  let fd := fun (p : sym × generic_fun_map_decl Unit Unit) => (p.1, relocFunDecl file p.2)
+def relocFile (ctx : RelocCtx) (cf : CoreFile) : CoreFile :=
+  let fd := fun (p : sym × generic_fun_map_decl Unit Unit) => (p.1, relocFunDecl ctx p.2)
   { cf with
     funs := cf.funs.map fd
     procs := cf.procs.map fd
     builtins := cf.builtins.map fd
-    impls := cf.impls.map fun (n, d) => (n, relocImplDecl file d)
-    tagDefs := cf.tagDefs.map fun (s, (loc, td)) => (s, (relocLoc file loc, td))
-    globs := cf.globs.map fun (s, g) => (s, relocGlob file g) }
+    impls := cf.impls.map fun (n, d) => (n, relocImplDecl ctx d)
+    tagDefs := cf.tagDefs.map fun (s, (loc, td)) => (s, (relocLoc ctx loc, td))
+    globs := cf.globs.map fun (s, g) => (s, relocGlob ctx g) }
+
+/-- Newline table of `input` (byte offsets of every `\n`), and the resolver
+    byte offset → (line, column) with the OCaml lexer's conventions:
+    `Cerb_position.line` = `pos_lnum` (1-based, bumped at each newline —
+    `Lexing.new_line`, core_lexer.mll) and `Cerb_position.column` =
+    `1 + pos_cnum - pos_bol` (util/cerb_position.ml:23-25), both in
+    BYTES. -/
+def lineTable (input : String) : Array Nat :=
+  let (_, tbl) := input.toUTF8.foldl (fun (acc : Nat × Array Nat) (b : UInt8) =>
+    let (i, tbl) := acc
+    (i + 1, if b == 10 then tbl.push i else tbl)) ((0 : Nat), (#[] : Array Nat))
+  tbl
+
+def resolveByte (tbl : Array Nat) (b : Nat) : Nat × Nat :=
+  -- number of newlines strictly before b (binary search), and the bol
+  let rec go (lo hi : Nat) (fuel : Nat) : Nat :=
+    match fuel with
+    | 0 => lo
+    | fuel + 1 =>
+      if lo < hi then
+        let mid := (lo + hi) / 2
+        if tbl[mid]! < b then go (mid + 1) hi fuel else go lo mid fuel
+      else lo
+  let n := go 0 tbl.size tbl.size
+  let bol := if n == 0 then 0 else tbl[n - 1]! + 1
+  (n + 1, 1 + b - bol)
+
+/-- Stamp a parsed LIBRARY file: markers → (line, column) in `file`,
+    remaining `unknown`s → the file-only region (see the section comment). -/
+def stampLibraryFile (file : String) (input : String) (cf : CoreFile) : CoreFile :=
+  relocFile { lib := some (file, resolveByte (lineTable input)) } cf
+
+/-- Parse a NON-library Core file (the `--libc` dump, `--parse-core`, the
+    unit tests): every parse-time position marker is erased to
+    `Loc.unknown`, so these nodes print and classify exactly as before the
+    Z-01 Pos row (`relocFile`'s `lib := none`). -/
+def parseFile (input : String) : Except String CoreFile :=
+  (parseRaw input).map (relocFile { lib := none })
 
 /-- Parse a LIBRARY `.core`/`.impl` file loaded from `file` (the runtime
     tree: std.core, the impl file) and stamp its nodes with that file
-    — the mirror of the OCaml parser's `region ($startpos, $endpos)` at the
-    granularity that is behaviour-bearing (the section comment). -/
+    — the mirror of the OCaml parser's `region ($startpos, $endpos)`:
+    exact (line, column) on the `PEundef` and `Action` nodes (the two
+    behaviour-bearing node classes, Z-01 Pos row), file-only on the rest
+    (the section comment). -/
 def parseLibraryFile (file : String) (input : String) : Except String CoreFile :=
-  (parseFile input).map (stampLibraryFile file)
+  (parseRaw input).map (stampLibraryFile file input)
 
 /-- Parse a .core file and return a human-readable summary. -/
 def parseFileSummary (input : String) : Except String String :=
