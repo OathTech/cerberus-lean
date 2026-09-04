@@ -820,3 +820,28 @@ test_verify.sh: test_verify: 127 passed, 0 failed (25 fixtures, 28 call points, 
 test_immaculate.sh: OK: lane matches the committed baseline (MATCH except the ISO-fix register pins …)
 test_exec.sh --check-baseline: SUMMARY: total=106 match=85 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=3 cerb_floor=0 cerb_inconsistent=0 / Baseline check: 0 regression(s), 0 improvement(s) / BASELINE OK
 ```
+
+
+## 14. Orchestrator boundary review [AGENT, orchestrator, 2026-09-04]
+
+Two independent runs in this worktree. (1) On `43360304b` (the slice): full
+battery, 26 lanes serially, every one rc 0, zero baseline movement
+(`SUMMARY: total=1963 compared=1885 agree=1873 … disagree=0 …` /
+`Baseline check: 0 regression(s), 0 improvement(s)` / `gcc second-oracle
+lane OK`; `test_verify: 127 passed, 0 failed …`); oracle stamp `bin
+bc1bee7b9e1e…` (the OCaml binary is not byte-reproducible across builds
+— audit N2 — the invariant is the generated tree's byte identity, `gen
+295e4f82…`, which the auditor reproduced against the mainline's committed
+tree); lean stamp `bin 444f1c285e39…`. (2) On `5dd3f1060` + the audit
+document `2b73014e0` cherry-picked (this head): `make lean-prelude-src`,
+`build_lean` → `recorded lean stamp (bin 444f1c285e39…` (the driver binary unchanged from run 1; the
+response touched gates, tests and speclab only), `check_driver_fresh
+--check` OK; then `test_unit.sh` (incl. `gen_fuel_parametricity --check`
+both directions and the 20-plant numerals selftest), exec minimal
+`--check-baseline`, `test_verify.sh`, `test_immaculate.sh`, speclab
+selftest + plant + the five gates, `test_fuel_plant.sh` — 13 lanes, 13 ×
+rc 0. Pre-merge audit `2026-09-04_fuel-parameter-C1-audit-premerge.md`
+(MERGE-WITH-FIXES, no MAJOR → M1–M3/N1–N3 fixed in `5dd3f1060`, §13).
+Merge ask goes to the operator on this head; the two-repo invariant
+closes at the merge (Lake pin = opam lem = `deps/lem-pinned` = lem-lean
+`mdd/lean-backend` = `ecf75b4`).
