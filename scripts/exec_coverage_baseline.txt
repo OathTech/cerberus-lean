@@ -307,3 +307,19 @@ varargs-002-va-end.libc.c MATCH
 varargs-003-va-multiple-types.libc.c MATCH
 varargs-004-va-pass-through.libc.c MATCH
 varargs-005-va-sum.libc.c MATCH
+# 2026-09-03 zero-discrepancy Z2 (audit docs/2026-09-03_zero-discrepancy-Z2-audit.md §4/§5;
+#   record docs/2026-09-04_zero-discrepancy-Z2-record.md §5): ten tests/coverage/z2/ rows
+#   added from tests/z2-probes/ (the three-engine AGREE probes: empty_struct UB061, enum_conv,
+#   unspec_const_ptr, atomic_member UB042, nd/order3+order2+order_ptreq, int32_uac, int32_compat,
+#   hexfloat_round) — statuses as measured by `test_exec.sh tests/coverage/z2` on the Z2 binary
+#   (SUMMARY: total=10 match=8 ub_match=2). Rows hand-inserted: --write-baseline would drop this header.
+z2-001-empty-struct-ub061.c UB_MATCH
+z2-002-enum-conv-registry.c MATCH
+z2-003-unspec-const-ptr.c MATCH
+z2-004-atomic-member-ub042.c UB_MATCH
+z2-005-nd-order3.c MATCH
+z2-006-nd-order2.c MATCH
+z2-007-nd-order-ptreq.c MATCH
+z2-008-int32-uac-header-route.c MATCH
+z2-009-int32-compat.c MATCH
+z2-010-hexfloat-round.c MATCH

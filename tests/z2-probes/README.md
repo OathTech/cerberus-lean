@@ -20,3 +20,20 @@ integration into the standard suites (each row names its proposed lane).
 | `call/` | CerbCall.lean vs wrapper TU | 2 | 2 (`_Bool` injection; errno allocation order) | — |
 
 Derived totals: 34 probe programs, 12 Lean≠oracle runs (9 distinct findings incl. the two `--call` harness rows and the Z-07 re-witness), 3 reader claims REFUTED by probe, 2 not settled.
+
+**Integration (Z2 FIX phase, 2026-09-03/04 — record
+`lean_frontend/docs/2026-09-04_zero-discrepancy-Z2-record.md` §"probe
+integration table", the per-probe lane/class/pinned columns):** every
+confirmed Lean≠oracle row is a `tests/immaculate` pin (RED before its fix,
+MATCH after — except the `aligned_alloc(0,·)` rows, which stay
+ORACLE_CRASH as PENDING rows under the [USER 2026-09-03] logical-semantics
+ruling: the oracle's `Division_by_zero` is an OCaml-execution artifact, not
+mirrored; the logical meaning is the record's decision §10.1) or a
+`tests/verify` call-point fixture (`z2_bool_param`,
+`z2_errno_order`); the agreeing nolibc probes are the standing exec rows
+`tests/coverage/z2/z2-0NN-*.c`, the agreeing libc probes `tests/libc_exec/
+008-011`; both-crash rows are `MATCH | L=CRASH` immaculate pairs; the
+both-reject / not-settled probes stay here as reporting-only reproducers.
+This directory remains the three-engine RUNNER for re-measurement
+(`run_z2.sh`); its READMEs are the audit-time record and are not
+re-edited.

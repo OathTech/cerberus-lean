@@ -41,3 +41,16 @@ m1_sgn sgn -7 Specified(-1)
 m1_sgn sgn 0 Specified(0)
 m1_sgn sgn 2147483647 Specified(1)
 m1_sgn sgn -2147483648 Specified(-1)
+# zero-discrepancy Z2 (2026-09-03; audit rows Z2-C-01/Z2-C-02, record
+# docs/2026-09-04_zero-discrepancy-Z2-record.md): the --call entry renders the
+# ELABORATED CALL SITE (conv_loaded_int of each argument at the parameter type,
+# errno allocated before the argument temporaries), so an out-of-range _Bool
+# argument converts as the oracle's wrapper converts it (2 → 1, -7 → 1) and the
+# parameter object's address matches the wrapper's (65524). Oracle values
+# measured on the rendered wrapper TUs before pinning.
+z2_bool_param f 0 Specified(0)
+z2_bool_param f 1 Specified(1)
+z2_bool_param f 2 Specified(1)
+z2_bool_param f -7 Specified(1)
+z2_errno_order f 1 Specified(65524)
+z2_errno_order f -7 Specified(65524)
