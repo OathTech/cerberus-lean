@@ -205,3 +205,13 @@ name = "fuel-exemplar-test"
 srcDir = "test"
 root = "Unit.FuelExemplar"
 moreLinkArgs = ["native/md5.o"]
+
+# FUEL arc C2 (2026-09-04): the (A)/(B)/(C) classifier of every fuel'd worker
+# (test/Unit/FuelFormsTool.lean) — a RUNTIME instrument over the compiled
+# environment (importModules), driven by scripts/check_fuel_forms.sh, which is
+# the policy + plants (test_unit.sh runs it). Not a compile-time proof exe.
+[[lean_exe]]
+name = "fuel-forms-tool"
+srcDir = "test"
+root = "Unit.FuelFormsTool"
+supportInterpreter = true

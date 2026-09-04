@@ -153,6 +153,24 @@ if ! "$ROOTS_SH"; then
     exit 1
 fi
 
+# Fuel-forms gate (fuel-parameter arc C2, 2026-09-04): the consumer's
+# (A)/(B)/(C) requirement made mechanical — every fuel'd worker in the compiled
+# environment is MEASURED (obligation + proof, cones ⊆ the standard three),
+# ABSORBING (its _zero lemma is the monad's absorbing element), or an AMBIENT
+# worker that is either unreachable from the drive cone (kernel constant
+# closure, mutual blocks included) or a reviewed row of
+# scripts/fuel_forms_pending.txt (both directions). Plant-tested by its
+# --selftest. Fail-closed.
+FUELFORMS_SH="$(dirname "$PURITY_SH")/check_fuel_forms.sh"
+if ! "$FUELFORMS_SH" --selftest; then
+    echo "test_unit: fuel-forms gate SELFTEST FAILED"
+    exit 1
+fi
+if ! "$FUELFORMS_SH"; then
+    echo "test_unit: fuel-forms gate FAILED"
+    exit 1
+fi
+
 # Totality gate (arc 3): the exec slice is partial-free (empty allowlist).
 # ENFORCING and fail-closed like the gates above.
 TOTALITY_SH="$(dirname "$PURITY_SH")/check_exec_totality.sh"

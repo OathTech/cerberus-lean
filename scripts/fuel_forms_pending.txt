@@ -1,0 +1,47 @@
+# fuel_forms_pending.txt — the REGISTER of fuel'd workers that are reachable from
+# `drive` (kernel constant closure, mutual blocks included) and are NEITHER
+# measured (`<f>_measure_sufficient` proved) NOR absorbing (their `_zero` lemma
+# states the monad's absorbing element): the consumer's (A)/(B)/(C) requirement
+# (refined-cerberus docs/2026-09-04_review-of-fuel-parameter-design.md §2) is
+# NOT yet met for these — each is a fail-open exhaustion on the execution path
+# in the kernel (the runtime panic is loud, the kernel value is the sentinel).
+# scripts/check_fuel_forms.sh fails on any reachable ambient worker NOT listed
+# here and on any listed worker that is no longer reachable-ambient (stale pin):
+# the register can only shrink by proving/absorbing, and grow by an explicit,
+# reviewed line. Format: <worker>  <reason class>  <route> (free text after the
+# first field). Record: lean_frontend/docs/2026-09-04_fuel-parameter-C2-record.md.
+#
+# --- tag-lookup recursion: no data measure; a measure needs a well-formedness
+#     (acyclicity) hypothesis on the tag environment, which the generated
+#     unconditional obligation cannot carry (C2 record, decisions D-C2-1) ---
+CerbMem.sizeofCtype_lemFuel        tag-lookup   hand-written layout oracle (impl_mem.ml sizeof); Struct arm recurses through offsetsof on member types from tagDefs
+CerbMem.alignofCtype_lemFuel       tag-lookup   as sizeofCtype (alignof)
+CerbMem.offsetsof_lemFuel          tag-lookup   as sizeofCtype (offsetsof)
+CerbMem.offsetsofMembers_lemFuel   tag-lookup   as sizeofCtype (member fold)
+CerbMem.memberAlign_lemFuel        tag-lookup   as sizeofCtype (_Alignas override)
+CerbMem.reconstructValue_lemFuel   tag-lookup   Struct/Union arms reconstruct member types read from tagDefs (offsetsof/UnionDef)
+are_compatible_aux_lemFuel         tag-lookup   ctype_aux.lem: Struct/Union members from tagDefs1/tagDefs2 (reached via memValueFromValue)
+are_compatible_params_aux0_lemFuel tag-lookup   sibling of are_compatible_aux (mutual block; also point-free tail)
+are_compatible_params0_lemFuel     tag-lookup   sibling of are_compatible_aux (mutual block)
+# --- point-free `function` tails: the recursion argument is an anonymous
+#     scrutinee no measure can name — BLOCKED on lem-lean TODO row 17 (Lean-only
+#     eta-expansion at emission); flips to MEASURED when that lands ---
+are_compatible_lemFuel             point-free   ail/ailTypesAux.lem (reached via step_eval_pexpr PEare_compatible); blocked on lem TODO 17
+are_compatible_params_aux_lemFuel  point-free   ail/ailTypesAux.lem sibling; blocked on lem TODO 17
+are_compatible_params_lemFuel      point-free   ail/ailTypesAux.lem sibling; blocked on lem TODO 17
+one_step_unseq_aux_lemFuel         point-free   core_reduction.lem; blocked on lem TODO 17
+get_ctx_lemFuel                    point-free   core_reduction.lem (via sibling get_ctx_unseq_aux, all-or-none); blocked on lem TODO 17
+get_ctx_unseq_aux_lemFuel          point-free   core_reduction.lem; blocked on lem TODO 17
+# --- pure recursion with no data measure and no absorbing element in the
+#     codomain: decisions for the operator (C2 record, D-C2-2 .. D-C2-4) ---
+hack_lemFuel                       pure-loop    driver.lem: step-until-value evaluation loop returning a Core `value` (Driver.finalize)
+to_pure_lemFuel                    opaque-arg   core_aux.lem: recursion on subst_pattern's RESULT (ill-typed arms are an opaque failwithI value: no provable size bound)
+to_pures_lemFuel                   opaque-arg   mutual sibling of to_pure
+many_lemFuel                       parser       monadic_parsing.lem: recursion depth is the INPUT's length, which is inside the ParserM lambda, not a parameter; payload = the parser zero, indistinguishable from a normal parse failure
+many1_lemFuel                      parser       mutual sibling of many
+showNonNegativeWithBasis_aux_lemFuel  precondition  formatted.lem: recursion on n / b terminates only for b >= 2 (callers use 8/10/16)
+# --- hand-written serialisation seams whose recursion IS on the data (C2 route:
+#     measured forms by hand — see the record's seam table) ---
+CerbMem.memValueToBytes_lemFuel    seam-data    CerbMem.lean: recursion on the MemValue (MVarray/MVstruct/MVunion); reaches the ambient sizeofCtype
+CerbMem.typeofMval_lemFuel         seam-data    CerbMem.lean: recursion on the MemValue (MVarray head)
+CerbMem.unqualifyAndUnatomic_lemFuel  seam-data CerbMem.lean: structural on the ctype

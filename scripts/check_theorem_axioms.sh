@@ -834,6 +834,10 @@ echo "check_theorem_axioms: mem-scale S1 leg OK (${#MEMSCALE_THMS[@]} C1/C3 equa
 # leg additionally pins their axiom cones. Fail-closed: each name must
 # produce exactly one probe line.
 # ---------------------------------------------------------------------------
+# C2 (2026-09-04): the 35 further fuel_measure obligations of the C2 slice are
+# NOT listed here — scripts/check_fuel_forms.sh probes the axiom cone of EVERY
+# `*_measure_sufficient` constant (generated statement + hand-written proof) in
+# the compiled environment, so the pin below stays the C1 set (still present).
 PROBE5=lean_frontend/.axiom-probe-fuel.lean
 FUEL_THMS=(nd_bind_lemFuel_zero liftND_lemFuel_zero liftAction_lemFuel_zero
            print_eval_conv_aux_lemFuel_zero drive_nonmemory_steps_aux2_lemFuel_zero
