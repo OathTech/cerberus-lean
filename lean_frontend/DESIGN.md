@@ -121,10 +121,15 @@ both), while structural recursion on a measure that IS the data (the AVL
 height stored in a node) is admissible — nothing is chosen, nothing is
 bounded, and a proof can unfold it; a caller-passed parameter or a
 termination proof are the other admissible forms.
-The fuel story as of this writing violates this (`driverFuel = 10^8`,
-`lemDefaultFuel = 10^6` in every generated fuel wrapper); the
-fuel-parameter arc removes it: lem-lean
-`doc/lean-backend/2026-09-03_fuel-parameter-design.md`.
+The fuel story satisfies this since the fuel-parameter arc's C1 slice
+(2026-09-04): fuel is the LemLib `[LemFuel]` instance every fuel'd
+function reads, instantiated once from `--fuel N` at the executable's
+entry (`Main.lean` `defaultFuel`, the one permitted numeral) and
+quantified by theorems (`∀ n, @f ⟨n⟩ = f_lemFuel n`); `driverFuel`,
+`ndDefaultFuel`, `lemDefaultFuel` and the numeric budget declares are
+deleted, gate-enforced by `scripts/check_no_fuel_numerals.sh`. Records:
+lem-lean `doc/lean-backend/2026-09-03_fuel-parameter-design.md` (R1–R3),
+`docs/2026-09-04_fuel-parameter-C1-record.md`.
 
 ## 5. Differential validation: the oracle, lanes, baselines, plants
 

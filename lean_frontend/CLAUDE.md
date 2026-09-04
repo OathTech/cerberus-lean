@@ -107,7 +107,8 @@ Each is a `[[lean_exe]]` in `lakefile.toml` that exits 0 on pass.
 ```
 
 Current unit tests:
-- `effects-proof-test` / `totality-proof-test` — compile-time checks on the exec cone, as it is today: every fuel'd wrapper is rfl-defeq to its worker at `lemDefaultFuel`, symbolic equations hold on the total layout/typing defs, and `tagDefs` is an honest reader parameter (no hidden extern read) — i.e. totality + reader lifting, properties of this port checked by the build (not a verification layer; exe names kept for build stability)
+- `effects-proof-test` / `totality-proof-test` — compile-time checks on the exec cone, as it is today: every fuel'd wrapper is FUEL-PARAMETRIC (`@f ⟨n⟩ = f_lemFuel n` for every `n`, by rfl — the fuel-parameter arc; no default constant exists), symbolic equations hold on the total layout/typing defs, and `tagDefs` is an honest reader parameter (no hidden extern read) — i.e. totality + reader lifting, properties of this port checked by the build (not a verification layer; exe names kept for build stability)
+- `fuel-exemplar-test` — the consumer-shaped ∀-fuel theorem over the shipped pipeline `@drive ⟨fuel⟩` (test/Unit/FuelExemplar.lean)
 - `core-parser-test` — 280 tests for `CoreParser.lean`
 - `fresh-int-test` — verifies `fresh_int`/`Symbol.fresh` generate unique values (+ the native-obj fresh-counter floor probe)
 - `pp-test` — arc-10 S3: pretty-printer mirrors (ctype/value shapes + float formatting vs an OCaml 5.4.0 reference transcript, in-file)
@@ -116,8 +117,12 @@ Current unit tests:
 sync gate, `check_exec_purity.sh`, `check_theorem_axioms.sh`
 (hand-written axiom census — exactly 0 — + generated-tree census +
 exemplar/driver2 axiom cones + the D14 non-kernel-proof-method ban),
-`check_exec_totality.sh` (20 generated modules + CerbND, empty
-allowlist), the lem-sync content-hash gate,
+`check_exec_totality.sh` (22 generated modules + CerbND, empty
+allowlist), `check_no_fuel_numerals.sh` (fuel-parameter arc: no fuel
+numeral in seams/generated/test/speclab except Main.lean's `--fuel`
+default; F1–F6 plant-tested by its --selftest), `check_lakefile_roots.sh`
+(every generated module, `_auxiliary` obligation carriers included, is a
+Lake root; plant-tested), the lem-sync content-hash gate,
 `check_fork_drift.sh` (arc-10 audit follow-up, [USER] mandate: the
 oracle surface must equal the reviewed manifest
 `scripts/fork_drift_manifest.txt`, and the generated-OCaml
@@ -226,13 +231,14 @@ a binary built from the old copy.
 | `CerbCabsInstances.lean` | BEq for Cabs enum types |
 | `CabsImport.lean` | JSON → Cabs AST deserializer |
 | `CoreParser.lean` | Core text parser (Parsec). Arc-14 F3: pre-parse symbol-hash collision TRIPWIRE (String.hash is MurmurHash64A(11) — collisions constructible; parseFile fail-stops, tests/immaculate/g6 pins it) |
-| `CerbND.lean` | Exhaustive ND runner (+ runND1 single-trace, arc-5 `--first`); fuel-TOTALIZED in arc-7 S2 (runNDFuel + wrappers, loud panic at exhaustion) — no `partial` allowed (totality gate scans it) |
+| `CerbND.lean` | Exhaustive ND runner (+ runND1 single-trace, arc-5 `--first`); fuel-TOTALIZED in arc-7 S2 (runNDFuel + wrappers at the ambient `[LemFuel]` fuel since the fuel-parameter arc; the distinguished kill at exhaustion) — no `partial` allowed (totality gate scans it); the FUEL contract: runner leaves + fuel-parametricity pins |
 | `CerbCall.lean` | The `--call <f> [--call-args <ints>]` entry (`CerbCall.driveCall`): `drive` with the startup symbol resolved by name + the elaborated-call-site caller protocol for the parameters. Port-side harness entry (the OCaml driver has no such mode; test_verify.sh checks it against an oracle-run wrapper TU). Relocated 2026-09-02 from the removed `relsemcore/` |
 | `CerbFunMapInstances.lean` | Arc-7 S2: real SetType instance for generic_fun_map_decl (evicts the lem backend's sorried fallback from initial_driver_state's cone) |
 | `CerbStepInstances.lean` | OCaml-poly-eq-parity instances for core_step2 (arc 4) |
 | `CerbLocation.lean` | Source location type; structural lawful Ord (arc-14 F4; was repr-string compare) |
 | `CerberusFresh.lean` | Fresh symbol/digest generation |
-| `Main.lean` | Driver: self-test, parse, desugar pipeline |
+| `Ctype_lemMeasureProofs.lean`, `Core_lemMeasureProofs.lean`, `Defacto_memory_aux_lemMeasureProofs.lean` | The `fuel_measure` sufficiency proofs the generated `*_auxiliary.lean` obligation shells import (fuel-parameter arc C1 / D2 enablers; one module per lem module with measured functions — the build fails without them, by design). Template: lem-lean `tests/comprehensive/lean-test/Test_lem_size_lemMeasureProofs.lean`; kernel-only tactics, no option bumps |
+| `Main.lean` | Driver: self-test, parse, desugar pipeline; `--fuel N` (the ONE fuel numeral: `defaultFuel` = 10^8, the harness default; the run's `[LemFuel]` instance is built once here) |
 
 ### Lem modifications (in `frontend/model/`)
 

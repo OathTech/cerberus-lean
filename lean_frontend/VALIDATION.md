@@ -134,20 +134,22 @@ a bare 137 without the witness keeps its crash/compare class. Plants:
 Unit executables (parser tests, pretty-printer mirrors vs recorded
 OCaml output, fresh-symbol/native-extern probes, and the compile-time
 totality/reader-lifting exemplars `effects-proof-test` /
-`totality-proof-test`: every fuel'd wrapper rfl-defeq to its worker at
-`lemDefaultFuel`, symbolic equations on the total layout defs,
-`tagDefs` an honest parameter — properties of the exec cone as built;
-and `fuel-exemplar-test`, the FUEL arc's consumer-shaped ∀-fuel theorem
-over the shipped fuel-parametric pipeline `CerbND.drive_lemFuel`, §5),
-then the gate scripts — all fail-closed:
+`totality-proof-test`: every fuel'd wrapper FUEL-PARAMETRIC — `@f ⟨n⟩ =
+f_lemFuel n` for every `n`, by rfl —, symbolic equations on the total
+layout defs, `tagDefs` an honest parameter — properties of the exec cone
+as built; and `fuel-exemplar-test`, the FUEL arc's consumer-shaped ∀-fuel
+theorem over the shipped pipeline `@drive ⟨fuel⟩` at the ambient
+`[LemFuel]` instance, §5), then the gate scripts — all fail-closed:
 
 | Gate | Guarantee |
 |---|---|
 | sync gate (`tools/check_handwritten_sync.sh`) | every hand-written file byte-identical to its compiled `generated/` copy (the binary corresponds to the sources); copy set enumerated from `lean_frontend/handwritten_copy.manifest`, the same list the Makefile copies from; every `lean_frontend/*.lean` must be listed; empty set = FAIL. Also a precondition of `build_lean` and of the driver-freshness stamp's Lean record/check (2026-09-02 gap: a green stamp over a stale-copy binary) |
 | `check_exec_purity.sh` | the execution slice is free of unsanctioned IO/effects |
-| `check_theorem_axioms.sh` | **zero `axiom` declarations anywhere** — hand-written census, generated-tree census, and the recursive census of the consumed LemLib package copy (the effect-retirement end state: `runEffectful` is deleted, `declare {lean} effectful` is refused by lem itself); `runEffectful` token-banned (comment-stripped) across all three trees; the `@[implemented_by]`/`unsafe`/`unsafeBaseIO` seam population pinned to `scripts/unsafebaseio_allowlist.txt`'s PIN rows exactly, both directions (a new seam fails naming itself — this bans an axiom-free reintroduction of the effect projection); the boundary-OPAQUE POPULATION pinned exactly-once, both directions (26 registered rows — the digest/config/util/enum/MemValue seams and the FUEL arc's pure `CerbFuel.fuelExhaustedLoc`; an unregistered `opaque` fails naming itself); zero `unsafeCast`; exemplar + `driver2` cones free of `sorryAx`/`ofReduce*`/DAEMON; the FUEL arc's contract lemmas (`CerbND.*_lemFuel_zero`, runner leaves, wrapper `rfl`s, `drive_wrapper_defeq`) and the exemplar theorem at the exact allowlist; the full exec-entry set (`driver2`, `drive`, `initial_driver_state`, `desugar`, `annotate_program`, `translate`, `link`, `convert_file`, `CerbCall.driveCall`) at the **exact** axiom allowlist `[propext, Classical.choice, Quot.sound]`; non-kernel decision procedures (`native_decide`/`bv_decide`) grep-banned. Source-scan legs are the primary evidence; the `#print axioms` probes are end-to-end spot checks (they underreport across `partial def` boundaries) |
+| `check_theorem_axioms.sh` | **zero `axiom` declarations anywhere** — hand-written census, generated-tree census, and the recursive census of the consumed LemLib package copy (the effect-retirement end state: `runEffectful` is deleted, `declare {lean} effectful` is refused by lem itself); `runEffectful` token-banned (comment-stripped) across all three trees; the `@[implemented_by]`/`unsafe`/`unsafeBaseIO` seam population pinned to `scripts/unsafebaseio_allowlist.txt`'s PIN rows exactly, both directions (a new seam fails naming itself — this bans an axiom-free reintroduction of the effect projection); the boundary-OPAQUE POPULATION pinned exactly-once, both directions (26 registered rows — the digest/config/util/enum/MemValue seams and the FUEL arc's pure `CerbFuel.fuelExhaustedLoc`; an unregistered `opaque` fails naming itself); zero `unsafeCast`; exemplar + `driver2` cones free of `sorryAx`/`ofReduce*`/DAEMON; the FUEL arc's contract lemmas (the nine GENERATED `*_lemFuel_zero`, the `CerbND` runner leaves, the fuel-parametricity `rfl`s `@X ⟨n⟩ = X_lemFuel n`) and the exemplar theorems at the exact allowlist; the full exec-entry set (`driver2`, `drive`, `initial_driver_state`, `desugar`, `annotate_program`, `translate`, `link`, `convert_file`, `CerbCall.driveCall`) at the **exact** axiom allowlist `[propext, Classical.choice, Quot.sound]`; non-kernel decision procedures (`native_decide`/`bv_decide`) grep-banned. Source-scan legs are the primary evidence; the `#print axioms` probes are end-to-end spot checks (they underreport across `partial def` boundaries) |
 | `check_sorry_token.sh` | zero `sorry` TOKENS in source text — comment- and string-stripped — over `generated/`, the hand-written seams + tests, and the consumed LemLib copy (the axiom gate probes `sorryAx` in cones only; the tree's last `sorry`, cmm_op.lem's target_rep, was closed by the FUEL arc). Empty scan set = FAIL |
 | `test_fuel_classifier.sh` | the one FUEL classifier (`scripts/fuel_classify.sh classify_fuel_outcome`) reads its fixture captures correctly: both fuel forms positive; a genuine `Error` kill, a PANIC without the marker, and program stdout carrying the words all negative (§5) |
+| `check_no_fuel_numerals.sh` | **no fuel numeral in the Lean text a consumer reasons against** (fuel-parameter arc, 2026-09-04; [USER 2026-09-03] "any and all magic values that are hardcoded and can't be quantified over are definitionally bugs"): seams, `generated/`, `test/`, `speclab/` scanned comment-stripped for the six shapes F1–F6 (the deleted `lemDefaultFuel`/`driverFuel`/`ndDefaultFuel`; a global `instance : LemFuel`; a worker at a literal fuel `_lemFuel 5`; `LemFuel := ⟨…⟩`/`LemFuel.mk 5`; `⟨<numeral>⟩`; a fuel-named constant defined as a numeral) — the ONE allowed site is Main.lean's `defaultFuel` (+ the `letI` that consumes it), allowlisted by exact line; vacuity-guarded (≥150 files, a `_lemFuel` worker seen); its `--selftest` plants all six shapes red and the unplanted set green on every `test_unit.sh` run |
+| `check_lakefile_roots.sh` | every `generated/*.lean` — the `_auxiliary` obligation carriers and the `*_lemMeasureProofs` modules included — is a Lake root of the semantics library and every root exists, both directions (lem-lean fuel-measure record §6.4 item 8: an auxiliary module dropped from the roots would silently un-build its obligations); `--selftest` plants a dropped root, a phantom root and an unrooted module |
 | `check_exec_totality.sh` | zero `partial` definitions on the execution path (empty allowlist; fuel-totalized recursion with the distinguished fuel-exhaustion outcome, §5) |
 | lem-sync gate | generated trees content-in-sync with the `.lem` sources (stamped; also wired into the dune graph for the libc `.co` artifacts) |
 | `check_fork_drift.sh` | the fork's oracle-side surface equals a reviewed manifest, and generated-OCaml fork-vs-upstream deltas match pinned hashes |
@@ -288,53 +290,90 @@ never absorbed as a skip; none is a memory-model limit):
   a tray candidate). The fuel arc's exhaustion leaf has the same shape and
   inherits the classification.
 
-- **Fuel exhaustion is a typed, distinguished outcome** for the ND
-  monad's fueled workers (the driver loop family, the memory-model ND
-  workers, and the `CerbND` runners): the fuel-zero arm is `NDkilled
-  CerbND.fuelExhaustedKill` = `Error0 CerbFuel.fuelExhaustedLoc "lem:
-  fuel exhausted"`, where `fuelExhaustedLoc` is a pure, kernel-checked
-  `opaque` constant on the boundary-opaque census (present exactly
-  once; no native binding). Every proof is uniform in the opaque
-  atom; the sentinel is a fresh location for every provable statement
-  — a theorem "every outcome is `Killed _ fuelExhaustedKill` or good"
-  holds under the reading where the atom is a location no model term
-  denotes, and a program that genuinely kills makes it unprovable, not
-  false; so no distinctness lemma is needed (corollary: no `.lem`
-  term, Core text, or JSON input can denote the atom). `_zero` lemmas
-  hold by `rfl`; the fuel-parametric pipeline `CerbND.drive_lemFuel`
-  is pinned to the generated `drive` by `drive = drive_lemFuel
-  driverFuel := rfl`. Budgets: the coupled driver family
-  (`driver2`, `drive_nonmemory_steps_aux2`, `print_eval_conv_aux`,
-  `hack`, `nd_bind`, `CerbND.ndDefaultFuel`) runs at
-  `CerbFuel.driverFuel` = 10^8 (the ceiling was ~1.7e4 plain loop
-  iterations / ~6e4 C-recursion depth at the former 10^6); every other
-  fueled declaration keeps `lemDefaultFuel` = 10^6 (the L1 opt-in
-  guarantee). Pure-return workers keep the opaque panicking sentinel
-  (exit 134, `lem: fuel exhausted` on stderr). The classifying lanes
-  (`test_exec.sh` and its csmith wrapper, `test_gcc_oracle.sh`,
-  `test_ci_sweep.sh`, `test_cn_coverage.sh`,
+- **Fuel is a PARAMETER of the semantics; fuel exhaustion is a typed,
+  distinguished outcome.** Every fuel'd generated function (67 sentinel
+  declares at the C1 slice; the `declare {lean} fuel val f = \`sentinel\``
+  form) is a total worker `f_lemFuel (lemFuel : Nat) …` whose wrapper
+  starts the counter from the LemLib class instance `[LemFuel]` (`def f
+  [LemFuel] := f_lemFuel LemFuel.fuel`) — or, for a `declare {lean}
+  fuel_measure val f = \`lemSize x\`` function, from the backend-derived
+  structural size of its argument (`def ctypeEqual (c c0) := ctypeEqual_lemFuel
+  (ctype.lemSize c) c c0`: no fuel binder, kernel-computable, with the
+  generated sufficiency obligation `ctypeEqual_measure_sufficient` proved
+  in the hand-written `Ctype_lemMeasureProofs.lean`; three such at C1:
+  `ctypeEqual`, `eq_core_base_type`, `fake_mem_value_eq`, the `Eq`
+  instance methods) — and every definition that
+  reaches one takes the same instance-implicit binder (the backend's fuel
+  lifting; the hand-written seams that reach fuel — the `CerbMem` layout
+  and (de)serialisation entries, `runND`/`runND1`/`runND1Trace`,
+  `CerbCall.driveCall`, `Main.runPipeline` — take it too, and the 19
+  `mem.lem` reps whose implementations read it are `declare {lean}
+  fuel_consumer`). So the whole run has ONE fuel, instantiated exactly
+  once at the executable's entry: `cerberus-lean … --fuel N` (default
+  `Main.lean` `defaultFuel` = 10^8, THE ONLY fuel numeral permitted in
+  the repository's Lean text — `check_no_fuel_numerals.sh`; 0 or a
+  non-numeral is refused, exit 2), and a theorem quantifies over it
+  (`∀ n, @f ⟨n⟩ = f_lemFuel n` by rfl is the parametricity pin for every
+  wrapper — `totality-proof-test`, `CerbND.*_wrapper_defeq`; the
+  consumer's hypotheses become `∀ [LemFuel], potential e ≤ LemFuel.fuel →
+  …`). This is the fuel-parameter arc ([USER 2026-09-03]: fuel "is an
+  execution parameter that 'doesn't matter' … a parameter which can be
+  chosen as 10^8 or any other value when calling the interpreter"; "Any
+  and all magic values that are hardcoded and can't be quantified over
+  are definitionally bugs"); the former constants `CerbFuel.driverFuel`
+  (10^8, the driver family), `CerbND.ndDefaultFuel` and LemLib's
+  `lemDefaultFuel` (10^6, everything else) and the per-declaration numeric
+  budget form are DELETED (lem-lean
+  `doc/lean-backend/2026-09-03_fuel-parameter-design.md` R1–R3;
+  `docs/2026-09-04_fuel-parameter-C1-record.md`). Every fuel'd callee
+  starts from the FULL ambient, never from its caller's remaining
+  counter.
+
+  The exhaustion outcome: for the ND monad's fueled workers (the driver
+  loop family, the memory-model ND workers, and the `CerbND` runners) the
+  fuel-zero arm is `NDkilled CerbND.fuelExhaustedKill` = `Error0
+  CerbFuel.fuelExhaustedLoc "lem: fuel exhausted"`, where
+  `fuelExhaustedLoc` is a pure, kernel-checked `opaque` constant on the
+  boundary-opaque census (present exactly once; no native binding). Every
+  proof is uniform in the opaque atom; the sentinel is a fresh location
+  for every provable statement — a theorem "every outcome is `Killed _
+  fuelExhaustedKill` or good" holds under the reading where the atom is a
+  location no model term denotes, and a program that genuinely kills makes
+  it unprovable, not false; so no distinctness lemma is needed (corollary:
+  no `.lem` term, Core text, or JSON input can denote the atom). The
+  `_zero` lemmas are GENERATED by lem beside each wrapper
+  (`f_lemFuel_zero … : f_lemFuel 0 … = <sentinel> := rfl`; the nine
+  ND-typed ones are gate-probed). Pure-return workers keep the opaque
+  panicking sentinel (exit 134, `lem: fuel exhausted` on stderr) — at a
+  tiny fuel the FRONT END's pure workers exhaust first (measured at C1:
+  `--fuel 1` on `tests/minimal/001-return-literal.c` is the panic form).
+  The classifying lanes (`test_exec.sh` and its csmith wrapper,
+  `test_gcc_oracle.sh`, `test_ci_sweep.sh`, `test_cn_coverage.sh`,
   `tests/mem-scale-probes/measure.sh`) assign the FUEL class to both
   forms by the printed message (fail-noisy, never agreement;
   reporting-only, no soundness rests on it); the byte-compare lanes
   (`test_libc_exec.sh`, `test_multi_tu.sh`, `test_verify.sh`,
   `test_immaculate.sh`, `test_libxml2_uri.sh`, `test_bytes.sh`) report
-  DIFF/FAIL. A 10^8 budget is unreachable inside any gate lane's
-  timeout (15-30 s ⇒ ≤ 7×10^6 fuel per invocation); it is exercised
-  only by `measure.sh` (600 s) and unbounded single probes. Why a
-  fuel row is an accepted Lean-vs-oracle discrepancy at all — [USER
-  2026-09-03]: "fuel is a reasonable exception because we could always
-  just run the semantics with more fuel." That ruling's frame: ALL
-  Lean-vs-oracle execution discrepancies are bugs, with exactly two
-  accepted exception classes — (a) failure-path message text may
+  DIFF/FAIL; `test_fuel_plant.sh` runs the real driver at `--fuel 1`
+  (FUEL) and at the default (MATCH). The harness default 10^8 is
+  unreachable inside any gate lane's timeout (15-30 s ⇒ ≤ 7×10^6 fuel per
+  invocation); it is exercised only by `measure.sh` (600 s) and unbounded
+  single probes. Why a fuel row is an accepted Lean-vs-oracle discrepancy
+  at all — [USER 2026-09-03]: "fuel is a reasonable exception because we
+  could always just run the semantics with more fuel." That ruling's
+  frame: ALL Lean-vs-oracle execution discrepancies are bugs, with exactly
+  two accepted exception classes — (a) failure-path message text may
   differ (failure-vs-success classification must match), (b) resource
-  limits: Lean must not fail where the oracle succeeds. Fuel
-  exhaustion is accepted under (b) with the rationale that the bound
-  is a PARAMETER of the port, not a semantic limit: for any oracle-
-  terminating run there is a fuel at which Lean agrees. This is the
-  design rationale, not a shipped theorem — fuel monotonicity for the
-  driver workers is NOT provided (design note §1.5), and a FUEL row
-  is never counted as agreement. Record:
-  `docs/2026-09-02_fuel-arc-design.md`.
+  limits: Lean must not fail where the oracle succeeds. Fuel exhaustion is
+  accepted under (b) with the rationale that the bound is a PARAMETER of
+  the port, not a semantic limit — now literally so: for any
+  oracle-terminating run there is a `--fuel N` at which Lean agrees. This
+  is the design rationale, not a shipped theorem — fuel monotonicity for
+  the driver workers is NOT provided (lem-lean fuel-parameter record §5:
+  it is a property of how each body CONSUMES exhaustion — an absorbing
+  typed outcome — and is the next slice's subject), and a FUEL row is
+  never counted as agreement. Records: `docs/2026-09-02_fuel-arc-design.md`,
+  `docs/2026-09-04_fuel-parameter-C1-record.md`.
 - Zero-initialised static aggregates above ~8 × 10^6 ELEMENTS
   (element-count driven: `char g[8000000]` completes, `char g[10000000]`
   does not; `int g[2500000]` completes) overflow the 1 GiB runtime-

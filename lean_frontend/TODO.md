@@ -48,7 +48,8 @@ downstream.)
   the PROCESS-STACK ceiling is BINDING
   AGAIN (measured 2026-09-03, FUEL arc record §6): at the coupled driver
   family's budget `CerbFuel.driverFuel` = 10^8 (the FUEL arc's budget
-  commit), `tests/mem-scale-probes/probes/d_loop_1000000.c` and
+  commit; since the fuel-parameter arc C1 that budget is the `--fuel`
+  default `Main.lean` `defaultFuel`, the same value), `tests/mem-scale-probes/probes/d_loop_1000000.c` and
   `e_memcpy_1000000.c` die with `Stack overflow detected. Aborting.`
   (exit 134, after 44.6 s / 99.8 s) while `d_loop_100000`/
   `e_memcpy_100000` complete with the oracle's values — onset between
@@ -69,7 +70,9 @@ downstream.)
   (`tests/mem-scale-probes/probes/b_zero_local_1000000.c`, and
   `_10000000`) dies in the FRONT END — `mkListN_aux_lemFuel` (called from
   `constructValue_aux` ← `wip_desugar_initializer`, symbolised from the
-  panic backtrace) exhausts `lemDefaultFuel` = 10^6 building the
+  panic backtrace) exhausts the fuel — `lemDefaultFuel` = 10^6 at the
+  time; the ambient `--fuel` (default 10^8) since the fuel-parameter arc
+  C1 — building the
   n-element list — as a pure-return-worker PANIC (exit 134, harness
   `FUEL(panic)`), unchanged by the driver-family budget (it is outside
   the coupled six; Q4). Evidence for a per-declaration budget declare on
@@ -91,7 +94,9 @@ downstream.)
   design note §1.6 route iii): a caller's fuel passed into callee
   workers across `let rec` blocks (today the L1 mechanism threads fuel
   through self/block-member calls only — lean_backend.ml:2852-2863,
-  :4088-4097 — which is why `drive_lemFuel` is a hand-written mirror).
+  :4088-4097 — which is why `drive_lemFuel` was a hand-written mirror
+  until the fuel-parameter arc C1 made the generated `drive [LemFuel]`
+  the fuel-parametric pipeline itself; the mirror is deleted).
   Motivation: the coupled-family analysis (stack-ceiling design
   :139-146). Class 0 (Lean emission only) but it changes every budget
   and consumer side condition in the call graph → next-lem-arc
