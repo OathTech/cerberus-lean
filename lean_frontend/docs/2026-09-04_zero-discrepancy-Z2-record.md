@@ -733,3 +733,32 @@ tally and text here; every quoted engine/gate line is verbatim from this
 worktree's runs; derived tallies are labelled. Nothing merged or pushed;
 the primary checkout, `deps/`, `lem-lean/`, other worktrees and global
 state untouched; `.tmp/z2/` is ephemeral scratch.
+
+
+## 13. Orchestrator boundary review [AGENT, orchestrator, 2026-09-04]
+
+Independent re-verification at the slice boundary (worker-claimed green
+is never accepted). Head `811e4ac59`. In this worktree: `make
+lean-prelude-src`; `DUNE_CACHE=disabled build_cerberus` → oracle stamp bin
+`b05790f2ecee…`; `CERB_MEM_MAX=32G build_lean` → lean stamp bin
+`b87125fa07d8…` (IDENTICAL to the worker's final stamp — the gated Lean
+binary is bit-for-bit the same); `check_driver_fresh --check` OK. Then 25
+lanes SERIALLY, every one rc 0, no baseline movement: Tier A in full
+(unit, exec minimal/coverage/debug/float, bytes, libc_exec, multi_tu,
+parse, core, elab, uri, cn_coverage), parse/core over `tests/ci`, verify,
+immaculate, speclab selftest + plant, hang/kill/fuel plants, libxml2, gcc
+lane. Box load at the gcc lane's start `load average: 10.09, 19.95,
+17.31` (moderate; no TIMEOUT movement). Verbatim:
+
+```
+gcc lane:  SUMMARY: total=1963 compared=1885 agree=1873 agree_nd=0 triaged=12 disagree=0 o2_agree=190 skip_gcc_compile=1 skip_gcc_stdout=1 skip_lean_crash=9 skip_lean_fail=9 skip_lean_timeout=11 skip_ub=47 triaged_addr=11 triaged_ub=1
+           Baseline check: 0 regression(s), 0 improvement(s)
+           gcc second-oracle lane OK
+verify:    test_verify: 127 passed, 0 failed (25 fixtures, 28 call points, 14 corpus fixtures, 21 corpus points)
+```
+
+Consumer change manifest for this slice:
+`docs/2026-09-04_zero-discrepancy-Z2-change-manifest.md`. The §10
+decisions go to the operator with the merge ask; the pre-merge audit
+follows this review (its document is cherry-picked onto the branch
+before the merge, as for Z1).
