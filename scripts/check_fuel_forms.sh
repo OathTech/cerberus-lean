@@ -5,7 +5,8 @@
 #
 # Every fuel'd worker in the compiled environment is CLASSIFIED by the Lean tool
 # lean_frontend/test/Unit/FuelFormsTool.lean (run under `lake env`, importing
-# the exec entries and every generated *_auxiliary module):
+# the exec entries, every generated *_auxiliary module and every
+# *_lemMeasureProofs module — the obligation carriers):
 #   MEASURED   — its `<f>_measure_sufficient` obligation exists (generated
 #                statement, hand-written proof); this script additionally
 #                requires the reported axiom cones (obligation AND proof) to be
@@ -34,7 +35,10 @@ CAPPED="$SCRIPT_DIR/capped"
 
 table_of_tree() {
   local aux
-  aux=$(cd "$LF" && ls generated/*_auxiliary.lean | xargs -n1 basename | sed 's/\.lean$//')
+  # every obligation carrier: the generated *_auxiliary modules AND every
+  # *_lemMeasureProofs module (the hand-written seam obligations of
+  # CerbMem_lemMeasureProofs are imported by nothing else)
+  aux=$(cd "$LF" && ls generated/*_auxiliary.lean generated/*_lemMeasureProofs.lean | xargs -n1 basename | sed 's/\.lean$//')
   (cd "$LF" && "$CAPPED" lake build fuel-forms-tool >/dev/null 2>&1) || { echo "check_fuel_forms: FAIL — could not build fuel-forms-tool"; return 1; }
   # shellcheck disable=SC2086
   (cd "$LF" && "$CAPPED" lake env ./.lake/build/bin/fuel-forms-tool Driver CerbCall CerbND Main $aux 2>/dev/null)
