@@ -40,8 +40,3 @@ to_pures_lemFuel                   opaque-arg   mutual sibling of to_pure
 many_lemFuel                       parser       monadic_parsing.lem: recursion depth is the INPUT's length, which is inside the ParserM lambda, not a parameter; payload = the parser zero, indistinguishable from a normal parse failure
 many1_lemFuel                      parser       mutual sibling of many
 showNonNegativeWithBasis_aux_lemFuel  precondition  formatted.lem: recursion on n / b terminates only for b >= 2 (callers use 8/10/16)
-# --- hand-written serialisation seams whose recursion IS on the data (C2 route:
-#     measured forms by hand — see the record's seam table) ---
-CerbMem.memValueToBytes_lemFuel    seam-data    CerbMem.lean: recursion on the MemValue (MVarray/MVstruct/MVunion); reaches the ambient sizeofCtype
-CerbMem.typeofMval_lemFuel         seam-data    CerbMem.lean: recursion on the MemValue (MVarray head)
-CerbMem.unqualifyAndUnatomic_lemFuel  seam-data CerbMem.lean: structural on the ctype

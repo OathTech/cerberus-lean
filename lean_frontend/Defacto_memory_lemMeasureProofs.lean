@@ -46,7 +46,7 @@ theorem has_concurRead_stable_aux (k : Nat) : ∀ (e : integer_value_base) (f g 
         have key : ∀ (y : integer_value_base), integer_value_base.lemSize y < integer_value_base.lemSize e →
             has_concurRead_lemFuel f y = has_concurRead_lemFuel g y :=
           fun y hy => ih y f g (by omega) (by omega) (by omega)
-        cases e <;> simp (disch := size_lt) only [has_concurRead_lemFuel, key]
+        cases e <;> simp only [has_concurRead_lemFuel]
         case IVop iop l =>
           apply lany_congr; intro iv hiv
           exact key iv (by have := ival_mem_lt_aux2 iv _ hiv; size_lt)

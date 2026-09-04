@@ -58,12 +58,10 @@ policy() {
   if [[ -n "$badax" ]]; then
     echo "check_fuel_forms: FAIL — measured obligation(s) with an axiom cone outside [propext, Classical.choice, Quot.sound] (or no proof constant):"; echo "$badax" | sed 's/^/  /'; rc=1
   fi
-  # measured rows must show the delegated proof constant too
-  local noproof
-  noproof=$(awk -F'\t' '$1=="FUEL_FORM" && $3=="MEASURED" && $5 !~ /proof=/ {print $2}' "$tbl")
-  if [[ -n "$noproof" ]]; then
-    echo "check_fuel_forms: FAIL — measured obligation(s) whose hand-written proof constant was not found in the environment:"; echo "$noproof" | sed 's/^/  /'; rc=1
-  fi
+  # (A delegated `proof=` constant is reported where one exists — the generated
+  # obligations delegate to <Module>_lemMeasureProofs — but is not required: the
+  # hand-written seam obligations in CerbMem_lemMeasureProofs ARE their own
+  # proof, and the obligation's axiom cone covers its proof transitively.)
   local reach_amb pinned
   reach_amb=$(awk -F'\t' '$1=="FUEL_FORM" && $3=="AMBIENT" && $4 ~ /^yes/ {print $2}' "$tbl" | sort -u)
   pinned=$(grep -v '^\s*#' "$pend" | awk 'NF>0 {print $1}' | sort -u)
@@ -99,7 +97,7 @@ if [[ "${1:-}" == "--selftest" ]]; then
   # P2: a pending row vanishes from the table (e.g. it became measured) -> stale pin
   grep -v $'^FUEL_FORM\thack_lemFuel\t' "$TBL" > "${TBL}.p"; plant "P2 stale pending pin (hack removed from the table)" "stale pin" "${TBL}.p" "$PENDING"
   # P3: a measured obligation with sorryAx in its cone
-  sed 's/^\(FUEL_FORM\tin_pattern_lemFuel\tMEASURED\t[^\t]*\t\)obligation=\([^ ]*\) axioms=ok/\1obligation=\2 axioms=BAD[[sorryAx]]/' "$TBL" > "${TBL}.p"; plant "P3 measured obligation with sorryAx" "axiom cone outside" "${TBL}.p" "$PENDING"
+  sed 's/^\(FUEL_FORM\tin_pattern_lemFuel\tMEASURED\t[^\t]*\t\)obligation=\([^ ]*\) axioms=ok/\1obligation=\2 axioms=BAD[[sorryAx]]/' "$TBL" > "${TBL}.p"; plant "P3 measured obligation with sorryAx in its cone" "axiom cone outside" "${TBL}.p" "$PENDING"
   # P4: truncated table (no summary)
   grep -v '^FUEL_FORMS_SUMMARY' "$TBL" > "${TBL}.p"; plant "P4 truncated table" "no FUEL_FORMS_SUMMARY" "${TBL}.p" "$PENDING"
   # P5: a phantom register row

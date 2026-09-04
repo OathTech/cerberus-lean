@@ -768,10 +768,17 @@ def memValueToBytes_lemFuel [LemFuel] (lemFuel : Nat) (ambient : TagDefs) (funpt
     let (fpm, bs) := memValueToBytes_lemFuel lemFuel ambient funptrmap mval
     (fpm, bs ++ List.replicate (size - bs.length) paddingByte)
 
-/-- Ambient-fuel wrapper (rfl-defeq to the worker at the instance's fuel). -/
+/-- MEASURED wrapper (fuel-parameter arc C2, 2026-09-04): the worker's own
+    counter starts from the structural size of the value it recurses on
+    (`memValueSize val_`: MVarray/MVstruct/MVunion descend into components) —
+    the hand-written twin of a `declare {lean} fuel_measure`; the sufficiency
+    theorem `memValueToBytes_measure_sufficient` is in
+    CerbMem_lemMeasureProofs.lean. The `[LemFuel]` binder stays because the
+    body reads the AMBIENT layout oracle (`sizeofCtype`/`offsetsof`, a tag
+    lookup: C2 record, pending register). -/
 def memValueToBytes [LemFuel] (ambient : TagDefs) (funptrmap : Funptrmap) (val_ : MemValue) :
     Funptrmap × List AbsByte :=
-  memValueToBytes_lemFuel LemFuel.fuel ambient funptrmap val_
+  memValueToBytes_lemFuel (memValueSize val_) ambient funptrmap val_
 
 /-! ### C3 reference form + equality theorem (mem-scale S1, 2026-09-02)
 
@@ -934,8 +941,8 @@ theorem memValueToBytes_lemFuel_eq_append [LemFuel] :
 
 theorem memValueToBytes_eq_append [LemFuel] (ambient : TagDefs) (funptrmap : Funptrmap) (val_ : MemValue) :
     memValueToBytes ambient funptrmap val_ =
-      memValueToBytes_append_lemFuel LemFuel.fuel ambient funptrmap val_ :=
-  memValueToBytes_lemFuel_eq_append LemFuel.fuel ambient funptrmap val_
+      memValueToBytes_append_lemFuel (memValueSize val_) ambient funptrmap val_ :=
+  memValueToBytes_lemFuel_eq_append (memValueSize val_) ambient funptrmap val_
 
 /-- `chunksOf e n l`: the `n` successive `e`-element slices of `l`
     (consume-and-return-rest; a slice past the end is short/empty, as
@@ -1277,16 +1284,18 @@ def typeofMval_lemFuel (lemFuel : Nat) : MemValue → ctype :=
   | .MVstruct tagSym _ => mkCtype (.Struct tagSym)
   | .MVunion tagSym _ _ => mkCtype (.Union0 tagSym)
 
-/-- Ambient-fuel wrapper (rfl-defeq to the worker at the instance's fuel). -/
-def typeofMval [LemFuel] (mval : MemValue) : ctype :=
-  typeofMval_lemFuel LemFuel.fuel mval
+/-- MEASURED wrapper (C2): the counter starts from `memValueSize mval` (the
+    recursion descends the MVarray head); fuel-free for every caller;
+    `typeofMval_measure_sufficient` in CerbMem_lemMeasureProofs.lean. -/
+def typeofMval (mval : MemValue) : ctype :=
+  typeofMval_lemFuel (memValueSize mval) mval
 
 /-- ctype_mem_compatible — impl_mem.ml:23-49: structural ctype equality
     after recursively erasing qualifiers, annotations and Atomic wrappers;
     Byte compares as unsigned char (impl_mem.ml:30-32); function-parameter
     is_register flags are dropped to false (impl_mem.ml:33-38, the
     `(_, ty, _) -> (..., false)` map). Used ONLY by the store guard. -/
-private def unqualifyAndUnatomic_lemFuel (lemFuel : Nat) : ctype → ctype_ :=
+def unqualifyAndUnatomic_lemFuel (lemFuel : Nat) : ctype → ctype_ :=
   fun cty =>
   match lemFuel with
   | 0 => fuelExhaustedWith "CerbMem.unqualifyAndUnatomic: fuel exhausted" .Void0
@@ -1309,11 +1318,15 @@ private def unqualifyAndUnatomic_lemFuel (lemFuel : Nat) : ctype → ctype_ :=
       .Pointer no_qualifiers (Ctype [] (unqualifyAndUnatomic_lemFuel lemFuel refTy))
     | .Atomic atomTy => unqualifyAndUnatomic_lemFuel lemFuel atomTy
 
-/-- Ambient-fuel wrapper (rfl-defeq to the worker at the instance's fuel). -/
-private def unqualifyAndUnatomic [LemFuel] (cty : ctype) : ctype_ :=
-  unqualifyAndUnatomic_lemFuel LemFuel.fuel cty
+/-- MEASURED wrapper (C2): structural on the ctype — the counter starts from
+    the backend-derived `ctype.lemSize cty`; fuel-free for every caller;
+    `unqualifyAndUnatomic_measure_sufficient` in CerbMem_lemMeasureProofs.lean
+    (the worker and this wrapper are no longer `private` so the proof module can
+    name them). -/
+def unqualifyAndUnatomic (cty : ctype) : ctype_ :=
+  unqualifyAndUnatomic_lemFuel (ctype.lemSize cty) cty
 
-def ctypeMemCompatible [LemFuel] (ty1 ty2 : ctype) : Bool :=
+def ctypeMemCompatible (ty1 ty2 : ctype) : Bool :=
   ctypeEqual (Ctype [] (unqualifyAndUnatomic ty1)) (Ctype [] (unqualifyAndUnatomic ty2))
 
 /-! ## Pointer value constructors — impl_mem.ml:1799-1827 -/

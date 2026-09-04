@@ -172,6 +172,17 @@ theorem memValue_mem_lt_list (v : CerbMem.MemValue) (l : List CerbMem.MemValue) 
     | head => simp only [CerbMem.memValueListSize]; omega
     | tail _ h' => have := ih h'; simp only [CerbMem.memValueListSize]; omega
 
+theorem memValue_mem_lt_members (i : identifier) (c : ctype) (v : CerbMem.MemValue)
+    (l : List (identifier × ctype × CerbMem.MemValue)) (h : (i, c, v) ∈ l) :
+    CerbMem.memValueSize v < CerbMem.memValueMembersSize l := by
+  induction l with
+  | nil => cases h
+  | cons y ys ih =>
+    obtain ⟨i', c', v'⟩ := y
+    cases h with
+    | head => simp only [CerbMem.memValueMembersSize]; omega
+    | tail _ h' => have := ih h'; simp only [CerbMem.memValueMembersSize]; omega
+
 /-! ## Positivity: every constructor counts at least 1 -/
 
 theorem expr_lemSize_pos {a bty sym : Type} (e : generic_expr a bty sym) : 1 ≤ generic_expr.lemSize e := by
@@ -217,15 +228,23 @@ theorem mem_map_unit {α : Type} {x : Unit} {pe : α} {pes : List α}
     otherwise peels ONE congruence level (`congr 1`, `funext` on lambdas) and
     recurses — depth-agnostic, so it does not depend on which debug/unit
     matches `simp` has already reduced. -/
-syntax "to_congr" : tactic
+syntax "to_congr_step" : tactic
 macro_rules
-  | `(tactic| to_congr) => `(tactic| first
+  | `(tactic| to_congr_step) => `(tactic| first
       | apply lmap_congr
       | apply lany_congr
       | apply lall_congr
       | apply lfoldl_congr
       | apply lemListFoldr_congr
-      | (congr 1 <;> to_congr))
+      | refine congrArg Prod.snd ?_
+      | refine congrArg Prod.fst ?_
+      | congr 1)
+/-- Bounded (12 levels; the two `congrArg` steps open a primitive projection
+    `x.2`/`x.1`, on which `congr 1` succeeds WITHOUT progress — hence their
+    order before it): a level that makes no progress is a `try` no-op, so
+    the descent can never loop; the goals it leaves are the congruence lemmas'
+    per-member hypotheses (`∀ x, x ∈ l → …`), one per traversal reached. -/
+macro "to_congr" : tactic => `(tactic| iterate 12 (all_goals (try to_congr_step)))
 
 /-! ## The discharger: unfold the derived sizes (goal and hypotheses), then `omega` -/
 
@@ -236,7 +255,7 @@ macro "size_lt" : tactic => `(tactic| (
     generic_pexpr_.lemSize_aux4, generic_pattern.lemSize, generic_pattern_.lemSize,
     generic_pattern_.lemSize_aux1, integer_value_base.lemSize, bitwise_operation.lemSize,
     impl_pointer_value.lemSize_aux2, CerbMem.memValueSize, CerbMem.memValueListSize,
-    CerbMem.memValueMembersSize, ctype.lemSize, ctype_.lemSize, List.length_cons, List.length_nil] at *);
+    CerbMem.memValueMembersSize, ctype.lemSize, ctype_.lemSize, ctype_.lemSize_aux1, List.length_cons, List.length_nil] at *);
   omega))
 
 end CerbMeasureLemmas
