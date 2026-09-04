@@ -92,14 +92,18 @@ declare {lean} reader_consumer val store
 
 declare ocaml target_rep function allocate_object = `Impl_mem.allocate_object`
 declare lean target_rep function allocate_object = `CerbMem.allocateObject`
+declare {lean} fuel_consumer val allocate_object
 declare ocaml target_rep function allocate_region = `Impl_mem.allocate_region`
 declare lean target_rep function allocate_region = `CerbMem.allocateRegion`
+declare {lean} fuel_consumer val allocate_region
 declare ocaml target_rep function kill = `Impl_mem.kill`
 declare lean target_rep function kill = `CerbMem.killM`
 declare ocaml target_rep function load = `Impl_mem.load`
 declare lean target_rep function load = `CerbMem.loadM`
+declare {lean} fuel_consumer val load
 declare ocaml target_rep function store = `Impl_mem.store`
 declare lean target_rep function store = `CerbMem.storeM`
+declare {lean} fuel_consumer val store
 
 
 (* Pointer value constructors *)
@@ -137,6 +141,7 @@ declare ocaml target_rep function eq_ptrval = `Impl_mem.eq_ptrval`
 declare lean target_rep function eq_ptrval = `CerbMem.eqPtrval`
 declare ocaml target_rep function ne_ptrval = `Impl_mem.ne_ptrval`
 declare lean target_rep function ne_ptrval = `CerbMem.nePtrval`
+declare {lean} fuel_consumer val ne_ptrval
 declare ocaml target_rep function lt_ptrval = `Impl_mem.lt_ptrval`
 declare lean target_rep function lt_ptrval = `CerbMem.ltPtrval`
 declare ocaml target_rep function gt_ptrval = `Impl_mem.gt_ptrval`
@@ -147,6 +152,7 @@ declare ocaml target_rep function ge_ptrval = `Impl_mem.ge_ptrval`
 declare lean target_rep function ge_ptrval = `CerbMem.gePtrval`
 declare ocaml target_rep function diff_ptrval = `Impl_mem.diff_ptrval`
 declare lean target_rep function diff_ptrval = `CerbMem.diffPtrval`
+declare {lean} fuel_consumer val diff_ptrval
 declare {lean} reader_consumer val diff_ptrval
 
 val update_prefix: (Symbol.prefix * mem_value) -> memM unit
@@ -159,11 +165,13 @@ declare lean target_rep function prefix_of_pointer = `CerbMem.prefixOfPointer`
 val validForDeref_ptrval: Ctype.ctype -> pointer_value -> memM bool
 declare ocaml target_rep function validForDeref_ptrval = `Impl_mem.validForDeref_ptrval`
 declare lean target_rep function validForDeref_ptrval = `CerbMem.validForDerefPtrval`
+declare {lean} fuel_consumer val validForDeref_ptrval
 declare {lean} reader_consumer val validForDeref_ptrval
 
 val isWellAligned_ptrval: Ctype.ctype -> pointer_value -> memM bool
 declare ocaml target_rep function isWellAligned_ptrval = `Impl_mem.isWellAligned_ptrval`
 declare lean target_rep function isWellAligned_ptrval = `CerbMem.isWellAlignedPtrval`
+declare {lean} fuel_consumer val isWellAligned_ptrval
 declare {lean} reader_consumer val isWellAligned_ptrval
 
 (* Casting operations *)
@@ -194,9 +202,11 @@ val array_shift_ptrval:  pointer_value -> Ctype.ctype -> integer_value -> pointe
 val member_shift_ptrval: pointer_value -> Symbol.sym -> Symbol.identifier -> pointer_value
 declare ocaml target_rep function array_shift_ptrval = `Impl_mem.array_shift_ptrval`
 declare lean target_rep function array_shift_ptrval = `CerbMem.arrayShiftPtrval`
+declare {lean} fuel_consumer val array_shift_ptrval
 declare {lean} reader_consumer val array_shift_ptrval
 declare ocaml target_rep function member_shift_ptrval = `Impl_mem.member_shift_ptrval`
 declare lean target_rep function member_shift_ptrval = `CerbMem.memberShiftPtrval`
+declare {lean} fuel_consumer val member_shift_ptrval
 declare {lean} reader_consumer val member_shift_ptrval
 
 (* Effectfull version of pointer shifting constructors *)
@@ -204,9 +214,11 @@ val eff_array_shift_ptrval: Loc.t -> pointer_value -> Ctype.ctype -> integer_val
 val eff_member_shift_ptrval: Loc.t -> pointer_value -> Symbol.sym -> Symbol.identifier -> memM pointer_value
 declare ocaml target_rep function eff_array_shift_ptrval = `Impl_mem.eff_array_shift_ptrval`
 declare lean target_rep function eff_array_shift_ptrval = `CerbMem.effArrayShiftPtrval`
+declare {lean} fuel_consumer val eff_array_shift_ptrval
 declare {lean} reader_consumer val eff_array_shift_ptrval
 declare ocaml target_rep function eff_member_shift_ptrval = `Impl_mem.eff_member_shift_ptrval`
 declare lean target_rep function eff_member_shift_ptrval = `CerbMem.effMemberShiftPtrval`
+declare {lean} fuel_consumer val eff_member_shift_ptrval
 declare {lean} reader_consumer val eff_member_shift_ptrval
 
 
@@ -216,12 +228,15 @@ val realloc: Loc.t -> Mem_common.thread_id -> integer_value -> pointer_value -> 
 
 declare ocaml target_rep function memcpy = `Impl_mem.memcpy`
 declare lean target_rep function memcpy = `CerbMem.memcpyM`
+declare {lean} fuel_consumer val memcpy
 declare {lean} reader_consumer val memcpy
 declare ocaml target_rep function memcmp = `Impl_mem.memcmp`
 declare lean target_rep function memcmp = `CerbMem.memcmpM`
+declare {lean} fuel_consumer val memcmp
 declare {lean} reader_consumer val memcmp
 declare ocaml target_rep function realloc = `Impl_mem.realloc`
 declare lean target_rep function realloc = `CerbMem.reallocM`
+declare {lean} fuel_consumer val realloc
 declare {lean} reader_consumer val realloc
 
 val va_start: list (Ctype.ctype * pointer_value) -> memM integer_value
@@ -245,6 +260,7 @@ declare lean target_rep function va_list = `CerbMem.vaList`
 val copy_alloc_id: integer_value -> pointer_value -> memM pointer_value
 declare ocaml target_rep function copy_alloc_id = `Impl_mem.copy_alloc_id`
 declare lean target_rep function copy_alloc_id = `CerbMem.copyAllocId`
+declare {lean} fuel_consumer val copy_alloc_id
 
 (* Byte casting operations *)
 val bytefromint: integer_value -> integer_value
@@ -279,12 +295,28 @@ declare ocaml target_rep function op_ival = `Impl_mem.op_ival`
 declare lean target_rep function op_ival = `CerbMem.opIval`
 declare ocaml target_rep function offsetof_ival = `Impl_mem.offsetof_ival`
 declare lean target_rep function offsetof_ival = `CerbMem.offsetofIval`
+declare {lean} fuel_consumer val offsetof_ival
 declare {lean} reader_consumer val offsetof_ival
 declare ocaml target_rep function sizeof_ival = `Impl_mem.sizeof_ival`
 declare lean target_rep function sizeof_ival = `CerbMem.sizeofIval`
+declare {lean} fuel_consumer val sizeof_ival
 declare {lean} reader_consumer val sizeof_ival
 declare ocaml target_rep function alignof_ival = `Impl_mem.alignof_ival`
 declare lean target_rep function alignof_ival = `CerbMem.alignofIval`
+(* FUEL CONSUMERS (fuel-parameter arc, 2026-09-04; Lean-only declares, no
+   OCaml effect — lem-lean doc/lean-backend/2026-09-03_fuel-parameter-design.md
+   R1 item 3): the hand-written CerbMem implementations of the vals below
+   read the ambient fuel (`[LemFuel]`, `LemFuel.fuel`) because they reach a
+   fuel'd worker — the layout oracles (sizeofCtype/alignofCtype/offsetsof),
+   the (de)serializers (memValueToBytes/reconstructValue), typeofMval, or
+   the ND monad's `nd_bind`. `fuel_consumer` makes every generated caller
+   fuel-lifted (the `[LemFuel]` binder is threaded to it; call sites are
+   textually unchanged). The set is the measured `[LemFuel]` closure of
+   CerbMem.lean's mem.lem reps at the C1 slice (19 vals; the build fails
+   closed — `failed to synthesize instance LemFuel` at the generated call
+   site — if one is missing). C2 converts the data-bounded ones to
+   `fuel_measure`. *)
+declare {lean} fuel_consumer val alignof_ival
 declare {lean} reader_consumer val alignof_ival
 declare ocaml target_rep function bitwise_complement_ival = `Impl_mem.bitwise_complement_ival`
 declare lean target_rep function bitwise_complement_ival = `CerbMem.bitwiseComplementIval`

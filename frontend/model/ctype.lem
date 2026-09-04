@@ -425,3 +425,12 @@ let is_ptr_t (Ctype _ ty_) =
    beyond-automatic shape). Witness false (Bool return; honesty lives
    in the opaque runtime panic, not the witness). === *)
 declare {lean} fuel val ctypeEqual = `fuelExhausted false`
+(* FUEL MEASURE (fuel-parameter arc C1 / D2 enablers, 2026-09-04; Lean-only,
+   no OCaml effect): the fuel'd equality is an `Eq` instance method, which
+   cannot take the ambient [LemFuel]; its wrapper instantiates the counter
+   from the backend-derived structural size of the first argument
+   (`ctype.lemSize c`) — fuel-free for callers, kernel-computable; the
+   sufficiency obligation `ctypeEqual_measure_sufficient` is emitted into
+   Ctype_auxiliary.lean and proved in lean_frontend/Ctype_lemMeasureProofs.lean
+   (lem-lean doc/lean-backend/2026-09-04_d2-enablers-record.md §4.5). *)
+declare {lean} fuel_measure val ctypeEqual = `lemSize c`

@@ -466,4 +466,9 @@ declare {lean} fuel val tmp_AND_aux = `fuelExhausted ((0 : Int))`
 declare {lean} fuel val tmp_OR_aux = `fuelExhausted ((0 : Int))`
 declare {lean} fuel val tmp_XOR_aux = `fuelExhausted ((0 : Int))`
 declare {lean} fuel val fake_mem_value_eq = `fuelExhausted false`
+(* FUEL MEASURE (fuel-parameter arc C1 / D2 enablers, 2026-09-04; Lean-only):
+   `fake_mem_value_eq` is an `Eq` instance method; its counter starts from the
+   derived size `impl_mem_value.lemSize mval1` (Defacto_memory_types);
+   obligation proved in lean_frontend/Defacto_memory_aux_lemMeasureProofs.lean. *)
+declare {lean} fuel_measure val fake_mem_value_eq = `lemSize mval1`
 declare {lean} fuel val simplify_integer_value_base = `Sum.inr ival_`

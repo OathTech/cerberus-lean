@@ -1907,12 +1907,3 @@ declare {lean} fuel val print_eval_conv_aux = `ND (fun st => (NDkilled (Error0 C
 declare {lean} fuel val drive_nonmemory_steps_aux2 = `fun _ => ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
 declare {lean} fuel val driver2 = `ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
 declare {lean} fuel val hack = `fuelExhausted Vunit`
-(* FUEL arc budget commit (design note section 4): the coupled driver
-   quartet runs at CerbFuel.driverFuel = 10^8 (L1 numeric form: WRAPPER
-   budget only; opt-in). CerbND.lean pins each wrapper to the named
-   constant (driver2_wrapper_defeq and siblings) and driverFuel_eq gives
-   the numeral. *)
-declare {lean} fuel val print_eval_conv_aux = 100000000
-declare {lean} fuel val drive_nonmemory_steps_aux2 = 100000000
-declare {lean} fuel val driver2 = 100000000
-declare {lean} fuel val hack = 100000000

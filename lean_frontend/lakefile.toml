@@ -18,10 +18,20 @@ moreLeanArgs = ["-DautoImplicit=false"]
 # (the parity-fix arc: OCaml-order derived Ord, Pset/Pmap verbatim ports,
 # right-to-left draw order, lem* deep-list rewrites, division-by-zero
 # panics; lem-lean doc/lean-backend/2026-09-03_parity-fix-record.md).
+# fuel-parameter C1 2026-09-04: bumped to the merged mdd/lean-backend head
+# 742506d (the fuel-parameter + structural + fuel-measure arcs: fuel is the
+# `[LemFuel]` class instance, `lemDefaultFuel` and the numeric budget form
+# deleted, generated `_lemFuel_zero` lemmas, `fuel_consumer`/`structural`/
+# `fuel_measure` declares; lem-lean doc/lean-backend/2026-09-04_fuel-
+# parameter-record.md; this repo: docs/2026-09-04_fuel-parameter-C1-record.md).
+# … then to the merged head ecf75b4 (the D2 enablers: backend-derived
+# `t.lemSize` structural sizes, `lemSize x` fuel measures, fuel-lifted
+# `inductive R [LemFuel]` for indreln premises; lem-lean doc/lean-backend/
+# 2026-09-04_d2-enablers-record.md) — the pin at which the real tree generates.
 [[require]]
 name = "LemLib"
 git = "https://github.com/OathTech/lem-lean"
-rev = "3c88f0d7e5556491d733932c503c1637ae186f54"
+rev = "ecf75b4172b1f5b9838eb8bcda5928c5b05dee9b"
 subDir = "lean-lib"
 
 [[lean_lib]]
@@ -127,6 +137,12 @@ roots = [
   "CoreParser",
   "CerbND",
   "CerbCall",
+  # fuel_measure obligation proofs (fuel-parameter arc C1 / D2 enablers): the
+  # hand-written <Module>_lemMeasureProofs modules the generated
+  # <Module>_auxiliary.lean obligation shells import (build fails without them)
+  "Ctype_lemMeasureProofs",
+  "Core_lemMeasureProofs",
+  "Defacto_memory_aux_lemMeasureProofs",
 ]
 
 [[lean_exe]]

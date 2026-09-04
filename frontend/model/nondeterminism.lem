@@ -566,12 +566,6 @@ type nd_status 'a 'err 'st =
    opaque (CerbFuel.lean, imported via the extra_import above). liftAction
    returns nd_action, so its arm is the curried action-shaped value. === *)
 declare {lean} fuel val nd_bind = `ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
-(* FUEL arc budget commit (design note section 4; C1 manifest section 8 coupling):
-   the coupled driver family runs at CerbFuel.driverFuel = 10^8 — the L1
-   numeric form sets ONLY this wrapper's budget (opt-in; liftND/liftAction
-   and every other fueled declaration keep lemDefaultFuel). CerbND.lean
-   pins the wrapper to the named constant: nd_bind_wrapper_defeq. *)
-declare {lean} fuel val nd_bind = 100000000
 declare {lean} termination_argument nd_foldlM = automatic
 declare {lean} fuel val liftND = `ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
 declare {lean} fuel val liftAction = `fun _ => NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg)`
