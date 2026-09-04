@@ -1,0 +1,40 @@
+# tests/litmus/expectations.txt — the Phase-0 TARGET outcome sets (charter
+# lean_frontend/docs/2026-09-04_concurrency-phase0-sc-charter.md §9 E1).
+#
+# Row: <file>  <class>  <target>
+#   class SC    : inside the SC-DRF fragment F_SC; target = the outcome SET
+#                 derived by sc_reference.py (mechanical; `sc_reference.py
+#                 --check` refuses drift) and cross-checked against the
+#                 recovered upstream tests.ml sets (see README.md).
+#   class RMW   : inside F_SC (seq_cst compare-exchange; charter slice S4);
+#                 target from the upstream RMW-*.core header comments.
+#   class NONSC : outside F_SC; target REFUSE = both engines emit exactly one
+#                 `Error {msg: ...}` line matching the lane's REFUSE_RE.
+# Tokens: Specified(v) | UB005_data_race | REFUSE. Sets are `{a,b,...}` with
+# no spaces, tokens in the order sc_reference.py prints them.
+# Consumed by scripts/test_litmus.sh --check (RED by design until S2/S3/S4
+# land; the "before" pin is before_baseline.txt, --check-before).
+IRIW+sc+sc+sc_sc+sc_sc.c  SC  {Specified(0),Specified(1),Specified(2),Specified(3),Specified(4),Specified(6),Specified(7),Specified(8),Specified(9),Specified(10),Specified(11),Specified(12),Specified(13),Specified(14),Specified(15)}
+LB+sc_sc+sc_sc.c  SC  {Specified(0),Specified(1),Specified(2)}
+MP+na+na.c  SC  {UB005_data_race}
+MP+na_sc+sc_na.c  SC  {Specified(1),Specified(2)}
+SB+sc_sc+sc_sc.c  SC  {Specified(1),Specified(2),Specified(3)}
+WRC+sc+sc_sc+sc_sc.c  SC  {Specified(0),Specified(1),Specified(4),Specified(5),Specified(7)}
+coherence+init+sc_sc.c  SC  {Specified(1)}
+coherence+sc_sc_sc.c  SC  {Specified(1)}
+datarace+Rna+Rna.c  SC  {Specified(0)}
+datarace+Rna+Rna_Wna.c  SC  {UB005_data_race}
+datarace+Rna+Wna.c  SC  {UB005_data_race}
+datarace+Wna+Wna.c  SC  {UB005_data_race}
+datarace+Wna_sc+sc_Rna.c  SC  {Specified(1),UB005_data_race}
+hb-mo-cycle+Wsc_Wsc_Rsc+Wsc_Wsc_Rsc.c  SC  {Specified(1),Specified(2),Specified(3)}
+RMW-strong-equal.c  RMW  {Specified(5)}
+RMW-strong-unequal.c  RMW  {Specified(0)}
+RMW-weak-equal.c  RMW  {Specified(0),Specified(5)}
+RMW-weak-unequal.c  RMW  {Specified(0)}
+SB+rel_acq+rel_acq.c  NONSC  REFUSE
+LB+acq_rel+acq_rel.c  NONSC  REFUSE
+LB+rlx_rlx+rlx_rlx.c  NONSC  REFUSE
+MP+na_rel+acq_na.c  NONSC  REFUSE
+IRIW+rel+rel+acq_acq+acq_acq.c  NONSC  REFUSE
+fence+sc_sc.c  NONSC  REFUSE
