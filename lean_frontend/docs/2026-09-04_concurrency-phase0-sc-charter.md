@@ -1,7 +1,11 @@
 # Concurrency Phase 0 charter — the SC instance of a parametric model (2026-09-04)
 
-Status: PROPOSED, for operator sign-off before any code (the design-pass
-rule; brief `2026-09-04_concurrency-feature-branch-brief.md` Phase 0 task 3).
+Status: APPROVED [USER 2026-09-04] ("yes, approve all decisions, go ahead"):
+D1–D6 are approved as recommended in §10 (D3 explicit threading; D4
+end-of-trace default + per-step behind a debug flag; D5 consumer review of
+§4.1/§4.6 gates S1; D6 BMC oracle deferred to Phase 1). Was: PROPOSED, for
+operator sign-off before any code (the design-pass rule; brief
+`2026-09-04_concurrency-feature-branch-brief.md` Phase 0 task 3).
 Branch `feature/concurrency`, worktree
 `worktrees/cerberus-lean-feature/concurrency`, base `mdd/cerberus-lean` @
 `1b57bcf26`. Author: the concurrency-branch agent [AGENT]. Inputs: the
@@ -398,7 +402,7 @@ What changes for them, and the proposed handling:
   maxRecDepth bumps, no numerals as budgets; grind tripwire respected
   (no pass near an hour; the litmus corpus is tiny by construction).
 
-## 10. Decisions requested from the operator
+## 10. Decisions requested from the operator — ALL APPROVED [USER 2026-09-04], recommendations adopted
 
 - D1. Approve the scope: Phase 0 = parametric selector + SC-DRF
   instance; C11-op/RC11/LKMM deferred to Phase 1–2 (§0, §3, §5).
