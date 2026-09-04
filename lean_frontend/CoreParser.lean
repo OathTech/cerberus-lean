@@ -780,16 +780,27 @@ private partial def pCoreIntegerType : P integerType := do
   lexSym "'"
   return ity
 
-/-- TRIPWIRE (zero-discrepancy Z2-CP-13): the pp prints an anonymous tag
-    (`SD_unnamed_tag`) as `a_N` in OTy_struct position (pp_symbol.ml:9-10
-    `to_string`) and as `__cerbty_unnamed_tag_N` in ctype position, so
-    by-name interning would (a) collapse every anonymous tag to `a` after
-    the suffix strip and (b) split the two positions' symbols. No Core text
-    this parser loads has one (std.core, the impl, tests/libc/libc.core:
-    all tags named — grep-verified); refuse loudly if one ever appears. -/
-private def isAnonymousTagSpelling (s : String) : Bool :=
-  (s.startsWith "a_" && (s.drop 2).toString.all Char.isDigit && s.length > 2)
-  || s.startsWith "__cerbty_unnamed_tag_"
+/-- Zero-discrepancy Z2-CP-13 — anonymous aggregate tags. The pp prints an
+    `SD_unnamed_tag` symbol TWO ways: `a_N` in core-object-type position
+    (pp_symbol.ml:5-10 `to_string`, the non-SD_Id arm) and
+    `__cerbty_unnamed_tag_N` in ctype/member_shift position
+    (`to_string_pretty`), while the oracle's in-memory AST holds ONE symbol.
+    By-name interning would split them (and the raw-suffix strip would
+    collapse every `a_N` to `a`). Resolution at the OTy site: if the tag
+    reads `a_<digits>` and THIS input declares `__cerbty_unnamed_tag_<digits>`
+    (the `-- Aggregates` section of every pp dump), intern the OTy tag as
+    that ctype-position name — the two spellings become the same symbol, as
+    on the oracle; otherwise it is a NAMED tag whose name is `a` (printed
+    `a_N` by `to_string`) and the ordinary suffix strip applies. Exercised
+    by the `--pp core` dumps of tests/ci/0042-struct_namespace.c and
+    0308-struct_global_with_dep.c (test_core.sh tests/ci) — the audit's
+    "no Core text this parser loads has one" held only for std.core/impl/
+    libc.core; a fail-stop here turned that lane red at the Z2 boundary and
+    was replaced by this mirror. -/
+private def anonymousTagDigits (s : String) : Option String :=
+  if s.startsWith "a_" && s.length > 2 && (s.drop 2).toString.all Char.isDigit
+  then some (s.drop 2).toString else none
+
 
 /-- Strip the `_<num>` suffix from a raw-printed symbol name.
     OTy_struct/OTy_union tags print via Pp_symbol.to_string
@@ -809,6 +820,15 @@ private def stripRawSymSuffix (s : String) : String :=
     | '_' :: rest => if rest.isEmpty then s else String.mk rest.reverse
     | _ => s
 
+/-- The OTy tag resolution of Z2-CP-13 (doc above `anonymousTagDigits`). -/
+private def resolveOTyTag (tag : String) : P sym := fun it =>
+  match anonymousTagDigits tag with
+  | some digits =>
+    let anon := "__cerbty_unnamed_tag_" ++ digits
+    if (it.1.splitOn anon).length > 1 then .success it (mkSym anon)
+    else .success it (mkSym (stripRawSymSuffix tag))
+  | none => .success it (mkSym (stripRawSymSuffix tag))
+
 /-- Parse a core object type. -/
 partial def pCoreObjectType : P core_object_type :=
       (attempt (lexKw "integer") *> pure OTy_integer)
@@ -823,13 +843,11 @@ partial def pCoreObjectType : P core_object_type :=
   <|> (attempt (do
         lexKw "struct"
         let tag ← lexIdent
-        if isAnonymousTagSpelling tag then fail s!"CoreParser: anonymous tag spelling `{tag}` in a Core object type — by-name interning cannot represent SD_unnamed_tag symbols (zero-discrepancy Z2-CP-13)"
-        return (OTy_struct (mkSym (stripRawSymSuffix tag)))))
+        return (OTy_struct (← resolveOTyTag tag))))   -- Z2-CP-13 (see resolveOTyTag)
   <|> (attempt (do
         lexKw "union"
         let tag ← lexIdent
-        if isAnonymousTagSpelling tag then fail s!"CoreParser: anonymous tag spelling `{tag}` in a Core object type (zero-discrepancy Z2-CP-13)"
-        return (OTy_union (mkSym (stripRawSymSuffix tag)))))
+        return (OTy_union (← resolveOTyTag tag))))
 
 /-- Parse a core base type. -/
 partial def pCoreBaseType : P core_base_type :=
