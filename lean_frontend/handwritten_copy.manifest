@@ -42,4 +42,7 @@ CerbStepInstances.lean
 CerbTags.lean
 CerbUtils.lean
 CoreParser.lean
+Core_lemMeasureProofs.lean
+Ctype_lemMeasureProofs.lean
+Defacto_memory_aux_lemMeasureProofs.lean
 Main.lean
