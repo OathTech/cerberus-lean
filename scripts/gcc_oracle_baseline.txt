@@ -1965,3 +1965,7 @@ tests/minimal/103-union-store-load.c AGREE -
 tests/minimal/104-unsigned-wrap-arith.c AGREE -
 tests/minimal/105-bitwise-ops.c AGREE -
 tests/minimal/106-sizeof-struct-array.c AGREE -
+# 2026-09-03 zero-discrepancy Z2: 3 rows for the new tests/immaculate/nolibc/zd-z2*.c pins hand-inserted (classes as measured by the lane on the Z2 binary; record docs/2026-09-04_zero-discrepancy-Z2-record.md §5/§11)
+tests/immaculate/nolibc/zd-z2fl03-nan-to-int.c SKIP_LEAN_CRASH -
+tests/immaculate/nolibc/zd-z2i01-cerbty-int32-uac.c SKIP_GCC_COMPILE -
+tests/immaculate/nolibc/zd-z2m01-aligned-alloc-zero-nolibc.c SKIP_UB -
