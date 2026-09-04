@@ -319,9 +319,12 @@ private abbrev TagDefs := CerbTags.TagDefsMap
     worker `*_lemFuel` (fuel decremented once per recursion layer;
     exhaustion = the OPAQUE `fuelExhaustedWith` sentinel, LemLib —
     a fake value provable equal to something would be a lie, D4
-    transparency doctrine) + the original name as the default-budget
-    wrapper (`lemDefaultFuel`, rfl-defeq), so every call site and every
-    runtime behavior is unchanged. `stringFromMemValue` (pp-only, never
+    transparency doctrine) + the original name as the wrapper started at
+    the AMBIENT fuel (`[LemFuel]`, `LemFuel.fuel` — the fuel-parameter arc
+    2026-09-04: the caller's parameter, never a constant; the former
+    `lemDefaultFuel` is deleted), rfl-defeq to the worker at every
+    instance, so every call site and every runtime behavior at a
+    sufficient fuel is unchanged. `stringFromMemValue` (pp-only, never
     on a computed path) is total since arc-10 S3 (structural mutual
     recursion — no fuel needed). -/
 
@@ -503,30 +506,31 @@ def alignofCtype_lemFuel (lemFuel : Nat) (ambient : TagDefs) (tagDefs : TagDefs)
 
 end
 
-/-- Default-budget + default-tagDefs wrapper (fuel: rfl-defeq to the
-    worker, arc-3 discipline; tagDefs: the ambient global, mirroring
-    OCaml's `?(tagDefs= Tags.tagDefs ())` optional-arg default). -/
-def memberAlign (ambient : TagDefs) (alignOpt : Option alignment) (ty : ctype) : Nat :=
-  memberAlign_lemFuel lemDefaultFuel ambient ambient alignOpt ty
+/-- Ambient-fuel + default-tagDefs wrapper (fuel: rfl-defeq to the
+    worker at the instance's fuel, arc-3 discipline; tagDefs: the ambient
+    global, mirroring OCaml's `?(tagDefs= Tags.tagDefs ())` optional-arg
+    default). -/
+def memberAlign [LemFuel] (ambient : TagDefs) (alignOpt : Option alignment) (ty : ctype) : Nat :=
+  memberAlign_lemFuel LemFuel.fuel ambient ambient alignOpt ty
 
-/-- Default-budget + default-tagDefs wrapper (see memberAlign). -/
-def offsetsofMembers (ambient : TagDefs)
+/-- Ambient-fuel + default-tagDefs wrapper (see memberAlign). -/
+def offsetsofMembers [LemFuel] (ambient : TagDefs)
     (members : List (identifier × (attributes × Option alignment × qualifiers × ctype)))
     : List (identifier × ctype × Nat) × Nat :=
-  offsetsofMembers_lemFuel lemDefaultFuel ambient ambient members
+  offsetsofMembers_lemFuel LemFuel.fuel ambient ambient members
 
-/-- Default-budget wrapper (tagDefs explicit, like OCaml offsetsof). -/
-def offsetsof (ambient : TagDefs) (tagDefs : TagDefs) (tagSym : sym)
+/-- Ambient-fuel wrapper (tagDefs explicit, like OCaml offsetsof). -/
+def offsetsof [LemFuel] (ambient : TagDefs) (tagDefs : TagDefs) (tagSym : sym)
     (ignoreFlexible : Bool := false) : List (identifier × ctype × Nat) × Nat :=
-  offsetsof_lemFuel lemDefaultFuel ambient tagDefs tagSym ignoreFlexible
+  offsetsof_lemFuel LemFuel.fuel ambient tagDefs tagSym ignoreFlexible
 
-/-- Default-budget + default-tagDefs wrapper (see memberAlign). -/
-def sizeofCtype (ambient : TagDefs) (cty : ctype) : Nat :=
-  sizeofCtype_lemFuel lemDefaultFuel ambient ambient cty
+/-- Ambient-fuel + default-tagDefs wrapper (see memberAlign). -/
+def sizeofCtype [LemFuel] (ambient : TagDefs) (cty : ctype) : Nat :=
+  sizeofCtype_lemFuel LemFuel.fuel ambient ambient cty
 
-/-- Default-budget + default-tagDefs wrapper (see memberAlign). -/
-def alignofCtype (ambient : TagDefs) (cty : ctype) : Nat :=
-  alignofCtype_lemFuel lemDefaultFuel ambient ambient cty
+/-- Ambient-fuel + default-tagDefs wrapper (see memberAlign). -/
+def alignofCtype [LemFuel] (ambient : TagDefs) (cty : ctype) : Nat :=
+  alignofCtype_lemFuel LemFuel.fuel ambient ambient cty
 
 /-! ## Byte-level serialization
 
@@ -635,7 +639,7 @@ abbrev Funptrmap := List (Int × (String × String))
     `repr funptrmap mval : (funptrmap' × bytes)` — storing a PVfunction
     registers the symbol in the map (impl_mem.ml:1168-1185, survey
     finding 20); all other arms pass it through. -/
-def memValueToBytes_lemFuel (lemFuel : Nat) (ambient : TagDefs) (funptrmap : Funptrmap)
+def memValueToBytes_lemFuel [LemFuel] (lemFuel : Nat) (ambient : TagDefs) (funptrmap : Funptrmap)
     (val_ : MemValue) : Funptrmap × List AbsByte :=
   match lemFuel with
   | 0 => fuelExhaustedWith "CerbMem.memValueToBytes: fuel exhausted" (funptrmap, [])
@@ -741,10 +745,10 @@ def memValueToBytes_lemFuel (lemFuel : Nat) (ambient : TagDefs) (funptrmap : Fun
     let (fpm, bs) := memValueToBytes_lemFuel lemFuel ambient funptrmap mval
     (fpm, bs ++ List.replicate (size - bs.length) paddingByte)
 
-/-- Default-budget wrapper (rfl-defeq to the worker). -/
-def memValueToBytes (ambient : TagDefs) (funptrmap : Funptrmap) (val_ : MemValue) :
+/-- Ambient-fuel wrapper (rfl-defeq to the worker at the instance's fuel). -/
+def memValueToBytes [LemFuel] (ambient : TagDefs) (funptrmap : Funptrmap) (val_ : MemValue) :
     Funptrmap × List AbsByte :=
-  memValueToBytes_lemFuel lemDefaultFuel ambient funptrmap val_
+  memValueToBytes_lemFuel LemFuel.fuel ambient funptrmap val_
 
 /-! ### C3 reference form + equality theorem (mem-scale S1, 2026-09-02)
 
@@ -757,7 +761,7 @@ kernel-checked equality (`memValueToBytes_lemFuel_eq_append`) rather
 than a claim. Charter §1 carve-out [R1/F5]. -/
 
 /-- Reference form (pre-C3): append-accumulating struct arm. -/
-def memValueToBytes_append_lemFuel (lemFuel : Nat) (ambient : TagDefs) (funptrmap : Funptrmap)
+def memValueToBytes_append_lemFuel [LemFuel] (lemFuel : Nat) (ambient : TagDefs) (funptrmap : Funptrmap)
     (val_ : MemValue) : Funptrmap × List AbsByte :=
   match lemFuel with
   | 0 => fuelExhaustedWith "CerbMem.memValueToBytes: fuel exhausted" (funptrmap, [])
@@ -875,7 +879,7 @@ theorem foldl_append_eq_flatten_reverse {γ β α : Type}
     arm but the struct arm is textually identical once the recursive calls
     are rewritten by the induction hypothesis; the struct arm is
     `foldl_append_eq_flatten_reverse`. -/
-theorem memValueToBytes_lemFuel_eq_append :
+theorem memValueToBytes_lemFuel_eq_append [LemFuel] :
     ∀ (lemFuel : Nat) (ambient : TagDefs) (funptrmap : Funptrmap) (val_ : MemValue),
       memValueToBytes_lemFuel lemFuel ambient funptrmap val_ =
         memValueToBytes_append_lemFuel lemFuel ambient funptrmap val_ := by
@@ -905,10 +909,10 @@ theorem memValueToBytes_lemFuel_eq_append :
              (memValueToBytes_append_lemFuel lemFuel ambient fpm p.2.2.2).2))]
     | _ => rfl
 
-theorem memValueToBytes_eq_append (ambient : TagDefs) (funptrmap : Funptrmap) (val_ : MemValue) :
+theorem memValueToBytes_eq_append [LemFuel] (ambient : TagDefs) (funptrmap : Funptrmap) (val_ : MemValue) :
     memValueToBytes ambient funptrmap val_ =
-      memValueToBytes_append_lemFuel lemDefaultFuel ambient funptrmap val_ :=
-  memValueToBytes_lemFuel_eq_append lemDefaultFuel ambient funptrmap val_
+      memValueToBytes_append_lemFuel LemFuel.fuel ambient funptrmap val_ :=
+  memValueToBytes_lemFuel_eq_append LemFuel.fuel ambient funptrmap val_
 
 /-- `chunksOf e n l`: the `n` successive `e`-element slices of `l`
     (consume-and-return-rest; a slice past the end is short/empty, as
@@ -939,7 +943,7 @@ theorem chunksOf_eq_range_map (e n : Nat) (l : List α) :
     consulted ONLY by the Pointer-to-Function arm (impl_mem.ml:1004-1016)
     — exactly as in OCaml's abst.
     Not ported: taint tracking (PNVI) and is_zap. -/
-def reconstructValue_lemFuel (lemFuel : Nat) (ambient : TagDefs)
+def reconstructValue_lemFuel [LemFuel] (lemFuel : Nat) (ambient : TagDefs)
     (unionmap : List (Int × identifier))
     (funptrmap : Funptrmap) (addr : Int)
     (ty : ctype) (bytes : List AbsByte) : MemValue :=
@@ -1078,11 +1082,11 @@ def reconstructValue_lemFuel (lemFuel : Nat) (ambient : TagDefs)
     | _ => panic! "CerbMem.reconstructValue: Union tag not a UnionDef (OCaml: assert false)"
   | _ => .MVunspecified ty
 
-/-- Default-budget wrapper (rfl-defeq to the worker). -/
-def reconstructValue (ambient : TagDefs) (unionmap : List (Int × identifier))
+/-- Ambient-fuel wrapper (rfl-defeq to the worker at the instance's fuel). -/
+def reconstructValue [LemFuel] (ambient : TagDefs) (unionmap : List (Int × identifier))
     (funptrmap : Funptrmap) (addr : Int)
     (ty : ctype) (bytes : List AbsByte) : MemValue :=
-  reconstructValue_lemFuel lemDefaultFuel ambient unionmap funptrmap addr ty bytes
+  reconstructValue_lemFuel LemFuel.fuel ambient unionmap funptrmap addr ty bytes
 
 /-! ### C1 reference form + equality theorem (mem-scale S1, 2026-09-02)
 
@@ -1099,7 +1103,7 @@ Charter §1 carve-out [R1/F5]; consumer note: refined-cerberus unfolds
 textually intact. -/
 
 /-- Reference form (pre-C1): index-slicing array arm. -/
-def reconstructValue_indexed_lemFuel (lemFuel : Nat) (ambient : TagDefs)
+def reconstructValue_indexed_lemFuel [LemFuel] (lemFuel : Nat) (ambient : TagDefs)
     (unionmap : List (Int × identifier))
     (funptrmap : Funptrmap) (addr : Int)
     (ty : ctype) (bytes : List AbsByte) : MemValue :=
@@ -1188,7 +1192,7 @@ def reconstructValue_indexed_lemFuel (lemFuel : Nat) (ambient : TagDefs)
     Induction on fuel; every arm but the array arm is textually identical
     once the recursive calls are rewritten by the induction hypothesis;
     the array arm is `chunksOf_eq_range_map` + `List.map_map`. -/
-theorem reconstructValue_lemFuel_eq_indexed :
+theorem reconstructValue_lemFuel_eq_indexed [LemFuel] :
     ∀ (lemFuel : Nat) (ambient : TagDefs) (unionmap : List (Int × identifier))
       (funptrmap : Funptrmap) (addr : Int) (ty : ctype) (bytes : List AbsByte),
       reconstructValue_lemFuel lemFuel ambient unionmap funptrmap addr ty bytes =
@@ -1221,11 +1225,11 @@ theorem reconstructValue_lemFuel_eq_indexed :
     | Basic bt => cases bt <;> rfl   -- the outer match is stuck until the basic type is split
     | _ => rfl
 
-theorem reconstructValue_eq_indexed (ambient : TagDefs) (unionmap : List (Int × identifier))
+theorem reconstructValue_eq_indexed [LemFuel] (ambient : TagDefs) (unionmap : List (Int × identifier))
     (funptrmap : Funptrmap) (addr : Int) (ty : ctype) (bytes : List AbsByte) :
     reconstructValue ambient unionmap funptrmap addr ty bytes =
-      reconstructValue_indexed_lemFuel lemDefaultFuel ambient unionmap funptrmap addr ty bytes :=
-  reconstructValue_lemFuel_eq_indexed lemDefaultFuel ambient unionmap funptrmap addr ty bytes
+      reconstructValue_indexed_lemFuel LemFuel.fuel ambient unionmap funptrmap addr ty bytes :=
+  reconstructValue_lemFuel_eq_indexed LemFuel.fuel ambient unionmap funptrmap addr ty bytes
 
 /-! ## Memory-value typing — the store guard's helpers (audit-2 C3) -/
 
@@ -1250,9 +1254,9 @@ def typeofMval_lemFuel (lemFuel : Nat) : MemValue → ctype :=
   | .MVstruct tagSym _ => mkCtype (.Struct tagSym)
   | .MVunion tagSym _ _ => mkCtype (.Union0 tagSym)
 
-/-- Default-budget wrapper (rfl-defeq to the worker). -/
-def typeofMval (mval : MemValue) : ctype :=
-  typeofMval_lemFuel lemDefaultFuel mval
+/-- Ambient-fuel wrapper (rfl-defeq to the worker at the instance's fuel). -/
+def typeofMval [LemFuel] (mval : MemValue) : ctype :=
+  typeofMval_lemFuel LemFuel.fuel mval
 
 /-- ctype_mem_compatible — impl_mem.ml:23-49: structural ctype equality
     after recursively erasing qualifiers, annotations and Atomic wrappers;
@@ -1282,11 +1286,11 @@ private def unqualifyAndUnatomic_lemFuel (lemFuel : Nat) : ctype → ctype_ :=
       .Pointer no_qualifiers (Ctype [] (unqualifyAndUnatomic_lemFuel lemFuel refTy))
     | .Atomic atomTy => unqualifyAndUnatomic_lemFuel lemFuel atomTy
 
-/-- Default-budget wrapper (rfl-defeq to the worker). -/
-private def unqualifyAndUnatomic (cty : ctype) : ctype_ :=
-  unqualifyAndUnatomic_lemFuel lemDefaultFuel cty
+/-- Ambient-fuel wrapper (rfl-defeq to the worker at the instance's fuel). -/
+private def unqualifyAndUnatomic [LemFuel] (cty : ctype) : ctype_ :=
+  unqualifyAndUnatomic_lemFuel LemFuel.fuel cty
 
-def ctypeMemCompatible (ty1 ty2 : ctype) : Bool :=
+def ctypeMemCompatible [LemFuel] (ty1 ty2 : ctype) : Bool :=
   ctypeEqual (Ctype [] (unqualifyAndUnatomic ty1)) (Ctype [] (unqualifyAndUnatomic ty2))
 
 /-! ## Pointer value constructors — impl_mem.ml:1799-1827 -/
@@ -1384,8 +1388,8 @@ def minIval (ity : integerType) : IntegerValue :=
     | .Ptraddr_t => 0
     | .Enum0 _ => panic! "minIval: Enum after typeof_enum (OCaml: assert false)")
 
-def sizeofIval (tagDefs : TagDefs) (ty : ctype) : IntegerValue := integerIval (sizeofCtype tagDefs ty)
-def alignofIval (tagDefs : TagDefs) (ty : ctype) : IntegerValue := integerIval (alignofCtype tagDefs ty)
+def sizeofIval [LemFuel] (tagDefs : TagDefs) (ty : ctype) : IntegerValue := integerIval (sizeofCtype tagDefs ty)
+def alignofIval [LemFuel] (tagDefs : TagDefs) (ty : ctype) : IntegerValue := integerIval (alignofCtype tagDefs ty)
 
 /-- concurRead_ival — impl_mem.ml:2361-2362 `failwith "TODO: concurRead_ival"`,
     mirrored as a fail-stop with the OCaml text (zero-discrepancy Z2-M-07:
@@ -1483,7 +1487,7 @@ def opIval (op : integer_operator) (v1 v2 : IntegerValue) : IntegerValue :=
     offsetsof's union arm. Missing member: OCaml failwith — panic here
     (the previous code silently returned 0 and compared identifiers
     location-sensitively with BEq). -/
-def offsetofIval (tagDefs : TagDefs) (tagDefsMap : CerbTags.TagDefsMap) (tag : sym) (memb : identifier) : IntegerValue :=
+def offsetofIval [LemFuel] (tagDefs : TagDefs) (tagDefsMap : CerbTags.TagDefsMap) (tag : sym) (memb : identifier) : IntegerValue :=
   -- target_rep for lem offsetof_ival (mem.lem:257): the lem-side argument
   -- is the tag map, threaded through the whole layout family (2026-09-01
   -- S-basket item 1 — the elaboration-time fold's only tag source)
@@ -1655,7 +1659,7 @@ def caseMemValue {α : Type} (mv : MemValue)
     PVfunction → failwith (:2218-2219); concrete → the shifted address with
     the union-member tag KEPT (:2220-2221). The failwiths are fail-stops
     with the OCaml texts (Q4). -/
-def arrayShiftPtrval (tagDefs : TagDefs) (pv : PointerValue) (elemTy : ctype) (iv : IntegerValue) : PointerValue :=
+def arrayShiftPtrval [LemFuel] (tagDefs : TagDefs) (pv : PointerValue) (elemTy : ctype) (iv : IntegerValue) : PointerValue :=
   match pv, iv with
   | .PV prov base, .IV _ ival =>
     let sz : Int := match elemTy with
@@ -1673,7 +1677,7 @@ def arrayShiftPtrval (tagDefs : TagDefs) (pv : PointerValue) (elemTy : ctype) (i
     Shift pointer to struct/union member. Uses CerbTags.tagDefs () to look up
     the struct layout. For unions, all members are at offset 0 but we record
     which member we're pointing to (in PVconcrete's unionMember field). -/
-def memberShiftPtrval (tagDefs : TagDefs) (pv : PointerValue) (tag : sym) (memb : identifier) : PointerValue :=
+def memberShiftPtrval [LemFuel] (tagDefs : TagDefs) (pv : PointerValue) (tag : sym) (memb : identifier) : PointerValue :=
   let tagDefsAsList : List (sym × (CerbLocation.Loc × tag_definition)) :=
     fmapElements tagDefs
   let (.IV _ offsetVal) := offsetofIval tagDefs tagDefs tag memb
@@ -2056,7 +2060,7 @@ def allocator (sz align : Int) : memM (StorageInstanceId × Address) :=
     set is refused — Z-24 — so the default arm is the only reachable one).
     `init_opt = Some mval` (:1320-1345): readonly kind by prefix
     (`readonlyStatusForAlloc`), `repr` threading the funptrmap. -/
-def allocateObject (tagDefs : TagDefs) (_ : Nat) (pref : prefix0) (alignIv : IntegerValue)
+def allocateObject [LemFuel] (tagDefs : TagDefs) (_ : Nat) (pref : prefix0) (alignIv : IntegerValue)
     (ty : ctype) (reqAddrOpt : Option Int) (initOpt : Option MemValue) : memM PointerValue :=
   match alignIv with
   | .IV _ alignN =>
@@ -2098,7 +2102,7 @@ def allocateObject (tagDefs : TagDefs) (_ : Nat) (pref : prefix0) (alignIv : Int
     materialisation that stood here was behaviour-preserving and the
     one-line cause of the Z-30 malloc OOM class
     (tests/z2-probes/mem/malloc_oom_msg.c). -/
-def allocateRegion (_ : Nat) (_pref : prefix0) (alignIv sizeIv : IntegerValue) : memM PointerValue :=
+def allocateRegion [LemFuel] (_ : Nat) (_pref : prefix0) (alignIv sizeIv : IntegerValue) : memM PointerValue :=
   match alignIv, sizeIv with
   | .IV _ alignN, .IV _ sizeN =>
   nd_bind (allocator sizeN alignN) fun (idAddr : StorageInstanceId × Address) =>   -- :1421
@@ -2225,7 +2229,7 @@ def deviceRanges : List (Int × Int) :=
   [(0x40000000, 0x40000004), (0xABC, 0xAC0)]
 
 /-- is_within_device — impl_mem.ml:681-686. -/
-def isWithinDevice (tagDefs : TagDefs) (ty : ctype) (addr : Int) : Bool :=
+def isWithinDevice [LemFuel] (tagDefs : TagDefs) (ty : ctype) (addr : Int) : Bool :=
   deviceRanges.any (fun (lo, hi) => lo ≤ addr && addr + (sizeofCtype tagDefs ty : Int) ≤ hi)
 
 /-- is_atomic_member_access — impl_mem.ml:689-706: accessing a PART of an
@@ -2236,7 +2240,7 @@ def isWithinDevice (tagDefs : TagDefs) (ty : ctype) (addr : Int) : Bool :=
     …`) — the tool stream, not the program's `stderr:` verdict field; not
     mirrored (tests/z2-probes/mem/atomic_member_stderr.c: identical
     UB042 verdict lines on all three engines). -/
-def isAtomicMemberAccess (tagDefs : TagDefs) (alloc : Allocation) (lvalueTy : ctype) (addr : Int) : Bool :=
+def isAtomicMemberAccess [LemFuel] (tagDefs : TagDefs) (alloc : Allocation) (lvalueTy : ctype) (addr : Int) : Bool :=
   match alloc.ty with
   | some allocTy =>
     match allocTy with
@@ -2248,7 +2252,7 @@ def isAtomicMemberAccess (tagDefs : TagDefs) (alloc : Allocation) (lvalueTy : ct
     | _ => false
   | none => false
 
-def loadM (tagDefs : TagDefs) (loc : CerbLocation.Loc) (ty : ctype) (pv : PointerValue) : memM (Footprint × MemValue) :=
+def loadM [LemFuel] (tagDefs : TagDefs) (loc : CerbLocation.Loc) (ty : ctype) (pv : PointerValue) : memM (Footprint × MemValue) :=
   ND fun st =>
     let fail_ (err : mem_error) := (NDkilled (failReason err loc), st)
     -- do_load — impl_mem.ml:1556-1603 (`last_used= alloc_id_opt` :1567
@@ -2295,7 +2299,7 @@ def loadM (tagDefs : TagDefs) (loc : CerbLocation.Loc) (ty : ctype) (pv : Pointe
             fail_ (MerrAccess LoadAccess AtomicMemberof)                  -- impl_mem.ml:1658-1660
           else doLoad (some allocId) addr
 
-def storeM (tagDefs : TagDefs) (loc : CerbLocation.Loc) (ty : ctype) (isLocking : Bool) (pv : PointerValue) (mv : MemValue) : memM Footprint :=
+def storeM [LemFuel] (tagDefs : TagDefs) (loc : CerbLocation.Loc) (ty : ctype) (isLocking : Bool) (pv : PointerValue) (mv : MemValue) : memM Footprint :=
   ND fun st =>
     let fail_ (err : mem_error) := (NDkilled (failReason err loc), st)
     -- select_ro_kind — impl_mem.ml:1704-1710
@@ -2426,7 +2430,7 @@ def eqPtrval (_ : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
         [("using provenance", memReturn false),
          ("ignoring provenance", memReturn (addr1 == addr2))]
 
-def nePtrval (loc : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
+def nePtrval [LemFuel] (loc : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
   nd_bind (eqPtrval loc pv1 pv2) (fun b => memReturn (!b))
 
 /-! Relational pointer operators — impl_mem.ml:1886-1955 (arc-14 S1 F1,
@@ -2481,7 +2485,7 @@ def gePtrval (loc : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
     valid_postcond (impl_mem.ml:1961-1967): strip ONE Array layer off
     diff_ty, then TRUNCATING Z.div of the address difference by
     sizeof(elem). -/
-def diffPtrval (tagDefs : TagDefs) (loc : CerbLocation.Loc) (diffTy : ctype) (pv1 pv2 : PointerValue) : memM IntegerValue :=
+def diffPtrval [LemFuel] (tagDefs : TagDefs) (loc : CerbLocation.Loc) (diffTy : ctype) (pv1 pv2 : PointerValue) : memM IntegerValue :=
   ND fun st =>
     let errorPostcond := (NDkilled (failReason MerrPtrdiff loc), st)
     match pv1, pv2 with
@@ -2525,7 +2529,7 @@ private def unatomic_ : ctype → ctype_
     Null → true (:2072-2073); function pointer → MerrOther (:2074-2075);
     concrete → `modulus addr (alignof ref_ty) = 0` (:2080) — no `.max 1`
     (Z2-M-10: alignof ≥ 1 for every type that reaches this arm). -/
-def isWellAlignedPtrval (tagDefs : TagDefs) (ty : ctype) (pv : PointerValue) : memM Bool :=
+def isWellAlignedPtrval [LemFuel] (tagDefs : TagDefs) (ty : ctype) (pv : PointerValue) : memM Bool :=
   match unatomic_ ty with
   | .Void0 | .Function _ _ _ =>
     memFail (MerrOther "called isWellAligned_ptrval on void or a function type")
@@ -2542,7 +2546,7 @@ def isWellAlignedPtrval (tagDefs : TagDefs) (ty : ctype) (pv : PointerValue) : m
     Prov_none → false.
     Prov_device → checks alignment.
     Prov_some → checks !is_dead && well-aligned. -/
-def validForDerefPtrval (tagDefs : TagDefs) (ty : ctype) (pv : PointerValue) : memM Bool :=
+def validForDerefPtrval [LemFuel] (tagDefs : TagDefs) (ty : ctype) (pv : PointerValue) : memM Bool :=
   ND fun st =>
     match pv with
     | .PV _ (.PVnull _) | .PV _ (.PVfunction _) =>
@@ -2640,7 +2644,7 @@ def intfromptr (loc : CerbLocation.Loc) (_ : ctype) (ity : integerType)
     here `offset` is computed in the concrete arms only (a null pointer
     with a void element type fails UB046 instead of asserting — a corner
     inside the refused region, recorded). -/
-def effArrayShiftPtrval (tagDefs : TagDefs) (loc : CerbLocation.Loc) (pv : PointerValue) (elemTy : ctype) (iv : IntegerValue) : memM PointerValue :=
+def effArrayShiftPtrval [LemFuel] (tagDefs : TagDefs) (loc : CerbLocation.Loc) (pv : PointerValue) (elemTy : ctype) (iv : IntegerValue) : memM PointerValue :=
   match pv, iv with
   | .PV _ (.PVnull _), _ => memFail MerrArrayShift loc                             -- :2247-2251
   | .PV _ (.PVfunction _), _ => panic! "Concrete.eff_array_shift_ptrval, PVfunction"  -- :2252-2253
@@ -2650,7 +2654,7 @@ def effArrayShiftPtrval (tagDefs : TagDefs) (loc : CerbLocation.Loc) (pv : Point
     let offset : Int := (sizeofCtype tagDefs elemTy : Int) * ival               -- :2246
     memReturn (.PV prov (.PVconcrete none (addr + offset)))                     -- :2336/:2343/:2346
 
-def effMemberShiftPtrval (tagDefs : TagDefs) (_ : CerbLocation.Loc) (pv : PointerValue) (tag : sym) (member : identifier) : memM PointerValue :=
+def effMemberShiftPtrval [LemFuel] (tagDefs : TagDefs) (_ : CerbLocation.Loc) (pv : PointerValue) (tag : sym) (member : identifier) : memM PointerValue :=
   memReturn (memberShiftPtrval tagDefs pv tag member)
 
 /-! ### Memory operations -/
@@ -2664,7 +2668,7 @@ def effMemberShiftPtrval (tagDefs : TagDefs) (_ : CerbLocation.Loc) (pv : Pointe
     Upstream's own TODOs (overlap-UB unimplemented) inherit unchanged.
     The loop recurses on a Nat countdown (structural; upstream counts up
     with `Z.lt i size_n`, same iteration space). -/
-def memcpyM (tagDefs : TagDefs) (loc : CerbLocation.Loc) (dst src : PointerValue) (sizeIv : IntegerValue) : memM PointerValue :=
+def memcpyM [LemFuel] (tagDefs : TagDefs) (loc : CerbLocation.Loc) (dst src : PointerValue) (sizeIv : IntegerValue) : memM PointerValue :=
   match sizeIv with
   | .IV _ size_n =>
     let rec aux : Nat → Int → memM PointerValue
@@ -2699,7 +2703,7 @@ def memcpyM (tagDefs : TagDefs) (loc : CerbLocation.Loc) (dst src : PointerValue
     total rendering is kept and declared. (memcpy, :2637-2644 `Z.lt i
     size_n`, runs ZERO iterations on a negative size on both sides — no
     difference there.) -/
-def memcmpM (tagDefs : TagDefs) (pv1 pv2 : PointerValue) (sizeIv : IntegerValue) : memM IntegerValue :=
+def memcmpM [LemFuel] (tagDefs : TagDefs) (pv1 pv2 : PointerValue) (sizeIv : IntegerValue) : memM IntegerValue :=
   match sizeIv with
   | .IV _ size_n =>
     -- get_bytes — impl_mem.ml:2650-2659 (ptr' = ptr+1 uchar per step)
@@ -2726,7 +2730,7 @@ def memcmpM (tagDefs : TagDefs) (pv1 pv2 : PointerValue) (sizeIv : IntegerValue)
     null → allocate_region (fresh)
     concrete + dynamic + live + base → allocate new, memcpy, kill old
     everything else → MerrWIP failure -/
-def reallocM (tagDefs : TagDefs) (loc : CerbLocation.Loc) (tid : Nat) (align : IntegerValue)
+def reallocM [LemFuel] (tagDefs : TagDefs) (loc : CerbLocation.Loc) (tid : Nat) (align : IntegerValue)
     (ptr : PointerValue) (size : IntegerValue) : memM PointerValue :=
   match ptr with
   | .PV .Prov_none (.PVnull _) =>
@@ -2915,7 +2919,7 @@ def vaList (vaIdx : Int) : memM (List (ctype × PointerValue)) :=
     zero-discrepancy Z-05 (noodle D4): this used to return `pv` unchanged
     (`Specified(1)` vs the oracle's `Specified(2)` on
     tests/immaculate/libc/zd-d4-copy-alloc-id.c). -/
-def copyAllocId (iv : IntegerValue) (pv : PointerValue) : memM PointerValue :=
+def copyAllocId [LemFuel] (iv : IntegerValue) (pv : PointerValue) : memM PointerValue :=
   nd_bind (intfromptr (CerbLocation.other "copy_alloc_id") void (.Unsigned .Intptr_t) pv)
     (fun _ => ptrfromint (CerbLocation.other "copy_alloc_id") (.Unsigned .Intptr_t) void iv)
 /-- call_intrinsic — impl_mem.ml:2190-2191 `assert false (* CHERI only *)`

@@ -25,6 +25,7 @@ differential drift/exec gate, never a kernel-checked claim.
 -/
 import SpecLab
 import SLUnit.EmitCore
+import SLUnit.Fuel
 
 open SpecLab SpecLab.ByteArr SpecLab.ByteArrCore
 
@@ -37,7 +38,7 @@ def ppOfB (d : generic_fun_map_decl Unit Unit) : Except String String :=
 /-- Run the assembled file through the production driver entry
 (`drive`, `["cmdname"]`, default fs) and project the single-execution
 verdict. -/
-def runFileB (f : file core_run_annotation) : Sum Int String :=
+def runFileB [LemFuel] (f : file core_run_annotation) : Sum Int String :=
   match CerbND.runND (drive f.tagDefs false f ["cmdname"])
       ((initial_driver_state 0 f CerbFS.fs_initial_state).1) with
   | [(Active r, _, _)] =>
@@ -62,7 +63,9 @@ def applyParams3 : List Int → Option (generic_fun_map_decl Unit Unit)
   | [c0, c1, c2] => some (memcpyMainParamDecl c0 c1 c2)
   | _ => none
 
-def main : IO UInt32 := do
+/-- The gate body at the ambient fuel (`[LemFuel]`; fuel-parameter arc):
+    `main` below instantiates it once from `--fuel N` (SLUnit.Fuel). -/
+def mainAt [LemFuel] : IO UInt32 := do
   let mut failures := 0
   -- 1. drift gate
   let (ma, mb, md, mp, ga, gb, gp) ← SpecLabEmitCore.readByteArrInputs
@@ -150,3 +153,8 @@ def main : IO UInt32 := do
   else
     IO.println s!"ByteArrGateTest: {failures} FAILED"
     return 1
+
+/-- Entry: the fuel is the caller's parameter (`--fuel N`, required). -/
+def main (args : List String) : IO UInt32 := do
+  let fuel ← SLUnit.fuelFromArgs args
+  @mainAt ⟨fuel⟩

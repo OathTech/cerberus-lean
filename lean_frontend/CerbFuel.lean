@@ -1,17 +1,29 @@
 /-
-  CerbFuel — the fuel-exhaustion atom, message, and driver budget.
+  CerbFuel — the fuel-exhaustion atom and message.
 
   Hand-written seam (lean_frontend/handwritten_copy.manifest), imported
   by the GENERATED Nondeterminism.lean via
-  `declare {lean} extra_import \`CerbFuel\`` (nondeterminism.lem; the
+  `declare {lean} extra_import `CerbFuel`` (nondeterminism.lem; the
   debug.lem:4 mechanism), so that the `declare {lean} fuel val …`
-  sentinel arms of the nine ND-typed fueled workers can name these
+  sentinel arms of the ND-typed fueled workers can name these
   constants. It sits BELOW Nondeterminism in the import order and
   therefore cannot mention `kill_reason`; the kill value itself
   (`CerbND.fuelExhaustedKill`) and every lemma live in CerbND.lean.
 
-  Design record: docs/2026-09-02_fuel-arc-design.md (§1.1 the export,
-  §1.3 the parametricity argument, §2 the trust story, §4 the budget).
+  THE FUEL IS A PARAMETER, NOT A CONSTANT (fuel-parameter arc, 2026-09-04;
+  [USER 2026-09-03]: fuel "is an execution parameter that 'doesn't matter'
+  … a parameter which can be chosen as 10^8 or any other value when
+  calling the interpreter"; "Any and all magic values that are hardcoded
+  and can't be quantified over are definitionally bugs"). Every fuel'd
+  generated function and everything reaching one takes the LemLib class
+  `[LemFuel]` (lem-lean doc/lean-backend/2026-09-03_fuel-parameter-design.md
+  R1); the executable instantiates it ONCE from `--fuel N` (Main.lean —
+  the only place a fuel numeral may live), a theorem quantifies over it.
+  The former budget constant `CerbFuel.driverFuel = 10^8` and LemLib's
+  `lemDefaultFuel = 10^6` are DELETED (docs/2026-09-04_fuel-parameter-C1-record.md).
+
+  Design record of the exhaustion outcome: docs/2026-09-02_fuel-arc-design.md
+  (§1.1 the export, §1.3 the parametricity argument, §2 the trust story).
   Option C ruled [USER 2026-09-02].
 
   MIRROR-OCAML NOTE: fuel has NO upstream counterpart — the lem model's
@@ -47,27 +59,5 @@ opaque fuelExhaustedLoc : CerbLocation.Loc := CerbLocation.Loc.other "lem: fuel 
     soundness. It exists as a named constant only because a lem `declare`
     cannot carry a string literal (the backtick lexer excludes `"`). -/
 def fuelExhaustedMsg : String := "lem: fuel exhausted"
-
-/-- The fuel budget of the coupled driver family (`driver2`,
-    `drive_nonmemory_steps_aux2`, `print_eval_conv_aux`, `hack`,
-    `nd_bind`, `CerbND.ndDefaultFuel`) — design note §4. The citable
-    name for the consumer's side condition (`k + 2 ≤ CerbFuel.driverFuel`);
-    the wrapper `rfl`s in CerbND.lean (`driver2_wrapper_defeq`,
-    `nd_bind_wrapper_defeq`, `runND_eq`, `drive_wrapper_defeq`) pin the
-    generated wrappers to this constant, and `driverFuel_eq` gives the
-    numeral.
-
-    VALUE: 10^8 (the budget commit; the mechanism commit carried
-    `1000000` = `lemDefaultFuel` so the FUEL class was witnessed by real
-    lane rows first). The six L1 budget declares (`declare {lean} fuel val
-    X = 100000000` in driver.lem / nondeterminism.lem) emit this numeral
-    into the generated wrappers; the wrapper `rfl`s hold because both
-    sides unfold to the same literal. Sizing (C1 manifest §8 / stack-
-    ceiling design §6b): at measured fuel rates the loud edge is ~7 min
-    (loop shape) to ~55 min (recursion shape) of single-invocation
-    stepping; 10^9+ would be past the grind horizon. A 10^8 budget is
-    unreachable inside any gate lane's timeout (15-30 s ⇒ ≤ 7×10^6 fuel);
-    it is exercised only by measure.sh (600 s) and unbounded probes. -/
-def driverFuel : Nat := 100000000
 
 end CerbFuel

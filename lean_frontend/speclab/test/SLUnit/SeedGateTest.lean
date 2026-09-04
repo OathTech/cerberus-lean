@@ -25,6 +25,7 @@ differential drift/exec gate, never a kernel-checked claim.
 -/
 import SpecLab
 import SLUnit.EmitCore
+import SLUnit.Fuel
 
 open SpecLab SpecLab.CnSeed SpecLab.CnSeedCore
 
@@ -36,7 +37,7 @@ def ppOf (d : generic_fun_map_decl Unit Unit) : Except String String :=
 
 /-- Run the assembled file through the production driver entry and
 project the single-execution verdict. -/
-def runFile (f : file core_run_annotation) : Sum Int String :=
+def runFile [LemFuel] (f : file core_run_annotation) : Sum Int String :=
   match CerbND.runND (drive f.tagDefs false f ["cmdname"])
       ((initial_driver_state 0 f CerbFS.fs_initial_state).1) with
   | [(Active r, _, _)] =>
@@ -91,7 +92,9 @@ def applyParams : List Int → Option (generic_fun_map_decl Unit Unit)
       b13 b14 b15)
   | _ => none
 
-def main : IO UInt32 := do
+/-- The gate body at the ambient fuel (`[LemFuel]`; fuel-parameter arc):
+    `main` below instantiates it once from `--fuel N` (SLUnit.Fuel). -/
+def mainAt [LemFuel] : IO UInt32 := do
   let mut failures := 0
   -- 1. drift gate
   let (sa, sb, sd, sc, sp, std) ← SpecLabEmitCore.readSeedInputs
@@ -159,3 +162,8 @@ def main : IO UInt32 := do
   else
     IO.println s!"SeedGateTest: {failures} FAILED"
     return 1
+
+/-- Entry: the fuel is the caller's parameter (`--fuel N`, required). -/
+def main (args : List String) : IO UInt32 := do
+  let fuel ← SLUnit.fuelFromArgs args
+  @mainAt ⟨fuel⟩

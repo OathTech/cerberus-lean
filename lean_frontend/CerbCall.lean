@@ -255,7 +255,7 @@ def checkSignature (fname : String) (retTy : ctype) (ptys : List ctype) (nargs :
 
 /-- Stage: allocate and initialise errno — verbatim `drive`
     (driver.lem:1860-1868), BEFORE the call site runs (Z2-C-02). -/
-def allocErrno (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)) (tid0 : Nat) :
+def allocErrno [LemFuel] (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)) (tid0 : Nat) :
     driverM CerbMem.PointerValue :=
   liftMem (nd_bind
     (CerbMem.allocateObject tagDefs tid0 (PrefOther "errno")
@@ -271,7 +271,7 @@ def allocErrno (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)) (tid0 :
 /-- Stage: park the rendered call site in thread 0's arena (drive's
     thread-state update, driver.lem:1870-1880, with `main_sym` := `fsym`),
     run the driver loop, finalize. -/
-def callFinish (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
+def callFinish [LemFuel] (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
     (tid0 : Nat) (fsym : sym) (callExpr : CE) (errno_ptr_val : CerbMem.PointerValue) :
     driverM driver_result :=
   nd_bind get_thread_states
@@ -299,7 +299,7 @@ def callFinish (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
     0's arena, run the driver loop, finalize. Structure is `drive`
     (driver.lem:1727) with the documented substitutions (header) — every
     combinator is the generated driver's own. -/
-def driveCall (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
+def driveCall [LemFuel] (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
     (file1 : file core_run_annotation) (fname : String)
     (args : List value) : driverM driver_result :=
   nd_bind (driver_globals tagDefs false file1) (fun (tid0 : Nat) =>

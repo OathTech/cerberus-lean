@@ -85,12 +85,12 @@ def divmodI8FileU (mainDecl : generic_fun_map_decl Unit Unit)
 
 /-- THE PARAMETRIC KERNEL-INSTANCE FILE: the healthy divmod harness
 family, indexed by the six spliced byte literals. -/
-def divmodI8File (c0 c1 e0 e1 e2 e3 : Int) : file core_run_annotation :=
+def divmodI8File [LemFuel] (c0 c1 e0 e1 e2 e3 : Int) : file core_run_annotation :=
   convert_file
     (divmodI8FileU (mainParamDecl c0 c1 e0 e1 e2 e3) divisionDecl modFnDecl)
 
 /-- The wrong-operator PLANT file (pinned verbatim; bytes (7,2)). -/
-def divmodI8PlantFile : file core_run_annotation :=
+def divmodI8PlantFile [LemFuel] : file core_run_annotation :=
   convert_file (divmodI8FileU mainPlantDecl divisionPlantDecl modFnPlantDecl)
 
 /-- Byte-valued Int (the splice literal of a byte). -/
@@ -99,7 +99,7 @@ def byteToInt (b : UInt8) : Int := (b.toNat : Int)
 /-- MODEL-INDEXED file: the healthy instance for a model input (the
 model-∀ face — bytes computed by the pure encoders, expected by the
 pure `modelFn`). -/
-def divmodI8FileOf (m : Input) : file core_run_annotation :=
+def divmodI8FileOf [LemFuel] [LemFuel] (m : Input) : file core_run_annotation :=
   divmodI8File
     (byteToInt (toByteI8 m.x)) (byteToInt (toByteI8 m.y))
     (byteToInt (i16b0 (modelDiv m))) (byteToInt (i16b1 (modelDiv m)))
@@ -115,7 +115,7 @@ def expectedOfStreamI8 (s : Stream) : Stream :=
 /-- STREAM-INDEXED file: the stream-∀ face. The fallback arm is junk
 for malformed streams (callers own validity — mirroring the codec
 side conditions). -/
-def divmodI8FileOfStream (s : Stream) : file core_run_annotation :=
+def divmodI8FileOfStream [LemFuel] [LemFuel] (s : Stream) : file core_run_annotation :=
   match s, expectedOfStreamI8 s with
   | [c0, c1], [e0, e1, e2, e3] =>
     divmodI8File (byteToInt c0) (byteToInt c1)

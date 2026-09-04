@@ -28,7 +28,12 @@ open CerbMem
 
 def intTy : ctype := Ctype [] (.Basic (.Integer (.Signed .Int_)))
 
-def runStore (mv : MemValue) :
+-- fuel-parameter arc (2026-09-04): storeM reads the ambient fuel
+-- (`[LemFuel]` — it reaches the fuel'd layout/serialisation workers);
+-- the probe takes it from its command line (`--fuel N`, passed by
+-- test_immaculate.sh as $CERB_TEST_FUEL — a test-suite choice, never a
+-- numeral in the Lean text; scripts/check_no_fuel_numerals.sh).
+def runStore [LemFuel] (mv : MemValue) :
     nd_action Footprint String mem_error
       (mem_constraint IntegerValue) MemState :=
   -- effect-retirement C1: storeM takes the tag table by value
@@ -38,7 +43,7 @@ def runStore (mv : MemValue) :
       (nullPtrval intTy) mv with
   | ND f => (f initialMemState).1
 
-def main : IO Unit := do
+def mainAt [LemFuel] : IO Unit := do
   -- Leg 1: _Bool-typed value stored at signed-int type (mem-incompatible).
   let leg1 := match runStore (integerValueMval .Bool0 (integerIval 1)) with
     | .NDkilled (.Other (MerrOther msg)) =>
@@ -54,3 +59,19 @@ def main : IO Unit := do
     IO.println "ILLTYPED_STATUS=KILL"
   else
     IO.println "ILLTYPED_STATUS=UNEXPECTED"
+
+def main (args : List String) : IO Unit := do
+  match args with
+  | ["--fuel", s] =>
+    match s.toNat? with
+    | some n =>
+      if n == 0 then
+        IO.eprintln "illtyped-store probe: refused — --fuel 0 (the fuel must be a positive integer)"
+        IO.Process.exit 2
+      else @mainAt ⟨n⟩
+    | none =>
+      IO.eprintln s!"illtyped-store probe: refused — --fuel {s}: not a decimal numeral"
+      IO.Process.exit 2
+  | _ =>
+    IO.eprintln "illtyped-store probe: refused — usage: --fuel <N> (test_immaculate.sh passes $CERB_TEST_FUEL)"
+    IO.Process.exit 2

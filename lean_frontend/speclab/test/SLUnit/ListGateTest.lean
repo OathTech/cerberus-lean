@@ -30,6 +30,7 @@ differential drift/exec gate, never a kernel-checked claim.
 -/
 import SpecLab
 import SLUnit.EmitCore
+import SLUnit.Fuel
 
 open SpecLab SpecLab.ListAppend SpecLab.ListAppendCore
 
@@ -45,7 +46,7 @@ the CerbTags global is GONE — struct layouts reach CerbMem by VALUE
 (reader_consumer), so `f.tagDefs` in the drive seed below is the whole
 story; the entry is supply-parameterized (seed 0 — authored-Core ids
 are name-hash interned, not drawn). -/
-def runFileL (f : file core_run_annotation) : IO (Sum (Int × Nat) String) := do
+def runFileL [LemFuel] (f : file core_run_annotation) : IO (Sum (Int × Nat) String) := do
   return match CerbND.runND (drive f.tagDefs false f ["cmdname"])
       ((initial_driver_state 0 f CerbFS.fs_initial_state).1) with
   | [(Active r, _, st)] =>
@@ -88,7 +89,7 @@ def applyParams12 : List Int → Option (generic_fun_map_decl Unit Unit)
   | _ => none
 
 /-- Check one exec point: verdict + leak observable. -/
-def checkRun (label : String) (f : file core_run_annotation)
+def checkRun [LemFuel] (label : String) (f : file core_run_annotation)
     (wantVerdict : Int) (wantAllocs : Nat) (note : String) :
     IO Nat := do
   match ← runFileL f with
@@ -109,7 +110,9 @@ def checkRun (label : String) (f : file core_run_annotation)
     IO.println s!"  FAIL  exec [{label}]: {e}"
     return 2
 
-def main : IO UInt32 := do
+/-- The gate body at the ambient fuel (`[LemFuel]`; fuel-parameter arc):
+    `main` below instantiates it once from `--fuel N` (SLUnit.Fuel). -/
+def mainAt [LemFuel] : IO UInt32 := do
   let mut failures := 0
   -- 1. drift gate
   let (a, b, d, c, lp, ep, bu, std) ← SpecLabEmitCore.readListInputs
@@ -167,3 +170,8 @@ def main : IO UInt32 := do
   else
     IO.println s!"ListGateTest: {failures} FAILED"
     return 1
+
+/-- Entry: the fuel is the caller's parameter (`--fuel N`, required). -/
+def main (args : List String) : IO UInt32 := do
+  let fuel ← SLUnit.fuelFromArgs args
+  @mainAt ⟨fuel⟩

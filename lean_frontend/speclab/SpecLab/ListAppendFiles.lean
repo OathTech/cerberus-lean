@@ -123,19 +123,19 @@ def appendFileU (targetSym : sym)
 family, indexed by the TWELVE element wire bytes (expected[] sites
 are derived — the parametric term shares the parameters, the S2-E4
 zip mechanism at 12 params / 24 sites). -/
-def appendI12File (b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 : Int) :
+def appendI12File [LemFuel] (b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 : Int) :
     file core_run_annotation :=
   convert_file (appendFileU intListAppendSym
     (appendMainParamDecl b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11)
     intListAppendDecl)
 
 /-- The WRONG-LINK PLANT file (pinned verbatim; instance a). -/
-def appendLinkPlantFile : file core_run_annotation :=
+def appendLinkPlantFile [LemFuel] : file core_run_annotation :=
   convert_file (appendFileU intListAppendLinkPlantSym
     appendMainLinkPlantDecl intListAppendLinkPlantDecl)
 
 /-- The WRONG-ELEMENT PLANT file (pinned verbatim; instance a). -/
-def appendElemPlantFile : file core_run_annotation :=
+def appendElemPlantFile [LemFuel] : file core_run_annotation :=
   convert_file (appendFileU intListAppendElemPlantSym
     appendMainElemPlantDecl intListAppendElemPlantDecl)
 
@@ -143,7 +143,7 @@ def appendElemPlantFile : file core_run_annotation :=
 builder-correctness statement's object. Its TU carries its own copy
 of the target decl (different fresh numbering — the S3
 symbol-numbering-coupling finding), never called. -/
-def appendBuildFile : file core_run_annotation :=
+def appendBuildFile [LemFuel] : file core_run_annotation :=
   convert_file (appendFileU intListAppendBuildSym
     appendMainBuildDecl intListAppendBuildDecl)
 
@@ -159,7 +159,7 @@ def wireBytes (m : Input) : List Int :=
 /-- MODEL-INDEXED append file (the model-∀ face; junk instance on
 models outside the (2,1)-length family — statements own the shape via
 their sample sets). -/
-def appendFileOf (m : Input) : file core_run_annotation :=
+def appendFileOf [LemFuel] (m : Input) : file core_run_annotation :=
   match m.xs, m.ys with
   | [_, _], [_] =>
     match wireBytes m with
@@ -171,7 +171,7 @@ def appendFileOf (m : Input) : file core_run_annotation :=
 /-- STREAM-INDEXED append file (the stream-∀ face): the full
 two-list codec decodes the stream; junk on malformed/out-of-family
 streams (callers own validity). -/
-def appendFileOfStream (s : Stream) : file core_run_annotation :=
+def appendFileOfStream [LemFuel] (s : Stream) : file core_run_annotation :=
   match decodeInput s with
   | some (m, []) => appendFileOf m
   | _ => appendI12File 0 0 0 0 0 0 0 0 0 0 0 0

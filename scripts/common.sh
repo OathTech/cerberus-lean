@@ -318,6 +318,17 @@ TIME_BIN=/usr/bin/time
 #   "${CAPPED_TEST[@]}" timeout "${TIMEOUT_SECS}s" <cmd…>
 CAPPED_BIN="$SCRIPT_DIR/capped"
 TEST_MEM_MAX="${CERB_TEST_MEM_MAX:-4G}"
+
+# The TEST SUITE'S fuel for gate executables that run the semantics
+# in-process (the speclab *GateTest binaries: `--fuel N`, required by the
+# binary — fuel-parameter arc, 2026-09-04). Fuel is a caller's parameter
+# of the semantics; a test suite may choose its default ([USER 2026-09-03]
+# "Defaults that are chosen eg. in test suites are fine") and this shell
+# constant is that choice, outside the Lean text the no-fuel-numerals gate
+# scans (scripts/check_no_fuel_numerals.sh). The differential lanes do
+# NOT pass it: the driver binary has its own `--fuel` default (Main.lean
+# `defaultFuel`, the one permitted Lean numeral).
+CERB_TEST_FUEL="${CERB_TEST_FUEL:-100000000}"
 CAPPED_TEST=(env "CERB_MEM_MAX=$TEST_MEM_MAX" "$CAPPED_BIN")
 [[ -x "$CAPPED_BIN" ]] || { echo "Error: $CAPPED_BIN missing or not executable (per-test memory cap; fail-closed)" >&2; exit 1; }
 # is_cap_kill <rc> <stderr-file-or-text-file>: true iff the run breached

@@ -226,7 +226,7 @@ echo "g6-hash-collision $g6_status" >> "$OUTPUT_DIR/baseline.new"
 # status KILL.
 it_out="$(cd "$PROJECT_ROOT/lean_frontend" && \
     "$PROJECT_ROOT/scripts/capped" lake env lean --run \
-    "$CORPUS/illtyped-store.lean" 2>/dev/null | grep -v 'env:')"
+    "$CORPUS/illtyped-store.lean" --fuel "$CERB_TEST_FUEL" 2>/dev/null | grep -v 'env:')"
 it_status="$(sed -n 's/^ILLTYPED_STATUS=//p' <<<"$it_out")"
 [[ -n "$it_status" ]] || fail "illtyped-store probe produced no ILLTYPED_STATUS line (output: $it_out)"
 CUR["illtyped-store"]="$it_status"

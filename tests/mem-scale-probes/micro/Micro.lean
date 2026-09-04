@@ -41,13 +41,25 @@ def elemsLen : MemValue → Nat
   | .MVarray es => es.length
   | _ => 0
 
+/-- Entry. fuel-parameter arc (2026-09-04): `memValueToBytes`/`reconstructValue`
+    read the ambient `[LemFuel]`; this instrument takes it from its command
+    line (`--fuel N`, REQUIRED, leading) — a caller's choice, never a numeral
+    in the Lean text (scripts/check_no_fuel_numerals.sh scans tests/). -/
 def main (args : List String) : IO UInt32 := do
   match args with
-  | [c, nStr] => run c nStr.toNat! (baseOf nStr.toNat! "lo")
-  | [c, nStr, "hi"] => run c nStr.toNat! (baseOf nStr.toNat! "hi")
-  | _ => IO.eprintln "usage: memscale-micro <case> <N> [hi]"; return 2
+  | "--fuel" :: fStr :: rest =>
+    match fStr.toNat? with
+    | some f =>
+      if f == 0 then IO.eprintln "memscale-micro: refused — --fuel 0 (positive integer required)"; return 2
+      else
+        match rest with
+        | [c, nStr] => @run ⟨f⟩ c nStr.toNat! (baseOf nStr.toNat! "lo")
+        | [c, nStr, "hi"] => @run ⟨f⟩ c nStr.toNat! (baseOf nStr.toNat! "hi")
+        | _ => IO.eprintln "usage: memscale-micro --fuel <N> <case> <N> [hi]"; return 2
+    | none => IO.eprintln s!"memscale-micro: refused — --fuel {fStr}: not a decimal numeral"; return 2
+  | _ => IO.eprintln "usage: memscale-micro --fuel <N> <case> <N> [hi]  (the fuel is the caller's parameter; scripts pass $CERB_TEST_FUEL)"; return 2
 where
-  run (c : String) (n : Nat) (base : Int) : IO UInt32 := do
+  run [LemFuel] (c : String) (n : Nat) (base : Int) : IO UInt32 := do
     match c with
     -- allocation-time list: List.replicate n unspecified (allocateObject initOpt=none)
     | "replicate" => timeIt c n fun n => (List.replicate n unspecByte).length

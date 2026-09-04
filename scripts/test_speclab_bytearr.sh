@@ -270,7 +270,7 @@ do_gate() {
         || fail "speclab-bytearr-core-test build failed"
     local bin="$PROJECT_ROOT/lean_frontend/speclab/.lake/build/bin/speclab-bytearr-core-test"
     [[ -f "$bin" ]] || fail "speclab-bytearr-core-test binary missing"
-    (cd "$PROJECT_ROOT" && "$bin") || fail "ByteArrGateTest red"
+    (cd "$PROJECT_ROOT" && "$bin" --fuel "$CERB_TEST_FUEL") || fail "ByteArrGateTest red"
 }
 
 case "$MODE" in

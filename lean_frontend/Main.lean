@@ -560,7 +560,7 @@ def findRuntimeDir : IO String := do
     would be let-SUNK past the NEXT TU's `setDigestIO`, stamping this
     TU's symbols with the wrong digest (see CerberusFresh.forceIO and
     test/Unit/FreshIntTest.lean testDigestGlobal). -/
-def frontendTU (quiet : Bool) (supply : Nat)
+def frontendTU [LemFuel] (quiet : Bool) (supply : Nat)
     (coreEvalStuff : Fmap String sym × fun_map Unit × impl)
     (ailnames : Fmap String sym) (stdFunMap : fun_map Unit) (coreImpl : impl)
     (tunit : translation_unit) : IO (Except UInt8 (file Unit × Nat)) := do
@@ -660,7 +660,7 @@ def frontendTU (quiet : Bool) (supply : Nat)
 
 /-- Load and assemble the libc library Core file (see the module note at
     "C-libc loading" above). -/
-def loadLibc (quiet : Bool) (supply0 : Nat)
+def loadLibc [LemFuel] (quiet : Bool) (supply0 : Nat)
     (coreEvalStuff : Fmap String sym × fun_map Unit × impl)
     (ailnames : Fmap String sym) (stdFunMap : fun_map Unit) (coreImpl : impl)
     (libcCorePath : String) (libcTuJsons : List String) :
@@ -788,7 +788,7 @@ def loadLibc (quiet : Bool) (supply0 : Nat)
     `ppCoreSignature`); the default human-readable mode is unchanged (and
     keeps its historical exit-code behavior: 0 even on semantic stage
     failures). -/
-def runPipeline (runtimeDir : String) (batch : Bool) (ppCore : Bool)
+def runPipeline [LemFuel] (runtimeDir : String) (batch : Bool) (ppCore : Bool)
     (firstTrace : Bool)
     (callFn : Option (String × List Int)) (traceNodes : Bool)
     (libc : Option (String × List String))
@@ -1052,6 +1052,23 @@ def runPipeline (runtimeDir : String) (batch : Bool) (ppCore : Bool)
 
 /-! ## Entry point -/
 
+/-- THE HARNESS DEFAULT FUEL (`--fuel N`, fuel-parameter arc 2026-09-04).
+    Fuel is a PARAMETER of the semantics — the LemLib `[LemFuel]` instance
+    every fuel'd function reads — instantiated exactly once, here, at the
+    executable's entry ([USER 2026-09-03]: fuel "is an execution parameter
+    that 'doesn't matter' … a parameter which can be chosen as 10^8 or any
+    other value when calling the interpreter"; "Defaults that are chosen
+    eg. in test suites are fine"). This is THE ONLY PLACE a fuel numeral
+    may live in this repository: no generated module, seam, test or
+    speclab file may carry one (`scripts/check_no_fuel_numerals.sh`, which
+    allowlists exactly the definition line below and the `letI` that
+    builds the instance in `main`). 10^8 is the former budget of the
+    driver family (docs/2026-09-02_fuel-arc-design.md §4 sizing: past
+    every gate lane's timeout, reachable only by measure.sh-scale probes);
+    it is a harness choice, overridable per run, and no theorem depends
+    on it. -/
+def defaultFuel : Nat := 100000000  -- FUEL-DEFAULT (the one allowed fuel numeral)
+
 /-- Zero-discrepancy Z-24/Z-25 (charter §2.3; [USER 2026-09-03] Q7: REFUSE,
     do not plumb): every `--`-prefixed token the positional parser does not
     accept is REFUSED — loud (exit 2) and feature-ATTRIBUTED (exception class
@@ -1070,7 +1087,7 @@ def refuseFlag (flag : String) : IO Unit := do
     else if flag == "--batch" || flag == "--pp-core" || flag == "--parse-core" || flag == "--first" then
       "known flag out of its canonical position (`--batch`, `--pp-core` or `--parse-core` must be argv[0]; `--first` must immediately follow `--batch`/`--pp-core`)"
     else
-      "unknown flag; this port accepts only --batch | --pp-core | --parse-core (argv[0]), --first, --stdin, --libc <core> --libc-tu <json>, --call <f> [--call-args <ints>], --args <str>, --trace-nodes"
+      "unknown flag; this port accepts only --batch | --pp-core | --parse-core (argv[0]), --first, --stdin, --libc <core> --libc-tu <json>, --call <f> [--call-args <ints>], --args <str>, --trace-nodes, --fuel <N>"
   IO.eprintln s!"cerberus-lean: refused — {flag}: {feature} (see VALIDATION.md, zero-discrepancy Z-24)"
   IO.Process.exit 2
 
@@ -1132,6 +1149,13 @@ def main (args : List String) : IO Unit := do
   let mut callArgsStr : Option String := none
   let mut progArgsStr : Option String := none
   let mut traceNodes : Bool := false
+  -- --fuel <N> (fuel-parameter arc): the run's fuel, a positive integer;
+  -- absent = `defaultFuel`. Accepted anywhere after the mode flag (the
+  -- same canonical position as --libc/--call/--args); zero or a
+  -- non-numeral is REFUSED (exit 2): a run at fuel 0 kills at the first
+  -- bind — never a verdict — and a silent fallback to the default would
+  -- be the fail-open shape the working practices ban.
+  let mut fuelStr : Option String := none
   let mut restArgs : List String := []
   -- --parse-core consumes its file list itself (below); nothing to scan
   let mut pending := if parseCoreMode then [] else rest1
@@ -1144,10 +1168,11 @@ def main (args : List String) : IO Unit := do
     | "--call-args" :: v :: rest => callArgsStr := some v; pending := rest
     | "--args" :: v :: rest => progArgsStr := some v; pending := rest
     | "--trace-nodes" :: rest => traceNodes := true; pending := rest
+    | "--fuel" :: v :: rest => fuelStr := some v; pending := rest
     | ["--libc"] | ["--libc-tu"] | ["--call"] | ["--call-args"]
-    | ["--args"] =>
+    | ["--args"] | ["--fuel"] =>
       IO.eprintln "cerberus-lean: --libc/--libc-tu/--call/--call-args/\
-        --args require an argument"
+        --args/--fuel require an argument"
       IO.Process.exit 1
     | a :: rest =>
       -- Z-24: a `--` token here is not a file name (except `--stdin`)
@@ -1162,6 +1187,17 @@ def main (args : List String) : IO Unit := do
   let progArgs : List String := match progArgsStr with
     | none => []
     | some s => ((s.replace "\t" " ").splitOn " ").filter (· ≠ "")
+  let fuel : Nat ← match fuelStr with
+    | none => pure defaultFuel
+    | some s => match s.toNat? with
+      | some n =>
+        if n == 0 then do
+          IO.eprintln s!"cerberus-lean: refused — --fuel {s}: the fuel must be a positive integer (fuel 0 kills at the first bind: never a verdict; see VALIDATION.md, fuel)"
+          IO.Process.exit 2
+        else pure n
+      | none => do
+        IO.eprintln s!"cerberus-lean: refused — --fuel {s}: not a decimal numeral (the fuel is a positive integer; default {defaultFuel}; see VALIDATION.md, fuel)"
+        IO.Process.exit 2
   let callFn : Option (String × List Int) ← match callName, callArgsStr with
     | none, none => pure none
     | none, some _ => do
@@ -1262,7 +1298,10 @@ def main (args : List String) : IO Unit := do
       IO.eprintln s!"cerberus-lean: parse error: {e}"
       IO.Process.exit 1
     | .ok tunit => tunits := tunits ++ [(content, tunit)]
-  let code ← runPipeline runtimeDir batchMode ppCoreMode firstTrace
-    callFn traceNodes libc progArgs tunits
+  -- The ONE instantiation of the ambient fuel (fuel-parameter arc): every
+  -- fuel'd function below `runPipeline` reads this instance; nothing else
+  -- in the repository builds one (`scripts/check_no_fuel_numerals.sh`).
+  let code ← (letI : LemFuel := ⟨fuel⟩; runPipeline runtimeDir batchMode ppCoreMode firstTrace
+    callFn traceNodes libc progArgs tunits)
   if code != 0 then
     IO.Process.exit code

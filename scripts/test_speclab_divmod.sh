@@ -284,7 +284,7 @@ do_gate() {
         || fail "speclab-core-test build failed"
     local bin="$PROJECT_ROOT/lean_frontend/speclab/.lake/build/bin/speclab-core-test"
     [[ -f "$bin" ]] || fail "speclab-core-test binary missing"
-    (cd "$PROJECT_ROOT" && "$bin") || fail "CoreGateTest red"
+    (cd "$PROJECT_ROOT" && "$bin" --fuel "$CERB_TEST_FUEL") || fail "CoreGateTest red"
 }
 
 case "$MODE" in

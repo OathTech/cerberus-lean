@@ -107,7 +107,7 @@ def swapFileU (mainDecl : generic_fun_map_decl Unit Unit)
 /-- THE PARAMETRIC swap FILE: the healthy harness family, indexed by
 the sixteen wire bytes (expected[] sites are derived — the parametric
 term shares the parameters through the swap permutation). -/
-def swapI16File (b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14
+def swapI16File [LemFuel] (b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14
     b15 : Int) : file core_run_annotation :=
   convert_file (swapFileU
     (swapMainParamDecl b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13
@@ -115,12 +115,12 @@ def swapI16File (b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14
     swapPairDecl)
 
 /-- The LOST-UPDATE PLANT file (pinned verbatim; instance a). -/
-def pairSwapPlantFile : file core_run_annotation :=
+def pairSwapPlantFile [LemFuel] : file core_run_annotation :=
   convert_file (swapFileU swapMainPlantDecl swapPairPlantDecl)
 
 /-- File from a 16-byte wire vector (junk on other lengths — the
 statements own their index sets). -/
-def swapFileOfBytes (bs : List UInt8) : file core_run_annotation :=
+def swapFileOfBytes [LemFuel] (bs : List UInt8) : file core_run_annotation :=
   match bs.map DivMod.byteToInt with
   | [b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14,
      b15] =>
@@ -129,12 +129,12 @@ def swapFileOfBytes (bs : List UInt8) : file core_run_annotation :=
 
 /-- MODEL-INDEXED file (the model-∀ face — wire bytes computed by the
 pure encoder; total on ALL of PairInput, the full-domain rung). -/
-def swapFileOf (m : PairInput) : file core_run_annotation :=
+def swapFileOf [LemFuel] (m : PairInput) : file core_run_annotation :=
   swapFileOfBytes (encodePair m)
 
 /-- STREAM-INDEXED file (the stream-∀ face; junk on malformed
 streams — callers own validity; the R2 decode-based style). -/
-def swapFileOfStream (s : Stream) : file core_run_annotation :=
+def swapFileOfStream [LemFuel] (s : Stream) : file core_run_annotation :=
   match decodePair s with
   | some (m, []) => swapFileOf m
   | _ => swapFileOfBytes []

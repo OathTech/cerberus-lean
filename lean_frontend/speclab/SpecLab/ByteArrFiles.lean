@@ -97,11 +97,11 @@ def getarrFileU (mainDecl : generic_fun_map_decl Unit Unit)
 /-- THE PARAMETRIC memcpy FILE: the healthy n = 3 harness family,
 indexed by the THREE choice bytes (expected[] sites are derived — the
 parametric term shares the parameters, register S2-E4). -/
-def memcpyI3File (c0 c1 c2 : Int) : file core_run_annotation :=
+def memcpyI3File [LemFuel] (c0 c1 c2 : Int) : file core_run_annotation :=
   convert_file (memcpyFileU (memcpyMainParamDecl c0 c1 c2) naiveMemcpyDecl)
 
 /-- The OFF-BY-ONE PLANT file (pinned verbatim; bytes [1,2,3]). -/
-def memcpyPlantFile : file core_run_annotation :=
+def memcpyPlantFile [LemFuel] : file core_run_annotation :=
   convert_file (memcpyFileU memcpyMainPlantDecl naiveMemcpyPlantDecl)
 
 /-- Byte-valued Int (the splice literal of a byte). -/
@@ -110,7 +110,7 @@ def byteToInt (b : UInt8) : Int := (b.toNat : Int)
 /-- MODEL-INDEXED memcpy file (the model-∀ face; junk instance on
 non-3-length models — statements own the length via their sample
 sets). -/
-def memcpyFileOf (bs : List UInt8) : file core_run_annotation :=
+def memcpyFileOf [LemFuel] (bs : List UInt8) : file core_run_annotation :=
   match bs with
   | [b0, b1, b2] =>
     memcpyI3File (byteToInt b0) (byteToInt b1) (byteToInt b2)
@@ -119,7 +119,7 @@ def memcpyFileOf (bs : List UInt8) : file core_run_annotation :=
 /-- STREAM-INDEXED memcpy file (the stream-∀ face): the full
 byte-blaster codec decodes the stream; junk on malformed/non-3-length
 streams (callers own validity). -/
-def memcpyFileOfStream (s : Stream) : file core_run_annotation :=
+def memcpyFileOfStream [LemFuel] (s : Stream) : file core_run_annotation :=
   match decodeInput s with
   | some (bs, []) => memcpyFileOf bs
   | _ => memcpyI3File 0 0 0
@@ -127,14 +127,14 @@ def memcpyFileOfStream (s : Stream) : file core_run_annotation :=
 /-- The getarr files, pinned VERBATIM per instance (the contrasting
 statement style — register S2-E4): a = "hellohello",
 b = [0,255,0,255,7,0,255,0,255,127]. -/
-def getarrFileA : file core_run_annotation :=
+def getarrFileA [LemFuel] : file core_run_annotation :=
   convert_file (getarrFileU getarrMainADecl getFromArrDecl)
 
-def getarrFileB : file core_run_annotation :=
+def getarrFileB [LemFuel] : file core_run_annotation :=
   convert_file (getarrFileU getarrMainBDecl getFromArrDecl)
 
 /-- The getarr WRONG-INDEX PLANT file (pinned verbatim; "hellohello"). -/
-def getarrPlantFile : file core_run_annotation :=
+def getarrPlantFile [LemFuel] : file core_run_annotation :=
   convert_file (getarrFileU getarrMainPlantDecl getFromArrPlantDecl)
 
 end ByteArr

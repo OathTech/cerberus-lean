@@ -149,7 +149,7 @@ def buildSyms : TUSyms :=
 harness family, indexed by the TWENTY-FOUR pre-order element wire
 bytes (expected[] sites are derived — the parametric term shares the
 parameters; 24 params / 48 sites). -/
-def rotateI24File (b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14
+def rotateI24File [LemFuel] (b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14
     b15 b16 b17 b18 b19 b20 b21 b22 b23 : Int) :
     file core_run_annotation :=
   convert_file (rotateFileU paramSyms
@@ -159,37 +159,37 @@ def rotateI24File (b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14
     freeTreeDecl)
 
 /-- The junk instance (all-zero bytes) for out-of-family models. -/
-def junkFile : file core_run_annotation :=
+def junkFile [LemFuel] : file core_run_annotation :=
   rotateI24File 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
 
 /-- The ROOT-PATH instance (path [] — pinned verbatim; the
 pointer-selection statement family's first non-parametric path). -/
-def rotateRootFile : file core_run_annotation :=
+def rotateRootFile [LemFuel] : file core_run_annotation :=
   convert_file (rotateFileU rootSyms rootMainDecl rootRotateRightDecl
     rootScanTreeDecl rootBuildTreeDecl rootSerializeTreeDecl
     rootFreeTreeDecl)
 
 /-- The DEEP-PATH instance (path [l,l] on a 4-spine — pinned
 verbatim). -/
-def rotateDeepFile : file core_run_annotation :=
+def rotateDeepFile [LemFuel] : file core_run_annotation :=
   convert_file (rotateFileU deepSyms deepMainDecl deepRotateRightDecl
     deepScanTreeDecl deepBuildTreeDecl deepSerializeTreeDecl
     deepFreeTreeDecl)
 
 /-- The WRONG-CHILD-SWAP PLANT file (instance a; shared helper
 decls — asserted byte-identical at emission). -/
-def swapPlantFile : file core_run_annotation :=
+def swapPlantFile [LemFuel] : file core_run_annotation :=
   convert_file (rotateFileU swapSyms swapMainDecl swapRotateRightDecl
     scanTreeDecl buildTreeDecl serializeTreeDecl freeTreeDecl)
 
 /-- The DROPPED-SUBTREE PLANT file (instance a). -/
-def dropPlantFile : file core_run_annotation :=
+def dropPlantFile [LemFuel] : file core_run_annotation :=
   convert_file (rotateFileU dropSyms dropMainDecl dropRotateRightDecl
     scanTreeDecl buildTreeDecl serializeTreeDecl freeTreeDecl)
 
 /-- The BUILD-ONLY file (pinned whole from its own dump) — the
 builder-correctness statement's object. -/
-def rotateBuildFile : file core_run_annotation :=
+def rotateBuildFile [LemFuel] : file core_run_annotation :=
   convert_file (rotateFileU buildSyms buildMainDecl
     buildRotateRightDecl buildScanTreeDecl buildBuildTreeDecl
     buildSerializeTreeDecl buildFreeTreeDecl)
@@ -202,7 +202,7 @@ def wireBytes (m : Input) : List Int :=
 /-- MODEL-INDEXED rotate file (the model-∀ face; junk instance on
 models outside the pinned shape/path family — statements own the
 shape via their sample sets). -/
-def rotateFileOf (m : Input) : file core_run_annotation :=
+def rotateFileOf [LemFuel] (m : Input) : file core_run_annotation :=
   match m.tree, m.path with
   | .node _ (.node _ (.node _ .leaf (.node _ .leaf .leaf))
       (.node _ .leaf .leaf)) (.node _ .leaf .leaf), [false] =>
@@ -217,7 +217,7 @@ def rotateFileOf (m : Input) : file core_run_annotation :=
 /-- STREAM-INDEXED rotate file (the stream-∀ face): the full
 tree-and-path codec decodes the stream; junk on malformed /
 out-of-family streams (callers own validity). -/
-def rotateFileOfStream (s : Stream) : file core_run_annotation :=
+def rotateFileOfStream [LemFuel] (s : Stream) : file core_run_annotation :=
   match decodeInput s with
   | some (m, []) => rotateFileOf m
   | _ => junkFile
