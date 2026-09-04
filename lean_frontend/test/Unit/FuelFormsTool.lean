@@ -111,7 +111,7 @@ def axiomsOf (env : Environment) (c : Name) : IO (Array Name) := do
 def axiomsVerdict (axs : Array Name) : String :=
   if axs.all (fun a => okAxioms.contains a) then "ok" else s!"BAD[{axs.toList}]"
 
-unsafe def main (args : List String) : IO UInt32 := do
+def main (args : List String) : IO UInt32 := do
   if args.isEmpty then
     IO.eprintln "fuel-forms-tool: usage: fuel-forms-tool <Module> ... (the modules to import; run under `lake env`)"
     return 2
