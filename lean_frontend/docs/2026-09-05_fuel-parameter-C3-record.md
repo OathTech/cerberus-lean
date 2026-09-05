@@ -575,3 +575,30 @@ test_unit rc=0
 ```
 
 (docs-only change; the binaries and stamps are the 2/n head's, `check_driver_fresh --check` inside the run OK).
+
+
+## 13. Orchestrator boundary review [AGENT, orchestrator, 2026-09-05]
+
+Independent run on `d127cfa9b` (the slice head): full battery, 26 lanes
+serially; 25 × rc 0 with zero baseline movement; the gcc second-oracle
+lane rc 1 on ONE row — `REGRESSION: csmith/sia_csmith_477.c
+baseline=AGREE/- current=SKIP_LEAN_TIMEOUT/-`, `disagree=0`, box load
+average 33 mid-lane from another agent's build (LADDER.md Tier B row 7
+load caveat; audit M2). Re-run on the quiet box (`load average: 0.24,
+9.18, 13.37` at start) together with the five speclab `--gate` lanes the
+battery script had omitted (audit N8), verbatim:
+
+```
+SUMMARY: total=1963 compared=1885 agree=1873 agree_nd=0 triaged=12 disagree=0 o2_agree=190 skip_gcc_compile=1 skip_gcc_stdout=1 skip_lean_crash=9 skip_lean_fail=9 skip_lean_timeout=11 skip_ub=47 triaged_addr=11 triaged_ub=1
+Baseline check: 0 regression(s), 0 improvement(s)
+gcc second-oracle lane OK
+```
+
+(speclab divmod/bytearr/list/tree/seed `--gate`: 5 × rc 0.) No
+instrument change; the row is row-for-row the C2 baseline. Pre-merge
+audit `2026-09-05_fuel-parameter-C3-audit-premerge.md` (MERGEABLE, no
+MAJOR; M1/N1/N6/N7 + the perf ruling in `2ed1b3d66`, §12; M2 = this
+re-run). The audit-response head is docs-only, so its binaries are the
+slice head's (lean `bin fbd8e397…`). Merge ask goes to the operator on
+this head; the two-repo invariant closes at the merge (Lake pin = opam lem
+= `deps/lem-pinned` = lem-lean `mdd/lean-backend` = `d4ba548`).

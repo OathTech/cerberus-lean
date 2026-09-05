@@ -352,3 +352,23 @@ S-basket slice — `docs/2026-09-01_s-basket.md`.)
   (grep-verified at registration). Wanted: stripper hardening, or a
   cheap raw-string ban probe (`r#"` fails until the stripper learns
   the form).
+
+- **Whole-project trust-surface risk map** [USER 2026-09-05: "A good thing
+  to schedule at the end of this would be a whole-project risk map which
+  says whether there has been movement wrt the trust surface. We're doing
+  a lot of surgery, all reasonable, but we'll want to make sure we aren't
+  disturbing the core cerberus correctness properties."] — an
+  INDEPENDENT pass (fresh auditor) after Z4 and the fuel close-out, BEFORE
+  the fresh-noodler exit test; baseline = the 2026-08-31 semantics-first
+  split. Surfaces: the oracle (`.lem` changes = Lean-only declares only;
+  OCaml generated tree byte-identical at every merge; fork-drift
+  manifest); execution behaviour (the battery re-run from scratch on the
+  final head, every movement one of the ruled ones); the definitions
+  consumers reason about (fuel parameter, measured wrappers, absorbing
+  payloads, deleted wrappers — each claimed zero-execution-effect: evidence
+  vs argument); the trust base (axiom census 0, kernel-only ban, opaque
+  boundary rows moved and why, ISO-fix register still 3, exception
+  classes unchanged); the gates (added/changed/weakened, plant evidence);
+  the consumer surface (what refined-cerberus depends on, what became
+  provisional). Output per surface: moved/unmoved · evidence · residual
+  risk · named mover. Price M.
