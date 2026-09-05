@@ -64,6 +64,16 @@
 # rem_t by zero is an operator decision (record §10). Z2 probe-integration pins
 # (record §5): zd-z2-free-funptr (Z-07 re-witness, MATCH), zd-z2m03-malloc-oom-msg (MATCH — Lean runs
 # it since Z2-M-04), zd-z2fl03-nan-to-int and zd-z2f04-closedir (both-crash MATCH | L=CRASH pairs).
+#
+# zero-discrepancy Z3 pins (2026-09-05; charter row Z-28 / detective RC-2, record
+# docs/2026-09-05_zero-discrepancy-Z3-record.md): zd-z28-<name> are BYTE-IDENTICAL copies of three of
+# the six tests/pnvi_testsuite STDOUT_DIFF rows (same MD5 => same oracle interleaving as the committed
+# ci_sweep rows) — the deterministic three; the other three (provenance_equality_{auto,global,global_fn}_yx)
+# have TWO executions ((p==q) true/false) and the oracle's default --mode=random (Random.self_init,
+# driver_ocaml.ml:153) picks one per run, so this single-trace lane cannot pin them (the Z3 record's
+# exhaustive pnvi spot sweep does). zd-z28-addr-layout-{a,b} are one program under two digests
+# (comment-only difference), so the program's globals land at DIFFERENT positions among the libc
+# TUs' globals on both engines. All five pinned DIFF before the fix, re-recorded MATCH by the fix commit.
 argv1-args MATCH | L=VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 argv2-args MATCH | L=VAL:{value: "Specified(97)", stdout: "", stderr: "", blocked: "false"}
 argv3-args MATCH | L=VAL:{value: "Specified(11)", stdout: "", stderr: "", blocked: "false"}
@@ -106,6 +116,11 @@ zd-da-align16 MATCH | L=VAL:{value: "Specified(2)", stdout: "", stderr: "", bloc
 zd-da-offset MATCH | L=VAL:{value: "Specified(8)", stdout: "", stderr: "", blocked: "false"}
 zd-e2-ptr-string-literals ORACLE_CRASH | L=VAL:{value: "Specified(0)", stdout: "98 65 66 4 83 52 3 10 9 92 34 39 63 0 4\n", stderr: "", blocked: "false"}
 zd-f1-truncate-negative-length MATCH | L=VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+zd-z28-addr-layout-a DIFF | L=VAL:{value: "Specified(0)", stdout: "s1=281474976706000 c1=281474976705999 i1=281474976705992 p1=281474976705984\n", stderr: "", blocked: "false"}
+zd-z28-addr-layout-b DIFF | L=VAL:{value: "Specified(0)", stdout: "s1=281474976706000 c1=281474976705999 i1=281474976705992 p1=281474976705984\n", stderr: "", blocked: "false"}
+zd-z28-pointer_from_integer_2g DIFF | L=VAL:{value: "Specified(0)", stdout: "j=5 &j=(@70, 0xffffffffedd0)\n", stderr: "", blocked: "false"}
+zd-z28-provenance_equality_uintptr_t_global_yx DIFF | L=VAL:{value: "Specified(0)", stdout: "Addresses: p=ffffffffede0 q=ffffffffede0\n(p==q) = true\n", stderr: "", blocked: "false"}
+zd-z28-provenance_lost_escape_1 DIFF | L=VAL:{value: "Specified(0)", stdout: "Addresses: p=(@68, 0xffffffffede0)\n", stderr: "", blocked: "false"}
 zd-z2cp01-strtod-inf MATCH | L=VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
 zd-z2f01-lseek-whence MATCH | L=VAL:{value: "Specified(9)", stdout: "", stderr: "", blocked: "false"}
 zd-z2f04-closedir MATCH | L=CRASH

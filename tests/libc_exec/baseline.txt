@@ -9,3 +9,4 @@
 009-aligned-alloc-3 MATCH
 010-int32-printf MATCH
 011-decimal-sweep MATCH
+012-global-alloc-order DIFF
