@@ -206,14 +206,23 @@ fi
 # Fork-drift gate (arc-10 audit follow-up, [USER] mandate): the oracle
 # surface (frontend model, ocaml_frontend, memory, util, parsers,
 # backend/{common,driver,lean_export}, runtime, opam files) must equal
-# the reviewed manifest scripts/fork_drift_manifest.txt, and the
-# generated-OCaml fork-vs-upstream deltas must match their pinned
-# hashes (spec: lean_frontend/docs/2026-08-21_fork-drift-review.md §6). Fail-closed
-# like the gates above (a missing script/manifest fails the suite; the
-# gate itself only SKIPs — loudly, rc 0 — when the upstream remote or
-# a generated tree is absent).
+# the reviewed manifest scripts/fork_drift_manifest.txt (as a SET,
+# C-locale canonical, duplicates fatal), and the generated-OCaml
+# fork-vs-upstream deltas must match their pinned hashes (spec:
+# lean_frontend/docs/2026-08-21_fork-drift-review.md §6). Fail-closed like
+# the gates above — INCLUDING its prerequisites since the P0 instrument
+# repair (2026-09-05, whole-project audit F4): a missing upstream remote or
+# generated tree is rc 1, no longer a loud rc-0 SKIP this caller read as
+# success. The development opt-in CERB_FORK_DRIFT_DEV_SKIP is explicitly
+# UNSET here (env -u) so it cannot reach the gate from the ambient
+# environment. Plant-tested by its --selftest (locale/order/name-drift/
+# duplicate/missing-ref/missing-tree/opt-in/lem-pin plants) first.
 DRIFT_SH="$(dirname "$PURITY_SH")/check_fork_drift.sh"
-if ! "$DRIFT_SH"; then
+if ! env -u CERB_FORK_DRIFT_DEV_SKIP "$DRIFT_SH" --selftest; then
+    echo "test_unit: fork-drift gate SELFTEST FAILED"
+    exit 1
+fi
+if ! env -u CERB_FORK_DRIFT_DEV_SKIP "$DRIFT_SH"; then
     echo "test_unit: fork-drift gate FAILED"
     exit 1
 fi

@@ -149,7 +149,11 @@
 # doctrine); no generated .ml moved, so layer 2 is unchanged.
 [meta]
 merge-base=b9aeedcb4dd438763b0eef7f95ac19e93875d7de
-lem-pin=af5df71
+# lem-pin = the lem-lean commit (`lem -v`, 2nd word) BOTH generated trees
+#   were derived with (the layer-2 hashes are relative to it). Cross-checked
+#   against `lem -v` by the gate when lem is on PATH (P0 repair 2026-09-05;
+#   was a stale af5df71, audit F4 (c)). Refresh recipe rewrites it.
+lem-pin=f6542f8
 renumber=arc13
 [files]
 backend/common/ail_sym_hwm.ml
@@ -173,24 +177,24 @@ frontend/model/annot.lem
 frontend/model/any.lem
 frontend/model/boot.lem
 frontend/model/builtins.lem
-frontend/model/cabs_to_ail_effect.lem
 frontend/model/cabs_to_ail.lem
+frontend/model/cabs_to_ail_effect.lem
 frontend/model/cerb_attributes.lem
 frontend/model/cn.lem
+frontend/model/core.lem
 frontend/model/core_aux.lem
 frontend/model/core_eval.lem
-frontend/model/core.lem
 frontend/model/core_linking.lem
 frontend/model/core_reduction.lem
 frontend/model/core_rewrite.lem
-frontend/model/core_run_aux.lem
 frontend/model/core_run.lem
-frontend/model/ctype_aux.lem
+frontend/model/core_run_aux.lem
 frontend/model/ctype.lem
+frontend/model/ctype_aux.lem
 frontend/model/debug.lem
 frontend/model/decode.lem
-frontend/model/defacto_memory_aux.lem
 frontend/model/defacto_memory.lem
+frontend/model/defacto_memory_aux.lem
 frontend/model/defacto_memory_types.lem
 frontend/model/driver.lem
 frontend/model/float.lem
@@ -204,14 +208,14 @@ frontend/model/mini_pipeline.lem
 frontend/model/monadic_parsing.lem
 frontend/model/nondeterminism.lem
 frontend/model/pp.lem
+frontend/model/state.lem
 frontend/model/state_exception.lem
 frontend/model/state_exception_undefined.lem
-frontend/model/state.lem
 frontend/model/std.lem
 frontend/model/symbol.lem
+frontend/model/translation.lem
 frontend/model/translation_aux.lem
 frontend/model/translation_effect.lem
-frontend/model/translation.lem
 frontend/model/utils.lem
 memory/cheri-coq/impl_mem.ml
 memory/concrete/impl_mem.ml
