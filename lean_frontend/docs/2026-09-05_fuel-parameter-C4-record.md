@@ -767,3 +767,27 @@ Branch `arc/fuel-parameter-C4`; `lean_frontend/generated/` and
 driver binaries fresh (`check_driver_fresh --check`); `.tmp/c4/` (the
 snapshots, lane logs, drafts) is ephemeral and deleted at slice end;
 everything load-bearing is quoted here.
+
+
+## 10. Orchestrator boundary review [AGENT, orchestrator, 2026-09-05]
+
+Independent full battery on `ab342fc6a` (the slice head) in this worktree:
+26 lanes serially, every one rc 0, zero baseline movement (`SUMMARY:
+total=1963 compared=1885 agree=1873 agree_nd=0 triaged=12 disagree=0 …` /
+`Baseline check: 0 regression(s), 0 improvement(s)` / `gcc second-oracle
+lane OK`). Pre-merge audit + register review
+`2026-09-05_fuel-parameter-C4-audit-premerge.md`: MERGEABLE; all seven
+hypothesis-register rows SIGNED by the fresh reviewer with cite
+corrections (applied in `49e98d9cf`, §9a, together with the F-A4 shape
+hardening, F-A5, and the F-A2/F-A7 record errata). Second independent run
+on `49e98d9cf` + the audit document cherry-picked: rebuild (lean stamp
+`bin 32f8b3427f02…`), `check_driver_fresh` OK, then `test_unit.sh`
+(incl. the 12-plant fuel-forms selftest), exec minimal
+`--check-baseline`, `test_verify.sh`, `test_immaculate.sh`, speclab
+selftest + plant + the five gates, `test_fuel_plant.sh` — 13 lanes, 13 ×
+rc 0. Merge ask goes to the operator on this head; per the register's
+header, the operator's explicit merge "yes" is the register's FINAL
+signature. Upstream findings owed to the tray (Z4 code half): F-A2
+(`_Alignas(struct A)` on a character member accepted; both oracles
+hang), F-C4-1 (`are_compatible` non-termination on a two-TU
+self-referential struct; both oracles time out).
