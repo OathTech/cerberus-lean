@@ -503,3 +503,17 @@ moved.
 Nothing merged; nothing pushed; `mdd/cerberus-lean` and `master` untouched.
 The `.tmp/cg/` logs are deleted at slice end (everything quoted above is
 in this record).
+
+
+## 9. Orchestrator boundary review [AGENT, orchestrator, 2026-09-05]
+
+Independent full battery on `dda02fb61` (the slice head) in this worktree:
+26 lanes serially, every one rc 0, zero baseline movement (`SUMMARY:
+total=1963 compared=1885 agree=1873 agree_nd=0 triaged=12 disagree=0 …` /
+`Baseline check: 0 regression(s), 0 improvement(s)` / `gcc second-oracle
+lane OK`). Pre-merge audit `2026-09-05_cerbglobal-defs-audit-premerge.md`:
+MERGEABLE, no MAJOR (F1–F5/F9 record errata fixed in `0047f19b4`, docs
+only). The operator's overnight pre-sign for this branch [USER 2026-09-05]
+was conditional on exactly these two facts (audit clean with no MAJOR;
+independent battery green with zero movement) — both hold, so the branch
+is merged ff-only under the pre-sign, and the pre-sign is spent.
