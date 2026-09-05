@@ -28,10 +28,17 @@ moreLeanArgs = ["-DautoImplicit=false"]
 # `t.lemSize` structural sizes, `lemSize x` fuel measures, fuel-lifted
 # `inductive R [LemFuel]` for indreln premises; lem-lean doc/lean-backend/
 # 2026-09-04_d2-enablers-record.md) — the pin at which the real tree generates.
+# fuel-parameter C3 2026-09-05: bumped to the merged head d4ba548 (the
+# tails-and-pmap-laws slice: a measured/structural definition's trailing
+# lambda binders are hoisted into the head on the Lean target — `lemTail`
+# for a `function` scrutinee — so the six point-free tails can carry a
+# `fuel_measure`; `LemLibPmapLaws`; the reserved-name capture check on
+# target_rep text; lem-lean doc/lean-backend/2026-09-05_tails-and-pmap-laws-
+# record.md; this repo: docs/2026-09-05_fuel-parameter-C3-record.md).
 [[require]]
 name = "LemLib"
 git = "https://github.com/OathTech/lem-lean"
-rev = "ecf75b4172b1f5b9838eb8bcda5928c5b05dee9b"
+rev = "d4ba548d084ff393126f04d90f18a72c3000aa88"
 subDir = "lean-lib"
 
 [[lean_lib]]
