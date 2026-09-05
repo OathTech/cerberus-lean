@@ -347,18 +347,20 @@ never absorbed as a skip; none is a memory-model limit):
   (`f_lemFuel_zero … : f_lemFuel 0 … = <sentinel> := rfl`; the nine
   ND-typed ones are gate-probed).
 
-  **The (A)/(B)/(C) classification (C2, 2026-09-04) — the consumer's truth
-  condition, gate-checked by `scripts/check_fuel_forms.sh` from the kernel
-  environment (`lean_frontend/test/Unit/FuelFormsTool.lean`; record
-  `docs/2026-09-04_fuel-parameter-C2-record.md`):** every fuel'd worker
+  **The (A)/(B)/(C) classification (C2, 2026-09-04; counts as of C3,
+  2026-09-05) — the consumer's truth condition, gate-checked by
+  `scripts/check_fuel_forms.sh` from the kernel environment
+  (`lean_frontend/test/Unit/FuelFormsTool.lean`; records
+  `docs/2026-09-04_fuel-parameter-C2-record.md`,
+  `docs/2026-09-05_fuel-parameter-C3-record.md`):** every fuel'd worker
   (81: 67 generated + 14 hand-written) is
 
   | form | count | meaning | for the consumer |
   |---|---|---|---|
-  | (A) MEASURED | 41 | `def f xs := f_lemFuel (<data measure>) xs`; theorem `f_measure_sufficient : measure ≤ n → f_lemFuel n xs = f xs`, cone ⊆ the standard three (38 generated + `CerbMem.typeofMval`/`unqualifyAndUnatomic`/`memValueToBytes` by hand) | fuel-FREE: no `[LemFuel]` in statements (four keep the binder for an ambient callee: `memValueFromValue`, `step_eval_pexpr`, `easy_update_mem_value_aux`, `memcmp_load_aux`, `CerbMem.memValueToBytes`) |
+  | (A) MEASURED | 47 | `def f xs := f_lemFuel (<data measure>) xs`; theorem `f_measure_sufficient : measure ≤ n → f_lemFuel n xs = f xs`, cone ⊆ the standard three (44 generated + `CerbMem.typeofMval`/`unqualifyAndUnatomic`/`memValueToBytes` by hand; the six point-free `function` tails joined at C3 — lem d4ba548 hoists the scrutinee into the head as `lemTail`, so `one_step_unseq_aux`, `get_ctx`/`get_ctx_unseq_aux`, `are_compatible`/`are_compatible_params_aux`/`are_compatible_params` carry measures over the hoisted list/ctypes; the two mutual blocks share one counter, so each member's measure bounds the whole block) | fuel-FREE: no `[LemFuel]` in statements (four keep the binder for an ambient callee: `memValueFromValue`, `step_eval_pexpr`, `easy_update_mem_value_aux`, `memcmp_load_aux`, `CerbMem.memValueToBytes`) |
   | (B) ABSORBING | 13 | `f_lemFuel_zero`'s RHS is the monad's absorbing element at the fuel atom: the ND kill (`nd_bind`, `liftND`, `liftAction`, `driver2`, `drive_nonmemory_steps_aux2`, `print_eval_conv_aux`, `load_character_array_aux`), `Result (Error fuelExhaustedLoc fuelExhaustedMsg)` in the undefined monad (`full_eval_pexpr`, `eval_pexpr_aux2`, `eval_pexpr_aux_broken`), the runners' `Killed` | `∀ fuel`: exhausted-or-specified is TRUE; exhaustion never continues as a value |
   | (C) UNREACHABLE | 6 ambient | not in the kernel constant closure of `drive`/`initial_driver_state`/the runners/`CerbCall.driveCall` (mutual blocks closed): the DEFACTO memory model's `mkUnspec`/`simplify_integer_value_base` (not the wired model), `zeros_aux` (front end), `list_unfoldr_aux`, two `CerbMem` reference forms | irrelevant to `drive` |
-  | PENDING | 21 | reachable AND ambient, each a reviewed row of `scripts/fuel_forms_pending.txt` with its reason (9 tag-lookup recursions incl. the `CerbMem` layout oracle, 6 point-free tails blocked on lem-lean TODO 17, `hack`, `to_pure`/`to_pures`, `many`/`many1`, `showNonNegativeWithBasis_aux`); exhaustion = the opaque panicking sentinel | statements about these need a depth hypothesis (record §9) |
+  | PENDING | 15 | reachable AND ambient, each a reviewed row of `scripts/fuel_forms_pending.txt` with its reason (9 tag-lookup recursions incl. the `CerbMem` layout oracle, `hack`, `to_pure`/`to_pures`, `many`/`many1`, `showNonNegativeWithBasis_aux`; the 6 point-free tails left the register at C3); exhaustion = the opaque panicking sentinel | statements about these need a depth hypothesis (C2 record §9) |
 
   The gate is RED on a NEW reachable ambient worker and on a stale register
   row (both directions), on a same-named obligation whose TYPE is not the

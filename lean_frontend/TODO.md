@@ -19,14 +19,12 @@ downstream.)
 
 ## Fuel-parameter arc — C2 follow-ups (record `docs/2026-09-04_fuel-parameter-C2-record.md` §9)
 
-- **Point-free `function` tails (6 PENDING rows; lem-lean TODO 17)** —
-  `are_compatible`/`are_compatible_params_aux`/`are_compatible_params`
-  (ail), `one_step_unseq_aux`, `get_ctx`/`get_ctx_unseq_aux`: when the
-  Lean-only eta-expansion lands in lem, add the six `fuel_measure` declares
-  (`lemSize` of the named list/ctype) + proofs in `AilTypesAux_lemMeasureProofs`
-  / `Core_reduction_lemMeasureProofs` and delete their register rows
-  (`scripts/fuel_forms_pending.txt` — the gate fails closed on a stale
-  row). M.
+- ~~**Point-free `function` tails (6 PENDING rows; lem-lean TODO 17)**~~ —
+  RESOLVED at C3 (2026-09-05, `docs/2026-09-05_fuel-parameter-C3-record.md`):
+  lem d4ba548 hoists the scrutinee as `lemTail`; the six declares + proofs
+  landed (`AilTypesAux_lemMeasureProofs`, `Core_reduction_lemMeasureProofs`),
+  register 21 → 15. Residual: none of the six (the mutual blocks' measures are
+  the derived sizes of the whole walked structure, proved sufficient).
 - **Tag-lookup family (9 PENDING rows: the `CerbMem` layout oracle ×5,
   `reconstructValue`, `ctype_aux` `are_compatible_aux` + 2) — D-C2-1** —
   needs a tag-environment well-formedness hypothesis the unconditional
