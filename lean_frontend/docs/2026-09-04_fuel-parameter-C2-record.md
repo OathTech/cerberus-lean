@@ -154,8 +154,10 @@ wrapper that keeps the binder because its body reaches an ambient callee.
 | 66 | `are_compatible_params` (AilTypesAux) | P | sibling | — | yes |
 | 67 | `eq_core_base_type` (Core) | M (C1) | `lemSize bTy1` | `Core_lemMeasureProofs.eq_core_base_type_measure_sufficient` | no |
 
-Tally (derived from the form column): M 38 (35 this slice + C1's 3; 20
-drive-reachable), A 10, P 15, U 4 — 38 + 10 + 15 + 4 = 67. The brief's "38 →
+Tally (derived from the form column; corrected per audit N7 — the first
+version said "20 drive-reachable"): M 38 (35 this slice + C1's 3; 18 of them
+drive-reachable per the reach column, + the 3 `CerbMem` seams of §2.1 = the
+gate's 21 reachable MEASURED), A 10, P 15, U 4 — 38 + 10 + 15 + 4 = 67. The brief's "38 →
 the remaining 35" undercounted by two (F-C2-1): the lem table's 38 MEASURED
 rows include `fake_mem_value_eq` but not `ctypeEqual`/`eq_core_base_type`
 (SAME-MODULE rows), so 37 measured candidates remained; 35 are proved,
@@ -251,7 +253,16 @@ OCAML GENERATED TREE BYTE-IDENTICAL (86 files) vs the pre-C2 snapshot
 ```
 
 (`diff -rq` printed nothing.) The `src` stamp moves with the `.lem` text by
-construction (C1 record §2.2). The Lean tree: `check_lem_sync: recorded
+construction (C1 record §2.2). REPRODUCIBLE COMPARAND (audit N1 — the
+snapshot above was ephemeral): the PRIMARY checkout is parked on mainline
+`753644005` and carries the mainline's stamped tree
+(`cerberus-lean/ocaml_frontend/lem_sync.sha256`: `src 03c176935c3e37a0f5b9a00192796ddf42dd6bd09ebf3bb3a41c028c25f8f10c`
+/ `gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100`);
+re-run at the audit response, verbatim: `diff -rq
+/home/dev/projects/cerberus-lean-proj/cerberus-lean/ocaml_frontend/generated
+ocaml_frontend/generated && echo 'DIFF-RQ vs primary (753644005): IDENTICAL'`
+→ `DIFF-RQ vs primary (753644005): IDENTICAL` (the auditor reproduced the
+same, audit §1). The Lean tree: `check_lem_sync: recorded
 lean_frontend/lem_sync.sha256 (src 928a08cd…, gen 76d138a3a8e6f5866edaebfc9725d265812de4fdaab908a650fbdb567f279f35)`;
 `lake build` of the whole package: `Build completed successfully (373
 jobs).`
@@ -262,12 +273,13 @@ Stamps at the battery: `check_driver_fresh: oracle OK (bin b1cc0bd9d4feae575bbc6
 `check_driver_fresh: lean OK (bin 797d1383ba69f288f1b936c31060667e56f27c7347136e2c3ea5127b13e66993, src 0760dd53cd77d202816c85500b814ee659708b9873f9995a9076229fe905a474)`
 (oracle rebuilt `DUNE_CACHE=disabled` after the last `.lem` edit; the Lean
 binary from the last `lake build` of the tree). Tier A row 1
-(`test_unit.sh`) ran on this head before the last two commits' verification
-(§12): `Total: 6 passed, 0 failed`, every gate green, verbatim in §7 for the
-fuel-forms gate and `gen_fuel_parametricity: OK (29 …)`, `check_lakefile_roots:
-OK (202 roots …)`, `check_exec_totality: CLEAN (22 generated modules +
-hand-written CerbND, 0 allowlisted)`, `check_theorem_axioms: OK …`,
-`check_sorry_token: OK (276 files …; 0 sorry tokens)`. Rows 2–11 and Tier B
+(`test_unit.sh`): the first version of this paragraph quoted `check_lakefile_roots:
+OK (202 roots …)`, `check_no_fuel_numerals: OK (281 files …)`,
+`check_sorry_token: OK (276 files …)` — VERBATIM lines, but of the PRE-3/n
+tree (before `CerbMem_lemMeasureProofs.lean` added a root and three scanned
+files), misattributed to this head (audit M3). The head's lines are in the
+audit response, §13 (203 roots / 284 files / 279 files); nothing was red at
+either state. Rows 2–11 and Tier B
 ran serially under `SKIP_BUILD=1` on the stamps above (`.tmp/c2/battery.sh`,
 23:24–00:12 UTC), every lane `rc=0`; ZERO baseline movement anywhere; no
 instrument commit. The lane summary lines, verbatim:
@@ -339,12 +351,20 @@ register row that is no longer a reachable ambient worker (stale pin), on a
 measured cone outside the standard three, on a truncated table; vacuity
 guards (≥ 60 workers, ≥ 30 measured, ≥ 10 absorbing). Limitation (stated
 in the script): the kernel closure stops at `partial def`/`opaque`/
-`implemented_by` boundaries — none exist on the drive cone's generated
-modules (`check_exec_totality`), and the seam externs (`CerbFS`,
-`CerbDebug`) call no fuel'd function; the front-end column is unreliable for
-that reason and is informational only.
+`implemented_by`/`extern` boundaries. Coverage (cite corrected per audit
+N2): `partial` is banned on the exec cone's generated modules by
+`check_exec_totality.sh` (it scans `partial` ONLY); the `opaque`/
+`implemented_by`/`extern` population is PINNED, both directions, by the
+axiom census (`scripts/unsafebaseio_allowlist.txt`, `check_theorem_axioms.sh`
+C2 ratchet leg) — the auditor read every pinned target (audit §2) and none
+calls a fuel'd worker; the front-end column is unreliable (the front end has
+`partial def`s) and is informational only.
 
-`--selftest` plants on a scratch copy of the table, verbatim:
+`--selftest` plants — five on a scratch copy of the table and, since the
+audit response (M1), two COMPILED decoy obligations in a scratch directory
+outside the tree (right name / type `True`; right shape / wrong worker
+constant) that the tool must refuse to count as MEASURED — verbatim on the
+audit-response head:
 
 ```
 check_fuel_forms: SELFTEST — plants on a scratch copy of the classification table (loud plant banner; nothing in the tree is touched)
@@ -353,9 +373,14 @@ check_fuel_forms: SELFTEST — plants on a scratch copy of the classification ta
   PLANT OK   [P3 measured obligation with sorryAx in its cone] -> check_fuel_forms: FAIL — measured obligation(s) with an axiom cone outside [propext, Classical.choice, Quot.sound] (or no proof constant):
   PLANT OK   [P4 truncated table] -> check_fuel_forms: FAIL — no FUEL_FORMS_SUMMARY line (the tool did not complete; fail-closed)
   PLANT OK   [P5 phantom register row] -> check_fuel_forms: FAIL — pending register row(s) no longer a reachable ambient worker (stale pin; edit the register):
+    plant table: FUEL_FORM	CerbMem.alignofCtype_lemFuel	AMBIENT	yes/-	MALFORMED obligation=CerbMem.alignofCtype_measure_sufficient: left-hand head `CerbMem.alignofCtype` is not the worker `CerbMem.alignofCtype_lemFuel`
+    plant table: FUEL_FORM	CerbMem.sizeofCtype_lemFuel	AMBIENT	yes/-	MALFORMED obligation=CerbMem.sizeofCtype_measure_sufficient: conclusion is not an equation
+  PLANT OK   [P6 decoy obligation of type True (CerbMem.sizeofCtype)] -> check_fuel_forms: FAIL — obligation(s) named <f>_measure_sufficient whose TYPE is not the contract's shape (∀ …, μ ≤ lemFuel → worker lemFuel … = wrapper …) — never MEASURED:
+  PLANT OK   [P7 decoy obligation with the wrong worker constant (CerbMem.alignofCtype)] -> check_fuel_forms: FAIL — obligation(s) named <f>_measure_sufficient whose TYPE is not the contract's shape (∀ …, μ ≤ lemFuel → worker lemFuel … = wrapper …) — never MEASURED:
   UNPLANTED:
+    check_fuel_forms: forms partition OK (41 MEASURED + 13 ABSORBING + 21 ambient-reachable + 6 ambient-unreachable = 81 fuel'd workers)
     check_fuel_forms: OK (81 fuel'd workers: 41 MEASURED (every obligation + proof cone ⊆ the standard three), 13 ABSORBING, 21 reachable-AMBIENT = the 21 rows of fuel_forms_pending.txt exactly, 6 ambient unreachable from the drive cone)
-check_fuel_forms: SELFTEST OK (5 plants red with the declared label; unplanted table green)
+check_fuel_forms: SELFTEST OK (7 plants red with the declared label — 5 on the table, 2 compiled decoy obligations; unplanted table green)
 ```
 
 The MEASURE plant (the brief's): `has_ccall`'s declare edited to the
@@ -382,8 +407,8 @@ are probed by the fuel-forms gate; `gen_fuel_parametricity.py --check`
 reads `OK (29 ambient fuel wrappers in the generated tree = the 29 pins of
 TotalityProofTest.lean Part 1, both directions)` (Part 1 regenerated with
 `--emit`; Part 2's `has_ccall`/`subst_sym_pexpr` examples restated for the
-measured/fuel-free forms); `check_lakefile_roots: OK (202 roots …)` (the
-seven new hand-written modules are roots); `check_no_fuel_numerals: OK (281
+measured/fuel-free forms); `check_lakefile_roots: OK (203 roots …)` on the head (the
+eight new hand-written modules are roots); `check_no_fuel_numerals: OK (284
 files scanned …)` — a numeral INSIDE a measure (`n + 1`, `size - i + 1`) is
 not a fuel numeral (F3 tightened at the lem slice).
 
@@ -488,15 +513,132 @@ deleted at slice end; everything load-bearing is quoted here.
 
 | # | Commit | Content | Verified before commit |
 |---|---|---|---|
-| 1/n | `bd8e9c75c` | 35 `fuel_measure` declares + proofs (7 modules), `CerbMeasureLemmas`, `CerbMem.memValueSize`, the 4 absorbing payloads, manifest/roots, `TotalityProofTest` pins | OCaml byte identity; `lake build` 372 jobs; `test_unit.sh` green; oracle stamp cache-disabled; exec minimal `BASELINE OK` |
+| 1/n | `bd8e9c75c` | 35 `fuel_measure` declares + proofs (7 modules), `CerbMeasureLemmas`, `CerbMem.memValueSize`, the 4 absorbing payloads, manifest/roots, `TotalityProofTest` pins | OCaml byte identity; `lake build` 372 jobs; `test_unit.sh` green — with the PRE-C2 gate set (the fuel-forms gate did not yet exist; audit N4); oracle stamp cache-disabled; exec minimal `BASELINE OK` |
 | 2/n | `e2bbacfc1` | the fuel-forms gate: `check_fuel_forms.sh`, `FuelFormsTool.lean`, `fuel_forms_pending.txt` (24 rows), `test_unit.sh` wiring | gate `--selftest` 5 plants + OK; `test_unit.sh` was RED at the axiom-cone gate (F-C2-8) — committed anyway by a masked shell exit |
 | 2b/n | `b64748d52` | `FuelFormsTool.main` is plain `IO` (the `unsafe` was an unregistered seam row) | `check_theorem_axioms` OK, `check_fuel_forms` OK, `test_unit.sh` rc 0 |
 | 3/n | `b25ea0aac` | `CerbMem` seams measured by hand (`typeofMval`, `unqualifyAndUnatomic`, `memValueToBytes`) + `CerbMem_lemMeasureProofs`; bounded `to_congr`; register 24 → 21 | `lake build` 373 jobs; exec minimal `BASELINE OK`; `test_unit.sh` was RED at the fuel-forms gate (the gate did not import the seam proofs module) — committed by the same masked exit |
 | 3b/n | `75240ce01` | the gate imports every `*_lemMeasureProofs` module | `--selftest` 5 plants + `OK (81 … 41 MEASURED … 13 ABSORBING … 21 …)`; `test_unit.sh` rc 0 (checked explicitly) |
-| 4/n | (this commit) | docs: this record, the change manifest, `VALIDATION.md` ((A)/(B)/(C) table + gate row), `TODO.md`, `CLAUDE.md` | the battery of §6 on the 3b head; docs-only change |
+| 4/n | `5c9f5cba2` | docs: this record, the change manifest, `VALIDATION.md` ((A)/(B)/(C) table + gate row), `TODO.md`, `CLAUDE.md` | the battery of §6 on the 3b head; docs-only change |
+| 5/n | (the audit-response commit) | §13 | the gates of §13, every exit code checked explicitly |
 
 The intermediate trees of 1/n are not individually buildable in smaller
 groups (declares + proofs must land together — the fail-closed design);
 2/n and 3/n are each RED at one gate until the next commit (F-C2-8): a
 bisect across `e2bbacfc1` or `b25ea0aac` must read the following commit
 with it.
+
+## 13. Pre-merge audit response (audit `2026-09-05_fuel-parameter-C2-audit-premerge.md` @ `17fb16084`, verdict MERGE-WITH-FIXES, no MAJOR)
+
+Applied in ONE commit on `arc/fuel-parameter-C2`; every gate below re-run
+on the fixed tree BEFORE the commit with its exit code checked explicitly
+(the F-C2-8 slip must not recur — the runner records `rc=` per lane and the
+commit was made only on eleven `rc=0`).
+
+- **M1 (gate hardening).** `FuelFormsTool.obligationShapeMismatch`: MEASURED
+  now requires the fully-qualified `<f>_measure_sufficient` constant AND its
+  TYPE to be the contract's shape — after the ∀-telescope the conclusion is an
+  `Eq` whose left head is the WORKER constant and right head the WRAPPER
+  constant (compared by `Name` on the `Expr` heads, not by string), and some
+  hypothesis binder is `LE.le _ _ _ lemFuel` on a `Nat` binder that the worker
+  side takes as an argument (the generated `<Module>_auxiliary` shells' exact
+  statement; §3 of the lem fuel-measure record). A same-named constant of any
+  other type is `MALFORMED …` in the detail column, never MEASURED, and the
+  policy is RED on it. Two COMPILED decoy plants in `--selftest` (scratch
+  modules outside the tree, `lean --root=… -o …`, appended to the tool's
+  imports via `FUELFORMS_EXTRA_PATH/MODULES`): P6 `theorem
+  CerbMem.sizeofCtype_measure_sufficient : True := trivial` → `MALFORMED …:
+  conclusion is not an equation`; P7 the right shape (`[LemFuel]`, `ctype.lemSize
+  cty ≤ lemFuel`, right wrapper `CerbMem.alignofCtype`) with the WRONG worker
+  constant on the left (`CerbMem.alignofCtype ambient cty = CerbMem.alignofCtype
+  ambient cty := rfl`) → `MALFORMED …: left-hand head `CerbMem.alignofCtype` is
+  not the worker `CerbMem.alignofCtype_lemFuel``. Both RED with the label
+  naming the shape mismatch — verbatim in §7 (the plant-table lines and the
+  P6/P7 lines).
+- **M2.** `table_of_tree` captures the build's and the tool's stderr in a log
+  (no `2>/dev/null`) and the script prints its tail on failure; `policy`
+  asserts the four forms PARTITION the table — verbatim on this head:
+  `check_fuel_forms: forms partition OK (41 MEASURED + 13 ABSORBING + 21
+  ambient-reachable + 6 ambient-unreachable = 81 fuel'd workers)` (a
+  non-partitioning count is RED, fail-closed).
+- **M3.** §6's Tier A row-1 paragraph now states the misattribution (the
+  three lines were the pre-3/n tree's) and points here; the HEAD's lines are
+  quoted below (203 roots / 284 files / 279 files).
+- **N1.** §5 cites the reproducible comparand (the primary checkout's stamped
+  tree at `753644005`, `gen 295e4f82…`) and quotes the re-run `DIFF-RQ vs
+  primary (753644005): IDENTICAL`.
+- **N2.** §7 and the script header cite the axiom-census PIN set
+  (`scripts/unsafebaseio_allowlist.txt`) for the `opaque`/`implemented_by`/
+  `extern` coverage; `check_exec_totality` is cited for `partial` only.
+- **N7.** §2's tally corrected: 18 drive-reachable generated M rows (+ the 3
+  seams = the gate's 21), labelled derived.
+- **N4.** §12's 1/n row states its green was the pre-C2 gate set.
+- N3 (ABSORBING is a constants "mentions" test, not a head-shape test; no live
+  payload exploits it) and N5/N6 are acknowledged; no change in this commit
+  (N3 is a candidate hardening for the next slice, registered in TODO.md).
+
+Gates on the fixed tree (serial, `SKIP_BUILD=1` on the stamped binaries,
+capped 32G; `.tmp/ar/rc.txt`, verbatim):
+
+```
+test_unit rc=0
+exec_minimal rc=0
+verify rc=0
+immaculate rc=0
+speclab_self rc=0
+speclab_plant rc=0
+speclab_divmod rc=0
+speclab_bytearr rc=0
+speclab_list rc=0
+speclab_tree rc=0
+speclab_seed rc=0
+```
+
+`test_unit.sh`, verbatim (the gate lines):
+
+```
+✓ effects-proof-test PASSED
+✓ totality-proof-test PASSED
+✓ core-parser-test PASSED
+✓ fresh-int-test PASSED
+✓ pp-test PASSED
+✓ fuel-exemplar-test PASSED
+Total: 6 passed, 0 failed
+check_exec_purity: CLEAN (11 modules)
+check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)
+check_sorry_token: OK (279 files scanned comment-stripped — generated 204, hand-written+test 41, LemLib 34; 0 sorry tokens)
+test_fuel_classifier: 18 fixtures, ALL OK
+check_no_fuel_numerals: OK (284 files scanned comment-stripped; no lemDefaultFuel/driverFuel/ndDefaultFuel, no LemFuel instance, no literal fuel (F1-F6); allowed Main.lean sites seen: 4 of 4 (hand-written + generated copy))
+gen_fuel_parametricity: OK (29 ambient fuel wrappers in the generated tree = the 29 pins of TotalityProofTest.lean Part 1, both directions)
+check_lakefile_roots: OK (203 roots = 203 generated modules + the exe root Main; 85 auxiliary modules all built)
+check_fuel_forms: SELFTEST OK (7 plants red with the declared label — 5 on the table, 2 compiled decoy obligations; unplanted table green)
+check_fuel_forms: forms partition OK (41 MEASURED + 13 ABSORBING + 21 ambient-reachable + 6 ambient-unreachable = 81 fuel'd workers)
+check_fuel_forms: OK (81 fuel'd workers: 41 MEASURED (every obligation + proof cone ⊆ the standard three), 13 ABSORBING, 21 reachable-AMBIENT = the 21 rows of fuel_forms_pending.txt exactly, 6 ambient unreachable from the drive cone)
+check_exec_totality: CLEAN (22 generated modules + hand-written CerbND, 0 allowlisted)
+check_lem_sync: OK (src 928a08cd72f10e899385191821266f915008a499c4033de8b44893b9fcac2e8a, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_lem_sync: lean OK (src 928a08cd72f10e899385191821266f915008a499c4033de8b44893b9fcac2e8a, gen 76d138a3a8e6f5866edaebfc9725d265812de4fdaab908a650fbdb567f279f35)
+check_fork_drift: OK — layer 1: 71 oracle-surface files = manifest; layer 2: 22 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de)
+check_fixture_freeze: OK (16 fixture files match the pinned manifest; name set exact)
+test_renumber_plants: OK (12 plants: refusals refuse, admits admit with declared class)
+```
+
+The other lanes, verbatim:
+
+```
+[exec_minimal] SUMMARY: total=106 match=85 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=3 cerb_floor=0 cerb_inconsistent=0
+[exec_minimal] Baseline check: 0 regression(s), 0 improvement(s)
+[exec_minimal] BASELINE OK
+[verify] test_verify: 127 passed, 0 failed (25 fixtures, 28 call points, 14 corpus fixtures, 21 corpus points)
+[immaculate] OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip DIFF, R3 s4b-memcmp-hugesize ORACLE_CRASH — VALIDATION.md 'ISO-fix register' — and the in-Lean probes g6 TRIPWIRE / illtyped-store KILL).
+[speclab_self] test_speclab: PASS (both pipelines agree on Specified(0))
+[speclab_plant] test_speclab: PASS (both pipelines agree on Specified(2))
+[speclab_divmod] CoreGateTest: ALL PASSED
+[speclab_divmod] test_speclab_divmod: PASS (--gate)
+[speclab_bytearr] ByteArrGateTest: ALL PASSED
+[speclab_bytearr] test_speclab_bytearr: PASS (--gate)
+[speclab_list] ListGateTest: ALL PASSED
+[speclab_list] test_speclab_list: PASS (--gate)
+[speclab_tree] TreeGateTest: ALL PASSED
+[speclab_tree] test_speclab_tree: PASS (--gate)
+[speclab_seed] SeedGateTest: ALL PASSED
+[speclab_seed] test_speclab_seed: PASS (--gate)
+```

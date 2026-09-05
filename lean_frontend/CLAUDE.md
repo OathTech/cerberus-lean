@@ -126,7 +126,7 @@ default; F1–F6 plant-tested by its --selftest), `check_lakefile_roots.sh`
 Lake root; plant-tested), `check_fuel_forms.sh` (C2: the (A)/(B)/(C)
 fuel-forms gate — every fuel'd worker measured, absorbing, unreachable
 from the drive cone, or a reviewed row of `scripts/fuel_forms_pending.txt`;
-five plants), the lem-sync content-hash gate,
+seven plants incl. two compiled decoy obligations), the lem-sync content-hash gate,
 `check_fork_drift.sh` (arc-10 audit follow-up, [USER] mandate: the
 oracle surface must equal the reviewed manifest
 `scripts/fork_drift_manifest.txt`, and the generated-OCaml

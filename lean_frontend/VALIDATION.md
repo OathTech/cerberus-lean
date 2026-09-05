@@ -152,7 +152,7 @@ theorem over the shipped pipeline `@drive ⟨fuel⟩` at the ambient
 | `gen_fuel_parametricity.py --check` | the generated tree's ambient fuel-wrapper SET equals the set pinned by `TotalityProofTest.lean` Part 1's `∀ n, @f ⟨n⟩ = f_lemFuel n` examples, both directions (a new fuel'd function without a pin is RED; `--emit` regenerates the list) — pre-merge audit M1 |
 | `check_lakefile_roots.sh` | every `generated/*.lean` — the `_auxiliary` obligation carriers and the `*_lemMeasureProofs` modules included — is a Lake root of the semantics library and every root exists, both directions (lem-lean fuel-measure record §6.4 item 8: an auxiliary module dropped from the roots would silently un-build its obligations); `--selftest` plants a dropped root, a phantom root and an unrooted module |
 | `check_exec_totality.sh` | zero `partial` definitions on the execution path (empty allowlist; fuel-totalized recursion with the distinguished fuel-exhaustion outcome, §5) |
-| `check_fuel_forms.sh` | **the (A)/(B)/(C) fuel-forms gate** (fuel-parameter arc C2, 2026-09-04): every fuel'd worker in the compiled environment is MEASURED (obligation + proof, cones ⊆ the standard three), ABSORBING (its `_zero` lemma is its monad's absorbing element), or AMBIENT and then either unreachable from the drive cone (kernel constant closure incl. mutual blocks) or a reviewed row of `scripts/fuel_forms_pending.txt` — both directions; the classifier is `lean_frontend/test/Unit/FuelFormsTool.lean` (runtime `importModules`, no source regex); `--selftest` plants five doctored tables red (§5, the (A)/(B)/(C) table) |
+| `check_fuel_forms.sh` | **the (A)/(B)/(C) fuel-forms gate** (fuel-parameter arc C2, 2026-09-04): every fuel'd worker in the compiled environment is MEASURED (obligation + proof, cones ⊆ the standard three), ABSORBING (its `_zero` lemma is its monad's absorbing element), or AMBIENT and then either unreachable from the drive cone (kernel constant closure incl. mutual blocks) or a reviewed row of `scripts/fuel_forms_pending.txt` — both directions; the classifier is `lean_frontend/test/Unit/FuelFormsTool.lean` (runtime `importModules`, no source regex); `--selftest` plants five doctored tables and two COMPILED decoy obligations (a same-named theorem of type `True`; the right shape with the wrong worker constant) red — MEASURED is decided by the obligation's fully-qualified name AND its type's shape (§5, the (A)/(B)/(C) table) |
 | lem-sync gate | generated trees content-in-sync with the `.lem` sources (stamped; also wired into the dune graph for the libc `.co` artifacts) |
 | `check_fork_drift.sh` | the fork's oracle-side surface equals a reviewed manifest, and generated-OCaml fork-vs-upstream deltas match pinned hashes |
 | `check_fixture_freeze.sh` | the `corpus/` differential-fixture set matches its hash manifest exactly (additions included) |
@@ -361,8 +361,10 @@ never absorbed as a skip; none is a memory-model limit):
   | PENDING | 21 | reachable AND ambient, each a reviewed row of `scripts/fuel_forms_pending.txt` with its reason (9 tag-lookup recursions incl. the `CerbMem` layout oracle, 6 point-free tails blocked on lem-lean TODO 17, `hack`, `to_pure`/`to_pures`, `many`/`many1`, `showNonNegativeWithBasis_aux`); exhaustion = the opaque panicking sentinel | statements about these need a depth hypothesis (record §9) |
 
   The gate is RED on a NEW reachable ambient worker and on a stale register
-  row (both directions), on a measured cone outside the standard three, on
-  a truncated table; `--selftest` plants five doctored tables. The ambient
+  row (both directions), on a same-named obligation whose TYPE is not the
+  contract's shape, on a measured cone outside the standard three, on a
+  truncated table or a non-partitioning form count; `--selftest` plants five
+  doctored tables and two compiled decoy obligations. The ambient
   panic form: exit 134, `lem: fuel exhausted` on stderr — at a tiny fuel
   the FRONT END's pure workers exhaust first (measured at C1: `--fuel 1`
   on `tests/minimal/001-return-literal.c` is the panic form).

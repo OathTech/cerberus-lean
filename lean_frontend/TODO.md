@@ -40,6 +40,12 @@ downstream.)
   `n + 1`. S each, after that pass.
 - **`hack`, `many`/`many1` (D-C2-4/5)** — no absorbing element and no
   parameter measure; a lem body change or a hypothesis. Operator.
+- **Fuel-forms gate: ABSORBING as a head-shape test (C2 audit N3)** —
+  `FuelFormsTool` tests the `_zero` RHS by the constants it MENTIONS (atom +
+  absorbing head, no value sentinel); tighten to "the RHS is literally the
+  absorbing application" (`ND (fun st => (NDkilled …, st))`, `fun st => Result
+  (Error …, st)`, `Result (Error …)`, the runner list). No live payload
+  exploits the gap. S.
 - **Fuel monotonicity for the 13 (B) rows (lem TODO 13)** — per-function
   `done at n ⇒ done at every m ≥ n`, provable by induction on the counter
   now that every reachable (B) payload is absorbing; not generated. M.
