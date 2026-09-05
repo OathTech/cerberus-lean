@@ -124,9 +124,11 @@ partial def telescope (e : Expr) (acc : Array (Name × Expr) := #[]) : Array (Na
     `worker … = wrapper …` with the two constants COMPARED BY NAME as the heads
     of the two sides; a binder NAMED `lemFuel` of type `Nat` occurs as an
     argument of the worker's side; a later binder is `_ ≤ lemFuel` on that very
-    binder (`LE.le _ _ _ lemFuel`); and IF a binder named `lemHyp` exists it is
+    binder (`LE.le _ _ _ lemFuel`); IF a binder named `lemHyp` exists it is
     immediately before `lemFuel` (lem-lean reserves the name, so no user
-    variable can produce the mark). This is exactly how the generated
+    variable can produce the mark); and EVERY other binder is an argument of
+    the wrapper side (C4 audit F-A4: an extra unnamed Prop binder would be an
+    unregistered second hypothesis). This is exactly how the generated
     `<Module>_auxiliary` shells state it (`theorem f_measure_sufficient (xs…)
     [(lemHyp : H)] (lemFuel : Nat) (lemMeasureLe : μ ≤ lemFuel) : f_lemFuel
     lemFuel xs… = f xs…`). Returns the index of the `lemHyp` binder (none for
@@ -149,20 +151,27 @@ def obligationShape (ty : Expr) (worker wrapper : Name) : Except String (Option 
   if !(lhs.getAppArgs.any fun a => a == .bvar (n - 1 - jFuel)) then
     throw "the `lemFuel` binder is not an argument of the worker side"
   -- a `≤ lemFuel` hypothesis on that binder: at binder k > jFuel, lemFuel is bvar (k - 1 - jFuel)
-  let mut found := false
+  let mut kLe? : Option Nat := none
   for k in [jFuel + 1:n] do
     let bt := binders[k]!.2
     let isLe := match bt.getAppFn with | .const c _ => c == ``LE.le | _ => false
-    if isLe then
+    if isLe && kLe?.isNone then
       let args := bt.getAppArgs
-      if args.size == 4 && args[3]! == .bvar (k - 1 - jFuel) then found := true
-  if !found then throw "no hypothesis `_ ≤ lemFuel` on the `lemFuel` binder"
+      if args.size == 4 && args[3]! == .bvar (k - 1 - jFuel) then kLe? := some k
+  let some kLe := kLe? | throw "no hypothesis `_ ≤ lemFuel` on the `lemFuel` binder"
   -- the optional hypothesis binder, by its reserved NAME, immediately before lemFuel
-  match binders.findIdx? (fun (nm, _) => nm == `lemHyp) with
-  | none => return none
-  | some jHyp =>
+  let jHyp? := binders.findIdx? (fun (nm, _) => nm == `lemHyp)
+  if let some jHyp := jHyp? then
     if jHyp + 1 != jFuel then throw "a binder named `lemHyp` that is not immediately before `lemFuel`"
-    return some jHyp
+  -- C4 audit F-A4: EVERY other binder is an argument of the wrapper side (the
+  -- statement quantifies exactly the wrapper's parameters — an extra Prop
+  -- binder would be an unregistered second hypothesis)
+  let rhsArgs := rhs.getAppArgs
+  for j in [:n] do
+    if j != jFuel && j != kLe && jHyp? != some j then
+      if !(rhsArgs.any fun a => a == .bvar (n - 1 - j)) then
+        throw s!"binder `{binders[j]!.1}` (#{j}) is neither reserved (`lemHyp`/`lemFuel`/the `≤ lemFuel` hypothesis) nor an argument of the wrapper side"
+  return jHyp?
 
 /-- Whitespace-normalize a pretty-printed type (the register compares text). -/
 def normWs (s : String) : String := Id.run do

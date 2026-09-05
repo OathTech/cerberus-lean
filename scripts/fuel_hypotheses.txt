@@ -26,20 +26,41 @@
 # makes a by-value Struct/Union member complete only when its tag is ALREADY in
 # sigm.tag_definitions (Array iff its element type is and its size is known,
 # Atomic iff its inner type is, Pointer regardless of its target); the flexible
-# array member's element type is checked likewise (cabs_to_ail.lem:1600-1603);
-# an _Alignas(type) is admitted only when alignof_ty al_ty succeeds at
-# desugaring (cabs_to_ail.lem:2860-2870). So definition order is a rank on the
-# by-value reference graph; CerbTagsWf.Acyclic states exactly that (any rank).
+# array member's ELEMENT type is guaranteed by the Ail passes — ailWf.lem:76-80
+# (ArrayDeclarationIncompleteType, StructMemberFlexibleArrayInArray) +
+# genTyping.lem:2346-2349 (StructMemberFlexibleArray): every by-value edge INTO
+# a FAM struct is a constraint violation, so the FAM edge cannot close a cycle
+# (audit F-A3); an _Alignas(type) member alignment is completeness-checked by
+# alignof_ty on the non-agnostic path (cabs_to_ail.lem:2851-2871) — NOT on the
+# character-member `Just LT` path (:2882-2883, ailTypesAux.lem:1291-1292; audit
+# F-A2, see below). So definition order is a rank on the by-value reference
+# graph; CerbTagsWf.Acyclic states exactly that (any rank).
 # Row 4 (offsetsof) takes the two-map form: struct tags resolve in the threaded
 # map, union tags in the ambient one (impl_mem.ml:173/:255, the mirrored
 # upstream asymmetry); at elaboration time the ambient map is empty and the
 # form is Acyclic of the threaded map, at run time both are the linked table.
-# A hand-authored Core file can violate the invariant: the wrapper then may
-# exhaust (the loud sentinel), as the oracle loops there.
-CerbMem.sizeofCtype_lemFuel	CerbTagsWf.Acyclic ambient	by-value acyclic tag environment: cabs_to_ail.lem:1512 check_members + ail/ailTypesAux.lem:222 is_complete (definition order is a rank)	[AGENT C4 worker 2026-09-05]; operator review pending (C4 record §8)
-CerbMem.alignofCtype_lemFuel	CerbTagsWf.Acyclic ambient	by-value acyclic tag environment: cabs_to_ail.lem:1512 check_members + ail/ailTypesAux.lem:222 is_complete; flexible member cabs_to_ail.lem:1600-1603	[AGENT C4 worker 2026-09-05]; operator review pending (C4 record §8)
-CerbMem.memberAlign_lemFuel	CerbTagsWf.Acyclic ambient	by-value acyclic tag environment: cabs_to_ail.lem:1512 check_members + ail/ailTypesAux.lem:222 is_complete; _Alignas(type) complete at desugaring cabs_to_ail.lem:2860-2870	[AGENT C4 worker 2026-09-05]; operator review pending (C4 record §8)
-CerbMem.offsetsof_lemFuel	CerbTagsWf.AcyclicPair ambient tagDefs	by-value acyclic tag environment, two-map form (struct tags via the threaded map, union tags via the ambient one — impl_mem.ml:173/:255): cabs_to_ail.lem:1512 check_members + ail/ailTypesAux.lem:222 is_complete; ambient empty at elaboration time (CerbMem.lean layout header)	[AGENT C4 worker 2026-09-05]; operator review pending (C4 record §8)
-CerbMem.offsetsofMembers_lemFuel	CerbTagsWf.Acyclic ambient	by-value acyclic tag environment: cabs_to_ail.lem:1512 check_members + ail/ailTypesAux.lem:222 is_complete	[AGENT C4 worker 2026-09-05]; operator review pending (C4 record §8)
-CerbMem.reconstructValue_lemFuel	CerbTagsWf.Acyclic ambient	by-value acyclic tag environment: cabs_to_ail.lem:1512 check_members + ail/ailTypesAux.lem:222 is_complete (the struct arm's member types come from offsetsof, the union arm's from the definition)	[AGENT C4 worker 2026-09-05]; operator review pending (C4 record §8)
-showNonNegativeWithBasis_aux_lemFuel	2 ≤ b	every caller passes a literal basis in {8, 10, 16}: formatted.lem:563,571,579,587,595 (showNonNegativeWithBasis, the %o/%d/%i/%u/%x/%X printf arms); b = 1 loops in the oracle too	[AGENT C4 worker 2026-09-05]; operator review pending (C4 record §8)
+#
+# SCOPE OF THE GUARANTEE: Acyclic holds for every program the frontend ACCEPTS
+# CORRECTLY. One known frontend GAP (audit e9730d1c8 F-A2): `struct A {
+# _Alignas(struct A) char c; }` — an ISO §6.5.3.4#1 constraint violation (gcc
+# rejects) — is ACCEPTED because the character-member path never
+# completeness-checks the _Alignas type; its table has a by-value self-edge,
+# Acyclic is FALSE for it, BOTH oracles hang on it, and the Lean wrapper fails
+# loudly (`CerbMem.memberAlign: fuel exhausted`). The hypothesis is honest there
+# (the environment is not acyclic); the gap is an upstream true-bug tray
+# candidate (C4 record §9). A hand-authored Core file can likewise violate the
+# invariant: the wrapper then may exhaust (the loud sentinel), as the oracle
+# loops there.
+#
+# REVIEW: rows signed by the pre-merge auditor (lean_frontend/docs/
+# 2026-09-05_fuel-parameter-C4-audit-premerge.md §3, audit e9730d1c8, with the
+# three cite corrections F-A1/F-A2/F-A3 applied below). The operator's explicit
+# merge "yes" is the FINAL signature on this register ([USER] sign-off at
+# merge); a later change to any row re-opens review.
+CerbMem.sizeofCtype_lemFuel	CerbTagsWf.Acyclic ambient	by-value acyclic tag environment: cabs_to_ail.lem:1512 check_members + ail/ailTypesAux.lem:222 is_complete (definition order is a rank); except the _Alignas(type)-on-a-character-member class (audit F-A2: ISO §6.5.3.4#1 CV undiagnosed; the oracle hangs there)	[AGENT auditor 2026-09-05, audit e9730d1c8] SIGNED; [USER] sign-off at merge
+CerbMem.alignofCtype_lemFuel	CerbTagsWf.Acyclic ambient	by-value acyclic tag environment: cabs_to_ail.lem:1512 check_members + ail/ailTypesAux.lem:222 is_complete; FAM element: ailWf.lem:76-80 (ArrayDeclarationIncompleteType, StructMemberFlexibleArrayInArray) + genTyping.lem:2346-2349 (StructMemberFlexibleArray) (audit F-A3); except the _Alignas(type)-on-a-character-member class (audit F-A2: ISO §6.5.3.4#1 CV undiagnosed; the oracle hangs there)	[AGENT auditor 2026-09-05, audit e9730d1c8] SIGNED; [USER] sign-off at merge
+CerbMem.memberAlign_lemFuel	CerbTagsWf.Acyclic ambient	by-value acyclic tag environment: cabs_to_ail.lem:1512 check_members + ail/ailTypesAux.lem:222 is_complete; _Alignas(type): completeness-checked by alignof_ty on the non-agnostic path (cabs_to_ail.lem:2851-2871) — NOT on the character-member `Just LT` path (:2882-2883, ailTypesAux.lem:1291-1292; audit F-A2): guaranteed by ISO §6.5.3.4#1 on conforming inputs	[AGENT auditor 2026-09-05, audit e9730d1c8] SIGNED; [USER] sign-off at merge
+CerbMem.offsetsof_lemFuel	CerbTagsWf.AcyclicPair ambient tagDefs	by-value acyclic tag environment, two-map form (struct tags via the threaded map, union tags via the ambient one — impl_mem.ml:173/:255): cabs_to_ail.lem:1512 check_members + ail/ailTypesAux.lem:222 is_complete; ambient empty at elaboration time (CerbMem.lean layout header); except the _Alignas(type)-on-a-character-member class (audit F-A2)	[AGENT auditor 2026-09-05, audit e9730d1c8] SIGNED; [USER] sign-off at merge
+CerbMem.offsetsofMembers_lemFuel	CerbTagsWf.Acyclic ambient	by-value acyclic tag environment: cabs_to_ail.lem:1512 check_members + ail/ailTypesAux.lem:222 is_complete; except the _Alignas(type)-on-a-character-member class (audit F-A2)	[AGENT auditor 2026-09-05, audit e9730d1c8] SIGNED; [USER] sign-off at merge
+CerbMem.reconstructValue_lemFuel	CerbTagsWf.Acyclic ambient	by-value acyclic tag environment: cabs_to_ail.lem:1512 check_members + ail/ailTypesAux.lem:222 is_complete (the struct arm's member types come from offsetsof, the union arm's from the definition); except the _Alignas(type)-on-a-character-member class (audit F-A2)	[AGENT auditor 2026-09-05, audit e9730d1c8] SIGNED; [USER] sign-off at merge
+showNonNegativeWithBasis_aux_lemFuel	2 ≤ b	every caller passes a literal basis in {8, 10, 16}: formatted.lem:573,581,589,597,605 (showNonNegativeWithBasis, the %d/%i, %o, %u, %x, %X printf arms; :338-343 is _aux's only caller and passes b through; audit F-A1); b = 1 loops in the oracle too	[AGENT auditor 2026-09-05, audit e9730d1c8] SIGNED; [USER] sign-off at merge

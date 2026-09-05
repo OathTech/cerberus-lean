@@ -84,19 +84,26 @@ symbol equality, description-insensitive), never over the map's tree, so no
 comparator law is involved; ranks are on the stored `Loc × tag_definition`
 values, so two symbols resolving to the same entry share its rank.
 
-**Why it holds for every C program** (the register `scripts/fuel_hypotheses.txt`
-cites this per row): the frontend accepts a struct/union definition only when
-every member's type is complete (`cabs_to_ail.lem:1512` `check_members`, STD
-§6.7.2.1#3; the flexible array member's element type at `:1600-1603`; an
-`_Alignas(type)` only when `alignof_ty` succeeds at desugaring, `:2860-2870`),
-and `AilTypesAux.is_complete` (`ail/ailTypesAux.lem:222`) makes a by-value
-`Struct sym`/`Union sym` complete only when `sym` is ALREADY in
-`sigm.tag_definitions` (a `Pointer` is complete regardless of its target). So
-**definition order is a rank**: `R := the index of the entry in definition
-order` satisfies `Ranked`. A hand-authored Core file can violate it — then the
-fuel-free wrapper may EXHAUST (the loud `fuelExhaustedWith` sentinel), as the
-oracle itself loops there — which is exactly why the hypothesis is in the
-obligation and not assumed by the wrapper.
+**Why it holds for every C program the frontend accepts CORRECTLY** (the
+register `scripts/fuel_hypotheses.txt` cites this per row; rows signed by the
+pre-merge auditor, audit `e9730d1c8`): the frontend accepts a struct/union
+definition only when every member's type is complete (`cabs_to_ail.lem:1512`
+`check_members`, STD §6.7.2.1#3), and `AilTypesAux.is_complete`
+(`ail/ailTypesAux.lem:222`) makes a by-value `Struct sym`/`Union sym` complete
+only when `sym` is ALREADY in `sigm.tag_definitions` (a `Pointer` is complete
+regardless of its target); the flexible array member's element type is
+guaranteed by the Ail passes (`ailWf.lem:76-80`, `genTyping.lem:2346-2349`:
+every by-value edge INTO a FAM struct is a constraint violation); an
+`_Alignas(type)` is completeness-checked by `alignof_ty` (`cabs_to_ail.lem:
+2851-2871`) EXCEPT on a character-typed member (`:2882-2883`,
+`ailTypesAux.lem:1291-1292`) — the one known gap: `struct A { _Alignas(struct
+A) char c; }` (an ISO §6.5.3.4#1 constraint violation gcc rejects) is accepted,
+`Acyclic` is FALSE for it, both oracles hang and the Lean wrapper fails loudly
+(audit F-A2; upstream-tray candidate). So **definition order is a rank**: `R :=
+the index of the entry in definition order` satisfies `Ranked`. A hand-authored
+Core file can violate it too — then the fuel-free wrapper may EXHAUST (the loud
+`fuelExhaustedWith` sentinel), as the oracle itself loops there — which is
+exactly why the hypothesis is in the obligation and not assumed by the wrapper.
 
 **How you discharge it for YOUR environments.** Your theorems about a program
 already assume its tag table is the frontend's; add `CerbTagsWf.Acyclic

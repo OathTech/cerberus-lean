@@ -9,7 +9,7 @@
     typeofMval             measure `memValueSize mval`   (the MVarray head)
     unqualifyAndUnatomic   measure `ctype.lemSize cty`   (structural on the ctype)
     memValueToBytes        measure `memValueSize val_`   (MVarray/MVstruct/MVunion components;
-                           the statement keeps `[LemFuel]` for the ambient layout oracle)
+                           fuel-free since C4 — the layout oracle it reads is measured)
 
   Shape = the C2 template (Core_run_aux_lemMeasureProofs.lean): strong
   induction on the size bound; `key` rewrites the direct children; the list
@@ -90,7 +90,7 @@ theorem unqualifyAndUnatomic_measure_sufficient (cty : ctype) (lemFuel : Nat)
     unqualifyAndUnatomic_lemFuel lemFuel cty = unqualifyAndUnatomic cty :=
   unqualifyAndUnatomic_stable_aux (ctype.lemSize cty) cty lemFuel (ctype.lemSize cty) (Nat.le_refl _) lemMeasureLe (Nat.le_refl _)
 
-theorem memValueToBytes_stable_aux [LemFuel] (k : Nat) :
+theorem memValueToBytes_stable_aux (k : Nat) :
     ∀ (ambient : CerbTags.TagDefsMap) (funptrmap : Funptrmap) (v : MemValue) (f g : Nat),
     memValueSize v ≤ k → memValueSize v ≤ f → memValueSize v ≤ g →
     memValueToBytes_lemFuel f ambient funptrmap v = memValueToBytes_lemFuel g ambient funptrmap v := by
@@ -125,9 +125,9 @@ theorem memValueToBytes_stable_aux [LemFuel] (k : Nat) :
             dsimp only
             rw [key fpm mval (by have := memValue_mem_lt_members i2 t2 mval _ hm; size_lt)]
 
-/-- THE OBLIGATION (the seam twin of the generated shape; `[LemFuel]` for the
-    ambient layout oracle the body reads). -/
-theorem memValueToBytes_measure_sufficient [LemFuel] (ambient : CerbTags.TagDefsMap) (funptrmap : Funptrmap)
+/-- THE OBLIGATION (the seam twin of the generated shape; its `[LemFuel]`
+    went at C4 with the layout oracle's — audit F-A5). -/
+theorem memValueToBytes_measure_sufficient (ambient : CerbTags.TagDefsMap) (funptrmap : Funptrmap)
     (val_ : MemValue) (lemFuel : Nat) (lemMeasureLe : memValueSize val_ ≤ lemFuel) :
     memValueToBytes_lemFuel lemFuel ambient funptrmap val_ = memValueToBytes ambient funptrmap val_ :=
   memValueToBytes_stable_aux (memValueSize val_) ambient funptrmap val_ lemFuel (memValueSize val_)

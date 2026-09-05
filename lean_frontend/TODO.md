@@ -86,13 +86,34 @@ downstream.)
   function types (STD §6.2.7#1 structural compatibility): a cross-TU pair of
   same-named self-referential structs (`struct node { struct node *next; }`
   in each translation unit, reached via `memValueFromValue` on a struct
-  value crossing TUs) makes the oracle recurse forever (OCaml:
-  Stack_overflow) and exhausts any fuel here.** The three ctype_aux rows
-  stay PENDING (no frontend-guaranteed hypothesis bounds them; by-value
-  acyclicity does not). Owed: a probe under `tests/multi_tu` reproducing the
-  oracle's non-termination (a Tier C instrument), then an upstream-tray draft
-  (the standard's rule needs an "assumed compatible" set for recursive
-  types). M (probe) / operator decision (tray).
+  value crossing TUs) makes BOTH oracles recurse forever (rc=124 at 60 s)
+  and the Lean driver fail loudly by NATIVE STACK OVERFLOW (rc=134, ~3 s —
+  the recursion is not tail-recursive; the fuel is never reached; C4 audit
+  §5.1/F-A7).** The three ctype_aux rows stay PENDING (no frontend-guaranteed
+  hypothesis bounds them; by-value acyclicity does not). Reproduced by the
+  pre-merge audit (its `node_a.c`/`node_b.c`); owed: the upstream-tray draft
+  (TRUE BUG: the standard's rule needs an "assumed compatible" set for
+  recursive types) — the Z4 code half. Operator decision (tray).
+- **F-A2 (C4 audit) — frontend GAP, upstream TRUE-BUG tray candidate:**
+  `_Alignas(type)` on a CHARACTER-typed member bypasses the completeness
+  check (`ailTypesAux.lem:1291-1292` `Just LT` → `cabs_to_ail.lem:2882-2883`
+  stores `AlignType al_ty` unexamined), so `struct A { _Alignas(struct A) char
+  c; }` (ISO §6.5.3.4#1 constraint violation; gcc rejects) is ACCEPTED; its
+  table has a by-value self-edge, `CerbTagsWf.Acyclic` is false, both oracles
+  hang, Lean gives the loud `CerbMem.memberAlign: fuel exhausted`. The
+  hypothesis is honest and the register header says "for programs the
+  frontend accepts correctly"; the tray draft is owed by the Z4 code half. S
+  (draft) / operator decision (a frontend fix is a shared-semantics change).
+- **Stack overflow vs fuel (C4 audit F-A7), for the mem-scale/stack-ceiling
+  backlog:** deep NON-tail recursion in a fuel'd worker dies on the 8 MB
+  native stack (rc=134 `Stack overflow detected. Aborting.`) long before the
+  default fuel is consumed — the fuel is not the operative bound there; the
+  harness reads it as a crash-class death, not FUEL. Cross-reference the
+  mem-scale S0 survey's `STACK_OVERFLOW` item. M.
+- **F-A8 (C4 audit NOTE):** `cerberus-lean --batch --fuel N a.json b.json`
+  (two JSON inputs) is refused as `unknown flag` while the single-input form
+  accepts `--fuel <N>` (`Main.lean` parses `--fuel` only on the single-input
+  path); either the multi-TU form takes `--fuel` or the refusal says why. S.
 - **A decidable acyclicity check as a load-time Tier C instrument.**
   `CerbTagsWf.Acyclic` is an existential over ranks (the natural hypothesis
   for the consumer); a bounded traversal computing ranks (or "definition
@@ -105,11 +126,17 @@ downstream.)
   (`defsWeight`: every entry's member-type sizes) on EVERY call of
   `sizeofCtype`/`alignofCtype`/`reconstructValue`/…, including on `int`.
   C4's B7 lane held its baseline row-for-row (no row moved into
-  SKIP_LEAN_TIMEOUT), but the per-row CPU was not A/B-measured. Owed with
-  the C3 item: the whole-csmith-lane timing at the merged head. A cheaper
-  sufficient measure exists (pay the traversal only when `refsOf ty ≠ []`;
-  or a size-annotated environment) — judged against the trust-surface bar,
-  not adopted for speed alone. M.
+  SKIP_LEAN_TIMEOUT), but the per-row CPU was not A/B-measured; the C4
+  audit (F-A6) could not measure it either — the operator's <10 % bar is
+  UNVERIFIED. Owed with the C3 item: the whole-csmith-lane timing at the
+  merged head. The cheaper SUFFICIENT measure, spelled out (audit §7): `if
+  refsOf ty = [] then lemSize ty + 1 else envBound m ty` (and likewise for
+  the member/members/offsetsof bounds) — sufficient because `refsOf ty = []
+  → tp ty = 0` (one lemma; the obligation changes only in `μ`), `refsOf ty =
+  []` is O(lemSize ty), so `int`/pointer layout calls pay no traversal; a
+  size-annotated environment would remove the traversal for struct calls
+  too (representation change). Judged against the trust-surface bar, not
+  adopted for speed alone; the C3 timing slice takes it up. M.
 
 ## Small items (independent; can ride along with any fix batch)
 

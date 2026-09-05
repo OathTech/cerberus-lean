@@ -73,6 +73,9 @@ table_of_tree() {
   # *_lemMeasureProofs module (the hand-written seam obligations of
   # CerbMem_lemMeasureProofs are imported by nothing else)
   aux=$(cd "$LF" && ls generated/*_auxiliary.lean generated/*_lemMeasureProofs.lean | xargs -n1 basename | sed 's/\.lean$//')
+  # FUELFORMS_EXCLUDE_MODULES (selftest only): drop a carrier so a decoy of a
+  # REAL obligation can be compiled in its place (P11)
+  for ex in ${FUELFORMS_EXCLUDE_MODULES:-}; do aux=$(echo "$aux" | grep -vx "$ex"); done
   if ! (cd "$LF" && "$CAPPED" lake build fuel-forms-tool >> "$log" 2>&1); then
     echo "check_fuel_forms: FAIL — could not build fuel-forms-tool (log tail follows)"; tail -20 "$log"; return 1
   fi
@@ -230,12 +233,42 @@ LEAN
   else
     echo "  PLANT FAIL [tool with the decoy modules]"; tail -20 "$LOG"; fails=$((fails+3))
   fi
+  # P11 (C4 audit F-A4): a decoy of a REAL registered obligation with an EXTRA
+  # unnamed Prop binder before `lemHyp` and the register's exact hypothesis
+  # (`CerbTagsWf.Acyclic ambient`) — compiled with the real CerbMem proofs module
+  # EXCLUDED from the import list (else a duplicate constant). Without the
+  # binder check the tool would count it MEASURED and the register would match:
+  # the shape check must report it MALFORMED.
+  # (the decoy needs a real PROOF, no `sorry`: it is stated with a contradictory
+  # extra binder — the SHAPE is what the plant tests, the proof is irrelevant)
+  cat > "$PLANTDIR/FuelFormsPlantExtra.lean" <<'LEAN'
+import CerbMem
+theorem CerbMem.sizeofCtype_measure_sufficient (ambient : CerbTags.TagDefsMap) (cty : ctype)
+    (extra : cty ≠ cty) (lemHyp : CerbTagsWf.Acyclic ambient) (lemFuel : Nat)
+    (_lemMeasureLe : CerbTagsWf.envBound ambient cty ≤ lemFuel) :
+    CerbMem.sizeofCtype_lemFuel lemFuel ambient ambient cty = CerbMem.sizeofCtype ambient cty :=
+  absurd rfl extra
+LEAN
+  if ! (cd "$LF" && "$CAPPED" lake env lean --root="$PLANTDIR" -o "$PLANTDIR/FuelFormsPlantExtra.olean" "$PLANTDIR/FuelFormsPlantExtra.lean" >> "$LOG" 2>&1); then
+    echo "  PLANT FAIL [compiling FuelFormsPlantExtra]"; tail -20 "$LOG"; fails=$((fails+1))
+  fi
+  if FUELFORMS_EXTRA_PATH="$PLANTDIR" FUELFORMS_EXTRA_MODULES="FuelFormsPlantExtra" FUELFORMS_EXCLUDE_MODULES="CerbMem_lemMeasureProofs" table_of_tree "$LOG" > "${TBL}.p"; then
+    grep -E $'^FUEL_FORM\tCerbMem\.sizeofCtype_lemFuel\t' "${TBL}.p" | cut -c1-260 | sed 's/^/    plant table: /'
+    plant "P11 decoy of a REAL obligation with an EXTRA Prop binder and the register's exact hypothesis (CerbMem.sizeofCtype): MALFORMED by the binder check" "not the contract's shape" "${TBL}.p" "$PENDING" "$HYPREG"
+    if ! grep -qE $'^FUEL_FORM\tCerbMem\.sizeofCtype_lemFuel\tAMBIENT\t[^\t]*\tMALFORMED [^\t]*binder `extra`' "${TBL}.p"; then
+      echo "  PLANT FAIL [P11: the tool did not report the extra binder as the shape mismatch]"; fails=$((fails+1))
+    else
+      echo "  PLANT OK   [P11 premise] -> the tool reports CerbMem.sizeofCtype_lemFuel MALFORMED: binder \`extra\` is neither reserved nor a wrapper argument"
+    fi
+  else
+    echo "  PLANT FAIL [tool with the extra-binder decoy]"; tail -20 "$LOG"; fails=$((fails+1))
+  fi
   # P8/P9/P9b (C4): the hypothesis register, both directions + format
   grep -v $'^CerbMem\.sizeofCtype_lemFuel\t' "$HYPREG" > "${TBL}.hreg"; plant "P8 register row of a measured-under-hypothesis worker deleted (CerbMem.sizeofCtype)" "no reviewed register row" "$TBL" "$PENDING" "${TBL}.hreg"
   { cat "$HYPREG"; printf 'hack_lemFuel\t0 < k\tdriver.lem:1 planted\t[PLANT]\n'; } > "${TBL}.hreg"; plant "P9 stale register row (hack under 0 < k)" "stale register row" "$TBL" "$PENDING" "${TBL}.hreg"
   { cat "$HYPREG"; printf 'phantom_lemFuel\tTrue\tno cite here\t[PLANT]\n'; } > "${TBL}.hreg"; plant "P9b register row without a .lem:<line> cite" "not of the form" "$TBL" "$PENDING" "${TBL}.hreg"
   echo "  UNPLANTED:"; policy "$TBL" "$PENDING" "$HYPREG" | sed 's/^/    /' || fails=$((fails+1))
-  if (( fails == 0 )); then echo "check_fuel_forms: SELFTEST OK (11 plants red with the declared label — 5 on the table, 3 on the hypothesis register, 3 compiled decoy obligations incl. the contradictory-hypothesis decoy caught by the register; unplanted table green)"; exit 0; else echo "check_fuel_forms: SELFTEST FAILED ($fails)"; exit 1; fi
+  if (( fails == 0 )); then echo "check_fuel_forms: SELFTEST OK (12 plants red with the declared label — 5 on the table, 3 on the hypothesis register, 4 compiled decoy obligations incl. the contradictory-hypothesis decoy caught by the register and the extra-binder decoy caught by the shape check; unplanted table green)"; exit 0; else echo "check_fuel_forms: SELFTEST FAILED ($fails)"; exit 1; fi
 fi
 
 policy "$TBL" "$PENDING" "$HYPREG"

@@ -21,7 +21,9 @@
 #     types, and the cross-TU Struct/Struct arm re-enters both definitions), so
 #     the by-value acyclicity that bounds the layout oracle does NOT bound it:
 #     `struct node { struct node *next; }` in two translation units makes the
-#     oracle recurse forever (OCaml: Stack_overflow) and exhausts any fuel here.
+#     oracle recurse forever (both oracles rc=124 at 60 s; C4 audit §5.1) and
+#     makes the Lean driver fail loudly by NATIVE STACK OVERFLOW (rc=134, ~3 s;
+#     the recursion is not tail-recursive) before any fuel is consumed.
 #     A sufficient hypothesis would be acyclicity through ALL references, which
 #     the frontend does not guarantee (self-referential structs are legal C) —
 #     a finding, not a fix (C4 record F-C4-1; the lem dry run's proposed

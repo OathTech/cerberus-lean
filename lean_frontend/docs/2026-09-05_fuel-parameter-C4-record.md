@@ -52,7 +52,9 @@ lem-lean, `deps/`, the primary checkout and the other worktrees untouched.
   `Acyclic p.1 ∧ Acyclic p.2` is INSUFFICIENT, and the sufficient hypothesis
   (acyclicity through all references) is NOT frontend-guaranteed (linked lists
   are legal C): `struct node { struct node *next; }` in two TUs makes the
-  oracle recurse forever. Per the brief, a finding, not a fix. `hack`, `many`,
+  oracle recurse forever (both oracles `rc=124` at 60 s; the Lean driver dies
+  by native stack overflow, rc=134, before any fuel is consumed — audit
+  F-A7). Per the brief, a finding, not a fix. `hack`, `many`,
   `many1`, `to_pure`, `to_pures` stay as before. Register 15 → 8.
 - **The gate + the register** (commit 2/3): `FuelFormsTool` pins the fuel
   binder by NAME `lemFuel` (lem audit N1), recognizes the hypothesis-carrying
@@ -63,7 +65,10 @@ lem-lean, `deps/`, the primary checkout and the other worktrees untouched.
   frontend invariant with `.lem:<line>` cite · reviewer), both directions,
   plant-tested with 11 plants incl. a COMPILED decoy under the contradictory
   hypothesis `env1 ≠ env1` (MEASURED by shape, RED by the register — the lem
-  audit's F1 closed on the consumer side, §5). Gate: `54 MEASURED (7 under a
+  audit's F1 closed on the consumer side, §5); 12 after the audit response
+  (§9a: every non-reserved binder must be a wrapper argument, plant P11). The
+  register rows are SIGNED by the pre-merge auditor (§9a); the operator's
+  merge "yes" is the final signature. Gate: `54 MEASURED (7 under a
   hypothesis), 13 ABSORBING, 8 pending, 6 unreachable`.
 - **OCaml byte identity at every step** (§2.2, §4): the `.lem` change is one
   Lean-only declare + a comment block in `formatted.lem`; `gen 295e4f82…`
@@ -190,12 +195,18 @@ in the module header, in the register, and in the manifest: `check_members`
 INCOMPLETE type; `AilTypesAux.is_complete` (`ail/ailTypesAux.lem:222`) makes a
 by-value `Struct sym`/`Union sym` complete only when `sym` is ALREADY in
 `sigm.tag_definitions`, `Array` iff its element type is (and sized), `Atomic`
-iff its inner type is, `Pointer` regardless of its target; the flexible
-member's element type is checked likewise (`:1600-1603`); `_Alignas(type)` is
-admitted only when `alignof_ty al_ty` succeeds at desugaring (`:2860-2870`).
-Hence definition order is a rank on the by-value graph. A hand-authored Core
-file can violate it; the wrapper then may exhaust (loud), where the oracle
-loops. `Acyclic` is an existential over ranks, not decidable as stated; a
+iff its inner type is, `Pointer` regardless of its target; the flexible array
+member's ELEMENT type is guaranteed by the Ail passes (`ailWf.lem:76-80`,
+`genTyping.lem:2346-2349` — every by-value edge INTO a FAM struct is a
+constraint violation; audit F-A3 corrected the first version's
+`cabs_to_ail.lem:1600-1603`, which registers the FAM without looking at the
+element type); `_Alignas(type)` is completeness-checked by `alignof_ty` on the
+non-agnostic path (`cabs_to_ail.lem:2851-2871`) — NOT on the character-member
+`Just LT` path (`:2882-2883`, `ailTypesAux.lem:1291-1292`): audit F-A2, the
+frontend GAP of §9. Hence, for every program the frontend ACCEPTS CORRECTLY,
+definition order is a rank on the by-value graph. A hand-authored Core file
+(or the F-A2 class) can violate it; the wrapper then may exhaust (loud), where
+the oracle loops. `Acyclic` is an existential over ranks, not decidable as stated; a
 decidable bounded-traversal checker with a soundness theorem (the Tier C
 load-time instrument the brief called optional) is a registered follow-up
 (TODO.md, C4 block), not done here.
@@ -560,7 +571,12 @@ lane's 30 s wall clock.)
   and a `struct node` value crossing them (the exec-path call site is
   `core_aux.lem:195`, `memValueFromValue`'s `Struct/OVstruct` arm comparing the
   ctype's tag with the loaded value's), the oracle recurses forever (OCaml:
-  `Stack_overflow`) and the Lean worker exhausts any fuel. The lem dry run's
+  `Stack_overflow`) and the Lean driver fails loudly by NATIVE STACK OVERFLOW
+  (`Stack overflow detected. Aborting.`, rc=134, ~3 s) before any fuel is
+  consumed — `are_compatible_aux` is not tail-recursive and the 8 MB native
+  stack goes first (audit F-A7 erratum: the first version of this sentence
+  said "exhausts any fuel"; both oracles `rc=124` at 60 s, audit §5.1). The
+  lem dry run's
   proposal `CerbTagsWf.Acyclic p.1 ∧ CerbTagsWf.Acyclic p.2` (measure
   `envBound p.1 p0.2 + envBound p.2 p1.2 + 1`) is therefore INSUFFICIENT — the
   obligation would be false for such environments; the hypothesis that IS
@@ -628,14 +644,111 @@ lane's 30 s wall clock.)
 |---|---|---|---|
 | 1/3 | `be1cebe36` | Lake pin bump `d4ba548` → `f6542f8` (lakefile + 3 manifests), nothing else; base `31eba718e` (ff-rebase before any work) | trees regenerated from re-derived sources: OCaml/sibylfs BYTE-IDENTICAL, Lean byte-identical on every lem-generated file (§2.2); `DUNE_CACHE=disabled build_cerberus`, `build_lean`; `test_unit.sh` rc 0; Tier A rows 2–11 rc 0 (§6.1) |
 | 2/3 | `e38d72c83` | `CerbTagsWf.lean` (NEW), the `CerbMem` lookup refactor + six measured wrappers, `CerbMem_lemMeasureProofs` (the layout block + `reconstructValue`), the `formatted.lem` declare + NEW `Formatted_lemMeasureProofs`, `FuelFormsTool` (named binders, `hyp` column, `unsafe main`), `check_fuel_forms.sh` (register logic, 11 plants), NEW `fuel_hypotheses.txt`, `fuel_forms_pending.txt` 15 → 8, pins 23 → 22, the census PIN row | OCaml byte-identical (§4); `#print axioms` of the seven `CerbMem` obligations standard-three (§3.4); `make lean-prelude-src` + `build_lean` + oracle cache-disabled, stamps OK; `test_unit.sh` rc 0 with the gate lines of §5/§6.2; one commit because the gate is fail-closed both ways (a measured row without its register row, or the register without the plants' targets, is a RED tree) |
-| 3/3 | (this commit) | this record, the change manifest, `VALIDATION.md` (§6 row, §7 table 54/13/8/6 + the register), `TODO.md` (C4 block), `lean_frontend/CLAUDE.md` (the gate line) | docs-only; the battery of §6.2 on the 2/3 head |
+| 3/3 | `ab342fc6a` | this record, the change manifest, `VALIDATION.md` (§6 row, §7 table 54/13/8/6 + the register), `TODO.md` (C4 block), `lean_frontend/CLAUDE.md` (the gate line) | docs-only; the battery of §6.2 on the 2/3 head |
+| 4 | (audit response, this commit) | register corrections + signatures, F-A2/F-A7 text, F-A4 (`obligationShape` binder check + plant P11), F-A5 (dead `[LemFuel]`), TODO rows F-A2/F-A6/F-A7/F-A8, §9a | `make lean-prelude-src`, `lake build CerberusLean fuel-forms-tool`, `build_lean`, `check_driver_fresh --check`; `check_fuel_forms --selftest` (12 plants), `test_unit.sh`, exec minimal `--check-baseline`, `test_verify.sh`, `test_immaculate.sh` — every rc 0 (§9a) |
 
+
+## 9a. Pre-merge audit response (audit `2026-09-05_fuel-parameter-C4-audit-premerge.md` @ `e9730d1c8`, branch `audit/c4-premerge`; verdict MERGEABLE, no MAJOR; all seven register rows SIGNED with three cite corrections)
+
+One audit-response commit on `arc/fuel-parameter-C4` (the coordinator's
+direction); every gate below re-run with its exit code checked explicitly.
+
+- **The register** (`scripts/fuel_hypotheses.txt`): F-A1 — row 7's caller
+  cites `:563,571,579,587,595` were stale by exactly the 10-line comment block
+  the same commit inserted above them → `formatted.lem:573,581,589,597,605`
+  (the gate's `.lem:[0-9]` check cannot see a wrong number — a limit of the
+  format check, recorded). F-A3 — the FAM element-type guarantee comes from
+  the Ail passes (`ailWf.lem:76-80` + `genTyping.lem:2346-2349`), not
+  `cabs_to_ail.lem:1600-1603` → rows 2/3 and the header. F-A2 — row 3's
+  `_Alignas(type)` text now names the checked path (`cabs_to_ail.lem:2851-2871`)
+  and the UNCHECKED character-member path (`:2882-2883`,
+  `ailTypesAux.lem:1291-1292`); rows 1/2/4/5/6 carry the F-A2 exception
+  clause. Reviewer field on all 7 rows: `[AGENT auditor 2026-09-05, audit
+  e9730d1c8] SIGNED; [USER] sign-off at merge`; the header states that the
+  operator's explicit merge "yes" is the FINAL signature. The same
+  corrections in `CerbTagsWf.lean`'s header, §2.3 above and the manifest.
+- **F-A2 — a frontend-invariant GAP (record + TODO, no code).** `struct A {
+  _Alignas(struct A) char c; }` is an ISO §6.5.3.4#1 constraint violation
+  (gcc: `invalid application of '__alignof__' to incomplete type`) that the
+  frontend ACCEPTS: `ailTypesAux.lem:1291-1292` returns `Just LT` for any
+  character `decl_ty` and the `Just LT` arm (`cabs_to_ail.lem:2882-2883`)
+  stores `AlignType al_ty` unexamined. The table then has a by-value self-edge
+  through `alignTypes`, `Acyclic` is FALSE for it, BOTH oracles hang (`rc=124`
+  at 60 s) and the Lean wrapper fails loudly (`CerbMem.memberAlign: fuel
+  exhausted`, rc=134, 1 s; the control `_Alignas(struct B)` runs on all three,
+  `Specified(4)`) — audit §5.2, verbatim there. Reading: the hypothesis is
+  HONEST (the environment is not acyclic), the guarantee is "for programs the
+  frontend accepts correctly", and Lean fails loudly where the oracle loops
+  (the class-(b) direction of the zero-discrepancy rule); a frontend true-bug
+  upstream-tray candidate (the Z4 code half owes the draft; TODO.md C4 block).
+- **F-A7 — record erratum.** F-C4-1's two-TU `struct node`: the Lean driver
+  at the default fuel dies by NATIVE STACK OVERFLOW (`Stack overflow detected.
+  Aborting.`, rc=134, ~3 s), not by the fuel sentinel — corrected in §0, §7,
+  `fuel_forms_pending.txt` and TODO.md ("exhausts any fuel" → "fails loudly by
+  stack overflow before the fuel is consumed; the oracle loops"). Still an
+  upstream TRUE BUG (both oracles `rc=124` at 60 s) → tray draft owed (Z4 code
+  half); the stack-overflow-vs-fuel point is noted for the mem-scale/stack-
+  ceiling backlog (TODO.md).
+- **F-A4 — gate hardening (code).** `obligationShape` now requires EVERY binder
+  that is not `lemHyp`, `lemFuel` or the `≤ lemFuel` hypothesis to occur as an
+  argument of the WRAPPER side (an extra unnamed Prop binder is an
+  unregistered second hypothesis). Plant P11: a decoy of the REAL registered
+  obligation `CerbMem.sizeofCtype_measure_sufficient` with an extra Prop binder
+  `(extra : cty ≠ cty)` before `lemHyp : CerbTagsWf.Acyclic ambient` (the
+  register's exact text), compiled with the real `CerbMem_lemMeasureProofs`
+  excluded from the tool's imports (`FUELFORMS_EXCLUDE_MODULES`, selftest
+  only) — without the check it would be MEASURED and register-matched;
+  verbatim:
+
+```
+    plant table: FUEL_FORM	CerbMem.sizeofCtype_lemFuel	AMBIENT	yes/-	MALFORMED obligation=CerbMem.sizeofCtype_measure_sufficient: binder `extra` (#2) is neither reserved (`lemHyp`/`lemFuel`/the `≤ lemFuel` hypothesis) nor an argument of the wrapper side	
+  PLANT OK   [P11 decoy of a REAL obligation with an EXTRA Prop binder and the register's exact hypothesis (CerbMem.sizeofCtype): MALFORMED by the binder check] -> check_fuel_forms: FAIL — obligation(s) named <f>_measure_sufficient whose TYPE is not the contract's shape (∀ …, μ ≤ lemFuel → worker lemFuel … = wrapper …) — never MEASURED:
+  PLANT OK   [P11 premise] -> the tool reports CerbMem.sizeofCtype_lemFuel MALFORMED: binder `extra` is neither reserved nor a wrapper argument
+```
+
+- **F-A5** — the dead `[LemFuel]` on `memValueToBytes_stable_aux`/
+  `_measure_sufficient` dropped (rebuild; the obligation's shape unchanged).
+- **F-A6 / F-A8** — TODO rows: the cheaper sufficient measure (`if refsOf ty
+  = [] then lemSize ty + 1 else envBound …`, proof: `refsOf ty = [] → tp ty =
+  0`) for the C3 timing slice; the multi-JSON `--fuel` argument-order refusal
+  (`cerberus-lean --batch --fuel N a.json b.json` → `unknown flag`).
+
+Gates on the audit-response head (`.tmp/c4ar-*.log`, each rc checked), verbatim:
+
+```
+lib build rc=0
+check_driver_fresh rc=0
+selftest rc=0
+test_unit rc=0
+exec_minimal rc=0
+verify rc=0
+immaculate rc=0
+check_driver_fresh: oracle OK (bin f6a52b7ed9927b9ed36383a4295116999146c0191a23d09c842ec9700b922665, src 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda)
+check_driver_fresh: lean OK (bin 32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6, src 89a31871cc2e83121d7efb009c35aa6c50216b31f6dad88cee4688b0786edf28)
+Total: 6 passed, 0 failed
+check_driver_fresh: lean OK (bin 32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6, src 89a31871cc2e83121d7efb009c35aa6c50216b31f6dad88cee4688b0786edf28)
+check_driver_fresh: oracle OK (bin f6a52b7ed9927b9ed36383a4295116999146c0191a23d09c842ec9700b922665, src 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda)
+check_fuel_forms: OK (81 fuel'd workers: 54 MEASURED (every obligation + proof cone ⊆ the standard three; 7 of them under a hypothesis, each = a reviewed row of fuel_hypotheses.txt, both directions), 13 ABSORBING, 8 reachable-AMBIENT = the 8 rows of fuel_forms_pending.txt exactly, 6 ambient unreachable from the drive cone)
+check_fuel_forms: SELFTEST OK (12 plants red with the declared label — 5 on the table, 3 on the hypothesis register, 4 compiled decoy obligations incl. the contradictory-hypothesis decoy caught by the register and the extra-binder decoy caught by the shape check; unplanted table green)
+check_handwritten_sync: OK (37 hand-written files byte-identical to lean_frontend/generated/; manifest lean_frontend/handwritten_copy.manifest)
+check_lakefile_roots: OK (206 roots = 206 generated modules + the exe root Main; 85 auxiliary modules all built)
+check_sorry_token: OK (286 files scanned comment-stripped — generated 207, hand-written+test 44, LemLib 35; 0 sorry tokens)
+check_theorem_axioms: C2 ratchet OK (326 files scanned recursively: 0 axioms, 0 runEffectful, seam population = the 38 pinned path-qualified counted rows exactly incl. the extern class; lem tests/ scaffolds asserted outside the surface)
+check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)
+gen_fuel_parametricity: OK (22 ambient fuel wrappers in the generated tree = the 22 pins of TotalityProofTest.lean Part 1, both directions)
+SUMMARY: total=106 match=85 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=3 cerb_floor=0 cerb_inconsistent=0
+BASELINE OK
+test_verify: 127 passed, 0 failed (25 fixtures, 28 call points, 14 corpus fixtures, 21 corpus points)
+OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip DIFF, R3 s4b-memcmp-hugesize ORACLE_CRASH — VALIDATION.md 'ISO-fix register' — and the in-Lean probes g6 TRIPWIRE / illtyped-store KILL).
+```
+
+(Note: the ORACLE binary in this worktree was relinked at 17:37:44 by a process outside this slice — after the §6.2 battery's last lane; `bin` now `c54c1dee…`, `src 46d26f1f…` UNCHANGED, so it is a product of the same sources; the Lean binary was rebuilt here after the F-A5 change. The `.tmp/c4ar-*` logs are ephemeral, deleted at the end of this response.)
 
 ## 10. Not done, and why
 
 - Rows 7–9 (the `ctype_aux` trio): PENDING by finding F-C4-1 (the obstacle is
   not a proof difficulty but a false obligation under any frontend-guaranteed
-  hypothesis). Rows 10–12 (`hack`, `many`, `many1`) and `to_pure`/`to_pures`:
+  hypothesis; reproduced by the audit, §9). Rows 10–12 (`hack`, `many`, `many1`) and `to_pure`/`to_pures`:
   not this mechanism's customers (lem record §6.3, C2 D-C2-3/4/5). So 13 − 3
   − 3 = 7 rows measured, 8 pending (the register's count).
 - The frontend guarantee PROOF (a theorem about the desugaring's output) — out

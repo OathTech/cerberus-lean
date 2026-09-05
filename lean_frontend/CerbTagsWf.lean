@@ -24,14 +24,25 @@
   ailTypesAux.lem:222) makes a by-value `Struct sym`/`Union sym` complete only
   when `sym` is ALREADY in `sigm.tag_definitions`, an `Array` complete only when
   its element type is, `Atomic` when its inner type is, and a `Pointer`
-  complete regardless of its target; the flexible array member's element type
-  is checked the same way (`:1600-1603`); an `_Alignas(type)` member alignment
-  is admitted only when `alignof_ty al_ty` succeeds at desugaring
-  (`:2860-2870`), i.e. when `al_ty` is complete THEN. Hence at the moment a
-  tag's definition is accepted, every tag its members reference BY VALUE
-  (through arrays and atomics, never through a pointer or a function type) is
-  defined EARLIER: the position in definition order is a rank; pointers break
-  the recursion (`struct A { struct B *p; }; struct B { struct A a; };` is
+  complete regardless of its target; the flexible array member's ELEMENT
+  type is guaranteed by the Ail passes (`ailWf.lem:76-80`
+  `ArrayDeclarationIncompleteType`/`StructMemberFlexibleArrayInArray`,
+  `genTyping.lem:2346-2349` `StructMemberFlexibleArray`: every by-value edge
+  INTO a FAM struct is a constraint violation, so that edge cannot close a
+  cycle); an `_Alignas(type)` member alignment is completeness-checked by
+  `alignof_ty` on the non-agnostic path (`:2851-2871`) — NOT on the
+  character-member `Just LT` path (`:2882-2883`, `ailTypesAux.lem:1291-1292`):
+  `struct A { _Alignas(struct A) char c; }`, an ISO §6.5.3.4#1 constraint
+  violation gcc rejects, is ACCEPTED by the frontend, its table has a by-value
+  self-edge, `Acyclic` is FALSE for it, both oracles hang and the Lean wrapper
+  fails loudly (`CerbMem.memberAlign: fuel exhausted`) — a frontend GAP
+  (C4 pre-merge audit F-A2, upstream-tray candidate), so the guarantee is:
+  `Acyclic` holds for every program the frontend ACCEPTS CORRECTLY. Hence at
+  the moment a tag's definition is accepted, every tag its members reference
+  BY VALUE (through arrays and atomics, never through a pointer or a function
+  type) is defined EARLIER: the position in definition order is a rank;
+  pointers break the recursion (`struct A { struct B *p; }; struct B { struct
+  A a; };` is
   fine). A hand-authored Core file can violate it — which is exactly why the
   hypothesis lives in the obligation, not in the wrapper: on inputs violating
   it the fuel-free wrapper may EXHAUST (the loud sentinel), as the oracle

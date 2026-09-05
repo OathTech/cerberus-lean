@@ -128,8 +128,9 @@ fuel-forms gate — every fuel'd worker measured, absorbing, unreachable
 from the drive cone, or a reviewed row of `scripts/fuel_forms_pending.txt`;
 C4: a worker measured UNDER A HYPOTHESIS (lem `assuming`, the `lemHyp`
 binder) must equal a row of the reviewed register `scripts/fuel_hypotheses.txt`,
-both directions; eleven plants incl. three compiled decoy obligations, one
-under a contradictory hypothesis caught by the register), the lem-sync content-hash gate,
+both directions; twelve plants incl. four compiled decoy obligations — one
+under a contradictory hypothesis caught by the register, one with an extra
+Prop binder caught by the shape check), the lem-sync content-hash gate,
 `check_fork_drift.sh` (arc-10 audit follow-up, [USER] mandate: the
 oracle surface must equal the reviewed manifest
 `scripts/fork_drift_manifest.txt`, and the generated-OCaml
