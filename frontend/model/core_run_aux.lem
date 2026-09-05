@@ -21,6 +21,23 @@ type core_run_annotation = <|
   asw_before: set Cmm_csem.aid;
 |>
 
+(* Concurrency Phase 0 (lean_frontend/docs/2026-09-04_concurrency-phase0-sc-charter.md
+   section 4.1; consumer review 2026-09-04_concurrency-S1-interface-review-response.md
+   Q1): the executable concurrency model is a PARAMETER of the driver, selected
+   by this payload-free type and threaded explicitly (never a bool -- a bool that
+   means SC today and C11 tomorrow is the commitment the charter avoids; never a
+   process-global read -- Global.using_concurrency is no longer consulted).
+     CM_sequential : the single-thread driver; a thread spawn is REFUSED
+                     (Driver.model_check_file at drive's entry).
+     CM_sc         : the SC-DRF instance -- interleaving at memory-action
+                     granularity over the concrete memory model, restricted to
+                     the fragment F_SC (seq_cst atomics, non-atomics; no fences,
+                     no Linux actions), everything else refused at entry.
+   Phase 1 adds the C11 operational instance here. *)
+type concurrency_model =
+  | CM_sequential
+  | CM_sc
+
 
  (* runtime stuff *)
 
@@ -337,9 +354,9 @@ let has_sbBefore_on_thread tid annot =
 (* val     annotate_expr: forall 'a. SetType 'a => polarity * 'a -> expr 'a -> expr 'a *)
 
 
-val     add_to_sb: set (polarity * (Mem_common.thread_id * Cmm_csem.aid)) -> Core.expr core_run_annotation -> Core.expr core_run_annotation
-let rec add_to_sb p_aids (Expr annot expr_ as expr) =
-  if Global.using_concurrency () then
+val     add_to_sb: concurrency_model -> set (polarity * (Mem_common.thread_id * Cmm_csem.aid)) -> Core.expr core_run_annotation -> Core.expr core_run_annotation
+let rec add_to_sb model p_aids (Expr annot expr_ as expr) =
+  match model with CM_sequential -> expr | CM_sc ->
     Expr annot match expr_ with
       | Epure _ ->
           (* no change *)
@@ -350,35 +367,35 @@ let rec add_to_sb p_aids (Expr annot expr_ as expr) =
       | Eaction (Paction p' (Action loc annots a)) ->
           Eaction (Paction p' (Action loc <| annots with sb_before= (Set.map snd p_aids) union annots.sb_before |> a))
       | Ecase pe pat_es ->
-          Ecase pe (List.map (fun (pat, e) -> (pat, add_to_sb p_aids e)) pat_es)
+          Ecase pe (List.map (fun (pat, e) -> (pat, add_to_sb model p_aids e)) pat_es)
       | Elet a pe1 e2 ->
-          Elet a pe1 (add_to_sb p_aids e2)
+          Elet a pe1 (add_to_sb model p_aids e2)
       | Eif pe1 e2 e3 ->
-          Eif pe1 (add_to_sb p_aids e2) (add_to_sb p_aids e3)
+          Eif pe1 (add_to_sb model p_aids e2) (add_to_sb model p_aids e3)
       | Eccall annots ty pe pes ->
           Eccall <| annots with sb_before= (Set.map snd p_aids) union annots.sb_before |> ty pe pes
       | Eproc annots nm pes ->
           Eproc <| annots with sb_before= (Set.map snd p_aids) union annots.sb_before |> nm pes
       | Eunseq es ->
-          Eunseq (List.map (add_to_sb p_aids) es)
+          Eunseq (List.map (add_to_sb model p_aids) es)
       | Ewseq _as e1 e2 ->
           let is_positive = function
             | (Pos, _) -> true
             | _        -> false
           end in
-          Ewseq _as (add_to_sb p_aids e1) (add_to_sb (Set.filter is_positive p_aids) e2)
+          Ewseq _as (add_to_sb model p_aids e1) (add_to_sb model (Set.filter is_positive p_aids) e2)
       | Esseq _as e1 e2 ->
-          Esseq _as (add_to_sb p_aids e1) (add_to_sb p_aids e2)
+          Esseq _as (add_to_sb model p_aids e1) (add_to_sb model p_aids e2)
       | Ebound _ ->
           error "Core_run_aux.add_to_sb, Ebound"
       | End es ->
-          End (List.map (add_to_sb p_aids) es)
+          End (List.map (add_to_sb model p_aids) es)
       | Esave sym_bTy xs e ->
-          Esave sym_bTy xs (add_to_sb p_aids e)
+          Esave sym_bTy xs (add_to_sb model p_aids e)
       | Erun annots sym pes ->
           Erun <| annots with sb_before= (Set.map snd p_aids) union annots.sb_before |> sym pes
       | Epar es ->
-          Epar (List.map (add_to_sb p_aids) es)
+          Epar (List.map (add_to_sb model p_aids) es)
       | Ewait _ ->
           (* no change *)
           expr_
@@ -387,46 +404,44 @@ let rec add_to_sb p_aids (Expr annot expr_ as expr) =
       | Eexcluded _ _ ->
           error "Core_run_aux.add_to_sb, Eexcluded"
     end
-  else
-    expr
+  end
 
 
-val add_to_sb_stack: set (polarity * (Mem_common.thread_id * Cmm_csem.aid)) -> stack core_run_annotation -> stack core_run_annotation
+val add_to_sb_stack: concurrency_model -> set (polarity * (Mem_common.thread_id * Cmm_csem.aid)) -> stack core_run_annotation -> stack core_run_annotation
 
-let rec add_to_sb_continuation p_aids = function
+let rec add_to_sb_continuation model p_aids = function
   | [] ->
       []
   | Kunseq annots es1 es2 :: cont ->
-      Kunseq annots es1 es2 :: add_to_sb_continuation p_aids cont
+      Kunseq annots es1 es2 :: add_to_sb_continuation model p_aids cont
   | Kwseq annots _as e2 :: cont ->
       let is_positive = function
         | (Pos, _) -> true
         | _        -> false
       end in
-      Kwseq annots _as(add_to_sb (Set.filter is_positive p_aids) e2) :: add_to_sb_continuation p_aids cont
+      Kwseq annots _as(add_to_sb model (Set.filter is_positive p_aids) e2) :: add_to_sb_continuation model p_aids cont
   | Ksseq annots _as e2 :: cont ->
-      Ksseq annots _as (add_to_sb p_aids e2) :: add_to_sb_continuation p_aids cont
+      Ksseq annots _as (add_to_sb model p_aids e2) :: add_to_sb_continuation model p_aids cont
 end
-let rec add_to_sb_stack p_aids sk =
-  if Global.using_concurrency () then
+let rec add_to_sb_stack model p_aids sk =
+  match model with CM_sequential -> sk | CM_sc ->
     match sk with
       | Stack_empty ->
           Stack_empty
       | Stack_cons proc_opt cont sk ->
           let () = Debug.warn [] (fun () -> "(UNSURE) Core_run_aux.add_to_sb_stack ==> is not touching lconts") in
-          Stack_cons proc_opt (add_to_sb_continuation p_aids cont) (add_to_sb_stack p_aids sk)
+          Stack_cons proc_opt (add_to_sb_continuation model p_aids cont) (add_to_sb_stack model p_aids sk)
       | Stack_cons2 _ _ _ ->
           error "add_to_sb_stack ==> Stack_cons2"
    end
-  else
-    sk
+  end
 
 
 
 
-val     add_to_asw: set Cmm_csem.aid -> Core.expr core_run_annotation -> Core.expr core_run_annotation
-let rec add_to_asw aids (Expr annot expr_ as expr) =
-  if Global.using_concurrency () then
+val     add_to_asw: concurrency_model -> set Cmm_csem.aid -> Core.expr core_run_annotation -> Core.expr core_run_annotation
+let rec add_to_asw model aids (Expr annot expr_ as expr) =
+  match model with CM_sequential -> expr | CM_sc ->
     let () = Debug.print_debug 5 [Debug.DB_driver; Debug.DB_concurrency] (fun () -> "HELLO add_to_asw ====") in
     Expr annot match expr_ with
       | Epure _ ->
@@ -441,31 +456,31 @@ let rec add_to_asw aids (Expr annot expr_ as expr) =
           ) aids in
           Eaction (Paction p' (Action loc <| annots with asw_before= aids union annots.asw_before |> a))
       | Ecase pe pat_es ->
-          Ecase pe (List.map (fun (pat, e) -> (pat, add_to_asw aids e)) pat_es)
+          Ecase pe (List.map (fun (pat, e) -> (pat, add_to_asw model aids e)) pat_es)
       | Elet a pe1 e2 ->
-          Elet a pe1 (add_to_asw aids e2)
+          Elet a pe1 (add_to_asw model aids e2)
       | Eif pe1 e2 e3 ->
-          Eif pe1 (add_to_asw aids e2) (add_to_asw aids e3)
+          Eif pe1 (add_to_asw model aids e2) (add_to_asw model aids e3)
       | Eccall annots ty pe pes ->
           Eccall <| annots with asw_before= aids union annots.asw_before |> ty pe pes
       | Eproc annots nm pes ->
           Eproc <| annots with asw_before= aids union annots.asw_before |> nm pes
       | Eunseq es ->
-          Eunseq (List.map (add_to_asw aids) es)
+          Eunseq (List.map (add_to_asw model aids) es)
       | Ewseq _as e1 e2 ->
-          Ewseq _as (add_to_asw aids e1) (add_to_asw aids e2) (* TODO this is wrong *)
+          Ewseq _as (add_to_asw model aids e1) (add_to_asw model aids e2) (* TODO this is wrong *)
       | Esseq _as e1 e2 ->
-          Esseq _as (add_to_asw aids e1) (add_to_asw aids e2) (* TODO this is wrong *)
+          Esseq _as (add_to_asw model aids e1) (add_to_asw model aids e2) (* TODO this is wrong *)
       | Ebound _ ->
           error "Core_run_aux.add_to_asw, Ebound"
       | Esave sym_bTy xs e ->
-          Esave sym_bTy xs (add_to_asw aids e)
+          Esave sym_bTy xs (add_to_asw model aids e)
       | Erun annots sym pes ->
           Erun <| annots with asw_before= aids union annots.asw_before |> sym pes
       | End es ->
-          End (List.map (add_to_asw aids) es)
+          End (List.map (add_to_asw model aids) es)
       | Epar es ->
-          Epar (List.map (add_to_asw aids) es)
+          Epar (List.map (add_to_asw model aids) es)
       | Ewait _ ->
           (* no change *)
           expr_
@@ -474,34 +489,32 @@ let rec add_to_asw aids (Expr annot expr_ as expr) =
       | Eexcluded _ _ ->
           error "Core_run_aux.add_to_asw, Eexcluded"
     end
-  else
-    expr
+  end
 
-val add_to_asw_stack: set Cmm_csem.aid -> stack core_run_annotation -> stack core_run_annotation
+val add_to_asw_stack: concurrency_model -> set Cmm_csem.aid -> stack core_run_annotation -> stack core_run_annotation
 
-let rec add_to_asw_continuation aids = function
+let rec add_to_asw_continuation model aids = function
   | [] ->
       []
   | Kunseq annots es1 es2 :: cont ->
-      Kunseq annots (List.map (add_to_asw aids) es1) (List.map (add_to_asw aids) es2) :: add_to_asw_continuation aids cont
+      Kunseq annots (List.map (add_to_asw model aids) es1) (List.map (add_to_asw model aids) es2) :: add_to_asw_continuation model aids cont
   | Kwseq annots _as e2 :: cont ->
-      Kwseq annots _as (add_to_asw aids e2) :: add_to_asw_continuation aids cont
+      Kwseq annots _as (add_to_asw model aids e2) :: add_to_asw_continuation model aids cont
   | Ksseq annots _as e2 :: cont ->
-      Ksseq annots _as (add_to_asw aids e2) :: add_to_asw_continuation aids cont
+      Ksseq annots _as (add_to_asw model aids e2) :: add_to_asw_continuation model aids cont
 end
-let rec add_to_asw_stack aids sk =
+let rec add_to_asw_stack model aids sk =
   let () = Debug.print_debug 5 [Debug.DB_driver; Debug.DB_concurrency] (fun () -> "BOOM add_to_asw_stack ==> "(* ^ Pp.stringFromCore_stack sk*)) in
-  if Global.using_concurrency () then
+  match model with CM_sequential -> sk | CM_sc ->
     match sk with
       | Stack_empty ->
           Stack_empty
       | Stack_cons proc_opt cont sk ->
-          Stack_cons proc_opt (add_to_asw_continuation aids cont) (add_to_asw_stack aids sk)
+          Stack_cons proc_opt (add_to_asw_continuation model aids cont) (add_to_asw_stack model aids sk)
       | Stack_cons2 _ _ _ ->
           error "add_to_asw_stack ==> Stack_cons2"
     end
-  else
-    sk
+  end
 
 
 

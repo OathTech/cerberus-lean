@@ -411,6 +411,12 @@ def driverErrorBatchMsg : driver_error → String
       s!"unresolved symbol: {CerbMem.ppSymbol sym} at {CerbLocation.stringFromLocation loc}"  -- :508-509
   | .DErr_memory merr => Lem_Show.show0 merr    -- driver_ocaml.ml:25-26
   | .DErr_concurrency s => s!"Concurrency error: {s}"
+  -- Concurrency Phase 0: the typed refusals render through the GENERATED
+  -- string functions (driver.lem string_of_model_refusal /
+  -- string_of_model_inconsistency) — identical text on both engines by
+  -- generation (driver_ocaml.ml calls the same functions).
+  | .DErr_model_refused r => string_of_model_refusal r
+  | .DErr_model_inconsistent i => string_of_model_inconsistency i
   | .DErr_other s => s
 
 /-! ## Elaborated-Core signature dump (`--pp-core`, arc-4 S4)
@@ -876,6 +882,7 @@ def runPipeline [LemFuel] (runtimeDir : String) (batch : Bool) (ppCore : Bool)
     (callFn : Option (String × List Int)) (traceNodes : Bool)
     (libc : Option (String × List String))
     (progArgs : List String)
+    (model : concurrency_model)
     (tunits : List (String × translation_unit)) : IO UInt8 := do
   -- Progress chatter: human mode only (batch and pp-core keep stdout clean)
   let quiet := batch || ppCore
@@ -1037,7 +1044,10 @@ def runPipeline [LemFuel] (runtimeDir : String) (batch : Bool) (ppCore : Bool)
     -- non-batch; progArgs is the parsed --args list (empty without the
     -- flag, so the historical ["cmdname"] argv is byte-unchanged).
     let driverAction := match callFn with
-      | none => drive runFile.tagDefs false runFile ("cmdname" :: progArgs)
+      -- Concurrency Phase 0: the model selector (CLI `--concurrency=sc`,
+      -- default CM_sequential) is threaded here; the --call harness mode
+      -- stays sequential (CerbCall.driveCall, its own record).
+      | none => drive runFile.tagDefs model runFile ("cmdname" :: progArgs)
       | some (fname, argInts) =>
         CerbCall.driveCall runFile.tagDefs runFile fname
           (argInts.map CerbCall.intValue)
@@ -1134,6 +1144,8 @@ def runPipeline [LemFuel] (runtimeDir : String) (batch : Bool) (ppCore : Bool)
               | .MerrAccess _ _ => IO.println s!"  result: Killed (memory access error)"
               | _ => IO.println s!"  result: Killed (memory error)"
             | .DErr_concurrency s => IO.println s!"  result: Killed (concurrency: {s})"
+            | .DErr_model_refused r => IO.println s!"  result: Killed ({string_of_model_refusal r})"
+            | .DErr_model_inconsistent i => IO.println s!"  result: Killed ({string_of_model_inconsistency i})"
             | .DErr_other s => IO.println s!"  result: Killed (other: {s})"
       return 0
 
@@ -1169,12 +1181,12 @@ def refuseFlag (flag : String) : IO Unit := do
   let feature :=
     if flag.startsWith "--switches" then
       "semantics switches (PVI/PNVI/strict_pointer_arith/CHERI/…) are not supported by this port — matched (default-switch) mode is the harness contract and CerbGlobal's switch set is permanently empty; the oracle's `--switches=…` changes the answer (e.g. PNVI turns an integer→pointer UB043 into a value)"
-    else if flag == "--concurrency" then
-      "concurrency is not supported by this port (the oracle's own --concurrency mode is non-functional at b9aeedcb4: `internal error: CONCURRENCY IS BROKEN`); matched mode runs atomics sequentially on both engines"
+    else if flag == "--concurrency" || flag.startsWith "--concurrency=" then
+      "the concurrency model is selected by name: `--concurrency=sc` (the SC-DRF instance, concurrency Phase 0 — lean_frontend/docs/2026-09-04_concurrency-phase0-sc-charter.md); a bare `--concurrency` or an unknown model name is refused, as on the oracle (cmdliner enum); the default is the sequential model, under which a thread spawn is a typed refusal"
     else if flag == "--batch" || flag == "--pp-core" || flag == "--parse-core" || flag == "--first" then
       "known flag out of its canonical position (`--batch`, `--pp-core` or `--parse-core` must be argv[0]; `--first` must immediately follow `--batch`/`--pp-core`)"
     else
-      "unknown flag; this port accepts only --batch | --pp-core | --parse-core (argv[0]), --first, --stdin, --libc <core> --libc-tu <json>, --call <f> [--call-args <ints>], --args <str>, --trace-nodes, --fuel <N>"
+      "unknown flag; this port accepts only --batch | --pp-core | --parse-core (argv[0]), --first, --stdin, --libc <core> --libc-tu <json>, --call <f> [--call-args <ints>], --args <str>, --trace-nodes, --fuel <N>, --concurrency=sc"
   IO.eprintln s!"cerberus-lean: refused — {flag}: {feature} (see VALIDATION.md, zero-discrepancy Z-24)"
   IO.Process.exit 2
 
@@ -1243,6 +1255,11 @@ def main (args : List String) : IO Unit := do
   -- bind — never a verdict — and a silent fallback to the default would
   -- be the fail-open shape the working practices ban.
   let mut fuelStr : Option String := none
+  -- --concurrency=sc (concurrency Phase 0): the executable concurrency
+  -- model, selected BY NAME (never a bool); absent = the sequential model.
+  -- Mirrors the oracle's cmdliner `opt (some (enum ["sc", CM_sc]))`
+  -- (backend/driver/main.ml): bare `--concurrency`/unknown names refused.
+  let mut model : concurrency_model := .CM_sequential
   let mut restArgs : List String := []
   -- --parse-core consumes its file list itself (below); nothing to scan
   let mut pending := if parseCoreMode then [] else rest1
@@ -1256,6 +1273,7 @@ def main (args : List String) : IO Unit := do
     | "--args" :: v :: rest => progArgsStr := some v; pending := rest
     | "--trace-nodes" :: rest => traceNodes := true; pending := rest
     | "--fuel" :: v :: rest => fuelStr := some v; pending := rest
+    | "--concurrency=sc" :: rest => model := .CM_sc; pending := rest
     | ["--libc"] | ["--libc-tu"] | ["--call"] | ["--call-args"]
     | ["--args"] | ["--fuel"] =>
       IO.eprintln "cerberus-lean: --libc/--libc-tu/--call/--call-args/\
@@ -1389,6 +1407,6 @@ def main (args : List String) : IO Unit := do
   -- fuel'd function below `runPipeline` reads this instance; nothing else
   -- in the repository builds one (`scripts/check_no_fuel_numerals.sh`).
   let code ← (letI : LemFuel := ⟨fuel⟩; runPipeline runtimeDir batchMode ppCoreMode firstTrace
-    callFn traceNodes libc progArgs tunits)
+    callFn traceNodes libc progArgs model tunits)
   if code != 0 then
     IO.Process.exit code

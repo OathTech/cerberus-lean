@@ -57,13 +57,24 @@ front end is the pipeline's standing boundary anyway.
   corpus (uses the BMC-only `__BMC_ASSUME`; a Phase-1 candidate together
   with the BMC backend as a second oracle, charter D6).
 
-## Reading `before_baseline.txt` (recorded 2026-09-04, pre-S1 tree)
+## Reading `before_baseline.txt`
 
-Every row is ONE outcome: the sequential driver runs each thread to
-completion before the scheduler picks (charter §2.1, the fail-open
-finding), so a 2-thread program reports one fixed serialization and no
-race verdict. Which serialization wins varies by program (compare
-`datarace+Rna+Wna.c` → `Specified(1)` with `MP+na+na.c` → `Specified(0)`).
-The `RMW-*` and `fence` rows are matched internal errors
-(`TODO[Core_reduction]: …`, `core_reduction.lem:799-814`). The pin exists so
-that every movement from here is a deliberate, recorded act of a slice.
+The pin is re-recorded by the slice that moves it, and the move is
+described in that slice's record:
+
+- **S0 (2026-09-04, pre-S1 tree)**: every row was ONE outcome — the
+  sequential driver ran each thread to completion before the scheduler
+  picked (charter §2.1, the fail-open finding); `RMW-*` and `fence` rows
+  were matched internal errors (`TODO[Core_reduction]: …`).
+- **S1+S2 (2026-09-04)**: the lane runs every row under `--concurrency=sc`
+  on both engines. `SC`-class rows carry their SC outcome SETS (identical
+  to the `expectations.txt` targets for every multi-outcome row); the
+  five race rows still report Defined values (race detection is S3);
+  `NONSC` rows are the typed refusal `model refused: atomic memory order …`
+  (matched on both engines; `fence+sc_sc.c` is refused on its relaxed
+  accesses before the fence is reached); `RMW` rows are still the matched
+  `TODO[Core_reduction]` internal error (S4). The lane's SEQ leg pins the
+  sequential model's spawn refusal on one file run without the flag.
+
+Every remaining difference between the pin and `expectations.txt` is a
+row S3 or S4 owes.

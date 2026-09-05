@@ -201,10 +201,12 @@ def derive(test):
             dfs(pcs2, regs2, mem2, events2)
 
     dfs([list(t) for t in test['threads']], base_regs, base_mem, base_events)
-    toks = [f'Specified({v})' for v in sorted(outcomes)]
+    toks = [f'Specified({v})' for v in outcomes]
     if racy:
         toks.append('UB005_data_race')
-    return '{' + ','.join(toks) + '}'
+    # canonical order = the lane's (`LC_ALL=C sort -u`: bytewise/lexicographic,
+    # so Specified(10) < Specified(2)); Python's default str sort is the same
+    return '{' + ','.join(sorted(toks)) + '}'
 
 def parse_expectations(path):
     rows = {}

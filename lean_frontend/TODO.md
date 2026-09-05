@@ -7,10 +7,33 @@ downstream.)
 
 ## Queued larger work
 
-- **Concurrency (cmm) instantiation** — concurrency is currently
-  stubbed (a declared, documented boundary); this is the work that
-  removes the stub and instantiates Cerberus's concurrency model on
-  the Lean side.
+- **Concurrency — Phase 0 IN PROGRESS on `feature/concurrency`**
+  (charter `docs/2026-09-04_concurrency-phase0-sc-charter.md`,
+  APPROVED [USER 2026-09-04]): the executable concurrency model is a
+  PARAMETER (`concurrency_model = CM_sequential | CM_sc`, the SC-DRF
+  instance; C11-op/RC11/LKMM are Phase 1–2, deliberately undesigned).
+  Landed: S0 (litmus corpus + lane + pins), S1+S2 (selector, typed
+  refusals, F_SC entry scan, scheduler live under `CM_sc`; records
+  `docs/2026-09-04_concurrency-S0-record.md`,
+  `docs/2026-09-04_concurrency-S1-S2-record.md`). Owed: S3 (execution
+  construction + library SC consistency bridge check + `data_races` →
+  UB005 — the five `datarace+*`/`MP+na+na` litmus rows), S4
+  (`RMW`/`CompareExchange{Strong,Weak}` reduction rules at `Seq_cst`,
+  `core_reduction.lem:799-814` — the four `RMW-*` rows), S5 (reasoning
+  surface: the `CM_sequential`/`CM_sc` agreement lemma on `epar_free`
+  files, `sc_fragment_ok_iff`, `using_concurrency` opaque deletion +
+  census re-pin, the 23 `sorry` reps in `cmm_csem.lem`, Cmm modules
+  into the totality slice, DESIGN/VALIDATION model sections, tray
+  draft), S6 (merge readiness). Findings parked here from the arc:
+  the front end rejects the C11 `_Atomic int` QUALIFIER form
+  (`constraint violation: … must be a pointer to _Atomic type`) while
+  `_Atomic(int)` works — upstream-tray candidate; upstream's driver
+  scheduler picked among k IDENTICAL `Step_blocked2` entries of a
+  k-child wait (k^rounds redundant traces) — fixed in S1
+  (`new_drive_core_threads`), tray candidate as a driver fix;
+  `scripts/fork_drift_manifest.txt` still says `lem-pin=af5df71`
+  (informational line, not checked by the gate; the C1 merge moved the
+  pin to `ecf75b4`) — for the orchestrator.
 - **A-road polish basket** — backend/semantics cleanups (pure-render
   emission split, remaining audit L-slice gaps, ott finish);
   itemized with prices in

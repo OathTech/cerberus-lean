@@ -8,23 +8,23 @@ coherence+init+sc_sc.c  SC  {Specified(1)}
 coherence+sc_sc_sc.c  SC  {Specified(1)}
 datarace+Rna+Rna.c  SC  {Specified(0)}
 datarace+Rna+Rna_Wna.c  SC  {Specified(0)}
-datarace+Rna+Wna.c  SC  {Specified(1)}
-datarace+Wna_sc+sc_Rna.c  SC  {Specified(0)}
-datarace+Wna+Wna.c  SC  {Specified(1)}
-fence+sc_sc.c  NONSC  {INTERNAL_ERROR(TODO[Core_reduction]:_Fence)}
-hb-mo-cycle+Wsc_Wsc_Rsc+Wsc_Wsc_Rsc.c  SC  {Specified(3)}
-IRIW+rel+rel+acq_acq+acq_acq.c  NONSC  {Specified(0)}
-IRIW+sc+sc+sc_sc+sc_sc.c  SC  {Specified(0)}
-LB+acq_rel+acq_rel.c  NONSC  {Specified(1)}
-LB+rlx_rlx+rlx_rlx.c  NONSC  {Specified(1)}
-LB+sc_sc+sc_sc.c  SC  {Specified(1)}
-MP+na+na.c  SC  {Specified(0)}
-MP+na_rel+acq_na.c  NONSC  {Specified(2)}
-MP+na_sc+sc_na.c  SC  {Specified(2)}
+datarace+Rna+Wna.c  SC  {Specified(0),Specified(1)}
+datarace+Wna_sc+sc_Rna.c  SC  {Specified(0),Specified(1)}
+datarace+Wna+Wna.c  SC  {Specified(1),Specified(2)}
+fence+sc_sc.c  NONSC  {ERROR}  [model refused: atomic memory order Relaxed is outside the SC fragment (seq_cst only)]
+hb-mo-cycle+Wsc_Wsc_Rsc+Wsc_Wsc_Rsc.c  SC  {Specified(1),Specified(2),Specified(3)}
+IRIW+rel+rel+acq_acq+acq_acq.c  NONSC  {ERROR}  [model refused: atomic memory order Release is outside the SC fragment (seq_cst only)]
+IRIW+sc+sc+sc_sc+sc_sc.c  SC  {Specified(0),Specified(1),Specified(10),Specified(11),Specified(12),Specified(13),Specified(14),Specified(15),Specified(2),Specified(3),Specified(4),Specified(6),Specified(7),Specified(8),Specified(9)}
+LB+acq_rel+acq_rel.c  NONSC  {ERROR}  [model refused: atomic memory order Acquire is outside the SC fragment (seq_cst only)]
+LB+rlx_rlx+rlx_rlx.c  NONSC  {ERROR}  [model refused: atomic memory order Relaxed is outside the SC fragment (seq_cst only)]
+LB+sc_sc+sc_sc.c  SC  {Specified(0),Specified(1),Specified(2)}
+MP+na+na.c  SC  {Specified(0),Specified(1)}
+MP+na_rel+acq_na.c  NONSC  {ERROR}  [model refused: atomic memory order Release is outside the SC fragment (seq_cst only)]
+MP+na_sc+sc_na.c  SC  {Specified(1),Specified(2)}
 RMW-strong-equal.c  RMW  {INTERNAL_ERROR(TODO[Core_reduction]:_CompareExchangeStrong)}
 RMW-strong-unequal.c  RMW  {INTERNAL_ERROR(TODO[Core_reduction]:_CompareExchangeStrong)}
 RMW-weak-equal.c  RMW  {INTERNAL_ERROR(TODO[Core_reduction]:_CompareExchangeWeak)}
 RMW-weak-unequal.c  RMW  {INTERNAL_ERROR(TODO[Core_reduction]:_CompareExchangeWeak)}
-SB+rel_acq+rel_acq.c  NONSC  {Specified(1)}
-SB+sc_sc+sc_sc.c  SC  {Specified(1)}
-WRC+sc+sc_sc+sc_sc.c  SC  {Specified(0)}
+SB+rel_acq+rel_acq.c  NONSC  {ERROR}  [model refused: atomic memory order Release is outside the SC fragment (seq_cst only)]
+SB+sc_sc+sc_sc.c  SC  {Specified(1),Specified(2),Specified(3)}
+WRC+sc+sc_sc+sc_sc.c  SC  {Specified(0),Specified(1),Specified(4),Specified(5),Specified(7)}

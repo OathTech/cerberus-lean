@@ -135,7 +135,7 @@ def dst₀ [LemFuel] (sup : Nat) : driver_state :=
     ⟨fuel⟩` around `runPipeline`, exactly). -/
 def run (n : Nat) :
     List (nd_status driver_result driver_error driver_state × List String × driver_state) :=
-  @CerbND.runND _ _ _ _ _ ⟨n⟩ (@drive ⟨n⟩ fmapEmpty false exemplarFile ["cmdname"]) (@dst₀ ⟨n⟩ 0)
+  @CerbND.runND _ _ _ _ _ ⟨n⟩ (@drive ⟨n⟩ fmapEmpty CM_sequential exemplarFile ["cmdname"]) (@dst₀ ⟨n⟩ 0)
 
 /-- The postcondition: the delivered Core value is `Specified(42)`. -/
 def post (r : driver_result) (_ : driver_state) : Prop :=
@@ -264,29 +264,37 @@ theorem loop_step_done {k : Nat} (fl : Nat) (tds : Fmap sym (CerbLocation.Loc ×
     (hsteps : @step_ctx ⟨Nat.succ k⟩ tds dst.layout_state dst.core_file dst.core_extern 0
       (none, th) = [Step_done2 v]) :
     runOne (@drive_nonmemory_steps_aux2_lemFuel ⟨Nat.succ k⟩ (Nat.succ (Nat.succ fl))
-        tds acc [0]) dst =
+        tds CM_sequential acc [0]) dst =
       (NDactive (fmapAddBy defaultCompare 0 [Step_done2 v] acc), dst) := by
   conv => lhs; unfold drive_nonmemory_steps_aux2_lemFuel
-  refine (runOne_bind_active (z := [Step_done2 v]) (s' := dst) ?_).trans ?_
+  -- Concurrency Phase 0 (S1): the worker's list `match` on the literal `[0]`
+  -- is iota-reduced explicitly (the extra `model` parameter changed how lem
+  -- emits the clause), and the per-thread read now returns the PAIR
+  -- (multi_threaded, steps) — `multi_threaded` is the scheduling-point
+  -- condition of the SC instance (charter section 4.2), `false` here (one
+  -- thread). The round shape underneath is unchanged.
+  dsimp only
+  refine (runOne_bind_active (z := (false, [Step_done2 v])) (s' := dst) ?_).trans ?_
   · rw [runOne_read]
     refine congrArg (fun x => (NDactive x, dst)) ?_
-    show (let th_info := match lookupBy (fun x y => x == y) 0
-            dst.core_state0.thread_states with
-          | some z => z
-          | none => failwithI _;
-        @step_ctx ⟨Nat.succ k⟩ tds dst.layout_state dst.core_file dst.core_extern 0 th_info) = _
+    show (natGteb dst.core_state0.thread_states.length 2,
+          @step_ctx ⟨Nat.succ k⟩ tds dst.layout_state dst.core_file dst.core_extern 0
+            (match lookupBy (fun x y => x == y) 0 dst.core_state0.thread_states with
+             | some z => z
+             | none => failwithI _)) = _
     rw [hth]
-    exact hsteps
+    exact Prod.ext rfl hsteps
   · dsimp only [find_can_advance, can_advance]
     conv => lhs; unfold drive_nonmemory_steps_aux2_lemFuel
+    dsimp only
     rfl
 
 theorem process_done {k : Nat} (tds : Fmap sym (CerbLocation.Loc × tag_definition))
-    (cont : Bool → ndM Unit step_kind driver_error
+    (cont : concurrency_model → ndM Unit step_kind driver_error
       (mem_constraint CerbMem.IntegerValue) driver_state)
     (v : value) (dst : driver_state) (th : thread_state)
     (hth : dst.core_state0.thread_states = [(0, (none, th))]) :
-    runOne (@process_core_step2 ⟨Nat.succ k⟩ tds false cont (Step_done2 v)) dst =
+    runOne (@process_core_step2 ⟨Nat.succ k⟩ tds CM_sequential cont (Step_done2 v)) dst =
       (NDactive (), { dst with core_state0 :=
         { dst.core_state0 with thread_states :=
             [(0, (none, { th with stack0 := Stack_empty, arena := mk_value_e v }))] } }) := by
@@ -304,10 +312,10 @@ theorem driver2_done {k : Nat} (fl : Nat)
     (dst dstF : driver_state) (th thF : thread_state) (v : value)
     (hth : dst.core_state0.thread_states = [(0, (none, th))])
     (hloop : runOne (@drive_nonmemory_steps_aux2_lemFuel ⟨Nat.succ k⟩ (Nat.succ k) tds
-        fmapEmpty [0]) dst =
+        CM_sequential fmapEmpty [0]) dst =
       (NDactive (fmapAddBy defaultCompare 0 [Step_done2 v] fmapEmpty), dstF))
     (hthF : dstF.core_state0.thread_states = [(0, (none, thF))]) :
-    runOne (@driver2_lemFuel ⟨Nat.succ k⟩ (Nat.succ fl) tds false) dst =
+    runOne (@driver2_lemFuel ⟨Nat.succ k⟩ (Nat.succ fl) tds CM_sequential) dst =
       (NDactive (), { dstF with core_state0 :=
         { dstF.core_state0 with thread_states :=
             [(0, (none, { thF with stack0 := Stack_empty, arena := mk_value_e v }))] } }) := by
@@ -414,7 +422,7 @@ def setupTail [LemFuel] (tid0 : Nat) : driverM Unit :=
 
 /-- The state at `driver2`'s entry, at the ambient instance. -/
 def S₁ [LemFuel] : driver_state :=
-  (runOne (setupTail 0) (runOne (driver_globals fmapEmpty false exemplarFile) (dst₀ 0)).2).2
+  (runOne (setupTail 0) (runOne (driver_globals fmapEmpty CM_sequential exemplarFile) (dst₀ 0)).2).2
 
 /-- The setup split at the shipped pipeline (consumer shape
     `drive_after_setup`), ambient `Nat.succ (Nat.succ k)`: the concrete
@@ -423,12 +431,19 @@ def S₁ [LemFuel] : driver_state :=
     match reduces on `Nat.succ _`), leaving `driver2` at `S₁` as a
     hypothesis. -/
 theorem drive_after_setup (k : Nat) (dstD : driver_state)
-    (hdrv2 : runOne (@driver2 ⟨Nat.succ (Nat.succ k)⟩ fmapEmpty false) (@S₁ ⟨Nat.succ (Nat.succ k)⟩)
+    (hdrv2 : runOne (@driver2 ⟨Nat.succ (Nat.succ k)⟩ fmapEmpty CM_sequential) (@S₁ ⟨Nat.succ (Nat.succ k)⟩)
       = (NDactive (), dstD)) :
-    runOne (@drive ⟨Nat.succ (Nat.succ k)⟩ fmapEmpty false exemplarFile ["cmdname"])
+    runOne (@drive ⟨Nat.succ (Nat.succ k)⟩ fmapEmpty CM_sequential exemplarFile ["cmdname"])
         (@dst₀ ⟨Nat.succ (Nat.succ k)⟩ 0)
       = (NDactive (@finalize ⟨Nat.succ (Nat.succ k)⟩ fmapEmpty "drive (without concur)" dstD), dstD) := by
   conv => lhs; unfold drive
+  -- Concurrency Phase 0 (S1): `drive` now opens with the model's entry scan
+  -- (`match model_check_file model file with …`, driver.lem). It is
+  -- discharged by a kernel-cheap equation and iota-reduced BEFORE the
+  -- round is stepped, so the elaborator's whnf never meets the scan
+  -- inside a bind (this file's rule: symbolic steps only).
+  rw [show model_check_file CM_sequential exemplarFile = none from rfl]
+  dsimp only
   -- driver_globals: spawn thread 0, no globals
   refine (runOne_bind_active (z := (0 : Nat)) (s' := _) rfl).trans ?_
   -- nd_get
@@ -457,7 +472,7 @@ theorem drive_after_setup (k : Nat) (dstD : driver_state)
     (consumer shape `driver2_done`); the successor state is explicit. -/
 theorem round_done (k : Nat) :
     ∃ (thF : thread_state),
-      runOne (@driver2 ⟨Nat.succ (Nat.succ k)⟩ fmapEmpty false) (@S₁ ⟨Nat.succ (Nat.succ k)⟩) =
+      runOne (@driver2 ⟨Nat.succ (Nat.succ k)⟩ fmapEmpty CM_sequential) (@S₁ ⟨Nat.succ (Nat.succ k)⟩) =
         (NDactive (), { @S₁ ⟨Nat.succ (Nat.succ k)⟩ with core_state0 :=
           { (@S₁ ⟨Nat.succ (Nat.succ k)⟩).core_state0 with thread_states :=
             [(0, (none, { thF with stack0 := Stack_empty, arena := mk_value_e fortyTwo }))] } }) := by
@@ -486,6 +501,21 @@ theorem exemplar_certified_shipped_forall (fuel : Nat) :
       have h := List.mem_singleton.mp ho
       subst h
       exact Or.inr ⟨_, rfl, finalize_done fmapEmpty _ _ _ fortyTwo rfl rfl⟩
+
+/-! ## Concurrency Phase 0 (S1) — the fragment scan is KERNEL-COMPUTABLE
+
+    Charter consumer review Q3 (docs/2026-09-04_concurrency-S1-interface-
+    review-response.md): `sc_fragment_ok file = true` must close by `rfl`/
+    `decide` on a closed file — i.e. the generated mutual scan
+    (`model_check_expr`/`model_check_exprs`/`model_check_pat_exprs`,
+    driver.lem) is structural for the kernel, not a well-founded definition
+    the kernel cannot unfold. These `rfl`s are that pin: if a future
+    lem/Lean change turns the scan well-founded, they FAIL the build (the
+    fallback would be the fuel_measure route, recorded in the S1 record).
+    plain `rfl` — never a native-evaluation tactic (D14 ban). -/
+example : sc_fragment_ok exemplarFile = true := rfl
+example : epar_free exemplarFile = true := rfl
+example : model_check_file CM_sequential exemplarFile = none := rfl
 
 end FuelExemplar
 

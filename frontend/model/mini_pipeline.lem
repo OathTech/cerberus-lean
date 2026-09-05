@@ -69,7 +69,7 @@ let inline (>>=) = Eff.bind
    On OCaml this is semantically identical to the previous inline code. *)
 let run_const_expr_driver tds dr_st =
   let driver_action =
-    ND.bind (Driver.driver2 false) (fun () ->
+    ND.bind (Driver.driver2 Core_run_aux.CM_sequential) (fun () -> (* Concurrency Phase 0: the const-expr mini-run is single-threaded by construction *)
       ND.bind ND.get (fun dr_st' ->
         ND.return (Driver.finalize "Mini_pipeline" dr_st')
       )

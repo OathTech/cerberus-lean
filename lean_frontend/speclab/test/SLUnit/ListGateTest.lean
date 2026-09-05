@@ -47,7 +47,7 @@ the CerbTags global is GONE — struct layouts reach CerbMem by VALUE
 story; the entry is supply-parameterized (seed 0 — authored-Core ids
 are name-hash interned, not drawn). -/
 def runFileL [LemFuel] (f : file core_run_annotation) : IO (Sum (Int × Nat) String) := do
-  return match CerbND.runND (drive f.tagDefs false f ["cmdname"])
+  return match CerbND.runND (drive f.tagDefs CM_sequential f ["cmdname"])
       ((initial_driver_state 0 f CerbFS.fs_initial_state).1) with
   | [(Active r, _, st)] =>
     match r.dres_core_value with
@@ -71,6 +71,9 @@ def runFileL [LemFuel] (f : file core_run_annotation) : IO (Sum (Int × Nat) Str
               (match d with | SD_Id s => s | _ => "<anon>")
         | DErr_memory merr => s!"Killed: memory error {Lem_Show.show0 merr}"
         | DErr_concurrency s => s!"Killed: concurrency {s}"
+        -- Concurrency Phase 0 (S1): the typed model refusals (generated renderers)
+        | DErr_model_refused r => s!"Killed: {string_of_model_refusal r}"
+        | DErr_model_inconsistent i => s!"Killed: {string_of_model_inconsistency i}"
         | DErr_other s => s!"Killed: {s}")
   | [] => .inr "no executions"
   | _ => .inr "multiple executions"

@@ -223,7 +223,7 @@ let execute ~conf ~filename (mode: Cerb_global.execution_mode) =
     end >>= fun core ->
     Tags.set_tagDefs core.tagDefs;
     let open Driver_ocaml in
-    let driver_conf = {concurrency=false; exec_mode=mode; fs_dump=false; trace=false; } in
+    let driver_conf = {concurrency=Cerb_frontend.Core_run_aux.CM_sequential; exec_mode=mode; fs_dump=false; trace=false; } in
     interp_backend dummy_io core ~args:[] ~batch:`Batch ~fs:None ~driver_conf
     >>= function
     | Either.Left (_, execs) ->

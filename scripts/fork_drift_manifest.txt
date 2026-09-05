@@ -149,6 +149,27 @@
 # doctrine); no generated .ml moved, so layer 2 is unchanged.
 [meta]
 merge-base=b9aeedcb4dd438763b0eef7f95ac19e93875d7de
+# NOTE (concurrency Phase 0, slice S1+S2, 2026-09-04; charter
+# lean_frontend/docs/2026-09-04_concurrency-phase0-sc-charter.md, record
+# docs/2026-09-04_concurrency-S1-S2-record.md): the executable concurrency
+# model becomes a parameter (core_run_aux.lem `concurrency_model`,
+# threaded explicitly through core_run/driver in place of the
+# Global.using_concurrency reads) and the SC instance lands (driver.lem:
+# typed refusals DErr_model_refused/DErr_model_inconsistent + the F_SC
+# syntactic scan model_check_file/sc_fragment_ok/epar_free, the
+# can_advance scheduling-point condition, the identical-blocked-steps
+# collapse in new_drive_core_threads, the entry scan in drive).
+# Four [expected-semantic] hashes MOVE (core_run_aux.ml, core_run.ml,
+# mini_pipeline.ml, driver.ml — the generated OCaml carries the same
+# feature by generation; this IS an oracle behaviour change, deliberate
+# and lane-pinned: par programs are now REFUSED under the default model
+# instead of silently serialized, and --concurrency=sc runs the SC
+# instance; every sequential lane is at zero movement). ONE NEW [files]
+# entry: backend/common/smt.ml (exhaustive match on Driver.driver_error
+# gains the two new arms; the smt backend is not the oracle path).
+# backend/driver/main.ml, backend/common/driver_ocaml.{ml,mli},
+# backend/web/instance.ml were already manifested (the flag becomes a
+# cmdliner enum `--concurrency=sc`; driver_conf.concurrency is the model).
 lem-pin=af5df71
 renumber=arc13
 [files]
@@ -157,6 +178,7 @@ backend/common/driver_ocaml.ml
 backend/common/driver_ocaml.mli
 backend/common/pipeline.ml
 backend/common/pipeline.mli
+backend/common/smt.ml
 backend/driver/dune
 backend/driver/main.ml
 backend/lean_export/cabs_json.ml
@@ -227,12 +249,12 @@ util/cerb_fresh.ml
 d252a154bca00b92a9dbe4422e40849d361bf1ad48dfc033be718aefb7e9f05d cabs_to_ail_effect.ml
 4e43f561d853351c040b4a53fc03636c3e869c62ff727db49584a22bdb89ea08 cabs_to_ail.ml
 22b0b094c6622a92dfdff511a05f19de93f445c5f47d149deec3ed223e582f98 core_reduction.ml
-64b9df673bdfa8e3051c8b7d392b4c02a11f89d1f72ab3055c533626cae09151 core_run_aux.ml
-7d4e9c99b3954e7c103d98b371dfd3f9e56c4fb22f32886db3f5382d66db6fa9 core_run.ml
-75e92ed1280fc1c45fd3e1d3e1c023467aa7542526dba4f2193485f123277cc6 mini_pipeline.ml
+cc8aad1733da4c670662d195aa4c612797581b80973f7162e6d810f33ee351cc core_run_aux.ml
+a9699fa79a65de4a3c483e184205f6921d68a0045fd1b27b3ac809894dd33b65 core_run.ml
+0d6c60605e2b54527444c8e34edc2de10c6043d4a9fcfdb14498df3142b9ad48 mini_pipeline.ml
 51f56677431b4c6095ef8523761c5879f7fe0f1b20f882977bf6555184f2d2e8 symbol.ml
 4af72185cf6ea64c94506ded11858db5884ecaed067b20dd9dcaf4a6aed31418 translation_effect.ml
-405c834f7108e9ae3614f74ab51089947539f9800c419738e61f056bcc97aa13 driver.ml
+2c8cdbe925149e2b5a6639e427e8344bf53c6279507c6f0fbe1193b52ca33ea5 driver.ml
 8882e41d9366569a3f76bed5d93c0aac7f622b7acf421807179e1bfc585be0cb ctype_aux.ml
 6ba1f4842fe4d8ef55b6405b6c2f1b88f20fc0e2b245230d680314ad0e6cb59f translation.ml
 [expected-cosmetic]

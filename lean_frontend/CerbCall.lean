@@ -287,7 +287,7 @@ def callFinish [LemFuel] (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition
              env := th_st.env,
              current_proc_opt := some fsym } : thread_state))
           (fun (_ : Unit) =>
-        nd_bind (driver2 tagDefs false) (fun (_ : Unit) =>
+        nd_bind (driver2 tagDefs CM_sequential) (fun (_ : Unit) =>
         nd_bind nd_get (fun (dr_st' : driver_state) =>
         nd_return (finalize tagDefs "driveCall" dr_st'))))
     | _ => kill (Other (DErr_other
@@ -302,7 +302,7 @@ def callFinish [LemFuel] (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition
 def driveCall [LemFuel] (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
     (file1 : file core_run_annotation) (fname : String)
     (args : List value) : driverM driver_result :=
-  nd_bind (driver_globals tagDefs false file1) (fun (tid0 : Nat) =>
+  nd_bind (driver_globals tagDefs CM_sequential file1) (fun (tid0 : Nat) =>
   nd_bind nd_get (fun (post_globals_dr_st : driver_state) =>
   let cf := post_globals_dr_st.core_file
   nd_bind (resolveFunSym cf fname) (fun (fsym : sym) =>

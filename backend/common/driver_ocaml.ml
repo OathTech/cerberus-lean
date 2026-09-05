@@ -11,7 +11,10 @@ let isActive = function
 type driver_conf = {
 (* TODO: bring back ==> [`Interactive | `Exhaustive | `Random] -> *)
   exec_mode: execution_mode;
-  concurrency: bool;
+  (* Concurrency Phase 0 (lean_frontend/docs/2026-09-04_concurrency-phase0-sc-charter.md
+     section 4.1): the executable concurrency model, selected by name on the
+     CLI (--concurrency=sc); never a bool. *)
+  concurrency: Core_run_aux.concurrency_model;
   fs_dump: bool;
   trace: bool;
 }
@@ -26,6 +29,12 @@ let string_of_driver_error = function
       Mem_common.instance_Show_Show_Mem_common_mem_error_dict.Lem_pervasives.show_method err
   | Driver.DErr_concurrency str ->
       "Concurrency error: " ^ str
+  (* Concurrency Phase 0: typed refusals render through the GENERATED
+     functions so both engines print identical text (Main.lean mirrors). *)
+  | Driver.DErr_model_refused r ->
+      Driver.string_of_model_refusal r
+  | Driver.DErr_model_inconsistent i ->
+      Driver.string_of_model_inconsistency i
   | Driver.DErr_other str ->
       str
 

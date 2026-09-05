@@ -14,7 +14,7 @@
 # no spaces, tokens in the order sc_reference.py prints them.
 # Consumed by scripts/test_litmus.sh --check (RED by design until S2/S3/S4
 # land; the "before" pin is before_baseline.txt, --check-before).
-IRIW+sc+sc+sc_sc+sc_sc.c  SC  {Specified(0),Specified(1),Specified(2),Specified(3),Specified(4),Specified(6),Specified(7),Specified(8),Specified(9),Specified(10),Specified(11),Specified(12),Specified(13),Specified(14),Specified(15)}
+IRIW+sc+sc+sc_sc+sc_sc.c  SC  {Specified(0),Specified(1),Specified(10),Specified(11),Specified(12),Specified(13),Specified(14),Specified(15),Specified(2),Specified(3),Specified(4),Specified(6),Specified(7),Specified(8),Specified(9)}
 LB+sc_sc+sc_sc.c  SC  {Specified(0),Specified(1),Specified(2)}
 MP+na+na.c  SC  {UB005_data_race}
 MP+na_sc+sc_na.c  SC  {Specified(1),Specified(2)}

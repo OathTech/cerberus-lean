@@ -8,6 +8,7 @@ open import Utils Show Errors Trace_event
 import Cmm_op Cmm_csem
 
 import Core_eval Core_run Core_reduction
+import Core_run_aux (* Concurrency Phase 0: the model selector type *)
 
 (* Lean: hand-written OCaml-parity instances for Core_reduction.core_step2
    (BEq etc.), used by driver2's blocked-thread filters below. The
@@ -52,11 +53,188 @@ declare ocaml target_rep function stringFromCore_core_state = `String_core_run.s
 declare lean target_rep function stringFromCore_core_state = `CerbPP.stringFromCore_core_state`
 
 
+(* === Concurrency Phase 0: typed refusals and the F_SC syntactic scan ===
+   (lean_frontend/docs/2026-09-04_concurrency-phase0-sc-charter.md sections 3,
+   4.5; consumer review 2026-09-04_concurrency-S1-interface-review-response.md
+   Q2/Q3). Refusals are DATA-carrying kills in the driver monad -- never a
+   panic, never free text -- so a theorem excludes them by constructor. *)
+type model_refusal =
+  | MR_spawn_under_sequential          (* an Epar in the file under CM_sequential *)
+  | MR_non_sc_order of Cmm.memory_order (* an atomic action whose order is not Seq_cst, under CM_sc (SC_condition, cmm_csem.lem:2564-2577) *)
+  | MR_fence of Cmm.memory_order        (* a Fence under CM_sc (fences are outside SC_condition) *)
+  | MR_linux_action                    (* a Linux* action under CM_sc *)
+  | MR_wait                            (* an Ewait in the FILE (spawn-created only; excluded at the consumer's request) *)
+
+type model_inconsistency =
+  | MI_spawn_after_scan                (* a spawn reached the driver under CM_sequential although the entry scan passed *)
+
 type driver_error =
   | DErr_core_run of core_run_cause
   | DErr_memory of Mem_common.mem_error
   | DErr_concurrency of string
+  | DErr_model_refused of model_refusal
+  | DErr_model_inconsistent of model_inconsistency
   | DErr_other of string
+
+(* The scan. Memory orders are constants after elaboration
+   (translation.lem translate_memory_order accepts constant arguments only) and
+   fences / Linux actions / Epar / Ewait are syntactic, so membership of the
+   model's fragment is decidable by a walk over the Core FILE -- the refusal is
+   a property of the program, not of the trace explored. Mutual structural
+   recursion over the expression / list / (pattern * expression) list shapes
+   (no fuel: the Lean target must compute it -- `sc_fragment_ok file = true`
+   closes by decide/rfl on a closed file; pinned by TotalityProofTest). Only
+   `Proc` bodies and `GlobalDef` initialisers carry effectful expressions;
+   `Fun`s and `impl` are pure. *)
+val sc_action_check: forall 'bty 'sym. Core.generic_action_ 'bty 'sym -> maybe model_refusal
+let sc_action_check act =
+  let access_order_ok mo = match mo with Cmm.NA -> true | Cmm.Seq_cst -> true | _ -> false end in
+  let rmw_order_ok    mo = match mo with Cmm.Seq_cst -> true | _ -> false end in
+  match act with
+    | Core.Create _ _ _ -> Nothing
+    | Core.CreateReadOnly _ _ _ _ -> Nothing
+    | Core.Alloc _ _ _ -> Nothing
+    | Core.Kill _ _ -> Nothing
+    | Core.Store _ _ _ _ mo -> if access_order_ok mo then Nothing else Just (MR_non_sc_order mo)
+    | Core.Load _ _ mo -> if access_order_ok mo then Nothing else Just (MR_non_sc_order mo)
+    | Core.SeqRMW _ _ _ _ _ -> Nothing
+    | Core.RMW _ _ _ _ mo1 mo2 ->
+        if rmw_order_ok mo1 then (if rmw_order_ok mo2 then Nothing else Just (MR_non_sc_order mo2)) else Just (MR_non_sc_order mo1)
+    | Core.CompareExchangeStrong _ _ _ _ mo1 mo2 ->
+        if rmw_order_ok mo1 then (if rmw_order_ok mo2 then Nothing else Just (MR_non_sc_order mo2)) else Just (MR_non_sc_order mo1)
+    | Core.CompareExchangeWeak _ _ _ _ mo1 mo2 ->
+        if rmw_order_ok mo1 then (if rmw_order_ok mo2 then Nothing else Just (MR_non_sc_order mo2)) else Just (MR_non_sc_order mo1)
+    | Core.Fence mo -> Just (MR_fence mo)
+    | Core.LinuxFence _ -> Just MR_linux_action
+    | Core.LinuxLoad _ _ _ -> Just MR_linux_action
+    | Core.LinuxStore _ _ _ _ -> Just MR_linux_action
+    | Core.LinuxRMW _ _ _ _ -> Just MR_linux_action
+  end
+
+val model_check_expr: forall 'a 'bty 'sym. Core_run_aux.concurrency_model -> Core.generic_expr 'a 'bty 'sym -> maybe model_refusal
+val model_check_exprs: forall 'a 'bty 'sym. Core_run_aux.concurrency_model -> list (Core.generic_expr 'a 'bty 'sym) -> maybe model_refusal
+val model_check_pat_exprs: forall 'a 'bty 'sym. Core_run_aux.concurrency_model -> list (Core.generic_pattern 'sym * Core.generic_expr 'a 'bty 'sym) -> maybe model_refusal
+let rec model_check_expr model (Core.Expr _ expr_) =
+  match expr_ with
+    | Core.Epure _ -> Nothing
+    | Core.Ememop _ _ -> Nothing
+    | Core.Eaction (Core.Paction _ (Core.Action _ _ act)) ->
+        match model with Core_run_aux.CM_sequential -> Nothing | Core_run_aux.CM_sc -> sc_action_check act end
+    | Core.Ecase _ pat_es -> model_check_pat_exprs model pat_es
+    | Core.Elet _ _ e -> model_check_expr model e
+    | Core.Eif _ e1 e2 ->
+        match model_check_expr model e1 with Just r -> Just r | Nothing -> model_check_expr model e2 end
+    | Core.Eccall _ _ _ _ -> Nothing
+    | Core.Eproc _ _ _ -> Nothing
+    | Core.Eunseq es -> model_check_exprs model es
+    | Core.Ewseq _ e1 e2 ->
+        match model_check_expr model e1 with Just r -> Just r | Nothing -> model_check_expr model e2 end
+    | Core.Esseq _ e1 e2 ->
+        match model_check_expr model e1 with Just r -> Just r | Nothing -> model_check_expr model e2 end
+    | Core.Ebound e -> model_check_expr model e
+    | Core.End es -> model_check_exprs model es
+    | Core.Esave _ _ e -> model_check_expr model e
+    | Core.Erun _ _ _ -> Nothing
+    | Core.Epar es ->
+        match model with
+          | Core_run_aux.CM_sequential -> Just MR_spawn_under_sequential
+          | Core_run_aux.CM_sc -> model_check_exprs model es
+        end
+    | Core.Ewait _ -> Just MR_wait
+    | Core.Eannot _ e -> model_check_expr model e
+    | Core.Eexcluded _ (Core.Action _ _ act) ->
+        match model with Core_run_aux.CM_sequential -> Nothing | Core_run_aux.CM_sc -> sc_action_check act end
+  end
+and model_check_exprs model es =
+  match es with
+    | [] -> Nothing
+    | e :: es' ->
+        match model_check_expr model e with Just r -> Just r | Nothing -> model_check_exprs model es' end
+  end
+and model_check_pat_exprs model pat_es =
+  match pat_es with
+    | [] -> Nothing
+    | (_, e) :: pat_es' ->
+        match model_check_expr model e with Just r -> Just r | Nothing -> model_check_pat_exprs model pat_es' end
+  end
+declare {lean} termination_argument model_check_expr = automatic
+declare {lean} termination_argument model_check_exprs = automatic
+declare {lean} termination_argument model_check_pat_exprs = automatic
+
+val model_check_decl: forall 'a 'bty. Core_run_aux.concurrency_model -> Core.generic_fun_map_decl 'bty 'a -> maybe model_refusal
+let model_check_decl model decl =
+  match decl with
+    | Core.Proc _ _ _ _ e -> model_check_expr model e
+    | Core.Fun _ _ _ -> Nothing
+    | Core.ProcDecl _ _ _ -> Nothing
+    | Core.BuiltinDecl _ _ _ -> Nothing
+  end
+
+val model_check_decls: forall 'a 'bty. Core_run_aux.concurrency_model -> list (Symbol.sym * Core.generic_fun_map_decl 'bty 'a) -> maybe model_refusal
+let rec model_check_decls model decls =
+  match decls with
+    | [] -> Nothing
+    | (_, decl) :: decls' ->
+        match model_check_decl model decl with Just r -> Just r | Nothing -> model_check_decls model decls' end
+  end
+declare {lean} termination_argument model_check_decls = automatic
+
+val model_check_globs: forall 'a 'bty. Core_run_aux.concurrency_model -> list (Symbol.sym * Core.generic_globs 'a 'bty) -> maybe model_refusal
+let rec model_check_globs model globs =
+  match globs with
+    | [] -> Nothing
+    | (_, Core.GlobalDef _ e) :: globs' ->
+        match model_check_expr model e with Just r -> Just r | Nothing -> model_check_globs model globs' end
+    | (_, Core.GlobalDecl _) :: globs' -> model_check_globs model globs'
+  end
+declare {lean} termination_argument model_check_globs = automatic
+
+val model_check_file: forall 'a 'bty. Core_run_aux.concurrency_model -> Core.generic_file 'bty 'a -> maybe model_refusal
+let model_check_file model file =
+  match model_check_decls model (Map_extra.toList file.Core.funs) with
+    | Just r -> Just r
+    | Nothing ->
+        match model_check_decls model (Map_extra.toList file.Core.stdlib) with
+          | Just r -> Just r
+          | Nothing -> model_check_globs model file.Core.globs
+        end
+  end
+
+(* Rendering of the typed refusals for the batch `Error {msg: ...}` line --
+   defined ONCE here so both targets print identical text by generation
+   (driver_ocaml.ml string_of_driver_error / Main.lean driverErrorBatchMsg
+   call these). *)
+val string_of_model_refusal: model_refusal -> string
+let string_of_model_refusal r =
+  match r with
+    | MR_spawn_under_sequential ->
+        "model refused: thread spawn (par) under the sequential model; select --concurrency=sc"
+    | MR_non_sc_order mo ->
+        "model refused: atomic memory order " ^ show mo ^ " is outside the SC fragment (seq_cst only)"
+    | MR_fence mo ->
+        "model refused: fence (" ^ show mo ^ ") is outside the SC fragment"
+    | MR_linux_action ->
+        "model refused: Linux memory action is outside the SC fragment"
+    | MR_wait ->
+        "model refused: wait action in the program file"
+  end
+
+val string_of_model_inconsistency: model_inconsistency -> string
+let string_of_model_inconsistency i =
+  match i with
+    | MI_spawn_after_scan ->
+        "model inconsistent: a thread spawn reached the driver under the sequential model after the entry scan passed"
+  end
+
+(* The two predicates the consumer states theorems over (review Q3/Q4):
+   membership of F_SC, and Epar-freedom (the hypothesis of the
+   CM_sequential/CM_sc agreement lemma). *)
+val sc_fragment_ok: forall 'a 'bty. Core.generic_file 'bty 'a -> bool
+let sc_fragment_ok file =
+  match model_check_file Core_run_aux.CM_sc file with Nothing -> true | Just _ -> false end
+val epar_free: forall 'a 'bty. Core.generic_file 'bty 'a -> bool
+let epar_free file =
+  match model_check_file Core_run_aux.CM_sequential file with Nothing -> true | Just _ -> false end
 
 type driver_state = <|
   core_file:         Core.file Core_run.core_run_annotation;
@@ -476,7 +654,7 @@ let rec drive_core_thread2 tid =
               ) dr_st.concurrency_state.Cmm_op.symPre.Cmm.sb)
             ) actions_of_current_thread in
           ND.update (fun dr_st -> <| dr_st with
-            core_state= Core_run.kill_thread tid parent_tid (Set.map Cmm.aid_of last_actions_of_current_thread) cval dr_st.core_state;
+            core_state= Core_run.kill_thread model tid parent_tid (Set.map Cmm.aid_of last_actions_of_current_thread) cval dr_st.core_state;
             dr_step_counter= dr_st.dr_step_counter + 1;
           |>) >>= fun () ->
           drive_core_thread2 parent_tid )
@@ -743,19 +921,26 @@ end
 
 
 val perform_action_request2:
-  bool -> Loc.t -> Mem.thread_id -> Core_reduction.action_request2 Core_run.thread_state -> driverM unit
-let perform_action_request2 with_concurrency loc tid request =
+  Core_run_aux.concurrency_model -> Loc.t -> Mem.thread_id -> Core_reduction.action_request2 Core_run.thread_state -> driverM unit
+let perform_action_request2 model loc tid request =
   let _execution_mode_is_random = match Global.current_execution_mode () with
     | Nothing   -> false
     | Just mode -> mode = Global.Random
   end in
   
   begin
-    if with_concurrency then
-      error "TODO: perform_action_request2 ==> concurrency"
-    else
-      liftCore_run (SEU.runS Core_run.fresh_action_id') >>= fun aid ->
-      action_request_sequential2 loc tid aid request
+    match model with
+      | Core_run_aux.CM_sequential ->
+          liftCore_run (SEU.runS Core_run.fresh_action_id') >>= fun aid ->
+          action_request_sequential2 loc tid aid request
+      | Core_run_aux.CM_sc ->
+          (* Concurrency Phase 0 S1/S2: the concrete memory IS the value store
+             of the SC instance (a read returns the value in memory at issue);
+             the interleaving choice was made by the scheduler (can_advance /
+             driver2). S3 adds the execution construction alongside. *)
+          liftCore_run (SEU.runS Core_run.fresh_action_id') >>= fun aid ->
+          action_request_sequential2 loc tid aid request
+    end
   end
 
 val perform_memop_request2: Loc.t -> Mem_common.memop -> list Core.value -> Mem.thread_id -> (Core.value -> Core_run.thread_state) -> driverM unit
@@ -904,7 +1089,14 @@ let perform_memop_request2 loc memop cvals tid mk_th_st =
 
 
 
-let can_advance = function
+(* Concurrency Phase 0 (charter section 4.2; S1/S2): under CM_sc a memory
+   action (or memop) is a SCHEDULING POINT whenever at least two threads
+   exist -- the step is saved and driver2's pick makes the interleaving
+   choice; with a single thread, and under CM_sequential, the historical
+   eager path is taken unchanged (the upstream comment "only correct if
+   there is only ONE thread" named exactly this). Consequence: for an
+   Epar-free program CM_sequential and CM_sc are the same computation. *)
+let can_advance model multi_threaded = function
   | Core_reduction.Step_ccall2 _ _ ->
       false
   | Core_reduction.Step_with_runstate2 _ _ ->
@@ -912,8 +1104,10 @@ let can_advance = function
   | Core_reduction.Step_tau2 _ _ _ ->
       true
   | Core_reduction.Step_action_request2 _ _ _ is_unseq_with_ccall _ ->
-      (* TODO: only correct if there is only ONE thread *)
-      not is_unseq_with_ccall (* false *)
+      match model with
+        | Core_run_aux.CM_sequential -> not is_unseq_with_ccall
+        | Core_run_aux.CM_sc -> if multi_threaded then false else not is_unseq_with_ccall
+      end
   | Core_reduction.Step_blocked2 ->
       false
   | Core_reduction.Step_error2 str ->
@@ -923,8 +1117,10 @@ let can_advance = function
   | Core_reduction.Step_done2 _ ->
       false
   | Core_reduction.Step_memop_request2 _ _ _ _ is_unseq_with_ccall _ ->
-      (* TODO: only correct if there is only ONE thread *)
-      not is_unseq_with_ccall (* false *)
+      match model with
+        | Core_run_aux.CM_sequential -> not is_unseq_with_ccall
+        | Core_run_aux.CM_sc -> if multi_threaded then false else not is_unseq_with_ccall
+      end
   | Core_reduction.Step_spawn_threads2 _ _ ->
       true
   | Core_reduction.Step_fs2 _ _ _ ->
@@ -937,7 +1133,7 @@ type advance_info =
   | NOWAKEUP
   | WAKEUP of bool * list Mem.thread_id 
 
-let advance_step tid step =
+let advance_step model tid step =
   match step with
     | Core_reduction.Step_ccall2 _ _ ->
         ND.return NOWAKEUP
@@ -977,7 +1173,7 @@ let advance_step tid step =
           ND.return ()
         else
           liftCore_run m_request >>= fun request ->
-          perform_action_request2 false (*TODO!!! with_concurrency*) loc tid request
+          perform_action_request2 model loc tid request
         end >>= fun () ->
         ND.return NOWAKEUP
 
@@ -1000,7 +1196,7 @@ let advance_step tid step =
           ) actions_of_current_thread
         ) >>= fun (last_actions_of_current_thread: set Cmm.action) ->
         ND.update (fun dr_st -> <| dr_st with
-          core_state= Core_run.kill_thread tid parent_tid (Set.map Cmm.aid_of last_actions_of_current_thread) cval dr_st.core_state;
+          core_state= Core_run.kill_thread model tid parent_tid (Set.map Cmm.aid_of last_actions_of_current_thread) cval dr_st.core_state;
           dr_step_counter= dr_st.dr_step_counter + 1;
         |>) >>= fun () ->
         ND.return (WAKEUP true [parent_tid])
@@ -1017,6 +1213,13 @@ let advance_step tid step =
         ND.return NOWAKEUP
 
     | Core_reduction.Step_spawn_threads2 mk_parent_th_st spawn_th_sts ->
+        match model with
+          | Core_run_aux.CM_sequential ->
+              (* the entry scan (model_check_file) refused every Epar under
+                 CM_sequential; reaching here means the scan and the run
+                 disagree -- a typed, fail-noisy inconsistency kill *)
+              ND.kill (ND.Other (DErr_model_inconsistent MI_spawn_after_scan))
+          | Core_run_aux.CM_sc ->
         ND.read (fun dr_st ->
           State.runStateM (
             State.foldlM (fun (th_tids_, core_st_) th_st ->
@@ -1032,6 +1235,7 @@ let advance_step tid step =
                         core_st';
         |>) >>= fun () ->
         ND.return (WAKEUP false spawn_tids)
+        end
 
     | Core_reduction.Step_fs2 _ _ _ ->
         error "TODO: Step_fs2"
@@ -1046,20 +1250,20 @@ let advance_step tid step =
   end
 
 
-let rec find_can_advance steps =
+let rec find_can_advance model multi_threaded steps =
   match steps with
     | [] ->
         Nothing
     | step :: steps' ->
-        if can_advance step then
+        if can_advance model multi_threaded step then
           Just step
         else
-          find_can_advance steps'
+          find_can_advance model multi_threaded steps'
   end
 
 
 
-let rec drive_nonmemory_steps_aux2 (acc: map Mem.thread_id (list Core_reduction.core_step2)) = function
+let rec drive_nonmemory_steps_aux2 model (acc: map Mem.thread_id (list Core_reduction.core_step2)) = function
   | [] ->
       ND.return acc
   | tid :: xs' ->
@@ -1070,13 +1274,16 @@ let rec drive_nonmemory_steps_aux2 (acc: map Mem.thread_id (list Core_reduction.
             | Nothing ->
                 error ("Driver.drive_nonmemory_steps_aux2 => invalid tid: " ^ show tid)
           end in
-        Core_reduction.step_ctx dr_st.layout_state dr_st.core_file dr_st.core_extern tid th_info
-      ) >>= fun steps ->
-      match find_can_advance steps with
+        (* Concurrency Phase 0: "at least two threads exist" is the
+           scheduling-point condition (can_advance) *)
+        let multi_threaded = List.length dr_st.core_state.Core_run.thread_states >= 2 in
+        (multi_threaded, Core_reduction.step_ctx dr_st.layout_state dr_st.core_file dr_st.core_extern tid th_info)
+      ) >>= fun (multi_threaded, steps) ->
+      match find_can_advance model multi_threaded steps with
         | Nothing ->
-            drive_nonmemory_steps_aux2 (Map.insert tid steps acc) xs'
+            drive_nonmemory_steps_aux2 model (Map.insert tid steps acc) xs'
         | Just step ->
-            advance_step tid step >>= fun wakeups ->
+            advance_step model tid step >>= fun wakeups ->
             let xs'' =
               match wakeups with
                 | NOWAKEUP ->
@@ -1086,7 +1293,7 @@ let rec drive_nonmemory_steps_aux2 (acc: map Mem.thread_id (list Core_reduction.
                 | WAKEUP true tids ->
                     Utils.list_inserts tids xs'
               end in
-            drive_nonmemory_steps_aux2 acc xs''
+            drive_nonmemory_steps_aux2 model acc xs''
       end
 end
 
@@ -1195,7 +1402,7 @@ let rec drive_nonmemory_steps_aux (acc: map Mem.thread_id (list Core_reduction.c
                     ) actions_of_current_thread
                   ) >>= fun (last_actions_of_current_thread: set Cmm.action) ->
                   ND.update (fun dr_st -> <| dr_st with
-                    core_state= Core_run.kill_thread tid parent_tid (Set.map Cmm.aid_of last_actions_of_current_thread) cval dr_st.core_state;
+                    core_state= Core_run.kill_thread model tid parent_tid (Set.map Cmm.aid_of last_actions_of_current_thread) cval dr_st.core_state;
                     dr_step_counter= dr_st.dr_step_counter + 1;
                   |>) >>= fun () ->
                   (* try to wake up the parent thread *)
@@ -1271,12 +1478,24 @@ end
 *)
 
 
-val new_drive_core_threads: unit -> driverM (list (Mem.thread_id * maybe Core_reduction.core_step2))
-let new_drive_core_threads () =
+val new_drive_core_threads: Core_run_aux.concurrency_model -> unit -> driverM (list (Mem.thread_id * maybe Core_reduction.core_step2))
+let new_drive_core_threads model () =
   ND.get >>= fun dr_st ->
   let tids = List.map fst dr_st.core_state.Core_run.thread_states in
-  drive_nonmemory_steps_aux2 Map.empty (*NEXT*) tids >>= fun m ->
-  ND.mapM (fun (tid, steps) ->
+  drive_nonmemory_steps_aux2 model Map.empty (*NEXT*) tids >>= fun m ->
+  ND.mapM (fun (tid, steps_raw) ->
+    (* Concurrency Phase 0 (S1/S2 record, measured 2026-09-04): a thread
+       waiting on k children has k IDENTICAL Step_blocked2 entries (one per
+       pending wait); picking among identical steps is not a choice -- every
+       alternative continues identically -- so the list collapses to one
+       blocked step. Without this, every scheduler round multiplied the trace
+       count by k (IRIW: 4^rounds; unfinished in 300 s at 15 GB). Outcome
+       SETS are unchanged; only duplicate traces disappear. Pattern-based
+       (no equality on core_step2, which carries closures). *)
+    let steps =
+      if List.all (fun step -> match step with Core_reduction.Step_blocked2 -> true | _ -> false end) steps_raw
+         && not (List.null steps_raw)
+      then [Core_reduction.Step_blocked2] else steps_raw in
     let size = List.length steps in
     let () = 
       if size > 1 then
@@ -1317,16 +1536,16 @@ let prepare_exit core_st cval =
   end
 
 (* performing all action and memop requests until there are no more *)
-val process_core_step2: bool -> (bool -> driverM unit) -> Core_reduction.core_step2 -> driverM unit
-let process_core_step2 with_concurrency driver2 = function
+val process_core_step2: Core_run_aux.concurrency_model -> (Core_run_aux.concurrency_model -> driverM unit) -> Core_reduction.core_step2 -> driverM unit
+let process_core_step2 model driver2 = function
   | Core_reduction.Step_action_request2 _ loc tid _ m_request ->
       liftCore_run m_request >>= fun request ->
-      perform_action_request2 with_concurrency loc tid request >>= fun () ->
-      driver2 with_concurrency
+      perform_action_request2 model loc tid request >>= fun () ->
+      driver2 model
 
   | Core_reduction.Step_memop_request2 loc memop cvals tid _ mk_th_st ->
       perform_memop_request2 loc memop cvals tid mk_th_st >>= fun () ->
-      driver2 with_concurrency
+      driver2 model
   
   | Core_reduction.Step_done2 cval ->
     ND.print_debug 3 [Debug.DB_driver] (fun () ->
@@ -1345,7 +1564,7 @@ let process_core_step2 with_concurrency driver2 = function
         core_state= Core_run.update_thread_state tid th_st' dr_st.core_state;
         dr_step_counter= dr_st.dr_step_counter + 1
       |>) >>= fun () ->
-        driver2 with_concurrency
+        driver2 model
   
   | Core_reduction.Step_fs2 tid th_st m_fs_step ->
       liftCore_run m_fs_step >>= function
@@ -1357,7 +1576,7 @@ let process_core_step2 with_concurrency driver2 = function
         | Core_reduction.FS_oper fs_step ->
             ND.get                                >>= fun dr_st ->
             drive_fs_step tid th_st dr_st fs_step >>= fun ()    ->
-            driver2 with_concurrency
+            driver2 model
       end
 
   | wrong_step ->
@@ -1365,10 +1584,10 @@ let process_core_step2 with_concurrency driver2 = function
 end
 
 
-val     driver2: bool -> driverM unit
-let rec driver2 with_concurrency =
+val     driver2: Core_run_aux.concurrency_model -> driverM unit
+let rec driver2 model =
   let () = Debug.print_debug 2 [] (fun () -> "ENTERING Driver.driver2") in
-  new_drive_core_threads   () >>= fun tid_steps ->
+  new_drive_core_threads model () >>= fun tid_steps ->
   ND.get >>= fun post_core_dr_st ->
   
   (* TODO: hackish *)
@@ -1399,7 +1618,7 @@ let rec driver2 with_concurrency =
          ) in
          match step_opt with
            | Just step ->
-               process_core_step2 with_concurrency driver2 step
+               process_core_step2 model driver2 step
            | Nothing ->
                (* TODO: hack hack, should just exit *)
                ND.return ()
@@ -1424,12 +1643,12 @@ let rec driver2 with_concurrency =
           (* TODO: hack hack, should just exit *)
           ND.return ()
       | (_, Just step) ->
-      process_core_step2 with_concurrency driver2 step
+      process_core_step2 model driver2 step
     end
     (*
     ND.pick (SK_misc ["driver 4"]) non_blocked_th_sts >>= fun (tid, th_info) ->
     ND.pick (SK_misc ["driver 5"]) (Core_reduction.step_ctx post_core_dr_st.layout_state post_core_dr_st.core_file post_core_dr_st.core_extern tid th_info)
-      >>= (process_core_step2 with_concurrency driver2)
+      >>= (process_core_step2 model driver2)
     *)
     end
   end
@@ -1560,8 +1779,8 @@ let driver_update_thread_state tid th_st =
 let inline update_thread_state = driver_update_thread_state
 
 
-val driver_globals: bool -> Core.file Core_run.core_run_annotation -> driverM Mem.thread_id
-let driver_globals with_concurrency file =
+val driver_globals: Core_run_aux.concurrency_model -> Core.file Core_run.core_run_annotation -> driverM Mem.thread_id
+let driver_globals model file =
   (* spawning a thread for the initialisation of globals, and later the execution of main *)
   spawn_thread Nothing <|
     (* NOTE: the pure(unit) is just a placeholder, the thread is given its actual state later *)
@@ -1606,7 +1825,7 @@ let driver_globals with_concurrency file =
     end >>= fun () ->
     
     (* evaluation of the initialisation *)
-    driver2 with_concurrency >>= fun () ->
+    driver2 model >>= fun () ->
     
     get_thread_states >>= function
       | [(_, (_, th_st))] ->
@@ -1723,12 +1942,21 @@ let prepare_main_args loc callconv tid0 main_sym arg_strs argc_sym argv_sym =
 
 
 
-val drive: bool -> Core.file Core_run.core_run_annotation -> list string -> driverM driver_result
-let drive (with_concurrency: bool) file (arg_strs: list string) =
+val drive: Core_run_aux.concurrency_model -> Core.file Core_run.core_run_annotation -> list string -> driverM driver_result
+let drive (model: Core_run_aux.concurrency_model) file (arg_strs: list string) =
+  (* Concurrency Phase 0 (charter section 4.5; S1): the model's fragment is a
+     property of the PROGRAM -- the entry scan refuses the file before any
+     step runs (CM_sequential: any Epar; CM_sc: any non-Seq_cst atomic order,
+     fence, Linux action, Ewait). The typed kill is the outcome; nothing is
+     approximated. *)
+  match model_check_file model file with
+    | Just refusal ->
+        ND.kill (ND.Other (DErr_model_refused refusal))
+    | Nothing ->
   (* Setting the read-only tag definitions (used by the memory model) *)
   (* first we execute the body of global definitions and remove their symbols
      from the rest of the program *)
-  driver_globals with_concurrency file >>= fun tid0 (*, post_globals_dr_st) *) ->
+  driver_globals model file >>= fun tid0 (*, post_globals_dr_st) *) ->
   ND.get >>= fun post_globals_dr_st ->
   
   (* we need a startup function to have been declared *)
@@ -1881,14 +2109,21 @@ let drive (with_concurrency: bool) file (arg_strs: list string) =
           | _ ->
               error "ERROR (in Driver 2)"
         end >>
-        driver2 with_concurrency >>
-        
-        if with_concurrency then
-          error "CONCURRENCY IS BROKEN"
-        else
-          ND.get >>= fun dr_st' ->
-          ND.return (finalize "drive (without concur)" dr_st')
+        driver2 model >>
+        (* Concurrency Phase 0 (S1): the tail keeps the historical bind shape
+           `(... >> driver2) >> (get >>= finalize)` -- lem's `>>`/`>>=` are
+           left-associative, so the parentheses are load-bearing: without
+           them the outermost bind's first component changes type and every
+           consumer proof that steps `drive` symbolically stops unifying
+           (measured 2026-09-04: the exemplar proof went from 2 s to an
+           out-of-memory kill). *)
+        (ND.get >>= fun dr_st' ->
+         ND.return (finalize (match model with
+           | Core_run_aux.CM_sequential -> "drive (without concur)"
+           | Core_run_aux.CM_sc -> "drive (sc)"
+         end) dr_st'))
 end
+  end
 
 
 (* === Totality declares (arc 3 sweep, 2026-08-18, final batch): Lean-target only.

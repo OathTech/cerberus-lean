@@ -3,7 +3,7 @@ open Cerb_frontend
 type driver_conf = {
 (* TODO: bring back ==> [`Interactive | `Exhaustive | `Random] -> *)
   exec_mode: Cerb_global.execution_mode;
-  concurrency: bool;
+  concurrency: Cerb_frontend.Core_run_aux.concurrency_model; (* Concurrency Phase 0: the model, by name *)
   fs_dump: bool;
   trace: bool;
 }

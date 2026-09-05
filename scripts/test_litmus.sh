@@ -5,8 +5,10 @@
 # `{-{ ... ||| ... }-}`, C11 atomics). Both engines run every program in
 # EXHAUSTIVE mode and the lane compares OUTCOME SETS:
 #
-#   oracle set  = tokens of `cerberus --nolibc --exec --batch --mode=exhaustive`
-#   Lean set    = tokens of `cerberus --cabs-json` -> `cerberus-lean --batch`
+#   oracle set  = tokens of `cerberus --nolibc --exec --batch --mode=exhaustive --concurrency=sc`
+#   Lean set    = tokens of `cerberus --cabs-json` -> `cerberus-lean --batch --concurrency=sc`
+#   (S1/S2: every corpus row runs under the SC instance on BOTH engines; the
+#   sequential model's spawn refusal is pinned by the SEQ leg below)
 #   token       = X for `Defined {value: "X", ...}`  (e.g. Specified(3))
 #               | U for `Undefined {ub: "U", ...}`   (e.g. UB005_data_race)
 #               | ERROR for `Error {msg: ...}`        (the msg is kept aside)
@@ -53,7 +55,8 @@ command -v timeout &>/dev/null || { echo "Error: 'timeout' not found" >&2; exit 
 LITMUS_DIR="${LITMUS_DIR:-$PROJECT_ROOT/tests/litmus}"
 EXPECTATIONS="$LITMUS_DIR/expectations.txt"
 BASELINE="$LITMUS_DIR/before_baseline.txt"
-REFUSE_RE="${REFUSE_RE:-[Cc]oncurrency}"   # placeholder until S1 pins the typed refusal text
+REFUSE_RE="${REFUSE_RE:-^model refused: }"   # S1: the typed refusal text (driver.lem string_of_model_refusal, generated on both engines)
+MODEL_FLAG="${MODEL_FLAG:---concurrency=sc}"   # every corpus row runs under the SC instance on both engines (S1/S2)
 
 MODE=""
 case "${1:-}" in
@@ -100,18 +103,20 @@ tokens_of() {
     printf '{%s}\n' "$(printf '%s\n' "$toks" | paste -sd, -)"
 }
 
-run_oracle() {   # <file.c> <out>
-    "$TIME_BIN" -v -o "$2.time" timeout "${TIMEOUT_SECS}s" "$CERBERUS_BIN" \
+run_oracle() {   # <file.c> <out> [model-flag...]
+    local src="$1" out="$2"; shift 2
+    "$TIME_BIN" -v -o "$out.time" timeout "${TIMEOUT_SECS}s" "$CERBERUS_BIN" \
         --runtime="$PROJECT_ROOT/_build/install/default" \
-        --nolibc --exec --batch --mode=exhaustive "$1" > "$2" 2>&1
+        --nolibc --exec --batch --mode=exhaustive "$@" "$src" > "$out" 2>&1
 }
-run_lean() {     # <file.c> <json> <out>
+run_lean() {     # <file.c> <json> <out> [model-flag...]
+    local src="$1" json="$2" out="$3"; shift 3
     timeout "${TIMEOUT_SECS}s" "$CERBERUS_BIN" --runtime="$PROJECT_ROOT/_build/install/default" \
-        --cabs-json "$1" > "$2" 2> "$2.err" || return 1
-    [[ -s "$2" ]] || return 1
-    "${CAPPED_TEST[@]}" "$TIME_BIN" -v -o "$3.time" timeout "${TIMEOUT_SECS}s" \
-        env LEAN_ABORT_ON_PANIC=1 "$CERBERUS_LEAN_BIN" --batch "$2" 2>&1 \
-        | grep -v '^cerberus-lean-proj env:' > "$3"
+        --cabs-json "$src" > "$json" 2> "$json.err" || return 1
+    [[ -s "$json" ]] || return 1
+    "${CAPPED_TEST[@]}" "$TIME_BIN" -v -o "$out.time" timeout "${TIMEOUT_SECS}s" \
+        env LEAN_ABORT_ON_PANIC=1 "$CERBERUS_LEAN_BIN" --batch "$json" "$@" 2>&1 \
+        | grep -v '^cerberus-lean-proj env:' > "$out"
     return "${PIPESTATUS[0]}"
 }
 
@@ -134,10 +139,10 @@ run_all() {
     local src name oset lset
     for src in "$LITMUS_DIR"/*.c; do
         name=$(basename "$src")
-        run_oracle "$src" "$OUTPUT_DIR/$name.oracle"
+        run_oracle "$src" "$OUTPUT_DIR/$name.oracle" $MODEL_FLAG
         oset=$(tokens_of "$OUTPUT_DIR/$name.oracle") || {
             echo "[FAIL] $name: oracle output unparsable: $(head -1 "$OUTPUT_DIR/$name.oracle")"; DIFF_FAIL=$((DIFF_FAIL+1)); continue; }
-        if ! run_lean "$src" "$OUTPUT_DIR/$name.json" "$OUTPUT_DIR/$name.lean"; then
+        if ! run_lean "$src" "$OUTPUT_DIR/$name.json" "$OUTPUT_DIR/$name.lean" $MODEL_FLAG; then
             lrc=$?
             if is_cap_kill "$lrc" "$OUTPUT_DIR/$name.lean"; then
                 echo "[FAIL] $name: Lean $(kill_label "$lrc" "$OUTPUT_DIR/$name.lean")"; DIFF_FAIL=$((DIFF_FAIL+1)); continue
@@ -153,6 +158,29 @@ run_all() {
         fi
         SET["$name"]="$oset"
     done
+}
+
+# seq_leg: the sequential model's spawn refusal, pinned on ONE corpus file
+# run WITHOUT the model flag on both engines (S1: charter section 4.5 —
+# a parallel program under CM_sequential is a typed refusal, never the
+# pre-S1 silent serialization). Fails loudly if either engine runs it.
+SEQ_LEG_FILE="${SEQ_LEG_FILE:-SB+sc_sc+sc_sc.c}"
+SEQ_FAIL=0
+seq_leg() {
+    local src="$LITMUS_DIR/$SEQ_LEG_FILE" oset lset
+    [[ -f "$src" ]] || { echo "[FAIL] SEQ leg: $SEQ_LEG_FILE missing"; SEQ_FAIL=1; return; }
+    run_oracle "$src" "$OUTPUT_DIR/seq.oracle"
+    oset=$(tokens_of "$OUTPUT_DIR/seq.oracle") || oset="<unparsable>"
+    run_lean "$src" "$OUTPUT_DIR/seq.json" "$OUTPUT_DIR/seq.lean" || true
+    lset=$(tokens_of "$OUTPUT_DIR/seq.lean") || lset="<unparsable>"
+    local omsg lmsg
+    omsg=$(head -1 "$OUTPUT_DIR/seq.oracle.errmsgs" 2>/dev/null); lmsg=$(head -1 "$OUTPUT_DIR/seq.lean.errmsgs" 2>/dev/null)
+    if [[ "$oset" == "{ERROR}" && "$lset" == "{ERROR}" && "$omsg" == "$lmsg" && "$omsg" =~ ^model\ refused:\ thread\ spawn ]]; then
+        echo "[MATCH] SEQ leg ($SEQ_LEG_FILE, no model flag): both engines refuse (\"$omsg\")"
+    else
+        echo "[FAIL] SEQ leg ($SEQ_LEG_FILE, no model flag): oracle $oset (\"$omsg\") vs Lean $lset (\"$lmsg\") — wanted the identical spawn refusal on both"
+        SEQ_FAIL=1
+    fi
 }
 
 # compare_to <rows-file> <label> -> prints per-row verdicts; returns fail count via COMPARE_FAIL
@@ -214,14 +242,15 @@ case "$MODE" in
     if [[ "$MODE" == before ]]; then ref="$BASELINE"; label="baseline"; [[ -f "$BASELINE" ]] || { echo "Error: $BASELINE missing — run --record-before first (fail-closed)" >&2; exit 1; }
     else ref="$EXPECTATIONS"; label="target"; fi
     run_all
+    seq_leg
     # baseline rows carry an optional trailing [msg] column: strip it for read_rows
     if [[ "$MODE" == before ]]; then sed 's/  \[.*\]$//' "$BASELINE" > "$OUTPUT_DIR/baseline.rows"; ref="$OUTPUT_DIR/baseline.rows"; fi
     compare_to "$ref" "$label"
     total=$(ls "$LITMUS_DIR"/*.c 2>/dev/null | wc -l)
     echo ""
     red="${!CLASS_RED[*]}"; [[ -n "$red" ]] || red=none
-    echo "SUMMARY: mode=$MODE programs=$total engine_disagreements=$DIFF_FAIL ${label}_mismatches=$((COMPARE_FAIL - DIFF_FAIL)) red_classes=$red"
-    if [[ $DIFF_FAIL -gt 0 || $COMPARE_FAIL -gt 0 ]]; then echo "LITMUS LANE FAILED"; exit 1; fi
+    echo "SUMMARY: mode=$MODE programs=$total engine_disagreements=$DIFF_FAIL ${label}_mismatches=$((COMPARE_FAIL - DIFF_FAIL)) seq_leg_fail=$SEQ_FAIL red_classes=$red"
+    if [[ $DIFF_FAIL -gt 0 || $COMPARE_FAIL -gt 0 || $SEQ_FAIL -gt 0 ]]; then echo "LITMUS LANE FAILED"; exit 1; fi
     echo "ALL ROWS AT $label"; exit 0 ;;
   plant)
     echo "*** PLANT MODE: the verdicts below are DELIBERATELY corrupted; a green plant means the lane is vacuous ***"

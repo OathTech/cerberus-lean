@@ -121,7 +121,14 @@ let cerberus debug_level progress core_obj
       | Some file -> (Core, file) :: ppouts
       | None -> ppouts in
   (* set global configuration *)
-  set_cerb_conf ~backend_name:"Driver" ~exec exec_mode ~concurrency QuoteStd ~defacto ~permissive ~agnostic ~ignore_bitfields;
+  (* Concurrency Phase 0 (lean_frontend/docs/2026-09-04_concurrency-phase0-sc-charter.md
+     section 4.1): the model is selected BY NAME (--concurrency=sc); absent =
+     the sequential model. Cerb_global's legacy bool records "a model other
+     than the sequential one is selected" for its remaining readers. *)
+  let concurrency_model = match concurrency with
+    | None -> Core_run_aux.CM_sequential
+    | Some m -> m in
+  set_cerb_conf ~backend_name:"Driver" ~exec exec_mode ~concurrency:(concurrency_model <> Core_run_aux.CM_sequential) QuoteStd ~defacto ~permissive ~agnostic ~ignore_bitfields;
   let conf = { astprints; pprints; ppflags; ppouts; debug_level; typecheck_core;
                rewrite_core; sequentialise_core; cpp_cmd; cpp_stderr = true; cpp_save = None } in
   let prelude =
@@ -320,7 +327,7 @@ let cerberus debug_level progress core_obj
           let open Driver_ocaml in
           let () = Tags.reset_tagDefs () in (* TODO: check this *)
           let () = Tags.set_tagDefs core_file.tagDefs in
-          let driver_conf = {concurrency; exec_mode; fs_dump; trace} in
+          let driver_conf = {concurrency= concurrency_model; exec_mode; fs_dump; trace} in
           interp_backend io core_file ~args ~batch ~fs ~driver_conf
         else
           match output_name with
@@ -507,10 +514,14 @@ let sequentialise =
   let doc = "Replace all unseq() with left to right wseq(s)" in
   Arg.(value & flag & info["sequentialise"] ~doc)
 
-(* TODO: is this flag being used? *)
+(* Concurrency Phase 0: the concurrency MODEL, by name. `sc` = the SC-DRF
+   instance (interleaving over the concrete memory, seq_cst atomics only;
+   everything outside that fragment is a typed refusal). Absent = the
+   sequential model (a thread spawn is a typed refusal). The C11 operational
+   model is not selectable (Phase 1). cmdliner refuses unknown names. *)
 let concurrency =
-  let doc = "Activate the C11 concurrency" in
-  Arg.(value & flag & info["concurrency"] ~doc)
+  let doc = "Select the concurrency model (sc); absent = sequential" in
+  Arg.(value & opt (some (enum ["sc", Core_run_aux.CM_sc])) None & info ["concurrency"] ~docv:"MODEL" ~doc)
 
 let batch =
   let doc = "makes the execution driver produce batch friendly output" in
