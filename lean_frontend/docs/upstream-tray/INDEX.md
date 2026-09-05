@@ -365,6 +365,17 @@ and gcc disagrees — the defect is in the shared model, not in our port:
     §2.14, rows CP-09/10/15/21). Also notes a parser assertion failure on
     a user-file `builtin` declaration (core_parser.mly:961).
 
+36. **36-mk-conv-int-bypasses-impl-def-signed-conversion.md** — UNCLEAR →
+    likely TRUE BUG (latent, unobservable under the shipped gcc impl).
+    `core_eval.lem:61-81` (`mk_conv_int`, the evaluator's `PEconv_int`
+    rule) wraps every non-representable conversion with `wrapI`, while
+    `std.core:25-55`'s `conv_int` calls the impl-defined
+    `<Integer.conv_nonrepresentable_signed_integer>` for SIGNED targets
+    (§6.3.1.3#3); the code's own `TODO` records the intent. Agree today
+    only because the gcc impl defines that function as `wrapI`. Remedy:
+    branch on signedness and evaluate the impl constant. Reported to us by
+    the refined-cerberus team (their 2026-09-05 note); cites re-verified.
+
 Amended 2026-09-05: draft 10 gains an addendum for the STRING-LITERAL
 form of `\?` (`"\?"` reaches the same decoder from translation.ml:3029;
 `tests/noodle-probes/ptr/ptr_string_literals.c`, upstream exit 125
