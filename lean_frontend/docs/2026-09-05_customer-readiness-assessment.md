@@ -119,14 +119,31 @@ stale. The remaining work is to verify their integration with current mainline,
 not recreate them. The branch still predates C4 and P0; its recorded
 83/49/13/15/6 fuel census is not the mainline census.
 
-**The csmith run remains unfinished.** The observed `.tmp/p0-reverify.log`
-has a completed shard 1/6 and an active shard 2/6. Shard 1 says:
+**The csmith run remains unfinished and now has two timeout regressions.**
+At the final check, `.tmp/p0-reverify.log` has completed shards 1/6 and 2/6,
+with shard 3/6 running. Shard 1 says:
 
 ```text
 SUMMARY: total=279 match=127 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=1 hang=0 cerb_skip=151 cerb_floor=0 cerb_inconsistent=0
 Baseline check: 0 regression(s), 0 improvement(s)
 BASELINE OK
 ```
+
+Shard 2 subsequently returned rc=1, verbatim:
+
+```text
+REGRESSION: sa_csmith_369.c baseline=MATCH current=TIMEOUT
+REGRESSION: sa_csmith_371.c baseline=MATCH current=TIMEOUT
+Baseline check: 2 regression(s), 0 improvement(s)
+FAILED: regressions vs baseline
+```
+
+The process list shows a separate existing session rerunning these two
+inputs. This assessment has not observed its result. Do not attribute the
+timeouts to load, measure overhead, or the extractor repair without
+measurement, and do not rebaseline them away. The final six-shard result
+and per-row disposition remain owed. The outer script's `tail -6` also
+discarded this shard's SUMMARY line from the top-level log.
 
 The preceding raw battery log includes `test_fuel_plant.sh` rc=1. Its
 subsequent correction and successful rerun are recorded in
