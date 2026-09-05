@@ -153,6 +153,7 @@ roots = [
   "CerbMeasureLemmas",
   "CerbMem_lemMeasureProofs",
   "Core_run_aux_lemMeasureProofs",
+  "Cmm_csem_lemMeasureProofs",
   "Core_reduction_lemMeasureProofs",
   "Defacto_memory_lemMeasureProofs",
   "Core_aux_lemMeasureProofs",

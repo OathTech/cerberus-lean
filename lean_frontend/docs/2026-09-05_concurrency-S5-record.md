@@ -8,6 +8,21 @@ after the S4 report listed this slice's content). Branch
 
 ## 0. What landed (charter §4.7, item by item)
 
+**ERRATUM 2 (S7, 2026-09-05 — after the pre-merge audit and the rebase
+onto mainline `31eba718e`):** two of this slice's decisions were reversed
+by S7 and this record is left as written for the history: (1) item 1's
+DELETION of `using_concurrency` — the mainline's cerbglobal-defs slice
+(`016b2a6ea`) had meanwhile made it a plain `def … := false` with an `rfl`
+lemma; at the rebase the orchestrator instructed "keep mainline's form",
+so `global.lem`'s val, `CerbGlobal.using_concurrency` and the census rows
+are mainline's; the def has no reader on any target (a one-line follow-up
+if wanted). (2) §1's RESTATEMENT of `apply_tree`/`apply_tree_fp_aux` —
+[USER 2026-09-05] "lem edits are against the rules"; S7 reverts the bodies
+to upstream's text and totalizes by the charter's fuel route
+(`declare {lean} fuel_measure`, proofs in `Cmm_csem_lemMeasureProofs.lean`).
+Record: `2026-09-05_concurrency-S7-record.md`.
+
+
 1. **`using_concurrency` deleted** (global.lem `val` + its three
    target_reps; `CerbGlobal.lean` `using_concurrency_impl` + the opaque +
    the never-set `concurrency` config field; the two
@@ -48,7 +63,7 @@ after the S4 report listed this slice's content). Branch
    corrected (the concurrency model is a parameter, not a boundary; the
    stub is gone). **README.md**: the capability bullet and the headline
    number.
-6. **Upstream tray drafts 20–22** (+ INDEX): the `_Atomic` qualifier form
+6. **Upstream tray drafts 36–38** (+ INDEX): the `_Atomic` qualifier form
    (§3 — the S0/S4 finding NARROWED by a six-shape sweep), the driver's
    duplicate blocked-step branching, `--concurrency` broken upstream with
    the fork's instance offered as the restoration.
@@ -129,7 +144,7 @@ Cmm partials before: Cmm_csem.lean:792 apply_tree, :2392 apply_tree_fp_aux (2); 
 failwithI residuals: Cmm_aux 0, Cmm_op 1, Cmm_csem 75 (unchanged)
 ```
 
-## 3. FINDING (tray 20): the `_Atomic` qualifier finding, narrowed
+## 3. FINDING (tray 36): the `_Atomic` qualifier finding, narrowed
 
 S0 recorded "`_Atomic int x` is rejected by the front end". A six-shape
 oracle sweep (this slice) shows it is two specific positions, and the
@@ -342,7 +357,7 @@ re-pin reason; NDguard/NDbranch unreachability is the standing FUEL/ND
 plant surface (unchanged by this arc). E5: DESIGN/VALIDATION/README carry
 the model section, F_SC, the §4.6 boundary entry and the DRF-SC citation;
 per-slice manifests exist (the cumulative one and the consumer note are
-S6); tray drafts 20–22 exist. E6: no `2>/dev/null` added, 0 `partial` in
+S6); tray drafts 36–38 exist. E6: no `2>/dev/null` added, 0 `partial` in
 the exec cone (now incl. Cmm), no heartbeat/maxRecDepth bumps, no
 numerals as budgets; longest pass this slice: the 24-minute gcc lane.
 

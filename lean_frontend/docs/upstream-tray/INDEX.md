@@ -512,10 +512,11 @@ design question stays draft 07.
   introduced by our commit 8923d6436 — see the provenance footer there.
 
 Added 2026-09-05 (concurrency Phase 0, `feature/concurrency` — the arc's
-tray items; un-forked repros re-verified against deps/cerberus-upstream @
+tray items — numbered 36–38 after the zero-discrepancy Z4 drafts 20–35 that
+landed on the mainline the same day; un-forked repros re-verified against deps/cerberus-upstream @
 b9aeedcb4 by file:line, the front-end one by a six-shape oracle sweep):
 
-20. **20-atomic-qualifier-form-dropped.md** — TRUE BUG. The C11 `_Atomic`
+36. **36-atomic-qualifier-form-dropped.md** — TRUE BUG. The C11 `_Atomic`
     QUALIFIER form is dropped for block-scope declarations WITH an
     initializer (the self-labelled BROKEN desugar path registers the
     un-wrapped type) and misplaced for parameters (`_Atomic int *p` becomes
@@ -523,14 +524,17 @@ b9aeedcb4 by file:line, the front-end one by a six-shape oracle sweep):
     to atomic operation must be a pointer to _Atomic type" violation.
     File-scope and block-scope-without-initializer are right; the
     specifier form and `atomic_int` escape. Two-site remedy proposed.
-21. **21-driver-scheduler-duplicate-blocked-steps.md** — TRUE BUG
+37. **37-driver-scheduler-duplicate-blocked-steps.md** — TRUE BUG
     (multiplicity, not verdicts): the exhaustive driver picks among k
     identical `Step_blocked2` entries of a k-child join every round —
     k^rounds redundant traces (IRIW unfinished at 300 s / 15 GB; 6300
     traces in 1 s after the one-line collapse). Latent upstream until
     concurrency runs.
-22. **22-concurrency-flag-is-broken.md** — INTENDED GAP, user-facing:
+38. **38-concurrency-flag-is-broken.md** — INTENDED GAP, user-facing:
     `--concurrency` is accepted and dies with `internal error: CONCURRENCY
     IS BROKEN`; without it `par` programs are silently serialized (one
     outcome, no race verdict). Two-tier remedy: typed refusals now; the
-    fork's parametric SC instance as a restoration offered upstream.
+    fork's parametric SC instance as a restoration offered upstream. Also
+    names the fork's `atomic_compare_exchange_{strong,weak}_explicit`
+    reduction rules (a sequential-visible oracle change: upstream dies with
+    `TODO[Core_reduction]: CompareExchangeStrong`; pre-merge audit M5).

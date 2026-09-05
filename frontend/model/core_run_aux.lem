@@ -446,7 +446,7 @@ let rec add_to_sb_ctx model p_aids ctx =
       | Csseq annots pat ctx' e2 ->
           (* a tag crossing a STRONG boundary enters e2 as positive: everything
              in e2 is sequenced after the action whatever its polarity (the
-             working-era rule at procedure entry, upstream core_run.lem:981
+             working-era rule at procedure entry, upstream 0df8708ad^ core_run.lem:936/:1007
              `Set.map (fun z -> (Pos, z))`); the expression walker's weak-seq
              filter inside e2 then only concerns e2's own negative actions.
              Measured 2026-09-05: without this, `a = 1; b = a;` lost the

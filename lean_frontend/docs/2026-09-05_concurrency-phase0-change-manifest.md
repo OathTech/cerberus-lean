@@ -18,13 +18,17 @@ head (the rebased S0–S5 commits). Charter:
 | `Step_action_request2 s loc tid b k` (5) | `Step_action_request2 s loc tid b pol annots k` (7) | Core_reduction.lean `core_step2` | S3: polarity + `core_run_annotation` |
 | `match … action_request2` exhaustive | + arm `CompareExchangeRequest2 strong ty obj exp desired mo_s mo_f k` | Core_reduction.lean | S4 |
 | `match … driver_error` exhaustive | + `DErr_model_refused (r : model_refusal)`, `DErr_model_inconsistent (i : model_inconsistency)` | Driver.lean | S1/S3 |
-| `Global.using_concurrency ()` | — (deleted) | Global.lean / CerbGlobal.lean | S5; no caller existed |
+| `Global.using_concurrency ()` | unchanged: mainline's plain `def … := false` (`using_concurrency_eq` by `rfl`) | Global.lean / CerbGlobal.lean | no caller on any target since S1; S5's deletion was reverted at the S7 rebase ("keep mainline's form") |
 | `CerbConcurrency.statically_satisfied` | — (module deleted) | — | S5; never referenced |
 
-Everything else on your statement surface is unchanged in signature:
-`drive_nonmemory_steps_aux2` (the single-thread executor; its step-list
-discipline — last component first, first advanceable — untouched, review
-§7), `driver2`, `process_core_step2`, the memory model, the ND runner.
+The driver FAMILY takes the model too — `driver2 : … → concurrency_model
+→ driverM Unit`, `process_core_step2 (model) (driver21 : concurrency_model
+→ …)`, `drive_nonmemory_steps_aux2` with the `concurrency_model` argument
+between `tds` and `acc` — exactly as the S1 manifest §1 lists (the earlier
+text of this sentence said "unchanged"; corrected per the pre-merge audit
+M2). The single-thread executor's step-list discipline (last component
+first, first advanceable) is untouched (review §7); the memory model and
+the ND runner are unchanged.
 
 ## 2. New definitions (generated), by slice
 
@@ -42,8 +46,13 @@ discipline — last component first, first advanceable — untouched, review
   measure `lemSize g`, obligations re-proved).
 - S4: `cmpxchg_values_equal`, `perform_compare_exchange` (Driver.lean);
   `wrap_tagged_many`, `compare_exchange_action` (Core_reduction.lean).
-- S5: `apply_tree_list`, `apply_tree_fp_aux_list` (Cmm_csem.lean;
-  `apply_tree`/`apply_tree_fp_aux` are plain structural `def`s now).
+- S5/S7: `apply_tree`/`apply_tree_fp_aux` are TOTAL fuel'd definitions
+  (were `partial`): `apply_tree pred_tree X := apply_tree_lemFuel
+  (named_predicate_tree.lemSize pred_tree) pred_tree X`, with the generated
+  sufficiency obligation `apply_tree_measure_sufficient` proved in
+  `Cmm_csem_lemMeasureProofs.lean` (the fuel-measure route; upstream's
+  `.lem` bodies untouched). Same signatures as before; unfold through the
+  obligation.
 
 ## 3. Behaviour under `CM_sequential` (your instance)
 
@@ -53,7 +62,7 @@ MR_spawn_under_sequential))` at `advance_step` (S1 manifest §3 lists the
 arms by file:line) where it used to be silently serialized. No sequential
 lane program spawns (S0 grep over 1,669 files: zero); the FULL battery is
 at zero movement at every slice (E3). The six theorems in
-`test/Unit/SCBridgeTest.lean` §SequentialIdentity state that every
+`Core_run_aux_lemMeasureProofs.lean` §SequentialIdentity (library side since S7; `test/Unit/SCBridgeTest.lean` re-states them) state that every
 concurrency hook is the identity under `CM_sequential` (S5 manifest §2).
 
 ## 4. Behaviour under `CM_sc` (the SC-DRF instance; not your instance yet)
@@ -68,16 +77,18 @@ issue = the recorded non-parametric point (DESIGN.md §4; mover Phase 1).
 ## 5. Gates you may rely on at re-pin
 
 Totality slice incl. Cmm_aux/Cmm_csem/Cmm_op (0 partials); axiom census
-0; `sorry` census 0; boundary-opaque population 25 rows (−1); litmus lane
-24/24 at target on both engines (E1); every slice's FULL battery verbatim
-in its record.
+0; `sorry` census 0; the boundary-opaque population is mainline's (the
+CerbGlobal rows left it on the mainline's cerbglobal-defs slice); litmus
+lane 30/30 at target on both engines (E1; shared objects at block AND
+file scope since S7); every slice's FULL battery verbatim in its record.
 
 ## 6. Owed (stated, not hidden)
 
 The `Epar`-free agreement lemma (your Q4; accepted in our response record
 as an S5 proof) is NOT discharged — see the consumer note §3 for the
-precise statement, what changed since the accepted design, and the
-decision pending with the operator.
+precise statement (with BOTH premises: `epar_free f = true` AND
+`sc_fragment_ok f = true`, per the pre-merge audit M1), what changed since
+the accepted design, and the decision pending with the operator.
 
 ## 7. Attachments
 

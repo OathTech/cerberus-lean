@@ -205,4 +205,53 @@ theorem convert_expr_measure_sufficient {a : Type} {bty : Type} (g : generic_exp
     convert_expr_lemFuel lemFuel g = convert_expr g :=
   convert_expr_stable_aux (generic_expr.lemSize g) g lemFuel (generic_expr.lemSize g) (Nat.le_refl _) lemMeasureLe (Nat.le_refl _)
 
+/-! ## Sequential identity facts (concurrency Phase 0 S5/S7)
+
+  Every concurrency hook is the identity under `CM_sequential`: the sb/asw
+  walkers on expressions (the fuel'd workers, at their measure), on reduction
+  contexts and on continuation stacks return their argument by the first
+  `match model`. These are the facts a sequential theorem needs in order to
+  ignore the model parameter (the exemplar's `drive_after_setup` uses
+  `add_to_sb_sequential` to discharge the S7 initialisation tagging of
+  main's body, which is `add_to_sb CM_sequential ∅ body`). Moved here from
+  test/Unit/SCBridgeTest.lean at S7 so library proofs can use them; the test
+  re-states them as examples. Kernel-checked by ordinary tactics. -/
+section SequentialIdentity
+
+theorem add_to_sb_ctx_sequential (p_aids : Pset (polarity × (thread_id × aid))) (ctx : context) :
+    add_to_sb_ctx CM_sequential p_aids ctx = ctx := by
+  unfold add_to_sb_ctx; rfl
+
+theorem add_to_asw_ctx_sequential (aids : Pset aid) (ctx : context) :
+    add_to_asw_ctx CM_sequential aids ctx = ctx := by
+  unfold add_to_asw_ctx; rfl
+
+theorem add_to_sb_stack_sequential (p_aids : Pset (polarity × (thread_id × aid))) (st : stack core_run_annotation) :
+    add_to_sb_stack CM_sequential p_aids st = st := by
+  unfold add_to_sb_stack; rfl
+
+theorem add_to_asw_stack_sequential (aids : Pset aid) (st : stack core_run_annotation) :
+    add_to_asw_stack CM_sequential aids st = st := by
+  unfold add_to_asw_stack; rfl
+
+theorem add_to_sb_sequential (p_aids : Pset (polarity × (thread_id × aid))) (g : generic_expr core_run_annotation Unit sym) :
+    add_to_sb CM_sequential p_aids g = g := by
+  unfold add_to_sb
+  obtain ⟨n, hn⟩ : ∃ n, generic_expr.lemSize g = n + 1 :=
+    ⟨generic_expr.lemSize g - 1, by have := expr_lemSize_pos g; omega⟩
+  rw [hn]
+  obtain ⟨annot1, e_⟩ := g
+  simp only [add_to_sb_lemFuel]
+
+theorem add_to_asw_sequential (aids : Pset Nat) (g : generic_expr core_run_annotation Unit sym) :
+    add_to_asw CM_sequential aids g = g := by
+  unfold add_to_asw
+  obtain ⟨n, hn⟩ : ∃ n, generic_expr.lemSize g = n + 1 :=
+    ⟨generic_expr.lemSize g - 1, by have := expr_lemSize_pos g; omega⟩
+  rw [hn]
+  obtain ⟨annot1, e_⟩ := g
+  simp only [add_to_asw_lemFuel]
+
+end SequentialIdentity
+
 end Core_run_aux_lemMeasureProofs

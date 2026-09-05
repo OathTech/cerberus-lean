@@ -216,14 +216,23 @@ a bug today and what is a bug still open, in the class vocabulary.
   The oracle's `--switches=PNVI` CHANGES the answer (an integer→pointer
   UB043 becomes a value), so this is a feature we do not have, not a
   difference we hide.
-- *Concurrency* (`--concurrency`): REFUSED, attributed — "not supported;
-  the oracle's own mode is non-functional at `b9aeedcb4`" (`internal
-  error: CONCURRENCY IS BROKEN`, `nondeterminism.ml:64` via `smt2.ml:38`).
-  In matched mode atomics run sequentially and AGREE on both engines
-  (`elab_atomic_qualifier_seq.c`, 8 traces each). A concurrency line of
-  work exists on the branch `feature/concurrency` (a parametric model
-  selector with an SC instance first); until it lands and is validated,
-  the refusal is the contract.
+- *Concurrency* (`--concurrency`): the concurrency MODEL is a PARAMETER of
+  the semantics since Phase 0 (DESIGN.md §4 "The concurrency model is a
+  parameter"; `Core_run_aux.concurrency_model = CM_sequential | CM_sc`,
+  threaded from `drive`, both engines by generation). `--concurrency=sc`
+  selects the SC-DRF instance; the default is the sequential model, under
+  which a thread spawn is a typed refusal in the outcome list
+  (`DErr_model_refused MR_spawn_under_sequential`) where the historical
+  driver silently serialized it. Under `CM_sc`, programs outside the
+  fragment F_SC (non-`seq_cst` orders, fences, Linux atomics, `wait`) are
+  typed refusals at the entry scan — class (c), attributed by constructor.
+  A bare `--concurrency` or an unknown model name is refused on both engines
+  (the oracle's cmdliner enum, `Main.refuseFlag`). Upstream's own mode
+  (`internal error: CONCURRENCY IS BROKEN`) is tray draft 38. Validation:
+  the litmus lane (§5), 30 programs three-way at the recovered upstream
+  expectation sets, race rows `UB005_data_race` on both engines, refusal
+  rows refused identically; the SC consistency BRIDGE check per trace
+  (`MI_sc_inconsistent leaf` is an internal error, plant-tested).
 - *CerbFS*: an in-memory file-system model that SERVES exactly the
   operations it can answer as SibylFS does and REFUSES every other,
   loudly (`PANIC … CerbFS refusal (fail-closed fs-model boundary): <op>
@@ -247,13 +256,22 @@ a bug today and what is a bug still open, in the class vocabulary.
   working practices ban; the oracle's behaviour is a tray candidate).
 - *Accepted command line:* `--batch | --pp-core | --parse-core` (argv[0]),
   `--first`, `--stdin`, `--libc <core>`/`--libc-tu <json>`, `--call <f>`
-  [`--call-args`], `--args <str>`, `--trace-nodes`, `--fuel <N>`; any
-  other `--` token, or a known flag out of its canonical position, is
-  refused (Z-24; it used to be treated as a file name).
+  [`--call-args`], `--args <str>`, `--trace-nodes`, `--fuel <N>`,
+  `--concurrency=sc` (concurrency Phase 0); any other `--` token, or a
+  known flag out of its canonical position, is refused (Z-24; it used to be
+  treated as a file name).
 
 **(d)** — the register, §2 (R1, R2, R3).
 
 **Still open (bugs by the rule; each with its owner):**
+
+- *Mixed-size overlapping accesses are not races under `CM_sc`* (pre-merge
+  audit M3): the SC instance's locations are pointer values (the upstream
+  `FOOTPRINT` dummy instantiation of `cmm_aux.lem`), so a byte read
+  overlapping an int write is not paired by `data_races` — a quiet wrong
+  answer inside F_SC on both engines identically. Owner: Phase 1
+  (byte-footprint location equality; `Mem.footprint` is already in the
+  request callbacks). Recorded in DESIGN.md §4 and TODO.md.
 
 - *libc-mode allocation-address ordering* (Z-28): program globals are
   interleaved among the libc TUs' globals on the oracle and placed after
@@ -341,6 +359,7 @@ lanes, with their recorded states:
 | `test_cn_coverage.sh` | `deps/cn/tests/cn` | **213/213** at the exact-match baseline (multi-TU drivers, reject lane, manifest bijection) |
 | `test_immaculate.sh` | curated pin suite | at baseline (incl. adversarial pins, e.g. the symbol-hash-collision tripwire) |
 | `test_gcc_oracle.sh --check-baseline` | tests/minimal + debug + float + immaculate/nolibc + the staged csmith tier (1,953 rows) | gcc SECOND oracle (oracle-independent): native `gcc -O0` exit status vs the Lean verdict set, `-O2` spot tier, fail-closed triage ledger; at the pinned skip ledger `scripts/gcc_oracle_baseline.txt` (regressions fatal; improvements printed at rc 0). Tier B GATE since 2026-09-02 [USER]. Load caveat: the TIMEOUT-class rows are wall-clock sensitive (TIMEOUT_SECS=30; the slowest csmith rows hand-time at ~17 s on a quiet box, and a busy box — load ≈12 at the 2026-09-02 audit — pushed one over) — a REGRESSION whose only movement is into SKIP_LEAN_TIMEOUT is re-run on a quiet box before it is read as red; no code change. |
+| `test_litmus.sh --check` | `tests/litmus/` (30 C litmus programs: SC, race, RMW, refusal classes; block-scope AND file-scope shared objects) | concurrency Phase 0: both engines exhaustive under `--concurrency=sc`, outcome SETS three-way (oracle == Lean == the recovered upstream `expectations.txt` + `sc_reference.py`'s derivation), race rows UB005 on both, out-of-fragment rows refused identically, the sequential-model spawn refusal leg; **30/30 at target** (charter exit criterion E1; S4 2026-09-05, S7 file-scope rows); plants `--plant` |
 | `test_verify.sh` | `tests/verify` + `corpus/` | pin provenance (oracle `--pp=core` re-derivation byte-identical / content-hash) + main-mode differentials + per-function call-point differentials (Lean `--call` vs oracle wrapper TU vs recorded pin) — 127 checks at the Z2 close (record §14) |
 | `test_speclab*.sh` (6 scripts) | rendered harness families | five families (scalar/bytes/list/tree/CN-seed): sweeps, deterministic fuzz with byte-wise shrinking, plant tests, pinned-term gates — ~2,000 recorded differential executions, all agreeing |
 | `test_csmith_corpus.sh` | 1,669 in-tree csmith programs | classified pinned baseline (sharded; reporting tier full-pass): 0 MISMATCH/DIFF rows; the non-MATCH rows are 499 `CERB_SKIP` (oracle-side) + 9 `TIMEOUT` (derived from `scripts/exec_csmith_corpus_baseline.txt` at `928aa1e76`; the header's per-row narrative is the arc-13 record) |
@@ -598,6 +617,18 @@ The claims this validation surface supports are exactly:
    `runEffectful` does not exist under any name; reintroducing
    `declare {lean} effectful` is a lem generation-time refusal.
    (Charter: `docs/2026-08-31_effect-retirement-design.md` §1.3.)
+5. **The SC concurrency instance is a member of the C11 model family,
+   checked per trace, not assumed**: on the litmus corpus both engines
+   produce the recovered upstream outcome sets under `--concurrency=sc`
+   (E1), and every race-free trace's recorded candidate execution
+   satisfies the library's SC consistency tree at runtime (a failing leaf
+   is a typed internal error; the corrupt-`rf` plant trips it). Sampled,
+   like everything in §4–5. The bridge check is NOT a race-freedom oracle
+   (pre-merge audit F1: an isolated initialisation write is a consistent
+   execution); race freedom is `data_races` over the recorded `hb`. The
+   theorem-shaped statements (agreement of the two models on `Epar`-free
+   files IN the fragment, the bridge invariant as a lemma) are recorded as
+   owed in `docs/2026-09-05_concurrency-S5-record.md` §4, not claimed here.
 5. Fuel is a quantified parameter (§7): for any oracle-terminating run
    there is a `--fuel N` at which Lean agrees — the design rationale,
    not a shipped theorem (fuel monotonicity for the driver workers is
@@ -634,6 +665,7 @@ left the list 2026-09-05, see below):
 
 There is no other declared boundary. The debug no-op stubs (`CerbDebug`,
 `CerbUtils`) are off every differential path (the oracle's debug level
-is 0 in matched mode); `CerbFS` and concurrency are class (c) as stated
-in §3; the fuel bound is class (b)/fuel with its parameter. Known
+is 0 in matched mode); `CerbFS` is class (c) as stated in §3, and
+the concurrency model is a PARAMETER (DESIGN.md §4), not a boundary — its
+out-of-fragment refusals are class (c); the fuel bound is class (b)/fuel with its parameter. Known
 limitations with owners are in §3 and [TODO.md](TODO.md).

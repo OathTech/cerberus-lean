@@ -73,6 +73,7 @@ import CerbCall
 import Core
 import Core_run_aux
 import Driver
+import Core_run_aux_lemMeasureProofs
 -- pin-bump 2026-09-03 (LemLib 3c88f0d, parity-fix F7): the generated
 -- `nd_mapM` folds with the tail-recursive `lemListFoldr` (an Array.foldr
 -- under the hood), which does not reduce by `dsimp` the way `List.foldr`
@@ -461,6 +462,13 @@ theorem drive_after_setup (k : Nat) (dstD : driver_state)
   -- divisor by rfl).
   rw [alignofIval_signed_int]
   refine (runOne_bind_active (z := _) (s' := _) (runOne_liftMem_active rfl)).trans ?_
+  -- Concurrency Phase 0 S7 (audit F1): `drive` reads the recorded actions
+  -- (none under CM_sequential) and tags main's body sb-after them —
+  -- `add_to_sb CM_sequential ∅ mainBody`, the identity by the library lemma
+  -- (NEVER by rfl: the fuel'd walker on the concrete body is the S3-era OOM).
+  refine (runOne_bind_active (z := _) (s' := _) rfl).trans ?_
+  dsimp only
+  rw [Core_run_aux_lemMeasureProofs.add_to_sb_sequential]
   -- park main's arena; driver2; finalize
   refine (runOne_bind_active (z := ()) (s' := dstD) ?_).trans ?_
   · refine (runOne_bind_active (z := ()) (s' := @S₁ ⟨Nat.succ (Nat.succ k)⟩) rfl).trans ?_

@@ -97,7 +97,7 @@ rule (positive tags only into e2) filtered the tag that had already crossed
 the statement's STRONG boundary. Diagnosis: SB-TAG/SC-RECORD debug lines
 (kept, `-d2`, CM_sc only) and the dumped remaining program. Fix: a tag
 crossing a `Csseq` frame enters e2 as POSITIVE — the working-era rule at
-procedure entry (`Set.map (fun z -> (Pos, z))`, upstream core_run.lem:981)
+procedure entry (`Set.map (fun z -> (Pos, z))`, upstream 0df8708ad^ core_run.lem:936/:1007 — cite corrected by the pre-merge audit M7)
 generalised to the context walker. Why not simply tag the rebuilt arena
 with the expression walker (which "worked" with positive tags): it also
 tags the action's UNSEQUENCED siblings, over-approximating sb — and hiding

@@ -1489,7 +1489,7 @@ let step_ctx model mem_st file core_extern current_tid (parent_tid_opt, th_st) =
                  E.return <| th_st with
                    (* S3: the callee's actions are sequenced after (asw-after)
                       everything the CALL node was -- the working-era rule
-                      (upstream 0df8708ad^ core_run.lem:981); identity under
+                      (upstream 0df8708ad^ core_run.lem:936/:1007); identity under
                       CM_sequential *)
                    arena= Core_run_aux.add_to_asw model call_annots.asw_before
                             (Core_run_aux.add_to_sb model (Set.map (fun z -> (Pos, z)) call_annots.sb_before) expr);

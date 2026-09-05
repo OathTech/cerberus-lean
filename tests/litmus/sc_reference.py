@@ -84,6 +84,24 @@ TESTS = {
     ret=lambda r: r['r2']),
  'MP+na+na.c': dict(vars={'x': (False, 0)}, regs={'r': 7},
     pre=[], threads=[[st('x', 1)], [ld('x', 'r')]], post=[], ret=lambda r: r['r']),
+ # --- S7 (pre-merge audit F1): the shared objects at FILE SCOPE. The reference
+ # model's `vars` initial values ARE static initialisation (sequenced before
+ # program startup, C11 5.1.2p1 / 6.2.4p3), so the transcripts equal their
+ # block-scope rows'; the two globals+init rows are the audit's probes p8a/p8d.
+ 'SB+sc_sc+sc_sc+globals.c': dict(vars={'x': (True, 0), 'y': (True, 0)}, regs={},
+    pre=[], threads=[[st('x', 1), ld('y', 'r1')], [st('y', 1), ld('x', 'r2')]], post=[],
+    ret=lambda r: r['r1'] + 2 * r['r2']),
+ 'MP+na_sc+sc_na+globals.c': dict(vars={'x': (False, 0), 'y': (True, 0)}, regs={},
+    pre=[], threads=[[st('x', 1), st('y', 1)],
+                     [ld('y', 'z1'), iff('z1', 1, [ld('x', 'z2')], [setr('z2', 2)])]], post=[],
+    ret=lambda r: r['z2']),
+ 'datarace+Wna+Wna+globals.c': dict(vars={'x': (False, 0)}, regs={},
+    pre=[], threads=[[st('x', 1)], [st('x', 2)]], post=[ld('x', 'r')], ret=lambda r: r['r']),
+ 'globals+init+Wna_Wna.c': dict(vars={'p': (False, 0), 'q': (False, 0)}, regs={},
+    pre=[], threads=[[st('p', 1)], [st('q', 2)]], post=[ld('p', 'a'), ld('q', 'b')],
+    ret=lambda r: r['a'] + r['b']),
+ 'globals+init+Rna_Rna.c': dict(vars={'c': (False, 5)}, regs={},
+    pre=[], threads=[[ld('c', 'r1')], [ld('c', 'r2')]], post=[], ret=lambda r: r['r1'] + r['r2']),
 }
 
 MAIN = 'main'

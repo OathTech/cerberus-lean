@@ -117,7 +117,7 @@ run tiers):
   cannot run: recorded, never counted as agreement) — plus the
   coverage, debug, and float suites at their pinned baselines;
 - 213/213 programs of the CN test corpus (multi-TU, libc proxies);
-- 24/24 concurrency litmus programs (`tests/litmus/`) at the recovered
+- 30/30 concurrency litmus programs (`tests/litmus/`) at the recovered
   upstream outcome sets under `--concurrency=sc`, three-way (oracle,
   Lean, expectation file), refusal rows included;
 - 16/16 URIs through libxml2's `xmlParseURISafe` (5 translation

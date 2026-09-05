@@ -557,27 +557,19 @@ let {coq} named_predicate_tree_measure t =
     | Node l -> 1 + length l
   end
 
-(* Concurrency Phase 0 S5 (2026-09-05): restated as MUTUAL structural
-   recursion with an explicit branch-list walker. Upstream's form
-   (`List.all (fun (name, branch) -> apply_tree branch X) l`) is the same
-   function -- List.all is a left-to-right short-circuit conjunction, exactly
-   `apply_tree branch X && apply_tree_list rest X` -- but no target's
-   termination checker sees through the higher-order call on a nested
-   inductive (Lean: "failed to eliminate recursive application"); the
-   walker form is structural on every target and needs no fuel. Both engines
-   are generated from this text. Record docs/2026-09-05_concurrency-S5-record.md. *)
 let rec apply_tree pred_tree X =
   match pred_tree with
     | Leaf p -> p X
-    | Node l -> apply_tree_list l X
+    | Node l -> List.all (fun (name, branch) -> apply_tree branch X) l
   end
-and apply_tree_list l X =
-  match l with
-    | [] -> true
-    | (name, branch) :: rest -> apply_tree branch X && apply_tree_list rest X
-  end
-declare {lean} termination_argument apply_tree = automatic
-declare {lean} termination_argument apply_tree_list = automatic
+(* Concurrency Phase 0 S7 (2026-09-05; [USER 2026-09-05] "lem edits are against
+   the rules" -- the S5 body restatement is REVERTED to upstream's text): the
+   Lean target totalizes this nested recursion by the fuel-measure route
+   (charter section 4.7): the worker is fuel'd, the wrapper starts the counter
+   from the tree's derived size, and the generated sufficiency obligation is
+   proved in lean_frontend/Cmm_csem_lemMeasureProofs.lean. OCaml text: unchanged. *)
+declare {lean} fuel val apply_tree = `fuelExhausted false`
+declare {lean} fuel_measure val apply_tree = `lemSize pred_tree`
 
 
 type fault_setgen =
@@ -3259,20 +3251,15 @@ type named_predicate_tree_fp =
   | Node_fp of list (string * named_predicate_tree_fp)
 
 val apply_tree_fp_aux: named_predicate_tree_fp -> candidate_execution_fp -> candidate_execution -> bool
-(* Concurrency Phase 0 S5: mutual structural form, as apply_tree above. *)
 let rec apply_tree_fp_aux pred_tree ex_fp ex =
   match pred_tree with
     | Leaf_fp p     -> p ex_fp
     | Leaf_non_fp p -> p ex
-    | Node_fp l     -> apply_tree_fp_aux_list l ex_fp ex
+    | Node_fp l     -> List.all (fun (_, branch) -> apply_tree_fp_aux branch ex_fp ex) l
   end
-and apply_tree_fp_aux_list l ex_fp ex =
-  match l with
-    | [] -> true
-    | (_, branch) :: rest -> apply_tree_fp_aux branch ex_fp ex && apply_tree_fp_aux_list rest ex_fp ex
-  end
-declare {lean} termination_argument apply_tree_fp_aux = automatic
-declare {lean} termination_argument apply_tree_fp_aux_list = automatic
+(* S7: the fuel-measure route, as apply_tree above. *)
+declare {lean} fuel val apply_tree_fp_aux = `fuelExhausted false`
+declare {lean} fuel_measure val apply_tree_fp_aux = `lemSize pred_tree`
 
 val apply_tree_fp: named_predicate_tree_fp -> candidate_execution_fp -> bool
 let apply_tree_fp tree ex_fp =

@@ -51,7 +51,11 @@ a Phase-0 obligation with an S5 proof. It is not proved. What is true:
   the arena/stack with sb/asw edges, and the trace end (c) evaluates
   `data_races` and the SC consistency tree. So the literal state equality
   is FALSE, and the true statement is your weaker form: the VERDICT
-  LISTS agree. Its content beyond the invariant is that for a single
+  LISTS agree — under BOTH premises `epar_free file = true` AND
+  `sc_fragment_ok file = true` (pre-merge audit M1: a spawn-free file
+  with a relaxed atomic is `Specified(1)` under `CM_sequential` and a
+  typed refusal under `CM_sc`; a spawn-free file with a fence is an
+  internal error under one and a refusal under the other). Its content beyond the invariant is that for a single
   thread (c) is silent — `data_races` is empty (no cross-thread pair) and
   the recorded execution with rf = the last write satisfies the tree
   (a single-thread SC-consistency theorem over cmm_csem's tree).

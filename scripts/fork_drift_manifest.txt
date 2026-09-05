@@ -213,6 +213,20 @@ merge-base=b9aeedcb4dd438763b0eef7f95ac19e93875d7de
 # Oracle behaviour: zero movement (the litmus lane runs the restated
 # functions on BOTH engines through the SC bridge check; sequential lanes
 # never reach them).
+# S7 (2026-09-05, pre-merge audit fixes; record
+# docs/2026-09-05_concurrency-S7-record.md): lem_global.ml LEAVES the set
+# (the using_concurrency deletion reverted at the rebase — "keep
+# mainline's form"; 24 -> 23 pinned deltas). cmm_csem.ml: the S5 body
+# restatement REVERTED ([USER 2026-09-05] lem edits are against the
+# rules) — the delta is COMMENT-ONLY again (hash back to 9510383409f3…,
+# the S5 pre-restatement value; the fuel declares emit nothing for
+# OCaml). driver.ml: [expected-semantic] MOVES for audit F1 — the
+# globals-initialisation arenas and main's body are tagged sb-after every
+# recorded action (identity under CM_sequential; the six new litmus rows
+# pin it on both engines) — plus the M7 cite correction in a comment.
+# core_run_aux.ml, core_reduction.ml: COMMENT-ONLY (the M7 cite
+# corrections, `core_run.lem:981` -> `:936/:1007`). Sequential lanes at
+# zero movement.
 lem-pin=af5df71
 renumber=arc13
 [files]
@@ -291,15 +305,14 @@ util/cerb_fresh.ml
 [expected-semantic]
 d252a154bca00b92a9dbe4422e40849d361bf1ad48dfc033be718aefb7e9f05d cabs_to_ail_effect.ml
 4e43f561d853351c040b4a53fc03636c3e869c62ff727db49584a22bdb89ea08 cabs_to_ail.ml
-845a614980cb8085f29cb5ff7161134b21acf832a17ae0baba3711ef7a6ebcc0 core_reduction.ml
-20dcc089057cfbd462eb08aa06c4d89bedf1b383eb8206c5028003b474c0e691 cmm_csem.ml
-048c98feab449a40d90166b9bd5b0a236343a939f32ba4ba103146298f7ba3e4 lem_global.ml
-84de7f818e9a41bbf1efedaa692422ab1bdd98e8615d69cc8326bd696ce29968 core_run_aux.ml
+038f349e587201368a2e30991d15b5dbcd5fec6c99ed0d1eeac20face622d668 core_reduction.ml
+9510383409f3cfdf593828ab31ea12dd2f8c14f15cadedee2d1dfc297973d766 cmm_csem.ml
+fe3a91cf83f51a0f24cc5d39c9aef4189fb3ee8cd052f796f92eef895d60de64 core_run_aux.ml
 cf84e1b62a1bf6542a4c5749bfacde5aab3d3704494df20fd058d0ecae7ab909 core_run.ml
 0d6c60605e2b54527444c8e34edc2de10c6043d4a9fcfdb14498df3142b9ad48 mini_pipeline.ml
 51f56677431b4c6095ef8523761c5879f7fe0f1b20f882977bf6555184f2d2e8 symbol.ml
 4af72185cf6ea64c94506ded11858db5884ecaed067b20dd9dcaf4a6aed31418 translation_effect.ml
-1bb4ddef85202ab2555e979ed7312aa02bab28be8d64914bf8d490d59356bc28 driver.ml
+1b3796fe6436ac64d2997d529cb71adbf8fbe247fac10c3c347b5e55c318cd01 driver.ml
 8882e41d9366569a3f76bed5d93c0aac7f622b7acf421807179e1bfc585be0cb ctype_aux.ml
 6ba1f4842fe4d8ef55b6405b6c2f1b88f20fc0e2b245230d680314ad0e6cb59f translation.ml
 [expected-cosmetic]

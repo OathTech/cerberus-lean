@@ -28,7 +28,7 @@ Base: mainline `a910f097c`; S4 head `9b1b3ff6d`. Attachment:
 
 ## 2. What is unchanged for a sequential statement — now as theorems
 
-`test/Unit/SCBridgeTest.lean` §SequentialIdentity (kernel-checked, builds
+`Core_run_aux_lemMeasureProofs.lean` §SequentialIdentity (library side since S7; `test/Unit/SCBridgeTest.lean` re-states them) (kernel-checked, builds
 in the unit-test target):
 
 ```

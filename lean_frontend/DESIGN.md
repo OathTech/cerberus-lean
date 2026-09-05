@@ -139,8 +139,10 @@ don't commit to it as the long term path") made the executable
 concurrency model an explicit argument of the driver family:
 `Core_run_aux.concurrency_model = CM_sequential | CM_sc`, threaded from
 `drive` (selected by `--concurrency=sc`; both engines, by generation),
-never read from process state — `Global.using_concurrency` is deleted. A
-theorem quantifies over the model or fixes an instance. The two
+never read from process state (`Global.using_concurrency` has no reader on
+any target; it survives as mainline's plain `def … := false` of the default
+configuration, kept in that form at the orchestrator's instruction on the
+S7 rebase). A theorem quantifies over the model or fixes an instance. The two
 instances:
 
 - `CM_sequential` (the default, today's semantics): one thread; a
@@ -163,7 +165,12 @@ instances:
   race-free trace the library's SC consistency tree
   (`sc_accesses_consistent_execution`, cmm_csem.lem) must HOLD — a
   failing leaf is a typed internal inconsistency (`MI_sc_inconsistent`),
-  plant-tested (`test/Unit/SCBridgeTest.lean`). This bridge is what makes
+  plant-tested (`test/Unit/SCBridgeTest.lean`). The bridge check is NOT a
+  race-freedom oracle: an isolated write is a consistent execution (the
+  pre-merge audit's F1 — file-scope initialisation stores with no `sb`
+  edge passed the tree and made every access to the object a "race"; S7
+  sequences the initialisers and `main` on thread 0, C11 5.1.2p1 /
+  6.2.4p3). This bridge is what makes
   the instance a MEMBER of the C11 model family rather than an ad-hoc
   interleaving semantics: for programs in the fragment F_SC (non-atomic
   accesses + `seq_cst` atomics, no fences, no other orders — the entry
@@ -193,7 +200,8 @@ fences, Linux atomics, `wait`; `compare_exchange` on non-integer
 objects; locations are pointer values (the upstream `FOOTPRINT` dummy
 instantiation), so mixed-size overlapping accesses are not related as
 races. Validation: the litmus lane (VALIDATION.md §2, `tests/litmus/`,
-24 programs three-way at the recovered upstream expectation sets).
+30 programs three-way at the recovered upstream expectation sets, shared
+objects at block AND file scope).
 
 ## 5. Differential validation: the oracle, lanes, baselines, plants
 

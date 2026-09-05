@@ -38,3 +38,9 @@ LB+rlx_rlx+rlx_rlx.c  NONSC  REFUSE
 MP+na_rel+acq_na.c  NONSC  REFUSE
 IRIW+rel+rel+acq_acq+acq_acq.c  NONSC  REFUSE
 fence+sc_sc.c  NONSC  REFUSE
+SB+sc_sc+sc_sc+globals.c  SC  {Specified(1),Specified(2),Specified(3)}
+MP+na_sc+sc_na+globals.c  SC  {Specified(1),Specified(2)}
+datarace+Wna+Wna+globals.c  SC  {UB005_data_race}
+globals+init+Wna_Wna.c  SC  {Specified(3)}
+globals+init+Rna_Rna.c  SC  {Specified(10)}
+fence+sc+sc_sc.c  NONSC  REFUSE

@@ -10,6 +10,15 @@ ASK is unconditional).
 
 ## 0. State
 
+> **UPDATED by S7 (2026-09-05, after the pre-merge audit):** the branch is
+> now rebased onto mainline `31eba718e` (not `928aa1e76`); the audit's two
+> MAJOR findings are fixed (F1 file-scope races, F2 the `.lem` restatement
+> reverted to the fuel route) and the corpus is 30 rows; the post-rebase
+> FULL gate below is SUPERSEDED by the S7 record §4. §1–§3 remain valid
+> with the S7 record's amendments (E1 = 30/30; using_concurrency kept in
+> mainline's form; tray drafts 36–38).
+
+
 - Branch `feature/concurrency`, REBASED onto mainline `928aa1e76`
   (fuel-parameter C3, 2026-09-05) with no conflicts (11 commits replayed;
   the five overlapping files — core_reduction.lem, lakefile.toml,
@@ -24,7 +33,7 @@ ASK is unconditional).
   `2026-09-05_concurrency-phase0-change-manifest.md`; consumer note
   `2026-09-05_concurrency-phase0-consumer-note.md`; per-slice records
   S0/S1+S2/S3/S4/S5 with verbatim gate tails; per-slice manifests +
-  generated diffs; tray drafts 20–22.
+  generated diffs; tray drafts 36–38.
 
 ## 1. Exit criteria (charter §9), each with its evidence
 
@@ -34,7 +43,7 @@ ASK is unconditional).
 | E2 | bridge check holds on every corpus trace; corrupt-rf plant trips | MET (S3) | S3 record §3; `sc-bridge-test` 5/5 every slice |
 | E3 | sequential battery zero movement across all slices | MET | every record's battery table; §2 below after the rebase |
 | E4 | totality incl. Cmm at 0 partials; axiom 0; sorry 0; opaque −`using_concurrency`; ND plants | MET (S5) | S5 record §5 (25 modules; 25 opaque rows) |
-| E5 | DESIGN/VALIDATION/README model section, F_SC, §4.6 entry, DRF-SC citation; manifest + consumer note; tray draft | MET (S5/S6) | DESIGN §4; VALIDATION §2/§5; README; the two S6 documents; tray 20–22 |
+| E5 | DESIGN/VALIDATION/README model section, F_SC, §4.6 entry, DRF-SC citation; manifest + consumer note; tray draft | MET (S5/S6) | DESIGN §4; VALIDATION §2/§5; README; the two S6 documents; tray 36–38 |
 | E6 | no `2>/dev/null`, no partial in the exec cone, no heartbeat/maxRecDepth bumps, no budget numerals, grind tripwire respected | MET | gates; longest pass any slice: the ~24-min gcc lane |
 
 **One accepted obligation OUTSIDE §9 is NOT met:** the `Epar`-free

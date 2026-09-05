@@ -3,7 +3,7 @@
 **Classification:** TRUE BUG (performance / trace multiplicity; verdict
 SETS are unaffected). Reachable only with a concurrency-enabled driver
 (upstream's `--concurrency` path is `error "CONCURRENCY IS BROKEN"`,
-driver.lem:1864 — see draft 22 — so upstream cannot observe it today;
+driver.lem:1864 — see draft 38 — so upstream cannot observe it today;
 it becomes load-bearing the moment threads run).
 
 **Affected (upstream `master` @ b9aeedcb4, `frontend/model/driver.lem`):**

@@ -28,24 +28,35 @@ downstream.)
   record.md`); Core `RMW` (fetch-style) actions are never emitted from C
   today (translation.lem:674 TODO) and stay refused. S5 (2026-09-05,
   record `docs/2026-09-05_concurrency-S5-record.md`): the reasoning
-  surface — `using_concurrency` deleted (no ambient model read on any
-  target; opaque census −1), the `CerbConcurrency` stub module and the
+  surface — `using_concurrency` has no reader on any target (S5 deleted
+  it; the S7 rebase kept mainline's plain `def … := false` form at the
+  orchestrator's instruction — a dead def, one-line follow-up), the `CerbConcurrency` stub module and the
   24 dead Lean target_reps of cmm_csem.lem's meta-theory surface deleted
   (nothing in the Lean target referenced them; the vals are excluded
   from the Lean target as they are from OCaml), the Cmm modules in the
-  totality slice at zero partials (`apply_tree`/`apply_tree_fp_aux`
-  restated as mutual structural recursion), DESIGN/VALIDATION/README
-  model sections, tray drafts 20–22. **OWED (accepted Phase-0
+  totality slice at zero partials (`apply_tree`/`apply_tree_fp_aux` by the
+  fuel-measure route since S7 — S5's body restatement was reverted, [USER
+  2026-09-05] "lem edits are against the rules"), DESIGN/VALIDATION/README
+  model sections, tray drafts 36–38. **OWED (accepted Phase-0
   obligation, S5 record §4 erratum):** the `CM_sequential`/`CM_sc`
   agreement lemma on `epar_free` files — requested by the consumer's S1
   review (Q4) and accepted in our response record as "S5 proof"; NOT
-  discharged in S5 (its true form is verdict-list agreement, whose
-  substance is single-thread SC consistency of the recorded execution);
+  discharged in S5 (its true form is verdict-list agreement under BOTH
+  `epar_free` and `sc_fragment_ok`, audit M1, whose substance is
+  single-thread SC consistency of the recorded execution);
   operator decision pending on an S5b slice vs. hand-off as owed. The
-  bridge invariant as a lemma is an [AGENT]-queued target only. Owed: S6 (merge
+  bridge invariant as a lemma is an [AGENT]-queued target only. S7
+  (2026-09-05, pre-merge audit fixes; record
+  `docs/2026-09-05_concurrency-S7-record.md`): F1 — file-scope
+  initialisation stores are now sequenced on thread 0 before `main`
+  (every file-scope program under `CM_sc` had read UB005; six litmus rows
+  added, 30/30); F2 — the fuel route for `apply_tree`; M1–M3, M5–M7, N3
+  addressed; M4 (a typed constructor for the compare_exchange
+  non-integer refusal, today `DErr_other` strings) and N2
+  (`Cerb_global.concurrency_mode` is a dead OCaml setter) left as noted. Owed: S6 (merge
   readiness: rebase, cumulative change manifest, consumer note, the
   "mergeable" record, STOP). Findings from the arc are in the upstream
-  tray (`docs/upstream-tray/20-22`): the `_Atomic` qualifier form dropped
+  tray (`docs/upstream-tray/36-38`): the `_Atomic` qualifier form dropped
   at block scope with initializer / misplaced on parameters (S5 sweep:
   file scope and block scope without initializer are RIGHT — the S0/S4
   records' blanket "rejected" is narrowed by that sweep); the driver's

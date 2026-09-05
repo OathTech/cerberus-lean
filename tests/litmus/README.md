@@ -22,17 +22,25 @@ front end is the pipeline's standing boundary anyway.
   double-brace `{{{ ||| }}}` of the 2017 upstream files is rejected by
   today's parser: "unexpected token after '}' and before '|||'").
 - Atomics are declared in the specifier form `_Atomic(int)`. The qualifier
-  form `_Atomic int x` is REJECTED by the front end (both engines, same
-  text): `constraint violation: address argument to atomic operation must be
-  a pointer to _Atomic type ('signed int' invalid)` — the qualifier is lost
-  on the declared type. Upstream-tray candidate (C11 6.7.3 allows the
-  qualifier form); not this arc's business. The upstream-derived files
-  below were respelled accordingly (recorded in their headers).
+  form `_Atomic int x` is mishandled by the front end in two positions
+  (block scope WITH an initializer, and parameters — S5's six-shape sweep;
+  upstream-tray draft 36; file scope and block scope without an initializer
+  are right), so the corpus uses the specifier form throughout. The
+  upstream-derived files were respelled accordingly (recorded in their
+  headers).
+- Shared objects live at BLOCK scope in the upstream-derived rows and at
+  FILE scope in the six `*+globals` / `globals+init+*` rows added by S7
+  (pre-merge audit F1: file-scope initialisation stores had no sb edge into
+  `main`, so every such program read `UB005`; the fix sequences the
+  initialisers and `main` on thread 0, C11 5.1.2p1 / 6.2.4p3). Both shapes
+  must give the same sets.
 - The return value encodes the outcome (`r1 + 2*r2`, …); outcome tokens
   are the engines' batch verdicts: `Specified(v)`, `UB005_data_race`.
 - Classes: `SC` = inside the SC-DRF fragment F_SC (charter §3), `RMW` =
   inside F_SC via `seq_cst` compare-exchange (slice S4), `NONSC` = outside
   F_SC (target `REFUSE`).
+  `fence+sc+sc_sc.c` (S7, audit M6) is the NONSC row whose ACCESSES are all
+  `seq_cst`: it is refused by the scan's FENCE arm alone.
 
 ## Provenance of the shapes and sets
 
@@ -85,3 +93,7 @@ described in that slice's record:
   branch): `{5}`, `{0}`, `{0,5}`, `{0}` — the recovered upstream expectation
   sets. The pin now EQUALS `expectations.txt` on every row (charter exit
   criterion E1); LADDER row 12 runs the lane in `--check` mode.
+- **S7 (2026-09-05, pre-merge audit fixes)**: six rows ADDED (five
+  file-scope shapes + the seq_cst-only fence row); no existing row moves.
+  The pin is re-recorded to carry them; it equals `expectations.txt` on all
+  30 rows.

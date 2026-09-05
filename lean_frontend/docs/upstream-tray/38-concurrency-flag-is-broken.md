@@ -45,6 +45,21 @@ a `{-{ … ||| … }-}` program runs each thread to completion in order.
    patch is `.lem`-side and generates into the OCaml driver unchanged in
    spirit. We would be glad to upstream it if there is interest.
 
+## Also in the fork's shared `.lem`: `atomic_compare_exchange_*` execute
+
+Upstream @ b9aeedcb4 elaborates `atomic_compare_exchange_{strong,weak}_explicit`
+to Core `CompareExchangeStrong/Weak` actions and then dies in the reduction
+with `internal error: TODO[Core_reduction]: CompareExchangeStrong` (both
+with and without `--concurrency`; `core_reduction.lem`, the two `error
+"TODO…"` arms). The fork gives the two actions reduction rules (C11
+7.17.7.4: load expected and object, compare with the memory model's integer
+equality, store desired or write back; the weak form's spurious failure as a
+nondeterministic branch), integer objects only; the four `RMW-*` rows of the
+fork's litmus corpus pin `{5}`, `{0}`, `{0,5}`, `{0}` on both engines and
+both models (the recovered upstream `RMW-*.core` header expectations). This
+is a sequential-visible behaviour change of the oracle (from an internal
+error to a verdict), offered alongside the SC instance.
+
 Provenance: measured 2026-09-04 (charter §2, verbatim outputs); the
-scheduler finding is draft 21. [AGENT]-drafted; filing is the operator's
+scheduler finding is draft 37; the compare_exchange rules 2026-09-05 (S4). [AGENT]-drafted; filing is the operator's
 call.

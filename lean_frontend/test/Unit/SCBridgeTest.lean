@@ -21,7 +21,7 @@
   point here — the driver's runtime path is).
 -/
 import Driver
-import CerbMeasureLemmas
+import Core_run_aux_lemMeasureProofs
 open Lem_Num Lem_Pervasives Lem_List Lem_Set Lem_Map Lem_Maybe Lem_Function
   Lem_Show Lem_Show_extra Lem_Bool Lem_Basic_classes Lem_Map_extra
   Lem_String_extra Lem_Num_extra Lem_Set_helpers Lem_Either Lem_Assert_extra
@@ -68,51 +68,21 @@ def preRace : pre_execution :=
 def preSync : pre_execution := { preRace with asw := rel [(wn, rn)] }
 def witRace : execution_witness := { empty_witness with rf := rel [(wn, rn)] }
 
-/-! ## Sequential identity facts (concurrency Phase 0 S5)
+/-! ## Sequential identity facts (concurrency Phase 0 S5; library home since S7)
 
-  The S3/S4 change manifests told the consumer, in prose, that every
-  concurrency hook is the identity under `CM_sequential`. These are the
-  statements. They are what a sequential theorem needs in order to ignore the
-  parameter: the sb/asw walkers on expressions (fuel'd, measure `lemSize g`),
-  on reduction contexts and on continuation stacks all return their argument
-  by the first `match model`. Kernel-checked by ordinary tactics; no
-  non-kernel decision procedure, no option bumps. -/
+  The statements live in `Core_run_aux_lemMeasureProofs` (library side, so the
+  exemplar's `drive_after_setup` can use `add_to_sb_sequential`); they are
+  re-stated here as examples so the consumer-facing list is in one place with
+  the plant. Every concurrency hook is the identity under `CM_sequential`. -/
 section SequentialIdentity
-open CerbMeasureLemmas
+open Core_run_aux_lemMeasureProofs
 
-theorem add_to_sb_ctx_sequential (p_aids) (ctx) :
-    add_to_sb_ctx CM_sequential p_aids ctx = ctx := by
-  unfold add_to_sb_ctx; rfl
-
-theorem add_to_asw_ctx_sequential (aids) (ctx) :
-    add_to_asw_ctx CM_sequential aids ctx = ctx := by
-  unfold add_to_asw_ctx; rfl
-
-theorem add_to_sb_stack_sequential (p_aids) (st) :
-    add_to_sb_stack CM_sequential p_aids st = st := by
-  unfold add_to_sb_stack; rfl
-
-theorem add_to_asw_stack_sequential (aids) (st) :
-    add_to_asw_stack CM_sequential aids st = st := by
-  unfold add_to_asw_stack; rfl
-
-theorem add_to_sb_sequential (p_aids) (g : generic_expr core_run_annotation Unit sym) :
-    add_to_sb CM_sequential p_aids g = g := by
-  unfold add_to_sb
-  obtain ⟨n, hn⟩ : ∃ n, generic_expr.lemSize g = n + 1 :=
-    ⟨generic_expr.lemSize g - 1, by have := expr_lemSize_pos g; omega⟩
-  rw [hn]
-  obtain ⟨annot1, e_⟩ := g
-  simp only [add_to_sb_lemFuel]
-
-theorem add_to_asw_sequential (aids) (g : generic_expr core_run_annotation Unit sym) :
-    add_to_asw CM_sequential aids g = g := by
-  unfold add_to_asw
-  obtain ⟨n, hn⟩ : ∃ n, generic_expr.lemSize g = n + 1 :=
-    ⟨generic_expr.lemSize g - 1, by have := expr_lemSize_pos g; omega⟩
-  rw [hn]
-  obtain ⟨annot1, e_⟩ := g
-  simp only [add_to_asw_lemFuel]
+example (p_aids) (ctx) : add_to_sb_ctx CM_sequential p_aids ctx = ctx := add_to_sb_ctx_sequential p_aids ctx
+example (aids) (ctx) : add_to_asw_ctx CM_sequential aids ctx = ctx := add_to_asw_ctx_sequential aids ctx
+example (p_aids) (st) : add_to_sb_stack CM_sequential p_aids st = st := add_to_sb_stack_sequential p_aids st
+example (aids) (st) : add_to_asw_stack CM_sequential aids st = st := add_to_asw_stack_sequential aids st
+example (p_aids) (g : generic_expr core_run_annotation Unit sym) : add_to_sb CM_sequential p_aids g = g := add_to_sb_sequential p_aids g
+example (aids) (g : generic_expr core_run_annotation Unit sym) : add_to_asw CM_sequential aids g = g := add_to_asw_sequential aids g
 
 end SequentialIdentity
 
