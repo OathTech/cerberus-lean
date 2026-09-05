@@ -1,5 +1,11 @@
 # Master plan — remaining work on cerberus-lean and lem-lean (2026-09-05)
 
+**Revision 2 (2026-09-05, post-audit).** The whole-project audit
+(`2026-09-05_whole-project-release-gate-audit.md`) falsified three
+claims below (marked `[rev 2 correction]`) and its response
+(`2026-09-05_whole-project-audit-response.md` §4) REPLACES §1's stable
+definition amendments and §5's order. Read this file with that §4.
+
 Written by the orchestrator [AGENT] at the operator's request ("land the
 branch, then write a 'master plan' doc with the remaining lem + cerberus
 tasks, then pause for a project review" [USER 2026-09-05]). Every item
@@ -24,8 +30,10 @@ S ≤ ½ day, M ≤ 3 days, L = an arc of worker time. Rulings are cited with
   kernel-only proof methods (gate); 15 opaque boundary rows (down from
   26); the ISO-fix register at three entries (R1, R2, R3 by class —
   [USER 2026-09-05] confirmed); exception classes (a)–(d) unchanged; the
-  OCaml generated tree byte-identical to upstream's lem output at every
-  merge (fork-drift manifest, 71 files / 22 pinned deltas).
+  OCaml generated tree = upstream's file set with 22 REVIEWED content
+  deltas (11 semantic, 11 cosmetic), hash-pinned, unchanged at every
+  merge (fork-drift manifest; [rev 2 correction, audit F4: NOT
+  byte-identical]).
 - **The reasoning interface (the customer's).** Fuel is a quantified
   `[LemFuel]` parameter reaching only the partial core: of 81 fuel'd
   workers, 54 are MEASURED (fuel-free, kernel-checked sufficiency, 7
@@ -92,7 +100,7 @@ S ≤ ½ day, M ≤ 3 days, L = an arc of worker time. Rulings are cited with
 | Rows | Route | Owner |
 |---|---|---|
 | `are_compatible_aux` + 2 siblings | UPSTREAM bug (recursion through pointers across TUs — oracle loops); tray draft; no honest hypothesis | C-Z4 (draft); stays pending until upstream fixes or a ruled ISO-fix |
-| `hack`, `many`, `many1` | no parameter hypothesis bounds them; lem body change forbidden → typed absorbing outcome (they are monadic/partial) | C-TF1 / L2 |
+| `hack`, `many`, `many1` | no parameter hypothesis bounds them; lem body change forbidden. [rev 2 correction, audit F8]: `hack : … → value` and `finalize : … → driver_result` are PURE (Driver.lean:433, 469), as are the parser combinators → the pure-failure correspondence route (response §4 item 4) or a checked precondition; NOT a monadic `failure_outcome` | census → correspondence note |
 | `to_pure`, `to_pures` | opaque `failwithI` in the recursion argument | C-TF1 |
 
 ### 3.4 Movers outside the arcs (registered, not scheduled)
