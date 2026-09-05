@@ -21,10 +21,10 @@ LB+sc_sc+sc_sc.c  SC  {Specified(0),Specified(1),Specified(2)}
 MP+na+na.c  SC  {UB005_data_race}
 MP+na_rel+acq_na.c  NONSC  {ERROR}  [model refused: atomic memory order Release is outside the SC fragment (seq_cst only)]
 MP+na_sc+sc_na.c  SC  {Specified(1),Specified(2)}
-RMW-strong-equal.c  RMW  {INTERNAL_ERROR(TODO[Core_reduction]:_CompareExchangeStrong)}
-RMW-strong-unequal.c  RMW  {INTERNAL_ERROR(TODO[Core_reduction]:_CompareExchangeStrong)}
-RMW-weak-equal.c  RMW  {INTERNAL_ERROR(TODO[Core_reduction]:_CompareExchangeWeak)}
-RMW-weak-unequal.c  RMW  {INTERNAL_ERROR(TODO[Core_reduction]:_CompareExchangeWeak)}
+RMW-strong-equal.c  RMW  {Specified(5)}
+RMW-strong-unequal.c  RMW  {Specified(0)}
+RMW-weak-equal.c  RMW  {Specified(0),Specified(5)}
+RMW-weak-unequal.c  RMW  {Specified(0)}
 SB+rel_acq+rel_acq.c  NONSC  {ERROR}  [model refused: atomic memory order Release is outside the SC fragment (seq_cst only)]
 SB+sc_sc+sc_sc.c  SC  {Specified(1),Specified(2),Specified(3)}
 WRC+sc+sc_sc+sc_sc.c  SC  {Specified(0),Specified(1),Specified(4),Specified(5),Specified(7)}

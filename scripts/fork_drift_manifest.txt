@@ -182,6 +182,18 @@ merge-base=b9aeedcb4dd438763b0eef7f95ac19e93875d7de
 # check + data_races -> UB005 at trace end). Oracle behaviour moves ONLY
 # under --concurrency=sc (the litmus lane pins it); sequential lanes at
 # zero movement.
+# S4 (2026-09-05, record docs/2026-09-05_concurrency-S4-record.md): three
+# hashes MOVE again (core_reduction.ml: CompareExchangeRequest2 + the
+# compare_exchange_{strong,weak} reduction arms (were `error "TODO"`) +
+# continuation tagging by every id a request produced; driver.ml: the
+# request performed atomically under both models, the weak form's ND
+# spurious failure, the SC recording (expected-load, RMW or load+store);
+# core_run_aux.ml: unseq siblings sequenced in execution order --
+# C11 6.5.2.2p10 indeterminate sequencing of atomic calls). Oracle
+# behaviour moves for compare_exchange programs on BOTH models (from the
+# `TODO[Core_reduction]` internal error to the C11 semantics; the litmus
+# lane's four RMW rows pin it at the recovered upstream expectation sets);
+# sequential lanes at zero movement.
 lem-pin=af5df71
 renumber=arc13
 [files]
@@ -260,13 +272,13 @@ util/cerb_fresh.ml
 [expected-semantic]
 d252a154bca00b92a9dbe4422e40849d361bf1ad48dfc033be718aefb7e9f05d cabs_to_ail_effect.ml
 4e43f561d853351c040b4a53fc03636c3e869c62ff727db49584a22bdb89ea08 cabs_to_ail.ml
-064e081347a8f9a9f3ba8063e6582f65d8d3e61b89f7031591cae5c500b117e4 core_reduction.ml
-4f780b7e1e852f719a75490eba445502087937b831989c264e8bd39ef8157cce core_run_aux.ml
+845a614980cb8085f29cb5ff7161134b21acf832a17ae0baba3711ef7a6ebcc0 core_reduction.ml
+84de7f818e9a41bbf1efedaa692422ab1bdd98e8615d69cc8326bd696ce29968 core_run_aux.ml
 cf84e1b62a1bf6542a4c5749bfacde5aab3d3704494df20fd058d0ecae7ab909 core_run.ml
 0d6c60605e2b54527444c8e34edc2de10c6043d4a9fcfdb14498df3142b9ad48 mini_pipeline.ml
 51f56677431b4c6095ef8523761c5879f7fe0f1b20f882977bf6555184f2d2e8 symbol.ml
 4af72185cf6ea64c94506ded11858db5884ecaed067b20dd9dcaf4a6aed31418 translation_effect.ml
-c204158dc3457dca9a3160bcf2b206f2c00d869cadbb348ae71867f6361dd552 driver.ml
+1bb4ddef85202ab2555e979ed7312aa02bab28be8d64914bf8d490d59356bc28 driver.ml
 8882e41d9366569a3f76bed5d93c0aac7f622b7acf421807179e1bfc585be0cb ctype_aux.ml
 6ba1f4842fe4d8ef55b6405b6c2f1b88f20fc0e2b245230d680314ad0e6cb59f translation.ml
 [expected-cosmetic]

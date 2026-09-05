@@ -99,6 +99,24 @@ type action_request2 'a =
                    *  (Mem.mem_value -> core_runM Mem.mem_value)
                    *  (Cmm.aid -> Mem.footprint -> Mem.mem_value -> Mem.mem_value -> 'a)
   
+  (* Concurrency Phase 0 S4 (2026-09-05): C11 atomic_compare_exchange_{strong,weak}
+     as ONE request (the driver performs it atomically -- a request is a
+     scheduling point, so no other thread's action interleaves inside it):
+     compare *object with *expected; equal -> store desired into *object,
+     result 1; else store *object into *expected, result 0; the weak form may
+     fail spuriously (an ND branch in the driver). The callback receives the
+     action ids the request produced (one to three: the expected-load, the
+     object action, the expected-store on failure) so the continuation is
+     sequenced after all of them, the two footprints (dyn annotations) and
+     the success flag. *)
+  | CompareExchangeRequest2 of bool (* strong *)
+                            *  Ctype.ctype (* the (unatomic) lvalue type *)
+                            *  Mem.pointer_value (* object *)
+                            *  Mem.pointer_value (* expected *)
+                            *  Mem.mem_value (* desired *)
+                            *  Cmm.memory_order (* success order *)
+                            *  Cmm.memory_order (* failure order *)
+                            *  (list Cmm.aid -> Mem.footprint -> Mem.footprint -> bool -> 'a)
   (* TODO: RMW, Fence *)
   | KillRequest2 of (* is_dynamic *)bool * Mem.pointer_value * (Cmm.aid -> 'a)
 
@@ -646,6 +664,46 @@ val step_action:
 let step_action e_annots full_eval_pexpr is_excluded (Action loc act_annots act) =
   let wrap z =
     Action loc act_annots z in
+  (* Concurrency Phase 0 S4: compare_exchange_{strong,weak} (see action_request2) *)
+  let compare_exchange_action strong mk_act pe1 pe2 pe3 pe4 mo1 mo2 =
+    match (act_valueFromPexpr pe1, act_valueFromPexpr pe2, act_valueFromPexpr pe3, act_valueFromPexpr pe4) with
+      | (Just (Vctype ty), Just (Vobject (OVpointer obj_ptrval)), Just (Vobject (OVpointer exp_ptrval)), Just cval) ->
+          match memValueFromValue (Ctype.Ctype [] (Ctype.unatomic_ ty)) cval with
+            | Just mval ->
+                ACTION_REQUEST
+                  (if strong then "CompareExchangeStrongRequest" else "CompareExchangeWeakRequest")
+                  loc
+                  begin
+                    CompareExchangeRequest2 strong (Ctype.Ctype [] (Ctype.unatomic_ ty)) obj_ptrval exp_ptrval mval mo1 mo2 (fun _ fp_obj fp_exp success ->
+                      let dyn_annots =
+                        match is_excluded with
+                          | Nothing ->
+                              [DA_pos [] fp_obj; DA_pos [] fp_exp]
+                          | Just excl_id ->
+                              [DA_neg excl_id [] fp_obj; DA_neg excl_id [] fp_exp]
+                        end in
+                      (* the result is the C _Bool converted by the elaboration: a loaded integer 0/1 *)
+                      Expr [] (Eannot dyn_annots (Caux.mk_value_e (Vloaded (LVspecified (OVinteger (Mem.integer_ival (if success then 1 else 0)))))))
+                    )
+                  end
+            | Nothing ->
+                ACTION_ILLTYPED begin
+                  (Loc.stringFromLocation loc) ^ "the desired value of a compare_exchange(" ^
+                  Pp.stringFromCore_ctype (Ctype.Ctype [] (Ctype.unatomic_ ty)) ^
+                  ") didn't match the lvalue type: " ^ Pp.stringFromCore_value cval
+                end
+          end
+      | (Just _, Just _, Just _, Just _) ->
+          ACTION_ILLTYPED "CompareExchange"
+      | (_, _, _, _) ->
+          ACTION_EVAL "eval operands of CompareExchange" begin
+            full_eval_pexpr pe1 >>= fun cval1 ->
+            full_eval_pexpr pe2 >>= fun cval2 ->
+            full_eval_pexpr pe3 >>= fun cval3 ->
+            full_eval_pexpr pe4 >>= fun cval4 ->
+            E.return (wrap (mk_act (Caux.mk_value_pe cval1) (Caux.mk_value_pe cval2) (Caux.mk_value_pe cval3) (Caux.mk_value_pe cval4)))
+          end
+    end in
   match act with
     | Create pe1 pe2 pref ->
         match (act_valueFromPexpr pe1, act_valueFromPexpr pe2) with
@@ -808,10 +866,10 @@ let step_action e_annots full_eval_pexpr is_excluded (Action loc act_annots act)
         error "TODO[Core_reduction]: RMW"
     | Fence _ ->
         error "TODO[Core_reduction]: Fence"
-    | CompareExchangeStrong _ _ _ _ _ _ ->
-        error "TODO[Core_reduction]: CompareExchangeStrong"
-    | CompareExchangeWeak _ _ _ _ _ _ ->
-        error "TODO[Core_reduction]: CompareExchangeWeak"
+    | CompareExchangeStrong pe1 pe2 pe3 pe4 mo1 mo2 ->
+        compare_exchange_action true (fun p1 p2 p3 p4 -> CompareExchangeStrong p1 p2 p3 p4 mo1 mo2) pe1 pe2 pe3 pe4 mo1 mo2
+    | CompareExchangeWeak pe1 pe2 pe3 pe4 mo1 mo2 ->
+        compare_exchange_action false (fun p1 p2 p3 p4 -> CompareExchangeWeak p1 p2 p3 p4 mo1 mo2) pe1 pe2 pe3 pe4 mo1 mo2
     | LinuxFence _ ->
         error "TODO[Core_reduction]: LinuxFence"
     | LinuxLoad _ _ _ ->
@@ -1177,6 +1235,12 @@ let step_ctx model mem_st file core_extern current_tid (parent_tid_opt, th_st) =
            carries the sb edge (Core_run_aux.add_to_sb_ctx: unseq siblings are
            not tagged; weak-seq continuations only by positive actions).
            Under CM_sequential both walkers are the identity. *)
+        let wrap_tagged_many pol aids z =
+          let tag = Set.fromList (List.map (fun aid -> (pol, (current_tid, aid))) aids) in
+          <| th_st with
+            arena= apply_ctx (Core_run_aux.add_to_sb_ctx model tag ctx) z;
+            stack= Core_run_aux.add_to_sb_stack model tag th_st.stack;
+          |> in
         let wrap_tagged pol aid z =
           let tag = {(pol, (current_tid, aid))} in
           let () = match model with
@@ -1220,6 +1284,10 @@ let step_ctx model mem_st file core_extern current_tid (parent_tid_opt, th_st) =
                     | KillRequest2 is_dynamic ptrval mk_expr' ->
                         KillRequest2 is_dynamic ptrval (fun aid ->
                           wrap_tagged pol aid (mk_expr' aid)
+                        )
+                    | CompareExchangeRequest2 strong ty obj_ptrval exp_ptrval mval mo1 mo2 mk_expr' ->
+                        CompareExchangeRequest2 strong ty obj_ptrval exp_ptrval mval mo1 mo2 (fun aids fp_obj fp_exp success ->
+                          wrap_tagged_many pol aids (mk_expr' aids fp_obj fp_exp success)
                         )
                     | SeqRMWRequest2 _ _ _ _ ->
                         (* this is not possible *)

@@ -22,9 +22,12 @@ downstream.)
   recorded by S3: locations are pointer values (the upstream `FOOTPRINT`
   dummy instantiation), so mixed-size OVERLAPPING accesses are not related
   as races; SeqRMW's sb tagging over-approximates onto its unsequenced
-  siblings. Owed: S4
-  (`RMW`/`CompareExchange{Strong,Weak}` reduction rules at `Seq_cst`,
-  `core_reduction.lem:799-814` — the four `RMW-*` rows), S5 (reasoning
+  siblings. S4 (2026-09-05): `compare_exchange_{strong,weak}` reduction
+  rules on both models (integer objects only — a non-integer object is a
+  typed refusal, Phase-0 scope; `record docs/2026-09-05_concurrency-S4-
+  record.md`); Core `RMW` (fetch-style) actions are never emitted from C
+  today (translation.lem:674 TODO) and stay refused. Owed: S5
+  DONE (S4), S5 (reasoning
   surface: the `CM_sequential`/`CM_sc` agreement lemma on `epar_free`
   files, `sc_fragment_ok_iff`, `using_concurrency` opaque deletion +
   census re-pin, the 23 `sorry` reps in `cmm_csem.lem`, Cmm modules

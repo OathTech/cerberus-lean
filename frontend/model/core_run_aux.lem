@@ -411,14 +411,26 @@ let rec add_to_sb model p_aids (Expr annot expr_ as expr) =
   end
 
 
-(* Concurrency Phase 0 S3: the sb tagging of an action's CONTINUATION under the
-   reduction-context semantics -- the frames of the action's context (the
-   continuation is `apply_ctx ctx value`, no longer the stack alone). Mirrors
-   add_to_sb_continuation's K-cases exactly: unseq siblings are NOT sequenced
-   after the action; a weak-seq continuation is sequenced after its POSITIVE
-   predecessors only; a strong-seq continuation after all of them. Tagging the
-   rebuilt arena with the expression walker instead would over-approximate sb
-   onto unsequenced siblings (measured 2026-09-05, S3 record). *)
+(* Concurrency Phase 0 S3/S4: the sb tagging of an action's CONTINUATION under
+   the reduction-context semantics -- the frames of the action's context (the
+   continuation is `apply_ctx ctx value`, no longer the stack alone). A weak-seq
+   continuation is sequenced after its POSITIVE predecessors only; a strong-seq
+   continuation after all of them (positivised, see below). UNSEQ SIBLINGS ARE
+   SEQUENCED AFTER THE ACTION IN THE ORDER THE INTERPRETER TOOK (S4, measured
+   on `return x + 2*y + 4*s` with an atomic x: the axiomatic model's
+   well-formedness conjunct `indeterminate_sequencing` requires every atomic
+   action to be sb-comparable with every other action of its thread). This is
+   C11's own rule, not an approximation: atomic operations are library
+   function calls, and a call is INDETERMINATELY sequenced with the other
+   evaluations of the full expression (C11 6.5.2.2p10) -- sequenced in some
+   order, chosen by the execution; Cerberus's exhaustive mode explores every
+   order, so every C11-allowed sequencing is a trace. For two NON-atomic
+   unsequenced evaluations this orders what C11 leaves unsequenced; that
+   affects only intra-thread facts (the unsequenced-race class, which the Core
+   dynamics detect on their own; hb across threads runs through atomics, which
+   are ordered either way), never the data-race verdict. The working-era
+   `add_to_sb_continuation` left Kunseq siblings untouched -- and never ran a
+   program of this shape. *)
 val add_to_sb_ctx: concurrency_model -> set (polarity * (Mem_common.thread_id * Cmm_csem.aid)) -> context -> context
 let rec add_to_sb_ctx model p_aids ctx =
   match model with CM_sequential -> ctx | CM_sc ->
@@ -428,7 +440,8 @@ let rec add_to_sb_ctx model p_aids ctx =
     end in
     match ctx with
       | CTX -> CTX
-      | Cunseq annots es1 ctx' es2 -> Cunseq annots es1 (add_to_sb_ctx model p_aids ctx') es2
+      | Cunseq annots es1 ctx' es2 ->
+          Cunseq annots (List.map (add_to_sb model p_aids) es1) (add_to_sb_ctx model p_aids ctx') (List.map (add_to_sb model p_aids) es2)
       | Cwseq annots pat ctx' e2 -> Cwseq annots pat (add_to_sb_ctx model p_aids ctx') (add_to_sb model (Set.filter is_positive p_aids) e2)
       | Csseq annots pat ctx' e2 ->
           (* a tag crossing a STRONG boundary enters e2 as positive: everything

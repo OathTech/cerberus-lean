@@ -842,6 +842,74 @@ let update_core_state core_st dr_st =
   <| dr_st with core_state= core_st |>
 
 
+
+(* === Concurrency Phase 0 S4: compare_exchange (C11 7.17.7.4) ===
+   Performed as ONE request against the concrete memory: load *object and
+   *expected, compare them (integer objects: the memory model's eq_ival --
+   provenance-insensitive value equality, i.e. the representation comparison
+   the standard specifies for integers; any other object type is a typed
+   REFUSAL, recorded Phase-0 scope), then either store desired into *object
+   (success, result 1) or store *object into *expected (failure, result 0).
+   The WEAK form may fail spuriously: when the values are equal both paths
+   are ND branches (exhaustive mode explores both -- the recovered upstream
+   expectation RMW-weak-equal = {0; 5}). Same on both models; the SC model
+   additionally records the actions (action_request_sc2). *)
+val cmpxchg_values_equal: Loc.t -> Mem.mem_value -> Mem.mem_value -> driverM bool
+let cmpxchg_values_equal loc obj_mval exp_mval =
+  match (Core_aux.valueFromMemValue obj_mval, Core_aux.valueFromMemValue exp_mval) with
+    | ((_, Core.Vloaded (Core.LVspecified (Core.OVinteger ival1))), (_, Core.Vloaded (Core.LVspecified (Core.OVinteger ival2)))) ->
+        match Mem.eq_ival ival1 ival2 with
+          | Just b -> ND.return b
+          | Nothing -> ND.kill (ND.Other (DErr_other "compare_exchange: the memory model could not decide integer equality"))
+        end
+    | ((_, Core.Vloaded (Core.LVunspecified _)), _) ->
+        ND.kill (ND.Undef loc [U.UB_unspecified_lvalue])
+    | (_, (_, Core.Vloaded (Core.LVunspecified _))) ->
+        ND.kill (ND.Undef loc [U.UB_unspecified_lvalue])
+    | _ ->
+        ND.kill (ND.Other (DErr_other "compare_exchange on a non-integer object is not supported (concurrency Phase 0: integer atomics only)"))
+  end
+
+(* the request's memory effects, shared by both models; [record] is the SC
+   model's recorder (a no-op under CM_sequential); returns the aids used *)
+val perform_compare_exchange:
+  Loc.t -> Mem.thread_id -> Cmm.aid -> bool -> Ctype.ctype -> Mem.pointer_value -> Mem.pointer_value -> Mem.mem_value ->
+  Cmm.memory_order -> Cmm.memory_order -> (list Cmm.aid -> Mem.footprint -> Mem.footprint -> bool -> Core_run.thread_state) ->
+  (Cmm.aid -> Cmm.aid -> Cmm.aid -> Mem.mem_value -> Mem.mem_value -> Mem.mem_value -> bool -> driverM unit) -> driverM unit
+let perform_compare_exchange loc tid aid strong lvalue_ty obj_ptr exp_ptr desired_mval mo_succ mo_fail mk_th_st' record =
+  (* the elaboration passes the UNATOMIC lvalue type (translation.lem: `unatomic_ ty1`);
+     the object itself is an atomic object and the memory model checks the access
+     type against it (UB042 otherwise) -- so the object is accessed with the atomic
+     type and *expected (a plain object) with the plain type *)
+  let obj_ty = Ctype.Ctype [] (Ctype.Atomic lvalue_ty) in
+  liftMem (Mem.load loc lvalue_ty exp_ptr) >>= fun (fp_exp, exp_mval) ->
+  liftMem (Mem.load loc obj_ty obj_ptr) >>= fun (fp_obj, obj_mval) ->
+  liftCore_run (SEU.runS Core_run.fresh_action_id') >>= fun aid_exp ->
+  liftCore_run (SEU.runS Core_run.fresh_action_id') >>= fun aid_st ->
+  liftMem (Mem.prefix_of_pointer obj_ptr) >>= fun pref ->
+  cmpxchg_values_equal loc obj_mval exp_mval >>= fun equal ->
+  let finish success =
+    ND.update (fun dr_st ->
+      <| dr_st with
+        core_state= Core_run.update_thread_state tid (mk_th_st' [aid_exp; aid; aid_st] fp_obj fp_exp success) dr_st.core_state;
+        trace= ME_load loc pref obj_ty obj_ptr obj_mval :: dr_st.trace
+      |>) in
+  let success_path =
+    liftMem (Mem.store loc obj_ty false obj_ptr desired_mval) >>= fun _ ->
+    finish true >>
+    record aid_exp aid aid_st exp_mval obj_mval desired_mval true in
+  let failure_path =
+    liftMem (Mem.store loc lvalue_ty false exp_ptr obj_mval) >>= fun _ ->
+    finish false >>
+    record aid_exp aid aid_st exp_mval obj_mval desired_mval false in
+  if equal then
+    if strong then success_path
+    else ND.msum (SK_misc ["compare_exchange_weak"])
+           [ (SK_misc ["compare_exchange_weak: success"], success_path)
+           ; (SK_misc ["compare_exchange_weak: spurious failure"], failure_path) ]
+  else
+    failure_path
+
 (* POST REDUCTION SEMANTICS *)
 val action_request_sequential2:
   Loc.t -> Mem.thread_id -> Cmm.aid -> Core_reduction.action_request2 Core_run.thread_state -> driverM unit
@@ -912,6 +980,11 @@ let action_request_sequential2 loc tid aid = function
         update_core_state (Core_run.update_thread_state tid th_st' dr_st.core_state) dr_st
       )
 *)
+  
+  | Core_reduction.CompareExchangeRequest2 strong lvalue_ty obj_ptr exp_ptr desired_mval mo_succ mo_fail mk_th_st' ->
+      (* S4: the sequential model performs the operation and records nothing *)
+      perform_compare_exchange loc tid aid strong lvalue_ty obj_ptr exp_ptr desired_mval mo_succ mo_fail mk_th_st'
+        (fun _ _ _ _ _ _ _ -> ND.return ())
   
   | Core_reduction.KillRequest2 is_dynamic ptr_val mk_th_st' ->
       let () = Debug.print_debug_located 3 [Debug.DB_driver] loc (fun () -> "REQUEST KILL") in (* DEBUG *)
@@ -1091,6 +1164,24 @@ let action_request_sc2 model loc tid aid pol annots = function
       sc_record_action tid annots (Just (lk_of_ctype lvalue_ty)) (Cmm.Load aid tid Cmm.NA ptr_val mval) >>
       sc_record_action tid <| annots with Core_run_aux.sb_before= Set.insert (tid, aid) annots.Core_run_aux.sb_before |>
         (Just (lk_of_ctype lvalue_ty)) (Cmm.Store aid_st tid Cmm.NA ptr_val mval')
+  
+  | Core_reduction.CompareExchangeRequest2 strong lvalue_ty obj_ptr exp_ptr desired_mval mo_succ mo_fail mk_th_st' ->
+      (* S4, the SC model: the expected-load is a non-atomic Load; success is
+         ONE atomic RMW on the object (value read, value written); failure is
+         an atomic Load of the object (the failure order) followed by a
+         non-atomic Store into *expected -- three actions at most, sequenced
+         in that order within the thread (C11 7.17.7.4). The object is an
+         atomic location; *expected is not. *)
+      perform_compare_exchange loc tid aid strong lvalue_ty obj_ptr exp_ptr desired_mval mo_succ mo_fail mk_th_st'
+        (fun aid_exp aid_obj aid_st exp_mval obj_mval desired success ->
+          let after a = <| annots with Core_run_aux.sb_before= Set.insert (tid, a) annots.Core_run_aux.sb_before |> in
+          sc_record_action tid annots (Just (lk_of_ctype lvalue_ty)) (Cmm.Load aid_exp tid Cmm.NA exp_ptr exp_mval) >>
+          if success then
+            sc_record_action tid (after aid_exp) (Just Cmm.Atomic) (Cmm.RMW aid_obj tid mo_succ obj_ptr obj_mval desired)
+          else
+            sc_record_action tid (after aid_exp) (Just Cmm.Atomic) (Cmm.Load aid_obj tid mo_fail obj_ptr obj_mval) >>
+            sc_record_action tid <| annots with Core_run_aux.sb_before= Set.insert (tid, aid_obj) (Set.insert (tid, aid_exp) annots.Core_run_aux.sb_before) |>
+              (Just (lk_of_ctype lvalue_ty)) (Cmm.Store aid_st tid Cmm.NA exp_ptr obj_mval))
   
   | Core_reduction.KillRequest2 is_dynamic ptr_val mk_th_st' ->
       liftMem (Mem.kill loc is_dynamic ptr_val) >>

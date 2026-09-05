@@ -80,5 +80,8 @@ described in that slice's record:
   (`datarace+Wna_sc+sc_Rna.c` = `{Specified(1),UB005_data_race}`: the one
   synchronised interleaving is race-free); every SC row equals its target.
 
-Every remaining difference between the pin and `expectations.txt` is a
-row S4 owes (the four `RMW-*` rows).
+- **S4 (2026-09-05)**: the four `RMW-*` rows execute (`compare_exchange_
+  {strong,weak}` reduction rules; the weak form's spurious failure is an ND
+  branch): `{5}`, `{0}`, `{0,5}`, `{0}` — the recovered upstream expectation
+  sets. The pin now EQUALS `expectations.txt` on every row (charter exit
+  criterion E1); LADDER row 12 runs the lane in `--check` mode.
