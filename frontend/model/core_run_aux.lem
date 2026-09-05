@@ -386,8 +386,12 @@ let rec add_to_sb model p_aids (Expr annot expr_ as expr) =
           Ewseq _as (add_to_sb model p_aids e1) (add_to_sb model (Set.filter is_positive p_aids) e2)
       | Esseq _as e1 e2 ->
           Esseq _as (add_to_sb model p_aids e1) (add_to_sb model p_aids e2)
-      | Ebound _ ->
-          error "Core_run_aux.add_to_sb, Ebound"
+      | Ebound e ->
+          (* Concurrency Phase 0 S3: the reduction-context forms (Ebound /
+             Eannot / Eexcluded) post-date this walker; they are traversed
+             like their payload -- an Eexcluded action is annotated exactly
+             as an Eaction *)
+          Ebound (add_to_sb model p_aids e)
       | End es ->
           End (List.map (add_to_sb model p_aids) es)
       | Esave sym_bTy xs e ->
@@ -399,13 +403,46 @@ let rec add_to_sb model p_aids (Expr annot expr_ as expr) =
       | Ewait _ ->
           (* no change *)
           expr_
-      | Eannot _ _ ->
-          error "Core_run_aux.add_to_sb, Eannot"
-      | Eexcluded _ _ ->
-          error "Core_run_aux.add_to_sb, Eexcluded"
+      | Eannot das e ->
+          Eannot das (add_to_sb model p_aids e)
+      | Eexcluded n (Action loc annots a) ->
+          Eexcluded n (Action loc <| annots with sb_before= (Set.map snd p_aids) union annots.sb_before |> a)
     end
   end
 
+
+(* Concurrency Phase 0 S3: the sb tagging of an action's CONTINUATION under the
+   reduction-context semantics -- the frames of the action's context (the
+   continuation is `apply_ctx ctx value`, no longer the stack alone). Mirrors
+   add_to_sb_continuation's K-cases exactly: unseq siblings are NOT sequenced
+   after the action; a weak-seq continuation is sequenced after its POSITIVE
+   predecessors only; a strong-seq continuation after all of them. Tagging the
+   rebuilt arena with the expression walker instead would over-approximate sb
+   onto unsequenced siblings (measured 2026-09-05, S3 record). *)
+val add_to_sb_ctx: concurrency_model -> set (polarity * (Mem_common.thread_id * Cmm_csem.aid)) -> context -> context
+let rec add_to_sb_ctx model p_aids ctx =
+  match model with CM_sequential -> ctx | CM_sc ->
+    let is_positive = function
+      | (Pos, _) -> true
+      | _        -> false
+    end in
+    match ctx with
+      | CTX -> CTX
+      | Cunseq annots es1 ctx' es2 -> Cunseq annots es1 (add_to_sb_ctx model p_aids ctx') es2
+      | Cwseq annots pat ctx' e2 -> Cwseq annots pat (add_to_sb_ctx model p_aids ctx') (add_to_sb model (Set.filter is_positive p_aids) e2)
+      | Csseq annots pat ctx' e2 ->
+          (* a tag crossing a STRONG boundary enters e2 as positive: everything
+             in e2 is sequenced after the action whatever its polarity (the
+             working-era rule at procedure entry, upstream core_run.lem:981
+             `Set.map (fun z -> (Pos, z))`); the expression walker's weak-seq
+             filter inside e2 then only concerns e2's own negative actions.
+             Measured 2026-09-05: without this, `a = 1; b = a;` lost the
+             store->load edge (the load sits in the e2 of an inner weak seq). *)
+          Csseq annots pat (add_to_sb_ctx model p_aids ctx') (add_to_sb model (Set.map (fun (_, x) -> (Pos, x)) p_aids) e2)
+      | Cannot annots xs ctx' -> Cannot annots xs (add_to_sb_ctx model p_aids ctx')
+      | Cbound annots ctx' -> Cbound annots (add_to_sb_ctx model p_aids ctx')
+    end
+  end
 
 val add_to_sb_stack: concurrency_model -> set (polarity * (Mem_common.thread_id * Cmm_csem.aid)) -> stack core_run_annotation -> stack core_run_annotation
 
@@ -431,8 +468,9 @@ let rec add_to_sb_stack model p_aids sk =
       | Stack_cons proc_opt cont sk ->
           let () = Debug.warn [] (fun () -> "(UNSURE) Core_run_aux.add_to_sb_stack ==> is not touching lconts") in
           Stack_cons proc_opt (add_to_sb_continuation model p_aids cont) (add_to_sb_stack model p_aids sk)
-      | Stack_cons2 _ _ _ ->
-          error "add_to_sb_stack ==> Stack_cons2"
+      | Stack_cons2 proc_opt ctx sk ->
+          (* S3: a procedure-call frame stores the caller's CONTEXT *)
+          Stack_cons2 proc_opt (add_to_sb_ctx model p_aids ctx) (add_to_sb_stack model p_aids sk)
    end
   end
 
@@ -471,8 +509,8 @@ let rec add_to_asw model aids (Expr annot expr_ as expr) =
           Ewseq _as (add_to_asw model aids e1) (add_to_asw model aids e2) (* TODO this is wrong *)
       | Esseq _as e1 e2 ->
           Esseq _as (add_to_asw model aids e1) (add_to_asw model aids e2) (* TODO this is wrong *)
-      | Ebound _ ->
-          error "Core_run_aux.add_to_asw, Ebound"
+      | Ebound e ->
+          Ebound (add_to_asw model aids e)
       | Esave sym_bTy xs e ->
           Esave sym_bTy xs (add_to_asw model aids e)
       | Erun annots sym pes ->
@@ -484,10 +522,25 @@ let rec add_to_asw model aids (Expr annot expr_ as expr) =
       | Ewait _ ->
           (* no change *)
           expr_
-      | Eannot _ _ ->
-          error "Core_run_aux.add_to_asw, Eannot"
-      | Eexcluded _ _ ->
-          error "Core_run_aux.add_to_asw, Eexcluded"
+      | Eannot das e ->
+          Eannot das (add_to_asw model aids e)
+      | Eexcluded n (Action loc annots a) ->
+          Eexcluded n (Action loc <| annots with asw_before= aids union annots.asw_before |> a)
+    end
+  end
+
+(* S3: the asw counterpart (join edges into the parent's continuation frames;
+   mirrors add_to_asw_continuation, which does tag unseq siblings) *)
+val add_to_asw_ctx: concurrency_model -> set Cmm_csem.aid -> context -> context
+let rec add_to_asw_ctx model aids ctx =
+  match model with CM_sequential -> ctx | CM_sc ->
+    match ctx with
+      | CTX -> CTX
+      | Cunseq annots es1 ctx' es2 -> Cunseq annots (List.map (add_to_asw model aids) es1) (add_to_asw_ctx model aids ctx') (List.map (add_to_asw model aids) es2)
+      | Cwseq annots pat ctx' e2 -> Cwseq annots pat (add_to_asw_ctx model aids ctx') (add_to_asw model aids e2)
+      | Csseq annots pat ctx' e2 -> Csseq annots pat (add_to_asw_ctx model aids ctx') (add_to_asw model aids e2)
+      | Cannot annots xs ctx' -> Cannot annots xs (add_to_asw_ctx model aids ctx')
+      | Cbound annots ctx' -> Cbound annots (add_to_asw_ctx model aids ctx')
     end
   end
 
@@ -511,8 +564,8 @@ let rec add_to_asw_stack model aids sk =
           Stack_empty
       | Stack_cons proc_opt cont sk ->
           Stack_cons proc_opt (add_to_asw_continuation model aids cont) (add_to_asw_stack model aids sk)
-      | Stack_cons2 _ _ _ ->
-          error "add_to_asw_stack ==> Stack_cons2"
+      | Stack_cons2 proc_opt ctx sk ->
+          Stack_cons2 proc_opt (add_to_asw_ctx model aids ctx) (add_to_asw_stack model aids sk)
     end
   end
 
@@ -762,10 +815,14 @@ declare {lean} fuel val add_to_sb = `fuelExhausted g`
 declare {lean} fuel_measure val add_to_sb = `lemSize g`
 declare {lean} termination_argument add_to_sb_continuation = automatic
 declare {lean} termination_argument add_to_sb_stack = automatic
+(* Concurrency Phase 0 S3: the context walkers recurse on the frame's inner
+   context (a direct subterm) -- structural for Lean *)
+declare {lean} termination_argument add_to_sb_ctx = automatic
 declare {lean} fuel val add_to_asw = `fuelExhausted g`
 declare {lean} fuel_measure val add_to_asw = `lemSize g`
 declare {lean} termination_argument add_to_asw_continuation = automatic
 declare {lean} termination_argument add_to_asw_stack = automatic
+declare {lean} termination_argument add_to_asw_ctx = automatic
 declare {lean} termination_argument comma_list = automatic
 declare {lean} fuel val convert_pexpr = `fuelExhausted (Pexpr [] () (PEval Vunit))`
 declare {lean} fuel_measure val convert_pexpr = `lemSize g`

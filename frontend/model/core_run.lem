@@ -96,7 +96,11 @@ let kill_thread model tid parent_tid aswBefores v st =
   <| st with
        thread_states= assoc_adjust (fun (parent_tid_opt, th_st) ->
          (parent_tid_opt, <| th_st with
-            arena= subst_wait tid v th_st.arena;
+            (* Concurrency Phase 0 S3: under the reduction-context semantics the
+               parent's continuation after a par lives in its ARENA (the context
+               is folded back in), not only in the stack as in the working-era
+               semantics -- the join's asw edges annotate both *)
+            arena= add_to_asw model aswBefores (subst_wait tid v th_st.arena);
 (*
             arenas= List.map (subst_wait tid v) th_st.arenas; (* NOTE!!!! ==> in fact here arenas must be a singleton (since Epar is not allowed inside Eunseq) *)
 *)

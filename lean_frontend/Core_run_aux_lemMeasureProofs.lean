@@ -4,7 +4,9 @@
   C2, 2026-09-04; `declare {lean} fuel_measure val …` in
   frontend/model/core_run_aux.lem, Lean-only):
 
-    add_to_sb / add_to_asw   measure `lemSize g`  (generic_expr.lemSize)
+    add_to_sb / add_to_asw   measure `lemSize g`  (generic_expr.lemSize; both take the
+                             concurrency-model selector since Phase 0 S1 — identity under
+                             CM_sequential, the walk under CM_sc)
     convert_pexpr            measure `lemSize g`  (generic_pexpr.lemSize)
     convert_expr             measure `lemSize g`  (generic_expr.lemSize)
 
@@ -31,14 +33,14 @@ open CerbMeasureLemmas
 
 namespace Core_run_aux_lemMeasureProofs
 
-theorem add_to_sb_stable_aux (k : Nat) : ∀ (p_aids : Pset (polarity × (thread_id × aid)))
+theorem add_to_sb_stable_aux (k : Nat) : ∀ (model : concurrency_model) (p_aids : Pset (polarity × (thread_id × aid)))
     (e : generic_expr core_run_annotation Unit sym) (f g : Nat),
     generic_expr.lemSize e ≤ k → generic_expr.lemSize e ≤ f → generic_expr.lemSize e ≤ g →
-    add_to_sb_lemFuel f p_aids e = add_to_sb_lemFuel g p_aids e := by
+    add_to_sb_lemFuel f model p_aids e = add_to_sb_lemFuel g model p_aids e := by
   induction k with
-  | zero => intro _ e _ _ hk; have := expr_lemSize_pos e; omega
+  | zero => intro _ _ e _ _ hk; have := expr_lemSize_pos e; omega
   | succ k ih =>
-    intro p_aids e f g hk hf hg
+    intro model p_aids e f g hk hf hg
     cases f with
     | zero => have := expr_lemSize_pos e; omega
     | succ f =>
@@ -47,43 +49,45 @@ theorem add_to_sb_stable_aux (k : Nat) : ∀ (p_aids : Pset (polarity × (thread
       | succ g =>
         have key : ∀ (q : Pset (polarity × (thread_id × aid))) (y : generic_expr core_run_annotation Unit sym),
             generic_expr.lemSize y < generic_expr.lemSize e →
-            add_to_sb_lemFuel f q y = add_to_sb_lemFuel g q y :=
-          fun q y hy => ih q y f g (by omega) (by omega) (by omega)
+            add_to_sb_lemFuel f model q y = add_to_sb_lemFuel g model q y :=
+          fun q y hy => ih model q y f g (by omega) (by omega) (by omega)
         obtain ⟨annot1, e_⟩ := e
+        -- Concurrency Phase 0 (S1/S3): the walker takes the model selector — the
+        -- identity under CM_sequential (no recursion), the working-era walk under
+        -- CM_sc, which S3 extended with two recursive arms on a direct
+        -- sub-expression (Ebound, Eannot; closed by `key`) and one leaf (Eexcluded)
+        cases model
+        · simp only [add_to_sb_lemFuel]
         cases e_ <;> simp (disch := size_lt) only [add_to_sb_lemFuel, key]
         -- Ecase
-        · split <;> try rfl
-          to_congr; intro p hp; obtain ⟨pat, e⟩ := p
+        · to_congr; intro p hp; obtain ⟨pat, e⟩ := p
           simp only []
           rw [key _ e (by have := expr_mem_lt_aux1 pat e _ hp; size_lt)]
         -- Eunseq
-        · split <;> try rfl
-          to_congr; intro e he
+        · to_congr; intro e he
           exact key _ e (by have := expr_mem_lt_aux2 e _ he; size_lt)
         -- End
-        · split <;> try rfl
-          to_congr; intro e he
+        · to_congr; intro e he
           exact key _ e (by have := expr_mem_lt_aux2 e _ he; size_lt)
         -- Epar
-        · split <;> try rfl
-          to_congr; intro e he
+        · to_congr; intro e he
           exact key _ e (by have := expr_mem_lt_aux2 e _ he; size_lt)
 
 /-- THE OBLIGATION, exactly as Core_run_aux_auxiliary.lean states and delegates it. -/
-theorem add_to_sb_measure_sufficient (p_aids : Pset (polarity × (thread_id × aid)))
+theorem add_to_sb_measure_sufficient (model : concurrency_model) (p_aids : Pset (polarity × (thread_id × aid)))
     (g : generic_expr core_run_annotation Unit sym) (lemFuel : Nat)
     (lemMeasureLe : generic_expr.lemSize g ≤ lemFuel) :
-    add_to_sb_lemFuel lemFuel p_aids g = add_to_sb p_aids g :=
-  add_to_sb_stable_aux (generic_expr.lemSize g) p_aids g lemFuel (generic_expr.lemSize g)
+    add_to_sb_lemFuel lemFuel model p_aids g = add_to_sb model p_aids g :=
+  add_to_sb_stable_aux (generic_expr.lemSize g) model p_aids g lemFuel (generic_expr.lemSize g)
     (Nat.le_refl _) lemMeasureLe (Nat.le_refl _)
 
-theorem add_to_asw_stable_aux (k : Nat) : ∀ (aids : Pset Nat) (e : generic_expr core_run_annotation Unit sym) (f g : Nat),
+theorem add_to_asw_stable_aux (k : Nat) : ∀ (model : concurrency_model) (aids : Pset Nat) (e : generic_expr core_run_annotation Unit sym) (f g : Nat),
     generic_expr.lemSize e ≤ k → generic_expr.lemSize e ≤ f → generic_expr.lemSize e ≤ g →
-    add_to_asw_lemFuel f aids e = add_to_asw_lemFuel g aids e := by
+    add_to_asw_lemFuel f model aids e = add_to_asw_lemFuel g model aids e := by
   induction k with
-  | zero => intro aids e f g hk _ _; have := expr_lemSize_pos e; omega
+  | zero => intro _ aids e f g hk _ _; have := expr_lemSize_pos e; omega
   | succ k ih =>
-    intro aids e f g hk hf hg
+    intro model aids e f g hk hf hg
     cases f with
     | zero => have := expr_lemSize_pos e; omega
     | succ f =>
@@ -91,33 +95,31 @@ theorem add_to_asw_stable_aux (k : Nat) : ∀ (aids : Pset Nat) (e : generic_exp
       | zero => have := expr_lemSize_pos e; omega
       | succ g =>
         have key : ∀ (aids' : Pset Nat) (y : generic_expr core_run_annotation Unit sym), generic_expr.lemSize y < generic_expr.lemSize e →
-            add_to_asw_lemFuel f aids' y = add_to_asw_lemFuel g aids' y :=
-          fun aids' y hy => ih aids' y f g (by omega) (by omega) (by omega)
+            add_to_asw_lemFuel f model aids' y = add_to_asw_lemFuel g model aids' y :=
+          fun aids' y hy => ih model aids' y f g (by omega) (by omega) (by omega)
         obtain ⟨annot1, e_⟩ := e
+        cases model
+        · simp only [add_to_asw_lemFuel]
         cases e_ <;> simp (disch := size_lt) only [add_to_asw_lemFuel, key]
         case Ecase pe pat_es =>
-          split <;> try rfl
           to_congr; intro p hp; obtain ⟨x1, e⟩ := p
           dsimp only
           rw [key _ e (by have := expr_mem_lt_aux1 x1 e _ hp; size_lt)]
         case Eunseq es =>
-          split <;> try rfl
           to_congr; intro e he
           exact key _ e (by have := expr_mem_lt_aux2 e _ he; size_lt)
         case End es =>
-          split <;> try rfl
           to_congr; intro e he
           exact key _ e (by have := expr_mem_lt_aux2 e _ he; size_lt)
         case Epar es =>
-          split <;> try rfl
           to_congr; intro e he
           exact key _ e (by have := expr_mem_lt_aux2 e _ he; size_lt)
 
 /-- THE OBLIGATION, exactly as the generated auxiliary module states and delegates it. -/
-theorem add_to_asw_measure_sufficient (aids : Pset Nat) (g : generic_expr core_run_annotation Unit sym) (lemFuel : Nat)
+theorem add_to_asw_measure_sufficient (model : concurrency_model) (aids : Pset Nat) (g : generic_expr core_run_annotation Unit sym) (lemFuel : Nat)
     (lemMeasureLe : generic_expr.lemSize g ≤ lemFuel) :
-    add_to_asw_lemFuel lemFuel aids g = add_to_asw aids g :=
-  add_to_asw_stable_aux (generic_expr.lemSize g) aids g lemFuel (generic_expr.lemSize g) (Nat.le_refl _) lemMeasureLe (Nat.le_refl _)
+    add_to_asw_lemFuel lemFuel model aids g = add_to_asw model aids g :=
+  add_to_asw_stable_aux (generic_expr.lemSize g) model aids g lemFuel (generic_expr.lemSize g) (Nat.le_refl _) lemMeasureLe (Nat.le_refl _)
 
 theorem convert_pexpr_stable_aux {bty : Type} (k : Nat) : ∀ (e : generic_pexpr bty sym) (f g : Nat),
     generic_pexpr.lemSize e ≤ k → generic_pexpr.lemSize e ≤ f → generic_pexpr.lemSize e ≤ g →

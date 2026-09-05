@@ -67,6 +67,9 @@ type model_refusal =
 
 type model_inconsistency =
   | MI_spawn_after_scan                (* a spawn reached the driver under CM_sequential although the entry scan passed *)
+  | MI_sc_inconsistent of string       (* S3: the candidate execution the SC run constructed FAILS the library's SC
+                                          consistency tree (cmm_csem.lem sc_accesses_consistent_execution) at the
+                                          named leaf -- the bridge check (charter section 4.4); never a pruned trace *)
 
 type driver_error =
   | DErr_core_run of core_run_cause
@@ -224,6 +227,8 @@ let string_of_model_inconsistency i =
   match i with
     | MI_spawn_after_scan ->
         "model inconsistent: a thread spawn reached the driver under the sequential model after the entry scan passed"
+    | MI_sc_inconsistent leaf ->
+        "model inconsistent: the SC run's candidate execution fails the SC consistency predicate at leaf " ^ leaf
   end
 
 (* The two predicates the consumer states theorems over (review Q3/Q4):
@@ -789,7 +794,7 @@ let rec drive_core_thread2 tid =
     | (Core_reduction.Step_memop_request2 _ _ _ _ _ _ as step) -> 
         ( SK_memop_request
         , ND.return (Just step) )
-  end) (Core_reduction.step_ctx dr_st.layout_state dr_st.core_file dr_st.core_extern tid th_info)
+  end) (Core_reduction.step_ctx model dr_st.layout_state dr_st.core_file dr_st.core_extern tid th_info)
 *)
 
 
@@ -920,9 +925,210 @@ let action_request_sequential2 loc tid aid = function
 end
 
 
+(* === Concurrency Phase 0 S3: the SC instance's candidate execution ===
+   (charter sections 4.3-4.4; record docs/2026-09-04_concurrency-S3-record.md).
+   Under CM_sc every load/store is performed against the concrete memory
+   (the value store) AND recorded as a Cmm action into concurrency_state:
+     pre-execution : actions, threads, lk (from the access ctype), sb / asw
+                     from the action's core_run_annotation (the sb hook below
+                     re-annotates the thread's continuation with each new
+                     action; asw = the annotation's asw_before, plus -- for a
+                     thread's FIRST action -- its inherited parent-thread
+                     sb_before entries, exactly the working-era rule,
+                     upstream 0df8708ad^ core_run.lem:296-312); dd stays empty
+                     (as upstream always had it).
+     witness       : rf  = the most recent committed same-location write
+                           (the interleaving IS the commitment order);
+                     mo  = the atomic writes to a location in commit order;
+                     sc  = the seq_cst actions in commit order; lo, tot empty.
+   Create/Alloc/Kill are memory-layout actions, not C11 memory-model events
+   (cmm_csem.lem SC_condition excludes Alloc/Dealloc), so they are performed
+   but not recorded. At trace end drive (CM_sc) checks the execution against
+   the library's SC consistency tree -- a failing leaf is
+   DErr_model_inconsistent (MI_sc_inconsistent leaf), the bridge check -- and
+   reports the library's data_races as UB005_data_race. *)
+
+val lk_of_ctype: Ctype.ctype -> Cmm.location_kind
+let lk_of_ctype ty =
+  match ty with
+    | Ctype.Ctype _ (Ctype.Atomic _) -> Cmm.Atomic
+    | _ -> Cmm.Non_Atomic
+  end
+
+(* whole-thread-state sb tagging -- used ONLY for SeqRMW (whose reduction
+   rebuilds the arena inside its own callback, where the context is not
+   available to the driver): it tags the rebuilt arena with the expression
+   walker, which also reaches the action's unsequenced siblings -- an
+   over-approximation of sb confined to Cerberus's sequential compound
+   read-modify-write (recorded, S3 record). Every other action is tagged at
+   its reduction step through its context (core_reduction.lem wrap_tagged /
+   Core_run_aux.add_to_sb_ctx). *)
+val sc_tag_thread_state: Core_run_aux.concurrency_model -> Mem.thread_id -> Core.polarity -> Cmm.aid -> Core_run.thread_state -> Core_run.thread_state
+let sc_tag_thread_state model tid pol aid th_st =
+  let tag = {(pol, (tid, aid))} in
+  <| th_st with
+    Core_run.arena= Core_run_aux.add_to_sb model tag th_st.Core_run.arena;
+    Core_run.stack= Core_run_aux.add_to_sb_stack model tag th_st.Core_run.stack;
+  |>
+
+val sc_record_action: Mem.thread_id -> Core_run.core_run_annotation -> maybe Cmm.location_kind -> Cmm.action -> driverM unit
+let sc_record_action tid annots lk_opt act =
+  ND.print_debug 2 [Debug.DB_concurrency] (fun () ->
+    "SC-RECORD aid " ^ show (Cmm.aid_of act) ^ " tid " ^ show tid ^
+    " sb_before " ^ show annots.Core_run_aux.sb_before ^
+    " asw_before " ^ show annots.Core_run_aux.asw_before) >>
+  ND.update (fun dr_st ->
+    let parent_tid_opt =
+      match List.lookup tid dr_st.core_state.Core_run.thread_states with
+        | Just (p, _) -> p
+        | Nothing -> Nothing
+      end in
+    let sb_before = Set.map snd (Set.filter (fun (t, _) -> t = tid) annots.Core_run_aux.sb_before) in
+    let asw_from_parent =
+      if Core_run_aux.has_sbBefore_on_thread tid annots then
+        {}
+      else
+        Set.map snd (Set.filter (fun (t, _) ->
+          match parent_tid_opt with
+            | Just parent_tid -> t = parent_tid
+            | Nothing -> false
+          end) annots.Core_run_aux.sb_before) in
+    let step = <|
+      Cmm_op.newAction=    act;
+      Cmm_op.sbBefore=     sb_before;
+      Cmm_op.ddBefore=     {};
+      Cmm_op.aswBefore=    annots.Core_run_aux.asw_before union asw_from_parent;
+      Cmm_op.locationKind= lk_opt;
+    |> in
+    let s1 = Cmm_op.symUpdatePreEx dr_st.concurrency_state step in
+    let committed = s1.Cmm_op.symCommitted in  (* newest first *)
+    let wit = s1.Cmm_op.symWit in
+    let same_loc_writes = List.filter (fun w -> Cmm.is_write w && Cmm.loc_of w = Cmm.loc_of act) committed in
+    let rf' =
+      if Cmm.is_read act then
+        match same_loc_writes with
+          | w :: _ -> Set.insert (w, act) wit.Cmm.rf
+          | [] -> wit.Cmm.rf
+        end
+      else wit.Cmm.rf in
+    (* mo is total over ALL writes at an ATOMIC LOCATION (cmm_csem consistent_mo:
+       the location kind decides, not the write's own order -- the non-atomic
+       initialisation write of an atomic object is in mo) *)
+    let mo' =
+      if Cmm.is_write act && lk_opt = Just Cmm.Atomic then
+        Set.fromList (List.map (fun w -> (w, act)) same_loc_writes) union wit.Cmm.mo
+      else wit.Cmm.mo in
+    let sc' =
+      if Cmm.is_seq_cst act then
+        Set.fromList (List.map (fun b -> (b, act)) (List.filter Cmm.is_seq_cst committed)) union wit.Cmm.sc
+      else wit.Cmm.sc in
+    <| dr_st with concurrency_state=
+      <| s1 with
+        Cmm_op.symWit= <| wit with Cmm.rf= rf'; Cmm.mo= mo'; Cmm.sc= sc' |>;
+        Cmm_op.symCommitted= act :: committed;
+      |> |>)
+
+(* the SC instance's action handler: the sequential effects, then the record *)
+val action_request_sc2:
+  Core_run_aux.concurrency_model -> Loc.t -> Mem.thread_id -> Cmm.aid -> Core.polarity -> Core_run.core_run_annotation ->
+  Core_reduction.action_request2 Core_run.thread_state -> driverM unit
+let action_request_sc2 model loc tid aid pol annots = function
+  | Core_reduction.AllocRequest2 pref align_ival size_ival mk_th_st' ->
+      liftMem (Mem.allocate_region tid pref align_ival size_ival) >>= fun ptrval ->
+      ND.update (fun dr_st ->
+        <| dr_st with
+          core_state= Core_run.update_thread_state tid (mk_th_st' aid ptrval) dr_st.core_state;
+          trace= ME_allocate_region tid pref align_ival size_ival ptrval :: dr_st.trace
+        |>
+      )
+  
+  | Core_reduction.CreateRequest2 pref align_ival lvalue_ty req_addr_opt init_opt mk_th_st' ->
+      liftMem (Mem.allocate_object tid pref align_ival lvalue_ty req_addr_opt init_opt) >>= fun ptrval ->
+      ND.update (fun dr_st ->
+        <| dr_st with
+          core_state= Core_run.update_thread_state tid (mk_th_st' aid ptrval) dr_st.core_state;
+          trace= ME_allocate_object tid pref align_ival lvalue_ty init_opt ptrval :: dr_st.trace
+        |>
+      )
+  
+  | Core_reduction.LoadRequest2 mo lvalue_ty ptr_val mk_th_st' ->
+      liftMem (Mem.load loc lvalue_ty ptr_val) >>= fun (fp, mval) ->
+      liftMem (Mem.prefix_of_pointer ptr_val)  >>= fun pref       ->
+      ND.update (fun dr_st ->
+        <| dr_st with
+          core_state= Core_run.update_thread_state tid (mk_th_st' aid fp mval) dr_st.core_state;
+          trace= ME_load loc pref lvalue_ty ptr_val mval :: dr_st.trace
+        |>
+      ) >>
+      sc_record_action tid annots (Just (lk_of_ctype lvalue_ty)) (Cmm.Load aid tid mo ptr_val mval)
+  
+  | Core_reduction.StoreRequest2 mo lvalue_ty is_locking ptr_val mem_val mk_th_st' ->
+      liftMem (Mem.store loc lvalue_ty is_locking ptr_val mem_val) >>= fun fp ->
+      liftMem (Mem.prefix_of_pointer ptr_val) >>= fun pref ->
+      ND.update (fun dr_st ->
+        <| dr_st with
+          core_state= Core_run.update_thread_state tid (mk_th_st' aid fp) dr_st.core_state;
+          trace= ME_store loc pref lvalue_ty is_locking ptr_val mem_val :: dr_st.trace
+        |>
+      ) >>
+      sc_record_action tid annots (Just (lk_of_ctype lvalue_ty)) (Cmm.Store aid tid mo ptr_val mem_val)
+  
+  | Core_reduction.SeqRMWRequest2 lvalue_ty ptr_val mk_mval' mk_th_st' ->
+      (* Cerberus's sequential read-modify-write (a non-atomic compound update):
+         a non-atomic load then a non-atomic store, two actions, two ids *)
+      liftMem (Mem.load loc lvalue_ty ptr_val)              >>= fun (_, mval) ->
+      liftCore_run (mk_mval' mval)                          >>= fun mval'     ->
+      liftMem (Mem.store loc lvalue_ty false ptr_val mval') >>= fun fp        ->
+      liftMem (Mem.prefix_of_pointer ptr_val)               >>= fun pref      ->
+      liftCore_run (SEU.runS Core_run.fresh_action_id')     >>= fun aid_st    ->
+      ND.update (fun dr_st ->
+        <| dr_st with
+          core_state= Core_run.update_thread_state tid
+            (sc_tag_thread_state model tid pol aid_st (sc_tag_thread_state model tid pol aid (mk_th_st' aid fp mval mval'))) dr_st.core_state;
+          trace= ME_seq_rmw loc pref lvalue_ty ptr_val mval mval' :: dr_st.trace
+        |>
+      ) >>
+      sc_record_action tid annots (Just (lk_of_ctype lvalue_ty)) (Cmm.Load aid tid Cmm.NA ptr_val mval) >>
+      sc_record_action tid <| annots with Core_run_aux.sb_before= Set.insert (tid, aid) annots.Core_run_aux.sb_before |>
+        (Just (lk_of_ctype lvalue_ty)) (Cmm.Store aid_st tid Cmm.NA ptr_val mval')
+  
+  | Core_reduction.KillRequest2 is_dynamic ptr_val mk_th_st' ->
+      liftMem (Mem.kill loc is_dynamic ptr_val) >>
+      ND.update (fun dr_st ->
+        <| dr_st with
+          core_state= Core_run.update_thread_state tid (mk_th_st' aid) dr_st.core_state;
+          trace= ME_kill loc is_dynamic ptr_val :: dr_st.trace
+        |>
+      )
+end
+
+(* the bridge check: every failing leaf of a named predicate tree *)
+val sc_failing_leaves: string -> Cmm.named_predicate_tree -> Cmm.candidate_execution -> list string
+val sc_failing_leaves_list: list (string * Cmm.named_predicate_tree) -> Cmm.candidate_execution -> list string
+let rec sc_failing_leaves name tree ex =
+  match tree with
+    | Cmm.Leaf p -> if p ex then [] else [name]
+    | Cmm.Node l -> sc_failing_leaves_list l ex
+  end
+and sc_failing_leaves_list l ex =
+  match l with
+    | [] -> []
+    | (name, tree) :: l' -> sc_failing_leaves name tree ex ++ sc_failing_leaves_list l' ex
+  end
+declare {lean} termination_argument sc_failing_leaves = automatic
+declare {lean} termination_argument sc_failing_leaves_list = automatic
+
+(* the candidate execution of a finished SC run *)
+val sc_candidate_execution: Cmm_op.symState -> Cmm.candidate_execution
+let sc_candidate_execution s =
+  let pre = s.Cmm_op.symPre in
+  let wit = s.Cmm_op.symWit in
+  (pre, wit, Cmm.release_acquire_fenced_relations pre wit)
+
 val perform_action_request2:
-  Core_run_aux.concurrency_model -> Loc.t -> Mem.thread_id -> Core_reduction.action_request2 Core_run.thread_state -> driverM unit
-let perform_action_request2 model loc tid request =
+  Core_run_aux.concurrency_model -> Loc.t -> Mem.thread_id -> Core.polarity -> Core_run.core_run_annotation ->
+  Core_reduction.action_request2 Core_run.thread_state -> driverM unit
+let perform_action_request2 model loc tid pol annots request =
   let _execution_mode_is_random = match Global.current_execution_mode () with
     | Nothing   -> false
     | Just mode -> mode = Global.Random
@@ -934,12 +1140,12 @@ let perform_action_request2 model loc tid request =
           liftCore_run (SEU.runS Core_run.fresh_action_id') >>= fun aid ->
           action_request_sequential2 loc tid aid request
       | Core_run_aux.CM_sc ->
-          (* Concurrency Phase 0 S1/S2: the concrete memory IS the value store
+          (* Concurrency Phase 0 S1-S3: the concrete memory IS the value store
              of the SC instance (a read returns the value in memory at issue);
              the interleaving choice was made by the scheduler (can_advance /
-             driver2). S3 adds the execution construction alongside. *)
+             driver2); the action is recorded into the candidate execution. *)
           liftCore_run (SEU.runS Core_run.fresh_action_id') >>= fun aid ->
-          action_request_sequential2 loc tid aid request
+          action_request_sc2 model loc tid aid pol annots request
     end
   end
 
@@ -1103,7 +1309,7 @@ let can_advance model multi_threaded = function
       true
   | Core_reduction.Step_tau2 _ _ _ ->
       true
-  | Core_reduction.Step_action_request2 _ _ _ is_unseq_with_ccall _ ->
+  | Core_reduction.Step_action_request2 _ _ _ is_unseq_with_ccall _ _ _ ->
       match model with
         | Core_run_aux.CM_sequential -> not is_unseq_with_ccall
         | Core_run_aux.CM_sc -> if multi_threaded then false else not is_unseq_with_ccall
@@ -1168,12 +1374,12 @@ let advance_step model tid step =
         |>) >>= fun () ->
         ND.return NOWAKEUP
 
-    | Core_reduction.Step_action_request2 _ loc tid is_unseq_with_ccall m_request ->
+    | Core_reduction.Step_action_request2 _ loc tid is_unseq_with_ccall pol annots m_request ->
         begin if is_unseq_with_ccall then
           ND.return ()
         else
           liftCore_run m_request >>= fun request ->
-          perform_action_request2 model loc tid request
+          perform_action_request2 model loc tid pol annots request
         end >>= fun () ->
         ND.return NOWAKEUP
 
@@ -1277,7 +1483,7 @@ let rec drive_nonmemory_steps_aux2 model (acc: map Mem.thread_id (list Core_redu
         (* Concurrency Phase 0: "at least two threads exist" is the
            scheduling-point condition (can_advance) *)
         let multi_threaded = List.length dr_st.core_state.Core_run.thread_states >= 2 in
-        (multi_threaded, Core_reduction.step_ctx dr_st.layout_state dr_st.core_file dr_st.core_extern tid th_info)
+        (multi_threaded, Core_reduction.step_ctx model dr_st.layout_state dr_st.core_file dr_st.core_extern tid th_info)
       ) >>= fun (multi_threaded, steps) ->
       match find_can_advance model multi_threaded steps with
         | Nothing ->
@@ -1332,7 +1538,7 @@ let rec drive_nonmemory_steps_aux (acc: map Mem.thread_id (list Core_reduction.c
                 | Nothing ->
                     error "Driver.drive_nonmemory_steps_aux => invalid tid"
               end in
-            Core_reduction.step_ctx dr_st.layout_state dr_st.core_file dr_st.core_extern tid th_info
+            Core_reduction.step_ctx model dr_st.layout_state dr_st.core_file dr_st.core_extern tid th_info
           )
       end >>= function
         | [] ->
@@ -1538,9 +1744,9 @@ let prepare_exit core_st cval =
 (* performing all action and memop requests until there are no more *)
 val process_core_step2: Core_run_aux.concurrency_model -> (Core_run_aux.concurrency_model -> driverM unit) -> Core_reduction.core_step2 -> driverM unit
 let process_core_step2 model driver2 = function
-  | Core_reduction.Step_action_request2 _ loc tid _ m_request ->
+  | Core_reduction.Step_action_request2 _ loc tid _ pol annots m_request ->
       liftCore_run m_request >>= fun request ->
-      perform_action_request2 model loc tid request >>= fun () ->
+      perform_action_request2 model loc tid pol annots request >>= fun () ->
       driver2 model
 
   | Core_reduction.Step_memop_request2 loc memop cvals tid _ mk_th_st ->
@@ -1593,7 +1799,7 @@ let rec driver2 model =
   (* TODO: hackish *)
   let _non_blocked_th_sts = List.filter (fun (tid, th_info) ->
     List.any (fun step -> step <> Core_reduction.Step_blocked2) $
-      Core_reduction.step_ctx post_core_dr_st.layout_state post_core_dr_st.core_file post_core_dr_st.core_extern tid th_info
+      Core_reduction.step_ctx model post_core_dr_st.layout_state post_core_dr_st.core_file post_core_dr_st.core_extern tid th_info
   ) post_core_dr_st.core_state.Core_run.thread_states in
   
   begin if Global.current_execution_mode () = Just Global.Random then
@@ -1608,7 +1814,7 @@ let rec driver2 model =
     ND.bindExhaustive (ND.pick (SK_misc ["driver 2"]) non_blocked_th_sts)
                       (fun (tid, th_info) ->
                        ND.pick (SK_misc ["driver 3"]) $
-                        Core_reduction.step_ctx post_core_dr_st.layout_state post_core_dr_st.core_file post_core_dr_st.core_extern tid th_info)
+                        Core_reduction.step_ctx model post_core_dr_st.layout_state post_core_dr_st.core_file post_core_dr_st.core_extern tid th_info)
 *)
     ND.bindExhaustive
       (ND.pick (SK_misc ["driver 2"]) tid_steps)
@@ -1647,7 +1853,7 @@ let rec driver2 model =
     end
     (*
     ND.pick (SK_misc ["driver 4"]) non_blocked_th_sts >>= fun (tid, th_info) ->
-    ND.pick (SK_misc ["driver 5"]) (Core_reduction.step_ctx post_core_dr_st.layout_state post_core_dr_st.core_file post_core_dr_st.core_extern tid th_info)
+    ND.pick (SK_misc ["driver 5"]) (Core_reduction.step_ctx model post_core_dr_st.layout_state post_core_dr_st.core_file post_core_dr_st.core_extern tid th_info)
       >>= (process_core_step2 model driver2)
     *)
     end
@@ -2118,10 +2324,35 @@ let drive (model: Core_run_aux.concurrency_model) file (arg_strs: list string) =
            (measured 2026-09-04: the exemplar proof went from 2 s to an
            out-of-memory kill). *)
         (ND.get >>= fun dr_st' ->
-         ND.return (finalize (match model with
-           | Core_run_aux.CM_sequential -> "drive (without concur)"
-           | Core_run_aux.CM_sc -> "drive (sc)"
-         end) dr_st'))
+         match model with
+           | Core_run_aux.CM_sequential ->
+               ND.return (finalize "drive (without concur)" dr_st')
+           | Core_run_aux.CM_sc ->
+               (* S3: the race verdict FIRST, then the bridge check (charter
+                  section 4.4). Order matters: in a racy execution a non-atomic
+                  read may have taken its value from the racing write, which the
+                  axiomatic model classes as INCONSISTENT (consistent_non_atomic_rf:
+                  the read is not in vse) -- the program is UB, and that is the
+                  verdict; the bridge (every race-free execution the SC run
+                  produces satisfies the library's SC consistency tree) is the
+                  invariant checked on the executions that survive. *)
+               ND.print_debug 2 [Debug.DB_driver; Debug.DB_concurrency] (fun () ->
+                 let pre = dr_st'.concurrency_state.Cmm_op.symPre in
+                 "SC candidate execution: " ^ show dr_st'.concurrency_state ^
+                 "\n  actions: " ^ show pre.Cmm.actions ^
+                 "\n  sb: " ^ Cmm.action_rel_tostring pre.Cmm.sb ^
+                 "\n  asw: " ^ Cmm.action_rel_tostring pre.Cmm.asw) >>
+               let ex = sc_candidate_execution dr_st'.concurrency_state in
+               if not (Set.null (Cmm.data_races ex)) then
+                 ND.kill (ND.Undef (Loc.other "concurrency (SC instance): data race") [U.UB005_data_race])
+               else
+                 match sc_failing_leaves "sc_accesses_consistent_execution" Cmm.sc_accesses_consistent_execution ex with
+                   | leaf :: _ ->
+                       ND.kill (ND.Other (DErr_model_inconsistent (MI_sc_inconsistent leaf)))
+                   | [] ->
+                       ND.return (finalize "drive (sc)" dr_st')
+                 end
+         end)
 end
   end
 

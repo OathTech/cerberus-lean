@@ -36,7 +36,8 @@
   | Step_ccall2           | thread_id (Nat), core_runM thread_state (FUNCTION)   | panic      |
   | Step_with_runstate2   | runstate_step_kind, core_runM thread_state (FUNCTION)| panic      |
   | Step_tau2             | String, core_tau_step_kind, thread_state (CLOSURES)  | panic      |
-  | Step_action_request2  | String, Loc, thread_id, Bool,                        |            |
+  | Step_action_request2  | String, Loc, thread_id, Bool, polarity,              |            |
+  |                       |   core_run_annotation (S3: the action's sb/asw),     |            |
   |                       |   core_runM (action_request2 thread_state) (FUNCTION)| panic      |
   | Step_blocked2         | (nullary)                                            | true       |
   | Step_error2           | String                                               | structural |
@@ -157,7 +158,7 @@ private def beqCoreStep2 : core_step2 → core_step2 → Bool
       (failwithI "BEq core_step2: functional value (Step_with_runstate2)" : Bool)
   | .Step_tau2 _ _ _, .Step_tau2 _ _ _ =>
       (failwithI "BEq core_step2: functional value (Step_tau2)" : Bool)
-  | .Step_action_request2 _ _ _ _ _, .Step_action_request2 _ _ _ _ _ =>
+  | .Step_action_request2 _ _ _ _ _ _ _, .Step_action_request2 _ _ _ _ _ _ _ =>
       (failwithI "BEq core_step2: functional value (Step_action_request2)" : Bool)
   | .Step_memop_request2 _ _ _ _ _ _, .Step_memop_request2 _ _ _ _ _ _ =>
       (failwithI "BEq core_step2: functional value (Step_memop_request2)" : Bool)
@@ -181,7 +182,7 @@ private def blockTag : core_step2 → Nat
   | .Step_ccall2 _ _ => 0
   | .Step_with_runstate2 _ _ => 1
   | .Step_tau2 _ _ _ => 2
-  | .Step_action_request2 _ _ _ _ _ => 3
+  | .Step_action_request2 _ _ _ _ _ _ _ => 3
   | .Step_error2 _ => 4
   | .Step_thread_done2 _ _ => 5
   | .Step_done2 _ => 6

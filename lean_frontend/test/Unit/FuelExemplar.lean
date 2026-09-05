@@ -261,7 +261,7 @@ theorem loop_step_done {k : Nat} (fl : Nat) (tds : Fmap sym (CerbLocation.Loc ×
     (acc : Fmap thread_id (List core_step2))
     {dst : driver_state} {th : thread_state} {v : value}
     (hth : dst.core_state0.thread_states = [(0, (none, th))])
-    (hsteps : @step_ctx ⟨Nat.succ k⟩ tds dst.layout_state dst.core_file dst.core_extern 0
+    (hsteps : @step_ctx ⟨Nat.succ k⟩ tds CM_sequential dst.layout_state dst.core_file dst.core_extern 0
       (none, th) = [Step_done2 v]) :
     runOne (@drive_nonmemory_steps_aux2_lemFuel ⟨Nat.succ k⟩ (Nat.succ (Nat.succ fl))
         tds CM_sequential acc [0]) dst =
@@ -278,7 +278,7 @@ theorem loop_step_done {k : Nat} (fl : Nat) (tds : Fmap sym (CerbLocation.Loc ×
   · rw [runOne_read]
     refine congrArg (fun x => (NDactive x, dst)) ?_
     show (natGteb dst.core_state0.thread_states.length 2,
-          @step_ctx ⟨Nat.succ k⟩ tds dst.layout_state dst.core_file dst.core_extern 0
+          @step_ctx ⟨Nat.succ k⟩ tds CM_sequential dst.layout_state dst.core_file dst.core_extern 0
             (match lookupBy (fun x y => x == y) 0 dst.core_state0.thread_states with
              | some z => z
              | none => failwithI _)) = _

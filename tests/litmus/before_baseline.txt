@@ -1,5 +1,5 @@
 # tests/litmus/before_baseline.txt — MEASURED outcome sets, both engines in
-# agreement, recorded by scripts/test_litmus.sh --record-before on 2026-09-04.
+# agreement, recorded by scripts/test_litmus.sh --record-before on 2026-09-05.
 # This is the regression PIN (--check-before), not the target (that is
 # expectations.txt). Re-recorded deliberately by the slice that moves it;
 # the movement is described in that slice's record. Row: <file> <class> <set>
@@ -7,10 +7,10 @@
 coherence+init+sc_sc.c  SC  {Specified(1)}
 coherence+sc_sc_sc.c  SC  {Specified(1)}
 datarace+Rna+Rna.c  SC  {Specified(0)}
-datarace+Rna+Rna_Wna.c  SC  {Specified(0)}
-datarace+Rna+Wna.c  SC  {Specified(0),Specified(1)}
-datarace+Wna_sc+sc_Rna.c  SC  {Specified(0),Specified(1)}
-datarace+Wna+Wna.c  SC  {Specified(1),Specified(2)}
+datarace+Rna+Rna_Wna.c  SC  {UB005_data_race}
+datarace+Rna+Wna.c  SC  {UB005_data_race}
+datarace+Wna_sc+sc_Rna.c  SC  {Specified(1),UB005_data_race}
+datarace+Wna+Wna.c  SC  {UB005_data_race}
 fence+sc_sc.c  NONSC  {ERROR}  [model refused: atomic memory order Relaxed is outside the SC fragment (seq_cst only)]
 hb-mo-cycle+Wsc_Wsc_Rsc+Wsc_Wsc_Rsc.c  SC  {Specified(1),Specified(2),Specified(3)}
 IRIW+rel+rel+acq_acq+acq_acq.c  NONSC  {ERROR}  [model refused: atomic memory order Release is outside the SC fragment (seq_cst only)]
@@ -18,7 +18,7 @@ IRIW+sc+sc+sc_sc+sc_sc.c  SC  {Specified(0),Specified(1),Specified(10),Specified
 LB+acq_rel+acq_rel.c  NONSC  {ERROR}  [model refused: atomic memory order Acquire is outside the SC fragment (seq_cst only)]
 LB+rlx_rlx+rlx_rlx.c  NONSC  {ERROR}  [model refused: atomic memory order Relaxed is outside the SC fragment (seq_cst only)]
 LB+sc_sc+sc_sc.c  SC  {Specified(0),Specified(1),Specified(2)}
-MP+na+na.c  SC  {Specified(0),Specified(1)}
+MP+na+na.c  SC  {UB005_data_race}
 MP+na_rel+acq_na.c  NONSC  {ERROR}  [model refused: atomic memory order Release is outside the SC fragment (seq_cst only)]
 MP+na_sc+sc_na.c  SC  {Specified(1),Specified(2)}
 RMW-strong-equal.c  RMW  {INTERNAL_ERROR(TODO[Core_reduction]:_CompareExchangeStrong)}

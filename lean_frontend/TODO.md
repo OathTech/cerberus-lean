@@ -13,11 +13,16 @@ downstream.)
   PARAMETER (`concurrency_model = CM_sequential | CM_sc`, the SC-DRF
   instance; C11-op/RC11/LKMM are Phase 1–2, deliberately undesigned).
   Landed: S0 (litmus corpus + lane + pins), S1+S2 (selector, typed
-  refusals, F_SC entry scan, scheduler live under `CM_sc`; records
+  refusals, F_SC entry scan, scheduler live under `CM_sc`), S3 (the
+  candidate execution alongside the run, the library SC consistency
+  BRIDGE CHECK, `data_races` → UB005; records
   `docs/2026-09-04_concurrency-S0-record.md`,
-  `docs/2026-09-04_concurrency-S1-S2-record.md`). Owed: S3 (execution
-  construction + library SC consistency bridge check + `data_races` →
-  UB005 — the five `datarace+*`/`MP+na+na` litmus rows), S4
+  `docs/2026-09-04_concurrency-S1-S2-record.md`,
+  `docs/2026-09-05_concurrency-S3-record.md`). Phase-0 limitation
+  recorded by S3: locations are pointer values (the upstream `FOOTPRINT`
+  dummy instantiation), so mixed-size OVERLAPPING accesses are not related
+  as races; SeqRMW's sb tagging over-approximates onto its unsequenced
+  siblings. Owed: S4
   (`RMW`/`CompareExchange{Strong,Weak}` reduction rules at `Seq_cst`,
   `core_reduction.lem:799-814` — the four `RMW-*` rows), S5 (reasoning
   surface: the `CM_sequential`/`CM_sc` agreement lemma on `epar_free`

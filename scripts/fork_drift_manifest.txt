@@ -170,6 +170,18 @@ merge-base=b9aeedcb4dd438763b0eef7f95ac19e93875d7de
 # backend/driver/main.ml, backend/common/driver_ocaml.{ml,mli},
 # backend/web/instance.ml were already manifested (the flag becomes a
 # cmdliner enum `--concurrency=sc`; driver_conf.concurrency is the model).
+# S3 (2026-09-05, record docs/2026-09-05_concurrency-S3-record.md): four
+# [expected-semantic] hashes MOVE again (core_reduction.ml: the step
+# constructor carries the action's polarity + core_run_annotation, the sb
+# hook tags the action's context frames at its reduction step, the callee
+# body is sequenced after the call node; core_run_aux.ml: add_to_sb_ctx /
+# add_to_asw_ctx context walkers, Stack_cons2 frames handled, the
+# reduction-context forms Ebound/Eannot/Eexcluded traversed; core_run.ml:
+# the join's asw edges reach the parent's arena; driver.ml: the SC
+# instance records loads/stores into the candidate execution, the bridge
+# check + data_races -> UB005 at trace end). Oracle behaviour moves ONLY
+# under --concurrency=sc (the litmus lane pins it); sequential lanes at
+# zero movement.
 lem-pin=af5df71
 renumber=arc13
 [files]
@@ -248,13 +260,13 @@ util/cerb_fresh.ml
 [expected-semantic]
 d252a154bca00b92a9dbe4422e40849d361bf1ad48dfc033be718aefb7e9f05d cabs_to_ail_effect.ml
 4e43f561d853351c040b4a53fc03636c3e869c62ff727db49584a22bdb89ea08 cabs_to_ail.ml
-22b0b094c6622a92dfdff511a05f19de93f445c5f47d149deec3ed223e582f98 core_reduction.ml
-cc8aad1733da4c670662d195aa4c612797581b80973f7162e6d810f33ee351cc core_run_aux.ml
-a9699fa79a65de4a3c483e184205f6921d68a0045fd1b27b3ac809894dd33b65 core_run.ml
+064e081347a8f9a9f3ba8063e6582f65d8d3e61b89f7031591cae5c500b117e4 core_reduction.ml
+4f780b7e1e852f719a75490eba445502087937b831989c264e8bd39ef8157cce core_run_aux.ml
+cf84e1b62a1bf6542a4c5749bfacde5aab3d3704494df20fd058d0ecae7ab909 core_run.ml
 0d6c60605e2b54527444c8e34edc2de10c6043d4a9fcfdb14498df3142b9ad48 mini_pipeline.ml
 51f56677431b4c6095ef8523761c5879f7fe0f1b20f882977bf6555184f2d2e8 symbol.ml
 4af72185cf6ea64c94506ded11858db5884ecaed067b20dd9dcaf4a6aed31418 translation_effect.ml
-2c8cdbe925149e2b5a6639e427e8344bf53c6279507c6f0fbe1193b52ca33ea5 driver.ml
+c204158dc3457dca9a3160bcf2b206f2c00d869cadbb348ae71867f6361dd552 driver.ml
 8882e41d9366569a3f76bed5d93c0aac7f622b7acf421807179e1bfc585be0cb ctype_aux.ml
 6ba1f4842fe4d8ef55b6405b6c2f1b88f20fc0e2b245230d680314ad0e6cb59f translation.ml
 [expected-cosmetic]

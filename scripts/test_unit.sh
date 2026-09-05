@@ -23,6 +23,10 @@ UNIT_TESTS=(
     # shipped pipeline (test/Unit/FuelExemplar.lean) — compile-time proof,
     # main reports success; its cone is probed by check_theorem_axioms.sh
     "fuel-exemplar-test"
+    # Concurrency Phase 0 S3 (2026-09-05): the bridge-check / race-verdict
+    # PLANT (test/Unit/SCBridgeTest.lean) — a corrupted rf must fail the SC
+    # consistency tree; an unsynchronised cross-thread NA pair must race
+    "sc-bridge-test"
 )
 
 # ---------------------------------------------------------------------------

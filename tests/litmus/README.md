@@ -76,5 +76,9 @@ described in that slice's record:
   `TODO[Core_reduction]` internal error (S4). The lane's SEQ leg pins the
   sequential model's spawn refusal on one file run without the flag.
 
+- **S3 (2026-09-05)**: the five race rows report `UB005_data_race`
+  (`datarace+Wna_sc+sc_Rna.c` = `{Specified(1),UB005_data_race}`: the one
+  synchronised interleaving is race-free); every SC row equals its target.
+
 Every remaining difference between the pin and `expectations.txt` is a
-row S3 or S4 owes.
+row S4 owes (the four `RMW-*` rows).
