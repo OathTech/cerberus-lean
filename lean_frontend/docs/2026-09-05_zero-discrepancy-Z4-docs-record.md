@@ -1,7 +1,8 @@
 # Zero-discrepancy Z4 — the DOCUMENTATION half: tray drafts 20–35, the VALIDATION.md trust-story rewrite (2026-09-05)
 
-Branch `docs/z4-tray-validation` @ base mainline `mdd/cerberus-lean`
-`928aa1e76` (plain worktree, no build). Author: the Z4 docs worker
+Branch `docs/z4-tray-validation`, written @ base mainline `mdd/cerberus-lean`
+`928aa1e76` and REBASED 2026-09-05 onto `eb27fa70f` (the CerbGlobal-defs
+step-1 slice; see §7) — plain worktree, no build. Author: the Z4 docs worker
 [AGENT]; every ruling quoted is [USER 2026-09-03] as recorded in the
 charter `docs/2026-09-03_zero-discrepancy-design.md` and the two rulings
 `docs/2026-09-03_logical-semantics-referent-ruling.md`,
@@ -272,3 +273,43 @@ header is history, the rows are the state), with the class-(b) note.
 2. `zero-discrepancy Z4 (docs, 2/2): VALIDATION.md trust-story rewrite
    (four aims, the rule, exception classes + tests, register R3 by class,
    census summary, fuel §7), LADDER.md:69, this record`.
+
+## 7. Rebase onto `eb27fa70f` (2026-09-05, coordinator request)
+
+Mainline moved `928aa1e76` → `eb27fa70f` (`CerbGlobal` step 1: the
+config/switch surface becomes plain `def`s of the default configuration;
+opaque-boundary census rows 26 → 15, `unsafebaseio_allowlist.txt` PIN
+rows 66 → 37; `docs/2026-09-05_cerbglobal-defs-record.md`). `git rebase
+mdd/cerberus-lean`: commit 1/2 applied cleanly (mainline touched no tray
+file); commit 2/2 conflicted in ONE hunk of `lean_frontend/VALIDATION.md`
+only (this slice never edited `TODO.md`/`CLAUDE.md`, so mainline's edits
+there came through untouched):
+
+- the runtime-seam bullet for `CerbGlobal` (§9): mainline's "LEFT the
+  boundary 2026-09-05 … eleven reads are now plain `def`s … step 2 a
+  separate slice" vs this slice's "class (c): flags refused, plumbing
+  not wanted". RESOLVED keep-both: mainline's facts in this slice's
+  framing (the surface left the boundary; the switch FEATURE stays class
+  (c) under Q7; `using_concurrency`'s step 2 belongs to the concurrency
+  feature branch).
+- the gate-table row for `check_theorem_axioms.sh` merged automatically
+  with mainline's text: "15 registered rows since 2026-09-05 — … the 11
+  `CerbGlobal` config/switch opaques left the census when they became
+  plain `def`s".
+- consequential edit (no conflict): §3 (c) *Semantics switches* no
+  longer says "`CerbGlobal`'s switch set is permanently empty"; it now
+  says the surface is eleven plain `def`s of the DEFAULT configuration
+  (kernel-transparent, `rfl` lemmas), every `Switches.has_switch` read
+  evaluates as the oracle's default by definition, and `using_concurrency`
+  is `def … := false` with `using_concurrency_eq … := rfl`, its
+  parameterisation owned by the concurrency feature branch; the §9 lead
+  sentence says `CerbGlobal` "left the list 2026-09-05".
+
+Numbers that changed in VALIDATION.md through the rebase: the opaque
+census 26 → 15 (gate row, from mainline). Nothing else in this document
+carried the old 26 or the PIN count 66. The reproducer runs of §1–§2 were
+made on binaries built from `928aa1e76`; the CerbGlobal slice's battery
+recorded 0 movement (`eb27fa70f`), and none of the probes here touches a
+switch, so the quoted lines stand. Post-rebase re-read of VALIDATION.md
+end to end: §-references (§0–§9) consistent, R1–R3 rows intact, fuel
+table 47/13/15/6 intact, no conflict marker, no stale phrasing.

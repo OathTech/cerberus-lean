@@ -212,9 +212,10 @@ a bug today and what is a bug still open, in the class vocabulary.
   `Switches.has_switch` read in the exec cone evaluates as the oracle's
   default by definition; `using_concurrency` is `def … := false` with
   `using_concurrency_eq : using_concurrency () = false := rfl`, its
-  parameterisation (step 2) owned by the concurrency feature branch. The oracle's `--switches=PNVI` CHANGES the
-  answer (an integer→pointer UB043 becomes a value), so this is a feature
-  we do not have, not a difference we hide.
+  parameterisation (step 2) owned by the concurrency feature branch.
+  The oracle's `--switches=PNVI` CHANGES the answer (an integer→pointer
+  UB043 becomes a value), so this is a feature we do not have, not a
+  difference we hide.
 - *Concurrency* (`--concurrency`): REFUSED, attributed — "not supported;
   the oracle's own mode is non-functional at `b9aeedcb4`" (`internal
   error: CONCURRENCY IS BROKEN`, `nondeterminism.ml:64` via `smt2.ml:38`).
