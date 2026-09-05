@@ -35,12 +35,14 @@ downstream.)
   from the Lean target as they are from OCaml), the Cmm modules in the
   totality slice at zero partials (`apply_tree`/`apply_tree_fp_aux`
   restated as mutual structural recursion), DESIGN/VALIDATION/README
-  model sections, tray drafts 20–22. NOT done in S5, recorded as the
-  consumer-facing theorem targets (S5 record §4): the
-  `CM_sequential`/`CM_sc` agreement lemma on `epar_free` files and the
-  bridge invariant as a lemma — both are proofs over the ND trace monad
-  and the axiomatic model's consistency of single-thread executions,
-  reasoning-era-scale work, not a Phase-0 slice. Owed: S6 (merge
+  model sections, tray drafts 20–22. **OWED (accepted Phase-0
+  obligation, S5 record §4 erratum):** the `CM_sequential`/`CM_sc`
+  agreement lemma on `epar_free` files — requested by the consumer's S1
+  review (Q4) and accepted in our response record as "S5 proof"; NOT
+  discharged in S5 (its true form is verdict-list agreement, whose
+  substance is single-thread SC consistency of the recorded execution);
+  operator decision pending on an S5b slice vs. hand-off as owed. The
+  bridge invariant as a lemma is an [AGENT]-queued target only. Owed: S6 (merge
   readiness: rebase, cumulative change manifest, consumer note, the
   "mergeable" record, STOP). Findings from the arc are in the upstream
   tray (`docs/upstream-tray/20-22`): the `_Atomic` qualifier form dropped

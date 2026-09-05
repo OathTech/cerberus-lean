@@ -154,16 +154,46 @@ litmus corpus's specifier-form respelling was the right workaround; the
 README/S0/S4 texts are not rewritten (records), the tray draft and this
 section carry the precise shape.
 
-## 4. NOT done, recorded as the consumer's theorem targets ([AGENT] scoping, within the charter)
+## 4. NOT done: the agreement lemma — an ACCEPTED Phase-0 obligation, not discharged
 
-The S3/S4 commit messages queued two theorems for S5 that the charter's
-§4.7 does not list; the S4 report flagged them as trimmable and the
-operator said "go ahead" on the list as given. They are NOT attempted
-here; statements for the consumer:
+**ERRATUM (same day, S6 preparation).** The first version of this section
+said the agreement lemma was queued only by the S3/S4 commit messages and
+"not in the charter". That was wrong about provenance: the consumer's
+review response (their §5, Q4: "please prove it inside one tree") asked
+for it, and OUR acceptance record
+(`2026-09-04_concurrency-S1-interface-review-response.md` Part B item 4)
+took it as "a Phase-0 obligation … The proof is S5". The S4 report to
+the operator called it "agent-added … yours to keep or trim", and the
+operator's "go ahead" was given on that mis-stated basis — so the
+omission is [AGENT]'s, not a ruling. Status, honestly:
 
-- **Agreement.** For every Core file `f` with `epar_free f = true` (no
-  `par`), `drive tds CM_sequential f args` and `drive tds CM_sc f args`
-  yield the same verdict set. Sketch: with one thread `can_advance`
+- The accepted DESIGN (S2: memory actions are scheduling points only with
+  ≥ 2 runnable threads) made the two drives "syntactically the same
+  computation" at equal fuel — TRUE at S2. S3 then added, under `CM_sc`
+  only, the candidate-execution RECORDING (an ND state update per
+  action), the sb/asw ANNOTATION of arena and stack, and the end-of-trace
+  race/bridge verdict. So `runND (drive … CM_sequential …) st = runND
+  (drive … CM_sc …) st` is FALSE as a literal state equality for
+  `Epar`-free files (the states differ in the recorded execution and the
+  annotations); the consumer's response allowed the weaker form ("same
+  outcome list up to the trace field"), and that is the true statement:
+  the VERDICT lists agree. Its substance is two facts about a single-
+  thread run: `data_races` is empty (no cross-thread pair), and the
+  recorded execution satisfies the SC consistency tree (a theorem about
+  cmm_csem's tree on single-thread executions with rf = the last write).
+  The invariant part ("no `Epar` ⇒ one thread ⇒ `can_advance` agrees ⇒
+  the same steps") is the part the acceptance foresaw.
+- It is NOT attempted in S5; the S6 mergeable record carries it as an OWED
+  obligation with this precise statement, and the operator is asked
+  whether to open an S5b slice for it before merge or to hand it to the
+  consumer note as owed. Either way it is stated, not silently dropped.
+
+The other two statements below were queued by [AGENT] only:
+
+- **Agreement (the accepted obligation, precise form).** For every Core
+  file `f` with `epar_free f = true` (no `par`), `drive tds CM_sequential
+  f args` and `drive tds CM_sc f args` yield the same verdict list under
+  `runND`, at equal fuel. Sketch: with one thread `can_advance`
   agrees, every sb/asw walker and annotation is the identity on the
   verdict (they touch annotations the sequential verdict never reads), the
   recording is dead state, and the tail's `data_races` is empty for a
