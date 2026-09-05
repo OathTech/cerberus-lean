@@ -22,15 +22,17 @@
     * string_of_digest (OCaml `Digest.to_hex`) becomes the identity: our
       rep already IS the to_hex image, so printed digests match OCaml
       byte-for-byte.
-  What gets digested also differs: OCaml digests the .c file
-  (`Cerb_fresh.set_digest filename` = Digest.file, pipeline.ml:181,
-  util/cerb_fresh.ml:7-10); the Lean pipeline never sees the .c — it
-  digests the cabs-json input it was handed (Main.lean, per-TU loop).
-  Distinct TUs get distinct digests on both sides, and identical-content
-  inputs conflate on both sides, so from_same_translation_unit behaves
-  isomorphically; the VALUES differ across the two pipelines (they are
-  never compared across pipelines — digests never appear in harness
-  output).
+  What gets digested is the SAME on both sides since zero-discrepancy Z3
+  (census row Z-28): OCaml digests the .c file (`Cerb_fresh.set_digest
+  filename` = Digest.file, pipeline.ml:181, util/cerb_fresh.ml:88-94);
+  the Lean pipeline never sees the .c, so the oracle's --cabs-json path
+  records that very digest in the JSON (`digest` field, main.ml) and
+  Main.lean installs it per TU (CabsImport.parseJson, fail-closed on a
+  JSON without it). Until Z3 the Lean side hashed the cabs-json text — a
+  different value, under which every program global sorted after every
+  libc global in libc mode: symbol digests ORDER the linked globals
+  (Core_linking.merge_globs' min-(digest, number) topological choice),
+  so the value is behaviour, not provenance.
 -/
 
 set_option autoImplicit true

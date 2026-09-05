@@ -2720,4 +2720,256 @@ def parseFileSummary (input : String) : Except String String :=
     .ok s!"Core file: {nFun} fun, {nProc} proc, {nImpl} def/impl, {nTag} struct/union, {nGlob} glob, {nBuiltin} builtin"
   | .error e => .error e
 
+/-! ## Symbol renaming (zero-discrepancy Z3, census row Z-28)
+
+The `--libc` loader (Main.loadLibc) parses the oracle's libc Core text dump,
+whose symbols are NAME-interned here (`mkSym`: digest "", number = the
+name's hash), and stitches it to the metadata it elaborates from the same
+12 libc TUs through the shared lem pipeline — symbols carrying the oracle's
+own (digest, number) identity. Symbol IDENTITY IS BEHAVIOUR in libc mode:
+`Core_linking.merge_globs` (core_linking.lem:252-273) orders the linked
+globals by a topological sort whose tie-break is `Set_extra.choose` =
+`Pset.min_elt` under `symbol_compare` (digest, then number;
+symbol.lem:157-160), and `Driver.driver_globals` (driver.lem:1577-1584)
+allocates them in that order — so the (digest, number) of every libc
+global decides every later address. The dump's hash symbols sorted every
+libc global before every program global and in hash order among
+themselves (detective RC-2 / Z-28). The stitch therefore renames the dump
+ONTO the metadata symbols, with this traversal.
+
+Two namespaces, as in C: `RenameCtx.onSym` for ordinary identifiers
+(objects, functions, binders, labels — every `PEsym`/`PEcall (Sym ·)`/
+`Eproc`/`Esave`/`Erun`/pattern/parameter position and the `funs`/`globs`
+keys) and `RenameCtx.onTag` for struct/union tags (`Struct`/`Union0` inside
+ctypes, `PEmember_shift`/`PEstruct`/`PEunion`/`PEmemberof`,
+`PtrMemberShift`, `OVstruct`/`OVunion`/`MVstruct`/`MVunion`, `tagDefs`
+keys). A `struct stat` and a function `stat` coexist in libc, so ONE map
+would conflate them. The traversal is the reloc pass's shape (above) with
+every symbol position mapped; both functions are applied uniformly, so a
+local binder that happens to share a global's name is renamed consistently
+with its uses (the same conflation the hash interning already had). -/
+
+structure RenameCtx where
+  onSym : sym → sym
+  onTag : sym → sym
+
+/-- Rename the struct/union tag symbols inside a ctype (public: the libc
+    stitch compares ctypes in a tags-by-name frame with it). -/
+partial def renameCtype (ctx : RenameCtx) : ctype → ctype
+  | Ctype annots ty => Ctype annots (match ty with
+    | Void0 => Void0
+    | Basic b => Basic b
+    | Byte => Byte
+    | Array0 t n => Array0 (renameCtype ctx t) n
+    | Function (qs, ret) params var =>
+      Function (qs, renameCtype ctx ret)
+        (params.map fun (q, t, b) => (q, renameCtype ctx t, b)) var
+    | FunctionNoParams (qs, ret) => FunctionNoParams (qs, renameCtype ctx ret)
+    | Pointer qs t => Pointer qs (renameCtype ctx t)
+    | Atomic t => Atomic (renameCtype ctx t)
+    | Struct s => Struct (ctx.onTag s)
+    | Union0 s => Union0 (ctx.onTag s))
+
+private def renamePtrVal (ctx : RenameCtx) : CerbMem.PointerValue → CerbMem.PointerValue
+  | .PV prov base => .PV prov (match base with
+    | .PVnull ty => .PVnull (renameCtype ctx ty)
+    | .PVfunction s => .PVfunction (ctx.onSym s)
+    | .PVconcrete m a => .PVconcrete m a)
+
+private partial def renameMemVal (ctx : RenameCtx) : CerbMem.MemValue → CerbMem.MemValue
+  | .MVunspecified ty => .MVunspecified (renameCtype ctx ty)
+  | .MVinteger ity iv => .MVinteger ity iv
+  | .MVfloating fty fv => .MVfloating fty fv
+  | .MVpointer ty pv => .MVpointer (renameCtype ctx ty) (renamePtrVal ctx pv)
+  | .MVarray vs => .MVarray (vs.map (renameMemVal ctx))
+  | .MVstruct tag ms =>
+    .MVstruct (ctx.onTag tag) (ms.map fun (i, t, v) => (i, renameCtype ctx t, renameMemVal ctx v))
+  | .MVunion tag i v => .MVunion (ctx.onTag tag) i (renameMemVal ctx v)
+
+mutual
+private partial def renameOV (ctx : RenameCtx) : object_value → object_value
+  | OVinteger iv => OVinteger iv
+  | OVfloating fv => OVfloating fv
+  | OVpointer pv => OVpointer (renamePtrVal ctx pv)
+  | OVarray lvs => OVarray (lvs.map (renameLV ctx))
+  | OVstruct tag ms =>
+    OVstruct (ctx.onTag tag) (ms.map fun (i, t, mv) => (i, renameCtype ctx t, renameMemVal ctx mv))
+  | OVunion tag i mv => OVunion (ctx.onTag tag) i (renameMemVal ctx mv)
+private partial def renameLV (ctx : RenameCtx) : loaded_value → loaded_value
+  | LVspecified ov => LVspecified (renameOV ctx ov)
+  | LVunspecified ty => LVunspecified (renameCtype ctx ty)
+end
+
+private partial def renameVal (ctx : RenameCtx) : value → value
+  | Vobject ov => Vobject (renameOV ctx ov)
+  | Vloaded lv => Vloaded (renameLV ctx lv)
+  | Vunit => Vunit
+  | Vtrue => Vtrue
+  | Vfalse => Vfalse
+  | Vctype ty => Vctype (renameCtype ctx ty)
+  | Vlist bty vs => Vlist bty (vs.map (renameVal ctx))
+  | Vtuple vs => Vtuple (vs.map (renameVal ctx))
+
+private def renameName (ctx : RenameCtx) : generic_name sym → generic_name sym
+  | Sym s => Sym (ctx.onSym s)
+  | Impl c => Impl c
+
+private def renameAnnots (ctx : RenameCtx) (annots : List annot) : List annot :=
+  annots.map fun a => match a with
+    | Atypedef s => Atypedef (ctx.onSym s)
+    | Ainlined_label (loc, s, la) => Ainlined_label (loc, ctx.onSym s, la)
+    | a => a
+
+private def renamePrefix (ctx : RenameCtx) : prefix0 → prefix0
+  | PrefSource loc syms => PrefSource loc (syms.map ctx.onSym)
+  | p => p
+
+private partial def renamePat (ctx : RenameCtx) : Pat → Pat
+  | Pattern annots pat_ =>
+    Pattern (renameAnnots ctx annots) (match pat_ with
+      | CaseBase (so, bty) => CaseBase (so.map ctx.onSym, bty)
+      | CaseCtor c pats => CaseCtor c (pats.map (renamePat ctx)))
+
+private partial def renamePE (ctx : RenameCtx) : PE → PE
+  | Pexpr annots bty pe_ =>
+    let r := renamePE ctx
+    Pexpr (renameAnnots ctx annots) bty (match pe_ with
+      | PEsym s => PEsym (ctx.onSym s)
+      | PEimpl c => PEimpl c
+      | PEval v => PEval (renameVal ctx v)
+      | PEconstrained xs => PEconstrained (xs.map fun (c, pe) => (c, r pe))
+      | PEundef loc ub => PEundef loc ub
+      | PEerror str pe => PEerror str (r pe)
+      | PEctor c pes => PEctor c (pes.map r)
+      | PEcase pe alts => PEcase (r pe) (alts.map fun (pat, pe) => (renamePat ctx pat, r pe))
+      | PEarray_shift pe1 ty pe2 => PEarray_shift (r pe1) (renameCtype ctx ty) (r pe2)
+      | PEmember_shift pe s id => PEmember_shift (r pe) (ctx.onTag s) id
+      | PEmemop op pes => PEmemop op (pes.map r)
+      | PEnot pe => PEnot (r pe)
+      | PEop op pe1 pe2 => PEop op (r pe1) (r pe2)
+      | PEconv_int ity pe => PEconv_int ity (r pe)
+      | PEwrapI ity iop pe1 pe2 => PEwrapI ity iop (r pe1) (r pe2)
+      | PEcatch_exceptional_condition ity iop pe1 pe2 =>
+        PEcatch_exceptional_condition ity iop (r pe1) (r pe2)
+      | PEstruct s fields => PEstruct (ctx.onTag s) (fields.map fun (id, pe) => (id, r pe))
+      | PEunion s id pe => PEunion (ctx.onTag s) id (r pe)
+      | PEcfunction pe => PEcfunction (r pe)
+      | PEmemberof s id pe => PEmemberof (ctx.onTag s) id (r pe)
+      | PEcall nm pes => PEcall (renameName ctx nm) (pes.map r)
+      | PElet pat pe1 pe2 => PElet (renamePat ctx pat) (r pe1) (r pe2)
+      | PEif pe1 pe2 pe3 => PEif (r pe1) (r pe2) (r pe3)
+      | PEis_scalar pe => PEis_scalar (r pe)
+      | PEis_integer pe => PEis_integer (r pe)
+      | PEis_signed pe => PEis_signed (r pe)
+      | PEis_unsigned pe => PEis_unsigned (r pe)
+      | PEbmc_assume pe => PEbmc_assume (r pe)
+      | PEare_compatible pe1 pe2 => PEare_compatible (r pe1) (r pe2))
+
+private def renameAct (ctx : RenameCtx) (act : Act) : Act :=
+  let r := renamePE ctx
+  match act with
+  | Create pe1 pe2 pref => Create (r pe1) (r pe2) (renamePrefix ctx pref)
+  | CreateReadOnly pe1 pe2 pe3 pref => CreateReadOnly (r pe1) (r pe2) (r pe3) (renamePrefix ctx pref)
+  | Alloc0 pe1 pe2 pref => Alloc0 (r pe1) (r pe2) (renamePrefix ctx pref)
+  | Kill k pe => Kill (match k with
+      | Dynamic0 => Dynamic0
+      | Static0 ty => Static0 (renameCtype ctx ty)) (r pe)
+  | Store0 b pe1 pe2 pe3 mo => Store0 b (r pe1) (r pe2) (r pe3) mo
+  | Load0 pe1 pe2 mo => Load0 (r pe1) (r pe2) mo
+  | SeqRMW b pe1 pe2 s pe3 => SeqRMW b (r pe1) (r pe2) (ctx.onSym s) (r pe3)
+  | RMW0 pe1 pe2 pe3 pe4 mo1 mo2 => RMW0 (r pe1) (r pe2) (r pe3) (r pe4) mo1 mo2
+  | Fence0 mo => Fence0 mo
+  | CompareExchangeStrong pe1 pe2 pe3 pe4 mo1 mo2 =>
+    CompareExchangeStrong (r pe1) (r pe2) (r pe3) (r pe4) mo1 mo2
+  | CompareExchangeWeak pe1 pe2 pe3 pe4 mo1 mo2 =>
+    CompareExchangeWeak (r pe1) (r pe2) (r pe3) (r pe4) mo1 mo2
+  | LinuxFence mo => LinuxFence mo
+  | LinuxLoad pe1 pe2 mo => LinuxLoad (r pe1) (r pe2) mo
+  | LinuxStore pe1 pe2 pe3 mo => LinuxStore (r pe1) (r pe2) (r pe3) mo
+  | LinuxRMW pe1 pe2 pe3 mo => LinuxRMW (r pe1) (r pe2) (r pe3) mo
+
+private def renameAction (ctx : RenameCtx) : generic_action Unit Unit sym → generic_action Unit Unit sym
+  | Action loc a act => Action loc a (renameAct ctx act)
+
+private def renameMemop (ctx : RenameCtx) : generic_memop sym → generic_memop sym
+  | PtrMemberShift s id => PtrMemberShift (ctx.onTag s) id
+  | op => op
+
+private partial def renameE (ctx : RenameCtx) : Expr' → Expr'
+  | Expr annots e_ =>
+    let r := renameE ctx
+    let rp := renamePE ctx
+    Expr (renameAnnots ctx annots) (match e_ with
+      | Epure pe => Epure (rp pe)
+      | Ememop op pes => Ememop (renameMemop ctx op) (pes.map rp)
+      | Eaction (Paction pol act) => Eaction (Paction pol (renameAction ctx act))
+      | Ecase pe alts => Ecase (rp pe) (alts.map fun (pat, e) => (renamePat ctx pat, r e))
+      | Elet pat pe e => Elet (renamePat ctx pat) (rp pe) (r e)
+      | Eif pe e1 e2 => Eif (rp pe) (r e1) (r e2)
+      | Eccall a pe1 pe2 pes => Eccall a (rp pe1) (rp pe2) (pes.map rp)
+      | Eproc a nm pes => Eproc a (renameName ctx nm) (pes.map rp)
+      | Eunseq es => Eunseq (es.map r)
+      | Ewseq pat e1 e2 => Ewseq (renamePat ctx pat) (r e1) (r e2)
+      | Esseq pat e1 e2 => Esseq (renamePat ctx pat) (r e1) (r e2)
+      | Ebound e => Ebound (r e)
+      | End es => End (es.map r)
+      | Esave (s, bty) params e =>
+        Esave (ctx.onSym s, bty)
+          (params.map fun (s', ((bty', tyinfo), pe)) =>
+            (ctx.onSym s', ((bty', tyinfo.map fun (ty, pb) => (renameCtype ctx ty, pb)), rp pe)))
+          (r e)
+      | Erun a s pes => Erun a (ctx.onSym s) (pes.map rp)
+      | Epar es => Epar (es.map r)
+      | Ewait tid => Ewait tid
+      | Eannot dyns e => Eannot dyns (r e)
+      | Eexcluded n act => Eexcluded n (renameAction ctx act))
+
+private def renameParams (ctx : RenameCtx) (ps : List (sym × core_base_type)) : List (sym × core_base_type) :=
+  ps.map fun (s, bty) => (ctx.onSym s, bty)
+
+private def renameFunDecl (ctx : RenameCtx) : generic_fun_map_decl Unit Unit → generic_fun_map_decl Unit Unit
+  | Fun bty params pe => Fun bty (renameParams ctx params) (renamePE ctx pe)
+  | Proc loc me bty params e => Proc loc me bty (renameParams ctx params) (renameE ctx e)
+  | ProcDecl loc bty tys => ProcDecl loc bty tys
+  | BuiltinDecl loc bty tys => BuiltinDecl loc bty tys
+
+private def renameImplDecl (ctx : RenameCtx) : generic_impl_decl Unit → generic_impl_decl Unit
+  | Def bty pe => Def bty (renamePE ctx pe)
+  | IFun bty params pe => IFun bty (renameParams ctx params) (renamePE ctx pe)
+
+private def renameGlob (ctx : RenameCtx) : generic_globs Unit Unit → generic_globs Unit Unit
+  | GlobalDef (bty, ct) e => GlobalDef (bty, renameCtype ctx ct) (renameE ctx e)
+  | GlobalDecl (bty, ct) => GlobalDecl (bty, renameCtype ctx ct)
+
+private def renameMember (ctx : RenameCtx) :
+    identifier × (attributes × Option alignment × qualifiers × ctype) →
+    identifier × (attributes × Option alignment × qualifiers × ctype)
+  | (i, (attrs, al, qs, ty)) =>
+    let al' := match al with
+      | some (AlignType t) => some (AlignType (renameCtype ctx t))
+      | x => x
+    (i, (attrs, al', qs, renameCtype ctx ty))
+
+/-- Rename the tag symbols inside a tag definition (member ctypes,
+    alignment types, the flexible array member's type). -/
+def renameTagDef (ctx : RenameCtx) : tag_definition → tag_definition
+  | StructDef membrs flexOpt =>
+    StructDef (membrs.map (renameMember ctx)) (match flexOpt with
+      | some (FlexibleArrayMember a i q t) => some (FlexibleArrayMember a i q (renameCtype ctx t))
+      | none => none)
+  | UnionDef membrs => UnionDef (membrs.map (renameMember ctx))
+
+/-- Rename every symbol occurrence of a parsed Core file — declaration keys
+    included — through the two namespace maps of `ctx` (see the section
+    comment). -/
+def renameFile (ctx : RenameCtx) (cf : CoreFile) : CoreFile :=
+  let fd := fun (p : sym × generic_fun_map_decl Unit Unit) => (ctx.onSym p.1, renameFunDecl ctx p.2)
+  { funs := cf.funs.map fd
+    procs := cf.procs.map fd
+    builtins := cf.builtins.map fd
+    impls := cf.impls.map fun (n, d) => (n, renameImplDecl ctx d)
+    tagDefs := cf.tagDefs.map fun (s, (loc, td)) => (ctx.onTag s, (loc, renameTagDef ctx td))
+    globs := cf.globs.map fun (s, g) => (ctx.onSym s, renameGlob ctx g)
+    ailnames := cf.ailnames.map fun (n, s) => (n, ctx.onSym s) }
+
 end CoreParser

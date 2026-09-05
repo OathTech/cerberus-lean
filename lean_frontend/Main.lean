@@ -70,7 +70,7 @@ def loadCoreImpl (implFile : CoreParser.CoreFile) : impl :=
       fmapAddBy implementation_constant_compare ic d acc)
     fmapEmpty
 
-/-! ## C-libc loading (`--libc`, arc-6 S1)
+/-! ## C-libc loading (`--libc`, arc-6 S1; the stitch reversed in zero-discrepancy Z3)
 
 The oracle loads `runtime/libc/libc.co` — an OCaml-marshalled `core_dump`
 record carrying main / calling_convention / tagDefs / globs / funs /
@@ -96,7 +96,7 @@ in two (decision log D5; scripts/libc_prep.sh):
   definition site is an #include'd header (pp_cond, pp_core.ml:745-746,
   show_include=false — only `struct fl` survives in the dump). The
   metadata is reconstructed by frontending the SAME 12 libc source TUs
-  (runtime/libc/dune:132-141, same order, same include flags) through
+  (runtime/libc/dune:145-146, same order, same include flags) through
   our own desugar/typecheck/translate and linking them with the
   generated Core_linking — the very pipeline that produced libc.co's
   metadata on the OCaml side (extern: `translate_extern_map`,
@@ -107,16 +107,52 @@ in two (decision log D5; scripts/libc_prep.sh):
   passes; they do not alter extern/funinfo/tagDefs, so the
   reconstruction is exact up to symbol identity.
 
-* THE STITCH: metadata symbols (per-TU-digested frontend syms) are
-  rekeyed BY NAME onto CoreParser's name-hash interned symbols — the
-  symbols the parsed dump bodies reference (CoreParser.internSym).
-  std.core proxy symbols (exit_proxy, vprintf_proxy, … — present in
-  funinfo because ailname substitution happens at elaboration,
-  translation.lem:244-251) are already CoreParser-interned, so rekeying
-  is the identity on them. Name collisions (the static `__procfdname`,
-  defined in two libc TUs; our interning conflates the two
-  alpha-equivalent definitions) are checked for structural agreement and
-  fail closed otherwise.
+* SYMBOL IDENTITY IS BEHAVIOUR (zero-discrepancy Z3, census row Z-28,
+  detective RC-2): `Core_linking.merge_globs` (core_linking.lem:252-273)
+  orders the linked globals by a topological sort whose tie-break is
+  `Set_extra.choose` = `Pset.min_elt` (pset.ml:297) under
+  `symbol_compare` — digest, then number (symbol.lem:157-160) — and
+  `Driver.driver_globals` (driver.lem:1577-1584) allocates them in that
+  order, so the (digest, number) of every libc global fixes every later
+  address (`(long)&g` is a Defined value under PVI). The oracle's libc.co
+  symbols carry the digest of their libc SOURCE file (`Cerb_fresh.set_digest`
+  = `Digest.file`, pipeline.ml:181, at the dune build of libc.co) and the
+  build's single-supply numbers. The metadata TUs here carry the same
+  digests (their cabs-jsons record the oracle's `Digest.file` of the same
+  sources — main.ml --cabs-json path) and numbers drawn by the same lem
+  elaboration, i.e. order-isomorphic within a TU — so the METADATA
+  symbols order exactly as the oracle's. CoreParser's dump symbols do not
+  (name-interned: digest "", number = the name's hash — every libc global
+  sorted before every program global, in hash order among themselves).
+
+* THE STITCH therefore renames the DUMP onto the METADATA symbols
+  (`CoreParser.renameFile`, two namespaces: ordinary identifiers and
+  struct/union tags — `struct stat` and the function `stat` coexist):
+  - tags by name (the headers' structs recur in every including TU: all
+    same-name definitions must agree structurally, fail-closed, and the
+    first in symbol order is the rename target — any structurally-equal
+    one yields the same layout; every TU's own entry stays in tagDefs, as
+    in libc.co);
+  - functions by name (the DEFINITION's symbol where a name is declared
+    in one TU and defined in another — __strtox/__strtoxd — because that
+    is the symbol `link_extern` resolves calls to; checked against
+    metaFile.extern's LK_normal/LK_tentative targets, fail-closed);
+  - globals by POSITION: metaFile.globs is the metadata's own link order,
+    the same `merge_globs` over the same keys and dependency edges as the
+    oracle's libc.co link, so it must equal the dump's order (libc.co's
+    globs, printed in order by pp_globs, pp_core.ml:832-841). Checked
+    entry by entry — kind, ail ctype (tags by name), and name (named
+    globals by name; the unnamed string-literal globals print as `a_<n>`
+    with the oracle's number and have no name to join on, so position is
+    their only join, which is why the whole-list agreement is
+    load-bearing and any disagreement refuses the load).
+  Unmapped names (locals, labels, std.core procs and proxies such as
+  exit_proxy/vprintf_proxy — present in the metadata's funinfo because
+  ailname substitution happens at elaboration, translation.lem:244-251)
+  keep their CoreParser symbols, which ARE the std.core symbols.
+  Same-named static functions in two TUs (`__procfdname`) are one
+  name-interned body in the dump; the first metadata symbol in symbol
+  order takes it (the other keeps its funinfo entry only).
 
 Assembly mirrors `read_core_object` (pipeline.ml:655-663): stdlib/impl
 come from the load context (:657-660), loop_attributes and
@@ -124,23 +160,34 @@ visible_objects_env are EMPTY (:661-663; empty visible_objects_env also
 preserves safe_map_union's disjointness requirement at link,
 core_linking.lem safe_map_union), and main = none — libc.co is a
 main-less library; link_main tolerates it (core_linking.lem:50-57).
+tagDefs/extern/funinfo are the linked metadata's own maps (the oracle's
+libc.co carries exactly these, under exactly these symbols up to the
+within-TU numbering offset).
 
 Documented divergences from the oracle's in-memory libc file:
-* funinfo parameter-name symbols are dropped (kept as `none`): the
-  runtime reads only the parameter CTYPES (Eccall conversion
-  core_run.lem:952-967 uses `List.map snd`; cfunction core_eval.lem
-  returns `snd`), and the oracle's name syms are unreconstructable
-  digested frontend symbols.
 * ProcDecl return base types parse as BTy_unit (not printed by the pp,
   pp_core.ml:783-785) — unread for declaration-only symbols.
-* Same-named static functions conflate to one symbol (name-hash
+* Same-named static functions conflate to one body (name-hash
   interning); fail-closed structural checks make this observable-
   behavior-preserving for the pinned dump.
+* Symbol NUMBERS are the Lean supply's, not libc.co's: equal up to a
+  per-TU constant offset (the oracle's std.core parse and per-TU
+  rewrite passes draw from the same counter), so every `symbol_compare`
+  outcome agrees; the absolute number is printed only in `a_<n>` names
+  of Illformed_program payloads (Z-04, EXC(a)).
 -/
 
 /-- symbolEqual (symbol.lem): digest+number, description ignored. -/
 private def libcSymEq : sym → sym → Bool
   | Symbol d1 n1 _, Symbol d2 n2 _ => d1 == d2 && n1 == n2
+
+/-- The name `--pp core` prints for a symbol (Pp_symbol.to_string_pretty,
+    pp_symbol.ml:20-24: SD_Id, SD_ObjectAddress, SD_FunArgValue) — the name
+    the dump's interning joins on; `none` for unnamed symbols (which print
+    as `a_<n>` and are never name-joined). -/
+private def libcSymNameOpt : sym → Option String
+  | Symbol _ _ (SD_Id s) | Symbol _ _ (SD_ObjectAddress s) | Symbol _ _ (SD_FunArgValue s) => some s
+  | _ => none
 
 private def libcSymName : sym → String
   | Symbol _ n sd =>
@@ -149,68 +196,32 @@ private def libcSymName : sym → String
     | .SD_None => s!"<SD_None sym {n}>"
     | _ => s!"<unnamed sym {n}>"
 
-/-- Rekey a metadata symbol by name onto the CoreParser-interned symbol.
-    Accepts exactly the descriptions `--pp core` prints as a plain name
-    (Pp_symbol.to_string_pretty, pp_symbol.ml:20-24: SD_Id,
-    SD_ObjectAddress, SD_FunArgValue) — the parsed dump interns those
-    names, so the name-join is faithful to the pp. -/
-private def libcRekeySym : sym → Except String sym
-  | Symbol _ _ (SD_Id name)
-  | Symbol _ _ (SD_ObjectAddress name)
-  | Symbol _ _ (SD_FunArgValue name) => .ok (CoreParser.internSym name)
-  | s => .error s!"libc metadata symbol without a printable name: {libcSymName s} (cannot name-join)"
-
-/-- Rekey every struct/union tag symbol inside a ctype. -/
-private partial def libcRekeyCtype : ctype → Except String ctype
-  | Ctype annots ty => do
-    let ty' ← match ty with
-      | Void0 => pure Void0
-      | Basic b => pure (Basic b)
-      | Byte => pure Byte
-      | Array0 t n => do pure (Array0 (← libcRekeyCtype t) n)
-      | Function (qs, ret) params var => do
-        let ret' ← libcRekeyCtype ret
-        let params' ← params.mapM (fun (q, t, b) => do pure (q, ← libcRekeyCtype t, b))
-        pure (Function (qs, ret') params' var)
-      | FunctionNoParams (qs, ret) => do
-        pure (FunctionNoParams (qs, ← libcRekeyCtype ret))
-      | Pointer qs t => do pure (Pointer qs (← libcRekeyCtype t))
-      | Atomic t => do pure (Atomic (← libcRekeyCtype t))
-      | Struct s => do pure (Struct (← libcRekeySym s))
-      | Union0 s => do pure (Union0 (← libcRekeySym s))
-    pure (Ctype annots ty')
-
-private def libcRekeyMember :
-    identifier × (attributes × Option alignment × qualifiers × ctype) →
-    Except String (identifier × (attributes × Option alignment × qualifiers × ctype))
-  | (i, (attrs, al, qs, ty)) => do
-    let al' ← match al with
-      | some (AlignType t) => do pure (some (AlignType (← libcRekeyCtype t)))
-      | x => pure x
-    pure (i, (attrs, al', qs, ← libcRekeyCtype ty))
-
-private def libcRekeyTagDef : tag_definition → Except String tag_definition
-  | StructDef membrs flexOpt => do
-    let membrs' ← membrs.mapM libcRekeyMember
-    let flexOpt' ← match flexOpt with
-      | some (FlexibleArrayMember a i q t) => do
-        pure (some (FlexibleArrayMember a i q (← libcRekeyCtype t)))
-      | none => pure none
-    pure (StructDef membrs' flexOpt')
-  | UnionDef membrs => do pure (UnionDef (← membrs.mapM libcRekeyMember))
+/-- The dump prints an unnamed symbol as `a_<n>` (pp_symbol.ml:33-34). -/
+private def libcIsUnnamedName (s : String) : Bool :=
+  s.startsWith "a_" && s.length > 2 && (s.drop 2).all Char.isDigit
 
 private def identName : identifier → String
   | Identifier _ s => s
 
-/-- Structural agreement for deduplicating same-name tag definitions
-    from different TUs (same headers ⇒ identical layouts). Member names,
-    qualifiers and ctypes are compared; attributes/alignment are not
+/-- Tag positions rekeyed BY NAME onto CoreParser's interning — the
+    comparison frame in which two TUs' copies of one header struct (each
+    referencing its own TU's tag symbols) are structurally equal. -/
+private def libcByNameCtx : CoreParser.RenameCtx :=
+  { onSym := id
+    onTag := fun s => match libcSymNameOpt s with
+      | some n => CoreParser.internSym n
+      | none => s }
+
+/-- Structural agreement for same-name tag definitions from different TUs
+    (same headers ⇒ identical layouts). Member names, qualifiers and
+    ctypes (tags by name) are compared; attributes/alignment are not
     (no_attributes/none throughout the libc headers). -/
 private def libcMemberEq
     (m1 m2 : identifier × (attributes × Option alignment × qualifiers × ctype)) : Bool :=
   identName m1.1 == identName m2.1 &&
   qualifiersEqual m1.2.2.2.1 m2.2.2.2.1 &&
-  ctypeEqual m1.2.2.2.2 m2.2.2.2.2
+  ctypeEqual (CoreParser.renameCtype libcByNameCtx m1.2.2.2.2)
+    (CoreParser.renameCtype libcByNameCtx m2.2.2.2.2)
 
 private def libcTagDefEq : tag_definition → tag_definition → Bool
   | StructDef xs1 f1, StructDef xs2 f2 =>
@@ -219,91 +230,27 @@ private def libcTagDefEq : tag_definition → tag_definition → Bool
     (match f1, f2 with
      | none, none => true
      | some (FlexibleArrayMember _ i1 q1 t1), some (FlexibleArrayMember _ i2 q2 t2) =>
-       identName i1 == identName i2 && qualifiersEqual q1 q2 && ctypeEqual t1 t2
+       identName i1 == identName i2 && qualifiersEqual q1 q2 &&
+       ctypeEqual (CoreParser.renameCtype libcByNameCtx t1) (CoreParser.renameCtype libcByNameCtx t2)
      | _, _ => false)
   | UnionDef xs1, UnionDef xs2 =>
     xs1.length == xs2.length &&
     (List.zip xs1 xs2).all (fun (a, b) => libcMemberEq a b)
   | _, _ => false
 
-/-- Minimal diagnostic ctype printer (loader error messages only). -/
-private partial def libcShowCtype : ctype → String
-  | Ctype _ ty =>
-    match ty with
-    | Void0 => "void"
-    | Basic (Integer _) => "<int-ty>"
-    | Basic (Floating _) => "<float-ty>"
-    | Byte => "byte"
-    | Array0 t n => s!"{libcShowCtype t}[{n.getD (-1)}]"
-    | Function (_, ret) params var =>
-      s!"{libcShowCtype ret} ({String.intercalate ", " (params.map (fun p => libcShowCtype p.2.1))}{if var then ", ..." else ""})"
-    | FunctionNoParams (_, ret) => s!"{libcShowCtype ret} <noproto>()"
-    | Pointer _ t => s!"{libcShowCtype t}*"
-    | Atomic t => s!"_Atomic({libcShowCtype t})"
-    | Struct s => s!"struct {libcSymName s}"
-    | Union0 s => s!"union {libcSymName s}"
-
-/-- Funinfo agreement modulo location/attributes/param names — and
-    modulo has_proto: the per-TU entries for a name declared in one TU
-    and defined in another can disagree on has_proto (observed:
-    __strtox/__strtoxd, declaration-TU true vs definition-TU false); in
-    the oracle both entries coexist under distinct symbols, but our
-    name-join must pick one. has_proto is verified UNREAD by the pinned
-    libc bodies (all 339 cfunction 4-tuple binders bind it to a variable
-    that never occurs again — checked mechanically over
-    tests/libc/libc.core; the count was originally misstated as 221, a
-    whitespace-brittle grep — corrected per audit-2's whitespace-tolerant
-    recount, arc-6 S5f; all 339 dead, conclusion unchanged), so the
-    first-inserted value stands. -/
-private def libcFuninfoEq
-    (f1 f2 : CerbLocation.Loc × attributes × ctype × List (Option sym × ctype) × Bool × Bool) : Bool :=
-  let (_, _, ret1, ps1, v1, _) := f1
-  let (_, _, ret2, ps2, v2, _) := f2
-  ctypeEqual ret1 ret2 && ps1.length == ps2.length &&
-  (List.zip ps1 ps2).all (fun (a, b) => ctypeEqual a.2 b.2) &&
-  v1 == v2
-
-/-- Checked insert into an assoc list (converted to an Fmap once assembly is
-    complete — arc-6 S3: Fmap is no longer the raw list): duplicate keys must
-    agree structurally (fail-closed name-join).
-    DECLARED (zero-discrepancy Z2-T-01): the oracle's `Core_linking.link`
-    merges the libc TUs' tagDefs/funinfo with lem `union` (core_linking.lem:
-    294/298 → `fmapUnionBy` → `Pmap.union`, pmap.ml:290-294: the SECOND
-    map's datum wins on a common key — LemLib.lean:981 mirrors it), silently
-    picking the later TU's definition where two TUs disagree; this join
-    REFUSES on any disagreement instead. On the
-    pinned 12 metadata TUs no duplicate key disagrees (the lane loads),
-    so the two agree on every current input; a disagreeing future pin would
-    surface here as a loud load failure rather than a silent pick. -/
-private def libcInsertChecked {β : Type} (what : String) (eqv : β → β → Bool)
-    (m : List (sym × β)) (k : sym) (v : β)
-    (dbg : β → β → String := fun _ _ => "") : Except String (List (sym × β)) :=
-  match m.find? (fun kv => libcSymEq kv.1 k) with
-  | none => .ok (m ++ [(k, v)])
-  | some (_, v') =>
-    if eqv v' v then .ok m
-    else .error s!"libc metadata name-join collision with disagreeing content: {what} '{libcSymName k}'{dbg v' v}"
-
 /-- Comparators the generated lem code keys these maps with (arc-6 S3: the
     Fmap representation captures the comparator at build time). sym-keyed
     maps: `symbol_compare` (the Ord0 sym instance every generated
-    `Map.lookup`/`insert` on syms inlines); identifier-keyed maps: the
-    string-only SetType identifier instance (exactly Core_linking's
-    comparator). -/
+    `Map.lookup`/`insert` on syms inlines). -/
 private def libcSymMapCmp : sym → sym → LemOrdering := symbol_compare
-private def libcIdentMapCmp : identifier → identifier → LemOrdering := fun i1 i2 =>
-  match i1, i2 with
-  | Identifier _ s1, Identifier _ s2 => defaultCompare s1 s2
 
 /-- `map_from_assoc` mirror — backend/common/pipeline.ml:653-654:
     `List.fold_left (fun acc (k, v) -> Pmap.add k v acc) (Pmap.empty compare)`
     — a LEFT fold of `Pmap.add`, so on a duplicate key the later binding
-    wins, as in the OCaml. Pin-bump 2026-09-03 (LemLib 3c88f0d): LemLib's
-    `fmapOfSpine` (a foldr — first key won) was removed with the list-
-    backed Fmap; the four assoc lists it built below are duplicate-free
-    by construction (`libcInsertChecked`, the `funs` find?-dedup, the
-    `fmapElements` walk of a map), so the fold direction is unobservable
-    here and the OCaml direction is mirrored regardless. -/
+    wins, as in the OCaml. The one assoc list built below (`funs`) is
+    duplicate-free by construction (the find?-dedup), so the fold
+    direction is unobservable here and the OCaml direction is mirrored
+    regardless. -/
 private def libcMapFromAssoc {α β : Type} (cmp : α → α → LemOrdering)
     (l : List (α × β)) : Fmap α β :=
   l.foldl (fun acc (k, v) => fmapAddBy cmp k v acc) fmapEmpty
@@ -682,71 +629,207 @@ def loadLibc [LemFuel] (quiet : Bool) (supply0 : Nat)
   say s!"    {parsed.procs.length} proc, {parsed.funs.length} fun, {parsed.globs.length} glob"
   -- 2. Frontend the 12 metadata TUs (same order as runtime/libc/dune's
   --    libc.co link; reverse-consed accumulator exactly as the OCaml
-  --    driver fold, main.ml:153-156) and link them.
+  --    driver fold, main.ml:153-156) and link them. Zero-discrepancy Z3
+  --    (Z-28): each TU runs under the digest its cabs-json carries — the
+  --    oracle's `Digest.file` of the libc SOURCE (main.ml --cabs-json path
+  --    = pipeline.ml:181 c_frontend), i.e. the digest the same source's
+  --    symbols carry inside libc.co (runtime/libc/dune:145-146 builds it
+  --    from these sources through the same c_frontend).
   say s!"  loading libc metadata from {libcTuJsons.length} TUs..."
   let mut metaFiles : List (file Unit) := []
   let mut supply := supply0
   for j in libcTuJsons do
     let content ← IO.FS.readFile ⟨j⟩
-    let tunit ← match CabsImport.parseJson content with
+    let (digest, tunit) ← match CabsImport.parseJson content with
       | .ok t => pure t
       | .error e => return (← bail s!"cabs-json parse error in {j}: {e}")
-    let _ ← (CerberusFresh.setDigestIO (CerberusFresh.md5Hex content) : BaseIO Unit)
+    let _ ← (CerberusFresh.setDigestIO digest : BaseIO Unit)
     match ← frontendTU true supply coreEvalStuff ailnames stdFunMap coreImpl tunit with
     | .error _ => return (← bail s!"frontend failed for libc metadata TU {j}")
     | .ok (f, supply') => metaFiles := f :: metaFiles; supply := supply'
   let metaFile ← match link metaFiles with
     | .Result f => pure f
     | .Exception (_, _) => return (← bail "linking the libc metadata TUs failed")
-  -- 3. Rekey the metadata by name (fail-closed).
-  let rekeyed : Except String (List (sym × (CerbLocation.Loc × tag_definition)) ×
-      List (identifier × (List sym × linking_kind)) ×
-      List (sym × (CerbLocation.Loc × attributes × ctype × List (Option sym × ctype) × Bool × Bool))) := do
+  -- 3. THE STITCH (module note): rename the dump onto the metadata
+  --    symbols — tags by name, functions by name, globals by position —
+  --    every join fail-closed.
+  let stitched : Except String (CoreParser.CoreFile × List (sym × generic_globs Unit Unit)
+      × Fmap sym (CerbLocation.Loc × tag_definition)
+      × Fmap sym (CerbLocation.Loc × attributes × ctype × List (Option sym × ctype) × Bool × Bool)) := do
+    -- (a) tags
+    let mut tagMap : Std.HashMap String sym := {}
+    let mut tagDefByName : Std.HashMap String tag_definition := {}
+    for (s, (_, td)) in fmapElements metaFile.tagDefs do
+      let name ← match libcSymNameOpt s with
+        | some n => pure n
+        | none => throw s!"libc metadata tag symbol without a printable name: {libcSymName s} (cannot name-join)"
+      match tagDefByName[name]? with
+      | none =>
+        tagMap := tagMap.insert name s
+        tagDefByName := tagDefByName.insert name td
+      | some td' =>
+        unless libcTagDefEq td' td do
+          throw s!"libc metadata name-join collision with disagreeing content: tagDef '{name}'"
+    -- (a') ONE tag symbol per name, on BOTH halves. The run-time
+    --     compatibility check (`AilTypesAux.are_compatible`,
+    --     ailTypesAux.lem:830-837, reached from every elaborated call through
+    --     `PEare_compatible`, core_eval.lem:1090-1099) requires struct/union
+    --     tag SYMBOLS to be equal; the oracle satisfies it because a call
+    --     site is checked against the CALLER TU's own declaration entry of the
+    --     callee (`cfunction` reads funinfo on the pointer's symbol,
+    --     core_eval.lem:906, before the extern remap) — both sides carry that
+    --     TU's tags. The dump's bodies cannot say which TU they came from, so
+    --     their tag references join onto one representative per name; the
+    --     metadata's funinfo ctypes, tagDefs (keys and members) and decl-globs
+    --     ctypes are moved onto the SAME representative here, so the frame is
+    --     consistent — the one-tag-per-name frame of the pre-Z3 loader, now
+    --     under a real (digest, number) symbol. Same-name definitions were
+    --     checked structurally equal in (a), so every collapsed tagDef is the
+    --     same layout. Program↔libc calls are unaffected (the program's own
+    --     declaration entry carries its own tags on both sides).
+    let metaTagCtx : CoreParser.RenameCtx :=
+      { onSym := id
+        onTag := fun s => match libcSymNameOpt s with
+          | some n => (tagMap[n]?).getD s
+          | none => s }
     let mut tagDefs : List (sym × (CerbLocation.Loc × tag_definition)) := []
     for (s, (loc, td)) in fmapElements metaFile.tagDefs do
-      let k ← libcRekeySym s
-      let td' ← libcRekeyTagDef td
-      tagDefs ← libcInsertChecked "tagDef" (fun a b => libcTagDefEq a.2 b.2) tagDefs k (loc, td')
-    let mut ext : List (identifier × (List sym × linking_kind)) := []
-    for (ident, (ds, lk)) in fmapElements metaFile.extern do
-      let ds' ← ds.mapM libcRekeySym
-      let ds'' := ds'.foldl (fun acc s => if acc.any (libcSymEq s) then acc else acc ++ [s]) []
-      let lk' ← match lk with
-        | LK_none => pure LK_none
-        | LK_tentative s => do pure (LK_tentative (← libcRekeySym s))
-        | LK_normal s => do pure (LK_normal (← libcRekeySym s))
-      ext := ext ++ [(ident, (ds'', lk'))]
-    let mut funinfo : List (sym × (CerbLocation.Loc × attributes × ctype × List (Option sym × ctype) × Bool × Bool)) := []
-    for (s, (loc, attrs, ret, params, var, proto)) in fmapElements metaFile.funinfo do
-      let k ← libcRekeySym s
-      let ret' ← libcRekeyCtype ret
-      let params' ← params.mapM (fun (_, t) => do
-        pure ((none : Option sym), ← libcRekeyCtype t))
-      funinfo ← libcInsertChecked "funinfo" libcFuninfoEq funinfo k (loc, attrs, ret', params', var, proto)
-        (fun a b =>
-          let show1 := fun (fi : CerbLocation.Loc × attributes × ctype × List (Option sym × ctype) × Bool × Bool) =>
-            let (_, _, ret, ps, v, p) := fi
-            s!"(ret={libcShowCtype ret}, params=[{String.intercalate ", " (ps.map (fun (q : Option sym × ctype) => libcShowCtype q.2))}], variadic={v}, proto={p})"
-          s!"\n  existing: {show1 a}\n  new:      {show1 b}")
-    -- the dump's surviving tagDefs (struct fl) must agree with the
-    -- metadata's — fail-closed consistency check between the two halves
-    for (s, (_, td)) in parsed.tagDefs do
+      let k := metaTagCtx.onTag s
+      unless tagDefs.any (fun kv => libcSymEq kv.1 k) do
+        tagDefs := tagDefs ++ [(k, (loc, CoreParser.renameTagDef metaTagCtx td))]
+    let funinfo := (fmapElements metaFile.funinfo).map fun (s, (loc, attrs, ret, params, v, pr)) =>
+      (s, (loc, attrs, CoreParser.renameCtype metaTagCtx ret,
+        params.map (fun (n, t) => (n, CoreParser.renameCtype metaTagCtx t)), v, pr))
+    -- (b) functions: the definition's symbol wins over declaration-only
+    --     entries; among definitions the first in symbol order
+    let mut funMap : Std.HashMap String (sym × Bool) := {}
+    for (s, d) in fmapElements metaFile.funs do
+      let name ← match libcSymNameOpt s with
+        | some n => pure n
+        | none => throw s!"libc metadata function symbol without a printable name: {libcSymName s} (cannot name-join)"
+      let isDef := match d with
+        | Proc _ _ _ _ _ | Fun _ _ _ => true
+        | ProcDecl _ _ _ | BuiltinDecl _ _ _ => false
+      match funMap[name]? with
+      | none => funMap := funMap.insert name (s, isDef)
+      | some (_, true) => pure ()
+      | some (_, false) => if isDef then funMap := funMap.insert name (s, true)
+    -- (c) globals, by position over the DEFINITIONS: the dump prints only
+    --     GlobalDef entries (pp_globs skips GlobalDecl, pp_core.ml:840-841)
+    --     while libc.co — and the linked metadata — also carry the
+    --     declaration-only globals, which the driver skips at allocation
+    --     (driver.lem:1581) but merge_globs still sorts. The metadata's list
+    --     is therefore the libc file's globs (decls included, as in libc.co)
+    --     and its GlobalDef subsequence must equal the dump's list.
+    let metaDefs := metaFile.globs.filter fun (_, g) => match g with
+      | GlobalDef _ _ => true
+      | GlobalDecl _ => false
+    unless parsed.globs.length == metaDefs.length do
+      throw s!"libc stitch: the dump has {parsed.globs.length} global definitions but the linked metadata has {metaDefs.length} (of {metaFile.globs.length} entries) — the two link orders cannot be joined"
+    let mut globMap : Std.HashMap String sym := {}
+    for (ms, _) in metaFile.globs.filter (fun (_, g) => match g with | GlobalDecl _ => true | _ => false) do
+      -- declaration-only entries: one per TU that declares a header
+      -- extern (`extern FILE *const __stdout;` in every stdio.h includer),
+      -- never in the dump. Bodies that mention the name join onto the
+      -- DEFINITION's symbol when libc defines it (below, the definition
+      -- overwrites); a name libc only declares joins onto the first
+      -- declaration in symbol order — the oracle resolves it through the
+      -- extern map to the same target either way.
+      match libcSymNameOpt ms with
+      | some n => unless globMap.contains n do globMap := globMap.insert n ms
+      | none => throw s!"libc stitch: unnamed declaration-only global {libcSymName ms}"
+    let mut defNames : Std.HashMap String Unit := {}
+    let mut i := 0
+    for ((ds, dg), (ms, mg)) in List.zip parsed.globs metaDefs do
+      let dname := libcSymName ds
+      let dcty := match dg with
+        | GlobalDef (_, ct) _ => some ct
+        | GlobalDecl _ => none
+      let mcty := match mg with
+        | GlobalDef (_, ct) _ => some ct
+        | GlobalDecl _ => none
+      match dcty, mcty with
+      | some dct, some mct =>
+        unless ctypeEqual (CoreParser.renameCtype libcByNameCtx dct)
+            (CoreParser.renameCtype libcByNameCtx mct) do
+          throw s!"libc stitch: global definition #{i} '{dname}': the dump's ail ctype differs from the metadata's"
+      | _, _ => throw s!"libc stitch: global #{i} '{dname}' is a declaration in the dump (the pp never prints one)"
+      match ms with
+      | Symbol _ _ (SD_ObjectAddress n) | Symbol _ _ (SD_Id n) =>
+        unless n == dname do
+          throw s!"libc stitch: global definition #{i} is '{dname}' in the dump but '{n}' in the metadata — the two link orders disagree (the metadata's merge_globs order must equal libc.co's)"
+      | Symbol _ n SD_None =>
+        unless libcIsUnnamedName dname do
+          throw s!"libc stitch: global definition #{i} is '{dname}' in the dump but the unnamed a_{n} in the metadata — the two link orders disagree"
+      | _ => throw s!"libc stitch: global definition #{i} '{dname}': unexpected metadata symbol description {libcSymName ms}"
+      if defNames.contains dname then
+        throw s!"libc stitch: global '{dname}' is defined twice (a static in two TUs) — name-interning cannot keep the two apart"
+      defNames := defNames.insert dname ()
+      globMap := globMap.insert dname ms   -- a definition wins over its declarations
+      i := i + 1
+    -- (d) the linker's own resolution must agree with the joins
+    for (ident, (_, lk)) in fmapElements metaFile.extern do
+      let target := match lk with
+        | LK_normal d | LK_tentative d => some d
+        | LK_none => none
+      match target with
+      | none => pure ()
+      | some d =>
+        let name ← match libcSymNameOpt d with
+          | some n => pure n
+          | none => throw s!"libc stitch: extern '{identName ident}' resolves to an unnamed symbol"
+        let joined := match globMap[name]? with
+          | some s => some s
+          | none => funMap[name]?.map Prod.fst
+        match joined with
+        | some s =>
+          unless libcSymEq s d do
+            throw s!"libc stitch: extern '{identName ident}' resolves to a symbol other than the stitched '{name}'"
+        | none =>
+          throw s!"libc stitch: extern '{identName ident}' resolves to '{name}', which the dump does not define"
+    -- (e) rename
+    let ctx : CoreParser.RenameCtx :=
+      { onSym := fun s => match libcSymNameOpt s with
+          | some n => match globMap[n]? with
+            | some s' => s'
+            | none => match funMap[n]? with
+              | some (s', _) => s'
+              | none => s
+          | none => s
+        onTag := fun s => match libcSymNameOpt s with
+          | some n => (tagMap[n]?).getD s
+          | none => s }
+    let renamed := CoreParser.renameFile ctx parsed
+    -- (f) the dump's surviving tagDefs (struct fl) must agree with the
+    --     metadata's — fail-closed consistency between the two halves
+    for (s, (_, td)) in renamed.tagDefs do
       match tagDefs.find? (fun kv => libcSymEq kv.1 s) with
       | none => throw s!"dump tagDef '{libcSymName s}' missing from metadata"
       | some (_, (_, td')) =>
         unless libcTagDefEq td td' do
           throw s!"dump tagDef '{libcSymName s}' disagrees with metadata"
-    pure (tagDefs, ext, funinfo)
-  let (tagDefs, ext, funinfo) ← match rekeyed with
-    | .ok x => pure x
+    -- (g) the libc globs: the metadata's list (libc.co's order, decls
+    --     included), each definition's body taken from the renamed dump
+    --     under the now-shared symbol
+    let mut globs : List (sym × generic_globs Unit Unit) := []
+    for (ms, mg) in metaFile.globs do
+      match mg with
+      | GlobalDecl (bty, ct) => globs := globs ++ [(ms, GlobalDecl (bty, CoreParser.renameCtype metaTagCtx ct))]
+      | GlobalDef _ _ =>
+        match renamed.globs.find? (fun kv => libcSymEq kv.1 ms) with
+        | some (_, g) => globs := globs ++ [(ms, g)]
+        | none => throw s!"libc stitch: no dump body for global definition '{libcSymName ms}' after renaming"
+    pure (renamed, globs, libcMapFromAssoc libcSymMapCmp tagDefs, libcMapFromAssoc libcSymMapCmp funinfo)
+  let (renamed, globs, tagDefs, funinfo) ← match stitched with
+    | .ok f => pure f
     | .error e => return (← bail e)
-  -- 4. Fun map from the parsed dump. Proc definitions win over ProcDecl
+  -- 4. Fun map from the renamed dump. Proc definitions win over ProcDecl
   --    entries for the same symbol (the pp emits both for names declared
   --    in one TU and defined in another — __strtox/__strtoxd; only a
   --    Proc body satisfies call_proc, core_run.lem:46-51). Duplicate
   --    Proc definitions (static __procfdname in two TUs) keep the first.
   let mut funs : List (sym × generic_fun_map_decl Unit Unit) := []
-  for (s, d) in parsed.funs ++ parsed.procs ++ parsed.builtins do
+  for (s, d) in renamed.funs ++ renamed.procs ++ renamed.builtins do
     match funs.find? (fun kv => libcSymEq kv.1 s) with
     | none => funs := funs ++ [(s, d)]
     | some (_, existing) =>
@@ -754,27 +837,27 @@ def loadLibc [LemFuel] (quiet : Bool) (supply0 : Nat)
       | ProcDecl _ _ _, Proc _ _ _ _ _ =>
         funs := funs.map (fun kv => if libcSymEq kv.1 s then (kv.1, d) else kv)
       | _, _ => pure ()
-  say s!"    metadata: {tagDefs.length} tagDefs, {ext.length} extern, {funinfo.length} funinfo"
+  say s!"    metadata: {(fmapElements tagDefs).length} tagDefs, {(fmapElements metaFile.extern).length} extern, {(fmapElements funinfo).length} funinfo"
   -- 5. Assemble (read_core_object mirror, pipeline.ml:655-663).
   return .ok ({
     main := none
     calling_convention0 := metaFile.calling_convention0
-    tagDefs := libcMapFromAssoc libcSymMapCmp tagDefs
+    tagDefs := tagDefs
     stdlib := stdFunMap
     impl0 := coreImpl
-    globs := parsed.globs
+    globs := globs
     funs := libcMapFromAssoc libcSymMapCmp funs
-    extern := libcMapFromAssoc libcIdentMapCmp ext
-    funinfo := libcMapFromAssoc libcSymMapCmp funinfo
+    extern := metaFile.extern
+    funinfo := funinfo
     loop_attributes1 := fmapEmpty
     visible_objects_env0 := fmapEmpty
   }, supply)
 
 
-
 /-- Run the pipeline over one or more translation units (multi-TU, arc-5
-    S2). `tunits` carries (cabs-json content, parsed Cabs) per TU in
-    command-line order. Per TU: set the TU digest, then
+    S2). `tunits` carries (source digest, parsed Cabs) per TU in
+    command-line order — the digest is the oracle's `Digest.file` the
+    cabs-json carries (CabsImport.parseJson; zero-discrepancy Z3). Per TU: set the TU digest, then
     desugar→typecheck→translate (`frontendTU`); the resulting Core files
     are linked with the generated `Core_linking.link` exactly as the
     OCaml driver does (backend/driver/main.ml:278-281), tag definitions
@@ -865,18 +948,22 @@ def runPipeline [LemFuel] (runtimeDir : String) (batch : Bool) (ppCore : Bool)
     | .error code => return code
     | .ok (libcFile, supply') => coreFiles := [libcFile]; supply := supply'
   | none => pure ()
-  for (content, tunit) in tunits do
+  for (digest, tunit) in tunits do
     -- Per-TU digest, before the TU's frontend stages — mirror of
     -- `Cerb_fresh.set_digest filename` at the top of the OCaml c_frontend
     -- (backend/common/pipeline.ml:181; ref cell util/cerb_fresh.ml:7-10).
-    -- We digest the cabs-json content we were handed (the Lean pipeline
-    -- never sees the .c file — divergence recorded in CerberusFresh.lean).
+    -- The digest is the ORACLE'S: `Digest.file` of the C source, carried
+    -- by the cabs-json (main.ml --cabs-json path; CabsImport.parseJson,
+    -- fail-closed) — zero-discrepancy Z3 (Z-28): symbol digests order the
+    -- linked globals (merge_globs), so the value itself is behaviour in
+    -- libc mode. (Until Z3 this hashed the cabs-json text, a different
+    -- value under which every program global sorted after the libc's.)
     -- Placement note: OCaml sets the digest before its C PARSE; our Cabs
     -- deserialization already happened in main — harmless, Cabs carries
     -- no Symbol.sym, so no symbol is created before the set.
     -- BaseIO variant: a discarded pure call is dead-code-eliminated
     -- (CerbTags set/reset pattern, arc-4 S3b).
-    let _ ← (CerberusFresh.setDigestIO (CerberusFresh.md5Hex content) : BaseIO Unit)
+    let _ ← (CerberusFresh.setDigestIO digest : BaseIO Unit)
     match ← frontendTU quiet supply coreEvalStuff ailnames stdFunMap coreImpl tunit with
     | .error code => return code
     | .ok (coreFile, supply') => coreFiles := coreFile :: coreFiles; supply := supply'
@@ -1297,7 +1384,7 @@ def main (args : List String) : IO Unit := do
         IO.println s!"Error \{msg: \"cabs-json parse error: {batchEscape e}\"}"
       IO.eprintln s!"cerberus-lean: parse error: {e}"
       IO.Process.exit 1
-    | .ok tunit => tunits := tunits ++ [(content, tunit)]
+    | .ok (digest, tunit) => tunits := tunits ++ [(digest, tunit)]
   -- The ONE instantiation of the ambient fuel (fuel-parameter arc): every
   -- fuel'd function below `runPipeline` reads this instance; nothing else
   -- in the repository builds one (`scripts/check_no_fuel_numerals.sh`).

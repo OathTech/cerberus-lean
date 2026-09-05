@@ -14,12 +14,12 @@
                 "loc": {
                   "tag": "Loc_region",
                   "begin": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                    "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 2,
                     "col": 4
                   },
                   "end": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                    "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 2,
                     "col": 8
                   },
@@ -31,12 +31,12 @@
                 "loc": {
                   "tag": "Loc_region",
                   "begin": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                    "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 2,
                     "col": 10
                   },
                   "end": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                    "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 2,
                     "col": 16
                   },
@@ -57,12 +57,12 @@
               "loc": {
                 "tag": "Loc_region",
                 "begin": {
-                  "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                  "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                   "line": 2,
                   "col": 20
                 },
                 "end": {
-                  "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                  "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                   "line": 2,
                   "col": 23
                 },
@@ -81,12 +81,12 @@
             "loc": {
               "tag": "Loc_region",
               "begin": {
-                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                 "line": 2,
                 "col": 24
               },
               "end": {
-                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                 "line": 2,
                 "col": 45
               },
@@ -104,12 +104,12 @@
                     "loc": {
                       "tag": "Loc_region",
                       "begin": {
-                        "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                        "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                         "line": 2,
                         "col": 24
                       },
                       "end": {
-                        "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                        "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                         "line": 2,
                         "col": 37
                       },
@@ -132,12 +132,12 @@
                             "loc": {
                               "tag": "Loc_region",
                               "begin": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 2,
                                 "col": 39
                               },
                               "end": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 2,
                                 "col": 42
                               },
@@ -160,12 +160,12 @@
                             "loc": {
                               "tag": "Loc_region",
                               "begin": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 2,
                                 "col": 43
                               },
                               "end": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 2,
                                 "col": 44
                               },
@@ -199,12 +199,12 @@
                 "loc": {
                   "tag": "Loc_region",
                   "begin": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                    "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 3,
                     "col": 4
                   },
                   "end": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                    "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 3,
                     "col": 8
                   },
@@ -216,12 +216,12 @@
                 "loc": {
                   "tag": "Loc_region",
                   "begin": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                    "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 3,
                     "col": 10
                   },
                   "end": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                    "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 3,
                     "col": 16
                   },
@@ -242,12 +242,12 @@
               "loc": {
                 "tag": "Loc_region",
                 "begin": {
-                  "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                  "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                   "line": 3,
                   "col": 20
                 },
                 "end": {
-                  "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                  "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                   "line": 3,
                   "col": 23
                 },
@@ -266,12 +266,12 @@
             "loc": {
               "tag": "Loc_region",
               "begin": {
-                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                 "line": 3,
                 "col": 24
               },
               "end": {
-                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                 "line": 3,
                 "col": 47
               },
@@ -289,12 +289,12 @@
                     "loc": {
                       "tag": "Loc_region",
                       "begin": {
-                        "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                        "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                         "line": 3,
                         "col": 24
                       },
                       "end": {
-                        "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                        "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                         "line": 3,
                         "col": 38
                       },
@@ -317,12 +317,12 @@
                             "loc": {
                               "tag": "Loc_region",
                               "begin": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 3,
                                 "col": 40
                               },
                               "end": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 3,
                                 "col": 44
                               },
@@ -345,12 +345,12 @@
                             "loc": {
                               "tag": "Loc_region",
                               "begin": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 3,
                                 "col": 45
                               },
                               "end": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 3,
                                 "col": 46
                               },
@@ -384,12 +384,12 @@
                 "loc": {
                   "tag": "Loc_region",
                   "begin": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                    "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 4,
                     "col": 4
                   },
                   "end": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                    "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 4,
                     "col": 8
                   },
@@ -401,12 +401,12 @@
                 "loc": {
                   "tag": "Loc_region",
                   "begin": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                    "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 4,
                     "col": 10
                   },
                   "end": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                    "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 4,
                     "col": 16
                   },
@@ -427,12 +427,12 @@
               "loc": {
                 "tag": "Loc_region",
                 "begin": {
-                  "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                  "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                   "line": 4,
                   "col": 20
                 },
                 "end": {
-                  "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                  "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                   "line": 4,
                   "col": 23
                 },
@@ -451,12 +451,12 @@
             "loc": {
               "tag": "Loc_region",
               "begin": {
-                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                 "line": 4,
                 "col": 24
               },
               "end": {
-                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                 "line": 4,
                 "col": 53
               },
@@ -474,12 +474,12 @@
                     "loc": {
                       "tag": "Loc_region",
                       "begin": {
-                        "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                        "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                         "line": 4,
                         "col": 24
                       },
                       "end": {
-                        "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                        "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                         "line": 4,
                         "col": 39
                       },
@@ -502,12 +502,12 @@
                             "loc": {
                               "tag": "Loc_region",
                               "begin": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 4,
                                 "col": 41
                               },
                               "end": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 4,
                                 "col": 45
                               },
@@ -520,12 +520,12 @@
                             "loc": {
                               "tag": "Loc_region",
                               "begin": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 4,
                                 "col": 46
                               },
                               "end": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 4,
                                 "col": 50
                               },
@@ -548,12 +548,12 @@
                             "loc": {
                               "tag": "Loc_region",
                               "begin": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 4,
                                 "col": 51
                               },
                               "end": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 4,
                                 "col": 52
                               },
@@ -587,12 +587,12 @@
                 "loc": {
                   "tag": "Loc_region",
                   "begin": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                    "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 5,
                     "col": 4
                   },
                   "end": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                    "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 5,
                     "col": 8
                   },
@@ -604,12 +604,12 @@
                 "loc": {
                   "tag": "Loc_region",
                   "begin": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                    "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 5,
                     "col": 10
                   },
                   "end": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                    "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 5,
                     "col": 16
                   },
@@ -630,12 +630,12 @@
               "loc": {
                 "tag": "Loc_region",
                 "begin": {
-                  "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                  "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                   "line": 5,
                   "col": 20
                 },
                 "end": {
-                  "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                  "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                   "line": 5,
                   "col": 23
                 },
@@ -654,12 +654,12 @@
             "loc": {
               "tag": "Loc_region",
               "begin": {
-                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                 "line": 5,
                 "col": 24
               },
               "end": {
-                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                 "line": 5,
                 "col": 54
               },
@@ -677,12 +677,12 @@
                     "loc": {
                       "tag": "Loc_region",
                       "begin": {
-                        "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                        "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                         "line": 5,
                         "col": 24
                       },
                       "end": {
-                        "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                        "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                         "line": 5,
                         "col": 37
                       },
@@ -705,12 +705,12 @@
                             "loc": {
                               "tag": "Loc_region",
                               "begin": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 5,
                                 "col": 39
                               },
                               "end": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 5,
                                 "col": 47
                               },
@@ -723,12 +723,12 @@
                             "loc": {
                               "tag": "Loc_region",
                               "begin": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 5,
                                 "col": 48
                               },
                               "end": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 5,
                                 "col": 51
                               },
@@ -751,12 +751,12 @@
                             "loc": {
                               "tag": "Loc_region",
                               "begin": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 5,
                                 "col": 52
                               },
                               "end": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 5,
                                 "col": 53
                               },
@@ -790,12 +790,12 @@
                 "loc": {
                   "tag": "Loc_region",
                   "begin": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                    "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 6,
                     "col": 4
                   },
                   "end": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                    "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 6,
                     "col": 8
                   },
@@ -807,12 +807,12 @@
                 "loc": {
                   "tag": "Loc_region",
                   "begin": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                    "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 6,
                     "col": 10
                   },
                   "end": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                    "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 6,
                     "col": 16
                   },
@@ -833,12 +833,12 @@
               "loc": {
                 "tag": "Loc_region",
                 "begin": {
-                  "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                  "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                   "line": 6,
                   "col": 20
                 },
                 "end": {
-                  "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                  "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                   "line": 6,
                   "col": 23
                 },
@@ -857,12 +857,12 @@
             "loc": {
               "tag": "Loc_region",
               "begin": {
-                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                 "line": 6,
                 "col": 24
               },
               "end": {
-                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                 "line": 6,
                 "col": 56
               },
@@ -880,12 +880,12 @@
                     "loc": {
                       "tag": "Loc_region",
                       "begin": {
-                        "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                        "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                         "line": 6,
                         "col": 24
                       },
                       "end": {
-                        "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                        "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                         "line": 6,
                         "col": 38
                       },
@@ -908,12 +908,12 @@
                             "loc": {
                               "tag": "Loc_region",
                               "begin": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 6,
                                 "col": 40
                               },
                               "end": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 6,
                                 "col": 48
                               },
@@ -926,12 +926,12 @@
                             "loc": {
                               "tag": "Loc_region",
                               "begin": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 6,
                                 "col": 49
                               },
                               "end": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 6,
                                 "col": 53
                               },
@@ -954,12 +954,12 @@
                             "loc": {
                               "tag": "Loc_region",
                               "begin": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 6,
                                 "col": 54
                               },
                               "end": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 6,
                                 "col": 55
                               },
@@ -993,12 +993,12 @@
                 "loc": {
                   "tag": "Loc_region",
                   "begin": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                    "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 7,
                     "col": 4
                   },
                   "end": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                    "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 7,
                     "col": 8
                   },
@@ -1010,12 +1010,12 @@
                 "loc": {
                   "tag": "Loc_region",
                   "begin": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                    "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 7,
                     "col": 10
                   },
                   "end": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                    "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 7,
                     "col": 16
                   },
@@ -1036,12 +1036,12 @@
               "loc": {
                 "tag": "Loc_region",
                 "begin": {
-                  "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                  "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                   "line": 7,
                   "col": 20
                 },
                 "end": {
-                  "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                  "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                   "line": 7,
                   "col": 23
                 },
@@ -1060,12 +1060,12 @@
             "loc": {
               "tag": "Loc_region",
               "begin": {
-                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                 "line": 7,
                 "col": 24
               },
               "end": {
-                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                 "line": 7,
                 "col": 62
               },
@@ -1083,12 +1083,12 @@
                     "loc": {
                       "tag": "Loc_region",
                       "begin": {
-                        "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                        "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                         "line": 7,
                         "col": 24
                       },
                       "end": {
-                        "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                        "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                         "line": 7,
                         "col": 39
                       },
@@ -1111,12 +1111,12 @@
                             "loc": {
                               "tag": "Loc_region",
                               "begin": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 7,
                                 "col": 41
                               },
                               "end": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 7,
                                 "col": 49
                               },
@@ -1129,12 +1129,12 @@
                             "loc": {
                               "tag": "Loc_region",
                               "begin": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 7,
                                 "col": 50
                               },
                               "end": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 7,
                                 "col": 54
                               },
@@ -1147,12 +1147,12 @@
                             "loc": {
                               "tag": "Loc_region",
                               "begin": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 7,
                                 "col": 55
                               },
                               "end": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 7,
                                 "col": 59
                               },
@@ -1175,12 +1175,12 @@
                             "loc": {
                               "tag": "Loc_region",
                               "begin": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 7,
                                 "col": 60
                               },
                               "end": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 7,
                                 "col": 61
                               },
@@ -1214,12 +1214,12 @@
                 "loc": {
                   "tag": "Loc_region",
                   "begin": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                    "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 8,
                     "col": 4
                   },
                   "end": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                    "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 8,
                     "col": 8
                   },
@@ -1231,12 +1231,12 @@
                 "loc": {
                   "tag": "Loc_region",
                   "begin": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                    "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 8,
                     "col": 10
                   },
                   "end": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                    "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 8,
                     "col": 16
                   },
@@ -1257,12 +1257,12 @@
               "loc": {
                 "tag": "Loc_region",
                 "begin": {
-                  "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                  "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                   "line": 8,
                   "col": 20
                 },
                 "end": {
-                  "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                  "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                   "line": 8,
                   "col": 37
                 },
@@ -1274,7 +1274,7 @@
                   "loc": {
                     "tag": "Loc_point",
                     "pos": {
-                      "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                      "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                       "line": 8,
                       "col": 20
                     }
@@ -1294,12 +1294,12 @@
             "loc": {
               "tag": "Loc_region",
               "begin": {
-                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                 "line": 8,
                 "col": 38
               },
               "end": {
-                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                 "line": 8,
                 "col": 77
               },
@@ -1317,12 +1317,12 @@
                     "loc": {
                       "tag": "Loc_region",
                       "begin": {
-                        "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                        "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                         "line": 8,
                         "col": 38
                       },
                       "end": {
-                        "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                        "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                         "line": 8,
                         "col": 55
                       },
@@ -1345,12 +1345,12 @@
                             "loc": {
                               "tag": "Loc_region",
                               "begin": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 8,
                                 "col": 57
                               },
                               "end": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 8,
                                 "col": 74
                               },
@@ -1362,7 +1362,7 @@
                                 "loc": {
                                   "tag": "Loc_point",
                                   "pos": {
-                                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                    "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                     "line": 8,
                                     "col": 57
                                   }
@@ -1386,12 +1386,12 @@
                             "loc": {
                               "tag": "Loc_region",
                               "begin": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 8,
                                 "col": 75
                               },
                               "end": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 8,
                                 "col": 76
                               },
@@ -1425,12 +1425,12 @@
                 "loc": {
                   "tag": "Loc_region",
                   "begin": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                    "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 9,
                     "col": 4
                   },
                   "end": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                    "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 9,
                     "col": 8
                   },
@@ -1442,12 +1442,12 @@
                 "loc": {
                   "tag": "Loc_region",
                   "begin": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                    "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 9,
                     "col": 10
                   },
                   "end": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                    "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 9,
                     "col": 16
                   },
@@ -1468,12 +1468,12 @@
               "loc": {
                 "tag": "Loc_region",
                 "begin": {
-                  "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                  "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                   "line": 9,
                   "col": 20
                 },
                 "end": {
-                  "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                  "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                   "line": 9,
                   "col": 37
                 },
@@ -1485,7 +1485,7 @@
                   "loc": {
                     "tag": "Loc_point",
                     "pos": {
-                      "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                      "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                       "line": 9,
                       "col": 20
                     }
@@ -1505,12 +1505,12 @@
             "loc": {
               "tag": "Loc_region",
               "begin": {
-                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                 "line": 9,
                 "col": 38
               },
               "end": {
-                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                 "line": 9,
                 "col": 77
               },
@@ -1528,12 +1528,12 @@
                     "loc": {
                       "tag": "Loc_region",
                       "begin": {
-                        "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                        "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                         "line": 9,
                         "col": 38
                       },
                       "end": {
-                        "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                        "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                         "line": 9,
                         "col": 55
                       },
@@ -1556,12 +1556,12 @@
                             "loc": {
                               "tag": "Loc_region",
                               "begin": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 9,
                                 "col": 57
                               },
                               "end": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 9,
                                 "col": 74
                               },
@@ -1573,7 +1573,7 @@
                                 "loc": {
                                   "tag": "Loc_point",
                                   "pos": {
-                                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                    "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                     "line": 9,
                                     "col": 57
                                   }
@@ -1597,12 +1597,12 @@
                             "loc": {
                               "tag": "Loc_region",
                               "begin": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 9,
                                 "col": 75
                               },
                               "end": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 9,
                                 "col": 76
                               },
@@ -1636,12 +1636,12 @@
                 "loc": {
                   "tag": "Loc_region",
                   "begin": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                    "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 10,
                     "col": 4
                   },
                   "end": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                    "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 10,
                     "col": 8
                   },
@@ -1653,12 +1653,12 @@
                 "loc": {
                   "tag": "Loc_region",
                   "begin": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                    "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 10,
                     "col": 10
                   },
                   "end": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                    "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 10,
                     "col": 16
                   },
@@ -1679,12 +1679,12 @@
               "loc": {
                 "tag": "Loc_region",
                 "begin": {
-                  "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                  "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                   "line": 10,
                   "col": 20
                 },
                 "end": {
-                  "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                  "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                   "line": 10,
                   "col": 37
                 },
@@ -1696,7 +1696,7 @@
                   "loc": {
                     "tag": "Loc_point",
                     "pos": {
-                      "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                      "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                       "line": 10,
                       "col": 20
                     }
@@ -1716,12 +1716,12 @@
             "loc": {
               "tag": "Loc_region",
               "begin": {
-                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                 "line": 10,
                 "col": 38
               },
               "end": {
-                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                 "line": 10,
                 "col": 77
               },
@@ -1739,12 +1739,12 @@
                     "loc": {
                       "tag": "Loc_region",
                       "begin": {
-                        "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                        "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                         "line": 10,
                         "col": 38
                       },
                       "end": {
-                        "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                        "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                         "line": 10,
                         "col": 55
                       },
@@ -1767,12 +1767,12 @@
                             "loc": {
                               "tag": "Loc_region",
                               "begin": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 10,
                                 "col": 57
                               },
                               "end": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 10,
                                 "col": 74
                               },
@@ -1784,7 +1784,7 @@
                                 "loc": {
                                   "tag": "Loc_point",
                                   "pos": {
-                                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                    "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                     "line": 10,
                                     "col": 57
                                   }
@@ -1808,12 +1808,12 @@
                             "loc": {
                               "tag": "Loc_region",
                               "begin": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 10,
                                 "col": 75
                               },
                               "end": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 10,
                                 "col": 76
                               },
@@ -1847,12 +1847,12 @@
                 "loc": {
                   "tag": "Loc_region",
                   "begin": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                    "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 11,
                     "col": 4
                   },
                   "end": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                    "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 11,
                     "col": 8
                   },
@@ -1864,12 +1864,12 @@
                 "loc": {
                   "tag": "Loc_region",
                   "begin": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                    "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 11,
                     "col": 10
                   },
                   "end": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                    "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 11,
                     "col": 16
                   },
@@ -1890,12 +1890,12 @@
               "loc": {
                 "tag": "Loc_region",
                 "begin": {
-                  "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                  "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                   "line": 11,
                   "col": 20
                 },
                 "end": {
-                  "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                  "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                   "line": 11,
                   "col": 24
                 },
@@ -1914,12 +1914,12 @@
             "loc": {
               "tag": "Loc_region",
               "begin": {
-                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                 "line": 11,
                 "col": 25
               },
               "end": {
-                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                 "line": 11,
                 "col": 52
               },
@@ -1937,12 +1937,12 @@
                     "loc": {
                       "tag": "Loc_region",
                       "begin": {
-                        "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                        "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                         "line": 11,
                         "col": 25
                       },
                       "end": {
-                        "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                        "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                         "line": 11,
                         "col": 46
                       },
@@ -1965,12 +1965,12 @@
                             "loc": {
                               "tag": "Loc_region",
                               "begin": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 11,
                                 "col": 47
                               },
                               "end": {
-                                "file": "/Users/miked/Projects/CerbLean/cerberus-lean/_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
+                                "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 11,
                                 "col": 51
                               },
@@ -2002,12 +2002,12 @@
         "loc": {
           "tag": "Loc_region",
           "begin": {
-            "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/001-return-literal.c",
+            "file": "tests/fixtures/001-return-literal//source.c",
             "line": 2,
             "col": 1
           },
           "end": {
-            "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/001-return-literal.c",
+            "file": "tests/fixtures/001-return-literal//source.c",
             "line": 4,
             "col": 2
           },
@@ -2023,12 +2023,12 @@
               "loc": {
                 "tag": "Loc_region",
                 "begin": {
-                  "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/001-return-literal.c",
+                  "file": "tests/fixtures/001-return-literal//source.c",
                   "line": 2,
                   "col": 1
                 },
                 "end": {
-                  "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/001-return-literal.c",
+                  "file": "tests/fixtures/001-return-literal//source.c",
                   "line": 2,
                   "col": 4
                 },
@@ -2053,12 +2053,12 @@
                 "loc": {
                   "tag": "Loc_region",
                   "begin": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/001-return-literal.c",
+                    "file": "tests/fixtures/001-return-literal//source.c",
                     "line": 2,
                     "col": 5
                   },
                   "end": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/001-return-literal.c",
+                    "file": "tests/fixtures/001-return-literal//source.c",
                     "line": 2,
                     "col": 9
                   },
@@ -2081,12 +2081,12 @@
                         "loc": {
                           "tag": "Loc_region",
                           "begin": {
-                            "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/001-return-literal.c",
+                            "file": "tests/fixtures/001-return-literal//source.c",
                             "line": 2,
                             "col": 10
                           },
                           "end": {
-                            "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/001-return-literal.c",
+                            "file": "tests/fixtures/001-return-literal//source.c",
                             "line": 2,
                             "col": 14
                           },
@@ -2111,12 +2111,12 @@
           "loc": {
             "tag": "Loc_region",
             "begin": {
-              "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/001-return-literal.c",
+              "file": "tests/fixtures/001-return-literal//source.c",
               "line": 2,
               "col": 16
             },
             "end": {
-              "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/001-return-literal.c",
+              "file": "tests/fixtures/001-return-literal//source.c",
               "line": 4,
               "col": 2
             },
@@ -2131,12 +2131,12 @@
                 "loc": {
                   "tag": "Loc_region",
                   "begin": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/001-return-literal.c",
+                    "file": "tests/fixtures/001-return-literal//source.c",
                     "line": 3,
                     "col": 3
                   },
                   "end": {
-                    "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/001-return-literal.c",
+                    "file": "tests/fixtures/001-return-literal//source.c",
                     "line": 3,
                     "col": 13
                   },
@@ -2150,12 +2150,12 @@
                     "loc": {
                       "tag": "Loc_region",
                       "begin": {
-                        "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/001-return-literal.c",
+                        "file": "tests/fixtures/001-return-literal//source.c",
                         "line": 3,
                         "col": 10
                       },
                       "end": {
-                        "file": "/Users/miked/Projects/CerbLean/cerberus-lean/tests/minimal/001-return-literal.c",
+                        "file": "tests/fixtures/001-return-literal//source.c",
                         "line": 3,
                         "col": 12
                       },
@@ -2176,5 +2176,6 @@
         }
       }
     }
-  ]
+  ],
+  "digest": "81c0f476cb2abad15583f4fcde44a0ed"
 }

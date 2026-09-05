@@ -267,7 +267,22 @@ let cerberus debug_level progress core_obj
           cpp (conf, io) ~filename >>= fun file_content ->
           C_parser_driver.parse_from_string ~filename file_content >>= fun cabs_tunit ->
           let json = Lean_export.Cabs_json.to_json cabs_tunit in
-          print_string (Yojson.pretty_to_string ~std:true (json :> Yojson.t));
+          (* zero-discrepancy Z3 (census row Z-28): the JSON carries the
+             TU's digest — `Digest.file filename`, the value set_digest
+             just installed and every symbol of this TU will carry
+             (frontend/model/symbol.lem:238 `Symbol (digest ()) …`). The
+             Lean driver sets its per-TU digest from this field instead of
+             hashing the JSON text: symbol digests ORDER the linked globals
+             (Core_linking.merge_globs' min-(digest, number) topological
+             choice, core_linking.lem:252-273), so in libc mode the
+             program's globals interleave among the libc TUs' by exactly
+             this value. Fail-closed: a translation unit that is not a JSON
+             object cannot carry it. *)
+          let json = match (json :> Yojson.t) with
+            | `Assoc kvs ->
+              `Assoc (kvs @ [("digest", `String (Digest.to_hex (Cerb_fresh.digest ())))])
+            | _ -> failwith "cabs-json: the translation unit did not serialise to a JSON object" in
+          print_string (Yojson.pretty_to_string ~std:true json);
           print_newline ();
           return ()
         ) files >>= fun _ ->
