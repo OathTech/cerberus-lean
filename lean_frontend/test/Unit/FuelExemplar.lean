@@ -27,8 +27,10 @@
     test-local round library (`Round`: `runOne` and its bind/get/update/
     read/liftMem/runND equations at a SYMBOLIC positive fuel
     `Nat.succ k`, `prepare_exit_single`, `loop_step_done`,
-    `process_done`, `driver2_done` — CASES on the opaque scheduler-mode
-    read `CerbGlobal.current_execution_mode ()` —, `finalize_done`) plus
+    `process_done`, `driver2_done` — the scheduler-mode read
+    `CerbGlobal.current_execution_mode ()` is a plain `def` (= `none`)
+    since 2026-09-05, rewritten by its `rfl` lemma; it used to be a
+    `cases` on an opaque read —, `finalize_done`) plus
     the exemplar-specific `S₁` (the post-setup state: the engine's own
     setup stages composed — `driver_globals`, then the errno allocation
     (drive's stage, driver.lem:1860-1868: `CerbCall.allocErrno`'s text
@@ -55,7 +57,8 @@
     every such fuel symbolically.)
 
   DIAGNOSIS recorded (arc record §4): the brute route — unfold the run,
-  expose the opaque read, `cases`, then `List.mem_singleton.mp`/`rfl` —
+  expose the scheduler-mode read (then opaque; `cases`), then
+  `List.mem_singleton.mp`/`rfl` —
   times out at the default 200000 heartbeats EVEN AT A LITERAL FUEL,
   so the blow-up is the ELABORATOR's (Meta) whnf of a concrete driver
   round, not the open fuel variable; the kernel evaluates the same round
@@ -333,23 +336,18 @@ theorem driver2_done {k : Nat} (fl : Nat)
         (z := ([] : List (Nat × Option core_step2))) (by rfl)).trans (by rfl)
   · refine (runOne_bind_active (z := dstF) (by rfl)).trans ?_
     dsimp only
-    cases hmode : maybeEqualBy (fun x y => x == y)
-        (CerbGlobal.current_execution_mode ())
-        (some CerbGlobal.ExecutionMode.random) with
-    | true =>
-      rw [if_pos rfl]
-      unfold bindExhaustive
-      refine (runOne_bind_active (z := ((0 : Nat), some (Step_done2 v)))
-        (s' := dstF) (by rfl)).trans ?_
-      dsimp only
-      exact process_done tds _ v dstF thF hthF
-    | false =>
-      rw [if_neg (fun h => Bool.noConfusion h)]
-      refine (runOne_bind_active (z := ()) (s' := dstF) (by rfl)).trans ?_
-      refine (runOne_bind_active (z := ((0 : Nat), some (Step_done2 v)))
-        (s' := dstF) (by rfl)).trans ?_
-      dsimp only
-      exact process_done tds _ v dstF thF hthF
+    -- The scheduler-mode test (driver.lem:1380) is a plain definition
+    -- since 2026-09-05 (CerbGlobal step 1): `current_execution_mode () =
+    -- none`, so the test is `false` by `rfl` and only the exhaustive arm
+    -- exists to prove (it used to be a `cases` on an opaque read, both
+    -- arms discharged).
+    rw [CerbGlobal.current_execution_mode_eq]
+    rw [if_neg (fun h => Bool.noConfusion h)]
+    refine (runOne_bind_active (z := ()) (s' := dstF) (by rfl)).trans ?_
+    refine (runOne_bind_active (z := ((0 : Nat), some (Step_done2 v)))
+      (s' := dstF) (by rfl)).trans ?_
+    dsimp only
+    exact process_done tds _ v dstF thF hthF
 
 theorem finalize_done {k : Nat} (tds : Fmap sym (CerbLocation.Loc × tag_definition))
     (s : String) (dst : driver_state) (th : thread_state) (v : value)

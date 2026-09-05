@@ -225,7 +225,7 @@ a binary built from the old copy.
 | `CerbTags.lean` | Mutable tag definitions state (struct/union defs) |
 | `CerbDebug.lean` | Debug level and output functions |
 | `CerbDecode.lean` | Integer/character constant decoding. Arc-14 F2: decode.ml's exhaustive fail-CLOSED table with C11 cites; `\?` -> 63 and hex escaped_char are documented Lean-right divergences (oracle-wrong: upstream tray 10/11) |
-| `CerbGlobal.lean` | Runtime config (execution mode, switches) |
+| `CerbGlobal.lean` | The DEFAULT configuration and switch set as plain `def`s (execution mode `none`, every flag `false`, switch set `[]`), each with a `rfl` lemma — the values the oracle driver holds in matched mode, cited line by line; no process state since 2026-09-05 (`docs/2026-09-05_cerbglobal-defs-record.md`) |
 | `CerbFloat.lean` | IEEE 754 float operations; lawful total Ord Float (NaN reflexive, arc-14 F4) |
 | `CerbUtils.lean` | Timing/logging no-op stubs (documented), GCC builtins on Z/two's-complement semantics mirroring ocaml_gcc_builtins.ml per-line (arc-14 F2: ffs(-1)=1, ctz(0)/bswap asserts panic) |
 | `CerbPP.lean` | Pretty-printer placeholders |

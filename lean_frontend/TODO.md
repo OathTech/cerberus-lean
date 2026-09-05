@@ -325,11 +325,15 @@ S-basket slice — `docs/2026-09-01_s-basket.md`.)
   fresh-symbol supply is threaded explicitly (single stream), the
   digest read is a kernel-checked opaque, and zero `axiom`
   declarations exist anywhere (this repo + LemLib, recursively,
-  gate-enforced). Remaining temporal seams with named movers (Q4
+  gate-enforced). Remaining temporal seam with a named mover (Q4
   ruling, machine-pinned in `scripts/unsafebaseio_allowlist.txt`):
-  CerbGlobal config/switch refs (mover: a parameter-plumbing slice)
-  and CerberusImpl's enum registry (mover: the arc's reader/supply
-  machinery, follow-up slice).
+  CerberusImpl's enum registry (mover: the arc's reader/supply
+  machinery, follow-up slice). The CerbGlobal config/switch refs LEFT
+  the allowlist 2026-09-05 (plain `def`s of the default configuration —
+  reasoning-artifact audit A step 1, `docs/2026-09-05_cerbglobal-defs-
+  record.md`); A step 2 (the configuration as a reader-lifted parameter
+  like `tagDefs`; `using_concurrency`'s half is `feature/concurrency`'s)
+  is a queued, chartered slice.
 - **Pin the Lake dependency SET** (C2 audit follow-up, registered
   2026-09-01): no gate asserts the lake-manifest package set, so a
   future `require` would join the built surface outside every census

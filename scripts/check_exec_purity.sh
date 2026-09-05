@@ -41,8 +41,10 @@
 #     naming itself).
 #   CerbFloat/CerbUtils/... — unchanged (CerbUtils no-op timing/log
 #     refs + boundedIntegerImpl stub: permanent-declared, Q4;
-#     CerbGlobal config/switch refs + CerberusImpl enum registry:
-#     temporal with named movers, Q4).
+#     CerberusImpl enum registry: temporal with a named mover, Q4).
+#   CerbGlobal.lean — plain `def`s of the default configuration since
+#     2026-09-05 (the never-written refs and their opaque readers are
+#     DELETED; docs/2026-09-05_cerbglobal-defs-record.md); zero seams.
 # Declared-boundary records: 2026-08-19_arc4-results.md, updated by
 # 2026-08-20_arc7-results.md (CerbND left the boundary; CerbMem's leg
 # partially discharged), and the effect-retirement charter section 7.2

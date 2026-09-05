@@ -11,7 +11,7 @@
 # consumed at lean_frontend/.lake/packages/LemLib/lean-lib/**).
 # Result: the census MATCHES the charter's Q4 table EXACTLY — zero
 # out-of-table sites. Comment-only mentions (not code sites, listed for
-# grep-leg design): CerbGlobal.lean:51, CerbTags.lean:28, LemLib.lean:36,
+# grep-leg design): CerbTags.lean:28, LemLib.lean:36,
 # plus doc mentions of `runEffectful` in CerbTags.lean:6,46,
 # CerberusFresh.lean:139, CerbDebug.lean:48. The C2 grep leg must either
 # strip comments or count these rows explicitly.
@@ -26,12 +26,22 @@ lean_frontend/CerbUtils.lean	timingStackRef	permanent-declared	KEEP (no-op timin
 lean_frontend/CerbUtils.lean	logRef	permanent-declared	KEEP (write-only log ref, nothing reads it; shape parity)
 lean_frontend/CerbUtils.lean	STD_impl	permanent-declared	KEEP (writes logRef only; value-identity otherwise)
 lean_frontend/CerbUtils.lean	boundedIntegerImpl	permanent-declared	KEEP (deterministic stub `pure lo`; documented residual with named mover in-file — RNG threading iff load-bearing)
-lean_frontend/CerbGlobal.lean	confRef	temporal(post-arc-parameter-plumbing-slice)	KEEP (config ref; written once by Main at startup, reader-shaped after)
-lean_frontend/CerbGlobal.lean	switchesRef	temporal(post-arc-parameter-plumbing-slice)	KEEP (switches ref; same discipline)
-lean_frontend/CerbGlobal.lean	getConf	temporal(post-arc-parameter-plumbing-slice)	KEEP (read of confRef)
-lean_frontend/CerbGlobal.lean	has_switch_impl	temporal(post-arc-parameter-plumbing-slice)	KEEP (read of switchesRef)
 lean_frontend/CerberusImpl.lean	typeof_enum_impl	temporal(reader/supply-machinery-follow-up-slice, explicitly NOT in-arc)	KEEP (enum registry read; genuinely stateful seam mirroring OCaml DefaultImpl ref)
 lean_frontend/CerberusImpl.lean	register_enum_impl	temporal(reader/supply-machinery-follow-up-slice, explicitly NOT in-arc)	KEEP (enum registry write during elaboration)
+# --- retired 2026-09-05 (reasoning-artifact audit instance A, step 1;
+# docs/2026-09-05_cerbglobal-defs-record.md) ---
+# lean_frontend/CerbGlobal.lean confRef / switchesRef / getConf /
+# has_switch_impl — DELETED. The two refs were never written (no setter;
+# Main refuses --switches/--concurrency/--mode, Z-24), so every read
+# returned the default; the eleven `opaque … implemented_by` readers are
+# now plain `def`s of the driver's default configuration (cerb_global.ml
+# :35-64 / switches.ml:47-55,153-160 cited in-file), each with a `rfl`
+# lemma. CerbGlobal.lean has ZERO unsafe/implemented_by/unsafeBaseIO/
+# opaque sites; its 29 PIN rows (11 IMPLBY + 4 UNSAFEBASEIO + 14
+# UNSAFEDECL) and its 11 OPAQUE_WANT rows left the pins (66 -> 37 PIN
+# rows; 26 -> 15 opaques). The `temporal(post-arc-parameter-plumbing-
+# slice)` mover is now step 2 (the config as a reader-lifted parameter;
+# `using_concurrency`'s step 2 is feature/concurrency's).
 # --- converted at C2 (left the allowlist, 2026-09-01) ---
 # lean_frontend/CerberusFresh.lean digest_impl — CONVERTED at C2 to the
 # kernel-checked-opaque forceIO/with_tagDefs pattern (Q4 ruling's promoted
@@ -84,7 +94,8 @@ lem-lean/lean-lib/LemLib.lean	runEffectful_impl	L2-delete	DELETE (the axiom scaf
 #   (digestPure/digest_impl/digest + forceThunkIO/forceIO_impl/forceIO)
 #   + the pure md5Hex extern + the BaseIO digestIO/setDigestIO externs
 #   (IO-typed, honest signatures; driver-side callers).
-# - CerbGlobal (temporal; mover: post-arc parameter-plumbing slice).
+# - CerbGlobal: NO rows since 2026-09-05 (plain defs; see the retired
+#   section above).
 # - CerberusImpl enum registry (temporal; mover: reader/supply
 #   machinery follow-up slice, explicitly NOT in-arc).
 # - CerbUtils no-op timing/log refs + boundedIntegerImpl stub
@@ -111,35 +122,6 @@ PIN UNSAFEBASEIO lean_frontend/CerberusImpl.lean register_enum_impl 2
 PIN UNSAFEBASEIO lean_frontend/CerberusImpl.lean typeof_enum_impl 2
 PIN UNSAFEDECL lean_frontend/CerberusImpl.lean register_enum_impl 2
 PIN UNSAFEDECL lean_frontend/CerberusImpl.lean typeof_enum_impl 2
-PIN IMPLBY lean_frontend/CerbGlobal.lean backend_name_impl 2
-PIN IMPLBY lean_frontend/CerbGlobal.lean current_execution_mode_impl 2
-PIN IMPLBY lean_frontend/CerbGlobal.lean has_strict_pointer_arith_impl 2
-PIN IMPLBY lean_frontend/CerbGlobal.lean has_switch_impl 2
-PIN IMPLBY lean_frontend/CerbGlobal.lean isAgnostic_impl 2
-PIN IMPLBY lean_frontend/CerbGlobal.lean is_CHERI_impl 2
-PIN IMPLBY lean_frontend/CerbGlobal.lean isDefacto_impl 2
-PIN IMPLBY lean_frontend/CerbGlobal.lean isIgnoreBitfields_impl 2
-PIN IMPLBY lean_frontend/CerbGlobal.lean isPermissive_impl 2
-PIN IMPLBY lean_frontend/CerbGlobal.lean is_PNVI_impl 2
-PIN IMPLBY lean_frontend/CerbGlobal.lean using_concurrency_impl 2
-PIN UNSAFEBASEIO lean_frontend/CerbGlobal.lean confRef 2
-PIN UNSAFEBASEIO lean_frontend/CerbGlobal.lean getConf 2
-PIN UNSAFEBASEIO lean_frontend/CerbGlobal.lean has_switch_impl 2
-PIN UNSAFEBASEIO lean_frontend/CerbGlobal.lean switchesRef 2
-PIN UNSAFEDECL lean_frontend/CerbGlobal.lean backend_name_impl 2
-PIN UNSAFEDECL lean_frontend/CerbGlobal.lean confRef 2
-PIN UNSAFEDECL lean_frontend/CerbGlobal.lean current_execution_mode_impl 2
-PIN UNSAFEDECL lean_frontend/CerbGlobal.lean getConf 2
-PIN UNSAFEDECL lean_frontend/CerbGlobal.lean has_strict_pointer_arith_impl 2
-PIN UNSAFEDECL lean_frontend/CerbGlobal.lean has_switch_impl 2
-PIN UNSAFEDECL lean_frontend/CerbGlobal.lean isAgnostic_impl 2
-PIN UNSAFEDECL lean_frontend/CerbGlobal.lean is_CHERI_impl 2
-PIN UNSAFEDECL lean_frontend/CerbGlobal.lean isDefacto_impl 2
-PIN UNSAFEDECL lean_frontend/CerbGlobal.lean isIgnoreBitfields_impl 2
-PIN UNSAFEDECL lean_frontend/CerbGlobal.lean isPermissive_impl 2
-PIN UNSAFEDECL lean_frontend/CerbGlobal.lean is_PNVI_impl 2
-PIN UNSAFEDECL lean_frontend/CerbGlobal.lean switchesRef 2
-PIN UNSAFEDECL lean_frontend/CerbGlobal.lean using_concurrency_impl 2
 PIN IMPLBY lean_frontend/CerbUtils.lean begin_timing_impl 2
 PIN IMPLBY lean_frontend/CerbUtils.lean boundedIntegerImpl 2
 PIN IMPLBY lean_frontend/CerbUtils.lean end_timing_impl 2

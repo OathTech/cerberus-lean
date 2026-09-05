@@ -202,17 +202,18 @@ fi
 # native binding, existing only to be unforgeable/unfoldable.
 # (History: with_tagDefs LEFT the list at effect-retirement C1 — charter
 # section 7.2 "boundary-opaque expectation list shrinks"; the digest
-# opaque conversion was C2.)
+# opaque conversion was C2; the 11 CerbGlobal rows LEFT on 2026-09-05,
+# 26 -> 15.)
 OPAQUE_WANT=(
   # CerberusFresh — the digest boundary (VALIDATION.md §4), [seam]
   'CerberusFresh.lean:md5Hex' 'CerberusFresh.lean:digestIO' 'CerberusFresh.lean:setDigestIO'
   'CerberusFresh.lean:digestPure' 'CerberusFresh.lean:digest' 'CerberusFresh.lean:forceThunkIO'
   'CerberusFresh.lean:forceIO'
-  # CerbGlobal — config/switch refs, temporal (mover: parameter plumbing), [seam]
-  'CerbGlobal.lean:backend_name' 'CerbGlobal.lean:current_execution_mode'
-  'CerbGlobal.lean:using_concurrency' 'CerbGlobal.lean:isDefacto' 'CerbGlobal.lean:isPermissive'
-  'CerbGlobal.lean:isAgnostic' 'CerbGlobal.lean:isIgnoreBitfields' 'CerbGlobal.lean:has_switch'
-  'CerbGlobal.lean:is_CHERI' 'CerbGlobal.lean:is_PNVI' 'CerbGlobal.lean:has_strict_pointer_arith'
+  # CerbGlobal — NO rows since 2026-09-05 (reasoning-artifact audit
+  # instance A step 1, docs/2026-09-05_cerbglobal-defs-record.md): the
+  # eleven config/switch opaques (never-written refs) became plain `def`s
+  # of the default configuration; an opaque reappearing there fails
+  # below as UNREGISTERED, by design.
   # CerbUtils — no-op timing/log refs + boundedIntegerImpl stub, permanent-declared, [seam]
   'CerbUtils.lean:begin_timing' 'CerbUtils.lean:end_timing' 'CerbUtils.lean:STD_'
   'CerbUtils.lean:bounded_integer'

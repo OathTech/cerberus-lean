@@ -1,15 +1,63 @@
 /-
-  Global Cerberus configuration and switches.
+  Cerberus configuration and switches — the DEFAULT configuration as
+  plain definitions.
   Corresponds to: util/cerb_global.ml and ocaml_frontend/switches.ml
 
-  Uses mutable state (like the OCaml implementation) for runtime configuration.
   This is a leaf module — no imports from generated code.
+
+  WHAT THIS FILE IS (reasoning-artifact audit instance A, step 1 —
+  docs/2026-09-03_reasoning-artifact-audit.md §2.A; the record is
+  docs/2026-09-05_cerbglobal-defs-record.md): every configuration read
+  the lem model makes through `Global.*` / `Switches.*` (global.lem) is a
+  plain `def` of the value the OCaml driver holds in matched mode —
+  kernel-transparent, `rfl`-unfoldable, no process state. Until
+  2026-09-05 the same eleven names were `opaque … implemented_by`
+  wrappers over two `IO.Ref`s that NOTHING ever wrote (no setter was
+  exposed; `Main` refuses `--switches`/`--concurrency`/`--mode` outright,
+  zero-discrepancy Z-24), so every read already returned these values at
+  runtime — the kernel was just not told. Behaviour is identical by
+  construction; the differential battery at zero movement is the proof
+  (record §5).
+
+  THE OCAML SIDE, line by line (the fork at this commit; the defaults are
+  the driver's, `backend/driver/main.ml`):
+  * `Cerb_global.set_cerb_conf ~backend_name:"Driver" ~exec exec_mode
+    ~concurrency QuoteStd ~defacto ~permissive ~agnostic ~ignore_bitfields`
+    (main.ml:124) is the ONE write of `cerb_conf` (cerb_global.ml:32-43);
+    the readers `backend_name`/`concurrency_mode`/`isDefacto`/
+    `isPermissive`/`isAgnostic`/`isIgnoreBitfields`/
+    `current_execution_mode` are cerb_global.ml:45-64.
+  * `--defacto`, `--permissive`, `--agnostic`, `--dignore-bitfields`,
+    `--concurrency` are `Arg.flag`s (main.ml:515-517, 519-521, 421-424,
+    426-432, 496-498): FALSE unless passed; this port refuses them (Z-24).
+  * `exec_mode_opt = if exec then Some exec_mode else None`
+    (cerb_global.ml:36) with `--mode` defaulting to `Random`
+    (main.ml:438-441): `Some Exhaustive` under the exec lanes'
+    `--mode=exhaustive`, `Some Random` under the bare default. See
+    `execMode` below for why this port's value is `none`.
+  * `Switches.internal_ref = ref []` (switches.ml:47-48), written only by
+    `Switches.set` / `set_iso_switches` from `--switches`/`--iso`
+    (main.ml:129-143; the CHERI build variant adds "CHERI" itself, :130-136
+    — not this build). `has_switch sw = List.mem sw !internal_ref`
+    (:54-55); `is_CHERI` (:153-154), `is_PNVI` (:156-157),
+    `has_strict_pointer_arith` (:159-160) are `List.exists`/`has_switch`
+    over the same list.
+
+  STEP 2 (NOT this file's job; the named mover of the former allowlist
+  rows, `temporal(post-arc-parameter-plumbing-slice)`): the configuration
+  becomes a reader-lifted PARAMETER exactly as `tagDefs` is (`declare
+  {lean} reader val` on the `Global.*` reads in global.lem), so a theorem
+  quantifies over switch settings. `using_concurrency`'s step 2 belongs
+  to `feature/concurrency` (docs/2026-09-04_concurrency-scoping.md §4: "the
+  feature branch OWNS A-step-2 for `using_concurrency` only"). The
+  `CerbConf` structure below is kept as the value type that parameter
+  will have.
 -/
 
 namespace CerbGlobal
 
 /-! ## Execution Mode
-    Corresponds to: Cerb_global.execution_mode -/
+    Corresponds to: Cerb_global.execution_mode (cerb_global.ml:14-16) -/
 
 inductive ExecutionMode where
   | exhaustive
@@ -17,7 +65,7 @@ inductive ExecutionMode where
   deriving BEq, Inhabited, Repr
 
 /-! ## Switches
-    Corresponds to: Switches.cerb_switch in switches.ml
+    Corresponds to: Switches.cerb_switch in switches.ml:1-44
     The lem file only exposes a subset of the full OCaml switch type. -/
 
 inductive CerbSwitch where
@@ -37,124 +85,114 @@ inductive CerbSwitch where
   | cheri
   deriving BEq, Inhabited, Repr
 
-/-! ## Global Configuration
-    Corresponds to: Cerb_global.cerberus_conf -/
+/-! ## Configuration
+    Corresponds to: Cerb_global.cerberus_conf (cerb_global.ml:18-28); the
+    field defaults are the values `set_cerb_conf` receives from the driver
+    with no flag passed (main.ml:124 + the flag defaults cited in the
+    header). -/
 
 structure CerbConf where
-  backendName : String := "cerberus-lean"
+  -- main.ml:124 `~backend_name:"Driver"`. Every read in the model is a
+  -- test against "Cn" or "Bmc" (cabs_to_ail_effect.lem:676,
+  -- translation_effect.lem:231, translation.lem:409/1732/1741,
+  -- core_aux.lem:552-553 — the complete set; derived grep census in the
+  -- record §2), so "Driver" and any other non-Cn/non-Bmc name behave
+  -- identically; the value is the oracle's.
+  backendName : String := "Driver"
   -- DECLARED (zero-discrepancy Z2-G-01, INSTRUMENT): the oracle's
   -- `current_execution_mode` is `Some Exhaustive` under `--mode=exhaustive`
   -- and `Some Random` under the bare default (main.ml:438-441); its ONE live
   -- exec-cone read, driver.lem:1380, takes the same branch for `none` and
-  -- `Some Exhaustive`. Two lanes run the oracle without `--mode` (single-
+  -- `Some Exhaustive` (driver.lem:748's `_execution_mode_is_random` is an
+  -- unused binding). Two lanes run the oracle without `--mode` (single-
   -- verdict programs: the unique step is picked either way). Mode flags are
-  -- refused by this port (Z-24), so the value is never set.
+  -- refused by this port (Z-24); this port's trace selection (`--first`) is
+  -- the explicit `firstTrace` argument `Main` threads to the runner choice
+  -- (`CerbND.runND1` vs `runND`, Main.lean:967) and never flows into this
+  -- value — so it is NOT a CLI-chosen value here, and `none` is what the
+  -- binary has always computed. Whether `--first` should set `Random` to
+  -- mirror the oracle's `--mode=random` lanes is a step-2 question (the
+  -- read becomes a parameter there), NOT decided by this step.
   execMode : Option ExecutionMode := none
+  -- main.ml:496-498 `--concurrency` flag (refused here, Z-24; the oracle's
+  -- own mode is non-functional at the fork base, "CONCURRENCY IS BROKEN").
   concurrency : Bool := false
+  -- main.ml:515-517 `--defacto` flag.
   defacto : Bool := false
+  -- main.ml:519-521 `--permissive` flag.
   permissive : Bool := false
+  -- main.ml:421-424 `--agnostic` flag.
   agnostic : Bool := false
+  -- main.ml:426-432 `--dignore-bitfields` flag.
   ignoreBitfields : Bool := false
   deriving Inhabited
 
-/-! ## Mutable global state
-    Mirrors: cerb_conf ref and Switches.internal_ref in OCaml.
+/-- The configuration this port runs under: the driver's defaults
+    (cerb_global.ml:35-43 with no flag passed). -/
+def conf : CerbConf := {}
 
-    @[never_extract, noinline] on the ref cells (arc-14 S1 F5, sem:S10):
-    matches the CerbTags/CerberusFresh armour and its rationale — a
-    top-level `def` allocating a ref via `unsafeBaseIO (IO.mkRef _)` is a
-    closed application the compiler may inline/CSE, which would mint a
-    FRESH ref at each use site (every read then sees `default`). The
-    hazard is latent today only because nothing ever WRITES these refs
-    (no setter is exposed — `current_execution_mode` is permanently
-    `none`), so all reads return `default` regardless; the armour makes
-    the seam correct-by-construction against a future compiler upgrade or
-    a setter landing, converging on the armoured pattern the effect-
-    erasure invariant page prescribes (docs/2026-08-22_arc14-effect-
-    erasure-invariant.md). -/
+/-- The switch set: `Switches.internal_ref = ref []` (switches.ml:47-48),
+    never written — `--switches`/`--iso` are refused (Z-24). -/
+def switches : List CerbSwitch := []
 
-@[never_extract, noinline]
-private unsafe def confRef : IO.Ref CerbConf :=
-  unsafeBaseIO (IO.mkRef default)
+/-! ## Config accessors (mirror cerb_global.ml:45-64) -/
 
-@[never_extract, noinline]
-private unsafe def switchesRef : IO.Ref (List CerbSwitch) :=
-  unsafeBaseIO (IO.mkRef [])
+def backend_name (_ : Unit) : String :=
+  conf.backendName
 
--- Config accessors (mirror cerb_global.ml)
+def current_execution_mode (_ : Unit) : Option ExecutionMode :=
+  conf.execMode
 
-@[never_extract, noinline]
-private unsafe def getConf : CerbConf :=
-  unsafeBaseIO confRef.get
+def using_concurrency (_ : Unit) : Bool :=
+  conf.concurrency
 
-unsafe def backend_name_impl (_ : Unit) : String :=
-  getConf.backendName
+def isDefacto (_ : Unit) : Bool :=
+  conf.defacto
 
-unsafe def current_execution_mode_impl (_ : Unit) : Option ExecutionMode :=
-  getConf.execMode
+def isPermissive (_ : Unit) : Bool :=
+  conf.permissive
 
-unsafe def using_concurrency_impl (_ : Unit) : Bool :=
-  getConf.concurrency
+def isAgnostic (_ : Unit) : Bool :=
+  conf.agnostic
 
-unsafe def isDefacto_impl (_ : Unit) : Bool :=
-  getConf.defacto
+def isIgnoreBitfields (_ : Unit) : Bool :=
+  conf.ignoreBitfields
 
-unsafe def isPermissive_impl (_ : Unit) : Bool :=
-  getConf.permissive
+/-! ## Switch accessors (mirror switches.ml:54-55, 153-160) -/
 
-unsafe def isAgnostic_impl (_ : Unit) : Bool :=
-  getConf.agnostic
+/-- `has_switch sw = List.mem sw !internal_ref` (switches.ml:54-55). -/
+def has_switch (sw : CerbSwitch) : Bool :=
+  switches.any (· == sw)
 
-unsafe def isIgnoreBitfields_impl (_ : Unit) : Bool :=
-  getConf.ignoreBitfields
+/-- `List.exists (function SW_CHERI -> true | _ -> false) !internal_ref`
+    (switches.ml:153-154). -/
+def is_CHERI (_ : Unit) : Bool :=
+  has_switch .cheri
 
--- Switch accessors (mirror switches.ml)
+/-- `List.exists (function SW_PNVI _ -> true | _ -> false) !internal_ref`
+    (switches.ml:156-157) over the empty list; `SW_PNVI` is not in the lem
+    subset (`CerbSwitch`), so the test is written as its value. -/
+def is_PNVI (_ : Unit) : Bool := false
 
-@[never_extract, noinline]
-unsafe def has_switch_impl (sw : CerbSwitch) : Bool :=
-  let sws := unsafeBaseIO switchesRef.get
-  sws.any (· == sw)
+/-- `has_switch (SW_pointer_arith `STRICT)` (switches.ml:159-160) over the
+    empty list; `SW_pointer_arith` is not in the lem subset. -/
+def has_strict_pointer_arith (_ : Unit) : Bool := false
 
-unsafe def is_CHERI_impl (_ : Unit) : Bool :=
-  has_switch_impl .cheri
+/-! ## The contract: what the kernel sees
+    Each read is its default by `rfl`; a consumer's proof through a switch
+    test rewrites with these (or unfolds) instead of `cases` on an opaque
+    `Bool` and proving the arm the binary can never take. -/
 
-unsafe def is_PNVI_impl (_ : Unit) : Bool := false  -- no PNVI switch in lem subset
-
-unsafe def has_strict_pointer_arith_impl (_ : Unit) : Bool := false  -- not in lem subset
-
-/-! ## Safe wrappers via implemented_by -/
-
-@[implemented_by backend_name_impl]
-opaque backend_name : Unit → String
-
-@[implemented_by current_execution_mode_impl]
-opaque current_execution_mode : Unit → Option ExecutionMode
-
-@[implemented_by using_concurrency_impl]
-opaque using_concurrency : Unit → Bool
-
-@[implemented_by isDefacto_impl]
-opaque isDefacto : Unit → Bool
-
-@[implemented_by isPermissive_impl]
-opaque isPermissive : Unit → Bool
-
-@[implemented_by isAgnostic_impl]
-opaque isAgnostic : Unit → Bool
-
-@[implemented_by isIgnoreBitfields_impl]
-opaque isIgnoreBitfields : Unit → Bool
-
-@[implemented_by has_switch_impl]
-opaque has_switch : CerbSwitch → Bool
-
-@[implemented_by is_CHERI_impl]
-opaque is_CHERI : Unit → Bool
-
-@[implemented_by is_PNVI_impl]
-opaque is_PNVI : Unit → Bool
-
-@[implemented_by has_strict_pointer_arith_impl]
-opaque has_strict_pointer_arith : Unit → Bool
+theorem backend_name_eq : backend_name () = "Driver" := rfl
+theorem current_execution_mode_eq : current_execution_mode () = none := rfl
+theorem using_concurrency_eq : using_concurrency () = false := rfl
+theorem isDefacto_eq : isDefacto () = false := rfl
+theorem isPermissive_eq : isPermissive () = false := rfl
+theorem isAgnostic_eq : isAgnostic () = false := rfl
+theorem isIgnoreBitfields_eq : isIgnoreBitfields () = false := rfl
+theorem has_switch_eq (sw : CerbSwitch) : has_switch sw = false := rfl
+theorem is_CHERI_eq : is_CHERI () = false := rfl
+theorem is_PNVI_eq : is_PNVI () = false := rfl
+theorem has_strict_pointer_arith_eq : has_strict_pointer_arith () = false := rfl
 
 end CerbGlobal
