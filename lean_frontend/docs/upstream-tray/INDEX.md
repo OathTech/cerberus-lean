@@ -324,7 +324,7 @@ and gcc disagrees — the defect is in the shared model, not in our port:
     first compare); musl's ancestor has the check.
 31. **31-calloc-overflow-check.md** — TRUE BUG (libc, minor). `calloc`
     has no `nmemb * size` overflow check (stdlib.c:125-134); C17 §7.22.3.2
-    requires NULL. **ON HOLD before filing** [AGENT 2026-09-05]: the
+    requires NULL. **Hold LIFTED** [USER 2026-09-05 "(5) agree"]: the draft stands on the UPSTREAM evidence alone (ISO 7.22.3.2 overflow check absent); Lean now agrees with the oracle on the reproducer (Z2-M-04 lazy allocation), so the "Lean differs" framing is dropped — file as a plain TRUE BUG (minor). Previous note: the
     upstream evidence is re-verified, but our own three-engine record for
     the probe moved since it was first taken (the Lean column: out of
     memory → agrees with the oracle), so the draft is held for the
@@ -481,7 +481,7 @@ everything filed from this tray:
 ## Filing checklist (operator; needs network + GitHub)
 
 For each draft, in ranking order (10, 11, 12, 13, 14, 15, 16, 20, 23, 22,
-24, 25, 27, 28, 30, 26, 34, 19, 18, 08, 09, 29, 31 [ON HOLD, see above],
+24, 25, 27, 28, 30, 26, 34, 19, 18, 08, 09, 29, 31,
 17, 02, 03, 35, 04, 05, 32, 21, 33, 06; 07 on request; 01 done — 20–35
 slotted 2026-09-05 [AGENT]: the silent-wrong-value bugs on common idioms
 (20, 23, 22, 24, 25, 27, 28, 30) and the two crashes on legal input (26,

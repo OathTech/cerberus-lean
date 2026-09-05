@@ -142,7 +142,7 @@ questions. "PR" names the branch on this repository that carries a fix
 | 08 | nested braced initializers desugar to `AilEinvalid`; uncaught internal error | TRUE BUG | tool crash on legal input | — |
 | 09 | `&arr[i].field` address constant rejected in a static initializer | TRUE BUG | legal program rejected | — |
 | 29 | `"hello" + 1` not accepted as an address constant in a static initializer | TRUE BUG | legal program rejected | — |
-| 31 | `calloc` has no `nmemb * size` overflow check (ON HOLD before filing — see INDEX.md) | TRUE BUG (minor) | wrong value on overflow | — |
+| 31 | `calloc` has no `nmemb * size` overflow check (upstream evidence only; Lean agrees with the oracle since Z2) | TRUE BUG (minor) | wrong value on overflow | — |
 | 17 | unknown-procedure diagnostic embeds the raw fresh-symbol id | TRUE BUG (minor) | diagnostic quality | — |
 | 02 | `--pp core` prints bodyless `proc` decls the grammar rejects; `Cfunction(f)` re-parses as NULL | TRUE BUG (if round-trip is intended) | reload fails / silent wrong value | pp-roundtrip |
 | 03 | `--pp core` output re-parses to a different tree (`if` operands, `;`-sequences) | TRUE BUG (same condition) | silent wrong tree on reload | pp-roundtrip |
