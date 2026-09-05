@@ -8,19 +8,27 @@
   `*_auxiliary` module, so the measured wrappers' obligations are in scope)
   and prints one TSV row per fuel'd worker:
 
-    FUEL_FORM <worker> <form> <reach>/<front> <detail>
+    FUEL_FORM <worker> <form> <reach>/<front> <detail> <hyp>
 
   where
     worker  = a definition whose name ends in `_lemFuel` (the lem backend's
               fuel'd workers, generated and hand-written), or a CerbND runner
               worker `run*Fuel`;
     form    = MEASURED   — the constant `<f>_measure_sufficient` exists AND has
-                           the contract's SHAPE (audit M1; `obligationShapeMismatch`:
-                           `∀ …, μ ≤ lemFuel → worker lemFuel … = wrapper …`, the
-                           worker/wrapper constants compared by name as the heads
-                           of the two sides); its axiom cone and the proof's cone
+                           the contract's SHAPE (audit M1; `obligationShape`:
+                           `∀ …, [lemHyp : H →] μ ≤ lemFuel → worker lemFuel … = wrapper …`,
+                           the worker/wrapper constants compared by name as the
+                           heads of the two sides, the fuel binder pinned by its
+                           NAME `lemFuel` (lem audit N1, C4), the optional
+                           hypothesis binder pinned by its reserved NAME `lemHyp`
+                           immediately before `lemFuel` (lem-lean's `assuming`
+                           form, 2026-09-05)); its axiom cone and the proof's cone
                            are reported in <detail> (`axioms=ok` iff ⊆ {propext,
-                           Classical.choice, Quot.sound}). A same-named constant
+                           Classical.choice, Quot.sound}); the <hyp> column is the
+                           `lemHyp` binder's TYPE pretty-printed (whitespace-
+                           normalized), empty for the unconditional form — the
+                           policy requires a reviewed register row per hypothesis
+                           (scripts/fuel_hypotheses.txt). A same-named constant
                            of ANOTHER type is `MALFORMED …` in <detail> (never
                            MEASURED; the policy is RED on it);
               ABSORBING  — the `<worker>_zero` lemma's right-hand side is the
@@ -102,53 +110,84 @@ def stripForalls : Expr → Expr
   | .forallE _ _ b _ => stripForalls b
   | e => e
 
-/-- The ∀-telescope of a type: the binder types in order (each with loose
-    bvars referring to earlier binders) and the body. -/
-partial def telescope (e : Expr) (acc : Array Expr := #[]) : Array Expr × Expr :=
+/-- The ∀-telescope of a type: the binders (name, type) in order (each type
+    with loose bvars referring to earlier binders) and the body. -/
+partial def telescope (e : Expr) (acc : Array (Name × Expr) := #[]) : Array (Name × Expr) × Expr :=
   match e with
-  | .forallE _ ty b _ => telescope b (acc.push ty)
+  | .forallE n ty b _ => telescope b (acc.push (n, ty))
   | e => (acc, e)
 
 /-- The CONTRACT SHAPE of a sufficiency obligation (audit M1: a same-named
-    theorem of any other type must not count): after the ∀-telescope the
-    conclusion is `worker … = wrapper …` with the two constants COMPARED BY
-    NAME as the heads of the two sides; a binder `lemFuel : Nat` occurs as an
-    argument of the worker's side; and some hypothesis binder is `_ ≤ lemFuel`
-    on that very binder (`LE.le _ _ _ lemFuel`). This is exactly how the
-    generated `<Module>_auxiliary` shells state it (`theorem f_measure_sufficient
-    (xs…) (lemFuel : Nat) (lemMeasureLe : μ ≤ lemFuel) : f_lemFuel lemFuel xs… =
-    f xs…`). Returns `none` when the shape holds, else the mismatch. -/
-def obligationShapeMismatch (ty : Expr) (worker wrapper : Name) : Option String := Id.run do
+    theorem of any other type must not count; lem audit N1 / C4: the fuel
+    binder is pinned by NAME, and the hypothesis-carrying form is recognized
+    by its reserved binder): after the ∀-telescope the conclusion is
+    `worker … = wrapper …` with the two constants COMPARED BY NAME as the heads
+    of the two sides; a binder NAMED `lemFuel` of type `Nat` occurs as an
+    argument of the worker's side; a later binder is `_ ≤ lemFuel` on that very
+    binder (`LE.le _ _ _ lemFuel`); and IF a binder named `lemHyp` exists it is
+    immediately before `lemFuel` (lem-lean reserves the name, so no user
+    variable can produce the mark). This is exactly how the generated
+    `<Module>_auxiliary` shells state it (`theorem f_measure_sufficient (xs…)
+    [(lemHyp : H)] (lemFuel : Nat) (lemMeasureLe : μ ≤ lemFuel) : f_lemFuel
+    lemFuel xs… = f xs…`). Returns the index of the `lemHyp` binder (none for
+    the unconditional form), or the mismatch. -/
+def obligationShape (ty : Expr) (worker wrapper : Name) : Except String (Option Nat) := do
   let (binders, body) := telescope ty
   let n := binders.size
-  match body.eq? with
-  | none => return some "conclusion is not an equation"
-  | some (_, lhs, rhs) =>
-    let lhsHead := lhs.getAppFn; let rhsHead := rhs.getAppFn
-    match lhsHead with
-    | .const c _ => if c != worker then return some s!"left-hand head `{c}` is not the worker `{worker}`"
-    | _ => return some "left-hand side is not an application of the worker"
-    match rhsHead with
-    | .const c _ => if c != wrapper then return some s!"right-hand head `{c}` is not the wrapper `{wrapper}`"
-    | _ => return some "right-hand side is not an application of the wrapper"
-    -- a `≤ lemFuel` hypothesis whose bound is a `Nat` binder that the worker side takes
-    let mut found := false
-    for k in [:n] do
-      let bt := binders[k]!
-      if bt.getAppFn == .const ``LE.le [] || (match bt.getAppFn with | .const c _ => c == ``LE.le | _ => false) then
-        let args := bt.getAppArgs
-        if args.size == 4 then
-          match args[3]! with
-          | .bvar i =>
-            -- binder k's bvar i refers to binder j := k - 1 - i; in the conclusion it is bvar (n - 1 - j)
-            if i < k then
-              let j := k - 1 - i
-              let isNat := match binders[j]! with | .const c _ => c == ``Nat | _ => false
-              let inLhs := (lhs.getAppArgs.any fun a => a == .bvar (n - 1 - j))
-              if isNat && inLhs then found := true
-          | _ => pure ()
-    if !found then return some "no hypothesis `_ ≤ lemFuel` on a `Nat` binder the worker side takes"
-    return none
+  let some (_, lhs, rhs) := body.eq? | throw "conclusion is not an equation"
+  match lhs.getAppFn with
+  | .const c _ => if c != worker then throw s!"left-hand head `{c}` is not the worker `{worker}`"
+  | _ => throw "left-hand side is not an application of the worker"
+  match rhs.getAppFn with
+  | .const c _ => if c != wrapper then throw s!"right-hand head `{c}` is not the wrapper `{wrapper}`"
+  | _ => throw "right-hand side is not an application of the wrapper"
+  -- the fuel binder, by NAME
+  let some jFuel := binders.findIdx? (fun (nm, _) => nm == `lemFuel) | throw "no binder named `lemFuel`"
+  let isNat := match binders[jFuel]!.2 with | .const c _ => c == ``Nat | _ => false
+  if !isNat then throw "the `lemFuel` binder is not a `Nat`"
+  -- binder j is bvar (n - 1 - j) in the conclusion
+  if !(lhs.getAppArgs.any fun a => a == .bvar (n - 1 - jFuel)) then
+    throw "the `lemFuel` binder is not an argument of the worker side"
+  -- a `≤ lemFuel` hypothesis on that binder: at binder k > jFuel, lemFuel is bvar (k - 1 - jFuel)
+  let mut found := false
+  for k in [jFuel + 1:n] do
+    let bt := binders[k]!.2
+    let isLe := match bt.getAppFn with | .const c _ => c == ``LE.le | _ => false
+    if isLe then
+      let args := bt.getAppArgs
+      if args.size == 4 && args[3]! == .bvar (k - 1 - jFuel) then found := true
+  if !found then throw "no hypothesis `_ ≤ lemFuel` on the `lemFuel` binder"
+  -- the optional hypothesis binder, by its reserved NAME, immediately before lemFuel
+  match binders.findIdx? (fun (nm, _) => nm == `lemHyp) with
+  | none => return none
+  | some jHyp =>
+    if jHyp + 1 != jFuel then throw "a binder named `lemHyp` that is not immediately before `lemFuel`"
+    return some jHyp
+
+/-- Whitespace-normalize a pretty-printed type (the register compares text). -/
+def normWs (s : String) : String := Id.run do
+  let mut out := ""
+  let mut pendingSpace := false
+  let mut started := false
+  for c in s.toList do
+    if c == ' ' || c == '\n' || c == '\t' then
+      pendingSpace := true
+    else
+      if pendingSpace && started then out := out.push ' '
+      pendingSpace := false
+      started := true
+      out := out.push c
+  return out
+
+/-- The `lemHyp` binder's type, pretty-printed under the obligation's own
+    binder names (MetaM `forallTelescope`), whitespace-normalized. -/
+def ppHyp (env : Environment) (ty : Expr) (jHyp : Nat) : IO String := do
+  let act : Lean.Meta.MetaM String := Lean.Meta.forallTelescope ty fun fvars _ => do
+    let t ← Lean.Meta.inferType fvars[jHyp]!
+    let fmt ← Lean.PrettyPrinter.ppExpr t
+    return normWs (fmt.pretty 100000)
+  let (s, _) ← Lean.Core.CoreM.toIO (Lean.Meta.MetaM.run' act) { fileName := "<fuel-forms>", fileMap := default } { env }
+  return s
 
 def absorbingHeads : List Name := [`nd_action.NDkilled, `nd_status.Killed, `t0.Error]
 def fuelAtoms : List Name := [`CerbFuel.fuelExhaustedLoc, `CerbND.fuelExhaustedKill]
@@ -163,7 +202,7 @@ def axiomsOf (env : Environment) (c : Name) : IO (Array Name) := do
 def axiomsVerdict (axs : Array Name) : String :=
   if axs.all (fun a => okAxioms.contains a) then "ok" else s!"BAD[{axs.toList}]"
 
-def main (args : List String) : IO UInt32 := do
+unsafe def main (args : List String) : IO UInt32 := do
   if args.isEmpty then
     IO.eprintln "fuel-forms-tool: usage: fuel-forms-tool <Module> ... (the modules to import; run under `lake env`)"
     return 2
@@ -176,7 +215,14 @@ def main (args : List String) : IO UInt32 := do
   let imports : Array Import := mods.toArray.map fun m => { module := String.toName m }
   IO.eprintln s!"fuel-forms-tool: importing {imports.size} modules"
 
-  let env ← importModules imports {} 0
+  -- `loadExts`: the environment extensions that need the interpreter (the
+  -- `app_unexpander` table among them) are loaded, so the `hyp` column is
+  -- printed with notation (`2 ≤ b`, not `instLENat.le 2 b`) — C4. This is
+  -- why `main` is `unsafe` (`enableInitializersExecution` is): an
+  -- INSTRUMENT-side unsafe, pinned in scripts/unsafebaseio_allowlist.txt;
+  -- nothing in the semantics depends on this executable.
+  Lean.enableInitializersExecution
+  let env ← importModules imports {} 0 (loadExts := true)
   -- entries must exist (fail-closed)
   for e in entries ++ frontEntries do
     if env.find? e |>.isNone then
@@ -196,21 +242,25 @@ def main (args : List String) : IO UInt32 := do
     IO.eprintln s!"fuel-forms-tool: FAIL — only {sorted.size} fuel'd workers found (vacuity guard; is the tree regenerated / are the right modules imported?)"
     return 1
   let mut nMeasured := 0; let mut nAbsorbing := 0; let mut nAmbientReach := 0; let mut nAmbientUnreach := 0
+  let mut nHyp := 0
   for w in sorted do
     let f := baseName w
     let obl := Name.str f.getPrefix (f.getString! ++ "_measure_sufficient")
     let zero := Name.str w.getPrefix (w.getString! ++ "_zero")
     let isReach := reach.contains w
     let reachS := (if isReach then "yes" else "no") ++ (if reachFront.contains w then "/front" else "/-")
-    let mut form := "AMBIENT"; let mut detail := ""
+    let mut form := "AMBIENT"; let mut detail := ""; let mut hyp := ""
     if let some oci := env.find? obl then
-     match obligationShapeMismatch oci.type w f with
-     | some why =>
+     match obligationShape oci.type w f with
+     | .error why =>
       -- the NAME matches but the TYPE is not the contract's statement (audit M1):
       -- never MEASURED; flagged for the policy (RED)
       detail := s!"MALFORMED obligation={obl}: {why}"
-     | none =>
+     | .ok jHyp? =>
       form := "MEASURED"
+      if let some jHyp := jHyp? then
+        hyp ← ppHyp env oci.type jHyp
+        nHyp := nHyp + 1
       let axs ← axiomsOf env obl
       -- the hand-written proof constant the obligation delegates to
       let target := f.getString! ++ "_measure_sufficient"
@@ -242,6 +292,6 @@ def main (args : List String) : IO UInt32 := do
       if form == "AMBIENT" then
         if isReach then nAmbientReach := nAmbientReach + 1 else nAmbientUnreach := nAmbientUnreach + 1
     let shown := (privateToUserName? w).getD w
-    IO.println s!"FUEL_FORM\t{shown}\t{form}\t{reachS}\t{detail}"
-  IO.println s!"FUEL_FORMS_SUMMARY\tworkers={sorted.size}\tmeasured={nMeasured}\tabsorbing={nAbsorbing}\tambient_reachable={nAmbientReach}\tambient_unreachable={nAmbientUnreach}\tclosure_size={reach.size}"
+    IO.println s!"FUEL_FORM\t{shown}\t{form}\t{reachS}\t{detail}\t{hyp}"
+  IO.println s!"FUEL_FORMS_SUMMARY\tworkers={sorted.size}\tmeasured={nMeasured}\tmeasured_under_hyp={nHyp}\tabsorbing={nAbsorbing}\tambient_reachable={nAmbientReach}\tambient_unreachable={nAmbientUnreach}\tclosure_size={reach.size}"
   return 0

@@ -8,11 +8,25 @@
 # the exec entries, every generated *_auxiliary module and every
 # *_lemMeasureProofs module — the obligation carriers):
 #   MEASURED   — its `<f>_measure_sufficient` obligation exists AND has the
-#                contract's SHAPE (∀ …, μ ≤ lemFuel → worker lemFuel … = wrapper …,
-#                heads compared by constant name — audit M1; a same-named
-#                constant of another type is MALFORMED and RED here); this
-#                script additionally requires the reported axiom cones
-#                (obligation AND proof) to be ⊆ [propext, Classical.choice, Quot.sound];
+#                contract's SHAPE (∀ …, [lemHyp : H →] μ ≤ lemFuel → worker lemFuel …
+#                = wrapper …, heads compared by constant name — audit M1; the fuel
+#                binder pinned by its NAME `lemFuel` and the optional hypothesis by
+#                its reserved NAME `lemHyp` immediately before it — lem audit N1 /
+#                C4; a same-named constant of another type is MALFORMED and RED
+#                here); this script additionally requires the reported axiom cones
+#                (obligation AND proof) to be ⊆ [propext, Classical.choice, Quot.sound],
+#                AND, for every row measured UNDER A HYPOTHESIS (the tool's `hyp`
+#                column = the `lemHyp` binder's type, pretty-printed), a row of the
+#                REVIEWED register scripts/fuel_hypotheses.txt naming that worker
+#                and that exact hypothesis with the frontend invariant it rests on
+#                (`.lem:<line>` cite) and a reviewer — BOTH directions (a stale
+#                register row is RED too). Why (lem-lean measure-hypothesis record
+#                §2.3/§10, its pre-merge audit F1): a CONTRADICTORY hypothesis
+#                (`b < b`, `x ≠ x`) passes generation and makes the obligation
+#                vacuously provable while the fuel-free wrapper ships MEASURED;
+#                satisfiability is undecidable at the gate, so the register is the
+#                closure — --selftest's P10 compiles exactly such a decoy and shows
+#                the register turning it RED;
 #   ABSORBING  — its `_zero` lemma's RHS is the monad's absorbing element at the
 #                fuel atom (ND kill / runner Killed / undefined-monad Error) with
 #                no value sentinel;
@@ -27,9 +41,13 @@
 # sum to the worker count — audit M2). `--selftest` plants on a scratch copy
 # of the table (a new reachable ambient worker, a stale pending pin, a
 # measured obligation with a bad axiom cone, a truncated table, a phantom
-# register row) and COMPILES two decoy obligations in a scratch dir outside the
-# tree (right name / type True; right shape / wrong worker constant) that the
-# tool must refuse to count as MEASURED. Nothing in the tree is touched. The
+# pending-register row), on a scratch copy of the HYPOTHESIS register (a
+# measured-under-hypothesis worker whose row is deleted; a stale row; a row
+# without a `.lem:` cite), and COMPILES three decoy obligations in a scratch
+# dir outside the tree (right name / type True; right shape / wrong worker
+# constant; right shape under the CONTRADICTORY hypothesis `env1 ≠ env1`) —
+# the first two the tool must refuse to count as MEASURED, the third it
+# counts MEASURED and the REGISTER must turn RED. Nothing in the tree is touched. The
 # tool itself fails closed if an entry constant is missing or the table is
 # vacuous. Reachability is the KERNEL constant closure: it stops at
 # opaque/implemented_by/extern seams — the population of those is pinned by
@@ -41,6 +59,7 @@ SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 ROOT="$SCRIPT_DIR/.."
 LF="$ROOT/lean_frontend"
 PENDING="$SCRIPT_DIR/fuel_forms_pending.txt"
+HYPREG="$SCRIPT_DIR/fuel_hypotheses.txt"
 CAPPED="$SCRIPT_DIR/capped"
 
 # table_of_tree <log>: builds the tool and runs it; the table on stdout, the
@@ -61,9 +80,9 @@ table_of_tree() {
   (cd "$LF" && "$CAPPED" lake env bash -c 'LEAN_PATH="${FUELFORMS_EXTRA_PATH:+$FUELFORMS_EXTRA_PATH:}$LEAN_PATH" exec ./.lake/build/bin/fuel-forms-tool "$@"' _ Driver CerbCall CerbND Main $aux ${FUELFORMS_EXTRA_MODULES:-} 2>> "$log")
 }
 
-# policy <table-file> <pending-file>: prints verdict lines, returns 0/1
+# policy <table-file> <pending-file> <hypotheses-register>: prints verdict lines, returns 0/1
 policy() {
-  local tbl="$1" pend="$2"
+  local tbl="$1" pend="$2" hreg="$3"
   local rc=0
   if ! grep -q '^FUEL_FORMS_SUMMARY' "$tbl"; then
     echo "check_fuel_forms: FAIL — no FUEL_FORMS_SUMMARY line (the tool did not complete; fail-closed)"; return 1
@@ -89,6 +108,30 @@ policy() {
   if [[ -n "$malformed" ]]; then
     echo "check_fuel_forms: FAIL — obligation(s) named <f>_measure_sufficient whose TYPE is not the contract's shape (∀ …, μ ≤ lemFuel → worker lemFuel … = wrapper …) — never MEASURED:"; echo "$malformed" | sed 's/^/  /'; rc=1
   fi
+  # C4: the hypotheses in force vs the reviewed register, both directions.
+  # Table side: (worker, hyp) of every MEASURED row with a non-empty hyp column.
+  # Register side: (worker, hyp) of every data row, hyp whitespace-normalized;
+  # a data row must have 4 TAB fields, a `.lem:<line>` cite in field 3 and a
+  # non-blank reviewer in field 4.
+  if [[ ! -f "$hreg" ]]; then echo "check_fuel_forms: FAIL — hypothesis register $hreg missing (fail-closed)"; return 1; fi
+  local hyps_tbl hyps_reg badreg
+  hyps_tbl=$(awk -F'\t' '$1=="FUEL_FORM" && $3=="MEASURED" && NF>=6 && $6!="" {print $2"\t"$6}' "$tbl" | sort -u)
+  hyps_reg=$(grep -v '^\s*#' "$hreg" | awk -F'\t' 'NF>=2 {h=$2; gsub(/[ \t]+/," ",h); sub(/^ /,"",h); sub(/ $/,"",h); print $1"\t"h}' | sort -u)
+  badreg=$(grep -v '^\s*#' "$hreg" | awk -F'\t' 'NF>0 && (NF!=4 || $3 !~ /\.lem:[0-9]/ || $4 ~ /^[ \t]*$/) {print $1}')
+  if [[ -n "$badreg" ]]; then
+    echo "check_fuel_forms: FAIL — hypothesis register row(s) not of the form <worker> TAB <hyp> TAB <invariant with a .lem:<line> cite> TAB <reviewer>:"; echo "$badreg" | sed 's/^/  /'; rc=1
+  fi
+  local hnew hstale
+  hnew=$(comm -23 <(echo "$hyps_tbl" | grep .) <(echo "$hyps_reg" | grep .))
+  hstale=$(comm -13 <(echo "$hyps_tbl" | grep .) <(echo "$hyps_reg" | grep .))
+  if [[ -n "$hnew" ]]; then
+    echo "check_fuel_forms: FAIL — worker(s) MEASURED under a hypothesis with no reviewed register row for that exact hypothesis in $HYPREG (worker TAB hypothesis):"; echo "$hnew" | sed 's/^/  /'; rc=1
+  fi
+  if [[ -n "$hstale" ]]; then
+    echo "check_fuel_forms: FAIL — hypothesis register row(s) whose worker is not MEASURED under that exact hypothesis (stale register row; edit the register):"; echo "$hstale" | sed 's/^/  /'; rc=1
+  fi
+  local n_hyp
+  n_hyp=$(echo "$hyps_tbl" | grep -c .)
   # M2: the four forms partition the table
   local n_amb_yes n_amb_no
   n_amb_yes=$(awk -F'\t' '$1=="FUEL_FORM" && $3=="AMBIENT" && $4 ~ /^yes/' "$tbl" | wc -l); n_amb_no=$(awk -F'\t' '$1=="FUEL_FORM" && $3=="AMBIENT" && $4 ~ /^no/' "$tbl" | wc -l)
@@ -112,59 +155,87 @@ policy() {
   if (( rc == 0 )); then
     local n_pend n_unr
     n_pend=$(echo "$reach_amb" | grep -c .); n_unr=$(awk -F'\t' '$1=="FUEL_FORM" && $3=="AMBIENT" && $4 ~ /^no/' "$tbl" | wc -l)
-    echo "check_fuel_forms: OK ($n_all fuel'd workers: $n_meas MEASURED (every obligation + proof cone ⊆ the standard three), $n_abs ABSORBING, $n_pend reachable-AMBIENT = the $n_pend rows of fuel_forms_pending.txt exactly, $n_unr ambient unreachable from the drive cone)"
+    echo "check_fuel_forms: OK ($n_all fuel'd workers: $n_meas MEASURED (every obligation + proof cone ⊆ the standard three; $n_hyp of them under a hypothesis, each = a reviewed row of fuel_hypotheses.txt, both directions), $n_abs ABSORBING, $n_pend reachable-AMBIENT = the $n_pend rows of fuel_forms_pending.txt exactly, $n_unr ambient unreachable from the drive cone)"
   fi
   return $rc
 }
 
-TBL=$(mktemp); LOG="${TBL}.log"; PLANTDIR=$(mktemp -d); trap 'rm -rf "$TBL" "${TBL}.p" "${TBL}.pend" "$LOG" "$PLANTDIR"' EXIT
+TBL=$(mktemp); LOG="${TBL}.log"; PLANTDIR=$(mktemp -d); trap 'rm -rf "$TBL" "${TBL}.p" "${TBL}.pend" "${TBL}.hreg" "$LOG" "$PLANTDIR"' EXIT
 if ! table_of_tree "$LOG" > "$TBL"; then echo "check_fuel_forms: FAIL — the classifier tool failed (fail-closed); diagnostics tail:"; tail -20 "$LOG"; exit 1; fi
 
 if [[ "${1:-}" == "--selftest" ]]; then
   echo "check_fuel_forms: SELFTEST — plants on a scratch copy of the classification table (loud plant banner; nothing in the tree is touched)"
   fails=0
-  plant() { # <label> <expected-substring> <table-file> <pending-file>
-    local out; out=$(policy "$3" "$4" 2>&1); local rc=$?
+  plant() { # <label> <expected-substring> <table-file> <pending-file> <hypotheses-register>
+    local out; out=$(policy "$3" "$4" "$5" 2>&1); local rc=$?
     if (( rc != 0 )) && grep -q -- "$2" <<<"$out"; then echo "  PLANT OK   [$1] -> $(grep -m1 -- "$2" <<<"$out")"; else echo "  PLANT FAIL [$1]: rc=$rc"; echo "$out" | sed 's/^/      /'; fails=$((fails+1)); fi
   }
   # P1: a measured, reachable worker flipped to ambient -> new reachable ambient
-  sed 's/^\(FUEL_FORM\tstep_eval_pexpr_lemFuel\t\)MEASURED\t/\1AMBIENT\t/' "$TBL" > "${TBL}.p"; plant "P1 measured->ambient reachable (step_eval_pexpr)" "REACHABLE from drive with an opaque" "${TBL}.p" "$PENDING"
+  sed 's/^\(FUEL_FORM\tstep_eval_pexpr_lemFuel\t\)MEASURED\t/\1AMBIENT\t/' "$TBL" > "${TBL}.p"; plant "P1 measured->ambient reachable (step_eval_pexpr)" "REACHABLE from drive with an opaque" "${TBL}.p" "$PENDING" "$HYPREG"
   # P2: a pending row vanishes from the table (e.g. it became measured) -> stale pin
-  grep -v $'^FUEL_FORM\thack_lemFuel\t' "$TBL" > "${TBL}.p"; plant "P2 stale pending pin (hack removed from the table)" "stale pin" "${TBL}.p" "$PENDING"
+  grep -v $'^FUEL_FORM\thack_lemFuel\t' "$TBL" > "${TBL}.p"; plant "P2 stale pending pin (hack removed from the table)" "stale pin" "${TBL}.p" "$PENDING" "$HYPREG"
   # P3: a measured obligation with sorryAx in its cone
-  sed 's/^\(FUEL_FORM\tin_pattern_lemFuel\tMEASURED\t[^\t]*\t\)obligation=\([^ ]*\) axioms=ok/\1obligation=\2 axioms=BAD[[sorryAx]]/' "$TBL" > "${TBL}.p"; plant "P3 measured obligation with sorryAx in its cone" "axiom cone outside" "${TBL}.p" "$PENDING"
+  sed 's/^\(FUEL_FORM\tin_pattern_lemFuel\tMEASURED\t[^\t]*\t\)obligation=\([^ ]*\) axioms=ok/\1obligation=\2 axioms=BAD[[sorryAx]]/' "$TBL" > "${TBL}.p"; plant "P3 measured obligation with sorryAx in its cone" "axiom cone outside" "${TBL}.p" "$PENDING" "$HYPREG"
   # P4: truncated table (no summary)
-  grep -v '^FUEL_FORMS_SUMMARY' "$TBL" > "${TBL}.p"; plant "P4 truncated table" "no FUEL_FORMS_SUMMARY" "${TBL}.p" "$PENDING"
+  grep -v '^FUEL_FORMS_SUMMARY' "$TBL" > "${TBL}.p"; plant "P4 truncated table" "no FUEL_FORMS_SUMMARY" "${TBL}.p" "$PENDING" "$HYPREG"
   # P5: a phantom register row
-  { cat "$PENDING"; echo "phantom_lemFuel pure-loop planted"; } > "${TBL}.pend"; plant "P5 phantom register row" "stale pin" "$TBL" "${TBL}.pend"
+  { cat "$PENDING"; echo "phantom_lemFuel pure-loop planted"; } > "${TBL}.pend"; plant "P5 phantom pending-register row" "stale pin" "$TBL" "${TBL}.pend" "$HYPREG"
   # P6/P7 (audit M1): decoy obligations COMPILED into scratch modules outside the
   # tree and appended to the tool's imports — the tool must classify by SHAPE.
-  # P6: right NAME, type `True`. P7: right name, right shape (Eq, `_ ≤ lemFuel`
-  # hypothesis, right wrapper) but the WRONG worker constant on the left.
+  # P6: right NAME, type `True` (to_pure). P7: right name, right shape (Eq,
+  # `_ ≤ lemFuel` hypothesis, right wrapper) but the WRONG worker constant on
+  # the left (to_pures). (Until C4 these decoys used CerbMem.sizeofCtype /
+  # alignofCtype, which are real measured obligations now — a decoy of a real
+  # obligation would be a duplicate constant, not a plant.)
+  # P10 (C4; lem audit F1): right name, right SHAPE, the hypothesis-carrying form
+  # under the CONTRADICTORY hypothesis `env1 ≠ env1` (hack) — the tool counts it
+  # MEASURED with `hyp=env1 ≠ env1` (the gate cannot decide satisfiability);
+  # the REGISTER has no row for it, so the policy is RED: this is the
+  # consumer-side closure of the lem slice's F1.
   cat > "$PLANTDIR/FuelFormsPlantTrue.lean" <<'LEAN'
-import CerbMem
-theorem CerbMem.sizeofCtype_measure_sufficient : True := trivial
+import Core_aux
+theorem to_pure_measure_sufficient : True := trivial
 LEAN
   cat > "$PLANTDIR/FuelFormsPlantWorker.lean" <<'LEAN'
-import CerbMem
-theorem CerbMem.alignofCtype_measure_sufficient [LemFuel] (ambient : CerbTags.TagDefsMap) (cty : ctype) (lemFuel : Nat)
-    (lemMeasureLe : ctype.lemSize cty ≤ lemFuel) :
-    CerbMem.alignofCtype ambient cty = CerbMem.alignofCtype ambient cty := rfl
+import Core_aux
+theorem to_pures_measure_sufficient {a : Type} [LemFuel] (l : List (expr a)) (lemFuel : Nat)
+    (_lemMeasureLe : List.length l ≤ lemFuel) :
+    to_pures l = to_pures l := rfl
 LEAN
-  for m in FuelFormsPlantTrue FuelFormsPlantWorker; do
+  cat > "$PLANTDIR/FuelFormsPlantContra.lean" <<'LEAN'
+import Driver
+theorem hack_measure_sufficient [LemFuel] (_lemReader_tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
+    (core_extern1 : Fmap sym sym) (env1 : List (Fmap sym value)) (mem_st : CerbMem.MemState)
+    (core_file1 : generic_file Unit core_run_annotation) (concur_sym_map : Fmap sym object_value)
+    (pexpr1 : generic_pexpr Unit sym) (lemHyp : env1 ≠ env1) (lemFuel : Nat) (_lemMeasureLe : 0 ≤ lemFuel) :
+    hack_lemFuel lemFuel _lemReader_tagDefs core_extern1 env1 mem_st core_file1 concur_sym_map pexpr1 =
+      hack _lemReader_tagDefs core_extern1 env1 mem_st core_file1 concur_sym_map pexpr1 :=
+  absurd rfl lemHyp
+LEAN
+  for m in FuelFormsPlantTrue FuelFormsPlantWorker FuelFormsPlantContra; do
     if ! (cd "$LF" && "$CAPPED" lake env lean --root="$PLANTDIR" -o "$PLANTDIR/$m.olean" "$PLANTDIR/$m.lean" >> "$LOG" 2>&1); then
       echo "  PLANT FAIL [compiling $m]"; tail -20 "$LOG"; fails=$((fails+1))
     fi
   done
-  if FUELFORMS_EXTRA_PATH="$PLANTDIR" FUELFORMS_EXTRA_MODULES="FuelFormsPlantTrue FuelFormsPlantWorker" table_of_tree "$LOG" > "${TBL}.p"; then
-    grep -E $'^FUEL_FORM\t(CerbMem\.sizeofCtype_lemFuel|CerbMem\.alignofCtype_lemFuel)\t' "${TBL}.p" | sed 's/^/    plant table: /'
-    plant "P6 decoy obligation of type True (CerbMem.sizeofCtype)" "not the contract's shape" "${TBL}.p" "$PENDING"
-    plant "P7 decoy obligation with the wrong worker constant (CerbMem.alignofCtype)" "not the contract's shape" "${TBL}.p" "$PENDING"
+  if FUELFORMS_EXTRA_PATH="$PLANTDIR" FUELFORMS_EXTRA_MODULES="FuelFormsPlantTrue FuelFormsPlantWorker FuelFormsPlantContra" table_of_tree "$LOG" > "${TBL}.p"; then
+    grep -E $'^FUEL_FORM\t(to_pure_lemFuel|to_pures_lemFuel|hack_lemFuel)\t' "${TBL}.p" | cut -c1-220 | sed 's/^/    plant table: /'
+    plant "P6 decoy obligation of type True (to_pure)" "not the contract's shape" "${TBL}.p" "$PENDING" "$HYPREG"
+    plant "P7 decoy obligation with the wrong worker constant (to_pures)" "not the contract's shape" "${TBL}.p" "$PENDING" "$HYPREG"
+    plant "P10 decoy obligation under the CONTRADICTORY hypothesis env1 ≠ env1 (hack): MEASURED by shape, RED by the register" "no reviewed register row" "${TBL}.p" "$PENDING" "$HYPREG"
+    if ! grep -qE $'^FUEL_FORM\thack_lemFuel\tMEASURED\t[^\t]*\t[^\t]*\tenv1 ≠ env1$' "${TBL}.p"; then
+      echo "  PLANT FAIL [P10: the tool did not report hack MEASURED with hyp=env1 ≠ env1 — the plant is not testing what it claims]"; fails=$((fails+1))
+    else
+      echo "  PLANT OK   [P10 premise] -> the tool reports hack_lemFuel MEASURED hyp=env1 ≠ env1 (shape alone cannot see the contradiction)"
+    fi
   else
-    echo "  PLANT FAIL [tool with the decoy modules]"; tail -20 "$LOG"; fails=$((fails+2))
+    echo "  PLANT FAIL [tool with the decoy modules]"; tail -20 "$LOG"; fails=$((fails+3))
   fi
-  echo "  UNPLANTED:"; policy "$TBL" "$PENDING" | sed 's/^/    /' || fails=$((fails+1))
-  if (( fails == 0 )); then echo "check_fuel_forms: SELFTEST OK (7 plants red with the declared label — 5 on the table, 2 compiled decoy obligations; unplanted table green)"; exit 0; else echo "check_fuel_forms: SELFTEST FAILED ($fails)"; exit 1; fi
+  # P8/P9/P9b (C4): the hypothesis register, both directions + format
+  grep -v $'^CerbMem\.sizeofCtype_lemFuel\t' "$HYPREG" > "${TBL}.hreg"; plant "P8 register row of a measured-under-hypothesis worker deleted (CerbMem.sizeofCtype)" "no reviewed register row" "$TBL" "$PENDING" "${TBL}.hreg"
+  { cat "$HYPREG"; printf 'hack_lemFuel\t0 < k\tdriver.lem:1 planted\t[PLANT]\n'; } > "${TBL}.hreg"; plant "P9 stale register row (hack under 0 < k)" "stale register row" "$TBL" "$PENDING" "${TBL}.hreg"
+  { cat "$HYPREG"; printf 'phantom_lemFuel\tTrue\tno cite here\t[PLANT]\n'; } > "${TBL}.hreg"; plant "P9b register row without a .lem:<line> cite" "not of the form" "$TBL" "$PENDING" "${TBL}.hreg"
+  echo "  UNPLANTED:"; policy "$TBL" "$PENDING" "$HYPREG" | sed 's/^/    /' || fails=$((fails+1))
+  if (( fails == 0 )); then echo "check_fuel_forms: SELFTEST OK (11 plants red with the declared label — 5 on the table, 3 on the hypothesis register, 3 compiled decoy obligations incl. the contradictory-hypothesis decoy caught by the register; unplanted table green)"; exit 0; else echo "check_fuel_forms: SELFTEST FAILED ($fails)"; exit 1; fi
 fi
 
-policy "$TBL" "$PENDING"
+policy "$TBL" "$PENDING" "$HYPREG"

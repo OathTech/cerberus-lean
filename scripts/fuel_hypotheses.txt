@@ -1,0 +1,45 @@
+# fuel_hypotheses.txt — the REVIEWED REGISTER of the hypotheses under which
+# MEASURED fuel'd workers are measured (fuel-parameter arc C4, 2026-09-05; the
+# lem-lean measure-hypothesis slice's CONSUMER-SIDE REQUIREMENT, its record
+# §2.3/§10 and its pre-merge audit F1: a contradictory hypothesis — `b < b` —
+# passes generation and makes an obligation VACUOUSLY provable while the
+# fuel-free wrapper ships with the MEASURED mark; satisfiability is not the
+# gate's to decide, so every hypothesis in force is named HERE with the
+# frontend invariant that guarantees it, and a human reviewer).
+#
+# scripts/check_fuel_forms.sh reads the classifier's `hyp` column (the type of
+# the obligation's reserved `lemHyp` binder, pretty-printed) and fails BOTH
+# ways: a MEASURED-under-hypothesis worker without a row here whose hypothesis
+# text matches exactly (whitespace-normalized) is RED; a row whose worker is
+# not measured under that exact hypothesis is RED (stale); a row without a
+# `.lem:<line>` cite in its invariant field or without a reviewer is RED. The
+# contradictory-hypothesis decoy of the gate's --selftest (P10) is caught by
+# the FIRST rule: a decoy has no row.
+#
+# Format: TAB-separated, 4 fields —
+#   <worker>  <hypothesis (exact `hyp=` text)>  <invariant it rests on, with .lem:line cite>  <reviewer>
+# Lines starting with '#' and blank lines are ignored.
+#
+# THE INVARIANT (rows 1-6): the C frontend's tag environment is acyclic in the
+# by-value sense — cabs_to_ail.lem:1512 check_members (STD §6.7.2.1#3) refuses a
+# member of function or INCOMPLETE type; ail/ailTypesAux.lem:222 is_complete
+# makes a by-value Struct/Union member complete only when its tag is ALREADY in
+# sigm.tag_definitions (Array iff its element type is and its size is known,
+# Atomic iff its inner type is, Pointer regardless of its target); the flexible
+# array member's element type is checked likewise (cabs_to_ail.lem:1600-1603);
+# an _Alignas(type) is admitted only when alignof_ty al_ty succeeds at
+# desugaring (cabs_to_ail.lem:2860-2870). So definition order is a rank on the
+# by-value reference graph; CerbTagsWf.Acyclic states exactly that (any rank).
+# Row 4 (offsetsof) takes the two-map form: struct tags resolve in the threaded
+# map, union tags in the ambient one (impl_mem.ml:173/:255, the mirrored
+# upstream asymmetry); at elaboration time the ambient map is empty and the
+# form is Acyclic of the threaded map, at run time both are the linked table.
+# A hand-authored Core file can violate the invariant: the wrapper then may
+# exhaust (the loud sentinel), as the oracle loops there.
+CerbMem.sizeofCtype_lemFuel	CerbTagsWf.Acyclic ambient	by-value acyclic tag environment: cabs_to_ail.lem:1512 check_members + ail/ailTypesAux.lem:222 is_complete (definition order is a rank)	[AGENT C4 worker 2026-09-05]; operator review pending (C4 record §8)
+CerbMem.alignofCtype_lemFuel	CerbTagsWf.Acyclic ambient	by-value acyclic tag environment: cabs_to_ail.lem:1512 check_members + ail/ailTypesAux.lem:222 is_complete; flexible member cabs_to_ail.lem:1600-1603	[AGENT C4 worker 2026-09-05]; operator review pending (C4 record §8)
+CerbMem.memberAlign_lemFuel	CerbTagsWf.Acyclic ambient	by-value acyclic tag environment: cabs_to_ail.lem:1512 check_members + ail/ailTypesAux.lem:222 is_complete; _Alignas(type) complete at desugaring cabs_to_ail.lem:2860-2870	[AGENT C4 worker 2026-09-05]; operator review pending (C4 record §8)
+CerbMem.offsetsof_lemFuel	CerbTagsWf.AcyclicPair ambient tagDefs	by-value acyclic tag environment, two-map form (struct tags via the threaded map, union tags via the ambient one — impl_mem.ml:173/:255): cabs_to_ail.lem:1512 check_members + ail/ailTypesAux.lem:222 is_complete; ambient empty at elaboration time (CerbMem.lean layout header)	[AGENT C4 worker 2026-09-05]; operator review pending (C4 record §8)
+CerbMem.offsetsofMembers_lemFuel	CerbTagsWf.Acyclic ambient	by-value acyclic tag environment: cabs_to_ail.lem:1512 check_members + ail/ailTypesAux.lem:222 is_complete	[AGENT C4 worker 2026-09-05]; operator review pending (C4 record §8)
+CerbMem.reconstructValue_lemFuel	CerbTagsWf.Acyclic ambient	by-value acyclic tag environment: cabs_to_ail.lem:1512 check_members + ail/ailTypesAux.lem:222 is_complete (the struct arm's member types come from offsetsof, the union arm's from the definition)	[AGENT C4 worker 2026-09-05]; operator review pending (C4 record §8)
+showNonNegativeWithBasis_aux_lemFuel	2 ≤ b	every caller passes a literal basis in {8, 10, 16}: formatted.lem:563,571,579,587,595 (showNonNegativeWithBasis, the %o/%d/%i/%u/%x/%X printf arms); b = 1 loops in the oracle too	[AGENT C4 worker 2026-09-05]; operator review pending (C4 record §8)

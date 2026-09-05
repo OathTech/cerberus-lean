@@ -40,6 +40,7 @@ CerbND.lean
 CerbPP.lean
 CerbStepInstances.lean
 CerbTags.lean
+CerbTagsWf.lean
 CerbUtils.lean
 CoreParser.lean
 Core_lemMeasureProofs.lean
@@ -55,3 +56,4 @@ Core_run_aux_lemMeasureProofs.lean
 CerbMeasureLemmas.lean
 CerbMem_lemMeasureProofs.lean
 AilTypesAux_lemMeasureProofs.lean
+Formatted_lemMeasureProofs.lean

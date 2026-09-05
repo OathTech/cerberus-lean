@@ -23,6 +23,7 @@ import CerberusImpl
 import CerbFloat
 import CerbLocation
 import Annot
+import CerbTagsWf
 
 open CerberusImpl
 
@@ -254,7 +255,7 @@ instance : Ord MemState where compare _ _ := .eq
 
 /-! ## Helper: construct ctype with empty annotations -/
 
-private def mkCtype (ty_ : ctype_) : ctype := Ctype ([] : List annot) ty_
+def mkCtype (ty_ : ctype_) : ctype := Ctype ([] : List annot) ty_
 
 /-! ## combine_prov — impl_mem.ml:366-394 -/
 
@@ -330,9 +331,10 @@ def targetPtrSize : Nat :=
 
 /- The threaded tag environment is the Fmap itself (the same value the
    ambient global holds); enumeration-spine conversion happens only at
-   the tag-LOOKUP arms (`fmapElements … |>.find? symbolEquality` — the
-   exact pre-threading per-arm lookup, so leaf-type sizeof/alignof pay
-   no conversion). -/
+   the tag-LOOKUP arms (`CerbTagsWf.lookupEntry` = `fmapElements … |>.find?
+   symbolEquality`, the exact pre-threading per-arm lookup named ONCE so
+   the C4 sufficiency proofs can speak about it; leaf-type sizeof/alignof
+   pay no conversion). -/
 private abbrev TagDefs := CerbTags.TagDefsMap
 
 /-! ARC-7 S4 TOTALIZATION (fuel; arc-3 pattern): the layout oracles and
@@ -349,7 +351,9 @@ private abbrev TagDefs := CerbTags.TagDefsMap
     instance, so every call site and every runtime behavior at a
     sufficient fuel is unchanged. `stringFromMemValue` (pp-only, never
     on a computed path) is total since arc-10 S3 (structural mutual
-    recursion — no fuel needed). -/
+    recursion — no fuel needed). C4 (2026-09-05): the five layout
+    wrappers below the block are MEASURED (fuel-free) under the
+    acyclicity hypothesis — see their header. -/
 
 mutual
 
@@ -407,7 +411,7 @@ def offsetsof_lemFuel (lemFuel : Nat) (ambient : TagDefs) (tagDefs : TagDefs) (t
   match lemFuel with
   | 0 => fuelExhaustedWith "CerbMem.offsetsof: fuel exhausted" ([], 0)
   | lemFuel + 1 =>
-    match (fmapElements tagDefs).find? (fun (s, _) => symbolEquality s tagSym) with
+    match CerbTagsWf.lookupEntry tagDefs tagSym with
     | none => panic! "CerbMem.offsetsof: unknown tag (OCaml: Pmap.find Not_found)"
     | some (_, (_, StructDef membrs_ flexibleOpt)) =>
       let membrs := match flexibleOpt with
@@ -460,7 +464,7 @@ def sizeofCtype_lemFuel (lemFuel : Nat) (ambient : TagDefs) (tagDefs : TagDefs) 
         -- GLOBAL read, deliberately: impl_mem.ml:173 is
         -- `Pmap.find tag_sym (Tags.tagDefs ())` — NOT ~tagDefs (the
         -- upstream asymmetry; see the section header note).
-        match (fmapElements ambient).find? (fun (s, _) => symbolEquality s tagSym) with
+        match CerbTagsWf.lookupEntry ambient tagSym with
         | some (_, (_, UnionDef membrs)) =>
           let (maxSize, maxAlign) := membrs.foldl (init := ((0 : Nat), (0 : Nat)))
             fun (acc : Nat × Nat) memb =>
@@ -505,7 +509,7 @@ def alignofCtype_lemFuel (lemFuel : Nat) (ambient : TagDefs) (tagDefs : TagDefs)
       | .Atomic innerCty => alignofCtype_lemFuel lemFuel ambient tagDefs innerCty   -- impl_mem.ml:226-227 (alignof ~tagDefs)
       | .Struct tagSym =>                           -- impl_mem.ml:228-252
         -- threaded lookup: impl_mem.ml:229 is `Pmap.find tag_sym tagDefs`
-        match (fmapElements tagDefs).find? (fun (s, _) => symbolEquality s tagSym) with
+        match CerbTagsWf.lookupEntry tagDefs tagSym with
         | some (_, (_, StructDef membrs flexibleOpt)) =>
           let init := match flexibleOpt with        -- impl_mem.ml:234-239
             | none => 0
@@ -519,7 +523,7 @@ def alignofCtype_lemFuel (lemFuel : Nat) (ambient : TagDefs) (tagDefs : TagDefs)
         -- GLOBAL read, deliberately: impl_mem.ml:255 is
         -- `Pmap.find tag_sym (Tags.tagDefs ())` — NOT ~tagDefs (the
         -- upstream asymmetry; see the section header note).
-        match (fmapElements ambient).find? (fun (s, _) => symbolEquality s tagSym) with
+        match CerbTagsWf.lookupEntry ambient tagSym with
         | some (_, (_, UnionDef membrs)) =>
           membrs.foldl (init := (0 : Nat)) fun acc memb =>
             let (_, (_, alignOpt, _, ty)) := memb
@@ -529,31 +533,44 @@ def alignofCtype_lemFuel (lemFuel : Nat) (ambient : TagDefs) (tagDefs : TagDefs)
 
 end
 
-/-- Ambient-fuel + default-tagDefs wrapper (fuel: rfl-defeq to the
-    worker at the instance's fuel, arc-3 discipline; tagDefs: the ambient
+/-! FUEL-PARAMETER ARC C4 (2026-09-05): the five layout wrappers are
+    MEASURED, fuel-FREE, under the hypothesis `CerbTagsWf.Acyclic ambient`
+    (`AcyclicPair ambient tagDefs` for `offsetsof`, whose struct tags resolve
+    in the threaded map and union tags in the ambient one). The measure is
+    `CerbTagsWf.envBound`/`memberBound`/`membersBound`/`offsetsofBound`: the
+    structural size of what is asked about plus the environment's weight
+    (every entry's member-type sizes + 2 frames per hop) — derived from the
+    hop structure in CerbMem_lemMeasureProofs.lean, where the obligations
+    `<f>_measure_sufficient (…) (lemHyp : Acyclic …) (lemFuel) (lemMeasureLe :
+    μ ≤ lemFuel) : f_lemFuel lemFuel … = f …` are proved in the generated
+    `assuming` shape. On an environment violating the hypothesis (a by-value
+    cycle a hand-authored Core file can state; the C frontend never emits one —
+    CerbTagsWf's header cites the invariant) the wrapper may exhaust: the loud
+    `fuelExhaustedWith` sentinel, where the oracle loops. tagDefs: the ambient
     global, mirroring OCaml's `?(tagDefs= Tags.tagDefs ())` optional-arg
-    default). -/
-def memberAlign [LemFuel] (ambient : TagDefs) (alignOpt : Option alignment) (ty : ctype) : Nat :=
-  memberAlign_lemFuel LemFuel.fuel ambient ambient alignOpt ty
+    default (unchanged). -/
+def memberAlign (ambient : TagDefs) (alignOpt : Option alignment) (ty : ctype) : Nat :=
+  memberAlign_lemFuel (CerbTagsWf.memberBound ambient alignOpt ty) ambient ambient alignOpt ty
 
-/-- Ambient-fuel + default-tagDefs wrapper (see memberAlign). -/
-def offsetsofMembers [LemFuel] (ambient : TagDefs)
+/-- Measured + default-tagDefs wrapper (see memberAlign). -/
+def offsetsofMembers (ambient : TagDefs)
     (members : List (identifier × (attributes × Option alignment × qualifiers × ctype)))
     : List (identifier × ctype × Nat) × Nat :=
-  offsetsofMembers_lemFuel LemFuel.fuel ambient ambient members
+  offsetsofMembers_lemFuel (CerbTagsWf.membersBound ambient members) ambient ambient members
 
-/-- Ambient-fuel wrapper (tagDefs explicit, like OCaml offsetsof). -/
-def offsetsof [LemFuel] (ambient : TagDefs) (tagDefs : TagDefs) (tagSym : sym)
+/-- Measured wrapper (tagDefs explicit, like OCaml offsetsof; hypothesis
+    `AcyclicPair ambient tagDefs`). -/
+def offsetsof (ambient : TagDefs) (tagDefs : TagDefs) (tagSym : sym)
     (ignoreFlexible : Bool := false) : List (identifier × ctype × Nat) × Nat :=
-  offsetsof_lemFuel LemFuel.fuel ambient tagDefs tagSym ignoreFlexible
+  offsetsof_lemFuel (CerbTagsWf.offsetsofBound ambient tagDefs) ambient tagDefs tagSym ignoreFlexible
 
-/-- Ambient-fuel + default-tagDefs wrapper (see memberAlign). -/
-def sizeofCtype [LemFuel] (ambient : TagDefs) (cty : ctype) : Nat :=
-  sizeofCtype_lemFuel LemFuel.fuel ambient ambient cty
+/-- Measured + default-tagDefs wrapper (see memberAlign). -/
+def sizeofCtype (ambient : TagDefs) (cty : ctype) : Nat :=
+  sizeofCtype_lemFuel (CerbTagsWf.envBound ambient cty) ambient ambient cty
 
-/-- Ambient-fuel + default-tagDefs wrapper (see memberAlign). -/
-def alignofCtype [LemFuel] (ambient : TagDefs) (cty : ctype) : Nat :=
-  alignofCtype_lemFuel LemFuel.fuel ambient ambient cty
+/-- Measured + default-tagDefs wrapper (see memberAlign). -/
+def alignofCtype (ambient : TagDefs) (cty : ctype) : Nat :=
+  alignofCtype_lemFuel (CerbTagsWf.envBound ambient cty) ambient ambient cty
 
 /-! ## Byte-level serialization
 
@@ -662,7 +679,7 @@ abbrev Funptrmap := List (Int × (String × String))
     `repr funptrmap mval : (funptrmap' × bytes)` — storing a PVfunction
     registers the symbol in the map (impl_mem.ml:1168-1185, survey
     finding 20); all other arms pass it through. -/
-def memValueToBytes_lemFuel [LemFuel] (lemFuel : Nat) (ambient : TagDefs) (funptrmap : Funptrmap)
+def memValueToBytes_lemFuel (lemFuel : Nat) (ambient : TagDefs) (funptrmap : Funptrmap)
     (val_ : MemValue) : Funptrmap × List AbsByte :=
   match lemFuel with
   | 0 => fuelExhaustedWith "CerbMem.memValueToBytes: fuel exhausted" (funptrmap, [])
@@ -773,10 +790,9 @@ def memValueToBytes_lemFuel [LemFuel] (lemFuel : Nat) (ambient : TagDefs) (funpt
     (`memValueSize val_`: MVarray/MVstruct/MVunion descend into components) —
     the hand-written twin of a `declare {lean} fuel_measure`; the sufficiency
     theorem `memValueToBytes_measure_sufficient` is in
-    CerbMem_lemMeasureProofs.lean. The `[LemFuel]` binder stays because the
-    body reads the AMBIENT layout oracle (`sizeofCtype`/`offsetsof`, a tag
-    lookup: C2 record, pending register). -/
-def memValueToBytes [LemFuel] (ambient : TagDefs) (funptrmap : Funptrmap) (val_ : MemValue) :
+    CerbMem_lemMeasureProofs.lean. Its `[LemFuel]` binder (C2: "for the
+    ambient layout oracle") went at C4: the layout oracle is measured. -/
+def memValueToBytes (ambient : TagDefs) (funptrmap : Funptrmap) (val_ : MemValue) :
     Funptrmap × List AbsByte :=
   memValueToBytes_lemFuel (memValueSize val_) ambient funptrmap val_
 
@@ -791,7 +807,7 @@ kernel-checked equality (`memValueToBytes_lemFuel_eq_append`) rather
 than a claim. Charter §1 carve-out [R1/F5]. -/
 
 /-- Reference form (pre-C3): append-accumulating struct arm. -/
-def memValueToBytes_append_lemFuel [LemFuel] (lemFuel : Nat) (ambient : TagDefs) (funptrmap : Funptrmap)
+def memValueToBytes_append_lemFuel (lemFuel : Nat) (ambient : TagDefs) (funptrmap : Funptrmap)
     (val_ : MemValue) : Funptrmap × List AbsByte :=
   match lemFuel with
   | 0 => fuelExhaustedWith "CerbMem.memValueToBytes: fuel exhausted" (funptrmap, [])
@@ -909,7 +925,7 @@ theorem foldl_append_eq_flatten_reverse {γ β α : Type}
     arm but the struct arm is textually identical once the recursive calls
     are rewritten by the induction hypothesis; the struct arm is
     `foldl_append_eq_flatten_reverse`. -/
-theorem memValueToBytes_lemFuel_eq_append [LemFuel] :
+theorem memValueToBytes_lemFuel_eq_append :
     ∀ (lemFuel : Nat) (ambient : TagDefs) (funptrmap : Funptrmap) (val_ : MemValue),
       memValueToBytes_lemFuel lemFuel ambient funptrmap val_ =
         memValueToBytes_append_lemFuel lemFuel ambient funptrmap val_ := by
@@ -939,7 +955,7 @@ theorem memValueToBytes_lemFuel_eq_append [LemFuel] :
              (memValueToBytes_append_lemFuel lemFuel ambient fpm p.2.2.2).2))]
     | _ => rfl
 
-theorem memValueToBytes_eq_append [LemFuel] (ambient : TagDefs) (funptrmap : Funptrmap) (val_ : MemValue) :
+theorem memValueToBytes_eq_append (ambient : TagDefs) (funptrmap : Funptrmap) (val_ : MemValue) :
     memValueToBytes ambient funptrmap val_ =
       memValueToBytes_append_lemFuel (memValueSize val_) ambient funptrmap val_ :=
   memValueToBytes_lemFuel_eq_append (memValueSize val_) ambient funptrmap val_
@@ -973,7 +989,7 @@ theorem chunksOf_eq_range_map (e n : Nat) (l : List α) :
     consulted ONLY by the Pointer-to-Function arm (impl_mem.ml:1004-1016)
     — exactly as in OCaml's abst.
     Not ported: taint tracking (PNVI) and is_zap. -/
-def reconstructValue_lemFuel [LemFuel] (lemFuel : Nat) (ambient : TagDefs)
+def reconstructValue_lemFuel (lemFuel : Nat) (ambient : TagDefs)
     (unionmap : List (Int × identifier))
     (funptrmap : Funptrmap) (addr : Int)
     (ty : ctype) (bytes : List AbsByte) : MemValue :=
@@ -1092,7 +1108,7 @@ def reconstructValue_lemFuel [LemFuel] (lemFuel : Nat) (ambient : TagDefs)
     -- impl_mem.ml:1074-1095: select the member recorded in
     -- last_used_union_members at this address; default to the FIRST
     -- declared member when absent (impl_mem.ml:1080-1083).
-    match (fmapElements ambient).find? (fun (s, _) => symbolEquality s tagSym) with
+    match CerbTagsWf.lookupEntry ambient tagSym with
     | some (_, (_, UnionDef membrs)) =>
       match membrs with
       | [] => panic! "CerbMem.reconstructValue: empty UnionDef (OCaml: match failure)"
@@ -1112,11 +1128,13 @@ def reconstructValue_lemFuel [LemFuel] (lemFuel : Nat) (ambient : TagDefs)
     | _ => panic! "CerbMem.reconstructValue: Union tag not a UnionDef (OCaml: assert false)"
   | _ => .MVunspecified ty
 
-/-- Ambient-fuel wrapper (rfl-defeq to the worker at the instance's fuel). -/
-def reconstructValue [LemFuel] (ambient : TagDefs) (unionmap : List (Int × identifier))
+/-- Measured wrapper (C4): fuel-free, hypothesis `CerbTagsWf.Acyclic ambient`
+    (its recursion is on the ctype being reconstructed, through member types
+    read from the tag environment); obligation in CerbMem_lemMeasureProofs. -/
+def reconstructValue (ambient : TagDefs) (unionmap : List (Int × identifier))
     (funptrmap : Funptrmap) (addr : Int)
     (ty : ctype) (bytes : List AbsByte) : MemValue :=
-  reconstructValue_lemFuel LemFuel.fuel ambient unionmap funptrmap addr ty bytes
+  reconstructValue_lemFuel (CerbTagsWf.envBound ambient ty) ambient unionmap funptrmap addr ty bytes
 
 /-! ### C1 reference form + equality theorem (mem-scale S1, 2026-09-02)
 
@@ -1133,7 +1151,7 @@ Charter §1 carve-out [R1/F5]; consumer note: refined-cerberus unfolds
 textually intact. -/
 
 /-- Reference form (pre-C1): index-slicing array arm. -/
-def reconstructValue_indexed_lemFuel [LemFuel] (lemFuel : Nat) (ambient : TagDefs)
+def reconstructValue_indexed_lemFuel (lemFuel : Nat) (ambient : TagDefs)
     (unionmap : List (Int × identifier))
     (funptrmap : Funptrmap) (addr : Int)
     (ty : ctype) (bytes : List AbsByte) : MemValue :=
@@ -1199,7 +1217,7 @@ def reconstructValue_indexed_lemFuel [LemFuel] (lemFuel : Nat) (ambient : TagDef
         ((ident, membTy, mval) :: revXs, off + sizeofCtype ambient membTy)
     .MVstruct tagSym revXs.reverse
   | Ctype _ (.Union0 tagSym) =>
-    match (fmapElements ambient).find? (fun (s, _) => symbolEquality s tagSym) with
+    match CerbTagsWf.lookupEntry ambient tagSym with
     | some (_, (_, UnionDef membrs)) =>
       match membrs with
       | [] => panic! "CerbMem.reconstructValue: empty UnionDef (OCaml: match failure)"
@@ -1222,7 +1240,7 @@ def reconstructValue_indexed_lemFuel [LemFuel] (lemFuel : Nat) (ambient : TagDef
     Induction on fuel; every arm but the array arm is textually identical
     once the recursive calls are rewritten by the induction hypothesis;
     the array arm is `chunksOf_eq_range_map` + `List.map_map`. -/
-theorem reconstructValue_lemFuel_eq_indexed [LemFuel] :
+theorem reconstructValue_lemFuel_eq_indexed :
     ∀ (lemFuel : Nat) (ambient : TagDefs) (unionmap : List (Int × identifier))
       (funptrmap : Funptrmap) (addr : Int) (ty : ctype) (bytes : List AbsByte),
       reconstructValue_lemFuel lemFuel ambient unionmap funptrmap addr ty bytes =
@@ -1255,11 +1273,11 @@ theorem reconstructValue_lemFuel_eq_indexed [LemFuel] :
     | Basic bt => cases bt <;> rfl   -- the outer match is stuck until the basic type is split
     | _ => rfl
 
-theorem reconstructValue_eq_indexed [LemFuel] (ambient : TagDefs) (unionmap : List (Int × identifier))
+theorem reconstructValue_eq_indexed (ambient : TagDefs) (unionmap : List (Int × identifier))
     (funptrmap : Funptrmap) (addr : Int) (ty : ctype) (bytes : List AbsByte) :
     reconstructValue ambient unionmap funptrmap addr ty bytes =
-      reconstructValue_indexed_lemFuel LemFuel.fuel ambient unionmap funptrmap addr ty bytes :=
-  reconstructValue_lemFuel_eq_indexed LemFuel.fuel ambient unionmap funptrmap addr ty bytes
+      reconstructValue_indexed_lemFuel (CerbTagsWf.envBound ambient ty) ambient unionmap funptrmap addr ty bytes :=
+  reconstructValue_lemFuel_eq_indexed (CerbTagsWf.envBound ambient ty) ambient unionmap funptrmap addr ty bytes
 
 /-! ## Memory-value typing — the store guard's helpers (audit-2 C3) -/
 

@@ -101,10 +101,19 @@ lem-lean/lean-lib/LemLib.lean	runEffectful_impl	L2-delete	DELETE (the axiom scaf
 # - CerbUtils no-op timing/log refs + boundedIntegerImpl stub
 #   (permanent-declared family).
 # - CerbMem beqMemValueImpl (safe perf seam: opaque + implemented_by).
+# - test/Unit/FuelFormsTool.lean main (C4, 2026-09-05): the fuel-forms
+#   GATE TOOL's entry point is `unsafe` only because it calls
+#   `Lean.enableInitializersExecution` before `importModules (loadExts :=
+#   true)` — needed so the imported `app_unexpander` extension is loaded
+#   and the `hyp` column prints hypotheses with notation (`2 ≤ b`, not
+#   `instLENat.le 2 b`), the text the reviewed register
+#   scripts/fuel_hypotheses.txt compares against. An INSTRUMENT-side
+#   unsafe: no semantics module imports the tool; permanent-declared.
 PIN IMPLBY lem-lean/lean-lib/LemLib.lean failwithIImpl 1
 PIN IMPLBY lem-lean/lean-lib/LemLib.lean fuelExhaustedWithImpl 1
 PIN UNSAFEDECL lem-lean/lean-lib/LemLib.lean failwithIImpl 1
 PIN UNSAFEDECL lem-lean/lean-lib/LemLib.lean fuelExhaustedWithImpl 1
+PIN UNSAFEDECL lean_frontend/test/Unit/FuelFormsTool.lean main 1
 PIN EXTERN lean_frontend/CerberusFresh.lean digestIO 2
 PIN EXTERN lean_frontend/CerberusFresh.lean digestPure 2
 PIN EXTERN lean_frontend/CerberusFresh.lean forceThunkIO 2
