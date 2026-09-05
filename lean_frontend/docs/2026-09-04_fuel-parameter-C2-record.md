@@ -642,3 +642,28 @@ The other lanes, verbatim:
 [speclab_seed] SeedGateTest: ALL PASSED
 [speclab_seed] test_speclab_seed: PASS (--gate)
 ```
+
+
+## 14. Orchestrator boundary review [AGENT, orchestrator, 2026-09-05]
+
+Two independent runs in this worktree. (1) On `5c9f5cba2` (the slice):
+full battery, 26 lanes serially, every one rc 0, zero baseline movement
+(`SUMMARY: total=1963 compared=1885 agree=1873 … disagree=0 …` / `Baseline
+check: 0 regression(s), 0 improvement(s)` / `gcc second-oracle lane OK`);
+lean stamp `bin 797d1383ba69…`. (2) On `2cc803ccc` + the audit document
+`17fb16084` cherry-picked (this head): `make lean-prelude-src`, `build_lean`
+→ the same lean stamp (the response touched the gate tool, the gate
+script and docs; the driver binary is unchanged), `check_driver_fresh
+--check` OK; then `test_unit.sh` (incl. the hardened fuel-forms gate: 7
+plants incl. the two compiled decoy obligations, and the forms-partition
+sum check), exec minimal `--check-baseline`, `test_verify.sh`,
+`test_immaculate.sh`, speclab selftest + plant + the five gates,
+`test_fuel_plant.sh` — 13 lanes, 13 × rc 0. Pre-merge audit
+`2026-09-05_fuel-parameter-C2-audit-premerge.md` (MERGE-WITH-FIXES, no
+MAJOR → M1–M3/N1/N2/N4/N7 fixed in `2cc803ccc`, §13). Merge ask goes to the
+operator on this head. Consumer state after the merge: the (A)/(B)/(C)
+requirement holds for 60 of the 81 fuel'd workers (41 measured + 13
+absorbing + 6 unreachable); the 21 reachable ambient rows are pinned in
+`scripts/fuel_forms_pending.txt`, fail-closed both ways, each with its
+route (9 need the hypothesis-carrying obligation form — operator decision
+D-C2-1; 6 flip with the lem tails slice; 6 wait on the typed-failure pass).
