@@ -35,10 +35,17 @@ moreLeanArgs = ["-DautoImplicit=false"]
 # `fuel_measure`; `LemLibPmapLaws`; the reserved-name capture check on
 # target_rep text; lem-lean doc/lean-backend/2026-09-05_tails-and-pmap-laws-
 # record.md; this repo: docs/2026-09-05_fuel-parameter-C3-record.md).
+# fuel-parameter C4 2026-09-05: bumped to f6542f8 (the measure-hypothesis
+# slice: `declare {lean} fuel_measure val f = `μ` assuming `H`` — the
+# obligation gains the reserved `lemHyp : H` binder immediately before
+# `lemFuel`, the wrapper stays fuel-free; the UTF-8 letter-like tokenizer
+# and the projection-on-non-parameter refusal in the measure renderer;
+# lem-lean doc/lean-backend/2026-09-05_measure-hypothesis-record.md; this
+# repo: docs/2026-09-05_fuel-parameter-C4-record.md).
 [[require]]
 name = "LemLib"
 git = "https://github.com/OathTech/lem-lean"
-rev = "d4ba548d084ff393126f04d90f18a72c3000aa88"
+rev = "f6542f8e6860d12d4655e6648bc4c45dabd1d798"
 subDir = "lean-lib"
 
 [[lean_lib]]
