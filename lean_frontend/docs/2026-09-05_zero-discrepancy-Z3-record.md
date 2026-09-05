@@ -952,3 +952,18 @@ worktree must have the DEFAULT targets built before Tier A row 1 is trusted.
    `2ddc1300c`), Z-69, §6 Z3 (DONE).
 
 No push; no merge; the mainline is untouched; lem pins unmoved (`d4ba548`).
+
+
+## 8. Orchestrator boundary review [AGENT, orchestrator, 2026-09-05]
+
+Independent full battery on `a8a4fe8f6` (the slice head, rebased on
+`eb27fa70f`) in this worktree: 26 lanes serially, every one rc 0, zero
+baseline movement outside the recorded pins (`SUMMARY: total=1963
+compared=1885 agree=1873 agree_nd=0 triaged=12 disagree=0 …` / `Baseline
+check: 0 regression(s), 0 improvement(s)` / `gcc second-oracle lane OK`).
+Pre-merge audit `2026-09-05_zero-discrepancy-Z3-audit-premerge.md`:
+MERGEABLE, no MAJOR (F1–F4 docs fixed in `9229300ef`; its function-pointer/
+`qsort`/`atexit`/struct-return plants agree byte-for-byte on these engines
+and show the address-order signature on mainline's). The audit-response
+head is docs/comments only (Lean binary hash unchanged `17a894c3…`). This
+branch was NOT pre-signed: it goes to the operator's morning merge ask.
