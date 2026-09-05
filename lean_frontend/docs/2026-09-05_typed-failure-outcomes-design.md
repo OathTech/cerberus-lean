@@ -850,3 +850,26 @@ lem `DESIGN.md` (:277-305 Inhabited derivation and comparison residuals;
 :140). All counts DERIVED by the §1.0 commands; nothing here was decided
 by the author — every recommendation is marked as such and every
 decision is in §6.
+
+
+## R1 — operator ruling on scope (2026-09-05)
+
+[USER 2026-09-05], on the orchestrator's proposed split ("the monadic
+group's typed absorbing outcomes now, the pure group's register and gate
+as the interim with the large transform decided after the risk map"):
+"Decision 4: yes agree, this seems the lowest risk approach".
+
+Applied [AGENT]: (1) MONADIC group — the seven hand-written `memM` failure
+sites become the memory monad's error (the driver already turns it into
+the kill) in a cerberus slice after C4/Z3 land (no lem change); the 59
+generated monadic sites' Lean-only `failure_outcome` declare is DESIGNED
+INSIDE the declare-consolidation pass (lem TODO 18) rather than added as
+an eleventh form now — lowest-risk ordering (§6 Q3 resolved this way).
+(2) PURE group — interim only: `panic!` → loud `failwithI` hygiene in the
+seams, a pinned register of every pure failure site by its invariant
+class, and the fail-closed `check_failure_forms` gate (§3); the
+failure-lifting transform (§2, L) is decided after the trust-surface risk
+map. (3) §6 Q2 (M′ `.lem` constructor change): NOT admitted — lem edits
+are against the rules ([USER 2026-09-05] on the concurrency branch's F2);
+M′ stays pending under its named invariant. Q1/Q4–Q7 as recommended in
+§6 unless the operator says otherwise.
