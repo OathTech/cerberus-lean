@@ -199,6 +199,18 @@ provenance note), same filing checklist and labeling policy:
   negatives); `docs/2026-09-01_mem-scale-profile.md` §6.2–6.3 (original
   observation).
 
+- **lean4/02-nat-div-mod-literal-folding.md** — target `leanprover/lean4`
+  (elaborator/`Meta` literal folding). UNCLEAR, question with a standalone
+  reproducer (`lean4/repro/DivModLiteralFold.lean`, no imports): `rfl`
+  fails on `8 / f (k+1)` and `8 % f (k+1)` (and the `Int` division)
+  although `f (k+1)` reduces to the literal `4` by `rfl` and `- * +`/
+  `Nat.beq` fold on the same input — the `Nat.div`/`Nat.mod` literal fast
+  path does not normalise its arguments first. Identical four errors on
+  v4.28.0, v4.32.2, v4.33.0 and nightly-2026-08-02 (verbatim matrix in
+  the draft). Found while proving a fuel-parametric theorem
+  (`docs/2026-09-04_fuel-parameter-C1-record.md` §4.3); worked around by
+  rewriting the divisor first. Added 2026-09-05.
+
 Added 2026-09-02 (arc/mem-scale S1' — cerberus-side, upstream-facing):
 
 18. **18-monadic-list-combinators-non-tail.md** — TRUE BUG
@@ -240,6 +252,125 @@ reproduced on deps/cerberus-upstream @ b9aeedcb4 and on the fork; record
     assessed and shown not verdict-preserving as stated). Probes:
     `tests/noodle-probes/dynamic-addrs/`.
 
+Added 2026-09-05 (the 2026-09-03 semantic-discrepancy probe campaign's
+oracle-side findings — record `lean_frontend/docs/2026-09-03_noodle-cerberus-lean.md`,
+probes `tests/noodle-probes/` — plus two findings of the 2026-09-03/04
+seam audits; every reproducer re-run 2026-09-05 on deps/cerberus-upstream
+@ b9aeedcb4, the fork's oracle @ 928aa1e76 and the Lean port, lines
+verbatim in each draft; slice record
+`lean_frontend/docs/2026-09-05_zero-discrepancy-Z4-docs-record.md`).
+Unless a draft says otherwise, both Cerberus engines agree with each other
+and gcc disagrees — the defect is in the shared model, not in our port:
+
+20. **20-size-t-integer-rank-uac.md** — TRUE BUG. `size_t` (a macro
+    `integerType` constructor) has no rank in `lt_integer_rank_ISO`
+    (ailTypesAux.lem:527-529, the code's own "probably wrong for macro
+    types" TODO), so the usual arithmetic conversions with `int`/`char`/
+    `short`/`unsigned int` convert BOTH operands to `unsigned int`: values
+    ≥ 2^32 are truncated (`n + 1` = 705032705 for n = 5000000000;
+    `n == 705032704` is TRUE). Silent wrong values AND control flow; the
+    largest class found. Remedy: rank the macro types through the
+    implementation's alias table.
+21. **21-provenance-lost-through-arithmetic-pvi.md** — TRUE BUG relative
+    to the PVI model's evident intent / UNCLEAR if intended (framed as a
+    question). `mk_conv_int`/`mk_wrapI` (core_eval.lem:29-46, :61-80)
+    rebuild every arithmetic result as a provenance-free integer, so
+    `(int*)((unsigned long)p + 4)` is UB043 under the default model
+    although `op_ival` propagates provenance. Two-line remedy if intended.
+22. **22-ptrdiff-strips-array-layer.md** — TRUE BUG. `diff_ptrval`
+    (impl_mem.ml:1961-1967) strips one `Array` layer off the pointee type
+    before dividing: `&a[2] - &a[0]` on `int a[3][4]` is 8, not 2. One
+    `match` to delete (the elaboration already passes the pointee type).
+23. **23-string-literal-init-of-char-array-members.md** — TRUE BUG. A
+    string literal initialising a `char`-array ELEMENT or MEMBER
+    (`char a[2][3] = {"ab","cd"}`, `struct{char c[3];} w = {{"ab"}}`) is a
+    constraint violation: desugaring_init.lem:461-462 has the sub-aggregate
+    case stubbed (`if false (* … string literal *) then internal_error
+    "TODO: explode the elements"`). Ubiquitous idiom; remedy = the TODO.
+24. **24-stdio-buffer-not-flushed-at-exit.md** — TRUE BUG. Neither return
+    from `main` (driver.lem:1328-1333 `Step_done2` → `prepare_exit`, libc
+    `exit` never entered) nor the shipped libc's `exit` (stdlib.c:223-227,
+    no stream flush) flushes `FILE` buffers: `fputs("out", stdout);
+    return 0;` prints nothing; `printf` proxies bypass the buffer (order);
+    a `puts`-after-`putchar` loss recorded, not localised.
+25. **25-atexit-not-run-on-main-return.md** — TRUE BUG. Same driver
+    path: `atexit` handlers run on `exit()` but not on return from `main`
+    (§5.1.2.2.3). Remedy: route main-return through libc `exit` when the
+    libc is linked.
+26. **26-printf-star-width-crash.md** — TRUE BUG (crash on legal input).
+    `%*d`: the format parser accepts `*` (formatted.lem:113/119) but every
+    consumer is a placeholder — `error "TODO: formatted.lem 6"` (:741-742),
+    `assert_false "TODO: FW_asterisk"` (:253) — uncaught `Failure`, exit
+    125. Remedy: consume the `int` argument.
+27. **27-printf-hex-int-argument-ub153b.md** — TRUE BUG (over-strict).
+    `%x`/`%X`/`%o` with an `int` argument → UB153b: the no-length-modifier
+    arm demands exact type equality with `unsigned int`
+    (formatted.lem:515-538) while the `l`/`ll`/`j` arms already accept
+    either signedness. Remedy: accept the same-representation counterpart,
+    then check representability by value (`%u` with -1 stays UB).
+28. **28-conditional-in-static-initializer.md** — TRUE BUG. `static int
+    a = (3 > 2) ? 10 : 20;` rejected "not a compile-time constant":
+    `is_arithmetic_constant_expression` (cabs_to_ail.lem:794-843) has no
+    `AilEcond` arm although `is_integer_constant_expression` (:727-740)
+    does — so `?:` works in enum/array-size/case contexts and not in
+    initialisers. One arm to add.
+29. **29-string-literal-address-constant.md** — TRUE BUG (tray-09-
+    adjacent). `static const char *s = "hello" + 1;` rejected:
+    `is_address_constant` (cabs_to_ail.lem:894-925) has no string-literal
+    arm; a bare literal is special-cased by the caller (:934-960), the
+    literal-plus-offset form is not. One arm to add.
+30. **30-strncmp-zero-length.md** — TRUE BUG (libc). `strncmp(s1, s2, 0)`
+    compares one character (string.c:85-90: the `--n > 0` test follows the
+    first compare); musl's ancestor has the check.
+31. **31-calloc-overflow-check.md** — TRUE BUG (libc, minor). `calloc`
+    has no `nmemb * size` overflow check (stdlib.c:125-134); C17 §7.22.3.2
+    requires NULL. **ON HOLD before filing** [AGENT 2026-09-05]: the
+    upstream evidence is re-verified, but our own three-engine record for
+    the probe moved since it was first taken (the Lean column: out of
+    memory → agrees with the oracle), so the draft is held for the
+    operator's second look per the slice rule; the hold is stated in the
+    draft's header.
+32. **32-float-evaluated-as-double.md** — INTENDED GAP (literal
+    `TODO:hack ==> 4`, ocaml_implementation.ml:206-208; permitted by
+    §6.2.5#10) with a TRUE BUG on the consistency side: the shipped
+    `runtime/libc/include/float.h:4` declares `FLT_MANT_DIG 24` for a
+    `float` that has 53 bits and `sizeof(float) == 8`. Remedy: a binary32
+    arm (M) or a consistent `float.h` (S).
+33. **33-unspecified-operand-exceptional-condition-question.md** —
+    UNCLEAR, question. `(x & 0) + 3` with indeterminate `x` is
+    `UB036_exceptional_condition` at the `+` (translation.lem:2165-2171's
+    signed catch-all "since the addition may overflow") while the `&`
+    yields `Unspecified`; asks which reading (§6.3.2.1#2 UB at the read,
+    or propagating unspecified values) is intended.
+34. **34-aligned-alloc-zero-alignment-division-by-zero.md** — TRUE BUG
+    (tool crash). `aligned_alloc(0, n)`: std.core:385 evaluates `size
+    rem_t align` with no alignment check; `Concrete.op_ival IntRem_t` is
+    `Z.rem` (impl_mem.ml:11, :2481-2482), unguarded where `IntDiv`
+    (:2479-2480) is guarded — uncaught `Division_by_zero`, exit 125, on
+    both oracles. Remedy: validate `align` in the proxy (C17: NULL) AND
+    make Core `rem_t`/`rem_f` by zero a UB verdict. Found by the 2026-09-03
+    memory-model seam audit (`docs/2026-09-04_zero-discrepancy-Z2-record.md`
+    §2.1/§10.1; our port's total remainder diverges here and the divergence
+    is held open pending the meaning being fixed upstream).
+35. **35-pp-core-grammar-mismatches.md** — item 1 TRUE BUG (parser:
+    `core_parser.mly:767-774` drops `seq_rmw`'s second operand on
+    symbolification — re-reading a dump of `x++` turns the pointer into a
+    dangling `case` expression; C-reachable witness verbatim); items 2-4
+    TRUE BUG conditional on round-trip intent (as 02/03): the printer
+    spells `Cfvfromint`/`Civfromfloat` (lexer: `Fvfromint`/`Ivfromfloat`;
+    29 occurrences in the oracle's own libc dump), `wrapI_div`/`wrapI_rem_t`
+    (not lexer keywords), `pcall(f, )`, `builtin f (bTys)` without `: eff`,
+    `PtrMemberShift[s, m]` without the dot. Found by the 2026-09-03 Core
+    text-parser seam audit (`docs/2026-09-03_zero-discrepancy-Z2-audit.md`
+    §2.14, rows CP-09/10/15/21). Also notes a parser assertion failure on
+    a user-file `builtin` declaration (core_parser.mly:961).
+
+Amended 2026-09-05: draft 10 gains an addendum for the STRING-LITERAL
+form of `\?` (`"\?"` reaches the same decoder from translation.ml:3029;
+`tests/noodle-probes/ptr/ptr_string_literals.c`, upstream exit 125
+verbatim; gcc and our port agree byte for byte) — the one-arm remedy
+covers both entry points.
+
 ## Filed / duplicate-search status (2026-08-23, read-only gh session)
 
 - **01 → FILED as issues/1009** (operator, 2026-08-19, open). Also filed
@@ -260,6 +391,11 @@ reproduced on deps/cerberus-upstream @ b9aeedcb4 and on the fork; record
   on current master.
 - Caveat: GitHub search is text-match; a very differently-worded
   duplicate could hide. Re-run step (2) at actual filing time.
+- **Drafts 15–35 and lean4/02 have NOT been duplicate-searched** (no
+  network window since 2026-08-23); step (2) is mandatory for each at
+  filing time. Likely neighbours to check: anything on `size_t`/integer
+  rank (20), `aligned_alloc` (34), `atexit`/stdio flushing (24/25),
+  `printf` format checking (26/27), and the Core parser (35).
 
 ## Near-at-hand audit around the PR branches (2026-08-23)
 
@@ -344,8 +480,14 @@ everything filed from this tray:
 
 ## Filing checklist (operator; needs network + GitHub)
 
-For each draft, in ranking order (10, 11, 12, 13, 14, 15, 16, 19, 18, 08, 09,
-17, 02, 03, 04, 05, 06; 07 on request; 01 done — 17 and 18 slotted
+For each draft, in ranking order (10, 11, 12, 13, 14, 15, 16, 20, 23, 22,
+24, 25, 27, 28, 30, 26, 34, 19, 18, 08, 09, 29, 31 [ON HOLD, see above],
+17, 02, 03, 35, 04, 05, 32, 21, 33, 06; 07 on request; 01 done — 20–35
+slotted 2026-09-05 [AGENT]: the silent-wrong-value bugs on common idioms
+(20, 23, 22, 24, 25, 27, 28, 30) and the two crashes on legal input (26,
+34) with the true-bug tier ahead of the Core-level 19; 29 and 31 with the
+minor true bugs; 35 with the pp-round-trip pair 02/03; 32 (intended gap)
+and the two questions 21/33 with the question tier; 17 and 18 slotted
 2026-09-02 [AGENT]: 18 (true bug, robustness) with the true-bug tier,
 17 (minor, diagnostic quality) with the minor tier; 19 slotted 2026-09-03
 [AGENT] with the true-bug tier after 16 — a soundness gap, but Core-level

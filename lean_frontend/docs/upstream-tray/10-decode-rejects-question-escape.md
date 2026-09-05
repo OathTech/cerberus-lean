@@ -86,3 +86,35 @@ native execution sides with the Lean semantics against the OCaml
 oracle, by instrument rather than by hand. Record:
 `lean_frontend/docs/2026-08-30_gcc-oracle-lane-record.md` (headline
 run, "mechanical referee" bullet).]
+
+## Addendum (2026-09-05): the string-literal form `"\?"` reaches the same decoder and crashes the same way
+
+The character-constant form above is one of two entry points into
+`decode_character_constant`; string literals are decoded by the same
+function from the elaboration (`ocaml_frontend/generated/translation.ml:3029`
+on master @ `b9aeedcb4`, `translate_expression`'s string-literal arm), so
+`"\?"` inside a string literal crashes the tool identically. Reproducer
+`tests/noodle-probes/ptr/ptr_string_literals.c` in our tree (string-literal
+concatenation and escapes, incl. `const char *e = "\n\t\\\"\'\?";`):
+
+```
+$ cerberus --nolibc --exec --batch --mode=exhaustive ptr_string_literals.c   # exit 125
+cerberus: internal error, uncaught exception:
+          Failure("decode_character_constant, started like an octal constant, but failed: ?")
+          Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+          Called from Cerb_frontend__Decode.decode_character_constant in file "ocaml_frontend/decode.ml", line 218, characters 8-43
+          Called from Cerb_frontend__Translation.translate_expression.(fun) in file "ocaml_frontend/generated/translation.ml", line 3029, characters 37-77
+```
+
+(verbatim head, 2026-09-05, un-forked upstream binary + runtime @
+`b9aeedcb4`; the fork's oracle at `928aa1e76` fails identically, at
+`translation.ml:3032` in its own generated file.)
+
+```
+$ gcc -std=c11 -O0 ptr_string_literals.c && ./a.out
+98 65 66 4 83 52 3 10 9 92 34 39 63 0 4
+```
+
+(gcc 13.3.0; verbatim 2026-09-05. Our Lean port, which decodes `\?` as
+63, prints the same line byte for byte.) The one-arm remedy above fixes
+both entry points, since they share the decoder.

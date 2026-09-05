@@ -55,7 +55,9 @@ instead of crashing the tool (draft 10; gcc agrees); `snprintf("%c",
 127)` stores 127 rather than 87 (draft 11; gcc agrees); and `memcmp`
 with a huge size reports the out-of-bounds read as undefined behaviour
 instead of dying on an integer-conversion exception (draft 13; the
-program is UB, so there is no native answer to compare). Each entry is
+program is UB, so there is no native answer to compare — this entry is
+admitted on the ground that an exception raised by the host language's
+integer conversion is not part of the semantics being implemented). Each entry is
 recorded in our test baseline as a Lean-differs-from-upstream pair;
 when upstream fixes the defect the pair flips to agreement and the
 entry is retired.
@@ -104,7 +106,10 @@ cerberus --exec --batch prog.c              # with the shipped libc (snprintf, m
 ```
 
 and, where gcc is used as the independent reference,
-`gcc -std=c11 prog.c && ./a.out; echo $?`.
+`gcc -std=c11 prog.c && ./a.out; echo $?`. Draft 35 (and 02/03) also use
+the Core text form: `cerberus --nolibc --pp=core prog.c > prog.core` to
+print the elaborated Core, and `cerberus --nolibc --exec --batch
+prog.core` (or `--pp=core prog.core`) to read a `.core` file back.
 
 ## 4. Triage table
 
@@ -123,20 +128,37 @@ questions. "PR" names the branch on this repository that carries a fix
 | 14 | Core stdlib `ailname` proxies hijack a program's own `read`/`write`/`open`… | TRUE BUG | legal program refused / spurious UB | — |
 | 15 | float→`_Bool` truncates before the compare-to-zero test; non-finite crashes | TRUE BUG | silent wrong value; crash | — |
 | 16 | `snprintf` returns the truncated length, not the would-have-been length | TRUE BUG | silent wrong value | — |
+| 20 | `size_t` has no integer conversion rank: arithmetic with `int`-family operands is done at 32 bits | TRUE BUG | silent wrong value and control flow | — |
+| 23 | string literal initialising a `char`-array element/member rejected (`char a[2][3] = {"ab","cd"}`) | TRUE BUG | legal program rejected | — |
+| 22 | pointer difference over pointers to arrays divides by the inner element size | TRUE BUG | silent wrong value | — |
+| 24 | `FILE`-buffered stdout never flushed at termination (return from `main`, `exit()`) | TRUE BUG | silent lost output | — |
+| 25 | `atexit` handlers not run on return from `main` | TRUE BUG | silent missing side effects | — |
+| 27 | `%x`/`%X`/`%o` with an `int` argument reported as UB153b | TRUE BUG (over-strict) | false UB verdict | — |
+| 28 | `?:` in a static initialiser rejected as non-constant | TRUE BUG | legal program rejected | — |
+| 30 | `strncmp(s1, s2, 0)` compares one character | TRUE BUG | silent wrong value | — |
+| 26 | `printf("%*d", …)`: `*` width parsed, then uncaught `Failure("TODO: formatted.lem 6")` | TRUE BUG | tool crash on legal input | — |
+| 34 | `aligned_alloc(0, n)`: Core `rem_t` by zero → uncaught `Division_by_zero` | TRUE BUG | tool crash (invalid argument) | — |
 | 18 | non-tail monadic list combinators: stack depth ∝ aggregate size | TRUE BUG | robustness (resource) | — |
 | 08 | nested braced initializers desugar to `AilEinvalid`; uncaught internal error | TRUE BUG | tool crash on legal input | — |
 | 09 | `&arr[i].field` address constant rejected in a static initializer | TRUE BUG | legal program rejected | — |
+| 29 | `"hello" + 1` not accepted as an address constant in a static initializer | TRUE BUG | legal program rejected | — |
+| 31 | `calloc` has no `nmemb * size` overflow check (ON HOLD before filing — see INDEX.md) | TRUE BUG (minor) | wrong value on overflow | — |
 | 17 | unknown-procedure diagnostic embeds the raw fresh-symbol id | TRUE BUG (minor) | diagnostic quality | — |
 | 02 | `--pp core` prints bodyless `proc` decls the grammar rejects; `Cfunction(f)` re-parses as NULL | TRUE BUG (if round-trip is intended) | reload fails / silent wrong value | pp-roundtrip |
 | 03 | `--pp core` output re-parses to a different tree (`if` operands, `;`-sequences) | TRUE BUG (same condition) | silent wrong tree on reload | pp-roundtrip |
+| 35 | Core parser drops `seq_rmw`'s pointer operand (parser bug); printer spellings the grammar rejects (`Cfvfromint`, `wrapI_div`, `pcall(f, )`, `builtin …`, `PtrMemberShift[s, m]`) | TRUE BUG / TRUE BUG (same condition) | silent wrong tree on reload / reload fails | — |
 | 04 | `p + 1` on a null pointer: uncaught `Failure("TODO…")` instead of a UB verdict | INTENDED GAP | tool crash (UB input) | — |
 | 05 | `va_arg` performs no type-compatibility check (acknowledged TODO); the gap is observable | INTENDED GAP | missed UB verdict | — |
+| 32 | `float` represented/evaluated as `double` (`TODO:hack`, `sizeof(float) == 8`) while `<float.h>` says `FLT_MANT_DIG 24` | INTENDED GAP + inconsistency | no single-precision rounding; wrong `<float.h>` facts | — |
+| 21 | provenance dropped by every integer arithmetic operator under the default PVI model (`(int*)((uintptr_t)p + 4)` is UB043) | TRUE BUG vs intent / UNCLEAR | question (false UB on a PVI idiom) | — |
+| 33 | unspecified operand of signed `+` classified as `UB036_exceptional_condition` | UNCLEAR | question | — |
 | 06 | `funinfo.has_proto` differs between declaration and definition entries; its runtime uses look dead | UNCLEAR | question | — |
 | 07 | symbol identity rests on an implicit shared-counter invariant; equality ignores names | UNCLEAR | question (for the record) | — |
 
-Not for you: `lean4/01-stack-overflow-handler-deadlock.md` targets the
-Lean 4 runtime (a stack-overflow handler that deadlocks instead of
-aborting), and `lem/` targets Lem (section 6).
+Not for you: `lean4/01-stack-overflow-handler-deadlock.md` and
+`lean4/02-nat-div-mod-literal-folding.md` target Lean 4 (the runtime's
+stack-overflow handler; `Nat.div`/`Nat.mod` literal folding), and `lem/`
+targets Lem (section 6).
 
 ## 5. The three patch branches
 
@@ -211,7 +233,7 @@ directory). Nothing else has been submitted.
   upstream issue tracker on 2026-08-23 (issues and PRs, open and
   closed, several keyword variants each): no duplicates found. Related
   but distinct: #154 (escape-sequence value semantics, same code region
-  as 10/11) and #370 (closed lexer crash on `\e`). Drafts 15–18 have
+  as 10/11) and #370 (closed lexer crash on `\e`). Drafts 15–35 have
   not been searched; a differently-worded duplicate could exist for
   any of them.
 - **Per-draft evidence limits**, as recorded in INDEX.md: draft 01
@@ -223,34 +245,49 @@ directory). Nothing else has been submitted.
   so unmodified upstream has not been shown to misbehave — the draft
   is a design question, not a defect claim.
 
-## 9. What is coming
+## 9. Added 2026-09-05 (the drafts announced here earlier are done)
 
-About fifteen further drafts are in preparation from the current
-audit pass; they are not yet filed and will be added to INDEX.md as
-they are finished. Topics, one line each:
+The fifteen drafts announced in the previous version of this section are
+now in INDEX.md (its "Added 2026-09-05" block) and in the triage table
+above. Pointers, one line each:
 
-- the `dynamic_addrs` set in the concrete model is never cleaned in
-  `kill`, so a zero-size allocation at a live object's base lets
-  `free` of that object pass (Core-level reproducer; already drafted
-  on a development branch);
-- `size_t` gets the wrong integer rank in the usual arithmetic
-  conversions, so arithmetic is done at 32 bits;
-- pointer difference strips an array layer when scaling;
-- string-literal initialisation of `char` array members;
-- stdio buffers not flushed at exit;
-- `atexit` handlers not run when `main` returns;
-- `printf("%*d", …)` crashes the tool;
-- `printf("%x", int)` reported as undefined behaviour (over-strict);
-- `?:` rejected in a static initialiser;
-- a string-literal address constant (with offset) rejected;
-- `strncmp` with `n = 0`;
-- `calloc` size-overflow check;
-- `float` arithmetic evaluated at `double` precision (a literal `TODO`
-  in the code, but inconsistent with the shipped `FLT_MANT_DIG`);
-- provenance lost through integer round-trips (a question against the
-  PVI model), and an unspecified-value question;
-- `aligned_alloc(0, n)` dies on an uncaught `Division_by_zero` from
-  `rem_t` in the Core stdlib proxy (from the memory-model seam audit).
+- `19-dynamic-addrs-never-cleaned.md` — the `dynamic_addrs` set never
+  cleaned in `kill` (Core-level reproducer);
+- `20-size-t-integer-rank-uac.md` — `size_t` has no integer conversion
+  rank, arithmetic at 32 bits;
+- `22-ptrdiff-strips-array-layer.md` — pointer difference strips an array
+  layer;
+- `23-string-literal-init-of-char-array-members.md` — string-literal
+  initialisation of `char`-array members/elements;
+- `24-stdio-buffer-not-flushed-at-exit.md` — stdio buffers not flushed at
+  termination;
+- `25-atexit-not-run-on-main-return.md` — `atexit` handlers not run when
+  `main` returns;
+- `26-printf-star-width-crash.md` — `printf("%*d", …)` crashes the tool;
+- `27-printf-hex-int-argument-ub153b.md` — `printf("%x", int)` reported
+  as UB (over-strict);
+- `28-conditional-in-static-initializer.md` — `?:` rejected in a static
+  initialiser;
+- `29-string-literal-address-constant.md` — string-literal address
+  constant with offset rejected;
+- `30-strncmp-zero-length.md` — `strncmp` with `n = 0`;
+- `31-calloc-overflow-check.md` — `calloc` size-overflow check (held for
+  a second look before filing, see INDEX.md);
+- `32-float-evaluated-as-double.md` — `float` evaluated at `double`
+  precision; inconsistent `FLT_MANT_DIG`;
+- `21-provenance-lost-through-arithmetic-pvi.md` — provenance lost
+  through integer arithmetic (question against the PVI model);
+- `33-unspecified-operand-exceptional-condition-question.md` — the
+  unspecified-value question;
+- `34-aligned-alloc-zero-alignment-division-by-zero.md` —
+  `aligned_alloc(0, n)` dies on an uncaught `Division_by_zero`;
+- and, not announced: `35-pp-core-grammar-mismatches.md` (four more
+  `--pp core` ↔ parser mismatches, one a parser bug), an addendum to
+  draft 10 (the string-literal form of `\?`), and `lean4/02` (a Lean 4
+  question, not for you).
+
+Nothing further is in preparation from that audit pass; new drafts, if
+any, will again be announced in INDEX.md first.
 
 ## 10. How to respond
 
