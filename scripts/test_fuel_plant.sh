@@ -48,7 +48,12 @@ exit 1
 EOS
 cat > "$WORK/stub_words" <<'EOS'
 #!/bin/sh
-echo 'Defined {value: "Specified(0)", stdout: "lem: fuel exhausted\n", stderr: "", blocked: "false"}'
+# printf '%s', not echo: dash's echo turns the escaped "\n" inside the
+# stdout field into a real newline, splitting the Defined line in two —
+# the whole-line extractor (P0 F3, 2026-09-05) correctly refuses a
+# truncated Defined line (HARNESS ERROR), so the stub must emit the
+# line exactly as the driver does: one line, escapes kept literal.
+printf '%s\n' 'Defined {value: "Specified(0)", stdout: "lem: fuel exhausted\n", stderr: "", blocked: "false"}'
 exit 0
 EOS
 chmod +x "$WORK"/stub_*

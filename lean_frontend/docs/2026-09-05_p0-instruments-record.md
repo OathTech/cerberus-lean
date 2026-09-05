@@ -398,3 +398,34 @@ and gate-list entries for the classifier, the fork-drift gate's fail-closed
 prerequisites via the test_unit text, and the new extractor selftest),
 `scripts/test_unit.sh` comments, `lean_frontend/TODO.md` (the escaping
 finding). No `.lem`, no semantics, no baseline file changed.
+
+## F3.7 Orchestrator boundary finding: the `test_fuel_plant.sh` words stub (fixed here)
+
+The orchestrator's independent full battery on `caa03c9bf` returned
+`test_fuel_plant.sh` rc=1 — the one lane the slice did not run:
+
+```
+PLANT FAIL [exec/words is a verdict row]: expected /^\[1/1\] (MATCH|MISMATCH|LEAN_ERROR) 001-return-literal/; got:
+…
+HARNESS ERROR: Lean verdict pattern matched but no tokens extracted for 001-return-literal
+```
+
+Cause (measured): the `stub_words` plant is a `#!/bin/sh` script using
+`echo` on a line containing the escaped `\n` of the stdout field;
+`/bin/sh` is dash (`readlink -f /bin/sh` → `/usr/bin/dash`), whose `echo`
+interprets `\n` (`sh -c 'echo "a\nb"' | wc -l` → 2), so the stub emitted
+the Defined line SPLIT over two lines. The pre-repair value-only extractor
+matched the first fragment and never noticed; the whole-line extractor
+refuses a truncated Defined line (plant E7) and the harness fails closed.
+A plant defect, not an extractor defect: the real drivers escape and
+never emit a raw newline inside a verdict line. Fix: the stub uses
+`printf '%s\n'`. Re-run (env.sh sourced, this worktree):
+
+```
+PLANT OK   [exec/words no FUEL row]: no /^\[1/1\] FUEL /
+PLANT OK   [exec/words is a verdict row]: [1/1] MISMATCH 001-return-literal: Lean=VAL:{value: "Specified(0)", stdout: "lem: fuel exhausted\n", stderr: "", blocked: "false"} Cerberus=VAL:{value: "Specified(42)", stdout: "", stderr: "", blocked
+test_fuel_plant: ALL PLANTS OK (FUEL classification live in exec/gcc/ci_sweep/cn_coverage/measure; negatives not FUEL; the real driver at --fuel 1 reads FUEL and at the default MATCH; --fuel 0/non-numeral/out-of-position/missing refused)
+```
+
+(The words row is now a MISMATCH on the stdout field — the widened
+comparison at work; before, the same two lines compared MATCH-by-value.)
