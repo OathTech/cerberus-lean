@@ -109,6 +109,7 @@ Each is a `[[lean_exe]]` in `lakefile.toml` that exits 0 on pass.
 Current unit tests:
 - `effects-proof-test` / `totality-proof-test` — compile-time checks on the exec cone, as it is today: every fuel'd wrapper is FUEL-PARAMETRIC (`@f ⟨n⟩ = f_lemFuel n` for every `n`, by rfl — the fuel-parameter arc; no default constant exists), symbolic equations hold on the total layout/typing defs, and `tagDefs` is an honest reader parameter (no hidden extern read) — i.e. totality + reader lifting, properties of this port checked by the build (not a verification layer; exe names kept for build stability)
 - `fuel-exemplar-test` — the consumer-shaped ∀-fuel theorem over the shipped pipeline `@drive ⟨fuel⟩` (test/Unit/FuelExemplar.lean)
+- `fuel-forms-tool` (not a pass/fail exe: the INSTRUMENT of `scripts/check_fuel_forms.sh`) — `test/Unit/FuelFormsTool.lean` imports the compiled environment at runtime and classifies every fuel'd worker MEASURED/ABSORBING/AMBIENT with its drive-cone reachability (C2)
 - `core-parser-test` — 280 tests for `CoreParser.lean`
 - `fresh-int-test` — verifies `fresh_int`/`Symbol.fresh` generate unique values (+ the native-obj fresh-counter floor probe)
 - `pp-test` — arc-10 S3: pretty-printer mirrors (ctype/value shapes + float formatting vs an OCaml 5.4.0 reference transcript, in-file)
@@ -122,7 +123,10 @@ allowlist), `check_no_fuel_numerals.sh` (fuel-parameter arc: no fuel
 numeral in seams/generated/test/speclab except Main.lean's `--fuel`
 default; F1–F6 plant-tested by its --selftest), `check_lakefile_roots.sh`
 (every generated module, `_auxiliary` obligation carriers included, is a
-Lake root; plant-tested), the lem-sync content-hash gate,
+Lake root; plant-tested), `check_fuel_forms.sh` (C2: the (A)/(B)/(C)
+fuel-forms gate — every fuel'd worker measured, absorbing, unreachable
+from the drive cone, or a reviewed row of `scripts/fuel_forms_pending.txt`;
+five plants), the lem-sync content-hash gate,
 `check_fork_drift.sh` (arc-10 audit follow-up, [USER] mandate: the
 oracle surface must equal the reviewed manifest
 `scripts/fork_drift_manifest.txt`, and the generated-OCaml
@@ -237,7 +241,9 @@ a binary built from the old copy.
 | `CerbStepInstances.lean` | OCaml-poly-eq-parity instances for core_step2 (arc 4) |
 | `CerbLocation.lean` | Source location type; structural lawful Ord (arc-14 F4; was repr-string compare) |
 | `CerberusFresh.lean` | Fresh symbol/digest generation |
-| `Ctype_lemMeasureProofs.lean`, `Core_lemMeasureProofs.lean`, `Defacto_memory_aux_lemMeasureProofs.lean` | The `fuel_measure` sufficiency proofs the generated `*_auxiliary.lean` obligation shells import (fuel-parameter arc C1 / D2 enablers; one module per lem module with measured functions — the build fails without them, by design). Template: lem-lean `tests/comprehensive/lean-test/Test_lem_size_lemMeasureProofs.lean`; kernel-only tactics, no option bumps |
+| `Ctype_lemMeasureProofs.lean`, `Core_lemMeasureProofs.lean`, `Defacto_memory_aux_lemMeasureProofs.lean`, `Utils_…`, `Core_run_aux_…`, `Core_reduction_…`, `Defacto_memory_…`, `Core_aux_…`, `Core_eval_lemMeasureProofs.lean` | The `fuel_measure` sufficiency proofs the generated `*_auxiliary.lean` obligation shells import (fuel-parameter arc C1/C2; one module per lem module with measured functions — the build fails without them, by design; 38 generated obligations). Template: the C2 record §4 / `Core_run_aux_lemMeasureProofs.lean` (strong induction on the derived size, `key` + `size_lt`, `split` for multi-discriminant matches, `to_congr` for list traversals); kernel-only tactics, no option bumps |
+| `CerbMeasureLemmas.lean` | The shared toolbox of those proofs: membership-relative congruences, the derived list helpers' member bounds, positivity, `unatomic_size_le`, the `size_lt` discharger and the bounded `to_congr` descent (C2) |
+| `CerbMem_lemMeasureProofs.lean` | The hand-written MEASURED seams' sufficiency theorems (`CerbMem.typeofMval/unqualifyAndUnatomic/memValueToBytes_measure_sufficient`, same shape and namespace rule as the generated ones — the fuel-forms gate classifies them by the same rule) |
 | `Main.lean` | Driver: self-test, parse, desugar pipeline; `--fuel N` (the ONE fuel numeral: `defaultFuel` = 10^8, the harness default; the run's `[LemFuel]` instance is built once here) |
 
 ### Lem modifications (in `frontend/model/`)

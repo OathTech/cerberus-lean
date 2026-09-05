@@ -17,6 +17,36 @@ downstream.)
   `docs/2026-08-31_semantics-forward-assessment.md` (the F-axes);
   deliberately parked behind the substantive track.
 
+## Fuel-parameter arc — C2 follow-ups (record `docs/2026-09-04_fuel-parameter-C2-record.md` §9)
+
+- **Point-free `function` tails (6 PENDING rows; lem-lean TODO 17)** —
+  `are_compatible`/`are_compatible_params_aux`/`are_compatible_params`
+  (ail), `one_step_unseq_aux`, `get_ctx`/`get_ctx_unseq_aux`: when the
+  Lean-only eta-expansion lands in lem, add the six `fuel_measure` declares
+  (`lemSize` of the named list/ctype) + proofs in `AilTypesAux_lemMeasureProofs`
+  / `Core_reduction_lemMeasureProofs` and delete their register rows
+  (`scripts/fuel_forms_pending.txt` — the gate fails closed on a stale
+  row). M.
+- **Tag-lookup family (9 PENDING rows: the `CerbMem` layout oracle ×5,
+  `reconstructValue`, `ctype_aux` `are_compatible_aux` + 2) — D-C2-1** —
+  needs a tag-environment well-formedness hypothesis the unconditional
+  obligation cannot carry; operator decision between hypothesis-carrying
+  measured forms (new lem/seam vocabulary), a structural re-totalization of
+  the hand-written oracle, or the consumer carrying a depth hypothesis. M–L.
+- **`to_pure`/`to_pures`, `showNonNegativeWithBasis_aux` (D-C2-3/6)** —
+  provable once `failwithI`/`lemDivByZero` are transparent-to-default (the
+  typed-failure pass, `docs/2026-09-03_typed-failure-outcomes-ruling.md`);
+  the measures are `lemSize g` / `generic_expr_.lemSize_aux2 l + 1` /
+  `n + 1`. S each, after that pass.
+- **`hack`, `many`/`many1` (D-C2-4/5)** — no absorbing element and no
+  parameter measure; a lem body change or a hypothesis. Operator.
+- **Fuel monotonicity for the 13 (B) rows (lem TODO 13)** — per-function
+  `done at n ⇒ done at every m ≥ n`, provable by induction on the counter
+  now that every reachable (B) payload is absorbing; not generated. M.
+- **The defacto memory model is unreachable from `drive` (F-C2-4)** — 12
+  fuel'd rows (9 measured) are dead code for the exec pipeline; decide
+  whether they leave the exec-cone module lists (D-C2-7). S.
+
 ## Small items (independent; can ride along with any fix batch)
 
 - **core_linking.lem's dangling `set_fold` declare (S)** — registered
