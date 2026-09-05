@@ -109,7 +109,7 @@ Each is a `[[lean_exe]]` in `lakefile.toml` that exits 0 on pass.
 Current unit tests:
 - `effects-proof-test` / `totality-proof-test` — compile-time checks on the exec cone, as it is today: every fuel'd wrapper is FUEL-PARAMETRIC (`@f ⟨n⟩ = f_lemFuel n` for every `n`, by rfl — the fuel-parameter arc; no default constant exists), symbolic equations hold on the total layout/typing defs, and `tagDefs` is an honest reader parameter (no hidden extern read) — i.e. totality + reader lifting, properties of this port checked by the build (not a verification layer; exe names kept for build stability)
 - `fuel-exemplar-test` — the consumer-shaped ∀-fuel theorem over the shipped pipeline `@drive ⟨fuel⟩` (test/Unit/FuelExemplar.lean)
-- `fuel-forms-tool` (not a pass/fail exe: the INSTRUMENT of `scripts/check_fuel_forms.sh`) — `test/Unit/FuelFormsTool.lean` imports the compiled environment at runtime and classifies every fuel'd worker MEASURED/ABSORBING/AMBIENT with its drive-cone reachability (C2)
+- `fuel-forms-tool` (not a pass/fail exe: the INSTRUMENT of `scripts/check_fuel_forms.sh`) — `test/Unit/FuelFormsTool.lean` imports the compiled environment at runtime and classifies every fuel'd worker MEASURED/ABSORBING/AMBIENT with its drive-cone reachability (C2; P0 2026-09-05: MEASURED checks the argument correspondence against the wrapper's own body in MetaM, ABSORBING = "kill at zero" checks the `_zero` lemma's left-hand side and cone)
 - `core-parser-test` — 280 tests for `CoreParser.lean`
 - `fresh-int-test` — verifies `fresh_int`/`Symbol.fresh` generate unique values (+ the native-obj fresh-counter floor probe)
 - `pp-test` — arc-10 S3: pretty-printer mirrors (ctype/value shapes + float formatting vs an OCaml 5.4.0 reference transcript, in-file)
@@ -124,13 +124,20 @@ numeral in seams/generated/test/speclab except Main.lean's `--fuel`
 default; F1–F6 plant-tested by its --selftest), `check_lakefile_roots.sh`
 (every generated module, `_auxiliary` obligation carriers included, is a
 Lake root; plant-tested), `check_fuel_forms.sh` (C2: the (A)/(B)/(C)
-fuel-forms gate — every fuel'd worker measured, absorbing, unreachable
-from the drive cone, or a reviewed row of `scripts/fuel_forms_pending.txt`;
-C4: a worker measured UNDER A HYPOTHESIS (lem `assuming`, the `lemHyp`
-binder) must equal a row of the reviewed register `scripts/fuel_hypotheses.txt`,
-both directions; twelve plants incl. four compiled decoy obligations — one
-under a contradictory hypothesis caught by the register, one with an extra
-Prop binder caught by the shape check), the lem-sync content-hash gate,
+fuel-forms gate — every fuel'd worker measured, absorbing (= kill at zero;
+propagation not proved, lem TODO 13), unreachable from the drive cone, or a
+reviewed row of `scripts/fuel_forms_pending.txt`; C4: a worker measured
+UNDER A HYPOTHESIS (lem `assuming`, the `lemHyp` binder) must equal a row of
+the reviewed register `scripts/fuel_hypotheses.txt`, both directions; P0
+2026-09-05 (whole-project audit F2): a MEASURED obligation must pass the
+worker to the wrapper's own inputs — the wrapper's body is unfolded and its
+worker call compared argument by argument, with the hypothesis' μ at the
+fuel position — and an ABSORBING `_zero` lemma must state THE worker at
+literal 0 on its own binders; 24 plants incl. 15 compiled decoys — the
+audit's two verbatim, wrong fuel position, swapped arguments, changed
+measure, wrapper calling another worker, hidden premise, contradictory
+hypothesis caught by the register, extra Prop binder, three `_zero`
+decoys), the lem-sync content-hash gate,
 `check_fork_drift.sh` (arc-10 audit follow-up, [USER] mandate: the
 oracle surface must equal the reviewed manifest
 `scripts/fork_drift_manifest.txt`, and the generated-OCaml

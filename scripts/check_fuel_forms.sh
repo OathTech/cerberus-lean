@@ -12,8 +12,16 @@
 #                = wrapper …, heads compared by constant name — audit M1; the fuel
 #                binder pinned by its NAME `lemFuel` and the optional hypothesis by
 #                its reserved NAME `lemHyp` immediately before it — lem audit N1 /
-#                C4; a same-named constant of another type is MALFORMED and RED
-#                here); this script additionally requires the reported axiom cones
+#                C4; and — P0 audit F2, 2026-09-05 — the ARGUMENT CORRESPONDENCE:
+#                the wrapper side is the wrapper on exactly the statement's
+#                binders in order, the worker side passes `lemFuel` once at the
+#                worker's own `lemFuel` parameter and otherwise only the
+#                wrapper's input binders, and the WRAPPER'S OWN BODY unfolds on
+#                those binders to the worker on those very arguments with the
+#                hypothesis' μ at the fuel position — so the audit's decoy
+#                `review_shift_lemFuel lemFuel 0 = review_shift x` is rejected
+#                for its literal `0`; a same-named constant of another shape is
+#                MALFORMED and RED here); this script additionally requires the reported axiom cones
 #                (obligation AND proof) to be ⊆ [propext, Classical.choice, Quot.sound],
 #                AND, for every row measured UNDER A HYPOTHESIS (the tool's `hyp`
 #                column = the `lemHyp` binder's type, pretty-printed), a row of the
@@ -25,11 +33,20 @@
 #                (`b < b`, `x ≠ x`) passes generation and makes the obligation
 #                vacuously provable while the fuel-free wrapper ships MEASURED;
 #                satisfiability is undecidable at the gate, so the register is the
-#                closure — --selftest's P10 compiles exactly such a decoy and shows
-#                the register turning it RED;
-#   ABSORBING  — its `_zero` lemma's RHS is the monad's absorbing element at the
-#                fuel atom (ND kill / runner Killed / undefined-monad Error) with
-#                no value sentinel;
+#                closure — --selftest's P10 compiles exactly such a decoy (the real
+#                CerbMem.alignofCtype obligation under `cty ≠ cty`) and shows the
+#                register turning it RED;
+#   ABSORBING  — "kill at zero" (P0 relabel, 2026-09-05: propagation of exhaustion
+#                through the successor cases is NOT proved — lem-lean TODO row 13,
+#                fuel monotonicity): its `_zero` lemma states the WORKER (left-hand
+#                head by name) at the literal fuel 0 on its own binders (each once;
+#                P0 audit F2 — the audit's decoy `review_bad_lemFuel_zero` stated a
+#                fact about CerbND.runNDFuel and was counted ABSORBING), and the
+#                RHS is the monad's absorbing element at the fuel atom (ND kill /
+#                runner Killed / undefined-monad Error) with no value sentinel;
+#                this script additionally requires the lemma's axiom cone ⊆ the
+#                standard three (same standard as MEASURED). A same-named lemma of
+#                another shape is MALFORMED-ZERO and RED;
 #   AMBIENT    — neither; RED iff reachable from the drive cone (kernel constant
 #                closure of drive/initial_driver_state/the CerbND runners/
 #                CerbCall.driveCall, closed under mutual blocks) and NOT a row of
@@ -40,14 +57,18 @@
 # summary line present, and the four forms PARTITION the table (their counts
 # sum to the worker count — audit M2). `--selftest` plants on a scratch copy
 # of the table (a new reachable ambient worker, a stale pending pin, a
-# measured obligation with a bad axiom cone, a truncated table, a phantom
-# pending-register row), on a scratch copy of the HYPOTHESIS register (a
-# measured-under-hypothesis worker whose row is deleted; a stale row; a row
-# without a `.lem:` cite), and COMPILES three decoy obligations in a scratch
-# dir outside the tree (right name / type True; right shape / wrong worker
-# constant; right shape under the CONTRADICTORY hypothesis `env1 ≠ env1`) —
-# the first two the tool must refuse to count as MEASURED, the third it
-# counts MEASURED and the REGISTER must turn RED. Nothing in the tree is touched. The
+# measured obligation with a bad axiom cone, an ABSORBING lemma with a bad
+# cone, a truncated table, a phantom pending-register row), on a scratch copy
+# of the HYPOTHESIS register (a measured-under-hypothesis worker whose row is
+# deleted; a stale row; a row without a `.lem:` cite), and COMPILES decoy
+# modules in a scratch dir outside the tree: the C4 four (right name / type
+# True; right shape / wrong worker constant; a real obligation restated under
+# the CONTRADICTORY hypothesis `cty ≠ cty` — counted MEASURED, the REGISTER
+# turns RED; a decoy of a real obligation with an extra Prop binder) and the
+# P0 audit-F2 battery (the audit's two decoys verbatim, wrong fuel position,
+# swapped arguments either side, changed measure, wrapper calling another
+# worker, hidden premise, three _zero decoys incl. a POSITIVE control) — every
+# decoy's table row must carry ITS OWN rejection message. Nothing in the tree is touched. The
 # tool itself fails closed if an entry constant is missing or the table is
 # vacuous. Reachability is the KERNEL constant closure: it stops at
 # opaque/implemented_by/extern seams — the population of those is pinned by
@@ -101,15 +122,27 @@ policy() {
   if [[ -n "$badax" ]]; then
     echo "check_fuel_forms: FAIL — measured obligation(s) with an axiom cone outside [propext, Classical.choice, Quot.sound] (or no proof constant):"; echo "$badax" | sed 's/^/  /'; rc=1
   fi
+  # ABSORBING rows: the _zero lemma's cone, same standard (P0 audit F2)
+  local badzax
+  badzax=$(awk -F'\t' '$1=="FUEL_FORM" && $3=="ABSORBING" && $5 !~ /axioms=ok/ {print $2" :: "$5}' "$tbl" | sort -u)
+  if [[ -n "$badzax" ]]; then
+    echo "check_fuel_forms: FAIL — ABSORBING _zero lemma(s) with an axiom cone outside [propext, Classical.choice, Quot.sound] (or no cone reported):"; echo "$badzax" | sed 's/^/  /'; rc=1
+  fi
   # (A delegated `proof=` constant is reported where one exists — the generated
   # obligations delegate to <Module>_lemMeasureProofs — but is not required: the
   # hand-written seam obligations in CerbMem_lemMeasureProofs ARE their own
   # proof, and the obligation's axiom cone covers its proof transitively.)
   # M1: a same-named constant that is NOT the contract's statement
   local malformed
-  malformed=$(awk -F'\t' '$1=="FUEL_FORM" && $5 ~ /^MALFORMED/ {print $2" :: "$5}' "$tbl")
+  malformed=$(awk -F'\t' '$1=="FUEL_FORM" && $5 ~ /^MALFORMED obligation/ {print $2" :: "$5}' "$tbl")
   if [[ -n "$malformed" ]]; then
-    echo "check_fuel_forms: FAIL — obligation(s) named <f>_measure_sufficient whose TYPE is not the contract's shape (∀ …, μ ≤ lemFuel → worker lemFuel … = wrapper …) — never MEASURED:"; echo "$malformed" | sed 's/^/  /'; rc=1
+    echo "check_fuel_forms: FAIL — obligation(s) named <f>_measure_sufficient whose TYPE is not the contract's shape (∀ …, μ ≤ lemFuel → worker lemFuel … = wrapper …, argument correspondence against the wrapper's body) — never MEASURED:"; echo "$malformed" | sed 's/^/  /'; rc=1
+  fi
+  # P0 audit F2: a same-named _zero lemma that is NOT the worker at literal 0 on its own binders
+  local malzero
+  malzero=$(awk -F'\t' '$1=="FUEL_FORM" && $5 ~ /^MALFORMED-ZERO/ {print $2" :: "$5}' "$tbl")
+  if [[ -n "$malzero" ]]; then
+    echo "check_fuel_forms: FAIL — lemma(s) named <worker>_zero whose statement is not \`worker … 0 … = <absorbing element>\` on the worker's own binders — never ABSORBING:"; echo "$malzero" | sed 's/^/  /'; rc=1
   fi
   # C4: the hypotheses in force vs the reviewed register, both directions.
   # Table side: (worker, hyp) of every MEASURED row with a non-empty hyp column.
@@ -158,7 +191,7 @@ policy() {
   if (( rc == 0 )); then
     local n_pend n_unr
     n_pend=$(echo "$reach_amb" | grep -c .); n_unr=$(awk -F'\t' '$1=="FUEL_FORM" && $3=="AMBIENT" && $4 ~ /^no/' "$tbl" | wc -l)
-    echo "check_fuel_forms: OK ($n_all fuel'd workers: $n_meas MEASURED (every obligation + proof cone ⊆ the standard three; $n_hyp of them under a hypothesis, each = a reviewed row of fuel_hypotheses.txt, both directions), $n_abs ABSORBING, $n_pend reachable-AMBIENT = the $n_pend rows of fuel_forms_pending.txt exactly, $n_unr ambient unreachable from the drive cone)"
+    echo "check_fuel_forms: OK ($n_all fuel'd workers: $n_meas MEASURED (obligation of the contract's shape incl. argument correspondence against the wrapper's body; every obligation + proof cone ⊆ the standard three; $n_hyp of them under a hypothesis, each = a reviewed row of fuel_hypotheses.txt, both directions), $n_abs ABSORBING = kill at zero (the _zero lemma is the worker at literal 0 on its own binders = the monad's absorbing element, cone ⊆ the standard three; propagation NOT proved — lem TODO 13), $n_pend reachable-AMBIENT = the $n_pend rows of fuel_forms_pending.txt exactly, $n_unr ambient unreachable from the drive cone)"
   fi
   return $rc
 }
@@ -191,10 +224,11 @@ if [[ "${1:-}" == "--selftest" ]]; then
   # alignofCtype, which are real measured obligations now — a decoy of a real
   # obligation would be a duplicate constant, not a plant.)
   # P10 (C4; lem audit F1): right name, right SHAPE, the hypothesis-carrying form
-  # under the CONTRADICTORY hypothesis `env1 ≠ env1` (hack) — the tool counts it
-  # MEASURED with `hyp=env1 ≠ env1` (the gate cannot decide satisfiability);
-  # the REGISTER has no row for it, so the policy is RED: this is the
-  # consumer-side closure of the lem slice's F1.
+  # under a CONTRADICTORY hypothesis — the tool counts it MEASURED (the gate
+  # cannot decide satisfiability); the REGISTER has no row for it, so the
+  # policy is RED: the consumer-side closure of the lem slice's F1. Since the
+  # P0 repair it is the real CerbMem.alignofCtype obligation under `cty ≠ cty`,
+  # compiled in the P11 run below (see the note there).
   cat > "$PLANTDIR/FuelFormsPlantTrue.lean" <<'LEAN'
 import Core_aux
 theorem to_pure_measure_sufficient : True := trivial
@@ -205,34 +239,140 @@ theorem to_pures_measure_sufficient {a : Type} [LemFuel] (l : List (expr a)) (le
     (_lemMeasureLe : List.length l ≤ lemFuel) :
     to_pures l = to_pures l := rfl
 LEAN
+  # (P0 2026-09-05: the C4-era P10 decoy stated `hack` — an AMBIENT worker whose
+  # wrapper calls it at `LemFuel.fuel` — under `0 ≤ lemFuel`; the argument/
+  # measure correspondence check now rejects that as MALFORMED before the
+  # register is consulted, which is right. P10 therefore restates the REAL
+  # CerbMem.alignofCtype obligation — shape-correct, μ = the wrapper's measure —
+  # under the CONTRADICTORY hypothesis `cty ≠ cty`, compiled in the P11 run
+  # where CerbMem_lemMeasureProofs is excluded.)
   cat > "$PLANTDIR/FuelFormsPlantContra.lean" <<'LEAN'
-import Driver
-theorem hack_measure_sufficient [LemFuel] (_lemReader_tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
-    (core_extern1 : Fmap sym sym) (env1 : List (Fmap sym value)) (mem_st : CerbMem.MemState)
-    (core_file1 : generic_file Unit core_run_annotation) (concur_sym_map : Fmap sym object_value)
-    (pexpr1 : generic_pexpr Unit sym) (lemHyp : env1 ≠ env1) (lemFuel : Nat) (_lemMeasureLe : 0 ≤ lemFuel) :
-    hack_lemFuel lemFuel _lemReader_tagDefs core_extern1 env1 mem_st core_file1 concur_sym_map pexpr1 =
-      hack _lemReader_tagDefs core_extern1 env1 mem_st core_file1 concur_sym_map pexpr1 :=
+import CerbMem
+theorem CerbMem.alignofCtype_measure_sufficient (ambient : CerbTags.TagDefsMap) (cty : ctype)
+    (lemHyp : cty ≠ cty) (lemFuel : Nat)
+    (_lemMeasureLe : CerbTagsWf.envBound ambient cty ≤ lemFuel) :
+    CerbMem.alignofCtype_lemFuel lemFuel ambient ambient cty = CerbMem.alignofCtype ambient cty :=
   absurd rfl lemHyp
 LEAN
-  for m in FuelFormsPlantTrue FuelFormsPlantWorker FuelFormsPlantContra; do
+  # P12–P22 (P0 audit F2, 2026-09-05; record docs/2026-09-05_p0-instruments-record.md
+  # §F2): the audit's two decoys VERBATIM (ReviewFuelDecoy.lean in the audit's
+  # evidence dir) plus the audit's listed extra plants, as fresh decoy
+  # workers/wrappers so no real row is disturbed. Each must be MALFORMED (never
+  # MEASURED/ABSORBING) for ITS OWN reason — the table row's detail is checked
+  # for the specific message, not just the policy's rc. pl_zt is a POSITIVE
+  # control: a correctly shaped _zero lemma on a decoy worker must be ABSORBING
+  # with axioms=ok (else the negative _zero plants prove nothing).
+  cat > "$PLANTDIR/FuelFormsPlantAudit.lean" <<'LEAN'
+import CerbND
+
+-- audit decoy 1 (verbatim): a _zero lemma about a DIFFERENT constant
+def review_bad_lemFuel (fuel : Nat) : Nat := fuel
+theorem review_bad_lemFuel_zero {a info err cs st : Type}
+    (m : ndM a info err cs st) (st0 : st) :
+    CerbND.runNDFuel 0 m st0 =
+      [(nd_status.Killed st0 CerbND.fuelExhaustedKill, [], st0)] := rfl
+
+-- audit decoy 2 (verbatim): the worker at a literal `0`, the wrapper's input `x` never reaches it
+def review_shift_lemFuel (fuel x : Nat) : Nat := x - fuel
+def review_shift (x : Nat) : Nat := 0 * x
+theorem review_shift_measure_sufficient (x : Nat) (lemFuel : Nat)
+    (_lemMeasureLe : 0 ≤ lemFuel) :
+    review_shift_lemFuel lemFuel 0 = review_shift x := by
+  simp [review_shift_lemFuel, review_shift]
+
+-- P14 wrong fuel position: lemFuel passed where the worker takes `a`
+def pl_pos_lemFuel (lemFuel : Nat) (a : Nat) (b : Int) : Int := b
+def pl_pos (a : Nat) (b : Int) : Int := pl_pos_lemFuel (a + 1) a b
+theorem pl_pos_measure_sufficient (a : Nat) (b : Int) (lemFuel : Nat) (_lemMeasureLe : a + 1 ≤ lemFuel) :
+    pl_pos_lemFuel a lemFuel b = pl_pos a b := rfl
+
+-- P15 swapped arguments on the worker side (the wrapper passes a b; the obligation passes b a)
+def pl_swap_lemFuel (lemFuel : Nat) (a b : Nat) : Nat := 0
+def pl_swap (a b : Nat) : Nat := pl_swap_lemFuel (a + b) a b
+theorem pl_swap_measure_sufficient (a b : Nat) (lemFuel : Nat) (_lemMeasureLe : a + b ≤ lemFuel) :
+    pl_swap_lemFuel lemFuel b a = pl_swap a b := rfl
+
+-- P16 swapped arguments on the wrapper side
+def pl_swapw_lemFuel (lemFuel : Nat) (a b : Nat) : Nat := 0
+def pl_swapw (a b : Nat) : Nat := pl_swapw_lemFuel (a + b) a b
+theorem pl_swapw_measure_sufficient (a b : Nat) (lemFuel : Nat) (_lemMeasureLe : a + b ≤ lemFuel) :
+    pl_swapw_lemFuel lemFuel a b = pl_swapw b a := rfl
+
+-- P17 changed measure: the hypothesis' lower bound `a` is not the wrapper's `a + 1`
+def pl_mu_lemFuel (lemFuel : Nat) (a : Nat) : Nat := 0
+def pl_mu (a : Nat) : Nat := pl_mu_lemFuel (a + 1) a
+theorem pl_mu_measure_sufficient (a : Nat) (lemFuel : Nat) (_lemMeasureLe : a ≤ lemFuel) :
+    pl_mu_lemFuel lemFuel a = pl_mu a := rfl
+
+-- P18 renamed worker / changed wrapper RHS: the wrapper calls a DIFFERENT worker
+def pl_rhs_lemFuel (lemFuel : Nat) (a : Nat) : Nat := 0
+def pl_rhs_other_lemFuel (lemFuel : Nat) (a : Nat) : Nat := 0
+def pl_rhs (a : Nat) : Nat := pl_rhs_other_lemFuel (a + 1) a
+theorem pl_rhs_measure_sufficient (a : Nat) (lemFuel : Nat) (_lemMeasureLe : a + 1 ≤ lemFuel) :
+    pl_rhs_lemFuel lemFuel a = pl_rhs a := rfl
+
+-- P19 hidden extra premise inside the `≤ lemFuel` binder
+def pl_prem_lemFuel (lemFuel : Nat) (a : Nat) : Nat := 0
+def pl_prem (a : Nat) : Nat := pl_prem_lemFuel (a + 1) a
+theorem pl_prem_measure_sufficient (a : Nat) (lemFuel : Nat) (_lemMeasureLe : a + 1 ≤ lemFuel ∧ a = 0) :
+    pl_prem_lemFuel lemFuel a = pl_prem a := rfl
+
+-- P20 POSITIVE CONTROL: a correctly shaped _zero lemma on a decoy worker (ABSORBING)
+def pl_zt_lemFuel {a info err cs st : Type} (lemFuel : Nat) (m : ndM a info err cs st) (st0 : st) :
+    List (nd_status a err st × List String × st) := CerbND.runNDFuel lemFuel m st0
+theorem pl_zt_lemFuel_zero {a info err cs st : Type} (m : ndM a info err cs st) (st0 : st) :
+    pl_zt_lemFuel 0 m st0 = [(nd_status.Killed st0 CerbND.fuelExhaustedKill, [], st0)] := rfl
+
+-- P21 _zero lemma with a TERM (st0 + 1) where a binder must be
+def pl_ztb_lemFuel {a info err cs : Type} (lemFuel : Nat) (m : ndM a info err cs Nat) (st0 : Nat) :
+    List (nd_status a err Nat × List String × Nat) := CerbND.runNDFuel lemFuel m st0
+theorem pl_ztb_lemFuel_zero {a info err cs : Type} (m : ndM a info err cs Nat) (st0 : Nat) :
+    pl_ztb_lemFuel 0 m (st0 + 1) = [(nd_status.Killed (st0 + 1) CerbND.fuelExhaustedKill, [], st0 + 1)] := rfl
+
+-- P22 _zero lemma not at fuel 0 (the worker ignores its fuel, so the equation holds at 1)
+def pl_ztc_lemFuel {a info err cs st : Type} (lemFuel : Nat) (m : ndM a info err cs st) (st0 : st) :
+    List (nd_status a err st × List String × st) := CerbND.runNDFuel 0 m st0
+theorem pl_ztc_lemFuel_zero {a info err cs st : Type} (m : ndM a info err cs st) (st0 : st) :
+    pl_ztc_lemFuel 1 m st0 = [(nd_status.Killed st0 CerbND.fuelExhaustedKill, [], st0)] := rfl
+LEAN
+  for m in FuelFormsPlantTrue FuelFormsPlantWorker FuelFormsPlantContra FuelFormsPlantAudit; do
     if ! (cd "$LF" && "$CAPPED" lake env lean --root="$PLANTDIR" -o "$PLANTDIR/$m.olean" "$PLANTDIR/$m.lean" >> "$LOG" 2>&1); then
       echo "  PLANT FAIL [compiling $m]"; tail -20 "$LOG"; fails=$((fails+1))
     fi
   done
-  if FUELFORMS_EXTRA_PATH="$PLANTDIR" FUELFORMS_EXTRA_MODULES="FuelFormsPlantTrue FuelFormsPlantWorker FuelFormsPlantContra" table_of_tree "$LOG" > "${TBL}.p"; then
-    grep -E $'^FUEL_FORM\t(to_pure_lemFuel|to_pures_lemFuel|hack_lemFuel)\t' "${TBL}.p" | cut -c1-220 | sed 's/^/    plant table: /'
+  # row_detail <label> <worker> <form> <detail-substring> <table>: the tool's row for
+  # <worker> has the declared form AND its detail carries the specific message
+  row_detail() {
+    local row; row=$(grep -E "^FUEL_FORM	$2	" "$5")
+    if [[ -n "$row" ]] && [[ "$(cut -f3 <<<"$row")" == "$3" ]] && grep -qF -- "$4" <<<"$(cut -f5 <<<"$row")"; then
+      echo "  PLANT OK   [$1] -> $2 $3: $(cut -f5 <<<"$row" | cut -c1-230)"
+    else
+      echo "  PLANT FAIL [$1]: wanted $2 $3 with detail containing '$4'; row: ${row:-<none>}"; fails=$((fails+1))
+    fi
+  }
+  if FUELFORMS_EXTRA_PATH="$PLANTDIR" FUELFORMS_EXTRA_MODULES="FuelFormsPlantTrue FuelFormsPlantWorker FuelFormsPlantAudit" table_of_tree "$LOG" > "${TBL}.p"; then
+    grep -E $'^FUEL_FORM\t(to_pure_lemFuel|to_pures_lemFuel)\t' "${TBL}.p" | cut -c1-220 | sed 's/^/    plant table: /'
     plant "P6 decoy obligation of type True (to_pure)" "not the contract's shape" "${TBL}.p" "$PENDING" "$HYPREG"
     plant "P7 decoy obligation with the wrong worker constant (to_pures)" "not the contract's shape" "${TBL}.p" "$PENDING" "$HYPREG"
-    plant "P10 decoy obligation under the CONTRADICTORY hypothesis env1 ≠ env1 (hack): MEASURED by shape, RED by the register" "no reviewed register row" "${TBL}.p" "$PENDING" "$HYPREG"
-    if ! grep -qE $'^FUEL_FORM\thack_lemFuel\tMEASURED\t[^\t]*\t[^\t]*\tenv1 ≠ env1$' "${TBL}.p"; then
-      echo "  PLANT FAIL [P10: the tool did not report hack MEASURED with hyp=env1 ≠ env1 — the plant is not testing what it claims]"; fails=$((fails+1))
-    else
-      echo "  PLANT OK   [P10 premise] -> the tool reports hack_lemFuel MEASURED hyp=env1 ≠ env1 (shape alone cannot see the contradiction)"
-    fi
+    row_detail "P12 audit decoy 1: _zero lemma about CerbND.runNDFuel, not the worker" review_bad_lemFuel AMBIENT "MALFORMED-ZERO zero=review_bad_lemFuel_zero: left-hand head \`CerbND.runNDFuel\` is not the worker \`review_bad_lemFuel\`" "${TBL}.p"
+    plant "P12 policy: a MALFORMED-ZERO lemma is RED" "named <worker>_zero whose statement is not" "${TBL}.p" "$PENDING" "$HYPREG"
+    row_detail "P13 audit decoy 2: worker at literal 0, wrapper input x never passed" review_shift_lemFuel AMBIENT "worker argument #1 is \`0\`, not one of the wrapper's input binders" "${TBL}.p"
+    row_detail "P14 wrong fuel position" pl_pos_lemFuel AMBIENT "wrong fuel position: \`lemFuel\` is passed as worker argument #1 (\`a\`), but the worker's \`lemFuel\` parameter is #0" "${TBL}.p"
+    row_detail "P15 swapped arguments on the worker side" pl_swap_lemFuel AMBIENT "worker argument #1: the obligation passes \`b\`, but the wrapper \`pl_swap\` passes \`a\`" "${TBL}.p"
+    row_detail "P16 swapped arguments on the wrapper side" pl_swapw_lemFuel AMBIENT "wrapper argument #0 is \`b\`, not the binder \`a\`" "${TBL}.p"
+    row_detail "P17 changed measure (lower bound a vs the wrapper's a + 1)" pl_mu_lemFuel AMBIENT "the lower bound \`a\` of the \`≤ lemFuel\` hypothesis is not the wrapper's measure: \`pl_mu\` calls the worker at fuel \`a + 1\`" "${TBL}.p"
+    row_detail "P18 renamed worker: the wrapper calls pl_rhs_other_lemFuel" pl_rhs_lemFuel AMBIENT "the wrapper \`pl_rhs\` does not call the worker \`pl_rhs_lemFuel\`: on these inputs its body is a call of \`pl_rhs_other_lemFuel\`" "${TBL}.p"
+    row_detail "P19 hidden extra premise inside the ≤ binder" pl_prem_lemFuel AMBIENT "no hypothesis \`_ ≤ lemFuel\` on the \`lemFuel\` binder" "${TBL}.p"
+    row_detail "P20 POSITIVE CONTROL: well-formed _zero lemma on a decoy worker" pl_zt_lemFuel ABSORBING "zero=pl_zt_lemFuel_zero heads=[nd_status.Killed, CerbND.fuelExhaustedKill] axioms=ok" "${TBL}.p"
+    row_detail "P21 _zero lemma with a term (st0 + 1) where a binder must be" pl_ztb_lemFuel AMBIENT "worker argument \`st0 + 1\` is not one of the lemma's binders" "${TBL}.p"
+    row_detail "P22 _zero lemma at fuel 1, not 0" pl_ztc_lemFuel AMBIENT "no literal \`0\` among the worker's arguments" "${TBL}.p"
   else
-    echo "  PLANT FAIL [tool with the decoy modules]"; tail -20 "$LOG"; fails=$((fails+3))
+    echo "  PLANT FAIL [tool with the decoy modules]"; tail -20 "$LOG"; fails=$((fails+13))
   fi
+  # P23: an ABSORBING row whose _zero lemma's cone carries sorryAx (table plant)
+  sed 's/^\(FUEL_FORM\tnd_bind_lemFuel\tABSORBING\t[^\t]*\tzero=[^ ]* heads=[^\t]*\) axioms=ok/\1 axioms=BAD[[sorryAx]]/' "$TBL" > "${TBL}.p"
+  if cmp -s "$TBL" "${TBL}.p"; then echo "  PLANT FAIL [P23 premise]: the sed did not alter the nd_bind row (vacuous plant)"; fails=$((fails+1)); fi
+  plant "P23 ABSORBING _zero lemma with sorryAx in its cone (nd_bind)" "ABSORBING _zero lemma(s) with an axiom cone outside" "${TBL}.p" "$PENDING" "$HYPREG"
   # P11 (C4 audit F-A4): a decoy of a REAL registered obligation with an EXTRA
   # unnamed Prop binder before `lemHyp` and the register's exact hypothesis
   # (`CerbTagsWf.Acyclic ambient`) — compiled with the real CerbMem proofs module
@@ -252,23 +392,29 @@ LEAN
   if ! (cd "$LF" && "$CAPPED" lake env lean --root="$PLANTDIR" -o "$PLANTDIR/FuelFormsPlantExtra.olean" "$PLANTDIR/FuelFormsPlantExtra.lean" >> "$LOG" 2>&1); then
     echo "  PLANT FAIL [compiling FuelFormsPlantExtra]"; tail -20 "$LOG"; fails=$((fails+1))
   fi
-  if FUELFORMS_EXTRA_PATH="$PLANTDIR" FUELFORMS_EXTRA_MODULES="FuelFormsPlantExtra" FUELFORMS_EXCLUDE_MODULES="CerbMem_lemMeasureProofs" table_of_tree "$LOG" > "${TBL}.p"; then
-    grep -E $'^FUEL_FORM\tCerbMem\.sizeofCtype_lemFuel\t' "${TBL}.p" | cut -c1-260 | sed 's/^/    plant table: /'
+  if FUELFORMS_EXTRA_PATH="$PLANTDIR" FUELFORMS_EXTRA_MODULES="FuelFormsPlantExtra FuelFormsPlantContra" FUELFORMS_EXCLUDE_MODULES="CerbMem_lemMeasureProofs" table_of_tree "$LOG" > "${TBL}.p"; then
+    grep -E $'^FUEL_FORM\tCerbMem\.(sizeofCtype|alignofCtype)_lemFuel\t' "${TBL}.p" | cut -c1-260 | sed 's/^/    plant table: /'
     plant "P11 decoy of a REAL obligation with an EXTRA Prop binder and the register's exact hypothesis (CerbMem.sizeofCtype): MALFORMED by the binder check" "not the contract's shape" "${TBL}.p" "$PENDING" "$HYPREG"
     if ! grep -qE $'^FUEL_FORM\tCerbMem\.sizeofCtype_lemFuel\tAMBIENT\t[^\t]*\tMALFORMED [^\t]*binder `extra`' "${TBL}.p"; then
       echo "  PLANT FAIL [P11: the tool did not report the extra binder as the shape mismatch]"; fails=$((fails+1))
     else
       echo "  PLANT OK   [P11 premise] -> the tool reports CerbMem.sizeofCtype_lemFuel MALFORMED: binder \`extra\` is neither reserved nor a wrapper argument"
     fi
+    plant "P10 the REAL CerbMem.alignofCtype obligation restated under the CONTRADICTORY hypothesis cty ≠ cty: MEASURED by shape, RED by the register" "no reviewed register row" "${TBL}.p" "$PENDING" "$HYPREG"
+    if ! grep -qE $'^FUEL_FORM\tCerbMem\.alignofCtype_lemFuel\tMEASURED\t[^\t]*\t[^\t]*\tcty ≠ cty$' "${TBL}.p"; then
+      echo "  PLANT FAIL [P10: the tool did not report CerbMem.alignofCtype_lemFuel MEASURED with hyp=cty ≠ cty — the plant is not testing what it claims]"; fails=$((fails+1))
+    else
+      echo "  PLANT OK   [P10 premise] -> the tool reports CerbMem.alignofCtype_lemFuel MEASURED hyp=cty ≠ cty (shape alone cannot see the contradiction; the register is the closure)"
+    fi
   else
-    echo "  PLANT FAIL [tool with the extra-binder decoy]"; tail -20 "$LOG"; fails=$((fails+1))
+    echo "  PLANT FAIL [tool with the extra-binder + contradictory-hypothesis decoys]"; tail -20 "$LOG"; fails=$((fails+3))
   fi
   # P8/P9/P9b (C4): the hypothesis register, both directions + format
   grep -v $'^CerbMem\.sizeofCtype_lemFuel\t' "$HYPREG" > "${TBL}.hreg"; plant "P8 register row of a measured-under-hypothesis worker deleted (CerbMem.sizeofCtype)" "no reviewed register row" "$TBL" "$PENDING" "${TBL}.hreg"
   { cat "$HYPREG"; printf 'hack_lemFuel\t0 < k\tdriver.lem:1 planted\t[PLANT]\n'; } > "${TBL}.hreg"; plant "P9 stale register row (hack under 0 < k)" "stale register row" "$TBL" "$PENDING" "${TBL}.hreg"
   { cat "$HYPREG"; printf 'phantom_lemFuel\tTrue\tno cite here\t[PLANT]\n'; } > "${TBL}.hreg"; plant "P9b register row without a .lem:<line> cite" "not of the form" "$TBL" "$PENDING" "${TBL}.hreg"
   echo "  UNPLANTED:"; policy "$TBL" "$PENDING" "$HYPREG" | sed 's/^/    /' || fails=$((fails+1))
-  if (( fails == 0 )); then echo "check_fuel_forms: SELFTEST OK (12 plants red with the declared label — 5 on the table, 3 on the hypothesis register, 4 compiled decoy obligations incl. the contradictory-hypothesis decoy caught by the register and the extra-binder decoy caught by the shape check; unplanted table green)"; exit 0; else echo "check_fuel_forms: SELFTEST FAILED ($fails)"; exit 1; fi
+  if (( fails == 0 )); then echo "check_fuel_forms: SELFTEST OK (24 plants with the declared label — 6 on the table (incl. the ABSORBING-cone plant), 3 on the hypothesis register, 15 compiled decoys: the C4 four (type True / wrong worker / contradictory hypothesis caught by the register / extra binder), the whole-project audit's two decoys verbatim (review_bad _zero about runNDFuel; review_shift at literal 0), wrong fuel position, swapped worker-side and wrapper-side arguments, changed measure, wrapper calling another worker, hidden premise, and three _zero decoys (a POSITIVE control ABSORBING, a term for a binder, fuel 1) — each rejected with its own message; unplanted table green)"; exit 0; else echo "check_fuel_forms: SELFTEST FAILED ($fails)"; exit 1; fi
 fi
 
 policy "$TBL" "$PENDING" "$HYPREG"

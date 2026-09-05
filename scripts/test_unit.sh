@@ -153,14 +153,19 @@ if ! "$ROOTS_SH"; then
     exit 1
 fi
 
-# Fuel-forms gate (fuel-parameter arc C2, 2026-09-04): the consumer's
-# (A)/(B)/(C) requirement made mechanical — every fuel'd worker in the compiled
-# environment is MEASURED (obligation + proof, cones ⊆ the standard three),
-# ABSORBING (its _zero lemma is the monad's absorbing element), or an AMBIENT
+# Fuel-forms gate (fuel-parameter arc C2, 2026-09-04; P0 audit-F2 repair
+# 2026-09-05): the consumer's (A)/(B)/(C) requirement made mechanical — every
+# fuel'd worker in the compiled environment is MEASURED (obligation of the
+# contract's shape INCLUDING the argument correspondence against the wrapper's
+# own body and μ = the wrapper's measure; obligation + proof cones ⊆ the
+# standard three), ABSORBING = kill at zero (its _zero lemma states the WORKER
+# at literal fuel 0 on its own binders = the monad's absorbing element, cone ⊆
+# the standard three; propagation NOT proved — lem TODO 13), or an AMBIENT
 # worker that is either unreachable from the drive cone (kernel constant
 # closure, mutual blocks included) or a reviewed row of
 # scripts/fuel_forms_pending.txt (both directions). Plant-tested by its
-# --selftest. Fail-closed.
+# --selftest (24 plants incl. the whole-project audit's two decoys verbatim).
+# Fail-closed.
 FUELFORMS_SH="$(dirname "$PURITY_SH")/check_fuel_forms.sh"
 if ! "$FUELFORMS_SH" --selftest; then
     echo "test_unit: fuel-forms gate SELFTEST FAILED"
