@@ -144,7 +144,12 @@ oracle surface must equal the reviewed manifest
 fork-vs-upstream deltas must match their pinned hashes; loud SKIP
 when the upstream remote or a generated tree is absent, fail-closed
 otherwise), and `check_fixture_freeze.sh` (the `corpus/`
-differential-fixture set must match its hash manifest exactly).
+differential-fixture set must match its hash manifest exactly), and
+`test_exec.sh --selftest` (P0 2026-09-05, audit F3: hermetic plants on the
+main lane's verdict extractor — the VAL token is the WHOLE `Defined` line,
+value + stdout + stderr + blocked; the pre-repair value-only collapse of the
+audit's same-value/different-stdout pair is reproduced in-plant so the
+battery cannot be vacuous).
 
 ### Fixture differentials
 

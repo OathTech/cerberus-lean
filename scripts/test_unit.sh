@@ -112,6 +112,20 @@ if ! "$FUELCLS_SH"; then
     exit 1
 fi
 
+# Verdict-extractor selftest (P0 instrument repair 2026-09-05, whole-project
+# audit F3): test_exec.sh's extract_verdict_seq must keep the WHOLE Defined
+# line (value, stdout, stderr, blocked) as the VAL token — hermetic plants
+# (no binaries): the audit's same-value/different-stdout pair yields distinct
+# tokens (and the pre-repair extractor's collapse is reproduced so the plant
+# cannot be vacuous), different-stderr, escaped payload byte-exact,
+# multi-outcome order, embedded text is payload, Undefined unchanged.
+# Fail-closed.
+EXEC_SH="$(dirname "$PURITY_SH")/test_exec.sh"
+if ! "$EXEC_SH" --selftest; then
+    echo "test_unit: test_exec verdict-extractor SELFTEST FAILED"
+    exit 1
+fi
+
 # No-fuel-numerals gate (fuel-parameter arc, 2026-09-04): no fuel numeral
 # in the Lean text a consumer reasons against (seams, generated, tests,
 # speclab) except Main.lean's `--fuel` default; the gate's own plant

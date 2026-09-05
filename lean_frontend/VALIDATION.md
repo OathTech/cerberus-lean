@@ -60,6 +60,21 @@ to the register (§2) BY CLASS.
 field of an `Undefined` line (and the `stderr` bytes) are part of the
 verdict the semantics reports; every lane compares whole `Undefined
 {…}` lines since Z1 (`docs/2026-09-03_zero-discrepancy-Z1-record.md` §4).
+**Successful output bytes are behaviour too**: since the P0 instrument
+repair (2026-09-05, whole-project audit F3;
+`docs/2026-09-05_p0-instruments-record.md` §F3) `test_exec.sh` — the
+main lane and everything built on it — compares the WHOLE `Defined {…}`
+line (value, the program's captured stdout and stderr, blocked) as one
+token; before it only the `value: "…"` field was compared, so two
+`Defined` lines with the same value and different stdout/stderr read
+MATCH. Lanes carrying their own copy of the old value-only extractor
+(`test_gcc_oracle.sh:308`, `test_ci_sweep.sh:172` — its libc leg has a
+separate whole-`Defined`-line `STDOUT_DIFF` channel, its nolibc token is
+value-only —, `test_cn_coverage.sh:243`, `test_multi_tu.sh:114`, and
+`test_verify.sh:72`'s recorded-pin token — its live main-mode comparison
+is already whole-line) are listed in that record as remaining work; do
+not read "whole-line" claims below as covering them until they are
+repaired.
 
 Terminology. **oracle** = the OCaml Cerberus built from this
 repository's `.lem` + OCaml sources, run in the MATCHED MODE (same
@@ -303,9 +318,12 @@ a bug today and what is a bug still open, in the class vocabulary.
 same `.lem` sources (`make prelude-src` + dune). It is an *immovable
 object* on the trust boundary: every differential lane runs a program
 through both implementations and compares **full verdict lines** —
-`Defined` values, exact undefined-behaviour codes, errors, stdout/
-stderr where applicable — over the exhaustive nondeterministic
-enumeration (or matched single traces, where a lane says so).
+whole `Undefined {…}` lines (ub code, stderr, loc) everywhere since Z1;
+whole `Defined {…}` lines (value, stdout, stderr, blocked) in the
+`test_exec.sh` family since the P0 repair of 2026-09-05 (§0 above names
+the lanes whose own extractors are still value-only) — over the
+exhaustive nondeterministic enumeration (or matched single traces,
+where a lane says so).
 
 **Upstream, as a third point.** An un-forked upstream checkout
 (`deps/cerberus-upstream` in the working layout, pinned at the fork's
@@ -586,8 +604,12 @@ Differential testing samples behaviour; it never proves equivalence.
 The claims this validation surface supports are exactly:
 
 1. On every corpus above, the Lean port and the OCaml implementation
-   produce **identical verdicts** — whole `Defined`/`Undefined`/`Error`
-   lines, UB location and stderr included — to the recorded baseline
+   produce **identical verdicts** — whole `Undefined`/`Error` lines, UB
+   location and stderr included, everywhere; whole `Defined` lines
+   (stdout/stderr bytes included) on the lanes whose extractor keeps
+   them (the `test_exec.sh` family since 2026-09-05: minimal, coverage,
+   debug, float re-run with zero movement; csmith/gcc/libxml2 and the
+   value-only copies listed in §0 pending) — to the recorded baseline
    rows, each of which is one of: a register pin (§2), a class-(a)
    both-failure pair, a class-(b)/(c) row named in §3, or an open bug
    named in §3 with its owner. There is no other kind of recorded

@@ -22,9 +22,14 @@
 #       --sequentialise  (no sequentialise wiring in the Lean pipeline)
 #   * FULL-SEQUENCE comparison (arc-4 S5f audit hardening, replaces the
 #     prototype-inherited head -1): BOTH sides' outputs are reduced to the
-#     ordered sequence of per-execution verdict tokens (UB:<code> for each
-#     Undefined line, VAL:<value> for each Defined line — Specified and
-#     Unspecified alike) and the sequences are compared in full. Identical
+#     ordered sequence of per-execution verdict tokens (UB:<whole Undefined
+#     line body> for each Undefined line — since Z1; VAL:<whole Defined
+#     line body> for each Defined line — value, stdout, stderr AND blocked
+#     fields, byte-for-byte, since the P0 instrument repair 2026-09-05
+#     (whole-project audit F3: before it only `value: "…"` was kept, so two
+#     Defined lines with the same value and different stdout/stderr compared
+#     MATCH) — Specified and Unspecified alike) and the sequences are
+#     compared in full. Identical
 #     sequences → MATCH (no UB token) / UB_MATCH (any UB token); sequences
 #     that differ ONLY in UB codes (same length, same UB positions, equal
 #     values) → UB_DIFF; one-sided UB presence → DIFF; anything else
@@ -89,8 +94,13 @@
 #     principle forge tokens. Unreachable today: the harness links no
 #     libc (--nolibc / no Lean-side C library), so test programs cannot
 #     write to stdout at all, and captured program stdout is embedded
-#     quote-ESCAPED inside the Defined line where the token patterns
-#     cannot match. Recorded, not defended further.
+#     quote-ESCAPED (OCaml String.escaped semantics on both printers:
+#     driver_ocaml.ml:99, Main.lean batchEscape) inside the Defined line,
+#     where the ^-anchored token patterns cannot match; since the P0
+#     repair those escaped bytes are PART of the VAL token and are
+#     compared, not skipped (--selftest E5 pins that an embedded
+#     "Defined {" text yields no extra token). Recorded, not defended
+#     further.
 #
 # Per-file statuses (baseline taxonomy):
 #   MATCH UB_MATCH UB_DIFF MISMATCH DIFF FAIL TIMEOUT HANG LEAN_CRASH
@@ -132,6 +142,7 @@ Options:
   --exclude=PATTERN        Exclude files whose basename matches PATTERN (grep)
   --write-baseline[=FILE]  Write per-file statuses (default: scripts/exec_baseline.txt)
   --check-baseline[=FILE]  Compare against baseline; exit 1 on any regression
+  --selftest               Hermetic plants on the verdict extractor (no binaries)
   -h, --help               Show this help
 
 Environment:
@@ -157,6 +168,7 @@ require_time_bin   # HANG classification needs GNU time (common.sh; fail-closed)
 DEFAULT_BASELINE="$SCRIPT_DIR/exec_baseline.txt"
 
 VERBOSE=false
+SELFTEST=false
 TEST_PATH=""
 LIST_FILE=""
 MAX_TESTS=0            # 0 = unlimited
@@ -169,6 +181,7 @@ while [[ $# -gt 0 ]]; do
     case $1 in
         -h|--help) usage ;;
         -v|--verbose) VERBOSE=true; shift ;;
+        --selftest) SELFTEST=true; shift ;;
         --max) MAX_TESTS="$2"; shift 2 ;;
         --list) LIST_FILE="$2"; shift 2 ;;
         --exclude=*) EXCLUDE_PATTERN="${1#--exclude=}"; shift ;;
@@ -232,6 +245,127 @@ fi
 if [[ -n "$WRITE_BASELINE" ]]; then
     wb_dir=$(abspath "$(dirname "$WRITE_BASELINE")") || { echo "Error: baseline directory not found: $(dirname "$WRITE_BASELINE")" >&2; exit 1; }
     WRITE_BASELINE="$wb_dir/$(basename "$WRITE_BASELINE")"
+fi
+
+# ---------------------------------------------------------------------------
+# Verdict-sequence extraction + exit-code expectation (S5f hardening)
+# ---------------------------------------------------------------------------
+# One canonical token per per-execution verdict line, in output order:
+#   Undefined {ub: "X", stderr: "S", loc: "L"}                 -> UB:{ub: "X", stderr: "S", loc: "L"}
+#   Defined {value: "V", stdout: "O", stderr: "E", blocked: "B"} -> VAL:{value: "V", stdout: "O", stderr: "E", blocked: "B"}
+# The UB token is the WHOLE Undefined line since the zero-discrepancy arc
+# (2026-09-03, charter lean_frontend/docs/2026-09-03_zero-discrepancy-design.md
+# §1.3/§4.1; [USER 2026-09-03] "UB location is behaviour"): the ub code,
+# the killed state's stderr AND the loc are compared byte-for-byte —
+# Lean renders all three exactly as the oracle (CerbLocation.simpleLocation
+# = Cerb_location.simple_location; Main.lean batch printer =
+# driver_ocaml.ml:173-181). Until then only the ub code was kept — the
+# instrument blind spot behind noodle D1/D2 and the charter's Z-72.
+# The VAL token is the WHOLE Defined line since the P0 instrument repair
+# (2026-09-05; whole-project audit F3, record
+# lean_frontend/docs/2026-09-05_p0-instruments-record.md §F3): value, the
+# program's captured stdout and stderr (String.escaped on both printers —
+# driver_ocaml.ml:99 / Main.lean batchEscape) and the blocked flag,
+# byte-for-byte. Until then only `value: "…"` was kept, so
+#   Defined {value: "Specified(0)", stdout: "GOOD", stderr: ""}
+#   Defined {value: "Specified(0)", stdout: "BAD", stderr: "WRONG"}
+# both mapped to VAL:Specified(0) and compared MATCH (the audit's plant; E1
+# below). Both patterns are ^-anchored to the line start, so the
+# quote-escaped stdout/stderr fields inside a Defined line cannot yield
+# tokens of their own (see the spoofing caveat in the header). grep/sed run
+# in the C locale so the escaped (ASCII) bytes are preserved exactly.
+# Status-only baselines do not move by this change; ROWS may (a same-value
+# stdout/stderr difference is now MISMATCH) — every such movement is a
+# finding, never a silent re-record.
+extract_verdict_seq() {   # <output>  → token lines on stdout
+    printf '%s\n' "$1" \
+        | LC_ALL=C grep -oE '^Undefined \{.*\}$|^Defined \{.*\}$' \
+        | LC_ALL=C sed -e 's/^Undefined \(.*\)$/UB:\1/' \
+                       -e 's/^Defined \(.*\)$/VAL:\1/'
+    return 0
+}
+
+# Expected exit code per OCaml main.ml runM (mirrored by Main.lean):
+# multiple executions → 0; single Undefined/Error → 1; single Defined → 0.
+expected_exit_for() {   # <output>  → echoes 0 or 1
+    if [[ "$1" == *'EXECUTION '* ]]; then
+        echo 0
+    elif [[ "$1" == *'Undefined {'* || "$1" == *'Error {'* ]]; then
+        echo 1
+    else
+        echo 0
+    fi
+}
+
+join_seq() {   # <token-lines>  → single line joined with '|'
+    printf '%s' "$1" | tr '\n' '|'
+}
+
+# --selftest (P0 2026-09-05): hermetic plants on extract_verdict_seq — no
+# binaries, no oracle. Each plant states the exact expected tokens; a plant
+# that would also pass under the pre-repair extractor is reproduced against
+# that extractor (E0) so the battery cannot be vacuous. Run by test_unit.sh.
+selftest_extractor() {
+    echo "test_exec: SELFTEST — extract_verdict_seq plants (loud plant banner; no binaries run)"
+    local fails=0
+    check() {  # <label> <expected-token-lines> <output>
+        local got; got=$(extract_verdict_seq "$3")
+        if [[ "$got" == "$2" ]]; then
+            echo "  PLANT OK   [$1] -> $(join_seq "$got")"
+        else
+            echo "  PLANT FAIL [$1]:"; echo "      wanted: $(join_seq "$2")"; echo "      got:    $(join_seq "$got")"; fails=$((fails+1))
+        fi
+    }
+    # the audit's exact two lines (evidence verdict-extractor-plant.log)
+    local a1='Defined {value: "Specified(0)", stdout: "GOOD", stderr: ""}'
+    local a2='Defined {value: "Specified(0)", stdout: "BAD", stderr: "WRONG"}'
+    # E0: the PRE-REPAIR extractor (value only, verbatim from the 2026-09-03
+    # script) maps the audit pair to identical tokens — the defect reproduced
+    old_extract() { printf '%s\n' "$1" | grep -oE '^Undefined \{.*\}$|^Defined \{value: "[^"]*"' | sed -e 's/^Undefined \(.*\)$/UB:\1/' -e 's/^Defined {value: "\(.*\)"$/VAL:\1/'; return 0; }
+    if [[ "$(old_extract "$a1")" == "VAL:Specified(0)" && "$(old_extract "$a1")" == "$(old_extract "$a2")" ]]; then
+        echo "  PLANT OK   [E0 pre-repair extractor collapses the audit pair to one token: $(old_extract "$a1") == $(old_extract "$a2")]"
+    else
+        echo "  PLANT FAIL [E0 premise]: the pre-repair extractor did not reproduce the audit's collapse ($(old_extract "$a1") vs $(old_extract "$a2"))"; fails=$((fails+1))
+    fi
+    # E1: same value, different stdout (+ stderr) — the audit's plant: DIFFERENT tokens, each the whole line body
+    check "E1a audit line 1 -> whole-line token" 'VAL:{value: "Specified(0)", stdout: "GOOD", stderr: ""}' "$a1"
+    check "E1b audit line 2 -> whole-line token" 'VAL:{value: "Specified(0)", stdout: "BAD", stderr: "WRONG"}' "$a2"
+    if [[ "$(extract_verdict_seq "$a1")" != "$(extract_verdict_seq "$a2")" ]]; then
+        echo "  PLANT OK   [E1 same-value/different-stdout+stderr lines yield DIFFERENT tokens]"
+    else
+        echo "  PLANT FAIL [E1 the two audit lines still compare equal]"; fails=$((fails+1))
+    fi
+    # E2: same value, same stdout, different stderr only (the real 4-field shape)
+    local b1='Defined {value: "Specified(3)", stdout: "x", stderr: "", blocked: "false"}'
+    local b2='Defined {value: "Specified(3)", stdout: "x", stderr: "warn: y", blocked: "false"}'
+    check "E2a" 'VAL:{value: "Specified(3)", stdout: "x", stderr: "", blocked: "false"}' "$b1"
+    check "E2b" 'VAL:{value: "Specified(3)", stdout: "x", stderr: "warn: y", blocked: "false"}' "$b2"
+    if [[ "$(extract_verdict_seq "$b1")" != "$(extract_verdict_seq "$b2")" ]]; then
+        echo "  PLANT OK   [E2 same-value/different-stderr lines yield DIFFERENT tokens]"
+    else
+        echo "  PLANT FAIL [E2 stderr difference not seen]"; fails=$((fails+1))
+    fi
+    # E3: escaped payload — escaped quotes, backslashes, \n and \ddd bytes preserved byte-exactly
+    local c1='Defined {value: "Specified(1)", stdout: "say \"hi\"\n\\ tab\t \255\000 end", stderr: "", blocked: "false"}'
+    check "E3 escaped-quote/backslash/octal payload preserved byte-exactly" 'VAL:{value: "Specified(1)", stdout: "say \"hi\"\n\\ tab\t \255\000 end", stderr: "", blocked: "false"}' "$c1"
+    # E4: multi-outcome output (exhaustive mode): tokens in order, one per verdict line
+    local m; m=$(printf '%s\n' 'EXECUTION 0 (exit = 0):' 'Defined {value: "Specified(0)", stdout: "a", stderr: "", blocked: "false"}' 'EXECUTION 1:' 'Undefined {ub: "UB043_indirection_invalid_value", stderr: "", loc: "<file.c:3:5>"}' 'EXECUTION 2 (exit = 0):' 'Defined {value: "Specified(0)", stdout: "b", stderr: "", blocked: "false"}')
+    check "E4 multi-outcome: 3 tokens in order (Defined a / Undefined / Defined b)" "$(printf '%s\n' 'VAL:{value: "Specified(0)", stdout: "a", stderr: "", blocked: "false"}' 'UB:{ub: "UB043_indirection_invalid_value", stderr: "", loc: "<file.c:3:5>"}' 'VAL:{value: "Specified(0)", stdout: "b", stderr: "", blocked: "false"}')" "$m"
+    # E5: an embedded (escaped) "Defined {" text inside stdout yields NO extra token (line anchoring)
+    local e5='Defined {value: "Specified(0)", stdout: "Defined {value: \"Specified(9)\"}", stderr: "", blocked: "false"}'
+    check "E5 embedded escaped Defined text is payload, not a token" 'VAL:{value: "Specified(0)", stdout: "Defined {value: \"Specified(9)\"}", stderr: "", blocked: "false"}' "$e5"
+    # E6: Undefined handling unchanged (whole line since Z1)
+    check "E6 Undefined whole-line token unchanged" 'UB:{ub: "UB036_exceptional_condition", stderr: "", loc: "<t.c:2:10>"}' 'Undefined {ub: "UB036_exceptional_condition", stderr: "", loc: "<t.c:2:10>"}'
+    # E7: a Defined line with a trailing non-} tail is NOT a token (shape discipline; the printers always end the line with })
+    check "E7 no token from a truncated Defined line" '' 'Defined {value: "Specified(0)", stdout: "'
+    if (( fails == 0 )); then
+        echo "test_exec: SELFTEST OK (E0 pre-repair collapse reproduced; E1-E7: same-value/different-stdout and different-stderr yield distinct whole-line tokens, escaped payload byte-exact, multi-outcome order kept, embedded text is payload, Undefined unchanged, truncated line is no token)"
+        return 0
+    fi
+    echo "test_exec: SELFTEST FAILED ($fails)"; return 1
+}
+if $SELFTEST; then
+    selftest_extractor; exit $?
 fi
 
 # Build both sides (each exits 1 on failure — fail-closed).
@@ -340,47 +474,6 @@ run_cabs_json() {   # <file.c> <out.json>
 run_lean_batch() {  # <file.json> <time-record>
     LEAN_ABORT_ON_PANIC=1 "$TIME_BIN" -v -o "$2" timeout "${TIMEOUT_SECS}s" \
         "$CERBERUS_LEAN_BIN" --batch "$1" 2>&1
-}
-
-# ---------------------------------------------------------------------------
-# Verdict-sequence extraction + exit-code expectation (S5f hardening)
-# ---------------------------------------------------------------------------
-# One canonical token per per-execution verdict line, in output order:
-#   Undefined {ub: "X", stderr: "S", loc: "L"} -> UB:{ub: "X", stderr: "S", loc: "L"}
-#   Defined {value: "V", ...}  -> VAL:V   (V = Specified(n)/Unspecified(t)/...)
-# The UB token is the WHOLE Undefined line since the zero-discrepancy arc
-# (2026-09-03, charter lean_frontend/docs/2026-09-03_zero-discrepancy-design.md
-# §1.3/§4.1; [USER 2026-09-03] "UB location is behaviour"): the ub code,
-# the killed state's stderr AND the loc are compared byte-for-byte —
-# Lean renders all three exactly as the oracle (CerbLocation.simpleLocation
-# = Cerb_location.simple_location; Main.lean batch printer =
-# driver_ocaml.ml:173-181). Until then only the ub code was kept — the
-# instrument blind spot behind noodle D1/D2 and the charter's Z-72.
-# Both patterns are ^-anchored to the line start, so the quote-escaped
-# stdout/stderr fields inside a Defined line cannot yield tokens (see the
-# spoofing caveat in the header). Status-only baselines do not move.
-extract_verdict_seq() {   # <output>  → token lines on stdout
-    printf '%s\n' "$1" \
-        | grep -oE '^Undefined \{.*\}$|^Defined \{value: "[^"]*"' \
-        | sed -e 's/^Undefined \(.*\)$/UB:\1/' \
-              -e 's/^Defined {value: "\(.*\)"$/VAL:\1/'
-    return 0
-}
-
-# Expected exit code per OCaml main.ml runM (mirrored by Main.lean):
-# multiple executions → 0; single Undefined/Error → 1; single Defined → 0.
-expected_exit_for() {   # <output>  → echoes 0 or 1
-    if [[ "$1" == *'EXECUTION '* ]]; then
-        echo 0
-    elif [[ "$1" == *'Undefined {'* || "$1" == *'Error {'* ]]; then
-        echo 1
-    else
-        echo 0
-    fi
-}
-
-join_seq() {   # <token-lines>  → single line joined with '|'
-    printf '%s' "$1" | tr '\n' '|'
 }
 
 # ---------------------------------------------------------------------------

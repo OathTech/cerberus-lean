@@ -140,6 +140,21 @@ downstream.)
 
 ## Small items (independent; can ride along with any fix batch)
 
+- **Batch printer escapes per CODEPOINT, the oracle per BYTE — a Lean
+  printer discrepancy class no lane row exercises yet (S)** — registered
+  2026-09-05 by reading, not measurement ([AGENT]; record
+  `docs/2026-09-05_p0-instruments-record.md` §F3.4 finding 2).
+  `Main.lean:353` `batchEscape` folds over `Char`s and emits `\ddd` from
+  the codepoint (`48 + a / 100` …); `backend/common/driver_ocaml.ml:99`
+  uses OCaml `String.escaped`, per UTF-8 byte. Any non-ASCII byte in a
+  program's captured stdout/stderr diverges (`é`: oracle `\195\169`, Lean
+  `\233`; a codepoint ≥ 256 yields non-digit characters). Since the P0
+  widening the first such row is a MISMATCH in `test_exec.sh`; today no
+  corpus row prints non-ASCII. Mover: a probe (`printf("\xc3\xa9")` under
+  libc mode) + mirror `String.escaped` byte-wise in `batchEscape`; then a
+  plant in the extractor selftest is NOT the place (it tests the harness,
+  not the printer) — pin the probe in `tests/immaculate` or `tests/bytes`.
+
 - **Driver-freshness stamp: the oracle `bin` hash is not source-
   determined, and the switch's lem libraries are an uncovered link
   input (S)** — registered 2026-09-05 (pre-merge audit
