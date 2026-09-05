@@ -116,11 +116,11 @@ zd-da-align16 MATCH | L=VAL:{value: "Specified(2)", stdout: "", stderr: "", bloc
 zd-da-offset MATCH | L=VAL:{value: "Specified(8)", stdout: "", stderr: "", blocked: "false"}
 zd-e2-ptr-string-literals ORACLE_CRASH | L=VAL:{value: "Specified(0)", stdout: "98 65 66 4 83 52 3 10 9 92 34 39 63 0 4\n", stderr: "", blocked: "false"}
 zd-f1-truncate-negative-length MATCH | L=VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
-zd-z28-addr-layout-a DIFF | L=VAL:{value: "Specified(0)", stdout: "s1=281474976706000 c1=281474976705999 i1=281474976705992 p1=281474976705984\n", stderr: "", blocked: "false"}
-zd-z28-addr-layout-b DIFF | L=VAL:{value: "Specified(0)", stdout: "s1=281474976706000 c1=281474976705999 i1=281474976705992 p1=281474976705984\n", stderr: "", blocked: "false"}
-zd-z28-pointer_from_integer_2g DIFF | L=VAL:{value: "Specified(0)", stdout: "j=5 &j=(@70, 0xffffffffedd0)\n", stderr: "", blocked: "false"}
-zd-z28-provenance_equality_uintptr_t_global_yx DIFF | L=VAL:{value: "Specified(0)", stdout: "Addresses: p=ffffffffede0 q=ffffffffede0\n(p==q) = true\n", stderr: "", blocked: "false"}
-zd-z28-provenance_lost_escape_1 DIFF | L=VAL:{value: "Specified(0)", stdout: "Addresses: p=(@68, 0xffffffffede0)\n", stderr: "", blocked: "false"}
+zd-z28-addr-layout-a MATCH | L=VAL:{value: "Specified(0)", stdout: "s1=281474976706032 c1=281474976706031 i1=281474976706024 p1=281474976706016\n", stderr: "", blocked: "false"}
+zd-z28-addr-layout-b MATCH | L=VAL:{value: "Specified(0)", stdout: "s1=281474976707776 c1=281474976707775 i1=281474976707768 p1=281474976707760\n", stderr: "", blocked: "false"}
+zd-z28-pointer_from_integer_2g MATCH | L=VAL:{value: "Specified(0)", stdout: "j=5 &j=(@70, 0xffffffffede8)\n", stderr: "", blocked: "false"}
+zd-z28-provenance_equality_uintptr_t_global_yx MATCH | L=VAL:{value: "Specified(0)", stdout: "Addresses: p=fffffffff3a0 q=fffffffff3a0\n(p==q) = true\n", stderr: "", blocked: "false"}
+zd-z28-provenance_lost_escape_1 MATCH | L=VAL:{value: "Specified(0)", stdout: "Addresses: p=(@17, 0xfffffffff4cc)\n", stderr: "", blocked: "false"}
 zd-z2cp01-strtod-inf MATCH | L=VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
 zd-z2f01-lseek-whence MATCH | L=VAL:{value: "Specified(9)", stdout: "", stderr: "", blocked: "false"}
 zd-z2f04-closedir MATCH | L=CRASH
