@@ -46,7 +46,10 @@ val memory_model: memory_model
 let inline memory_model = standard_memory_model
 
 val axBehaviour: opsem_t -> program -> program_behaviours
-let inline ~{ocaml} axBehaviour = standard_behaviour
+(* Concurrency Phase 0 S5: excluded from the Lean target with the file's own
+   idiom (cf. axsimpBehaviour below) -- standard_behaviour has no Lean body
+   (cmm_csem.lem, the meta-theory surface). *)
+let inline ~{ocaml;lean} axBehaviour = standard_behaviour
 
 val axUndefined: list fault_setgen
 let inline axUndefined = locks_only_undefined_behaviour

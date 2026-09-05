@@ -35,10 +35,12 @@ val backend_name: unit -> string
 declare ocaml target_rep function backend_name = `Cerb_global.backend_name`
 declare lean target_rep function backend_name = `CerbGlobal.backend_name`
 
-val using_concurrency: unit -> bool
-declare ocaml target_rep function using_concurrency = `Cerb_global.concurrency_mode`
-declare hol  target_rep function using_concurrency u = false
-declare lean target_rep function using_concurrency = `CerbGlobal.using_concurrency`
+(* Concurrency Phase 0 S5 (2026-09-05): `using_concurrency` (a process-global
+   read of Cerb_global.concurrency_mode) is DELETED. The concurrency model is
+   an explicit parameter of the driver family (Core_run_aux.concurrency_model,
+   selected by `--concurrency=sc`), so the model has no ambient reader left on
+   any target; the OCaml Cerb_global.concurrency_mode stays for the backend's
+   own use (record docs/2026-09-05_concurrency-S5-record.md). *)
 
 
 val isDefacto: unit -> bool

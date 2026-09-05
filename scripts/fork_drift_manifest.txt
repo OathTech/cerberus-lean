@@ -194,6 +194,25 @@ merge-base=b9aeedcb4dd438763b0eef7f95ac19e93875d7de
 # `TODO[Core_reduction]` internal error to the C11 semantics; the litmus
 # lane's four RMW rows pin it at the recovered upstream expectation sets);
 # sequential lanes at zero movement.
+# S5 (2026-09-05, record docs/2026-09-05_concurrency-S5-record.md): two
+# files JOIN the differing set. lem_global.ml: the fork DELETES
+# `using_concurrency` (upstream global.lem:32-34 — a process-global read of
+# Cerb_global.concurrency_mode; the concurrency model is an explicit
+# parameter here, charter §4.7) — the generated .ml loses one commented
+# `val` line and gains the explanatory comment; no OCaml code references
+# the binding (backend/ util/ grep, zero). cmm_csem.ml: [expected-semantic]
+# TEXT change, behaviour-equal: apply_tree / apply_tree_fp_aux restated as
+# MUTUAL structural recursion with an explicit branch-list walker
+# (`List.for_all (fun (_, branch) -> f branch …) l` -> `f_list l …` with
+# `f branch … && f_list rest …`): the same left-to-right short-circuit
+# conjunction, no termination checker needed on any target (Lean's could
+# not eliminate the higher-order recursive call — the S5 record §2 has
+# the verbatim error and the three-shape test). Plus the S5 comment above
+# statically_satisfied (comment-only; the deleted `declare lean` and the
+# `declare {lean} termination_argument` lines emit nothing for OCaml).
+# Oracle behaviour: zero movement (the litmus lane runs the restated
+# functions on BOTH engines through the SC bridge check; sequential lanes
+# never reach them).
 lem-pin=af5df71
 renumber=arc13
 [files]
@@ -273,6 +292,8 @@ util/cerb_fresh.ml
 d252a154bca00b92a9dbe4422e40849d361bf1ad48dfc033be718aefb7e9f05d cabs_to_ail_effect.ml
 4e43f561d853351c040b4a53fc03636c3e869c62ff727db49584a22bdb89ea08 cabs_to_ail.ml
 845a614980cb8085f29cb5ff7161134b21acf832a17ae0baba3711ef7a6ebcc0 core_reduction.ml
+20dcc089057cfbd462eb08aa06c4d89bedf1b383eb8206c5028003b474c0e691 cmm_csem.ml
+048c98feab449a40d90166b9bd5b0a236343a939f32ba4ba103146298f7ba3e4 lem_global.ml
 84de7f818e9a41bbf1efedaa692422ab1bdd98e8615d69cc8326bd696ce29968 core_run_aux.ml
 cf84e1b62a1bf6542a4c5749bfacde5aab3d3704494df20fd058d0ecae7ab909 core_run.ml
 0d6c60605e2b54527444c8e34edc2de10c6043d4a9fcfdb14498df3142b9ad48 mini_pipeline.ml

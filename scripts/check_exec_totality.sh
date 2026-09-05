@@ -66,7 +66,14 @@ EXEC_MODULES=(Core_run Core_reduction Core_eval Driver Core_run_aux
               Nondeterminism Mem_aux
               Utils Annot Ctype Core State_exception_undefined
               State State_exception Translation_aux Cerb_attributes
-              Formatted Monadic_parsing)
+              Formatted Monadic_parsing
+              Cmm_aux Cmm_csem Cmm_op)
+# Concurrency Phase 0 S5 (2026-09-05): the Cmm modules join the slice — the
+# SC instance's drive tail evaluates Cmm_csem's relation calculators,
+# consistency tree and data_races over the recorded candidate execution
+# (Cmm_op.symState). The two apply_tree partials were totalized by
+# `declare {lean} termination_argument … = automatic` (structural recursion
+# through the branch list). Record: docs/2026-09-05_concurrency-S5-record.md.
 
 declare -A allowed=()
 if [[ -f "$ALLOW" ]]; then

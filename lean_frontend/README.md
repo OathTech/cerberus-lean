@@ -94,6 +94,13 @@ the agent-facing operating manual with all build gotchas is
   multiple translation units and can load the C standard library the
   oracle ships, so real multi-file programs (libxml2 slices, the CN
   corpus, csmith output) run under both implementations.
+- **Concurrent programs under the SC model.** `--concurrency=sc` selects
+  the SC-DRF instance of the parametric concurrency model (DESIGN.md §4):
+  thread interleavings are enumerated exhaustively, data races are
+  reported as `UB005_data_race`, and every race-free trace is checked
+  against C11's axiomatic model at trace end. Programs outside the
+  fragment (non-`seq_cst` orders, fences) are refused by name, never
+  approximated; the default sequential model refuses thread spawns.
 - **Semantics-level differential testing of C tooling.** The lanes in
   `scripts/` are reusable instruments: point them at a corpus and any
   divergence between the two implementations — or between either and
@@ -110,6 +117,9 @@ run tiers):
   cannot run: recorded, never counted as agreement) — plus the
   coverage, debug, and float suites at their pinned baselines;
 - 213/213 programs of the CN test corpus (multi-TU, libc proxies);
+- 24/24 concurrency litmus programs (`tests/litmus/`) at the recovered
+  upstream outcome sets under `--concurrency=sc`, three-way (oracle,
+  Lean, expectation file), refusal rows included;
 - 16/16 URIs through libxml2's `xmlParseURISafe` (5 translation
   units, libc-linked, byte-identical output) plus a 1,354-point
   libxml2 `chvalid` boundary battery;

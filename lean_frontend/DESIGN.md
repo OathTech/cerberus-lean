@@ -131,6 +131,70 @@ deleted, gate-enforced by `scripts/check_no_fuel_numerals.sh`. Records:
 lem-lean `doc/lean-backend/2026-09-03_fuel-parameter-design.md` (R1–R3),
 `docs/2026-09-04_fuel-parameter-C1-record.md`.
 
+**The concurrency model is a parameter.** Concurrency Phase 0
+(charter `docs/2026-09-04_concurrency-phase0-sc-charter.md`, [USER
+2026-09-04]: "make the executable memory model parametric, and initially
+support just an SC / strongly interleaved semantics … built so that we
+don't commit to it as the long term path") made the executable
+concurrency model an explicit argument of the driver family:
+`Core_run_aux.concurrency_model = CM_sequential | CM_sc`, threaded from
+`drive` (selected by `--concurrency=sc`; both engines, by generation),
+never read from process state — `Global.using_concurrency` is deleted. A
+theorem quantifies over the model or fixes an instance. The two
+instances:
+
+- `CM_sequential` (the default, today's semantics): one thread; a
+  thread spawn (`par`) is a typed refusal in the outcome list
+  (`DErr_model_refused MR_spawn_under_sequential`) where the historical
+  driver silently serialized it (fail-open, charter §2). Every
+  concurrency hook (the sequenced-before/asw walkers, the join and
+  procedure-entry annotations, the recording) is the identity under this
+  instance, so a sequential statement is unchanged by the parameter.
+- `CM_sc` (the SC-DRF instance): the interpreter enumerates the thread
+  interleavings — every memory action and memop is a scheduling point
+  once two threads exist — performing each action against the concrete
+  memory, AND records a candidate execution of C11's axiomatic model
+  alongside (`Cmm_op.symState`: actions with concrete values, thread
+  ids, location kinds from the access type, sb/asw from the reduction's
+  annotations; the witness `rf` = the most recent committed same-location
+  write, `mo` = the writes at each atomic location in commit order, `sc`
+  = the seq_cst actions in commit order). At trace end the library's
+  `data_races` verdict is reported as `UB005_data_race`, and on a
+  race-free trace the library's SC consistency tree
+  (`sc_accesses_consistent_execution`, cmm_csem.lem) must HOLD — a
+  failing leaf is a typed internal inconsistency (`MI_sc_inconsistent`),
+  plant-tested (`test/Unit/SCBridgeTest.lean`). This bridge is what makes
+  the instance a MEMBER of the C11 model family rather than an ad-hoc
+  interleaving semantics: for programs in the fragment F_SC (non-atomic
+  accesses + `seq_cst` atomics, no fences, no other orders — the entry
+  scan `model_check_file` refuses anything else with a typed
+  `model_refusal`), C11's own theorem (the DRF-SC guarantee, ISO C11
+  §5.1.2.4's note on programs using only `seq_cst` atomics; Boehm & Adve, "Foundations of the C++ concurrency
+  memory model", PLDI 2008; cmm_csem.lem `sc_accesses_memory_model`)
+  says the interleaving semantics and the axiomatic model agree on
+  race-free programs, and the runtime check confirms the instance
+  produces exactly the axiomatic model's consistent executions.
+  Sequenced-before within a thread is the interpreter's execution order
+  (C11 6.5.2.2p10: atomic operations are calls, indeterminately
+  sequenced within a full expression; the interpreter runs every order,
+  so recording the order taken yields exactly the allowed sequencings —
+  S4 record §1).
+
+*Recorded non-parametric point (temporal boundary; mover = Phase 1).*
+The interface obtains a load's value AT ISSUE from the concrete memory.
+The C11 operational instance (the `symStep` machinery, present and
+generated but unused) fixes a read's value when the read is COMMITTED,
+possibly later; the interface therefore does not yet admit deferred
+values, and a reader of the parameter surface must not take `CM_sc`'s
+shape for the general one. Designing the deferral IS the weak-memory
+design work the ruling defers; it is not attempted here (charter §4.6).
+Phase-0 scope limits, all typed refusals or recorded: non-SC orders,
+fences, Linux atomics, `wait`; `compare_exchange` on non-integer
+objects; locations are pointer values (the upstream `FOOTPRINT` dummy
+instantiation), so mixed-size overlapping accesses are not related as
+races. Validation: the litmus lane (VALIDATION.md §2, `tests/litmus/`,
+24 programs three-way at the recovered upstream expectation sets).
+
 ## 5. Differential validation: the oracle, lanes, baselines, plants
 
 The OCaml implementation is **the oracle**: it cannot be reasoned

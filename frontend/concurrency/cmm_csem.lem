@@ -557,11 +557,27 @@ let {coq} named_predicate_tree_measure t =
     | Node l -> 1 + length l
   end
 
+(* Concurrency Phase 0 S5 (2026-09-05): restated as MUTUAL structural
+   recursion with an explicit branch-list walker. Upstream's form
+   (`List.all (fun (name, branch) -> apply_tree branch X) l`) is the same
+   function -- List.all is a left-to-right short-circuit conjunction, exactly
+   `apply_tree branch X && apply_tree_list rest X` -- but no target's
+   termination checker sees through the higher-order call on a nested
+   inductive (Lean: "failed to eliminate recursive application"); the
+   walker form is structural on every target and needs no fuel. Both engines
+   are generated from this text. Record docs/2026-09-05_concurrency-S5-record.md. *)
 let rec apply_tree pred_tree X =
   match pred_tree with
     | Leaf p -> p X
-    | Node l -> List.all (fun (name, branch) -> apply_tree branch X) l
+    | Node l -> apply_tree_list l X
   end
+and apply_tree_list l X =
+  match l with
+    | [] -> true
+    | (name, branch) :: rest -> apply_tree branch X && apply_tree_list rest X
+  end
+declare {lean} termination_argument apply_tree = automatic
+declare {lean} termination_argument apply_tree_list = automatic
 
 
 type fault_setgen =
@@ -651,8 +667,17 @@ let each_empty faults_list X =
     List.all faults_empty faults_list
 
 
+(* Concurrency Phase 0 S5 (2026-09-05): the meta-theory surface of this file
+   -- statically_satisfied, observable_filter, behaviour and the per-model
+   *_behaviour functions below (24 vals) -- has {hol; isabelle; tex} bodies
+   ONLY: no executable target defines them, and no Lean-emitted code (the
+   Core dynamics reach this file through the relation calculators, the
+   consistency trees, data_races and the fault setgens) references them.
+   Their Lean target_reps (`sorry` for 23, a `true`-returning stub for
+   statically_satisfied) were therefore dead text and are removed: the Lean
+   target excludes these vals exactly as the OCaml target does (which emits
+   only the commented signature). Record docs/2026-09-05_concurrency-S5-record.md. *)
 val statically_satisfied : forall. condition_t -> opsem_t -> program -> bool
-declare lean target_rep function statically_satisfied = `CerbConcurrency.statically_satisfied`
 let {hol; isabelle; tex} statically_satisfied condition opsem (p : program) =
   let Xs = {(Xo,Xw,rl) | opsem p Xo} in
   condition Xs
@@ -660,11 +685,9 @@ let {hol; isabelle; tex} statically_satisfied condition opsem (p : program) =
 
 
 val observable_filter : forall. set (candidate_execution) -> set (observable_execution)
-declare lean target_rep function observable_filter = `sorry`
 let {hol; isabelle; tex} observable_filter X = {(Xo,Xw) | exists rl. (Xo,Xw,rl) IN X}
 
 val behaviour : forall. memory_model -> condition_t -> opsem_t -> program -> program_behaviours
-declare lean target_rep function behaviour = `sorry`
 let {hol; isabelle; tex} behaviour M condition opsem (p : program) =
   let consistent_executions =
     { (Xo,Xw,rl) |
@@ -679,12 +702,10 @@ let {hol; isabelle; tex} behaviour M condition opsem (p : program) =
 
 
 val rf_observable_filter : forall. set (candidate_execution) -> set (rf_observable_execution)
-declare lean target_rep function rf_observable_filter = `sorry`
 let {hol; isabelle; tex} rf_observable_filter X = {(Xo,Xw.rf) | exists rl. (Xo,Xw,rl) IN X}
 
 
 val rf_behaviour : forall. memory_model -> condition_t -> opsem_t -> program -> rf_program_behaviours
-declare lean target_rep function rf_behaviour = `sorry`
 let {hol; isabelle; tex} rf_behaviour M condition opsem (p : program) =
   let consistent_executions =
     { (Xo,Xw,rl) |
@@ -1299,7 +1320,6 @@ let single_thread_memory_model =
 
 
 val single_thread_behaviour : forall. opsem_t -> program -> program_behaviours
-declare lean target_rep function single_thread_behaviour = `sorry`
 let {hol; isabelle; tex} single_thread_behaviour opsem (p : program) =
   behaviour single_thread_memory_model single_thread_condition opsem p
 
@@ -1495,7 +1515,6 @@ let locks_only_memory_model =
   |>
 
 val locks_only_behaviour : forall . opsem_t -> program -> program_behaviours
-declare lean target_rep function locks_only_behaviour = `sorry`
 let {hol; isabelle; tex} locks_only_behaviour opsem (p : program) =
   behaviour locks_only_memory_model locks_only_condition opsem p
 
@@ -1597,7 +1616,6 @@ let relaxed_only_memory_model =
 
 
 val relaxed_only_behaviour : forall. opsem_t -> program -> program_behaviours
-declare lean target_rep function relaxed_only_behaviour = `sorry`
 let {hol; isabelle; tex} relaxed_only_behaviour opsem (p : program) =
   behaviour relaxed_only_memory_model relaxed_only_condition opsem p
 
@@ -1746,7 +1764,6 @@ let release_acquire_memory_model =
 
 
 val release_acquire_behaviour : forall. opsem_t -> program -> program_behaviours
-declare lean target_rep function release_acquire_behaviour = `sorry`
 let {hol; isabelle; tex} release_acquire_behaviour opsem (p : program) =
   behaviour release_acquire_memory_model release_acquire_condition opsem p
 
@@ -1865,7 +1882,6 @@ let release_acquire_relaxed_memory_model =
 
 
 val release_acquire_relaxed_behaviour : forall. opsem_t -> program -> program_behaviours
-declare lean target_rep function release_acquire_relaxed_behaviour = `sorry`
 let {hol; isabelle; tex} release_acquire_relaxed_behaviour opsem (p : program) =
   behaviour release_acquire_relaxed_memory_model release_acquire_relaxed_condition opsem p
 
@@ -2021,7 +2037,6 @@ let release_acquire_fenced_memory_model =
 
 
 val release_acquire_fenced_behaviour : forall. opsem_t -> program -> program_behaviours
-declare lean target_rep function release_acquire_fenced_behaviour = `sorry`
 let {hol; isabelle; tex} release_acquire_fenced_behaviour opsem (p : program) =
   behaviour release_acquire_fenced_memory_model release_acquire_fenced_condition opsem p
 
@@ -2110,7 +2125,6 @@ let sc_accesses_memory_model =
 
 
 val sc_accesses_behaviour : forall. opsem_t -> program -> program_behaviours
-declare lean target_rep function sc_accesses_behaviour = `sorry`
 let {hol; isabelle; tex} sc_accesses_behaviour opsem (p : program) =
   behaviour sc_accesses_memory_model sc_accesses_condition opsem p
 
@@ -2210,7 +2224,6 @@ let sc_fenced_memory_model =
 
 
 val sc_fenced_behaviour : forall. opsem_t -> program -> program_behaviours
-declare lean target_rep function sc_fenced_behaviour = `sorry`
 let {hol; isabelle; tex} sc_fenced_behaviour opsem (p : program) =
   behaviour sc_fenced_memory_model sc_fenced_condition opsem p
 
@@ -2377,7 +2390,6 @@ let with_consume_memory_model =
 
 
 val with_consume_behaviour : forall. opsem_t -> program -> program_behaviours
-declare lean target_rep function with_consume_behaviour = `sorry`
 let {hol; isabelle; tex} with_consume_behaviour opsem (p : program) =
   behaviour with_consume_memory_model with_consume_condition opsem p
 
@@ -2493,7 +2505,6 @@ let standard_memory_model =
   |>
 
 val standard_behaviour : forall. opsem_t -> program -> program_behaviours
-declare lean target_rep function standard_behaviour = `sorry`
 let {hol; isabelle; tex} standard_behaviour opsem (p : program) =
   behaviour standard_memory_model with_consume_condition opsem p
 
@@ -2543,13 +2554,11 @@ let release_acquire_SC_memory_model =
 
 
 val release_acquire_SC_behaviour : forall. opsem_t -> program -> program_behaviours
-declare lean target_rep function release_acquire_SC_behaviour = `sorry`
 let {hol; isabelle; tex} release_acquire_SC_behaviour opsem (p : program) =
   behaviour release_acquire_SC_memory_model release_acquire_SC_condition opsem p
 
 
 val release_acquire_SC_rf_behaviour : forall. opsem_t -> program -> rf_program_behaviours
-declare lean target_rep function release_acquire_SC_rf_behaviour = `sorry`
 let {hol; isabelle; tex} release_acquire_SC_rf_behaviour opsem (p : program) =
   rf_behaviour release_acquire_SC_memory_model release_acquire_SC_condition opsem p
 
@@ -2595,7 +2604,6 @@ let SC_memory_model =
 
 
 val SC_behaviour : forall. opsem_t -> program -> program_behaviours
-declare lean target_rep function SC_behaviour = `sorry`
 let {hol; isabelle; tex} SC_behaviour opsem (p : program) =
   behaviour SC_memory_model SC_condition opsem p
 
@@ -2744,12 +2752,10 @@ let tot_memory_model =
 
 
 val tot_behaviour : forall. opsem_t -> program -> program_behaviours
-declare lean target_rep function tot_behaviour = `sorry`
 let {hol; isabelle; tex} tot_behaviour opsem (p : program) =
   behaviour tot_memory_model tot_condition opsem p
 
 val tot_rf_behaviour : forall. opsem_t -> program -> rf_program_behaviours
-declare lean target_rep function tot_rf_behaviour = `sorry`
 let {hol; isabelle; tex} tot_rf_behaviour opsem (p : program) =
   rf_behaviour tot_memory_model tot_condition opsem p
 
@@ -3033,7 +3039,6 @@ let release_acquire_no_locks_memory_model =
 
 
 val release_acquire_no_locks_behaviour : forall. opsem_t -> program -> program_behaviours
-declare lean target_rep function release_acquire_no_locks_behaviour = `sorry`
 let {hol; isabelle; tex} release_acquire_no_locks_behaviour opsem (p : program) =
   behaviour release_acquire_no_locks_memory_model release_acquire_no_locks_condition opsem p
 
@@ -3254,12 +3259,20 @@ type named_predicate_tree_fp =
   | Node_fp of list (string * named_predicate_tree_fp)
 
 val apply_tree_fp_aux: named_predicate_tree_fp -> candidate_execution_fp -> candidate_execution -> bool
+(* Concurrency Phase 0 S5: mutual structural form, as apply_tree above. *)
 let rec apply_tree_fp_aux pred_tree ex_fp ex =
   match pred_tree with
     | Leaf_fp p     -> p ex_fp
     | Leaf_non_fp p -> p ex
-    | Node_fp l     -> List.all (fun (_, branch) -> apply_tree_fp_aux branch ex_fp ex) l
+    | Node_fp l     -> apply_tree_fp_aux_list l ex_fp ex
   end
+and apply_tree_fp_aux_list l ex_fp ex =
+  match l with
+    | [] -> true
+    | (_, branch) :: rest -> apply_tree_fp_aux branch ex_fp ex && apply_tree_fp_aux_list rest ex_fp ex
+  end
+declare {lean} termination_argument apply_tree_fp_aux = automatic
+declare {lean} termination_argument apply_tree_fp_aux_list = automatic
 
 val apply_tree_fp: named_predicate_tree_fp -> candidate_execution_fp -> bool
 let apply_tree_fp tree ex_fp =
@@ -3277,11 +3290,9 @@ type program_behaviours_fp =
   | Undefined_fp
 
 val observable_filter_fp : forall. set (candidate_execution_fp) -> set (observable_execution_fp)
-declare lean target_rep function observable_filter_fp = `sorry`
 let {hol; isabelle; tex} observable_filter_fp X = {(Xo,Xw) | exists rl. (Xo,Xw,rl) IN X}
 
 val behaviour_fp : forall. memory_model_fp -> condition_t -> opsem_t -> program -> program_behaviours_fp
-declare lean target_rep function behaviour_fp = `sorry`
 let {hol; isabelle; tex} behaviour_fp M condition opsem (p : program) =
   let consistent_executions_fp =
     { (Xo,Xw,rl) |
@@ -3415,6 +3426,5 @@ let overlap_memory_model =
   |>
 
 val overlap_behaviour: opsem_t -> program -> program_behaviours_fp
-declare lean target_rep function overlap_behaviour = `sorry`
 let {hol; isabelle; tex} overlap_behaviour opsem p =
   behaviour_fp overlap_memory_model sc_fenced_condition opsem p

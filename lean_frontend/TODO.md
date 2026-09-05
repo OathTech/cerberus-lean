@@ -26,22 +26,31 @@ downstream.)
   rules on both models (integer objects only — a non-integer object is a
   typed refusal, Phase-0 scope; `record docs/2026-09-05_concurrency-S4-
   record.md`); Core `RMW` (fetch-style) actions are never emitted from C
-  today (translation.lem:674 TODO) and stay refused. Owed: S5
-  DONE (S4), S5 (reasoning
-  surface: the `CM_sequential`/`CM_sc` agreement lemma on `epar_free`
-  files, `sc_fragment_ok_iff`, `using_concurrency` opaque deletion +
-  census re-pin, the 23 `sorry` reps in `cmm_csem.lem`, Cmm modules
-  into the totality slice, DESIGN/VALIDATION model sections, tray
-  draft), S6 (merge readiness). Findings parked here from the arc:
-  the front end rejects the C11 `_Atomic int` QUALIFIER form
-  (`constraint violation: … must be a pointer to _Atomic type`) while
-  `_Atomic(int)` works — upstream-tray candidate; upstream's driver
-  scheduler picked among k IDENTICAL `Step_blocked2` entries of a
-  k-child wait (k^rounds redundant traces) — fixed in S1
-  (`new_drive_core_threads`), tray candidate as a driver fix;
-  `scripts/fork_drift_manifest.txt` still says `lem-pin=af5df71`
-  (informational line, not checked by the gate; the C1 merge moved the
-  pin to `ecf75b4`) — for the orchestrator.
+  today (translation.lem:674 TODO) and stay refused. S5 (2026-09-05,
+  record `docs/2026-09-05_concurrency-S5-record.md`): the reasoning
+  surface — `using_concurrency` deleted (no ambient model read on any
+  target; opaque census −1), the `CerbConcurrency` stub module and the
+  24 dead Lean target_reps of cmm_csem.lem's meta-theory surface deleted
+  (nothing in the Lean target referenced them; the vals are excluded
+  from the Lean target as they are from OCaml), the Cmm modules in the
+  totality slice at zero partials (`apply_tree`/`apply_tree_fp_aux`
+  restated as mutual structural recursion), DESIGN/VALIDATION/README
+  model sections, tray drafts 20–22. NOT done in S5, recorded as the
+  consumer-facing theorem targets (S5 record §4): the
+  `CM_sequential`/`CM_sc` agreement lemma on `epar_free` files and the
+  bridge invariant as a lemma — both are proofs over the ND trace monad
+  and the axiomatic model's consistency of single-thread executions,
+  reasoning-era-scale work, not a Phase-0 slice. Owed: S6 (merge
+  readiness: rebase, cumulative change manifest, consumer note, the
+  "mergeable" record, STOP). Findings from the arc are in the upstream
+  tray (`docs/upstream-tray/20-22`): the `_Atomic` qualifier form dropped
+  at block scope with initializer / misplaced on parameters (S5 sweep:
+  file scope and block scope without initializer are RIGHT — the S0/S4
+  records' blanket "rejected" is narrowed by that sweep); the driver's
+  duplicate `Step_blocked2` branching; `--concurrency` broken upstream.
+  For the orchestrator: `scripts/fork_drift_manifest.txt` still says
+  `lem-pin=af5df71` (informational line, not checked by the gate; the C1
+  merge moved the pin to `ecf75b4`, the C2 merge beyond).
 - **A-road polish basket** — backend/semantics cleanups (pure-render
   emission split, remaining audit L-slice gaps, ott finish);
   itemized with prices in
