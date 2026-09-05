@@ -1,159 +1,338 @@
-# Master plan — remaining work on cerberus-lean and lem-lean (2026-09-05)
+# Master plan — cerberus-lean and lem-lean
 
-**Revision 2 (2026-09-05, post-audit).** The whole-project audit
-(`2026-09-05_whole-project-release-gate-audit.md`) falsified three
-claims below (marked `[rev 2 correction]`) and its response
-(`2026-09-05_whole-project-audit-response.md` §4) REPLACES §1's stable
-definition amendments and §5's order. Read this file with that §4.
+**Revision 3, 2026-09-05.** Updated by Codex [AGENT] at the operator's
+request following the
+[customer-readiness assessment](2026-09-05_customer-readiness-assessment.md).
+This is the complete recommended work order. It supersedes revision 2's
+sequencing and proposed release criteria, including the replacement order in
+[the audit response, section 4](2026-09-05_whole-project-audit-response.md).
+Historical evidence and [USER] rulings remain in those records. Agent
+recommendations below are not new operator rulings.
 
-Written by the orchestrator [AGENT] at the operator's request ("land the
-branch, then write a 'master plan' doc with the remaining lem + cerberus
-tasks, then pause for a project review" [USER 2026-09-05]). Every item
-below points at the record or register that carries its detail; sizes are
-S ≤ ½ day, M ≤ 3 days, L = an arc of worker time. Rulings are cited with
-[USER] provenance; sequencing and prices are [AGENT].
+**Direction:** retain the shared Lem model and the executable Cerberus
+semantics as the product. Prioritize trustworthy observations, explicit
+failure behavior, usable proof contracts, and a scoped concurrency landing.
+The verification logic stays in refined-cerberus. Improve upstream
+reviewability after the relevant semantics and interfaces settle.
 
-## 0. Where we stand
+The proposed first execution charter is
+[Validation foundations](2026-09-05_validation-foundations-charter.md).
+It turns the first priorities into an ambitious, bounded work package with
+decisions settled at entry or reserved for the final review.
 
-- **Mainlines.** cerberus-lean `mdd/cerberus-lean` @ `56b3c9e90`; lem-lean
-  `mdd/lean-backend` @ `f6542f8`. Two-repo invariant CLOSED: Lake pin =
-  opam lem = `deps/lem-pinned` = lem mainline = `f6542f8`. Neither pushed
-  since the operator's last push (pushes are operator actions).
-- **The product.** An executable Lean port of the Cerberus C semantics,
-  generated from the same `.lem` as the OCaml oracle, hand-written seams
-  mirroring the OCaml line by line, validated by differential execution
-  (the Tier A/B battery: ~3,500 programs, whole-line verdicts incl. UB
-  location, stderr, stdout bytes; gcc as a second oracle on 1,963 points;
-  immaculate pins; libxml2; CN corpus). Zero baseline movement at every
-  merge since the 2026-08-31 baseline except the ruled fixes.
-- **Trust base.** Zero axioms in this repo and LemLib (gate-enforced);
-  kernel-only proof methods (gate); 15 opaque boundary rows (down from
-  26); the ISO-fix register at three entries (R1, R2, R3 by class —
-  [USER 2026-09-05] confirmed); exception classes (a)–(d) unchanged; the
-  OCaml generated tree = upstream's file set with 22 REVIEWED content
-  deltas (11 semantic, 11 cosmetic), hash-pinned, unchanged at every
-  merge (fork-drift manifest; [rev 2 correction, audit F4: NOT
-  byte-identical]).
-- **The reasoning interface (the customer's).** Fuel is a quantified
-  `[LemFuel]` parameter reaching only the partial core: of 81 fuel'd
-  workers, 54 are MEASURED (fuel-free, kernel-checked sufficiency, 7
-  under a reviewed hypothesis), 13 ABSORBING (typed kill at exhaustion),
-  6 unreachable, 8 registered pending (`scripts/fuel_forms_pending.txt`).
-  `∀ fuel` theorems are TRUE on every measured/absorbing path. The switch
-  surface is plain defs of the default configuration (no opaque reads on
-  the exec cone).
-- **Records.** Every slice has a dated record, a pre-merge audit and an
-  orchestrator boundary review on the mainline; consumer change manifests
-  for every re-pin (C1–C4, Z1, Z2, CerbGlobal). Rulings: `DESIGN.md` §4
-  ("No magic values", the referent ruling, the four aims in
-  `VALIDATION.md` §0), the dated ruling notes.
+## 1. Starting point and ownership
 
-## 1. Definition of "stable" (the exit the plan aims at) [AGENT proposal]
-
-1. The fresh-noodler convergence test passes: a new adversarial agent
-   with a new brief and no access to earlier probe corpora finds ZERO
-   C-reachable execution discrepancies, and the whole-line lanes hold
-   at zero movement over a full re-sweep ([USER 2026-09-03]: "probably
-   correct, but bugs are still possible" is the phase we are leaving).
-2. The trust-surface risk map (§3.4 below) reports every surface
-   unmoved or moved-with-ruling, with evidence not citation.
-3. The fuel register is empty except rows blocked on UPSTREAM bugs
-   (`are_compatible` ×3), and every failure site on the exec cone is
-   typed-absorbing, proven-unreachable, or in the failure register.
-4. The lem declare family is consolidated (§2.1) and the lem submission
-   is reviewable by the upstream team.
-5. The upstream tray is filed (operator's network window).
-
-## 2. lem-lean — remaining tasks (owner: the sequential orchestrator's lem worktree)
-
-| # | Task | Why | Size | Depends on | Record |
-|---|---|---|---|---|---|
-| L1 | **Declare-family consolidation** (~10 Lean-only forms → termination / ambient / consumer-mark / supply / representation; readers carried as typeclass instances like `LemFuel`; manual rewritten once) | [USER 2026-09-04] "definitely worth doing before we get to stable"; upstream reviewability (aim 4) | M | after C4 (done) — START NOW; before the upstream submission | lem TODO row 18 |
-| L2 | **`failure_outcome` declare** for the 59 generated monadic failure sites (payload = the enclosing monad's absorbing element), DESIGNED INSIDE L1's grammar | typed-failure ruling [USER 2026-09-05 "lowest risk"]: the generated half of the monadic group | S–M (inside L1) | L1 | `2026-09-05_typed-failure-outcomes-design.md` R1 |
-| L3 | Fuel monotonicity generation (per-function `f_completes` + `f_mono`) | consumer's request §3 bullet 3; today hand-proved per use | L | L1 (vocabulary) | lem TODO row 13 |
-| L4 | Strings-as-bytes (F2) — the last lem-vs-OCaml representation gap; two parity rows are registered XFAIL | zero-discrepancy rule for lem-lean | L | none | `2026-09-03_string-representation-design.md` |
-| L5 | `Pset` laws, `remove`, `bindings = toList` for the consumer | follow-on to the Pmap laws | S–M | none | lem TODO row 19 |
-| L6 | Small TODOs: non-Prop hypothesis at generation (row 20), `sizeOf` in hypotheses (21), point-free `lemTail` global reservation (22), hypothesis-register mechanics (23), Ott derived artifacts (5) | hygiene | S each | none | lem TODO |
-| L7 | **Upstream submission prep**: the declare family (post-L1) as an upstream-reviewable patch series; the lem/01 reproducer executed; the `nonlean-regress` net as the "OCaml untouched" evidence | aim 4; the Cerberus/Lem team's review | M | L1 | `doc/lean-backend/README.md` |
-| L8 | Perf: measured-wrapper cost (eager measures, ~7% CPU on one row) — cheaper sufficient measures (`if refsOf ty = [] then …`); lazy-measure scheme only if the Tier C timing says so | [USER 2026-09-05] accepted <10%; trust-surface bar for any scheme | S–M | Tier C timing (C-P1) | C3 record §8.4, C4 F-A6 |
-
-## 3. cerberus-lean — remaining tasks (owner: the sequential orchestrator)
-
-### 3.1 Close-out of the current arcs
-| # | Task | Why | Size | Depends on | Record |
-|---|---|---|---|---|---|
-| C-TF1 | **Typed-failure seam slice**: the 7 `memM` failure sites → the memory monad's error (the driver already turns it into the kill); `panic!` → loud `failwithI` hygiene across the seams; the failure register (every pure failure site by invariant class); `check_failure_forms` gate (typed-absorbing / proven-unreachable / registered pending; fail-closed; plants) | [USER 2026-09-05] decision 4 | M | none | design note §2/§3 R1 |
-| C-Z4 | **Z4 code half**: probe integration into lanes (145 noodle + 34 audit probes; the `PINNED_TRAY_<n>` gcc class); `test_ci_sweep` re-record (tripwire-justified); Defined-line stdout widening in `test_exec.sh`; `cerb_skip` ceiling; libc-body UB-loc mover (Z1-A1, S–M); the two stale `lembugs` cites in gated files; Z2-J-01/J-02 bridge fixes + manifest re-pin; R3 `-- ISO-fix register R3` marker + bijection gate; Z-40 elab filter; Z-31 per-row timeout evidence; **tray drafts owed**: F-A2 (`_Alignas` completeness gap → both oracles hang), F-C4-1 (`are_compatible` non-termination on legal two-TU code), Z-73 (oracle silent exit 0), lean4/01 filing notes | charter §4.1/§4.2/§4.3, Z1–Z3 hand-offs | M | Z3 (done) | charter §6; Z4 docs record §5 |
-| C-N2 | **Fresh-noodler convergence test** (new agent, new brief, no earlier probes) | the exit test [USER 2026-09-03] | M | C-Z4 | `convergence-phase-and-exit-test` ruling |
-| C-RM | **Trust-surface risk map** — independent pass, baseline 2026-08-31: oracle / execution / definitions / trust base / gates / consumer surface; per surface moved·evidence·residual·mover | [USER 2026-09-05] | M | C-Z4 + C-TF1 (so it covers the surgery), BEFORE C-N2 | TODO.md row |
-| C-P1 | Tier C timing: whole csmith lane wall-clock at the merged head vs the pre-fuel head (the 7% question) | [USER 2026-09-05] perf ruling | S | none | C3 §8.4 |
-
-### 3.2 Reasoning-artifact audit follow-ups (instances not yet closed)
-| # | Instance | Remedy | Size | Status |
-|---|---|---|---|---|
-| C-A2 | Config as a reader-lifted PARAMETER (step 2; `using_concurrency` owned by `feature/concurrency`) | `drive conf switches fuel …` | M | after concurrency merges |
-| C-B | Core-text symbols minted by `String.hash` with digest `""` (Z3 fixed the DIGEST and the libc ordering; the hash-minted NUMBERS and the G6 tripwire remain) | mint from the threaded supply; delete G6 | S–M | open |
-| C-C | Enum registry as a process-global `IO.Ref` inside `sizeof_ity` | registry as a VALUE carried with the tag environment | M | open; bundle with C-TF1 or C-A2 |
-| C-D/E/F/G/I | front end `partial` (L); digest global (S–M); `runND1` branch-0 choice as ND fork/selector (S); `BEq MemValue` unsafe sandwich (S); opaque no-op shims (S) | as the audit lists | — | open; the S ones can ride C-TF1 |
-
-### 3.3 The fuel residue (8 pending rows)
-| Rows | Route | Owner |
+| Component | Assessed state | Consequence |
 |---|---|---|
-| `are_compatible_aux` + 2 siblings | UPSTREAM bug (recursion through pointers across TUs — oracle loops); tray draft; no honest hypothesis | C-Z4 (draft); stays pending until upstream fixes or a ruled ISO-fix |
-| `hack`, `many`, `many1` | no parameter hypothesis bounds them; lem body change forbidden. [rev 2 correction, audit F8]: `hack : … → value` and `finalize : … → driver_result` are PURE (Driver.lean:433, 469), as are the parser combinators → the pure-failure correspondence route (response §4 item 4) or a checked precondition; NOT a monadic `failure_outcome` | census → correspondence note |
-| `to_pure`, `to_pures` | opaque `failwithI` in the recursion argument | C-TF1 |
+| Cerberus mainline | `89f7e6885`; P0 instruments landed; fuel C4 at `56b3c9e90` | Preserve the repaired fuel checker, whole-Defined main extractor, and fork prerequisite checks. |
+| Lem and Cerberus pins | `f6542f8`; installed compiler, pinned worktree and all three checked Lake manifests agree | The two-repo invariant is closed; maintain it through functional pin changes. |
+| Fuel contracts | 81 workers: 54 measured, 13 kill-at-zero, eight reachable pending, six outside the checked entry cone; seven measured hypotheses | Quantification is delivered. Completion, propagation and sufficiency remain distinct obligations. |
+| Runtime maps | Pmap insertion/lookup laws and structurally computing map/set `join` with correspondence proofs delivered | Provide these to the customer; do not schedule their implementation again. |
+| Concurrency prototype | `feature/concurrency` at `086d8762d`, through S7; below current mainline | Historical globals-race and `apply_tree` restatement fixes exist. Repair remaining issues and audit the integrated candidate. |
+| First customer | refined-cerberus's assessed main semantics pin is `f95ef8d9c` | Its agent owns re-pinning and proof migration. Providers owe interfaces, manifests and reusable semantic lemmas. |
+| Legacy csmith run | Another agent's existing run and worktree | Outside our active queue until completion. |
 
-### 3.4 Movers outside the arcs (registered, not scheduled)
-Z-29 8 M zero-init hang (lem run-loop rendering, L); Z-30 byte-list OOM
-(representation refinement, M, parked [USER]); CerbFS real semantics
-(optional [USER Q10]); concurrency model instantiation (the
-`feature/concurrency` branch — Phase 0 SC-DRF in review; Phases 1–2
-per `2026-09-04_concurrency-scoping.md`).
+These revisions anchor the assessment, not future implementation branches.
+Recheck source heads before beginning a charter. Fresh assessment checks
+covered the Cerberus unit suite/minimal baseline, Lem's nine non-Lean
+emitters, and the prototype's 30-row litmus lane. The litmus abnormal-exit
+hole was also reproduced. None certifies a future integration head.
 
-## 4. Other branches and parties
+**Legacy-run instruction [USER], verbatim:**
 
-- **`feature/concurrency`** (another agent): S0–S6 declared mergeable;
-  pre-merge audit `audit/concurrency-premerge` @ `c0a926707` →
-  MERGE-WITH-FIXES: F1 spurious `UB005_data_race` on file-scope shared
-  objects under `--concurrency=sc` (fix + file-scope litmus rows); F2 the
-  `.lem` restatement of `apply_tree`/`apply_tree_fp_aux` → REVERT to the
-  fuel route ([USER 2026-09-05] "lem edits are against the rules");
-  rebase onto `56b3c9e90`; then re-audit the delta, battery, operator
-  sign-off, ff-merge through the orchestrator.
-- **refined-cerberus** (consumer): re-pin to `56b3c9e90`; manifests
-  C1–C4 + CerbGlobal on mainline; their restatement slice (~60
-  hypotheses → `∀ [LemFuel], … ≤ LemFuel.fuel → …`; layout-oracle
-  theorems carry `Acyclic tagDefs`); they discharge `Acyclic` for their
-  environments (`CerbTagsWf`); Pmap laws available at lem `f6542f8`.
-- **Upstream tray** (operator's network window): Cerberus drafts 02–35
-  (+ F-A2, F-C4-1, Z-73 owed), `lean4/01` (standalone reproducer,
-  fileable) and `lean4/02`, `lem/01` (reproducer to run first); three PR
-  branches. Reader's guide: `docs/upstream-tray/README.md`.
+> "That csmith run is a legacy run in another agent, leave it alone until it completes"
 
-## 5. Proposed order (sequential owner; one heavy worker at a time)
+Do not monitor, interrupt, restart, duplicate, diagnose, rebaseline or clean
+up that run or its worktree while active. Its agent retains ownership.
+After completion, incorporate the owner's final record as historical
+evidence. This is not the first task in our queue and does not block
+unrelated work. Later candidate measurements are separately scoped jobs.
 
-1. L1 declare consolidation (lem, M) ∥ C-TF1 typed-failure seams (cerberus, M) — different repos, no shared files.
-2. Pin bump after L1 (a renaming pass over cerberus's `.lem` declare lines, Lean-only).
-3. C-Z4 code half (M) incl. the owed tray drafts; C-P1 timing alongside.
-4. C-RM risk map (M, independent auditor).
-5. C-N2 fresh noodler (M). → "stable" if it passes; else the found rows become a Z5.
-6. L7 upstream submission prep; the operator's filing window.
-Concurrency merge slots in when its fixes land (any point after 1).
+**Execution instruction [USER]:** charters should be ambitious and run
+long-cycle, with critical decisions resolved up front or kept to the end;
+agents resolve non-critical choices. Build on worktrees, using paired Lem
+worktrees if needed. Landing on main requires discussion with the operator.
 
-## 6. Decisions the plan still needs from the operator
+## 2. Outcomes and release claims
 
-- D-P1: the "stable" definition in §1 — confirm or amend.
-- D-P2: the order in §5 (esp. L1 before C-Z4's pin bump vs after).
-- D-P3: C-B/C-C (symbol minting; enum registry) — schedule in C-TF1's
-  slice or as their own; both touch the consumer's cone.
-- D-P4: whether the `are_compatible` upstream bug warrants a ruled
-  ISO-fix on our side (a visited-set compatibility check — a `.lem`
-  change, hence against the standing rule unless ruled) or stays pending
-  until upstream fixes.
+| Outcome | Required claim | Outside that claim |
+|---|---|---|
+| Supported sequential release | A stated C/Core profile, trustworthy verdicts/proof definitions, explicit preconditions, reproducible artifacts, and green consumer adoption | General weak memory, optional filesystem support, universal ISO conformance |
+| Scoped SC feature landing | Explicit selector; correct behavior or attributed refusal in its domain; repaired instruments; reviewed compatibility and consumer obligations | Arbitrary pthread code, non-SC orders, fences, RC11, Linux memory ordering |
+| Upstream submission readiness | Reviewable Cerberus/Lem series, promised legacy compatibility, coherent declarations/manual, reproducible reports | Completion of every optional feature and compiler cleanup |
 
-## 7. Provenance
+The release profile distinguishes supported behavior, loud refusals,
+inherited upstream defects and open port bugs. A registered bug is not a
+supported capability. A narrower profile needs an enforced restriction or
+an explicit theorem precondition; a quiet wrong answer cannot be excluded
+by a documentation label alone.
 
-[USER]: the rulings cited inline (dates given). [AGENT] (orchestrator):
-the state summary, the stable definition proposal, the task tables,
-sizes, order, and the open decisions. Docs-only; nothing merged or
-pushed by this note.
+Shared source, no added axioms, fork-oracle parity, upstream compatibility,
+and a consumer theorem are different assurances. Each needs its own
+evidence. Preserve the aims and exception classes in
+[VALIDATION.md](../VALIDATION.md).
+
+## 3. Priority order
+
+This is the default work order. Dependencies are the actual blockers:
+concurrency must not wait for an unrelated large failure transform, byte
+migration or cosmetic refactor. Owners name repositories; this table does
+not dispatch additional agents.
+
+| Priority | Deliverable | Owner | Dependencies and exit |
+|---|---|---|---|
+| 1 | Release profile and risk baseline | Cerberus | Start now; state supported entries, hypotheses, boundaries, evidence and residual risks. |
+| 2 | Trustworthy observation/oracle instruments | Cerberus | Define observation contracts first; shared verdict handling, abnormal-exit plants, content-pinned oracle deltas, pristine-versus-fork lane, executable release runner. |
+| 3 | Failure census and reviewed design; bounded monadic repair | Lem + Cerberus | Census can start now. Review the larger transform before implementation; seven memory-monad sites gain typed errors and propagation evidence. |
+| 4 | Repair and land scoped concurrency | Cerberus | Relevant priority-2 instruments and section 5; exact rebased candidate meets domain, compatibility, proof and test obligations. |
+| 5 | Byte, semantic-state and remaining fuel contracts | Lem + Cerberus | Relevant designs; configuration follows concurrency. No unguarded known wrong answer inside the supported profile. |
+| 6 | Consumer adoption, clean build, measured cost | Providers + consumer's agent | Named integration checkpoints; exact candidate adopted with proofs through, reproducible bootstrap and CPU/RSS/completion evidence. |
+| 7 | Final risk review and fresh adversarial exercise | Cerberus + Lem | Instruments, semantics and customer candidate settled; section 8 exits met. |
+| Submission track | Declare consolidation, manual and patch series | Lem + Cerberus | Failure vocabulary reviewed; relevant interfaces settled; compatibility evidence and upstream-reviewable presentation. |
+
+**First charter:** priorities 1–2, the failure census/design evidence from
+priority 3, and the concurrency instrument repair. Its results make later
+semantic work measurable. It does not wait for the legacy sweep and does
+not implement the larger pure-failure transform or claim concurrency ready
+to land. See its explicit goals and final deliverables.
+
+## 4. Sequential semantics and backend work
+
+### 4.1 Profile, risk map and evidence
+
+Use the assessment as input to the independently reviewed risk map already
+requested in the audit response. Compare against 2026-08-31 across oracle,
+execution, definitions, trust base, gates and consumer interface. Each row
+names the change, its evidence, residual risk and the task that removes it.
+Repeat the review after the semantic changes.
+
+Repair the audit archive's missing evidence links/checksum inventory: twelve
+named logs were absent at assessment. Recover originals where available;
+otherwise identify new reproductions as new evidence. Reconcile overview
+and TODO claims with current code while preserving dated history. This
+does not include the active legacy run or its scratch files.
+
+### 4.2 Observations and independent oracles
+
+Share a byte-preserving verdict codec across `test_exec.sh`,
+`test_gcc_oracle.sh`, `test_ci_sweep.sh`, `test_cn_coverage.sh`,
+`test_multi_tu.sh`, `test_verify.sh`, and concurrency. Preserve values,
+stdout/stderr, UB code/location, blocked state and exit classification.
+Specify sequence, multiplicity or set projection per lane. Litmus reference
+outcome sets remain separate from the full Lean-versus-OCaml comparison.
+
+Acceptance includes same-value/different-byte plants, NUL/high bytes,
+escaping, multiple outcomes, truncated output, verdict-then-timeout/kill,
+and expected semantic nonzero exits. Migrate lane by lane; triage newly
+visible differences before baseline updates. Trace producers of
+`Main.batchEscape` inputs before changing its encoding assumptions.
+
+Add pristine-upstream versus fork-OCaml execution over applicable Tier A
+inputs and representative legacy CLI/library interfaces. Keep fork-OCaml
+versus Lean separate. Identify both source/compiler/runtime builds and
+intentional deltas. Independently establish pristine toolchain provenance:
+regenerating both models with fork Lem alone does not prove upstream-Lem
+compatibility.
+
+Content-pin hand-written oracle changes, including fresh supply, renumbering,
+driver and relevant build/runtime surfaces; plant a change inside an
+already-listed file. Preserve P0's locale, duplicate and prerequisite fixes.
+Retain reviewed OCaml compensation unless a separate justified change
+removes it.
+
+Create one executable release runner from LADDER's existing membership,
+with per-lane exit status, source/binary identity, required/reporting status
+and explicit incomplete/skip results. Use it to replace ad-hoc certification
+chains and support Lean CI. Do not create a competing catalogue. Preserve
+complete diagnostic evidence; a completion marker is not a passing gate.
+
+### 4.3 Failure semantics
+
+First trace deliberate pure failures through unused lets/arguments,
+projections, ignored results and callbacks, including `hack`/`finalize`,
+`to_pure(s)` and parser combinators. Separate the known Lem counterexample
+from C-reachable cases. Record actual public preconditions and what is not
+proved unreachable.
+
+Retain the mirror as reference. For any proposed explicit-failure worker,
+require success preservation and a strict failure account in addition to
+`f_exc xs = .ok v → f xs = v`: an always-failing worker satisfies that
+one-way theorem. Explain which directions are kernel-checked and which
+remain differential evidence. The mirror cannot express an exception its
+own reduction erases. Review the design with the operator before the larger
+transformation, as required by the existing audit-response ruling.
+
+Convert the seven hand-written `memM` sites into the existing error channel
+and establish propagation through the driver. Register remaining pure sites
+and add the meaningful checks/plants from
+[the typed-failure design](2026-09-05_typed-failure-outcomes-design.md).
+`panic!` to `failwithI` is interim hygiene, not pure-failure closure.
+
+Freeze the failure vocabulary after review. The 59 generated monadic sites
+use it inside Lem's declaration consolidation, rather than adding an
+unrelated new form. Keep the five monadic sites without the required location
+channel separately classified. Pure `hack`/`finalize` cannot be repaired by
+adding a monadic annotation elsewhere.
+
+### 4.4 Bytes, state and fuel
+
+| Work | Scope and acceptance |
+|---|---|
+| Lem byte strings/chars | Implement the existing byte-representation design; remove the two string bug XFAILs. Cover all char bytes, invalid UTF-8, NUL, indexing, comparison and concatenation; make text conversion explicit; rerun affected Cerberus/consumer checks. |
+| Enum, digest and symbols | Carry enum interpretation/TU digest as data; intern Core-text symbols from explicit supply. Provide needed kernel equations and reentrant/reordered/repeated-call tests; remove retired native/opaque machinery. |
+| Configuration and remaining interfaces | After concurrency lands, parameterize supported configuration/switch choices. Review single-trace selection, MemValue equality and opaque no-op shims against the actual consumer contract. |
+| Checked tag environments | Validator with `check = true → Acyclic`, or proved frontend invariant, including linking/renaming where used. Discharge `AcyclicPair` and formatting's `2 ≤ b` honestly at actual entries. |
+| Fuel contracts | Distinguish no invented success, stability of completed observations at greater fuel, and sufficient budgets. Prove required properties per family before generalizing the generator; more fuel may resolve exhausted ND branches. |
+| Backend refusal | Refuse explicit `target_rep` spelled `sorry` after removing dead consumer declarations, including concurrency's cleanup. A downstream token gate is not a guarantee for every Lem client. |
+
+The eight reachable pending workers have separate routes:
+
+| Workers | Required route |
+|---|---|
+| `are_compatible_aux` and two siblings | Prepare an upstream recursive cross-TU compatibility remedy with positive/negative tests. By-value acyclicity does not suffice. A local shared-model fix needs the existing explicit ruling; otherwise preserve the upstream-defect entry without claiming support for those cases. |
+| `hack` | Pure evaluation/finalization failure contract; no fabricated successful sentinel. |
+| `many`, `many1` | Input progress/bounds or explicit exhaustion distinguished from ordinary parse failure, using the reviewed failure design where needed. |
+| `to_pure`, `to_pures` | Resolve failure-dependent recursion arguments with proved preconditions or the reviewed representation, then discharge sufficiency. |
+
+Finish Z4's remaining work: integrate recorded noodle/audit probes, add the
+appropriate `PINNED_TRAY_<n>` GCC classification, enforce skip accounting,
+preserve libc-body UB locations, close Z2-J bridge issues, and finish R3's
+marker/register correspondence. Re-record CI results after its extractor
+is repaired. Keep Z-40's elaboration filter, per-row timeout evidence and
+stale source cites attached to their existing backlog entries.
+
+## 5. Concurrency repair and landing
+
+Phase 0 landing is a near-term deliverable. The S7 fixes and corpus are
+valuable but do not replace these exit checks:
+
+1. Prepare an integration copy at an identified current mainline. Preserve
+   C4 hypotheses/P0 instruments, S7's initialization ordering and original
+   `apply_tree` bodies with measure proofs. Resolve tray draft 36's collision
+   and refresh manifests/census claims. Do not overwrite its owner's tree.
+2. Repair CR-1: capture both original engine statuses, including the sequential
+   refusal leg. Fix the negated-command status loss and ignored oracle status.
+   The [assessment probe](2026-09-05_litmus-exit-status-probe.py) must stop
+   accepting all four plants; add lane-integrated plants and full observation
+   parity alongside reference outcome sets.
+3. Repair or enforce a narrower checked domain for mixed-size overlapping
+   accesses and SeqRMW sequencing. The mixed-size case is a recorded quiet
+   wrong answer in the advertised fragment; a Phase-1 TODO does not close it.
+   Test dynamic accesses as well as the syntactic memory-order scan.
+4. Discharge the accepted consumer agreement obligation: verdict observations
+   under `epar_free`, `sc_fragment_ok`, valid initial state, appropriate fuel
+   conditions and any necessary domain restrictions. Prove single-thread SC
+   consistency and silent race checks. Literal state equality is false; the
+   six identity lemmas do not suffice. This is provider work. Any proposed
+   experimental landing without that guarantee needs an explicit end-of-work
+   decision, not silent transfer of the obligation to refined-cerberus.
+5. Audit compatibility and the whole final delta. Default mode now refuses
+   parallel spawn; compare-exchange gains sequential behavior. Name and test
+   these intentional changes. Shared semantic changes follow the approved
+   concurrency charter; Lean-plumbing-only body rewrites remain excluded.
+6. Regenerate and validate the exact candidate: cache-disabled rebuilds where
+   required, full Tier A+B, litmus checks/plants, applicable candidate reporting
+   evidence and consumer-shaped proofs. Bring the candidate, review findings
+   and consumer manifest to the operator for the landing discussion; ff-only.
+
+Integration preparation can proceed once the relevant instruments are ready.
+Do not make general failure lifting or byte migration dependencies without
+concrete evidence. An SC landing does not itself declare the entire product
+stable. Weak memory, symbolic reads, RC11 and LKMM remain future scoped work.
+
+## 6. Consumer, performance and upstream work
+
+Use named integration checkpoints rather than asking refined-cerberus to
+chase every provider commit. Supply C1–C4/map/config manifests and precise
+selector/error/step changes for concurrency. Its agent owns re-pinning,
+`[LemFuel]` restatements, environment hypotheses and its full proof gate.
+Providers own defects and reusable semantic/map lemmas. Adoption of the final
+release candidate is an exit; old green proofs at `f95ef8d9c` do not meet it.
+Its E5/E6/E7 implementation and C-example scope are not assigned here.
+
+Rehearse a clean consumer build outside the primed workspace: generation,
+copy manifests, native objects, toolchain and compiler/runtime pins must be
+explicit. Include a small proof over the genuine entry and map laws. Check
+Cerberus's Lean 4.32.2 package and Lem's supported standalone toolchain(s).
+
+At an agreed candidate checkpoint, measure CPU, wall time, RSS and completion
+against the relevant pre-measure baseline. One row's ~7% overhead does not
+establish aggregate <10% cost. Prefer cheaper proved-sufficient measures
+where evidence warrants them. Run-loop rendering, stack behavior and memory
+representation remain real work subject to existing design rulings; avoid
+heartbeat increases, arbitrary budgets and unreviewed representation changes.
+This future campaign does not take over the legacy run.
+
+After reviewing the failure vocabulary, consolidate Lem's
+termination/ambient/consumer/supply/representation forms and rewrite the
+manual around them. Preserve non-Lean goldens, mixed-target/reentrancy checks
+and consumer-relevant behavior. Enumerate intentional Lean signature/text
+changes rather than promising byte identity for a representation change.
+Consolidation serves the upstream series; syntax cleanup alone does not earn
+a stable semantics claim. Preserve the existing [USER 2026-09-04]
+before-stable expectation for declaration consolidation; distinguishing a
+scoped customer checkpoint from upstream readiness does not waive it.
+
+Prepare the owed `_Alignas`, recursive `are_compatible` and empty-execution
+reports; reconcile concurrency drafts and preserve `mk_conv_int`. Finish
+Lean/Lem reproducer preparation and reviewable patch series. Filing/pushing
+remain separate operator actions.
+
+## 7. Retained backlog and crosswalk
+
+Keep Pset/remove/bindings laws, qualified constructor rendering, library-name
+entanglement, emission-state refactoring, Ott artifacts, remaining kernel
+reduction obstacles and small diagnostics/library issues visible. Promote
+them when a supported behavior, consumer proof, reproducible build or
+upstream submission needs them.
+
+Frontend totality beyond the execution slice, large-memory representation,
+real CerbFS and general weak memory need scoped designs. Do not revive parked
+reasoning/prototype branches to solve them.
+
+| Earlier IDs | Current location |
+|---|---|
+| C-RM, audit F10 | Sections 2, 4.1, 8 |
+| P0 remainder, C-Z4, audit F3–F5 | Sections 4.1–4.2, end of 4.4; legacy run externally owned |
+| C-TF1, L2, audit F1/F8 | Sections 4.3–4.4 |
+| Concurrency | Section 5 |
+| L4, C-A2, C-B/C-C and remaining reasoning-artifact instances | Section 4.4 |
+| L3 and pending fuel | Section 4.4 |
+| C-P1, L8, Z-29/Z-30 resources | Section 6; existing design/parking decisions preserved |
+| Consumer adoption, audit F9 | Section 6 |
+| L1, L7 | Section 6 consolidation/submission |
+| L5, L6, other small Lem TODOs | Section 7 |
+| C-N2 | Section 8 |
+
+## 8. Release exits and decision boundaries
+
+A supported release requires, on identified revisions:
+
+1. A reviewed profile with evidence for each claim. Known port defects in
+   its domain are fixed or excluded by checked restrictions/preconditions;
+   inherited upstream defects stay separately identified.
+2. Complete required validation with trustworthy instruments, coherent pins,
+   fresh artifacts, triaged movement and explicit skip/resource accounting.
+   Reporting results do not become exhaustive conformance claims.
+3. No reachable invented success on certified entries. Required failure,
+   fuel and environment contracts are proved or explicit theorem preconditions.
+   Merely listing opaque failure as pending does not satisfy this exit.
+4. Clean reproducible consumption and actual refined-cerberus adoption of
+   the final candidate with proofs through.
+5. Repeated risk review and the already-requested fresh adversarial convergence
+   exercise after the instruments and semantics settle. New findings reopen
+   their work packages; zero findings remains evidence, not universal proof.
+
+SC additionally meets section 5; upstream submission additionally meets
+section 6. Report these as distinct milestones.
+
+Unresolved critical boundaries are the pure-failure design before its larger
+transform, any relaxation of the accepted concurrency agreement obligation,
+and a local shared-model compatibility repair. Prepare evidence and concrete
+proposals before asking for these decisions. Routine implementation choices
+stay with the agent. Each charter produces a reviewable branch and final
+report; landing on main is discussed with the operator.
+
+This file carries current ordering/ownership; TODOs retain detailed residuals
+and dated records retain evidence. Close work packages with exact validation
+records. Future readers should not need to combine obsolete work orders.

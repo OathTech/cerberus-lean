@@ -6,6 +6,12 @@ below; generated files and test results are identified separately from
 committed source. This is an assessment with targeted verification, not a
 full release certification or the independent convergence exercise.
 
+**Work-order update:** [master plan revision 3](2026-09-05_master-plan.md)
+now supplies current priorities and ownership. The operator's subsequent
+instruction leaves the legacy csmith run entirely with its existing agent
+until completion. Observations below remain historical evidence, not an
+instruction to monitor or take over that run.
+
 **Judgment:** retain the shared-model architecture and finish its correctness
 and consumer contracts. The project is a substantial, useful development
 dependency, but an unrestricted stable-release claim is premature. The

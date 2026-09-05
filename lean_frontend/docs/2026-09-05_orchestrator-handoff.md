@@ -1,5 +1,16 @@
 # Orchestrator handoff — cerberus-lean + lem-lean, state and what's next (2026-09-05, evening)
 
+**Current planning note [AGENT, 2026-09-05]:** read
+[master plan revision 3](2026-09-05_master-plan.md) for the current work order,
+[the customer-readiness assessment](2026-09-05_customer-readiness-assessment.md)
+for the newer source/check snapshot, and
+[the proposed first charter](2026-09-05_validation-foundations-charter.md)
+for the next execution package. The rest of this handoff is the outgoing
+agent's historical record; revision 3 replaces the older combined reading
+order below. The operator's subsequent instruction leaves the legacy csmith
+run with its existing agent until completion, superseding this handoff's
+directions to monitor, record or clean up that run. Follow current ownership.
+
 Written by the outgoing orchestrator [AGENT] for the agent picking up the
 orchestrator role. Everything here is either measured on the box today or
 cites the committed record that carries it. Rulings are quoted verbatim
