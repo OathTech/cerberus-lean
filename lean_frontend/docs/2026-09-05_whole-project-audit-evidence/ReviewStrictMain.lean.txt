@@ -1,0 +1,6 @@
+import Review_strict
+
+theorem discarded_succeeds (n : Nat) : discarded n = n + 1 := rfl
+#print axioms discarded_succeeds
+
+def main (args : List String) : IO Unit := IO.println (discarded args.length)

@@ -1,0 +1,3 @@
+open import Pervasives_extra
+let discarded (n : nat) : nat =
+  let x : nat = failwith "review discarded failure" in n + 1

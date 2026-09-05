@@ -1,0 +1,14 @@
+name = "ReviewStrict"
+defaultTargets = ["review-strict-lean"]
+
+[[require]]
+name = "LemLib"
+path = "../../cerberus-lean/lean_frontend/.lake/packages/LemLib/lean-lib"
+
+[[lean_lib]]
+name = "ReviewInput"
+roots = ["Review_strict"]
+
+[[lean_exe]]
+name = "review-strict-lean"
+root = "ReviewStrictMain"

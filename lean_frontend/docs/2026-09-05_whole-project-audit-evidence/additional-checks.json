@@ -1,0 +1,58 @@
+[
+  {
+    "name": "coverage",
+    "command": [
+      "./scripts/test_exec.sh",
+      "--check-baseline=scripts/exec_coverage_baseline.txt",
+      "tests/coverage"
+    ],
+    "exit": 0
+  },
+  {
+    "name": "debug",
+    "command": [
+      "./scripts/test_exec.sh",
+      "--check-baseline=scripts/exec_debug_baseline.txt",
+      "tests/debug"
+    ],
+    "exit": 0
+  },
+  {
+    "name": "float",
+    "command": [
+      "./scripts/test_exec.sh",
+      "--check-baseline=scripts/exec_float_baseline.txt",
+      "tests/float"
+    ],
+    "exit": 0
+  },
+  {
+    "name": "bytes",
+    "command": [
+      "./scripts/test_bytes.sh"
+    ],
+    "exit": 0
+  },
+  {
+    "name": "multi-tu",
+    "command": [
+      "./scripts/test_multi_tu.sh"
+    ],
+    "exit": 0
+  },
+  {
+    "name": "libc",
+    "command": [
+      "./scripts/test_libc_exec.sh"
+    ],
+    "exit": 0
+  },
+  {
+    "name": "cn",
+    "command": [
+      "./scripts/test_cn_coverage.sh",
+      "--check-baseline"
+    ],
+    "exit": 0
+  }
+]

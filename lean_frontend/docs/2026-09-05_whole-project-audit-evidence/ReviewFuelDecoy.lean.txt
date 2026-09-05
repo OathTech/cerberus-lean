@@ -1,0 +1,18 @@
+import CerbND
+
+-- Deliberately unrelated zero theorem: the classifier must reject this.
+def review_bad_lemFuel (fuel : Nat) : Nat := fuel
+
+theorem review_bad_lemFuel_zero {a info err cs st : Type}
+    (m : ndM a info err cs st) (st0 : st) :
+    CerbND.runNDFuel 0 m st0 =
+      [(nd_status.Killed st0 CerbND.fuelExhaustedKill, [], st0)] := rfl
+
+-- A genuinely fuel-sensitive result, with a tautological obligation using
+-- the worker's name at a different argument from the wrapper's input.
+def review_shift_lemFuel (fuel x : Nat) : Nat := x - fuel
+def review_shift (x : Nat) : Nat := 0 * x
+theorem review_shift_measure_sufficient (x : Nat) (lemFuel : Nat)
+    (_lemMeasureLe : 0 ≤ lemFuel) :
+    review_shift_lemFuel lemFuel 0 = review_shift x := by
+  simp [review_shift_lemFuel, review_shift]

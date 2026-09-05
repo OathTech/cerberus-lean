@@ -1,0 +1,1 @@
+let () = print_int (Review_strict.discarded (Array.length Sys.argv - 1))
