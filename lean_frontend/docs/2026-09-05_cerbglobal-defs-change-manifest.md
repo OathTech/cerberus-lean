@@ -64,7 +64,7 @@ export's meaning changes.
   () then …` each close by `simp only [CerbGlobal.has_switch_eq,
   CerbGlobal.is_PNVI_eq, Bool.false_eq_true, ↓reduceIte]` (or `rw [… ];
   rw [if_neg (fun h => Bool.noConfusion h)]`, or `decide` on the test).
-  Your `README.md:585-600` premise ("the Lean `CerbMem` references no
+  Your `README.md:612-624` premise (the paragraph our 2026-09-03 audit cited at `:585-600`; "the Lean `CerbMem` references no
   `CerbGlobal` constant") should be restated as "every `CerbGlobal` read in
   `CerbMem` unfolds to its default (`has_switch_eq`, `is_PNVI_eq`)".
 - **`driver2_done`** (`DriverCollapse.lean:64`, `cases hmode` at `:709`): drop

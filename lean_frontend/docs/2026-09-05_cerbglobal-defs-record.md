@@ -49,7 +49,7 @@ worktrees untouched.
   option bump (§3).
 - Battery on fresh stamped binaries: Tier A + Tier B — ZERO movement (§5).
 - Consumer (refined-cerberus): the switch-independence argument of
-  `cerberus-heaplang/README.md:585-600` is TRUE again at this head, now by
+  `cerberus-heaplang/README.md:612-624` (was `:585-600` at the 2026-09-03 audit's read) is TRUE again at this head, now by
   unfolding rather than by absence; `driver2_done`'s `cases` can go. Change
   manifest: `2026-09-05_cerbglobal-defs-change-manifest.md` (§6).
 - Not done / for the operator: §7. Commits: §8.
@@ -114,13 +114,17 @@ reads) is KEPT as the value type step 2's parameter will have; `conf : CerbConf
 **The one moved default, `backendName`.** The deleted ref's default was
 `"cerberus-lean"`; the oracle's value is `"Driver"` (main.ml:124). Every
 read of `backend_name ()` in the model is an equality test — the complete
-set, from the `.lem` (`grep -n 'backend_name' frontend/model/*.lem`):
+set, NINE lem sites (`grep -n 'backend_name' frontend/model/*.lem`; the
+first draft of this record listed six — pre-merge audit F1 supplied the
+three `translation.lem` sites its `head`-truncated grep had dropped):
 `cabs_to_ail_effect.lem:676` (`= "Cn"`), `translation_effect.lem:231`
-(`= "Cn"`), `translation.lem:409, 1732, 1741` (`= "Cn"`), `core_aux.lem:552-553`
-(`let backend = … in if backend = "Cn" || backend = "Bmc"`); the generated
-Lean agrees (derived: `grep -oE 'CerbGlobal\.backend_name +\(\) +== +"[A-Za-z]*"'`
-→ 8 × `== "Cn"` in `Cabs_to_ail_effect`/`Translation_effect`/`Translation`;
-`Core_aux.lean:384` `backend == "Cn"`, `backend == "Bmc"`). No read prints,
+(`= "Cn"`), `translation.lem:409, 1732, 1741, 1822, 1830, 4120` (all
+`= "Cn"`), `core_aux.lem:552-553` (`let backend = … in if backend = "Cn"
+|| backend = "Bmc"`); the generated Lean agrees (derived: `grep -oE
+'CerbGlobal\.backend_name +\(\) +== +"[A-Za-z]*"'` → 8 × `== "Cn"` in
+`Cabs_to_ail_effect`/`Translation_effect`/`Translation`; `Core_aux.lean:384`
+`backend == "Cn"`, `backend == "Bmc"` — 9 generated occurrences for the 9
+lem sites). No read prints,
 stores or otherwise inspects the string. Hence `"cerberus-lean"` and
 `"Driver"` are indistinguishable to the model; the value is now the
 oracle's (mirror doctrine), and the battery confirms (§5).
@@ -136,12 +140,32 @@ it never wrote `confRef.execMode`, which no code path ever wrote (§1). So
 the value the binary has always computed for `Global.current_execution_mode
 ()` is `none`, in both `--first` and exhaustive runs; the `def` states that.
 The oracle's value differs by lane (`Some Exhaustive` under the exec lanes'
-`--mode=exhaustive`; `Some Random` under the single-trace lanes' bare
-default) — the DECLARED Z2-G-01 instrument (Z2 record; the in-file note is
-kept): the one live exec-cone read, `driver.lem:1380` (`if
-Global.current_execution_mode () = Just Global.Random then …`), takes the
-same branch for `none` and `Some Exhaustive`; `driver.lem:748`'s
-`_execution_mode_is_random` is an unused binding. Making `--first` read
+`--mode=exhaustive`; `Some Random` wherever a lane invokes the oracle
+without `--mode` — FOUR lane scripts do, not the "two" the in-file
+Z2-G-01 note and this record's first draft said (pre-merge audit F2):
+`scripts/test_immaculate.sh:140` (`oflags=(--exec --batch)`),
+`scripts/test_libc_exec.sh:87`, `scripts/test_libxml2.sh:162`,
+`scripts/test_libxml2_uri.sh:139,160`) — the DECLARED Z2-G-01 instrument
+(Z2 record; the in-file note is kept, its "two lanes" count to be
+corrected with the next code-touching slice). The equivalence argument
+is unchanged and is the auditor's F9 observation, adopted here: the read
+has exactly ONE live exec-cone site — `driver.lem:748`'s
+`_execution_mode_is_random` (`perform_action_request2`) is an UNUSED
+binding, so `driver.lem:1380` (`driver2`: `if
+Global.current_execution_mode () = Just Global.Random then …`) is the only
+read whose value reaches a branch. Its arms (`driver.lem:1380-1428`):
+then — `ND.bindExhaustive (ND.pick (SK_misc ["driver 2"]) tid_steps) …
+process_core_step2`; else — filter `tid_steps` to the non-blocked
+threads, then `ND.pick (SK_misc ["driver non_blocked"]) … >>=
+process_core_step2`. For `none` and `Some Exhaustive` the test is false —
+identical. For `Some Random` (the four `--mode`-less lanes) the arms
+differ only in `bindExhaustive` vs `>>=` over the pick and in whether
+blocked threads are filtered; with a single runnable thread — the only
+situation matched mode reaches (`--concurrency` refused, Z-24; the
+oracle's own is "BROKEN") — the pick is over a singleton in both arms and
+the same step is processed. The Z2-G-01 row's recommendation (pass
+`--mode=exhaustive` in those lanes; INSTRUMENT, S) stays open, not this
+slice's. Making `--first` read
 as `Random` would CHANGE the branch taken in the single-trace lanes — a
 behaviour change outside this step, and moot once step 2 makes the read a
 parameter the driver supplies. Recorded as a step-2 question (§7), not
@@ -181,7 +205,9 @@ the FUEL leg of `check_theorem_axioms.sh` reports its cones unchanged
 - KEEP rows retired (4): `confRef`, `switchesRef`, `getConf`,
   `has_switch_impl` (class `temporal(post-arc-parameter-plumbing-slice)`),
   with the retirement note in the file's "retired 2026-09-05" section.
-  KEEP rows 11 → 7 (derived, `grep -c KEEP`).
+  Real (tab-separated) KEEP rows 8 → 4 (derived, `grep -cP
+  '^\S+\t\S+\t\S+\tKEEP'`; the first draft said "11 → 7" from a bare
+  `grep -c KEEP`, which also counts the header's class comments — audit F4).
 - PIN rows retired (29 = 11 IMPLBY + 4 UNSAFEBASEIO + 14 UNSAFEDECL, all
   `lean_frontend/CerbGlobal.lean`, count 2 each — the hand-written file
   and its `generated/` copy): PIN rows 66 → 37 (derived, `grep -c '^PIN '`).
@@ -334,30 +360,78 @@ Final stamps (`tools/check_driver_fresh.sh --check`, rc 0, after the last
 lane): `oracle OK (bin eff14bc4…, src 7f1a0c0a…)`, `lean OK (bin 00edd6fd…,
 src e9f05dfb…)`.
 
-### 5.3 Observation (not a movement): the oracle binary was relinked from unchanged sources
+### 5.3 Observation (not a movement): the oracle binary's hash moves with `git describe`, not with its sources
 
 Before the slice `--check` reported `oracle OK (bin 28fb2198…, src
 7f1a0c0a…)`. The first lane's `build_cerberus` (`dune build
 backend/driver/main.exe …`, incremental) relinked `main.exe` at 06:56:26
 and re-recorded `oracle OK (bin eff14bc4…, src 7f1a0c0a…)` — the SAME
 source hash (no OCaml or `.lem` file changed in this slice; the lem-sync
-stamps are unchanged). Every subsequent lane ran on `eff14bc4…`. The source
-set the stamp hashes is unchanged, so the freshness gate's guarantee
-("the binary corresponds to its sources") holds throughout; the relink
-itself is dune's incremental decision on an input outside the hashed set
-— the likely one is the SHARED opam switch (`_opam` → the primary
-checkout's), whose `lib/cerberus-lib` and `stublibs` are rewritten by
-every `dune install cerberus-lib` from any checkout (the primary's refresh
-was running concurrently; this worktree's own lanes rewrote them at 07:03).
-Recorded because a binary hash moving without a source change is exactly
-the class the stamp exists to make visible; no lane moved. If the operator
-wants it closed, the fix is outside this slice (the stamp's source set
-does not cover the switch; the worktree recipe shares it by design).
+stamps are unchanged); the orchestrator's re-verify build then produced a
+third hash (`e09043b6…`, audit §1 F3) at the same `src`. Every lane ran on
+a binary whose hashed source set is the pre-slice one, so the freshness
+gate's guarantee ("the binary corresponds to its sources") holds
+throughout.
 
+The first draft of this record attributed the relink to the shared opam
+switch. That attribution was WRONG; the pre-merge audit (F3, §2.5,
+`2026-09-05_cerbglobal-defs-audit-premerge.md`) measured the mechanism in
+the tree, adopted here verbatim:
+
+```
+ocaml_frontend/dune:12-18
+(rule
+ (targets version.ml)
+ (deps (universe))
+ (action
+  (with-stdout-to version.ml
+    (run ocaml -I +unix unix.cma %{dep:../tools/gen_version.ml})))
+ (mode fallback))
+```
+
+```
+tools/gen_version.ml:11-16
+let git_version =
+  Option.map ((^) "git-") @@ run_cmd "git describe --dirty --always"
+
+let git_version_date =
+  Option.bind (run_cmd "git describe --always") (fun hash ->
+    run_cmd ("git show --no-patch --format=\"%ci\" " ^ hash))
+```
+
+```
+_build/default/ocaml_frontend/version.ml
+let git_version : string = "git-cn-pin-697-gdda02fb61"
+let git_version_date : string = "2026-09-05 08:00:18 +0000"
+let version : string = "git-cn-pin-697-gdda02fb61"
+```
+
+`Version.version` is read by `backend/driver/main.ml:558` and
+`backend/common/pipeline.ml:659`, so it is linked into `main.exe`; the
+rule depends on `(universe)` (re-run every build) and the string carries
+`--dirty` and the HEAD hash. The three hashes are exactly HEAD `928aa1e76`
+clean → `928aa1e76-dirty` (this slice's working-tree edits during its
+battery) → `dda02fb61` clean (the orchestrator's rebuild): a
+deterministic, source-external, semantics-free input the stamp's source
+set does not hash (the generated `_build/…/version.ml` is not a source;
+`tools/gen_version.ml` is outside the hashed directories). Cross-checkout
+coupling, which the first draft feared, does not exist for the lanes: the
+workspace defines `cerberus-lib`, so dune links the in-tree library, not
+`_opam/lib/cerberus-lib`; runtime files are resolved by
+`--runtime=<worktree>/_build/install/default` (`scripts/common.sh:244`,
+every direct lane invocation; `util/cerb_runtime.ml:45-51`
+`specified_runtime` has highest priority); `main.exe` is a native
+executable and reads nothing from the switch at run time. The switch's
+`lem`/`lem_num`/`lem_zarith` libraries ARE link-time inputs the stamp does
+not cover — governed by the pin invariant ("branch heads = opam pin =
+Lake pin", `d4ba548` everywhere), not by the stamp; that pre-existing gap
+and the audit's §2.5 recommendation are registered as a `TODO.md` row
+(this audit-response commit). Nothing here blocked the merge; no lane
+moved.
 
 ## 6. Consumer note (refined-cerberus)
 
-- The switch-independence argument (`cerberus-heaplang/README.md:585-600`:
+- The switch-independence argument (`cerberus-heaplang/README.md:612-624`, the paragraph the 2026-09-03 audit cited at `:585-600`; audit-response F5:
   "the Lean `CerbMem` references no `CerbGlobal` constant, so
   `loadM`/`storeM`/`allocateObject`/`eqPtrval` are switch-independent by
   construction") was FALSE at mainline since Z1 (`killM` reads
@@ -412,9 +486,19 @@ does not cover the switch; the worktree recipe shares it by design).
    full battery above (§5) was green on this exact tree (the working tree
    at commit time = the tree the battery ran on; `git status` showed only
    these eight files modified plus the two untracked docs).
-2. (this commit) — the record and the consumer change manifest
+2. `dda02fb61` — the record and the consumer change manifest
    (`2026-09-05_cerbglobal-defs-record.md`,
    `2026-09-05_cerbglobal-defs-change-manifest.md`). Docs only.
+3. (this commit) — audit response, docs only (record, manifest, one
+   `TODO.md` row): F1 the nine `backend_name` sites (§2), F2 four
+   `--mode`-less lanes + F9 the single-live-read argument (§2.1), F3 the
+   corrected §5.3 attribution, F4 the KEEP tally (§4), F5 the consumer
+   README cite (§0, §6). No code changed; `CerbGlobal.lean`'s in-file
+   Z2-G-01 note still says "Two lanes" and its `backendName` comment
+   "the complete set" lists six sites — a comment-only correction for the
+   next code-touching slice (a comment edit alone would re-stamp the
+   binary). Pre-merge audit: `2026-09-05_cerbglobal-defs-audit-premerge.md`
+   (branch `audit/cerbglobal-premerge` @ `3709c34bc`): MERGEABLE, 0 MAJOR.
 
 Nothing merged; nothing pushed; `mdd/cerberus-lean` and `master` untouched.
 The `.tmp/cg/` logs are deleted at slice end (everything quoted above is

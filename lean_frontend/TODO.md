@@ -69,6 +69,30 @@ downstream.)
 
 ## Small items (independent; can ride along with any fix batch)
 
+- **Driver-freshness stamp: the oracle `bin` hash is not source-
+  determined, and the switch's lem libraries are an uncovered link
+  input (S)** — registered 2026-09-05 (pre-merge audit
+  `docs/2026-09-05_cerbglobal-defs-audit-premerge.md` F3/§2.5; slice
+  record `docs/2026-09-05_cerbglobal-defs-record.md` §5.3).
+  (a) `ocaml_frontend/dune:12-18`'s `version.ml` rule (`(deps
+  (universe))`, `tools/gen_version.ml` `git describe --dirty --always`
+  + commit date) is linked into `main.exe` via `Version.version`
+  (`backend/driver/main.ml:558`, `backend/common/pipeline.ml:659`), so
+  the stamped `bin` hash moves with HEAD and the dirty flag at an
+  unchanged `src` hash (three hashes at one `src` during the CerbGlobal
+  slice) — a permanent reproducibility nuisance: either exclude
+  `Version` from the oracle link (the string is printed by `--version`,
+  never consumed) or document it in `tools/check_driver_fresh.sh`'s
+  header. (b) The oracle links the switch-installed `lem`, `lem_num`,
+  `lem_zarith` (`ocaml_frontend/dune:10`, transitively from
+  `backend/driver/dune`); a lem RUNTIME change would relink the oracle
+  at an unchanged `src` and could change behaviour invisibly to the
+  stamp — today governed only by the pin invariant (branch heads = opam
+  pin = Lake pin). Cheap extra leg: record `git -C deps/lem-pinned
+  rev-parse HEAD` in the oracle stamp and compare on `--check`; at
+  minimum name `lem*` explicitly in the header's non-goals. Neither
+  blocked the CerbGlobal merge.
+
 - **core_linking.lem's dangling `set_fold` declare (S)** — registered
   2026-09-03 (pin-bump record §8): `frontend/model/core_linking.lem:61-63`
   declares an UNUSED `val set_fold` with an OCaml rep `Pset.fold` and a
