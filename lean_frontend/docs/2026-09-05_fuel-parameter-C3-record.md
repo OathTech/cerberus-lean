@@ -21,8 +21,10 @@ marked "derived" are derived. Nothing merged, nothing pushed; lem-lean,
   a trailing lambda, of which the C2 tree has none. The driver binary from
   `build_lean` is C2's byte-for-byte (`bin 797d1383ba69…`). Tier A green (§6.1).
 - **Six measures** (commit 2/n): the six point-free `function` tails are
-  MEASURED — declares in `core_reduction.lem` / `ail/ailTypesAux.lem`
-  (Lean-only; OCaml tree still byte-identical), proofs in
+  MEASURED — the `.lem` diff is exactly six `declare {lean} fuel_measure
+  val` lines plus two 9-line comment blocks (one per file, non-semantic on
+  every target; OCaml tree byte-identical, `gen` unchanged) in
+  `core_reduction.lem` / `ail/ailTypesAux.lem`, proofs in
   `Core_reduction_lemMeasureProofs.lean` (extended) and the new
   `AilTypesAux_lemMeasureProofs.lean`; every obligation's cone
   `[propext, Classical.choice, Quot.sound]`, no option bump, no `sorry`
@@ -96,7 +98,9 @@ LEAN diff -rq rc=0 lines=0 files=204
 
 **The Lean tree at the pin bump is EMPTY-diff**: no hoisted heads yet,
 because the general rule applies only to `fuel_measure`d/`structural`
-definitions and none of C2's 41 measured rows has a trailing lambda (the
+definitions and none of C2's 38 generated `fuel_measure` rows (the gate's
+41 MEASURED include 3 hand-written `CerbMem` seams lem never sees — audit
+N6) has a trailing lambda (the
 lem record's §2.7 prediction, "byte-identical without the new declares",
 holds on the real tree). No other difference — nothing to report.
 
@@ -114,6 +118,13 @@ stamp moved with the manifests.
 ## 3. The six measures (commit 2/n)
 
 ### 3.1 Declares (Lean-only, each block after its sentinel declares)
+
+The whole `.lem` change of this slice (`git diff --stat`: `ailTypesAux.lem
+| 12 ++`, `core_reduction.lem | 12 ++`) is the six declare lines below plus
+one 9-line `(* FUEL MEASURE … *)` comment block before each trio — comments
+are non-semantic on every target (and swallowed by the following `{lean}`
+declare on OCaml, C1 record §2.2's quirk), so the OCaml tree's `gen` stamp
+is unchanged (§4). No body, type or `val` was touched (audit N1).
 
 `frontend/model/core_reduction.lem` (after line 1516, the `get_ctx_unseq_aux`
 sentinel; comment swallowed by the following `{lean}` declare on OCaml):
@@ -236,8 +247,13 @@ and the seven callers that lose `[LemFuel]`: `Cabs_to_ail_aux`,
 `Cabs_to_ail_effect`, `Cabs_to_ail`, `Ctype_aux`, `GenTypesAux`, `GenTyping`,
 `Mini_pipeline` (diff line counts 2/6/2/12/8/34/2). The 59 changed heads are
 enumerated in the change manifest §2 (derived: `diff` filtered to
-`def`/`partial def`/`theorem` lines); every one of the 53 caller heads only
-drops `[LemFuel]`. The six wrappers, verbatim:
+`def`/`partial def`/`theorem` lines): 18 own-family heads (6 wrappers + 6
+obligations + 3 hoisted workers + 3 `_zero` lemmas) + **41 caller heads**,
+every one of which only drops `[LemFuel]`. (The first version of this
+sentence and commit 2/n's message said "53 callers" — a derived-tally slip,
+59 − 6, caught by the pre-merge audit N7; the manifest's by-name list was
+right all along. The commit message stays as history; this record is the
+corrected count.) The six wrappers, verbatim:
 
 ```
 def one_step_unseq_aux {a : Type} {b : Type} (p : (List (dyn_annotation) ×List (value))) (lemTail : List (generic_expr b a (sym))) : Option ((List (dyn_annotation) ×List (value))) := one_step_unseq_aux_lemFuel (List.length lemTail + 1) p lemTail
@@ -444,20 +460,47 @@ gcc second-oracle lane OK
    (`funext`-recoverable) was added.
 3. [AGENT] The remaining 15 PENDING rows keep their C2 routes (D-C2-1..4);
    nothing in this slice touched them.
-4. [AGENT] **`get_ctx`'s eager arena-size measure (F-C3-4).** Options, none
-   taken here: (a) accept — the semantics is a reasoning artifact
-   ([USER 2026-09-03]); the differential lanes are green and the lane timeout
-   caveat already covers load; (b) a cheaper sufficient measure — the recursion
-   depth of `get_ctx` is bounded by the arena's DEPTH (plus, at each `Eunseq`,
-   the operand list's length), so a backend-derived `lemDepth` (or a
-   hand-written depth function named as a qualified global) would be
-   O(|arena|) too unless memoized — no free lunch without changing the
-   wrapper's evaluation strategy; (c) a lem-side change: let the measured
-   wrapper pass the measure LAZILY (e.g. compute the fuel only when the
-   counter would otherwise exhaust) — a design change to the fuel scheme,
-   for the lem side and the consumer to weigh. Measure first: the A/B above
-   is the only number; the mem-scale/timing lane on the csmith tier would
-   quantify it across the corpus.
+4. **`get_ctx`'s eager arena-size measure (F-C3-4).** Options (the list as
+   completed by the pre-merge audit M1, §12), none taken here:
+   (a) accept — the semantics is a reasoning artifact ([USER 2026-09-03]);
+   the differential lanes are green and the lane timeout caveat already
+   covers load; (b) a cheaper sufficient measure — the recursion depth of
+   `get_ctx` is bounded by the arena's DEPTH (plus, at each `Eunseq`, the
+   operand list's length), so a backend-derived `lemDepth` (or a hand-written
+   depth function named as a qualified global) is O(|arena|) too when
+   computed eagerly; (c) a lem-side change: let the measured wrapper pass the
+   measure LAZILY (compute the fuel only when the counter would otherwise
+   exhaust) — a design change to the fuel scheme, for the lem side and the
+   consumer to weigh; (d) **the `structural` route** — with `lemTail` a named
+   parameter, `get_ctx`/`get_ctx_unseq_aux` is a mutual recursion every hop
+   of which is on a strict subterm (a child expression; the `Eunseq` operand
+   list, then its elements and its tail), so `declare {lean} structural val`
+   on both members would remove the fuel counter AND the eager measure
+   entirely (no runtime cost, a stronger artifact for the consumer). The
+   arc-3 comment at `core_reduction.lem:1495-1501` recorded
+   `termination_argument automatic` as REJECTED for this pair ("genuinely
+   mutual pair over expr/list with an accumulator"), but that premise
+   predates the hoist — the list was a point-free tail then; the risk is
+   Lean's structural recursion over the nested `expr`/`List expr` block,
+   which lem's structural analysis may still refuse (loudly). Not tried in
+   this slice; the first thing to try if the cost is ever revisited;
+   (e) **memoized/cached sizes** — carry the derived size in the arena
+   (or a size-annotated node) so the measure is O(1) at each step; this is
+   the option that also helps a consumer's `decide`/`rfl` over a large
+   arena (manifest §3), and it changes the data representation — the
+   representation-coupled class the perf doctrine asks to justify before
+   imposing.
+
+   **RULING [USER 2026-09-05]** (relayed by the coordinator, verbatim): "I
+   tend to feel like this is a price we pay, so long as it's truly <10% cpu.
+   We can record it for a future performance pass but changing the trust
+   surface is a high bar." **Disposition: ACCEPTED** — option (a); nothing
+   changed in this slice. Registered on the performance backlog (TODO.md,
+   "Fuel-parameter arc — C3 follow-ups"): re-measure the cost on the WHOLE
+   csmith lane as a Tier C instrument at the merged head (the one A/B
+   number here is one row, +7.0 %, under the <10 % bar); any lazy (c),
+   memoized (e) or `structural` (d) scheme is judged against the
+   trust-surface bar, not adopted for speed alone.
 
 ## 9. Commits
 
@@ -490,3 +533,45 @@ Branch `arc/fuel-parameter-C3`; `lean_frontend/generated/` and
 driver binaries fresh (`check_driver_fresh --check`); `.tmp/c3/` (the C2
 snapshots, lane logs, probes, drafts) is ephemeral and deleted at slice end;
 everything load-bearing is quoted here.
+
+## 12. Pre-merge audit response (audit `2026-09-05_fuel-parameter-C3-audit-premerge.md` @ `5fbabc530`, branch `audit/c3-premerge`; verdict MERGEABLE, no MAJOR)
+
+One docs-only commit on `arc/fuel-parameter-C3`, as the coordinator directed;
+`test_unit.sh` re-run on it with the exit code checked explicitly (§12's
+last line). Items and their disposition:
+
+- **M1** — §8.4's option list completed: (d) the `structural` route (now
+  plausible because `lemTail` is a named parameter; the arc-3 "automatic
+  REJECTED" premise predates the hoist; Lean's checker on the nested
+  expr/list block is the risk), and memoized/cached sizes as its own option
+  (e), not a clause of (b). The operator's ruling on F-C3-4 is recorded there
+  verbatim with its disposition (ACCEPTED, backlog row in TODO.md).
+- **M2** — the coordinator's own item (the B7 quiet-box re-run of the
+  orchestrator's battery, whose first run moved `sia_csmith_477.c` into
+  `SKIP_LEAN_TIMEOUT` under load 33); to be quoted in the boundary review,
+  not here. This record's own B7 first run/re-run pair (`sa_csmith_85.c`)
+  stands as in §6.2.
+- **N1** — the `.lem` diff stated precisely (§0, §3.1): six declares + two
+  comment blocks, non-semantic, `gen` unchanged.
+- **N6** — "41 measured rows" → the 38 generated `fuel_measure` rows are the
+  hoist candidates (§2.2); the 3 hand-written `CerbMem` rows are not
+  generated.
+- **N7** — "53 caller heads" → 41 (§4); commit 2/n's message keeps the slip
+  as history, noted in §4.
+- N2–N5, N8, N9 — acknowledged; no change (N2: the durable comparand is the
+  committed `gen` stamp; N3: the A/B is one row, said so; N4: the sentinel
+  declares are the design; N5: the `lemSize p.2` refusal statement is lem's
+  FM-size-param rule — `render_lem_size` in `src/lean_backend.ml` accepts
+  only a bare parameter after `lemSize`; read from the pinned source, not
+  re-tested; N8/N9 are the
+  boundary review's).
+
+`test_unit.sh` on this head, verbatim: 
+
+```
+check_fuel_forms: OK (81 fuel'd workers: 47 MEASURED (every obligation + proof cone ⊆ the standard three), 13 ABSORBING, 15 reachable-AMBIENT = the 15 rows of fuel_forms_pending.txt exactly, 6 ambient unreachable from the drive cone)
+gen_fuel_parametricity: OK (23 ambient fuel wrappers in the generated tree = the 23 pins of TotalityProofTest.lean Part 1, both directions)
+test_unit rc=0
+```
+
+(docs-only change; the binaries and stamps are the 2/n head's, `check_driver_fresh --check` inside the run OK).

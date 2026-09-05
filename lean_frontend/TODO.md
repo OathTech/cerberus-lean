@@ -51,6 +51,22 @@ downstream.)
   fuel'd rows (9 measured) are dead code for the exec pipeline; decide
   whether they leave the exec-cone module lists (D-C2-7). S.
 
+## Fuel-parameter arc — C3 follow-ups (record `docs/2026-09-05_fuel-parameter-C3-record.md` §7–§8)
+
+- **Performance backlog: the eager `lemSize` measure of `get_ctx` (F-C3-4;
+  RULING [USER 2026-09-05] ACCEPTED, "a price we pay, so long as it's truly
+  <10% cpu … changing the trust surface is a high bar")** — measured +7.0 %
+  CPU on ONE csmith row (`sa_csmith_85.c`, C2 vs C3 binaries, record §7).
+  Owed: re-measure on the WHOLE csmith lane as a Tier C instrument at the
+  merged head (per-row CPU, C2-head binary vs merged binary; the
+  mem-scale/timing lane shape). Any remedy — lazy measure (lem-side fuel
+  scheme change), memoized/size-annotated arena (representation change),
+  or `declare {lean} structural` on the `get_ctx`/`get_ctx_unseq_aux` pair
+  (removes the counter entirely if lem/Lean accept the nested expr/list
+  block; the arc-3 "automatic REJECTED" note predates the hoist) — is judged
+  against the trust-surface bar, not adopted for speed alone. M (measure) /
+  operator decision (remedy).
+
 ## Small items (independent; can ride along with any fix batch)
 
 - **core_linking.lem's dangling `set_fold` declare (S)** — registered
