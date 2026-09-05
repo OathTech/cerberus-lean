@@ -67,6 +67,50 @@ downstream.)
   against the trust-surface bar, not adopted for speed alone. M (measure) /
   operator decision (remedy).
 
+## Fuel-parameter arc — C4 follow-ups (record `docs/2026-09-05_fuel-parameter-C4-record.md` §7–§8)
+
+- **The dead `[LemFuel]` binders of the layout oracle's callers (work-list
+  item 2, second half).** The five layout wrappers, `reconstructValue` and
+  `memValueToBytes` are fuel-free since C4, but the ~20 `CerbMem` functions
+  that took `[LemFuel]` only to reach them (`sizeofIval`, `alignofIval`,
+  `offsetofIval`, `loadM`, `storeM`, `arrayShiftPtrval`, … — `grep -c
+  '\[LemFuel\]' lean_frontend/CerbMem.lean` = 23) still carry the binder,
+  and mem.lem's `declare {lean} fuel_consumer val` rows (allocate_object,
+  load, store, ne_ptrval, …) make their generated callers carry it too.
+  Removing them is a Lean-only cascade (the declares are Lean-target lines;
+  OCaml byte-identical by construction) that touches many generated heads —
+  its own slice, with the generated-tree diff enumerated in a manifest for
+  refined-cerberus. Until then the binders are dead (nothing reads the
+  ambient fuel below them). S.
+- **F-C4-1 — `Ctype_aux.are_compatible_aux` recurses through pointers and
+  function types (STD §6.2.7#1 structural compatibility): a cross-TU pair of
+  same-named self-referential structs (`struct node { struct node *next; }`
+  in each translation unit, reached via `memValueFromValue` on a struct
+  value crossing TUs) makes the oracle recurse forever (OCaml:
+  Stack_overflow) and exhausts any fuel here.** The three ctype_aux rows
+  stay PENDING (no frontend-guaranteed hypothesis bounds them; by-value
+  acyclicity does not). Owed: a probe under `tests/multi_tu` reproducing the
+  oracle's non-termination (a Tier C instrument), then an upstream-tray draft
+  (the standard's rule needs an "assumed compatible" set for recursive
+  types). M (probe) / operator decision (tray).
+- **A decidable acyclicity check as a load-time Tier C instrument.**
+  `CerbTagsWf.Acyclic` is an existential over ranks (the natural hypothesis
+  for the consumer); a bounded traversal computing ranks (or "definition
+  order is a rank" on `fmapElements`, if the spine order is definition order
+  — it is key order today) would let the differential lanes assert the
+  invariant on every loaded program, with a theorem `check = true → Acyclic`.
+  S–M.
+- **The measures' eager cost (the F-C3-4 mechanism, second instance).**
+  `CerbTagsWf.envBound ambient ty` traverses the whole tag environment
+  (`defsWeight`: every entry's member-type sizes) on EVERY call of
+  `sizeofCtype`/`alignofCtype`/`reconstructValue`/…, including on `int`.
+  C4's B7 lane held its baseline row-for-row (no row moved into
+  SKIP_LEAN_TIMEOUT), but the per-row CPU was not A/B-measured. Owed with
+  the C3 item: the whole-csmith-lane timing at the merged head. A cheaper
+  sufficient measure exists (pay the traversal only when `refsOf ty ≠ []`;
+  or a size-annotated environment) — judged against the trust-surface bar,
+  not adopted for speed alone. M.
+
 ## Small items (independent; can ride along with any fix batch)
 
 - **Driver-freshness stamp: the oracle `bin` hash is not source-
