@@ -9,7 +9,8 @@
 # here and on any listed worker that is no longer reachable-ambient (stale pin):
 # the register can only shrink by proving/absorbing, and grow by an explicit,
 # reviewed line. Format: <worker>  <reason class>  <route> (free text after the
-# first field). Record: lean_frontend/docs/2026-09-04_fuel-parameter-C2-record.md.
+# first field). Record: lean_frontend/docs/2026-09-04_fuel-parameter-C2-record.md;
+# the six point-free rows left at C3 (measured; lean_frontend/docs/2026-09-05_fuel-parameter-C3-record.md).
 #
 # --- tag-lookup recursion: no data measure; a measure needs a well-formedness
 #     (acyclicity) hypothesis on the tag environment, which the generated
@@ -23,15 +24,6 @@ CerbMem.reconstructValue_lemFuel   tag-lookup   Struct/Union arms reconstruct me
 are_compatible_aux_lemFuel         tag-lookup   ctype_aux.lem: Struct/Union members from tagDefs1/tagDefs2 (reached via memValueFromValue)
 are_compatible_params_aux0_lemFuel tag-lookup   sibling of are_compatible_aux (mutual block; also point-free tail)
 are_compatible_params0_lemFuel     tag-lookup   sibling of are_compatible_aux (mutual block)
-# --- point-free `function` tails: the recursion argument is an anonymous
-#     scrutinee no measure can name — BLOCKED on lem-lean TODO row 17 (Lean-only
-#     eta-expansion at emission); flips to MEASURED when that lands ---
-are_compatible_lemFuel             point-free   ail/ailTypesAux.lem (reached via step_eval_pexpr PEare_compatible); blocked on lem TODO 17
-are_compatible_params_aux_lemFuel  point-free   ail/ailTypesAux.lem sibling; blocked on lem TODO 17
-are_compatible_params_lemFuel      point-free   ail/ailTypesAux.lem sibling; blocked on lem TODO 17
-one_step_unseq_aux_lemFuel         point-free   core_reduction.lem; blocked on lem TODO 17
-get_ctx_lemFuel                    point-free   core_reduction.lem (via sibling get_ctx_unseq_aux, all-or-none); blocked on lem TODO 17
-get_ctx_unseq_aux_lemFuel          point-free   core_reduction.lem; blocked on lem TODO 17
 # --- pure recursion with no data measure and no absorbing element in the
 #     codomain: decisions for the operator (C2 record, D-C2-2 .. D-C2-4) ---
 hack_lemFuel                       pure-loop    driver.lem: step-until-value evaluation loop returning a Core `value` (Driver.finalize)

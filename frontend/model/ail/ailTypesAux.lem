@@ -1336,3 +1336,15 @@ let rec agnostic_alignment_requirement_ord ((Ctype.Ctype _ ty1_) as ty1) ((Ctype
 declare {lean} fuel val are_compatible = `fuelExhausted false`
 declare {lean} fuel val are_compatible_params_aux = `fuelExhausted (fun _ => false)`
 declare {lean} fuel val are_compatible_params = `fuelExhausted false`
+(* FUEL MEASURE (fuel-parameter arc C3, 2026-09-05; Lean-only): the block shares ONE
+   fuel counter, so each member's measure bounds the WHOLE block's call depth from
+   that entry. are_compatible: the two ctypes' derived sizes. are_compatible_params_aux:
+   its recursion argument is the `function` scrutinee (hoisted as `lemTail` since lem
+   d4ba548), a PAIR of parameter lists whose element ctypes are recursed into by
+   are_compatible — the measure is the derived size of both lists (`ctype_.lemSize_aux1`,
+   the backend's helper for `list (qualifiers * ctype * bool)`; `List.length` alone is
+   not sufficient). are_compatible_params calls the aux at fuel - 1 on the same lists,
+   hence its + 2. Proved in lean_frontend/AilTypesAux_lemMeasureProofs.lean. *)
+declare {lean} fuel_measure val are_compatible = `ctype.lemSize p.2 + ctype.lemSize p0.2 + 1`
+declare {lean} fuel_measure val are_compatible_params_aux = `ctype_.lemSize_aux1 lemTail.1 + ctype_.lemSize_aux1 lemTail.2 + 1`
+declare {lean} fuel_measure val are_compatible_params = `ctype_.lemSize_aux1 params1 + ctype_.lemSize_aux1 params2 + 2`

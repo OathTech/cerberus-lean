@@ -1514,6 +1514,18 @@ declare {lean} fuel_measure val has_ccall = `lemSize g`
 declare {lean} termination_argument is_unseq_with_ccall_aux = automatic
 declare {lean} fuel val get_ctx = `fuelExhausted []`
 declare {lean} fuel val get_ctx_unseq_aux = `fuelExhausted (fun _ => acc)`
+(* FUEL MEASURE (fuel-parameter arc C3, 2026-09-05; Lean-only): the three point-free
+   `function` tails, measurable since lem d4ba548 hoists the scrutinee into the head
+   as `lemTail`. one_step_unseq_aux recurses on the tail of `lemTail` only.
+   get_ctx/get_ctx_unseq_aux share ONE fuel counter: get_ctx descends into a
+   subexpression or hands the Eunseq operand list to the aux, which recurses into
+   get_ctx on each element and on the rest of the list — so the aux's measure is the
+   derived size of the WHOLE list (elements included; `List.length` alone is not
+   sufficient), and every cross-call strictly decreases the callee's measure. Proved in
+   lean_frontend/Core_reduction_lemMeasureProofs.lean. *)
+declare {lean} fuel_measure val one_step_unseq_aux = `List.length lemTail + 1`
+declare {lean} fuel_measure val get_ctx = `lemSize g + 1`
+declare {lean} fuel_measure val get_ctx_unseq_aux = `generic_expr_.lemSize_aux2 lemTail + 1`
 declare {lean} termination_argument apply_ctx = automatic
 declare {lean} termination_argument break_at_sseq = automatic
 declare {lean} termination_argument break_at_bound_and_sseq = automatic

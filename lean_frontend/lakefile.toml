@@ -158,6 +158,7 @@ roots = [
   "Defacto_memory_lemMeasureProofs",
   "Core_aux_lemMeasureProofs",
   "Core_eval_lemMeasureProofs",
+  "AilTypesAux_lemMeasureProofs",
 ]
 
 [[lean_exe]]
