@@ -2745,9 +2745,24 @@ ctypes, `PEmember_shift`/`PEstruct`/`PEunion`/`PEmemberof`,
 `PtrMemberShift`, `OVstruct`/`OVunion`/`MVstruct`/`MVunion`, `tagDefs`
 keys). A `struct stat` and a function `stat` coexist in libc, so ONE map
 would conflate them. The traversal is the reloc pass's shape (above) with
-every symbol position mapped; both functions are applied uniformly, so a
-local binder that happens to share a global's name is renamed consistently
-with its uses (the same conflation the hash interning already had). -/
+every symbol position the exec cone and the linker READ mapped; both
+functions are applied uniformly, so a local binder that happens to share a
+global's name is renamed consistently with its uses (the same conflation
+the hash interning already had).
+
+KNOWN NON-RENAMED SET (Z3 pre-merge audit F2): struct/union tags inside
+`core_base_type` — `OTy_struct`/`OTy_union` (Core.lean:64-66) reachable
+from `CaseBase (_, bty)`, the `Fun`/`Proc`/`ProcDecl`/`BuiltinDecl` and
+parameter btys, `GlobalDef (bty, _)`/`GlobalDecl`, `Vlist bty`, `Cnil bty`,
+`Esave (s, bty)`, `Def`/`IFun` — stay name-interned (`resolveOTyTag`,
+Z2-CP-13) while the same tag in ctype position becomes the metadata
+symbol. Inert: no exec-cone or linker `.lem` reads them (`grep -n
+'BTy_object\|BTy_loaded\|OTy_\|core_object_type'` over core_run,
+core_eval, core_reduction, driver, core_run_aux, core_linking is empty;
+core_aux.lem:58-60/98-146 only DERIVES `OTy_*` from ctypes/values, and Core
+typing — their only consumer — is not run by Main.lean), and the audit's
+`div` plant (a libc `Proc` whose return bty is `OTy_struct`) agrees on
+both engines. -/
 
 structure RenameCtx where
   onSym : sym → sym

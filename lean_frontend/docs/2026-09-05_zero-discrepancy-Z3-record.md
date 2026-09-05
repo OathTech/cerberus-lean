@@ -270,9 +270,17 @@ No `.lem` body changed; the seams are hand-written glue, mirrored with cites.
    (`CerberusFresh.setDigestIO digest`) where it used to hash the JSON text;
    `CerberusFresh.lean`'s header records that what is digested is now the same
    on both sides. The ten `tests/fixtures/*/cabs.json` goldens were
-   regenerated with the new oracle (they carry the field; their locations are
-   this box's runtime-relative paths instead of the original author's absolute
-   ones — `test_golden.sh` reads return values only).
+   regenerated with the new oracle: they carry the field, and every `"file"`
+   location moved from the original author's absolute `/Users/miked/…` paths
+   to box-relative ones (`./_build/install/…`, `tests/fixtures/<n>//source.c`)
+   — `test_golden.sh` compares return values only (pre-merge audit F4).
+   Fork-drift status (audit F1): `backend/driver/main.ml` is an already-
+   manifested layer-1 hand file of `scripts/fork_drift_manifest.txt`; the
+   `digest` export is a delta inside its fork-local `--cabs-json` arm
+   (main.ml:264-290), name-manifested and review-defended, and no generated
+   `.ml` moved, so layer 2 is unchanged — `check_fork_drift` passes by
+   design; the manifest header carries the conventional NOTE (audit-response
+   commit).
 2. **The libc stitch is reversed** (`Main.loadLibc`; module note "C-libc
    loading" rewritten). The 12 metadata TUs are frontended under the digests
    their cabs-jsons carry — `Digest.file` of `runtime/libc/src/<tu>.c`, the
@@ -280,11 +288,22 @@ No `.lem` body changed; the seams are hand-written glue, mirrored with cites.
    oracle's (numbers are the Lean supply's, order-isomorphic within a TU:
    the same lem elaboration draws them). The DUMP is then renamed onto the
    metadata's symbols by `CoreParser.renameFile` (new, CoreParser.lean:
-   section "Symbol renaming": a total traversal of every symbol position in
-   patterns, pexprs, actions, exprs, values incl. `PVnull`/`PVfunction`
-   pointer values and ctype tags, fun/glob/tag declaration keys; two
-   namespaces, ordinary identifiers vs struct/union tags, because `struct
-   stat` and the function `stat` coexist):
+   section "Symbol renaming": it renames every symbol position the exec
+   cone and the linker READ — patterns, pexprs, actions, exprs, values incl.
+   `PVnull`/`PVfunction` pointer values and ctype tags, fun/glob/tag
+   declaration keys; two namespaces, ordinary identifiers vs struct/union
+   tags, because `struct stat` and the function `stat` coexist. KNOWN
+   NON-RENAMED SET (pre-merge audit F2): struct/union tags inside
+   `core_base_type` — `OTy_struct`/`OTy_union` in `CaseBase` btys, the
+   decl/parameter btys of `Fun`/`Proc`/`ProcDecl`/`BuiltinDecl`,
+   `GlobalDef`/`GlobalDecl` btys, `Vlist`, `Cnil`, `Esave` — stay
+   name-interned; inert because no exec-cone or linker `.lem` reads them
+   (the auditor's `grep -n 'BTy_object\|BTy_loaded\|OTy_\|core_object_type'`
+   over core_run/core_eval/core_reduction/driver/core_run_aux/core_linking
+   is empty; core_aux.lem:58-60/98-146 only derives `OTy_*`, for Core typing,
+   which Main.lean does not run) and the audit's `div` plant — a libc `Proc`
+   returning a struct through an `OTy_struct` bty — agrees on both engines,
+   `docs/2026-09-05_zero-discrepancy-Z3-audit-premerge.md` §2.5/§4.4):
    * tags by name — same-name definitions across TUs must agree
      structurally (fail-closed); ONE representative symbol per tag name, on
      both halves (the metadata's funinfo ctypes, tagDefs keys/members and
@@ -862,7 +881,7 @@ measurement; it is for Z4's re-record (the committed TSV has the row
 UB_MATCH from a faster binary/box). No code change.
 
 ### 6.3 The oracle's default single-trace mode is randomised
-`--exec --batch` without `--mode` is `Random` (backend/driver/main.ml:438-441)
+`--exec --batch` without `--mode` is `Random` (backend/driver/main.ml:453-456)
 with `Random.self_init ()` (backend/common/driver_ocaml.ml:153, :194): a
 program with an ND choice (the `_yx` pointer comparisons: `(p==q)` on a
 one-past pointer) prints a DIFFERENT single line run to run (measured,

@@ -270,7 +270,7 @@ let cerberus debug_level progress core_obj
           (* zero-discrepancy Z3 (census row Z-28): the JSON carries the
              TU's digest — `Digest.file filename`, the value set_digest
              just installed and every symbol of this TU will carry
-             (frontend/model/symbol.lem:238 `Symbol (digest ()) …`). The
+             (the minting sites frontend/model/symbol.lem:284/:287, `Symbol (digest ()) (fresh_int ()) …`). The
              Lean driver sets its per-TU digest from this field instead of
              hashing the JSON text: symbol digests ORDER the linked globals
              (Core_linking.merge_globs' min-(digest, number) topological

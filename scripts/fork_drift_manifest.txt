@@ -137,6 +137,16 @@
 # --batch only, AFTER the verdict line. OFF BY DEFAULT: all default
 # output byte-unchanged (proof: full Tier A zero-movement at the
 # item-8 commit).
+# NOTE (zero-discrepancy Z3, 2026-09-05; record
+# lean_frontend/docs/2026-09-05_zero-discrepancy-Z3-record.md §3): the
+# already-manifested hand file backend/driver/main.ml (layer 1) grew one
+# delta inside its fork-local `--cabs-json` arm (main.ml:264-290) — the
+# TUnit JSON now carries "digest" = Digest.to_hex (Cerb_fresh.digest ()),
+# the Digest.file value set_digest just installed, so the Lean driver
+# installs the oracle's own per-TU digest (symbol digests order the
+# linked globals, core_linking.lem:252-273). Hand-file delta: name-
+# manifested here, content defended by review, not by a hash pin (A-F1
+# doctrine); no generated .ml moved, so layer 2 is unchanged.
 [meta]
 merge-base=b9aeedcb4dd438763b0eef7f95ac19e93875d7de
 lem-pin=af5df71
