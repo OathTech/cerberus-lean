@@ -1,13 +1,16 @@
 # Master plan — cerberus-lean and lem-lean
 
-**Revision 7, 2026-09-06.** Updated by Codex [AGENT] at the operator's
+**Revision 8, 2026-09-06.** Updated by Codex [AGENT] at the operator's
 request following the
 [customer-readiness assessment](2026-09-05_customer-readiness-assessment.md).
-Revision 7 records the [audit repairs and revalidation](2026-09-06_validation-foundations-audit-repairs.md).
-All eleven findings have implemented repairs and adversarial checks; the
-corrected candidate has completed its full battery and fresh provider/failure
-and affected reporting measurements. Second-review acceptance is pending.
-Review this candidate and discuss landing before scoped SC integration.
+Revision 8 records the [fresh document review and corrections](2026-09-06_validation-foundations-document-review.md).
+It found one material fuel-correspondence overclaim and three minor issues,
+corrected without implementation or gate changes. The user's conditional
+merge authorization required no major findings, so landing awaits a renewed
+decision. Revision 7 recorded the [audit repairs and revalidation](2026-09-06_validation-foundations-audit-repairs.md):
+all eleven findings have implemented repairs and checks, and the functional
+candidate completed its full battery, cold provider/failure work and affected
+reporting measurements. Discuss landing before scoped SC integration.
 Revision 6 recorded the first audit's hold; revision 5 recorded the original
 delivery. Those dated measurements remain preserved.
 This revision preserves the adopted decision boundaries. Revision 3 superseded revision 2's
@@ -27,9 +30,10 @@ The adopted first execution charter is
 Its [original delivery record](2026-09-06_validation-foundations-delivery.md)
 supplies the historical acceptance table and measurements. The next proposed arc is
 [scoped concurrency integration](2026-09-06_concurrency-integration-charter.md).
-The first audit is complete; its repaired candidate is ready for the second
-review. The failure design, next charter and landing remain decisions for
-the end-of-charter discussion. Repair authorization did not authorize landing.
+The first audit, repairing-agent second pass and fresh document review are
+complete. The failure design, next charter and landing remain decisions for
+the end-of-charter discussion. The latest conditional landing authorization
+and the reason for holding the merge are recorded in the document review.
 
 ## 1. Starting point and ownership
 
@@ -101,13 +105,14 @@ not dispatch additional agents.
 | 7 | Final risk review and fresh adversarial exercise | Cerberus + Lem | Instruments, semantics and customer candidate settled; section 8 exits met. |
 | Submission track | Declare consolidation, manual and patch series | Lem + Cerberus | Failure vocabulary reviewed; relevant interfaces settled; compatibility evidence and upstream-reviewable presentation. |
 
-**Current handoff:** review the repaired validation-foundations candidate
-first. Its functional primary is `de9f6d3612232d581622afcdf0b23cdaf31fa09d`; the older feature-base
+**Current handoff:** decide landing of the corrected validation-foundations
+candidate following the fresh document review. Its functional primary is `de9f6d3612232d581622afcdf0b23cdaf31fa09d`; the older feature-base
 instrument companion is `86a2aea547804b78eb7f1eae633bb9c24c713b7f`. The
 [repair record](2026-09-06_validation-foundations-audit-repairs.md) supplies
 current results and evidence, including the intentionally interrupted first
 attempt. Priorities 1–2 and the bounded census/provider work are implemented
-and measured, pending second review and a landing discussion. After that,
+and measured; the fresh review's documentary findings are corrected, with
+the landing decision pending. After that,
 scoped concurrency integration remains the recommended next implementation
 charter; review the failure design with that entry decision. Its broader
 implementation remains separate unless a concrete proof dependency requires
@@ -227,7 +232,7 @@ appropriate `PINNED_TRAY_<n>` GCC classification, enforce skip accounting,
 preserve libc-body UB locations, close Z2-J bridge issues, and finish R3's
 marker/register correspondence. Use the [completed CI re-record](2026-09-06_ci-reporting-results.md) as
 current evidence: one libc UB-location difference, three filesystem refusals
-and two Lean timeouts remain explicit. Preserve its historical scoreboards
+and three Lean timeouts remain explicit. Preserve its historical scoreboards
 separately and remeasure after relevant semantic changes. Keep Z-40's elaboration filter, per-row timeout evidence and
 stale source cites attached to their existing backlog entries.
 

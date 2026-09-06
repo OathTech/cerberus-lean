@@ -21,8 +21,10 @@ and a cold provider client. The
 [audit repair record](docs/2026-09-06_validation-foundations-audit-repairs.md)
 identifies the corrected 32/32 Tier A+B pass, C1/C4 reporting, cold build/proof
 and failure measurements. The original delivery and first audit remain dated
-history. C2/C3, customer adoption and successful second-review acceptance
-remain separate uncompleted release exits. Missing historical logs are
+history. The [fresh document review](docs/2026-09-06_validation-foundations-document-review.md)
+corrects a material fuel-correspondence overclaim and three minor issues;
+landing acceptance, C2/C3 and customer adoption remain outstanding.
+Missing historical logs are
 explicitly inventoried; they are not evidence of a current pass. See
 [the observation contract](docs/2026-09-05_observation-contract.md)
 for sequence/set projections and the printer's observational limits.
@@ -595,14 +597,17 @@ single probes. Why a fuel row is an accepted Lean-vs-oracle discrepancy
 at all — [USER 2026-09-03]: "fuel is a reasonable exception because we
 could always just run the semantics with more fuel." That ruling's
 frame is §0/§1 of this document: every Lean-vs-oracle execution
-discrepancy is a bug; fuel exhaustion is accepted under class (b) with the rationale that the bound is a PARAMETER of
-the port, not a semantic limit — now literally so: for any
-oracle-terminating run there is a `--fuel N` at which Lean agrees. This
-is the design rationale, not a shipped theorem — fuel monotonicity for
-the driver workers is NOT provided (lem-lean fuel-parameter record §5:
-it is a property of how each body CONSUMES exhaustion — an absorbing
-typed outcome — and is the next slice's subject), and a FUEL row is
-never counted as agreement. Records: `docs/2026-09-02_fuel-arc-design.md`,
+discrepancy is a bug; fuel exhaustion is accepted under class (b) with
+the rationale that the bound is a PARAMETER of the port rather than a
+fixed semantic limit. General sufficient-fuel completion and observation
+agreement are not established; they require explicit domain, failure,
+state and runtime assumptions. Increasing fuel does not repair known
+non-fuel discrepancies, such as the libc UB-location loss in the
+[current CI record](docs/2026-09-06_ci-reporting-results.md).
+Fuel monotonicity for the driver workers is NOT provided: it depends on
+how each body consumes exhaustion (lem-lean fuel-parameter record §5).
+A FUEL row is never counted as agreement.
+Records: `docs/2026-09-02_fuel-arc-design.md`,
 `docs/2026-09-04_fuel-parameter-C1-record.md`.
 ## 8. How often
 
@@ -627,9 +632,10 @@ owned cgroup v2 subtree; nested caps stay inside it. Timeout, interruption,
 surviving descendants or missing final artifacts prevent certification. A
 pipe guardian cleans the subtree after supervisor death. This requires a
 writable delegated cgroup v2 parent with memory enabled and `cgroup.kill`;
-unavailable containment fails before dispatch. The repaired candidate still
-requires its second pre-merge review; see the
-[audit repair record](docs/2026-09-06_validation-foundations-audit-repairs.md).
+unavailable containment fails before dispatch. The repaired candidate's
+[fresh document review](docs/2026-09-06_validation-foundations-document-review.md)
+is complete; its corrections require a renewed landing decision because
+the user's merge authorization was conditional on no major findings.
 
 ## 9. What this does and does not establish
 
@@ -662,10 +668,11 @@ The claims this validation surface supports are exactly:
    `runEffectful` does not exist under any name; reintroducing
    `declare {lean} effectful` is a lem generation-time refusal.
    (Charter: `docs/2026-08-31_effect-retirement-design.md` §1.3.)
-5. Fuel is a quantified parameter (§7): for any oracle-terminating run
-   there is a `--fuel N` at which Lean agrees — the design rationale,
-   not a shipped theorem (fuel monotonicity for the driver workers is
-   the next slice's subject).
+5. Fuel is a quantified parameter (§7). Wrapper equations, measured
+   sufficiency lemmas and zero-case lemmas establish their stated local
+   contracts. General completion, propagation and stability remain
+   obligations under explicit hypotheses; these local results do not
+   establish universal agreement with oracle-terminating runs.
 
 What remains on the trust boundary: the OCaml oracle itself (and
 upstream's correctness — the tray is the log of where we believe it is
@@ -681,6 +688,11 @@ left the list 2026-09-05, see below):
   kernel-checked opaques with native `@[implemented_by]`/`@[extern]`
   bindings (the C2 conversion; nothing postulated, no proof can
   unfold them);
+- `CerbMem.beqMemValueSafe`, implemented by the unsafe
+  `beqMemValueImpl` — the opaque equality used by `BEq MemValue`;
+  the native implementation is pinned, but its agreement with the
+  logical declaration is not proved. The supported profile's VF-3
+  retains this correspondence obligation;
 - (`CerbGlobal` config/switch surface — LEFT the boundary 2026-09-05:
   the refs were never written, so the eleven reads are now plain `def`s
   of the driver's default configuration, kernel-transparent, with `rfl`
