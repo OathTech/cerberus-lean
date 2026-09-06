@@ -108,6 +108,9 @@ run_capped() { # <out> <err> <cmd...>
     ( "${CAPPED_TEST[@]}" timeout "${TIMEOUT_SECS}s" /usr/bin/time -v "$@" \
         > "$out" 2> "$err" ) || rc=$?
     printf '%s\n' "$rc" > "$out.status"
+    # The caller attributes timeout/crash/cap status before verdict decoding.
+    # Raw streams remain intact; no abnormal completion reaches comparison.
+    [[ $rc -lt 124 ]] || return "$rc"
     # Preserve the complete observation before any lane-specific projection.
     python3 "$OBSERVATION_CODEC" tokens --stdout "$out" --stderr "$err" \
         --status "$rc" > "$out.tokens" || fail "incomplete batch observation: $out (exit $rc)"

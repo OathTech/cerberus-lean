@@ -35,6 +35,9 @@ LEAN_INTERNAL = re.compile(rb'^PANIC at [^\r\n]*failwithIImpl '
                            rb'[^\r\n]*:[0-9]+:[0-9]+: (.+)$', re.M)
 FATAL = re.compile(rb'^(?:PANIC at |internal error: |Fatal error: exception |'
                    rb'cerberus: internal error, uncaught exception:|capped: OOM-KILLED)', re.M)
+FUEL_RECORD = re.compile(rb'^(?:Error \{msg: "lem: fuel exhausted"\}|'
+                         rb'lem: fuel exhausted|internal error: lem: fuel exhausted|'
+                         rb'PANIC at [^\r\n]*: lem: fuel exhausted)$', re.M)
 
 
 def unescape(data: bytes) -> bytes:
@@ -138,7 +141,9 @@ def parse(stdout: bytes, stderr: bytes = b'', status: int | None = None,
     if status == 124:
         raise ProtocolError('engine timeout; exploration incomplete')
     all_output = stdout + b'\n' + stderr
-    if b'lem: fuel exhausted' in all_output:
+    # Match complete failure/diagnostic records, never a substring of an
+    # escaped semantic output field or of an unrelated Error message.
+    if FUEL_RECORD.search(all_output):
         raise ProtocolError('fuel exhausted; exploration incomplete')
     if policy == 'litmus':
         oracle = list(ORACLE_INTERNAL.finditer(all_output))

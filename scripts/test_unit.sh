@@ -113,6 +113,10 @@ if ! "$FUELCLS_SH"; then
 fi
 
 # Byte protocol and real subprocess capture plants (validation foundations).
+if ! "$(dirname "$PURITY_SH")/test_gcc_capture.sh"; then
+    echo "test_unit: native stream capture probes FAILED"
+    exit 1
+fi
 if ! python3 "$(dirname "$PURITY_SH")/test_observations.py"; then
     echo "test_unit: observation codec/capture plants FAILED"
     exit 1

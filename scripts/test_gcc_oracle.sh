@@ -379,27 +379,33 @@ gcc_run() {
     # 137 (128+KILL), so the elapsed-time discriminator accepts 137 past the
     # deadline as a timeout too (same-status-early — a fast genuine
     # signal-9/exit-137 death — still flows to comparison as before).
+    # FD 8 carries the native program's stderr. Close it after dup2 in the
+    # exec shell: timeout/capped retain their own stderr, including PID-bearing
+    # signal diagnostics. Keep both streams; compare only program bytes for
+    # native determinism, and inspect the launcher stream for OOM witnesses.
     local e1=0 e2=0 t0 t1 elapsed_ms
     local threshold_ms=$(( GCC_RUN_TIMEOUT * 1000 - 500 ))
+    printf '9 %s\n8 %s\n' "$bin" "$native_capture.run1.program.stderr" > "$native_capture.run1.fds" || return 1
     t0=$(date +%s%N)
     ( observation_capture "$native_capture.run1" "${CAPPED_TEST[@]}" timeout -k 1s "${GCC_RUN_TIMEOUT}s" \
-        setarch -R /usr/bin/env -i bash -c 'unset PWD OLDPWD SHLVL _; exec -a cmdname /proc/self/fd/9' \
-        9< "$bin" > "$WORK/run1.display" ) || e1=$?
+        setarch -R /usr/bin/env -i bash -c 'unset PWD OLDPWD SHLVL _; exec -a cmdname /proc/self/fd/9 2>&8 8>&-' \
+        8> "$native_capture.run1.program.stderr" 9< "$bin" > "$WORK/run1.display" ) || e1=$?
     t1=$(date +%s%N)
     elapsed_ms=$(( (t1 - t0) / 1000000 ))
     cp "$native_capture.run1.stdout" "$WORK/run1.out" || return 1
-    cp "$native_capture.run1.stderr" "$WORK/run1.err" || return 1
-    [[ $e1 -eq 137 ]] && grep -q "capped: OOM-KILLED" "$WORK/run1.err" && { G_STATUS=killed; return 0; }
+    cp "$native_capture.run1.program.stderr" "$WORK/run1.err" || return 1
+    [[ $e1 -eq 137 ]] && grep -q "capped: OOM-KILLED" "$native_capture.run1.stderr" && { G_STATUS=killed; return 0; }
     [[ ( $e1 -eq 124 || $e1 -eq 137 ) && $elapsed_ms -ge $threshold_ms ]] && { G_STATUS=timeout; return 0; }
+    printf '9 %s\n8 %s\n' "$bin" "$native_capture.run2.program.stderr" > "$native_capture.run2.fds" || return 1
     t0=$(date +%s%N)
     ( observation_capture "$native_capture.run2" "${CAPPED_TEST[@]}" timeout -k 1s "${GCC_RUN_TIMEOUT}s" \
-        setarch -R /usr/bin/env -i bash -c 'unset PWD OLDPWD SHLVL _; exec -a cmdname /proc/self/fd/9' \
-        9< "$bin" > "$WORK/run2.display" ) || e2=$?
+        setarch -R /usr/bin/env -i bash -c 'unset PWD OLDPWD SHLVL _; exec -a cmdname /proc/self/fd/9 2>&8 8>&-' \
+        8> "$native_capture.run2.program.stderr" 9< "$bin" > "$WORK/run2.display" ) || e2=$?
     t1=$(date +%s%N)
     elapsed_ms=$(( (t1 - t0) / 1000000 ))
     cp "$native_capture.run2.stdout" "$WORK/run2.out" || return 1
-    cp "$native_capture.run2.stderr" "$WORK/run2.err" || return 1
-    [[ $e2 -eq 137 ]] && grep -q "capped: OOM-KILLED" "$WORK/run2.err" && { G_STATUS=killed; return 0; }
+    cp "$native_capture.run2.program.stderr" "$WORK/run2.err" || return 1
+    [[ $e2 -eq 137 ]] && grep -q "capped: OOM-KILLED" "$native_capture.run2.stderr" && { G_STATUS=killed; return 0; }
     [[ ( $e2 -eq 124 || $e2 -eq 137 ) && $elapsed_ms -ge $threshold_ms ]] && { G_STATUS=timeout; return 0; }
     [[ $e1 -ne $e2 ]] && { G_STATUS=nondet; return 0; }
     if ! cmp -s "$WORK/run1.out" "$WORK/run2.out" || ! cmp -s "$WORK/run1.err" "$WORK/run2.err"; then

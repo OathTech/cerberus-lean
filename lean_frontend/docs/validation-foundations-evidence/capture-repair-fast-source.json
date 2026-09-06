@@ -1,0 +1,34 @@
+{
+  "schema": 1,
+  "parent": "5c28b3b244c64fc4696db1fd927a220f85a310fc",
+  "report": ".tmp/release-capture-repair-fast/report.json",
+  "status": "13/13 Tier A passed, source unchanged",
+  "tested_files": {
+    "scripts/LADDER.md": "0dec50b82f3648a6ab9a22ad4315bf2d91650517af22a20fbc4f9794ff29c9ae",
+    "scripts/common.sh": "7823608431ba78206105e1ed0be614fe7ec9fa4717576f6c4d88226c30fb4e08",
+    "scripts/fork_drift_manifest.txt": "aa91a4f69cfb8f757fbf6feefb909bae7761ff986f21bc0bd73b7c217b055ae0",
+    "scripts/observations.py": "e73287aaf5179d47e078eb21c9a795eb1e311f4345d96e1e155a2ebb23131ad6",
+    "scripts/test_ci_sweep.sh": "a0966c1a72e8a85ae0d0d443c92ccdeddab0a79555d2cb5981a61155c56d9758",
+    "scripts/test_fuel_plant.sh": "ef57b4e3301c3af41a6261d16528b3c793d6420a4a9d5f3c27cc053574f2d57e",
+    "scripts/test_gcc_capture.sh": "bd3b84d51b9fb8189d81c2b9a6d4daaa3d5fba4f612acb1577849a906381939f",
+    "scripts/test_gcc_oracle.sh": "bc307fac9cf99305c4564cdd83a9eae619dc5a4a4c3a31c0e2aab522cfe091d6",
+    "scripts/test_libxml2.sh": "907527a7a3b55a8550985d9ab7e9554b0d108b1df9a7fdb4d2a8979bc884f0c5",
+    "scripts/test_libxml2_uri.sh": "e181c7ecfb8f447bba281b85b19b388022865509c1be304cc940183d2de5717a",
+    "scripts/test_observation_lanes.py": "23a7fd736d66502ba0adbdf4e7dd0872ea46706437e8219bcd98e0a89aab1f21",
+    "scripts/test_observations.py": "4ec031142b4d28aa1974aad4b1c747048cc9dda1a9e696453425d14b8b1905a5",
+    "scripts/test_unit.sh": "6d6c04335b61df1c3c0485a51ec74f4aa9c9e55c6d1b9dc2afbddfc7d30b4d44"
+  },
+  "source_before": {
+    "branch": "arc/validation-foundations",
+    "diff_sha256": "05bd2d8e2ab7db4abd4c68107d81d929d4d5f6144dd7d8c013b00915e8f764a3",
+    "head": "5c28b3b244c64fc4696db1fd927a220f85a310fc",
+    "status": "M lean_frontend/docs/2026-09-05_validation-foundations-execution.md\n M lean_frontend/docs/validation-foundations-evidence/SHA256SUMS\n M scripts/LADDER.md\n M scripts/common.sh\n M scripts/fork_drift_manifest.txt\n M scripts/observations.py\n M scripts/test_ci_sweep.sh\n M scripts/test_fuel_plant.sh\n M scripts/test_gcc_oracle.sh\n M scripts/test_libxml2.sh\n M scripts/test_libxml2_uri.sh\n M scripts/test_observation_lanes.py\n M scripts/test_observations.py\n M scripts/test_unit.sh\n?? lean_frontend/docs/2026-09-06_capture-composition-repair.md\n?? lean_frontend/docs/validation-foundations-evidence/capture-repairs-development.tar.gz\n?? lean_frontend/docs/validation-foundations-evidence/first-full-candidate.tar.gz\n?? scripts/test_gcc_capture.sh",
+    "untracked_sha256": {
+      "lean_frontend/docs/2026-09-06_capture-composition-repair.md": "58e479350cb9206b0a9cf698d77d2eeaf7970610aea217a47496aaf0c98383bc",
+      "lean_frontend/docs/validation-foundations-evidence/capture-repairs-development.tar.gz": "0e9208c5f863badd16eaa3f3db530ef09fd118754be238ae4497fc06ddf0d6d7",
+      "lean_frontend/docs/validation-foundations-evidence/first-full-candidate.tar.gz": "0fd4804e5cc682d50e5ebb4f77b3cf83548aeeaf0bfab0e77473b461ed8d9648",
+      "scripts/test_gcc_capture.sh": "bd3b84d51b9fb8189d81c2b9a6d4daaa3d5fba4f612acb1577849a906381939f"
+    }
+  },
+  "checkpoint_additions": "Only evidence and result documentation follow the tested source."
+}

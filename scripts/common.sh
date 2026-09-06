@@ -71,9 +71,13 @@ fi
 # Temp directory
 TMP_DIR="$PROJECT_ROOT/.tmp/scripts"
 mkdir -p "$TMP_DIR"
-# Raw observations survive individual lane scratch cleanup. A release runner
-# supplies a lane-specific evidence directory; standalone runs print the path.
-OBSERVATION_RUN_DIR="${CERB_OBSERVATION_DIR:-$TMP_DIR/observations/$(basename "$0" .sh).$$}"
+# Raw observations survive individual lane scratch cleanup. The configured
+# directory is an evidence parent: repeated child harnesses in a plant battery
+# must never reuse each other's capture prefixes.
+OBSERVATION_BASE_DIR="${CERB_OBSERVATION_DIR:-$TMP_DIR/observations}"
+mkdir -p "$OBSERVATION_BASE_DIR" || { echo "Error: cannot create observation parent" >&2; exit 1; }
+OBSERVATION_RUN_DIR=$(mktemp -d "$OBSERVATION_BASE_DIR/$(basename "$0" .sh).XXXXXXXXXX") \
+    || { echo "Error: cannot create unique observation directory" >&2; exit 1; }
 
 # Cleanup
 _CLEANUP_PATHS=()

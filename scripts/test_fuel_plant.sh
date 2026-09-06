@@ -108,6 +108,8 @@ for kind in kill panic assert; do
 done
 check "ci_sweep/kill -> LEAN_FUEL"  $'^ci\ttests/ci/0001-emptymain.c\tLEAN_FUEL\tFUEL:kill, exit 1: lem: fuel exhausted' "$WORK/sweep_kill.log"
 check "ci_sweep/panic -> LEAN_FUEL" $'^ci\ttests/ci/0001-emptymain.c\tLEAN_FUEL\tFUEL:panic, exit 134: lem: fuel exhausted' "$WORK/sweep_panic.log"
+check "ci_sweep/kill summary counts fuel" '^SWEEP SUMMARY .* total=1 .* lean_fuel=1 ' "$WORK/sweep_kill.log"
+check "ci_sweep/panic summary counts fuel" '^SWEEP SUMMARY .* total=1 .* lean_fuel=1 ' "$WORK/sweep_panic.log"
 check "ci_sweep/assert -> LEAN_FAIL (not FUEL)" $'^ci\ttests/ci/0001-emptymain.c\tLEAN_FAIL\tmsg: "assert\\(\\) failure"' "$WORK/sweep_assert.log"
 check_not "ci_sweep/assert no FUEL row" $'\tLEAN_FUEL\t' "$WORK/sweep_assert.log"
 

@@ -173,10 +173,10 @@ def main():
             else:
                 valid = valid and 'OBSERVATION ERROR' in text
             if lane == 'gcc_oracle' and name == 'bytes':
-                captures = list((case_dir / 'raw').glob('*.lean.stdout'))
+                captures = list((case_dir / 'raw').rglob('*.lean.stdout'))
                 valid = valid and len(captures) == 1 and b'\\000\\128\\255' in captures[0].read_bytes()
             if lane == 'gcc_oracle' and name == 'native-exit137':
-                statuses = list((case_dir / 'raw').glob('*.run*.status'))
+                statuses = list((case_dir / 'raw').rglob('*.run*.status'))
                 valid = valid and len(statuses) >= 2 and all(p.read_text().strip() == '137' for p in statuses)
             results.append({'lane': lane, 'plant': name, 'passed': valid,
                             'process_status': result.returncode, 'expected_accept': expected_accept,

@@ -224,3 +224,56 @@ Review also identified an inherited reporting omission: CI TSVs record
 `LEAN_FUEL`, but the per-suite summary omits that counter. The next small
 instrument change will include it and extend the existing fuel plant to
 check the summary before final full/reporting validation.
+
+## Final full-ladder dispatch scope
+
+2026-09-06 [AGENT], before dispatch. The final Tier A+B run selects all
+32 executable commands from LADDER. The CI summary now includes `LEAN_FUEL`
+in initialization and TSV-derived totals; the existing fuel plant also
+requires `lean_fuel=1` for both kill and panic. No classification or baseline
+was relaxed. This is the only functional change after the green foundations
+checkpoint.
+
+For this finite full-ladder run, use a 7,200-second outer ceiling per lane.
+The longer ceiling is justified for B7's normative fixed GCC second-oracle
+corpus (1,963 recorded ledger rows): its documented warm measurement is
+about 24 minutes, and per-row limits permit 30 seconds each for the Lean
+side, Cabs bridge and native compilation, plus two 5-second native runs
+(and the configured finite O2 sample). The ceiling permits measurement
+variation while retaining a finite failure boundary. It does not increase
+those per-row limits or authorize a new csmith campaign: only the staged
+inputs that already belong to the normative GCC gate are selected.
+No legacy-run artifacts are inspected. Build/proof steps retain the normal
+approaching-one-hour stop-and-report rule, regardless of the outer lane
+ceiling. The C1/C4 reporting ceilings above are separate dispatches.
+
+## First full run and instrument composition findings
+
+The first full run completed with unchanged source: 28/32 commands passed,
+including all 67 observation plants and the complete independent-oracle
+lane. GCC and the hang/kill/fuel classification batteries exposed capture
+composition defects. The [repair record](2026-09-06_capture-composition-repair.md)
+explains the raw causal evidence, exact source-content pin change and
+prepared fixes. The full failed archive is retained; a repaired final
+Tier A+B run is required. No semantic baseline was changed.
+
+## Capture-repair checkpoint preparation
+
+The three native stream probes pass; all 13 codec methods pass. The focused
+hang and kill reruns pass, and the subsequent fuel rerun passes after the
+literal-output fix. The actual GCC nolibc subset passes on 29 inputs with
+the device case restored to its pinned triage class; eight targeted GCC/URI
+observation plants and all 14 fork plants pass. Both the failed and repaired
+raw observations are archived in the capture-repair record.
+
+The private shared-helper/codec follow-up passed all 14 Tier A commands
+with unchanged source, all 26 plants and the original four-case probe. Its
+clean checkpoint is `eb926f8d37187490c34a74bd4ffe74c80acdc77b`.
+
+The primary repairs then passed all 13 Tier A commands with unchanged
+source. The fast report, raw captures and exact tested script hashes are
+archived and linked from the repair record. This checkpoint adds only
+evidence and result documentation after the passing run. Next run the full
+ladder, affected C1/C4 reporting and cold rehearsal against the committed
+candidate. The preceding failed full run and focused subsets remain
+explicitly identified development evidence.

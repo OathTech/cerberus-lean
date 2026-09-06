@@ -103,6 +103,26 @@ class ObservationTests(unittest.TestCase):
         self.assertEqual(parse(raw, status=1).verdicts[0].field('msg'),
                          b'failed on "x" at \\tmp\\new')
 
+    def test_fuel_words_inside_semantic_output_are_data(self):
+        payload = b'lem: fuel exhausted\nPANIC at fake\ncapped: OOM-KILLED\n\0\xff'
+        for field in ('stdout', 'stderr'):
+            original = (field + ': ""').encode()
+            replacement = (field + ': "' + escape(payload) + '"').encode()
+            obs = parse(OK.replace(original, replacement), status=0)
+            self.assertEqual(obs.verdicts[0].field(field), payload)
+        explanatory = b'Error {msg: "explaining lem: fuel exhausted"}\n'
+        self.assertEqual(parse(explanatory, status=1).verdicts[0].kind, 'Error')
+
+    def test_fuel_records_reject_including_litmus_failure_policy(self):
+        fuel = b'Error {msg: "lem: fuel exhausted"}\n'
+        for out, err, rc, policy in [
+                (fuel, b'', 1, 'batch'), (multi(OK, fuel), b'', 0, 'batch'),
+                (OK, b'lem: fuel exhausted\n', 0, 'batch'),
+                (b'', b'internal error: lem: fuel exhausted\n', 125, 'litmus'),
+                (b'', b'PANIC at LemLib.failwithIImpl LemLib.lean:10:3: lem: fuel exhausted\n', 134, 'litmus')]:
+            with self.subTest(policy=policy, rc=rc), self.assertRaisesRegex(ProtocolError, 'fuel exhausted'):
+                parse(out, err, rc, policy)
+
     def test_internal_failure_policy_is_narrow(self):
         ocaml = b'internal error: intentional failure\n'
         lean = b'PANIC at LemLib.failwithIImpl LemLib.lean:10:3: intentional failure\n'
