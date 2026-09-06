@@ -80,30 +80,38 @@ build_lean
 RUNTIME_DIR="$PROJECT_ROOT/_build/install/default"
 [[ -d "$RUNTIME_DIR" ]] || fail "runtime dir not found: $RUNTIME_DIR"
 
-OUTPUT_DIR=$(mktemp -d "$TMP_DIR/immaculate.XXXXXXXXXX") || fail "mktemp failed"
-register_cleanup "$OUTPUT_DIR"
+mkdir -p "$OBSERVATION_RUN_DIR" || fail "cannot create raw evidence directory"
+OUTPUT_DIR=$(mktemp -d "$OBSERVATION_RUN_DIR/immaculate.XXXXXXXXXX") || fail "mktemp failed"
 cd "$PROJECT_ROOT" || fail "cannot cd to $PROJECT_ROOT"
 
-# --- Normalize a batch first-line into a verdict token. ---
+# Validate a complete observation, then retain the historical baseline spelling.
 # Undefined {ub: "CODE", stderr: "S", loc: "L"} -> UB:{ub: "CODE", stderr: "S", loc: "L"}
 # Defined   {value: "VAL", stdout: "S", stderr: "E", blocked: "B"} -> VAL:{value: "VAL", stdout: "S", stderr: "E", blocked: "B"}
 # Error     {msg: "MSG"}       -> ERR:{msg: "MSG"}
 # empty / uncaught exception / panic (with nonzero/crash exit) -> CRASH
-verdict() {   # <first-line> <rc> [<stderr-file>]
-    local line="$1" rc="$2" errf="${3:-}"
+verdict() {   # <stdout-file> <rc> <stderr-file>
+    local outf="$1" rc="$2" errf="$3" line
+    printf '%s\n' "$rc" > "$outf.status"
+    line=$(cat "$outf")
     if is_cap_kill "$rc" "$errf"; then
         # memory-cap breach (exit 137 + capped's OOM-KILLED witness on
         # stderr): its own token, so it can never read as a verdict
         echo "KILL"; return
     fi
-    if [[ -z "$line" ]]; then
-        # empty stdout: an oracle-side uncaught exception (exit 125/2) or a
-        # timeout — either way, no verdict was produced.
+    # Historical negative pins classify deliberate engine failures coarsely.
+    # MATCH | L=CRASH means that failure class was observed on both sides;
+    # it is not a semantic success or full diagnostic correspondence claim.
+    # A timeout, arbitrary abnormal exit, or a verdict followed by failure
+    # must never be admitted by this exception.
+    if [[ "$rc" == 125 || "$rc" == 134 ]] && \
+       ! grep -qE '^(Defined|Undefined|Error|EXECUTION)' "$outf" && \
+       grep -qE '^(internal error: |cerberus: internal error, uncaught exception:|PANIC at )' "$outf" "$errf"; then
         echo "CRASH"; return
     fi
-    case "$line" in
-        *"uncaught exception"*|*"panic"*|*"PANIC"*) echo "CRASH"; return ;;
-    esac
+    if ! python3 "$OBSERVATION_CODEC" tokens --stdout "$outf" --stderr "$errf" \
+            --status "$rc" > "$outf.tokens"; then
+        echo "INVALID"; return
+    fi
     if [[ "$line" == Undefined* ]]; then
         # whole payload: {ub: "…", stderr: "…", loc: "…"} (charter §4.1)
         echo "UB:$(sed -n 's/^Undefined \(.*\)$/\1/p' <<<"$line")"
@@ -126,7 +134,8 @@ verdict() {   # <first-line> <rc> [<stderr-file>]
 # Classify oracle-token vs lean-token into a lane status.
 classify() {
     local o="$1" l="$2"
-    if [[ "$o" == "KILL" || "$l" == "KILL" ]]; then echo "KILL"
+    if [[ "$o" == "INVALID" || "$l" == "INVALID" ]]; then echo "INVALID"
+    elif [[ "$o" == "KILL" || "$l" == "KILL" ]]; then echo "KILL"
     elif [[ "$o" == "$l" ]]; then echo "MATCH"
     elif [[ "$o" == "CRASH" ]]; then echo "ORACLE_CRASH"
     else echo "DIFF"; fi
@@ -147,13 +156,12 @@ run_c_case() {  # $1=name $2=cfile $3=libc(0/1) [$4=--args string]
         opam exec --switch="$PROJECT_ROOT" -- \
         "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" "${oflags[@]}" "$c" \
         > "$OUTPUT_DIR/$name.o" 2>"$OUTPUT_DIR/$name.oerr" ) || orc=$?
-    local oline; oline="$(head -1 "$OUTPUT_DIR/$name.o")"
-    local otok; otok="$(verdict "$oline" "$orc" "$OUTPUT_DIR/$name.oerr")"
+    local otok; otok="$(verdict "$OUTPUT_DIR/$name.o" "$orc" "$OUTPUT_DIR/$name.oerr")"
     # cabs-json (no --nolibc; the cpp side is identical between sides)
     ( "${CAPPED_TEST[@]}" timeout "${TIMEOUT_SECS}s" \
         opam exec --switch="$PROJECT_ROOT" -- \
         "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" --cabs-json "$c" \
-        > "$OUTPUT_DIR/$name.json" 2>/dev/null ) || fail "cabs-json failed for $name"
+        > "$OUTPUT_DIR/$name.json" 2>"$OUTPUT_DIR/$name.json.err" ) || fail "cabs-json failed for $name"
     [[ -s "$OUTPUT_DIR/$name.json" ]] || fail "empty cabs-json for $name"
     local largs=(--batch --first)
     [[ -n "$xargs" ]] && largs+=(--args "$xargs")
@@ -162,9 +170,7 @@ run_c_case() {  # $1=name $2=cfile $3=libc(0/1) [$4=--args string]
         env LEAN_ABORT_ON_PANIC=1 "$CERBERUS_LEAN_BIN" "${largs[@]}" \
         "$OUTPUT_DIR/$name.json" \
         > "$OUTPUT_DIR/$name.l" 2>"$OUTPUT_DIR/$name.lerr" ) || lrc=$?
-    local lline; lline="$(head -1 "$OUTPUT_DIR/$name.l")"
-    [[ -z "$lline" ]] && lline="$(head -1 "$OUTPUT_DIR/$name.lerr")"
-    local ltok; ltok="$(verdict "$lline" "$lrc" "$OUTPUT_DIR/$name.lerr")"
+    local ltok; ltok="$(verdict "$OUTPUT_DIR/$name.l" "$lrc" "$OUTPUT_DIR/$name.lerr")"
     local status; status="$(classify "$otok" "$ltok")"
     # The Lean token is PART of the recorded state (F2 lane hardening):
     # on ORACLE_CRASH rows the status alone cannot see a Lean-side value

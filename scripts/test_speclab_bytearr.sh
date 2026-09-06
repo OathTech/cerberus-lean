@@ -66,22 +66,8 @@ OUTPUT_DIR=$(mktemp -d "$TMP_DIR/speclab_bytearr.XXXXXXXXXX") || fail "mktemp fa
 register_cleanup "$OUTPUT_DIR"
 
 # ---- pipeline pair (nolibc lanes) -----------------------------------
-# sets: ORACLE_VERDICT LEAN_VERDICT (empty on no Defined line)
-run_pair() {
-    local src="$1" tag="$2"
-    local oout lout
-    oout=$(timeout "${TIMEOUT_SECS}s" "$CERBERUS_BIN" \
-        --runtime="$RUNTIME_DIR" --nolibc --exec --batch --mode=exhaustive \
-        "$src" 2>&1)
-    ORACLE_VERDICT=$(echo "$oout" | grep -oE '^Defined \{value: "[^"]*"|^Undefined \{.*\}$' | head -1 | sed 's/^Defined {value: "//;s/"$//')
-    timeout "${TIMEOUT_SECS}s" "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" \
-        --cabs-json "$src" > "$OUTPUT_DIR/$tag.json" 2>"$OUTPUT_DIR/$tag.cabs.err" \
-        || fail "cabs-json refused $tag: $(cat "$OUTPUT_DIR/$tag.cabs.err")"
-    lout=$(cd "$PROJECT_ROOT" && LEAN_ABORT_ON_PANIC=1 \
-        timeout "${TIMEOUT_SECS}s" "$CERBERUS_LEAN_BIN" --batch \
-        "$OUTPUT_DIR/$tag.json" 2>&1)
-    LEAN_VERDICT=$(echo "$lout" | grep -oE '^Defined \{value: "[^"]*"|^Undefined \{.*\}$' | head -1 | sed 's/^Defined {value: "//;s/"$//')
-}
+# Full observations for parity; scalar model predictions are a separate check.
+source "$SCRIPT_DIR/speclab_observations.sh"
 
 # ---- sweeps ---------------------------------------------------------
 do_sweep() { # memcpy stream sweep
@@ -95,7 +81,7 @@ do_sweep() { # memcpy stream sweep
         run_pair "$OUTPUT_DIR/h.c" "sweep"
         n=$((n+1))
         local status="OK"
-        if [[ -z "$ORACLE_VERDICT" || "$ORACLE_VERDICT" != "$LEAN_VERDICT" \
+        if [[ -z "$ORACLE_VERDICT" || "$ORACLE_OBSERVATION" != "$LEAN_OBSERVATION" \
               || "$ORACLE_VERDICT" != "Specified(0)" ]]; then
             status="RED"; red=$((red+1))
         fi
@@ -116,7 +102,7 @@ do_getsweep() { # getarr model sweep
         run_pair "$OUTPUT_DIR/g.c" "getsweep"
         n=$((n+1))
         local status="OK"
-        if [[ -z "$ORACLE_VERDICT" || "$ORACLE_VERDICT" != "$LEAN_VERDICT" \
+        if [[ -z "$ORACLE_VERDICT" || "$ORACLE_OBSERVATION" != "$LEAN_OBSERVATION" \
               || "$ORACLE_VERDICT" != "Specified(0)" ]]; then
             status="RED"; red=$((red+1))
         fi
@@ -149,7 +135,7 @@ diverges() {
     local csv="$1"
     "$SPECLAB_TEST_BIN" --emit-bytearr memcpy-stream "$csv" > "$OUTPUT_DIR/f.c" 2>/dev/null || return 1
     run_pair "$OUTPUT_DIR/f.c" "fuzz"
-    [[ "$ORACLE_VERDICT" != "$LEAN_VERDICT" || "$ORACLE_VERDICT" != "Specified(0)" ]]
+    [[ "$ORACLE_OBSERVATION" != "$LEAN_OBSERVATION" || "$ORACLE_VERDICT" != "Specified(0)" ]]
 }
 
 shrink_stream() { # csv -> minimal diverging stream (prints result)
@@ -195,7 +181,7 @@ do_fuzz() {
         fi
         run_pair "$OUTPUT_DIR/f.c" "fuzz"
         n=$((n+1))
-        if [[ "$ORACLE_VERDICT" != "$LEAN_VERDICT" || "$ORACLE_VERDICT" != "Specified(0)" ]]; then
+        if [[ "$ORACLE_OBSERVATION" != "$LEAN_OBSERVATION" || "$ORACLE_VERDICT" != "Specified(0)" ]]; then
             div=$((div+1))
             echo "FUZZ DIVERGENCE at stream [$csv]: oracle=$ORACLE_VERDICT lean=$LEAN_VERDICT"
             local minimal
@@ -221,7 +207,7 @@ plant_case() { # mode csv kind(healthy|plant|blindspot|malformed) label
         || fail "emit $pmode [$csv]"
     run_pair "$OUTPUT_DIR/p.c" "plant"
     echo "[plant:$label] stream=[$csv] oracle=$ORACLE_VERDICT lean=$LEAN_VERDICT predict=$predict"
-    [[ "$ORACLE_VERDICT" == "$LEAN_VERDICT" ]] \
+    [[ "$ORACLE_OBSERVATION" == "$LEAN_OBSERVATION" ]] \
         || fail "plant $label: pipelines disagree"
     [[ "$ORACLE_VERDICT" == "$predict" ]] \
         || fail "plant $label: verdict != pure-side prediction"

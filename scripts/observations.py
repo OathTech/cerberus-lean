@@ -34,7 +34,7 @@ ORACLE_INTERNAL = re.compile(rb'^internal error: (.+)$', re.M)
 LEAN_INTERNAL = re.compile(rb'^PANIC at [^\r\n]*failwithIImpl '
                            rb'[^\r\n]*:[0-9]+:[0-9]+: (.+)$', re.M)
 FATAL = re.compile(rb'^(?:PANIC at |internal error: |Fatal error: exception |'
-                   rb'capped: OOM-KILLED)', re.M)
+                   rb'cerberus: internal error, uncaught exception:|capped: OOM-KILLED)', re.M)
 
 
 def unescape(data: bytes) -> bytes:

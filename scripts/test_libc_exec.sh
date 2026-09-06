@@ -15,7 +15,7 @@
 #
 # Corpus: tests/libc_exec/*.c — the S0 survey's coverage libc wants
 # (exit/puts/calloc/memset/strlen, survey §a.3) plus a snprintf
-# composition test. Both sides' first batch line must agree exactly
+# composition test. Both sides' complete batch observations must agree
 # (value + stdout + stderr). Committed baseline:
 # tests/libc_exec/baseline.txt (fail-closed both directions, the
 # uri-baseline pattern).
@@ -55,8 +55,8 @@ RUNTIME_DIR="$PROJECT_ROOT/_build/install/default"
 [[ -d "$RUNTIME_DIR" ]] || fail "runtime dir not found: $RUNTIME_DIR"
 $RECORD_BASELINE || [[ -f "$BASELINE" ]] || fail "baseline not found: $BASELINE (run --record-baseline)"
 
-OUTPUT_DIR=$(mktemp -d "$TMP_DIR/libc-exec.XXXXXXXXXX") || fail "mktemp failed"
-register_cleanup "$OUTPUT_DIR"
+mkdir -p "$OBSERVATION_RUN_DIR" || fail "cannot create raw evidence directory"
+OUTPUT_DIR=$(mktemp -d "$OBSERVATION_RUN_DIR/libc-exec.XXXXXXXXXX") || fail "mktemp failed"
 cd "$PROJECT_ROOT" || fail "cannot cd to $PROJECT_ROOT"
 
 echo ""
@@ -87,14 +87,16 @@ for tu in "$PROJECT_ROOT"/tests/libc_exec/*.c; do
         "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" --exec --batch "$tu" \
         > "$OUTPUT_DIR/$name.ocaml" 2> "$OUTPUT_DIR/$name.ocaml.err" ) || rc=$?
     ocaml_rc=$rc
-    ocaml_line="$(head -1 "$OUTPUT_DIR/$name.ocaml")"
+    printf '%s\n' "$ocaml_rc" > "$OUTPUT_DIR/$name.ocaml.status"
+    ocaml_line="$(cat "$OUTPUT_DIR/$name.ocaml")"
     # cabs-json (same flags as the standing harnesses: no --nolibc — the
     # cpp side is identical between oracle and Lean, S0 survey §b)
     rc=0
     ( "${CAPPED_TEST[@]}" timeout "${TIMEOUT_SECS}s" \
         opam exec --switch="$PROJECT_ROOT" -- \
         "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" --cabs-json "$tu" \
-        > "$OUTPUT_DIR/$name.json" 2> /dev/null ) || rc=$?
+        > "$OUTPUT_DIR/$name.json" 2> "$OUTPUT_DIR/$name.json.err" ) || rc=$?
+    printf '%s\n' "$rc" > "$OUTPUT_DIR/$name.json.status"
     [[ $rc -eq 0 && -s "$OUTPUT_DIR/$name.json" ]] || fail "cabs-json failed for $name"
     # Lean side: --libc mode
     rc=0
@@ -102,7 +104,8 @@ for tu in "$PROJECT_ROOT"/tests/libc_exec/*.c; do
         env LEAN_ABORT_ON_PANIC=1 "$CERBERUS_LEAN_BIN" --batch --first \
         "${LIBC_ARGS[@]}" "$OUTPUT_DIR/$name.json" \
         > "$OUTPUT_DIR/$name.lean" 2> "$OUTPUT_DIR/$name.lean.err" ) || rc=$?
-    lean_line="$(head -1 "$OUTPUT_DIR/$name.lean")"
+    printf '%s\n' "$rc" > "$OUTPUT_DIR/$name.lean.status"
+    lean_line="$(cat "$OUTPUT_DIR/$name.lean")"
     if is_cap_kill $rc "$OUTPUT_DIR/$name.lean.err" || is_cap_kill $ocaml_rc "$OUTPUT_DIR/$name.ocaml.err"; then
         # memory-cap breach on either side (capped OOM-KILLED witness): its
         # own status, never MATCH
@@ -112,7 +115,11 @@ for tu in "$PROJECT_ROOT"/tests/libc_exec/*.c; do
         is_cap_kill $ocaml_rc "$OUTPUT_DIR/$name.ocaml.err" && killed_side="oracle: $(kill_label $ocaml_rc "$OUTPUT_DIR/$name.ocaml.err")"
         is_cap_kill $rc "$OUTPUT_DIR/$name.lean.err" && killed_side="${killed_side:+$killed_side; }lean: $(kill_label $rc "$OUTPUT_DIR/$name.lean.err")"
         echo "  KILL  $name: oracle exit $ocaml_rc, lean exit $rc — $killed_side"
-    elif [[ "$ocaml_line" == "$lean_line" && -n "$ocaml_line" ]]; then
+    elif otok=$(python3 "$OBSERVATION_CODEC" tokens --stdout "$OUTPUT_DIR/$name.ocaml" \
+                --stderr "$OUTPUT_DIR/$name.ocaml.err" --status "$ocaml_rc") && \
+         ltok=$(python3 "$OBSERVATION_CODEC" tokens --stdout "$OUTPUT_DIR/$name.lean" \
+                --stderr "$OUTPUT_DIR/$name.lean.err" --status "$rc") && \
+         [[ "$otok" == "$ltok" ]]; then
         status="MATCH"
         pass=$((pass+1))
         echo "  MATCH $name: $(head -c 80 <<<"$ocaml_line")"

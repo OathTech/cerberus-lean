@@ -93,6 +93,7 @@ class ObservationTests(unittest.TestCase):
         self.assertEqual(base64.b64decode(evidence['stderr_base64']), note)
         for diagnostic in (b'PANIC at source\n', b'internal error: failed\n',
                            b'Fatal error: exception Failure("x")\n', b'capped: OOM-KILLED\n',
+                           b'cerberus: internal error, uncaught exception:\n',
                            b'lem: fuel exhausted\n'):
             with self.subTest(diagnostic=diagnostic), self.assertRaises(ProtocolError):
                 parse(OK, diagnostic, status=0)

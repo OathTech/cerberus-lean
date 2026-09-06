@@ -38,12 +38,11 @@
 #   entries were verified comment/blank-line-only at manifest time
 #   (strip check in the refresh recipe); the hash pin subsumes the
 #   check at gate time.
-#   NOT in scope of layer 1 (audit F4/F5, open): the CONTENT of the
-#   hand-written [files] entries (util/cerb_fresh.ml, ocaml_frontend/
-#   fork_renumber.ml, backend/driver/main.ml, …) is name-manifested and
-#   review-defended only — a behaviour change inside an already-listed
-#   hand file moves neither list. Content pins for that surface are the
-#   separate F5 task.
+# Layer 3: [source-content] pins every layer-1 file's bytes and git-style
+#   mode, including .lem sources, handwritten fresh supply/renumbering,
+#   driver changes and build/runtime helpers. An edit inside an already
+#   listed file fails. These pins supplement the reviewed historical deltas;
+#   a checksum is not itself a semantic review or an independent oracle.
 #
 # PREREQUISITES ARE FAIL-CLOSED (P0 repair; was a loud rc-0 SKIP, which the
 #   unit caller consumed as success — audit F4): a missing upstream ref, a
@@ -88,7 +87,9 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MANIFEST_DEFAULT="$ROOT/scripts/fork_drift_manifest.txt"
 SURFACES=(frontend backend/common backend/driver backend/lean_export
           ocaml_frontend memory util parsers sibylfs runtime
-          cerberus.opam cerberus-lib.opam)
+          cerberus.opam cerberus-lib.opam Makefile dune dune-project
+          tools/check_lem_sync.sh tools/check_driver_fresh.sh
+          tools/check_handwritten_sync.sh scripts/common.sh)
 FORK_TREE_DEFAULT="$ROOT/ocaml_frontend/generated"
 UPSTREAM_REF_DEFAULT=upstream/master
 
@@ -119,6 +120,7 @@ resolve_upstream_tree() {
 #   the selftest passes fakes); "" = not on PATH.
 gate() {
     local MANIFEST="$1" UPSTREAM_REF="$2" UP_TREE="$3" FORK_TREE="$4" LEM_CMD="$5" REFRESH="$6"
+    local CONTENT_ROOT="${7:-$ROOT}"
     local dev_skip="${CERB_FORK_DRIFT_DEV_SKIP:-}"
     export LC_ALL=C   # the gate's own sort/comm/uniq are byte-ordered whatever the caller's locale
 
@@ -179,7 +181,8 @@ gate() {
 
     # --- layer 1: name-level (SET comparison, C-locale canonical) -----------
     local live_files manifest_raw manifest_files dups
-    live_files=$(git -C "$ROOT" diff "$UPSTREAM_REF" --name-only -- "${SURFACES[@]}" | sort)
+    live_files=$( { git -C "$ROOT" diff "$UPSTREAM_REF" --name-only -- "${SURFACES[@]}";
+                   git -C "$ROOT" ls-files --others --exclude-standard -- "${SURFACES[@]}"; } | sort -u)
 
     if [[ $REFRESH -eq 0 ]]; then
         manifest_raw=$(section files)
@@ -200,6 +203,13 @@ gate() {
             echo "against lean_frontend/docs/2026-08-21_fork-drift-review.md, then run the refresh recipe." >&2
             exit 1
         fi
+    fi
+
+    # The selftest can supply a scratch content root; the production gate
+    # always checks this worktree's actual files. No ambient bypass exists.
+    if [[ $REFRESH -eq 0 ]]; then
+        printf '%s\n' "$live_files" | python3 "$ROOT/scripts/check_fork_content.py" \
+            --root "$CONTENT_ROOT" --manifest "$MANIFEST" || fail "source-content check failed"
     fi
 
     # --- layer 2: generated-tree content -------------------------------------
@@ -253,6 +263,9 @@ gate() {
             echo "lem-pin=$live_lem"
             echo "[files]"
             printf '%s\n' "$live_files"
+            echo "[source-content]"
+            printf '%s\n' "$live_files" | python3 "$ROOT/scripts/check_fork_content.py" \
+                --root "$CONTENT_ROOT" --manifest "$MANIFEST" --emit || exit 1
             echo "[expected-semantic]"
             while IFS= read -r f; do
                 [[ -n "$f" ]] || continue
@@ -394,6 +407,22 @@ plant "S9 stale [meta] lem-pin vs lem -v" nonzero "lem-pin stale" C 0 "$PLANTDIR
 # S10 — lem-pin line removed
 grep -v '^lem-pin=' "$PLANTDIR/m.c" > "$PLANTDIR/m.nolem"
 plant "S10 [meta] lem-pin line missing" nonzero "no [meta] lem-pin= line" C 0 "$PLANTDIR/m.nolem" "$UPSTREAM_REF_DEFAULT" "$UP_TREE_REAL" "$FORK_TREE_DEFAULT" "$PLANTDIR/lem-ok" 0
+# S11/S12: same manifested names, but fresh supply's handwritten bytes move.
+# The positive control uses a copied tree; only that owned copy is mutated.
+mkdir "$PLANTDIR/content"
+while read -r mode digest path; do
+    [[ -n "$path" && "$mode" != 000000 ]] || continue
+    mkdir -p "$PLANTDIR/content/$(dirname "$path")"
+    cp -pP "$ROOT/$path" "$PLANTDIR/content/$path" || exit 1
+done < <(awk '/^\[source-content\]/{s=1;next} /^\[/{s=0} s && !/^[[:space:]]*(#|$)/' "$MANIFEST_DEFAULT")
+plant "S11 unmodified copied source contents" 0 "$OKMSG" C 0 "$PLANTDIR/m.c" "$UPSTREAM_REF_DEFAULT" "$UP_TREE_REAL" "$FORK_TREE_DEFAULT" "$PLANTDIR/lem-ok" 0 "$PLANTDIR/content"
+printf '\nlet validation_foundations_content_plant = 1\n' >> "$PLANTDIR/content/util/cerb_fresh.ml"
+plant "S12 content change inside already-listed fresh supply" nonzero "source-content drift inside reviewed file(s)" C 0 "$PLANTDIR/m.c" "$UPSTREAM_REF_DEFAULT" "$UP_TREE_REAL" "$FORK_TREE_DEFAULT" "$PLANTDIR/lem-ok" 0 "$PLANTDIR/content"
+# S13/S14: duplicated or missing content pins must fail independently of names.
+awk '1; /^100[67][45][45] [0-9a-f]+ util\/cerb_fresh.ml$/{print}' "$PLANTDIR/m.c" > "$PLANTDIR/m.content-dup"
+plant "S13 duplicate source-content pin" nonzero "duplicate [source-content] entry" C 0 "$PLANTDIR/m.content-dup" "$UPSTREAM_REF_DEFAULT" "$UP_TREE_REAL" "$FORK_TREE_DEFAULT" "$PLANTDIR/lem-ok" 0
+sed '/^100[67][45][45] [0-9a-f]* util\/cerb_fresh.ml$/d' "$PLANTDIR/m.c" > "$PLANTDIR/m.content-missing"
+plant "S14 missing source-content pin" nonzero "source-content path set differs" C 0 "$PLANTDIR/m.content-missing" "$UPSTREAM_REF_DEFAULT" "$UP_TREE_REAL" "$FORK_TREE_DEFAULT" "$PLANTDIR/lem-ok" 0
 # unplanted: the real manifest, the real prerequisites, lem as found on PATH
 echo "  UNPLANTED:"
 if out=$( ( unset CERB_FORK_DRIFT_DEV_SKIP; gate "$MANIFEST_DEFAULT" "$UPSTREAM_REF_DEFAULT" "$UP_TREE_REAL" "$FORK_TREE_DEFAULT" "$LEM_ON_PATH" 0 ) 2>&1 ); then
@@ -402,7 +431,7 @@ else
     echo "  PLANT FAIL [unplanted gate is not green]:"; sed 's/^/      /' <<<"$out"; fails=$((fails+1))
 fi
 if (( fails == 0 )); then
-    echo "check_fork_drift: SELFTEST OK (10 plants with the declared verdict and message: S1-S3 order/locale OK, S4 name-drift FAIL (+ both-sides listing), S5 duplicate FAIL, S6 missing-ref FAIL, S7 missing-tree FAIL, S8 dev-opt-in rc 0 with banner, S9/S10 lem-pin FAILs; unplanted gate green)"
+    echo "check_fork_drift: SELFTEST OK (14 plants with declared verdict/message: S1-S10 prerequisite/locale/name controls; S11 copied-content control; S12 inside-listed-file drift; S13/S14 duplicate/missing content pins; unplanted gate green)"
     exit 0
 else
     echo "check_fork_drift: SELFTEST FAILED ($fails)"; exit 1

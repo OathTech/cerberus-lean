@@ -3,8 +3,7 @@
 # probe lane (2026-08-30, probe/parity-detective). ADDITIVE instrument:
 # runs ONE .c file through oracle (exhaustive batch) and the Lean exec
 # driver (cabs-json bridge) and prints both outputs plus an agreement
-# verdict. Comparison semantics replicated from scripts/test_ci_sweep.sh
-# (verdict-sequence extraction + libc-mode Defined-line comparison);
+# verdict. Complete verdicts/statuses use the shared byte observation codec;
 # NON-GATING, no baseline.
 #
 # Usage: run_probe.sh [--nolibc] [--timeout N] file.c
@@ -14,6 +13,7 @@
 set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+source "$ROOT/scripts/observations.sh"
 CERB="$ROOT/_build/default/backend/driver/main.exe"
 LEAN="$ROOT/lean_frontend/.lake/build/bin/cerberus-lean"
 RUNTIME="$ROOT/_build/install/default"
@@ -28,6 +28,10 @@ while [[ $# -gt 1 ]]; do
 done
 F="$1"
 [[ -f "$F" ]] || { echo "no such file: $F" >&2; exit 2; }
+"$ROOT/tools/check_driver_fresh.sh" --check || exit 2
+mkdir -p "$ROOT/.tmp/pd/observations" || exit 2
+EVIDENCE=$(mktemp -d "$ROOT/.tmp/pd/observations/probe.XXXXXXXX") || exit 2
+echo "Raw observations: $EVIDENCE"
 
 ORACLE_FLAGS=(--exec --batch --mode=exhaustive)
 LEAN_ARGS=()
@@ -47,39 +51,34 @@ fi
 CAPPED=(env "CERB_MEM_MAX=${CERB_TEST_MEM_MAX:-4G}" "$ROOT/scripts/capped")
 kill_note() { [[ "$1" -eq 137 && "$2" == *"capped: OOM-KILLED"* ]] && echo " OOM-KILLED (exit 137 — memory cap ${CERB_TEST_MEM_MAX:-4G} breached)"; return 0; }
 cerb_exit=0
-cerb_out=$( "${CAPPED[@]}" timeout "${TIMEOUT_SECS}s" \
-    "$CERB" --runtime="$RUNTIME" "${ORACLE_FLAGS[@]}" "$F" 2>&1 ) || cerb_exit=$?
+cerb_out=$(observation_capture "$EVIDENCE/oracle" "${CAPPED[@]}" timeout "${TIMEOUT_SECS}s" \
+    "$CERB" --runtime="$RUNTIME" "${ORACLE_FLAGS[@]}" "$F") || cerb_exit=$?
 echo "=== ORACLE (exit $cerb_exit)$(kill_note $cerb_exit "$cerb_out") ==="
 printf '%s\n' "$cerb_out" | grep -v '^Time spent'
 
 mkdir -p "$ROOT/.tmp/pd" || { echo "run_probe.sh: cannot create $ROOT/.tmp/pd" >&2; exit 2; }
-json=$(mktemp "$ROOT/.tmp/pd/probe.XXXXXX.json")
-trap 'rm -f "$json"' EXIT
+json="$EVIDENCE/bridge.stdout"
 json_ok=true
-"${CAPPED[@]}" timeout "${TIMEOUT_SECS}s" \
-    "$CERB" --runtime="$RUNTIME" --cabs-json "$F" > "$json" 2>/dev/null || json_ok=false
+observation_capture "$EVIDENCE/bridge" "${CAPPED[@]}" timeout "${TIMEOUT_SECS}s" \
+    "$CERB" --runtime="$RUNTIME" --cabs-json "$F" > "$EVIDENCE/bridge.display" || json_ok=false
+[[ -s "$json" ]] || json_ok=false
 
 lean_exit=0
 if $json_ok; then
-    lean_out=$( "${CAPPED[@]}" env LEAN_ABORT_ON_PANIC=1 timeout "${TIMEOUT_SECS}s" \
-        "$LEAN" --batch ${LEAN_ARGS[@]+"${LEAN_ARGS[@]}"} "$json" 2>&1 ) || lean_exit=$?
+    lean_out=$(observation_capture "$EVIDENCE/lean" "${CAPPED[@]}" env LEAN_ABORT_ON_PANIC=1 timeout "${TIMEOUT_SECS}s" \
+        "$LEAN" --batch ${LEAN_ARGS[@]+"${LEAN_ARGS[@]}"} "$json") || lean_exit=$?
 else
     lean_out="(cabs-json failed)"; lean_exit=98
 fi
 echo "=== LEAN (exit $lean_exit)$(kill_note $lean_exit "$lean_out") ==="
 printf '%s\n' "$lean_out"
 
-# whole Undefined line (ub, stderr, loc) since the zero-discrepancy arc (charter §4.1)
-seq() { printf '%s\n' "$1" | grep -oE '^Undefined \{.*\}$|^Defined \{value: "[^"]*"' \
-    | sed -e 's/^Undefined \(.*\)$/UB:\1/' -e 's/^Defined {value: "\(.*\)"$/VAL:\1/'; return 0; }
-cs=$(seq "$cerb_out"); ls_=$(seq "$lean_out")
-dc=$(printf '%s\n' "$cerb_out" | grep -E '^Defined \{' || true)
-dl=$(printf '%s\n' "$lean_out" | grep -E '^Defined \{' || true)
+cs=$(observation_tokens "$EVIDENCE/oracle") || cs=""
+ls_=$(observation_tokens "$EVIDENCE/lean") || ls_=""
 echo "=== VERDICT ==="
 if [[ -z "$cs" && -z "$ls_" ]]; then echo "BOTH-NO-VERDICT (oracle exit=$cerb_exit lean exit=$lean_exit)"
 elif [[ -z "$cs" ]]; then echo "ORACLE-NO-VERDICT lean=$(printf '%s' "$ls_" | tr '\n' '|')"
 elif [[ -z "$ls_" ]]; then echo "PARITY-GAP: oracle-has-verdict, lean-none (lean exit=$lean_exit)"
-elif [[ "$cs" != "$ls_" ]]; then echo "PARITY-GAP: value-seq differs Lean=$(printf '%s' "$ls_" | tr '\n' '|') Cerberus=$(printf '%s' "$cs" | tr '\n' '|')"
-elif [[ "$MODE" == libc && "$dc" != "$dl" ]]; then echo "STDOUT-DIFF (values equal, Defined lines differ)"
+elif [[ "$cs" != "$ls_" ]]; then echo "PARITY-GAP: full observations differ Lean=$(printf '%s' "$ls_" | tr '\n' '|') Cerberus=$(printf '%s' "$cs" | tr '\n' '|')"
 else echo "AGREE $(printf '%s' "$cs" | tr '\n' '|')"
 fi

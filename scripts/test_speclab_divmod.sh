@@ -64,22 +64,8 @@ OUTPUT_DIR=$(mktemp -d "$TMP_DIR/speclab_divmod.XXXXXXXXXX") || fail "mktemp fai
 register_cleanup "$OUTPUT_DIR"
 
 # ---- pipeline pair (nolibc lanes) -----------------------------------
-# sets: ORACLE_VERDICT LEAN_VERDICT (empty on no Defined line)
-run_pair() {
-    local src="$1" tag="$2"
-    local oout lout
-    oout=$(timeout "${TIMEOUT_SECS}s" "$CERBERUS_BIN" \
-        --runtime="$RUNTIME_DIR" --nolibc --exec --batch --mode=exhaustive \
-        "$src" 2>&1)
-    ORACLE_VERDICT=$(echo "$oout" | grep -oE '^Defined \{value: "[^"]*"|^Undefined \{.*\}$' | head -1 | sed 's/^Defined {value: "//;s/"$//')
-    timeout "${TIMEOUT_SECS}s" "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" \
-        --cabs-json "$src" > "$OUTPUT_DIR/$tag.json" 2>"$OUTPUT_DIR/$tag.cabs.err" \
-        || fail "cabs-json refused $tag: $(cat "$OUTPUT_DIR/$tag.cabs.err")"
-    lout=$(cd "$PROJECT_ROOT" && LEAN_ABORT_ON_PANIC=1 \
-        timeout "${TIMEOUT_SECS}s" "$CERBERUS_LEAN_BIN" --batch \
-        "$OUTPUT_DIR/$tag.json" 2>&1)
-    LEAN_VERDICT=$(echo "$lout" | grep -oE '^Defined \{value: "[^"]*"|^Undefined \{.*\}$' | head -1 | sed 's/^Defined {value: "//;s/"$//')
-}
+# Full observations for parity; scalar model predictions are a separate check.
+source "$SCRIPT_DIR/speclab_observations.sh"
 
 # ---- sweep ----------------------------------------------------------
 do_sweep() {
@@ -100,7 +86,7 @@ do_sweep() {
         run_pair "$OUTPUT_DIR/h.c" "sweep"
         n=$((n+1))
         local status="OK"
-        if [[ -z "$ORACLE_VERDICT" || "$ORACLE_VERDICT" != "$LEAN_VERDICT" \
+        if [[ -z "$ORACLE_VERDICT" || "$ORACLE_OBSERVATION" != "$LEAN_OBSERVATION" \
               || "$ORACLE_VERDICT" != "$predict" ]]; then
             status="RED"; red=$((red+1))
         fi
@@ -123,7 +109,7 @@ do_i8sweep() {
             run_pair "$OUTPUT_DIR/h.c" "i8"
             n=$((n+1))
             local status="OK"
-            if [[ "$ORACLE_VERDICT" != "Specified(0)" \
+            if [[ "$ORACLE_OBSERVATION" != "$LEAN_OBSERVATION" || "$ORACLE_VERDICT" != "Specified(0)" \
                   || "$LEAN_VERDICT" != "Specified(0)" ]]; then
                 status="RED"; red=$((red+1))
             fi
@@ -153,7 +139,7 @@ diverges() {
     local csv="$1"
     "$SPECLAB_TEST_BIN" --emit-divmod-stream "$csv" > "$OUTPUT_DIR/f.c" 2>/dev/null || return 1
     run_pair "$OUTPUT_DIR/f.c" "fuzz"
-    [[ "$ORACLE_VERDICT" != "$LEAN_VERDICT" || "$ORACLE_VERDICT" != "Specified(0)" ]]
+    [[ "$ORACLE_OBSERVATION" != "$LEAN_OBSERVATION" || "$ORACLE_VERDICT" != "Specified(0)" ]]
 }
 
 do_fuzz() {
@@ -167,7 +153,7 @@ do_fuzz() {
         fi
         run_pair "$OUTPUT_DIR/f.c" "fuzz"
         n=$((n+1))
-        if [[ "$ORACLE_VERDICT" != "$LEAN_VERDICT" || "$ORACLE_VERDICT" != "Specified(0)" ]]; then
+        if [[ "$ORACLE_OBSERVATION" != "$LEAN_OBSERVATION" || "$ORACLE_VERDICT" != "Specified(0)" ]]; then
             div=$((div+1))
             echo "FUZZ DIVERGENCE at stream [$csv]: oracle=$ORACLE_VERDICT lean=$LEAN_VERDICT"
             # ---- byte-wise shrink: minimize toward 0 preserving divergence
@@ -209,7 +195,7 @@ plant_case() { # form x y
         || fail "emit $form ($x,$y)"
     run_pair "$OUTPUT_DIR/p.c" "plant"
     echo "[plant:$form] x=$x y=$y oracle=$ORACLE_VERDICT lean=$LEAN_VERDICT predict=$predict"
-    [[ "$ORACLE_VERDICT" == "$LEAN_VERDICT" ]] \
+    [[ "$ORACLE_OBSERVATION" == "$LEAN_OBSERVATION" ]] \
         || fail "plant $form: pipelines disagree"
     [[ "$ORACLE_VERDICT" == "$predict" ]] \
         || fail "plant $form: verdict != pure-side prediction"
@@ -254,14 +240,9 @@ do_form2() {
         local predict_stdout
         predict_stdout=$("$SPECLAB_TEST_BIN" --divmod-predict form2 "$x" "$y" | sed -n 2p)
         local oline lline
-        oline=$(timeout "${TIMEOUT_SECS}s" "$CERBERUS_BIN" \
-            --runtime="$RUNTIME_DIR" --exec --batch "$OUTPUT_DIR/f2.c" 2>&1 | head -1)
-        timeout "${TIMEOUT_SECS}s" "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" \
-            --cabs-json "$OUTPUT_DIR/f2.c" > "$OUTPUT_DIR/f2.json" 2>/dev/null \
-            || fail "cabs-json failed for form2 ($x,$y)"
-        lline=$(cd "$PROJECT_ROOT" && LEAN_ABORT_ON_PANIC=1 \
-            timeout "${TIMEOUT_SECS}s" "$CERBERUS_LEAN_BIN" --batch --first \
-            "${LIBC_ARGS[@]}" "$OUTPUT_DIR/f2.json" 2>&1 | head -1)
+        speclab_pair "$OUTPUT_DIR/f2.c" form2 libc first
+        oline="$ORACLE_BATCH_LINE"
+        lline="$LEAN_BATCH_LINE"
         local status="OK"
         # both sides byte-identical AND stdout carries the predicted render
         if [[ "$oline" != "$lline" || "$oline" != *"stdout: \"$predict_stdout\""* \

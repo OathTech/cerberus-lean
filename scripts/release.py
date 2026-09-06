@@ -187,6 +187,8 @@ def execute_lane(lane: Lane, out: Path, limit: float, root=None):
             command += ['--out', str(directory / 'scoreboard')]
     if 'scripts/test_observation_lanes.py' in ' '.join(command):
         command += ['--out', str(directory / 'plants')]
+    if 'scripts/test_upstream_oracle.py' in ' '.join(command):
+        command += ['--out', str(directory / 'independent-oracle')]
     env = dict(os.environ, CERB_OBSERVATION_DIR=str(directory / 'observations'))
     started = time.monotonic()
     result = {'id': lane.id, 'tier': lane.tier, 'command': command,

@@ -53,8 +53,8 @@ BYTES_DIR="$PROJECT_ROOT/tests/bytes"
 build_cerberus
 build_lean
 
-OUTPUT_DIR=$(mktemp -d "$TMP_DIR/bytes.XXXXXXXXXX") || { echo "mktemp failed" >&2; exit 1; }
-register_cleanup "$OUTPUT_DIR"
+mkdir -p "$OBSERVATION_RUN_DIR" || exit 1
+OUTPUT_DIR=$(mktemp -d "$OBSERVATION_RUN_DIR/bytes.XXXXXXXXXX") || { echo "mktemp failed" >&2; exit 1; }
 cd "$PROJECT_ROOT" || exit 1
 
 pass=0
@@ -75,15 +75,25 @@ for src in "$BYTES_DIR"/*.exec.c; do
     fi
     json="$OUTPUT_DIR/$name.json"
     # run_cerberus body inlined (common.sh:91-94) — timeout needs a command
+    json_rc=0
     timeout "$TIMEOUT_SECS" opam exec --switch="$PROJECT_ROOT" -- \
         "$CERBERUS_BIN" --runtime="$PROJECT_ROOT/_build/install/default" \
-        --nolibc --cabs-json "$src" > "$json" 2> "$json.err"
-    if [[ ! -s "$json" ]]; then
+        --nolibc --cabs-json "$src" > "$json" 2> "$json.err" || json_rc=$?
+    printf '%s\n' "$json_rc" > "$json.status"
+    if [[ $json_rc -ne 0 || ! -s "$json" ]]; then
         echo "[FAIL] $name: cabs-json production failed: $(head -1 "$json.err" 2>/dev/null)"
         fail=$((fail + 1)); continue
     fi
-    lean_out=$(timeout "$TIMEOUT_SECS" env LEAN_ABORT_ON_PANIC=1 "$CERBERUS_LEAN_BIN" --batch "$json" 2>"$OUTPUT_DIR/$name.lean.err")
-    lean_rc=$?
+    lean_rc=0
+    timeout "$TIMEOUT_SECS" env LEAN_ABORT_ON_PANIC=1 "$CERBERUS_LEAN_BIN" --batch "$json" \
+        > "$OUTPUT_DIR/$name.lean" 2>"$OUTPUT_DIR/$name.lean.err" || lean_rc=$?
+    printf '%s\n' "$lean_rc" > "$OUTPUT_DIR/$name.lean.status"
+    lean_out=$(cat "$OUTPUT_DIR/$name.lean")
+    if ! python3 "$OBSERVATION_CODEC" tokens --stdout "$OUTPUT_DIR/$name.lean" \
+            --stderr "$OUTPUT_DIR/$name.lean.err" --status "$lean_rc" > "$OUTPUT_DIR/$name.tokens"; then
+        echo "[FAIL] $name: incomplete batch observation (rc=$lean_rc)"
+        fail=$((fail + 1)); continue
+    fi
     # exactly one Defined line with a Specified integer and empty stdout
     n_lines=$(printf '%s\n' "$lean_out" | grep -c '^Defined\|^Undefined\|^Error\|^EXECUTION')
     val=$(printf '%s\n' "$lean_out" | sed -n 's/^Defined {value: "Specified(\(-\{0,1\}[0-9]*\))", stdout: "", stderr: "[^"]*", blocked: "false"}$/\1/p')
@@ -117,9 +127,12 @@ for src in "$BYTES_DIR"/*.c; do
         fail=$((fail + 1)); continue
     fi
     json="$OUTPUT_DIR/$name.json"
-    if timeout "$TIMEOUT_SECS" opam exec --switch="$PROJECT_ROOT" -- \
+    json_rc=0
+    timeout "$TIMEOUT_SECS" opam exec --switch="$PROJECT_ROOT" -- \
         "$CERBERUS_BIN" --runtime="$PROJECT_ROOT/_build/install/default" \
-        --nolibc --cabs-json "$src" > "$json" 2>/dev/null && [[ -s "$json" ]]; then
+        --nolibc --cabs-json "$src" > "$json" 2> "$json.err" || json_rc=$?
+    printf '%s\n' "$json_rc" > "$json.status"
+    if [[ "$json_rc" == 0 && -s "$json" ]]; then
         # Parse-only --cabs-json (2026-08-31): the rejection moved to
         # the Lean side — pin it there (see header).
         exp_line=$(sed -n '2s/^[^:]*\.c:\([0-9][0-9]*\):.*/\1/p' "$expect_file")
@@ -127,10 +140,15 @@ for src in "$BYTES_DIR"/*.c; do
             echo "[FAIL] $name: cannot extract the pinned diagnostic line from $expect_file (extend the lane)"
             fail=$((fail + 1)); continue
         fi
-        lean_out=$(timeout "$TIMEOUT_SECS" env LEAN_ABORT_ON_PANIC=1 \
-            "$CERBERUS_LEAN_BIN" --batch "$json" 2>&1)
-        lean_rc=$?
-        if [[ "$lean_rc" == "1" ]] && printf '%s\n' "$lean_out" \
+        lean_rc=0
+        timeout "$TIMEOUT_SECS" env LEAN_ABORT_ON_PANIC=1 \
+            "$CERBERUS_LEAN_BIN" --batch "$json" > "$OUTPUT_DIR/$name.lean" \
+            2> "$OUTPUT_DIR/$name.lean.err" || lean_rc=$?
+        printf '%s\n' "$lean_rc" > "$OUTPUT_DIR/$name.lean.status"
+        lean_out=$(cat "$OUTPUT_DIR/$name.lean")
+        if python3 "$OBSERVATION_CODEC" tokens --stdout "$OUTPUT_DIR/$name.lean" \
+               --stderr "$OUTPUT_DIR/$name.lean.err" --status "$lean_rc" > "$OUTPUT_DIR/$name.tokens" && \
+           [[ "$lean_rc" == "1" ]] && printf '%s\n' "$lean_out" \
             | grep -qE "^Error \{msg: \"(desugaring|typechecking) failed at [^\"]*/$(basename "$src"):$exp_line:"; then
             echo "[NEG_OK] $name: Lean-side desugar/typing rejection at the committed diagnostic line $exp_line (rc 1)"
             neg=$((neg + 1))

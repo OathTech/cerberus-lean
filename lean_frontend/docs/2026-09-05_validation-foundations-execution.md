@@ -17,10 +17,10 @@ been changed. The legacy csmith run has not been monitored or operated.
 
 | Goal | State | Evidence still required |
 |---|---|---|
-| G1 observation contract and lanes | All six mainline lanes migrated; 27/27 actual entry-point plants pass | Additional caller inventory/migration, final ladder and affected reporting evidence |
+| G1 observation contract and lanes | Six required lanes and older callers migrated; 67 actual entry-point plants pass across development runs; complete caller inventory | Final combined plants, ladder and affected reporting evidence |
 | G2 concurrency instrument | Original statuses captured; full verdict-set parity and reference projection separated; 30 rows and sequential refusal passed; 26/26 integrated plants and original four-case probe pass | Final candidate report and portable commits |
-| G3 independent oracle and fork pins | Upstream Lem compiler and OCaml libraries built and installed in an owned prefix | Pristine Cerberus comparisons, reproducible recipe, content pins and plants |
-| G4 release runner and CI | Executable LADDER reader and actual CI entry; eight hermetic runner tests; first Tier A run passed 13/13 | Final Tier A+B, reporting, interruption hardening and final source/artifact records |
+| G3 independent oracle and fork pins | Cold upstream-Lem/pristine-Cerberus recipe and 723 comparisons pass; public OCaml client passes; 76 source pins and 14 plants pass | Final-candidate rerun and archive |
+| G4 release runner and CI | Executable LADDER reader and actual CI entry; eight hermetic runner tests; initial and expanded Tier A runs passed 13/13 | Final Tier A+B, reporting, interruption hardening and final source/artifact records |
 | G5 clean provider client | Not implemented; shared-switch install defect removed from owned build helper | Clean generation/build/client proof, pin and missing-artifact plants |
 | G6 failure census/design | Not implemented | Current site census, probes, worked correspondence proposal |
 | G7 profile/evidence | Entry recorded; reconciliation pending | Risk map, missing historical evidence accounting, current docs and final archive |
@@ -82,7 +82,35 @@ the final candidate and publish the relevant evidence with checksums.
 
 ## Pending next actions
 
-Finish the caller/header inventory and older execution-harness migrations;
-complete G3/G4 and the clean client, census/design and risk map. Keep the
+Complete release interruption handling and the clean client, census/design
+and risk map, then final-candidate validation and concurrency reports. Keep the
 charter's full G1–G7 scope and final decision package intact. First-slice
 Tier A evidence does not discharge final-candidate validation obligations.
+
+## Expanded observation and independent-oracle checkpoint
+
+2026-09-06 [AGENT]. At the uncommitted source fingerprint recorded in
+`release-expanded-fast/report.json`, all 13 Tier A commands passed again
+through the actual CI entry, with source unchanged and no baseline edits.
+The complete independent-oracle lane and its actual-engine difference plant
+both passed at the same source state. Its 723 rows comprise 709 semantic
+agreements, two CLI agreements, eleven matching frontend failures and one
+reviewed, content-pinned diagnostic difference. Both public OCaml package
+clients print `42`. The independently compiled pristine engine was produced
+by the corrected cold v2 recipe, without fork Lem or shared installation.
+See [the G3 record](2026-09-06_independent-oracle-and-fork-pins.md) for
+applicability limits and the reviewed diagnostic projections.
+
+The ten additional observation callers contribute 40 passing plants across
+the initial run and the corrected fixture rerun. Seven initial test-fixture
+failures were resolved: one oracle override missed the bytes bridge, one
+byte mutation missed nonempty stdout, and five validators failed to recognize
+the family's correct disagreement message. All seven affected lanes were
+rerun (28/28); the other three lanes had passed initially (12/12). The
+final candidate must run all 67 mainline plants together. The fork gate's
+14 plants and five independent-oracle instrument test methods also pass.
+
+The expanded evidence archive contains both older-caller runs, both runner
+reports and raw observations, cold-build logs/manifest, and fork-plant logs.
+Build trees and binaries are excluded; their hashes and rebuilding recipe
+are retained. This is development evidence, not full charter acceptance.

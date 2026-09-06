@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "cases": {
+    "minimal/097-null-ptr-arith.undef.c": {
+      "upstream": {
+        "status": 125,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_sha256": "0cbf405bb92a175bd2453c546cf4c86f8f129c559e4b92dc87daebf62aa372b2"
+      },
+      "fork": {
+        "status": 125,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_sha256": "e455f1a4db26182e1e3f8eeae981b3a909281cb99698cbe7212f4c48c66ccf26"
+      },
+      "rationale": "Both engines deliberately fail with the same null-pointer-arithmetic TODO (status 125, empty stdout). Reviewed raw diff: only OCaml/Lem generated backtrace frames and line/character positions differ. No semantic execution result exists; this pin records the inherited failure and diagnostic-layout difference, not C conformance or successful execution."
+    }
+  }
+}

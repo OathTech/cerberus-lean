@@ -80,8 +80,8 @@ RUNTIME_DIR="$PROJECT_ROOT/_build/install/default"
 [[ -f "$HARNESS" ]] || fail "harness not found: $HARNESS"
 $RECORD_BASELINE || [[ -f "$BASELINE" ]] || fail "baseline not found: $BASELINE"
 
-OUTPUT_DIR=$(mktemp -d "$TMP_DIR/libxml2-uri.XXXXXXXXXX") || fail "mktemp failed"
-register_cleanup "$OUTPUT_DIR"
+mkdir -p "$OBSERVATION_RUN_DIR" || fail "cannot create raw evidence directory"
+OUTPUT_DIR=$(mktemp -d "$OBSERVATION_RUN_DIR/libxml2-uri.XXXXXXXXXX") || fail "mktemp failed"
 cd "$PROJECT_ROOT" || fail "cannot cd to $PROJECT_ROOT"
 
 echo ""
@@ -107,6 +107,10 @@ run_capped() { # <out> <err> <cmd...>
     local rc=0
     ( "${CAPPED_TEST[@]}" timeout "${TIMEOUT_SECS}s" /usr/bin/time -v "$@" \
         > "$out" 2> "$err" ) || rc=$?
+    printf '%s\n' "$rc" > "$out.status"
+    # Preserve the complete observation before any lane-specific projection.
+    python3 "$OBSERVATION_CODEC" tokens --stdout "$out" --stderr "$err" \
+        --status "$rc" > "$out.tokens" || fail "incomplete batch observation: $out (exit $rc)"
     return $rc
 }
 
@@ -140,11 +144,11 @@ run_capped "$OUTPUT_DIR/oracle.out" "$OUTPUT_DIR/oracle.err" \
     "${FLAGS[@]}" "${TUS[@]}" || rc=$?
 [[ $rc -lt 124 ]] || fail "ORACLE_LIBC $(rc_label $rc): $(tail -2 "$OUTPUT_DIR/oracle.err" | tr '\n' ' ')"
 record "ORACLE_LIBC exit" "$rc"
-record "ORACLE_LIBC" "$(head -1 "$OUTPUT_DIR/oracle.out")"
+record "ORACLE_LIBC" "$(cat "$OUTPUT_DIR/oracle.out")"
 echo "[oracle+libc] exit=$rc wall=$(grep -oE 'Elapsed.*' "$OUTPUT_DIR/oracle.err" | awk '{print $NF}') maxRSS=$(grep 'Maximum resident' "$OUTPUT_DIR/oracle.err" | awk '{print $NF}')kB"
 # Lane expectation (pinned): successful Defined/Specified run over the full
 # pinned corpus size.
-oracle_line=$(head -1 "$OUTPUT_DIR/oracle.out")
+oracle_line=$(cat "$OUTPUT_DIR/oracle.out")
 [[ $rc -eq 0 ]] || fail "GATE: ORACLE_LIBC expected exit 0, got $rc"
 [[ "$oracle_line" == 'Defined {value: "Specified('* ]] \
     || fail "GATE: ORACLE_LIBC verdict is not Defined/Specified: ${oracle_line:0:120}"
@@ -161,11 +165,11 @@ run_capped "$OUTPUT_DIR/nolibc.out" "$OUTPUT_DIR/nolibc.err" \
     "${FLAGS[@]}" "${TUS[@]}" || rc=$?
 [[ $rc -lt 124 ]] || fail "OCAML_NOLIBC $(rc_label $rc): $(tail -2 "$OUTPUT_DIR/nolibc.err" | tr '\n' ' ')"
 record "OCAML_NOLIBC exit" "$rc"
-record "OCAML_NOLIBC" "$(head -1 "$OUTPUT_DIR/nolibc.out")"
+record "OCAML_NOLIBC" "$(cat "$OUTPUT_DIR/nolibc.out")"
 echo "[ocaml-nolibc] exit=$rc: $(head -c 100 "$OUTPUT_DIR/nolibc.out")"
 # Lane expectation (pinned): the recorded --nolibc failure mode — memset is
 # the closure's missing symbol.
-ocaml_nolibc_line=$(head -1 "$OUTPUT_DIR/nolibc.out")
+ocaml_nolibc_line=$(cat "$OUTPUT_DIR/nolibc.out")
 [[ $rc -eq 1 ]] || fail "GATE: OCAML_NOLIBC expected exit 1, got $rc"
 [[ "$ocaml_nolibc_line" == *'unknown procedure'* && "$ocaml_nolibc_line" == *'memset'* ]] \
     || fail "GATE: OCAML_NOLIBC expected unknown-procedure memset failure, got: ${ocaml_nolibc_line:0:120}"
@@ -186,12 +190,12 @@ run_capped "$OUTPUT_DIR/lean.out" "$OUTPUT_DIR/lean.err" \
     env LEAN_ABORT_ON_PANIC=1 "$CERBERUS_LEAN_BIN" --batch --first "${JSONS[@]}" || rc=$?
 [[ $rc -lt 124 ]] || fail "LEAN_NOLIBC $(rc_label $rc): $(tail -2 "$OUTPUT_DIR/lean.err" | tr '\n' ' ')"
 record "LEAN_NOLIBC exit" "$rc"
-record "LEAN_NOLIBC" "$(head -1 "$OUTPUT_DIR/lean.out")"
+record "LEAN_NOLIBC" "$(cat "$OUTPUT_DIR/lean.out")"
 echo "[lean-nolibc] exit=$rc wall=$(grep -oE 'Elapsed.*' "$OUTPUT_DIR/lean.err" | awk '{print $NF}') maxRSS=$(grep 'Maximum resident' "$OUTPUT_DIR/lean.err" | awk '{print $NF}')kB: $(head -c 100 "$OUTPUT_DIR/lean.out")"
 # Lane expectation (pinned): the MIRRORED-FAILURE PAIR — the Lean --nolibc
 # surface must keep agreeing with OCAML_NOLIBC that memset is the missing
 # symbol.
-lean_nolibc_line=$(head -1 "$OUTPUT_DIR/lean.out")
+lean_nolibc_line=$(cat "$OUTPUT_DIR/lean.out")
 [[ $rc -eq 1 ]] || fail "GATE: LEAN_NOLIBC expected exit 1, got $rc"
 [[ "$lean_nolibc_line" == *'unknown procedure'* && "$lean_nolibc_line" == *'memset'* ]] \
     || fail "GATE: LEAN_NOLIBC expected unknown-procedure memset failure (mirroring OCAML_NOLIBC), got: ${lean_nolibc_line:0:120}"
@@ -214,11 +218,11 @@ run_capped "$OUTPUT_DIR/lean_libc.out" "$OUTPUT_DIR/lean_libc.err" \
     env LEAN_ABORT_ON_PANIC=1 "$CERBERUS_LEAN_BIN" --batch --first "${LIBC_ARGS[@]}" "${JSONS[@]}" || rc=$?
 [[ $rc -lt 124 ]] || fail "LEAN_LIBC $(rc_label $rc): $(tail -2 "$OUTPUT_DIR/lean_libc.err" | tr '\n' ' ')"
 record "LEAN_LIBC exit" "$rc"
-record "LEAN_LIBC" "$(head -1 "$OUTPUT_DIR/lean_libc.out")"
+record "LEAN_LIBC" "$(cat "$OUTPUT_DIR/lean_libc.out")"
 echo "[lean+libc] exit=$rc wall=$(grep -oE 'Elapsed.*' "$OUTPUT_DIR/lean_libc.err" | awk '{print $NF}') maxRSS=$(grep 'Maximum resident' "$OUTPUT_DIR/lean_libc.err" | awk '{print $NF}')kB: $(head -c 100 "$OUTPUT_DIR/lean_libc.out")"
 # Lane expectation (pinned): THE GATE — byte-identical verdict line vs
 # ORACLE_LIBC over the full corpus (charter success condition 1).
-lean_libc_line=$(head -1 "$OUTPUT_DIR/lean_libc.out")
+lean_libc_line=$(cat "$OUTPUT_DIR/lean_libc.out")
 [[ $rc -eq 0 ]] || fail "GATE: LEAN_LIBC expected exit 0, got $rc"
 if [[ "$lean_libc_line" == "$oracle_line" ]]; then
     echo "[lean+libc] EXACT MATCH with ORACLE_LIBC ($N_URIS/$N_URIS URI corpus)"

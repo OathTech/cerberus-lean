@@ -17,14 +17,17 @@ import tempfile
 
 
 ROOT = Path(__file__).resolve().parent.parent
-LANES = ('exec', 'multi_tu', 'cn_coverage', 'ci_sweep', 'gcc_oracle', 'verify')
+LEGACY_LANES = ('bytes', 'libc_exec', 'libxml2_uri', 'immaculate', 'speclab',
+                'speclab_divmod', 'speclab_bytearr', 'speclab_list', 'speclab_tree', 'speclab_seed')
+LANES = ('exec', 'multi_tu', 'cn_coverage', 'ci_sweep', 'gcc_oracle', 'verify', *LEGACY_LANES)
 STUB = r'''#!/usr/bin/env python3
 import os, pathlib, subprocess, sys
 side = pathlib.Path(sys.argv[0]).name
 kind = os.environ[side.upper() + '_PLANT_KIND']
 real = os.environ['REAL_' + side.upper()]
 args = sys.argv[1:]
-if side == 'oracle' and '--exec' not in args:
+if side == 'oracle' and '--exec' not in args and not (
+        os.environ.get('PLANT_BRIDGE_STATUS') == '1' and kind.startswith('exit')):
     os.execv(real, [real, *args])
 rc = 0
 out = b'Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}\n'
@@ -33,10 +36,10 @@ if os.environ.get('PLANT_REAL_EXEC') == '1':
     p = subprocess.run([real, *args], capture_output=True)
     out, err, rc = p.stdout, p.stderr, p.returncode
     # Verify's former hole was in call mode. Leave main-mode results alone.
-    if side == 'lean' and '--call' not in args:
+    if os.environ.get('PLANT_ONLY_CALL') == '1' and side == 'lean' and '--call' not in args:
         kind = 'good'
 if kind == 'bytes':
-    out = out.replace(b'stdout: ""', b'stdout: "\\000\\128\\255"')
+    out = out.replace(b'stdout: "', b'stdout: "\\000\\128\\255')
 elif kind == 'exit2':
     rc = 2
 elif kind == 'exit124':
@@ -111,9 +114,15 @@ def main():
             elif lane == 'gcc_oracle':
                 (gccdir / 'zero.c').write_text(f'int main(void) {{ return {137 if name == "native-exit137" else 0}; }}\n')
                 flags = ['--no-csmith', '--max', '1', str(gccdir)]
-            else:
+            elif lane == 'verify':
                 flags = ['--verbose']
                 case_env['PLANT_REAL_EXEC'] = '1'
+                case_env['PLANT_ONLY_CALL'] = '1'
+            elif lane in LEGACY_LANES:
+                flags = ['--selftest'] if lane == 'speclab' else ['--plant'] if lane.startswith('speclab_') else []
+                case_env['PLANT_REAL_EXEC'] = '1'
+                if lane == 'bytes':
+                    case_env['PLANT_BRIDGE_STATUS'] = '1'
             command = [str(ROOT / 'scripts' / f'test_{lane}.sh'), *flags]
             result = subprocess.run(command, cwd=ROOT, env=case_env, capture_output=True)
             (case_dir / 'stdout').write_bytes(result.stdout)
@@ -142,12 +151,25 @@ def main():
                     valid = valid and bool(re.search(r'^\[1/1\] AGREE ', text, re.M))
                 elif lane == 'verify':
                     valid = valid and '127 passed, 0 failed' in text
+                elif lane == 'bytes':
+                    valid = valid and 'exec_match=9 neg_pinned=5 fail=0' in text
+                elif lane == 'libc_exec':
+                    valid = valid and 'ALL MATCH RECORDED BASELINE' in text
+                elif lane == 'libxml2_uri':
+                    valid = valid and 'GATE PASS:' in text
+                elif lane == 'immaculate':
+                    valid = valid and 'OK: lane matches the committed baseline' in text
+                elif lane.startswith('speclab'):
+                    valid = valid and f'test_{lane}: PASS' in text
             elif lane == 'verify':
                 valid = valid and 'complete observation mismatch/incomplete engine' in text
             elif name == 'bytes':
-                valid = valid and ('MISMATCH' in text or 'STDOUT_DIFF' in text)
+                valid = valid and any(word in text for word in
+                                      ('MISMATCH', 'STDOUT_DIFF', 'DIFF', '[FAIL]', 'pipelines disagree'))
             elif name == 'refusal-text':
                 valid = valid and 'REJECT_DIFF' in text
+            elif lane == 'bytes' and name == 'oracle-exit2':
+                valid = valid and 'cabs-json production failed' in text
             else:
                 valid = valid and 'OBSERVATION ERROR' in text
             if lane == 'gcc_oracle' and name == 'bytes':

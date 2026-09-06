@@ -5,9 +5,7 @@
 # Lean via --cabs-json + cerberus-lean --batch) and compares the two
 # outputs to each other and to an expected verdict.
 #
-# NOT WIRED INTO test_unit.sh: this lane is not gating until a rung
-# stabilizes (arc-15 charter, "Validation and gates"). Run by hand /
-# by rung workers.
+# The selftest and plant modes are Tier B members in scripts/LADDER.md.
 #
 # Usage:
 #   ./scripts/test_speclab.sh <harness.c> <expected-verdict>
@@ -90,30 +88,19 @@ case "$MODE" in
 esac
 
 # ---- both pipelines (test_exec.sh invocation pattern) ---------------
-oracle_out=$(timeout "${TIMEOUT_SECS}s" "$CERBERUS_BIN" \
-    --runtime="$RUNTIME_DIR" --nolibc --exec --batch --mode=exhaustive \
-    "$HARNESS_SRC" 2>&1)
-oracle_exit=$?
-oracle_verdict=$(echo "$oracle_out" | grep -oE '^Defined \{value: "[^"]*"|^Undefined \{.*\}$' | head -1 | sed 's/^Defined {value: "//;s/"$//')
-
-timeout "${TIMEOUT_SECS}s" "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" \
-    --cabs-json "$HARNESS_SRC" > "$OUTPUT_DIR/harness.json" 2>"$OUTPUT_DIR/cabs.err" \
-    || fail "cabs-json bridge refused the harness: $(cat "$OUTPUT_DIR/cabs.err")"
-
-lean_out=$(cd "$PROJECT_ROOT" && LEAN_ABORT_ON_PANIC=1 \
-    timeout "${TIMEOUT_SECS}s" "$CERBERUS_LEAN_BIN" --batch \
-    "$OUTPUT_DIR/harness.json" 2>&1)
-lean_exit=$?
-lean_verdict=$(echo "$lean_out" | grep -oE '^Defined \{value: "[^"]*"|^Undefined \{.*\}$' | head -1 | sed 's/^Defined {value: "//;s/"$//')
+source "$SCRIPT_DIR/speclab_observations.sh"
+run_pair "$HARNESS_SRC" harness
+oracle_exit=$ORACLE_STATUS
+lean_exit=$LEAN_STATUS
+oracle_verdict=$ORACLE_VERDICT
+lean_verdict=$LEAN_VERDICT
 
 echo "test_speclab [$MODE] $HARNESS_SRC"
 echo "  oracle: exit=$oracle_exit verdict=${oracle_verdict:-<none>}"
 echo "  lean:   exit=$lean_exit verdict=${lean_verdict:-<none>}"
 echo "  expect: $EXPECTED"
 
-[[ -n "$oracle_verdict" ]] || fail "oracle produced no Defined verdict: $oracle_out"
-[[ -n "$lean_verdict" ]] || fail "lean produced no Defined verdict: $lean_out"
-[[ "$oracle_verdict" == "$lean_verdict" ]] \
+[[ "$ORACLE_OBSERVATION" == "$LEAN_OBSERVATION" ]] \
     || fail "DIFFERENTIAL: oracle='$oracle_verdict' lean='$lean_verdict'"
 [[ "$oracle_verdict" == "$EXPECTED" ]] \
     || fail "verdict '$oracle_verdict' != expected '$EXPECTED'"

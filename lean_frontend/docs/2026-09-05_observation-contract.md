@@ -64,6 +64,10 @@ followed by either failure form. Fuel failures stay incomplete exploration.
 |---|---|---|
 | exec, CI sweep, CN, multi-TU | Ordered sequence of complete decoded verdicts; multiplicity retained | UB mismatch classification may erase UB payload to classify a difference, never to call it agreement. Existing explicit refusal exceptions require separate accounting. |
 | verify main/call | Complete observations and valid process completion | The committed call-point pin projects the single return value/UB payload; it cannot replace the full engine comparison. |
+| spec-lab families | Complete observations/statuses in the shared `speclab_pair`; sequence retained | Each existing model prediction still requires exactly one value/UB outcome. Libc form2 also checks the complete printed result against the model's output prediction. |
+| libc-exec, libxml2 URI/chvalid | Validate full observations/statuses before exact printed-output/baseline comparison | These existing baselines additionally pin the printer spelling. Full captures/statuses remain available. |
+| bytes | Validate full observations/statuses before the reference check | Committed numeric exit-byte expectations require empty semantic stdout and a single Defined result; negative pins require a completed Error at the specified input line. |
+| immaculate | Validate full semantic observations/statuses before historical token/baseline comparison | Existing negative pins distinguish inherited differences. `MATCH | L=CRASH` is only a legacy coarse failure-class pin, not semantic success or exact diagnostic equivalence; only recognized internal-failure forms at 125/134 with no batch prefix qualify. Timeouts, arbitrary exits and malformed records cannot use that exception. |
 | GCC | Decode the complete Lean observation and check completion first | Native integer exit membership, modulo 256, under the existing native-side applicability/triage contract; raw semantic bytes retained even when this projection does not compare them. |
 | litmus engine parity | Set of complete verdicts, explicitly unordered and duplicate-insensitive like exhaustive exploration | The independent reference uses a second, coarser value/UB set projection. Failure messages stay exact in engine parity. Sequence/multiplicity are retained in the raw/full record, but not asserted equal across the two schedulers. |
 | pristine vs fork | Complete verdict comparison under each input's declared mode | Intentional shared-model/interface changes require a named manifest entry, never automatic rebaselining. |
@@ -71,6 +75,42 @@ followed by either failure form. Fuel failures stay incomplete exploration.
 Internal JSON evidence represents bytes as hex/base64 with an explicit schema
 version. Canonical display tokens re-escape decoded bytes deterministically.
 Canonicalization changes spelling only; it never drops or rewrites a byte.
+
+## Caller and wrapper inventory
+
+The executable-source inventory covers `scripts/` and `tests/` in the owned
+mainline tree. `fuzz_csmith.sh`, `test_csmith_corpus.sh` and
+`creduce_interestingness.sh` invoke `test_exec.sh`, so they inherit its codec;
+none has a second verdict extractor. The csmith campaigns remain excluded
+from execution under the user's ownership instruction. The owned future
+`csmith_explore.sh` oracle-only yield classifier now uses the same saved
+capture/status decoder, replacing its hand-copied expected-exit guess; no
+campaign was run to validate it.
+
+`tests/parity-probes/run_probe.sh`, a separate non-gating instrument copied
+from the CI extractor, now uses shared full captures/statuses and checks
+driver freshness. It retains reporting-only exit semantics and can print
+AGREE only for complete equal observations. The six `test_speclab*.sh`
+legacy extractors and the three libc form2 paths now share
+`speclab_observations.sh`. Bytes, libc-exec, immaculate and both libxml2
+execution lanes validate their complete saved streams before their narrower
+reference/baseline checks. Parse/core/elab lanes compare different artifacts
+(frontend acceptance or syntax dumps), not plain batch verdicts; they do
+not use this decoder. Their status handling remains a separate ladder check.
+
+`test_unit.sh` calls the hermetic codec/release/independent-oracle tests and
+the historical `test_exec.sh --selftest`. Hang/kill/fuel plants invoke the
+real classifying lanes. The old `extract_verdict_seq`/`expected_exit_for`
+names remain solely for historical extractor selftests; no production lane
+calls them. Documentation mentions and the selftest's deliberately broken
+pre-repair extractor are historical examples, not execution paths.
+
+The initial six actual-entry plant sets passed 27/27. Additional actual-entry
+plants cover bytes, libc-exec, URI, immaculate and every spec-lab family:
+40/40 passed across the first run and corrected fixture reruns. The fixture
+corrections made byte injection cover nonempty stdout and made the bytes
+lane's oracle-status plant target its actual Cabs bridge. Final Tier B runs
+all 67 cases together using the latest fixture implementation.
 
 ## Main.batchEscape producer trace
 

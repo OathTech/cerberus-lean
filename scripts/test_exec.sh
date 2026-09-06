@@ -88,19 +88,10 @@
 #     times out the file is CERB_SKIP and the Lean side is never sampled,
 #     so a Lean-side hang on the same file is invisible. A file must be
 #     OCaml-terminating for its Lean behavior to be observed.
-#   * stdout-text spoofing: verdict tokens are extracted textually from
-#     the merged output; a test program that printed a crafted
-#     "Undefined {ub: ..." / "Defined {value: ..." line could in
-#     principle forge tokens. Unreachable today: the harness links no
-#     libc (--nolibc / no Lean-side C library), so test programs cannot
-#     write to stdout at all, and captured program stdout is embedded
-#     quote-ESCAPED (OCaml String.escaped semantics on both printers:
-#     driver_ocaml.ml:99, Main.lean batchEscape) inside the Defined line,
-#     where the ^-anchored token patterns cannot match; since the P0
-#     repair those escaped bytes are PART of the VAL token and are
-#     compared, not skipped (--selftest E5 pins that an embedded
-#     "Defined {" text yields no extra token). Recorded, not defended
-#     further.
+#   * Protocol limits: parsing uses the separate raw stdout capture;
+#     escaped semantic stdout cannot forge records (codec plants cover
+#     embedded verdict text). Plain Error omits its internal stderr and
+#     the protocol has no total-outcome count. See the observation contract.
 #
 # Per-file statuses (baseline taxonomy):
 #   MATCH UB_MATCH UB_DIFF MISMATCH DIFF FAIL TIMEOUT HANG LEAN_CRASH
@@ -272,8 +263,8 @@ fi
 # both mapped to VAL:Specified(0) and compared MATCH (the audit's plant; E1
 # below). Both patterns are ^-anchored to the line start, so the
 # quote-escaped stdout/stderr fields inside a Defined line cannot yield
-# tokens of their own (see the spoofing caveat in the header). grep/sed run
-# in the C locale so the escaped (ASCII) bytes are preserved exactly.
+# tokens of their own. The shared byte parser validates every field,
+# framing and original status; no grep/sed extractor drives comparisons.
 # Status-only baselines do not move by this change; ROWS may (a same-value
 # stdout/stderr difference is now MISMATCH) — every such movement is a
 # finding, never a silent re-record.

@@ -93,8 +93,8 @@ RUNTIME_DIR="$PROJECT_ROOT/_build/install/default"
 [[ -d "$BATTERY_DIR" ]] || fail "battery dir not found: $BATTERY_DIR"
 $RECORD_BASELINE || [[ -f "$BASELINE" ]] || fail "baseline not found: $BASELINE (run --record-baseline once, commit with justification)"
 
-OUTPUT_DIR=$(mktemp -d "$TMP_DIR/libxml2-test.XXXXXXXXXX") || fail "mktemp failed"
-register_cleanup "$OUTPUT_DIR"
+mkdir -p "$OBSERVATION_RUN_DIR" || fail "cannot create raw evidence directory"
+OUTPUT_DIR=$(mktemp -d "$OBSERVATION_RUN_DIR/libxml2-test.XXXXXXXXXX") || fail "mktemp failed"
 
 # Lean binary locates runtime/libcore relative to cwd
 cd "$PROJECT_ROOT" || fail "cannot cd to $PROJECT_ROOT"
@@ -163,6 +163,12 @@ for slice in "${SLICES[@]}"; do
         "${FLAGS[@]}" "$slice" "$CHVALID_TU" \
         > "$OUTPUT_DIR/$sname.ocaml.out" 2> "$OUTPUT_DIR/$sname.ocaml.err" ) || cerb_exit=$?
     cerb_output=$(cat "$OUTPUT_DIR/$sname.ocaml.out")
+    printf '%s\n' "$cerb_exit" > "$OUTPUT_DIR/$sname.ocaml.out.status"
+    if ! python3 "$OBSERVATION_CODEC" tokens --stdout "$OUTPUT_DIR/$sname.ocaml.out" \
+            --stderr "$OUTPUT_DIR/$sname.ocaml.err" --status "$cerb_exit" > "$OUTPUT_DIR/$sname.ocaml.tokens"; then
+        echo "[$sname] FAIL: incomplete OCaml observation (exit $cerb_exit)"
+        FAIL_CNT=$((FAIL_CNT+1)); continue
+    fi
     if is_cap_kill $cerb_exit "$OUTPUT_DIR/$sname.ocaml.err"; then
         echo "[$sname] FAIL: OCaml $(kill_label 137 "$OUTPUT_DIR/$sname.ocaml.err")"
         FAIL_CNT=$((FAIL_CNT+1)); continue
@@ -209,6 +215,12 @@ for slice in "${SLICES[@]}"; do
         "$OUTPUT_DIR/$sname.json" "$CHVALID_JSON" \
         > "$OUTPUT_DIR/$sname.lean.out" 2> "$OUTPUT_DIR/$sname.lean.err" ) || lean_exit=$?
     lean_output=$(cat "$OUTPUT_DIR/$sname.lean.out")
+    printf '%s\n' "$lean_exit" > "$OUTPUT_DIR/$sname.lean.out.status"
+    if ! python3 "$OBSERVATION_CODEC" tokens --stdout "$OUTPUT_DIR/$sname.lean.out" \
+            --stderr "$OUTPUT_DIR/$sname.lean.err" --status "$lean_exit" > "$OUTPUT_DIR/$sname.lean.tokens"; then
+        echo "[$sname] FAIL: incomplete Lean observation (exit $lean_exit)"
+        FAIL_CNT=$((FAIL_CNT+1)); continue
+    fi
     if is_cap_kill $lean_exit "$OUTPUT_DIR/$sname.lean.err"; then
         echo "[$sname] FAIL: Lean $(kill_label 137 "$OUTPUT_DIR/$sname.lean.err")"
         FAIL_CNT=$((FAIL_CNT+1)); continue

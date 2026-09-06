@@ -33,8 +33,8 @@
 #
 # Statuses (oracle side only):
 #   OK              verdict token(s) extracted, exit consistent (runnable)
-#   OK_INCONS       verdict extracted but exit inconsistent (runnable-ish,
-#                   counted separately; test_exec.sh calls it CERB_INCONSISTENT)
+#   OK_INCONS       incomplete/malformed verdict or inconsistent exit;
+#                   never included in the runnable subset
 #   SKIP_INTERNAL   "internal error" (e.g. AilEinvalid translation abort)
 #   SKIP_ERROR      oracle Error{...} verdict
 #   SKIP_TIMEOUT    oracle timeout (124)
@@ -125,8 +125,10 @@ for i in $(seq 1 "$N"); do
     seed=$((SEED_START + i))
     f="$D/gen/cs_${seed}.c"
     rc=0
-    out=$(timeout "${TIMEOUT_SECS}s" "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" \
-            --nolibc --exec --batch --mode=exhaustive "$f" 2>&1) || rc=$?
+    capture="$OBSERVATION_RUN_DIR/$seed.oracle"
+    out=$(observation_capture "$capture" timeout "${TIMEOUT_SECS}s" \
+            "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" \
+            --nolibc --exec --batch --mode=exhaustive "$f") || rc=$?
     # diagnostic line: prefer a real error line over debug chatter
     firstline=$(grep -m1 -E 'internal error|error:' <<<"$out" | cut -c1-200)
     [[ -z "$firstline" ]] && firstline=$(head -1 <<<"$out" | cut -c1-200)
@@ -135,11 +137,9 @@ for i in $(seq 1 "$N"); do
     elif [[ $rc -eq 134 || $rc -eq 137 || $rc -eq 139 ]]; then status=SKIP_CRASH
     elif [[ "$out" == *'internal error'* ]]; then status=SKIP_INTERNAL
     elif [[ "$out" == *'Undefined {'* || "$out" == *'value: "Specified'* || "$out" == *'value: "Unspecified'* ]]; then
-        # exit-consistency per test_exec.sh expected_exit_for
-        if [[ "$out" == *'EXECUTION '* ]]; then exp=0
-        elif [[ "$out" == *'Undefined {'* || "$out" == *'Error {'* ]]; then exp=1
-        else exp=0; fi
-        if [[ $rc -eq $exp ]]; then status=OK; else status=OK_INCONS; fi
+        if observation_tokens "$capture" --status "$rc" > "$capture.tokens"; then
+            status=OK
+        else status=OK_INCONS; fi
     elif [[ "$out" == *'Error {'* ]]; then status=SKIP_ERROR
     else status=SKIP_OTHER
     fi
