@@ -1,0 +1,17 @@
+{
+  "reviewed_primary": "05278ae9537a0212d18a3ca587f79a67e5d9ceaf",
+  "private": "86a2aea547804b78eb7f1eae633bb9c24c713b7f",
+  "mainline": "89f7e688530c6910884518811d645e4e892e4507",
+  "changed_tracked_files": [
+    "lean_frontend/VALIDATION.md"
+  ],
+  "added_files_scope": [
+    "lean_frontend/docs/2026-09-06_validation-foundations-second-review.md",
+    "lean_frontend/docs/validation-foundations-second-review-evidence/"
+  ],
+  "functional_source_and_ladder_unchanged": true,
+  "historical_evidence_unchanged": true,
+  "post_gate_changes": "Review result/limitations, R2-04 prose corrections, source-boundary and checkpoint publication only",
+  "reviewer_limit": "Repairing agent self-review; fresh reviewer of major core documents remains required unless waived by user.",
+  "disposition": "No new runtime/instrument correctness merge blocker found; three maintenance recommendations; residual prose corrected; no merge/push"
+}

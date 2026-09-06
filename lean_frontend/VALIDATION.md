@@ -86,7 +86,8 @@ older callers to the shared byte codec and actual-status capture. The
 [observation contract](docs/2026-09-05_observation-contract.md) defines the
 fields and each lane's sequence/set projection. GCC native exit comparison
 and the independent litmus reference remain explicitly weaker projections;
-the final 67 actual-entry plants verify the primary migrated instruments.
+the initial candidate had 67 actual-entry plants, and the repaired candidate
+passed all 90 in its identified full run (see the audit repair record).
 
 Terminology. **oracle** = the OCaml Cerberus built from this
 repository's `.lem` + OCaml sources, run in the MATCHED MODE (same
@@ -280,13 +281,15 @@ a bug today and what is a bug still open, in the class vocabulary.
 
 **(d)** — the register, §2 (R1, R2, R3).
 
+The libc-mode allocation-address ordering defect **Z-28 is fixed** by the
+Z3 mirror (`2ddc1300c`, already in mainline). The
+[Z3 record](docs/2026-09-05_zero-discrepancy-Z3-record.md) records the source
+repair and the address-printing programs' agreement. The old committed
+sweep's STDOUT_DIFF rows are historical, not an outstanding Z3 implementation
+task; current measurements are in the CI reporting record.
+
 **Still open (bugs by the rule; each with its owner):**
 
-- *libc-mode allocation-address ordering* (Z-28): program globals are
-  interleaved among the libc TUs' globals on the oracle and placed after
-  them on Lean; 6 `tests/pnvi_testsuite` STDOUT_DIFF rows in the committed
-  sweep. BUG-FIX (addresses are values under PVI); owner: slice Z3 (the
-  `Main.lean` multi-TU link order vs `pipeline.ml`), not yet landed.
 - *libc-body UB locations* (Z1-A1): a UB raised INSIDE a libc C body
   carries the libc source location on the oracle and `<unknown
   location>` on Lean (the `--libc` pin is the oracle's Core TEXT dump,
@@ -432,20 +435,24 @@ Lane semantics worth knowing:
   §3.6/§9, `docs/2026-09-01_C1-adoption-record.md`,
   `docs/2026-09-01_C2-ratchet-record.md`.
 
-**Per-test resource limits (all differential harnesses).** Every
-oracle, cabs-json and Lean invocation runs under `timeout` (lane-
-specific, 15–30 s) and — since mem-scale S2 (2026-09-02, Q2 [USER
-2026-09-02]) — under a per-test cgroup RESIDENT-memory cap,
+**Per-test resource limits.** Execution lanes use `timeout` with
+lane-specific bounds. The seven larger-input harnesses listed in
+`scripts/LADDER.md`'s resource-cap convention additionally use a per-test
+cgroup RESIDENT-memory cap since mem-scale S2 (2026-09-02, Q2 [USER
+2026-09-02]):
 `scripts/common.sh` `CAPPED_TEST` → `scripts/capped` with
 `CERB_TEST_MEM_MAX` (default 4G), replacing the arc-5 `ulimit -v 4000000`
 (a virtual-address-space cap that killed Lean at ~1.7 GB RSS while the
 oracle ran to 3.1 GB — record `docs/2026-09-01_mem-scale-profile.md` §2).
-The two failure classes are LOUD and distinct in every lane: exit 124 with
-CPU/wall < 0.1 is `HANG` (S0); a cap breach is exit 137 WITH capped's
-OOM-KILLED witness banner (the cgroup's `memory.events oom_kill`
-counter) and is the lane's KILL class (`LEAN_KILL`/`CERB_KILL`, `KILL`,
-`SKIP_GCC_KILL`, "FAIL: … OOM-KILLED") — never agreement, never a skip;
-a bare 137 without the witness keeps its crash/compare class. Plants:
+The cap does not cover every direct invocation in every script; for example,
+`test_exec.sh`'s small-corpus helpers use timeout without `CAPPED_TEST`.
+The classifying lanes distinguish a low-CPU timeout (`HANG`, S0) from a cap
+breach. A positive capped OOM witness, derived from `memory.events oom_kill`,
+identifies a breach at any surviving parent status, including 0 and 1.
+It produces the lane's KILL class and never observation agreement. Native
+GCC's `SKIP_GCC_KILL`/`O2_SKIP_KILL` are explicit applicability exclusions.
+A bare 137 without the witness follows the relevant engine/native protocol,
+not an assumed OOM classification. Plants:
 `scripts/test_hang_plant.sh`, `scripts/test_kill_plant.sh`.
 
 ## 6. The build-time gates (`scripts/test_unit.sh`)

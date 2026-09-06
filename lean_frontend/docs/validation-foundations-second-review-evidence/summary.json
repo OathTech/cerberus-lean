@@ -1,0 +1,120 @@
+{
+  "subject": "05278ae9537a0212d18a3ca587f79a67e5d9ceaf",
+  "checks": {
+    "published_hashes": {
+      "validation-foundations-repair-evidence": 31,
+      "validation-foundations-private-repair-evidence": 7
+    },
+    "full_and_reporting_logs": 68,
+    "retained_actual_entry_plants": 90,
+    "retained_immaculate_captures_redecoded": {
+      "Defined": 60,
+      "Error": 10,
+      "InternalError": 21,
+      "Undefined": 27
+    },
+    "cold_provider_commands": 20,
+    "cold_generated_sources": {
+      "lean": 207,
+      "ocaml": 86
+    },
+    "repair_preserved_semantics_probes_and_baselines": true,
+    "final_commit_is_documentation_evidence_over_tested_functional_source": true
+  },
+  "packages": [
+    {
+      "archive": "development.tar.zst",
+      "file_count": 23213,
+      "total_bytes": 972619230
+    },
+    {
+      "archive": "interrupted-full.tar.zst",
+      "file_count": 68453,
+      "total_bytes": 10938746678
+    },
+    {
+      "archive": "full.tar.zst",
+      "file_count": 80997,
+      "total_bytes": 11985192321
+    },
+    {
+      "archive": "reporting.tar.zst",
+      "file_count": 16258,
+      "total_bytes": 42823457
+    },
+    {
+      "archive": "provider-failures.tar.zst",
+      "file_count": 249,
+      "total_bytes": 19688802
+    },
+    {
+      "archive": "final-checkpoint.tar.gz",
+      "file_count": 8930,
+      "total_bytes": 256360450
+    }
+  ],
+  "repair_evidence_directory_bytes": 225657975,
+  "full_lane_seconds": {
+    "A1": 121.335,
+    "A2": 32.379,
+    "A3": 52.161,
+    "A4": 23.215,
+    "A4b": 18.808,
+    "A4c": 3.283,
+    "A5": 24.669,
+    "A6": 2.231,
+    "A7": 9.594,
+    "A8": 8.391,
+    "A9": 15.8,
+    "A10": 17.604,
+    "A11": 58.321,
+    "B1": 657.949,
+    "B2": 22.668,
+    "B3": 15.101,
+    "B4": 46.059,
+    "B5": 70.102,
+    "B6.1": 2.383,
+    "B6.2": 2.282,
+    "B6.3": 2.633,
+    "B6.4": 3.083,
+    "B6.5": 3.989,
+    "B6.6": 4.238,
+    "B6.7": 3.288,
+    "B7": 1452.047,
+    "B8.1": 13.449,
+    "B8.2": 215.877,
+    "B8.3": 6.687,
+    "B9": 1097.837,
+    "B10.1": 65.187,
+    "B10.2": 1.33
+  },
+  "B9_fraction_of_full_time": 0.2694753042479344,
+  "C4": {
+    "rows": 2186,
+    "counts": {
+      "MATCH": 1205,
+      "UB_MATCH": 154,
+      "CERB_TIMEOUT": 25,
+      "CERB_REJECT": 766,
+      "CERB_ERROR": 29,
+      "LEAN_CRASH": 3,
+      "LEAN_TIMEOUT": 3,
+      "UB_DIFF": 1
+    },
+    "movement_from_first_candidate": [
+      {
+        "suite": "torture_success",
+        "file": "tests/gcc-torture/breakdown/success/pr63209.c",
+        "old": "CERB_TIMEOUT",
+        "new": "LEAN_TIMEOUT"
+      }
+    ]
+  },
+  "fresh_checks": {
+    "python_unittest_methods": 46,
+    "native_subprocess_probes": 4,
+    "actual_exec_lane_plants": 9,
+    "private_reference_refusal_cases": 19,
+    "initial_dispatch_error": "unittest discovery rejected arguments in standalone private test; direct invocation then passed all 19"
+  }
+}

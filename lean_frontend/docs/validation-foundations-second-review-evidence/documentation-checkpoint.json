@@ -1,0 +1,304 @@
+{
+  "schema": 1,
+  "archive": "documentation-checkpoint.tar.gz",
+  "archive_sha256": "3d42e7e639e6ecfb28f5177ca8f4ccb8c911b88a458829c4ffa5755fb70e8d66",
+  "file_count": 59,
+  "total_bytes": 1857097,
+  "files": [
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint.log",
+      "size": 1390,
+      "sha256": "0f1f4774a043a4b0a8f640a8c2be01d79db734aa5cf66490b823bf5a46a6adda"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A1/scope-cleanup.log",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A1/scope.json",
+      "size": 427,
+      "sha256": "8f8e684db676d0ff80e13e593c0eb34b94bf00e0b1efc4cf2a6bc4dd178fdab7"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A1/stderr",
+      "size": 6947,
+      "sha256": "032880a436c2eef00e1946e6c8b659502f33cd7fa5548a4181d0b150f5a5c512"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A1/stdout",
+      "size": 39461,
+      "sha256": "0c467669be4e260a82408e1eea45acdd930c75dd94d4659d831ba4194c2feacf"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A10/scope-cleanup.log",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A10/scope.json",
+      "size": 434,
+      "sha256": "8844a2bed009f5ef2af55945baf5058d451228f20edacc198ff9242e98b80681"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A10/stderr",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A10/stdout",
+      "size": 1448,
+      "sha256": "cd2c09dcb6ba5b4994199d719bc959357a66cea0ef2d31d087c8d4d5effae3da"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A11/scope-cleanup.log",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A11/scope.json",
+      "size": 458,
+      "sha256": "77991742d1e302f4ef191e9de35fb36febf83f573fbba74b69b93c3ee8ac702c"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A11/stderr",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A11/stdout",
+      "size": 95588,
+      "sha256": "88ed0aaa5f630e962f6e57c2e0c4d810eab1876199764036e3092200b7c5b48d"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A2/scope-cleanup.log",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A2/scope.json",
+      "size": 451,
+      "sha256": "feee51b82d98049c6b12e302d99298f58939fa20c3c503e70dda63f56cdcbdce"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A2/stderr",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A2/stdout",
+      "size": 15659,
+      "sha256": "7e7c61f57f96958f57b55b477ceda5f859c2a6b2a543fba0978296c18f809aa5"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A3/scope-cleanup.log",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A3/scope.json",
+      "size": 508,
+      "sha256": "844d4f060ba7de6bb18bc337de96d269fb5082d7218533850c77de05943c133d"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A3/stderr",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A3/stdout",
+      "size": 144164,
+      "sha256": "208682911b29df82654439830c1d0e631423d0139c15facfe058d757908c8b6a"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A4/scope-cleanup.log",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A4/scope.json",
+      "size": 502,
+      "sha256": "622bd8b3aecb01c54656c7bbf4675efe02f53a5b92294bb7a8e4fa75c0798908"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A4/stderr",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A4/stdout",
+      "size": 12410,
+      "sha256": "fedf5214bc456a72db8ea9796008f437ceb4086ae3d7994474ee0abc2362a053"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A4b/scope-cleanup.log",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A4b/scope.json",
+      "size": 502,
+      "sha256": "36e1e642829f0327c18c4c78ed244685e1908e75ac3a80a8e773430872a5a81c"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A4b/stderr",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A4b/stdout",
+      "size": 9353,
+      "sha256": "325c44a4962a30fc07e5a206418833e4b119458221bbed3a6a13fa9a44c68eed"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A4c/scope-cleanup.log",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A4c/scope.json",
+      "size": 428,
+      "sha256": "7a7f61501752df4e03ac7b3346ff3fb39e177965c38e2e429db2803c004abb74"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A4c/stderr",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A4c/stdout",
+      "size": 1784,
+      "sha256": "3404bf3ec94cbd17d2d7a69918c2439d20005d9d9559313edbafd6c18db9f299"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A5/scope-cleanup.log",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A5/scope.json",
+      "size": 432,
+      "sha256": "cdfcab4ebf5a6070de096999426b599dcb65ed99a4ea01b1676a284f611c14a6"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A5/stderr",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A5/stdout",
+      "size": 2090,
+      "sha256": "89a05d0104d7481bdee944efe571099b38fec0ffc14673116aed909089390a4f"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A6/scope-cleanup.log",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A6/scope.json",
+      "size": 431,
+      "sha256": "e9017e1aab36154061b2b1989f50bdd2af8572d022aedf33a18924055bd2b7b0"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A6/stderr",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A6/stdout",
+      "size": 1300,
+      "sha256": "96a00e4ee8d6379fef38a0e279e3bf23fdd885c0ed1e2fe06f08106bac447258"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A7/scope-cleanup.log",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A7/scope.json",
+      "size": 428,
+      "sha256": "b70b5de3070c68bde61b2b72f32947cbf01d18f5e2d330201ef80d0ff0819db1"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A7/stderr",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A7/stdout",
+      "size": 1307,
+      "sha256": "c3d445c2a27c5a41e9129dc450745d18bd4553a9d32f9ff7e545233052a49a6e"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A8/scope-cleanup.log",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A8/scope.json",
+      "size": 427,
+      "sha256": "ffaab33c5613ad453c180a16a9f91a3b7ac49edb2ff5c3a0b8c2604b6bad84a7"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A8/stderr",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A8/stdout",
+      "size": 1030,
+      "sha256": "1fea3acaeb0656566a71fe8a7eb38612227426e05abaf2ca5178802fcc684138"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A9/scope-cleanup.log",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A9/scope.json",
+      "size": 427,
+      "sha256": "70ca7a679618932da1f60111dc15d5291d46fcf1921f391e88f28155bfbfb2be"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A9/stderr",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/A9/stdout",
+      "size": 4449,
+      "sha256": "7d503474bf11a8ab338595a30a2f0197273babb4d180afe60474f703af0ac1b3"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/report.json",
+      "size": 1495441,
+      "sha256": "93bba6101fa4db7bb45fe70ab6ad0ffb31b3d278fb22bc146304bf5c5e886032"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/documentation-checkpoint/summary.txt",
+      "size": 210,
+      "sha256": "558b2be372b5718b050b89cdc8d6559127eac1f7e22c6c2ad98e4ac869b0824a"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/residual-documentation.json",
+      "size": 685,
+      "sha256": "e0c7e53b37bb7825939d7496f892d5ca1260bbb13af74dd1c36ec7268d954e63"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/tested-documentation/lean_frontend/docs/2026-09-06_validation-foundations-second-review.md",
+      "size": 15276,
+      "sha256": "41772eee9144b0f76ff73e8fcf7d69c42cc441ac3f7e411a1ed0c8d42e31f5dd"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/tested-documentation/lean_frontend/docs/validation-foundations-second-review-evidence/README.md",
+      "size": 923,
+      "sha256": "5f60c548a9f6015c938fd51acf4920e7bf02cfb2d590d3067525b568f061dab4"
+    },
+    {
+      "path": ".validation-foundations/second-review-20260906/tested-documentation/lean_frontend/docs/validation-foundations-second-review-evidence/SHA256SUMS",
+      "size": 327,
+      "sha256": "b8e733e564f5c47a898dbeac5f71167a3eec8860c25f1bcb89c94f74397a155a"
+    }
+  ]
+}
