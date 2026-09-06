@@ -112,6 +112,16 @@ if ! "$FUELCLS_SH"; then
     exit 1
 fi
 
+# Byte protocol and real subprocess capture plants (validation foundations).
+if ! python3 "$(dirname "$PURITY_SH")/test_observations.py"; then
+    echo "test_unit: observation codec/capture plants FAILED"
+    exit 1
+fi
+if ! python3 "$(dirname "$PURITY_SH")/test_release.py"; then
+    echo "test_unit: release runner plants FAILED"
+    exit 1
+fi
+
 # Verdict-extractor selftest (P0 instrument repair 2026-09-05, whole-project
 # audit F3): test_exec.sh's extract_verdict_seq must keep the WHOLE Defined
 # line (value, stdout, stderr, blocked) as the VAL token — hermetic plants

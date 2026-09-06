@@ -277,25 +277,9 @@ fi
 # Status-only baselines do not move by this change; ROWS may (a same-value
 # stdout/stderr difference is now MISMATCH) — every such movement is a
 # finding, never a silent re-record.
-extract_verdict_seq() {   # <output>  → token lines on stdout
-    printf '%s\n' "$1" \
-        | LC_ALL=C grep -oE '^Undefined \{.*\}$|^Defined \{.*\}$' \
-        | LC_ALL=C sed -e 's/^Undefined \(.*\)$/UB:\1/' \
-                       -e 's/^Defined \(.*\)$/VAL:\1/'
-    return 0
-}
-
-# Expected exit code per OCaml main.ml runM (mirrored by Main.lean):
-# multiple executions → 0; single Undefined/Error → 1; single Defined → 0.
-expected_exit_for() {   # <output>  → echoes 0 or 1
-    if [[ "$1" == *'EXECUTION '* ]]; then
-        echo 0
-    elif [[ "$1" == *'Undefined {'* || "$1" == *'Error {'* ]]; then
-        echo 1
-    else
-        echo 0
-    fi
-}
+# Implemented once in observations.py / observations.sh (through common.sh).
+# Production parses the raw stdout capture and checks its original status.
+# Text-only helpers below are used by the historical extractor plants only.
 
 join_seq() {   # <token-lines>  → single line joined with '|'
     printf '%s' "$1" | tr '\n' '|'
@@ -316,9 +300,9 @@ selftest_extractor() {
             echo "  PLANT FAIL [$1]:"; echo "      wanted: $(join_seq "$2")"; echo "      got:    $(join_seq "$got")"; fails=$((fails+1))
         fi
     }
-    # the audit's exact two lines (evidence verdict-extractor-plant.log)
-    local a1='Defined {value: "Specified(0)", stdout: "GOOD", stderr: ""}'
-    local a2='Defined {value: "Specified(0)", stdout: "BAD", stderr: "WRONG"}'
+    # The audit's two payloads, with the mandatory blocked field supplied.
+    local a1='Defined {value: "Specified(0)", stdout: "GOOD", stderr: "", blocked: "false"}'
+    local a2='Defined {value: "Specified(0)", stdout: "BAD", stderr: "WRONG", blocked: "false"}'
     # E0: the PRE-REPAIR extractor (value only, verbatim from the 2026-09-03
     # script) maps the audit pair to identical tokens — the defect reproduced
     old_extract() { printf '%s\n' "$1" | grep -oE '^Undefined \{.*\}$|^Defined \{value: "[^"]*"' | sed -e 's/^Undefined \(.*\)$/UB:\1/' -e 's/^Defined {value: "\(.*\)"$/VAL:\1/'; return 0; }
@@ -328,8 +312,8 @@ selftest_extractor() {
         echo "  PLANT FAIL [E0 premise]: the pre-repair extractor did not reproduce the audit's collapse ($(old_extract "$a1") vs $(old_extract "$a2"))"; fails=$((fails+1))
     fi
     # E1: same value, different stdout (+ stderr) — the audit's plant: DIFFERENT tokens, each the whole line body
-    check "E1a audit line 1 -> whole-line token" 'VAL:{value: "Specified(0)", stdout: "GOOD", stderr: ""}' "$a1"
-    check "E1b audit line 2 -> whole-line token" 'VAL:{value: "Specified(0)", stdout: "BAD", stderr: "WRONG"}' "$a2"
+    check "E1a audit payload 1 -> whole-line token" 'VAL:{value: "Specified(0)", stdout: "GOOD", stderr: "", blocked: "false"}' "$a1"
+    check "E1b audit payload 2 -> whole-line token" 'VAL:{value: "Specified(0)", stdout: "BAD", stderr: "WRONG", blocked: "false"}' "$a2"
     if [[ "$(extract_verdict_seq "$a1")" != "$(extract_verdict_seq "$a2")" ]]; then
         echo "  PLANT OK   [E1 same-value/different-stdout+stderr lines yield DIFFERENT tokens]"
     else
@@ -347,7 +331,7 @@ selftest_extractor() {
     fi
     # E3: escaped payload — escaped quotes, backslashes, \n and \ddd bytes preserved byte-exactly
     local c1='Defined {value: "Specified(1)", stdout: "say \"hi\"\n\\ tab\t \255\000 end", stderr: "", blocked: "false"}'
-    check "E3 escaped-quote/backslash/octal payload preserved byte-exactly" 'VAL:{value: "Specified(1)", stdout: "say \"hi\"\n\\ tab\t \255\000 end", stderr: "", blocked: "false"}' "$c1"
+    check "E3 escaped-quote/backslash/decimal payload preserved byte-exactly" 'VAL:{value: "Specified(1)", stdout: "say \"hi\"\n\\ tab\t \255\000 end", stderr: "", blocked: "false"}' "$c1"
     # E4: multi-outcome output (exhaustive mode): tokens in order, one per verdict line
     local m; m=$(printf '%s\n' 'EXECUTION 0 (exit = 0):' 'Defined {value: "Specified(0)", stdout: "a", stderr: "", blocked: "false"}' 'EXECUTION 1:' 'Undefined {ub: "UB043_indirection_invalid_value", stderr: "", loc: "<file.c:3:5>"}' 'EXECUTION 2 (exit = 0):' 'Defined {value: "Specified(0)", stdout: "b", stderr: "", blocked: "false"}')
     check "E4 multi-outcome: 3 tokens in order (Defined a / Undefined / Defined b)" "$(printf '%s\n' 'VAL:{value: "Specified(0)", stdout: "a", stderr: "", blocked: "false"}' 'UB:{ub: "UB043_indirection_invalid_value", stderr: "", loc: "<file.c:3:5>"}' 'VAL:{value: "Specified(0)", stdout: "b", stderr: "", blocked: "false"}')" "$m"
@@ -465,7 +449,7 @@ fi
 # untouched.
 run_ocaml_exec() {  # <file.c> <time-record>
     "$TIME_BIN" -v -o "$2" timeout "${TIMEOUT_SECS}s" "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" \
-        --nolibc --exec --batch --mode=exhaustive "$1" 2>&1
+        --nolibc --exec --batch --mode=exhaustive "$1"
 }
 run_cabs_json() {   # <file.c> <out.json>
     timeout "${TIMEOUT_SECS}s" "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" \
@@ -473,7 +457,7 @@ run_cabs_json() {   # <file.c> <out.json>
 }
 run_lean_batch() {  # <file.json> <time-record>
     LEAN_ABORT_ON_PANIC=1 "$TIME_BIN" -v -o "$2" timeout "${TIMEOUT_SECS}s" \
-        "$CERBERUS_LEAN_BIN" --batch "$1" 2>&1
+        "$CERBERUS_LEAN_BIN" --batch "$1"
 }
 
 # ---------------------------------------------------------------------------
@@ -513,6 +497,7 @@ record_status() {   # <basename.c> <STATUS>
 echo ""
 echo "Running differential execution comparison..."
 echo "============================================"
+echo "Raw observation evidence: $OBSERVATION_RUN_DIR"
 
 file_num=0
 total_to_test=${#TEST_FILES[@]}
@@ -528,7 +513,8 @@ for c_file in "${TEST_FILES[@]}"; do
     # --- OCaml cerberus: --exec --batch (exhaustive, nolibc) ---------------
     cerberus_shell_exit=0
     cerb_time="$OUTPUT_DIR/$filename.cerb.time"
-    cerberus_output=$(run_ocaml_exec "$c_file" "$cerb_time") || cerberus_shell_exit=$?
+    cerb_capture="$OBSERVATION_RUN_DIR/$file_num.oracle"
+    cerberus_output=$(observation_capture "$cerb_capture" run_ocaml_exec "$c_file" "$cerb_time") || cerberus_shell_exit=$?
 
     if [[ $cerberus_shell_exit -eq 124 ]]; then
         # Class stays CERB_SKIP (header); the CPU/wall ratio is made
@@ -569,10 +555,10 @@ for c_file in "${TEST_FILES[@]}"; do
     cerb_seq=""
     if [[ "$cerberus_output" == *'Undefined {'* ]]; then
         cerberus_has_ub=true
-        cerb_seq=$(extract_verdict_seq "$cerberus_output")
+        cerb_seq=$(observation_tokens "$cerb_capture")
     elif [[ "$cerberus_output" == *'value: "Specified'* ]] \
       || [[ "$cerberus_output" == *'value: "Unspecified'* ]]; then
-        cerb_seq=$(extract_verdict_seq "$cerberus_output")
+        cerb_seq=$(observation_tokens "$cerb_capture")
     elif [[ "$cerberus_output" == *'Error {'* ]]; then
         CERB_SKIP_COUNT=$((CERB_SKIP_COUNT + 1))
         error_msg=$(echo "$cerberus_output" | grep -o 'msg: "[^"]*"' | head -1 | sed 's/msg: "\([^"]*\)"/\1/')
@@ -598,7 +584,7 @@ for c_file in "${TEST_FILES[@]}"; do
     # S5f H2: exit-code/verdict consistency (see header). Any deviation
     # from the runM-convention expected exit — even with parseable output —
     # is CERB_INCONSISTENT (non-fatal, counted, visible).
-    cerb_expected_exit=$(expected_exit_for "$cerberus_output")
+    cerb_expected_exit=$(observation_expected_exit "$cerb_capture") || exit 1
     if [[ $cerberus_shell_exit -ne $cerb_expected_exit ]]; then
         CERB_INCONSISTENT_COUNT=$((CERB_INCONSISTENT_COUNT + 1))
         echo "[$file_num/$total_to_test] CERB_INCONSISTENT $filename: output parsed ($(join_seq "$cerb_seq")) but exit=$cerberus_shell_exit (expected $cerb_expected_exit)"
@@ -619,7 +605,8 @@ for c_file in "${TEST_FILES[@]}"; do
     # --- Lean pipeline: --batch --------------------------------------------
     lean_exit=0
     lean_time="$OUTPUT_DIR/$filename.lean.time"
-    lean_output=$(run_lean_batch "$json_file" "$lean_time") || lean_exit=$?
+    lean_capture="$OBSERVATION_RUN_DIR/$file_num.lean"
+    lean_output=$(observation_capture "$lean_capture" run_lean_batch "$json_file" "$lean_time") || lean_exit=$?
 
     if [[ $lean_exit -eq 124 ]]; then
         # HANG vs TIMEOUT (header; common.sh classify_exit124). An
@@ -679,9 +666,9 @@ for c_file in "${TEST_FILES[@]}"; do
     lean_seq=""
     if [[ "$lean_output" == *'Undefined {'* ]]; then
         lean_has_ub=true
-        lean_seq=$(extract_verdict_seq "$lean_output")
+        lean_seq=$(observation_tokens "$lean_capture")
     elif [[ "$lean_output" == *'Defined {'* ]]; then
-        lean_seq=$(extract_verdict_seq "$lean_output")
+        lean_seq=$(observation_tokens "$lean_capture")
     elif [[ "$lean_output" == *'Error {'* ]]; then
         error_msg=$(echo "$lean_output" | grep -o 'msg: "[^"]*"' | head -1 | sed 's/msg: "\([^"]*\)"/\1/')
         if $expect_unsupported; then
@@ -715,7 +702,7 @@ for c_file in "${TEST_FILES[@]}"; do
     # S5f H2: exit-code/verdict consistency, Lean side (see header). A
     # nonzero-vs-expected exit is fatal in default mode even though the
     # output parsed (print-then-crash / laundering hole).
-    lean_expected_exit=$(expected_exit_for "$lean_output")
+    lean_expected_exit=$(observation_expected_exit "$lean_capture") || exit 1
     if [[ $lean_exit -ne $lean_expected_exit ]]; then
         if $expect_unsupported; then
             UNSUPPORTED_EXPECTED=$((UNSUPPORTED_EXPECTED + 1))
@@ -844,11 +831,11 @@ if [[ $UNSUPPORTED_EXPECTED -gt 0 ]] || [[ $UNSUPPORTED_UNEXPECTED -gt 0 ]]; the
     echo ""
 fi
 
-TOTAL_MATCH=$((MATCH + UB_MATCH + UB_CODE_DIFF))
+TOTAL_MATCH=$((MATCH + UB_MATCH))
 TOTAL_COMPARE=$((TOTAL_MATCH + MISMATCH))
 if [[ $TOTAL_COMPARE -gt 0 ]]; then
     MATCH_RATE=$((TOTAL_MATCH * 100 / TOTAL_COMPARE))
-    echo "Match rate:   ${MATCH_RATE}% (of comparable; UB_DIFF counts as match, per prototype)"
+    echo "Match rate:   ${MATCH_RATE}% (complete observations; UB_DIFF is a difference)"
 fi
 
 # One-line machine-grepable summary

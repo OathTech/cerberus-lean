@@ -9,8 +9,8 @@
 # the oracle, exactly as in test_exec.sh.
 #
 # Invocations mirror test_exec.sh precisely (same flags, same
-# verdict-sequence comparison — the extraction/comparison logic below is
-# lifted from test_exec.sh's S5f full-sequence form, simplified to the
+# verdict-sequence comparison — the shared byte codec is also used by
+# test_exec.sh, with classifications simplified to the
 # statuses a directory corpus can produce):
 #   OCaml : cerberus --nolibc --exec --batch --mode=exhaustive a.c b.c ...
 #           (multi-file linking is native: per-file frontend fold
@@ -19,14 +19,9 @@
 #           (per-file cabs-json via `cerberus --cabs-json <file>` — one
 #            run per file: the OCaml driver prints one json per input)
 #
-# Comparison scope (arc-5 audit 2, F9): this harness compares VERDICT
-# SEQUENCES (the value/ub fields extracted per execution), NOT
-# stdout/stderr — the libxml2 gate (test_libxml2.sh) is the stricter one
-# (byte-identical batch verdict line incl. stdout/stderr/blocked).
-# Rationale: the corpus here runs --mode=exhaustive, where per-execution
-# stdout interleaving/ordering is not a stable comparable, while the
-# verdict sequence is; deep-observation coverage is delegated to the
-# single-trace libxml2 gate.
+# Comparison scope (validation foundations): complete ordered verdicts,
+# including semantic stdout/stderr, UB location and blocked state. Preserve
+# outcome multiplicity and validate actual process completion on both sides.
 #
 # Fail-closed: any MISMATCH/DIFF/FAIL/CRASH/TIMEOUT/empty-corpus exits 1.
 set -uo pipefail
@@ -107,20 +102,7 @@ if [[ ${#TEST_DIRS[@]} -eq 0 ]]; then
     exit 1
 fi
 
-# Verdict-sequence extraction — lifted from test_exec.sh (S5f full-sequence;
-# whole Undefined line since the zero-discrepancy arc, charter §4.1)
-extract_verdict_seq() {
-    printf '%s\n' "$1" \
-        | grep -oE '^Undefined \{.*\}$|^Defined \{value: "[^"]*"' \
-        | sed -e 's/^Undefined \(.*\)$/UB:\1/' \
-              -e 's/^Defined {value: "\(.*\)"$/VAL:\1/'
-    return 0
-}
-expected_exit_for() {
-    if [[ "$1" == *'EXECUTION '* ]]; then echo 0
-    elif [[ "$1" == *'Undefined {'* || "$1" == *'Error {'* ]]; then echo 1
-    else echo 0; fi
-}
+# Common codec: complete ordered verdicts, original status, raw evidence.
 
 PASS=0
 FAIL=0
@@ -128,6 +110,7 @@ num=0
 echo ""
 echo "Running multi-TU differential comparison (${#TEST_DIRS[@]} tests)..."
 echo "=================================================="
+echo "Raw observation evidence: $OBSERVATION_RUN_DIR"
 
 for tdir in "${TEST_DIRS[@]}"; do
     num=$((num + 1))
@@ -142,20 +125,21 @@ for tdir in "${TEST_DIRS[@]}"; do
 
     # --- OCaml: native multi-file link + exec --------------------------
     cerb_exit=0
-    cerb_output=$(timeout "${TIMEOUT_SECS}s" "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" \
-        --nolibc --exec --batch --mode=exhaustive "${C_FILES[@]}" 2>&1) || cerb_exit=$?
+    cerb_capture="$OBSERVATION_RUN_DIR/$num.oracle"
+    cerb_output=$(observation_capture "$cerb_capture" timeout "${TIMEOUT_SECS}s" "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" \
+        --nolibc --exec --batch --mode=exhaustive "${C_FILES[@]}") || cerb_exit=$?
     if [[ $cerb_exit -ge 124 ]]; then
         echo "[$num] FAIL $tname: OCaml side timeout/crash (exit $cerb_exit)"
         FAIL=$((FAIL + 1))
         continue
     fi
-    cerb_seq=$(extract_verdict_seq "$cerb_output")
+    cerb_seq=$(observation_tokens "$cerb_capture")
     if [[ -z "$cerb_seq" ]]; then
         echo "[$num] FAIL $tname: no OCaml verdicts (exit $cerb_exit): $(echo "$cerb_output" | head -2 | tr '\n' ' ')"
         FAIL=$((FAIL + 1))
         continue
     fi
-    cerb_expected=$(expected_exit_for "$cerb_output")
+    cerb_expected=$(observation_expected_exit "$cerb_capture") || exit 1
     if [[ $cerb_exit -ne $cerb_expected ]]; then
         echo "[$num] FAIL $tname: OCaml exit $cerb_exit inconsistent with verdicts (expected $cerb_expected)"
         FAIL=$((FAIL + 1))
@@ -183,21 +167,22 @@ for tdir in "${TEST_DIRS[@]}"; do
 
     # --- Lean: multi-json link + exec ---------------------------------
     lean_exit=0
-    lean_output=$(LEAN_ABORT_ON_PANIC=1 timeout "${TIMEOUT_SECS}s" \
-        "$CERBERUS_LEAN_BIN" --batch "${JSON_FILES[@]}" 2>&1) || lean_exit=$?
+    lean_capture="$OBSERVATION_RUN_DIR/$num.lean"
+    lean_output=$(observation_capture "$lean_capture" env LEAN_ABORT_ON_PANIC=1 timeout "${TIMEOUT_SECS}s" \
+        "$CERBERUS_LEAN_BIN" --batch "${JSON_FILES[@]}") || lean_exit=$?
     JSON_FILES=()
     if [[ $lean_exit -ge 124 ]]; then
         echo "[$num] FAIL $tname: Lean side timeout/crash (exit $lean_exit)"
         FAIL=$((FAIL + 1))
         continue
     fi
-    lean_seq=$(extract_verdict_seq "$lean_output")
+    lean_seq=$(observation_tokens "$lean_capture")
     if [[ -z "$lean_seq" ]]; then
         echo "[$num] FAIL $tname: no Lean verdicts (exit $lean_exit): $(echo "$lean_output" | head -2 | tr '\n' ' ')"
         FAIL=$((FAIL + 1))
         continue
     fi
-    lean_expected=$(expected_exit_for "$lean_output")
+    lean_expected=$(observation_expected_exit "$lean_capture") || exit 1
     if [[ $lean_exit -ne $lean_expected ]]; then
         echo "[$num] FAIL $tname: Lean exit $lean_exit inconsistent with verdicts (expected $lean_expected)"
         FAIL=$((FAIL + 1))

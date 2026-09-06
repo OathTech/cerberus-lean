@@ -33,6 +33,11 @@ fi
 # Binary paths
 CERBERUS_BIN="$PROJECT_ROOT/_build/default/backend/driver/main.exe"
 CERBERUS_LEAN_BIN="$PROJECT_ROOT/lean_frontend/.lake/build/bin/cerberus-lean"
+if [[ -n "${CERB_ORACLE_BIN_OVERRIDE:-}" ]]; then
+    CERBERUS_BIN="$CERB_ORACLE_BIN_OVERRIDE"
+    echo "CERB_ORACLE_BIN_OVERRIDE ACTIVE: oracle replaced by $CERBERUS_BIN" >&2
+    echo "PLANT MODE — this run's rows are NOT evidence about the semantics" >&2
+fi
 # PLANT HOOK (mem-scale S0, 2026-09-02): substitute a stub for the Lean
 # driver so a harness's failure CLASSIFICATION can be plant-tested
 # (scripts/test_hang_plant.sh: a sleeping stub must read HANG, a
@@ -54,6 +59,7 @@ fi
 # definition without this file's env guard. Fail-closed: missing = exit.
 # shellcheck source=fuel_classify.sh
 source "$SCRIPT_DIR/fuel_classify.sh" || { echo "Error: $SCRIPT_DIR/fuel_classify.sh missing (fuel classifier; fail-closed)" >&2; exit 1; }
+source "$SCRIPT_DIR/observations.sh" || { echo "Error: shared observation codec missing" >&2; exit 1; }
 
 # Colors
 if [[ -t 1 ]]; then
@@ -65,6 +71,9 @@ fi
 # Temp directory
 TMP_DIR="$PROJECT_ROOT/.tmp/scripts"
 mkdir -p "$TMP_DIR"
+# Raw observations survive individual lane scratch cleanup. A release runner
+# supplies a lane-specific evidence directory; standalone runs print the path.
+OBSERVATION_RUN_DIR="${CERB_OBSERVATION_DIR:-$TMP_DIR/observations/$(basename "$0" .sh).$$}"
 
 # Cleanup
 _CLEANUP_PATHS=()
@@ -126,7 +135,7 @@ build_cerberus() {
     # tree — fabricated freshness. Fail here instead.
     local _dlog="$TMP_DIR/build_cerberus.$$.log"
     if ! (cd "$PROJECT_ROOT" && opam exec --switch="$PROJECT_ROOT" -- \
-        dune build backend/driver/main.exe cerberus-lib.install) > "$_dlog" 2>&1; then
+        dune build --root "$PROJECT_ROOT" backend/driver/main.exe cerberus-lib.install) > "$_dlog" 2>&1; then
         echo "Error: cerberus build FAILED (dune exit nonzero); last 40 lines:" >&2
         tail -40 "$_dlog" >&2
         rm -f "$_dlog"
@@ -138,13 +147,16 @@ build_cerberus() {
         echo "Error: Cerberus build failed" >&2
         exit 1
     fi
+    # Install into this worktree, never into its shared _opam symlink.
+    # All engine invocations use the explicit _build/install/default runtime;
+    # this local prefix also checks the package's install recipe in isolation.
     # Ensure cerberus-lib is installed (for runtime files). Fail LOUDLY
     # (2026-08-22 hotfix): the old `2>/dev/null` masked the post-clean
     # "cerberus-lib.install missing" failure and let lanes proceed on a
     # half-staged tree.
     local _install_out
     if ! _install_out=$(cd "$PROJECT_ROOT" && opam exec --switch="$PROJECT_ROOT" -- \
-        dune install cerberus-lib 2>&1); then
+        dune install --root "$PROJECT_ROOT" --prefix "$PROJECT_ROOT/_build/local-install" cerberus-lib 2>&1); then
         echo "Error: dune install cerberus-lib failed:" >&2
         echo "$_install_out" | tail -4 >&2
         exit 1
@@ -161,7 +173,7 @@ build_cerberus() {
     # every libc-mode oracle invocation dies at startup
     # (Failure("file libc.co not found"), exit 125).
     if ! (cd "$PROJECT_ROOT" && opam exec --switch="$PROJECT_ROOT" -- \
-        dune build cerberus.install) > "$_dlog" 2>&1; then
+        dune build --root "$PROJECT_ROOT" cerberus.install) > "$_dlog" 2>&1; then
         echo "Error: cerberus.install build FAILED (dune exit nonzero); last 40 lines:" >&2
         tail -40 "$_dlog" >&2
         rm -f "$_dlog"
@@ -263,7 +275,9 @@ run_cerberus_lean() {
 # check_driver_fresh.sh). Intentional cross-version runs only:
 # CERB_DRIVER_FRESH_OVERRIDE=1 (loud on every use).
 if [[ "${SKIP_BUILD:-0}" == "1" ]]; then
-    if [[ -f "$CERBERUS_BIN" ]]; then
+    if [[ -n "${CERB_ORACLE_BIN_OVERRIDE:-}" ]]; then
+        echo "CERB_ORACLE_BIN_OVERRIDE ACTIVE: oracle freshness check SKIPPED (plant stub)" >&2
+    elif [[ -f "$CERBERUS_BIN" ]]; then
         "$PROJECT_ROOT/tools/check_driver_fresh.sh" --check-oracle >&2 || exit 1
     fi
     if [[ -n "${CERB_LEAN_BIN_OVERRIDE:-}" ]]; then

@@ -8,12 +8,9 @@
 # breaks (fail-closed on harness-internal errors only). Survey basis:
 # lean_frontend/docs/2026-08-20_prototype-test-migration-survey.md §3.4/§6 item 4.
 #
-# Relationship to test_exec.sh (NOT modified — additive-file rule):
-# the comparison semantics are REPLICATED from scripts/test_exec.sh with
-# citations, extended for libc mode:
-#   * verdict-sequence extraction (test_exec.sh:322-334 extract_verdict_seq)
-#   * expected-exit derivation    (test_exec.sh:339-347 expected_exit_for)
-#   * classification ladder       (test_exec.sh:389-635 main loop)
+# Relationship to test_exec.sh: both consume the shared observations.py
+# byte codec and completion protocol through common.sh. This lane retains
+# its reporting classifications and per-suite libc selection.
 # Deliberate deltas vs test_exec.sh, all sweep-motivated:
 #   1. LIBC MODE (per-suite): the oracle runs WITHOUT --nolibc (loads
 #      runtime/libc/libc.co) and the Lean side gets
@@ -23,14 +20,9 @@
 #      libc (abort/exit/printf); the --nolibc lane skips ~80% of them
 #      (measured on the first 10 breakdown/success files: 8/10
 #      CERB_SKIP "calling an unknown procedure").
-#   2. STDOUT comparison (libc mode only): value-sequences equal but the
-#      full Defined lines (value+stdout+stderr+blocked; loc-free by
-#      format) differ => STDOUT_DIFF. The --nolibc harness never needed
-#      this (programs cannot write to stdout there, test_exec.sh header
-#      "stdout-text spoofing" note); with libc it is a real divergence
-#      channel. Undefined lines are compared WHOLE (ub code, the killed
-#      state's stderr and the loc — zero-discrepancy arc 2026-09-03, charter
-#      §4.1; Lean renders them exactly as the oracle).
+#   2. Complete verdicts are compared in every mode. Equal return values
+#      with unequal remaining Defined fields are STDOUT_DIFF. Undefined
+#      comparison retains UB code, killed-state stderr and location.
 #   3. Oracle-failure buckets are SUBDIVIDED (test_exec.sh folds them all
 #      into CERB_SKIP): CERB_TIMEOUT / CERB_CRASH / CERB_ERROR (Error{}
 #      verdict) / CERB_REJECT (nonzero exit, no verdict = front-end
@@ -166,23 +158,7 @@ fi
 
 cd "$PROJECT_ROOT" || { echo "Error: cannot cd to $PROJECT_ROOT" >&2; exit 1; }
 
-# --- replicated helpers (citations in header) ------------------------------
-extract_verdict_seq() {   # test_exec.sh extract_verdict_seq, verbatim semantics (whole Undefined line)
-    printf '%s\n' "$1" \
-        | grep -oE '^Undefined \{.*\}$|^Defined \{value: "[^"]*"' \
-        | sed -e 's/^Undefined \(.*\)$/UB:\1/' \
-              -e 's/^Defined {value: "\(.*\)"$/VAL:\1/'
-    return 0
-}
-extract_defined_lines() { # libc-mode STDOUT_DIFF channel (delta 2)
-    printf '%s\n' "$1" | grep -E '^Defined \{'
-    return 0
-}
-expected_exit_for() {     # test_exec.sh:339-347, verbatim semantics
-    if [[ "$1" == *'EXECUTION '* ]]; then echo 0
-    elif [[ "$1" == *'Undefined {'* || "$1" == *'Error {'* ]]; then echo 1
-    else echo 0; fi
-}
+# --- formatting (parsing/completion are shared through common.sh) ---------
 join_seq() { printf '%s' "$1" | tr '\n' '|'; }
 sanitize() {  # TSV detail field: no tabs/newlines, capped length
     printf '%s' "$1" | tr '\t\n' '  ' | cut -c1-300
@@ -243,8 +219,9 @@ for suite in "${SUITES[@]}"; do
         # --- oracle ---------------------------------------------------------
         cerb_exit=0
         cerb_time="$WORK_DIR/cerb.time"
-        cerb_out=$( "${CAPPED_TEST[@]}" "$TIME_BIN" -v -o "$cerb_time" timeout "${TIMEOUT_SECS}s" \
-            "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" "${ORACLE_FLAGS[@]}" "$f" 2>&1 ) \
+        cerb_capture="$OBSERVATION_RUN_DIR/$suite.$n.oracle"
+        cerb_out=$( observation_capture "$cerb_capture" "${CAPPED_TEST[@]}" "$TIME_BIN" -v -o "$cerb_time" timeout "${TIMEOUT_SECS}s" \
+            "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" "${ORACLE_FLAGS[@]}" "$f" ) \
             || cerb_exit=$?
         if [[ $cerb_exit -eq 124 ]]; then
             cerb_124=$(classify_exit124 "$cerb_time" "$TIMEOUT_SECS") || exit 1
@@ -259,9 +236,9 @@ for suite in "${SUITES[@]}"; do
             row CERB_FLOOR "exit $cerb_exit"; continue; fi
         cerb_has_ub=false; cerb_seq=""
         if [[ "$cerb_out" == *'Undefined {'* ]]; then
-            cerb_has_ub=true; cerb_seq=$(extract_verdict_seq "$cerb_out")
+            cerb_has_ub=true; cerb_seq=$(observation_tokens "$cerb_capture")
         elif [[ "$cerb_out" == *'value: "Specified'* || "$cerb_out" == *'value: "Unspecified'* ]]; then
-            cerb_seq=$(extract_verdict_seq "$cerb_out")
+            cerb_seq=$(observation_tokens "$cerb_capture")
         elif [[ "$cerb_out" == *'Error {'* ]]; then
             msg=$(echo "$cerb_out" | grep -o 'msg: "[^"]*"' | head -1)
             row CERB_ERROR "$msg"; continue
@@ -273,7 +250,7 @@ for suite in "${SUITES[@]}"; do
         fi
         if [[ -z "$cerb_seq" ]]; then
             echo "HARNESS ERROR: oracle verdict matched but no tokens for $rel" >&2; exit 1; fi
-        cerb_expected=$(expected_exit_for "$cerb_out")
+        cerb_expected=$(observation_expected_exit "$cerb_capture") || exit 1
         if [[ $cerb_exit -ne $cerb_expected ]]; then
             row CERB_INCONSISTENT "parsed $(join_seq "$cerb_seq") but exit=$cerb_exit (expected $cerb_expected)"; continue; fi
 
@@ -289,9 +266,10 @@ for suite in "${SUITES[@]}"; do
         # --- Lean pipeline --------------------------------------------------
         lean_exit=0
         lean_time="$WORK_DIR/lean.time"
-        lean_out=$( "${CAPPED_TEST[@]}" env LEAN_ABORT_ON_PANIC=1 \
+        lean_capture="$OBSERVATION_RUN_DIR/$suite.$n.lean"
+        lean_out=$( observation_capture "$lean_capture" "${CAPPED_TEST[@]}" env LEAN_ABORT_ON_PANIC=1 \
             "$TIME_BIN" -v -o "$lean_time" timeout "${TIMEOUT_SECS}s" "$CERBERUS_LEAN_BIN" --batch \
-            ${LEAN_MODE_ARGS[@]+"${LEAN_MODE_ARGS[@]}"} "$json" 2>&1 ) || lean_exit=$?
+            ${LEAN_MODE_ARGS[@]+"${LEAN_MODE_ARGS[@]}"} "$json" ) || lean_exit=$?
         if [[ $lean_exit -eq 124 ]]; then
             lean_124=$(classify_exit124 "$lean_time" "$TIMEOUT_SECS") || exit 1
             if [[ "$lean_124" == HANG* ]]; then row LEAN_HANG "$lean_124"; else row LEAN_TIMEOUT "$lean_124"; fi
@@ -308,9 +286,9 @@ for suite in "${SUITES[@]}"; do
             row LEAN_CRASH "exit $lean_exit: $kind"; continue; fi
         lean_has_ub=false; lean_seq=""
         if [[ "$lean_out" == *'Undefined {'* ]]; then
-            lean_has_ub=true; lean_seq=$(extract_verdict_seq "$lean_out")
+            lean_has_ub=true; lean_seq=$(observation_tokens "$lean_capture")
         elif [[ "$lean_out" == *'Defined {'* ]]; then
-            lean_seq=$(extract_verdict_seq "$lean_out")
+            lean_seq=$(observation_tokens "$lean_capture")
         elif [[ "$lean_out" == *'Error {'* ]]; then
             msg=$(echo "$lean_out" | grep -o 'msg: "[^"]*"' | head -1)
             row LEAN_FAIL "$msg"; continue
@@ -319,7 +297,7 @@ for suite in "${SUITES[@]}"; do
         fi
         if [[ -z "$lean_seq" ]]; then
             echo "HARNESS ERROR: Lean verdict matched but no tokens for $rel" >&2; exit 1; fi
-        lean_expected=$(expected_exit_for "$lean_out")
+        lean_expected=$(observation_expected_exit "$lean_capture") || exit 1
         if [[ $lean_exit -ne $lean_expected ]]; then
             row LEAN_ERROR "parsed $(join_seq "$lean_seq") but exit=$lean_exit (expected $lean_expected)"; continue; fi
 
@@ -327,20 +305,14 @@ for suite in "${SUITES[@]}"; do
         lean_shape=$(printf '%s\n' "$lean_seq" | sed 's/^UB:.*/UB/')
         cerb_shape=$(printf '%s\n' "$cerb_seq" | sed 's/^UB:.*/UB/')
         if [[ "$lean_seq" == "$cerb_seq" ]]; then
-            if [[ "$mode" == libc ]] && ! $lean_has_ub; then
-                dl_lean=$(extract_defined_lines "$lean_out")
-                dl_cerb=$(extract_defined_lines "$cerb_out")
-                if [[ "$dl_lean" != "$dl_cerb" ]]; then
-                    row STDOUT_DIFF "values equal; Lean=$(echo "$dl_lean" | head -1) Cerberus=$(echo "$dl_cerb" | head -1)"
-                    continue
-                fi
-            fi
             if $lean_has_ub; then row UB_MATCH "$(join_seq "$lean_seq")"
             else row MATCH "$(join_seq "$lean_seq")"; fi
         elif [[ "$lean_shape" == "$cerb_shape" ]]; then
             row UB_DIFF "Lean=$(join_seq "$lean_seq") Cerberus=$(join_seq "$cerb_seq")"
         elif [[ "$lean_has_ub" != "$cerb_has_ub" ]]; then
             row DIFF "Lean=$(join_seq "$lean_seq") Cerberus=$(join_seq "$cerb_seq")"
+        elif ! $lean_has_ub && [[ "$(observation_tokens "$lean_capture" --projection values)" == "$(observation_tokens "$cerb_capture" --projection values)" ]]; then
+            row STDOUT_DIFF "values equal; complete verdict fields differ; raw captures: $lean_capture / $cerb_capture"
         else
             row MISMATCH "Lean=$(join_seq "$lean_seq") Cerberus=$(join_seq "$cerb_seq")"
         fi

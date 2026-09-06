@@ -1,9 +1,12 @@
 # First execution charter — validation foundations
 
-**Proposed, 2026-09-05; [AGENT] recommendation for operator review.**
+**Adopted for execution, 2026-09-05 [USER].** The operator instructed:
+"complete the goals in docs/2026-09-05_validation-foundations-charter.md"
+and authorized long-cycle work without review except at major decision
+boundaries. Landing remains subject to the discussion below.
 This charter implements the first work package in the
 [master plan, revision 3](2026-09-05_master-plan.md). Writing it does not
-start implementation or authorize landing. The starting evidence is the
+by itself authorize landing. The starting evidence is the
 [customer-readiness assessment](2026-09-05_customer-readiness-assessment.md).
 
 ## 1. Mission and result

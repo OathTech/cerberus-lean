@@ -228,7 +228,7 @@ cd "$PROJECT_ROOT" || { echo "Error: cannot cd to $PROJECT_ROOT" >&2; exit 1; }
 run_ocaml_exec() {  # <incdir> <file...>
     local inc="$1"; shift
     timeout "${TIMEOUT_SECS}s" "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" \
-        -I "$inc" --nolibc --exec --batch --mode=exhaustive "$@" 2>&1
+        -I "$inc" --nolibc --exec --batch --mode=exhaustive "$@"
 }
 run_cabs_json() {   # <incdir> <file.c> <out.json>
     timeout "${TIMEOUT_SECS}s" "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" \
@@ -236,21 +236,9 @@ run_cabs_json() {   # <incdir> <file.c> <out.json>
 }
 run_lean_batch() {  # <file.json...>
     LEAN_ABORT_ON_PANIC=1 timeout "${TIMEOUT_SECS}s" \
-        "$CERBERUS_LEAN_BIN" --batch "$@" 2>&1
+        "$CERBERUS_LEAN_BIN" --batch "$@"
 }
-extract_verdict_seq() {
-    printf '%s\n' "$1" \
-        | grep -oE '^Undefined \{.*\}$|^Defined \{value: "[^"]*"' \
-        | sed -e 's/^Undefined \(.*\)$/UB:\1/' \
-              -e 's/^Defined {value: "\(.*\)"$/VAL:\1/'
-    return 0
-}
-expected_exit_for() {
-    if [[ "$1" == *'EXECUTION '* ]]; then echo 0
-    elif [[ "$1" == *'Undefined {'* || "$1" == *'Error {'* ]]; then echo 1
-    else echo 0
-    fi
-}
+# Complete byte observations and completion checks come from common.sh.
 join_seq() { printf '%s' "$1" | tr '\n' '|'; }
 
 # ---------------------------------------------------------------------------
@@ -304,7 +292,8 @@ for rel in "${RUN_ROWS[@]}"; do
 
     # --- oracle exec --------------------------------------------------------
     cerb_exit=0
-    cerb_out=$(run_ocaml_exec "$incdir" "${tus[@]}") || cerb_exit=$?
+    cerb_capture="$OBSERVATION_RUN_DIR/$file_num.oracle"
+    cerb_out=$(observation_capture "$cerb_capture" run_ocaml_exec "$incdir" "${tus[@]}") || cerb_exit=$?
 
     if [[ $cerb_exit -eq 124 ]]; then
         echo "[$file_num/$total] ORACLE_TIMEOUT $rel"
@@ -328,11 +317,14 @@ for rel in "${RUN_ROWS[@]}"; do
     cerb_seq=""
     if [[ "$cerb_out" == *'Undefined {'* ]]; then
         cerb_has_ub=true
-        cerb_seq=$(extract_verdict_seq "$cerb_out")
+        cerb_seq=$(observation_tokens "$cerb_capture")
     elif [[ "$cerb_out" == *'value: "Specified'* || "$cerb_out" == *'value: "Unspecified'* ]]; then
-        cerb_seq=$(extract_verdict_seq "$cerb_out")
+        cerb_seq=$(observation_tokens "$cerb_capture")
     elif [[ "$cerb_out" == *'Error {'* ]]; then
         oracle_rejects=true
+        cerb_seq=$(observation_tokens "$cerb_capture") || {
+            echo "[$file_num/$total] ORACLE_INCONSISTENT $rel (malformed/incomplete refusal)"
+            record_status "$rel" ORACLE_INCONSISTENT; continue; }
     elif [[ $cerb_exit -ne 0 ]]; then
         emsg=$(printf '%s\n' "$cerb_out" | head -2 | tr '\n' ' ' | cut -c1-140)
         echo "[$file_num/$total] ORACLE_FAIL $rel (exit $cerb_exit: $emsg)"
@@ -349,7 +341,7 @@ for rel in "${RUN_ROWS[@]}"; do
             echo "HARNESS ERROR: oracle verdict pattern matched but no tokens for $rel" >&2
             exit 1
         fi
-        cerb_expected_exit=$(expected_exit_for "$cerb_out")
+        cerb_expected_exit=$(observation_expected_exit "$cerb_capture") || exit 1
         if [[ $cerb_exit -ne $cerb_expected_exit ]]; then
             echo "[$file_num/$total] ORACLE_INCONSISTENT $rel (parsed $(join_seq "$cerb_seq") but exit=$cerb_exit, expected $cerb_expected_exit)"
             record_status "$rel" ORACLE_INCONSISTENT
@@ -385,7 +377,8 @@ for rel in "${RUN_ROWS[@]}"; do
 
     # --- Lean pipeline ------------------------------------------------------
     lean_exit=0
-    lean_out=$(run_lean_batch "${jsons[@]}") || lean_exit=$?
+    lean_capture="$OBSERVATION_RUN_DIR/$file_num.lean"
+    lean_out=$(observation_capture "$lean_capture" run_lean_batch "${jsons[@]}") || lean_exit=$?
 
     if [[ $lean_exit -eq 124 ]]; then
         echo "[$file_num/$total] LEAN_TIMEOUT $rel (>${TIMEOUT_SECS}s)"
@@ -411,11 +404,14 @@ for rel in "${RUN_ROWS[@]}"; do
     lean_seq=""
     if [[ "$lean_out" == *'Undefined {'* ]]; then
         lean_has_ub=true
-        lean_seq=$(extract_verdict_seq "$lean_out")
+        lean_seq=$(observation_tokens "$lean_capture")
     elif [[ "$lean_out" == *'Defined {'* ]]; then
-        lean_seq=$(extract_verdict_seq "$lean_out")
+        lean_seq=$(observation_tokens "$lean_capture")
     elif [[ "$lean_out" == *'Error {'* ]]; then
         lean_rejects=true
+        lean_seq=$(observation_tokens "$lean_capture") || {
+            echo "[$file_num/$total] LEAN_ERROR $rel (malformed/incomplete refusal)"
+            record_status "$rel" LEAN_ERROR; continue; }
     else
         echo "[$file_num/$total] LEAN_FAIL $rel (unexpected output: $(echo "$lean_out" | head -2 | tr '\n' ' ' | cut -c1-140))"
         record_status "$rel" LEAN_FAIL
@@ -426,9 +422,12 @@ for rel in "${RUN_ROWS[@]}"; do
     if $oracle_rejects || $lean_rejects; then
         cmsg=$(printf '%s\n' "$cerb_out" | grep -o 'msg: "[^"]*"' | head -1 | cut -c1-100)
         lmsg=$(printf '%s\n' "$lean_out" | grep -o 'msg: "[^"]*"' | head -1 | cut -c1-100)
-        if $oracle_rejects && $lean_rejects; then
-            echo "[$file_num/$total] REJECT_MATCH $rel (both refuse; oracle: $cmsg)"
+        if $oracle_rejects && $lean_rejects && [[ "$cerb_seq" == "$lean_seq" ]]; then
+            echo "[$file_num/$total] REJECT_MATCH $rel (identical complete refusal; oracle: $cmsg)"
             record_status "$rel" REJECT_MATCH
+        elif $oracle_rejects && $lean_rejects; then
+            echo "[$file_num/$total] REJECT_DIFF $rel (refusal observations differ; raw evidence: $OBSERVATION_RUN_DIR)"
+            record_status "$rel" REJECT_DIFF
         elif $oracle_rejects; then
             echo "[$file_num/$total] REJECT_DIFF $rel (oracle refuses: $cmsg; Lean runs: $(join_seq "$lean_seq"))"
             record_status "$rel" REJECT_DIFF
@@ -447,7 +446,7 @@ for rel in "${RUN_ROWS[@]}"; do
         echo "HARNESS ERROR: Lean verdict pattern matched but no tokens for $rel" >&2
         exit 1
     fi
-    lean_expected_exit=$(expected_exit_for "$lean_out")
+    lean_expected_exit=$(observation_expected_exit "$lean_capture") || exit 1
     if [[ $lean_exit -ne $lean_expected_exit ]]; then
         echo "[$file_num/$total] LEAN_ERROR $rel (parsed $(join_seq "$lean_seq") but exit=$lean_exit, expected $lean_expected_exit)"
         record_status "$rel" LEAN_ERROR
@@ -495,8 +494,8 @@ fi
 # Summary + agreement headline
 # ---------------------------------------------------------------------------
 g() { echo "${COUNT[$1]:-0}"; }
-AGREE=$(( $(g MATCH) + $(g UB_MATCH) + $(g UB_DIFF) + $(g REJECT_MATCH) ))
-DIVERGE=$(( $(g DIFF) + $(g MISMATCH) + $(g REJECT_DIFF) ))
+AGREE=$(( $(g MATCH) + $(g UB_MATCH) + $(g REJECT_MATCH) ))
+DIVERGE=$(( $(g DIFF) + $(g UB_DIFF) + $(g MISMATCH) + $(g REJECT_DIFF) ))
 LEAN_SIDE=$(( $(g LEAN_FAIL) + $(g LEAN_CRASH) + $(g FUEL) + $(g LEAN_ERROR) + $(g LEAN_TIMEOUT) ))
 ORACLE_SIDE=$(( $(g ORACLE_FAIL) + $(g ORACLE_TIMEOUT) + $(g ORACLE_INCONSISTENT) ))
 COMPARED=$(( AGREE + DIVERGE ))

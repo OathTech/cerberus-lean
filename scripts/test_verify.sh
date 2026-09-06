@@ -64,15 +64,23 @@ render_wrapper() {  # <fixture.c> <fname> <args-csv|->  -> wrapper path
     echo "$wpath"
 }
 
-# Extract the verdict token (Specified(N)/Unspecified value, or the WHOLE
-# Undefined payload — ub code, stderr, loc; zero-discrepancy arc, charter
-# §4.1) from a batch verdict line.
-verdict_of() {  # <line>
-    case "$1" in
-        Defined*)   sed -n 's/^Defined {value: "\([^"]*\)".*/\1/p' <<<"$1" ;;
-        Undefined*) sed -n 's/^Undefined \(.*\)$/\1/p' <<<"$1" ;;
-        *)          echo "<no verdict: $1>" ;;
-    esac
+# Compare complete, status-checked observations before consulting a call pin.
+# Prefixes are unique per fixture/row; no head/grep pipeline can discard a
+# later execution or replace the engine's actual failure status.
+verify_pair() { # <oracle-c> <lean-json> <capture-name> [Lean call options...]
+    local cfile="$1" json="$2" name="$3" orc=0 lrc=0
+    shift 3
+    VERIFY_ORACLE_CAPTURE="$OBSERVATION_RUN_DIR/$name.oracle"
+    VERIFY_LEAN_CAPTURE="$OBSERVATION_RUN_DIR/$name.lean"
+    observation_capture "$VERIFY_ORACLE_CAPTURE" timeout 30 "$CERBERUS_BIN" \
+        --runtime="$PROJECT_ROOT/_build/install/default" --nolibc --exec --batch \
+        --mode=exhaustive "$cfile" > "$WORK_DIR/pair.oracle.display" || orc=$?
+    observation_capture "$VERIFY_LEAN_CAPTURE" timeout 30 env LEAN_ABORT_ON_PANIC=1 \
+        "$CERBERUS_LEAN_BIN" --batch "$json" "$@" > "$WORK_DIR/pair.lean.display" || lrc=$?
+    if ! observation_compare "$VERIFY_ORACLE_CAPTURE" "$VERIFY_LEAN_CAPTURE"; then
+        echo "    original engine statuses: oracle=$orc lean=$lrc; raw evidence: $OBSERVATION_RUN_DIR"
+        return 1
+    fi
 }
 
 fail() { echo -e "${RED}FAIL${NC} $1"; FAIL=$((FAIL + 1)); }
@@ -123,21 +131,10 @@ for cfile in "$VERIFY_DIR"/*.c; do
     fi
     JSON_OF[$stem]="$json"
 
-    oracle_out=$(timeout 30 bash -c '
-        source "'"$SCRIPT_DIR"'/common.sh"
-        run_cerberus --nolibc --exec --batch --mode=exhaustive "'"$cfile"'" 2>/dev/null' \
-        | grep -E '^(Defined|Undefined|Error|EXECUTION)' || true)
-    lean_out=$(timeout 30 env LEAN_ABORT_ON_PANIC=1 "$CERBERUS_LEAN_BIN" --batch "$json" 2>/dev/null \
-        | grep -E '^(Defined|Undefined|Error|EXECUTION)' || true)
-
-    if [[ -z "$oracle_out" ]]; then
-        fail "$stem: oracle produced no verdict"
-    elif [[ "$oracle_out" == "$lean_out" ]]; then
-        pass "$stem: main-mode differential ($oracle_out)"
+    if verify_pair "$cfile" "$json" "fixture.$stem.main"; then
+        pass "$stem: complete main-mode differential"
     else
-        fail "$stem: main-mode differential mismatch"
-        echo "    oracle: $oracle_out"
-        echo "    lean:   $lean_out"
+        fail "$stem: main-mode differential mismatch or incomplete engine"
     fi
 done
 
@@ -160,20 +157,15 @@ while read -r stem fname argscsv expected; do
         fail "$stem $fname($argscsv): no cabs-json (fixture missing/failed)"
         continue
     fi
-    if [[ "$argscsv" == "-" ]]; then
-        out=$(timeout 30 env LEAN_ABORT_ON_PANIC=1 "$CERBERUS_LEAN_BIN" \
-            --batch --call "$fname" "$json" 2>&1 | head -1)
-    else
-        out=$(timeout 30 env LEAN_ABORT_ON_PANIC=1 "$CERBERUS_LEAN_BIN" \
-            --batch --call "$fname" --call-args "$argscsv" "$json" 2>&1 | head -1)
-    fi
-    lean_got=$(verdict_of "$out")
     wrapper=$(render_wrapper "$VERIFY_DIR/$stem.c" "$fname" "$argscsv")
-    oracle_line=$(timeout 30 bash -c '
-        source "'"$SCRIPT_DIR"'/common.sh"
-        run_cerberus --nolibc --exec --batch --mode=exhaustive "'"$wrapper"'" 2>/dev/null' \
-        | grep -E '^(Defined|Undefined|Error)' | head -1 || true)
-    oracle_got=$(verdict_of "$oracle_line")
+    call_flags=(--call "$fname")
+    [[ "$argscsv" == "-" ]] || call_flags+=(--call-args "$argscsv")
+    if ! verify_pair "$wrapper" "$json" "fixture.call.$row_count" "${call_flags[@]}"; then
+        fail "$stem: $fname($argscsv) — complete observation mismatch/incomplete engine"
+        continue
+    fi
+    lean_got=$(observation_tokens "$VERIFY_LEAN_CAPTURE" --projection pin) || { fail "$stem: invalid call pin observation"; continue; }
+    oracle_got=$(observation_tokens "$VERIFY_ORACLE_CAPTURE" --projection pin) || { fail "$stem: invalid oracle pin observation"; continue; }
     if [[ "$lean_got" == "$oracle_got" && "$lean_got" == "$expected" ]]; then
         pass "$stem: $fname($argscsv) = $expected (oracle-differential)"
     else
@@ -282,20 +274,10 @@ for stem in p01_clamp p02_sat_add p03_swap_mayalias p09_call_contract p10_gcd_re
         continue
     fi
     CORPUS_JSON_OF[$stem]="$json"
-    oracle_out=$(timeout 30 bash -c "
-        source \"$SCRIPT_DIR/common.sh\"
-        run_cerberus --nolibc --exec --batch --mode=exhaustive \"$cfile\" 2>/dev/null" \
-        | grep -E "^(Defined|Undefined|Error|EXECUTION)" || true)
-    lean_out=$(timeout 30 env LEAN_ABORT_ON_PANIC=1 "$CERBERUS_LEAN_BIN" --batch "$json" 2>/dev/null \
-        | grep -E "^(Defined|Undefined|Error|EXECUTION)" || true)
-    if [[ -z "$oracle_out" ]]; then
-        fail "corpus/$stem: oracle produced no verdict"
-    elif [[ "$oracle_out" == "$lean_out" ]]; then
-        pass "corpus/$stem: main-mode differential ($oracle_out)"
+    if verify_pair "$cfile" "$json" "corpus.$stem.main"; then
+        pass "corpus/$stem: complete main-mode differential"
     else
-        fail "corpus/$stem: main-mode differential mismatch"
-        echo "    oracle: $oracle_out"
-        echo "    lean:   $lean_out"
+        fail "corpus/$stem: main-mode differential mismatch or incomplete engine"
     fi
 done
 
@@ -309,15 +291,15 @@ if [[ -f "$CORPUS_EXPECT" ]]; then
             fail "corpus/$stem $fname($argscsv): no cabs-json"
             continue
         fi
-        out=$(timeout 30 env LEAN_ABORT_ON_PANIC=1 "$CERBERUS_LEAN_BIN" \
-            --batch --call "$fname" --call-args "$argscsv" "$json" 2>&1 | head -1)
-        lean_got=$(verdict_of "$out")
         wrapper=$(render_wrapper "$CORPUS_SRC_DIR/$stem.c" "$fname" "$argscsv")
-        oracle_line=$(timeout 30 bash -c '
-            source "'"$SCRIPT_DIR"'/common.sh"
-            run_cerberus --nolibc --exec --batch --mode=exhaustive "'"$wrapper"'" 2>/dev/null' \
-            | grep -E '^(Defined|Undefined|Error)' | head -1 || true)
-        oracle_got=$(verdict_of "$oracle_line")
+        call_flags=(--call "$fname")
+        [[ "$argscsv" == "-" ]] || call_flags+=(--call-args "$argscsv")
+        if ! verify_pair "$wrapper" "$json" "corpus.call.$corpus_row_count" "${call_flags[@]}"; then
+            fail "corpus/$stem: $fname($argscsv) — complete observation mismatch/incomplete engine"
+            continue
+        fi
+        lean_got=$(observation_tokens "$VERIFY_LEAN_CAPTURE" --projection pin) || { fail "$stem: invalid call pin observation"; continue; }
+        oracle_got=$(observation_tokens "$VERIFY_ORACLE_CAPTURE" --projection pin) || { fail "$stem: invalid oracle pin observation"; continue; }
         if [[ "$lean_got" == "$oracle_got" && "$lean_got" == "$expected" ]]; then
             pass "corpus/$stem: $fname($argscsv) = $expected (oracle-differential)"
         else

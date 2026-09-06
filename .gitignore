@@ -72,6 +72,10 @@ cerb_times.csv
 # Temporary files (scripts, reproducers)
 .tmp/
 
+# Python validation tools
+__pycache__/
+/.validation-foundations/
+
 # Claude Code
 .claude/
 

@@ -167,6 +167,10 @@ if [[ -n "$CHECK_BASELINE" && ( $MAX_TESTS -gt 0 || ${#CORPUS_DIRS[@]} -gt 0 || 
     echo "Error: --check-baseline is defined for the full default corpus only (no --max / dirs / --no-csmith)" >&2
     exit 1
 fi
+PARTIAL_RUN=false
+if [[ $MAX_TESTS -gt 0 || ${#CORPUS_DIRS[@]} -gt 0 || "$WANT_CSMITH" == no ]]; then
+    PARTIAL_RUN=true
+fi
 
 abspath_dir() { (cd "$1" 2>/dev/null && pwd); }
 
@@ -295,6 +299,8 @@ if [[ $MAX_TESTS -gt 0 ]]; then
 fi
 TOTAL=$(wc -l < "$LIST")
 [[ $TOTAL -gt 0 ]] || { echo "Error: empty corpus (a failure, not a pass)" >&2; exit 1; }
+declare -A SELECTED_KEYS=()
+while IFS=$'\t' read -r _source _mode selected_key; do SELECTED_KEYS["$selected_key"]=1; done < "$LIST"
 echo ""
 echo "gcc second-oracle lane: $TOTAL files (gcc $("$GCC_BIN" -dumpfullversion), lean timeout ${TIMEOUT_SECS}s, native timeout ${GCC_RUN_TIMEOUT}s, O2 stride $O2_STRIDE)"
 echo "============================================"
@@ -303,18 +309,8 @@ echo "============================================"
 # Helpers (verdict extraction mirrors test_exec.sh:323-341 — cited, not
 # modified there)
 # ---------------------------------------------------------------------------
-extract_verdict_seq() {
-    printf '%s\n' "$1" \
-        | grep -oE 'Undefined \{ub: "[^"]*"|Defined \{value: "[^"]*"' \
-        | sed -e 's/^Undefined {ub: "\(.*\)"$/UB:\1/' \
-              -e 's/^Defined {value: "\(.*\)"$/VAL:\1/'
-    return 0
-}
-expected_exit_for() {
-    if [[ "$1" == *'EXECUTION '* ]]; then echo 0
-    elif [[ "$1" == *'Undefined {'* || "$1" == *'Error {'* ]]; then echo 1
-    else echo 0; fi
-}
+# Shared codec validates complete Lean observations before the deliberate
+# native-exit/value projection. Raw output bytes remain in the capture.
 
 declare -A COUNT=()
 STATUS_LINES=0
@@ -329,12 +325,17 @@ record() {   # <key> <status> <o2status> <detail...>
 
 # Compile+double-run one binary. Sets: G_STATUS (ok|compile|timeout|stdout|nondet)
 # and G_EXIT. Args: <src> <bin> <flags...>
+GCC_RUN_SERIAL=0
 gcc_run() {
     local src="$1" bin="$2"; shift 2
+    GCC_RUN_SERIAL=$((GCC_RUN_SERIAL + 1))
+    local native_capture="$OBSERVATION_RUN_DIR/$file_num.gcc.$GCC_RUN_SERIAL"
     G_STATUS=ok; G_EXIT=-1
-    if ! timeout "${GCC_COMPILE_TIMEOUT}s" "$GCC_BIN" "$@" -o "$bin" "$src" 2> "$WORK/gcc_err.txt"; then
+    if ! observation_capture "$native_capture.compile" timeout "${GCC_COMPILE_TIMEOUT}s" "$GCC_BIN" "$@" -o "$bin" "$src" > "$WORK/gcc_compile.display"; then
+        cp "$native_capture.compile.stderr" "$WORK/gcc_err.txt" || return 1
         G_STATUS=compile; return 0
     fi
+    sha256sum "$bin" > "$native_capture.binary.sha256" || return 1
     # Native-run alignment with the model (both process-scoped, no
     # global state):
     #  * argv: Cerberus supplies argv = ["cmdname"] (cf.
@@ -381,22 +382,29 @@ gcc_run() {
     local e1=0 e2=0 t0 t1 elapsed_ms
     local threshold_ms=$(( GCC_RUN_TIMEOUT * 1000 - 500 ))
     t0=$(date +%s%N)
-    ( "${CAPPED_TEST[@]}" timeout -k 1s "${GCC_RUN_TIMEOUT}s" \
+    ( observation_capture "$native_capture.run1" "${CAPPED_TEST[@]}" timeout -k 1s "${GCC_RUN_TIMEOUT}s" \
         setarch -R /usr/bin/env -i bash -c 'unset PWD OLDPWD SHLVL _; exec -a cmdname /proc/self/fd/9' \
-        9< "$bin" > "$WORK/run1.out" 2> "$WORK/run1.err" ) || e1=$?
+        9< "$bin" > "$WORK/run1.display" ) || e1=$?
     t1=$(date +%s%N)
     elapsed_ms=$(( (t1 - t0) / 1000000 ))
+    cp "$native_capture.run1.stdout" "$WORK/run1.out" || return 1
+    cp "$native_capture.run1.stderr" "$WORK/run1.err" || return 1
     [[ $e1 -eq 137 ]] && grep -q "capped: OOM-KILLED" "$WORK/run1.err" && { G_STATUS=killed; return 0; }
     [[ ( $e1 -eq 124 || $e1 -eq 137 ) && $elapsed_ms -ge $threshold_ms ]] && { G_STATUS=timeout; return 0; }
     t0=$(date +%s%N)
-    ( "${CAPPED_TEST[@]}" timeout -k 1s "${GCC_RUN_TIMEOUT}s" \
+    ( observation_capture "$native_capture.run2" "${CAPPED_TEST[@]}" timeout -k 1s "${GCC_RUN_TIMEOUT}s" \
         setarch -R /usr/bin/env -i bash -c 'unset PWD OLDPWD SHLVL _; exec -a cmdname /proc/self/fd/9' \
-        9< "$bin" > /dev/null 2> "$WORK/run2.err" ) || e2=$?
+        9< "$bin" > "$WORK/run2.display" ) || e2=$?
     t1=$(date +%s%N)
     elapsed_ms=$(( (t1 - t0) / 1000000 ))
+    cp "$native_capture.run2.stdout" "$WORK/run2.out" || return 1
+    cp "$native_capture.run2.stderr" "$WORK/run2.err" || return 1
     [[ $e2 -eq 137 ]] && grep -q "capped: OOM-KILLED" "$WORK/run2.err" && { G_STATUS=killed; return 0; }
     [[ ( $e2 -eq 124 || $e2 -eq 137 ) && $elapsed_ms -ge $threshold_ms ]] && { G_STATUS=timeout; return 0; }
     [[ $e1 -ne $e2 ]] && { G_STATUS=nondet; return 0; }
+    if ! cmp -s "$WORK/run1.out" "$WORK/run2.out" || ! cmp -s "$WORK/run1.err" "$WORK/run2.err"; then
+        G_STATUS=nondet; return 0
+    fi
     [[ -s "$WORK/run1.out" ]] && { G_STATUS=stdout; return 0; }
     G_EXIT=$e1
     return 0
@@ -424,8 +432,9 @@ while IFS=$'\t' read -r c_file mode key; do
     lean_flags=(--batch)
     [[ "$mode" == first ]] && lean_flags+=(--first)
     lean_exit=0
-    lean_output=$(LEAN_ABORT_ON_PANIC=1 timeout "${TIMEOUT_SECS}s" \
-        "$CERBERUS_LEAN_BIN" "${lean_flags[@]}" "$json" 2>&1) || lean_exit=$?
+    lean_capture="$OBSERVATION_RUN_DIR/$file_num.lean"
+    lean_output=$(observation_capture "$lean_capture" env LEAN_ABORT_ON_PANIC=1 timeout "${TIMEOUT_SECS}s" \
+        "$CERBERUS_LEAN_BIN" "${lean_flags[@]}" "$json") || lean_exit=$?
 
     if [[ $lean_exit -eq 124 ]]; then record "$base_c" SKIP_LEAN_TIMEOUT -; continue; fi
     # SKIP_LEAN_FUEL (header; fuel_classify.sh): ahead of the crash / fail
@@ -442,9 +451,9 @@ while IFS=$'\t' read -r c_file mode key; do
         record "$base_c" SKIP_LEAN_FAIL - "${msg:-$(echo "$lean_output" | head -1 | cut -c1-80)}"
         continue
     fi
-    lean_seq=$(extract_verdict_seq "$lean_output")
+    lean_seq=$(observation_tokens "$lean_capture" --projection values)
     [[ -n "$lean_seq" ]] || { echo "HARNESS ERROR: verdict pattern matched but no tokens for $base_c" >&2; exit 1; }
-    lexp=$(expected_exit_for "$lean_output")
+    lexp=$(observation_expected_exit "$lean_capture") || exit 1
     if [[ $lean_exit -ne $lexp ]]; then
         record "$base_c" SKIP_LEAN_EXIT - "(exit $lean_exit, expected $lexp)"
         continue
@@ -475,7 +484,7 @@ while IFS=$'\t' read -r c_file mode key; do
 
     # ---- native side ------------------------------------------------------
     bin="$WORK/$stem.bin"
-    gcc_run "$c_file" "$bin" -O0 -w
+    gcc_run "$c_file" "$bin" -O0 -w || { echo "HARNESS ERROR: native capture failed" >&2; exit 1; }
     case "$G_STATUS" in
         compile) record "$base_c" SKIP_GCC_COMPILE - "($(head -1 "$WORK/gcc_err.txt" | cut -c1-80))"; continue ;;
         timeout) record "$base_c" SKIP_GCC_TIMEOUT - "(lean=$expect_list)"; continue ;;
@@ -523,7 +532,7 @@ while IFS=$'\t' read -r c_file mode key; do
         key_crc=$(printf '%s' "$base_c" | cksum)
         key_crc=${key_crc%% *}
         if [[ $O2_STRIDE -gt 0 && $((key_crc % O2_STRIDE)) -eq 0 ]]; then
-            gcc_run "$c_file" "$bin.o2" -O2 -fno-strict-aliasing -w
+            gcc_run "$c_file" "$bin.o2" -O2 -fno-strict-aliasing -w || { echo "HARNESS ERROR: native O2 capture failed" >&2; exit 1; }
             case "$G_STATUS" in
                 compile) o2=O2_SKIP_COMPILE ;;
                 timeout) o2=O2_SKIP_TIMEOUT ;;
@@ -546,10 +555,14 @@ done < "$LIST"
 [[ $STATUS_LINES -eq $file_num && $file_num -eq $TOTAL ]] \
     || { echo "HARNESS ERROR: $TOTAL files, processed $file_num, recorded $STATUS_LINES" >&2; exit 1; }
 
-# Stale triage entries are fatal (a listed file that no longer reaches the
-# -O0 compare stage — skipped or absent — forces ledger cleanup)
+# Full release runs require every triage entry to reach comparison. Explicit
+# subsets require every SELECTED triage entry; unselected rows are not claims.
 stale=0
 for f in "${!TRIAGE[@]}"; do
+    if $PARTIAL_RUN && [[ -z "${SELECTED_KEYS[$f]+x}" ]]; then
+        echo "NOT_SELECTED_TRIAGE: $f (explicit subset; not certification)"
+        continue
+    fi
     if [[ -z "${TRIAGE_USED[$f]+x}" ]]; then
         echo "STALE TRIAGE ENTRY: $f (${TRIAGE[$f]}) — file did not reach the -O0 compare stage in this run" >&2
         stale=$((stale + 1))

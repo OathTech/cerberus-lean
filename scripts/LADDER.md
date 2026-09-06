@@ -5,6 +5,22 @@ the normative meanings of those phrases in charters, decision logs, and
 merge checklists from arc 6 on. Every command runs from the repo root;
 every gating command must exit 0.
 
+`python3 scripts/release.py --mode fast` executes Tier A; `--mode full`
+executes Tier A+B. `--list` prints the command IDs parsed directly from the
+tables below. A `--lane ID` selection is explicitly a subset, never a full
+tier certification. The CI entry is `bash scripts/ci_lean.sh` (full by
+default), after loading the project-scoped opam/Lean/Git environment.
+
+The runner retains raw logs, source/build identities and a versioned report
+under `.tmp/release/` (or a fresh `--out` directory). Missing commands,
+timeouts, changed source and ambient binary/freshness overrides prevent a
+green certification. A completed tier and a customer-ready release are
+separate claims; unrun reporting/adoption/audit obligations remain visible.
+Reporting requires explicit `--mode reporting --lane ID` selections and
+writes proposed scoreboard/baseline artifacts into the report directory.
+Follow current ownership: the legacy csmith run is excluded from this
+charter's dispatch. No automatic reporting campaign follows a full run.
+
 ## Tier A — fast ladder (every commit / worker boundary claim)
 
 Order is the conventional run order; all are fail-closed gates.
@@ -32,7 +48,9 @@ whatever dune+lake need.
 
 ## Tier B — slow ladder (slice boundaries, close-out certification, pre-merge)
 
-Everything in Tier A, plus the rows below. No ladder/battery runner script exists: Tier A/B membership is operator procedure at boundaries (`test_unit.sh` bundles a few Tier A gates); every Tier B row — the gcc row included — has exactly that enforcement level.
+Everything in Tier A, plus the rows below. `scripts/release.py --mode full`
+executes this membership; `test_unit.sh` also bundles the codec and runner's
+small hermetic plants. The tables are the executable membership authority.
 
 | # | Command | Bar |
 |---|---------|-----|
@@ -44,6 +62,7 @@ Everything in Tier A, plus the rows below. No ladder/battery runner script exist
 | 6 | `./scripts/test_speclab.sh --selftest` + `--plant`; `./scripts/test_speclab_{divmod,bytearr,list,tree,seed}.sh --gate` | all PASS (harness-family differential lanes; sweep/fuzz modes are reporting-tier extras) |
 | 7 | `./scripts/test_gcc_oracle.sh --check-baseline` | **GATE since 2026-09-02 [USER 2026-09-02]** (born reporting-tier 2026-08-30; design `lean_frontend/docs/2026-08-30_gcc-second-oracle-design.md`): the gcc SECOND-oracle lane over tests/minimal + debug + float + immaculate/nolibc + the staged csmith tier, rc 0 vs the 1,953-row skip ledger `scripts/gcc_oracle_baseline.txt` + the fail-closed triage ledger `scripts/gcc_oracle_triage.txt`. Asymmetric by audited design (VALIDATION.md §2): any DISAGREE or regression is fatal; improvements print loudly at rc 0 and are re-recorded in a dedicated instrument commit. ~24 min wall (csmith tier incl.) — Tier B, never Tier A. Load caveat: the TIMEOUT-class rows are wall-clock sensitive (TIMEOUT_SECS=30; the slowest csmith rows hand-time at ~17 s on a quiet box, and a busy box — load ≈12 at the 2026-09-02 audit — pushed one over) — a REGRESSION whose only movement is into SKIP_LEAN_TIMEOUT is re-run on a quiet box before it is read as red; no code change. |
 | 8 | `./scripts/test_hang_plant.sh`; `./scripts/test_kill_plant.sh`; `./scripts/test_fuel_plant.sh` | plant batteries for the harness failure CLASSIFICATIONS (mem-scale S0/S2; FUEL arc 2026-09-03): a sleeping Lean-driver stub must read HANG and a busy-looping one TIMEOUT in test_exec.sh + test_ci_sweep.sh; a 5 GiB-resident stub must read each capped harness's own KILL class (exit 137 + capped's OOM-KILLED witness); a stub printing the fuel-exhaustion kill / panic must read FUEL (`FUEL` / `SKIP_LEAN_FUEL` / `LEAN_FUEL` / measure.sh `FUEL(kill|panic)`) in every classifying lane and a genuine `Error {msg: "assert() failure"}` stub must NOT. Loud plant banner on every run; rc 0 |
+| 9 | `python3 scripts/test_observation_lanes.py` | Real entry-point plants for exec, multi-TU, CN, CI, GCC and verify: required positive controls, same-value byte differences, original failure statuses, CN refusal text and genuine native exit 137. Explicit reference projections are retained. Several minutes, dominated by verify's real corpus; Tier B because this repeats its full pipeline under controlled mutations. |
 
 **Battery placement decision [AGENT:S4]:** `test_libxml2.sh` was
 out-of-ladder in arc 5 (~35 min, 28 slices). After the arc-6 S3

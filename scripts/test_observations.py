@@ -1,0 +1,141 @@
+#!/usr/bin/env python3
+"""Adversarial protocol and actual subprocess-capture tests; no engine build."""
+
+import base64
+from pathlib import Path
+import subprocess
+import sys
+import tempfile
+import unittest
+
+from observations import ProtocolError, escape, load_capture, parse, unescape
+
+
+OK = b'Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}\n'
+UB = b'Undefined {ub: "UB005_data_race", stderr: "x\\000\\255", loc: "<t.c:4:2>"}\n'
+ERR = b'Error {msg: "model refused: thread spawn"}\n'
+
+
+def multi(*rows):
+    return b''.join(b'EXECUTION %d:\n' % i + row for i, row in enumerate(rows))
+
+
+class ObservationTests(unittest.TestCase):
+    def test_all_bytes_are_decimal_not_octal_or_unicode(self):
+        data = bytes(range(256))
+        self.assertEqual(unescape(escape(data).encode('ascii')), data)
+        self.assertEqual(unescape(b'\\000\\128\\195\\169\\255'), b'\0\x80\xc3\xa9\xff')
+        self.assertEqual(unescape(b'\\010'), b'\n')
+        for bad in (b'\\', b'\\12', b'\\xFF', b'\\256', b'\\999', b'\xff', b'\0'):
+            with self.subTest(bad=bad), self.assertRaises(ProtocolError):
+                unescape(bad)
+
+    def test_each_semantic_field_changes_comparison(self):
+        original = parse(OK, status=0).verdicts
+        for old, new in [(b'Specified(0)', b'Specified(137)'),
+                         (b'stdout: ""', b'stdout: "\\000\\255"'),
+                         (b'stderr: ""', b'stderr: "\\195\\169"'),
+                         (b'false', b'true')]:
+            with self.subTest(field=old):
+                self.assertNotEqual(parse(OK.replace(old, new), status=0).verdicts, original)
+        for old, new in [(b'UB005', b'UB999'), (b'x\\000', b'y\\000'), (b':4:2', b':4:3')]:
+            self.assertNotEqual(parse(UB, status=1).verdicts,
+                                parse(UB.replace(old, new), status=1).verdicts)
+
+    def test_equivalent_escape_spelling_preserves_bytes(self):
+        a = OK.replace(b'stdout: ""', b'stdout: "\\n"')
+        b = OK.replace(b'stdout: ""', b'stdout: "\\010"')
+        self.assertEqual(parse(a).verdicts, parse(b).verdicts)
+        self.assertNotEqual(parse(a).stdout, parse(b).stdout)
+
+    def test_escaped_verdict_is_payload(self):
+        payload = b'Defined {value: "Specified(9)"}\n\xff\0'
+        data = OK.replace(b'stdout: ""', b'stdout: "' + escape(payload).encode() + b'"')
+        obs = parse(data, status=0)
+        self.assertEqual(len(obs.verdicts), 1)
+        self.assertEqual(obs.verdicts[0].field('stdout'), payload)
+
+    def test_order_and_multiplicity_are_preserved(self):
+        a = parse(multi(OK, UB, OK), status=0)
+        b = parse(multi(UB, OK), status=0)
+        self.assertNotEqual(a.verdicts, b.verdicts)
+        self.assertEqual(set(a.verdicts), set(b.verdicts))
+        self.assertEqual(a.tokens('values')[0], 'VAL:Specified(0)')
+        with self.assertRaises(ProtocolError):
+            a.tokens('pin')
+
+    def test_completion_protocol(self):
+        for output, status in [(OK, 0), (UB, 1), (ERR, 1), (multi(UB, ERR), 0),
+                               (OK.replace(b'Specified(0)', b'Specified(137)'), 0)]:
+            self.assertEqual(parse(output, status=status).expected_exit, status)
+        for output, status in [(OK, 1), (UB, 0), (ERR, 0), (OK, 124), (OK, 137),
+                               (UB, 125), (multi(OK, UB), 1), (OK, -9)]:
+            with self.subTest(output=output, status=status), self.assertRaises(ProtocolError):
+                parse(output, status=status)
+
+    def test_malformed_suffix_does_not_leave_a_valid_prefix(self):
+        cases = [b'', b'\n', OK + b'Defined {value: "Specified(9)"',
+                 OK.replace(b', blocked: "false"', b''),
+                 OK.replace(b'stdout: ""', b'stdout: "", unexpected: "x"'),
+                 OK.replace(b'stdout: ""', b'stdout: "", stdout: ""'),
+                 OK.replace(b'false', b'unknown'), OK + ERR, b'EXECUTION 0:\n' + OK,
+                 multi(OK, UB) + b'EXECUTION 2:\n', multi(OK, UB).replace(b'EXECUTION 1', b'EXECUTION 3'),
+                 OK + b'unknown diagnostic\n', OK + b'\0', b'Unknown {msg: "x"}\n']
+        for data in cases:
+            with self.subTest(data=data), self.assertRaises(ProtocolError):
+                parse(data, status=0)
+
+    def test_diagnostics_are_separate_and_fatal_suffixes_reject(self):
+        note = b'Time spent: 0.04 seconds\nwarning: model annotation\xff\n'
+        obs = parse(OK, note, status=0)
+        self.assertEqual(obs.verdicts, parse(OK, status=0).verdicts)
+        evidence = obs.evidence()
+        self.assertEqual(base64.b64decode(evidence['stderr_base64']), note)
+        for diagnostic in (b'PANIC at source\n', b'internal error: failed\n',
+                           b'Fatal error: exception Failure("x")\n', b'capped: OOM-KILLED\n',
+                           b'lem: fuel exhausted\n'):
+            with self.subTest(diagnostic=diagnostic), self.assertRaises(ProtocolError):
+                parse(OK, diagnostic, status=0)
+
+    def test_error_message_is_unescaped_bytes(self):
+        raw = b'Error {msg: "failed on "x" at \\tmp\\new"}\n'
+        self.assertEqual(parse(raw, status=1).verdicts[0].field('msg'),
+                         b'failed on "x" at \\tmp\\new')
+
+    def test_internal_failure_policy_is_narrow(self):
+        ocaml = b'internal error: intentional failure\n'
+        lean = b'PANIC at LemLib.failwithIImpl LemLib.lean:10:3: intentional failure\n'
+        a = parse(b'', ocaml, 125, 'litmus')
+        b = parse(b'', lean, 134, 'litmus')
+        self.assertEqual(a.verdicts, b.verdicts)
+        for out, err, rc in [(OK, ocaml, 125), (OK, lean, 134), (b'', ocaml, 0),
+                              (b'', lean, 137), (b'something else\n', ocaml, 125)]:
+            with self.subTest(rc=rc), self.assertRaises(ProtocolError):
+                parse(out, err, rc, 'litmus')
+        with self.assertRaises(ProtocolError):
+            parse(b'', ocaml, 125)
+
+    def test_actual_shell_capture_retains_bytes_and_status(self):
+        helper = Path(__file__).with_name('observations.sh')
+        with tempfile.TemporaryDirectory() as directory:
+            for rc in (0, 1, 124, 137):
+                prefix = str(Path(directory) / str(rc))
+                script = ('source "$1"; observation_capture "$2" "$3" -c '
+                          '\'import sys; sys.stdout.buffer.write(bytes.fromhex(sys.argv[1])); '
+                          'sys.stderr.buffer.write(b"diagnostic\\xff\\n"); sys.exit(int(sys.argv[2]))\' '
+                          '"$4" "$5"')
+                proc = subprocess.run(['bash', '-c', script, 'capture-test', str(helper),
+                                       prefix, sys.executable, OK.hex(), str(rc)], capture_output=True)
+                self.assertEqual(proc.returncode, rc)
+                self.assertEqual(Path(prefix + '.stdout').read_bytes(), OK)
+                self.assertEqual(Path(prefix + '.stderr').read_bytes(), b'diagnostic\xff\n')
+                self.assertEqual(Path(prefix + '.status').read_text(), f'{rc}\n')
+                if rc == 0:
+                    self.assertEqual(load_capture(prefix).status, 0)
+                else:
+                    with self.assertRaises(ProtocolError):
+                        load_capture(prefix)
+
+
+if __name__ == '__main__':
+    unittest.main(verbosity=2)
