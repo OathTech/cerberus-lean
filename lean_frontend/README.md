@@ -16,6 +16,10 @@ state behind pure signatures. Zero added axiom declarations does not prove
 agreement between those declarations and their native implementations.
 See the [supported profile](docs/2026-09-06_supported-profile.md) and
 [VALIDATION.md](VALIDATION.md) for measured scope and remaining release exits.
+The [validation-foundations delivery](docs/2026-09-06_validation-foundations-delivery.md)
+records the final gates, reporting findings, cold proof client and failure
+census. The [master plan](docs/2026-09-05_master-plan.md) recommends scoped
+SC integration next; it is a proposed arc, with landing discussed separately.
 
 **Provenance.** This port was developed primarily by AI agents
 (Claude, Anthropic) operating under the direction and review of a

@@ -1,0 +1,242 @@
+{
+  "schema": 1,
+  "candidate": "1066d89eea16f55a0f204f95c351731629df296a",
+  "report": ".tmp/release-final-1066d89-full/report.json",
+  "report_sha256": "dbbdb4f50c4210122850c13fc89f727a89966e5067db9487f0d5e55e9b27e35c",
+  "status": "passed",
+  "source_before": {
+    "branch": "arc/validation-foundations",
+    "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "head": "1066d89eea16f55a0f204f95c351731629df296a",
+    "status": "",
+    "untracked_sha256": {}
+  },
+  "source_unchanged": true,
+  "lanes": [
+    {
+      "id": "A1",
+      "status": "passed",
+      "seconds": 124.467,
+      "exit_status": 0
+    },
+    {
+      "id": "A2",
+      "status": "passed",
+      "seconds": 33.515,
+      "exit_status": 0
+    },
+    {
+      "id": "A3",
+      "status": "passed",
+      "seconds": 54.158,
+      "exit_status": 0
+    },
+    {
+      "id": "A4",
+      "status": "passed",
+      "seconds": 23.657,
+      "exit_status": 0
+    },
+    {
+      "id": "A4b",
+      "status": "passed",
+      "seconds": 20.713,
+      "exit_status": 0
+    },
+    {
+      "id": "A4c",
+      "status": "passed",
+      "seconds": 3.424,
+      "exit_status": 0
+    },
+    {
+      "id": "A5",
+      "status": "passed",
+      "seconds": 27.565,
+      "exit_status": 0
+    },
+    {
+      "id": "A6",
+      "status": "passed",
+      "seconds": 2.473,
+      "exit_status": 0
+    },
+    {
+      "id": "A7",
+      "status": "passed",
+      "seconds": 11.048,
+      "exit_status": 0
+    },
+    {
+      "id": "A8",
+      "status": "passed",
+      "seconds": 9.137,
+      "exit_status": 0
+    },
+    {
+      "id": "A9",
+      "status": "passed",
+      "seconds": 18.054,
+      "exit_status": 0
+    },
+    {
+      "id": "A10",
+      "status": "passed",
+      "seconds": 19.317,
+      "exit_status": 0
+    },
+    {
+      "id": "A11",
+      "status": "passed",
+      "seconds": 60.63,
+      "exit_status": 0
+    },
+    {
+      "id": "B1",
+      "status": "passed",
+      "seconds": 693.612,
+      "exit_status": 0
+    },
+    {
+      "id": "B2",
+      "status": "passed",
+      "seconds": 25.812,
+      "exit_status": 0
+    },
+    {
+      "id": "B3",
+      "status": "passed",
+      "seconds": 16.743,
+      "exit_status": 0
+    },
+    {
+      "id": "B4",
+      "status": "passed",
+      "seconds": 47.994,
+      "exit_status": 0
+    },
+    {
+      "id": "B5",
+      "status": "passed",
+      "seconds": 68.431,
+      "exit_status": 0
+    },
+    {
+      "id": "B6.1",
+      "status": "passed",
+      "seconds": 2.422,
+      "exit_status": 0
+    },
+    {
+      "id": "B6.2",
+      "status": "passed",
+      "seconds": 2.372,
+      "exit_status": 0
+    },
+    {
+      "id": "B6.3",
+      "status": "passed",
+      "seconds": 2.724,
+      "exit_status": 0
+    },
+    {
+      "id": "B6.4",
+      "status": "passed",
+      "seconds": 3.074,
+      "exit_status": 0
+    },
+    {
+      "id": "B6.5",
+      "status": "passed",
+      "seconds": 3.523,
+      "exit_status": 0
+    },
+    {
+      "id": "B6.6",
+      "status": "passed",
+      "seconds": 4.225,
+      "exit_status": 0
+    },
+    {
+      "id": "B6.7",
+      "status": "passed",
+      "seconds": 2.973,
+      "exit_status": 0
+    },
+    {
+      "id": "B7",
+      "status": "passed",
+      "seconds": 1458.989,
+      "exit_status": 0
+    },
+    {
+      "id": "B8.1",
+      "status": "passed",
+      "seconds": 13.34,
+      "exit_status": 0
+    },
+    {
+      "id": "B8.2",
+      "status": "passed",
+      "seconds": 219.026,
+      "exit_status": 0
+    },
+    {
+      "id": "B8.3",
+      "status": "passed",
+      "seconds": 6.58,
+      "exit_status": 0
+    },
+    {
+      "id": "B9",
+      "status": "passed",
+      "seconds": 790.734,
+      "exit_status": 0
+    },
+    {
+      "id": "B10.1",
+      "status": "passed",
+      "seconds": 69.929,
+      "exit_status": 0
+    },
+    {
+      "id": "B10.2",
+      "status": "passed",
+      "seconds": 1.37,
+      "exit_status": 0
+    }
+  ],
+  "total_lane_seconds": 3842.031,
+  "artifact_changes": [
+    "_build/default/backend/driver/main.exe",
+    "_build/install/default/lib/cerberus-lib/backend_common/cerb_backend.cma",
+    "_build/install/default/lib/cerberus-lib/backend_common/cerb_backend.cmxa",
+    "_build/install/default/lib/cerberus-lib/backend_common/cerb_backend.cmxs",
+    "_build/install/default/lib/cerberus-lib/backend_common/cerb_backend__Pipeline.cmt",
+    "_build/install/default/lib/cerberus-lib/backend_common/cerb_backend__Pipeline.cmx",
+    "_build/install/default/lib/cerberus-lib/frontend/cerb_frontend__Version.cmi",
+    "_build/install/default/lib/cerberus-lib/frontend/cerb_frontend__Version.cmo",
+    "_build/install/default/lib/cerberus-lib/frontend/cerb_frontend__Version.cmt",
+    "_build/install/default/lib/cerberus-lib/frontend/cerb_frontend__Version.cmx",
+    "_build/install/default/lib/cerberus-lib/frontend/cerb_frontend__Version.o",
+    "_build/install/default/lib/cerberus-lib/frontend/version.ml",
+    "_build/install/default/lib/cerberus-lib/mem/concrete/cerb_frontend__Version.cmi",
+    "_build/install/default/lib/cerberus-lib/mem/concrete/cerb_frontend__Version.cmx",
+    "_build/install/default/lib/cerberus-lib/mem/concrete/mem_concrete.a",
+    "_build/install/default/lib/cerberus-lib/mem/concrete/mem_concrete.cma",
+    "_build/install/default/lib/cerberus-lib/mem/concrete/mem_concrete.cmxa",
+    "_build/install/default/lib/cerberus-lib/mem/concrete/mem_concrete.cmxs",
+    "_build/install/default/lib/cerberus-lib/mem/vip/cerb_frontend__Version.cmi",
+    "_build/install/default/lib/cerberus-lib/mem/vip/cerb_frontend__Version.cmx",
+    "_build/install/default/lib/cerberus-lib/mem/vip/mem_vip.a",
+    "_build/install/default/lib/cerberus-lib/mem/vip/mem_vip.cma",
+    "_build/install/default/lib/cerberus-lib/mem/vip/mem_vip.cmxa",
+    "_build/install/default/lib/cerberus-lib/mem/vip/mem_vip.cmxs",
+    "_build/install/default/lib/cerberus/runtime/libc/libc.co",
+    "_build/install/default/lib/cerberus/runtime/libc/libc_inner_arg_temps.co",
+    "_build/install/default/lib/cerberus/runtime/libc/libm.co",
+    "driver_fresh.lean.sha256",
+    "driver_fresh.oracle.sha256"
+  ],
+  "release_certification": "incomplete: reporting/adoption/audit exits require separate evidence"
+}

@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "report": ".tmp/release-final-1066d89-C1/report.json",
+  "report_sha256": "3e2037841357e4a2e19e60bdd2f6bf72760c845c9fa266e0fb611b5722a23cfc",
+  "rows": 242,
+  "counts": {
+    "MATCH": 91,
+    "UB_MATCH": 41,
+    "CERB_SKIP": 110
+  },
+  "movement": []
+}

@@ -1,5 +1,14 @@
 # Orchestrator handoff — cerberus-lean + lem-lean, state and what's next (2026-09-05, evening)
 
+**Current continuation, 2026-09-06 [AGENT]:** the adopted validation-foundations
+charter has delivered G1–G7. Start with its
+[delivery record](2026-09-06_validation-foundations-delivery.md) and
+[master plan revision 5](2026-09-05_master-plan.md), then discuss the proposed
+[SC integration charter](2026-09-06_concurrency-integration-charter.md).
+The remaining text is the earlier assessment handoff; its old execution
+queue is superseded by those records. No feature merge, customer adoption or
+legacy-run operation is implied.
+
 **Current planning note [AGENT, 2026-09-05]:** read
 [master plan revision 3](2026-09-05_master-plan.md) for the current work order,
 [the customer-readiness assessment](2026-09-05_customer-readiness-assessment.md)

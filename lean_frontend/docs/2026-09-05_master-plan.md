@@ -1,10 +1,11 @@
 # Master plan — cerberus-lean and lem-lean
 
-**Revision 4, 2026-09-06.** Updated by Codex [AGENT] at the operator's
+**Revision 5, 2026-09-06.** Updated by Codex [AGENT] at the operator's
 request following the
 [customer-readiness assessment](2026-09-05_customer-readiness-assessment.md).
-Revision 4 incorporates validation-foundations findings while preserving
-revision 3's work order and decision boundaries. Revision 3 superseded revision 2's
+Revision 5 records the validation-foundations delivery and recommends scoped
+SC integration next, with concrete failure dependencies handled explicitly.
+It preserves the adopted decision boundaries. Revision 3 superseded revision 2's
 sequencing and proposed release criteria, including the replacement order in
 [the audit response, section 4](2026-09-05_whole-project-audit-response.md).
 Historical evidence and [USER] rulings remain in those records. Agent
@@ -18,8 +19,11 @@ reviewability after the relevant semantics and interfaces settle.
 
 The adopted first execution charter is
 [Validation foundations](2026-09-05_validation-foundations-charter.md).
-It turns the first priorities into an ambitious, bounded work package with
-decisions settled at entry or reserved for the final review.
+Its [delivery record](2026-09-06_validation-foundations-delivery.md) supplies
+the acceptance table, exact candidates and evidence. The next proposed arc is
+[scoped concurrency integration](2026-09-06_concurrency-integration-charter.md).
+The failure design, next charter, audit scope and landing remain decisions
+for the end-of-charter discussion.
 
 ## 1. Starting point and ownership
 
@@ -82,20 +86,22 @@ not dispatch additional agents.
 
 | Priority | Deliverable | Owner | Dependencies and exit |
 |---|---|---|---|
-| 1 | Release profile and risk baseline | Cerberus | Start now; state supported entries, hypotheses, boundaries, evidence and residual risks. |
-| 2 | Trustworthy observation/oracle instruments | Cerberus | Define observation contracts first; shared verdict handling, abnormal-exit plants, content-pinned oracle deltas, pristine-versus-fork lane, executable release runner. |
-| 3 | Failure census and reviewed design; bounded monadic repair | Lem + Cerberus | Census can start now. Review the larger transform before implementation; seven memory-monad sites gain typed errors and propagation evidence. |
+| 1 | Maintain the release profile and risk baseline | Cerberus | Profile delivered; update supported entries, hypotheses, boundaries and evidence as semantics change, then obtain the proposed fresh review. |
+| 2 | Preserve trustworthy observation/oracle instruments | Cerberus | Foundation delivered: shared codec/status handling, actual-entry plants, whole-file oracle pins, pristine-versus-fork lane and executable release runner. Revalidate each semantic candidate. |
+| 3 | Failure design decision and bounded repair preparation | Lem + Cerberus | Census/probes delivered. Review the strict-result proposal before implementation. A concrete dependency of the concurrency theorem can require a bounded failure slice first; no unrelated broad transform blocks integration. |
 | 4 | Repair and land scoped concurrency | Cerberus | Relevant priority-2 instruments and section 5; exact rebased candidate meets domain, compatibility, proof and test obligations. |
 | 5 | Byte, semantic-state and remaining fuel contracts | Lem + Cerberus | Relevant designs; configuration follows concurrency. No unguarded known wrong answer inside the supported profile. |
 | 6 | Consumer adoption, clean build, measured cost | Providers + consumer's agent | Named integration checkpoints; exact candidate adopted with proofs through, reproducible bootstrap and CPU/RSS/completion evidence. |
 | 7 | Final risk review and fresh adversarial exercise | Cerberus + Lem | Instruments, semantics and customer candidate settled; section 8 exits met. |
 | Submission track | Declare consolidation, manual and patch series | Lem + Cerberus | Failure vocabulary reviewed; relevant interfaces settled; compatibility evidence and upstream-reviewable presentation. |
 
-**First charter:** priorities 1–2, the failure census/design evidence from
-priority 3, and the concurrency instrument repair. Its results make later
-semantic work measurable. It does not wait for the legacy sweep and does
-not implement the larger pure-failure transform or claim concurrency ready
-to land. See its explicit goals and final deliverables.
+**Current handoff:** validation foundations delivers priorities 1–2, the
+failure census/proposal from priority 3, the concurrency instrument repair,
+and a cold provider client. See the delivery record for final pass/fail/unrun
+results. The next implementation priority is scoped concurrency integration;
+review the failure design in parallel with that entry decision. Its broader
+implementation remains separate unless a specific proof dependency makes a
+bounded slice urgent first. Neither milestone declares a stable release.
 
 ## 4. Sequential semantics and backend work
 
@@ -107,13 +113,18 @@ execution, definitions, trust base, gates and consumer interface. Each row
 names the change, its evidence, residual risk and the task that removes it.
 Repeat the review after the semantic changes.
 
-Repair the audit archive's missing evidence links/checksum inventory: twelve
-named logs were absent at assessment. Recover originals where available;
-otherwise identify new reproductions as new evidence. Reconcile overview
-and TODO claims with current code while preserving dated history. This
-does not include the active legacy run or its scratch files.
+The audit archive now has an explicit inventory: ten original files match
+their historical hashes; twelve original logs remain missing. Current links
+and checksums cover the files actually retained. New reproductions have their
+own dates and source identities. Maintain that separation and reconcile
+overview/TODO claims at each semantic checkpoint. This never licenses
+inspection of the excluded legacy run or its scratch files.
 
 ### 4.2 Observations and independent oracles
+
+The validation-foundations instruments deliver this contract. Maintain it
+through subsequent semantic changes; the delivery record separates passing
+comparisons, expected reference defects and unavailable release exits.
 
 Share a byte-preserving verdict codec across `test_exec.sh`,
 `test_gcc_oracle.sh`, `test_ci_sweep.sh`, `test_cn_coverage.sh`,
@@ -128,7 +139,7 @@ and expected semantic nonzero exits. Migrate lane by lane; triage newly
 visible differences before baseline updates. Trace producers of
 `Main.batchEscape` inputs before changing its encoding assumptions.
 
-Add pristine-upstream versus fork-OCaml execution over applicable Tier A
+Maintain pristine-upstream versus fork-OCaml execution over applicable Tier A
 inputs and representative legacy CLI/library interfaces. Keep fork-OCaml
 versus Lean separate. Identify both source/compiler/runtime builds and
 intentional deltas. Independently establish pristine toolchain provenance:
@@ -141,19 +152,20 @@ already-listed file. Preserve P0's locale, duplicate and prerequisite fixes.
 Retain reviewed OCaml compensation unless a separate justified change
 removes it.
 
-Create one executable release runner from LADDER's existing membership,
-with per-lane exit status, source/binary identity, required/reporting status
-and explicit incomplete/skip results. Use it to replace ad-hoc certification
-chains and support Lean CI. Do not create a competing catalogue. Preserve
-complete diagnostic evidence; a completion marker is not a passing gate.
+Maintain the delivered executable release runner derived from LADDER,
+including per-lane status, source/binary identity, required/reporting status
+and explicit incomplete/skip results. Its CI entry runs the same catalogue.
+Preserve complete diagnostic evidence; a completion marker is not a passing
+gate. Revalidate this instrument when its callers or protocol change.
 
 ### 4.3 Failure semantics
 
-First trace deliberate pure failures through unused lets/arguments,
-projections, ignored results and callbacks, including `hack`/`finalize`,
-`to_pure(s)` and parser combinators. Separate the known Lem counterexample
-from C-reachable cases. Record actual public preconditions and what is not
-proved unreachable.
+The [completed census and probes](2026-09-06_failure-census-and-correspondence.md)
+trace unused lets/arguments, projections, ignored results and callbacks, and
+connect `hack`/`finalize`, `to_pure(s)` and parser combinators to their remaining
+obligations. It distinguishes demonstrated Lem mechanisms, C-triggered
+failures, dependency closures and unresolved branch reachability. Use that
+record rather than restarting the sampled census or assuming unreachability.
 
 Retain the mirror as reference. For any proposed explicit-failure worker,
 require success preservation and a strict failure account in addition to
@@ -163,10 +175,11 @@ remain differential evidence. The mirror cannot express an exception its
 own reduction erases. Review the design with the operator before the larger
 transformation, as required by the existing audit-response ruling.
 
-Convert the seven hand-written `memM` sites into the existing error channel
-and establish propagation through the driver. Register remaining pure sites
-and add the meaningful checks/plants from
-[the typed-failure design](2026-09-05_typed-failure-outcomes-design.md).
+After the failure vocabulary is reviewed, carry the seven hand-written
+`memM` failures through its existing result channel with the faithful failure
+alternative and establish propagation through the driver. Preserve remaining
+pure sites in the census and implement the obligations in the current
+[correspondence proposal](2026-09-06_failure-census-and-correspondence.md).
 `panic!` to `failwithI` is interim hygiene, not pure-failure closure.
 
 Freeze the failure vocabulary after review, then use it inside Lem's
@@ -202,8 +215,10 @@ The eight reachable pending workers have separate routes:
 Finish Z4's remaining work: integrate recorded noodle/audit probes, add the
 appropriate `PINNED_TRAY_<n>` GCC classification, enforce skip accounting,
 preserve libc-body UB locations, close Z2-J bridge issues, and finish R3's
-marker/register correspondence. Re-record CI results after its extractor
-is repaired. Keep Z-40's elaboration filter, per-row timeout evidence and
+marker/register correspondence. Use the [completed CI re-record](2026-09-06_ci-reporting-results.md) as
+current evidence: one libc UB-location difference, three filesystem refusals
+and two Lean timeouts remain explicit. Preserve its historical scoreboards
+separately and remeasure after relevant semantic changes. Keep Z-40's elaboration filter, per-row timeout evidence and
 stale source cites attached to their existing backlog entries.
 
 ## 5. Concurrency repair and landing
@@ -215,11 +230,12 @@ valuable but do not replace these exit checks:
    C4 hypotheses/P0 instruments, S7's initialization ordering and original
    `apply_tree` bodies with measure proofs. Resolve tray draft 36's collision
    and refresh manifests/census claims. Do not overwrite its owner's tree.
-2. Repair CR-1: capture both original engine statuses, including the sequential
-   refusal leg. Fix the negated-command status loss and ignored oracle status.
-   The [assessment probe](2026-09-05_litmus-exit-status-probe.py) must stop
-   accepting all four plants; add lane-integrated plants and full observation
-   parity alongside reference outcome sets.
+2. Preserve the delivered CR-1 repair: capture both original engine statuses,
+   including the sequential refusal leg. The private instrument series closes
+   the negated-command status loss and ignored oracle status.
+   The [assessment probe](2026-09-05_litmus-exit-status-probe.py) must continue
+   rejecting all four plants after integration. Preserve the 26 integrated
+   plants and full observation parity alongside reference outcome sets.
 3. Repair or enforce a narrower checked domain for mixed-size overlapping
    accesses and SeqRMW sequencing. The mixed-size case is a recorded quiet
    wrong answer in the advertised fragment; a Phase-1 TODO does not close it.
@@ -255,10 +271,13 @@ Providers own defects and reusable semantic/map lemmas. Adoption of the final
 release candidate is an exit; old green proofs at `f95ef8d9c` do not meet it.
 Its E5/E6/E7 implementation and C-example scope are not assigned here.
 
-Rehearse a clean consumer build outside the primed workspace: generation,
-copy manifests, native objects, toolchain and compiler/runtime pins must be
-explicit. Include a small proof over the genuine entry and map laws. Check
-Cerberus's Lean 4.32.2 package and Lem's supported standalone toolchain(s).
+The [cold provider recipe](2026-09-06_provider-smoke.md) and adoption manifest
+now record generation, copy manifests, native objects, all three package pins
+and the actual compiler/runtime. Its external client proves completion of a
+fixed closed Core fixture and a shipped map law. Repeat this unprimed check
+for future semantic candidates; customer adoption and a broader proof profile
+remain separate exits. Preserve checks on Cerberus Lean 4.32.2 and standalone
+Lem's declared toolchain.
 
 At an agreed candidate checkpoint, measure CPU, wall time, RSS and completion
 against the relevant pre-measure baseline. One row's ~7% overhead does not

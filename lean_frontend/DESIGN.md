@@ -14,16 +14,17 @@ the *same model* to Lean 4.
 
 Why: hand-porting a semantics of this size would create a second
 semantics that drifts from the first. Generating both sides from one
-source makes agreement structural, and reduces the validation question
-to (a) is the Lean backend of Lem correct, and (b) are the few
-hand-written parts equivalent? Both questions are attacked by
-differential testing (§5) and, where the artifacts are both in Lean,
+source makes the intended correspondence structurally reviewable. The
+remaining questions include (a) whether the Lean backend preserves the
+reference behavior and (b) whether the hand-written parts are equivalent.
+Both questions are attacked by differential testing (§5) and, where the artifacts are both in Lean,
 by theorems rather than tests.
 
 The generated code lives in `generated/` and is never edited by hand.
-A content-hash gate (`lem-sync`) makes a stale generated tree a build
-failure, so the binary you test always corresponds to the model
-sources.
+The content-hash gate (`lem-sync`), handwritten-copy gate and artifact
+freshness checks reject stale inputs on the guarded build/test paths.
+The final release report records the actual source and binary identities;
+source generation alone is not a proof of semantic correspondence.
 
 ## 2. The pipeline and the Cabs JSON boundary
 
@@ -140,9 +141,11 @@ lem-lean `doc/lean-backend/2026-09-03_fuel-parameter-design.md` (R1–R3),
 
 ## 5. Differential validation: the oracle, lanes, baselines, plants
 
-The OCaml implementation is **the oracle**: it cannot be reasoned
-about, only compared against — so it sits permanently on the trust
-boundary, and the comparison is industrialized.
+The compiled OCaml implementation is the reference oracle. This project
+has no formal correspondence proof for its compiler/runtime, so that link
+remains an external reference boundary supported by differential evidence.
+The [supported profile](docs/2026-09-06_supported-profile.md) states the
+distinct logical, executable and consumer claims.
 
 - **Lanes.** Each corpus has a lane script (`scripts/test_*.sh`) that
   runs every program through both pipelines and compares full verdict

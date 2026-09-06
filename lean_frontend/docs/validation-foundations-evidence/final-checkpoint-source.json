@@ -1,0 +1,222 @@
+{
+  "schema": 1,
+  "parent": "1066d89eea16f55a0f204f95c351731629df296a",
+  "report": ".tmp/release-final-documentation/report.json",
+  "report_sha256": "e4ee4a0ec190cbaa65929e2524917a562e16e162cf02fe0357d082dfbd943053",
+  "status": "13/13 Tier A passed, source unchanged",
+  "source_before": {
+    "branch": "arc/validation-foundations",
+    "diff_sha256": "27c66ea97275ffbe01b890c6f824612268814394137ff9f69c4f8c9a517cc1ea",
+    "head": "1066d89eea16f55a0f204f95c351731629df296a",
+    "status": "M  lean_frontend/README.md\nM  lean_frontend/TODO.md\nM  lean_frontend/VALIDATION.md\nM  lean_frontend/docs/2026-09-05_master-plan.md\nM  lean_frontend/docs/2026-09-05_orchestrator-handoff.md\nM  lean_frontend/docs/2026-09-05_validation-foundations-execution.md\nM  lean_frontend/docs/2026-09-06_capture-composition-repair.md\nA  lean_frontend/docs/2026-09-06_ci-reporting-results.md\nM  lean_frontend/docs/2026-09-06_failure-census-and-correspondence.md\nM  lean_frontend/docs/2026-09-06_independent-oracle-and-fork-pins.md\nM  lean_frontend/docs/2026-09-06_provider-smoke.md\nM  lean_frontend/docs/2026-09-06_supported-profile.md\nA  lean_frontend/docs/2026-09-06_validation-foundations-delivery.md\nA  lean_frontend/docs/validation-foundations-evidence/README.md\nM  lean_frontend/docs/validation-foundations-evidence/SHA256SUMS\nA  lean_frontend/docs/validation-foundations-evidence/final-C1-summary.json\nA  lean_frontend/docs/validation-foundations-evidence/final-branch-map.json\nA  lean_frontend/docs/validation-foundations-evidence/final-full-summary.json\nA  lean_frontend/docs/validation-foundations-evidence/final-full.json\nA  lean_frontend/docs/validation-foundations-evidence/final-full.tar.gz\nA  lean_frontend/docs/validation-foundations-evidence/final-provider-failures.json\nA  lean_frontend/docs/validation-foundations-evidence/final-provider-failures.tar.gz\nA  lean_frontend/docs/validation-foundations-evidence/final-provider-summary.json\nA  lean_frontend/docs/validation-foundations-evidence/final-reporting-summary.json\nA  lean_frontend/docs/validation-foundations-evidence/final-reporting.json\nA  lean_frontend/docs/validation-foundations-evidence/final-reporting.tar.gz\nA  lean_frontend/docs/validation-foundations-evidence/provider-adoption.json\nA  lean_frontend/docs/validation-foundations-evidence/provider-evidence-comparison.json",
+    "untracked_sha256": {}
+  },
+  "source_after": {
+    "branch": "arc/validation-foundations",
+    "diff_sha256": "27c66ea97275ffbe01b890c6f824612268814394137ff9f69c4f8c9a517cc1ea",
+    "head": "1066d89eea16f55a0f204f95c351731629df296a",
+    "status": "M  lean_frontend/README.md\nM  lean_frontend/TODO.md\nM  lean_frontend/VALIDATION.md\nM  lean_frontend/docs/2026-09-05_master-plan.md\nM  lean_frontend/docs/2026-09-05_orchestrator-handoff.md\nM  lean_frontend/docs/2026-09-05_validation-foundations-execution.md\nM  lean_frontend/docs/2026-09-06_capture-composition-repair.md\nA  lean_frontend/docs/2026-09-06_ci-reporting-results.md\nM  lean_frontend/docs/2026-09-06_failure-census-and-correspondence.md\nM  lean_frontend/docs/2026-09-06_independent-oracle-and-fork-pins.md\nM  lean_frontend/docs/2026-09-06_provider-smoke.md\nM  lean_frontend/docs/2026-09-06_supported-profile.md\nA  lean_frontend/docs/2026-09-06_validation-foundations-delivery.md\nA  lean_frontend/docs/validation-foundations-evidence/README.md\nM  lean_frontend/docs/validation-foundations-evidence/SHA256SUMS\nA  lean_frontend/docs/validation-foundations-evidence/final-C1-summary.json\nA  lean_frontend/docs/validation-foundations-evidence/final-branch-map.json\nA  lean_frontend/docs/validation-foundations-evidence/final-full-summary.json\nA  lean_frontend/docs/validation-foundations-evidence/final-full.json\nA  lean_frontend/docs/validation-foundations-evidence/final-full.tar.gz\nA  lean_frontend/docs/validation-foundations-evidence/final-provider-failures.json\nA  lean_frontend/docs/validation-foundations-evidence/final-provider-failures.tar.gz\nA  lean_frontend/docs/validation-foundations-evidence/final-provider-summary.json\nA  lean_frontend/docs/validation-foundations-evidence/final-reporting-summary.json\nA  lean_frontend/docs/validation-foundations-evidence/final-reporting.json\nA  lean_frontend/docs/validation-foundations-evidence/final-reporting.tar.gz\nA  lean_frontend/docs/validation-foundations-evidence/provider-adoption.json\nA  lean_frontend/docs/validation-foundations-evidence/provider-evidence-comparison.json",
+    "untracked_sha256": {}
+  },
+  "tested_documentation_files": {
+    "lean_frontend/README.md": {
+      "sha256": "c04cc2d91083b555e4ef47d9d99f94219b0836744e2c0fabba4cdb6ad73ca0c5",
+      "bytes": 6719
+    },
+    "lean_frontend/TODO.md": {
+      "sha256": "601c2183061e5c52d423cd82bec42f9b7b88c11f5400621b3682e15cd0a5cbc8",
+      "bytes": 31924
+    },
+    "lean_frontend/VALIDATION.md": {
+      "sha256": "984983a425e0062eeb0dabe7018ebc418f55c874d73d97676f3f2af6dc2c80a0",
+      "bytes": 56690
+    },
+    "lean_frontend/docs/2026-09-05_master-plan.md": {
+      "sha256": "51761c67dcf1ddf1a44b56e3ea6c537c95d6dbc12b8f37f190a4b92c664334c8",
+      "bytes": 24344
+    },
+    "lean_frontend/docs/2026-09-05_orchestrator-handoff.md": {
+      "sha256": "8510b21d1a36567113c02909de01171a7cfea5e3a1cab140da306a166277db70",
+      "bytes": 14619
+    },
+    "lean_frontend/docs/2026-09-05_validation-foundations-execution.md": {
+      "sha256": "92ad99d7bc70b7b4dc57e58ff245804938df44096ab2ef5d436a03e5c891cb30",
+      "bytes": 16805
+    },
+    "lean_frontend/docs/2026-09-06_capture-composition-repair.md": {
+      "sha256": "5caa367e98719d598ccb2845e79bf57c90420bc9b85f71b57e3a0a74b9787437",
+      "bytes": 7633
+    },
+    "lean_frontend/docs/2026-09-06_ci-reporting-results.md": {
+      "sha256": "a3e8b5b0d0ecb5c6771a935e7cf503e2d96684c1b7f02af1d3419ab7a2cf41e4",
+      "bytes": 6457
+    },
+    "lean_frontend/docs/2026-09-06_failure-census-and-correspondence.md": {
+      "sha256": "dba244e5bed96e7f49afbdb9f28e7f8eabf5c4c2ce6376b2371815e472e98163",
+      "bytes": 17149
+    },
+    "lean_frontend/docs/2026-09-06_independent-oracle-and-fork-pins.md": {
+      "sha256": "0a437b2552f37eac22be87a025582a08ca18caf3b6991282e3e7defe1b965d7c",
+      "bytes": 9418
+    },
+    "lean_frontend/docs/2026-09-06_provider-smoke.md": {
+      "sha256": "93041496745deef52e38eed9149774095b3b2ce50af1073c186983f5e081df6d",
+      "bytes": 6334
+    },
+    "lean_frontend/docs/2026-09-06_supported-profile.md": {
+      "sha256": "ba8cb53ae13d7afe511c983579d2c381d049d3e3eaaf546587cfe0dcdcf26b3f",
+      "bytes": 11932
+    },
+    "lean_frontend/docs/2026-09-06_validation-foundations-delivery.md": {
+      "sha256": "a88dd696f9dfe03177ccd2ad6922bf483a6378d5d76d2ca48c3da6cb37114046",
+      "bytes": 14399
+    },
+    "lean_frontend/docs/validation-foundations-evidence/README.md": {
+      "sha256": "9f453c8462c4b62b3afee3f64bb326e83dcf5291c5a5fb2006c16b547c575722",
+      "bytes": 2861
+    },
+    "lean_frontend/docs/validation-foundations-evidence/SHA256SUMS": {
+      "sha256": "3af81b1c111fa63549f819094e01ec4f71e31660b5a5269c7101ebd13151deb3",
+      "bytes": 2247
+    },
+    "lean_frontend/docs/validation-foundations-evidence/final-C1-summary.json": {
+      "sha256": "4f2f79928c0bb2df92d248aa0e2505114c5ec0ae7d396f62ee2997708beef1e4",
+      "bytes": 272
+    },
+    "lean_frontend/docs/validation-foundations-evidence/final-branch-map.json": {
+      "sha256": "b5cfca260718acfc32007ecd0fef33d38ab91a571cba847dccba85d6158ae784",
+      "bytes": 8382
+    },
+    "lean_frontend/docs/validation-foundations-evidence/final-full-summary.json": {
+      "sha256": "e17ec9e81556e89ade0d5d62f2b4abbb5c6f3aaa8c9f0f0411b057ce44985bc0",
+      "bytes": 6220
+    },
+    "lean_frontend/docs/validation-foundations-evidence/final-full.json": {
+      "sha256": "bed19e573362e45acdce8fb5b096b7f01a6aa4cf78cf51b7ebc928e49936cde1",
+      "bytes": 14286343
+    },
+    "lean_frontend/docs/validation-foundations-evidence/final-full.tar.gz": {
+      "sha256": "2e598ac153a7445ee1d9e0d7d907ee3984f1e11e5aca5bfbe6f37d602a7505de",
+      "bytes": 37821363
+    },
+    "lean_frontend/docs/validation-foundations-evidence/final-provider-failures.json": {
+      "sha256": "1ca8c3b32fe20998ad261a7177588429cec90a72e0a644da665e4aa9b909182d",
+      "bytes": 29808
+    },
+    "lean_frontend/docs/validation-foundations-evidence/final-provider-failures.tar.gz": {
+      "sha256": "cc769a5411e4263def49fedd19f4597281f088dafec6acfe62d24e0ef1728b2a",
+      "bytes": 659838
+    },
+    "lean_frontend/docs/validation-foundations-evidence/final-provider-summary.json": {
+      "sha256": "2660a1340d67a290c36f402c4f4ae4280ed3f5d60c4ead40c9f3d905f57fc9ea",
+      "bytes": 5003
+    },
+    "lean_frontend/docs/validation-foundations-evidence/final-reporting-summary.json": {
+      "sha256": "c95130a2ed19fc90ce085b8fac108f5f617141fec1bbde82392cd0f7d8b38680",
+      "bytes": 705435
+    },
+    "lean_frontend/docs/validation-foundations-evidence/final-reporting.json": {
+      "sha256": "d6e4d08ca49a912cecaec8cc1e4f77aa9723c2809b83f29d0f35356f55edeeb0",
+      "bytes": 3430809
+    },
+    "lean_frontend/docs/validation-foundations-evidence/final-reporting.tar.gz": {
+      "sha256": "3a941bbae25f41a7086795e96cd8a690438332a6fa7bd0a94ffe707b5a175909",
+      "bytes": 1513416
+    },
+    "lean_frontend/docs/validation-foundations-evidence/provider-adoption.json": {
+      "sha256": "9f8428410e153376be2c4716dd693bff3c5a108636cc2e92b4eb717637c513b1",
+      "bytes": 4960
+    },
+    "lean_frontend/docs/validation-foundations-evidence/provider-evidence-comparison.json": {
+      "sha256": "8bf3b7009a63fec8240b19d3375904930ce72cf0d95019e0aa5732f615f720c3",
+      "bytes": 2418
+    }
+  },
+  "lanes": [
+    {
+      "id": "A1",
+      "status": "passed",
+      "exit_status": 0,
+      "seconds": 128.163
+    },
+    {
+      "id": "A2",
+      "status": "passed",
+      "exit_status": 0,
+      "seconds": 36.796
+    },
+    {
+      "id": "A3",
+      "status": "passed",
+      "exit_status": 0,
+      "seconds": 55.823
+    },
+    {
+      "id": "A4",
+      "status": "passed",
+      "exit_status": 0,
+      "seconds": 25.118
+    },
+    {
+      "id": "A4b",
+      "status": "passed",
+      "exit_status": 0,
+      "seconds": 20.404
+    },
+    {
+      "id": "A4c",
+      "status": "passed",
+      "exit_status": 0,
+      "seconds": 3.626
+    },
+    {
+      "id": "A5",
+      "status": "passed",
+      "exit_status": 0,
+      "seconds": 26.861
+    },
+    {
+      "id": "A6",
+      "status": "passed",
+      "exit_status": 0,
+      "seconds": 2.424
+    },
+    {
+      "id": "A7",
+      "status": "passed",
+      "exit_status": 0,
+      "seconds": 11.19
+    },
+    {
+      "id": "A8",
+      "status": "passed",
+      "exit_status": 0,
+      "seconds": 9.736
+    },
+    {
+      "id": "A9",
+      "status": "passed",
+      "exit_status": 0,
+      "seconds": 18.309
+    },
+    {
+      "id": "A10",
+      "status": "passed",
+      "exit_status": 0,
+      "seconds": 20.704
+    },
+    {
+      "id": "A11",
+      "status": "passed",
+      "exit_status": 0,
+      "seconds": 63.49
+    }
+  ],
+  "after_test_changes": "Final result/archive records and small wording corrections to master plan/DESIGN only; no functional or baseline change. The exact pre-result documents and checksum list are archived, and immutable evidence retains the listed hashes.",
+  "failed_launch": {
+    "command": "scripts/ci_lean.sh without bash",
+    "exit_status": 126,
+    "scope": "Launcher error before the release runner: file is deliberately mode 100644; corrected to the documented bash scripts/ci_lean.sh entry. No lane was run or failed in that attempt.",
+    "log": ".validation-foundations/final-documentation-fast.log"
+  }
+}

@@ -1,8 +1,11 @@
 # Validation foundations — execution record
 
 2026-09-05 [AGENT], under the operator's adopted
-[charter](2026-09-05_validation-foundations-charter.md). Work in progress;
-none of the charter goals is certified complete by this entry record.
+[charter](2026-09-05_validation-foundations-charter.md). This is the dated
+development history. The [final delivery record](2026-09-06_validation-foundations-delivery.md)
+now closes G1–G7 and supplies the final acceptance table, evidence and
+discussion package. Earlier prospective statements below describe their
+checkpoint's state; they are not outstanding instructions.
 
 ## Entry and owned branches
 
@@ -13,17 +16,14 @@ the primary `arc/validation-foundations` starts at planning commit
 Lem/compiler/runtime pins remain `f6542f8`. No other agent's worktree has
 been changed. The legacy csmith run has not been monitored or operated.
 
-## Current acceptance ledger
+## Final acceptance pointer
 
-| Goal | State | Evidence still required |
-|---|---|---|
-| G1 observation contract and lanes | Six required lanes and older callers migrated; 67 actual entry-point plants pass across development runs; complete caller inventory | Final combined plants, ladder and affected reporting evidence |
-| G2 concurrency instrument | Committed at `51b855aec`; 14/14 Tier A, 30 rows plus sequential refusal, 26/26 integrated plants and original four-case probe pass; portable source/evidence archive | Include exact branch/source map in final discussion package |
-| G3 independent oracle and fork pins | Cold upstream-Lem/pristine-Cerberus recipe and 723 comparisons pass; public OCaml client passes; 76 source pins and 14 plants pass | Final-candidate rerun |
-| G4 release runner and CI | Executable LADDER/CI entry; eleven runner tests including signals and missing inventories; external input/artifact identities; initial and expanded Tier A passed 13/13 | Final Tier A+B, reporting and final source/artifact records |
-| G5 clean provider client | Cold provider rehearsal passes both targets, all three Lake packages, real-entry/map-law client and standalone Lem runtime/comprehensive; omitted-generation and pin plants pass | Final-candidate rehearsal/archive and adoption manifest |
-| G6 failure census/design | Cold census identifies 1,642/1,644 sites; seven memory-monad sites confirmed and generated counts corrected; eight strictness probes measured; correspondence proposal written | Final evidence/archive and operator design discussion |
-| G7 profile/evidence | Profile/defect ledger and next charter drafted; current overview/TODO claims corrected; 10 historical artifacts match and 12 logs explicitly missing | Final candidate reports, archive, clean commit series and discussion package |
+All G1–G7 implementation/evidence deliverables are complete at primary
+functional candidate `1066d89ee` and private instrument `eb926f8d`.
+The [delivery acceptance table](2026-09-06_validation-foundations-delivery.md#charter-acceptance)
+records exact claims and residual boundaries. Final A+B is 32/32; C1/C4
+record 242/2,186 rows; all 20 cold steps and both G6 instruments complete.
+C2/C3, customer adoption and the fresh audit remain uncompleted release exits.
 
 ## Development checks (not candidate certification)
 

@@ -1,7 +1,12 @@
 # Independent oracle and fork source pins
 
-2026-09-06 [AGENT], validation-foundations G3. Development record;
-final-candidate runner evidence is still required.
+2026-09-06 [AGENT], validation-foundations G3. The final candidate
+`1066d89ee` passed both independent-oracle commands: all 723 classified
+comparisons and the unexpected-difference plant. The representative OCaml
+package clients are retained with the development evidence. See the
+[delivery record](2026-09-06_validation-foundations-delivery.md) for final
+reports and source/artifact identities; the build and initial investigation
+below explain the independent reference and its precise claim boundaries.
 
 ## Three separate checks
 

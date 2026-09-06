@@ -5,10 +5,10 @@ against, and this document is the honest inventory: the rule the port is
 held to, the exceptions and how each is tested, the register of
 deliberate deviations, every known difference and its class, then what
 is compared against what, how often, and what the gates guarantee. There
-is no proof that the Lean port equals the OCaml implementation — the
-OCaml side cannot be reasoned about, only compared against — so the
-validation story is (a) **structural**: both implementations are
-generated from one Lem model, and the hand-written residue mirrors its
+is no delivered proof that the Lean port equals the compiled OCaml
+implementation. That compiler/runtime correspondence remains an external
+reference boundary, so the validation story is (a) **structural**: both
+implementations are generated from one Lem model, and the hand-written residue mirrors its
 OCaml counterpart line-by-line; and (b) **empirical**: an industrialized
 differential-testing surface with pinned, fail-closed baselines. A green
 build is never the signal; the differential baselines are.
@@ -17,11 +17,13 @@ The current [supported profile](docs/2026-09-06_supported-profile.md)
 separates shared-source, logical-definition, native-execution and consumer
 claims. Validation-foundations adds an independently compiled pristine
 oracle, a shared byte observation contract, an executable LADDER runner,
-and a cold provider client. Development results are in the
-[execution record](docs/2026-09-05_validation-foundations-execution.md);
-they do not replace final Tier A/B, reporting, customer adoption or audit
-exits. Missing historical logs are explicitly inventoried, not evidence of
-a current pass. See [the observation contract](docs/2026-09-05_observation-contract.md)
+and a cold provider client. The
+[delivery record](docs/2026-09-06_validation-foundations-delivery.md) identifies
+the complete 32/32 Tier A+B pass, C1/C4 reporting, cold build/proof and failure
+measurements. C2/C3, customer adoption and the fresh audit remain separate
+uncompleted release exits. Missing historical logs are explicitly inventoried;
+they are not evidence of a current pass. See
+[the observation contract](docs/2026-09-05_observation-contract.md)
 for sequence/set projections and the printer's observational limits.
 
 ## 0. The aims and the rule
@@ -78,14 +80,12 @@ main lane and everything built on it — compares the WHOLE `Defined {…}`
 line (value, the program's captured stdout and stderr, blocked) as one
 token; before it only the `value: "…"` field was compared, so two
 `Defined` lines with the same value and different stdout/stderr read
-MATCH. Lanes carrying their own copy of the old value-only extractor
-(`test_gcc_oracle.sh:308`, `test_ci_sweep.sh:172` — its libc leg has a
-separate whole-`Defined`-line `STDOUT_DIFF` channel, its nolibc token is
-value-only —, `test_cn_coverage.sh:243`, `test_multi_tu.sh:114`, and
-`test_verify.sh:72`'s recorded-pin token — its live main-mode comparison
-is already whole-line) are listed in that record as remaining work; do
-not read "whole-line" claims below as covering them until they are
-repaired.
+MATCH. Validation foundations migrated the six required lanes and inventoried
+older callers to the shared byte codec and actual-status capture. The
+[observation contract](docs/2026-09-05_observation-contract.md) defines the
+fields and each lane's sequence/set projection. GCC native exit comparison
+and the independent litmus reference remain explicitly weaker projections;
+the final 67 actual-entry plants verify the primary migrated instruments.
 
 Terminology. **oracle** = the OCaml Cerberus built from this
 repository's `.lem` + OCaml sources, run in the MATCHED MODE (same
@@ -372,11 +372,11 @@ lanes, with their recorded states:
 | `test_libxml2.sh` | libxml2 `chvalid` battery | 4 slices × 1,354 points, byte-equal verdicts (slow tier) |
 | `test_cn_coverage.sh` | `deps/cn/tests/cn` | **213/213** at the exact-match baseline (multi-TU drivers, reject lane, manifest bijection) |
 | `test_immaculate.sh` | curated pin suite | at baseline (incl. adversarial pins, e.g. the symbol-hash-collision tripwire) |
-| `test_gcc_oracle.sh --check-baseline` | tests/minimal + debug + float + immaculate/nolibc + the staged csmith tier (1,953 rows) | gcc SECOND oracle (oracle-independent): native `gcc -O0` exit status vs the Lean verdict set, `-O2` spot tier, fail-closed triage ledger; at the pinned skip ledger `scripts/gcc_oracle_baseline.txt` (regressions fatal; improvements printed at rc 0). Tier B GATE since 2026-09-02 [USER]. Load caveat: the TIMEOUT-class rows are wall-clock sensitive (TIMEOUT_SECS=30; the slowest csmith rows hand-time at ~17 s on a quiet box, and a busy box — load ≈12 at the 2026-09-02 audit — pushed one over) — a REGRESSION whose only movement is into SKIP_LEAN_TIMEOUT is re-run on a quiet box before it is read as red; no code change. |
+| `test_gcc_oracle.sh --check-baseline` | tests/minimal + debug + float + immaculate/nolibc + the staged csmith tier (1,963 final-candidate rows) | gcc SECOND oracle (oracle-independent): native `gcc -O0` exit status vs the Lean verdict set, `-O2` spot tier, fail-closed triage ledger; at the pinned skip ledger `scripts/gcc_oracle_baseline.txt` (regressions fatal; improvements printed at rc 0). Tier B GATE since 2026-09-02 [USER]. Load caveat: the TIMEOUT-class rows are wall-clock sensitive (TIMEOUT_SECS=30; the slowest csmith rows hand-time at ~17 s on a quiet box, and a busy box — load ≈12 at the 2026-09-02 audit — pushed one over) — a REGRESSION whose only movement is into SKIP_LEAN_TIMEOUT is re-run on a quiet box before it is read as red; no code change. |
 | `test_verify.sh` | `tests/verify` + `corpus/` | pin provenance (oracle `--pp=core` re-derivation byte-identical / content-hash) + main-mode differentials + per-function call-point differentials (Lean `--call` vs oracle wrapper TU vs recorded pin) — 127 checks at the Z2 close (record §14) |
 | `test_speclab*.sh` (6 scripts) | rendered harness families | five families (scalar/bytes/list/tree/CN-seed): sweeps, deterministic fuzz with byte-wise shrinking, plant tests, pinned-term gates — ~2,000 recorded differential executions, all agreeing |
 | `test_csmith_corpus.sh` | 1,669 in-tree csmith programs | classified pinned baseline (sharded; reporting tier full-pass): 0 MISMATCH/DIFF rows; the non-MATCH rows are 499 `CERB_SKIP` (oracle-side) + 9 `TIMEOUT` (derived from `scripts/exec_csmith_corpus_baseline.txt` at `928aa1e76`; the header's per-row narrative is the arc-13 record) |
-| `test_ci_sweep.sh` | 2,186-file upstream CI suite | reporting instrument; the committed TSVs are the 2026-08-22 snapshot (14 of 15; `tcc.tsv` re-recorded 2026-09-02) and PREDATE the Z1/Z2 fixes and the whole-line UB comparison — the re-record is the code half of Z4 (TODO.md; §3 below) |
+| `test_ci_sweep.sh` | 2,186-file upstream CI suite | [Final candidate re-record](docs/2026-09-06_ci-reporting-results.md): 1,359 matching observations, one UB-location difference, three filesystem refusals, two Lean timeouts and 821 oracle-side non-comparisons. All 15 fresh TSVs/raw records are archived. The default TSVs under `tests/ci_sweep/results/` remain historical (14 from August 22, TCC from September 2); no automatic baseline adoption. |
 | `fuzz_csmith.sh` | generated csmith programs | deterministic seeded fuzz kit (reporting tier) |
 
 Lane semantics worth knowing:

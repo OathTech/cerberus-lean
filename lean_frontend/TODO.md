@@ -6,9 +6,12 @@ the semantics is the product here; a verification layer consumes it
 downstream.)
 
 The current work order is the [master plan](docs/2026-09-05_master-plan.md).
-The validation-foundations [execution ledger](docs/2026-09-05_validation-foundations-execution.md)
-and [failure census](docs/2026-09-06_failure-census-and-correspondence.md)
-supersede older sampled counts. The legacy csmith run remains independently
+The validation-foundations [delivery record](docs/2026-09-06_validation-foundations-delivery.md)
+closes its G1–G7 implementation/evidence goals. The next proposed arc is
+[scoped SC integration](docs/2026-09-06_concurrency-integration-charter.md);
+its adoption and landing require discussion. The current
+[failure census](docs/2026-09-06_failure-census-and-correspondence.md)
+supersedes older sampled counts. The legacy csmith run remains independently
 owned and hands off; this roadmap does not authorize operating it.
 
 ## Queued larger work
@@ -357,16 +360,14 @@ owned and hands off; this roadmap does not authorize operating it.
   with `CERB_MEM_MAX=4G`; LADDER.md:73 text updated; migration of the
   seven harnesses + dedicated baseline-instrument commit = mem-scale
   S2 (charter §6.4); then re-run the class-(b) rows.
-- **Tier-C ci-sweep re-record (M)** — registered 2026-09-02 (release-
-  hygiene sweep): 14 of the 15 committed scoreboard TSVs under
-  `tests/ci_sweep/results/` are the 2026-08-22-era run (commits
-  `8663f1f79`/`406560515`); only `tcc.tsv` was re-recorded (mem-scale
-  S2, `de574fbc8`). A fresh full sweep at mainline `a8f86112d` exists as
-  an instrument snapshot (`tests/parity-probes/sweep-2026-08-30/`, not
-  the scoreboard). Mover: a dedicated instrument commit re-running
-  `scripts/test_ci_sweep.sh` on fresh stamped binaries after the next
-  semantics-affecting merge (hours of wall; measurement sweep, tripwire-
-  justified in advance per the grind rule).
+- **Tier-C CI re-record — measured 2026-09-06**: all 2,186 rows across
+  15 suites were recorded on `1066d89ee`, after extractor/status repair.
+  [Current results and all 56 historical movements](docs/2026-09-06_ci-reporting-results.md)
+  retain one libc UB-location defect, three filesystem refusals and two Lean
+  timeouts. Fresh TSVs and raw records are committed in the evidence archive;
+  the old default scoreboards remain explicitly historical. Remaining work
+  is the registered semantic/completion obligations and remeasurement after
+  relevant changes, not another run of this completed candidate measurement.
 - **CerbFS real-fs mover + served-pattern probe family (S)** —
   registered 2026-09-02. `CerbFS` is a declared MODEL boundary
   (VALIDATION.md §5: in-memory filesystem; fail-closed since trust-

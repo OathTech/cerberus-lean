@@ -15,6 +15,15 @@ The cold provider rehearsal separately rebuilt that compiler, its OCaml
 libraries/runtime, and Cerberus. Strictness probes use that owned compiler
 and runtime, Lean 4.32.2 and OCaml 5.4.0. No shared installation was changed.
 
+Both instruments were then rerun directly against the final cold build of
+`1066d89eea16f55a0f204f95c351731629df296a`. All eight observations, every
+census site/classification and its source hash match the development results.
+All 207 generated Lean and 86 generated OCaml file hashes also match. The
+rebuilt compiler and four OCaml runtime archive hashes differ, so no binary
+identity was assumed: the final probes used the final compiler/runtime.
+See the [comparison and direct-reproduction record](validation-foundations-evidence/provider-evidence-comparison.json)
+and [final raw archive](validation-foundations-evidence/final-provider-failures.tar.gz).
+
 Reproduction, in the project environment after the
 [provider recipe](2026-09-06_provider-smoke.md):
 
@@ -144,6 +153,14 @@ immaculate reproducer/pin and current lane evidence. Matching crashes are
 not semantic result agreement. A precondition invoked for any other site
 must be proved or enforced, rather than copied from a comment.
 
+Current C4 captures also witness the declared filesystem refusals at
+`CerbFS.fs_close:260` (`tests/freebsd/cat.c`, closing stdout), `fs_stat:504`
+(`tests/suite/fs/stat.c`) and `fs_read:338` (`tests/tcc/40_stdio.c`, a
+nonzero, non-EOF read offset). These are C-triggered runtime failures within
+the explicit filesystem boundary, not successful comparisons or a proof of
+logical failure propagation. See the [CI reporting record](2026-09-06_ci-reporting-results.md)
+for their raw observations and historical classifications.
+
 ## The eight pending fuel workers are still separate obligations
 
 | Workers | What prevents closure |
@@ -219,6 +236,13 @@ sufficient fuel. This witness rules out an always-failing implementation.
 For the mapped projection, propagation must be proved through traversal
 before length/projection discards elements, not inferred from the native
 panic. These examples define the first transform's acceptance cases.
+
+For expressions with several potentially failing operands, the translation
+must also preserve the reference evaluation order at the pinned toolchain
+boundary. Add multiple-failure and effect-order probes before expanding the
+vertical slice, and state any order-independence precondition explicitly.
+A generic claim of strict evaluation does not determine which failure payload
+or failure-time state should survive.
 
 Kernel-checkable obligations include generated typed-result propagation,
 strict evaluation-order certificates for the supported Lem constructs,

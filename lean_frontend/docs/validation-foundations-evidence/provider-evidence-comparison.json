@@ -1,0 +1,61 @@
+{
+  "schema": 1,
+  "development_manifest": ".validation-foundations/provider-cold-dev-v2/manifest.json",
+  "development_manifest_sha256": "64c95b7af24a8892b3febe1b4689b648bdff73b231053c57990625398c2d9c48",
+  "final_manifest": ".validation-foundations/provider-cold-final-1066d89/manifest.json",
+  "final_manifest_sha256": "0d97cfd3719a1038b06e3cb1bff8005ae069a8c35e8a950dcaa2ee911232a3eb",
+  "development_candidate": "5d2f380de1f9e7d951551ae038a059df3f60bba1",
+  "final_candidate": "1066d89eea16f55a0f204f95c351731629df296a",
+  "comparisons": {
+    "generated_lean": {
+      "equal": true,
+      "old_count": 207,
+      "new_count": 207,
+      "old_only": [],
+      "new_only": [],
+      "changed": []
+    },
+    "generated_ocaml": {
+      "equal": true,
+      "old_count": 86,
+      "new_count": 86,
+      "old_only": [],
+      "new_only": [],
+      "changed": []
+    },
+    "ocaml_runtime": {
+      "equal": false,
+      "old_count": 193,
+      "new_count": 193,
+      "old_only": [],
+      "new_only": [],
+      "changed": [
+        "lem_num/extract.a",
+        "lem_zarith/extract.a",
+        "lem_num/extract.cma",
+        "lem_zarith/extract.cma"
+      ]
+    },
+    "compiler": {
+      "equal": false,
+      "old": "e35f567f4eb1a77774c0392d00d60cebd430530e5413e6bb3b0afa6629db2998",
+      "new": "82e6780c35c1246ef48daa5f079ca13466615170bf5b32d9362f935cffe75f9f"
+    },
+    "client_source": {
+      "equal": true,
+      "sha256": "afd3abd15df2c493823cb83f8629e3bdac78de6bb6a688ef5c4a78b3d414b735"
+    }
+  },
+  "source_semantics_equal": true,
+  "compiler_runtime_equal": false,
+  "scope": "Artifact/source bridge for the previously identified G6 measurements; not a claim those old commands ran again on the final candidate.",
+  "final_reproduction": {
+    "failure_probes": ".validation-foundations/failure-probes-final-1066d89/report.json",
+    "failure_probes_sha256": "0da313793a67087a62b8a869b7153b8f36947b9dfa34ba69c0fd93f464ad1da7",
+    "observations_equal_to_development": true,
+    "census": ".validation-foundations/failure-census-final-1066d89/census.json",
+    "census_sha256": "8f476678f657d86ea2bb2644a7ffb04717bacd579b1bff89851c55f22f5ca337",
+    "counts_sites_and_source_hashes_equal_to_development": true,
+    "reason": "Compiler and four runtime archive hashes differ between rebuilds. No binary-equality claim is made; both G6 instruments were run directly against the final cold build."
+  }
+}

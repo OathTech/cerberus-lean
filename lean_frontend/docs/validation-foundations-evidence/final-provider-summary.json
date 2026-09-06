@@ -1,0 +1,171 @@
+{
+  "schema": 1,
+  "candidate": "1066d89eea16f55a0f204f95c351731629df296a",
+  "manifest": ".validation-foundations/provider-cold-final-1066d89/manifest.json",
+  "manifest_sha256": "0d97cfd3719a1038b06e3cb1bff8005ae069a8c35e8a950dcaa2ee911232a3eb",
+  "status": "passed",
+  "commands": [
+    {
+      "name": "cerberus-checkout",
+      "status": "passed",
+      "exit_status": 0,
+      "seconds": 0.765
+    },
+    {
+      "name": "lem-checkout",
+      "status": "passed",
+      "exit_status": 0,
+      "seconds": 0.114
+    },
+    {
+      "name": "plant-omitted-lean-generation",
+      "status": "passed",
+      "exit_status": 1,
+      "seconds": 0.032
+    },
+    {
+      "name": "plant-omitted-ocaml-generation",
+      "status": "passed",
+      "exit_status": 1,
+      "seconds": 0.016
+    },
+    {
+      "name": "lem-compiler",
+      "status": "passed",
+      "exit_status": 0,
+      "seconds": 9.928
+    },
+    {
+      "name": "lem-ocaml-library",
+      "status": "passed",
+      "exit_status": 0,
+      "seconds": 1.716
+    },
+    {
+      "name": "lem-runtime-build",
+      "status": "passed",
+      "exit_status": 0,
+      "seconds": 4.62
+    },
+    {
+      "name": "lem-runtime-install",
+      "status": "passed",
+      "exit_status": 0,
+      "seconds": 0.164
+    },
+    {
+      "name": "lake-dependency-clone",
+      "status": "passed",
+      "exit_status": 0,
+      "seconds": 0.214
+    },
+    {
+      "name": "lake-dependency-pin",
+      "status": "passed",
+      "exit_status": 0,
+      "seconds": 0.114
+    },
+    {
+      "name": "cerberus-ocaml-generation",
+      "status": "passed",
+      "exit_status": 0,
+      "seconds": 23.044
+    },
+    {
+      "name": "cerberus-lean-generation",
+      "status": "passed",
+      "exit_status": 0,
+      "seconds": 22.789
+    },
+    {
+      "name": "cerberus-ocaml-build",
+      "status": "passed",
+      "exit_status": 0,
+      "seconds": 10.78
+    },
+    {
+      "name": "cerberus-native",
+      "status": "passed",
+      "exit_status": 0,
+      "seconds": 0.615
+    },
+    {
+      "name": "lake-package-1",
+      "status": "passed",
+      "exit_status": 0,
+      "seconds": 171.125
+    },
+    {
+      "name": "lake-package-2",
+      "status": "passed",
+      "exit_status": 0,
+      "seconds": 91.45
+    },
+    {
+      "name": "lake-package-3",
+      "status": "passed",
+      "exit_status": 0,
+      "seconds": 1.266
+    },
+    {
+      "name": "provider-client",
+      "status": "passed",
+      "exit_status": 0,
+      "seconds": 2.067
+    },
+    {
+      "name": "standalone-lem-runtime",
+      "status": "passed",
+      "exit_status": 0,
+      "seconds": 5.371
+    },
+    {
+      "name": "standalone-lem-comprehensive",
+      "status": "passed",
+      "exit_status": 0,
+      "seconds": 407.326
+    }
+  ],
+  "source_before": {
+    "cerberus": {
+      "branch": "",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "head": "1066d89eea16f55a0f204f95c351731629df296a",
+      "status": "",
+      "untracked_sha256": {}
+    },
+    "lem": {
+      "branch": "",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "head": "f6542f8e6860d12d4655e6648bc4c45dabd1d798",
+      "status": "",
+      "untracked_sha256": {}
+    }
+  },
+  "cerberus_source_unchanged": true,
+  "both_cold_worktrees_tracked_sources_unchanged": true,
+  "post_measurement_status": {
+    "cerberus": "",
+    "lem": "?? local-install/\n?? ocaml-lib/install_lem\n?? ocaml-lib/install_num\n?? ocaml-lib/install_zarith"
+  },
+  "lem_untracked_outputs": "Owned local-install prefix and three ocaml-lib install helper products from the cold build; retained as build artifacts, not source changes.",
+  "compiler": {
+    "path": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/provider-cold-final-1066d89/lem/local-install/bin/lem",
+    "sha256": "82e6780c35c1246ef48daa5f079ca13466615170bf5b32d9362f935cffe75f9f",
+    "version": "f6542f8"
+  },
+  "plants": {
+    "compiler": "wrong Lem compiler version: 'wrong-compiler'",
+    "runtime": "wrong Lem runtime manifest pin: tests/mem-scale-probes/micro"
+  },
+  "failure_measurements": {
+    "failure_probes": ".validation-foundations/failure-probes-final-1066d89/report.json",
+    "failure_probes_sha256": "0da313793a67087a62b8a869b7153b8f36947b9dfa34ba69c0fd93f464ad1da7",
+    "observations_equal_to_development": true,
+    "census": ".validation-foundations/failure-census-final-1066d89/census.json",
+    "census_sha256": "8f476678f657d86ea2bb2644a7ffb04717bacd579b1bff89851c55f22f5ca337",
+    "counts_sites_and_source_hashes_equal_to_development": true,
+    "reason": "Compiler and four runtime archive hashes differ between rebuilds. No binary-equality claim is made; both G6 instruments were run directly against the final cold build."
+  },
+  "expected_failures": "Two ruled host-integer deviations and two unresolved string/byte defects remain explicit XFAILs in the comprehensive suite."
+}

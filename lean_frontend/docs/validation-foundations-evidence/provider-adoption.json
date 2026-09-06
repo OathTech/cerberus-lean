@@ -1,0 +1,82 @@
+{
+  "schema": 1,
+  "status": "provider checkpoint measured; proposed for review/adoption, not customer-certified",
+  "candidate": "1066d89eea16f55a0f204f95c351731629df296a",
+  "candidate_branch": "arc/validation-foundations",
+  "assessed_mainline": "89f7e688530c6910884518811d645e4e892e4507",
+  "lem_compiler_runtime_pin": "f6542f8e6860d12d4655e6648bc4c45dabd1d798",
+  "packages": {
+    "lean_frontend": {
+      "toolchain": "leanprover/lean4:v4.32.2",
+      "lake_manifest_sha256": "ce11f33292dca81439373f91e4d71d21f9f6573ec4e4bd90daad95ca1f90710e",
+      "LemLib": "f6542f8e6860d12d4655e6648bc4c45dabd1d798"
+    },
+    "lean_frontend/speclab": {
+      "toolchain": "leanprover/lean4:v4.32.2",
+      "lake_manifest_sha256": "9fc280b8158cd6c7dde2108d27c234fbcff5b8de8dd0f6cf3c09b25329c5deb5",
+      "LemLib": "f6542f8e6860d12d4655e6648bc4c45dabd1d798"
+    },
+    "tests/mem-scale-probes/micro": {
+      "toolchain": "leanprover/lean4:v4.32.2",
+      "lake_manifest_sha256": "8f4a27b6ed192ec8e1588a1733807ef04497e1812bf936a0345a9729675dfdf8",
+      "LemLib": "f6542f8e6860d12d4655e6648bc4c45dabd1d798"
+    }
+  },
+  "customer_ownership": "refined-cerberus agent retains its checkout, pin update and full proof validation; no adoption claim or request sent",
+  "last_assessed_customer_provider_pin": "f95ef8d9c; dated assessment only, not a fresh customer inspection",
+  "charter_semantic_delta": "No shared .lem model or shipped Lean semantic-source change from assessed mainline; new provider-owned proof/probe packages and validation instruments only.",
+  "migration_records": [
+    "2026-09-04_zero-discrepancy-Z2-change-manifest.md",
+    "2026-09-04_fuel-parameter-C1-change-manifest.md",
+    "2026-09-04_fuel-parameter-C2-change-manifest.md",
+    "2026-09-05_fuel-parameter-C3-change-manifest.md",
+    "2026-09-05_fuel-parameter-C4-change-manifest.md",
+    "2026-09-05_cerbglobal-defs-change-manifest.md"
+  ],
+  "current_interface_notes": [
+    "Quantify ambient [LemFuel] where the actual generated signature retains it; old fixed driver/default fuel constants and handwritten drive_lemFuel mirror are removed.",
+    "Measured wrappers use proved data bounds; use the corresponding measure_sufficient theorem under its actual hypotheses. Four measured wrappers retain [LemFuel] for ambient callees.",
+    "Layout and reconstructValue obligations require CerbTagsWf.Acyclic or AcyclicPair, and formatting requires 2 <= b. Frontend acceptance alone is not a proof of acyclicity; the historical change manifests must be read with the current profile correction.",
+    "CerbGlobal default configuration/switch reads are transparent defs with equations; enum/digest/value-equality runtime boundaries remain.",
+    "Delivered LemLibPmapLaws require comparator laws and Pmap.WF; the cold client instantiates the actual map with Nat keys and driver_result values.",
+    "81 fuel workers:54 measured,13 checked zero cases,8 reachable pending,6 outside the checked dependency closure. No general propagation/completion or failure correspondence follows.",
+    "Concurrency APIs/theorem are not part of this primary candidate; private feature instrumentation is preparation for the next integration charter."
+  ],
+  "provider_client": {
+    "source": "tests/provider-smoke/ProviderSmoke.lean",
+    "sha256": "afd3abd15df2c493823cb83f8629e3bdac78de6bb6a688ef5c4a78b3d414b735",
+    "theorems": [
+      "ProviderSmoke.completed",
+      "ProviderSmoke.remember_result"
+    ],
+    "entry": "Actual generated drive with CerbND.runND, through exported Unit.FuelExemplar compositional lemmas",
+    "completion": "For every k, ambient fuel k+2 yields exactly one Active result with dres_core_value=fortyTwo",
+    "preconditions": [
+      "Fixed closed Core fixture with main returning42",
+      "Empty tag environment, initial filesystem, argv=[cmdname]",
+      "Pmap.WF defaultCompare m for remember_result; delivered Nat comparator laws"
+    ],
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "outside_claim": [
+      "arbitrary C parser/frontend/linking/libc",
+      "arbitrary Core or concurrent C",
+      "unconditional logical/native equality",
+      "stable fixture-independent consumer API"
+    ]
+  },
+  "profile": "2026-09-06_supported-profile.md",
+  "failure_design": "2026-09-06_failure-census-and-correspondence.md",
+  "recipe": "2026-09-06_provider-smoke.md",
+  "final_evidence": {
+    "delivery": "2026-09-06_validation-foundations-delivery.md",
+    "full": "validation-foundations-evidence/final-full-summary.json",
+    "reporting": "validation-foundations-evidence/final-reporting-summary.json",
+    "cold": "validation-foundations-evidence/final-provider-summary.json",
+    "failure_reproduction": "validation-foundations-evidence/provider-evidence-comparison.json"
+  },
+  "release_certification": "incomplete: C2/C3 unrun by ownership, customer adoption and fresh audit absent, semantic profile obligations remain"
+}

@@ -1,10 +1,13 @@
 # Clean provider build and consumer proof
 
-2026-09-06 [AGENT], validation-foundations G5. The development rehearsal
-completed from Cerberus `5d2f380de` and Lem
-`f6542f8e6860d12d4655e6648bc4c45dabd1d798`. Final-candidate evidence remains
-part of the charter's close-out. This record does not claim adoption by
-refined-cerberus, whose work remains with its agent.
+2026-09-06 [AGENT], validation-foundations G5. The final cold rehearsal
+completed all 20 steps from Cerberus
+`1066d89eea16f55a0f204f95c351731629df296a` and Lem
+`f6542f8e6860d12d4655e6648bc4c45dabd1d798`.
+The [final manifest summary](validation-foundations-evidence/final-provider-summary.json)
+and [raw build/proof archive](validation-foundations-evidence/final-provider-failures.tar.gz)
+identify every command, source and artifact. This record does not claim
+adoption by refined-cerberus, whose work remains with its agent.
 
 ## Reproduction
 
@@ -73,7 +76,19 @@ recursion-depth, fuel-policy, opaque-boundary, or model change was made to
 obtain this result. The client intentionally depends on a provider fixture
 API; it does not certify stability of every public interface.
 
-## Completed development evidence and limits
+## Completed candidate evidence and limits
+
+The final rehearsal used `.validation-foundations/provider-cold-final-1066d89`.
+All 20 steps passed, with unchanged tracked sources in both detached trees.
+The owned Lem install prefix and three install helpers remain untracked build
+products. Root/spec-lab/micro package builds took 171.1/91.5/1.3 seconds; the
+external proof 2.1 seconds; standalone runtime 5.4 seconds; comprehensive
+407.3 seconds. These are single-run observations. Compiler/runtime and
+generated/artifact hashes are in the archived manifest; all 207 Lean and
+86 OCaml generated files match the earlier rehearsal. Both G6 instruments
+were run directly with this final provider build.
+
+The development history remains separately identified below.
 
 The cold rehearsal at `.validation-foundations/provider-cold-dev-v2` passed
 all steps: fresh generation, OCaml build, native object, the root semantics
@@ -89,7 +104,9 @@ deviations remain documented exceptions. A green suite does not turn those
 cases into unconditional OCaml/Lean parity. No shared opam pin, mainline
 branch, customer checkout or legacy csmith activity was changed.
 
-The final provider adoption manifest must identify the actual landing
-candidate, compiler/runtime pins, clean recipe report, supported profile,
-failure obligations, and consumer-facing theorem boundaries. Customer
-re-pin/build evidence and the landing audit remain separate decisions.
+The [provider adoption manifest](validation-foundations-evidence/provider-adoption.json)
+identifies the functional candidate, all package/compiler/runtime pins,
+interface migration records, cold evidence, failure obligations and theorem
+boundaries. Customer re-pin/build evidence and the landing audit remain
+separate decisions. This is a proposed provider checkpoint, not a release
+certification or an instruction sent to the customer's agent.

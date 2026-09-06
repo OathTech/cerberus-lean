@@ -111,3 +111,12 @@ The matching private concurrency follow-up is committed at
 Tier A commands, 30 litmus cases, 26 plants and the original four-case probe
 pass. Its manifest pins the byte-identical codec/tests and the shared
 capture-directory repair. No concurrency semantics changed.
+
+## Final candidate confirmation
+
+The repairs were committed as `1066d89ee`. Its complete Tier A+B run passes
+32/32, including the actual GCC gate, all hang/kill/fuel checks and 67 plants;
+C1/C4 and the cold provider recipes also complete. See the
+[delivery record](2026-09-06_validation-foundations-delivery.md) for exact
+reports, remaining findings and source/artifact identities. The failed and
+focused development runs above remain historical evidence, not the final gate.

@@ -4,8 +4,10 @@
 evidence and limits. It supersedes unconditional overview claims of one
 semantics “by construction” or entirely absent ambient state. Source heads
 and finished/unrun gates belong to the
-[execution ledger](2026-09-05_validation-foundations-execution.md), which is
-still open until the final candidate reports are assembled.
+[delivery record](2026-09-06_validation-foundations-delivery.md).
+The functional candidate passes all 32 Tier A+B commands, both affected
+reporting measurements and the cold provider/probe recipes. These completed
+measurements do not close the semantic, adoption and audit exits below.
 
 ## Claims that can currently be made
 
@@ -52,7 +54,7 @@ No responsibility for a provider theorem is transferred to refined-cerberus.
 | ID / priority | Input or precise obligation; impact | Owner and next action |
 |---|---|---|
 | VF-1 / release-critical | `tests/failure-probes/discarded_failures.lem`: five forms fail in OCaml and succeed in Lean; mapped projection also separates kernel and native behavior. Consumers cannot use unrestricted value equations as failure correspondence. | Lem + Cerberus maintainers: review the [correspondence proposal](2026-09-06_failure-census-and-correspondence.md), then implement a bounded strict-result vertical slice and propagation proofs. |
-| VF-2 / release-critical | `LemLib` string representation; `p_str_bytes` and Unicode `p_escapes` expected failures. Exact observation decoding exposes bytes; it does not fix Unicode/byte semantics. | Lem maintainer, then Cerberus provider: implement the reviewed byte representation, regenerate/re-pin together and require parity without those XFAILs. |
+| VF-2 / release-critical | `LemLib` string representation; `p_str_bytes` and Unicode `p_str_escapes` expected failures. Exact observation decoding exposes bytes; it does not fix Unicode/byte semantics. | Lem maintainer, then Cerberus provider: implement the reviewed byte representation, regenerate/re-pin together and require parity without those XFAILs. |
 | VF-3 / release-critical | `CerberusImpl.lean:55` enum registry reads, native digest in `CerberusFresh`, and `CerbMem` value-equality boundary. Opaque declarations do not determine the runtime state used by native calls. | Cerberus provider: thread or otherwise model the required state; supply kernel contracts or explicitly scoped trusted-boundary claims and reentrancy evidence. |
 | VF-4 / release-critical | Seven memory-monad arms and corrected generated inventory; ordinary model error/UB is not the same outcome as deliberate fail-stop. `hack`/`finalize` return pure values. | Cerberus + Lem maintainers: migrate by actual result channel after vocabulary review; retain failure-time output/state and prove propagation through the delivered entry. |
 | VF-5 / profile blocker | Layout measure theorems assume `CerbTagsWf.Acyclic`; the `_Alignas(struct A)` counterexample defeats treating frontend acceptance as that theorem. | Cerberus provider: preserve/minimize the source case, prove an enforced admissibility condition or guard/reject; prepare the upstream report. |
@@ -63,7 +65,8 @@ No responsibility for a provider theorem is transferred to refined-cerberus.
 | CR-4 / concurrency blocker | Equality of full sequential/SC states is false because SC records events. Six sequential identity lemmas do not imply observer agreement. | Cerberus provider: prove the accepted observation agreement obligation with `epar_free`, fragment/initial-state conditions and explicit fuel; discuss any necessary change to the accepted contract. |
 | VF-8 / inherited defects | Null pointer arithmetic and other immaculate crash/refusal cases retain exact inputs. Agreement on crashing behavior does not supply a C result. | Cerberus provider: preserve three-way evidence, distinguish deliberate model failure from host artifacts, and keep precise upstream drafts. |
 | VF-9 / evidence limit | Twelve historical audit logs are missing; original checksums and available files are separately retained. | Cerberus provider: use [the corrected inventory](2026-09-05_whole-project-audit-evidence/README.md); new reproductions carry new dates and hashes. |
-| VF-10 / release exit | Final Tier A/B and affected reporting reports, exact source/artifact identity, customer adoption and fresh audit. Legacy csmith evidence is unavailable to this charter by ownership. | Provider owns gates/artifacts; customer agent owns adoption; operator decides audit/landing. Report incomplete certification instead of silently waiving an exit. |
+| VF-10 / release exit | Final Tier A+B passed 32/32, C1/C4 recorded all prescribed rows, and cold provider/failure evidence completed on identified sources. C2/C3 remain unrun by ownership; customer adoption and fresh audit are still absent. | Preserve the delivered gates/artifacts; customer agent owns adoption; operator decides audit/landing and unavailable evidence. Certification remains incomplete. |
+| VF-12 / reporting findings | [Current C4 evidence](2026-09-06_ci-reporting-results.md): one libc UB-location loss, three explicit filesystem refusals and two Lean timeouts among 2,186 rows. | Provider owns location retention (registered Z1-A1), future supported filesystem behavior and identified completion/cost investigation. These six rows are not agreements; 56 historical movements are recorded without blanket causal attribution to this charter. |
 | VF-11 / observation limit | Batch Error omits internal stderr and the protocol has no declared outcome count; equal printed records do not prove full-state/exploration equality. | Provider: design a versioned richer protocol if a customer claim needs those fields; keep present comparison projections explicit. |
 
 The full census is the per-site source-obligation register for remaining pure
