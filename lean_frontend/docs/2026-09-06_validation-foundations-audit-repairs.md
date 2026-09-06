@@ -85,3 +85,38 @@ Preliminary targeted and hermetic results are retained separately from the
 forthcoming clean functional-candidate gates. Final measured results and
 candidate identities will be appended before presentation; this work-in-progress
 checkpoint is not a claim that the second review has passed.
+
+
+## Cancellation correction after the first repair checkpoint
+
+The first repair checkpoint is `68de6771c65d06704612c691a9fca7efbff70e3d`.
+Its complete pre-commit Tier A passed 13/13, and its committed source was
+matched to the tested tracked diff and new-file hashes. The first full run
+passed 29 commands, including the unchanged 1,963-row GCC baseline and all
+hang/kill/fuel plants, before the agent deliberately interrupted B9 to repair
+an additional cancellation window. The incomplete run and its raw outputs
+remain separate evidence; it is not a full-gate pass.
+
+The new `ProcessScope.finish` originally ignored SIGINT/SIGTERM during
+cleanup. A first signal arriving in that window could be lost, allowing the
+next lane to start. A real signal injected during the actual cleanup made
+the old runner return success and dispatch its next command; the regression
+test failed as expected. Cleanup now temporarily blocks those signals and
+restores the previous signal mask after removing the owned subtree. Pending
+cancellation is then delivered to the original handler. Release and provider
+callers record an incomplete result, the actual available process status and
+cleanup state, and stop dispatch. The finalizer restores the mask even if
+cleanup itself raises.
+
+A second actual-entry test uses tiny owned Git fixtures to interrupt provider
+cleanup after its first checkout: the manifest remains incomplete, the
+command cgroup is gone, and the second checkout never starts. The runner
+suite now contains 16 methods. Both first/second signal-repair attempts and
+the full-run interruption record are retained. A new functional checkpoint
+and full candidate measurements supersede the interrupted attempt.
+
+The runner/provider require Linux cgroup v2 delegation with memory enabled
+and `cgroup.kill`. Unsupported environments fail before a command launches.
+Containment covers the supplied commands and their ordinary descendants,
+including nested timeouts/caps; it is not isolation against a command that
+deliberately moves itself to a different cgroup.

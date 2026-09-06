@@ -21,7 +21,14 @@ python3 scripts/build_provider_smoke.py \
 ```
 
 Use the container's `scripts/ce` to load its scoped OCaml/Git environment.
-The output directory must be new. The repositories supply local Git objects;
+The output directory must be new. The release/provider supervisor also
+requires Linux cgroup v2 delegation with memory enabled and `cgroup.kill`.
+It contains the supplied commands in owned subtrees, defers cancellation
+during cleanup, and stops subsequent dispatch after delivering it; a pipe
+guardian cleans after supervisor death. This is a command-lifetime mechanism,
+not isolation from code that deliberately migrates between cgroups. See the
+[audit repair record](2026-09-06_validation-foundations-audit-repairs.md).
+ The repositories supply local Git objects;
 their mainline worktrees are not modified. The recipe creates owned detached
 worktrees and a fresh dependency clone. It neither runs the worktree-priming
 helper nor copies generated Cerberus, native objects, or Lake build products.

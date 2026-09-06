@@ -128,8 +128,9 @@ class ProcessScope:
     def finish(self, *, cancel=False):
         if self.closed:
             return False
-        previous = {sig: signal.signal(sig, signal.SIG_IGN)
-                    for sig in (signal.SIGINT, signal.SIGTERM)}
+        # Defer cancellation until cleanup is complete; SIG_IGN would lose
+        # a first cancellation arriving during otherwise normal cleanup.
+        previous = signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGINT, signal.SIGTERM})
         try:
             residual = not wait_empty(self.path, 0 if cancel else 0.25)
             destroy(self.path)
@@ -148,12 +149,13 @@ class ProcessScope:
         finally:
             # Even failed cleanup releases the guardian to retry; callers
             # must stop dispatch if finish raises, never certify or overlap.
-            if self.write_fd is not None:
-                os.close(self.write_fd)
-                self.write_fd = None
-                self.guardian.wait(timeout=10)
-            for sig, handler in previous.items():
-                signal.signal(sig, handler)
+            try:
+                if self.write_fd is not None:
+                    os.close(self.write_fd)
+                    self.write_fd = None
+                    self.guardian.wait(timeout=10)
+            finally:
+                signal.pthread_sigmask(signal.SIG_SETMASK, previous)
 
 
 def main():

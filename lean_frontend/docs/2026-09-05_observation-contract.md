@@ -76,7 +76,8 @@ Never accept a valid verdict followed by either failure form. Fuel failures
 stay incomplete exploration.
 
 Immaculate runs the same decoder first, under its explicit `immaculate`
-policy. Only eight named, reviewed panic origins and the observed OCaml
+policy. Alongside the shared failwithI panic form, eight named, reviewed panic
+origins and the observed OCaml
 exception forms qualify for its historical CRASH projection. A new origin
 requires an explicit policy edit and controls; unrelated panics, stdout
 transport garbage, additional fatal diagnostics and fuel cannot use that pin.

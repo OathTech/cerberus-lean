@@ -299,6 +299,12 @@ def execute_lane(lane: Lane, out: Path, limit: float, root=None, on_started=None
                         result.update(status='incomplete', reason='command exited with live descendants')
                     if cancelled and scope.proc is not None and not (directory/'scope-launch-error.json').exists():
                         result['exit_status'] = scope.proc.returncode
+                except RunnerInterrupted as exc:
+                    result.update(status='incomplete', interrupted_signal=exc.signum,
+                                  containment_cleaned=scope.closed, cleanup_failed=not scope.closed,
+                                  reason=str(exc))
+                    if scope.proc is not None and not (directory/'scope-launch-error.json').exists():
+                        result['exit_status'] = scope.proc.returncode
                 except (OSError, ContainmentError, subprocess.SubprocessError) as exc:
                     result.update(status='incomplete', containment_cleaned=False,
                                   cleanup_failed=True, reason=str(exc))

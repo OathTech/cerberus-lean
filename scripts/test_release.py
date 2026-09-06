@@ -199,6 +199,66 @@ class ReleaseTests(unittest.TestCase):
             self.assertTrue(result['containment_cleaned'])
             self.assertFalse(Path(result['cgroup']).exists())
 
+    def test_interrupt_during_cleanup_is_not_lost(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            marker = base/'second-started'
+            root = self.make_fixture(base, b=f"touch '{marker}'\n")
+            sent = False
+            def interrupt_then_destroy(scope):
+                nonlocal sent
+                if not sent:
+                    sent = True
+                    # Deliver a real signal exactly while the normal cleanup
+                    # is active. Only this trigger is substituted; actual
+                    # scope removal, finalization and dispatch are exercised.
+                    os.kill(os.getpid(), signal.SIGTERM)
+                destroy(scope)
+            with patch('process_scope.destroy', side_effect=interrupt_then_destroy):
+                code, report = self.run_fixture(root, base/'evidence')
+            self.assertEqual(code, 1)
+            self.assertEqual(report['status'], 'incomplete')
+            self.assertEqual(report['interrupted_signal'], signal.SIGTERM)
+            self.assertEqual(len(report['lanes']), 1)
+            self.assertEqual(report['lanes'][0]['exit_status'], 0)
+            self.assertTrue(report['lanes'][0]['containment_cleaned'])
+            self.assertFalse(Path(report['lanes'][0]['cgroup']).exists())
+            self.assertFalse(marker.exists(), 'dispatch continued after cancellation during cleanup')
+
+    def test_provider_cancellation_during_cleanup_stops_before_next_checkout(self):
+        import build_provider_smoke as provider
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            root = self.make_fixture(base)
+            rev = subprocess.check_output(['git', '-C', str(root), 'rev-parse', 'HEAD'], text=True).strip()
+            out = base/'provider'
+            sent = False
+            def interrupt_then_destroy(scope):
+                nonlocal sent
+                if not sent:
+                    sent = True
+                    os.kill(os.getpid(), signal.SIGTERM)
+                destroy(scope)
+            # Tiny actual Git worktrees exercise the shipped provider entry.
+            # Even a broken cancellation cannot start a Lean build: the
+            # fixture has no generation script and refuses before that step.
+            argv = ['build_provider_smoke.py', '--cerberus-repo', str(root),
+                    '--cerberus-rev', rev, '--lem-repo', str(root), '--out', str(out)]
+            with patch.object(provider, 'LEM_REV', rev), patch('sys.argv', argv), \
+                 patch('process_scope.destroy', side_effect=interrupt_then_destroy), \
+                 redirect_stdout(io.StringIO()):
+                code = provider.main()
+            report = json.loads((out/'manifest.json').read_text())
+            self.assertEqual(code, 1)
+            self.assertEqual(report['status'], 'incomplete')
+            self.assertEqual(len(report['commands']), 1)
+            row = report['commands'][0]
+            self.assertEqual(row['exit_status'], 0)
+            self.assertEqual(row['interrupted_signal'], signal.SIGTERM)
+            self.assertTrue(row['containment_cleaned'])
+            self.assertFalse(Path(row['cgroup']).exists())
+            self.assertFalse((out/'lem').exists())
+
     def test_runner_signals_leave_incomplete_report_and_identified_process(self):
         for sig in (signal.SIGTERM, signal.SIGKILL):
             with self.subTest(signal=sig), tempfile.TemporaryDirectory() as tmp:

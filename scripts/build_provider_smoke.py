@@ -87,9 +87,17 @@ def main():
                     try:
                         residual = scope.finish(cancel=error is not None)
                         row['containment_cleaned'] = True
+                        if error is not None and scope.proc is not None and not (scope.directory/'scope-launch-error.json').exists():
+                            row['exit_status'] = scope.proc.returncode
                         if residual and error is None:
                             error = ContainmentError('build command exited with live descendants')
                             row.update(status='incomplete', reason=str(error))
+                    except RunnerInterrupted as exc:
+                        error = exc
+                        row.update(status='incomplete', interrupted_signal=exc.signum,
+                                   containment_cleaned=scope.closed, reason=str(exc))
+                        if scope.proc is not None and not (scope.directory/'scope-launch-error.json').exists():
+                            row['exit_status'] = scope.proc.returncode
                     except (OSError, ContainmentError, subprocess.SubprocessError) as exc:
                         error = exc
                         row.update(status='incomplete', containment_cleaned=False, reason=str(exc))
