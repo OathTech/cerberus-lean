@@ -1,0 +1,59 @@
+# Release / independent-oracle pre-merge audit
+
+2026-09-06. Subject: `arc/validation-foundations` at `6d6cfa858109a42561878db3d939024c5756ad4f`; full delta from `89f7e688530c6910884518811d645e4e892e4507`. Reviewed under the container, repository and lean_frontend CLAUDE instructions and the delivery record's areas 2/3. No product edits or commits.
+
+## F1 — P1: cancelling a lane leaves ordinary nested timeout work running
+
+**Locations:** `scripts/release.py:221-230`, `:274-285`. Actual call sites include `scripts/test_ci_sweep.sh:229-230`, `:276-278`, `scripts/test_libxml2_uri.sh:108`, and `scripts/test_upstream_oracle.py:56-59`.
+
+`execute_lane` starts the outer lane in a new session, but `stop_group` sends TERM and KILL only to that leader's original process group. GNU `timeout`, used by the real lanes, starts a different process group by default. The nested command therefore survives normal release timeout/interrupt cleanup. This does not require a detached daemon, a TERM-resistant command, or a malicious lane.
+
+**Reproducer:** from the subject root, run `PYTHONDONTWRITEBYTECODE=1 python3 .validation-foundations/premerge-audit-20260906/release-oracle/reproduce_timeout_group.py <fresh-owned-output-directory>`. The synthetic lane runs `timeout 30 sh -c 'echo $$ > child.pid; exec sleep 30'` followed by `echo done`. The actual `release.execute_lane` times it out at 0.25 seconds. The latest retained run recorded the lane as `incomplete`, exit `-15`, outer process group `316385`; its ordinary child `316388` was still running in state `S`, process group `316387`. The audit then explicitly SIGKILLed that owned descendant group and verified state `Z` (no running child). The reproducer asserts both escape and cleanup.
+
+**Evidence:** `timeout-group-cleanup-confirmed/reproducer-result.json`, its `B1/stdout` and `B1/stderr`, and the runnable reproducer. The original first run is separately retained under `timeout-group/`.
+
+**Impact:** a release lane can return incomplete while its compiler, executable or timeout wrapper continues running. The runner continues to later selected lanes after a lane timeout. This can violate the single-heavy-job rule, write logs/build artifacts after their recorded completion/hash, and interfere with subsequent lanes. The existing test only checks that the outer leader disappears; its plain `sleep` child stays in the outer group and misses the production timeout shape. This blocks the claimed complete interruption/process cleanup behavior; it is not evidence that the archived completed full run had an orphan.
+
+**Remedy:** establish ownership/containment for the entire lane process tree before launch and stop that complete containment before finalizing or moving to another lane. A per-lane cgroup or equivalent supervised process-tree lifetime must include nested process groups; killing just the original PGID is insufficient. Add a real nested GNU-timeout process plant and check the descendant as well as the leader. Preserve the current incomplete status and durable active-lane record.
+
+## F2 — P2: vanished staged-runtime/native inventory entries do not prevent a pass
+
+**Locations:** `scripts/release.py:149-155`, `:166-174`, `:198-199`, `:369-383`.
+
+For staged runtime/library/native directories, `artifacts` only emits entries for files that currently exist; a missing directory or file is omitted. `artifact_issues` can only reject entries explicitly marked missing/error, and finalization neither checks for keys lost from `artifacts_before` nor validates mandatory roots. Consequently required artifact disappearance can still produce `status: passed` and exit 0.
+
+**Reproducer:** from the subject root, run `PYTHONDONTWRITEBYTECODE=1 python3 .validation-foundations/premerge-audit-20260906/release-oracle/reproduce_missing_inventory.py <fresh-owned-output-directory>`. This constructs an isolated Git fixture, exercises the actual `release.main`, `artifacts`, hashing, `source_identity`, lane execution and report finalization, and uses a last synthetic lane that removes its ignored staged runtime/library/native directories after printing completion. Only external-corpus discovery and tool-version resolution are fixture-controlled; no inventory implementation or result is mocked. All product paths refer to dummy fixture files, not the subject's actual builds.
+
+**Observed result:** exit 0, `status: passed`, `source_unchanged: true`, `artifact_issues: []`, despite these before-inventory entries being absent afterward:
+
+- `_build/install/default/lib/cerberus/runtime/libc/libc.co`
+- `_build/install/default/lib/cerberus-lib/resource`
+- `lean_frontend/native/fixture.o`
+
+**Evidence:** `missing-inventory/reproducer-result.json`, `missing-inventory/evidence/report.json`, `missing-inventory/runner.stdout`, and the runnable reproducer.
+
+**Impact and other guards:** normal `build_cerberus` explicitly requires staged `libc.co` at `scripts/common.sh:188-195`, so absence before such a build usually fails or is repaired. That guard does not re-run after the final lane; the end inventory is meant to cover that boundary. This reproduction establishes a final-status defect in the runner, not a historical missing-runtime claim. The archived final full report has no lost before/after artifact keys. Missing `lem_runtime_checkout` or unavailable Lean compiler resolution are also omitted by the same inventory pattern, although normal package builds often independently require them.
+
+**Remedy:** inventory required roots/entries even when absent; check lost entries across snapshots and require the final required resource set. Permit documented rebuild-related hash changes deliberately, while distinguishing them from disappeared inputs. Add a plant using actual inventory collection and real file removal; the current missing-inventory test mocks `artifact_issues` itself and cannot detect this omission.
+
+## Checks and evidence that passed
+
+- `scripts/test_release.py`: all 11 hermetic tests pass; `test_release.log`.
+- `scripts/test_upstream_oracle_instrument.py`: all five hermetic tests pass; `test_upstream_oracle_instrument.log`.
+- `scripts/check_fork_drift.sh --selftest` via the project environment: all 14 plants and the unplanted real gate pass; `check_fork_drift_selftest.log`. TMPDIR pointed under this audit directory.
+- All 76 whole-file content/mode pins match the subject worktree. The 22 generated-delta pin entries are unchanged from the assessed base. Existing pins cover the 71 historical surfaces plus the five newly reviewed build/helpers. The five-file source-surface expansion and content parser enforce a bijection and malformed/duplicate checks.
+- LADDER parses to 13 Tier A plus 19 Tier B commands, with four explicit reporting commands. The tables drive execution; subset selection is explicitly incomplete and reporting is not automatically dispatched. The CI shell entry invokes this runner and validates its immediate tool/environment prerequisites. The existing GitHub workflow remains upstream OCaml CI; the charter permits a separately executable CI entry.
+- The archived final full report contains 32 completed passing commands at clean `1066d89eea16f55a0f204f95c351731629df296a`, no lost artifact entries, and the explicit incomplete release-certification disclaimer. Functional scripts/tools/Lean seams have no changes between that measured commit and audited HEAD.
+- Selected bytes from `final-full.tar.gz` were checked against their per-file inventory hashes before inspection. Retained copies: `archived-final-full-report.json`, `archived-final-upstream-report.json`.
+- The final B10 report's independent-build manifest hash matches the build manifest extracted from `expanded-instruments.tar.gz` (`21e8fbb2eab67b74c8db0c6167190f1efddf575bcad26981c57c273576635180`). The independent build records immutable Cerberus `b9aeedcb4...` and upstream Lem `3802cb0...`, all six steps at exit 0, actual owned Lem compiler/library/runtime paths, `OCAMLPATH` selection, `DUNE_CACHE=disabled`, `GIT_CEILING_DIRECTORIES` and forced Dune build. Inventory sizes: 86 generated OCaml files, 34 Lem library entries, 193 Lem runtime entries and 1,746 staged Cerberus runtime/package entries. Upstream Lem's pinned library Makefile invokes its own `../lem`; Cerberus's pinned Makefile resolves the prefix-prepended `lem`.
+- Independently re-ran the actual read-only `validate_build` over the current prepared independent build: all source archive hashes, compiler/oracle hashes, resource bytes and complete file sets still match that exact archived manifest (`current-independent-validation.json`). Streamed fresh `git archive` output for each immutable source commit through SHA-256; both reproduce their recorded archive hashes (`source-archive-rederivation.json`). These were source/content checks only, with no compiler/build/corpus execution.
+- Final independent result: 709 semantic agreements, two CLI agreements, eleven matching failures, one reviewed diagnostic difference; both public package clients pass. Matching failure is correctly distinct from semantic agreement. The reviewed null-pointer pair's raw diagnostic diff only moves listed backtrace line/character locations; failure text and initial memory frame agree. Full raw diagnostic hashes/statuses are pinned in `upstream_oracle_differences.json`. Retained `null-pointer-*.stderr` and `null-pointer-diagnostic.diff` show the exact comparison.
+- Applicability is explicitly restricted to available pristine interfaces; fork-only JSON/call/allocation-census and Lean-specific interfaces are not presented as upstream coverage. The URI harness contains all 16 cases inside one TU execution. The full lane guards empty/missing corpus inputs, wrong source pins, changed pre-dispatch artifacts, unexpected differences and empty selections.
+
+## Reviewed files, commands and limits
+
+Read the complete implementations/tests of `scripts/release.py`, `scripts/ci_lean.sh`, `scripts/test_release.py`, `scripts/build_independent_oracle.py`, `scripts/test_upstream_oracle.py`, `scripts/test_upstream_oracle_instrument.py`, `scripts/check_fork_content.py`, `scripts/check_fork_drift.sh`, `scripts/upstream_oracle_differences.json`, and `scripts/fork_drift_manifest.txt`; LADDER and the G3/G4 charter/delivery/execution records. Traced the relevant `scripts/common.sh`, `scripts/capped`, `tools/check_driver_fresh.sh`, `scripts/test_unit.sh`, `scripts/test_ci_sweep.sh`, `scripts/test_exec.sh`, `scripts/test_libxml2_uri.sh`, `scripts/libxml2_prep.sh`, URI harness, and existing GitHub workflow paths. Read pinned upstream Lem/Cerberus Makefile recipes with `git show`. Used `rg`, `git diff/show/status`, line-numbered source reads, the three lightweight test commands above, and two short hermetic runner plants. `archive-evidence-summary.json` gives derived archived-report/pin checks.
+
+No Lean/lake/make/dune build, corpus run, shared installation/pin, mainline mutation, refined-cerberus work, legacy-run inspection, external message, merge, commit or push was performed. The coordinator owns heavy verification. The independent-oracle's pre-dispatch artifact checks were reviewed and directly rerun read-only, but no new cold independent build or full B10 execution was dispatched; the archived evidence provides that build/run history. This review does not establish general native/logical agreement or C conformance.
+
+Audit hygiene: the initial login shell emitted a nono `/etc/profile` read denial; subsequent commands used `login:false` and did not access that unnecessary path. One archive-inspection Python import accidentally refreshed the ignored `scripts/__pycache__/check_fork_content.cpython-312.pyc`; all intentional scratch/evidence writes were confined to this directory, and no tracked file changed. Both process plants explicitly cleaned their owned descendants. The subject remained clean at the concluding `git status --short` check.

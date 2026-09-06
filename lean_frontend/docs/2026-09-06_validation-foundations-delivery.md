@@ -1,5 +1,12 @@
 # Validation foundations — delivery and final review
 
+**Subsequent audit status, 2026-09-06 [AGENT]: HOLD.** The agreed
+[fresh pre-merge audit](2026-09-06_validation-foundations-premerge-audit.md)
+found four P1 and seven P2 defects. It reopens G1/G2/G4/G6/G7 and supersedes
+the readiness/next-step recommendation below. This delivery record retains
+the original candidate measurements and proposal; repair and re-audit come
+before SC integration or a landing discussion.
+
 2026-09-06 [AGENT]. The authorized G1–G7 implementation and evidence work
 is complete. This record is the end-of-charter discussion package; it does
 not authorize landing or certify a customer-ready release.

@@ -1,10 +1,13 @@
 # Master plan — cerberus-lean and lem-lean
 
-**Revision 5, 2026-09-06.** Updated by Codex [AGENT] at the operator's
+**Revision 6, 2026-09-06.** Updated by Codex [AGENT] at the operator's
 request following the
 [customer-readiness assessment](2026-09-05_customer-readiness-assessment.md).
-Revision 5 records the validation-foundations delivery and recommends scoped
-SC integration next, with concrete failure dependencies handled explicitly.
+Revision 6 records the agreed [pre-merge audit](2026-09-06_validation-foundations-premerge-audit.md):
+four P1 and seven P2 findings put validation foundations on hold. Repair the
+instruments, census attribution and current documentation, then re-gate and
+review them before the proposed scoped SC integration. Revision 5 recorded
+the original delivery; its immediate-next-arc recommendation is superseded.
 It preserves the adopted decision boundaries. Revision 3 superseded revision 2's
 sequencing and proposed release criteria, including the replacement order in
 [the audit response, section 4](2026-09-05_whole-project-audit-response.md).
@@ -22,8 +25,9 @@ The adopted first execution charter is
 Its [delivery record](2026-09-06_validation-foundations-delivery.md) supplies
 the acceptance table, exact candidates and evidence. The next proposed arc is
 [scoped concurrency integration](2026-09-06_concurrency-integration-charter.md).
-The failure design, next charter, audit scope and landing remain decisions
-for the end-of-charter discussion.
+The agreed audit is complete with open findings. The failure design, next
+charter and landing remain decisions for the end-of-charter discussion after
+the audit repairs; audit agreement did not authorize landing.
 
 ## 1. Starting point and ownership
 
@@ -86,9 +90,9 @@ not dispatch additional agents.
 
 | Priority | Deliverable | Owner | Dependencies and exit |
 |---|---|---|---|
-| 1 | Maintain the release profile and risk baseline | Cerberus | Profile delivered; update supported entries, hypotheses, boundaries and evidence as semantics change, then obtain the proposed fresh review. |
-| 2 | Preserve trustworthy observation/oracle instruments | Cerberus | Foundation delivered: shared codec/status handling, actual-entry plants, whole-file oracle pins, pristine-versus-fork lane and executable release runner. Revalidate each semantic candidate. |
-| 3 | Failure design decision and bounded repair preparation | Lem + Cerberus | Census/probes delivered. Review the strict-result proposal before implementation. A concrete dependency of the concurrency theorem can require a bounded failure slice first; no unrelated broad transform blocks integration. |
+| 1 | Correct the release profile and risk baseline | Cerberus | Fresh review completed with findings: reconcile overviews/TODO and regenerate the range-correct census; reopen G6/G7. Preserve historical raw measurements. |
+| 2 | Repair and revalidate the observation/release instruments | Cerberus | Close audit VF-01–05 and VF-09–11 on the relevant owned candidates with adversarial controls and full affected gates; reopen G1/G2/G4. Independent-reference G3 and cold-provider G5 evidence remain supported within scope. This repair precedes SC integration. |
+| 3 | Failure design decision and bounded repair preparation | Lem + Cerberus | Probes delivered; correct census attribution before using its dependency counts. Review the strict-result proposal, including stable-failure fuel quantifiers, before implementation. A concrete concurrency-theorem dependency may require a bounded failure slice; no unrelated broad transform blocks integration. |
 | 4 | Repair and land scoped concurrency | Cerberus | Relevant priority-2 instruments and section 5; exact rebased candidate meets domain, compatibility, proof and test obligations. |
 | 5 | Byte, semantic-state and remaining fuel contracts | Lem + Cerberus | Relevant designs; configuration follows concurrency. No unguarded known wrong answer inside the supported profile. |
 | 6 | Consumer adoption, clean build, measured cost | Providers + consumer's agent | Named integration checkpoints; exact candidate adopted with proofs through, reproducible bootstrap and CPU/RSS/completion evidence. |
