@@ -1,9 +1,10 @@
 # Master plan — cerberus-lean and lem-lean
 
-**Revision 3, 2026-09-05.** Updated by Codex [AGENT] at the operator's
+**Revision 4, 2026-09-06.** Updated by Codex [AGENT] at the operator's
 request following the
 [customer-readiness assessment](2026-09-05_customer-readiness-assessment.md).
-This is the complete recommended work order. It supersedes revision 2's
+Revision 4 incorporates validation-foundations findings while preserving
+revision 3's work order and decision boundaries. Revision 3 superseded revision 2's
 sequencing and proposed release criteria, including the replacement order in
 [the audit response, section 4](2026-09-05_whole-project-audit-response.md).
 Historical evidence and [USER] rulings remain in those records. Agent
@@ -15,7 +16,7 @@ failure behavior, usable proof contracts, and a scoped concurrency landing.
 The verification logic stays in refined-cerberus. Improve upstream
 reviewability after the relevant semantics and interfaces settle.
 
-The proposed first execution charter is
+The adopted first execution charter is
 [Validation foundations](2026-09-05_validation-foundations-charter.md).
 It turns the first priorities into an ambitious, bounded work package with
 decisions settled at entry or reserved for the final review.
@@ -168,10 +169,14 @@ and add the meaningful checks/plants from
 [the typed-failure design](2026-09-05_typed-failure-outcomes-design.md).
 `panic!` to `failwithI` is interim hygiene, not pure-failure closure.
 
-Freeze the failure vocabulary after review. The 59 generated monadic sites
-use it inside Lem's declaration consolidation, rather than adding an
-unrelated new form. Keep the five monadic sites without the required location
-channel separately classified. Pure `hack`/`finalize` cannot be repaired by
+Freeze the failure vocabulary after review, then use it inside Lem's
+consolidated declaration machinery. The old 59-plus-five monadic census
+was a sample: the [current census](2026-09-06_failure-census-and-correspondence.md)
+finds 77 sites in those nine modules and 263 across the whole generated tree,
+with dependency and channel classifications kept separate. Eight sites in
+those nine modules use non-`t0` `core_run_cause`; frontend `errorM` already
+carries a location but needs an appropriate failure alternative. Do not
+misclassify missing failure vocabulary as the absence of any location field. Pure `hack`/`finalize` cannot be repaired by
 adding a monadic annotation elsewhere.
 
 ### 4.4 Bytes, state and fuel

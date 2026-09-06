@@ -1,6 +1,6 @@
 # Cerberus Lean Frontend
 
-Lean 4 port of the Cerberus C semantics. Generates Lean code from the same `.lem` files as the OCaml backend, sharing identical semantics.
+Lean 4 port of the Cerberus C semantics, generated from the same `.lem` source as the OCaml backend. The intended correspondence and its current failure/runtime limits are described in [VALIDATION.md](VALIDATION.md).
 
 ## Architecture
 

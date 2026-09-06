@@ -104,11 +104,13 @@ add_suite examples                  tests/examples                              
 add_suite cheri_smoke               tests/cheri-ci                                libc
 
 SUITES=()
+ALL_SUITES=false
 MAX_TESTS=0
 RESUME=false
 OUT_DIR="$PROJECT_ROOT/tests/ci_sweep/results"
 while [[ $# -gt 0 ]]; do
     case $1 in
+        --all-suites) ALL_SUITES=true; shift ;;
         --suite) SUITES+=("$2"); shift 2 ;;
         --max) MAX_TESTS="$2"; shift 2 ;;
         --resume) RESUME=true; shift ;;
@@ -119,6 +121,10 @@ while [[ $# -gt 0 ]]; do
         *) echo "Unknown option: $1" >&2; exit 1 ;;
     esac
 done
+if $ALL_SUITES; then
+    [[ ${#SUITES[@]} -eq 0 ]] || { echo "Error: choose --all-suites or --suite" >&2; exit 1; }
+    mapfile -t SUITES < <(printf '%s\n' "${!SUITE_DIR[@]}" | LC_ALL=C sort)
+fi
 [[ ${#SUITES[@]} -gt 0 ]] || { echo "Error: at least one --suite required (--list-suites)" >&2; exit 1; }
 for s in "${SUITES[@]}"; do
     [[ -n "${SUITE_DIR[$s]+x}" ]] || { echo "Error: unknown suite '$s'" >&2; exit 1; }

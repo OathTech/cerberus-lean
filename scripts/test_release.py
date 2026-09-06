@@ -4,6 +4,10 @@
 from contextlib import redirect_stdout
 import io
 import json
+import os
+import signal
+import sys
+import time
 from pathlib import Path
 import subprocess
 import tempfile
@@ -52,6 +56,7 @@ class ReleaseTests(unittest.TestCase):
 
     def run_fixture(self, root, out, *flags):
         with patch.object(release, 'ROOT', root), patch.object(release, 'artifacts', return_value={}), \
+             patch.object(release, 'external_inputs', return_value={}), \
              patch('sys.argv', ['release.py', '--mode', 'full', '--out', str(out), *flags]), \
              redirect_stdout(io.StringIO()):
             code = release.main()
@@ -114,6 +119,70 @@ class ReleaseTests(unittest.TestCase):
             self.assertFalse(report['selection_complete'])
             self.assertEqual(report['status'], 'incomplete')
             self.assertIn('B1', [row['id'] for row in report['unrun']])
+
+
+    def test_reporting_discrepancy_preserves_exit_and_requires_complete_rows(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root/'baseline.txt').write_text('# expected report\na.c DIFF\n')
+            (root/'stdout').write_text('SUMMARY: total=1 match=0\nBaseline written: report (1 entries)\n')
+            self.assertEqual(release.reporting_result(['./scripts/test_exec.sh'], root, 1), 'reported')
+            self.assertEqual(release.reporting_result(['./scripts/test_exec.sh'], root, 137), 'failed')
+            (root/'baseline.txt').write_text('# incomplete\n')
+            self.assertEqual(release.reporting_result(['./scripts/test_exec.sh'], root, 1), 'failed')
+
+    def test_missing_inventory_prevents_success(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            root = self.make_fixture(base)
+            with patch.object(release, 'artifact_issues', return_value=['missing compiler']):
+                code, report = self.run_fixture(root, base/'evidence')
+            self.assertNotEqual(code, 0)
+            self.assertNotEqual(report['status'], 'passed')
+
+    def test_runner_signals_leave_incomplete_report_and_identified_process(self):
+        for sig in (signal.SIGTERM, signal.SIGKILL):
+            with self.subTest(signal=sig), tempfile.TemporaryDirectory() as tmp:
+                base = Path(tmp)
+                root = self.make_fixture(base, a='echo CLAIMED-PASS\nsleep 30\n')
+                out = base/'evidence'
+                program = (f'import sys; sys.path.insert(0, {str(Path(release.__file__).parent)!r}); '
+                    'import release; from pathlib import Path; '
+                    f'release.ROOT=Path({str(root)!r}); release.artifacts=lambda: {{}}; '
+                    'release.external_inputs=lambda: {}; '
+                    f'sys.argv=["release.py","--mode","full","--out",{str(out)!r}]; '
+                    'sys.exit(release.main())')
+                child = subprocess.Popen([sys.executable, '-c', program], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+                pgid = None
+                try:
+                    deadline = time.monotonic()+10
+                    while time.monotonic() < deadline:
+                        if (out/'report.json').exists():
+                            report = json.loads((out/'report.json').read_text())
+                            pgid = report.get('active_lane', {}).get('process_group')
+                            if pgid: break
+                        time.sleep(0.01)
+                    self.assertIsNotNone(pgid)
+                    child.send_signal(sig)
+                    child.wait(timeout=10)
+                    report = json.loads((out/'report.json').read_text())
+                    self.assertNotEqual(report['status'], 'passed')
+                    self.assertTrue(report['release_certification'].startswith('incomplete:'))
+                    if sig == signal.SIGTERM:
+                        self.assertEqual(report['status'], 'incomplete')
+                        self.assertEqual(report['lanes'][0]['interrupted_signal'], sig)
+                        self.assertIn('B1', [row['id'] for row in report['unrun']])
+                        # A reaped leader cannot still be a running process.
+                        self.assertFalse(Path(f'/proc/{pgid}').exists())
+                    else:
+                        self.assertEqual(report['status'], 'running')
+                        self.assertEqual(report['active_lane']['process_group'], pgid)
+                finally:
+                    if pgid:
+                        try: os.killpg(pgid, signal.SIGKILL)
+                        except ProcessLookupError: pass
+                    if child.poll() is None: child.kill()
+                    child.communicate(timeout=10)
 
 
 if __name__ == '__main__':

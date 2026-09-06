@@ -121,6 +121,10 @@ if ! python3 "$(dirname "$PURITY_SH")/test_release.py"; then
     echo "test_unit: release runner plants FAILED"
     exit 1
 fi
+if ! python3 "$(dirname "$PURITY_SH")/test_failure_census.py"; then
+    echo "test_unit: failure census instrument tests FAILED"
+    exit 1
+fi
 if ! python3 "$(dirname "$PURITY_SH")/test_upstream_oracle_instrument.py"; then
     echo "ERROR: independent oracle instrument plants failed" >&2
     exit 1

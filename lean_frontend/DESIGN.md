@@ -65,8 +65,9 @@ check the citations against the cited code.
 
 Why: differential testing can only sample behaviour. Structural
 mirroring makes equivalence reviewable where it cannot be proved, and
-turns "the tests pass" into "the code is the same computation, and
-the tests agree".
+exposes the intended correspondence for review. Shared source and passing
+tests do not prove preservation of evaluation order, deliberate failure,
+byte representations, or native implementations of opaque declarations.
 
 ## 4. Executing C: nondeterminism, effects, totality
 
@@ -79,7 +80,7 @@ compared across the whole enumeration in differential runs.
 
 **Effects.** The OCaml model uses mutable references for ambient state
 (fresh-name counters, tag definitions, debug output). The Lean port
-carries NONE of that as effects — the effect-retirement arc
+threads fresh supply and tag state explicitly. The effect-retirement arc
 (2026-08/09, `docs/2026-08-31_effect-retirement-design.md`) ended the
 effect-erasure era: the fresh-symbol counter is an explicit threaded
 SUPPLY (lem's `declare {lean} supply` state-passing transform for the
@@ -91,16 +92,22 @@ old effect-projection axiom — is DELETED, and lem refuses
 `declare {lean} effectful` outright. Zero `axiom` declarations exist
 in this repository OR in LemLib (gate-enforced recursively; see
 VALIDATION.md §3). The surviving pure-signature runtime seams (the
-per-TU digest read, config refs, the enum registry) are kernel-checked
-opaques on the declared `@[implemented_by]`/`@[extern]` boundary,
-machine-pinned in `scripts/unsafebaseio_allowlist.txt`.
+per-TU digest read and enum registry) remain opaque declarations with
+ambient native implementations on the declared `@[implemented_by]`/`@[extern]` boundary,
+machine-pinned in `scripts/unsafebaseio_allowlist.txt`. The default
+configuration switches became transparent definitions on 2026-09-05.
+Pinning the remaining boundary population does not prove agreement between
+its logical and native behavior.
 
-**Totality.** The execution path contains no `partial` definitions:
-every function on it is fuel-totalized — structural recursion over an
-explicit fuel argument, with loud failure at exhaustion — so the
-executable semantics is a total Lean artifact the kernel can evaluate
-and future consumers can reason about. A build gate enforces an empty
-`partial`-allowlist for the execution slice.
+**Totality.** The checked execution slice contains no `partial`
+definitions. Structural and measured functions are total; remaining
+recursive workers use an explicit fuel parameter. That does not establish
+that every input completes, or that every exhaustion/failure is absorbing.
+Eight execution-dependent workers remain in the pending fuel register, and
+13 zero-case kill lemmas do not prove propagation through all successor
+cases. Pure failure/sentinel values and runtime overrides remain a separate
+correspondence obligation. Frontend totality is outside this execution-slice
+claim. See the [failure census](docs/2026-09-06_failure-census-and-correspondence.md).
 
 **No magic values.** [USER 2026-09-03]: a fuel budget, a bound, a
 default, or any "magical" choice among nondeterministic alternatives

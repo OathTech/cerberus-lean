@@ -1,0 +1,14 @@
+open import Pervasives_extra
+
+let stop (n : nat) : nat = failwith "validation-foundations deliberate failure"
+let keep_second (x : nat) (n : nat) : nat = n + 1
+let visit (f : nat -> nat) (n : nat) : nat = let r = f n in n + 1
+
+let unused_binding (n : nat) : nat = let x = stop n in n + 1
+let unused_argument (n : nat) : nat = keep_second (stop n) n
+let projection (n : nat) : nat = snd (stop n, n + 1)
+let discarded_result (n : nat) : nat = let xs = List.map stop [n] in n + 1
+let callback (n : nat) : nat = visit stop n
+let mapped_projection (n : nat) : nat = List.length (List.map stop [n])
+let required (n : nat) : nat = stop n
+let positive_control (n : nat) : nat = n + 1

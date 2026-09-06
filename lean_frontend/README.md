@@ -1,19 +1,21 @@
 # cerberus-lean: the Cerberus C semantics in Lean 4
 
 This directory contains a Lean 4 port of the [Cerberus](https://www.cl.cam.ac.uk/~pes20/cerberus/)
-C semantics. It is generated from the **same Lem model** as Cerberus's
-OCaml implementation, so the two share one semantics by construction;
-the Lean side is then **differentially validated** against the OCaml
-implementation (the "oracle") on every test corpus we can get our
-hands on. The result is an executable, rigorously defined C semantics
-that lives natively in Lean: parse real C (via the upstream front
-end), elaborate it to Cerberus's Core language, and execute it —
-undefined-behaviour verdicts included — inside a Lean artifact whose
-execution path is total, pure (state is threaded, never ambient —
-the effect-retirement arc deleted the last effect-projection axiom),
-and axiom-free: zero `axiom` declarations exist in this repository or
-its LemLib runtime, so every constant's axiom cone bottoms out in
-Lean's three standard axioms (gate-enforced; VALIDATION.md).
+C semantics. Both targets are generated from shared Lem source, with
+handwritten runtime seams. The Lean pipeline imports the OCaml parser's
+Cabs JSON, elaborates it to Core, and executes Core inside Lean. Shared
+source makes correspondence reviewable; it does not establish equivalent
+failure behavior or a general conformance theorem by construction.
+
+The execution definitions pass the repository's totality and axiom gates,
+and differential lanes compare their printed observations with the fork's
+OCaml engine. There are still explicit failure, fuel, representation and
+runtime-boundary obligations. In particular, deliberate pure failures can
+be erased by Lean evaluation, and enum/digest seams retain ambient runtime
+state behind pure signatures. Zero added axiom declarations does not prove
+agreement between those declarations and their native implementations.
+See the [supported profile](docs/2026-09-06_supported-profile.md) and
+[VALIDATION.md](VALIDATION.md) for measured scope and remaining release exits.
 
 **Provenance.** This port was developed primarily by AI agents
 (Claude, Anthropic) operating under the direction and review of a

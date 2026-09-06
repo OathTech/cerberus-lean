@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "report": ".tmp/release-foundations-development-fast/report.json",
+  "validated_source_files": {
+    "scripts/build_provider_smoke.py": "f8b56751b480a91277fe8736fb30085c6ae2f2ce68cfd26301fb6ee56a5f833d",
+    "scripts/failure_census.py": "faa572e6622b99a265e3b32969bd69720cd43e02295e5b03dd6a9c0da3fc1d1d",
+    "scripts/release.py": "d8943cef1b577322a5b10e0900af223d72df8dcc22a7133bdfc94c7b4f2f0bc5",
+    "scripts/run_failure_census.py": "d931330cd3b4cc2fb19bc8873429a03dd4463733a984b62925aba4eda2ee9acd",
+    "scripts/run_failure_probes.py": "46e70a96522db6d34f8b1cdd510ee6428e156b7a1b02a62e257f2f26190097e8",
+    "scripts/test_ci_sweep.sh": "b711f9bb614f96dbfc76e4e9731d1653966d0bf17e60f31dbaa5578292dd2c41",
+    "scripts/test_failure_census.py": "0cecdb90b8f02c3c4947cef8ee8376e047b52a85e8da1a7371cfb013482e5013",
+    "scripts/test_release.py": "456dd2d9eaf015501e6394c78d82e2bae901c9bef632f3d5b1a685f91918bbcb",
+    "scripts/test_unit.sh": "36c92f640f53d8e0ed2ed111b36fa09720b5c6ee2ab852f4fae2e9b59107d679",
+    "tests/failure-probes/FailureMain.lean": "31dd33f2d5bae5ef3124a922176980e27b220604c4c1320c805326afb43bf056",
+    "tests/failure-probes/FailureReach.lean": "b0c37da61e42f050f42f5ca3d669ddf338b7ff56d9fa790e12558d1395422757",
+    "tests/failure-probes/discarded_failures.lem": "0d08554e52356986d59502a4d544d855c8af22b010432ebe3c661906d6c352c7",
+    "tests/failure-probes/failure_main.ml": "fa5fe97680a91dc4e3394d246ac3fb1e67c003f558f90bac7762210531096e32",
+    "tests/provider-smoke/ProviderSmoke.lean": "afd3abd15df2c493823cb83f8629e3bdac78de6bb6a688ef5c4a78b3d414b735"
+  },
+  "subsequent_changes": "evidence and documentation only before checkpoint"
+}

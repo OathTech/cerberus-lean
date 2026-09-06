@@ -13,6 +13,17 @@ OCaml counterpart line-by-line; and (b) **empirical**: an industrialized
 differential-testing surface with pinned, fail-closed baselines. A green
 build is never the signal; the differential baselines are.
 
+The current [supported profile](docs/2026-09-06_supported-profile.md)
+separates shared-source, logical-definition, native-execution and consumer
+claims. Validation-foundations adds an independently compiled pristine
+oracle, a shared byte observation contract, an executable LADDER runner,
+and a cold provider client. Development results are in the
+[execution record](docs/2026-09-05_validation-foundations-execution.md);
+they do not replace final Tier A/B, reporting, customer adoption or audit
+exits. Missing historical logs are explicitly inventoried, not evidence of
+a current pass. See [the observation contract](docs/2026-09-05_observation-contract.md)
+for sequence/set projections and the printer's observational limits.
+
 ## 0. The aims and the rule
 
 The four aims, in priority order — [USER 2026-09-03], verbatim:
@@ -288,14 +299,17 @@ a bug today and what is a bug still open, in the class vocabulary.
   drafted; the logical meaning is an operator decision (Z2 record
   §10.1: Core-level UB045 and/or the ISO 7.22.3.1 guard in `std.core:385`,
   both shared-model changes).
-- *In-process consumers and kind-1 fail-stops*: `drive` is
-  oracle-conformant on every input where no failure site is reached; on
-  inputs where the oracle crashes with an uncaught exception the Lean
-  DEFINITION currently denotes the `Inhabited` default of the failing
-  site (the binary aborts under the required flag; the definition does
-  not). The typed-failure pass is SCHEDULED after Z4
-  (`docs/2026-09-03_typed-failure-outcomes-ruling.md`); until then
-  theorems about `drive` on such inputs are about the default.
+- *In-process consumers and kind-1 fail-stops*: no universal `drive`
+  conformance theorem follows from avoiding known failure sites; byte,
+  runtime-state and other obligations also remain. `failwithI` has an
+  opaque logical definition with a default-valued implementation and a
+  native panic override. When a result is discarded, even the native
+  executable can erase the failure. Kernel reduction can also discard a
+  mapped projection whose native execution aborts. The measured probes and
+  strict-result correspondence proposal are in the
+  [failure census](docs/2026-09-06_failure-census-and-correspondence.md).
+  The earlier typed-failure ruling remains recorded; implementation beyond
+  this charter's census/proposal awaits the final design discussion.
 - *Instruments, not semantics:* `test_elab.sh`'s 3 recorded DIFF rows are
   a pretty-printer main-file filter difference (Z-40; `Main.lean
   ppCoreSignature` should mirror `pp_cond`); the committed
@@ -534,9 +548,9 @@ ND-typed ones are gate-probed).
 
 | form | count | meaning | for the consumer |
 |---|---|---|---|
-| (A) MEASURED | 54 (7 under a hypothesis) | `def f xs := f_lemFuel (<data measure>) xs`; theorem `f_measure_sufficient : [H →] measure ≤ n → f_lemFuel n xs = f xs`, cone ⊆ the standard three (45 generated + 9 `CerbMem` seams by hand: `typeofMval`/`unqualifyAndUnatomic`/`memValueToBytes` unconditional, and — C4 — the layout oracle `sizeofCtype`/`alignofCtype`/`memberAlign`/`offsetsofMembers`/`offsetsof` and `reconstructValue` under `CerbTagsWf.Acyclic ambient` (`AcyclicPair ambient tagDefs` for `offsetsof`): a rank on tag-environment entries descends along every by-VALUE reference — the frontend's "definition order is a rank" invariant, `scripts/fuel_hypotheses.txt`; measures `CerbTagsWf.envBound` & co. = structural size + the environment's weight; plus `showNonNegativeWithBasis_aux` under `2 ≤ b` (lem `assuming`, the first generated hypothesis-carrying row). The six point-free `function` tails joined at C3 — lem d4ba548 hoists the scrutinee into the head as `lemTail`; the two mutual blocks share one counter, so each member's measure bounds the whole block) | fuel-FREE: no `[LemFuel]` in statements (four keep the binder for an ambient callee: `memValueFromValue`, `step_eval_pexpr`, `easy_update_mem_value_aux`, `memcmp_load_aux`; `CerbMem.memValueToBytes` lost its binder at C4 with the layout oracle it read) |
+| (A) MEASURED | 54 (7 under a hypothesis) | `def f xs := f_lemFuel (<data measure>) xs`; theorem `f_measure_sufficient : [H →] measure ≤ n → f_lemFuel n xs = f xs`, cone ⊆ the standard three (45 generated + 9 `CerbMem` seams by hand: `typeofMval`/`unqualifyAndUnatomic`/`memValueToBytes` unconditional, and — C4 — the layout oracle `sizeofCtype`/`alignofCtype`/`memberAlign`/`offsetsofMembers`/`offsetsof` and `reconstructValue` under `CerbTagsWf.Acyclic ambient` (`AcyclicPair ambient tagDefs` for `offsetsof`): a rank on tag-environment entries descends along every by-VALUE reference — a theorem hypothesis, not an established frontend invariant, `scripts/fuel_hypotheses.txt`; measures `CerbTagsWf.envBound` & co. = structural size + the environment's weight; plus `showNonNegativeWithBasis_aux` under `2 ≤ b` (lem `assuming`, the first generated hypothesis-carrying row). The six point-free `function` tails joined at C3 — lem d4ba548 hoists the scrutinee into the head as `lemTail`; the two mutual blocks share one counter, so each member's measure bounds the whole block) | fuel-FREE: no `[LemFuel]` in statements (four keep the binder for an ambient callee: `memValueFromValue`, `step_eval_pexpr`, `easy_update_mem_value_aux`, `memcmp_load_aux`; `CerbMem.memValueToBytes` lost its binder at C4 with the layout oracle it read) |
 | (B) ABSORBING ("kill at zero") | 13 | `f_lemFuel_zero` states `f_lemFuel 0 xs…` — the worker itself, at literal 0, on the lemma's own binders (P0 gate check) — and its RHS is the monad's absorbing element at the fuel atom: the ND kill (`nd_bind`, `liftND`, `liftAction`, `driver2`, `drive_nonmemory_steps_aux2`, `print_eval_conv_aux`, `load_character_array_aux`), `Result (Error fuelExhaustedLoc fuelExhaustedMsg)` in the undefined monad (`full_eval_pexpr`, `eval_pexpr_aux2`, `eval_pexpr_aux_broken`), the runners' `Killed` | at fuel 0 the result IS the kill; that exhaustion at a deeper fuel propagates through every successor case ("never continues as a value") is NOT proved by this gate — it is lem-lean TODO row 13 (fuel monotonicity), pending |
-| (C) UNREACHABLE | 6 ambient | not in the kernel constant closure of `drive`/`initial_driver_state`/the runners/`CerbCall.driveCall` (mutual blocks closed): the DEFACTO memory model's `mkUnspec`/`simplify_integer_value_base` (not the wired model), `zeros_aux` (front end), `list_unfoldr_aux`, two `CerbMem` reference forms | irrelevant to `drive` |
+| (C) OUTSIDE EXEC DEPENDENCY CLOSURE | 6 ambient | not in the kernel constant closure of `drive`/`initial_driver_state`/the runners/`CerbCall.driveCall` (mutual blocks closed): the DEFACTO memory model's `mkUnspec`/`simplify_integer_value_base` (not the wired model), `zeros_aux` (front end), `list_unfoldr_aux`, two `CerbMem` reference forms | absent from this dependency closure; no general API unreachability claim |
 | PENDING | 8 | reachable AND ambient, each a reviewed row of `scripts/fuel_forms_pending.txt` with its reason (the `ctype_aux` compatibility trio `are_compatible_aux`/`are_compatible_params_aux0`/`are_compatible_params0` — a DEEP-reference recursion through pointer and function types that by-value acyclicity does not bound and no frontend-guaranteed hypothesis does (C4 record F-C4-1), `hack`, `to_pure`/`to_pures`, `many`/`many1`; the 6 point-free tails left the register at C3, the 6 `CerbMem` layout rows and `showNonNegativeWithBasis_aux` at C4); exhaustion = the opaque panicking sentinel | statements about these need a depth hypothesis (C2 record §9) |
 
 The gate is RED on a NEW reachable ambient worker and on a stale register

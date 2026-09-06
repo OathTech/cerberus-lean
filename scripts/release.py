@@ -131,6 +131,8 @@ def artifacts(root=None):
     root = root or ROOT
     paths = ['lean_frontend/lean-toolchain', 'lean_frontend/lakefile.toml',
              'lean_frontend/lake-manifest.json', 'lean_frontend/speclab/lake-manifest.json',
+             'lean_frontend/speclab/lakefile.toml', 'lean_frontend/speclab/lean-toolchain',
+             'tests/mem-scale-probes/micro/lakefile.toml', 'tests/mem-scale-probes/micro/lean-toolchain',
              'tests/mem-scale-probes/micro/lake-manifest.json',
              'lean_frontend/lem_sync.sha256', 'ocaml_frontend/lem_sync.sha256',
              'driver_fresh.oracle.sha256', 'driver_fresh.lean.sha256',
@@ -164,7 +166,44 @@ def artifacts(root=None):
     package = root / 'lean_frontend/.lake/packages/LemLib'
     if package.is_dir():
         records['lem_runtime_checkout'] = source_identity(package)
+    # Resolve the installed Lean binary without executing an uncapped Lean
+    # process. Lake build logs independently record the actual invocations.
+    toolchain = (root / 'lean_frontend/lean-toolchain')
+    if toolchain.is_file() and shutil.which('elan'):
+        binary = Path(run_text(['elan', 'which', 'lean'], root/'lean_frontend'))
+        records['lean_compiler'] = {'present': binary.is_file(), 'path': str(binary), 'sha256': sha(binary)}
     return records
+
+
+def external_inputs(root=None):
+    root = root or ROOT
+    result = {}
+    for name, override, relative in [('cn', 'CN_CORPUS_DIR', 'deps/cn/tests/cn'),
+                                     ('libxml2', 'LIBXML2_DIR', 'deps/libxml2')]:
+        path = Path(os.environ[override]).resolve() if os.environ.get(override) else next(
+            (p / relative for p in [root, *root.parents] if (p / relative).is_dir()), None)
+        row = {'present': path is not None and path.is_dir(), 'path': str(path) if path else None}
+        if row['present']:
+            row['git'] = source_identity(path)
+            # Include ignored/generated headers as bytes too; Git HEAD alone
+            # is insufficient for a configured external C source directory.
+            paths = list(path.rglob('*.c')) + list(path.rglob('*.h')) if name == 'cn' else (
+                list(path.glob('*.c')) + list(path.glob('*.h')) + list((path/'include').rglob('*')) +
+                list((path/'codegen').rglob('*.inc')))
+            row['files'] = {str(p.relative_to(path)): sha(p) for p in sorted(set(paths)) if p.is_file()}
+        result[name] = row
+    return result
+
+
+def artifact_issues(records):
+    return [key for key, value in records.items() if value.get('present') is False or value.get('error')]
+
+
+def safe_inventory(reader):
+    try:
+        return reader()
+    except (OSError, RuntimeError, subprocess.SubprocessError) as exc:
+        return {'inventory_error': {'present': False, 'error': str(exc)}}
 
 
 def write_report(path, report):
@@ -173,7 +212,43 @@ def write_report(path, report):
     temporary.replace(path)
 
 
-def execute_lane(lane: Lane, out: Path, limit: float, root=None):
+class RunnerInterrupted(Exception):
+    def __init__(self, signum):
+        self.signum = signum
+        super().__init__(f'runner interrupted by signal {signum}')
+
+
+def stop_group(proc):
+    # The leader can exit while a descendant ignores TERM. Always address
+    # the whole original process group again, even after wait() succeeds.
+    try: os.killpg(proc.pid, signal.SIGTERM)
+    except ProcessLookupError: pass
+    try: proc.wait(timeout=2)
+    except subprocess.TimeoutExpired: pass
+    try: os.killpg(proc.pid, signal.SIGKILL)
+    except ProcessLookupError: pass
+    proc.wait()
+
+
+def reporting_result(command, directory, rc):
+    if rc == 0:
+        return 'reported'
+    # C1 deliberately exits 1 for observed discrepancies. Accept that as a
+    # completed measurement only with the full row count and committed-output
+    # protocol; retain rc and classifications, never call it a passing gate.
+    if Path(command[0]).name == 'test_exec.sh' and rc == 1:
+        baseline = directory / 'baseline.txt'
+        output = (directory / 'stdout').read_text(errors='replace')
+        totals = re.findall(r'^SUMMARY: total=(\d+) ', output, re.M)
+        written = re.findall(r'^Baseline written: .* \((\d+) entries\)', output, re.M)
+        if len(totals) == len(written) == 1 and totals == written and int(totals[0]) > 0 and baseline.is_file():
+            rows = [line for line in baseline.read_text().splitlines() if line and not line.startswith('#')]
+            if len(rows) == int(totals[0]):
+                return 'reported'
+    return 'failed'
+
+
+def execute_lane(lane: Lane, out: Path, limit: float, root=None, on_started=None):
     root = root or ROOT
     directory = out / lane.id
     directory.mkdir()
@@ -199,18 +274,21 @@ def execute_lane(lane: Lane, out: Path, limit: float, root=None):
             proc = subprocess.Popen(command, cwd=root, env=env, stdout=stdout, stderr=stderr,
                                     start_new_session=True)
             try:
+                result['process_group'] = proc.pid
+                if on_started:
+                    on_started(result)
                 rc = proc.wait(timeout=limit)
-                result.update(exit_status=rc, status=('passed' if lane.tier != 'C' else 'reported') if rc == 0 else 'failed')
-            except subprocess.TimeoutExpired:
-                os.killpg(proc.pid, signal.SIGTERM)
-                try:
-                    proc.wait(timeout=5)
-                except subprocess.TimeoutExpired:
-                    os.killpg(proc.pid, signal.SIGKILL)
-                    proc.wait()
-                result.update(exit_status=proc.returncode, status='incomplete', reason='lane timeout')
+                result.update(exit_status=rc, status=('passed' if rc == 0 else 'failed'))
+            except (subprocess.TimeoutExpired, RunnerInterrupted) as exc:
+                stop_group(proc)
+                result.update(exit_status=proc.returncode, status='incomplete',
+                              reason='lane timeout' if isinstance(exc, subprocess.TimeoutExpired) else str(exc))
+                if isinstance(exc, RunnerInterrupted):
+                    result['interrupted_signal'] = exc.signum
         except OSError as exc:
             result.update(exit_status=None, status='incomplete', reason=str(exc))
+    if lane.tier == 'C' and result['status'] in ('passed', 'failed'):
+        result['status'] = reporting_result(command, directory, result['exit_status'])
     result['seconds'] = round(time.monotonic() - started, 3)
     result['stdout_sha256'] = sha(directory / 'stdout')
     result['stderr_sha256'] = sha(directory / 'stderr')
@@ -247,10 +325,10 @@ def main():
     out = Path(args.out).resolve() if args.out else ROOT / '.tmp/release' / stamp
     out.mkdir(parents=True, exist_ok=False)
     before = source_identity()
-    report = {'schema': 1, 'started_utc': stamp, 'mode': args.mode,
+    report = {'schema': 2, 'started_utc': stamp, 'mode': args.mode,
               'membership_sha256': sha(ROOT / 'scripts/LADDER.md'),
               'catalogue': [asdict(lane) for lane in lanes], 'source_before': before,
-              'artifacts_before': artifacts(), 'selected': [l.id for l in selected],
+              'artifacts_before': safe_inventory(artifacts), 'external_inputs_before': safe_inventory(external_inputs), 'selected': [l.id for l in selected],
               'unrun': [asdict(l) for l in lanes if l not in selected],
               'lanes': [], 'status': 'running',
               'release_certification': 'incomplete: reporting/adoption/audit exits require separate evidence',
@@ -260,28 +338,51 @@ def main():
                   'CERB_DRIVER_FRESH_OVERRIDE', 'CERB_FORK_DRIFT_DEV_SKIP']}}
     write_report(out / 'report.json', report)
     print(f'Release evidence: {out}', flush=True)
-    for lane in selected:
-        print(f'RUN {lane.id}: {shlex.join(lane.command)}', flush=True)
-        # Persist the started command before waiting; a killed runner cannot
-        # leave an old completion marker standing in for the unfinished lane.
-        report['active_lane'] = lane.id
-        write_report(out / 'report.json', report)
-        result = execute_lane(lane, out, args.lane_timeout)
-        report['lanes'].append(result)
-        print(f'{result["status"].upper()} {lane.id} ({result["seconds"]:.1f}s)', flush=True)
-        write_report(out / 'report.json', report)
-    report.pop('active_lane', None)
+    previous_handlers = {sig: signal.getsignal(sig) for sig in (signal.SIGINT, signal.SIGTERM)}
+    def interrupted(signum, _frame):
+        raise RunnerInterrupted(signum)
+    for sig in previous_handlers:
+        signal.signal(sig, interrupted)
+    try:
+        for lane in selected:
+            print(f'RUN {lane.id}: {shlex.join(lane.command)}', flush=True)
+            report['active_lane'] = {'id': lane.id, 'command': lane.command, 'status': 'starting'}
+            write_report(out / 'report.json', report)
+            def started(row):
+                report['active_lane'] = dict(row)
+                write_report(out / 'report.json', report)
+            result = execute_lane(lane, out, args.lane_timeout, on_started=started)
+            report['lanes'].append(result)
+            report.pop('active_lane', None)
+            print(f'{result["status"].upper()} {lane.id} ({result["seconds"]:.1f}s)', flush=True)
+            write_report(out / 'report.json', report)
+            if 'interrupted_signal' in result:
+                report['interrupted_signal'] = result['interrupted_signal']
+                break
+    except RunnerInterrupted as exc:
+        report['interrupted_signal'] = exc.signum
+    finally:
+        for sig, handler in previous_handlers.items():
+            signal.signal(sig, handler)
+    finished = {r['id'] for r in report['lanes']}
+    report['unrun'] = [asdict(l) for l in lanes if l.id not in finished]
     report['source_after'] = source_identity()
-    report['artifacts_after'] = artifacts()
-    unchanged = before == report['source_after']
+    report['artifacts_after'] = safe_inventory(artifacts)
+    report['external_inputs_after'] = safe_inventory(external_inputs)
+    report['artifact_issues'] = artifact_issues(report['artifacts_after']) + artifact_issues(report['external_inputs_after'])
+    unchanged = (before == report['source_after'] and
+                 report['external_inputs_before'] == report['external_inputs_after'])
     complete_selection = len(selected) == len(eligible)
-    good = all(row['status'] in ('passed', 'reported') for row in report['lanes'])
+    good = (not report['artifact_issues'] and not report.get('interrupted_signal') and len(report['lanes']) == len(selected)
+            and all(row['status'] in ('passed', 'reported') for row in report['lanes']))
     override = any(report['environment'].get(key) for key in [
         'CERB_ORACLE_BIN_OVERRIDE', 'CERB_LEAN_BIN_OVERRIDE',
         'CERB_DRIVER_FRESH_OVERRIDE', 'CERB_FORK_DRIFT_DEV_SKIP'])
     report['source_unchanged'] = unchanged
     report['selection_complete'] = complete_selection
     report['status'] = 'passed' if good and unchanged and not override and complete_selection else 'incomplete' if good else 'failed'
+    if report.get('interrupted_signal'):
+        report['status'] = 'incomplete'
     if args.mode == 'reporting' and good and unchanged and not override:
         report['status'] = 'reported'
     report['finished_utc'] = datetime.now(timezone.utc).isoformat()

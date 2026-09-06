@@ -5,12 +5,19 @@ records. (Verification-layer work is out of scope for this branch —
 the semantics is the product here; a verification layer consumes it
 downstream.)
 
+The current work order is the [master plan](docs/2026-09-05_master-plan.md).
+The validation-foundations [execution ledger](docs/2026-09-05_validation-foundations-execution.md)
+and [failure census](docs/2026-09-06_failure-census-and-correspondence.md)
+supersede older sampled counts. The legacy csmith run remains independently
+owned and hands off; this roadmap does not authorize operating it.
+
 ## Queued larger work
 
 - **Concurrency (cmm) instantiation** — concurrency is currently
-  stubbed (a declared, documented boundary); this is the work that
-  removes the stub and instantiates Cerberus's concurrency model on
-  the Lean side.
+  stubbed on mainline. The owned prototype has S0–S7 SC support and a
+  repaired litmus instrument; integration still requires mixed-size/SeqRMW
+  repairs or enforced restrictions, the provider agreement theorem, current
+  mainline rebase/compatibility gates, audit and an explicit landing discussion.
 - **A-road polish basket** — backend/semantics cleanups (pure-render
   emission split, remaining audit L-slice gaps, ott finish);
   itemized with prices in
@@ -25,28 +32,24 @@ downstream.)
   landed (`AilTypesAux_lemMeasureProofs`, `Core_reduction_lemMeasureProofs`),
   register 21 → 15. Residual: none of the six (the mutual blocks' measures are
   the derived sizes of the whole walked structure, proved sufficient).
-- **Tag-lookup family (9 PENDING rows: the `CerbMem` layout oracle ×5,
-  `reconstructValue`, `ctype_aux` `are_compatible_aux` + 2) — D-C2-1** —
-  needs a tag-environment well-formedness hypothesis the unconditional
-  obligation cannot carry; operator decision between hypothesis-carrying
-  measured forms (new lem/seam vocabulary), a structural re-totalization of
-  the hand-written oracle, or the consumer carrying a depth hypothesis. M–L.
-- **`to_pure`/`to_pures`, `showNonNegativeWithBasis_aux` (D-C2-3/6)** —
-  provable once `failwithI`/`lemDivByZero` are transparent-to-default (the
-  typed-failure pass, `docs/2026-09-03_typed-failure-outcomes-ruling.md`);
-  the measures are `lemSize g` / `generic_expr_.lemSize_aux2 l + 1` /
-  `n + 1`. S each, after that pass.
-- **`hack`, `many`/`many1` (D-C2-4/5)** — no absorbing element and no
-  parameter measure; a lem body change or a hypothesis. Operator.
-- **Fuel-forms gate: ABSORBING as a head-shape test (C2 audit N3)** —
-  `FuelFormsTool` tests the `_zero` RHS by the constants it MENTIONS (atom +
-  absorbing head, no value sentinel); tighten to "the RHS is literally the
-  absorbing application" (`ND (fun st => (NDkilled …, st))`, `fun st => Result
-  (Error …, st)`, `Result (Error …)`, the runner list). No live payload
-  exploits the gap. S.
-- **Fuel monotonicity for the 13 (B) rows (lem TODO 13)** — per-function
-  `done at n ⇒ done at every m ≥ n`, provable by induction on the counter
-  now that every reachable (B) payload is absorbing; not generated. M.
+- **Compatibility trio (three pending workers)** — the C4 layout measures
+  discharged the six CerbMem layout/reconstruction rows under explicit
+  `CerbTagsWf.Acyclic` hypotheses. `are_compatible_aux` and its two siblings
+  follow deep pointer/function references; legal recursive-pointer cross-TU
+  input is a reference nontermination case. By-value acyclicity is insufficient.
+- **`to_pure`/`to_pures`** — establish bounds on failure-dependent recursive
+  arguments under a faithful failure design or proved preconditions. Making
+  `failwithI` transparent to a default does not close this obligation.
+  `showNonNegativeWithBasis_aux` was discharged at C4 under `2 ≤ b`.
+- **`hack`, `many`/`many1`** — pure finalization needs an explicit success/
+  failure contract; parser combinators need progress/consumption conditions
+  and distinguished exhaustion. The current pending register totals eight.
+- **Fuel-forms instrument repair** — P0 checked the exact worker/argument
+  correspondence and zero-case shapes; its decoy plants now reject. Keep
+  general propagation and completion proofs distinct from this instrument.
+- **Fuel propagation/monotonicity for the 13 zero-case rows (Lem TODO 13)** —
+  prove successor-case absorption and `done at n ⇒ done at every m ≥ n`
+  where valid. The zero-case theorem does not establish either property.
 - **The defacto memory model is unreachable from `drive` (F-C2-4)** — 12
   fuel'd rows (9 measured) are dead code for the exec pipeline; decide
   whether they leave the exec-cone module lists (D-C2-7). S.
@@ -238,18 +241,12 @@ downstream.)
   the coupled six; Q4). Evidence for a per-declaration budget declare on
   `mkListN_aux` (an operand-bounded measure: n elements) — a ruling item,
   not applied.
-- The `finalize`/`hack` leaf (FUEL arc follow-up, source: the
-  refined-cerberus review 2026-09-02 §5): `finalize` (driver.lem:1473-
-  1476) calls the pure-return worker `hack` (sentinel `fuelExhausted
-  Vunit`, driver.lem:1905) on `Core_aux.to_pure` of the terminal arena
-  — the one remaining opaque leaf inside a shipped-pipeline export's
-  evaluation. Price S; the cheap closure is a LEMMA, not a code change:
-  on a terminal state the arena is already a value, so `hack` takes
-  zero steps and its result is fuel-independent at every positive fuel
-  (the fuel-erasure `rfl` pattern) — a `hack_val_fuel_indep` lemma lets
-  a consumer's `finalize` evaluation never touch the opaque leaf.
-  Changing `hack`'s type is a `.lem` change → OCaml text → not the
-  route. Design note §7.
+- **`finalize`/`hack` boundary** — the existing fixture lemma reduces
+  finalization under singleton-thread/value-arena hypotheses. Prove those
+  hypotheses for the claimed input domain, or implement the reviewed strict
+  failure/completion design. This is not a universal terminal-state invariant;
+  no blanket "cheap closure" or unconditional fuel independence is established.
+
 - Comment-only `.lem` cleanup (fuel-parameter C1, pre-merge audit N3):
   `frontend/model/defacto_memory.lem:2678`, `formatted.lem:327`,
   `monadic_parsing.lem:113` still name the deleted `lemDefaultFuel` in
