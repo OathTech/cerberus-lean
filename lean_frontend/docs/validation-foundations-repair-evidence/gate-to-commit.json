@@ -1,0 +1,20 @@
+[
+  {
+    "candidate": "primary",
+    "base": "b1aa25796bdebdf61c9c1c3523d9dd534e204800",
+    "functional_head": "68de6771c65d06704612c691a9fca7efbff70e3d",
+    "tested_tracked_diff_matches_commit": true,
+    "tested_new_file_hashes_match_commit": true,
+    "gate_report": ".validation-foundations/audit-repairs-20260906/fast-before-commit/report.json",
+    "gate_report_sha256": "307e92e888e3be8cf8f3cf90b51a280249dde4775af7fd7e6f11355308d216f5"
+  },
+  {
+    "candidate": "private",
+    "base": "eb926f8d37187490c34a74bd4ffe74c80acdc77b",
+    "functional_head": "2460ef33f897761dc40680437b2c5cd420e22dc6",
+    "tested_tracked_diff_matches_commit": true,
+    "tested_new_file_hashes_match_commit": true,
+    "gate_report": ".tmp/audit-repair-fast-before-commit/report.json",
+    "gate_report_sha256": "35401138ea11f17bc7cb4992814434e62244f6f8ff3572eac8e001e6b0d3835e"
+  }
+]

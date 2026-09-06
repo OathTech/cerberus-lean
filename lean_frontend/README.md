@@ -107,9 +107,10 @@ the agent-facing operating manual with all build gotchas is
 
 ## The headline validation numbers
 
-Byte-level verdict agreement with the OCaml oracle across (see
-[VALIDATION.md](VALIDATION.md) for the full lane list, semantics, and
-run tiers):
+Current differential coverage and dated measurements (see
+[VALIDATION.md](VALIDATION.md) for comparison projections and run tiers,
+and the [repair record](docs/2026-09-06_validation-foundations-audit-repairs.md)
+for the candidate awaiting second review):
 
 - 106/106 upstream `tests/minimal` programs at the pinned baseline —
   exactly 85 MATCH + 18 UB_MATCH + 3 CERB_SKIP (rows the oracle itself
@@ -122,8 +123,8 @@ run tiers):
 - a historical 1,669-program csmith classified baseline (not rerun by
   validation foundations; the separately owned legacy run is excluded);
 - the 2026-09-06 CI measurement: 2,186 rows, comprising 1,205 MATCH,
-  154 UB_MATCH, one UB_DIFF, three FS refusals, two Lean timeouts and
-  821 oracle-side exclusions (766 rejects, 29 errors, 26 timeouts).
+  154 UB_MATCH, one UB_DIFF, three FS refusals, three Lean timeouts and
+  820 oracle-side exclusions (766 rejects, 29 errors, 25 timeouts).
   Only the 1,359 MATCH/UB_MATCH rows are observation agreement;
   [the reporting record](docs/2026-09-06_ci-reporting-results.md) records
   classification movement and limitations;

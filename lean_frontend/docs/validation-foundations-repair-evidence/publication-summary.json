@@ -1,0 +1,144 @@
+{
+  "schema": 1,
+  "functional_source": "de9f6d3612232d581622afcdf0b23cdaf31fa09d",
+  "refs_before_publication_commit": {
+    "HEAD": "de9f6d3612232d581622afcdf0b23cdaf31fa09d",
+    "mdd/cerberus-lean": "89f7e688530c6910884518811d645e4e892e4507",
+    "arc/validation-foundations-concurrency": "86a2aea547804b78eb7f1eae633bb9c24c713b7f",
+    "feature/concurrency": "086d8762d382eff375c101f5f0c64d3ffe9bccc7"
+  },
+  "final_tracked_changes": [
+    "lean_frontend/README.md",
+    "lean_frontend/TODO.md",
+    "lean_frontend/VALIDATION.md",
+    "lean_frontend/docs/2026-09-05_master-plan.md",
+    "lean_frontend/docs/2026-09-05_orchestrator-handoff.md",
+    "lean_frontend/docs/2026-09-06_ci-reporting-results.md",
+    "lean_frontend/docs/2026-09-06_failure-census-and-correspondence.md",
+    "lean_frontend/docs/2026-09-06_provider-smoke.md",
+    "lean_frontend/docs/2026-09-06_supported-profile.md",
+    "lean_frontend/docs/2026-09-06_validation-foundations-audit-repairs.md",
+    "scripts/LADDER.md"
+  ],
+  "post_gate_tracked_changes": [
+    "a/lean_frontend/TODO.md b/lean_frontend/TODO.md",
+    "a/lean_frontend/docs/2026-09-06_validation-foundations-audit-repairs.md b/lean_frontend/docs/2026-09-06_validation-foundations-audit-repairs.md"
+  ],
+  "post_gate_existing_untracked_changes": [
+    "lean_frontend/docs/validation-foundations-repair-evidence/README.md",
+    "lean_frontend/docs/validation-foundations-repair-evidence/summary.json"
+  ],
+  "publication_additions": [
+    "lean_frontend/TODO.md current C4 reporting entry",
+    "lean_frontend/docs/2026-09-06_validation-foundations-audit-repairs.md final checkpoint result",
+    "repair-evidence README.md, summary.json, SHA256SUMS",
+    "repair-evidence final-checkpoint.tar.gz, final-checkpoint.json, final-checkpoint-summary.json and publication-summary.json"
+  ],
+  "executable_source_and_all_36_ladder_commands_unchanged": true,
+  "first_audit_and_historical_evidence_unchanged": true,
+  "semantic_probe_baseline_diff_empty": true,
+  "only_common_sh_content_pin_changed": true,
+  "all_live_source_content_pins_match": true,
+  "private_clean": true,
+  "private_on_older_feature_base": true,
+  "lem_mainline_and_three_runtime_pins_unchanged": true,
+  "release_status": "Second review and landing discussion pending; no merge, push or customer adoption.",
+  "new_local_markdown_links_checked": [
+    {
+      "source": "lean_frontend/README.md",
+      "target": "VALIDATION.md"
+    },
+    {
+      "source": "lean_frontend/README.md",
+      "target": "docs/2026-09-06_validation-foundations-audit-repairs.md"
+    },
+    {
+      "source": "lean_frontend/TODO.md",
+      "target": "docs/2026-09-06_ci-reporting-results.md"
+    },
+    {
+      "source": "lean_frontend/VALIDATION.md",
+      "target": "docs/2026-09-06_validation-foundations-audit-repairs.md"
+    },
+    {
+      "source": "lean_frontend/VALIDATION.md",
+      "target": "docs/2026-09-06_ci-reporting-results.md"
+    },
+    {
+      "source": "lean_frontend/docs/2026-09-05_master-plan.md",
+      "target": "2026-09-06_validation-foundations-audit-repairs.md"
+    },
+    {
+      "source": "lean_frontend/docs/2026-09-05_master-plan.md",
+      "target": "2026-09-06_validation-foundations-delivery.md"
+    },
+    {
+      "source": "lean_frontend/docs/2026-09-05_master-plan.md",
+      "target": "2026-09-06_validation-foundations-audit-repairs.md"
+    },
+    {
+      "source": "lean_frontend/docs/2026-09-05_orchestrator-handoff.md",
+      "target": "2026-09-06_validation-foundations-audit-repairs.md"
+    },
+    {
+      "source": "lean_frontend/docs/2026-09-05_orchestrator-handoff.md",
+      "target": "2026-09-05_master-plan.md"
+    },
+    {
+      "source": "lean_frontend/docs/2026-09-05_orchestrator-handoff.md",
+      "target": "2026-09-06_concurrency-integration-charter.md"
+    },
+    {
+      "source": "lean_frontend/docs/2026-09-06_ci-reporting-results.md",
+      "target": "validation-foundations-repair-evidence/reporting-summary.json"
+    },
+    {
+      "source": "lean_frontend/docs/2026-09-06_ci-reporting-results.md",
+      "target": "validation-foundations-repair-evidence/README.md"
+    },
+    {
+      "source": "lean_frontend/docs/2026-09-06_ci-reporting-results.md",
+      "target": "validation-foundations-repair-evidence/c4-timing-movement-v2.json"
+    },
+    {
+      "source": "lean_frontend/docs/2026-09-06_failure-census-and-correspondence.md",
+      "target": "validation-foundations-repair-evidence/provider-summary.json"
+    },
+    {
+      "source": "lean_frontend/docs/2026-09-06_provider-smoke.md",
+      "target": "validation-foundations-repair-evidence/provider-summary.json"
+    },
+    {
+      "source": "lean_frontend/docs/2026-09-06_supported-profile.md",
+      "target": "2026-09-06_validation-foundations-audit-repairs.md"
+    },
+    {
+      "source": "lean_frontend/docs/2026-09-06_supported-profile.md",
+      "target": "2026-09-06_ci-reporting-results.md"
+    },
+    {
+      "source": "lean_frontend/docs/2026-09-06_validation-foundations-audit-repairs.md",
+      "target": "validation-foundations-repair-evidence/c4-timing-movement-v2.json"
+    },
+    {
+      "source": "lean_frontend/docs/2026-09-06_validation-foundations-audit-repairs.md",
+      "target": "validation-foundations-repair-evidence/README.md"
+    },
+    {
+      "source": "lean_frontend/docs/2026-09-06_validation-foundations-audit-repairs.md",
+      "target": "validation-foundations-repair-evidence/final-checkpoint-summary.json"
+    },
+    {
+      "source": "lean_frontend/docs/validation-foundations-repair-evidence/README.md",
+      "target": "../2026-09-06_validation-foundations-audit-repairs.md"
+    },
+    {
+      "source": "lean_frontend/docs/validation-foundations-repair-evidence/README.md",
+      "target": "final-checkpoint-summary.json"
+    },
+    {
+      "source": "lean_frontend/docs/validation-foundations-repair-evidence/README.md",
+      "target": "publication-summary.json"
+    }
+  ]
+}

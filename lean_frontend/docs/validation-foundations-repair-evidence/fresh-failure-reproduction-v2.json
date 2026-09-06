@@ -1,0 +1,22 @@
+{
+  "provider_commands": 20,
+  "generated_lean_files": 207,
+  "generated_ocaml_files": 86,
+  "generated_sources_match_original": true,
+  "census_sites": 1644,
+  "corrected_census_reproduced": true,
+  "strictness_observations": 8,
+  "strictness_observations_unchanged": true,
+  "census_counts": {
+    "generated:monadic_ascribed": 263,
+    "generated:pure_or_unresolved": 1253,
+    "handwritten:monadic_ascribed": 7,
+    "handwritten:pure_or_unresolved": 121
+  },
+  "exec_counts": {
+    "handwritten:pure_or_unresolved": 105,
+    "handwritten:monadic_ascribed": 7,
+    "generated:pure_or_unresolved": 126,
+    "generated:monadic_ascribed": 67
+  }
+}

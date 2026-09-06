@@ -1,5 +1,33 @@
 # CI reporting on the validation-foundations candidate
 
+**Repaired candidate, 2026-09-06 [AGENT]:** `de9f6d3612232d581622afcdf0b23cdaf31fa09d`
+completed C1 (242 rows) and C4 (2,186 rows across all 15 suites), with the
+prescribed input set and hashes verified. C1 classifications are unchanged;
+C4 has one changed classification, listed in the new summary.
+The [new reporting summary](validation-foundations-repair-evidence/reporting-summary.json)
+and [repair evidence index](validation-foundations-repair-evidence/README.md)
+retain every row and raw observation. The 56 movements discussed below compare
+the original candidate with older historical TSVs; they are not new movement
+caused by these audit repairs. No semantic baseline or scoreboard was adopted.
+
+The changed row is `tests/gcc-torture/breakdown/success/pr63209.c`:
+previously the oracle timed out; now it exits 0 and reports 14.711890 seconds,
+just below the unchanged 15-second budget. Lean then times out with status
+124 and empty stdout/stderr. No completed Lean result is available to compare.
+The [raw timing record](validation-foundations-repair-evidence/c4-timing-movement-v2.json)
+links the original and new captures. This is a completion/timing observation;
+no causal attribution to the repairs is made. Provider cost/completion work
+owns this input alongside the existing two timeout witnesses.
+
+The new counts retain 1,205 MATCH and 154 UB_MATCH (1,359 agreements).
+There are now three Lean timeouts and 820 oracle-side non-comparisons
+(766 rejects, 29 errors, 25 timeouts), alongside three filesystem refusals
+and one UB-location difference. All other 2,185 classifications are unchanged.
+The historical table below retains the original two Lean timeouts and 26
+oracle timeouts.
+
+The original candidate's measurement and disposition record follows.
+
 2026-09-06 [AGENT]. Both affected reporting measurements completed on the
 clean identified candidate. Their classifications are evidence, not a release
 certification or permission to change a semantic baseline.

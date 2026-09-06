@@ -1,0 +1,42 @@
+[
+  {
+    "path": ".validation-foundations/audit-repairs-20260906/full-functional-v2/B5/observations/test_immaculate.H170OnPkLV/immaculate.m3CsOMXvDj/zd-z2p01-stderr_escape.l",
+    "sha256": "f89a54d1ef592b58f80a668373345f40037711ede0a19e45e2e43156b6390b24",
+    "matches_first_audit_and_initial_repair_capture": true
+  },
+  {
+    "path": ".validation-foundations/audit-repairs-20260906/full-functional-v2/B5/observations/test_immaculate.H170OnPkLV/immaculate.m3CsOMXvDj/zd-z2p01-stderr_escape.l.status",
+    "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "matches_first_audit_and_initial_repair_capture": true
+  },
+  {
+    "path": ".validation-foundations/audit-repairs-20260906/full-functional-v2/B5/observations/test_immaculate.H170OnPkLV/immaculate.m3CsOMXvDj/zd-z2p01-stderr_escape.o",
+    "sha256": "f89a54d1ef592b58f80a668373345f40037711ede0a19e45e2e43156b6390b24",
+    "matches_first_audit_and_initial_repair_capture": true
+  },
+  {
+    "path": ".validation-foundations/audit-repairs-20260906/full-functional-v2/B5/observations/test_immaculate.H170OnPkLV/immaculate.m3CsOMXvDj/zd-z2p01-stderr_escape.o.status",
+    "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "matches_first_audit_and_initial_repair_capture": true
+  },
+  {
+    "path": ".validation-foundations/audit-repairs-20260906/full-functional-v2/B5/observations/test_immaculate.H170OnPkLV/immaculate.m3CsOMXvDj/zd-z2p01-stdout_escape.l",
+    "sha256": "167f8f6479e903f64d2ebf4e0327c99e0651c40c9e279aec570dbb8fa23679fe",
+    "matches_first_audit_and_initial_repair_capture": true
+  },
+  {
+    "path": ".validation-foundations/audit-repairs-20260906/full-functional-v2/B5/observations/test_immaculate.H170OnPkLV/immaculate.m3CsOMXvDj/zd-z2p01-stdout_escape.l.status",
+    "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "matches_first_audit_and_initial_repair_capture": true
+  },
+  {
+    "path": ".validation-foundations/audit-repairs-20260906/full-functional-v2/B5/observations/test_immaculate.H170OnPkLV/immaculate.m3CsOMXvDj/zd-z2p01-stdout_escape.o",
+    "sha256": "167f8f6479e903f64d2ebf4e0327c99e0651c40c9e279aec570dbb8fa23679fe",
+    "matches_first_audit_and_initial_repair_capture": true
+  },
+  {
+    "path": ".validation-foundations/audit-repairs-20260906/full-functional-v2/B5/observations/test_immaculate.H170OnPkLV/immaculate.m3CsOMXvDj/zd-z2p01-stdout_escape.o.status",
+    "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "matches_first_audit_and_initial_repair_capture": true
+  }
+]

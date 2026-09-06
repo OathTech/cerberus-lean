@@ -1,14 +1,16 @@
 # Master plan — cerberus-lean and lem-lean
 
-**Revision 6, 2026-09-06.** Updated by Codex [AGENT] at the operator's
+**Revision 7, 2026-09-06.** Updated by Codex [AGENT] at the operator's
 request following the
 [customer-readiness assessment](2026-09-05_customer-readiness-assessment.md).
-Revision 6 records the agreed [pre-merge audit](2026-09-06_validation-foundations-premerge-audit.md):
-four P1 and seven P2 findings put validation foundations on hold. Repair the
-instruments, census attribution and current documentation, then re-gate and
-review them before the proposed scoped SC integration. Revision 5 recorded
-the original delivery; its immediate-next-arc recommendation is superseded.
-It preserves the adopted decision boundaries. Revision 3 superseded revision 2's
+Revision 7 records the [audit repairs and revalidation](2026-09-06_validation-foundations-audit-repairs.md).
+All eleven findings have implemented repairs and adversarial checks; the
+corrected candidate has completed its full battery and fresh provider/failure
+and affected reporting measurements. Second-review acceptance is pending.
+Review this candidate and discuss landing before scoped SC integration.
+Revision 6 recorded the first audit's hold; revision 5 recorded the original
+delivery. Those dated measurements remain preserved.
+This revision preserves the adopted decision boundaries. Revision 3 superseded revision 2's
 sequencing and proposed release criteria, including the replacement order in
 [the audit response, section 4](2026-09-05_whole-project-audit-response.md).
 Historical evidence and [USER] rulings remain in those records. Agent
@@ -22,12 +24,12 @@ reviewability after the relevant semantics and interfaces settle.
 
 The adopted first execution charter is
 [Validation foundations](2026-09-05_validation-foundations-charter.md).
-Its [delivery record](2026-09-06_validation-foundations-delivery.md) supplies
-the acceptance table, exact candidates and evidence. The next proposed arc is
+Its [original delivery record](2026-09-06_validation-foundations-delivery.md)
+supplies the historical acceptance table and measurements. The next proposed arc is
 [scoped concurrency integration](2026-09-06_concurrency-integration-charter.md).
-The agreed audit is complete with open findings. The failure design, next
-charter and landing remain decisions for the end-of-charter discussion after
-the audit repairs; audit agreement did not authorize landing.
+The first audit is complete; its repaired candidate is ready for the second
+review. The failure design, next charter and landing remain decisions for
+the end-of-charter discussion. Repair authorization did not authorize landing.
 
 ## 1. Starting point and ownership
 
@@ -90,22 +92,26 @@ not dispatch additional agents.
 
 | Priority | Deliverable | Owner | Dependencies and exit |
 |---|---|---|---|
-| 1 | Correct the release profile and risk baseline | Cerberus | Fresh review completed with findings: reconcile overviews/TODO and regenerate the range-correct census; reopen G6/G7. Preserve historical raw measurements. |
-| 2 | Repair and revalidate the observation/release instruments | Cerberus | Close audit VF-01–05 and VF-09–11 on the relevant owned candidates with adversarial controls and full affected gates; reopen G1/G2/G4. Independent-reference G3 and cold-provider G5 evidence remain supported within scope. This repair precedes SC integration. |
-| 3 | Failure design decision and bounded repair preparation | Lem + Cerberus | Probes delivered; correct census attribution before using its dependency counts. Review the strict-result proposal, including stable-failure fuel quantifiers, before implementation. A concrete concurrency-theorem dependency may require a bounded failure slice; no unrelated broad transform blocks integration. |
+| 1 | Correct the release profile and risk baseline | Cerberus | Profile/TODO reconciled and compiler-range census regenerated on the cold candidate. Review the renewed G6/G7 evidence; historical measurements remain preserved. |
+| 2 | Repair and revalidate the observation/release instruments | Cerberus | VF-01–05 and VF-09–11 repaired, including a further cancellation-window correction; full affected gates and adversaries completed. Obtain second-review acceptance of G1/G2/G4 and renewed scoped G3/G5 evidence before SC integration. |
+| 3 | Failure design decision and bounded repair preparation | Lem + Cerberus | Probes reproduced and corrected census published; use its compiler-range attribution and explicit unresolved sites. Review the strict-result proposal, including stable-failure fuel quantifiers, before implementation. A concrete concurrency-theorem dependency may require a bounded failure slice; no unrelated broad transform blocks integration. |
 | 4 | Repair and land scoped concurrency | Cerberus | Relevant priority-2 instruments and section 5; exact rebased candidate meets domain, compatibility, proof and test obligations. |
 | 5 | Byte, semantic-state and remaining fuel contracts | Lem + Cerberus | Relevant designs; configuration follows concurrency. No unguarded known wrong answer inside the supported profile. |
 | 6 | Consumer adoption, clean build, measured cost | Providers + consumer's agent | Named integration checkpoints; exact candidate adopted with proofs through, reproducible bootstrap and CPU/RSS/completion evidence. |
 | 7 | Final risk review and fresh adversarial exercise | Cerberus + Lem | Instruments, semantics and customer candidate settled; section 8 exits met. |
 | Submission track | Declare consolidation, manual and patch series | Lem + Cerberus | Failure vocabulary reviewed; relevant interfaces settled; compatibility evidence and upstream-reviewable presentation. |
 
-**Current handoff:** validation foundations delivers priorities 1–2, the
-failure census/proposal from priority 3, the concurrency instrument repair,
-and a cold provider client. See the delivery record for final pass/fail/unrun
-results. The next implementation priority is scoped concurrency integration;
-review the failure design in parallel with that entry decision. Its broader
-implementation remains separate unless a specific proof dependency makes a
-bounded slice urgent first. Neither milestone declares a stable release.
+**Current handoff:** review the repaired validation-foundations candidate
+first. Its functional primary is `de9f6d3612232d581622afcdf0b23cdaf31fa09d`; the older feature-base
+instrument companion is `86a2aea547804b78eb7f1eae633bb9c24c713b7f`. The
+[repair record](2026-09-06_validation-foundations-audit-repairs.md) supplies
+current results and evidence, including the intentionally interrupted first
+attempt. Priorities 1–2 and the bounded census/provider work are implemented
+and measured, pending second review and a landing discussion. After that,
+scoped concurrency integration remains the recommended next implementation
+charter; review the failure design with that entry decision. Its broader
+implementation remains separate unless a concrete proof dependency requires
+a bounded slice first. Neither milestone declares a stable release.
 
 ## 4. Sequential semantics and backend work
 

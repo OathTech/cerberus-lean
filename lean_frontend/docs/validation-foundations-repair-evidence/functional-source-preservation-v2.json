@@ -1,0 +1,50 @@
+{
+  "refs": {
+    "HEAD": "de9f6d3612232d581622afcdf0b23cdaf31fa09d",
+    "mdd/cerberus-lean": "89f7e688530c6910884518811d645e4e892e4507",
+    "arc/validation-foundations-concurrency": "86a2aea547804b78eb7f1eae633bb9c24c713b7f",
+    "feature/concurrency": "086d8762d382eff375c101f5f0c64d3ffe9bccc7"
+  },
+  "lem_compiler_runtime_pin": "f6542f8e6860d12d4655e6648bc4c45dabd1d798",
+  "packages": {
+    "lean_frontend": {
+      "LemLib": "f6542f8e6860d12d4655e6648bc4c45dabd1d798",
+      "manifest_sha256": "ce11f33292dca81439373f91e4d71d21f9f6573ec4e4bd90daad95ca1f90710e",
+      "toolchain": "leanprover/lean4:v4.32.2"
+    },
+    "lean_frontend/speclab": {
+      "LemLib": "f6542f8e6860d12d4655e6648bc4c45dabd1d798",
+      "manifest_sha256": "9fc280b8158cd6c7dde2108d27c234fbcff5b8de8dd0f6cf3c09b25329c5deb5",
+      "toolchain": "leanprover/lean4:v4.32.2"
+    },
+    "tests/mem-scale-probes/micro": {
+      "LemLib": "f6542f8e6860d12d4655e6648bc4c45dabd1d798",
+      "manifest_sha256": "8f4a27b6ed192ec8e1588a1733807ef04497e1812bf936a0345a9729675dfdf8",
+      "toolchain": "leanprover/lean4:v4.32.2"
+    }
+  },
+  "preserved_surfaces": [
+    "frontend",
+    "backend",
+    "memory",
+    "util",
+    "parsers",
+    "sibylfs",
+    "runtime",
+    "*.lem",
+    "lean_frontend/*.lean",
+    "lean_frontend/native/*",
+    "tests/provider-smoke",
+    "tests/failure-probes",
+    "scripts/exec*_baseline.txt",
+    "scripts/gcc_oracle_baseline.txt",
+    "tests/immaculate",
+    "tests/libc_exec",
+    "tests/ci_sweep/results"
+  ],
+  "semantic_probe_baseline_diff_empty": true,
+  "only_common_sh_content_pin_changed": true,
+  "mainline_is_ancestor_of_primary": true,
+  "mainline_is_ancestor_of_private": false,
+  "customer_and_legacy_ownership": "not inspected or operated on; no adoption claim"
+}

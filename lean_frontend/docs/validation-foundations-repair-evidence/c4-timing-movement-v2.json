@@ -1,0 +1,77 @@
+{
+  "input": "tests/gcc-torture/breakdown/success/pr63209.c",
+  "input_sha256": "668efce315b83d6e6d8a43288a54b93500d0d3f8a667d444ef9b3e3c72ca5708",
+  "old_classification": "CERB_TIMEOUT",
+  "new_classification": "LEAN_TIMEOUT",
+  "new": {
+    "oracle.stdout": {
+      "path": ".validation-foundations/audit-repairs-20260906/reporting-functional/C4/observations/test_ci_sweep.Tf3NsmYMQk/torture_success.824.oracle.stdout",
+      "bytes": 6233310,
+      "sha256": "ce3aa873f3e0cd0c16897d2ae50ff4eea854a4730995b02c2a82ae4ef7d9900e"
+    },
+    "oracle.stderr": {
+      "path": ".validation-foundations/audit-repairs-20260906/reporting-functional/C4/observations/test_ci_sweep.Tf3NsmYMQk/torture_success.824.oracle.stderr",
+      "bytes": 30,
+      "sha256": "e85464342df132aea8bebc0fa5cd645482a53a7a280904d520e6f5456d7bae26",
+      "text": "Time spent: 14.711890 seconds\n"
+    },
+    "oracle.status": {
+      "path": ".validation-foundations/audit-repairs-20260906/reporting-functional/C4/observations/test_ci_sweep.Tf3NsmYMQk/torture_success.824.oracle.status",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "text": "0\n"
+    },
+    "oracle.command": {
+      "path": ".validation-foundations/audit-repairs-20260906/reporting-functional/C4/observations/test_ci_sweep.Tf3NsmYMQk/torture_success.824.oracle.command",
+      "bytes": 707,
+      "sha256": "925044b4316856d9853087e9533560c7a2b9220fa2015a0f0555637cbcf1a4ee"
+    },
+    "lean.stdout": {
+      "path": ".validation-foundations/audit-repairs-20260906/reporting-functional/C4/observations/test_ci_sweep.Tf3NsmYMQk/torture_success.824.lean.stdout",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "lean.stderr": {
+      "path": ".validation-foundations/audit-repairs-20260906/reporting-functional/C4/observations/test_ci_sweep.Tf3NsmYMQk/torture_success.824.lean.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "text": ""
+    },
+    "lean.status": {
+      "path": ".validation-foundations/audit-repairs-20260906/reporting-functional/C4/observations/test_ci_sweep.Tf3NsmYMQk/torture_success.824.lean.status",
+      "bytes": 4,
+      "sha256": "ca2ebdf97d7469496b1f4b78958f9dc8447efdcb623953fee7b6996b762f6fff",
+      "text": "124\n"
+    },
+    "lean.command": {
+      "path": ".validation-foundations/audit-repairs-20260906/reporting-functional/C4/observations/test_ci_sweep.Tf3NsmYMQk/torture_success.824.lean.command",
+      "bytes": 2592,
+      "sha256": "a253fdb538e2c00b06d3836730d3916834faf0edf87c78bec990780e7c470e88"
+    }
+  },
+  "original": {
+    "torture_success.824.oracle.command": {
+      "member": ".tmp/release-final-1066d89-C4/C4/observations/test_ci_sweep.rctZsH8z3Z/torture_success.824.oracle.command",
+      "bytes": 707,
+      "sha256": "47160943eda98b93199d6fd9a2a905abf78f70e52ec889aaf1c929d2a5c4e2cb"
+    },
+    "torture_success.824.oracle.status": {
+      "member": ".tmp/release-final-1066d89-C4/C4/observations/test_ci_sweep.rctZsH8z3Z/torture_success.824.oracle.status",
+      "bytes": 4,
+      "sha256": "ca2ebdf97d7469496b1f4b78958f9dc8447efdcb623953fee7b6996b762f6fff",
+      "text": "124\n"
+    },
+    "torture_success.824.oracle.stderr": {
+      "member": ".tmp/release-final-1066d89-C4/C4/observations/test_ci_sweep.rctZsH8z3Z/torture_success.824.oracle.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "text": ""
+    },
+    "torture_success.824.oracle.stdout": {
+      "member": ".tmp/release-final-1066d89-C4/C4/observations/test_ci_sweep.rctZsH8z3Z/torture_success.824.oracle.stdout",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "account": "The oracle now completes just below the unchanged 15-second budget (its diagnostic reports 14.711890 seconds), allowing Lean to run. Lean reaches the 15-second timeout with no output. The original oracle timed out, so that run did not reach Lean. No completed Lean result exists for comparison. This is a completion/timing observation; no causal attribution to the repairs or baseline adoption is made."
+}

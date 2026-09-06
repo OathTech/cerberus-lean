@@ -1,0 +1,12 @@
+{
+  "report_sha256": "b60dab797063ef2dcafea2387ff2e797be35a320362a506a844b2e07acd33d8e",
+  "tested_source": {
+    "branch": "arc/validation-foundations",
+    "diff_sha256": "47e2d3940680a1d0d758e25e70c243a485d8062218093d9e1a5513d2b8d6cc7a",
+    "head": "68de6771c65d06704612c691a9fca7efbff70e3d",
+    "status": "M lean_frontend/docs/2026-09-05_observation-contract.md\n M lean_frontend/docs/2026-09-06_provider-smoke.md\n M lean_frontend/docs/2026-09-06_validation-foundations-audit-repairs.md\n M scripts/build_provider_smoke.py\n M scripts/process_scope.py\n M scripts/release.py\n M scripts/test_release.py",
+    "untracked_sha256": {}
+  },
+  "functional_head": "de9f6d3612232d581622afcdf0b23cdaf31fa09d",
+  "tested_tracked_diff_matches_commit": true
+}

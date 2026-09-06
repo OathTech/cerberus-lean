@@ -1,0 +1,314 @@
+{
+  "schema": 1,
+  "status": "repaired candidate for second review; acceptance pending",
+  "functional_primary": "de9f6d3612232d581622afcdf0b23cdaf31fa09d",
+  "private_candidate": "86a2aea547804b78eb7f1eae633bb9c24c713b7f",
+  "private_functional": "2460ef33f897761dc40680437b2c5cd420e22dc6",
+  "primary_repair_base": "b1aa25796bdebdf61c9c1c3523d9dd534e204800",
+  "first_audit_subject": "6d6cfa858109a42561878db3d939024c5756ad4f",
+  "findings": {
+    "VF-01": {
+      "disposition": "repair implemented and validated; second review pending",
+      "evidence": [
+        "scripts/test_observations.py",
+        "scripts/test_gcc_capture.sh",
+        "scripts/test_kill_plant.sh",
+        "scripts/test_observation_lanes.py"
+      ]
+    },
+    "VF-02": {
+      "disposition": "repair implemented and validated; second review pending",
+      "evidence": [
+        "scripts/test_observations.py",
+        "scripts/test_observation_lanes.py (immaculate: all eight cases)",
+        "archived-failure-replay.json"
+      ]
+    },
+    "VF-03": {
+      "disposition": "repair implemented and validated; second review pending",
+      "evidence": [
+        "scripts/test_observation_lanes.py (exec: mixed, all-difference and new-row UB_DIFF cases)"
+      ]
+    },
+    "VF-04": {
+      "disposition": "repair implemented and validated; second review pending",
+      "evidence": [
+        "scripts/test_release.py (16 methods, including real nested scopes and cancellation during release/provider cleanup)"
+      ]
+    },
+    "VF-05": {
+      "disposition": "repair implemented and validated; second review pending",
+      "evidence": [
+        "scripts/test_release.py (real required-resource/root and dynamic-entry deletion fixtures)"
+      ]
+    },
+    "VF-06": {
+      "disposition": "repair implemented and validated; second review pending",
+      "evidence": [
+        "scripts/test_failure_census.py (5 methods)",
+        "fresh-failure-reproduction-v2.json",
+        "census-replay-comparison.json"
+      ]
+    },
+    "VF-07": {
+      "disposition": "repair implemented and validated; second review pending",
+      "evidence": [
+        "byte-producer-controls-v2.json",
+        "lean_frontend/TODO.md producer-specific account"
+      ]
+    },
+    "VF-08": {
+      "disposition": "repair implemented and validated; second review pending",
+      "evidence": [
+        "fresh C1/C4 measurements",
+        "updated README/VALIDATION, observation matrix, profile, master plan and handoff; fresh second review pending"
+      ]
+    },
+    "VF-09": {
+      "disposition": "repair implemented and validated; second review pending",
+      "evidence": [
+        "scripts/test_observations.py",
+        "private observation/reference helper plants; full multiline message and trace-envelope controls"
+      ]
+    },
+    "VF-10": {
+      "disposition": "repair implemented and validated; second review pending",
+      "evidence": [
+        "private scripts/test_litmus_references.py (19 reference/refusal adversaries)",
+        "private test_litmus.sh --plant"
+      ]
+    },
+    "VF-11": {
+      "disposition": "repair implemented and validated; second review pending",
+      "evidence": [
+        "private scripts/test_litmus_references.py (complete singleton refusal guards)",
+        "private test_litmus.sh --plant"
+      ]
+    }
+  },
+  "additional_cancellation_repair": "68de6771c temporarily ignored first cancellation during cleanup; real pre-fix signal test failed. de9f6d361 defers signals until cleanup and records interruption without further dispatch in release/provider.",
+  "full": {
+    "commands": 32,
+    "status": "passed",
+    "summed_seconds": 4073.98,
+    "source_unchanged": true,
+    "artifact_entries": 1778,
+    "artifact_changes": 29,
+    "lost_entries": []
+  },
+  "actual_entry_plants": {
+    "functional_head": "de9f6d3612232d581622afcdf0b23cdaf31fa09d",
+    "passed": 90,
+    "failed": 0,
+    "by_lane": {
+      "exec": 9,
+      "multi_tu": 5,
+      "cn_coverage": 7,
+      "ci_sweep": 5,
+      "gcc_oracle": 5,
+      "verify": 6,
+      "bytes": 5,
+      "libc_exec": 5,
+      "libxml2_uri": 5,
+      "immaculate": 8,
+      "speclab": 5,
+      "speclab_divmod": 5,
+      "speclab_bytearr": 5,
+      "speclab_list": 5,
+      "speclab_tree": 5,
+      "speclab_seed": 5
+    },
+    "report": ".validation-foundations/audit-repairs-20260906/full-functional-v2/B9/plants/report.json",
+    "report_sha256": "1cacba674871e1a5fe7b557a30cbe72bd31cc36ddf2e359d91efb56ef88a3f5c"
+  },
+  "hermetic_methods": {
+    "codec": 18,
+    "prerequisites": 2,
+    "census": 5,
+    "release_provider": 16,
+    "independent_oracle": 5
+  },
+  "gcc": {
+    "initial": {
+      "counts": {
+        "total": 1963,
+        "compared": 1885,
+        "agree": 1873,
+        "agree_nd": 0,
+        "triaged": 12,
+        "disagree": 0,
+        "o2_agree": 190,
+        "skip_gcc_compile": 1,
+        "skip_gcc_stdout": 1,
+        "skip_lean_crash": 9,
+        "skip_lean_fail": 9,
+        "skip_lean_timeout": 11,
+        "skip_ub": 47,
+        "triaged_addr": 11,
+        "triaged_ub": 1
+      },
+      "stdout_sha256": "c1cb0d37c334401cb1fc52af5f1f39f63c99161fb21ac4de01282fdc9637b4ec"
+    },
+    "corrected_candidate": {
+      "counts": {
+        "total": 1963,
+        "compared": 1885,
+        "agree": 1873,
+        "agree_nd": 0,
+        "triaged": 12,
+        "disagree": 0,
+        "o2_agree": 190,
+        "skip_gcc_compile": 1,
+        "skip_gcc_stdout": 1,
+        "skip_lean_crash": 9,
+        "skip_lean_fail": 9,
+        "skip_lean_timeout": 11,
+        "skip_ub": 47,
+        "triaged_addr": 11,
+        "triaged_ub": 1
+      },
+      "stdout_sha256": "f5adc7de1717f15a6d827acdfaea81840bceb442063e3b67a863a0f5ee0e669c"
+    },
+    "all_counts_unchanged": true,
+    "baseline_regressions": 0,
+    "baseline_improvements": 0,
+    "policy": "fixed B7 corpus only; no legacy-run operation"
+  },
+  "pristine_oracle": {
+    "counts": {
+      "interface_agreement": 2,
+      "matching_failure": 11,
+      "reviewed_difference": 1,
+      "semantic_agreement": 709
+    },
+    "status": "passed",
+    "library_status": "passed"
+  },
+  "provider": {
+    "commands": 20,
+    "verified_artifact_hashes": 1769,
+    "generated_lean_files": 207,
+    "generated_ocaml_files": 86,
+    "source_unchanged": true,
+    "strictness_observations_unchanged": true,
+    "census_sites": 1644,
+    "corrected_census_reproduced": true
+  },
+  "C1": {
+    "rows": 242,
+    "counts": {
+      "MATCH": 91,
+      "UB_MATCH": 41,
+      "CERB_SKIP": 110
+    },
+    "movement_from_first_candidate": []
+  },
+  "C4": {
+    "rows": 2186,
+    "counts": {
+      "MATCH": 1205,
+      "UB_MATCH": 154,
+      "CERB_TIMEOUT": 25,
+      "CERB_REJECT": 766,
+      "CERB_ERROR": 29,
+      "LEAN_CRASH": 3,
+      "LEAN_TIMEOUT": 3,
+      "UB_DIFF": 1
+    },
+    "movement_from_first_candidate": [
+      {
+        "suite": "torture_success",
+        "file": "tests/gcc-torture/breakdown/success/pr63209.c",
+        "old": "CERB_TIMEOUT",
+        "new": "LEAN_TIMEOUT"
+      }
+    ]
+  },
+  "private": {
+    "final_fast_commands": 14,
+    "final_fast_summed_seconds": 351.161,
+    "actual_litmus_rows": 30,
+    "observation_plants": 26,
+    "reference_refusal_adversaries": 19,
+    "scope": "older feature-base instrument companion; not current-mainline integration"
+  },
+  "preservation": {
+    "refs": {
+      "HEAD": "de9f6d3612232d581622afcdf0b23cdaf31fa09d",
+      "mdd/cerberus-lean": "89f7e688530c6910884518811d645e4e892e4507",
+      "arc/validation-foundations-concurrency": "86a2aea547804b78eb7f1eae633bb9c24c713b7f",
+      "feature/concurrency": "086d8762d382eff375c101f5f0c64d3ffe9bccc7"
+    },
+    "lem_compiler_runtime_pin": "f6542f8e6860d12d4655e6648bc4c45dabd1d798",
+    "packages": {
+      "lean_frontend": {
+        "LemLib": "f6542f8e6860d12d4655e6648bc4c45dabd1d798",
+        "manifest_sha256": "ce11f33292dca81439373f91e4d71d21f9f6573ec4e4bd90daad95ca1f90710e",
+        "toolchain": "leanprover/lean4:v4.32.2"
+      },
+      "lean_frontend/speclab": {
+        "LemLib": "f6542f8e6860d12d4655e6648bc4c45dabd1d798",
+        "manifest_sha256": "9fc280b8158cd6c7dde2108d27c234fbcff5b8de8dd0f6cf3c09b25329c5deb5",
+        "toolchain": "leanprover/lean4:v4.32.2"
+      },
+      "tests/mem-scale-probes/micro": {
+        "LemLib": "f6542f8e6860d12d4655e6648bc4c45dabd1d798",
+        "manifest_sha256": "8f4a27b6ed192ec8e1588a1733807ef04497e1812bf936a0345a9729675dfdf8",
+        "toolchain": "leanprover/lean4:v4.32.2"
+      }
+    },
+    "preserved_surfaces": [
+      "frontend",
+      "backend",
+      "memory",
+      "util",
+      "parsers",
+      "sibylfs",
+      "runtime",
+      "*.lem",
+      "lean_frontend/*.lean",
+      "lean_frontend/native/*",
+      "tests/provider-smoke",
+      "tests/failure-probes",
+      "scripts/exec*_baseline.txt",
+      "scripts/gcc_oracle_baseline.txt",
+      "tests/immaculate",
+      "tests/libc_exec",
+      "tests/ci_sweep/results"
+    ],
+    "semantic_probe_baseline_diff_empty": true,
+    "only_common_sh_content_pin_changed": true,
+    "mainline_is_ancestor_of_primary": true,
+    "mainline_is_ancestor_of_private": false,
+    "customer_and_legacy_ownership": "not inspected or operated on; no adoption claim"
+  },
+  "interrupted_attempt": {
+    "functional_head": "68de6771c65d06704612c691a9fca7efbff70e3d",
+    "status": "incomplete",
+    "passed_commands": 29,
+    "interrupted_signal": 15,
+    "interruption_record": "development archive: signal-repair-interruption.json"
+  },
+  "remaining": [
+    "second review and landing discussion",
+    "C2/C3 excluded by ownership",
+    "refined-cerberus adoption remains with its agent",
+    "documented semantic and SC integration obligations"
+  ],
+  "final_checkpoint": {
+    "status": "passed",
+    "commands": 13,
+    "summed_seconds": 394.135,
+    "source_unchanged": true,
+    "external_inputs_unchanged": true,
+    "artifact_changes": 29,
+    "lost_artifacts": [],
+    "summary": "final-checkpoint-summary.json",
+    "post_gate_scope": [
+      "lean_frontend/TODO.md current C4 reporting entry",
+      "lean_frontend/docs/2026-09-06_validation-foundations-audit-repairs.md final checkpoint result",
+      "repair-evidence README.md, summary.json, SHA256SUMS",
+      "repair-evidence final-checkpoint.tar.gz, final-checkpoint.json, final-checkpoint-summary.json and publication-summary.json"
+    ]
+  }
+}

@@ -4,14 +4,14 @@
 evidence and limits. It supersedes unconditional overview claims of one
 semantics “by construction” or entirely absent ambient state. Source heads
 and finished/unrun gates belong to the
-[delivery record](2026-09-06_validation-foundations-delivery.md).
+[audit repair record](2026-09-06_validation-foundations-audit-repairs.md).
 The historical functional candidate completed 32 Tier A+B commands, both
 affected reporting measurements and the cold provider/probe recipes. The
 [first audit](2026-09-06_validation-foundations-premerge-audit.md) nevertheless
 found four P1 and seven P2 defects in instruments and evidence attribution.
-The [repair record](2026-09-06_validation-foundations-audit-repairs.md) tracks
-the corrections and candidate reruns. Review acceptance and the semantic,
-adoption and release exits below remain separate obligations.
+The implemented corrections have a complete new 32-command battery and
+fresh cold provider/census/probe and C1/C4 measurements. Review acceptance
+and the semantic, adoption and release exits below remain separate obligations.
 
 ## Claims that can currently be made
 
@@ -70,7 +70,7 @@ No responsibility for a provider theorem is transferred to refined-cerberus.
 | VF-8 / inherited defects | Null pointer arithmetic and other immaculate crash/refusal cases retain exact inputs. Agreement on crashing behavior does not supply a C result. | Cerberus provider: preserve three-way evidence, distinguish deliberate model failure from host artifacts, and keep precise upstream drafts. |
 | VF-9 / evidence limit | Twelve historical audit logs are missing; original checksums and available files are separately retained. | Cerberus provider: use [the corrected inventory](2026-09-05_whole-project-audit-evidence/README.md); new reproductions carry new dates and hashes. |
 | VF-10 / release exit | Final Tier A+B passed 32/32, C1/C4 recorded all prescribed rows, and cold provider/failure evidence completed on identified sources. C2/C3 remain unrun by ownership; customer adoption and successful second-review acceptance remain outstanding. | Preserve the delivered gates/artifacts; customer agent owns adoption; operator decides audit/landing and unavailable evidence. Certification remains incomplete. |
-| VF-12 / reporting findings | [Current C4 evidence](2026-09-06_ci-reporting-results.md): one libc UB-location loss, three explicit filesystem refusals and two Lean timeouts among 2,186 rows. | Provider owns location retention (registered Z1-A1), future supported filesystem behavior and identified completion/cost investigation. These six rows are not agreements; 56 historical movements are recorded without blanket causal attribution to this charter. |
+| VF-12 / reporting findings | [Current C4 evidence](2026-09-06_ci-reporting-results.md): one libc UB-location loss, three explicit filesystem refusals and three Lean timeouts among 2,186 rows. | Provider owns location retention (registered Z1-A1), future supported filesystem behavior and identified completion/cost investigation. These seven rows are not agreements; 56 historical movements are recorded without blanket causal attribution to this charter. |
 | VF-11 / observation limit | Batch Error omits internal stderr and the protocol has no declared outcome count; equal printed records do not prove full-state/exploration equality. | Provider: design a versioned richer protocol if a customer claim needs those fields; keep present comparison projections explicit. |
 
 The full census is the per-site source-obligation register for remaining pure

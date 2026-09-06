@@ -1,0 +1,17 @@
+{
+  "axiom_cones": {
+    "ProviderSmoke.completed": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "ProviderSmoke.remember_result": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ]
+  },
+  "proof_source_sha256": "afd3abd15df2c493823cb83f8629e3bdac78de6bb6a688ef5c4a78b3d414b735",
+  "client_copy_matches_committed_proof": true,
+  "stdout_sha256": "346eb22f083b803e741bcf9bdd92ac47151d339e40d06ed2eb5baeb0032b1d35"
+}

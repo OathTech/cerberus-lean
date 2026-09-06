@@ -1,6 +1,13 @@
 # Clean provider build and consumer proof
 
-2026-09-06 [AGENT], validation-foundations G5. The final cold rehearsal
+2026-09-06 [AGENT], validation-foundations G5. The repaired candidate at
+`de9f6d3612232d581622afcdf0b23cdaf31fa09d` completed a new 20-command cold
+rehearsal. The [repair evidence](validation-foundations-repair-evidence/provider-summary.json)
+identifies its fresh compiler/runtime, unchanged generated sources, proof and
+failure measurements. Second-review acceptance and customer adoption remain
+pending. The earlier rehearsals below are preserved history.
+
+The original delivery's final cold rehearsal
 completed all 20 steps from Cerberus
 `1066d89eea16f55a0f204f95c351731629df296a` and Lem
 `f6542f8e6860d12d4655e6648bc4c45dabd1d798`.
@@ -28,7 +35,7 @@ during cleanup, and stops subsequent dispatch after delivering it; a pipe
 guardian cleans after supervisor death. This is a command-lifetime mechanism,
 not isolation from code that deliberately migrates between cgroups. See the
 [audit repair record](2026-09-06_validation-foundations-audit-repairs.md).
- The repositories supply local Git objects;
+The repositories supply local Git objects;
 their mainline worktrees are not modified. The recipe creates owned detached
 worktrees and a fresh dependency clone. It neither runs the worktree-priming
 helper nor copies generated Cerberus, native objects, or Lake build products.

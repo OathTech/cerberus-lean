@@ -361,11 +361,14 @@ owned and hands off; this roadmap does not authorize operating it.
   seven harnesses + dedicated baseline-instrument commit = mem-scale
   S2 (charter §6.4); then re-run the class-(b) rows.
 - **Tier-C CI re-record — measured 2026-09-06**: all 2,186 rows across
-  15 suites were recorded on `1066d89ee`, after extractor/status repair.
-  [Current results and all 56 historical movements](docs/2026-09-06_ci-reporting-results.md)
-  retain one libc UB-location defect, three filesystem refusals and two Lean
-  timeouts. Fresh TSVs and raw records are committed in the evidence archive;
-  the old default scoreboards remain explicitly historical. Remaining work
+  15 suites were remeasured on repaired functional candidate `de9f6d361`.
+  [Current results and the separate original history](docs/2026-09-06_ci-reporting-results.md)
+  retain 1,359 agreements, one libc UB-location defect, three filesystem
+  refusals and three Lean timeouts. The sole movement from `1066d89ee` is
+  `pr63209.c`: CERB_TIMEOUT to LEAN_TIMEOUT at the unchanged 15-second budget.
+  Fresh TSVs and both runs' raw records are retained in the evidence archives;
+  the original 56 historical movements and default scoreboards remain unchanged.
+  Remaining work
   is the registered semantic/completion obligations and remeasurement after
   relevant changes, not another run of this completed candidate measurement.
 - **CerbFS real-fs mover + served-pattern probe family (S)** —

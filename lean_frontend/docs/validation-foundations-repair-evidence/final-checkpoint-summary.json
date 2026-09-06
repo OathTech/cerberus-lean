@@ -1,0 +1,460 @@
+{
+  "schema": 1,
+  "functional_source": "de9f6d3612232d581622afcdf0b23cdaf31fa09d",
+  "report": ".validation-foundations/audit-repairs-20260906/final-checkpoint/report.json",
+  "report_sha256": "bbe7d395a9b049ca475db72b4c6ad817cc7e3ab6d8b3ce4bc9e0ab46f93b49ee",
+  "status": "passed",
+  "commands": 13,
+  "summed_seconds": 394.135,
+  "source_before": {
+    "branch": "arc/validation-foundations",
+    "diff_sha256": "76f38618fa55082980b70eb34fb55fd11b2dc182d435696c2cbbc2acfbaebff1",
+    "head": "de9f6d3612232d581622afcdf0b23cdaf31fa09d",
+    "status": "M lean_frontend/README.md\n M lean_frontend/VALIDATION.md\n M lean_frontend/docs/2026-09-05_master-plan.md\n M lean_frontend/docs/2026-09-05_orchestrator-handoff.md\n M lean_frontend/docs/2026-09-06_ci-reporting-results.md\n M lean_frontend/docs/2026-09-06_failure-census-and-correspondence.md\n M lean_frontend/docs/2026-09-06_provider-smoke.md\n M lean_frontend/docs/2026-09-06_supported-profile.md\n M lean_frontend/docs/2026-09-06_validation-foundations-audit-repairs.md\n M scripts/LADDER.md\n?? lean_frontend/docs/validation-foundations-repair-evidence/",
+    "untracked_sha256": {
+      "lean_frontend/docs/validation-foundations-repair-evidence/README.md": "21d97121e35ea0a5154a4e893a85d7a118a1e31bf5e5ac42068acffc8cc24510",
+      "lean_frontend/docs/validation-foundations-repair-evidence/SHA256SUMS": "8ae9209c8ddd1827756e8a2070a6d5ae1b8133f622fc91b6a32ff3800c6f048f",
+      "lean_frontend/docs/validation-foundations-repair-evidence/archive_evidence_zstd.py": "df4cb2d0f7f9d7da7205c33dc6ca558f7ea7e5e63ad8793e487488fa7597f86a",
+      "lean_frontend/docs/validation-foundations-repair-evidence/artifact-rebuild-account-v2.json": "5d4a3abd08b2ecd7f2e17465f680c0e38e1c7f19792feb266006b4689bb5b440",
+      "lean_frontend/docs/validation-foundations-repair-evidence/byte-producer-controls-v2.json": "cce71ba8dd292803b30097b42788cf8805eb50e3c1cb9267dd364939f6042b25",
+      "lean_frontend/docs/validation-foundations-repair-evidence/c4-timing-movement-v2.json": "9f8b6bee247df6954899027c619ed4fb14fb4d85f5d7e776070378ff819f789f",
+      "lean_frontend/docs/validation-foundations-repair-evidence/census-replay-comparison.json": "d96a6e3dcd1d08daa74f9b564cdea1921f3fd2d84e4593fd6c80a07e3a23fe23",
+      "lean_frontend/docs/validation-foundations-repair-evidence/development.json": "7e9db8a0436684a444f605cb1aeba3ce63357d283dd839e77ee5206f5c7a34bb",
+      "lean_frontend/docs/validation-foundations-repair-evidence/development.tar.zst": "6382ab5c7ff5319f4a83ad119bda9677bea8f790e971dcc7ff47f1f0113182ed",
+      "lean_frontend/docs/validation-foundations-repair-evidence/documentation-source-check.json": "5bc8bcbb22fd31d6155c13473fd9d6656530aa1b56b9f00c065fb9db036cb578",
+      "lean_frontend/docs/validation-foundations-repair-evidence/fresh-failure-reproduction-v2.json": "38d58d40b4344d8af5ec76208877d477b4c678a88ce88565e7db361e43eec9ea",
+      "lean_frontend/docs/validation-foundations-repair-evidence/full-summary.json": "3c983b7f328003a69410ddfe8363bb541102797ea03c7e0343c820ed20e01976",
+      "lean_frontend/docs/validation-foundations-repair-evidence/full.json": "254081636c24fc56cb05616b244c01c14bffbba0dc7851f8d3a54080d55431af",
+      "lean_frontend/docs/validation-foundations-repair-evidence/full.tar.zst": "a3a7184e92cb0a83c6f9da1304e3211be71794a5745f02657bf06fa833a710c6",
+      "lean_frontend/docs/validation-foundations-repair-evidence/functional-source-preservation-v2.json": "aab62cffdd6d6c6f1d7ca02b98d360e1cbe7aeb1506a8580d2d02f4469e58ce6",
+      "lean_frontend/docs/validation-foundations-repair-evidence/gate-to-commit.json": "e5211322c29be6793185c7bd74dc3af4fd0cdd84aa1fa1a147bc7601db55795f",
+      "lean_frontend/docs/validation-foundations-repair-evidence/interrupted-full.json": "abf6103495ec21d497ce71b71601c70b352907c9e98a76e70d92b5b0299bcb57",
+      "lean_frontend/docs/validation-foundations-repair-evidence/interrupted-full.tar.zst": "561654d291a412813823795eb4c3f5d661d8a0056c7440958ae60e76e6a561e8",
+      "lean_frontend/docs/validation-foundations-repair-evidence/provider-adoption.json": "13a05e34319f12344024985e6147fb393e05c9f6f005a9fa4c161b553446723e",
+      "lean_frontend/docs/validation-foundations-repair-evidence/provider-failures.json": "d455832a251b33257d5ee5add74576ab1b95dd2fe644df9699938472c4ee2eb0",
+      "lean_frontend/docs/validation-foundations-repair-evidence/provider-failures.tar.zst": "4ec08324081c4eb4a29efcb29cce3b8c9b49b100050ede3a2eb480296aa89f71",
+      "lean_frontend/docs/validation-foundations-repair-evidence/provider-proof-v2.json": "8cd426eb4bb1a4f5db95cb3b3ceeab74dce576af92b6c4fa12ed68bcb429816d",
+      "lean_frontend/docs/validation-foundations-repair-evidence/provider-summary.json": "dd0568e0e579003b7306b0cd775678398c6f1308be184b0b835544c5e475ddb4",
+      "lean_frontend/docs/validation-foundations-repair-evidence/reporting-summary.json": "0ada7c2010b854b9c08be0d5cd1f15e5afec298f5b11fd18c4fa100dbfec8da8",
+      "lean_frontend/docs/validation-foundations-repair-evidence/reporting.json": "13a5ae44b8d33bdb48af623ff19df1616f533d58969b14a89120e7577ec9359d",
+      "lean_frontend/docs/validation-foundations-repair-evidence/reporting.tar.zst": "a7b081ace8f87d6a8b105fae5dc28083e4f8548650a84e2a994f455867511cb6",
+      "lean_frontend/docs/validation-foundations-repair-evidence/signal-repair-gate-to-commit.json": "539bd78686e0f3bd921b10b0aa1dd7f834fc5ef644a623aec14a854c0fbc5d49",
+      "lean_frontend/docs/validation-foundations-repair-evidence/summary.json": "6c0d432f853c8bceb646d366b62128fb513e04ba5fc668a2d07303648423738d"
+    }
+  },
+  "source_after": {
+    "branch": "arc/validation-foundations",
+    "diff_sha256": "76f38618fa55082980b70eb34fb55fd11b2dc182d435696c2cbbc2acfbaebff1",
+    "head": "de9f6d3612232d581622afcdf0b23cdaf31fa09d",
+    "status": "M lean_frontend/README.md\n M lean_frontend/VALIDATION.md\n M lean_frontend/docs/2026-09-05_master-plan.md\n M lean_frontend/docs/2026-09-05_orchestrator-handoff.md\n M lean_frontend/docs/2026-09-06_ci-reporting-results.md\n M lean_frontend/docs/2026-09-06_failure-census-and-correspondence.md\n M lean_frontend/docs/2026-09-06_provider-smoke.md\n M lean_frontend/docs/2026-09-06_supported-profile.md\n M lean_frontend/docs/2026-09-06_validation-foundations-audit-repairs.md\n M scripts/LADDER.md\n?? lean_frontend/docs/validation-foundations-repair-evidence/",
+    "untracked_sha256": {
+      "lean_frontend/docs/validation-foundations-repair-evidence/README.md": "21d97121e35ea0a5154a4e893a85d7a118a1e31bf5e5ac42068acffc8cc24510",
+      "lean_frontend/docs/validation-foundations-repair-evidence/SHA256SUMS": "8ae9209c8ddd1827756e8a2070a6d5ae1b8133f622fc91b6a32ff3800c6f048f",
+      "lean_frontend/docs/validation-foundations-repair-evidence/archive_evidence_zstd.py": "df4cb2d0f7f9d7da7205c33dc6ca558f7ea7e5e63ad8793e487488fa7597f86a",
+      "lean_frontend/docs/validation-foundations-repair-evidence/artifact-rebuild-account-v2.json": "5d4a3abd08b2ecd7f2e17465f680c0e38e1c7f19792feb266006b4689bb5b440",
+      "lean_frontend/docs/validation-foundations-repair-evidence/byte-producer-controls-v2.json": "cce71ba8dd292803b30097b42788cf8805eb50e3c1cb9267dd364939f6042b25",
+      "lean_frontend/docs/validation-foundations-repair-evidence/c4-timing-movement-v2.json": "9f8b6bee247df6954899027c619ed4fb14fb4d85f5d7e776070378ff819f789f",
+      "lean_frontend/docs/validation-foundations-repair-evidence/census-replay-comparison.json": "d96a6e3dcd1d08daa74f9b564cdea1921f3fd2d84e4593fd6c80a07e3a23fe23",
+      "lean_frontend/docs/validation-foundations-repair-evidence/development.json": "7e9db8a0436684a444f605cb1aeba3ce63357d283dd839e77ee5206f5c7a34bb",
+      "lean_frontend/docs/validation-foundations-repair-evidence/development.tar.zst": "6382ab5c7ff5319f4a83ad119bda9677bea8f790e971dcc7ff47f1f0113182ed",
+      "lean_frontend/docs/validation-foundations-repair-evidence/documentation-source-check.json": "5bc8bcbb22fd31d6155c13473fd9d6656530aa1b56b9f00c065fb9db036cb578",
+      "lean_frontend/docs/validation-foundations-repair-evidence/fresh-failure-reproduction-v2.json": "38d58d40b4344d8af5ec76208877d477b4c678a88ce88565e7db361e43eec9ea",
+      "lean_frontend/docs/validation-foundations-repair-evidence/full-summary.json": "3c983b7f328003a69410ddfe8363bb541102797ea03c7e0343c820ed20e01976",
+      "lean_frontend/docs/validation-foundations-repair-evidence/full.json": "254081636c24fc56cb05616b244c01c14bffbba0dc7851f8d3a54080d55431af",
+      "lean_frontend/docs/validation-foundations-repair-evidence/full.tar.zst": "a3a7184e92cb0a83c6f9da1304e3211be71794a5745f02657bf06fa833a710c6",
+      "lean_frontend/docs/validation-foundations-repair-evidence/functional-source-preservation-v2.json": "aab62cffdd6d6c6f1d7ca02b98d360e1cbe7aeb1506a8580d2d02f4469e58ce6",
+      "lean_frontend/docs/validation-foundations-repair-evidence/gate-to-commit.json": "e5211322c29be6793185c7bd74dc3af4fd0cdd84aa1fa1a147bc7601db55795f",
+      "lean_frontend/docs/validation-foundations-repair-evidence/interrupted-full.json": "abf6103495ec21d497ce71b71601c70b352907c9e98a76e70d92b5b0299bcb57",
+      "lean_frontend/docs/validation-foundations-repair-evidence/interrupted-full.tar.zst": "561654d291a412813823795eb4c3f5d661d8a0056c7440958ae60e76e6a561e8",
+      "lean_frontend/docs/validation-foundations-repair-evidence/provider-adoption.json": "13a05e34319f12344024985e6147fb393e05c9f6f005a9fa4c161b553446723e",
+      "lean_frontend/docs/validation-foundations-repair-evidence/provider-failures.json": "d455832a251b33257d5ee5add74576ab1b95dd2fe644df9699938472c4ee2eb0",
+      "lean_frontend/docs/validation-foundations-repair-evidence/provider-failures.tar.zst": "4ec08324081c4eb4a29efcb29cce3b8c9b49b100050ede3a2eb480296aa89f71",
+      "lean_frontend/docs/validation-foundations-repair-evidence/provider-proof-v2.json": "8cd426eb4bb1a4f5db95cb3b3ceeab74dce576af92b6c4fa12ed68bcb429816d",
+      "lean_frontend/docs/validation-foundations-repair-evidence/provider-summary.json": "dd0568e0e579003b7306b0cd775678398c6f1308be184b0b835544c5e475ddb4",
+      "lean_frontend/docs/validation-foundations-repair-evidence/reporting-summary.json": "0ada7c2010b854b9c08be0d5cd1f15e5afec298f5b11fd18c4fa100dbfec8da8",
+      "lean_frontend/docs/validation-foundations-repair-evidence/reporting.json": "13a5ae44b8d33bdb48af623ff19df1616f533d58969b14a89120e7577ec9359d",
+      "lean_frontend/docs/validation-foundations-repair-evidence/reporting.tar.zst": "a7b081ace8f87d6a8b105fae5dc28083e4f8548650a84e2a994f455867511cb6",
+      "lean_frontend/docs/validation-foundations-repair-evidence/signal-repair-gate-to-commit.json": "539bd78686e0f3bd921b10b0aa1dd7f834fc5ef644a623aec14a854c0fbc5d49",
+      "lean_frontend/docs/validation-foundations-repair-evidence/summary.json": "6c0d432f853c8bceb646d366b62128fb513e04ba5fc668a2d07303648423738d"
+    }
+  },
+  "source_unchanged": true,
+  "external_inputs_unchanged": true,
+  "artifact_issues": [],
+  "artifact_changes": {
+    "_build/default/backend/driver/main.exe": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/backend/driver/main.exe",
+        "sha256": "e33755a24743f5eaee6215b3d0ce3abdba20f6201ac7c49f469d7f8e79224208"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/backend/driver/main.exe",
+        "sha256": "01cbe23f0920ab8a7afb0d4e43ae0fc91bdfe2764d8ffa66d8135e524a125a23"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/backend_common/cerb_backend.cma": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/backend/common/cerb_backend.cma",
+        "sha256": "9c526367a42b5478b9f3cad4ba4263df11591cd52d512e2e4ec6ebd3feac2772"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/backend/common/cerb_backend.cma",
+        "sha256": "062a26170eccaa0b7da41f753a57ae2387f785ac2b4b534821b2674e9cb2f22b"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/backend_common/cerb_backend.cmxa": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/backend/common/cerb_backend.cmxa",
+        "sha256": "d32d47b04f8082df87a1c7fe2b9b034eaac8b50da6732e08c96ab4e634906999"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/backend/common/cerb_backend.cmxa",
+        "sha256": "f9f239c076c2c18c6478ed4153be33b688539afb6897e02b854bc97b337b2a90"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/backend_common/cerb_backend.cmxs": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/backend/common/cerb_backend.cmxs",
+        "sha256": "c27ca26964110b03e52a711fe2054debc1a29be135f07c09e88edf844be36be4"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/backend/common/cerb_backend.cmxs",
+        "sha256": "42fae672ce193fe95101f2da66f973516f846c4cb5a139f7b2076eb0dedd0789"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/backend_common/cerb_backend__Pipeline.cmt": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/backend/common/.cerb_backend.objs/byte/cerb_backend__Pipeline.cmt",
+        "sha256": "90b05c48fafe90aef3ca52c149d7ff1760a1914da9eb4ab55f4774033090892e"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/backend/common/.cerb_backend.objs/byte/cerb_backend__Pipeline.cmt",
+        "sha256": "a90edc12c0940978185c6e1cb8c3ce2e0979e56f964a73204147749b05261b42"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/backend_common/cerb_backend__Pipeline.cmx": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/backend/common/.cerb_backend.objs/native/cerb_backend__Pipeline.cmx",
+        "sha256": "a1e56bc11f3541fce0d76dd5269e455ae6e1212bb1fcf3688286a405a82748c5"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/backend/common/.cerb_backend.objs/native/cerb_backend__Pipeline.cmx",
+        "sha256": "9ab1cd313f147129b1634125184a4604420f60c1682e9a088a28705a9df97583"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/frontend/cerb_frontend__Version.cmi": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/ocaml_frontend/.cerb_frontend.objs/byte/cerb_frontend__Version.cmi",
+        "sha256": "5e79ab6dd73fdf307a964b008d53ee5f0d3165e8b3724e41331bdbd049dcc80b"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/ocaml_frontend/.cerb_frontend.objs/byte/cerb_frontend__Version.cmi",
+        "sha256": "0f3d8a2fada22b1b04d30ac2fad80a550d1168420c1a796af663c31b9cb710ff"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/frontend/cerb_frontend__Version.cmo": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/ocaml_frontend/.cerb_frontend.objs/byte/cerb_frontend__Version.cmo",
+        "sha256": "afa590b6d84f64433f535b18efb66a0c0d84a239660bfaf86f9eb69a1685ec63"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/ocaml_frontend/.cerb_frontend.objs/byte/cerb_frontend__Version.cmo",
+        "sha256": "28210e2a6ac9ac078a163e0712fc7c99adb47b99950e2e8d911120d39ba8eb3a"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/frontend/cerb_frontend__Version.cmt": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/ocaml_frontend/.cerb_frontend.objs/byte/cerb_frontend__Version.cmt",
+        "sha256": "033183c9b55653b942d16098c8939e835472bb82560fcf1ff2aaf7c20d343294"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/ocaml_frontend/.cerb_frontend.objs/byte/cerb_frontend__Version.cmt",
+        "sha256": "3c7f535efcc16e54a5ee07d2efff6a546dc46775bd0428fbaf10952d82094610"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/frontend/cerb_frontend__Version.cmx": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/ocaml_frontend/.cerb_frontend.objs/native/cerb_frontend__Version.cmx",
+        "sha256": "d3c0480dd0c39d92640126319028e2ac3a1c879ba075aa951b444fb9a01a3813"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/ocaml_frontend/.cerb_frontend.objs/native/cerb_frontend__Version.cmx",
+        "sha256": "2530d90108c67df14363158896f5741f981afb8e09cec9ebc33e13b87e3382da"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/frontend/cerb_frontend__Version.o": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/ocaml_frontend/.cerb_frontend.objs/native/cerb_frontend__Version.o",
+        "sha256": "508aecf7f785b670134a5e11bfb982d65bd5e897a5c2dc6ce70acc4696a631ce"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/ocaml_frontend/.cerb_frontend.objs/native/cerb_frontend__Version.o",
+        "sha256": "7034c9a6cebe991239eb6ae16feba7939d50ac0d425858bbc7bd0c0edf9ac35b"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/frontend/version.ml": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/ocaml_frontend/version.ml",
+        "sha256": "ecc32e858c61753ccdde5236e2eb5fd09255f015c20d82704641af7e9badb52c"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/ocaml_frontend/version.ml",
+        "sha256": "13cc5d30e9f7c475066f704dcad6ab9252fc3866c273a41b63167e56813f46ac"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/mem/concrete/cerb_frontend__Version.cmi": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/ocaml_frontend/.cerb_frontend.objs/byte/cerb_frontend__Version.cmi",
+        "sha256": "5e79ab6dd73fdf307a964b008d53ee5f0d3165e8b3724e41331bdbd049dcc80b"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/ocaml_frontend/.cerb_frontend.objs/byte/cerb_frontend__Version.cmi",
+        "sha256": "0f3d8a2fada22b1b04d30ac2fad80a550d1168420c1a796af663c31b9cb710ff"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/mem/concrete/cerb_frontend__Version.cmx": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/ocaml_frontend/.cerb_frontend.objs/native/cerb_frontend__Version.cmx",
+        "sha256": "d3c0480dd0c39d92640126319028e2ac3a1c879ba075aa951b444fb9a01a3813"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/ocaml_frontend/.cerb_frontend.objs/native/cerb_frontend__Version.cmx",
+        "sha256": "2530d90108c67df14363158896f5741f981afb8e09cec9ebc33e13b87e3382da"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/mem/concrete/mem_concrete.a": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/memory/concrete/mem_concrete.a",
+        "sha256": "4e602787c608afe5f6ceb9e156254c1bdd2539d2b1f223006a58e101a465ab30"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/memory/concrete/mem_concrete.a",
+        "sha256": "e769832771fc271e9ae798fe92c0166f5618b27ce6b866c6e06c525e9148d386"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/mem/concrete/mem_concrete.cma": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/memory/concrete/mem_concrete.cma",
+        "sha256": "c7c23823eeb83f28a4b9fd88fda248fc962f6b675adf9464f61c6c9846f90f65"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/memory/concrete/mem_concrete.cma",
+        "sha256": "9a045bb47afc5e66b665ae08653696f7682b3387d5e6fcd66d182b02f8782c05"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/mem/concrete/mem_concrete.cmxa": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/memory/concrete/mem_concrete.cmxa",
+        "sha256": "bc158d3aa3ab2444c1841bd8dbf1ff37837c959a4c58a768142634684df78411"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/memory/concrete/mem_concrete.cmxa",
+        "sha256": "e4b6c27a645f7adf9e87a4de0effa13a677f2011eddc3594022da00aa83b37a8"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/mem/concrete/mem_concrete.cmxs": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/memory/concrete/mem_concrete.cmxs",
+        "sha256": "9a36d4c747d5e109167b5f8211272c5e49e3fa2bd17e20c891ed283dca0a762a"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/memory/concrete/mem_concrete.cmxs",
+        "sha256": "52546a215409e0118520c4f977d6a2cc4e11b5143fa828c8770722bc1499a1f3"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/mem/vip/cerb_frontend__Version.cmi": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/ocaml_frontend/.cerb_frontend.objs/byte/cerb_frontend__Version.cmi",
+        "sha256": "5e79ab6dd73fdf307a964b008d53ee5f0d3165e8b3724e41331bdbd049dcc80b"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/ocaml_frontend/.cerb_frontend.objs/byte/cerb_frontend__Version.cmi",
+        "sha256": "0f3d8a2fada22b1b04d30ac2fad80a550d1168420c1a796af663c31b9cb710ff"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/mem/vip/cerb_frontend__Version.cmx": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/ocaml_frontend/.cerb_frontend.objs/native/cerb_frontend__Version.cmx",
+        "sha256": "d3c0480dd0c39d92640126319028e2ac3a1c879ba075aa951b444fb9a01a3813"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/ocaml_frontend/.cerb_frontend.objs/native/cerb_frontend__Version.cmx",
+        "sha256": "2530d90108c67df14363158896f5741f981afb8e09cec9ebc33e13b87e3382da"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/mem/vip/mem_vip.a": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/memory/vip/mem_vip.a",
+        "sha256": "255b6a61a248c106ea1fc168b57d2f3dccc9d68520b0839b2c9fc7e09631d8bf"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/memory/vip/mem_vip.a",
+        "sha256": "1dc354f2970883e6c2696678558ee90a7e00c063176c3b09f8ec600af2214dbd"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/mem/vip/mem_vip.cma": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/memory/vip/mem_vip.cma",
+        "sha256": "65123254d36c97fbb30538bc739442398348785e0aa8f1419e3385d09a125714"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/memory/vip/mem_vip.cma",
+        "sha256": "df030b8634a41f2d48e0ebaaa1a3be9e511b63d07492d8434d7e8881451c9bb6"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/mem/vip/mem_vip.cmxa": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/memory/vip/mem_vip.cmxa",
+        "sha256": "7018c4c87752f234ba51281842fd0a4df60bf49db60975b9fa306ee47594b953"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/memory/vip/mem_vip.cmxa",
+        "sha256": "3beb3492515c33040572246fbabdf292ed9d4571e2b4426aae9b2c692fc9838f"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/mem/vip/mem_vip.cmxs": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/memory/vip/mem_vip.cmxs",
+        "sha256": "a3a9c56633b58ed9ab7c7315fd6d05525036436ef0d657d1f4bce0a337f13d1b"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/memory/vip/mem_vip.cmxs",
+        "sha256": "41019633dffb6296864b54267316b52ec7fe296b1a214f6a7dc5471a6d2e6789"
+      }
+    },
+    "_build/install/default/lib/cerberus/runtime/libc/libc.co": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/runtime/libc/libc.co",
+        "sha256": "13c5e4b2bf9959414f940a9570cec9807249670376bb3087643fde12a1dc20aa"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/runtime/libc/libc.co",
+        "sha256": "eb41b826f32dcb3165c116cf1cfe7e0a53ae830fd89ed7da092c65f341983863"
+      }
+    },
+    "_build/install/default/lib/cerberus/runtime/libc/libc_inner_arg_temps.co": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/runtime/libc/libc_inner_arg_temps.co",
+        "sha256": "01516eec0ba0e168de60ca950491ce4f003390f9de1ad1ad7c6dcc5c276d6fa9"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/runtime/libc/libc_inner_arg_temps.co",
+        "sha256": "a9591373ca0ab2c91e289255ae48d1ffbef093bf03c1bd991211ecf14561012b"
+      }
+    },
+    "_build/install/default/lib/cerberus/runtime/libc/libm.co": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/runtime/libc/libm.co",
+        "sha256": "a4f4d2cc7c70fcbcbdc4630d1185e2c5efe70b75d0615929046ba7a42f7500c6"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/runtime/libc/libm.co",
+        "sha256": "cc39480f9314b9a052f22b7c21550e2f4bb3dacb6310535a8a43436e4af41b67"
+      }
+    },
+    "driver_fresh.lean.sha256": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/driver_fresh.lean.sha256",
+        "sha256": "77d53c3826b36ce0380b6e11faeb1faa8d5069db0295bb72f79ac21ee0784a1e",
+        "text": "commit de9f6d3612232d581622afcdf0b23cdaf31fa09d\nbin 32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6\nsrc 89a31871cc2e83121d7efb009c35aa6c50216b31f6dad88cee4688b0786edf28\n"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/driver_fresh.lean.sha256",
+        "sha256": "e62cd20e38c404f478ba9ab31e7d0d5303e14b25d964081da295fa6d3623f66f",
+        "text": "commit de9f6d3612232d581622afcdf0b23cdaf31fa09d +dirty\nbin 32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6\nsrc 89a31871cc2e83121d7efb009c35aa6c50216b31f6dad88cee4688b0786edf28\n"
+      }
+    },
+    "driver_fresh.oracle.sha256": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/driver_fresh.oracle.sha256",
+        "sha256": "e8b9871d5a0e4c3c4e65cbd7148e88a9ea77fd6e5a4c69e1e4fbb5391e797cf2",
+        "text": "commit de9f6d3612232d581622afcdf0b23cdaf31fa09d\nbin e33755a24743f5eaee6215b3d0ce3abdba20f6201ac7c49f469d7f8e79224208\nsrc 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda\n"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/driver_fresh.oracle.sha256",
+        "sha256": "39925fcf9601f336a1a68bd802f6f0bcf921699e1cfeeac4ea6939147e24c873",
+        "text": "commit de9f6d3612232d581622afcdf0b23cdaf31fa09d +dirty\nbin 01cbe23f0920ab8a7afb0d4e43ae0fc91bdfe2764d8ffa66d8135e524a125a23\nsrc 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda\n"
+      }
+    }
+  },
+  "lost_artifacts": [],
+  "all_command_log_hashes_verified": true,
+  "all_owned_scopes_removed": true,
+  "ladder_commands_unchanged": true,
+  "tested_diff": "final-checkpoint archive: .validation-foundations/audit-repairs-20260906/final-checkpoint-tested.diff",
+  "tested_publication_metadata": "final-checkpoint archive: .validation-foundations/audit-repairs-20260906/final-checkpoint-publication-snapshots/",
+  "post_gate_publication": [
+    "lean_frontend/TODO.md current C4 reporting entry",
+    "lean_frontend/docs/2026-09-06_validation-foundations-audit-repairs.md final checkpoint result",
+    "repair-evidence README.md, summary.json, SHA256SUMS",
+    "repair-evidence final-checkpoint.tar.gz, final-checkpoint.json, final-checkpoint-summary.json and publication-summary.json"
+  ],
+  "scope": "Documentation and evidence publication only after this gate; executable source and ladder command catalogue remain exactly de9f6d361.",
+  "artifact_rebuild_account": {
+    "account": "Same 29 version-bearing OCaml/runtime/freshness entries as the full-run rebuild, now from clean de9f6d361 to its documentation-dirty snapshot. Both source fingerprints and the Lean executable hash are unchanged; the oracle binary hash changed. Serialized bodies and rebuilt OCaml binaries are not asserted identical.",
+    "version_source": "(** Version informations. *)\n\n(** [git_version] gives a git commit version description. *)\nlet git_version : string = \"git-cn-pin-739-gde9f6d361-dirty\"\n\n(** [git_version_date] gives a commit version date. *)\nlet git_version_date : string = \"2026-09-06 18:30:54 +0000\"\n\n(** [version] gives a version description. *)\nlet version : string = \"git-cn-pin-739-gde9f6d361-dirty\"\n",
+    "serialized_runtime_headers": {
+      "_build/install/default/lib/cerberus/runtime/libc/libc.co": "ocaml:5.4.0+cerb:git-cn-pin-739-gde9f6d361-dirty+mem:concrete",
+      "_build/install/default/lib/cerberus/runtime/libc/libc_inner_arg_temps.co": "ocaml:5.4.0+cerb:git-cn-pin-739-gde9f6d361-dirty+mem:concrete",
+      "_build/install/default/lib/cerberus/runtime/libc/libm.co": "ocaml:5.4.0+cerb:git-cn-pin-739-gde9f6d361-dirty+mem:concrete"
+    }
+  }
+}

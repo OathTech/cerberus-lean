@@ -1,0 +1,584 @@
+{
+  "head": "de9f6d3612232d581622afcdf0b23cdaf31fa09d",
+  "manifest_sha256": "33e069ec0966eec66b6a978886b920befd3a3b4bb57bea596d4f64e512aeadd6",
+  "commands": [
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-d0f4f874a0c0400cbec6c0a9a5c89641/cerb-command-232c01620bb04f08a43518b11d337be7",
+      "command": [
+        "git",
+        "-C",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations",
+        "worktree",
+        "add",
+        "--detach",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/provider-functional/cerberus",
+        "de9f6d3612232d581622afcdf0b23cdaf31fa09d"
+      ],
+      "containment_cleaned": true,
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/provider-functional",
+      "exit_status": 0,
+      "expected": 0,
+      "name": "cerberus-checkout",
+      "process_group": 4034133,
+      "seconds": 0.875,
+      "status": "passed",
+      "stderr_sha256": "eaeaa332e9938f1a6b5897addd785451e4ce874ce6978648534a5fd6b17386da",
+      "stdout_sha256": "356291ba5ff857e7877da8240b5e09db18166480f5f48393de0937574fc96186"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-d0f4f874a0c0400cbec6c0a9a5c89641/cerb-command-08d5630ea01747bcbfd6590b6d4abf77",
+      "command": [
+        "git",
+        "-C",
+        "/home/dev/projects/cerberus-lean-proj/lem-lean",
+        "worktree",
+        "add",
+        "--detach",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/provider-functional/lem",
+        "f6542f8e6860d12d4655e6648bc4c45dabd1d798"
+      ],
+      "containment_cleaned": true,
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/provider-functional",
+      "exit_status": 0,
+      "expected": 0,
+      "name": "lem-checkout",
+      "process_group": 4034213,
+      "seconds": 0.119,
+      "status": "passed",
+      "stderr_sha256": "092264da614fe623baf780764ba336128191e44e8515f24223ed9dfcdf6aa2da",
+      "stdout_sha256": "587aaf137d79f4dd99ae0b9b87b300aa6ba37dfacd85a5f431da462bddf859e3"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-d0f4f874a0c0400cbec6c0a9a5c89641/cerb-command-2a9a8b95c7c3433ba0ab48fdd4fa2f7b",
+      "command": [
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/provider-functional/cerberus/tools/check_lem_sync.sh",
+        "--check-lean"
+      ],
+      "containment_cleaned": true,
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/provider-functional/cerberus",
+      "exit_status": 1,
+      "expected": 1,
+      "name": "plant-omitted-lean-generation",
+      "process_group": 4034222,
+      "seconds": 0.073,
+      "status": "passed",
+      "stderr_sha256": "f5c368523cc67d168084bc5078fa6efeb963d54d6360056af08d7a239f8289d8",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-d0f4f874a0c0400cbec6c0a9a5c89641/cerb-command-d2a6a7277aa4460990197c1c734a2982",
+      "command": [
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/provider-functional/cerberus/tools/check_lem_sync.sh",
+        "--check"
+      ],
+      "containment_cleaned": true,
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/provider-functional/cerberus",
+      "exit_status": 1,
+      "expected": 1,
+      "name": "plant-omitted-ocaml-generation",
+      "process_group": 4034249,
+      "seconds": 0.069,
+      "status": "passed",
+      "stderr_sha256": "c902bb294929e735b175c26e422f0c38f3dbc9251f5049e6e5a543d348fbcfd9",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-d0f4f874a0c0400cbec6c0a9a5c89641/cerb-command-8f3497f24e3f4a90ac6f563d5ead0f8f",
+      "command": [
+        "make",
+        "bin/lem",
+        "INSTALL_DIR=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/provider-functional/lem/local-install",
+        "LEMVERSION=f6542f8"
+      ],
+      "containment_cleaned": true,
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/provider-functional/lem",
+      "exit_status": 0,
+      "expected": 0,
+      "name": "lem-compiler",
+      "process_group": 4034276,
+      "seconds": 9.239,
+      "status": "passed",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "466fdc97e48fa459eb0d62a3628c2c40a7487fd5bd5ffd5b2e9d342eb37a1016"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-d0f4f874a0c0400cbec6c0a9a5c89641/cerb-command-7287e201d9cc4dd69ced603280f9c62c",
+      "command": [
+        "make",
+        "-C",
+        "library",
+        "ocaml-libs",
+        "INSTALL_DIR=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/provider-functional/lem/local-install",
+        "LEMVERSION=f6542f8"
+      ],
+      "containment_cleaned": true,
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/provider-functional/lem",
+      "exit_status": 0,
+      "expected": 0,
+      "name": "lem-ocaml-library",
+      "process_group": 4038853,
+      "seconds": 1.526,
+      "status": "passed",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "934a919a0f22ae8754105bc63b6ee9b25ec65a076d3b2930d045bd541eaccab7"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-d0f4f874a0c0400cbec6c0a9a5c89641/cerb-command-9c1315e6db66471ca98346015fac7d0e",
+      "command": [
+        "make",
+        "-C",
+        "ocaml-lib",
+        "all"
+      ],
+      "containment_cleaned": true,
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/provider-functional/lem",
+      "exit_status": 0,
+      "expected": 0,
+      "name": "lem-runtime-build",
+      "process_group": 4041350,
+      "seconds": 4.58,
+      "status": "passed",
+      "stderr_sha256": "e1cd674aebb1336f817daece2ebc4ee254daa5555ea9c4beb73118702f76f125",
+      "stdout_sha256": "9a93ecac1c0df0e713bdfb3d0b12982b44c958f41cf0e7a68004de4d8b406991"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-d0f4f874a0c0400cbec6c0a9a5c89641/cerb-command-d4c5c236c8d1498aba29cb4c94d0b841",
+      "command": [
+        "make",
+        "-C",
+        "ocaml-lib",
+        "install",
+        "INSTALLDIR=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/provider-functional/lem/local-install/lib",
+        "LEMVERSION=f6542f8"
+      ],
+      "containment_cleaned": true,
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/provider-functional/lem",
+      "exit_status": 0,
+      "expected": 0,
+      "name": "lem-runtime-install",
+      "process_group": 4045414,
+      "seconds": 0.224,
+      "status": "passed",
+      "stderr_sha256": "817f51ff619f87df5d2e39fdf6ad7e5cffd95ceb56e5c0aba47aab05888eb026",
+      "stdout_sha256": "1ca8a2c81094742b18367b032943cc22700a465dae3db57bf1a307dbc03c240b"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-d0f4f874a0c0400cbec6c0a9a5c89641/cerb-command-887e03852d7c4a85baaa551e0473eef4",
+      "command": [
+        "git",
+        "clone",
+        "--no-hardlinks",
+        "--no-checkout",
+        "/home/dev/projects/cerberus-lean-proj/lem-lean",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/provider-functional/cerberus/lean_frontend/.lake/packages/LemLib"
+      ],
+      "containment_cleaned": true,
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/provider-functional",
+      "exit_status": 0,
+      "expected": 0,
+      "name": "lake-dependency-clone",
+      "process_group": 4045669,
+      "seconds": 0.274,
+      "status": "passed",
+      "stderr_sha256": "644e4aac75963cf09f5f2653dbc5041717721efc4188abc0fac3738f0f9c78c5",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-d0f4f874a0c0400cbec6c0a9a5c89641/cerb-command-4ca97c3e4d3f4111a6a1f7957db257c3",
+      "command": [
+        "git",
+        "-C",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/provider-functional/cerberus/lean_frontend/.lake/packages/LemLib",
+        "checkout",
+        "--detach",
+        "f6542f8e6860d12d4655e6648bc4c45dabd1d798"
+      ],
+      "containment_cleaned": true,
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/provider-functional",
+      "exit_status": 0,
+      "expected": 0,
+      "name": "lake-dependency-pin",
+      "process_group": 4045980,
+      "seconds": 0.123,
+      "status": "passed",
+      "stderr_sha256": "587aaf137d79f4dd99ae0b9b87b300aa6ba37dfacd85a5f431da462bddf859e3",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-d0f4f874a0c0400cbec6c0a9a5c89641/cerb-command-1b75579cdbb24226a135424aaac6aded",
+      "command": [
+        "make",
+        "prelude-src"
+      ],
+      "containment_cleaned": true,
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/provider-functional/cerberus",
+      "exit_status": 0,
+      "expected": 0,
+      "name": "cerberus-ocaml-generation",
+      "process_group": 4046236,
+      "seconds": 19.055,
+      "status": "passed",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "5f457e5aa0958256c34577ec54692c41e9f0508fb3b09e6f34e52e86e6b31286"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-d0f4f874a0c0400cbec6c0a9a5c89641/cerb-command-d1b196a9eb8f4e6e9d11f3786be010f5",
+      "command": [
+        "make",
+        "lean-prelude-src"
+      ],
+      "containment_cleaned": true,
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/provider-functional/cerberus",
+      "exit_status": 0,
+      "expected": 0,
+      "name": "cerberus-lean-generation",
+      "process_group": 4047175,
+      "seconds": 18.753,
+      "status": "passed",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "515d7a98f0d391ad10fad13915a5801c65d8944015e1fa9e68ce9eaa2df3b4d0"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-d0f4f874a0c0400cbec6c0a9a5c89641/cerb-command-903d77fa5e1b4a48ba761faf62a5bfb3",
+      "command": [
+        "dune",
+        "build",
+        "--root",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/provider-functional/cerberus",
+        "--force",
+        "backend/driver/main.exe",
+        "cerberus-lib.install",
+        "cerberus.install"
+      ],
+      "containment_cleaned": true,
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/provider-functional/cerberus",
+      "exit_status": 0,
+      "expected": 0,
+      "name": "cerberus-ocaml-build",
+      "process_group": 4047320,
+      "seconds": 9.791,
+      "status": "passed",
+      "stderr_sha256": "d5264b8d3c92af42e8fe8f32ae33dd32035daab9470be6873a7a923130ab141b",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-d0f4f874a0c0400cbec6c0a9a5c89641/cerb-command-80796b4a88194e88af5e145498d60ca5",
+      "command": [
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/provider-functional/cerberus/scripts/capped",
+        "make",
+        "lean-native-obj"
+      ],
+      "containment_cleaned": true,
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/provider-functional/cerberus",
+      "exit_status": 0,
+      "expected": 0,
+      "name": "cerberus-native",
+      "process_group": 4048753,
+      "seconds": 0.57,
+      "status": "passed",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "a7320ba37a5f36d2d8934771f8b19cf93a8ae631c12c1d68618c0f65b3624b35"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-d0f4f874a0c0400cbec6c0a9a5c89641/cerb-command-b1e44e941857481c82bc3c6818c8da4e",
+      "command": [
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/provider-functional/cerberus/scripts/capped",
+        "lake",
+        "build"
+      ],
+      "containment_cleaned": true,
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/provider-functional/cerberus/lean_frontend",
+      "exit_status": 0,
+      "expected": 0,
+      "name": "lake-package-1",
+      "process_group": 4048788,
+      "seconds": 206.597,
+      "status": "passed",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "fd42c5793c2675ba62ff435b407a644b1cecb8b8510b654646e80adfa6b7a00d"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-d0f4f874a0c0400cbec6c0a9a5c89641/cerb-command-c9ca845b0bff458aad72bb1647f2aefb",
+      "command": [
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/provider-functional/cerberus/scripts/capped",
+        "lake",
+        "build"
+      ],
+      "containment_cleaned": true,
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/provider-functional/cerberus/lean_frontend/speclab",
+      "exit_status": 0,
+      "expected": 0,
+      "name": "lake-package-2",
+      "process_group": 4068738,
+      "seconds": 96.351,
+      "status": "passed",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "a582cbc1dcbe8955b3cbfc29e0fd7c80047f7bd49e16eceb6196a9c5cf07998e"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-d0f4f874a0c0400cbec6c0a9a5c89641/cerb-command-50ee46352cc04681b26045e68ffc9985",
+      "command": [
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/provider-functional/cerberus/scripts/capped",
+        "lake",
+        "build"
+      ],
+      "containment_cleaned": true,
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/provider-functional/cerberus/tests/mem-scale-probes/micro",
+      "exit_status": 0,
+      "expected": 0,
+      "name": "lake-package-3",
+      "process_group": 4073564,
+      "seconds": 1.477,
+      "status": "passed",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "3c9d3d0acfe6ff5ac591a4a247cc2dc153828c6aaeaeb72dd9289c0596f63a15"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-d0f4f874a0c0400cbec6c0a9a5c89641/cerb-command-0b3f846899c747328046c623a9f85abd",
+      "command": [
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/provider-functional/cerberus/scripts/capped",
+        "lake",
+        "build"
+      ],
+      "containment_cleaned": true,
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/provider-functional/client",
+      "exit_status": 0,
+      "expected": 0,
+      "name": "provider-client",
+      "process_group": 4073635,
+      "seconds": 2.228,
+      "status": "passed",
+      "stderr_sha256": "1c67018360ddac6786e8009b928d131d9a29929982ba11ae55410603de49d1d2",
+      "stdout_sha256": "346eb22f083b803e741bcf9bdd92ac47151d339e40d06ed2eb5baeb0032b1d35"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-d0f4f874a0c0400cbec6c0a9a5c89641/cerb-command-09c39f8de5f74906b13681e8ec8edea3",
+      "command": [
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/provider-functional/cerberus/scripts/capped",
+        "lake",
+        "build"
+      ],
+      "containment_cleaned": true,
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/provider-functional/lem/lean-lib",
+      "exit_status": 0,
+      "expected": 0,
+      "name": "standalone-lem-runtime",
+      "process_group": 4073805,
+      "seconds": 4.833,
+      "status": "passed",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "9ce1aeb0311412e1c33b6b1e306ecd79c7a01b52c5df32cced58211449e4f62d"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-d0f4f874a0c0400cbec6c0a9a5c89641/cerb-command-0b8f581098c14aa2a71aa90d6f9e42b4",
+      "command": [
+        "make",
+        "lean",
+        "CAPPED=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/provider-functional/cerberus/scripts/capped"
+      ],
+      "containment_cleaned": true,
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/provider-functional/lem/tests/comprehensive",
+      "exit_status": 0,
+      "expected": 0,
+      "name": "standalone-lem-comprehensive",
+      "process_group": 4074228,
+      "seconds": 364.216,
+      "status": "passed",
+      "stderr_sha256": "8100060248317458d2376820bddd4a4fc53dbeb27e3917c1f9852d0530d2568f",
+      "stdout_sha256": "7e3c78bd73609c6dee3c17372fd9128d481e85942cece00e1ea4722247cecd19"
+    }
+  ],
+  "verified_artifact_hashes": 1769,
+  "generated_lean_files": 207,
+  "generated_ocaml_files": 86,
+  "generated_sources_match_first_candidate": true,
+  "source_unchanged": true,
+  "release_only_stamps_absent": [
+    "driver_fresh.lean.sha256",
+    "driver_fresh.oracle.sha256"
+  ],
+  "strictness_observations_unchanged": true,
+  "observations": [
+    {
+      "mechanism": "unused_binding",
+      "results": {
+        "ocaml": {
+          "exit_status": 2,
+          "stdout_last_line": []
+        },
+        "lean-native": {
+          "exit_status": 0,
+          "stdout_last_line": [
+            "1"
+          ]
+        },
+        "lean-interpreted": {
+          "exit_status": 0,
+          "stdout_last_line": [
+            "1"
+          ]
+        }
+      }
+    },
+    {
+      "mechanism": "unused_argument",
+      "results": {
+        "ocaml": {
+          "exit_status": 2,
+          "stdout_last_line": []
+        },
+        "lean-native": {
+          "exit_status": 0,
+          "stdout_last_line": [
+            "1"
+          ]
+        },
+        "lean-interpreted": {
+          "exit_status": 0,
+          "stdout_last_line": [
+            "1"
+          ]
+        }
+      }
+    },
+    {
+      "mechanism": "projection",
+      "results": {
+        "ocaml": {
+          "exit_status": 2,
+          "stdout_last_line": []
+        },
+        "lean-native": {
+          "exit_status": 0,
+          "stdout_last_line": [
+            "1"
+          ]
+        },
+        "lean-interpreted": {
+          "exit_status": 0,
+          "stdout_last_line": [
+            "1"
+          ]
+        }
+      }
+    },
+    {
+      "mechanism": "discarded_result",
+      "results": {
+        "ocaml": {
+          "exit_status": 2,
+          "stdout_last_line": []
+        },
+        "lean-native": {
+          "exit_status": 0,
+          "stdout_last_line": [
+            "1"
+          ]
+        },
+        "lean-interpreted": {
+          "exit_status": 0,
+          "stdout_last_line": [
+            "1"
+          ]
+        }
+      }
+    },
+    {
+      "mechanism": "callback",
+      "results": {
+        "ocaml": {
+          "exit_status": 2,
+          "stdout_last_line": []
+        },
+        "lean-native": {
+          "exit_status": 0,
+          "stdout_last_line": [
+            "1"
+          ]
+        },
+        "lean-interpreted": {
+          "exit_status": 0,
+          "stdout_last_line": [
+            "1"
+          ]
+        }
+      }
+    },
+    {
+      "mechanism": "mapped_projection",
+      "results": {
+        "ocaml": {
+          "exit_status": 2,
+          "stdout_last_line": []
+        },
+        "lean-native": {
+          "exit_status": -6,
+          "stdout_last_line": []
+        },
+        "lean-interpreted": {
+          "exit_status": 134,
+          "stdout_last_line": [
+            "'erased_mapped_projection' does not depend on any axioms"
+          ]
+        }
+      }
+    },
+    {
+      "mechanism": "required",
+      "results": {
+        "ocaml": {
+          "exit_status": 2,
+          "stdout_last_line": []
+        },
+        "lean-native": {
+          "exit_status": -6,
+          "stdout_last_line": []
+        },
+        "lean-interpreted": {
+          "exit_status": 134,
+          "stdout_last_line": [
+            "'erased_mapped_projection' does not depend on any axioms"
+          ]
+        }
+      }
+    },
+    {
+      "mechanism": "control",
+      "results": {
+        "ocaml": {
+          "exit_status": 0,
+          "stdout_last_line": [
+            "1"
+          ]
+        },
+        "lean-native": {
+          "exit_status": 0,
+          "stdout_last_line": [
+            "1"
+          ]
+        },
+        "lean-interpreted": {
+          "exit_status": 0,
+          "stdout_last_line": [
+            "1"
+          ]
+        }
+      }
+    }
+  ],
+  "corrected_census_reproduced": true,
+  "site_count": 1644,
+  "counts": {
+    "generated:monadic_ascribed": 263,
+    "generated:pure_or_unresolved": 1253,
+    "handwritten:monadic_ascribed": 7,
+    "handwritten:pure_or_unresolved": 121
+  },
+  "exec_counts": {
+    "handwritten:pure_or_unresolved": 105,
+    "handwritten:monadic_ascribed": 7,
+    "generated:pure_or_unresolved": 126,
+    "generated:monadic_ascribed": 67
+  },
+  "limits": "provider fixture completion and map law only; strictness discrepancies remain findings; no customer adoption"
+}

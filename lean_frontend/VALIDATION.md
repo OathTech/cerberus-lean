@@ -18,11 +18,12 @@ separates shared-source, logical-definition, native-execution and consumer
 claims. Validation-foundations adds an independently compiled pristine
 oracle, a shared byte observation contract, an executable LADDER runner,
 and a cold provider client. The
-[delivery record](docs/2026-09-06_validation-foundations-delivery.md) identifies
-the complete 32/32 Tier A+B pass, C1/C4 reporting, cold build/proof and failure
-measurements. C2/C3, customer adoption and the fresh audit remain separate
-uncompleted release exits. Missing historical logs are explicitly inventoried;
-they are not evidence of a current pass. See
+[audit repair record](docs/2026-09-06_validation-foundations-audit-repairs.md)
+identifies the corrected 32/32 Tier A+B pass, C1/C4 reporting, cold build/proof
+and failure measurements. The original delivery and first audit remain dated
+history. C2/C3, customer adoption and successful second-review acceptance
+remain separate uncompleted release exits. Missing historical logs are
+explicitly inventoried; they are not evidence of a current pass. See
 [the observation contract](docs/2026-09-05_observation-contract.md)
 for sequence/set projections and the printer's observational limits.
 
@@ -377,7 +378,7 @@ lanes, with their recorded states:
 | `test_verify.sh` | `tests/verify` + `corpus/` | pin provenance (oracle `--pp=core` re-derivation byte-identical / content-hash) + main-mode differentials + per-function call-point differentials (Lean `--call` vs oracle wrapper TU vs recorded pin) — 127 checks at the Z2 close (record §14) |
 | `test_speclab*.sh` (6 scripts) | rendered harness families | five families (scalar/bytes/list/tree/CN-seed): sweeps, deterministic fuzz with byte-wise shrinking, plant tests, pinned-term gates — ~2,000 recorded differential executions, all agreeing |
 | `test_csmith_corpus.sh` | 1,669 in-tree csmith programs | classified pinned baseline (sharded; reporting tier full-pass): 0 MISMATCH/DIFF rows; the non-MATCH rows are 499 `CERB_SKIP` (oracle-side) + 9 `TIMEOUT` (derived from `scripts/exec_csmith_corpus_baseline.txt` at `928aa1e76`; the header's per-row narrative is the arc-13 record) |
-| `test_ci_sweep.sh` | 2,186-file upstream CI suite | [Final candidate re-record](docs/2026-09-06_ci-reporting-results.md): 1,359 matching observations, one UB-location difference, three filesystem refusals, two Lean timeouts and 821 oracle-side non-comparisons. All 15 fresh TSVs/raw records are archived. The default TSVs under `tests/ci_sweep/results/` remain historical (14 from August 22, TCC from September 2); no automatic baseline adoption. |
+| `test_ci_sweep.sh` | 2,186-file upstream CI suite | [Repaired candidate measurement](docs/2026-09-06_ci-reporting-results.md): 1,359 matching observations, one UB-location difference, three filesystem refusals, three Lean timeouts and 820 oracle-side non-comparisons. All 15 fresh TSVs/raw records are archived. The default TSVs under `tests/ci_sweep/results/` remain historical (14 from August 22, TCC from September 2); no automatic baseline adoption. |
 | `fuzz_csmith.sh` | generated csmith programs | deterministic seeded fuzz kit (reporting tier) |
 
 Lane semantics worth knowing:

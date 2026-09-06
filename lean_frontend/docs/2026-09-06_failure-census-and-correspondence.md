@@ -55,6 +55,14 @@ instrument modules and remain unresolved explicitly.
 
 ## Corrected census
 
+The repaired candidate's fresh cold run at `de9f6d3612232d581622afcdf0b23cdaf31fa09d`
+reproduces all eight strictness observations and the corrected census below.
+All source hashes and per-site ownership/dependency fields match the corrected
+replay; the two unresolved sites remain explicit. See the
+[new provider summary](validation-foundations-repair-evidence/provider-summary.json).
+The source/measurement history above retains the original, pre-correction
+census and must be read with this replacement attribution.
+
 The first audit (VF-06) found that lexical declaration names could borrow
 another definition's dependency flags. The repaired mapper always requires
 compiler range containment, chooses the unique smallest enclosing range,

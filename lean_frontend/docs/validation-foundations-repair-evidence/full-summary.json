@@ -1,0 +1,1076 @@
+{
+  "report": ".validation-foundations/audit-repairs-20260906/full-functional-v2/report.json",
+  "report_sha256": "3b11a2dc2bbd66db6111cfdd3cb76d863e451e79495206cb016d23ae5f15270b",
+  "status": "passed",
+  "source": {
+    "branch": "arc/validation-foundations",
+    "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "head": "de9f6d3612232d581622afcdf0b23cdaf31fa09d",
+    "status": "",
+    "untracked_sha256": {}
+  },
+  "lanes": [
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-3e877bac273a496ba0d3471d83ea3342/cerb-command-885cdb3c917649ab8444959d2f62c31c",
+      "command": [
+        "./scripts/test_unit.sh"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "A1",
+      "process_group": 3561840,
+      "required": true,
+      "seconds": 121.335,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/A1/stderr",
+      "stderr_sha256": "7d5cbf72edc5190d6ecafbefc903824e09f4d950e5bd93a7dfde90112aa73adb",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/A1/stdout",
+      "stdout_sha256": "c7cc7b74b405a907f2bbf85010299d48b0bbcd4b92fca6ff5e7a6a9a77815bdc",
+      "summaries": [],
+      "tier": "A"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-3e877bac273a496ba0d3471d83ea3342/cerb-command-e766ee8a635b49e38f2bf16ee8c6637e",
+      "command": [
+        "./scripts/test_exec.sh",
+        "--check-baseline"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "A2",
+      "process_group": 3578351,
+      "required": true,
+      "seconds": 32.379,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/A2/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/A2/stdout",
+      "stdout_sha256": "40d7bcff905ab0357e97bba0a0076a78bb3342a4115a5de77081415e47d34d03",
+      "summaries": [
+        "SUMMARY: total=106 match=85 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=3 cerb_floor=0 cerb_inconsistent=0",
+        "Baseline check: 0 regression(s), 0 improvement(s)",
+        "BASELINE OK"
+      ],
+      "tier": "A"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-3e877bac273a496ba0d3471d83ea3342/cerb-command-f91b3511cb1540e3bbce112133c16afc",
+      "command": [
+        "./scripts/test_exec.sh",
+        "--check-baseline=scripts/exec_coverage_baseline.txt",
+        "tests/coverage"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "A3",
+      "process_group": 3584747,
+      "required": true,
+      "seconds": 52.161,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/A3/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/A3/stdout",
+      "stdout_sha256": "64a1b04581cc32e16a2098932ac10f157b6e9201969f7ded2156568d8a721441",
+      "summaries": [
+        "SUMMARY: total=212 match=183 ub_match=16 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=13 cerb_floor=0 cerb_inconsistent=0",
+        "Baseline check: 0 regression(s), 0 improvement(s)",
+        "BASELINE OK"
+      ],
+      "tier": "A"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-3e877bac273a496ba0d3471d83ea3342/cerb-command-aad7d439845b4d2eb283cafc900c4647",
+      "command": [
+        "./scripts/test_exec.sh",
+        "--check-baseline=scripts/exec_debug_baseline.txt",
+        "tests/debug"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "A4",
+      "process_group": 3597207,
+      "required": true,
+      "seconds": 23.215,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/A4/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/A4/stdout",
+      "stdout_sha256": "0e30391110f4ed7dd5f3ece90fb385b8666108515192729fb08446c45e3390fa",
+      "summaries": [
+        "SUMMARY: total=90 match=66 ub_match=20 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=4 cerb_floor=0 cerb_inconsistent=0",
+        "Baseline check: 0 regression(s), 0 improvement(s)",
+        "BASELINE OK"
+      ],
+      "tier": "A"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-3e877bac273a496ba0d3471d83ea3342/cerb-command-905424517ae04bc49bf4868056388747",
+      "command": [
+        "./scripts/test_exec.sh",
+        "--check-baseline=scripts/exec_float_baseline.txt",
+        "tests/float"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "A4b",
+      "process_group": 3602946,
+      "required": true,
+      "seconds": 18.808,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/A4b/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/A4b/stdout",
+      "stdout_sha256": "c5ee655f246cc1526cce8b5c918867410e342c1baaa8071764724b25f69ff5fc",
+      "summaries": [
+        "SUMMARY: total=69 match=69 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0",
+        "Baseline check: 0 regression(s), 0 improvement(s)",
+        "BASELINE OK"
+      ],
+      "tier": "A"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-3e877bac273a496ba0d3471d83ea3342/cerb-command-bc27594affc244c580c2eee4fd6b5e23",
+      "command": [
+        "./scripts/test_bytes.sh"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "A4c",
+      "process_group": 3607527,
+      "required": true,
+      "seconds": 3.283,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/A4c/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/A4c/stdout",
+      "stdout_sha256": "c6592b3347c2cf944c8d0dbdc08c1eb57b265428fdcd8a01474e15430c75f178",
+      "summaries": [
+        "SUMMARY: exec_match=9 neg_pinned=5 fail=0"
+      ],
+      "tier": "A"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-3e877bac273a496ba0d3471d83ea3342/cerb-command-aa6e9035ce7545fb863f6080e635e11f",
+      "command": [
+        "./scripts/test_libc_exec.sh"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "A5",
+      "process_group": 3608172,
+      "required": true,
+      "seconds": 24.669,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/A5/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/A5/stdout",
+      "stdout_sha256": "b7bf4ca8a32ba7a2f35c9eeb3e1d80edf41bd6861f30cb26cab0b9c87c3ddae9",
+      "summaries": [
+        "SUMMARY: match=12 diff=0"
+      ],
+      "tier": "A"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-3e877bac273a496ba0d3471d83ea3342/cerb-command-3629a08a15734c85902c8a57cf0689ed",
+      "command": [
+        "./scripts/test_multi_tu.sh"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "A6",
+      "process_group": 3609545,
+      "required": true,
+      "seconds": 2.231,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/A6/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/A6/stdout",
+      "stdout_sha256": "18c596b509b0921fc7bc6e9d415c0afedbdb492704181dc968616d73deef2b25",
+      "summaries": [
+        "SUMMARY: total=2 match=2 fail=0"
+      ],
+      "tier": "A"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-3e877bac273a496ba0d3471d83ea3342/cerb-command-97a6ea42573f4fc4979ea3515ff0cb94",
+      "command": [
+        "./scripts/test_parse.sh"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "A7",
+      "process_group": 3610067,
+      "required": true,
+      "seconds": 9.594,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/A7/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/A7/stdout",
+      "stdout_sha256": "e8fa8c0e95b8f4b8e917f52009dc0c7d8bc85136ffb4a999ac4b324b99f8479b",
+      "summaries": [],
+      "tier": "A"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-3e877bac273a496ba0d3471d83ea3342/cerb-command-1f0cb0b7c6134cfbb2a66ffb168d8903",
+      "command": [
+        "./scripts/test_core.sh"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "A8",
+      "process_group": 3612310,
+      "required": true,
+      "seconds": 8.391,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/A8/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/A8/stdout",
+      "stdout_sha256": "e64a2bf7526667a6996d44942a17ded6de1f61c5ef250b075f3d74d8c34da7c8",
+      "summaries": [],
+      "tier": "A"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-3e877bac273a496ba0d3471d83ea3342/cerb-command-25d142ebf0a24b71b5a1df6790434ba7",
+      "command": [
+        "./scripts/test_elab.sh"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "A9",
+      "process_group": 3614563,
+      "required": true,
+      "seconds": 15.8,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/A9/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/A9/stdout",
+      "stdout_sha256": "1a00f35e6f1e50f474299c8f0514064f461ecb82ec2089a874becf9ae734b38e",
+      "summaries": [
+        "SUMMARY: total=106 same=103 diff=3 ocaml_fail=0 lean_fail=0"
+      ],
+      "tier": "A"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-3e877bac273a496ba0d3471d83ea3342/cerb-command-77f40bf95b964043b34a1e933ff890dc",
+      "command": [
+        "./scripts/test_libxml2_uri.sh"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "A10",
+      "process_group": 3617636,
+      "required": true,
+      "seconds": 17.604,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/A10/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/A10/stdout",
+      "stdout_sha256": "1883a9c22aaf33694bd8f32db4bb8beafdd269e09f3c11528ea2b6982627e1ed",
+      "summaries": [],
+      "tier": "A"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-3e877bac273a496ba0d3471d83ea3342/cerb-command-5933c2a83f1142e18a24f8c856892f4f",
+      "command": [
+        "./scripts/test_cn_coverage.sh",
+        "--check-baseline"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "A11",
+      "process_group": 3618374,
+      "required": true,
+      "seconds": 58.321,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/A11/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/A11/stdout",
+      "stdout_sha256": "66c91d2f1c79748748c3e9fa0b948f36410d092a519fe364c77741eb3ba9aad2",
+      "summaries": [
+        "SUMMARY: total=213 match=207 ub_match=6 ub_diff=0 reject_match=0 diff=0 mismatch=0 reject_diff=0 lean_fail=0 lean_crash=0 fuel=0 lean_error=0 lean_timeout=0 oracle_fail=0 oracle_timeout=0 oracle_inconsistent=0",
+        "BASELINE OK (213 entries, exact match)"
+      ],
+      "tier": "A"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-3e877bac273a496ba0d3471d83ea3342/cerb-command-594d17afccc4401083dbdc1650110887",
+      "command": [
+        "./scripts/test_libxml2.sh"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "B1",
+      "process_group": 3631823,
+      "required": true,
+      "seconds": 657.949,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/B1/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/B1/stdout",
+      "stdout_sha256": "1a3c3cf92ee5d6ed46284049fc8b88642d87bcfda5f1d872c5c9ff4bfacb9939",
+      "summaries": [
+        "SUMMARY: total=4 match=4 fail=0 (points: 1354, 22 observations each)"
+      ],
+      "tier": "B"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-3e877bac273a496ba0d3471d83ea3342/cerb-command-0e9299890d1c4f5694bcb57c86b3481e",
+      "command": [
+        "./scripts/test_parse.sh",
+        "tests/ci"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "B2",
+      "process_group": 3647035,
+      "required": true,
+      "seconds": 22.668,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/B2/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/B2/stdout",
+      "stdout_sha256": "f5940373b81340f2b8ed9a3db46a13ba78c47d80ee4032714731302d23063e09",
+      "summaries": [],
+      "tier": "B"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-3e877bac273a496ba0d3471d83ea3342/cerb-command-6249135f31f144279229dbc229b0845c",
+      "command": [
+        "./scripts/test_core.sh",
+        "tests/ci"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "B3",
+      "process_group": 3652528,
+      "required": true,
+      "seconds": 15.101,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/B3/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/B3/stdout",
+      "stdout_sha256": "ea5fa3ff4d818135c5f7f8bb4ef4a4da51f1327a77c711173fe2e3c4e0db1cba",
+      "summaries": [],
+      "tier": "B"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-3e877bac273a496ba0d3471d83ea3342/cerb-command-840dc874729044bc9097ecbd85755cef",
+      "command": [
+        "./scripts/test_verify.sh"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "B4",
+      "process_group": 3656198,
+      "required": true,
+      "seconds": 46.059,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/B4/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/B4/stdout",
+      "stdout_sha256": "82750796e1506e51660fb8fae049aa51cb1843fa1966da6ead7db100b2907618",
+      "summaries": [
+        "test_verify: 127 passed, 0 failed (25 fixtures, 28 call points, 14 corpus fixtures, 21 corpus points)"
+      ],
+      "tier": "B"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-3e877bac273a496ba0d3471d83ea3342/cerb-command-eb5c48e1d52f49df88ac841dc93136fd",
+      "command": [
+        "./scripts/test_immaculate.sh"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "B5",
+      "process_group": 3660552,
+      "required": true,
+      "seconds": 70.102,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/B5/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/B5/stdout",
+      "stdout_sha256": "9c10bd9f46caf90b70cb6dcdac42ba9332d644d3ae16880ad1982938e28a8e9e",
+      "summaries": [],
+      "tier": "B"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-3e877bac273a496ba0d3471d83ea3342/cerb-command-bd090009c751430cb5440d516e1c5b3d",
+      "command": [
+        "./scripts/test_speclab.sh",
+        "--selftest"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "B6.1",
+      "process_group": 3666834,
+      "required": true,
+      "seconds": 2.383,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/B6.1/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/B6.1/stdout",
+      "stdout_sha256": "52d666fd0602d366ff9fe2d95440b491ee52298a556be92b2ba671f2a6506724",
+      "summaries": [],
+      "tier": "B"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-3e877bac273a496ba0d3471d83ea3342/cerb-command-7268282bfab44229a7d96710fb5085c4",
+      "command": [
+        "./scripts/test_speclab.sh",
+        "--plant"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "B6.2",
+      "process_group": 3667314,
+      "required": true,
+      "seconds": 2.282,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/B6.2/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/B6.2/stdout",
+      "stdout_sha256": "c6d5be74794d54860135680ed0bc6e71c76c20cddb1c604ceffad829a10eeca2",
+      "summaries": [],
+      "tier": "B"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-3e877bac273a496ba0d3471d83ea3342/cerb-command-d1d4898796ab4fdbb03cfaa9437fc870",
+      "command": [
+        "./scripts/test_speclab_divmod.sh",
+        "--gate"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "B6.3",
+      "process_group": 3667777,
+      "required": true,
+      "seconds": 2.633,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/B6.3/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/B6.3/stdout",
+      "stdout_sha256": "5be1d49c85c518fb8c569905a4974afa9cf7b9b118b4ae8a98671fb5ce6e35a5",
+      "summaries": [],
+      "tier": "B"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-3e877bac273a496ba0d3471d83ea3342/cerb-command-5553829e59dd43a4b7471bc5ad0c1214",
+      "command": [
+        "./scripts/test_speclab_bytearr.sh",
+        "--gate"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "B6.4",
+      "process_group": 3668283,
+      "required": true,
+      "seconds": 3.083,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/B6.4/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/B6.4/stdout",
+      "stdout_sha256": "54949d6c64a825c16e55ece48aa1084b82eb448eff40cbbe61cda435a039a673",
+      "summaries": [],
+      "tier": "B"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-3e877bac273a496ba0d3471d83ea3342/cerb-command-ff852d9490ff4e818cfa4d52e31be3ec",
+      "command": [
+        "./scripts/test_speclab_list.sh",
+        "--gate"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "B6.5",
+      "process_group": 3668904,
+      "required": true,
+      "seconds": 3.989,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/B6.5/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/B6.5/stdout",
+      "stdout_sha256": "09c48ec8e72f508edd784c01f34ed7c685767fd2f8bd05b21375e1cd7ad45a0f",
+      "summaries": [],
+      "tier": "B"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-3e877bac273a496ba0d3471d83ea3342/cerb-command-7d087ec90d45451a9f531b1e78d6d56f",
+      "command": [
+        "./scripts/test_speclab_tree.sh",
+        "--gate"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "B6.6",
+      "process_group": 3669553,
+      "required": true,
+      "seconds": 4.238,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/B6.6/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/B6.6/stdout",
+      "stdout_sha256": "8f69c67a8f9f0791bcaacbd365f5984bae11a0c70d5427efaa2c3932db9705cd",
+      "summaries": [],
+      "tier": "B"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-3e877bac273a496ba0d3471d83ea3342/cerb-command-743a84fc89184a349709f6a5259f4e0f",
+      "command": [
+        "./scripts/test_speclab_seed.sh",
+        "--gate"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "B6.7",
+      "process_group": 3670033,
+      "required": true,
+      "seconds": 3.288,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/B6.7/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/B6.7/stdout",
+      "stdout_sha256": "bfdbff84f8f019262cd5a20c0619b83eaece23a7114cf3d041c0a1df30a7674f",
+      "summaries": [],
+      "tier": "B"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-3e877bac273a496ba0d3471d83ea3342/cerb-command-99358b5753bc4ffe930f5d474b0846cf",
+      "command": [
+        "./scripts/test_gcc_oracle.sh",
+        "--check-baseline"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "B7",
+      "process_group": 3670587,
+      "required": true,
+      "seconds": 1452.047,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/B7/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/B7/stdout",
+      "stdout_sha256": "f5adc7de1717f15a6d827acdfaea81840bceb442063e3b67a863a0f5ee0e669c",
+      "summaries": [
+        "SUMMARY: total=1963 compared=1885 agree=1873 agree_nd=0 triaged=12 disagree=0 o2_agree=190 skip_gcc_compile=1 skip_gcc_stdout=1 skip_lean_crash=9 skip_lean_fail=9 skip_lean_timeout=11 skip_ub=47 triaged_addr=11 triaged_ub=1",
+        "Baseline check: 0 regression(s), 0 improvement(s)"
+      ],
+      "tier": "B"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-3e877bac273a496ba0d3471d83ea3342/cerb-command-7231555e91914728b1069a3d6ad3947f",
+      "command": [
+        "./scripts/test_hang_plant.sh"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "B8.1",
+      "process_group": 3907757,
+      "required": true,
+      "seconds": 13.449,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/B8.1/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/B8.1/stdout",
+      "stdout_sha256": "32bc28a65f912d7e7161ffb56c9a0ec3f45bb10ad9c8278ee1be7ee57d6a7dec",
+      "summaries": [],
+      "tier": "B"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-3e877bac273a496ba0d3471d83ea3342/cerb-command-5c20dad797da479998e9d1fe059dbc75",
+      "command": [
+        "./scripts/test_kill_plant.sh"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "B8.2",
+      "process_group": 3908508,
+      "required": true,
+      "seconds": 215.877,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/B8.2/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/B8.2/stdout",
+      "stdout_sha256": "72ba0599c599fb1bcd5a8d1b628cb17273fdbf009e2696cd98abb6d90add1a25",
+      "summaries": [],
+      "tier": "B"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-3e877bac273a496ba0d3471d83ea3342/cerb-command-931d395bc3184f2c9fd851b99eb970fa",
+      "command": [
+        "./scripts/test_fuel_plant.sh"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "B8.3",
+      "process_group": 3917633,
+      "required": true,
+      "seconds": 6.687,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/B8.3/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/B8.3/stdout",
+      "stdout_sha256": "c0bc00fa93190302057585977f17f77d20f2549fcf27a571f1b68c89761fb33a",
+      "summaries": [],
+      "tier": "B"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-3e877bac273a496ba0d3471d83ea3342/cerb-command-d00afeedb0d640c2ab13723ff6da5b93",
+      "command": [
+        "python3",
+        "scripts/test_observation_lanes.py",
+        "--out",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/B9/plants"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "B9",
+      "process_group": 3921160,
+      "required": true,
+      "seconds": 1097.837,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/B9/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/B9/stdout",
+      "stdout_sha256": "3487a5d92b3baf1c916921094b6e07c2d9afe0eaf8ea578319d66413c9f5cf4d",
+      "summaries": [],
+      "tier": "B"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-3e877bac273a496ba0d3471d83ea3342/cerb-command-6891e44b0b3b484eba5ffa4a20697725",
+      "command": [
+        "python3",
+        "scripts/test_upstream_oracle.py",
+        "--out",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/B10.1/independent-oracle"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "B10.1",
+      "process_group": 4015821,
+      "required": true,
+      "seconds": 65.187,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/B10.1/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/B10.1/stdout",
+      "stdout_sha256": "3fcfff0c573d2daf16591f98a692fc20ba447265585a7670ff2f0790fc7ca85d",
+      "summaries": [],
+      "tier": "B"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-3e877bac273a496ba0d3471d83ea3342/cerb-command-d4c4efd1af4e4f598fa4d624135d0baf",
+      "command": [
+        "python3",
+        "scripts/test_upstream_oracle.py",
+        "--plant",
+        "--out",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/B10.2/independent-oracle"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "B10.2",
+      "process_group": 4033821,
+      "required": true,
+      "seconds": 1.33,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/B10.2/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/.validation-foundations/audit-repairs-20260906/full-functional-v2/B10.2/stdout",
+      "stdout_sha256": "54f434c620402d350aa0ba3072452edbcc330fb47bc401143cd56df3329ec0c6",
+      "summaries": [],
+      "tier": "B"
+    }
+  ],
+  "summed_seconds": 4073.98,
+  "artifact_count_before": 1778,
+  "artifact_count_after": 1778,
+  "artifact_changes": {
+    "_build/install/default/lib/cerberus-lib/frontend/cerb_frontend__Version.cmx": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/ocaml_frontend/.cerb_frontend.objs/native/cerb_frontend__Version.cmx",
+        "sha256": "2530d90108c67df14363158896f5741f981afb8e09cec9ebc33e13b87e3382da"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/ocaml_frontend/.cerb_frontend.objs/native/cerb_frontend__Version.cmx",
+        "sha256": "d3c0480dd0c39d92640126319028e2ac3a1c879ba075aa951b444fb9a01a3813"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/mem/concrete/mem_concrete.cmxa": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/memory/concrete/mem_concrete.cmxa",
+        "sha256": "e4b6c27a645f7adf9e87a4de0effa13a677f2011eddc3594022da00aa83b37a8"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/memory/concrete/mem_concrete.cmxa",
+        "sha256": "bc158d3aa3ab2444c1841bd8dbf1ff37837c959a4c58a768142634684df78411"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/mem/vip/mem_vip.cmxa": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/memory/vip/mem_vip.cmxa",
+        "sha256": "3beb3492515c33040572246fbabdf292ed9d4571e2b4426aae9b2c692fc9838f"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/memory/vip/mem_vip.cmxa",
+        "sha256": "7018c4c87752f234ba51281842fd0a4df60bf49db60975b9fa306ee47594b953"
+      }
+    },
+    "driver_fresh.lean.sha256": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/driver_fresh.lean.sha256",
+        "sha256": "6f6967365a4b2f3208f42791de1048679580eb93c89aaff3534d084f99ac1ca2",
+        "text": "commit 68de6771c65d06704612c691a9fca7efbff70e3d +dirty\nbin 32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6\nsrc 89a31871cc2e83121d7efb009c35aa6c50216b31f6dad88cee4688b0786edf28\n"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/driver_fresh.lean.sha256",
+        "sha256": "77d53c3826b36ce0380b6e11faeb1faa8d5069db0295bb72f79ac21ee0784a1e",
+        "text": "commit de9f6d3612232d581622afcdf0b23cdaf31fa09d\nbin 32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6\nsrc 89a31871cc2e83121d7efb009c35aa6c50216b31f6dad88cee4688b0786edf28\n"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/frontend/cerb_frontend__Version.cmt": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/ocaml_frontend/.cerb_frontend.objs/byte/cerb_frontend__Version.cmt",
+        "sha256": "357dff8a052453c7b65fd4f1cdc0c609cc7928750a96d8b70d3593428d6cbe66"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/ocaml_frontend/.cerb_frontend.objs/byte/cerb_frontend__Version.cmt",
+        "sha256": "033183c9b55653b942d16098c8939e835472bb82560fcf1ff2aaf7c20d343294"
+      }
+    },
+    "_build/install/default/lib/cerberus/runtime/libc/libc_inner_arg_temps.co": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/runtime/libc/libc_inner_arg_temps.co",
+        "sha256": "52a73a54a8971756561528a2fe81e10e4e9569ffde868fd13a648c555dd1fd36"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/runtime/libc/libc_inner_arg_temps.co",
+        "sha256": "01516eec0ba0e168de60ca950491ce4f003390f9de1ad1ad7c6dcc5c276d6fa9"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/frontend/cerb_frontend__Version.o": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/ocaml_frontend/.cerb_frontend.objs/native/cerb_frontend__Version.o",
+        "sha256": "dfc21a3f9c96be97239528db6e664e2a7f95634ab694e6053e8089cc421093fe"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/ocaml_frontend/.cerb_frontend.objs/native/cerb_frontend__Version.o",
+        "sha256": "508aecf7f785b670134a5e11bfb982d65bd5e897a5c2dc6ce70acc4696a631ce"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/mem/concrete/mem_concrete.cmxs": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/memory/concrete/mem_concrete.cmxs",
+        "sha256": "a45740f60295bd4a56662ea372841ed8110182e8e05bc9070b784ad45f0e5ea8"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/memory/concrete/mem_concrete.cmxs",
+        "sha256": "9a36d4c747d5e109167b5f8211272c5e49e3fa2bd17e20c891ed283dca0a762a"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/mem/vip/mem_vip.a": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/memory/vip/mem_vip.a",
+        "sha256": "3e546c6887c124943f077725a5efbd97ecb2188c4fd249786adb0a264bf641a5"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/memory/vip/mem_vip.a",
+        "sha256": "255b6a61a248c106ea1fc168b57d2f3dccc9d68520b0839b2c9fc7e09631d8bf"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/mem/concrete/cerb_frontend__Version.cmi": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/ocaml_frontend/.cerb_frontend.objs/byte/cerb_frontend__Version.cmi",
+        "sha256": "0f3d8a2fada22b1b04d30ac2fad80a550d1168420c1a796af663c31b9cb710ff"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/ocaml_frontend/.cerb_frontend.objs/byte/cerb_frontend__Version.cmi",
+        "sha256": "5e79ab6dd73fdf307a964b008d53ee5f0d3165e8b3724e41331bdbd049dcc80b"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/frontend/version.ml": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/ocaml_frontend/version.ml",
+        "sha256": "6e4c57e1e0ce6ad4bce12aee78a649a7326537575fc64a2c41b78ccdc721ad12"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/ocaml_frontend/version.ml",
+        "sha256": "ecc32e858c61753ccdde5236e2eb5fd09255f015c20d82704641af7e9badb52c"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/mem/vip/mem_vip.cma": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/memory/vip/mem_vip.cma",
+        "sha256": "5c77a31dbdb10152ca59d9b037baa19e986371b71725630eefaa2f770f6bda34"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/memory/vip/mem_vip.cma",
+        "sha256": "65123254d36c97fbb30538bc739442398348785e0aa8f1419e3385d09a125714"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/frontend/cerb_frontend__Version.cmi": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/ocaml_frontend/.cerb_frontend.objs/byte/cerb_frontend__Version.cmi",
+        "sha256": "0f3d8a2fada22b1b04d30ac2fad80a550d1168420c1a796af663c31b9cb710ff"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/ocaml_frontend/.cerb_frontend.objs/byte/cerb_frontend__Version.cmi",
+        "sha256": "5e79ab6dd73fdf307a964b008d53ee5f0d3165e8b3724e41331bdbd049dcc80b"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/mem/vip/mem_vip.cmxs": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/memory/vip/mem_vip.cmxs",
+        "sha256": "134842de38abbb98086943b778e7a6763099c9a33ad30f5c8b048b2221d606e9"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/memory/vip/mem_vip.cmxs",
+        "sha256": "a3a9c56633b58ed9ab7c7315fd6d05525036436ef0d657d1f4bce0a337f13d1b"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/backend_common/cerb_backend.cmxa": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/backend/common/cerb_backend.cmxa",
+        "sha256": "f9f239c076c2c18c6478ed4153be33b688539afb6897e02b854bc97b337b2a90"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/backend/common/cerb_backend.cmxa",
+        "sha256": "d32d47b04f8082df87a1c7fe2b9b034eaac8b50da6732e08c96ab4e634906999"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/mem/concrete/mem_concrete.cma": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/memory/concrete/mem_concrete.cma",
+        "sha256": "726a8975cbeee7b4cb126666ab8f91332b7f7341cffaa15321dd012799eddd20"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/memory/concrete/mem_concrete.cma",
+        "sha256": "c7c23823eeb83f28a4b9fd88fda248fc962f6b675adf9464f61c6c9846f90f65"
+      }
+    },
+    "_build/default/backend/driver/main.exe": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/backend/driver/main.exe",
+        "sha256": "ac05353b6df4ccb11f2759615f8c7faa690a46fdad9182072f2cbfef4b137dbc"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/backend/driver/main.exe",
+        "sha256": "e33755a24743f5eaee6215b3d0ce3abdba20f6201ac7c49f469d7f8e79224208"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/mem/concrete/mem_concrete.a": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/memory/concrete/mem_concrete.a",
+        "sha256": "6ac26442a8a4132a51dcacd433b2da3f57e0bed221edbd390127e828b12912e3"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/memory/concrete/mem_concrete.a",
+        "sha256": "4e602787c608afe5f6ceb9e156254c1bdd2539d2b1f223006a58e101a465ab30"
+      }
+    },
+    "_build/install/default/lib/cerberus/runtime/libc/libm.co": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/runtime/libc/libm.co",
+        "sha256": "447777015f18ed5e49b5f52fde478c01487f26413ae285f509aa33e36e09abd7"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/runtime/libc/libm.co",
+        "sha256": "a4f4d2cc7c70fcbcbdc4630d1185e2c5efe70b75d0615929046ba7a42f7500c6"
+      }
+    },
+    "_build/install/default/lib/cerberus/runtime/libc/libc.co": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/runtime/libc/libc.co",
+        "sha256": "4f04b4da9620002d447ebbb1f0e12fd67ce41ba2e308f8524e91fbfd988b230e"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/runtime/libc/libc.co",
+        "sha256": "13c5e4b2bf9959414f940a9570cec9807249670376bb3087643fde12a1dc20aa"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/backend_common/cerb_backend__Pipeline.cmx": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/backend/common/.cerb_backend.objs/native/cerb_backend__Pipeline.cmx",
+        "sha256": "9ab1cd313f147129b1634125184a4604420f60c1682e9a088a28705a9df97583"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/backend/common/.cerb_backend.objs/native/cerb_backend__Pipeline.cmx",
+        "sha256": "a1e56bc11f3541fce0d76dd5269e455ae6e1212bb1fcf3688286a405a82748c5"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/backend_common/cerb_backend.cmxs": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/backend/common/cerb_backend.cmxs",
+        "sha256": "42fae672ce193fe95101f2da66f973516f846c4cb5a139f7b2076eb0dedd0789"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/backend/common/cerb_backend.cmxs",
+        "sha256": "c27ca26964110b03e52a711fe2054debc1a29be135f07c09e88edf844be36be4"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/mem/vip/cerb_frontend__Version.cmx": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/ocaml_frontend/.cerb_frontend.objs/native/cerb_frontend__Version.cmx",
+        "sha256": "2530d90108c67df14363158896f5741f981afb8e09cec9ebc33e13b87e3382da"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/ocaml_frontend/.cerb_frontend.objs/native/cerb_frontend__Version.cmx",
+        "sha256": "d3c0480dd0c39d92640126319028e2ac3a1c879ba075aa951b444fb9a01a3813"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/frontend/cerb_frontend__Version.cmo": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/ocaml_frontend/.cerb_frontend.objs/byte/cerb_frontend__Version.cmo",
+        "sha256": "ebea92e13a35e7c3c455c07239349a171721fc22d3e23d2b8ea31ed12d94d8fa"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/ocaml_frontend/.cerb_frontend.objs/byte/cerb_frontend__Version.cmo",
+        "sha256": "afa590b6d84f64433f535b18efb66a0c0d84a239660bfaf86f9eb69a1685ec63"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/backend_common/cerb_backend__Pipeline.cmt": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/backend/common/.cerb_backend.objs/byte/cerb_backend__Pipeline.cmt",
+        "sha256": "a90edc12c0940978185c6e1cb8c3ce2e0979e56f964a73204147749b05261b42"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/backend/common/.cerb_backend.objs/byte/cerb_backend__Pipeline.cmt",
+        "sha256": "90b05c48fafe90aef3ca52c149d7ff1760a1914da9eb4ab55f4774033090892e"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/mem/concrete/cerb_frontend__Version.cmx": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/ocaml_frontend/.cerb_frontend.objs/native/cerb_frontend__Version.cmx",
+        "sha256": "2530d90108c67df14363158896f5741f981afb8e09cec9ebc33e13b87e3382da"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/ocaml_frontend/.cerb_frontend.objs/native/cerb_frontend__Version.cmx",
+        "sha256": "d3c0480dd0c39d92640126319028e2ac3a1c879ba075aa951b444fb9a01a3813"
+      }
+    },
+    "driver_fresh.oracle.sha256": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/driver_fresh.oracle.sha256",
+        "sha256": "2877db38f61c08d43db95ce460934d48497180c4cd71fcf3629bd6c09147b6a4",
+        "text": "commit 68de6771c65d06704612c691a9fca7efbff70e3d +dirty\nbin ac05353b6df4ccb11f2759615f8c7faa690a46fdad9182072f2cbfef4b137dbc\nsrc 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda\n"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/driver_fresh.oracle.sha256",
+        "sha256": "e8b9871d5a0e4c3c4e65cbd7148e88a9ea77fd6e5a4c69e1e4fbb5391e797cf2",
+        "text": "commit de9f6d3612232d581622afcdf0b23cdaf31fa09d\nbin e33755a24743f5eaee6215b3d0ce3abdba20f6201ac7c49f469d7f8e79224208\nsrc 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda\n"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/backend_common/cerb_backend.cma": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/backend/common/cerb_backend.cma",
+        "sha256": "062a26170eccaa0b7da41f753a57ae2387f785ac2b4b534821b2674e9cb2f22b"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/backend/common/cerb_backend.cma",
+        "sha256": "9c526367a42b5478b9f3cad4ba4263df11591cd52d512e2e4ec6ebd3feac2772"
+      }
+    },
+    "_build/install/default/lib/cerberus-lib/mem/vip/cerb_frontend__Version.cmi": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/ocaml_frontend/.cerb_frontend.objs/byte/cerb_frontend__Version.cmi",
+        "sha256": "0f3d8a2fada22b1b04d30ac2fad80a550d1168420c1a796af663c31b9cb710ff"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/_build/default/ocaml_frontend/.cerb_frontend.objs/byte/cerb_frontend__Version.cmi",
+        "sha256": "5e79ab6dd73fdf307a964b008d53ee5f0d3165e8b3724e41331bdbd049dcc80b"
+      }
+    }
+  },
+  "lost_entries": [],
+  "unrun": [
+    {
+      "command": [
+        "./scripts/test_exec.sh",
+        "--write-baseline=scripts/exec_ci_baseline.txt",
+        "tests/ci"
+      ],
+      "id": "C1",
+      "tier": "C"
+    },
+    {
+      "command": [
+        "./scripts/fuzz_csmith.sh"
+      ],
+      "id": "C2",
+      "tier": "C"
+    },
+    {
+      "command": [
+        "./scripts/test_csmith_corpus.sh",
+        "--check-baseline"
+      ],
+      "id": "C3",
+      "tier": "C"
+    },
+    {
+      "command": [
+        "./scripts/test_ci_sweep.sh",
+        "--all-suites"
+      ],
+      "id": "C4",
+      "tier": "C"
+    }
+  ]
+}

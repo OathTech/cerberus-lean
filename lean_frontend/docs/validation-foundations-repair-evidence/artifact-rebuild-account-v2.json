@@ -1,0 +1,72 @@
+{
+  "changed_artifact_entries": 29,
+  "lost_entries": [],
+  "changed_keys": [
+    "_build/default/backend/driver/main.exe",
+    "_build/install/default/lib/cerberus-lib/backend_common/cerb_backend.cma",
+    "_build/install/default/lib/cerberus-lib/backend_common/cerb_backend.cmxa",
+    "_build/install/default/lib/cerberus-lib/backend_common/cerb_backend.cmxs",
+    "_build/install/default/lib/cerberus-lib/backend_common/cerb_backend__Pipeline.cmt",
+    "_build/install/default/lib/cerberus-lib/backend_common/cerb_backend__Pipeline.cmx",
+    "_build/install/default/lib/cerberus-lib/frontend/cerb_frontend__Version.cmi",
+    "_build/install/default/lib/cerberus-lib/frontend/cerb_frontend__Version.cmo",
+    "_build/install/default/lib/cerberus-lib/frontend/cerb_frontend__Version.cmt",
+    "_build/install/default/lib/cerberus-lib/frontend/cerb_frontend__Version.cmx",
+    "_build/install/default/lib/cerberus-lib/frontend/cerb_frontend__Version.o",
+    "_build/install/default/lib/cerberus-lib/frontend/version.ml",
+    "_build/install/default/lib/cerberus-lib/mem/concrete/cerb_frontend__Version.cmi",
+    "_build/install/default/lib/cerberus-lib/mem/concrete/cerb_frontend__Version.cmx",
+    "_build/install/default/lib/cerberus-lib/mem/concrete/mem_concrete.a",
+    "_build/install/default/lib/cerberus-lib/mem/concrete/mem_concrete.cma",
+    "_build/install/default/lib/cerberus-lib/mem/concrete/mem_concrete.cmxa",
+    "_build/install/default/lib/cerberus-lib/mem/concrete/mem_concrete.cmxs",
+    "_build/install/default/lib/cerberus-lib/mem/vip/cerb_frontend__Version.cmi",
+    "_build/install/default/lib/cerberus-lib/mem/vip/cerb_frontend__Version.cmx",
+    "_build/install/default/lib/cerberus-lib/mem/vip/mem_vip.a",
+    "_build/install/default/lib/cerberus-lib/mem/vip/mem_vip.cma",
+    "_build/install/default/lib/cerberus-lib/mem/vip/mem_vip.cmxa",
+    "_build/install/default/lib/cerberus-lib/mem/vip/mem_vip.cmxs",
+    "_build/install/default/lib/cerberus/runtime/libc/libc.co",
+    "_build/install/default/lib/cerberus/runtime/libc/libc_inner_arg_temps.co",
+    "_build/install/default/lib/cerberus/runtime/libc/libm.co",
+    "driver_fresh.lean.sha256",
+    "driver_fresh.oracle.sha256"
+  ],
+  "freshness_stamps": {
+    "driver_fresh.lean.sha256": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/driver_fresh.lean.sha256",
+        "sha256": "6f6967365a4b2f3208f42791de1048679580eb93c89aaff3534d084f99ac1ca2",
+        "text": "commit 68de6771c65d06704612c691a9fca7efbff70e3d +dirty\nbin 32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6\nsrc 89a31871cc2e83121d7efb009c35aa6c50216b31f6dad88cee4688b0786edf28\n"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/driver_fresh.lean.sha256",
+        "sha256": "77d53c3826b36ce0380b6e11faeb1faa8d5069db0295bb72f79ac21ee0784a1e",
+        "text": "commit de9f6d3612232d581622afcdf0b23cdaf31fa09d\nbin 32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6\nsrc 89a31871cc2e83121d7efb009c35aa6c50216b31f6dad88cee4688b0786edf28\n"
+      }
+    },
+    "driver_fresh.oracle.sha256": {
+      "before": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/driver_fresh.oracle.sha256",
+        "sha256": "2877db38f61c08d43db95ce460934d48497180c4cd71fcf3629bd6c09147b6a4",
+        "text": "commit 68de6771c65d06704612c691a9fca7efbff70e3d +dirty\nbin ac05353b6df4ccb11f2759615f8c7faa690a46fdad9182072f2cbfef4b137dbc\nsrc 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda\n"
+      },
+      "after": {
+        "present": true,
+        "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations/driver_fresh.oracle.sha256",
+        "sha256": "e8b9871d5a0e4c3c4e65cbd7148e88a9ea77fd6e5a4c69e1e4fbb5391e797cf2",
+        "text": "commit de9f6d3612232d581622afcdf0b23cdaf31fa09d\nbin e33755a24743f5eaee6215b3d0ce3abdba20f6201ac7c49f469d7f8e79224208\nsrc 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda\n"
+      }
+    }
+  },
+  "version_source": "(** Version informations. *)\n\n(** [git_version] gives a git commit version description. *)\nlet git_version : string = \"git-cn-pin-739-gde9f6d361\"\n\n(** [git_version_date] gives a commit version date. *)\nlet git_version_date : string = \"2026-09-06 18:30:54 +0000\"\n\n(** [version] gives a version description. *)\nlet version : string = \"git-cn-pin-739-gde9f6d361\"\n",
+  "serialized_runtime_headers": {
+    "_build/install/default/lib/cerberus/runtime/libc/libc.co": "ocaml:5.4.0+cerb:git-cn-pin-739-gde9f6d361+mem:concrete",
+    "_build/install/default/lib/cerberus/runtime/libc/libc_inner_arg_temps.co": "ocaml:5.4.0+cerb:git-cn-pin-739-gde9f6d361+mem:concrete",
+    "_build/install/default/lib/cerberus/runtime/libc/libm.co": "ocaml:5.4.0+cerb:git-cn-pin-739-gde9f6d361+mem:concrete"
+  },
+  "account": "The gate began with the previous dirty-checkpoint artifacts and rebuilt version-bearing OCaml libraries/binary and serialized runtimes at the committed candidate. Both recorded source fingerprints and the Lean binary hash are unchanged; the oracle binary hash changed. Full before/after hashes are retained. This is not a claim that the serialized body bytes or rebuilt OCaml binaries were identical."
+}

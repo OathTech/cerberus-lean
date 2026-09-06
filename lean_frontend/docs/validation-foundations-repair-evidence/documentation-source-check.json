@@ -1,0 +1,300 @@
+{
+  "functional_source": "de9f6d3612232d581622afcdf0b23cdaf31fa09d",
+  "changed_tracked_paths": [
+    "lean_frontend/README.md",
+    "lean_frontend/VALIDATION.md",
+    "lean_frontend/docs/2026-09-05_master-plan.md",
+    "lean_frontend/docs/2026-09-05_orchestrator-handoff.md",
+    "lean_frontend/docs/2026-09-06_ci-reporting-results.md",
+    "lean_frontend/docs/2026-09-06_failure-census-and-correspondence.md",
+    "lean_frontend/docs/2026-09-06_provider-smoke.md",
+    "lean_frontend/docs/2026-09-06_supported-profile.md",
+    "lean_frontend/docs/2026-09-06_validation-foundations-audit-repairs.md",
+    "scripts/LADDER.md"
+  ],
+  "changes_are_documentation_or_evidence": true,
+  "ladder_commands_unchanged": true,
+  "catalogue": [
+    {
+      "id": "A1",
+      "tier": "A",
+      "command": [
+        "./scripts/test_unit.sh"
+      ]
+    },
+    {
+      "id": "A2",
+      "tier": "A",
+      "command": [
+        "./scripts/test_exec.sh",
+        "--check-baseline"
+      ]
+    },
+    {
+      "id": "A3",
+      "tier": "A",
+      "command": [
+        "./scripts/test_exec.sh",
+        "--check-baseline=scripts/exec_coverage_baseline.txt",
+        "tests/coverage"
+      ]
+    },
+    {
+      "id": "A4",
+      "tier": "A",
+      "command": [
+        "./scripts/test_exec.sh",
+        "--check-baseline=scripts/exec_debug_baseline.txt",
+        "tests/debug"
+      ]
+    },
+    {
+      "id": "A4b",
+      "tier": "A",
+      "command": [
+        "./scripts/test_exec.sh",
+        "--check-baseline=scripts/exec_float_baseline.txt",
+        "tests/float"
+      ]
+    },
+    {
+      "id": "A4c",
+      "tier": "A",
+      "command": [
+        "./scripts/test_bytes.sh"
+      ]
+    },
+    {
+      "id": "A5",
+      "tier": "A",
+      "command": [
+        "./scripts/test_libc_exec.sh"
+      ]
+    },
+    {
+      "id": "A6",
+      "tier": "A",
+      "command": [
+        "./scripts/test_multi_tu.sh"
+      ]
+    },
+    {
+      "id": "A7",
+      "tier": "A",
+      "command": [
+        "./scripts/test_parse.sh"
+      ]
+    },
+    {
+      "id": "A8",
+      "tier": "A",
+      "command": [
+        "./scripts/test_core.sh"
+      ]
+    },
+    {
+      "id": "A9",
+      "tier": "A",
+      "command": [
+        "./scripts/test_elab.sh"
+      ]
+    },
+    {
+      "id": "A10",
+      "tier": "A",
+      "command": [
+        "./scripts/test_libxml2_uri.sh"
+      ]
+    },
+    {
+      "id": "A11",
+      "tier": "A",
+      "command": [
+        "./scripts/test_cn_coverage.sh",
+        "--check-baseline"
+      ]
+    },
+    {
+      "id": "B1",
+      "tier": "B",
+      "command": [
+        "./scripts/test_libxml2.sh"
+      ]
+    },
+    {
+      "id": "B2",
+      "tier": "B",
+      "command": [
+        "./scripts/test_parse.sh",
+        "tests/ci"
+      ]
+    },
+    {
+      "id": "B3",
+      "tier": "B",
+      "command": [
+        "./scripts/test_core.sh",
+        "tests/ci"
+      ]
+    },
+    {
+      "id": "B4",
+      "tier": "B",
+      "command": [
+        "./scripts/test_verify.sh"
+      ]
+    },
+    {
+      "id": "B5",
+      "tier": "B",
+      "command": [
+        "./scripts/test_immaculate.sh"
+      ]
+    },
+    {
+      "id": "B6.1",
+      "tier": "B",
+      "command": [
+        "./scripts/test_speclab.sh",
+        "--selftest"
+      ]
+    },
+    {
+      "id": "B6.2",
+      "tier": "B",
+      "command": [
+        "./scripts/test_speclab.sh",
+        "--plant"
+      ]
+    },
+    {
+      "id": "B6.3",
+      "tier": "B",
+      "command": [
+        "./scripts/test_speclab_divmod.sh",
+        "--gate"
+      ]
+    },
+    {
+      "id": "B6.4",
+      "tier": "B",
+      "command": [
+        "./scripts/test_speclab_bytearr.sh",
+        "--gate"
+      ]
+    },
+    {
+      "id": "B6.5",
+      "tier": "B",
+      "command": [
+        "./scripts/test_speclab_list.sh",
+        "--gate"
+      ]
+    },
+    {
+      "id": "B6.6",
+      "tier": "B",
+      "command": [
+        "./scripts/test_speclab_tree.sh",
+        "--gate"
+      ]
+    },
+    {
+      "id": "B6.7",
+      "tier": "B",
+      "command": [
+        "./scripts/test_speclab_seed.sh",
+        "--gate"
+      ]
+    },
+    {
+      "id": "B7",
+      "tier": "B",
+      "command": [
+        "./scripts/test_gcc_oracle.sh",
+        "--check-baseline"
+      ]
+    },
+    {
+      "id": "B8.1",
+      "tier": "B",
+      "command": [
+        "./scripts/test_hang_plant.sh"
+      ]
+    },
+    {
+      "id": "B8.2",
+      "tier": "B",
+      "command": [
+        "./scripts/test_kill_plant.sh"
+      ]
+    },
+    {
+      "id": "B8.3",
+      "tier": "B",
+      "command": [
+        "./scripts/test_fuel_plant.sh"
+      ]
+    },
+    {
+      "id": "B9",
+      "tier": "B",
+      "command": [
+        "python3",
+        "scripts/test_observation_lanes.py"
+      ]
+    },
+    {
+      "id": "B10.1",
+      "tier": "B",
+      "command": [
+        "python3",
+        "scripts/test_upstream_oracle.py"
+      ]
+    },
+    {
+      "id": "B10.2",
+      "tier": "B",
+      "command": [
+        "python3",
+        "scripts/test_upstream_oracle.py",
+        "--plant"
+      ]
+    },
+    {
+      "id": "C1",
+      "tier": "C",
+      "command": [
+        "./scripts/test_exec.sh",
+        "--write-baseline=scripts/exec_ci_baseline.txt",
+        "tests/ci"
+      ]
+    },
+    {
+      "id": "C2",
+      "tier": "C",
+      "command": [
+        "./scripts/fuzz_csmith.sh"
+      ]
+    },
+    {
+      "id": "C3",
+      "tier": "C",
+      "command": [
+        "./scripts/test_csmith_corpus.sh",
+        "--check-baseline"
+      ]
+    },
+    {
+      "id": "C4",
+      "tier": "C",
+      "command": [
+        "./scripts/test_ci_sweep.sh",
+        "--all-suites"
+      ]
+    }
+  ],
+  "ladder_before_sha256": "3acc4d56a76491843bec131b5b5d17d8d632299a56947aee60a90fbba0a7a783",
+  "ladder_after_sha256": "b237cb56506a1e60a1002a3e9fef24a8dfab9b754f78539c9a565f5e973e31a2",
+  "first_audit_and_historical_evidence_unchanged": true
+}

@@ -79,12 +79,12 @@ for cap classification and capture plumbing above. The 22 generated-OCaml
 delta pins and model sources are unchanged. No baseline values or concurrency
 reference sets are edited.
 
-## Validation in progress
+## Validation checkpoints
 
-Preliminary targeted and hermetic results are retained separately from the
-forthcoming clean functional-candidate gates. Final measured results and
-candidate identities will be appended before presentation; this work-in-progress
-checkpoint is not a claim that the second review has passed.
+Targeted/hermetic repairs, the first checkpoint and the intentionally
+interrupted attempt remain separate records. The completed clean-candidate
+measurements below supersede the interrupted attempt. Second-review acceptance
+remains pending; these are the repairing agent's checks.
 
 
 ## Cancellation correction after the first repair checkpoint
@@ -120,3 +120,79 @@ and `cgroup.kill`. Unsupported environments fail before a command launches.
 Containment covers the supplied commands and their ordinary descendants,
 including nested timeouts/caps; it is not isolation against a command that
 deliberately moves itself to a different cgroup.
+
+
+## Measured candidate for second review
+
+Functional primary: `de9f6d3612232d581622afcdf0b23cdaf31fa09d` on
+`arc/validation-foundations`. The final documentation/evidence commit carries
+these results and its separate Tier A checkpoint. Private companion:
+`86a2aea547804b78eb7f1eae633bb9c24c713b7f` on `arc/validation-foundations-concurrency`,
+with functional changes at `2460ef33f897761dc40680437b2c5cd420e22dc6`.
+The primary descends from mainline `89f7e688530c6910884518811d645e4e892e4507`.
+The private companion remains on the older feature base; integrate its
+instrument changes in the future SC charter, rather than landing that older
+branch directly. Lem/compiler/pinned checkout and all three package pins
+remain `f6542f8e6860d12d4655e6648bc4c45dabd1d798`.
+
+| Measurement | Completed result |
+|---|---|
+| Primary Tier A+B | 32/32 commands; 4073.980 summed seconds; clean unchanged functional source and external inputs |
+| Real observation entry-point plants | 90/90 across 16 lane families, including all new audit adversaries |
+| Hermetic checks | 18 codec, two prerequisite, five census, 16 release/provider and five oracle-instrument methods |
+| Fixed GCC corpus | 1,963 rows; 1,873 agreements, 12 triaged comparisons, existing skips; zero regressions and zero improvements; 190 O2 agreements |
+| Pristine oracle | 723 rows: 709 semantic agreements, 11 matching failures, one reviewed difference, two interface agreements; separate library check and unexpected-verdict plant pass |
+| Private companion | Final Tier A 14/14 (351.161 summed seconds), all 30 actual litmus rows; 26 observation plants and 19 reference/refusal adversaries |
+| Cold provider | 20/20 commands; all 1,769 present artifact hashes checked; 207 Lean and 86 OCaml generated files match the original candidate |
+| Failure evidence | All eight observations reproduced; compiler-range census reproduced all 1,644 sites, 1,642 identified owners, two unresolved; 231 pure execution-dependent sites and 305 execution-dependent sites overall |
+| C1 | All 242 rows; 91 MATCH, 41 UB_MATCH, 110 CERB_SKIP; no movement from the original candidate |
+| C4 | All 2,186 rows across 15 suites; exact input set/hashes checked; one classification movement from the original candidate; detailed counts below |
+
+C4 records 1,205 MATCH and 154 UB_MATCH (1,359 agreements), one UB_DIFF,
+three filesystem refusals, three Lean timeouts and 820 oracle-side
+non-comparisons (766 rejects, 29 errors, 25 timeouts). The single movement is
+`pr63209.c`: the oracle now completes just below the unchanged 15-second
+budget, then Lean times out with no output. The
+[timing record](validation-foundations-repair-evidence/c4-timing-movement-v2.json)
+retains both runs; no completed Lean result is available to compare.
+Reporting results are measurements. The historical scoreboards and every
+semantic baseline remain unchanged; skips, timeouts, attributed refusals,
+triaged rows and the UB-location difference are not observation agreement.
+The eight strictness observations reproduce known failures and limits; they
+do not establish general failure correspondence or customer adoption.
+
+The full run has 1,778 artifact entries before and after, with no missing or
+lost entry. It records 29 changed hashes: version-bearing OCaml libraries and
+binary, serialized runtimes and freshness stamps rebuilt from the previous
+dirty checkpoint at the committed candidate. Both recorded source fingerprints
+and the Lean executable hash are unchanged. The exact before/after identities
+and serialized runtime headers are retained; no rebuilt-binary identity is
+assumed. The cold rehearsal independently reconstructs the new candidate.
+
+The [evidence index](validation-foundations-repair-evidence/README.md) retains
+all new owned raw attempts, command/status/log hashes, per-file archive
+inventories, source-to-commit checks and source/model/reference preservation.
+The original first-audit report and evidence are unchanged. Additional
+ancillary prerequisite controls exercise six actual script entries behind
+failed builds, with healthy controls; no stale executable is run. All raw
+Cabs captures are retained by the repaired paths before publication as JSON.
+
+The next step is a fresh second review of this candidate and the updated core
+documents. Critical design/SC-domain and landing decisions remain for the
+user discussion; no second-review acceptance, merge, push or adoption is
+claimed. The original concurrency worktree and the legacy run remain outside
+these operations.
+
+The final documentation checkpoint passed Tier A **13/13**, in 394.135
+summed seconds, with its source snapshot and external inputs unchanged,
+no missing/lost required artifacts and every owned process scope removed.
+Its 29 changed artifact hashes record the version-bearing OCaml/runtime
+rebuild for the documented dirty checkpoint; both source fingerprints and
+the Lean executable hash stayed unchanged. The
+[checkpoint summary](validation-foundations-repair-evidence/final-checkpoint-summary.json)
+retains the exact tested diff, untracked-file hashes, metadata snapshots and
+before/after artifact identities. Subsequent changes publish this result,
+the TODO's current C4 entry and the evidence index/inventories. These are
+documentation/evidence changes; executable source and all 36 ladder command
+entries remain those of `de9f6d361`. The commit carrying this record is the
+candidate's final documentation/evidence checkpoint.
