@@ -62,7 +62,7 @@ small hermetic plants. The tables are the executable membership authority.
 | 6 | `./scripts/test_speclab.sh --selftest` + `--plant`; `./scripts/test_speclab_{divmod,bytearr,list,tree,seed}.sh --gate` | all PASS (harness-family differential lanes; sweep/fuzz modes are reporting-tier extras) |
 | 7 | `./scripts/test_gcc_oracle.sh --check-baseline` | **GATE since 2026-09-02 [USER 2026-09-02]** (born reporting-tier 2026-08-30; design `lean_frontend/docs/2026-08-30_gcc-second-oracle-design.md`): the gcc SECOND-oracle lane over tests/minimal + debug + float + immaculate/nolibc + the staged csmith tier, rc 0 vs the 1,963-row skip ledger `scripts/gcc_oracle_baseline.txt` + the fail-closed triage ledger `scripts/gcc_oracle_triage.txt`. Asymmetric by audited design (VALIDATION.md §2): any DISAGREE or regression is fatal; improvements print loudly at rc 0 and are re-recorded in a dedicated instrument commit. ~24 min wall (csmith tier incl.) — Tier B, never Tier A. Load caveat: the TIMEOUT-class rows are wall-clock sensitive (TIMEOUT_SECS=30; the slowest csmith rows hand-time at ~17 s on a quiet box, and a busy box — load ≈12 at the 2026-09-02 audit — pushed one over) — a REGRESSION whose only movement is into SKIP_LEAN_TIMEOUT is re-run on a quiet box before it is read as red; no code change. |
 | 8 | `./scripts/test_hang_plant.sh`; `./scripts/test_kill_plant.sh`; `./scripts/test_fuel_plant.sh` | plant batteries for the harness failure CLASSIFICATIONS (mem-scale S0/S2; FUEL arc 2026-09-03): a sleeping Lean-driver stub must read HANG and a busy-looping one TIMEOUT in test_exec.sh + test_ci_sweep.sh; a 5 GiB-resident stub must read each capped harness's own KILL class (exit 137 + capped's OOM-KILLED witness); a stub printing the fuel-exhaustion kill / panic must read FUEL (`FUEL` / `SKIP_LEAN_FUEL` / `LEAN_FUEL` / measure.sh `FUEL(kill|panic)`) in every classifying lane and a genuine `Error {msg: "assert() failure"}` stub must NOT. Loud plant banner on every run; rc 0 |
-| 9 | `python3 scripts/test_observation_lanes.py` | Real entry-point plants for exec, multi-TU, CN, CI, GCC, verify, bytes, libc-exec, URI, immaculate and all six spec-lab scripts: positive controls, same-value byte differences, original failure statuses, CN refusal text and genuine native exit 137. Explicit reference projections are retained. Measured about 12.5 minutes in the 2026-09-06 full run, dominated by repeated real verify/immaculate pipelines; Tier B because this repeats full pipelines under controlled mutations. |
+| 9 | `python3 scripts/test_observation_lanes.py` | Real entry-point plants for exec, multi-TU, CN, CI, GCC, verify, bytes, libc-exec, URI, immaculate and all six spec-lab scripts: positive controls, same-value byte differences, original failure statuses, CN refusal text and genuine native exit 137; descendant-OOM witnesses at successful exits, UB_DIFF denominator/default/new-baseline rejection, and immaculate fuel/garbage/unreviewed-panic rejection. Explicit reference projections are retained. Measured about 12.5 minutes in the 2026-09-06 full run, dominated by repeated real verify/immaculate pipelines; Tier B because this repeats full pipelines under controlled mutations. |
 | 10 | `python3 scripts/test_upstream_oracle.py` + `--plant` | Pristine source `b9aeedcb4` built with upstream Lem `3802cb0`, compared with fork OCaml: applicable Tier A C inputs plus representative CLI/library interfaces, full raw records, reviewed diagnostic differences and a real unexpected-verdict plant. Requires a checked independent build manifest (`CERB_INDEPENDENT_MANIFEST`); missing provenance fails. About two minutes warm plus roughly one minute for the separate cold-build recipe. |
 
 **Battery placement decision [AGENT:S4]:** `test_libxml2.sh` was
@@ -119,10 +119,11 @@ a record, never a pass/fail for the tree.
   `test_libxml2_uri`, `test_immaculate`, `test_gcc_oracle`,
   `tests/parity-probes/run_probe.sh`) now run each test under
   `scripts/common.sh`'s `CAPPED_TEST` (`scripts/capped`,
-  `CERB_TEST_MEM_MAX`, default 4G); a cap breach is exit 137 + capped's
-  OOM-KILLED witness banner (the cgroup's `memory.events oom_kill`
-  counter) and every harness classifies it as its own KILL class (never
-  agreement, never a skip; a bare 137 keeps its crash class); plant:
+  `CERB_TEST_MEM_MAX`, default 4G); a cap breach has capped's positive
+  OOM witness (the cgroup's `memory.events oom_kill` counter), even when
+  a surviving parent exits 0 or 1. It is never agreement; GCC explicitly
+  accounts for its native-side exclusion. A bare 137 remains subject to
+  each protocol's status rules and is not itself an OOM witness. Plant:
   `scripts/test_kill_plant.sh`.
   Baselines re-derived in the dedicated instrument commit recorded in
   `lean_frontend/docs/2026-09-02_mem-scale-record.md` §S2.

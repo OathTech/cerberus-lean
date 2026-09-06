@@ -231,8 +231,8 @@ run_ocaml_exec() {  # <incdir> <file...>
         -I "$inc" --nolibc --exec --batch --mode=exhaustive "$@"
 }
 run_cabs_json() {   # <incdir> <file.c> <out.json>
-    timeout "${TIMEOUT_SECS}s" "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" \
-        -I "$1" --cabs-json "$2" > "$3" 2>/dev/null
+    capture_cabs_json "$3" "$OBSERVATION_RUN_DIR/$(basename "$3").bridge" \
+        timeout "${TIMEOUT_SECS}s" "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" -I "$1" --cabs-json "$2"
 }
 run_lean_batch() {  # <file.json...>
     LEAN_ABORT_ON_PANIC=1 timeout "${TIMEOUT_SECS}s" \

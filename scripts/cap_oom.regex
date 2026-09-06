@@ -1,0 +1,1 @@
+^capped: (OOM-KILLED|OOM event recorded in cgroup)([ (]|$)

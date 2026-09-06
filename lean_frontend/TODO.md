@@ -146,20 +146,20 @@ owned and hands off; this roadmap does not authorize operating it.
 
 ## Small items (independent; can ride along with any fix batch)
 
-- **Batch printer escapes per CODEPOINT, the oracle per BYTE — a Lean
-  printer discrepancy class no lane row exercises yet (S)** — registered
-  2026-09-05 by reading, not measurement ([AGENT]; record
-  `docs/2026-09-05_p0-instruments-record.md` §F3.4 finding 2).
-  `Main.lean:353` `batchEscape` folds over `Char`s and emits `\ddd` from
-  the codepoint (`48 + a / 100` …); `backend/common/driver_ocaml.ml:99`
-  uses OCaml `String.escaped`, per UTF-8 byte. Any non-ASCII byte in a
-  program's captured stdout/stderr diverges (`é`: oracle `\195\169`, Lean
-  `\233`; a codepoint ≥ 256 yields non-digit characters). Since the P0
-  widening the first such row is a MISMATCH in `test_exec.sh`; today no
-  corpus row prints non-ASCII. Mover: a probe (`printf("\xc3\xa9")` under
-  libc mode) + mirror `String.escaped` byte-wise in `batchEscape`; then a
-  plant in the extractor selftest is NOT the place (it tests the harness,
-  not the printer) — pin the probe in `tests/immaculate` or `tests/bytes`.
+- **Byte representation and printer producer contracts (M)** — corrected
+  2026-09-06 after audit VF-07. `Main.batchEscape` handles the execution IO
+  path's byte-carrier Chars: `driver_fs_step.update_stdout/update_stderr`
+  append `String.ofList out_chars`, with one model byte per Char. Existing
+  `tests/immaculate` libc fixtures already print bytes C3 A9 and FF and agree with
+  OCaml's `String.escaped`. Converting these carriers to UTF-8 would corrupt
+  that behavior (FF would become C3 BF). Keep those byte-preserving pins.
+  Other producers passed to `batchEscape`, such as frontend parse errors,
+  need separate analysis; the generic Lem String/Char representation debt
+  and two Lem String XFAILs remain open. Trace each producer, specify its
+  byte/text relation, then add missing boundary cases. No blanket printer
+  conversion is justified. See the
+  [observation contract](docs/2026-09-05_observation-contract.md#mainbatchescape-producer-trace)
+  and [audit repair record](docs/2026-09-06_validation-foundations-audit-repairs.md).
 
 - **Driver-freshness stamp: the oracle `bin` hash is not source-
   determined, and the switch's lem libraries are an uncovered link

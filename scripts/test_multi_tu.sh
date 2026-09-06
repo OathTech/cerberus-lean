@@ -151,8 +151,8 @@ for tdir in "${TEST_DIRS[@]}"; do
     json_ok=true
     for c in "${C_FILES[@]}"; do
         j="$OUTPUT_DIR/$tname-$(basename "$c" .c).json"
-        if ! timeout "${TIMEOUT_SECS}s" "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" \
-                --cabs-json "$c" > "$j" 2>/dev/null; then
+        if ! capture_cabs_json "$j" "$OBSERVATION_RUN_DIR/$(basename "$j").bridge" \
+                timeout "${TIMEOUT_SECS}s" "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" --cabs-json "$c"; then
             echo "[$num] FAIL $tname: cabs-json failed for $(basename "$c")"
             json_ok=false
             break

@@ -103,14 +103,12 @@ verdict() {   # <stdout-file> <rc> <stderr-file>
     # it is not a semantic success or full diagnostic correspondence claim.
     # A timeout, arbitrary abnormal exit, or a verdict followed by failure
     # must never be admitted by this exception.
-    if [[ "$rc" == 125 || "$rc" == 134 ]] && \
-       ! grep -qE '^(Defined|Undefined|Error|EXECUTION)' "$outf" && \
-       grep -qE '^(internal error: |cerberus: internal error, uncaught exception:|PANIC at )' "$outf" "$errf"; then
-        echo "CRASH"; return
-    fi
     if ! python3 "$OBSERVATION_CODEC" tokens --stdout "$outf" --stderr "$errf" \
-            --status "$rc" > "$outf.tokens"; then
+            --status "$rc" --policy immaculate > "$outf.tokens"; then
         echo "INVALID"; return
+    fi
+    if grep -q '^INTERNAL_ERROR:' "$outf.tokens"; then
+        echo "CRASH"; return
     fi
     if [[ "$line" == Undefined* ]]; then
         # whole payload: {ub: "…", stderr: "…", loc: "…"} (charter §4.1)

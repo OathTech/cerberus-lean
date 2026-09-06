@@ -43,4 +43,32 @@ gcc_run "$WORK/varying.c" "$WORK/probe" -O0 -w
 [[ "$G_STATUS" == nondet ]] || { echo "GCC capture: varying program stderr accepted: $G_STATUS/$G_EXIT" >&2; exit 1; }
 [[ "$(cat "$OBSERVATION_RUN_DIR/3.gcc.3.run1.status")" == 3 && "$(cat "$OBSERVATION_RUN_DIR/3.gcc.3.run2.status")" == 3 ]]
 echo 'GCC capture: varying program stderr rejected — PASS'
-echo "GCC capture: 3/3 probes passed; raw evidence $OBSERVATION_RUN_DIR"
+cat > "$WORK/descendant.c" <<'C'
+#include <stdlib.h>
+#include <signal.h>
+#include <sys/wait.h>
+#include <unistd.h>
+int main(void) {
+  pid_t child = fork();
+  if (child < 0) return 80;
+  if (!child) {
+    volatile unsigned char *p = malloc(256u * 1024u * 1024u);
+    if (!p) _exit(81);
+    for (size_t i = 0; i < 256u * 1024u * 1024u; i += 4096) p[i] = 1;
+    _exit(82);
+  }
+  int status;
+  if (waitpid(child, &status, 0) != child) return 83;
+  return WIFSIGNALED(status) && WTERMSIG(status) == SIGKILL ? 0 : 84;
+}
+C
+file_num=4
+saved_cap=("${CAPPED_TEST[@]}")
+CAPPED_TEST=(env CERB_MEM_MAX=128M "$CAPPED_BIN")
+gcc_run "$WORK/descendant.c" "$WORK/probe" -O0 -w
+CAPPED_TEST=("${saved_cap[@]}")
+[[ "$G_STATUS" == killed && "$(cat "$OBSERVATION_RUN_DIR/4.gcc.4.run1.status")" == 0 ]] \
+    || { echo "GCC capture: successful parent hid descendant OOM: $G_STATUS/$G_EXIT" >&2; exit 1; }
+is_cap_kill 0 "$OBSERVATION_RUN_DIR/4.gcc.4.run1.stderr"
+echo 'GCC capture: actual descendant OOM despite parent exit zero rejected — PASS'
+echo "GCC capture: 4/4 probes passed; raw evidence $OBSERVATION_RUN_DIR"

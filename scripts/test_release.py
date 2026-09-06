@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Test membership interpretation and actual fail-closed runner processes."""
 
-from contextlib import redirect_stdout
+from contextlib import nullcontext, redirect_stdout
 import io
 import json
 import os
@@ -15,6 +15,7 @@ import unittest
 from unittest.mock import patch
 
 import release
+from process_scope import destroy
 
 
 class ReleaseTests(unittest.TestCase):
@@ -54,8 +55,9 @@ class ReleaseTests(unittest.TestCase):
                         '-c', 'user.email=runner-test@example.invalid', 'commit', '-qm', 'fixture'], check=True)
         return root
 
-    def run_fixture(self, root, out, *flags):
-        with patch.object(release, 'ROOT', root), patch.object(release, 'artifacts', return_value={}), \
+    def run_fixture(self, root, out, *flags, real_inventory=False):
+        inventory = nullcontext() if real_inventory else patch.object(release, 'artifacts', return_value={})
+        with patch.object(release, 'ROOT', root), inventory, \
              patch.object(release, 'external_inputs', return_value={}), \
              patch('sys.argv', ['release.py', '--mode', 'full', '--out', str(out), *flags]), \
              redirect_stdout(io.StringIO()):
@@ -140,11 +142,68 @@ class ReleaseTests(unittest.TestCase):
             self.assertNotEqual(code, 0)
             self.assertNotEqual(report['status'], 'passed')
 
+    def test_actual_inventory_rejects_lost_files_and_required_roots(self):
+        for removal in ('', 'rm -rf _build/install/default/lib/cerberus/runtime lean_frontend/native',
+                        'rm _build/install/default/lib/cerberus-lib/resource'):
+            with self.subTest(removal=removal), tempfile.TemporaryDirectory() as tmp:
+                base = Path(tmp)
+                root = self.make_fixture(base, b=(removal+'\n' if removal else '')+'echo PASSED\n')
+                (root/'.gitignore').write_text('/_build/\n/lean_frontend/\n/ocaml_frontend/\n/driver_fresh*\n')
+                subprocess.run(['git', '-C', str(root), 'add', '.gitignore'], check=True)
+                subprocess.run(['git', '-C', str(root), '-c', 'user.name=Runner test',
+                                '-c', 'user.email=runner-test@example.invalid', 'commit', '-qm', 'ignore fixture products'], check=True)
+                for name in [*release.REQUIRED_ARTIFACTS, '_build/install/default/lib/cerberus-lib/resource']:
+                    path = root/name; path.parent.mkdir(parents=True, exist_ok=True); path.write_text('fixture artifact\n')
+                (root/'lean_frontend/.lake/packages/LemLib').mkdir(parents=True)
+                bins = base/'bin'; bins.mkdir()
+                for name in ('lem', 'ocamlc', 'dune', 'gcc', 'lean', 'elan'):
+                    tool = bins/name
+                    tool.write_text('#!/bin/sh\n'+('echo "'+str(bins/'lean')+'"' if name == 'elan' else 'echo fixture-version')+'\n')
+                    tool.chmod(0o755)
+                with patch.dict(os.environ, PATH=str(bins)+os.pathsep+os.environ['PATH']):
+                    code, report = self.run_fixture(root, base/'evidence', real_inventory=True)
+                self.assertTrue(report['source_unchanged'])
+                self.assertEqual(code, int(bool(removal)))
+                self.assertEqual(report['status'], 'failed' if removal else 'passed')
+                if removal:
+                    self.assertTrue(report['artifact_issues'])
+                    self.assertTrue(any('lost inventory entry:' in s or s.endswith('md5.o') for s in report['artifact_issues']))
+
+    def test_nested_timeout_and_capped_descendants_are_cleaned(self):
+        cap = Path(release.__file__).with_name('capped')
+        for capped in (False, True):
+            with self.subTest(capped=capped), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                pidfile = root/'child.pid'
+                nested = ['sh', '-c', 'echo $$ > "$1"; exec sleep 30', 'owned-child', str(pidfile)]
+                if capped:
+                    nested = ['env', 'CERB_MEM_MAX=128M', str(cap), *nested]
+                lane = release.Lane('A1', 'A', ['timeout', '30', *nested])
+                result = release.execute_lane(lane, root, 0.5, root=root)
+                self.assertTrue(pidfile.exists(), (root/'A1/stderr').read_text())
+                self.assertEqual(result['status'], 'incomplete')
+                self.assertTrue(result['containment_cleaned'])
+                self.assertFalse(Path(result['cgroup']).exists())
+                pid = int(pidfile.read_text())
+                stat = Path(f'/proc/{pid}/stat')
+                self.assertTrue(not stat.exists() or stat.read_text().split(') ')[1].split()[0] in ('Z', 'X'))
+
+    def test_successful_leader_cannot_leave_background_work(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            lane = release.Lane('A1', 'A', ['sh', '-c', 'sleep 30 & echo $! > child.pid; echo ALL-PASSED'])
+            result = release.execute_lane(lane, root, 10, root=root)
+            self.assertEqual(result['exit_status'], 0)
+            self.assertEqual(result['status'], 'incomplete')
+            self.assertEqual(result['reason'], 'command exited with live descendants')
+            self.assertTrue(result['containment_cleaned'])
+            self.assertFalse(Path(result['cgroup']).exists())
+
     def test_runner_signals_leave_incomplete_report_and_identified_process(self):
         for sig in (signal.SIGTERM, signal.SIGKILL):
             with self.subTest(signal=sig), tempfile.TemporaryDirectory() as tmp:
                 base = Path(tmp)
-                root = self.make_fixture(base, a='echo CLAIMED-PASS\nsleep 30\n')
+                root = self.make_fixture(base, a='echo CLAIMED-PASS\ntimeout 30 sh -c \'echo $$ > child.pid; exec sleep 30\'\n')
                 out = base/'evidence'
                 program = (f'import sys; sys.path.insert(0, {str(Path(release.__file__).parent)!r}); '
                     'import release; from pathlib import Path; '
@@ -160,9 +219,12 @@ class ReleaseTests(unittest.TestCase):
                         if (out/'report.json').exists():
                             report = json.loads((out/'report.json').read_text())
                             pgid = report.get('active_lane', {}).get('process_group')
-                            if pgid: break
+                            if pgid and (root/'child.pid').exists(): break
                         time.sleep(0.01)
                     self.assertIsNotNone(pgid)
+                    self.assertTrue((root/'child.pid').exists())
+                    nested_pid = int((root/'child.pid').read_text())
+                    scope_path = Path(report['active_lane']['cgroup'])
                     child.send_signal(sig)
                     child.wait(timeout=10)
                     report = json.loads((out/'report.json').read_text())
@@ -177,10 +239,15 @@ class ReleaseTests(unittest.TestCase):
                     else:
                         self.assertEqual(report['status'], 'running')
                         self.assertEqual(report['active_lane']['process_group'], pgid)
+                    deadline = time.monotonic()+10
+                    while scope_path.exists() and time.monotonic() < deadline:
+                        time.sleep(0.01)
+                    self.assertFalse(scope_path.exists(), 'guardian must clean after supervisor SIGKILL too')
+                    stat = Path(f'/proc/{nested_pid}/stat')
+                    self.assertTrue(not stat.exists() or stat.read_text().split(') ')[1].split()[0] in ('Z', 'X'))
                 finally:
-                    if pgid:
-                        try: os.killpg(pgid, signal.SIGKILL)
-                        except ProcessLookupError: pass
+                    if pgid and 'scope_path' in locals():
+                        destroy(scope_path)
                     if child.poll() is None: child.kill()
                     child.communicate(timeout=10)
 

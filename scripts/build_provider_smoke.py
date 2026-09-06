@@ -13,12 +13,14 @@ import json
 import os
 from pathlib import Path
 import shutil
+import signal
 import subprocess
 import sys
 import time
 
 from build_independent_oracle import files, save, sha
-from release import artifacts, source_identity, stop_group
+from release import RunnerInterrupted, artifacts, source_identity
+from process_scope import ContainmentError, ProcessScope
 
 ROOT = Path(__file__).resolve().parent.parent
 LEM_REV = 'f6542f8e6860d12d4655e6648bc4c45dabd1d798'
@@ -56,33 +58,47 @@ def main():
                                 'local Git source objects', 'one heavy job at a time']}
     save(out, report)
     env = dict(os.environ, DUNE_CACHE='disabled', CERB_MEM_MAX='32G')
+    previous_handlers = {sig: signal.getsignal(sig) for sig in (signal.SIGINT, signal.SIGTERM)}
+    def interrupted(signum, _frame):
+        raise RunnerInterrupted(signum)
+    for sig in previous_handlers:
+        signal.signal(sig, interrupted)
 
     def run(name, argv, cwd=out, expected=0):
         row = {'name': name, 'command': list(map(str, argv)), 'cwd': str(cwd), 'status': 'running'}
         report['commands'].append(row)
         save(out, report)
         started = time.monotonic()
+        error = None
         with (out / (name + '.stdout')).open('wb') as stdout, (out / (name + '.stderr')).open('wb') as stderr:
-            proc = subprocess.Popen(row['command'], cwd=cwd, env=env, stdout=stdout, stderr=stderr,
-                                    start_new_session=True)
-            row['process_group'] = proc.pid
-            save(out, report)
+            scope = None
             try:
-                proc.wait(timeout=3500)
-            except subprocess.TimeoutExpired:
-                stop_group(proc)
-                row.update(exit_status=proc.returncode, status='incomplete', reason='build step timeout',
-                           seconds=round(time.monotonic()-started, 3),
-                           stdout_sha256=sha(out / (name + '.stdout')),
-                           stderr_sha256=sha(out / (name + '.stderr')))
+                scope = ProcessScope(out/(name+'.scope'))
+                proc = scope.start(row['command'], cwd=cwd, env=env, stdout=stdout, stderr=stderr)
+                row.update(process_group=proc.pid, cgroup=str(scope.path))
                 save(out, report)
-                raise
-        row.update(exit_status=proc.returncode, expected=expected,
-                   status='passed' if proc.returncode == expected else 'failed',
-                   seconds=round(time.monotonic()-started, 3),
+                rc = scope.wait(3500)
+                row.update(exit_status=rc, expected=expected, status='passed' if rc == expected else 'failed')
+            except (OSError, ContainmentError, subprocess.SubprocessError, RunnerInterrupted) as exc:
+                error = exc
+                row.update(exit_status=None, status='incomplete', reason=str(exc))
+            finally:
+                if scope is not None:
+                    try:
+                        residual = scope.finish(cancel=error is not None)
+                        row['containment_cleaned'] = True
+                        if residual and error is None:
+                            error = ContainmentError('build command exited with live descendants')
+                            row.update(status='incomplete', reason=str(error))
+                    except (OSError, ContainmentError, subprocess.SubprocessError) as exc:
+                        error = exc
+                        row.update(status='incomplete', containment_cleaned=False, reason=str(exc))
+        row.update(seconds=round(time.monotonic()-started, 3),
                    stdout_sha256=sha(out / (name + '.stdout')), stderr_sha256=sha(out / (name + '.stderr')))
         save(out, report)
         print(f'{name}: {row["status"]} ({row["seconds"]}s)', flush=True)
+        if error is not None:
+            raise error
         if row['status'] != 'passed':
             raise RuntimeError(f'{name}: expected {expected}, got {proc.returncode}; see retained logs')
 
@@ -181,11 +197,14 @@ def main():
         report['status'] = 'passed'
         save(out, report)
         return 0
-    except (OSError, RuntimeError, subprocess.SubprocessError) as exc:
+    except (OSError, RuntimeError, subprocess.SubprocessError, RunnerInterrupted) as exc:
         report.update(status='incomplete', error=str(exc))
         save(out, report)
         print('PROVIDER REHEARSAL INCOMPLETE: '+str(exc), file=sys.stderr)
         return 1
+    finally:
+        for sig, handler in previous_handlers.items():
+            signal.signal(sig, handler)
 
 
 if __name__ == '__main__':

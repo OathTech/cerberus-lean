@@ -23,6 +23,8 @@ import subprocess
 import sys
 import time
 
+from process_scope import ContainmentError, ProcessScope
+
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -127,9 +129,7 @@ def source_identity(root=None):
             'diff_sha256': hashlib.sha256(diff).hexdigest(), 'untracked_sha256': extra}
 
 
-def artifacts(root=None):
-    root = root or ROOT
-    paths = ['lean_frontend/lean-toolchain', 'lean_frontend/lakefile.toml',
+REQUIRED_ARTIFACTS = ['lean_frontend/lean-toolchain', 'lean_frontend/lakefile.toml',
              'lean_frontend/lake-manifest.json', 'lean_frontend/speclab/lake-manifest.json',
              'lean_frontend/speclab/lakefile.toml', 'lean_frontend/speclab/lean-toolchain',
              'tests/mem-scale-probes/micro/lakefile.toml', 'tests/mem-scale-probes/micro/lean-toolchain',
@@ -137,18 +137,28 @@ def artifacts(root=None):
              'lean_frontend/lem_sync.sha256', 'ocaml_frontend/lem_sync.sha256',
              'driver_fresh.oracle.sha256', 'driver_fresh.lean.sha256',
              '_build/default/backend/driver/main.exe',
-             'lean_frontend/.lake/build/bin/cerberus-lean']
+             'lean_frontend/.lake/build/bin/cerberus-lean',
+             '_build/install/default/lib/cerberus-lib/META',
+             '_build/install/default/lib/cerberus-lib/runtime/libcore/std.core',
+             '_build/install/default/lib/cerberus/runtime/libc/libc.co',
+             'lean_frontend/native/md5.o']
+ARTIFACT_TREES = ['_build/install/default/lib/cerberus-lib',
+                  '_build/install/default/lib/cerberus/runtime', 'lean_frontend/native']
+
+
+def artifacts(root=None):
+    root = root or ROOT
     records = {}
-    for rel in paths:
+    for rel in REQUIRED_ARTIFACTS:
         path = root / rel
         records[rel] = {'present': path.is_file()}
         if path.is_file():
             records[rel].update(sha256=sha(path), resolved=str(path.resolve()))
             if path.suffix in ('.json', '.toml', '.sha256') or path.name == 'lean-toolchain':
                 records[rel]['text'] = path.read_text()
-    for folder in ['_build/install/default/lib/cerberus-lib',
-                   '_build/install/default/lib/cerberus/runtime', 'lean_frontend/native']:
+    for folder in ARTIFACT_TREES:
         directory = root / folder
+        records[folder+'/'] = {'present': directory.is_dir(), 'kind': 'required-directory'}
         for path in sorted(directory.rglob('*')) if directory.is_dir() else []:
             if path.is_file():
                 records[str(path.relative_to(root))] = {'present': True, 'sha256': sha(path),
@@ -164,11 +174,13 @@ def artifacts(root=None):
             flag = '-version' if executable == 'ocamlc' else '--version'
             records[executable].update(sha256=sha(Path(binary)), version=run_text([binary, flag], root))
     package = root / 'lean_frontend/.lake/packages/LemLib'
+    records['lem_runtime_checkout'] = {'present': package.is_dir()}
     if package.is_dir():
-        records['lem_runtime_checkout'] = source_identity(package)
+        records['lem_runtime_checkout'].update(source_identity(package))
     # Resolve the installed Lean binary without executing an uncapped Lean
     # process. Lake build logs independently record the actual invocations.
     toolchain = (root / 'lean_frontend/lean-toolchain')
+    records['lean_compiler'] = {'present': False}
     if toolchain.is_file() and shutil.which('elan'):
         binary = Path(run_text(['elan', 'which', 'lean'], root/'lean_frontend'))
         records['lean_compiler'] = {'present': binary.is_file(), 'path': str(binary), 'sha256': sha(binary)}
@@ -195,8 +207,11 @@ def external_inputs(root=None):
     return result
 
 
-def artifact_issues(records):
-    return [key for key, value in records.items() if value.get('present') is False or value.get('error')]
+def artifact_issues(records, before=None):
+    issues = [key for key, value in records.items() if value.get('present') is False or value.get('error')]
+    if before is not None:
+        issues += ['lost inventory entry: '+key for key in sorted(set(before)-set(records))]
+    return issues
 
 
 def safe_inventory(reader):
@@ -216,18 +231,6 @@ class RunnerInterrupted(Exception):
     def __init__(self, signum):
         self.signum = signum
         super().__init__(f'runner interrupted by signal {signum}')
-
-
-def stop_group(proc):
-    # The leader can exit while a descendant ignores TERM. Always address
-    # the whole original process group again, even after wait() succeeds.
-    try: os.killpg(proc.pid, signal.SIGTERM)
-    except ProcessLookupError: pass
-    try: proc.wait(timeout=2)
-    except subprocess.TimeoutExpired: pass
-    try: os.killpg(proc.pid, signal.SIGKILL)
-    except ProcessLookupError: pass
-    proc.wait()
 
 
 def reporting_result(command, directory, rc):
@@ -270,23 +273,35 @@ def execute_lane(lane: Lane, out: Path, limit: float, root=None, on_started=None
               'required': lane.tier != 'C', 'status': 'running',
               'stdout': str(directory / 'stdout'), 'stderr': str(directory / 'stderr')}
     with (directory / 'stdout').open('wb') as stdout, (directory / 'stderr').open('wb') as stderr:
+        scope = None
         try:
-            proc = subprocess.Popen(command, cwd=root, env=env, stdout=stdout, stderr=stderr,
-                                    start_new_session=True)
-            try:
-                result['process_group'] = proc.pid
-                if on_started:
-                    on_started(result)
-                rc = proc.wait(timeout=limit)
-                result.update(exit_status=rc, status=('passed' if rc == 0 else 'failed'))
-            except (subprocess.TimeoutExpired, RunnerInterrupted) as exc:
-                stop_group(proc)
-                result.update(exit_status=proc.returncode, status='incomplete',
-                              reason='lane timeout' if isinstance(exc, subprocess.TimeoutExpired) else str(exc))
-                if isinstance(exc, RunnerInterrupted):
-                    result['interrupted_signal'] = exc.signum
-        except OSError as exc:
+            scope = ProcessScope(directory)
+            proc = scope.start(command, cwd=root, env=env, stdout=stdout, stderr=stderr)
+            result.update(process_group=proc.pid, cgroup=str(scope.path))
+            if on_started:
+                on_started(result)
+            rc = scope.wait(limit)
+            result.update(exit_status=rc, status=('passed' if rc == 0 else 'failed'))
+        except (subprocess.TimeoutExpired, RunnerInterrupted) as exc:
+            result.update(exit_status=None, status='incomplete',
+                          reason='lane timeout' if isinstance(exc, subprocess.TimeoutExpired) else str(exc))
+            if isinstance(exc, RunnerInterrupted):
+                result['interrupted_signal'] = exc.signum
+        except (OSError, ContainmentError) as exc:
             result.update(exit_status=None, status='incomplete', reason=str(exc))
+        finally:
+            if scope is not None:
+                try:
+                    cancelled = result['status'] not in ('passed', 'failed')
+                    residual = scope.finish(cancel=cancelled)
+                    result['containment_cleaned'] = True
+                    if residual and not cancelled:
+                        result.update(status='incomplete', reason='command exited with live descendants')
+                    if cancelled and scope.proc is not None and not (directory/'scope-launch-error.json').exists():
+                        result['exit_status'] = scope.proc.returncode
+                except (OSError, ContainmentError, subprocess.SubprocessError) as exc:
+                    result.update(status='incomplete', containment_cleaned=False,
+                                  cleanup_failed=True, reason=str(exc))
     if lane.tier == 'C' and result['status'] in ('passed', 'failed'):
         result['status'] = reporting_result(command, directory, result['exit_status'])
     result['seconds'] = round(time.monotonic() - started, 3)
@@ -356,8 +371,9 @@ def main():
             report.pop('active_lane', None)
             print(f'{result["status"].upper()} {lane.id} ({result["seconds"]:.1f}s)', flush=True)
             write_report(out / 'report.json', report)
-            if 'interrupted_signal' in result:
-                report['interrupted_signal'] = result['interrupted_signal']
+            if 'interrupted_signal' in result or result.get('cleanup_failed'):
+                if 'interrupted_signal' in result:
+                    report['interrupted_signal'] = result['interrupted_signal']
                 break
     except RunnerInterrupted as exc:
         report['interrupted_signal'] = exc.signum
@@ -369,7 +385,7 @@ def main():
     report['source_after'] = source_identity()
     report['artifacts_after'] = safe_inventory(artifacts)
     report['external_inputs_after'] = safe_inventory(external_inputs)
-    report['artifact_issues'] = artifact_issues(report['artifacts_after']) + artifact_issues(report['external_inputs_after'])
+    report['artifact_issues'] = artifact_issues(report['artifacts_after'], report['artifacts_before']) + artifact_issues(report['external_inputs_after'], report['external_inputs_before'])
     unchanged = (before == report['source_after'] and
                  report['external_inputs_before'] == report['external_inputs_after'])
     complete_selection = len(selected) == len(eligible)

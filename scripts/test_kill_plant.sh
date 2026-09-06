@@ -69,8 +69,8 @@ CERB_MEM_MAX=1G "$WORK/capped_nowitness" sh -c 'kill -KILL $$' > /dev/null 2> "$
 # (b) grandchild OOM — the direct child exits 1 after its own child was
 #     OOM-killed: the cgroup still records the event and capped says so
 CERB_MEM_MAX=1G "$CAPPED_BIN" sh -c 'python3 -c "b = bytearray(2 * 1024 ** 3)"; exit 1' > /dev/null 2> "$WORK/grand.err"; rc=$?
-[[ $rc -eq 1 ]] && grep -q "capped: OOM event recorded in cgroup (memory.events oom_kill=[1-9][0-9]*.*though the command exited rc=1" "$WORK/grand.err" \
-    && echo "PLANT OK   [capped grandchild OOM -> bannered despite rc=1]: $(grep -o 'capped: OOM event recorded[^—]*' "$WORK/grand.err" | cut -c1-120)" \
+[[ $rc -eq 1 ]] && is_cap_kill "$rc" "$WORK/grand.err" && grep -q 'command exit 1' "$WORK/grand.err" \
+    && echo "PLANT OK   [capped grandchild OOM -> bannered despite rc=1]: $(grep -o 'capped: OOM-KILLED[^—]*' "$WORK/grand.err" | cut -c1-120)" \
     || { echo "PLANT FAIL [capped grandchild OOM]: exit $rc; stderr: $(grep capped: "$WORK/grand.err")" >&2; fail=1; }
 
 export SKIP_BUILD=1

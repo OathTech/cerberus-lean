@@ -38,6 +38,9 @@ if os.environ.get('PLANT_REAL_EXEC') == '1':
     # Verify's former hole was in call mode. Leave main-mode results alone.
     if os.environ.get('PLANT_ONLY_CALL') == '1' and side == 'lean' and '--call' not in args:
         kind = 'good'
+    if os.environ.get('PLANT_ONLY_CRASH') == '1' and side == 'lean' and not any(
+            pathlib.Path(a).name == 'g2-memcmp-uninit.json' for a in args):
+        kind = 'good'
 if kind == 'bytes':
     out = out.replace(b'stdout: "', b'stdout: "\\000\\128\\255')
 elif kind == 'exit2':
@@ -46,6 +49,18 @@ elif kind == 'exit124':
     rc = 124
 elif kind == 'value137':
     out = out.replace(b'Specified(0)', b'Specified(137)')
+elif kind in ('ub_ref', 'ub_diff'):
+    if any(pathlib.Path(a).stem == 'ub' for a in args):
+        out = b'Undefined {ub: "UB036_exceptional_condition", stderr: "", loc: "<probe.c:2:' + (b'1' if kind == 'ub_ref' else b'2') + b'>"}\n'
+        rc = 1
+elif kind == 'descendant_oom':
+    err += b'capped: OOM-KILLED (memory.events oom_kill=1; command exit 0; descendant killed)\n'
+elif kind == 'crash_fuel':
+    out, err, rc = b'', b'PANIC at LemLib.failwithIImpl LemLib.lean:10:3: lem: fuel exhausted\n', 134
+elif kind == 'crash_garbage':
+    out = b'corrupted transport bytes\n'
+elif kind == 'crash_other':
+    out, err, rc = b'', b'PANIC at Other.unreviewed Other:10:3: unrelated panic\n', 134
 elif kind in ('refusal', 'different_refusal'):
     word = b'one' if kind == 'refusal' else b'two'
     out = b'Error {msg: "model refused: ' + word + b'"}\n'
@@ -71,6 +86,11 @@ def main():
         path.chmod(0o755)
     fixture = outdir / 'zero.c'
     fixture.write_text('int main(void) { return 0; }\n')
+    execdir = outdir/'exec-mixed'; execdir.mkdir(exist_ok=True)
+    for name in ('control.c', 'ub.c'):
+        (execdir/name).write_text(fixture.read_text())
+    partial_baseline = outdir/'exec-partial-baseline.txt'
+    partial_baseline.write_text('control.c MATCH\n')
     gccdir = outdir / 'gcc'
     gccdir.mkdir(exist_ok=True)
     (gccdir / 'zero.c').write_text(fixture.read_text())
@@ -88,7 +108,8 @@ def main():
     print(f'PLANT MODE: real lane entry points, explicit engine overrides; evidence {outdir}', flush=True)
     for lane in args.lane or LANES:
         variants = [('control', 'good', 'good'), ('bytes', 'good', 'bytes'),
-                    ('lean-exit2', 'good', 'exit2')]
+                    ('lean-exit2', 'good', 'exit2'),
+                    ('descendant-oom', 'good', 'descendant_oom')]
         if lane != 'gcc_oracle':
             variants.append(('oracle-exit2', 'exit2', 'good'))
         if lane == 'verify':
@@ -98,6 +119,14 @@ def main():
                              ('refusal-text', 'refusal', 'different_refusal')])
         if lane == 'gcc_oracle':
             variants.append(('native-exit137', 'value137', 'value137'))
+        if lane == 'exec':
+            variants.extend([('ub-control', 'ub_ref', 'ub_ref'),
+                             ('ub-difference', 'ub_ref', 'ub_diff'),
+                             ('ub-difference-new-baseline', 'ub_ref', 'ub_diff'),
+                             ('ub-difference-only', 'ub_ref', 'ub_diff')])
+        if lane == 'immaculate':
+            variants.extend([(kind.replace('_', '-'), 'good', kind)
+                             for kind in ('crash_fuel', 'crash_garbage', 'crash_other')])
         for name, okind, lkind in variants:
             case_dir = outdir / f'{lane}.{name}'
             case_dir.mkdir(exist_ok=True)
@@ -105,6 +134,10 @@ def main():
                             CERB_OBSERVATION_DIR=str(case_dir / 'raw'))
             if lane == 'exec':
                 flags = [str(fixture)]
+                if name.startswith('ub-'):
+                    flags = [str(execdir/'ub.c' if name.endswith('-only') else execdir)]
+                    if name.endswith('-new-baseline'):
+                        flags.insert(0, '--check-baseline='+str(partial_baseline))
             elif lane == 'multi_tu':
                 flags = [str(multitree.parent)]
             elif lane == 'cn_coverage':
@@ -121,6 +154,8 @@ def main():
             elif lane in LEGACY_LANES:
                 flags = ['--selftest'] if lane == 'speclab' else ['--plant'] if lane.startswith('speclab_') else []
                 case_env['PLANT_REAL_EXEC'] = '1'
+                if lane == 'immaculate' and name.startswith('crash-'):
+                    case_env['PLANT_ONLY_CRASH'] = '1'
                 if lane == 'bytes':
                     case_env['PLANT_BRIDGE_STATUS'] = '1'
             command = [str(ROOT / 'scripts' / f'test_{lane}.sh'), *flags]
@@ -128,7 +163,7 @@ def main():
             (case_dir / 'stdout').write_bytes(result.stdout)
             (case_dir / 'stderr').write_bytes(result.stderr)
             text = (result.stdout + result.stderr).decode('utf8', errors='replace')
-            expected_accept = name in ('control', 'refusal-control', 'native-exit137')
+            expected_accept = name in ('control', 'refusal-control', 'native-exit137', 'ub-control')
             if lane == 'gcc_oracle' and name == 'bytes':
                 # This lane deliberately compares integer exits. Demonstrate
                 # that the richer bytes survive, rather than pretend it is a
@@ -168,6 +203,13 @@ def main():
                                       ('MISMATCH', 'STDOUT_DIFF', 'DIFF', '[FAIL]', 'pipelines disagree'))
             elif name == 'refusal-text':
                 valid = valid and 'REJECT_DIFF' in text
+            elif name.startswith('ub-difference'):
+                rate = '0%' if name.endswith('-only') else '50%'
+                valid = valid and 'ub_diff=1' in text and f'Match rate:   {rate}' in text
+                if name.endswith('-new-baseline'):
+                    valid = valid and 'REGRESSION: new file (not in baseline) with failing status: ub.c UB_DIFF' in text
+            elif name == 'descendant-oom':
+                valid = valid and any(word in text for word in ('OBSERVATION ERROR', 'KILL', 'killed'))
             elif lane == 'bytes' and name == 'oracle-exit2':
                 valid = valid and 'cabs-json production failed' in text
             else:

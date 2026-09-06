@@ -65,7 +65,7 @@ fi
 
 if [[ "$MODE" != "file" ]]; then
     (cd "$PROJECT_ROOT/lean_frontend/speclab" && \
-        "$SCRIPT_DIR/capped" lake build speclab-test >/dev/null 2>&1)
+        "$SCRIPT_DIR/capped" lake build speclab-test) || fail "speclab-test build failed"
     [[ -f "$SPECLAB_TEST_BIN" ]] || fail "speclab-test binary missing after build"
 fi
 

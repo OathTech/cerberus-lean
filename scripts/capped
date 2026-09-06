@@ -75,7 +75,7 @@ run_reporting_kills() {
     echo "==============================================================" >&2
   elif [[ -n "$CAPPED_OOM_KILLS" && "$CAPPED_OOM_KILLS" != "0" ]]; then
     echo "==============================================================" >&2
-    echo "capped: OOM event recorded in cgroup (memory.events oom_kill=$CAPPED_OOM_KILLS, cap CERB_MEM_MAX=$MEM) though the command exited rc=$rc — a descendant was killed by the cap; NOT a clean pass" >&2
+    echo "capped: OOM-KILLED (memory.events oom_kill=$CAPPED_OOM_KILLS, cap CERB_MEM_MAX=$MEM; command exit $rc — a descendant was killed by the cap; NOT a clean pass)" >&2
     echo "==============================================================" >&2
   fi
   exit $rc
@@ -119,6 +119,10 @@ cgroup_direct_try() {
   self="$(cut -d: -f3 /proc/self/cgroup 2>/dev/null)" || return 1
   [[ -n "$self" && "$self" != "/" ]] || return 1
   orig="/sys/fs/cgroup$self"; parent="$(dirname "$orig")"
+  if [[ -n "${CERB_JOB_CGROUP:-}" && "$orig" != "$CERB_JOB_CGROUP/"* ]]; then
+    echo "capped: ERROR — command escaped its owned runner cgroup $CERB_JOB_CGROUP" >&2
+    exit 2
+  fi
   [[ -d "$parent" && -f "$parent/cgroup.subtree_control" ]] || return 1
   grep -qw memory "$parent/cgroup.subtree_control" 2>/dev/null || return 1
   cg="$parent/capped-$$-$(date +%s%N)"
@@ -143,6 +147,12 @@ if cgroup_direct_try; then
       || echo "capped: WARNING — could not remove cgroup $CAPPED_CG (processes still inside?)" >&2
   }
   run_reporting_kills "$@"
+fi
+# A managed runner owns the complete process subtree. Falling back to a
+# systemd scope would move work outside that lifetime and defeat cleanup.
+if [[ -n "${CERB_JOB_CGROUP:-}" ]]; then
+  echo "capped: ERROR — cannot establish a memory cap inside owned command cgroup $CERB_JOB_CGROUP" >&2
+  exit 2
 fi
 # Portability fallback (arc-7 S5c, audit-1 F4): on hosts without
 # systemd-run (containers, non-systemd distros) warn LOUDLY and

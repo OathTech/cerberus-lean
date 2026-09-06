@@ -68,7 +68,7 @@ fi
 [[ -d "$RUNTIME_DIR" ]] || fail "runtime dir not found: $RUNTIME_DIR"
 
 (cd "$PROJECT_ROOT/lean_frontend/speclab" && \
-    "$SCRIPT_DIR/capped" lake build speclab-test >/dev/null 2>&1)
+    "$SCRIPT_DIR/capped" lake build speclab-test) || fail "speclab-test build failed"
 [[ -f "$SPECLAB_TEST_BIN" ]] || fail "speclab-test binary missing after build"
 
 OUTPUT_DIR=$(mktemp -d "$TMP_DIR/speclab_list.XXXXXXXXXX") || fail "mktemp failed"

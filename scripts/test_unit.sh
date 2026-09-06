@@ -121,6 +121,10 @@ if ! python3 "$(dirname "$PURITY_SH")/test_observations.py"; then
     echo "test_unit: observation codec/capture plants FAILED"
     exit 1
 fi
+if ! python3 "$(dirname "$PURITY_SH")/test_capture_prerequisites.py"; then
+    echo "test_unit: bridge capture / generator build-status plants FAILED"
+    exit 1
+fi
 if ! python3 "$(dirname "$PURITY_SH")/test_release.py"; then
     echo "test_unit: release runner plants FAILED"
     exit 1

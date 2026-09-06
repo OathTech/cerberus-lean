@@ -136,6 +136,65 @@ class ObservationTests(unittest.TestCase):
         with self.assertRaises(ProtocolError):
             parse(b'', ocaml, 125)
 
+    def test_all_positive_cap_witnesses_reject_regardless_of_parent_status(self):
+        banners = [b'capped: OOM-KILLED (memory.events oom_kill=1; command exit 0)\n',
+                   b'capped: OOM event recorded in cgroup (memory.events oom_kill=1) though command exited rc=0\n']
+        for banner in banners:
+            for out, rc in [(OK, 0), (ERR, 1)]:
+                for policy in ['batch', 'litmus', 'immaculate']:
+                    with self.subTest(rc=rc, policy=policy), self.assertRaises(ProtocolError):
+                        parse(out, banner, rc, policy)
+        self.assertEqual(parse(OK, b'warning: capped: OOM-KILLED is a banner name\n', 0).verdicts,
+                         parse(OK, status=0).verdicts)
+
+    def test_failure_continuation_is_preserved_and_extra_fatal_rejects(self):
+        oracle = b'internal error: reason\n'
+        lean = b'PANIC at LemLib.failwithIImpl LemLib.lean:10:3: reason\n'
+        a = parse(b'', oracle + b'left payload\n', 125, 'litmus')
+        b = parse(b'', lean + b'right payload\n', 134, 'litmus')
+        self.assertNotEqual(a.verdicts, b.verdicts)
+        self.assertEqual(a.verdicts[0].field('msg'), b'reason\nleft payload')
+        self.assertEqual(a.verdicts, parse(b'', lean+b'left payload\n', 134, 'litmus').verdicts)
+        for extra in [b'Fatal error: exception Failure("second fault")\n',
+                      b'PANIC at other\n', b'internal error: second fault\n']:
+            with self.subTest(extra=extra), self.assertRaises(ProtocolError):
+                parse(b'', lean + extra, 134, 'litmus')
+
+    def test_known_trace_envelopes_only_are_normalized(self):
+        lean = b'PANIC at LemLib.failwithIImpl LemLib.lean:10:3: reason\n'
+        trace = (b'backtrace:\n/tmp/lean(+0x12) [0x1234]\n'
+                 b'timeout: the monitored command dumped core\n'
+                 b'/tmp/scripts/capped: line 55: 123 Aborted                 "$@"\n')
+        self.assertEqual(parse(b'', lean+trace, 134, 'litmus').verdicts,
+                         parse(b'', lean, 134, 'litmus').verdicts)
+        for bad in [trace+b'Fatal error: exception Stack_overflow\n',
+                    trace.replace(b'/tmp/lean(+0x12) [0x1234]', b'unknown diagnostic')]:
+            with self.assertRaises(ProtocolError): parse(b'', lean+bad, 134, 'litmus')
+        oracle = (b'internal error: reason\ncerberus: internal error, uncaught exception:\n'
+                  b'          Failure("internal error: reason")\n'
+                  b'          Called from Lem_list.map in file "lem_list.ml" (inlined), line 171, characters 22-39\n')
+        self.assertEqual(parse(b'', oracle, 125, 'litmus').verdicts,
+                         parse(b'', lean, 134, 'litmus').verdicts)
+        with self.assertRaises(ProtocolError):
+            parse(b'', oracle.replace(b'Failure("internal error: reason")', b'Failure("different")'), 125, 'litmus')
+
+    def test_immaculate_validates_before_coarse_crash_projection(self):
+        good = b'PANIC at CerbMem.memcmpM.getBytes CerbMem:2774:10: assertion\n'
+        self.assertTrue(parse(b'', good, 134, 'immaculate').internal)
+        for out, err, rc in [(b'corrupted bytes\n', good, 134),
+                             (OK, good, 134), (b'', good, 125),
+                             (b'', good.replace(b'assertion', b'lem: fuel exhausted'), 134),
+                             (b'', good.replace(b'CerbMem.memcmpM.getBytes', b'Other.unreviewed'), 134)]:
+            with self.subTest(out=out, err=err, rc=rc), self.assertRaises(ProtocolError):
+                parse(out, err, rc, 'immaculate')
+
+    def test_refusal_validates_the_entire_collection(self):
+        self.assertEqual(parse(ERR, status=1).refusal(b'model refused: thread spawn'), b'model refused: thread spawn')
+        other = b'Error {msg: "unrelated evaluator failure"}\n'
+        for data in [multi(ERR, other), multi(other, ERR), multi(ERR, ERR), multi(ERR, OK)]:
+            with self.assertRaises(ProtocolError): parse(data, status=0).refusal(b'model refused: ')
+        with self.assertRaises(ProtocolError): parse(other, status=1).refusal(b'model refused: ')
+
     def test_actual_shell_capture_retains_bytes_and_status(self):
         helper = Path(__file__).with_name('observations.sh')
         with tempfile.TemporaryDirectory() as directory:

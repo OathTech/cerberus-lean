@@ -394,7 +394,7 @@ gcc_run() {
     elapsed_ms=$(( (t1 - t0) / 1000000 ))
     cp "$native_capture.run1.stdout" "$WORK/run1.out" || return 1
     cp "$native_capture.run1.program.stderr" "$WORK/run1.err" || return 1
-    [[ $e1 -eq 137 ]] && grep -q "capped: OOM-KILLED" "$native_capture.run1.stderr" && { G_STATUS=killed; return 0; }
+    is_cap_kill "$e1" "$native_capture.run1.stderr" && { G_STATUS=killed; return 0; }
     [[ ( $e1 -eq 124 || $e1 -eq 137 ) && $elapsed_ms -ge $threshold_ms ]] && { G_STATUS=timeout; return 0; }
     printf '9 %s\n8 %s\n' "$bin" "$native_capture.run2.program.stderr" > "$native_capture.run2.fds" || return 1
     t0=$(date +%s%N)
@@ -405,7 +405,7 @@ gcc_run() {
     elapsed_ms=$(( (t1 - t0) / 1000000 ))
     cp "$native_capture.run2.stdout" "$WORK/run2.out" || return 1
     cp "$native_capture.run2.program.stderr" "$WORK/run2.err" || return 1
-    [[ $e2 -eq 137 ]] && grep -q "capped: OOM-KILLED" "$native_capture.run2.stderr" && { G_STATUS=killed; return 0; }
+    is_cap_kill "$e2" "$native_capture.run2.stderr" && { G_STATUS=killed; return 0; }
     [[ ( $e2 -eq 124 || $e2 -eq 137 ) && $elapsed_ms -ge $threshold_ms ]] && { G_STATUS=timeout; return 0; }
     [[ $e1 -ne $e2 ]] && { G_STATUS=nondet; return 0; }
     if ! cmp -s "$WORK/run1.out" "$WORK/run2.out" || ! cmp -s "$WORK/run1.err" "$WORK/run2.err"; then
@@ -424,9 +424,9 @@ while IFS=$'\t' read -r c_file mode key; do
 
     # ---- Lean side --------------------------------------------------------
     json="$WORK/cur.json"
-    oc_err="$WORK/oc_err.txt"
-    if ! timeout "${TIMEOUT_SECS}s" "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" \
-            --cabs-json "$c_file" > "$json" 2> "$oc_err"; then
+    oc_err="$OBSERVATION_RUN_DIR/$file_num.bridge.stderr"
+    if ! capture_cabs_json "$json" "$OBSERVATION_RUN_DIR/$file_num.bridge" \
+            timeout "${TIMEOUT_SECS}s" "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" --cabs-json "$c_file"; then
         if grep -q CERB_FRESH_FLOOR_VIOLATION "$oc_err"; then
             record "$base_c" SKIP_ORACLE - "(floor refusal)"
         else
@@ -542,6 +542,7 @@ while IFS=$'\t' read -r c_file mode key; do
             case "$G_STATUS" in
                 compile) o2=O2_SKIP_COMPILE ;;
                 timeout) o2=O2_SKIP_TIMEOUT ;;
+                killed)  o2=O2_SKIP_KILL ;;
                 nondet)  o2=O2_SKIP_NONDET ;;
                 stdout)  o2=O2_SKIP_STDOUT ;;
                 ok)
@@ -551,6 +552,7 @@ while IFS=$'\t' read -r c_file mode key; do
                         o2=O2_DISAGREE
                         detail+=" O2:gcc=$G_EXIT"
                     fi ;;
+                *) echo "HARNESS ERROR: unrecognized native O2 status $G_STATUS" >&2; exit 1 ;;
             esac
         fi
     fi

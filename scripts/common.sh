@@ -19,6 +19,8 @@
 # Path resolution
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+# Shared with the Python decoder; includes the historical descendant banner.
+CAP_OOM_PATTERN=$(cat "$SCRIPT_DIR/cap_oom.regex") || { echo "Error: shared cap witness pattern missing" >&2; exit 2; }
 
 # Fail-fast env guard ([USER] env-trap tweak, arc-13 audit-fix batch):
 # every consumer of this file assumes the container env — the opam switch
@@ -350,13 +352,28 @@ CERB_TEST_FUEL="${CERB_TEST_FUEL:-100000000}"
 CAPPED_TEST=(env "CERB_MEM_MAX=$TEST_MEM_MAX" "$CAPPED_BIN")
 [[ -x "$CAPPED_BIN" ]] || { echo "Error: $CAPPED_BIN missing or not executable (per-test memory cap; fail-closed)" >&2; exit 1; }
 # is_cap_kill <rc> <stderr-file-or-text-file>: true iff the run breached
-# the per-test cap — exit 137 AND capped's OOM-KILLED banner (the kernel's
+# the per-test cap — capped's positive OOM witness (the kernel's
 # memory.events oom_kill counter, read by capped). A bare 137 is NOT a cap
 # kill (timeout -k SIGKILL, or a program's own exit(137) — found live in
 # the gcc lane's csmith rows) and keeps its pre-S2 classification.
 is_cap_kill() {
     local rc="$1" f="${2:-}"
-    [[ "$rc" -eq 137 && -n "$f" && -f "$f" ]] && grep -q "capped: OOM-KILLED" "$f"
+    [[ -n "$f" && -f "$f" ]] && grep -qE "$CAP_OOM_PATTERN" "$f"
+}
+
+# Save bridge bytes/status/command outside disposable lane scratch. A bridge
+# is JSON transport, so it is captured here without the batch-verdict parser.
+capture_cabs_json() { # <json-output> <unique-capture-prefix> <command> [args...]
+    local json="$1" prefix="$2" rc=0
+    shift 2
+    : > "$json" || return 125
+    observation_capture "$prefix" "$@" > /dev/null || rc=$?
+    if [[ "$rc" != 0 ]] || is_cap_kill "$rc" "$prefix.stderr"; then
+        [[ ! -f "$prefix.stderr" ]] || cat "$prefix.stderr" >&2
+        [[ "$rc" != 0 ]] && return "$rc"
+        return 125
+    fi
+    cp "$prefix.stdout" "$json" || return 125
 }
 # kill_label <rc> <stderr-file>: the one-line reading of a cap kill.
 kill_label() {

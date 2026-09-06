@@ -119,9 +119,14 @@ run tiers):
 - 16/16 URIs through libxml2's `xmlParseURISafe` (5 translation
   units, libc-linked, byte-identical output) plus a 1,354-point
   libxml2 `chvalid` boundary battery;
-- a 1,669-program csmith corpus at a pinned classified baseline, and
-  a 2,186-file sweep of the upstream CI suite (zero mismatches among
-  the 1,316 comparable);
+- a historical 1,669-program csmith classified baseline (not rerun by
+  validation foundations; the separately owned legacy run is excluded);
+- the 2026-09-06 CI measurement: 2,186 rows, comprising 1,205 MATCH,
+  154 UB_MATCH, one UB_DIFF, three FS refusals, two Lean timeouts and
+  821 oracle-side exclusions (766 rejects, 29 errors, 26 timeouts).
+  Only the 1,359 MATCH/UB_MATCH rows are observation agreement;
+  [the reporting record](docs/2026-09-06_ci-reporting-results.md) records
+  classification movement and limitations;
 - ~2,000 rendered harness-program executions across the five
   spec-lab differential families;
 - per-function call-point differentials over the `tests/verify` and

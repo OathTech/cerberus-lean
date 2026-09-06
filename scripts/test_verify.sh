@@ -125,7 +125,7 @@ for cfile in "$VERIFY_DIR"/*.c; do
     fixture_count=$((fixture_count + 1))
     json="$WORK_DIR/$stem.json"
 
-    if ! run_cerberus --cabs-json "$cfile" > "$json" 2>"$WORK_DIR/$stem.cabs.err"; then
+    if ! capture_cabs_json "$json" "$OBSERVATION_RUN_DIR/fixture.$stem.bridge" run_cerberus --cabs-json "$cfile"; then
         fail "$stem: cabs-json generation failed"
         continue
     fi
@@ -269,7 +269,7 @@ declare -A CORPUS_JSON_OF
 for stem in p01_clamp p02_sat_add p03_swap_mayalias p09_call_contract p10_gcd_rec p11_gcd_iter p12_pt_midpoint; do
     cfile="$CORPUS_SRC_DIR/$stem.c"
     json="$WORK_DIR/$stem.json"
-    if ! run_cerberus --cabs-json "$cfile" > "$json" 2>"$WORK_DIR/$stem.cabs.err"; then
+    if ! capture_cabs_json "$json" "$OBSERVATION_RUN_DIR/corpus.$stem.bridge" run_cerberus --cabs-json "$cfile"; then
         fail "corpus/$stem: cabs-json generation failed"
         continue
     fi

@@ -443,8 +443,8 @@ run_ocaml_exec() {  # <file.c> <time-record>
         --nolibc --exec --batch --mode=exhaustive "$1"
 }
 run_cabs_json() {   # <file.c> <out.json>
-    timeout "${TIMEOUT_SECS}s" "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" \
-        --cabs-json "$1" > "$2" 2>/dev/null
+    capture_cabs_json "$2" "$OBSERVATION_RUN_DIR/$file_num.bridge" \
+        timeout "${TIMEOUT_SECS}s" "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" --cabs-json "$1"
 }
 run_lean_batch() {  # <file.json> <time-record>
     LEAN_ABORT_ON_PANIC=1 "$TIME_BIN" -v -o "$2" timeout "${TIMEOUT_SECS}s" \
@@ -753,8 +753,7 @@ for c_file in "${TEST_FILES[@]}"; do
 
     LEAN_OK=$((LEAN_OK + 1))
     if [[ "$lean_shape" == "$cerb_shape" ]]; then
-        # Same length, same UB positions, identical values — only UB codes
-        # differ (both detected UB at the same points).
+        # Same shape and values; UB code, location or stderr differs.
         UB_CODE_DIFF=$((UB_CODE_DIFF + 1))
         echo "[$file_num/$total_to_test] UB_DIFF $filename: Lean=$lean_disp Cerberus=$cerb_disp"
         record_status "$base_c" UB_DIFF
@@ -823,7 +822,7 @@ if [[ $UNSUPPORTED_EXPECTED -gt 0 ]] || [[ $UNSUPPORTED_UNEXPECTED -gt 0 ]]; the
 fi
 
 TOTAL_MATCH=$((MATCH + UB_MATCH))
-TOTAL_COMPARE=$((TOTAL_MATCH + MISMATCH))
+TOTAL_COMPARE=$((TOTAL_MATCH + MISMATCH + UB_CODE_DIFF))
 if [[ $TOTAL_COMPARE -gt 0 ]]; then
     MATCH_RATE=$((TOTAL_MATCH * 100 / TOTAL_COMPARE))
     echo "Match rate:   ${MATCH_RATE}% (complete observations; UB_DIFF is a difference)"
@@ -915,7 +914,7 @@ if [[ -n "$CHECK_BASELINE" ]]; then
     for f in "${!cur_map[@]}"; do
         if [[ -z "${base_map[$f]+x}" ]]; then
             case "${cur_map[$f]}" in
-                MISMATCH|DIFF|FAIL|LEAN_CRASH|FUEL|LEAN_ERROR|TIMEOUT|HANG|CERB_FLOOR)
+                MISMATCH|DIFF|UB_DIFF|FAIL|LEAN_CRASH|FUEL|LEAN_ERROR|TIMEOUT|HANG|CERB_FLOOR)
                     echo "REGRESSION: new file (not in baseline) with failing status: $f ${cur_map[$f]}"
                     regressions=$((regressions + 1))
                     ;;
@@ -968,6 +967,11 @@ fi
 if [[ $LEAN_HANG_COUNT -gt 0 ]]; then
     echo ""
     echo -e "${RED}FAILED: $LEAN_HANG_COUNT Lean HANG(s) — exit 124 with CPU/wall < 0.1: no output, no exit (charter C9 shape)${NC}"
+    FATAL=1
+fi
+if [[ $UB_CODE_DIFF -gt 0 ]]; then
+    echo ""
+    echo -e "${RED}FAILED: $UB_CODE_DIFF UB observation difference(s) with Cerberus${NC}"
     FATAL=1
 fi
 if [[ $MISMATCH -gt 0 ]]; then

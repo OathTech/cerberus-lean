@@ -55,6 +55,17 @@ instrument modules and remain unresolved explicitly.
 
 ## Corrected census
 
+The first audit (VF-06) found that lexical declaration names could borrow
+another definition's dependency flags. The repaired mapper always requires
+compiler range containment, chooses the unique smallest enclosing range,
+and exposes ambiguity/import gaps explicitly. Lexical names remain hints;
+canonical `definition` and `kernel_names` record the compiled owner. Replaying
+against the same hash-matched source and compiler log preserves all 1,644
+sites and fixes 30 false execution-dependency assignments. The table below
+uses that corrected mapping: pure execution-dependent sites are **231**,
+not the historical 261. Historical raw files remain unchanged; see the
+[audit repairs](2026-09-06_validation-foundations-audit-repairs.md).
+
 Derived occurrence counts, not line counts:
 
 | Source surface | Count | Meaning |
@@ -65,7 +76,7 @@ Derived occurrence counts, not line counts:
 | Generated monadic sites in the nine modules used by the older monadic table | 77 | Replaces the sampled 64 = 59 + five count; computed-message and function-valued ascriptions were missed |
 | Generated monadic sites whose declaration is in the execution dependency closure | 67 | 37 ND-channel sites, 26 `t0`-channel sites, four `Core_eval.call_function` sites needing a failure constructor |
 | Handwritten monadic sites in that closure | 7 | The seven `CerbMem` arms below |
-| Pure sites in that closure | 261 | 156 generated and 105 handwritten; branch reachability and preconditions still require analysis |
+| Pure sites in that closure | 231 | 126 generated and 105 handwritten; branch reachability and preconditions still require analysis |
 
 The instrument identifies 1,642 of 1,644 source occurrences with a compiled
 declaration. The remaining two are retained in the inventory. These counts
@@ -219,9 +230,13 @@ The contract needs all of these directions:
 2. **Completion and success completeness:** a finite successful reference
    evaluation admits sufficient fuel, and every larger fuel produces the
    related success. Include a concrete successful witness.
-3. **Faithful failure, both directions:** a finite deliberate reference
-   failure is reproduced with its class/payload; a reported checked failure
-   has such a reference failure. Unsupported-domain guards are explicit.
+3. **Faithful failure, both directions:** for every finite deliberate
+   reference failure there exists a sufficient budget such that every larger
+   budget reproduces its related class/payload. Every reported checked model
+   failure must have that reference failure. Exhaustion is separate and may
+   occur below the sufficient budget. An unsupported-domain guard has its
+   own explicit precondition/refusal contract; it cannot masquerade as a
+   reference model failure or discharge this completeness obligation.
 4. **Connection to the value definitions:** under a proved success-domain
    condition, relate `f_checked = .value v` to `f_value = v`. An unrestricted
    equation over a value definition that erases failure cannot express the

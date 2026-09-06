@@ -54,8 +54,8 @@ def census(path, root=ROOT):
     clean = strip_comments(text)
     tokens = list(TOKEN.finditer(clean))
     # Generated declarations mostly occupy one line, but some workers don't.
-    headers = list(re.finditer(r'(?m)^\s*(?:(?:private|protected|noncomputable|partial|unsafe)\s+)*'
-                              r'(?:def|abbrev|opaque|instance|theorem)\s+([^\s:(\[]+)', clean))
+    headers = list(re.finditer(r'(?m)^[ \t]*(?:(?:private|protected|noncomputable|partial|unsafe)[ \t]+)*'
+                              r'(?:def|abbrev|opaque|instance|theorem)\b(?:[ \t]+([^\s:(\[]+))?', clean))
     namespaces = []
     header_names = {}
     events = [(h.start(), 'header', h) for h in headers]
@@ -64,7 +64,7 @@ def census(path, root=ROOT):
     for _, kind, event in sorted(events, key=lambda e: e[0]):
         if kind == 'header':
             prefix = '.'.join(n for n in namespaces if n)
-            header_names[event.start()] = (prefix+'.' if prefix else '')+event[1]
+            header_names[event.start()] = (prefix+'.' if prefix else '')+(event[1] or '<anonymous declaration>')
         elif event[1].startswith('namespace '): namespaces.append(event[1].split()[1])
         elif event[1].startswith('end'):
             if namespaces: namespaces.pop()
@@ -97,7 +97,8 @@ def census(path, root=ROOT):
                     break
         decl_type = ''
         if header:
-            end = clean.find(':=', header.end())
+            next_header = next((h.start() for h in headers if h.start() > header.start()), len(clean))
+            end = clean.find(':=', header.end(), next_header)
             if end >= 0: decl_type = clean[header.start():end].strip()
         generated = path.parent.name == 'generated'
         evidence = type_text if generated else decl_type
@@ -126,6 +127,35 @@ def census(path, root=ROOT):
     return rows
 
 
+def assign_dependencies(rows, reach, ranges_by_module):
+    """Only a compiler range containing this source position may own a site.
+
+    Lexical names are retained as hints, never as evidence of containment.
+    Multiple smallest ranges remain explicit rather than selecting one by
+    name/order. Dependency bits are available only for identified owners.
+    """
+    for row in rows:
+        position = (row['line'], row['column'] - 1)
+        matches = [r for r in ranges_by_module.get(Path(row['file']).stem, [])
+                   if r[2] <= position < r[3]]
+        candidates = []
+        if matches:
+            span = min((r[3][0] - r[2][0], r[3][1] - r[2][1]) for r in matches)
+            candidates = sorted({r[0] for r in matches
+                                 if (r[3][0] - r[2][0], r[3][1] - r[2][1]) == span})
+        row['lexical_definition'] = row['definition']
+        row['kernel_names'] = candidates
+        row['range_match'] = bool(candidates)
+        identified = len(candidates) == 1 and candidates[0] in reach
+        row['dependency_status'] = ('identified' if identified else 'range_multiple'
+                                    if len(candidates) > 1 else 'unresolved_range_or_import')
+        if identified:
+            row['definition'] = candidates[0]
+            row.update(reach[candidates[0]])
+        else:
+            row['definition'] = '<unresolved compiler declaration>'
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--root', type=Path, default=ROOT)
@@ -150,33 +180,9 @@ def main():
         ranges_by_module = {}
         for m in re.finditer(r'FAILURE_RANGE\t([^\t\n]+)\t([^\t\n]+)\t([^\t\n]+)\t(\d+)\t(\d+)\t(\d+)\t(\d+)', reach_text):
             ranges_by_module.setdefault(m[2], []).append((m[1], m[3], (int(m[4]), int(m[5])), (int(m[6]), int(m[7]))))
-        private_names = {}
-        for n in reach:
-            if n.startswith('_private.'):
-                parts = n.split('.')
-                # Private names are _private.<module>.<counter>.<source name>.
-                for j, part in enumerate(parts[2:], 2):
-                    if part.isdecimal():
-                        module, source = '.'.join(parts[1:j]), '.'.join(parts[j+1:])
-                        private_names.setdefault((module, source), []).append(n)
-                        break
-        for row in rows:
-            name = row['definition']
-            candidates = [name] if name in reach else private_names.get((Path(row['file']).stem, name), [])
-            if not candidates:
-                position = (row['line'], row['column']-1)
-                matches = [r for r in ranges_by_module.get(Path(row['file']).stem, []) if r[2] <= position < r[3]]
-                if matches:
-                    span = min((r[3][0]-r[2][0], r[3][1]-r[2][1]) for r in matches)
-                    candidates = sorted({r[0] for r in matches if (r[3][0]-r[2][0], r[3][1]-r[2][1]) == span})
-                    row['range_match'] = True
-            row['kernel_names'] = candidates
-            row['dependency_status'] = 'identified' if len(candidates) == 1 else 'range_multiple' if candidates else 'unresolved_name_or_import'
-            if candidates:
-                row['exec_dependency'] = any(reach[n]['exec_dependency'] for n in candidates)
-                row['frontend_dependency'] = any(reach[n]['frontend_dependency'] for n in candidates)
+        assign_dependencies(rows, reach, ranges_by_module)
     counts = Counter(('generated' if r['generated'] else 'handwritten')+':'+r['group'] for r in rows)
-    report = {'schema': 1, 'method': __doc__, 'counts': dict(sorted(counts.items())),
+    report = {'schema': 2, 'method': __doc__, 'counts': dict(sorted(counts.items())),
               'source_sha256': {str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest() for p in paths},
               'sites': rows}
     if args.reach_log:

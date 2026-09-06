@@ -31,13 +31,26 @@ UNDEFINED = re.compile(rb'Undefined \{ub: "([^"\r\n]*)", stderr: "(' +
 ERROR = re.compile(rb'Error \{msg: "([^\r\n]*)"\}')
 HEADER = re.compile(rb'EXECUTION ([0-9]+)(?: \(exit = [^\r\n]+\))?:')
 ORACLE_INTERNAL = re.compile(rb'^internal error: (.+)$', re.M)
-LEAN_INTERNAL = re.compile(rb'^PANIC at [^\r\n]*failwithIImpl '
-                           rb'[^\r\n]*:[0-9]+:[0-9]+: (.+)$', re.M)
 FATAL = re.compile(rb'^(?:PANIC at |internal error: |Fatal error: exception |'
                    rb'cerberus: internal error, uncaught exception:|capped: OOM-KILLED)', re.M)
 FUEL_RECORD = re.compile(rb'^(?:Error \{msg: "lem: fuel exhausted"\}|'
                          rb'lem: fuel exhausted|internal error: lem: fuel exhausted|'
                          rb'PANIC at [^\r\n]*: lem: fuel exhausted)$', re.M)
+CAP_OOM = re.compile(Path(__file__).with_name('cap_oom.regex').read_bytes().strip(), re.M)
+LEAN_PANIC = re.compile(rb'PANIC at ([^ \r\n]+) [^\r\n]+:[0-9]+:[0-9]+: (.+)')
+LEAN_FRAME = re.compile(rb'[^\r\n]+\([^()\r\n]*\) \[0x[0-9a-fA-F]+\]')
+ABORT_WRAPPER = re.compile(rb'[^\r\n]*/scripts/capped: line [0-9]+: +[0-9]+ Aborted(?: \(core dumped\))? +"\$@"')
+OCAML_FRAME = re.compile(rb'          (?:Raised at|Raised by primitive operation at|Called from|Re-raised at) '
+                          rb'.+ in file "[^"\r\n]+"(?: \(inlined\))?, lines? [0-9]+(?:-[0-9]+)?, characters [0-9]+-[0-9]+')
+OCAML_ENVELOPE = b'cerberus: internal error, uncaught exception:'
+# These existing negative pins are coarse CRASH checks, never semantic or
+# diagnostic agreement. New panic origins need explicit review here.
+IMMACULATE_PANICS = {
+    b'CerbMem.memcmpM.getBytes', b'CerbUtils.gcc_builtin_bswap64',
+    b'_private.CerbDecode.0.CerbDecode.decode_character_constant_aux',
+    b'CerbMem.sizeofCtype_lemFuel', b'CerbFS.fs_opendir',
+    b'CerbFloat.truncToInt', b'CerbMem.allocator', b'CerbMem.casePtrval',
+}
 
 
 def unescape(data: bytes) -> bytes:
@@ -131,12 +144,94 @@ class Observation:
                 'stdout_base64': base64.b64encode(self.stdout).decode('ascii'),
                 'stderr_base64': base64.b64encode(self.stderr).decode('ascii')}
 
+    def refusal(self, prefix: bytes) -> bytes:
+        if len(self.verdicts) != 1 or self.verdicts[0].kind != 'Error':
+            raise ProtocolError('refusal requires exactly one completed Error verdict')
+        message = self.verdicts[0].field('msg')
+        if not message.startswith(prefix):
+            raise ProtocolError('Error is outside the required refusal domain')
+        return message
+
+
+def failure_message(stderr: bytes, status: int | None, policy: str) -> bytes | None:
+    """Decode a failure and its known trace envelope, retaining all payload.
+
+    Unknown continuation before a trace is message content, not discarded
+    diagnostics. Extra fatal records and unrecognized trace lines reject.
+    Exact single-line OCaml/Lean header-only captures remain supported.
+    """
+    lines = stderr.split(b'\n')
+    if lines[-1] == b'':
+        lines.pop()  # the printer's final newline; additional newlines are data
+    if not lines:
+        return None
+    lean = LEAN_PANIC.fullmatch(lines[0])
+    oracle = ORACLE_INTERNAL.fullmatch(lines[0])
+    envelope_only = lines[0] == OCAML_ENVELOPE and policy == 'immaculate'
+    if not lean and not oracle and not envelope_only:
+        return None
+    if status != (134 if lean else 125):
+        raise ProtocolError('internal failure has the wrong exit status')
+    if lean:
+        if lean[1] != b'LemLib.failwithIImpl' and not (
+                policy == 'immaculate' and lean[1] in IMMACULATE_PANICS):
+            raise ProtocolError('unreviewed panic origin')
+        payload = [lean[2]]
+        remaining = lines[1:]
+        if b'backtrace:' in remaining:
+            at = remaining.index(b'backtrace:')
+            payload += remaining[:at]
+            trace = remaining[at + 1:]
+            frames = 0
+            while trace and LEAN_FRAME.fullmatch(trace[0]):
+                frames += 1
+                trace.pop(0)
+            if not frames:
+                raise ProtocolError('empty or malformed Lean backtrace')
+            if trace and trace[0] == b'timeout: the monitored command dumped core':
+                trace.pop(0)
+            if trace and ABORT_WRAPPER.fullmatch(trace[0]):
+                trace.pop(0)
+            if trace:
+                raise ProtocolError('unexpected diagnostic after Lean backtrace')
+        else:
+            payload += remaining
+    else:
+        payload = [oracle[1]] if oracle else []
+        remaining = lines[1:] if oracle else lines
+        if OCAML_ENVELOPE in remaining:
+            at = remaining.index(OCAML_ENVELOPE)
+            payload += remaining[:at]
+            trace = remaining[at + 1:]
+            if not trace or not trace[0].startswith(b'          '):
+                raise ProtocolError('missing OCaml exception payload')
+            exception = trace.pop(0)[10:]
+            failure = re.fullmatch(rb'Failure\("(' + ESCAPED + rb')"\)', exception)
+            if oracle:
+                if not failure or unescape(failure[1]) != b'internal error: ' + b'\n'.join(payload):
+                    raise ProtocolError('OCaml exception does not repeat its complete failure message')
+            else:
+                if not (failure or exception in (b'Z.Overflow', b'Division_by_zero', b'Not_found') or
+                        re.fullmatch(rb'File "[^"\r\n]+", line [0-9]+, characters [0-9]+-[0-9]+: Assertion failed', exception)):
+                    raise ProtocolError('unreviewed OCaml exception form')
+                payload = [unescape(failure[1]) if failure else exception]
+            if not trace or not all(OCAML_FRAME.fullmatch(line) for line in trace):
+                raise ProtocolError('missing or unrecognized OCaml exception trace')
+        else:
+            payload += remaining
+    message = b'\n'.join(payload)
+    # The leading payload is the recognized failure itself. A second fatal
+    # line inside its continuation is not an ignorable diagnostic envelope.
+    if FATAL.search(b'\n'.join(payload[1:])) or FUEL_RECORD.search(message):
+        raise ProtocolError('additional fatal/fuel record inside failure payload')
+    return message
+
 
 def parse(stdout: bytes, stderr: bytes = b'', status: int | None = None,
           policy: str = 'batch') -> Observation:
     if b'\x00' in stdout:
         raise ProtocolError('raw NUL in batch protocol (capture retained)')
-    if b'capped: OOM-KILLED' in stderr or status == 137:
+    if CAP_OOM.search(stderr) or status == 137:
         raise ProtocolError('engine killed or exited 137; no completed observation')
     if status == 124:
         raise ProtocolError('engine timeout; exploration incomplete')
@@ -145,23 +240,13 @@ def parse(stdout: bytes, stderr: bytes = b'', status: int | None = None,
     # escaped semantic output field or of an unrelated Error message.
     if FUEL_RECORD.search(all_output):
         raise ProtocolError('fuel exhausted; exploration incomplete')
-    if policy == 'litmus':
-        oracle = list(ORACLE_INTERNAL.finditer(all_output))
-        lean = list(LEAN_INTERNAL.finditer(all_output))
-        matches = oracle + lean
-        if matches:
-            if len(matches) != 1 or re.search(rb'^(Defined|Undefined|Error|EXECUTION)\b',
-                                              stdout, re.M):
-                raise ProtocolError('mixed verdicts and internal failure')
-            expected = 125 if oracle else 134
-            if status != expected:
-                raise ProtocolError(f'internal failure exit {status}; expected {expected}')
-            # No extra stdout may be smuggled in with the recognized failure.
-            remaining = ORACLE_INTERNAL.sub(b'', LEAN_INTERNAL.sub(b'', stdout)).strip()
-            if remaining:
+    if policy in ('litmus', 'immaculate'):
+        message = failure_message(stderr, status, policy)
+        if message is not None:
+            if stdout:
                 raise ProtocolError('unexpected stdout beside internal failure')
-            v = Verdict('InternalError', (('msg', matches[0].group(1)),))
-            return Observation((v,), expected, stdout, stderr, status, True)
+            v = Verdict('InternalError', (('msg', message),))
+            return Observation((v,), status, stdout, stderr, status, True)
     if FATAL.search(all_output):
         raise ProtocolError('fatal engine diagnostic; no completed observation')
     if status is not None and status not in (0, 1):
@@ -216,13 +301,14 @@ def load_capture(prefix: str, policy: str = 'batch') -> Observation:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=['tokens', 'expected-exit', 'inspect',
-                                           'reference-set', 'messages', 'compare'])
+                                           'reference-set', 'messages', 'compare', 'refusal'])
     parser.add_argument('--stdout', default='-')
     parser.add_argument('--stderr')
     parser.add_argument('--status', type=int)
     parser.add_argument('--capture', help='prefix of .stdout/.stderr/.status files')
     parser.add_argument('--other', help='second capture prefix for compare')
-    parser.add_argument('--policy', choices=['batch', 'litmus'], default='batch')
+    parser.add_argument('--policy', choices=['batch', 'litmus', 'immaculate'], default='batch')
+    parser.add_argument('--refusal-prefix', default='model refused: ')
     parser.add_argument('--projection', choices=['full', 'values', 'pin'], default='full')
     parser.add_argument('--comparison', choices=['sequence', 'set'], default='sequence')
     args = parser.parse_args()
@@ -247,6 +333,8 @@ def main() -> int:
             for v in obs.verdicts:
                 if v.kind in ('Error', 'InternalError'):
                     print(escape(v.field('msg')))
+        elif args.action == 'refusal':
+            print(escape(obs.refusal(args.refusal_prefix.encode('utf-8'))))
         elif args.action == 'compare':
             if not args.capture or not args.other:
                 raise ProtocolError('compare requires two complete captures')

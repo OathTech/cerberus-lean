@@ -330,14 +330,15 @@ a bug today and what is a bug still open, in the class vocabulary.
 
 **The oracle.** The OCaml Cerberus in this repository, built from the
 same `.lem` sources (`make prelude-src` + dune). It is an *immovable
-object* on the trust boundary: every differential lane runs a program
-through both implementations and compares **full verdict lines** —
-whole `Undefined {…}` lines (ub code, stderr, loc) everywhere since Z1;
-whole `Defined {…}` lines (value, stdout, stderr, blocked) in the
-`test_exec.sh` family since the P0 repair of 2026-09-05 (§0 above names
-the lanes whose own extractors are still value-only) — over the
-exhaustive nondeterministic enumeration (or matched single traces,
-where a lane says so).
+object* on the trust boundary. Plain-batch lanes decode complete verdicts
+and validate process completion through the shared
+[observation contract](docs/2026-09-05_observation-contract.md). `Defined`
+includes value, stdout/stderr bytes and blocked state; `Undefined` includes
+UB code, stderr and location; `Error` retains its full printed message.
+The contract's matrix names each lane's ordering and projection: GCC uses
+native exit membership, call-point pins project a single value/UB, and
+legacy printer/reference checks retain their documented narrower purpose.
+An acknowledged baseline difference or refusal is not observation agreement.
 
 **Upstream, as a third point.** An un-forked upstream checkout
 (`deps/cerberus-upstream` in the working layout, pinned at the fork's
@@ -610,24 +611,32 @@ instruments (`test_ci_sweep.sh`, the csmith full pass, fuzz). Probe
 corpora that are neither gates nor scoreboards (`tests/parity-probes`,
 `tests/mem-scale-probes` incl. its `micro/` Lake package,
 `tests/csmith_findings`) are enumerated in LADDER.md as instruments.
-No ladder/battery runner script exists: Tier A/B membership is operator procedure at boundaries (`test_unit.sh` bundles a few Tier A gates); every Tier B row — the gcc row included — has exactly that enforcement level.
+`scripts/release.py` reads executable membership from `scripts/LADDER.md`:
+`--mode fast` selects Tier A, and `--mode full` selects A+B. It records source,
+artifact and external-input identities, complete lane logs and completion.
+A selected subset is not a complete release. Each command runs in a fresh,
+owned cgroup v2 subtree; nested caps stay inside it. Timeout, interruption,
+surviving descendants or missing final artifacts prevent certification. A
+pipe guardian cleans the subtree after supervisor death. This requires a
+writable delegated cgroup v2 parent with memory enabled and `cgroup.kill`;
+unavailable containment fails before dispatch. The repaired candidate still
+requires its second pre-merge review; see the
+[audit repair record](docs/2026-09-06_validation-foundations-audit-repairs.md).
 
 ## 9. What this does and does not establish
 
 Differential testing samples behaviour; it never proves equivalence.
 The claims this validation surface supports are exactly:
 
-1. On every corpus above, the Lean port and the OCaml implementation
-   produce **identical verdicts** — whole `Undefined`/`Error` lines, UB
-   location and stderr included, everywhere; whole `Defined` lines
-   (stdout/stderr bytes included) on the lanes whose extractor keeps
-   them (the `test_exec.sh` family since 2026-09-05: minimal, coverage,
-   debug, float re-run with zero movement; csmith/gcc/libxml2 and the
-   value-only copies listed in §0 pending) — to the recorded baseline
-   rows, each of which is one of: a register pin (§2), a class-(a)
-   both-failure pair, a class-(b)/(c) row named in §3, or an open bug
-   named in §3 with its owner. There is no other kind of recorded
-   difference.
+1. The measured MATCH/UB_MATCH rows agree under each lane's documented
+   observation comparison. The shared decoder covers the former value-only
+   batch extractors; narrower reference/model projections remain explicit
+   in its matrix. Baseline stability additionally checks recorded exclusions,
+   inherited failures, known differences and open bugs. Those categories,
+   including UB_DIFF, refusal, fuel and timeout, never count as agreement.
+   The [delivery record](docs/2026-09-06_validation-foundations-delivery.md)
+   identifies the historical measurements; the repair record identifies the
+   candidate's reruns. No csmith campaign was run by this charter.
 2. The artifact you tested is the artifact you built: sync,
    lem-sync, staging, and fork-drift gates close the
    "verified-vs-loaded" gaps.
