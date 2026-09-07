@@ -1,8 +1,26 @@
 # Pure failure — the correspondence design (twin, connection theorem, typed exhaustion)
 
-**Status: DRAFT for operator review [AGENT orchestrator, 2026-09-07].** Master
-plan revision 9, step 2. Nothing here is authorized for dispatch; §8 lists the
-decisions that are the operator's. Inputs: the typed-failure design
+**Status: PARKED design, 2026-09-07 [AGENT orchestrator] — pending the operator's
+reading of the reachability census.** Master plan revision 9, step 2. The operator
+asked ([USER 2026-09-07] "let's do the reachability census and try to understand
+whether this is worthwhile") before ruling on §8; the census
+(`2026-09-07_pure-failure-reachability-census.md`) measured, over the 231 pure
+sites of the execution closure: **DISCARDABLE positions: 0** (178 TAIL, 53
+NON-TAIL all used) — so the F1 discard class has no instance in this tree and
+there is no execution discrepancy for the twin to fix today; REACHABLE 48 (36
+declared CerbFS refusals, 12 both-crash of which 4 on well-typed UB-free C),
+UNKNOWN 17; the 3 always-on-path exhaustion sentinels (`hack`, `to_pure`,
+`to_pures`) need exactly one iteration at `finalize` (the `Step_done` shape,
+core_run.lem:1557-1589) and the other 5 have concrete data measures — i.e. the
+pending register closes by the existing `fuel_measure … assuming` route, without
+a twin. The census's recommendation is option C (status quo + register + the
+one-iteration measures). This design therefore stays on file as the answer IF
+its flip conditions arrive: a DISCARDABLE site that is REACHABLE (the lem probe
+`tests/failure-probes/discarded_failures.lem` and the census's NON-TAIL
+classifier are the tripwires), a REACHABLE step-level site where the oracle
+succeeds, growth of the well-typed-reachable set beyond 4, or an operator ruling
+that values the logical property over oracle conformance. Nothing here is
+authorized for dispatch; §8 lists the decisions that would be the operator's. Inputs: the typed-failure design
 (`2026-09-05_typed-failure-outcomes-design.md`, R0/R1), the census and
 proposal (`2026-09-06_failure-census-and-correspondence.md`), the audit F1
 reproducer (`2026-09-05_whole-project-release-gate-audit.md` §3 F1), the
