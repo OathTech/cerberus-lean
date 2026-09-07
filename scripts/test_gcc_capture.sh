@@ -71,4 +71,4 @@ CAPPED_TEST=("${saved_cap[@]}")
     || { echo "GCC capture: successful parent hid descendant OOM: $G_STATUS/$G_EXIT" >&2; exit 1; }
 is_cap_kill 0 "$OBSERVATION_RUN_DIR/4.gcc.4.run1.stderr"
 echo 'GCC capture: actual descendant OOM despite parent exit zero rejected — PASS'
-echo "GCC capture: 4/4 probes passed; raw evidence $OBSERVATION_RUN_DIR"
+echo "GCC capture: 4/4 probes passed; raw evidence $OBSERVATION_RUN_DIR (kept under CERB_OBSERVATION_DIR; removed on exit 0)"
