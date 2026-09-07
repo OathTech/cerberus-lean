@@ -84,6 +84,48 @@ capture_cabs_json "$2/output.json" "$2/$3" "$4" -c "$5"
                     self.assertEqual(p.returncode == 0, name == 'control')
                     self.assertEqual((root/'output.json').read_bytes(), out if name == 'control' else b'')
 
+    def test_observation_run_dir_retention_follows_exit_status_and_evidence_mode(self):
+        """Landing prep 2026-09-06: a harness exiting 0 removes its raw-observation
+        run directory; exiting non-zero keeps it and prints the path; with
+        CERB_OBSERVATION_DIR set (evidence mode) it is always kept. register_cleanup
+        must keep working in all three cases. Checked on the real filesystem."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            scripts = root/'scripts'; scripts.mkdir()
+            for name in ['common.sh', 'cap_oom.regex', 'fuel_classify.sh', 'observations.sh', 'observations.py', 'capped']:
+                shutil.copy2(ROOT/'scripts'/name, scripts/name)  # capped: common.sh fail-closes without it; never invoked here
+            harness = scripts/'harness.sh'
+            harness.write_text('''#!/bin/bash
+set -uo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
+mkdir -p "$SCRATCH"
+register_cleanup "$SCRATCH"
+observation_capture "$OBSERVATION_RUN_DIR/probe" true > /dev/null
+printf '%s\\n' "$OBSERVATION_RUN_DIR" > "$RUN_DIR_RECORD"
+exit "$HARNESS_EXIT"
+''')
+            harness.chmod(0o755)
+            cases = [('success', 0, None, False), ('failure', 3, None, True), ('evidence-mode', 0, 'raw', True)]
+            for name, status, evidence, kept in cases:
+                with self.subTest(case=name):
+                    record, scratch = root/(name+'.run-dir'), root/(name+'.scratch')
+                    env = dict(os.environ, HARNESS_EXIT=str(status), RUN_DIR_RECORD=str(record), SCRATCH=str(scratch))
+                    env.pop('CERB_OBSERVATION_DIR', None)
+                    if evidence:
+                        env['CERB_OBSERVATION_DIR'] = str(root/evidence)
+                    p = subprocess.run(['bash', str(harness)], env=env, capture_output=True, timeout=60)
+                    self.assertEqual(p.returncode, status, p.stderr)
+                    run_dir = Path(record.read_text().strip())
+                    self.assertTrue(run_dir.is_relative_to(root), run_dir)
+                    if evidence:
+                        self.assertTrue(run_dir.is_relative_to(root/evidence), run_dir)
+                    self.assertFalse(scratch.exists(), 'register_cleanup path survived exit')
+                    self.assertEqual(run_dir.is_dir(), kept,
+                                     f'{name}: run dir {run_dir} exists={run_dir.is_dir()}, expected kept={kept}')
+                    if kept:
+                        self.assertEqual((run_dir/'probe.status').read_text(), '0\n')
+                    self.assertEqual(f'Raw observation evidence: {run_dir}'.encode() in p.stderr, name == 'failure', p.stderr)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

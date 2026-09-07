@@ -81,11 +81,33 @@ mkdir -p "$OBSERVATION_BASE_DIR" || { echo "Error: cannot create observation par
 OBSERVATION_RUN_DIR=$(mktemp -d "$OBSERVATION_BASE_DIR/$(basename "$0" .sh).XXXXXXXXXX") \
     || { echo "Error: cannot create unique observation directory" >&2; exit 1; }
 
-# Cleanup
+# Cleanup. register_cleanup paths are removed on every exit (unchanged).
+# Raw-observation RETENTION (landing prep 2026-09-06, [AGENT] assessment
+# finding: every harness invocation left its OBSERVATION_RUN_DIR under
+# .tmp/scripts/observations/ forever — 5.5 GB in one worktree). Rule:
+#   exit 0 and CERB_OBSERVATION_DIR unset -> the run dir is REMOVED (a green
+#       run's raw captures are re-derivable by re-running the lane);
+#   exit != 0                             -> KEPT, path printed on stderr
+#       ("Raw observation evidence: ...") — it is the failure's evidence;
+#   CERB_OBSERVATION_DIR set              -> ALWAYS KEPT (evidence mode: the
+#       release runner / plant batteries own the parent directory).
+# Fail-safe direction: anything but a clean exit 0 keeps the data, and an
+# abnormal death that skips the EXIT trap (SIGKILL, exec) keeps it too.
+# Plants: scripts/test_capture_prerequisites.py (real filesystem state).
 _CLEANUP_PATHS=()
 register_cleanup() { _CLEANUP_PATHS+=("$1"); }
-_do_cleanup() { for p in ${_CLEANUP_PATHS[@]+"${_CLEANUP_PATHS[@]}"}; do rm -rf "$p"; done; }
-trap _do_cleanup EXIT
+_do_cleanup() {   # <exit-status>
+    local rc="$1"
+    for p in ${_CLEANUP_PATHS[@]+"${_CLEANUP_PATHS[@]}"}; do rm -rf "$p"; done
+    if [[ -n "${OBSERVATION_RUN_DIR:-}" && -d "$OBSERVATION_RUN_DIR" ]]; then
+        if [[ "$rc" == 0 && -z "${CERB_OBSERVATION_DIR:-}" ]]; then
+            rm -rf "$OBSERVATION_RUN_DIR"
+        elif [[ "$rc" != 0 ]]; then
+            echo "Raw observation evidence: $OBSERVATION_RUN_DIR" >&2
+        fi
+    fi
+}
+trap '_do_cleanup $?' EXIT
 
 # Check OCaml prerequisites
 require_cerberus() {

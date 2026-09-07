@@ -488,7 +488,7 @@ record_status() {   # <basename.c> <STATUS>
 echo ""
 echo "Running differential execution comparison..."
 echo "============================================"
-echo "Raw observation evidence: $OBSERVATION_RUN_DIR"
+echo "Raw observation evidence (kept on failure or under CERB_OBSERVATION_DIR; removed on exit 0): $OBSERVATION_RUN_DIR"
 
 file_num=0
 total_to_test=${#TEST_FILES[@]}

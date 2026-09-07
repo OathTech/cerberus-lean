@@ -110,7 +110,7 @@ num=0
 echo ""
 echo "Running multi-TU differential comparison (${#TEST_DIRS[@]} tests)..."
 echo "=================================================="
-echo "Raw observation evidence: $OBSERVATION_RUN_DIR"
+echo "Raw observation evidence (kept on failure or under CERB_OBSERVATION_DIR; removed on exit 0): $OBSERVATION_RUN_DIR"
 
 for tdir in "${TEST_DIRS[@]}"; do
     num=$((num + 1))
