@@ -42,5 +42,24 @@ are_compatible_params0_lemFuel     deep-ref     sibling of are_compatible_aux (m
 #     every exec-path call site, by prepare_exit (driver.lem:1309-1316);
 #     rows in scripts/fuel_hypotheses.txt, record
 #     lean_frontend/docs/2026-09-08_fuel-pending-closeout-record.md. ---
-many_lemFuel                       parser       monadic_parsing.lem: recursion depth is the INPUT's length, which is inside the ParserM lambda, not a parameter; payload = the parser zero, indistinguishable from a normal parse failure
-many1_lemFuel                      parser       mutual sibling of many
+# --- parser combinators: the recursion argument is not a parameter (fuel-pending
+#     close-out 2026-09-08, D2 — assessed for an honest restatement, none found
+#     without a lem body change). monadic_parsing.lem:100-103 `many p = many1 p <|>
+#     return []` / `many1 p = p >>= fun a -> many p >>= fun _as -> return (a::_as)`:
+#     the recursion descends the INPUT `cs`, which is bound by the lambda INSIDE the
+#     `ParserM` constructor in the bodies of `<|>` (:52-56) and `>>=` (:38-40), never
+#     by the head — the ONLY parameter of `many`/`many1` is the parser `p`, a
+#     function. A measured wrapper fixes its counter `μ p` BEFORE the input
+#     arrives, and the depth on an input is the number of characters `p` consumes
+#     on THAT input (bounded by its length), so no Nat expression over `p` bounds
+#     it and no Prop over `p` alone ("p consumes on success", progress) makes one
+#     exist — the bound is a function of the input, not of `p`. The C3 `lemTail`
+#     hoist (lem d4ba548) applies to `function` bodies, not to a lambda under a
+#     single-constructor wrapper; an eta-expansion through `ParserM` in the lem
+#     text would be a body change (forbidden); a backend hoist through the wrapper
+#     is a lem-lean item. Reachability: the printf family only (Formatted.format0/
+#     decimalInteger/nonnegativeDecimalInteger/flags0), never `drive` itself; the
+#     payload is the parser zero, indistinguishable from a normal parse failure;
+#     exhausts only at fuel < the longest `many` run in a format string (census Q4). ---
+many_lemFuel                       parser       monadic_parsing.lem:100-103: recursion on the INPUT `cs` inside the ParserM lambda (not a parameter); no parameter-level measure exists — see the block note above
+many1_lemFuel                      parser       mutual sibling of many (all-or-none, FM-mutual); same blocker
