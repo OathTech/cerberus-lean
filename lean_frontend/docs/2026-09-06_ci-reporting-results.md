@@ -111,7 +111,7 @@ No historical source version was re-executed by this comparison.
 
 ## Reproduction and evidence
 
-The [reporting archive](validation-foundations-evidence/final-reporting.tar.gz)
+The reporting archive (`final-reporting.tar.gz`, dropped at landing [USER 2026-09-06]; identity in [SHA256SUMS.dropped](validation-foundations-evidence/SHA256SUMS.dropped)) — its per-row record is [final-reporting-summary.json](validation-foundations-evidence/final-reporting-summary.json) —
 retains both complete release reports, every raw capture, all proposed TSVs,
 the exact input inventory and the comparison script/result. The
 [checksum inventory](validation-foundations-evidence/SHA256SUMS) identifies the

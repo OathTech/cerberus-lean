@@ -76,6 +76,16 @@ cerb_times.csv
 __pycache__/
 /.validation-foundations/
 
+# Evidence archives never enter the repo ([USER 2026-09-06]: "These should
+# not be git committed, and will not be pushed ... The important thing is
+# that runs can be reconstructed"). Identities of dropped archives live in
+# the evidence directories' SHA256SUMS.dropped; runs are reconstructed from
+# the recipes in their READMEs. Deliberately NO *.json ignore: inventories
+# and summaries stay tracked.
+lean_frontend/docs/**/*.tar.gz
+lean_frontend/docs/**/*.tar.zst
+lean_frontend/docs/**/*.tar
+
 # Claude Code
 .claude/
 

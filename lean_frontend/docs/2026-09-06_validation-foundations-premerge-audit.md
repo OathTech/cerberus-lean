@@ -314,7 +314,7 @@ inventories contain 1,775 entries, with no missing or lost entries. Twenty-nine
 version/build/library/stamp entries changed during normal rebuilding; artifact
 byte identity is not claimed. The
 [checkpoint summary](validation-foundations-audit-evidence/checkpoint-summary.json)
-and [raw archive](validation-foundations-audit-evidence/checkpoint-fast.tar.gz)
+and raw archive (`checkpoint-fast.tar.gz`, dropped at landing [USER 2026-09-06]; identity in [SHA256SUMS.dropped](validation-foundations-audit-evidence/SHA256SUMS.dropped))
 retain both inventories, all lane logs and the exact tested documentation
 patch/file hashes. The archive has 5,804 individually verified members; the
 separate audit archive has 4,038.

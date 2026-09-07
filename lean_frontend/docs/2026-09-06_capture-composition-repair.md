@@ -60,10 +60,10 @@ unchanged. No reference-model or runtime semantic repair is included.
 
 ## Evidence and validation state
 
-[The first full-run archive](validation-foundations-evidence/first-full-candidate.tar.gz)
+The first full-run archive (`first-full-candidate.tar.gz`, dropped at landing [USER 2026-09-06]; identity in [SHA256SUMS.dropped](validation-foundations-evidence/SHA256SUMS.dropped))
 contains the complete failed report, raw observations, exact pre-repair
 source patch and native diagnostic prototype. Its checksum is in the
-evidence directory's `SHA256SUMS`. It must not be substituted for a green
+evidence directory's `SHA256SUMS.dropped`. It must not be substituted for a green
 final-candidate run. The first run's GCC lane completed 1,963 rows with
 1,873 agreements, 11 triaged rows and zero value disagreements; the native
 diagnostic false positive caused the one regression/stale-triage failure.
@@ -92,14 +92,14 @@ literal-output control restored. The actual GCC nolibc subset passes on
 GCC/URI observation plants and 14 fork plants pass. These are focused
 evidence, not a replacement for the final complete ladder.
 
-[The repair-development archive](validation-foundations-evidence/capture-repairs-development.tar.gz)
+The repair-development archive (`capture-repairs-development.tar.gz`, dropped at landing [USER 2026-09-06]; identity in [SHA256SUMS.dropped](validation-foundations-evidence/SHA256SUMS.dropped))
 retains both focused classification reports, the failed literal-output
 reproducer, native stream probes, repaired GCC subset raw captures, eight
 observation plants and the fork-plant log. It complements the first failed
 full-run archive; all original failures remain visible.
 
 The repaired primary candidate subsequently passed all 13 Tier A commands
-with source unchanged. The [fast-run archive](validation-foundations-evidence/capture-repair-fast.tar.gz)
+with source unchanged. The fast-run archive (`capture-repair-fast.tar.gz`, dropped at landing [USER 2026-09-06]; identity in [SHA256SUMS.dropped](validation-foundations-evidence/SHA256SUMS.dropped))
 retains all reports, raw observations and the tested source patch;
 [its source manifest](validation-foundations-evidence/capture-repair-fast-source.json)
 pins every changed script. Only evidence and result documentation follow

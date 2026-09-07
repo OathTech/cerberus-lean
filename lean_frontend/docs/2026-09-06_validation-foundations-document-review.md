@@ -98,14 +98,21 @@ The 29 changed artifact hashes are version-bearing OCaml/runtime products
 and freshness stamps; the Lean executable and both driver source
 fingerprints are unchanged. These differences are recorded, not hidden.
 
-The [compact evidence archive](validation-foundations-document-review-evidence.tar.gz)
-contains 35 verified members: the report and derived checkpoint summary,
+The compact evidence archive (`validation-foundations-document-review-evidence.tar.gz`)
+contained 35 verified members: the report and derived checkpoint summary,
 all 26 command logs, the tested diff and five tested document snapshots.
 It is 316,706 bytes; SHA-256:
 `9bfc16c70ab4dde6aa49e08c71eff9cd28247f4306d7bedf6bbfdb7f1ff78ed4`.
 Every archived member was read back and checked against its original bytes.
 Publication after the run changes only this result paragraph and adds that
-archive. No full semantic corpus is duplicated. The retained full/cold
+archive. [Landing note, 2026-09-06 [AGENT]: the archive was dropped from the
+repository per [USER 2026-09-06] ("These should not be git committed, and
+will not be pushed ... The important thing is that runs can be
+reconstructed"); its identity line is retained in
+[validation-foundations-document-review-evidence.SHA256SUMS.dropped](validation-foundations-document-review-evidence.SHA256SUMS.dropped);
+reconstruction: `python3 scripts/release.py --mode fast --out <new dir>` at
+`d607409f9` (landed replay `741b0231a`), `CERB_MEM_MAX=32G`,
+`DUNE_CACHE=disabled`, in the project environment.] No full semantic corpus is duplicated. The retained full/cold
 measurements are not presented as newly executed.
 
 ## Landing and next work

@@ -81,8 +81,8 @@ The [full summary](validation-foundations-evidence/final-full-summary.json),
 [reporting comparison](validation-foundations-evidence/final-reporting-summary.json)
 and [provider summary](validation-foundations-evidence/final-provider-summary.json)
 pin exact report hashes, statuses, source and timing. Full A+B is in
-[final-full](validation-foundations-evidence/final-full.tar.gz); C1/C4 in
-[final-reporting](validation-foundations-evidence/final-reporting.tar.gz).
+`final-full` (archive + inventory dropped at landing [USER 2026-09-06]; [summary](validation-foundations-evidence/final-full-summary.json), identities in [SHA256SUMS.dropped](validation-foundations-evidence/SHA256SUMS.dropped)); C1/C4 in
+`final-reporting` (archive + inventory dropped; [comparison](validation-foundations-evidence/final-reporting-summary.json)).
 The [CI findings record](2026-09-06_ci-reporting-results.md) disposes of all
 56 historical movements and the six current Lean non-agreement rows.
 
@@ -128,7 +128,7 @@ development, failed attempts and final evidence. Its
 inventories identify retained bytes. The
 [provider adoption manifest](validation-foundations-evidence/provider-adoption.json)
 links package pins, migration records, proof hypotheses and remaining exits.
-The [final provider/failure archive](validation-foundations-evidence/final-provider-failures.tar.gz)
+The final provider/failure archive (`final-provider-failures.tar.gz`, dropped at landing [USER 2026-09-06]; identity in [SHA256SUMS.dropped](validation-foundations-evidence/SHA256SUMS.dropped)); [inventory](validation-foundations-evidence/final-provider-failures.json) retained)
 contains cold logs, compiler/runtime identities, the external client and
 directly rerun failure probes/census. The earlier developer evidence remains
 separate; no old compiler binary was assumed equal to the new build.
@@ -193,7 +193,7 @@ merge of the prototype. Pushing requires a separate decision.
 The required final Tier A check completed all 13 commands with unchanged
 source and no missing artifact inventory (summed lane time 422.6
 seconds). Its [source/result record](validation-foundations-evidence/final-checkpoint-source.json)
-and [raw archive](validation-foundations-evidence/final-checkpoint-fast.tar.gz)
+and raw archive (`final-checkpoint-fast.tar.gz`, dropped at landing [USER 2026-09-06]; identity in [SHA256SUMS.dropped](validation-foundations-evidence/SHA256SUMS.dropped))
 retain the exact tested documentation/evidence hashes and original source
 fingerprint. The first launcher attempt omitted the documented `bash` prefix
 and exited 126 before any lane; that log is retained separately.

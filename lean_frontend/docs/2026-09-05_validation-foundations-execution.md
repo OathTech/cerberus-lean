@@ -46,7 +46,7 @@ After their respective migrations:
 - First complete Tier A through `ci_lean.sh --mode fast`: 13/13 commands
   passed on 2026-09-06, source fingerprint unchanged. No baseline moved.
   This checks the initial implementation slice, not the final candidate.
-  The [initial evidence archive](validation-foundations-evidence/initial-instruments.tar.gz)
+  The initial evidence archive (`initial-instruments.tar.gz`, dropped at landing [USER 2026-09-06]; identity in [SHA256SUMS.dropped](validation-foundations-evidence/SHA256SUMS.dropped))
   contains its report/logs/raw captures and the mainline integration plants.
   Paths inside the original reports are relative to this owned checkout;
   extract the archive here to restore the `.tmp/` paths. The archive's
@@ -192,7 +192,7 @@ A complete measurement may contain discrepancies. It is reporting evidence,
 not a green semantic comparison or complete release certification. C2/C3
 remain unrun under the legacy-run ownership restriction.
 
-The [provider/failure development archive](validation-foundations-evidence/provider-failures-development.tar.gz)
+The provider/failure development archive (`provider-failures-development.tar.gz`, dropped at landing [USER 2026-09-06]; identity in [SHA256SUMS.dropped](validation-foundations-evidence/SHA256SUMS.dropped))
 and its [file inventory](validation-foundations-evidence/provider-failures-development.json)
 retain the cold build commands/manifests, external client source, generated
 strictness probes and raw runs, and cold census source/range evidence.
@@ -203,7 +203,7 @@ manifests. Archive checksums are in the evidence directory's `SHA256SUMS`.
 
 The actual CI entry completed all 13 Tier A commands again, with source and
 external inputs unchanged. The
-[runner archive](validation-foundations-evidence/foundations-development-fast.tar.gz)
+runner archive (`foundations-development-fast.tar.gz`, dropped at landing [USER 2026-09-06]; identity in [SHA256SUMS.dropped](validation-foundations-evidence/SHA256SUMS.dropped))
 retains the report, logs and raw captures; the
 [source manifest](validation-foundations-evidence/foundations-development-source.json)
 identifies the tested changed source bytes. Only evidence and documentation

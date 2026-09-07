@@ -12,7 +12,7 @@ completed all 20 steps from Cerberus
 `1066d89eea16f55a0f204f95c351731629df296a` and Lem
 `f6542f8e6860d12d4655e6648bc4c45dabd1d798`.
 The [final manifest summary](validation-foundations-evidence/final-provider-summary.json)
-and [raw build/proof archive](validation-foundations-evidence/final-provider-failures.tar.gz)
+and raw build/proof archive (`final-provider-failures.tar.gz`, dropped at landing [USER 2026-09-06]; identity in [SHA256SUMS.dropped](validation-foundations-evidence/SHA256SUMS.dropped)); inventory [final-provider-failures.json](validation-foundations-evidence/final-provider-failures.json))
 identify every command, source and artifact. This record does not claim
 adoption by refined-cerberus, whose work remains with its agent.
 

@@ -22,7 +22,7 @@ All 207 generated Lean and 86 generated OCaml file hashes also match. The
 rebuilt compiler and four OCaml runtime archive hashes differ, so no binary
 identity was assumed: the final probes used the final compiler/runtime.
 See the [comparison and direct-reproduction record](validation-foundations-evidence/provider-evidence-comparison.json)
-and [final raw archive](validation-foundations-evidence/final-provider-failures.tar.gz).
+and the final raw archive (`final-provider-failures.tar.gz`, dropped at landing [USER 2026-09-06]; identity in [SHA256SUMS.dropped](validation-foundations-evidence/SHA256SUMS.dropped)); its inventory [final-provider-failures.json](validation-foundations-evidence/final-provider-failures.json) is retained).
 
 Reproduction, in the project environment after the
 [provider recipe](2026-09-06_provider-smoke.md):

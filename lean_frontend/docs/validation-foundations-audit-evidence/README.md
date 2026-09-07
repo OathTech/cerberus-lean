@@ -1,5 +1,39 @@
 # Validation foundations audit evidence
 
+> **Landing note, 2026-09-06 [AGENT, orchestrator-directed].** The
+> archives and large inventories listed below are NOT in the repository.
+> They were dropped at the landing replay (`arc/validation-foundations-land`
+> replays `arc/validation-foundations` commit by commit without them) under
+> the operator ruling [USER 2026-09-06], verbatim:
+>
+> > "Agree on all points, and particularly on cleaning up the evidence
+> > archives. These should not be git committed, and will not be pushed. I
+> > don't actually hold strong value in such data which could be recreated,
+> > so I am fine dropping large files like this. The important thing is
+> > that runs can be reconstructed. Re ordering of concurrency, I think we
+> > should stabilize the core semantics before this, so we should revert to
+> > our previous ordering. Re master plan revisions dropping rulings - yes,
+> > this should be retained."
+>
+> Drop rule: every `.tar.gz`/`.tar.zst` under `lean_frontend/docs/` and
+> every file there of 1 MiB (1,048,576 bytes) or more. Dropped from this
+> directory (3 files; bytes derived from the source-branch blobs, total
+> 11,855,230): `audit.tar.gz` (6,652,112), `checkpoint-fast.tar.gz` (3,900,930), `checkpoint-files.json` (1,302,188).
+>
+> Their SHA-256 identities are kept, line for line and unchanged, in
+> [SHA256SUMS.dropped](SHA256SUMS.dropped). [SHA256SUMS](SHA256SUMS) lists
+> present files only, so `sha256sum -c SHA256SUMS` passes in this directory.
+> Each dropped line was checked against the source-branch blob before the
+> split. The original bytes exist only on the local, never-pushed source
+> branch `arc/validation-foundations` (head `d607409f9`) until it is pruned.
+
+> **Reconstruction.** Load the project environment first (`source scripts/env.sh`, or prefix each command with `scripts/ce`); run from the repo root; the checkpoints of record ran with `CERB_MEM_MAX=32G` and `DUNE_CACHE=disabled` (document-review record) — use the same. Commit column: source SHA on `arc/validation-foundations`, then the byte-identical replayed commit on the landing branch in parentheses. Reconstructed runs reproduce verdicts/classifications; timings, version-bearing artifact hashes and process identifiers differ, as the records themselves note. What is and is not re-derivable here:
+>
+> | Dropped | Commit | Recipe / disposition |
+> |---|---|---|
+> | `audit.tar.gz`: reviewer and coordinator reproducers, command records, raw observations, cold logs | subject `6d6cfa858` (`a192c1392`), functional `1066d89ee` (`4aa61a95e`) | Its complete member list with per-member SHA-256 is RETAINED in [audit-files.json](audit-files.json). The re-runnable parts: the 20 cold provider steps — `python3 scripts/build_provider_smoke.py --cerberus-rev "$(git rev-parse HEAD)" --lem-repo <lem-lean checkout> --out .validation-foundations/provider-cold`, then `python3 scripts/run_failure_probes.py --provider-manifest .validation-foundations/provider-cold/manifest.json --out .validation-foundations/failure-probes` and `python3 scripts/run_failure_census.py --provider-manifest .validation-foundations/provider-cold/manifest.json --out .validation-foundations/failure-census` ([provider record](../2026-09-06_provider-smoke.md), [census record](../2026-09-06_failure-census-and-correspondence.md)); the observation plants — `python3 scripts/test_observation_lanes.py --out .validation-foundations/premerge-audit-20260906/plants`. The reviewers' own scripts (`archive_audit.py`, `row-parser-probe-v1.sh`/`-v2.sh`, the coordinator checkers) existed ONLY inside this archive: their methods, controls and results are described in the four retained records ([observations.md](observations.md), [private-concurrency.md](private-concurrency.md), [release-oracle.md](release-oracle.md), [provider-docs.md](provider-docs.md)); the scripts themselves are not reconstructible from the repository |
+> | `checkpoint-fast.tar.gz` + inventory `checkpoint-files.json`: the documentation Tier A checkpoint | `b1aa25796` (`f780a9570`) | `python3 scripts/release.py --mode fast --out .validation-foundations/premerge-audit-20260906/checkpoint-fast`; [checkpoint-summary.json](checkpoint-summary.json) (13/13, 429.371 s, report hash) is retained |
+
 2026-09-06 [AGENT]. Evidence for the
 [pre-merge audit](../2026-09-06_validation-foundations-premerge-audit.md).
 **Result: HOLD; four P1 and seven P2 findings remain open.**
@@ -13,12 +47,12 @@ controlled instrument adversaries, not a corrected release candidate.
 | [private-concurrency.md](private-concurrency.md) | Fresh full private instrumentation/reference review, shared P1 and three private P2 findings, source preservation. |
 | [release-oracle.md](release-oracle.md) | Fresh release/oracle/pin review, process-tree and disappearing-inventory findings. |
 | [provider-docs.md](provider-docs.md) | Fresh provider/proof/failure/core-document review and three P2 findings. |
-| [audit.tar.gz](audit.tar.gz) | Reviewer and coordinator reproducers, command records, raw observations, cold logs/manifest/client and selected hash-verified historical inputs. |
+| `audit.tar.gz` (dropped; identity in [SHA256SUMS.dropped](SHA256SUMS.dropped); members listed in [audit-files.json](audit-files.json)) | Reviewer and coordinator reproducers, command records, raw observations, cold logs/manifest/client and selected hash-verified historical inputs. |
 | [audit-files.json](audit-files.json) | Every archived member's path, length and SHA-256. |
 | [checkpoint-summary.json](checkpoint-summary.json) | Final documentation Tier A: 13/13 pass, 429.371 summed lane seconds; source/external inputs unchanged, no missing/lost artifact entries. |
-| [checkpoint-fast.tar.gz](checkpoint-fast.tar.gz) | All checkpoint lane logs/captures, before/after inventories and the exact tested document patch/bytes. |
-| [checkpoint-files.json](checkpoint-files.json) | Every checkpoint archive member's path, length and SHA-256. |
-| [SHA256SUMS](SHA256SUMS) | Archive, inventory, reviewer-copy and checkpoint-file hashes. |
+| `checkpoint-fast.tar.gz` (dropped; identity in [SHA256SUMS.dropped](SHA256SUMS.dropped)) | All checkpoint lane logs/captures, before/after inventories and the exact tested document patch/bytes. |
+| `checkpoint-files.json` (dropped, 1,302,188 bytes; identity in [SHA256SUMS.dropped](SHA256SUMS.dropped)) | Every checkpoint archive member's path, length and SHA-256. |
+| [SHA256SUMS](SHA256SUMS) | Present-file hashes (inventory, reviewer copies, checkpoint summary); the dropped archive/inventory hashes are in [SHA256SUMS.dropped](SHA256SUMS.dropped). |
 
 Extract `audit.tar.gz` into an owned primary checkout to restore paths under
 `.validation-foundations/premerge-audit-20260906/`. Absolute command paths

@@ -70,7 +70,16 @@ cd lean_frontend/speclab && ../../scripts/capped lake build
 # _build/install/default/lib/cerberus-lib (std.core etc.) which every
 # --runtime=_build/install/default invocation needs.
 opam exec -- dune build backend/driver/main.exe cerberus-lib.install
-opam exec -- dune install cerberus-lib  # for runtime files
+# Install the runtime files WORKTREE-LOCALLY — this is what
+# scripts/common.sh build_cerberus does (validation-foundations arc,
+# 2026-09-06): the prefix is this checkout's _build/local-install, never
+# the shared _opam switch. A worktree's _opam is a symlink to the
+# primary's switch, so a plain `dune install cerberus-lib` from one
+# worktree would silently rewrite the runtime every other checkout uses.
+# Engine invocations use --runtime=_build/install/default (staged by the
+# build above); the local prefix additionally checks the package's
+# install recipe in isolation.
+opam exec -- dune install --prefix "$PWD/_build/local-install" cerberus-lib
 # REQUIRED for libc-mode lanes (2026-08-22 hotfix,
 # docs/2026-08-22_libc-co-divergence-diagnosis.md): stage the `cerberus`
 # PACKAGE's install tree. Libc-mode oracle runs (no --nolibc) load
