@@ -517,3 +517,18 @@ only). The operator's overnight pre-sign for this branch [USER 2026-09-05]
 was conditional on exactly these two facts (audit clean with no MAJOR;
 independent battery green with zero movement) — both hold, so the branch
 is merged ff-only under the pre-sign, and the pre-sign is spent.
+
+## Erratum (2026-09-07, from the risk-map baseline audit §3)
+
+[AGENT orchestrator] This record's (and `CerbGlobal.lean`'s header
+comment's) claim that "every read already returned these values" /
+"behaviour is identical by construction" is OVERBROAD for `backend_name`:
+at baseline B (`ae1a5448c`) the ref-backed default was
+`backendName := "cerberus-lean"`; the plain def returns `"Driver"`,
+mirroring `main.ml:124` (`~backend_name:"Driver"`). That is a
+Lean-vs-OCaml MIRROR FIX riding the defs step, not a no-op: execution is
+unaffected only by the argument at `CerbGlobal.lean:95-99` (every model
+read of the name tests Cn/Bmc, so any other name behaves alike), which is
+an argument, not a theorem. Direct consumers of `backend_name ()` see a
+changed string. TODO carries the comment fix (`CerbGlobal.lean:17`).
+Found by the independent auditor (`2026-09-07_risk-map-baseline.md` §3).

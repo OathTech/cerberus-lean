@@ -95,3 +95,13 @@ evidence is this record's verbatim quotes. The `arc/p0-instruments`
 worktree is removed; the branch stays (its four content commits are
 merged as `aa5fc06c4..0a62dd7f7`; this record is the one unmerged commit —
 cherry-pick it onto the mainline, then delete the branch).
+
+## Erratum (2026-09-07, from the risk-map baseline audit §2)
+
+[AGENT orchestrator] The sentence above "the baseline has 12 `TIMEOUT`
+rows in total" is WRONG: `scripts/exec_csmith_corpus_baseline.txt` has
+**9** `TIMEOUT` data rows; the derived 12 came from `grep -c " TIMEOUT"`,
+which also matched three header/comment mentions. Re-derived 2026-09-07:
+`grep -c "^[^#].* TIMEOUT$"` → 9; `grep -c " TIMEOUT"` → 12. The shard
+tallies (1+2+0+1+2 = 6 shown, shard 2's not captured) are unchanged.
+Found by the independent auditor (`2026-09-07_risk-map-baseline.md` §2).

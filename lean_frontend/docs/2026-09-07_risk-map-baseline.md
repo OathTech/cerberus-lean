@@ -787,3 +787,28 @@ The final branch/source/file-fence checks are retained in [final-fence.txt](2026
 Every movement identified in this pass has ruling or instrument provenance, with no MOVED-UNRULED oracle finding; correspondence, historical timing, marker compliance and fresh consumer proof-check obligations remain open rather than established by the green gates.
 
 VERDICT: MOVED-WITH-RULING · evidence: `git status --porcelain` / final-fence.txt:1 and the measured commands in §§1–6 · residual risk: This baseline audit records known limits and cannot substitute for the master's remaining correspondence, adoption and repeat-audit exits. · mover: master plan steps 2–7.
+
+
+## 8. Orchestrator review of this record (2026-09-07)
+
+[AGENT orchestrator] — a separate author; §§0–7 above are the auditor's.
+Fence: `git status --porcelain` at the auditor's final commit listed only
+the record and the evidence directory (`final-fence.txt`); no tracked file
+changed; evidence 992 KB, no archives. The four documentary gaps the
+auditor named were re-verified on this tree:
+
+| Gap | Re-verification |
+|---|---|
+| R3 marker absent | `grep -rn "ISO-fix register R" lean_frontend/*.lean` → R1 (`CerbDecode.lean:102`), R2 (`:175`, `:184`) only. Known C-Z4 item. |
+| Acyclic "guarantee" overstated | `scripts/fuel_hypotheses.txt:43-46`, `CerbTagsWf.lean:19-40` say "holds for every program the frontend ACCEPTS CORRECTLY" with the F-A2 gap noted — a conjecture presented as a guarantee. TODO row added. |
+| CerbGlobal "identical by construction" overbroad | `git show ae1a5448c:lean_frontend/CerbGlobal.lean:37` `backendName := "cerberus-lean"`; HEAD `CerbGlobal.lean:101/140/186` `"Driver"`. Erratum appended to the cerbglobal record; TODO row for the comment. |
+| Sweep record "12 TIMEOUT" | `grep -c "^[^#].* TIMEOUT$" scripts/exec_csmith_corpus_baseline.txt` → 9; the 12 counted 3 comment hits. Erratum appended to that record. |
+
+Verdicts accepted as stated: six surfaces MOVED-WITH-RULING, none
+MOVED-UNRULED; the auditor's independent re-derivations (86/22 generated
+files, 38-row native pin population, 81/54/13/8/6 fuel census, 709/1/11/2
+pristine lane, 32/32 cold ladder, both locale/terminal unit runs) agree
+with the repo's gates. The operator's question is answered in §7: the
+trust surface moved on every audited surface since the split, every
+movement carries a ruling or an instrument commit, and the open items are
+obligations the plan already names, not undisclosed movement.

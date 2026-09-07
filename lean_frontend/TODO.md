@@ -57,6 +57,40 @@ owned and hands off; this roadmap does not authorize operating it.
   fuel'd rows (9 measured) are dead code for the exec pipeline; decide
   whether they leave the exec-cone module lists (D-C2-7). S.
 
+## Risk-map baseline audit follow-ups (record `docs/2026-09-07_risk-map-baseline.md`, 2026-09-07)
+
+All six surfaces MOVED-WITH-RULING, no MOVED-UNRULED. Documentary and
+hygiene items the audit confirmed (each re-verified by the orchestrator):
+
+- **R3 has no `-- ISO-fix register R3` code marker in `CerbMem.lean`** (audit
+  §4; VALIDATION §2 already acknowledges it) — the existing C-Z4 item "R3
+  marker + register/marker bijection gate" closes it; no new task.
+- **`scripts/fuel_hypotheses.txt:43-46` and `CerbTagsWf.lean:19-40` state
+  "Acyclic holds for every program the frontend ACCEPTS CORRECTLY" as a
+  guarantee** (audit §3) — it is a CONJECTURE about the frontend with a known
+  counterexample (F-A2), not a theorem; restate both as "conjectured frontend
+  invariant; consumers discharge `Acyclic` at their entry (refined-cerberus
+  does, FUEL.md)". Docs/comment only.
+- **`CerbGlobal.lean:17` header comment "every read already returned these
+  values"** is overbroad (audit §3; erratum in the cerbglobal record):
+  `backend_name` moved `"cerberus-lean"` → `"Driver"` (mirror of `main.ml:124`).
+  Fix the comment; state the non-Cn/non-Bmc argument as the execution-
+  equivalence reason. Hand-written seam comment → rides the next seam slice.
+- **Stale counts in comments/tables** (audit §5): `lean_frontend/test/Unit/TotalityProofTest.lean:21`
+  "(64 at C1; 22 at C4)" is fine as history but the caller comment the
+  audit read should say the CURRENT ambient pin count (22);
+  `scripts/unsafebaseio_allowlist.txt:41` "66 -> 37 PIN" describes a later
+  checkpoint (the tooling-inclusive count is 38: B 61 − 29 + 5 + 1, audit §4);
+  `scripts/LADDER.md` Tier B row 9 cites a 90-case timing where the lane
+  now reports `91/91`. Comment/table fixes; ride the next instrument slice.
+- **`2026-09-06_csmith-sweep-post-p0.md` "12 TIMEOUT rows"** → 9 data rows
+  (erratum appended to that record).
+- Open obligations the audit lists as residual, all already carried: fuel
+  monotonicity/propagation (lem TODO 13), native/logical correspondence
+  (`beqMemValueSafe`, digest; F7), the pure-failure correspondence design
+  (master plan step 2), C-P1 timing, consumer proof-check at the current
+  pin (their step 6). Repeat risk map = master plan step 7.
+
 ## Fuel-parameter arc — C3 follow-ups (record `docs/2026-09-05_fuel-parameter-C3-record.md` §7–§8)
 
 - **Performance backlog: the eager `lemSize` measure of `get_ctx` (F-C3-4;
