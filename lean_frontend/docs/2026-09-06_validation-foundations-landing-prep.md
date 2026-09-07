@@ -573,3 +573,94 @@ of writing) are theirs to inspect or delete. (4) The earlier record
 commits' claim that `common.sh` moved one pin still holds per commit; the
 pin has now moved twice on this branch (`dc3bf76b… → 71f184f3…` in
 `7d49efdeb`, `71f184f3… → 77f5ab3a…` in `ded9efef8`).
+
+## 11. Orchestrator boundary battery on the final head (2026-09-07)
+
+[AGENT orchestrator]. Independent of the worker's gates: the detached
+script `.tmp/vf-reverify.sh` (ephemeral, deleted with this commit) ran the
+LADDER Tier A + Tier B battery plus the branch's two new Tier B rows on
+`df6b20ee1` in THIS worktree, alone (a first attempt on `6071050f7` was
+stopped when the repair worker started re-gating in the same worktree;
+its 23 green lanes and the immaculate red that became §10 are superseded).
+Environment: an ordinary interactive-derived shell — `TERM=xterm-256color`,
+`NO_COLOR` unset, `LANG=en_US.UTF-8` — i.e. the condition under which the
+pre-repair codec failed. Cache-disabled rebuild first
+(`recorded oracle stamp (bin b896aa287b7f` / `recorded lean stamp (bin 32f8b3427f02`).
+
+Every lane rc=0 (verbatim `=== lane` / `--- rc=` pairs from the log):
+    === bash tools/check_driver_fresh.sh --check  rc=0
+    === ./scripts/test_unit.sh  rc=0
+    === ./scripts/test_exec.sh --check-baseline  rc=0
+    === ./scripts/test_exec.sh --check-baseline=scripts/exec_coverage_baseline.txt tests/coverage  rc=0
+    === ./scripts/test_exec.sh --check-baseline=scripts/exec_debug_baseline.txt tests/debug  rc=0
+    === ./scripts/test_exec.sh --check-baseline=scripts/exec_float_baseline.txt tests/float  rc=0
+    === ./scripts/test_bytes.sh  rc=0
+    === ./scripts/test_libc_exec.sh  rc=0
+    === ./scripts/test_multi_tu.sh  rc=0
+    === ./scripts/test_parse.sh  rc=0
+    === ./scripts/test_core.sh  rc=0
+    === ./scripts/test_elab.sh  rc=0
+    === ./scripts/test_libxml2_uri.sh  rc=0
+    === ./scripts/test_cn_coverage.sh --check-baseline  rc=0
+    === ./scripts/test_parse.sh tests/ci  rc=0
+    === ./scripts/test_core.sh tests/ci  rc=0
+    === ./scripts/test_verify.sh  rc=0
+    === ./scripts/test_immaculate.sh  rc=0
+    === ./scripts/test_speclab.sh --selftest  rc=0
+    === ./scripts/test_speclab.sh --plant  rc=0
+    === ./scripts/test_hang_plant.sh  rc=0
+    === ./scripts/test_kill_plant.sh  rc=0
+    === ./scripts/test_fuel_plant.sh  rc=0
+    === ./scripts/test_libxml2.sh  rc=0
+    === python3 scripts/test_observation_lanes.py  rc=0
+    === independent oracle build (branch recipe)  rc=0
+    === python3 scripts/test_upstream_oracle.py  rc=0
+    === python3 scripts/test_upstream_oracle.py --plant  rc=0
+    === ./scripts/test_gcc_oracle.sh --check-baseline  rc=0
+
+Verdict lines, verbatim:
+
+```
+check_driver_fresh: oracle OK (bin b896aa287b7f3543600c59277c517472093be412fe3ddf8ff689f59567b83bb8, src 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda)
+check_driver_fresh: lean OK (bin 32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6, src 89a31871cc2e83121d7efb009c35aa6c50216b31f6dad88cee4688b0786edf28)
+test_renumber_plants: OK (12 plants: refusals refuse, admits admit with declared class)
+SUMMARY: total=106 match=85 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=3 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+SUMMARY: total=212 match=183 ub_match=16 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=13 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+SUMMARY: total=90 match=66 ub_match=20 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=4 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+SUMMARY: total=69 match=69 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+SUMMARY: exec_match=9 neg_pinned=5 fail=0
+SUMMARY: match=12 diff=0
+ALL MATCH RECORDED BASELINE
+SUMMARY: total=2 match=2 fail=0
+SUMMARY: total=106 same=103 diff=3 ocaml_fail=0 lean_fail=0
+SUMMARY: total=213 match=207 ub_match=6 ub_diff=0 reject_match=0 diff=0 mismatch=0 reject_diff=0 lean_fail=0 lean_crash=0 fuel=0 lean_error=0 lean_timeout=0 oracle_fail=0 oracle_timeout=0 oracle_inconsistent=0
+BASELINE OK (213 entries, exact match)
+test_verify: 127 passed, 0 failed (25 fixtures, 28 call points, 14 corpus fixtures, 21 corpus points)
+OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip DIFF, R3 s4b-memcmp-hugesize ORACLE_CRASH — VALIDATION.md 'ISO-fix register' — and the in-Lean probes g6 TRIPWIRE / illtyped-store KILL).
+test_fuel_plant: ALL PLANTS OK (FUEL classification live in exec/gcc/ci_sweep/cn_coverage/measure; negatives not FUEL; the real driver at --fuel 1 reads FUEL and at the default MATCH; --fuel 0/non-numeral/out-of-position/missing refused)
+SUMMARY: total=4 match=4 fail=0 (points: 1354, 22 observations each)
+observation lane plants: 91/91 passed
+Independent oracle: passed; {'semantic_agreement': 709, 'reviewed_difference': 1, 'matching_failure': 11, 'interface_agreement': 2}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations-land/.tmp/upstream-oracle-q9q21hlp/report.json
+check_driver_fresh: oracle OK (bin b896aa287b7f3543600c59277c517472093be412fe3ddf8ff689f59567b83bb8, src 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda)
+Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/validation-foundations-land/.tmp/upstream-oracle-ik58hik9/report.json
+SUMMARY: total=1963 compared=1885 agree=1873 agree_nd=0 triaged=12 disagree=0 o2_agree=190 skip_gcc_compile=1 skip_gcc_stdout=1 skip_lean_crash=9 skip_lean_fail=9 skip_lean_timeout=11 skip_ub=47 triaged_addr=11 triaged_ub=1
+Baseline check: 0 regression(s), 0 improvement(s)
+```
+
+Derived: zero baseline movement in every baseline lane; gcc second oracle
+`agree=1873 disagree=0`, `0 regression(s), 0 improvement(s)`; the pristine
+oracle lane `semantic_agreement: 709, reviewed_difference: 1,
+matching_failure: 11, interface_agreement: 2` and its plant `plant_rejected: 1`;
+observation-lane plants `91/91 passed`; immaculate `OK: lane matches the
+committed baseline` under the ambient colour terminal (§10's defect closed).
+Not run here: csmith corpus shards, ci_sweep, libxml2 beyond the battery
+row — unchanged from the mainline's last runs; the C1/C4 reporting
+measurements are the branch's own records.
