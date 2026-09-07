@@ -147,7 +147,11 @@ audit's two verbatim, wrong fuel position, swapped arguments, changed
 measure, wrapper calling another worker, hidden premise, contradictory
 hypothesis caught by the register, extra Prop binder, three `_zero`
 decoys), the lem-sync content-hash gate,
-`check_fork_drift.sh` (arc-10 audit follow-up, [USER] mandate: the
+`check_failure_reach.sh` (the failure-reach register gate, 2026-09-08: every pure
+`failwithI`/`panic!` site of the exec dependency closure = a sealed, reviewed row of
+`scripts/failure_reach_register.txt`, position and reach classes both directions,
+DISCARDABLE generated let-bindings RED; rebuilds the one-module reach instrument,
+~6 s; 5 plants), `check_fork_drift.sh` (arc-10 audit follow-up, [USER] mandate: the
 oracle surface must equal the reviewed manifest
 `scripts/fork_drift_manifest.txt`, and the generated-OCaml
 fork-vs-upstream deltas must match their pinned hashes; loud SKIP
@@ -266,7 +270,8 @@ a binary built from the old copy.
 | `CerbStepInstances.lean` | OCaml-poly-eq-parity instances for core_step2 (arc 4) |
 | `CerbLocation.lean` | Source location type; structural lawful Ord (arc-14 F4; was repr-string compare) |
 | `CerberusFresh.lean` | Fresh symbol/digest generation |
-| `Ctype_lemMeasureProofs.lean`, `Core_lemMeasureProofs.lean`, `Defacto_memory_aux_lemMeasureProofs.lean`, `Utils_…`, `Core_run_aux_…`, `Core_reduction_…`, `Defacto_memory_…`, `Core_aux_…`, `Core_eval_lemMeasureProofs.lean` | The `fuel_measure` sufficiency proofs the generated `*_auxiliary.lean` obligation shells import (fuel-parameter arc C1/C2; one module per lem module with measured functions — the build fails without them, by design; 38 generated obligations). Template: the C2 record §4 / `Core_run_aux_lemMeasureProofs.lean` (strong induction on the derived size, `key` + `size_lt`, `split` for multi-discriminant matches, `to_congr` for list traversals); kernel-only tactics, no option bumps |
+| `Ctype_lemMeasureProofs.lean`, `Core_lemMeasureProofs.lean`, `Defacto_memory_aux_lemMeasureProofs.lean`, `Utils_…`, `Core_run_aux_…`, `Core_reduction_…`, `Defacto_memory_…`, `Core_aux_…`, `Core_eval_lemMeasureProofs.lean`, `AilTypesAux_…`, `Formatted_…`, `Driver_lemMeasureProofs.lean` | The `fuel_measure` sufficiency proofs the generated `*_auxiliary.lean` obligation shells import (fuel-parameter arc C1/C2; one module per lem module with measured functions — the build fails without them, by design; 38 generated obligations). Template: the C2 record §4 / `Core_run_aux_lemMeasureProofs.lean` (strong induction on the derived size, `key` + `size_lt`, `split` for multi-discriminant matches, `to_congr` for list traversals); kernel-only tactics, no option bumps |
+| `CerbCoreShape.lean` | SHAPE predicates on Core terms (`IsValuePexpr`, `IsPureExpr`, `AllPureExprs`): the hypothesis vocabulary of the measured-under-hypothesis `hack`/`to_pure`/`to_pures` (fuel-pending close-out 2026-09-08); the invariant they rest on — `prepare_exit` (driver.lem:1309-1316), the only exit of `driver2` — is cited in its header and in `scripts/fuel_hypotheses.txt` |
 | `CerbMeasureLemmas.lean` | The shared toolbox of those proofs: membership-relative congruences, the derived list helpers' member bounds, positivity, `unatomic_size_le`, the `size_lt` discharger and the bounded `to_congr` descent (C2) |
 | `CerbMem_lemMeasureProofs.lean` | The hand-written MEASURED seams' sufficiency theorems (`CerbMem.typeofMval/unqualifyAndUnatomic/memValueToBytes_measure_sufficient`, same shape and namespace rule as the generated ones — the fuel-forms gate classifies them by the same rule) |
 | `Main.lean` | Driver: self-test, parse, desugar pipeline; `--fuel N` (the ONE fuel numeral: `defaultFuel` = 10^8, the harness default; the run's `[LemFuel]` instance is built once here) |

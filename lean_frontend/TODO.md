@@ -40,13 +40,26 @@ owned and hands off; this roadmap does not authorize operating it.
   `CerbTagsWf.Acyclic` hypotheses. `are_compatible_aux` and its two siblings
   follow deep pointer/function references; legal recursive-pointer cross-TU
   input is a reference nontermination case. By-value acyclicity is insufficient.
-- **`to_pure`/`to_pures`** — establish bounds on failure-dependent recursive
-  arguments under a faithful failure design or proved preconditions. Making
-  `failwithI` transparent to a default does not close this obligation.
-  `showNonNegativeWithBasis_aux` was discharged at C4 under `2 ≤ b`.
-- **`hack`, `many`/`many1`** — pure finalization needs an explicit success/
-  failure contract; parser combinators need progress/consumption conditions
-  and distinguished exhaustion. The current pending register totals eight.
+  Close-out D3 (2026-09-08): re-assessed, no honest hypothesis; the upstream-tray
+  draft 37 (`docs/upstream-tray/37-…nontermination.md`) is WRITTEN with the
+  reproducer `tests/failure-probes/cross_tu_node/` (both oracles rc=124 at 60 s,
+  Lean stack overflow rc=134, single-TU control `Specified(7)`); MOVER: upstream's
+  fix (an assumed-compatible set), or a lem body change (not Lean-only — C4 record
+  §8 item 2(c), operator decision).
+- ~~**`to_pure`/`to_pures`**~~ and ~~**`hack`**~~ — RESOLVED at the fuel-pending
+  close-out (2026-09-08, `docs/2026-09-08_fuel-pending-closeout-record.md`, option C
+  of the reachability census): MEASURED under the arena SHAPE hypothesis
+  (`CerbCoreShape.IsValuePexpr` / `IsPureExpr` / `AllPureExprs`; one hop at
+  `finalize`/`driver_globals` by `prepare_exit`, driver.lem:1309-1316 — the census's
+  Q4 cite corrected in the record §2.1). The hypotheses are cited invariants, not
+  theorems: a theorem about `drive`'s final state discharges them from
+  `prepare_exit`'s definition (consumer-side; not done). Register 8 → 5.
+- **`many`/`many1`** — PENDING with the precise blocker (close-out D2,
+  `scripts/fuel_forms_pending.txt`): the recursion argument is the parser INPUT,
+  bound inside the `ParserM` lambda (monadic_parsing.lem:38-40, :52-56, :100-103),
+  never a head parameter; no parameter-level measure exists without a lem body
+  change. MOVER: a lem-lean backend hoist through a single-constructor wrapper
+  (the `lemTail` hoist applies to `function` bodies only). S–M (lem-lean).
 - **Fuel-forms instrument repair** — P0 checked the exact worker/argument
   correspondence and zero-case shapes; its decoy plants now reject. Keep
   general propagation and completion proofs distinct from this instrument.
@@ -56,6 +69,22 @@ owned and hands off; this roadmap does not authorize operating it.
 - **The defacto memory model is unreachable from `drive` (F-C2-4)** — 12
   fuel'd rows (9 measured) are dead code for the exec pipeline; decide
   whether they leave the exec-cone module lists (D-C2-7). S.
+
+## Pure-failure correspondence — PARKED design, its tripwire (2026-09-08)
+
+- **The F1 twin design is PARKED** (`docs/2026-09-07_pure-failure-correspondence-design.md`;
+  the census `docs/2026-09-07_pure-failure-reachability-census.md` found 0
+  DISCARDABLE among the 231 pure exec-closure sites; [USER 2026-09-07] chose option C).
+  Its TRIPWIRE is the failure-reach register gate (`scripts/check_failure_reach.sh`,
+  `scripts/failure_reach_register.txt`; test_unit.sh + LADDER Tier B row 11): flip
+  conditions = a DISCARDABLE site that is REACHABLE (the gate's DISCARDABLE verdict on
+  a generated dead let-binding, or the lem probe suite
+  `tests/failure-probes/discarded_failures.lem`), a REACHABLE step-level site where the
+  oracle SUCCEEDS (today 0 — the 36 one-sided rows are all `CerbFS`), growth of the
+  well-typed-UB-free reachable set beyond 4, or an operator ruling for the logical
+  property. The 17 UNKNOWN rows of the register (cross-TU compatibility ×4,
+  sequential-fragment progress ×8, memory well-formedness ×4, one Eunseq shape) move
+  only by a witness or an invariant, through `--emit`/`--reseal` in a commit. S per row.
 
 ## Risk-map baseline audit follow-ups (record `docs/2026-09-07_risk-map-baseline.md`, 2026-09-07)
 
@@ -131,9 +160,10 @@ hygiene items the audit confirmed (each re-verified by the orchestrator):
   the recursion is not tail-recursive; the fuel is never reached; C4 audit
   §5.1/F-A7).** The three ctype_aux rows stay PENDING (no frontend-guaranteed
   hypothesis bounds them; by-value acyclicity does not). Reproduced by the
-  pre-merge audit (its `node_a.c`/`node_b.c`); owed: the upstream-tray draft
-  (TRUE BUG: the standard's rule needs an "assumed compatible" set for
-  recursive types) — the Z4 code half. Operator decision (tray).
+  pre-merge audit (its `node_a.c`/`node_b.c`); the upstream-tray draft is
+  WRITTEN (close-out D3, 2026-09-08: draft 37 + `tests/failure-probes/
+  cross_tu_node/`; TRUE BUG: the standard's rule needs an "assumed compatible"
+  set for recursive types). Operator decision (filing; a lem body change).
 - **F-A2 (C4 audit) — frontend GAP, upstream TRUE-BUG tray candidate:**
   `_Alignas(type)` on a CHARACTER-typed member bypasses the completeness
   check (`ailTypesAux.lem:1291-1292` `Just LT` → `cabs_to_ail.lem:2882-2883`
@@ -291,10 +321,15 @@ hygiene items the audit confirmed (each re-verified by the orchestrator):
   `mkListN_aux` (an operand-bounded measure: n elements) — a ruling item,
   not applied.
 - **`finalize`/`hack` boundary** — the existing fixture lemma reduces
-  finalization under singleton-thread/value-arena hypotheses. Prove those
-  hypotheses for the claimed input domain, or implement the reviewed strict
-  failure/completion design. This is not a universal terminal-state invariant;
-  no blanket "cheap closure" or unconditional fuel independence is established.
+  finalization under singleton-thread/value-arena hypotheses. Since the
+  fuel-pending close-out (2026-09-08) the value-arena hypothesis is NAMED
+  (`CerbCoreShape.IsValuePexpr`/`IsPureExpr`) and its invariant CITED
+  (`prepare_exit`, driver.lem:1309-1316, the only exit of `driver2`); `hack`,
+  `to_pure`, `to_pures` are fuel-free under it. Still open: PROVE the hypothesis
+  for `drive`'s final state (a theorem from `prepare_exit`'s definition; the
+  singleton-thread part likewise), or implement the reviewed strict
+  failure/completion design. No blanket "cheap closure" or unconditional fuel
+  independence is established.
 
 - Comment-only `.lem` cleanup (fuel-parameter C1, pre-merge audit N3):
   `frontend/model/defacto_memory.lem:2678`, `formatted.lem:327`,
