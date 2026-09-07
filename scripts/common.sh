@@ -19,6 +19,33 @@
 # Path resolution
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# Diagnostic-styling pin (landing prep 2026-09-06, orchestrator boundary
+# finding on arc/validation-foundations-land @ 6071050f7): Cmdliner 2.x —
+# the oracle's CLI, _opam/lib/cmdliner = 2.1.1 — styles its diagnostics,
+# including the uncaught-exception envelope "cerberus: internal error,
+# uncaught exception:", from the ENVIRONMENT, not from isatty
+# (cmdliner_base.ml styler': NO_COLOR non-empty -> plain; TERM=dumb or
+# unset -> plain; any other TERM -> ANSI). Cerb_colour (util/cerb_colour.ml)
+# styles by isatty on stdout/stderr, which every capture redirects. Both
+# must be deterministic for the exact-envelope codec (observations.py
+# OCAML_ENVELOPE / FATAL / ORACLE_INTERNAL): under an interactive
+# TERM=xterm-256color the envelope arrived as
+# "cerberus: internal error, ^[[31muncaught exception^[[m:" (13 styled
+# envelopes; 12 immaculate rows read INVALID via "engine exit 125 outside
+# batch protocol", the 13th was absorbed into a CRASH message)
+# while the same lane was green in a TERM-less sandbox — an
+# environment-dependent gate (F4 class). Record:
+# lean_frontend/docs/2026-09-06_validation-foundations-landing-prep.md §10.
+# Exported here so EVERY engine/oracle/tool invocation a harness makes
+# sees the same plain-text contract: observation_capture, CAPPED_TEST /
+# scripts/capped, opam exec and timeout all pass the environment through
+# (the gcc lane's deliberate `env -i` applies to the compiled PROGRAM
+# only). The codec rejects an ESC byte in engine stderr with a specific
+# error rather than normalizing it, so a run outside this pin is loud.
+export NO_COLOR=1
+export TERM=dumb
+
 # Shared with the Python decoder; includes the historical descendant banner.
 CAP_OOM_PATTERN=$(cat "$SCRIPT_DIR/cap_oom.regex") || { echo "Error: shared cap witness pattern missing" >&2; exit 2; }
 

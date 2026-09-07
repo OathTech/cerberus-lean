@@ -35,7 +35,9 @@ def main():
         raise SystemExit('provider compiler bytes changed')
     out = args.out.resolve()
     out.mkdir(parents=True, exist_ok=False)
-    env = dict(os.environ, CERB_MEM_MAX='32G', LEAN_ABORT_ON_PANIC='1')
+    # NO_COLOR/TERM: diagnostic-styling pin as scripts/common.sh (probes read
+    # engine stderr; Cmdliner styles it from TERM; 2026-09-06 landing finding).
+    env = dict(os.environ, CERB_MEM_MAX='32G', LEAN_ABORT_ON_PANIC='1', NO_COLOR='1', TERM='dumb')
     cap = ROOT/'scripts/capped'
     report = {'schema': 1, 'status': 'incomplete', 'provider_manifest_sha256': sha(args.provider_manifest),
               'compiler': manifest['compiler'], 'commands': [], 'observations': []}

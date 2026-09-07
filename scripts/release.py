@@ -267,7 +267,10 @@ def execute_lane(lane: Lane, out: Path, limit: float, root=None, on_started=None
         command += ['--out', str(directory / 'plants')]
     if 'scripts/test_upstream_oracle.py' in ' '.join(command):
         command += ['--out', str(directory / 'independent-oracle')]
-    env = dict(os.environ, CERB_OBSERVATION_DIR=str(directory / 'observations'))
+    # NO_COLOR/TERM: the same diagnostic-styling pin scripts/common.sh exports,
+    # applied at the runner too so Python-driven lanes (B9/B10) are ambient-
+    # independent as well (2026-09-06 landing finding).
+    env = dict(os.environ, CERB_OBSERVATION_DIR=str(directory / 'observations'), NO_COLOR='1', TERM='dumb')
     started = time.monotonic()
     result = {'id': lane.id, 'tier': lane.tier, 'command': command,
               'required': lane.tier != 'C', 'status': 'running',
@@ -356,7 +359,7 @@ def main():
               'environment': {key: os.environ.get(key) for key in [
                   'CERB_MEM_MAX', 'CERB_TEST_MEM_MAX', 'TIMEOUT_SECS', 'DUNE_CACHE', 'SKIP_BUILD',
                   'CERB_ORACLE_BIN_OVERRIDE', 'CERB_LEAN_BIN_OVERRIDE',
-                  'CERB_DRIVER_FRESH_OVERRIDE', 'CERB_FORK_DRIFT_DEV_SKIP']}}
+                  'CERB_DRIVER_FRESH_OVERRIDE', 'CERB_FORK_DRIFT_DEV_SKIP', 'TERM', 'NO_COLOR']}}
     write_report(out / 'report.json', report)
     print(f'Release evidence: {out}', flush=True)
     previous_handlers = {sig: signal.getsignal(sig) for sig in (signal.SIGINT, signal.SIGTERM)}

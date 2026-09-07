@@ -127,11 +127,18 @@ def main():
         if lane == 'immaculate':
             variants.extend([(kind.replace('_', '-'), 'good', kind)
                              for kind in ('crash_fuel', 'crash_garbage', 'crash_other')])
+            # 2026-09-06 landing finding: the ambient TERM must not reach the
+            # engines (Cmdliner styles the crash envelope from TERM/NO_COLOR);
+            # the harness pin in common.sh must win over an interactive shell.
+            variants.append(('ambient-term', 'good', 'good'))
         for name, okind, lkind in variants:
             case_dir = outdir / f'{lane}.{name}'
             case_dir.mkdir(exist_ok=True)
             case_env = dict(env, ORACLE_PLANT_KIND=okind, LEAN_PLANT_KIND=lkind,
                             CERB_OBSERVATION_DIR=str(case_dir / 'raw'))
+            if name == 'ambient-term':
+                case_env['TERM'] = 'xterm-256color'
+                case_env.pop('NO_COLOR', None)
             if lane == 'exec':
                 flags = [str(fixture)]
                 if name.startswith('ub-'):
@@ -163,7 +170,7 @@ def main():
             (case_dir / 'stdout').write_bytes(result.stdout)
             (case_dir / 'stderr').write_bytes(result.stderr)
             text = (result.stdout + result.stderr).decode('utf8', errors='replace')
-            expected_accept = name in ('control', 'refusal-control', 'native-exit137', 'ub-control')
+            expected_accept = name in ('control', 'refusal-control', 'native-exit137', 'ub-control', 'ambient-term')
             if lane == 'gcc_oracle' and name == 'bytes':
                 # This lane deliberately compares integer exits. Demonstrate
                 # that the richer bytes survive, rather than pretend it is a

@@ -235,6 +235,16 @@ def parse(stdout: bytes, stderr: bytes = b'', status: int | None = None,
         raise ProtocolError('engine killed or exited 137; no completed observation')
     if status == 124:
         raise ProtocolError('engine timeout; exploration incomplete')
+    if b'\x1b' in stderr:
+        # Cmdliner 2.x styles the oracle's diagnostics (incl. the uncaught-
+        # exception envelope) from NO_COLOR/TERM regardless of isatty; a
+        # styled envelope would otherwise miss every exact match below and
+        # fall through to "outside batch protocol" (2026-09-06 landing
+        # finding, 13 immaculate rows). Never stripped: scripts/common.sh
+        # pins NO_COLOR=1 / TERM=dumb for every engine invocation, and this
+        # is the loud witness that an engine ran outside that pin.
+        raise ProtocolError('styled (ANSI) diagnostics in engine stderr; '
+                            'the harness must run engines with NO_COLOR=1 / TERM=dumb')
     all_output = stdout + b'\n' + stderr
     # Match complete failure/diagnostic records, never a substring of an
     # escaped semantic output field or of an unrelated Error message.

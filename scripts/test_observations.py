@@ -14,6 +14,14 @@ from observations import ProtocolError, escape, load_capture, parse, unescape
 OK = b'Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}\n'
 UB = b'Undefined {ub: "UB005_data_race", stderr: "x\\000\\255", loc: "<t.c:4:2>"}\n'
 ERR = b'Error {msg: "model refused: thread spawn"}\n'
+# 2026-09-06 landing finding: the oracle's uncaught-exception envelope as
+# Cmdliner 2.1.1 printed it under an interactive TERM (retained bytes,
+# .tmp/scripts/observations/test_immaculate.RNqM2FI3dw/immaculate.CMnrVbDREw/
+# zd-z2m01-aligned-alloc-zero-zero.oerr, status 125, empty stdout) and its
+# plain form (TERM=dumb / NO_COLOR=1 / TERM unset). Same 25-line trace.
+OCAML_TRACE_TAIL = b'          Division_by_zero\n          Raised at Z.rem in file "z.ml", line 96, characters 13-50\n          Called from Cerb_frontend__Impl_mem.Concrete.op_ival in file "memory/concrete/impl_mem.ml", line 2482, characters 40-60\n          Called from Cerb_frontend__Core_eval.step_eval_peop.(fun) in file "ocaml_frontend/generated/core_eval.ml", line 454, characters 82-117\n          Called from Cerb_frontend__Core_eval.step_eval_pexpr in file "ocaml_frontend/generated/core_eval.ml", line 813, characters 7-47\n          Called from Cerb_frontend__Core_eval.step_eval_peop in file "ocaml_frontend/generated/core_eval.ml", line 320, characters 2-12\n          Called from Cerb_frontend__Core_eval.step_eval_pexpr in file "ocaml_frontend/generated/core_eval.ml", line 813, characters 7-47\n          Called from Cerb_frontend__Core_eval.eval_pexpr_aux2 in file "ocaml_frontend/generated/core_eval.ml", line 1124, characters 8-104\n          Called from Cerb_frontend__Core_reduction.E.eval_pexpr20 in file "ocaml_frontend/generated/core_reduction.ml", line 48, characters 14-124\n          Called from Cerb_frontend__Core_reduction.full_eval_pexpr in file "ocaml_frontend/generated/core_reduction.ml", line 52, characters 2-53\n          Called from Cerb_frontend__Core_reduction.one_step in file "ocaml_frontend/generated/core_reduction.ml", line 419, characters 12-34\n          Called from Cerb_frontend__Core_reduction.step_ctx.(fun) in file "ocaml_frontend/generated/core_reduction.ml", line 1512, characters 21-74\n          Called from Lem_list.count_map in file "lem_list.ml", line 165, characters 16-20\n          Called from Cerb_frontend__Nondeterminism.nd_read.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 95, characters 28-34\n          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 62, characters 11-19\n          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 62, characters 11-19\n          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 62, characters 11-19\n          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 62, characters 11-19\n          Called from Cerb_frontend__Smt2.runND.aux in file "ocaml_frontend/smt2.ml", line 38, characters 10-18\n          Called from Cerb_frontend__Smt2.runND in file "ocaml_frontend/smt2.ml", line 140, characters 22-33\n          Called from Cerb_backend__Driver_ocaml.batch_drive in file "backend/common/driver_ocaml.ml", line 158, characters 15-115\n          Called from Cerb_backend__Pipeline.interp_backend in file "backend/common/pipeline.ml", line 604, characters 21-85\n          Called from Dune__exe__Main.cerberus in file "backend/driver/main.ml", lines 309-335, characters 8-15\n          Called from Cmdliner_term.app.(fun) in file "cmdliner_term.ml", line 22, characters 19-24\n          Called from Cmdliner_eval.run_parser in file "cmdliner_eval.ml", line 41, characters 7-16\n'
+STYLED_ENVELOPE = b'cerberus: internal error, \x1b[31muncaught exception\x1b[m:\n' + OCAML_TRACE_TAIL
+PLAIN_ENVELOPE = b'cerberus: internal error, uncaught exception:\n' + OCAML_TRACE_TAIL
 
 
 def multi(*rows):
@@ -194,6 +202,25 @@ class ObservationTests(unittest.TestCase):
         for data in [multi(ERR, other), multi(other, ERR), multi(ERR, ERR), multi(ERR, OK)]:
             with self.assertRaises(ProtocolError): parse(data, status=0).refusal(b'model refused: ')
         with self.assertRaises(ProtocolError): parse(other, status=1).refusal(b'model refused: ')
+
+    def test_styled_diagnostics_are_rejected_specifically_never_normalized(self):
+        """Landing finding 2026-09-06: under TERM=xterm-256color Cmdliner styled the
+        crash envelope and 12 immaculate rows read INVALID through the unspecific
+        'engine exit 125 outside batch protocol'. An ESC byte in engine stderr is
+        now its own loud error (no stripping); the plain bytes decode as before."""
+        specific = r'^styled \(ANSI\) diagnostics in engine stderr; the harness must run engines with NO_COLOR=1 / TERM=dumb$'
+        for policy in ('immaculate', 'litmus', 'batch'):
+            with self.subTest(policy=policy), self.assertRaisesRegex(ProtocolError, specific):
+                parse(b'', STYLED_ENVELOPE, 125, policy)
+        with self.assertRaisesRegex(ProtocolError, specific):   # any stderr line, any status
+            parse(OK, b'warning: \x1b[33mstyled\x1b[m\n', 0)
+        with self.assertRaisesRegex(ProtocolError, specific):   # after a plain first line too
+            parse(b'', b'internal error: can_advance: x\n' + STYLED_ENVELOPE, 125, 'immaculate')
+        obs = parse(b'', PLAIN_ENVELOPE, 125, 'immaculate')
+        self.assertTrue(obs.internal)
+        self.assertEqual(obs.tokens(), ['INTERNAL_ERROR:{msg: "Division_by_zero"}'])
+        with self.assertRaisesRegex(ProtocolError, 'malformed stdout record'):   # stdout styling is a different defect
+            parse(b'\x1b[31mDefined\x1b[m {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}\n', b'', 0)
 
     def test_actual_shell_capture_retains_bytes_and_status(self):
         helper = Path(__file__).with_name('observations.sh')

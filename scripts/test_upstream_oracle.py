@@ -231,7 +231,11 @@ def main():
         sides = {'upstream': {'binary': Path(manifest['artifacts']['oracle']['path']),
                                'runtime': Path(manifest['artifacts']['runtime']['root'])},
                  'fork': {'binary': fork, 'runtime': ROOT / '_build/install/default'}}
-        envs = {'fork': dict(os.environ), 'upstream': dict(os.environ, **manifest['environment'])}
+        # Diagnostic-styling pin (as scripts/common.sh): Cmdliner styles the
+        # crash envelope from TERM/NO_COLOR, and both sides' stderr is decoded
+        # by the exact-envelope codec (2026-09-06 landing finding).
+        pin = {'NO_COLOR': '1', 'TERM': 'dumb'}
+        envs = {'fork': {**os.environ, **pin}, 'upstream': {**os.environ, **manifest['environment'], **pin}}
         exceptions = json.loads((ROOT / 'scripts/upstream_oracle_differences.json').read_text())['cases']
         cases = corpus(args.cn_root)
         if set(exceptions) - {name for name, kind, flags in cases}:
