@@ -1,0 +1,5 @@
+D1 ladder catalogue check: OK
+All existing lane IDs retain exactly their previous tier and command.
+Tier A and Tier B membership and commands are unchanged.
+C4 remains: ./scripts/test_ci_sweep.sh --all-suites
+Only added lane: C5 = python3 scripts/measure_csmith_cpu.py --output .tmp/csmith-cpu.tsv

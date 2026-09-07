@@ -1,0 +1,30 @@
+Release evidence: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/fuel-measure-cost/d1-fast
+RUN A1: ./scripts/test_unit.sh
+PASSED A1 (121.2s)
+RUN A2: ./scripts/test_exec.sh --check-baseline
+PASSED A2 (33.0s)
+RUN A3: ./scripts/test_exec.sh --check-baseline=scripts/exec_coverage_baseline.txt tests/coverage
+PASSED A3 (53.0s)
+RUN A4: ./scripts/test_exec.sh --check-baseline=scripts/exec_debug_baseline.txt tests/debug
+PASSED A4 (23.4s)
+RUN A4b: ./scripts/test_exec.sh --check-baseline=scripts/exec_float_baseline.txt tests/float
+PASSED A4b (18.7s)
+RUN A4c: ./scripts/test_bytes.sh
+PASSED A4c (3.2s)
+RUN A5: ./scripts/test_libc_exec.sh
+PASSED A5 (27.7s)
+RUN A6: ./scripts/test_multi_tu.sh
+PASSED A6 (2.5s)
+RUN A7: ./scripts/test_parse.sh
+PASSED A7 (10.7s)
+RUN A8: ./scripts/test_core.sh
+PASSED A8 (9.7s)
+RUN A9: ./scripts/test_elab.sh
+PASSED A9 (18.4s)
+RUN A10: ./scripts/test_libxml2_uri.sh
+PASSED A10 (21.1s)
+RUN A11: ./scripts/test_cn_coverage.sh --check-baseline
+PASSED A11 (70.0s)
+fast: passed; 13/13 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.

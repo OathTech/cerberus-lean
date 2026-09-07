@@ -1,0 +1,8 @@
+D1 live instrument check: 2026-09-07T20:19:40Z
+Source/header substitution: all 1669 staged inputs byte-equal to the lane recipe; header copies byte-equal.
+Derived corpus counts: {'small_arrays': 470, 'small_int_arith': 1192, 'small_mix': 7}
+List: exactly the staged input set in sorted order; first 470 are all small_arrays.
+Completed rows examined (derived): 36
+Complete GNU time records parsed (derived): {'oracle': 36, 'lean': 17}
+Every executed-side record examined parses; absent Lean records occur only on oracle-side refusals/skips.
+Live check only: not a whole-corpus completion or baseline acceptance claim.

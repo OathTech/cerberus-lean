@@ -1,0 +1,6 @@
+D1 acceptance OK: 1669 inputs, 3338 unique input/engine rows.
+TSV joint statuses equal all retained and printed lane statuses.
+TSV input set equals all 1669 committed baseline inputs.
+Derived tally: MATCH=1159 CERB_SKIP=499 TIMEOUT=11.
+Exactly 9 baseline TIMEOUT inputs preserved; only sa_csmith_369.c and sa_csmith_371.c changed MATCH -> TIMEOUT.
+No baseline source file changed; instrument export exit 0, underlying lane exit 1 (the two required known regressions).

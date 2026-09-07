@@ -1,0 +1,7 @@
+PLANT MODE: CPU instrument selftest; no semantics evidence
+CPU run directory: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/fuel-measure-cost/cpu-5_bot8y9
+CPU progress: 3/3 TIMEOUT sa_csmith_003
+SUMMARY: total=3 match=1 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=1 hang=0 cerb_skip=1 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+CPU export OK: 3 inputs, 6 engine rows; lane exit=0; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/fuel-measure-cost/selftest-l_armx4v/plant.tsv
+CPU instrument SELFTEST OK: exact rusage, real CPU stub, MATCH/CERB_SKIP/TIMEOUT, missing/malformed records refused

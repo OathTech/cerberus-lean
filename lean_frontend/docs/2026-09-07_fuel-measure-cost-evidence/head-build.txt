@@ -1,0 +1,9 @@
+Building cerberus (OCaml)...
+check_lem_sync: OK (src 977326511c1096013d9b1fa183500ad6487a23ac9c6edc3d3f2ff8bd11e266e0, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+(debug 0): constructValue_aux: is WRONG for union ==> always assigning the first member
+check_driver_fresh: recorded oracle stamp (bin a7ceeb66f4297d5210f3f417fa82b5dc238a303a10f134d494acc737e2f186c6, src 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda)
+Building cerberus-lean (Lean)...
+instead of
+  String → String
+Build completed successfully (273 jobs).
+check_driver_fresh: recorded lean stamp (bin 32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6, src 89a31871cc2e83121d7efb009c35aa6c50216b31f6dad88cee4688b0786edf28)
