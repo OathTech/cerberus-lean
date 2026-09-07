@@ -56,7 +56,9 @@ Landing-preparation commits on top:
 | `7d49efdeb` | raw-observation retention rule in `scripts/common.sh` + plants + the one content-pin move |
 | `0dae55102` | master plan revision 9, handoff order pointer, response §6 erratum |
 | `809189b71` | `test_gcc_capture.sh` success message (follow-up to the retention rule) |
-| (this record) | docs-only |
+| `6071050f7` | this record (§1–§9) |
+| `ded9efef8` | the TERM/NO_COLOR diagnostic-styling repair after the orchestrator's boundary finding (§10) |
+| (this update) | §10 appended, docs-only |
 
 ## 3. The drop set (derived from the source-branch blobs)
 
@@ -393,3 +395,181 @@ from the primary checkout's location. No `.md` links to a dropped path.
    fixed in `lean_frontend/CLAUDE.md`).
 6. The 14 pre-existing broken doc links above (disposition, not repair, is
    the question: the 12 historical ones are correct as they stand).
+
+## 10. Orchestrator boundary finding (2026-09-07): TERM-dependent oracle diagnostics — repaired in `ded9efef8`
+
+**Finding, verbatim** (orchestrator, independent battery on `6071050f7`;
+`./scripts/test_immaculate.sh` → rc=1):
+
+```
+DEVIATION: zd-z2m01-aligned-alloc-zero-zero expected [MATCH | L=CRASH] got [INVALID | L=CRASH]
+DEVIATION: zd-z2m01-aligned-alloc-zero expected [ORACLE_CRASH | L=UB:{ub: "DUMMY(align_alloc)", stderr: "", loc: "<12:28--12:47>"}] got [INVALID | L=UB:{ub: "DUMMY(align_alloc)", stderr: "", loc: "<12:28--12:47>"}]
+DEVIATION: g5-decode-multichar expected [MATCH | L=CRASH] got [INVALID | L=CRASH]
+```
+
+> "Retained raw evidence (the new retention rule worked):
+> `.tmp/scripts/observations/test_immaculate.RNqM2FI3dw/immaculate.CMnrVbDREw/*.oerr`.
+> The oracle stderr's first line is `cerberus: internal error, ^[[31muncaught
+> exception^[[m:` (ANSI SGR around "uncaught exception"), so `observations.py`'s
+> exact `OCAML_ENVELOPE` match fails and the codec reports `OBSERVATION ERROR:
+> engine exit 125 outside batch protocol` → INVALID."
+
+Reproduced here: the four cited captures each decode to `OBSERVATION ERROR:
+engine exit 125 outside batch protocol` under the pre-repair codec; the
+retained run has 13 `.oerr` files with an ESC byte and 12 INVALID rows (the
+13th, `zd-z2f04-closedir`, begins with a plain `internal error: can_advance:
+…` line and the old codec absorbed the styled envelope behind it into a
+CRASH message — same defect, silently). Probe on the lane's own invocation
+shape (`opam exec --switch=. -- _build/default/backend/driver/main.exe
+--runtime=_build/install/default --exec --batch --mode=exhaustive
+tests/immaculate/libc/zd-z2m01-aligned-alloc-zero-zero.c`, both streams to
+files), verbatim:
+
+```
+TERM=xterm-256color                status=125 escapes=1 first=cerberus: internal error, ^[[31muncaught exception^[[m:
+TERM=dumb                          status=125 escapes=0 first=cerberus: internal error, uncaught exception:
+NO_COLOR=1 TERM=xterm-256color     status=125 escapes=0 first=cerberus: internal error, uncaught exception:
+TERM unset                         status=125 escapes=0 first=cerberus: internal error, uncaught exception:
+```
+
+**Root cause (measured):** Cmdliner 2.1.1 (`_opam/lib/cmdliner/META`;
+`_opam/lib/cmdliner/cmdliner_base.ml:131-138`, `styler'`: `NO_COLOR`
+non-empty → Plain; `TERM=dumb` or unset → Plain; any other `TERM` → Ansi)
+styles its diagnostics — the uncaught-exception envelope is printed by
+`cmdliner_msg.ml:103-106` with `Fmt.ereason "uncaught exception"` — from the
+ENVIRONMENT, independent of isatty. Codex's recorded 32/32 ran in a sandbox
+without `TERM`; the orchestrator's battery inherited `TERM=xterm-256color`
+from an interactive shell: an environment-dependent gate (F4 class).
+`Cerb_colour` (`util/cerb_colour.ml:34-52`) is isatty-based and every
+capture redirects both streams, so it was not the culprit; it is pinned in
+scope below anyway.
+
+**Repair (`ded9efef8`, one commit):**
+
+1. `scripts/common.sh` exports `NO_COLOR=1` and `TERM=dumb` at the top,
+   before any engine/oracle/tool invocation (comment cites this finding).
+   Pass-through confirmed by reading the invocation paths:
+   `observation_capture` runs `"$@"` in place; `CAPPED_TEST=(env
+   CERB_MEM_MAX=… scripts/capped)` and `capped` only source `env.sh` (opam
+   switch + git redirects, no TERM); `opam exec` and `timeout` inherit; the
+   gcc lane's `setarch -R /usr/bin/env -i bash -c …` applies to the compiled
+   PROGRAM only (`test_gcc_oracle.sh:391,402`) and is untouched.
+2. `scripts/observations.py`: an ESC byte (0x1b) anywhere in engine stderr
+   raises `ProtocolError('styled (ANSI) diagnostics in engine stderr; the
+   harness must run engines with NO_COLOR=1 / TERM=dumb')`, checked after
+   the kill/timeout classifications and before any grammar match. Nothing
+   is stripped or normalized.
+3. `scripts/release.py`: the same pin in every lane's environment (the
+   Python lanes B9/B10 do not source `common.sh`); ambient `TERM` /
+   `NO_COLOR` recorded in the report's `environment` block.
+   `scripts/test_upstream_oracle.py` and `scripts/run_failure_probes.py`:
+   the same pin on their direct engine invocations (both decode stderr).
+4. Plants. `scripts/test_observations.py`
+   `test_styled_diagnostics_are_rejected_specifically_never_normalized`:
+   the retained `.oerr` bytes (3,173 bytes, 25-line trace) as fixture →
+   the specific error under `immaculate` / `litmus` / `batch`, behind a
+   plain `internal error:` first line, and for any styled stderr line at
+   status 0; the plain form decodes to
+   `INTERNAL_ERROR:{msg: "Division_by_zero"}`; styled stdout stays a
+   malformed record. Negative form (pre-repair `observations.py` swapped
+   in, then restored byte-identical): `AssertionError: "^styled \(ANSI\)
+   diagnostics …$" does not match "engine exit 125 outside batch protocol"`
+   (×3), `FAILED`. `scripts/test_observation_lanes.py`: immaculate variant
+   `ambient-term` (the real lane with `TERM=xterm-256color` and no
+   `NO_COLOR` in its ambient environment), expected to accept.
+5. Content pin `scripts/common.sh` (`--emit` route, one line):
+   `100755 71f184f3eeb16515a828e931e669f39287a5969b9f38e47d97f29b3fc45b290a`
+   → `100755 77f5ab3a841446962926185d3db8c0e3853fada26ff7708fdd3b47dcab0c3413`;
+   no other pin moved (76 lines = live emit; `--numstat 1 1`).
+
+**Exposure audit of oracle-stderr consumers (step 4):**
+
+| Form (grammar / consumer) | Printer | Styled by | After the pin, under the harness | Probe |
+|---|---|---|---|---|
+| `cerberus: internal error, uncaught exception:` + exception + trace (`OCAML_ENVELOPE` exact match, `FATAL`; the immaculate/litmus CRASH decode) | Cmdliner (`cmdliner_msg.ml:103-106`) | `TERM` / `NO_COLOR` (environment) | plain | the four-row table above |
+| Cmdliner usage/parse errors (`Usage: …`, `cerberus: unknown option …`) — status-consumed only (codec: exit outside 0/1; `test_exec.sh`: CERB_SKIP by status) | Cmdliner (`Fmt.code`/`ereason`/`missing`) | `TERM` / `NO_COLOR` | plain | `main.exe --no-such-option` under `TERM=xterm-256color`: `cerberus: ^[[31munknown^[[m option ^[[01m--no-such-option^[[m` |
+| `internal error: <msg>` first line (`ORACLE_INTERNAL`; `FATAL`; `FUEL_RECORD` `internal error: lem: fuel exhausted`) | `Cerb_debug.error` (`util/cerb_debug.ml:23`, `Cerb_colour.ansi_format ~err:true [Red]`) | isatty(stdout) AND isatty(stderr) | plain — every capture redirects both streams | retained `zd-z2f04-closedir.oerr` under the ambient `TERM=xterm-256color`: line 1 `internal error: can_advance: …` has no ESC; the ESC is on line 2, the Cmdliner envelope |
+| `unsupported: <msg>`, `warning: …`, `(debug N): …` | `Cerb_debug` (`ansi_format`, `err=false` → isatty(stdout) only) | isatty | plain under captures; not grammar-consumed | source (`util/cerb_debug.ml:44-54`) |
+| `CERB_FRESH_FLOOR_VIOLATION …` (`test_exec.sh` CERB_FLOOR substring class) | `prerr_endline` (`util/cerb_fresh.ml:66`, `backend/common/ail_sym_hwm.ml:322`) | never | plain | source (plain `Printf.sprintf` + `prerr_endline`) |
+| `Fatal error: exception …` (`FATAL`) | OCaml runtime default handler | never | plain | source |
+| `PANIC at …` (`LEAN_PANIC`, `FATAL`, `IMMACULATE_PANICS`) | Lean runtime | never | plain | retained `.lerr` files under the ambient `TERM`: `escapes=0` (g2-memcmp-uninit, g4-bswap64-overflow, g5-decode-multichar, offsetof-union-member) |
+| `capped: OOM-KILLED …` (`CAP_OOM`) | `scripts/capped` | never | plain | source |
+| verdict lines and `Error {msg: …}` refusals (cn_coverage/verify/ci_sweep/multi_tu/gcc/exec) | engine stdout protocol | n/a | unchanged | — |
+
+Consumers covered: `observations.py` (`observation_tokens` / `compare` in
+exec, multi_tu, cn_coverage, verify, ci_sweep, gcc, immaculate, speclab*,
+libc_exec, libxml2*, bytes), `test_exec.sh` CERB_FLOOR/CERB_SKIP,
+`test_upstream_oracle.py` (codec), `run_failure_probes.py`. Argument: after
+the pin every engine invocation runs with `NO_COLOR=1 TERM=dumb` and both
+streams redirected, so no consumed form is styled; if one ever is, the
+codec's ESC rejection names it instead of mis-classifying. Not pinned:
+`build_provider_smoke.py` / `build_independent_oracle.py` (build logs are
+hashed, never grammar-decoded; dune's own styling is isatty-gated).
+
+**Gates on `ded9efef8`**, `TERM=xterm-256color` exported and `NO_COLOR`
+unset in the shell (the point of the exercise), run while the
+orchestrator's own re-verify battery (`/home/dev/projects/cerberus-lean-proj/.tmp/vf-reverify.sh`,
+same worktree; in its libxml2 → observation-lanes phase, gcc last) was
+still running — the overlap is recorded, not hidden (32 cores; load 13 at
+start). Verbatim:
+
+```
+=== regate at HEAD=ded9efef8833c95dd21a293830af7f1ab9179d94 start 2026-09-07T01:19:59Z; ambient TERM=xterm-256color NO_COLOR=unset; dirty=0; load=10.32 6.15 3.72; concurrent: orchestrator battery pid 1053920 (/bin/bash ./scripts/test_libxml2.sh)
+=== ./scripts/test_unit.sh
+Total: 6 passed, 0 failed
+Ran 19 tests in 0.064s
+check_fork_content: OK — 76 source files content/mode-pinned
+check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 22 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+check_fixture_freeze: OK (16 fixture files match the pinned manifest; name set exact)
+test_renumber_plants: OK (12 plants: refusals refuse, admits admit with declared class)
+=== test_unit.sh exit=0 2026-09-07T01:22:01Z
+=== ./scripts/test_immaculate.sh
+  MATCH          g5-decode-multichar   O[CRASH] L[CRASH]
+  MATCH          g2-memcmp-uninit      O[CRASH] L[CRASH]
+  MATCH          zd-z2f04-closedir     O[CRASH] L[CRASH]
+  ORACLE_CRASH   zd-z2m01-aligned-alloc-zero  O[CRASH] L[UB:{ub: "DUMMY(align_alloc)", stderr: "", loc: "<12:28--12:47>"}]
+  MATCH          zd-z2m01-aligned-alloc-zero-zero  O[CRASH] L[CRASH]
+OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip DIFF, R3 s4b-memcmp-hugesize ORACLE_CRASH — VALIDATION.md 'ISO-fix register' — and the in-Lean probes g6 TRIPWIRE / illtyped-store KILL).
+=== test_immaculate.sh exit=0 2026-09-07T01:23:20Z
+=== python3 scripts/test_observation_lanes.py --lane immaculate
+PLANT OK   immaculate: control
+PLANT OK   immaculate: bytes
+PLANT OK   immaculate: lean-exit2
+PLANT OK   immaculate: descendant-oom
+PLANT OK   immaculate: oracle-exit2
+PLANT OK   immaculate: crash-fuel
+PLANT OK   immaculate: crash-garbage
+PLANT OK   immaculate: crash-other
+PLANT OK   immaculate: ambient-term
+observation lane plants: 9/9 passed
+=== obs-lanes exit=0 2026-09-07T01:42:37Z
+=== release.py --mode fast (alone) at HEAD=ded9efef8833c95dd21a293830af7f1ab9179d94 start 2026-09-07T01:42:38Z; ambient TERM=xterm-256color NO_COLOR=unset; dirty=0; load=8.12 12.85 12.35; other dune/lane processes: 0
+fast: passed; 13/13 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+=== release.py exit=0 2026-09-07T01:49:26Z; dirty=0; load=8.75 9.17 10.69
+report.json environment (ambient, recorded): TERM=xterm-256color NO_COLOR=None; lanes: A1 passed 127.3s, A2 passed 28.5s, A3 passed 55.8s, A4 passed 23.6s, A4b passed 19.6s, A4c passed 3.5s, A5 passed 25.5s, A6 passed 2.3s, A7 passed 10.0s, A8 passed 9.4s, A9 passed 17.6s, A10 passed 19.8s, A11 passed 62.8s
+```
+
+Notes. (1) A first `release.py --mode fast` on this head (01:23:20–01:29:31,
+while the orchestrator's battery was in its observation-lanes phase in the
+same worktree) ended `fast: failed; 10/13 selected commands completed
+successfully.`: A5 `test_libc_exec.sh`, A7 `test_parse.sh` and A8
+`test_core.sh` each died after 0.13 s in `build_cerberus` with dune's
+`Error: Another Dune instance is currently running. Aborting...` — the two
+batteries share this worktree's `_build/` and dune's lock (the other
+battery's lanes reach dune through the `SKIP_BUILD=1` freshness checks
+`tools/check_lem_sync.sh` / `tools/check_driver_fresh.sh` and their build
+steps), and `build_cerberus` fails closed there rather than proceeding on a
+possibly half-built tree — correct behaviour, not a lane result; their run
+directories were kept and their paths printed (the §6 retention rule,
+witnessed). That report is kept aside at `.tmp/landing/release-fast-2/`;
+`test_parse.sh` alone under the same `TERM` passed (`ALL PASSED`, rc=0); the
+standalone rerun above, with no other dune or lane process on the box, is
+the gate. (2) The `Ran 19 tests` line is `test_observations.py` inside
+`test_unit.sh` (18 + the new styled-diagnostics test). (3) The orchestrator's
+own battery on `6071050f7` is superseded by this head; its retained
+observation directories under `.tmp/scripts/observations/` (18 at the time
+of writing) are theirs to inspect or delete. (4) The earlier record
+commits' claim that `common.sh` moved one pin still holds per commit; the
+pin has now moved twice on this branch (`dc3bf76b… → 71f184f3…` in
+`7d49efdeb`, `71f184f3… → 77f5ab3a…` in `ded9efef8`).
