@@ -180,11 +180,16 @@ the fork content pins (`[source-content]`), the release runner
 | 8 | ONLY THEN: scoped SC concurrency integration | Cerberus | The [charter](2026-09-06_concurrency-integration-charter.md) stays a PROPOSAL until step 7 is met; the merge comes through the orchestrator's pre-merge audit + per-merge sign-off; `arc/validation-foundations-concurrency` is portable commits for this step, not a landing candidate. §5 below is the exit checklist when the step is reached. |
 | Submission track (L7) | Declare consolidation, manual and patch series | Lem + Cerberus | In parallel with steps 5–7; failure vocabulary from step 2. |
 
-**Current handoff (revision 9):** land the validation-foundations candidate
-`arc/validation-foundations-land` through the orchestrator's full battery,
-the delta audit of `scripts/capped` / `scripts/common.sh` /
-`scripts/test_exec.sh`, and per-merge sign-off
-([record](2026-09-06_validation-foundations-landing-prep.md)); then step 1.
+**Current handoff (revision 9, updated 2026-09-07):** the validation-
+foundations candidate LANDED — ff-merge `arc/validation-foundations-land`
+→ `mdd/cerberus-lean` `a3b5d169d` on the orchestrator's full battery
+([record §11](2026-09-06_validation-foundations-landing-prep.md)) and the
+operator's per-merge sign-off ([USER 2026-09-07]: "(1) codex is working in
+other trees, this is safe, (2) agree, audit done, (3) go ahead and merge").
+Next: step 1 (the risk-map baseline by an independent auditor). Open
+housekeeping: the Codex worktree's scratch and nested worktree
+registrations, and the fate of the archive-bearing branch
+`arc/validation-foundations` (operator's call).
 
 **Current handoff (revision 8, retained as history; its "scoped concurrency
 integration remains the recommended next implementation charter" is

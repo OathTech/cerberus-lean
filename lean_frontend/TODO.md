@@ -127,6 +127,18 @@ owned and hands off; this roadmap does not authorize operating it.
   — it is key order today) would let the differential lanes assert the
   invariant on every loaded program, with a theorem `check = true → Acyclic`.
   S–M.
+- **Two csmith corpus rows MATCH→TIMEOUT at the lane's 15 s budget
+  (class (b) PENDING; record `docs/2026-09-06_csmith-sweep-post-p0.md`).**
+  `sa_csmith_369.c`, `sa_csmith_371.c` (`tests/csmith/small_arrays/`):
+  cpu-bound at 15 s (`cpu 14.99s of 15.00s wall`), MATCH at 90 s. Not a
+  semantic discrepancy and not the P0 instrument (a timeout is classified
+  before any verdict is compared); the lane had not been fully re-run since
+  its 2026-08-22 baseline, so the slowdown lies anywhere in that window —
+  the eager measures above are the leading hypothesis. MOVER: the whole-
+  csmith-lane timing (this section's C-P1 item) on the merged head vs a
+  pre-fuel head (`928aa1e76` C3 / `753644005` C1); if the measures are the
+  cause → the cheaper sufficient measure below / lem L8; else bisect. The
+  baseline is NOT re-recorded (TIMEOUT is never agreement).
 - **The measures' eager cost (the F-C3-4 mechanism, second instance).**
   `CerbTagsWf.envBound ambient ty` traverses the whole tag environment
   (`defsWeight`: every entry's member-type sizes) on EVERY call of
