@@ -162,3 +162,31 @@ submission criterion, L7).
 - Ephemeral: `.review-evidence/2026-09-05/` (6.8 MB of the audit's
   scratch, container root) is deleted once this branch is merged; the
   durable evidence is the committed directory.
+
+## 6. Erratum (2026-09-06): the landing lost 12 evidence logs
+
+[AGENT orchestrator], reported to the operator 2026-09-06. Facts (each
+checked against the repository, 2026-09-06):
+
+- The repository `.gitignore` line 59, `*.log` (in the "Coq generated
+  files" block), excluded the 12 `.log` files of
+  `2026-09-05_whole-project-audit-evidence/` from `git add` when the audit
+  was landed.
+- The orchestrator verified `sha256sum -c SHA256SUMS` against the WORKTREE
+  directory (22/22 OK) and not against the index.
+- The landing commit `9635592ca` therefore claims "SHA256SUMS verified at
+  landing (22/22 OK)" for a commit that carries 10 of the 22 hashed files
+  (its `SHA256SUMS` lists 22 files, 12 of them `.log`; the commit's
+  evidence directory holds 11 files, none of them `.log`).
+- The worktree removal after the merge destroyed the untracked logs.
+- The Codex agent's disposition on the validation-foundations branch —
+  `README.md`, `artifact-inventory.json` and `SHA256SUMS.historical` in
+  that directory (the original 22 checksums preserved, the twelve missing
+  logs named, nothing recreated or relabelled) — is the correct one.
+
+Process fix, binding at every landing: verify evidence checksums against
+`git ls-files` (the index/commit), never against the working directory
+alone; and never `git add` a directory that contains gitignored evidence
+without `-f` or renaming the files out of the ignored pattern. The
+validation-foundations landing candidate applies it
+([landing record](2026-09-06_validation-foundations-landing-prep.md)).

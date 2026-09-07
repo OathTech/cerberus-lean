@@ -1,5 +1,19 @@
 # Orchestrator handoff — cerberus-lean + lem-lean, state and what's next (2026-09-05, evening)
 
+**Order pointer, 2026-09-06 [AGENT orchestrator-directed]:** the work order is
+[master plan revision 9 §3](2026-09-05_master-plan.md) — the response §4
+order, reconfirmed [USER 2026-09-06] ("we should stabilize the core semantics before this, so we should revert to our previous ordering"): 1 risk-map baseline (independent
+auditor, baseline 2026-08-31) → 2 pure-failure correspondence design note →
+3 lem L1 ∥ cerberus C-TF1 → 4 C-Z4 remainder → 5 bytes (L4) + F7 instances +
+fuel residue → 6 consumer adoption exit → 7 risk map repeat → fresh-noodler
+exit test → stable-profile claim → 8 ONLY THEN scoped SC concurrency (the
+charter stays a proposal; the merge comes through the orchestrator's audit +
+per-merge sign-off); submission track L7 in parallel with 5–7. The
+validation-foundations landing candidate is `arc/validation-foundations-land`
+([landing record](2026-09-06_validation-foundations-landing-prep.md)); the
+"Current continuation" note below is superseded where it points at SC
+integration as the next arc.
+
 **Current continuation, 2026-09-06 [AGENT]:** validation foundations has a
 corrected candidate after the [fresh document review](2026-09-06_validation-foundations-document-review.md).
 Start there, then the [audit repair record](2026-09-06_validation-foundations-audit-repairs.md),

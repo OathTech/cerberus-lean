@@ -1,5 +1,18 @@
 # Master plan — cerberus-lean and lem-lean
 
+**Revision 9, 2026-09-06 [AGENT orchestrator-directed].** Landing preparation
+of the validation-foundations arc
+([record](2026-09-06_validation-foundations-landing-prep.md)). Two changes,
+both operator-ruled [USER 2026-09-06]: (1) a new §0 "Operator rulings carried
+verbatim" collects every [USER] ruling this plan rests on, so that no revision
+can drop them again ("Re master plan revisions dropping rulings - yes, this
+should be retained"); (2) §3 "Priority order" is REPLACED by the response §4
+order — this order IS the response §4 order, reconfirmed [USER 2026-09-06]
+("we should stabilize the core semantics before this, so we should revert to our previous ordering") — updated only for what is now done. Revision 8's factual state
+sections (§1, §2, §4–§8) are kept as they were; nothing below is deleted; the
+concurrency integration charter stays a proposal, sequenced after the
+stable-profile claim (§3 step 8).
+
 **Revision 8, 2026-09-06.** Updated by Codex [AGENT] at the operator's
 request following the
 [customer-readiness assessment](2026-09-05_customer-readiness-assessment.md).
@@ -13,9 +26,11 @@ candidate completed its full battery, cold provider/failure work and affected
 reporting measurements. Discuss landing before scoped SC integration.
 Revision 6 recorded the first audit's hold; revision 5 recorded the original
 delivery. Those dated measurements remain preserved.
-This revision preserves the adopted decision boundaries. Revision 3 superseded revision 2's
-sequencing and proposed release criteria, including the replacement order in
-[the audit response, section 4](2026-09-05_whole-project-audit-response.md).
+This revision preserves the adopted decision boundaries. Revisions 3–8 had
+superseded revision 2's sequencing (the order in
+[the audit response, section 4](2026-09-05_whole-project-audit-response.md));
+revision 9 withdraws that: the §3 order IS the response §4 order, reconfirmed
+[USER 2026-09-06] ("we should stabilize the core semantics before this, so we should revert to our previous ordering").
 Historical evidence and [USER] rulings remain in those records. Agent
 recommendations below are not new operator rulings.
 
@@ -28,12 +43,58 @@ reviewability after the relevant semantics and interfaces settle.
 The adopted first execution charter is
 [Validation foundations](2026-09-05_validation-foundations-charter.md).
 Its [original delivery record](2026-09-06_validation-foundations-delivery.md)
-supplies the historical acceptance table and measurements. The next proposed arc is
-[scoped concurrency integration](2026-09-06_concurrency-integration-charter.md).
+supplies the historical acceptance table and measurements. The [scoped concurrency integration charter](2026-09-06_concurrency-integration-charter.md)
+remains a PROPOSAL, sequenced at §3 step 8 (after the stable-profile claim)
+per [USER 2026-09-06].
 The first audit, repairing-agent second pass and fresh document review are
 complete. The failure design, next charter and landing remain decisions for
 the end-of-charter discussion. The latest conditional landing authorization
 and the reason for holding the merge are recorded in the document review.
+
+## 0. Operator rulings carried verbatim
+
+Added in revision 9 so that the rulings this plan rests on travel with it
+([USER 2026-09-06]: "Re master plan revisions dropping rulings - yes, this
+should be retained"). Quotes are verbatim; interpretations are [AGENT] and
+live in the cited records.
+
+**[USER 2026-09-05]** — the whole-project audit rulings, asked as four
+decisions plus two yes/no items, quoted from
+[the audit response §3](2026-09-05_whole-project-audit-response.md):
+
+> "(1) agree, the aim should be to provide the most faithful C
+> semantics, per the intent of the authors, (2) unsure, this feels like
+> it does touch the trust surface because it increases the gap between
+> 'obviously right' and what Lean does. Is there a route where we prove
+> the two are equivalent? (3) agree on the first, and the second depends
+> on how the refined-cerberus project evolves, (4) I think you're right,
+> the matrix may come later but for now we mostly inherit trust from
+> Cerberus-upstream
+>
+> yes on the two other items"
+
+Interpretation [AGENT], response §3 items 1–5: F1 is read kind-1 (the
+authors' intent is the referent); P2 pure-failure lifting is NOT authorized
+as proposed — the correspondence route (mirror stays the reference; checked
+twin behind a per-function kernel-checked connection theorem) with a design
+note before any dispatch; F9 consumer adoption IS a release exit; F10
+release-profile statement yes, standards matrix later; land the audit and
+run the P0 instrument slice.
+
+**[USER 2026-09-06]** — the validation-foundations landing rulings (evidence
+archives, concurrency ordering, retained rulings):
+
+> "Agree on all points, and particularly on cleaning up the evidence archives. These should not be git committed, and will not be pushed. I don't actually hold strong value in such data which could be recreated, so I am fine dropping large files like this. The important thing is that runs can be reconstructed. Re ordering of concurrency, I think we should stabilize the core semantics before this, so we should revert to our previous ordering. Re master plan revisions dropping rulings - yes, this should be retained."
+
+Consequences: the evidence archives are dropped from the repository with
+identities retained and runs reconstructible
+([landing record](2026-09-06_validation-foundations-landing-prep.md)); §3 is
+the response §4 order again; this §0 exists.
+
+**[USER], earlier, already verbatim in this file:** the legacy-run
+instruction and the execution instruction (§1); the gcc-oracle gate ruling
+[USER 2026-09-02] and the Q1b tolerance [USER 2026-08-31] live in
+`scripts/LADDER.md` / `scripts/fork_drift_manifest.txt` respectively.
 
 ## 1. Starting point and ownership
 
@@ -89,23 +150,45 @@ evidence. Preserve the aims and exception classes in
 
 ## 3. Priority order
 
-This is the default work order. Dependencies are the actual blockers:
-concurrency must not wait for an unrelated large failure transform, byte
-migration or cosmetic refactor. Owners name repositories; this table does
-not dispatch additional agents.
+This order IS the [audit response §4](2026-09-05_whole-project-audit-response.md)
+order, reconfirmed [USER 2026-09-06]: "we should stabilize the core semantics before this, so we should revert to our previous ordering". Revisions 3–8 had moved scoped SC
+concurrency ahead of the stability work; that reordering is withdrawn.
+Dependencies remain the actual blockers; owners name repositories; this
+table does not dispatch agents.
 
-| Priority | Deliverable | Owner | Dependencies and exit |
+**DONE — do not reschedule:** P0 instruments (landed `0a62dd7f7`: F4 locale +
+fail-open + order-only manifest re-sort + stale metadata, the F2 checker, the
+F3 Defined-line widening). On the validation-foundations landing candidate
+(`arc/validation-foundations-land`, [record](2026-09-06_validation-foundations-landing-prep.md)):
+the observation codec and complete-capture callers
+([contract](2026-09-05_observation-contract.md)), the F5 pristine-oracle lane
+(Tier B row 10, [record](2026-09-06_independent-oracle-and-fork-pins.md)),
+the fork content pins (`[source-content]`), the release runner
+(`scripts/release.py`, membership from `scripts/LADDER.md`), the
+[supported profile](2026-09-06_supported-profile.md) and the
+[failure census](2026-09-06_failure-census-and-correspondence.md).
+
+| # | Deliverable | Owner | Dependencies and exit |
 |---|---|---|---|
-| 1 | Correct the release profile and risk baseline | Cerberus | Profile/TODO reconciled and compiler-range census regenerated on the cold candidate. Review the renewed G6/G7 evidence; historical measurements remain preserved. |
-| 2 | Repair and revalidate the observation/release instruments | Cerberus | VF-01–05 and VF-09–11 repaired, including a further cancellation-window correction; full affected gates and adversaries completed. Obtain second-review acceptance of G1/G2/G4 and renewed scoped G3/G5 evidence before SC integration. |
-| 3 | Failure design decision and bounded repair preparation | Lem + Cerberus | Probes reproduced and corrected census published; use its compiler-range attribution and explicit unresolved sites. Review the strict-result proposal, including stable-failure fuel quantifiers, before implementation. A concrete concurrency-theorem dependency may require a bounded failure slice; no unrelated broad transform blocks integration. |
-| 4 | Repair and land scoped concurrency | Cerberus | Relevant priority-2 instruments and section 5; exact rebased candidate meets domain, compatibility, proof and test obligations. |
-| 5 | Byte, semantic-state and remaining fuel contracts | Lem + Cerberus | Relevant designs; configuration follows concurrency. No unguarded known wrong answer inside the supported profile. |
-| 6 | Consumer adoption, clean build, measured cost | Providers + consumer's agent | Named integration checkpoints; exact candidate adopted with proofs through, reproducible bootstrap and CPU/RSS/completion evidence. |
-| 7 | Final risk review and fresh adversarial exercise | Cerberus + Lem | Instruments, semantics and customer candidate settled; section 8 exits met. |
-| Submission track | Declare consolidation, manual and patch series | Lem + Cerberus | Failure vocabulary reviewed; relevant interfaces settled; compatibility evidence and upstream-reviewable presentation. |
+| 1 | Risk-map BASELINE by an independent auditor — now | Cerberus (independent auditor, not the implementing agents) | Baseline point 2026-08-31 (the semantics-first split); per trust surface: moved/unmoved · evidence · residual risk · mover. Repeated at step 7. |
+| 2 | Pure-failure CORRESPONDENCE design note | Lem + Cerberus | Input: the census's proposal. The mirror stays the reference model; a checked twin sits behind a per-function kernel-checked connection theorem (the fuel-sufficiency pattern). Reviewed WITH the operator before any dispatch. It fixes the failure vocabulary for step 3. |
+| 3 | lem L1 declare consolidation ∥ cerberus C-TF1 monadic seam slice | Lem ∥ Cerberus | After the step-2 note fixes the failure vocabulary. |
+| 4 | C-Z4 remainder | Cerberus | Probe integration, ci_sweep re-record, cerb_skip ceiling, libc-body UB-loc mover, Z2-J fixes, R3 marker, the owed tray drafts, the batchEscape per-byte fix. |
+| 5 | Bytes (L4) + F7 instances + the fuel residue | Lem + Cerberus | F7: hash-minted symbols, enum registry, digest; the eight fuel-residue rows (§1). Submission track in parallel. |
+| 6 | Consumer adoption exit | refined-cerberus's agent + providers | refined-cerberus re-pin + proofs through against the current interface (F9 is a release exit, [USER 2026-09-05], §0). |
+| 7 | Risk map REPEAT → fresh-noodler exit test → stable-profile claim | Cerberus + Lem | Instruments and semantics settled; §8 exits met. |
+| 8 | ONLY THEN: scoped SC concurrency integration | Cerberus | The [charter](2026-09-06_concurrency-integration-charter.md) stays a PROPOSAL until step 7 is met; the merge comes through the orchestrator's pre-merge audit + per-merge sign-off; `arc/validation-foundations-concurrency` is portable commits for this step, not a landing candidate. §5 below is the exit checklist when the step is reached. |
+| Submission track (L7) | Declare consolidation, manual and patch series | Lem + Cerberus | In parallel with steps 5–7; failure vocabulary from step 2. |
 
-**Current handoff:** decide landing of the corrected validation-foundations
+**Current handoff (revision 9):** land the validation-foundations candidate
+`arc/validation-foundations-land` through the orchestrator's full battery,
+the delta audit of `scripts/capped` / `scripts/common.sh` /
+`scripts/test_exec.sh`, and per-merge sign-off
+([record](2026-09-06_validation-foundations-landing-prep.md)); then step 1.
+
+**Current handoff (revision 8, retained as history; its "scoped concurrency
+integration remains the recommended next implementation charter" is
+withdrawn by revision 9):** decide landing of the corrected validation-foundations
 candidate following the fresh document review. Its functional primary is `de9f6d3612232d581622afcdf0b23cdaf31fa09d`; the older feature-base
 instrument companion is `86a2aea547804b78eb7f1eae633bb9c24c713b7f`. The
 [repair record](2026-09-06_validation-foundations-audit-repairs.md) supplies
