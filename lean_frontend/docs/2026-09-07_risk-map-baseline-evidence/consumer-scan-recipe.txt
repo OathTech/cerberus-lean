@@ -1,0 +1,53 @@
+# Run with python3 from the audited worktree after sourcing scripts/env.sh.
+from pathlib import Path
+import subprocess,re,collections
+repo=Path('/home/dev/projects/cerberus-lean-proj/refined-cerberus')
+paths=subprocess.check_output(['git','-C',str(repo),'ls-files','*.lean'],text=True).splitlines()
+def mask(s):
+ out=list(s);i=0;depth=0;string=False;line=False
+ while i<len(s):
+  if line:
+   if s[i]=='\n':line=False
+   else:out[i]=' '
+   i+=1;continue
+  if depth:
+   if s.startswith('/-',i):out[i:i+2]='  ';depth+=1;i+=2
+   elif s.startswith('-/',i):out[i:i+2]='  ';depth-=1;i+=2
+   else:
+    if s[i]!='\n':out[i]=' '
+    i+=1
+   continue
+  if string:
+   if s[i]=='\\':
+    out[i]=' ';i+=1
+    if i<len(s):out[i]=' ';i+=1
+   elif s[i]=='"':out[i]=' ';string=False;i+=1
+   else:
+    if s[i]!='\n':out[i]=' '
+    i+=1
+   continue
+  if s.startswith('--',i):out[i:i+2]='  ';line=True;i+=2
+  elif s.startswith('/-',i):out[i:i+2]='  ';depth=1;i+=2
+  elif s[i]=='"':out[i]=' ';string=True;i+=1
+  else:i+=1
+ assert not depth and not string
+ return ''.join(out)
+imports=collections.defaultdict(list);uses=collections.defaultdict(list)
+prefixes="CerbFuel CerbGlobal CerbMem CerbND CerbTagsWf CerbTags CerbCall CerbUtils CerberusImpl CerberusFresh Core_aux_lemMeasureProofs Core_eval_lemMeasureProofs Core_reduction_lemMeasureProofs Core_aux Core_eval Core_reduction Core_run_aux Pmap Fmap".split()
+qualified=r"(?<![\w'.!?])(?:"+"|".join(prefixes)+r")\.[A-Za-z_][A-Za-z_0-9'.!?]*"
+names=r"(?<![\w'.!?])(?:LemFuel|drive|driver2|initial_driver_state|step_ctx|step_eval_pexpr|nd_bind|liftND|get_ctx|subst_sym_pexpr|update_env_aux|killM|lemDefaultFuel)(?![\w'.!?])"
+for rel in paths:
+ s=mask((repo/rel).read_text())
+ for i,line in enumerate(s.splitlines(),1):
+  if re.match(r'^\s*import\s+',line):
+   for mod in line.split()[1:]:imports[mod].append(f'{rel}:{i}')
+  for m in re.finditer(qualified+'|'+names,line):uses[m.group()].append(f'{rel}:{i}')
+print('METHOD: git ls-files *.lean in consumer main; independent nested-comment/string mask; identifier regex preserves trailing ?/!; source locations retained; no worktrees or .lake.')
+print('DERIVED tracked source files='+str(len(paths)))
+print('consumer HEAD='+subprocess.check_output(['git','-C',str(repo),'rev-parse','HEAD'],text=True).strip())
+print('IMPORTS (provider modules only)')
+for k,v in sorted(imports.items()):
+ if k in prefixes or k in ['Core_run_aux','Driver','LemLibPmapLaws','LemLibTheorems']:print(k+'\t'+','.join(v))
+print('LEXICAL CONSTANT USES (DERIVED occurrence counts; first 5 locations each; not a compiler-resolved import graph)')
+for k,v in sorted(uses.items()):print(k+'\t'+str(len(v))+'\t'+','.join(v[:5]))
+print('RETIRED LIVE REFERENCES: '+repr({k:v for k,v in uses.items() if k in ['CerbFuel.driverFuel','CerbND.drive_lemFuel','lemDefaultFuel','CerbND.ndDefaultFuel']}))

@@ -1,0 +1,60 @@
+# Run from the audited worktree after sourcing the required env and exporting DUNE_CACHE=disabled CERB_MEM_MAX=48G.
+# python3 lean_frontend/docs/2026-09-07_risk-map-baseline-evidence/direct-run-recipe.txt
+import hashlib, json, os, re, shlex, subprocess, sys, time
+from pathlib import Path
+sys.path.insert(0, str(Path("scripts").resolve()))
+from process_scope import ProcessScope
+root=Path.cwd()
+evidence=root/"lean_frontend/docs/2026-09-07_risk-map-baseline-evidence"
+scratch=root/".tmp/risk-map-direct"
+cases=[
+ ("unit-C",["bash","-c","export LC_ALL=C TERM=dumb; exec ./scripts/test_unit.sh"],root,{}),
+ ("unit-UTF8",["bash","-c","export LC_ALL=en_US.UTF-8 TERM=xterm-256color; exec ./scripts/test_unit.sh"],root,{}),
+ ("exec-minimal",["./scripts/test_exec.sh","--check-baseline"],root,{}),
+ ("exec-coverage",["./scripts/test_exec.sh","--check-baseline=scripts/exec_coverage_baseline.txt","tests/coverage"],root,{}),
+ ("exec-debug",["./scripts/test_exec.sh","--check-baseline=scripts/exec_debug_baseline.txt","tests/debug"],root,{}),
+ ("exec-float",["./scripts/test_exec.sh","--check-baseline=scripts/exec_float_baseline.txt","tests/float"],root,{}),
+]
+for gate in ["check_theorem_axioms","check_sorry_token","check_exec_purity","check_exec_totality","check_fuel_forms","check_no_fuel_numerals"]:
+ cases.append((gate,["./scripts/"+gate+".sh"],root,{"ENFORCE":"1"} if gate=="check_exec_totality" else {}))
+lf=root/"lean_frontend"
+aux=sorted({p.stem for pattern in ["*_auxiliary.lean","*_lemMeasureProofs.lean"] for p in (lf/"generated").glob(pattern)})
+cases.append(("fuel-table",["../scripts/capped","lake","env","bash","-c",'exec ./.lake/build/bin/fuel-forms-tool "$@"',"_","Driver","CerbCall","CerbND","Main",*aux],lf,{}))
+cases.append(("theorem-probe",["bash","-c","exec ../scripts/capped lake env lean --stdin < docs/2026-09-07_risk-map-baseline-evidence/theorem-probe-input.txt"],lf,{}))
+cases.append(("pmap-laws",["../scripts/capped","lake","env","lean",".lake/packages/LemLib/lean-lib/LemLibPmapLaws.lean"],lf,{}))
+for family in ["divmod","bytearr","list","tree","seed"]:
+ cases.append(("plant-"+family,["./scripts/test_speclab_"+family+".sh","--plant"],root,{}))
+cases.append(("csmith-shard-2",["./scripts/test_csmith_corpus.sh","--check-baseline","--shard","2/6"],root,{}))
+selector=re.compile(r"SUMMARY|BASELINE|(?i:baseline)|(?:^|\s|[,;])rc[ =:]|SELFTEST|\bOK\b|^Ran |ALL.*PASSED|passed;|All .*passed|^check_|FUEL_FORMS_SUMMARY|csmith_36[9]|csmith_371")
+results=[]
+for name,command,cwd,extra in cases:
+ directory=scratch/name
+ scope=ProcessScope(directory)
+ display="COMMAND: "+(" ".join(k+"="+shlex.quote(v) for k,v in extra.items())+" " if extra else "")+shlex.join(command)+"\nCWD: "+str(cwd)+"\n"
+ print("START "+name+"\n"+display,end="",flush=True)
+ t=time.monotonic();timed_out=False;rc=None
+ try:
+  with (directory/"stdout").open("wb") as out,(directory/"stderr").open("wb") as err:
+   scope.start(command,cwd=cwd,env=dict(os.environ,**extra),stdout=out,stderr=err)
+   try:rc=scope.wait(3300)
+   except subprocess.TimeoutExpired:timed_out=True
+ finally:
+  residual=scope.finish(cancel=timed_out)
+ elapsed=time.monotonic()-t
+ status="UNKNOWN" if timed_out else ("passed" if rc==0 else "FINDING")
+ end=f"DIRECT {name} rc={rc if rc is not None else 'TIMEOUT'} elapsed_seconds={elapsed:.3f} status={status} cleaned=true residual_processes={residual}\n"
+ chunks=[display]
+ for stream in ["stdout","stderr"]:
+  data=(directory/stream).read_bytes()
+  chunks.append(f"STREAM {stream}: bytes={len(data)} sha256={hashlib.sha256(data).hexdigest()}\n")
+  lines=data.decode(errors="replace").splitlines()
+  chosen=set(range(max(0,len(lines)-12),len(lines)))
+  chosen.update(i for i,line in enumerate(lines) if selector.search(line))
+  if name in {"fuel-table","theorem-probe","pmap-laws"}:chosen=set(range(len(lines)))
+  chunks.extend(lines[i]+"\n" for i in sorted(chosen))
+ chunks.append(end)
+ (evidence/("direct-"+name+".txt")).write_text("".join(chunks))
+ print(end,end="",flush=True)
+ results.append(dict(name=name,command=command,cwd=str(cwd),env=extra,rc=rc,seconds=round(elapsed,3),status=status))
+ (scratch/"results.json").write_text(json.dumps(results,indent=2)+"\n")
+print("DIRECT_BATCH_DONE "+json.dumps(results),flush=True)

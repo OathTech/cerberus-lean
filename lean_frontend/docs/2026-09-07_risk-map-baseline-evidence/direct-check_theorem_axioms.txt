@@ -1,0 +1,24 @@
+COMMAND: ./scripts/check_theorem_axioms.sh
+CWD: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline
+STREAM stdout: bytes=5805 sha256=28b5e2c50c0187f7829c95e9e2bb6ab3e0140e195a0ae13a470ad5f1f2e50e63
+check_theorem_axioms: hand-written axiom census OK (0 axioms — the arc-17 S2b end state)
+check_theorem_axioms: generated-tree census OK (207 files: 0 axioms, boundary-opaque population = the 15 registered rows exactly-once (incl. CerbFuel.fuelExhaustedLoc), 0 unsafeCast)
+check_theorem_axioms: C2 ratchet OK (326 files scanned recursively: 0 axioms, 0 runEffectful, seam population = the 38 pinned path-qualified counted rows exactly incl. the extern class; lem tests/ scaffolds asserted outside the surface)
+check_theorem_axioms: D14 grep-ban OK (no native_decide/bv_decide in 1 tree(s) + 37 hand-written seam files + LemLibTest.lean)
+check_theorem_axioms: driver2 cone sorryAx-free + ofReduce*-free + DAEMON-free (arc-8 S3 bar)
+check_theorem_axioms: C2 entry census OK (9 entries, every cone ⊆ [propext, Classical.choice, Quot.sound])
+check_theorem_axioms: mem-scale S1 leg OK (6 C1/C3 equality theorems, every cone ⊆ [propext, Classical.choice, Quot.sound])
+'CerbND.runND1Trace_eq' depends on axioms: [propext]
+'FuelExemplar.exemplar_certified_shipped_zero' depends on axioms: [propext, Classical.choice, Quot.sound]
+'FuelExemplar.exemplar_killed_at_one' depends on axioms: [propext, Classical.choice, Quot.sound]
+'FuelExemplar.exemplar_certified_shipped_forall' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Ctype_lemMeasureProofs.ctypeEqual_measure_sufficient' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Core_lemMeasureProofs.eq_core_base_type_measure_sufficient' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Defacto_memory_aux_lemMeasureProofs.fake_mem_value_eq_measure_sufficient' depends on axioms: [propext, Quot.sound]
+'ctypeEqual_measure_sufficient' depends on axioms: [propext, Classical.choice, Quot.sound]
+'eq_core_base_type_measure_sufficient' depends on axioms: [propext, Classical.choice, Quot.sound]
+'fake_mem_value_eq_measure_sufficient' depends on axioms: [propext, Quot.sound]
+check_theorem_axioms: FUEL arc leg OK (34 contract lemmas — 9 generated _zero + the CerbND runner leaves/parametricity pins + the ∀-fuel exemplar and its instances + the 3 fuel_measure sufficiency obligations (generated statement + hand-written proof), every cone ⊆ [propext, Classical.choice, Quot.sound])
+check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)
+STREAM stderr: bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DIRECT check_theorem_axioms rc=0 elapsed_seconds=7.234 status=passed cleaned=true residual_processes=False

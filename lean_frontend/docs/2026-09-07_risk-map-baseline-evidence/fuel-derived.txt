@@ -1,0 +1,16 @@
+COMMAND: direct fuel-forms-tool invocation recorded in direct-fuel-table.txt; Python split raw FUEL_FORM TSV rows (not the summary/OK line).
+RAW_TABLE sha256=4fc38f4bd0da0fda4d5926f1c0f52375dbd2f8dd38e69a1c0062df99f3b5444c
+DERIVED rows=81 unique_workers=81 measured=54 absorbing=13 ambient_reachable=8 ambient_unreachable=6 measured_under_hyp=7
+DERIVED reachable_minus_pending=[] pending_minus_reachable=[]
+DERIVED hypotheses_minus_register=[] register_minus_hypotheses=[]
+DERIVED GROUP MEASURED ["CerbMem.alignofCtype_lemFuel", "CerbMem.memValueToBytes_lemFuel", "CerbMem.memberAlign_lemFuel", "CerbMem.offsetsofMembers_lemFuel", "CerbMem.offsetsof_lemFuel", "CerbMem.reconstructValue_lemFuel", "CerbMem.sizeofCtype_lemFuel", "CerbMem.typeofMval_lemFuel", "CerbMem.unqualifyAndUnatomic_lemFuel", "add_to_asw_lemFuel", "add_to_sb_lemFuel", "are_compatible_lemFuel", "are_compatible_params_aux_lemFuel", "are_compatible_params_lemFuel", "collect_saves_aux_lemFuel", "convert_expr_lemFuel", "convert_pexpr_lemFuel", "ctypeEqual_lemFuel", "easy_update_mem_value_aux_lemFuel", "eq_core_base_type_lemFuel", "fake_mem_value_eq_lemFuel", "find_array_index_lemFuel", "find_labeled_continuation2_aux_lemFuel", "find_labeled_continuation_lemFuel", "get_ctx_lemFuel", "get_ctx_unseq_aux_lemFuel", "has_ccall_lemFuel", "has_concurRead_lemFuel", "in_pattern_lemFuel", "loadedValueFromMemValue_lemFuel", "m_collect_saves_aux_lemFuel", "match_pattern_lemFuel", "memValueFromValue_lemFuel", "memcmp_load_aux_lemFuel", "mkListFromTo_aux_lemFuel", "mkListN_aux_lemFuel", "one_step_unseq_aux_lemFuel", "pull_constrained_lemFuel", "replicate_list__lemFuel", "showNonNegativeWithBasis_aux_lemFuel", "step_eval_pexpr_lemFuel", "subst_pattern_lemFuel", "subst_pattern_val_lemFuel", "subst_sym_expr_lemFuel", "subst_sym_pexpr_lemFuel", "subst_wait_lemFuel", "tmp_AND_aux_lemFuel", "tmp_OR_aux_lemFuel", "tmp_XOR_aux_lemFuel", "tmp_compl_aux_lemFuel", "unsafe_subst_pattern_lemFuel", "unsafe_subst_sym_expr_lemFuel", "unsafe_subst_sym_pexpr_lemFuel", "update_env_aux_lemFuel"]
+DERIVED GROUP ABSORBING ["CerbND.runND1Fuel", "CerbND.runND1TraceFuel", "CerbND.runNDFuel", "drive_nonmemory_steps_aux2_lemFuel", "driver2_lemFuel", "eval_pexpr_aux2_lemFuel", "eval_pexpr_aux_broken_lemFuel", "full_eval_pexpr_lemFuel", "liftAction_lemFuel", "liftND_lemFuel", "load_character_array_aux_lemFuel", "nd_bind_lemFuel", "print_eval_conv_aux_lemFuel"]
+DERIVED AMBIENT_REACHABLE ["are_compatible_aux_lemFuel", "are_compatible_params0_lemFuel", "are_compatible_params_aux0_lemFuel", "hack_lemFuel", "many1_lemFuel", "many_lemFuel", "to_pure_lemFuel", "to_pures_lemFuel"]
+DERIVED AMBIENT_UNREACHABLE ["CerbMem.memValueToBytes_append_lemFuel", "CerbMem.reconstructValue_indexed_lemFuel", "list_unfoldr_aux_lemFuel", "mkUnspec_lemFuel", "simplify_integer_value_base_lemFuel", "zeros_aux_lemFuel"]
+DERIVED HYP CerbMem.alignofCtype_lemFuel	CerbTagsWf.Acyclic ambient
+DERIVED HYP CerbMem.memberAlign_lemFuel	CerbTagsWf.Acyclic ambient
+DERIVED HYP CerbMem.offsetsofMembers_lemFuel	CerbTagsWf.Acyclic ambient
+DERIVED HYP CerbMem.offsetsof_lemFuel	CerbTagsWf.AcyclicPair ambient tagDefs
+DERIVED HYP CerbMem.reconstructValue_lemFuel	CerbTagsWf.Acyclic ambient
+DERIVED HYP CerbMem.sizeofCtype_lemFuel	CerbTagsWf.Acyclic ambient
+DERIVED HYP showNonNegativeWithBasis_aux_lemFuel	2 ≤ b

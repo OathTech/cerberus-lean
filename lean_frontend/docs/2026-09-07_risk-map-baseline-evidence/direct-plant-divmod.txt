@@ -1,0 +1,20 @@
+COMMAND: ./scripts/test_speclab_divmod.sh --plant
+CWD: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline
+STREAM stdout: bytes=146148 sha256=d1de59c072fb353a01ffce210d6d63e44990d5d668e9e4a1023b50ea99d0b6d0
+check_lem_sync: OK (src 977326511c1096013d9b1fa183500ad6487a23ac9c6edc3d3f2ff8bd11e266e0, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin 501147ca761a28cf64b0b6f3eb244c90164db137322122305572b7c0b8bff8a7, src 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda)
+check_driver_fresh: recorded lean stamp (bin 32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6, src 89a31871cc2e83121d7efb009c35aa6c50216b31f6dad88cee4688b0786edf28)
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+Build completed successfully (282 jobs).
+[plant:form1] x=7 y=2 oracle=Specified(0) lean=Specified(0) predict=Specified(0)
+[plant:form1-plant] x=7 y=2 oracle=Specified(1) lean=Specified(1) predict=Specified(1)
+[plant:form1-plant] x=-7 y=3 oracle=Specified(1) lean=Specified(1) predict=Specified(1)
+[plant:form1b] x=7 y=2 oracle=Specified(0) lean=Specified(0) predict=Specified(0)
+[plant:form1b-plant] x=7 y=2 oracle=Specified(1) lean=Specified(1) predict=Specified(1)
+[plant:i8] x=7 y=2 oracle=Specified(0) lean=Specified(0) predict=Specified(0)
+[plant:i8-plant] x=7 y=2 oracle=Specified(1) lean=Specified(1) predict=Specified(1)
+[plant:i8-plant] x=-5 y=3 oracle=Specified(1) lean=Specified(1) predict=Specified(1)
+PLANT SUMMARY: all wrong-operator plants RED with predicted indexes; healthy twins green
+test_speclab_divmod: PASS (--plant)
+STREAM stderr: bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DIRECT plant-divmod rc=0 elapsed_seconds=4.430 status=passed cleaned=true residual_processes=False

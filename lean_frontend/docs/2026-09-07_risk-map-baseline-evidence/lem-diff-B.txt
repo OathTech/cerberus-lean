@@ -1,0 +1,649 @@
+diff --git a/frontend/concurrency/cmm_op.lem b/frontend/concurrency/cmm_op.lem
+index e34b527e1..1c632917b 100644
+--- a/frontend/concurrency/cmm_op.lem
++++ b/frontend/concurrency/cmm_op.lem
+@@ -14,7 +14,18 @@ open import {hol} `pp_memTheory` `utilTheory`
+ val pretty_stringFromMem_mem_value: forall 'a. 'a -> string
+ declare ocaml target_rep function pretty_stringFromMem_mem_value = `String_mem.string_pretty_of_mem_value_decimal`
+ declare hol  target_rep function pretty_stringFromMem_mem_value = `util$emptyString`
+-declare lean target_rep function pretty_stringFromMem_mem_value = `sorry`
++(* Lean rep (FUEL arc rider, docs/2026-09-02_fuel-arc-design.md section 5;
++   closes the tree's last `sorry`): the val is 'a-polymorphic only because
++   Mem.mem_value did not typecheck here (comment above); its ONLY use site
++   (below, the "CONCUR CHOSE ==> " debug-log string) applies it to
++   Mem.mem_value pairs, so the monomorphic CerbMem.MemValue -> String
++   printer typechecks at both applications. MIRROR-OCAML NOTE: the OCaml
++   rep is the PRETTY decimal printer String_mem.string_pretty_of_mem_value
++   _decimal; CerbMem.stringFromMemValue mirrors String_mem.string_of_mem
++   _value instead — a deliberate, recorded divergence confined to a
++   concurrency-model debug-log string (never oracle-compared; the
++   concurrency model is a declared stub boundary). *)
++declare lean target_rep function pretty_stringFromMem_mem_value = `CerbMem.stringFromMemValue`
+ 
+ import Loc (* Somebody is going to hate me for this *)
+ 
+diff --git a/frontend/model/ail/ailTypesAux.lem b/frontend/model/ail/ailTypesAux.lem
+index 19874c3ed..6a7542a8d 100644
+--- a/frontend/model/ail/ailTypesAux.lem
++++ b/frontend/model/ail/ailTypesAux.lem
+@@ -1336,3 +1336,15 @@ let rec agnostic_alignment_requirement_ord ((Ctype.Ctype _ ty1_) as ty1) ((Ctype
+ declare {lean} fuel val are_compatible = `fuelExhausted false`
+ declare {lean} fuel val are_compatible_params_aux = `fuelExhausted (fun _ => false)`
+ declare {lean} fuel val are_compatible_params = `fuelExhausted false`
++(* FUEL MEASURE (fuel-parameter arc C3, 2026-09-05; Lean-only): the block shares ONE
++   fuel counter, so each member's measure bounds the WHOLE block's call depth from
++   that entry. are_compatible: the two ctypes' derived sizes. are_compatible_params_aux:
++   its recursion argument is the `function` scrutinee (hoisted as `lemTail` since lem
++   d4ba548), a PAIR of parameter lists whose element ctypes are recursed into by
++   are_compatible — the measure is the derived size of both lists (`ctype_.lemSize_aux1`,
++   the backend's helper for `list (qualifiers * ctype * bool)`; `List.length` alone is
++   not sufficient). are_compatible_params calls the aux at fuel - 1 on the same lists,
++   hence its + 2. Proved in lean_frontend/AilTypesAux_lemMeasureProofs.lean. *)
++declare {lean} fuel_measure val are_compatible = `ctype.lemSize p.2 + ctype.lemSize p0.2 + 1`
++declare {lean} fuel_measure val are_compatible_params_aux = `ctype_.lemSize_aux1 lemTail.1 + ctype_.lemSize_aux1 lemTail.2 + 1`
++declare {lean} fuel_measure val are_compatible_params = `ctype_.lemSize_aux1 params1 + ctype_.lemSize_aux1 params2 + 2`
+diff --git a/frontend/model/annot.lem b/frontend/model/annot.lem
+index f88e7f9f0..07942a82e 100644
+--- a/frontend/model/annot.lem
++++ b/frontend/model/annot.lem
+@@ -325,10 +325,10 @@ let set_loc loc annots =
+   Aloc loc :: annots'
+ 
+ (* === Totality declares (arc 7 S5a, 2026-08-20): Lean-target only.
+-   get_loc is an arc-3 F8 call-graph escapee on the slate theorems'
+-   kernel path (S4 record §6.3 event 2: step_ctx consults it on every
++   get_loc is on the execution path (step_ctx consults it on every
+    driver step); the other six get_* are the same list-walk shape, so
+-   the whole module totalizes and the totality gate can adopt Annot.
++   the whole module totalizes and the totality gate
++   (scripts/check_exec_totality.sh) can adopt Annot.
+    All structural recursions on the annots list -> automatic. === *)
+ declare {lean} termination_argument get_loc = automatic
+ declare {lean} termination_argument get_typedef = automatic
+diff --git a/frontend/model/core.lem b/frontend/model/core.lem
+index f63625a6c..cfc92c855 100644
+--- a/frontend/model/core.lem
++++ b/frontend/model/core.lem
+@@ -461,8 +461,7 @@ instance (SetType polarity)
+ end
+ 
+ (* === Totality declares (arc 7 S5a, 2026-08-20): Lean-target only.
+-   eq_core_object_type is an arc-3 F8 call-graph escapee on the slate
+-   theorems' kernel path (S4 record §6.3 event 2, via Core_aux);
++   eq_core_object_type is on the execution path (via Core_aux);
+    eq_core_base_type is the module's only other partial (totality-gate
+    adoption of Core). eq_core_object_type: structural pair-component
+    recursion -> automatic. eq_core_base_type: the BTy_tuple arm passes
+@@ -471,3 +470,8 @@ end
+    (Bool return; honesty lives in the opaque runtime panic). === *)
+ declare {lean} termination_argument eq_core_object_type = automatic
+ declare {lean} fuel val eq_core_base_type = `fuelExhausted false`
++(* FUEL MEASURE (fuel-parameter arc C1 / D2 enablers, 2026-09-04; Lean-only):
++   `eq_core_base_type` is an `Eq` instance method; its counter starts from the
++   derived size `core_base_type.lemSize bTy1`; obligation proved in
++   lean_frontend/Core_lemMeasureProofs.lean. *)
++declare {lean} fuel_measure val eq_core_base_type = `lemSize bTy1`
+diff --git a/frontend/model/core_aux.lem b/frontend/model/core_aux.lem
+index 2cf34df5d..a75b6abb8 100644
+--- a/frontend/model/core_aux.lem
++++ b/frontend/model/core_aux.lem
+@@ -2535,21 +2535,44 @@ declare {lean} termination_argument select_case = automatic
+ declare {lean} termination_argument lookup_env = automatic
+ declare {lean} termination_argument collect_labeled_continuations = automatic
+ declare {lean} fuel val in_pattern = `fuelExhausted false`
++(* FUEL MEASURE (fuel-parameter arc C2, 2026-09-04; Lean-only): each measure is the
++   derived structural size of the argument the recursion descends
++   (pattern/pexpr/expr; `CerbMem.memValueSize` for the hand-written MemValue;
++   the ctype for memValueFromValue); to_pures shares to_pure's counter and
++   starts from the derived list helper. Proofs in
++   lean_frontend/Core_aux_lemMeasureProofs.lean. *)
++declare {lean} fuel_measure val in_pattern = `lemSize g`
+ declare {lean} fuel val subst_wait = `fuelExhausted g`
++declare {lean} fuel_measure val subst_wait = `lemSize g`
+ declare {lean} fuel val find_labeled_continuation2_aux = `fuelExhausted acc`
++declare {lean} fuel_measure val find_labeled_continuation2_aux = `lemSize g`
+ declare {lean} fuel val loadedValueFromMemValue = `fuelExhausted (OTy_integer, LVunspecified (Ctype [] Void0))`
++declare {lean} fuel_measure val loadedValueFromMemValue = `CerbMem.memValueSize mem_val`
+ declare {lean} fuel val memValueFromValue = `fuelExhausted none`
++declare {lean} fuel_measure val memValueFromValue = `lemSize ty1`
+ declare {lean} fuel val subst_sym_pexpr = `fuelExhausted g`
++declare {lean} fuel_measure val subst_sym_pexpr = `lemSize g`
+ declare {lean} fuel val subst_sym_expr = `fuelExhausted g`
++declare {lean} fuel_measure val subst_sym_expr = `lemSize g`
+ declare {lean} fuel val subst_pattern_val = `fuelExhausted expr1`
++declare {lean} fuel_measure val subst_pattern_val = `lemSize g`
+ declare {lean} fuel val unsafe_subst_sym_pexpr = `fuelExhausted g0`
++declare {lean} fuel_measure val unsafe_subst_sym_pexpr = `lemSize g0`
+ declare {lean} fuel val unsafe_subst_sym_expr = `fuelExhausted g`
++declare {lean} fuel_measure val unsafe_subst_sym_expr = `lemSize g`
+ declare {lean} fuel val unsafe_subst_pattern = `fuelExhausted expr1`
++declare {lean} fuel_measure val unsafe_subst_pattern = `lemSize g`
+ declare {lean} fuel val subst_pattern = `fuelExhausted none`
++declare {lean} fuel_measure val subst_pattern = `lemSize g`
+ declare {lean} fuel val match_pattern = `fuelExhausted none`
++declare {lean} fuel_measure val match_pattern = `lemSize g`
+ declare {lean} fuel val to_pure = `fuelExhausted none`
+ declare {lean} fuel val to_pures = `fuelExhausted none`
+ declare {lean} fuel val collect_saves_aux = `fuelExhausted st`
++declare {lean} fuel_measure val collect_saves_aux = `lemSize g`
+ declare {lean} fuel val m_collect_saves_aux = `fuelExhausted st`
++declare {lean} fuel_measure val m_collect_saves_aux = `lemSize g`
+ declare {lean} fuel val find_labeled_continuation = `fuelExhausted none`
++declare {lean} fuel_measure val find_labeled_continuation = `lemSize g`
+ declare {lean} fuel val update_env_aux = `fuelExhausted env1`
++declare {lean} fuel_measure val update_env_aux = `lemSize g`
+diff --git a/frontend/model/core_eval.lem b/frontend/model/core_eval.lem
+index 2656151f3..57e5c8364 100644
+--- a/frontend/model/core_eval.lem
++++ b/frontend/model/core_eval.lem
+@@ -1215,8 +1215,18 @@ let eval_pexpr loc current_call_loc_opt core_extern env mem_st_opt file pe =
+    `| Nat.succ lemFuel =>` match arm (Lean: `Type mismatch
+    exception_undef_bind ...` + `unexpected token '('`). Needs a lem-lane
+    fix (parenthesize the succ-arm body) before it can be fueled. === *)
++(* FUEL-PARAMETER ARC C2 (2026-09-04; Lean-only): eval_pexpr_aux2 /
++   eval_pexpr_aux_broken are step-until-value loops (class (B)); their
++   exhaustion payload is the undefined-monad's ABSORBING `Error` outcome at the
++   fuel atom (`exception_undef_bind` propagates it; the driver kills on it),
++   never a value the run continues with. *)
+ declare {lean} fuel val pull_constrained = `fuelExhausted g`
++(* FUEL MEASURE (fuel-parameter arc C2, 2026-09-04; Lean-only): structural on the
++   pexpr's derived size (every `self` argument is a component of the matched
++   pexpr); proofs in lean_frontend/Core_eval_lemMeasureProofs.lean. *)
++declare {lean} fuel_measure val pull_constrained = `lemSize g`
+ declare {lean} fuel val step_eval_pexpr = `fuelExhausted (Result (Undef CerbLocation.Loc.unknown []))`
+-declare {lean} fuel val eval_pexpr_aux2 = `fuelExhausted (Result (Undef CerbLocation.Loc.unknown []))`
++declare {lean} fuel_measure val step_eval_pexpr = `lemSize pexpr1`
++declare {lean} fuel val eval_pexpr_aux2 = `Result (Error CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg)`
+ (* un-parked after the lem succ-arm parenthesization fix (arc-3 batch E) *)
+-declare {lean} fuel val eval_pexpr_aux_broken = `fuelExhausted (Result (Undef CerbLocation.Loc.unknown []))`
++declare {lean} fuel val eval_pexpr_aux_broken = `Result (Error CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg)`
+diff --git a/frontend/model/core_reduction.lem b/frontend/model/core_reduction.lem
+index a1ecb37af..26faa550c 100644
+--- a/frontend/model/core_reduction.lem
++++ b/frontend/model/core_reduction.lem
+@@ -1508,13 +1508,34 @@ let step_ctx mem_st file core_extern current_tid (parent_tid_opt, th_st) =
+    lem-lane fix (parenthesize the succ-arm body) before it can be fueled. === *)
+ declare {lean} fuel val one_step_unseq_aux = `fuelExhausted (fun _ => none)`
+ declare {lean} fuel val has_ccall = `fuelExhausted false`
++(* FUEL MEASURE (fuel-parameter arc C2, 2026-09-04; Lean-only): structural on the
++   expression's derived size; proved in lean_frontend/Core_reduction_lemMeasureProofs.lean. *)
++declare {lean} fuel_measure val has_ccall = `lemSize g`
+ declare {lean} termination_argument is_unseq_with_ccall_aux = automatic
+ declare {lean} fuel val get_ctx = `fuelExhausted []`
+ declare {lean} fuel val get_ctx_unseq_aux = `fuelExhausted (fun _ => acc)`
++(* FUEL MEASURE (fuel-parameter arc C3, 2026-09-05; Lean-only): the three point-free
++   `function` tails, measurable since lem d4ba548 hoists the scrutinee into the head
++   as `lemTail`. one_step_unseq_aux recurses on the tail of `lemTail` only.
++   get_ctx/get_ctx_unseq_aux share ONE fuel counter: get_ctx descends into a
++   subexpression or hands the Eunseq operand list to the aux, which recurses into
++   get_ctx on each element and on the rest of the list — so the aux's measure is the
++   derived size of the WHOLE list (elements included; `List.length` alone is not
++   sufficient), and every cross-call strictly decreases the callee's measure. Proved in
++   lean_frontend/Core_reduction_lemMeasureProofs.lean. *)
++declare {lean} fuel_measure val one_step_unseq_aux = `List.length lemTail + 1`
++declare {lean} fuel_measure val get_ctx = `lemSize g + 1`
++declare {lean} fuel_measure val get_ctx_unseq_aux = `generic_expr_.lemSize_aux2 lemTail + 1`
+ declare {lean} termination_argument apply_ctx = automatic
+ declare {lean} termination_argument break_at_sseq = automatic
+ declare {lean} termination_argument break_at_bound_and_sseq = automatic
+ declare {lean} termination_argument pull_dyn_annotations = automatic
+ declare {lean} termination_argument add_exclusion = automatic
+ (* un-parked after the lem succ-arm parenthesization fix (arc-3 batch E) *)
+-declare {lean} fuel val full_eval_pexpr = `fuelExhausted (fun st => Result (Undef CerbLocation.Loc.unknown [], st))`
++(* FUEL-PARAMETER ARC C2 (2026-09-04; Lean-only): the exhaustion payload of the
++   step-until-value loop is the ABSORBING element of its monad — the
++   undefined-monad `Error` outcome at the fuel atom, which every
++   `stExceptUndef_bind` propagates and the driver turns into
++   `kill (Error0 CerbFuel.fuelExhaustedLoc ...)` — never a value the run
++   continues with (consumer requirement (B); C2 record). *)
++declare {lean} fuel val full_eval_pexpr = `fun st => Result (Error CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg, st)`
+diff --git a/frontend/model/core_run_aux.lem b/frontend/model/core_run_aux.lem
+index 23c5b7975..07e9a4714 100644
+--- a/frontend/model/core_run_aux.lem
++++ b/frontend/model/core_run_aux.lem
+@@ -306,30 +306,6 @@ let initial_core_run_state xs =
+    See lean_frontend/docs/2026-08-22_arc13-s0-scheme-decision.md. *)
+ declare ocaml target_rep function initial_core_run_state = `Fork_renumber.initial_core_run_state`
+ 
+-(* Thread-B lem totalization slice (2026-08-29), effect-wrapper census
+-   item 1 (docs/2026-08-27_v0-statements-and-ban.md §5.2; the wrapper's
+-   NAME is deliberately not written here — the exec-purity gate greps
+-   generated comments too, fail-closed): the
+-   SEED-EXPLICIT initial state, generated for the Lean target only
+-   (~{ocaml}: the OCaml scheme keeps sym_supply dead per arc-13 D1
+-   above; no val spec, so no OCaml comment emission — the OCaml output
+-   stays byte-identical). This is the effect-spike route (branch
+-   effect-spike @ 7f4100a5c) landed as a GENERATED def: statements
+-   thread the seed here instead of the ambient draw; the hand twin
+-   RelSem.Cerb.initial_core_run_state_threaded (relsemcore
+-   RelSem/Threaded.lean) now agrees with it BY THEOREM
+-   (RelSem.TotalizationSmoke). The ambient initial_core_run_state
+-   above is UNTOUCHED: it remains the executable/differential face's
+-   one ambient read (census site 1, now bypassable at
+-   statement level without any hand mirror). *)
+-let ~{ocaml} initial_core_run_state_seeded (seed : nat) xs = <|
+-  tid_supply=      0;
+-  aid_supply=      0;
+-  excluded_supply= 0;
+-  sym_supply=      seed;
+-  labeled= xs;
+-|>
+-
+ 
+ let empty_annotation = <|
+   sb_before  = {};
+@@ -767,14 +743,21 @@ declare {lean} termination_argument subst_wait_stack = automatic
+ (* pair-list (Ecase) recursion is beyond Lean's automatic derivation
+    (arc-3 design note): fuel with the input expression as witness. *)
+ declare {lean} fuel val add_to_sb = `fuelExhausted g`
++(* FUEL MEASURE (fuel-parameter arc C2, 2026-09-04; Lean-only): structural on the
++   expression's derived size; obligations proved in
++   lean_frontend/Core_run_aux_lemMeasureProofs.lean. *)
++declare {lean} fuel_measure val add_to_sb = `lemSize g`
+ declare {lean} termination_argument add_to_sb_continuation = automatic
+ declare {lean} termination_argument add_to_sb_stack = automatic
+ declare {lean} fuel val add_to_asw = `fuelExhausted g`
++declare {lean} fuel_measure val add_to_asw = `lemSize g`
+ declare {lean} termination_argument add_to_asw_continuation = automatic
+ declare {lean} termination_argument add_to_asw_stack = automatic
+ declare {lean} termination_argument comma_list = automatic
+ declare {lean} fuel val convert_pexpr = `fuelExhausted (Pexpr [] () (PEval Vunit))`
++declare {lean} fuel_measure val convert_pexpr = `lemSize g`
+ declare {lean} fuel val convert_expr = `fuelExhausted (Expr [] (Epure (Pexpr [] () (PEval Vunit))))`
++declare {lean} fuel_measure val convert_expr = `lemSize g`
+ declare {lean} termination_argument convert_action_ = automatic
+ declare {lean} termination_argument convert_action = automatic
+ declare {lean} termination_argument convert_paction = automatic
+diff --git a/frontend/model/ctype.lem b/frontend/model/ctype.lem
+index b857c9ab0..88c4178e7 100644
+--- a/frontend/model/ctype.lem
++++ b/frontend/model/ctype.lem
+@@ -418,11 +418,19 @@ let is_ptr_t (Ctype _ ty_) =
+   end
+ 
+ (* === Totality declares (arc 7 S5a, 2026-08-20): Lean-target only.
+-   ctypeEqual is an arc-3 F8 call-graph escapee on the slate theorems'
+-   kernel path (S4 record §6.3 event 2: the store guard's
++   ctypeEqual is on the execution path (the store guard's
+    ctypeMemCompatible and conv_int's ty = '_Bool' value equality).
+    Fuel, not automatic: the Function arm recurses under a let-bound
+    lambda applied by List.all over a zipped pair list (the arc-3 D6
+    beyond-automatic shape). Witness false (Bool return; honesty lives
+    in the opaque runtime panic, not the witness). === *)
+ declare {lean} fuel val ctypeEqual = `fuelExhausted false`
++(* FUEL MEASURE (fuel-parameter arc C1 / D2 enablers, 2026-09-04; Lean-only,
++   no OCaml effect): the fuel'd equality is an `Eq` instance method, which
++   cannot take the ambient [LemFuel]; its wrapper instantiates the counter
++   from the backend-derived structural size of the first argument
++   (`ctype.lemSize c`) — fuel-free for callers, kernel-computable; the
++   sufficiency obligation `ctypeEqual_measure_sufficient` is emitted into
++   Ctype_auxiliary.lean and proved in lean_frontend/Ctype_lemMeasureProofs.lean
++   (lem-lean doc/lean-backend/2026-09-04_d2-enablers-record.md §4.5). *)
++declare {lean} fuel_measure val ctypeEqual = `lemSize c`
+diff --git a/frontend/model/defacto_memory.lem b/frontend/model/defacto_memory.lem
+index 987229adf..9162b9609 100644
+--- a/frontend/model/defacto_memory.lem
++++ b/frontend/model/defacto_memory.lem
+@@ -2669,10 +2669,25 @@ declare {lean} termination_argument impl_sizeof_ival_aux = automatic
+ declare {lean} termination_argument isBeginningShift = automatic
+ declare {lean} termination_argument silly_sh_eq = automatic
+ declare {lean} fuel val has_concurRead = `fuelExhausted false`
++(* FUEL MEASURE (fuel-parameter arc C2, 2026-09-04; Lean-only): structural on the
++   integer value's derived size; proved in lean_frontend/Defacto_memory_lemMeasureProofs.lean. *)
++declare {lean} fuel_measure val has_concurRead = `lemSize ival_`
+ declare {lean} termination_argument anyM = automatic
+ declare {lean} termination_argument fold_memcmp_compare = automatic
+-declare {lean} fuel val find_array_index = `fuelExhausted (ND (fun st => (NDkilled (Undef0 CerbLocation.Loc.unknown []), st)))`
+-declare {lean} fuel val easy_update_mem_value_aux = `fuelExhausted (ND (fun st => (NDkilled (Undef0 CerbLocation.Loc.unknown []), st)))`
+-declare {lean} fuel val memcmp_load_aux = `fuelExhausted (ND (fun st => (NDkilled (Undef0 CerbLocation.Loc.unknown []), st)))`
++(* FUEL ARC (2026-09-03, docs/2026-09-02_fuel-arc-design.md section 1.2):
++   the three impl_memM-typed fueled workers' fuel-zero arms are the same
++   DISTINGUISHED kill as the driver family's (`CerbND.fuelExhaustedKill`,
++   'err-polymorphic), unwrapped; liftND/liftAction propagate it unchanged
++   into driverM. Budget stays lemDefaultFuel (design note Q4). *)
++declare {lean} fuel val find_array_index = `ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
++(* FUEL MEASURE (fuel-parameter arc C2, 2026-09-04; Lean-only): the index i climbs
++   to size (ND-typed but data-bounded); the shift path sh is consumed one
++   element per step; offset climbs to max_offset. Proofs in
++   lean_frontend/Defacto_memory_lemMeasureProofs.lean. *)
++declare {lean} fuel_measure val find_array_index = `size - i + 1`
++declare {lean} fuel val easy_update_mem_value_aux = `ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
++declare {lean} fuel_measure val easy_update_mem_value_aux = `List.length sh + 1`
++declare {lean} fuel val memcmp_load_aux = `ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
++declare {lean} fuel_measure val memcmp_load_aux = `Int.toNat (max_offset - offset) + 1`
+ declare {lean} termination_argument memcmp_compare = automatic
+ declare {lean} fuel val mkUnspec = `fuelExhausted (MVarray [])`
+diff --git a/frontend/model/defacto_memory_aux.lem b/frontend/model/defacto_memory_aux.lem
+index 6e36e92ad..395b85467 100644
+--- a/frontend/model/defacto_memory_aux.lem
++++ b/frontend/model/defacto_memory_aux.lem
+@@ -462,8 +462,20 @@ let lifted_simplify_integer_value_base ival_ =
+    simplify_integer_value_base: SOFT sentinel — on fuel exhaustion it
+    returns its input unsimplified (Sum.inr ival_), semantically clean. === *)
+ declare {lean} fuel val tmp_compl_aux = `fuelExhausted ((0 : Int))`
++(* FUEL MEASURE (fuel-parameter arc C2, 2026-09-04; Lean-only): nbits counts down to 0
++   (the four bit-twiddling helpers); obligations proved in
++   lean_frontend/Defacto_memory_aux_lemMeasureProofs.lean. *)
++declare {lean} fuel_measure val tmp_compl_aux = `nbits + 1`
+ declare {lean} fuel val tmp_AND_aux = `fuelExhausted ((0 : Int))`
++declare {lean} fuel_measure val tmp_AND_aux = `nbits + 1`
+ declare {lean} fuel val tmp_OR_aux = `fuelExhausted ((0 : Int))`
++declare {lean} fuel_measure val tmp_OR_aux = `nbits + 1`
+ declare {lean} fuel val tmp_XOR_aux = `fuelExhausted ((0 : Int))`
++declare {lean} fuel_measure val tmp_XOR_aux = `nbits + 1`
+ declare {lean} fuel val fake_mem_value_eq = `fuelExhausted false`
++(* FUEL MEASURE (fuel-parameter arc C1 / D2 enablers, 2026-09-04; Lean-only):
++   `fake_mem_value_eq` is an `Eq` instance method; its counter starts from the
++   derived size `impl_mem_value.lemSize mval1` (Defacto_memory_types);
++   obligation proved in lean_frontend/Defacto_memory_aux_lemMeasureProofs.lean. *)
++declare {lean} fuel_measure val fake_mem_value_eq = `lemSize mval1`
+ declare {lean} fuel val simplify_integer_value_base = `Sum.inr ival_`
+diff --git a/frontend/model/driver.lem b/frontend/model/driver.lem
+index 1032f0526..87a5dedb9 100644
+--- a/frontend/model/driver.lem
++++ b/frontend/model/driver.lem
+@@ -1893,13 +1893,17 @@ end
+ 
+ (* === Totality declares (arc 3 sweep, 2026-08-18, final batch): Lean-target only.
+    find_can_advance: structural list recursion -> automatic.
+-   Fuel cases (fuelExhausted witness panics at runtime, typing only):
+-   print_eval_conv_aux / driver2 are driver loops returning ndM -> ND-killed
+-   witness; drive_nonmemory_steps_aux2 has a trailing curried list arg, so
+-   the witness is a lambda to the ND-killed value; hack is a step-until-value
+-   loop returning a bare value -> witness Vunit. === *)
++   Fuel cases: print_eval_conv_aux / driver2 are driver loops returning
++   ndM; drive_nonmemory_steps_aux2 has a trailing curried list arg, so its
++   arm is a lambda to the ND-killed value; hack is a step-until-value loop
++   returning a bare value -> the opaque `fuelExhausted Vunit` sentinel
++   (panics at runtime; a pure-return worker, request item 3).
++   FUEL ARC (2026-09-03, docs/2026-09-02_fuel-arc-design.md section 1.2):
++   the three ND-typed arms are the DISTINGUISHED kernel-transparent kill
++   `NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg)`
++   (= CerbND.fuelExhaustedKill), unwrapped — see nondeterminism.lem. === *)
+ declare {lean} termination_argument find_can_advance = automatic
+-declare {lean} fuel val print_eval_conv_aux = `fuelExhausted (ND (fun st => (NDkilled (Undef0 CerbLocation.Loc.unknown []), st)))`
+-declare {lean} fuel val drive_nonmemory_steps_aux2 = `fuelExhausted (fun _ => ND (fun st => (NDkilled (Undef0 CerbLocation.Loc.unknown []), st)))`
+-declare {lean} fuel val driver2 = `fuelExhausted (ND (fun st => (NDkilled (Undef0 CerbLocation.Loc.unknown []), st)))`
++declare {lean} fuel val print_eval_conv_aux = `ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
++declare {lean} fuel val drive_nonmemory_steps_aux2 = `fun _ => ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
++declare {lean} fuel val driver2 = `ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
+ declare {lean} fuel val hack = `fuelExhausted Vunit`
+diff --git a/frontend/model/formatted.lem b/frontend/model/formatted.lem
+index 127e6d397..0b6a1b1c4 100644
+--- a/frontend/model/formatted.lem
++++ b/frontend/model/formatted.lem
+@@ -326,6 +326,16 @@ let rec showNonNegativeWithBasis_aux acc useUpper b n =
+    see): fuel; the digit count of any natural is microscopic against
+    lemDefaultFuel; exhaustion is the LOUD fuelExhausted panic. === *)
+ declare {lean} fuel val showNonNegativeWithBasis_aux = `fuelExhausted []`
++(* FUEL MEASURE (fuel-parameter arc C4, 2026-09-05; Lean-only): the recursion
++   is on n / b, which descends only for a basis b >= 2 (b = 1 loops forever
++   on OCaml too; b = 0 raises Division_by_zero there and is the opaque
++   lemDivByZero here) — so the measure `n + 1` is sufficient ONLY under the
++   hypothesis `2 <= b`, carried by the obligation's `lemHyp` binder (lem
++   `assuming`); the wrapper stays fuel-free. The invariant it rests on: the
++   only callers are showNonNegativeWithBasis at the literal bases 8/10/16
++   (this file, the %o/%d/%i/%u/%x/%X arms) — scripts/fuel_hypotheses.txt.
++   Proof: Formatted_lemMeasureProofs.lean. *)
++declare {lean} fuel_measure val showNonNegativeWithBasis_aux = `n + 1` assuming `2 ≤ b`
+ 
+ val showNonNegativeWithBasis: bool -> natural -> natural -> list char
+ let showNonNegativeWithBasis useUpper b n =
+@@ -396,7 +406,10 @@ let rec load_character_array_aux elem_ty ptrval prec_n_opt acc =
+    bound; no structural decrease): fuel, threadB recipe. Sentinel =
+    the empty-result memM, reached only through the LOUD fuelExhausted
+    panic. *)
+-declare {lean} fuel val load_character_array_aux = `fuelExhausted (nd_return [])`
++(* FUEL-PARAMETER ARC C2 (2026-09-04; Lean-only): the memory walk's exhaustion
++   payload is the ND monad's ABSORBING kill at the fuel atom (as the driver
++   family's), never `nd_return []` — a value printf would continue with. *)
++declare {lean} fuel val load_character_array_aux = `ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
+ val load_character_array: Ctype.ctype -> Mem.pointer_value -> maybe nat -> Mem.memM (list char)
+ let load_character_array elem_ty ptrval prec_n_opt =
+   Mem.bind
+diff --git a/frontend/model/mem.lem b/frontend/model/mem.lem
+index 0cf758fcc..b411b3aef 100644
+--- a/frontend/model/mem.lem
++++ b/frontend/model/mem.lem
+@@ -92,14 +92,18 @@ declare {lean} reader_consumer val store
+ 
+ declare ocaml target_rep function allocate_object = `Impl_mem.allocate_object`
+ declare lean target_rep function allocate_object = `CerbMem.allocateObject`
++declare {lean} fuel_consumer val allocate_object
+ declare ocaml target_rep function allocate_region = `Impl_mem.allocate_region`
+ declare lean target_rep function allocate_region = `CerbMem.allocateRegion`
++declare {lean} fuel_consumer val allocate_region
+ declare ocaml target_rep function kill = `Impl_mem.kill`
+ declare lean target_rep function kill = `CerbMem.killM`
+ declare ocaml target_rep function load = `Impl_mem.load`
+ declare lean target_rep function load = `CerbMem.loadM`
++declare {lean} fuel_consumer val load
+ declare ocaml target_rep function store = `Impl_mem.store`
+ declare lean target_rep function store = `CerbMem.storeM`
++declare {lean} fuel_consumer val store
+ 
+ 
+ (* Pointer value constructors *)
+@@ -137,6 +141,7 @@ declare ocaml target_rep function eq_ptrval = `Impl_mem.eq_ptrval`
+ declare lean target_rep function eq_ptrval = `CerbMem.eqPtrval`
+ declare ocaml target_rep function ne_ptrval = `Impl_mem.ne_ptrval`
+ declare lean target_rep function ne_ptrval = `CerbMem.nePtrval`
++declare {lean} fuel_consumer val ne_ptrval
+ declare ocaml target_rep function lt_ptrval = `Impl_mem.lt_ptrval`
+ declare lean target_rep function lt_ptrval = `CerbMem.ltPtrval`
+ declare ocaml target_rep function gt_ptrval = `Impl_mem.gt_ptrval`
+@@ -147,6 +152,7 @@ declare ocaml target_rep function ge_ptrval = `Impl_mem.ge_ptrval`
+ declare lean target_rep function ge_ptrval = `CerbMem.gePtrval`
+ declare ocaml target_rep function diff_ptrval = `Impl_mem.diff_ptrval`
+ declare lean target_rep function diff_ptrval = `CerbMem.diffPtrval`
++declare {lean} fuel_consumer val diff_ptrval
+ declare {lean} reader_consumer val diff_ptrval
+ 
+ val update_prefix: (Symbol.prefix * mem_value) -> memM unit
+@@ -159,11 +165,13 @@ declare lean target_rep function prefix_of_pointer = `CerbMem.prefixOfPointer`
+ val validForDeref_ptrval: Ctype.ctype -> pointer_value -> memM bool
+ declare ocaml target_rep function validForDeref_ptrval = `Impl_mem.validForDeref_ptrval`
+ declare lean target_rep function validForDeref_ptrval = `CerbMem.validForDerefPtrval`
++declare {lean} fuel_consumer val validForDeref_ptrval
+ declare {lean} reader_consumer val validForDeref_ptrval
+ 
+ val isWellAligned_ptrval: Ctype.ctype -> pointer_value -> memM bool
+ declare ocaml target_rep function isWellAligned_ptrval = `Impl_mem.isWellAligned_ptrval`
+ declare lean target_rep function isWellAligned_ptrval = `CerbMem.isWellAlignedPtrval`
++declare {lean} fuel_consumer val isWellAligned_ptrval
+ declare {lean} reader_consumer val isWellAligned_ptrval
+ 
+ (* Casting operations *)
+@@ -194,9 +202,11 @@ val array_shift_ptrval:  pointer_value -> Ctype.ctype -> integer_value -> pointe
+ val member_shift_ptrval: pointer_value -> Symbol.sym -> Symbol.identifier -> pointer_value
+ declare ocaml target_rep function array_shift_ptrval = `Impl_mem.array_shift_ptrval`
+ declare lean target_rep function array_shift_ptrval = `CerbMem.arrayShiftPtrval`
++declare {lean} fuel_consumer val array_shift_ptrval
+ declare {lean} reader_consumer val array_shift_ptrval
+ declare ocaml target_rep function member_shift_ptrval = `Impl_mem.member_shift_ptrval`
+ declare lean target_rep function member_shift_ptrval = `CerbMem.memberShiftPtrval`
++declare {lean} fuel_consumer val member_shift_ptrval
+ declare {lean} reader_consumer val member_shift_ptrval
+ 
+ (* Effectfull version of pointer shifting constructors *)
+@@ -204,9 +214,11 @@ val eff_array_shift_ptrval: Loc.t -> pointer_value -> Ctype.ctype -> integer_val
+ val eff_member_shift_ptrval: Loc.t -> pointer_value -> Symbol.sym -> Symbol.identifier -> memM pointer_value
+ declare ocaml target_rep function eff_array_shift_ptrval = `Impl_mem.eff_array_shift_ptrval`
+ declare lean target_rep function eff_array_shift_ptrval = `CerbMem.effArrayShiftPtrval`
++declare {lean} fuel_consumer val eff_array_shift_ptrval
+ declare {lean} reader_consumer val eff_array_shift_ptrval
+ declare ocaml target_rep function eff_member_shift_ptrval = `Impl_mem.eff_member_shift_ptrval`
+ declare lean target_rep function eff_member_shift_ptrval = `CerbMem.effMemberShiftPtrval`
++declare {lean} fuel_consumer val eff_member_shift_ptrval
+ declare {lean} reader_consumer val eff_member_shift_ptrval
+ 
+ 
+@@ -216,12 +228,15 @@ val realloc: Loc.t -> Mem_common.thread_id -> integer_value -> pointer_value ->
+ 
+ declare ocaml target_rep function memcpy = `Impl_mem.memcpy`
+ declare lean target_rep function memcpy = `CerbMem.memcpyM`
++declare {lean} fuel_consumer val memcpy
+ declare {lean} reader_consumer val memcpy
+ declare ocaml target_rep function memcmp = `Impl_mem.memcmp`
+ declare lean target_rep function memcmp = `CerbMem.memcmpM`
++declare {lean} fuel_consumer val memcmp
+ declare {lean} reader_consumer val memcmp
+ declare ocaml target_rep function realloc = `Impl_mem.realloc`
+ declare lean target_rep function realloc = `CerbMem.reallocM`
++declare {lean} fuel_consumer val realloc
+ declare {lean} reader_consumer val realloc
+ 
+ val va_start: list (Ctype.ctype * pointer_value) -> memM integer_value
+@@ -245,6 +260,7 @@ declare lean target_rep function va_list = `CerbMem.vaList`
+ val copy_alloc_id: integer_value -> pointer_value -> memM pointer_value
+ declare ocaml target_rep function copy_alloc_id = `Impl_mem.copy_alloc_id`
+ declare lean target_rep function copy_alloc_id = `CerbMem.copyAllocId`
++declare {lean} fuel_consumer val copy_alloc_id
+ 
+ (* Byte casting operations *)
+ val bytefromint: integer_value -> integer_value
+@@ -279,12 +295,28 @@ declare ocaml target_rep function op_ival = `Impl_mem.op_ival`
+ declare lean target_rep function op_ival = `CerbMem.opIval`
+ declare ocaml target_rep function offsetof_ival = `Impl_mem.offsetof_ival`
+ declare lean target_rep function offsetof_ival = `CerbMem.offsetofIval`
++declare {lean} fuel_consumer val offsetof_ival
+ declare {lean} reader_consumer val offsetof_ival
+ declare ocaml target_rep function sizeof_ival = `Impl_mem.sizeof_ival`
+ declare lean target_rep function sizeof_ival = `CerbMem.sizeofIval`
++declare {lean} fuel_consumer val sizeof_ival
+ declare {lean} reader_consumer val sizeof_ival
+ declare ocaml target_rep function alignof_ival = `Impl_mem.alignof_ival`
+ declare lean target_rep function alignof_ival = `CerbMem.alignofIval`
++(* FUEL CONSUMERS (fuel-parameter arc, 2026-09-04; Lean-only declares, no
++   OCaml effect — lem-lean doc/lean-backend/2026-09-03_fuel-parameter-design.md
++   R1 item 3): the hand-written CerbMem implementations of the vals below
++   read the ambient fuel (`[LemFuel]`, `LemFuel.fuel`) because they reach a
++   fuel'd worker — the layout oracles (sizeofCtype/alignofCtype/offsetsof),
++   the (de)serializers (memValueToBytes/reconstructValue), typeofMval, or
++   the ND monad's `nd_bind`. `fuel_consumer` makes every generated caller
++   fuel-lifted (the `[LemFuel]` binder is threaded to it; call sites are
++   textually unchanged). The set is the measured `[LemFuel]` closure of
++   CerbMem.lean's mem.lem reps at the C1 slice (19 vals; the build fails
++   closed — `failed to synthesize instance LemFuel` at the generated call
++   site — if one is missing). C2 converts the data-bounded ones to
++   `fuel_measure`. *)
++declare {lean} fuel_consumer val alignof_ival
+ declare {lean} reader_consumer val alignof_ival
+ declare ocaml target_rep function bitwise_complement_ival = `Impl_mem.bitwise_complement_ival`
+ declare lean target_rep function bitwise_complement_ival = `CerbMem.bitwiseComplementIval`
+diff --git a/frontend/model/nondeterminism.lem b/frontend/model/nondeterminism.lem
+index 03815f313..21c2f2337 100644
+--- a/frontend/model/nondeterminism.lem
++++ b/frontend/model/nondeterminism.lem
+@@ -13,6 +13,11 @@ open import Pervasives
+ open import Utils Debug
+ import Undefined
+ 
++(* Lean-target only (debug.lem:4 mechanism): the fuel-exhaustion atom /
++   message / budget seam the `declare {lean} fuel val` sentinels below
++   name (FUEL arc, docs/2026-09-02_fuel-arc-design.md section 1.1). *)
++declare {lean} extra_import `CerbFuel`
++
+ 
+ 
+ (* Cause of an execution path termination *)
+@@ -546,13 +551,21 @@ type nd_status 'a 'err 'st =
+ 
+ (* === Totality declares (arc 3 sweep, 2026-08-18): Lean-target only.
+    nd_bind: recursion on the result of applying a stored function
+-   (m_act st), not a subterm -> fuel; witness is a minimal killed
+-   computation (fuelExhausted panics at runtime, the witness only
+-   discharges typing).
++   (m_act st), not a subterm -> fuel.
+    nd_foldlM: structural on its list argument -> automatic.
+    liftND/liftAction: genuinely cyclic mutual pair, recursion through
+-   stored-function application -> fuel both (all-or-none). === *)
+-declare {lean} fuel val nd_bind = `fuelExhausted (ND (fun st => (NDkilled (Undef0 CerbLocation.Loc.unknown []), st)))`
++   stored-function application -> fuel both (all-or-none).
++   FUEL ARC (2026-09-03, docs/2026-09-02_fuel-arc-design.md section 1.2):
++   the fuel-zero arm of every ND-typed fueled worker is the DISTINGUISHED,
++   kernel-transparent kill `NDkilled (Error0 CerbFuel.fuelExhaustedLoc
++   CerbFuel.fuelExhaustedMsg)` (= CerbND.fuelExhaustedKill) with NO opaque
++   `fuelExhausted` wrapper around the monadic value — exhaustion is a typed
++   outcome the kernel can recognise (the `_zero` lemmas in CerbND.lean hold
++   by rfl), printed by Main as `Error {msg: "lem: fuel exhausted"}` and
++   classified FUEL by the harnesses. The atom `fuelExhaustedLoc` is a pure
++   opaque (CerbFuel.lean, imported via the extra_import above). liftAction
++   returns nd_action, so its arm is the curried action-shaped value. === *)
++declare {lean} fuel val nd_bind = `ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
+ declare {lean} termination_argument nd_foldlM = automatic
+-declare {lean} fuel val liftND = `fuelExhausted (ND (fun st => (NDkilled (Undef0 CerbLocation.Loc.unknown []), st)))`
+-declare {lean} fuel val liftAction = `fuelExhausted (fun _ => NDkilled (Undef0 CerbLocation.Loc.unknown []))`
++declare {lean} fuel val liftND = `ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
++declare {lean} fuel val liftAction = `fun _ => NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg)`
+diff --git a/frontend/model/state_exception_undefined.lem b/frontend/model/state_exception_undefined.lem
+index 0b8eaa51d..75c4c6909 100644
+--- a/frontend/model/state_exception_undefined.lem
++++ b/frontend/model/state_exception_undefined.lem
+@@ -146,8 +146,7 @@ let inline undef loc ubs =
+   stExceptUndef_undef loc ubs
+ 
+ (* === Totality declares (arc 7 S5a, 2026-08-20): Lean-target only.
+-   stExceptUndef_foldM is an arc-3 F8 call-graph escapee on the slate
+-   theorems' kernel path (S4 record §6.3 event 2: Erun/Eccall argument
++   stExceptUndef_foldM is on the execution path (Erun/Eccall argument
+    evaluation); filterM is the module's only other partial, same
+    structural list-walk shape, so the totality gate can adopt
+    State_exception_undefined. Both automatic. === *)
+diff --git a/frontend/model/utils.lem b/frontend/model/utils.lem
+index ffaa47aa7..8ebf5b5f0 100644
+--- a/frontend/model/utils.lem
++++ b/frontend/model/utils.lem
+@@ -329,9 +329,8 @@ declare ocaml target_rep function is_power_of_two = `Cerb_util.is_power_of_two`
+ declare lean target_rep function is_power_of_two = `CerbUtils.is_power_of_two`
+ 
+ (* === Totality declares (arc 7 S5a, 2026-08-20): Lean-target only.
+-   The arc-3 F8 call-graph escapees on the slate theorems' kernel path
+-   (S4 record §6.3 event 2: assoc_insert/remove/adjust) + the rest of
+-   the module so the totality gate can adopt Utils whole.
++   The execution-path entries (assoc_insert/remove/adjust) + the rest
++   of the module so the totality gate can adopt Utils whole.
+    Structural recursions -> termination_argument automatic.
+    Fuel cases (fuelExhausted witness panics at runtime, typing only):
+    mkListN_aux / mkListFromTo_aux count an integer UP to a bound
+@@ -342,7 +341,11 @@ declare lean target_rep function is_power_of_two = `CerbUtils.is_power_of_two`
+    the accumulator acc (input arg, return type matches, arc-3 D6
+    witness rule). === *)
+ declare {lean} fuel val mkListN_aux = `fuelExhausted acc`
++(* FUEL MEASURE (fuel-parameter arc C2, 2026-09-04; Lean-only): the counter i climbs to n,
++   one step per unit; obligation proved in lean_frontend/Utils_lemMeasureProofs.lean. *)
++declare {lean} fuel_measure val mkListN_aux = `Int.toNat (n - i) + 1`
+ declare {lean} fuel val mkListFromTo_aux = `fuelExhausted acc`
++declare {lean} fuel_measure val mkListFromTo_aux = `Int.toNat (max2 + 1 - i) + 1`
+ declare {lean} termination_argument numerote_ = automatic
+ declare {lean} termination_argument foldl2 = automatic
+ declare {lean} termination_argument map2_ = automatic
+@@ -351,6 +354,8 @@ declare {lean} termination_argument set_from_options = automatic
+ declare {lean} termination_argument mapUnzip_ = automatic
+ declare {lean} termination_argument map_option = automatic
+ declare {lean} fuel val replicate_list_ = `fuelExhausted acc`
++(* FUEL MEASURE (fuel-parameter arc C2, 2026-09-04; Lean-only): n counts down to 0. *)
++declare {lean} fuel_measure val replicate_list_ = `n + 1`
+ declare {lean} termination_argument assoc_insert = automatic
+ declare {lean} termination_argument assoc_remove = automatic
+ declare {lean} termination_argument assoc_adjust = automatic
+diff --git a/tests/failure-probes/discarded_failures.lem b/tests/failure-probes/discarded_failures.lem
+new file mode 100644
+index 000000000..386f1c180
+--- /dev/null
++++ b/tests/failure-probes/discarded_failures.lem
+@@ -0,0 +1,14 @@
++open import Pervasives_extra
++
++let stop (n : nat) : nat = failwith "validation-foundations deliberate failure"
++let keep_second (x : nat) (n : nat) : nat = n + 1
++let visit (f : nat -> nat) (n : nat) : nat = let r = f n in n + 1
++
++let unused_binding (n : nat) : nat = let x = stop n in n + 1
++let unused_argument (n : nat) : nat = keep_second (stop n) n
++let projection (n : nat) : nat = snd (stop n, n + 1)
++let discarded_result (n : nat) : nat = let xs = List.map stop [n] in n + 1
++let callback (n : nat) : nat = visit stop n
++let mapped_projection (n : nat) : nat = List.length (List.map stop [n])
++let required (n : nat) : nat = stop n
++let positive_control (n : nat) : nat = n + 1

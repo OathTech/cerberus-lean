@@ -1,0 +1,1047 @@
+diff --git a/scripts/exec_ci_baseline.txt b/scripts/exec_ci_baseline.txt
+index 96f98b330..1a7e6151a 100644
+--- a/scripts/exec_ci_baseline.txt
++++ b/scripts/exec_ci_baseline.txt
+@@ -14,6 +14,33 @@
+ #   Unspecified payload prints "Unspecified('<ctype>')" per
+ #   pp_core.ml:304-308 (was "Unspecified(<ctype>)" placeholder text).
+ #   Only movement in the ci sweep (0 regressions, 3 improvements).
++# 2026-09-01 exec-lane re-record (cabs-json parse-only fix): the 18
++#   CERB_INCONSISTENT rows -> UB_MATCH — 0039-struct_imcomplete.undef.c,
++#   0069-const_expr.c, 0201-main-return-type.undef.c,
++#   0202-main-not-function.undef.c, 0203-main-params1.undef.c,
++#   0204-main-params2.undef.c, 0206-no-linkage-block-incomplete.undef.c,
++#   0207-incomplete-internal-linkage.undef.c,
++#   0208-static-assert-not-integral-constant.undef.c,
++#   0221-block-scoped-function-decl-illegal-storage-class.undef.c,
++#   0222-scalar-init-not-single-expr.undef.c,
++#   0240-incomplete-adust-parameter.undef.c,
++#   0245-storage-class-void-param.undef.c,
++#   0246-block-scoped-function.undef.c, 0257-array-incomplete-type.error.c,
++#   0262-parameter-qualified-void.error.c,
++#   0314-nonarray-incomplete-lvalue-conversion.undef.c,
++#   0337-scalar-init-with_braces.undef.c. Attributed to the trust-basket
++#   oracle driver fix 80e674ee2 (backend/driver/main.ml: --cabs-json now
++#   stops after parse+serialize, mirroring the then-in-file cn_spec_json
++#   parse-only path — that exporter was itself removed 2026-09-02, the
++#   cabs-json path stands on its own). Pre-fix the oracle's exec succeeded (with
++#   translation-time UB) but its cabs-json ran the full c_frontend and
++#   produced no JSON, so each row was CERB_INCONSISTENT ("exec succeeded
++#   but cabs-json failed", test_exec.sh:475-478); the bridge now exists
++#   and the Lean pipeline classifies the same UB. Pre-record check
++#   "0 regression(s), 18 improvement(s)" — the only movement in the ci
++#   sweep; cerb_inconsistent now 0. Sanctioned [USER 2026-09-01]; record
++#   lean_frontend/docs/2026-09-01_C2-ratchet-record.md Addendum 3
++#   (closing note). Re-recorded in a dedicated baseline commit per house rule.
+ 0001-emptymain.c MATCH
+ 0002-return_const.c MATCH
+ 0003-return_arith.c MATCH
+@@ -51,7 +78,7 @@
+ 0036-auto_register_function.error.c CERB_SKIP
+ 0037-function_conflicting_types.error.c CERB_SKIP
+ 0038-function_redefinition.error.c CERB_SKIP
+-0039-struct_imcomplete.undef.c CERB_INCONSISTENT
++0039-struct_imcomplete.undef.c UB_MATCH
+ 0040-struct_redefinition.error.c CERB_SKIP
+ 0041-struct_incompatible.error.c CERB_SKIP
+ 0042-struct_namespace.c MATCH
+@@ -80,7 +107,7 @@
+ 0066-const2.error.c CERB_SKIP
+ 0067-band1.c MATCH
+ 0068-bor1.c MATCH
+-0069-const_expr.c CERB_INCONSISTENT
++0069-const_expr.c UB_MATCH
+ 0070-do-while1.c MATCH
+ 0071-do-while2.c MATCH
+ 0072-example03.c MATCH
+@@ -123,14 +150,14 @@
+ 0127-function-pointer.c MATCH
+ 0128-function-pointer-void-cast.c MATCH
+ 0129-function-pointer-wrong-args.undef.c UB_MATCH
+-0201-main-return-type.undef.c CERB_INCONSISTENT
+-0202-main-not-function.undef.c CERB_INCONSISTENT
+-0203-main-params1.undef.c CERB_INCONSISTENT
+-0204-main-params2.undef.c CERB_INCONSISTENT
++0201-main-return-type.undef.c UB_MATCH
++0202-main-not-function.undef.c UB_MATCH
++0203-main-params1.undef.c UB_MATCH
++0204-main-params2.undef.c UB_MATCH
+ 0205-illegal-storage-class.error.c CERB_SKIP
+-0206-no-linkage-block-incomplete.undef.c CERB_INCONSISTENT
+-0207-incomplete-internal-linkage.undef.c CERB_INCONSISTENT
+-0208-static-assert-not-integral-constant.undef.c CERB_INCONSISTENT
++0206-no-linkage-block-incomplete.undef.c UB_MATCH
++0207-incomplete-internal-linkage.undef.c UB_MATCH
++0208-static-assert-not-integral-constant.undef.c UB_MATCH
+ 0209-static-assert-failed.error.c CERB_SKIP
+ 0210-illegal-storage-class-function.error.c CERB_SKIP
+ 0211-function-id-not-function-type.error.c CERB_SKIP
+@@ -143,8 +170,8 @@
+ 0218-multiple-storage-class.error.c CERB_SKIP
+ 0219-thread-local-function-declaration.error.c CERB_SKIP
+ 0220-thread-local-auto.error.c CERB_SKIP
+-0221-block-scoped-function-decl-illegal-storage-class.undef.c CERB_INCONSISTENT
+-0222-scalar-init-not-single-expr.undef.c CERB_INCONSISTENT
++0221-block-scoped-function-decl-illegal-storage-class.undef.c UB_MATCH
++0222-scalar-init-not-single-expr.undef.c UB_MATCH
+ 0223-illegal-storage-class-static-init.error.c CERB_SKIP
+ 0224-enum-not-int.error.c CERB_SKIP
+ 0225-incomplete-field.error.c CERB_SKIP
+@@ -162,13 +189,13 @@
+ 0237-array-star-illegal-scope.error.c CERB_SKIP
+ 0238-storage-class-function-decl.error.c CERB_SKIP
+ 0239-parameter-type-void.error.c CERB_SKIP
+-0240-incomplete-adust-parameter.undef.c CERB_INCONSISTENT
++0240-incomplete-adust-parameter.undef.c UB_MATCH
+ 0241-fundef-with-params-void-int.error.c CERB_SKIP
+ 0242-array-designator-wrong-type.error.c CERB_SKIP
+ 0243-array-designator-wrong-size.error.c CERB_SKIP
+ 0244-literal-type-array-char.error.c CERB_SKIP
+-0245-storage-class-void-param.undef.c CERB_INCONSISTENT
+-0246-block-scoped-function.undef.c CERB_INCONSISTENT
++0245-storage-class-void-param.undef.c UB_MATCH
++0246-block-scoped-function.undef.c UB_MATCH
+ 0247-illegal-typedef-initializer.error.c CERB_SKIP
+ 0248-typedef-redefinition.error.c CERB_SKIP
+ 0249-multiple-declaration.error.c CERB_SKIP
+@@ -179,12 +206,12 @@
+ 0254-undeclared-label.error.c CERB_SKIP
+ 0255-indirection-wrong-type.error.c CERB_SKIP
+ 0256-untypable-constant.error.c CERB_SKIP
+-0257-array-incomplete-type.error.c CERB_INCONSISTENT
++0257-array-incomplete-type.error.c UB_MATCH
+ 0258-array-function-type.error.c CERB_SKIP
+ 0259-invalid-return-type.error.c CERB_SKIP
+ 0260-pointer-to-restrict.error.c CERB_SKIP
+ 0261-restrict-requires-pointer.error.c CERB_SKIP
+-0262-parameter-qualified-void.error.c CERB_INCONSISTENT
++0262-parameter-qualified-void.error.c UB_MATCH
+ 0263-parameter-incomplete-type.error.c CERB_SKIP
+ 0264-if-expression-scalar.error.c CERB_SKIP
+ 0265-loop-expression-not-scalar.error.c CERB_SKIP
+@@ -235,7 +262,7 @@
+ 0311-unseq_race_ok01.c MATCH
+ 0312-unseq_race_ok02.c MATCH
+ 0313-unseq_race_ok03.c MATCH
+-0314-nonarray-incomplete-lvalue-conversion.undef.c CERB_INCONSISTENT
++0314-nonarray-incomplete-lvalue-conversion.undef.c UB_MATCH
+ 0315-duplicate_member.error.c CERB_SKIP
+ 0316-declaration_struct_pointer.error.c CERB_SKIP
+ 0317-compound-literal-lifetime.c MATCH
+@@ -251,7 +278,7 @@
+ 0333-shifts_non_representable.undef.c UB_MATCH
+ 0334-non_decimal_long_int_constants.c MATCH
+ 0335-non_decimal_unsigned_long_int_constants.c MATCH
+-0337-scalar-init-with_braces.undef.c CERB_INCONSISTENT
++0337-scalar-init-with_braces.undef.c UB_MATCH
+ 0338-cast-pointer-to-_Bool.c MATCH
+ 0339-invalid-string-character.error.c CERB_SKIP
+ 0340-shl_promotion_to_signed.undef.c UB_MATCH
+diff --git a/scripts/exec_coverage_baseline.txt b/scripts/exec_coverage_baseline.txt
+index f61d39a19..38ad40d1f 100644
+--- a/scripts/exec_coverage_baseline.txt
++++ b/scripts/exec_coverage_baseline.txt
+@@ -99,6 +99,12 @@
+ #   struct     n=10  MATCH=10
+ #   union3     n=7   CERB_SKIP=2 MATCH=5
+ #   varargs    n=5   MATCH=5
++# 2026-09-03 zero-discrepancy Z1 (charter docs/2026-09-03_zero-discrepancy-design.md
++#   §4.2 R2 row; record docs/2026-09-03_zero-discrepancy-Z1-record.md): three
++#   tests/coverage/dynaddr/ rows added from tests/noodle-probes/dynamic-addrs/
++#   (da_control.c, da_bug.c, da_malloc0_nonnull.c) — UB_MATCH, UB_MATCH, MATCH as
++#   measured on fork oracle, upstream @ b9aeedcb4 and Lean (verbatim lines in the
++#   record). Rows hand-inserted: --write-baseline would drop this header.
+ arith3-001-unsigned-div.c MATCH
+ arith3-002-unsigned-mod.c MATCH
+ arith3-003-unsigned-shl.c MATCH
+@@ -161,6 +167,9 @@ ctrl3-002-null-funcptr-call.c CERB_SKIP
+ ctrl3-003-funcptr-void-cast.c MATCH
+ ctrl3-004-falloff-nonvoid.c UB_MATCH
+ ctrl3-005-unseq-neg-pos.c UB_MATCH
++dynaddr-001-free-automatic-control.c UB_MATCH
++dynaddr-002-malloc0-then-free-automatic.c UB_MATCH
++dynaddr-003-malloc0-nonnull.c MATCH
+ eval2-001-struct-member-value.c MATCH
+ eval2-002-union-member-value.c MATCH
+ eval2-003-nested-member-value.c MATCH
+@@ -298,3 +307,19 @@ varargs-002-va-end.libc.c MATCH
+ varargs-003-va-multiple-types.libc.c MATCH
+ varargs-004-va-pass-through.libc.c MATCH
+ varargs-005-va-sum.libc.c MATCH
++# 2026-09-03 zero-discrepancy Z2 (audit docs/2026-09-03_zero-discrepancy-Z2-audit.md §4/§5;
++#   record docs/2026-09-04_zero-discrepancy-Z2-record.md §5): ten tests/coverage/z2/ rows
++#   added from tests/z2-probes/ (the three-engine AGREE probes: empty_struct UB061, enum_conv,
++#   unspec_const_ptr, atomic_member UB042, nd/order3+order2+order_ptreq, int32_uac, int32_compat,
++#   hexfloat_round) — statuses as measured by `test_exec.sh tests/coverage/z2` on the Z2 binary
++#   (SUMMARY: total=10 match=8 ub_match=2). Rows hand-inserted: --write-baseline would drop this header.
++z2-001-empty-struct-ub061.c UB_MATCH
++z2-002-enum-conv-registry.c MATCH
++z2-003-unspec-const-ptr.c MATCH
++z2-004-atomic-member-ub042.c UB_MATCH
++z2-005-nd-order3.c MATCH
++z2-006-nd-order2.c MATCH
++z2-007-nd-order-ptreq.c MATCH
++z2-008-int32-uac-header-route.c MATCH
++z2-009-int32-compat.c MATCH
++z2-010-hexfloat-round.c MATCH
+diff --git a/scripts/exec_csmith_corpus_baseline.txt b/scripts/exec_csmith_corpus_baseline.txt
+index 81b20fc30..577f4fdfc 100644
+--- a/scripts/exec_csmith_corpus_baseline.txt
++++ b/scripts/exec_csmith_corpus_baseline.txt
+@@ -1174,7 +1174,7 @@ sia_csmith_473.c MATCH
+ sia_csmith_474.c MATCH
+ sia_csmith_475.c MATCH
+ sia_csmith_476.c MATCH
+-sia_csmith_477.c LEAN_CRASH
++sia_csmith_477.c TIMEOUT
+ sia_csmith_478.c MATCH
+ sia_csmith_479.c MATCH
+ sia_csmith_480.c MATCH
+@@ -1466,7 +1466,7 @@ sia_csmith_765.c MATCH
+ sia_csmith_766.c MATCH
+ sia_csmith_767.c MATCH
+ sia_csmith_768.c MATCH
+-sia_csmith_769.c LEAN_CRASH
++sia_csmith_769.c MATCH
+ sia_csmith_770.c MATCH
+ sia_csmith_771.c MATCH
+ sia_csmith_772.c MATCH
+diff --git a/scripts/exec_debug_baseline.txt b/scripts/exec_debug_baseline.txt
+index 74f23ac93..8f19e528a 100644
+--- a/scripts/exec_debug_baseline.txt
++++ b/scripts/exec_debug_baseline.txt
+@@ -13,6 +13,23 @@
+ #   movement was masked at threadB time by a stale generated tree in
+ #   this worktree (remediated at the split, split record §6.6);
+ #   re-recorded here in a dedicated baseline commit per house rule.
++# 2026-09-01 exec-lane re-record (cabs-json parse-only fix):
++#   ub-inconsistent.c CERB_INCONSISTENT -> UB_MATCH — attributed to the
++#   trust-basket oracle driver fix 80e674ee2 (backend/driver/main.ml:
++#   --cabs-json now stops after parse+serialize, mirroring the then-in-file
++#   cn_spec_json parse-only path — that exporter was itself removed
++#   2026-09-02; the cabs-json path stands on its own). Pre-fix the oracle's exec succeeded
++#   (with UB) but its cabs-json ran the full c_frontend and produced no
++#   JSON, so the row was CERB_INCONSISTENT ("exec succeeded but cabs-json
++#   failed", test_exec.sh:475-478); the bridge now exists and the Lean
++#   pipeline classifies the same UB. Run row verbatim:
++#   "[66/90] UB_MATCH ub-inconsistent: UB:UB061_no_named_members";
++#   pre-record check "0 regression(s), 1 improvement(s)" — the only
++#   movement in the debug lane. Sibling ub-static-reject.c stays
++#   CERB_SKIP (oracle exec fails — different class). Sanctioned
++#   [USER 2026-09-01]; record lean_frontend/docs/
++#   2026-09-01_C2-ratchet-record.md Addendum 3 (closing note).
++#   Re-recorded in a dedicated baseline commit per house rule.
+ # Per-category summary (regenerate via docs/2026-08-19_arc4-s4b-corpus-scoreboard.md recipe):
+ #   alias      n=3   MATCH=1 UB_MATCH=2
+ #   align      n=4   MATCH=4
+@@ -25,7 +42,7 @@
+ #   ptr        n=9   MATCH=9
+ #   rec        n=6   MATCH=6
+ #   struct     n=8   MATCH=8
+-#   ub         n=3   CERB_INCONSISTENT=1 CERB_SKIP=1 UB_MATCH=1
++#   ub         n=3   CERB_INCONSISTENT=1 CERB_SKIP=1 UB_MATCH=1   (2026-09-01: now CERB_SKIP=1 UB_MATCH=2, see below)
+ #   unseq      n=16  MATCH=5 UB_MATCH=11
+ #   valid      n=5   CERB_SKIP=1 MATCH=2 UB_MATCH=2
+ #   varargs    n=1   MATCH=1
+@@ -94,7 +111,7 @@ struct-04-array-member.c MATCH
+ struct-05-array-direct.c MATCH
+ struct-06-local-struct-array.c MATCH
+ struct-07-pass-int-array.c MATCH
+-ub-inconsistent.c CERB_INCONSISTENT
++ub-inconsistent.c UB_MATCH
+ ub-runtime-detect.c UB_MATCH
+ ub-static-reject.c CERB_SKIP
+ unseq-01-exact-0301.c UB_MATCH
+diff --git a/scripts/exec_float_baseline.txt b/scripts/exec_float_baseline.txt
+index 80b62abe0..6061c6984 100644
+--- a/scripts/exec_float_baseline.txt
++++ b/scripts/exec_float_baseline.txt
+@@ -2,7 +2,7 @@
+ # format: <file.c> <STATUS>   (see test_exec.sh header for the taxonomy)
+ # corpus: tests/float (69 files, ported verbatim from the prototype in
+ #   arc 4, wired arc-10 S3b — the last dangling arc-4 corpus deferral;
+-#   see notes/2026-08-20_prototype-test-migration-survey.md §4.1).
++#   see lean_frontend/docs/2026-08-20_prototype-test-migration-survey.md §4.1).
+ # First sweep 2026-08-20 (post-S3 pp mirrors): 69/69 MATCH, no fixes
+ #   needed. NOTE the upstream float-mul oracle bug
+ #   (lembugs/2026-08-19_upstream-float-mul.md, declared TEMPORAL
+diff --git a/scripts/gcc_oracle_baseline.txt b/scripts/gcc_oracle_baseline.txt
+index b46c3f642..3fd999aab 100644
+--- a/scripts/gcc_oracle_baseline.txt
++++ b/scripts/gcc_oracle_baseline.txt
+@@ -3,12 +3,15 @@
+ # design + triage classes: lean_frontend/docs/2026-08-30_gcc-second-oracle-design.md)
+ # Every corpus file has exactly one row; every skip carries its reason class.
+ # TRIAGED_* rows are justified per-file in scripts/gcc_oracle_triage.txt.
++# 2026-09-03 zero-discrepancy Z1: 7 rows for the new tests/immaculate/nolibc/zd-*.c pins hand-inserted (sorted by key)
++#   at their observed statuses (3 TRIAGED via gcc_oracle_triage.txt; record docs/2026-09-03_zero-discrepancy-Z1-record.md §9).
+ csmith/sa_csmith_001.c AGREE O2_AGREE
+ csmith/sa_csmith_002.c SKIP_LEAN_CRASH -
+ csmith/sa_csmith_003.c SKIP_LEAN_CRASH -
+ csmith/sa_csmith_004.c AGREE -
+ csmith/sa_csmith_005.c SKIP_LEAN_CRASH -
+ csmith/sa_csmith_006.c AGREE -
++csmith/sa_csmith_10.c AGREE -
+ csmith/sa_csmith_100.c AGREE -
+ csmith/sa_csmith_101.c AGREE -
+ csmith/sa_csmith_102.c AGREE -
+@@ -19,7 +22,7 @@ csmith/sa_csmith_106.c AGREE -
+ csmith/sa_csmith_107.c AGREE -
+ csmith/sa_csmith_108.c AGREE -
+ csmith/sa_csmith_109.c AGREE -
+-csmith/sa_csmith_10.c AGREE -
++csmith/sa_csmith_11.c AGREE -
+ csmith/sa_csmith_110.c AGREE -
+ csmith/sa_csmith_111.c AGREE -
+ csmith/sa_csmith_112.c AGREE -
+@@ -30,7 +33,7 @@ csmith/sa_csmith_116.c AGREE -
+ csmith/sa_csmith_117.c AGREE -
+ csmith/sa_csmith_118.c AGREE -
+ csmith/sa_csmith_119.c AGREE -
+-csmith/sa_csmith_11.c AGREE -
++csmith/sa_csmith_12.c AGREE -
+ csmith/sa_csmith_120.c AGREE -
+ csmith/sa_csmith_121.c AGREE O2_AGREE
+ csmith/sa_csmith_122.c AGREE -
+@@ -41,7 +44,7 @@ csmith/sa_csmith_126.c AGREE -
+ csmith/sa_csmith_127.c AGREE -
+ csmith/sa_csmith_128.c AGREE -
+ csmith/sa_csmith_129.c AGREE -
+-csmith/sa_csmith_12.c AGREE -
++csmith/sa_csmith_13.c AGREE -
+ csmith/sa_csmith_130.c AGREE -
+ csmith/sa_csmith_131.c AGREE -
+ csmith/sa_csmith_132.c AGREE -
+@@ -52,7 +55,7 @@ csmith/sa_csmith_136.c AGREE -
+ csmith/sa_csmith_137.c AGREE -
+ csmith/sa_csmith_138.c AGREE -
+ csmith/sa_csmith_139.c AGREE -
+-csmith/sa_csmith_13.c AGREE -
++csmith/sa_csmith_14.c AGREE -
+ csmith/sa_csmith_140.c AGREE -
+ csmith/sa_csmith_141.c AGREE -
+ csmith/sa_csmith_142.c AGREE -
+@@ -63,7 +66,7 @@ csmith/sa_csmith_146.c AGREE O2_AGREE
+ csmith/sa_csmith_147.c AGREE -
+ csmith/sa_csmith_148.c AGREE -
+ csmith/sa_csmith_149.c AGREE -
+-csmith/sa_csmith_14.c AGREE -
++csmith/sa_csmith_15.c AGREE -
+ csmith/sa_csmith_150.c AGREE -
+ csmith/sa_csmith_151.c AGREE O2_AGREE
+ csmith/sa_csmith_152.c AGREE O2_AGREE
+@@ -74,7 +77,7 @@ csmith/sa_csmith_156.c AGREE -
+ csmith/sa_csmith_157.c AGREE -
+ csmith/sa_csmith_158.c AGREE -
+ csmith/sa_csmith_159.c AGREE -
+-csmith/sa_csmith_15.c AGREE -
++csmith/sa_csmith_16.c AGREE -
+ csmith/sa_csmith_160.c AGREE -
+ csmith/sa_csmith_161.c AGREE -
+ csmith/sa_csmith_162.c AGREE -
+@@ -85,7 +88,7 @@ csmith/sa_csmith_166.c AGREE -
+ csmith/sa_csmith_167.c AGREE -
+ csmith/sa_csmith_168.c AGREE -
+ csmith/sa_csmith_169.c AGREE -
+-csmith/sa_csmith_16.c AGREE -
++csmith/sa_csmith_17.c AGREE -
+ csmith/sa_csmith_170.c AGREE -
+ csmith/sa_csmith_171.c AGREE -
+ csmith/sa_csmith_172.c AGREE -
+@@ -96,7 +99,7 @@ csmith/sa_csmith_176.c AGREE -
+ csmith/sa_csmith_177.c AGREE O2_AGREE
+ csmith/sa_csmith_178.c AGREE -
+ csmith/sa_csmith_179.c AGREE O2_AGREE
+-csmith/sa_csmith_17.c AGREE -
++csmith/sa_csmith_18.c AGREE -
+ csmith/sa_csmith_180.c AGREE -
+ csmith/sa_csmith_181.c AGREE -
+ csmith/sa_csmith_182.c AGREE -
+@@ -107,7 +110,7 @@ csmith/sa_csmith_186.c AGREE -
+ csmith/sa_csmith_187.c AGREE -
+ csmith/sa_csmith_188.c AGREE -
+ csmith/sa_csmith_189.c AGREE O2_AGREE
+-csmith/sa_csmith_18.c AGREE -
++csmith/sa_csmith_19.c AGREE -
+ csmith/sa_csmith_190.c AGREE -
+ csmith/sa_csmith_191.c AGREE -
+ csmith/sa_csmith_192.c AGREE -
+@@ -118,7 +121,7 @@ csmith/sa_csmith_196.c AGREE -
+ csmith/sa_csmith_197.c AGREE -
+ csmith/sa_csmith_198.c AGREE O2_AGREE
+ csmith/sa_csmith_199.c AGREE -
+-csmith/sa_csmith_19.c AGREE -
++csmith/sa_csmith_20.c AGREE -
+ csmith/sa_csmith_200.c AGREE -
+ csmith/sa_csmith_201.c AGREE -
+ csmith/sa_csmith_202.c AGREE -
+@@ -129,7 +132,7 @@ csmith/sa_csmith_206.c AGREE -
+ csmith/sa_csmith_207.c AGREE -
+ csmith/sa_csmith_208.c AGREE -
+ csmith/sa_csmith_209.c AGREE -
+-csmith/sa_csmith_20.c AGREE -
++csmith/sa_csmith_21.c AGREE -
+ csmith/sa_csmith_210.c AGREE -
+ csmith/sa_csmith_211.c AGREE -
+ csmith/sa_csmith_212.c AGREE -
+@@ -140,7 +143,7 @@ csmith/sa_csmith_216.c AGREE O2_AGREE
+ csmith/sa_csmith_217.c AGREE -
+ csmith/sa_csmith_218.c AGREE -
+ csmith/sa_csmith_219.c AGREE -
+-csmith/sa_csmith_21.c AGREE -
++csmith/sa_csmith_22.c AGREE -
+ csmith/sa_csmith_220.c AGREE -
+ csmith/sa_csmith_221.c AGREE O2_AGREE
+ csmith/sa_csmith_222.c AGREE -
+@@ -151,7 +154,7 @@ csmith/sa_csmith_226.c AGREE -
+ csmith/sa_csmith_227.c AGREE O2_AGREE
+ csmith/sa_csmith_228.c AGREE -
+ csmith/sa_csmith_229.c AGREE -
+-csmith/sa_csmith_22.c AGREE -
++csmith/sa_csmith_23.c AGREE -
+ csmith/sa_csmith_230.c AGREE -
+ csmith/sa_csmith_231.c AGREE -
+ csmith/sa_csmith_232.c AGREE -
+@@ -162,7 +165,7 @@ csmith/sa_csmith_236.c AGREE -
+ csmith/sa_csmith_237.c AGREE -
+ csmith/sa_csmith_238.c AGREE -
+ csmith/sa_csmith_239.c AGREE -
+-csmith/sa_csmith_23.c AGREE -
++csmith/sa_csmith_24.c AGREE -
+ csmith/sa_csmith_240.c AGREE -
+ csmith/sa_csmith_241.c AGREE -
+ csmith/sa_csmith_242.c AGREE -
+@@ -173,7 +176,7 @@ csmith/sa_csmith_246.c AGREE O2_AGREE
+ csmith/sa_csmith_247.c AGREE -
+ csmith/sa_csmith_248.c AGREE O2_AGREE
+ csmith/sa_csmith_249.c AGREE -
+-csmith/sa_csmith_24.c AGREE -
++csmith/sa_csmith_25.c AGREE -
+ csmith/sa_csmith_250.c AGREE -
+ csmith/sa_csmith_251.c AGREE O2_AGREE
+ csmith/sa_csmith_252.c AGREE -
+@@ -184,7 +187,7 @@ csmith/sa_csmith_256.c AGREE -
+ csmith/sa_csmith_257.c AGREE -
+ csmith/sa_csmith_258.c AGREE -
+ csmith/sa_csmith_259.c AGREE -
+-csmith/sa_csmith_25.c AGREE -
++csmith/sa_csmith_26.c AGREE -
+ csmith/sa_csmith_260.c AGREE -
+ csmith/sa_csmith_261.c AGREE -
+ csmith/sa_csmith_262.c AGREE -
+@@ -195,7 +198,7 @@ csmith/sa_csmith_266.c AGREE -
+ csmith/sa_csmith_267.c AGREE -
+ csmith/sa_csmith_268.c AGREE -
+ csmith/sa_csmith_269.c AGREE -
+-csmith/sa_csmith_26.c AGREE -
++csmith/sa_csmith_27.c AGREE -
+ csmith/sa_csmith_270.c AGREE -
+ csmith/sa_csmith_271.c AGREE -
+ csmith/sa_csmith_272.c AGREE -
+@@ -206,7 +209,7 @@ csmith/sa_csmith_276.c AGREE -
+ csmith/sa_csmith_277.c AGREE -
+ csmith/sa_csmith_278.c AGREE -
+ csmith/sa_csmith_279.c AGREE -
+-csmith/sa_csmith_27.c AGREE -
++csmith/sa_csmith_28.c AGREE O2_AGREE
+ csmith/sa_csmith_280.c AGREE -
+ csmith/sa_csmith_281.c AGREE -
+ csmith/sa_csmith_282.c AGREE -
+@@ -217,7 +220,7 @@ csmith/sa_csmith_286.c AGREE -
+ csmith/sa_csmith_287.c AGREE -
+ csmith/sa_csmith_288.c AGREE -
+ csmith/sa_csmith_289.c AGREE O2_AGREE
+-csmith/sa_csmith_28.c AGREE O2_AGREE
++csmith/sa_csmith_29.c AGREE -
+ csmith/sa_csmith_290.c AGREE O2_AGREE
+ csmith/sa_csmith_291.c AGREE -
+ csmith/sa_csmith_292.c AGREE -
+@@ -228,7 +231,7 @@ csmith/sa_csmith_296.c AGREE -
+ csmith/sa_csmith_297.c AGREE -
+ csmith/sa_csmith_298.c AGREE -
+ csmith/sa_csmith_299.c AGREE -
+-csmith/sa_csmith_29.c AGREE -
++csmith/sa_csmith_30.c AGREE -
+ csmith/sa_csmith_300.c AGREE -
+ csmith/sa_csmith_301.c AGREE O2_AGREE
+ csmith/sa_csmith_302.c AGREE -
+@@ -239,7 +242,7 @@ csmith/sa_csmith_306.c AGREE -
+ csmith/sa_csmith_307.c AGREE -
+ csmith/sa_csmith_308.c AGREE -
+ csmith/sa_csmith_309.c AGREE O2_AGREE
+-csmith/sa_csmith_30.c AGREE -
++csmith/sa_csmith_31.c AGREE O2_AGREE
+ csmith/sa_csmith_310.c AGREE O2_AGREE
+ csmith/sa_csmith_311.c AGREE -
+ csmith/sa_csmith_312.c AGREE -
+@@ -250,7 +253,7 @@ csmith/sa_csmith_316.c AGREE -
+ csmith/sa_csmith_317.c AGREE -
+ csmith/sa_csmith_318.c AGREE -
+ csmith/sa_csmith_319.c AGREE -
+-csmith/sa_csmith_31.c AGREE O2_AGREE
++csmith/sa_csmith_32.c AGREE O2_AGREE
+ csmith/sa_csmith_320.c AGREE -
+ csmith/sa_csmith_321.c AGREE -
+ csmith/sa_csmith_322.c AGREE -
+@@ -261,7 +264,7 @@ csmith/sa_csmith_326.c AGREE -
+ csmith/sa_csmith_327.c AGREE -
+ csmith/sa_csmith_328.c AGREE -
+ csmith/sa_csmith_329.c AGREE O2_AGREE
+-csmith/sa_csmith_32.c AGREE O2_AGREE
++csmith/sa_csmith_33.c AGREE -
+ csmith/sa_csmith_330.c AGREE -
+ csmith/sa_csmith_331.c AGREE -
+ csmith/sa_csmith_332.c AGREE -
+@@ -272,7 +275,7 @@ csmith/sa_csmith_336.c AGREE -
+ csmith/sa_csmith_337.c AGREE -
+ csmith/sa_csmith_338.c AGREE -
+ csmith/sa_csmith_339.c AGREE -
+-csmith/sa_csmith_33.c AGREE -
++csmith/sa_csmith_34.c AGREE O2_AGREE
+ csmith/sa_csmith_340.c AGREE -
+ csmith/sa_csmith_341.c SKIP_LEAN_TIMEOUT -
+ csmith/sa_csmith_342.c AGREE -
+@@ -283,7 +286,7 @@ csmith/sa_csmith_346.c AGREE -
+ csmith/sa_csmith_347.c AGREE -
+ csmith/sa_csmith_348.c SKIP_LEAN_TIMEOUT -
+ csmith/sa_csmith_349.c AGREE -
+-csmith/sa_csmith_34.c AGREE O2_AGREE
++csmith/sa_csmith_35.c AGREE -
+ csmith/sa_csmith_350.c AGREE -
+ csmith/sa_csmith_351.c AGREE O2_AGREE
+ csmith/sa_csmith_352.c AGREE -
+@@ -294,7 +297,7 @@ csmith/sa_csmith_356.c AGREE -
+ csmith/sa_csmith_357.c AGREE -
+ csmith/sa_csmith_358.c AGREE -
+ csmith/sa_csmith_359.c AGREE -
+-csmith/sa_csmith_35.c AGREE -
++csmith/sa_csmith_36.c AGREE -
+ csmith/sa_csmith_360.c AGREE -
+ csmith/sa_csmith_361.c AGREE -
+ csmith/sa_csmith_362.c AGREE -
+@@ -305,7 +308,7 @@ csmith/sa_csmith_366.c AGREE -
+ csmith/sa_csmith_367.c AGREE -
+ csmith/sa_csmith_368.c AGREE -
+ csmith/sa_csmith_369.c AGREE -
+-csmith/sa_csmith_36.c AGREE -
++csmith/sa_csmith_37.c AGREE -
+ csmith/sa_csmith_370.c AGREE -
+ csmith/sa_csmith_371.c AGREE -
+ csmith/sa_csmith_372.c AGREE O2_AGREE
+@@ -316,7 +319,7 @@ csmith/sa_csmith_376.c AGREE -
+ csmith/sa_csmith_377.c AGREE -
+ csmith/sa_csmith_378.c AGREE -
+ csmith/sa_csmith_379.c AGREE -
+-csmith/sa_csmith_37.c AGREE -
++csmith/sa_csmith_38.c AGREE -
+ csmith/sa_csmith_380.c AGREE -
+ csmith/sa_csmith_381.c AGREE O2_AGREE
+ csmith/sa_csmith_382.c AGREE -
+@@ -327,7 +330,7 @@ csmith/sa_csmith_386.c AGREE -
+ csmith/sa_csmith_387.c AGREE -
+ csmith/sa_csmith_388.c AGREE -
+ csmith/sa_csmith_389.c AGREE -
+-csmith/sa_csmith_38.c AGREE -
++csmith/sa_csmith_39.c AGREE -
+ csmith/sa_csmith_390.c AGREE -
+ csmith/sa_csmith_391.c AGREE -
+ csmith/sa_csmith_392.c AGREE -
+@@ -338,7 +341,7 @@ csmith/sa_csmith_396.c AGREE -
+ csmith/sa_csmith_397.c AGREE -
+ csmith/sa_csmith_398.c AGREE -
+ csmith/sa_csmith_399.c AGREE -
+-csmith/sa_csmith_39.c AGREE -
++csmith/sa_csmith_40.c AGREE -
+ csmith/sa_csmith_400.c AGREE -
+ csmith/sa_csmith_401.c AGREE -
+ csmith/sa_csmith_402.c AGREE -
+@@ -349,7 +352,7 @@ csmith/sa_csmith_406.c AGREE -
+ csmith/sa_csmith_407.c AGREE -
+ csmith/sa_csmith_408.c AGREE -
+ csmith/sa_csmith_409.c AGREE -
+-csmith/sa_csmith_40.c AGREE -
++csmith/sa_csmith_41.c AGREE -
+ csmith/sa_csmith_410.c AGREE -
+ csmith/sa_csmith_411.c AGREE -
+ csmith/sa_csmith_412.c AGREE -
+@@ -360,7 +363,7 @@ csmith/sa_csmith_416.c AGREE -
+ csmith/sa_csmith_417.c AGREE -
+ csmith/sa_csmith_418.c AGREE -
+ csmith/sa_csmith_419.c AGREE -
+-csmith/sa_csmith_41.c AGREE -
++csmith/sa_csmith_42.c AGREE -
+ csmith/sa_csmith_420.c AGREE -
+ csmith/sa_csmith_421.c AGREE -
+ csmith/sa_csmith_422.c AGREE -
+@@ -371,7 +374,7 @@ csmith/sa_csmith_426.c AGREE -
+ csmith/sa_csmith_427.c AGREE -
+ csmith/sa_csmith_428.c AGREE -
+ csmith/sa_csmith_429.c AGREE -
+-csmith/sa_csmith_42.c AGREE -
++csmith/sa_csmith_43.c AGREE -
+ csmith/sa_csmith_430.c AGREE -
+ csmith/sa_csmith_431.c AGREE -
+ csmith/sa_csmith_432.c AGREE -
+@@ -382,7 +385,7 @@ csmith/sa_csmith_436.c AGREE -
+ csmith/sa_csmith_437.c AGREE -
+ csmith/sa_csmith_438.c AGREE -
+ csmith/sa_csmith_439.c AGREE -
+-csmith/sa_csmith_43.c AGREE -
++csmith/sa_csmith_44.c AGREE O2_AGREE
+ csmith/sa_csmith_440.c AGREE -
+ csmith/sa_csmith_441.c AGREE -
+ csmith/sa_csmith_442.c AGREE -
+@@ -393,7 +396,7 @@ csmith/sa_csmith_446.c AGREE -
+ csmith/sa_csmith_447.c AGREE -
+ csmith/sa_csmith_448.c AGREE -
+ csmith/sa_csmith_449.c AGREE -
+-csmith/sa_csmith_44.c AGREE O2_AGREE
++csmith/sa_csmith_45.c AGREE -
+ csmith/sa_csmith_450.c AGREE -
+ csmith/sa_csmith_451.c AGREE -
+ csmith/sa_csmith_452.c AGREE O2_AGREE
+@@ -404,7 +407,7 @@ csmith/sa_csmith_456.c AGREE -
+ csmith/sa_csmith_457.c AGREE -
+ csmith/sa_csmith_458.c AGREE -
+ csmith/sa_csmith_459.c AGREE -
+-csmith/sa_csmith_45.c AGREE -
++csmith/sa_csmith_46.c AGREE -
+ csmith/sa_csmith_460.c AGREE -
+ csmith/sa_csmith_461.c AGREE -
+ csmith/sa_csmith_462.c AGREE -
+@@ -415,9 +418,8 @@ csmith/sa_csmith_466.c AGREE -
+ csmith/sa_csmith_467.c AGREE -
+ csmith/sa_csmith_468.c AGREE -
+ csmith/sa_csmith_469.c AGREE -
+-csmith/sa_csmith_46.c AGREE -
+-csmith/sa_csmith_470.c AGREE -
+ csmith/sa_csmith_47.c AGREE -
++csmith/sa_csmith_470.c AGREE -
+ csmith/sa_csmith_48.c AGREE -
+ csmith/sa_csmith_49.c AGREE O2_AGREE
+ csmith/sa_csmith_50.c AGREE O2_AGREE
+@@ -440,6 +442,7 @@ csmith/sa_csmith_66.c AGREE -
+ csmith/sa_csmith_67.c AGREE -
+ csmith/sa_csmith_68.c AGREE -
+ csmith/sa_csmith_69.c AGREE -
++csmith/sa_csmith_7.c AGREE -
+ csmith/sa_csmith_70.c SKIP_LEAN_TIMEOUT -
+ csmith/sa_csmith_71.c AGREE -
+ csmith/sa_csmith_72.c AGREE -
+@@ -450,7 +453,7 @@ csmith/sa_csmith_76.c AGREE -
+ csmith/sa_csmith_77.c AGREE -
+ csmith/sa_csmith_78.c AGREE -
+ csmith/sa_csmith_79.c AGREE -
+-csmith/sa_csmith_7.c AGREE -
++csmith/sa_csmith_8.c AGREE -
+ csmith/sa_csmith_80.c AGREE -
+ csmith/sa_csmith_81.c AGREE -
+ csmith/sa_csmith_82.c AGREE -
+@@ -461,7 +464,7 @@ csmith/sa_csmith_86.c AGREE -
+ csmith/sa_csmith_87.c AGREE -
+ csmith/sa_csmith_88.c AGREE -
+ csmith/sa_csmith_89.c AGREE -
+-csmith/sa_csmith_8.c AGREE -
++csmith/sa_csmith_9.c AGREE -
+ csmith/sa_csmith_90.c AGREE -
+ csmith/sa_csmith_91.c AGREE O2_AGREE
+ csmith/sa_csmith_92.c AGREE O2_AGREE
+@@ -472,7 +475,6 @@ csmith/sa_csmith_96.c AGREE -
+ csmith/sa_csmith_97.c AGREE O2_AGREE
+ csmith/sa_csmith_98.c AGREE -
+ csmith/sa_csmith_99.c AGREE -
+-csmith/sa_csmith_9.c AGREE -
+ csmith/sia_csmith_001.c AGREE -
+ csmith/sia_csmith_002.c AGREE -
+ csmith/sia_csmith_003.c AGREE -
+@@ -572,6 +574,7 @@ csmith/sia_csmith_096.c AGREE -
+ csmith/sia_csmith_097.c AGREE -
+ csmith/sia_csmith_098.c AGREE -
+ csmith/sia_csmith_099.c AGREE -
++csmith/sia_csmith_100.c AGREE -
+ csmith/sia_csmith_1000.c AGREE -
+ csmith/sia_csmith_1001.c AGREE -
+ csmith/sia_csmith_1002.c AGREE -
+@@ -582,7 +585,7 @@ csmith/sia_csmith_1006.c AGREE O2_AGREE
+ csmith/sia_csmith_1007.c AGREE -
+ csmith/sia_csmith_1008.c AGREE O2_AGREE
+ csmith/sia_csmith_1009.c AGREE -
+-csmith/sia_csmith_100.c AGREE -
++csmith/sia_csmith_101.c AGREE -
+ csmith/sia_csmith_1010.c AGREE -
+ csmith/sia_csmith_1011.c AGREE -
+ csmith/sia_csmith_1012.c AGREE -
+@@ -593,7 +596,7 @@ csmith/sia_csmith_1016.c AGREE -
+ csmith/sia_csmith_1017.c AGREE -
+ csmith/sia_csmith_1018.c AGREE -
+ csmith/sia_csmith_1019.c AGREE O2_AGREE
+-csmith/sia_csmith_101.c AGREE -
++csmith/sia_csmith_102.c AGREE -
+ csmith/sia_csmith_1020.c AGREE O2_AGREE
+ csmith/sia_csmith_1021.c AGREE -
+ csmith/sia_csmith_1022.c AGREE -
+@@ -604,7 +607,7 @@ csmith/sia_csmith_1026.c AGREE -
+ csmith/sia_csmith_1027.c AGREE -
+ csmith/sia_csmith_1028.c AGREE -
+ csmith/sia_csmith_1029.c AGREE -
+-csmith/sia_csmith_102.c AGREE -
++csmith/sia_csmith_103.c AGREE -
+ csmith/sia_csmith_1030.c AGREE -
+ csmith/sia_csmith_1031.c AGREE -
+ csmith/sia_csmith_1032.c AGREE -
+@@ -615,7 +618,7 @@ csmith/sia_csmith_1036.c AGREE -
+ csmith/sia_csmith_1037.c AGREE -
+ csmith/sia_csmith_1038.c AGREE -
+ csmith/sia_csmith_1039.c AGREE -
+-csmith/sia_csmith_103.c AGREE -
++csmith/sia_csmith_104.c AGREE -
+ csmith/sia_csmith_1040.c AGREE -
+ csmith/sia_csmith_1041.c AGREE -
+ csmith/sia_csmith_1042.c AGREE -
+@@ -626,7 +629,7 @@ csmith/sia_csmith_1046.c AGREE -
+ csmith/sia_csmith_1047.c AGREE O2_AGREE
+ csmith/sia_csmith_1048.c AGREE -
+ csmith/sia_csmith_1049.c AGREE O2_AGREE
+-csmith/sia_csmith_104.c AGREE -
++csmith/sia_csmith_105.c AGREE -
+ csmith/sia_csmith_1050.c AGREE -
+ csmith/sia_csmith_1051.c AGREE -
+ csmith/sia_csmith_1052.c AGREE -
+@@ -637,7 +640,7 @@ csmith/sia_csmith_1056.c AGREE -
+ csmith/sia_csmith_1057.c AGREE -
+ csmith/sia_csmith_1058.c SKIP_LEAN_TIMEOUT -
+ csmith/sia_csmith_1059.c AGREE -
+-csmith/sia_csmith_105.c AGREE -
++csmith/sia_csmith_106.c AGREE -
+ csmith/sia_csmith_1060.c AGREE -
+ csmith/sia_csmith_1061.c AGREE O2_AGREE
+ csmith/sia_csmith_1062.c AGREE O2_AGREE
+@@ -648,7 +651,7 @@ csmith/sia_csmith_1066.c AGREE -
+ csmith/sia_csmith_1067.c AGREE -
+ csmith/sia_csmith_1068.c AGREE -
+ csmith/sia_csmith_1069.c AGREE O2_AGREE
+-csmith/sia_csmith_106.c AGREE -
++csmith/sia_csmith_107.c AGREE -
+ csmith/sia_csmith_1070.c AGREE -
+ csmith/sia_csmith_1071.c AGREE -
+ csmith/sia_csmith_1072.c AGREE -
+@@ -659,7 +662,7 @@ csmith/sia_csmith_1076.c AGREE -
+ csmith/sia_csmith_1077.c AGREE -
+ csmith/sia_csmith_1078.c AGREE -
+ csmith/sia_csmith_1079.c AGREE -
+-csmith/sia_csmith_107.c AGREE -
++csmith/sia_csmith_108.c AGREE -
+ csmith/sia_csmith_1080.c AGREE O2_AGREE
+ csmith/sia_csmith_1081.c AGREE -
+ csmith/sia_csmith_1082.c AGREE -
+@@ -670,7 +673,7 @@ csmith/sia_csmith_1086.c AGREE -
+ csmith/sia_csmith_1087.c AGREE -
+ csmith/sia_csmith_1088.c AGREE -
+ csmith/sia_csmith_1089.c AGREE -
+-csmith/sia_csmith_108.c AGREE -
++csmith/sia_csmith_109.c AGREE -
+ csmith/sia_csmith_1090.c AGREE -
+ csmith/sia_csmith_1091.c AGREE O2_AGREE
+ csmith/sia_csmith_1092.c AGREE O2_AGREE
+@@ -681,7 +684,7 @@ csmith/sia_csmith_1096.c AGREE -
+ csmith/sia_csmith_1097.c AGREE -
+ csmith/sia_csmith_1098.c AGREE -
+ csmith/sia_csmith_1099.c AGREE -
+-csmith/sia_csmith_109.c AGREE -
++csmith/sia_csmith_110.c AGREE -
+ csmith/sia_csmith_1100.c AGREE -
+ csmith/sia_csmith_1101.c AGREE -
+ csmith/sia_csmith_1102.c AGREE -
+@@ -692,7 +695,7 @@ csmith/sia_csmith_1106.c AGREE O2_AGREE
+ csmith/sia_csmith_1107.c AGREE -
+ csmith/sia_csmith_1108.c AGREE -
+ csmith/sia_csmith_1109.c AGREE -
+-csmith/sia_csmith_110.c AGREE -
++csmith/sia_csmith_111.c AGREE -
+ csmith/sia_csmith_1110.c AGREE -
+ csmith/sia_csmith_1111.c AGREE -
+ csmith/sia_csmith_1112.c AGREE -
+@@ -703,7 +706,7 @@ csmith/sia_csmith_1116.c AGREE -
+ csmith/sia_csmith_1117.c AGREE -
+ csmith/sia_csmith_1118.c AGREE -
+ csmith/sia_csmith_1119.c AGREE -
+-csmith/sia_csmith_111.c AGREE -
++csmith/sia_csmith_112.c AGREE -
+ csmith/sia_csmith_1120.c AGREE -
+ csmith/sia_csmith_1121.c AGREE -
+ csmith/sia_csmith_1122.c AGREE -
+@@ -714,7 +717,7 @@ csmith/sia_csmith_1126.c AGREE -
+ csmith/sia_csmith_1127.c AGREE -
+ csmith/sia_csmith_1128.c AGREE -
+ csmith/sia_csmith_1129.c AGREE -
+-csmith/sia_csmith_112.c AGREE -
++csmith/sia_csmith_113.c AGREE -
+ csmith/sia_csmith_1130.c AGREE -
+ csmith/sia_csmith_1131.c AGREE -
+ csmith/sia_csmith_1132.c AGREE O2_AGREE
+@@ -725,7 +728,7 @@ csmith/sia_csmith_1136.c AGREE -
+ csmith/sia_csmith_1137.c AGREE -
+ csmith/sia_csmith_1138.c AGREE -
+ csmith/sia_csmith_1139.c AGREE -
+-csmith/sia_csmith_113.c AGREE -
++csmith/sia_csmith_114.c AGREE -
+ csmith/sia_csmith_1140.c AGREE -
+ csmith/sia_csmith_1141.c AGREE -
+ csmith/sia_csmith_1142.c AGREE -
+@@ -736,7 +739,7 @@ csmith/sia_csmith_1146.c AGREE -
+ csmith/sia_csmith_1147.c AGREE -
+ csmith/sia_csmith_1148.c AGREE -
+ csmith/sia_csmith_1149.c AGREE -
+-csmith/sia_csmith_114.c AGREE -
++csmith/sia_csmith_115.c AGREE -
+ csmith/sia_csmith_1150.c AGREE -
+ csmith/sia_csmith_1151.c AGREE -
+ csmith/sia_csmith_1152.c AGREE -
+@@ -747,7 +750,7 @@ csmith/sia_csmith_1156.c AGREE -
+ csmith/sia_csmith_1157.c AGREE -
+ csmith/sia_csmith_1158.c AGREE O2_AGREE
+ csmith/sia_csmith_1159.c AGREE -
+-csmith/sia_csmith_115.c AGREE -
++csmith/sia_csmith_116.c AGREE -
+ csmith/sia_csmith_1160.c AGREE -
+ csmith/sia_csmith_1161.c AGREE -
+ csmith/sia_csmith_1162.c AGREE -
+@@ -758,7 +761,7 @@ csmith/sia_csmith_1166.c AGREE -
+ csmith/sia_csmith_1167.c AGREE -
+ csmith/sia_csmith_1168.c AGREE -
+ csmith/sia_csmith_1169.c AGREE -
+-csmith/sia_csmith_116.c AGREE -
++csmith/sia_csmith_117.c AGREE -
+ csmith/sia_csmith_1170.c AGREE -
+ csmith/sia_csmith_1171.c AGREE -
+ csmith/sia_csmith_1172.c AGREE -
+@@ -769,7 +772,7 @@ csmith/sia_csmith_1176.c AGREE -
+ csmith/sia_csmith_1177.c AGREE -
+ csmith/sia_csmith_1178.c AGREE -
+ csmith/sia_csmith_1179.c AGREE -
+-csmith/sia_csmith_117.c AGREE -
++csmith/sia_csmith_118.c AGREE -
+ csmith/sia_csmith_1180.c AGREE -
+ csmith/sia_csmith_1181.c AGREE -
+ csmith/sia_csmith_1182.c AGREE -
+@@ -780,11 +783,10 @@ csmith/sia_csmith_1186.c AGREE -
+ csmith/sia_csmith_1187.c AGREE -
+ csmith/sia_csmith_1188.c AGREE -
+ csmith/sia_csmith_1189.c AGREE -
+-csmith/sia_csmith_118.c AGREE -
++csmith/sia_csmith_119.c AGREE -
+ csmith/sia_csmith_1190.c AGREE -
+ csmith/sia_csmith_1191.c AGREE -
+ csmith/sia_csmith_1192.c AGREE -
+-csmith/sia_csmith_119.c AGREE -
+ csmith/sia_csmith_120.c AGREE -
+ csmith/sia_csmith_121.c AGREE O2_AGREE
+ csmith/sia_csmith_122.c AGREE -
+@@ -1142,7 +1144,7 @@ csmith/sia_csmith_473.c AGREE -
+ csmith/sia_csmith_474.c AGREE -
+ csmith/sia_csmith_475.c AGREE -
+ csmith/sia_csmith_476.c AGREE -
+-csmith/sia_csmith_477.c SKIP_LEAN_CRASH -
++csmith/sia_csmith_477.c AGREE -
+ csmith/sia_csmith_478.c AGREE -
+ csmith/sia_csmith_479.c AGREE -
+ csmith/sia_csmith_480.c AGREE -
+@@ -1434,7 +1436,7 @@ csmith/sia_csmith_765.c AGREE -
+ csmith/sia_csmith_766.c AGREE -
+ csmith/sia_csmith_767.c AGREE -
+ csmith/sia_csmith_768.c AGREE -
+-csmith/sia_csmith_769.c SKIP_LEAN_CRASH -
++csmith/sia_csmith_769.c AGREE -
+ csmith/sia_csmith_770.c AGREE -
+ csmith/sia_csmith_771.c AGREE -
+ csmith/sia_csmith_772.c AGREE O2_AGREE
+@@ -1835,8 +1837,8 @@ tests/immaculate/nolibc/g1-ge-funptr.c SKIP_LEAN_FAIL -
+ tests/immaculate/nolibc/g1-lt-null.c SKIP_LEAN_FAIL -
+ tests/immaculate/nolibc/g3-realloc-dead.c SKIP_UB -
+ tests/immaculate/nolibc/g3-realloc-non-heap.c SKIP_UB -
+-tests/immaculate/nolibc/g4-bswap64-overflow.c SKIP_LEAN_CRASH -
+ tests/immaculate/nolibc/g4-bswap-controls.c AGREE -
++tests/immaculate/nolibc/g4-bswap64-overflow.c SKIP_LEAN_CRASH -
+ tests/immaculate/nolibc/g4-ctz-nonzero.c AGREE -
+ tests/immaculate/nolibc/g4-ffs-intmin.c AGREE -
+ tests/immaculate/nolibc/g4-ffs-negative.c AGREE -
+@@ -1850,6 +1852,13 @@ tests/immaculate/nolibc/s9-enum-signedness.c AGREE -
+ tests/immaculate/nolibc/s9-enum-sizeof-route.c AGREE -
+ tests/immaculate/nolibc/trap-bool-uninit.c SKIP_UB -
+ tests/immaculate/nolibc/trap-bool-write.c SKIP_UB -
++tests/immaculate/nolibc/zd-d1-float-inf-to-int-ub.c SKIP_UB -
++tests/immaculate/nolibc/zd-d2-ptr-to-int-narrow-ub.c SKIP_UB -
++tests/immaculate/nolibc/zd-d5-device-range-load.c TRIAGED_UB -
++tests/immaculate/nolibc/zd-da-align16.c TRIAGED_ADDR -
++tests/immaculate/nolibc/zd-da-offset.c TRIAGED_ADDR -
++tests/immaculate/nolibc/zd-e2-ptr-string-literals.c SKIP_GCC_STDOUT -
++tests/immaculate/nolibc/zd-z2m02-device-funptr-call.c SKIP_LEAN_CRASH -
+ tests/minimal/001-return-literal.c AGREE -
+ tests/minimal/002-return-zero.c AGREE O2_AGREE
+ tests/minimal/003-arith-add.c AGREE -
+@@ -1956,3 +1965,7 @@ tests/minimal/103-union-store-load.c AGREE -
+ tests/minimal/104-unsigned-wrap-arith.c AGREE -
+ tests/minimal/105-bitwise-ops.c AGREE -
+ tests/minimal/106-sizeof-struct-array.c AGREE -
++# 2026-09-03 zero-discrepancy Z2: 3 rows for the new tests/immaculate/nolibc/zd-z2*.c pins hand-inserted (classes as measured by the lane on the Z2 binary; record docs/2026-09-04_zero-discrepancy-Z2-record.md §5/§11)
++tests/immaculate/nolibc/zd-z2fl03-nan-to-int.c SKIP_LEAN_CRASH -
++tests/immaculate/nolibc/zd-z2i01-cerbty-int32-uac.c SKIP_GCC_COMPILE -
++tests/immaculate/nolibc/zd-z2m01-aligned-alloc-zero-nolibc.c SKIP_UB -
+diff --git a/tests/immaculate/baseline.txt b/tests/immaculate/baseline.txt
+index 9d63d2d6c..9e63e5eaf 100644
+--- a/tests/immaculate/baseline.txt
++++ b/tests/immaculate/baseline.txt
+@@ -16,7 +16,7 @@
+ #   CONFLATED    G6 in-Lean probe: two distinct hash-colliding identifiers
+ #                intern to the SAME symbol (silent conflation).
+ #
+-# Finding -> row map (registers: notes/2026-08-21_grumpy-audit-*.md):
++# Finding -> row map (register: lean_frontend/docs/2026-08-21_grumpy-audit-cerberus-semantics.md; the lem-backend register is parked on tag park/reasoning-era-20260831):
+ #   G1 semantics: g1-lt-null, g1-ge-funptr (relational kill-path -> value-path)
+ #   G2 semantics: g2-memcpy-oob, g2-memcpy-readonly, g2-memcmp-uninit (checked-path bypass)
+ #   G3 semantics: g3-realloc-non-heap (UB179c), g3-realloc-dead (UB179d) (wrong UB family)
+@@ -34,39 +34,104 @@
+ #   G1/G2/G3/G4 rows and 'ab' -> MATCH (fixed in S1 F1/F2).
+ #   g5-decode-question -> ORACLE_CRASH with L pinned Specified(63):
+ #     '\?' is legal C11 (= 63, gcc agrees); the ORACLE failwiths — oracle-wrong,
+-#     upstream-tray #10. Never fix-to-match.
++#     upstream-tray #10. ISO-fix register R1 (VALIDATION.md; code marker in
++#     CerbDecode.lean) — the pin RETIRES the entry when upstream fixes it.
+ #   g5-escape-roundtrip -> DIFF, Lean-right (127 vs oracle 87): Char.escaped
+ #     decimal read back through the octal decoder corrupts the printf %c
+-#     round-trip upstream — oracle-wrong, upstream-tray #11. Never fix-to-match.
++#     round-trip upstream — oracle-wrong, upstream-tray #11. ISO-fix register R2
++#     (VALIDATION.md; code marker CerbDecode.escaped_char) — retires likewise.
++#   s4b-memcmp-hugesize -> ORACLE_CRASH with L pinned UB_CERB002a: ISO-fix
++#     register R3, ADMITTED CONDITIONAL (pending Z4's scratch-oracle evidence).
++#   zd-e2-ptr-string-literals -> ORACLE_CRASH (the string-literal form of R1).
+ #   g6-hash-collision -> TRIPWIRE (CoreParser fail-stops on hash collisions, F3).
+-argv1-args MATCH | L=VAL:Specified(3)
+-argv2-args MATCH | L=VAL:Specified(97)
+-argv3-args MATCH | L=VAL:Specified(11)
+-g1-ge-funptr MATCH | L=ERR:Memory WIP: ge_ptrval
+-g1-lt-null MATCH | L=ERR:Memory WIP: lt_ptrval ==> one null pointer
++#
++# zero-discrepancy Z1 pins (2026-09-03; charter docs/2026-09-03_zero-discrepancy-design.md
++# §4.2 rows 'Lean != oracle: D4-D7 (+ D1/D2 loc)', E2 and the R2 da_* rows; record
++# docs/2026-09-03_zero-discrepancy-Z1-record.md): the zd-* rows are the census's
++# Lean-vs-oracle reproducers, pinned at the CURRENT Lean value before each fix
++# (DIFF) and re-recorded MATCH by the fix commit that cites them. The UB token
++# is loc+stderr-inclusive since this pin commit (header), so every UB row
++# carries the oracle's <L:C--L:C> loc once Z-03 lands; zd-e2-ptr-string-literals
++# is the register-R1 ORACLE_CRASH pair and stays as recorded.
++#
++# zero-discrepancy Z2 pins (2026-09-03; Z2 seam audit docs/2026-09-03_zero-discrepancy-Z2-audit.md
++# §4/§5, record docs/2026-09-04_zero-discrepancy-Z2-record.md): zd-z2cp01-strtod-inf (libc.core `inf`
++# literal), zd-z2i01-cerbty-int32-uac (IntN_t aliasing), zd-z2f01-lseek-whence (SibylFS EINVAL) — each
++# pinned at the CURRENT Lean token BEFORE its fix (DIFF) and re-recorded MATCH by the fix commit.
++# zd-z2m01-* (aligned_alloc(0,·): oracle Division_by_zero at std.core:385 rem_t) stay ORACLE_CRASH /
++# MATCH|L=CRASH as PENDING rows: the oracle's crash is a KIND-2 OCaml-execution artifact, not mirrored
++# ([USER 2026-09-03] docs/2026-09-03_logical-semantics-referent-ruling.md); the logical meaning of a Core
++# rem_t by zero is an operator decision (record §10). Z2 probe-integration pins
++# (record §5): zd-z2-free-funptr (Z-07 re-witness, MATCH), zd-z2m03-malloc-oom-msg (MATCH — Lean runs
++# it since Z2-M-04), zd-z2fl03-nan-to-int and zd-z2f04-closedir (both-crash MATCH | L=CRASH pairs).
++#
++# zero-discrepancy Z3 pins (2026-09-05; charter row Z-28 / detective RC-2, record
++# docs/2026-09-05_zero-discrepancy-Z3-record.md): zd-z28-<name> are BYTE-IDENTICAL copies of three of
++# the six tests/pnvi_testsuite STDOUT_DIFF rows (same MD5 => same oracle interleaving as the committed
++# ci_sweep rows) — the deterministic three; the other three (provenance_equality_{auto,global,global_fn}_yx)
++# have TWO executions ((p==q) true/false) and the oracle's default --mode=random (Random.self_init,
++# driver_ocaml.ml:153) picks one per run, so this single-trace lane cannot pin them (the Z3 record's
++# exhaustive pnvi spot sweep does). zd-z28-addr-layout-{a,b} are one program under two digests
++# (comment-only difference), so the program's globals land at DIFFERENT positions among the libc
++# TUs' globals on both engines. All five pinned DIFF before the fix, re-recorded MATCH by the fix commit.
++argv1-args MATCH | L=VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
++argv2-args MATCH | L=VAL:{value: "Specified(97)", stdout: "", stderr: "", blocked: "false"}
++argv3-args MATCH | L=VAL:{value: "Specified(11)", stdout: "", stderr: "", blocked: "false"}
++g1-ge-funptr MATCH | L=ERR:{msg: "Memory WIP: ge_ptrval"}
++g1-lt-null MATCH | L=ERR:{msg: "Memory WIP: lt_ptrval ==> one null pointer"}
+ g2-memcmp-uninit MATCH | L=CRASH
+-g2-memcpy-ok MATCH | L=VAL:Specified(4)
+-g2-memcpy-oob MATCH | L=UB:UB_CERB002b_out_of_bound_store
+-g2-memcpy-readonly MATCH | L=UB:UB064_modifying_const
+-g3-realloc-dead MATCH | L=UB:UB179d_dead_allocation_realloc
+-g3-realloc-non-heap MATCH | L=UB:UB179c_non_matching_allocation_realloc
++g2-memcpy-ok MATCH | L=VAL:{value: "Specified(4)", stdout: "", stderr: "", blocked: "false"}
++g2-memcpy-oob MATCH | L=UB:{ub: "UB_CERB002b_out_of_bound_store", stderr: "", loc: "<8:3--8:22>"}
++g2-memcpy-readonly MATCH | L=UB:{ub: "UB064_modifying_const", stderr: "", loc: "<7:3--7:29>"}
++g3-realloc-dead MATCH | L=UB:{ub: "UB179d_dead_allocation_realloc", stderr: "", loc: "<7:12--7:39>"}
++g3-realloc-non-heap MATCH | L=UB:{ub: "UB179c_non_matching_allocation_realloc", stderr: "", loc: "<7:12--7:40>"}
+ g4-bswap64-overflow MATCH | L=CRASH
+-g4-bswap-controls MATCH | L=VAL:Specified(0)
+-g4-ctz-nonzero MATCH | L=VAL:Specified(3)
+-g4-ffs-intmin MATCH | L=VAL:Specified(32)
+-g4-ffs-negative MATCH | L=VAL:Specified(1)
++g4-bswap-controls MATCH | L=VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
++g4-ctz-nonzero MATCH | L=VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
++g4-ffs-intmin MATCH | L=VAL:{value: "Specified(32)", stdout: "", stderr: "", blocked: "false"}
++g4-ffs-negative MATCH | L=VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+ g5-decode-multichar MATCH | L=CRASH
+-g5-decode-question ORACLE_CRASH | L=VAL:Specified(63)
+-g5-escape-roundtrip DIFF | L=VAL:Specified(127)
++g5-decode-question ORACLE_CRASH | L=VAL:{value: "Specified(63)", stdout: "", stderr: "", blocked: "false"}
++g5-escape-roundtrip DIFF | L=VAL:{value: "Specified(127)", stdout: "", stderr: "", blocked: "false"}
+ g6-hash-collision TRIPWIRE
+ illtyped-store KILL
+-lock-const-global MATCH | L=UB:UB064_modifying_const
+-lock-string-literal MATCH | L=UB:UB033_modifying_string_literal
+-offsetof-nested-struct MATCH | L=VAL:Specified(0)
++lock-const-global MATCH | L=UB:{ub: "UB064_modifying_const", stderr: "", loc: "<4:3--4:17>"}
++lock-string-literal MATCH | L=UB:{ub: "UB033_modifying_string_literal", stderr: "", loc: "<4:3--4:13>"}
++offsetof-nested-struct MATCH | L=VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+ offsetof-union-member MATCH | L=CRASH
+-pr44468 MATCH | L=VAL:Specified(0)
+-s4b-memcmp-hugesize ORACLE_CRASH | L=UB:UB_CERB002a_out_of_bound_load
+-s9-enum-signedness MATCH | L=VAL:Specified(2)
+-s9-enum-sizeof-route MATCH | L=VAL:Specified(4)
+-trap-bool-uninit MATCH | L=UB:UB012_lvalue_read_trap_representation
+-trap-bool-write MATCH | L=UB:UB012_lvalue_read_trap_representation
++pr44468 MATCH | L=VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
++s4b-memcmp-hugesize ORACLE_CRASH | L=UB:{ub: "UB_CERB002a_out_of_bound_load", stderr: "", loc: "<unknown location>"}
++s9-enum-signedness MATCH | L=VAL:{value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}
++s9-enum-sizeof-route MATCH | L=VAL:{value: "Specified(4)", stdout: "", stderr: "", blocked: "false"}
++trap-bool-uninit MATCH | L=UB:{ub: "UB012_lvalue_read_trap_representation", stderr: "", loc: "<4:10--4:11>"}
++trap-bool-write MATCH | L=UB:{ub: "UB012_lvalue_read_trap_representation", stderr: "", loc: "<6:10--6:11>"}
++zd-d1-float-inf-to-int-ub MATCH | L=UB:{ub: "UB017_out_of_range_floating_integer_conversion", stderr: "", loc: "<7:11--7:19>"}
++zd-d2-ptr-to-int-narrow-ub MATCH | L=UB:{ub: "UB024_out_of_range_pointer_to_integer_conversion", stderr: "", loc: "<8:11--8:17>"}
++zd-d4-copy-alloc-id MATCH | L=VAL:{value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}
++zd-d5-device-range-load MATCH | L=VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
++zd-d6-free-device-pointer MATCH | L=VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
++zd-d6-free-no-provenance MATCH | L=ERR:{msg: "MerrOther "attempted to kill with a pointer lacking a provenance""}
++zd-d7-free-interior-pointer MATCH | L=UB:{ub: "UB179a_non_matching_allocation_free", stderr: "", loc: "<6:39--6:50>"}
++zd-da-align16 MATCH | L=VAL:{value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}
++zd-da-offset MATCH | L=VAL:{value: "Specified(8)", stdout: "", stderr: "", blocked: "false"}
++zd-e2-ptr-string-literals ORACLE_CRASH | L=VAL:{value: "Specified(0)", stdout: "98 65 66 4 83 52 3 10 9 92 34 39 63 0 4\n", stderr: "", blocked: "false"}
++zd-f1-truncate-negative-length MATCH | L=VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
++zd-z28-addr-layout-a MATCH | L=VAL:{value: "Specified(0)", stdout: "s1=281474976706032 c1=281474976706031 i1=281474976706024 p1=281474976706016\n", stderr: "", blocked: "false"}
++zd-z28-addr-layout-b MATCH | L=VAL:{value: "Specified(0)", stdout: "s1=281474976707776 c1=281474976707775 i1=281474976707768 p1=281474976707760\n", stderr: "", blocked: "false"}
++zd-z28-pointer_from_integer_2g MATCH | L=VAL:{value: "Specified(0)", stdout: "j=5 &j=(@70, 0xffffffffede8)\n", stderr: "", blocked: "false"}
++zd-z28-provenance_equality_uintptr_t_global_yx MATCH | L=VAL:{value: "Specified(0)", stdout: "Addresses: p=fffffffff3a0 q=fffffffff3a0\n(p==q) = true\n", stderr: "", blocked: "false"}
++zd-z28-provenance_lost_escape_1 MATCH | L=VAL:{value: "Specified(0)", stdout: "Addresses: p=(@17, 0xfffffffff4cc)\n", stderr: "", blocked: "false"}
++zd-z2cp01-strtod-inf MATCH | L=VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
++zd-z2f01-lseek-whence MATCH | L=VAL:{value: "Specified(9)", stdout: "", stderr: "", blocked: "false"}
++zd-z2f04-closedir MATCH | L=CRASH
++zd-z2fl03-nan-to-int MATCH | L=CRASH
++zd-z2-free-funptr MATCH | L=ERR:{msg: "MerrOther "attempted to kill with a pointer lacking a provenance""}
++zd-z2i01-cerbty-int32-uac MATCH | L=VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
++zd-z2m01-aligned-alloc-zero-nolibc ORACLE_CRASH | L=UB:{ub: "DUMMY(align_alloc)", stderr: "", loc: "<8:28--8:47>"}
++zd-z2m01-aligned-alloc-zero ORACLE_CRASH | L=UB:{ub: "DUMMY(align_alloc)", stderr: "", loc: "<12:28--12:47>"}
++zd-z2m01-aligned-alloc-zero-zero MATCH | L=CRASH
++zd-z2m02-device-funptr-call MATCH | L=CRASH
++zd-z2m03-malloc-oom-msg MATCH | L=ERR:{msg: "MerrOther "Concrete.allocator: failed (out of memory)""}
++zd-z2p01-stderr_escape MATCH | L=VAL:{value: "Specified(0)", stdout: "", stderr: "E\b\007\255|", blocked: "false"}
++zd-z2p01-stdout_escape MATCH | L=VAL:{value: "Specified(0)", stdout: "a\bb\007\127\195\169\011\012\027|\n", stderr: "", blocked: "false"}
++zd-z72-stderr-ub MATCH | L=UB:{ub: "UB043_indirection_invalid_value", stderr: "E1", loc: "<6:62--6:64>"}
+diff --git a/tests/libc_exec/baseline.txt b/tests/libc_exec/baseline.txt
+index ff96aea54..fb567ffed 100644
+--- a/tests/libc_exec/baseline.txt
++++ b/tests/libc_exec/baseline.txt
+@@ -5,3 +5,8 @@
+ 005-strlen MATCH
+ 006-strlen-snprintf MATCH
+ 007-va-user-vsnprintf MATCH
++008-aligned-alloc-bad-size MATCH
++009-aligned-alloc-3 MATCH
++010-int32-printf MATCH
++011-decimal-sweep MATCH
++012-global-alloc-order MATCH

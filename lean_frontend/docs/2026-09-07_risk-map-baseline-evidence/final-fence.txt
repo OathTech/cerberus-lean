@@ -1,0 +1,10 @@
+COMMAND git branch --show-current
+audit/risk-map-baseline
+COMMAND git rev-parse HEAD
+a0f7b9842dd419df9332a2bbc04ef339ae3fc50d
+COMMAND git diff --name-only HEAD
+COMMAND git diff --cached --name-only
+COMMAND git status --porcelain
+?? lean_frontend/docs/2026-09-07_risk-map-baseline-evidence/
+?? lean_frontend/docs/2026-09-07_risk-map-baseline.md
+DERIVED file-fence check: all untracked files are the record or permitted evidence; no existing tracked changes.

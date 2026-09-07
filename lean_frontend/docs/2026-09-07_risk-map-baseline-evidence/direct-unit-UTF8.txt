@@ -1,0 +1,157 @@
+COMMAND: bash -c 'export LC_ALL=en_US.UTF-8 TERM=xterm-256color; exec ./scripts/test_unit.sh'
+CWD: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline
+STREAM stdout: bytes=39440 sha256=562dcf675f0af8d74971f34be3f0869759e0fb72bdef61470baf1e55a178b3c5
+check_handwritten_sync: OK (37 hand-written files byte-identical to lean_frontend/generated/; manifest lean_frontend/handwritten_copy.manifest)
+All PP tests passed
+check_exec_purity: CLEAN (11 modules)
+check_theorem_axioms: hand-written axiom census OK (0 axioms — the arc-17 S2b end state)
+check_theorem_axioms: generated-tree census OK (207 files: 0 axioms, boundary-opaque population = the 15 registered rows exactly-once (incl. CerbFuel.fuelExhaustedLoc), 0 unsafeCast)
+check_theorem_axioms: C2 ratchet OK (326 files scanned recursively: 0 axioms, 0 runEffectful, seam population = the 38 pinned path-qualified counted rows exactly incl. the extern class; lem tests/ scaffolds asserted outside the surface)
+check_theorem_axioms: D14 grep-ban OK (no native_decide/bv_decide in 1 tree(s) + 37 hand-written seam files + LemLibTest.lean)
+check_theorem_axioms: driver2 cone sorryAx-free + ofReduce*-free + DAEMON-free (arc-8 S3 bar)
+check_theorem_axioms: C2 entry census OK (9 entries, every cone ⊆ [propext, Classical.choice, Quot.sound])
+check_theorem_axioms: mem-scale S1 leg OK (6 C1/C3 equality theorems, every cone ⊆ [propext, Classical.choice, Quot.sound])
+check_theorem_axioms: FUEL arc leg OK (34 contract lemmas — 9 generated _zero + the CerbND runner leaves/parametricity pins + the ∀-fuel exemplar and its instances + the 3 fuel_measure sufficiency obligations (generated statement + hand-written proof), every cone ⊆ [propext, Classical.choice, Quot.sound])
+check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)
+check_sorry_token: OK (286 files scanned comment-stripped — generated 207, hand-written+test 44, LemLib 35; 0 sorry tokens)
+test_fuel_classifier: 18 fixtures, ALL OK
+GCC capture: 4/4 probes passed; raw evidence /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/.tmp/scripts/observations/test_gcc_capture.yGkrhJKr9D (kept under CERB_OBSERVATION_DIR; removed on exit 0)
+test_exec: SELFTEST — extract_verdict_seq plants (loud plant banner; no binaries run)
+  PLANT OK   [E0 pre-repair extractor collapses the audit pair to one token: VAL:Specified(0) == VAL:Specified(0)]
+  PLANT OK   [E1a audit payload 1 -> whole-line token] -> VAL:{value: "Specified(0)", stdout: "GOOD", stderr: "", blocked: "false"}
+  PLANT OK   [E1b audit payload 2 -> whole-line token] -> VAL:{value: "Specified(0)", stdout: "BAD", stderr: "WRONG", blocked: "false"}
+  PLANT OK   [E1 same-value/different-stdout+stderr lines yield DIFFERENT tokens]
+  PLANT OK   [E2a] -> VAL:{value: "Specified(3)", stdout: "x", stderr: "", blocked: "false"}
+  PLANT OK   [E2b] -> VAL:{value: "Specified(3)", stdout: "x", stderr: "warn: y", blocked: "false"}
+  PLANT OK   [E2 same-value/different-stderr lines yield DIFFERENT tokens]
+  PLANT OK   [E3 escaped-quote/backslash/decimal payload preserved byte-exactly] -> VAL:{value: "Specified(1)", stdout: "say \"hi\"\n\\ tab\t \255\000 end", stderr: "", blocked: "false"}
+  PLANT OK   [E4 multi-outcome: 3 tokens in order (Defined a / Undefined / Defined b)] -> VAL:{value: "Specified(0)", stdout: "a", stderr: "", blocked: "false"}|UB:{ub: "UB043_indirection_invalid_value", stderr: "", loc: "<file.c:3:5>"}|VAL:{value: "Specified(0)", stdout: "b", stderr: "", blocked: "false"}
+  PLANT OK   [E5 embedded escaped Defined text is payload, not a token] -> VAL:{value: "Specified(0)", stdout: "Defined {value: \"Specified(9)\"}", stderr: "", blocked: "false"}
+  PLANT OK   [E6 Undefined whole-line token unchanged] -> UB:{ub: "UB036_exceptional_condition", stderr: "", loc: "<t.c:2:10>"}
+  PLANT OK   [E7 no token from a truncated Defined line] -> 
+test_exec: SELFTEST OK (E0 pre-repair collapse reproduced; E1-E7: same-value/different-stdout and different-stderr yield distinct whole-line tokens, escaped payload byte-exact, multi-outcome order kept, embedded text is payload, Undefined unchanged, truncated line is no token)
+check_no_fuel_numerals: SELFTEST — planting F1-F6 into a scratch copy of the scan set (loud plant banner; nothing in the tree is touched)
+  PLANT OK   [F1 deleted default named in code] -> check_no_fuel_numerals: FAIL (F1): fuel numeral shape found:
+  PLANT OK   [F1 deleted driverFuel in a seam] -> check_no_fuel_numerals: FAIL (F1): fuel numeral shape found:
+  PLANT OK   [F2 global instance] -> check_no_fuel_numerals: FAIL (F2): fuel numeral shape found:
+  PLANT OK   [F2 global instance (where)] -> check_no_fuel_numerals: FAIL (F2): fuel numeral shape found:
+  PLANT OK   [F3 worker at a literal fuel] -> check_no_fuel_numerals: FAIL (F3): fuel numeral shape found:
+  PLANT OK   [F3 parenthesised literal] -> check_no_fuel_numerals: FAIL (F3): fuel numeral shape found:
+  PLANT OK   [F4 LemFuel.mk numeral] -> check_no_fuel_numerals: FAIL (F4): fuel numeral shape found:
+  PLANT OK   [F4 letI outside Main] -> check_no_fuel_numerals: FAIL (F4): fuel numeral shape found:
+  PLANT OK   [F5 anonymous-constructor literal] -> check_no_fuel_numerals: FAIL (F5): fuel numeral shape found:
+  PLANT OK   [F6 fuel-named numeral constant] -> check_no_fuel_numerals: FAIL (F6): fuel numeral shape found:
+  PLANT OK   [F6 in a speclab gate test] -> check_no_fuel_numerals: FAIL (F6): fuel numeral shape found:
+  PLANT OK   [F6 in a generated copy of Main] -> check_no_fuel_numerals: FAIL (F6): fuel numeral shape found:
+  PLANT OK   [F5 in an immaculate Lean probe] -> check_no_fuel_numerals: FAIL (F5): fuel numeral shape found:
+  PLANT OK   [M2 F3 instance-carrying worker literal] -> check_no_fuel_numerals: FAIL (F3): fuel numeral shape found:
+  PLANT OK   [M2 E1 hex literal ⟨0x5F5E100⟩] -> check_no_fuel_numerals: FAIL (F5): fuel numeral shape found:
+  PLANT OK   [M2 E2 ascribed literal ⟨(N : Nat)⟩] -> check_no_fuel_numerals: FAIL (F5): fuel numeral shape found:
+  PLANT OK   [M2 E4 structure instance { fuel := N }] -> check_no_fuel_numerals: FAIL (F4): fuel numeral shape found:
+  PLANT OK   [M2 E6 LemFuel.mk (expr)] -> check_no_fuel_numerals: FAIL (F4): fuel numeral shape found:
+  PLANT OK   [M2 E7 worker at a hex literal] -> check_no_fuel_numerals: FAIL (F3): fuel numeral shape found:
+  PLANT OK   [M2 E3 arithmetic ⟨10^8⟩] -> check_no_fuel_numerals: FAIL (F5): fuel numeral shape found:
+  check_no_fuel_numerals: OK (293 files scanned comment-stripped; no lemDefaultFuel/driverFuel/ndDefaultFuel, no LemFuel instance, no literal fuel (F1-F6); allowed Main.lean sites seen: 4 of 4 (hand-written + generated copy))
+check_no_fuel_numerals: SELFTEST OK (20 plants red with the declared label; E5 indirection a recorded known gap; unplanted set green)
+check_no_fuel_numerals: OK (293 files scanned comment-stripped; no lemDefaultFuel/driverFuel/ndDefaultFuel, no LemFuel instance, no literal fuel (F1-F6); allowed Main.lean sites seen: 4 of 4 (hand-written + generated copy))
+gen_fuel_parametricity: OK (22 ambient fuel wrappers in the generated tree = the 22 pins of TotalityProofTest.lean Part 1, both directions)
+check_lakefile_roots: SELFTEST — planting on a scratch copy of lakefile.toml (loud plant banner; nothing in the tree is touched)
+  PLANT OK   [dropped root Core_aux_auxiliary] -> check_lakefile_roots: FAIL — generated module(s) NOT a Lake root (their obligations would never build):
+  PLANT OK   [phantom root Phantom_auxiliary] -> check_lakefile_roots: FAIL — Lake root(s) with no generated module:
+  PLANT OK   [unrooted generated Orphan_auxiliary] -> check_lakefile_roots: FAIL — generated module(s) NOT a Lake root (their obligations would never build):
+  check_lakefile_roots: OK (206 roots = 206 generated modules + the exe root Main; 85 auxiliary modules all built)
+check_lakefile_roots: SELFTEST OK (3 plants red, baseline green)
+check_lakefile_roots: OK (206 roots = 206 generated modules + the exe root Main; 85 auxiliary modules all built)
+check_fuel_forms: SELFTEST — plants on a scratch copy of the classification table (loud plant banner; nothing in the tree is touched)
+  PLANT OK   [P1 measured->ambient reachable (step_eval_pexpr)] -> check_fuel_forms: FAIL — fuel'd worker(s) REACHABLE from drive with an opaque (fail-open) exhaustion, not in /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/scripts/fuel_forms_pending.txt:
+  PLANT OK   [P2 stale pending pin (hack removed from the table)] -> check_fuel_forms: FAIL — pending register row(s) no longer a reachable ambient worker (stale pin; edit the register):
+  PLANT OK   [P3 measured obligation with sorryAx in its cone] -> check_fuel_forms: FAIL — measured obligation(s) with an axiom cone outside [propext, Classical.choice, Quot.sound] (or no proof constant):
+  PLANT OK   [P4 truncated table] -> check_fuel_forms: FAIL — no FUEL_FORMS_SUMMARY line (the tool did not complete; fail-closed)
+  PLANT OK   [P5 phantom pending-register row] -> check_fuel_forms: FAIL — pending register row(s) no longer a reachable ambient worker (stale pin; edit the register):
+  PLANT OK   [P6 decoy obligation of type True (to_pure)] -> check_fuel_forms: FAIL — obligation(s) named <f>_measure_sufficient whose TYPE is not the contract's shape (∀ …, μ ≤ lemFuel → worker lemFuel … = wrapper …, argument correspondence against the wrapper's body) — never MEASURED:
+  PLANT OK   [P7 decoy obligation with the wrong worker constant (to_pures)] -> check_fuel_forms: FAIL — obligation(s) named <f>_measure_sufficient whose TYPE is not the contract's shape (∀ …, μ ≤ lemFuel → worker lemFuel … = wrapper …, argument correspondence against the wrapper's body) — never MEASURED:
+  PLANT OK   [P12 audit decoy 1: _zero lemma about CerbND.runNDFuel, not the worker] -> review_bad_lemFuel AMBIENT: MALFORMED-ZERO zero=review_bad_lemFuel_zero: left-hand head `CerbND.runNDFuel` is not the worker `review_bad_lemFuel`
+  PLANT OK   [P12 policy: a MALFORMED-ZERO lemma is RED] -> check_fuel_forms: FAIL — lemma(s) named <worker>_zero whose statement is not `worker … 0 … = <absorbing element>` on the worker's own binders — never ABSORBING:
+  PLANT OK   [P13 audit decoy 2: worker at literal 0, wrapper input x never passed] -> review_shift_lemFuel AMBIENT: MALFORMED obligation=review_shift_measure_sufficient: worker argument #1 is `0`, not one of the wrapper's input binders — the obligation must relate the worker to the wrapper on the SAME inputs
+  PLANT OK   [P14 wrong fuel position] -> pl_pos_lemFuel AMBIENT: MALFORMED obligation=pl_pos_measure_sufficient: wrong fuel position: `lemFuel` is passed as worker argument #1 (`a`), but the worker's `lemFuel` parameter is #0
+  PLANT OK   [P15 swapped arguments on the worker side] -> pl_swap_lemFuel AMBIENT: MALFORMED obligation=pl_swap_measure_sufficient: worker argument #1: the obligation passes `b`, but the wrapper `pl_swap` passes `a` — the equation does not relate the worker to the wrapper on the same inputs
+  PLANT OK   [P16 swapped arguments on the wrapper side] -> pl_swapw_lemFuel AMBIENT: MALFORMED obligation=pl_swapw_measure_sufficient: wrapper argument #0 is `b`, not the binder `a` — the wrapper side must be the wrapper applied to the statement's own binders, in order
+  PLANT OK   [P17 changed measure (lower bound a vs the wrapper's a + 1)] -> pl_mu_lemFuel AMBIENT: MALFORMED obligation=pl_mu_measure_sufficient: the lower bound `a` of the `≤ lemFuel` hypothesis is not the wrapper's measure: `pl_mu` calls the worker at fuel `a + 1`
+  PLANT OK   [P18 renamed worker: the wrapper calls pl_rhs_other_lemFuel] -> pl_rhs_lemFuel AMBIENT: MALFORMED obligation=pl_rhs_measure_sufficient: the wrapper `pl_rhs` does not call the worker `pl_rhs_lemFuel`: on these inputs its body is a call of `pl_rhs_other_lemFuel`
+  PLANT OK   [P19 hidden extra premise inside the ≤ binder] -> pl_prem_lemFuel AMBIENT: MALFORMED obligation=pl_prem_measure_sufficient: no hypothesis `_ ≤ lemFuel` on the `lemFuel` binder
+  PLANT OK   [P20 POSITIVE CONTROL: well-formed _zero lemma on a decoy worker] -> pl_zt_lemFuel ABSORBING: zero=pl_zt_lemFuel_zero heads=[nd_status.Killed, CerbND.fuelExhaustedKill] axioms=ok
+  PLANT OK   [P21 _zero lemma with a term (st0 + 1) where a binder must be] -> pl_ztb_lemFuel AMBIENT: MALFORMED-ZERO zero=pl_ztb_lemFuel_zero: worker argument `st0 + 1` is not one of the lemma's binders (the lemma must state the worker at fuel 0 on universally quantified inputs)
+  PLANT OK   [P22 _zero lemma at fuel 1, not 0] -> pl_ztc_lemFuel AMBIENT: MALFORMED-ZERO zero=pl_ztc_lemFuel_zero: no literal `0` among the worker's arguments (the lemma must state the worker at fuel 0)
+  PLANT OK   [P23 ABSORBING _zero lemma with sorryAx in its cone (nd_bind)] -> check_fuel_forms: FAIL — ABSORBING _zero lemma(s) with an axiom cone outside [propext, Classical.choice, Quot.sound] (or no cone reported):
+  PLANT OK   [P11 decoy of a REAL obligation with an EXTRA Prop binder and the register's exact hypothesis (CerbMem.sizeofCtype): MALFORMED by the binder check] -> check_fuel_forms: FAIL — obligation(s) named <f>_measure_sufficient whose TYPE is not the contract's shape (∀ …, μ ≤ lemFuel → worker lemFuel … = wrapper …, argument correspondence against the wrapper's body) — never MEASURED:
+  PLANT OK   [P11 premise] -> the tool reports CerbMem.sizeofCtype_lemFuel MALFORMED: binder `extra` is neither reserved nor a wrapper argument
+  PLANT OK   [P10 the REAL CerbMem.alignofCtype obligation restated under the CONTRADICTORY hypothesis cty ≠ cty: MEASURED by shape, RED by the register] -> check_fuel_forms: FAIL — worker(s) MEASURED under a hypothesis with no reviewed register row for that exact hypothesis in /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/scripts/fuel_hypotheses.txt (worker TAB hypothesis):
+  PLANT OK   [P10 premise] -> the tool reports CerbMem.alignofCtype_lemFuel MEASURED hyp=cty ≠ cty (shape alone cannot see the contradiction; the register is the closure)
+  PLANT OK   [P8 register row of a measured-under-hypothesis worker deleted (CerbMem.sizeofCtype)] -> check_fuel_forms: FAIL — worker(s) MEASURED under a hypothesis with no reviewed register row for that exact hypothesis in /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/scripts/fuel_hypotheses.txt (worker TAB hypothesis):
+  PLANT OK   [P9 stale register row (hack under 0 < k)] -> check_fuel_forms: FAIL — hypothesis register row(s) whose worker is not MEASURED under that exact hypothesis (stale register row; edit the register):
+  PLANT OK   [P9b register row without a .lem:<line> cite] -> check_fuel_forms: FAIL — hypothesis register row(s) not of the form <worker> TAB <hyp> TAB <invariant with a .lem:<line> cite> TAB <reviewer>:
+    check_fuel_forms: forms partition OK (54 MEASURED + 13 ABSORBING + 8 ambient-reachable + 6 ambient-unreachable = 81 fuel'd workers)
+    check_fuel_forms: OK (81 fuel'd workers: 54 MEASURED (obligation of the contract's shape incl. argument correspondence against the wrapper's body; every obligation + proof cone ⊆ the standard three; 7 of them under a hypothesis, each = a reviewed row of fuel_hypotheses.txt, both directions), 13 ABSORBING = kill at zero (the _zero lemma is the worker at literal 0 on its own binders = the monad's absorbing element, cone ⊆ the standard three; propagation NOT proved — lem TODO 13), 8 reachable-AMBIENT = the 8 rows of fuel_forms_pending.txt exactly, 6 ambient unreachable from the drive cone)
+check_fuel_forms: SELFTEST OK (24 plants with the declared label — 6 on the table (incl. the ABSORBING-cone plant), 3 on the hypothesis register, 15 compiled decoys: the C4 four (type True / wrong worker / contradictory hypothesis caught by the register / extra binder), the whole-project audit's two decoys verbatim (review_bad _zero about runNDFuel; review_shift at literal 0), wrong fuel position, swapped worker-side and wrapper-side arguments, changed measure, wrapper calling another worker, hidden premise, and three _zero decoys (a POSITIVE control ABSORBING, a term for a binder, fuel 1) — each rejected with its own message; unplanted table green)
+check_fuel_forms: forms partition OK (54 MEASURED + 13 ABSORBING + 8 ambient-reachable + 6 ambient-unreachable = 81 fuel'd workers)
+check_fuel_forms: OK (81 fuel'd workers: 54 MEASURED (obligation of the contract's shape incl. argument correspondence against the wrapper's body; every obligation + proof cone ⊆ the standard three; 7 of them under a hypothesis, each = a reviewed row of fuel_hypotheses.txt, both directions), 13 ABSORBING = kill at zero (the _zero lemma is the worker at literal 0 on its own binders = the monad's absorbing element, cone ⊆ the standard three; propagation NOT proved — lem TODO 13), 8 reachable-AMBIENT = the 8 rows of fuel_forms_pending.txt exactly, 6 ambient unreachable from the drive cone)
+check_exec_totality: CLEAN (22 generated modules + hand-written CerbND, 0 allowlisted)
+check_lem_sync: OK (src 977326511c1096013d9b1fa183500ad6487a23ac9c6edc3d3f2ff8bd11e266e0, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_lem_sync: lean OK (src 977326511c1096013d9b1fa183500ad6487a23ac9c6edc3d3f2ff8bd11e266e0, gen 11c6b37a5dc95ed9f2ec3d1f6f3e157e1f0309c7236e247b9d279deaf1ab2938)
+check_fork_drift: SELFTEST — plants on scratch copies of the manifest and fake prerequisites (loud plant banner; nothing in the tree is touched)
+  PLANT OK   [S1 en_US-ordered [files] under LC_ALL=C (the pre-repair failing configuration)] rc=0 -> check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 22 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef
+  PLANT OK   [S2 C-ordered [files] under LC_ALL=en_US.UTF-8] rc=0 -> check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 22 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef
+  PLANT OK   [S3 reversed [files] order (set unchanged)] rc=0 -> check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 22 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef
+  PLANT OK   [S4 one [files] name changed -> set drift] rc=1 -> check_fork_drift: FAIL — oracle-surface file set drifted from the manifest.
+  PLANT OK   [S4 detail] both the live-only name (util/cerb_fresh.ml) and the manifest-only name (util/cerb_fresh_planted.ml) are listed
+  PLANT OK   [S5 duplicate [files] entry] rc=1 -> check_fork_drift: FAIL — duplicate [files] entries in the manifest (a set with a repeated name is not a reviewed set):
+  PLANT OK   [S6 missing upstream ref -> FAIL (not a skip)] rc=1 -> check_fork_drift: FAIL — missing upstream ref 'plant/no-such-ref' (fail-closed; the development opt-in is CERB_FORK_DRIFT_DEV_SKIP=1)
+  PLANT OK   [S7 missing upstream generated tree -> FAIL (not a skip)] rc=1 -> check_fork_drift: FAIL — layer 2 prerequisite missing (fail-closed; the development opt-in is CERB_FORK_DRIFT_DEV_SKIP=1): upstream pristine tree not found (deps/cerberus-upstream/ocaml_frontend/gen
+  PLANT OK   [S8 CERB_FORK_DRIFT_DEV_SKIP=1 on a missing ref -> rc 0 with the DEV SKIP banner] rc=0 -> # check_fork_drift: DEV SKIP (CERB_FORK_DRIFT_DEV_SKIP=1 is set) — missing upstream ref 'plant/no-such-ref'; layers 1 and 2 NOT checked
+  PLANT OK   [S9 stale [meta] lem-pin vs lem -v] rc=1 -> check_fork_drift: FAIL — lem-pin stale: manifest records lem-pin=f6542f8, '/home/dev/projects/cerberus-lean-proj/.tmp/tmp.ChyRM9iKOU/lem-stale -v' says deadbee — both generated trees must be re-de
+  PLANT OK   [S10 [meta] lem-pin line missing] rc=1 -> check_fork_drift: FAIL — manifest has no [meta] lem-pin= line (the lem-lean commit both generated trees were derived with)
+  PLANT OK   [S11 unmodified copied source contents] rc=0 -> check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 22 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef
+  PLANT OK   [S12 content change inside already-listed fresh supply] rc=1 -> check_fork_content: FAIL — source-content drift inside reviewed file(s):
+  PLANT OK   [S13 duplicate source-content pin] rc=1 -> check_fork_content: FAIL — duplicate [source-content] entry: util/cerb_fresh.ml
+  PLANT OK   [S14 missing source-content pin] rc=1 -> check_fork_content: FAIL — source-content path set differs from live source delta: unpinned=['util/cerb_fresh.ml']; stale=[]
+    check_fork_content: OK — 76 source files content/mode-pinned
+    check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 22 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+check_fork_drift: SELFTEST OK (14 plants with declared verdict/message: S1-S10 prerequisite/locale/name controls; S11 copied-content control; S12 inside-listed-file drift; S13/S14 duplicate/missing content pins; unplanted gate green)
+check_fork_content: OK — 76 source files content/mode-pinned
+check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 22 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+check_fixture_freeze: OK (16 fixture files match the pinned manifest; name set exact)
+  OK (refused as declared): s5_string_content
+  OK (refused as declared): l1_string_ws
+  OK (refused as declared): l3_comment_absorb
+  OK (refused as declared): l4_comment_release
+  OK (refused as declared): count_mismatch
+  OK (refused as declared): appended_line
+  OK (refused as declared): token_change
+  OK (refused as declared): section_reorder
+  OK (admitted as declared): strict_renumber [RENUMBER-ONLY ADMIT plant/strict_renumber class=STRICT ids=1 moved=1 canon=d7b6d3c7463e]
+  OK (admitted as declared): layout_rewrap [RENUMBER-ONLY ADMIT plant/layout_rewrap class=LAYOUT ids=2 moved=2 canon=9b2ed22f1988]
+  OK (refused as declared): crlf_string
+  OK (admitted as declared): crlf_code [RENUMBER-ONLY ADMIT plant/crlf_code class=LAYOUT ids=1 moved=1 canon=8c8910c71fce]
+test_renumber_plants: OK (12 plants: refusals refuse, admits admit with declared class)
+STREAM stderr: bytes=7659 sha256=31760bddd73f0932d0b57a7ca273b5fabd285ff1118140ab45918984b79e165e
+Ran 19 tests in 0.069s
+OK
+Ran 3 tests in 0.257s
+OK
+Ran 16 tests in 3.576s
+OK
+Ran 5 tests in 0.002s
+OK
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.248s
+
+OK
+OBSERVATION ERROR: unknown or malformed stdout record: b'Defined {value: "Specified(0)", stdout: "'
+comm: file 1 is not in sorted order
+comm: file 2 is not in sorted order
+comm: input is not in sorted order
+comm: file 1 is not in sorted order
+comm: file 2 is not in sorted order
+comm: input is not in sorted order
+DIRECT unit-UTF8 rc=0 elapsed_seconds=120.788 status=passed cleaned=true residual_processes=False

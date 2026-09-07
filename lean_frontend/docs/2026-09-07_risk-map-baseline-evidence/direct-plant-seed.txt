@@ -1,0 +1,20 @@
+COMMAND: ./scripts/test_speclab_seed.sh --plant
+CWD: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline
+STREAM stdout: bytes=147039 sha256=ff9baabe52a804125d308c1ed36971ce4467901030029a339fd935e18d1d05c3
+check_lem_sync: OK (src 977326511c1096013d9b1fa183500ad6487a23ac9c6edc3d3f2ff8bd11e266e0, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin 501147ca761a28cf64b0b6f3eb244c90164db137322122305572b7c0b8bff8a7, src 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda)
+check_driver_fresh: recorded lean stamp (bin 32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6, src 89a31871cc2e83121d7efb009c35aa6c50216b31f6dad88cee4688b0786edf28)
+[plant:swap-lostupdate] arg=578437695752307201,1157159078456920585 oracle=Specified(9) lean=Specified(9) predict=Specified(9)
+[plant:swap-lostupdate-extremes] arg=0,18446744073709551615 oracle=Specified(9) lean=Specified(9) predict=Specified(9)
+[plant:lookup-wrongconst] arg=1 oracle=Specified(1) lean=Specified(1) predict=Specified(1)
+[plant:swap-lostupdate-diagonal-blindspot] arg=5,5 oracle=Specified(0) lean=Specified(0) predict=Specified(0)
+[plant:lookup-wrongconst-big-blindspot] arg=0 oracle=Specified(0) lean=Specified(0) predict=Specified(0)
+[plant:lookup-wrongconst-default-blindspot] arg=77 oracle=Specified(0) lean=Specified(0) predict=Specified(0)
+[plant:swap-short-stream] arg=1,2,3 oracle=Specified(254) lean=Specified(254) predict=Specified(254)
+[plant:swap-long-stream] arg=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17 oracle=Specified(254) lean=Specified(254) predict=Specified(254)
+[plant:lookup-short-stream] arg=1,0 oracle=Specified(254) lean=Specified(254) predict=Specified(254)
+[plant:lookup-over-int-ceiling] arg=0,0,0,128 oracle=Specified(254) lean=Specified(254) predict=Specified(254)
+PLANT SUMMARY: lost-update plant RED at byte 8 (verdict 9); wrong-constant plant RED at result byte 0; diagonal/non-medium blind twins green as predicted (swap blind set kernel-characterized: swapPlant_blind_iff); malformed twins at 254
+test_speclab_seed: PASS (--plant)
+STREAM stderr: bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DIRECT plant-seed rc=0 elapsed_seconds=5.932 status=passed cleaned=true residual_processes=False

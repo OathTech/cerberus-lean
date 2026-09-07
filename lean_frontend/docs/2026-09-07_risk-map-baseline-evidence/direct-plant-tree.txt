@@ -1,0 +1,20 @@
+COMMAND: ./scripts/test_speclab_tree.sh --plant
+CWD: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline
+STREAM stdout: bytes=148407 sha256=22c9e84292550e76067f538a510e0664360e15b0735febde55405f1740ce3a85
+check_lem_sync: OK (src 977326511c1096013d9b1fa183500ad6487a23ac9c6edc3d3f2ff8bd11e266e0, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin 501147ca761a28cf64b0b6f3eb244c90164db137322122305572b7c0b8bff8a7, src 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda)
+check_driver_fresh: recorded lean stamp (bin 32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6, src 89a31871cc2e83121d7efb009c35aa6c50216b31f6dad88cee4688b0786edf28)
+[plant:rotate-childswap-offshape-blindspot] model=[(5 L (6 L L))|] oracle=Specified(0) lean=Specified(0) predict=Specified(0)
+[plant:rotate-dropsubtree-nullmiddle-blindspot] model=[(1 (2 L L) (3 L L))|] oracle=Specified(0) lean=Specified(0) predict=Specified(0)
+[plant:rotate-dropsubtree-offshapepath-blindspot] model=[(1 (2 L L) L)|rr] oracle=Specified(0) lean=Specified(0) predict=Specified(0)
+[plant:rotate-truncated-children] model=[1,5,0,0,0] oracle=Specified(254) lean=Specified(254) predict=Specified(254)
+[plant:rotate-bad-presence-byte] model=[2,0] oracle=Specified(254) lean=Specified(254) predict=Specified(254)
+[plant:rotate-missing-path-count] model=[0] oracle=Specified(254) lean=Specified(254) predict=Specified(254)
+[plant:rotate-path-over-cap] model=[0,9,1,1,1,1,1,1,1,1,1] oracle=Specified(254) lean=Specified(254) predict=Specified(254)
+[plant:rotate-bad-path-bit] model=[0,1,2] oracle=Specified(254) lean=Specified(254) predict=Specified(254)
+[plant:rotate-trailing-junk] model=[0,0,7] oracle=Specified(254) lean=Specified(254) predict=Specified(254)
+[plant:rotate-32-nodes-over-cap] model=[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] oracle=Specified(254) lean=Specified(254) predict=Specified(254)
+PLANT SUMMARY: wrong-child-swap plant RED at the locus-val byte (content signature, leak-free); dropped-subtree plant RED in the 255 length arm (structural signature, the leak arm's witness); healthy + blind-spot twins green as predicted; malformed twins at 254
+test_speclab_tree: PASS (--plant)
+STREAM stderr: bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DIRECT plant-tree rc=0 elapsed_seconds=8.937 status=passed cleaned=true residual_processes=False

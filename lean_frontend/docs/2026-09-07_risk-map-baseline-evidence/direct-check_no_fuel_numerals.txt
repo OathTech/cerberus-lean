@@ -1,0 +1,6 @@
+COMMAND: ./scripts/check_no_fuel_numerals.sh
+CWD: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline
+STREAM stdout: bytes=224 sha256=e2b998ce132703acfa63bab72ad1979473e85e02aed5edf08bcaee1c294175ee
+check_no_fuel_numerals: OK (293 files scanned comment-stripped; no lemDefaultFuel/driverFuel/ndDefaultFuel, no LemFuel instance, no literal fuel (F1-F6); allowed Main.lean sites seen: 4 of 4 (hand-written + generated copy))
+STREAM stderr: bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DIRECT check_no_fuel_numerals rc=0 elapsed_seconds=4.080 status=passed cleaned=true residual_processes=False

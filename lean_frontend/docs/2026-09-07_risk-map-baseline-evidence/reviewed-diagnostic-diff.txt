@@ -1,0 +1,43 @@
+--- upstream.stderr
++++ fork.stderr
+@@ -4,26 +4,26 @@
+           Called from Cerb_frontend__Impl_mem.Concrete.array_shift_ptrval in file "memory/concrete/impl_mem.ml", line 2217, characters 14-118
+           Called from Cerb_frontend__Core_eval.step_eval_pexpr.(fun) in file "ocaml_frontend/generated/core_eval.ml", line 753, characters 155-201
+           Called from Cerb_frontend__Core_eval.step_eval_pexpr in file "ocaml_frontend/generated/core_eval.ml", lines 749-757, characters 39-11
+-          Called from Lem_list.count_map in file "lem_list.ml", line 172, characters 16-20
+-          Called from Lem_list.map in file "lem_list.ml" (inlined), line 178, characters 22-39
++          Called from Lem_list.count_map in file "lem_list.ml", line 165, characters 16-20
++          Called from Lem_list.map in file "lem_list.ml" (inlined), line 171, characters 22-39
+           Called from Cerb_frontend__Exception.except_mapM.(fun) in file "ocaml_frontend/generated/exception.ml", line 61, characters 79-100
+           Called from Cerb_frontend__Exception_undefined.exception_undef_mapM in file "ocaml_frontend/generated/exception_undefined.ml", line 30, characters 26-54
+           Called from Cerb_frontend__Core_eval.step_eval_pexpr in file "ocaml_frontend/generated/core_eval.ml", line 630, characters 8-59
+           Called from Cerb_frontend__Core_eval.eval_pexpr_aux2 in file "ocaml_frontend/generated/core_eval.ml", line 1124, characters 8-104
+-          Called from Cerb_frontend__Core_reduction.E.eval_pexpr20 in file "ocaml_frontend/generated/core_reduction.ml", line 45, characters 14-124
+-          Called from Cerb_frontend__Core_reduction.full_eval_pexpr in file "ocaml_frontend/generated/core_reduction.ml", line 49, characters 2-53
+-          Called from Cerb_frontend__Core_reduction.one_step in file "ocaml_frontend/generated/core_reduction.ml", line 340, characters 18-39
+-          Called from Cerb_frontend__Core_reduction.step_ctx.(fun) in file "ocaml_frontend/generated/core_reduction.ml", line 1494, characters 21-74
+-          Called from Lem_list.count_map in file "lem_list.ml", line 172, characters 16-20
+-          Called from Cerb_frontend__Nondeterminism.nd_read.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 97, characters 28-34
+-          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 64, characters 11-19
+-          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 64, characters 11-19
+-          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 64, characters 11-19
+-          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 64, characters 11-19
++          Called from Cerb_frontend__Core_reduction.E.eval_pexpr20 in file "ocaml_frontend/generated/core_reduction.ml", line 48, characters 14-124
++          Called from Cerb_frontend__Core_reduction.full_eval_pexpr in file "ocaml_frontend/generated/core_reduction.ml", line 52, characters 2-53
++          Called from Cerb_frontend__Core_reduction.one_step in file "ocaml_frontend/generated/core_reduction.ml", line 354, characters 18-39
++          Called from Cerb_frontend__Core_reduction.step_ctx.(fun) in file "ocaml_frontend/generated/core_reduction.ml", line 1512, characters 21-74
++          Called from Lem_list.count_map in file "lem_list.ml", line 165, characters 16-20
++          Called from Cerb_frontend__Nondeterminism.nd_read.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 95, characters 28-34
++          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 62, characters 11-19
++          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 62, characters 11-19
++          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 62, characters 11-19
++          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 62, characters 11-19
+           Called from Cerb_frontend__Smt2.runND.aux in file "ocaml_frontend/smt2.ml", line 38, characters 10-18
+           Called from Cerb_frontend__Smt2.runND in file "ocaml_frontend/smt2.ml", line 140, characters 22-33
+           Called from Cerb_backend__Driver_ocaml.batch_drive in file "backend/common/driver_ocaml.ml", line 158, characters 15-115
+-          Called from Cerb_backend__Pipeline.interp_backend in file "backend/common/pipeline.ml", line 590, characters 21-85
+-          Called from Dune__exe__Main.cerberus in file "backend/driver/main.ml", lines 261-287, characters 8-15
++          Called from Cerb_backend__Pipeline.interp_backend in file "backend/common/pipeline.ml", line 604, characters 21-85
++          Called from Dune__exe__Main.cerberus in file "backend/driver/main.ml", lines 309-335, characters 8-15
+           Called from Cmdliner_term.app.(fun) in file "cmdliner_term.ml", line 22, characters 19-24
+           Called from Cmdliner_eval.run_parser in file "cmdliner_eval.ml", line 41, characters 7-16

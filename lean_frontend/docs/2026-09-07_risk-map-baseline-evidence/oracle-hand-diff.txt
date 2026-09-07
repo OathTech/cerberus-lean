@@ -1,0 +1,1458 @@
+--- upstream/backend/common/ail_sym_hwm.ml
++++ fork/backend/common/ail_sym_hwm.ml
+@@ -0,0 +1,327 @@
++(* Ail symbol-id window fold — feeds the arc-13 single-supply backstop
++   (util/cerb_fresh.ml check_ail_window; scheme + design:
++   lean_frontend/docs/2026-08-22_arc13-s0-scheme-decision.md §3;
++   the walk itself is the arc-12 fold, unchanged —
++   lean_frontend/docs/2026-08-21_arc12-s0-floor-design.md §4.3).
++
++   Returns the (min, max) symbol NUMBER over every Symbol.sym of the
++   GIVEN TU digest occurring anywhere in a desugared Ail program
++   ((-1, -1) if none): declarations, definitions, binders, labels incl.
++   the freshify'd __cerb_continue AilSlabel syms, gotos, struct/union
++   tags inside ctypes, typedef/inlined-label annotations, extern-idmap
++   and typedef-attribute entries. Under the arc-13 single-supply scheme
++   every such symbol must have been drawn from Cerb_fresh.int inside the
++   TU's own window [tu_first .. last_issued]; the caller checks both
++   bounds (a below-window symbol = a supply re-threaded 0-based, the
++   F-D-era scheme; an above-window symbol = ids from nowhere).
++
++   v2 — SYMBOLS ONLY (S1 measurement-driven correction, recorded in the S1
++   record): v1 also noted the desugar-drawn NAT ids that live in the tree
++   unwrapped (loop ids, marker ids). Those are draws of the same supply, so
++   v1 tracked the raw supply high water — but only SYMBOLS can collide
++   (symbol.lem symbolEqual is over syms; on the cerberus driver path no
++   Symbol is ever constructed from a loop/marker nat — verified at every
++   use site: loop_attributes and AilSmarker/Amarker/fn-def-marker are
++   int-keyed/int-valued throughout, translation label syms are fresh
++   ambient draws), and the corpus measurement showed the raw-supply mark
++   exceeds the live-symbol mark by roughly one draw per source line
++   (dropped aux draws), flooring ~half the csmith corpus with zero live
++   collisions. v2 restores the reviewed S0 margin semantics: the floor
++   fires exactly on live-symbol overlap potential. Documented residual: a
++   symbol drawn mid-desugar, referenced only inside a const-expr mini-run,
++   and absent from the final tree escapes this mark; such ids are aux-tier
++   (unnamed tags and object addresses land in the tree) and the window is
++   the S2-composition transient only.
++
++   Digest note (arc-13): the fold FILTERS on the given digest. Symbols of
++   foreign digests reachable here (the core stdlib ailname symbols, and —
++   under the single supply — any symbol minted before this TU's
++   set_digest) are legitimately outside the TU window and must not
++   false-fire the window check; only current-digest symbols carry the
++   per-TU minting obligation.
++
++   STYLE RULE (load-bearing): NO catch-all constructor arms anywhere in this
++   file — a new constructor in any walked type must break this compile, not
++   silently escape the fold. Fields deliberately not walked are bound with
++   named-wildcard patterns in place.
++
++   CN declarations (cn_functions/lemmata/predicates/datatypes/decl_specs)
++   are refused LOUDLY when present: this fold does not cover the Cn ASTs,
++   and the cerberus driver paths guarded by the floor never populate them.
++   Fail-closed beats a silent hole. *)
++
++open Cerb_frontend
++open AilSyntax
++
++let sym_window_program (tu_digest : Digest.t)
++    ((_main_opt : ail_identifier option), (sigma : 'a sigma))
++    : int * int =
++  let mn = ref (-1) in
++  let mx = ref (-1) in
++  let note n =
++    if !mn < 0 || n < !mn then mn := n;
++    if n > !mx then mx := n
++  in
++  (* arc-13: current-TU-digest symbols only (see the digest note above) *)
++  let note_sym (Symbol.Symbol (dig, n, _descr)) =
++    if dig = tu_digest then note n
++  in
++  let note_opt f = function None -> () | Some x -> f x in
++
++  (* ---- Ctype ---- *)
++  let rec walk_ctype (Ctype.Ctype (annots, ct_)) =
++    walk_annots annots;
++    walk_ctype_ ct_
++
++  and walk_ctype_ = function
++    | Ctype.Void -> ()
++    | Ctype.Basic bty -> walk_basicType bty
++    | Ctype.Array (ct, _n_opt) -> walk_ctype ct
++    | Ctype.Function ((_q, ret_ct), params, _variadic) ->
++        walk_ctype ret_ct;
++        List.iter (fun (_q, ct, _reg) -> walk_ctype ct) params
++    | Ctype.FunctionNoParams (_q, ret_ct) -> walk_ctype ret_ct
++    | Ctype.Pointer (_q, ct) -> walk_ctype ct
++    | Ctype.Atomic ct -> walk_ctype ct
++    | Ctype.Struct tag -> note_sym tag
++    | Ctype.Union tag -> note_sym tag
++    | Ctype.Byte -> ()
++
++  (* audit A-F1 fix: `Basic _bty` was a de-facto catch-all dropping the
++     ENUM TAG symbol inside integerType — exactly the class the
++     no-catch-all rule exists to prevent. Both payload types are now
++     walked exhaustively. *)
++  and walk_basicType = function
++    | Ctype.Integer ity -> walk_integerType ity
++    | Ctype.Floating (Ctype.RealFloating _rft) -> ()
++
++  and walk_integerType = function
++    | IntegerType.Char -> ()
++    | IntegerType.Bool -> ()
++    | IntegerType.Signed _ibt -> ()     (* integerBaseType: sym-free *)
++    | IntegerType.Unsigned _ibt -> ()
++    | IntegerType.Enum tag -> note_sym tag
++    | IntegerType.Wchar_t -> ()
++    | IntegerType.Wint_t -> ()
++    | IntegerType.Size_t -> ()
++    | IntegerType.Ptrdiff_t -> ()
++    | IntegerType.Ptraddr_t -> ()
++
++  (* ---- Annot ---- *)
++  and walk_annots annots = List.iter walk_annot annots
++
++  and walk_annot = function
++    | Annot.Astd _ -> ()
++    | Annot.Aloc _ -> ()
++    | Annot.Auid _ -> ()
++    | Annot.Amarker _id -> ()               (* v2: int marker, never a sym *)
++    | Annot.Amarker_object_types _id -> ()  (* v2: int marker, never a sym *)
++    | Annot.Abmc (Annot.Abmc_id _) -> ()
++    | Annot.Aattrs _attrs -> ()   (* attributes: identifier/string payloads only *)
++    | Annot.Atypedef sym -> note_sym sym
++    | Annot.Alabel la -> walk_label_annot la
++    | Annot.Acerb (Annot.ACerb_with_address _) -> ()
++    | Annot.Acerb Annot.ACerb_hidden -> ()
++    | Annot.Avalue (Annot.Ainteger ity) -> walk_integerType ity  (* A-F1: Enum *)
++    | Annot.Ainlined_label (_loc, sym, la) -> note_sym sym; walk_label_annot la
++    | Annot.Astmt -> ()
++    | Annot.Aexpr -> ()
++
++  and walk_label_annot = function
++    | Annot.LAloop _id -> ()           (* v2: loop ids are ints, never syms *)
++    | Annot.LAloop_continue _id -> ()
++    | Annot.LAloop_break _id -> ()
++    | Annot.LAreturn -> ()
++    | Annot.LAswitch -> ()
++    | Annot.LAcase -> ()
++    | Annot.LAdefault -> ()
++    | Annot.LAactual_label -> ()
++  in
++
++  let walk_alignment = function
++    | Ctype.AlignInteger _ -> ()
++    | Ctype.AlignType ct -> walk_ctype ct
++  in
++  let walk_bindings bindings =
++    List.iter
++      (fun (sym, ((_loc, _dur, _reg), align_opt, _q, ct)) ->
++        note_sym sym;
++        note_opt walk_alignment align_opt;
++        walk_ctype ct)
++      bindings
++  in
++
++  (* ---- expressions / statements (mutually recursive) ---- *)
++  let rec walk_expr (AnnotatedExpression (_a, annots, _loc, e_)) =
++    walk_annots annots;
++    walk_expr_ e_
++
++  and walk_expr_ = function
++    | AilEunary (_op, e) -> walk_expr e
++    | AilEbinary (e1, _op, e2) -> walk_expr e1; walk_expr e2
++    | AilEassign (e1, e2) -> walk_expr e1; walk_expr e2
++    | AilEcompoundAssign (e1, _op, e2) -> walk_expr e1; walk_expr e2
++    | AilEcond (e1, e2_opt, e3) ->
++        walk_expr e1; note_opt walk_expr e2_opt; walk_expr e3
++    | AilEcast (_q, ct, e) -> walk_ctype ct; walk_expr e
++    | AilEcall (e, es) -> walk_expr e; List.iter walk_expr es
++    | AilEassert e -> walk_expr e
++    | AilEoffsetof (ct, _member_ident) -> walk_ctype ct
++    | AilEgeneric (e, _idx_opt, gas) ->
++        walk_expr e; List.iter walk_generic_association gas
++    | AilEarray (_from_str, ct, e_opts) ->
++        walk_ctype ct; List.iter (note_opt walk_expr) e_opts
++    | AilEstruct (tag, members) ->
++        note_sym tag;
++        List.iter (fun (_member_ident, e_opt) -> note_opt walk_expr e_opt)
++          members
++    | AilEunion (tag, _member_ident, e_opt) ->
++        note_sym tag; note_opt walk_expr e_opt
++    | AilEcompound (_q, ct, e) -> walk_ctype ct; walk_expr e
++    | AilEmemberof (e, _member_ident) -> walk_expr e
++    | AilEmemberofptr (e, _member_ident) -> walk_expr e
++    | AilEbuiltin _b -> ()    (* ail_builtin: sym-free (atomic/linux/CHERI-string) *)
++    | AilEstr _lit -> ()      (* stringLiteral: sym-free *)
++    | AilEconst c -> walk_constant c   (* A-F1 sibling: constant carries syms *)
++    | AilEident sym -> note_sym sym
++    | AilEsizeof (_q, ct) -> walk_ctype ct
++    | AilEsizeof_expr e -> walk_expr e
++    | AilEalignof (_q, ct) -> walk_ctype ct
++    | AilEannot (ct, e) -> walk_ctype ct; walk_expr e
++    | AilEva_start (e, sym) -> walk_expr e; note_sym sym
++    | AilEva_arg (e, ct) -> walk_expr e; walk_ctype ct
++    | AilEva_copy (e1, e2) -> walk_expr e1; walk_expr e2
++    | AilEva_end e -> walk_expr e
++    | AilEprint_type e -> walk_expr e
++    | AilEbmc_assume e -> walk_expr e
++    | AilEreg_load _reg -> ()
++    | AilErvalue e -> walk_expr e
++    | AilEarray_decay e -> walk_expr e
++    | AilEfunction_decay e -> walk_expr e
++    | AilEatomic e -> walk_expr e
++    | AilEgcc_statement (bindings, stmts) ->
++        walk_bindings bindings; List.iter walk_stmt stmts
++    | AilEinvalid (ct, _reason) -> walk_ctype ct
++
++  and walk_generic_association = function
++    | AilGAtype (_q, ct, e) -> walk_ctype ct; walk_expr e
++    | AilGAdefault e -> walk_expr e
++
++  (* A-F1 sibling fix: `AilEconst _c` was another de-facto catch-all —
++     constant carries struct/union TAG syms, ctypes, and integerTypes. *)
++  and walk_constant = function
++    | ConstantIndeterminate ct -> walk_ctype ct
++    | ConstantNull -> ()
++    | ConstantInteger ic -> walk_integerConstant ic
++    | ConstantFloating (_str, _suf) -> ()
++    | ConstantCharacter (_pref, _str) -> ()
++    | ConstantArray (ct, cs) -> walk_ctype ct; List.iter walk_constant cs
++    | ConstantStruct (tag, members) ->
++        note_sym tag;
++        List.iter (fun (_member_ident, c) -> walk_constant c) members
++    | ConstantUnion (tag, _member_ident, c) -> note_sym tag; walk_constant c
++    | ConstantPredefined (PConstantFalse | PConstantTrue) -> ()
++
++  and walk_integerConstant = function
++    | IConstant (_n, _basis, _suf) -> ()
++    | IConstantMax ity -> walk_integerType ity
++    | IConstantMin ity -> walk_integerType ity
++
++  and walk_stmt { loc = _; desug_info = _; attrs = _attrs; node } =
++    walk_stmt_ node
++
++  and walk_stmt_ = function
++    | AilSskip -> ()
++    | AilSexpr e -> walk_expr e
++    | AilSblock (bindings, stmts) ->
++        walk_bindings bindings; List.iter walk_stmt stmts
++    | AilSif (e, s1, s2) -> walk_expr e; walk_stmt s1; walk_stmt s2
++    | AilSwhile (e, s, _loop_id) -> walk_expr e; walk_stmt s   (* v2: int *)
++    | AilSdo (s, e, _loop_id) -> walk_stmt s; walk_expr e      (* v2: int *)
++    | AilSbreak -> ()
++    | AilScontinue -> ()
++    | AilSreturnVoid -> ()
++    | AilSreturn e -> walk_expr e
++    | AilSswitch (e, s) -> walk_expr e; walk_stmt s
++    | AilScase (_n, s) -> walk_stmt s
++    | AilScase_rangeGNU (_n1, _n2, s) -> walk_stmt s
++    | AilSdefault s -> walk_stmt s
++    | AilSlabel (sym, s, la_opt) ->
++        note_sym sym; walk_stmt s; note_opt walk_label_annot la_opt
++    | AilSgoto sym -> note_sym sym
++    | AilSdeclaration decls ->
++        List.iter (fun (sym, e_opt) -> note_sym sym; note_opt walk_expr e_opt)
++          decls
++    | AilSpar stmts -> List.iter walk_stmt stmts
++    | AilSreg_store (_reg, e) -> walk_expr e
++    | AilSmarker (_id, s) -> walk_stmt s                       (* v2: int *)
++  in
++
++  let walk_declaration = function
++    | Decl_object ((_dur, _reg), align_opt, _q, ct) ->
++        note_opt walk_alignment align_opt; walk_ctype ct
++    | Decl_function (_proto, (_q, ret_ct), params, _var, _inl, _noret) ->
++        walk_ctype ret_ct;
++        List.iter (fun (_q, ct, _reg) -> walk_ctype ct) params
++  in
++  let walk_tag_definition = function
++    | Ctype.StructDef (members, fam_opt) ->
++        List.iter
++          (fun (_member_ident, (_attrs, align_opt, _q, ct)) ->
++            note_opt walk_alignment align_opt; walk_ctype ct)
++          members;
++        note_opt
++          (fun (Ctype.FlexibleArrayMember (_attrs, _ident, _q, ct)) ->
++            walk_ctype ct)
++          fam_opt
++    | Ctype.UnionDef members ->
++        List.iter
++          (fun (_member_ident, (_attrs, align_opt, _q, ct)) ->
++            note_opt walk_alignment align_opt; walk_ctype ct)
++          members
++  in
++
++  (* ---- sigma ---- *)
++  List.iter
++    (fun (sym, (_loc, _attrs, decl)) -> note_sym sym; walk_declaration decl)
++    sigma.declarations;
++  List.iter
++    (fun (sym, e) -> note_sym sym; walk_expr e)
++    sigma.object_definitions;
++  List.iter
++    (fun (sym, (_loc, _marker_id, _attrs, param_syms, body)) ->
++      note_sym sym;                          (* v2: marker int not noted *)
++      List.iter note_sym param_syms;
++      walk_stmt body)
++    sigma.function_definitions;
++  List.iter
++    (fun (e, _strlit) -> walk_expr e)
++    sigma.static_assertions;
++  List.iter
++    (fun (sym, (_loc, _attrs, tagdef)) ->
++      note_sym sym; walk_tag_definition tagdef)
++    sigma.tag_definitions;
++  Pmap.fold
++    (fun _ident (sym, _kind) () -> note_sym sym)
++    sigma.extern_idmap ();
++  Pmap.fold
++    (fun sym _attrs () -> note_sym sym)
++    sigma.typedef_attributes ();
++  Pmap.fold                                (* v2: loop/marker ints not noted *)
++    (fun _loop_id { Annot.marker_id = _; attributes = _; loc_condition = _;
++                    loc_loop = _ } () -> ())
++    sigma.loop_attributes ();
++  Pmap.fold
++    (fun (_ns, _ident) sym () -> note_sym sym)
++    sigma.cn_idents ();
++  (match sigma.cn_functions, sigma.cn_lemmata, sigma.cn_predicates,
++         sigma.cn_datatypes, sigma.cn_decl_specs with
++   | [], [], [], [], [] -> ()
++   | _ ->
++       (* fail-closed: this fold does not cover the Cn ASTs *)
++       prerr_endline
++         "CERB_FRESH_FLOOR_VIOLATION (unsupported): CN declarations present \
++          — the symbol-window fold (backend/common/ail_sym_hwm.ml) \
++          does not cover Cn ASTs; refusing rather than under-approximate.";
++       exit 70);
++  (!mn, !mx)
+--- upstream/backend/common/driver_ocaml.ml
++++ fork/backend/common/driver_ocaml.ml
+@@ -183,7 +183,11 @@
+           let stderr = String.concat "" (Dlist.toList dr_st.Driver.core_state.Core_run.io.Core_run.stderr) in
+           Error { msg= string_of_driver_error dr_err; stderr }
+     end in
+-    (z3_strs, result)
++    (* fork addition (2026-09-01): per-execution allocation census from
++       the FINAL driver state (nd_st, Smt2.runND's st'); consumed only
++       by the opt-in --batch-alloc-census reporting line. *)
++    let census_opt = Impl_mem.alloc_census_opt nd_st.Driver.layout_state in
++    (z3_strs, result, census_opt)
+   ) values
+ 
+ let drive file args fs_state conf : execution_result =
+--- upstream/backend/common/driver_ocaml.mli
++++ fork/backend/common/driver_ocaml.mli
+@@ -23,8 +23,11 @@
+ val string_of_batch_exit: batch_exit -> string
+ val string_of_batch_output: ?json:bool -> ?is_charon:bool -> int option -> (string list * batch_output) -> string
+ 
++(* the third component is the per-execution allocation census
++   (live, dead) from the final memory state — None when the memory
++   model doesn't support it (fork addition, 2026-09-01) *)
+ val batch_drive:
+-  'a Core.file -> string list -> Sibylfs.fs_state -> driver_conf -> (string list * batch_output) list
++  'a Core.file -> string list -> Sibylfs.fs_state -> driver_conf -> (string list * batch_output * (int * int) option) list
+ 
+ val drive:
+   'a Core.file -> string list -> Sibylfs.fs_state -> driver_conf -> execution_result
+--- upstream/backend/common/pipeline.ml
++++ fork/backend/common/pipeline.ml
+@@ -199,8 +199,20 @@
+     ret in
+   let desugar cabs_tunit =
+     let (ailnames, core_stdlib_fun_map) = core_stdlib in
+-    Cabs_to_ail.desugar (ailnames, core_stdlib_fun_map, core_impl) cn_init_scope
+-      "main" cabs_tunit >>= fun (markers_env, ail_prog) ->
++    (* effect-retirement C1: the desugar entry threads the Lean-side
++       fresh-symbol stream explicitly; on this target the supply
++       argument and the returned final-supply component are DEAD (the
++       ambient Cerb_fresh.int is the counter) — pass 0, drop it. *)
++    Cabs_to_ail.desugar 0 (ailnames, core_stdlib_fun_map, core_impl) cn_init_scope
++      "main" cabs_tunit >>= fun (markers_env, ail_prog, _dead_supply) ->
++          (* arc-13 single-supply backstop: every current-digest symbol in
++             the desugared program must have been minted by Cerb_fresh.int
++             inside this TU's window — a re-threaded supply (the F-D-era
++             scheme) fails loud here (util/cerb_fresh.ml; design:
++             lean_frontend/docs/2026-08-22_arc13-s0-scheme-decision.md §3) *)
++          (let (min_sym, max_sym) =
++             Ail_sym_hwm.sym_window_program (Cerb_fresh.digest ()) ail_prog in
++           Cerb_fresh.check_ail_window ~min_sym ~max_sym);
+           io.set_progress "DESUG"
+       >|> io.pass_message "Cabs -> Ail completed!"
+           (* NOTE: if the debug level is lower the do the printing after the typing *)
+@@ -253,7 +265,9 @@
+   Tags.reset_tagDefs ();
+   let calling_convention =
+     Core.(if Switches.has_switch SW_inner_arg_temps then Inner_arg_callconv else Normal_callconv) in
+-  let core_file = Translation.translate core_stdlib calling_convention core_impl ailtau_prog in
++  (* effect-retirement C1: translate is supply-parameterized (Lean-side
++     stream); DEAD on this target — pass 0, drop the returned supply. *)
++  let (core_file, _dead_supply) = Translation.translate 0 core_stdlib calling_convention core_impl ailtau_prog in
+   io.set_progress "ELABO" >>= fun () ->
+   io.pass_message "Translation to Core completed!" >>= fun () ->
+   return (Some cabs_tunit, Some (markers_env, ailtau_prog), core_file)
+--- upstream/backend/common/pipeline.mli
++++ fork/backend/common/pipeline.mli
+@@ -84,7 +84,7 @@
+ val interp_backend:
+   io_helpers -> 'a Core.file ->
+   args:(string list) -> batch:[`Batch | `CharonBatch | `JsonBatch | `NotBatch] -> fs:string option -> driver_conf:Driver_ocaml.driver_conf ->
+-  ((([`Batch | `CharonBatch | `JsonBatch] * (string list * Driver_ocaml.batch_output) list), int) Either.either, Cerb_location.t * Errors.cause) Exception.exceptM
++  ((([`Batch | `CharonBatch | `JsonBatch] * (string list * Driver_ocaml.batch_output * (int * int) option) list), int) Either.either, Cerb_location.t * Errors.cause) Exception.exceptM
+ 
+ (*
+ val ocaml_backend:
+--- upstream/backend/driver/main.ml
++++ fork/backend/driver/main.ml
+@@ -92,11 +92,11 @@
+   Unix.chmod out 0o755
+ 
+ let cerberus debug_level progress core_obj
+-             cpp_cmd syntax_only nostdinc nolibc agnostic macros macros_undef
++             cpp_cmd syntax_only cabs_json nostdinc nolibc agnostic macros macros_undef
+              runtime_path_opt incl_dirs incl_files cpp_only
+              link_lib_path link_core_obj
+              impl_name
+-             exec exec_mode iso_switches switches batch concurrency
++             exec exec_mode iso_switches switches batch batch_alloc_census concurrency
+              astprints pprints ppflags pp_ail_out pp_core_out
+              sequentialise_core rewrite_core typecheck_core defacto permissive ignore_bitfields
+              fs_dump fs trace
+@@ -189,7 +189,7 @@
+         let exit =
+           let open Driver_ocaml in
+           match execs with
+-            | [(_, Defined {exit= Specified n; _})] ->
++            | [(_, Defined {exit= Specified n; _}, _)] ->
+                 begin try
+                   if is_charon then
+                     Z.to_int n
+@@ -200,18 +200,29 @@
+                       Cerb_debug.warn [] (fun () -> "Return value overlows (wrapping it down to 255)");
+                       Z .(to_int (n mod (of_int 256)))
+                 end
+-            | [(_, (Undefined _ | Error _))] ->
++            | [(_, (Undefined _ | Error _), _)] ->
+                 1
+             | _ ->
+                 0
+           in
+         let has_multiple = List.length execs > 1 in
+-        List.iteri (fun i (z3_strs, exec) ->
++        List.iteri (fun i (z3_strs, exec, census_opt) ->
+           let open Driver_ocaml in
+           print_string begin
+             string_of_batch_output ~json:(batch = `JsonBatch) ~is_charon
+               (if has_multiple then Some i else None) (z3_strs, exec)
+-          end
++          end;
++          (* fork addition (2026-09-01): opt-in allocation-census line
++             (--batch-alloc-census); plain-batch mode only, printed
++             AFTER the execution's verdict line so all default output
++             is byte-unchanged. An unsupported model reports loudly. *)
++          if batch_alloc_census && batch = `Batch then
++            print_string begin match census_opt with
++              | Some (live, dead) ->
++                  Printf.sprintf "AllocCensus {live: %d, dead: %d}\n" live dead
++              | None ->
++                  "AllocCensus {unsupported}\n"
++            end
+         ) execs;
+         epilogue exit
+     | Exception.Result (Either.Right n) ->
+@@ -238,6 +249,43 @@
+             print_file processed_file;
+             return ()
+           ) () files >>= fun () ->
++        return success
++      (* Export Cabs as JSON for Lean backend. Stops after
++         parse+serialize (trust-basket item c, 2026-08-31): the old
++         path ran the full c_frontend (desugar + Ail typing) and used
++         only the cabs_tunit — a file that parses but trips an
++         oracle-side desugar limit produced NO JSON, blocking 43
++         differential rows on exactly the translation-time-UB set
++         (docs/2026-08-30_parity-detective-report.md §2).
++         Cerb_fresh.set_digest mirrors c_frontend
++         (backend/common/pipeline.ml:181). No core
++         stdlib prelude needed: nothing before desugar consumes it.
++         Fork-local flag (not upstream), so no tray entry. *)
++      else if cabs_json then
++        Exception.except_mapM (fun filename ->
++          Cerb_fresh.set_digest filename;
++          cpp (conf, io) ~filename >>= fun file_content ->
++          C_parser_driver.parse_from_string ~filename file_content >>= fun cabs_tunit ->
++          let json = Lean_export.Cabs_json.to_json cabs_tunit in
++          (* zero-discrepancy Z3 (census row Z-28): the JSON carries the
++             TU's digest — `Digest.file filename`, the value set_digest
++             just installed and every symbol of this TU will carry
++             (the minting sites frontend/model/symbol.lem:284/:287, `Symbol (digest ()) (fresh_int ()) …`). The
++             Lean driver sets its per-TU digest from this field instead of
++             hashing the JSON text: symbol digests ORDER the linked globals
++             (Core_linking.merge_globs' min-(digest, number) topological
++             choice, core_linking.lem:252-273), so in libc mode the
++             program's globals interleave among the libc TUs' by exactly
++             this value. Fail-closed: a translation unit that is not a JSON
++             object cannot carry it. *)
++          let json = match (json :> Yojson.t) with
++            | `Assoc kvs ->
++              `Assoc (kvs @ [("digest", `String (Digest.to_hex (Cerb_fresh.digest ())))])
++            | _ -> failwith "cabs-json: the translation unit did not serialise to a JSON object" in
++          print_string (Yojson.pretty_to_string ~std:true json);
++          print_newline ();
++          return ()
++        ) files >>= fun _ ->
+         return success
+       (* Dump a core object (-c) *)
+       else if core_obj then
+@@ -347,6 +395,10 @@
+   let doc = "Stop the pipeline after the Ail typechecking (only supported when called on .c files)" in
+   Arg.(value & flag & info ["syntax-only"] ~doc)
+ 
++let cabs_json =
++  let doc = "Parse C and output the Cabs AST as JSON (for the Lean backend)." in
++  Arg.(value & flag & info ["cabs-json"] ~doc)
++
+ let incl_dir =
+   let doc = "Add the specified directory to the search path for the\
+              C preprocessor." in
+@@ -466,6 +518,11 @@
+                                   (`CharonBatch, info["charon-batch"] ~doc:(doc^" (for Charon)"));
+                                   (`JsonBatch, info["json-batch"] ~doc:"outputs the executions in json") ])
+ 
++let batch_alloc_census =
++  let doc = "(fork addition) with --batch: append a per-execution AllocCensus \
++             {live: N, dead: M} line from the final memory state" in
++  Arg.(value & flag & info["batch-alloc-census"] ~doc)
++
+ let typecheck_core =
+   let doc = "typecheck the elaborated Core program" in
+   Arg.(value & flag & info["typecheck-core"] ~doc)
+@@ -501,11 +558,12 @@
+ (* entry point *)
+ let () =
+   let cerberus_t = Term.(const cerberus $ debug_level $ progress $ core_obj $
+-                         cpp_cmd $ syntax_only $ nostdinc $ nolibc $ agnostic $ macros $ macros_undef $
++                         cpp_cmd $ syntax_only $ cabs_json $ nostdinc $ nolibc $ agnostic $ macros $ macros_undef $
+                          runtime_path $ incl_dir $ incl_file $ cpp_only $
+                          link_lib_path $ link_core_obj $
+                          impl $
+                          exec $ exec_mode $ iso $ switches $ batch $
++                         batch_alloc_census $
+                          concurrency $
+                          astprints $ pprints $ ppflags $ pp_ail_out $ pp_core_out $
+                          sequentialise $ rewrite $ typecheck_core $ defacto $ permissive $ ignore_bitfields $
+--- upstream/backend/lean_export/cabs_json.ml
++++ fork/backend/lean_export/cabs_json.ml
+@@ -0,0 +1,639 @@
++(* Cabs AST to JSON serializer for the Lean backend.
++
++   Schema: every constructor becomes {"tag": "Name", "args": [...]}
++   Atoms: strings -> JSON strings, integers -> JSON strings (arbitrary precision),
++   bools -> JSON bools, options -> null or value, lists -> JSON arrays,
++   tuples -> JSON arrays, locations -> lossless tagged format (see below).
++
++   This is a mechanical translation of the Cabs type definitions. *)
++
++open Cerb_frontend
++open Cabs
++
++let tag name args = `Assoc (("tag", `String name) :: args)
++let tag0 name = `String name  (* nullary constructor *)
++
++(* === Positions and locations (lossless) ===
++
++   Unlike Cerb_location.to_json (which drops filename, cursor, region lists,
++   and the Loc_point/Loc_other distinction), this serializes the full location
++   tree so the Lean parser can reconstruct it exactly.
++
++   Positions: {"file": S, "line": N, "col": N}  (1-indexed, matching Cerb_position accessors)
++   Cursors:   "NoCursor" | {"tag": "PointCursor", ...} | {"tag": "RegionCursor", ...}
++   Locations: "Loc_unknown" | {"tag": "Loc_other", ...} | {"tag": "Loc_point", ...}
++            | {"tag": "Loc_region", ...} | {"tag": "Loc_regions", ...}
++*)
++
++let json_of_pos p =
++  `Assoc [
++    ("file", `String (Cerb_position.file p));
++    ("line", `Int (Cerb_position.line p));
++    ("col", `Int (Cerb_position.column p))
++  ]
++
++let json_of_cursor = function
++  | Cerb_location.NoCursor -> tag0 "NoCursor"
++  | Cerb_location.PointCursor p ->
++    tag "PointCursor" [("pos", json_of_pos p)]
++  | Cerb_location.RegionCursor (p1, p2) ->
++    tag "RegionCursor" [("begin", json_of_pos p1); ("end", json_of_pos p2)]
++
++let json_of_loc = function
++  | Cerb_location.Loc_unknown -> tag0 "Loc_unknown"
++  | Cerb_location.Loc_other s -> tag "Loc_other" [("str", `String s)]
++  | Cerb_location.Loc_point p -> tag "Loc_point" [("pos", json_of_pos p)]
++  | Cerb_location.Loc_region (p1, p2, cursor) ->
++    tag "Loc_region" [
++      ("begin", json_of_pos p1);
++      ("end", json_of_pos p2);
++      ("cursor", json_of_cursor cursor)
++    ]
++  | Cerb_location.Loc_regions (regions, cursor) ->
++    tag "Loc_regions" [
++      ("regions", `List (List.map (fun (p1, p2) ->
++        `List [json_of_pos p1; json_of_pos p2]
++      ) regions));
++      ("cursor", json_of_cursor cursor)
++    ]
++
++(* === Identifiers === *)
++
++let json_of_identifier (Symbol.Identifier (loc, s)) =
++  `Assoc [("loc", json_of_loc loc); ("name", `String s)]
++
++(* === Basic types === *)
++
++let json_of_option f = function
++  | None -> `Null
++  | Some x -> f x
++
++let json_of_list f xs = `List (List.map f xs)
++
++let json_of_string s = `String s
++
++let json_of_bool b = `Bool b
++
++(* === Cabs types === *)
++
++let json_of_cabs_integer_suffix = function
++  | CabsSuffix_U -> tag0 "CabsSuffix_U"
++  | CabsSuffix_UL -> tag0 "CabsSuffix_UL"
++  | CabsSuffix_ULL -> tag0 "CabsSuffix_ULL"
++  | CabsSuffix_L -> tag0 "CabsSuffix_L"
++  | CabsSuffix_LL -> tag0 "CabsSuffix_LL"
++
++let json_of_cabs_integer_constant (s, suffix_opt) =
++  `List [`String s; json_of_option json_of_cabs_integer_suffix suffix_opt]
++
++let json_of_cabs_floating_suffix = function
++  | CabsFloatingSuffix_F -> tag0 "CabsFloatingSuffix_F"
++  | CabsFloatingSuffix_L -> tag0 "CabsFloatingSuffix_L"
++
++let json_of_cabs_floating_constant (s, suffix_opt) =
++  `List [`String s; json_of_option json_of_cabs_floating_suffix suffix_opt]
++
++let json_of_cabs_character_prefix = function
++  | CabsPrefix_L -> tag0 "CabsPrefix_L"
++  | CabsPrefix_u -> tag0 "CabsPrefix_u"
++  | CabsPrefix_U -> tag0 "CabsPrefix_U"
++
++let json_of_cabs_character_constant (prefix_opt, s) =
++  `List [json_of_option json_of_cabs_character_prefix prefix_opt; `String s]
++
++let json_of_cabs_constant = function
++  | CabsInteger_const ic -> tag "CabsInteger_const" [("val", json_of_cabs_integer_constant ic)]
++  | CabsFloating_const fc -> tag "CabsFloating_const" [("val", json_of_cabs_floating_constant fc)]
++  | CabsCharacter_const cc -> tag "CabsCharacter_const" [("val", json_of_cabs_character_constant cc)]
++
++let json_of_cabs_encoding_prefix = function
++  | CabsEncPrefix_u8 -> tag0 "CabsEncPrefix_u8"
++  | CabsEncPrefix_u -> tag0 "CabsEncPrefix_u"
++  | CabsEncPrefix_U -> tag0 "CabsEncPrefix_U"
++  | CabsEncPrefix_L -> tag0 "CabsEncPrefix_L"
++
++let json_of_cabs_string_literal (enc_opt, parts) =
++  `List [
++    json_of_option json_of_cabs_encoding_prefix enc_opt;
++    json_of_list (fun (loc, strs) ->
++      `List [json_of_loc loc; json_of_list json_of_string strs]
++    ) parts
++  ]
++
++(* Forward declarations for mutual recursion *)
++let rec json_of_cabs_expression (CabsExpression (loc, expr_)) =
++  tag "CabsExpression" [
++    ("loc", json_of_loc loc);
++    ("expr", json_of_cabs_expression_ expr_)
++  ]
++
++and json_of_cabs_expression_ = function
++  | CabsEident id -> tag "CabsEident" [("id", json_of_identifier id)]
++  | CabsEconst c -> tag "CabsEconst" [("val", json_of_cabs_constant c)]
++  | CabsEstring sl -> tag "CabsEstring" [("val", json_of_cabs_string_literal sl)]
++  | CabsEgeneric (e, assocs) ->
++    tag "CabsEgeneric" [
++      ("expr", json_of_cabs_expression e);
++      ("assocs", json_of_list json_of_generic_association assocs)
++    ]
++  | CabsEsubscript (e1, e2) ->
++    tag "CabsEsubscript" [
++      ("arr", json_of_cabs_expression e1);
++      ("idx", json_of_cabs_expression e2)
++    ]
++  | CabsEcall (f, args, attrs_opt) ->
++    tag "CabsEcall" [
++      ("fun", json_of_cabs_expression f);
++      ("args", json_of_list json_of_cabs_expression args);
++      ("attrs", json_of_option json_of_attributes attrs_opt)
++    ]
++  | CabsEmemberof (e, id) ->
++    tag "CabsEmemberof" [("expr", json_of_cabs_expression e); ("member", json_of_identifier id)]
++  | CabsEmemberofptr (e, id) ->
++    tag "CabsEmemberofptr" [("expr", json_of_cabs_expression e); ("member", json_of_identifier id)]
++  | CabsEpostincr e -> tag "CabsEpostincr" [("expr", json_of_cabs_expression e)]
++  | CabsEpostdecr e -> tag "CabsEpostdecr" [("expr", json_of_cabs_expression e)]
++  | CabsEcompound (tn, inits) ->
++    tag "CabsEcompound" [
++      ("type", json_of_type_name tn);
++      ("inits", json_of_list (fun (desig_opt, init) ->
++        `List [
++          json_of_option (json_of_list json_of_designator) desig_opt;
++          json_of_initializer_ init
++        ]) inits)
++    ]
++  | CabsEpreincr e -> tag "CabsEpreincr" [("expr", json_of_cabs_expression e)]
++  | CabsEpredecr e -> tag "CabsEpredecr" [("expr", json_of_cabs_expression e)]
++  | CabsEunary (op, e) ->
++    tag "CabsEunary" [("op", json_of_unary_op op); ("expr", json_of_cabs_expression e)]
++  | CabsEsizeof_expr e -> tag "CabsEsizeof_expr" [("expr", json_of_cabs_expression e)]
++  | CabsEsizeof_type tn -> tag "CabsEsizeof_type" [("type", json_of_type_name tn)]
++  | CabsEalignof tn -> tag "CabsEalignof" [("type", json_of_type_name tn)]
++  | CabsEcast (tn, e) ->
++    tag "CabsEcast" [("type", json_of_type_name tn); ("expr", json_of_cabs_expression e)]
++  | CabsEbinary (op, e1, e2) ->
++    tag "CabsEbinary" [
++      ("op", json_of_binary_op op);
++      ("lhs", json_of_cabs_expression e1);
++      ("rhs", json_of_cabs_expression e2)
++    ]
++  | CabsEcond (e1, e2, e3) ->
++    tag "CabsEcond" [
++      ("cond", json_of_cabs_expression e1);
++      ("then_", json_of_cabs_expression e2);
++      ("else_", json_of_cabs_expression e3)
++    ]
++  | CabsEassign (op, e1, e2) ->
++    tag "CabsEassign" [
++      ("op", json_of_assignment_op op);
++      ("lhs", json_of_cabs_expression e1);
++      ("rhs", json_of_cabs_expression e2)
++    ]
++  | CabsEcomma (e1, e2) ->
++    tag "CabsEcomma" [("lhs", json_of_cabs_expression e1); ("rhs", json_of_cabs_expression e2)]
++  | CabsEassert e -> tag "CabsEassert" [("expr", json_of_cabs_expression e)]
++  | CabsEoffsetof (tn, id) ->
++    tag "CabsEoffsetof" [("type", json_of_type_name tn); ("member", json_of_identifier id)]
++  | CabsEva_start (e, id) ->
++    tag "CabsEva_start" [("expr", json_of_cabs_expression e); ("param", json_of_identifier id)]
++  | CabsEva_copy (e1, e2) ->
++    tag "CabsEva_copy" [("dst", json_of_cabs_expression e1); ("src", json_of_cabs_expression e2)]
++  | CabsEva_arg (e, tn) ->
++    tag "CabsEva_arg" [("expr", json_of_cabs_expression e); ("type", json_of_type_name tn)]
++  | CabsEva_end e -> tag "CabsEva_end" [("expr", json_of_cabs_expression e)]
++  | CabsEprint_type e -> tag "CabsEprint_type" [("expr", json_of_cabs_expression e)]
++  | CabsEbmc_assume e -> tag "CabsEbmc_assume" [("expr", json_of_cabs_expression e)]
++  | CabsEgcc_statement stmts ->
++    tag "CabsEgcc_statement" [("stmts", json_of_list json_of_cabs_statement stmts)]
++  | CabsEcondGNU (e1, e2) ->
++    tag "CabsEcondGNU" [("cond", json_of_cabs_expression e1); ("else_", json_of_cabs_expression e2)]
++  | CabsEbuiltinGNU b -> tag "CabsEbuiltinGNU" [("builtin", json_of_gnu_builtin b)]
++
++and json_of_generic_association = function
++  | GA_type (tn, e) -> tag "GA_type" [("type", json_of_type_name tn); ("expr", json_of_cabs_expression e)]
++  | GA_default e -> tag "GA_default" [("expr", json_of_cabs_expression e)]
++
++and json_of_unary_op = function
++  | CabsAddress -> tag0 "CabsAddress"
++  | CabsIndirection -> tag0 "CabsIndirection"
++  | CabsPlus -> tag0 "CabsPlus"
++  | CabsMinus -> tag0 "CabsMinus"
++  | CabsBnot -> tag0 "CabsBnot"
++  | CabsNot -> tag0 "CabsNot"
++
++and json_of_binary_op = function
++  | CabsMul -> tag0 "CabsMul" | CabsDiv -> tag0 "CabsDiv" | CabsMod -> tag0 "CabsMod"
++  | CabsAdd -> tag0 "CabsAdd" | CabsSub -> tag0 "CabsSub"
++  | CabsShl -> tag0 "CabsShl" | CabsShr -> tag0 "CabsShr"
++  | CabsLt -> tag0 "CabsLt" | CabsGt -> tag0 "CabsGt"
++  | CabsLe -> tag0 "CabsLe" | CabsGe -> tag0 "CabsGe"
++  | CabsEq -> tag0 "CabsEq" | CabsNe -> tag0 "CabsNe"
++  | CabsBand -> tag0 "CabsBand" | CabsBxor -> tag0 "CabsBxor" | CabsBor -> tag0 "CabsBor"
++  | CabsAnd -> tag0 "CabsAnd" | CabsOr -> tag0 "CabsOr"
++
++and json_of_assignment_op = function
++  | Assign -> tag0 "Assign"
++  | Assign_Mul -> tag0 "Assign_Mul" | Assign_Div -> tag0 "Assign_Div"
++  | Assign_Mod -> tag0 "Assign_Mod" | Assign_Add -> tag0 "Assign_Add"
++  | Assign_Sub -> tag0 "Assign_Sub" | Assign_Shl -> tag0 "Assign_Shl"
++  | Assign_Shr -> tag0 "Assign_Shr" | Assign_Band -> tag0 "Assign_Band"
++  | Assign_Bxor -> tag0 "Assign_Bxor" | Assign_Bor -> tag0 "Assign_Bor"
++
++(* === Statements === *)
++
++and json_of_cabs_statement (CabsStatement (loc, attrs, stmt_)) =
++  tag "CabsStatement" [
++    ("loc", json_of_loc loc);
++    ("attrs", json_of_attributes attrs);
++    ("stmt", json_of_cabs_statement_ stmt_)
++  ]
++
++and json_of_cabs_statement_ = function
++  | CabsSlabel (id, stmt) ->
++    tag "CabsSlabel" [("label", json_of_identifier id); ("stmt", json_of_cabs_statement stmt)]
++  | CabsScase (e, stmt) ->
++    tag "CabsScase" [("expr", json_of_cabs_expression e); ("stmt", json_of_cabs_statement stmt)]
++  | CabsSdefault stmt ->
++    tag "CabsSdefault" [("stmt", json_of_cabs_statement stmt)]
++  | CabsSblock stmts ->
++    tag "CabsSblock" [("stmts", json_of_list json_of_cabs_statement stmts)]
++  | CabsSdecl decl ->
++    tag "CabsSdecl" [("decl", json_of_cabs_declaration decl)]
++  | CabsSnull -> tag0 "CabsSnull"
++  | CabsSexpr e ->
++    tag "CabsSexpr" [("expr", json_of_cabs_expression e)]
++  | CabsSif (e, then_stmt, else_opt) ->
++    tag "CabsSif" [
++      ("cond", json_of_cabs_expression e);
++      ("then_", json_of_cabs_statement then_stmt);
++      ("else_", json_of_option json_of_cabs_statement else_opt)
++    ]
++  | CabsSswitch (e, stmt) ->
++    tag "CabsSswitch" [("expr", json_of_cabs_expression e); ("stmt", json_of_cabs_statement stmt)]
++  | CabsSwhile (e, stmt) ->
++    tag "CabsSwhile" [("cond", json_of_cabs_expression e); ("body", json_of_cabs_statement stmt)]
++  | CabsSdo (e, stmt) ->
++    tag "CabsSdo" [("cond", json_of_cabs_expression e); ("body", json_of_cabs_statement stmt)]
++  | CabsSfor (fc_opt, cond_opt, step_opt, body) ->
++    tag "CabsSfor" [
++      ("init", json_of_option json_of_for_clause fc_opt);
++      ("cond", json_of_option json_of_cabs_expression cond_opt);
++      ("step", json_of_option json_of_cabs_expression step_opt);
++      ("body", json_of_cabs_statement body)
++    ]
++  | CabsSgoto id ->
++    tag "CabsSgoto" [("label", json_of_identifier id)]
++  | CabsScontinue -> tag0 "CabsScontinue"
++  | CabsSbreak -> tag0 "CabsSbreak"
++  | CabsSreturn e_opt ->
++    tag "CabsSreturn" [("expr", json_of_option json_of_cabs_expression e_opt)]
++  | CabsSpar stmts ->
++    tag "CabsSpar" [("stmts", json_of_list json_of_cabs_statement stmts)]
++  | CabsSasm (is_volatile, is_inline, parts) ->
++    tag "CabsSasm" [
++      ("is_volatile", json_of_bool is_volatile);
++      ("is_inline", json_of_bool is_inline);
++      ("parts", json_of_list (fun (loc, strs) ->
++        `List [json_of_loc loc; json_of_list json_of_string strs]
++      ) parts)
++    ]
++  | CabsScaseGNU (lo, hi, stmt) ->
++    tag "CabsScaseGNU" [
++      ("lo", json_of_cabs_expression lo);
++      ("hi", json_of_cabs_expression hi);
++      ("stmt", json_of_cabs_statement stmt)
++    ]
++  | CabsSmarker stmt ->
++    tag "CabsSmarker" [("stmt", json_of_cabs_statement stmt)]
++
++and json_of_for_clause = function
++  | FC_expr e -> tag "FC_expr" [("expr", json_of_cabs_expression e)]
++  | FC_decl (loc, decl) ->
++    tag "FC_decl" [("loc", json_of_loc loc); ("decl", json_of_cabs_declaration decl)]
++
++(* === Type names === *)
++
++and json_of_type_name (Type_name (tspecs, tquals, aspecs, abs_decl_opt)) =
++  tag "Type_name" [
++    ("type_specifiers", json_of_list json_of_cabs_type_specifier tspecs);
++    ("type_qualifiers", json_of_list json_of_cabs_type_qualifier tquals);
++    ("alignment_specifiers", json_of_list json_of_alignment_specifier aspecs);
++    ("abstract_declarator", json_of_option json_of_abstract_declarator abs_decl_opt)
++  ]
++
++(* === Type specifiers === *)
++
++and json_of_cabs_type_specifier (TSpec (loc, tspec_)) =
++  tag "TSpec" [
++    ("loc", json_of_loc loc);
++    ("spec", json_of_cabs_type_specifier_ tspec_)
++  ]
++
++and json_of_cabs_type_specifier_ = function
++  | TSpec_void -> tag0 "TSpec_void"
++  | TSpec_char -> tag0 "TSpec_char"
++  | TSpec_short -> tag0 "TSpec_short"
++  | TSpec_int -> tag0 "TSpec_int"
++  | TSpec_long -> tag0 "TSpec_long"
++  | TSpec_float -> tag0 "TSpec_float"
++  | TSpec_double -> tag0 "TSpec_double"
++  | TSpec_signed -> tag0 "TSpec_signed"
++  | TSpec_unsigned -> tag0 "TSpec_unsigned"
++  | TSpec_Bool -> tag0 "TSpec_Bool"
++  | TSpec_Complex -> tag0 "TSpec_Complex"
++  | TSpec_Atomic tn ->
++    tag "TSpec_Atomic" [("type", json_of_type_name tn)]
++  | TSpec_struct (attrs, id_opt, members_opt) ->
++    tag "TSpec_struct" [
++      ("attrs", json_of_attributes attrs);
++      ("id", json_of_option json_of_identifier id_opt);
++      ("members", json_of_option (json_of_list json_of_struct_declaration) members_opt)
++    ]
++  | TSpec_union (attrs, id_opt, members_opt) ->
++    tag "TSpec_union" [
++      ("attrs", json_of_attributes attrs);
++      ("id", json_of_option json_of_identifier id_opt);
++      ("members", json_of_option (json_of_list json_of_struct_declaration) members_opt)
++    ]
++  | TSpec_enum (id_opt, enumerators_opt) ->
++    tag "TSpec_enum" [
++      ("id", json_of_option json_of_identifier id_opt);
++      ("enumerators", json_of_option (json_of_list (fun (id, e_opt) ->
++        `List [json_of_identifier id; json_of_option json_of_cabs_expression e_opt]
++      )) enumerators_opt)
++    ]
++  | TSpec_name id ->
++    tag "TSpec_name" [("id", json_of_identifier id)]
++  | TSpec_typeof_expr e ->
++    tag "TSpec_typeof_expr" [("expr", json_of_cabs_expression e)]
++  | TSpec_typeof_type tn ->
++    tag "TSpec_typeof_type" [("type", json_of_type_name tn)]
++
++(* === Struct declarations === *)
++
++and json_of_struct_declaration = function
++  | Struct_declaration (attrs, tspecs, tquals, aspecs, sdecls) ->
++    tag "Struct_declaration" [
++      ("attrs", json_of_attributes attrs);
++      ("type_specifiers", json_of_list json_of_cabs_type_specifier tspecs);
++      ("type_qualifiers", json_of_list json_of_cabs_type_qualifier tquals);
++      ("alignment_specifiers", json_of_list json_of_alignment_specifier aspecs);
++      ("declarators", json_of_list json_of_struct_declarator sdecls)
++    ]
++  | Struct_assert sa ->
++    tag "Struct_assert" [("assert", json_of_static_assert_declaration sa)]
++
++and json_of_struct_declarator = function
++  | SDecl_simple decl ->
++    tag "SDecl_simple" [("declarator", json_of_declarator decl)]
++  | SDecl_bitfield (decl_opt, e) ->
++    tag "SDecl_bitfield" [
++      ("declarator", json_of_option json_of_declarator decl_opt);
++      ("width", json_of_cabs_expression e)
++    ]
++
++(* === Type qualifiers === *)
++
++and json_of_cabs_type_qualifier = function
++  | Q_const -> tag0 "Q_const"
++  | Q_restrict -> tag0 "Q_restrict"
++  | Q_volatile -> tag0 "Q_volatile"
++  | Q_Atomic -> tag0 "Q_Atomic"
++
++(* === Function specifiers === *)
++
++and json_of_function_specifier = function
++  | FS_inline -> tag0 "FS_inline"
++  | FS_Noreturn -> tag0 "FS_Noreturn"
++
++(* === Alignment specifiers === *)
++
++and json_of_alignment_specifier = function
++  | AS_type tn -> tag "AS_type" [("type", json_of_type_name tn)]
++  | AS_expr e -> tag "AS_expr" [("expr", json_of_cabs_expression e)]
++
++(* === Storage class specifiers === *)
++
++and json_of_storage_class_specifier = function
++  | SC_typedef -> tag0 "SC_typedef"
++  | SC_extern -> tag0 "SC_extern"
++  | SC_static -> tag0 "SC_static"
++  | SC_Thread_local -> tag0 "SC_Thread_local"
++  | SC_auto -> tag0 "SC_auto"
++  | SC_register -> tag0 "SC_register"
++
++(* === Specifiers record === *)
++
++and json_of_specifiers (s : specifiers) =
++  tag "Specifiers" [
++    ("storage_classes", json_of_list json_of_storage_class_specifier s.storage_classes);
++    ("type_specifiers", json_of_list json_of_cabs_type_specifier s.type_specifiers);
++    ("type_qualifiers", json_of_list json_of_cabs_type_qualifier s.type_qualifiers);
++    ("function_specifiers", json_of_list json_of_function_specifier s.function_specifiers);
++    ("alignment_specifiers", json_of_list json_of_alignment_specifier s.alignment_specifiers)
++  ]
++
++(* === Declarators === *)
++
++and json_of_declarator (Declarator (ptr_opt, ddecl)) =
++  tag "Declarator" [
++    ("pointer", json_of_option json_of_pointer_declarator ptr_opt);
++    ("direct", json_of_direct_declarator ddecl)
++  ]
++
++and json_of_direct_declarator = function
++  | DDecl_identifier (attrs, id) ->
++    tag "DDecl_identifier" [
++      ("attrs", json_of_attributes attrs);
++      ("id", json_of_identifier id)
++    ]
++  | DDecl_declarator decl ->
++    tag "DDecl_declarator" [("declarator", json_of_declarator decl)]
++  | DDecl_array (ddecl, adecl) ->
++    tag "DDecl_array" [
++      ("direct", json_of_direct_declarator ddecl);
++      ("array", json_of_array_declarator adecl)
++    ]
++  | DDecl_function (ddecl, ptl) ->
++    tag "DDecl_function" [
++      ("direct", json_of_direct_declarator ddecl);
++      ("params", json_of_parameter_type_list ptl)
++    ]
++
++and json_of_array_declarator (ADecl (loc, tquals, is_static, size_opt)) =
++  tag "ADecl" [
++    ("loc", json_of_loc loc);
++    ("type_qualifiers", json_of_list json_of_cabs_type_qualifier tquals);
++    ("is_static", json_of_bool is_static);
++    ("size", json_of_option json_of_array_declarator_size size_opt)
++  ]
++
++and json_of_array_declarator_size = function
++  | ADeclSize_expression e ->
++    tag "ADeclSize_expression" [("expr", json_of_cabs_expression e)]
++  | ADeclSize_asterisk -> tag0 "ADeclSize_asterisk"
++
++and json_of_pointer_declarator (PDecl (loc, tquals, ptr_opt)) =
++  tag "PDecl" [
++    ("loc", json_of_loc loc);
++    ("type_qualifiers", json_of_list json_of_cabs_type_qualifier tquals);
++    ("pointer", json_of_option json_of_pointer_declarator ptr_opt)
++  ]
++
++and json_of_parameter_type_list (Params (params, is_variadic)) =
++  tag "Params" [
++    ("params", json_of_list json_of_parameter_declaration params);
++    ("is_variadic", json_of_bool is_variadic)
++  ]
++
++and json_of_parameter_declaration = function
++  | PDeclaration_decl (specs, decl) ->
++    tag "PDeclaration_decl" [
++      ("specifiers", json_of_specifiers specs);
++      ("declarator", json_of_declarator decl)
++    ]
++  | PDeclaration_abs_decl (specs, abs_decl_opt) ->
++    tag "PDeclaration_abs_decl" [
++      ("specifiers", json_of_specifiers specs);
++      ("abstract_declarator", json_of_option json_of_abstract_declarator abs_decl_opt)
++    ]
++
++(* === Abstract declarators === *)
++
++and json_of_abstract_declarator = function
++  | AbsDecl_pointer ptr ->
++    tag "AbsDecl_pointer" [("pointer", json_of_pointer_declarator ptr)]
++  | AbsDecl_direct (ptr_opt, dabs) ->
++    tag "AbsDecl_direct" [
++      ("pointer", json_of_option json_of_pointer_declarator ptr_opt);
++      ("direct", json_of_direct_abstract_declarator dabs)
++    ]
++
++and json_of_direct_abstract_declarator = function
++  | DAbs_abs_declarator abs ->
++    tag "DAbs_abs_declarator" [("abstract_declarator", json_of_abstract_declarator abs)]
++  | DAbs_array (dabs_opt, adecl) ->
++    tag "DAbs_array" [
++      ("direct", json_of_option json_of_direct_abstract_declarator dabs_opt);
++      ("array", json_of_array_declarator adecl)
++    ]
++  | DAbs_function (dabs_opt, ptl) ->
++    tag "DAbs_function" [
++      ("direct", json_of_option json_of_direct_abstract_declarator dabs_opt);
++      ("params", json_of_parameter_type_list ptl)
++    ]
++
++(* === Designators === *)
++
++and json_of_designator = function
++  | Desig_array e ->
++    tag "Desig_array" [("expr", json_of_cabs_expression e)]
++  | Desig_member id ->
++    tag "Desig_member" [("member", json_of_identifier id)]
++
++(* === Initializers === *)
++
++and json_of_initializer_ = function
++  | Init_expr e ->
++    tag "Init_expr" [("expr", json_of_cabs_expression e)]
++  | Init_list (loc, inits) ->
++    tag "Init_list" [
++      ("loc", json_of_loc loc);
++      ("inits", json_of_list (fun (desig_opt, init) ->
++        `List [
++          json_of_option (json_of_list json_of_designator) desig_opt;
++          json_of_initializer_ init
++        ]) inits)
++    ]
++
++(* === GNU builtins === *)
++
++and json_of_gnu_builtin = function
++  | GNUbuiltin_types_compatible_p (tn1, tn2) ->
++    tag "GNUbuiltin_types_compatible_p" [
++      ("type1", json_of_type_name tn1);
++      ("type2", json_of_type_name tn2)
++    ]
++  | GNUbuiltin_choose_expr (e1, e2, e3) ->
++    tag "GNUbuiltin_choose_expr" [
++      ("cond", json_of_cabs_expression e1);
++      ("then_", json_of_cabs_expression e2);
++      ("else_", json_of_cabs_expression e3)
++    ]
++
++(* === Attributes === *)
++
++and json_of_attribute (attr : Annot.attribute) =
++  tag "Attribute" [
++    ("ns", json_of_option json_of_identifier attr.attr_ns);
++    ("id", json_of_identifier attr.attr_id);
++    ("args", json_of_list (fun (loc, s, inner) ->
++      `List [
++        json_of_loc loc;
++        json_of_string s;
++        json_of_list (fun (iloc, is) ->
++          `List [json_of_loc iloc; json_of_string is]
++        ) inner
++      ]) attr.attr_args)
++  ]
++
++and json_of_attributes (Annot.Attrs attrs) =
++  tag "Attrs" [("attrs", json_of_list json_of_attribute attrs)]
++
++(* === Declarations === *)
++
++and json_of_cabs_declaration = function
++  | Declaration_base (attrs, specs, init_decls) ->
++    tag "Declaration_base" [
++      ("attrs", json_of_attributes attrs);
++      ("specifiers", json_of_specifiers specs);
++      ("init_declarators", json_of_list json_of_init_declarator init_decls)
++    ]
++  | Declaration_static_assert sa ->
++    tag "Declaration_static_assert" [("assert", json_of_static_assert_declaration sa)]
++
++and json_of_init_declarator (InitDecl (loc, decl, init_opt)) =
++  tag "InitDecl" [
++    ("loc", json_of_loc loc);
++    ("declarator", json_of_declarator decl);
++    ("initializer", json_of_option json_of_initializer_ init_opt)
++  ]
++
++and json_of_static_assert_declaration (Static_assert (e, sl)) =
++  tag "Static_assert" [
++    ("expr", json_of_cabs_expression e);
++    ("msg", json_of_cabs_string_literal sl)
++  ]
++
++(* === Function definitions === *)
++
++and json_of_function_definition (FunDef (loc, attrs, specs, decl, body)) =
++  tag "FunDef" [
++    ("loc", json_of_loc loc);
++    ("attrs", json_of_attributes attrs);
++    ("specifiers", json_of_specifiers specs);
++    ("declarator", json_of_declarator decl);
++    ("body", json_of_cabs_statement body)
++  ]
++
++(* === Top-level === *)
++
++(* CN backend declarations have no C semantics and carry types from a
++   separate module that we don't serialize.  Filter them out here so the
++   Lean parser never encounters unrecognised / data-less tags. *)
++let json_of_external_declaration = function
++  | EDecl_func fdef ->
++    Some (tag "EDecl_func" [("def", json_of_function_definition fdef)])
++  | EDecl_decl decl ->
++    Some (tag "EDecl_decl" [("decl", json_of_cabs_declaration decl)])
++  | EDecl_magic (loc, s) ->
++    Some (tag "EDecl_magic" [("loc", json_of_loc loc); ("str", json_of_string s)])
++  | EDecl_funcCN _ | EDecl_lemmaCN _ | EDecl_predCN _
++  | EDecl_datatypeCN _ | EDecl_type_synCN _ | EDecl_fun_specCN _ ->
++    None
++
++let json_of_translation_unit (TUnit decls) =
++  tag "TUnit" [("decls", `List (List.filter_map json_of_external_declaration decls))]
++
++(* Entry point *)
++let to_json = json_of_translation_unit
+--- upstream/memory/cheri-coq/impl_mem.ml
++++ fork/memory/cheri-coq/impl_mem.ml
+@@ -1435,6 +1435,10 @@
+   let serialise_mem_state dig (st: mem_state) : Cerb_json.json
+     = `Assoc [] (* TODO: not implemented *)
+ 
++  (* fork addition (2026-09-01): census not wired for CHERI —
++     reported loudly as unsupported by the driver. *)
++  let alloc_census_opt (_: mem_state) : (int * int) option = None
++
+ end
+ 
+ include CHERIMorello
+--- upstream/memory/concrete/impl_mem.ml
++++ fork/memory/concrete/impl_mem.ml
+@@ -2996,6 +2996,11 @@
+     `Assoc [("map", serialise_map (fun id alloc -> serialise_ui_alloc st @@ mk_ui_alloc st id alloc) allocs);
+             ("last_used", Cerb_json.of_option (fun v -> `Int (Z.to_int v)) st.last_used);]
+ 
++  (* fork addition (2026-09-01): kill/free move an allocation OUT of
++     st.allocations and onto st.dead_allocations (see kill above), so
++     live = cardinal allocations, dead = length dead_allocations. *)
++  let alloc_census_opt (st: mem_state) : (int * int) option =
++    Some (IntMap.cardinal st.allocations, List.length st.dead_allocations)
+ 
+ end
+ 
+--- upstream/memory/symbolic/impl_mem.ml
++++ fork/memory/symbolic/impl_mem.ml
+@@ -688,6 +688,10 @@
+   `Assoc [("kind", `String "symbolic");
+           ("allocations", serialise_map serialise_storage allocs)]
+ 
++(* fork addition (2026-09-01): census not wired for the symbolic
++   model — reported loudly as unsupported by the driver. *)
++let alloc_census_opt (_: mem_state) : (int * int) option = None
++
+ let string_of_integer_value ival =
+   Pp_utils.to_plain_string (pp_integer_value ival)
+ 
+--- upstream/memory/vip/impl_mem.ml
++++ fork/memory/vip/impl_mem.ml
+@@ -1447,3 +1447,7 @@
+   `Assoc [ ("map", serialise_int_map (fun id alloc -> serialise_ui_alloc @@ mk_ui_alloc st id alloc) allocs)
+          ; ("last_used", Cerb_json.of_option (fun v -> `Int (Z.to_int v)) st.last_used); ]
+   (* not_implemented "VIP.serialise_mem_state" *)
++
++(* fork addition (2026-09-01): census not wired for VIP — reported
++   loudly as unsupported by the driver, never silently elided. *)
++let alloc_census_opt (_: mem_state) : (int * int) option = None
+--- upstream/ocaml_frontend/fork_renumber.ml
++++ fork/ocaml_frontend/fork_renumber.ml
+@@ -0,0 +1,82 @@
++(* Fork renumbering shims (arc-13 D1: scheme R-B, upstream re-convergence).
++   Evidence + decision: lean_frontend/docs/2026-08-22_arc13-s0-scheme-decision.md.
++
++   On the OCAML target the desugar-stage and run-time symbol supplies draw
++   from the single ambient counter (Cerb_fresh.int) — exactly un-forked
++   upstream's scheme (this IS the mirror: upstream mints every symbol
++   through the one counter; upstream generated core_run.ml:612 mints run
++   Load symbols via `Symbol.fresh ()`; upstream has no threaded desugar
++   supply and no run-seed draw). Symbol-id collisions are impossible by
++   construction — one supply, every id a distinct draw — and the fork
++   oracle's symbol numbering is byte-identical to upstream's (S0 probe:
++   11/11 fixtures + libc.co dump).
++
++   The LEAN target keeps the threaded supplies these shims bypass:
++   - desugar: cabs_to_ail_effect.lem fresh_sym_supply (commit 8923d6436 —
++     Lean CSE collapses pure-typed Symbol.fresh calls; the state thread is
++     the Lean-side fix and stays);
++   - run: core_run_aux.lem sym_supply (arc-2 purity — the run relation is
++     a pure function of its state on Lean);
++   - plus the 2^20 ambient base + trap floor (lean_frontend/native/
++     fresh_int.c).
++   The `declare ocaml target_rep` seams these functions serve:
++   - Cabs_to_ail_effect.fresh_sym_int    (cabs_to_ail_effect.lem)
++   - Core_run.fresh_symbol'              (core_run.lem:115)
++   - Core_run_aux.initial_core_run_state (core_run_aux.lem:282)
++
++   Backstop scope (narrowed at the arc-13 audit, finding A-F1): the
++   single-supply invariant is dynamically CHECKED per TU at the DESUGAR
++   seam only (util/cerb_fresh.ml check_ail_window +
++   backend/common/ail_sym_hwm.ml) — re-threading fresh_sym_int off the
++   counter fails loud in both directions (below- and above-window;
++   plant-tested). The RUN seams (fresh_symbol',
++   initial_core_run_state) carry NO dynamic check: run-minted symbols
++   never pass a hand-written chokepoint outside these shims, and an
++   in-shim assertion would be deleted by the very re-thread it is
++   meant to catch. Their defense is static: re-threading them at the
++   source level changes the generated OCaml call sites and trips the
++   fork-drift gate's layer-2 hash pins (scripts/check_fork_drift.sh
++   against scripts/fork_drift_manifest.txt), and this hand file is
++   itself a manifested, review-bound oracle surface. *)
++
++(* Desugar minting (upstream: Symbol.fresh* -> Cerb_fresh.int, one draw
++   per registered identifier/tag/CN-ident/loop-id/marker). The desugM
++   state field fresh_sym_supply is DEAD on this target. *)
++let fresh_sym_int () = fun st -> Exception.Result (Cerb_fresh.int (), st)
++
++(* Run-time minting (upstream core_run.lem: `Symbol.fresh ()` at the Load
++   val_sym site — ambient, one draw per run-minted symbol). *)
++let fresh_symbol' run_st = (Symbol.fresh (), run_st)
++
++(* Mirror of core_run_aux.lem:282-289 initial_core_run_state. DELIBERATE
++   divergence from the .lem body, documented: sym_supply = 0, NOT an
++   ambient draw — upstream has no run-seed draw, and fresh_symbol' above
++   never reads the field. The arc-2 seed draw was the last numbering
++   divergence from upstream (S0 probe: +1 ambient id per const-expr
++   mini-run). *)
++let initial_core_run_state xs : Core_run_aux.core_run_state = {
++  Core_run_aux.tid_supply = 0;
++  aid_supply = 0;
++  excluded_supply = 0;
++  sym_supply = 0;
++  labeled = xs;
++}
++
++(* Effect-retirement C1 (charter m1/m1b): elaboration-cone minting.
++   Upstream draws every elaboration symbol from the one ambient counter
++   (Symbol.fresh* -> Cerb_fresh.int); the .lem bodies these shims
++   replace thread elab_state.fresh_supply / erase_loop_control_state.
++   elc_supply instead — the LEAN-target scheme only. On this target the
++   threaded fields are DEAD and each mint is one ambient draw at the
++   migrated call position (the dynamic draw SEQUENCE moves per the
++   tolerated S0-measured class; charter section 3.6.1, ruling Q1b
++   TOLERATED [USER 2026-08-31]).
++   Seams served:
++   - Translation_effect.fresh_elab_int  (translation_effect.lem)
++   - Translation.elc_fresh_int          (translation.lem, m1b)        *)
++
++(* elabM nat: elab_state -> nat * elab_state *)
++let fresh_elab_int st = (Cerb_fresh.int (), st)
++
++(* St.stateM nat erase_loop_control_state *)
++let elc_fresh_int st = (Cerb_fresh.int (), st)
+--- upstream/ocaml_frontend/memory_model.ml
++++ fork/ocaml_frontend/memory_model.ml
+@@ -241,6 +241,13 @@
+ 
+   (* JSON serialisation *)
+   val serialise_mem_state: Digest.t -> mem_state -> Cerb_json.json
++
++  (* Allocation census (fork addition, 2026-09-01; upstream-patch
++     candidate): (live, dead) allocation counts of a memory state, for
++     the driver's opt-in --batch-alloc-census reporting line. None =
++     the model does not support the census (reported loudly, never
++     silently elided). *)
++  val alloc_census_opt: mem_state -> (int * int) option
+   
+   
+   
+--- upstream/util/cerb_fresh.ml
++++ fork/util/cerb_fresh.ml
+@@ -1,10 +1,115 @@
++(* Fork single-supply symbol-id backstop (arc-13; supersedes the arc-12
++   two-check floor). Design + probe evidence:
++   lean_frontend/docs/2026-08-22_arc13-s0-scheme-decision.md.
++
++   HISTORY. Commit 8923d6436 (April 2026) threaded the desugar stage's
++   symbol supply through desugM for the Lean target's sake and — contrary
++   to its own commit message — also moved the OCAML oracle's desugar
++   draws off this counter, splitting symbol minting into two 0-based-vs-
++   ambient streams whose overlap was finding F-D: two DISTINCT symbols
++   with equal (digest, num) compare EQUAL (symbol.lem symbolEqual ignores
++   the description) and silently corrupt the Esave/Erun label machinery,
++   environments and substitutions (tests/csmith_findings/README.md).
++   Arc-12 made the overlap FAIL-STOP (the two-check dynamic floor).
++   Arc-13 D1 removed the second stream entirely: the ocaml target_reps in
++   cabs_to_ail_effect.lem / core_run.lem / core_run_aux.lem
++   (ocaml_frontend/fork_renumber.ml) route desugar and run-time minting
++   back through this single counter, exactly as un-forked upstream.
++   Collisions are impossible by construction — one supply, every id a
++   distinct draw — and oracle numbering is byte-identical to upstream's
++   (S0 probe: 11/11 fixtures incl. the libc.co dump).
++
++   THE BACKSTOP (this file + backend/common/ail_sym_hwm.ml +
++   backend/common/pipeline.ml): the single-supply invariant is checked
++   at the DESUGAR seam, never assumed there. SCOPE (narrowed at the
++   arc-13 audit, finding A-F1): this is a check of the desugar-stage
++   supply (Cabs_to_ail_effect.fresh_sym_int) in both directions; the
++   RUN-seam shims (Core_run.fresh_symbol',
++   Core_run_aux.initial_core_run_state) have no dynamic check — run
++   symbols pass no hand chokepoint outside the shims themselves. The
++   run seams' defense is the fork-drift gate: re-threading them at the
++   source level changes the generated OCaml call sites and trips the
++   layer-2 hash pins (scripts/check_fork_drift.sh,
++   scripts/fork_drift_manifest.txt notes). At the post-desugar hook,
++   every symbol carrying the CURRENT TU's digest in the desugared Ail
++   program must have been minted by this counter inside this TU's
++   window:
++
++       tu_first <= num <= last_issued
++
++   - a symbol BELOW the window means a supply was re-threaded 0-based
++     (the F-D-era scheme; the plant test simulates exactly that);
++   - a symbol ABOVE the window means ids minted from nowhere;
++   - a post-hook draw at or below the recorded Ail maximum (forward
++     check) means the counter went backwards (re-init regression).
++
++   All three fail LOUD: one stderr line carrying the
++   CERB_FRESH_FLOOR_VIOLATION token, exit 70 (EX_SOFTWARE — never
++   foldable into the harness timeout/signal buckets; harness class
++   CERB_FLOOR). Acceptance property (arc-13 charter): the backstop NEVER
++   fires on any in-tree input — the arc-12 refusal class is gone, and
++   with it the arc-12 warn-only modes (cabs-json export, grandfather):
++   both DELETED as dead code, grandfather register G1-G4 dissolved. *)
++
++let cur_filename = ref ""
++
++(* first id drawn since the last set_digest; -1 = none yet *)
++let tu_first = ref (-1)
++
++(* last id issued (process-global, monotone); -1 = none yet *)
++let last_issued = ref (-1)
++
++(* forward backstop: current TU's max Ail symbol num + 1 (0 = unset /
++   non-desugared input such as a .co file) *)
++let floor = ref 0
++
++let floor_fail which n lo hi =
++  prerr_endline (Printf.sprintf
++    "CERB_FRESH_FLOOR_VIOLATION (%s): symbol id %d is outside the \
++     single-supply window [%d..%d] of '%s' — a symbol supply has been \
++     re-threaded off Cerb_fresh.int (the F-D-era split-stream scheme, \
++     finding F-D: tests/csmith_findings/README.md) or the counter was \
++     re-initialized; refusing to continue. Scheme + backstop design: \
++     lean_frontend/docs/2026-08-22_arc13-s0-scheme-decision.md."
++    which n lo hi !cur_filename);
++  exit 70
++
+ let int : unit -> int =
+   let counter = ref (-1) in
+   fun () ->
+     assert (!counter <> max_int);
+-    incr counter; !counter
++    incr counter;
++    let n = !counter in
++    if !tu_first < 0 then tu_first := n;
++    if n < !floor then floor_fail "forward" n !floor !last_issued;
++    last_issued := n;
++    n
+ 
+ let digest, set_digest =
+   let digest = ref "" in
+   (fun () -> !digest),
+-  (fun filename -> digest := Digest.file filename)+  (fun filename ->
++    digest := Digest.file filename;
++    cur_filename := filename;
++    floor := 0;
++    tu_first := (-1))
++
++(* Post-desugar pipeline hook (backend/common/pipeline.ml c_frontend):
++   (min_sym, max_sym) = the min/max symbol num of the CURRENT TU digest
++   occurring in the desugared Ail program (Ail_sym_hwm.sym_window_program;
++   (-1, -1) when the program carries no current-digest symbols — then the
++   window check is vacuous and only the forward backstop arms). *)
++let check_ail_window ~min_sym ~max_sym =
++  if min_sym >= 0 then begin
++    if !tu_first < 0 then
++      (* current-digest symbols exist but nothing was ever drawn: a
++         fully off-counter supply *)
++      floor_fail "window-nodraw" min_sym 0 (-1)
++    else begin
++      if min_sym < !tu_first then
++        floor_fail "window-low" min_sym !tu_first !last_issued;
++      if max_sym > !last_issued then
++        floor_fail "window-high" max_sym !tu_first !last_issued
++    end
++  end;
++  floor := max_sym + 1

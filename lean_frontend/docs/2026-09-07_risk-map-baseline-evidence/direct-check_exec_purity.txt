@@ -1,0 +1,6 @@
+COMMAND: ./scripts/check_exec_purity.sh
+CWD: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline
+STREAM stdout: bytes=38 sha256=9abaf1a58620f7a6fea2c21c04de7268c3c05b7cca0d5e56632fbafe698d3b02
+check_exec_purity: CLEAN (11 modules)
+STREAM stderr: bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DIRECT check_exec_purity rc=0 elapsed_seconds=0.073 status=passed cleaned=true residual_processes=False

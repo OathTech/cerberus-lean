@@ -1,0 +1,20 @@
+COMMAND: ./scripts/test_speclab_bytearr.sh --plant
+CWD: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline
+STREAM stdout: bytes=146978 sha256=6b5ac54aa13bd9291d992a825b4cac1420584224a74e4e593f28864a2c5e5e1a
+check_lem_sync: OK (src 977326511c1096013d9b1fa183500ad6487a23ac9c6edc3d3f2ff8bd11e266e0, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin 501147ca761a28cf64b0b6f3eb244c90164db137322122305572b7c0b8bff8a7, src 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda)
+check_driver_fresh: recorded lean stamp (bin 32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6, src 89a31871cc2e83121d7efb009c35aa6c50216b31f6dad88cee4688b0786edf28)
+[plant:memcpy-offbyone] stream=[1,2,3] oracle=Specified(3) lean=Specified(3) predict=Specified(3)
+[plant:memcpy-offbyone-ff] stream=[255,0,7,9] oracle=Specified(3) lean=Specified(3) predict=Specified(3)
+[plant:getarr-wrongindex] stream=[104,101,108,108,111,104,101,108,108,111] oracle=Specified(1) lean=Specified(1) predict=Specified(1)
+[plant:memcpy-offbyone-n0-blindspot] stream=[] oracle=Specified(0) lean=Specified(0) predict=Specified(0)
+[plant:memcpy-offbyone-canary-blindspot] stream=[42,9] oracle=Specified(0) lean=Specified(0) predict=Specified(0)
+[plant:getarr-eq34-blindspot] stream=[7,7,7,7,7,7,7,7,7,7] oracle=Specified(0) lean=Specified(0) predict=Specified(0)
+[plant:memcpy-short-body] stream=[5,0,1] oracle=Specified(254) lean=Specified(254) predict=Specified(254)
+[plant:memcpy-over-capacity] stream=[17,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17] oracle=Specified(254) lean=Specified(254) predict=Specified(254)
+[plant:memcpy-no-prefix] stream=[3] oracle=Specified(254) lean=Specified(254) predict=Specified(254)
+[plant:getarr-nine-bytes] stream=[1,2,3,4,5,6,7,8,9] oracle=Specified(254) lean=Specified(254) predict=Specified(254)
+PLANT SUMMARY: plants RED at predicted indexes; healthy + blind-spot twins green as predicted; malformed twins at 254
+test_speclab_bytearr: PASS (--plant)
+STREAM stderr: bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DIRECT plant-bytearr rc=0 elapsed_seconds=5.933 status=passed cleaned=true residual_processes=False

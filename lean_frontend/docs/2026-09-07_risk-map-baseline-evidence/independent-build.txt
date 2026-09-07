@@ -1,0 +1,9 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+lem-compiler: passed (7.098s)
+lem-libraries: passed (1.454s)
+lem-runtime-build: passed (4.604s)
+lem-runtime-install: passed (0.158s)
+cerberus-generation: passed (21.708s)
+cerberus-build: passed (10.08s)
+Independent upstream oracle: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/.validation-foundations/independent-oracle-v2/manifest.json
+INDEPENDENT_BUILD rc=0

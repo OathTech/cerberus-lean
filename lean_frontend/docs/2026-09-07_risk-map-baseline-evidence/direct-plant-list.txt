@@ -1,0 +1,20 @@
+COMMAND: ./scripts/test_speclab_list.sh --plant
+CWD: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline
+STREAM stdout: bytes=147126 sha256=6b6617f2f393829a5f3a4ed2fee618b555c12b62e7109a9f249e01796694f53a
+check_lem_sync: OK (src 977326511c1096013d9b1fa183500ad6487a23ac9c6edc3d3f2ff8bd11e266e0, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin 501147ca761a28cf64b0b6f3eb244c90164db137322122305572b7c0b8bff8a7, src 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda)
+check_driver_fresh: recorded lean stamp (bin 32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6, src 89a31871cc2e83121d7efb009c35aa6c50216b31f6dad88cee4688b0786edf28)
+[plant:append-wronglink-noys] model=[-2147483648,-1,5|] oracle=Specified(255) lean=Specified(255) predict=Specified(255)
+[plant:append-wrongelem] model=[1,2|3] oracle=Specified(3) lean=Specified(3) predict=Specified(3)
+[plant:append-wrongelem-neg] model=[-1|2147483647] oracle=Specified(3) lean=Specified(3) predict=Specified(3)
+[plant:append-wronglink-emptyxs-blindspot] model=[|7] oracle=Specified(0) lean=Specified(0) predict=Specified(0)
+[plant:append-wronglink-singleton-blindspot] model=[5|7] oracle=Specified(0) lean=Specified(0) predict=Specified(0)
+[plant:append-wrongelem-emptyxs-blindspot] model=[|7] oracle=Specified(0) lean=Specified(0) predict=Specified(0)
+[plant:append-short-first-list] model=[2,0,1] oracle=Specified(254) lean=Specified(254) predict=Specified(254)
+[plant:append-over-cap] model=[9,0] oracle=Specified(254) lean=Specified(254) predict=Specified(254)
+[plant:append-missing-second-prefix] model=[1,0,1,2,3,4] oracle=Specified(254) lean=Specified(254) predict=Specified(254)
+[plant:append-trailing-junk] model=[0,0,0,0,9] oracle=Specified(254) lean=Specified(254) predict=Specified(254)
+PLANT SUMMARY: wrong-link plant RED in the 255 length arm (structural-break signature); wrong-element plant RED at predicted index 3; healthy + blind-spot twins green as predicted; malformed twins at 254
+test_speclab_list: PASS (--plant)
+STREAM stderr: bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DIRECT plant-list rc=0 elapsed_seconds=6.533 status=passed cleaned=true residual_processes=False

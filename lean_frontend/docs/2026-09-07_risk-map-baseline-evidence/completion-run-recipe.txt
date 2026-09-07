@@ -1,0 +1,43 @@
+# Run from the audited worktree after the sourced environment and DUNE_CACHE=disabled CERB_MEM_MAX=48G; uses the retained stage of the required shard.
+import hashlib,json,os,re,shlex,subprocess,sys,time
+from pathlib import Path
+sys.path.insert(0,str(Path("scripts").resolve()))
+from process_scope import ProcessScope
+root=Path.cwd()
+stage=Path(".tmp/scripts/csmith-corpus.qIpKLJ78JB").resolve()
+assert stage.is_relative_to(root) and stage.is_dir(), "Required shard's retained stage unavailable"
+ev=root/"lean_frontend/docs/2026-09-07_risk-map-baseline-evidence"
+results=[]
+for n in [369,371]:
+ name=f"sa_csmith_{n}.c"
+ inp=stage/name
+ assert inp.is_file()
+ directory=root/".tmp/risk-map-completion"/name
+ scope=ProcessScope(directory);command=["./scripts/test_exec.sh",str(inp)]
+ heading="COMMAND: TIMEOUT_SECS=90 "+shlex.join(command)+"\n"
+ print("START_COMPLETION "+name+"\n"+heading,end="",flush=True)
+ t=time.monotonic();timeout=False;rc=None
+ try:
+  with (directory/"stdout").open("wb") as out,(directory/"stderr").open("wb") as err:
+   scope.start(command,cwd=root,env=dict(os.environ,TIMEOUT_SECS="90"),stdout=out,stderr=err)
+   try:rc=scope.wait(3300)
+   except subprocess.TimeoutExpired:timeout=True
+ finally:scope.finish(cancel=timeout)
+ elapsed=time.monotonic()-t
+ texts=[heading]
+ for p in [inp,root/f"tests/csmith/small_arrays/csmith_{n}.c",stage/"csmith_cerberus.h",stage/"safe_math.h"]:
+  texts.append(f"INPUT {p} bytes={p.stat().st_size} sha256={hashlib.sha256(p.read_bytes()).hexdigest()}\n")
+ statusrows=[]
+ for stream in ["stdout","stderr"]:
+  p=directory/stream;data=p.read_bytes();lines=data.decode(errors="replace").splitlines()
+  texts.append(f"STREAM {stream} bytes={len(data)} sha256={hashlib.sha256(data).hexdigest()}\n")
+  for line in lines:
+   if re.match(r'^\[\d+/\d+\]',line):statusrows.append(line.split(None,3)[:3])
+   if re.search(r"SUMMARY|BASELINE|(?:^|\s)rc[ =:]|Baseline",line) or (len(line)<5000 and re.match(r'^\[\d+/\d+\]',line)):texts.append(line+"\n")
+ texts.append("DERIVED per-input status rows: "+json.dumps(statusrows)+"\n")
+ end=f"DIRECT_CSMITH_90 {name} rc={rc if rc is not None else 'TIMEOUT'} elapsed_seconds={elapsed:.3f}\n"
+ texts.append(end);(ev/f"completion-{n}.txt").write_text("".join(texts))
+ print(end,end="",flush=True)
+ results.append(dict(name=name,rc=rc,seconds=round(elapsed,3),statusrows=statusrows))
+(root/".tmp/risk-map-completion/results.json").write_text(json.dumps(results,indent=2)+"\n")
+print("COMPLETION_DONE "+json.dumps(results),flush=True)

@@ -1,0 +1,764 @@
+COMMAND: source /home/dev/projects/cerberus-lean-proj/scripts/env.sh; export DUNE_CACHE=disabled CERB_MEM_MAX=48G
+COMMAND: /home/dev/projects/cerberus-lean-proj/scripts/ce python3 scripts/release.py --mode full --lane-timeout 3300 --out .tmp/risk-map-full
+METHOD: every SUMMARY/BASELINE/rc and pass/selftest line retained verbatim, plus each stream tail; full omitted logs identified by SHA-256.
+
+LANE A1 COMMAND: ./scripts/test_unit.sh
+stdout: bytes=39277 sha256=7cfe4c2837a3b8c3ac8c96c3e813737decdbe6f0814f67cc28a8ec02ad548d64
+check_handwritten_sync: OK (37 hand-written files byte-identical to lean_frontend/generated/; manifest lean_frontend/handwritten_copy.manifest)
+All PP tests passed
+check_exec_purity: CLEAN (11 modules)
+check_theorem_axioms: hand-written axiom census OK (0 axioms — the arc-17 S2b end state)
+check_theorem_axioms: generated-tree census OK (207 files: 0 axioms, boundary-opaque population = the 15 registered rows exactly-once (incl. CerbFuel.fuelExhaustedLoc), 0 unsafeCast)
+check_theorem_axioms: C2 ratchet OK (326 files scanned recursively: 0 axioms, 0 runEffectful, seam population = the 38 pinned path-qualified counted rows exactly incl. the extern class; lem tests/ scaffolds asserted outside the surface)
+check_theorem_axioms: D14 grep-ban OK (no native_decide/bv_decide in 1 tree(s) + 37 hand-written seam files + LemLibTest.lean)
+check_theorem_axioms: driver2 cone sorryAx-free + ofReduce*-free + DAEMON-free (arc-8 S3 bar)
+check_theorem_axioms: C2 entry census OK (9 entries, every cone ⊆ [propext, Classical.choice, Quot.sound])
+check_theorem_axioms: mem-scale S1 leg OK (6 C1/C3 equality theorems, every cone ⊆ [propext, Classical.choice, Quot.sound])
+check_theorem_axioms: FUEL arc leg OK (34 contract lemmas — 9 generated _zero + the CerbND runner leaves/parametricity pins + the ∀-fuel exemplar and its instances + the 3 fuel_measure sufficiency obligations (generated statement + hand-written proof), every cone ⊆ [propext, Classical.choice, Quot.sound])
+check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)
+check_sorry_token: OK (286 files scanned comment-stripped — generated 207, hand-written+test 44, LemLib 35; 0 sorry tokens)
+test_fuel_classifier: 18 fixtures, ALL OK
+GCC capture: 4/4 probes passed; raw evidence /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/.tmp/risk-map-full/A1/observations/test_gcc_capture.Y4NvDxENki (kept under CERB_OBSERVATION_DIR; removed on exit 0)
+test_exec: SELFTEST — extract_verdict_seq plants (loud plant banner; no binaries run)
+  PLANT OK   [E0 pre-repair extractor collapses the audit pair to one token: VAL:Specified(0) == VAL:Specified(0)]
+  PLANT OK   [E1a audit payload 1 -> whole-line token] -> VAL:{value: "Specified(0)", stdout: "GOOD", stderr: "", blocked: "false"}
+  PLANT OK   [E1b audit payload 2 -> whole-line token] -> VAL:{value: "Specified(0)", stdout: "BAD", stderr: "WRONG", blocked: "false"}
+  PLANT OK   [E1 same-value/different-stdout+stderr lines yield DIFFERENT tokens]
+  PLANT OK   [E2a] -> VAL:{value: "Specified(3)", stdout: "x", stderr: "", blocked: "false"}
+  PLANT OK   [E2b] -> VAL:{value: "Specified(3)", stdout: "x", stderr: "warn: y", blocked: "false"}
+  PLANT OK   [E2 same-value/different-stderr lines yield DIFFERENT tokens]
+  PLANT OK   [E3 escaped-quote/backslash/decimal payload preserved byte-exactly] -> VAL:{value: "Specified(1)", stdout: "say \"hi\"\n\\ tab\t \255\000 end", stderr: "", blocked: "false"}
+  PLANT OK   [E4 multi-outcome: 3 tokens in order (Defined a / Undefined / Defined b)] -> VAL:{value: "Specified(0)", stdout: "a", stderr: "", blocked: "false"}|UB:{ub: "UB043_indirection_invalid_value", stderr: "", loc: "<file.c:3:5>"}|VAL:{value: "Specified(0)", stdout: "b", stderr: "", blocked: "false"}
+  PLANT OK   [E5 embedded escaped Defined text is payload, not a token] -> VAL:{value: "Specified(0)", stdout: "Defined {value: \"Specified(9)\"}", stderr: "", blocked: "false"}
+  PLANT OK   [E6 Undefined whole-line token unchanged] -> UB:{ub: "UB036_exceptional_condition", stderr: "", loc: "<t.c:2:10>"}
+  PLANT OK   [E7 no token from a truncated Defined line] -> 
+test_exec: SELFTEST OK (E0 pre-repair collapse reproduced; E1-E7: same-value/different-stdout and different-stderr yield distinct whole-line tokens, escaped payload byte-exact, multi-outcome order kept, embedded text is payload, Undefined unchanged, truncated line is no token)
+check_no_fuel_numerals: SELFTEST — planting F1-F6 into a scratch copy of the scan set (loud plant banner; nothing in the tree is touched)
+  PLANT OK   [F1 deleted default named in code] -> check_no_fuel_numerals: FAIL (F1): fuel numeral shape found:
+  PLANT OK   [F1 deleted driverFuel in a seam] -> check_no_fuel_numerals: FAIL (F1): fuel numeral shape found:
+  PLANT OK   [F2 global instance] -> check_no_fuel_numerals: FAIL (F2): fuel numeral shape found:
+  PLANT OK   [F2 global instance (where)] -> check_no_fuel_numerals: FAIL (F2): fuel numeral shape found:
+  PLANT OK   [F3 worker at a literal fuel] -> check_no_fuel_numerals: FAIL (F3): fuel numeral shape found:
+  PLANT OK   [F3 parenthesised literal] -> check_no_fuel_numerals: FAIL (F3): fuel numeral shape found:
+  PLANT OK   [F4 LemFuel.mk numeral] -> check_no_fuel_numerals: FAIL (F4): fuel numeral shape found:
+  PLANT OK   [F4 letI outside Main] -> check_no_fuel_numerals: FAIL (F4): fuel numeral shape found:
+  PLANT OK   [F5 anonymous-constructor literal] -> check_no_fuel_numerals: FAIL (F5): fuel numeral shape found:
+  PLANT OK   [F6 fuel-named numeral constant] -> check_no_fuel_numerals: FAIL (F6): fuel numeral shape found:
+  PLANT OK   [F6 in a speclab gate test] -> check_no_fuel_numerals: FAIL (F6): fuel numeral shape found:
+  PLANT OK   [F6 in a generated copy of Main] -> check_no_fuel_numerals: FAIL (F6): fuel numeral shape found:
+  PLANT OK   [F5 in an immaculate Lean probe] -> check_no_fuel_numerals: FAIL (F5): fuel numeral shape found:
+  PLANT OK   [M2 F3 instance-carrying worker literal] -> check_no_fuel_numerals: FAIL (F3): fuel numeral shape found:
+  PLANT OK   [M2 E1 hex literal ⟨0x5F5E100⟩] -> check_no_fuel_numerals: FAIL (F5): fuel numeral shape found:
+  PLANT OK   [M2 E2 ascribed literal ⟨(N : Nat)⟩] -> check_no_fuel_numerals: FAIL (F5): fuel numeral shape found:
+  PLANT OK   [M2 E4 structure instance { fuel := N }] -> check_no_fuel_numerals: FAIL (F4): fuel numeral shape found:
+  PLANT OK   [M2 E6 LemFuel.mk (expr)] -> check_no_fuel_numerals: FAIL (F4): fuel numeral shape found:
+  PLANT OK   [M2 E7 worker at a hex literal] -> check_no_fuel_numerals: FAIL (F3): fuel numeral shape found:
+  PLANT OK   [M2 E3 arithmetic ⟨10^8⟩] -> check_no_fuel_numerals: FAIL (F5): fuel numeral shape found:
+  check_no_fuel_numerals: OK (293 files scanned comment-stripped; no lemDefaultFuel/driverFuel/ndDefaultFuel, no LemFuel instance, no literal fuel (F1-F6); allowed Main.lean sites seen: 4 of 4 (hand-written + generated copy))
+check_no_fuel_numerals: SELFTEST OK (20 plants red with the declared label; E5 indirection a recorded known gap; unplanted set green)
+check_no_fuel_numerals: OK (293 files scanned comment-stripped; no lemDefaultFuel/driverFuel/ndDefaultFuel, no LemFuel instance, no literal fuel (F1-F6); allowed Main.lean sites seen: 4 of 4 (hand-written + generated copy))
+gen_fuel_parametricity: OK (22 ambient fuel wrappers in the generated tree = the 22 pins of TotalityProofTest.lean Part 1, both directions)
+check_lakefile_roots: SELFTEST — planting on a scratch copy of lakefile.toml (loud plant banner; nothing in the tree is touched)
+  PLANT OK   [dropped root Core_aux_auxiliary] -> check_lakefile_roots: FAIL — generated module(s) NOT a Lake root (their obligations would never build):
+  PLANT OK   [phantom root Phantom_auxiliary] -> check_lakefile_roots: FAIL — Lake root(s) with no generated module:
+  PLANT OK   [unrooted generated Orphan_auxiliary] -> check_lakefile_roots: FAIL — generated module(s) NOT a Lake root (their obligations would never build):
+  check_lakefile_roots: OK (206 roots = 206 generated modules + the exe root Main; 85 auxiliary modules all built)
+check_lakefile_roots: SELFTEST OK (3 plants red, baseline green)
+check_lakefile_roots: OK (206 roots = 206 generated modules + the exe root Main; 85 auxiliary modules all built)
+check_fuel_forms: SELFTEST — plants on a scratch copy of the classification table (loud plant banner; nothing in the tree is touched)
+  PLANT OK   [P1 measured->ambient reachable (step_eval_pexpr)] -> check_fuel_forms: FAIL — fuel'd worker(s) REACHABLE from drive with an opaque (fail-open) exhaustion, not in /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/scripts/fuel_forms_pending.txt:
+  PLANT OK   [P2 stale pending pin (hack removed from the table)] -> check_fuel_forms: FAIL — pending register row(s) no longer a reachable ambient worker (stale pin; edit the register):
+  PLANT OK   [P3 measured obligation with sorryAx in its cone] -> check_fuel_forms: FAIL — measured obligation(s) with an axiom cone outside [propext, Classical.choice, Quot.sound] (or no proof constant):
+  PLANT OK   [P4 truncated table] -> check_fuel_forms: FAIL — no FUEL_FORMS_SUMMARY line (the tool did not complete; fail-closed)
+  PLANT OK   [P5 phantom pending-register row] -> check_fuel_forms: FAIL — pending register row(s) no longer a reachable ambient worker (stale pin; edit the register):
+  PLANT OK   [P6 decoy obligation of type True (to_pure)] -> check_fuel_forms: FAIL — obligation(s) named <f>_measure_sufficient whose TYPE is not the contract's shape (∀ …, μ ≤ lemFuel → worker lemFuel … = wrapper …, argument correspondence against the wrapper's body) — never MEASURED:
+  PLANT OK   [P7 decoy obligation with the wrong worker constant (to_pures)] -> check_fuel_forms: FAIL — obligation(s) named <f>_measure_sufficient whose TYPE is not the contract's shape (∀ …, μ ≤ lemFuel → worker lemFuel … = wrapper …, argument correspondence against the wrapper's body) — never MEASURED:
+  PLANT OK   [P12 audit decoy 1: _zero lemma about CerbND.runNDFuel, not the worker] -> review_bad_lemFuel AMBIENT: MALFORMED-ZERO zero=review_bad_lemFuel_zero: left-hand head `CerbND.runNDFuel` is not the worker `review_bad_lemFuel`
+  PLANT OK   [P12 policy: a MALFORMED-ZERO lemma is RED] -> check_fuel_forms: FAIL — lemma(s) named <worker>_zero whose statement is not `worker … 0 … = <absorbing element>` on the worker's own binders — never ABSORBING:
+  PLANT OK   [P13 audit decoy 2: worker at literal 0, wrapper input x never passed] -> review_shift_lemFuel AMBIENT: MALFORMED obligation=review_shift_measure_sufficient: worker argument #1 is `0`, not one of the wrapper's input binders — the obligation must relate the worker to the wrapper on the SAME inputs
+  PLANT OK   [P14 wrong fuel position] -> pl_pos_lemFuel AMBIENT: MALFORMED obligation=pl_pos_measure_sufficient: wrong fuel position: `lemFuel` is passed as worker argument #1 (`a`), but the worker's `lemFuel` parameter is #0
+  PLANT OK   [P15 swapped arguments on the worker side] -> pl_swap_lemFuel AMBIENT: MALFORMED obligation=pl_swap_measure_sufficient: worker argument #1: the obligation passes `b`, but the wrapper `pl_swap` passes `a` — the equation does not relate the worker to the wrapper on the same inputs
+  PLANT OK   [P16 swapped arguments on the wrapper side] -> pl_swapw_lemFuel AMBIENT: MALFORMED obligation=pl_swapw_measure_sufficient: wrapper argument #0 is `b`, not the binder `a` — the wrapper side must be the wrapper applied to the statement's own binders, in order
+  PLANT OK   [P17 changed measure (lower bound a vs the wrapper's a + 1)] -> pl_mu_lemFuel AMBIENT: MALFORMED obligation=pl_mu_measure_sufficient: the lower bound `a` of the `≤ lemFuel` hypothesis is not the wrapper's measure: `pl_mu` calls the worker at fuel `a + 1`
+  PLANT OK   [P18 renamed worker: the wrapper calls pl_rhs_other_lemFuel] -> pl_rhs_lemFuel AMBIENT: MALFORMED obligation=pl_rhs_measure_sufficient: the wrapper `pl_rhs` does not call the worker `pl_rhs_lemFuel`: on these inputs its body is a call of `pl_rhs_other_lemFuel`
+  PLANT OK   [P19 hidden extra premise inside the ≤ binder] -> pl_prem_lemFuel AMBIENT: MALFORMED obligation=pl_prem_measure_sufficient: no hypothesis `_ ≤ lemFuel` on the `lemFuel` binder
+  PLANT OK   [P20 POSITIVE CONTROL: well-formed _zero lemma on a decoy worker] -> pl_zt_lemFuel ABSORBING: zero=pl_zt_lemFuel_zero heads=[nd_status.Killed, CerbND.fuelExhaustedKill] axioms=ok
+  PLANT OK   [P21 _zero lemma with a term (st0 + 1) where a binder must be] -> pl_ztb_lemFuel AMBIENT: MALFORMED-ZERO zero=pl_ztb_lemFuel_zero: worker argument `st0 + 1` is not one of the lemma's binders (the lemma must state the worker at fuel 0 on universally quantified inputs)
+  PLANT OK   [P22 _zero lemma at fuel 1, not 0] -> pl_ztc_lemFuel AMBIENT: MALFORMED-ZERO zero=pl_ztc_lemFuel_zero: no literal `0` among the worker's arguments (the lemma must state the worker at fuel 0)
+  PLANT OK   [P23 ABSORBING _zero lemma with sorryAx in its cone (nd_bind)] -> check_fuel_forms: FAIL — ABSORBING _zero lemma(s) with an axiom cone outside [propext, Classical.choice, Quot.sound] (or no cone reported):
+  PLANT OK   [P11 decoy of a REAL obligation with an EXTRA Prop binder and the register's exact hypothesis (CerbMem.sizeofCtype): MALFORMED by the binder check] -> check_fuel_forms: FAIL — obligation(s) named <f>_measure_sufficient whose TYPE is not the contract's shape (∀ …, μ ≤ lemFuel → worker lemFuel … = wrapper …, argument correspondence against the wrapper's body) — never MEASURED:
+  PLANT OK   [P11 premise] -> the tool reports CerbMem.sizeofCtype_lemFuel MALFORMED: binder `extra` is neither reserved nor a wrapper argument
+  PLANT OK   [P10 the REAL CerbMem.alignofCtype obligation restated under the CONTRADICTORY hypothesis cty ≠ cty: MEASURED by shape, RED by the register] -> check_fuel_forms: FAIL — worker(s) MEASURED under a hypothesis with no reviewed register row for that exact hypothesis in /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/scripts/fuel_hypotheses.txt (worker TAB hypothesis):
+  PLANT OK   [P10 premise] -> the tool reports CerbMem.alignofCtype_lemFuel MEASURED hyp=cty ≠ cty (shape alone cannot see the contradiction; the register is the closure)
+  PLANT OK   [P8 register row of a measured-under-hypothesis worker deleted (CerbMem.sizeofCtype)] -> check_fuel_forms: FAIL — worker(s) MEASURED under a hypothesis with no reviewed register row for that exact hypothesis in /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/scripts/fuel_hypotheses.txt (worker TAB hypothesis):
+  PLANT OK   [P9 stale register row (hack under 0 < k)] -> check_fuel_forms: FAIL — hypothesis register row(s) whose worker is not MEASURED under that exact hypothesis (stale register row; edit the register):
+  PLANT OK   [P9b register row without a .lem:<line> cite] -> check_fuel_forms: FAIL — hypothesis register row(s) not of the form <worker> TAB <hyp> TAB <invariant with a .lem:<line> cite> TAB <reviewer>:
+    check_fuel_forms: forms partition OK (54 MEASURED + 13 ABSORBING + 8 ambient-reachable + 6 ambient-unreachable = 81 fuel'd workers)
+    check_fuel_forms: OK (81 fuel'd workers: 54 MEASURED (obligation of the contract's shape incl. argument correspondence against the wrapper's body; every obligation + proof cone ⊆ the standard three; 7 of them under a hypothesis, each = a reviewed row of fuel_hypotheses.txt, both directions), 13 ABSORBING = kill at zero (the _zero lemma is the worker at literal 0 on its own binders = the monad's absorbing element, cone ⊆ the standard three; propagation NOT proved — lem TODO 13), 8 reachable-AMBIENT = the 8 rows of fuel_forms_pending.txt exactly, 6 ambient unreachable from the drive cone)
+check_fuel_forms: SELFTEST OK (24 plants with the declared label — 6 on the table (incl. the ABSORBING-cone plant), 3 on the hypothesis register, 15 compiled decoys: the C4 four (type True / wrong worker / contradictory hypothesis caught by the register / extra binder), the whole-project audit's two decoys verbatim (review_bad _zero about runNDFuel; review_shift at literal 0), wrong fuel position, swapped worker-side and wrapper-side arguments, changed measure, wrapper calling another worker, hidden premise, and three _zero decoys (a POSITIVE control ABSORBING, a term for a binder, fuel 1) — each rejected with its own message; unplanted table green)
+check_fuel_forms: forms partition OK (54 MEASURED + 13 ABSORBING + 8 ambient-reachable + 6 ambient-unreachable = 81 fuel'd workers)
+check_fuel_forms: OK (81 fuel'd workers: 54 MEASURED (obligation of the contract's shape incl. argument correspondence against the wrapper's body; every obligation + proof cone ⊆ the standard three; 7 of them under a hypothesis, each = a reviewed row of fuel_hypotheses.txt, both directions), 13 ABSORBING = kill at zero (the _zero lemma is the worker at literal 0 on its own binders = the monad's absorbing element, cone ⊆ the standard three; propagation NOT proved — lem TODO 13), 8 reachable-AMBIENT = the 8 rows of fuel_forms_pending.txt exactly, 6 ambient unreachable from the drive cone)
+check_exec_totality: CLEAN (22 generated modules + hand-written CerbND, 0 allowlisted)
+check_lem_sync: OK (src 977326511c1096013d9b1fa183500ad6487a23ac9c6edc3d3f2ff8bd11e266e0, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_lem_sync: lean OK (src 977326511c1096013d9b1fa183500ad6487a23ac9c6edc3d3f2ff8bd11e266e0, gen 11c6b37a5dc95ed9f2ec3d1f6f3e157e1f0309c7236e247b9d279deaf1ab2938)
+check_fork_drift: SELFTEST — plants on scratch copies of the manifest and fake prerequisites (loud plant banner; nothing in the tree is touched)
+  PLANT OK   [S1 en_US-ordered [files] under LC_ALL=C (the pre-repair failing configuration)] rc=0 -> check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 22 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef
+  PLANT OK   [S2 C-ordered [files] under LC_ALL=en_US.UTF-8] rc=0 -> check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 22 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef
+  PLANT OK   [S3 reversed [files] order (set unchanged)] rc=0 -> check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 22 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef
+  PLANT OK   [S4 one [files] name changed -> set drift] rc=1 -> check_fork_drift: FAIL — oracle-surface file set drifted from the manifest.
+  PLANT OK   [S4 detail] both the live-only name (util/cerb_fresh.ml) and the manifest-only name (util/cerb_fresh_planted.ml) are listed
+  PLANT OK   [S5 duplicate [files] entry] rc=1 -> check_fork_drift: FAIL — duplicate [files] entries in the manifest (a set with a repeated name is not a reviewed set):
+  PLANT OK   [S6 missing upstream ref -> FAIL (not a skip)] rc=1 -> check_fork_drift: FAIL — missing upstream ref 'plant/no-such-ref' (fail-closed; the development opt-in is CERB_FORK_DRIFT_DEV_SKIP=1)
+  PLANT OK   [S7 missing upstream generated tree -> FAIL (not a skip)] rc=1 -> check_fork_drift: FAIL — layer 2 prerequisite missing (fail-closed; the development opt-in is CERB_FORK_DRIFT_DEV_SKIP=1): upstream pristine tree not found (deps/cerberus-upstream/ocaml_frontend/gen
+  PLANT OK   [S8 CERB_FORK_DRIFT_DEV_SKIP=1 on a missing ref -> rc 0 with the DEV SKIP banner] rc=0 -> # check_fork_drift: DEV SKIP (CERB_FORK_DRIFT_DEV_SKIP=1 is set) — missing upstream ref 'plant/no-such-ref'; layers 1 and 2 NOT checked
+  PLANT OK   [S9 stale [meta] lem-pin vs lem -v] rc=1 -> check_fork_drift: FAIL — lem-pin stale: manifest records lem-pin=f6542f8, '/home/dev/projects/cerberus-lean-proj/.tmp/tmp.Z0l6GiMxnU/lem-stale -v' says deadbee — both generated trees must be re-de
+  PLANT OK   [S10 [meta] lem-pin line missing] rc=1 -> check_fork_drift: FAIL — manifest has no [meta] lem-pin= line (the lem-lean commit both generated trees were derived with)
+  PLANT OK   [S11 unmodified copied source contents] rc=0 -> check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 22 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef
+  PLANT OK   [S12 content change inside already-listed fresh supply] rc=1 -> check_fork_content: FAIL — source-content drift inside reviewed file(s):
+  PLANT OK   [S13 duplicate source-content pin] rc=1 -> check_fork_content: FAIL — duplicate [source-content] entry: util/cerb_fresh.ml
+  PLANT OK   [S14 missing source-content pin] rc=1 -> check_fork_content: FAIL — source-content path set differs from live source delta: unpinned=['util/cerb_fresh.ml']; stale=[]
+    check_fork_content: OK — 76 source files content/mode-pinned
+    check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 22 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+check_fork_drift: SELFTEST OK (14 plants with declared verdict/message: S1-S10 prerequisite/locale/name controls; S11 copied-content control; S12 inside-listed-file drift; S13/S14 duplicate/missing content pins; unplanted gate green)
+check_fork_content: OK — 76 source files content/mode-pinned
+check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 22 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+check_fixture_freeze: OK (16 fixture files match the pinned manifest; name set exact)
+  OK (refused as declared): s5_string_content
+  OK (refused as declared): l1_string_ws
+  OK (refused as declared): l3_comment_absorb
+  OK (refused as declared): l4_comment_release
+  OK (refused as declared): count_mismatch
+  OK (refused as declared): appended_line
+  OK (refused as declared): token_change
+  OK (refused as declared): section_reorder
+  OK (admitted as declared): strict_renumber [RENUMBER-ONLY ADMIT plant/strict_renumber class=STRICT ids=1 moved=1 canon=d7b6d3c7463e]
+  OK (admitted as declared): layout_rewrap [RENUMBER-ONLY ADMIT plant/layout_rewrap class=LAYOUT ids=2 moved=2 canon=9b2ed22f1988]
+  OK (refused as declared): crlf_string
+  OK (admitted as declared): crlf_code [RENUMBER-ONLY ADMIT plant/crlf_code class=LAYOUT ids=1 moved=1 canon=8c8910c71fce]
+test_renumber_plants: OK (12 plants: refusals refuse, admits admit with declared class)
+stderr: bytes=7445 sha256=352cc60b3160c1e154da428ad84ab02e79a0f7c00a9d961559b622608597949d
+Ran 19 tests in 0.069s
+OK
+Ran 3 tests in 0.267s
+OK
+Ran 16 tests in 3.385s
+OK
+Ran 5 tests in 0.002s
+OK
+test_reviewed_difference_moves_fail_closed (__main__.UpstreamInstrumentTests.test_reviewed_difference_moves_fail_closed) ... ok
+test_status_and_fatal_suffix_cannot_hide_behind_verdict (__main__.UpstreamInstrumentTests.test_status_and_fatal_suffix_cannot_hide_behind_verdict) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.253s
+
+OK
+OBSERVATION ERROR: unknown or malformed stdout record: b'Defined {value: "Specified(0)", stdout: "'
+DERIVED report fields: A1 rc=0 status=passed elapsed_seconds=138.278
+
+LANE A2 COMMAND: ./scripts/test_exec.sh --check-baseline
+stdout: bytes=15576 sha256=248eb052e0c3f764d7dc192df419796db9b86f393e0d7b0f627435b50825b80c
+check_lem_sync: OK (src 977326511c1096013d9b1fa183500ad6487a23ac9c6edc3d3f2ff8bd11e266e0, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin 501147ca761a28cf64b0b6f3eb244c90164db137322122305572b7c0b8bff8a7, src 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda)
+check_driver_fresh: recorded lean stamp (bin 32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6, src 89a31871cc2e83121d7efb009c35aa6c50216b31f6dad88cee4688b0786edf28)
+Testing all .c files in /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/tests/minimal...
+Raw observation evidence (kept on failure or under CERB_OBSERVATION_DIR; removed on exit 0): /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/.tmp/risk-map-full/A2/observations/test_exec.QItOOFdwWC
+Match rate:   100% (complete observations; UB_DIFF is a difference)
+
+SUMMARY: total=106 match=85 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=3 cerb_floor=0 cerb_inconsistent=0
+
+Checking against baseline: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/scripts/exec_baseline.txt
+
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+stderr: bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DERIVED report fields: A2 rc=0 status=passed elapsed_seconds=28.932
+
+LANE A3 COMMAND: ./scripts/test_exec.sh --check-baseline=scripts/exec_coverage_baseline.txt tests/coverage
+stdout: bytes=144169 sha256=731043acce69b31007d68a821893c81976011632e989371e35c2fb137e04ca31
+check_lem_sync: OK (src 977326511c1096013d9b1fa183500ad6487a23ac9c6edc3d3f2ff8bd11e266e0, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin 501147ca761a28cf64b0b6f3eb244c90164db137322122305572b7c0b8bff8a7, src 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda)
+check_driver_fresh: recorded lean stamp (bin 32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6, src 89a31871cc2e83121d7efb009c35aa6c50216b31f6dad88cee4688b0786edf28)
+Testing all .c files in /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/tests/coverage...
+Raw observation evidence (kept on failure or under CERB_OBSERVATION_DIR; removed on exit 0): /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/.tmp/risk-map-full/A3/observations/test_exec.VeaVJLr028
+Match rate:   100% (complete observations; UB_DIFF is a difference)
+
+SUMMARY: total=212 match=183 ub_match=16 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=13 cerb_floor=0 cerb_inconsistent=0
+
+Checking against baseline: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/scripts/exec_coverage_baseline.txt
+
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+stderr: bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DERIVED report fields: A3 rc=0 status=passed elapsed_seconds=55.321
+
+LANE A4 COMMAND: ./scripts/test_exec.sh --check-baseline=scripts/exec_debug_baseline.txt tests/debug
+stdout: bytes=12415 sha256=31aa57f3a5cbcf092187a0fdf04b025e64c91ee1fc791e8e849018091c4b5874
+check_lem_sync: OK (src 977326511c1096013d9b1fa183500ad6487a23ac9c6edc3d3f2ff8bd11e266e0, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin 501147ca761a28cf64b0b6f3eb244c90164db137322122305572b7c0b8bff8a7, src 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda)
+check_driver_fresh: recorded lean stamp (bin 32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6, src 89a31871cc2e83121d7efb009c35aa6c50216b31f6dad88cee4688b0786edf28)
+Testing all .c files in /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/tests/debug...
+Raw observation evidence (kept on failure or under CERB_OBSERVATION_DIR; removed on exit 0): /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/.tmp/risk-map-full/A4/observations/test_exec.GdOxs346Ki
+Match rate:   100% (complete observations; UB_DIFF is a difference)
+
+SUMMARY: total=90 match=66 ub_match=20 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=4 cerb_floor=0 cerb_inconsistent=0
+
+Checking against baseline: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/scripts/exec_debug_baseline.txt
+
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+stderr: bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DERIVED report fields: A4 rc=0 status=passed elapsed_seconds=24.412
+
+LANE A4b COMMAND: ./scripts/test_exec.sh --check-baseline=scripts/exec_float_baseline.txt tests/float
+stdout: bytes=9358 sha256=f6f3a377b357e6a9f5d88c520b0a5005f477ec98ca3f32636c39ba42cfad84cd
+check_lem_sync: OK (src 977326511c1096013d9b1fa183500ad6487a23ac9c6edc3d3f2ff8bd11e266e0, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin 501147ca761a28cf64b0b6f3eb244c90164db137322122305572b7c0b8bff8a7, src 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda)
+check_driver_fresh: recorded lean stamp (bin 32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6, src 89a31871cc2e83121d7efb009c35aa6c50216b31f6dad88cee4688b0786edf28)
+Testing all .c files in /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/tests/float...
+Raw observation evidence (kept on failure or under CERB_OBSERVATION_DIR; removed on exit 0): /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/.tmp/risk-map-full/A4b/observations/test_exec.rhS61cHdk7
+Match rate:   100% (complete observations; UB_DIFF is a difference)
+
+SUMMARY: total=69 match=69 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0
+
+Checking against baseline: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/scripts/exec_float_baseline.txt
+
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+stderr: bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DERIVED report fields: A4b rc=0 status=passed elapsed_seconds=19.356
+
+LANE A4c COMMAND: ./scripts/test_bytes.sh
+stdout: bytes=1784 sha256=02e9dc9ef9c64bdfeb6c194fe7111f88e23e0989a6034246833194624f38818b
+check_lem_sync: OK (src 977326511c1096013d9b1fa183500ad6487a23ac9c6edc3d3f2ff8bd11e266e0, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin 501147ca761a28cf64b0b6f3eb244c90164db137322122305572b7c0b8bff8a7, src 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda)
+check_driver_fresh: recorded lean stamp (bin 32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6, src 89a31871cc2e83121d7efb009c35aa6c50216b31f6dad88cee4688b0786edf28)
+[NEG_OK] byte_is_not_char.c: Lean-side desugar/typing rejection at the committed diagnostic line 4 (rc 1)
+[NEG_OK] no_add.c: Lean-side desugar/typing rejection at the committed diagnostic line 8 (rc 1)
+[NEG_OK] no_shift_left.c: Lean-side desugar/typing rejection at the committed diagnostic line 8 (rc 1)
+[NEG_OK] no_shift_right.c: Lean-side desugar/typing rejection at the committed diagnostic line 8 (rc 1)
+[NEG_OK] only_unsigned_char.c: Lean-side desugar/typing rejection at the committed diagnostic line 1 (rc 1)
+
+SUMMARY: exec_match=9 neg_pinned=5 fail=0
+ALL AT COMMITTED EXPECTEDS
+stderr: bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DERIVED report fields: A4c rc=0 status=passed elapsed_seconds=3.384
+
+LANE A5 COMMAND: ./scripts/test_libc_exec.sh
+stdout: bytes=2090 sha256=678ed81e689f56e495cd104a6722e9ddec0b578ba99000102364c1784027baf2
+check_lem_sync: OK (src 977326511c1096013d9b1fa183500ad6487a23ac9c6edc3d3f2ff8bd11e266e0, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin 501147ca761a28cf64b0b6f3eb244c90164db137322122305572b7c0b8bff8a7, src 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda)
+check_driver_fresh: recorded lean stamp (bin 32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6, src 89a31871cc2e83121d7efb009c35aa6c50216b31f6dad88cee4688b0786edf28)
+  MATCH 008-aligned-alloc-bad-size: Undefined {ub: "DUMMY(align_alloc)", stderr: "", loc: "<8:28--8:48>"}
+  MATCH 009-aligned-alloc-3: Defined {value: "Specified(11)", stdout: "", stderr: "", blocked: "false"}
+  MATCH 010-int32-printf: Defined {value: "Specified(0)", stdout: "7\n", stderr: "", blocked: "false"}
+  MATCH 011-decimal-sweep: Defined {value: "Specified(0)", stdout: "8058938944302713231\n194266234449066599
+  MATCH 012-global-alloc-order: Defined {value: "Specified(0)", stdout: "s1=281474976707472 c1=281474976707471 i
+
+SUMMARY: match=12 diff=0
+ALL MATCH RECORDED BASELINE
+stderr: bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DERIVED report fields: A5 rc=0 status=passed elapsed_seconds=25.069
+
+LANE A6 COMMAND: ./scripts/test_multi_tu.sh
+stdout: bytes=1311 sha256=55b383a17bef7a89d6b849f7553fc9b8f693d9f282762769f96a542dbd48295a
+check_lem_sync: OK (src 977326511c1096013d9b1fa183500ad6487a23ac9c6edc3d3f2ff8bd11e266e0, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin 501147ca761a28cf64b0b6f3eb244c90164db137322122305572b7c0b8bff8a7, src 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda)
+check_driver_fresh: recorded lean stamp (bin 32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6, src 89a31871cc2e83121d7efb009c35aa6c50216b31f6dad88cee4688b0786edf28)
+==================================================
+Raw observation evidence (kept on failure or under CERB_OBSERVATION_DIR; removed on exit 0): /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/.tmp/risk-map-full/A6/observations/test_multi_tu.kjHOQxlKv5
+[1] MATCH basic: 31 execution(s), VAL:{value: "Specified(42)", stdout: "", stderr: "", blocked: "false"}
+[2] MATCH tentative: 1 execution(s), VAL:{value: "Specified(42)", stdout: "", stderr: "", blocked: "false"}
+
+==================================================
+SUMMARY: total=2 match=2 fail=0
+ALL PASSED
+stderr: bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DERIVED report fields: A6 rc=0 status=passed elapsed_seconds=2.282
+
+LANE A7 COMMAND: ./scripts/test_parse.sh
+stdout: bytes=1307 sha256=11462dd148a86339697cbd70ee5e8ba87fbdd2be4b12039679b86c78b1369dd4
+check_lem_sync: OK (src 977326511c1096013d9b1fa183500ad6487a23ac9c6edc3d3f2ff8bd11e266e0, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin 501147ca761a28cf64b0b6f3eb244c90164db137322122305572b7c0b8bff8a7, src 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda)
+check_driver_fresh: recorded lean stamp (bin 32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6, src 89a31871cc2e83121d7efb009c35aa6c50216b31f6dad88cee4688b0786edf28)
+================================
+Total:          106
+Cerberus parse: 106 ok, 0 failed
+Lean parse:     106 ok, 0 failed, 0 timeout (>60s; fatal), 0 lean failure(s) (crash / nonzero exit without a printed verdict; fatal)
+Lean front end: 0 rejected (exit 1 + a printed Error/Undefined verdict; not a parse failure), 0 internal-error-expected (failwithI panic on an *.error.c input, oracle-mirrored)
+Success rate:   100% (of cerberus successes)
+
+ALL PASSED
+stderr: bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DERIVED report fields: A7 rc=0 status=passed elapsed_seconds=9.749
+
+LANE A8 COMMAND: ./scripts/test_core.sh
+stdout: bytes=1030 sha256=8e2c37b69da4895c6f7faa5c09f4b8f0be495cb877d6de8681680f577b33813b
+check_lem_sync: OK (src 977326511c1096013d9b1fa183500ad6487a23ac9c6edc3d3f2ff8bd11e266e0, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin 501147ca761a28cf64b0b6f3eb244c90164db137322122305572b7c0b8bff8a7, src 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda)
+check_driver_fresh: recorded lean stamp (bin 32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6, src 89a31871cc2e83121d7efb009c35aa6c50216b31f6dad88cee4688b0786edf28)
+Results (7 seconds)
+================================
+Total:          106
+Cerberus --pp:  106 ok, 0 failed
+Lean parse:     106 ok, 0 failed
+Success rate:   100% (of cerberus successes)
+
+ALL PASSED
+stderr: bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DERIVED report fields: A8 rc=0 status=passed elapsed_seconds=8.793
+
+LANE A9 COMMAND: ./scripts/test_elab.sh
+stdout: bytes=4449 sha256=bf5fcb726d4e3456ee7f94a48db91bf991825f9e1fcec9b19a05c9b848c1ea4a
+check_lem_sync: OK (src 977326511c1096013d9b1fa183500ad6487a23ac9c6edc3d3f2ff8bd11e266e0, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin 501147ca761a28cf64b0b6f3eb244c90164db137322122305572b7c0b8bff8a7, src 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda)
+check_driver_fresh: recorded lean stamp (bin 32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6, src 89a31871cc2e83121d7efb009c35aa6c50216b31f6dad88cee4688b0786edf28)
+============================================
+Elaborated-Core signature differential (reporting mode)
+  SAME:       103
+  DIFF:       3
+  OCAML_FAIL: 0
+  LEAN_FAIL:  0
+
+SUMMARY: total=106 same=103 diff=3 ocaml_fail=0 lean_fail=0
+stderr: bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DERIVED report fields: A9 rc=0 status=passed elapsed_seconds=16.454
+
+LANE A10 COMMAND: ./scripts/test_libxml2_uri.sh
+stdout: bytes=1448 sha256=176f7a939fa7932e017c4d7330583838d21733e5f2e151c60e3a6179044b9f4a
+check_lem_sync: OK (src 977326511c1096013d9b1fa183500ad6487a23ac9c6edc3d3f2ff8bd11e266e0, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin 501147ca761a28cf64b0b6f3eb244c90164db137322122305572b7c0b8bff8a7, src 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda)
+check_driver_fresh: recorded lean stamp (bin 32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6, src 89a31871cc2e83121d7efb009c35aa6c50216b31f6dad88cee4688b0786edf28)
+[oracle+libc] exit=0 wall=0:01.27 maxRSS=202320kB
+[ocaml-nolibc] exit=1: Error {msg: "ill-formed program: `calling an unknown procedure: Symbol(1451, SD_Id("memset"))'"}
+[lean-nolibc] exit=1 wall=0:01.12 maxRSS=203248kB: Error {msg: "ill-formed program: `calling an unknown procedure: Symbol(968, SD_Id("memset"))'"}
+[lean+libc] exit=0 wall=0:11.15 maxRSS=288752kB: Defined {value: "Specified(600741297)", stdout: "uri 0 rc=0 scheme=http server=example.com port=8080
+[lean+libc] EXACT MATCH with ORACLE_LIBC (16/16 URI corpus)
+
+==================================================
+GATE PASS: all lane expectations pinned-green + baseline unchanged (16/16)
+stderr: bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DERIVED report fields: A10 rc=0 status=passed elapsed_seconds=18.56
+
+LANE A11 COMMAND: ./scripts/test_cn_coverage.sh --check-baseline
+stdout: bytes=95585 sha256=c42b8b5f57f2efcb850494583cd218575e2affcc9cbda494e847f068cc2c5364
+check_lem_sync: OK (src 977326511c1096013d9b1fa183500ad6487a23ac9c6edc3d3f2ff8bd11e266e0, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin 501147ca761a28cf64b0b6f3eb244c90164db137322122305572b7c0b8bff8a7, src 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda)
+check_driver_fresh: recorded lean stamp (bin 32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6, src 89a31871cc2e83121d7efb009c35aa6c50216b31f6dad88cee4688b0786edf28)
+  ORACLE_FAIL:   0  ORACLE_TIMEOUT: 0  ORACLE_INCONSISTENT: 0
+
+Agreement tally: 213/213 compared (213 run, 0 oracle-side unobservable)
+
+SUMMARY: total=213 match=207 ub_match=6 ub_diff=0 reject_match=0 diff=0 mismatch=0 reject_diff=0 lean_fail=0 lean_crash=0 fuel=0 lean_error=0 lean_timeout=0 oracle_fail=0 oracle_timeout=0 oracle_inconsistent=0
+
+Checking against baseline (exact match, fail-closed both directions): /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/tests/cn_coverage/baseline.txt
+BASELINE OK (213 entries, exact match)
+stderr: bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DERIVED report fields: A11 rc=0 status=passed elapsed_seconds=59.979
+
+LANE B1 COMMAND: ./scripts/test_libxml2.sh
+stdout: bytes=1442 sha256=d8cfe79a32e336b29bea52e463d7aa1b6017c2180b250008691185c587bb163b
+check_lem_sync: OK (src 977326511c1096013d9b1fa183500ad6487a23ac9c6edc3d3f2ff8bd11e266e0, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin 501147ca761a28cf64b0b6f3eb244c90164db137322122305572b7c0b8bff8a7, src 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda)
+check_driver_fresh: recorded lean stamp (bin 32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6, src 89a31871cc2e83121d7efb009c35aa6c50216b31f6dad88cee4688b0786edf28)
+[chvalid_battery_00] MATCH (wall=0:47.98 maxRSS=240820kB | lean wall=1:46.98 maxRSS=179988kB)
+[chvalid_battery_01] MATCH (wall=0:56.96 maxRSS=263596kB | lean wall=2:05.08 maxRSS=194084kB)
+[chvalid_battery_02] MATCH (wall=0:58.60 maxRSS=261680kB | lean wall=1:58.84 maxRSS=188864kB)
+[chvalid_battery_03] MATCH (wall=0:57.08 maxRSS=270516kB | lean wall=1:56.58 maxRSS=195980kB)
+
+==================================================
+SUMMARY: total=4 match=4 fail=0 (points: 1354, 22 observations each)
+ALL PASSED
+stderr: bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DERIVED report fields: B1 rc=0 status=passed elapsed_seconds=690.991
+
+LANE B2 COMMAND: ./scripts/test_parse.sh tests/ci
+stdout: bytes=2669 sha256=987e32bc290d535d635ecf39b1f36f6c1426e1fe004cba4c154c07ec7a54c317
+check_lem_sync: OK (src 977326511c1096013d9b1fa183500ad6487a23ac9c6edc3d3f2ff8bd11e266e0, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin 501147ca761a28cf64b0b6f3eb244c90164db137322122305572b7c0b8bff8a7, src 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda)
+check_driver_fresh: recorded lean stamp (bin 32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6, src 89a31871cc2e83121d7efb009c35aa6c50216b31f6dad88cee4688b0786edf28)
+        1 REJECTED (exit 1): Undefined {ub: "UB081_scalar_initializer_not_single_expression", stderr: "", loc: "<2:13--2:21>"}
+        1 REJECTED (exit 1): Undefined {ub: "UB081_scalar_initializer_not_single_expression", stderr: "", loc: "<1:5--1:15>"}
+        1 REJECTED (exit 1): Undefined {ub: "UB078_modified_void_parameter", stderr: "", loc: "<1:17--1:21>"}
+        1 REJECTED (exit 1): Undefined {ub: "UB078_modified_void_parameter", stderr: "", loc: "<1:11--1:15>"}
+        1 REJECTED (exit 1): Undefined {ub: "UB060_block_scope_function_with_storage_class", stderr: "", loc: "<3:15--3:24>"}
+        1 REJECTED (exit 1): Undefined {ub: "UB060_block_scope_function_with_storage_class", stderr: "", loc: "<2:15--2:24>"}
+
+ALL PASSED
+stderr: bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DERIVED report fields: B2 rc=0 status=passed elapsed_seconds=22.958
+
+LANE B3 COMMAND: ./scripts/test_core.sh tests/ci
+stdout: bytes=1035 sha256=00aee7d23c02b91e9eb7a89cf7d7626348191eca2fb2cf29f58cd60d9bf02ed0
+check_lem_sync: OK (src 977326511c1096013d9b1fa183500ad6487a23ac9c6edc3d3f2ff8bd11e266e0, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin 501147ca761a28cf64b0b6f3eb244c90164db137322122305572b7c0b8bff8a7, src 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda)
+check_driver_fresh: recorded lean stamp (bin 32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6, src 89a31871cc2e83121d7efb009c35aa6c50216b31f6dad88cee4688b0786edf28)
+Results (14 seconds)
+================================
+Total:          250
+Cerberus --pp:  128 ok, 122 failed
+Lean parse:     128 ok, 0 failed
+Success rate:   100% (of cerberus successes)
+
+ALL PASSED
+stderr: bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DERIVED report fields: B3 rc=0 status=passed elapsed_seconds=15.197
+
+LANE B4 COMMAND: ./scripts/test_verify.sh
+stdout: bytes=761 sha256=7490a97cdbfc9a4b787f3564af41bdd406c25bf25ebc884140b6dbb1d01d282e
+check_lem_sync: OK (src 977326511c1096013d9b1fa183500ad6487a23ac9c6edc3d3f2ff8bd11e266e0, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin 501147ca761a28cf64b0b6f3eb244c90164db137322122305572b7c0b8bff8a7, src 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda)
+Building cerberus-lean (Lean)...
+instead of
+  String → String
+Build completed successfully (273 jobs).
+check_driver_fresh: recorded lean stamp (bin 32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6, src 89a31871cc2e83121d7efb009c35aa6c50216b31f6dad88cee4688b0786edf28)
+
+test_verify: 127 passed, 0 failed (25 fixtures, 28 call points, 14 corpus fixtures, 21 corpus points)
+stderr: bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DERIVED report fields: B4 rc=0 status=passed elapsed_seconds=46.486
+
+LANE B5 COMMAND: ./scripts/test_immaculate.sh
+stdout: bytes=11714 sha256=d42c9a2ecc17d7e48b94a517fd03740e3b326d2c8bb76e1fddf0ef0b0c895518
+check_lem_sync: OK (src 977326511c1096013d9b1fa183500ad6487a23ac9c6edc3d3f2ff8bd11e266e0, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin 501147ca761a28cf64b0b6f3eb244c90164db137322122305572b7c0b8bff8a7, src 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda)
+check_driver_fresh: recorded lean stamp (bin 32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6, src 89a31871cc2e83121d7efb009c35aa6c50216b31f6dad88cee4688b0786edf28)
+  MATCH          zd-z2p01-stderr_escape  O[VAL:{value: "Specified(0)", stdout: "", stderr: "E\b\007\255|", blocked: "false"}] L[VAL:{value: "Specified(0)", stdout: "", stderr: "E\b\007\255|", blocked: "false"}]
+  MATCH          zd-z2p01-stdout_escape  O[VAL:{value: "Specified(0)", stdout: "a\bb\007\127\195\169\011\012\027|\n", stderr: "", blocked: "false"}] L[VAL:{value: "Specified(0)", stdout: "a\bb\007\127\195\169\011\012\027|\n", stderr: "", blocked: "false"}]
+  MATCH          zd-z72-stderr-ub      O[UB:{ub: "UB043_indirection_invalid_value", stderr: "E1", loc: "<6:62--6:64>"}] L[UB:{ub: "UB043_indirection_invalid_value", stderr: "E1", loc: "<6:62--6:64>"}]
+[in-lean probe]
+  TRIPWIRE       g6-hash-collision   
+  KILL           illtyped-store      
+
+OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip DIFF, R3 s4b-memcmp-hugesize ORACLE_CRASH — VALIDATION.md 'ISO-fix register' — and the in-Lean probes g6 TRIPWIRE / illtyped-store KILL).
+stderr: bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DERIVED report fields: B5 rc=0 status=passed elapsed_seconds=72.323
+
+LANE B6.1 COMMAND: ./scripts/test_speclab.sh --selftest
+stdout: bytes=148042 sha256=84fca90b7de5d2d465bf2b1b34fc391dc60cc866fa0c271a53707d41accac77f
+check_lem_sync: OK (src 977326511c1096013d9b1fa183500ad6487a23ac9c6edc3d3f2ff8bd11e266e0, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin 501147ca761a28cf64b0b6f3eb244c90164db137322122305572b7c0b8bff8a7, src 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda)
+check_driver_fresh: recorded lean stamp (bin 32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6, src 89a31871cc2e83121d7efb009c35aa6c50216b31f6dad88cee4688b0786edf28)
+✔ [281/282] Built SpecLab.TreeRotCore:c.o (75s)
+✔ [282/282] Built «speclab-test»:exe (580ms)
+Build completed successfully (282 jobs).
+test_speclab [selftest] /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/.tmp/scripts/speclab.Rj9hAEjKMX/identity.c
+  oracle: exit=0 verdict=Specified(0)
+  lean:   exit=0 verdict=Specified(0)
+  expect: Specified(0)
+test_speclab: PASS (both pipelines agree on Specified(0))
+stderr: bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DERIVED report fields: B6.1 rc=0 status=passed elapsed_seconds=174.628
+
+LANE B6.2 COMMAND: ./scripts/test_speclab.sh --plant
+stdout: bytes=145654 sha256=2f2cd97737121f4017502cd40f9b60b0d5e96e4f6b7a030dad9d42992a195d88
+check_lem_sync: OK (src 977326511c1096013d9b1fa183500ad6487a23ac9c6edc3d3f2ff8bd11e266e0, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin 501147ca761a28cf64b0b6f3eb244c90164db137322122305572b7c0b8bff8a7, src 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda)
+check_driver_fresh: recorded lean stamp (bin 32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6, src 89a31871cc2e83121d7efb009c35aa6c50216b31f6dad88cee4688b0786edf28)
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+Build completed successfully (282 jobs).
+test_speclab [plant] /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/.tmp/scripts/speclab.l6UZ4erdeY/plant.c
+  oracle: exit=0 verdict=Specified(2)
+  lean:   exit=0 verdict=Specified(2)
+  expect: Specified(2)
+test_speclab: PASS (both pipelines agree on Specified(2))
+stderr: bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DERIVED report fields: B6.2 rc=0 status=passed elapsed_seconds=2.331
+
+LANE B6.3 COMMAND: ./scripts/test_speclab_divmod.sh --gate
+stdout: bytes=145905 sha256=e2604349bfe9a7f50379c13df9005a59775e0aac7286d5fb5e64972533416001
+check_lem_sync: OK (src 977326511c1096013d9b1fa183500ad6487a23ac9c6edc3d3f2ff8bd11e266e0, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin 501147ca761a28cf64b0b6f3eb244c90164db137322122305572b7c0b8bff8a7, src 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda)
+check_driver_fresh: recorded lean stamp (bin 32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6, src 89a31871cc2e83121d7efb009c35aa6c50216b31f6dad88cee4688b0786edf28)
+  PASS  param pin [c]: mainParamDecl == parsed main
+  PASS  exec [a] (7,2): Specified(0)
+  PASS  exec [b] (-5,3): Specified(0)
+  PASS  exec [d] (-6,3): Specified(0)
+  PASS  exec [c] (-128,-1): Specified(0)
+  PASS  exec [plant]: Specified(1) — the wrong-operator plant is RED in-logic
+CoreGateTest: ALL PASSED
+test_speclab_divmod: PASS (--gate)
+stderr: bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DERIVED report fields: B6.3 rc=0 status=passed elapsed_seconds=10.145
+
+LANE B6.4 COMMAND: ./scripts/test_speclab_bytearr.sh --gate
+stdout: bytes=146108 sha256=b5d79c41a3fba4f19d75c20fe3322140da7aeea74430161e1e537aa99ae06d51
+check_lem_sync: OK (src 977326511c1096013d9b1fa183500ad6487a23ac9c6edc3d3f2ff8bd11e266e0, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin 501147ca761a28cf64b0b6f3eb244c90164db137322122305572b7c0b8bff8a7, src 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda)
+check_driver_fresh: recorded lean stamp (bin 32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6, src 89a31871cc2e83121d7efb009c35aa6c50216b31f6dad88cee4688b0786edf28)
+  PASS  exec [memcpy d]: Specified(0)
+  PASS  exec [memcpy c]: Specified(0)
+  PASS  exec [memcpy plant]: Specified(3) — the off-by-one plant is RED in-logic at dst byte 0
+  PASS  exec [getarr A]: Specified(0)
+  PASS  exec [getarr B]: Specified(0)
+  PASS  exec [getarr plant]: Specified(1) — the wrong-index plant is RED in-logic
+ByteArrGateTest: ALL PASSED
+test_speclab_bytearr: PASS (--gate)
+stderr: bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DERIVED report fields: B6.4 rc=0 status=passed elapsed_seconds=9.545
+
+LANE B6.5 COMMAND: ./scripts/test_speclab_list.sh --gate
+stdout: bytes=146497 sha256=39b6e8e1f55e3148918345f02cafab783f40afc13029e6973adfa5d721779198
+check_lem_sync: OK (src 977326511c1096013d9b1fa183500ad6487a23ac9c6edc3d3f2ff8bd11e266e0, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin 501147ca761a28cf64b0b6f3eb244c90164db137322122305572b7c0b8bff8a7, src 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda)
+check_driver_fresh: recorded lean stamp (bin 32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6, src 89a31871cc2e83121d7efb009c35aa6c50216b31f6dad88cee4688b0786edf28)
+  PASS  exec [append link-plant]: Specified(255) — structural break in the length arm; +1 = the orphaned node
+  PASS  leak [append link-plant]: final allocations = 2
+  PASS  exec [append elem-plant]: Specified(3) — the wrong-element plant is RED in-logic at element 0
+  PASS  leak [append elem-plant]: final allocations = 1
+  PASS  exec [build-only]: Specified(0) — builder-walker round trip through the heap
+  PASS  leak [build-only]: final allocations = 1
+ListGateTest: ALL PASSED
+test_speclab_list: PASS (--gate)
+stderr: bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DERIVED report fields: B6.5 rc=0 status=passed elapsed_seconds=10.4
+
+LANE B6.6 COMMAND: ./scripts/test_speclab_tree.sh --gate
+stdout: bytes=146818 sha256=c2d0fcf298db3231ebb3834ec1858ff9cfcbd4629b92f644180133e01c4aa588
+check_lem_sync: OK (src 977326511c1096013d9b1fa183500ad6487a23ac9c6edc3d3f2ff8bd11e266e0, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin 501147ca761a28cf64b0b6f3eb244c90164db137322122305572b7c0b8bff8a7, src 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda)
+check_driver_fresh: recorded lean stamp (bin 32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6, src 89a31871cc2e83121d7efb009c35aa6c50216b31f6dad88cee4688b0786edf28)
+  PASS  exec [rotate swap-plant]: Specified(7) — content break at the locus val's first wire byte; LEAK-FREE (baseline)
+  PASS  leak [rotate swap-plant]: final allocations = 1
+  PASS  exec [rotate drop-plant]: Specified(255) — structural break in the length arm; +1 = the orphaned middle subtree
+  PASS  leak [rotate drop-plant]: final allocations = 2
+  PASS  exec [build-only]: Specified(0) — builder-walker round trip through the heap
+  PASS  leak [build-only]: final allocations = 1
+TreeGateTest: ALL PASSED
+test_speclab_tree: PASS (--gate)
+stderr: bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DERIVED report fields: B6.6 rc=0 status=passed elapsed_seconds=10.846
+
+LANE B6.7 COMMAND: ./scripts/test_speclab_seed.sh --gate
+stdout: bytes=145940 sha256=45fd475ff84741926abecb02d1aeebab7a40e4498c56f4b20d07620777530857
+check_lem_sync: OK (src 977326511c1096013d9b1fa183500ad6487a23ac9c6edc3d3f2ff8bd11e266e0, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin 501147ca761a28cf64b0b6f3eb244c90164db137322122305572b7c0b8bff8a7, src 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda)
+check_driver_fresh: recorded lean stamp (bin 32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6, src 89a31871cc2e83121d7efb009c35aa6c50216b31f6dad88cee4688b0786edf28)
+  PASS  param pin [c]: swapMainParamDecl == parsed main
+  PASS  exec [swap a]: Specified(0)
+  PASS  exec [swap b]: Specified(0)
+  PASS  exec [swap d]: Specified(0)
+  PASS  exec [swap c]: Specified(0)
+  PASS  exec [swap plant]: Specified(9) — the lost-update plant is RED in-logic at post-state cell 1, byte 0
+SeedGateTest: ALL PASSED
+test_speclab_seed: PASS (--gate)
+stderr: bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DERIVED report fields: B6.7 rc=0 status=passed elapsed_seconds=9.241
+
+LANE B7 COMMAND: ./scripts/test_gcc_oracle.sh --check-baseline
+stdout: bytes=131284 sha256=f0837ccc13269afed06808fb7028736ebdd075c8c821e7bc235a75fe731eec9f
+check_lem_sync: OK (src 977326511c1096013d9b1fa183500ad6487a23ac9c6edc3d3f2ff8bd11e266e0, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin 501147ca761a28cf64b0b6f3eb244c90164db137322122305572b7c0b8bff8a7, src 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda)
+check_driver_fresh: recorded lean stamp (bin 32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6, src 89a31871cc2e83121d7efb009c35aa6c50216b31f6dad88cee4688b0786edf28)
+[174/1963] SKIP_LEAN_FAIL  tests/debug/ub-static-reject.c: msg: "desugaring failed at /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/tests/debug/ub-static-reject.c:4:12:"
+[1962/1963] SKIP_LEAN_FAIL  csmith/smx_csmith_6.c: msg: "typechecking failed at /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/.tmp/scripts/gcc-oracle.9a5dxhFw1C/csmith-stage/smx_csmith_6.c:191:16-21 (cursor: 191:14)"
+  Skipped:      78  (every skip enumerated below and in the baseline rows)
+    TRIAGED_UB: 1
+
+SUMMARY: total=1963 compared=1885 agree=1873 agree_nd=0 triaged=12 disagree=0 o2_agree=190 skip_gcc_compile=1 skip_gcc_stdout=1 skip_lean_crash=9 skip_lean_fail=9 skip_lean_timeout=11 skip_ub=47 triaged_addr=11 triaged_ub=1
+
+Checking against baseline: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/scripts/gcc_oracle_baseline.txt
+
+Baseline check: 0 regression(s), 0 improvement(s)
+gcc second-oracle lane OK
+stderr: bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DERIVED report fields: B7 rc=0 status=passed elapsed_seconds=1524.197
+
+LANE B8.1 COMMAND: ./scripts/test_hang_plant.sh
+stdout: bytes=1003 sha256=9b66074a1c5241ee56556a6c3644473dd57cf1b035a71fcb2e936c450a705169
+PLANT OK   [exec/sleep → HANG]: [1/1] HANG 001-return-literal (Lean HANG(cpu 0.00s of 3.00s wall; timeout 3s))
+PLANT OK   [exec/sleep summary]: FAILED: 1 Lean HANG(s) — exit 124 with CPU/wall < 0.1: no output, no exit (charter C9 shape)
+PLANT OK   [exec/busy → TIMEOUT]: [1/1] TIMEOUT 001-return-literal (Lean TIMEOUT(cpu 2.99s of 3.00s wall; timeout 3s))
+PLANT OK   [exec/busy summary]: FAILED: 1 Lean timeout(s)
+PLANT OK   [sweep/sleep → LEAN_HANG]: ci	tests/ci/0001-emptymain.c	LEAN_HANG	HANG(cpu 0.00s of 3.00s wall; timeout 3s)
+PLANT OK   [sweep/busy → LEAN_TIMEOUT]: ci	tests/ci/0001-emptymain.c	LEAN_TIMEOUT	TIMEOUT(cpu 2.99s of 3.00s wall; timeout 3s)
+PLANT OK   [classifier fail-closed]: HARNESS ERROR: time record /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/.tmp/scripts/hang-plant.uemFPl3FHJ/does-not-exist.time missing
+test_hang_plant: all plants read as expected (sleep→HANG, busy→TIMEOUT, both lanes; missing record→harness error)
+stderr: bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DERIVED report fields: B8.1 rc=0 status=passed elapsed_seconds=13.516
+
+LANE B8.2 COMMAND: ./scripts/test_kill_plant.sh
+stdout: bytes=2126 sha256=954b70f43274681001e723981f3200932348b4c73d5264e0f1b76d7c812d9366
+PLANT OK   [cap kills a 5 GiB allocator]: exit 137, capped: OOM-KILLED (exit 137 — cgroup memory cap CERB_MEM_MAX=4G breached; memory.events oom_kill=1
+PLANT OK   [capped witness unavailable -> honest banner]: capped: KILLED, OOM witness UNAVAILABLE (exit 137 — cannot distinguish a cap breach from a signal death: no readable cgroup memory.events on this path
+PLANT OK   [capped grandchild OOM -> bannered despite rc=1]: capped: OOM-KILLED (memory.events oom_kill=1, cap CERB_MEM_MAX=1G; command exit 1 
+PLANT OK   [ci_sweep -> LEAN_KILL]: ci	tests/ci/0001-emptymain.c	LEAN_KILL	exit 137, capped OOM-KILLED (memory cap 4G breached)
+PLANT OK   [ci_sweep SIGKILL stub -> LEAN_CRASH (not the cap class)]: ci	tests/ci/0001-emptymain.c	LEAN_CRASH	exit 137: (no PANIC line captured)
+PLANT OK   [libc_exec -> KILL row]:   KILL  001-exit: oracle exit 0, lean exit 137 — lean: OOM-KILLED (exit 137; cgroup memory cap CERB_TEST_MEM_MAX=4G breached — memory.events oom_kill=1)
+PLANT OK   [libc_exec no MATCH]: SUMMARY: match=0 diff=12
+PLANT OK   [libc_exec SIGKILL stub -> DIFF (not KILL)]: SUMMARY: match=0 diff=12
+PLANT OK   [immaculate -> KILL status on a C row]:   KILL           g1-ge-funptr          O[ERR:{msg: "Memory WIP: ge_ptrval"}] L[KILL]
+PLANT OK   [immaculate no MATCH]
+PLANT OK   [libxml2_uri -> killed label]: FAIL: LEAN_NOLIBC killed by SIGKILL (exit 137 — the per-test cgroup memory cap CERB_TEST_MEM_MAX=4G if the lane's stderr carries capped's OOM-KILLED witness banner, otherwise an external SIGKILL): c
+PLANT OK   [libxml2 -> Lean OOM-KILLED]: [chvalid_battery_00] FAIL: Lean OOM-KILLED (exit 137; cgroup memory cap CERB_TEST_MEM_MAX=4G breached — memory.events oom_kill=1)
+PLANT OK   [gcc_oracle exit(137) native -> compared (AGREE gcc=137 lean={137}), not SKIP_GCC_KILL]: [1/1] AGREE  .tmp/scripts/kill-plant.46bcU0GaI4/gcc137/exit137.c: gcc=137 lean={137}
+test_kill_plant: all plants read as expected (cap breach -> OOM-KILLED witness; ci_sweep LEAN_KILL, libc_exec KILL, immaculate KILL, uri/libxml2 FAIL-killed; SIGKILL stub NOT the cap class; native exit(137) still compared; no MATCH anywhere)
+stderr: bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DERIVED report fields: B8.2 rc=0 status=passed elapsed_seconds=220.106
+
+LANE B8.3 COMMAND: ./scripts/test_fuel_plant.sh
+stdout: bytes=4340 sha256=1d714a44a30cabb86e26e39a87dac269a496ec34b68e4f80ad644d99540eb7fd
+PLANT OK   [exec/kill -> FUEL]: [1/1] FUEL 001-return-literal (FUEL:kill, exit 1): lem: fuel exhausted
+PLANT OK   [exec/kill fatal]: FAILED: 1 Lean fuel exhaustion(s) — the fuel budget is a port artifact; a FUEL row is never agreement
+PLANT OK   [exec/kill summary fuel=1]: SUMMARY: total=1 match=0 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=1 lean_error=0 timeout=0 hang=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0
+PLANT OK   [exec/panic -> FUEL]: [1/1] FUEL 001-return-literal (FUEL:panic, exit 134): lem: fuel exhausted
+PLANT OK   [exec/assert -> FAIL (not FUEL)]: [1/1] FAIL 001-return-literal: assert() failure
+PLANT OK   [exec/assert no FUEL row]: no /^\[1/1\] FUEL /
+PLANT OK   [exec/words no FUEL row]: no /^\[1/1\] FUEL /
+PLANT OK   [exec/words is a verdict row]: [1/1] MISMATCH 001-return-literal: Lean=VAL:{value: "Specified(0)", stdout: "lem: fuel exhausted\n", stderr: "", blocked: "false"} Cerberus=VAL:{value: "Specified(42)", stdout: "", stderr: "", blocked
+PLANT OK   [gcc/kill -> SKIP_LEAN_FUEL]: [1/1] SKIP_LEAN_FUEL  tests/minimal/001-return-literal.c: (FUEL:kill, exit 1) lem: fuel exhausted
+PLANT OK   [gcc/assert -> SKIP_LEAN_FAIL (not FUEL)]: [1/1] SKIP_LEAN_FAIL  tests/minimal/001-return-literal.c: msg: "assert() failure"
+PLANT OK   [gcc/assert no FUEL row]: no /^\[1/1\] SKIP_LEAN_FUEL/
+PLANT OK   [ci_sweep/kill -> LEAN_FUEL]: ci	tests/ci/0001-emptymain.c	LEAN_FUEL	FUEL:kill, exit 1: lem: fuel exhausted
+PLANT OK   [ci_sweep/panic -> LEAN_FUEL]: ci	tests/ci/0001-emptymain.c	LEAN_FUEL	FUEL:panic, exit 134: lem: fuel exhausted
+PLANT OK   [ci_sweep/kill summary counts fuel]: SWEEP SUMMARY suite=ci mode=nolibc total=1 match=0 ub_match=0 ub_diff=0 stdout_diff=0 diff=0 mismatch=0 lean_fail=0 lean_crash=0 lean_kill=0 lean_fuel=1 lean_error=0 lean_timeout=0 lean_hang=0 cerb_re
+PLANT OK   [ci_sweep/panic summary counts fuel]: SWEEP SUMMARY suite=ci mode=nolibc total=1 match=0 ub_match=0 ub_diff=0 stdout_diff=0 diff=0 mismatch=0 lean_fail=0 lean_crash=0 lean_kill=0 lean_fuel=1 lean_error=0 lean_timeout=0 lean_hang=0 cerb_re
+PLANT OK   [ci_sweep/assert -> LEAN_FAIL (not FUEL)]: ci	tests/ci/0001-emptymain.c	LEAN_FAIL	msg: "assert() failure"
+PLANT OK   [ci_sweep/assert no FUEL row]: no /	LEAN_FUEL	/
+PLANT OK   [cn_coverage/kill -> FUEL]: [1/1] FUEL alloc_create.c (FUEL:kill, exit 1): lem: fuel exhausted
+PLANT OK   [cn_coverage/assert -> REJECT (not FUEL)]: [1/1] REJECT_DIFF alloc_create.c (Lean refuses: msg: "assert() failure"; oracle runs: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"})
+PLANT OK   [cn_coverage/assert no FUEL row]: no /^\[1/1\] FUEL /
+PLANT OK   [parse/abort -> LEAN_FAILURE counted]: Lean parse:     0 ok, 0 failed, 0 timeout (>60s; fatal), 1 lean failure(s) (crash / nonzero exit without a printed verdict; fatal)
+PLANT OK   [parse/abort fatal]: FAILED: 0 parse error(s), 0 timeout(s), 1 lean failure(s)
+PLANT OK   [measure/kill -> FUEL(kill) note]: 001-return-literal	nolibc	lean-first	1	0.00	1864	ERR:lem: fuel exhausted	FUEL(kill);	0.00
+PLANT OK   [measure/panic -> FUEL(panic) note]: 001-return-literal	nolibc	lean-first	134	0.00	1864	NONE	FUEL(panic);	0.00
+PLANT OK   [measure/assert no FUEL]: no /FUEL\(/
+check_driver_fresh: lean OK (bin 32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6, src 89a31871cc2e83121d7efb009c35aa6c50216b31f6dad88cee4688b0786edf28)
+PLANT OK   [exec/real driver at --fuel 1 -> FUEL]: [1/1] FUEL 001-return-literal (FUEL:kill, exit 1): lem: fuel exhausted
+PLANT OK   [exec/real driver at the default fuel -> MATCH]: [1/1] MATCH 001-return-literal: VAL:{value: "Specified(42)", stdout: "", stderr: "", blocked: "false"}
+PLANT OK   [--fuel 0 refused, exit 2]: cerberus-lean: refused — --fuel 0: the fuel must be a positive integer (fuel 0 kills at the first bind: never a verdic
+PLANT OK   [--fuel abc refused, exit 2]: cerberus-lean: refused — --fuel abc: not a decimal numeral (the fuel is a positive integer; default 100000000; see VAL
+PLANT OK   [--fuel before the mode flag refused (positional contract)]
+PLANT OK   [--fuel without an argument refused]
+
+test_fuel_plant: ALL PLANTS OK (FUEL classification live in exec/gcc/ci_sweep/cn_coverage/measure; negatives not FUEL; the real driver at --fuel 1 reads FUEL and at the default MATCH; --fuel 0/non-numeral/out-of-position/missing refused)
+stderr: bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DERIVED report fields: B8.3 rc=0 status=passed elapsed_seconds=6.687
+
+LANE B9 COMMAND: python3 scripts/test_observation_lanes.py --out /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/.tmp/risk-map-full/B9/plants
+stdout: bytes=3288 sha256=dc03ba8ce63ce014660bbbf8016333dd2a820da590b34f844a6189679029e547
+PLANT MODE: real lane entry points, explicit engine overrides; evidence /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/.tmp/risk-map-full/B9/plants
+PLANT OK   exec: control
+PLANT OK   exec: bytes
+PLANT OK   exec: lean-exit2
+PLANT OK   exec: descendant-oom
+PLANT OK   exec: oracle-exit2
+PLANT OK   exec: ub-control
+PLANT OK   exec: ub-difference
+PLANT OK   exec: ub-difference-new-baseline
+PLANT OK   exec: ub-difference-only
+PLANT OK   multi_tu: control
+PLANT OK   multi_tu: bytes
+PLANT OK   multi_tu: lean-exit2
+PLANT OK   multi_tu: descendant-oom
+PLANT OK   multi_tu: oracle-exit2
+PLANT OK   cn_coverage: control
+PLANT OK   cn_coverage: bytes
+PLANT OK   cn_coverage: lean-exit2
+PLANT OK   cn_coverage: descendant-oom
+PLANT OK   cn_coverage: oracle-exit2
+PLANT OK   cn_coverage: refusal-control
+PLANT OK   cn_coverage: refusal-text
+PLANT OK   ci_sweep: control
+PLANT OK   ci_sweep: bytes
+PLANT OK   ci_sweep: lean-exit2
+PLANT OK   ci_sweep: descendant-oom
+PLANT OK   ci_sweep: oracle-exit2
+PLANT OK   gcc_oracle: control
+PLANT OK   gcc_oracle: bytes
+PLANT OK   gcc_oracle: lean-exit2
+PLANT OK   gcc_oracle: descendant-oom
+PLANT OK   gcc_oracle: native-exit137
+PLANT OK   verify: control
+PLANT OK   verify: bytes
+PLANT OK   verify: lean-exit2
+PLANT OK   verify: descendant-oom
+PLANT OK   verify: oracle-exit2
+PLANT OK   verify: call-verdict-then-timeout
+PLANT OK   bytes: control
+PLANT OK   bytes: bytes
+PLANT OK   bytes: lean-exit2
+PLANT OK   bytes: descendant-oom
+PLANT OK   bytes: oracle-exit2
+PLANT OK   libc_exec: control
+PLANT OK   libc_exec: bytes
+PLANT OK   libc_exec: lean-exit2
+PLANT OK   libc_exec: descendant-oom
+PLANT OK   libc_exec: oracle-exit2
+PLANT OK   libxml2_uri: control
+PLANT OK   libxml2_uri: bytes
+PLANT OK   libxml2_uri: lean-exit2
+PLANT OK   libxml2_uri: descendant-oom
+PLANT OK   libxml2_uri: oracle-exit2
+PLANT OK   immaculate: control
+PLANT OK   immaculate: bytes
+PLANT OK   immaculate: lean-exit2
+PLANT OK   immaculate: descendant-oom
+PLANT OK   immaculate: oracle-exit2
+PLANT OK   immaculate: crash-fuel
+PLANT OK   immaculate: crash-garbage
+PLANT OK   immaculate: crash-other
+PLANT OK   immaculate: ambient-term
+PLANT OK   speclab: control
+PLANT OK   speclab: bytes
+PLANT OK   speclab: lean-exit2
+PLANT OK   speclab: descendant-oom
+PLANT OK   speclab: oracle-exit2
+PLANT OK   speclab_divmod: control
+PLANT OK   speclab_divmod: bytes
+PLANT OK   speclab_divmod: lean-exit2
+PLANT OK   speclab_divmod: descendant-oom
+PLANT OK   speclab_divmod: oracle-exit2
+PLANT OK   speclab_bytearr: control
+PLANT OK   speclab_bytearr: bytes
+PLANT OK   speclab_bytearr: lean-exit2
+PLANT OK   speclab_bytearr: descendant-oom
+PLANT OK   speclab_bytearr: oracle-exit2
+PLANT OK   speclab_list: control
+PLANT OK   speclab_list: bytes
+PLANT OK   speclab_list: lean-exit2
+PLANT OK   speclab_list: descendant-oom
+PLANT OK   speclab_list: oracle-exit2
+PLANT OK   speclab_tree: control
+PLANT OK   speclab_tree: bytes
+PLANT OK   speclab_tree: lean-exit2
+PLANT OK   speclab_tree: descendant-oom
+PLANT OK   speclab_tree: oracle-exit2
+PLANT OK   speclab_seed: control
+PLANT OK   speclab_seed: bytes
+PLANT OK   speclab_seed: lean-exit2
+PLANT OK   speclab_seed: descendant-oom
+PLANT OK   speclab_seed: oracle-exit2
+observation lane plants: 91/91 passed
+stderr: bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DERIVED report fields: B9 rc=0 status=passed elapsed_seconds=1188.683
+
+LANE B10.1 COMMAND: python3 scripts/test_upstream_oracle.py --out /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/.tmp/risk-map-full/B10.1/independent-oracle
+stdout: bytes=42890 sha256=97f77585b724647b2cb7204d0bb8712d8109a463035c40ab4773bbaf3aceab46
+check_driver_fresh: oracle OK (bin 501147ca761a28cf64b0b6f3eb244c90164db137322122305572b7c0b8bff8a7, src 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda)
+717/723 semantic_agreement: cn/use_typedef.c
+718/723 semantic_agreement: cn/void_star_arg.c
+719/723 semantic_agreement: libxml2/uri-libc
+720/723 semantic_agreement: libxml2/uri-nolibc
+721/723 interface_agreement: cli/core-dump
+722/723 interface_agreement: cli/typecheck-core
+723/723 semantic_agreement: cli/args
+Independent oracle: passed; {'semantic_agreement': 709, 'reviewed_difference': 1, 'matching_failure': 11, 'interface_agreement': 2}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/.tmp/risk-map-full/B10.1/independent-oracle/report.json
+stderr: bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DERIVED report fields: B10.1 rc=0 status=passed elapsed_seconds=65.085
+
+LANE B10.2 COMMAND: python3 scripts/test_upstream_oracle.py --plant --out /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/.tmp/risk-map-full/B10.2/independent-oracle
+stdout: bytes=560 sha256=374b1133aa281bdc0612032ceb0408dc9369e293941a97ec4fbc38359ff0a988
+check_driver_fresh: oracle OK (bin 501147ca761a28cf64b0b6f3eb244c90164db137322122305572b7c0b8bff8a7, src 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda)
+PLANT MODE: passing real pair then mutate the fork engine verdict
+1/2 semantic_agreement: minimal/001-return-literal.c
+2/2 plant_rejected: plant/unexpected-verdict
+Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/.tmp/risk-map-full/B10.2/independent-oracle/report.json
+stderr: bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DERIVED report fields: B10.2 rc=0 status=passed elapsed_seconds=1.381
+status: "passed"
+source_unchanged: true
+release_certification: "incomplete: reporting/adoption/audit exits require separate evidence"
+started_utc: "20260907T061140.681758Z"
+finished_utc: "2026-09-07T07:26:47.480384+00:00"
+unrun: [{"command": ["./scripts/test_exec.sh", "--write-baseline=scripts/exec_ci_baseline.txt", "tests/ci"], "id": "C1", "tier": "C"}, {"command": ["./scripts/fuzz_csmith.sh"], "id": "C2", "tier": "C"}, {"command": ["./scripts/test_csmith_corpus.sh", "--check-baseline"], "id": "C3", "tier": "C"}, {"command": ["./scripts/test_ci_sweep.sh", "--all-suites"], "id": "C4", "tier": "C"}]

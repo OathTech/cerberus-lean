@@ -1,0 +1,7 @@
+METHOD: independent regex ^\[(\d+)/(\d+)\]\s+(\S+)\s+([^\s:]+) over raw direct shard stdout; append .c to basenames and compare with committed baseline by key.
+COMMAND: ./scripts/test_csmith_corpus.sh --check-baseline --shard 2/6
+RAW stdout bytes=422568 sha256=a1c7f26162324a6c6aa0b70c2f541ae7d6b959b37f51ad16b382f1c1ca7007c0
+DERIVED rows=279 sequential_indices=1..279 unique_keys=279 expected_list_keys=279 set_difference=[]
+DERIVED old counts={"CERB_SKIP": 117, "MATCH": 159, "TIMEOUT": 3}
+DERIVED current counts={"CERB_SKIP": 117, "MATCH": 157, "TIMEOUT": 5}
+DERIVED movement=[["sa_csmith_369.c", "MATCH", "TIMEOUT"], ["sa_csmith_371.c", "MATCH", "TIMEOUT"]]

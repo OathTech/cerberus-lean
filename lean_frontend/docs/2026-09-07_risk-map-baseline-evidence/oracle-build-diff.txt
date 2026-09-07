@@ -1,0 +1,450 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+285:  (* skip spaces *)
+289:  (* integer constants *)
+292:  (* C-like strings *)
+295:        (* TODO: check this *)
+304:  (* binary operators *)
+320:  (* negative action *)
+323:  (* list symbols *)
+327:  (* pattern symbols *)
+--- upstream/Makefile
++++ fork/Makefile
+@@ -1,6 +1,15 @@
+ # Checking for required tools.
++# Lean-only targets don't require dune.
++LEAN_TARGETS := lean-prelude-src lean-build clean-lean rebuild-lem
++ifneq ($(MAKECMDGOALS),)
++ifeq ($(filter-out $(LEAN_TARGETS),$(MAKECMDGOALS)),)
++_SKIP_DUNE_CHECK := 1
++endif
++endif
++ifndef _SKIP_DUNE_CHECK
+ ifeq (,$(shell command -v dune 2> /dev/null))
+ $(error "Compilation requires [dune].")
++endif
+ endif
+ ifeq (,$(shell command -v lem 2> /dev/null))
+ $(error "Compilation requires [lem].")
+@@ -182,14 +191,32 @@
+ 
+ LEM_SRC = $(LEM_SRC_RENAMED) \
+ 					$(LEM_SRC_NOT_RENAMED)
++
++# Lean generation list (effect-retirement C1, charter section 3.4 e):
++# the Core_unstruct pair is Lean-dead (imported by nothing in the Lean
++# build; its two Symbol.fresh sites sit inside foldl/map lambdas that
++# would trip the supply transform's G-lambda guard). It stays in
++# LEM_SRC for the OCaml target (upstream's sequentialisation pass,
++# untouched).
++LEM_SRC_LEAN = $(filter-out frontend/model/core_unstruct.lem,$(LEM_SRC))
+ ####
+ 
+ PRELUDE_SRC_DIR = ocaml_frontend/generated
+ OCAML_SRC = $(addprefix $(PRELUDE_SRC_DIR)/, $(addsuffix .ml, $(notdir $(basename $(LEM_SRC_NOT_RENAMED))))) \
+ 						$(addprefix $(PRELUDE_SRC_DIR)/lem_, $(addsuffix .ml, $(notdir $(basename $(LEM_RENAMED)))))
+ 
++# Lem-sync content stamp (hotfix arc/hotfix-libc-floor, 2026-08-22):
++# written ONLY by the generation recipe below, immediately after lem+sed,
++# and verified by tools/check_lem_sync.sh --check (wired into the dune
++# graph via ocaml_frontend/dune `lem_sync_checked` and into
++# scripts/test_unit.sh). Guards against dune-building a STALE generated
++# tree (dune cannot see the .lem sources; make's own dependency is
++# mtime-based and no-ops on stale content after worktree priming).
++# Record: lean_frontend/docs/2026-08-22_arc13-hotfix-libc-floor.md.
++PRELUDE_SYNC_STAMP = ocaml_frontend/lem_sync.sha256
++
+ # All targets generated at once thanks to [&:].
+-$(OCAML_SRC)&: $(LEM_SRC)
++$(OCAML_SRC) $(PRELUDE_SYNC_STAMP)&: $(LEM_SRC)
+ 	@echo "[MKDIR] $(PRELUDE_SRC_DIR)"
+ 	$(Q)mkdir -p $(PRELUDE_SRC_DIR)
+ 	@echo "[LEM] generating files in [$(PRELUDE_SRC_DIR)] (log in [ocaml_frontend/lem.log])"
+@@ -202,6 +229,8 @@
+ 	$(Q)$(SEDI) -e "s/Lem_debug.DB_/Cerb_debug.DB_/g" $(OCAML_SRC)
+ 	$(Q)$(SEDI) -e "1 s/.*/&[@@@warning \"-8\"]/" $(PRELUDE_SRC_DIR)/cmm_csem.ml
+ 	$(Q)$(SEDI) -e "1 s/.*/&[@@@warning \"-8\"]/" $(PRELUDE_SRC_DIR)/cmm_op.ml
++	@echo "[STAMP] recording lem-sync content stamp"
++	$(Q)bash tools/check_lem_sync.sh --record
+ 
+ # Elaboration PP stuff
+ elab_pp:
+@@ -267,12 +296,98 @@
+ .PHONY: clean-prelude-src
+ clean-prelude-src:
+ 	$(Q)rm -rf $(PRELUDE_SRC_DIR)
+-	$(Q)rm -f ocaml_frontend/lem.log
++	$(Q)rm -f ocaml_frontend/lem.log $(PRELUDE_SYNC_STAMP)
+ 
+ .PHONY: clean-sibylfs-src
+ clean-sibylfs-src:
+ 	$(Q)rm -rf $(SIBYLFS_SRC_DIR)
+ 	$(Q)rm -f sibylfs/lem.log
++
++#### Lean frontend (generated from the same LEM_SRC as the OCaml frontend)
++LEAN_SRC_DIR = lean_frontend/generated
++
++# Hand-written Lean files copied into generated/ so they're importable
++# by the generated code (which references them via declare lean target_rep).
++# THE LIST LIVES IN lean_frontend/handwritten_copy.manifest (hotfix
++# fix/freshness-copy-gap, 2026-09-02): one authority shared with
++# tools/check_handwritten_sync.sh, which byte-pins every copy against its
++# source (via check_driver_fresh --record-lean/--check, common.sh
++# build_lean, test_unit.sh). Entries are the lines starting with a letter
++# (comment lines start with '#'). Fail-closed: a missing or empty manifest
++# is a parse-time error, never an empty copy.
++# Main.lean is in the list since arc-4 S5f: it was previously copied only
++# by hand, and a stale generated/Main.lean silently dropped the S1r floor
++# probe from the built binary (audit-2 G2).
++LEAN_HANDWRITTEN_MANIFEST = lean_frontend/handwritten_copy.manifest
++LEAN_HANDWRITTEN := $(strip $(shell sed -n '/^[A-Za-z]/p' $(LEAN_HANDWRITTEN_MANIFEST) 2>/dev/null))
++ifeq (,$(LEAN_HANDWRITTEN))
++$(error "lean_frontend: hand-written copy manifest $(LEAN_HANDWRITTEN_MANIFEST) missing or empty (fail-closed; nothing would be copied into generated/)")
++endif
++
++# Reinstall lem via opam.  Lem is opam-pinned in the LOCAL switch to the
++# container worktree deps/lem-pinned (lem-lean fork, branch cerberus-pin):
++#   opam pin list --switch=.  ->  git+file:///.../deps/lem-pinned#cerberus-pin
++# To move the pin, FIRST move that worktree (git -C ../deps/lem-pinned
++# reset --hard <lem-lean commit>), then run this target: `opam upgrade`
++# rebuilds and installs if the pinned source changed. Path form because the
++# switch is local; --no-depexts because system-package detection fails in
++# the sandbox (container CLAUDE.md, "opam in the sandbox"). Afterwards
++# regenerate both trees (prelude-src, lean-prelude-src): the lem-sync
++# stamps hash sources + outputs, not the lem version.
++.PHONY: rebuild-lem
++rebuild-lem:
++	@echo "[LEM] reinstalling lem from the pinned local source (deps/lem-pinned#cerberus-pin)"
++	$(Q)opam upgrade --switch=. --no-depexts -y lem
++	@echo "[LEM] installed $$(lem -v 2>&1)"
++
++.PHONY: lean-prelude-src
++lean-prelude-src: $(LEM_SRC)
++	@echo "[MKDIR] $(LEAN_SRC_DIR)"
++	$(Q)mkdir -p $(LEAN_SRC_DIR)
++	@# effect-retirement C1: the Core_unstruct pair leaves the Lean build
++	@# (LEM_SRC_LEAN); stale generated copies are removed fail-closed so a
++	@# lingering artifact cannot shadow the build-list drop.
++	$(Q)rm -f $(LEAN_SRC_DIR)/Core_unstruct.lean $(LEAN_SRC_DIR)/Core_unstruct_auxiliary.lean
++	@echo "[LEM] generating Lean files in [$(LEAN_SRC_DIR)] (log in [lean_frontend/lem.log])"
++	$(Q)lem -wl ign -wl_rename warn -wl_pat_red err -wl_pat_exh warn \
++    -outdir $(LEAN_SRC_DIR) -cerberus_pp -lean \
++    $(LEM_SRC_LEAN) 2> lean_frontend/lem.log || (>&2 cat lean_frontend/lem.log; exit 1)
++	@# Workaround: Lem generates bogus `import Operators` from `open SEU.Operators` in core_run.lem
++	$(Q)sed -i'' -e '/^import Operators$$/d' $(LEAN_SRC_DIR)/Core_run.lean
++	@echo "[COPY] $(words $(LEAN_HANDWRITTEN)) hand-written Lean files ($(LEAN_HANDWRITTEN_MANIFEST)) into [$(LEAN_SRC_DIR)]"
++	$(Q)cp $(addprefix lean_frontend/,$(LEAN_HANDWRITTEN)) $(LEAN_SRC_DIR)/
++	$(Q)tools/check_handwritten_sync.sh
++	@echo "[STAMP] recording Lean lem-sync content stamp"
++	$(Q)tools/check_lem_sync.sh --record-lean
++
++# Native C objects linked into lean_frontend executables (lakefile.toml
++# moreLinkArgs). Compiled with the toolchain's leanc (hermetic clang).
++# Lake does NOT track these .o files as link inputs, so after recompiling we
++# delete the linked executables to force a relink on the next lake build.
++# effect-retirement C1: fresh_int/debug/tags retired with their externs
++# (supply threading / value passing / driver-local verbosity); md5 stays
++# — the digest boundary remains (its opaque conversion is C2).
++LEAN_NATIVE = md5
++.PHONY: lean-native-obj
++lean-native-obj:
++	@echo "[LEANC] compiling lean_frontend/native objects"
++	$(Q)cd lean_frontend && SYSROOT=$$(lake env printenv LEAN_SYSROOT) && \
++	  for f in $(LEAN_NATIVE); do \
++	    "$$SYSROOT/bin/leanc" -c -O2 native/$$f.c -o native/$$f.o || exit 1; \
++	  done && rm -f .lake/build/bin/*
++
++.PHONY: lean-build
++lean-build: lean-prelude-src lean-native-obj
++	@echo "[LAKE] building CerberusLean"
++	@# Arc-7 S5c (audit-1 F4): lake runs under the cgroup memory cap
++	@# (D7 rule; scripts/capped falls back loudly without systemd-run).
++	$(Q)cd lean_frontend && ../scripts/capped lake build
++
++.PHONY: clean-lean
++clean-lean:
++	$(Q)rm -rf $(LEAN_SRC_DIR)
++	$(Q)rm -f lean_frontend/lem.log lean_frontend/lem_sync.sha256
++####
+ 
+ .PHONY: clean-web distclean-web
+ clean-web:
+@@ -290,7 +405,7 @@
+ 	$(Q)rm -rf _build/
+ 
+ .PHONY: distclean
+-distclean: clean clean-prelude-src clean-sibylfs-src distclean-web
++distclean: clean clean-prelude-src clean-sibylfs-src clean-lean distclean-web
+ 
+ .PHONY: cerberus-lib
+ cerberus-lib:
+
+--- upstream/backend/driver/dune
++++ fork/backend/driver/dune
+@@ -3,7 +3,7 @@
+  (public_name cerberus)
+  (package cerberus)
+  (modules main)
+- (libraries result cmdliner str unix mem_concrete cerberus-lib.backend_common))
++ (libraries result cmdliner str unix mem_concrete cerberus-lib.backend_common lean_export))
+ 
+ ;(executable
+ ; (name main_symbolic)
+@@ -22,7 +22,7 @@
+  (public_name cerberus-vip)
+  (package cerberus)
+  (modules main_vip)
+- (libraries result cmdliner str unix mem_vip cerberus-lib.backend_common))
++ (libraries result cmdliner str unix mem_vip cerberus-lib.backend_common lean_export))
+ 
+ (rule
+  (target main_vip.ml)
+@@ -34,7 +34,7 @@
+  (public_name cerberus-cheri)
+  (package cerberus-cheri)
+  (modules main_cheri_coq)
+- (libraries result cmdliner str unix mem_cheri_coq cerberus-lib.backend_common)
++ (libraries result cmdliner str unix mem_cheri_coq cerberus-lib.backend_common lean_export)
+  (instrumentation (backend landmarks))
+ )
+ 
+
+--- upstream/backend/lean_export/dune
++++ fork/backend/lean_export/dune
+@@ -0,0 +1,3 @@
++(library
++ (name lean_export)
++ (libraries yojson cerberus-lib.frontend))
+
+--- upstream/cerberus-lib.opam
++++ fork/cerberus-lib.opam
+@@ -26,7 +26,7 @@
+   "ppx_sexp_conv" {>= "v0.14.3" }
+   "sexplib" {>= "v0.14.0"}
+   "cmdliner" {>= "1.1.0"}
+-  "yojson" {>= "2.0.0"}
++  "yojson" {>= "3.0.0"}
+   "lem" {>= "2020-06-03"}
+   "menhir" {>= "20211230"}
+   "result" {>= "1.5"}
+
+--- upstream/cerberus.opam
++++ fork/cerberus.opam
+@@ -26,7 +26,7 @@
+   "ppx_sexp_conv" {>= "v0.14.3" }
+   "sexplib" {>= "v0.14.0"}
+   "cmdliner" {>= "1.1.0"}
+-  "yojson" {>= "2.0.0"}
++  "yojson" {>= "3.0.0"}
+   "lem" {>= "2020-06-03"}
+   "menhir" {>= "20211230"}
+   "result" {>= "1.5"}
+
+--- upstream/ocaml_frontend/dune
++++ fork/ocaml_frontend/dune
+@@ -16,3 +16,28 @@
+   (with-stdout-to version.ml
+     (run ocaml -I +unix unix.cma %{dep:../tools/gen_version.ml})))
+  (mode fallback))
++
++; Lem-sync gate (hotfix arc/hotfix-libc-floor, 2026-08-22): generated/
++; is `make prelude-src` output, and its .lem sources live OUTSIDE the
++; dune workspace (root `dune` (dirs ...) excludes frontend/), so dune
++; cannot track them — a stale generated/ tree silently builds a WRONG
++; oracle binary, which the arc-13 single-supply backstop then refuses
++; wholesale (observed at the arc-13 post-merge certification:
++; CERB_FRESH_FLOOR_VIOLATION window-nodraw on every TU of the
++; runtime/libc/libc.co rule). This rule re-verifies the content-hash
++; stamp written by the Makefile generation recipe on EVERY build
++; ((universe) = never cached, the version.ml precedent above; sandbox
++; none because the checker reads the .lem sources from the source tree
++; via the %{workspace_root}/../.. escape — default build context only,
++; the only context this project uses). runtime/libc's .co rules depend
++; on the lem_sync_checked witness. Record:
++; lean_frontend/docs/2026-08-22_arc13-hotfix-libc-floor.md.
++(rule
++ (targets lem_sync_checked)
++ (deps (universe) (sandbox none))
++ (action
++  (progn
++   (run bash %{workspace_root}/../../tools/check_lem_sync.sh
++        --root %{workspace_root}/../.. --check)
++   (with-stdout-to lem_sync_checked
++    (echo "lem generated tree verified in sync")))))
+
+--- upstream/runtime/libc/dune
++++ fork/runtime/libc/dune
+@@ -1,15 +1,26 @@
+ (include_subdirs unqualified)
+ 
++; NOTE (hotfix arc/hotfix-libc-floor, 2026-08-22): both .co rules
++; depend on ../../ocaml_frontend/lem_sync_checked — the lem-sync gate
++; witness (tools/check_lem_sync.sh via ocaml_frontend/dune). Without
++; it, a `dune build` from a checkout whose gitignored
++; ocaml_frontend/generated/ tree is content-stale w.r.t. the .lem
++; sources builds a wrong oracle whose every C compile the arc-13
++; single-supply backstop refuses (CERB_FRESH_FLOOR_VIOLATION) — first
++; hit exactly here, at the multi-TU libc.co generation. Record:
++; lean_frontend/docs/2026-08-22_arc13-hotfix-libc-floor.md.
+ (rule
+  (target libm.co)
+- (deps src/math.c include/math.h include/stdint.h include/limits.h)
++ (deps src/math.c include/math.h include/stdint.h include/limits.h
++       ../../ocaml_frontend/lem_sync_checked)
+  (action
+   (run cerberus --nolibc -I include -I include/posix --sequentialise
+                 --rewrite -o libm.co src/math.c)))
+ 
+ (rule
+  (targets libc.co libc_inner_arg_temps.co)
+- (deps src/ctype.c src/stdio.c src/stdlib.c src/string.c src/time.c
++ (deps ../../ocaml_frontend/lem_sync_checked
++       src/ctype.c src/stdio.c src/stdlib.c src/string.c src/time.c
+        src/utime.c src/unistd.c src/stat.c src/uio.c src/internal.c
+        src/vfscanf.c src/signal.c src/internal.h
+        ../libcore/std.core
+
+--- upstream/runtime/libcore/impls/i686-apple-darwin10-gcc-4.2.1.impl
++++ fork/runtime/libcore/impls/i686-apple-darwin10-gcc-4.2.1.impl
+@@ -1,93 +1,93 @@
+-(* i686-apple-darwin10-gcc-4.2.1 (GCC) 4.2.1 (Apple Inc. build 5666) (dot 3) *)
++{- i686-apple-darwin10-gcc-4.2.1 (GCC) 4.2.1 (Apple Inc. build 5666) (dot 3) -}
+ 
+-(** J.3.2 Environment *)
++{- J.3.2 Environment -}
+ 
+-(* The mapping between physical source file multibyte characters and the source character set in translation phase 1 (5.1.1.2). *)
+-(* [GCC] Currently, CPP requires its input to be ASCII or UTF-8. The execution character set may be controlled by the user, with
+-         the -fexec-charset and -fwide-exec-charset options. *)
++{- The mapping between physical source file multibyte characters and the source character set in translation phase 1 (5.1.1.2). -}
++{- [GCC] Currently, CPP requires its input to be ASCII or UTF-8. The execution character set may be controlled by the user, with
++         the -fexec-charset and -fwide-exec-charset options.   -}
+ 
+ 
+-(* The name and type of the function called at program startup in a freestanding environment (5.1.2.1). *)
++{- The name and type of the function called at program startup in a freestanding environment (5.1.2.1). -}
+ 
+ 
+ 
+-(* The effect of program termination in a freestanding environment (5.1.2.1). *)
++{- The effect of program termination in a freestanding environment (5.1.2.1). -}
+ 
+ 
+ 
+-(* An alternative manner in which the main function may be defined (5.1.2.2.1). *)
++{- An alternative manner in which the main function may be defined (5.1.2.2.1). -}
+ 
+ 
+ 
+ 
+-(* ... *)
++{- ... -}
+ 
+ 
+-(** J.3.4 Characters *)
++{- J.3.4 Characters -}
+ 
+-(* The number of bits in a byte (3.6). *)
++{- The number of bits in a byte (3.6). -}
+ def bits_in_byte = 8
+ 
+ 
+-(* The values of the members of the execution character set (5.2.1). *)
+-(* [GCC] Determined by ABI. *)
++{- The values of the members of the execution character set (5.2.1). -}
++{- [GCC] Determined by ABI. -}
+ 
+ 
+-(* The unique value of the member of the execution character set produced for each of the standard alphabetic escape sequences (5.2.2). *)
+-(* [GCC] Determined by ABI. *)
++{- The unique value of the member of the execution character set produced for each of the standard alphabetic escape sequences (5.2.2). -}
++{- [GCC] Determined by ABI. -}
+ 
+ 
+-(* The value of a char object into which has been stored any character other than a member of the basic execution character set (6.2.5). *)
+-(* [GCC] Determined by ABI. *)
++{- The value of a char object into which has been stored any character other than a member of the basic execution character set (6.2.5). -}
++{- [GCC] Determined by ABI. -}
+ 
+ 
+-(* Which of signed char or unsigned char has the same range, representation, and behavior as ‘‘plain’’ char (6.2.5, 6.3.1.1). *)
+-(* [GCC] Determined by ABI. The options -funsigned-char and -fsigned-char change the default. *)
++{- Which of signed char or unsigned char has the same range, representation, and behavior as ‘‘plain’’ char (6.2.5, 6.3.1.1). -}
++{- [GCC] Determined by ABI. The options -funsigned-char and -fsigned-char change the default. -}
+ 
+ 
+-(* The mapping of members of the source character set (in character constants and string literals) to members of the execution
+-   character set (6.4.4.4, 5.1.1.2). *)
+-(* [GCC] Determined by ABI. *)
++{- The mapping of members of the source character set (in character constants and string literals) to members of the execution
++   character set (6.4.4.4, 5.1.1.2).   -}
++{- [GCC] Determined by ABI. -}
+ 
+ 
+-(* The value of an integer character constant containing more than one character or containing a character or escape sequence that does
+-   not map to a single-byte execution character (6.4.4.4). *)
+-(* [GCC] See Implementation-defined behavior. *)
++{- The value of an integer character constant containing more than one character or containing a character or escape sequence that does
++   not map to a single-byte execution character (6.4.4.4).   -}
++{- [GCC] See Implementation-defined behavior. -}
+ 
+ 
+-(* The value of a wide character constant containing more than one multibyte character or a single
++{- The value of a wide character constant containing more than one multibyte character or a single
+    multibyte character that maps to multiple members of the extended execution character set, or
+    containing a multibyte character or escape sequence not represented in the extended execution
+-   character set (6.4.4.4). *)
+-(* [GCC] See Implementation-defined behavior. *)
++   character set (6.4.4.4).   -}
++{- [GCC] See Implementation-defined behavior. -}
+ 
+ 
+-  (* The current locale used to convert a wide character constant consisting of a
++  {- The current locale used to convert a wide character constant consisting of a
+      single multibyte character that maps to a member of the extended execution
+-     character set into a corresponding wide character code (6.4.4.4). *)
+-(* [GCC] See Implementation-defined behavior. *)
++     character set into a corresponding wide character code (6.4.4.4).   -}
++{- [GCC] See Implementation-defined behavior. -}
+ 
+ 
+-  (* Whether differently-prefixed wide string literal tokens can be concatenated
++  {- Whether differently-prefixed wide string literal tokens can be concatenated
+      and, if so, the treatment of the resulting multibyte character sequence
+-     (6.4.5). *)
+-(* [GCC] See Implementation-defined behavior. *)
++     (6.4.5).   -}
++{- [GCC] See Implementation-defined behavior. -}
+ 
+ 
+-  (* The current locale used to convert a wide string literal into corresponding
+-     wide character codes (6.4.5). *)
+-(* [GCC] See Implementation-defined behavior. *)
++  {- The current locale used to convert a wide string literal into corresponding
++     wide character codes (6.4.5).   -}
++{- [GCC] See Implementation-defined behavior. -}
+ 
+ 
+-  (* The value of a string literal containing a multibyte character or escape
+-     sequence not represented in the execution character set (6.4.5). *)
+-(* [GCC] See Implementation-defined behavior. *)
++  {- The value of a string literal containing a multibyte character or escape
++     sequence not represented in the execution character set (6.4.5).   -}
++{- [GCC] See Implementation-defined behavior. -}
+ 
+ 
+-  (* The encoding of any of wchar_t, char16_t, and char32_t where the
++  {- The encoding of any of wchar_t, char16_t, and char32_t where the
+      corresponding standard encoding macro (__STDC_ISO_10646__, __STDC_UTF_16__,
+-     or__STDC_UTF_32__) is not defined (6.10.8.2). *)
+-(* [GCC] See Implementation-defined behavior. *)
++     or__STDC_UTF_32__) is not defined (6.10.8.2).   -}
++{- [GCC] See Implementation-defined behavior. -}
+ 
+ 
+ fun sizeof (ty: ctype) : integer :=
+
+OMITTED whole-file addition scripts/common.sh; source bytes=25088 sha256=77f5ab3a841446962926185d3db8c0e3853fada26ff7708fdd3b47dcab0c3413; unified diff bytes=25644 sha256=e746f03e812dac385533248d30378eb1633928c928bde331320c54f105c17a76
+OMITTED whole-file addition tools/check_driver_fresh.sh; source bytes=10610 sha256=e46f9aac905e4afe0b3f673e725bb4428c0c2781bf51659875e658addd453cdb; unified diff bytes=10908 sha256=401c1bc1ae0f338d80ae7bd91f8d71ab9f8f9ac17ef4ccdfe38408ffa1306ce7
+OMITTED whole-file addition tools/check_handwritten_sync.sh; source bytes=6743 sha256=e2d0b6b781462ce2d57f613185fc863d9fff7f6af889172e9bc813f4bf4e3c7c; unified diff bytes=6985 sha256=1c25689c5095c41401889e9367c73f34c526d30ac929e7c7650df2d596037d59
+OMITTED whole-file addition tools/check_lem_sync.sh; source bytes=10461 sha256=9a07e1a9188443cebef04bef184bbac1a876c996fad0caca90ea9b4ce3605292; unified diff bytes=10756 sha256=328394ed093567369d2a1af50097ddee1470d2bfd4341c0d8c999aa055cc7897
+DERIVED i686 noncomment tokens equal: True

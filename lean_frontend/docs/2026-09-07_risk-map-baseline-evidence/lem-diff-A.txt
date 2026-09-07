@@ -1,0 +1,1505 @@
+diff --git a/frontend/concurrency/cmm_op.lem b/frontend/concurrency/cmm_op.lem
+index e34b527e1..1c632917b 100644
+--- a/frontend/concurrency/cmm_op.lem
++++ b/frontend/concurrency/cmm_op.lem
+@@ -14,7 +14,18 @@ open import {hol} `pp_memTheory` `utilTheory`
+ val pretty_stringFromMem_mem_value: forall 'a. 'a -> string
+ declare ocaml target_rep function pretty_stringFromMem_mem_value = `String_mem.string_pretty_of_mem_value_decimal`
+ declare hol  target_rep function pretty_stringFromMem_mem_value = `util$emptyString`
+-declare lean target_rep function pretty_stringFromMem_mem_value = `sorry`
++(* Lean rep (FUEL arc rider, docs/2026-09-02_fuel-arc-design.md section 5;
++   closes the tree's last `sorry`): the val is 'a-polymorphic only because
++   Mem.mem_value did not typecheck here (comment above); its ONLY use site
++   (below, the "CONCUR CHOSE ==> " debug-log string) applies it to
++   Mem.mem_value pairs, so the monomorphic CerbMem.MemValue -> String
++   printer typechecks at both applications. MIRROR-OCAML NOTE: the OCaml
++   rep is the PRETTY decimal printer String_mem.string_pretty_of_mem_value
++   _decimal; CerbMem.stringFromMemValue mirrors String_mem.string_of_mem
++   _value instead — a deliberate, recorded divergence confined to a
++   concurrency-model debug-log string (never oracle-compared; the
++   concurrency model is a declared stub boundary). *)
++declare lean target_rep function pretty_stringFromMem_mem_value = `CerbMem.stringFromMemValue`
+ 
+ import Loc (* Somebody is going to hate me for this *)
+ 
+diff --git a/frontend/model/ail/ailTypesAux.lem b/frontend/model/ail/ailTypesAux.lem
+index 19874c3ed..6a7542a8d 100644
+--- a/frontend/model/ail/ailTypesAux.lem
++++ b/frontend/model/ail/ailTypesAux.lem
+@@ -1336,3 +1336,15 @@ let rec agnostic_alignment_requirement_ord ((Ctype.Ctype _ ty1_) as ty1) ((Ctype
+ declare {lean} fuel val are_compatible = `fuelExhausted false`
+ declare {lean} fuel val are_compatible_params_aux = `fuelExhausted (fun _ => false)`
+ declare {lean} fuel val are_compatible_params = `fuelExhausted false`
++(* FUEL MEASURE (fuel-parameter arc C3, 2026-09-05; Lean-only): the block shares ONE
++   fuel counter, so each member's measure bounds the WHOLE block's call depth from
++   that entry. are_compatible: the two ctypes' derived sizes. are_compatible_params_aux:
++   its recursion argument is the `function` scrutinee (hoisted as `lemTail` since lem
++   d4ba548), a PAIR of parameter lists whose element ctypes are recursed into by
++   are_compatible — the measure is the derived size of both lists (`ctype_.lemSize_aux1`,
++   the backend's helper for `list (qualifiers * ctype * bool)`; `List.length` alone is
++   not sufficient). are_compatible_params calls the aux at fuel - 1 on the same lists,
++   hence its + 2. Proved in lean_frontend/AilTypesAux_lemMeasureProofs.lean. *)
++declare {lean} fuel_measure val are_compatible = `ctype.lemSize p.2 + ctype.lemSize p0.2 + 1`
++declare {lean} fuel_measure val are_compatible_params_aux = `ctype_.lemSize_aux1 lemTail.1 + ctype_.lemSize_aux1 lemTail.2 + 1`
++declare {lean} fuel_measure val are_compatible_params = `ctype_.lemSize_aux1 params1 + ctype_.lemSize_aux1 params2 + 2`
+diff --git a/frontend/model/annot.lem b/frontend/model/annot.lem
+index f88e7f9f0..07942a82e 100644
+--- a/frontend/model/annot.lem
++++ b/frontend/model/annot.lem
+@@ -325,10 +325,10 @@ let set_loc loc annots =
+   Aloc loc :: annots'
+ 
+ (* === Totality declares (arc 7 S5a, 2026-08-20): Lean-target only.
+-   get_loc is an arc-3 F8 call-graph escapee on the slate theorems'
+-   kernel path (S4 record §6.3 event 2: step_ctx consults it on every
++   get_loc is on the execution path (step_ctx consults it on every
+    driver step); the other six get_* are the same list-walk shape, so
+-   the whole module totalizes and the totality gate can adopt Annot.
++   the whole module totalizes and the totality gate
++   (scripts/check_exec_totality.sh) can adopt Annot.
+    All structural recursions on the annots list -> automatic. === *)
+ declare {lean} termination_argument get_loc = automatic
+ declare {lean} termination_argument get_typedef = automatic
+diff --git a/frontend/model/cabs_to_ail.lem b/frontend/model/cabs_to_ail.lem
+index 5b2562b46..c7da606d9 100644
+--- a/frontend/model/cabs_to_ail.lem
++++ b/frontend/model/cabs_to_ail.lem
+@@ -1128,8 +1128,15 @@ val evaluate_integer_constant_expression: Loc.t -> maybe Ctype.ctype -> expressi
+ let evaluate_integer_constant_expression loc ty_opt expr =
+   E.get_core_eval_stuff >>= fun core_env ->
+   E.get_sigma_sofar >>= fun sigm ->
++  (* C1 m2: the const-expr mini-run draws the supply from the desugar
++     state and restores the final value to it (S1 single stream; DEAD
++     round-trip on the OCaml target, where the mini-run draws
++     ambiently) *)
++  E.get_fresh_sym_supply >>= fun sup ->
+   E.liftException
+-      (Mini_pipeline.evalIntegerConstantExpression loc core_env sigm ty_opt expr)
++      (Mini_pipeline.evalIntegerConstantExpression sup loc core_env sigm ty_opt expr) >>= fun (n, sup') ->
++  E.set_fresh_sym_supply sup' >>
++  E.return n
+ 
+ 
+ 
+@@ -4958,9 +4965,14 @@ let register_additional_cn_var id = E.register_cn_ident CN_vars id
+ 
+ 
+ import Core
+-val desugar: (map string Symbol.sym) * Core.fun_map unit * Core.impl -> Cn_desugaring.init_scope -> string -> translation_unit ->
+-  Exception.exceptM (E.fin_markers_env * ail_program unit) Errors.error
+-let desugar core_eval_stuff cn_eval_stuff startup_str (TUnit edecls) =
++(* C1 (effect retirement): the entry threads the pipeline's single
++   fresh-symbol stream (S1) — takes the current supply, seeds the
++   desugar state with it, and returns the final supply beside the
++   result. DEAD on the OCaml target (ambient counter; callers pass 0
++   and ignore the returned component). *)
++val desugar: nat -> (map string Symbol.sym) * Core.fun_map unit * Core.impl -> Cn_desugaring.init_scope -> string -> translation_unit ->
++  Exception.exceptM (E.fin_markers_env * ail_program unit * nat) Errors.error
++let desugar sup core_eval_stuff cn_eval_stuff startup_str (TUnit edecls) =
+ (*
+   E.eval sym_counter core_eval_stuff cn_eval_stuff (
+     E.under_scope E.Scope_file (
+@@ -5035,7 +5047,7 @@ let desugar core_eval_stuff cn_eval_stuff startup_str (TUnit edecls) =
+     )
+   ) 
+ *)
+-  E.eval core_eval_stuff cn_eval_stuff (
++  E.eval sup core_eval_stuff cn_eval_stuff (
+     E.under_scope E.Scope_file (
+       register_cn_predicate_names edecls                       >>= fun () ->
+       register_cn_function_names edecls                        >>= fun () ->
+diff --git a/frontend/model/cabs_to_ail_effect.lem b/frontend/model/cabs_to_ail_effect.lem
+index ce5d0d5f6..cafc3d9f4 100644
+--- a/frontend/model/cabs_to_ail_effect.lem
++++ b/frontend/model/cabs_to_ail_effect.lem
+@@ -568,12 +568,18 @@ let empty_switch_info =
+ 
+ 
+ (* ========================================================================== *)
+-val initial_state: (map string Symbol.sym) * Core.fun_map unit * Core.impl -> Cn_desugaring.init_scope -> state_with_markers
+-let initial_state core_eval_stuff cn_eval_stuff = <|
++(* C1 (effect retirement, S1 single-stream ruling): the desugar state's
++   fresh_sym_supply is seeded from the pipeline's single stream (the
++   entry's explicit supply parameter) instead of a fixed 0 — one
++   stream: Main seeds it once; desugar, const-expr mini-runs,
++   elaboration and the run-init seed all draw from and return to it.
++   On the OCaml target the field stays DEAD (arc-13 scheme R-B). *)
++val initial_state: nat -> (map string Symbol.sym) * Core.fun_map unit * Core.impl -> Cn_desugaring.init_scope -> state_with_markers
++let initial_state fresh_sym_supply_seed core_eval_stuff cn_eval_stuff = <|
+   inner= <|
+     aux_supply=      0;
+     scope_id_supply= 0;
+-    fresh_sym_supply= 0;
++    fresh_sym_supply= fresh_sym_supply_seed;
+     
+     registered_external_identifiers= Map.empty;
+     registered_identifiers=      Scope_table.empty;
+@@ -682,13 +688,25 @@ let fin_markers_env () =
+   State_exception.return (id, st.markers_env)
+ 
+ 
+-val eval: forall 'a. (map string Symbol.sym) * Core.fun_map unit * Core.impl -> Cn_desugaring.init_scope -> desugM 'a -> Exception.exceptM (fin_markers_env * 'a) Errors.error
+-let cabs_to_ail_effect_eval core_eval_stuff cn_eval_stuff m =
++(* C1: the desugar supply threads in and out of the evaluation (S1
++   single stream) — the caller passes the current stream value and
++   receives the final one beside the result. *)
++val get_fresh_sym_supply: desugM nat
++let get_fresh_sym_supply =
++  modify_inner (fun st -> (st.fresh_sym_supply, st))
++
++val set_fresh_sym_supply: nat -> desugM unit
++let set_fresh_sym_supply n =
++  modify_inner (fun st -> ((), <| st with fresh_sym_supply= n |>))
++
++val eval: forall 'a. nat -> (map string Symbol.sym) * Core.fun_map unit * Core.impl -> Cn_desugaring.init_scope -> desugM 'a -> Exception.exceptM (fin_markers_env * 'a * nat) Errors.error
++let cabs_to_ail_effect_eval sup core_eval_stuff cn_eval_stuff m =
+   State_exception.eval begin
+     m >>= fun res ->
+     fin_markers_env () >>= fun markers ->
+-    State_exception.return (markers, res)
+-  end (initial_state core_eval_stuff cn_eval_stuff)
++    get_fresh_sym_supply >>= fun sup' ->
++    State_exception.return (markers, res, sup')
++  end (initial_state sup core_eval_stuff cn_eval_stuff)
+ let inline eval = cabs_to_ail_effect_eval
+ 
+ 
+diff --git a/frontend/model/core.lem b/frontend/model/core.lem
+index f63625a6c..cfc92c855 100644
+--- a/frontend/model/core.lem
++++ b/frontend/model/core.lem
+@@ -461,8 +461,7 @@ instance (SetType polarity)
+ end
+ 
+ (* === Totality declares (arc 7 S5a, 2026-08-20): Lean-target only.
+-   eq_core_object_type is an arc-3 F8 call-graph escapee on the slate
+-   theorems' kernel path (S4 record §6.3 event 2, via Core_aux);
++   eq_core_object_type is on the execution path (via Core_aux);
+    eq_core_base_type is the module's only other partial (totality-gate
+    adoption of Core). eq_core_object_type: structural pair-component
+    recursion -> automatic. eq_core_base_type: the BTy_tuple arm passes
+@@ -471,3 +470,8 @@ end
+    (Bool return; honesty lives in the opaque runtime panic). === *)
+ declare {lean} termination_argument eq_core_object_type = automatic
+ declare {lean} fuel val eq_core_base_type = `fuelExhausted false`
++(* FUEL MEASURE (fuel-parameter arc C1 / D2 enablers, 2026-09-04; Lean-only):
++   `eq_core_base_type` is an `Eq` instance method; its counter starts from the
++   derived size `core_base_type.lemSize bTy1`; obligation proved in
++   lean_frontend/Core_lemMeasureProofs.lean. *)
++declare {lean} fuel_measure val eq_core_base_type = `lemSize bTy1`
+diff --git a/frontend/model/core_aux.lem b/frontend/model/core_aux.lem
+index 2cf34df5d..a75b6abb8 100644
+--- a/frontend/model/core_aux.lem
++++ b/frontend/model/core_aux.lem
+@@ -2535,21 +2535,44 @@ declare {lean} termination_argument select_case = automatic
+ declare {lean} termination_argument lookup_env = automatic
+ declare {lean} termination_argument collect_labeled_continuations = automatic
+ declare {lean} fuel val in_pattern = `fuelExhausted false`
++(* FUEL MEASURE (fuel-parameter arc C2, 2026-09-04; Lean-only): each measure is the
++   derived structural size of the argument the recursion descends
++   (pattern/pexpr/expr; `CerbMem.memValueSize` for the hand-written MemValue;
++   the ctype for memValueFromValue); to_pures shares to_pure's counter and
++   starts from the derived list helper. Proofs in
++   lean_frontend/Core_aux_lemMeasureProofs.lean. *)
++declare {lean} fuel_measure val in_pattern = `lemSize g`
+ declare {lean} fuel val subst_wait = `fuelExhausted g`
++declare {lean} fuel_measure val subst_wait = `lemSize g`
+ declare {lean} fuel val find_labeled_continuation2_aux = `fuelExhausted acc`
++declare {lean} fuel_measure val find_labeled_continuation2_aux = `lemSize g`
+ declare {lean} fuel val loadedValueFromMemValue = `fuelExhausted (OTy_integer, LVunspecified (Ctype [] Void0))`
++declare {lean} fuel_measure val loadedValueFromMemValue = `CerbMem.memValueSize mem_val`
+ declare {lean} fuel val memValueFromValue = `fuelExhausted none`
++declare {lean} fuel_measure val memValueFromValue = `lemSize ty1`
+ declare {lean} fuel val subst_sym_pexpr = `fuelExhausted g`
++declare {lean} fuel_measure val subst_sym_pexpr = `lemSize g`
+ declare {lean} fuel val subst_sym_expr = `fuelExhausted g`
++declare {lean} fuel_measure val subst_sym_expr = `lemSize g`
+ declare {lean} fuel val subst_pattern_val = `fuelExhausted expr1`
++declare {lean} fuel_measure val subst_pattern_val = `lemSize g`
+ declare {lean} fuel val unsafe_subst_sym_pexpr = `fuelExhausted g0`
++declare {lean} fuel_measure val unsafe_subst_sym_pexpr = `lemSize g0`
+ declare {lean} fuel val unsafe_subst_sym_expr = `fuelExhausted g`
++declare {lean} fuel_measure val unsafe_subst_sym_expr = `lemSize g`
+ declare {lean} fuel val unsafe_subst_pattern = `fuelExhausted expr1`
++declare {lean} fuel_measure val unsafe_subst_pattern = `lemSize g`
+ declare {lean} fuel val subst_pattern = `fuelExhausted none`
++declare {lean} fuel_measure val subst_pattern = `lemSize g`
+ declare {lean} fuel val match_pattern = `fuelExhausted none`
++declare {lean} fuel_measure val match_pattern = `lemSize g`
+ declare {lean} fuel val to_pure = `fuelExhausted none`
+ declare {lean} fuel val to_pures = `fuelExhausted none`
+ declare {lean} fuel val collect_saves_aux = `fuelExhausted st`
++declare {lean} fuel_measure val collect_saves_aux = `lemSize g`
+ declare {lean} fuel val m_collect_saves_aux = `fuelExhausted st`
++declare {lean} fuel_measure val m_collect_saves_aux = `lemSize g`
+ declare {lean} fuel val find_labeled_continuation = `fuelExhausted none`
++declare {lean} fuel_measure val find_labeled_continuation = `lemSize g`
+ declare {lean} fuel val update_env_aux = `fuelExhausted env1`
++declare {lean} fuel_measure val update_env_aux = `lemSize g`
+diff --git a/frontend/model/core_eval.lem b/frontend/model/core_eval.lem
+index 2656151f3..57e5c8364 100644
+--- a/frontend/model/core_eval.lem
++++ b/frontend/model/core_eval.lem
+@@ -1215,8 +1215,18 @@ let eval_pexpr loc current_call_loc_opt core_extern env mem_st_opt file pe =
+    `| Nat.succ lemFuel =>` match arm (Lean: `Type mismatch
+    exception_undef_bind ...` + `unexpected token '('`). Needs a lem-lane
+    fix (parenthesize the succ-arm body) before it can be fueled. === *)
++(* FUEL-PARAMETER ARC C2 (2026-09-04; Lean-only): eval_pexpr_aux2 /
++   eval_pexpr_aux_broken are step-until-value loops (class (B)); their
++   exhaustion payload is the undefined-monad's ABSORBING `Error` outcome at the
++   fuel atom (`exception_undef_bind` propagates it; the driver kills on it),
++   never a value the run continues with. *)
+ declare {lean} fuel val pull_constrained = `fuelExhausted g`
++(* FUEL MEASURE (fuel-parameter arc C2, 2026-09-04; Lean-only): structural on the
++   pexpr's derived size (every `self` argument is a component of the matched
++   pexpr); proofs in lean_frontend/Core_eval_lemMeasureProofs.lean. *)
++declare {lean} fuel_measure val pull_constrained = `lemSize g`
+ declare {lean} fuel val step_eval_pexpr = `fuelExhausted (Result (Undef CerbLocation.Loc.unknown []))`
+-declare {lean} fuel val eval_pexpr_aux2 = `fuelExhausted (Result (Undef CerbLocation.Loc.unknown []))`
++declare {lean} fuel_measure val step_eval_pexpr = `lemSize pexpr1`
++declare {lean} fuel val eval_pexpr_aux2 = `Result (Error CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg)`
+ (* un-parked after the lem succ-arm parenthesization fix (arc-3 batch E) *)
+-declare {lean} fuel val eval_pexpr_aux_broken = `fuelExhausted (Result (Undef CerbLocation.Loc.unknown []))`
++declare {lean} fuel val eval_pexpr_aux_broken = `Result (Error CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg)`
+diff --git a/frontend/model/core_reduction.lem b/frontend/model/core_reduction.lem
+index a1ecb37af..26faa550c 100644
+--- a/frontend/model/core_reduction.lem
++++ b/frontend/model/core_reduction.lem
+@@ -1508,13 +1508,34 @@ let step_ctx mem_st file core_extern current_tid (parent_tid_opt, th_st) =
+    lem-lane fix (parenthesize the succ-arm body) before it can be fueled. === *)
+ declare {lean} fuel val one_step_unseq_aux = `fuelExhausted (fun _ => none)`
+ declare {lean} fuel val has_ccall = `fuelExhausted false`
++(* FUEL MEASURE (fuel-parameter arc C2, 2026-09-04; Lean-only): structural on the
++   expression's derived size; proved in lean_frontend/Core_reduction_lemMeasureProofs.lean. *)
++declare {lean} fuel_measure val has_ccall = `lemSize g`
+ declare {lean} termination_argument is_unseq_with_ccall_aux = automatic
+ declare {lean} fuel val get_ctx = `fuelExhausted []`
+ declare {lean} fuel val get_ctx_unseq_aux = `fuelExhausted (fun _ => acc)`
++(* FUEL MEASURE (fuel-parameter arc C3, 2026-09-05; Lean-only): the three point-free
++   `function` tails, measurable since lem d4ba548 hoists the scrutinee into the head
++   as `lemTail`. one_step_unseq_aux recurses on the tail of `lemTail` only.
++   get_ctx/get_ctx_unseq_aux share ONE fuel counter: get_ctx descends into a
++   subexpression or hands the Eunseq operand list to the aux, which recurses into
++   get_ctx on each element and on the rest of the list — so the aux's measure is the
++   derived size of the WHOLE list (elements included; `List.length` alone is not
++   sufficient), and every cross-call strictly decreases the callee's measure. Proved in
++   lean_frontend/Core_reduction_lemMeasureProofs.lean. *)
++declare {lean} fuel_measure val one_step_unseq_aux = `List.length lemTail + 1`
++declare {lean} fuel_measure val get_ctx = `lemSize g + 1`
++declare {lean} fuel_measure val get_ctx_unseq_aux = `generic_expr_.lemSize_aux2 lemTail + 1`
+ declare {lean} termination_argument apply_ctx = automatic
+ declare {lean} termination_argument break_at_sseq = automatic
+ declare {lean} termination_argument break_at_bound_and_sseq = automatic
+ declare {lean} termination_argument pull_dyn_annotations = automatic
+ declare {lean} termination_argument add_exclusion = automatic
+ (* un-parked after the lem succ-arm parenthesization fix (arc-3 batch E) *)
+-declare {lean} fuel val full_eval_pexpr = `fuelExhausted (fun st => Result (Undef CerbLocation.Loc.unknown [], st))`
++(* FUEL-PARAMETER ARC C2 (2026-09-04; Lean-only): the exhaustion payload of the
++   step-until-value loop is the ABSORBING element of its monad — the
++   undefined-monad `Error` outcome at the fuel atom, which every
++   `stExceptUndef_bind` propagates and the driver turns into
++   `kill (Error0 CerbFuel.fuelExhaustedLoc ...)` — never a value the run
++   continues with (consumer requirement (B); C2 record). *)
++declare {lean} fuel val full_eval_pexpr = `fun st => Result (Error CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg, st)`
+diff --git a/frontend/model/core_run_aux.lem b/frontend/model/core_run_aux.lem
+index a00608b9e..07e9a4714 100644
+--- a/frontend/model/core_run_aux.lem
++++ b/frontend/model/core_run_aux.lem
+@@ -268,6 +268,7 @@ end
+ val initial_io_state: io_state
+ val initial_core_state: core_state
+ val initial_core_run_state: map Symbol.sym (labeled_continuations core_run_annotation) -> core_run_state
++val initial_core_run_state_given: nat -> map Symbol.sym (labeled_continuations core_run_annotation) -> core_run_state
+ 
+ let initial_io_state = <|
+   stdout= Dlist.nil;
+@@ -279,16 +280,24 @@ let initial_core_state = <|
+   io= initial_io_state;
+ |>
+ 
+-let initial_core_run_state xs = <|
++(* C1 (effect retirement): the pure explicit-seed constructor — the
++   run-state builder for callers that thread their own supply (the
++   const-expr mini-run seeds it from the desugar-held stream). *)
++let initial_core_run_state_given sup xs = <|
+   tid_supply=      0;
+   aid_supply=      0;
+   excluded_supply= 0;
+-  (* the ONE ambient read: everything after init is threaded *)
+-  sym_supply=      Symbol.fresh_int ();
+-  
++  sym_supply=      sup;
++
+   (*env=     [Map.empty];*)
+   labeled= xs;
+ |>
++
++(* the ONE former-ambient read, now a supply draw (Lean: supply-lifted
++   by the fresh_int supply declare — takes the current supply, returns
++   the next; everything after init is threaded) *)
++let initial_core_run_state xs =
++  initial_core_run_state_given (Symbol.fresh_int ()) xs
+ (* arc-13 D1 (renumbering, scheme R-B): on the OCaml target the run
+    state carries NO seed draw (sym_supply dead — run symbols are minted
+    ambiently, see core_run.lem fresh_symbol'); the seed above is the
+@@ -297,30 +306,6 @@ let initial_core_run_state xs = <|
+    See lean_frontend/docs/2026-08-22_arc13-s0-scheme-decision.md. *)
+ declare ocaml target_rep function initial_core_run_state = `Fork_renumber.initial_core_run_state`
+ 
+-(* Thread-B lem totalization slice (2026-08-29), effect-wrapper census
+-   item 1 (docs/2026-08-27_v0-statements-and-ban.md §5.2; the wrapper's
+-   NAME is deliberately not written here — the exec-purity gate greps
+-   generated comments too, fail-closed): the
+-   SEED-EXPLICIT initial state, generated for the Lean target only
+-   (~{ocaml}: the OCaml scheme keeps sym_supply dead per arc-13 D1
+-   above; no val spec, so no OCaml comment emission — the OCaml output
+-   stays byte-identical). This is the effect-spike route (branch
+-   effect-spike @ 7f4100a5c) landed as a GENERATED def: statements
+-   thread the seed here instead of the ambient draw; the hand twin
+-   RelSem.Cerb.initial_core_run_state_threaded (relsemcore
+-   RelSem/Threaded.lean) now agrees with it BY THEOREM
+-   (RelSem.TotalizationSmoke). The ambient initial_core_run_state
+-   above is UNTOUCHED: it remains the executable/differential face's
+-   one ambient read (census site 1, now bypassable at
+-   statement level without any hand mirror). *)
+-let ~{ocaml} initial_core_run_state_seeded (seed : nat) xs = <|
+-  tid_supply=      0;
+-  aid_supply=      0;
+-  excluded_supply= 0;
+-  sym_supply=      seed;
+-  labeled= xs;
+-|>
+-
+ 
+ let empty_annotation = <|
+   sb_before  = {};
+@@ -758,14 +743,21 @@ declare {lean} termination_argument subst_wait_stack = automatic
+ (* pair-list (Ecase) recursion is beyond Lean's automatic derivation
+    (arc-3 design note): fuel with the input expression as witness. *)
+ declare {lean} fuel val add_to_sb = `fuelExhausted g`
++(* FUEL MEASURE (fuel-parameter arc C2, 2026-09-04; Lean-only): structural on the
++   expression's derived size; obligations proved in
++   lean_frontend/Core_run_aux_lemMeasureProofs.lean. *)
++declare {lean} fuel_measure val add_to_sb = `lemSize g`
+ declare {lean} termination_argument add_to_sb_continuation = automatic
+ declare {lean} termination_argument add_to_sb_stack = automatic
+ declare {lean} fuel val add_to_asw = `fuelExhausted g`
++declare {lean} fuel_measure val add_to_asw = `lemSize g`
+ declare {lean} termination_argument add_to_asw_continuation = automatic
+ declare {lean} termination_argument add_to_asw_stack = automatic
+ declare {lean} termination_argument comma_list = automatic
+ declare {lean} fuel val convert_pexpr = `fuelExhausted (Pexpr [] () (PEval Vunit))`
++declare {lean} fuel_measure val convert_pexpr = `lemSize g`
+ declare {lean} fuel val convert_expr = `fuelExhausted (Expr [] (Epure (Pexpr [] () (PEval Vunit))))`
++declare {lean} fuel_measure val convert_expr = `lemSize g`
+ declare {lean} termination_argument convert_action_ = automatic
+ declare {lean} termination_argument convert_action = automatic
+ declare {lean} termination_argument convert_paction = automatic
+diff --git a/frontend/model/ctype.lem b/frontend/model/ctype.lem
+index b857c9ab0..88c4178e7 100644
+--- a/frontend/model/ctype.lem
++++ b/frontend/model/ctype.lem
+@@ -418,11 +418,19 @@ let is_ptr_t (Ctype _ ty_) =
+   end
+ 
+ (* === Totality declares (arc 7 S5a, 2026-08-20): Lean-target only.
+-   ctypeEqual is an arc-3 F8 call-graph escapee on the slate theorems'
+-   kernel path (S4 record §6.3 event 2: the store guard's
++   ctypeEqual is on the execution path (the store guard's
+    ctypeMemCompatible and conv_int's ty = '_Bool' value equality).
+    Fuel, not automatic: the Function arm recurses under a let-bound
+    lambda applied by List.all over a zipped pair list (the arc-3 D6
+    beyond-automatic shape). Witness false (Bool return; honesty lives
+    in the opaque runtime panic, not the witness). === *)
+ declare {lean} fuel val ctypeEqual = `fuelExhausted false`
++(* FUEL MEASURE (fuel-parameter arc C1 / D2 enablers, 2026-09-04; Lean-only,
++   no OCaml effect): the fuel'd equality is an `Eq` instance method, which
++   cannot take the ambient [LemFuel]; its wrapper instantiates the counter
++   from the backend-derived structural size of the first argument
++   (`ctype.lemSize c`) — fuel-free for callers, kernel-computable; the
++   sufficiency obligation `ctypeEqual_measure_sufficient` is emitted into
++   Ctype_auxiliary.lean and proved in lean_frontend/Ctype_lemMeasureProofs.lean
++   (lem-lean doc/lean-backend/2026-09-04_d2-enablers-record.md §4.5). *)
++declare {lean} fuel_measure val ctypeEqual = `lemSize c`
+diff --git a/frontend/model/ctype_aux.lem b/frontend/model/ctype_aux.lem
+index 0af5b995a..4bfddfb5c 100644
+--- a/frontend/model/ctype_aux.lem
++++ b/frontend/model/ctype_aux.lem
+@@ -13,22 +13,28 @@ val with_tagDefs: forall 'a. map Symbol.sym (Loc.t * tag_definition) -> (unit ->
+ 
+ declare ocaml target_rep function tagDefs = `Tags.tagDefs`
+ declare ocaml target_rep function set_tagDefs = `Tags.set_tagDefs`
++(* C1 (effect retirement, charter section 4): on the Lean target the
++   tag-definition GLOBAL is gone — the linked table is passed as a
++   value. tagDefs stays an ambient READER (arc-1 ruling 2026-08-18):
++   every def that transitively reads it takes '_lemReader_tagDefs' as
++   a leading parameter, seeded by the hand-written entry points; the
++   stub rep below satisfies lem's target-coverage check but is never
++   emitted at applied call sites (fail-closed panic if it ever is).
++   The write scaffold (set_tagDefs/reset_tagDefs) and the CerbTags IO
++   externs are DELETED on Lean (no Lean rep — no .lem code calls them
++   and Main no longer does either); the OCaml oracle keeps its Tags
++   module untouched. with_tagDefs keeps its whole-extent role on the
++   OCaml target via the redirect; on Lean its lem body is the plain
++   application (the reader seeding carries the value instead — see
++   mini_pipeline.run_const_expr_driver). *)
++let with_tagDefs tds f = f ()
+ declare ocaml target_rep function with_tagDefs = `Tags.with_tagDefs`
+ 
+ declare hol target_rep function tagDefs = `tagDefs`
+-(* Lean: tagDefs is an ambient READER (arc-1 ruling 2026-08-18, see
+-   lean_frontend/docs/2026-08-18_effects-totality-design.md): every def that
+-   transitively reads it takes '_lemReader_tagDefs' as a leading parameter,
+-   seeded by the hand-written entry points. The target_rep below satisfies
+-   lem's target-coverage check but is never emitted at applied call sites.
+-   Writes (set_tagDefs/reset_tagDefs) remain execution-only scaffold. *)
+-declare lean target_rep function tagDefs u = `CerbTags.tagDefsIO` u
++declare lean target_rep function tagDefs u = `CerbTags.tagDefsUnreachable` u
+ declare {lean} reader val tagDefs
+ declare hol target_rep function set_tagDefs = `set_tagDefs`
+-declare lean target_rep function set_tagDefs tds = `CerbTags.setTagDefsIO` tds
+-declare {lean} effectful val set_tagDefs
+ declare hol target_rep function with_tagDefs = `with_tagDefs`
+-declare lean target_rep function with_tagDefs = `CerbTags.with_tagDefs`
+ 
+ val get_membersDefs: Symbol.sym -> tag_definition
+ let get_membersDefs tag_sym =
+@@ -74,8 +80,6 @@ let get_unionDef tag_sym =
+ 
+ val reset_tagDefs: unit -> unit
+ declare ocaml target_rep function reset_tagDefs = `Tags.reset_tagDefs`
+-declare lean target_rep function reset_tagDefs u = `CerbTags.resetTagDefsIO` u
+-declare {lean} effectful val reset_tagDefs
+ 
+ 
+ 
+diff --git a/frontend/model/defacto_memory.lem b/frontend/model/defacto_memory.lem
+index 987229adf..9162b9609 100644
+--- a/frontend/model/defacto_memory.lem
++++ b/frontend/model/defacto_memory.lem
+@@ -2669,10 +2669,25 @@ declare {lean} termination_argument impl_sizeof_ival_aux = automatic
+ declare {lean} termination_argument isBeginningShift = automatic
+ declare {lean} termination_argument silly_sh_eq = automatic
+ declare {lean} fuel val has_concurRead = `fuelExhausted false`
++(* FUEL MEASURE (fuel-parameter arc C2, 2026-09-04; Lean-only): structural on the
++   integer value's derived size; proved in lean_frontend/Defacto_memory_lemMeasureProofs.lean. *)
++declare {lean} fuel_measure val has_concurRead = `lemSize ival_`
+ declare {lean} termination_argument anyM = automatic
+ declare {lean} termination_argument fold_memcmp_compare = automatic
+-declare {lean} fuel val find_array_index = `fuelExhausted (ND (fun st => (NDkilled (Undef0 CerbLocation.Loc.unknown []), st)))`
+-declare {lean} fuel val easy_update_mem_value_aux = `fuelExhausted (ND (fun st => (NDkilled (Undef0 CerbLocation.Loc.unknown []), st)))`
+-declare {lean} fuel val memcmp_load_aux = `fuelExhausted (ND (fun st => (NDkilled (Undef0 CerbLocation.Loc.unknown []), st)))`
++(* FUEL ARC (2026-09-03, docs/2026-09-02_fuel-arc-design.md section 1.2):
++   the three impl_memM-typed fueled workers' fuel-zero arms are the same
++   DISTINGUISHED kill as the driver family's (`CerbND.fuelExhaustedKill`,
++   'err-polymorphic), unwrapped; liftND/liftAction propagate it unchanged
++   into driverM. Budget stays lemDefaultFuel (design note Q4). *)
++declare {lean} fuel val find_array_index = `ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
++(* FUEL MEASURE (fuel-parameter arc C2, 2026-09-04; Lean-only): the index i climbs
++   to size (ND-typed but data-bounded); the shift path sh is consumed one
++   element per step; offset climbs to max_offset. Proofs in
++   lean_frontend/Defacto_memory_lemMeasureProofs.lean. *)
++declare {lean} fuel_measure val find_array_index = `size - i + 1`
++declare {lean} fuel val easy_update_mem_value_aux = `ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
++declare {lean} fuel_measure val easy_update_mem_value_aux = `List.length sh + 1`
++declare {lean} fuel val memcmp_load_aux = `ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
++declare {lean} fuel_measure val memcmp_load_aux = `Int.toNat (max_offset - offset) + 1`
+ declare {lean} termination_argument memcmp_compare = automatic
+ declare {lean} fuel val mkUnspec = `fuelExhausted (MVarray [])`
+diff --git a/frontend/model/defacto_memory_aux.lem b/frontend/model/defacto_memory_aux.lem
+index 6e36e92ad..395b85467 100644
+--- a/frontend/model/defacto_memory_aux.lem
++++ b/frontend/model/defacto_memory_aux.lem
+@@ -462,8 +462,20 @@ let lifted_simplify_integer_value_base ival_ =
+    simplify_integer_value_base: SOFT sentinel — on fuel exhaustion it
+    returns its input unsimplified (Sum.inr ival_), semantically clean. === *)
+ declare {lean} fuel val tmp_compl_aux = `fuelExhausted ((0 : Int))`
++(* FUEL MEASURE (fuel-parameter arc C2, 2026-09-04; Lean-only): nbits counts down to 0
++   (the four bit-twiddling helpers); obligations proved in
++   lean_frontend/Defacto_memory_aux_lemMeasureProofs.lean. *)
++declare {lean} fuel_measure val tmp_compl_aux = `nbits + 1`
+ declare {lean} fuel val tmp_AND_aux = `fuelExhausted ((0 : Int))`
++declare {lean} fuel_measure val tmp_AND_aux = `nbits + 1`
+ declare {lean} fuel val tmp_OR_aux = `fuelExhausted ((0 : Int))`
++declare {lean} fuel_measure val tmp_OR_aux = `nbits + 1`
+ declare {lean} fuel val tmp_XOR_aux = `fuelExhausted ((0 : Int))`
++declare {lean} fuel_measure val tmp_XOR_aux = `nbits + 1`
+ declare {lean} fuel val fake_mem_value_eq = `fuelExhausted false`
++(* FUEL MEASURE (fuel-parameter arc C1 / D2 enablers, 2026-09-04; Lean-only):
++   `fake_mem_value_eq` is an `Eq` instance method; its counter starts from the
++   derived size `impl_mem_value.lemSize mval1` (Defacto_memory_types);
++   obligation proved in lean_frontend/Defacto_memory_aux_lemMeasureProofs.lean. *)
++declare {lean} fuel_measure val fake_mem_value_eq = `lemSize mval1`
+ declare {lean} fuel val simplify_integer_value_base = `Sum.inr ival_`
+diff --git a/frontend/model/driver.lem b/frontend/model/driver.lem
+index ecf405a5a..87a5dedb9 100644
+--- a/frontend/model/driver.lem
++++ b/frontend/model/driver.lem
+@@ -1506,12 +1506,19 @@ let finalize debug_str dr_st =
+ 
+ (* TODO: it is problematic for proofy backend that this function may diverge *)
+ (* TODO: HACK *)
+-let initial_driver_state file fs_state =
++(* C1 (effect retirement): the record builder is factored out so the
++   const-expr mini-run can build the state from an EXPLICITLY threaded
++   supply (initial_driver_state_given) while the production entry
++   below keeps the one supply draw (Lean: supply-lifted via
++   initial_core_run_state — signature Nat -> file -> fs_state ->
++   driver_state * Nat, entry shape (b); OCaml: unchanged behavior, the
++   run-state redirect carries no draw). *)
++let initial_driver_state_with run_st file fs_state =
+   <|
+     core_file=         file;
+     core_extern=       Core_linking.create_extern_symmap file;
+     core_state=        Core_run.initial_core_state;
+-    core_run_state=    Core_run.initial_core_run_state (Caux.collect_labeled_continuations_NEW file);
++    core_run_state=    run_st;
+     layout_state=      Mem.initial_mem_state;
+     concurrency_state= Cmm_op.symInitialState Cmm_op.symInitialPre;
+     fs_state=          fs_state;
+@@ -1521,6 +1528,15 @@ let initial_driver_state file fs_state =
+     dr_step_counter=   0;
+   |>
+ 
++let initial_driver_state file fs_state =
++  initial_driver_state_with (Core_run.initial_core_run_state (Caux.collect_labeled_continuations_NEW file)) file fs_state
++
++(* the explicit-supply variant for the const-expr mini-run: consumes
++   exactly one draw (the run-seed), mirroring the lifted entry above *)
++let initial_driver_state_given sup file fs_state =
++  ( initial_driver_state_with (Core_run.initial_core_run_state_given sup (Caux.collect_labeled_continuations_NEW file)) file fs_state
++  , sup+1 )
++
+ 
+ val spawn_thread: maybe Mem.thread_id -> Core_run.thread_state -> driverM Mem.thread_id
+ let driver_spawn_thread parent_tid_opt th_st =
+@@ -1877,13 +1893,17 @@ end
+ 
+ (* === Totality declares (arc 3 sweep, 2026-08-18, final batch): Lean-target only.
+    find_can_advance: structural list recursion -> automatic.
+-   Fuel cases (fuelExhausted witness panics at runtime, typing only):
+-   print_eval_conv_aux / driver2 are driver loops returning ndM -> ND-killed
+-   witness; drive_nonmemory_steps_aux2 has a trailing curried list arg, so
+-   the witness is a lambda to the ND-killed value; hack is a step-until-value
+-   loop returning a bare value -> witness Vunit. === *)
++   Fuel cases: print_eval_conv_aux / driver2 are driver loops returning
++   ndM; drive_nonmemory_steps_aux2 has a trailing curried list arg, so its
++   arm is a lambda to the ND-killed value; hack is a step-until-value loop
++   returning a bare value -> the opaque `fuelExhausted Vunit` sentinel
++   (panics at runtime; a pure-return worker, request item 3).
++   FUEL ARC (2026-09-03, docs/2026-09-02_fuel-arc-design.md section 1.2):
++   the three ND-typed arms are the DISTINGUISHED kernel-transparent kill
++   `NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg)`
++   (= CerbND.fuelExhaustedKill), unwrapped — see nondeterminism.lem. === *)
+ declare {lean} termination_argument find_can_advance = automatic
+-declare {lean} fuel val print_eval_conv_aux = `fuelExhausted (ND (fun st => (NDkilled (Undef0 CerbLocation.Loc.unknown []), st)))`
+-declare {lean} fuel val drive_nonmemory_steps_aux2 = `fuelExhausted (fun _ => ND (fun st => (NDkilled (Undef0 CerbLocation.Loc.unknown []), st)))`
+-declare {lean} fuel val driver2 = `fuelExhausted (ND (fun st => (NDkilled (Undef0 CerbLocation.Loc.unknown []), st)))`
++declare {lean} fuel val print_eval_conv_aux = `ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
++declare {lean} fuel val drive_nonmemory_steps_aux2 = `fun _ => ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
++declare {lean} fuel val driver2 = `ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
+ declare {lean} fuel val hack = `fuelExhausted Vunit`
+diff --git a/frontend/model/formatted.lem b/frontend/model/formatted.lem
+index db87c3fa9..0b6a1b1c4 100644
+--- a/frontend/model/formatted.lem
++++ b/frontend/model/formatted.lem
+@@ -320,6 +320,23 @@ let rec showNonNegativeWithBasis_aux acc useUpper b n =
+   else
+     showNonNegativeWithBasis_aux (charFromDigit useUpper d :: acc) useUpper b r
+ 
++(* === V0 exec-cone opaque census, printf tail (2026-09-01 S-basket
++   item 3; threadB recipe): Lean-target-only; OCaml byte-identical.
++   Recursion on n/b (numeric division, no structural decrease Lean can
++   see): fuel; the digit count of any natural is microscopic against
++   lemDefaultFuel; exhaustion is the LOUD fuelExhausted panic. === *)
++declare {lean} fuel val showNonNegativeWithBasis_aux = `fuelExhausted []`
++(* FUEL MEASURE (fuel-parameter arc C4, 2026-09-05; Lean-only): the recursion
++   is on n / b, which descends only for a basis b >= 2 (b = 1 loops forever
++   on OCaml too; b = 0 raises Division_by_zero there and is the opaque
++   lemDivByZero here) — so the measure `n + 1` is sufficient ONLY under the
++   hypothesis `2 <= b`, carried by the obligation's `lemHyp` binder (lem
++   `assuming`); the wrapper stays fuel-free. The invariant it rests on: the
++   only callers are showNonNegativeWithBasis at the literal bases 8/10/16
++   (this file, the %o/%d/%i/%u/%x/%X arms) — scripts/fuel_hypotheses.txt.
++   Proof: Formatted_lemMeasureProofs.lean. *)
++declare {lean} fuel_measure val showNonNegativeWithBasis_aux = `n + 1` assuming `2 ≤ b`
++
+ val showNonNegativeWithBasis: bool -> natural -> natural -> list char
+ let showNonNegativeWithBasis useUpper b n =
+   if n < 0 then
+@@ -384,6 +401,15 @@ let rec load_character_array_aux elem_ty ptrval prec_n_opt acc =
+           (fun _ _ -> error "Formatted.load_character_array, found a union")
+       )
+   end
++
++(* Unbounded memory-walk recursion (reads until NUL or the precision
++   bound; no structural decrease): fuel, threadB recipe. Sentinel =
++   the empty-result memM, reached only through the LOUD fuelExhausted
++   panic. *)
++(* FUEL-PARAMETER ARC C2 (2026-09-04; Lean-only): the memory walk's exhaustion
++   payload is the ND monad's ABSORBING kill at the fuel atom (as the driver
++   family's), never `nd_return []` — a value printf would continue with. *)
++declare {lean} fuel val load_character_array_aux = `ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
+ val load_character_array: Ctype.ctype -> Mem.pointer_value -> maybe nat -> Mem.memM (list char)
+ let load_character_array elem_ty ptrval prec_n_opt =
+   Mem.bind
+@@ -758,6 +784,11 @@ let rec printf_aux loc eval_conv acc fs ty_ptrvals =
+           Right (U.return acc)
+   end
+ 
++(* Structural on the format list `fs` (both recursive calls pass a
++   tail); recursion under monadic continuations — Lean derives it
++   (threadB finding 3). *)
++declare {lean} termination_argument printf_aux = automatic
++
+ 
+ val     store_chars_in_array: bool -> Mem.pointer_value -> list char -> Mem.memM unit
+ let rec store_chars_in_array zero_terminated ptrval = function
+@@ -782,6 +813,10 @@ let rec store_chars_in_array zero_terminated ptrval = function
+       store_chars_in_array zero_terminated ptrval' cs
+ end
+ 
++(* Structural on the char list (tail per step, pointer re-bound);
++   recursion under monadic continuations — Lean derives it. *)
++declare {lean} termination_argument store_chars_in_array = automatic
++
+ 
+ val vsnprintf: Loc.t ->
+               (Ctype.ctype -> (*Ctype.ctype -> *)Mem.mem_value -> Mem.memM (either Errors.error (Undefined.t Core.value))) ->
+diff --git a/frontend/model/mem.lem b/frontend/model/mem.lem
+index 184702458..b411b3aef 100644
+--- a/frontend/model/mem.lem
++++ b/frontend/model/mem.lem
+@@ -76,16 +76,34 @@ val kill: Loc.t -> bool -> pointer_value -> memM unit
+ val load: Loc.t -> Ctype.ctype -> pointer_value -> memM (footprint * mem_value)
+ val store: Loc.t -> Ctype.ctype -> (* is_locking *)bool -> pointer_value -> mem_value -> memM footprint
+ 
++(* C1 (effect retirement, charter section 4.2): the mem-ops whose
++   hand-written CerbMem implementations read the tag-definition GLOBAL
++   are declared READER CONSUMERS — their generated call sites pass the
++   reader parameters (the linked table, or the phase-appropriate empty
++   map at elaboration-time entries) as extra leading arguments, and the
++   CerbMem implementations take them explicitly. The set below is the
++   measured global-read closure of CerbMem.lean (16 vals: the
++   load/store/allocate family, the shift/diff/align/deref group, the
++   memcpy/memcmp/realloc group, and the sizeof/alignof/offsetof ival
++   entries). OCaml (Impl_mem) is untouched. *)
++declare {lean} reader_consumer val allocate_object
++declare {lean} reader_consumer val load
++declare {lean} reader_consumer val store
++
+ declare ocaml target_rep function allocate_object = `Impl_mem.allocate_object`
+ declare lean target_rep function allocate_object = `CerbMem.allocateObject`
++declare {lean} fuel_consumer val allocate_object
+ declare ocaml target_rep function allocate_region = `Impl_mem.allocate_region`
+ declare lean target_rep function allocate_region = `CerbMem.allocateRegion`
++declare {lean} fuel_consumer val allocate_region
+ declare ocaml target_rep function kill = `Impl_mem.kill`
+ declare lean target_rep function kill = `CerbMem.killM`
+ declare ocaml target_rep function load = `Impl_mem.load`
+ declare lean target_rep function load = `CerbMem.loadM`
++declare {lean} fuel_consumer val load
+ declare ocaml target_rep function store = `Impl_mem.store`
+ declare lean target_rep function store = `CerbMem.storeM`
++declare {lean} fuel_consumer val store
+ 
+ 
+ (* Pointer value constructors *)
+@@ -123,6 +141,7 @@ declare ocaml target_rep function eq_ptrval = `Impl_mem.eq_ptrval`
+ declare lean target_rep function eq_ptrval = `CerbMem.eqPtrval`
+ declare ocaml target_rep function ne_ptrval = `Impl_mem.ne_ptrval`
+ declare lean target_rep function ne_ptrval = `CerbMem.nePtrval`
++declare {lean} fuel_consumer val ne_ptrval
+ declare ocaml target_rep function lt_ptrval = `Impl_mem.lt_ptrval`
+ declare lean target_rep function lt_ptrval = `CerbMem.ltPtrval`
+ declare ocaml target_rep function gt_ptrval = `Impl_mem.gt_ptrval`
+@@ -133,6 +152,8 @@ declare ocaml target_rep function ge_ptrval = `Impl_mem.ge_ptrval`
+ declare lean target_rep function ge_ptrval = `CerbMem.gePtrval`
+ declare ocaml target_rep function diff_ptrval = `Impl_mem.diff_ptrval`
+ declare lean target_rep function diff_ptrval = `CerbMem.diffPtrval`
++declare {lean} fuel_consumer val diff_ptrval
++declare {lean} reader_consumer val diff_ptrval
+ 
+ val update_prefix: (Symbol.prefix * mem_value) -> memM unit
+ val prefix_of_pointer: pointer_value -> memM (maybe string)
+@@ -144,10 +165,14 @@ declare lean target_rep function prefix_of_pointer = `CerbMem.prefixOfPointer`
+ val validForDeref_ptrval: Ctype.ctype -> pointer_value -> memM bool
+ declare ocaml target_rep function validForDeref_ptrval = `Impl_mem.validForDeref_ptrval`
+ declare lean target_rep function validForDeref_ptrval = `CerbMem.validForDerefPtrval`
++declare {lean} fuel_consumer val validForDeref_ptrval
++declare {lean} reader_consumer val validForDeref_ptrval
+ 
+ val isWellAligned_ptrval: Ctype.ctype -> pointer_value -> memM bool
+ declare ocaml target_rep function isWellAligned_ptrval = `Impl_mem.isWellAligned_ptrval`
+ declare lean target_rep function isWellAligned_ptrval = `CerbMem.isWellAlignedPtrval`
++declare {lean} fuel_consumer val isWellAligned_ptrval
++declare {lean} reader_consumer val isWellAligned_ptrval
+ 
+ (* Casting operations *)
+ (* the first ctype is the original integer type, the second is the target referenced type *)
+@@ -177,16 +202,24 @@ val array_shift_ptrval:  pointer_value -> Ctype.ctype -> integer_value -> pointe
+ val member_shift_ptrval: pointer_value -> Symbol.sym -> Symbol.identifier -> pointer_value
+ declare ocaml target_rep function array_shift_ptrval = `Impl_mem.array_shift_ptrval`
+ declare lean target_rep function array_shift_ptrval = `CerbMem.arrayShiftPtrval`
++declare {lean} fuel_consumer val array_shift_ptrval
++declare {lean} reader_consumer val array_shift_ptrval
+ declare ocaml target_rep function member_shift_ptrval = `Impl_mem.member_shift_ptrval`
+ declare lean target_rep function member_shift_ptrval = `CerbMem.memberShiftPtrval`
++declare {lean} fuel_consumer val member_shift_ptrval
++declare {lean} reader_consumer val member_shift_ptrval
+ 
+ (* Effectfull version of pointer shifting constructors *)
+ val eff_array_shift_ptrval: Loc.t -> pointer_value -> Ctype.ctype -> integer_value -> memM pointer_value
+ val eff_member_shift_ptrval: Loc.t -> pointer_value -> Symbol.sym -> Symbol.identifier -> memM pointer_value
+ declare ocaml target_rep function eff_array_shift_ptrval = `Impl_mem.eff_array_shift_ptrval`
+ declare lean target_rep function eff_array_shift_ptrval = `CerbMem.effArrayShiftPtrval`
++declare {lean} fuel_consumer val eff_array_shift_ptrval
++declare {lean} reader_consumer val eff_array_shift_ptrval
+ declare ocaml target_rep function eff_member_shift_ptrval = `Impl_mem.eff_member_shift_ptrval`
+ declare lean target_rep function eff_member_shift_ptrval = `CerbMem.effMemberShiftPtrval`
++declare {lean} fuel_consumer val eff_member_shift_ptrval
++declare {lean} reader_consumer val eff_member_shift_ptrval
+ 
+ 
+ val memcpy: Loc.t -> pointer_value -> pointer_value -> integer_value -> memM pointer_value
+@@ -195,10 +228,16 @@ val realloc: Loc.t -> Mem_common.thread_id -> integer_value -> pointer_value ->
+ 
+ declare ocaml target_rep function memcpy = `Impl_mem.memcpy`
+ declare lean target_rep function memcpy = `CerbMem.memcpyM`
++declare {lean} fuel_consumer val memcpy
++declare {lean} reader_consumer val memcpy
+ declare ocaml target_rep function memcmp = `Impl_mem.memcmp`
+ declare lean target_rep function memcmp = `CerbMem.memcmpM`
++declare {lean} fuel_consumer val memcmp
++declare {lean} reader_consumer val memcmp
+ declare ocaml target_rep function realloc = `Impl_mem.realloc`
+ declare lean target_rep function realloc = `CerbMem.reallocM`
++declare {lean} fuel_consumer val realloc
++declare {lean} reader_consumer val realloc
+ 
+ val va_start: list (Ctype.ctype * pointer_value) -> memM integer_value
+ val va_copy: integer_value -> memM integer_value
+@@ -221,6 +260,7 @@ declare lean target_rep function va_list = `CerbMem.vaList`
+ val copy_alloc_id: integer_value -> pointer_value -> memM pointer_value
+ declare ocaml target_rep function copy_alloc_id = `Impl_mem.copy_alloc_id`
+ declare lean target_rep function copy_alloc_id = `CerbMem.copyAllocId`
++declare {lean} fuel_consumer val copy_alloc_id
+ 
+ (* Byte casting operations *)
+ val bytefromint: integer_value -> integer_value
+@@ -255,10 +295,29 @@ declare ocaml target_rep function op_ival = `Impl_mem.op_ival`
+ declare lean target_rep function op_ival = `CerbMem.opIval`
+ declare ocaml target_rep function offsetof_ival = `Impl_mem.offsetof_ival`
+ declare lean target_rep function offsetof_ival = `CerbMem.offsetofIval`
++declare {lean} fuel_consumer val offsetof_ival
++declare {lean} reader_consumer val offsetof_ival
+ declare ocaml target_rep function sizeof_ival = `Impl_mem.sizeof_ival`
+ declare lean target_rep function sizeof_ival = `CerbMem.sizeofIval`
++declare {lean} fuel_consumer val sizeof_ival
++declare {lean} reader_consumer val sizeof_ival
+ declare ocaml target_rep function alignof_ival = `Impl_mem.alignof_ival`
+ declare lean target_rep function alignof_ival = `CerbMem.alignofIval`
++(* FUEL CONSUMERS (fuel-parameter arc, 2026-09-04; Lean-only declares, no
++   OCaml effect — lem-lean doc/lean-backend/2026-09-03_fuel-parameter-design.md
++   R1 item 3): the hand-written CerbMem implementations of the vals below
++   read the ambient fuel (`[LemFuel]`, `LemFuel.fuel`) because they reach a
++   fuel'd worker — the layout oracles (sizeofCtype/alignofCtype/offsetsof),
++   the (de)serializers (memValueToBytes/reconstructValue), typeofMval, or
++   the ND monad's `nd_bind`. `fuel_consumer` makes every generated caller
++   fuel-lifted (the `[LemFuel]` binder is threaded to it; call sites are
++   textually unchanged). The set is the measured `[LemFuel]` closure of
++   CerbMem.lean's mem.lem reps at the C1 slice (19 vals; the build fails
++   closed — `failed to synthesize instance LemFuel` at the generated call
++   site — if one is missing). C2 converts the data-bounded ones to
++   `fuel_measure`. *)
++declare {lean} fuel_consumer val alignof_ival
++declare {lean} reader_consumer val alignof_ival
+ declare ocaml target_rep function bitwise_complement_ival = `Impl_mem.bitwise_complement_ival`
+ declare lean target_rep function bitwise_complement_ival = `CerbMem.bitwiseComplementIval`
+ declare ocaml target_rep function bitwise_and_ival = `Impl_mem.bitwise_and_ival`
+diff --git a/frontend/model/mini_pipeline.lem b/frontend/model/mini_pipeline.lem
+index c229736b8..1b40e228f 100644
+--- a/frontend/model/mini_pipeline.lem
++++ b/frontend/model/mini_pipeline.lem
+@@ -77,13 +77,22 @@ let run_const_expr_driver tds dr_st =
+   Ctype_aux.with_tagDefs tds (fun () -> runND_proxy driver_action dr_st)
+ declare {lean} reader_seed val run_const_expr_driver
+ 
++(* C1 m2 (charter section 3.4 c): the const-expr seam carries the
++   fresh-symbol supply EXPLICITLY — it takes the pipeline's current
++   supply (the desugar-held stream, S1 single-stream ruling), seeds the
++   local elab_init and the mini-run's driver state from it, and returns
++   the final supply beside the value through the Eff (exception-monad)
++   binds. On the OCaml target the threaded values are DEAD (the mints
++   redirect ambiently); the desugM caller draws/restores the dead
++   field — behavior unchanged. *)
+ val evalConstantExpressionAux:
++  nat ->
+   Loc.t -> (map string Symbol.sym) * C.fun_map unit * C.impl ->
+   A.sigma unit ->
+   (GenTypes.genTypeCategory -> Eff.exceptM unit Errors.error) ->
+-  maybe Ctype.ctype -> A.expression unit -> Eff.exceptM C.value Errors.error
++  maybe Ctype.ctype -> A.expression unit -> Eff.exceptM (C.value * nat) Errors.error
+ 
+-let evalConstantExpressionAux loc (*TODO*)(ailnames, stdlib_fun_map, impl) sigm typing_guard ty_opt expr =
++let evalConstantExpressionAux sup loc (*TODO*)(ailnames, stdlib_fun_map, impl) sigm typing_guard ty_opt expr =
+   let toAilTau: A.expression unit -> ErrorMonad.errorM (A.expression GenTypes.genTypeCategory) =
+     GenTyping.annotate_expression (GenTyping.annotate_block Nothing) sigm [] (*TODO: check*)GenTyping.CTXother in
+   
+@@ -129,10 +138,13 @@ let evalConstantExpressionAux loc (*TODO*)(ailnames, stdlib_fun_map, impl) sigm
+         let callconv =
+           if Global.has_switch Global.SW_inner_arg_temps then Core.Inner_arg_callconv else Core.Normal_callconv in
+         
+-        (* elaborate the typed expression into Core *)
+-        let (core_expr, translate_final_st) = TranslateEff.runStateM (toCore a_expr) (TranslateEff.elab_init callconv) in
+-        
+-        let dr_st =
++        (* elaborate the typed expression into Core (seeded from the
++           threaded supply; the elaboration's final supply continues
++           into the mini-run's seed below) *)
++        let (core_expr, translate_final_st) = TranslateEff.runStateM (toCore a_expr) (TranslateEff.elab_init sup callconv) in
++        let sup_after_elab = translate_final_st.TranslateEff.fresh_supply in
++
++        let (dr_st, sup_after_init) =
+           (* this just builds the shell of the driver state *)
+           let dummy_core_file = Core_run_aux.convert_file
+             <| C.main= Nothing
+@@ -148,7 +160,7 @@ let evalConstantExpressionAux loc (*TODO*)(ailnames, stdlib_fun_map, impl) sigm
+              ; C.visible_objects_env = Map.empty
+            |> 
+           in
+-          let init_dr_st = Driver.initial_driver_state dummy_core_file Fs.fs_initial_state in
++          let (init_dr_st, sup') = Driver.initial_driver_state_given sup_after_elab dummy_core_file Fs.fs_initial_state in
+           (* spawning a thread with the Core expression we just generated as it's arena *)
+           let ((tid, core_st), run_st) = State.runStateM (
+             Core_run.spawn_thread Nothing <|
+@@ -162,10 +174,11 @@ let evalConstantExpressionAux loc (*TODO*)(ailnames, stdlib_fun_map, impl) sigm
+             |> init_dr_st.Driver.core_state
+           ) init_dr_st.Driver.core_run_state in
+           (* now we can build the actual driver's initial state *)
+-          <| init_dr_st with
+-           Driver.core_state= core_st;
+-           Driver.core_run_state= run_st |> in
+-        
++          ( <| init_dr_st with
++             Driver.core_state= core_st;
++             Driver.core_run_state= run_st |>
++          , sup' ) in
++
+         (* run the evaluator (arc-2 S6: built AND run inside
+            run_const_expr_driver so the Lean reader seeding covers the
+            action's construction — see that function's comment) *)
+@@ -174,7 +187,7 @@ let evalConstantExpressionAux loc (*TODO*)(ailnames, stdlib_fun_map, impl) sigm
+                       dr_st in
+         match execs with
+           | [(ND.Active dres, _, _ )] ->
+-              Eff.return dres.Driver.dres_core_value
++              Eff.return (dres.Driver.dres_core_value, sup_after_init)
+           | [(ND.Killed _ (ND.Undef ub_loc [ub]), _, _)] ->
+               Eff.fail (ub_loc, Errors.DESUGAR (Errors.Desugar_UndefinedBehaviour ub))
+           | [(ND.Killed _ (ND.Error loc "§6.6#4 failed"), _, _)] ->
+@@ -186,10 +199,11 @@ let evalConstantExpressionAux loc (*TODO*)(ailnames, stdlib_fun_map, impl) sigm
+ 
+ 
+ val evalIntegerConstantExpression:
++  nat ->
+   Loc.t -> (map string Symbol.sym) * C.fun_map unit * C.impl -> A.sigma unit ->
+-  maybe Ctype.ctype -> A.expression unit -> Eff.exceptM integer Errors.error
++  maybe Ctype.ctype -> A.expression unit -> Eff.exceptM (integer * nat) Errors.error
+ 
+-let evalIntegerConstantExpression loc core_env sigm ty_opt expr =
++let evalIntegerConstantExpression sup loc core_env sigm ty_opt expr =
+   let typing_guard gtc =
+     let do_fail =
+       Eff.fail (loc, Errors.DESUGAR (Errors.Desugar_UndefinedBehaviour Undefined.UB055_invalid_integer_constant_expression))
+@@ -204,15 +218,15 @@ let evalIntegerConstantExpression loc core_env sigm ty_opt expr =
+             do_fail
+     end in
+   
+-  evalConstantExpressionAux loc core_env sigm typing_guard ty_opt expr >>= function
+-    | C.Vloaded (C.LVspecified (C.OVinteger ival)) ->
++  evalConstantExpressionAux sup loc core_env sigm typing_guard ty_opt expr >>= function
++    | (C.Vloaded (C.LVspecified (C.OVinteger ival)), sup') ->
+         match Mem.eval_integer_value ival with
+           | Just n ->
+-              Eff.return n
++              Eff.return (n, sup')
+           | Nothing ->
+               error "TODO error: the memory model failed to concretise the integer value (was impl dependent?)"
+         end
+-    | cval ->
++    | (cval, _) ->
+         let () = Debug.print_debug 1 [] (fun () ->
+           "cval: " ^ Pp.stringFromCore_value cval
+         ) in
+diff --git a/frontend/model/monadic_parsing.lem b/frontend/model/monadic_parsing.lem
+index 1c8addc29..32efaa586 100644
+--- a/frontend/model/monadic_parsing.lem
++++ b/frontend/model/monadic_parsing.lem
+@@ -90,6 +90,13 @@ let rec string cs =
+         return (c::cs')
+   end
+ 
++(* === V0 exec-cone opaque census, printf/Monadic_parsing tail
++   (2026-09-01 S-basket item 3; recipe = the threadB totalization,
++   docs/2026-08-29_threadB-totalization.md): Lean-target-only; OCaml
++   output byte-identical. `string` is list-structural (Lean derives
++   termination). === *)
++declare {lean} termination_argument string = automatic
++
+ val     many:  forall 'a. parserM 'a -> parserM (list 'a)
+ val     many1: forall 'a. parserM 'a -> parserM (list 'a)
+ let rec many p = many1 p <|> return []
+@@ -97,3 +104,12 @@ and     many1 p =
+   p      >>= fun a   ->
+   many p >>= fun _as ->
+   return (a::_as)
++
++(* many/many1 are genuinely mutual with NO structural decrease (the
++   grammar-recursion terminates only through input consumption): fuel,
++   all-or-none across the mutual block (backend requirement). The
++   sentinel is the always-failing parser (empty result list) — reached
++   only through the LOUD fuelExhausted panic, never a silent default.
++   lemDefaultFuel dominates any real parse depth. *)
++declare {lean} fuel val many = `fuelExhausted (ParserM (fun _ => []))`
++declare {lean} fuel val many1 = `fuelExhausted (ParserM (fun _ => []))`
+diff --git a/frontend/model/nondeterminism.lem b/frontend/model/nondeterminism.lem
+index 03815f313..21c2f2337 100644
+--- a/frontend/model/nondeterminism.lem
++++ b/frontend/model/nondeterminism.lem
+@@ -13,6 +13,11 @@ open import Pervasives
+ open import Utils Debug
+ import Undefined
+ 
++(* Lean-target only (debug.lem:4 mechanism): the fuel-exhaustion atom /
++   message / budget seam the `declare {lean} fuel val` sentinels below
++   name (FUEL arc, docs/2026-09-02_fuel-arc-design.md section 1.1). *)
++declare {lean} extra_import `CerbFuel`
++
+ 
+ 
+ (* Cause of an execution path termination *)
+@@ -546,13 +551,21 @@ type nd_status 'a 'err 'st =
+ 
+ (* === Totality declares (arc 3 sweep, 2026-08-18): Lean-target only.
+    nd_bind: recursion on the result of applying a stored function
+-   (m_act st), not a subterm -> fuel; witness is a minimal killed
+-   computation (fuelExhausted panics at runtime, the witness only
+-   discharges typing).
++   (m_act st), not a subterm -> fuel.
+    nd_foldlM: structural on its list argument -> automatic.
+    liftND/liftAction: genuinely cyclic mutual pair, recursion through
+-   stored-function application -> fuel both (all-or-none). === *)
+-declare {lean} fuel val nd_bind = `fuelExhausted (ND (fun st => (NDkilled (Undef0 CerbLocation.Loc.unknown []), st)))`
++   stored-function application -> fuel both (all-or-none).
++   FUEL ARC (2026-09-03, docs/2026-09-02_fuel-arc-design.md section 1.2):
++   the fuel-zero arm of every ND-typed fueled worker is the DISTINGUISHED,
++   kernel-transparent kill `NDkilled (Error0 CerbFuel.fuelExhaustedLoc
++   CerbFuel.fuelExhaustedMsg)` (= CerbND.fuelExhaustedKill) with NO opaque
++   `fuelExhausted` wrapper around the monadic value — exhaustion is a typed
++   outcome the kernel can recognise (the `_zero` lemmas in CerbND.lean hold
++   by rfl), printed by Main as `Error {msg: "lem: fuel exhausted"}` and
++   classified FUEL by the harnesses. The atom `fuelExhaustedLoc` is a pure
++   opaque (CerbFuel.lean, imported via the extra_import above). liftAction
++   returns nd_action, so its arm is the curried action-shaped value. === *)
++declare {lean} fuel val nd_bind = `ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
+ declare {lean} termination_argument nd_foldlM = automatic
+-declare {lean} fuel val liftND = `fuelExhausted (ND (fun st => (NDkilled (Undef0 CerbLocation.Loc.unknown []), st)))`
+-declare {lean} fuel val liftAction = `fuelExhausted (fun _ => NDkilled (Undef0 CerbLocation.Loc.unknown []))`
++declare {lean} fuel val liftND = `ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
++declare {lean} fuel val liftAction = `fun _ => NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg)`
+diff --git a/frontend/model/state_exception_undefined.lem b/frontend/model/state_exception_undefined.lem
+index 0b8eaa51d..75c4c6909 100644
+--- a/frontend/model/state_exception_undefined.lem
++++ b/frontend/model/state_exception_undefined.lem
+@@ -146,8 +146,7 @@ let inline undef loc ubs =
+   stExceptUndef_undef loc ubs
+ 
+ (* === Totality declares (arc 7 S5a, 2026-08-20): Lean-target only.
+-   stExceptUndef_foldM is an arc-3 F8 call-graph escapee on the slate
+-   theorems' kernel path (S4 record §6.3 event 2: Erun/Eccall argument
++   stExceptUndef_foldM is on the execution path (Erun/Eccall argument
+    evaluation); filterM is the module's only other partial, same
+    structural list-walk shape, so the totality gate can adopt
+    State_exception_undefined. Both automatic. === *)
+diff --git a/frontend/model/symbol.lem b/frontend/model/symbol.lem
+index 99749539f..a843449e5 100644
+--- a/frontend/model/symbol.lem
++++ b/frontend/model/symbol.lem
+@@ -225,10 +225,21 @@ type prefix =
+   | PrefOther of string
+ 
+ (* TODO: "nat", "int" *)
++(* effect-retirement C1 (charter section 3.4 a): on the Lean target
++   fresh_int is a SUPPLY — every transitive caller is supply-lifted
++   (takes the current counter, returns the next one); the entry points
++   seed it explicitly (entry shape (b)). The OCaml target keeps the
++   single ambient counter (Cerb_fresh.int), byte-identical to
++   un-forked upstream. The former `effectful` declare + the
++   CerberusFresh.freshIntIO extern (native/fresh_int.c) are retired. *)
+ val fresh_int: unit -> nat
+ declare ocaml target_rep function fresh_int = `Cerb_fresh.int`
+-declare lean target_rep function fresh_int u = `CerberusFresh.freshIntIO` u
+-declare {lean} effectful val fresh_int
++(* the Lean rep satisfies target-coverage checking but is never emitted
++   at applied call sites: every draw is rewritten to LemLib.supplySplit
++   on the threaded parameter (bare references are a generation-time
++   error, so the rep is unreachable outside dead text) *)
++declare lean target_rep function fresh_int u = 0
++declare {lean} supply val fresh_int
+ 
+ val digest_of_sym: sym -> digest
+ let digest_of_sym (Symbol dig _ _) = dig
+@@ -251,10 +262,13 @@ let fresh_pretty_with_id mkStr =
+   Symbol (digest()) id (SD_Id (mkStr id))
+ 
+ val fresh_fancy : maybe string -> sym
+-let fresh_fancy = function
+-  | Just str -> fresh_pretty str
+-  | Nothing  -> fresh ()
+-end
++(* C1: eta-expanded (was `function`-sugar, a lambda — the supply
++   transform's G-lambda guard rejects draws under lambdas) *)
++let fresh_fancy str_opt =
++  match str_opt with
++    | Just str -> fresh_pretty str
++    | Nothing  -> fresh ()
++  end
+ 
+ (* Build a symbol from an EXPLICITLY SUPPLIED id (arc-2 S1): the pure
+    counterpart of fresh, for callers that thread their own supply (see
+diff --git a/frontend/model/translation.lem b/frontend/model/translation.lem
+index 9edacc91f..f61aae536 100644
+--- a/frontend/model/translation.lem
++++ b/frontend/model/translation.lem
+@@ -872,8 +872,11 @@ let translate_function_call loc annots is_used translate_expr stdlib e es =
+   (* elaborate the expression that denotes the called function *)
+   translate_expr e >>= fun core_e ->
+   (* symbolic names for the arguments temporary objects *)
++  (* C1 m1: the mapi-lambda draws become a monadic map over the indexed
++     list (charter section 3.4 b); LIST order preserved. *)
+   let n_args = List.length es in
+-  let arg_ptr_syms = mapi (fun i arg_e -> Symbol.fresh_funarg (locOf arg_e) i) es in
++  E.mapM (fun (i, arg_e) -> E.fresh_elab_sym (Symbol.SD_FunArg (locOf arg_e) i))
++    (mapi (fun i arg_e -> (i, arg_e)) es) >>= fun arg_ptr_syms ->
+   let arg_ptr_sym_pats = List.map (fun sym -> Caux.mk_sym_pat sym (C.BTy_object C.OTy_pointer)) arg_ptr_syms in
+   let arg_ptr_sym_pes = List.map Caux.mk_sym_pe arg_ptr_syms in
+   (* elaborate each argument *)
+@@ -1868,7 +1871,7 @@ end                       end))) ) ]
+           E.wrapped_fresh_symbol (C.BTy_object oTy) >>= fun obj_wrp ->
+           (* STD §6.3.2.1#2 "lvalue conversion" *)
+           self e    >>= fun core_e  ->
+-          let let_sym = Symbol.fresh () in
++          E.fresh_elab_sym Symbol.SD_None >>= fun let_sym ->
+           E.return $
+             Caux.add_std "§6.5.4" (
+ if AilTypesAux.is_void cast_ty then
+@@ -3295,17 +3298,37 @@ let collect_cases s =
+ type erase_loop_control_state = <|
+   elc_continue: maybe Symbol.sym;
+   elc_break: maybe Symbol.sym;
++  (* C1 m1b (charter section 3.4 b'): the pass's own supply component.
++     DEAD on the OCaml target (elc_fresh_int redirects to the ambient
++     counter); on Lean it is seeded from the elaboration supply at the
++     erase_loop_control call and returned to it. *)
++  elc_supply: nat;
+ |>
+ 
++val elc_fresh_int: St.stateM nat erase_loop_control_state
++let elc_fresh_int =
++  fun st ->
++    let n = st.elc_supply in
++    (n, <| st with elc_supply= n+1 |>)
++declare ocaml target_rep function elc_fresh_int = `Fork_renumber.elc_fresh_int`
++
+ val     erase_loop_control_aux: A.statement GenTypes.genTypeCategory -> St.stateM (A.statement GenTypes.genTypeCategory) erase_loop_control_state
+ let rec erase_loop_control_aux stmt =
+   let loc = stmt.A.loc in
+   let with_fresh_labels mf =
+     fun st ->
+-      let continue_sym = Symbol.fresh_pretty_with_id (fun x -> "continue_" ^ show x) in
+-      let break_sym    = Symbol.fresh_pretty_with_id (fun x -> "break_" ^ show x) in
+-      let (ret, st')   = mf <| elc_continue= Just continue_sym; elc_break= Just break_sym |> in
+-      ((continue_sym, break_sym, ret), st) in 
++      (* C1 m1b: the label mints draw from the pass's supply at the same
++         run-time firing point as the former ambient draws (continue
++         then break); the inner run inherits the advanced supply and
++         hands its final supply back to the outer state (the original
++         code discarded the inner state entirely — the label fields are
++         still discarded, only the supply flows back). *)
++      let (nc, st_c) = elc_fresh_int st in
++      let (nb, st_b) = elc_fresh_int st_c in
++      let continue_sym = Symbol.set_symbol_description (Symbol.fresh_given_int nc) (Symbol.SD_Id ("continue_" ^ show nc)) in
++      let break_sym    = Symbol.set_symbol_description (Symbol.fresh_given_int nb) (Symbol.SD_Id ("break_" ^ show nb)) in
++      let (ret, st')   = mf <| elc_continue= Just continue_sym; elc_break= Just break_sym; elc_supply= st_b.elc_supply |> in
++      ((continue_sym, break_sym, ret), <| st_b with elc_supply= st'.elc_supply |>) in
+   A.mk_statement_full loc stmt.A.desug_info stmt.A.attrs <$> match stmt.A.node with
+     | A.AilSskip ->
+         St.return stmt.A.node
+@@ -3381,11 +3404,19 @@ let rec erase_loop_control_aux stmt =
+         A.AilSmarker id <$> erase_loop_control_aux s
+   end
+ 
++(* C1 m1b: the pass runs to completion atomically from the fn-def
++   elaboration prefix; its supply is seeded from the elaboration supply
++   and the final value is returned to it (the pass's draws stay a
++   contiguous block — contiguity only, per charter section 3.4 b'). *)
++val erase_loop_control: A.statement GenTypes.genTypeCategory -> E.elabM (A.statement GenTypes.genTypeCategory)
+ let erase_loop_control stmt =
+-  let (stmt', _) = State.runStateM (erase_loop_control_aux stmt) <|
+-    elc_continue= Nothing;
+-    elc_break= Nothing;
+-  |> in stmt'
++  E.with_fresh_supply (fun sup ->
++    let (stmt', elc_st) = State.runStateM (erase_loop_control_aux stmt) <|
++      elc_continue= Nothing;
++      elc_break= Nothing;
++      elc_supply= sup;
++    |> in
++    (stmt', elc_st.elc_supply))
+ 
+ 
+ type collect_visibles_state = <|
+@@ -3797,7 +3828,7 @@ let rec translate_stmt stdlib tagDefs f env stmt : E.elabM (C.expr unit) =
+     
+     | A.AilSwhile e s loop_id ->
+         (* NOTE: the object type is OTy_integer since we are using mkTestExpression which turns [e] into [e == 0] *)
+-        let sym_loop = Symbol.fresh_pretty_with_id (fun x ->  "while_" ^ show x) in
++        E.fresh_elab_pretty_with_id (fun x ->  "while_" ^ show x) >>= fun sym_loop ->
+         E.wrapped_fresh_symbol C.BTy_boolean                  >>= fun do_loop_wrp  ->
+         E.wrapped_fresh_symbol (C.BTy_loaded C.OTy_integer)   >>= fun test_wrp     ->
+         E.wrapped_fresh_symbol (C.BTy_object C.OTy_integer)   >>= fun case_wrp     ->
+@@ -3833,9 +3864,9 @@ let rec translate_stmt stdlib tagDefs f env stmt : E.elabM (C.expr unit) =
+     
+     | A.AilSdo s e loop_id ->
+         (* TODO: make the elab of AilSdo use mkTestExpression *)
+-        let sym_loop = Symbol.fresh_pretty_with_id (fun x ->  "do_" ^ show x) in
+-        let sym_case = Symbol.fresh () in
+-        let sym_e    = Symbol.fresh () in
++        E.fresh_elab_pretty_with_id (fun x ->  "do_" ^ show x) >>= fun sym_loop ->
++        E.fresh_elab_sym Symbol.SD_None >>= fun sym_case ->
++        E.fresh_elab_sym Symbol.SD_None >>= fun sym_e    ->
+         translate_expression true e >>= fun core_e       ->
+         self s                      >>= fun core_s       ->
+         E.get_visible_objects       >>= fun visible_syms ->
+@@ -3951,8 +3982,11 @@ let rec translate_stmt stdlib tagDefs f env stmt : E.elabM (C.expr unit) =
+         (* Create case symbols and translate cases block *)
+         let cases    = collect_cases s in
+         let nb_cases = List.length (cases.case_csts) + List.length (cases.case_ranges) in
+-        let case_syms = list_init nb_cases (fun _ -> Symbol.fresh_pretty_with_id (fun x -> "case_" ^ show x)) in
+-        let default_sym = Symbol.fresh_pretty_with_id (fun x -> "default_" ^ show x) in
++        (* C1 m1: the list_init batch becomes a threaded monadic build
++           (contiguous mints at the same chain position, list order kept) *)
++        E.mapM (fun _ -> E.fresh_elab_pretty_with_id (fun x -> "case_" ^ show x))
++          (list_init nb_cases (fun i -> i)) >>= fun case_syms ->
++        E.fresh_elab_pretty_with_id (fun x -> "default_" ^ show x) >>= fun default_sym ->
+         let case_labs =
+           List.zip
+             begin
+@@ -4232,7 +4266,9 @@ let translate_program stdlib (startup_sym_opt, sigm) =
+               | _ ->
+                   (fun z -> z)
+             end (Caux.pcreate loc align_ival core_ty (Symbol.PrefSource loc [sym])) in
+-          let sym_global  = Symbol.fresh () in
++          (* C1 m1: the mint stays UNCONDITIONAL (it is unused on the
++             external-object branch — kept to preserve numbering) *)
++          E.fresh_elab_sym Symbol.SD_None >>= fun sym_global ->
+ 
+           match List.lookup sym sigm.A.object_definitions with
+             | Nothing ->
+@@ -4262,7 +4298,7 @@ let translate_program stdlib (startup_sym_opt, sigm) =
+                       Caux.mk_sseqs lit_pats_core_creates core
+                     )
+                 end >>= fun (e_bTy, core_e) ->
+-                let e_sym = Symbol.fresh () in
++                E.fresh_elab_sym Symbol.SD_None >>= fun e_sym ->
+                 let core_init_e =
+                   if AilTypesAux.is_integer ty || AilTypesAux.is_floating ty then
+                     conv_loaded_arith stdlib (ctype_of expr) ty (Caux.mk_sym_pe e_sym)
+@@ -4351,18 +4387,23 @@ let translate_program stdlib (startup_sym_opt, sigm) =
+                           (Just sym, ty)
+                       ) (List.zip param_syms params)
+                   , is_variadic, has_proto ) in
+-                let ret_label = Symbol.fresh_pretty_with_id (fun x -> "ret_" ^ show x) in
+-                let stmt = erase_loop_control stmt in
++                (* C1 m1: fn-def prefix mints in prefix order (ret_label,
++                   then the erase pass's contiguous block, then the
++                   variadic mint) *)
++                E.fresh_elab_pretty_with_id (fun x -> "ret_" ^ show x) >>= fun ret_label ->
++                erase_loop_control stmt >>= fun stmt ->
+                 let visibles = collect_visibles stmt in
+-                let (variadic_sym_opt, last_arg_sym_opt) =
++                begin
+                   if is_variadic then
+                     match List.reverse param_syms with
+                       | [] -> error "variadic functions need to have at least one parameter"
+-                      | sym::_ -> (Just (Symbol.fresh ()), Just sym)
++                      | sym::_ ->
++                          E.fresh_elab_sym Symbol.SD_None >>= fun variadic_sym ->
++                          E.return (Just variadic_sym, Just sym)
+                     end
+                   else
+-                    (Nothing, Nothing)
+-                in
++                    E.return (Nothing, Nothing)
++                end >>= fun (variadic_sym_opt, last_arg_sym_opt) ->
+                 let (mk_body_wrapper, label_visibles) =
+                   if is_using_inner_arg_temps then
+                     let xs = List.map (fun (sym, (_, ty, _)) -> (sym, ty)) (List.zip param_syms params) in
+@@ -4411,7 +4452,7 @@ let translate_program stdlib (startup_sym_opt, sigm) =
+                     z in
+                 (* let is_used_sym = Symbol.fresh () in
+                 let is_used_arg_type = (is_used_sym, C.BTy_boolean) in *)
+-                let ret_sym = Symbol.fresh () in
++                E.fresh_elab_sym Symbol.SD_None >>= fun ret_sym ->
+                 let core_return =
+                   let ret_pe =
+                     if startup_sym_opt = Just sym then
+@@ -4511,19 +4552,28 @@ let translate_extern_map (_, sigm) =
+     end) sigm.A.extern_idmap
+ 
+ 
+-(* This is the entry function (called from main.ml) *)
++(* This is the entry function (called from main.ml).
++   C1 m1 (charter sections 1.3/3.4): the entry carries the fresh-symbol
++   supply explicitly — it takes the pipeline's current supply, seeds
++   elab_init with it, and returns the elaboration's final supply beside
++   the Core file (entry shape (b): supply-parameterized, no baked
++   seed). On the OCaml target the supply argument and returned value
++   are DEAD (the elaboration mints redirect to the single ambient
++   counter): main.ml/pipeline.ml pass 0 and drop the second component
++   — documented divergence, see ocaml_frontend/fork_renumber.ml. *)
+ val translate:
++    nat ->
+     (map string Symbol.sym) * C.fun_map unit ->
+     C.calling_convention ->
+-    C.impl -> 
++    C.impl ->
+     A.ail_program GenTypes.genTypeCategory ->
+-    C.file unit
+-let translate (ailnames, stdlib_fun_map) callconv impl prog =
++    (C.file unit * nat)
++let translate sup (ailnames, stdlib_fun_map) callconv impl prog =
+   let translation_stdlib = mk_translation_stdlib (ailnames, stdlib_fun_map) in
+   let ((core_tagDefs, cglobs, (*cdecls, *) cfuns, funinfo), st) =
+-    E.runStateM_errors (translate_program translation_stdlib prog) (E.elab_init callconv)
++    E.runStateM_errors (translate_program translation_stdlib prog) (E.elab_init sup callconv)
+   in
+-  <| C.main= fst prog;
++  (<| C.main= fst prog;
+      C.calling_convention= callconv;
+      C.tagDefs= core_tagDefs;
+      C.stdlib= stdlib_fun_map;
+@@ -4532,6 +4582,6 @@ let translate (ailnames, stdlib_fun_map) callconv impl prog =
+      C.funs= cfuns;
+      C.extern = translate_extern_map prog;
+      C.funinfo= funinfo;
+-     C.loop_attributes= (snd prog).A.loop_attributes; 
++     C.loop_attributes= (snd prog).A.loop_attributes;
+      C.visible_objects_env= st.E.visible_objects_types_markers_env;
+-  |>
++  |>, st.E.fresh_supply)
+diff --git a/frontend/model/translation_effect.lem b/frontend/model/translation_effect.lem
+index f3aa22e86..a89e6ebc8 100644
+--- a/frontend/model/translation_effect.lem
++++ b/frontend/model/translation_effect.lem
+@@ -32,16 +32,24 @@ type elab_state = <|
+ 
+   cheri_const_alias: map Symbol.sym Symbol.sym;
+ 
++  (* effect-retirement C1 (charter m1): the fresh-symbol supply for the
++     elaboration cone, threaded through elabM. On the OCaml target this
++     field is DEAD — the mints below redirect to the single ambient
++     counter (Fork_renumber, arc-13 scheme R-B) — it serves the LEAN
++     target only, seeded by the entry (translation.lem translate /
++     mini_pipeline's local run) from the pipeline's single stream. *)
++  fresh_supply: nat;
++
+   errors: list string;
+-  
++
+   (* readonly *)
+   calling_convention: C.calling_convention;
+ |>
+ 
+ type elabM 'a = stateM 'a elab_state
+ 
+-val elab_init: C.calling_convention -> elab_state
+-let elab_init callconv = <|
++val elab_init: nat -> C.calling_convention -> elab_state
++let elab_init fresh_supply_seed callconv = <|
+   visible_objects_types= Map.empty;
+   visible_objects= [[]];
+   string_literals= [];
+@@ -49,6 +57,7 @@ let elab_init callconv = <|
+   temporary_objects= [];
+   visible_objects_types_markers_env = Map.empty;
+   cheri_const_alias= Map.empty;
++  fresh_supply= fresh_supply_seed;
+   errors = [];
+   calling_convention= callconv;
+ |>
+@@ -57,18 +66,54 @@ val get_calling_convention: elabM C.calling_convention
+ let get_calling_convention =
+   fun st -> (st.calling_convention, st)
+ 
++(* effect-retirement C1 (charter m1): the monadic fresh mints for the
++   elaboration cone, replacing the ambient Symbol.fresh* draws at the
++   19 live sites. The lem bodies thread elab_state.fresh_supply (the
++   LEAN scheme, built on the pure Symbol.fresh_given_int exactly like
++   core_run.lem's fresh_symbol'); the OCaml target redirects the int
++   mint to the single ambient counter (Fork_renumber.fresh_elab_int),
++   keeping the oracle on Cerb_fresh.int at the migrated positions.
++   The oracle's dynamic draw SEQUENCE moves per the tolerated
++   S0-measured class (charter section 3.6.1, Q1b TOLERATED). *)
++val fresh_elab_int: elabM nat
++let fresh_elab_int =
++  fun st ->
++    let n = st.fresh_supply in
++    (n, <| st with fresh_supply= n+1 |>)
++declare ocaml target_rep function fresh_elab_int = `Fork_renumber.fresh_elab_int`
++
++val fresh_elab_sym: Symbol.symbol_description -> elabM Symbol.sym
++let fresh_elab_sym descr =
++  bind fresh_elab_int (fun n ->
++  return (Symbol.set_symbol_description (Symbol.fresh_given_int n) descr))
++
++val fresh_elab_pretty_with_id: (nat -> string) -> elabM Symbol.sym
++let fresh_elab_pretty_with_id mkStr =
++  bind fresh_elab_int (fun n ->
++  return (Symbol.set_symbol_description (Symbol.fresh_given_int n) (Symbol.SD_Id (mkStr n))))
++
++(* Run a supply-consuming sub-computation against the elaboration
++   supply: f receives the current supply and returns (result, final
++   supply). Used by the erase_loop_control pass (m1b). Pure threading —
++   on OCaml this shuttles the dead field (the sub-computation's own
++   mints redirect ambiently). *)
++val with_fresh_supply: forall 'a. (nat -> ('a * nat)) -> elabM 'a
++let with_fresh_supply f =
++  fun st ->
++    let (a, sup') = f st.fresh_supply in
++    (a, <| st with fresh_supply= sup' |>)
+ 
+ (* TODO: this does not need to be in the monad, but it is useful to unsure
+    proper ordering (for "intuitive" sym number) *)
+ val wrapped_fresh_symbol: C.core_base_type -> elabM wrapped_symbol
+ let wrapped_fresh_symbol bTy =
+-  let sym = Symbol.fresh () in
+-  return <|sym_sym= sym; sym_pat= Caux.mk_sym_pat sym bTy; sym_pe= Caux.mk_sym_pe sym |>
++  bind (fresh_elab_sym Symbol.SD_None) (fun sym ->
++  return <|sym_sym= sym; sym_pat= Caux.mk_sym_pat sym bTy; sym_pe= Caux.mk_sym_pe sym |>)
+ 
+ val wrapped_fresh_symbol_: Symbol.symbol_description -> C.core_base_type -> elabM (Symbol.sym * C.pattern * C.pexpr)
+ let wrapped_fresh_symbol_ descr bTy =
+-  let sym = Symbol.fresh_description descr in
+-  return (sym, Caux.mk_sym_pat sym bTy, Caux.mk_sym_pe sym)
++  bind (fresh_elab_sym descr) (fun sym ->
++  return (sym, Caux.mk_sym_pat sym bTy, Caux.mk_sym_pe sym))
+ 
+ 
+ (* TODO: this does not need to be in the monad *)
+@@ -101,15 +146,21 @@ let cheri_const_alias_map = fun st ->
+ val with_block_objects: forall 'a. list (Symbol.sym * (Ctype.qualifiers * Ctype.ctype)) -> elabM 'a ->
+   elabM (list (Symbol.sym * (Ctype.qualifiers * Ctype.ctype * Symbol.sym)) * list compound_literal_info * 'a)
+ let with_block_objects binds ma = fun st ->
+-  let (new_aliases, cheri_const_alias) = List.foldl (fun (xs_acc, map_acc) (sym, (qs, ty)) ->
++  (* C1 m1: the const-alias mints draw from the threaded supply (the
++     fold threads the elab_state through fresh_elab_int; on OCaml the
++     redirected mint draws ambiently and returns the state unchanged).
++     The mints keep their run-time firing position (inside this state
++     function); the fold's LIST order is unchanged. *)
++  let (new_aliases, cheri_const_alias, st0) = List.foldl (fun (xs_acc, map_acc, stx) (sym, (qs, ty)) ->
+     (* TODO: fail if sym IN acc *)
+     if qs.Ctype.const then
+-      let sym' = Symbol.fresh () in
+-      ((sym, (qs, ty, sym')) :: xs_acc, Map.insert sym sym' map_acc)
++      let (n, stx') = fresh_elab_int stx in
++      let sym' = Symbol.fresh_given_int n in
++      ((sym, (qs, ty, sym')) :: xs_acc, Map.insert sym sym' map_acc, stx')
+     else
+-      (xs_acc, map_acc)
+-  ) ([], st.cheri_const_alias) binds in
+-  let st' = <| st with
++      (xs_acc, map_acc, stx)
++  ) ([], st.cheri_const_alias, st) binds in
++  let st' = <| st0 with
+     visible_objects_types= List.foldl (fun acc (sym, qs_ty) -> Map.insert sym qs_ty acc) st.visible_objects_types binds;
+     visible_objects= (List.map fst binds) :: st.visible_objects;
+     compound_literals= [];
+@@ -174,8 +225,8 @@ let resolve_object_type sym = fun st ->
+ 
+ (* similar to Cabs_to_ail_effect.record_marker *)
+ val record_object_types_marker: unit -> elabM nat
+-let record_object_types_marker () = 
+-  let marker_id = Symbol.fresh_int () in
++let record_object_types_marker () =
++  bind fresh_elab_int (fun marker_id ->
+   begin
+     if Global.backend_name () = "Cn" then
+       get_visible_objects >>= fun visible_objects ->
+@@ -191,7 +242,7 @@ let record_object_types_marker () =
+     else
+       return ()
+   end >>
+-  return marker_id
++  return marker_id)
+ 
+ 
+ (* record that an (unrecoverable) error occured, but don't abandon
+diff --git a/frontend/model/utils.lem b/frontend/model/utils.lem
+index ffaa47aa7..8ebf5b5f0 100644
+--- a/frontend/model/utils.lem
++++ b/frontend/model/utils.lem
+@@ -329,9 +329,8 @@ declare ocaml target_rep function is_power_of_two = `Cerb_util.is_power_of_two`
+ declare lean target_rep function is_power_of_two = `CerbUtils.is_power_of_two`
+ 
+ (* === Totality declares (arc 7 S5a, 2026-08-20): Lean-target only.
+-   The arc-3 F8 call-graph escapees on the slate theorems' kernel path
+-   (S4 record §6.3 event 2: assoc_insert/remove/adjust) + the rest of
+-   the module so the totality gate can adopt Utils whole.
++   The execution-path entries (assoc_insert/remove/adjust) + the rest
++   of the module so the totality gate can adopt Utils whole.
+    Structural recursions -> termination_argument automatic.
+    Fuel cases (fuelExhausted witness panics at runtime, typing only):
+    mkListN_aux / mkListFromTo_aux count an integer UP to a bound
+@@ -342,7 +341,11 @@ declare lean target_rep function is_power_of_two = `CerbUtils.is_power_of_two`
+    the accumulator acc (input arg, return type matches, arc-3 D6
+    witness rule). === *)
+ declare {lean} fuel val mkListN_aux = `fuelExhausted acc`
++(* FUEL MEASURE (fuel-parameter arc C2, 2026-09-04; Lean-only): the counter i climbs to n,
++   one step per unit; obligation proved in lean_frontend/Utils_lemMeasureProofs.lean. *)
++declare {lean} fuel_measure val mkListN_aux = `Int.toNat (n - i) + 1`
+ declare {lean} fuel val mkListFromTo_aux = `fuelExhausted acc`
++declare {lean} fuel_measure val mkListFromTo_aux = `Int.toNat (max2 + 1 - i) + 1`
+ declare {lean} termination_argument numerote_ = automatic
+ declare {lean} termination_argument foldl2 = automatic
+ declare {lean} termination_argument map2_ = automatic
+@@ -351,6 +354,8 @@ declare {lean} termination_argument set_from_options = automatic
+ declare {lean} termination_argument mapUnzip_ = automatic
+ declare {lean} termination_argument map_option = automatic
+ declare {lean} fuel val replicate_list_ = `fuelExhausted acc`
++(* FUEL MEASURE (fuel-parameter arc C2, 2026-09-04; Lean-only): n counts down to 0. *)
++declare {lean} fuel_measure val replicate_list_ = `n + 1`
+ declare {lean} termination_argument assoc_insert = automatic
+ declare {lean} termination_argument assoc_remove = automatic
+ declare {lean} termination_argument assoc_adjust = automatic
+diff --git a/tests/failure-probes/discarded_failures.lem b/tests/failure-probes/discarded_failures.lem
+new file mode 100644
+index 000000000..386f1c180
+--- /dev/null
++++ b/tests/failure-probes/discarded_failures.lem
+@@ -0,0 +1,14 @@
++open import Pervasives_extra
++
++let stop (n : nat) : nat = failwith "validation-foundations deliberate failure"
++let keep_second (x : nat) (n : nat) : nat = n + 1
++let visit (f : nat -> nat) (n : nat) : nat = let r = f n in n + 1
++
++let unused_binding (n : nat) : nat = let x = stop n in n + 1
++let unused_argument (n : nat) : nat = keep_second (stop n) n
++let projection (n : nat) : nat = snd (stop n, n + 1)
++let discarded_result (n : nat) : nat = let xs = List.map stop [n] in n + 1
++let callback (n : nat) : nat = visit stop n
++let mapped_projection (n : nat) : nat = List.length (List.map stop [n])
++let required (n : nat) : nat = stop n
++let positive_control (n : nat) : nat = n + 1

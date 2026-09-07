@@ -1,0 +1,48 @@
+COMMAND: bash -c 'exec ../scripts/capped lake env lean --stdin < docs/2026-09-07_risk-map-baseline-evidence/theorem-probe-input.txt'
+CWD: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/lean_frontend
+STREAM stdout: bytes=3586 sha256=b62ed4ef9d902dbd1f8c53f64732742cfc0949d917510f45c15bc033146b4561
+'CerbGlobal.backend_name_eq' does not depend on any axioms
+'CerbGlobal.current_execution_mode_eq' does not depend on any axioms
+'CerbGlobal.using_concurrency_eq' does not depend on any axioms
+'CerbGlobal.isDefacto_eq' does not depend on any axioms
+'CerbGlobal.isPermissive_eq' does not depend on any axioms
+'CerbGlobal.isAgnostic_eq' does not depend on any axioms
+'CerbGlobal.isIgnoreBitfields_eq' does not depend on any axioms
+'CerbGlobal.has_switch_eq' does not depend on any axioms
+'CerbGlobal.is_CHERI_eq' does not depend on any axioms
+'CerbGlobal.is_PNVI_eq' does not depend on any axioms
+'CerbGlobal.has_strict_pointer_arith_eq' does not depend on any axioms
+'CerbTagsWf.Acyclic.pair' depends on axioms: [propext, Classical.choice, Quot.sound]
+CerbMem.alignofCtype_measure_sufficient (ambient : CerbTags.TagDefsMap) (cty : ctype)
+  (lemHyp : CerbTagsWf.Acyclic ambient) (lemFuel : Nat) (lemMeasureLe : CerbTagsWf.envBound ambient cty ≤ lemFuel) :
+  CerbMem.alignofCtype_lemFuel lemFuel ambient ambient cty = CerbMem.alignofCtype ambient cty
+'CerbMem.alignofCtype_measure_sufficient' depends on axioms: [propext, Classical.choice, Quot.sound]
+CerbMem.sizeofCtype_measure_sufficient (ambient : CerbTags.TagDefsMap) (cty : ctype)
+  (lemHyp : CerbTagsWf.Acyclic ambient) (lemFuel : Nat) (lemMeasureLe : CerbTagsWf.envBound ambient cty ≤ lemFuel) :
+  CerbMem.sizeofCtype_lemFuel lemFuel ambient ambient cty = CerbMem.sizeofCtype ambient cty
+'CerbMem.sizeofCtype_measure_sufficient' depends on axioms: [propext, Classical.choice, Quot.sound]
+CerbMem.memberAlign_measure_sufficient (ambient : CerbTags.TagDefsMap) (alignOpt : Option alignment) (ty : ctype)
+  (lemHyp : CerbTagsWf.Acyclic ambient) (lemFuel : Nat)
+  (lemMeasureLe : CerbTagsWf.memberBound ambient alignOpt ty ≤ lemFuel) :
+  CerbMem.memberAlign_lemFuel lemFuel ambient ambient alignOpt ty = CerbMem.memberAlign ambient alignOpt ty
+'CerbMem.memberAlign_measure_sufficient' depends on axioms: [propext, Classical.choice, Quot.sound]
+CerbMem.offsetsofMembers_measure_sufficient (ambient : CerbTags.TagDefsMap)
+  (members : List (identifier × attributes × Option alignment × qualifiers × ctype))
+  (lemHyp : CerbTagsWf.Acyclic ambient) (lemFuel : Nat)
+  (lemMeasureLe : CerbTagsWf.membersBound ambient members ≤ lemFuel) :
+  CerbMem.offsetsofMembers_lemFuel lemFuel ambient ambient members = CerbMem.offsetsofMembers ambient members
+'CerbMem.offsetsofMembers_measure_sufficient' depends on axioms: [propext, Classical.choice, Quot.sound]
+CerbMem.offsetsof_measure_sufficient (ambient tagDefs : CerbTags.TagDefsMap) (tagSym : sym) (ignoreFlexible : Bool)
+  (lemHyp : CerbTagsWf.AcyclicPair ambient tagDefs) (lemFuel : Nat)
+  (lemMeasureLe : CerbTagsWf.offsetsofBound ambient tagDefs ≤ lemFuel) :
+  CerbMem.offsetsof_lemFuel lemFuel ambient tagDefs tagSym ignoreFlexible =
+    CerbMem.offsetsof ambient tagDefs tagSym ignoreFlexible
+'CerbMem.offsetsof_measure_sufficient' depends on axioms: [propext, Classical.choice, Quot.sound]
+CerbMem.reconstructValue_measure_sufficient (ambient : CerbTags.TagDefsMap) (unionmap : List (Int × identifier))
+  (funptrmap : CerbMem.Funptrmap) (addr : Int) (ty : ctype) (bytes : List CerbMem.AbsByte)
+  (lemHyp : CerbTagsWf.Acyclic ambient) (lemFuel : Nat) (lemMeasureLe : CerbTagsWf.envBound ambient ty ≤ lemFuel) :
+  CerbMem.reconstructValue_lemFuel lemFuel ambient unionmap funptrmap addr ty bytes =
+    CerbMem.reconstructValue ambient unionmap funptrmap addr ty bytes
+'CerbMem.reconstructValue_measure_sufficient' depends on axioms: [propext, Classical.choice, Quot.sound]
+STREAM stderr: bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DIRECT theorem-probe rc=0 elapsed_seconds=0.574 status=passed cleaned=true residual_processes=False

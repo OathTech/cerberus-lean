@@ -1,0 +1,608 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+COMMAND: git diff ae1a5448c df1fdaf02 -- scripts/test_unit.sh scripts/LADDER.md
+diff --git a/scripts/LADDER.md b/scripts/LADDER.md
+index 900934f6c..8fe1bc9ac 100644
+--- a/scripts/LADDER.md
++++ b/scripts/LADDER.md
+@@ -5,13 +5,29 @@ the normative meanings of those phrases in charters, decision logs, and
+ merge checklists from arc 6 on. Every command runs from the repo root;
+ every gating command must exit 0.
+ 
++`python3 scripts/release.py --mode fast` executes Tier A; `--mode full`
++executes Tier A+B. `--list` prints the command IDs parsed directly from the
++tables below. A `--lane ID` selection is explicitly a subset, never a full
++tier certification. The CI entry is `bash scripts/ci_lean.sh` (full by
++default), after loading the project-scoped opam/Lean/Git environment.
++
++The runner retains raw logs, source/build identities and a versioned report
++under `.tmp/release/` (or a fresh `--out` directory). Missing commands,
++timeouts, changed source and ambient binary/freshness overrides prevent a
++green certification. A completed tier and a customer-ready release are
++separate claims; unrun reporting/adoption/audit obligations remain visible.
++Reporting requires explicit `--mode reporting --lane ID` selections and
++writes proposed scoreboard/baseline artifacts into the report directory.
++Follow current ownership: the legacy csmith run is excluded from this
++charter's dispatch. No automatic reporting campaign follows a full run.
++
+ ## Tier A — fast ladder (every commit / worker boundary claim)
+ 
+ Order is the conventional run order; all are fail-closed gates.
+ 
+ | # | Command | Bar |
+ |---|---------|-----|
+-| 1 | `./scripts/test_unit.sh` | 5/5 exes (incl. 280 parser tests + pp-test) + sync gate + axiom censuses/cones + exec-purity/totality + lem-sync + fork-drift gate (`check_fork_drift.sh` — oracle-surface manifest + hash-pinned generated-OCaml deltas) + fixture-freeze (`check_fixture_freeze.sh` — the corpus/ hash manifest) |
++| 1 | `./scripts/test_unit.sh` | 6/6 exes (incl. 280 parser tests + pp-test + the FUEL arc's `fuel-exemplar-test`) + sync gate + axiom censuses/cones (incl. the boundary-opaque population pin + the FUEL contract-lemma cones) + `check_sorry_token.sh` (comment-stripped `sorry`-token census, 0) + `test_fuel_classifier.sh` (FUEL classifier selftest) + exec-purity/totality + lem-sync + fork-drift gate (`check_fork_drift.sh` — oracle-surface manifest + hash-pinned generated-OCaml deltas) + fixture-freeze (`check_fixture_freeze.sh` — the corpus/ hash manifest) + native stream-capture probes (stable signal, binary stderr, and genuine stderr nondeterminism) + the renumber-instrument plant battery (`test_renumber_plants.sh` RIDES this row: it is invoked by test_unit.sh, not run separately) |
+ | 2 | `./scripts/test_exec.sh --check-baseline` | tests/minimal vs `scripts/exec_baseline.txt`, rc 0 |
+ | 3 | `./scripts/test_exec.sh --check-baseline=scripts/exec_coverage_baseline.txt tests/coverage` | rc 0 (recorded DIFFs unchanged) |
+ | 4 | `./scripts/test_exec.sh --check-baseline=scripts/exec_debug_baseline.txt tests/debug` | rc 0 |
+@@ -19,7 +35,7 @@ Order is the conventional run order; all are fail-closed gates.
+ | 4c | `./scripts/test_bytes.sh` | rc 0 — 9/9 exec files at the COMMITTED `.exec` expecteds (oracle-independent reference) + 5/5 front-end-reject pins (arc-10 S3b; script header has the leg semantics) |
+ | 5 | `./scripts/test_libc_exec.sh` | all MATCH recorded baseline (`tests/libc_exec/baseline.txt`) |
+ | 6 | `./scripts/test_multi_tu.sh` | all corpus entries pass |
+-| 7 | `./scripts/test_parse.sh` | tests/minimal 100% |
++| 7 | `./scripts/test_parse.sh` | tests/minimal 100% (FUEL arc budget commit, 2026-09-03: Lean side runs `--pp-core` — front end, NO execution — under a fail-noisy per-file timeout; the 10^6 fuel ceiling had been this lane's implicit bound. Nonzero Lean exits are classified REJECTED (printed verdict) / INTERNAL_ERROR_EXPECTED (failwithI on `*.error.c`, oracle-mirrored) / LEAN_FAILURE (fatal) — never `ok`) |
+ | 8 | `./scripts/test_core.sh` | tests/minimal 100% (078 is GREEN since arc-6 S1 — any red is a regression) |
+ | 9 | `./scripts/test_elab.sh` | recorded same/diff state, rc 0 |
+ | 10 | `./scripts/test_libxml2_uri.sh` | **GATING since arc-6 S4** (charter success condition 1): 16/16 byte-identical LEAN_LIBC vs ORACLE_LIBC + pinned per-lane expectations + baseline drift check (`tests/libxml2/uri_baseline.txt`), fail-closed both directions |
+@@ -32,16 +48,22 @@ whatever dune+lake need.
+ 
+ ## Tier B — slow ladder (slice boundaries, close-out certification, pre-merge)
+ 
+-Everything in Tier A, plus:
++Everything in Tier A, plus the rows below. `scripts/release.py --mode full`
++executes this membership; `test_unit.sh` also bundles the codec and runner's
++small hermetic plants. The tables are the executable membership authority.
+ 
+ | # | Command | Bar |
+ |---|---------|-----|
+ | 1 | `./scripts/test_libxml2.sh` | full chvalid battery, 4 slices × (1354-point set), byte-equal verdicts both sides + oracle == `tests/libxml2/chvalid_baseline.txt`; ~8 min |
+-| 2 | `./scripts/test_parse.sh tests/ci` | 100% |
++| 2 | `./scripts/test_parse.sh tests/ci` | 100% (`--pp-core` + per-file timeout since the FUEL arc budget commit — see Tier A row 7) |
+ | 3 | `./scripts/test_core.sh tests/ci` | at recorded state (all parse) |
+ | 4 | `./scripts/test_verify.sh` | fixture differentials (tests/verify + corpus/): pin provenance + main-mode + call-point oracle-differentials, 0 failed |
+ | 5 | `./scripts/test_immaculate.sh` | at baseline |
+ | 6 | `./scripts/test_speclab.sh --selftest` + `--plant`; `./scripts/test_speclab_{divmod,bytearr,list,tree,seed}.sh --gate` | all PASS (harness-family differential lanes; sweep/fuzz modes are reporting-tier extras) |
++| 7 | `./scripts/test_gcc_oracle.sh --check-baseline` | **GATE since 2026-09-02 [USER 2026-09-02]** (born reporting-tier 2026-08-30; design `lean_frontend/docs/2026-08-30_gcc-second-oracle-design.md`): the gcc SECOND-oracle lane over tests/minimal + debug + float + immaculate/nolibc + the staged csmith tier, rc 0 vs the 1,963-row skip ledger `scripts/gcc_oracle_baseline.txt` + the fail-closed triage ledger `scripts/gcc_oracle_triage.txt`. Asymmetric by audited design (VALIDATION.md §2): any DISAGREE or regression is fatal; improvements print loudly at rc 0 and are re-recorded in a dedicated instrument commit. ~24 min wall (csmith tier incl.) — Tier B, never Tier A. Load caveat: the TIMEOUT-class rows are wall-clock sensitive (TIMEOUT_SECS=30; the slowest csmith rows hand-time at ~17 s on a quiet box, and a busy box — load ≈12 at the 2026-09-02 audit — pushed one over) — a REGRESSION whose only movement is into SKIP_LEAN_TIMEOUT is re-run on a quiet box before it is read as red; no code change. |
++| 8 | `./scripts/test_hang_plant.sh`; `./scripts/test_kill_plant.sh`; `./scripts/test_fuel_plant.sh` | plant batteries for the harness failure CLASSIFICATIONS (mem-scale S0/S2; FUEL arc 2026-09-03): a sleeping Lean-driver stub must read HANG and a busy-looping one TIMEOUT in test_exec.sh + test_ci_sweep.sh; a 5 GiB-resident stub must read each capped harness's own KILL class (exit 137 + capped's OOM-KILLED witness); a stub printing the fuel-exhaustion kill / panic must read FUEL (`FUEL` / `SKIP_LEAN_FUEL` / `LEAN_FUEL` / measure.sh `FUEL(kill|panic)`) in every classifying lane and a genuine `Error {msg: "assert() failure"}` stub must NOT. Loud plant banner on every run; rc 0 |
++| 9 | `python3 scripts/test_observation_lanes.py` | Real entry-point plants for exec, multi-TU, CN, CI, GCC, verify, bytes, libc-exec, URI, immaculate and all six spec-lab scripts: positive controls, same-value byte differences, original failure statuses, CN refusal text and genuine native exit 137; descendant-OOM witnesses at successful exits, UB_DIFF denominator/default/new-baseline rejection, and immaculate fuel/garbage/unreviewed-panic rejection. Explicit reference projections are retained. Measured 18.3 minutes in the repaired 90-case run at `de9f6d361`, dominated by repeated real verify/immaculate pipelines; Tier B because this repeats full pipelines under controlled mutations. |
++| 10 | `python3 scripts/test_upstream_oracle.py` + `--plant` | Pristine source `b9aeedcb4` built with upstream Lem `3802cb0`, compared with fork OCaml: applicable Tier A C inputs plus representative CLI/library interfaces, full raw records, reviewed diagnostic differences and a real unexpected-verdict plant. Requires a checked independent build manifest (`CERB_INDEPENDENT_MANIFEST`); missing provenance fails. About two minutes warm plus roughly one minute for the separate cold-build recipe. **PREREQUISITE (not built by the lane or by `release.py`):** the prepared independent build — `scripts/ce python3 scripts/build_independent_oracle.py --lem-repo <lem-lean checkout> --cerberus-repo <cerberus-lean checkout> --out .validation-foundations/independent-oracle-v2` (~50 s–1 min; the output directory must be new) — whose `manifest.json` the lane reads from that default path or from `CERB_INDEPENDENT_MANIFEST`. Without a valid built manifest the lane FAILS CLOSED (no build, no skip, no vacuous pass); recipe and review: `lean_frontend/docs/2026-09-06_independent-oracle-and-fork-pins.md`. |
+ 
+ **Battery placement decision [AGENT:S4]:** `test_libxml2.sh` was
+ out-of-ladder in arc 5 (~35 min, 28 slices). After the arc-6 S3
+@@ -64,14 +86,46 @@ block a merge by themselves.
+ |---------|----------|
+ | `./scripts/test_exec.sh --write-baseline=scripts/exec_ci_baseline.txt tests/ci` | tests/ci exec differential scoreboard (arc-6 S4 rider; see `lean_frontend/docs/2026-08-19_arc6-s4-ci-scoreboard.md`). NOTE: default-mode exit is nonzero while known mismatches exist — the artifact is the baseline file, not the exit code. A CHECK against this baseline (`--check-baseline=scripts/exec_ci_baseline.txt tests/ci`) may be used as a no-regression probe, but tier-C status means running it is optional, not part of certification. |
+ | `./scripts/fuzz_csmith.sh` | csmith differential fuzzing (csmith + creduce installed locally since arc-10; lane portfolio + deterministic seed ranges: `lean_frontend/docs/2026-08-20_arc10-s4-csmith-campaign.md`) |
+-| `./scripts/test_csmith_corpus.sh --check-baseline` | 1669-file in-tree csmith corpus lane vs `scripts/exec_csmith_corpus_baseline.txt` (arc-10 S4; classified baseline — 15 DIFF are the F-D fork-oracle class, see baseline header). Full pass ~2.7 h: run `--shard K/6` sharded (shard-aware fail-closed baseline check, arc-10 S5). Reporting-tier: full pass at close-out/pre-merge boundaries, spot shard otherwise |
++| `./scripts/test_csmith_corpus.sh --check-baseline` | 1669-file in-tree csmith corpus lane vs `scripts/exec_csmith_corpus_baseline.txt` (arc-10 S4; classified baseline). At `928aa1e76` the baseline has NO MISMATCH/DIFF/UB_DIFF row: 1161 MATCH, 499 `CERB_SKIP` (oracle-side, Lean not reached) and 9 `TIMEOUT` (derived tallies from the file; the 2026-08-22 header narrates the arc-13 re-baseline and is the per-row history). Under the zero-discrepancy rule (VALIDATION.md §1) the TIMEOUT rows are class-(b) pending per-row completion evidence, never agreement. Full pass ~2.7 h: run `--shard K/6` sharded (shard-aware fail-closed baseline check, arc-10 S5). Reporting-tier: full pass at close-out/pre-merge boundaries, spot shard otherwise |
++| `./scripts/test_ci_sweep.sh --all-suites` | full-upstream-CI-sweep scoreboard (ci-sweep stream, 2026-08-22): differential sweep of the big heterogeneous corpora under tests/ (gcc-torture breakdown classes, ci, tcc, suite, pnvi, hacl-star, freebsd, examples) with checkpointed per-corpus TSVs committed under `tests/ci_sweep/results/` (15 TSVs). Enforces NO baseline, exits 0 unless the harness itself breaks; the committed TSVs move only by a deliberate re-record (TODO.md registers the pending one) |
++
++### Instruments (neither gates nor scoreboards)
++
++Runnable artifacts kept so that recorded claims stay reproducible. They
++have no baseline, no tier, no wiring; running one produces evidence for
++a record, never a pass/fail for the tree.
++
++| Path | What |
++|------|------|
++| `tests/parity-probes/` | the parity-detective lane (2026-08-30): `run_probe.sh` single-file differential runner + `probes/*.c` beyond-testset probes + the `sweep-2026-08-30/` TSVs; every claim of `lean_frontend/docs/2026-08-30_parity-detective-report.md` has a runnable artifact here |
++| `tests/mem-scale-probes/` | the memory-scale arc's probe corpus (`gen_probes.sh`, `measure.sh`, `run_all.sh`, `summarize.py`, `probes/`, `results/`) and `micro/` — a THIRD Lake package (`memscale-micro`, own `lakefile.toml` + `lake-manifest.json`, requires CerberusLean by path, shares the workspace package store) timing CerbMem byte-path primitives in isolation. Measurement only; the third manifest is registered in TODO.md's package-set-pin item |
++| `tests/csmith_findings/` | the arc-10 S4 csmith campaign's committed reproducer artifacts (all ORACLE-side findings) with regeneration recipes; index in its README |
+ 
+ ## Conventions
+ 
+ * Baseline updates are instrument changes: never silent, always a
+   dedicated commit with justification (house rule since arc 4).
+-* Per-invocation resource caps on libxml2-sized inputs: `ulimit -v
+-  4000000` + timeout (operator directive, arc 5) — the harnesses apply
+-  these themselves.
++* Per-invocation resource caps on libxml2-sized inputs: per-test
++  `scripts/capped` with `CERB_MEM_MAX=4G` (cgroup RSS) + timeout —
++  [USER 2026-09-02] ("Q2 agree"), SUPERSEDING the arc-5 operator
++  directive `ulimit -v 4000000`. Why: `ulimit -v` limits VIRTUAL
++  address space, and Lean's virtual footprint is ~2–3.6× its RSS, so
++  the old cap killed Lean at ~1.7 GB RSS while the oracle ran to
++  3.1 GB (record: `lean_frontend/docs/2026-09-01_mem-scale-profile.md`
++  §2; ruling: `docs/2026-09-01_mem-scale-design.md` §0/Q2). MIGRATED
++  (mem-scale S2, 2026-09-02): all 22 `ulimit -v` sites — 20 code sites
++  + 2 header comments, derived tally — in the seven
++  harnesses (`test_ci_sweep`, `test_libc_exec`, `test_libxml2`,
++  `test_libxml2_uri`, `test_immaculate`, `test_gcc_oracle`,
++  `tests/parity-probes/run_probe.sh`) now run each test under
++  `scripts/common.sh`'s `CAPPED_TEST` (`scripts/capped`,
++  `CERB_TEST_MEM_MAX`, default 4G); a cap breach has capped's positive
++  OOM witness (the cgroup's `memory.events oom_kill` counter), even when
++  a surviving parent exits 0 or 1. It is never agreement; GCC explicitly
++  accounts for its native-side exclusion. A bare 137 remains subject to
++  each protocol's status rules and is not itself an OOM witness. Plant:
++  `scripts/test_kill_plant.sh`.
++  Baselines re-derived in the dedicated instrument commit recorded in
++  `lean_frontend/docs/2026-09-02_mem-scale-record.md` §S2.
+ * Close-out certification = Tier B green + Tier C artifacts current +
+   the arc's charter-specific bars (see the arc merge checklist).
+diff --git a/scripts/test_unit.sh b/scripts/test_unit.sh
+index 4147c6952..b8d18e779 100755
+--- a/scripts/test_unit.sh
++++ b/scripts/test_unit.sh
+@@ -19,63 +19,31 @@ UNIT_TESTS=(
+     "fresh-int-test"
+     # arc-10 S3: pretty-printer mirrors vs recorded oracle outputs
+     "pp-test"
++    # FUEL arc (2026-09-03): the consumer-shaped exemplar theorem over the
++    # shipped pipeline (test/Unit/FuelExemplar.lean) — compile-time proof,
++    # main reports success; its cone is probed by check_theorem_axioms.sh
++    "fuel-exemplar-test"
+ )
+ 
+ # ---------------------------------------------------------------------------
+ # Sync gate (arc-4 S5f, audit G2). Lake compiles from lean_frontend/generated/
+ # (srcDir), NOT from lean_frontend/ — a stale generated/ copy of a
+ # hand-written file silently launders edits out of the binary (observed:
+-# generated/Main.lean lacked the S1r floor probe). Every file in the
+-# Makefile's LEAN_HANDWRITTEN list (which includes Main.lean) must be
+-# byte-identical to its generated/ copy. Fail-closed: an unparseable
+-# Makefile list, a missing file on either side, or any byte drift fails
+-# the suite. Absolute paths throughout.
++# generated/Main.lean lacked the S1r floor probe; 2026-09-02: a merged
++# CerbMem.lean change never reached the binary while the driver-freshness
++# stamp read green). Since hotfix fix/freshness-copy-gap the gate is
++# tools/check_handwritten_sync.sh — the copy set is enumerated from
++# lean_frontend/handwritten_copy.manifest, the SAME file the Makefile
++# recipe copies from (the inline awk parse of the Makefile that lived
++# here was a second, drift-prone reader). Fail-closed: missing/empty
++# manifest, a missing file on either side, any byte drift, or an
++# unlisted lean_frontend/*.lean fails the suite. The same tool gates
++# check_driver_fresh --record-lean/--check and common.sh build_lean.
+ # ---------------------------------------------------------------------------
+-SYNC_MAKEFILE="$PROJECT_ROOT/Makefile"
+-SYNC_SRC_DIR="$PROJECT_ROOT/lean_frontend"
+-SYNC_GEN_DIR="$PROJECT_ROOT/lean_frontend/generated"
+-sync_list=$(awk '
+-    /^LEAN_HANDWRITTEN[[:space:]]*=/ { inlist=1 }
+-    inlist {
+-        line=$0
+-        sub(/^LEAN_HANDWRITTEN[[:space:]]*=/, "", line)
+-        cont = (line ~ /\\[[:space:]]*$/)
+-        gsub(/\\[[:space:]]*$/, "", line)
+-        printf "%s ", line
+-        if (!cont) exit
+-    }' "$SYNC_MAKEFILE")
+-# shellcheck disable=SC2206
+-sync_files=($sync_list)
+-if [[ ${#sync_files[@]} -eq 0 ]]; then
+-    echo "${RED}test_unit: sync gate FAILED — could not parse LEAN_HANDWRITTEN from $SYNC_MAKEFILE (fail-closed)${NC}"
+-    exit 1
+-fi
+-# Main.lean is in LEAN_HANDWRITTEN since S5f; keep the belt-and-braces
+-# append in case the Makefile list regresses to not covering it.
+-case " ${sync_files[*]} " in
+-    *" Main.lean "*) ;;
+-    *) sync_files+=("Main.lean") ;;
+-esac
+-sync_drift=0
+-for f in "${sync_files[@]}"; do
+-    src="$SYNC_SRC_DIR/$f"
+-    gen="$SYNC_GEN_DIR/$f"
+-    if [[ ! -f "$src" ]]; then
+-        echo "  SYNC: hand-written file missing: $src"
+-        sync_drift=$((sync_drift + 1))
+-    elif [[ ! -f "$gen" ]]; then
+-        echo "  SYNC: generated copy missing: $gen (run 'make lean-prelude-src')"
+-        sync_drift=$((sync_drift + 1))
+-    elif ! cmp -s "$src" "$gen"; then
+-        echo "  SYNC: DRIFT between $src and $gen (run 'make lean-prelude-src')"
+-        sync_drift=$((sync_drift + 1))
+-    fi
+-done
+-if [[ $sync_drift -gt 0 ]]; then
+-    echo "${RED}test_unit: sync gate FAILED — $sync_drift hand-written/generated drift(s); the built binary does not correspond to the sources${NC}"
++if ! "$PROJECT_ROOT/tools/check_handwritten_sync.sh"; then
++    echo "${RED}test_unit: sync gate FAILED — hand-written/generated drift; the built binary does not correspond to the sources${NC}"
+     exit 1
+ fi
+-echo "test_unit: sync gate OK (${#sync_files[@]} hand-written files byte-identical to generated/)"
+ 
+ cd "$PROJECT_ROOT/lean_frontend"
+ 
+@@ -124,6 +92,130 @@ if ! "$AXIOM_SH"; then
+     exit 1
+ fi
+ 
++# `sorry`-token SOURCE census (FUEL arc rider, 2026-09-03; design
++# lean_frontend/docs/2026-09-02_fuel-arc-design.md §5): comment-stripped
++# scan of generated/ + hand-written + test + the LemLib copy, expected 0
++# (the axiom gate probes sorryAx in CONES only; this sees the text).
++# Fail-closed: empty scan set = FAIL.
++SORRY_SH="$(dirname "$PURITY_SH")/check_sorry_token.sh"
++if ! "$SORRY_SH"; then
++    echo "test_unit: sorry-token gate FAILED"
++    exit 1
++fi
++
++# FUEL classifier selftest (FUEL arc, 2026-09-03; design §3.4): the one
++# classify_fuel_outcome every classifying lane uses, against fixture
++# captures incl. the three mandated negatives. Fail-closed.
++FUELCLS_SH="$(dirname "$PURITY_SH")/test_fuel_classifier.sh"
++if ! "$FUELCLS_SH"; then
++    echo "test_unit: FUEL classifier selftest FAILED"
++    exit 1
++fi
++
++# Byte protocol and real subprocess capture plants (validation foundations).
++if ! "$(dirname "$PURITY_SH")/test_gcc_capture.sh"; then
++    echo "test_unit: native stream capture probes FAILED"
++    exit 1
++fi
++if ! python3 "$(dirname "$PURITY_SH")/test_observations.py"; then
++    echo "test_unit: observation codec/capture plants FAILED"
++    exit 1
++fi
++if ! python3 "$(dirname "$PURITY_SH")/test_capture_prerequisites.py"; then
++    echo "test_unit: bridge capture / generator build-status plants FAILED"
++    exit 1
++fi
++if ! python3 "$(dirname "$PURITY_SH")/test_release.py"; then
++    echo "test_unit: release runner plants FAILED"
++    exit 1
++fi
++if ! python3 "$(dirname "$PURITY_SH")/test_failure_census.py"; then
++    echo "test_unit: failure census instrument tests FAILED"
++    exit 1
++fi
++if ! python3 "$(dirname "$PURITY_SH")/test_upstream_oracle_instrument.py"; then
++    echo "ERROR: independent oracle instrument plants failed" >&2
++    exit 1
++fi
++
++# Verdict-extractor selftest (P0 instrument repair 2026-09-05, whole-project
++# audit F3): test_exec.sh's extract_verdict_seq must keep the WHOLE Defined
++# line (value, stdout, stderr, blocked) as the VAL token — hermetic plants
++# (no binaries): the audit's same-value/different-stdout pair yields distinct
++# tokens (and the pre-repair extractor's collapse is reproduced so the plant
++# cannot be vacuous), different-stderr, escaped payload byte-exact,
++# multi-outcome order, embedded text is payload, Undefined unchanged.
++# Fail-closed.
++EXEC_SH="$(dirname "$PURITY_SH")/test_exec.sh"
++if ! "$EXEC_SH" --selftest; then
++    echo "test_unit: test_exec verdict-extractor SELFTEST FAILED"
++    exit 1
++fi
++
++# No-fuel-numerals gate (fuel-parameter arc, 2026-09-04): no fuel numeral
++# in the Lean text a consumer reasons against (seams, generated, tests,
++# speclab) except Main.lean's `--fuel` default; the gate's own plant
++# battery (--selftest: F1-F6 planted red, unplanted green) runs first so
++# a silently vacuous gate cannot pass. Fail-closed.
++NOFUEL_SH="$(dirname "$PURITY_SH")/check_no_fuel_numerals.sh"
++if ! "$NOFUEL_SH" --selftest; then
++    echo "test_unit: no-fuel-numerals gate SELFTEST FAILED"
++    exit 1
++fi
++if ! "$NOFUEL_SH"; then
++    echo "test_unit: no-fuel-numerals gate FAILED"
++    exit 1
++fi
++
++# Fuel-parametricity pin set (fuel-parameter arc, pre-merge audit M1): the
++# generated tree's ambient fuel wrappers must equal the set pinned by the
++# 64 `∀ n, @f ⟨n⟩ = f_lemFuel n` examples of TotalityProofTest.lean Part 1,
++# both directions (a new fuel'd function without a pin is RED; regenerate
++# with scripts/gen_fuel_parametricity.py --emit). Fail-closed (vacuity
++# guard inside the script).
++GENPIN_PY="$(dirname "$PURITY_SH")/gen_fuel_parametricity.py"
++if ! python3 "$GENPIN_PY" --check; then
++    echo "test_unit: fuel-parametricity pin-set check FAILED"
++    exit 1
++fi
++
++# Lakefile-roots gate (fuel-parameter arc, 2026-09-04; lem-lean fuel-measure
++# record §6.4 item 8): every generated module — the `_auxiliary` obligation
++# carriers included — is a Lake root, both directions; plant-tested by its
++# --selftest. Fail-closed.
++ROOTS_SH="$(dirname "$PURITY_SH")/check_lakefile_roots.sh"
++if ! "$ROOTS_SH" --selftest; then
++    echo "test_unit: lakefile-roots gate SELFTEST FAILED"
++    exit 1
++fi
++if ! "$ROOTS_SH"; then
++    echo "test_unit: lakefile-roots gate FAILED"
++    exit 1
++fi
++
++# Fuel-forms gate (fuel-parameter arc C2, 2026-09-04; P0 audit-F2 repair
++# 2026-09-05): the consumer's (A)/(B)/(C) requirement made mechanical — every
++# fuel'd worker in the compiled environment is MEASURED (obligation of the
++# contract's shape INCLUDING the argument correspondence against the wrapper's
++# own body and μ = the wrapper's measure; obligation + proof cones ⊆ the
++# standard three), ABSORBING = kill at zero (its _zero lemma states the WORKER
++# at literal fuel 0 on its own binders = the monad's absorbing element, cone ⊆
++# the standard three; propagation NOT proved — lem TODO 13), or an AMBIENT
++# worker that is either unreachable from the drive cone (kernel constant
++# closure, mutual blocks included) or a reviewed row of
++# scripts/fuel_forms_pending.txt (both directions). Plant-tested by its
++# --selftest (24 plants incl. the whole-project audit's two decoys verbatim).
++# Fail-closed.
++FUELFORMS_SH="$(dirname "$PURITY_SH")/check_fuel_forms.sh"
++if ! "$FUELFORMS_SH" --selftest; then
++    echo "test_unit: fuel-forms gate SELFTEST FAILED"
++    exit 1
++fi
++if ! "$FUELFORMS_SH"; then
++    echo "test_unit: fuel-forms gate FAILED"
++    exit 1
++fi
++
+ # Totality gate (arc 3): the exec slice is partial-free (empty allowlist).
+ # ENFORCING and fail-closed like the gates above.
+ TOTALITY_SH="$(dirname "$PURITY_SH")/check_exec_totality.sh"
+@@ -159,21 +251,29 @@ fi
+ # Fork-drift gate (arc-10 audit follow-up, [USER] mandate): the oracle
+ # surface (frontend model, ocaml_frontend, memory, util, parsers,
+ # backend/{common,driver,lean_export}, runtime, opam files) must equal
+-# the reviewed manifest scripts/fork_drift_manifest.txt, and the
+-# generated-OCaml fork-vs-upstream deltas must match their pinned
+-# hashes (spec: notes/2026-08-21_fork-drift-review.md §6). Fail-closed
+-# like the gates above (a missing script/manifest fails the suite; the
+-# gate itself only SKIPs — loudly, rc 0 — when the upstream remote or
+-# a generated tree is absent).
++# the reviewed manifest scripts/fork_drift_manifest.txt (as a SET,
++# C-locale canonical, duplicates fatal), and the generated-OCaml
++# fork-vs-upstream deltas must match their pinned hashes (spec:
++# lean_frontend/docs/2026-08-21_fork-drift-review.md §6). Fail-closed like
++# the gates above — INCLUDING its prerequisites since the P0 instrument
++# repair (2026-09-05, whole-project audit F4): a missing upstream remote or
++# generated tree is rc 1, no longer a loud rc-0 SKIP this caller read as
++# success. The development opt-in CERB_FORK_DRIFT_DEV_SKIP is explicitly
++# UNSET here (env -u) so it cannot reach the gate from the ambient
++# environment. Plant-tested by its --selftest (locale/order/name-drift/
++# duplicate/missing-ref/missing-tree/opt-in/lem-pin plants) first.
+ DRIFT_SH="$(dirname "$PURITY_SH")/check_fork_drift.sh"
+-if ! "$DRIFT_SH"; then
++if ! env -u CERB_FORK_DRIFT_DEV_SKIP "$DRIFT_SH" --selftest; then
++    echo "test_unit: fork-drift gate SELFTEST FAILED"
++    exit 1
++fi
++if ! env -u CERB_FORK_DRIFT_DEV_SKIP "$DRIFT_SH"; then
+     echo "test_unit: fork-drift gate FAILED"
+     exit 1
+ fi
+ 
+-# Fixture-freeze gate (2026-08-31 semantics-first split; formerly the
+-# corpus-freeze leg of check_proof_size.sh — the proof-layer legs of
+-# that gate left with the proof packages): the lean_frontend/corpus
++# Fixture-freeze gate (2026-08-31 semantics-first split; the manifest is
++# scripts/fixture_corpus.sha256): the lean_frontend/corpus
+ # differential-fixture set must match its pinned manifest exactly.
+ # ENFORCING and fail-closed like the gates above.
+ FREEZE_SH="$(dirname "$PURITY_SH")/check_fixture_freeze.sh"
+@@ -181,3 +281,14 @@ if ! "$FREEZE_SH"; then
+     echo "test_unit: fixture-freeze gate FAILED"
+     exit 1
+ fi
++
++# Renumber-instrument plant battery (effect-retirement C2 step 3):
++# check_renumber_only.py adjudicates rebaseline admissions, so its
++# refusal legs are TRUST properties — the committed adversarial pairs
++# (string/comment holes s5/l1/l3/l4 + the C1-era plants) must refuse
++# and the positive controls must admit, forever.
++RENUM_PLANTS_SH="$(dirname "$PURITY_SH")/test_renumber_plants.sh"
++if ! "$RENUM_PLANTS_SH"; then
++    echo "test_unit: renumber-instrument plant battery FAILED"
++    exit 1
++fi
+
+DIFF rc=0
+COMMAND: git diff ae1a5448c df1fdaf02 -- scripts/unsafebaseio_allowlist.txt scripts/exec_purity_allowlist.txt scripts/exec_totality_allowlist.txt
+diff --git a/scripts/unsafebaseio_allowlist.txt b/scripts/unsafebaseio_allowlist.txt
+index 7bdb79ad7..e51674d97 100644
+--- a/scripts/unsafebaseio_allowlist.txt
++++ b/scripts/unsafebaseio_allowlist.txt
+@@ -11,7 +11,7 @@
+ # consumed at lean_frontend/.lake/packages/LemLib/lean-lib/**).
+ # Result: the census MATCHES the charter's Q4 table EXACTLY — zero
+ # out-of-table sites. Comment-only mentions (not code sites, listed for
+-# grep-leg design): CerbGlobal.lean:51, CerbTags.lean:28, LemLib.lean:36,
++# grep-leg design): CerbTags.lean:28, LemLib.lean:36,
+ # plus doc mentions of `runEffectful` in CerbTags.lean:6,46,
+ # CerberusFresh.lean:139, CerbDebug.lean:48. The C2 grep leg must either
+ # strip comments or count these rows explicitly.
+@@ -26,12 +26,22 @@ lean_frontend/CerbUtils.lean	timingStackRef	permanent-declared	KEEP (no-op timin
+ lean_frontend/CerbUtils.lean	logRef	permanent-declared	KEEP (write-only log ref, nothing reads it; shape parity)
+ lean_frontend/CerbUtils.lean	STD_impl	permanent-declared	KEEP (writes logRef only; value-identity otherwise)
+ lean_frontend/CerbUtils.lean	boundedIntegerImpl	permanent-declared	KEEP (deterministic stub `pure lo`; documented residual with named mover in-file — RNG threading iff load-bearing)
+-lean_frontend/CerbGlobal.lean	confRef	temporal(post-arc-parameter-plumbing-slice)	KEEP (config ref; written once by Main at startup, reader-shaped after)
+-lean_frontend/CerbGlobal.lean	switchesRef	temporal(post-arc-parameter-plumbing-slice)	KEEP (switches ref; same discipline)
+-lean_frontend/CerbGlobal.lean	getConf	temporal(post-arc-parameter-plumbing-slice)	KEEP (read of confRef)
+-lean_frontend/CerbGlobal.lean	has_switch_impl	temporal(post-arc-parameter-plumbing-slice)	KEEP (read of switchesRef)
+ lean_frontend/CerberusImpl.lean	typeof_enum_impl	temporal(reader/supply-machinery-follow-up-slice, explicitly NOT in-arc)	KEEP (enum registry read; genuinely stateful seam mirroring OCaml DefaultImpl ref)
+ lean_frontend/CerberusImpl.lean	register_enum_impl	temporal(reader/supply-machinery-follow-up-slice, explicitly NOT in-arc)	KEEP (enum registry write during elaboration)
++# --- retired 2026-09-05 (reasoning-artifact audit instance A, step 1;
++# docs/2026-09-05_cerbglobal-defs-record.md) ---
++# lean_frontend/CerbGlobal.lean confRef / switchesRef / getConf /
++# has_switch_impl — DELETED. The two refs were never written (no setter;
++# Main refuses --switches/--concurrency/--mode, Z-24), so every read
++# returned the default; the eleven `opaque … implemented_by` readers are
++# now plain `def`s of the driver's default configuration (cerb_global.ml
++# :35-64 / switches.ml:47-55,153-160 cited in-file), each with a `rfl`
++# lemma. CerbGlobal.lean has ZERO unsafe/implemented_by/unsafeBaseIO/
++# opaque sites; its 29 PIN rows (11 IMPLBY + 4 UNSAFEBASEIO + 14
++# UNSAFEDECL) and its 11 OPAQUE_WANT rows left the pins (66 -> 37 PIN
++# rows; 26 -> 15 opaques). The `temporal(post-arc-parameter-plumbing-
++# slice)` mover is now step 2 (the config as a reader-lifted parameter;
++# `using_concurrency`'s step 2 is feature/concurrency's).
+ # --- converted at C2 (left the allowlist, 2026-09-01) ---
+ # lean_frontend/CerberusFresh.lean digest_impl — CONVERTED at C2 to the
+ # kernel-checked-opaque forceIO/with_tagDefs pattern (Q4 ruling's promoted
+@@ -55,90 +65,85 @@ lem-lean/lean-lib/LemLib.lean	runEffectful_impl	L2-delete	DELETE (the axiom scaf
+ #
+ # =====================================================================
+ # C2 RATCHET POPULATION PIN (charter section 7.2 leg 3, as amended by
+-# the accepted L2-audit ratchet legs; 2026-09-01). Machine-readable:
++# the accepted L2-audit ratchet legs AND the C2 fresh audit's
++# MAJOR-2/minor-1 fixes; 2026-09-01). Machine-readable:
+ # check_theorem_axioms.sh parses the `PIN` lines below and asserts the
+ # comment-stripped census of @[implemented_by] targets, `unsafe
+-# def/opaque/abbrev` declarations, and `unsafeBaseIO` occurrences
+-# (keyed by enclosing declaration) over the ban surface — hand-written
+-# lean_frontend/*.lean + generated/*.lean + the consumed LemLib copy
+-# (.lake/packages/LemLib/lean-lib/**, recursive) — EQUALS this set
+-# exactly, both directions: any NEW site fails naming itself; any
+-# MISSING pinned row fails as scanner/copy-pipeline drift. This is the
+-# leg that bans an axiom-free reintroduction of the effect projection
+-# via opaque + implemented_by + unsafeBaseIO (the L2 audit's accepted
+-# proposal). Format: PIN <KIND> <file-basename> <identifier>, KIND in
+-# {IMPLBY, UNSAFEDECL, UNSAFEBASEIO}; hand-written files and their
+-# generated/ copies share the basename row (sync-gate byte-mirrored).
+-# =====================================================================
+-# LemLib survivors (the L2 record's enumerated pair)
+-PIN UNSAFEDECL LemLib.lean failwithIImpl
+-PIN IMPLBY LemLib.lean failwithIImpl
+-PIN UNSAFEDECL LemLib.lean fuelExhaustedWithImpl
+-PIN IMPLBY LemLib.lean fuelExhaustedWithImpl
+-# CerberusFresh — the digest/forceIO boundary (post-C2-conversion:
+-# zero unsafeBaseIO; kernel-checked opaques with native bindings)
+-PIN UNSAFEDECL CerberusFresh.lean digestPure
+-PIN UNSAFEDECL CerberusFresh.lean digest_impl
+-PIN IMPLBY CerberusFresh.lean digest_impl
+-PIN UNSAFEDECL CerberusFresh.lean forceThunkIO
+-PIN UNSAFEDECL CerberusFresh.lean forceIO_impl
+-PIN IMPLBY CerberusFresh.lean forceIO_impl
+-# CerberusImpl — enum registry (temporal; mover = reader/supply
+-# machinery follow-up slice, explicitly NOT in-arc)
+-PIN UNSAFEDECL CerberusImpl.lean typeof_enum_impl
+-PIN IMPLBY CerberusImpl.lean typeof_enum_impl
+-PIN UNSAFEBASEIO CerberusImpl.lean typeof_enum_impl
+-PIN UNSAFEDECL CerberusImpl.lean register_enum_impl
+-PIN IMPLBY CerberusImpl.lean register_enum_impl
+-PIN UNSAFEBASEIO CerberusImpl.lean register_enum_impl
+-# CerbGlobal — config/switch refs (temporal; mover = post-arc
+-# parameter-plumbing slice) + their read-only safe wrappers
+-PIN UNSAFEDECL CerbGlobal.lean confRef
+-PIN UNSAFEBASEIO CerbGlobal.lean confRef
+-PIN UNSAFEDECL CerbGlobal.lean switchesRef
+-PIN UNSAFEBASEIO CerbGlobal.lean switchesRef
+-PIN UNSAFEDECL CerbGlobal.lean getConf
+-PIN UNSAFEBASEIO CerbGlobal.lean getConf
+-PIN UNSAFEDECL CerbGlobal.lean backend_name_impl
+-PIN IMPLBY CerbGlobal.lean backend_name_impl
+-PIN UNSAFEDECL CerbGlobal.lean current_execution_mode_impl
+-PIN IMPLBY CerbGlobal.lean current_execution_mode_impl
+-PIN UNSAFEDECL CerbGlobal.lean using_concurrency_impl
+-PIN IMPLBY CerbGlobal.lean using_concurrency_impl
+-PIN UNSAFEDECL CerbGlobal.lean isDefacto_impl
+-PIN IMPLBY CerbGlobal.lean isDefacto_impl
+-PIN UNSAFEDECL CerbGlobal.lean isPermissive_impl
+-PIN IMPLBY CerbGlobal.lean isPermissive_impl
+-PIN UNSAFEDECL CerbGlobal.lean isAgnostic_impl
+-PIN IMPLBY CerbGlobal.lean isAgnostic_impl
+-PIN UNSAFEDECL CerbGlobal.lean isIgnoreBitfields_impl
+-PIN IMPLBY CerbGlobal.lean isIgnoreBitfields_impl
+-PIN UNSAFEDECL CerbGlobal.lean has_switch_impl
+-PIN IMPLBY CerbGlobal.lean has_switch_impl
+-PIN UNSAFEBASEIO CerbGlobal.lean has_switch_impl
+-PIN UNSAFEDECL CerbGlobal.lean is_CHERI_impl
+-PIN IMPLBY CerbGlobal.lean is_CHERI_impl
+-PIN UNSAFEDECL CerbGlobal.lean is_PNVI_impl
+-PIN IMPLBY CerbGlobal.lean is_PNVI_impl
+-PIN UNSAFEDECL CerbGlobal.lean has_strict_pointer_arith_impl
+-PIN IMPLBY CerbGlobal.lean has_strict_pointer_arith_impl
+-# CerbUtils — no-op timing/log refs + deterministic stub
+-# (permanent-declared family, Q4)
+-PIN UNSAFEDECL CerbUtils.lean timingStackRef
+-PIN UNSAFEBASEIO CerbUtils.lean timingStackRef
+-PIN UNSAFEDECL CerbUtils.lean begin_timing_impl
+-PIN IMPLBY CerbUtils.lean begin_timing_impl
+-PIN UNSAFEDECL CerbUtils.lean end_timing_impl
+-PIN IMPLBY CerbUtils.lean end_timing_impl
+-PIN UNSAFEDECL CerbUtils.lean logRef
+-PIN UNSAFEBASEIO CerbUtils.lean logRef
+-PIN UNSAFEDECL CerbUtils.lean STD_impl
+-PIN IMPLBY CerbUtils.lean STD_impl
+-PIN UNSAFEBASEIO CerbUtils.lean STD_impl
+-PIN UNSAFEDECL CerbUtils.lean boundedIntegerImpl
+-PIN IMPLBY CerbUtils.lean boundedIntegerImpl
+-PIN UNSAFEBASEIO CerbUtils.lean boundedIntegerImpl
+-# CerbMem — BEq shortcut (safe perf seam: opaque + implemented_by,
+-# no unsafeBaseIO; pinned because the population census is total)
+-PIN UNSAFEDECL CerbMem.lean beqMemValueImpl
+-PIN IMPLBY CerbMem.lean beqMemValueImpl
++# def/opaque/abbrev/...` declarations, `unsafeBaseIO` occurrences
++# (keyed by enclosing declaration), and @[extern]-attributed
++# declarations (the MAJOR-2 class: a pure/BaseIO-signature extern is a
++# native seam exactly like an unsafeBaseIO impl) over the ban surface
++# — hand-written lean_frontend sources + generated/ + the consumed
++# LemLib copy (recursive) — EQUALS this set exactly, both directions
++# and at the pinned COUNT: any new/moved/duplicated site fails naming
++# itself; any missing row fails as scanner/copy drift.
++#
++# Format: PIN <KIND> <PATH> <IDENTIFIER> <COUNT>, KIND in
++# {IMPLBY, UNSAFEDECL, UNSAFEBASEIO, EXTERN}. PATH is the NORMALIZED
++# key (minor-1 fix — path-qualified, so a pinned pair reused from a
++# different directory is visible): generated/ copies fold onto their
++# lean_frontend/ hand-written source (hence COUNT 2 for mirrored
++# files; byte-identity of the copies is the sync gate's job), the
++# consumed LemLib package copy folds onto lem-lean/lean-lib/ (COUNT 1).
++#
++# Q4 classes (the ruling [USER 2026-08-31], rows grouped):
++# - lem-lean/lean-lib/LemLib.lean failwithIImpl/fuelExhaustedWithImpl:
++#   the L2 record's enumerated survivor pair (panic bindings of the
++#   axiom-free failure/fuel constants).
++# - CerberusFresh: the digest boundary — kernel-checked opaque chain
++#   (digestPure/digest_impl/digest + forceThunkIO/forceIO_impl/forceIO)
++#   + the pure md5Hex extern + the BaseIO digestIO/setDigestIO externs
++#   (IO-typed, honest signatures; driver-side callers).
++# - CerbGlobal: NO rows since 2026-09-05 (plain defs; see the retired
++#   section above).
++# - CerberusImpl enum registry (temporal; mover: reader/supply
++#   machinery follow-up slice, explicitly NOT in-arc).
++# - CerbUtils no-op timing/log refs + boundedIntegerImpl stub
++#   (permanent-declared family).
++# - CerbMem beqMemValueImpl (safe perf seam: opaque + implemented_by).
++# - test/Unit/FuelFormsTool.lean main (C4, 2026-09-05): the fuel-forms
++#   GATE TOOL's entry point is `unsafe` only because it calls
++#   `Lean.enableInitializersExecution` before `importModules (loadExts :=
++#   true)` — needed so the imported `app_unexpander` extension is loaded
++#   and the `hyp` column prints hypotheses with notation (`2 ≤ b`, not
++#   `instLENat.le 2 b`), the text the reviewed register
++#   scripts/fuel_hypotheses.txt compares against. An INSTRUMENT-side
++#   unsafe: no semantics module imports the tool; permanent-declared.
++PIN IMPLBY lem-lean/lean-lib/LemLib.lean failwithIImpl 1
++PIN IMPLBY lem-lean/lean-lib/LemLib.lean fuelExhaustedWithImpl 1
++PIN UNSAFEDECL lem-lean/lean-lib/LemLib.lean failwithIImpl 1
++PIN UNSAFEDECL lem-lean/lean-lib/LemLib.lean fuelExhaustedWithImpl 1
++PIN UNSAFEDECL lean_frontend/test/Unit/FuelFormsTool.lean main 1
++PIN EXTERN lean_frontend/CerberusFresh.lean digestIO 2
++PIN EXTERN lean_frontend/CerberusFresh.lean digestPure 2
++PIN EXTERN lean_frontend/CerberusFresh.lean forceThunkIO 2
++PIN EXTERN lean_frontend/CerberusFresh.lean md5Hex 2
++PIN EXTERN lean_frontend/CerberusFresh.lean setDigestIO 2
++PIN IMPLBY lean_frontend/CerberusFresh.lean digest_impl 2
++PIN IMPLBY lean_frontend/CerberusFresh.lean forceIO_impl 2
++PIN UNSAFEDECL lean_frontend/CerberusFresh.lean digest_impl 2
++PIN UNSAFEDECL lean_frontend/CerberusFresh.lean digestPure 2
++PIN UNSAFEDECL lean_frontend/CerberusFresh.lean forceIO_impl 2
++PIN UNSAFEDECL lean_frontend/CerberusFresh.lean forceThunkIO 2
++PIN IMPLBY lean_frontend/CerberusImpl.lean register_enum_impl 2
++PIN IMPLBY lean_frontend/CerberusImpl.lean typeof_enum_impl 2
++PIN UNSAFEBASEIO lean_frontend/CerberusImpl.lean register_enum_impl 2
++PIN UNSAFEBASEIO lean_frontend/CerberusImpl.lean typeof_enum_impl 2
++PIN UNSAFEDECL lean_frontend/CerberusImpl.lean register_enum_impl 2
++PIN UNSAFEDECL lean_frontend/CerberusImpl.lean typeof_enum_impl 2
++PIN IMPLBY lean_frontend/CerbUtils.lean begin_timing_impl 2
++PIN IMPLBY lean_frontend/CerbUtils.lean boundedIntegerImpl 2
++PIN IMPLBY lean_frontend/CerbUtils.lean end_timing_impl 2
++PIN IMPLBY lean_frontend/CerbUtils.lean STD_impl 2
++PIN UNSAFEBASEIO lean_frontend/CerbUtils.lean boundedIntegerImpl 2
++PIN UNSAFEBASEIO lean_frontend/CerbUtils.lean logRef 2
++PIN UNSAFEBASEIO lean_frontend/CerbUtils.lean STD_impl 2
++PIN UNSAFEBASEIO lean_frontend/CerbUtils.lean timingStackRef 2
++PIN UNSAFEDECL lean_frontend/CerbUtils.lean begin_timing_impl 2
++PIN UNSAFEDECL lean_frontend/CerbUtils.lean boundedIntegerImpl 2
++PIN UNSAFEDECL lean_frontend/CerbUtils.lean end_timing_impl 2
++PIN UNSAFEDECL lean_frontend/CerbUtils.lean logRef 2
++PIN UNSAFEDECL lean_frontend/CerbUtils.lean STD_impl 2
++PIN UNSAFEDECL lean_frontend/CerbUtils.lean timingStackRef 2
++PIN IMPLBY lean_frontend/CerbMem.lean beqMemValueImpl 2
++PIN UNSAFEDECL lean_frontend/CerbMem.lean beqMemValueImpl 2
+
+DIFF rc=0

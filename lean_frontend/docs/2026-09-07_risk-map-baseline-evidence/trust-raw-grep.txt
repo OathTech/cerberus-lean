@@ -1,0 +1,872 @@
+lean_frontend/CabsImport.lean:286:partial def
+lean_frontend/CabsImport.lean:292:partial def
+lean_frontend/CabsImport.lean:375:partial def
+lean_frontend/CabsImport.lean:384:partial def
+lean_frontend/CabsImport.lean:392:partial def
+lean_frontend/CabsImport.lean:399:partial def
+lean_frontend/CabsImport.lean:405:partial def
+lean_frontend/CabsImport.lean:412:partial def
+lean_frontend/CabsImport.lean:438:partial def
+lean_frontend/CabsImport.lean:445:partial def
+lean_frontend/CabsImport.lean:457:partial def
+lean_frontend/CabsImport.lean:466:partial def
+lean_frontend/CabsImport.lean:475:partial def
+lean_frontend/CabsImport.lean:483:partial def
+lean_frontend/CabsImport.lean:490:partial def
+lean_frontend/CabsImport.lean:499:partial def
+lean_frontend/CabsImport.lean:506:partial def
+lean_frontend/CabsImport.lean:517:partial def
+lean_frontend/CabsImport.lean:532:partial def
+lean_frontend/CabsImport.lean:539:partial def
+lean_frontend/CabsImport.lean:548:partial def
+lean_frontend/CabsImport.lean:561:partial def
+lean_frontend/CabsImport.lean:570:partial def
+lean_frontend/CabsImport.lean:577:partial def
+lean_frontend/CabsImport.lean:593:partial def
+lean_frontend/CabsImport.lean:605:partial def
+lean_frontend/CabsImport.lean:610:partial def
+lean_frontend/CabsImport.lean:632:partial def
+lean_frontend/CabsImport.lean:642:partial def
+lean_frontend/CabsImport.lean:649:partial def
+lean_frontend/CabsImport.lean:657:partial def
+lean_frontend/CabsImport.lean:668:partial def
+lean_frontend/CabsImport.lean:677:partial def
+lean_frontend/CabsImport.lean:732:partial def
+lean_frontend/CabsImport.lean:740:partial def
+lean_frontend/CabsImport.lean:750:partial def
+lean_frontend/CabsImport.lean:761:partial def
+lean_frontend/CerbConcurrency.lean:23:sorry
+lean_frontend/CerbConcurrency.lean:23:sorry
+lean_frontend/CerbConcurrency.lean:24:sorry
+lean_frontend/CerbCall.lean:83:sorry
+lean_frontend/Core_lemMeasureProofs.lean:16:axiom 
+lean_frontend/docs/upstream-tray/lean4/repro/Variants.lean:15:partial def
+lean_frontend/docs/upstream-tray/lean4/repro/Variants.lean:19:partial def
+lean_frontend/docs/upstream-tray/lean4/repro/Variants.lean:23:partial def
+lean_frontend/docs/upstream-tray/lean4/repro/Variants.lean:39:partial def
+lean_frontend/generated/AilSyntaxAux.lean:44:partial def
+lean_frontend/generated/AilSyntaxAux.lean:47:partial def
+lean_frontend/generated/Cabs_to_ail_aux.lean:146:partial def
+lean_frontend/generated/Cabs_to_ail_aux.lean:164:partial def
+lean_frontend/generated/Cabs_to_ail_aux.lean:175:partial def
+lean_frontend/generated/Cabs_to_ail_aux.lean:178:partial def
+lean_frontend/generated/CerbStepInstances.lean:7:sorry
+lean_frontend/generated/CerbStepInstances.lean:7:sorry
+lean_frontend/generated/CerbStepInstances.lean:57:sorry
+lean_frontend/generated/CerbStepInstances.lean:67:sorry
+lean_frontend/generated/CerbStepInstances.lean:67:sorry
+lean_frontend/generated/CerbStepInstances.lean:78:sorry
+lean_frontend/generated/CerbStepInstances.lean:79:sorry
+lean_frontend/generated/CerbStepInstances.lean:85:sorry
+lean_frontend/generated/Core_typing.lean:80:partial def
+lean_frontend/generated/Core_typing.lean:81:partial def
+lean_frontend/generated/Core_typing.lean:86:partial def
+lean_frontend/generated/Core_typing.lean:93:partial def
+lean_frontend/generated/Core_typing.lean:101:partial def
+lean_frontend/generated/Core_typing.lean:108:partial def
+lean_frontend/generated/Core_typing.lean:109:partial def
+lean_frontend/generated/Core_typing.lean:130:partial def
+lean_frontend/generated/Core_typing.lean:131:partial def
+lean_frontend/generated/Core_typing.lean:136:extern
+lean_frontend/generated/Core_typing.lean:136:extern
+lean_frontend/CoreParser.lean:31:partial def
+lean_frontend/CoreParser.lean:37:partial def
+lean_frontend/CoreParser.lean:46:partial def
+lean_frontend/CoreParser.lean:103:partial def
+lean_frontend/CoreParser.lean:149:partial def
+lean_frontend/CoreParser.lean:162:partial def
+lean_frontend/CoreParser.lean:194:partial def
+lean_frontend/CoreParser.lean:285:partial def
+lean_frontend/CoreParser.lean:297:partial def
+lean_frontend/CoreParser.lean:591:partial def
+lean_frontend/CoreParser.lean:609:partial def
+lean_frontend/CoreParser.lean:638:partial def
+lean_frontend/CoreParser.lean:666:partial def
+lean_frontend/CoreParser.lean:739:partial def
+lean_frontend/CoreParser.lean:747:partial def
+lean_frontend/CoreParser.lean:754:partial def
+lean_frontend/CoreParser.lean:759:partial def
+lean_frontend/CoreParser.lean:770:partial def
+lean_frontend/CoreParser.lean:777:partial def
+lean_frontend/CoreParser.lean:840:partial def
+lean_frontend/CoreParser.lean:860:partial def
+lean_frontend/CoreParser.lean:884:partial def
+lean_frontend/CoreParser.lean:919:partial def
+lean_frontend/CoreParser.lean:991:partial def
+lean_frontend/CoreParser.lean:1032:partial def
+lean_frontend/CoreParser.lean:1060:partial def
+lean_frontend/CoreParser.lean:1073:partial def
+lean_frontend/CoreParser.lean:1083:partial def
+lean_frontend/CoreParser.lean:1089:partial def
+lean_frontend/CoreParser.lean:1097:partial def
+lean_frontend/CoreParser.lean:1104:partial def
+lean_frontend/CoreParser.lean:1111:partial def
+lean_frontend/CoreParser.lean:1121:partial def
+lean_frontend/CoreParser.lean:1130:partial def
+lean_frontend/CoreParser.lean:1141:partial def
+lean_frontend/CoreParser.lean:1151:partial def
+lean_frontend/CoreParser.lean:1157:partial def
+lean_frontend/CoreParser.lean:1179:partial def
+lean_frontend/CoreParser.lean:1194:partial def
+lean_frontend/CoreParser.lean:1207:partial def
+lean_frontend/CoreParser.lean:1214:partial def
+lean_frontend/CoreParser.lean:1223:partial def
+lean_frontend/CoreParser.lean:1239:partial def
+lean_frontend/CoreParser.lean:1245:partial def
+lean_frontend/CoreParser.lean:1599:partial def
+lean_frontend/CoreParser.lean:1609:partial def
+lean_frontend/CoreParser.lean:1615:partial def
+lean_frontend/CoreParser.lean:1650:partial def
+lean_frontend/CoreParser.lean:1655:partial def
+lean_frontend/CoreParser.lean:1665:partial def
+lean_frontend/CoreParser.lean:1674:partial def
+lean_frontend/CoreParser.lean:1685:partial def
+lean_frontend/CoreParser.lean:1694:partial def
+lean_frontend/CoreParser.lean:1701:partial def
+lean_frontend/CoreParser.lean:1710:partial def
+lean_frontend/CoreParser.lean:1722:partial def
+lean_frontend/CoreParser.lean:1734:partial def
+lean_frontend/CoreParser.lean:1744:partial def
+lean_frontend/CoreParser.lean:1764:partial def
+lean_frontend/CoreParser.lean:1777:partial def
+lean_frontend/CoreParser.lean:1794:partial def
+lean_frontend/CoreParser.lean:1802:partial def
+lean_frontend/CoreParser.lean:1816:partial def
+lean_frontend/CoreParser.lean:1838:partial def
+lean_frontend/CoreParser.lean:1844:partial def
+lean_frontend/CoreParser.lean:1851:partial def
+lean_frontend/CoreParser.lean:1860:partial def
+lean_frontend/CoreParser.lean:1869:partial def
+lean_frontend/CoreParser.lean:1879:partial def
+lean_frontend/CoreParser.lean:1889:partial def
+lean_frontend/CoreParser.lean:1898:partial def
+lean_frontend/CoreParser.lean:1910:partial def
+lean_frontend/CoreParser.lean:1919:partial def
+lean_frontend/CoreParser.lean:1929:partial def
+lean_frontend/CoreParser.lean:1936:partial def
+lean_frontend/CoreParser.lean:1943:partial def
+lean_frontend/CoreParser.lean:1961:partial def
+lean_frontend/CoreParser.lean:1969:partial def
+lean_frontend/CoreParser.lean:1976:partial def
+lean_frontend/CoreParser.lean:1983:partial def
+lean_frontend/CoreParser.lean:1993:partial def
+lean_frontend/CoreParser.lean:1997:partial def
+lean_frontend/CoreParser.lean:2048:partial def
+lean_frontend/CoreParser.lean:2060:partial def
+lean_frontend/CoreParser.lean:2085:partial def
+lean_frontend/CoreParser.lean:2096:partial def
+lean_frontend/CoreParser.lean:2103:partial def
+lean_frontend/CoreParser.lean:2120:partial def
+lean_frontend/CoreParser.lean:2158:partial def
+lean_frontend/CoreParser.lean:2204:partial def
+lean_frontend/CoreParser.lean:2216:partial def
+lean_frontend/CoreParser.lean:2228:partial def
+lean_frontend/CoreParser.lean:2247:partial def
+lean_frontend/CoreParser.lean:2263:partial def
+lean_frontend/CoreParser.lean:2275:partial def
+lean_frontend/CoreParser.lean:2302:partial def
+lean_frontend/CoreParser.lean:2338:partial def
+lean_frontend/CoreParser.lean:2546:partial def
+lean_frontend/CoreParser.lean:2552:partial def
+lean_frontend/CoreParser.lean:2611:partial def
+lean_frontend/CoreParser.lean:2773:partial def
+lean_frontend/CoreParser.lean:2794:partial def
+lean_frontend/CoreParser.lean:2805:partial def
+lean_frontend/CoreParser.lean:2813:partial def
+lean_frontend/CoreParser.lean:2818:partial def
+lean_frontend/CoreParser.lean:2842:partial def
+lean_frontend/CoreParser.lean:2848:partial def
+lean_frontend/CoreParser.lean:2913:partial def
+lean_frontend/generated/GenTyping.lean:79:partial def
+lean_frontend/generated/GenTyping.lean:93:partial def
+lean_frontend/generated/GenTyping.lean:178:partial def
+lean_frontend/generated/GenTyping.lean:240:partial def
+lean_frontend/generated/GenTyping.lean:292:partial def
+lean_frontend/generated/GenTyping.lean:293:partial def
+lean_frontend/generated/GenTyping.lean:294:partial def
+lean_frontend/generated/GenTyping.lean:295:partial def
+lean_frontend/generated/GenTyping.lean:296:partial def
+lean_frontend/generated/GenTyping.lean:297:partial def
+lean_frontend/generated/GenTyping.lean:304:partial def
+lean_frontend/generated/GenTyping.lean:309:partial def
+lean_frontend/generated/GenTyping.lean:317:partial def
+lean_frontend/generated/GenTyping.lean:319:partial def
+lean_frontend/generated/Utils_auxiliary.lean:37:sorry
+lean_frontend/generated/Utils_auxiliary.lean:37:sorry
+lean_frontend/generated/Utils_auxiliary.lean:37:axiom 
+lean_frontend/generated/Utils_auxiliary.lean:42:sorry
+lean_frontend/generated/Utils_auxiliary.lean:42:sorry
+lean_frontend/generated/Utils_auxiliary.lean:42:axiom 
+lean_frontend/generated/Utils_auxiliary.lean:47:sorry
+lean_frontend/generated/Utils_auxiliary.lean:47:sorry
+lean_frontend/generated/Utils_auxiliary.lean:47:axiom 
+lean_frontend/generated/CerbConcurrency.lean:23:sorry
+lean_frontend/generated/CerbConcurrency.lean:23:sorry
+lean_frontend/generated/CerbConcurrency.lean:24:sorry
+lean_frontend/generated/CoreParser.lean:31:partial def
+lean_frontend/generated/CoreParser.lean:37:partial def
+lean_frontend/generated/CoreParser.lean:46:partial def
+lean_frontend/generated/CoreParser.lean:103:partial def
+lean_frontend/generated/CoreParser.lean:149:partial def
+lean_frontend/generated/CoreParser.lean:162:partial def
+lean_frontend/generated/CoreParser.lean:194:partial def
+lean_frontend/generated/CoreParser.lean:285:partial def
+lean_frontend/generated/CoreParser.lean:297:partial def
+lean_frontend/generated/CoreParser.lean:591:partial def
+lean_frontend/generated/CoreParser.lean:609:partial def
+lean_frontend/generated/CoreParser.lean:638:partial def
+lean_frontend/generated/CoreParser.lean:666:partial def
+lean_frontend/generated/CoreParser.lean:739:partial def
+lean_frontend/generated/CoreParser.lean:747:partial def
+lean_frontend/generated/CoreParser.lean:754:partial def
+lean_frontend/generated/CoreParser.lean:759:partial def
+lean_frontend/generated/CoreParser.lean:770:partial def
+lean_frontend/generated/CoreParser.lean:777:partial def
+lean_frontend/generated/CoreParser.lean:840:partial def
+lean_frontend/generated/CoreParser.lean:860:partial def
+lean_frontend/generated/CoreParser.lean:884:partial def
+lean_frontend/generated/CoreParser.lean:919:partial def
+lean_frontend/generated/CoreParser.lean:991:partial def
+lean_frontend/generated/CoreParser.lean:1032:partial def
+lean_frontend/generated/CoreParser.lean:1060:partial def
+lean_frontend/generated/CoreParser.lean:1073:partial def
+lean_frontend/generated/CoreParser.lean:1083:partial def
+lean_frontend/generated/CoreParser.lean:1089:partial def
+lean_frontend/generated/CoreParser.lean:1097:partial def
+lean_frontend/generated/CoreParser.lean:1104:partial def
+lean_frontend/generated/CoreParser.lean:1111:partial def
+lean_frontend/generated/CoreParser.lean:1121:partial def
+lean_frontend/generated/CoreParser.lean:1130:partial def
+lean_frontend/generated/CoreParser.lean:1141:partial def
+lean_frontend/generated/CoreParser.lean:1151:partial def
+lean_frontend/generated/CoreParser.lean:1157:partial def
+lean_frontend/generated/CoreParser.lean:1179:partial def
+lean_frontend/generated/CoreParser.lean:1194:partial def
+lean_frontend/generated/CoreParser.lean:1207:partial def
+lean_frontend/generated/CoreParser.lean:1214:partial def
+lean_frontend/generated/CoreParser.lean:1223:partial def
+lean_frontend/generated/CoreParser.lean:1239:partial def
+lean_frontend/generated/CoreParser.lean:1245:partial def
+lean_frontend/generated/CoreParser.lean:1599:partial def
+lean_frontend/generated/CoreParser.lean:1609:partial def
+lean_frontend/generated/CoreParser.lean:1615:partial def
+lean_frontend/generated/CoreParser.lean:1650:partial def
+lean_frontend/generated/CoreParser.lean:1655:partial def
+lean_frontend/generated/CoreParser.lean:1665:partial def
+lean_frontend/generated/CoreParser.lean:1674:partial def
+lean_frontend/generated/CoreParser.lean:1685:partial def
+lean_frontend/generated/CoreParser.lean:1694:partial def
+lean_frontend/generated/CoreParser.lean:1701:partial def
+lean_frontend/generated/CoreParser.lean:1710:partial def
+lean_frontend/generated/CoreParser.lean:1722:partial def
+lean_frontend/generated/CoreParser.lean:1734:partial def
+lean_frontend/generated/CoreParser.lean:1744:partial def
+lean_frontend/generated/CoreParser.lean:1764:partial def
+lean_frontend/generated/CoreParser.lean:1777:partial def
+lean_frontend/generated/CoreParser.lean:1794:partial def
+lean_frontend/generated/CoreParser.lean:1802:partial def
+lean_frontend/generated/CoreParser.lean:1816:partial def
+lean_frontend/generated/CoreParser.lean:1838:partial def
+lean_frontend/generated/CoreParser.lean:1844:partial def
+lean_frontend/generated/CoreParser.lean:1851:partial def
+lean_frontend/generated/CoreParser.lean:1860:partial def
+lean_frontend/generated/CoreParser.lean:1869:partial def
+lean_frontend/generated/CoreParser.lean:1879:partial def
+lean_frontend/generated/CoreParser.lean:1889:partial def
+lean_frontend/generated/CoreParser.lean:1898:partial def
+lean_frontend/generated/CoreParser.lean:1910:partial def
+lean_frontend/generated/CoreParser.lean:1919:partial def
+lean_frontend/generated/CoreParser.lean:1929:partial def
+lean_frontend/generated/CoreParser.lean:1936:partial def
+lean_frontend/generated/CoreParser.lean:1943:partial def
+lean_frontend/generated/CoreParser.lean:1961:partial def
+lean_frontend/generated/CoreParser.lean:1969:partial def
+lean_frontend/generated/CoreParser.lean:1976:partial def
+lean_frontend/generated/CoreParser.lean:1983:partial def
+lean_frontend/generated/CoreParser.lean:1993:partial def
+lean_frontend/generated/CoreParser.lean:1997:partial def
+lean_frontend/generated/CoreParser.lean:2048:partial def
+lean_frontend/generated/CoreParser.lean:2060:partial def
+lean_frontend/generated/CoreParser.lean:2085:partial def
+lean_frontend/generated/CoreParser.lean:2096:partial def
+lean_frontend/generated/CoreParser.lean:2103:partial def
+lean_frontend/generated/CoreParser.lean:2120:partial def
+lean_frontend/generated/CoreParser.lean:2158:partial def
+lean_frontend/generated/CoreParser.lean:2204:partial def
+lean_frontend/generated/CoreParser.lean:2216:partial def
+lean_frontend/generated/CoreParser.lean:2228:partial def
+lean_frontend/generated/CoreParser.lean:2247:partial def
+lean_frontend/generated/CoreParser.lean:2263:partial def
+lean_frontend/generated/CoreParser.lean:2275:partial def
+lean_frontend/generated/CoreParser.lean:2302:partial def
+lean_frontend/generated/CoreParser.lean:2338:partial def
+lean_frontend/generated/CoreParser.lean:2546:partial def
+lean_frontend/generated/CoreParser.lean:2552:partial def
+lean_frontend/generated/CoreParser.lean:2611:partial def
+lean_frontend/generated/CoreParser.lean:2773:partial def
+lean_frontend/generated/CoreParser.lean:2794:partial def
+lean_frontend/generated/CoreParser.lean:2805:partial def
+lean_frontend/generated/CoreParser.lean:2813:partial def
+lean_frontend/generated/CoreParser.lean:2818:partial def
+lean_frontend/generated/CoreParser.lean:2842:partial def
+lean_frontend/generated/CoreParser.lean:2848:partial def
+lean_frontend/generated/CoreParser.lean:2913:partial def
+lean_frontend/CerbMem.lean:223:unsafe
+lean_frontend/CerbMem.lean:224:unsafe
+lean_frontend/CerbMem.lean:239:implemented_by
+lean_frontend/CerbMem.lean:341:partial def
+lean_frontend/CerbMem.lean:2053:maxRecDepth
+lean_frontend/generated/Ctype_auxiliary.lean:44:sorry
+lean_frontend/generated/Ctype_auxiliary.lean:44:sorry
+lean_frontend/generated/Ctype_auxiliary.lean:44:axiom 
+lean_frontend/docs/upstream-tray/lean4/repro/PlainRecursion.lean:9:partial def
+lean_frontend/CerbFuel.lean:46:unsafe
+lean_frontend/CerbFuel.lean:46:implemented_by
+lean_frontend/CerbFuel.lean:46:extern
+lean_frontend/CerbUtils.lean:18:unsafe
+lean_frontend/CerbUtils.lean:21:unsafe
+lean_frontend/CerbUtils.lean:23:unsafe
+lean_frontend/CerbUtils.lean:25:implemented_by
+lean_frontend/CerbUtils.lean:28:implemented_by
+lean_frontend/CerbUtils.lean:37:unsafe
+lean_frontend/CerbUtils.lean:40:unsafe
+lean_frontend/CerbUtils.lean:46:implemented_by
+lean_frontend/CerbUtils.lean:77:unsafe
+lean_frontend/CerbUtils.lean:81:implemented_by
+lean_frontend/Formatted_lemMeasureProofs.lean:17:sorry
+lean_frontend/generated/Exception_undefined.lean:84:partial def
+lean_frontend/generated/Exception_undefined.lean:89:partial def
+lean_frontend/generated/CabsImport.lean:286:partial def
+lean_frontend/generated/CabsImport.lean:292:partial def
+lean_frontend/generated/CabsImport.lean:375:partial def
+lean_frontend/generated/CabsImport.lean:384:partial def
+lean_frontend/generated/CabsImport.lean:392:partial def
+lean_frontend/generated/CabsImport.lean:399:partial def
+lean_frontend/generated/CabsImport.lean:405:partial def
+lean_frontend/generated/CabsImport.lean:412:partial def
+lean_frontend/generated/CabsImport.lean:438:partial def
+lean_frontend/generated/CabsImport.lean:445:partial def
+lean_frontend/generated/CabsImport.lean:457:partial def
+lean_frontend/generated/CabsImport.lean:466:partial def
+lean_frontend/generated/CabsImport.lean:475:partial def
+lean_frontend/generated/CabsImport.lean:483:partial def
+lean_frontend/generated/CabsImport.lean:490:partial def
+lean_frontend/generated/CabsImport.lean:499:partial def
+lean_frontend/generated/CabsImport.lean:506:partial def
+lean_frontend/generated/CabsImport.lean:517:partial def
+lean_frontend/generated/CabsImport.lean:532:partial def
+lean_frontend/generated/CabsImport.lean:539:partial def
+lean_frontend/generated/CabsImport.lean:548:partial def
+lean_frontend/generated/CabsImport.lean:561:partial def
+lean_frontend/generated/CabsImport.lean:570:partial def
+lean_frontend/generated/CabsImport.lean:577:partial def
+lean_frontend/generated/CabsImport.lean:593:partial def
+lean_frontend/generated/CabsImport.lean:605:partial def
+lean_frontend/generated/CabsImport.lean:610:partial def
+lean_frontend/generated/CabsImport.lean:632:partial def
+lean_frontend/generated/CabsImport.lean:642:partial def
+lean_frontend/generated/CabsImport.lean:649:partial def
+lean_frontend/generated/CabsImport.lean:657:partial def
+lean_frontend/generated/CabsImport.lean:668:partial def
+lean_frontend/generated/CabsImport.lean:677:partial def
+lean_frontend/generated/CabsImport.lean:732:partial def
+lean_frontend/generated/CabsImport.lean:740:partial def
+lean_frontend/generated/CabsImport.lean:750:partial def
+lean_frontend/generated/CabsImport.lean:761:partial def
+lean_frontend/generated/AilTypesAux_auxiliary.lean:36:sorry
+lean_frontend/generated/AilTypesAux_auxiliary.lean:36:sorry
+lean_frontend/generated/AilTypesAux_auxiliary.lean:36:axiom 
+lean_frontend/generated/AilTypesAux_auxiliary.lean:41:sorry
+lean_frontend/generated/AilTypesAux_auxiliary.lean:41:sorry
+lean_frontend/generated/AilTypesAux_auxiliary.lean:41:axiom 
+lean_frontend/generated/AilTypesAux_auxiliary.lean:46:sorry
+lean_frontend/generated/AilTypesAux_auxiliary.lean:46:sorry
+lean_frontend/generated/AilTypesAux_auxiliary.lean:46:axiom 
+lean_frontend/generated/Mini_pipeline.lean:111:extern
+lean_frontend/generated/Core_aux_auxiliary.lean:36:sorry
+lean_frontend/generated/Core_aux_auxiliary.lean:36:sorry
+lean_frontend/generated/Core_aux_auxiliary.lean:36:axiom 
+lean_frontend/generated/Core_aux_auxiliary.lean:41:sorry
+lean_frontend/generated/Core_aux_auxiliary.lean:41:sorry
+lean_frontend/generated/Core_aux_auxiliary.lean:41:axiom 
+lean_frontend/generated/Core_aux_auxiliary.lean:46:sorry
+lean_frontend/generated/Core_aux_auxiliary.lean:46:sorry
+lean_frontend/generated/Core_aux_auxiliary.lean:46:axiom 
+lean_frontend/generated/Core_aux_auxiliary.lean:51:sorry
+lean_frontend/generated/Core_aux_auxiliary.lean:51:sorry
+lean_frontend/generated/Core_aux_auxiliary.lean:51:axiom 
+lean_frontend/generated/Core_aux_auxiliary.lean:56:sorry
+lean_frontend/generated/Core_aux_auxiliary.lean:56:sorry
+lean_frontend/generated/Core_aux_auxiliary.lean:56:axiom 
+lean_frontend/generated/Core_aux_auxiliary.lean:61:sorry
+lean_frontend/generated/Core_aux_auxiliary.lean:61:sorry
+lean_frontend/generated/Core_aux_auxiliary.lean:61:axiom 
+lean_frontend/generated/Core_aux_auxiliary.lean:66:sorry
+lean_frontend/generated/Core_aux_auxiliary.lean:66:sorry
+lean_frontend/generated/Core_aux_auxiliary.lean:66:axiom 
+lean_frontend/generated/Core_aux_auxiliary.lean:71:sorry
+lean_frontend/generated/Core_aux_auxiliary.lean:71:sorry
+lean_frontend/generated/Core_aux_auxiliary.lean:71:axiom 
+lean_frontend/generated/Core_aux_auxiliary.lean:76:sorry
+lean_frontend/generated/Core_aux_auxiliary.lean:76:sorry
+lean_frontend/generated/Core_aux_auxiliary.lean:76:axiom 
+lean_frontend/generated/Core_aux_auxiliary.lean:81:sorry
+lean_frontend/generated/Core_aux_auxiliary.lean:81:sorry
+lean_frontend/generated/Core_aux_auxiliary.lean:81:axiom 
+lean_frontend/generated/Core_aux_auxiliary.lean:86:sorry
+lean_frontend/generated/Core_aux_auxiliary.lean:86:sorry
+lean_frontend/generated/Core_aux_auxiliary.lean:86:axiom 
+lean_frontend/generated/Core_aux_auxiliary.lean:91:sorry
+lean_frontend/generated/Core_aux_auxiliary.lean:91:sorry
+lean_frontend/generated/Core_aux_auxiliary.lean:91:axiom 
+lean_frontend/generated/Core_aux_auxiliary.lean:96:sorry
+lean_frontend/generated/Core_aux_auxiliary.lean:96:sorry
+lean_frontend/generated/Core_aux_auxiliary.lean:96:axiom 
+lean_frontend/generated/Core_aux_auxiliary.lean:101:sorry
+lean_frontend/generated/Core_aux_auxiliary.lean:101:sorry
+lean_frontend/generated/Core_aux_auxiliary.lean:101:axiom 
+lean_frontend/generated/Core_aux_auxiliary.lean:106:sorry
+lean_frontend/generated/Core_aux_auxiliary.lean:106:sorry
+lean_frontend/generated/Core_aux_auxiliary.lean:106:axiom 
+lean_frontend/generated/Core_aux_auxiliary.lean:111:sorry
+lean_frontend/generated/Core_aux_auxiliary.lean:111:sorry
+lean_frontend/generated/Core_aux_auxiliary.lean:111:axiom 
+lean_frontend/generated/Core_aux_auxiliary.lean:116:sorry
+lean_frontend/generated/Core_aux_auxiliary.lean:116:sorry
+lean_frontend/generated/Core_aux_auxiliary.lean:116:axiom 
+lean_frontend/generated/CerberusFresh.lean:56:extern
+lean_frontend/generated/CerberusFresh.lean:57:extern
+lean_frontend/generated/CerberusFresh.lean:64:extern
+lean_frontend/generated/CerberusFresh.lean:70:extern
+lean_frontend/generated/CerberusFresh.lean:82:unsafe
+lean_frontend/generated/CerberusFresh.lean:82:extern
+lean_frontend/generated/CerberusFresh.lean:85:implemented_by
+lean_frontend/generated/CerberusFresh.lean:87:axiom 
+lean_frontend/generated/CerberusFresh.lean:88:implemented_by
+lean_frontend/generated/CerberusFresh.lean:88:extern
+lean_frontend/generated/CerberusFresh.lean:110:extern
+lean_frontend/generated/CerberusFresh.lean:111:unsafe
+lean_frontend/generated/CerberusFresh.lean:115:unsafe
+lean_frontend/generated/CerberusFresh.lean:118:implemented_by
+lean_frontend/generated/CerberusFresh.lean:131:unsafe
+lean_frontend/generated/CerberusFresh.lean:131:extern
+lean_frontend/generated/CerberusFresh.lean:132:implemented_by
+lean_frontend/generated/CerberusFresh.lean:134:extern
+lean_frontend/generated/CerberusFresh.lean:139:axiom 
+lean_frontend/generated/CerberusFresh.lean:145:implemented_by
+lean_frontend/generated/CerberusFresh.lean:149:axiom 
+lean_frontend/generated/CerberusFresh.lean:150:implemented_by
+lean_frontend/generated/CerberusFresh.lean:151:implemented_by
+lean_frontend/generated/CerberusFresh.lean:151:unsafe
+lean_frontend/generated/CerberusFresh.lean:154:extern
+lean_frontend/generated/CerberusFresh.lean:155:unsafe
+lean_frontend/generated/CerberusFresh.lean:161:unsafe
+lean_frontend/generated/CerberusFresh.lean:164:implemented_by
+lean_frontend/generated/CerberusFresh.lean:170:extern
+lean_frontend/speclab/SpecLab/TreeRotFiles.lean:116:extern
+lean_frontend/speclab/SpecLab/ListAppendHarness.lean:55:extern
+lean_frontend/generated/Desugaring_init.lean:223:partial def
+lean_frontend/generated/Desugaring_init.lean:237:partial def
+lean_frontend/generated/Desugaring_init.lean:243:partial def
+lean_frontend/generated/Desugaring_init.lean:244:partial def
+lean_frontend/generated/Desugaring_init.lean:289:partial def
+lean_frontend/generated/Desugaring_init.lean:294:partial def
+lean_frontend/generated/Desugaring_init.lean:300:partial def
+lean_frontend/generated/Desugaring_init.lean:377:partial def
+lean_frontend/generated/Desugaring_init.lean:389:partial def
+lean_frontend/generated/Exception.lean:123:partial def
+lean_frontend/generated/Exception.lean:175:partial def
+lean_frontend/CerbGlobal.lean:14:implemented_by
+lean_frontend/generated/Core_run_aux.lean:523:extern
+lean_frontend/generated/Core_run_aux.lean:523:extern
+lean_frontend/CerbStepInstances.lean:7:sorry
+lean_frontend/CerbStepInstances.lean:7:sorry
+lean_frontend/CerbStepInstances.lean:57:sorry
+lean_frontend/CerbStepInstances.lean:67:sorry
+lean_frontend/CerbStepInstances.lean:67:sorry
+lean_frontend/CerbStepInstances.lean:78:sorry
+lean_frontend/CerbStepInstances.lean:79:sorry
+lean_frontend/CerbStepInstances.lean:85:sorry
+lean_frontend/generated/GenTypesAux.lean:192:partial def
+lean_frontend/generated/GenTypesAux.lean:201:partial def
+lean_frontend/Ctype_lemMeasureProofs.lean:20:axiom 
+lean_frontend/CerberusImpl.lean:62:unsafe
+lean_frontend/CerberusImpl.lean:73:implemented_by
+lean_frontend/CerberusImpl.lean:224:partial def
+lean_frontend/CerberusImpl.lean:268:unsafe
+lean_frontend/CerberusImpl.lean:283:implemented_by
+lean_frontend/generated/Mem_common.lean:1119:partial def
+lean_frontend/generated/Mem_common.lean:1134:partial def
+lean_frontend/generated/AilTyping.lean:50:partial def
+lean_frontend/generated/CerbFuel.lean:46:unsafe
+lean_frontend/generated/CerbFuel.lean:46:implemented_by
+lean_frontend/generated/CerbFuel.lean:46:extern
+lean_frontend/CerbFunMapInstances.lean:6:sorry
+lean_frontend/CerbFunMapInstances.lean:8:sorry
+lean_frontend/CerbFunMapInstances.lean:14:axiom 
+lean_frontend/CerbFunMapInstances.lean:59:sorry
+lean_frontend/generated/CerbUtils.lean:18:unsafe
+lean_frontend/generated/CerbUtils.lean:21:unsafe
+lean_frontend/generated/CerbUtils.lean:23:unsafe
+lean_frontend/generated/CerbUtils.lean:25:implemented_by
+lean_frontend/generated/CerbUtils.lean:28:implemented_by
+lean_frontend/generated/CerbUtils.lean:37:unsafe
+lean_frontend/generated/CerbUtils.lean:40:unsafe
+lean_frontend/generated/CerbUtils.lean:46:implemented_by
+lean_frontend/generated/CerbUtils.lean:77:unsafe
+lean_frontend/generated/CerbUtils.lean:81:implemented_by
+lean_frontend/generated/Undefined.lean:376:extern
+lean_frontend/CerbCtypeInstances.lean:5:sorry
+lean_frontend/CerberusFresh.lean:56:extern
+lean_frontend/CerberusFresh.lean:57:extern
+lean_frontend/CerberusFresh.lean:64:extern
+lean_frontend/CerberusFresh.lean:70:extern
+lean_frontend/CerberusFresh.lean:82:unsafe
+lean_frontend/CerberusFresh.lean:82:extern
+lean_frontend/CerberusFresh.lean:85:implemented_by
+lean_frontend/CerberusFresh.lean:87:axiom 
+lean_frontend/CerberusFresh.lean:88:implemented_by
+lean_frontend/CerberusFresh.lean:88:extern
+lean_frontend/CerberusFresh.lean:110:extern
+lean_frontend/CerberusFresh.lean:111:unsafe
+lean_frontend/CerberusFresh.lean:115:unsafe
+lean_frontend/CerberusFresh.lean:118:implemented_by
+lean_frontend/CerberusFresh.lean:131:unsafe
+lean_frontend/CerberusFresh.lean:131:extern
+lean_frontend/CerberusFresh.lean:132:implemented_by
+lean_frontend/CerberusFresh.lean:134:extern
+lean_frontend/CerberusFresh.lean:139:axiom 
+lean_frontend/CerberusFresh.lean:145:implemented_by
+lean_frontend/CerberusFresh.lean:149:axiom 
+lean_frontend/CerberusFresh.lean:150:implemented_by
+lean_frontend/CerberusFresh.lean:151:implemented_by
+lean_frontend/CerberusFresh.lean:151:unsafe
+lean_frontend/CerberusFresh.lean:154:extern
+lean_frontend/CerberusFresh.lean:155:unsafe
+lean_frontend/CerberusFresh.lean:161:unsafe
+lean_frontend/CerberusFresh.lean:164:implemented_by
+lean_frontend/CerberusFresh.lean:170:extern
+lean_frontend/generated/Core_eval_auxiliary.lean:36:sorry
+lean_frontend/generated/Core_eval_auxiliary.lean:36:sorry
+lean_frontend/generated/Core_eval_auxiliary.lean:36:axiom 
+lean_frontend/generated/Core_eval_auxiliary.lean:41:sorry
+lean_frontend/generated/Core_eval_auxiliary.lean:41:sorry
+lean_frontend/generated/Core_eval_auxiliary.lean:41:axiom 
+lean_frontend/CerbND.lean:33:partial def
+/home/dev/projects/cerberus-lean-proj/deps/lem-pinned/lean-lib/LemLib/List_extra.lean:33:partial def
+/home/dev/projects/cerberus-lean-proj/deps/lem-pinned/lean-lib/LemLib/List_extra.lean:61:partial def
+lean_frontend/Main.lean:77:extern
+lean_frontend/Main.lean:92:extern
+lean_frontend/Main.lean:93:extern
+lean_frontend/Main.lean:102:extern
+lean_frontend/Main.lean:107:extern
+lean_frontend/Main.lean:139:extern
+lean_frontend/Main.lean:163:extern
+lean_frontend/Main.lean:680:extern
+lean_frontend/Main.lean:732:extern
+lean_frontend/Main.lean:732:extern
+lean_frontend/Main.lean:737:extern
+lean_frontend/Main.lean:771:extern
+lean_frontend/Main.lean:780:extern
+lean_frontend/Main.lean:787:extern
+lean_frontend/Main.lean:789:extern
+lean_frontend/Main.lean:840:extern
+lean_frontend/Main.lean:840:extern
+lean_frontend/Main.lean:850:extern
+lean_frontend/Main.lean:850:extern
+lean_frontend/Main.lean:975:extern
+lean_frontend/generated/Core_rewrite.lean:182:partial def
+lean_frontend/generated/Core_rewrite.lean:185:partial def
+lean_frontend/generated/Core_rewrite.lean:191:partial def
+lean_frontend/generated/Core_rewrite.lean:198:partial def
+lean_frontend/generated/Core_rewrite.lean:204:partial def
+lean_frontend/generated/Core_rewrite.lean:210:partial def
+lean_frontend/generated/Core_rewrite.lean:221:partial def
+lean_frontend/generated/Core_rewrite.lean:294:partial def
+lean_frontend/generated/Core_rewrite.lean:296:partial def
+lean_frontend/generated/Core_rewrite.lean:315:partial def
+lean_frontend/generated/Core_rewrite.lean:317:partial def
+lean_frontend/generated/Core_rewrite.lean:320:partial def
+lean_frontend/generated/Core_rewrite.lean:322:partial def
+lean_frontend/generated/CerbCabsInstances.lean:5:sorry
+/home/dev/projects/cerberus-lean-proj/deps/lem-pinned/lean-lib/LemLib/Basic_classes.lean:47:unsafe
+lean_frontend/generated/CerbCall.lean:83:sorry
+lean_frontend/generated/AilTypesAux.lean:132:partial def
+lean_frontend/generated/AilTypesAux.lean:154:partial def
+lean_frontend/generated/AilTypesAux.lean:297:partial def
+lean_frontend/generated/AilTypesAux.lean:301:partial def
+lean_frontend/generated/AilTypesAux.lean:417:partial def
+lean_frontend/generated/AilTypesAux.lean:422:partial def
+lean_frontend/CerbCabsInstances.lean:5:sorry
+lean_frontend/generated/CerberusImpl.lean:62:unsafe
+lean_frontend/generated/CerberusImpl.lean:73:implemented_by
+lean_frontend/generated/CerberusImpl.lean:224:partial def
+lean_frontend/generated/CerberusImpl.lean:268:unsafe
+lean_frontend/generated/CerberusImpl.lean:283:implemented_by
+lean_frontend/generated/Defacto_memory.lean:732:axiom 
+lean_frontend/generated/Defacto_memory.lean:732:axiom 
+lean_frontend/generated/Defacto_memory.lean:748:axiom 
+lean_frontend/generated/Defacto_memory.lean:748:axiom 
+lean_frontend/generated/Bimap.lean:71:partial def
+lean_frontend/speclab/SpecLab/CnSeedFiles.lean:102:extern
+lean_frontend/generated/Core_lemMeasureProofs.lean:16:axiom 
+lean_frontend/generated/Cabs_to_ail.lean:199:partial def
+lean_frontend/generated/Cabs_to_ail.lean:211:partial def
+lean_frontend/generated/Cabs_to_ail.lean:289:partial def
+lean_frontend/generated/Cabs_to_ail.lean:292:partial def
+lean_frontend/generated/Cabs_to_ail.lean:295:partial def
+lean_frontend/generated/Cabs_to_ail.lean:298:partial def
+lean_frontend/generated/Cabs_to_ail.lean:304:partial def
+lean_frontend/generated/Cabs_to_ail.lean:310:partial def
+lean_frontend/generated/Cabs_to_ail.lean:313:partial def
+lean_frontend/generated/Cabs_to_ail.lean:316:partial def
+lean_frontend/generated/Cabs_to_ail.lean:476:partial def
+lean_frontend/generated/Cabs_to_ail.lean:481:partial def
+lean_frontend/generated/Cabs_to_ail.lean:495:partial def
+lean_frontend/generated/Cabs_to_ail.lean:654:partial def
+lean_frontend/generated/Cabs_to_ail.lean:713:partial def
+lean_frontend/generated/Cabs_to_ail.lean:714:partial def
+lean_frontend/generated/Cabs_to_ail.lean:715:partial def
+lean_frontend/generated/Cabs_to_ail.lean:716:partial def
+lean_frontend/generated/Cabs_to_ail.lean:717:partial def
+lean_frontend/generated/Cabs_to_ail.lean:718:partial def
+lean_frontend/generated/Cabs_to_ail.lean:719:partial def
+lean_frontend/generated/Cabs_to_ail.lean:720:partial def
+lean_frontend/generated/Cabs_to_ail.lean:721:partial def
+lean_frontend/generated/Cabs_to_ail.lean:722:partial def
+lean_frontend/generated/Cabs_to_ail.lean:723:partial def
+lean_frontend/generated/Cabs_to_ail.lean:724:partial def
+lean_frontend/generated/Cabs_to_ail.lean:725:partial def
+lean_frontend/generated/Cabs_to_ail.lean:726:partial def
+lean_frontend/generated/Cabs_to_ail.lean:727:partial def
+lean_frontend/generated/Cabs_to_ail.lean:728:partial def
+lean_frontend/generated/Cabs_to_ail.lean:729:partial def
+lean_frontend/generated/Cabs_to_ail.lean:730:partial def
+lean_frontend/generated/Cabs_to_ail.lean:731:partial def
+lean_frontend/generated/Cabs_to_ail.lean:732:partial def
+lean_frontend/generated/Cabs_to_ail.lean:733:partial def
+lean_frontend/generated/Cabs_to_ail.lean:734:partial def
+lean_frontend/generated/Cabs_to_ail.lean:735:partial def
+lean_frontend/generated/Cabs_to_ail.lean:736:partial def
+lean_frontend/generated/Cabs_to_ail.lean:737:partial def
+lean_frontend/generated/Cabs_to_ail.lean:738:partial def
+lean_frontend/generated/Cabs_to_ail.lean:740:partial def
+lean_frontend/generated/Cabs_to_ail.lean:741:partial def
+lean_frontend/generated/Cabs_to_ail.lean:742:partial def
+lean_frontend/generated/Cabs_to_ail.lean:743:partial def
+lean_frontend/generated/Cabs_to_ail.lean:751:partial def
+lean_frontend/generated/Cabs_to_ail.lean:764:partial def
+lean_frontend/generated/Cabs_to_ail.lean:768:partial def
+lean_frontend/generated/Cabs_to_ail.lean:781:partial def
+lean_frontend/generated/Cabs_to_ail.lean:801:partial def
+lean_frontend/generated/Cabs_to_ail.lean:809:partial def
+lean_frontend/generated/CerbFunMapInstances.lean:6:sorry
+lean_frontend/generated/CerbFunMapInstances.lean:8:sorry
+lean_frontend/generated/CerbFunMapInstances.lean:14:axiom 
+lean_frontend/generated/CerbFunMapInstances.lean:59:sorry
+lean_frontend/generated/Core_run_aux_auxiliary.lean:40:sorry
+lean_frontend/generated/Core_run_aux_auxiliary.lean:40:sorry
+lean_frontend/generated/Core_run_aux_auxiliary.lean:40:axiom 
+lean_frontend/generated/Core_run_aux_auxiliary.lean:45:sorry
+lean_frontend/generated/Core_run_aux_auxiliary.lean:45:sorry
+lean_frontend/generated/Core_run_aux_auxiliary.lean:45:axiom 
+lean_frontend/generated/Core_run_aux_auxiliary.lean:50:sorry
+lean_frontend/generated/Core_run_aux_auxiliary.lean:50:sorry
+lean_frontend/generated/Core_run_aux_auxiliary.lean:50:axiom 
+lean_frontend/generated/Core_run_aux_auxiliary.lean:55:sorry
+lean_frontend/generated/Core_run_aux_auxiliary.lean:55:sorry
+lean_frontend/generated/Core_run_aux_auxiliary.lean:55:axiom 
+lean_frontend/docs/upstream-tray/lean4/repro/OverflowInMalloc.lean:20:partial def
+lean_frontend/generated/AilWf.lean:56:partial def
+lean_frontend/generated/AilWf.lean:61:partial def
+lean_frontend/generated/Defacto_memory_auxiliary.lean:39:sorry
+lean_frontend/generated/Defacto_memory_auxiliary.lean:39:sorry
+lean_frontend/generated/Defacto_memory_auxiliary.lean:39:axiom 
+lean_frontend/generated/Defacto_memory_auxiliary.lean:44:sorry
+lean_frontend/generated/Defacto_memory_auxiliary.lean:44:sorry
+lean_frontend/generated/Defacto_memory_auxiliary.lean:44:axiom 
+lean_frontend/generated/Defacto_memory_auxiliary.lean:49:sorry
+lean_frontend/generated/Defacto_memory_auxiliary.lean:49:sorry
+lean_frontend/generated/Defacto_memory_auxiliary.lean:49:axiom 
+lean_frontend/generated/Defacto_memory_auxiliary.lean:54:sorry
+lean_frontend/generated/Defacto_memory_auxiliary.lean:54:sorry
+lean_frontend/generated/Defacto_memory_auxiliary.lean:54:axiom 
+lean_frontend/generated/Core_auxiliary.lean:64:sorry
+lean_frontend/generated/Core_auxiliary.lean:64:sorry
+lean_frontend/generated/Core_auxiliary.lean:64:axiom 
+lean_frontend/generated/ErrorMonad.lean:121:partial def
+lean_frontend/generated/ErrorMonad.lean:131:partial def
+/home/dev/projects/cerberus-lean-proj/deps/lem-pinned/lean-lib/LemLib/Set_extra.lean:60:partial def
+lean_frontend/generated/Scope_table.lean:50:partial def
+lean_frontend/generated/Scope_table.lean:64:partial def
+lean_frontend/generated/Scope_table.lean:89:partial def
+lean_frontend/generated/Core_typing_effect.lean:65:partial def
+lean_frontend/generated/Core_typing_effect.lean:77:partial def
+lean_frontend/generated/Core_reduction_auxiliary.lean:43:sorry
+lean_frontend/generated/Core_reduction_auxiliary.lean:43:sorry
+lean_frontend/generated/Core_reduction_auxiliary.lean:43:axiom 
+lean_frontend/generated/Core_reduction_auxiliary.lean:48:sorry
+lean_frontend/generated/Core_reduction_auxiliary.lean:48:sorry
+lean_frontend/generated/Core_reduction_auxiliary.lean:48:axiom 
+lean_frontend/generated/Core_reduction_auxiliary.lean:53:sorry
+lean_frontend/generated/Core_reduction_auxiliary.lean:53:sorry
+lean_frontend/generated/Core_reduction_auxiliary.lean:53:axiom 
+lean_frontend/generated/Core_reduction_auxiliary.lean:58:sorry
+lean_frontend/generated/Core_reduction_auxiliary.lean:58:sorry
+lean_frontend/generated/Core_reduction_auxiliary.lean:58:axiom 
+lean_frontend/generated/Formatted_lemMeasureProofs.lean:17:sorry
+lean_frontend/generated/Core_typing_aux.lean:224:partial def
+lean_frontend/generated/Core_typing_aux.lean:236:partial def
+lean_frontend/generated/Core_typing_aux.lean:241:partial def
+lean_frontend/generated/Core_typing_aux.lean:270:partial def
+lean_frontend/generated/Core_typing_aux.lean:273:partial def
+lean_frontend/generated/Core_typing_aux.lean:280:partial def
+lean_frontend/generated/Cabs.lean:2633:partial def
+lean_frontend/generated/CerbCtypeInstances.lean:5:sorry
+lean_frontend/generated/Cabs_to_ail_effect.lean:876:partial def
+lean_frontend/generated/Cabs_to_ail_effect.lean:879:partial def
+lean_frontend/generated/Cabs_to_ail_effect.lean:983:partial def
+lean_frontend/generated/Cabs_to_ail_effect.lean:1172:partial def
+lean_frontend/generated/CerbGlobal.lean:14:implemented_by
+lean_frontend/generated/CerbND.lean:33:partial def
+lean_frontend/speclab/SpecLab/ByteArrFiles.lean:76:extern
+lean_frontend/speclab/SpecLab/ByteArrFiles.lean:92:extern
+lean_frontend/speclab/SpecLab/DivModFiles.lean:81:extern
+lean_frontend/speclab/SpecLab/ListAppendFiles.lean:12:extern
+lean_frontend/speclab/SpecLab/ListAppendFiles.lean:87:extern
+lean_frontend/speclab/SpecLab/ListAppendFiles.lean:117:extern
+lean_frontend/generated/Cmm_csem.lean:792:partial def
+lean_frontend/generated/Cmm_csem.lean:2392:partial def
+lean_frontend/generated/Translation.lean:186:partial def
+lean_frontend/generated/Translation.lean:494:partial def
+lean_frontend/generated/Translation.lean:535:partial def
+lean_frontend/generated/Translation.lean:571:partial def
+lean_frontend/generated/Translation.lean:603:partial def
+lean_frontend/generated/Translation.lean:700:partial def
+lean_frontend/generated/Translation.lean:722:extern
+lean_frontend/generated/CerbMem.lean:223:unsafe
+lean_frontend/generated/CerbMem.lean:224:unsafe
+lean_frontend/generated/CerbMem.lean:239:implemented_by
+lean_frontend/generated/CerbMem.lean:341:partial def
+lean_frontend/generated/CerbMem.lean:2053:maxRecDepth
+lean_frontend/test/Unit/FuelFormsTool.lean:56:axiom 
+lean_frontend/test/Unit/FuelFormsTool.lean:84:axiom 
+lean_frontend/test/Unit/FuelFormsTool.lean:138:partial def
+lean_frontend/test/Unit/FuelFormsTool.lean:159:partial def
+lean_frontend/test/Unit/FuelFormsTool.lean:356:unsafe
+lean_frontend/test/Unit/FuelFormsTool.lean:372:unsafe
+lean_frontend/test/Unit/FuelFormsTool.lean:373:unsafe
+lean_frontend/generated/Core_reduction.lean:278:sorry
+lean_frontend/generated/Core_sequentialise.lean:37:partial def
+lean_frontend/generated/Defacto_memory_aux_auxiliary.lean:36:sorry
+lean_frontend/generated/Defacto_memory_aux_auxiliary.lean:36:sorry
+lean_frontend/generated/Defacto_memory_aux_auxiliary.lean:36:axiom 
+lean_frontend/generated/Defacto_memory_aux_auxiliary.lean:41:sorry
+lean_frontend/generated/Defacto_memory_aux_auxiliary.lean:41:sorry
+lean_frontend/generated/Defacto_memory_aux_auxiliary.lean:41:axiom 
+lean_frontend/generated/Defacto_memory_aux_auxiliary.lean:46:sorry
+lean_frontend/generated/Defacto_memory_aux_auxiliary.lean:46:sorry
+lean_frontend/generated/Defacto_memory_aux_auxiliary.lean:46:axiom 
+lean_frontend/generated/Defacto_memory_aux_auxiliary.lean:51:sorry
+lean_frontend/generated/Defacto_memory_aux_auxiliary.lean:51:sorry
+lean_frontend/generated/Defacto_memory_aux_auxiliary.lean:51:axiom 
+lean_frontend/generated/Defacto_memory_aux_auxiliary.lean:56:sorry
+lean_frontend/generated/Defacto_memory_aux_auxiliary.lean:56:sorry
+lean_frontend/generated/Defacto_memory_aux_auxiliary.lean:56:axiom 
+lean_frontend/generated/Ctype_lemMeasureProofs.lean:20:axiom 
+lean_frontend/generated/Core.lean:2016:extern
+lean_frontend/generated/Enum.lean:63:partial def
+lean_frontend/generated/Core_linking.lean:68:partial def
+lean_frontend/generated/Core_linking.lean:70:partial def
+lean_frontend/generated/Core_linking.lean:76:partial def
+lean_frontend/generated/Core_linking.lean:86:partial def
+lean_frontend/generated/Core_linking.lean:117:extern
+lean_frontend/generated/Core_linking.lean:117:extern
+lean_frontend/generated/Core_linking.lean:117:extern
+lean_frontend/generated/Core_linking.lean:125:extern
+lean_frontend/generated/GenTypes.lean:315:partial def
+lean_frontend/generated/GenTypes.lean:340:partial def
+lean_frontend/generated/GenTypes.lean:373:partial def
+lean_frontend/generated/Formatted_auxiliary.lean:41:sorry
+lean_frontend/generated/Formatted_auxiliary.lean:41:sorry
+lean_frontend/generated/Formatted_auxiliary.lean:41:axiom 
+lean_frontend/test/Unit/TotalityProofTest.lean:81:partial def
+lean_frontend/test/Unit/FuelExemplar.lean:20:axiom 
+lean_frontend/test/Unit/FuelExemplar.lean:121:extern
+lean_frontend/test/Unit/EffectsProofTest.lean:2:unsafe
+lean_frontend/test/Unit/EffectsProofTest.lean:2:extern
+lean_frontend/test/Unit/EffectsProofTest.lean:5:partial def
+lean_frontend/test/Unit/EffectsProofTest.lean:8:extern
+lean_frontend/test/Unit/EffectsProofTest.lean:42:extern
+lean_frontend/test/Unit/EffectsProofTest.lean:61:partial def
+lean_frontend/generated/Implementation.lean:642:partial def
+lean_frontend/speclab/test/SLUnit/EmitCore.lean:126:partial def
+lean_frontend/speclab/test/SLUnit/EmitCore.lean:140:partial def
+lean_frontend/speclab/test/SLUnit/EmitCore.lean:146:partial def
+lean_frontend/speclab/test/SLUnit/EmitCore.lean:176:partial def
+lean_frontend/speclab/test/SLUnit/EmitCore.lean:182:partial def
+lean_frontend/speclab/test/SLUnit/EmitCore.lean:196:partial def
+lean_frontend/speclab/test/SLUnit/EmitCore.lean:212:partial def
+lean_frontend/speclab/test/SLUnit/EmitCore.lean:216:partial def
+lean_frontend/speclab/test/SLUnit/EmitCore.lean:299:partial def
+lean_frontend/speclab/test/SLUnit/EmitCore.lean:340:partial def
+lean_frontend/speclab/test/SLUnit/EmitCore.lean:406:partial def
+lean_frontend/speclab/test/SLUnit/EmitCore.lean:452:partial def
+lean_frontend/speclab/test/SLUnit/EmitCore.lean:514:partial def
+lean_frontend/speclab/test/SLUnit/EmitCore.lean:525:partial def
+/home/dev/projects/cerberus-lean-proj/deps/lem-pinned/lean-lib/LemLib.lean:18:axiom 
+/home/dev/projects/cerberus-lean-proj/deps/lem-pinned/lean-lib/LemLib.lean:19:implemented_by
+/home/dev/projects/cerberus-lean-proj/deps/lem-pinned/lean-lib/LemLib.lean:27:axiom 
+/home/dev/projects/cerberus-lean-proj/deps/lem-pinned/lean-lib/LemLib.lean:33:unsafe
+/home/dev/projects/cerberus-lean-proj/deps/lem-pinned/lean-lib/LemLib.lean:34:implemented_by
+/home/dev/projects/cerberus-lean-proj/deps/lem-pinned/lean-lib/LemLib.lean:36:axiom 
+/home/dev/projects/cerberus-lean-proj/deps/lem-pinned/lean-lib/LemLib.lean:42:axiom 
+/home/dev/projects/cerberus-lean-proj/deps/lem-pinned/lean-lib/LemLib.lean:42:unsafe
+/home/dev/projects/cerberus-lean-proj/deps/lem-pinned/lean-lib/LemLib.lean:43:axiom 
+/home/dev/projects/cerberus-lean-proj/deps/lem-pinned/lean-lib/LemLib.lean:160:implemented_by
+/home/dev/projects/cerberus-lean-proj/deps/lem-pinned/lean-lib/LemLib.lean:163:implemented_by
+/home/dev/projects/cerberus-lean-proj/deps/lem-pinned/lean-lib/LemLib.lean:167:unsafe
+/home/dev/projects/cerberus-lean-proj/deps/lem-pinned/lean-lib/LemLib.lean:176:implemented_by
+/home/dev/projects/cerberus-lean-proj/deps/lem-pinned/lean-lib/LemLib.lean:187:implemented_by
+/home/dev/projects/cerberus-lean-proj/deps/lem-pinned/lean-lib/LemLib.lean:188:unsafe
+/home/dev/projects/cerberus-lean-proj/deps/lem-pinned/lean-lib/LemLib.lean:190:implemented_by
+/home/dev/projects/cerberus-lean-proj/deps/lem-pinned/lean-lib/LemLib.lean:1311:partial def
+/home/dev/projects/cerberus-lean-proj/deps/lem-pinned/lean-lib/LemLib.lean:1711:partial def
+/home/dev/projects/cerberus-lean-proj/deps/lem-pinned/lean-lib/LemLib.lean:1715:partial def
+lean_frontend/generated/Main.lean:77:extern
+lean_frontend/generated/Main.lean:92:extern
+lean_frontend/generated/Main.lean:93:extern
+lean_frontend/generated/Main.lean:102:extern
+lean_frontend/generated/Main.lean:107:extern
+lean_frontend/generated/Main.lean:139:extern
+lean_frontend/generated/Main.lean:163:extern
+lean_frontend/generated/Main.lean:680:extern
+lean_frontend/generated/Main.lean:732:extern
+lean_frontend/generated/Main.lean:732:extern
+lean_frontend/generated/Main.lean:737:extern
+lean_frontend/generated/Main.lean:771:extern
+lean_frontend/generated/Main.lean:780:extern
+lean_frontend/generated/Main.lean:787:extern
+lean_frontend/generated/Main.lean:789:extern
+lean_frontend/generated/Main.lean:840:extern
+lean_frontend/generated/Main.lean:840:extern
+lean_frontend/generated/Main.lean:850:extern
+lean_frontend/generated/Main.lean:850:extern
+lean_frontend/generated/Main.lean:975:extern
+/home/dev/projects/cerberus-lean-proj/deps/lem-pinned/lean-lib/LemLib/String_extra.lean:35:partial def
+/home/dev/projects/cerberus-lean-proj/deps/lem-pinned/lean-lib/LemLib/String_extra.lean:47:partial def
+/home/dev/projects/cerberus-lean-proj/deps/lem-pinned/lean-lib/LemLib/Set.lean:116:sorry
+/home/dev/projects/cerberus-lean-proj/deps/lem-pinned/lean-lib/LemLib/Set.lean:153:sorry
+/home/dev/projects/cerberus-lean-proj/deps/lem-pinned/lean-lib/LemLib/Set.lean:175:sorry
+/home/dev/projects/cerberus-lean-proj/deps/lem-pinned/lean-lib/LemLib/Set.lean:211:sorry
+/home/dev/projects/cerberus-lean-proj/deps/lem-pinned/lean-lib/LemLib/Set.lean:218:sorry
+/home/dev/projects/cerberus-lean-proj/deps/lem-pinned/lean-lib/LemLib/Set.lean:226:partial def
+/home/dev/projects/cerberus-lean-proj/deps/lem-pinned/lean-lib/LemLib/Num.lean:1129:partial def
+/home/dev/projects/cerberus-lean-proj/deps/lem-pinned/lean-lib/LemLib/Num.lean:1269:partial def
+/home/dev/projects/cerberus-lean-proj/deps/lem-pinned/lean-lib/LemLibPmapLaws.lean:48:sorry
+/home/dev/projects/cerberus-lean-proj/deps/lem-pinned/lean-lib/LemLibPmapLaws.lean:48:native_decide
+/home/dev/projects/cerberus-lean-proj/deps/lem-pinned/lean-lib/LemLibPmapLaws.lean:49:ofReduce
+/home/dev/projects/cerberus-lean-proj/deps/lem-pinned/lean-lib/LemLibTheorems.lean:17:sorry
+/home/dev/projects/cerberus-lean-proj/deps/lem-pinned/lean-lib/LemLibTheorems.lean:18:native_decide
+/home/dev/projects/cerberus-lean-proj/deps/lem-pinned/lean-lib/LemLibTheorems.lean:18:ofReduce
+/home/dev/projects/cerberus-lean-proj/deps/lem-pinned/lean-lib/LemLibTheorems.lean:21:partial def

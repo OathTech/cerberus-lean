@@ -1,0 +1,14 @@
+Verbatim selected output lines; repeated build warnings omitted.
+Original complete capture sha256=8a28fe29050a82555d1843906d2af9168995f813af4e0e7a476df452131ddb93
+Removed local build-artifact directories: ['lean_frontend/.lake/packages/LemLib/lean-lib/.lake/build', 'lean_frontend/.lake/packages/iris/Iris/.lake/build', 'lean_frontend/.lake/packages/Qq/.lake/build', 'lean_frontend/.lake/packages/batteries/.lake/build', 'lean_frontend/.lake/build']
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+[MKDIR] lean_frontend/generated
+[LEM] generating Lean files in [lean_frontend/generated] (log in [lean_frontend/lem.log])
+[COPY] 37 hand-written Lean files (lean_frontend/handwritten_copy.manifest) into [lean_frontend/generated]
+check_handwritten_sync: OK (37 hand-written files byte-identical to lean_frontend/generated/; manifest lean_frontend/handwritten_copy.manifest)
+[STAMP] recording Lean lem-sync content stamp
+check_lem_sync: recorded lean_frontend/lem_sync.sha256 (src 977326511c1096013d9b1fa183500ad6487a23ac9c6edc3d3f2ff8bd11e266e0, gen 11c6b37a5dc95ed9f2ec3d1f6f3e157e1f0309c7236e247b9d279deaf1ab2938)
+LEAN_GENERATE rc=0 elapsed_seconds=42.742
+LEAN_NATIVE rc=0 elapsed_seconds=0.860
+Build completed successfully (377 jobs).
+LEAN_COLD_BUILD rc=0 elapsed_seconds=278.666

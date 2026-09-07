@@ -1,0 +1,10 @@
+COMMAND: TIMEOUT_SECS=90 ./scripts/test_exec.sh /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/.tmp/scripts/csmith-corpus.qIpKLJ78JB/sa_csmith_371.c
+INPUT /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/.tmp/scripts/csmith-corpus.qIpKLJ78JB/sa_csmith_371.c bytes=26100 sha256=aead266ced87eada282ce25b47cf641bc85f5c0d4ab784ab50b8c42b6148491d
+INPUT /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/tests/csmith/small_arrays/csmith_371.c bytes=26068 sha256=c6b60c4b3c56189a20c12a32a6998577eebeed3ac0f81a778b4ba73678043035
+INPUT /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/.tmp/scripts/csmith-corpus.qIpKLJ78JB/csmith_cerberus.h bytes=4413 sha256=b59fb14def3e31341d31a60c4f7010d8d57ca7d57fe6829fdff157c3660887cc
+INPUT /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/.tmp/scripts/csmith-corpus.qIpKLJ78JB/safe_math.h bytes=22107 sha256=601f60c53babcdf95d5e875b5a3546a87f651f4f92a69be27a760e32ee2de2ff
+STREAM stdout bytes=24344 sha256=4f90fd6de52e3cad167c73fab7c14fa889140dcf90feee419d501773e55ad359
+SUMMARY: total=1 match=1 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0
+STREAM stderr bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DERIVED per-input status rows: [["[1/1]", "MATCH", "sa_csmith_371:"]]
+DIRECT_CSMITH_90 sa_csmith_371.c rc=0 elapsed_seconds=21.357

@@ -1,0 +1,14 @@
+COMMAND: ../scripts/capped lake env lean .lake/packages/LemLib/lean-lib/LemLibPmapLaws.lean
+CWD: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/lean_frontend
+STREAM stdout: bytes=655 sha256=f160dfe2c128c7e5875bb5c0e5cbfe7aa851aac2425de9526724004f617593ff
+'Pmap.find?_add_same' depends on axioms: [propext, Quot.sound]
+'Pmap.find?_add_other' depends on axioms: [propext, Quot.sound]
+'Pmap.WF_add' depends on axioms: [propext, Quot.sound]
+'Fmap.fmapLookupBy_fmapAddBy_same' depends on axioms: [propext, Quot.sound]
+'Fmap.fmapLookupBy_fmapAddBy_other' depends on axioms: [propext, Quot.sound]
+'Pmap.cmpLaws_defaultCompare_nat' depends on axioms: [propext, Quot.sound]
+'Pmap.cmpLaws_of_transOrd' depends on axioms: [propext]
+'Pmap.cmpLaws_defaultCompare_int' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Pmap.cmpLaws_defaultCompare_string' depends on axioms: [propext, Classical.choice, Quot.sound]
+STREAM stderr: bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DIRECT pmap-laws rc=0 elapsed_seconds=1.575 status=passed cleaned=true residual_processes=False

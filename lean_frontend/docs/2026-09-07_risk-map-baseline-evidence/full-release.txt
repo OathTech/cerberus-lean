@@ -1,0 +1,70 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+Release evidence: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/.tmp/risk-map-full
+RUN A1: ./scripts/test_unit.sh
+PASSED A1 (138.3s)
+RUN A2: ./scripts/test_exec.sh --check-baseline
+PASSED A2 (28.9s)
+RUN A3: ./scripts/test_exec.sh --check-baseline=scripts/exec_coverage_baseline.txt tests/coverage
+PASSED A3 (55.3s)
+RUN A4: ./scripts/test_exec.sh --check-baseline=scripts/exec_debug_baseline.txt tests/debug
+PASSED A4 (24.4s)
+RUN A4b: ./scripts/test_exec.sh --check-baseline=scripts/exec_float_baseline.txt tests/float
+PASSED A4b (19.4s)
+RUN A4c: ./scripts/test_bytes.sh
+PASSED A4c (3.4s)
+RUN A5: ./scripts/test_libc_exec.sh
+PASSED A5 (25.1s)
+RUN A6: ./scripts/test_multi_tu.sh
+PASSED A6 (2.3s)
+RUN A7: ./scripts/test_parse.sh
+PASSED A7 (9.7s)
+RUN A8: ./scripts/test_core.sh
+PASSED A8 (8.8s)
+RUN A9: ./scripts/test_elab.sh
+PASSED A9 (16.5s)
+RUN A10: ./scripts/test_libxml2_uri.sh
+PASSED A10 (18.6s)
+RUN A11: ./scripts/test_cn_coverage.sh --check-baseline
+PASSED A11 (60.0s)
+RUN B1: ./scripts/test_libxml2.sh
+PASSED B1 (691.0s)
+RUN B2: ./scripts/test_parse.sh tests/ci
+PASSED B2 (23.0s)
+RUN B3: ./scripts/test_core.sh tests/ci
+PASSED B3 (15.2s)
+RUN B4: ./scripts/test_verify.sh
+PASSED B4 (46.5s)
+RUN B5: ./scripts/test_immaculate.sh
+PASSED B5 (72.3s)
+RUN B6.1: ./scripts/test_speclab.sh --selftest
+PASSED B6.1 (174.6s)
+RUN B6.2: ./scripts/test_speclab.sh --plant
+PASSED B6.2 (2.3s)
+RUN B6.3: ./scripts/test_speclab_divmod.sh --gate
+PASSED B6.3 (10.1s)
+RUN B6.4: ./scripts/test_speclab_bytearr.sh --gate
+PASSED B6.4 (9.5s)
+RUN B6.5: ./scripts/test_speclab_list.sh --gate
+PASSED B6.5 (10.4s)
+RUN B6.6: ./scripts/test_speclab_tree.sh --gate
+PASSED B6.6 (10.8s)
+RUN B6.7: ./scripts/test_speclab_seed.sh --gate
+PASSED B6.7 (9.2s)
+RUN B7: ./scripts/test_gcc_oracle.sh --check-baseline
+PASSED B7 (1524.2s)
+RUN B8.1: ./scripts/test_hang_plant.sh
+PASSED B8.1 (13.5s)
+RUN B8.2: ./scripts/test_kill_plant.sh
+PASSED B8.2 (220.1s)
+RUN B8.3: ./scripts/test_fuel_plant.sh
+PASSED B8.3 (6.7s)
+RUN B9: python3 scripts/test_observation_lanes.py
+PASSED B9 (1188.7s)
+RUN B10.1: python3 scripts/test_upstream_oracle.py
+PASSED B10.1 (65.1s)
+RUN B10.2: python3 scripts/test_upstream_oracle.py --plant
+PASSED B10.2 (1.4s)
+full: passed; 32/32 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+FULL_RELEASE rc=0 elapsed_seconds=4506.862

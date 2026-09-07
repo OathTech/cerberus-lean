@@ -1,0 +1,25 @@
+COMMAND: ./scripts/test_csmith_corpus.sh --check-baseline --shard 2/6
+CWD: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline
+STREAM stdout: bytes=422568 sha256=a1c7f26162324a6c6aa0b70c2f541ae7d6b959b37f51ad16b382f1c1ca7007c0
+check_lem_sync: OK (src 977326511c1096013d9b1fa183500ad6487a23ac9c6edc3d3f2ff8bd11e266e0, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin 501147ca761a28cf64b0b6f3eb244c90164db137322122305572b7c0b8bff8a7, src 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda)
+check_driver_fresh: recorded lean stamp (bin 32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6, src 89a31871cc2e83121d7efb009c35aa6c50216b31f6dad88cee4688b0786edf28)
+Testing files from list: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/.tmp/scripts/csmith-corpus.qIpKLJ78JB/list.txt.shard
+Raw observation evidence (kept on failure or under CERB_OBSERVATION_DIR; removed on exit 0): /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/.tmp/scripts/observations/test_exec.pUPzGKDiIx
+[24/279] TIMEOUT sa_csmith_369 (Lean TIMEOUT(cpu 15.00s of 15.00s wall; timeout 15s))
+[27/279] TIMEOUT sa_csmith_371 (Lean TIMEOUT(cpu 15.00s of 15.00s wall; timeout 15s))
+  Mismatch:   0 (includes one-sided-UB DIFFs)
+
+Match rate:   100% (complete observations; UB_DIFF is a difference)
+
+SUMMARY: total=279 match=157 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=5 hang=0 cerb_skip=117 cerb_floor=0 cerb_inconsistent=0
+
+Checking against baseline: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/.tmp/scripts/csmith-corpus.qIpKLJ78JB/baseline.slice
+REGRESSION: sa_csmith_369.c baseline=MATCH current=TIMEOUT
+REGRESSION: sa_csmith_371.c baseline=MATCH current=TIMEOUT
+
+Baseline check: 2 regression(s), 0 improvement(s)
+FAILED: regressions vs baseline
+STREAM stderr: bytes=159 sha256=a4cccbc346565e5764cf576d5d30e3ffbdd72aedef4fe241227c4b9f7ffb719e
+Raw observation evidence: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline/.tmp/scripts/observations/test_exec.pUPzGKDiIx
+DIRECT csmith-shard-2 rc=1 elapsed_seconds=1999.201 status=FINDING cleaned=true residual_processes=False

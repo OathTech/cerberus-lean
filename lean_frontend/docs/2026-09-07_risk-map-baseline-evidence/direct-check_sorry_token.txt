@@ -1,0 +1,6 @@
+COMMAND: ./scripts/check_sorry_token.sh
+CWD: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline
+STREAM stdout: bytes=126 sha256=8b7224aa5c9ff24cbf04397d2e4dd3de52db3476efeb63f95a58dede0df4c76a
+check_sorry_token: OK (286 files scanned comment-stripped — generated 207, hand-written+test 44, LemLib 35; 0 sorry tokens)
+STREAM stderr: bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DIRECT check_sorry_token rc=0 elapsed_seconds=0.824 status=passed cleaned=true residual_processes=False

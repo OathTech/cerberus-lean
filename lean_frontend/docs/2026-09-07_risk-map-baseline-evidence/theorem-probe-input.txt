@@ -1,0 +1,27 @@
+import CerbGlobal
+import CerbTagsWf
+import CerbMem_lemMeasureProofs
+#print axioms CerbGlobal.backend_name_eq
+#print axioms CerbGlobal.current_execution_mode_eq
+#print axioms CerbGlobal.using_concurrency_eq
+#print axioms CerbGlobal.isDefacto_eq
+#print axioms CerbGlobal.isPermissive_eq
+#print axioms CerbGlobal.isAgnostic_eq
+#print axioms CerbGlobal.isIgnoreBitfields_eq
+#print axioms CerbGlobal.has_switch_eq
+#print axioms CerbGlobal.is_CHERI_eq
+#print axioms CerbGlobal.is_PNVI_eq
+#print axioms CerbGlobal.has_strict_pointer_arith_eq
+#print axioms CerbTagsWf.Acyclic.pair
+#check CerbMem.alignofCtype_measure_sufficient
+#print axioms CerbMem.alignofCtype_measure_sufficient
+#check CerbMem.sizeofCtype_measure_sufficient
+#print axioms CerbMem.sizeofCtype_measure_sufficient
+#check CerbMem.memberAlign_measure_sufficient
+#print axioms CerbMem.memberAlign_measure_sufficient
+#check CerbMem.offsetsofMembers_measure_sufficient
+#print axioms CerbMem.offsetsofMembers_measure_sufficient
+#check CerbMem.offsetsof_measure_sufficient
+#print axioms CerbMem.offsetsof_measure_sufficient
+#check CerbMem.reconstructValue_measure_sufficient
+#print axioms CerbMem.reconstructValue_measure_sufficient

@@ -1,0 +1,6 @@
+COMMAND: ENFORCE=1 ./scripts/check_exec_totality.sh
+CWD: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/risk-map-baseline
+STREAM stdout: bytes=87 sha256=44afc8d8dd3bf052cca6ccd417924e8ae36fd9362a18b1d7c3b259e7e77d3e6b
+check_exec_totality: CLEAN (22 generated modules + hand-written CerbND, 0 allowlisted)
+STREAM stderr: bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+DIRECT check_exec_totality rc=0 elapsed_seconds=0.674 status=passed cleaned=true residual_processes=False
