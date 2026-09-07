@@ -380,8 +380,15 @@ theorem print_eval_conv_aux_wrapper_defeq (n : Nat) :
 theorem drive_nonmemory_steps_aux2_wrapper_defeq (n : Nat) :
     @drive_nonmemory_steps_aux2 ⟨n⟩ = @drive_nonmemory_steps_aux2_lemFuel ⟨n⟩ n := rfl
 
-theorem hack_wrapper_defeq (n : Nat) :
-    @hack ⟨n⟩ = @hack_lemFuel ⟨n⟩ n := rfl
+/- `hack_wrapper_defeq` LEFT this list at the 2026-09-08 fuel-pending close-out:
+   `hack` is MEASURED (`hack_lemFuel (lemSize pexpr1) …` under the hypothesis
+   `CerbCoreShape.IsValuePexpr pexpr1`, frontend/model/driver.lem's
+   `fuel_measure … assuming` declare), so its counter is no longer the
+   ambient and `@hack ⟨n⟩ = @hack_lemFuel ⟨n⟩ n` is FALSE by design; its
+   fuel-freedom is pinned by the sufficiency obligation
+   `Driver_auxiliary.hack_measure_sufficient` (proof
+   `Driver_lemMeasureProofs`, the fuel-forms gate's MEASURED row). The
+   wrapper keeps `[LemFuel]` only for `step_eval_pexpr`'s ambient callees. -/
 
 /-- `nd_bind`'s worker is a LEAF (its only fuel is its counter), so the
     right-hand side carries no instance. -/

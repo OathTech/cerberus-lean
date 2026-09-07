@@ -146,6 +146,7 @@ roots = [
   "CerbCabsInstances",
   "CerbTags",
   "CerbTagsWf",
+  "CerbCoreShape",
   "CerbDebug",
   "CerbDecode",
   "CabsImport",
@@ -168,6 +169,7 @@ roots = [
   "Core_eval_lemMeasureProofs",
   "AilTypesAux_lemMeasureProofs",
   "Formatted_lemMeasureProofs",
+  "Driver_lemMeasureProofs",
 ]
 
 [[lean_exe]]

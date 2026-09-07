@@ -839,6 +839,11 @@ echo "check_theorem_axioms: mem-scale S1 leg OK (${#MEMSCALE_THMS[@]} C1/C3 equa
 # NOT listed here — scripts/check_fuel_forms.sh probes the axiom cone of EVERY
 # `*_measure_sufficient` constant (generated statement + hand-written proof) in
 # the compiled environment, so the pin below stays the C1 set (still present).
+# Fuel-pending close-out (2026-09-08): `CerbND.hack_wrapper_defeq` LEFT the list —
+# `hack` is MEASURED under `CerbCoreShape.IsValuePexpr` (its counter is no longer
+# the ambient, so the parametricity pin is false by design); in its place the
+# generated obligation `hack_measure_sufficient` (Driver_auxiliary) and its
+# hand-written proof (Driver_lemMeasureProofs) are probed here by name.
 PROBE5=lean_frontend/.axiom-probe-fuel.lean
 FUEL_THMS=(nd_bind_lemFuel_zero liftND_lemFuel_zero liftAction_lemFuel_zero
            print_eval_conv_aux_lemFuel_zero drive_nonmemory_steps_aux2_lemFuel_zero
@@ -848,7 +853,8 @@ FUEL_THMS=(nd_bind_lemFuel_zero liftND_lemFuel_zero liftAction_lemFuel_zero
            CerbND.runNDFuel_zero CerbND.runND1Fuel_zero CerbND.runND1TraceFuel_zero
            CerbND.fuelExhaustedKill_ne_Undef0 CerbND.fuelExhaustedKill_ne_Other
            CerbND.driver2_wrapper_defeq CerbND.print_eval_conv_aux_wrapper_defeq
-           CerbND.drive_nonmemory_steps_aux2_wrapper_defeq CerbND.hack_wrapper_defeq
+           CerbND.drive_nonmemory_steps_aux2_wrapper_defeq
+           hack_measure_sufficient Driver_lemMeasureProofs.hack_measure_sufficient
            CerbND.nd_bind_wrapper_defeq CerbND.liftND_wrapper_defeq CerbND.liftAction_wrapper_defeq
            CerbND.runND_eq CerbND.runND1_eq CerbND.runND1Trace_eq
            FuelExemplar.exemplar_certified_shipped_zero FuelExemplar.exemplar_killed_at_one
@@ -863,6 +869,7 @@ FUEL_THMS=(nd_bind_lemFuel_zero liftND_lemFuel_zero liftAction_lemFuel_zero
   echo "import Ctype_auxiliary"
   echo "import Core_auxiliary"
   echo "import Defacto_memory_aux_auxiliary"
+  echo "import Driver_auxiliary"
   for name in "${FUEL_THMS[@]}"; do
     echo "#print axioms $name"
   done
@@ -896,6 +903,6 @@ if [[ -n "$FUEL_BAD" ]]; then
   echo "$FUEL_BAD"
   exit 1
 fi
-echo "check_theorem_axioms: FUEL arc leg OK (${#FUEL_THMS[@]} contract lemmas — 9 generated _zero + the CerbND runner leaves/parametricity pins + the ∀-fuel exemplar and its instances + the 3 fuel_measure sufficiency obligations (generated statement + hand-written proof), every cone ⊆ [propext, Classical.choice, Quot.sound])"
+echo "check_theorem_axioms: FUEL arc leg OK (${#FUEL_THMS[@]} contract lemmas — 9 generated _zero + the CerbND runner leaves/parametricity pins + the ∀-fuel exemplar and its instances + the 3 C1 fuel_measure sufficiency obligations + hack's (generated statement + hand-written proof), every cone ⊆ [propext, Classical.choice, Quot.sound])"
 
 echo "check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)"

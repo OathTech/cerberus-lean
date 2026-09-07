@@ -14,6 +14,10 @@ import Core_eval Core_run Core_reduction
    auto-generated fallback instances were sorry-bodied (core_step2 carries
    core_runM closures) and crashed at runtime -- arc-4 S0/S1a. *)
 declare {lean} extra_import `CerbStepInstances`
+(* Lean: the SHAPE predicate (IsValuePexpr) that the measured hack wrapper's
+   sufficiency obligation assumes — see the fuel_measure declare at the end of
+   this file; seam lean_frontend/CerbCoreShape.lean. *)
+declare {lean} extra_import `CerbCoreShape`
 
 import Translation_aux
 import Enum State_exception_undefined Exception Undefined Nondeterminism Dlist
@@ -1907,3 +1911,17 @@ declare {lean} fuel val print_eval_conv_aux = `ND (fun st => (NDkilled (Error0 C
 declare {lean} fuel val drive_nonmemory_steps_aux2 = `fun _ => ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
 declare {lean} fuel val driver2 = `ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
 declare {lean} fuel val hack = `fuelExhausted Vunit`
+(* FUEL MEASURE under a HYPOTHESIS (fuel-pending close-out 2026-09-08, option C of
+   the pure-failure reachability census; Lean-only, OCaml byte-identical): hack
+   is a step-until-value loop with no unconditional data measure (C2 record
+   D-C2-4). Its only exec-path caller is finalize (:1473-1477), right after
+   driver2, whose only exits are process_core_step2's two terminal arms
+   (:1331-1338, :1352-1356) — both prepare_exit (:1309-1316), which makes the
+   arena mk_value_e cval; to_pure of that arena is its `PEval` pexpr, so hack's
+   argument is a VALUE: step_eval_pexpr returns it unchanged (core_eval.lem
+   PEval arm) and valueFromPexpr accepts it (core_aux.lem:862-868) — ONE
+   iteration. Measure = the derived size (>= 1; a numeral is refused,
+   FM-literal), hypothesis = the shape (lean_frontend/CerbCoreShape.lean).
+   Proof in lean_frontend/Driver_lemMeasureProofs.lean; row in
+   scripts/fuel_hypotheses.txt. *)
+declare {lean} fuel_measure val hack = `lemSize pexpr1` assuming `CerbCoreShape.IsValuePexpr pexpr1`

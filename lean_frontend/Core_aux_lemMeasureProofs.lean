@@ -14,9 +14,11 @@
     memValueFromValue        (ctype.lemSize ty1 — the recursion descends `unatomic ty1`,
                               never larger: CerbMeasureLemmas.unatomic_size_le)
 
-  NOT here (ambient, pending — C2 record): to_pure/to_pures, whose recursion
-  descends into `subst_pattern`'s RESULT; its ill-typed arms are an opaque
-  `failwithI` value, so no size bound on that result is provable.
+  to_pure/to_pures (fuel-pending close-out 2026-09-08): measured UNDER A
+  HYPOTHESIS — their recursion descends into `subst_pattern`'s RESULT (no size
+  bound on it is provable), but at every exec-path call site the arena is
+  `Epure` of a value, so the sufficiency is stated under the arena SHAPE
+  (`CerbCoreShape.IsPureExpr g` / `AllPureExprs l`); see the last section.
 
   Shape = the C2 template: strong induction on the size bound; at
   `Nat.succ f`/`Nat.succ g` the body is unfolded and every recursive call on a
@@ -634,5 +636,78 @@ theorem update_env_aux_measure_sufficient {a : Type} [Lem_Map.MapKeyType a] (g :
     (lemMeasureLe : generic_pattern.lemSize g ≤ lemFuel) :
     update_env_aux_lemFuel lemFuel g cval env1 = update_env_aux g cval env1 :=
   update_env_aux_stable_aux (generic_pattern.lemSize g) g cval env1 lemFuel (generic_pattern.lemSize g) (Nat.le_refl _) lemMeasureLe (Nat.le_refl _)
+
+
+/-! ## `to_pure` / `to_pures` — measured UNDER A HYPOTHESIS (fuel-pending close-out 2026-09-08)
+
+  Option C of the pure-failure reachability census (docs/2026-09-07_pure-failure-
+  reachability-census.md Q4/Q6). The pair is a cyclic mutual block (one shared
+  counter, measured all-or-none — lem FM-mutual) and `to_pure` recurses on
+  `subst_pattern`'s RESULT (its `to_pure_aux`, core_aux.lem:1531-1541), so no
+  unconditional data measure exists (the header's "NOT here" is closed by a
+  hypothesis, not by a size bound):
+
+    to_pure    measure `lemSize g`            assuming `CerbCoreShape.IsPureExpr g`
+    to_pures   measure `List.length l + 1`    assuming `CerbCoreShape.AllPureExprs l`
+
+  Under `IsPureExpr g` (`g = Expr _ (Epure pe)`) the `Epure pe -> Just pe` arm
+  (core_aux.lem:1545-1546) returns at depth 1 at every positive fuel, so the
+  derived size (≥ 1, `expr_lemSize_pos`) is sufficient — the least parameter
+  expression the declare grammar admits for a one-hop bound (a numeral is
+  refused, FM-literal). `to_pures` (:1623-1631) folds `to_pure` over its list at
+  the SAME inner counter; when every element is `Epure` and the list is
+  non-empty the inner counter `List.length l ≥ 1` suffices for each element,
+  and the empty list needs no inner call at all. The hypothesis holds at both
+  exec-path call sites of `to_pure` — driver.lem `finalize` (:1473-1477) and
+  `driver_globals` (:1611-1616), each right after `driver2`, whose only exits
+  set the arena to `mk_value_e cval` by `prepare_exit` (:1309-1316) — and
+  `to_pures` is never entered there (CerbCoreShape.lean's header; the register
+  scripts/fuel_hypotheses.txt). Kernel-only tactics; no option bumps.
+-/
+
+/-- `to_pure`'s worker on an `Epure` expr at any positive fuel returns its pexpr
+    (core_aux.lem:1545-1546). -/
+theorem to_pure_pure {a : Type} (m : Nat) (hm : 1 ≤ m) (annots : List annot) (pe : pexpr) :
+    to_pure_lemFuel m (Expr annots (Epure pe) : generic_expr a Unit sym) = some pe := by
+  cases m with
+  | zero => omega
+  | succ m => simp only [to_pure_lemFuel]
+
+/-- THE OBLIGATION, exactly as the generated auxiliary module states and delegates it. -/
+theorem to_pure_measure_sufficient {a : Type} (g : generic_expr a Unit sym)
+    (lemHyp : CerbCoreShape.IsPureExpr g) (lemFuel : Nat)
+    (lemMeasureLe : generic_expr.lemSize g ≤ lemFuel) :
+    to_pure_lemFuel lemFuel g = to_pure g := by
+  obtain ⟨annots, pe, rfl⟩ := lemHyp
+  have hpos := expr_lemSize_pos (Expr annots (Epure pe) : generic_expr a Unit sym)
+  unfold to_pure
+  rw [to_pure_pure lemFuel (by omega), to_pure_pure _ hpos]
+
+/-- `to_pures`'s worker is fuel-stable above `List.length l + 1` when every
+    element is `Epure`: the fold's step function agrees on every member at any
+    two positive inner counters (`to_pure_pure`). -/
+theorem to_pures_stable {a : Type} (l : List (expr a)) (hl : CerbCoreShape.AllPureExprs l)
+    (f g : Nat) (hf : List.length l + 1 ≤ f) (hg : List.length l + 1 ≤ g) :
+    to_pures_lemFuel f l = to_pures_lemFuel g l := by
+  cases f with
+  | zero => omega
+  | succ f =>
+    cases g with
+    | zero => omega
+    | succ g =>
+      simp only [to_pures_lemFuel]
+      show lemListFoldr _ (some []) l = lemListFoldr _ (some []) l
+      apply lemListFoldr_congr
+      intro e acc he
+      obtain ⟨annots, pe, rfl⟩ := hl e he
+      have hlen := List.length_pos_of_mem he
+      rw [to_pure_pure f (by omega) annots pe, to_pure_pure g (by omega) annots pe]
+
+/-- THE OBLIGATION, exactly as the generated auxiliary module states and delegates it. -/
+theorem to_pures_measure_sufficient {a : Type} (l : List (expr a))
+    (lemHyp : CerbCoreShape.AllPureExprs l) (lemFuel : Nat)
+    (lemMeasureLe : List.length l + 1 ≤ lemFuel) :
+    to_pures_lemFuel lemFuel l = to_pures l :=
+  to_pures_stable l lemHyp lemFuel (List.length l + 1) lemMeasureLe (Nat.le_refl _)
 
 end Core_aux_lemMeasureProofs

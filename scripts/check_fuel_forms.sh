@@ -209,7 +209,7 @@ if [[ "${1:-}" == "--selftest" ]]; then
   # P1: a measured, reachable worker flipped to ambient -> new reachable ambient
   sed 's/^\(FUEL_FORM\tstep_eval_pexpr_lemFuel\t\)MEASURED\t/\1AMBIENT\t/' "$TBL" > "${TBL}.p"; plant "P1 measured->ambient reachable (step_eval_pexpr)" "REACHABLE from drive with an opaque" "${TBL}.p" "$PENDING" "$HYPREG"
   # P2: a pending row vanishes from the table (e.g. it became measured) -> stale pin
-  grep -v $'^FUEL_FORM\thack_lemFuel\t' "$TBL" > "${TBL}.p"; plant "P2 stale pending pin (hack removed from the table)" "stale pin" "${TBL}.p" "$PENDING" "$HYPREG"
+  grep -v $'^FUEL_FORM\tmany_lemFuel\t' "$TBL" > "${TBL}.p"; plant "P2 stale pending pin (many removed from the table)" "stale pin" "${TBL}.p" "$PENDING" "$HYPREG"
   # P3: a measured obligation with sorryAx in its cone
   sed 's/^\(FUEL_FORM\tin_pattern_lemFuel\tMEASURED\t[^\t]*\t\)obligation=\([^ ]*\) axioms=ok/\1obligation=\2 axioms=BAD[[sorryAx]]/' "$TBL" > "${TBL}.p"; plant "P3 measured obligation with sorryAx in its cone" "axiom cone outside" "${TBL}.p" "$PENDING" "$HYPREG"
   # P4: truncated table (no summary)
@@ -218,11 +218,13 @@ if [[ "${1:-}" == "--selftest" ]]; then
   { cat "$PENDING"; echo "phantom_lemFuel pure-loop planted"; } > "${TBL}.pend"; plant "P5 phantom pending-register row" "stale pin" "$TBL" "${TBL}.pend" "$HYPREG"
   # P6/P7 (audit M1): decoy obligations COMPILED into scratch modules outside the
   # tree and appended to the tool's imports — the tool must classify by SHAPE.
-  # P6: right NAME, type `True` (to_pure). P7: right name, right shape (Eq,
+  # P6: right NAME, type `True` (many). P7: right name, right shape (Eq,
   # `_ ≤ lemFuel` hypothesis, right wrapper) but the WRONG worker constant on
-  # the left (to_pures). (Until C4 these decoys used CerbMem.sizeofCtype /
-  # alignofCtype, which are real measured obligations now — a decoy of a real
-  # obligation would be a duplicate constant, not a plant.)
+  # the left (many1). (Until C4 these decoys used CerbMem.sizeofCtype /
+  # alignofCtype, and until the 2026-09-08 fuel-pending close-out to_pure /
+  # to_pures — each pair became real measured obligations, and a decoy of a
+  # real obligation would be a duplicate constant, not a plant; the targets
+  # are the still-AMBIENT pending workers many/many1.)
   # P10 (C4; lem audit F1): right name, right SHAPE, the hypothesis-carrying form
   # under a CONTRADICTORY hypothesis — the tool counts it MEASURED (the gate
   # cannot decide satisfiability); the REGISTER has no row for it, so the
@@ -230,14 +232,14 @@ if [[ "${1:-}" == "--selftest" ]]; then
   # P0 repair it is the real CerbMem.alignofCtype obligation under `cty ≠ cty`,
   # compiled in the P11 run below (see the note there).
   cat > "$PLANTDIR/FuelFormsPlantTrue.lean" <<'LEAN'
-import Core_aux
-theorem to_pure_measure_sufficient : True := trivial
+import Monadic_parsing
+theorem many_measure_sufficient : True := trivial
 LEAN
   cat > "$PLANTDIR/FuelFormsPlantWorker.lean" <<'LEAN'
-import Core_aux
-theorem to_pures_measure_sufficient {a : Type} [LemFuel] (l : List (expr a)) (lemFuel : Nat)
-    (_lemMeasureLe : List.length l ≤ lemFuel) :
-    to_pures l = to_pures l := rfl
+import Monadic_parsing
+theorem many1_measure_sufficient {a : Type} [LemFuel] (p : parserM a) (lemFuel : Nat)
+    (_lemMeasureLe : 0 ≤ lemFuel) :
+    many1 p = many1 p := rfl
 LEAN
   # (P0 2026-09-05: the C4-era P10 decoy stated `hack` — an AMBIENT worker whose
   # wrapper calls it at `LemFuel.fuel` — under `0 ≤ lemFuel`; the argument/
@@ -351,9 +353,9 @@ LEAN
     fi
   }
   if FUELFORMS_EXTRA_PATH="$PLANTDIR" FUELFORMS_EXTRA_MODULES="FuelFormsPlantTrue FuelFormsPlantWorker FuelFormsPlantAudit" table_of_tree "$LOG" > "${TBL}.p"; then
-    grep -E $'^FUEL_FORM\t(to_pure_lemFuel|to_pures_lemFuel)\t' "${TBL}.p" | cut -c1-220 | sed 's/^/    plant table: /'
-    plant "P6 decoy obligation of type True (to_pure)" "not the contract's shape" "${TBL}.p" "$PENDING" "$HYPREG"
-    plant "P7 decoy obligation with the wrong worker constant (to_pures)" "not the contract's shape" "${TBL}.p" "$PENDING" "$HYPREG"
+    grep -E $'^FUEL_FORM\t(many_lemFuel|many1_lemFuel)\t' "${TBL}.p" | cut -c1-220 | sed 's/^/    plant table: /'
+    plant "P6 decoy obligation of type True (many)" "not the contract's shape" "${TBL}.p" "$PENDING" "$HYPREG"
+    plant "P7 decoy obligation with the wrong worker constant (many1)" "not the contract's shape" "${TBL}.p" "$PENDING" "$HYPREG"
     row_detail "P12 audit decoy 1: _zero lemma about CerbND.runNDFuel, not the worker" review_bad_lemFuel AMBIENT "MALFORMED-ZERO zero=review_bad_lemFuel_zero: left-hand head \`CerbND.runNDFuel\` is not the worker \`review_bad_lemFuel\`" "${TBL}.p"
     plant "P12 policy: a MALFORMED-ZERO lemma is RED" "named <worker>_zero whose statement is not" "${TBL}.p" "$PENDING" "$HYPREG"
     row_detail "P13 audit decoy 2: worker at literal 0, wrapper input x never passed" review_shift_lemFuel AMBIENT "worker argument #1 is \`0\`, not one of the wrapper's input binders" "${TBL}.p"
@@ -411,7 +413,7 @@ LEAN
   fi
   # P8/P9/P9b (C4): the hypothesis register, both directions + format
   grep -v $'^CerbMem\.sizeofCtype_lemFuel\t' "$HYPREG" > "${TBL}.hreg"; plant "P8 register row of a measured-under-hypothesis worker deleted (CerbMem.sizeofCtype)" "no reviewed register row" "$TBL" "$PENDING" "${TBL}.hreg"
-  { cat "$HYPREG"; printf 'hack_lemFuel\t0 < k\tdriver.lem:1 planted\t[PLANT]\n'; } > "${TBL}.hreg"; plant "P9 stale register row (hack under 0 < k)" "stale register row" "$TBL" "$PENDING" "${TBL}.hreg"
+  { cat "$HYPREG"; printf 'hack_lemFuel\t0 < k\tdriver.lem:1 planted\t[PLANT]\n'; } > "${TBL}.hreg"; plant "P9 stale register row (hack under 0 < k — hack IS measured, under CerbCoreShape.IsValuePexpr pexpr1, not under this)" "stale register row" "$TBL" "$PENDING" "${TBL}.hreg"
   { cat "$HYPREG"; printf 'phantom_lemFuel\tTrue\tno cite here\t[PLANT]\n'; } > "${TBL}.hreg"; plant "P9b register row without a .lem:<line> cite" "not of the form" "$TBL" "$PENDING" "${TBL}.hreg"
   echo "  UNPLANTED:"; policy "$TBL" "$PENDING" "$HYPREG" | sed 's/^/    /' || fails=$((fails+1))
   if (( fails == 0 )); then echo "check_fuel_forms: SELFTEST OK (24 plants with the declared label — 6 on the table (incl. the ABSORBING-cone plant), 3 on the hypothesis register, 15 compiled decoys: the C4 four (type True / wrong worker / contradictory hypothesis caught by the register / extra binder), the whole-project audit's two decoys verbatim (review_bad _zero about runNDFuel; review_shift at literal 0), wrong fuel position, swapped worker-side and wrapper-side arguments, changed measure, wrapper calling another worker, hidden premise, and three _zero decoys (a POSITIVE control ABSORBING, a term for a binder, fuel 1) — each rejected with its own message; unplanted table green)"; exit 0; else echo "check_fuel_forms: SELFTEST FAILED ($fails)"; exit 1; fi

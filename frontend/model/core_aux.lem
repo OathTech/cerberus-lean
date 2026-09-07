@@ -16,6 +16,11 @@ module ND = Nondeterminism
    The hand-written default-priority instance evicts it (arc-4 S1a
    precedent; see lean_frontend/CerbFunMapInstances.lean). *)
 declare {lean} extra_import `CerbFunMapInstances`
+(* Lean: the SHAPE predicates (IsPureExpr / AllPureExprs) that the measured
+   to_pure/to_pures wrappers' sufficiency obligations assume — see the
+   fuel_measure declares at the end of this file; seam
+   lean_frontend/CerbCoreShape.lean. *)
+declare {lean} extra_import `CerbCoreShape`
 
 
 val strip: forall 'ty 'sym. generic_pexpr 'ty 'sym -> generic_pexpr_ 'ty 'sym
@@ -2568,6 +2573,21 @@ declare {lean} fuel val match_pattern = `fuelExhausted none`
 declare {lean} fuel_measure val match_pattern = `lemSize g`
 declare {lean} fuel val to_pure = `fuelExhausted none`
 declare {lean} fuel val to_pures = `fuelExhausted none`
+(* FUEL MEASURE under a HYPOTHESIS (fuel-pending close-out 2026-09-08, option C of
+   the pure-failure reachability census; Lean-only, OCaml byte-identical):
+   to_pure recurses on subst_pattern's RESULT, so no unconditional data measure
+   exists (C2 record D-C2-3). At both exec-path call sites (driver.lem finalize
+   :1473-1477 and driver_globals :1611-1616, each right after driver2) the arena
+   is `Epure` of a value — driver2 returns only through process_core_step2's two
+   terminal arms (driver.lem:1331-1338, :1352-1356), which set the arena to
+   mk_value_e cval by prepare_exit (:1309-1316) — so to_pure needs ONE hop:
+   measure = the derived size (>= 1; a numeral is refused, FM-literal),
+   hypothesis = the shape (lean_frontend/CerbCoreShape.lean). to_pures, the
+   mutual sibling (all-or-none, FM-mutual), is bounded by its list length when
+   every element is Epure; it is never entered on the exec path. Proofs in
+   lean_frontend/Core_aux_lemMeasureProofs.lean; rows in scripts/fuel_hypotheses.txt. *)
+declare {lean} fuel_measure val to_pure = `lemSize g` assuming `CerbCoreShape.IsPureExpr g`
+declare {lean} fuel_measure val to_pures = `List.length l + 1` assuming `CerbCoreShape.AllPureExprs l`
 declare {lean} fuel val collect_saves_aux = `fuelExhausted st`
 declare {lean} fuel_measure val collect_saves_aux = `lemSize g`
 declare {lean} fuel val m_collect_saves_aux = `fuelExhausted st`

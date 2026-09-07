@@ -1,3 +1,10 @@
+# Fuel-pending close-out, 2026-09-08 [AGENT]: two [source-content] pins moved —
+# frontend/model/core_aux.lem 64a7e8ab… -> 547a673e…, frontend/model/driver.lem
+# 5035f993… -> 067f1830… — for LEAN-ONLY declares (`declare {lean} extra_import`,
+# `declare {lean} fuel_measure … assuming …` for to_pure/to_pures/hack) plus comment
+# blocks; the OCaml generated tree is BYTE-IDENTICAL (lem-sync gen 295e4f82… unchanged;
+# layer 2 still 22 hash-pinned files). Record:
+# lean_frontend/docs/2026-09-08_fuel-pending-closeout-record.md.
 # Validation foundations, 2026-09-06 [AGENT]: [source-content] now pins
 # bytes + file modes for every [files] entry. The 71 existing source files
 # are unchanged from 89f7e6885 and retain their linked historical reviews;
@@ -268,7 +275,7 @@ util/cerb_fresh.ml
 100644 185b1d2afb9e0d3598c664a50d7106b8cc195add6049b358c0c92c8305e60dc2 frontend/model/cerb_attributes.lem
 100644 c4426c93453c70139f7693096cb2d3796dee1676344652c2c6271303a2d392ae frontend/model/cn.lem
 100644 093d6aaa3e6318c2981eb0f1885c2907abf3a3d0c20a8f22b878a6f1ee395098 frontend/model/core.lem
-100644 64a7e8abc63fd87c527de32c6914ff73a0ec7f57d60b072ea9337c2a8974e9bd frontend/model/core_aux.lem
+100644 547a673e1005de22b202460107a8c14f2e3c5cd40c697a213432fe4956d28514 frontend/model/core_aux.lem
 100644 e1fc98edcbfe16b000232ece8553c25f4272cb64b050fad322bd0efc6f9764a6 frontend/model/core_eval.lem
 100644 cbce5089e0e079d532b458fc7b660e1cf4bdb55484639bc2c08e5fd578e0fdbb frontend/model/core_linking.lem
 100644 dd12a55bc776acb588a33b811d175ad66ffb190cec4ec39b8b61179f01059cd1 frontend/model/core_reduction.lem
@@ -282,7 +289,7 @@ util/cerb_fresh.ml
 100644 ec3e5754b17377012a3df8055d4c0462812ce521818150c93d1c3ef16da60488 frontend/model/defacto_memory.lem
 100644 6b0b21a89f667513555fe8f3edaa26d67a9c0946df9ddcc7dde5ea75e322477a frontend/model/defacto_memory_aux.lem
 100644 c787451bc6aa2c5bf088d1acb0483b4c3be9fade6d889942cc91f5c4d93c03ae frontend/model/defacto_memory_types.lem
-100644 5035f99339d2750eeae0312819b7e8fa83951b59e31d4cc04790789131936d5b frontend/model/driver.lem
+100644 067f18309657d4eb913eae840fec193a52c85a681afcebcd2a48353b49419eca frontend/model/driver.lem
 100644 fef63c6ce9047d1a714882f93f5e5b8ea40bec483e9929cafdb9a8e8e0ab6062 frontend/model/float.lem
 100644 bea12923a5e3d19566b6d6b6acf08f0a69645b4a963141059416227d4b9f2751 frontend/model/formatted.lem
 100644 5079002023f7e22633acbd6b112f99213227475c4d19d3b1859ea388b322de80 frontend/model/fs.lem

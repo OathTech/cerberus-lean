@@ -12,7 +12,9 @@
 # first field). Record: lean_frontend/docs/2026-09-04_fuel-parameter-C2-record.md;
 # the six point-free rows left at C3 (measured; lean_frontend/docs/2026-09-05_fuel-parameter-C3-record.md);
 # the six CerbMem layout rows + showNonNegativeWithBasis_aux left at C4 (measured under a
-# hypothesis — scripts/fuel_hypotheses.txt; lean_frontend/docs/2026-09-05_fuel-parameter-C4-record.md).
+# hypothesis — scripts/fuel_hypotheses.txt; lean_frontend/docs/2026-09-05_fuel-parameter-C4-record.md);
+# hack + to_pure/to_pures left at the fuel-pending close-out (measured under the arena shape
+# hypothesis; lean_frontend/docs/2026-09-08_fuel-pending-closeout-record.md).
 #
 # --- deep-reference recursion (STD §6.2.7#1 structural compatibility): the
 #     ctype_aux trio compares two struct/union definitions member by member
@@ -33,9 +35,12 @@ are_compatible_aux_lemFuel         deep-ref     ctype_aux.lem: Struct/Union memb
 are_compatible_params_aux0_lemFuel deep-ref     sibling of are_compatible_aux (mutual block; also point-free tail)
 are_compatible_params0_lemFuel     deep-ref     sibling of are_compatible_aux (mutual block)
 # --- pure recursion with no data measure and no absorbing element in the
-#     codomain: decisions for the operator (C2 record, D-C2-2 .. D-C2-4) ---
-hack_lemFuel                       pure-loop    driver.lem: step-until-value evaluation loop returning a Core `value` (Driver.finalize)
-to_pure_lemFuel                    opaque-arg   core_aux.lem: recursion on subst_pattern's RESULT (ill-typed arms are an opaque failwithI value: no provable size bound)
-to_pures_lemFuel                   opaque-arg   mutual sibling of to_pure
+#     codomain (C2 record, D-C2-2 .. D-C2-5). hack / to_pure / to_pures LEFT the
+#     register 2026-09-08 (fuel-pending close-out, option C of the pure-failure
+#     reachability census): measured UNDER the arena SHAPE hypothesis
+#     (CerbCoreShape.IsValuePexpr / IsPureExpr / AllPureExprs) — one hop at
+#     every exec-path call site, by prepare_exit (driver.lem:1309-1316);
+#     rows in scripts/fuel_hypotheses.txt, record
+#     lean_frontend/docs/2026-09-08_fuel-pending-closeout-record.md. ---
 many_lemFuel                       parser       monadic_parsing.lem: recursion depth is the INPUT's length, which is inside the ParserM lambda, not a parameter; payload = the parser zero, indistinguishable from a normal parse failure
 many1_lemFuel                      parser       mutual sibling of many
