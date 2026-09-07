@@ -1,0 +1,88 @@
+{
+ "schema": 1,
+ "tree": "mdd/cerberus-lean 4d1088004 (worktree audit/failure-reach)",
+ "whole_tree_counts": {
+  "generated:monadic_ascribed": 263,
+  "generated:pure_or_unresolved": 1253,
+  "handwritten:monadic_ascribed": 7,
+  "handwritten:pure_or_unresolved": 121
+ },
+ "sites_total": 1644,
+ "dependency_status": {
+  "identified": 1642,
+  "unresolved_range_or_import": 2
+ },
+ "unresolved": [
+  [
+   "lean_frontend/CoreParser.lean",
+   2413,
+   "scanStep"
+  ],
+  [
+   "lean_frontend/Main.lean",
+   69,
+   "loadCoreImpl"
+  ]
+ ],
+ "exec_closure_sites": 305,
+ "exec_by_group": {
+  "handwritten:pure_or_unresolved": 105,
+  "handwritten:monadic_ascribed": 7,
+  "generated:pure_or_unresolved": 126,
+  "generated:monadic_ascribed": 67
+ },
+ "generated_monadic_channels": {
+  "core_run_cause_needs_failure_constructor": 4,
+  "undefined_Error_loc": 26,
+  "NDkilled_Error0_loc": 37
+ },
+ "handwritten_memM_arms": [
+  [
+   "lean_frontend/CerbMem.lean",
+   2093,
+   "CerbMem.allocator"
+  ],
+  [
+   "lean_frontend/CerbMem.lean",
+   2123,
+   "CerbMem.allocateObject"
+  ],
+  [
+   "lean_frontend/CerbMem.lean",
+   2216,
+   "CerbMem.killM"
+  ],
+  [
+   "lean_frontend/CerbMem.lean",
+   2704,
+   "CerbMem.effArrayShiftPtrval"
+  ],
+  [
+   "lean_frontend/CerbMem.lean",
+   2774,
+   "CerbMem.memcmpM.getBytes"
+  ],
+  [
+   "lean_frontend/CerbMem.lean",
+   2963,
+   "CerbMem.vaList"
+  ],
+  [
+   "lean_frontend/CerbMem.lean",
+   2982,
+   "CerbMem.callIntrinsic"
+  ]
+ ],
+ "reach_log_sha256": "62e61fbb845ef76e411c656af424a7ce02eeba1f68a33c141452ffb9c862cc4a",
+ "reachability_limit": "constant dependency closure, including types and mutual blocks; not a path reachability proof",
+ "sha256": {
+  "reach.log": "62e61fbb845ef76e411c656af424a7ce02eeba1f68a33c141452ffb9c862cc4a",
+  "census.json": "06fa42d82771c6655fe024eba5da17d90e6802c58fdf20adbbce56056246ec80",
+  "positions.json": "8855a1d0298578b54bc3e01131cd0ba3f4d76cd5163e07e0483d7b525a38e265",
+  "cons.json": "f7c4a1f274ca63ad4c70a1121874170a30ec06d6529aaf3aec5623f44f66ddc4",
+  "sites231.tsv": "ac4564cbd0239994971e758c5ce67d64a04ac15b82d15124e829c50a55e714b9",
+  "sites231_classified.tsv": "c3aef7eb42b3234c79b19d1ab760d3ba930247d15c14ea0b9c0663446342ce34",
+  "FailureReach.lean": "f67b9d50a8f4d638c39b0dafcc548b3117a105dd339f6a664415cfc32dfcc3d2",
+  "lakefile.toml": "3a2862353ff5df335a62165e6a62600cb4cb94ef706c075487903b60302b00b2"
+ }
+}

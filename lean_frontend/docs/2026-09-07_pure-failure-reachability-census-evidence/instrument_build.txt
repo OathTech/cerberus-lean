@@ -1,0 +1,42 @@
+# Instrument build — FailureReachProbe (2026-09-07, worktree audit/failure-reach @ 4d1088004)
+
+## Scratch Lake package (untracked, .tmp/failure-census/), the run_failure_census.py recipe without the cold provider:
+    name = "FailureCensus"
+    defaultTargets = ["FailureReach"]
+    packagesDir = "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/failure-reach/lean_frontend/.lake/packages"
+    [[require]]
+    name = "CerberusLean"
+    path = "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/failure-reach/lean_frontend"
+    [[lean_lib]]
+    name = "FailureReach"
+    lean-toolchain: leanprover/lean4:v4.32.2
+
+## Dry run (trace check only) before the build — verbatim tail:
+    $ CERB_MEM_MAX=32G ../../scripts/capped lake build --no-build
+    ✖ [137/138] Building FailureReach
+    error: target is out-of-date and needs to be rebuilt
+    (all 136 dependency modules replayed as up to date; only the probe module needed elaboration)
+
+## Build (the csmith corpus lane of worktrees/cerberus-lean-arc/fuel-measure-cost was RUNNING concurrently — pid 482453, ~63 min elapsed; 115 GB free; the probe is a one-module elaboration):
+    $ /usr/bin/time -v env CERB_MEM_MAX=32G ../../scripts/capped lake build > reach.log 2>&1   # rc=0
+    Build completed successfully (138 jobs).
+    Elapsed (wall clock) time (h:mm:ss or m:ss): 0:06.34
+    Maximum resident set size (kbytes): 1789612
+    FAILURE_REACH rows: 21080; FAILURE_CONS rows: 21080; FAILURE_RANGE rows: 11231
+    reach.log sha256: 62e61fbb845ef76e411c656af424a7ce02eeba1f68a33c141452ffb9c862cc4a  (4.96 MB; not committed — the rows for the 305 exec-closure owners are in reach_rows_exec_closure_owners.tsv)
+
+## Census (scripts/failure_census.py, unmodified) — verbatim stdout:
+    {
+      "generated:monadic_ascribed": 263,
+      "generated:pure_or_unresolved": 1253,
+      "handwritten:monadic_ascribed": 7,
+      "handwritten:pure_or_unresolved": 121
+    }
+    census.json sha256: 06fa42d82771c6655fe024eba5da17d90e6802c58fdf20adbbce56056246ec80
+
+## Freshness of the driver binaries used by every witness run (tools/check_driver_fresh.sh --check, verbatim):
+    check_driver_fresh: oracle OK (bin 7d1778bba8defb85233c4be211ab9cbe4b32dae13cf4afc9de79fae3c9302cd4, src 46d26f1f7ede22ffb6d3ff563194b8423a297775cef211805388c6c88217efda)
+    check_driver_fresh: lean OK (bin 32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6, src 89a31871cc2e83121d7efb009c35aa6c50216b31f6dad88cee4688b0786edf28)
+    check_lem_sync: OK (src 977326511c1096013d9b1fa183500ad6487a23ac9c6edc3d3f2ff8bd11e266e0, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+    check_lem_sync: lean OK (src 977326511c1096013d9b1fa183500ad6487a23ac9c6edc3d3f2ff8bd11e266e0, gen 11c6b37a5dc95ed9f2ec3d1f6f3e157e1f0309c7236e247b9d279deaf1ab2938)
+    (stamps copied from the primary checkout; bin+src hashes recomputed in this worktree match)

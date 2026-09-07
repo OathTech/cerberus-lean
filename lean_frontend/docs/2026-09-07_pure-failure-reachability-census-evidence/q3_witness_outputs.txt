@@ -1,0 +1,186 @@
+# Q3 witness runs — every C program tried (positives AND negatives), verbatim first lines, mainline 4d1088004
+# recipe: tests/failure-probes/reach/README.md; nolibc unless marked [libc]; exit 125 = oracle uncaught exception, 134 = Lean panic
+
+== printf_star_prec.c [nolibc]
+   | int printf(const char *, ...);
+   | int main(void) { printf("%.*d\n", 3, 7); return 0; }
+oracle exit=125:  internal error: TODO: Formatted.convert, * prec
+lean   exit=134:  PANIC at _private.LemLib.0.failwithIImpl LemLib:168:2: TODO: Formatted.convert, * prec
+
+== printf_star_width.c [nolibc]
+   | int printf(const char *, ...);
+   | int main(void) { printf("%*d\n", 5, 7); return 0; }
+oracle exit=125:  internal error: TODO: formatted.lem 6
+lean   exit=134:  PANIC at _private.LemLib.0.failwithIImpl LemLib:168:2: TODO: formatted.lem 6
+
+== printf_lc.c [nolibc]
+   | int printf(const char *, ...);
+   | int main(void) { printf("%lc\n", 97); return 0; }
+oracle exit=125:  internal error: NOT YET SUPPORTED: %lc
+lean   exit=134:  PANIC at _private.LemLib.0.failwithIImpl LemLib:168:2: NOT YET SUPPORTED: %lc
+
+== printf_x_neg.c [nolibc]
+   | int printf(const char *, ...);
+   | int main(void) { printf("%x\n", -1); return 0; }
+oracle: (see below)
+lean   exit=?: Undefined {ub: "UB153b_illtyped_argument_for_format", stderr: "", loc: "<2:18--2:36>"} 
+
+== ctz0.c [nolibc]
+   | int main(void) { return __builtin_ctz(0u); }
+oracle: (see below)
+lean   exit=?: Undefined {ub: "DUMMY(__builtin_ctz)", stderr: "", loc: "<1:25--1:42>"} 
+
+== wchar_arith.c [nolibc]
+   | #include <stddef.h>
+   | #include <stdint.h>
+   | int main(void) { wchar_t w = 65; w = w + 1; size_t s = sizeof(int); intmax_t m = 5; m = m * 2; ptrdiff_t d = 3; return (int)w + (int)s + (int)m + (int)d; }
+oracle: (see below)
+lean   exit=?: Defined {value: "Specified(83)", stdout: "", stderr: "", blocked: "false"} 
+
+== bool_arith.c [nolibc]
+   | int main(void) { _Bool b = 1; int x = b + 1; return x; }
+oracle: (see below)
+lean   exit=?: Defined {value: "Specified(2)", stdout: "", stderr: "", blocked: "false"} 
+
+== flex_sizeof.c [nolibc]
+   | struct F { int n; int a[]; };
+   | int main(void) { struct F f; f.n = (int)sizeof(struct F); return f.n; }
+oracle: (see below)
+lean   exit=?: Defined {value: "Specified(4)", stdout: "", stderr: "", blocked: "false"} 
+
+== printf_n.c [nolibc]
+   | int printf(const char *, ...);
+   | int main(void) { int n = 0; printf("ab%n\n", &n); return n; }
+oracle exit=125:  internal error: WIP: Formatted.convert, CS_n
+lean   exit=134:  PANIC at _private.LemLib.0.failwithIImpl LemLib:168:2: WIP: Formatted.convert, CS_n
+
+== snprintf.c [libc]
+   | #include <stdio.h>
+   | int main(void) { char buf[8]; int r = snprintf(buf, 8, "%d", 42); return r + buf[0]; }
+oracle: (see below)
+lean   exit=?: Defined {value: "Specified(54)", stdout: "", stderr: "", blocked: "false"} 
+
+== printf_star_prec_f.c [nolibc]
+   | int printf(const char *, ...);
+   | int main(void) { printf("%.*f\n", 2, 1.5); return 0; }
+oracle exit=125:  internal error: TODO: Formatted.convert, * prec
+lean   exit=134:  PANIC at _private.LemLib.0.failwithIImpl LemLib:168:2: TODO: Formatted.convert, * prec
+
+== printf_star_prec_s.c [nolibc]
+   | int printf(const char *, ...);
+   | int main(void) { printf("%.*s\n", 2, "abc"); return 0; }
+oracle exit=125:  internal error: TODO: Formatted.convert, * prec
+lean   exit=134:  PANIC at _private.LemLib.0.failwithIImpl LemLib:168:2: TODO: Formatted.convert, * prec
+
+== printf_zu.c [nolibc]
+   | int printf(const char *, ...);
+   | int main(void) { printf("%zu\n", sizeof(int)); return 0; }
+oracle exit=0: Defined {value: "Specified(0)", stdout: "4
+", stderr: "", blocked: "false"} 
+lean   exit=0: Defined {value: "Specified(0)", stdout: "4
+", stderr: "", blocked: "false"} 
+
+== printf_zd.c [nolibc]
+   | int printf(const char *, ...);
+   | int main(void) { printf("%zd\n", sizeof(int)); return 0; }
+oracle exit=0: Defined {value: "Specified(0)", stdout: "4
+", stderr: "", blocked: "false"} 
+lean   exit=0: Defined {value: "Specified(0)", stdout: "4
+", stderr: "", blocked: "false"} 
+
+== printf_td.c [nolibc]
+   | #include <stddef.h>
+   | int printf(const char *, ...);
+   | int main(void) { int a[2]; ptrdiff_t d = &a[1] - &a[0]; printf("%td\n", d); return 0; }
+oracle exit=0: Defined {value: "Specified(0)", stdout: "1
+", stderr: "", blocked: "false"} 
+lean   exit=0: Defined {value: "Specified(0)", stdout: "1
+", stderr: "", blocked: "false"} 
+
+== printf_jd.c [nolibc]
+   | #include <stdint.h>
+   | int printf(const char *, ...);
+   | int main(void) { intmax_t m = 5; printf("%jd\n", m); return 0; }
+oracle exit=1: Undefined {ub: "UB153b_illtyped_argument_for_format", stderr: "", loc: "<3:34--3:52>"} 
+lean   exit=1: Undefined {ub: "UB153b_illtyped_argument_for_format", stderr: "", loc: "<3:34--3:52>"} 
+
+== printf_ld.c [nolibc]
+   | int printf(const char *, ...);
+   | int main(void) { long l = 5; printf("%ld\n", l); return 0; }
+oracle exit=0: Defined {value: "Specified(0)", stdout: "5
+", stderr: "", blocked: "false"} 
+lean   exit=0: Defined {value: "Specified(0)", stdout: "5
+", stderr: "", blocked: "false"} 
+
+== printf_lu_sizet.c [nolibc]
+   | int printf(const char *, ...);
+   | int main(void) { printf("%lu\n", sizeof(int)); return 0; }
+oracle exit=0: Defined {value: "Specified(0)", stdout: "4
+", stderr: "", blocked: "false"} 
+lean   exit=0: Defined {value: "Specified(0)", stdout: "4
+", stderr: "", blocked: "false"} 
+
+== printf_ld_wchar.c [nolibc]
+   | #include <stddef.h>
+   | int printf(const char *, ...);
+   | int main(void) { wchar_t w = 65; printf("%ld\n", w); return 0; }
+oracle exit=1: Undefined {ub: "UB153b_illtyped_argument_for_format", stderr: "", loc: "<3:34--3:52>"} 
+lean   exit=1: Undefined {ub: "UB153b_illtyped_argument_for_format", stderr: "", loc: "<3:34--3:52>"} 
+
+== atomic_rmw.c [nolibc]
+   | int main(void) { _Atomic int x = 0; x += 1; return x; }
+oracle exit=0: Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"} 
+lean   exit=0: Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"} 
+
+== funptr_reload.c [nolibc]
+   | int main(void) { void (*f)(void) = (void (*)(void))0xABC; void (*g)(void); g = f; return g == f; }
+oracle exit=125:  cerberus: internal error, uncaught exception:
+lean   exit=134:  PANIC at CerbMem.reconstructValue_lemFuel CerbMem:1045:18: unknown function pointer: 2748
+
+== funptr_arith.c [nolibc]
+   | int main(void) { char *p = (char *)main; char *q = p + 1; return q != p; }
+oracle exit=1: Error {msg: "MerrOther "called isWellAligned_ptrval on function pointer""} 
+lean   exit=1: Error {msg: "MerrOther "called isWellAligned_ptrval on function pointer""} 
+
+== bswap16_range.c [nolibc]
+   | int main(void) { return __builtin_bswap16(0x12345u) & 0xff; }
+oracle exit=0: Defined {value: "Specified(35)", stdout: "", stderr: "", blocked: "false"} 
+lean   exit=0: Defined {value: "Specified(35)", stdout: "", stderr: "", blocked: "false"} 
+
+== int128.c [nolibc]
+   | int main(void) { __int128 x = 1; return (int)x; }
+oracle exit=1:  
+cabs-json FAILED: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/failure-reach/.tmp/reach-smoke/w/int128.c:1:27: error: unexpected token after '__int128' and
+
+== args_backslash.c [nolibc]
+   | int main(int argc, char **argv) { return argc + (argv[1][0] == 92); }
+oracle exit=125:  cerberus: internal error, uncaught exception:
+lean   exit=134:  PANIC at _private.CerbDecode.0.CerbDecode.decode_character_constant_aux CerbDecode:121:11: decode_character_constant: invalid char constant ==> \ (decode.ml:199-200)
+
+== atomic_fetch_add.c [libc]
+   | #include <stdatomic.h>
+   | int main(void) { atomic_int x = 0; atomic_fetch_add(&x, 1); return atomic_load(&x); }
+oracle exit=1:  
+lean   exit=1: Error {msg: "desugaring failed at /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/failure-reach/.tmp/reach-smoke/w/atomic_fetch_add.c:2:36:"} 
+
+== atomic_fence.c [libc]
+   | #include <stdatomic.h>
+   | int main(void) { atomic_thread_fence(memory_order_seq_cst); return 0; }
+oracle exit=125:  internal error: TODO[Core_reduction]: Fence
+lean   exit=134:  PANIC at _private.LemLib.0.failwithIImpl LemLib:168:2: TODO[Core_reduction]: Fence
+
+== alignof_union_member.c [nolibc]
+   | union U { int i; char c; };
+   | struct R { int k; union U u; };
+   | int main(void) { return (int)_Alignof(struct R); }
+oracle exit=0: Defined {value: "Specified(4)", stdout: "", stderr: "", blocked: "false"} 
+lean   exit=0: Defined {value: "Specified(4)", stdout: "", stderr: "", blocked: "false"} 
+
+== exit3.c [nolibc] and [libc] (.tmp/reach-smoke/exit3*)
+   | #include <stdlib.h>
+   | int main(void) { exit(3); }
+nolibc: oracle rc=1 Error {msg: "ill-formed program: `calling an unknown procedure: Symbol(549, SD_Id("exit"))'"}; lean rc=1 same class
+libc:   oracle rc=0 Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}; lean rc=0 identical
+
+== csmith SKIP_LEAN_CRASH rows sa_csmith_002/003/005 (materialised with the corpus lane's header substitution; .tmp/reach-smoke/csmith)
+all three: oracle rc=125 'internal error: Translation called on Ail program with an invalid node'; lean rc=134 'PANIC at _private.LemLib.0.failwithIImpl LemLib:168:2: Translation called on Ail program with an invalid node' — a FRONT-END (Translation) site, outside the drive execution closure (csmith F-A class)

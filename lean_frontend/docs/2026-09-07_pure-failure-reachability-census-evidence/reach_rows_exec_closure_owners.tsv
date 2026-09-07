@@ -1,0 +1,368 @@
+# FAILURE_REACH <owner> <exec closure> <front closure>; FAILURE_CONS <owner> <closure(drive)> <closure(consumer fine)> <closure(consumer step)>; FAILURE_RANGE <owner> <module> <kind> <l0> <c0> <l1> <c1>
+# owners = the kernel owners of the 305 exec-closure sites (from census.json); full reach.log sha256 in census_counts.json
+FAILURE_CONS	CerbDecode.decode_integer_constant	true	true	false
+FAILURE_CONS	CerbFS.fs_chdir	true	true	false
+FAILURE_CONS	CerbFS.fs_chmod	true	true	false
+FAILURE_CONS	CerbFS.fs_chown	true	true	false
+FAILURE_CONS	CerbFS.fs_close	true	true	false
+FAILURE_CONS	CerbFS.fs_closedir	true	true	false
+FAILURE_CONS	CerbFS.fs_link	true	true	false
+FAILURE_CONS	CerbFS.fs_lseek	true	true	false
+FAILURE_CONS	CerbFS.fs_lstat	true	true	false
+FAILURE_CONS	CerbFS.fs_mkdir	true	true	false
+FAILURE_CONS	CerbFS.fs_open	true	true	false
+FAILURE_CONS	CerbFS.fs_opendir	true	true	false
+FAILURE_CONS	CerbFS.fs_pread	true	true	false
+FAILURE_CONS	CerbFS.fs_pwrite	true	true	false
+FAILURE_CONS	CerbFS.fs_read	true	true	false
+FAILURE_CONS	CerbFS.fs_readdir	true	true	false
+FAILURE_CONS	CerbFS.fs_readlink	true	true	false
+FAILURE_CONS	CerbFS.fs_rename	true	true	false
+FAILURE_CONS	CerbFS.fs_rewinddir	true	true	false
+FAILURE_CONS	CerbFS.fs_rmdir	true	true	false
+FAILURE_CONS	CerbFS.fs_stat	true	true	false
+FAILURE_CONS	CerbFS.fs_symlink	true	true	false
+FAILURE_CONS	CerbFS.fs_truncate	true	true	false
+FAILURE_CONS	CerbFS.fs_unlink	true	true	false
+FAILURE_CONS	CerbFS.fs_write	true	true	false
+FAILURE_CONS	CerbFloat.truncToInt	true	true	true
+FAILURE_CONS	CerbMem.alignofCtype_lemFuel	true	true	true
+FAILURE_CONS	CerbMem.allocateObject	true	true	true
+FAILURE_CONS	CerbMem.allocator	true	true	true
+FAILURE_CONS	CerbMem.arrayShiftPtrval	true	true	true
+FAILURE_CONS	CerbMem.bytefromint	true	true	true
+FAILURE_CONS	CerbMem.bytesToInt	true	true	true
+FAILURE_CONS	CerbMem.callIntrinsic	true	true	false
+FAILURE_CONS	CerbMem.capAssignValue	true	true	true
+FAILURE_CONS	CerbMem.casePtrval	true	true	true
+FAILURE_CONS	CerbMem.combineProv	true	true	true
+FAILURE_CONS	CerbMem.deriveCap	true	true	true
+FAILURE_CONS	CerbMem.effArrayShiftPtrval	true	true	false
+FAILURE_CONS	CerbMem.intToBytes	true	true	true
+FAILURE_CONS	CerbMem.intfrombyte	true	true	true
+FAILURE_CONS	CerbMem.killM	true	true	true
+FAILURE_CONS	CerbMem.maxIval	true	true	true
+FAILURE_CONS	CerbMem.memValueToBytes_lemFuel	true	true	true
+FAILURE_CONS	CerbMem.memberShiftPtrval	true	true	true
+FAILURE_CONS	CerbMem.memcmpM.getBytes	true	true	false
+FAILURE_CONS	CerbMem.minIval	true	true	true
+FAILURE_CONS	CerbMem.nullCap	true	true	true
+FAILURE_CONS	CerbMem.offsetofIval	true	true	true
+FAILURE_CONS	CerbMem.offsetsof_lemFuel	true	true	true
+FAILURE_CONS	CerbMem.opIval	true	true	true
+FAILURE_CONS	CerbMem.ptrTIntValue	true	true	true
+FAILURE_CONS	CerbMem.reconstructValue_lemFuel	true	true	true
+FAILURE_CONS	CerbMem.sizeofCtype_lemFuel	true	true	true
+FAILURE_CONS	CerbMem.splitBytesProv	true	true	true
+FAILURE_CONS	CerbMem.targetPtrSize	true	true	true
+FAILURE_CONS	CerbMem.typeofMval_lemFuel	true	true	true
+FAILURE_CONS	CerbMem.vaList	true	true	false
+FAILURE_CONS	CerbUtils.gcc_builtin_bswap16	true	true	true
+FAILURE_CONS	CerbUtils.gcc_builtin_bswap32	true	true	true
+FAILURE_CONS	CerbUtils.gcc_builtin_bswap64	true	true	true
+FAILURE_CONS	CerbUtils.gcc_builtin_ctz	true	true	true
+FAILURE_CONS	CerberusImpl.aux_ibty	true	true	true
+FAILURE_CONS	CerberusImpl.sizeof_ity	true	true	true
+FAILURE_CONS	_private.CerbDecode.0.CerbDecode.decode_character_constant_aux	true	true	false
+FAILURE_CONS	_private.CerbLocation.0.CerbLocation.outerBbox	true	true	true
+FAILURE_CONS	_private.CerbStepInstances.0.beqCoreStep2	true	true	false
+FAILURE_CONS	act_valueFromPexpr	true	true	true
+FAILURE_CONS	add_to_asw_lemFuel	true	true	false
+FAILURE_CONS	add_to_asw_stack	true	true	false
+FAILURE_CONS	advance_step	true	true	false
+FAILURE_CONS	are_compatible_aux_lemFuel	true	true	true
+FAILURE_CONS	break_at_sseq	true	true	true
+FAILURE_CONS	call_function	true	true	true
+FAILURE_CONS	can_advance	true	true	false
+FAILURE_CONS	charFromDigit	true	true	false
+FAILURE_CONS	convert	true	true	false
+FAILURE_CONS	core_object_type_of_ctype	true	true	true
+FAILURE_CONS	drive	true	false	false
+FAILURE_CONS	drive_fs_step	true	true	false
+FAILURE_CONS	drive_nonmemory_steps_aux2_lemFuel	true	true	false
+FAILURE_CONS	driver_globals	true	false	false
+FAILURE_CONS	finalize	true	true	false
+FAILURE_CONS	foldl2	true	true	true
+FAILURE_CONS	hack_lemFuel	true	true	false
+FAILURE_CONS	instSetTypeGeneric_fun_map_decl_cerbFunMapInstances	false	false	false
+FAILURE_CONS	is_compatible_with_ptrdiff_t	true	true	false
+FAILURE_CONS	is_compatible_with_size_t	true	true	false
+FAILURE_CONS	is_signed_or_unsigned_aux	true	true	false
+FAILURE_CONS	load_character_array_aux_lemFuel	true	true	false
+FAILURE_CONS	loadedValueFromMemValue_lemFuel	true	true	true
+FAILURE_CONS	map2_	true	true	false
+FAILURE_CONS	mk_call_catch_exceptional_condition	true	true	true
+FAILURE_CONS	mk_conv_int	true	true	true
+FAILURE_CONS	mk_stdcall	true	true	false
+FAILURE_CONS	mk_tuple_pat	true	true	true
+FAILURE_CONS	mk_wrapI	true	true	true
+FAILURE_CONS	msum	true	true	true
+FAILURE_CONS	one_step0	true	true	true
+FAILURE_CONS	one_step_unseq_aux_lemFuel	true	true	true
+FAILURE_CONS	perform_action_request2	true	true	false
+FAILURE_CONS	perform_memop_request2	true	true	false
+FAILURE_CONS	pick	true	true	false
+FAILURE_CONS	prepare_exit	true	true	false
+FAILURE_CONS	print_eval_conv_aux_lemFuel	true	true	false
+FAILURE_CONS	printf_aux	true	true	false
+FAILURE_CONS	process_core_step2	true	true	false
+FAILURE_CONS	process_impl_proc	true	true	true
+FAILURE_CONS	pull_constrained_lemFuel	true	true	true
+FAILURE_CONS	showNonNegativeWithBasis	true	true	false
+FAILURE_CONS	step_action	true	true	true
+FAILURE_CONS	step_ctx	true	true	true
+FAILURE_CONS	step_eval_peop	true	true	true
+FAILURE_CONS	step_eval_pexpr_lemFuel	true	true	true
+FAILURE_CONS	step_fs_proc	true	true	true
+FAILURE_CONS	subst_pattern_val_lemFuel	true	true	true
+FAILURE_CONS	subst_wait_stack	true	true	false
+FAILURE_CONS	to_pure_lemFuel	true	true	true
+FAILURE_CONS	translate_errno	true	true	false
+FAILURE_CONS	update_env	true	true	true
+FAILURE_CONS	update_env_aux_lemFuel	true	true	true
+FAILURE_CONS	valueFromMemValue	true	true	true
+FAILURE_CONS	vsnprintf	true	true	false
+FAILURE_RANGE	CerbDecode.decode_integer_constant	CerbDecode	definition	27	0	49	20
+FAILURE_RANGE	CerbFS.fs_chdir	CerbFS	definition	415	0	416	205
+FAILURE_RANGE	CerbFS.fs_chmod	CerbFS	definition	412	0	413	208
+FAILURE_RANGE	CerbFS.fs_chown	CerbFS	definition	418	0	419	208
+FAILURE_RANGE	CerbFS.fs_close	CerbFS	definition	258	0	267	17
+FAILURE_RANGE	CerbFS.fs_closedir	CerbFS	definition	518	0	519	117
+FAILURE_RANGE	CerbFS.fs_link	CerbFS	definition	421	0	422	210
+FAILURE_RANGE	CerbFS.fs_lseek	CerbFS	definition	465	0	501	57
+FAILURE_RANGE	CerbFS.fs_lstat	CerbFS	definition	506	0	507	156
+FAILURE_RANGE	CerbFS.fs_mkdir	CerbFS	definition	341	0	342	194
+FAILURE_RANGE	CerbFS.fs_open	CerbFS	definition	220	0	256	13
+FAILURE_RANGE	CerbFS.fs_opendir	CerbFS	definition	509	0	510	179
+FAILURE_RANGE	CerbFS.fs_pread	CerbFS	definition	372	0	393	136
+FAILURE_RANGE	CerbFS.fs_pwrite	CerbFS	definition	344	0	370	109
+FAILURE_RANGE	CerbFS.fs_read	CerbFS	definition	312	0	339	136
+FAILURE_RANGE	CerbFS.fs_readdir	CerbFS	definition	512	0	513	131
+FAILURE_RANGE	CerbFS.fs_readlink	CerbFS	definition	424	0	425	150
+FAILURE_RANGE	CerbFS.fs_rename	CerbFS	definition	395	0	404	41
+FAILURE_RANGE	CerbFS.fs_rewinddir	CerbFS	definition	515	0	516	140
+FAILURE_RANGE	CerbFS.fs_rmdir	CerbFS	definition	430	0	431	184
+FAILURE_RANGE	CerbFS.fs_stat	CerbFS	definition	503	0	504	246
+FAILURE_RANGE	CerbFS.fs_symlink	CerbFS	definition	427	0	428	165
+FAILURE_RANGE	CerbFS.fs_truncate	CerbFS	definition	433	0	452	43
+FAILURE_RANGE	CerbFS.fs_unlink	CerbFS	definition	454	0	463	41
+FAILURE_RANGE	CerbFS.fs_write	CerbFS	definition	273	0	310	109
+FAILURE_RANGE	CerbFloat.truncToInt	CerbFloat	definition	296	0	314	58
+FAILURE_RANGE	CerbMem.alignofCtype_lemFuel	CerbMem	definition	481	0	532	18
+FAILURE_RANGE	CerbMem.allocateObject	CerbMem	definition	2105	0	2144	70
+FAILURE_RANGE	CerbMem.allocator	CerbMem	definition	2071	0	2103	93
+FAILURE_RANGE	CerbMem.arrayShiftPtrval	CerbMem	definition	1709	0	1728	73
+FAILURE_RANGE	CerbMem.bytefromint	CerbMem	definition	1754	0	1762	88
+FAILURE_RANGE	CerbMem.bytesToInt	CerbMem	definition	605	0	629	18
+FAILURE_RANGE	CerbMem.callIntrinsic	CerbMem	definition	2979	0	2982	89
+FAILURE_RANGE	CerbMem.capAssignValue	CerbMem	definition	1982	0	1983	91
+FAILURE_RANGE	CerbMem.casePtrval	CerbMem	definition	1361	0	1379	24
+FAILURE_RANGE	CerbMem.combineProv	CerbMem	definition	262	0	275	80
+FAILURE_RANGE	CerbMem.deriveCap	CerbMem	definition	1980	0	1981	85
+FAILURE_RANGE	CerbMem.effArrayShiftPtrval	CerbMem	definition	2679	0	2709	59
+FAILURE_RANGE	CerbMem.intToBytes	CerbMem	definition	581	0	603	38
+FAILURE_RANGE	CerbMem.intfrombyte	CerbMem	definition	1764	0	1770	88
+FAILURE_RANGE	CerbMem.killM	CerbMem	definition	2175	0	2233	58
+FAILURE_RANGE	CerbMem.maxIval	CerbMem	definition	1395	0	1422	81
+FAILURE_RANGE	CerbMem.memValueToBytes_lemFuel	CerbMem	definition	677	0	786	62
+FAILURE_RANGE	CerbMem.memberShiftPtrval	CerbMem	definition	1730	0	1752	54
+FAILURE_RANGE	CerbMem.memcmpM.getBytes	CerbMem	definition	2764	12	2774	89
+FAILURE_RANGE	CerbMem.minIval	CerbMem	definition	1424	0	1443	81
+FAILURE_RANGE	CerbMem.nullCap	CerbMem	definition	1984	0	1985	83
+FAILURE_RANGE	CerbMem.offsetofIval	CerbMem	definition	1538	0	1551	63
+FAILURE_RANGE	CerbMem.offsetsof_lemFuel	CerbMem	definition	399	0	424	68
+FAILURE_RANGE	CerbMem.opIval	CerbMem	definition	1503	0	1536	51
+FAILURE_RANGE	CerbMem.ptrTIntValue	CerbMem	definition	1986	0	1987	90
+FAILURE_RANGE	CerbMem.reconstructValue_lemFuel	CerbMem	definition	981	0	1129	26
+FAILURE_RANGE	CerbMem.sizeofCtype_lemFuel	CerbMem	definition	426	0	479	18
+FAILURE_RANGE	CerbMem.splitBytesProv	CerbMem	definition	641	0	661	20
+FAILURE_RANGE	CerbMem.targetPtrSize	CerbMem	definition	322	0	330	81
+FAILURE_RANGE	CerbMem.typeofMval_lemFuel	CerbMem	definition	1284	0	1303	51
+FAILURE_RANGE	CerbMem.vaList	CerbMem	definition	2951	0	2964	61
+FAILURE_RANGE	CerbUtils.gcc_builtin_bswap16	CerbUtils	definition	139	0	149	61
+FAILURE_RANGE	CerbUtils.gcc_builtin_bswap32	CerbUtils	definition	151	0	162	65
+FAILURE_RANGE	CerbUtils.gcc_builtin_bswap64	CerbUtils	definition	164	0	186	60
+FAILURE_RANGE	CerbUtils.gcc_builtin_ctz	CerbUtils	definition	129	0	137	35
+FAILURE_RANGE	CerberusImpl.aux_ibty	CerberusImpl	definition	131	0	145	16
+FAILURE_RANGE	CerberusImpl.sizeof_ity	CerberusImpl	definition	160	0	182	24
+FAILURE_RANGE	_private.CerbDecode.0.CerbDecode.decode_character_constant_aux	CerbDecode	definition	80	0	151	95
+FAILURE_RANGE	_private.CerbLocation.0.CerbLocation.outerBbox	CerbLocation	definition	126	0	137	14
+FAILURE_RANGE	_private.CerbStepInstances.0.beqCoreStep2	CerbStepInstances	definition	147	0	170	17
+FAILURE_RANGE	act_valueFromPexpr	Core_reduction	definition	403	0	403	277
+FAILURE_RANGE	add_to_asw_lemFuel	Core_run_aux	definition	470	1	472	2898
+FAILURE_RANGE	add_to_asw_stack	Core_run_aux	definition	483	1	484	568
+FAILURE_RANGE	advance_step	Driver	definition	374	0	375	5278
+FAILURE_RANGE	are_compatible_aux_lemFuel	Ctype_aux	definition	97	0	99	6786
+FAILURE_RANGE	break_at_sseq	Core_reduction	definition	437	1	438	1209
+FAILURE_RANGE	call_function	Core_eval	definition	111	0	113	2332
+FAILURE_RANGE	can_advance	Driver	definition	349	0	349	827
+FAILURE_RANGE	charFromDigit	Formatted	definition	428	0	428	589
+FAILURE_RANGE	convert	Formatted	definition	489	0	494	9063
+FAILURE_RANGE	core_object_type_of_ctype	Core_aux	definition	75	1	75	1088
+FAILURE_RANGE	drive	Driver	definition	563	0	576	3
+FAILURE_RANGE	drive_fs_step	Driver	definition	290	0	304	4897
+FAILURE_RANGE	drive_nonmemory_steps_aux2_lemFuel	Driver	definition	385	1	388	1
+FAILURE_RANGE	driver_globals	Driver	definition	518	0	527	56
+FAILURE_RANGE	finalize	Driver	definition	468	0	469	1177
+FAILURE_RANGE	foldl2	Utils	definition	97	1	98	193
+FAILURE_RANGE	hack_lemFuel	Driver	definition	433	1	436	654
+FAILURE_RANGE	instSetTypeGeneric_fun_map_decl_cerbFunMapInstances	CerbFunMapInstances	definition	74	0	86	59
+FAILURE_RANGE	is_compatible_with_ptrdiff_t	Implementation	definition	649	0	650	243
+FAILURE_RANGE	is_compatible_with_size_t	Implementation	definition	645	0	646	244
+FAILURE_RANGE	is_signed_or_unsigned_aux	Implementation	definition	656	0	657	976
+FAILURE_RANGE	load_character_array_aux_lemFuel	Formatted	definition	457	1	461	3
+FAILURE_RANGE	loadedValueFromMemValue_lemFuel	Core_aux	definition	86	0	90	1761
+FAILURE_RANGE	map2_	Utils	definition	102	1	103	215
+FAILURE_RANGE	mk_call_catch_exceptional_condition	Core_eval	definition	105	0	107	385
+FAILURE_RANGE	mk_conv_int	Core_eval	definition	92	0	93	845
+FAILURE_RANGE	mk_stdcall	Translation_aux	definition	74	0	75	539
+FAILURE_RANGE	mk_tuple_pat	Core_aux	definition	125	0	125	309
+FAILURE_RANGE	mk_wrapI	Core_eval	definition	76	0	77	616
+FAILURE_RANGE	msum	Nondeterminism	definition	269	0	269	668
+FAILURE_RANGE	one_step0	Core_reduction	definition	357	0	357	7937
+FAILURE_RANGE	one_step_unseq_aux_lemFuel	Core_reduction	definition	347	1	349	1895
+FAILURE_RANGE	perform_action_request2	Driver	definition	316	0	324	3
+FAILURE_RANGE	perform_memop_request2	Driver	definition	327	0	332	4
+FAILURE_RANGE	pick	Nondeterminism	definition	300	0	300	1087
+FAILURE_RANGE	prepare_exit	Driver	definition	413	0	414	484
+FAILURE_RANGE	print_eval_conv_aux_lemFuel	Driver	definition	268	1	272	1
+FAILURE_RANGE	printf_aux	Formatted	definition	498	1	499	2652
+FAILURE_RANGE	process_core_step2	Driver	definition	418	0	418	6393
+FAILURE_RANGE	process_impl_proc	Core_reduction	definition	488	0	490	5303
+FAILURE_RANGE	pull_constrained_lemFuel	Core_eval	definition	126	1	128	5404
+FAILURE_RANGE	showNonNegativeWithBasis	Formatted	definition	443	0	446	52
+FAILURE_RANGE	step_action	Core_reduction	definition	434	0	434	9128
+FAILURE_RANGE	step_ctx	Core_reduction	definition	494	0	494	24265
+FAILURE_RANGE	step_eval_peop	Core_eval	definition	137	0	141	8
+FAILURE_RANGE	step_eval_pexpr_lemFuel	Core_eval	definition	144	1	148	3
+FAILURE_RANGE	step_fs_proc	Core_reduction_aux	definition	50	0	53	11518
+FAILURE_RANGE	subst_pattern_val_lemFuel	Core_aux	definition	537	1	539	2322
+FAILURE_RANGE	subst_wait_stack	Core_run_aux	definition	266	1	266	389
+FAILURE_RANGE	to_pure_lemFuel	Core_aux	definition	592	1	594	2393
+FAILURE_RANGE	translate_errno	Builtins	definition	46	0	46	3338
+FAILURE_RANGE	update_env	Core_aux	definition	908	0	908	330
+FAILURE_RANGE	update_env_aux_lemFuel	Core_aux	definition	899	1	901	2288
+FAILURE_RANGE	valueFromMemValue	Core_aux	definition	98	0	100	1564
+FAILURE_RANGE	vsnprintf	Formatted	definition	507	0	512	932
+FAILURE_REACH	CerbDecode.decode_integer_constant	true	true
+FAILURE_REACH	CerbFS.fs_chdir	true	false
+FAILURE_REACH	CerbFS.fs_chmod	true	false
+FAILURE_REACH	CerbFS.fs_chown	true	false
+FAILURE_REACH	CerbFS.fs_close	true	false
+FAILURE_REACH	CerbFS.fs_closedir	true	false
+FAILURE_REACH	CerbFS.fs_link	true	false
+FAILURE_REACH	CerbFS.fs_lseek	true	false
+FAILURE_REACH	CerbFS.fs_lstat	true	false
+FAILURE_REACH	CerbFS.fs_mkdir	true	false
+FAILURE_REACH	CerbFS.fs_open	true	false
+FAILURE_REACH	CerbFS.fs_opendir	true	false
+FAILURE_REACH	CerbFS.fs_pread	true	false
+FAILURE_REACH	CerbFS.fs_pwrite	true	false
+FAILURE_REACH	CerbFS.fs_read	true	false
+FAILURE_REACH	CerbFS.fs_readdir	true	false
+FAILURE_REACH	CerbFS.fs_readlink	true	false
+FAILURE_REACH	CerbFS.fs_rename	true	false
+FAILURE_REACH	CerbFS.fs_rewinddir	true	false
+FAILURE_REACH	CerbFS.fs_rmdir	true	false
+FAILURE_REACH	CerbFS.fs_stat	true	false
+FAILURE_REACH	CerbFS.fs_symlink	true	false
+FAILURE_REACH	CerbFS.fs_truncate	true	false
+FAILURE_REACH	CerbFS.fs_unlink	true	false
+FAILURE_REACH	CerbFS.fs_write	true	false
+FAILURE_REACH	CerbFloat.truncToInt	true	false
+FAILURE_REACH	CerbMem.alignofCtype_lemFuel	true	false
+FAILURE_REACH	CerbMem.allocateObject	true	false
+FAILURE_REACH	CerbMem.allocator	true	false
+FAILURE_REACH	CerbMem.arrayShiftPtrval	true	false
+FAILURE_REACH	CerbMem.bytefromint	true	false
+FAILURE_REACH	CerbMem.bytesToInt	true	false
+FAILURE_REACH	CerbMem.callIntrinsic	true	false
+FAILURE_REACH	CerbMem.capAssignValue	true	false
+FAILURE_REACH	CerbMem.casePtrval	true	false
+FAILURE_REACH	CerbMem.combineProv	true	false
+FAILURE_REACH	CerbMem.deriveCap	true	false
+FAILURE_REACH	CerbMem.effArrayShiftPtrval	true	false
+FAILURE_REACH	CerbMem.intToBytes	true	false
+FAILURE_REACH	CerbMem.intfrombyte	true	false
+FAILURE_REACH	CerbMem.killM	true	false
+FAILURE_REACH	CerbMem.maxIval	true	false
+FAILURE_REACH	CerbMem.memValueToBytes_lemFuel	true	false
+FAILURE_REACH	CerbMem.memberShiftPtrval	true	false
+FAILURE_REACH	CerbMem.memcmpM.getBytes	true	false
+FAILURE_REACH	CerbMem.minIval	true	false
+FAILURE_REACH	CerbMem.nullCap	true	false
+FAILURE_REACH	CerbMem.offsetofIval	true	false
+FAILURE_REACH	CerbMem.offsetsof_lemFuel	true	false
+FAILURE_REACH	CerbMem.opIval	true	false
+FAILURE_REACH	CerbMem.ptrTIntValue	true	false
+FAILURE_REACH	CerbMem.reconstructValue_lemFuel	true	false
+FAILURE_REACH	CerbMem.sizeofCtype_lemFuel	true	false
+FAILURE_REACH	CerbMem.splitBytesProv	true	false
+FAILURE_REACH	CerbMem.targetPtrSize	true	false
+FAILURE_REACH	CerbMem.typeofMval_lemFuel	true	false
+FAILURE_REACH	CerbMem.vaList	true	false
+FAILURE_REACH	CerbUtils.gcc_builtin_bswap16	true	false
+FAILURE_REACH	CerbUtils.gcc_builtin_bswap32	true	false
+FAILURE_REACH	CerbUtils.gcc_builtin_bswap64	true	false
+FAILURE_REACH	CerbUtils.gcc_builtin_ctz	true	false
+FAILURE_REACH	CerberusImpl.aux_ibty	true	true
+FAILURE_REACH	CerberusImpl.sizeof_ity	true	true
+FAILURE_REACH	_private.CerbDecode.0.CerbDecode.decode_character_constant_aux	true	false
+FAILURE_REACH	_private.CerbLocation.0.CerbLocation.outerBbox	true	true
+FAILURE_REACH	_private.CerbStepInstances.0.beqCoreStep2	true	false
+FAILURE_REACH	act_valueFromPexpr	true	false
+FAILURE_REACH	add_to_asw_lemFuel	true	false
+FAILURE_REACH	add_to_asw_stack	true	false
+FAILURE_REACH	advance_step	true	false
+FAILURE_REACH	are_compatible_aux_lemFuel	true	false
+FAILURE_REACH	break_at_sseq	true	false
+FAILURE_REACH	call_function	true	false
+FAILURE_REACH	can_advance	true	false
+FAILURE_REACH	charFromDigit	true	false
+FAILURE_REACH	convert	true	false
+FAILURE_REACH	core_object_type_of_ctype	true	true
+FAILURE_REACH	drive	true	false
+FAILURE_REACH	drive_fs_step	true	false
+FAILURE_REACH	drive_nonmemory_steps_aux2_lemFuel	true	false
+FAILURE_REACH	driver_globals	true	false
+FAILURE_REACH	finalize	true	false
+FAILURE_REACH	foldl2	true	false
+FAILURE_REACH	hack_lemFuel	true	false
+FAILURE_REACH	instSetTypeGeneric_fun_map_decl_cerbFunMapInstances	true	false
+FAILURE_REACH	is_compatible_with_ptrdiff_t	true	false
+FAILURE_REACH	is_compatible_with_size_t	true	false
+FAILURE_REACH	is_signed_or_unsigned_aux	true	false
+FAILURE_REACH	load_character_array_aux_lemFuel	true	false
+FAILURE_REACH	loadedValueFromMemValue_lemFuel	true	false
+FAILURE_REACH	map2_	true	false
+FAILURE_REACH	mk_call_catch_exceptional_condition	true	false
+FAILURE_REACH	mk_conv_int	true	false
+FAILURE_REACH	mk_stdcall	true	false
+FAILURE_REACH	mk_tuple_pat	true	false
+FAILURE_REACH	mk_wrapI	true	false
+FAILURE_REACH	msum	true	false
+FAILURE_REACH	one_step0	true	false
+FAILURE_REACH	one_step_unseq_aux_lemFuel	true	false
+FAILURE_REACH	perform_action_request2	true	false
+FAILURE_REACH	perform_memop_request2	true	false
+FAILURE_REACH	pick	true	false
+FAILURE_REACH	prepare_exit	true	false
+FAILURE_REACH	print_eval_conv_aux_lemFuel	true	false
+FAILURE_REACH	printf_aux	true	false
+FAILURE_REACH	process_core_step2	true	false
+FAILURE_REACH	process_impl_proc	true	false
+FAILURE_REACH	pull_constrained_lemFuel	true	false
+FAILURE_REACH	showNonNegativeWithBasis	true	false
+FAILURE_REACH	step_action	true	false
+FAILURE_REACH	step_ctx	true	false
+FAILURE_REACH	step_eval_peop	true	false
+FAILURE_REACH	step_eval_pexpr_lemFuel	true	false
+FAILURE_REACH	step_fs_proc	true	false
+FAILURE_REACH	subst_pattern_val_lemFuel	true	false
+FAILURE_REACH	subst_wait_stack	true	false
+FAILURE_REACH	to_pure_lemFuel	true	false
+FAILURE_REACH	translate_errno	true	false
+FAILURE_REACH	update_env	true	false
+FAILURE_REACH	update_env_aux_lemFuel	true	false
+FAILURE_REACH	valueFromMemValue	true	false
+FAILURE_REACH	vsnprintf	true	false

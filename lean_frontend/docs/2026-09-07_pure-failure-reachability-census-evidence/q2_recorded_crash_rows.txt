@@ -1,0 +1,106 @@
+# Q2 — recorded CRASH rows re-run on this tree (mainline 4d1088004, worktree audit/failure-reach) with the immaculate-lane recipe (scripts/test_immaculate.sh run_c_case)
+# oracle: _build/default/backend/driver/main.exe --runtime=_build/install/default --exec --batch [--nolibc] <file.c>      (exit 125 = uncaught exception)
+# lean:   LEAN_ABORT_ON_PANIC=1 lean_frontend/.lake/build/bin/cerberus-lean --batch --first [--libc tests/libc/libc.core --libc-tu <12 jsons>] <cabs-json>   (exit 134 = panic)
+# both under scripts/capped CERB_MEM_MAX=4G, timeout 60s; driver binaries freshness-checked (tools/check_driver_fresh.sh --check: oracle OK, lean OK).
+# Every quoted line is VERBATIM (ANSI colour codes stripped from the oracle stderr; first matching exception line shown).
+
+== g4-bswap64-overflow  [nolibc]  tests/immaculate/nolibc/g4-bswap64-overflow.c
+oracle exit=125  stdout(1st line): 
+oracle stderr: cerberus: internal error, uncaught exception:
+lean   exit=134  stdout(1st line): 
+lean   stderr: PANIC at CerbUtils.gcc_builtin_bswap64 CerbUtils:172:4: Ocaml_gcc_builtins.bswap64: Z.to_int64 overflow (ocaml_gcc_builtins.ml:30)
+
+== g5-decode-multichar  [nolibc]  tests/immaculate/nolibc/g5-decode-multichar.c
+oracle exit=125  stdout(1st line): 
+oracle stderr: cerberus: internal error, uncaught exception:
+lean   exit=134  stdout(1st line): 
+lean   stderr: PANIC at _private.CerbDecode.0.CerbDecode.decode_character_constant_aux CerbDecode:151:6: decode_character_constant: invalid char constant ==> ab (decode.ml:199-200)
+
+== offsetof-union-member  [nolibc]  tests/immaculate/nolibc/offsetof-union-member.c
+oracle exit=125  stdout(1st line): 
+oracle stderr: cerberus: internal error, uncaught exception:
+lean   exit=134  stdout(1st line): 
+lean   stderr: PANIC at CerbMem.sizeofCtype_lemFuel CerbMem:478:15: CerbMem.sizeofCtype: Union tag not a UnionDef (OCaml: assert false / Not_found)
+
+== zd-z2fl03-nan-to-int  [nolibc]  tests/immaculate/nolibc/zd-z2fl03-nan-to-int.c
+oracle exit=125  stdout(1st line): 
+oracle stderr: cerberus: internal error, uncaught exception:
+lean   exit=134  stdout(1st line): 
+lean   stderr: PANIC at CerbFloat.truncToInt CerbFloat:307:4: CerbFloat.truncToInt: nan/inf (OCaml Z.of_float raises Z.Overflow)
+
+== zd-z2m02-device-funptr-call  [nolibc]  tests/immaculate/nolibc/zd-z2m02-device-funptr-call.c
+oracle exit=125  stdout(1st line): 
+oracle stderr: cerberus: internal error, uncaught exception:
+lean   exit=134  stdout(1st line): 
+lean   stderr: PANIC at CerbMem.casePtrval CerbMem:1379:4: case_ptrval
+
+== 097-null-ptr-arith  [nolibc]  tests/minimal/097-null-ptr-arith.undef.c
+oracle exit=125  stdout(1st line): 
+oracle stderr: cerberus: internal error, uncaught exception:
+lean   exit=134  stdout(1st line): 
+lean   stderr: PANIC at CerbMem.arrayShiftPtrval CerbMem:1726:6: TODO(pure shift a null pointer should be undefined behaviour), offset:4
+
+== g2-memcmp-uninit  [libc]  tests/immaculate/libc/g2-memcmp-uninit.c
+oracle exit=125  stdout(1st line): 
+oracle stderr: cerberus: internal error, uncaught exception:
+lean   exit=134  stdout(1st line): 
+lean   stderr: PANIC at CerbMem.memcmpM.getBytes CerbMem:2774:10: Concrete.memcmp: non-integer byte (impl_mem.ml:2658-2659 assert false)
+
+== zd-z2f04-closedir  [libc]  tests/immaculate/libc/zd-z2f04-closedir.c
+oracle exit=125  stdout(1st line): 
+oracle stderr: internal error: can_advance: Step_error2 ==> tests/immaculate/libc/zd-z2f04-closedir.c:10:18-40the value of a store(signed int*) didn't match the lvalue type: Specified(1)
+lean   exit=134  stdout(1st line): 
+lean   stderr: PANIC at CerbFS.fs_opendir CerbFS:510:2: CerbFS refusal (fail-closed fs-model boundary): opendir '.' — SibylFS opens a directory stream (ENOENT/ENOTDIR per POSIX); this model has no directories and answered a fresh fd for any path; answering would differ from the oracle's SibylFS (CerbFS.lean header; mover: a directory/permission model)
+
+== zd-z2m01-aligned-alloc-zero-zero  [libc]  tests/immaculate/libc/zd-z2m01-aligned-alloc-zero-zero.c
+oracle exit=125  stdout(1st line): 
+oracle stderr: cerberus: internal error, uncaught exception:
+lean   exit=134  stdout(1st line): 
+lean   stderr: PANIC at CerbMem.allocator CerbMem:2093:6: CerbMem.allocator: alignment 0 has no meaning in the model (impl_mem.ml:1252 quomod raises Division_by_zero — an OCaml-execution artifact, not the referent); operator decision pending, zero-discrepancy Z2 record §10
+
+== freebsd-cat  [libc]  tests/freebsd/cat.c
+oracle exit=0  stdout(1st line): Defined {value: "Specified(1)", stdout: "stdin", stderr: "", blocked: "false"}
+oracle stderr: 
+lean   exit=134  stdout(1st line): 
+lean   stderr: PANIC at CerbFS.fs_close CerbFS:260:4: CerbFS refusal (fail-closed fs-model boundary): close of fd 1 — fds 0,1,2 are open in SibylFS's initial state; this model has no entry for them and answered EBADF; answering would differ from the oracle's SibylFS (CerbFS.lean header; mover: SibylFS's std fds (fs_spec.lem:5690-5696: fds 0,1,2 are open on a root-directory dummy fid))
+
+== suite-fs-stat  [libc]  tests/suite/fs/stat.c
+oracle exit=0  stdout(1st line): Defined {value: "Specified(0)", stdout: "2049 1 33261 1 0 0 0 10
+", stderr: "", blocked: "false"}
+oracle stderr: 
+lean   exit=134  stdout(1st line): 
+lean   stderr: PANIC at CerbFS.fs_stat CerbFS:504:2: CerbFS refusal (fail-closed fs-model boundary): stat 'testfile.txt' — SibylFS answers the real st_dev/st_ino/st_mode/st_nlink/uid/gid/rdev/size fields (tests/suite/fs/stat.c: 2049 1 33261 1 0 0 0 10); this model answered zeroed fields except size (0 0 420 1 0 0 0 10); answering would differ from the oracle's SibylFS (CerbFS.lean header; mover: real stat fields)
+
+== tcc-40_stdio  [libc]  tests/tcc/40_stdio.c
+oracle exit=0  stdout(1st line): Defined {value: "Specified(0)", stdout: "hello
+ch: 104 'h'
+ch: 101 'e'
+ch: 108 'l'
+ch: 108 'l'
+ch: 111 'o'
+ch: 10 '.'
+ch: 104 'h'
+ch: 101 'e'
+ch: 108 'l'
+ch: 108 'l'
+ch: 111 'o'
+ch: 10 '.'
+ch: 104 'h'
+ch: 101 'e'
+ch: 108 'l'
+ch: 108 'l'
+ch: 111 'o'
+ch: 10 '.'
+ch: 104 'h'
+ch: 101 'e'
+ch: 108 'l'
+ch: 108 'l'
+ch: 111 'o'
+ch: 10 '.'
+x: hello
+x: hello
+", stderr: "", blocked: "false"}
+oracle stderr: 
+lean   exit=134  stdout(1st line): 
+lean   stderr: PANIC at CerbFS.fs_read CerbFS:338:8: CerbFS refusal (fail-closed fs-model boundary): read on fd 4 at offset 5 of the 12-byte file 'fred.txt' — the minimal fs model can only serve whole-prefix (offset 0) or at-EOF reads; answering would return WRONG data; answering would differ from the oracle's SibylFS (CerbFS.lean header; mover: real per-fd offset semantics)
+
