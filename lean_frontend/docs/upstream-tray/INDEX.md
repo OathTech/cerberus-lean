@@ -376,6 +376,28 @@ and gcc disagrees — the defect is in the shared model, not in our port:
     branch on signedness and evaluate the impl constant. Reported to us by
     the refined-cerberus team (their 2026-09-05 note); cites re-verified.
 
+Added 2026-09-08 (the fuel-pending close-out — option C of the pure-failure
+reachability census; record `lean_frontend/docs/2026-09-08_fuel-pending-closeout-record.md`
+D3; the C4 record's F-C4-1 / its pre-merge audit §5.1 owed this draft; both
+oracles re-run 2026-09-08, lines verbatim in the draft):
+
+37. **37-are-compatible-cross-tu-recursive-struct-nontermination.md** — TRUE
+    BUG (non-termination on strictly conforming input). `Ctype_aux.are_compatible_aux`
+    (ctype_aux.lem:69-192) decides §6.2.7#1 structural compatibility of two
+    struct types from DIFFERENT translation units by recursing into every
+    member pair (:95-136) and through pointer members (:92) with no "assumed
+    compatible" set, so `struct node { int v; struct node *next; }` defined in
+    two TUs and passed by value across them (`core_aux.lem:182-184`
+    memValueFromValue) recurses forever: both oracles `rc=124` at 60 s, the
+    same program in one TU `Specified(7)` (the same-TU fast path :98-99).
+    Every multi-TU program storing a recursive-struct VALUE across TUs hangs.
+    Remedy: the standard's own device — an assumed-compatible set of tag pairs
+    threaded through the recursion. Reproducers `tests/failure-probes/cross_tu_node/`.
+    (Our Lean port dies there by native stack overflow, rc=134; its three
+    `ctype_aux` fuel'd workers stay in `scripts/fuel_forms_pending.txt` — no
+    frontend-guaranteed hypothesis bounds a recursion that legal C makes
+    cyclic.)
+
 Amended 2026-09-05: draft 10 gains an addendum for the STRING-LITERAL
 form of `\?` (`"\?"` reaches the same decoder from translation.ml:3029;
 `tests/noodle-probes/ptr/ptr_string_literals.c`, upstream exit 125
@@ -402,11 +424,12 @@ covers both entry points.
   on current master.
 - Caveat: GitHub search is text-match; a very differently-worded
   duplicate could hide. Re-run step (2) at actual filing time.
-- **Drafts 15–35 and lean4/02 have NOT been duplicate-searched** (no
+- **Drafts 15–37 and lean4/02 have NOT been duplicate-searched** (no
   network window since 2026-08-23); step (2) is mandatory for each at
   filing time. Likely neighbours to check: anything on `size_t`/integer
   rank (20), `aligned_alloc` (34), `atexit`/stdio flushing (24/25),
-  `printf` format checking (26/27), and the Core parser (35).
+  `printf` format checking (26/27), the Core parser (35), and struct
+  compatibility / `are_compatible` / multi-file linking (37).
 
 ## Near-at-hand audit around the PR branches (2026-08-23)
 
