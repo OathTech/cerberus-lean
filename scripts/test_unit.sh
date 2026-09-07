@@ -216,6 +216,28 @@ if ! "$FUELFORMS_SH"; then
     exit 1
 fi
 
+# Failure-reach register gate (fuel-pending close-out 2026-09-08; option C of the
+# pure-failure reachability census — the TRIPWIRE of the parked twin design):
+# every PURE failure site (failwithI/panic!) in the execution dependency closure
+# = a row of scripts/failure_reach_register.txt with its position class (the
+# census's token-level classifier, scripts/failure_position.py) and its reviewed
+# reach class (UNREACHABLE-BY-INVARIANT / REACHABLE / UNKNOWN), both directions;
+# a NEW site, a stale row, a moved position class, a DISCARDABLE generated
+# let-binding (the F1 shape) or an unsealed class edit is RED with the rows named.
+# Rebuilds the one-module reach instrument (tests/failure-probes/FailureReach.lean,
+# ~6 s, ~1.8 GB under capped) — unit-scale, measured 2026-09-08 — so it rides
+# here as well as in LADDER Tier B; --selftest plants first (a new site, a dead
+# let, an unsealed class edit, a phantom row, an edited tally). Fail-closed.
+REACH_SH="$(dirname "$PURITY_SH")/check_failure_reach.sh"
+if ! "$REACH_SH" --selftest; then
+    echo "test_unit: failure-reach register gate SELFTEST FAILED"
+    exit 1
+fi
+if ! "$REACH_SH"; then
+    echo "test_unit: failure-reach register gate FAILED"
+    exit 1
+fi
+
 # Totality gate (arc 3): the exec slice is partial-free (empty allowlist).
 # ENFORCING and fail-closed like the gates above.
 TOTALITY_SH="$(dirname "$PURITY_SH")/check_exec_totality.sh"
