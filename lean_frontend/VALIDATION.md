@@ -565,16 +565,21 @@ fuel-pending close-out, 2026-09-08 — `docs/2026-09-08_fuel-pending-closeout-re
 | (C) OUTSIDE EXEC DEPENDENCY CLOSURE | 6 ambient | not in the kernel constant closure of `drive`/`initial_driver_state`/the runners/`CerbCall.driveCall` (mutual blocks closed): the DEFACTO memory model's `mkUnspec`/`simplify_integer_value_base` (not the wired model), `zeros_aux` (front end), `list_unfoldr_aux`, two `CerbMem` reference forms | absent from this dependency closure; no general API unreachability claim |
 | PENDING | 5 | reachable AND ambient, each a reviewed row of `scripts/fuel_forms_pending.txt` with its reason (the `ctype_aux` compatibility trio `are_compatible_aux`/`are_compatible_params_aux0`/`are_compatible_params0` — a DEEP-reference recursion through pointer and function types that by-value acyclicity does not bound and no frontend-guaranteed hypothesis does (C4 record F-C4-1; upstream-tray draft 37 — the oracle's non-termination on a cross-TU recursive struct), and `many`/`many1` (the recursion argument is the parser INPUT, bound inside the `ParserM` lambda, not a head parameter — no parameter-level measure exists without a lem body change; record D2); the 6 point-free tails left the register at C3, the 6 `CerbMem` layout rows and `showNonNegativeWithBasis_aux` at C4, `hack`/`to_pure`/`to_pures` at the 2026-09-08 close-out); exhaustion = the opaque panicking sentinel | statements about these need a depth hypothesis (C2 record §9) |
 
-The fuel-measure-cost change (`6ce040f06`,
-[record](docs/2026-09-07_fuel-measure-cost-record.md)) keeps this census and
-all obligation shapes. `get_ctx` and `get_ctx_unseq_aux` now select the
-proved conservative context-call bound `CerbTagsWf.getCtxMeasure` on the
-expression/list state, definitionally equal to the proof module's
-`getCtxBound`, instead of the full expression/list `lemSize + 1`.
-The well-founded rank is erased; the executable bound visits possible
-context-search children and computes their maximum call depth. All eight
-relevant sufficiency cones remain within the standard three, and two
-kernel-checked equalities relate the previous measures' worker results to
+The fuel-measure-cost change (Codex D3 `6ce040f06`, landed 2026-09-08 as a
+named structural measure — [record](docs/2026-09-07_fuel-measure-cost-record.md)
+§D3 and "Landing improvements") keeps this census and all obligation shapes.
+`get_ctx` and `get_ctx_unseq_aux` now instantiate their shared counter with
+the proved conservative context CALL-DEPTH bound `CerbCoreMeasure.getCtxBound`
+on the expression/list state (`Sum.inl g` / `Sum.inr lemTail`) instead of the
+whole-arena `lemSize + 1`. The bound is an ordinary structural definition
+(`lean_frontend/CerbCoreMeasure.lean`, imported by the generated
+`Core_reduction` via `declare {lean} extra_import`; no `WellFounded.fix`, no
+erased rank, no macro — the qualified-helper form lem's FM-free validator was
+written to accept): one unit per worker frame plus the maximum over the
+possible children (`Ewseq`/`Esseq` left operand, `Ebound`/`Eannot` body,
+`Eunseq` operand list; a nonempty list its head and tail). The two
+sufficiency cones and the seam's lemmas are within the standard three, and
+two kernel-checked equalities relate the previous measures' worker results to
 the new wrappers. The six environment measures and their acyclicity
 hypotheses are unchanged. No frontend acyclicity invariant is newly claimed.
 

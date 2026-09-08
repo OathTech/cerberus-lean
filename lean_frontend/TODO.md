@@ -130,6 +130,11 @@ hygiene items the audit confirmed (each re-verified by the orchestrator):
   [the fuel-measure-cost record](docs/2026-09-07_fuel-measure-cost-record.md).
   Code `6ce040f06` replaces the full arena-size traversal with a proved
   conservative context-call bound; the obligation shape and trust cone stay.
+  Landed 2026-09-08 (orchestrator review F1) as the NAMED structural
+  definition `CerbCoreMeasure.getCtxBound` in the seam
+  `lean_frontend/CerbCoreMeasure.lean`; the Lean `macro` D3 used to pass lem's
+  FM-free validator is deleted and `CerbTagsWf.lean` is back to its mainline
+  text (record, "Landing improvements").
   On 369/371, visible measure cost falls from about 45%/39% to 4.3%/4.6%;
   paired total CPU overhead versus pre-arc is 7.50%/7.29%.
   D4's 287-row paired table has one ratio exception, `sia_csmith_078.c`:
@@ -196,16 +201,21 @@ hygiene items the audit confirmed (each re-verified by the orchestrator):
   invariant on every loaded program, with a theorem `check = true → Acyclic`.
   S–M.
 - **Two csmith corpus rows MATCH→TIMEOUT — RESOLVED at 15 seconds in
-  `arc/fuel-measure-cost`, code `6ce040f06`, instrument `5f14f0702`.**
+  `arc/fuel-measure-cost`, code `6ce040f06`, instrument `5f14f0702`; landed
+  2026-09-08 (`arc/fuel-measure-cost-land`).**
   `sa_csmith_369.c` and `sa_csmith_371.c` both read MATCH in the full
   HEAD-after lane (CPU 12.07 / 10.06 s) and the separate shard-2/6 check
   (11.48 / 9.64 s). Their baseline rows remain unchanged MATCH. The full
-  lane reports `0 regression(s), 1 improvement(s)`; only `sia_csmith_169.c`
-  was re-recorded TIMEOUT → MATCH, under the explicit D3 operator ruling,
-  with CPU 14.93 s and the entire MATCH line in the dedicated instrument
-  commit. No other baseline row moved. The eight remaining baseline
-  TIMEOUT rows are still pending completions, including `sa_csmith_419.c`,
-  which completed pre-arc and remains the measured budget exception.
+  lane reports `0 regression(s), 1 improvement(s)`: `sia_csmith_169.c`
+  completed at 14.93 s CPU / 14.94 s wall against the 15 s budget. D3's
+  dedicated instrument commit re-recorded it TIMEOUT → MATCH; the landing
+  REVERTED that row (orchestrator review F2): no margin — a MATCH pin that
+  times out under load is a FATAL regression, a TIMEOUT pin that completes is
+  a non-fatal reported improvement — so it stays TIMEOUT, class-(b) pending,
+  with the completion evidence in the record (LADDER load caveat). No other
+  baseline row moved. The nine baseline TIMEOUT rows are still pending
+  completions, including `sa_csmith_419.c`, which completed pre-arc and
+  remains the measured budget exception.
 - **Environment-measure eager cost — measured, remedy deferred.**
   `CerbTagsWf.envBound ambient ty` still traverses the tag environment on
   layout/reconstruction calls. The full-corpus instrument and D2/D3/D4

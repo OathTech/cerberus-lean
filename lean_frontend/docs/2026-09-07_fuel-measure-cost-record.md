@@ -1271,3 +1271,86 @@ this lane's `TIMEOUT_SECS=15` wall-clock budget requires (the LADDER load
 caveat on the csmith row is the standing note). The D3 acceptance table above
 should be read with its `sia_csmith_169.c` row's "Baseline action" as
 "TIMEOUT → MATCH, reverted at landing".
+
+### Final-head gates (F2 head `e9c2ffc53`; the docs commit that follows adds documentation only)
+
+**Cost check + `--shard 2/6`**, through D1's instrument
+(`python3 scripts/measure_csmith_cpu.py --shard 2/6 --output …`, which runs the
+unmodified `scripts/test_csmith_corpus.sh --check-baseline --shard 2/6` with
+`SKIP_BUILD=1` under the 48 GiB cap at `TIMEOUT_SECS=15` and retains the
+lane's rusage). Export:
+[`head-land-15-shard2.tsv`](2026-09-07_fuel-measure-cost-evidence/head-land-15-shard2.tsv)
+(279 inputs, 558 engine rows) and its
+[metadata](2026-09-07_fuel-measure-cost-evidence/head-land-15-shard2.meta.txt)
+(head `e9c2ffc53dc57726b5c8a57db8ba8943c987c319`, Lean SHA-256
+`f08c33cb7cc231727c758fe2ff0187bc19fe9e3aac1b78a93ea6ea14687147a9`, oracle
+`f7efa50e60ca8bf9748fb49268fb5b8a2fe87dd4ee33c02a3cdbd98e30a91a4d`, baseline
+`f809543d…`). Lane verdicts, verbatim:
+
+```text
+SUMMARY: total=279 match=159 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=3 hang=0 cerb_skip=117 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+```
+
+The two rows, verbatim from the TSV (`input engine exit wall_s cpu_s maxrss_kb status`):
+
+```text
+sa_csmith_369.c	oracle	0	4.74	4.74	230912	MATCH
+sa_csmith_369.c	lean	0	12.14	12.13	238512	MATCH
+sa_csmith_371.c	oracle	0	3.91	3.90	204052	MATCH
+sa_csmith_371.c	lean	0	10.15	10.15	208216	MATCH
+```
+
+Both MATCH at 15 s. Against D3's dedicated-commit numbers (full corpus 12.07 /
+10.06 s; shard 11.48 / 9.64 s) the structural definition costs 12.13 / 10.15 s
+— derived ratios 1.005 / 1.009 to the full-corpus figures: within noise, no
+regression from the WF-`callBound` form. Load, verbatim (start, at the two
+rows, end):
+
+```text
+07:45:02 up 1 day, 16:20,  ? user,  load average: 2.04, 2.10, 1.81
+07:51:27 up 1 day, 16:27,  ? user,  load average: 11.06, 7.16, 4.03
+08:18:04 up 1 day, 16:53,  ? user,  load average: 2.16, 2.72, 3.65
+```
+
+(the 07:51 reading was taken right after the `[24/279]`/`[27/279]` lines
+appeared; the lane itself was the only project job — the spike is the box's,
+recorded, not explained). Derived status tally: 159 MATCH, 117 CERB_SKIP,
+3 TIMEOUT — identical to D3's shard-2/6 tally.
+
+**Unit gates and the four `test_exec.sh` baseline lanes**, re-run on the same
+head after the shard (`08:21:50 … load average: 4.30, 2.99, 3.52` →
+`08:26:17 … load average: 1.96, 2.20, 3.04`), verbatim:
+
+```text
+Total: 6 passed, 0 failed
+check_fuel_forms: OK (81 fuel'd workers: 57 MEASURED (obligation of the contract's shape incl. argument correspondence against the wrapper's body; every obligation + proof cone ⊆ the standard three; 10 of them under a hypothesis, each = a reviewed row of fuel_hypotheses.txt, both directions), 13 ABSORBING = kill at zero (the _zero lemma is the worker at literal 0 on its own binders = the monad's absorbing element, cone ⊆ the standard three; propagation NOT proved — lem TODO 13), 5 reachable-AMBIENT = the 5 rows of fuel_forms_pending.txt exactly, 6 ambient unreachable from the drive cone)
+check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 22 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)
+check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=166 REACHABLE=48 UNKNOWN=19; every row sealed; tally line consistent)
+SUMMARY: total=106 match=85 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=3 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+SUMMARY: total=212 match=183 ub_match=16 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=13 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+SUMMARY: total=90 match=66 ub_match=20 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=4 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+SUMMARY: total=69 match=69 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+```
+
+(`test_unit.sh` rc 0; lanes tests/minimal, coverage, debug, float, each rc 0.)
+The full Tier B battery was NOT run here (the orchestrator's boundary gate).
+
+### What the landing did not do
+
+No `.lem` body or type edit; no worker, `_zero` lemma, generated-file hand
+edit, register row, Lake pin, opam, or lem-lean change; no baseline change
+other than reverting D3's one re-recorded row; no change to D3's measure
+VALUE (the same call-depth bound, now structural); no Tier B run; no merge or
+push. `sa_csmith_419.c` (D4's budget exception) and the `sia_csmith_078.c`
+ratio exception are untouched and still open. Documentation updated only
+where a claim changed: `TODO.md` (the mechanism landed; the 169 row's status),
+`VALIDATION.md` §7 (the measure's text and form), `scripts/LADDER.md` (the
+csmith lane's load caveat), `lean_frontend/CLAUDE.md` (the seam's key-files
+row).
