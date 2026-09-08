@@ -1,0 +1,8 @@
+D5 stop-record integrity checks (not a full-battery pass):
+B10.1 fails only at the missing independent build manifest; lane exit=1; runner source unchanged.
+Baseline byte comparison OK: exactly sia_csmith_169.c TIMEOUT -> MATCH; no other byte changes.
+sa_csmith_369.c and sa_csmith_371.c remain MATCH; sa_csmith_419.c remains TIMEOUT.
+Dedicated instrument commit message equals the retained completion message, including all three measured cpu_s values and complete MATCH lines.
+Six environment wrappers/proofs, hypothesis register and Lake pins unchanged from D2.
+Statement comparison OK: six declarations byte-identical; two declarations differ only in mu.
+No additional build or lane dispatched after the outside-fence prerequisite failure.

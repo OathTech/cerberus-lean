@@ -1,0 +1,6 @@
+Release evidence: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/fuel-measure-cost/d5-prerequisite
+RUN B10.1: python3 scripts/test_upstream_oracle.py
+FAILED B10.1 (0.1s)
+full: failed; 0/1 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: False.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.

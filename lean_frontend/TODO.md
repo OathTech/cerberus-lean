@@ -122,19 +122,23 @@ hygiene items the audit confirmed (each re-verified by the orchestrator):
 
 ## Fuel-parameter arc — C3 follow-ups (record `docs/2026-09-05_fuel-parameter-C3-record.md` §7–§8)
 
-- **Performance backlog: the eager `lemSize` measure of `get_ctx` (F-C3-4;
-  RULING [USER 2026-09-05] ACCEPTED, "a price we pay, so long as it's truly
-  <10% cpu … changing the trust surface is a high bar")** — measured +7.0 %
-  CPU on ONE csmith row (`sa_csmith_85.c`, C2 vs C3 binaries, record §7).
-  Owed: re-measure on the WHOLE csmith lane as a Tier C instrument at the
-  merged head (per-row CPU, C2-head binary vs merged binary; the
-  mem-scale/timing lane shape). Any remedy — lazy measure (lem-side fuel
-  scheme change), memoized/size-annotated arena (representation change),
-  or `declare {lean} structural` on the `get_ctx`/`get_ctx_unseq_aux` pair
-  (removes the counter entirely if lem/Lean accept the nested expr/list
-  block; the arc-3 "automatic REJECTED" note predates the hoist) — is judged
-  against the trust-surface bar, not adopted for speed alone. M (measure) /
-  operator decision (remedy).
+- **Eager `get_ctx` measure cost — resolved in the fuel-measure-cost worktree;
+  remaining performance bar re-scoped.** The operator's standing price is
+  "a price we pay, so long as it's truly <10% cpu … changing the trust
+  surface is a high bar" [USER 2026-09-05]. The full 1,669-row before/after
+  CPU instrument and pre-arc comparison are recorded in
+  [the fuel-measure-cost record](docs/2026-09-07_fuel-measure-cost-record.md).
+  Code `6ce040f06` replaces the full arena-size traversal with a proved
+  conservative context-call bound; the obligation shape and trust cone stay.
+  On 369/371, visible measure cost falls from about 45%/39% to 4.3%/4.6%;
+  paired total CPU overhead versus pre-arc is 7.50%/7.29%.
+  D4's 287-row paired table has one ratio exception, `sia_csmith_078.c`:
+  +30.77% initially, +13.80% with all six runs retained, +5.14% in the fixed
+  four follow-ups. The CPU spike is unreproduced; its exact cause is unresolved.
+  `sa_csmith_419.c` remains TIMEOUT at 15 seconds (completed mean 15.62 s,
+  pre-arc 14.50 s). The all-program property is not certified. Broader measure
+  scope, a Lem fuel-scheme change, representation work or a revision bisect
+  remain operator decisions; none is implemented here.
 
 ## Fuel-parameter arc — C4 follow-ups (record `docs/2026-09-05_fuel-parameter-C4-record.md` §7–§8)
 
@@ -191,34 +195,28 @@ hygiene items the audit confirmed (each re-verified by the orchestrator):
   — it is key order today) would let the differential lanes assert the
   invariant on every loaded program, with a theorem `check = true → Acyclic`.
   S–M.
-- **Two csmith corpus rows MATCH→TIMEOUT at the lane's 15 s budget
-  (class (b) PENDING; record `docs/2026-09-06_csmith-sweep-post-p0.md`).**
-  `sa_csmith_369.c`, `sa_csmith_371.c` (`tests/csmith/small_arrays/`):
-  cpu-bound at 15 s (`cpu 14.99s of 15.00s wall`), MATCH at 90 s. Not a
-  semantic discrepancy and not the P0 instrument (a timeout is classified
-  before any verdict is compared); the lane had not been fully re-run since
-  its 2026-08-22 baseline, so the slowdown lies anywhere in that window —
-  the eager measures above are the leading hypothesis. MOVER: the whole-
-  csmith-lane timing (this section's C-P1 item) on the merged head vs a
-  pre-fuel head (`928aa1e76` C3 / `753644005` C1); if the measures are the
-  cause → the cheaper sufficient measure below / lem L8; else bisect. The
-  baseline is NOT re-recorded (TIMEOUT is never agreement).
-- **The measures' eager cost (the F-C3-4 mechanism, second instance).**
-  `CerbTagsWf.envBound ambient ty` traverses the whole tag environment
-  (`defsWeight`: every entry's member-type sizes) on EVERY call of
-  `sizeofCtype`/`alignofCtype`/`reconstructValue`/…, including on `int`.
-  C4's B7 lane held its baseline row-for-row (no row moved into
-  SKIP_LEAN_TIMEOUT), but the per-row CPU was not A/B-measured; the C4
-  audit (F-A6) could not measure it either — the operator's <10 % bar is
-  UNVERIFIED. Owed with the C3 item: the whole-csmith-lane timing at the
-  merged head. The cheaper SUFFICIENT measure, spelled out (audit §7): `if
-  refsOf ty = [] then lemSize ty + 1 else envBound m ty` (and likewise for
-  the member/members/offsetsof bounds) — sufficient because `refsOf ty = []
-  → tp ty = 0` (one lemma; the obligation changes only in `μ`), `refsOf ty =
-  []` is O(lemSize ty), so `int`/pointer layout calls pay no traversal; a
-  size-annotated environment would remove the traversal for struct calls
-  too (representation change). Judged against the trust-surface bar, not
-  adopted for speed alone; the C3 timing slice takes it up. M.
+- **Two csmith corpus rows MATCH→TIMEOUT — RESOLVED at 15 seconds in
+  `arc/fuel-measure-cost`, code `6ce040f06`, instrument `5f14f0702`.**
+  `sa_csmith_369.c` and `sa_csmith_371.c` both read MATCH in the full
+  HEAD-after lane (CPU 12.07 / 10.06 s) and the separate shard-2/6 check
+  (11.48 / 9.64 s). Their baseline rows remain unchanged MATCH. The full
+  lane reports `0 regression(s), 1 improvement(s)`; only `sia_csmith_169.c`
+  was re-recorded TIMEOUT → MATCH, under the explicit D3 operator ruling,
+  with CPU 14.93 s and the entire MATCH line in the dedicated instrument
+  commit. No other baseline row moved. The eight remaining baseline
+  TIMEOUT rows are still pending completions, including `sa_csmith_419.c`,
+  which completed pre-arc and remains the measured budget exception.
+- **Environment-measure eager cost — measured, remedy deferred.**
+  `CerbTagsWf.envBound ambient ty` still traverses the tag environment on
+  layout/reconstruction calls. The full-corpus instrument and D2/D3/D4
+  profiles are in the same record: environment measures contribute at most
+  0.25% on the final 369/371 profiles and 0.20% on the residual 419/078
+  profiles. They do not explain the known regressions or provide a measured
+  remedy for 419's remaining 15-second miss. All six wrappers and hypotheses
+  are unchanged. The `refsOf ty = []` guarded bound remains a future
+  candidate requiring a kernel-checked sufficiency proof and workload
+  evidence; it is not implemented or claimed proved here. The measured
+  subset does not establish an environment-cost bound for every program.
 
 ## Small items (independent; can ride along with any fix batch)
 

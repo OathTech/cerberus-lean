@@ -1,0 +1,52 @@
+{
+  "schema": 2,
+  "started_utc": "20260908T054817.231283Z",
+  "finished_utc": "2026-09-08T05:48:18.540252+00:00",
+  "mode": "full",
+  "selected": [
+    "B10.1"
+  ],
+  "status": "failed",
+  "source_unchanged": true,
+  "selection_complete": false,
+  "release_certification": "incomplete: reporting/adoption/audit exits require separate evidence",
+  "environment": {
+    "CERB_DRIVER_FRESH_OVERRIDE": null,
+    "CERB_FORK_DRIFT_DEV_SKIP": null,
+    "CERB_LEAN_BIN_OVERRIDE": null,
+    "CERB_MEM_MAX": "48G",
+    "CERB_ORACLE_BIN_OVERRIDE": null,
+    "CERB_TEST_MEM_MAX": null,
+    "DUNE_CACHE": "disabled",
+    "NO_COLOR": "1",
+    "SKIP_BUILD": null,
+    "TERM": "dumb",
+    "TIMEOUT_SECS": null
+  },
+  "lanes": [
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-f38a0a55f87247399f16a78631b1dd89",
+      "command": [
+        "python3",
+        "scripts/test_upstream_oracle.py",
+        "--out",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/fuel-measure-cost/d5-prerequisite/B10.1/independent-oracle"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 1,
+      "id": "B10.1",
+      "process_group": 274391,
+      "required": true,
+      "seconds": 0.128,
+      "status": "failed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/fuel-measure-cost/d5-prerequisite/B10.1/stderr",
+      "stderr_sha256": "27fcfe52b016909c83bd5a646d7289a5c55b64675ea3a8c220289ef9202f22b1",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/fuel-measure-cost/d5-prerequisite/B10.1/stdout",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "summaries": [],
+      "tier": "B"
+    }
+  ],
+  "raw_report_sha256": "c1762b79a8302cb549c91c1be7930938493ea32ee7b180053ab95b6c15a90480",
+  "claim": "B10.1 prerequisite check only; full Tier A+B battery not run after the charter stop rule fired."
+}

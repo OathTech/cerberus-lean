@@ -4,11 +4,12 @@
 on `arc/fuel-measure-cost` at starting HEAD
 `cee6b4639508c543524900bcd763ae04565f1916`. This HEAD adds only the charter
 to the target `4d1088004`. No earlier deliverable or active charter job
-was present when this work began. **D1–D3 are complete. D3's code is `6ce040f06`; its dedicated instrument
+was present when this work began. D1–D3 are complete. D3's code is `6ce040f06`; its dedicated instrument
 and authorized baseline commit is `5f14f0702`. D4 is complete as a report
-of remaining exceptions, with Tier A green. D5 remains pending. The full
-CPU bar and charter completion are not claimed. Measurements span
-2026-09-07 and 2026-09-08.**
+of remaining exceptions in `cacc42bbb`, with Tier A green. **Execution
+stopped at D5's missing independent-oracle prerequisite under the charter
+stop rule.** The full CPU bar and D5 full-battery certification are not claimed. Measurements span
+2026-09-07 and 2026-09-08.
 
 ## Property and boundaries
 
@@ -1004,9 +1005,89 @@ Release certification: incomplete: reporting/adoption/audit exits require separa
 D4's report acceptance and checkpoint are green; the reported performance
 exceptions remain open. D5's full battery has not been certified.
 
+## D5 — outside-fence prerequisite failure; recorded stop
+
+[AGENT] D4 is committed as `cacc42bbb01cee8cf5e5175f38a12f7cb94e9cd8`.
+Before D5's long battery, the required B10.1 lane was selected through the
+unchanged release runner to check the independent-oracle prerequisite.
+`CERB_INDEPENDENT_MANIFEST` is unset and the documented default manifest is
+absent. The required B10.1 command was actually executed, not counted as a
+skip or pass. It failed before any oracle comparison. The runner completed
+and cleaned its process scope; no heavy job remains from this charter.
+
+Command (after sourcing the project environment):
+
+```sh
+CERB_MEM_MAX=48G DUNE_CACHE=disabled ./scripts/capped python3 scripts/release.py --mode full --lane B10.1 --lane-timeout 3300 --out .tmp/fuel-measure-cost/d5-prerequisite
+```
+
+[Runner output](2026-09-07_fuel-measure-cost-evidence/d5-prerequisite-verdicts.txt)
+and [lane diagnostic](2026-09-07_fuel-measure-cost-evidence/d5-prerequisite-stderr.txt), verbatim:
+
+```text
+Release evidence: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/fuel-measure-cost/d5-prerequisite
+RUN B10.1: python3 scripts/test_upstream_oracle.py
+FAILED B10.1 (0.1s)
+full: failed; 0/1 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: False.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+INDEPENDENT ORACLE INCOMPLETE: [Errno 2] No such file or directory: '/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.validation-foundations/independent-oracle-v2/manifest.json'
+```
+
+Both lane and runner exit 1. The
+[compact report](2026-09-07_fuel-measure-cost-evidence/d5-prerequisite.meta.json)
+pins the complete raw report and retains the actual selected command,
+UTC boundaries, statuses, elapsed time, output hashes and containment result.
+`--lane B10.1` is explicitly a prerequisite subset: **the full Tier A+B
+selection was not run or certified at D5**. No later lane or separate D5
+unit/baseline pass was dispatched after this failure. D4's actual full
+Tier A run (including `test_unit.sh` and all four direct `test_exec.sh`
+baseline lanes) remains green evidence for the same semantic source;
+it is not relabeled as D5's complete battery.
+
+The charter's stop rule, verbatim:
+
+> Stop and report (record + commit, no merge) when: D5 is done; or D2 concludes the measures are not the dominant cause; or a required gate is red for a reason outside the fence; or the reference build fails as in D2(b).
+
+[AGENT] This is the required-gate/outside-fence case. `scripts/LADDER.md`
+B10 requires a separately prepared pristine Cerberus `b9aeedcb4` / upstream
+Lem `3802cb0` build; the lane and runner do not build it. The documented
+`build_independent_oracle.py` recipe creates both archived source/build
+trees under `.validation-foundations/independent-oracle-v2`. The charter
+restricts reference Lem builds to `worktrees/lem-lean-ref/*` worktrees and
+reference Cerberus builds to `worktrees/cerberus-lean-ref/*`; it does not
+provide this independent manifest. No existing valid manifest was found
+at the documented paths in this worktree, the primary or registered
+worktrees. I did not run that archive-build recipe outside the reference
+layout, alter the gate, synthesize provenance, change pins/opam or broaden
+the charter to establish another build recipe. Preparing a checked
+independent manifest under an authorized layout is the prerequisite for
+a subsequent full-battery run. This stop record does not grant that scope.
+
+Before the prerequisite check, the allowed documentation was updated:
+`TODO.md` resolves the two restored csmith rows and eager-context traversal,
+retains the measured D4 exceptions and re-scopes the unimplemented
+environment guard; `VALIDATION.md` §7 describes the changed context measure
+and unchanged census/hypotheses. D1 already added the non-gating instrument
+to `LADDER.md`. The [side-by-side theorem statements](2026-09-07_fuel-measure-cost-evidence/theorem-statements.md)
+show all eight declarations before and after: six are byte-identical and
+two differ only in μ. The D3 kernel audit proves their sufficiency and
+checks the permitted cones; this textual comparison does not replace it.
+
+[Final integrity checks](2026-09-07_fuel-measure-cost-evidence/d5-stop-checks.txt)
+confirm that the only baseline byte change over the entire charter is the
+operator-authorized `sia_csmith_169.c` improvement in its dedicated
+instrument commit; 369/371 remain MATCH, and every other baseline row is
+unchanged. The dedicated message retains the measured CPU values and full
+MATCH lines exactly. The six environment wrappers/proofs, hypothesis
+register and Lake pins are unchanged. The stop-record commit contains
+only the fenced documentation and compact evidence. It is the explicitly
+required failure record, not a claim of a green D5 gate.
+
 ## What has not been done
 
 No worker, `_zero` lemma, generated-file hand edit, register, pin,
 opam, or non-measure `.lem` change. No baseline change except the explicitly
 authorized, separately recorded `sia_csmith_169.c` improvement. The two authorized reference worktrees
-remain available. No merge or push. No stop rule has fired.
+remain available. No merge or push. The outside-fence required-gate stop
+rule fired at D5 B10.1; no subsequent build, lane, or scope expansion was performed.
