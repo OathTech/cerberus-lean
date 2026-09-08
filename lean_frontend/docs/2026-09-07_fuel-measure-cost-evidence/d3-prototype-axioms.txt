@@ -1,0 +1,6 @@
+'FuelMeasureCostProbe.stable' depends on axioms: [propext, Classical.choice, Quot.sound]
+'FuelMeasureCostProbe.branchBound' does not depend on any axioms
+'FuelMeasureCostProbe.next_lower' depends on axioms: [propext, Quot.sound]
+'FuelMeasureCostProbe.bound' depends on axioms: [propext, Quot.sound]
+'FuelMeasureCostProbe.inlineBound_eq' depends on axioms: [propext, Quot.sound]
+'FuelMeasureCostProbe.branchBound_child_lt' depends on axioms: [propext, Quot.sound]

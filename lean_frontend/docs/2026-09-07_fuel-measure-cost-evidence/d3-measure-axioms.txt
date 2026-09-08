@@ -1,0 +1,19 @@
+'CerbTagsWf.branchBound' does not depend on any axioms
+'CerbTagsWf.branchBound_child_lt' depends on axioms: [propext, Quot.sound]
+'Core_reduction_lemMeasureProofs.getCtxNext_lower' depends on axioms: [propext, Quot.sound]
+'Core_reduction_lemMeasureProofs.get_ctx_search_stable_aux' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Core_reduction_lemMeasureProofs.get_ctx_measure_sufficient' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Core_reduction_lemMeasureProofs.get_ctx_unseq_aux_measure_sufficient' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Core_reduction_lemMeasureProofs.get_ctx_previous_measure_eq' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Core_reduction_lemMeasureProofs.get_ctx_unseq_aux_previous_measure_eq' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'CerbMem.alignofCtype_measure_sufficient' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbMem.sizeofCtype_measure_sufficient' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbMem.memberAlign_measure_sufficient' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbMem.offsetsofMembers_measure_sufficient' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbMem.offsetsof_measure_sufficient' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbMem.reconstructValue_measure_sufficient' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbTagsWf.branchBoundEntry_eq' does not depend on any axioms

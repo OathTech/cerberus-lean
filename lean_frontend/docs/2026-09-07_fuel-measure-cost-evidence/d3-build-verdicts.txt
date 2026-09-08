@@ -1,0 +1,10 @@
+⚠ [348/381] Built Core_reduction_aux (569ms)
+✔ [350/381] Built Core_reduction_aux_auxiliary (218ms)
+⚠ [351/381] Built Core_reduction (2.1s)
+✔ [356/381] Built Core_reduction:c.o (1.0s)
+✔ [364/381] Built Core_reduction_lemMeasureProofs (2.0s)
+✔ [365/381] Built Core_reduction_auxiliary (431ms)
+✔ [366/381] Built Unit.FuelExemplar (1.2s)
+✔ [368/381] Built «fuel-exemplar-test»:exe (194ms)
+✔ [381/381] Built «cerberus-lean»:exe (580ms)
+Build completed successfully (381 jobs).

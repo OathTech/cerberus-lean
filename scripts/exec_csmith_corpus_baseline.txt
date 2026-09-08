@@ -866,7 +866,7 @@ sia_csmith_165.c MATCH
 sia_csmith_166.c MATCH
 sia_csmith_167.c MATCH
 sia_csmith_168.c MATCH
-sia_csmith_169.c TIMEOUT
+sia_csmith_169.c MATCH
 sia_csmith_170.c MATCH
 sia_csmith_171.c CERB_SKIP
 sia_csmith_172.c MATCH

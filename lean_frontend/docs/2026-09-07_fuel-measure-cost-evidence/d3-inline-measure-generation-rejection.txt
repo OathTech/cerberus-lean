@@ -1,0 +1,2 @@
+  Error: Lean backend: free variable `fun` in the fuel measure of get_ctx (FM-free: a measure or hypothesis mentions only the function's parameters — here g — and QUALIFIED Lean names such as `List.length xs`, `Ns.size x` or `Ns.WellFormed env`, or `lemSize x` for the derived size of a parameter's inductive type; Lean's global namespace is not visible at generation, so an unqualified name that is not a parameter is refused)
+make: *** [Makefile:352: lean-prelude-src] Error 1

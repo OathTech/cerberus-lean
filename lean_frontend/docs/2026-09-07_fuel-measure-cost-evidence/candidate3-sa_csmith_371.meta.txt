@@ -1,0 +1,12 @@
+2026-09-08T02:06:07.597710+00:00
+02:06:07 up 1 day, 10:41,  ? user,  load average: 4.36, 4.17, 5.75
+359cf998c422ba3abb1598b57a94187a69071a9f3c59ef8ec365aa13296c42bb  /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/lean_frontend/.lake/build/bin/cerberus-lean
+5ce56db1549033c33e5aa92e0b9ea52c59fedd3ebd26f999566f120e643f25ad  /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/fuel-measure-cost/d2-profile/sampler.so
+b22a2874d2c1bf6a87a2a4d0b51ed98e73026cd96d0c34f32cf9d3a50b5cd98b  /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/lean_frontend/docs/2026-09-07_fuel-measure-cost-evidence/analyze-fused-cpu-stacks.py
+6ce000d0a32b7c08526d4931373c4b2f26954be58ee14a28c7aef86863491b02  /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/fuel-measure-cost/candidate3-fused-90/repeat1-371/sa_csmith_371.json
+command=['/usr/bin/time', '-v', '-o', '/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/fuel-measure-cost/d3-fused-profile/sa_csmith_371.time', 'timeout', '90', 'env', 'LEAN_ABORT_ON_PANIC=1', 'LD_PRELOAD=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/fuel-measure-cost/d2-profile/sampler.so', 'FC_SAMPLE_FILE=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/fuel-measure-cost/d3-fused-profile/sa_csmith_371.samples', 'FC_SAMPLE_US=10000', '/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/lean_frontend/.lake/build/bin/cerberus-lean', '--batch', '/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/fuel-measure-cost/candidate3-fused-90/repeat1-371/sa_csmith_371.json']
+exit=0
+full Defined-line MULTISETS equal; derived tally={'Defined {value: "Specified(165)", stdout: "", stderr: "", blocked: "false"}': 310}
+2026-09-08T02:06:17.559302+00:00
+02:06:17 up 1 day, 10:42,  ? user,  load average: 4.38, 4.18, 5.74
+identities unchanged; trace_sha256=89eaf39cec740845711e55266890a79d5a4a308c30ef5cfdc97257d1fd0ee1de

@@ -1,0 +1,12 @@
+2026-09-08T01:40:01.320454+00:00
+01:40:01 up 1 day, 10:15,  ? user,  load average: 3.27, 3.95, 5.61
+be1da899f7ad722dad3cf89ab7164eaf50162a024f2e452746ac2ae7d8c3cb2e  /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/lean_frontend/.lake/build/bin/cerberus-lean
+5ce56db1549033c33e5aa92e0b9ea52c59fedd3ebd26f999566f120e643f25ad  /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/fuel-measure-cost/d2-profile/sampler.so
+ec46310e4c6f7e0e33ba135b74da2b955c608e6e2ad4f3b75539de48ae9eeeed  /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/lean_frontend/docs/2026-09-07_fuel-measure-cost-evidence/analyze-after-cpu-stacks.py
+6ce000d0a32b7c08526d4931373c4b2f26954be58ee14a28c7aef86863491b02  /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/fuel-measure-cost/head-known-after-90/repeat1-371/sa_csmith_371.json
+command=['/usr/bin/time', '-v', '-o', '/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/fuel-measure-cost/d3-profile/sa_csmith_371.time', 'timeout', '90', 'env', 'LEAN_ABORT_ON_PANIC=1', 'LD_PRELOAD=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/fuel-measure-cost/d2-profile/sampler.so', 'FC_SAMPLE_FILE=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/fuel-measure-cost/d3-profile/sa_csmith_371.samples', 'FC_SAMPLE_US=10000', '/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/lean_frontend/.lake/build/bin/cerberus-lean', '--batch', '/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/fuel-measure-cost/head-known-after-90/repeat1-371/sa_csmith_371.json']
+exit=0
+full Defined-line MULTISETS equal; derived tally={'Defined {value: "Specified(165)", stdout: "", stderr: "", blocked: "false"}': 310}
+2026-09-08T01:40:13.032816+00:00
+01:40:13 up 1 day, 10:16,  ? user,  load average: 3.65, 4.00, 5.60
+trace_sha256=29c6056a18a2a59dd12d5da1d4d57baf723584da0bfd42a5550ff7888d730044

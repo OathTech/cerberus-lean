@@ -1,0 +1,8 @@
+Full corpus
+SUMMARY: total=1669 match=1162 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=8 hang=0 cerb_skip=499 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 1 improvement(s)
+CPU export OK: 1669 inputs, 3338 engine rows; lane exit=0; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/fuel-measure-cost/head-after-15.tsv
+Shard 2/6
+SUMMARY: total=279 match=159 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=3 hang=0 cerb_skip=117 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+CPU export OK: 279 inputs, 558 engine rows; lane exit=0; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/fuel-measure-cost/head-after-15-shard2.tsv

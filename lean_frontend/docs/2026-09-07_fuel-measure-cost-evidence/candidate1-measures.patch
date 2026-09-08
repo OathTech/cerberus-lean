@@ -1,0 +1,336 @@
+diff --git a/frontend/model/core_reduction.lem b/frontend/model/core_reduction.lem
+index 26faa550c..16f248965 100644
+--- a/frontend/model/core_reduction.lem
++++ b/frontend/model/core_reduction.lem
+@@ -1524,8 +1524,8 @@ declare {lean} fuel val get_ctx_unseq_aux = `fuelExhausted (fun _ => acc)`
+    sufficient), and every cross-call strictly decreases the callee's measure. Proved in
+    lean_frontend/Core_reduction_lemMeasureProofs.lean. *)
+ declare {lean} fuel_measure val one_step_unseq_aux = `List.length lemTail + 1`
+-declare {lean} fuel_measure val get_ctx = `lemSize g + 1`
+-declare {lean} fuel_measure val get_ctx_unseq_aux = `generic_expr_.lemSize_aux2 lemTail + 1`
++declare {lean} fuel_measure val get_ctx = `CerbTagsWf.getCtxMeasure (Sum.inl g)`
++declare {lean} fuel_measure val get_ctx_unseq_aux = `CerbTagsWf.getCtxMeasure (Sum.inr lemTail)`
+ declare {lean} termination_argument apply_ctx = automatic
+ declare {lean} termination_argument break_at_sseq = automatic
+ declare {lean} termination_argument break_at_bound_and_sseq = automatic
+diff --git a/lean_frontend/CerbTagsWf.lean b/lean_frontend/CerbTagsWf.lean
+index 0ce298b11..d7ce53cc7 100644
+--- a/lean_frontend/CerbTagsWf.lean
++++ b/lean_frontend/CerbTagsWf.lean
+@@ -203,4 +203,132 @@ def membersBound (m : CerbTags.TagDefsMap) (members : List Member) : Nat :=
+ def offsetsofBound (ambient tagDefs : CerbTags.TagDefsMap) : Nat :=
+   defsWeight ambient + defsWeight tagDefs + defsWeight tagDefs + 3
+ 
++/-! ## Bounds over the possible recursive calls of a worker
++
++    The context-search measure uses this generic helper because Core imports
++    this module through CerbMem; importing Core here would make a cycle.
++    Only `next` is evaluated: `rank` witnesses termination in erased proofs.
++    The result is one worker frame plus the maximum bound of any possible
++    recursive call. Unvisited continuation arenas need not be sized. -/
++
++def branchBound {α : Type} (next : α → List α) (rank : α → Nat)
++    (lower : ∀ x y, y ∈ next x → rank y < rank x) (x : α) : Nat :=
++  WellFounded.fix (measure rank).wf (fun x rec =>
++    (next x).attach.foldr (fun y n => max (rec y.val (lower x y.val y.property)) n) 0 + 1) x
++
++theorem branchBound_eq {α : Type} (next : α → List α) (rank : α → Nat)
++    (lower : ∀ x y, y ∈ next x → rank y < rank x) (x : α) :
++    branchBound next rank lower x =
++    (next x).attach.foldr (fun y n => max (branchBound next rank lower y.val) n) 0 + 1 := by
++  unfold branchBound
++  rw [WellFounded.fix_eq]
++
++theorem branchBound_pos {α : Type} (next : α → List α) (rank : α → Nat)
++    (lower : ∀ x y, y ∈ next x → rank y < rank x) (x : α) :
++    0 < branchBound next rank lower x := by
++  rw [branchBound_eq]
++  omega
++
++theorem mem_le_foldr_max {α : Type} (l : List α) (cost : α → Nat) (x : α)
++    (h : x ∈ l) : cost x ≤ l.foldr (fun y n => max (cost y) n) 0 := by
++  induction l with
++  | nil => cases h
++  | cons y ys ih =>
++    simp only [List.foldr_cons]
++    rcases List.mem_cons.mp h with rfl | h
++    · exact Nat.le_max_left _ _
++    · exact Nat.le_trans (ih h) (Nat.le_max_right _ _)
++
++theorem branchBound_child_lt {α : Type} (next : α → List α) (rank : α → Nat)
++    (lower : ∀ x y, y ∈ next x → rank y < rank x) (x y : α) (h : y ∈ next x) :
++    branchBound next rank lower y < branchBound next rank lower x := by
++  rw [branchBound_eq next rank lower x]
++  have hle := mem_le_foldr_max (next x).attach
++    (fun z => branchBound next rank lower z.val) ⟨y, h⟩ (List.mem_attach ..)
++  dsimp only at hle
++  omega
++
++/-- Preserve definitional reduction on leaves, without unfolding an
++    accessibility proof. This is equal to the general call-depth bound. -/
++def branchBoundEntry {α : Type} (next : α → List α) (rank : α → Nat)
++    (lower : ∀ x y, y ∈ next x → rank y < rank x) (x : α) : Nat :=
++  match next x with
++  | [] => 1
++  | _ :: _ => branchBound next rank lower x
++
++theorem branchBoundEntry_eq {α : Type} (next : α → List α) (rank : α → Nat)
++    (lower : ∀ x y, y ∈ next x → rank y < rank x) (x : α) :
++    branchBoundEntry next rank lower x = branchBound next rank lower x := by
++  unfold branchBoundEntry
++  split
++  · rename_i h
++    rw [branchBound_eq, h]
++    rfl
++  · rfl
++
++theorem branchBoundEntry_pos {α : Type} (next : α → List α) (rank : α → Nat)
++    (lower : ∀ x y, y ∈ next x → rank y < rank x) (x : α) :
++    0 < branchBoundEntry next rank lower x := by
++  rw [branchBoundEntry_eq]
++  exact branchBound_pos next rank lower x
++
++theorem branchBoundEntry_child_lt {α : Type} (next : α → List α) (rank : α → Nat)
++    (lower : ∀ x y, y ∈ next x → rank y < rank x) (x y : α) (h : y ∈ next x) :
++    branchBoundEntry next rank lower y < branchBoundEntry next rank lower x := by
++  rw [branchBoundEntry_eq, branchBoundEntry_eq]
++  exact branchBound_child_lt next rank lower x y h
++
++/-- Expand the context-search measure where Core's AST types are available.
++    Lem's raw-measure validator accepts this qualified name but does not parse
++    lambda binders. The expansion is an ordinary kernel-checked term, with no
++    new Lem vocabulary or run-time proof. -/
++-- Explicit case eliminators keep separate macro expansions equal at the
++-- fuel-forms gate's reducible transparency; a compiled pattern match creates
++-- a different private matcher for each expansion.
++macro "CerbTagsWf.getCtxMeasure " x:term : term => do
++  -- These types arrive through Core and Core_run_aux, after this import.
++  let exprType := Lean.mkIdent `generic_expr
++  let annotationType := Lean.mkIdent `core_run_annotation
++  let exprCases := Lean.mkIdent `generic_expr.casesOn
++  let nodeCases := Lean.mkIdent `generic_expr_.casesOn
++  `(CerbTagsWf.branchBoundEntry
++    (fun y : Sum ($exprType $annotationType Unit sym)
++        (List ($exprType $annotationType Unit sym)) =>
++      Sum.casesOn y
++        (fun e => $exprCases e (fun _ node =>
++          $nodeCases node
++            (fun _ => [])                         -- Epure
++            (fun _ _ => [])                       -- Ememop
++            (fun _ => [])                         -- Eaction
++            (fun _ _ => [])                       -- Ecase
++            (fun _ _ _ => [])                     -- Elet
++            (fun _ _ _ => [])                     -- Eif
++            (fun _ _ _ _ => [])                   -- Eccall
++            (fun _ _ _ => [])                     -- Eproc
++            (fun es => [Sum.inr es])               -- Eunseq
++            (fun _ e _ => [Sum.inl e])             -- Ewseq
++            (fun _ e _ => [Sum.inl e])             -- Esseq
++            (fun e => [Sum.inl e])                 -- Ebound
++            (fun _ => [])                         -- End
++            (fun _ _ _ => [])                     -- Esave
++            (fun _ _ _ => [])                     -- Erun
++            (fun _ => [])                         -- Epar
++            (fun _ => [])                         -- Ewait
++            (fun _ e => [Sum.inl e])               -- Eannot
++            (fun _ _ => [])))                     -- Eexcluded
++        (fun es => List.casesOn es [] (fun e es => [Sum.inl e, Sum.inr es])))
++    sizeOf (by
++      intro x y hy
++      cases x with
++      | inl e =>
++        obtain ⟨a, e⟩ := e
++        cases e <;> simp only [List.mem_singleton, List.not_mem_nil] at hy
++        all_goals first | contradiction | (subst y; simp_wf; omega)
++      | inr es =>
++        cases es with
++        | nil => simp at hy
++        | cons e es =>
++          simp only [List.mem_cons, List.not_mem_nil, or_false] at hy
++          rcases hy with hy | hy <;> subst y <;> simp_wf <;> omega) $x)
++
+ end CerbTagsWf
+diff --git a/lean_frontend/Core_reduction_lemMeasureProofs.lean b/lean_frontend/Core_reduction_lemMeasureProofs.lean
+index 7c6848790..8b14b974b 100644
+--- a/lean_frontend/Core_reduction_lemMeasureProofs.lean
++++ b/lean_frontend/Core_reduction_lemMeasureProofs.lean
+@@ -169,20 +169,161 @@ theorem get_ctx_stable_aux (k : Nat) :
+           | nil => simp only [get_ctx_unseq_aux_lemFuel]
+           | cons e es2 => simp (disch := size_lt) only [get_ctx_unseq_aux_lemFuel, key1, key2]
+ 
++/-- The two kinds of calls in the context-search mutual block. -/
++abbrev GetCtxState := Sum (generic_expr core_run_annotation Unit sym)
++  (List (generic_expr core_run_annotation Unit sym))
++
++/-- Possible recursive calls, conservatively ignoring irreducibility tests.
++    Sequences search only their left operand; continuations and pure-expression
++    payloads never cause a recursive call to either context-search worker. -/
++def getCtxNext (y : GetCtxState) : List GetCtxState :=
++  Sum.casesOn y
++    (fun e => generic_expr.casesOn e (fun _ node =>
++      generic_expr_.casesOn node
++        (fun _ => [])                         -- Epure
++        (fun _ _ => [])                       -- Ememop
++        (fun _ => [])                         -- Eaction
++        (fun _ _ => [])                       -- Ecase
++        (fun _ _ _ => [])                     -- Elet
++        (fun _ _ _ => [])                     -- Eif
++        (fun _ _ _ _ => [])                   -- Eccall
++        (fun _ _ _ => [])                     -- Eproc
++        (fun es => [Sum.inr es])               -- Eunseq
++        (fun _ e _ => [Sum.inl e])             -- Ewseq
++        (fun _ e _ => [Sum.inl e])             -- Esseq
++        (fun e => [Sum.inl e])                 -- Ebound
++        (fun _ => [])                         -- End
++        (fun _ _ _ => [])                     -- Esave
++        (fun _ _ _ => [])                     -- Erun
++        (fun _ => [])                         -- Epar
++        (fun _ => [])                         -- Ewait
++        (fun _ e => [Sum.inl e])               -- Eannot
++        (fun _ _ => [])))                     -- Eexcluded
++    (fun es => List.casesOn es [] (fun e es => [Sum.inl e, Sum.inr es]))
++
++theorem getCtxNext_lower : ∀ x y, y ∈ getCtxNext x → sizeOf y < sizeOf x := by
++  intro x y hy
++  cases x with
++  | inl e =>
++    obtain ⟨a, e⟩ := e
++    cases e <;> simp only [getCtxNext, List.mem_singleton, List.not_mem_nil] at hy
++    all_goals first | contradiction | (subst y; simp_wf; omega)
++  | inr es =>
++    cases es with
++    | nil => simp [getCtxNext] at hy
++    | cons e es =>
++      simp only [getCtxNext, List.mem_cons, List.not_mem_nil, or_false] at hy
++      rcases hy with rfl | rfl <;> simp_wf <;> omega
++
++def getCtxBound (x : GetCtxState) := CerbTagsWf.branchBoundEntry getCtxNext sizeOf getCtxNext_lower x
++
++
++/-- Joint fuel stability for the narrower call-depth measure. -/
++theorem getCtxBound_child_lt (x y : GetCtxState) (h : y ∈ getCtxNext x) : getCtxBound y < getCtxBound x :=
++  CerbTagsWf.branchBoundEntry_child_lt getCtxNext sizeOf getCtxNext_lower x y h
++
++theorem get_ctx_search_stable_aux (k : Nat) :
++    (∀ (e : generic_expr core_run_annotation Unit sym) (f g : Nat),
++      getCtxBound (.inl e) ≤ k → getCtxBound (.inl e) ≤ f → getCtxBound (.inl e) ≤ g →
++      get_ctx_lemFuel f e = get_ctx_lemFuel g e) ∧
++    (∀ (annot1 : List annot) (acc : List (context × generic_expr core_run_annotation Unit sym))
++      (es1 l : List (generic_expr core_run_annotation Unit sym)) (f g : Nat),
++      getCtxBound (.inr l) ≤ k → getCtxBound (.inr l) ≤ f →
++      getCtxBound (.inr l) ≤ g →
++      get_ctx_unseq_aux_lemFuel f annot1 acc es1 l = get_ctx_unseq_aux_lemFuel g annot1 acc es1 l) := by
++  have pos : ∀ x : GetCtxState, 0 < getCtxBound x := CerbTagsWf.branchBoundEntry_pos getCtxNext sizeOf getCtxNext_lower
++  induction k with
++  | zero => exact ⟨fun e _ _ hk _ _ => by have := pos (.inl e); omega, fun _ _ _ l _ _ hk _ _ => by have := pos (.inr l); omega⟩
++  | succ k ih =>
++    obtain ⟨ih1, ih2⟩ := ih
++    refine ⟨?_, ?_⟩
++    -- get_ctx
++    · intro e f g hk hf hg
++      have hp := pos (.inl e)
++      cases f with
++      | zero => omega
++      | succ f =>
++        cases g with
++        | zero => omega
++        | succ g =>
++          -- every cross-call strictly decreases the callee's measure below THIS entry's
++          have key1 : ∀ (y : generic_expr core_run_annotation Unit sym),
++              getCtxBound (.inl y) < getCtxBound (.inl e) →
++              get_ctx_lemFuel f y = get_ctx_lemFuel g y :=
++            fun y hy => ih1 y f g (by omega) (by omega) (by omega)
++          have key2 : ∀ (annot1 : List annot) (acc : List (context × generic_expr core_run_annotation Unit sym))
++              (es1 l : List (generic_expr core_run_annotation Unit sym)),
++              getCtxBound (.inr l) < getCtxBound (.inl e) →
++              get_ctx_unseq_aux_lemFuel f annot1 acc es1 l = get_ctx_unseq_aux_lemFuel g annot1 acc es1 l :=
++            fun annot1 acc es1 l hl => ih2 annot1 acc es1 l f g (by omega) (by omega) (by omega)
++          obtain ⟨annot1, e_⟩ := e
++          cases e_ <;> simp (disch := (apply getCtxBound_child_lt; simp [getCtxNext])) only [get_ctx_lemFuel, key1, key2]
++          -- Eannot: the nested pattern `Eannot _ (Expr _ (Eannot _ e))` needs the inner expression opened
++          case Eannot xs e =>
++            obtain ⟨annot2, e2⟩ := e
++            cases e2 <;> simp (disch := (apply getCtxBound_child_lt; simp [getCtxNext])) only [key1]
++    -- get_ctx_unseq_aux (the hoisted `lemTail` is the operand list)
++    · intro annot1 acc es1 l f g hk hf hg
++      have hp := pos (.inr l)
++      cases f with
++      | zero => omega
++      | succ f =>
++        cases g with
++        | zero => omega
++        | succ g =>
++          -- every cross-call strictly decreases the callee's measure below THIS entry's
++          have key1 : ∀ (y : generic_expr core_run_annotation Unit sym),
++              getCtxBound (.inl y) < getCtxBound (.inr l) →
++              get_ctx_lemFuel f y = get_ctx_lemFuel g y :=
++            fun y hy => ih1 y f g (by omega) (by omega) (by omega)
++          have key2 : ∀ (annot1' : List annot) (acc' : List (context × generic_expr core_run_annotation Unit sym))
++              (es1' l' : List (generic_expr core_run_annotation Unit sym)),
++              getCtxBound (.inr l') < getCtxBound (.inr l) →
++              get_ctx_unseq_aux_lemFuel f annot1' acc' es1' l' = get_ctx_unseq_aux_lemFuel g annot1' acc' es1' l' :=
++            fun annot1' acc' es1' l' hl => ih2 annot1' acc' es1' l' f g (by omega) (by omega) (by omega)
++          cases l with
++          | nil => simp only [get_ctx_unseq_aux_lemFuel]
++          | cons e es2 => simp (disch := (apply getCtxBound_child_lt; simp [getCtxNext])) only [get_ctx_unseq_aux_lemFuel, key1, key2]
++
++
+ /-- THE OBLIGATION, exactly as the generated auxiliary module states and delegates it. -/
+ theorem get_ctx_measure_sufficient (g : generic_expr core_run_annotation Unit sym) (lemFuel : Nat)
+-    (lemMeasureLe : generic_expr.lemSize g + 1 ≤ lemFuel) :
++    (lemMeasureLe : getCtxBound (.inl g) ≤ lemFuel) :
+     get_ctx_lemFuel lemFuel g = get_ctx g :=
+-  (get_ctx_stable_aux (generic_expr.lemSize g + 1)).1 g lemFuel (generic_expr.lemSize g + 1)
++  (get_ctx_search_stable_aux (getCtxBound (.inl g))).1 g lemFuel (getCtxBound (.inl g))
+     (Nat.le_refl _) lemMeasureLe (Nat.le_refl _)
+ 
+ /-- THE OBLIGATION for the hoisted-tail member (`lemTail` = the `Eunseq` operand list). -/
+ theorem get_ctx_unseq_aux_measure_sufficient (annot1 : List annot)
+     (acc : List (context × generic_expr core_run_annotation Unit sym))
+     (es1 lemTail : List (generic_expr core_run_annotation Unit sym)) (lemFuel : Nat)
+-    (lemMeasureLe : generic_expr_.lemSize_aux2 lemTail + 1 ≤ lemFuel) :
++    (lemMeasureLe : getCtxBound (.inr lemTail) ≤ lemFuel) :
+     get_ctx_unseq_aux_lemFuel lemFuel annot1 acc es1 lemTail = get_ctx_unseq_aux annot1 acc es1 lemTail :=
+-  (get_ctx_stable_aux (generic_expr_.lemSize_aux2 lemTail + 1)).2 annot1 acc es1 lemTail lemFuel
+-    (generic_expr_.lemSize_aux2 lemTail + 1) (Nat.le_refl _) lemMeasureLe (Nat.le_refl _)
++  (get_ctx_search_stable_aux (getCtxBound (.inr lemTail))).2 annot1 acc es1 lemTail lemFuel
++    (getCtxBound (.inr lemTail)) (Nat.le_refl _) lemMeasureLe (Nat.le_refl _)
++
++/-- The previous expression-size measure and the new wrapper return the
++    same result on every input, via a common sufficient fuel. -/
++theorem get_ctx_previous_measure_eq (e : generic_expr core_run_annotation Unit sym) :
++    get_ctx_lemFuel (generic_expr.lemSize e + 1) e = get_ctx e := by
++  let f := max (generic_expr.lemSize e + 1) (getCtxBound (.inl e))
++  calc
++    _ = get_ctx_lemFuel f e :=
++      (get_ctx_stable_aux (generic_expr.lemSize e + 1)).1 e _ f
++        (Nat.le_refl _) (Nat.le_refl _) (Nat.le_max_left ..)
++    _ = _ := get_ctx_measure_sufficient e f (Nat.le_max_right ..)
++
++/-- The same equivalence for the operand-list entry point. -/
++theorem get_ctx_unseq_aux_previous_measure_eq (annot1 : List annot)
++    (acc : List (context × generic_expr core_run_annotation Unit sym))
++    (es1 l : List (generic_expr core_run_annotation Unit sym)) :
++    get_ctx_unseq_aux_lemFuel (generic_expr_.lemSize_aux2 l + 1) annot1 acc es1 l =
++      get_ctx_unseq_aux annot1 acc es1 l := by
++  let f := max (generic_expr_.lemSize_aux2 l + 1) (getCtxBound (.inr l))
++  calc
++    _ = get_ctx_unseq_aux_lemFuel f annot1 acc es1 l :=
++      (get_ctx_stable_aux (generic_expr_.lemSize_aux2 l + 1)).2 annot1 acc es1 l _ f
++        (Nat.le_refl _) (Nat.le_refl _) (Nat.le_max_left ..)
++    _ = _ := get_ctx_unseq_aux_measure_sufficient annot1 acc es1 l f (Nat.le_max_right ..)
+ 
+ end Core_reduction_lemMeasureProofs
+diff --git a/scripts/fork_drift_manifest.txt b/scripts/fork_drift_manifest.txt
+index 93efa88a2..415918b92 100644
+--- a/scripts/fork_drift_manifest.txt
++++ b/scripts/fork_drift_manifest.txt
+@@ -271,7 +271,7 @@ util/cerb_fresh.ml
+ 100644 64a7e8abc63fd87c527de32c6914ff73a0ec7f57d60b072ea9337c2a8974e9bd frontend/model/core_aux.lem
+ 100644 e1fc98edcbfe16b000232ece8553c25f4272cb64b050fad322bd0efc6f9764a6 frontend/model/core_eval.lem
+ 100644 cbce5089e0e079d532b458fc7b660e1cf4bdb55484639bc2c08e5fd578e0fdbb frontend/model/core_linking.lem
+-100644 dd12a55bc776acb588a33b811d175ad66ffb190cec4ec39b8b61179f01059cd1 frontend/model/core_reduction.lem
++100644 b80d535a24bb993a5bf6715979bb0cd2d6b0f65e40116149bbfbebc39e7da695 frontend/model/core_reduction.lem
+ 100644 0630b14d31c11aa34ff2765ac1810d80aeadc02d4497ba80af0eb348bfff1db2 frontend/model/core_rewrite.lem
+ 100644 1427069bce64605c7230c64efc3564008b02258911074550686babe2b7669ded frontend/model/core_run.lem
+ 100644 60f4766a7813c8a72bf2e562575164a4bb5a9a3cfbbd6add84640e778b821297 frontend/model/core_run_aux.lem

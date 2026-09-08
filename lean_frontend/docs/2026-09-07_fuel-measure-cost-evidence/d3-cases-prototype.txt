@@ -1,0 +1,3 @@
+'FuelMeasureCostProbe.first' depends on axioms: [propext, Quot.sound]
+'FuelMeasureCostProbe.get_ctx_search_stable_aux' depends on axioms: [propext, Classical.choice, Quot.sound]
+Separate macro expansions agree at reducible transparency: true

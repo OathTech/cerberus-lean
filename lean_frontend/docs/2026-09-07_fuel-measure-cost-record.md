@@ -4,8 +4,10 @@
 on `arc/fuel-measure-cost` at starting HEAD
 `cee6b4639508c543524900bcd763ae04565f1916`. This HEAD adds only the charter
 to the target `4d1088004`. No earlier deliverable or active charter job
-was present when this work began. **D1 (commit `a1e7cda30`) and D2 are complete. D3–D5 remain pending;
-no proven remedy or charter completion is claimed. Measurements span
+was present when this work began. **D1, D2 and D3 are complete. D3's code is committed separately as
+`6ce040f0614f762e729633a955bcb002dce693ba`; this record and the authorized baseline update belong
+to its dedicated instrument commit. D4 and D5 remain pending; the full
+CPU bar and charter completion are not yet claimed. Measurements span
 2026-09-07 and 2026-09-08.**
 
 ## Property and boundaries
@@ -475,26 +477,393 @@ and all required inputs are accounted for. D1's Tier A semantic gates remain
 the applicable unchanged-HEAD snapshot; D2 changed only this record and its
 measurement artifacts. No D3 semantic edit has occurred.
 
-### Clarification pending for D3 acceptance
+### D3 acceptance clarification — resolved by the operator
 
-[AGENT] Reference 419 exposes a conflict between the charter's requirements:
-§0 requires every pre-arc 15-second completer to complete again, while D3
-requires the shard to print exactly `0 improvement(s)` against a baseline
-that records 419 as TIMEOUT. An asynchronous clarification asks whether new
-MATCH improvements may be accepted while keeping every baseline file
-unchanged, or whether the exact zero-improvement requirement governs. No
-answer or exception has been assumed. This does not prevent completing D2;
-it must be resolved or reported when assessing D3 acceptance.
+[USER 2026-09-08]: “"0 regression(s)" is the gate; the exact
+"0 improvement(s)" wording is withdrawn.” The operator directs that
+improvements be reported, and that every baseline TIMEOUT row which becomes
+MATCH at 15 seconds on HEAD-after be re-recorded in a **dedicated instrument
+commit separate from the code change**. Its message must list each such row
+with the measured HEAD-after `cpu_s` and its verbatim MATCH verdict line.
+No other baseline row may change. The operator reiterates that
+`sa_csmith_369` and `sa_csmith_371` must read MATCH and directs D3 to proceed.
 
-## D3–D5 — not started
+This explicit ruling resolves the pending asynchronous question and
+supersedes the charter's exact zero-improvement criterion and blanket
+baseline immutability only for those evidenced improvements in that separate
+commit. D1/D2 measurements and their baseline identities remain historical
+evidence. No baseline edit has yet occurred.
 
-No proven measure change, HEAD-after measurement, post-remedy 1.10 bar
-verdict, or full closing battery is claimed. The completed pre-arc table
-is D2 evidence above.
+## D3 — narrower context-search measure (complete)
+
+D2 committed as `30384f4a797e55f670f9ace4337befd58aa0f57c`. Before the
+first D3 semantic edit, D1's Tier A `test_unit.sh` snapshot was already green
+and the unchanged Lean binary still had SHA-256
+`32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6`.
+The [selected unit verdicts](2026-09-07_fuel-measure-cost-evidence/d3-untouched-unit-verdicts.txt)
+retain that required untouched snapshot.
+
+[AGENT] The candidate measure is the depth of possible calls in the
+`get_ctx`/`get_ctx_unseq_aux` mutual block. A state is an expression or an
+operand list. Sequence nodes visit only their left operand; bounds and
+annotations visit their child; an unsequenced node visits its list; a
+nonempty list visits its head and tail. Every other state has no children.
+Irreducibility tests and the nested-annotation stop case are conservatively
+ignored. The bound is one plus the
+maximum child bound, so each possible worker call strictly decreases it.
+It avoids sizing pure-expression payloads and sequence continuations.
+
+The first generic prototype, `CerbTagsWf.branchBound`, implemented that recursion with
+`WellFounded.fix`. The structural rank is used only by erased termination
+proofs. This generic helper lives in the permitted measure module because
+Core already imports that module through CerbMem, precluding a Core import
+in the opposite direction. The raw generated measure and the named proof
+measure share this same recursive definition; their call matches agree by
+`rfl` and their termination proofs by proof irrelevance. The prototype's
+[joint stability cone](2026-09-07_fuel-measure-cost-evidence/d3-prototype-axioms.txt)
+is within `[propext, Classical.choice, Quot.sound]`.
+
+The initial inline-lambda declaration was rejected by Lem's existing
+`FM-free` validator ([verbatim rejection](2026-09-07_fuel-measure-cost-evidence/d3-inline-measure-generation-rejection.txt)).
+The permitted module now supplies the named Lean term macro
+`CerbTagsWf.getCtxMeasure`, expanding to the same ordinary measure term
+where Core's AST types are available. Lem accepts the qualified name;
+there is no new Lem vocabulary, dependency change, or proof-trust extension.
+`make prelude-src lean-prelude-src` completed with that declaration.
+
+Only the two permitted `.lem` measure expressions changed. The surrounding
+historical C3 comment is preserved by the measure-expression-only fence;
+its whole-list-derived-size description refers to the previous measure.
+Only the permitted content-pin row in `fork_drift_manifest.txt` changed:
+
+- Before: `dd12a55bc776acb588a33b811d175ad66ffb190cec4ec39b8b61179f01059cd1`
+- After: `b80d535a24bb993a5bf6715979bb0cd2d6b0f65e40116149bbfbebc39e7da695`
+
+The first root build required fixing hygiene in the new macro: its AST type
+identifiers are intentionally resolved at the expansion site, and its list
+membership proof explicitly substitutes the child. A focused macro probe
+then passed. The next root build passed all generated obligations, and the
+[measure audit](2026-09-07_fuel-measure-cost-MeasureAudit.lean) printed the
+permitted cones for all eight relevant sufficiency theorems and both
+old/new equivalences.
+
+The first Tier A attempt exposed a compatibility requirement in the
+unchanged consumer exemplar: `FuelExemplar.round_done` at line 465 uses
+`rfl` to reduce the value context. The general well-founded bound did not
+reduce definitionally there. This is a consequence of the new measure,
+addressed inside the allowed measure module: `branchBoundEntry` returns
+its single frame directly when the possible-call list is empty, and is
+proved equal to `branchBound` for every state. The unchanged worker then
+reduces on `mk_value_e v` by `rfl`, as a focused probe verifies. No test
+statement, worker, or proof-budget option changed.
+
+The interrupted first Tier A run is not acceptance evidence: A1 failed;
+A2–A5 (including A4b/c) passed before cancellation during A6. Its source
+aggregate also changed because compact evidence was written during the
+run; the replacement run will freeze every tracked/untracked source file
+until completion. The first attempt's raw report and diagnostic are kept
+under `.tmp/fuel-measure-cost/`. No outside-fence gate failure is claimed;
+the measure-induced definitional issue is being repaired within the fence.
+
+The second Tier A attempt held source identity unchanged and passed all
+six unit executables, axiom checks, and the no-fuel-numerals gate. The
+fuel-forms selftest then rejected the two new wrappers in its unplanted
+comparison: separate macro pattern matches elaborate into distinct private
+matcher definitions, which are not unfolded at the gate's deliberately
+restricted `.reducible` transparency. A Meta probe confirmed `.reducible`
+comparison false and ordinary kernel definitional equality true. The run
+was cancelled after that failure; its report is retained as
+`.tmp/fuel-measure-cost/d3-fast-leaf/` and is not a pass.
+
+The measure macro now uses explicit `Sum.casesOn`, `generic_expr.casesOn`,
+`generic_expr_.casesOn`, and `List.casesOn` to inspect the same constructors.
+No private pattern matcher is introduced into the executable measure term.
+The proof's named next-call function uses the same eliminators. The
+[focused probe](2026-09-07_fuel-measure-cost-evidence/d3-cases-prototype.txt)
+checks joint stability, definitional leaf reduction, and equality of separate
+macro expansions at the gate's existing `.reducible` transparency. No gate
+source, comparison rule, obligation shape, or option was changed.
+
+The existing size-based stability lemma is retained. Two additional
+pointwise equivalence theorems compare the previous measure's worker with
+the new wrapper through a common sufficient fuel. The six environment-bound
+wrappers and their sufficiency obligations remain unchanged: D2 did not
+attribute the known regressions to those bounds.
+
+The regenerated fork-drift gate passed, verbatim:
+
+```text
+check_fork_content: OK — 76 source files content/mode-pinned
+check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 22 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+```
+
+The first passing candidate root build (including `fuel-exemplar-test`) passed
+381 jobs. The [actual audit cones](2026-09-07_fuel-measure-cost-evidence/d3-measure-axioms.txt)
+all stay within the permitted three. The [direct fuel-forms gate](2026-09-07_fuel-measure-cost-evidence/d3-fuel-forms.txt)
+passes with the unchanged census, verbatim:
+
+```text
+check_fuel_forms: forms partition OK (54 MEASURED + 13 ABSORBING + 8 ambient-reachable + 6 ambient-unreachable = 81 fuel'd workers)
+check_fuel_forms: OK (81 fuel'd workers: 54 MEASURED (obligation of the contract's shape incl. argument correspondence against the wrapper's body; every obligation + proof cone ⊆ the standard three; 7 of them under a hypothesis, each = a reviewed row of fuel_hypotheses.txt, both directions), 13 ABSORBING = kill at zero (the _zero lemma is the worker at literal 0 on its own binders = the monad's absorbing element, cone ⊆ the standard three; propagation NOT proved — lem TODO 13), 8 reachable-AMBIENT = the 8 rows of fuel_forms_pending.txt exactly, 6 ambient unreachable from the drive cone)
+```
+
+The [generated-C excerpt](2026-09-07_fuel-measure-cost-evidence/d3-compiled-bound.txt)
+shows that the recursive helper takes only `next` and the current state;
+its rank is never evaluated. The leaf entry returns the derived single
+frame directly. The complete replacement Tier A run passed ([verbatim runner verdicts](2026-09-07_fuel-measure-cost-evidence/d3-fast-verdicts.txt),
+[required gate lines](2026-09-07_fuel-measure-cost-evidence/d3-required-gate-verdicts.txt)):
+
+```text
+fast: passed; 13/13 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+```
+
+At this first-candidate checkpoint, runtime timing and the required
+15-second passes were still pending. Its Tier A pass was not a D5
+full-battery claim; the subsequent measurements and selected implementation
+are recorded below.
+
+### First passing candidate: ordinary repeats and remaining cost
+
+The explicit-eliminator candidate (Lean SHA-256
+`be1da899f7ad722dad3cf89ab7164eaf50162a024f2e452746ac2ae7d8c3cb2e`)
+is retained as a [source patch](2026-09-07_fuel-measure-cost-evidence/candidate1-measures.patch)
+against D2. Its root build and Tier A passed above. Two ordinary 90-second
+repetitions per input, using the actual D1 staged C files and each binary's
+own oracle bridge, all completed with equal full Defined-line multisets:
+[candidate TSV](2026-09-07_fuel-measure-cost-evidence/candidate1-after-90.tsv),
+[metadata](2026-09-07_fuel-measure-cost-evidence/candidate1-after-90.meta.txt),
+[verdicts](2026-09-07_fuel-measure-cost-evidence/candidate1-after-90.verdicts.txt),
+and a fresh check on the unchanged pre-arc binary
+[TSV](2026-09-07_fuel-measure-cost-evidence/current-pre-90.tsv),
+[metadata](2026-09-07_fuel-measure-cost-evidence/current-pre-90.meta.txt),
+[verdicts](2026-09-07_fuel-measure-cost-evidence/current-pre-90.verdicts.txt).
+
+| Input | Candidate CPU repeats (s) | Current pre-arc CPU repeats (s) | Derived ratio of means |
+|---|---|---|---:|
+| sa_csmith_369.c | 13.51 / 13.28 | 10.97 / 11.26 | 1.2051 |
+| sa_csmith_371.c | 11.66 / 11.17 | 9.18 / 9.33 | 1.2334 |
+| sa_csmith_419.c | 18.83 / 18.32 | 15.49 / 15.16 | 1.2121 |
+
+These are candidate measurements, not D3's 15-second lane verdicts or D4
+acceptance. The pre-arc repetitions are somewhat slower than D2's earlier
+ones; 419's original pre-arc 15-second MATCH remains evidenced by D2.
+Timing-table load, verbatim (candidate then current pre-arc):
+
+```text
+01:33:00 up 1 day, 10:08,  ? user,  load average: 2.07, 3.43, 6.34
+01:33:00 up 1 day, 10:08,  ? user,  load average: 2.07, 3.43, 6.34
+01:33:18 up 1 day, 10:09,  ? user,  load average: 2.91, 3.52, 6.31
+01:33:18 up 1 day, 10:09,  ? user,  load average: 2.91, 3.52, 6.31
+01:33:34 up 1 day, 10:09,  ? user,  load average: 4.40, 3.82, 6.36
+01:33:34 up 1 day, 10:09,  ? user,  load average: 4.40, 3.82, 6.36
+01:34:00 up 1 day, 10:09,  ? user,  load average: 5.62, 4.16, 6.40
+01:34:00 up 1 day, 10:09,  ? user,  load average: 5.62, 4.16, 6.40
+01:34:18 up 1 day, 10:10,  ? user,  load average: 5.37, 4.20, 6.37
+01:34:18 up 1 day, 10:10,  ? user,  load average: 5.37, 4.20, 6.37
+01:34:33 up 1 day, 10:10,  ? user,  load average: 5.13, 4.20, 6.33
+01:34:33 up 1 day, 10:10,  ? user,  load average: 5.13, 4.20, 6.33
+01:34:57 up 1 day, 10:10,  ? user,  load average: 4.75, 4.19, 6.27
+01:34:58 up 1 day, 10:10,  ? user,  load average: 4.75, 4.19, 6.27
+01:37:13 up 1 day, 10:13,  ? user,  load average: 4.77, 4.28, 6.01
+01:37:13 up 1 day, 10:13,  ? user,  load average: 4.77, 4.28, 6.01
+01:37:28 up 1 day, 10:13,  ? user,  load average: 4.37, 4.22, 5.96
+01:37:28 up 1 day, 10:13,  ? user,  load average: 4.37, 4.22, 5.96
+01:37:41 up 1 day, 10:13,  ? user,  load average: 4.31, 4.21, 5.94
+01:37:41 up 1 day, 10:13,  ? user,  load average: 4.31, 4.21, 5.94
+01:38:03 up 1 day, 10:13,  ? user,  load average: 4.62, 4.29, 5.92
+01:38:03 up 1 day, 10:13,  ? user,  load average: 4.62, 4.29, 5.92
+01:38:19 up 1 day, 10:14,  ? user,  load average: 4.55, 4.29, 5.89
+01:38:19 up 1 day, 10:14,  ? user,  load average: 4.55, 4.29, 5.89
+01:38:32 up 1 day, 10:14,  ? user,  load average: 4.43, 4.28, 5.86
+01:38:32 up 1 day, 10:14,  ? user,  load average: 4.43, 4.28, 5.86
+01:38:54 up 1 day, 10:14,  ? user,  load average: 4.38, 4.28, 5.83
+01:38:54 up 1 day, 10:14,  ? user,  load average: 4.38, 4.28, 5.83
+```
+
+The [369 profile](2026-09-07_fuel-measure-cost-evidence/candidate1-sa_csmith_369.profile.txt)
+and [371 profile](2026-09-07_fuel-measure-cost-evidence/candidate1-sa_csmith_371.profile.txt)
+use the same checked CPU-stack sampler, on each candidate run's own captured
+bridge, at a 10,000-microsecond CPU interval. Both exit 0 and agree with the
+ordinary oracle's full Defined multiset. Their metadata retains commands,
+identities and start/end uptime. The [after-profile classifier](2026-09-07_fuel-measure-cost-evidence/analyze-after-cpu-stacks.py)
+separates the new generic context bound from the tag-environment group;
+the D2 analyzer remains unchanged.
+
+Derived inclusive shares: the new context bound occupies 10.85% (148/1364
+samples) on 369 and 10.48% (120/1145) on 371. Other expression measures
+occupy 3.15% / 2.53%; environment bounds 0.07% / 0.09%; all measure work
+14.08% / 13.10%. As before, stack truncation and inlining limit attribution;
+profiled CPU is never used in a ratio.
+
+[AGENT] The candidate removed the dominant full-arena traversal, but its
+new bound still incurs measurable traversal, allocation and higher-order
+call costs. Before accepting that remaining cost, the next candidate adds
+`@[inline]` only to `branchBound` and `branchBoundEntry`, exposing the known
+visitor to the compiler's existing well-founded-recursion specialization.
+The numeric bound, term expansion, and proof statements are unchanged.
+The inlined candidate built successfully, but ordinary repeats showed no
+clear benefit: Lean CPU 369 14.26 / 13.09 s, 371 11.56 / 11.11 s,
+419 18.06 / 18.89 s. All six full Defined-line multisets agreed with
+the oracle; identities remained unchanged. See [timings](2026-09-07_fuel-measure-cost-evidence/candidate2-inline-90.tsv),
+[commands and load](2026-09-07_fuel-measure-cost-evidence/candidate2-inline-90.meta.txt),
+and [verdicts](2026-09-07_fuel-measure-cost-evidence/candidate2-inline-90.verdicts.txt).
+Generated C still constructed child lists and used the fold's temporary array.
+
+### Direct computation of the context bound
+
+[AGENT] The next candidate fuses the possible-child traversal and maximum
+calculation. `callBound` supplies structurally smaller recursive results to
+an explicit AST step; that step returns one frame plus the child's bound,
+or one plus the maximum of head and tail for an operand list. Its `sizeOf`
+rank occurs only in termination proofs. `callBoundEntry` unrolls one step
+to preserve definitional reduction on value leaves. The executable measure
+allocates no possible-child list; `getCtxNext` remains only a proof specification.
+The [prototype](2026-09-07_fuel-measure-cost-evidence/d3-fused-prototype.txt)
+passed the joint worker stability proof, value-leaf definitional reduction,
+and equality of separate macro expansions at `.reducible` transparency.
+The integrated build, measurements and final D3 acceptance follow below.
+
+The integrated direct-bound candidate built all 381 jobs, including
+`fuel-exemplar-test` ([build](2026-09-07_fuel-measure-cost-evidence/d3-fused-build.txt)).
+The [actual sufficiency audit](2026-09-07_fuel-measure-cost-evidence/d3-fused-axioms.txt)
+checks both generated wrappers against the named bound by `rfl`, checks
+value-context reduction, and prints all eight obligations plus both old/new
+result equivalences. Every cone is contained in the standard three.
+The [direct fuel-forms gate](2026-09-07_fuel-measure-cost-evidence/d3-fused-fuel-forms.txt)
+passes with 81/54/13/8/6 and seven hypothesis-carrying rows. The old
+size-based joint stability lemma is byte-identical to D2. Only source
+`.lem` lines 1527/1528 differ; the authorized content pin remains
+`b80d535a24bb993a5bf6715979bb0cd2d6b0f65e40116149bbfbebc39e7da695`.
+
+The executable SHA-256 is
+`359cf998c422ba3abb1598b57a94187a69071a9f3c59ef8ec365aa13296c42bb`.
+[Ordinary repeats](2026-09-07_fuel-measure-cost-evidence/candidate3-fused-90.tsv),
+[commands, load and identities](2026-09-07_fuel-measure-cost-evidence/candidate3-fused-90.meta.txt),
+and [full Defined multiset verdicts](2026-09-07_fuel-measure-cost-evidence/candidate3-fused-90.verdicts.txt):
+
+| Input | Direct-bound CPU repeats (s) | Current pre-arc repeats (s) | Derived ratio of means |
+|---|---|---|---:|
+| sa_csmith_369.c | 11.70 / 12.19 | 10.97 / 11.26 | 1.0747 |
+| sa_csmith_371.c | 9.97 / 10.08 | 9.18 / 9.33 | 1.0832 |
+| sa_csmith_419.c | 15.85 / 15.83 | 15.49 / 15.16 | 1.0336 |
+
+These are 90-second ordinary measurements, not 15-second lane verdicts.
+All six oracle/Lean pairs completed with identical full Defined-line
+multisets. They establish a cheaper implementation than candidate 1,
+subject to the recorded changing box load; D4 must still check every
+required per-program ratio and repeat deciding rows.
+
+The [369 profile](2026-09-07_fuel-measure-cost-evidence/candidate3-sa_csmith_369.profile.txt)
+and [371 profile](2026-09-07_fuel-measure-cost-evidence/candidate3-sa_csmith_371.profile.txt)
+use the checked sampler and each run's own bridge; both complete and
+agree with the oracle's full Defined multiset. Derived inclusive shares:
+context-bound recursion 1.99% (24/1204 samples) / 1.81% (18/994),
+all measures 4.32% / 4.63%, remaining work 95.68% / 95.37%.
+The [classifier](2026-09-07_fuel-measure-cost-evidence/analyze-fused-cpu-stacks.py)
+recognizes the compiler's specialized well-founded context-bound symbol.
+The [generated C](2026-09-07_fuel-measure-cost-evidence/d3-fused-compiled-bound.txt)
+shows 278 lines for that recursion, no rank traversal, child-list fold,
+array or indirect call. Seven constructor-allocation sites construct or
+reuse the Sum state. Root-step work inlined into the wrapper cannot be
+separated by this sampler; optimized frames and the 96-frame stack limit
+still constrain attribution. Profiled CPU is never used for a ratio.
+
+[AGENT] This is the selected D3 implementation. The complete final Tier A
+run passed with source identity unchanged ([runner verdicts](2026-09-07_fuel-measure-cost-evidence/d3-fused-fast-verdicts.txt),
+[required gate lines](2026-09-07_fuel-measure-cost-evidence/d3-fused-required-gate-verdicts.txt)):
+
+```text
+fast: passed; 13/13 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+```
+
+### D3 acceptance and the separate instrument commit
+
+The selected source was committed as `6ce040f0614f762e729633a955bcb002dce693ba` only after all
+D3 gates were green. The two timing passes measured that same uncommitted
+D3 source while Git HEAD was still D2 (`30384f4a7`); their original
+metadata is preserved, including unchanged source/engine identities.
+No rebuild occurred between the full corpus and the shard check.
+The standalone [audit](2026-09-07_fuel-measure-cost-MeasureAudit.lean)
+belongs to the code commit. These timing records and the permitted baseline
+edit belong to the following, dedicated instrument commit.
+
+- Full HEAD-after: [3,338 engine rows](2026-09-07_fuel-measure-cost-evidence/head-after-15.tsv)
+  for all 1,669 inputs; [metadata](2026-09-07_fuel-measure-cost-evidence/head-after-15.meta.txt).
+- Required `test_csmith_corpus.sh --check-baseline --shard 2/6`:
+  [558 engine rows](2026-09-07_fuel-measure-cost-evidence/head-after-15-shard2.tsv)
+  for all 279 selected inputs; [metadata](2026-09-07_fuel-measure-cost-evidence/head-after-15-shard2.meta.txt).
+  D1's unchanged, non-gating cleanup-retention instrument invokes the
+  unmodified shard command and retains its rusage; it does not alter the gate.
+
+Both run at `TIMEOUT_SECS=15`, `SKIP_BUILD=1`, under the 48 GiB cap.
+The whole-corpus pass uses the charter's explicit long-run exception;
+the shard is additionally bounded by the 3,300-second outer timeout.
+Every exported status was checked against the lane's displayed classification
+and retained status file; neither timing run changed its input, script,
+baseline or binary identities. Timing-table load and timestamps, verbatim:
+
+```text
+Full corpus
+start_utc=2026-09-08T02:14:28Z
+start_uptime=02:14:28 up 1 day, 10:50,  ? user,  load average: 6.55, 5.51, 5.68
+end_utc=2026-09-08T04:34:32Z
+end_uptime=04:34:32 up 1 day, 13:10,  ? user,  load average: 1.90, 1.89, 1.49
+Shard 2/6
+start_utc=2026-09-08T04:34:59Z
+start_uptime=04:34:59 up 1 day, 13:10,  ? user,  load average: 1.38, 1.77, 1.46
+end_utc=2026-09-08T05:08:01Z
+end_uptime=05:08:01 up 1 day, 13:43,  ? user,  load average: 6.96, 6.69, 4.55
+```
+
+[Gate verdicts](2026-09-07_fuel-measure-cost-evidence/d3-csmith-verdicts.txt),
+verbatim (full corpus, then shard 2/6):
+
+```text
+SUMMARY: total=1669 match=1162 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=8 hang=0 cerb_skip=499 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 1 improvement(s)
+SUMMARY: total=279 match=159 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=3 hang=0 cerb_skip=117 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+```
+
+Derived status comparison against D1: exactly three TIMEOUT → MATCH rows;
+all other 1,666 statuses are identical. No row worsened. The two required
+rows were already MATCH in the baseline and are **not** re-recorded there.
+Measured Lean CPU, from the ordinary 15-second lane rusage:
+
+| Input | Full HEAD-after cpu_s / status | Shard 2/6 cpu_s / status | Baseline action |
+|---|---|---|---|
+| sa_csmith_369.c | 12.07 / MATCH | 11.48 / MATCH | remains MATCH, unchanged |
+| sa_csmith_371.c | 10.06 / MATCH | 9.64 / MATCH | remains MATCH, unchanged |
+| sia_csmith_169.c | 14.93 / MATCH | outside the shard | TIMEOUT → MATCH |
+
+The **only** baseline edit is `sia_csmith_169.c TIMEOUT` →
+`sia_csmith_169.c MATCH`. Its full-run wall time was 14.94 s and exit 0.
+The dedicated instrument commit message contains each of the three restored
+rows above, its measured full HEAD-after `cpu_s`, and its **entire verbatim
+MATCH verdict line**, as the operator directed. Those long lines are kept
+in that commit message rather than duplicated in this compact evidence tree.
+Verbatim unit output, generated-C excerpts and the saved candidate patch retain
+their original trailing spaces; the authored-file whitespace check excludes
+only those four captures. No source whitespace or repository gate is changed.
+The baseline SHA-256 changes from
+`f809543d2f7859b6cb09b354274f974db8d548edff0aa40db7a3ed5a647eef10` to
+`c284806aeff14fa983964329c59e9d8f761728f5361d4d39c3e99c626e76954b`.
+A byte comparison confirms that single data-line replacement and no other
+baseline changes; the updated baseline equals all 1,669 full-run statuses.
+
+`sa_csmith_419.c` remains TIMEOUT in both HEAD-after 15-second passes,
+and its baseline row is unchanged. Its earlier pre-arc MATCH and the
+90-second ordinary completions remain part of D4's CPU/budget assessment;
+D3 acceptance does not claim that the full charter property is already met.
+D4 and the D5 full battery remain pending. No merge or push.
 
 ## What has not been done
 
-No semantics, measure, theorem, worker, `_zero` lemma, generated source,
-register, baseline, pin, or opam change. The two authorized reference worktrees have been created for D2. No merge or push. The only intended source changes so far are the
-new instrument, its NON-GATING reporting-tier documentation, and this record
-and its compact evidence. No stop rule has fired.
+No worker, `_zero` lemma, generated-file hand edit, register, pin,
+opam, or non-measure `.lem` change. No baseline change except the explicitly
+authorized, separately recorded `sia_csmith_169.c` improvement. The two authorized reference worktrees
+remain available. No merge or push. No stop rule has fired.

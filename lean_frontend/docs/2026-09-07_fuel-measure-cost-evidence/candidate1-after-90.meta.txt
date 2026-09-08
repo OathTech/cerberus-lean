@@ -1,0 +1,49 @@
+start 2026-09-08T01:33:00.669354+00:00
+01:33:00 up 1 day, 10:08,  ? user,  load average: 2.07, 3.43, 6.34
+head=30384f4a797e55f670f9ace4337befd58aa0f57c
+CERB_MEM_MAX=48G
+be1da899f7ad722dad3cf89ab7164eaf50162a024f2e452746ac2ae7d8c3cb2e  lean_frontend/.lake/build/bin/cerberus-lean
+61c16c4d1f33612c8d5ca415bf2e39e6076adfa3b259b8bf16bd08f4ddb2a89a  _build/default/backend/driver/main.exe
+b80d535a24bb993a5bf6715979bb0cd2d6b0f65e40116149bbfbebc39e7da695  frontend/model/core_reduction.lem
+78f789cbfb3e8ce6794b1c87b96d1c546a02ef9302c6b90538670d1e98dae4f2  lean_frontend/CerbTagsWf.lean
+3ea5e62227be5460dc825378cdf3bb7bed38edf495c7e60459c3f099de43545e  lean_frontend/Core_reduction_lemMeasureProofs.lean
+50c022205be0f372dd7f9b2ba5fc7183402c1a6f312bcfbc53d2f154d9c9b50c  tests/mem-scale-probes/measure.sh
+f809543d2f7859b6cb09b354274f974db8d548edff0aa40db7a3ed5a647eef10  scripts/exec_csmith_corpus_baseline.txt
+input_sha256=7a0700e6680d8ef5a665cb098d8f573d0822be17a6d16eda93fb5d800b6838d6  /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/scripts/csmith-corpus.9bBV9Gnhn4/sa_csmith_369.c
+repeat=1 input=sa_csmith_369.c 2026-09-08T01:33:00.672837+00:00
+01:33:00 up 1 day, 10:08,  ? user,  load average: 2.07, 3.43, 6.34
+command=['tests/mem-scale-probes/measure.sh', '--nolibc', '--timeout', '90', '--engines', 'oracle,lean-exh', '--outdir', '/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/fuel-measure-cost/head-known-after-90/repeat1-369', '/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/scripts/csmith-corpus.9bBV9Gnhn4/sa_csmith_369.c']
+completed repeat=1 input=sa_csmith_369.c 2026-09-08T01:33:18.894042+00:00
+01:33:18 up 1 day, 10:09,  ? user,  load average: 2.91, 3.52, 6.31
+input_sha256=aead266ced87eada282ce25b47cf641bc85f5c0d4ab784ab50b8c42b6148491d  /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/scripts/csmith-corpus.9bBV9Gnhn4/sa_csmith_371.c
+repeat=1 input=sa_csmith_371.c 2026-09-08T01:33:18.895677+00:00
+01:33:18 up 1 day, 10:09,  ? user,  load average: 2.91, 3.52, 6.31
+command=['tests/mem-scale-probes/measure.sh', '--nolibc', '--timeout', '90', '--engines', 'oracle,lean-exh', '--outdir', '/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/fuel-measure-cost/head-known-after-90/repeat1-371', '/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/scripts/csmith-corpus.9bBV9Gnhn4/sa_csmith_371.c']
+completed repeat=1 input=sa_csmith_371.c 2026-09-08T01:33:34.818826+00:00
+01:33:34 up 1 day, 10:09,  ? user,  load average: 4.40, 3.82, 6.36
+input_sha256=21d51300895e7d2849781ccd35a2187be94ae7dc75860383144fc725ef02d515  /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/scripts/csmith-corpus.9bBV9Gnhn4/sa_csmith_419.c
+repeat=1 input=sa_csmith_419.c 2026-09-08T01:33:34.820433+00:00
+01:33:34 up 1 day, 10:09,  ? user,  load average: 4.40, 3.82, 6.36
+command=['tests/mem-scale-probes/measure.sh', '--nolibc', '--timeout', '90', '--engines', 'oracle,lean-exh', '--outdir', '/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/fuel-measure-cost/head-known-after-90/repeat1-419', '/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/scripts/csmith-corpus.9bBV9Gnhn4/sa_csmith_419.c']
+completed repeat=1 input=sa_csmith_419.c 2026-09-08T01:34:00.122712+00:00
+01:34:00 up 1 day, 10:09,  ? user,  load average: 5.62, 4.16, 6.40
+input_sha256=7a0700e6680d8ef5a665cb098d8f573d0822be17a6d16eda93fb5d800b6838d6  /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/scripts/csmith-corpus.9bBV9Gnhn4/sa_csmith_369.c
+repeat=2 input=sa_csmith_369.c 2026-09-08T01:34:00.124323+00:00
+01:34:00 up 1 day, 10:09,  ? user,  load average: 5.62, 4.16, 6.40
+command=['tests/mem-scale-probes/measure.sh', '--nolibc', '--timeout', '90', '--engines', 'oracle,lean-exh', '--outdir', '/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/fuel-measure-cost/head-known-after-90/repeat2-369', '/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/scripts/csmith-corpus.9bBV9Gnhn4/sa_csmith_369.c']
+completed repeat=2 input=sa_csmith_369.c 2026-09-08T01:34:18.181024+00:00
+01:34:18 up 1 day, 10:10,  ? user,  load average: 5.37, 4.20, 6.37
+input_sha256=aead266ced87eada282ce25b47cf641bc85f5c0d4ab784ab50b8c42b6148491d  /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/scripts/csmith-corpus.9bBV9Gnhn4/sa_csmith_371.c
+repeat=2 input=sa_csmith_371.c 2026-09-08T01:34:18.182544+00:00
+01:34:18 up 1 day, 10:10,  ? user,  load average: 5.37, 4.20, 6.37
+command=['tests/mem-scale-probes/measure.sh', '--nolibc', '--timeout', '90', '--engines', 'oracle,lean-exh', '--outdir', '/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/fuel-measure-cost/head-known-after-90/repeat2-371', '/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/scripts/csmith-corpus.9bBV9Gnhn4/sa_csmith_371.c']
+completed repeat=2 input=sa_csmith_371.c 2026-09-08T01:34:33.378366+00:00
+01:34:33 up 1 day, 10:10,  ? user,  load average: 5.13, 4.20, 6.33
+input_sha256=21d51300895e7d2849781ccd35a2187be94ae7dc75860383144fc725ef02d515  /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/scripts/csmith-corpus.9bBV9Gnhn4/sa_csmith_419.c
+repeat=2 input=sa_csmith_419.c 2026-09-08T01:34:33.379787+00:00
+01:34:33 up 1 day, 10:10,  ? user,  load average: 5.13, 4.20, 6.33
+command=['tests/mem-scale-probes/measure.sh', '--nolibc', '--timeout', '90', '--engines', 'oracle,lean-exh', '--outdir', '/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/fuel-measure-cost/head-known-after-90/repeat2-419', '/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/scripts/csmith-corpus.9bBV9Gnhn4/sa_csmith_419.c']
+completed repeat=2 input=sa_csmith_419.c 2026-09-08T01:34:57.932361+00:00
+01:34:57 up 1 day, 10:10,  ? user,  load average: 4.75, 4.19, 6.27
+end; input/binary/source identities unchanged 2026-09-08T01:34:58.081015+00:00
+01:34:58 up 1 day, 10:10,  ? user,  load average: 4.75, 4.19, 6.27

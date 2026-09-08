@@ -1,0 +1,5 @@
+'FuelMeasureCostFused.callBoundEntry_eq' does not depend on any axioms
+'FuelMeasureCostFused.getCtxStep' depends on axioms: [propext, Quot.sound]
+'FuelMeasureCostFused.get_ctx_search_stable_aux' depends on axioms: [propext, Classical.choice, Quot.sound]
+'FuelMeasureCostFused.first' depends on axioms: [propext, Quot.sound]
+Separate macro expansions agree at reducible transparency: true

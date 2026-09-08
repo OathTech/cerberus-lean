@@ -1,0 +1,12 @@
+2026-09-08T01:39:46.686963+00:00
+01:39:46 up 1 day, 10:15,  ? user,  load average: 3.14, 3.97, 5.64
+be1da899f7ad722dad3cf89ab7164eaf50162a024f2e452746ac2ae7d8c3cb2e  /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/lean_frontend/.lake/build/bin/cerberus-lean
+5ce56db1549033c33e5aa92e0b9ea52c59fedd3ebd26f999566f120e643f25ad  /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/fuel-measure-cost/d2-profile/sampler.so
+ec46310e4c6f7e0e33ba135b74da2b955c608e6e2ad4f3b75539de48ae9eeeed  /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/lean_frontend/docs/2026-09-07_fuel-measure-cost-evidence/analyze-after-cpu-stacks.py
+f2a36e1742d2d33f3ee0e466b9fcd52aa8ca6db7b6738cb9bb0789053fa5c79a  /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/fuel-measure-cost/head-known-after-90/repeat1-369/sa_csmith_369.json
+command=['/usr/bin/time', '-v', '-o', '/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/fuel-measure-cost/d3-profile/sa_csmith_369.time', 'timeout', '90', 'env', 'LEAN_ABORT_ON_PANIC=1', 'LD_PRELOAD=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/fuel-measure-cost/d2-profile/sampler.so', 'FC_SAMPLE_FILE=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/fuel-measure-cost/d3-profile/sa_csmith_369.samples', 'FC_SAMPLE_US=10000', '/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/lean_frontend/.lake/build/bin/cerberus-lean', '--batch', '/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/fuel-measure-cost/head-known-after-90/repeat1-369/sa_csmith_369.json']
+exit=0
+full Defined-line MULTISETS equal; derived tally={'Defined {value: "Specified(57)", stdout: "", stderr: "", blocked: "false"}': 350}
+2026-09-08T01:40:00.601029+00:00
+01:40:00 up 1 day, 10:15,  ? user,  load average: 3.27, 3.95, 5.61
+trace_sha256=648854ccb57494f1ff32cc71e474c7d72661a88abfd3d10d4ebd67671436bc5d
