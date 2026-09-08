@@ -1091,3 +1091,183 @@ opam, or non-measure `.lem` change. No baseline change except the explicitly
 authorized, separately recorded `sia_csmith_169.c` improvement. The two authorized reference worktrees
 remain available. No merge or push. The outside-fence required-gate stop
 rule fired at D5 B10.1; no subsequent build, lane, or scope expansion was performed.
+
+## Landing improvements (orchestrator review, 2026-09-08)
+
+[AGENT] Codex's seven commits (charter, D1, D2, D3 `6ce040f06`, the baseline
+re-record `5f14f0702`, D4, the D5 stop) were rebased onto the mainline
+`6ccb607e0` (the fuel-pending close-out: `CerbCoreShape.lean`, `hack`/
+`to_pure`/`to_pures` measured, census 57/13/5/6) as `arc/fuel-measure-cost-land`
+(worktree `worktrees/cerberus-lean-arc/fuel-measure-cost-land`; the original
+`arc/fuel-measure-cost` is kept as the record). The orchestrator's review
+[AGENT] found two things that had to change before merge; a worker [AGENT]
+implemented them here. Nothing in this section is an operator ruling.
+
+### F1 — the measure is a NAMED definition, not a macro
+
+**Finding.** D3's inline-lambda measure "was rejected by Lem's existing
+FM-free validator", so D3 wrapped the term in a Lean
+`macro "CerbTagsWf.getCtxMeasure"` (`lean_frontend/CerbTagsWf.lean`) whose
+qualified NAME the validator accepts without seeing the lambda inside;
+`frontend/model/core_reduction.lem:1527-1528` read
+`` `CerbTagsWf.getCtxMeasure (Sum.inl g)` `` / `` `CerbTagsWf.getCtxMeasure (Sum.inr lemTail)` ``.
+Hiding code behind a name to pass a generation-time check evades the
+validator's intent: FM-free admits a measure that names the function's
+PARAMETERS, `lemSize` of a parameter, and QUALIFIED HELPER DEFINITIONS — in
+the validator's own words, "a hand-written structural size function `Ns.size x`
+in a Lean module the generated module imports via `declare {lean} extra_import`"
+(lem-lean `src/lean_backend.ml:706-716`, `:949`; the FM-free row of lem-lean's
+`2026-09-04_fuel-measure-record.md`) — the same class the C4 pre-merge audit
+closed for `_root_`-headed measures (M1). D3 chose the macro because its fence
+allowed no new seam file and `CerbTagsWf.lean` cannot import `Core` (a cycle
+through `CerbMem`). The landing is not so fenced.
+
+**What moved where.** New seam `lean_frontend/CerbCoreMeasure.lean` (modelled
+on `CerbCoreShape.lean`: header with the mechanism and the cites,
+`import Core` + `import Core_run_aux` (`core_run_annotation`,
+core_run_aux.lem:18), `set_option autoImplicit false`, namespace
+`CerbCoreMeasure`). It now holds, as ORDINARY DEFINITIONS: `GetCtxState`
+(the `Sum` of an expression and an operand list), the measure `getCtxBound :
+GetCtxState → Nat` over the mutual `exprBound`/`nodeBound`/`listBound`, the
+proof specification `getCtxNext`, and the lemmas `getCtxBound_pos`,
+`getCtxBound_child_lt` — previously `Core_reduction_lemMeasureProofs.lean:173-260`
+(`getCtxStep`/`getCtxBound` over `CerbTagsWf.callBoundEntry`). `getCtxStep` and
+`getCtxBound_eq_step` are gone: the structural equations Lean derives
+(`exprBound.eq_1`, `nodeBound.eq_1..6`, `listBound.eq_1..2`) take their place.
+`Core_reduction_lemMeasureProofs.lean` imports the seam (`open CerbCoreMeasure`);
+`get_ctx_search_stable_aux` and both obligations are textually unchanged, as
+are the C3 size-based lemma and the two `_previous_measure_eq` equivalences.
+`CerbTagsWf.lean`: the macro and `callBound`/`callBoundEntry` (+ `_eq`) are
+DELETED — nothing else used them; the file is byte-identical to the mainline
+`6ccb607e0`. The docs audit probe
+`2026-09-07_fuel-measure-cost-MeasureAudit.lean` names the new constants.
+
+**Structural, not well-founded — the outcome, verbatim.** The recursion has
+exactly D3's arms (`Ewseq`/`Esseq` → the LEFT operand, `Ebound`/`Eannot` →
+the child, `Eunseq` → the list; a nonempty list → `max` of head and tail;
+everything else → 1; `+1` per frame) and was written as a plain `mutual`
+block over the nested inductive `generic_expr`/`generic_expr_`/`List generic_expr`.
+Lean 4.32.2 accepted it without a `termination_by` clause: the probe
+(`scripts/lean_probe.sh CerbCoreMeasure.lean`) exited 0 with no diagnostics,
+and on a throwaway copy:
+
+```text
+def CerbCoreMeasure.exprBound : generic_expr core_run_annotation Unit sym → Nat :=
+fun x =>
+  x.brecOn CerbCoreMeasure.nodeBound._f CerbCoreMeasure.exprBound._f (fun t f => PUnit.unit)
+    CerbCoreMeasure.listBound._f fun t f => PUnit.unit
+```
+
+— `brecOn`, no `WellFounded.fix`, no erased rank, no unrolled entry frame; the
+value-context reduction D3 needed a one-frame unroll for holds by `rfl`
+(`example (v : value) : getCtxBound (.inl (mk_value_e v)) = 1 := rfl` accepted;
+`FuelExemplar.round_done` builds unchanged). The compiler emits a direct
+recursion. Cones (the audit probe, verbatim):
+
+```text
+'CerbCoreMeasure.getCtxBound' depends on axioms: [propext]
+'CerbCoreMeasure.getCtxBound_pos' depends on axioms: [propext, Quot.sound]
+'CerbCoreMeasure.getCtxBound_child_lt' depends on axioms: [propext, Quot.sound]
+'Core_reduction_lemMeasureProofs.get_ctx_search_stable_aux' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Core_reduction_lemMeasureProofs.get_ctx_measure_sufficient' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Core_reduction_lemMeasureProofs.get_ctx_unseq_aux_measure_sufficient' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Core_reduction_lemMeasureProofs.get_ctx_previous_measure_eq' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Core_reduction_lemMeasureProofs.get_ctx_unseq_aux_previous_measure_eq' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+```
+
+**The `.lem` lines (Lean-only declares + comments; no body/type edit).**
+`frontend/model/core_reduction.lem` gains `declare {lean} extra_import
+`CerbCoreMeasure`` after `import Core_run` (as `driver.lem`/`core_aux.lem`
+did for `CerbCoreShape` at the close-out); the stale C3 comment above the
+measures (still describing "the derived size of the WHOLE list") is replaced
+by one describing the call-depth bound; and the two measure expressions are
+the ONLY other change:
+
+| | `get_ctx` | `get_ctx_unseq_aux` |
+|---|---|---|
+| C3 (`928aa1e76`) | `` `lemSize g + 1` `` | `` `generic_expr_.lemSize_aux2 lemTail + 1` `` |
+| D3 (`6ce040f06`) | `` `CerbTagsWf.getCtxMeasure (Sum.inl g)` `` | `` `CerbTagsWf.getCtxMeasure (Sum.inr lemTail)` `` |
+| landed | `` `CerbCoreMeasure.getCtxBound (Sum.inl g)` `` | `` `CerbCoreMeasure.getCtxBound (Sum.inr lemTail)` `` |
+
+`scripts/ce make prelude-src lean-prelude-src` regenerated both trees (lem
+accepted the qualified-definition form; the OCaml lem-sync `gen` stamp
+`295e4f82…` is unchanged from the close-out, so the generated OCaml is
+byte-identical). The generated wrapper reads
+`def get_ctx g := get_ctx_lemFuel (CerbCoreMeasure.getCtxBound (Sum.inl g)) g`
+and the obligation `lemMeasureLe : (CerbCoreMeasure.getCtxBound (Sum.inl g)) ≤ lemFuel`
+— one constant on both sides, so the fuel-forms gate's syntactic match holds
+(rows below). The content pin: `scripts/fork_drift_manifest.txt`'s
+`core_reduction.lem` row moved
+`b80d535a24bb993a5bf6715979bb0cd2d6b0f65e40116149bbfbebc39e7da695` →
+`7f61895fe9f448d6b28d0290e9982a7dc4213508e23b9fd4c71f04a6828de5a7`, as a
+single-row edit plus a header note. The wholesale `--refresh` was tried once
+and discarded: it strips the manifest's documented header and reorders rows
+(the pitfall its own arc-14 S1 F6 note records); its OK line served only to
+confirm every `[expected-*]` hash unchanged. Registration: `lakefile.toml`
+root + `handwritten_copy.manifest`; the seam has no `unsafe`/`opaque`/`extern`,
+so no boundary-pin row.
+
+Gate lines at the F1 commit `a3cb44c1c` (env sourced; capped 48G; box idle,
+`07:15:01 up 1 day, 15:50,  ? user,  load average: 2.50, 0.89, 0.45`), verbatim:
+
+```text
+check_fork_content: OK — 76 source files content/mode-pinned
+check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 22 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+Build completed successfully (382 jobs).
+Total: 6 passed, 0 failed
+check_fuel_forms: forms partition OK (57 MEASURED + 13 ABSORBING + 5 ambient-reachable + 6 ambient-unreachable = 81 fuel'd workers)
+check_fuel_forms: OK (81 fuel'd workers: 57 MEASURED (obligation of the contract's shape incl. argument correspondence against the wrapper's body; every obligation + proof cone ⊆ the standard three; 10 of them under a hypothesis, each = a reviewed row of fuel_hypotheses.txt, both directions), 13 ABSORBING = kill at zero (the _zero lemma is the worker at literal 0 on its own binders = the monad's absorbing element, cone ⊆ the standard three; propagation NOT proved — lem TODO 13), 5 reachable-AMBIENT = the 5 rows of fuel_forms_pending.txt exactly, 6 ambient unreachable from the drive cone)
+FUEL_FORM	get_ctx_lemFuel	MEASURED	yes/-	obligation=get_ctx_measure_sufficient axioms=ok proof=Core_reduction_lemMeasureProofs.get_ctx_measure_sufficient:ok args=positional measure=syntactic
+FUEL_FORM	get_ctx_unseq_aux_lemFuel	MEASURED	yes/-	obligation=get_ctx_unseq_aux_measure_sufficient axioms=ok proof=Core_reduction_lemMeasureProofs.get_ctx_unseq_aux_measure_sufficient:ok args=positional measure=syntactic
+check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)
+check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=166 REACHABLE=48 UNKNOWN=19; every row sealed; tally line consistent)
+```
+
+The census is UNCHANGED from the mainline (57 MEASURED, 10 under a
+hypothesis / 13 / 5 / 6); this branch adds no classification change. The
+four `test_exec.sh` baseline lanes at the same commit, verbatim:
+
+```text
+SUMMARY: total=106 match=85 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=3 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+SUMMARY: total=212 match=183 ub_match=16 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=13 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+SUMMARY: total=90 match=66 ub_match=20 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=4 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+SUMMARY: total=69 match=69 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+```
+
+(tests/minimal, coverage, debug, float in that order; each lane rc 0. A first
+attempt at lanes 2–4 failed with `Error: baseline file not found:
+scripts/exec_coverage_baseline.txt tests/coverage` — the worker's zsh loop had
+passed the flag and directory as ONE argument; an invocation error, not a lane
+verdict; the lanes were re-run correctly.) The cost check and the shard are
+recorded under "Final-head gates" below.
+
+### F2 — the `sia_csmith_169.c` re-record is REVERTED
+
+D3's dedicated instrument commit `5f14f0702` flipped
+`scripts/exec_csmith_corpus_baseline.txt` row `sia_csmith_169.c TIMEOUT` →
+`MATCH` on a completion of **14.93 s CPU / 14.94 s wall against the lane's 15 s
+budget** (full HEAD-after pass; verdict line `[832/1669] MATCH sia_csmith_169:
+VAL:{value: "Specified(52)", stdout: "", stderr: "", blocked: "false"}|…` — the
+entire line is in that commit's message). That margin is inside load noise:
+a MATCH pin that times out under load is a FATAL regression of the lane,
+while a TIMEOUT pin that completes is a non-fatal reported improvement. The
+landing reverts that one line (row back to `TIMEOUT`); the baseline file's
+SHA-256 returns from `c284806aeff14fa983964329c59e9d8f761728f5361d4d39c3e99c626e76954b`
+to `f809543d2f7859b6cb09b354274f974db8d548edff0aa40db7a3ed5a647eef10` — exactly
+the pre-re-record value D3 recorded — and is byte-identical to the mainline
+`6ccb607e0` baseline (9 `TIMEOUT` data rows). No other baseline row changes.
+The completion evidence stays here as a class-(b) row: **`sia_csmith_169.c`
+completes at 14.94 s wall — no margin; not re-recorded**; the operator's D3
+ruling on re-recording evidenced improvements stands, applied with the margin
+this lane's `TIMEOUT_SECS=15` wall-clock budget requires (the LADDER load
+caveat on the csmith row is the standing note). The D3 acceptance table above
+should be read with its `sia_csmith_169.c` row's "Baseline action" as
+"TIMEOUT → MATCH, reverted at landing".
