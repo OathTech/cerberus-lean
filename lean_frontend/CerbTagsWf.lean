@@ -203,4 +203,79 @@ def membersBound (m : CerbTags.TagDefsMap) (members : List Member) : Nat :=
 def offsetsofBound (ambient tagDefs : CerbTags.TagDefsMap) : Nat :=
   defsWeight ambient + defsWeight tagDefs + defsWeight tagDefs + 3
 
+/-! ## Bounds over the possible recursive calls of a worker
+
+    Context search imports this helper through CerbMem; importing Core here
+    would create a cycle. The step computes one frame plus the maximum bound
+    of any possible recursive call, directly, without allocating a child list.
+    The rank only witnesses termination in erased proofs. -/
+
+@[inline] def callBound {α : Type} (rank : α → Nat)
+    (step : (x : α) → ((y : α) → rank y < rank x → Nat) → Nat) (x : α) : Nat :=
+  WellFounded.fix (measure rank).wf step x
+
+theorem callBound_eq {α : Type} (rank : α → Nat)
+    (step : (x : α) → ((y : α) → rank y < rank x → Nat) → Nat) (x : α) :
+    callBound rank step x = step x (fun y _ => callBound rank step y) := by
+  unfold callBound
+  rw [WellFounded.fix_eq]
+  rfl
+
+/-- Unroll one frame so leaf measures reduce without unfolding accessibility. -/
+@[inline] def callBoundEntry {α : Type} (rank : α → Nat)
+    (step : (x : α) → ((y : α) → rank y < rank x → Nat) → Nat) (x : α) : Nat :=
+  step x (fun y _ => callBound rank step y)
+
+theorem callBoundEntry_eq {α : Type} (rank : α → Nat)
+    (step : (x : α) → ((y : α) → rank y < rank x → Nat) → Nat) (x : α) :
+    callBoundEntry rank step x = callBound rank step x := (callBound_eq rank step x).symm
+
+/-- Expand the context-search measure where Core's AST types are available.
+    Lem's raw-measure validator accepts this qualified name but does not parse
+    lambda binders. The expansion is an ordinary kernel-checked term, with no
+    new Lem vocabulary or run-time proof. -/
+-- Explicit case eliminators keep separate expansions equal at the fuel-forms
+-- gate's reducible transparency. The proof module names this same step.
+macro "CerbTagsWf.getCtxMeasure " target:term : term => do
+  let exprType := Lean.mkIdent `generic_expr
+  let annotationType := Lean.mkIdent `core_run_annotation
+  let exprCases := Lean.mkIdent `generic_expr.casesOn
+  let nodeCases := Lean.mkIdent `generic_expr_.casesOn
+  let stateType ← `(Sum ($exprType $annotationType Unit sym)
+    (List ($exprType $annotationType Unit sym)))
+  `(CerbTagsWf.callBoundEntry sizeOf
+    (fun x : $stateType =>
+      Sum.casesOn
+          (motive := fun x => ((y : $stateType) → sizeOf y < sizeOf x → Nat) → Nat) x
+          (fun e => $exprCases
+            (motive_2 := fun e => ((y : $stateType) → sizeOf y < sizeOf (Sum.inl e : $stateType) → Nat) → Nat) e
+            (fun annot node => $nodeCases
+              (motive_1 := fun node => ((y : $stateType) →
+                sizeOf y < sizeOf (Sum.inl (.Expr annot node) : $stateType) → Nat) → Nat) node
+              (fun _ _ => 1)                     -- Epure
+              (fun _ _ _ => 1)                   -- Ememop
+              (fun _ _ => 1)                     -- Eaction
+              (fun _ _ _ => 1)                   -- Ecase
+              (fun _ _ _ _ => 1)                 -- Elet
+              (fun _ _ _ _ => 1)                 -- Eif
+              (fun _ _ _ _ _ => 1)               -- Eccall
+              (fun _ _ _ _ => 1)                 -- Eproc
+              (fun es rec => rec (.inr es) (by simp_wf; omega) + 1)       -- Eunseq
+              (fun _ e _ rec => rec (.inl e) (by simp_wf; omega) + 1)      -- Ewseq
+              (fun _ e _ rec => rec (.inl e) (by simp_wf; omega) + 1)      -- Esseq
+              (fun e rec => rec (.inl e) (by simp_wf; omega) + 1)          -- Ebound
+              (fun _ _ => 1)                     -- End
+              (fun _ _ _ _ => 1)                 -- Esave
+              (fun _ _ _ _ => 1)                 -- Erun
+              (fun _ _ => 1)                     -- Epar
+              (fun _ _ => 1)                     -- Ewait
+              (fun _ e rec => rec (.inl e) (by simp_wf; omega) + 1)        -- Eannot
+              (fun _ _ _ => 1)))                 -- Eexcluded
+          (fun es => List.casesOn
+            (motive := fun es => ((y : $stateType) → sizeOf y < sizeOf (Sum.inr es : $stateType) → Nat) → Nat) es
+            (fun _ => 1)
+            (fun e es rec => max (rec (.inl e) (by simp_wf; omega))
+              (rec (.inr es) (by simp_wf; omega)) + 1))
+    ) $target)
+
 end CerbTagsWf
