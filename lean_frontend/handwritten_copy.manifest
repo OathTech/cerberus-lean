@@ -60,3 +60,5 @@ CerbMem_lemMeasureProofs.lean
 AilTypesAux_lemMeasureProofs.lean
 Formatted_lemMeasureProofs.lean
 Driver_lemMeasureProofs.lean
+CerbFail.lean
+CerbFailProofs.lean

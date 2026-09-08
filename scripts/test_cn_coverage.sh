@@ -391,8 +391,8 @@ for rel in "${RUN_ROWS[@]}"; do
         record_status "$rel" FUEL
         continue
     fi
-    if [[ $lean_exit -ge 128 ]]; then
-        crash_kind=$(echo "$lean_out" | grep -m1 -E 'PANIC|fuel exhausted' | cut -c1-120)
+    if [[ $lean_exit -ge 128 ]] || observation_model_failure "$lean_capture"; then
+        crash_kind=$(echo "$lean_out" | grep -m1 -E 'PANIC|fuel exhausted|^ModelFailure ' | cut -c1-120)
         [[ -z "$crash_kind" ]] && crash_kind="(no PANIC line captured)"
         echo "[$file_num/$total] LEAN_CRASH $rel (exit $lean_exit): $crash_kind"
         record_status "$rel" LEAN_CRASH

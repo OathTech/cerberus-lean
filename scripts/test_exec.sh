@@ -632,13 +632,25 @@ for c_file in "${TEST_FILES[@]}"; do
         continue
     fi
 
+    # A malformed model-stop candidate cannot enter the ordinary Error or
+    # .unsupported.c branches. The classifier's 2 means invalid capture.
+    model_failure=false
+    if observation_model_failure "$lean_capture"; then
+        model_failure=true
+    elif [[ $? -eq 2 ]]; then
+        LEAN_ERROR_COUNT=$((LEAN_ERROR_COUNT + 1))
+        echo "[$file_num/$total_to_test] LEAN_ERROR $filename (malformed/incomplete model fail-stop)"
+        record_status "$base_c" LEAN_ERROR
+        continue
+    fi
+
     # New vs prototype: crash detection (SIGABRT under LEAN_ABORT_ON_PANIC=1,
     # SIGSEGV, ...). Classify by signal + first PANIC line on stderr.
-    if [[ $lean_exit -ge 128 ]]; then
+    if [[ $lean_exit -ge 128 ]] || $model_failure; then
         # arc-10 S4: also capture the loud fuel-exhaustion marker (the
         # arc-3/7 fuel totalization aborts with "lem: fuel exhausted",
         # not a PANIC line — previously showed as "no PANIC line captured")
-        crash_kind=$(echo "$lean_output" | grep -m1 -E 'PANIC|fuel exhausted' | cut -c1-120)
+        crash_kind=$(echo "$lean_output" | grep -m1 -E 'PANIC|fuel exhausted|^ModelFailure ' | cut -c1-120)
         [[ -z "$crash_kind" ]] && crash_kind="(no PANIC line captured)"
         if $expect_unsupported; then
             UNSUPPORTED_EXPECTED=$((UNSUPPORTED_EXPECTED + 1))

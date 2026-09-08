@@ -447,8 +447,8 @@ while IFS=$'\t' read -r c_file mode key; do
     # branches, keyed on the exact message.
     fuel_kind=$(classify_fuel_outcome "$lean_exit" "$lean_output")
     if [[ -n "$fuel_kind" ]]; then record "$base_c" SKIP_LEAN_FUEL - "($fuel_kind, exit $lean_exit) lem: fuel exhausted"; continue; fi
-    if [[ $lean_exit -ge 128 ]]; then
-        crash=$(echo "$lean_output" | grep -m1 -E 'PANIC|fuel exhausted' | cut -c1-100)
+    if [[ $lean_exit -ge 128 ]] || observation_model_failure "$lean_capture"; then
+        crash=$(echo "$lean_output" | grep -m1 -E 'PANIC|fuel exhausted|^ModelFailure ' | cut -c1-100)
         record "$base_c" SKIP_LEAN_CRASH - "(exit $lean_exit) $crash"
         continue
     fi

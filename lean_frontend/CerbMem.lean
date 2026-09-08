@@ -18,6 +18,7 @@ import Ctype
 import Symbol
 import Mem_common
 import Nondeterminism
+import CerbFail
 import CerbTags
 import CerberusImpl
 import CerbFloat
@@ -1994,6 +1995,9 @@ def getIntrinsicTypeSpec (_ : String) : Option intrinsics_signature :=
 
 abbrev memM (a : Type) := ndM a String mem_error (mem_constraint IntegerValue) MemState
 
+/-- An intentional model stop, distinct from modeled memory errors. -/
+def failStopMem {a : Type} (msg : String) : memM a := CerbFail.failStopND msg
+
 def memReturn {a : Type} (x : a) : memM a := nd_return x
 
 /-- The concrete model's kill reason for a memory error — mirrors
@@ -2090,7 +2094,7 @@ def allocator (sz align : Int) : memM (StorageInstanceId × Address) :=
   ND fun st =>
     let allocId := st.nextAllocId
     if align == 0 then
-      panic! "CerbMem.allocator: alignment 0 has no meaning in the model (impl_mem.ml:1252 quomod raises Division_by_zero — an OCaml-execution artifact, not the referent); operator decision pending, zero-discrepancy Z2 record §10"
+      (NDkilled (CerbFail.failStopKill "CerbMem.allocator: alignment 0 has no meaning in the model (impl_mem.ml:1252 quomod raises Division_by_zero — an OCaml-execution artifact, not the referent); operator decision pending, zero-discrepancy Z2 record §10"), st)
     else
       let z := st.lastAddress - sz
       let q := z / align
@@ -2120,7 +2124,7 @@ def allocateObject [LemFuel] (tagDefs : TagDefs) (_ : Nat) (pref : prefix0) (ali
   | .IV _ alignN =>
   let size : Int := sizeofCtype tagDefs ty                                       -- :1289
   match reqAddrOpt with
-  | some _ => panic! "TODO: cerb::with_address() is yet implemented"           -- :1293-1295
+  | some _ => failStopMem "TODO: cerb::with_address() is yet implemented"           -- :1293-1295
   | none =>
   nd_bind (allocator size alignN) fun (idAddr : StorageInstanceId × Address) =>  -- :1291-1292
   let (allocId, addr) := idAddr
@@ -2213,7 +2217,7 @@ def killM (loc : CerbLocation.Loc) (isDynamic : Bool) (pv : PointerValue) : memM
           -- on Lean via libc-body injection) or the fork-only
           -- `cerb::with_address` attribute. Unreachable from C through
           -- malloc/free (argument temporaries, translation.lem:4435).
-          panic! "Concrete: FREE was called on a dead allocation"
+          (NDkilled (CerbFail.failStopKill "Concrete: FREE was called on a dead allocation"), st)
       else match st.allocations.get? allocId with
         | none =>
           -- :1534 get_allocation ~loc → :669-675 MerrOutsideLifetime (UB009)
@@ -2701,7 +2705,7 @@ def intfromptr (loc : CerbLocation.Loc) (_ : ctype) (ity : integerType)
 def effArrayShiftPtrval [LemFuel] (tagDefs : TagDefs) (loc : CerbLocation.Loc) (pv : PointerValue) (elemTy : ctype) (iv : IntegerValue) : memM PointerValue :=
   match pv, iv with
   | .PV _ (.PVnull _), _ => memFail MerrArrayShift loc                             -- :2247-2251
-  | .PV _ (.PVfunction _), _ => panic! "Concrete.eff_array_shift_ptrval, PVfunction"  -- :2252-2253
+  | .PV _ (.PVfunction _), _ => failStopMem "Concrete.eff_array_shift_ptrval, PVfunction"  -- :2252-2253
   | .PV (.Prov_symbolic _) _, _ =>
     kill (kill_reason.Other (MerrOther "effArrayShiftPtrval: Prov_symbolic in concrete model"))
   | .PV prov (.PVconcrete _ addr), .IV _ ival =>
@@ -2771,7 +2775,7 @@ def memcmpM [LemFuel] (tagDefs : TagDefs) (pv1 pv2 : PointerValue) (sizeIv : Int
           getBytes ptr' (byte_n :: acc) k
         | _ =>
           -- impl_mem.ml:2658-2659: assert false (unspecified byte)
-          panic! "Concrete.memcmp: non-integer byte (impl_mem.ml:2658-2659 assert false)"
+          failStopMem "Concrete.memcmp: non-integer byte (impl_mem.ml:2658-2659 assert false)"
     nd_bind (getBytes pv1 [] size_n.toNat) fun bytes1 =>
     nd_bind (getBytes pv2 [] size_n.toNat) fun bytes2 =>
     -- impl_mem.ml:2661-2664
@@ -2960,7 +2964,7 @@ def vaList (vaIdx : Int) : memM (List (ctype × PointerValue)) :=
     match st.varargs.find? (fun e => e.1 == vaIdx) with
     | some (_, (n, args)) =>
       if n == 0 then (NDactive args, st)
-      else panic! "va_list: assert (n = 0) failed (impl_mem.ml:2760)"
+      else (NDkilled (CerbFail.failStopKill "va_list: assert (n = 0) failed (impl_mem.ml:2760)"), st)
     | none => (NDkilled (failReason (MerrWIP "va_list")), st)
 
 /-! ### Misc -/
@@ -2979,7 +2983,7 @@ def copyAllocId [LemFuel] (iv : IntegerValue) (pv : PointerValue) : memM Pointer
 /-- call_intrinsic — impl_mem.ml:2190-2191 `assert false (* CHERI only *)`
     (zero-discrepancy Z-22; see the CHERI section note). -/
 def callIntrinsic (_ : CerbLocation.Loc) (_ : String) (_ : List MemValue) : memM (Option MemValue) :=
-  panic! "assert false (* CHERI only *): Concrete.call_intrinsic (impl_mem.ml:2190-2191)"
+  failStopMem "assert false (* CHERI only *): Concrete.call_intrinsic (impl_mem.ml:2190-2191)"
 
 /-- Fuel-exhaustion sentinel for the fuel-threaded `Core_aux.zeros_aux`
     (arc-1): reached only past the default fuel's type-nesting depth, i.e.

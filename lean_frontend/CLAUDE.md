@@ -117,6 +117,7 @@ Each is a `[[lean_exe]]` in `lakefile.toml` that exits 0 on pass.
 
 Current unit tests:
 - `effects-proof-test` / `totality-proof-test` — compile-time checks on the exec cone, as it is today: every fuel'd wrapper is FUEL-PARAMETRIC (`@f ⟨n⟩ = f_lemFuel n` for every `n`, by rfl — the fuel-parameter arc; no default constant exists), symbolic equations hold on the total layout/typing defs, and `tagDefs` is an honest reader parameter (no hidden extern read) — i.e. totality + reader lifting, properties of this port checked by the build (not a verification layer; exe names kept for build stability)
+- `monadic-failstop-test` — C-TF1 seven-arm runtime witnesses, positive controls, and failure-time state checks; `CerbFailProofs` carries the kernel propagation contracts.
 - `fuel-exemplar-test` — the consumer-shaped ∀-fuel theorem over the shipped pipeline `@drive ⟨fuel⟩` (test/Unit/FuelExemplar.lean)
 - `fuel-forms-tool` (not a pass/fail exe: the INSTRUMENT of `scripts/check_fuel_forms.sh`) — `test/Unit/FuelFormsTool.lean` imports the compiled environment at runtime and classifies every fuel'd worker MEASURED/ABSORBING/AMBIENT with its drive-cone reachability (C2; P0 2026-09-05: MEASURED checks the argument correspondence against the wrapper's own body in MetaM, ABSORBING = "kill at zero" checks the `_zero` lemma's left-hand side and cone)
 - `core-parser-test` — 280 tests for `CoreParser.lean`

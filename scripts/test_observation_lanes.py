@@ -59,6 +59,10 @@ elif kind == 'crash_fuel':
     out, err, rc = b'', b'PANIC at LemLib.failwithIImpl LemLib.lean:10:3: lem: fuel exhausted\n', 134
 elif kind == 'crash_garbage':
     out = b'corrupted transport bytes\n'
+elif kind in ('crash_model', 'crash_model_suffix'):
+    out, err, rc = b'ModelFailure {msg: "Concrete.memcmp: non-integer byte"}\n', b'', 1
+    if kind == 'crash_model_suffix':
+        out += b'garbage after complete-looking record\n'
 elif kind == 'crash_other':
     out, err, rc = b'', b'PANIC at Other.unreviewed Other:10:3: unrelated panic\n', 134
 elif kind in ('refusal', 'different_refusal'):
@@ -126,7 +130,7 @@ def main():
                              ('ub-difference-only', 'ub_ref', 'ub_diff')])
         if lane == 'immaculate':
             variants.extend([(kind.replace('_', '-'), 'good', kind)
-                             for kind in ('crash_fuel', 'crash_garbage', 'crash_other')])
+                             for kind in ('crash_fuel', 'crash_garbage', 'crash_other', 'crash_model', 'crash_model_suffix')])
             # 2026-09-06 landing finding: the ambient TERM must not reach the
             # engines (Cmdliner styles the crash envelope from TERM/NO_COLOR);
             # the harness pin in common.sh must win over an interactive shell.
@@ -170,7 +174,7 @@ def main():
             (case_dir / 'stdout').write_bytes(result.stdout)
             (case_dir / 'stderr').write_bytes(result.stderr)
             text = (result.stdout + result.stderr).decode('utf8', errors='replace')
-            expected_accept = name in ('control', 'refusal-control', 'native-exit137', 'ub-control', 'ambient-term')
+            expected_accept = name in ('control', 'refusal-control', 'native-exit137', 'ub-control', 'ambient-term', 'crash-model')
             if lane == 'gcc_oracle' and name == 'bytes':
                 # This lane deliberately compares integer exits. Demonstrate
                 # that the richer bytes survive, rather than pretend it is a

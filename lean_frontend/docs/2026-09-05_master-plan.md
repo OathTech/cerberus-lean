@@ -172,7 +172,7 @@ the fork content pins (`[source-content]`), the release runner
 |---|---|---|---|
 | 1 | Risk-map BASELINE by an independent auditor — now | Cerberus (independent auditor, not the implementing agents) | Baseline point 2026-08-31 (the semantics-first split); per trust surface: moved/unmoved · evidence · residual risk · mover. Repeated at step 7. |
 | 2 | Pure-failure CORRESPONDENCE design note | Lem + Cerberus | Input: the census's proposal. The mirror stays the reference model; a checked twin sits behind a per-function kernel-checked connection theorem (the fuel-sufficiency pattern). Reviewed WITH the operator before any dispatch. It fixes the failure vocabulary for step 3. |
-| 3 | lem L1 declare consolidation ∥ cerberus C-TF1 monadic seam slice | Lem ∥ Cerberus | After the step-2 note fixes the failure vocabulary. |
+| 3 | lem L1 declare consolidation ∥ cerberus C-TF1 monadic seam slice | Lem ∥ Cerberus | C-TF1 complete on `arc/monadic-failstop`: [implementation and 35/35 A+B command coverage](2026-09-08_monadic-failstop-record.md). Lem L1 retains its separate scope. |
 | 4 | C-Z4 remainder | Cerberus | Probe integration, ci_sweep re-record, cerb_skip ceiling, libc-body UB-loc mover, Z2-J fixes, R3 marker, the owed tray drafts, the batchEscape per-byte fix. |
 | 5 | Bytes (L4) + F7 instances + the fuel residue | Lem + Cerberus | F7: hash-minted symbols, enum registry, digest; the eight fuel-residue rows (§1). Submission track in parallel. |
 | 6 | Consumer adoption exit | refined-cerberus's agent + providers | refined-cerberus re-pin + proofs through against the current interface (F9 is a release exit, [USER 2026-09-05], §0). |
@@ -278,12 +278,15 @@ remain differential evidence. The mirror cannot express an exception its
 own reduction erases. Review the design with the operator before the larger
 transformation, as required by the existing audit-response ruling.
 
-After the failure vocabulary is reviewed, carry the seven hand-written
-`memM` failures through its existing result channel with the faithful failure
-alternative and establish propagation through the driver. Preserve remaining
-pure sites in the census and implement the obligations in the current
-[correspondence proposal](2026-09-06_failure-census-and-correspondence.md).
-`panic!` to `failwithI` is interim hygiene, not pure-failure closure.
+C-TF1's seven hand-written `memM` failures now use the existing ND kill
+channel, with kernel propagation contracts through bind, liftMem and the
+runners, and an explicit crash-class observation record. The
+[2026-09-08 execution record](2026-09-08_monadic-failstop-record.md) carries
+scope, validation and landing status. This is independent of the
+[parked pure-failure twin](2026-09-07_pure-failure-correspondence-design.md):
+retain the pure sites and their failure-reach register; that larger
+transformation still requires its own decision. `panic!` to `failwithI`
+is interim hygiene, not pure-failure closure.
 
 Freeze the failure vocabulary after review, then use it inside Lem's
 consolidated declaration machinery. The old 59-plus-five monadic census

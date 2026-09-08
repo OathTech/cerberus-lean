@@ -23,6 +23,7 @@ UNIT_TESTS=(
     # shipped pipeline (test/Unit/FuelExemplar.lean) — compile-time proof,
     # main reports success; its cone is probed by check_theorem_axioms.sh
     "fuel-exemplar-test"
+    "monadic-failstop-test"
 )
 
 # ---------------------------------------------------------------------------
@@ -61,7 +62,11 @@ for test in "${TESTS[@]}"; do
     echo "=== $test ==="
     "$SCRIPT_DIR/capped" lake build "$test" 2>&1 | tail -3
     bin="./.lake/build/bin/$test"
-    if "$bin"; then
+    test_args=()
+    # The C-TF1 test receives its fuel explicitly: 2 is liftND + liftAction's
+    # minimum, and the second run checks a larger caller-selected budget.
+    if [[ "$test" == monadic-failstop-test ]]; then test_args=(2 17); fi
+    if "$bin" "${test_args[@]}"; then
         echo "${GREEN}✓ $test PASSED${NC}"
         total_pass=$((total_pass + 1))
     else

@@ -1082,8 +1082,10 @@ def runPipeline [LemFuel] (runtimeDir : String) (batch : Bool) (ppCore : Bool)
           | .Undef0 loc (ub :: _) =>
             -- OCaml batch_drive parity: first UB only; loc via simple_location (Z-03)
             IO.println s!"Undefined \{ub: \"{stringFromUndefined_behaviour ub}\", stderr: \"{killedStderr}\", loc: \"{CerbLocation.simpleLocation loc}\"}"
-          | .Error0 _loc msg =>
-            IO.println s!"Error \{msg: \"{msg}\"}"
+          | .Error0 loc msg =>
+            if loc == CerbFail.modelFailStopLoc then
+              IO.println (CerbFail.batchRecord msg)
+            else IO.println s!"Error \{msg: \"{msg}\"}"
           | .Other err =>
             IO.println s!"Error \{msg: \"{driverErrorBatchMsg err}\"}"
         idx := idx + 1
@@ -1113,7 +1115,7 @@ def runPipeline [LemFuel] (runtimeDir : String) (batch : Bool) (ppCore : Bool)
             for ub in ubs do
               IO.println s!"    ub: {stringFromUndefined_behaviour ub}"
           | .Error0 loc msg =>
-            IO.println s!"  result: Killed (error: {msg})"
+            IO.println s!"  result: Killed ({if loc == CerbFail.modelFailStopLoc then "model fail-stop" else "error"}: {msg})"
             IO.println s!"    at: {CerbLocation.stringFromLocation loc}"
           | .Other err =>
             match err with

@@ -139,6 +139,8 @@ roots = [
   "CerbMem",
   "CerbFS",
   "CerbFuel",
+  "CerbFail",
+  "CerbFailProofs",
   "CerbConcurrency",
   "CerbCtypeInstances",
   "CerbStepInstances",
@@ -236,3 +238,10 @@ name = "fuel-forms-tool"
 srcDir = "test"
 root = "Unit.FuelFormsTool"
 supportInterpreter = true
+
+# C-TF1: kernel propagation contracts and concrete memory-arm witnesses.
+[[lean_exe]]
+name = "monadic-failstop-test"
+srcDir = "test"
+root = "Unit.MonadicFailstop"
+moreLinkArgs = ["native/md5.o"]

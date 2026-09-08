@@ -29,6 +29,7 @@ DEFINED = re.compile(rb'Defined \{value: "([^"\r\n]*)", stdout: "(' +
 UNDEFINED = re.compile(rb'Undefined \{ub: "([^"\r\n]*)", stderr: "(' +
                        ESCAPED + rb')", loc: "([^"\r\n]*)"\}')
 ERROR = re.compile(rb'Error \{msg: "([^\r\n]*)"\}')
+MODEL_FAILURE = re.compile(rb'ModelFailure \{msg: "(' + ESCAPED + rb')"\}')
 HEADER = re.compile(rb'EXECUTION ([0-9]+)(?: \(exit = [^\r\n]+\))?:')
 ORACLE_INTERNAL = re.compile(rb'^internal error: (.+)$', re.M)
 FATAL = re.compile(rb'^(?:PANIC at |internal error: |Fatal error: exception |'
@@ -95,11 +96,13 @@ class Verdict:
 
     def token(self) -> str:
         prefix = {'Defined': 'VAL', 'Undefined': 'UB', 'Error': 'ERR',
-                  'InternalError': 'INTERNAL_ERROR'}[self.kind]
+                  'InternalError': 'INTERNAL_ERROR', 'ModelFailure': 'MODEL_FAILURE'}[self.kind]
         body = ', '.join(f'{k}: "{escape(v)}"' for k, v in self.fields)
         return f'{prefix}:{{{body}}}'
 
     def reference(self) -> str:
+        if self.kind == 'ModelFailure':
+            raise ProtocolError('model fail-stop has no semantic reference projection')
         if self.kind == 'Defined':
             return escape(self.field('value'))
         if self.kind == 'Undefined':
@@ -117,6 +120,10 @@ class Observation:
     stderr: bytes
     status: int | None
     internal: bool = False
+
+    @property
+    def model_failure(self) -> bool:
+        return any(v.kind == 'ModelFailure' for v in self.verdicts)
 
     def tokens(self, projection: str = 'full') -> list[str]:
         if projection == 'full':
@@ -137,7 +144,8 @@ class Observation:
 
     def evidence(self) -> dict:
         return {'schema': 1, 'status': self.status, 'expected_exit': self.expected_exit,
-                'completion': 'internal_failure' if self.internal else 'complete',
+                'completion': ('model_failure' if self.model_failure else
+                               'internal_failure' if self.internal else 'complete'),
                 'verdicts': [{'kind': v.kind,
                               'fields_hex': {k: x.hex() for k, x in v.fields}}
                              for v in self.verdicts],
@@ -282,6 +290,8 @@ def parse(stdout: bytes, stderr: bytes = b'', status: int | None = None,
             v = Verdict('Undefined', (('ub', u[1]), ('stderr', unescape(u[2])), ('loc', u[3])))
         elif e:
             v = Verdict('Error', (('msg', e[1]),))
+        elif f := MODEL_FAILURE.fullmatch(line):
+            v = Verdict('ModelFailure', (('msg', unescape(f[1])),))
         else:
             raise ProtocolError('unknown or malformed stdout record: ' + repr(line[:160]))
         if headers and not pending:
@@ -296,7 +306,12 @@ def parse(stdout: bytes, stderr: bytes = b'', status: int | None = None,
     expected = int(len(verdicts) == 1 and verdicts[0].kind != 'Defined')
     if status is not None and status != expected:
         raise ProtocolError(f'exit {status} inconsistent with verdicts; expected {expected}')
-    return Observation(tuple(verdicts), expected, stdout, stderr, status)
+    obs = Observation(tuple(verdicts), expected, stdout, stderr, status)
+    if obs.model_failure and policy not in ('model-failure', 'immaculate'):
+        raise ProtocolError('model fail-stop; no completed semantic observation')
+    if obs.model_failure and status is None:
+        raise ProtocolError('model fail-stop classification requires original exit status')
+    return obs
 
 
 def load_capture(prefix: str, policy: str = 'batch') -> Observation:
@@ -311,17 +326,19 @@ def load_capture(prefix: str, policy: str = 'batch') -> Observation:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=['tokens', 'expected-exit', 'inspect',
-                                           'reference-set', 'messages', 'compare', 'refusal'])
+                                           'reference-set', 'messages', 'compare', 'refusal', 'model-failure'])
     parser.add_argument('--stdout', default='-')
     parser.add_argument('--stderr')
     parser.add_argument('--status', type=int)
     parser.add_argument('--capture', help='prefix of .stdout/.stderr/.status files')
     parser.add_argument('--other', help='second capture prefix for compare')
-    parser.add_argument('--policy', choices=['batch', 'litmus', 'immaculate'], default='batch')
+    parser.add_argument('--policy', choices=['batch', 'litmus', 'immaculate', 'model-failure'], default='batch')
     parser.add_argument('--refusal-prefix', default='model refused: ')
     parser.add_argument('--projection', choices=['full', 'values', 'pin'], default='full')
     parser.add_argument('--comparison', choices=['sequence', 'set'], default='sequence')
     args = parser.parse_args()
+    if args.action == 'model-failure':
+        args.policy = 'model-failure'
     try:
         if args.capture:
             obs = load_capture(args.capture, args.policy)
@@ -331,7 +348,11 @@ def main() -> int:
             stdout = sys.stdin.buffer.read() if args.stdout == '-' else Path(args.stdout).read_bytes()
             stderr = Path(args.stderr).read_bytes() if args.stderr else b''
             obs = parse(stdout, stderr, args.status, args.policy)
-        if args.action == 'tokens':
+        if args.action == 'model-failure':
+            if not obs.model_failure:
+                return 1
+            print('MODEL_FAILURE')
+        elif args.action == 'tokens':
             print('\n'.join(obs.tokens(args.projection)))
         elif args.action == 'expected-exit':
             print(obs.expected_exit)
@@ -341,7 +362,7 @@ def main() -> int:
             print('{' + ','.join(sorted({v.reference() for v in obs.verdicts})) + '}')
         elif args.action == 'messages':
             for v in obs.verdicts:
-                if v.kind in ('Error', 'InternalError'):
+                if v.kind in ('Error', 'InternalError', 'ModelFailure'):
                     print(escape(v.field('msg')))
         elif args.action == 'refusal':
             print(escape(obs.refusal(args.refusal_prefix.encode('utf-8'))))
@@ -349,6 +370,8 @@ def main() -> int:
             if not args.capture or not args.other:
                 raise ProtocolError('compare requires two complete captures')
             other = load_capture(args.other, args.policy)
+            if obs.model_failure or other.model_failure:
+                raise ProtocolError('model fail-stops cannot certify semantic agreement')
             left, right = obs.verdicts, other.verdicts
             equal = set(left) == set(right) if args.comparison == 'set' else left == right
             if not equal:

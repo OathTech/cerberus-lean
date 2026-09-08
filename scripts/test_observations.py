@@ -29,6 +29,63 @@ def multi(*rows):
 
 
 class ObservationTests(unittest.TestCase):
+    def test_model_failure_is_explicit_and_never_semantic_agreement(self):
+        msg = bytes(range(256)) + ' — §10'.encode()
+        record = ('ModelFailure {msg: "' + escape(msg) + '"}\n').encode('ascii')
+        for policy in ('batch', 'litmus'):
+            with self.assertRaises(ProtocolError):
+                parse(record, status=1, policy=policy)
+        for policy in ('model-failure', 'immaculate'):
+            obs = parse(record, status=1, policy=policy)
+            self.assertTrue(obs.model_failure)
+            self.assertEqual(obs.verdicts[0].field('msg'), msg)
+            self.assertEqual(obs.evidence()['completion'], 'model_failure')
+            with self.assertRaises(ProtocolError):
+                obs.refusal(b'')
+            with self.assertRaises(ProtocolError):
+                obs.verdicts[0].reference()
+        ordinary = 'Error {msg: "cerberus-lean: model fail-stop — asserted text"}\n'.encode()
+        # Ordinary diagnostics do not acquire the new class from their text.
+        self.assertFalse(parse(ordinary, status=1, policy='model-failure').model_failure)
+        semantic = OK.replace(b'stdout: ""', ('stdout: "' + escape(b'ModelFailure {msg: "x"}\n') + '"').encode())
+        self.assertFalse(parse(semantic, status=0, policy='model-failure').model_failure)
+
+    def test_model_failure_cli_refuses_even_identical_failure_comparisons(self):
+        codec = Path(__file__).with_name('observations.py')
+        with tempfile.TemporaryDirectory() as directory:
+            prefix = str(Path(directory) / 'capture')
+            Path(prefix + '.stdout').write_bytes(b'ModelFailure {msg: "stop"}\n')
+            Path(prefix + '.stderr').write_bytes(b'')
+            Path(prefix + '.status').write_text('1\n')
+            def run(*args):
+                return subprocess.run([sys.executable, str(codec), *args], capture_output=True)
+            self.assertEqual(run('model-failure', '--capture', prefix).returncode, 0)
+            for policy in ('batch', 'immaculate', 'model-failure'):
+                result = run('compare', '--capture', prefix, '--other', prefix, '--policy', policy)
+                self.assertEqual(result.returncode, 2, result.stderr)
+            Path(prefix + '.capture-error').write_text('incomplete capture')
+            self.assertEqual(run('model-failure', '--capture', prefix).returncode, 2)
+
+    def test_model_failure_validates_entire_capture_and_failure_precedence(self):
+        record = b'ModelFailure {msg: "stop"}\n'
+        for out, err, rc in [
+                (record, b'', None), (record, b'', 0), (record, b'', 124),
+                (record, b'', 137), (record, b'', 134),
+                (record, b'capped: OOM-KILLED (cgroup memory.max=4G)\n', 1),
+                (record, b'PANIC at origin file:1:2: bad\n', 1),
+                (record, b'lem: fuel exhausted\n', 1),
+                (record + b'garbage\n', b'', 1),
+                (record[:-3], b'', 1),
+                (multi(record, OK) + b'EXECUTION 2:\n', b'', 0),
+                (record + OK, b'', 0)]:
+            with self.subTest(out=out, err=err, rc=rc), self.assertRaises(ProtocolError):
+                parse(out, err, rc, 'model-failure')
+        obs = parse(multi(OK, record, ERR), status=0, policy='model-failure')
+        self.assertTrue(obs.model_failure)
+        self.assertEqual(len(obs.verdicts), 3)
+        with self.assertRaises(ProtocolError):
+            parse(multi(OK, record, ERR), status=0)
+
     def test_all_bytes_are_decimal_not_octal_or_unicode(self):
         data = bytes(range(256))
         self.assertEqual(unescape(escape(data).encode('ascii')), data)

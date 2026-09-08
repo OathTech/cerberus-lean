@@ -107,7 +107,7 @@ verdict() {   # <stdout-file> <rc> <stderr-file>
             --status "$rc" --policy immaculate > "$outf.tokens"; then
         echo "INVALID"; return
     fi
-    if grep -q '^INTERNAL_ERROR:' "$outf.tokens"; then
+    if grep -qE '^(INTERNAL_ERROR|MODEL_FAILURE):' "$outf.tokens"; then
         echo "CRASH"; return
     fi
     if [[ "$line" == Undefined* ]]; then

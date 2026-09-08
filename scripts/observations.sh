@@ -46,3 +46,11 @@ extract_verdict_seq() { # legacy text-only plant API; production uses captures
 expected_exit_for() { # legacy text-only plant API
     printf '%s\n' "$1" | python3 "$OBSERVATION_CODEC" expected-exit
 }
+
+# C-TF1: the prefilter only avoids Python for ordinary runs. Acceptance uses
+# the COMPLETE original capture (framing, status, escapes, fatal suffixes,
+# timeout, FUEL and descendant OOM); a prefix alone never certifies a stop.
+observation_model_failure() { # <capture-prefix>
+    grep -q '^ModelFailure ' "$1.stdout" 2>/dev/null || return 1
+    python3 "$OBSERVATION_CODEC" model-failure --capture "$1" >/dev/null 2>&1
+}

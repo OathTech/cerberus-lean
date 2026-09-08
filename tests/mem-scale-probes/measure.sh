@@ -145,6 +145,10 @@ run_one() {
     fi
     grep -q "Out of memory\|Fatal error" "$err" "$out" 2>/dev/null && note="${note}OCAML-FATAL:$(grep -m1 -hoE '(Out of memory|Fatal error[^\n]*)' "$err" "$out" | head -1 | cut -c1-60);"
     local v; v=$(verdict_of "$out")
+    if grep -q '^ModelFailure ' "$out" &&
+       python3 "$ROOT/scripts/observations.py" model-failure --stdout "$out" --stderr "$err" --status "$rc" >/dev/null 2>&1; then
+        v=CRASH; note="${note}FAILSTOP;"
+    fi
     printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$name" "$MODE" "$eng" "$rc" "${wall:-NA}" "${rss:-NA}" "${v:-NONE}" "${note:--}" "${cpu:-NA}"
 }
 

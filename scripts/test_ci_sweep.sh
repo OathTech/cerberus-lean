@@ -286,8 +286,8 @@ for suite in "${SUITES[@]}"; do
         fuel_kind=$(classify_fuel_outcome "$lean_exit" "$lean_out")
         if [[ -n "$fuel_kind" ]]; then
             row LEAN_FUEL "$fuel_kind, exit $lean_exit: lem: fuel exhausted"; continue; fi
-        if [[ $lean_exit -ge 128 ]]; then
-            kind=$(echo "$lean_out" | grep -m1 -E 'PANIC|fuel exhausted' | cut -c1-120)
+        if [[ $lean_exit -ge 128 ]] || observation_model_failure "$lean_capture"; then
+            kind=$(echo "$lean_out" | grep -m1 -E 'PANIC|fuel exhausted|^ModelFailure ' | cut -c1-120)
             [[ -z "$kind" ]] && kind="(no PANIC line captured)"
             row LEAN_CRASH "exit $lean_exit: $kind"; continue; fi
         lean_has_ub=false; lean_seq=""

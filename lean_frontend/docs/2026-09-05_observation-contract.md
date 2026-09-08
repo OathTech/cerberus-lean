@@ -160,3 +160,32 @@ example a frontend JSON parse error) are different producers. Their byte
 correctness is not established by the IO trace. Record any out-of-range
 escape as a source/printer finding; do not add Unicode normalization to hide
 it. G6 and the later byte-representation work own the deeper semantics.
+
+## C-TF1 model-stop records (2026-09-08)
+
+[AGENT, execution of the user-approved C-TF1 slice] The handwritten memory
+monad uses `Error0 CerbFail.modelFailStopLoc msg` for its seven intentional
+failure arms. The batch producer recognizes that atom at runtime and emits
+`ModelFailure {msg: "…"}`. The payload is the diagnostic's UTF-8 bytes in
+`String.escaped` form. This is a separate record, not the older typed-failure
+design §2.5 proposal to recognize a prefix inside an ordinary `Error` message.
+Ordinary model errors, UB and FUEL retain their protocols. Single model stops
+exit 1; complete multi-execution output retains the existing headers and exit 0.
+
+The codec validates the entire capture, including original status, all records,
+framing and escapes. Timeout, fatal diagnostics, FUEL and descendant-OOM
+witnesses prevent this classification. A model stop is never semantic
+agreement, even beside successful executions. Default batch/litmus parsing
+refuses it; explicit `model-failure` classification and immaculate's reviewed
+coarse crash policy retain it as `ModelFailure`, with completion
+`model_failure`. Semantic comparison and reference/pin projections refuse it.
+No prefix in an ordinary Error or escaped program-output field can produce
+this record class. As with every batch record, the codec trusts the identified
+producer, not arbitrary bytes supplied by an unauthenticated source.
+
+The classifying lanes retain their existing crash families (`LEAN_CRASH`,
+`SKIP_LEAN_CRASH`, immaculate `CRASH`); the memory measurement instrument
+reports `CRASH` with `FAILSTOP;`. Raw captures retain the complete message.
+This changes transport from process abort to typed kill; it does not broaden
+C support, assign an alignment-zero policy, or establish correspondence for
+the still-parked pure failure sites. See the [execution record](2026-09-08_monadic-failstop-record.md).

@@ -226,6 +226,8 @@ OPAQUE_WANT=(
   # unsafe/implemented_by/extern; exists to be unforgeable, not to hide an
   # effect. Its presence-AS-OPAQUE is what the arc's soundness rests on.
   'CerbFuel.lean:fuelExhaustedLoc'
+  # C-TF1 R1 (2026-09-05 typed-failure design §2.1): pure model-stop atom.
+  'CerbFail.lean:modelFailStopLoc'
 )
 OPAQUE_FOUND=$(sed -E 's/^OPAQUE ([^:]+):[0-9]+:(.*)$/\1:\2/' <<<"$GEN_OPAQUES" | grep . | sort | uniq -c | awk '{print $2" "$1}' || true)
 OPAQUE_BAD=0
@@ -863,8 +865,15 @@ FUEL_THMS=(nd_bind_lemFuel_zero liftND_lemFuel_zero liftAction_lemFuel_zero
            Core_lemMeasureProofs.eq_core_base_type_measure_sufficient
            Defacto_memory_aux_lemMeasureProofs.fake_mem_value_eq_measure_sufficient
            ctypeEqual_measure_sufficient eq_core_base_type_measure_sufficient fake_mem_value_eq_measure_sufficient)
+# C-TF1 uses the same strict kernel-only contract-cone audit.
+FUEL_THMS+=(CerbFail.failStopND_step CerbFail.bind_preserves CerbFail.lift_preserves
+            CerbFail.liftMem_preserves CerbFail.run_preserves CerbFail.run1_preserves
+            CerbFail.runTrace_preserves CerbFail.pipeline_preserves CerbFail.zero_precedes
+            CerbFail.failStopND_ne_active CerbFail.failStopKill_ne_undef CerbFail.failStopKill_ne_other)
+
 {
   echo "import CerbND"
+  echo "import CerbFailProofs"
   echo "import Unit.FuelExemplar"
   echo "import Ctype_auxiliary"
   echo "import Core_auxiliary"
