@@ -1354,3 +1354,145 @@ where a claim changed: `TODO.md` (the mechanism landed; the 169 row's status),
 `VALIDATION.md` §7 (the measure's text and form), `scripts/LADDER.md` (the
 csmith lane's load caveat), `lean_frontend/CLAUDE.md` (the seam's key-files
 row).
+
+## Orchestrator review (2026-09-08) — verdict, findings, improvements, boundary battery
+
+[AGENT orchestrator], a separate author from the Codex agent that executed
+the charter and from the worker that applied the improvements.
+
+### Verdict
+
+**Accepted for landing after two required improvements.** The charter's
+property (§0) is met on its decisive rows and honestly NOT certified for
+all programs: `sa_csmith_369/371` complete at 15 s again (12.1 / 10.1 s
+CPU) with paired CPU ratios 1.075 / 1.073 against the pre-arc binary
+`1b57bcf26`; on the controlled paired table 286 of 287 completing programs
+are ≤ 1.10 (the one exception, `sia_csmith_078.c`, is a single unreproduced
+excursion on a 0.8 s program: four fixed follow-ups give 1.051); one row,
+`sa_csmith_419.c`, stays TIMEOUT at the lane's 15 s wall clock (15.62 s vs
+14.50 s pre-arc, ratio 1.077 — inside the operator's <10 % CPU bar [USER
+2026-09-05], outside the harness budget). D2's attribution is sound and
+measured (eager `generic_expr.lemSize` in `get_ctx`: 39–47 % of samples →
+~4.5 % after); the remaining cost is runtime allocation/reference counting
+and OTHER measured wrappers' `generic_pexpr.lemSize`, outside the charter's
+fence and correctly left as a report for the operator. D5's stop at the
+absent independent-oracle prerequisite was the charter's stop rule applied
+correctly; this battery supplies the missing full-ladder certification.
+
+### Findings against Codex's head `3a7237bd3` (both fixed here)
+
+| # | Finding | Grade | Fix (commits `a3cb44c1c`, `e9c2ffc53`) |
+|---|---|---|---|
+| R1 | The new measure was a Lean `macro` (`CerbTagsWf.getCtxMeasure`) expanding to a 40-line `casesOn` term, adopted because lem's FM-free measure validator rejected the inline lambda and accepts a qualified NAME it cannot see into (record §D3, verbatim: "Lem's raw-measure validator accepts this qualified name but does not parse lambda binders"). Sound and kernel-checked, but a generation-time check defeated by hiding code behind a name — the evasion class the C4 audit closed for `_root_`-headed measures. Root cause: Codex's fence allowed no new seam file, and `CerbTagsWf.lean` cannot import `Core`. | MAJOR (validator intent) | A NAMED, ORDINARY definition `CerbCoreMeasure.getCtxBound` in a new seam imported via `declare {lean} extra_import` (the close-out's `CerbCoreShape` pattern); the macro and `callBound*` deleted; `CerbTagsWf.lean` byte-identical to the mainline. Lean 4.32 accepted plain structural recursion over the nested block — kernel-reducible (`getCtxBound (.inl (mk_value_e v)) = 1 := rfl`), no `WellFounded.fix`, no unrolled frame; same cost (12.14 / 10.15 s). |
+| R2 | The dedicated re-record flipped `sia_csmith_169.c TIMEOUT → MATCH` on a 14.93 s CPU / 14.94 s wall completion against the 15 s budget — no margin: a MATCH pin that times out under load is a FATAL regression, while a TIMEOUT pin that completes is a non-fatal reported improvement. | MAJOR (gate stability) | Reverted to `TIMEOUT` (baseline sha256 back to Codex's documented pre-re-record value); completion evidence kept as a class-(b) row. Rule for future re-records: only with a comfortable margin under the budget. |
+| R3 | The two reference worktrees (`worktrees/cerberus-lean-ref/1b57bcf26`, `worktrees/lem-lean-ref/3c88f0d`, 1.6 GB) were left registered after the stop. | minor | Removed and pruned by the orchestrator; their evidence is in §D2. |
+
+Charter lessons carried to the pattern: a measure expression is a named
+`def` in an `extra_import` seam — macros/notation in a declare are
+forbidden; baseline re-records require margin; a charter that may need a
+new Lean module must allow one.
+
+### Boundary battery on the landing head `69b490565`
+
+Cache-disabled rebuild in this worktree, then the LADDER Tier A + Tier B
+battery, the failure-reach gate, the pristine-oracle build + lanes, the gcc
+lane (quiet box) and the csmith shard `2/6`. Every lane rc=0 (verbatim
+`=== lane` / `--- rc=` pairs):
+
+```
+=== bash tools/check_driver_fresh.sh --check  rc=0
+=== ./scripts/test_unit.sh  rc=0
+=== ./scripts/test_exec.sh --check-baseline  rc=0
+=== ./scripts/test_exec.sh --check-baseline=scripts/exec_coverage_baseline.txt tests/coverage  rc=0
+=== ./scripts/test_exec.sh --check-baseline=scripts/exec_debug_baseline.txt tests/debug  rc=0
+=== ./scripts/test_exec.sh --check-baseline=scripts/exec_float_baseline.txt tests/float  rc=0
+=== ./scripts/test_bytes.sh  rc=0
+=== ./scripts/test_libc_exec.sh  rc=0
+=== ./scripts/test_multi_tu.sh  rc=0
+=== ./scripts/test_parse.sh  rc=0
+=== ./scripts/test_core.sh  rc=0
+=== ./scripts/test_elab.sh  rc=0
+=== ./scripts/test_libxml2_uri.sh  rc=0
+=== ./scripts/test_cn_coverage.sh --check-baseline  rc=0
+=== ./scripts/test_parse.sh tests/ci  rc=0
+=== ./scripts/test_core.sh tests/ci  rc=0
+=== ./scripts/test_verify.sh  rc=0
+=== ./scripts/test_immaculate.sh  rc=0
+=== ./scripts/test_speclab.sh --selftest  rc=0
+=== ./scripts/test_speclab.sh --plant  rc=0
+=== ./scripts/test_hang_plant.sh  rc=0
+=== ./scripts/test_kill_plant.sh  rc=0
+=== ./scripts/test_fuel_plant.sh  rc=0
+=== ./scripts/test_libxml2.sh  rc=0
+=== python3 scripts/test_observation_lanes.py  rc=0
+=== ./scripts/check_failure_reach.sh --selftest  rc=0
+=== ./scripts/check_failure_reach.sh  rc=0
+=== independent oracle build  rc=0
+=== python3 scripts/test_upstream_oracle.py  rc=0
+=== python3 scripts/test_upstream_oracle.py --plant  rc=0
+=== ./scripts/test_gcc_oracle.sh --check-baseline  rc=0
+=== ./scripts/test_csmith_corpus.sh --check-baseline --shard 2/6  rc=0
+```
+
+Verdict lines, verbatim:
+
+```
+SUMMARY: total=106 match=85 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=3 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+SUMMARY: total=212 match=183 ub_match=16 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=13 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+SUMMARY: total=90 match=66 ub_match=20 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=4 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+SUMMARY: total=69 match=69 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+SUMMARY: exec_match=9 neg_pinned=5 fail=0
+SUMMARY: match=12 diff=0
+ALL MATCH RECORDED BASELINE
+SUMMARY: total=2 match=2 fail=0
+Total:          106
+Total:          106
+SUMMARY: total=106 same=103 diff=3 ocaml_fail=0 lean_fail=0
+SUMMARY: total=213 match=207 ub_match=6 ub_diff=0 reject_match=0 diff=0 mismatch=0 reject_diff=0 lean_fail=0 lean_crash=0 fuel=0 lean_error=0 lean_timeout=0 oracle_fail=0 oracle_timeout=0 oracle_inconsistent=0
+BASELINE OK (213 entries, exact match)
+Total:          250
+test_verify: 127 passed, 0 failed (25 fixtures, 28 call points, 14 corpus fixtures, 21 corpus points)
+OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip DIFF, R3 s4b-memcmp-hugesize ORACLE_CRASH — VALIDATION.md 'ISO-fix register' — and the in-Lean probes g6 TRIPWIRE / illtyped-store KILL).
+test_fuel_plant: ALL PLANTS OK (FUEL classification live in exec/gcc/ci_sweep/cn_coverage/measure; negatives not FUEL; the real driver at --fuel 1 reads FUEL and at the default MATCH; --fuel 0/non-numeral/out-of-position/missing refused)
+SUMMARY: total=4 match=4 fail=0 (points: 1354, 22 observations each)
+observation lane plants: 91/91 passed
+check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=166 REACHABLE=48 UNKNOWN=19; every row sealed; tally line consistent)
+Independent oracle: passed; {'semantic_agreement': 709, 'reviewed_difference': 1, 'matching_failure': 11, 'interface_agreement': 2}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost-land/.tmp/upstream-oracle-fta0x0kf/report.json
+Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost-land/.tmp/upstream-oracle-5avz_vay/report.json
+SUMMARY: total=1963 compared=1885 agree=1873 agree_nd=0 triaged=12 disagree=0 o2_agree=190 skip_gcc_compile=1 skip_gcc_stdout=1 skip_lean_crash=9 skip_lean_fail=9 skip_lean_timeout=11 skip_ub=47 triaged_addr=11 triaged_ub=1
+Baseline check: 0 regression(s), 0 improvement(s)
+gcc second-oracle lane OK
+SUMMARY: total=279 match=159 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=3 hang=0 cerb_skip=117 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+```
+
+csmith shard 2/6 rows of record (verbatim):
+
+```
+```
+
+Derived: zero baseline movement in every baseline lane; fuel census
+unchanged at `57 MEASURED (… 10 of them under a hypothesis …) 13 ABSORBING
+… 5 reachable-AMBIENT`; fork-drift layer 2 = 22; gcc `agree=1873 disagree=0`;
+pristine oracle 709 / 1 / 11 / 2 + plant rejected; the shard reads
+`0 regression(s), 0 improvement(s)` with 369/371 MATCH and 419 TIMEOUT as
+recorded.
+
+### Remaining, for the operator (not decided here)
+
+`sa_csmith_419.c` (0.6 s over the 15 s budget, inside the CPU bar) and the
+residual ~7 % CPU overhead versus pre-arc: the remaining measurable cost is
+in the runtime and in OTHER measured wrappers' `lemSize` evaluations; the
+remedy classes (broader measure scope, a lem fuel-scheme change, a
+representation change) are each a trust-surface decision. The `refsOf`
+guard for the environment bounds is NOT supported by the profiles (≤ 0.2 %)
+and is withdrawn from the TODO as a remedy.
