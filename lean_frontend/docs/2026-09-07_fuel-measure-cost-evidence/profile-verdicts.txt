@@ -1,0 +1,4 @@
+sa_csmith_369: exact full Defined-line set equals the captured D1 oracle; derived Lean verdict multiplicities={'Defined {value: "Specified(57)", stdout: "", stderr: "", blocked: "false"}': 350}
+sa_csmith_369-repeat: exact full Defined-line set equals the captured D1 oracle; derived Lean verdict multiplicities={'Defined {value: "Specified(57)", stdout: "", stderr: "", blocked: "false"}': 350}
+sa_csmith_371: exact full Defined-line set equals the captured D1 oracle; derived Lean verdict multiplicities={'Defined {value: "Specified(165)", stdout: "", stderr: "", blocked: "false"}': 310}
+sa_csmith_371-repeat: exact full Defined-line set equals the captured D1 oracle; derived Lean verdict multiplicities={'Defined {value: "Specified(165)", stdout: "", stderr: "", blocked: "false"}': 310}

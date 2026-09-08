@@ -1,0 +1,11 @@
+Mon Sep  7 22:44:07 UTC 2026
+ 22:44:07 up 1 day,  7:19,  ? user,  load average: 16.23, 7.42, 6.42
+a1e7cda30cbf572e9ff878c86859924c05e21a41
+32f8b3427f023ad78afc27fd170284cf09c2b331751652ef588d8d0061a62ad6  lean_frontend/.lake/build/bin/cerberus-lean
+5ce56db1549033c33e5aa92e0b9ea52c59fedd3ebd26f999566f120e643f25ad  .tmp/fuel-measure-cost/d2-profile/sampler.so
+f0f5423489ec8b3420b37bce4ed0539e61711d684ef0307b9d95472f5c0bd79c  lean_frontend/docs/2026-09-07_fuel-measure-cost-evidence/cpu-stack-sampler.c
+a9bd5d875c9878731da3b36444890f41f586dff507facf483b8ba273b5f6c98c  lean_frontend/docs/2026-09-07_fuel-measure-cost-evidence/analyze-cpu-stacks.py
+f2a36e1742d2d33f3ee0e466b9fcd52aa8ca6db7b6738cb9bb0789053fa5c79a  .tmp/fuel-measure-cost/cpu-fp9njwkc/observations/test_exec.g0QZz4c4Ld/303.bridge.stdout
+Mon Sep  7 22:44:38 UTC 2026
+ 22:44:38 up 1 day,  7:20,  ? user,  load average: 18.55, 8.86, 6.94
+raw_trace_sha256=d1408fb27c6528b7a0e4c203162c49187bdbfde08c34c53074297fbdce1ac3d8

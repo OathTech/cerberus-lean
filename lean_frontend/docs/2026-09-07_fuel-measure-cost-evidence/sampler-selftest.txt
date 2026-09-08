@@ -1,0 +1,18 @@
+trace=fixture-distinct.samples samples=139 interval_us=10000 depth_limit_hits=0
+Derived inclusive groups (groups can overlap; union and rest partition samples):
+     0    0.00% environment measures
+     0    0.00% generic expression measures
+     0    0.00% ctype measures
+     0    0.00% all measures union
+   139  100.00% rest
+Top self symbols:
+    58   41.73% fixture_measure
+    58   41.73% fixture_rest
+    23   16.55% [shared-library/or-unresolved]
+Top inclusive symbols:
+   139  100.00% _start
+   139  100.00% main
+    70   50.36% fixture_rest
+    69   49.64% fixture_measure
+All visible measure symbols: self_samples inclusive_samples symbol
+CPU stack sampler SELFTEST OK: interrupted PCs and inclusive stacks resolve both known CPU phases, each 30%-70% of samples

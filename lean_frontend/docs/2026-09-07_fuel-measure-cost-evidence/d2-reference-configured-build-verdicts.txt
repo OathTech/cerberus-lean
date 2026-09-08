@@ -1,0 +1,32 @@
+Selected verbatim lines; intermediate compiler output omitted.
+raw_log_sha256=fd7fde2bc62a874c8d90bb1ec21d505bae8a39168c259171ebb0a68903c6826f
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+Mon Sep  7 22:52:38 UTC 2026
+ 22:52:38 up 1 day,  7:28,  ? user,  load average: 18.88, 42.48, 26.24
+1b57bcf26ee729818a22dbf122296fcf8081fc9f
+/home/dev/projects/cerberus-lean-proj/worktrees/lem-lean-ref/3c88f0d/lem
+Lem 3c88f0d
+75efb04e017d5272ec0ddcbe9203cdb0258ba2c48044edad05a1b51efa17bf74  /home/dev/projects/cerberus-lean-proj/worktrees/lem-lean-ref/3c88f0d/bin/lem
+[MKDIR] ocaml_frontend/generated
+[LEM] generating files in [ocaml_frontend/generated] (log in [ocaml_frontend/lem.log])
+[STAMP] recording lem-sync content stamp
+check_lem_sync: recorded ocaml_frontend/lem_sync.sha256 (src 4f2e089b39d5b371973513b3350f81d1b89871976f77df9ba4a25da3421d0c54, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+[LEM] generating files in [sibylfs/generated] (log in [sibylfs/lem.log])
+[LEM] generating Lean files in [lean_frontend/generated] (log in [lean_frontend/lem.log])
+[COPY] 23 hand-written Lean files (lean_frontend/handwritten_copy.manifest) into [lean_frontend/generated]
+check_handwritten_sync: OK (23 hand-written files byte-identical to lean_frontend/generated/; manifest lean_frontend/handwritten_copy.manifest)
+[STAMP] recording Lean lem-sync content stamp
+check_lem_sync: recorded lean_frontend/lem_sync.sha256 (src 4f2e089b39d5b371973513b3350f81d1b89871976f77df9ba4a25da3421d0c54, gen 41781645302ba346ab11977956c6eb2e82f5de95678bc3d1091b1ae9e9eab3f8)
+check_lem_sync: OK (src 4f2e089b39d5b371973513b3350f81d1b89871976f77df9ba4a25da3421d0c54, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_lem_sync: lean OK (src 4f2e089b39d5b371973513b3350f81d1b89871976f77df9ba4a25da3421d0c54, gen 41781645302ba346ab11977956c6eb2e82f5de95678bc3d1091b1ae9e9eab3f8)
+check_lem_sync: OK (src 4f2e089b39d5b371973513b3350f81d1b89871976f77df9ba4a25da3421d0c54, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin 5773df76681e44f4ff117957617acae97fcf0622630b92c8804821dc6f185e2c, src c9c1a7067139b3ceb4eb0ad6870b93d8d0dbbaa9bd39e0397f11e8c975737a3b)
+[LEANC] compiling lean_frontend/native objects
+✔ [271/271] Built «cerberus-lean»:exe (543ms)
+Build completed successfully (271 jobs).
+check_driver_fresh: recorded lean stamp (bin 99912f86b9e98dfb415af071138058e0f004b26e760c5a99941475e055332d83, src f3d5b4b4fb5503daea6da931b6c73cf61bd0f3bf2fc412c698f9a53333e855bd)
+5773df76681e44f4ff117957617acae97fcf0622630b92c8804821dc6f185e2c  _build/default/backend/driver/main.exe
+99912f86b9e98dfb415af071138058e0f004b26e760c5a99941475e055332d83  lean_frontend/.lake/build/bin/cerberus-lean
+REFERENCE CONFIGURED BUILD EXIT: 0
+Mon Sep  7 22:56:11 UTC 2026
+ 22:56:11 up 1 day,  7:32,  ? user,  load average: 5.94, 24.37, 22.39

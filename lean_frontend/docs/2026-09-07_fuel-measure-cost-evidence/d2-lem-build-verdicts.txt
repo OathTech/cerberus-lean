@@ -1,0 +1,14 @@
+Selected verbatim lines; intermediate compiler output omitted.
+raw_log_sha256=cabb84e8b9c64bd221d70286eed8a0229f660bec5accff9fadd7597abf6b1bd0
+Mon Sep  7 22:49:01 UTC 2026
+ 22:49:01 up 1 day,  7:24,  ? user,  load average: 82.06, 43.11, 20.77
+3c88f0d7e5556491d733932c503c1637ae186f54
+command: CERB_MEM_MAX=48G scripts/capped timeout --signal=TERM --kill-after=15s 3300s make
+echo "(* Generated file -- do not edit. *)" > src/version.ml
+echo 'let v="3c88f0d"' >> src/version.ml
+echo "(* Generated file -- do not edit. *)" > src/share_directory.ml
+echo let d=\"/home/dev/projects/cerberus-lean-proj/worktrees/lem-lean-ref/3c88f0d/share/lem\" >> src/share_directory.ml
+make -C src all
+REFERENCE LEM BUILD EXIT: 0
+Mon Sep  7 22:50:07 UTC 2026
+ 22:50:07 up 1 day,  7:25,  ? user,  load average: 87.68, 52.52, 25.54

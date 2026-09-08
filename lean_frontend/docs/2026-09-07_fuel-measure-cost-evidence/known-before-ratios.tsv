@@ -1,0 +1,7 @@
+input	repeat	cpu_pre	cpu_head	ratio
+sa_csmith_369.c	1	10.87	21.18	1.948482
+sa_csmith_369.c	2	10.62	21.37	2.012241
+sa_csmith_371.c	1	8.95	16.14	1.803352
+sa_csmith_371.c	2	9.07	16.16	1.781698
+sa_csmith_419.c	1	14.42	23.98	1.662968
+sa_csmith_419.c	2	14.59	24.58	1.684716

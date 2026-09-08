@@ -1,0 +1,9 @@
+repeat	probe	mode	engine	exit	wall_s	maxrss_kb	verdict	note	cpu_s
+1	sa_csmith_369	nolibc	oracle	0	4.29	230448	VAL:Specified(57)x350	-	4.28
+1	sa_csmith_369	nolibc	lean-exh	0	10.88	254348	VAL:Specified(57)x350	-	10.87
+1	sa_csmith_371	nolibc	oracle	0	3.57	204560	VAL:Specified(165)x310	-	3.57
+1	sa_csmith_371	nolibc	lean-exh	0	8.95	220608	VAL:Specified(165)x310	-	8.95
+2	sa_csmith_369	nolibc	oracle	0	4.20	231548	VAL:Specified(57)x350	-	4.19
+2	sa_csmith_369	nolibc	lean-exh	0	10.64	255464	VAL:Specified(57)x350	-	10.62
+2	sa_csmith_371	nolibc	oracle	0	3.50	204664	VAL:Specified(165)x310	-	3.49
+2	sa_csmith_371	nolibc	lean-exh	0	9.08	221012	VAL:Specified(165)x310	-	9.07

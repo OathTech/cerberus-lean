@@ -1,0 +1,6 @@
+Reference LemLib manifest revision: 3c88f0d7e5556491d733932c503c1637ae186f54
+Reference resolved LemLib checkout HEAD: 3c88f0d7e5556491d733932c503c1637ae186f54
+Reference checkout status: clean
+Reference engine SHA-256:
+5773df76681e44f4ff117957617acae97fcf0622630b92c8804821dc6f185e2c  _build/default/backend/driver/main.exe
+99912f86b9e98dfb415af071138058e0f004b26e760c5a99941475e055332d83  lean_frontend/.lake/build/bin/cerberus-lean

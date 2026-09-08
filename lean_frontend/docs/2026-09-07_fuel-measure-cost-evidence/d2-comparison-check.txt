@@ -1,0 +1,6 @@
+D2 comparison integrity OK: 558 required inputs = 287 completed-CPU ratios + 271 explicitly excluded inputs.
+Derived pre-arc joint-status tally: {'MATCH': 287, 'CERB_SKIP': 268, 'TIMEOUT': 3}
+Derived ratio tally: above_1.10=73; at_or_below_1.10=214
+Derived ratio min=0.400000 median=1.000000 max=3.234694
+Only the three censored HEAD inputs use raised-budget repeats; all remaining ratios are single lane observations.
+No D4/post-remedy verdict: short-duration ratios have 0.01-second quantization, and deciding ratios must be repeated.

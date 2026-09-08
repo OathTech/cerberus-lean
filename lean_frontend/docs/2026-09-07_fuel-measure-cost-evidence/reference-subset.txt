@@ -1,0 +1,8 @@
+Derived selection from the actual D1 sorted staging list and unchanged lane shard formula:
+small_arrays=470
+shard_1_of_6=279 (one-based indices 1..279)
+shard_2_of_6=279 (one-based indices 280..558)
+union=558=small_arrays union shard_2_of_6
+Overlap between shard 1 and shard 2: 0
+The corpus sources, staging script and committed corpus baseline have no git diff from 1b57bcf26 to HEAD.
+Separate 55-minute tripwires will bound each reference shard.

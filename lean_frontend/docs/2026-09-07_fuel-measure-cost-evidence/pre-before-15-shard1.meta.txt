@@ -1,0 +1,47 @@
+repo=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-ref/1b57bcf26
+head=1b57bcf26ee729818a22dbf122296fcf8081fc9f
+instrument_sha256=f5666763bc880cd4494656e9950124066771352b0dd2cb8c5a1c955c4eebaa4d
+sha256 98f97f6ba9991e2c8ec8d4caf812266891e31525795b28068903197423746b6a scripts/test_csmith_corpus.sh
+sha256 0024d453121c7ef6a05982bc431665d7be1ad6cf0cb58c8c181dd03bf43abec9 scripts/test_exec.sh
+sha256 b21aeb4a1c32a2098d44c735a91c713876d2251ee9d624b86773632334a216a7 scripts/common.sh
+sha256 f809543d2f7859b6cb09b354274f974db8d548edff0aa40db7a3ed5a647eef10 scripts/exec_csmith_corpus_baseline.txt
+sha256 3d63c81a64659120e24d43d959cf0b6e3b4f6882e6fe99261c8be30892df73a6 lean_frontend/lake-manifest.json
+sha256 5773df76681e44f4ff117957617acae97fcf0622630b92c8804821dc6f185e2c _build/default/backend/driver/main.exe
+sha256 99912f86b9e98dfb415af071138058e0f004b26e760c5a99941475e055332d83 lean_frontend/.lake/build/bin/cerberus-lean
+corpus_source_sha256=3e6ee353f29fce9ca643d375983d85f931b19c4c898cae5a72a4d85a31a6e3c3
+command=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-ref/1b57bcf26/scripts/capped bash -c '
+rm() {
+    local p f
+    for p in "$@"; do
+        case "$p" in
+            "$FC_REPO"/.tmp/scripts/exec-test.*)
+                if [[ -d "$p" && -f "$p/status.txt" ]]; then
+                    for f in "$p"/*.time "$p/status.txt"; do
+                        [[ -f "$f" ]] || continue
+                        command cp -- "$f" "$FC_RUN/retained/" || return 1
+                    done
+                fi
+                ;;
+        esac
+    done
+    command rm "$@"
+}
+export -f rm
+exec "$@"
+' cpu-retention /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-ref/1b57bcf26/scripts/test_csmith_corpus.sh --check-baseline --shard 1/6
+CERB_MEM_MAX=48G
+TIMEOUT_SECS=15
+SKIP_BUILD=1
+start_utc=2026-09-07T23:01:52Z
+start_uptime=23:01:52 up 1 day,  7:37,  ? user,  load average: 1.28, 8.72, 15.93
+plant=False
+end_utc=2026-09-07T23:41:08Z
+end_uptime=23:41:08 up 1 day,  8:17,  ? user,  load average: 56.89, 29.38, 14.10
+
+SUMMARY: total=279 match=127 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=1 hang=0 cerb_skip=151 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+lane_exit=0
+exported_inputs=279
+exported_engine_rows=558
+derived_status_tally={'CERB_SKIP': 151, 'MATCH': 127, 'TIMEOUT': 1}

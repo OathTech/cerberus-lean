@@ -1,0 +1,15 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+Mon Sep  7 22:51:40 UTC 2026
+ 22:51:40 up 1 day,  7:27,  ? user,  load average: 46.93, 51.28, 27.80
+1b57bcf26ee729818a22dbf122296fcf8081fc9f
+/home/dev/projects/cerberus-lean-proj/worktrees/lem-lean-ref/3c88f0d/lem
+Lem 3c88f0d
+75efb04e017d5272ec0ddcbe9203cdb0258ba2c48044edad05a1b51efa17bf74  /home/dev/projects/cerberus-lean-proj/worktrees/lem-lean-ref/3c88f0d/bin/lem
+[MKDIR] ocaml_frontend/generated
+[LEM] generating files in [ocaml_frontend/generated] (log in [ocaml_frontend/lem.log])
+File "frontend/model/global.lem", line 1, character 1 to line 1, character 22
+  Unknown dependency: could not find module 'Pervasives' in directories 'frontend/model', './library'
+make: *** [Makefile:223: ocaml_frontend/generated/utils.ml] Error 1
+REFERENCE WHOLE BUILD EXIT: 2
+Mon Sep  7 22:51:41 UTC 2026
+ 22:51:41 up 1 day,  7:27,  ? user,  load average: 43.34, 50.46, 27.66
