@@ -230,6 +230,21 @@ hygiene items the audit confirmed (each re-verified by the orchestrator):
 
 ## Small items (independent; can ride along with any fix batch)
 
+- **C-TF1 landed (2026-09-08, `docs/2026-09-08_monadic-failstop-record.md`) — follow-ups.**
+  (a) Two escapers now exist: `CerbFail.escapeMessage` (per UTF-8 BYTE — the
+  correct `String.escaped` mirror) and `Main.batchEscape` (per CODEPOINT — the
+  registered P0 finding below). Unify on the per-byte one; a probe with a
+  non-ASCII byte in program stdout is the tripwire. (b) Reasoning-artifact
+  lens: `CerbFuel.fuelExhaustedLoc` and `CerbFail.modelFailStopLoc` are
+  `opaque`s (boundary census 16); consumers cannot prove them different from
+  any location. A transparent `def` (`Loc.other "…"`, kernel-decidable
+  against every program location) would remove two boundary rows and let
+  theorems case on the kill kind — operator decision (deviates from the C1
+  Option-C precedent). (c) The immaculate pin label `L=CRASH` now also covers
+  the typed fail-stop (exit 1) — rename to `L=FAILSTOP` in a re-record with
+  justification if the coarse label becomes misleading.
+
+
 - **Byte representation and printer producer contracts (M)** — corrected
   2026-09-06 after audit VF-07. `Main.batchEscape` handles the execution IO
   path's byte-carrier Chars: `driver_fs_step.update_stdout/update_stderr`

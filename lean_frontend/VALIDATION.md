@@ -119,7 +119,13 @@ pairs (`MATCH | L=CRASH`: `g2-memcmp-uninit`, `g4-bswap64-overflow`,
 front-end rejections reported on stderr by the oracle and as an `Error
 {msg: …}` line on stdout by Lean (exit class identical — measured on 112
 reject rows, Z1 record §2). Quoted PANIC texts carry build-relative line
-numbers (`CerbMem:2075:6` today) — never compare them byte-wise.
+numbers (`CerbMem:2075:6` today) — never compare them byte-wise. Since C-TF1 (2026-09-08, `docs/2026-09-08_monadic-failstop-record.md`) the
+seven hand-written memory-model fail-stops are TYPED kills
+(`Error0 CerbFail.modelFailStopLoc msg`) printed as the batch record
+`ModelFailure {msg: "…"}` with exit 1, where the oracle dies with an
+uncaught exception (exit 125): a both-fail pair, class (a) — the immaculate
+pin label `L=CRASH` covers it under the lane's reviewed coarse crash
+policy; the codec never lets a `ModelFailure` count as semantic agreement.
 
 **(b) RESOURCE LIMITS** — Lean must not fail where the oracle succeeds;
 the converse is acceptable. *Test:* the oracle completes the input
@@ -726,6 +732,13 @@ left the list 2026-09-05, see below):
   permanent-declared (OCaml module-shape parity);
 - LemLib's `failwithIImpl`/`fuelExhaustedWithImpl` panic bindings
   (runtime behavior of the axiom-free failure/fuel constants).
+
+Separately from the runtime seams, the boundary-opaque census (the axiom
+gate's exactly-once population, 16 rows since 2026-09-08) carries two PURE
+value-carrying opaques with no native binding: `CerbFuel.fuelExhaustedLoc`
+(§7) and `CerbFail.modelFailStopLoc` (C-TF1: the kill location of the seven
+memory-model fail-stops; proofs are uniform in the atom, no inequality between
+the two atoms is claimed — a transparent `def` alternative is a TODO item).
 
 There is no other declared boundary. The debug no-op stubs (`CerbDebug`,
 `CerbUtils`) are off every differential path (the oracle's debug level
