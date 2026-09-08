@@ -1,0 +1,72 @@
+trace=r2-after-sia_csmith_078.samples samples=879 interval_us=1000 depth_limit_hits=797
+Derived inclusive groups (groups can overlap; union and rest partition samples):
+    11    1.25% context-search bounds
+     1    0.11% environment measures
+    24    2.73% generic expression measures
+     1    0.11% ctype measures
+    36    4.10% all measures union
+   843   95.90% rest
+Top self symbols:
+   170   19.34% [shared-library/or-unresolved]
+    80    9.10% mi_free
+    56    6.37% lean_dec_ref_cold
+    33    3.75% lean_apply_1
+    32    3.64% mi_free_size
+    22    2.50% _ZN4leanL19lean_del_core_otherEP11lean_objecthRS1_
+    18    2.05% _ZN4lean11utf8_strlenEPKcm
+    15    1.71% lp_CerberusLean_generic__pexpr___00lemSize___redArg
+    15    1.71% lp_CerberusLean_subst__sym__pexpr__lemFuel
+    13    1.48% l_List_reverseAux___redArg
+    11    1.25% lean_free_object
+    11    1.25% __gmpz_cmp
+    11    1.25% lp_CerberusLean_WellFounded_fixC___at___00get__ctx_spec__0___redArg
+    11    1.25% lp_LemLib_Pmap_find_x3f___redArg
+     9    1.02% lp_CerberusLean_pull__constrained__lemFuel
+     9    1.02% lp_CerberusLean_get__ctx__lemFuel
+     9    1.02% lean_alloc_object
+     9    1.02% lp_CerberusLean_apply__ctx
+     8    0.91% lean_inc_heartbeat
+     8    0.91% lp_CerberusLean_List_mapTR_loop___at___00step__ctx___at___00drive__nonmemory__steps__aux2__lemFuel___at___00drive__nonmemory__steps__aux2___at___00new__drive__core__threads___at___00driver2__lemFuel___at___00driver2___at___00drive___at___00runPipeline___at___00main_spec__2_spec__12_spec__16_spec__28_spec__60_spec__128_spec__188_spec__223_spec__247
+     8    0.91% lp_LemLib_Pmap_add___redArg
+     8    0.91% lp_CerberusLean_nd__bind__lemFuel___redArg___lam__1
+     7    0.80% lp_CerberusLean_step__eval__pexpr__lemFuel___at___00step__eval__pexpr___at___00hack__lemFuel___at___00hack___at___00finalize___at___00drive___at___00runPipeline___at___00main_spec__2_spec__12_spec__15_spec__25_spec__53_spec__115_spec__156___redArg
+     7    0.80% l_String_Pos_Raw_isValidForSlice
+     7    0.80% _ZL12mi_find_pageP9mi_heap_smm
+Top inclusive symbols:
+   839   95.45% lean_apply_1
+   787   89.53% lp_CerberusLean_nd__bind__lemFuel___redArg___lam__1___boxed
+   784   89.19% lp_CerberusLean_nd__bind__lemFuel___redArg___lam__1
+   378   43.00% lp_CerberusLean_liftCore__run___at___00process__core__step2___at___00driver2__lemFuel___at___00driver2___at___00drive___at___00runPipeline___at___00main_spec__2_spec__12_spec__16_spec__28_spec__57_spec__119___redArg___lam__2___boxed
+   377   42.89% lp_CerberusLean_liftCore__run___at___00process__core__step2___at___00driver2__lemFuel___at___00driver2___at___00drive___at___00runPipeline___at___00main_spec__2_spec__12_spec__16_spec__28_spec__57_spec__119___redArg___lam__2
+   360   40.96% lp_CerberusLean_stExceptUndef__bind___redArg
+   346   39.36% lp_CerberusLean_List_mapTR_loop___at___00step__ctx___at___00drive__nonmemory__steps__aux2__lemFuel___at___00drive__nonmemory__steps__aux2___at___00new__drive__core__threads___at___00driver2__lemFuel___at___00driver2___at___00drive___at___00runPipeline___at___00main_spec__2_spec__12_spec__16_spec__28_spec__60_spec__128_spec__188_spec__223_spec__247___lam__6
+   344   39.14% lp_CerberusLean_E_eval__pexpr20___at___00step__ctx___at___00drive__nonmemory__steps__aux2__lemFuel___at___00drive__nonmemory__steps__aux2___at___00new__drive__core__threads___at___00driver2__lemFuel___at___00driver2___at___00drive___at___00runPipeline___at___00main_spec__2_spec__12_spec__16_spec__28_spec__60_spec__128_spec__188_spec__223_spec__241___redArg
+   337   38.34% lp_CerberusLean_eval__pexpr__aux2__lemFuel___at___00eval__pexpr__aux2___at___00print__eval__conv__aux__lemFuel___at___00print__eval__conv__aux___at___00printf__eval__conv___at___00drive__fs__step___at___00process__core__step2___at___00driver2__lemFuel___at___00driver2___at___00drive___at___00runPipeline___at___00main_spec__2_spec__12_spec__16_spec__28_spec__57_spec__121_spec__177_spec__210_spec__225_spec__232_spec__240
+   243   27.65% lp_CerberusLean_step__eval__pexpr__lemFuel___at___00step__eval__pexpr___at___00hack__lemFuel___at___00hack___at___00finalize___at___00drive___at___00runPipeline___at___00main_spec__2_spec__12_spec__15_spec__25_spec__53_spec__115_spec__156___redArg
+   241   27.42% lp_CerberusLean_eval__pexpr__aux2__lemFuel___at___00eval__pexpr__aux2___at___00print__eval__conv__aux__lemFuel___at___00print__eval__conv__aux___at___00printf__eval__conv___at___00drive__fs__step___at___00process__core__step2___at___00driver2__lemFuel___at___00driver2___at___00drive___at___00runPipeline___at___00main_spec__2_spec__12_spec__16_spec__28_spec__57_spec__121_spec__177_spec__210_spec__225_spec__232_spec__240___lam__0___boxed
+   239   27.19% lp_CerberusLean_eval__pexpr__aux2__lemFuel___at___00eval__pexpr__aux2___at___00print__eval__conv__aux__lemFuel___at___00print__eval__conv__aux___at___00printf__eval__conv___at___00drive__fs__step___at___00process__core__step2___at___00driver2__lemFuel___at___00driver2___at___00drive___at___00runPipeline___at___00main_spec__2_spec__12_spec__16_spec__28_spec__57_spec__121_spec__177_spec__210_spec__225_spec__232_spec__240___lam__0
+   232   26.39% lp_CerberusLean_nd__read___redArg___lam__0
+   230   26.17% lp_CerberusLean_drive__nonmemory__steps__aux2__lemFuel___at___00drive__nonmemory__steps__aux2___at___00new__drive__core__threads___at___00driver2__lemFuel___at___00driver2___at___00drive___at___00runPipeline___at___00main_spec__2_spec__12_spec__16_spec__28_spec__60_spec__128_spec__188___lam__2___boxed
+   230   26.17% lp_CerberusLean_drive__nonmemory__steps__aux2__lemFuel___at___00drive__nonmemory__steps__aux2___at___00new__drive__core__threads___at___00driver2__lemFuel___at___00driver2___at___00drive___at___00runPipeline___at___00main_spec__2_spec__12_spec__16_spec__28_spec__60_spec__128_spec__188___lam__2
+   219   24.91% lp_CerberusLean_step__ctx___at___00drive__nonmemory__steps__aux2__lemFuel___at___00drive__nonmemory__steps__aux2___at___00new__drive__core__threads___at___00driver2__lemFuel___at___00driver2___at___00drive___at___00runPipeline___at___00main_spec__2_spec__12_spec__16_spec__28_spec__60_spec__128_spec__188_spec__223
+   203   23.09% lean_apply_2
+   170   19.34% lp_CerberusLean_List_mapTR_loop___at___00step__ctx___at___00drive__nonmemory__steps__aux2__lemFuel___at___00drive__nonmemory__steps__aux2___at___00new__drive__core__threads___at___00driver2__lemFuel___at___00driver2___at___00drive___at___00runPipeline___at___00main_spec__2_spec__12_spec__16_spec__28_spec__60_spec__128_spec__188_spec__223_spec__247
+   156   17.75% lp_CerberusLean_step__eval__pexpr__lemFuel___at___00step__eval__pexpr___at___00hack__lemFuel___at___00hack___at___00finalize___at___00drive___at___00runPipeline___at___00main_spec__2_spec__12_spec__15_spec__25_spec__53_spec__115_spec__156___redArg___lam__1___boxed
+   155   17.63% lean_dec_ref_cold
+   127   14.45% lp_CerberusLean_pull__constrained
+   119   13.54% lp_CerberusLean_pull__constrained__lemFuel
+   106   12.06% lp_CerberusLean_pull__helper___redArg
+   104   11.83% lp_CerberusLean_List_foldl___at___00pull__helper_spec__3___redArg
+   103   11.72% lp_CerberusLean_exception__undef__mapM___redArg
+All visible measure symbols: self_samples inclusive_samples symbol
+1 22 lp_CerberusLean_generic__pexpr_lemSize___redArg
+15 21 lp_CerberusLean_generic__pexpr___00lemSize___redArg
+11 11 lp_CerberusLean_WellFounded_fixC___at___00get__ctx_spec__0___redArg
+4 8 lp_CerberusLean_generic__pexpr___00lemSize__aux2___redArg
+2 8 lp_CerberusLean_generic__pexpr___00lemSize__aux3___redArg
+0 1 lp_CerberusLean_generic__expr_lemSize___redArg
+1 1 lp_CerberusLean_generic__expr___00lemSize___redArg
+0 1 lp_CerberusLean_CerbTagsWf_envBound
+0 1 lp_CerberusLean_ctype_lemSize
+1 1 lp_CerberusLean_ctype___00lemSize
+1 1 lp_CerberusLean_generic__pattern_lemSize___redArg

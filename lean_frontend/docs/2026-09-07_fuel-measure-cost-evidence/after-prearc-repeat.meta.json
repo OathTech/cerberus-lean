@@ -1,0 +1,90 @@
+{
+  "start": {
+    "utc": "2026-09-08T05:15:41.386773+00:00",
+    "uptime": "05:15:41 up 1 day, 13:51,  ? user,  load average: 3.53, 4.48, 4.33"
+  },
+  "script_sha256": "be963234710ae2d6678736572ac88392f1d84696b7f94e48b1d21e1745e0bbba",
+  "input_table_sha256": "ae2e495d1483c4559081b4ccab36086d12bc4f3b85db1e2c690b5fb30d50fab0",
+  "repos": {
+    "pre": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-ref/1b57bcf26",
+    "after": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost"
+  },
+  "staged": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/scripts/csmith-corpus.9bBV9Gnhn4",
+  "identities_before": {
+    "pre": {
+      "lean_frontend/.lake/build/bin/cerberus-lean": "99912f86b9e98dfb415af071138058e0f004b26e760c5a99941475e055332d83",
+      "_build/default/backend/driver/main.exe": "5773df76681e44f4ff117957617acae97fcf0622630b92c8804821dc6f185e2c",
+      "tests/mem-scale-probes/measure.sh": "50c022205be0f372dd7f9b2ba5fc7183402c1a6f312bcfbc53d2f154d9c9b50c",
+      "scripts/exec_csmith_corpus_baseline.txt": "f809543d2f7859b6cb09b354274f974db8d548edff0aa40db7a3ed5a647eef10",
+      "frontend/model/core_reduction.lem": "88dae8981839ac10f912cafe84aedae449464b17125b24c6e837f3cc810dc2b8",
+      "lean_frontend/lake-manifest.json": "3d63c81a64659120e24d43d959cf0b6e3b4f6882e6fe99261c8be30892df73a6",
+      "head": "1b57bcf26ee729818a22dbf122296fcf8081fc9f",
+      "status": "",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "after": {
+      "lean_frontend/.lake/build/bin/cerberus-lean": "359cf998c422ba3abb1598b57a94187a69071a9f3c59ef8ec365aa13296c42bb",
+      "_build/default/backend/driver/main.exe": "61c16c4d1f33612c8d5ca415bf2e39e6076adfa3b259b8bf16bd08f4ddb2a89a",
+      "tests/mem-scale-probes/measure.sh": "50c022205be0f372dd7f9b2ba5fc7183402c1a6f312bcfbc53d2f154d9c9b50c",
+      "scripts/exec_csmith_corpus_baseline.txt": "c284806aeff14fa983964329c59e9d8f761728f5361d4d39c3e99c626e76954b",
+      "frontend/model/core_reduction.lem": "b80d535a24bb993a5bf6715979bb0cd2d6b0f65e40116149bbfbebc39e7da695",
+      "lean_frontend/lake-manifest.json": "ce11f33292dca81439373f91e4d71d21f9f6573ec4e4bd90daad95ca1f90710e",
+      "head": "5f14f0702b326fae43d2b5968d0e57b1f03b815e",
+      "status": "?? lean_frontend/docs/2026-09-07_fuel-measure-cost-evidence/repeat-prearc-comparison.py\n",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "CERB_MEM_MAX": "48G",
+  "TIMEOUT_SECS": 90,
+  "repetitions": 2,
+  "order": "two passes over all 287 names; alternate pre/after order within each pair",
+  "table_boundaries": [
+    {
+      "repeat": 1,
+      "start": {
+        "utc": "2026-09-08T05:15:41.389011+00:00",
+        "uptime": "05:15:41 up 1 day, 13:51,  ? user,  load average: 3.53, 4.48, 4.33"
+      },
+      "end": {
+        "utc": "2026-09-08T05:24:40.881280+00:00",
+        "uptime": "05:24:40 up 1 day, 14:00,  ? user,  load average: 2.63, 3.14, 3.76"
+      }
+    },
+    {
+      "repeat": 2,
+      "start": {
+        "utc": "2026-09-08T05:24:40.882811+00:00",
+        "uptime": "05:24:40 up 1 day, 14:00,  ? user,  load average: 2.63, 3.14, 3.76"
+      },
+      "end": {
+        "utc": "2026-09-08T05:33:31.347714+00:00",
+        "uptime": "05:33:31 up 1 day, 14:09,  ? user,  load average: 4.18, 2.96, 3.30"
+      }
+    }
+  ],
+  "end": {
+    "utc": "2026-09-08T05:33:31.686162+00:00",
+    "uptime": "05:33:31 up 1 day, 14:09,  ? user,  load average: 4.18, 2.96, 3.30"
+  },
+  "identities_unchanged": true,
+  "input_inventory": {
+    "count": 289,
+    "sha256_of_sorted_json": "6846ac49eaf3739e636a9589795c42371e5dc6853c1988fd48cc367160a33c21",
+    "raw": "metadata.json/input_sha256"
+  },
+  "raw_directory": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/fuel-measure-cost/d4-repeats",
+  "raw_sha256": {
+    "metadata.json": "a7c047a69b71ab89adb403c5acbdbd2610fcc88f87702afec92da371f5b3943d",
+    "observations.tsv": "dd6e9ef4059cdb325ae9bf263778f4e3f21d7492acc46cbc0a5093d361b8a371",
+    "verdicts.json": "b4df65bc36650be0c4c6eb4bd1ece7903c8b43f6c4c9017b933b48e5aff6b729"
+  },
+  "console_sha256": "e92d603369f58378a2539a2e4e0b0f464f95b6ee13f2308ffa01931c75ad789d",
+  "derived_tallies": {
+    "inputs": 287,
+    "engine_rows": 2296,
+    "oracle_lean_pairs": 1148,
+    "initial_exceptions": 80,
+    "repeated_exceptions": 1,
+    "median_repeated_ratio": "0.945946"
+  }
+}

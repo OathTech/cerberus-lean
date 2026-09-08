@@ -1,0 +1,185 @@
+Verbatim lane summary/gate lines selected from the completed D4 Tier A run.
+Raw directory: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/fuel-measure-cost/d4-fast
+
+[A1]
+check_handwritten_sync: OK (37 hand-written files byte-identical to lean_frontend/generated/; manifest lean_frontend/handwritten_copy.manifest)
+=== effects-proof-test ===
+=== totality-proof-test ===
+=== core-parser-test ===
+=== Lexer ===
+=== Types ===
+=== Values ===
+=== Patterns ===
+=== Pexpr atoms ===
+=== Pexpr constructors ===
+=== Pexpr compound expressions ===
+=== Expr atoms ===
+=== Expr compound ===
+=== Full programs (from cerberus --pp core) ===
+=== Declarations ===
+=== libc dump productions (arc-6 S1) ===
+=== Runtime files ===
+=== fresh-int-test ===
+=== pp-test ===
+=== PPTest: arc-10 S3 pretty-printer mirrors ===
+All PP tests passed
+=== fuel-exemplar-test ===
+check_exec_purity: CLEAN (11 modules)
+check_theorem_axioms: hand-written axiom census OK (0 axioms — the arc-17 S2b end state)
+check_theorem_axioms: generated-tree census OK (207 files: 0 axioms, boundary-opaque population = the 15 registered rows exactly-once (incl. CerbFuel.fuelExhaustedLoc), 0 unsafeCast)
+check_theorem_axioms: C2 ratchet OK (327 files scanned recursively: 0 axioms, 0 runEffectful, seam population = the 38 pinned path-qualified counted rows exactly incl. the extern class; lem tests/ scaffolds asserted outside the surface)
+check_theorem_axioms: D14 grep-ban OK (no native_decide/bv_decide in 1 tree(s) + 37 hand-written seam files + LemLibTest.lean)
+check_theorem_axioms: driver2 cone sorryAx-free + ofReduce*-free + DAEMON-free (arc-8 S3 bar)
+check_theorem_axioms: C2 entry census OK (9 entries, every cone ⊆ [propext, Classical.choice, Quot.sound])
+check_theorem_axioms: mem-scale S1 leg OK (6 C1/C3 equality theorems, every cone ⊆ [propext, Classical.choice, Quot.sound])
+check_theorem_axioms: FUEL arc leg OK (34 contract lemmas — 9 generated _zero + the CerbND runner leaves/parametricity pins + the ∀-fuel exemplar and its instances + the 3 fuel_measure sufficiency obligations (generated statement + hand-written proof), every cone ⊆ [propext, Classical.choice, Quot.sound])
+check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)
+check_sorry_token: OK (286 files scanned comment-stripped — generated 207, hand-written+test 44, LemLib 35; 0 sorry tokens)
+test_fuel_classifier: 18 fixtures, ALL OK
+test_exec: SELFTEST — extract_verdict_seq plants (loud plant banner; no binaries run)
+test_exec: SELFTEST OK (E0 pre-repair collapse reproduced; E1-E7: same-value/different-stdout and different-stderr yield distinct whole-line tokens, escaped payload byte-exact, multi-outcome order kept, embedded text is payload, Undefined unchanged, truncated line is no token)
+check_no_fuel_numerals: SELFTEST — planting F1-F6 into a scratch copy of the scan set (loud plant banner; nothing in the tree is touched)
+check_no_fuel_numerals: SELFTEST OK (20 plants red with the declared label; E5 indirection a recorded known gap; unplanted set green)
+check_no_fuel_numerals: OK (293 files scanned comment-stripped; no lemDefaultFuel/driverFuel/ndDefaultFuel, no LemFuel instance, no literal fuel (F1-F6); allowed Main.lean sites seen: 4 of 4 (hand-written + generated copy))
+check_lakefile_roots: SELFTEST — planting on a scratch copy of lakefile.toml (loud plant banner; nothing in the tree is touched)
+check_lakefile_roots: SELFTEST OK (3 plants red, baseline green)
+check_lakefile_roots: OK (206 roots = 206 generated modules + the exe root Main; 85 auxiliary modules all built)
+check_fuel_forms: SELFTEST — plants on a scratch copy of the classification table (loud plant banner; nothing in the tree is touched)
+check_fuel_forms: SELFTEST OK (24 plants with the declared label — 6 on the table (incl. the ABSORBING-cone plant), 3 on the hypothesis register, 15 compiled decoys: the C4 four (type True / wrong worker / contradictory hypothesis caught by the register / extra binder), the whole-project audit's two decoys verbatim (review_bad _zero about runNDFuel; review_shift at literal 0), wrong fuel position, swapped worker-side and wrapper-side arguments, changed measure, wrapper calling another worker, hidden premise, and three _zero decoys (a POSITIVE control ABSORBING, a term for a binder, fuel 1) — each rejected with its own message; unplanted table green)
+check_fuel_forms: forms partition OK (54 MEASURED + 13 ABSORBING + 8 ambient-reachable + 6 ambient-unreachable = 81 fuel'd workers)
+check_fuel_forms: OK (81 fuel'd workers: 54 MEASURED (obligation of the contract's shape incl. argument correspondence against the wrapper's body; every obligation + proof cone ⊆ the standard three; 7 of them under a hypothesis, each = a reviewed row of fuel_hypotheses.txt, both directions), 13 ABSORBING = kill at zero (the _zero lemma is the worker at literal 0 on its own binders = the monad's absorbing element, cone ⊆ the standard three; propagation NOT proved — lem TODO 13), 8 reachable-AMBIENT = the 8 rows of fuel_forms_pending.txt exactly, 6 ambient unreachable from the drive cone)
+check_exec_totality: CLEAN (22 generated modules + hand-written CerbND, 0 allowlisted)
+check_lem_sync: OK (src 89f018ea22377dff9f234d5d48a59a4c733b1a70a6abdbcac84ceb08febac3fd, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_lem_sync: lean OK (src 89f018ea22377dff9f234d5d48a59a4c733b1a70a6abdbcac84ceb08febac3fd, gen 9a120fb81bc4ea6f8d6e66d91eb87614d5ddf1929e85b59030efd11aa791b89f)
+check_fork_drift: SELFTEST — plants on scratch copies of the manifest and fake prerequisites (loud plant banner; nothing in the tree is touched)
+check_fork_drift: SELFTEST OK (14 plants with declared verdict/message: S1-S10 prerequisite/locale/name controls; S11 copied-content control; S12 inside-listed-file drift; S13/S14 duplicate/missing content pins; unplanted gate green)
+check_fork_content: OK — 76 source files content/mode-pinned
+check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 22 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+check_fixture_freeze: OK (16 fixture files match the pinned manifest; name set exact)
+test_renumber_plants: OK (12 plants: refusals refuse, admits admit with declared class)
+test_actual_shell_capture_retains_bytes_and_status (__main__.ObservationTests.test_actual_shell_capture_retains_bytes_and_status) ... ok
+test_all_bytes_are_decimal_not_octal_or_unicode (__main__.ObservationTests.test_all_bytes_are_decimal_not_octal_or_unicode) ... ok
+test_all_positive_cap_witnesses_reject_regardless_of_parent_status (__main__.ObservationTests.test_all_positive_cap_witnesses_reject_regardless_of_parent_status) ... ok
+test_completion_protocol (__main__.ObservationTests.test_completion_protocol) ... ok
+test_diagnostics_are_separate_and_fatal_suffixes_reject (__main__.ObservationTests.test_diagnostics_are_separate_and_fatal_suffixes_reject) ... ok
+test_each_semantic_field_changes_comparison (__main__.ObservationTests.test_each_semantic_field_changes_comparison) ... ok
+test_equivalent_escape_spelling_preserves_bytes (__main__.ObservationTests.test_equivalent_escape_spelling_preserves_bytes) ... ok
+test_error_message_is_unescaped_bytes (__main__.ObservationTests.test_error_message_is_unescaped_bytes) ... ok
+test_escaped_verdict_is_payload (__main__.ObservationTests.test_escaped_verdict_is_payload) ... ok
+test_failure_continuation_is_preserved_and_extra_fatal_rejects (__main__.ObservationTests.test_failure_continuation_is_preserved_and_extra_fatal_rejects) ... ok
+test_fuel_records_reject_including_litmus_failure_policy (__main__.ObservationTests.test_fuel_records_reject_including_litmus_failure_policy) ... ok
+test_fuel_words_inside_semantic_output_are_data (__main__.ObservationTests.test_fuel_words_inside_semantic_output_are_data) ... ok
+test_immaculate_validates_before_coarse_crash_projection (__main__.ObservationTests.test_immaculate_validates_before_coarse_crash_projection) ... ok
+test_internal_failure_policy_is_narrow (__main__.ObservationTests.test_internal_failure_policy_is_narrow) ... ok
+test_known_trace_envelopes_only_are_normalized (__main__.ObservationTests.test_known_trace_envelopes_only_are_normalized) ... ok
+test_malformed_suffix_does_not_leave_a_valid_prefix (__main__.ObservationTests.test_malformed_suffix_does_not_leave_a_valid_prefix) ... ok
+test_order_and_multiplicity_are_preserved (__main__.ObservationTests.test_order_and_multiplicity_are_preserved) ... ok
+test_refusal_validates_the_entire_collection (__main__.ObservationTests.test_refusal_validates_the_entire_collection) ... ok
+test_styled_diagnostics_are_rejected_specifically_never_normalized (__main__.ObservationTests.test_styled_diagnostics_are_rejected_specifically_never_normalized)
+OK
+test_bridge_keeps_all_bytes_and_status_without_publishing_failed_json (__main__.PrerequisiteTests.test_bridge_keeps_all_bytes_and_status_without_publishing_failed_json) ... ok
+test_failed_speclab_build_cannot_use_existing_generator (__main__.PrerequisiteTests.test_failed_speclab_build_cannot_use_existing_generator) ... ok
+test_observation_run_dir_retention_follows_exit_status_and_evidence_mode (__main__.PrerequisiteTests.test_observation_run_dir_retention_follows_exit_status_and_evidence_mode)
+OK
+test_actual_inventory_rejects_lost_files_and_required_roots (__main__.ReleaseTests.test_actual_inventory_rejects_lost_files_and_required_roots) ... ok
+test_complete_tier_is_distinct_from_release_certification (__main__.ReleaseTests.test_complete_tier_is_distinct_from_release_certification) ... ok
+test_failure_after_completion_marker_is_failure (__main__.ReleaseTests.test_failure_after_completion_marker_is_failure) ... ok
+test_interrupt_during_cleanup_is_not_lost (__main__.ReleaseTests.test_interrupt_during_cleanup_is_not_lost) ... ok
+test_missing_command_is_incomplete (__main__.ReleaseTests.test_missing_command_is_incomplete) ... ok
+test_missing_inventory_prevents_success (__main__.ReleaseTests.test_missing_inventory_prevents_success) ... ok
+test_missing_tier_duplicate_and_bad_command_refuse (__main__.ReleaseTests.test_missing_tier_duplicate_and_bad_command_refuse) ... ok
+test_nested_timeout_and_capped_descendants_are_cleaned (__main__.ReleaseTests.test_nested_timeout_and_capped_descendants_are_cleaned) ... ok
+test_provider_cancellation_during_cleanup_stops_before_next_checkout (__main__.ReleaseTests.test_provider_cancellation_during_cleanup_stops_before_next_checkout) ... PROVIDER REHEARSAL INCOMPLETE: runner interrupted by signal 15
+test_real_membership_expands_every_documented_command (__main__.ReleaseTests.test_real_membership_expands_every_documented_command) ... ok
+test_reporting_discrepancy_preserves_exit_and_requires_complete_rows (__main__.ReleaseTests.test_reporting_discrepancy_preserves_exit_and_requires_complete_rows) ... ok
+test_runner_signals_leave_incomplete_report_and_identified_process (__main__.ReleaseTests.test_runner_signals_leave_incomplete_report_and_identified_process) ... ok
+test_source_change_cannot_certify_original_candidate (__main__.ReleaseTests.test_source_change_cannot_certify_original_candidate) ... ok
+test_subset_cannot_claim_a_complete_tier (__main__.ReleaseTests.test_subset_cannot_claim_a_complete_tier) ... ok
+test_successful_leader_cannot_leave_background_work (__main__.ReleaseTests.test_successful_leader_cannot_leave_background_work) ... ok
+test_timeout_after_completion_marker_is_incomplete (__main__.ReleaseTests.test_timeout_after_completion_marker_is_incomplete) ... ok
+OK
+test_computed_message_and_state_function_ascription_are_inventoried (__main__.CensusTests.test_computed_message_and_state_function_ascription_are_inventoried) ... ok
+test_nested_comments_strings_and_quote_char_do_not_hide_real_site (__main__.CensusTests.test_nested_comments_strings_and_quote_char_do_not_hide_real_site) ... ok
+test_smallest_range_and_ambiguity_are_explicit (__main__.CensusTests.test_smallest_range_and_ambiguity_are_explicit) ... ok
+test_unterminated_comment_and_string_refuse (__main__.CensusTests.test_unterminated_comment_and_string_refuse) ... ok
+test_unused_anonymous_instance_does_not_inherit_named_exec_dependency (__main__.CensusTests.test_unused_anonymous_instance_does_not_inherit_named_exec_dependency) ... ok
+OK
+test_missing_wrong_and_extra_artifacts_refuse (__main__.UpstreamInstrumentTests.test_missing_wrong_and_extra_artifacts_refuse) ... ok
+test_only_elapsed_diagnostic_trailer_is_projected (__main__.UpstreamInstrumentTests.test_only_elapsed_diagnostic_trailer_is_projected) ... ok
+test_real_control_and_same_value_byte_mutation (__main__.UpstreamInstrumentTests.test_real_control_and_same_value_byte_mutation) ... ok
+test_reviewed_difference_moves_fail_closed (__main__.UpstreamInstrumentTests.test_reviewed_difference_moves_fail_closed) ... ok
+test_status_and_fatal_suffix_cannot_hide_behind_verdict (__main__.UpstreamInstrumentTests.test_status_and_fatal_suffix_cannot_hide_behind_verdict) ... ok
+OK
+
+[A2]
+check_lem_sync: OK (src 89f018ea22377dff9f234d5d48a59a4c733b1a70a6abdbcac84ceb08febac3fd, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin fcfe187487dc7f6d33e9ca30101efeee746aca3953ef73379fad88d31d860975, src fbe821d0c57daa7cce058e57f4d9f1d500e4b17b200bfea3fb9ad32759053b33)
+check_driver_fresh: recorded lean stamp (bin 359cf998c422ba3abb1598b57a94187a69071a9f3c59ef8ec365aa13296c42bb, src 8cc17d75a8e100ce53f62fdf6d6b769861333c5310894521d76c9dedfbc8d111)
+SUMMARY: total=106 match=85 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=3 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+
+[A3]
+check_lem_sync: OK (src 89f018ea22377dff9f234d5d48a59a4c733b1a70a6abdbcac84ceb08febac3fd, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin fcfe187487dc7f6d33e9ca30101efeee746aca3953ef73379fad88d31d860975, src fbe821d0c57daa7cce058e57f4d9f1d500e4b17b200bfea3fb9ad32759053b33)
+check_driver_fresh: recorded lean stamp (bin 359cf998c422ba3abb1598b57a94187a69071a9f3c59ef8ec365aa13296c42bb, src 8cc17d75a8e100ce53f62fdf6d6b769861333c5310894521d76c9dedfbc8d111)
+SUMMARY: total=212 match=183 ub_match=16 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=13 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+
+[A4]
+check_lem_sync: OK (src 89f018ea22377dff9f234d5d48a59a4c733b1a70a6abdbcac84ceb08febac3fd, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin fcfe187487dc7f6d33e9ca30101efeee746aca3953ef73379fad88d31d860975, src fbe821d0c57daa7cce058e57f4d9f1d500e4b17b200bfea3fb9ad32759053b33)
+check_driver_fresh: recorded lean stamp (bin 359cf998c422ba3abb1598b57a94187a69071a9f3c59ef8ec365aa13296c42bb, src 8cc17d75a8e100ce53f62fdf6d6b769861333c5310894521d76c9dedfbc8d111)
+SUMMARY: total=90 match=66 ub_match=20 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=4 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+
+[A4b]
+check_lem_sync: OK (src 89f018ea22377dff9f234d5d48a59a4c733b1a70a6abdbcac84ceb08febac3fd, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin fcfe187487dc7f6d33e9ca30101efeee746aca3953ef73379fad88d31d860975, src fbe821d0c57daa7cce058e57f4d9f1d500e4b17b200bfea3fb9ad32759053b33)
+check_driver_fresh: recorded lean stamp (bin 359cf998c422ba3abb1598b57a94187a69071a9f3c59ef8ec365aa13296c42bb, src 8cc17d75a8e100ce53f62fdf6d6b769861333c5310894521d76c9dedfbc8d111)
+SUMMARY: total=69 match=69 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+
+[A4c]
+check_lem_sync: OK (src 89f018ea22377dff9f234d5d48a59a4c733b1a70a6abdbcac84ceb08febac3fd, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin fcfe187487dc7f6d33e9ca30101efeee746aca3953ef73379fad88d31d860975, src fbe821d0c57daa7cce058e57f4d9f1d500e4b17b200bfea3fb9ad32759053b33)
+check_driver_fresh: recorded lean stamp (bin 359cf998c422ba3abb1598b57a94187a69071a9f3c59ef8ec365aa13296c42bb, src 8cc17d75a8e100ce53f62fdf6d6b769861333c5310894521d76c9dedfbc8d111)
+SUMMARY: exec_match=9 neg_pinned=5 fail=0
+
+[A5]
+check_lem_sync: OK (src 89f018ea22377dff9f234d5d48a59a4c733b1a70a6abdbcac84ceb08febac3fd, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin fcfe187487dc7f6d33e9ca30101efeee746aca3953ef73379fad88d31d860975, src fbe821d0c57daa7cce058e57f4d9f1d500e4b17b200bfea3fb9ad32759053b33)
+check_driver_fresh: recorded lean stamp (bin 359cf998c422ba3abb1598b57a94187a69071a9f3c59ef8ec365aa13296c42bb, src 8cc17d75a8e100ce53f62fdf6d6b769861333c5310894521d76c9dedfbc8d111)
+SUMMARY: match=12 diff=0
+
+[A6]
+check_lem_sync: OK (src 89f018ea22377dff9f234d5d48a59a4c733b1a70a6abdbcac84ceb08febac3fd, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin fcfe187487dc7f6d33e9ca30101efeee746aca3953ef73379fad88d31d860975, src fbe821d0c57daa7cce058e57f4d9f1d500e4b17b200bfea3fb9ad32759053b33)
+check_driver_fresh: recorded lean stamp (bin 359cf998c422ba3abb1598b57a94187a69071a9f3c59ef8ec365aa13296c42bb, src 8cc17d75a8e100ce53f62fdf6d6b769861333c5310894521d76c9dedfbc8d111)
+SUMMARY: total=2 match=2 fail=0
+
+[A7]
+check_lem_sync: OK (src 89f018ea22377dff9f234d5d48a59a4c733b1a70a6abdbcac84ceb08febac3fd, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin fcfe187487dc7f6d33e9ca30101efeee746aca3953ef73379fad88d31d860975, src fbe821d0c57daa7cce058e57f4d9f1d500e4b17b200bfea3fb9ad32759053b33)
+check_driver_fresh: recorded lean stamp (bin 359cf998c422ba3abb1598b57a94187a69071a9f3c59ef8ec365aa13296c42bb, src 8cc17d75a8e100ce53f62fdf6d6b769861333c5310894521d76c9dedfbc8d111)
+
+[A8]
+check_lem_sync: OK (src 89f018ea22377dff9f234d5d48a59a4c733b1a70a6abdbcac84ceb08febac3fd, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin fcfe187487dc7f6d33e9ca30101efeee746aca3953ef73379fad88d31d860975, src fbe821d0c57daa7cce058e57f4d9f1d500e4b17b200bfea3fb9ad32759053b33)
+check_driver_fresh: recorded lean stamp (bin 359cf998c422ba3abb1598b57a94187a69071a9f3c59ef8ec365aa13296c42bb, src 8cc17d75a8e100ce53f62fdf6d6b769861333c5310894521d76c9dedfbc8d111)
+
+[A9]
+check_lem_sync: OK (src 89f018ea22377dff9f234d5d48a59a4c733b1a70a6abdbcac84ceb08febac3fd, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin fcfe187487dc7f6d33e9ca30101efeee746aca3953ef73379fad88d31d860975, src fbe821d0c57daa7cce058e57f4d9f1d500e4b17b200bfea3fb9ad32759053b33)
+check_driver_fresh: recorded lean stamp (bin 359cf998c422ba3abb1598b57a94187a69071a9f3c59ef8ec365aa13296c42bb, src 8cc17d75a8e100ce53f62fdf6d6b769861333c5310894521d76c9dedfbc8d111)
+SUMMARY: total=106 same=103 diff=3 ocaml_fail=0 lean_fail=0
+
+[A10]
+check_lem_sync: OK (src 89f018ea22377dff9f234d5d48a59a4c733b1a70a6abdbcac84ceb08febac3fd, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin fcfe187487dc7f6d33e9ca30101efeee746aca3953ef73379fad88d31d860975, src fbe821d0c57daa7cce058e57f4d9f1d500e4b17b200bfea3fb9ad32759053b33)
+check_driver_fresh: recorded lean stamp (bin 359cf998c422ba3abb1598b57a94187a69071a9f3c59ef8ec365aa13296c42bb, src 8cc17d75a8e100ce53f62fdf6d6b769861333c5310894521d76c9dedfbc8d111)
+
+[A11]
+check_lem_sync: OK (src 89f018ea22377dff9f234d5d48a59a4c733b1a70a6abdbcac84ceb08febac3fd, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin fcfe187487dc7f6d33e9ca30101efeee746aca3953ef73379fad88d31d860975, src fbe821d0c57daa7cce058e57f4d9f1d500e4b17b200bfea3fb9ad32759053b33)
+check_driver_fresh: recorded lean stamp (bin 359cf998c422ba3abb1598b57a94187a69071a9f3c59ef8ec365aa13296c42bb, src 8cc17d75a8e100ce53f62fdf6d6b769861333c5310894521d76c9dedfbc8d111)
+SUMMARY: total=213 match=207 ub_match=6 ub_diff=0 reject_match=0 diff=0 mismatch=0 reject_diff=0 lean_fail=0 lean_crash=0 fuel=0 lean_error=0 lean_timeout=0 oracle_fail=0 oracle_timeout=0 oracle_inconsistent=0

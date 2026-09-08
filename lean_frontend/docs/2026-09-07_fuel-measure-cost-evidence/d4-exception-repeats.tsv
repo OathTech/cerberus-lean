@@ -1,0 +1,17 @@
+repeat	revision	input	probe	mode	engine	exit	wall_s	maxrss_kb	verdict	note	cpu_s
+3	pre	sia_csmith_078.c	sia_csmith_078	nolibc	oracle	0	0.36	66968	VAL:Specified(152)x60	-	0.35
+3	pre	sia_csmith_078.c	sia_csmith_078	nolibc	lean-exh	0	0.83	101756	VAL:Specified(152)x60	-	0.83
+3	after	sia_csmith_078.c	sia_csmith_078	nolibc	oracle	0	0.35	66304	VAL:Specified(152)x60	-	0.35
+3	after	sia_csmith_078.c	sia_csmith_078	nolibc	lean-exh	0	0.87	96420	VAL:Specified(152)x60	-	0.87
+4	after	sia_csmith_078.c	sia_csmith_078	nolibc	oracle	0	0.34	65960	VAL:Specified(152)x60	-	0.33
+4	after	sia_csmith_078.c	sia_csmith_078	nolibc	lean-exh	0	0.87	95584	VAL:Specified(152)x60	-	0.86
+4	pre	sia_csmith_078.c	sia_csmith_078	nolibc	oracle	0	0.34	66832	VAL:Specified(152)x60	-	0.33
+4	pre	sia_csmith_078.c	sia_csmith_078	nolibc	lean-exh	0	0.82	102272	VAL:Specified(152)x60	-	0.82
+5	pre	sia_csmith_078.c	sia_csmith_078	nolibc	oracle	0	0.34	66496	VAL:Specified(152)x60	-	0.34
+5	pre	sia_csmith_078.c	sia_csmith_078	nolibc	lean-exh	0	0.83	101252	VAL:Specified(152)x60	-	0.83
+5	after	sia_csmith_078.c	sia_csmith_078	nolibc	oracle	0	0.34	67128	VAL:Specified(152)x60	-	0.34
+5	after	sia_csmith_078.c	sia_csmith_078	nolibc	lean-exh	0	0.88	95020	VAL:Specified(152)x60	-	0.88
+6	after	sia_csmith_078.c	sia_csmith_078	nolibc	oracle	0	0.34	66612	VAL:Specified(152)x60	-	0.34
+6	after	sia_csmith_078.c	sia_csmith_078	nolibc	lean-exh	0	0.88	95152	VAL:Specified(152)x60	-	0.87
+6	pre	sia_csmith_078.c	sia_csmith_078	nolibc	oracle	0	0.34	66600	VAL:Specified(152)x60	-	0.33
+6	pre	sia_csmith_078.c	sia_csmith_078	nolibc	lean-exh	0	0.83	102088	VAL:Specified(152)x60	-	0.83

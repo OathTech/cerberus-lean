@@ -1,0 +1,33 @@
+trace=r1-pre-sa_csmith_419.samples samples=1415 interval_us=10000 depth_limit_hits=1377
+Derived inclusive groups (groups can overlap; union and rest partition samples):
+     0    0.00% context-search bounds
+     0    0.00% environment measures
+     0    0.00% generic expression measures
+     0    0.00% ctype measures
+     0    0.00% all measures union
+  1415  100.00% rest
+trace=r1-after-sa_csmith_419.samples samples=1523 interval_us=10000 depth_limit_hits=1486
+Derived inclusive groups (groups can overlap; union and rest partition samples):
+    36    2.36% context-search bounds
+     2    0.13% environment measures
+    46    3.02% generic expression measures
+     1    0.07% ctype measures
+    84    5.52% all measures union
+  1439   94.48% rest
+trace=r2-after-sa_csmith_419.samples samples=1522 interval_us=10000 depth_limit_hits=1483
+Derived inclusive groups (groups can overlap; union and rest partition samples):
+    29    1.91% context-search bounds
+     3    0.20% environment measures
+    34    2.23% generic expression measures
+     2    0.13% ctype measures
+    66    4.34% all measures union
+  1456   95.66% rest
+trace=r2-pre-sa_csmith_419.samples samples=1417 interval_us=10000 depth_limit_hits=1373
+Derived inclusive groups (groups can overlap; union and rest partition samples):
+     0    0.00% context-search bounds
+     0    0.00% environment measures
+     0    0.00% generic expression measures
+     0    0.00% ctype measures
+     0    0.00% all measures union
+  1417  100.00% rest
+D4 residual profiles complete: two repeats per revision; full oracle/Lean observation multisets agree; identities unchanged.

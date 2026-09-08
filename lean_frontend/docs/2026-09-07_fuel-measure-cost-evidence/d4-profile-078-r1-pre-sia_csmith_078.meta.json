@@ -1,0 +1,40 @@
+{
+  "start": {
+    "utc": "2026-09-08T05:36:20.634035+00:00",
+    "uptime": "05:36:20 up 1 day, 14:12,  ? user,  load average: 0.93, 2.01, 2.88"
+  },
+  "identities_before": {
+    "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-ref/1b57bcf26/lean_frontend/.lake/build/bin/cerberus-lean": "99912f86b9e98dfb415af071138058e0f004b26e760c5a99941475e055332d83",
+    "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/fuel-measure-cost/d2-profile/sampler.so": "5ce56db1549033c33e5aa92e0b9ea52c59fedd3ebd26f999566f120e643f25ad",
+    "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/lean_frontend/docs/2026-09-07_fuel-measure-cost-evidence/analyze-fused-cpu-stacks.py": "b22a2874d2c1bf6a87a2a4d0b51ed98e73026cd96d0c34f32cf9d3a50b5cd98b",
+    "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/fuel-measure-cost/d4-repeats/r1-pre-sia_csmith_078/sia_csmith_078.json": "f99e312db8e7c49d292f6146d24092ac194a2667404f97fefa87fb7a38c9eba4",
+    "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/fuel-measure-cost/d4-repeats/r1-pre-sia_csmith_078/sia_csmith_078.nolibc.oracle.out": "90068de110ff76e6a6e2bcedba1f41b2caf63b2e1fd9de6480e9e450ad416aa4",
+    "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-ref/1b57bcf26/scripts/exec_csmith_corpus_baseline.txt": "f809543d2f7859b6cb09b354274f974db8d548edff0aa40db7a3ed5a647eef10"
+  },
+  "command": [
+    "/usr/bin/time",
+    "-v",
+    "-o",
+    "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/fuel-measure-cost/d4-profile-078/r1-pre-sia_csmith_078.time",
+    "timeout",
+    "90",
+    "env",
+    "LEAN_ABORT_ON_PANIC=1",
+    "LD_PRELOAD=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/fuel-measure-cost/d2-profile/sampler.so",
+    "FC_SAMPLE_FILE=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/fuel-measure-cost/d4-profile-078/r1-pre-sia_csmith_078.samples",
+    "FC_SAMPLE_US=1000",
+    "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-ref/1b57bcf26/lean_frontend/.lake/build/bin/cerberus-lean",
+    "--batch",
+    "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-measure-cost/.tmp/fuel-measure-cost/d4-repeats/r1-pre-sia_csmith_078/sia_csmith_078.json"
+  ],
+  "end": {
+    "utc": "2026-09-08T05:36:21.592057+00:00",
+    "uptime": "05:36:21 up 1 day, 14:12,  ? user,  load average: 0.93, 2.01, 2.88"
+  },
+  "exit": 0,
+  "identities_unchanged": true,
+  "full_observation_multisets_equal": true,
+  "observations": 60,
+  "observable_multiset_sha256": "c38a6611b518d8f394a8f4ff5bed461bac6cbee55f26cea1b2c010cf3318154b",
+  "trace_sha256": "84b522409f5c21ea8c0c025a9238209443ac90101a73560280e29d3671ace352"
+}

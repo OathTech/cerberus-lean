@@ -4,10 +4,10 @@
 on `arc/fuel-measure-cost` at starting HEAD
 `cee6b4639508c543524900bcd763ae04565f1916`. This HEAD adds only the charter
 to the target `4d1088004`. No earlier deliverable or active charter job
-was present when this work began. **D1, D2 and D3 are complete. D3's code is committed separately as
-`6ce040f0614f762e729633a955bcb002dce693ba`; this record and the authorized baseline update belong
-to its dedicated instrument commit. D4 and D5 remain pending; the full
-CPU bar and charter completion are not yet claimed. Measurements span
+was present when this work began. **D1–D3 are complete. D3's code is `6ce040f06`; its dedicated instrument
+and authorized baseline commit is `5f14f0702`. D4 is complete as a report
+of remaining exceptions, with Tier A green. D5 remains pending. The full
+CPU bar and charter completion are not claimed. Measurements span
 2026-09-07 and 2026-09-08.**
 
 ## Property and boundaries
@@ -859,7 +859,150 @@ baseline changes; the updated baseline equals all 1,669 full-run statuses.
 and its baseline row is unchanged. Its earlier pre-arc MATCH and the
 90-second ordinary completions remain part of D4's CPU/budget assessment;
 D3 acceptance does not claim that the full charter property is already met.
-D4 and the D5 full battery remain pending. No merge or push.
+At this D3 checkpoint, D4 and the D5 full battery remained pending. No merge or push.
+
+## D4 — per-program bar and remaining budget failure (report complete)
+
+[AGENT] D3 was committed as code `6ce040f06` and dedicated instrument
+`5f14f0702b326fae43d2b5968d0e57b1f03b815e`. D4 changes evidence only.
+The [complete comparison](2026-09-07_fuel-measure-cost-evidence/after-prearc-ratios.tsv)
+contains every one of D2's 287 completing programs in the small_arrays +
+shard-2/6 union. It retains the original pre-arc/HEAD-after comparisons,
+then two new ordinary CPU measurements per revision and their ratio of means.
+The [271 explicit exclusions](2026-09-07_fuel-measure-cost-evidence/after-prearc-excluded.tsv)
+are 268 pre-arc oracle skips and three pre-arc timeouts; none supplies a
+completed-CPU ratio. Together these tables cover all 558 selected inputs.
+The original ratio for `419` uses its two completed candidate-3 90-second
+runs, never its censored 15-second CPU. Every row and exception is retained.
+
+The [repeat driver](2026-09-07_fuel-measure-cost-evidence/repeat-prearc-comparison.py)
+runs each revision's unchanged `measure.sh`, using that revision's own
+oracle/cabs bridge on identical retained lane-staged C and headers. It
+alternates revision order within each pair and makes two passes over all
+287 programs. Timeout is 90 seconds; execution is serial under the 48 GiB
+cap. This is a completed-cost experiment, not a replacement 15-second lane.
+Each of the 1,148 oracle/Lean pairs has equal **full** Defined/Undefined-line
+multisets, also equal across revisions and repeats. Source, binaries, pins,
+baselines, scripts and input hashes remained unchanged. The compact
+[metadata](2026-09-07_fuel-measure-cost-evidence/after-prearc-repeat.meta.json)
+pins the raw 2,296-engine-row TSV and full input/verdict inventories.
+Raw output remains under `.tmp/fuel-measure-cost/d4-repeats`.
+
+Verbatim timing-table boundaries (UTC dates and loads in the metadata):
+
+```text
+05:15:41 up 1 day, 13:51,  ? user,  load average: 3.53, 4.48, 4.33
+05:24:40 up 1 day, 14:00,  ? user,  load average: 2.63, 3.14, 3.76
+05:33:31 up 1 day, 14:09,  ? user,  load average: 4.18, 2.96, 3.30
+```
+
+[Repeat verdict](2026-09-07_fuel-measure-cost-evidence/d4-repeat-verdicts.txt), verbatim:
+
+```text
+D4 repeats complete: 287 inputs, two repeats per revision, 1148 oracle/Lean pairs; all full observation multisets agree; all identities unchanged.
+D4 table integrity OK: 287 complete ratios, 271 explicit exclusions, 558 unique selected inputs; exact Decimal threshold; no censored CPU used.
+```
+
+[AGENT] Derived tallies: the initial measurements taken hours apart show
+80/287 ratios above 1.10; the paired two-pass experiment shows **1/287**.
+Its median ratio is 0.945946. Threshold decisions use exact decimal CPU
+sums, not rounded printed ratios. Every initial excess is identifiable in
+the complete table, including the short runs sensitive to the instrument's
+0.01-second precision and changing machine load. The fresh paired table is
+the controlled comparison; the earlier observations have not been deleted.
+
+| Input | pre CPU runs (s) | HEAD-after CPU runs (s) | ratio of means | HEAD-after 15-second lane |
+|---|---|---|---|---|
+| sa_csmith_369.c | 11.06, 10.66 | 11.95, 11.40 | 1.075046 | MATCH in both full and shard runs |
+| sa_csmith_371.c | 9.10, 8.86 | 9.77, 9.50 | 1.072940 | MATCH in both full and shard runs |
+| sa_csmith_419.c | 14.45, 14.55 | 15.54, 15.70 | 1.077241 | TIMEOUT in both runs |
+| sia_csmith_078.c | 0.84, 0.85 | 0.89, 1.32 | 1.307692 | MATCH |
+
+**The sole repeated-ratio exception is `sia_csmith_078.c`.** Before further
+measurement, a fixed four additional ordinary pairs were selected, with
+alternating order; this was not repeat-until-pass. The
+[follow-up observations](2026-09-07_fuel-measure-cost-evidence/d4-exception-repeats.tsv)
+and [metadata](2026-09-07_fuel-measure-cost-evidence/d4-exception-repeats.meta.json)
+retain all engine rows, identities, UTC and loads. Pre CPU is
+0.83/0.82/0.83/0.83; after CPU is 0.87/0.86/0.88/0.87. Their ratio of means
+is **1.051360**. Pooling **all six** ordinary runs per revision, including
+1.32, gives pre mean 0.833333 and after mean 0.948333: **1.138000**, still
+above the bar. All observations agree. [AGENT attribution] the large excess
+is localized to one unreproduced CPU excursion, consistent with timing
+variation on a shared machine; its exact external cause is not established.
+It is not evidence that a persistent 30.8% measure overhead was removed.
+The initial and pooled exceptions remain reported, and an unconditional
+all-program ≤1.10 claim is **not** made.
+
+**The separate 15-second budget exception is `sa_csmith_419.c`.** It was
+MATCH pre-arc and remains TIMEOUT in both D3 lane runs. Its fresh completed
+mean is 15.62 seconds versus 14.50 pre-arc; both new ordinary completions
+exceed 15 seconds. Its baseline row remains unchanged TIMEOUT. Reaching
+15 from that mean requires a derived **3.97%** reduction in HEAD-after CPU;
+a CPU estimate does not itself certify the wall-time lane limit.
+
+D4 profiles both exceptions twice per revision with the checked D2 CPU
+sampler and the exact binary symbol table. Each uses its own ordinary
+oracle bridge and compares the full oracle/Lean observation multiset.
+All exit 0 and preserve input/binary identities. Sampling is separate from
+the ordinary timing tables. Verbatim per-profile top symbols, inclusive
+shares, interval, depth-limit hits, commands, hashes and loads are retained
+in the `d4-profile-*` and `d4-profile-078-*` evidence files.
+
+| HEAD-after input / repeat | samples | context measure | environment measures | other generic-expression measures | all-measure union | rest |
+|---|---:|---:|---:|---:|---:|---:|
+| 419 / 1 | 1523 | 2.36% | 0.13% | 3.02% | 5.52% | 94.48% |
+| 419 / 2 | 1522 | 1.91% | 0.20% | 2.23% | 4.34% | 95.66% |
+| 078 / 1 | 887 | 1.92% | 0.00% | 1.69% | 3.61% | 96.39% |
+| 078 / 2 | 879 | 1.25% | 0.11% | 2.73% | 4.10% | 95.90% |
+
+[AGENT attribution] D3 removed the dominant full-expression-size traversal.
+The remaining profile is mostly allocation/reference-count work, monadic
+continuations, expression substitution/evaluation and context application,
+on both revisions. For example `419` after repeat 1 has self samples
+`mi_free` 9.13%, `lean_dec_ref_cold` 6.89%, `mi_free_size` 3.55% and
+`lean_apply_1` 3.41%; its pre-arc profile has the same leading runtime work.
+The remaining `generic_pexpr.lemSize` evaluations belong to other measured
+wrappers, whose declare lines are outside the two-line model fence.
+The six allowed environment measures contribute at most 0.20% on these
+profiles, so the proposed `refsOf` guard is not a supported remedy for the
+remaining budget miss. No environment wrapper is changed.
+
+The allowed context plus environment measures occupy only about 2.1–2.5%
+of `419`'s observed CPU, less than the 3.97% reduction needed at its fresh
+mean even if all their visible cost could be removed. This is a sampling
+assessment, **not an impossibility theorem**: inlining and 96-frame
+truncation limit attribution, and conservative context bounds may still
+have refinements. There is no measured, proved remedy inside this fence
+that establishes the remaining budget requirement. Further work would
+need an operator-selected broader measure scope, a Lem fuel-scheme change,
+or a representation change reducing repeated allocation/traversal; a
+broader revision bisect could isolate other intervening costs. None is
+implemented. For `078`, the profiles do not reproduce the anomalous excess;
+a quieter, higher-precision experiment is the appropriate next instrument,
+not a speculative semantic optimization.
+
+D4 is therefore a **report of the remaining exceptions**, not certification
+of the charter's whole property. Its acceptance checks are complete;
+the Tier A checkpoint and D5 status are recorded below.
+
+D4's complete Tier A checkpoint passed all 13 commands with source identity
+unchanged. It includes `test_unit.sh`, all four direct execution baselines,
+the theorem/fuel/fork gates and their plants. [Runner verdicts](2026-09-07_fuel-measure-cost-evidence/d4-fast-verdicts.txt)
+and [lane/gate lines](2026-09-07_fuel-measure-cost-evidence/d4-fast-lane-verdicts.txt)
+are quoted verbatim in the evidence. The full fuel census remains
+81/54/13/8/6, seven under hypotheses; fork layer 2 remains exactly 22.
+The profile script for `078` has a documentation-only correction to identify
+it as the ratio exception; its executed sampler command is unchanged.
+
+```text
+fast: passed; 13/13 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+```
+
+D4's report acceptance and checkpoint are green; the reported performance
+exceptions remain open. D5's full battery has not been certified.
 
 ## What has not been done
 

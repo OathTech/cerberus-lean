@@ -1,0 +1,9 @@
+follow-up repeat 3: pre CPU 0.83; full observation multisets agree
+follow-up repeat 3: after CPU 0.87; full observation multisets agree
+follow-up repeat 4: after CPU 0.86; full observation multisets agree
+follow-up repeat 4: pre CPU 0.82; full observation multisets agree
+follow-up repeat 5: pre CPU 0.83; full observation multisets agree
+follow-up repeat 5: after CPU 0.88; full observation multisets agree
+follow-up repeat 6: after CPU 0.87; full observation multisets agree
+follow-up repeat 6: pre CPU 0.83; full observation multisets agree
+D4 exception follow-up complete: four additional pairs; full observation multisets agree; identities unchanged.

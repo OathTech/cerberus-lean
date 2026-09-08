@@ -1,0 +1,6 @@
+D4 table integrity OK: 287 complete ratios, 271 explicit exclusions, 558 unique selected inputs; exact Decimal threshold; no censored CPU used.
+Derived tallies: {"engine_rows": 2296, "initial_exceptions": 80, "inputs": 287, "median_repeated_ratio": "0.945946", "oracle_lean_pairs": 1148, "repeated_exceptions": 1}
+sa_csmith_369.c 11.06 11.95 10.66 11.40 1.075046 MATCH
+sa_csmith_371.c 9.10 9.77 8.86 9.50 1.072940 MATCH
+sa_csmith_419.c 14.45 15.54 14.55 15.70 1.077241 TIMEOUT
+sia_csmith_078.c 0.84 0.89 0.85 1.32 1.307692 MATCH

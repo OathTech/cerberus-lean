@@ -1,0 +1,5 @@
+Derived CPU ratios for sia_csmith_078.c; retain every ordinary observation.
+initial two: pre_mean=0.845000, after_mean=1.105000, ratio=1.307692
+fixed four follow-ups: pre_mean=0.827500, after_mean=0.870000, ratio=1.051360
+all six pooled: pre_mean=0.833333, after_mean=0.948333, ratio=1.138000
+Full observation multisets agree for all twelve ordinary engine pairs; no original observation discarded.
