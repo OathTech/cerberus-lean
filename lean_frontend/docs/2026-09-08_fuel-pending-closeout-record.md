@@ -312,3 +312,118 @@ commit's stat).
 - `check_failure_reach.sh --selftest` runs the census on copies of ~210 files three times;
   a hand-written NON-TAIL site is classified by READING, not by the tool (§5) — the census's
   own limit, recorded in the register header.
+
+## 10. Orchestrator boundary battery (2026-09-08)
+
+[AGENT orchestrator]. Independent of the worker's gates: cache-disabled
+rebuild of this worktree at `d6ae1698a`, then the LADDER Tier A + Tier B
+battery plus the branch's new Tier B row 11 and the pristine-oracle rows,
+run alone (the other agent's CPU-timing phase had gone idle; box load
+during the run rose to ~22 from a third project's jobs — see the gcc row).
+Every lane rc=0 except the gcc second-oracle lane's FIRST run, whose single
+moved row is the LADDER's documented load-caveat shape (a csmith-tier row
+into `SKIP_LEAN_TIMEOUT` at the 30 s wall clock under load); per that
+rule it was re-run alone on a quieter box and came back green with the
+baseline row-for-row. Verbatim:
+
+```
+=== bash tools/check_driver_fresh.sh --check  rc=0
+=== ./scripts/test_unit.sh  rc=0
+=== ./scripts/test_exec.sh --check-baseline  rc=0
+=== ./scripts/test_exec.sh --check-baseline=scripts/exec_coverage_baseline.txt tests/coverage  rc=0
+=== ./scripts/test_exec.sh --check-baseline=scripts/exec_debug_baseline.txt tests/debug  rc=0
+=== ./scripts/test_exec.sh --check-baseline=scripts/exec_float_baseline.txt tests/float  rc=0
+=== ./scripts/test_bytes.sh  rc=0
+=== ./scripts/test_libc_exec.sh  rc=0
+=== ./scripts/test_multi_tu.sh  rc=0
+=== ./scripts/test_parse.sh  rc=0
+=== ./scripts/test_core.sh  rc=0
+=== ./scripts/test_elab.sh  rc=0
+=== ./scripts/test_libxml2_uri.sh  rc=0
+=== ./scripts/test_cn_coverage.sh --check-baseline  rc=0
+=== ./scripts/test_parse.sh tests/ci  rc=0
+=== ./scripts/test_core.sh tests/ci  rc=0
+=== ./scripts/test_verify.sh  rc=0
+=== ./scripts/test_immaculate.sh  rc=0
+=== ./scripts/test_speclab.sh --selftest  rc=0
+=== ./scripts/test_speclab.sh --plant  rc=0
+=== ./scripts/test_hang_plant.sh  rc=0
+=== ./scripts/test_kill_plant.sh  rc=0
+=== ./scripts/test_fuel_plant.sh  rc=0
+=== ./scripts/test_libxml2.sh  rc=0
+=== python3 scripts/test_observation_lanes.py  rc=0
+=== ./scripts/check_failure_reach.sh --selftest  rc=0
+=== ./scripts/check_failure_reach.sh  rc=0
+=== independent oracle build  rc=0
+=== python3 scripts/test_upstream_oracle.py  rc=0
+=== python3 scripts/test_upstream_oracle.py --plant  rc=0
+=== ./scripts/test_gcc_oracle.sh --check-baseline  rc=1
+```
+
+Verdict lines, verbatim:
+
+```
+SUMMARY: total=106 match=85 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=3 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+SUMMARY: total=212 match=183 ub_match=16 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=13 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+SUMMARY: total=90 match=66 ub_match=20 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=4 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+SUMMARY: total=69 match=69 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+SUMMARY: exec_match=9 neg_pinned=5 fail=0
+SUMMARY: match=12 diff=0
+ALL MATCH RECORDED BASELINE
+SUMMARY: total=2 match=2 fail=0
+Total:          106
+Total:          106
+SUMMARY: total=106 same=103 diff=3 ocaml_fail=0 lean_fail=0
+SUMMARY: total=213 match=207 ub_match=6 ub_diff=0 reject_match=0 diff=0 mismatch=0 reject_diff=0 lean_fail=0 lean_crash=0 fuel=0 lean_error=0 lean_timeout=0 oracle_fail=0 oracle_timeout=0 oracle_inconsistent=0
+BASELINE OK (213 entries, exact match)
+Total:          250
+test_verify: 127 passed, 0 failed (25 fixtures, 28 call points, 14 corpus fixtures, 21 corpus points)
+OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip DIFF, R3 s4b-memcmp-hugesize ORACLE_CRASH — VALIDATION.md 'ISO-fix register' — and the in-Lean probes g6 TRIPWIRE / illtyped-store KILL).
+test_fuel_plant: ALL PLANTS OK (FUEL classification live in exec/gcc/ci_sweep/cn_coverage/measure; negatives not FUEL; the real driver at --fuel 1 reads FUEL and at the default MATCH; --fuel 0/non-numeral/out-of-position/missing refused)
+SUMMARY: total=4 match=4 fail=0 (points: 1354, 22 observations each)
+observation lane plants: 91/91 passed
+check_failure_reach: SELFTEST OK (5 plants with the declared message — a new site in a generated exec-closure definition, a DISCARDABLE dead let-binding, an unsealed class edit, a phantom row, an edited tally — and the unplanted register green)
+check_failure_reach: instrument built + census taken in 6 s (FAILURE_REACH rows 21083, FAILURE_RANGE rows 11234; counts: {"generated:monadic_ascribed":263,"generated:pure_or_unresolved":1253,"handwritten:monadic_ascribed":7,"handwritten:pure_or_unresolved":121})
+check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=166 REACHABLE=48 UNKNOWN=19; every row sealed; tally line consistent)
+Independent oracle: passed; {'semantic_agreement': 709, 'reviewed_difference': 1, 'matching_failure': 11, 'interface_agreement': 2}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-pending-closeout/.tmp/upstream-oracle-ca25nctl/report.json
+Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/fuel-pending-closeout/.tmp/upstream-oracle-dpcmx4oi/report.json
+SUMMARY: total=1963 compared=1884 agree=1872 agree_nd=0 triaged=12 disagree=0 o2_agree=190 skip_gcc_compile=1 skip_gcc_stdout=1 skip_lean_crash=9 skip_lean_fail=9 skip_lean_timeout=12 skip_ub=47 triaged_addr=11 triaged_ub=1
+REGRESSION: csmith/sa_csmith_231.c baseline=AGREE/- current=SKIP_LEAN_TIMEOUT/-
+Baseline check: 1 regression(s), 0 improvement(s)
+```
+
+gcc lane, first run (under load) then the quiet re-run, verbatim:
+
+```
+closeout-gcc-rerun.log: 02:07:14 up 1 day, 10:43,  ? user,  load average: 3.81, 4.09, 5.61
+closeout-gcc-rerun.log:SUMMARY: total=1963 compared=1885 agree=1873 agree_nd=0 triaged=12 disagree=0 o2_agree=190 skip_gcc_compile=1 skip_gcc_stdout=1 skip_lean_crash=9 skip_lean_fail=9 skip_lean_timeout=11 skip_ub=47 triaged_addr=11 triaged_ub=1
+closeout-gcc-rerun.log:Baseline check: 0 regression(s), 0 improvement(s)
+closeout-gcc-rerun.log:gcc second-oracle lane OK
+closeout-gcc-rerun.log: 02:32:33 up 1 day, 11:08,  ? user,  load average: 6.98, 8.61, 8.65
+closeout-reverify.log:Baseline check: 0 regression(s), 0 improvement(s)
+closeout-reverify.log:Baseline check: 0 regression(s), 0 improvement(s)
+closeout-reverify.log:Baseline check: 0 regression(s), 0 improvement(s)
+closeout-reverify.log:Baseline check: 0 regression(s), 0 improvement(s)
+closeout-reverify.log: 01:41:47 up 1 day, 10:17,  ? user,  load average: 4.87, 4.52, 5.65
+closeout-reverify.log:SUMMARY: total=1963 compared=1884 agree=1872 agree_nd=0 triaged=12 disagree=0 o2_agree=190 skip_gcc_compile=1 skip_gcc_stdout=1 skip_lean_crash=9 skip_lean_fail=9 skip_lean_timeout=12 skip_ub=47 triaged_addr=11 triaged_ub=1
+closeout-reverify.log:REGRESSION: csmith/sa_csmith_231.c baseline=AGREE/- current=SKIP_LEAN_TIMEOUT/-
+closeout-reverify.log:Baseline check: 1 regression(s), 0 improvement(s)
+```
+
+Derived: zero baseline movement in every baseline lane; fuel census
+`57 MEASURED (… 10 of them under a hypothesis …) 13 ABSORBING … 5 reachable-AMBIENT`;
+`check_failure_reach: OK` (233 register rows, 0 DISCARDABLE) and its five
+plants; fork-drift layer 2 = 22; pristine oracle 709/1/11/2; gcc
+`agree=1873 disagree=0` on the quiet run. The three new hypothesis rows were
+read by the orchestrator against their cites (`prepare_exit`
+driver.lem:1309-1316; `process_core_step2`'s terminal arms; `mk_value_e`
+core_aux.lem:2077-2082) and marked reviewed; [USER] sign-off at merge, as at
+C4.
