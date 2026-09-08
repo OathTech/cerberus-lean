@@ -9,6 +9,11 @@ import Cerb_attributes
 
 (* TODO *)
 import Core_run
+(* Lean: the executable fuel MEASURE of the get_ctx/get_ctx_unseq_aux block
+   (CerbCoreMeasure.getCtxBound) — see the fuel_measure declares at the end of
+   this file; seam lean_frontend/CerbCoreMeasure.lean (fuel-measure-cost arc,
+   2026-09-08). Lean-only: a declare line is invisible to the OCaml target. *)
+declare {lean} extra_import `CerbCoreMeasure`
 
 module Cmm = struct
   include Cmm_aux
@@ -1517,15 +1522,21 @@ declare {lean} fuel val get_ctx_unseq_aux = `fuelExhausted (fun _ => acc)`
 (* FUEL MEASURE (fuel-parameter arc C3, 2026-09-05; Lean-only): the three point-free
    `function` tails, measurable since lem d4ba548 hoists the scrutinee into the head
    as `lemTail`. one_step_unseq_aux recurses on the tail of `lemTail` only.
-   get_ctx/get_ctx_unseq_aux share ONE fuel counter: get_ctx descends into a
-   subexpression or hands the Eunseq operand list to the aux, which recurses into
-   get_ctx on each element and on the rest of the list — so the aux's measure is the
-   derived size of the WHOLE list (elements included; `List.length` alone is not
-   sufficient), and every cross-call strictly decreases the callee's measure. Proved in
-   lean_frontend/Core_reduction_lemMeasureProofs.lean. *)
+   get_ctx/get_ctx_unseq_aux share ONE fuel counter: get_ctx descends into ONE child
+   (the LEFT operand of Ewseq/Esseq, the body of Ebound/Eannot) or hands the Eunseq
+   operand list to the aux, which recurses into get_ctx on the head and into itself
+   on the rest — so the measure is the block's CALL DEPTH, not a size:
+   `CerbCoreMeasure.getCtxBound` (lean_frontend/CerbCoreMeasure.lean, the
+   extra_import at the top of this file; fuel-measure-cost arc, 2026-09-07/08). It
+   replaces C3's whole-arena `lemSize g + 1` / `lemSize_aux2 lemTail + 1`, which
+   re-sized the ENTIRE arena on every driver step (45 %/39 % of CPU samples on
+   csmith 369/371, docs/2026-09-07_fuel-measure-cost-record.md §D2). One unit per
+   worker frame, the maximum over the possible children, the is_irreducible pruning
+   ignored — so every cross-call strictly decreases the callee's measure and the
+   bound is never short. Proved in lean_frontend/Core_reduction_lemMeasureProofs.lean. *)
 declare {lean} fuel_measure val one_step_unseq_aux = `List.length lemTail + 1`
-declare {lean} fuel_measure val get_ctx = `CerbTagsWf.getCtxMeasure (Sum.inl g)`
-declare {lean} fuel_measure val get_ctx_unseq_aux = `CerbTagsWf.getCtxMeasure (Sum.inr lemTail)`
+declare {lean} fuel_measure val get_ctx = `CerbCoreMeasure.getCtxBound (Sum.inl g)`
+declare {lean} fuel_measure val get_ctx_unseq_aux = `CerbCoreMeasure.getCtxBound (Sum.inr lemTail)`
 declare {lean} termination_argument apply_ctx = automatic
 declare {lean} termination_argument break_at_sseq = automatic
 declare {lean} termination_argument break_at_bound_and_sseq = automatic

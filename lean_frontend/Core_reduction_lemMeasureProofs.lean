@@ -9,16 +9,28 @@
   expression size, `key` rewrites the direct children, `List.any` congruence
   for `Ecase`/`Eunseq`/`End`. Kernel-only tactics; no option bumps.
 
+  Fuel-measure-cost arc (2026-09-07/08): the `get_ctx`/`get_ctx_unseq_aux`
+  measure is the block's CALL DEPTH `CerbCoreMeasure.getCtxBound` (the seam
+  CerbCoreMeasure.lean — a structural definition over the Core AST, imported
+  here and by the generated Core_reduction via `extra_import`), no longer the
+  whole-arena `lemSize g + 1`. The joint stability proof
+  (`get_ctx_search_stable_aux`) is strong induction on that bound, descending
+  along the seam's `getCtxNext` specification via `getCtxBound_child_lt`. The
+  C3 size-based stability lemma is retained, and two equivalence theorems
+  relate the previous measures' worker results to the new wrappers.
+
   MIRROR-OCAML NOTE: proofs about the Lean total workers; no OCaml text
   corresponds (fuel is a Lean-target artifact).
 -/
 
 import Core_reduction
 import CerbMeasureLemmas
+import CerbCoreMeasure
 
 set_option autoImplicit false
 
 open CerbMeasureLemmas
+open CerbCoreMeasure
 
 namespace Core_reduction_lemMeasureProofs
 
@@ -169,106 +181,14 @@ theorem get_ctx_stable_aux (k : Nat) :
           | nil => simp only [get_ctx_unseq_aux_lemFuel]
           | cons e es2 => simp (disch := size_lt) only [get_ctx_unseq_aux_lemFuel, key1, key2]
 
-/-- The two kinds of calls in the context-search mutual block. -/
-abbrev GetCtxState := Sum (generic_expr core_run_annotation Unit sym)
-  (List (generic_expr core_run_annotation Unit sym))
+/-! ## The call-depth measure (fuel-measure-cost arc)
 
-/-- Possible recursive calls, conservatively ignoring irreducibility tests.
-    Sequences search only their left operand; continuations and pure-expression
-    payloads never cause a recursive call to either context-search worker. -/
-def getCtxNext (y : GetCtxState) : List GetCtxState :=
-  Sum.casesOn y
-    (fun e => generic_expr.casesOn e (fun _ node =>
-      generic_expr_.casesOn node
-        (fun _ => [])                         -- Epure
-        (fun _ _ => [])                       -- Ememop
-        (fun _ => [])                         -- Eaction
-        (fun _ _ => [])                       -- Ecase
-        (fun _ _ _ => [])                     -- Elet
-        (fun _ _ _ => [])                     -- Eif
-        (fun _ _ _ _ => [])                   -- Eccall
-        (fun _ _ _ => [])                     -- Eproc
-        (fun es => [Sum.inr es])               -- Eunseq
-        (fun _ e _ => [Sum.inl e])             -- Ewseq
-        (fun _ e _ => [Sum.inl e])             -- Esseq
-        (fun e => [Sum.inl e])                 -- Ebound
-        (fun _ => [])                         -- End
-        (fun _ _ _ => [])                     -- Esave
-        (fun _ _ _ => [])                     -- Erun
-        (fun _ => [])                         -- Epar
-        (fun _ => [])                         -- Ewait
-        (fun _ e => [Sum.inl e])               -- Eannot
-        (fun _ _ => [])))                     -- Eexcluded
-    (fun es => List.casesOn es [] (fun e es => [Sum.inl e, Sum.inr es]))
-
-/-- Compute the call-depth bound directly. The unit increment pays for the
-    current worker frame; every possible child receives a strictly lower bound.
-    Unlike `getCtxNext`, this executable step allocates no child lists. -/
-def getCtxStep (x : GetCtxState) : ((y : GetCtxState) → sizeOf y < sizeOf x → Nat) → Nat :=
-  Sum.casesOn
-    (motive := fun x => ((y : GetCtxState) → sizeOf y < sizeOf x → Nat) → Nat) x
-    (fun e => generic_expr.casesOn
-      (motive_2 := fun e => ((y : GetCtxState) → sizeOf y < sizeOf (Sum.inl e : GetCtxState) → Nat) → Nat) e
-      (fun annot node => generic_expr_.casesOn
-        (motive_1 := fun node => ((y : GetCtxState) →
-          sizeOf y < sizeOf (Sum.inl (.Expr annot node) : GetCtxState) → Nat) → Nat) node
-        (fun _ _ => 1)                     -- Epure
-        (fun _ _ _ => 1)                   -- Ememop
-        (fun _ _ => 1)                     -- Eaction
-        (fun _ _ _ => 1)                   -- Ecase
-        (fun _ _ _ _ => 1)                 -- Elet
-        (fun _ _ _ _ => 1)                 -- Eif
-        (fun _ _ _ _ _ => 1)               -- Eccall
-        (fun _ _ _ _ => 1)                 -- Eproc
-        (fun es rec => rec (.inr es) (by simp_wf; omega) + 1)       -- Eunseq
-        (fun _ e _ rec => rec (.inl e) (by simp_wf; omega) + 1)      -- Ewseq
-        (fun _ e _ rec => rec (.inl e) (by simp_wf; omega) + 1)      -- Esseq
-        (fun e rec => rec (.inl e) (by simp_wf; omega) + 1)          -- Ebound
-        (fun _ _ => 1)                     -- End
-        (fun _ _ _ _ => 1)                 -- Esave
-        (fun _ _ _ _ => 1)                 -- Erun
-        (fun _ _ => 1)                     -- Epar
-        (fun _ _ => 1)                     -- Ewait
-        (fun _ e rec => rec (.inl e) (by simp_wf; omega) + 1)        -- Eannot
-        (fun _ _ _ => 1)))                 -- Eexcluded
-    (fun es => List.casesOn
-      (motive := fun es => ((y : GetCtxState) → sizeOf y < sizeOf (Sum.inr es : GetCtxState) → Nat) → Nat) es
-      (fun _ => 1)
-      (fun e es rec => max (rec (.inl e) (by simp_wf; omega))
-        (rec (.inr es) (by simp_wf; omega)) + 1))
-
-def getCtxBound (x : GetCtxState) : Nat := CerbTagsWf.callBoundEntry sizeOf getCtxStep x
-
-theorem getCtxBound_eq_step (x : GetCtxState) :
-    getCtxBound x = getCtxStep x (fun y _ => getCtxBound y) := by
-  change getCtxStep x (fun y _ => CerbTagsWf.callBound sizeOf getCtxStep y) = _
-  apply congrArg (getCtxStep x)
-  funext y hy
-  exact (CerbTagsWf.callBoundEntry_eq sizeOf getCtxStep y).symm
-
-theorem getCtxBound_pos (x : GetCtxState) : 0 < getCtxBound x := by
-  rw [getCtxBound_eq_step]
-  cases x with
-  | inl e =>
-    obtain ⟨annot, node⟩ := e
-    cases node <;> simp only [getCtxStep] <;> omega
-  | inr es =>
-    cases es <;> simp only [getCtxStep] <;> omega
-
-theorem getCtxBound_child_lt (x y : GetCtxState) (h : y ∈ getCtxNext x) :
-    getCtxBound y < getCtxBound x := by
-  rw [getCtxBound_eq_step x]
-  cases x with
-  | inl e =>
-    obtain ⟨annot, node⟩ := e
-    cases node <;> simp only [getCtxNext, List.mem_singleton, List.not_mem_nil] at h
-    all_goals first | contradiction | (subst y; simp only [getCtxStep]; omega)
-  | inr es =>
-    cases es with
-    | nil => simp [getCtxNext] at h
-    | cons e es =>
-      simp only [getCtxNext, List.mem_cons, List.not_mem_nil, or_false] at h
-      rcases h with h | h <;> subst y <;> simp only [getCtxStep] <;> omega
+    `GetCtxState`, `getCtxBound`, `getCtxNext`, `getCtxBound_pos` and
+    `getCtxBound_child_lt` live in the seam CerbCoreMeasure.lean (opened
+    above): the measure is an ordinary structural definition the generated
+    wrapper names by its qualified name, so the obligation's `lemMeasureLe`
+    and the wrapper's fuel argument are the same constant applied to the same
+    parameter. -/
 
 /-- Joint fuel stability for the narrower call-depth measure. -/
 theorem get_ctx_search_stable_aux (k : Nat) :

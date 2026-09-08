@@ -147,6 +147,7 @@ roots = [
   "CerbTags",
   "CerbTagsWf",
   "CerbCoreShape",
+  "CerbCoreMeasure",
   "CerbDebug",
   "CerbDecode",
   "CabsImport",

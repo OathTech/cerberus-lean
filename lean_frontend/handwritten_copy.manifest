@@ -42,6 +42,7 @@ CerbStepInstances.lean
 CerbTags.lean
 CerbTagsWf.lean
 CerbCoreShape.lean
+CerbCoreMeasure.lean
 CerbUtils.lean
 CoreParser.lean
 Core_lemMeasureProofs.lean
