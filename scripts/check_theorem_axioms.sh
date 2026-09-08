@@ -870,10 +870,19 @@ FUEL_THMS+=(CerbFail.failStopND_step CerbFail.bind_preserves CerbFail.lift_prese
             CerbFail.liftMem_preserves CerbFail.run_preserves CerbFail.run1_preserves
             CerbFail.runTrace_preserves CerbFail.pipeline_preserves CerbFail.zero_precedes
             CerbFail.failStopND_ne_active CerbFail.failStopKill_ne_undef CerbFail.failStopKill_ne_other)
+# ND stability: six infrastructure workers, independent worker/observer
+# budgets, and the fixed-operand shared-budget wrapper corollaries.
+FUEL_THMS+=(CerbND.runNDFuel_stable CerbND.runND1Fuel_stable CerbND.runND1TraceFuel_stable
+            CerbND.nd_bind_lemFuel_stable CerbND.liftND_lemFuel_stable CerbND.liftAction_lemFuel_stable
+            CerbND.runND_stable CerbND.runND1_stable CerbND.runND1Trace_stable
+            CerbND.nd_bind_stable CerbND.liftND_stable CerbND.liftAction_stable
+            CerbND.FuelProof.run_refines CerbND.FuelProof.run1_refines
+            CerbND.FuelProof.trace_eq_of_refines CerbND.FuelProof.observationStability)
 
 {
   echo "import CerbND"
   echo "import CerbFailProofs"
+  echo "import CerbNDFuelProofs"
   echo "import Unit.FuelExemplar"
   echo "import Ctype_auxiliary"
   echo "import Core_auxiliary"
@@ -912,6 +921,6 @@ if [[ -n "$FUEL_BAD" ]]; then
   echo "$FUEL_BAD"
   exit 1
 fi
-echo "check_theorem_axioms: FUEL arc leg OK (${#FUEL_THMS[@]} contract lemmas — 9 generated _zero + the CerbND runner leaves/parametricity pins + the ∀-fuel exemplar and its instances + the 3 C1 fuel_measure sufficiency obligations + hack's (generated statement + hand-written proof), every cone ⊆ [propext, Classical.choice, Quot.sound])"
+echo "check_theorem_axioms: FUEL arc leg OK (${#FUEL_THMS[@]} contract lemmas — generated _zero, runner leaves/parametricity, ∀-fuel exemplar, measured obligations, fail-stop propagation, and six-worker ND stability, every cone ⊆ [propext, Classical.choice, Quot.sound])"
 
 echo "check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)"

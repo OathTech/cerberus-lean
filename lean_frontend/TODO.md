@@ -64,8 +64,17 @@ owned and hands off; this roadmap does not authorize operating it.
   correspondence and zero-case shapes; its decoy plants now reject. Keep
   general propagation and completion proofs distinct from this instrument.
 - **Fuel propagation/monotonicity for the 13 zero-case rows (Lem TODO 13)** —
-  prove successor-case absorption and `done at n ⇒ done at every m ≥ n`
-  where valid. The zero-case theorem does not establish either property.
+  `arc/nd-fuel-stability` supplies completed-observation stability for the
+  three CerbND runners and `nd_bind`/`liftND`/`liftAction`, with fixed operands
+  and independently quantified worker/observer budgets (record
+  `docs/2026-09-08_nd-fuel-stability-record.md`; full A+B green,
+  adversarial audit/external review pending).
+  The other seven rows retain their obligations: `eval_pexpr_aux2`,
+  `eval_pexpr_aux_broken` (outside the drive cone), `full_eval_pexpr`,
+  `print_eval_conv_aux`, `drive_nonmemory_steps_aux2`, `driver2`, and
+  `load_character_array_aux`. Increasing ambient fuel captured in callees
+  needs separate composition proofs. The fuel-forms classifier still means
+  kill-at-zero only; it does not certify stability or general propagation.
 - **The defacto memory model is unreachable from `drive` (F-C2-4)** — 12
   fuel'd rows (9 measured) are dead code for the exec pipeline; decide
   whether they leave the exec-cone module lists (D-C2-7). S.

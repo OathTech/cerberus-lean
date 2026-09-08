@@ -45,6 +45,7 @@ import Formatted
 import Monadic_parsing
 import Nondeterminism
 import Utils
+import Unit.NDFuelStabilityTest
 
 open Lem_Basic_classes Lem_Map
 set_option autoImplicit true
