@@ -123,7 +123,7 @@ Current unit tests:
 - `fuel-forms-tool` (not a pass/fail exe: the INSTRUMENT of `scripts/check_fuel_forms.sh`) — `test/Unit/FuelFormsTool.lean` imports the compiled environment at runtime and classifies every fuel'd worker MEASURED/ABSORBING/AMBIENT with its drive-cone reachability (C2; P0 2026-09-05: MEASURED checks the argument correspondence against the wrapper's own body in MetaM, ABSORBING = "kill at zero" checks the `_zero` lemma's left-hand side and cone)
 - `core-parser-test` — 280 tests for `CoreParser.lean`
 - `fresh-int-test` — verifies `fresh_int`/`Symbol.fresh` generate unique values (+ the native-obj fresh-counter floor probe)
-- `pp-test` — arc-10 S3: pretty-printer mirrors (ctype/value shapes + float formatting vs an OCaml 5.4.0 reference transcript, in-file)
+- `pp-test` — pretty-printer mirrors (ctype/value shapes + float formatting), plus byte/text batch escaping against an OCaml 5.4.0 all-byte transcript (`Unit.BatchEscapeTest`).
 
 `test_unit.sh` also runs the gate scripts: the hand-written↔generated
 sync gate, `check_exec_purity.sh`, `check_theorem_axioms.sh`

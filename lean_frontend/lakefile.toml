@@ -141,7 +141,7 @@ roots = [
   "CerbFuel",
   "CerbFail",
   "CerbFailProofs",
-  "CerbNDFuelProofs",
+  "CerbNDFuelProofs", "CerbEscape",
   "CerbConcurrency",
   "CerbCtypeInstances",
   "CerbStepInstances",

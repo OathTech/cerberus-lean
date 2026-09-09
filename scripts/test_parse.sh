@@ -238,5 +238,9 @@ if [[ $parse_fail -gt 0 || $lean_timeout -gt 0 || $lean_failure -gt 0 ]]; then
     echo "Error log: $ERROR_LOG"
     exit 1
 else
+    # Check real diagnostic producers after classifying the requested inputs.
+    # A planted crash must first reach this lane's LEAN_FAILURE accounting;
+    # an earlier diagnostic probe would abort before that contract is tested.
+    python3 "$SCRIPT_DIR/test_batch_diagnostics.py" --lean-bin "$CERBERUS_LEAN_BIN"
     echo -e "${GREEN}ALL PASSED${NC}"
 fi

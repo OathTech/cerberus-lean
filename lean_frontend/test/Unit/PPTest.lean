@@ -13,6 +13,7 @@
 -/
 
 import CerbPP
+import Unit.BatchEscapeTest
 
 open CerbPP
 
@@ -151,7 +152,8 @@ def main : IO UInt32 := do
   let r1 ← testCtype
   let r2 ← testCoreValue
   let r3 ← testFloats
-  if r1 && r2 && r3 then
+  let r4 ← BatchEscapeTest.run
+  if r1 && r2 && r3 && r4 then
     IO.println "All PP tests passed"
     return 0
   else

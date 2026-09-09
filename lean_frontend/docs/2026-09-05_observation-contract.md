@@ -155,11 +155,17 @@ historical run description.
 `update_stderr` append `String.ofList out_chars`; FS_WRITE and printf-family
 results provide those character lists. Thus this path is intended to encode
 one model byte per Char, explaining the printer's decimal-byte implementation.
-The generic Lem String representation and other uses of `batchEscape` (for
-example a frontend JSON parse error) are different producers. Their byte
-correctness is not established by the IO trace. Record any out-of-range
-escape as a source/printer finding; do not add Unicode normalization to hide
-it. G6 and the later byte-representation work own the deeper semantics.
+The generic Lem String representation and diagnostic text are different
+producers. The [batch-diagnostic slice](2026-09-09_batch-diagnostic-bytes-record.md)
+separates them: `Main.batchEscape` uses `CerbEscape.byteChars`; Cabs JSON
+parse failures, libc-loading diagnostics, and `CerbFail.escapeMessage` use
+`CerbEscape.text`, which escapes UTF-8 bytes. The byte-class escaping
+primitive is shared. Actual producer probes cover both diagnostic entry
+points; the existing C3 A9/FF program-output fixtures remain byte-exact.
+This does not establish every model producer's byte-domain invariant or
+complete the generic Lem String migration. Record any out-of-range carrier
+escape as a source/printer finding; do not normalize or truncate it to hide
+the problem. G6 and the later byte-representation work own the deeper semantics.
 
 ## C-TF1 model-stop records (2026-09-08)
 

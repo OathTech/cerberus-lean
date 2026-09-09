@@ -12,6 +12,7 @@ import Translation
 import Core_run_aux
 import Driver
 import CerbND
+import CerbEscape
 -- the `--call` mode's entry (CerbCall.driveCall): `drive` started at a
 -- designated function with injected arguments — a port-side harness
 -- entry over the generated driver (see CerbCall.lean's header)
@@ -351,17 +352,7 @@ Deviations from OCaml (hand-written latitude, documented):
     dropped `\b`, and re-encoded 0xC3 0xA9 as four UTF-8 bytes
     (tests/immaculate/libc/zd-z2p01-{stdout,stderr}_escape.c). -/
 def batchEscape (s : String) : String :=
-  s.foldl (fun acc c =>
-    let a := c.toNat
-    acc ++ (if c == '"' || c == '\\' then "\\" ++ String.singleton c
-      else if c == '\n' then "\\n"
-      else if c == '\t' then "\\t"
-      else if c == '\r' then "\\r"
-      else if a == 8 then "\\b"
-      else if 32 ≤ a && a ≤ 126 then String.singleton c
-      else "\\" ++ String.singleton (Char.ofNat (48 + a / 100))
-                ++ String.singleton (Char.ofNat (48 + (a / 10) % 10))
-                ++ String.singleton (Char.ofNat (48 + a % 10)))) ""
+  CerbEscape.byteChars s
 
 /-- Batch rendering of the final core value — mirrors OCaml's exit
     selection in batch_drive (driver_ocaml.ml:162-171) composed with
@@ -614,7 +605,7 @@ def loadLibc [LemFuel] (quiet : Bool) (supply0 : Nat)
     IO (Except UInt8 (file Unit × Nat)) := do
   let say (s : String) : IO Unit := unless quiet do IO.println s
   let bail (msg : String) : IO (Except UInt8 (file Unit × Nat)) := do
-    if quiet then IO.println s!"Error \{msg: \"libc load failed: {batchEscape msg}\"}"
+    if quiet then IO.println s!"Error \{msg: \"libc load failed: {CerbEscape.text msg}\"}"
     else IO.println s!"  libc load failed: {msg}"
     return .error 1
   -- 1. Parse the pinned dump (bodies). The TU digest is the real MD5 of
@@ -1383,7 +1374,7 @@ def main (args : List String) : IO Unit := do
     match CabsImport.parseJson content with
     | .error e =>
       if batchMode then
-        IO.println s!"Error \{msg: \"cabs-json parse error: {batchEscape e}\"}"
+        IO.println s!"Error \{msg: \"cabs-json parse error: {CerbEscape.text e}\"}"
       IO.eprintln s!"cerberus-lean: parse error: {e}"
       IO.Process.exit 1
     | .ok (digest, tunit) => tunits := tunits ++ [(digest, tunit)]

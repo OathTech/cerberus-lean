@@ -27,6 +27,7 @@ CerbConcurrency.lean
 CerbCtypeInstances.lean
 CerbDebug.lean
 CerbDecode.lean
+CerbEscape.lean
 CerberusFresh.lean
 CerberusImpl.lean
 CerbFloat.lean
