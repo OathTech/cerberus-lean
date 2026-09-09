@@ -243,8 +243,8 @@ hygiene items the audit confirmed (each re-verified by the orchestrator):
 
 - **C-TF1 landed (2026-09-08, `docs/2026-09-08_monadic-failstop-record.md`) — follow-ups.**
   (a) Byte/text escaping is separated in `arc/batch-diagnostic-bytes`
-  (`docs/2026-09-09_batch-diagnostic-bytes-record.md`, full Tier A+B passed;
-  adversarial audit and external review pending):
+  (`docs/2026-09-09_batch-diagnostic-bytes-record.md`, full Tier A+B and
+  adversarial audit passed; external review pending):
   `CerbEscape` shares byte escaping, with distinct byte-carrier and UTF-8
   text adapters. The earlier instruction to unify on UTF-8 was incorrect
   for model stdout/stderr; their FF and C3 A9 pins must stay byte-exact.

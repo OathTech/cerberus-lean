@@ -223,5 +223,37 @@ the adversarial audit will be recorded separately.
 | `scripts/test_batch_diagnostics.py` | `8da797db8685d2dfd4924d2ca80038e2aa07844d9611e24de087fa2f69db3187` |
 | `scripts/test_parse.sh` | `b18c0a95772f3c9ee46467b85c376c61189450c266b490a9ebd9060fcebe0691` |
 
-Adversarial audit and external review are pending. No merge or push has
-occurred.
+### Adversarial audit and external-review handoff
+
+[AGENT 2026-09-09] Implementation candidate
+`9f947a425cad942daa93a4f2a53e3940f2e1aa51` received a fresh independent
+adversarial audit. The [audit report](2026-09-09_batch-diagnostic-bytes-adversarial-audit.md),
+committed as `da26e96081a0ab26a6cd3ccc905b578b4a54dd27`, gives **PASS
+within the slice, with no blocking or nonblocking findings**.
+
+The auditor reran the complete unit suite, all eight diagnostic cases,
+and the unchanged fuel plants; independently checked the full-run receipts,
+log hashes, nine implementation/test/wiring hashes, and baseline/generated
+snapshots; and ran fresh boundary and actual-producer probes. The old
+carrier printer agrees with the compiled adapter for every Unicode scalar
+in a bounded runtime check. Five small kernel witnesses separately check
+adapter and out-of-domain boundaries. Fresh OCaml escaping agrees with both
+all-byte adapters and additional bridge/libc Core/metadata diagnostics.
+
+A forwarding wrapper confirms that a successful real parse is followed by
+all nine subprocesses for the eight diagnostic cases. Restoring just the
+old `é` encoding defect makes that same lane fail before `ALL PASSED`.
+The existing fuel plant still checks the original crashing-parse summary.
+These controls address both sides of the repaired test placement.
+
+The orchestrator independently read the audit report, probe sources and
+outputs, rechecked the four 734-byte all-byte transcript hashes, and
+confirmed the forwarding/corruption outcomes. No implementation revision
+was required. After the full fixed-source run, only this record, the TODO
+status, and the new audit report changed; the nine recorded implementation,
+test, and build-wiring hashes still identify the candidate exactly.
+
+The branch is ready for external review. The user's requested pause remains
+in force: no merge or push has occurred. Generic Lem String/Char migration,
+model producer byte-domain invariants, and broader correspondence/reporting
+work remain outside this completed slice.
