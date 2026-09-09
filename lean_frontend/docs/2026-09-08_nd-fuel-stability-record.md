@@ -4,8 +4,9 @@
 assessment, requested an explicit goal, and required an adversarial subagent
 audit at the merge candidate followed by a pause for external review before
 merging. Base: `df7ca32fed45acfacf015c35e016ff7a8c4f775a`; branch:
-`arc/nd-fuel-stability`. Implementation and full Tier A+B validation are complete. The candidate
-awaits its adversarial audit and external review; no merge has occurred.
+`arc/nd-fuel-stability`. Implementation and full Tier A+B validation are
+complete. The adversarial audit passed, and its one documentation finding is
+resolved. The candidate awaits external review; no merge has occurred.
 
 ## Scope and acceptance
 
@@ -116,7 +117,6 @@ consumer adoption, reporting exits, and external review remain separate.
 
 | Command ID | Seconds | Exit / containment |
 |---|---:|---|
-
 | A1 | 146.40 | 0 / cleaned |
 | A2 | 27.43 | 0 / cleaned |
 | A3 | 52.77 | 0 / cleaned |
@@ -172,11 +172,12 @@ its unexpected-verdict plant was rejected. The failure register remains
 No baseline or generated-model row moved. The observed zero improvements
 is a result, not an additional acceptance gate.
 
-Only this record's validation receipt and the TODO status are updated after
-that fixed-source run; the implementation, tests, and gate code are unchanged.
+After that fixed-source run, changes are confined to this record, the TODO
+status, and the adversarial audit report; the implementation, tests, gate
+code, and build wiring are unchanged.
 The sixteen new contract/composition cones are included in the existing
-strict axiom audit. No new axioms, failure atoms, instances, or fuel defaults
-were introduced.
+strict axiom audit. No new axioms, failure atoms, instance declarations, or
+fuel defaults were introduced.
 
 ### Consumer use and remaining scope
 
@@ -199,5 +200,25 @@ fuel-forms classifier continues to certify only the zero-arm property.
 
 ### Adversarial audit and external review
 
-Pending. The user requires the adversarial audit at this candidate and a
-pause for external review before merging. Mainline remains unchanged.
+[AGENT 2026-09-09] Implementation candidate `7c8bbbd3a` received an independent
+adversarial **PASS** for the six-worker, fixed-operand slice. The
+[audit report](2026-09-09_nd-fuel-stability-adversarial-audit.md), committed
+separately as `c0a0acfb6`, records no blocking, high, medium, or kernel-proof
+finding. Its independent full unit suite, fresh elaboration of both new
+Lean modules, and targeted adversarial probes all passed. Fourteen additional
+probe cones remain within the standard three.
+
+[AGENT, orchestrator disposition] F1, the sole low documentation finding, is
+resolved by removing the blank line inside the 35-command table. No receipt
+value or Lean source changed. The orchestrator reviewed the audit report,
+probe source and outputs, and unit gate completion; rechecked the report and
+candidate source hashes, all 63 baseline paths and all 213 generated source
+paths; and confirmed that the auditor committed only its report. The original
+full battery was run by the orchestrator and was not repeated for these
+documentation-only changes.
+
+The branch is ready for external review. The user's requested pause remains
+in force: no merge or push has occurred, and mainline remains at
+`df7ca32fed45acfacf015c35e016ff7a8c4f775a`. The implementation record and audit
+report form the review handoff; the remaining seven absorbing workers and
+whole-interpreter fuel composition are not closed by this slice.

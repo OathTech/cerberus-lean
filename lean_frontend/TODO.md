@@ -68,7 +68,9 @@ owned and hands off; this roadmap does not authorize operating it.
   three CerbND runners and `nd_bind`/`liftND`/`liftAction`, with fixed operands
   and independently quantified worker/observer budgets (record
   `docs/2026-09-08_nd-fuel-stability-record.md`; full A+B green,
-  adversarial audit/external review pending).
+  adversarial audit PASS with its documentation finding resolved,
+  external review pending; audit
+  `docs/2026-09-09_nd-fuel-stability-adversarial-audit.md`).
   The other seven rows retain their obligations: `eval_pexpr_aux2`,
   `eval_pexpr_aux_broken` (outside the drive cone), `full_eval_pexpr`,
   `print_eval_conv_aux`, `drive_nonmemory_steps_aux2`, `driver2`, and
