@@ -222,3 +222,134 @@ in force: no merge or push has occurred, and mainline remains at
 `df7ca32fed45acfacf015c35e016ff7a8c4f775a`. The implementation record and audit
 report form the review handoff; the remaining seven absorbing workers and
 whole-interpreter fuel composition are not closed by this slice.
+
+## External review (orchestrator, 2026-09-09) — verdict, findings, boundary battery
+
+[AGENT orchestrator], the external reviewer the operator's pause called for;
+a separate author from the executing agent and from its adversarial auditor.
+
+### Verdict
+
+**Accepted and landed with one documentation fix.** The slice is the
+six-worker, fixed-operand scope the operator approved [USER 2026-09-08]:
+completed-observation STABILITY for the three CerbND runners and for
+`nd_bind`/`liftND`/`liftAction`, with worker and observer budgets quantified
+independently and the wrapper corollaries at the caller's single `[LemFuel]`
+instance. It is proof-only: one new library root (`CerbNDFuelProofs.lean`,
+499 lines), one unit witness module imported by `totality-proof-test`, 16
+theorems added to the axiom gate's FUEL leg, the manifest/lakefile rows, and
+the records. No runtime definition, generated body, `.lem`, pin, baseline or
+register changed. No `sorry`, `axiom`, `native_decide`, `bv_decide`,
+`ofReduce*`, heartbeat or recursion-depth option, `unsafe`, `opaque` or
+`partial` in either new module (the two grep hits are the word "axiom" in
+comments stating that no atom-distinctness axiom is used).
+
+What the theorems say, checked against the source: `IsFuel o := ∃ s, o.1 =
+Killed s fuelExhaustedKill` (structural, rendering-independent), `NoFuel xs
+:= ∀ o ∈ xs, ¬ IsFuel o`; `runNDFuel_stable (hn : n ≤ k) m s : NoFuel
+(runNDFuel n m s) → runNDFuel k m s = runNDFuel n m s`, likewise for the
+first-trace and traced runners; for the workers, `ObservationStability n k x
+y s` with separate `exhaustive`/`first`/`trace` premises, derived from a
+finite-depth refinement relation in which only an explicit fuel-kill node may
+be refined. The unit witnesses are the right adversaries: `fork` shows the
+budget matters (2 vs 3), that first-trace completion does not imply
+exhaustive completion, and that stability holds only above the completing
+budget. Because the theorems are kernel-checked, the only residual question
+is usefulness, not soundness: `NoFuel` is dischargeable for a concrete run
+whenever every outcome differs structurally from the fuel kill — a fail-stop
+kill differs by its message, so the open atom-distinctness question
+(`modelFailStopLoc` vs `fuelExhaustedLoc`, TODO) does not block it.
+
+Scope honestly not covered (record §"Consumer use and remaining scope"): the
+seven driver-level absorbing workers and whole-interpreter stability under a
+larger AMBIENT fuel captured inside operands. That is the next slice.
+
+### Findings
+
+| # | Finding | Disposition |
+|---|---|---|
+| E1 | `VALIDATION.md` §7 and §9 still said "Fuel monotonicity for the driver workers is NOT provided" / "stability remain[s] obligations" with no mention of what this slice delivers. | Fixed here: §7 states the six-worker stability contracts and their exact limits; §9 claim 5 names them. |
+| E2 | The adversarial audit's sole finding (a blank line breaking the 35-command Markdown table) was already resolved by the executing agent. | Verified. |
+
+### Boundary battery on `2c568de01` (independent of the agent's runs)
+
+Cache-disabled rebuild in this worktree, then the LADDER Tier A + Tier B
+battery, the fail-stop and fuel plants, the failure-reach gate, the
+pristine-oracle lanes (prepared manifest) and the gcc lane. Every lane rc=0:
+
+```
+=== bash tools/check_driver_fresh.sh --check  rc=0
+=== ./scripts/test_unit.sh  rc=0
+=== ./scripts/test_exec.sh --check-baseline  rc=0
+=== ./scripts/test_exec.sh --check-baseline=scripts/exec_coverage_baseline.txt tests/coverage  rc=0
+=== ./scripts/test_exec.sh --check-baseline=scripts/exec_debug_baseline.txt tests/debug  rc=0
+=== ./scripts/test_exec.sh --check-baseline=scripts/exec_float_baseline.txt tests/float  rc=0
+=== ./scripts/test_bytes.sh  rc=0
+=== ./scripts/test_libc_exec.sh  rc=0
+=== ./scripts/test_multi_tu.sh  rc=0
+=== ./scripts/test_parse.sh  rc=0
+=== ./scripts/test_core.sh  rc=0
+=== ./scripts/test_elab.sh  rc=0
+=== ./scripts/test_libxml2_uri.sh  rc=0
+=== ./scripts/test_cn_coverage.sh --check-baseline  rc=0
+=== ./scripts/test_parse.sh tests/ci  rc=0
+=== ./scripts/test_core.sh tests/ci  rc=0
+=== ./scripts/test_verify.sh  rc=0
+=== ./scripts/test_immaculate.sh  rc=0
+=== ./scripts/test_speclab.sh --selftest  rc=0
+=== ./scripts/test_speclab.sh --plant  rc=0
+=== ./scripts/test_hang_plant.sh  rc=0
+=== ./scripts/test_kill_plant.sh  rc=0
+=== ./scripts/test_fuel_plant.sh  rc=0
+=== ./scripts/test_failstop_plant.sh  rc=0
+=== ./scripts/test_libxml2.sh  rc=0
+=== python3 scripts/test_observation_lanes.py  rc=0
+=== ./scripts/check_failure_reach.sh --selftest  rc=0
+=== ./scripts/check_failure_reach.sh  rc=0
+=== python3 scripts/test_upstream_oracle.py  rc=0
+=== python3 scripts/test_upstream_oracle.py --plant  rc=0
+=== ./scripts/test_gcc_oracle.sh --check-baseline  rc=0
+```
+
+Verdict lines, verbatim:
+
+```
+SUMMARY: total=106 match=85 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=3 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+SUMMARY: total=212 match=183 ub_match=16 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=13 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+SUMMARY: total=90 match=66 ub_match=20 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=4 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+SUMMARY: total=69 match=69 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+SUMMARY: exec_match=9 neg_pinned=5 fail=0
+SUMMARY: match=12 diff=0
+ALL MATCH RECORDED BASELINE
+SUMMARY: total=2 match=2 fail=0
+Total:          106
+Total:          106
+SUMMARY: total=106 same=103 diff=3 ocaml_fail=0 lean_fail=0
+SUMMARY: total=213 match=207 ub_match=6 ub_diff=0 reject_match=0 diff=0 mismatch=0 reject_diff=0 lean_fail=0 lean_crash=0 fuel=0 lean_error=0 lean_timeout=0 oracle_fail=0 oracle_timeout=0 oracle_inconsistent=0
+BASELINE OK (213 entries, exact match)
+Total:          250
+test_verify: 127 passed, 0 failed (25 fixtures, 28 call points, 14 corpus fixtures, 21 corpus points)
+OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip DIFF, R3 s4b-memcmp-hugesize ORACLE_CRASH — VALIDATION.md 'ISO-fix register' — and the in-Lean probes g6 TRIPWIRE / illtyped-store KILL).
+test_fuel_plant: ALL PLANTS OK (FUEL classification live in exec/gcc/ci_sweep/cn_coverage/measure; negatives not FUEL; the real driver at --fuel 1 reads FUEL and at the default MATCH; --fuel 0/non-numeral/out-of-position/missing refused)
+SUMMARY: total=4 match=4 fail=0 (points: 1354, 22 observations each)
+observation lane plants: 93/93 passed
+check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=166 REACHABLE=48 UNKNOWN=19; every row sealed; tally line consistent)
+Independent oracle: passed; {'semantic_agreement': 709, 'reviewed_difference': 1, 'matching_failure': 11, 'interface_agreement': 2}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/nd-fuel-stability/.tmp/upstream-oracle-237eyot7/report.json
+Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/nd-fuel-stability/.tmp/upstream-oracle-zrz043bq/report.json
+SUMMARY: total=1963 compared=1885 agree=1873 agree_nd=0 triaged=12 disagree=0 o2_agree=190 skip_gcc_compile=1 skip_gcc_stdout=1 skip_lean_crash=9 skip_lean_fail=9 skip_lean_timeout=11 skip_ub=47 triaged_addr=11 triaged_ub=1
+Baseline check: 0 regression(s), 0 improvement(s)
+gcc second-oracle lane OK
+```
+
+Derived: zero baseline movement in every baseline lane; the axiom gate's
+FUEL leg now counts the 16 new contract lemmas with cones in the standard
+three; fuel census unchanged 57/13/5/6; fork-drift layer 2 = 22; gcc
+`agree=1873 disagree=0`; pristine oracle 709 / 1 / 11 / 2 + plant rejected.

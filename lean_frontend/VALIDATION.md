@@ -629,9 +629,18 @@ agreement are not established; they require explicit domain, failure,
 state and runtime assumptions. Increasing fuel does not repair known
 non-fuel discrepancies, such as the libc UB-location loss in the
 [current CI record](docs/2026-09-06_ci-reporting-results.md).
-Fuel monotonicity for the driver workers is NOT provided: it depends on
-how each body consumes exhaustion (lem-lean fuel-parameter record §5).
-A FUEL row is never counted as agreement.
+Fuel STABILITY is delivered for the ND infrastructure only (2026-09-09,
+`CerbNDFuelProofs.lean`, record `docs/2026-09-08_nd-fuel-stability-record.md`):
+for the three runners `runNDFuel`/`runND1Fuel`/`runND1TraceFuel` and for
+`nd_bind`/`liftND`/`liftAction`, if the earlier observation contains no
+fuel-exhaustion outcome (`NoFuel`), every larger budget yields the SAME
+observation — exact order, multiplicity, failure reasons, states and trace
+labels — with operands fixed and worker/observer budgets quantified
+independently. Fuel monotonicity for the seven driver-level absorbing
+workers (`driver2`, `full_eval_pexpr`, …) and whole-interpreter stability
+under a larger AMBIENT fuel captured inside operands are NOT provided: they
+depend on how each body consumes exhaustion (lem-lean fuel-parameter record
+§5) and need composition proofs. A FUEL row is never counted as agreement.
 Records: `docs/2026-09-02_fuel-arc-design.md`,
 `docs/2026-09-04_fuel-parameter-C1-record.md`.
 ## 8. How often
@@ -695,8 +704,10 @@ The claims this validation surface supports are exactly:
    (Charter: `docs/2026-08-31_effect-retirement-design.md` §1.3.)
 5. Fuel is a quantified parameter (§7). Wrapper equations, measured
    sufficiency lemmas and zero-case lemmas establish their stated local
-   contracts. General completion, propagation and stability remain
-   obligations under explicit hypotheses; these local results do not
+   contracts; the ND runners and `nd_bind`/`liftND`/`liftAction` carry
+   kernel-checked completed-observation STABILITY theorems (§7). General
+   completion, driver-level propagation and whole-interpreter stability
+   remain obligations under explicit hypotheses; these local results do not
    establish universal agreement with oracle-terminating runs.
 
 What remains on the trust boundary: the OCaml oracle itself (and
