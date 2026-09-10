@@ -1,0 +1,8 @@
+=== fork-oracle
+$ timeout --kill-after=5s 60s /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/_build/default/backend/driver/main.exe --runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/_build/install/default --nolibc --exec --batch --mode=exhaustive /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/tests/failure-probes/cross_tu_node/node_a.c /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/tests/failure-probes/cross_tu_node/node_b.c
+Error {msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(531, SD_Id("node")) vs Symbol(502, SD_Id("node"))'"}
+Time spent: 0.024507 seconds
+rc=1 elapsed=0.036015s
+Traceback (most recent call last):
+  File "<stdin>", line 28, in <module>
+AssertionError

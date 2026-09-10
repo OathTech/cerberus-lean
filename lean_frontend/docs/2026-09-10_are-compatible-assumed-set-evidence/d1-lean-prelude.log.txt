@@ -1,0 +1,10 @@
+[MKDIR] lean_frontend/generated
+[LEM] generating Lean files in [lean_frontend/generated] (log in [lean_frontend/lem.log])
+[COPY] 44 hand-written Lean files (lean_frontend/handwritten_copy.manifest) into [lean_frontend/generated]
+check_handwritten_sync: OK (44 hand-written files byte-identical to lean_frontend/generated/; manifest lean_frontend/handwritten_copy.manifest)
+[STAMP] recording Lean lem-sync content stamp
+check_lem_sync: recorded lean_frontend/lem_sync.sha256 (src e877cfc343021e3bfb63bbbf237930cb9da14901705209c92c0409481db49b82, gen 99a00bc576a1eb1b1f26c842442087c7061ae510c9a7a5744420386640c8b7ca)
+real 19.55
+user 19.23
+sys 0.34
+rc=0

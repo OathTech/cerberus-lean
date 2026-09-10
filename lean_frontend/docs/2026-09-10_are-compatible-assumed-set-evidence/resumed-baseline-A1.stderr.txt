@@ -1,0 +1,80 @@
+test_actual_shell_capture_retains_bytes_and_status (__main__.ObservationTests.test_actual_shell_capture_retains_bytes_and_status) ... ok
+test_all_bytes_are_decimal_not_octal_or_unicode (__main__.ObservationTests.test_all_bytes_are_decimal_not_octal_or_unicode) ... ok
+test_all_positive_cap_witnesses_reject_regardless_of_parent_status (__main__.ObservationTests.test_all_positive_cap_witnesses_reject_regardless_of_parent_status) ... ok
+test_completion_protocol (__main__.ObservationTests.test_completion_protocol) ... ok
+test_diagnostics_are_separate_and_fatal_suffixes_reject (__main__.ObservationTests.test_diagnostics_are_separate_and_fatal_suffixes_reject) ... ok
+test_each_semantic_field_changes_comparison (__main__.ObservationTests.test_each_semantic_field_changes_comparison) ... ok
+test_equivalent_escape_spelling_preserves_bytes (__main__.ObservationTests.test_equivalent_escape_spelling_preserves_bytes) ... ok
+test_error_message_is_unescaped_bytes (__main__.ObservationTests.test_error_message_is_unescaped_bytes) ... ok
+test_escaped_verdict_is_payload (__main__.ObservationTests.test_escaped_verdict_is_payload) ... ok
+test_failure_continuation_is_preserved_and_extra_fatal_rejects (__main__.ObservationTests.test_failure_continuation_is_preserved_and_extra_fatal_rejects) ... ok
+test_fuel_records_reject_including_litmus_failure_policy (__main__.ObservationTests.test_fuel_records_reject_including_litmus_failure_policy) ... ok
+test_fuel_words_inside_semantic_output_are_data (__main__.ObservationTests.test_fuel_words_inside_semantic_output_are_data) ... ok
+test_immaculate_validates_before_coarse_crash_projection (__main__.ObservationTests.test_immaculate_validates_before_coarse_crash_projection) ... ok
+test_internal_failure_policy_is_narrow (__main__.ObservationTests.test_internal_failure_policy_is_narrow) ... ok
+test_known_trace_envelopes_only_are_normalized (__main__.ObservationTests.test_known_trace_envelopes_only_are_normalized) ... ok
+test_malformed_suffix_does_not_leave_a_valid_prefix (__main__.ObservationTests.test_malformed_suffix_does_not_leave_a_valid_prefix) ... ok
+test_model_failure_cli_refuses_even_identical_failure_comparisons (__main__.ObservationTests.test_model_failure_cli_refuses_even_identical_failure_comparisons) ... ok
+test_model_failure_is_explicit_and_never_semantic_agreement (__main__.ObservationTests.test_model_failure_is_explicit_and_never_semantic_agreement) ... ok
+test_model_failure_validates_entire_capture_and_failure_precedence (__main__.ObservationTests.test_model_failure_validates_entire_capture_and_failure_precedence) ... ok
+test_order_and_multiplicity_are_preserved (__main__.ObservationTests.test_order_and_multiplicity_are_preserved) ... ok
+test_refusal_validates_the_entire_collection (__main__.ObservationTests.test_refusal_validates_the_entire_collection) ... ok
+test_styled_diagnostics_are_rejected_specifically_never_normalized (__main__.ObservationTests.test_styled_diagnostics_are_rejected_specifically_never_normalized)
+Landing finding 2026-09-06: under TERM=xterm-256color Cmdliner styled the ... ok
+
+----------------------------------------------------------------------
+Ran 22 tests in 0.225s
+
+OK
+test_bridge_keeps_all_bytes_and_status_without_publishing_failed_json (__main__.PrerequisiteTests.test_bridge_keeps_all_bytes_and_status_without_publishing_failed_json) ... ok
+test_failed_speclab_build_cannot_use_existing_generator (__main__.PrerequisiteTests.test_failed_speclab_build_cannot_use_existing_generator) ... ok
+test_observation_run_dir_retention_follows_exit_status_and_evidence_mode (__main__.PrerequisiteTests.test_observation_run_dir_retention_follows_exit_status_and_evidence_mode)
+Landing prep 2026-09-06: a harness exiting 0 removes its raw-observation ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.303s
+
+OK
+test_actual_inventory_rejects_lost_files_and_required_roots (__main__.ReleaseTests.test_actual_inventory_rejects_lost_files_and_required_roots) ... ok
+test_complete_tier_is_distinct_from_release_certification (__main__.ReleaseTests.test_complete_tier_is_distinct_from_release_certification) ... ok
+test_failure_after_completion_marker_is_failure (__main__.ReleaseTests.test_failure_after_completion_marker_is_failure) ... ok
+test_interrupt_during_cleanup_is_not_lost (__main__.ReleaseTests.test_interrupt_during_cleanup_is_not_lost) ... ok
+test_missing_command_is_incomplete (__main__.ReleaseTests.test_missing_command_is_incomplete) ... ok
+test_missing_inventory_prevents_success (__main__.ReleaseTests.test_missing_inventory_prevents_success) ... ok
+test_missing_tier_duplicate_and_bad_command_refuse (__main__.ReleaseTests.test_missing_tier_duplicate_and_bad_command_refuse) ... ok
+test_nested_timeout_and_capped_descendants_are_cleaned (__main__.ReleaseTests.test_nested_timeout_and_capped_descendants_are_cleaned) ... ok
+test_provider_cancellation_during_cleanup_stops_before_next_checkout (__main__.ReleaseTests.test_provider_cancellation_during_cleanup_stops_before_next_checkout) ... PROVIDER REHEARSAL INCOMPLETE: runner interrupted by signal 15
+ok
+test_real_membership_expands_every_documented_command (__main__.ReleaseTests.test_real_membership_expands_every_documented_command) ... ok
+test_reporting_discrepancy_preserves_exit_and_requires_complete_rows (__main__.ReleaseTests.test_reporting_discrepancy_preserves_exit_and_requires_complete_rows) ... ok
+test_runner_signals_leave_incomplete_report_and_identified_process (__main__.ReleaseTests.test_runner_signals_leave_incomplete_report_and_identified_process) ... ok
+test_source_change_cannot_certify_original_candidate (__main__.ReleaseTests.test_source_change_cannot_certify_original_candidate) ... ok
+test_subset_cannot_claim_a_complete_tier (__main__.ReleaseTests.test_subset_cannot_claim_a_complete_tier) ... ok
+test_successful_leader_cannot_leave_background_work (__main__.ReleaseTests.test_successful_leader_cannot_leave_background_work) ... ok
+test_timeout_after_completion_marker_is_incomplete (__main__.ReleaseTests.test_timeout_after_completion_marker_is_incomplete) ... ok
+
+----------------------------------------------------------------------
+Ran 16 tests in 3.349s
+
+OK
+test_computed_message_and_state_function_ascription_are_inventoried (__main__.CensusTests.test_computed_message_and_state_function_ascription_are_inventoried) ... ok
+test_nested_comments_strings_and_quote_char_do_not_hide_real_site (__main__.CensusTests.test_nested_comments_strings_and_quote_char_do_not_hide_real_site) ... ok
+test_smallest_range_and_ambiguity_are_explicit (__main__.CensusTests.test_smallest_range_and_ambiguity_are_explicit) ... ok
+test_unterminated_comment_and_string_refuse (__main__.CensusTests.test_unterminated_comment_and_string_refuse) ... ok
+test_unused_anonymous_instance_does_not_inherit_named_exec_dependency (__main__.CensusTests.test_unused_anonymous_instance_does_not_inherit_named_exec_dependency) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.002s
+
+OK
+test_missing_wrong_and_extra_artifacts_refuse (__main__.UpstreamInstrumentTests.test_missing_wrong_and_extra_artifacts_refuse) ... ok
+test_only_elapsed_diagnostic_trailer_is_projected (__main__.UpstreamInstrumentTests.test_only_elapsed_diagnostic_trailer_is_projected) ... ok
+test_real_control_and_same_value_byte_mutation (__main__.UpstreamInstrumentTests.test_real_control_and_same_value_byte_mutation) ... ok
+test_reviewed_difference_moves_fail_closed (__main__.UpstreamInstrumentTests.test_reviewed_difference_moves_fail_closed) ... ok
+test_status_and_fatal_suffix_cannot_hide_behind_verdict (__main__.UpstreamInstrumentTests.test_status_and_fatal_suffix_cannot_hide_behind_verdict) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.248s
+
+OK
+OBSERVATION ERROR: unknown or malformed stdout record: b'Defined {value: "Specified(0)", stdout: "'

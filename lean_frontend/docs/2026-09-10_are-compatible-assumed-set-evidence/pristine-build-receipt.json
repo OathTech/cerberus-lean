@@ -1,0 +1,129 @@
+{
+  "schema": 1,
+  "status": "built",
+  "build_policy": "git archives; own compiler/runtime prefix; DUNE_CACHE=disabled; --force",
+  "sources": {
+    "cerberus": {
+      "archive_sha256": "7a0436ed542247cb03bd3fe2c1c8f17d4b8ef4ffd498a47f3b424df52d8bedd1",
+      "commit": "b9aeedcb4dd438763b0eef7f95ac19e93875d7de",
+      "repository": "/home/dev/projects/cerberus-lean-proj/cerberus-lean",
+      "tree": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.validation-foundations/independent-oracle-v2/cerberus"
+    },
+    "lem": {
+      "archive_sha256": "ccc4275d7ad8627820272b58244a0f74cdafc87c7a0369b1be2b04afbeb9e006",
+      "commit": "3802cb04b53d5f1096a464e51ecbfb2a750a7ccd",
+      "repository": "/home/dev/projects/cerberus-lean-proj/lem-lean",
+      "tree": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.validation-foundations/independent-oracle-v2/lem"
+    }
+  },
+  "commands": [
+    {
+      "command": [
+        "make",
+        "bin/lem",
+        "INSTALL_DIR=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.validation-foundations/independent-oracle-v2/lem/local-install",
+        "LEMVERSION=3802cb0"
+      ],
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.validation-foundations/independent-oracle-v2/lem",
+      "exit_status": 0,
+      "seconds": 6.842,
+      "status": "passed",
+      "stderr": "lem-compiler.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "lem-compiler.stdout",
+      "stdout_sha256": "5c07c59c73412bb10b4c8b2c2944f63ac698d8a8809343f8c1dd0f16b652cb10"
+    },
+    {
+      "command": [
+        "make",
+        "-C",
+        "library",
+        "ocaml-libs",
+        "INSTALL_DIR=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.validation-foundations/independent-oracle-v2/lem/local-install",
+        "LEMVERSION=3802cb0"
+      ],
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.validation-foundations/independent-oracle-v2/lem",
+      "exit_status": 0,
+      "seconds": 1.264,
+      "status": "passed",
+      "stderr": "lem-libraries.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "lem-libraries.stdout",
+      "stdout_sha256": "bb3e38f47d475338ed56ed1da9a741d1ccdd03da88597da571bfad01905f60e4"
+    },
+    {
+      "command": [
+        "make",
+        "-C",
+        "ocaml-lib",
+        "all"
+      ],
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.validation-foundations/independent-oracle-v2/lem",
+      "exit_status": 0,
+      "seconds": 4.302,
+      "status": "passed",
+      "stderr": "lem-runtime-build.stderr",
+      "stderr_sha256": "e1cd674aebb1336f817daece2ebc4ee254daa5555ea9c4beb73118702f76f125",
+      "stdout": "lem-runtime-build.stdout",
+      "stdout_sha256": "e8bf21c7b4dfd01b2eb955f7f47473674012f545a93716a26f6574bc4231566d"
+    },
+    {
+      "command": [
+        "make",
+        "-C",
+        "ocaml-lib",
+        "install",
+        "INSTALLDIR=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.validation-foundations/independent-oracle-v2/lem/local-install/lib",
+        "LEMVERSION=3802cb0"
+      ],
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.validation-foundations/independent-oracle-v2/lem",
+      "exit_status": 0,
+      "seconds": 0.154,
+      "status": "passed",
+      "stderr": "lem-runtime-install.stderr",
+      "stderr_sha256": "33a4fc826954ef5de01847b7a94b1d74ac2ac05f0dd0a8d2a76f3d9eea8a868f",
+      "stdout": "lem-runtime-install.stdout",
+      "stdout_sha256": "477f3c7ad813db6ef6c356b30e89ab8db8ade8873e8560fefceff917e53855ec"
+    },
+    {
+      "command": [
+        "make",
+        "prelude-src"
+      ],
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.validation-foundations/independent-oracle-v2/cerberus",
+      "exit_status": 0,
+      "seconds": 19.91,
+      "status": "passed",
+      "stderr": "cerberus-generation.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "cerberus-generation.stdout",
+      "stdout_sha256": "a46573f79e273df39d4affc1ee639cb6428c897bebe57c354aa58135bc887cb2"
+    },
+    {
+      "command": [
+        "dune",
+        "build",
+        "--root",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.validation-foundations/independent-oracle-v2/cerberus",
+        "--force",
+        "backend/driver/main.exe",
+        "cerberus-lib.install",
+        "cerberus.install"
+      ],
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.validation-foundations/independent-oracle-v2/cerberus",
+      "exit_status": 0,
+      "seconds": 9.572,
+      "status": "passed",
+      "stderr": "cerberus-build.stderr",
+      "stderr_sha256": "646625c5ff1210d824a198e9c72c7bbdf74344cbccd227c535b3b87968e7b02f",
+      "stdout": "cerberus-build.stdout",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "oracle": {
+    "path": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+    "sha256": "e21f6cf392cd180cab290ac2101ffd5b35d67581c68b1636479a65f52b6ea985"
+  },
+  "runtime_root": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+  "full_manifest_sha256": "3e7234cbece79960ebf6872a0e8b4cb802ed40865e550490431cccbfa25cf611"
+}

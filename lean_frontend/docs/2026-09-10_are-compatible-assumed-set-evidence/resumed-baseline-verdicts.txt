@@ -1,0 +1,41 @@
+=== A1 ./scripts/test_unit.sh
+rc=0 status=passed elapsed=146.839s
+Total: 7 passed, 0 failed
+check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)
+check_fuel_forms: forms partition OK (57 MEASURED + 13 ABSORBING + 5 ambient-reachable + 6 ambient-unreachable = 81 fuel'd workers)
+check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 22 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+=== A2 ./scripts/test_exec.sh --check-baseline
+rc=0 status=passed elapsed=29.269s
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+=== A3 ./scripts/test_exec.sh --check-baseline=scripts/exec_coverage_baseline.txt tests/coverage
+rc=0 status=passed elapsed=51.939s
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+=== A4 ./scripts/test_exec.sh --check-baseline=scripts/exec_debug_baseline.txt tests/debug
+rc=0 status=passed elapsed=22.905s
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+=== A4b ./scripts/test_exec.sh --check-baseline=scripts/exec_float_baseline.txt tests/float
+rc=0 status=passed elapsed=18.459s
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+=== A4c ./scripts/test_bytes.sh
+rc=0 status=passed elapsed=3.233s
+=== A5 ./scripts/test_libc_exec.sh
+rc=0 status=passed elapsed=23.513s
+=== A6 ./scripts/test_multi_tu.sh
+rc=0 status=passed elapsed=2.332s
+=== A7 ./scripts/test_parse.sh
+rc=0 status=passed elapsed=9.895s
+Total:          106
+=== A8 ./scripts/test_core.sh
+rc=0 status=passed elapsed=8.442s
+Total:          106
+=== A9 ./scripts/test_elab.sh
+rc=0 status=passed elapsed=15.904s
+=== A10 ./scripts/test_libxml2_uri.sh
+rc=0 status=passed elapsed=17.309s
+=== A11 ./scripts/test_cn_coverage.sh --check-baseline
+rc=0 status=passed elapsed=58.83s
+BASELINE OK (213 entries, exact match)

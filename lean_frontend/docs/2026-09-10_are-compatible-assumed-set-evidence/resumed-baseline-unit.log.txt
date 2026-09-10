@@ -1,0 +1,778 @@
+check_handwritten_sync: OK (44 hand-written files byte-identical to lean_frontend/generated/; manifest lean_frontend/handwritten_copy.manifest)
+
+=== effects-proof-test ===
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+Build completed successfully (197 jobs).
+effects-proof-test: all theorems checked at compile time
+  total core_object_type_of_ctype: 3 symbolic rfl theorems
+  reader-lifted get_membersDefs: 1 concrete lookup theorem
+  fuel-threaded zeros_aux: wrapper fuel-parametric (∀ n) + symbolic integer case
+  threaded sym_supply: id/advance/distinctness, symbolic in the state
+✓ effects-proof-test PASSED
+
+=== totality-proof-test ===
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+Build completed successfully (247 jobs).
+TotalityProofTest: all proofs kernel-checked at compile time (fuel parametricity of every fuel'd def + symbolic execution)
+✓ totality-proof-test PASSED
+
+=== core-parser-test ===
+
+Note: The updated constant is in a different namespace. Dot notation may need to be changed (e.g., from `x.asString` to `String.ofList x`).
+Build completed successfully (155 jobs).
+CoreParser unit tests
+
+=== Lexer ===
+  ✓ int positive
+  ✓ int negative
+  ✓ int zero
+  ✓ ident simple
+  ✓ ident underscore
+  ✓ ident with digits
+  ✓ ident starts digit
+  ✓ ident double underscore
+  ✓ ident with underscore mid
+  ✓ ident stops at quote
+  ✓ kw void before quote
+  ✓ kw match
+  ✓ kw partial
+  ✓ string simple
+  ✓ string escape kept verbatim
+  ✓ string escape \" kept
+  ✓ string unknown escape
+  ✓ string raw newline
+  ✓ sym paren
+  ✓ sym assign
+  ✓ sym arrow
+  ✓ sym semicolon
+  ✓ sym double colon
+  ✓ impl name
+  ✓ impl name with dot
+  ✓ ub name
+  ✓ ub name dummy
+  ✓ error name
+  ✓ ws then int
+  ✓ comment then int
+  ✓ block comment
+  ✓ multiline comment
+=== Types ===
+  ✓ obj integer
+  ✓ obj floating
+  ✓ obj pointer
+  ✓ obj array(integer)
+  ✓ obj struct tag
+  ✓ obj union tag
+  ✓ base unit
+  ✓ base boolean
+  ✓ base ctype
+  ✓ base storable
+  ✓ base integer
+  ✓ base pointer
+  ✓ base loaded integer
+  ✓ base list
+  ✓ base tuple
+  ✓ base loaded pointer
+  ✓ type eff integer
+  ✓ type eff loaded integer
+  ✓ type base
+  ✓ ctype void
+  ✓ ctype signed int
+  ✓ ctype unsigned int
+  ✓ ctype char
+  ✓ ctype _Bool
+  ✓ ctype void*
+  ✓ ctype signed int*
+  ✓ ctype const void*
+  ✓ ctype int[10]
+  ✓ ctype struct tag
+  ✓ ctype union tag
+  ✓ ctype enum tag
+  ✓ ctype enum tag pointer
+  ✓ ctype int8_t
+  ✓ ctype uint64_t
+  ✓ ctype size_t
+  ✓ ctype ptrdiff_t
+  ✓ ctype function
+  ✓ ctype function pointer
+=== Values ===
+  ✓ val unit
+  ✓ val true
+  ✓ val false
+  ✓ val int 0
+  ✓ val int 42
+  ✓ val int negative
+  ✓ val NULL
+  --- ctype value bisection ---
+  ✓ val ctype void*
+  ✓ val ctype void
+  ✓ val ctype signed int
+  --- pCtype (no quotes) ---
+  ✓ pCtype void
+  ✓ pCtype signed int
+  ✓ pCtype void*
+  --- lexSym quote ---
+  ✓ lexSym quote
+  ✓ quote-ctype-quote void*
+  ✓ quote-ctype-quote void
+  ✓ quote-ctype-quote signed int
+=== Patterns ===
+  ✓ pat wildcard
+  ✓ pat named
+  ✓ pat named underscore prefix
+  ✓ pat named numbered
+  ✓ pat tuple
+  ✓ pat ctor Specified
+  ✓ pat ctor Unspecified
+  ✓ pat empty list
+  ✓ pat cons
+  ✓ pat loaded integer tuple
+  ✓ pat wildcard loaded tuple
+=== Pexpr atoms ===
+  ✓ pe int 42
+  ✓ pe int 0
+  ✓ pe negative
+  ✓ pe True
+  ✓ pe False
+  ✓ pe Unit
+  ✓ pe sym x
+  ✓ pe sym a_506
+  ✓ pe ctype signed int
+  ✓ pe ctype void
+  ✓ pe ctype void*
+  ✓ pe ctype unsigned int
+  ✓ pe ctype char
+  ✓ pe impl
+  ✓ pe NULL(void)
+=== Pexpr constructors ===
+  ✓ pe Specified(42)
+  ✓ pe Specified(0)
+  ✓ pe Unspecified('signed int')
+  ✓ pe Ivmax('signed int')
+  ✓ pe Ivmin('signed int')
+  ✓ pe Ivsizeof('signed int')
+  ✓ pe Ivalignof('signed int')
+  ✓ pe IvCOMPL(x, y)
+  ✓ pe IvAND(x, y, z)
+  ✓ pe IvOR(x, y, z)
+  ✓ pe IvXOR(x, y, z)
+  ✓ pe Fvfromint(x)
+  ✓ pe Ivfromfloat(x, y)
+  ✓ pe Array(x, y)
+  ✓ pe IvMaxAlignment
+=== Pexpr compound expressions ===
+  ✓ pe call 0 args
+  ✓ pe call 1 arg
+  ✓ pe call 2 args
+  ✓ pe call conv_loaded_int
+  ✓ pe call conv_int
+  ✓ pe impl call
+  ✓ pe add
+  ✓ pe sub
+  ✓ pe mul
+  ✓ pe div
+  ✓ pe eq
+  ✓ pe gt
+  ✓ pe lt
+  ✓ pe ge
+  ✓ pe le
+  ✓ pe and
+  ✓ pe or
+  ✓ pe exp
+  ✓ pe conv_int eq
+  ✓ pe cons
+  ✓ pe empty list
+  ✓ pe list literal
+  ✓ pe tuple
+  ✓ pe tuple 3
+  ✓ pe not
+  ✓ pe not eq
+  ✓ pe if
+  ✓ pe if not eq
+  ✓ pe if conv_int
+  ✓ pe let
+  ✓ pe case simple
+  ✓ pe case loaded pair
+  ✓ pe undef
+  ✓ pe undef reached_end
+  ✓ pe error
+  ✓ pe __conv_int__
+  ✓ pe wrapI_add
+  ✓ pe wrapI_sub
+  ✓ pe wrapI_mul
+  ✓ pe catch_add
+  ✓ pe catch_sub
+  ✓ pe catch_mul
+  ✓ pe catch+conv
+  ✓ pe cfunction
+  ✓ pe struct
+  ✓ pe union
+  ✓ pe array_shift
+  ✓ pe member_shift
+  ✓ pe is_scalar
+  ✓ pe is_integer
+  ✓ pe is_signed
+  ✓ pe is_unsigned
+  ✓ pe are_compatible
+  ✓ pe paren
+  ✓ pe paren complex
+=== Expr atoms ===
+  ✓ expr pure(42)
+  ✓ expr pure(Specified(42))
+  ✓ expr pure(Unit)
+  ✓ expr pure(x)
+  ✓ expr pure(a_507)
+  ✓ expr pure(Specified(0))
+  ✓ expr create
+  ✓ expr store
+  ✓ expr store conv
+  ✓ expr load
+  ✓ expr kill
+  ✓ expr free
+  ✓ expr alloc
+  ✓ expr fence
+  ✓ expr neg store
+  ✓ expr store mo
+  ✓ expr load mo
+  ✓ expr seq_rmw
+  ✓ expr bound pure
+  ✓ expr bound let
+  ✓ expr unseq
+  ✓ expr nd
+  ✓ expr pcall
+  ✓ expr pcall args
+  ✓ expr ccall
+  ✓ expr ccall args
+  ✓ expr memop PtrEq
+  ✓ expr memop IntFromPtr
+=== Expr compound ===
+  ✓ expr let
+  ✓ expr let strong
+  ✓ expr let weak
+  ✓ expr let strong s
+  ✓ expr let strong w
+  ✓ expr let weak tuple
+  ✓ expr seq
+  ✓ expr seq 3
+  ✓ expr store seq
+  ✓ expr if
+  ✓ expr case
+  ✓ expr save run
+  ✓ expr run
+  ✓ expr run;pure;save
+=== Full programs (from cerberus --pp core) ===
+  ✓ 001-return-literal (0f 1p 0i 0t 0g 0b)
+  ✓ 003-arith-add (0f 1p 0i 0t 0g 0b)
+  ✓ 007-local-var (0f 1p 0i 0t 0g 0b)
+  ✓ 009-if-true (0f 1p 0i 0t 0g 0b)
+=== Declarations ===
+  ✓ def impl
+  ✓ fun impl
+  ✓ fun simple
+  ✓ proc simple
+  ✓ builtin
+  ✓ two decls
+  ✓ proc with ctype
+  ✓ fun+proc
+  ✓ impl builtin_ prefix stripped
+  ✓ impl builtin_generic_ffs
+  ✓ impl <sizeof> via impl_map
+  ✓ impl <Ctype.min> via impl_map
+  ✓ impl <Sizeof> refused (not an impl_map key)
+  ✓ impl <frobnicate> refused
+  ✓ ailname captured
+  ✓ ailname tight spacing
+  ✓ no ailname, no entry
+  ✓ builtin/fun register no ailname
+=== libc dump productions (arc-6 S1) ===
+  ✓ procdecl bodyless
+  ✓ procdecl multi
+  ✓ procdecl AST is ProcDecl
+  ✓ zero-arg full proc still Proc
+  ✓ CP-13 named tag a_5 → a (tag 50 coexists)
+  ✓ CP-13 anonymous a_50 → __cerbty_unnamed_tag_50
+  ✓ impl decl <bogus> refused
+  ✓ impl decl <sizeof> accepted
+  ✓ glob fn-ptr array ail_ctype
+  ✓ glob empty-params fn ail_ctype
+  ✓ space long long
+  ✓ space long double
+  ✓ fn-ptr restrict + variadic
+  ✓ (void) empty prototype
+  ✓ (*[32]) array of fn ptrs
+  ✓ char*const *
+  ✓ CORE-dialect 'void ()*'
+  ✓ OTy strip _<num> suffix
+  ✓ Cfunction → PVfunction
+  ✓ unannotated list literal
+  ✓ error dquoted
+  ✓ bounded if as binop RHS
+  ✓ greedy else keeps binop branch
+  ✓ outdented ;-sequel attaches to sequence
+  ✓ indented ;-sequel stays in branch
+=== Runtime files ===
+  ✓ impl first5
+  ✓ impl first15
+  ✓ impl first28
+  ✓ impl first50
+  ✓ impl full
+  ✓ std.core
+  ✓ std_inner_arg_temps.core
+  ✓ gcc x86_64 impl
+  ✓ std.core ailnames count 46
+  ✓ std.core ailname malloc ↦ malloc_proxy
+  ✓ std.core ailname printf ↦ printf_proxy
+  ✓ std.core ailname __builtin_errno ↦ errno_proxy
+  ✓ std.core ailname memcpy ↦ memcpy_proxy
+  ✓ libc.core 191 procs
+  ✓ libc.core 68 globs
+  ✓ libc.core 1 tagDef (fl)
+  ✓ libc.core no fun/builtin/impl decls
+  ✓ libc∪std sym ids ≥ 2^20 (arc-5 invariant)
+  ✓ libc∪std name-hash collision-free
+  ✓ no top-level name aliases under _<num> strip
+
+Done: 292 passed, 0 failed
+✓ core-parser-test PASSED
+
+=== fresh-int-test ===
+warning: generated/Symbol.lean:348:0: unused `termination_by`, function is not recursive
+warning: generated/Symbol.lean:357:0: unused `termination_by`, function is not recursive
+Build completed successfully (81 jobs).
+test: Symbol.fresh threads the supply (monotone, distinct, returned)
+  got ids: 500, 501, 502; final supply 503
+  ✓ PASS
+test: the fresh* family draws exactly one id each and composes
+  ✓ PASS
+test: CerberusFresh.md5Hex matches OCaml Digest.to_hex (RFC 1321 vectors)
+  ✓ PASS
+test: per-TU digest global (set/get + Symbol.fresh pickup + armoring)
+  ✓ PASS
+
+4 passed, 0 failed
+✓ fresh-int-test PASSED
+
+=== pp-test ===
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+Build completed successfully (157 jobs).
+=== PPTest: arc-10 S3 pretty-printer mirrors ===
+test: ppCtype mirrors Pp_core_ctype.pp_ctype
+  ✓ PASS
+test: stringFromCore_value mirrors Pp_core.pp_value
+  ✓ PASS
+test: CerbFloat.string_of_float / formatFixed vs OCaml transcript
+  ✓ PASS
+PASS batch escaping: all 256 bytes match OCaml
+PASS batch escaping: all 256 byte carriers match OCaml
+PASS batch escaping: empty bytes
+PASS batch escaping: empty byte carriers
+PASS batch escaping: empty text
+PASS batch escaping: text controls and delimiters
+PASS batch escaping: UTF-8 sequence carried as bytes
+PASS batch escaping: UTF-8 text
+PASS batch escaping: model-failure text uses the same adapter
+PASS batch escaping: embedded verdict remains escaped payload
+All PP tests passed
+✓ pp-test PASSED
+
+=== fuel-exemplar-test ===
+info: LemLibTheorems.lean:391:0: 'LemLibTheorems.lemStringConcat_eq' depends on axioms: [propext, Quot.sound]
+info: LemLibTheorems.lean:392:0: 'LemLibTheorems.lemShowListAux_eq' depends on axioms: [propext, Quot.sound]
+Build completed successfully (247 jobs).
+FuelExemplar: exemplar_certified_shipped_forall (∀ fuel over the shipped `@drive ⟨fuel⟩`; the consumer's §6 shape, symbolic round library) — kernel-checked at compile time
+FuelExemplar: exemplar_certified_shipped_zero (fuel 0 → the runner's distinguished kill) — kernel-checked at compile time
+FuelExemplar: exemplar_killed_at_one (fuel 1 → the kill at the first memory operation; fuels ≥ 2 deliver Specified(42)) — kernel-checked at compile time
+✓ fuel-exemplar-test PASSED
+
+=== monadic-failstop-test ===
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+Build completed successfully (245 jobs).
+PASS [2] allocator zero alignment remains a refusal
+PASS [2] allocator ordinary alignment
+PASS [2] requested address
+PASS [2] ordinary allocation
+PASS [2] dead static allocation
+PASS [2] live static allocation
+PASS [2] dead dynamic allocation remains UB
+PASS [2] function pointer shift
+PASS [2] ordinary pointer shift
+PASS [2] unspecified memcmp byte
+PASS [2] memcmp retains load's updated state
+PASS [2] specified memcmp byte
+PASS [2] noninitial va_list
+PASS [2] initial va_list
+PASS [2] CHERI intrinsic
+PASS [2] ordinary model errors remain Other
+PASS [2] continuation cannot revive failure or overwrite its state
+PASS [2] UTF-8 and control bytes are escaped
+PASS [17] allocator zero alignment remains a refusal
+PASS [17] allocator ordinary alignment
+PASS [17] requested address
+PASS [17] ordinary allocation
+PASS [17] dead static allocation
+PASS [17] live static allocation
+PASS [17] dead dynamic allocation remains UB
+PASS [17] function pointer shift
+PASS [17] ordinary pointer shift
+PASS [17] unspecified memcmp byte
+PASS [17] memcmp retains load's updated state
+PASS [17] specified memcmp byte
+PASS [17] noninitial va_list
+PASS [17] initial va_list
+PASS [17] CHERI intrinsic
+PASS [17] ordinary model errors remain Other
+PASS [17] continuation cannot revive failure or overwrite its state
+PASS [17] UTF-8 and control bytes are escaped
+✓ monadic-failstop-test PASSED
+
+==========================================
+Total: 7 passed, 0 failed
+check_exec_purity: CLEAN (11 modules)
+check_theorem_axioms: hand-written axiom census OK (0 axioms — the arc-17 S2b end state)
+check_theorem_axioms: generated-tree census OK (214 files: 0 axioms, boundary-opaque population = the 16 registered rows exactly-once (incl. CerbFuel.fuelExhaustedLoc), 0 unsafeCast)
+check_theorem_axioms: C2 ratchet OK (345 files scanned recursively: 0 axioms, 0 runEffectful, seam population = the 38 pinned path-qualified counted rows exactly incl. the extern class; lem tests/ scaffolds asserted outside the surface)
+check_theorem_axioms: D14 grep-ban OK (no native_decide/bv_decide in 1 tree(s) + 44 hand-written seam files + LemLibTest.lean)
+'core_object_type_of_ctype' does not depend on any axioms
+'get_membersDefs' depends on axioms: [propext, Classical.choice, Quot.sound]
+'zeros_aux' depends on axioms: [propext, Classical.choice, Quot.sound]
+'fresh_symbol'' does not depend on any axioms
+'match_pattern' depends on axioms: [propext]
+'convert_pexpr' does not depend on any axioms
+'nd_bind' does not depend on any axioms
+'subst_sym_pexpr' depends on axioms: [propext, Classical.choice, Quot.sound]
+'driver2' depends on axioms: [propext, Classical.choice, Quot.sound]
+check_theorem_axioms: driver2 cone sorryAx-free + ofReduce*-free + DAEMON-free (arc-8 S3 bar)
+'driver2' depends on axioms: [propext, Classical.choice, Quot.sound]
+'drive' depends on axioms: [propext, Classical.choice, Quot.sound]
+'initial_driver_state' depends on axioms: [propext, Classical.choice, Quot.sound]
+'desugar' depends on axioms: [propext, Classical.choice, Quot.sound]
+'annotate_program' depends on axioms: [propext, Classical.choice, Quot.sound]
+'translate' depends on axioms: [propext, Classical.choice, Quot.sound]
+'link' depends on axioms: [propext, Classical.choice, Quot.sound]
+'convert_file' does not depend on any axioms
+'CerbCall.driveCall' depends on axioms: [propext, Classical.choice, Quot.sound]
+check_theorem_axioms: C2 entry census OK (9 entries, every cone ⊆ [propext, Classical.choice, Quot.sound])
+'CerbMem.chunksOf_eq_range_map' depends on axioms: [propext, Quot.sound]
+'CerbMem.reconstructValue_lemFuel_eq_indexed' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbMem.reconstructValue_eq_indexed' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbMem.foldl_append_eq_flatten_reverse' depends on axioms: [propext]
+'CerbMem.memValueToBytes_lemFuel_eq_append' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbMem.memValueToBytes_eq_append' depends on axioms: [propext, Classical.choice, Quot.sound]
+check_theorem_axioms: mem-scale S1 leg OK (6 C1/C3 equality theorems, every cone ⊆ [propext, Classical.choice, Quot.sound])
+'nd_bind_lemFuel_zero' does not depend on any axioms
+'liftND_lemFuel_zero' does not depend on any axioms
+'liftAction_lemFuel_zero' does not depend on any axioms
+'print_eval_conv_aux_lemFuel_zero' depends on axioms: [propext, Classical.choice, Quot.sound]
+'drive_nonmemory_steps_aux2_lemFuel_zero' depends on axioms: [propext, Classical.choice, Quot.sound]
+'driver2_lemFuel_zero' depends on axioms: [propext, Classical.choice, Quot.sound]
+'find_array_index_lemFuel_zero' depends on axioms: [propext]
+'easy_update_mem_value_aux_lemFuel_zero' depends on axioms: [propext, Classical.choice, Quot.sound]
+'memcmp_load_aux_lemFuel_zero' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbND.fuelExhaustedKill_eq' does not depend on any axioms
+'CerbND.runNDFuel_zero' does not depend on any axioms
+'CerbND.runND1Fuel_zero' does not depend on any axioms
+'CerbND.runND1TraceFuel_zero' depends on axioms: [propext]
+'CerbND.fuelExhaustedKill_ne_Undef0' does not depend on any axioms
+'CerbND.fuelExhaustedKill_ne_Other' does not depend on any axioms
+'CerbND.driver2_wrapper_defeq' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbND.print_eval_conv_aux_wrapper_defeq' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbND.drive_nonmemory_steps_aux2_wrapper_defeq' depends on axioms: [propext, Classical.choice, Quot.sound]
+'hack_measure_sufficient' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Driver_lemMeasureProofs.hack_measure_sufficient' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbND.nd_bind_wrapper_defeq' does not depend on any axioms
+'CerbND.liftND_wrapper_defeq' does not depend on any axioms
+'CerbND.liftAction_wrapper_defeq' does not depend on any axioms
+'CerbND.runND_eq' does not depend on any axioms
+'CerbND.runND1_eq' does not depend on any axioms
+'CerbND.runND1Trace_eq' depends on axioms: [propext]
+'FuelExemplar.exemplar_certified_shipped_zero' depends on axioms: [propext, Classical.choice, Quot.sound]
+'FuelExemplar.exemplar_killed_at_one' depends on axioms: [propext, Classical.choice, Quot.sound]
+'FuelExemplar.exemplar_certified_shipped_forall' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Ctype_lemMeasureProofs.ctypeEqual_measure_sufficient' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Core_lemMeasureProofs.eq_core_base_type_measure_sufficient' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Defacto_memory_aux_lemMeasureProofs.fake_mem_value_eq_measure_sufficient' depends on axioms: [propext, Quot.sound]
+'ctypeEqual_measure_sufficient' depends on axioms: [propext, Classical.choice, Quot.sound]
+'eq_core_base_type_measure_sufficient' depends on axioms: [propext, Classical.choice, Quot.sound]
+'fake_mem_value_eq_measure_sufficient' depends on axioms: [propext, Quot.sound]
+'CerbFail.failStopND_step' does not depend on any axioms
+'CerbFail.bind_preserves' depends on axioms: [propext]
+'CerbFail.lift_preserves' depends on axioms: [propext]
+'CerbFail.liftMem_preserves' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbFail.run_preserves' depends on axioms: [propext]
+'CerbFail.run1_preserves' depends on axioms: [propext]
+'CerbFail.runTrace_preserves' depends on axioms: [propext]
+'CerbFail.pipeline_preserves' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbFail.zero_precedes' does not depend on any axioms
+'CerbFail.failStopND_ne_active' does not depend on any axioms
+'CerbFail.failStopKill_ne_undef' does not depend on any axioms
+'CerbFail.failStopKill_ne_other' does not depend on any axioms
+'CerbND.runNDFuel_stable' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbND.runND1Fuel_stable' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbND.runND1TraceFuel_stable' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbND.nd_bind_lemFuel_stable' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbND.liftND_lemFuel_stable' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbND.liftAction_lemFuel_stable' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbND.runND_stable' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbND.runND1_stable' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbND.runND1Trace_stable' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbND.nd_bind_stable' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbND.liftND_stable' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbND.liftAction_stable' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbND.FuelProof.run_refines' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbND.FuelProof.run1_refines' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbND.FuelProof.trace_eq_of_refines' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbND.FuelProof.observationStability' depends on axioms: [propext, Classical.choice, Quot.sound]
+check_theorem_axioms: FUEL arc leg OK (63 contract lemmas — generated _zero, runner leaves/parametricity, ∀-fuel exemplar, measured obligations, fail-stop propagation, and six-worker ND stability, every cone ⊆ [propext, Classical.choice, Quot.sound])
+check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)
+check_sorry_token: OK (303 files scanned comment-stripped — generated 214, hand-written+test 54, LemLib 35; 0 sorry tokens)
+ok   [kill: batch single execution]: exit 1 -> FUEL:kill
+ok   [kill: batch multi-execution (one exhausted, exit 0)]: exit 0 -> FUEL:kill
+ok   [kill: non-batch human form]: exit 1 -> FUEL:kill
+ok   [kill: preceded by stderr chatter]: exit 1 -> FUEL:kill
+ok   [panic: pure-worker sentinel, exit 134]: exit 134 -> FUEL:panic
+ok   [panic: marker among other stderr lines, exit 134]: exit 134 -> FUEL:panic
+ok   [n1: genuine Error kill (assert)]: exit 1 -> <not fuel>
+ok   [n1b: genuine Error kill (unknown procedure)]: exit 1 -> <not fuel>
+ok   [n2: PANIC without the marker, exit 134]: exit 134 -> <not fuel>
+ok   [n2b: SIGSEGV, nothing captured]: exit 139 -> <not fuel>
+ok   [n3: program stdout containing the words, inside a Defined line]: exit 0 -> <not fuel>
+ok   [n3b: program stdout forging the batch line, quote-escaped]: exit 0 -> <not fuel>
+ok   [near: message with a suffix]: exit 1 -> <not fuel>
+ok   [near: message with a prefix]: exit 1 -> <not fuel>
+ok   [near: panic line at exit 1 (not a crash)]: exit 1 -> <not fuel>
+ok   [near: panic marker with a prefix at exit 134]: exit 134 -> <not fuel>
+ok   [near: loose words only]: exit 134 -> <not fuel>
+ok   [near: empty capture, exit 0]: exit 0 -> <not fuel>
+test_fuel_classifier: 18 fixtures, ALL OK
+GCC capture: stable signal with launcher diagnostics retained — PASS
+GCC capture: NUL/high-byte program stderr preserved — PASS
+GCC capture: varying program stderr rejected — PASS
+GCC capture: actual descendant OOM despite parent exit zero rejected — PASS
+GCC capture: 4/4 probes passed; raw evidence /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.tmp/scripts/observations/test_gcc_capture.smVuBGEHzH (kept under CERB_OBSERVATION_DIR; removed on exit 0)
+test_actual_shell_capture_retains_bytes_and_status (__main__.ObservationTests.test_actual_shell_capture_retains_bytes_and_status) ... ok
+test_all_bytes_are_decimal_not_octal_or_unicode (__main__.ObservationTests.test_all_bytes_are_decimal_not_octal_or_unicode) ... ok
+test_all_positive_cap_witnesses_reject_regardless_of_parent_status (__main__.ObservationTests.test_all_positive_cap_witnesses_reject_regardless_of_parent_status) ... ok
+test_completion_protocol (__main__.ObservationTests.test_completion_protocol) ... ok
+test_diagnostics_are_separate_and_fatal_suffixes_reject (__main__.ObservationTests.test_diagnostics_are_separate_and_fatal_suffixes_reject) ... ok
+test_each_semantic_field_changes_comparison (__main__.ObservationTests.test_each_semantic_field_changes_comparison) ... ok
+test_equivalent_escape_spelling_preserves_bytes (__main__.ObservationTests.test_equivalent_escape_spelling_preserves_bytes) ... ok
+test_error_message_is_unescaped_bytes (__main__.ObservationTests.test_error_message_is_unescaped_bytes) ... ok
+test_escaped_verdict_is_payload (__main__.ObservationTests.test_escaped_verdict_is_payload) ... ok
+test_failure_continuation_is_preserved_and_extra_fatal_rejects (__main__.ObservationTests.test_failure_continuation_is_preserved_and_extra_fatal_rejects) ... ok
+test_fuel_records_reject_including_litmus_failure_policy (__main__.ObservationTests.test_fuel_records_reject_including_litmus_failure_policy) ... ok
+test_fuel_words_inside_semantic_output_are_data (__main__.ObservationTests.test_fuel_words_inside_semantic_output_are_data) ... ok
+test_immaculate_validates_before_coarse_crash_projection (__main__.ObservationTests.test_immaculate_validates_before_coarse_crash_projection) ... ok
+test_internal_failure_policy_is_narrow (__main__.ObservationTests.test_internal_failure_policy_is_narrow) ... ok
+test_known_trace_envelopes_only_are_normalized (__main__.ObservationTests.test_known_trace_envelopes_only_are_normalized) ... ok
+test_malformed_suffix_does_not_leave_a_valid_prefix (__main__.ObservationTests.test_malformed_suffix_does_not_leave_a_valid_prefix) ... ok
+test_model_failure_cli_refuses_even_identical_failure_comparisons (__main__.ObservationTests.test_model_failure_cli_refuses_even_identical_failure_comparisons) ... ok
+test_model_failure_is_explicit_and_never_semantic_agreement (__main__.ObservationTests.test_model_failure_is_explicit_and_never_semantic_agreement) ... ok
+test_model_failure_validates_entire_capture_and_failure_precedence (__main__.ObservationTests.test_model_failure_validates_entire_capture_and_failure_precedence) ... ok
+test_order_and_multiplicity_are_preserved (__main__.ObservationTests.test_order_and_multiplicity_are_preserved) ... ok
+test_refusal_validates_the_entire_collection (__main__.ObservationTests.test_refusal_validates_the_entire_collection) ... ok
+test_styled_diagnostics_are_rejected_specifically_never_normalized (__main__.ObservationTests.test_styled_diagnostics_are_rejected_specifically_never_normalized)
+Landing finding 2026-09-06: under TERM=xterm-256color Cmdliner styled the ... ok
+
+----------------------------------------------------------------------
+Ran 22 tests in 0.224s
+
+OK
+test_bridge_keeps_all_bytes_and_status_without_publishing_failed_json (__main__.PrerequisiteTests.test_bridge_keeps_all_bytes_and_status_without_publishing_failed_json) ... ok
+test_failed_speclab_build_cannot_use_existing_generator (__main__.PrerequisiteTests.test_failed_speclab_build_cannot_use_existing_generator) ... ok
+test_observation_run_dir_retention_follows_exit_status_and_evidence_mode (__main__.PrerequisiteTests.test_observation_run_dir_retention_follows_exit_status_and_evidence_mode)
+Landing prep 2026-09-06: a harness exiting 0 removes its raw-observation ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.297s
+
+OK
+test_actual_inventory_rejects_lost_files_and_required_roots (__main__.ReleaseTests.test_actual_inventory_rejects_lost_files_and_required_roots) ... ok
+test_complete_tier_is_distinct_from_release_certification (__main__.ReleaseTests.test_complete_tier_is_distinct_from_release_certification) ... ok
+test_failure_after_completion_marker_is_failure (__main__.ReleaseTests.test_failure_after_completion_marker_is_failure) ... ok
+test_interrupt_during_cleanup_is_not_lost (__main__.ReleaseTests.test_interrupt_during_cleanup_is_not_lost) ... ok
+test_missing_command_is_incomplete (__main__.ReleaseTests.test_missing_command_is_incomplete) ... ok
+test_missing_inventory_prevents_success (__main__.ReleaseTests.test_missing_inventory_prevents_success) ... ok
+test_missing_tier_duplicate_and_bad_command_refuse (__main__.ReleaseTests.test_missing_tier_duplicate_and_bad_command_refuse) ... ok
+test_nested_timeout_and_capped_descendants_are_cleaned (__main__.ReleaseTests.test_nested_timeout_and_capped_descendants_are_cleaned) ... ok
+test_provider_cancellation_during_cleanup_stops_before_next_checkout (__main__.ReleaseTests.test_provider_cancellation_during_cleanup_stops_before_next_checkout) ... PROVIDER REHEARSAL INCOMPLETE: runner interrupted by signal 15
+ok
+test_real_membership_expands_every_documented_command (__main__.ReleaseTests.test_real_membership_expands_every_documented_command) ... ok
+test_reporting_discrepancy_preserves_exit_and_requires_complete_rows (__main__.ReleaseTests.test_reporting_discrepancy_preserves_exit_and_requires_complete_rows) ... ok
+test_runner_signals_leave_incomplete_report_and_identified_process (__main__.ReleaseTests.test_runner_signals_leave_incomplete_report_and_identified_process) ... ok
+test_source_change_cannot_certify_original_candidate (__main__.ReleaseTests.test_source_change_cannot_certify_original_candidate) ... ok
+test_subset_cannot_claim_a_complete_tier (__main__.ReleaseTests.test_subset_cannot_claim_a_complete_tier) ... ok
+test_successful_leader_cannot_leave_background_work (__main__.ReleaseTests.test_successful_leader_cannot_leave_background_work) ... ok
+test_timeout_after_completion_marker_is_incomplete (__main__.ReleaseTests.test_timeout_after_completion_marker_is_incomplete) ... ok
+
+----------------------------------------------------------------------
+Ran 16 tests in 3.481s
+
+OK
+test_computed_message_and_state_function_ascription_are_inventoried (__main__.CensusTests.test_computed_message_and_state_function_ascription_are_inventoried) ... ok
+test_nested_comments_strings_and_quote_char_do_not_hide_real_site (__main__.CensusTests.test_nested_comments_strings_and_quote_char_do_not_hide_real_site) ... ok
+test_smallest_range_and_ambiguity_are_explicit (__main__.CensusTests.test_smallest_range_and_ambiguity_are_explicit) ... ok
+test_unterminated_comment_and_string_refuse (__main__.CensusTests.test_unterminated_comment_and_string_refuse) ... ok
+test_unused_anonymous_instance_does_not_inherit_named_exec_dependency (__main__.CensusTests.test_unused_anonymous_instance_does_not_inherit_named_exec_dependency) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.002s
+
+OK
+test_missing_wrong_and_extra_artifacts_refuse (__main__.UpstreamInstrumentTests.test_missing_wrong_and_extra_artifacts_refuse) ... ok
+test_only_elapsed_diagnostic_trailer_is_projected (__main__.UpstreamInstrumentTests.test_only_elapsed_diagnostic_trailer_is_projected) ... ok
+test_real_control_and_same_value_byte_mutation (__main__.UpstreamInstrumentTests.test_real_control_and_same_value_byte_mutation) ... ok
+test_reviewed_difference_moves_fail_closed (__main__.UpstreamInstrumentTests.test_reviewed_difference_moves_fail_closed) ... ok
+test_status_and_fatal_suffix_cannot_hide_behind_verdict (__main__.UpstreamInstrumentTests.test_status_and_fatal_suffix_cannot_hide_behind_verdict) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.240s
+
+OK
+test_exec: SELFTEST — extract_verdict_seq plants (loud plant banner; no binaries run)
+  PLANT OK   [E0 pre-repair extractor collapses the audit pair to one token: VAL:Specified(0) == VAL:Specified(0)]
+  PLANT OK   [E1a audit payload 1 -> whole-line token] -> VAL:{value: "Specified(0)", stdout: "GOOD", stderr: "", blocked: "false"}
+  PLANT OK   [E1b audit payload 2 -> whole-line token] -> VAL:{value: "Specified(0)", stdout: "BAD", stderr: "WRONG", blocked: "false"}
+  PLANT OK   [E1 same-value/different-stdout+stderr lines yield DIFFERENT tokens]
+  PLANT OK   [E2a] -> VAL:{value: "Specified(3)", stdout: "x", stderr: "", blocked: "false"}
+  PLANT OK   [E2b] -> VAL:{value: "Specified(3)", stdout: "x", stderr: "warn: y", blocked: "false"}
+  PLANT OK   [E2 same-value/different-stderr lines yield DIFFERENT tokens]
+  PLANT OK   [E3 escaped-quote/backslash/decimal payload preserved byte-exactly] -> VAL:{value: "Specified(1)", stdout: "say \"hi\"\n\\ tab\t \255\000 end", stderr: "", blocked: "false"}
+  PLANT OK   [E4 multi-outcome: 3 tokens in order (Defined a / Undefined / Defined b)] -> VAL:{value: "Specified(0)", stdout: "a", stderr: "", blocked: "false"}|UB:{ub: "UB043_indirection_invalid_value", stderr: "", loc: "<file.c:3:5>"}|VAL:{value: "Specified(0)", stdout: "b", stderr: "", blocked: "false"}
+  PLANT OK   [E5 embedded escaped Defined text is payload, not a token] -> VAL:{value: "Specified(0)", stdout: "Defined {value: \"Specified(9)\"}", stderr: "", blocked: "false"}
+  PLANT OK   [E6 Undefined whole-line token unchanged] -> UB:{ub: "UB036_exceptional_condition", stderr: "", loc: "<t.c:2:10>"}
+OBSERVATION ERROR: unknown or malformed stdout record: b'Defined {value: "Specified(0)", stdout: "'
+  PLANT OK   [E7 no token from a truncated Defined line] -> 
+test_exec: SELFTEST OK (E0 pre-repair collapse reproduced; E1-E7: same-value/different-stdout and different-stderr yield distinct whole-line tokens, escaped payload byte-exact, multi-outcome order kept, embedded text is payload, Undefined unchanged, truncated line is no token)
+check_no_fuel_numerals: SELFTEST — planting F1-F6 into a scratch copy of the scan set (loud plant banner; nothing in the tree is touched)
+  PLANT OK   [F1 deleted default named in code] -> check_no_fuel_numerals: FAIL (F1): fuel numeral shape found:
+  PLANT OK   [F1 deleted driverFuel in a seam] -> check_no_fuel_numerals: FAIL (F1): fuel numeral shape found:
+  PLANT OK   [F2 global instance] -> check_no_fuel_numerals: FAIL (F2): fuel numeral shape found:
+  PLANT OK   [F2 global instance (where)] -> check_no_fuel_numerals: FAIL (F2): fuel numeral shape found:
+  PLANT OK   [F3 worker at a literal fuel] -> check_no_fuel_numerals: FAIL (F3): fuel numeral shape found:
+  PLANT OK   [F3 parenthesised literal] -> check_no_fuel_numerals: FAIL (F3): fuel numeral shape found:
+  PLANT OK   [F4 LemFuel.mk numeral] -> check_no_fuel_numerals: FAIL (F4): fuel numeral shape found:
+  PLANT OK   [F4 letI outside Main] -> check_no_fuel_numerals: FAIL (F4): fuel numeral shape found:
+  PLANT OK   [F5 anonymous-constructor literal] -> check_no_fuel_numerals: FAIL (F5): fuel numeral shape found:
+  PLANT OK   [F6 fuel-named numeral constant] -> check_no_fuel_numerals: FAIL (F6): fuel numeral shape found:
+  PLANT OK   [F6 in a speclab gate test] -> check_no_fuel_numerals: FAIL (F6): fuel numeral shape found:
+  PLANT OK   [F6 in a generated copy of Main] -> check_no_fuel_numerals: FAIL (F6): fuel numeral shape found:
+  PLANT OK   [F5 in an immaculate Lean probe] -> check_no_fuel_numerals: FAIL (F5): fuel numeral shape found:
+  PLANT OK   [M2 F3 instance-carrying worker literal] -> check_no_fuel_numerals: FAIL (F3): fuel numeral shape found:
+  PLANT OK   [M2 E1 hex literal ⟨0x5F5E100⟩] -> check_no_fuel_numerals: FAIL (F5): fuel numeral shape found:
+  PLANT OK   [M2 E2 ascribed literal ⟨(N : Nat)⟩] -> check_no_fuel_numerals: FAIL (F5): fuel numeral shape found:
+  PLANT OK   [M2 E4 structure instance { fuel := N }] -> check_no_fuel_numerals: FAIL (F4): fuel numeral shape found:
+  PLANT OK   [M2 E6 LemFuel.mk (expr)] -> check_no_fuel_numerals: FAIL (F4): fuel numeral shape found:
+  PLANT OK   [M2 E7 worker at a hex literal] -> check_no_fuel_numerals: FAIL (F3): fuel numeral shape found:
+  PLANT OK   [M2 E3 arithmetic ⟨10^8⟩] -> check_no_fuel_numerals: FAIL (F5): fuel numeral shape found:
+  KNOWN GAP  [M2 E5 indirection via a non-fuel-named constant] -> stays GREEN (not regex-closable; review discipline + the [LemFuel] typing backstop)
+  REVERTED (unplanted scratch copy):
+  check_no_fuel_numerals: OK (310 files scanned comment-stripped; no lemDefaultFuel/driverFuel/ndDefaultFuel, no LemFuel instance, no literal fuel (F1-F6); allowed Main.lean sites seen: 4 of 4 (hand-written + generated copy))
+check_no_fuel_numerals: SELFTEST OK (20 plants red with the declared label; E5 indirection a recorded known gap; unplanted set green)
+check_no_fuel_numerals: OK (310 files scanned comment-stripped; no lemDefaultFuel/driverFuel/ndDefaultFuel, no LemFuel instance, no literal fuel (F1-F6); allowed Main.lean sites seen: 4 of 4 (hand-written + generated copy))
+gen_fuel_parametricity: OK (19 ambient fuel wrappers in the generated tree = the 19 pins of TotalityProofTest.lean Part 1, both directions)
+check_lakefile_roots: SELFTEST — planting on a scratch copy of lakefile.toml (loud plant banner; nothing in the tree is touched)
+  PLANT OK   [dropped root Core_aux_auxiliary] -> check_lakefile_roots: FAIL — generated module(s) NOT a Lake root (their obligations would never build):
+  PLANT OK   [phantom root Phantom_auxiliary] -> check_lakefile_roots: FAIL — Lake root(s) with no generated module:
+  PLANT OK   [unrooted generated Orphan_auxiliary] -> check_lakefile_roots: FAIL — generated module(s) NOT a Lake root (their obligations would never build):
+  REVERTED (real lakefile + generated):
+  check_lakefile_roots: OK (213 roots = 213 generated modules + the exe root Main; 85 auxiliary modules all built)
+check_lakefile_roots: SELFTEST OK (3 plants red, baseline green)
+check_lakefile_roots: OK (213 roots = 213 generated modules + the exe root Main; 85 auxiliary modules all built)
+check_fuel_forms: SELFTEST — plants on a scratch copy of the classification table (loud plant banner; nothing in the tree is touched)
+  PLANT OK   [P1 measured->ambient reachable (step_eval_pexpr)] -> check_fuel_forms: FAIL — fuel'd worker(s) REACHABLE from drive with an opaque (fail-open) exhaustion, not in /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/scripts/fuel_forms_pending.txt:
+  PLANT OK   [P2 stale pending pin (many removed from the table)] -> check_fuel_forms: FAIL — pending register row(s) no longer a reachable ambient worker (stale pin; edit the register):
+  PLANT OK   [P3 measured obligation with sorryAx in its cone] -> check_fuel_forms: FAIL — measured obligation(s) with an axiom cone outside [propext, Classical.choice, Quot.sound] (or no proof constant):
+  PLANT OK   [P4 truncated table] -> check_fuel_forms: FAIL — no FUEL_FORMS_SUMMARY line (the tool did not complete; fail-closed)
+  PLANT OK   [P5 phantom pending-register row] -> check_fuel_forms: FAIL — pending register row(s) no longer a reachable ambient worker (stale pin; edit the register):
+    plant table: FUEL_FORM	many1_lemFuel	AMBIENT	yes/-	MALFORMED obligation=many1_measure_sufficient: left-hand head `many1` is not the worker `many1_lemFuel`	
+    plant table: FUEL_FORM	many_lemFuel	AMBIENT	yes/-	MALFORMED obligation=many_measure_sufficient: conclusion is not an equation	
+  PLANT OK   [P6 decoy obligation of type True (many)] -> check_fuel_forms: FAIL — obligation(s) named <f>_measure_sufficient whose TYPE is not the contract's shape (∀ …, μ ≤ lemFuel → worker lemFuel … = wrapper …, argument correspondence against the wrapper's body) — never MEASURED:
+  PLANT OK   [P7 decoy obligation with the wrong worker constant (many1)] -> check_fuel_forms: FAIL — obligation(s) named <f>_measure_sufficient whose TYPE is not the contract's shape (∀ …, μ ≤ lemFuel → worker lemFuel … = wrapper …, argument correspondence against the wrapper's body) — never MEASURED:
+  PLANT OK   [P12 audit decoy 1: _zero lemma about CerbND.runNDFuel, not the worker] -> review_bad_lemFuel AMBIENT: MALFORMED-ZERO zero=review_bad_lemFuel_zero: left-hand head `CerbND.runNDFuel` is not the worker `review_bad_lemFuel`
+  PLANT OK   [P12 policy: a MALFORMED-ZERO lemma is RED] -> check_fuel_forms: FAIL — lemma(s) named <worker>_zero whose statement is not `worker … 0 … = <absorbing element>` on the worker's own binders — never ABSORBING:
+  PLANT OK   [P13 audit decoy 2: worker at literal 0, wrapper input x never passed] -> review_shift_lemFuel AMBIENT: MALFORMED obligation=review_shift_measure_sufficient: worker argument #1 is `0`, not one of the wrapper's input binders — the obligation must relate the worker to the wrapper on the SAME inputs
+  PLANT OK   [P14 wrong fuel position] -> pl_pos_lemFuel AMBIENT: MALFORMED obligation=pl_pos_measure_sufficient: wrong fuel position: `lemFuel` is passed as worker argument #1 (`a`), but the worker's `lemFuel` parameter is #0
+  PLANT OK   [P15 swapped arguments on the worker side] -> pl_swap_lemFuel AMBIENT: MALFORMED obligation=pl_swap_measure_sufficient: worker argument #1: the obligation passes `b`, but the wrapper `pl_swap` passes `a` — the equation does not relate the worker to the wrapper on the same inputs
+  PLANT OK   [P16 swapped arguments on the wrapper side] -> pl_swapw_lemFuel AMBIENT: MALFORMED obligation=pl_swapw_measure_sufficient: wrapper argument #0 is `b`, not the binder `a` — the wrapper side must be the wrapper applied to the statement's own binders, in order
+  PLANT OK   [P17 changed measure (lower bound a vs the wrapper's a + 1)] -> pl_mu_lemFuel AMBIENT: MALFORMED obligation=pl_mu_measure_sufficient: the lower bound `a` of the `≤ lemFuel` hypothesis is not the wrapper's measure: `pl_mu` calls the worker at fuel `a + 1`
+  PLANT OK   [P18 renamed worker: the wrapper calls pl_rhs_other_lemFuel] -> pl_rhs_lemFuel AMBIENT: MALFORMED obligation=pl_rhs_measure_sufficient: the wrapper `pl_rhs` does not call the worker `pl_rhs_lemFuel`: on these inputs its body is a call of `pl_rhs_other_lemFuel`
+  PLANT OK   [P19 hidden extra premise inside the ≤ binder] -> pl_prem_lemFuel AMBIENT: MALFORMED obligation=pl_prem_measure_sufficient: no hypothesis `_ ≤ lemFuel` on the `lemFuel` binder
+  PLANT OK   [P20 POSITIVE CONTROL: well-formed _zero lemma on a decoy worker] -> pl_zt_lemFuel ABSORBING: zero=pl_zt_lemFuel_zero heads=[nd_status.Killed, CerbND.fuelExhaustedKill] axioms=ok
+  PLANT OK   [P21 _zero lemma with a term (st0 + 1) where a binder must be] -> pl_ztb_lemFuel AMBIENT: MALFORMED-ZERO zero=pl_ztb_lemFuel_zero: worker argument `st0 + 1` is not one of the lemma's binders (the lemma must state the worker at fuel 0 on universally quantified inputs)
+  PLANT OK   [P22 _zero lemma at fuel 1, not 0] -> pl_ztc_lemFuel AMBIENT: MALFORMED-ZERO zero=pl_ztc_lemFuel_zero: no literal `0` among the worker's arguments (the lemma must state the worker at fuel 0)
+  PLANT OK   [P23 ABSORBING _zero lemma with sorryAx in its cone (nd_bind)] -> check_fuel_forms: FAIL — ABSORBING _zero lemma(s) with an axiom cone outside [propext, Classical.choice, Quot.sound] (or no cone reported):
+    plant table: FUEL_FORM	CerbMem.alignofCtype_lemFuel	MEASURED	yes/-	obligation=CerbMem.alignofCtype_measure_sufficient axioms=ok args=wrapper-body measure=syntactic	cty ≠ cty
+    plant table: FUEL_FORM	CerbMem.sizeofCtype_lemFuel	AMBIENT	yes/-	MALFORMED obligation=CerbMem.sizeofCtype_measure_sufficient: binder `extra` (#2) is neither reserved (`lemHyp`/`lemFuel`/the `≤ lemFuel` hypothesis) nor an argument of the wrapper side	
+  PLANT OK   [P11 decoy of a REAL obligation with an EXTRA Prop binder and the register's exact hypothesis (CerbMem.sizeofCtype): MALFORMED by the binder check] -> check_fuel_forms: FAIL — obligation(s) named <f>_measure_sufficient whose TYPE is not the contract's shape (∀ …, μ ≤ lemFuel → worker lemFuel … = wrapper …, argument correspondence against the wrapper's body) — never MEASURED:
+  PLANT OK   [P11 premise] -> the tool reports CerbMem.sizeofCtype_lemFuel MALFORMED: binder `extra` is neither reserved nor a wrapper argument
+  PLANT OK   [P10 the REAL CerbMem.alignofCtype obligation restated under the CONTRADICTORY hypothesis cty ≠ cty: MEASURED by shape, RED by the register] -> check_fuel_forms: FAIL — worker(s) MEASURED under a hypothesis with no reviewed register row for that exact hypothesis in /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/scripts/fuel_hypotheses.txt (worker TAB hypothesis):
+  PLANT OK   [P10 premise] -> the tool reports CerbMem.alignofCtype_lemFuel MEASURED hyp=cty ≠ cty (shape alone cannot see the contradiction; the register is the closure)
+  PLANT OK   [P8 register row of a measured-under-hypothesis worker deleted (CerbMem.sizeofCtype)] -> check_fuel_forms: FAIL — worker(s) MEASURED under a hypothesis with no reviewed register row for that exact hypothesis in /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/scripts/fuel_hypotheses.txt (worker TAB hypothesis):
+  PLANT OK   [P9 stale register row (hack under 0 < k — hack IS measured, under CerbCoreShape.IsValuePexpr pexpr1, not under this)] -> check_fuel_forms: FAIL — hypothesis register row(s) whose worker is not MEASURED under that exact hypothesis (stale register row; edit the register):
+  PLANT OK   [P9b register row without a .lem:<line> cite] -> check_fuel_forms: FAIL — hypothesis register row(s) not of the form <worker> TAB <hyp> TAB <invariant with a .lem:<line> cite> TAB <reviewer>:
+  UNPLANTED:
+    check_fuel_forms: forms partition OK (57 MEASURED + 13 ABSORBING + 5 ambient-reachable + 6 ambient-unreachable = 81 fuel'd workers)
+    check_fuel_forms: OK (81 fuel'd workers: 57 MEASURED (obligation of the contract's shape incl. argument correspondence against the wrapper's body; every obligation + proof cone ⊆ the standard three; 10 of them under a hypothesis, each = a reviewed row of fuel_hypotheses.txt, both directions), 13 ABSORBING = kill at zero (the _zero lemma is the worker at literal 0 on its own binders = the monad's absorbing element, cone ⊆ the standard three; propagation NOT proved — lem TODO 13), 5 reachable-AMBIENT = the 5 rows of fuel_forms_pending.txt exactly, 6 ambient unreachable from the drive cone)
+check_fuel_forms: SELFTEST OK (24 plants with the declared label — 6 on the table (incl. the ABSORBING-cone plant), 3 on the hypothesis register, 15 compiled decoys: the C4 four (type True / wrong worker / contradictory hypothesis caught by the register / extra binder), the whole-project audit's two decoys verbatim (review_bad _zero about runNDFuel; review_shift at literal 0), wrong fuel position, swapped worker-side and wrapper-side arguments, changed measure, wrapper calling another worker, hidden premise, and three _zero decoys (a POSITIVE control ABSORBING, a term for a binder, fuel 1) — each rejected with its own message; unplanted table green)
+check_fuel_forms: forms partition OK (57 MEASURED + 13 ABSORBING + 5 ambient-reachable + 6 ambient-unreachable = 81 fuel'd workers)
+check_fuel_forms: OK (81 fuel'd workers: 57 MEASURED (obligation of the contract's shape incl. argument correspondence against the wrapper's body; every obligation + proof cone ⊆ the standard three; 10 of them under a hypothesis, each = a reviewed row of fuel_hypotheses.txt, both directions), 13 ABSORBING = kill at zero (the _zero lemma is the worker at literal 0 on its own binders = the monad's absorbing element, cone ⊆ the standard three; propagation NOT proved — lem TODO 13), 5 reachable-AMBIENT = the 5 rows of fuel_forms_pending.txt exactly, 6 ambient unreachable from the drive cone)
+check_failure_reach: instrument built + census taken in 6 s (FAILURE_REACH rows 21120, FAILURE_RANGE rows 11250; counts: {"generated:monadic_ascribed":263,"generated:pure_or_unresolved":1253,"handwritten:pure_or_unresolved":121})
+check_failure_reach: SELFTEST — plants on scratch copies of the scanned sources and the register (loud plant banner; nothing in the tree is touched)
+  PLANT OK   [P1 a new failwithI planted into generated valueFromPexpr] rc=1 ->   NEW pure exec-closure site (no register row — review it): lean_frontend/generated/Core_aux.lean:479 valueFromPexpr failwithI «"PLANT-NEW-SITE" : Option (value)) /- removed value specific» position=TAIL scope=EXEC
+  PLANT OK   [P2 a DEAD let-bound failwithI planted into generated valueFromPexprs (the F1 shape)] rc=1 ->   DISCARDABLE position (the F1 shape: a dead let-binding of a failure in a generated definition — the twin design's flip condition): lean_frontend/generated/Core_aux.lean:483 valueFromPexprs «"PLANT-DEAD" : Nat); lemListFoldr (
+edited: lean_frontend/CerbDecode.lean _private.CerbDecode.0.CerbDecode.decode_character_constant_aux s!"decode_character_constant: invalid ch
+  PLANT OK   [P3 a REACHABLE row's reach class edited to UNKNOWN without --reseal] rc=1 ->   SEAL MISMATCH (row edited without --reseal; a class change is a review change): lean_frontend/CerbDecode.lean _private.CerbDecode.0.CerbDecode.decode_character_constant_aux «s!"decode_character_constant: invalid char constant =
+  PLANT OK   [P4 a phantom register row (re-sealed) -> stale] rc=1 ->   STALE register row (site gone or its key moved): lean_frontend/generated/Core_aux.lean phantom_def failwithI «"phantom"» scope=EXEC
+  PLANT OK   [P5 the tally line edited] rc=1 ->   `# tally:` line does not equal the rows: register says `sites=0 exec=231 unresolved-owner=2 reviewed-TAIL=179 reviewed-NON-TAIL=54 UNREACHABLE-BY-INVARIANT=166 REACHABLE=48 UNKNOWN=19 discardable=0`, rows give `sites=233 exec=23
+  UNPLANTED:
+    check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=166 REACHABLE=48 UNKNOWN=19; every row sealed; tally line consistent)
+check_failure_reach: SELFTEST OK (5 plants with the declared message — a new site in a generated exec-closure definition, a DISCARDABLE dead let-binding, an unsealed class edit, a phantom row, an edited tally — and the unplanted register green)
+check_failure_reach: instrument built + census taken in 6 s (FAILURE_REACH rows 21120, FAILURE_RANGE rows 11250; counts: {"generated:monadic_ascribed":263,"generated:pure_or_unresolved":1253,"handwritten:pure_or_unresolved":121})
+check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=166 REACHABLE=48 UNKNOWN=19; every row sealed; tally line consistent)
+check_exec_totality: CLEAN (22 generated modules + hand-written CerbND, 0 allowlisted)
+check_lem_sync: OK (src 0447289f663b14204df4a8b540ac196f0aa8b2f2faa4540d1f25864ea8bb85db, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_lem_sync: lean OK (src 0447289f663b14204df4a8b540ac196f0aa8b2f2faa4540d1f25864ea8bb85db, gen 819f67e92818e04f7fb97de84ed82cc5af17ab154776d8ca59af77678f6e35d8)
+check_fork_drift: SELFTEST — plants on scratch copies of the manifest and fake prerequisites (loud plant banner; nothing in the tree is touched)
+  PLANT OK   [S1 en_US-ordered [files] under LC_ALL=C (the pre-repair failing configuration)] rc=0 -> check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 22 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef
+  PLANT OK   [S2 C-ordered [files] under LC_ALL=en_US.UTF-8] rc=0 -> check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 22 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef
+  PLANT OK   [S3 reversed [files] order (set unchanged)] rc=0 -> check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 22 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef
+  PLANT OK   [S4 one [files] name changed -> set drift] rc=1 -> check_fork_drift: FAIL — oracle-surface file set drifted from the manifest.
+  PLANT OK   [S4 detail] both the live-only name (util/cerb_fresh.ml) and the manifest-only name (util/cerb_fresh_planted.ml) are listed
+  PLANT OK   [S5 duplicate [files] entry] rc=1 -> check_fork_drift: FAIL — duplicate [files] entries in the manifest (a set with a repeated name is not a reviewed set):
+  PLANT OK   [S6 missing upstream ref -> FAIL (not a skip)] rc=1 -> check_fork_drift: FAIL — missing upstream ref 'plant/no-such-ref' (fail-closed; the development opt-in is CERB_FORK_DRIFT_DEV_SKIP=1)
+  PLANT OK   [S7 missing upstream generated tree -> FAIL (not a skip)] rc=1 -> check_fork_drift: FAIL — layer 2 prerequisite missing (fail-closed; the development opt-in is CERB_FORK_DRIFT_DEV_SKIP=1): upstream pristine tree not found (deps/cerberus-upstream/ocaml_frontend/gen
+  PLANT OK   [S8 CERB_FORK_DRIFT_DEV_SKIP=1 on a missing ref -> rc 0 with the DEV SKIP banner] rc=0 -> # check_fork_drift: DEV SKIP (CERB_FORK_DRIFT_DEV_SKIP=1 is set) — missing upstream ref 'plant/no-such-ref'; layers 1 and 2 NOT checked
+  PLANT OK   [S9 stale [meta] lem-pin vs lem -v] rc=1 -> check_fork_drift: FAIL — lem-pin stale: manifest records lem-pin=f6542f8, '/home/dev/projects/cerberus-lean-proj/.tmp/tmp.nhJkWOipF7/lem-stale -v' says deadbee — both generated trees must be re-de
+  PLANT OK   [S10 [meta] lem-pin line missing] rc=1 -> check_fork_drift: FAIL — manifest has no [meta] lem-pin= line (the lem-lean commit both generated trees were derived with)
+  PLANT OK   [S11 unmodified copied source contents] rc=0 -> check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 22 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef
+  PLANT OK   [S12 content change inside already-listed fresh supply] rc=1 -> check_fork_content: FAIL — source-content drift inside reviewed file(s):
+  PLANT OK   [S13 duplicate source-content pin] rc=1 -> check_fork_content: FAIL — duplicate [source-content] entry: util/cerb_fresh.ml
+  PLANT OK   [S14 missing source-content pin] rc=1 -> check_fork_content: FAIL — source-content path set differs from live source delta: unpinned=['util/cerb_fresh.ml']; stale=[]
+  UNPLANTED:
+    check_fork_content: OK — 76 source files content/mode-pinned
+    check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 22 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+check_fork_drift: SELFTEST OK (14 plants with declared verdict/message: S1-S10 prerequisite/locale/name controls; S11 copied-content control; S12 inside-listed-file drift; S13/S14 duplicate/missing content pins; unplanted gate green)
+check_fork_content: OK — 76 source files content/mode-pinned
+check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 22 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+check_fixture_freeze: OK (16 fixture files match the pinned manifest; name set exact)
+  OK (refused as declared): s5_string_content
+  OK (refused as declared): l1_string_ws
+  OK (refused as declared): l3_comment_absorb
+  OK (refused as declared): l4_comment_release
+  OK (refused as declared): count_mismatch
+  OK (refused as declared): appended_line
+  OK (refused as declared): token_change
+  OK (refused as declared): section_reorder
+  OK (admitted as declared): strict_renumber [RENUMBER-ONLY ADMIT plant/strict_renumber class=STRICT ids=1 moved=1 canon=d7b6d3c7463e]
+  OK (admitted as declared): layout_rewrap [RENUMBER-ONLY ADMIT plant/layout_rewrap class=LAYOUT ids=2 moved=2 canon=9b2ed22f1988]
+  OK (refused as declared): crlf_string
+  OK (admitted as declared): crlf_code [RENUMBER-ONLY ADMIT plant/crlf_code class=LAYOUT ids=1 moved=1 canon=8c8910c71fce]
+test_renumber_plants: OK (12 plants: refusals refuse, admits admit with declared class)
+real 145.20
+user 104.35
+sys 49.39
+rc=0
+/usr/bin/bash: line 3: /home/dev/.bash_logout: Permission denied

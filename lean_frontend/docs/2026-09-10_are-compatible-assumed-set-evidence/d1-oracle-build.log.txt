@@ -1,0 +1,8 @@
+Building cerberus (OCaml)...
+check_lem_sync: OK (src e877cfc343021e3bfb63bbbf237930cb9da14901705209c92c0409481db49b82, gen 3d4795f0c52bf03be52006669ff4007aa6c3cd4c99157e3b8501dacfda5f3b73)
+(debug 0): constructValue_aux: is WRONG for union ==> always assigning the first member
+check_driver_fresh: recorded oracle stamp (bin 36f2fce36439c08c261fb34b6b8f79582fa23be6e4ac9b61f759b39e7fa6984e, src 5d57b951d111dc372af3625e6f81c72554be129eefc22db1b5fb57d71715926e)
+real 7.59
+user 20.09
+sys 4.54
+rc=0

@@ -1,0 +1,80 @@
+[
+  {
+    "name": "fork-oracle",
+    "command": [
+      "timeout",
+      "--kill-after=5s",
+      "60s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/tests/failure-probes/cross_tu_node/node_a.c",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/tests/failure-probes/cross_tu_node/node_b.c"
+    ],
+    "rc": 1,
+    "elapsed_s": 0.036015326040796936
+  },
+  {
+    "name": "bridge-node_a",
+    "command": [
+      "timeout",
+      "--kill-after=5s",
+      "60s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/_build/install/default",
+      "--cabs-json",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/tests/failure-probes/cross_tu_node/node_a.c"
+    ],
+    "rc": 0,
+    "elapsed_s": 0.03378927701851353
+  },
+  {
+    "name": "bridge-node_b",
+    "command": [
+      "timeout",
+      "--kill-after=5s",
+      "60s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/_build/install/default",
+      "--cabs-json",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/tests/failure-probes/cross_tu_node/node_b.c"
+    ],
+    "rc": 0,
+    "elapsed_s": 0.03326115704840049
+  },
+  {
+    "name": "lean",
+    "command": [
+      "timeout",
+      "--kill-after=5s",
+      "60s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.tmp/are-compatible-assumed-set/d1-reproducer/node_a.json",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.tmp/are-compatible-assumed-set/d1-reproducer/node_b.json"
+    ],
+    "rc": 1,
+    "elapsed_s": 0.031220231961924583
+  },
+  {
+    "name": "pristine-oracle",
+    "command": [
+      "timeout",
+      "--kill-after=5s",
+      "60s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/tests/failure-probes/cross_tu_node/node_a.c",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/tests/failure-probes/cross_tu_node/node_b.c"
+    ],
+    "rc": 124,
+    "elapsed_s": 60.07340189698152
+  }
+]

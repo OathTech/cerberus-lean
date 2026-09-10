@@ -1,0 +1,115 @@
+Building cerberus (OCaml)...
+check_lem_sync: OK (src 0447289f663b14204df4a8b540ac196f0aa8b2f2faa4540d1f25864ea8bb85db, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin aeaf98cf1202f604d3b15123e8d038d8c8b33d5adb39483233cf58769bf58d30, src 41e2550b41c37a390ec6a4124420e2847cf3cd88636fac641353caa85e0e0851)
+Building cerberus-lean (Lean)...
+instead of
+  String → String
+Build completed successfully (281 jobs).
+check_driver_fresh: recorded lean stamp (bin 4beced12a48eec89dc1aa9c88ea40aa8777b65097d520ed892a0f711ebfa7df6, src 275d7d0a68483ac3b7c2bdfc2f0b3bf478d9407e19c01fd7f3f0a2c4c1a37f9c)
+
+Testing all .c files in /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/tests/float...
+Found 69 test files
+
+Running differential execution comparison...
+============================================
+Raw observation evidence (kept on failure or under CERB_OBSERVATION_DIR; removed on exit 0): /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.tmp/are-compatible-assumed-set/resumed-baseline-fast/A4b/observations/test_exec.Dt3aISqGbN
+[1/69] MATCH 001-literal-zero: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[2/69] MATCH 002-literal-one: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[3/69] MATCH 003-literal-negative: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[4/69] MATCH 004-literal-fraction: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[5/69] MATCH 005-literal-large: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[6/69] MATCH 006-literal-small: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[7/69] MATCH 010-compare-eq-true: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[8/69] MATCH 011-compare-eq-false: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[9/69] MATCH 012-compare-ne-true: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[10/69] MATCH 013-compare-lt: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[11/69] MATCH 014-compare-gt: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[12/69] MATCH 015-compare-le: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[13/69] MATCH 016-compare-ge: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[14/69] MATCH 020-arith-add: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[15/69] MATCH 021-arith-sub: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[16/69] MATCH 022-arith-mul: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[17/69] MATCH 023-arith-div: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[18/69] MATCH 024-arith-neg: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[19/69] MATCH 030-conv-int-to-float: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[20/69] MATCH 031-conv-float-to-int: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[21/69] MATCH 032-conv-float-to-int-neg: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[22/69] MATCH 033-conv-float-to-double: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[23/69] MATCH 034-conv-double-to-float: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[24/69] MATCH 035-conv-neg-int-to-float: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[25/69] MATCH 036-conv-unsigned-to-float: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[26/69] MATCH 037-conv-implicit-int-to-float: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[27/69] MATCH 038-conv-implicit-float-to-double: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[28/69] MATCH 039-conv-double-to-int: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[29/69] MATCH 040-bool-zero-is-false: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[30/69] MATCH 041-bool-nonzero-is-true: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[31/69] MATCH 042-bool-neg-is-true: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[32/69] MATCH 043-bool-small-is-true: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[33/69] MATCH 044-bool-logical-not: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[34/69] MATCH 045-bool-logical-not-zero: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[35/69] MATCH 046-bool-and: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[36/69] MATCH 047-bool-or: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[37/69] MATCH 048-bool-double-zero: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[38/69] MATCH 049-bool-double-nonzero: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[39/69] MATCH 050-store-load-roundtrip: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[40/69] MATCH 051-store-load-negative: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[41/69] MATCH 052-store-load-fraction: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[42/69] MATCH 053-store-load-double: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[43/69] MATCH 054-array-float: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[44/69] MATCH 055-pointer-deref: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[45/69] MATCH 056-pointer-write: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[46/69] MATCH 057-large-value: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[47/69] MATCH 058-small-value: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[48/69] MATCH 059-neg-zero: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[49/69] MATCH 060-func-param: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[50/69] MATCH 061-func-return: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[51/69] MATCH 062-func-two-params: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[52/69] MATCH 063-func-double-param: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[53/69] MATCH 064-func-mixed-params: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[54/69] MATCH 065-struct-member: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[55/69] MATCH 066-struct-init: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[56/69] MATCH 067-struct-double: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[57/69] MATCH 068-struct-mixed: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[58/69] MATCH 069-funcptr-float: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[59/69] MATCH 070-compound-add: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[60/69] MATCH 071-compound-sub: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[61/69] MATCH 072-compound-mul: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[62/69] MATCH 073-compound-div: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[63/69] MATCH 074-increment: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[64/69] MATCH 075-decrement: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[65/69] MATCH 076-postinc: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[66/69] MATCH 077-postdec: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[67/69] MATCH 078-compound-double: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[68/69] MATCH 079-ternary-float: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[69/69] MATCH 080-nan-inf: VAL:{value: "Specified(8)", stdout: "", stderr: "", blocked: "false"}
+
+============================================
+Results Summary
+============================================
+
+Cerberus execution:
+  Success:    69
+  Skipped:    0
+
+Lean pipeline (of Cerberus successes):
+  Compared:   69
+  Failed:     0
+  Crashed:    0
+  Fuel:       0 (fuel exhaustion — typed kill or pure-worker panic; never agreement)
+  ExitErr:    0 (exit code inconsistent with parsed verdict)
+  Timeout:    0
+  Hang:       0 (exit 124 with CPU/wall < 0.1 — no output, no exit)
+
+Comparison (of both successes):
+  Match:      69
+  UB Match:   0 (both detected same UB)
+  Mismatch:   0 (includes one-sided-UB DIFFs)
+
+Match rate:   100% (complete observations; UB_DIFF is a difference)
+
+SUMMARY: total=69 match=69 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0
+
+Checking against baseline: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/scripts/exec_float_baseline.txt
+
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK

@@ -1,0 +1,20 @@
+Building cerberus (OCaml)...
+check_lem_sync: OK (src 0447289f663b14204df4a8b540ac196f0aa8b2f2faa4540d1f25864ea8bb85db, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin aeaf98cf1202f604d3b15123e8d038d8c8b33d5adb39483233cf58769bf58d30, src 41e2550b41c37a390ec6a4124420e2847cf3cd88636fac641353caa85e0e0851)
+Building cerberus-lean (Lean)...
+instead of
+  String → String
+Build completed successfully (281 jobs).
+check_driver_fresh: recorded lean stamp (bin 4beced12a48eec89dc1aa9c88ea40aa8777b65097d520ed892a0f711ebfa7df6, src 275d7d0a68483ac3b7c2bdfc2f0b3bf478d9407e19c01fd7f3f0a2c4c1a37f9c)
+
+libxml2 uri 5-TU harness (arc-6 S4 GATE, 16-URI corpus)
+==================================================
+[prep] pins verified; 5 TUs
+[oracle+libc] exit=0 wall=0:01.23 maxRSS=203092kB
+[ocaml-nolibc] exit=1: Error {msg: "ill-formed program: `calling an unknown procedure: Symbol(1451, SD_Id("memset"))'"}
+[lean-nolibc] exit=1 wall=0:01.07 maxRSS=204816kB: Error {msg: "ill-formed program: `calling an unknown procedure: Symbol(968, SD_Id("memset"))'"}
+[lean+libc] exit=0 wall=0:10.19 maxRSS=292992kB: Defined {value: "Specified(600741297)", stdout: "uri 0 rc=0 scheme=http server=example.com port=8080
+[lean+libc] EXACT MATCH with ORACLE_LIBC (16/16 URI corpus)
+
+==================================================
+GATE PASS: all lane expectations pinned-green + baseline unchanged (16/16)

@@ -1,0 +1,14 @@
+[MKDIR] ocaml_frontend/generated
+[LEM] generating files in [ocaml_frontend/generated] (log in [ocaml_frontend/lem.log])
+[SED] patching things up in [ocaml_frontend/generated]
+[STAMP] recording lem-sync content stamp
+check_lem_sync: recorded ocaml_frontend/lem_sync.sha256 (src e877cfc343021e3bfb63bbbf237930cb9da14901705209c92c0409481db49b82, gen 3d4795f0c52bf03be52006669ff4007aa6c3cd4c99157e3b8501dacfda5f3b73)
+[MKDIR] sibylfs/generated
+[LEM] generating files in [sibylfs/generated] (log in [sibylfs/lem.log])
+[CP] sibylfs/generated/abstract_string.mli sibylfs/generated/fs_dict_wrappers.mli sibylfs/generated/fs_interface.mli sibylfs/generated/lem_support.mli
+[CP] sibylfs/generated/abstract_string.ml sibylfs/generated/fs_dict_wrappers.ml sibylfs/generated/fs_interface.ml sibylfs/generated/fs_dump.ml sibylfs/generated/fs_printer.ml sibylfs/generated/lem_support.ml
+[SED] patching things up in [sibylfs/generated]
+real 19.84
+user 19.53
+sys 0.31
+rc=0

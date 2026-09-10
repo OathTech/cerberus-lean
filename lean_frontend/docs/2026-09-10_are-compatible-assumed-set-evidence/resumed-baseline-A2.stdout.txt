@@ -1,0 +1,153 @@
+Building cerberus (OCaml)...
+check_lem_sync: OK (src 0447289f663b14204df4a8b540ac196f0aa8b2f2faa4540d1f25864ea8bb85db, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+(debug 0): constructValue_aux: is WRONG for union ==> always assigning the first member
+check_driver_fresh: recorded oracle stamp (bin aeaf98cf1202f604d3b15123e8d038d8c8b33d5adb39483233cf58769bf58d30, src 41e2550b41c37a390ec6a4124420e2847cf3cd88636fac641353caa85e0e0851)
+Building cerberus-lean (Lean)...
+instead of
+  String → String
+Build completed successfully (281 jobs).
+check_driver_fresh: recorded lean stamp (bin 4beced12a48eec89dc1aa9c88ea40aa8777b65097d520ed892a0f711ebfa7df6, src 275d7d0a68483ac3b7c2bdfc2f0b3bf478d9407e19c01fd7f3f0a2c4c1a37f9c)
+
+Testing all .c files in /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/tests/minimal...
+Found 106 test files
+
+Running differential execution comparison...
+============================================
+Raw observation evidence (kept on failure or under CERB_OBSERVATION_DIR; removed on exit 0): /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.tmp/are-compatible-assumed-set/resumed-baseline-fast/A2/observations/test_exec.z3ib04JIJI
+[1/106] MATCH 001-return-literal: VAL:{value: "Specified(42)", stdout: "", stderr: "", blocked: "false"}
+[2/106] MATCH 002-return-zero: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[3/106] MATCH 003-arith-add: VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+[4/106] MATCH 004-arith-sub: VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+[5/106] MATCH 005-arith-mul: VAL:{value: "Specified(12)", stdout: "", stderr: "", blocked: "false"}
+[6/106] MATCH 006-arith-div: VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+[7/106] MATCH 007-local-var: VAL:{value: "Specified(5)", stdout: "", stderr: "", blocked: "false"}
+[8/106] MATCH 008-local-var-arith: VAL:{value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+[9/106] MATCH 009-if-true: VAL:{value: "Specified(10)", stdout: "", stderr: "", blocked: "false"}
+[10/106] MATCH 010-if-false: VAL:{value: "Specified(20)", stdout: "", stderr: "", blocked: "false"}
+[11/106] MATCH 011-if-else: VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+[12/106] MATCH 012-compare-eq: VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+[13/106] MATCH 013-compare-lt: VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+[14/106] MATCH 014-while-simple: VAL:{value: "Specified(5)", stdout: "", stderr: "", blocked: "false"}
+[15/106] MATCH 015-while-sum: VAL:{value: "Specified(15)", stdout: "", stderr: "", blocked: "false"}
+[16/106] MATCH 016-func-simple: VAL:{value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+[17/106] MATCH 017-func-recursive: VAL:{value: "Specified(120)", stdout: "", stderr: "", blocked: "false"}|VAL:{value: "Specified(120)", stdout: "", stderr: "", blocked: "false"}|VAL:{value: "Specified(120)", stdout: "", stderr: "", blocked: "false"}|VAL:{value: "Specified(120)", stdout: "", stderr: "", blocked: "false"}|VAL:{value: "Specified(120)", stdout: "", stderr: "", blocked: "false"}|VAL:{value: "Specified(120)", stdout: "", stderr: "", blocked: "false"}|VAL:{value: "Specified(120)", stdout: "", stderr: "", blocked: "false"}|VAL:{value: "Specified(120)", stdout: "", stderr: "", blocked: "false"}|VAL:{value: "Specified(120)", stdout: "", stderr: "", blocked: "false"}|VAL:{value: "Specified(120)", stdout: "", stderr: "", blocked: "false"}|VAL:{value: "Specified(120)", stdout: "", stderr: "", blocked: "false"}|VAL:{value: "Specified(120)", stdout: "", stderr: "", blocked: "false"}|VAL:{value: "Specified(120)", stdout: "", stderr: "", blocked: "false"}|VAL:{value: "Specified(120)", stdout: "", stderr: "", blocked: "false"}|VAL:{value: "Specified(120)", stdout: "", stderr: "", blocked: "false"}|VAL:{value: "Specified(120)", stdout: "", stderr: "", blocked: "false"}|VAL:{value: "Specified(120)", stdout: "", stderr: "", blocked: "false"}|VAL:{value: "Specified(120)", stdout: "", stderr: "", blocked: "false"}|VAL:{value: "Specified(120)", stdout: "", stderr: "", blocked: "false"}|VAL:{value: "Specified(120)", stdout: "", stderr: "", blocked: "false"}|VAL:{value: "Specified(120)", stdout: "", stderr: "", blocked: "false"}|VAL:{value: "Specified(120)", stdout: "", stderr: "", blocked: "false"}|VAL:{value: "Specified(120)", stdout: "", stderr: "", blocked: "false"}|VAL:{value: "Specified(120)", stdout: "", stderr: "", blocked: "false"}|VAL:{value: "Specified(120)", stdout: "", stderr: "", blocked: "false"}|VAL:{value: "Specified(120)", stdout: "", stderr: "", blocked: "false"}|VAL:{value: "Specified(120)", stdout: "", stderr: "", blocked: "false"}|VAL:{value: "Specified(120)", stdout: "", stderr: "", blocked: "false"}|VAL:{value: "Specified(120)", stdout: "", stderr: "", blocked: "false"}|VAL:{value: "Specified(120)", stdout: "", stderr: "", blocked: "false"}|VAL:{value: "Specified(120)", stdout: "", stderr: "", blocked: "false"}|VAL:{value: "Specified(120)", stdout: "", stderr: "", blocked: "false"}
+[18/106] MATCH 018-increment: VAL:{value: "Specified(6)", stdout: "", stderr: "", blocked: "false"}
+[19/106] MATCH 019-decrement: VAL:{value: "Specified(4)", stdout: "", stderr: "", blocked: "false"}
+[20/106] MATCH 020-global-var: VAL:{value: "Specified(42)", stdout: "", stderr: "", blocked: "false"}
+[21/106] MATCH 021-pointer-basic: VAL:{value: "Specified(10)", stdout: "", stderr: "", blocked: "false"}
+[22/106] MATCH 022-pointer-write: VAL:{value: "Specified(20)", stdout: "", stderr: "", blocked: "false"}
+[23/106] MATCH 023-array-read: VAL:{value: "Specified(20)", stdout: "", stderr: "", blocked: "false"}
+[24/106] MATCH 024-array-write: VAL:{value: "Specified(42)", stdout: "", stderr: "", blocked: "false"}
+[25/106] MATCH 025-struct-basic: VAL:{value: "Specified(30)", stdout: "", stderr: "", blocked: "false"}
+[26/106] MATCH 026-ternary: VAL:{value: "Specified(100)", stdout: "", stderr: "", blocked: "false"}
+[27/106] MATCH 027-for-loop: VAL:{value: "Specified(15)", stdout: "", stderr: "", blocked: "false"}
+[28/106] MATCH 028-break: VAL:{value: "Specified(5)", stdout: "", stderr: "", blocked: "false"}
+[29/106] MATCH 029-continue: VAL:{value: "Specified(12)", stdout: "", stderr: "", blocked: "false"}
+[30/106] MATCH 030-negative: VAL:{value: "Specified(5)", stdout: "", stderr: "", blocked: "false"}
+[31/106] MATCH 031-bitwise-and: VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+[32/106] MATCH 032-bitwise-or: VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+[33/106] MATCH 033-bitwise-xor: VAL:{value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}
+[34/106] MATCH 034-bitwise-not: VAL:{value: "Specified(255)", stdout: "", stderr: "", blocked: "false"}
+[35/106] MATCH 035-shift-left: VAL:{value: "Specified(8)", stdout: "", stderr: "", blocked: "false"}
+[36/106] MATCH 036-shift-right: VAL:{value: "Specified(4)", stdout: "", stderr: "", blocked: "false"}
+[37/106] MATCH 037-logical-and: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[38/106] MATCH 038-logical-or: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[39/106] MATCH 039-compound-assign: VAL:{value: "Specified(30)", stdout: "", stderr: "", blocked: "false"}
+[40/106] MATCH 040-do-while: VAL:{value: "Specified(5)", stdout: "", stderr: "", blocked: "false"}
+[41/106] MATCH 041-switch: VAL:{value: "Specified(20)", stdout: "", stderr: "", blocked: "false"}
+[42/106] MATCH 042-nested-loop: VAL:{value: "Specified(6)", stdout: "", stderr: "", blocked: "false"}
+[43/106] MATCH 043-comma: VAL:{value: "Specified(20)", stdout: "", stderr: "", blocked: "false"}
+[44/106] MATCH 044-void-func: VAL:{value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}
+[45/106] MATCH 045-ptr-arith: VAL:{value: "Specified(20)", stdout: "", stderr: "", blocked: "false"}
+[46/106] MATCH 046-ptr-ptr: VAL:{value: "Specified(42)", stdout: "", stderr: "", blocked: "false"}
+[47/106] MATCH 047-cast: VAL:{value: "Specified(188)", stdout: "", stderr: "", blocked: "false"}
+[48/106] MATCH 048-pre-post-inc: VAL:{value: "Specified(12)", stdout: "", stderr: "", blocked: "false"}
+[49/106] MATCH 049-scope-shadow: VAL:{value: "Specified(10)", stdout: "", stderr: "", blocked: "false"}
+[50/106] MATCH 050-modulo: VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+[51/106] MATCH 051-sizeof-type: VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+[52/106] MATCH 052-sizeof-expr: VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+[53/106] MATCH 053-static-local: VAL:{value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}
+[54/106] MATCH 054-string-literal: VAL:{value: "Specified(65)", stdout: "", stderr: "", blocked: "false"}
+[55/106] MATCH 055-char-array-init: VAL:{value: "Specified(90)", stdout: "", stderr: "", blocked: "false"}
+[56/106] MATCH 056-func-ptr: VAL:{value: "Specified(30)", stdout: "", stderr: "", blocked: "false"}
+[57/106] MATCH 057-void-ptr: VAL:{value: "Specified(42)", stdout: "", stderr: "", blocked: "false"}
+[58/106] MATCH 058-struct-value: VAL:{value: "Specified(42)", stdout: "", stderr: "", blocked: "false"}
+[59/106] MATCH 059-union-basic: VAL:{value: "Specified(123)", stdout: "", stderr: "", blocked: "false"}
+[60/106] MATCH 060-switch-fallthrough: VAL:{value: "Specified(30)", stdout: "", stderr: "", blocked: "false"}
+[61/106] MATCH 061-goto: VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+[62/106] MATCH 062-multidim-array: VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+[63/106] MATCH 063-logical-not: VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+[64/106] MATCH 064-precedence-ptr: VAL:{value: "Specified(30)", stdout: "", stderr: "", blocked: "false"}
+[65/106] MATCH 065-typedef: VAL:{value: "Specified(50)", stdout: "", stderr: "", blocked: "false"}
+[66/106] MATCH 066-cast-float: VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+[67/106] MATCH 067-if-int: VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+[68/106] UB_MATCH 068-div-by-zero.undef: UB:{ub: "UB045a_division_by_zero", stderr: "", loc: "<5:10--5:15>"}
+[69/106] UB_MATCH 069-mod-by-zero.undef: UB:{ub: "UB045b_modulo_by_zero", stderr: "", loc: "<5:10--5:15>"}
+[70/106] UB_MATCH 070-signed-overflow.undef: UB:{ub: "UB036_exceptional_condition", stderr: "", loc: "<4:10--4:15>"}
+[71/106] UB_MATCH 071-null-deref.undef: UB:{ub: "UB043_indirection_invalid_value", stderr: "", loc: "<4:10--4:12>"}
+[72/106] UB_MATCH 072-out-of-bounds.undef: UB:{ub: "UB_CERB002a_out_of_bound_load", stderr: "", loc: "<4:10--4:17>"}
+[73/106] CERB_SKIP 073-exit.libc (error: ill-formed program: `calling an unknown procedure: Symbol(549, SD_Id()
+[74/106] CERB_SKIP 074-abort.libc (error: ill-formed program: `calling an unknown procedure: Symbol(543, SD_Id()
+[75/106] MATCH 075-main-argc-argv: VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+[76/106] MATCH 076-main-argv-access: VAL:{value: "Specified(17)", stdout: "", stderr: "", blocked: "false"}|VAL:{value: "Specified(17)", stdout: "", stderr: "", blocked: "false"}
+[77/106] UB_MATCH 077-bool-trap.undef: UB:{ub: "UB012_lvalue_read_trap_representation", stderr: "", loc: "<9:15--9:18>"}
+[78/106] MATCH 078-float-special: VAL:{value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+[79/106] MATCH 079-unseq-simple: VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+[80/106] MATCH 080-unseq-reads-only: VAL:{value: "Specified(84)", stdout: "", stderr: "", blocked: "false"}
+[81/106] MATCH 081-unseq-diff-locations: VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+[82/106] UB_MATCH 082-unseq-race.undef: UB:{ub: "UB035_unsequenced_race", stderr: "", loc: "<7:12--7:23>"}
+[83/106] UB_MATCH 083-unseq-nested-assign.undef: UB:{ub: "UB035_unsequenced_race", stderr: "", loc: "<6:5--6:16>"}
+[84/106] UB_MATCH 084-unseq-two-writes.undef: UB:{ub: "UB035_unsequenced_race", stderr: "", loc: "<5:5--5:22>"}
+[85/106] MATCH 085-unseq-comma-seq: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[86/106] MATCH 086-unseq-comma-writes: VAL:{value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}
+[87/106] UB_MATCH 087-unseq-increment.undef: UB:{ub: "UB035_unsequenced_race", stderr: "", loc: "<6:5--6:14>"}
+[88/106] UB_MATCH 088-unseq-postinc-read.undef: UB:{ub: "UB035_unsequenced_race", stderr: "", loc: "<6:5--6:12>"}
+[89/106] UB_MATCH 089-unseq-func-args.undef: UB:{ub: "UB035_unsequenced_race", stderr: "", loc: "<9:16--9:21>"}
+[90/106] MATCH 090-unseq-func-args-ok: VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+[91/106] UB_MATCH 091-unseq-nested-complex.undef: UB:{ub: "UB035_unsequenced_race", stderr: "", loc: "<6:5--6:32>"}
+[92/106] UB_MATCH 092-unseq-comma-plus.undef: UB:{ub: "UB035_unsequenced_race", stderr: "", loc: "<6:13--6:14>"}
+[93/106] MATCH 093-nd-choice: VAL:{value: "Specified(42)", stdout: "", stderr: "", blocked: "false"}
+[94/106] MATCH 094-bool-conversion: VAL:{value: "Specified(4)", stdout: "", stderr: "", blocked: "false"}
+[95/106] UB_MATCH 095-unsigned-div-zero.undef: UB:{ub: "UB045a_division_by_zero", stderr: "", loc: "<7:10--7:15>"}
+[96/106] UB_MATCH 096-unsigned-mod-zero.undef: UB:{ub: "UB045b_modulo_by_zero", stderr: "", loc: "<7:10--7:15>"}
+[97/106] CERB_SKIP 097-null-ptr-arith.undef (exit 125)
+[98/106] UB_MATCH 098-cross-alloc-ptrdiff.undef: UB:{ub: "UB048_disjoint_array_pointers_subtraction", stderr: "", loc: "<7:17--7:24>"}
+[99/106] MATCH 099-negative-right-shift: VAL:{value: "Specified(6)", stdout: "", stderr: "", blocked: "false"}
+[100/106] MATCH 100-int-wrap-unsigned: VAL:{value: "Specified(299)", stdout: "", stderr: "", blocked: "false"}
+[101/106] UB_MATCH 101-signed-overflow.undef: UB:{ub: "UB036_exceptional_condition", stderr: "", loc: "<7:11--7:16>"}
+[102/106] MATCH 102-bool-implicit-conv: VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+[103/106] MATCH 103-union-store-load: VAL:{value: "Specified(42)", stdout: "", stderr: "", blocked: "false"}
+[104/106] MATCH 104-unsigned-wrap-arith: VAL:{value: "Specified(259)", stdout: "", stderr: "", blocked: "false"}
+[105/106] MATCH 105-bitwise-ops: VAL:{value: "Specified(270)", stdout: "", stderr: "", blocked: "false"}
+[106/106] MATCH 106-sizeof-struct-array: VAL:{value: "Specified(32)", stdout: "", stderr: "", blocked: "false"}
+
+============================================
+Results Summary
+============================================
+
+Cerberus execution:
+  Success:    103
+  Skipped:    3
+
+Lean pipeline (of Cerberus successes):
+  Compared:   103
+  Failed:     0
+  Crashed:    0
+  Fuel:       0 (fuel exhaustion — typed kill or pure-worker panic; never agreement)
+  ExitErr:    0 (exit code inconsistent with parsed verdict)
+  Timeout:    0
+  Hang:       0 (exit 124 with CPU/wall < 0.1 — no output, no exit)
+
+Comparison (of both successes):
+  Match:      85
+  UB Match:   18 (both detected same UB)
+  Mismatch:   0 (includes one-sided-UB DIFFs)
+
+Match rate:   100% (complete observations; UB_DIFF is a difference)
+
+SUMMARY: total=106 match=85 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=3 cerb_floor=0 cerb_inconsistent=0
+
+Checking against baseline: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/scripts/exec_baseline.txt
+
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK

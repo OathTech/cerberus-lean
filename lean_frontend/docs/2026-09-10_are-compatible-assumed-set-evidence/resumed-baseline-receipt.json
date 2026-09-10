@@ -1,0 +1,327 @@
+{
+  "schema": 2,
+  "mode": "fast",
+  "started_utc": "20260910T052355.815474Z",
+  "finished_utc": "2026-09-10T05:30:45.970362+00:00",
+  "status": "passed",
+  "selected": [
+    "A1",
+    "A2",
+    "A3",
+    "A4",
+    "A4b",
+    "A4c",
+    "A5",
+    "A6",
+    "A7",
+    "A8",
+    "A9",
+    "A10",
+    "A11"
+  ],
+  "selection_complete": true,
+  "source_before": {
+    "branch": "arc/are-compatible-assumed-set",
+    "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "head": "f7e631dcae6cbfc2ba34e7ac68fc8c16c925736b",
+    "status": "",
+    "untracked_sha256": {}
+  },
+  "source_after": {
+    "branch": "arc/are-compatible-assumed-set",
+    "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "head": "f7e631dcae6cbfc2ba34e7ac68fc8c16c925736b",
+    "status": "",
+    "untracked_sha256": {}
+  },
+  "source_unchanged": true,
+  "artifact_issues": [],
+  "lanes": [
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-6a8f54e52d42439c86e0b570a6e35673",
+      "command": [
+        "./scripts/test_unit.sh"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "A1",
+      "process_group": 2241798,
+      "required": true,
+      "seconds": 146.839,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.tmp/are-compatible-assumed-set/resumed-baseline-fast/A1/stderr",
+      "stderr_sha256": "dd5074f3f875c42a2efb02d41120f0338d9951bb0c482d76f8bf3e75269dbdd7",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.tmp/are-compatible-assumed-set/resumed-baseline-fast/A1/stdout",
+      "stdout_sha256": "f927687127b425a9c96c72717b0c40cfa356ae2bfbb91dfdae2ed7a92e7743af",
+      "summaries": [],
+      "tier": "A"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-af7895674beb48a6a1725fd7ca83e1a1",
+      "command": [
+        "./scripts/test_exec.sh",
+        "--check-baseline"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "A2",
+      "process_group": 2263608,
+      "required": true,
+      "seconds": 29.269,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.tmp/are-compatible-assumed-set/resumed-baseline-fast/A2/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.tmp/are-compatible-assumed-set/resumed-baseline-fast/A2/stdout",
+      "stdout_sha256": "13715bd17d27323110b5917b006985b9b6c2cbdf1f07d164258042a2c4b1b883",
+      "summaries": [
+        "SUMMARY: total=106 match=85 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=3 cerb_floor=0 cerb_inconsistent=0",
+        "Baseline check: 0 regression(s), 0 improvement(s)",
+        "BASELINE OK"
+      ],
+      "tier": "A"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-b4c8098726ae4dbb8751decd8846869f",
+      "command": [
+        "./scripts/test_exec.sh",
+        "--check-baseline=scripts/exec_coverage_baseline.txt",
+        "tests/coverage"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "A3",
+      "process_group": 2270392,
+      "required": true,
+      "seconds": 51.939,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.tmp/are-compatible-assumed-set/resumed-baseline-fast/A3/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.tmp/are-compatible-assumed-set/resumed-baseline-fast/A3/stdout",
+      "stdout_sha256": "6232d4da83c5db594afb15c4e764399b13786cb17b7d39483cfc6c5bce015b85",
+      "summaries": [
+        "SUMMARY: total=212 match=183 ub_match=16 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=13 cerb_floor=0 cerb_inconsistent=0",
+        "Baseline check: 0 regression(s), 0 improvement(s)",
+        "BASELINE OK"
+      ],
+      "tier": "A"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-938db390f5e04594b6b83ddb7e863833",
+      "command": [
+        "./scripts/test_exec.sh",
+        "--check-baseline=scripts/exec_debug_baseline.txt",
+        "tests/debug"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "A4",
+      "process_group": 2281918,
+      "required": true,
+      "seconds": 22.905,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.tmp/are-compatible-assumed-set/resumed-baseline-fast/A4/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.tmp/are-compatible-assumed-set/resumed-baseline-fast/A4/stdout",
+      "stdout_sha256": "d5084aac052a370711742c57ebfd95a46450b343929fba19c61ba7504d4a4522",
+      "summaries": [
+        "SUMMARY: total=90 match=66 ub_match=20 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=4 cerb_floor=0 cerb_inconsistent=0",
+        "Baseline check: 0 regression(s), 0 improvement(s)",
+        "BASELINE OK"
+      ],
+      "tier": "A"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-755e8e3ee3294c3e80b968a3c431b595",
+      "command": [
+        "./scripts/test_exec.sh",
+        "--check-baseline=scripts/exec_float_baseline.txt",
+        "tests/float"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "A4b",
+      "process_group": 2287078,
+      "required": true,
+      "seconds": 18.459,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.tmp/are-compatible-assumed-set/resumed-baseline-fast/A4b/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.tmp/are-compatible-assumed-set/resumed-baseline-fast/A4b/stdout",
+      "stdout_sha256": "c01fc38935bc5a30358edc9c13685d27fde6a6dffe030bd367d22c1e8f6f6fb6",
+      "summaries": [
+        "SUMMARY: total=69 match=69 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0",
+        "Baseline check: 0 regression(s), 0 improvement(s)",
+        "BASELINE OK"
+      ],
+      "tier": "A"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-3e4d3c75d47c4f05bdc347f1c8844f55",
+      "command": [
+        "./scripts/test_bytes.sh"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "A4c",
+      "process_group": 2291389,
+      "required": true,
+      "seconds": 3.233,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.tmp/are-compatible-assumed-set/resumed-baseline-fast/A4c/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.tmp/are-compatible-assumed-set/resumed-baseline-fast/A4c/stdout",
+      "stdout_sha256": "84689963a4756f77e7ac8802f2594baaee7d0d2b0ed6f289c097efe86019989d",
+      "summaries": [
+        "SUMMARY: exec_match=9 neg_pinned=5 fail=0"
+      ],
+      "tier": "A"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-143a8b50423c4c0ead7ada7c64feb06a",
+      "command": [
+        "./scripts/test_libc_exec.sh"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "A5",
+      "process_group": 2292199,
+      "required": true,
+      "seconds": 23.513,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.tmp/are-compatible-assumed-set/resumed-baseline-fast/A5/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.tmp/are-compatible-assumed-set/resumed-baseline-fast/A5/stdout",
+      "stdout_sha256": "8efa3415c04f80f18bd638ed7c82d3dff99fbc9ddf34db6d75355d5d408e75d0",
+      "summaries": [
+        "SUMMARY: match=12 diff=0"
+      ],
+      "tier": "A"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-725b7fd64b2241caac7949b245a5458c",
+      "command": [
+        "./scripts/test_multi_tu.sh"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "A6",
+      "process_group": 2294011,
+      "required": true,
+      "seconds": 2.332,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.tmp/are-compatible-assumed-set/resumed-baseline-fast/A6/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.tmp/are-compatible-assumed-set/resumed-baseline-fast/A6/stdout",
+      "stdout_sha256": "428548e7b36b6c2d40742d6e245b0d90cb704afde88a3bfd51193c3e3bbe2cf6",
+      "summaries": [
+        "SUMMARY: total=2 match=2 fail=0"
+      ],
+      "tier": "A"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-044c6d9445334b11a19f78d97e18bff9",
+      "command": [
+        "./scripts/test_parse.sh"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "A7",
+      "process_group": 2294606,
+      "required": true,
+      "seconds": 9.895,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.tmp/are-compatible-assumed-set/resumed-baseline-fast/A7/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.tmp/are-compatible-assumed-set/resumed-baseline-fast/A7/stdout",
+      "stdout_sha256": "a8b33e86d6dea46454894e8cfef8b32268f0ffa6b64154bda3ce639b276b4222",
+      "summaries": [],
+      "tier": "A"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-2cfc54eb43d044fd8dc59240de8eb9d0",
+      "command": [
+        "./scripts/test_core.sh"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "A8",
+      "process_group": 2296955,
+      "required": true,
+      "seconds": 8.442,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.tmp/are-compatible-assumed-set/resumed-baseline-fast/A8/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.tmp/are-compatible-assumed-set/resumed-baseline-fast/A8/stdout",
+      "stdout_sha256": "c82808222b460017259158719487727428a93ba57caa2a84608888adaed57862",
+      "summaries": [],
+      "tier": "A"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-02fb3088c5574ec1946a403be9a8cb6e",
+      "command": [
+        "./scripts/test_elab.sh"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "A9",
+      "process_group": 2299053,
+      "required": true,
+      "seconds": 15.904,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.tmp/are-compatible-assumed-set/resumed-baseline-fast/A9/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.tmp/are-compatible-assumed-set/resumed-baseline-fast/A9/stdout",
+      "stdout_sha256": "c58d5c5b90d9625343a0210a182f02fa63abf10c5360cd94f6dfaef89e16e798",
+      "summaries": [
+        "SUMMARY: total=106 same=103 diff=3 ocaml_fail=0 lean_fail=0"
+      ],
+      "tier": "A"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-c84ce42a7ef8493dbc0920cdc2ab9cae",
+      "command": [
+        "./scripts/test_libxml2_uri.sh"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "A10",
+      "process_group": 2302027,
+      "required": true,
+      "seconds": 17.309,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.tmp/are-compatible-assumed-set/resumed-baseline-fast/A10/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.tmp/are-compatible-assumed-set/resumed-baseline-fast/A10/stdout",
+      "stdout_sha256": "1cde8f4da7e2fc4c0ecfbb031bcabf6d9309857356dfef356d2d4385bee62b21",
+      "summaries": [],
+      "tier": "A"
+    },
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-9fb3c21e40e74b0b92533c52a4a0fb7e",
+      "command": [
+        "./scripts/test_cn_coverage.sh",
+        "--check-baseline"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "A11",
+      "process_group": 2302722,
+      "required": true,
+      "seconds": 58.83,
+      "status": "passed",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.tmp/are-compatible-assumed-set/resumed-baseline-fast/A11/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.tmp/are-compatible-assumed-set/resumed-baseline-fast/A11/stdout",
+      "stdout_sha256": "b778e19ccc8b67ccfd1786878be03cc108239b1b959b0df1522c360d4dfa76d3",
+      "summaries": [
+        "SUMMARY: total=213 match=207 ub_match=6 ub_diff=0 reject_match=0 diff=0 mismatch=0 reject_diff=0 lean_fail=0 lean_crash=0 fuel=0 lean_error=0 lean_timeout=0 oracle_fail=0 oracle_timeout=0 oracle_inconsistent=0",
+        "BASELINE OK (213 entries, exact match)"
+      ],
+      "tier": "A"
+    }
+  ],
+  "projection_note": "Projection of the full release report; full inventory remains in the ignored run directory.",
+  "full_report_sha256": "409a90414c1860843d2ff514453a1075db8a4ad9ba5e2b6eb6b3471c26cfc4f8",
+  "external_inputs_unchanged": true,
+  "all_capture_hashes_verified": true
+}

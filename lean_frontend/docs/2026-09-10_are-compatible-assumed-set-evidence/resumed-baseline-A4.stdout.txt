@@ -1,0 +1,136 @@
+Building cerberus (OCaml)...
+check_lem_sync: OK (src 0447289f663b14204df4a8b540ac196f0aa8b2f2faa4540d1f25864ea8bb85db, gen 295e4f8291c9ffd57a4061dd38e8ec273f18d6c1cfe3a0465291f1a4bcff8100)
+check_driver_fresh: recorded oracle stamp (bin aeaf98cf1202f604d3b15123e8d038d8c8b33d5adb39483233cf58769bf58d30, src 41e2550b41c37a390ec6a4124420e2847cf3cd88636fac641353caa85e0e0851)
+Building cerberus-lean (Lean)...
+instead of
+  String → String
+Build completed successfully (281 jobs).
+check_driver_fresh: recorded lean stamp (bin 4beced12a48eec89dc1aa9c88ea40aa8777b65097d520ed892a0f711ebfa7df6, src 275d7d0a68483ac3b7c2bdfc2f0b3bf478d9407e19c01fd7f3f0a2c4c1a37f9c)
+
+Testing all .c files in /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/tests/debug...
+Found 90 test files
+
+Running differential execution comparison...
+============================================
+Raw observation evidence (kept on failure or under CERB_OBSERVATION_DIR; removed on exit 0): /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.tmp/are-compatible-assumed-set/resumed-baseline-fast/A4/observations/test_exec.2wX6XbgZtD
+[1/90] UB_MATCH alias-01-int-to-struct: UB:{ub: "UB025_misaligned_pointer_conversion", stderr: "", loc: "<19:15--19:29>"}
+[2/90] UB_MATCH alias-02-simple-cast: UB:{ub: "UB025_misaligned_pointer_conversion", stderr: "", loc: "<9:17--9:31>"}
+[3/90] MATCH alias-03-forced-misalign: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[4/90] MATCH align-01-char-array-addr: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[5/90] MATCH align-02-print-addr: VAL:{value: "Specified(223)", stdout: "", stderr: "", blocked: "false"}
+[6/90] MATCH align-03-single-global: VAL:{value: "Specified(254)", stdout: "", stderr: "", blocked: "false"}
+[7/90] MATCH align-04-no-globals: VAL:{value: "Specified(244)", stdout: "", stderr: "", blocked: "false"}
+[8/90] MATCH compat-01-funcall-types: VAL:{value: "Specified(30)", stdout: "", stderr: "", blocked: "false"}
+[9/90] MATCH compat-02-size-t: VAL:{value: "Specified(42)", stdout: "", stderr: "", blocked: "false"}
+[10/90] MATCH compat-03-enum-int: VAL:{value: "Specified(11)", stdout: "", stderr: "", blocked: "false"}
+[11/90] UB_MATCH compat-04-funcptr-enum-int: UB:{ub: "UB041_function_not_compatible", stderr: "", loc: "<13:12--13:17>"}
+[12/90] MATCH conv-01-neg-to-unsigned: VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+[13/90] MATCH conv-02-unsigned-cmp-self: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[14/90] MATCH conv-03-neg-cmp-umax: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[15/90] MATCH conv-04-signed-cmp: VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+[16/90] MATCH conv-05-simple-conv: VAL:{value: "Specified(255)", stdout: "", stderr: "", blocked: "false"}
+[17/90] MATCH conv-06-conv-preserves: VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+[18/90] MATCH conv-07-if-conv-cmp: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[19/90] MATCH conv-08-explicit-vars: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[20/90] MATCH conv-09-inline-cmp: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[21/90] MATCH div-01-neg-divide: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[22/90] MATCH div-11-neg1-over-10: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[23/90] MATCH div-12-neg1-over-10-ret: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[24/90] MATCH float-01-infinity-literal: VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+[25/90] MATCH float-13-multi-param: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[26/90] MATCH float-17-compare-first: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[27/90] MATCH float-20-bool-conv: VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+[28/90] MATCH float-20-neg-to-long: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[29/90] MATCH float-21-simple-neg: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[30/90] MATCH float-22-compare: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[31/90] MATCH intfromptr-01-null: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[32/90] MATCH intfromptr-02-small-addr: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[33/90] UB_MATCH intfromptr-03-local-to-int: UB:{ub: "UB024_out_of_range_pointer_to_integer_conversion", stderr: "", loc: "<6:12--6:19>"}
+[34/90] UB_MATCH intfromptr-04-to-unsigned: UB:{ub: "UB024_out_of_range_pointer_to_integer_conversion", stderr: "", loc: "<5:12--5:28>"}
+[35/90] MATCH intfromptr-05-to-long: VAL:{value: "Specified(-12)", stdout: "", stderr: "", blocked: "false"}
+[36/90] MATCH intfromptr-06-sizeof: VAL:{value: "Specified(408)", stdout: "", stderr: "", blocked: "false"}
+[37/90] MATCH intfromptr-07-check-addr: VAL:{value: "Specified(710644)", stdout: "", stderr: "", blocked: "false"}
+[38/90] MATCH intfromptr-08-full-addr: VAL:{value: "Specified(281474)", stdout: "", stderr: "", blocked: "false"}
+[39/90] MATCH intfromptr-09-first-alloc: VAL:{value: "Specified(710644)", stdout: "", stderr: "", blocked: "false"}
+[40/90] MATCH intfromptr-10-minimal: VAL:{value: "Specified(710644)", stdout: "", stderr: "", blocked: "false"}
+[41/90] CERB_SKIP libc-01-memset.libc (error: ill-formed program: `calling an unknown procedure: Symbol(571, SD_Id()
+[42/90] CERB_SKIP libc-02-strlen.libc (error: ill-formed program: `calling an unknown procedure: Symbol(575, SD_Id()
+[43/90] MATCH ptr-01-one-past-end: VAL:{value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}
+[44/90] MATCH ptr-02-simple-decr: VAL:{value: "Specified(20)", stdout: "", stderr: "", blocked: "false"}
+[45/90] MATCH ptr-03-no-decr: VAL:{value: "Specified(20)", stdout: "", stderr: "", blocked: "false"}
+[46/90] MATCH ptr-04-int-decr: VAL:{value: "Specified(9)", stdout: "", stderr: "", blocked: "false"}
+[47/90] MATCH ptr-05-store-load-ptr: VAL:{value: "Specified(20)", stdout: "", stderr: "", blocked: "false"}
+[48/90] MATCH ptr-06-explicit-sub: VAL:{value: "Specified(20)", stdout: "", stderr: "", blocked: "false"}
+[49/90] MATCH ptr-07-reassign: VAL:{value: "Specified(20)", stdout: "", stderr: "", blocked: "false"}
+[50/90] MATCH ptr-10-neg-one: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[51/90] MATCH ptr-11-neg-one-simple: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[52/90] MATCH rec-01-simplest: VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+[53/90] MATCH rec-02-call-twice: VAL:{value: "Specified(5)", stdout: "", stderr: "", blocked: "false"}
+[54/90] MATCH rec-03-one-recursive-call: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[55/90] MATCH rec-04-add-one: VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+[56/90] MATCH rec-05-multiply: VAL:{value: "Specified(8)", stdout: "", stderr: "", blocked: "false"}
+[57/90] MATCH rec-06-factorial-small: VAL:{value: "Specified(6)", stdout: "", stderr: "", blocked: "false"}|VAL:{value: "Specified(6)", stdout: "", stderr: "", blocked: "false"}|VAL:{value: "Specified(6)", stdout: "", stderr: "", blocked: "false"}|VAL:{value: "Specified(6)", stdout: "", stderr: "", blocked: "false"}|VAL:{value: "Specified(6)", stdout: "", stderr: "", blocked: "false"}|VAL:{value: "Specified(6)", stdout: "", stderr: "", blocked: "false"}|VAL:{value: "Specified(6)", stdout: "", stderr: "", blocked: "false"}|VAL:{value: "Specified(6)", stdout: "", stderr: "", blocked: "false"}
+[58/90] MATCH struct-00-membershift: VAL:{value: "Specified(42)", stdout: "", stderr: "", blocked: "false"}
+[59/90] MATCH struct-01-init: VAL:{value: "Specified(42)", stdout: "", stderr: "", blocked: "false"}
+[60/90] MATCH struct-02-pass-by-value: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[61/90] MATCH struct-03-pass-simple: VAL:{value: "Specified(30)", stdout: "", stderr: "", blocked: "false"}
+[62/90] MATCH struct-04-array-member: VAL:{value: "Specified(30)", stdout: "", stderr: "", blocked: "false"}
+[63/90] MATCH struct-05-array-direct: VAL:{value: "Specified(30)", stdout: "", stderr: "", blocked: "false"}
+[64/90] MATCH struct-06-local-struct-array: VAL:{value: "Specified(30)", stdout: "", stderr: "", blocked: "false"}
+[65/90] MATCH struct-07-pass-int-array: VAL:{value: "Specified(30)", stdout: "", stderr: "", blocked: "false"}
+[66/90] UB_MATCH ub-inconsistent: UB:{ub: "UB061_no_named_members", stderr: "", loc: "<2:1--2:12>"}
+[67/90] UB_MATCH ub-runtime-detect: UB:{ub: "UB045a_division_by_zero", stderr: "", loc: "<5:12--5:17>"}
+[68/90] CERB_SKIP ub-static-reject (exit 1)
+[69/90] UB_MATCH unseq-01-exact-0301: UB:{ub: "UB035_unsequenced_race", stderr: "", loc: "<7:3--7:14>"}
+[70/90] UB_MATCH unseq-02-simple-double-write: UB:{ub: "UB035_unsequenced_race", stderr: "", loc: "<7:3--7:20>"}
+[71/90] UB_MATCH unseq-03-write-then-read: UB:{ub: "UB035_unsequenced_race", stderr: "", loc: "<7:3--7:14>"}
+[72/90] UB_MATCH unseq-04-nested-write-outer: UB:{ub: "UB035_unsequenced_race", stderr: "", loc: "<8:3--8:14>"}
+[73/90] MATCH unseq-05-nested-write-inner: VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+[74/90] MATCH unseq-06-sequenced-comma: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[75/90] MATCH unseq-07-read-then-write-comma: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[76/90] UB_MATCH unseq-08-compound-lhs: UB:{ub: "UB035_unsequenced_race", stderr: "", loc: "<9:3--9:15>"}
+[77/90] UB_MATCH unseq-09-increment: UB:{ub: "UB035_unsequenced_race", stderr: "", loc: "<8:3--8:10>"}
+[78/90] UB_MATCH unseq-10-func-arg: UB:{ub: "UB035_unsequenced_race", stderr: "", loc: "<10:5--10:10>"}
+[79/90] UB_MATCH unseq-11-both-in-unseq: UB:{ub: "UB035_unsequenced_race", stderr: "", loc: "<8:3--8:20>"}
+[80/90] UB_MATCH unseq-12-outer-after-unseq: UB:{ub: "UB035_unsequenced_race", stderr: "", loc: "<10:3--10:14>"}
+[81/90] MATCH unseq-13-read-in-unseq-write-after: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[82/90] MATCH unseq-14-different-vars: VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+[83/90] UB_MATCH unseq-15-nested-same-unseq: UB:{ub: "UB035_unsequenced_race", stderr: "", loc: "<9:3--9:32>"}
+[84/90] UB_MATCH unseq-16-triple-nested: UB:{ub: "UB035_unsequenced_race", stderr: "", loc: "<9:3--9:20>"}
+[85/90] MATCH valid-01-oob-no-deref: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[86/90] UB_MATCH valid-02-oob-deref: UB:{ub: "UB_CERB002a_out_of_bound_load", stderr: "", loc: "<6:12--6:14>"}
+[87/90] UB_MATCH valid-03-oob-store: UB:{ub: "UB_CERB002b_out_of_bound_store", stderr: "", loc: "<5:5--5:15>"}
+[88/90] CERB_SKIP valid-04-exit-before-oob (error: ill-formed program: `calling an unknown procedure: Symbol(502, SD_Id()
+[89/90] MATCH valid-05-ptr-validity-check: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[90/90] MATCH varargs-01-ptr-valist: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+
+============================================
+Results Summary
+============================================
+
+Cerberus execution:
+  Success:    86
+  Skipped:    4
+
+Lean pipeline (of Cerberus successes):
+  Compared:   86
+  Failed:     0
+  Crashed:    0
+  Fuel:       0 (fuel exhaustion — typed kill or pure-worker panic; never agreement)
+  ExitErr:    0 (exit code inconsistent with parsed verdict)
+  Timeout:    0
+  Hang:       0 (exit 124 with CPU/wall < 0.1 — no output, no exit)
+
+Comparison (of both successes):
+  Match:      66
+  UB Match:   20 (both detected same UB)
+  Mismatch:   0 (includes one-sided-UB DIFFs)
+
+Match rate:   100% (complete observations; UB_DIFF is a difference)
+
+SUMMARY: total=90 match=66 ub_match=20 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=4 cerb_floor=0 cerb_inconsistent=0
+
+Checking against baseline: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/scripts/exec_debug_baseline.txt
+
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK

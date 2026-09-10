@@ -1,0 +1,13 @@
+=== bridge-node_a
+$ timeout --kill-after=5s 60s /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/_build/default/backend/driver/main.exe --runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/_build/install/default --cabs-json /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/tests/failure-probes/cross_tu_node/node_a.c
+rc=0 elapsed=0.033789s
+=== bridge-node_b
+$ timeout --kill-after=5s 60s /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/_build/default/backend/driver/main.exe --runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/_build/install/default --cabs-json /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/tests/failure-probes/cross_tu_node/node_b.c
+rc=0 elapsed=0.033261s
+=== lean
+$ timeout --kill-after=5s 60s /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/lean_frontend/.lake/build/bin/cerberus-lean --batch /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.tmp/are-compatible-assumed-set/d1-reproducer/node_a.json /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.tmp/are-compatible-assumed-set/d1-reproducer/node_b.json
+Error {msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(48, SD_Id("node")) vs Symbol(19, SD_Id("node"))'"}
+rc=1 elapsed=0.031220s
+=== pristine-oracle
+$ timeout --kill-after=5s 60s /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe --runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default --nolibc --exec --batch --mode=exhaustive /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/tests/failure-probes/cross_tu_node/node_a.c /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/tests/failure-probes/cross_tu_node/node_b.c
+rc=124 elapsed=60.073402s
