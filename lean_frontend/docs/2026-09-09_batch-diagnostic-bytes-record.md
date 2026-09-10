@@ -257,3 +257,117 @@ The branch is ready for external review. The user's requested pause remains
 in force: no merge or push has occurred. Generic Lem String/Char migration,
 model producer byte-domain invariants, and broader correspondence/reporting
 work remain outside this completed slice.
+
+## External review (mainline orchestrator, Claude) — 2026-09-10
+
+[AGENT 2026-09-10] Reviewed `arc/batch-diagnostic-bytes @ 7572c0c57`
+(base = mainline `679181d1b`, three commits, worktree clean) under the
+operator's instruction "review and either (1) do minor fixes and land, or
+(2) send back with a review for larger fixes". **Verdict: (1), with zero
+code fixes required.** The slice is correct, in scope, and the design
+split it introduces (byte-carrier channels keep the per-Char printer;
+Unicode diagnostics escape their UTF-8 bytes) is the right one.
+
+Independent checks, each performed against the branch head, not the
+record:
+
+- **Transcript ground truth.** Re-ran OCaml 5.4.0 in the project switch:
+  `String.escaped (String.init 256 Char.chr)` produces 733 bytes and is
+  byte-identical (`cmp`) to the de-escaped `oracleAllBytes` literal in
+  `test/Unit/BatchEscapeTest.lean`.
+- **Byte-carrier path preserved.** `Main.batchEscape` → `CerbEscape.byteChars`
+  for Defined stdout/stderr and the killed-state stderr; only the
+  `libc load failed:` / `cabs-json parse error:` diagnostics and
+  `CerbFail.escapeMessage` switch to `CerbEscape.text`. No program output
+  is double-encoded; the FF and C3 A9 pins are unmoved.
+- **Banned methods.** None in `CerbEscape.lean` / `BatchEscapeTest.lean`
+  (the one grep hit is the `Bytes.unsafe_escape` OCaml cite in a doc
+  comment). No `.lem`, generated, baseline, or register changes.
+- **Integration repair** (record §"Initial full run"): a test-placement
+  fix inside the slice, honestly reported; no skip or bypass added;
+  `test_fuel_plant.sh` unchanged.
+- **VALIDATION.md** contains no escaper text; no edit needed. The gate
+  list (`lean_frontend/CLAUDE.md`), LADDER row 7, the observation
+  contract and TODO VF-07 are updated by the branch.
+- **Correction accepted.** The earlier TODO instruction to "unify the
+  escapers on the per-byte one" was written by this orchestrator [AGENT]
+  and was wrong for the model stdout/stderr byte carriers; the branch's
+  corrected TODO text stands.
+
+Residuals are as the record states: the 0..255 carrier invariant is the
+producer's (out of scope here); the generic Lem String/Char migration is
+separate work.
+
+### Orchestrator battery (independent, this worktree, head 7572c0c57)
+
+Cache-disabled OCaml rebuild from re-derived generated trees, 32G-capped
+Lean build, then every lane below. All lanes rc=0; zero reds. Verbatim
+lane/rc pairs (the harness tails each lane to its last 8 lines):
+
+```
+=== bash tools/check_driver_fresh.sh --check  --- rc=0
+=== ./scripts/test_unit.sh  --- rc=0
+=== ./scripts/test_exec.sh --check-baseline  --- rc=0
+=== ./scripts/test_exec.sh --check-baseline=scripts/exec_coverage_baseline.txt tests/coverage  --- rc=0
+=== ./scripts/test_exec.sh --check-baseline=scripts/exec_debug_baseline.txt tests/debug  --- rc=0
+=== ./scripts/test_exec.sh --check-baseline=scripts/exec_float_baseline.txt tests/float  --- rc=0
+=== ./scripts/test_bytes.sh  --- rc=0
+=== ./scripts/test_libc_exec.sh  --- rc=0
+=== ./scripts/test_multi_tu.sh  --- rc=0
+=== ./scripts/test_parse.sh  --- rc=0
+=== ./scripts/test_core.sh  --- rc=0
+=== ./scripts/test_elab.sh  --- rc=0
+=== ./scripts/test_libxml2_uri.sh  --- rc=0
+=== ./scripts/test_cn_coverage.sh --check-baseline  --- rc=0
+=== ./scripts/test_parse.sh tests/ci  --- rc=0
+=== ./scripts/test_core.sh tests/ci  --- rc=0
+=== ./scripts/test_verify.sh  --- rc=0
+=== ./scripts/test_immaculate.sh  --- rc=0
+=== ./scripts/test_speclab.sh --selftest  --- rc=0
+=== ./scripts/test_speclab.sh --plant  --- rc=0
+=== ./scripts/test_hang_plant.sh  --- rc=0
+=== ./scripts/test_kill_plant.sh  --- rc=0
+=== ./scripts/test_fuel_plant.sh  --- rc=0
+=== ./scripts/test_failstop_plant.sh  --- rc=0
+=== ./scripts/test_libxml2.sh  --- rc=0
+=== python3 scripts/test_observation_lanes.py  --- rc=0
+=== ./scripts/check_failure_reach.sh --selftest  --- rc=0
+=== ./scripts/check_failure_reach.sh  --- rc=0
+=== python3 scripts/test_upstream_oracle.py  --- rc=0
+=== python3 scripts/test_upstream_oracle.py --plant  --- rc=0
+=== ./scripts/test_gcc_oracle.sh --check-baseline  --- rc=0
+=== BATTERY DONE  
+```
+
+Verbatim verdict lines from the same log:
+
+```
+Baseline check: 0 regression(s), 0 improvement(s)
+batch diagnostic producers: 8/8 passed
+check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=166 REACHABLE=48 UNKNOWN=19; every row sealed; tally line consistent)
+observation lane plants: 93/93 passed
+OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip DIFF, R3 s4b-memcmp-hugesize ORACLE_CRASH — VALIDATION.md 'ISO-fix register' — and the in-Lean probes g6 TRIPWIRE / illtyped-store KILL).
+SUMMARY: total=1963 compared=1885 agree=1873 agree_nd=0 triaged=12 disagree=0 o2_agree=190 skip_gcc_compile=1 skip_gcc_stdout=1 skip_lean_crash=9 skip_lean_fail=9 skip_lean_timeout=11 skip_ub=47 triaged_addr=11 triaged_ub=1
+test_fuel_plant: ALL PLANTS OK (FUEL classification live in exec/gcc/ci_sweep/cn_coverage/measure; negatives not FUEL; the real driver at --fuel 1 reads FUEL and at the default MATCH; --fuel 0/non-numeral/out-of-position/missing refused)
+test_verify: 127 passed, 0 failed (25 fixtures, 28 call points, 14 corpus fixtures, 21 corpus points)
+```
+
+Because the harness tail hides per-case lines, the built `pp-test` was
+also run directly (`scripts/capped ./.lake/build/bin/pp-test`, rc=0):
+
+```
+PASS batch escaping: all 256 bytes match OCaml
+PASS batch escaping: all 256 byte carriers match OCaml
+PASS batch escaping: empty bytes
+PASS batch escaping: empty byte carriers
+PASS batch escaping: empty text
+PASS batch escaping: text controls and delimiters
+PASS batch escaping: UTF-8 sequence carried as bytes
+PASS batch escaping: UTF-8 text
+PASS batch escaping: model-failure text uses the same adapter
+PASS batch escaping: embedded verdict remains escaped payload
+All PP tests passed
+```
+
+Merged ff-only into `mdd/cerberus-lean` on the operator's standing
+instruction for this review ("do minor fixes and land"); no push.
