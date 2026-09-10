@@ -397,6 +397,20 @@ oracles re-run 2026-09-08, lines verbatim in the draft):
     `ctype_aux` fuel'd workers stay in `scripts/fuel_forms_pending.txt` — no
     frontend-guaranteed hypothesis bounds a recursion that legal C makes
     cyclic.)
+    FORK STATUS 2026-09-10: FIXED in the fork (are-compatible-assumed-set slice,
+    `lean_frontend/docs/2026-09-10_are-compatible-assumed-set-record.md`; the
+    draft's new "Fork status" section carries the patch summary and the fresh
+    three-engine run). The three workers are MEASURED without a hypothesis.
+
+38. **38-pememberof-cross-tu-struct-value-tag-identity.md** — TRUE BUG /
+    LIMITATION exposed by 37's fix: with `are_compatible` terminating, the same
+    reproducer reaches `core_eval.lem:945-946`'s `PEmemberof(struct)` exact-tag
+    guard — a `struct node` VALUE returned from TU 1 is rejected under TU 2's
+    compatible definition (`ill-formed program: mismatched tags`, both fork
+    engines agreeing up to symbol numbering; upstream never gets here, rc=124).
+    Remedy: consult `Ctype_aux.are_compatible` at member selection (the check
+    `memValueFromValue` already performs on store) or retag at the TU boundary.
+    File together with 37. Reproducer: draft 37's `tests/failure-probes/cross_tu_node/`.
 
 Amended 2026-09-05: draft 10 gains an addendum for the STRING-LITERAL
 form of `\?` (`"\?"` reaches the same decoder from translation.ml:3029;
@@ -424,7 +438,7 @@ covers both entry points.
   on current master.
 - Caveat: GitHub search is text-match; a very differently-worded
   duplicate could hide. Re-run step (2) at actual filing time.
-- **Drafts 15–37 and lean4/02 have NOT been duplicate-searched** (no
+- **Drafts 15–38 and lean4/02 have NOT been duplicate-searched** (no
   network window since 2026-08-23); step (2) is mandatory for each at
   filing time. Likely neighbours to check: anything on `size_t`/integer
   rank (20), `aligned_alloc` (34), `atexit`/stdio flushing (24/25),

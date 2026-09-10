@@ -121,3 +121,44 @@ verbatim) for the fuel-pending close-out
 (`lean_frontend/docs/2026-09-08_fuel-pending-closeout-record.md` D3).
 Localisation and this draft by Claude (Fable 5.1) under operator direction;
 the filed issue carries an AI-provenance note per the tray's policy.
+
+## Fork status (2026-09-10) — FIXED in the fork; the patch is the `.lem` diff
+
+[AGENT 2026-09-10] Landed on the fork's mainline candidate `arc/are-compatible-assumed-set`
+(record `lean_frontend/docs/2026-09-10_are-compatible-assumed-set-record.md`): the
+remedy above, with a LIST rather than a set (`assumed : list (Symbol.sym * Symbol.sym)`,
+`List.elem`; a set is equivalent — the list keeps the fork's Lean proofs on core
+list laws). `env` is now the triple `(tagDefs1, tagDefs2, assumed)`; the entry passes
+`(tagDefs, tagDefs, [])`; in the cross-TU `Struct/Struct` and `Union/Union` arms,
+after the same-name test and before the two lookups, `if List.elem (tag1, tag2)
+assumed then true else …`, and the member comparisons (including the flexible array
+member) run with `(tag1, tag2) :: assumed`; every other recursive call passes the
+current list unchanged (a path-set, never returned). The patch for upstream is the
+`frontend/model/ctype_aux.lem` diff of that record's D1 commit, minus its Lean-only
+`declare {lean} …` lines. Results on every previously-terminating input are unchanged
+(argument in the record); the fork's Tier A/B corpora moved nowhere.
+
+The reproducer no longer hangs on the fork, and exposes the NEXT cross-TU limitation
+(draft 38): both fork engines now reach `core_eval.lem:946`'s exact-tag guard in
+`PEmemberof(struct)` when the returned `struct node` value (tagged by TU 1) is
+member-selected under TU 2's type. Verbatim, 2026-09-10 (fork oracle and Lean at the
+record's D2 state; pristine upstream `b9aeedcb4` + lem `3802cb0`):
+
+```
+=== fork-oracle: cerberus --nolibc --exec --batch --mode=exhaustive node_a.c node_b.c
+Error {msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(531, SD_Id("node")) vs Symbol(502, SD_Id("node"))'"}
+rc=1 elapsed=.037669325s
+=== lean: cerberus-lean --batch node_a.json node_b.json (cabs-json via the fork oracle)
+Error {msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(48, SD_Id("node")) vs Symbol(19, SD_Id("node"))'"}
+rc=1 elapsed=.033639341s
+=== pristine upstream oracle (b9aeedcb4 + lem 3802cb0): same flags
+rc=124 elapsed=60.105290299s
+=== single-TU control (fork oracle / lean)
+Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+```
+
+So upstream's behaviour on this input is: non-termination here, then (once fixed) the
+draft-38 rejection. Both drafts should be filed together.

@@ -151,6 +151,7 @@ roots = [
   "CerbTagsWf",
   "CerbCoreShape",
   "CerbCoreMeasure",
+  "CerbCtypeMeasure",
   "CerbDebug",
   "CerbDecode",
   "CabsImport",
@@ -161,6 +162,7 @@ roots = [
   # hand-written <Module>_lemMeasureProofs modules the generated
   # <Module>_auxiliary.lean obligation shells import (build fails without them)
   "Ctype_lemMeasureProofs",
+  "Ctype_aux_lemMeasureProofs",
   "Core_lemMeasureProofs",
   "Defacto_memory_aux_lemMeasureProofs",
   "Utils_lemMeasureProofs",

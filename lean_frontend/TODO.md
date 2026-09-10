@@ -35,17 +35,21 @@ owned and hands off; this roadmap does not authorize operating it.
   landed (`AilTypesAux_lemMeasureProofs`, `Core_reduction_lemMeasureProofs`),
   register 21 → 15. Residual: none of the six (the mutual blocks' measures are
   the derived sizes of the whole walked structure, proved sufficient).
-- **Compatibility trio (three pending workers)** — the C4 layout measures
-  discharged the six CerbMem layout/reconstruction rows under explicit
-  `CerbTagsWf.Acyclic` hypotheses. `are_compatible_aux` and its two siblings
-  follow deep pointer/function references; legal recursive-pointer cross-TU
-  input is a reference nontermination case. By-value acyclicity is insufficient.
-  Close-out D3 (2026-09-08): re-assessed, no honest hypothesis; the upstream-tray
-  draft 37 (`docs/upstream-tray/37-…nontermination.md`) is WRITTEN with the
-  reproducer `tests/failure-probes/cross_tu_node/` (both oracles rc=124 at 60 s,
-  Lean stack overflow rc=134, single-TU control `Specified(7)`); MOVER: upstream's
-  fix (an assumed-compatible set), or a lem body change (not Lean-only — C4 record
-  §8 item 2(c), operator decision).
+- ~~**Compatibility trio (three pending workers)**~~ — RESOLVED 2026-09-10
+  (are-compatible-assumed-set slice, `docs/2026-09-10_are-compatible-assumed-set-record.md`;
+  [USER 2026-09-10] ruled for the lem BODY change): `are_compatible_aux` threads a
+  path-local assumed-compatible list of tag pairs (C11 §6.2.7#1's device for
+  recursive types), the block is total, and the three workers are MEASURED WITHOUT
+  a hypothesis (`lean_frontend/CerbCtypeMeasure.lean`, proofs in
+  `Ctype_aux_lemMeasureProofs.lean`). Register 5 → 2 (`many`/`many1` only). The
+  fork's OCaml oracle changes identically (fork-drift `[expected-semantic]`
+  `ctype_aux.ml` pin moved; upstream-tray draft 37 carries the patch, now with a
+  "Fork status" section). Residual: the reproducer now exposes the NEXT cross-TU
+  limitation — `core_eval.lem:946` `PEmemberof(struct)` exact-tag identity on a
+  struct value that crossed the TU boundary (both fork engines: `ill-formed
+  program … mismatched tags`, agreeing up to symbol numbering; upstream still
+  rc=124) — tray draft 38 (`docs/upstream-tray/38-…tag-identity.md`); its fix is a
+  separate shared-model change (operator decision, same class as this one).
 - ~~**`to_pure`/`to_pures`**~~ and ~~**`hack`**~~ — RESOLVED at the fuel-pending
   close-out (2026-09-08, `docs/2026-09-08_fuel-pending-closeout-record.md`, option C
   of the reachability census): MEASURED under the arena SHAPE hypothesis
@@ -171,7 +175,9 @@ hygiene items the audit confirmed (each re-verified by the orchestrator):
   its own slice, with the generated-tree diff enumerated in a manifest for
   refined-cerberus. Until then the binders are dead (nothing reads the
   ambient fuel below them). S.
-- **F-C4-1 — `Ctype_aux.are_compatible_aux` recurses through pointers and
+- ~~**F-C4-1**~~ — RESOLVED 2026-09-10 by the lem body change (assumed-compatible list;
+  see the C2 block's compatibility-trio entry and `docs/2026-09-10_are-compatible-assumed-set-record.md`).
+  History: **F-C4-1 — `Ctype_aux.are_compatible_aux` recurses through pointers and
   function types (STD §6.2.7#1 structural compatibility): a cross-TU pair of
   same-named self-referential structs (`struct node { struct node *next; }`
   in each translation unit, reached via `memValueFromValue` on a struct

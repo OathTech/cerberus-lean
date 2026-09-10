@@ -17,23 +17,19 @@
 # hypothesis; lean_frontend/docs/2026-09-08_fuel-pending-closeout-record.md).
 #
 # --- deep-reference recursion (STD §6.2.7#1 structural compatibility): the
-#     ctype_aux trio compares two struct/union definitions member by member
-#     THROUGH pointer and function types (are_compatible_aux's Pointer/Pointer
-#     and Function/Function arms recurse into the pointee/return/parameter
-#     types, and the cross-TU Struct/Struct arm re-enters both definitions), so
-#     the by-value acyclicity that bounds the layout oracle does NOT bound it:
-#     `struct node { struct node *next; }` in two translation units makes the
-#     oracle recurse forever (both oracles rc=124 at 60 s; C4 audit §5.1) and
-#     makes the Lean driver fail loudly by NATIVE STACK OVERFLOW (rc=134, ~3 s;
-#     the recursion is not tail-recursive) before any fuel is consumed.
-#     A sufficient hypothesis would be acyclicity through ALL references, which
-#     the frontend does not guarantee (self-referential structs are legal C) —
-#     a finding, not a fix (C4 record F-C4-1; the lem dry run's proposed
-#     `Acyclic p.1 ∧ Acyclic p.2` was insufficient). The six CerbMem tag-lookup
-#     rows left the register at C4 (measured under `CerbTagsWf.Acyclic`). ---
-are_compatible_aux_lemFuel         deep-ref     ctype_aux.lem: Struct/Union members from tagDefs1/tagDefs2 compared through pointers/functions (reached via memValueFromValue)
-are_compatible_params_aux0_lemFuel deep-ref     sibling of are_compatible_aux (mutual block; also point-free tail)
-are_compatible_params0_lemFuel     deep-ref     sibling of are_compatible_aux (mutual block)
+#     ctype_aux trio (are_compatible_aux / are_compatible_params_aux0 /
+#     are_compatible_params0) LEFT the register 2026-09-10 (are-compatible-
+#     assumed-set slice, lean_frontend/docs/2026-09-10_are-compatible-assumed-set-record.md):
+#     the shared lem body now threads a path-local assumed-compatible list of tag
+#     pairs (C11 §6.2.7#1's device for recursive types; upstream-tray draft 37),
+#     which makes the block total, and the three workers are MEASURED WITHOUT a
+#     hypothesis (lean_frontend/CerbCtypeMeasure.lean: unassumed occurring tag
+#     pairs × table member sizes + structural size). The previous text — that
+#     `struct node { struct node *next; }` in two translation units made both
+#     oracles recurse forever (rc=124 at 60 s) and the Lean driver overflow its
+#     native stack (rc=134), and that no frontend-guaranteed hypothesis bounded
+#     it (C4 record F-C4-1) — is now history: the body change, not a hypothesis,
+#     closed the class. ---
 # --- pure recursion with no data measure and no absorbing element in the
 #     codomain (C2 record, D-C2-2 .. D-C2-5). hack / to_pure / to_pures LEFT the
 #     register 2026-09-08 (fuel-pending close-out, option C of the pure-failure

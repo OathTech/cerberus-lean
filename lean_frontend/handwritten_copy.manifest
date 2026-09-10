@@ -44,10 +44,12 @@ CerbTags.lean
 CerbTagsWf.lean
 CerbCoreShape.lean
 CerbCoreMeasure.lean
+CerbCtypeMeasure.lean
 CerbUtils.lean
 CoreParser.lean
 Core_lemMeasureProofs.lean
 Ctype_lemMeasureProofs.lean
+Ctype_aux_lemMeasureProofs.lean
 Defacto_memory_aux_lemMeasureProofs.lean
 Main.lean
 Utils_lemMeasureProofs.lean

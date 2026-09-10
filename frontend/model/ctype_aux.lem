@@ -5,6 +5,7 @@ open import Utils Ctype
 import Map_extra
 
 declare {lean} extra_import `CerbTags`
+declare {lean} extra_import `CerbCtypeMeasure`
 
 (* SEE src/tags.mli for the documentation *)
 val tagDefs: unit -> map Symbol.sym (Loc.t * tag_definition)
@@ -286,3 +287,11 @@ let match_integer_ctype (Ctype _ ty_) =
 declare {lean} fuel val are_compatible_aux = `fuelExhausted false`
 declare {lean} fuel val are_compatible_params_aux = `fuelExhausted (fun _ => false)`
 declare {lean} fuel val are_compatible_params = `fuelExhausted false`
+(* Fuel MEASURES (are-compatible-assumed-set slice, 2026-09-10): hypothesis-free
+   bounds on the block's call depth, computed by the fuel-free wrappers —
+   lean_frontend/CerbCtypeMeasure.lean (the qualified-helper seam form; proofs in
+   Ctype_aux_lemMeasureProofs.lean). Each member's bound covers the WHOLE mutual
+   block's depth from that entry (one shared counter). *)
+declare {lean} fuel_measure val are_compatible_aux = `CerbCtypeMeasure.auxBound p p0 p1`
+declare {lean} fuel_measure val are_compatible_params_aux = `CerbCtypeMeasure.paramsAuxBound env1 lemTail`
+declare {lean} fuel_measure val are_compatible_params = `CerbCtypeMeasure.paramsBound env1 params1 params2`
