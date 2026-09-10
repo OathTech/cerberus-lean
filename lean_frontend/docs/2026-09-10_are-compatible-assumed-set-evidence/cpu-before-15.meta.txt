@@ -1,0 +1,47 @@
+repo=/home/dev/projects/cerberus-lean-proj/cerberus-lean
+head=86daea264c7ff7d074315c396086087c59762d05
+instrument_sha256=f5666763bc880cd4494656e9950124066771352b0dd2cb8c5a1c955c4eebaa4d
+sha256 98f97f6ba9991e2c8ec8d4caf812266891e31525795b28068903197423746b6a scripts/test_csmith_corpus.sh
+sha256 782cd572dea9c1af608e796484513759c7ae3e42d4b69aa77173027b769ccc7c scripts/test_exec.sh
+sha256 77f5ab3a841446962926185d3db8c0e3853fada26ff7708fdd3b47dcab0c3413 scripts/common.sh
+sha256 f809543d2f7859b6cb09b354274f974db8d548edff0aa40db7a3ed5a647eef10 scripts/exec_csmith_corpus_baseline.txt
+sha256 ce11f33292dca81439373f91e4d71d21f9f6573ec4e4bd90daad95ca1f90710e lean_frontend/lake-manifest.json
+sha256 bf8dfb6b88b1bc2bad594283a1deae0ae44b9c9f574b4f11f73d08f9c0b66ee0 _build/default/backend/driver/main.exe
+sha256 4beced12a48eec89dc1aa9c88ea40aa8777b65097d520ed892a0f711ebfa7df6 lean_frontend/.lake/build/bin/cerberus-lean
+corpus_source_sha256=3e6ee353f29fce9ca643d375983d85f931b19c4c898cae5a72a4d85a31a6e3c3
+command=/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped bash -c '
+rm() {
+    local p f
+    for p in "$@"; do
+        case "$p" in
+            "$FC_REPO"/.tmp/scripts/exec-test.*)
+                if [[ -d "$p" && -f "$p/status.txt" ]]; then
+                    for f in "$p"/*.time "$p/status.txt"; do
+                        [[ -f "$f" ]] || continue
+                        command cp -- "$f" "$FC_RUN/retained/" || return 1
+                    done
+                fi
+                ;;
+        esac
+    done
+    command rm "$@"
+}
+export -f rm
+exec "$@"
+' cpu-retention /home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/test_csmith_corpus.sh --check-baseline --max 470
+CERB_MEM_MAX=48G
+TIMEOUT_SECS=15
+SKIP_BUILD=1
+start_utc=2026-09-10T08:59:32Z
+start_uptime=08:59:32 up 3 days, 17:35,  ? user,  load average: 1.00, 1.08, 1.08
+plant=False
+end_utc=2026-09-10T10:08:09Z
+end_uptime=10:08:09 up 3 days, 18:44,  ? user,  load average: 1.19, 1.07, 1.01
+
+SUMMARY: total=470 match=207 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=3 hang=0 cerb_skip=260 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+lane_exit=0
+exported_inputs=470
+exported_engine_rows=940
+derived_status_tally={'CERB_SKIP': 260, 'MATCH': 207, 'TIMEOUT': 3}

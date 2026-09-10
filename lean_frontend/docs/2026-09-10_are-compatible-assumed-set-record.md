@@ -852,3 +852,426 @@ passes. The whole-record check reports trailing spaces inside the required
 verbatim unified diffs (including their blank context-line prefixes and
 generated trailing spaces). Those evidence bytes are intentionally preserved,
 not reformatted. This is not an implementation whitespace defect.
+
+
+## Orchestrator take-over (2026-09-10) — the slice finished by the orchestrator [AGENT]
+
+[USER 2026-09-10] ("I think it's better if you finish this up yourself given the level of
+uncertainty involved. Can you pick this up?") — the orchestrator (Claude) took the slice
+over at Codex's second stop (`a91804f9e`) and executed D1's acceptance, D2, D3, D4 and
+D5 in this worktree. Codex's stop records above stand as written; nothing in them is
+edited. Every verdict line below is verbatim from the named log.
+
+### D1 — accepted as specified; the acceptance criterion (a) REVISED
+
+Codex's uncommitted `frontend/model/ctype_aux.lem` edit (the stop record's diff) is
+exactly the charter's accumulator: `env = (tagDefs1, tagDefs2, assumed)`, a LIST of tag
+pairs, membership tested after the name test and before the lookups in both cross-TU
+arms, the pair consed only into the member comparisons (incl. the flexible array
+member), every other call passing the current list, the entry passing `[]`. Accepted
+without change and committed by the orchestrator in `bbc60d6ef` together with D2/D4.
+
+**Acceptance (b), zero baseline movement, holds.** Tier A on Codex's D1 source (its
+oracle and Lean rebuilt, driver-fresh), `python3 scripts/release.py --mode fast --out
+.tmp/acas-tierA-d1`:
+
+```
+FAILED A1 (148.2s)
+PASSED A2 (32.5s)
+PASSED A3 (54.0s)
+PASSED A4 (23.0s)
+PASSED A4b (18.4s)
+PASSED A4c (3.1s)
+PASSED A5 (23.1s)
+PASSED A6 (2.3s)
+PASSED A7 (10.0s)
+PASSED A8 (8.4s)
+PASSED A9 (16.4s)
+PASSED A10 (16.7s)
+PASSED A11 (58.3s)
+fast: failed; 12/13 selected commands completed successfully.
+```
+
+The single red is the one the charter licensed for D1 — `test_unit.sh`'s fork-drift
+gate on the changed `ctype_aux.lem` (cleared in D4); every other gate inside A1 passed:
+
+```
+Total: 7 passed, 0 failed
+check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)
+    check_fuel_forms: forms partition OK (57 MEASURED + 13 ABSORBING + 5 ambient-reachable + 6 ambient-unreachable = 81 fuel'd workers)
+check_fuel_forms: forms partition OK (57 MEASURED + 13 ABSORBING + 5 ambient-reachable + 6 ambient-unreachable = 81 fuel'd workers)
+      check_fork_content: FAIL — source-content drift inside reviewed file(s):
+      check_fork_drift: FAIL — source-content check failed
+  PLANT OK   [S12 content change inside already-listed fresh supply] rc=1 -> check_fork_content: FAIL — source-content drift inside reviewed file(s):
+  PLANT OK   [S13 duplicate source-content pin] rc=1 -> check_fork_content: FAIL — duplicate [source-content] entry: util/cerb_fresh.ml
+  PLANT OK   [S14 missing source-content pin] rc=1 -> check_fork_content: FAIL — source-content path set differs from live source delta: unpinned=['util/cerb_fresh.ml']; stale=[]
+test_unit: fork-drift gate SELFTEST FAILED
+```
+
+**Acceptance (a) is revised, not met as written.** The charter expected `Specified(7)`
+on the fork oracle and on Lean. With the non-termination gone, both engines reach the
+NEXT cross-TU strictness in the shared model, `core_eval.lem:945-946`'s exact-tag guard
+in `PEmemberof(struct)`: the `struct node` value returned from TU 1 (tagged by TU 1's
+`node`) is member-selected under TU 2's `node` and rejected as ill-formed. Both fork
+engines agree on the failure up to symbol numbering (class (a) of the zero-discrepancy
+rule: message text); the pristine upstream oracle still does not terminate. This is a
+distinct upstream limitation, outside this slice's fence, filed as upstream-tray draft
+38 (`docs/upstream-tray/38-pememberof-cross-tu-struct-value-tag-identity.md`); draft 37
+gained a "Fork status" section pointing at it. Verbatim re-run on the FINAL binaries of
+this slice (commit `bbc60d6ef`; the pristine oracle is the one Codex built in this
+worktree, `b9aeedcb4` + lem `3802cb0`):
+
+```
+=== fork-oracle: cerberus --nolibc --exec --batch --mode=exhaustive node_a.c node_b.c
+Error {msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(531, SD_Id("node")) vs Symbol(502, SD_Id("node"))'"}
+Time spent: 0.024473 seconds
+rc=1 elapsed=.037669325s
+=== lean: cerberus-lean --batch node_a.json node_b.json (cabs-json via the fork oracle)
+Error {msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(48, SD_Id("node")) vs Symbol(19, SD_Id("node"))'"}
+rc=1 elapsed=.033639341s
+=== pristine upstream oracle (b9aeedcb4 + lem 3802cb0): same flags
+rc=124 elapsed=60.105290299s
+=== single-TU control (fork oracle / lean)
+Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+Time spent: 0.023435 seconds
+rc=0
+Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+```
+
+The revised D1 acceptance: (a′) the reproducer terminates on both fork engines with the
+same failure class, the single-TU control is `Specified(7)` on both, upstream still
+`rc=124`; (b) zero baseline movement; (c) the tracked diff is `ctype_aux.lem` alone
+(Codex's record carries the generated deltas' hashes; the OCaml `ctype_aux.ml` delta is
+the fork-drift `[expected-semantic]` pin moved in D4).
+
+**Correctness argument (why results on previously-terminating inputs are unchanged).**
+A cross-TU hop node is determined by the two tables and the two tags once the
+qualifier and name tests have passed; its member subtree does not read the outer
+qualifiers. If the same pair recurred on a path of the ORIGINAL recursion tree, that
+subtree would repeat and the original would not terminate. So on every input the
+original terminates on, no pair recurs on any path, the new `List.elem` test never
+fires, and both functions compute the same tree, test for test. Termination: every hop
+adds a pair the path does not yet carry, drawn from the tags occurring in the tables'
+member types (a finite set), and between hops the recursion descends finite syntax —
+the measure of D2 makes this a kernel-checked bound.
+
+### D2 — the hypothesis-free measure and its proofs
+
+Declares added to `ctype_aux.lem` beside the three `fuel` declares (the
+`ailTypesAux.lem:1337-1350` pattern) and `declare {lean} extra_import
+`CerbCtypeMeasure``:
+
+```
+declare {lean} fuel_measure val are_compatible_aux = `CerbCtypeMeasure.auxBound p p0 p1`
+declare {lean} fuel_measure val are_compatible_params_aux = `CerbCtypeMeasure.paramsAuxBound env1 lemTail`
+declare {lean} fuel_measure val are_compatible_params = `CerbCtypeMeasure.paramsBound env1 params1 params2`
+```
+
+lem hoisted `are_compatible_params_aux`'s `function` scrutinee as `lemTail` (as at C3)
+and emitted the three obligations into `generated/Ctype_aux_auxiliary.lean`
+(`are_compatible_aux_measure_sufficient`, `are_compatible_params_aux0_measure_sufficient`,
+`are_compatible_params0_measure_sufficient`).
+
+**The measure** (`lean_frontend/CerbCtypeMeasure.lean`, structural `def`s only; no
+`partial`/`opaque`/`implemented_by`/macros), for `are_compatible_aux (t1,t2,A) (qs1,ty1) (qs2,ty2)`:
+
+```
+auxGeneral = count * weight + lemSize ty1 + lemSize ty2 + 1
+count      = hops t1 t2 A + missing (tagsIn ty1) (occ t1) + missing (tagsIn ty2) (occ t2)
+hops       = #{ (a,b) ∈ occ t1 × occ t2 : (a,b) not `Lem_List.elem` A }
+occ t      = every struct/union tag occurring in a member type of t
+missing l o = #{ a ∈ l : a not `Lem_List.elem` o }
+weight     = valsSize t1 + valsSize t2 + 1        (Σ member-type sizes of each table)
+auxBound   = if both types are Struct/Struct (or Union/Union) tags of the SAME translation
+             unit then 1 else auxGeneral         (the cheap path: no table traversal)
+```
+
+with `paramsAuxBound` the same over `tagsInParams` and `lemSize_aux1` of the two lists
+and `paramsBound = paramsAuxBound + 1`. Why it bounds the block's depth: a structural
+step keeps `count` from growing (the child's tags are a sublist of the parent's) and
+shrinks both sizes; a hop into member types (u1,u2) with `(s1,s2) :: A` makes the
+children's `missing` 0 (their tags occur in the tables) and EITHER both s1,s2 occur in
+the tables — the pair `≈ (s1,s2)` of `occ × occ` flips from unassumed to assumed and
+`hops` drops — OR one does not and the parent's `missing` was ≥ 1; either way `count`
+drops by ≥ 1 while the member sizes are ≤ `valsSize`, so `count'·w + sizes' + 1 ≤
+(count−1)·w + w = count·w < parent`. No property of the tables' comparators is used: a
+successful `fmapLookupBy` only says the value is one of the tree's nodes
+(`find?_some_bounds`, by induction on the `Pmap`). Symbol membership is the block's own
+`Lem_List.elem` at the model's `Eq0 sym` instance (digest and number; the description
+is ignored), shown to be an equivalence (`symEq_iff`, via `digest_compare_eq_zero_iff`
+and the `Eq0 Nat` instance's `defaultCompare`).
+
+**The proofs** (`lean_frontend/Ctype_aux_lemMeasureProofs.lean`): the C3 template — one
+joint stability statement for the three members by induction on a bound, each worker
+unfolded one step, every recursive call rewritten by a `key` whose side condition is a
+decrease lemma (`lt_array`, `lt_pointer`, `lt_atomic`, `lt_function_ret`,
+`lt_function_params`, `lt_params_head`, `lt_params_tail`, `lt_params`,
+`auxGeneral_lt_of_hop`); the two hop arms descend under the member traversal with
+`all_congr`, which supplies the member's membership (`member_bounds`,
+`union_member_bounds`, `flex_bounds`). The name test's two shapes (two `SD_Id` tags, or
+the `failwithI` pair) are handled by one script since `split` substitutes the tags.
+Kernel-only tactics; no option bumps; hypothesis-free (no `assuming`, no
+`fuel_hypotheses.txt` row).
+
+**Consequential edits outside the charter's fence, all forced by the measure:**
+`lean_frontend/Core_aux_lemMeasureProofs.lean` — `memValueFromValue`'s two theorems
+drop their `[LemFuel]` binder (its callee `Ctype_aux.are_compatible` is no longer
+ambient, so lem's regenerated obligation has none; the library build failed with
+`failed to synthesize LemFuel` until this); `lean_frontend/test/Unit/TotalityProofTest.lean`
+Part 1 regenerated with `scripts/gen_fuel_parametricity.py --emit` (19 → 16 ambient
+wrappers: the three pins of this block are gone, nothing else moved);
+`lean_frontend/lakefile.toml` roots + `handwritten_copy.manifest` gain
+`CerbCtypeMeasure` and `Ctype_aux_lemMeasureProofs` (every `generated/` module must be a
+root — `check_lakefile_roots.sh`; the charter's §1 said otherwise and is corrected in
+place); `scripts/fuel_forms_pending.txt` loses its three `deep-ref` rows (header note
+rewritten; 2 parser rows remain); `lean_frontend/VALIDATION.md` §7 table 57→60 MEASURED,
+PENDING 5→2.
+
+Verbatim (the proofs+obligations build, the library build, the freshness check, the
+fuel-forms gate):
+
+```
+Build completed successfully (67 jobs).
+Build completed successfully (249 jobs).
+check_driver_fresh: oracle OK (bin 6f06e19c653c3c7f80ab538419b6fe558d1cdb23ecc3fd3abf8027780bd7a253, src 2e7aa0096a729a5a9852c40206f12630792e93f87f8682ddee898289d14d7d17)
+check_driver_fresh: lean OK (bin aa8bf3e46f68f4e56282c492fa2b1fc13e3ec1e79da33ae77c088e1003f7db91, src 0e46cc1261eeb5ea83e22fe81c0cf82e5285c29a7c28df6d93c014ab1ea41b51)
+check_fuel_forms: forms partition OK (60 MEASURED + 13 ABSORBING + 2 ambient-reachable + 6 ambient-unreachable = 81 fuel'd workers)
+check_fuel_forms: OK (81 fuel'd workers: 60 MEASURED (obligation of the contract's shape incl. argument correspondence against the wrapper's body; every obligation + proof cone ⊆ the standard three; 10 of them under a hypothesis, each = a reviewed row of fuel_hypotheses.txt, both directions), 13 ABSORBING = kill at zero (the _zero lemma is the worker at literal 0 on its own binders = the monad's absorbing element, cone ⊆ the standard three; propagation NOT proved — lem TODO 13), 2 reachable-AMBIENT = the 2 rows of fuel_forms_pending.txt exactly, 6 ambient unreachable from the drive cone)
+```
+
+### D4 — the fork delta manifested; the tray; what was NOT done and why
+
+**Fork-drift.** `./scripts/check_fork_drift.sh --refresh` was tried first and REVERTED:
+the wholesale refresh strips the manifest's documented header (181 lines) and reorders
+rows — exactly what the manifest's own notes warn about. The two pins were moved by
+single-row edits with a header note, as every previous landing did: `[source-content]
+frontend/model/ctype_aux.lem 9c81b03e… → 5a657d68…` and `[expected-semantic]
+ctype_aux.ml 8882e41d… → afcc21e3…`. Unlike the earlier Lean-only pin moves this one is
+a GENUINE shared-model change to the oracle's generated OCaml. The charter's D4.1 text
+("--refresh; exactly two hunks") was wrong about the mechanism; corrected here.
+
+```
+check_fork_content: OK — 76 source files content/mode-pinned
+check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 22 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+```
+
+**The tray-pinned multi-TU corpus (charter D4.2) is NOT added.** Trial: with the
+reproducer under a `tests/multi_tu_tray/cross_tu_node/` corpus, `./scripts/test_multi_tu.sh
+tests/multi_tu_tray` reports `[1] MISMATCH cross_tu_node` — the lane compares the two
+engines' `ERR` payloads byte for byte and the agreed failure differs in symbol numbering
+(`Symbol(531…) vs Symbol(502…)` on the oracle, `Symbol(48…) vs Symbol(19…)` on Lean).
+Pinning it green would require changing the lane's observation contract (projecting
+symbol numbers out of failure text), which is a decision about class (a) evidence the
+slice must not take. Decision [AGENT]: the reproducer stays in
+`tests/failure-probes/cross_tu_node/`; its differential behaviour is the verbatim
+three-engine run above (record-level evidence); the gate-enforced property of this slice
+is the termination itself (the three MEASURED obligations, checked by the fuel-forms
+gate on every unit run). No LADDER row 6b. **Question for the operator:** should the
+multi-TU lane (and the exec lanes, which never see an agreed `ERR`) project symbol
+numbers out of failure text so class-(a) agreements can be pinned as MATCH? If yes, the
+reproducer becomes a Tier A row in that slice.
+
+**Tray and TODO.** Draft 37 gained "Fork status (2026-09-10)" (the patch is the
+D1 `.lem` diff minus the Lean-only declares; fresh three-engine run); NEW draft 38
+(`PEmemberof` exact-tag identity on a struct value that crossed the TU boundary; remedy:
+consult `Ctype_aux.are_compatible` at member selection, as `memValueFromValue` already
+does on store); `INDEX.md` rows 37 (fork status) and 38. `TODO.md`: the C2
+compatibility-trio bullet and F-C4-1 RESOLVED with the residual (draft 38) named.
+`lean_frontend/CLAUDE.md` states no counts; unchanged.
+
+### Tier A on the finished D2/D4 state (before D3/D5)
+
+`python3 scripts/release.py --mode fast --out .tmp/acas-tierA-d2` at the tree committed as
+`bbc60d6ef` (the fuel-forms partition and the moved pins included):
+
+```
+PASSED A1 (150.5s)
+PASSED A2 (26.7s)
+PASSED A3 (51.4s)
+PASSED A4 (22.7s)
+PASSED A4b (18.4s)
+PASSED A4c (3.1s)
+PASSED A5 (21.9s)
+PASSED A6 (2.2s)
+PASSED A7 (9.8s)
+PASSED A8 (8.4s)
+PASSED A9 (15.8s)
+PASSED A10 (16.6s)
+PASSED A11 (58.2s)
+fast: incomplete; 13/13 selected commands completed successfully.
+```
+
+("`fast: incomplete`" is the runner's standing label for Tier A alone — certification
+needs Tier B, run in D5.)
+
+
+### D3 — the measure's cost, measured (csmith small_arrays, both engines, 15 s budget)
+
+`scripts/measure_csmith_cpu.py --max 470 --timeout 15`, AFTER = this worktree at
+`bbc60d6ef`, BEFORE = the primary checkout at mainline `86daea264` (read-only; its
+binaries are the pre-change ones), run back to back on an otherwise idle box (load ≈ 1):
+
+```
+=== after (this worktree, HEAD bbc60d6ef) 2026-09-10T07:50:50Z
+after rc=0
+SUMMARY: total=470 match=207 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=3 hang=0 cerb_skip=260 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+CPU export OK: 470 inputs, 940 engine rows; lane exit=0; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/lean_frontend/docs/2
+=== before (primary checkout 86daea264, read-only) 2026-09-10T08:59:31Z
+before rc=0
+SUMMARY: total=470 match=207 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=3 hang=0 cerb_skip=260 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+CPU export OK: 470 inputs, 940 engine rows; lane exit=0; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/are-compatible-assumed-set/lean_frontend/docs/2
+=== D3 DONE 2026-09-10T10:08:09Z
+```
+
+Both runs classify every row exactly as the committed baseline does (the 260 `CERB_SKIP`
+rows are the baseline's oracle timeouts, the 3 `TIMEOUT` rows the baseline's Lean
+timeouts; zero movement). Derivation (`derive-d3-ratios.py`, output `cpu-ratios.tsv`):
+
+```
+compared (lean MATCH on both): 207 rows; excluded: 263; status movements: 0
+aggregate lean CPU before=83.75 s after=84.44 s ratio=1.008239
+rows over the 1.10 bar: 45
+  … 45 rows listed in cpu-ratios.tsv (over_1_10 = YES); every one is a 0.01–0.04 s difference on a row of 0.05–0.23 s
+excluded (status before -> after):
+  Counter({('CERB_SKIP', 'CERB_SKIP'): 260, ('TIMEOUT', 'TIMEOUT'): 3})
+```
+
+The **aggregate Lean CPU over the 207 comparable rows moved by +0.8 %** (83.75 s → 84.44 s).
+The 45 per-row "exceedances" are the instrument's 0.01 s quantum on rows of 0.05–0.23 s
+(a single tick on a 0.05 s row is a ratio of 1.20). As the previous slice did, they were
+REPEATED rather than argued away (`repeat-d3-exceptions.py`, each input re-staged as the
+lane stages it, pre/after alternated, `cpu-repeats.tsv`):
+
+```
+sa_csmith_132.c	pre=0.0500	after=0.0600	ratio=1.200000	YES
+sa_csmith_212.c	pre=0.0500	after=0.0600	ratio=1.200000	YES
+sa_csmith_44.c	pre=0.0850	after=0.0950	ratio=1.117647	YES
+sa_csmith_51.c	pre=0.0550	after=0.0650	ratio=1.181818	YES
+repeated 45 inputs x 2; still over 1.10 by means: 4 ['sa_csmith_132.c', 'sa_csmith_212.c', 'sa_csmith_44.c', 'sa_csmith_51.c']
+```
+
+The four that remained over the bar by the means of 2 repeats were repeated 10 times
+each (`cpu-repeats-residual-x10.tsv`):
+
+```
+sa_csmith_132.c	pre=0.0540	after=0.0530	ratio=0.981481	NO
+sa_csmith_212.c	pre=0.0570	after=0.0590	ratio=1.035088	NO
+sa_csmith_44.c	pre=0.0930	after=0.0890	ratio=0.956989	NO
+sa_csmith_51.c	pre=0.0610	after=0.0600	ratio=0.983607	NO
+repeated 4 inputs x 10; still over 1.10 by means: 0 []
+```
+
+**D3 verdict: the bar holds.** Every row that completes on both sides is ≤ 1.10 by the
+mean of repeated measurements; no row moved MATCH → TIMEOUT; the aggregate cost of the
+measure is +0.8 % on this set. The cheap same-TU path does what it was designed to do:
+single-TU programs never evaluate `auxGeneral`. Cross-TU programs pay the general bound
+(a table traversal per cross-TU struct store); the multi-TU corpora are small and moved
+nowhere.
+
+### D5 — the full battery
+
+`.tmp/acas-d5.sh` (orchestrator harness: `LC_ALL=C NO_COLOR=1 TERM=dumb`,
+`CERB_MEM_MAX=48G`; each lane's last lines tailed, rc printed): the freshness check, the
+unit lane and the four `test_exec.sh` baseline lanes directly, then `python3
+scripts/release.py --mode full --out .tmp/acas-tierAB` (Tier A + Tier B, 35 commands).
+Verbatim:
+
+```
+=== bash tools/check_driver_fresh.sh --check  --- rc=0
+=== ./scripts/test_unit.sh  --- rc=0
+=== ./scripts/test_exec.sh --check-baseline  --- rc=0
+=== ./scripts/test_exec.sh --check-baseline=scripts/exec_coverage_baseline.txt tests/coverage  --- rc=0
+=== ./scripts/test_exec.sh --check-baseline=scripts/exec_debug_baseline.txt tests/debug  --- rc=0
+=== ./scripts/test_exec.sh --check-baseline=scripts/exec_float_baseline.txt tests/float  --- rc=0
+=== python3 scripts/release.py --mode full --out .tmp/acas-tierAB  --- rc=0
+```
+
+```
+full: passed; 35/35 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+```
+
+Per-command status from the runner's schema-2 `report.json` (`lanes`), verbatim fields:
+
+```
+A1: passed (exit 0, 110.865 s)
+A2: passed (exit 0, 26.468 s)
+A3: passed (exit 0, 50.955 s)
+A4: passed (exit 0, 22.462 s)
+A4b: passed (exit 0, 18.104 s)
+A4c: passed (exit 0, 3.032 s)
+A5: passed (exit 0, 21.71 s)
+A6: passed (exit 0, 2.131 s)
+A7: passed (exit 0, 9.643 s)
+A8: passed (exit 0, 8.442 s)
+A9: passed (exit 0, 15.653 s)
+A10: passed (exit 0, 16.453 s)
+A11: passed (exit 0, 57.466 s)
+B1: passed (exit 0, 631.509 s)
+B2: passed (exit 0, 22.873 s)
+B3: passed (exit 0, 14.9 s)
+B4: passed (exit 0, 44.307 s)
+B5: passed (exit 0, 61.697 s)
+B6.1: passed (exit 0, 164.151 s)
+B6.2: passed (exit 0, 2.231 s)
+B6.3: passed (exit 0, 9.093 s)
+B6.4: passed (exit 0, 8.39 s)
+B6.5: passed (exit 0, 8.891 s)
+B6.6: passed (exit 0, 9.542 s)
+B6.7: passed (exit 0, 8.34 s)
+B7: passed (exit 0, 1293.364 s)
+B8.1: passed (exit 0, 13.417 s)
+B8.2: passed (exit 0, 212.696 s)
+B8.3: passed (exit 0, 6.287 s)
+B8.4: passed (exit 0, 15.555 s)
+B9: passed (exit 0, 1232.219 s)
+B10.1: passed (exit 0, 62.136 s)
+B10.2: passed (exit 0, 1.279 s)
+B11.1: passed (exit 0, 14.801 s)
+B11.2: passed (exit 0, 6.638 s)
+```
+
+Verbatim verdict lines from the lanes' stdout:
+
+```
+Baseline check: 0 regression(s), 0 improvement(s)
+SUMMARY: total=1963 compared=1885 agree=1873 agree_nd=0 triaged=12 disagree=0 o2_agree=190 skip_gcc_compile=1 skip_gcc_stdout=1 skip_lean_crash=9 skip_lean_fail=9 skip_lean_timeout=11 skip_ub=47 triag
+Total: 7 passed, 0 failed
+check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position cla
+check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 22 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f
+check_fuel_forms: forms partition OK (60 MEASURED + 13 ABSORBING + 2 ambient-reachable + 6 ambient-unreachable = 81 fuel'd workers)
+observation lane plants: 93/93 passed
+test_fuel_plant: ALL PLANTS OK (FUEL classification live in exec/gcc/ci_sweep/cn_coverage/measure; negatives not FUEL; the real driver at --fuel 1 reads FUEL and at the default MATCH; --fuel 0/non-num
+test_verify: 127 passed, 0 failed (25 fixtures, 28 call points, 14 corpus fixtures, 21 corpus points)
+```
+
+pristine-oracle lane report status: passed; rows: 723
+
+### State at hand-over, and what the operator decides
+
+- **Branch** `arc/are-compatible-assumed-set`: Codex's two stop records (`3f9ade56d`,
+  `a91804f9e`), the orchestrator's `bbc60d6ef` (D1+D2+D4 source/proofs/registers/pins/
+  tray) and the commit carrying this record + the D3 evidence. Base = mainline
+  `86daea264`; fast-forwardable. lem-lean untouched (`f6542f8`).
+- **The property delivered:** `Ctype_aux.are_compatible_aux` and its two siblings are
+  total (the lem body change) and MEASURED without a hypothesis; the fuel-forms
+  register of pending workers is `many`/`many1` only; the fork's OCaml oracle changes
+  identically; the deviation from upstream is manifested (two pins) and filed as tray
+  drafts 37 (patch) + 38 (the next limitation).
+- **Not done, deliberately:** the tray-pinned multi-TU corpus (D4.2) — see D4 for why;
+  the operator question about projecting symbol numbers out of `ERR` text stands.
+- **Charter corrections** (all applied in place or recorded above): §1 "not lakefile
+  roots" (wrong — every generated module is a root); D1 acceptance (a) `Specified(7)`
+  (an unobserved outcome asserted; the next limitation intervened); D4.1 `--refresh`
+  (strips the header; single-row edits are the practice); D4.2's lane assumption (the
+  multi-TU lane compares failure text byte for byte).
+- **Consequential edits outside the fence:** `Core_aux_lemMeasureProofs.lean` (dead
+  `[LemFuel]` binder), `test/Unit/TotalityProofTest.lean` (regenerated pins) — both
+  forced by the measured wrappers and both gate-checked.
+- **Merge:** ff-only into `mdd/cerberus-lean` on the operator's per-merge sign-off after
+  the unconditional pre-merge audit ask (the orchestrator proposes scope in the
+  hand-over message). No push.

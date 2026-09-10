@@ -106,3 +106,28 @@ The §3 snapshot rule now says to build the library target after every regenerat
 **Question 2 (D1 acceptance (c)).** Correct — both generated trees are untracked build outputs. D1(c) is amended above: `git diff --stat` shows only `frontend/model/ctype_aux.lem`; the generated deltas are recorded in the record as unified diffs plus sha256 after regeneration. Nothing is force-added; no ignore rule changes.
 
 **Resume at D1.** Re-run Tier A once yourself (`python3 scripts/release.py --mode fast` plus `./scripts/test_unit.sh`), expect green, then proceed D1 → D5 as chartered. Build the pristine oracle (§1) before D1's acceptance (a).
+
+## 7. Post-execution errata (orchestrator [AGENT], 2026-09-10)
+
+The slice was finished by the orchestrator after Codex's second, correct stop
+([record](2026-09-10_are-compatible-assumed-set-record.md), "Orchestrator take-over").
+Statements of this charter that turned out wrong, kept here so the brief reads as history:
+
+- **D1 acceptance (a)** asserted `Specified(7)` on both fork engines. Unobserved and
+  false: once the non-termination is gone the reproducer hits the next cross-TU
+  strictness (`core_eval.lem:946`, `PEmemberof` exact tags) — tray draft 38. Rule for
+  future charters: an acceptance criterion states only observed or proved facts
+  ("terminates; record the verdict"), never a predicted verdict.
+- **D4.1** prescribed `check_fork_drift.sh --refresh` with "exactly two hunks". The
+  wholesale refresh strips the manifest's documented header; the practice is single-row
+  hash edits plus a header note, which is what landed.
+- **D4.2** prescribed a `tests/multi_tu_tray/` corpus as a Tier A row. The multi-TU lane
+  compares `ERR` payloads byte for byte, so an agreed failure differing in symbol
+  numbering is `MISMATCH`; not added. Rule: a lane-classification assumption gets a
+  60-second trial before it enters a charter.
+- **§1 roots** (corrected in place above): every `generated/` module is a Lake root.
+- **Fence:** two files outside it had to change, both forced by the measured wrappers —
+  `Core_aux_lemMeasureProofs.lean` (a dead `[LemFuel]` binder) and
+  `test/Unit/TotalityProofTest.lean` (its generated pin block). A charter that removes a
+  worker's ambient fuel should list the callers' proof files and the parametricity pins
+  in its fence.
