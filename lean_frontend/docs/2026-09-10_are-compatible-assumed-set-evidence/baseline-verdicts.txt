@@ -1,0 +1,15 @@
+=== A1 ./scripts/test_unit.sh
+rc=1 status=failed
+Total: 7 passed, 0 failed
+.axiom-probe-fuel.lean:27:14: error(lean.unknownIdentifier): Unknown constant `hack_measure_sufficient`
+.axiom-probe-fuel.lean:28:14: error(lean.unknownIdentifier): Unknown constant `Driver_lemMeasureProofs.hack_measure_sufficient`
+check_theorem_axioms: FAIL — FUEL arc leg: probe for 'hack_measure_sufficient' did not run cleanly (matched 0 lines; fail-closed)
+test_unit: axiom-cone gate FAILED
+=== A2 ./scripts/test_exec.sh --check-baseline
+rc=0 status=passed
+Baseline check: 0 regression(s), 0 improvement(s)
+=== A3 ./scripts/test_exec.sh --check-baseline=scripts/exec_coverage_baseline.txt tests/coverage
+rc=0 status=passed
+Baseline check: 0 regression(s), 0 improvement(s)
+=== A4 ./scripts/test_exec.sh --check-baseline=scripts/exec_debug_baseline.txt tests/debug
+rc=-9 status=incomplete
