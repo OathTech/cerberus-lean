@@ -1275,3 +1275,14 @@ pristine-oracle lane report status: passed; rows: 723
 - **Merge:** ff-only into `mdd/cerberus-lean` on the operator's per-merge sign-off after
   the unconditional pre-merge audit ask (the orchestrator proposes scope in the
   hand-over message). No push.
+
+### Landing (2026-09-11)
+
+[USER 2026-09-11], on the orchestrator's minimal-landing proposal (merge now, re-pin the
+consumer, leave draft 38's fix / the refusal census / the failure-text projection in the
+backlog; audit scope = two reads — the lem diff against the standard's device and the D1
+correctness argument — "you can trim or waive"): "Great, let's land it as is, as you
+suggest". Taken as the per-merge sign-off. The audit ask was made and answered; the two
+reads were performed by the orchestrator (the author of D2 — an author-side re-read, not
+an independent audit; recorded as such). Merge: ff-only onto `mdd/cerberus-lean` @
+`86daea264`. No push.
