@@ -1,0 +1,15 @@
+# D0 direct ./scripts/test_unit.sh (CERB_MEM_MAX=48G DUNE_CACHE=disabled), HEAD 40bb7fe77 — verbatim gate lines
+check_exec_totality: CLEAN (22 generated modules + hand-written CerbND, 0 allowlisted)
+check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=166 REACHABLE=48 UNKNOWN=19; every row sealed; tally line consistent)
+check_fixture_freeze: OK (16 fixture files match the pinned manifest; name set exact)
+check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 22 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+check_fuel_forms: forms partition OK (60 MEASURED + 13 ABSORBING + 2 ambient-reachable + 6 ambient-unreachable = 81 fuel'd workers)
+check_lakefile_roots: OK (215 roots = 215 generated modules + the exe root Main; 85 auxiliary modules all built)
+check_lakefile_roots: SELFTEST OK (3 plants red, baseline green)
+check_no_fuel_numerals: OK (314 files scanned comment-stripped; no lemDefaultFuel/driverFuel/ndDefaultFuel, no LemFuel instance, no literal fuel (F1-F6); allowed Main.lean sites seen: 4 of 4 (hand-written + generated copy))
+check_sorry_token: OK (307 files scanned comment-stripped — generated 216, hand-written+test 56, LemLib 35; 0 sorry tokens)
+check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)
+gen_fuel_parametricity: OK (16 ambient fuel wrappers in the generated tree = the 16 pins of TotalityProofTest.lean Part 1, both directions)
+rc=0
+test_renumber_plants: OK (12 plants: refusals refuse, admits admit with declared class)
+Total: 7 passed, 0 failed

@@ -1,0 +1,57 @@
+# D0 Tier A snapshot — python3 scripts/release.py --mode fast --lane-timeout 3300 --out .tmp/d0-fast2 (CERB_MEM_MAX=48G DUNE_CACHE=disabled), started 2026-09-11T23:43:27Z, HEAD 40bb7fe77
+# runner lines (verbatim):
+Release evidence: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/semantics-audit-repairs/.tmp/d0-fast2
+RUN A1: ./scripts/test_unit.sh
+PASSED A1 (147.7s)
+RUN A2: ./scripts/test_exec.sh --check-baseline
+PASSED A2 (27.6s)
+RUN A3: ./scripts/test_exec.sh --check-baseline=scripts/exec_coverage_baseline.txt tests/coverage
+PASSED A3 (52.1s)
+RUN A4: ./scripts/test_exec.sh --check-baseline=scripts/exec_debug_baseline.txt tests/debug
+PASSED A4 (23.0s)
+RUN A4b: ./scripts/test_exec.sh --check-baseline=scripts/exec_float_baseline.txt tests/float
+PASSED A4b (18.4s)
+RUN A4c: ./scripts/test_bytes.sh
+PASSED A4c (3.1s)
+RUN A5: ./scripts/test_libc_exec.sh
+PASSED A5 (23.2s)
+RUN A6: ./scripts/test_multi_tu.sh
+PASSED A6 (2.2s)
+RUN A7: ./scripts/test_parse.sh
+PASSED A7 (9.6s)
+RUN A8: ./scripts/test_core.sh
+PASSED A8 (8.3s)
+RUN A9: ./scripts/test_elab.sh
+PASSED A9 (16.1s)
+RUN A10: ./scripts/test_libxml2_uri.sh
+PASSED A10 (17.0s)
+RUN A11: ./scripts/test_cn_coverage.sh --check-baseline
+PASSED A11 (57.9s)
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+rc=0
+
+# A1 gate lines (verbatim):
+check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=166 REACHABLE=48 UNKNOWN=19; every row sealed; tally line consistent)
+check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 22 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+check_fuel_forms: forms partition OK (60 MEASURED + 13 ABSORBING + 2 ambient-reachable + 6 ambient-unreachable = 81 fuel'd workers)
+check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)
+gen_fuel_parametricity: OK (16 ambient fuel wrappers in the generated tree = the 16 pins of TotalityProofTest.lean Part 1, both directions)
+test_renumber_plants: OK (12 plants: refusals refuse, admits admit with declared class)
+Total: 7 passed, 0 failed
+
+# exec lanes (verbatim Baseline check lines):
+A2: Baseline check: 0 regression(s), 0 improvement(s)
+A3: Baseline check: 0 regression(s), 0 improvement(s)
+A4: Baseline check: 0 regression(s), 0 improvement(s)
+A4b: Baseline check: 0 regression(s), 0 improvement(s)
+
+# other lanes (verbatim last lines):
+A4c: SUMMARY: exec_match=9 neg_pinned=5 fail=0 
+A5: SUMMARY: match=12 diff=0 ALL MATCH RECORDED BASELINE 
+A6: SUMMARY: total=2 match=2 fail=0 ALL PASSED 
+A7: batch diagnostic producers: 8/8 passed ALL PASSED 
+A8: ALL PASSED 
+A9: SUMMARY: total=106 same=103 diff=3 ocaml_fail=0 lean_fail=0 
+A10: GATE PASS: all lane expectations pinned-green + baseline unchanged (16/16) 
+A11: SUMMARY: total=213 match=207 ub_match=6 ub_diff=0 reject_match=0 diff=0 mismatch=0 reject_diff=0 lean_fail=0 lean_crash=0 fuel=0 lean_error=0 lean_timeout=0 oracle_fail=0 oracle_timeout=0 oracle_inconsistent=0 BASELINE OK (213 entries, exact match) 
