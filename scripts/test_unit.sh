@@ -24,6 +24,8 @@ UNIT_TESTS=(
     # main reports success; its cone is probed by check_theorem_axioms.sh
     "fuel-exemplar-test"
     "monadic-failstop-test"
+    # semantics-audit repairs D1 (2026-09-11): CerbFloat.of_string binary64 bit-pattern pins
+    "float-literal-test"
 )
 
 # ---------------------------------------------------------------------------

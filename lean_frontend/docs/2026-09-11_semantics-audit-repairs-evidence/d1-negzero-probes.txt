@@ -1,0 +1,6 @@
+a.c: oracle Defined {value: "Specified(0)", stdout: "", stderr: "", bloc | gcc_exit=0
+b.c: oracle Defined {value: "Specified(1)", stdout: "", stderr: "", bloc | gcc_exit=0
+c.c: oracle Defined {value: "Specified(3)", stdout: "", stderr: "", bloc | gcc_exit=0
+a.c: gcc_exit=1
+b.c: gcc_exit=1
+c.c: gcc_exit=3

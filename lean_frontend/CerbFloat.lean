@@ -55,40 +55,139 @@ def floatDiv (x y : Float) : Float := x / y
 /-- Corresponds to: float_of_int in OCaml -/
 def of_int (n : Int) : Float := Float.ofInt n
 
-/-! ## String → Float parsing
+/-! ## String → Float parsing — correctly rounded (semantics-audit repairs, 2026-09-11)
 
-    Corresponds to: Cerb_floating.of_string (util/cerb_floating.ml:8-16),
-    which strips one trailing 'f' and delegates to OCaml's
-    `float_of_string` (strtod). The strings reaching this function are
-    C floating literals, fed from exactly two places:
+    MIRROR TARGETS. The strings reaching `of_string` are C floating-literal
+    texts, fed from exactly two places:
 
-    * translation.lem:207-209 (`A.ConstantFloating (str, _)` →
-      `Mem.str_fval str`): the raw C literal text from the C lexer —
-      decimal forms `D+ [. D*] [(e|E) [+|-] D+]`, `. D+ ...`, and
-      (legal C, unused by the current corpus) hex forms `0x H* [. H*]
-      (p|P) [+|-] D+`, with an optional f/F/l/L suffix;
-    * CoreParser.lean (lexNumLit): a normalized decimal
-      `D+ . D+ [e[+|-]D+]` string, optionally negated.
+    * `translation.lem:207-209` (`A.ConstantFloating (str, _)` → `Mem.str_fval str`):
+      the raw literal text from the C lexer WITHOUT its suffix (the lexer
+      separates `f`/`F`/`l`/`L` into `suffix_opt`; `cabs_json.ml:93-94`
+      `json_of_cabs_floating_constant (s, suffix_opt)`). On the OCaml side
+      the concrete model's `Impl_mem.str_fval`
+      (memory/concrete/impl_mem.ml:2523-2524) is `float_of_string str`; the
+      lem-level `Float.of_string` (frontend/model/float.lem:82; defacto
+      model only, outside the exec cone) is `Cerb_floating.of_string`
+      (util/cerb_floating.ml:8-16), which strips one trailing `f` and calls
+      the same `float_of_string`. We accept one trailing `f`/`F`/`l`/`L`
+      (charter 2026-09-11 D1 goal); neither feeding site produces one.
+    * `CoreParser.lean` (`lexNumLit`): a normalised decimal
+      `D+ [. D*] [e[+|-]D+]`, optionally negated (Core text dumps, including
+      the pinned `tests/libc/libc.core`).
 
-    Lean core has no String.toFloat, so we parse by hand:
-    decimal literals accumulate an exact integer mantissa and a base-10
-    exponent and finish with `Float.ofScientific` (binary64); hex
-    literals accumulate an exact hex mantissa and finish with
-    `Float.scaleB`. Precision notes (deliberate, documented divergence
-    from OCaml's strtod):
-    * decimal: `Float.ofScientific` is Lean's standard decimal→binary64
-      conversion; literals with ≤ 17 significant digits (all this
-      pipeline produces) convert to the same double as strtod; extreme
-      many-digit literals could differ in the last ulp;
-    * hex: exact when the mantissa fits 53 bits (scaleB is exact);
-      longer hex mantissas round differently from strtod's
-      correct rounding.
-    OCaml's float_of_string also accepts "inf"/"nan" — C has no such
-    literals and neither feeding site can produce them, so (like any
-    other malformed input) they take the parse-failure path: OCaml
-    raises `Failure`, we mirror with `panic!` (same observable class:
-    abort with a message; OCaml's exception also escapes — nothing
-    catches it on this path). -/
+    `float_of_string` is `caml_float_of_string` (OCaml 5.4.0
+    runtime/floats.c:376-425):
+    * hexadecimal `0x…`: `caml_float_of_hex` (floats.c:286-374) — the exact
+      mantissa in a 60-bit accumulator with round-to-odd on the excess digits
+      (:342-345), ONE int64→double conversion (:355) and then `ldexp` (:369).
+      For a result in the NORMAL range `ldexp` is exact, so the result is the
+      correctly rounded binary64 value; for a result in the SUBNORMAL range
+      `ldexp` rounds a second time (double rounding) — see the record
+      `docs/2026-09-11_semantics-audit-repairs-record.md` §D1 for what the
+      fork oracle was OBSERVED to do on that shape (`tests/float/106`).
+    * decimal: the C library's `strtod` (glibc: correctly rounded, every
+      range, ties-to-even).
+
+    THIS MODULE computes, for every well-formed literal (decimal or hex,
+    sign, optional suffix), THE IEEE 754-2019 binary64 value nearest to the
+    literal's exact rational value under round-to-nearest-even, with gradual
+    underflow to subnormals and signed zero, and overflow to ±inf — in exact
+    `Nat` arithmetic on `num/den`, assembled bit by bit with `Float.ofBits`.
+    NO `Float` arithmetic happens before that final assembly:
+    `Float.ofNat`/`Float.scaleB`/`Float.ofScientific` — the pre-2026-09-11
+    implementation — WERE the defect (finding 4 of the 2026-09-11 semantics
+    audit: `Float.ofNat` of a 1041-bit hex mantissa is `inf` before scaling;
+    `Float.ofScientific` truncates twice before a third rounding). The only
+    numerals are the binary64 format parameters of IEEE 754-2019 §3.4,
+    named below. Any residual difference from the oracle is a BUG
+    (VALIDATION.md §0–§1; the former "deliberate, documented divergence"
+    wording is withdrawn); the differential pins are `tests/float/081-106`.
+
+    Malformed input (including OCaml's own "inf"/"nan" spellings, which no
+    feeding site produces): `float_of_string` raises `Failure`; mirrored
+    with `panic!` (same observable class — abort with a message; nothing
+    catches it on either side). A decimal exponent marker without digits
+    (`1e`, `1e+`) is malformed here as it is for `strtod` (the OCaml wrapper
+    requires the whole string to be consumed, floats.c:420-421). -/
+
+/-! ### IEEE 754-2019 §3.4 binary64 parameters (table 3.5) — the conversion's only numerals -/
+
+/-- precision p = 53 (IEEE 754-2019 §3.4, table 3.5, binary64). -/
+private def binary64Precision : Nat := 53
+/-- exponent field width w = 11 bits (§3.4, table 3.5). -/
+private def binary64ExpWidth : Nat := 11
+/-- emax = 1023 (§3.4, table 3.5); the exponent bias equals emax (§3.4). -/
+private def binary64Emax : Int := 1023
+private def binary64Bias : Int := binary64Emax
+/-- emin = 1 − emax = −1022 (§3.4). -/
+private def binary64Emin : Int := 1 - binary64Emax
+/-- trailing-significand (fraction) width p − 1 = 52 bits (§3.4). -/
+private def binary64FracBits : Nat := binary64Precision - 1
+/-- exponent of the least significant bit of a subnormal, emin − (p − 1) = −1074
+    (§3.4: subnormals are 0.f · 2^emin). -/
+private def binary64MinQuantumExp : Int := binary64Emin - (binary64FracBits : Int)
+/-- the all-ones exponent field 2^w − 1 (§3.4: infinities and NaNs). -/
+private def binary64ExpFieldMax : Nat := 2 ^ binary64ExpWidth - 1
+
+private def signBits (neg : Bool) : UInt64 :=
+  if neg then (1 : UInt64) <<< UInt64.ofNat (binary64ExpWidth + binary64FracBits) else 0
+
+/-- ±inf: sign · all-ones exponent · zero fraction (§3.4). -/
+private def infBits (neg : Bool) : UInt64 :=
+  signBits neg ||| (UInt64.ofNat binary64ExpFieldMax <<< UInt64.ofNat binary64FracBits)
+
+/-- Bits of the binary64 nearest, ties-to-even (IEEE 754-2019 §4.3.1), to
+    `(-1)^neg · num / den` (`den > 0`), assembled per §3.4 as
+    sign · biased exponent · trailing significand. Exact `Nat` arithmetic:
+    the binade E is found from the two bit lengths plus one comparison, the
+    significand is truncated at the format's quantum (2^(E−52), or 2^−1074 in
+    the subnormal range) with the remainder deciding the rounding; a carry
+    to 2^53 renormalises; an exponent field of 2^w−1 or more is +/−inf. -/
+private def roundToBinary64Bits (neg : Bool) (num den : Nat) : UInt64 :=
+  if num == 0 then signBits neg
+  else
+    -- E with 2^E ≤ num/den < 2^(E+1): the candidate log2 num − log2 den is E or E+1
+    let e0 : Int := (Nat.log2 num : Int) - (Nat.log2 den : Int)
+    let atLeast (e : Int) : Bool :=  -- den · 2^e ≤ num ?
+      if e ≥ 0 then den * 2 ^ e.toNat ≤ num else den ≤ num * 2 ^ (-e).toNat
+    let E : Int := if atLeast e0 then e0 else e0 - 1
+    -- the quantum 2^qe of the result's least significant bit
+    let qe : Int := max (E - (binary64FracBits : Int)) binary64MinQuantumExp
+    -- q = ⌊num · 2^(−qe) / den⌋, remainder r for the tie/sticky decision
+    let (n, d) := if qe ≤ 0 then (num * 2 ^ (-qe).toNat, den) else (num, den * 2 ^ qe.toNat)
+    let q := n / d
+    let r := n % d
+    let q := if 2 * r > d then q + 1
+             else if 2 * r < d then q
+             else if q % 2 == 0 then q else q + 1
+    let hidden := 2 ^ binary64FracBits
+    if q < hidden then
+      -- subnormal (or zero after rounding): exponent field 0, fraction q at 2^−1074
+      signBits neg ||| UInt64.ofNat q
+    else
+      -- normal; a carry to 2^p means significand 1.0 one binade up
+      let (q, qe) := if q == 2 * hidden then (hidden, qe + 1) else (q, qe)
+      let expField : Int := qe + (binary64FracBits : Int) + binary64Bias
+      if expField ≥ (binary64ExpFieldMax : Int) then infBits neg
+      else
+        signBits neg
+          ||| (UInt64.ofNat expField.toNat <<< UInt64.ofNat binary64FracBits)
+          ||| UInt64.ofNat (q - hidden)
+
+/-- Bits of the binary64 nearest to `(-1)^neg · m · base^e` where `m < base^mBound`
+    (`base ≥ 2`). The two guards keep the exact arithmetic bounded by the FORMAT,
+    not by the literal's exponent text (a literal `1e999999999` must not build
+    10^999999999): with `m ≥ 1`, `e > emax + 1` gives `m · base^e ≥ 2^(emax+2) >
+    2^(emax+1)`, already above every finite value's rounding range → ±inf;
+    `e + mBound < (emin − (p−1)) − 1` gives `m · base^e < base^(e+mBound) ≤
+    2^(e+mBound) < 2^−1075`, below half the smallest subnormal → ±0. Everything
+    else is rounded exactly. -/
+private def scaledToBits (neg : Bool) (m : Nat) (base : Nat) (e : Int) (mBound : Nat) : UInt64 :=
+  if m == 0 then signBits neg
+  else if e > binary64Emax + 1 then infBits neg
+  else if e + (mBound : Int) < binary64MinQuantumExp - 1 then signBits neg
+  else if e ≥ 0 then roundToBinary64Bits neg (m * base ^ e.toNat) 1
+  else roundToBinary64Bits neg m (base ^ (-e).toNat)
 
 /-- Decimal-digit run → (value, digit count). -/
 private def digitsToNat (s : List Char) : Nat × Nat :=
@@ -102,9 +201,23 @@ private def hexVal (c : Char) : Nat :=
   else if 'a' ≤ c && c ≤ 'f' then c.toNat - 'a'.toNat + 10
   else c.toNat - 'A'.toNat + 10
 
-/-- Parse a decimal C floating literal (sign already stripped).
-    Returns none on malformed input. -/
-private def parseDecimal (cs : List Char) : Option Float := do
+/-- Optional signed decimal exponent after a marker: `[+|-] D+` → (value, rest);
+    `none` if no digit follows (malformed, as for strtod). -/
+private def parseExponent (rest : List Char) : Option (Int × List Char) :=
+  let (neg, rest) := match rest with
+    | '+' :: r => (false, r)
+    | '-' :: r => (true, r)
+    | r => (false, r)
+  let digits := rest.takeWhile Char.isDigit
+  if digits.isEmpty then none
+  else
+    let v : Int := digits.foldl (fun a c => a * 10 + (c.toNat - '0'.toNat)) (0 : Int)
+    some (if neg then -v else v, rest.drop digits.length)
+
+/-- Decimal C floating literal (sign already stripped): `D* [. D*] [(e|E) [+|-] D+]`
+    with at least one digit → exact `(m, e10, nd)` with value `m · 10^e10` and
+    `m < 10^nd`. `none` on malformed input. -/
+private def parseDecimal (cs : List Char) : Option (Nat × Int × Nat) := do
   let intPart := cs.takeWhile Char.isDigit
   let cs := cs.drop intPart.length
   let (fracPart, cs) :=
@@ -112,31 +225,20 @@ private def parseDecimal (cs : List Char) : Option Float := do
     | '.' :: rest => (rest.takeWhile Char.isDigit, rest.drop (rest.takeWhile Char.isDigit).length)
     | _ => ([], cs)
   if intPart.isEmpty && fracPart.isEmpty then failure
-  let (expNeg, expDigits, cs) :=
-    match cs with
-    | 'e' :: rest | 'E' :: rest =>
-      let (neg, rest) := match rest with
-        | '+' :: r => (false, r)
-        | '-' :: r => (true, r)
-        | r => (false, r)
-      (neg, rest.takeWhile Char.isDigit, rest.drop (rest.takeWhile Char.isDigit).length)
-    | _ => (false, [], cs)
-  -- exponent marker present but no digits → malformed
+  let (exp10, cs) ← match cs with
+    | 'e' :: rest | 'E' :: rest => parseExponent rest
+    | _ => some ((0 : Int), cs)
   if !cs.isEmpty then failure
-  let (intVal, _) := digitsToNat intPart
+  let (intVal, intLen) := digitsToNat intPart
   let (fracVal, fracLen) := digitsToNat fracPart
-  let mantissa := intVal * 10 ^ fracLen + fracVal
-  let exp10 : Int := (if expNeg then -(expDigits.foldl (fun a c => a * 10 + (c.toNat - '0'.toNat)) 0 : Int)
-                      else (expDigits.foldl (fun a c => a * 10 + (c.toNat - '0'.toNat)) 0 : Int)) - fracLen
-  -- Float.ofScientific m eNeg e = m * 10^(±e)
-  if exp10 < 0 then
-    return Float.ofScientific mantissa true exp10.natAbs
-  else
-    return Float.ofScientific mantissa false exp10.toNat
+  return (intVal * 10 ^ fracLen + fracVal, exp10 - fracLen, intLen + fracLen)
 
-/-- Parse a hex C floating literal after the "0x" (sign already stripped):
-    `H* [. H*] (p|P) [+|-] D+` — value = mantissa · 2^(p − 4·fracDigits). -/
-private def parseHex (cs : List Char) : Option Float := do
+/-- Hexadecimal C floating literal after the `0x`/`0X` (sign already stripped):
+    `H* [. H*] [(p|P) [+|-] D+]` with at least one hex digit → exact `(m, e2, nb)`
+    with value `m · 2^e2` and `m < 2^nb`. The binary exponent is mandatory in C
+    (§6.4.4.2) but `caml_float_of_hex` tolerates its absence as `p0` (floats.c:
+    the `exp` initialiser :293), mirrored. `none` on malformed input. -/
+private def parseHex (cs : List Char) : Option (Nat × Int × Nat) := do
   let intPart := cs.takeWhile isHexDigit
   let cs := cs.drop intPart.length
   let (fracPart, cs) :=
@@ -144,28 +246,20 @@ private def parseHex (cs : List Char) : Option Float := do
     | '.' :: rest => (rest.takeWhile isHexDigit, rest.drop (rest.takeWhile isHexDigit).length)
     | _ => ([], cs)
   if intPart.isEmpty && fracPart.isEmpty then failure
-  let (expNeg, expDigits, cs) :=
-    match cs with
-    | 'p' :: rest | 'P' :: rest =>
-      let (neg, rest) := match rest with
-        | '+' :: r => (false, r)
-        | '-' :: r => (true, r)
-        | r => (false, r)
-      (neg, rest.takeWhile Char.isDigit, rest.drop (rest.takeWhile Char.isDigit).length)
-    | _ => (false, [], cs)  -- binary exponent is mandatory in C; tolerate absence as p0
+  let (p, cs) ← match cs with
+    | 'p' :: rest | 'P' :: rest => parseExponent rest
+    | _ => some ((0 : Int), cs)
   if !cs.isEmpty then failure
-  let mantissa := (intPart ++ fracPart).foldl (fun a c => a * 16 + hexVal c) 0
-  let p : Int := expDigits.foldl (fun a c => a * 10 + (c.toNat - '0'.toNat)) (0 : Int)
-  let p := if expNeg then -p else p
-  return Float.scaleB (Float.ofNat mantissa) (p - 4 * fracPart.length)
+  let digits := intPart ++ fracPart
+  let mantissa := digits.foldl (fun a c => a * 16 + hexVal c) 0
+  return (mantissa, p - 4 * fracPart.length, 4 * digits.length)
 
-/-- Corresponds to: Cerb_floating.of_string (util/cerb_floating.ml:8-16):
-    strips ONE trailing 'f' (OCaml checks only lowercase 'f'; we also
-    accept F/l/L — the C-suffix forms float_of_string itself would
-    otherwise reject; OCaml raises Failure on those, an upstream
-    fragility, not behavior worth mirroring), then parses per
-    float_of_string. Malformed input: OCaml raises Failure — mirrored
-    with panic! (see module comment). -/
+/-- Corresponds to: `Impl_mem.str_fval` = `float_of_string` (impl_mem.ml:2523-2524)
+    / `Cerb_floating.of_string` (util/cerb_floating.ml:8-16) — see the section
+    comment for the two mirror targets and the correctly-rounded contract. One
+    trailing `f`/`F`/`l`/`L` is dropped; a leading `-`/`+` sets the sign (a
+    negative zero is a negative zero); `0x`/`0X` selects the hexadecimal form.
+    Malformed input: OCaml raises `Failure` — mirrored with `panic!`. -/
 def of_string (s : String) : Float :=
   let s' := if s.endsWith "f" || s.endsWith "F" || s.endsWith "l" || s.endsWith "L"
     then s.dropRight 1
@@ -175,11 +269,13 @@ def of_string (s : String) : Float :=
     | '-' :: rest => (true, rest)
     | '+' :: rest => (false, rest)
     | _ => (false, cs)
-  let parsed := match cs with
-    | '0' :: 'x' :: rest | '0' :: 'X' :: rest => parseHex rest
-    | _ => parseDecimal cs
-  match parsed with
-  | some f => if neg then -f else f
+  let bits : Option UInt64 := match cs with
+    | '0' :: 'x' :: rest | '0' :: 'X' :: rest =>
+      (parseHex rest).map fun (m, e2, nb) => scaledToBits neg m 2 e2 nb
+    | _ =>
+      (parseDecimal cs).map fun (m, e10, nd) => scaledToBits neg m 10 e10 nd
+  match bits with
+  | some b => Float.ofBits b
   | none => panic! s!"CerbFloat.of_string: {s} (OCaml Cerb_floating.of_string raises Failure)"
 
 /-! ## Exact decimal formatting (arc-10 S3, pp-placeholder text class)

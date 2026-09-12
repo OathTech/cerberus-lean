@@ -248,3 +248,10 @@ name = "monadic-failstop-test"
 srcDir = "test"
 root = "Unit.MonadicFailstop"
 moreLinkArgs = ["native/md5.o"]
+
+
+# semantics-audit repairs D1 (2026-09-11): CerbFloat.of_string bit-pattern pins
+[[lean_exe]]
+name = "float-literal-test"
+srcDir = "test"
+root = "Unit.FloatLiteralTest"

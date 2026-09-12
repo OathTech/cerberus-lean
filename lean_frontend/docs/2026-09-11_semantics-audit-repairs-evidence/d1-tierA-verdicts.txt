@@ -1,0 +1,58 @@
+# D1 Tier A — python3 scripts/release.py --mode fast --lane-timeout 3300 --out .tmp/d1-fast (CERB_MEM_MAX=48G DUNE_CACHE=disabled), started 2026-09-12T00:08:13Z, working tree = D1 change over dbdf36a5e
+Release evidence: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/semantics-audit-repairs/.tmp/d1-fast
+RUN A1: ./scripts/test_unit.sh
+PASSED A1 (152.3s)
+RUN A2: ./scripts/test_exec.sh --check-baseline
+PASSED A2 (27.2s)
+RUN A3: ./scripts/test_exec.sh --check-baseline=scripts/exec_coverage_baseline.txt tests/coverage
+PASSED A3 (51.8s)
+RUN A4: ./scripts/test_exec.sh --check-baseline=scripts/exec_debug_baseline.txt tests/debug
+PASSED A4 (22.5s)
+RUN A4b: ./scripts/test_exec.sh --check-baseline=scripts/exec_float_baseline.txt tests/float
+PASSED A4b (24.0s)
+RUN A4c: ./scripts/test_bytes.sh
+PASSED A4c (3.1s)
+RUN A5: ./scripts/test_libc_exec.sh
+PASSED A5 (22.5s)
+RUN A6: ./scripts/test_multi_tu.sh
+PASSED A6 (2.1s)
+RUN A7: ./scripts/test_parse.sh
+PASSED A7 (10.2s)
+RUN A8: ./scripts/test_core.sh
+PASSED A8 (8.3s)
+RUN A9: ./scripts/test_elab.sh
+PASSED A9 (15.6s)
+RUN A10: ./scripts/test_libxml2_uri.sh
+PASSED A10 (18.0s)
+RUN A11: ./scripts/test_cn_coverage.sh --check-baseline
+PASSED A11 (58.1s)
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+rc=0
+
+# A1 gate lines (verbatim):
+42 literal pins checked
+All float-literal pins passed
+check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=166 REACHABLE=48 UNKNOWN=19; every row sealed; tally line consistent)
+check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 22 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+check_fuel_forms: forms partition OK (60 MEASURED + 13 ABSORBING + 2 ambient-reachable + 6 ambient-unreachable = 81 fuel'd workers)
+check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)
+=== float-literal-test ===
+✓ float-literal-test PASSED
+gen_fuel_parametricity: OK (16 ambient fuel wrappers in the generated tree = the 16 pins of TotalityProofTest.lean Part 1, both directions)
+Total: 8 passed, 0 failed
+
+# exec lanes:
+A2: Baseline check: 0 regression(s), 0 improvement(s)
+A3: Baseline check: 0 regression(s), 0 improvement(s)
+A4: Baseline check: 0 regression(s), 0 improvement(s)
+A4b: Baseline check: 0 regression(s), 0 improvement(s)
+
+A4c: SUMMARY: exec_match=9 neg_pinned=5 fail=0
+A5: SUMMARY: match=12 diff=0
+A6: ALL PASSED
+A7: ALL PASSED
+A8: ALL PASSED
+A9: SUMMARY: total=106 same=103 diff=3 ocaml_fail=0 lean_fail=0
+A10: GATE PASS: all lane expectations pinned-green + baseline unchanged (16/16)
+A11: BASELINE OK (213 entries, exact match)

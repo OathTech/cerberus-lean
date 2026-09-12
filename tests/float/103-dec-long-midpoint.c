@@ -1,0 +1,2 @@
+/* the exact midpoint between 0.1's double and its successor (57 digits) ties to even = 0.1; one more nonzero digit rounds up; the exact expansion of 0.1 (55 digits) is 0.1 (expect 7) */
+int main(void) { int a = 0.100000000000000012490009027033011079765856266021728515625 == 0.1; int b = 0.1000000000000000124900090270330110797658562660217285156251 == 0x1.999999999999bp-4; int c = 0.1000000000000000055511151231257827021181583404541015625 == 0.1; return a * 4 + b * 2 + c; }
