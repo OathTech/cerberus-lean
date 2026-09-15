@@ -1,5 +1,5 @@
 # parser-progress-measure D1, 2026-09-15 [AGENT]: GENUINE shared-model change, an EXTENSIONALLY IDENTICAL
-# restatement — one [source-content] pin moved (frontend/model/monadic_parsing.lem 194dcdbc… -> 62445706…:
+# restatement — one [source-content] pin moved (frontend/model/monadic_parsing.lem 194dcdbc… -> da04e3c2… (62445706… at D1, before the D2 Lean-only `fuel_measure` declares):
 # `many`/`many1` are restated as input-indexed recursion — two mutually recursive RUN functions
 # many_run/many1_run on the input `cs`, bodies = the exact unfoldings of `many1 p <|> return []` and
 # `p >>= fun a -> many p >>= fun _as -> return (a::_as)`, plus `many p = ParserM (many_run p)` /
@@ -344,7 +344,7 @@ util/cerb_fresh.ml
 100644 ae79a26c1cfd62acdf18ca6479625de8db05e01f43bdc3dc829cc5a83f465111 frontend/model/loc.lem
 100644 91898bb378f44784142af8773e8784f0b6e4aa33d422e672552bd5b52624e7b8 frontend/model/mem.lem
 100644 2a631f74dd94633b08a34a052197a3028f63cbd8e87a035192e3d865d1c79627 frontend/model/mini_pipeline.lem
-100644 6244570634264c7b810189bbdf0804ac4f52ace7513c33fee22bca9c845ccc2e frontend/model/monadic_parsing.lem
+100644 da04e3c262a6e776e977bac03e820d17a3c54065009ae7bd255bfadb900b9524 frontend/model/monadic_parsing.lem
 100644 fc90e8eb740711176ddf98d9ebb929e6746604ea50375b08762646edb69e0493 frontend/model/nondeterminism.lem
 100644 b8bd6d19e3130795183c9524fa62052e96b9497cb17ddca7e3763d9171791543 frontend/model/pp.lem
 100644 8de49b4f9775e7d4f7b07f4d2c6757e9597c34a95d61658b0914e15db4511898 frontend/model/state.lem

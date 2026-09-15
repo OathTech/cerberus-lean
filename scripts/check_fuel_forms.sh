@@ -208,8 +208,14 @@ if [[ "${1:-}" == "--selftest" ]]; then
   }
   # P1: a measured, reachable worker flipped to ambient -> new reachable ambient
   sed 's/^\(FUEL_FORM\tstep_eval_pexpr_lemFuel\t\)MEASURED\t/\1AMBIENT\t/' "$TBL" > "${TBL}.p"; plant "P1 measured->ambient reachable (step_eval_pexpr)" "REACHABLE from drive with an opaque" "${TBL}.p" "$PENDING" "$HYPREG"
-  # P2: a pending row vanishes from the table (e.g. it became measured) -> stale pin
-  grep -v $'^FUEL_FORM\tmany_lemFuel\t' "$TBL" > "${TBL}.p"; plant "P2 stale pending pin (many removed from the table)" "stale pin" "${TBL}.p" "$PENDING" "$HYPREG"
+  # P2: a pending row whose worker became MEASURED (it left the reachable-ambient
+  # set but its register row was not edited) -> stale pin. Until 2026-09-15 this
+  # removed the real pending row many_lemFuel from the table; the parser-progress-
+  # measure slice emptied the register (many_run_lemFuel IS the worker that became
+  # measured that day), so the stale row is planted into a scratch register instead
+  # — the same rule, the same direction, on a REAL measured worker's name (P5 below
+  # is the same rule on a phantom name).
+  { cat "$PENDING"; echo "many_run_lemFuel parser planted: measured 2026-09-15, row not removed"; } > "${TBL}.pend"; plant "P2 stale pending pin (many_run_lemFuel is MEASURED, not reachable-ambient)" "stale pin" "$TBL" "${TBL}.pend" "$HYPREG"
   # P3: a measured obligation with sorryAx in its cone
   sed 's/^\(FUEL_FORM\tin_pattern_lemFuel\tMEASURED\t[^\t]*\t\)obligation=\([^ ]*\) axioms=ok/\1obligation=\2 axioms=BAD[[sorryAx]]/' "$TBL" > "${TBL}.p"; plant "P3 measured obligation with sorryAx in its cone" "axiom cone outside" "${TBL}.p" "$PENDING" "$HYPREG"
   # P4: truncated table (no summary)
@@ -218,13 +224,16 @@ if [[ "${1:-}" == "--selftest" ]]; then
   { cat "$PENDING"; echo "phantom_lemFuel pure-loop planted"; } > "${TBL}.pend"; plant "P5 phantom pending-register row" "stale pin" "$TBL" "${TBL}.pend" "$HYPREG"
   # P6/P7 (audit M1): decoy obligations COMPILED into scratch modules outside the
   # tree and appended to the tool's imports — the tool must classify by SHAPE.
-  # P6: right NAME, type `True` (many). P7: right name, right shape (Eq,
+  # P6: right NAME, type `True` (zeros_aux). P7: right name, right shape (Eq,
   # `_ ≤ lemFuel` hypothesis, right wrapper) but the WRONG worker constant on
-  # the left (many1). (Until C4 these decoys used CerbMem.sizeofCtype /
-  # alignofCtype, and until the 2026-09-08 fuel-pending close-out to_pure /
-  # to_pures — each pair became real measured obligations, and a decoy of a
-  # real obligation would be a duplicate constant, not a plant; the targets
-  # are the still-AMBIENT pending workers many/many1.)
+  # the left (list_unfoldr_aux). (Until C4 these decoys used CerbMem.sizeofCtype /
+  # alignofCtype, until the 2026-09-08 fuel-pending close-out to_pure /
+  # to_pures, and until 2026-09-15 the pending workers many/many1 — each pair
+  # became real measured obligations, and a decoy of a real obligation would be
+  # a duplicate constant, not a plant; since the parser-progress-measure slice
+  # emptied the pending register the targets are two of the AMBIENT workers
+  # UNREACHABLE from the drive cone, zeros_aux (Core_aux) and list_unfoldr_aux
+  # (Utils), which have no obligation to duplicate.)
   # P10 (C4; lem audit F1): right name, right SHAPE, the hypothesis-carrying form
   # under a CONTRADICTORY hypothesis — the tool counts it MEASURED (the gate
   # cannot decide satisfiability); the REGISTER has no row for it, so the
@@ -232,14 +241,14 @@ if [[ "${1:-}" == "--selftest" ]]; then
   # P0 repair it is the real CerbMem.alignofCtype obligation under `cty ≠ cty`,
   # compiled in the P11 run below (see the note there).
   cat > "$PLANTDIR/FuelFormsPlantTrue.lean" <<'LEAN'
-import Monadic_parsing
-theorem many_measure_sufficient : True := trivial
+import Core_aux
+theorem zeros_aux_measure_sufficient : True := trivial
 LEAN
   cat > "$PLANTDIR/FuelFormsPlantWorker.lean" <<'LEAN'
-import Monadic_parsing
-theorem many1_measure_sufficient {a : Type} [LemFuel] (p : parserM a) (lemFuel : Nat)
+import Utils
+theorem list_unfoldr_aux_measure_sufficient {a : Type} {b : Type} [LemFuel] (acc : List b) (ctor1 : a → Option (b × a)) (b0 : a) (lemFuel : Nat)
     (_lemMeasureLe : 0 ≤ lemFuel) :
-    many1 p = many1 p := rfl
+    list_unfoldr_aux acc ctor1 b0 = list_unfoldr_aux acc ctor1 b0 := rfl
 LEAN
   # (P0 2026-09-05: the C4-era P10 decoy stated `hack` — an AMBIENT worker whose
   # wrapper calls it at `LemFuel.fuel` — under `0 ≤ lemFuel`; the argument/
@@ -353,9 +362,9 @@ LEAN
     fi
   }
   if FUELFORMS_EXTRA_PATH="$PLANTDIR" FUELFORMS_EXTRA_MODULES="FuelFormsPlantTrue FuelFormsPlantWorker FuelFormsPlantAudit" table_of_tree "$LOG" > "${TBL}.p"; then
-    grep -E $'^FUEL_FORM\t(many_lemFuel|many1_lemFuel)\t' "${TBL}.p" | cut -c1-220 | sed 's/^/    plant table: /'
-    plant "P6 decoy obligation of type True (many)" "not the contract's shape" "${TBL}.p" "$PENDING" "$HYPREG"
-    plant "P7 decoy obligation with the wrong worker constant (many1)" "not the contract's shape" "${TBL}.p" "$PENDING" "$HYPREG"
+    grep -E $'^FUEL_FORM\t(zeros_aux_lemFuel|list_unfoldr_aux_lemFuel)\t' "${TBL}.p" | cut -c1-220 | sed 's/^/    plant table: /'
+    plant "P6 decoy obligation of type True (zeros_aux)" "not the contract's shape" "${TBL}.p" "$PENDING" "$HYPREG"
+    plant "P7 decoy obligation with the wrong worker constant (list_unfoldr_aux)" "not the contract's shape" "${TBL}.p" "$PENDING" "$HYPREG"
     row_detail "P12 audit decoy 1: _zero lemma about CerbND.runNDFuel, not the worker" review_bad_lemFuel AMBIENT "MALFORMED-ZERO zero=review_bad_lemFuel_zero: left-hand head \`CerbND.runNDFuel\` is not the worker \`review_bad_lemFuel\`" "${TBL}.p"
     plant "P12 policy: a MALFORMED-ZERO lemma is RED" "named <worker>_zero whose statement is not" "${TBL}.p" "$PENDING" "$HYPREG"
     row_detail "P13 audit decoy 2: worker at literal 0, wrapper input x never passed" review_shift_lemFuel AMBIENT "worker argument #1 is \`0\`, not one of the wrapper's input binders" "${TBL}.p"

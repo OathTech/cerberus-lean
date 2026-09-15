@@ -45,6 +45,7 @@ CerbTagsWf.lean
 CerbCoreShape.lean
 CerbCoreMeasure.lean
 CerbCtypeMeasure.lean
+CerbParserProgress.lean
 CerbUtils.lean
 CoreParser.lean
 Core_lemMeasureProofs.lean
@@ -63,6 +64,7 @@ CerbMem_lemMeasureProofs.lean
 AilTypesAux_lemMeasureProofs.lean
 Formatted_lemMeasureProofs.lean
 Driver_lemMeasureProofs.lean
+Monadic_parsing_lemMeasureProofs.lean
 CerbFail.lean
 CerbFailProofs.lean
 CerbNDFuelProofs.lean

@@ -137,3 +137,15 @@ let many1 p = ParserM (many1_run p)
    panic, never a silent default. *)
 declare {lean} fuel val many_run  = `fuelExhausted []`
 declare {lean} fuel val many1_run = `fuelExhausted []`
+
+(* Lean target: the two workers are MEASURED under the progress hypothesis
+   (record D2): the wrappers are fuel-free and compute the parse at the
+   counter 2 * length cs + 2 (many_run) / 2 * length cs + 1 (many1_run) once
+   the input arrives. The hypothesis vocabulary is
+   lean_frontend/CerbParserProgress.lean (imported by the proofs module
+   lean_frontend/Monadic_parsing_lemMeasureProofs.lean, which the generated
+   obligation shell imports - NOT by `extra_import`, which would make this
+   module import a module that must import it); the invariant every exec-path
+   caller satisfies is cited in scripts/fuel_hypotheses.txt. *)
+declare {lean} fuel_measure val many_run  = `2 * List.length cs + 2` assuming `CerbParserProgress.Consumes p`
+declare {lean} fuel_measure val many1_run = `2 * List.length cs + 1` assuming `CerbParserProgress.Consumes p`

@@ -1,0 +1,129 @@
+# D2 — scripts/fuel_forms_pending.txt diff (verbatim)
+diff --git a/scripts/fuel_forms_pending.txt b/scripts/fuel_forms_pending.txt
+index 8bdd97580..ab90e39f6 100644
+--- a/scripts/fuel_forms_pending.txt
++++ b/scripts/fuel_forms_pending.txt
+@@ -38,24 +38,19 @@
+ #     every exec-path call site, by prepare_exit (driver.lem:1309-1316);
+ #     rows in scripts/fuel_hypotheses.txt, record
+ #     lean_frontend/docs/2026-09-08_fuel-pending-closeout-record.md. ---
+-# --- parser combinators: the recursion argument is not a parameter (fuel-pending
+-#     close-out 2026-09-08, D2 — assessed for an honest restatement, none found
+-#     without a lem body change). monadic_parsing.lem:100-103 `many p = many1 p <|>
+-#     return []` / `many1 p = p >>= fun a -> many p >>= fun _as -> return (a::_as)`:
+-#     the recursion descends the INPUT `cs`, which is bound by the lambda INSIDE the
+-#     `ParserM` constructor in the bodies of `<|>` (:52-56) and `>>=` (:38-40), never
+-#     by the head — the ONLY parameter of `many`/`many1` is the parser `p`, a
+-#     function. A measured wrapper fixes its counter `μ p` BEFORE the input
+-#     arrives, and the depth on an input is the number of characters `p` consumes
+-#     on THAT input (bounded by its length), so no Nat expression over `p` bounds
+-#     it and no Prop over `p` alone ("p consumes on success", progress) makes one
+-#     exist — the bound is a function of the input, not of `p`. The C3 `lemTail`
+-#     hoist (lem d4ba548) applies to `function` bodies, not to a lambda under a
+-#     single-constructor wrapper; an eta-expansion through `ParserM` in the lem
+-#     text would be a body change (forbidden); a backend hoist through the wrapper
+-#     is a lem-lean item. Reachability: the printf family only (Formatted.format0/
+-#     decimalInteger/nonnegativeDecimalInteger/flags0), never `drive` itself; the
+-#     payload is the parser zero, indistinguishable from a normal parse failure;
+-#     exhausts only at fuel < the longest `many` run in a format string (census Q4). ---
+-many_lemFuel                       parser       monadic_parsing.lem:100-103: recursion on the INPUT `cs` inside the ParserM lambda (not a parameter); no parameter-level measure exists — see the block note above
+-many1_lemFuel                      parser       mutual sibling of many (all-or-none, FM-mutual); same blocker
++# --- parser combinators: many/many1 LEFT the register 2026-09-15 (parser-progress-
++#     measure slice, lean_frontend/docs/2026-09-11_parser-progress-measure-record.md;
++#     [USER 2026-09-11] ruled for the shared lem BODY change): `many`/`many1` are
++#     restated as input-indexed recursion — two mutually recursive RUN functions
++#     many_run/many1_run on the input `cs` (monadic_parsing.lem:119-132), extensionally
++#     the same parsers on every input for every p — and the two workers are MEASURED
++#     UNDER THE PROGRESS HYPOTHESIS `CerbParserProgress.Consumes p` (every result of
++#     `parse p cs` leaves a strictly shorter rest; measures 2 * List.length cs + 2 /
++#     + 1; lean_frontend/CerbParserProgress.lean, proofs
++#     lean_frontend/Monadic_parsing_lemMeasureProofs.lean; rows in
++#     scripts/fuel_hypotheses.txt). The previous text — that the recursion argument
++#     was the input bound INSIDE the ParserM lambda, never a head parameter, so no
++#     parameter-level measure existed without a lem body change (close-out 2026-09-08
++#     D2) — is now history: the body change made the input a parameter. The parser
++#     class is CLOSED; the register is EMPTY (header-only) — the gate accepts an
++#     empty register (record D2). ---
+
+# D2 — scripts/check_fuel_forms.sh selftest retarget diff (verbatim)
+diff --git a/scripts/check_fuel_forms.sh b/scripts/check_fuel_forms.sh
+index 1391310bd..5212bc9a0 100755
+--- a/scripts/check_fuel_forms.sh
++++ b/scripts/check_fuel_forms.sh
+@@ -208,8 +208,14 @@ if [[ "${1:-}" == "--selftest" ]]; then
+   }
+   # P1: a measured, reachable worker flipped to ambient -> new reachable ambient
+   sed 's/^\(FUEL_FORM\tstep_eval_pexpr_lemFuel\t\)MEASURED\t/\1AMBIENT\t/' "$TBL" > "${TBL}.p"; plant "P1 measured->ambient reachable (step_eval_pexpr)" "REACHABLE from drive with an opaque" "${TBL}.p" "$PENDING" "$HYPREG"
+-  # P2: a pending row vanishes from the table (e.g. it became measured) -> stale pin
+-  grep -v $'^FUEL_FORM\tmany_lemFuel\t' "$TBL" > "${TBL}.p"; plant "P2 stale pending pin (many removed from the table)" "stale pin" "${TBL}.p" "$PENDING" "$HYPREG"
++  # P2: a pending row whose worker became MEASURED (it left the reachable-ambient
++  # set but its register row was not edited) -> stale pin. Until 2026-09-15 this
++  # removed the real pending row many_lemFuel from the table; the parser-progress-
++  # measure slice emptied the register (many_run_lemFuel IS the worker that became
++  # measured that day), so the stale row is planted into a scratch register instead
++  # — the same rule, the same direction, on a REAL measured worker's name (P5 below
++  # is the same rule on a phantom name).
++  { cat "$PENDING"; echo "many_run_lemFuel parser planted: measured 2026-09-15, row not removed"; } > "${TBL}.pend"; plant "P2 stale pending pin (many_run_lemFuel is MEASURED, not reachable-ambient)" "stale pin" "$TBL" "${TBL}.pend" "$HYPREG"
+   # P3: a measured obligation with sorryAx in its cone
+   sed 's/^\(FUEL_FORM\tin_pattern_lemFuel\tMEASURED\t[^\t]*\t\)obligation=\([^ ]*\) axioms=ok/\1obligation=\2 axioms=BAD[[sorryAx]]/' "$TBL" > "${TBL}.p"; plant "P3 measured obligation with sorryAx in its cone" "axiom cone outside" "${TBL}.p" "$PENDING" "$HYPREG"
+   # P4: truncated table (no summary)
+@@ -218,13 +224,16 @@ if [[ "${1:-}" == "--selftest" ]]; then
+   { cat "$PENDING"; echo "phantom_lemFuel pure-loop planted"; } > "${TBL}.pend"; plant "P5 phantom pending-register row" "stale pin" "$TBL" "${TBL}.pend" "$HYPREG"
+   # P6/P7 (audit M1): decoy obligations COMPILED into scratch modules outside the
+   # tree and appended to the tool's imports — the tool must classify by SHAPE.
+-  # P6: right NAME, type `True` (many). P7: right name, right shape (Eq,
++  # P6: right NAME, type `True` (zeros_aux). P7: right name, right shape (Eq,
+   # `_ ≤ lemFuel` hypothesis, right wrapper) but the WRONG worker constant on
+-  # the left (many1). (Until C4 these decoys used CerbMem.sizeofCtype /
+-  # alignofCtype, and until the 2026-09-08 fuel-pending close-out to_pure /
+-  # to_pures — each pair became real measured obligations, and a decoy of a
+-  # real obligation would be a duplicate constant, not a plant; the targets
+-  # are the still-AMBIENT pending workers many/many1.)
++  # the left (list_unfoldr_aux). (Until C4 these decoys used CerbMem.sizeofCtype /
++  # alignofCtype, until the 2026-09-08 fuel-pending close-out to_pure /
++  # to_pures, and until 2026-09-15 the pending workers many/many1 — each pair
++  # became real measured obligations, and a decoy of a real obligation would be
++  # a duplicate constant, not a plant; since the parser-progress-measure slice
++  # emptied the pending register the targets are two of the AMBIENT workers
++  # UNREACHABLE from the drive cone, zeros_aux (Core_aux) and list_unfoldr_aux
++  # (Utils), which have no obligation to duplicate.)
+   # P10 (C4; lem audit F1): right name, right SHAPE, the hypothesis-carrying form
+   # under a CONTRADICTORY hypothesis — the tool counts it MEASURED (the gate
+   # cannot decide satisfiability); the REGISTER has no row for it, so the
+@@ -232,14 +241,14 @@ if [[ "${1:-}" == "--selftest" ]]; then
+   # P0 repair it is the real CerbMem.alignofCtype obligation under `cty ≠ cty`,
+   # compiled in the P11 run below (see the note there).
+   cat > "$PLANTDIR/FuelFormsPlantTrue.lean" <<'LEAN'
+-import Monadic_parsing
+-theorem many_measure_sufficient : True := trivial
++import Core_aux
++theorem zeros_aux_measure_sufficient : True := trivial
+ LEAN
+   cat > "$PLANTDIR/FuelFormsPlantWorker.lean" <<'LEAN'
+-import Monadic_parsing
+-theorem many1_measure_sufficient {a : Type} [LemFuel] (p : parserM a) (lemFuel : Nat)
++import Utils
++theorem list_unfoldr_aux_measure_sufficient {a : Type} {b : Type} [LemFuel] (acc : List b) (ctor1 : a → Option (b × a)) (b0 : a) (lemFuel : Nat)
+     (_lemMeasureLe : 0 ≤ lemFuel) :
+-    many1 p = many1 p := rfl
++    list_unfoldr_aux acc ctor1 b0 = list_unfoldr_aux acc ctor1 b0 := rfl
+ LEAN
+   # (P0 2026-09-05: the C4-era P10 decoy stated `hack` — an AMBIENT worker whose
+   # wrapper calls it at `LemFuel.fuel` — under `0 ≤ lemFuel`; the argument/
+@@ -353,9 +362,9 @@ LEAN
+     fi
+   }
+   if FUELFORMS_EXTRA_PATH="$PLANTDIR" FUELFORMS_EXTRA_MODULES="FuelFormsPlantTrue FuelFormsPlantWorker FuelFormsPlantAudit" table_of_tree "$LOG" > "${TBL}.p"; then
+-    grep -E $'^FUEL_FORM\t(many_lemFuel|many1_lemFuel)\t' "${TBL}.p" | cut -c1-220 | sed 's/^/    plant table: /'
+-    plant "P6 decoy obligation of type True (many)" "not the contract's shape" "${TBL}.p" "$PENDING" "$HYPREG"
+-    plant "P7 decoy obligation with the wrong worker constant (many1)" "not the contract's shape" "${TBL}.p" "$PENDING" "$HYPREG"
++    grep -E $'^FUEL_FORM\t(zeros_aux_lemFuel|list_unfoldr_aux_lemFuel)\t' "${TBL}.p" | cut -c1-220 | sed 's/^/    plant table: /'
++    plant "P6 decoy obligation of type True (zeros_aux)" "not the contract's shape" "${TBL}.p" "$PENDING" "$HYPREG"
++    plant "P7 decoy obligation with the wrong worker constant (list_unfoldr_aux)" "not the contract's shape" "${TBL}.p" "$PENDING" "$HYPREG"
+     row_detail "P12 audit decoy 1: _zero lemma about CerbND.runNDFuel, not the worker" review_bad_lemFuel AMBIENT "MALFORMED-ZERO zero=review_bad_lemFuel_zero: left-hand head \`CerbND.runNDFuel\` is not the worker \`review_bad_lemFuel\`" "${TBL}.p"
+     plant "P12 policy: a MALFORMED-ZERO lemma is RED" "named <worker>_zero whose statement is not" "${TBL}.p" "$PENDING" "$HYPREG"
+     row_detail "P13 audit decoy 2: worker at literal 0, wrapper input x never passed" review_shift_lemFuel AMBIENT "worker argument #1 is \`0\`, not one of the wrapper's input binders" "${TBL}.p"
+
+# D2 — scripts/fuel_hypotheses.txt: the two rows appended (verbatim)
+many_run_lemFuel	CerbParserProgress.Consumes p	every exec-path caller passes a parser that consumes >= 1 character on every success: formatted.lem:90 and :97 `many digit` (digit formatted.lem:83-85 = char #'0' <|> nonzero; nonzero :66-79 is a `sat`), :103 `many (char #'-' <|> char #'+' <|> char #' ' <|> char #'#' <|> char #'0')`, :170-171 `many ((many1 (sat (fun z -> z <> #'%')) >>= fun str -> return (F_text str)) <|> (conversionSpecification >>= fun cs -> return (F_conv cs)))` — the left alternative is many1 of a consuming sat, the right begins with char #'%' (conversionSpecification formatted.lem:152-153) followed by parsers that never lengthen the input; sat/char/item consume exactly one character on success (monadic_parsing.lem:39-43,65-74); `many p = ParserM (many_run p)` (monadic_parsing.lem:131) passes p through unchanged, so the wrapper's p IS the call site's parser; a non-consuming p makes the oracle recurse forever on the same input (record D1)	[AGENT worker 2026-09-15, parser-progress-measure (charter 2026-09-11)]; [USER] sign-off at merge
+many1_run_lemFuel	CerbParserProgress.Consumes p	mutual sibling of many_run (one shared counter, measured all-or-none — lem FM-mutual): entered from many_run on the SAME input (monadic_parsing.lem:119-122) and directly through `many1 p = ParserM (many1_run p)` (monadic_parsing.lem:132) at formatted.lem:171 `many1 (sat (fun z -> z <> #'%'))` — a consuming sat (monadic_parsing.lem:65-68); same invariant and cites as the many_run row	[AGENT worker 2026-09-15, parser-progress-measure (charter 2026-09-11)]; [USER] sign-off at merge

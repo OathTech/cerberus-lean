@@ -152,6 +152,7 @@ roots = [
   "CerbCoreShape",
   "CerbCoreMeasure",
   "CerbCtypeMeasure",
+  "CerbParserProgress",
   "CerbDebug",
   "CerbDecode",
   "CabsImport",
@@ -176,6 +177,7 @@ roots = [
   "AilTypesAux_lemMeasureProofs",
   "Formatted_lemMeasureProofs",
   "Driver_lemMeasureProofs",
+  "Monadic_parsing_lemMeasureProofs",
 ]
 
 [[lean_exe]]

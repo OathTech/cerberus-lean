@@ -1,0 +1,60 @@
+# D2 — generated tree after the fuel_measure declares (untracked build outputs), 2026-09-15
+## lean_frontend/generated/Monadic_parsing.lean, from the mutual block's end (verbatim)
+end
+
+def many_run  {a : Type} ( p : parserM a) ( cs : List (Char)) : List ((List a ×List (Char))) := many_run_lemFuel (2 * List.length cs + 2)  p  cs
+theorem many_run_lemFuel_zero  {a : Type} ( p : parserM a) ( cs : List (Char)) :
+    many_run_lemFuel 0  p  cs = (fuelExhausted []) := rfl
+
+
+def many1_run  {a : Type} ( p : parserM a) ( cs : List (Char)) : List ((List a ×List (Char))) := many1_run_lemFuel (2 * List.length cs + 1)  p  cs
+theorem many1_run_lemFuel_zero  {a : Type} ( p : parserM a) ( cs : List (Char)) :
+    many1_run_lemFuel 0  p  cs = (fuelExhausted []) := rfl
+
+/- removed value specification -/
+
+/- removed value specification -/
+
+def  many  {a : Type}  (p : parserM a)   : parserM (List a) :=  ParserM  (many_run  p)
+def  many1  {a : Type}  (p : parserM a)  : parserM (List a) :=  ParserM  (many1_run  p)
+
+## lean_frontend/generated/Monadic_parsing_auxiliary.lean imports + obligations (verbatim)
+3:import LemLib
+4:import Monadic_parsing
+6:import Monadic_parsing_lemMeasureProofs
+7:import LemLib.Pervasives_extra
+8:import LemLib.Bridges
+/- ===== fuel_measure obligations (generated statements; proofs in the hand-written module above) ===== -/
+
+/- fuel_measure obligation for `many_run` (generated; declare {lean} fuel_measure val many_run = `2 * List.length cs + 2` assuming `CerbParserProgress.Consumes p`; the hypothesis is the binder `lemHyp`, before `lemFuel` — on inputs violating it the wrapper may exhaust): the worker is fuel-STABLE at the measure (equal to the wrapper at every fuel at or above it). The proof is hand-written in `Monadic_parsing_lemMeasureProofs.many_run_measure_sufficient`, stated with exactly these binders; a missing or mistyped theorem fails the build (a `sorry` is the sorry/axiom gates' job). -/
+theorem many_run_measure_sufficient  {a : Type} ( p : parserM a) ( cs : List (Char)) (lemHyp : (CerbParserProgress.Consumes p)) (lemFuel : Nat) (lemMeasureLe : (2 * List.length cs + 2) ≤ lemFuel) :
+    many_run_lemFuel lemFuel  p  cs = many_run  p  cs :=
+  Monadic_parsing_lemMeasureProofs.many_run_measure_sufficient  p  cs lemHyp lemFuel lemMeasureLe
+
+/- fuel_measure obligation for `many1_run` (generated; declare {lean} fuel_measure val many1_run = `2 * List.length cs + 1` assuming `CerbParserProgress.Consumes p`; the hypothesis is the binder `lemHyp`, before `lemFuel` — on inputs violating it the wrapper may exhaust): the worker is fuel-STABLE at the measure (equal to the wrapper at every fuel at or above it). The proof is hand-written in `Monadic_parsing_lemMeasureProofs.many1_run_measure_sufficient`, stated with exactly these binders; a missing or mistyped theorem fails the build (a `sorry` is the sorry/axiom gates' job). -/
+theorem many1_run_measure_sufficient  {a : Type} ( p : parserM a) ( cs : List (Char)) (lemHyp : (CerbParserProgress.Consumes p)) (lemFuel : Nat) (lemMeasureLe : (2 * List.length cs + 1) ≤ lemFuel) :
+    many1_run_lemFuel lemFuel  p  cs = many1_run  p  cs :=
+  Monadic_parsing_lemMeasureProofs.many1_run_measure_sufficient  p  cs lemHyp lemFuel lemMeasureLe
+
+
+## lean_frontend/generated/Formatted.lean: heads that changed vs the D0 tree (diff, def lines only)
+< def  nonnegativeDecimalInteger [LemFuel]   : parserM (Nat) :=     parse_bind 
+> def  nonnegativeDecimalInteger   : parserM (Nat) :=     parse_bind 
+< def  decimalInteger [LemFuel]   : parserM (Nat) :=  parse_bind 
+> def  decimalInteger   : parserM (Nat) :=  parse_bind 
+< def  flags0 [LemFuel]   : parserM (flags) :=  parse_bind 
+> def  flags0   : parserM (flags) :=  parse_bind 
+< def  fieldWidth [LemFuel]   : parserM (field_width) :=  ParserM  (fun (cs : List (Char)) =>  match  parse  (parse_mplus  ( parse_bind  (parse_char  '*')  (fun ( _ : Char) =>  parse_return  FW_asterisk))  ( parse_bind nonnegativeDecimalInteger  (fun (n : Nat) =>  parse_return  (FW_num  n))))  cs with  |  [] =>  [] | ( x :: _) =>  [x]
+> def  fieldWidth   : parserM (field_width) :=  ParserM  (fun (cs : List (Char)) =>  match  parse  (parse_mplus  ( parse_bind  (parse_char  '*')  (fun ( _ : Char) =>  parse_return  FW_asterisk))  ( parse_bind nonnegativeDecimalInteger  (fun (n : Nat) =>  parse_return  (FW_num  n))))  cs with  |  [] =>  [] | ( x :: _) =>  [x]
+< def  output_precision [LemFuel]   : parserM (precision) := 
+> def  output_precision   : parserM (precision) := 
+< def  conversionSpecification [LemFuel]   : parserM (conversion_specification) :=                       parse_bind                   (parse_bind  (parse_char  '%')  (fun ( _ : Char) =>  flags0))  (fun (fs : flags)     =>      parse_bind 
+> def  conversionSpecification   : parserM (conversion_specification) :=                       parse_bind                   (parse_bind  (parse_char  '%')  (fun ( _ : Char) =>  flags0))  (fun (fs : flags)     =>      parse_bind 
+< def  format0 [LemFuel]   : parserM (List (format_)) := 
+> def  format0   : parserM (List (format_)) := 
+
+## sha256
+07690802a0fceea45265bafa08a10bf28574922755e4fd2347bc8807425d77c0  lean_frontend/generated/Monadic_parsing.lean
+3b68a917ccaee47907f06abd2502f850d6cca4a19259792ba9abaf6f2fe5f695  lean_frontend/generated/Monadic_parsing_auxiliary.lean
+dfbb24458f1dc9dadbd535a81f9acc2bd4170d71bebfd5463b03ad6339fdaab1  lean_frontend/generated/Formatted.lean
+13ae02dfd834de19f9671c0219910fbf439c853de22decca3da306b05a161f45  ocaml_frontend/generated/monadic_parsing.ml
