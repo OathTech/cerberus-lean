@@ -145,12 +145,21 @@ resumption rulings and errata). Branch `arc/semantics-audit-repairs`.
   Q4 cite corrected in the record §2.1). The hypotheses are cited invariants, not
   theorems: a theorem about `drive`'s final state discharges them from
   `prepare_exit`'s definition (consumer-side; not done). Register 8 → 5.
-- **`many`/`many1`** — PENDING with the precise blocker (close-out D2,
-  `scripts/fuel_forms_pending.txt`): the recursion argument is the parser INPUT,
-  bound inside the `ParserM` lambda (monadic_parsing.lem:38-40, :52-56, :100-103),
-  never a head parameter; no parameter-level measure exists without a lem body
-  change. MOVER: a lem-lean backend hoist through a single-constructor wrapper
-  (the `lemTail` hoist applies to `function` bodies only). S–M (lem-lean).
+- ~~**`many`/`many1`**~~ — RESOLVED 2026-09-15 (parser-progress-measure slice,
+  `docs/2026-09-11_parser-progress-measure-record.md`; [USER 2026-09-11] ruled for
+  the shared lem BODY change, "D3 agree. Go ahead"): `many`/`many1` are restated as
+  input-indexed recursion — two mutually recursive RUN functions `many_run`/`many1_run`
+  on the input (monadic_parsing.lem:119-132), extensionally the same parsers on every
+  input for every `p` (D1 argument; kernel theorems relating the old and new workers,
+  `test/Unit/ManyRestatementTest.lean`) — and the two workers are MEASURED under the
+  progress hypothesis `CerbParserProgress.Consumes p` (measures `2 * List.length cs + 2` /
+  `+ 1`; proofs `Monadic_parsing_lemMeasureProofs.lean`), discharged as a THEOREM at
+  every printf call site (`CerbParserProgress.callSites_consume`). Register 2 → 0:
+  `scripts/fuel_forms_pending.txt` is EMPTY (header-only); the printf parser family
+  lost its ambient `[LemFuel]`; upstream-tray draft 43 carries the restatement as a
+  proposal. The close-out record's "what remains" pointer for this pair is closed here.
+  Residual: none (the fuel-pending register is closed; a new reachable ambient worker
+  is RED by the gate).
 - **Fuel-forms instrument repair** — P0 checked the exact worker/argument
   correspondence and zero-case shapes; its decoy plants now reject. Keep
   general propagation and completion proofs distinct from this instrument.
@@ -207,9 +216,11 @@ hygiene items the audit confirmed (each re-verified by the orchestrator):
   `backend_name` moved `"cerberus-lean"` → `"Driver"` (mirror of `main.ml:124`).
   Fix the comment; state the non-Cn/non-Bmc argument as the execution-
   equivalence reason. Hand-written seam comment → rides the next seam slice.
-- **Stale counts in comments/tables** (audit §5): `lean_frontend/test/Unit/TotalityProofTest.lean:21`
+- **Stale counts in comments/tables** (audit §5): ~~`lean_frontend/test/Unit/TotalityProofTest.lean:21`
   "(64 at C1; 22 at C4)" is fine as history but the caller comment the
-  audit read should say the CURRENT ambient pin count (22);
+  audit read should say the CURRENT ambient pin count (22)~~ — DONE 2026-09-15
+  (parser-progress-measure D3: the header carries the history through 14 and states
+  "CURRENT count: 14");
   `scripts/unsafebaseio_allowlist.txt:41` "66 -> 37 PIN" describes a later
   checkpoint (the tooling-inclusive count is 38: B 61 − 29 + 5 + 1, audit §4);
   `scripts/LADDER.md` Tier B row 9 cites a 90-case timing where the lane

@@ -490,6 +490,21 @@ the flexible-array-member compatibility question, 42 = unary minus on a floating
     of" `+0` for a non-IEC-60559 model? Probes in the record's evidence directory
     (`d4-negzero-three-engine.txt`), deliberately NOT lane files.
 
+43. **43-many-many1-input-indexed-recursion-proposal.md** — PROPOSAL / minor (slotting note:
+    proposal tier, ranks with the questions 06/07/33/41/42 — no bug claim, no ISO matter,
+    no observable change; a termination-checkable formulation offered to upstream).
+    `Monadic_parsing.many`/`many1` (`monadic_parsing.lem:93-99`) recurse with no structural
+    decrease in their only parameter (the parser `p`); the input that makes the recursion
+    well-founded is bound inside the `ParserM` lambdas of `<|>`/`>>=`, so a total-language
+    port cannot give the pair a termination argument. Proposal: two mutually recursive RUN
+    functions `many_run`/`many1_run` on the input whose bodies are the exact unfoldings of the
+    current definitions, plus `many p = ParserM (many_run p)` / `many1 p = ParserM (many1_run p)`
+    — extensionally the same parsers on every input (argument in the draft; kernel theorem
+    relating the old and new workers on the fork). LANDED on the fork's
+    `arc/parser-progress-measure` (record `lean_frontend/docs/2026-09-11_parser-progress-measure-record.md`);
+    the printf parser family lost its fuel there. Drafted by Claude (Fable 5.1) under operator
+    direction; AI-provenance note per the tray's policy.
+
 Amended 2026-09-05: draft 10 gains an addendum for the STRING-LITERAL
 form of `\?` (`"\?"` reaches the same decoder from translation.ml:3029;
 `tests/noodle-probes/ptr/ptr_string_literals.c`, upstream exit 125

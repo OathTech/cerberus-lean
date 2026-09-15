@@ -612,3 +612,25 @@ check_fork_drift: OK — layer 1: 76 … layer 2: 24 differing generated files, 
 test_unit rc=0
 ```
 Stamps after D4 (re-recorded once the probe file was removed — the first `--record-lean` was REFUSED, fail-closed, because `lean_frontend/AxiomProbe.lean` was present and unlisted; evidence file): `check_driver_fresh: oracle OK (bin 8b562dc7ccd81aaaecfb9c715bb46a6927ecbf284bfe3e2f1b7e469793b46cbe, src 98ad48b592a222a21e4619c5ce03652fc6a44c0a67c6b02cb222e1d40b1c701d)` / `check_driver_fresh: lean OK (bin 5f6dfacf25852e7eedb386345ee641317eb03448688cd768974332962a2aa2ab, src c468cb46a12e1a438172ea9a51cd9c5f6e5f5f6dce0494bc61bfe76f706b690e)`. [AGENT] The Lean driver BINARY is byte-identical to D2's (`5f6dfacf…`): the seam and the test are outside the driver's cone, so D4 cannot move any lane (the D6 full battery is the observation). The oracle `bin` hash moved (`d918cba3…` → `8b562dc7…`) with `src` unchanged: the lanes' `build_cerberus` relinks `main.exe` non-reproducibly — the sibling slice's open question 2, unchanged here. `scripts/LADDER.md` Tier A row 1: `9/9 exes` → `10/10 exes` (the §6 fence addition). Committed as D4.
+
+## D5 — Manifest, tray, documents — DONE
+
+### D5.1 — Fork-drift manifest (performed at D1/D2; §0 item 3)
+
+The two enumerated hunks and no other: `[source-content]` `frontend/model/monadic_parsing.lem` `194dcdbc… → da04e3c2…` (via `62445706…` at D1, before the Lean-only D2 declares; the header note names both), `[expected-semantic]` NEW `6cc50123c4727ca848299fc38a7f62c889acd6e5f5c1ce5a5c732b52e9abd05c monadic_parsing.ml` (layer 2: 23 → 24), one dated header note ("GENUINE shared-model change, an EXTENSIONALLY IDENTICAL restatement … the OCaml's results are unchanged on every input for every p"). Re-run at D5 (verbatim):
+```
+check_fork_content: OK — 76 source files content/mode-pinned
+check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 24 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+```
+
+### D5.2 — Tray draft 43 (PROPOSAL tier) + INDEX row
+
+`docs/upstream-tray/43-many-many1-input-indexed-recursion-proposal.md` — "Proposal: `many`/`many1` as input-indexed recursion — a termination-checkable formulation of the two parser combinators, extensionally identical to the current one". Cites upstream `master @ b9aeedcb4` numbering (`monadic_parsing.lem:93-99`, `<|>` `:48-52`, `>>=` `:16-18`, `mplus` `:25`, `return` `:12`, `parse` `:8` — read from `deps/cerberus-upstream/`); sections Observation / Proposal (the `.lem` text, Lean-only declares omitted) / Why the parsers are the same on every input (D1's argument) / What the restatement buys / Classification PROPOSAL / Provenance (Claude Fable 5.1 under operator direction; AI-provenance note per the tray's policy) / Fork status (LANDED on this branch; the D4.2 theorems named). INDEX row 43 after row 42, slotting note "proposal tier, ranks with the questions 06/07/33/41/42", provenance note; the ranking/filing lists above are untouched (row-only edit, as the fence says).
+
+### D5.3 — `TODO.md`, `VALIDATION.md` §7, `CLAUDE.md`
+
+* `lean_frontend/TODO.md`: the C2-follow-ups block's `many`/`many1` PENDING item → RESOLVED 2026-09-15 with this record, the ruling, the mechanism, "Register 2 → 0 … EMPTY (header-only)", the close-out record's "what remains" pointer closed, residual none; the "Stale counts" item's `TotalityProofTest.lean:21` clause → DONE (D3, "CURRENT count: 14").
+* `lean_frontend/VALIDATION.md` §7: the "counts as of" header now names this slice (and the close-out before it); `(A) MEASURED | 60 (10 under a hypothesis)` → `62 (12 under a hypothesis)` with a clause for `many_run`/`many1_run` under `CerbParserProgress.Consumes p` (the restatement, the kernel relation to the old workers, the call-site theorem `callSites_consume`, the proofs module); `PENDING | 2 | … many/many1 …` → `PENDING | 0 | … the register is EMPTY (header-only; the gate accepts an empty register …)` with the history sentence extended "… and `many`/`many1` on 2026-09-15 — by the input-indexed restatement (…), measured under `CerbParserProgress.Consumes p`".
+* `lean_frontend/CLAUDE.md`: `grep -n -i "pending\|many"` finds no sentence naming the 2026-09-08 count/pending state (only the generic gate description at `:140` and the `CerbCoreShape` row) — NO edit, per the fence. [AGENT] Its Key-files table does not list the two new hand-written modules (`CerbParserProgress.lean`; `Monadic_parsing_lemMeasureProofs` in the `*_lemMeasureProofs` row) — outside the fence; open question 3.
+
+`git diff --stat` for D5: `TODO.md`, `VALIDATION.md`, `upstream-tray/INDEX.md`, the new draft 43 (docs only; no build affected). Committed as D5.
