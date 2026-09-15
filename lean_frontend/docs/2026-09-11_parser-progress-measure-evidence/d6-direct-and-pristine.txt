@@ -1,0 +1,97 @@
+# D6 direct runs — ./scripts/test_unit.sh + the four test_exec.sh baseline lanes (CERB_MEM_MAX=48G, under bash), verbatim key lines
+2026-09-15T21:30:50Z
+=== ./scripts/test_unit.sh ===
+check_handwritten_sync: OK (48 hand-written files byte-identical to lean_frontend/generated/; manifest lean_frontend/handwritten_copy.manifest)
+=== effects-proof-test ===
+✓ effects-proof-test PASSED
+=== totality-proof-test ===
+✓ totality-proof-test PASSED
+=== core-parser-test ===
+=== Lexer ===
+=== Types ===
+=== Values ===
+=== Patterns ===
+=== Pexpr atoms ===
+=== Pexpr constructors ===
+=== Pexpr compound expressions ===
+=== Expr atoms ===
+=== Expr compound ===
+=== Full programs (from cerberus --pp core) ===
+=== Declarations ===
+=== libc dump productions (arc-6 S1) ===
+=== Runtime files ===
+✓ core-parser-test PASSED
+=== fresh-int-test ===
+✓ fresh-int-test PASSED
+=== pp-test ===
+=== PPTest: arc-10 S3 pretty-printer mirrors ===
+✓ pp-test PASSED
+=== fuel-exemplar-test ===
+✓ fuel-exemplar-test PASSED
+=== monadic-failstop-test ===
+✓ monadic-failstop-test PASSED
+=== float-literal-test ===
+✓ float-literal-test PASSED
+=== are-compatible-test ===
+✓ are-compatible-test PASSED
+=== many-restatement-test ===
+✓ many-restatement-test PASSED
+Total: 10 passed, 0 failed
+check_exec_purity: CLEAN (11 modules)
+check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)
+check_sorry_token: OK (314 files scanned comment-stripped — generated 218, hand-written+test 61, LemLib 35; 0 sorry tokens)
+test_exec: SELFTEST OK (E0 pre-repair collapse reproduced; E1-E7: same-value/different-stdout and different-stderr yield distinct whole-line tokens, escaped payload byte-exact, multi-outcome order kept, embedded text is payload, Undefined unchanged, truncated line is no token)
+  check_no_fuel_numerals: OK (321 files scanned comment-stripped; no lemDefaultFuel/driverFuel/ndDefaultFuel, no LemFuel instance, no literal fuel (F1-F6); allowed Main.lean sites seen: 4 of 4 (hand-written + generated copy))
+check_no_fuel_numerals: SELFTEST OK (20 plants red with the declared label; E5 indirection a recorded known gap; unplanted set green)
+check_no_fuel_numerals: OK (321 files scanned comment-stripped; no lemDefaultFuel/driverFuel/ndDefaultFuel, no LemFuel instance, no literal fuel (F1-F6); allowed Main.lean sites seen: 4 of 4 (hand-written + generated copy))
+gen_fuel_parametricity: OK (14 ambient fuel wrappers in the generated tree = the 14 pins of TotalityProofTest.lean Part 1, both directions)
+  check_lakefile_roots: OK (217 roots = 217 generated modules + the exe root Main; 85 auxiliary modules all built)
+check_lakefile_roots: SELFTEST OK (3 plants red, baseline green)
+check_lakefile_roots: OK (217 roots = 217 generated modules + the exe root Main; 85 auxiliary modules all built)
+    check_fuel_forms: OK (81 fuel'd workers: 62 MEASURED (obligation of the contract's shape incl. argument correspondence against the wrapper's body; every obligation + proof cone ⊆ the standard three; 12 of them under a hypothesis, each = a reviewed row of fuel_hypotheses.txt, both directions), 13 ABSORBING = kill at zero (t
+check_fuel_forms: SELFTEST OK (24 plants with the declared label — 6 on the table (incl. the ABSORBING-cone plant), 3 on the hypothesis register, 15 compiled decoys: the C4 four (type True / wrong worker / contradictory hypothesis caught by the register / extra binder), the whole-project audit's two decoys verbatim (review_bad
+check_fuel_forms: OK (81 fuel'd workers: 62 MEASURED (obligation of the contract's shape incl. argument correspondence against the wrapper's body; every obligation + proof cone ⊆ the standard three; 12 of them under a hypothesis, each = a reviewed row of fuel_hypotheses.txt, both directions), 13 ABSORBING = kill at zero (the _
+    check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=166 REACHABLE=48 UNKNOWN=19; every row sealed; tally line consis
+check_failure_reach: SELFTEST OK (5 plants with the declared message — a new site in a generated exec-closure definition, a DISCARDABLE dead let-binding, an unsealed class edit, a phantom row, an edited tally — and the unplanted register green)
+check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=166 REACHABLE=48 UNKNOWN=19; every row sealed; tally line consistent
+check_exec_totality: CLEAN (22 generated modules + hand-written CerbND, 0 allowlisted)
+check_lem_sync: OK (src 0ea744e44bd25235b4db5b42660406f178879ca5194c707640feb4f814e3793c, gen bcb2f7d80459eda631942ad09cf31a632640ad5fbfb2bd3d5d678bbf01c6a14b)
+  PLANT OK   [S1 en_US-ordered [files] under LC_ALL=C (the pre-repair failing configuration)] rc=0 -> check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 24 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef
+  PLANT OK   [S2 C-ordered [files] under LC_ALL=en_US.UTF-8] rc=0 -> check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 24 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef
+  PLANT OK   [S3 reversed [files] order (set unchanged)] rc=0 -> check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 24 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef
+  PLANT OK   [S11 unmodified copied source contents] rc=0 -> check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 24 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef
+    check_fork_content: OK — 76 source files content/mode-pinned
+    check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 24 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+check_fork_drift: SELFTEST OK (14 plants with declared verdict/message: S1-S10 prerequisite/locale/name controls; S11 copied-content control; S12 inside-listed-file drift; S13/S14 duplicate/missing content pins; unplanted gate green)
+check_fork_content: OK — 76 source files content/mode-pinned
+check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 24 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+check_fixture_freeze: OK (16 fixture files match the pinned manifest; name set exact)
+test_renumber_plants: OK (12 plants: refusals refuse, admits admit with declared class)
+rc=0
+=== ./scripts/test_exec.sh --check-baseline ===
+SUMMARY: total=111 match=90 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=3 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+rc=0
+=== ./scripts/test_exec.sh --check-baseline=scripts/exec_coverage_baseline.txt tests/coverage ===
+SUMMARY: total=212 match=183 ub_match=16 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=13 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+rc=0
+=== ./scripts/test_exec.sh --check-baseline=scripts/exec_debug_baseline.txt tests/debug ===
+SUMMARY: total=90 match=66 ub_match=20 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=4 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+rc=0
+=== ./scripts/test_exec.sh --check-baseline=scripts/exec_float_baseline.txt tests/float ===
+SUMMARY: total=93 match=93 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+rc=0
+2026-09-15T21:35:24Z
+
+# D6 pristine lane (B10.1) — the one reviewed pin, verbatim from .tmp/d6-full/B10.1/independent-oracle/report.json rows[96]
+id: minimal/097-null-ptr-arith.undef.c
+fork:     {'status': 125, 'stderr_sha256': 'a31c366c46156430652c5a0aef898db54acc145d0f88e9ae0889652eb2fa3333', 'stdout_sha256': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'}
+upstream: {'status': 125, 'stderr_sha256': '0cbf405bb92a175bd2453c546cf4c86f8f129c559e4b92dc87daebf62aa372b2', 'stdout_sha256': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'}
+= the pinned hashes of scripts/upstream_oracle_differences.json (re-pinned 2026-09-15 by the orchestrator): the pin HELD

@@ -634,3 +634,87 @@ check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-loc
 * `lean_frontend/CLAUDE.md`: `grep -n -i "pending\|many"` finds no sentence naming the 2026-09-08 count/pending state (only the generic gate description at `:140` and the `CerbCoreShape` row) — NO edit, per the fence. [AGENT] Its Key-files table does not list the two new hand-written modules (`CerbParserProgress.lean`; `Monadic_parsing_lemMeasureProofs` in the `*_lemMeasureProofs` row) — outside the fence; open question 3.
 
 `git diff --stat` for D5: `TODO.md`, `VALIDATION.md`, `upstream-tray/INDEX.md`, the new draft 43 (docs only; no build affected). Committed as D5.
+
+## D6 — Full battery and the record — DONE; zero movement in every existing baseline row; the pristine pin HELD
+
+Full battery at HEAD `dccc4f17f` (D5), tree clean and untouched throughout (`Source unchanged: True`). Stamps before the run (verbatim): `check_driver_fresh: oracle OK (bin 8b562dc7ccd81aaaecfb9c715bb46a6927ecbf284bfe3e2f1b7e469793b46cbe, src 98ad48b592a222a21e4619c5ce03652fc6a44c0a67c6b02cb222e1d40b1c701d)` / `check_driver_fresh: lean OK (bin 5f6dfacf25852e7eedb386345ee641317eb03448688cd768974332962a2aa2ab, src c468cb46a12e1a438172ea9a51cd9c5f6e5f5f6dce0494bc61bfe76f706b690e)`. One heavy job at a time. Verbatim key lines (full key-line extract per lane in `…-evidence/d6-full-battery-verdicts.txt`; direct runs in `…-evidence/d6-direct-and-pristine.txt`):
+
+```
+$ CERB_MEM_MAX=48G DUNE_CACHE=disabled python3 scripts/release.py --mode full --lane-timeout 3300 --out .tmp/d6-full   # 20:16:44Z → 21:28:44Z
+PASSED A1 (145.9s) · A2 (33.0s) · A3 (50.9s) · A4 (22.4s) · A4b (23.8s) · A4c (3.1s) · A5 (21.8s) · A6 (2.1s) · A6b (3.5s) · A7 (10.1s) · A8 (8.7s) · A9 (16.3s) · A10 (16.7s) · A11 (57.3s)
+PASSED B1 (611.0s) · B2 (22.9s) · B3 (14.8s) · B4 (45.0s) · B5 (67.4s) · B6.1 (161.2s) · B6.2 (2.2s) · B6.3 (8.9s) · B6.4 (8.4s) · B6.5 (8.8s) · B6.6 (9.5s) · B6.7 (8.2s)
+PASSED B7 (1303.7s) · B8.1 (13.4s) · B8.2 (223.0s) · B8.3 (6.3s) · B8.4 (15.7s) · B9 (1283.8s) · B10.1 (65.6s) · B10.2 (1.3s) · B11.1 (14.9s) · B11.2 (6.8s)
+full: passed; 36/36 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+rc=0
+```
+(The `·`-joined PASSED lines are the runner's own lines joined by me; every `RUN`/`PASSED` pair is verbatim in the evidence file. Longest lane B7 21.7 min — no tripwire.) Named lines:
+```
+A1  Total: 10 passed, 0 failed
+    check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)
+    gen_fuel_parametricity: OK (14 ambient fuel wrappers in the generated tree = the 14 pins of TotalityProofTest.lean Part 1, both directions)
+    check_fuel_forms: SELFTEST OK (24 plants with the declared label — 6 on the table (incl. the ABSORBING-cone plant), 3 on the hypothesis register, 15 compiled decoys: …)
+    check_fuel_forms: forms partition OK (62 MEASURED + 13 ABSORBING + 0 ambient-reachable + 6 ambient-unreachable = 81 fuel'd workers)
+    check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; …
+    check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 24 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+    check_handwritten_sync: OK (48 hand-written files byte-identical to lean_frontend/generated/; manifest lean_frontend/handwritten_copy.manifest)
+A2  SUMMARY: total=111 match=90 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=3 cerb_floor=0 cerb_inconsistent=0 / Baseline check: 0 regression(s), 0 improvement(s)
+A3  SUMMARY: total=212 match=183 ub_match=16 ub_diff=0 mismatch=0 … cerb_skip=13 … / Baseline check: 0 regression(s), 0 improvement(s)
+A4  SUMMARY: total=90 match=66 ub_match=20 ub_diff=0 mismatch=0 … cerb_skip=4 … / Baseline check: 0 regression(s), 0 improvement(s)
+A4b SUMMARY: total=93 match=93 ub_match=0 ub_diff=0 mismatch=0 … / Baseline check: 0 regression(s), 0 improvement(s)
+A4c SUMMARY: exec_match=9 neg_pinned=5 fail=0      A5  SUMMARY: match=12 diff=0      A6  SUMMARY: total=2 match=2 fail=0      A6b SUMMARY: total=7 match=7 fail=0
+A7  Success rate: 100% (of cerberus successes) / cabs bytes probe: 128 raw bytes 0x80..0xFF crossed the bridge as one code point each (…)      A8  Success rate: 100%
+A9  SUMMARY: total=111 same=108 diff=3 ocaml_fail=0 lean_fail=0      A10 GATE PASS: all lane expectations pinned-green + baseline unchanged (16/16)
+A11 SUMMARY: total=213 match=207 ub_match=6 ub_diff=0 reject_match=0 diff=0 mismatch=0 reject_diff=0 lean_fail=0 lean_crash=0 fuel=0 lean_error=0 lean_timeout=0 oracle_fail=0 oracle_timeout=0 oracle_inconsistent=0
+B1  SUMMARY: total=4 match=4 fail=0 (points: 1354, 22 observations each) / ALL PASSED      B2  Success rate: 51% (of cerberus successes) / ALL PASSED      B3  Success rate: 100% / ALL PASSED
+B4  test_verify: 127 passed, 0 failed (25 fixtures, 28 call points, 14 corpus fixtures, 21 corpus points)
+B5  OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip DIFF, R3 s4b-memcmp-hugesize ORACLE_CRASH, R5 r5-hex-subnormal-double-rounding DIFF — …
+B6  test_speclab: PASS (both pipelines agree on Specified(0)) · PASS (… Specified(2)) · test_speclab_divmod: PASS (--gate) · _bytearr: PASS · _list: PASS · _tree: PASS · _seed: PASS
+B7  Compared: 1916 (agree=1904 agree_nd=0 triaged=12 DISAGREE=0)
+    SUMMARY: total=1997 compared=1916 agree=1904 agree_nd=0 triaged=12 disagree=0 o2_agree=196 skip_gcc_compile=1 skip_gcc_stdout=1 skip_lean_crash=12 skip_lean_fail=9 skip_lean_timeout=11 skip_ub=47 triaged_addr=11 triaged_ub=1
+    Baseline check: 0 regression(s), 0 improvement(s) / gcc second-oracle lane OK
+B8  PLANT OK … (8.1 classifier fail-closed; 8.2 gcc_oracle exit(137) …; 8.3 test_fuel_plant: ALL PLANTS OK; 8.4 test_failstop_plant: PASS (11 class and rejection checks))
+B9  PLANT OK speclab_seed: oracle-exit2 observation lane plants: 93/93 passed
+B10.1 Independent oracle: passed; {'semantic_agreement': 738, 'reviewed_difference': 1, 'matching_failure': 11, 'interface_agreement': 2}
+B10.2 Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1}
+B11.1 check_failure_reach: SELFTEST OK (5 plants with the declared message …)      B11.2 check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly …)
+$ ./scripts/test_unit.sh        # direct, 21:30:50Z →
+Total: 10 passed, 0 failed
+rc=0
+$ ./scripts/test_exec.sh --check-baseline
+SUMMARY: total=111 match=90 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=3 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+rc=0
+$ ./scripts/test_exec.sh --check-baseline=scripts/exec_coverage_baseline.txt tests/coverage
+SUMMARY: total=212 match=183 ub_match=16 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=13 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+rc=0
+$ ./scripts/test_exec.sh --check-baseline=scripts/exec_debug_baseline.txt tests/debug
+SUMMARY: total=90 match=66 ub_match=20 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=4 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+rc=0
+$ ./scripts/test_exec.sh --check-baseline=scripts/exec_float_baseline.txt tests/float
+SUMMARY: total=93 match=93 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+rc=0                                                                                                        # → 21:35:24Z
+```
+
+**The pristine lane (Tier B row 10) and §6's pin-drift STOP rule — did NOT fire [AGENT, observed].** `B10.1 … passed; … 'reviewed_difference': 1 …` = the orchestrator's landing-time counts exactly; the one reviewed pin `minimal/097-null-ptr-arith.undef.c` (`rows[96]` of the report, verbatim in the evidence file): fork `status 125, stderr_sha256 a31c366c46156430652c5a0aef898db54acc145d0f88e9ae0889652eb2fa3333`, upstream `status 125, stderr_sha256 0cbf405bb92a175bd2453c546cf4c86f8f129c559e4b92dc87daebf62aa372b2` — both EQUAL to the pinned hashes in `scripts/upstream_oracle_differences.json`. The `monadic_parsing.ml` line shift did not pass through that backtrace (its frames are `core_eval.ml`/`lem_list.ml`, and 097 has no printf — §0 item 5, now observed, not assumed). No pin moved; nothing was re-recorded.
+
+**Zero movement, the whole slice [AGENT]:** every existing baseline row of every lane is at its recorded value at D0, D1, D2, D3 and D6 (A2/A3/A4/A4b and the gcc lane `0 regression(s), 0 improvement(s)`; libc_exec 12/0; multi_tu 2/2 and 7/7; cn 213 exact; uri 16/16; libxml2 4/4; verify 127; immaculate at baseline; pristine 738/1/11/2; the 1997-row gcc ledger at its statuses); partition 81 throughout (60+13+2+6 → 62+13+0+6 with exactly the two renamed workers moving); failure-reach 233; fork-drift layer 2 = 24 from D1; axioms 0. No lane, no pin, no register row was re-recorded. No tripwire (longest single pass B7 21.7 min; D4's proof work ~55 min wall across seven short builds).
+
+## State at hand-over (D6 done, per charter §3 — STOP: no merge, no push, no rebase)
+
+Commits on `arc/parser-progress-measure` over the mainline `eaa2066e9` (oldest first): `cd2952045` charter · `5f3a61cfb` §6 note · `f936737de` D0 · `8371d4763` D1 · `c30ada752` D2 · `f9672c207` D3 · `65e11887b` D4 · `dccc4f17f` D5 · (this commit) D6. Not done / not permitted: merge, push, rebase; any re-record of any baseline row (none was needed); `lean_frontend/CLAUDE.md` Key-files rows for the two new modules (fence; open question 3).
+
+What a reader can see (charter §4): (1) the `.lem` diff and the one-page argument (D1) plus the kernel theorems relating old and new workers (D4.2 — under the sentinel hypothesis at every fuel; unconditionally under `Consumes p` at fuel ≥ the measure); (2) `62 MEASURED (12 under a hypothesis) + 13 ABSORBING + 0 ambient-reachable + 6 ambient-unreachable = 81` and the two theorems `Monadic_parsing_lemMeasureProofs.many_run_measure_sufficient` / `many1_run_measure_sufficient`, cones `[propext, Classical.choice, Quot.sound]`; (3) the two register rows with the four call-site cites, and `Consumes` a THEOREM at all four call sites (`CerbParserProgress.callSites_consume`); (4) the 14-wrapper pin and the nine generated heads that lost `[LemFuel]` (`many`, `many1`, `nonnegativeDecimalInteger`, `decimalInteger`, `flags0`, `fieldWidth`, `output_precision`, `conversionSpecification`, `format0`); (5) the manifest's two hunks and layer 2 = 24; (6) the full A + B battery with zero movement; (7) tray draft 43; (8) the open questions below.
+
+## Open questions for the orchestrator / operator (priority order)
+
+1. **The fence reading for `scripts/check_fuel_forms.sh --selftest`** (D2; §0 item 2): the charter allowed "ONLY the empty-register fix of §1, plant-tested"; the `policy` function needed no fix, but the selftest's P2/P6/P7 named the pending workers and could not run on an empty register, so they were retargeted (P2 → a stale scratch-register row for the now-MEASURED `many_run_lemFuel`; P6/P7 → decoys on the ambient-unreachable `zeros_aux`/`list_unfoldr_aux`). Please confirm this is the intended reading (the alternative was a STOP at D2 on "a gate red for a reason outside the fence", which I judged not to be the case: the reason is the slice's own deliverable).
+2. **`extra_import` vs a same-module hypothesis** (D2): `CerbParserProgress` cannot be named by `declare {lean} extra_import` (import cycle: the hypothesis is over `parserM`/`parse` of `Monadic_parsing` itself); it is resolved transitively through the proofs module the generated obligation shell imports. Is this the pattern for same-module hypotheses, or a lem-lean item (an auxiliary-only import declare)? The lem-lean renderer also refuses an inline `∀`-hypothesis (FH-free), so a qualified seam name is the only form.
+3. **`lean_frontend/CLAUDE.md` Key-files table** does not list `CerbParserProgress.lean` nor `Monadic_parsing_lemMeasureProofs` (in the `*_lemMeasureProofs` row); outside this slice's fence (D5.3 allowed only a count/pending sentence, which does not exist there). One-line additions for the orchestrator.
+4. **Matcher identity as a standing fact for the pattern**: two syntactically identical `match` expressions from different declarations are not definitionally equal (D4.1 probe). Any future lemma about a lem-INLINED combinator (`<|>`, `option`) must use the `split at hr` + step-lemma + unification-capture pattern of `CerbParserProgress.lean`, or the combinator must be made a named lem function (`let parse_choice … ; let inline (<|>) = parse_choice`, the `option`/`mplus`/`bind` pattern already in the module) — a `.lem` change outside this charter; worth an operator decision if more parser lemmas are wanted.
+5. **The unconditional `∀ n` equivalence is unprovable** (D4.2): LemLib's `fuelExhaustedWith` is `opaque`, so the two sentinel shapes are unrelated kernel values and that leaf is reached at every fuel. The two theorems proved (under the sentinel hypothesis at every fuel; unconditionally under `Consumes p` at fuel ≥ the measure) are, I believe, the strongest honest statements; if a sentinel-parametric formulation of fuel'd workers is ever wanted, that is a lem-lean design item.
+6. **Oracle `main.exe` link non-reproducibility** (the sibling's open question 2, observed again: `bin d918cba3… → 8b562dc7…` with `src` unchanged between D2 and D4, each lane's `build_cerberus` re-recording the stamp).
+7. **The charter's `val many_run` result type** (§0 item 1) is a typo (`list ('a * list char)` for `list (list 'a * list char)`); used as forced.
