@@ -1,0 +1,11 @@
+# D2 — bridge probe (scripts/test_cabs_bytes_probe.py), verbatim
+
+## RED on the PRE-D2 exporter (oracle bin bfd9ff8317dc63e3…, the raw json_of_string write still in the binary) — 2026-09-15
+$ python3 scripts/test_cabs_bytes_probe.py --oracle-bin _build/default/backend/driver/main.exe --lean-bin lean_frontend/.lake/build/bin/cerberus-lean
+cabs bytes probe: FAIL at step 1: --cabs-json output is NOT valid UTF-8: 'utf-8' codec can't decode byte 0x80 in position 95461: invalid start byte (raw-byte write reintroduced?)
+rc=1
+
+## GREEN on the POST-D2 exporter (oracle bin 8878b2c5…, Lean bin e5cea7e34e6e48ef…) — 2026-09-15
+$ python3 scripts/test_cabs_bytes_probe.py --oracle-bin _build/default/backend/driver/main.exe --lean-bin lean_frontend/.lake/build/bin/cerberus-lean
+cabs bytes probe: 128 raw bytes 0x80..0xFF crossed the bridge as one code point each (valid UTF-8 JSON; Lean sizeof = 129)
+rc=0

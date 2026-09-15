@@ -1,3 +1,12 @@
+# semantics-audit-repairs D2, 2026-09-11 (landed 2026-09-15) [AGENT]: one [source-content] pin moved —
+# backend/lean_export/cabs_json.ml 34f2ddcf… -> 5f64fc9c… — the byte-preserving Cabs bridge (finding 3 of
+# docs/2026-09-11_whole-project-semantics-audit.md): a new `json_of_bytes` encoder maps each source byte
+# >= 0x80 of a string-literal fragment / character-constant body / asm part to the scalar U+00XX so the
+# exported JSON is always valid UTF-8 (one Lean Char per byte, the byte-carrier convention); every text
+# field keeps json_of_string. Fork-side exporter only — the OCaml model and its generated tree are
+# untouched (layer 2 still 22 hash-pinned files); the 106 tests/minimal cabs-json outputs are byte-identical.
+# Single-row edit, not a wholesale --refresh (which strips this header). Record:
+# lean_frontend/docs/2026-09-11_semantics-audit-repairs-record.md §D2.
 # are-compatible-assumed-set, 2026-09-10 [AGENT]: two pins moved — [source-content]
 # frontend/model/ctype_aux.lem 9c81b03e… -> 5a657d68… and [expected-semantic]
 # ctype_aux.ml 8882e41d… -> afcc21e3…. This one is a GENUINE shared-model change,
@@ -275,7 +284,7 @@ util/cerb_fresh.ml
 100644 4daefed842d45a19976f16f2c0c38dd299cd4f6753950e2f7d23974e8d72f022 backend/common/pipeline.mli
 100644 2a2d4d1b5ce9b61811f245ed00ce27a907a52de84174b67fa16548f5c2372ef0 backend/driver/dune
 100644 e33b20452aad36707d313df450ca0e8e5c5326f114796524c6c646e33658563b backend/driver/main.ml
-100644 34f2ddcf61f53b82f11171f95ca8d02181e35034e7b6dc81281f8b746dda1ab0 backend/lean_export/cabs_json.ml
+100644 5f64fc9cadd7064237ef4f3403641a7870be35a06d5a0b07257c7ea6a72c44f3 backend/lean_export/cabs_json.ml
 100644 6940e7e73f0bd7d1fedfa9d83f9401125064171b6e9b26c62493cc667bcedc4d backend/lean_export/dune
 100644 a3e314407d7f252f3613639df3325589fd9c653a9bd7d2b3caa66f07e712e444 cerberus-lib.opam
 100644 efc81ffdefabd01716ec52b3e90258db0313364c5fedce611626b1ea1496cf5c cerberus.opam

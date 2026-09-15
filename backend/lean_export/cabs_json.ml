@@ -72,6 +72,33 @@ let json_of_list f xs = `List (List.map f xs)
 
 let json_of_string s = `String s
 
+(* BYTE-CARRIER encoder for C string-literal fragments and character-constant
+   bodies (semantics-audit repairs D2, 2026-09-11; record
+   lean_frontend/docs/2026-09-11_semantics-audit-repairs-record.md §D2).
+   The lexer's s_char_sequence (parsers/c/c_lexer.mll:434-457) yields one
+   fragment per s-char: an escape sequence as its source text, or ONE raw
+   source byte. A byte >= 0x80 written through json_of_string is copied raw
+   by Yojson (yojson 3.0.0 lib/write.ml: only '"', '\\', 0x00-0x1F and 0x7F
+   are escaped), so the JSON was not UTF-8 and the Lean importer refused the
+   file where the oracle succeeds (e.g. sizeof("\xc3\xa9") = 3). Here each
+   byte b < 0x80 is itself and each byte b >= 0x80 is the scalar U+00b (two
+   UTF-8 bytes), so the JSON is always valid UTF-8 and the Lean side reads
+   ONE Char per source byte with c.toNat = the byte — the project's
+   byte-carrier convention (lean_frontend/docs/2026-09-09_batch-diagnostic-bytes-record.md).
+   Decoding of the bytes (decode.ml) is untouched: it happens in the model,
+   after the bridge, on both sides. Identifiers, file names, constant texts
+   and attribute strings are TEXT and keep json_of_string. *)
+let json_of_bytes s =
+  let buf = Buffer.create (String.length s) in
+  String.iter (fun c ->
+    let b = Char.code c in
+    if b < 0x80 then Buffer.add_char buf c
+    else begin
+      Buffer.add_char buf (Char.chr (0xC0 lor (b lsr 6)));
+      Buffer.add_char buf (Char.chr (0x80 lor (b land 0x3F)))
+    end) s;
+  `String (Buffer.contents buf)
+
 let json_of_bool b = `Bool b
 
 (* === Cabs types === *)
@@ -99,7 +126,7 @@ let json_of_cabs_character_prefix = function
   | CabsPrefix_U -> tag0 "CabsPrefix_U"
 
 let json_of_cabs_character_constant (prefix_opt, s) =
-  `List [json_of_option json_of_cabs_character_prefix prefix_opt; `String s]
+  `List [json_of_option json_of_cabs_character_prefix prefix_opt; json_of_bytes s]  (* BYTES: c-char sequence *)
 
 let json_of_cabs_constant = function
   | CabsInteger_const ic -> tag "CabsInteger_const" [("val", json_of_cabs_integer_constant ic)]
@@ -116,7 +143,7 @@ let json_of_cabs_string_literal (enc_opt, parts) =
   `List [
     json_of_option json_of_cabs_encoding_prefix enc_opt;
     json_of_list (fun (loc, strs) ->
-      `List [json_of_loc loc; json_of_list json_of_string strs]
+      `List [json_of_loc loc; json_of_list json_of_bytes strs]  (* BYTES: s-char fragments *)
     ) parts
   ]
 
@@ -294,7 +321,7 @@ and json_of_cabs_statement_ = function
       ("is_volatile", json_of_bool is_volatile);
       ("is_inline", json_of_bool is_inline);
       ("parts", json_of_list (fun (loc, strs) ->
-        `List [json_of_loc loc; json_of_list json_of_string strs]
+        `List [json_of_loc loc; json_of_list json_of_bytes strs]  (* BYTES: asm string-literal fragments *)
       ) parts)
     ]
   | CabsScaseGNU (lo, hi, stmt) ->

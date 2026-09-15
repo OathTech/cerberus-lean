@@ -106,3 +106,8 @@
 104-unsigned-wrap-arith.c MATCH
 105-bitwise-ops.c MATCH
 106-sizeof-struct-array.c MATCH
+107-sizeof-multibyte-literal.c MATCH
+108-sizeof-5byte-multibyte-literal.c MATCH
+109-escape-hex-all-bytes.c MATCH
+110-escape-octal-all-bytes.c MATCH
+111-escape-nul-inside-literal.c MATCH

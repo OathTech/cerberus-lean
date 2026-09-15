@@ -567,3 +567,281 @@ two `.lean` files). Files changed by D1b: `lean_frontend/CerbFloat.lean`,
 (+1 row, +7 header lines), `scripts/gcc_oracle_baseline.txt` (+1 row), `scripts/LADDER.md` (row
 1), `docs/upstream-tray/ocaml/{README,01-…}.md` (new), `docs/upstream-tray/40-….md` (new),
 `docs/upstream-tray/INDEX.md`, this record, `…-evidence/d1b-r5-observations.txt`.
+
+## D2 — Byte-preserving Cabs bridge (finding 3) — DONE
+
+### The bridge before and after
+
+[AGENT] The C lexer's `s_char_sequence` (`parsers/c/c_lexer.mll:434-457`) yields one fragment
+per s-char — an escape sequence as its source TEXT, or ONE raw source byte — and a character
+constant's body likewise. The exporter wrote every fragment with `json_of_string s = `String s`
+(`cabs_json.ml:73`), and Yojson 3.0.0 (`lib/write.ml`) escapes only `"`, `\`, `0x00-0x1F` and
+`0x7F` — a byte ≥ 0x80 was copied RAW, the JSON was not UTF-8, and `IO.FS.readFile`
+(`Main.lean:280`) refused it where the oracle succeeds on every shape that never decodes the
+bytes. Fix (charter shape): `json_of_bytes` maps byte `b < 0x80` to itself and `b ≥ 0x80` to
+the scalar U+00`b` (two UTF-8 bytes, `0xC0 | b>>6`, `0x80 | b&0x3F`), so the JSON is always
+valid UTF-8 and the Lean side reads ONE `Char` per source byte with `c.toNat` = the byte — the
+project's byte-carrier convention (`docs/2026-09-09_batch-diagnostic-bytes-record.md`: "Model
+bytes carried in Chars"). Decoding (decode.ml / CerbDecode) is untouched on both sides.
+
+**Every `` `String `` / `json_of_string` site of `backend/lean_export/cabs_json.ml`, classified**
+(line numbers AFTER the edit; the edit added 26 lines at :75-100):
+
+| site | what | class | reason |
+|---|---|---|---|
+| `:13` `tag name` | constructor tag | TEXT | schema names, ASCII |
+| `:14` `tag0 name` | nullary constructor | TEXT | schema names, ASCII |
+| `:30` `("file", `String (Cerb_position.file p))` | file name | TEXT | file names are Unicode text (charter: identifiers/filenames stay TEXT) |
+| `:44` `Loc_other s` | location description | TEXT | diagnostic text |
+| `:63` `("name", `String s)` in `json_of_identifier` | C identifier | TEXT | identifiers are text (the lexer's identifier class is ASCII/UCN) |
+| `:73` `json_of_string` | the text encoder | TEXT | kept for every text field |
+| `:91` `json_of_bytes` (NEW) | the byte encoder | BYTES | this fix |
+| `:114` integer constant `String s` | digit text | TEXT | ASCII by the lexer's token class |
+| `:121` floating constant `String s` | digit text | TEXT | ASCII by the lexer's token class |
+| `:129` character-constant body | c-char sequence | **BYTES** → `json_of_bytes` | one raw source byte or an escape's text; decoded later in the model |
+| `:146` string-literal fragments | s-char fragments | **BYTES** → `json_of_bytes` | as above |
+| `:324` `CabsSasm` parts | asm string-literal fragments | **BYTES** → `json_of_bytes` | the same `(loc, strs)` fragment shape as `:146` (asm parts are string literals) |
+| `:600, :602` attribute argument strings (`attr_args`) | `__attribute__`/`[[…]]` arguments | TEXT | consumed as annotation text by `Annot`/CN; the charter names them text. NOTE [AGENT]: the parser builds them from string literals (`c_parser.mly:1780-1785` `located_string_literal`, `String.concat` of the fragments), so a raw byte ≥ 0x80 in an attribute string would still leave the JSON non-UTF-8 — fail-NOISY on the Lean side (`readFile` refuses), never silent; recorded as an open question, not changed here |
+| `:657` `EDecl_magic` `str` | magic-comment text | TEXT | CN comment text; same note as attribute args |
+
+Lean importer (`CabsImport.lean`): NEW `getByteStr` (`:98-109`) = `getStr` + a fail-closed
+check that every `Char` has `toNat < 256`, else `err "getByteStr" "byte-carrier violation: code
+point U+… (≥ 256) in a string-literal fragment or character constant; …"` — an `Except` error
+naming the code point, never absorbed; used at `jsonToCharacterConstant` (`:249`),
+`jsonToStringLiteral` (`:268`) and the `CabsSasm` parts (`:746`); identifiers/file names keep
+`getStr`. Note Z2-J-02 (`:31-48`) rewritten: the both-fail claim is stated FALSE for shapes that
+never decode the bytes, with the fix and the convention. No signature changed; no new `partial`.
+`CerbDecode.lean` untouched.
+
+### Observations — fork oracle (post-D2 exporter), pristine upstream, gcc, Lean — all verbatim in `…-evidence/d2-oracle-gcc-observed.txt`
+
+Every new file's `--cabs-json` output is `rc=0` and `valid UTF-8` (strict decode). Verdicts
+(`--nolibc --exec --batch --mode=exhaustive`; Lean `LEAN_ABORT_ON_PANIC=1 --batch`):
+
+| file | fork oracle | pristine | gcc | Lean |
+|---|---|---|---|---|
+| `tests/minimal/107-sizeof-multibyte-literal.c` (raw `c3 a9`) | `Specified(3)` rc 0 | `Specified(3)` rc 0 | 3 | `Specified(3)` rc 0 |
+| `tests/minimal/108-sizeof-5byte-multibyte-literal.c` (raw `c3 a9 e2 82 ac`) | `Specified(6)` rc 0 | `Specified(6)` rc 0 | 6 | `Specified(6)` rc 0 |
+| `tests/minimal/109-escape-hex-all-bytes.c` (256 `\xNN`, 6 indices summed mod 256) | `Specified(2)` rc 0 | `Specified(2)` rc 0 | 2 | `Specified(2)` rc 0 |
+| `tests/minimal/110-escape-octal-all-bytes.c` (256 `\NNN`) | `Specified(231)` rc 0 | `Specified(231)` rc 0 | 231 | `Specified(231)` rc 0 |
+| `tests/minimal/111-escape-nul-inside-literal.c` (`"ab\0cd"`) | `Specified(159)` rc 0 | `Specified(159)` rc 0 | 159 | `Specified(159)` rc 0 |
+| `tests/immaculate/nolibc/f3-escaped-high-byte-uchar.c` (`(unsigned char)"\xc3\xa9"[0]`) | `Specified(195)` rc 0 | `Specified(195)` rc 0 | 195 | `Specified(195)` rc 0 |
+| `tests/immaculate/nolibc/f3-raw-high-byte-int.c` (`"é"[0]`) | `Failure("decode_character_constant: invalid char constant ==> \169")` rc 125 | same, rc 125 | 195 | `PANIC … decode_character_constant: invalid char constant ==> Ã (decode.ml:199-200)` rc 134 |
+| `tests/immaculate/nolibc/f3-raw-high-byte-uchar.c` (`(unsigned char)"é"[0]`) | `Failure(… ==> \169")` rc 125 | same, rc 125 | 195 | `PANIC …` rc 134 |
+| `tests/immaculate/nolibc/f3-raw-high-byte-char-const.c` (`'é'`) | `Failure(… ==> \195\169")` rc 125 | same, rc 125 | 169 | `PANIC … ==> Ã© …` rc 134 |
+
+[AGENT] The three crash-class files present the SAME class on both fork engines: an uncaught
+exception / abort at the decoder, no verdict (the oracle's `Failure` message quotes the byte as
+OCaml `\169`; Lean's panic message renders the byte-carrier `Char`s through the text path as
+`Ã`/`Ã©` — message text, not a verdict token, and the lane compares verdict tokens). The
+oracle's message quotes `\169` (0xA9) for the two-fragment literal where Lean's quotes `Ã`
+(0xC3): the two decoders reach the fragment list's two bytes in different orders before
+failing — an ordering inside a crash, not a verdict difference (both fail-stop at the same
+site class, decode.ml:199-200 / its CerbDecode mirror). gcc returns `(char)0xC3` = -61 → exit
+195 for the int shape, 195 for the unsigned-char shape and 169 for the multi-char constant
+(implementation-defined) — no oracle-independent reference exists for a program the oracle
+rejects; the `f3-escaped-…` twin is the reference that does run (195 on all four).
+
+### The bridge probe (D2(d)) — `scripts/test_cabs_bytes_probe.py`, called from `test_parse.sh`
+
+Generates a C file whose literal holds every raw byte `0x80..0xFF` in order, runs the REAL
+`--cabs-json`, and asserts fail-closed: (1) rc 0 and the output decodes as strict UTF-8; (2) the
+`CabsEstring` fragments are 128 one-character strings whose code points are exactly
+`0x80..0xFF` in order (a direct JSON read); (3) Lean `--batch` on that JSON prints
+`Defined {value: "Specified(129)", …}` (sizeof = 128 + NUL). The PLANT is the pre-D2 binary
+itself — the probe was written BEFORE the exporter was rebuilt and run against the exporter
+that still carried the raw write (`…-evidence/d2-bridge-probe.txt`, verbatim):
+
+```
+$ python3 scripts/test_cabs_bytes_probe.py --oracle-bin _build/default/backend/driver/main.exe --lean-bin lean_frontend/.lake/build/bin/cerberus-lean     # PRE-D2 oracle bin bfd9ff83…
+cabs bytes probe: FAIL at step 1: --cabs-json output is NOT valid UTF-8: 'utf-8' codec can't decode byte 0x80 in position 95461: invalid start byte (raw-byte write reintroduced?)
+rc=1
+$ python3 scripts/test_cabs_bytes_probe.py …                                                  # POST-D2 oracle bin 8878b2c5…
+cabs bytes probe: 128 raw bytes 0x80..0xFF crossed the bridge as one code point each (valid UTF-8 JSON; Lean sizeof = 129)
+rc=0
+```
+
+### D2(e) — regression: the 106 D0 `--cabs-json` hashes
+
+Before the rebuild the current oracle reproduced all 106 rows of
+`…-evidence/cabs-json-before.sha256` (method check, `diff` empty). After the rebuild, restricted
+to the same 106 files: `diff` empty — **every D0 hash is byte-identical on the post-D2
+exporter** (the unrestricted diff is exactly `106a107,111`, the five new files' rows;
+`…-evidence/d2-oracle-gcc-observed.txt`). ASCII inputs are untouched by the encoder, as the
+charter requires; no STOP.
+
+Builds: `build_cerberus` (dune → install `_build/local-install` → `cerberus.install`) rc=0,
+03:07:xx→03:08:36Z, `check_driver_fresh: recorded oracle stamp (bin 8878b2c5…)`; `make
+lean-prelude-src` + `CERB_MEM_MAX=48G ../scripts/capped lake build CerberusLean cerberus-lean`
+→ `✔ [392/392] Built «cerberus-lean»:exe`, rc=0 (03:08:4x→03:10:05Z); `check_driver_fresh:
+oracle OK (bin 8878b2c5…)` / `lean OK (bin e5cea7e3…)`.
+
+### Acceptance — lanes (key lines verbatim; all in `…-evidence/d2-lanes.txt`)
+
+(a)/(c) `tests/minimal`, exec lane, first run (observe):
+```
+$ ./scripts/test_exec.sh tests/minimal
+[107/111] MATCH 107-sizeof-multibyte-literal: VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+[108/111] MATCH 108-sizeof-5byte-multibyte-literal: VAL:{value: "Specified(6)", stdout: "", stderr: "", blocked: "false"}
+[109/111] MATCH 109-escape-hex-all-bytes: VAL:{value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}
+[110/111] MATCH 110-escape-octal-all-bytes: VAL:{value: "Specified(231)", stdout: "", stderr: "", blocked: "false"}
+[111/111] MATCH 111-escape-nul-inside-literal: VAL:{value: "Specified(159)", stdout: "", stderr: "", blocked: "false"}
+SUMMARY: total=111 match=90 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=3 cerb_floor=0 cerb_inconsistent=0
+```
+`scripts/exec_baseline.txt` gains exactly five rows, `107-sizeof-multibyte-literal.c MATCH` …
+`111-escape-nul-inside-literal.c MATCH` (appended after `106-…`); no existing row changed.
+
+(b) immaculate lane, first run (observe; the four DEVIATION lines are the four new files and
+there is no other DEVIATION/MISSING line):
+```
+  MATCH          f3-escaped-high-byte-uchar  O[VAL:{value: "Specified(195)", stdout: "", stderr: "", blocked: "false"}] L[VAL:{value: "Specified(195)", stdout: "", stderr: "", blocked: "false"}]
+  MATCH          f3-raw-high-byte-char-const  O[CRASH] L[CRASH]
+  MATCH          f3-raw-high-byte-int  O[CRASH] L[CRASH]
+  MATCH          f3-raw-high-byte-uchar  O[CRASH] L[CRASH]
+DEVIATION: f3-escaped-high-byte-uchar expected [<absent>] got [MATCH | L=VAL:{value: "Specified(195)", stdout: "", stderr: "", blocked: "false"}]
+DEVIATION: f3-raw-high-byte-char-const expected [<absent>] got [MATCH | L=CRASH]
+DEVIATION: f3-raw-high-byte-int expected [<absent>] got [MATCH | L=CRASH]
+DEVIATION: f3-raw-high-byte-uchar expected [<absent>] got [MATCH | L=CRASH]
+```
+The lane's label for the crash class is the both-crash pair `MATCH | L=CRASH` (oracle `CRASH`
+= uncaught exception exit 125; Lean `CRASH` = abort 134) — recorded as printed, not predicted.
+`tests/immaculate/baseline.txt` gains the four rows verbatim (locale-sorted after `argv3-args`)
+plus a 7-line header note; no existing row changed.
+
+(g) parse and core lanes on `tests/minimal` with the five new files:
+```
+$ ./scripts/test_parse.sh          # before the probe step was added
+Total:          111
+Lean parse:     111 ok, 0 failed, 0 timeout (>60s; fatal), 0 lean failure(s) (crash / nonzero exit without a printed verdict; fatal)
+Success rate:   100% (of cerberus successes)
+batch diagnostic producers: 8/8 passed
+ALL PASSED
+$ ./scripts/test_core.sh
+Total:          111
+Lean parse:     111 ok, 0 failed
+Success rate:   100% (of cerberus successes)
+ALL PASSED
+```
+([AGENT] `--pp core` elaborates string literals to `Array(Specified(conv_int('char', N)))…`
+and `sizeof` to `Ivsizeof('char[3]')` — ASCII Core text — so the Core-text bridge never carries
+the raw bytes; checked on scratch files before the lane.)
+
+gcc lane, subset runs (observe-only; `--check-baseline` is full-corpus only):
+```
+$ ./scripts/test_gcc_oracle.sh tests/minimal
+[107/111] AGREE  tests/minimal/107-sizeof-multibyte-literal.c: gcc=3 lean={3}
+[108/111] AGREE O2_AGREE tests/minimal/108-sizeof-5byte-multibyte-literal.c: gcc=6 lean={6}
+[109/111] AGREE  tests/minimal/109-escape-hex-all-bytes.c: gcc=2 lean={2}
+[110/111] AGREE  tests/minimal/110-escape-octal-all-bytes.c: gcc=231 lean={231}
+[111/111] AGREE  tests/minimal/111-escape-nul-inside-literal.c: gcc=159 lean={159}
+SUMMARY: total=111 compared=90 agree=90 agree_nd=0 triaged=0 disagree=0 o2_agree=8 skip_lean_crash=1 skip_lean_fail=2 skip_ub=18
+$ ./scripts/test_gcc_oracle.sh tests/immaculate/nolibc
+[1/34] AGREE  tests/immaculate/nolibc/f3-escaped-high-byte-uchar.c: gcc=195 lean={195}
+[2/34] SKIP_LEAN_CRASH  tests/immaculate/nolibc/f3-raw-high-byte-char-const.c: (exit 134) PANIC at … CerbDecode:151:6: decode_cha…
+[3/34] SKIP_LEAN_CRASH  tests/immaculate/nolibc/f3-raw-high-byte-int.c: (exit 134) PANIC at … CerbDecode:121:11: decode_ch…
+[4/34] SKIP_LEAN_CRASH  tests/immaculate/nolibc/f3-raw-high-byte-uchar.c: (exit 134) PANIC at … CerbDecode:121:11: decode_ch…
+SUMMARY: total=34 compared=13 agree=10 agree_nd=0 triaged=3 disagree=0 skip_gcc_compile=1 skip_gcc_stdout=1 skip_lean_crash=8 skip_lean_fail=2 skip_ub=9 triaged_addr=2 triaged_ub=1
+```
+`scripts/gcc_oracle_baseline.txt` gains nine NEW rows at the observed statuses, in key order
+(`107 AGREE -`, `108 AGREE O2_AGREE`, `109 AGREE -`, `110 AGREE -`, `111 AGREE -` after
+`106-…`; `f3-escaped-high-byte-uchar.c AGREE -`, `f3-raw-high-byte-char-const.c SKIP_LEAN_CRASH -`,
+`f3-raw-high-byte-int.c SKIP_LEAN_CRASH -`, `f3-raw-high-byte-uchar.c SKIP_LEAN_CRASH -` before
+`g1-ge-funptr.c`). [AGENT, derived] The O2 column follows the lane's stride rule (108's key
+≡ 0 mod 10 and the lane printed `O2_AGREE`; the other eight keys ≡ 1, 2, 2, 3, 6, 6, 6, 2 — no
+O2 run, `-`). The `SKIP_LEAN_CRASH` class for the three crash files is the lane's own
+classification of a Lean abort (the skip ledger; gcc's value for a program the oracle rejects
+is not a reference).
+
+(f) fork-drift, before the manifest edit (the gate names the new hash):
+```
+$ ./scripts/check_fork_drift.sh
+check_fork_content: FAIL — source-content drift inside reviewed file(s):
+backend/lean_export/cabs_json.ml: expected ('100644', '34f2ddcf61f53b82f11171f95ca8d02181e35034e7b6dc81281f8b746dda1ab0'), actual ('100644', '5f64fc9cadd7064237ef4f3403641a7870be35a06d5a0b07257c7ea6a72c44f3')
+check_fork_drift: FAIL — source-content check failed
+```
+Manifest edit: the ONE `[source-content]` row `backend/lean_export/cabs_json.ml` `34f2ddcf… →
+5f64fc9c…` plus a 9-line dated header note in the manifest's existing style (newest first); no
+other hunk.
+
+Re-runs after the edits (verbatim):
+```
+$ ./scripts/check_fork_drift.sh
+check_fork_content: OK — 76 source files content/mode-pinned
+check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 22 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+$ ./scripts/test_immaculate.sh
+OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip DIFF, R3 s4b-memcmp-hugesize ORACLE_CRASH — VALIDATION.md 'ISO-fix register' — and the in-Lean probes g6 TRIPWIRE / illtyped-store KILL).
+$ ./scripts/test_parse.sh          # with the probe step (scripts/test_parse.sh, after test_batch_diagnostics.py)
+Total:          111
+Lean parse:     111 ok, 0 failed, 0 timeout (>60s; fatal), 0 lean failure(s) (crash / nonzero exit without a printed verdict; fatal)
+Success rate:   100% (of cerberus successes)
+batch diagnostic producers: 8/8 passed
+cabs bytes probe: 128 raw bytes 0x80..0xFF crossed the bridge as one code point each (valid UTF-8 JSON; Lean sizeof = 129)
+ALL PASSED
+$ ./scripts/test_exec.sh --check-baseline
+SUMMARY: total=111 match=90 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=3 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+```
+
+### D2(h) — Tier A green, zero movement (verbatim; full file `…-evidence/d2-tierA-verdicts.txt`)
+
+```
+$ CERB_MEM_MAX=48G DUNE_CACHE=disabled python3 scripts/release.py --mode fast --lane-timeout 3300 --out .tmp/d2-fast   # 03:17:45Z → 03:24:34Z
+RUN A1: ./scripts/test_unit.sh
+PASSED A1 (148.3s)
+RUN A2: ./scripts/test_exec.sh --check-baseline
+PASSED A2 (27.5s)
+RUN A3: ./scripts/test_exec.sh --check-baseline=scripts/exec_coverage_baseline.txt tests/coverage
+PASSED A3 (50.4s)
+RUN A4: ./scripts/test_exec.sh --check-baseline=scripts/exec_debug_baseline.txt tests/debug
+PASSED A4 (22.2s)
+RUN A4b: ./scripts/test_exec.sh --check-baseline=scripts/exec_float_baseline.txt tests/float
+PASSED A4b (23.7s)
+RUN A4c: ./scripts/test_bytes.sh
+PASSED A4c (3.0s)
+RUN A5: ./scripts/test_libc_exec.sh
+PASSED A5 (21.7s)
+RUN A6: ./scripts/test_multi_tu.sh
+PASSED A6 (2.1s)
+RUN A7: ./scripts/test_parse.sh
+PASSED A7 (10.1s)
+RUN A8: ./scripts/test_core.sh
+PASSED A8 (8.7s)
+RUN A9: ./scripts/test_elab.sh
+PASSED A9 (16.3s)
+RUN A10: ./scripts/test_libxml2_uri.sh
+PASSED A10 (16.4s)
+RUN A11: ./scripts/test_cn_coverage.sh --check-baseline
+PASSED A11 (57.0s)
+fast: passed; 13/13 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+rc=0
+check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=166 REACHABLE=48 UNKNOWN=19; every row sealed; tally line consistent)
+check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 22 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+check_fuel_forms: forms partition OK (60 MEASURED + 13 ABSORBING + 2 ambient-reachable + 6 ambient-unreachable = 81 fuel'd workers)
+gen_fuel_parametricity: OK (16 ambient fuel wrappers in the generated tree = the 16 pins of TotalityProofTest.lean Part 1, both directions)
+Total: 8 passed, 0 failed
+A2: Baseline check: 0 regression(s), 0 improvement(s)      # tests/minimal, now 111 rows (5 NEW)
+A3: Baseline check: 0 regression(s), 0 improvement(s)
+A4: Baseline check: 0 regression(s), 0 improvement(s)
+A4b: Baseline check: 0 regression(s), 0 improvement(s)
+A5: SUMMARY: match=12 diff=0
+A6: SUMMARY: total=2 match=2 fail=0
+A7: batch diagnostic producers: 8/8 passed / cabs bytes probe: 128 raw bytes 0x80..0xFF crossed the bridge as one code point each (valid UTF-8 JSON; Lean sizeof = 129)
+A11: BASELINE OK (213 entries, exact match)
+$ ./scripts/test_unit.sh        # direct, 03:24:34Z → 03:27:00Z
+Total: 8 passed, 0 failed    (same partition / fork-drift / failure-reach / parametricity lines)
+rc=0
+```
+
+[AGENT] Zero movement: every existing row of every Tier A lane holds; the immaculate lane
+(Tier B) holds with its four NEW rows; `check_failure_reach` reports the same 233 rows (the
+importer's new `Except` error is not a pure `panic!`/`failwithI` site; `CerbDecode` is
+untouched); fork-drift layer 2 unchanged (22) with the one `[source-content]` pin moved. D2
+changed no Lean signature (`getByteStr` is a new private-to-module helper; the importers'
+types are unchanged) and introduced no `partial`. Files changed by D2: `backend/lean_export/
+cabs_json.ml`; `lean_frontend/CabsImport.lean`; `scripts/test_parse.sh` (+ NEW
+`scripts/test_cabs_bytes_probe.py`); NEW `tests/minimal/107…111` and
+`tests/immaculate/nolibc/f3-*` (4); `scripts/exec_baseline.txt` (+5 rows),
+`tests/immaculate/baseline.txt` (+4 rows, +7 header lines), `scripts/gcc_oracle_baseline.txt`
+(+9 rows), `scripts/fork_drift_manifest.txt` (1 row + header note); this record and three
+evidence files.

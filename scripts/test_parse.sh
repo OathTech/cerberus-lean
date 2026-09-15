@@ -242,5 +242,11 @@ else
     # A planted crash must first reach this lane's LEAN_FAILURE accounting;
     # an earlier diagnostic probe would abort before that contract is tested.
     python3 "$SCRIPT_DIR/test_batch_diagnostics.py" --lean-bin "$CERBERUS_LEAN_BIN"
+    # Byte-preserving Cabs bridge probe (semantics-audit repairs D2, 2026-09-11,
+    # finding 3): a literal of every raw source byte 0x80..0xFF through the REAL
+    # --cabs-json exporter and the real importer — the JSON must be valid UTF-8,
+    # the fragments one code point per byte, and Lean's sizeof 129. Fail-closed;
+    # the pre-D2 exporter (raw json_of_string write) is RED at step 1.
+    python3 "$SCRIPT_DIR/test_cabs_bytes_probe.py" --oracle-bin "$CERBERUS_BIN" --lean-bin "$CERBERUS_LEAN_BIN"
     echo -e "${GREEN}ALL PASSED${NC}"
 fi

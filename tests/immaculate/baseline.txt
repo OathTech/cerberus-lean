@@ -81,9 +81,20 @@
 # hexadecimal mantissa twice when the result is subnormal (C11 §6.4.4.2#3 requires correct
 # rounding; gcc and Python agree with Lean). Recorded DIFF | L=Specified(1) (oracle Specified(0));
 # it flips to MATCH and RETIRES R5 when the OCaml runtime is fixed (tray ocaml/01, Cerberus-facing 40).
+# Finding-3 pins (2026-09-11 semantics-audit repairs D2, the byte-preserving Cabs bridge; record
+# lean_frontend/docs/2026-09-11_semantics-audit-repairs-record.md §D2): f3-raw-high-byte-{int,uchar,char-const}
+# MATERIALISE a raw source byte >= 0x80 from a string literal / character constant — both engines
+# fail-stop at the decoder (oracle decode.ml:199-200 uncaught Failure exit 125; Lean CerbDecode panic,
+# LEAN_ABORT_ON_PANIC=1 abort): recorded MATCH | L=CRASH, the both-crash pair shape. Before D2 the Lean
+# side could not even READ the cabs-json of these files (raw bytes => non-UTF-8 JSON); the bridge now
+# carries one Char per byte. f3-escaped-high-byte-uchar is the escaped control twin (MATCH Specified(195)).
 argv1-args MATCH | L=VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 argv2-args MATCH | L=VAL:{value: "Specified(97)", stdout: "", stderr: "", blocked: "false"}
 argv3-args MATCH | L=VAL:{value: "Specified(11)", stdout: "", stderr: "", blocked: "false"}
+f3-escaped-high-byte-uchar MATCH | L=VAL:{value: "Specified(195)", stdout: "", stderr: "", blocked: "false"}
+f3-raw-high-byte-char-const MATCH | L=CRASH
+f3-raw-high-byte-int MATCH | L=CRASH
+f3-raw-high-byte-uchar MATCH | L=CRASH
 g1-ge-funptr MATCH | L=ERR:{msg: "Memory WIP: ge_ptrval"}
 g1-lt-null MATCH | L=ERR:{msg: "Memory WIP: lt_ptrval ==> one null pointer"}
 g2-memcmp-uninit MATCH | L=CRASH

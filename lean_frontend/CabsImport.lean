@@ -28,12 +28,26 @@
     the `EDecl_*CN` constructors (only the CN frontend produces them). The
     fail-closed remedy (a `failwith` there) is an oracle-surface change for
     Z4/the tray.
-  - Z2-J-02: a C string literal with non-UTF-8 bytes is written raw by
-    `json_of_string` (cabs_json.ml:118-119), so the JSON is not UTF-8 and
-    `IO.FS.readFile` fails loudly ("containing non UTF-8 data") — while the
-    ORACLE also fails on such literals (decode.ml:199-200 failwith): a
-    both-fail today (EXC(a)), a latent bridge fail-point if the decoder ever
-    accepts them (remedy: escape bytes ≥ 0x80 as `\u00XX` in the bridge).
+  - Z2-J-02 (CORRECTED and FIXED 2026-09-11, semantics-audit repairs D2 —
+    finding 3 of `docs/2026-09-11_whole-project-semantics-audit.md`): a C
+    string literal (or character constant) with a raw source byte ≥ 0x80 was
+    written raw by `json_of_string`, so the JSON was not UTF-8 and
+    `IO.FS.readFile` failed ("containing non UTF-8 data"). The earlier note
+    called this "a both-fail (EXC(a))" because the oracle's decoder
+    (decode.ml:199-200) fails on such bytes — FALSE for every shape that never
+    DECODES the bytes: `sizeof("é")` is `Specified(3)` on the oracle (the
+    length is the fragment count + 1), so Lean failed where the oracle
+    succeeds — a class-(b) bug (VALIDATION.md §1). Fix: the exporter's
+    `json_of_bytes` (cabs_json.ml) maps each byte b ≥ 0x80 to the scalar
+    U+00b, so the JSON is always valid UTF-8 and every fragment /
+    character-constant body arrives here as ONE `Char` per source byte with
+    `c.toNat` = the byte — the byte-carrier convention
+    (`docs/2026-09-09_batch-diagnostic-bytes-record.md`). `getByteStr`
+    REJECTS (fail-closed) any such `Char` with `toNat ≥ 256`, a violation of
+    the convention. Identifiers and file names stay Unicode TEXT (`getStr`).
+    Decoding is unchanged: a raw byte ≥ 0x80 in a DECODED position still
+    takes CerbDecode's `panic!` mirror of decode.ml:199-200 — the oracle's
+    crash class (pinned in tests/immaculate/nolibc/f3-*).
 -/
 
 import Lean.Data.Json
@@ -81,6 +95,18 @@ def getStr (j : Json) : Except String String :=
   match j with
   | .str s => .ok s
   | _ => err "getStr" s!"expected string, got {j}"
+
+/-- A BYTE-CARRIER string: one `Char` per C source byte, `c.toNat` = the byte
+    (cabs_json.ml `json_of_bytes`; header note Z2-J-02). Used for string-literal
+    fragments (incl. asm parts) and character-constant bodies — never for
+    identifiers or file names, which are Unicode text (`getStr`). A code point
+    ≥ 256 cannot come from the encoder; it is REJECTED, never absorbed. -/
+def getByteStr (j : Json) : Except String String := do
+  let s ← getStr j
+  match s.toList.find? (fun c => c.toNat ≥ 256) with
+  | none => .ok s
+  | some c =>
+    err "getByteStr" s!"byte-carrier violation: code point U+{(Nat.toDigits 16 c.toNat).asString} (≥ 256) in a string-literal fragment or character constant; cabs_json.ml json_of_bytes emits one code point ≤ 0xFF per source byte"
 
 def getNat (j : Json) : Except String Nat :=
   match j with
@@ -220,7 +246,7 @@ def jsonToCharacterConstant (j : Json) : Except String cabs_character_constant :
   let arr ← getArr j
   if h : arr.size = 2 then
     let pfx ← getOption jsonToCharacterPrefix arr[0]
-    let s ← getStr arr[1]
+    let s ← getByteStr arr[1]  -- BYTES (c-char sequence), not text
     .ok (pfx, s)
   else err "jsonToCharacterConstant" "expected 2-element array"
 
@@ -239,7 +265,7 @@ def jsonToStringLiteral (j : Json) : Except String cabs_string_literal := do
       let partArr ← getArr partJ
       if h2 : partArr.size = 2 then
         let loc ← jsonToLoc partArr[0]
-        let strs ← getList getStr partArr[1]
+        let strs ← getList getByteStr partArr[1]  -- BYTES (s-char fragments), not text
         .ok (loc, strs)
       else err "jsonToStringLiteral" "expected 2-element part"
     ) arr[1]
@@ -717,7 +743,7 @@ partial def jsonToStatement_ (j : Json) : Except String cabs_statement_ := do
         let arr ← getArr partJ
         if h : arr.size = 2 then
           let loc ← jsonToLoc arr[0]
-          let strs ← getList getStr arr[1]
+          let strs ← getList getByteStr arr[1]  -- BYTES (asm string-literal fragments)
           .ok (loc, strs)
         else err "asm" "expected 2-element part"
       ) (← getField j "parts")))

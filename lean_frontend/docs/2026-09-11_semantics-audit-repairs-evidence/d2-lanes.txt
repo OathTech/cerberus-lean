@@ -1,0 +1,84 @@
+# D2 — lane runs, key lines verbatim (2026-09-15); full logs were under the ephemeral .tmp/
+
+## ./scripts/test_exec.sh tests/minimal   (observe the 5 new rows; no baseline check)
+122:[107/111] MATCH 107-sizeof-multibyte-literal: VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+123:[108/111] MATCH 108-sizeof-5byte-multibyte-literal: VAL:{value: "Specified(6)", stdout: "", stderr: "", blocked: "false"}
+124:[109/111] MATCH 109-escape-hex-all-bytes: VAL:{value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}
+125:[110/111] MATCH 110-escape-octal-all-bytes: VAL:{value: "Specified(231)", stdout: "", stderr: "", blocked: "false"}
+126:[111/111] MATCH 111-escape-nul-inside-literal: VAL:{value: "Specified(159)", stdout: "", stderr: "", blocked: "false"}
+152:SUMMARY: total=111 match=90 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=3 cerb_floor=0 cerb_inconsistent=0
+exec rc=0
+
+## ./scripts/test_immaculate.sh   (run 1: 4 new files, no baseline rows)
+13:  MATCH          f3-escaped-high-byte-uchar  O[VAL:{value: "Specified(195)", stdout: "", stderr: "", blocked: "false"}] L[VAL:{value: "Specified(195)", stdout: "", stderr: "", blocked: "false"}]
+14:  MATCH          f3-raw-high-byte-char-const  O[CRASH] L[CRASH]
+15:  MATCH          f3-raw-high-byte-int  O[CRASH] L[CRASH]
+16:  MATCH          f3-raw-high-byte-uchar  O[CRASH] L[CRASH]
+83:DEVIATION: f3-escaped-high-byte-uchar expected [<absent>] got [MATCH | L=VAL:{value: "Specified(195)", stdout: "", stderr: "", blocked: "false"}]
+84:DEVIATION: f3-raw-high-byte-char-const expected [<absent>] got [MATCH | L=CRASH]
+85:DEVIATION: f3-raw-high-byte-int expected [<absent>] got [MATCH | L=CRASH]
+86:DEVIATION: f3-raw-high-byte-uchar expected [<absent>] got [MATCH | L=CRASH]
+immaculate rc=1 (the four DEVIATION lines are the new files; no other deviation)
+
+## ./scripts/test_parse.sh   (before the probe step was added)
+18:Total:          111
+19:Cerberus parse: 111 ok, 0 failed
+20:Lean parse:     111 ok, 0 failed, 0 timeout (>60s; fatal), 0 lean failure(s) (crash / nonzero exit without a printed verdict; fatal)
+22:Success rate:   100% (of cerberus successes)
+24:batch diagnostic producers: 8/8 passed
+25:ALL PASSED
+parse rc=0
+
+## ./scripts/test_core.sh
+18:Total:          111
+19:Cerberus --pp:  111 ok, 0 failed
+20:Lean parse:     111 ok, 0 failed
+21:Success rate:   100% (of cerberus successes)
+23:ALL PASSED
+core rc=0
+
+## ./scripts/test_gcc_oracle.sh tests/minimal   (subset, observe-only)
+118:[107/111] AGREE  tests/minimal/107-sizeof-multibyte-literal.c: gcc=3 lean={3}
+119:[108/111] AGREE O2_AGREE tests/minimal/108-sizeof-5byte-multibyte-literal.c: gcc=6 lean={6}
+120:[109/111] AGREE  tests/minimal/109-escape-hex-all-bytes.c: gcc=2 lean={2}
+121:[110/111] AGREE  tests/minimal/110-escape-octal-all-bytes.c: gcc=231 lean={231}
+122:[111/111] AGREE  tests/minimal/111-escape-nul-inside-literal.c: gcc=159 lean={159}
+140:  Compared:     90  (agree=90 agree_nd=0 triaged=0 DISAGREE=0)
+147:SUMMARY: total=111 compared=90 agree=90 agree_nd=0 triaged=0 disagree=0 o2_agree=8 skip_lean_crash=1 skip_lean_fail=2 skip_ub=18
+gcc-minimal rc=0
+
+## ./scripts/test_gcc_oracle.sh tests/immaculate/nolibc   (subset, observe-only)
+12:[1/34] AGREE  tests/immaculate/nolibc/f3-escaped-high-byte-uchar.c: gcc=195 lean={195}
+13:[2/34] SKIP_LEAN_CRASH  tests/immaculate/nolibc/f3-raw-high-byte-char-const.c: (exit 134) PANIC at _private.CerbDecode.0.CerbDecode.decode_character_constant_aux CerbDecode:151:6: decode_cha
+14:[3/34] SKIP_LEAN_CRASH  tests/immaculate/nolibc/f3-raw-high-byte-int.c: (exit 134) PANIC at _private.CerbDecode.0.CerbDecode.decode_character_constant_aux CerbDecode:121:11: decode_ch
+15:[4/34] SKIP_LEAN_CRASH  tests/immaculate/nolibc/f3-raw-high-byte-uchar.c: (exit 134) PANIC at _private.CerbDecode.0.CerbDecode.decode_character_constant_aux CerbDecode:121:11: decode_ch
+60:  Compared:     13  (agree=10 agree_nd=0 triaged=3 DISAGREE=0)
+70:SUMMARY: total=34 compared=13 agree=10 agree_nd=0 triaged=3 disagree=0 skip_gcc_compile=1 skip_gcc_stdout=1 skip_lean_crash=8 skip_lean_fail=2 skip_ub=9 triaged_addr=2 triaged_ub=1
+gcc-immaculate rc=0
+
+## ./scripts/check_fork_drift.sh   (before the manifest edit)
+check_fork_content: FAIL — source-content drift inside reviewed file(s):
+backend/lean_export/cabs_json.ml: expected ('100644', '34f2ddcf61f53b82f11171f95ca8d02181e35034e7b6dc81281f8b746dda1ab0'), actual ('100644', '5f64fc9cadd7064237ef4f3403641a7870be35a06d5a0b07257c7ea6a72c44f3')
+check_fork_drift: FAIL — source-content check failed
+drift rc=1
+
+## re-runs after the baseline/manifest/test_parse.sh edits
+$ ./scripts/check_fork_drift.sh
+check_fork_content: OK — 76 source files content/mode-pinned
+check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 22 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+drift rc=0
+$ ./scripts/test_immaculate.sh
+OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip DIFF, R3 s4b-memcmp-hugesize ORACLE_CRASH — VALIDATION.md 'ISO-fix register' — and the in-Lean probes g6 TRIPWIRE / illtyped-store KILL).
+immaculate rc=0
+$ ./scripts/test_parse.sh    # with the new probe step
+Total:          111
+Lean parse:     111 ok, 0 failed, 0 timeout (>60s; fatal), 0 lean failure(s) (crash / nonzero exit without a printed verdict; fatal)
+Success rate:   100% (of cerberus successes)
+batch diagnostic producers: 8/8 passed
+cabs bytes probe: 128 raw bytes 0x80..0xFF crossed the bridge as one code point each (valid UTF-8 JSON; Lean sizeof = 129)
+ALL PASSED
+parse rc=0
+$ ./scripts/test_exec.sh --check-baseline
+SUMMARY: total=111 match=90 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=3 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+exec-check rc=0

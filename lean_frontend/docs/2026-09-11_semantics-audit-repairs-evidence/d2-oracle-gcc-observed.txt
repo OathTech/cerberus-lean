@@ -1,0 +1,386 @@
+# D2 — fork oracle (bin 8878b2c5…, post-D2 exporter), pristine upstream and gcc on the new files; verbatim, 2026-09-15
+
+## D2(e) regression: sha256 of --cabs-json stdout for every tests/minimal/*.c present at D0, recomputed on the post-D2 oracle vs …/cabs-json-before.sha256
+$ grep -v "^#" cabs-json-before.sha256 | diff - .tmp/d2/cabs-json-after.sha256; echo rc=$?
+106a107,111
+> 492ca206c6fc6cfe1c8ef11c1fe2a4f78f62d3b62f1d864ed9d890c59f3aa0db tests/minimal/107-sizeof-multibyte-literal.c
+> 52689369b60ba17f3544fa291e8d8c9112d785303372e3f6c7e5cca033e2cd48 tests/minimal/108-sizeof-5byte-multibyte-literal.c
+> 18b5b7888809bf2f39481a59fda802d6eccea1bc25d22ce0d5bec6de2b7110eb tests/minimal/109-escape-hex-all-bytes.c
+> f8c142fe892c1c2aa19e7efa237e40c0dd8b468395a0fa681d6bec4d0b3c9ee4 tests/minimal/110-escape-octal-all-bytes.c
+> 147e97c456225386d09c89fe2070950c183249d0edd8c99bf4238abdc2161ef4 tests/minimal/111-escape-nul-inside-literal.c
+rc=1
+(rows compared: 106 D0 rows vs 111 recomputed for the SAME 106 files — the 5 new files 107-111 are hashed separately below)
+[AGENT] The recomputation globbed tests/minimal/*.c AFTER the five new files were added, so the diff above is `106a107,111` — five `>` additions and NOTHING else. Restricted to the 106 D0 files:
+$ grep -v '^#' cabs-json-before.sha256 | diff - <(grep -v '/10[7-9]-\|/11[01]-' cabs-json-after.sha256) && echo UNCHANGED
+UNCHANGED
+(rc=0: every one of the 106 D0 hashes is byte-identical on the post-D2 oracle)
+
+## tests/minimal/107-sizeof-multibyte-literal.c
+--- cabs-json: rc / utf-8 / sha256
+rc=0
+valid UTF-8
+492ca206c6fc6cfe1c8ef11c1fe2a4f78f62d3b62f1d864ed9d890c59f3aa0db
+--- fork oracle --nolibc --exec --batch --mode=exhaustive
+Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+--- pristine upstream
+Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+--- gcc -std=c11 -O0 -w
+gcc exit=3
+
+## tests/minimal/108-sizeof-5byte-multibyte-literal.c
+--- cabs-json: rc / utf-8 / sha256
+rc=0
+valid UTF-8
+52689369b60ba17f3544fa291e8d8c9112d785303372e3f6c7e5cca033e2cd48
+--- fork oracle --nolibc --exec --batch --mode=exhaustive
+Defined {value: "Specified(6)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+--- pristine upstream
+Defined {value: "Specified(6)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+--- gcc -std=c11 -O0 -w
+gcc exit=6
+
+## tests/minimal/109-escape-hex-all-bytes.c
+--- cabs-json: rc / utf-8 / sha256
+rc=0
+valid UTF-8
+18b5b7888809bf2f39481a59fda802d6eccea1bc25d22ce0d5bec6de2b7110eb
+--- fork oracle --nolibc --exec --batch --mode=exhaustive
+Defined {value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+--- pristine upstream
+Defined {value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+--- gcc -std=c11 -O0 -w
+gcc exit=2
+
+## tests/minimal/110-escape-octal-all-bytes.c
+--- cabs-json: rc / utf-8 / sha256
+rc=0
+valid UTF-8
+f8c142fe892c1c2aa19e7efa237e40c0dd8b468395a0fa681d6bec4d0b3c9ee4
+--- fork oracle --nolibc --exec --batch --mode=exhaustive
+Defined {value: "Specified(231)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+--- pristine upstream
+Defined {value: "Specified(231)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+--- gcc -std=c11 -O0 -w
+gcc exit=231
+
+## tests/minimal/111-escape-nul-inside-literal.c
+--- cabs-json: rc / utf-8 / sha256
+rc=0
+valid UTF-8
+147e97c456225386d09c89fe2070950c183249d0edd8c99bf4238abdc2161ef4
+--- fork oracle --nolibc --exec --batch --mode=exhaustive
+Defined {value: "Specified(159)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+--- pristine upstream
+Defined {value: "Specified(159)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+--- gcc -std=c11 -O0 -w
+gcc exit=159
+
+## tests/immaculate/nolibc/f3-escaped-high-byte-uchar.c
+--- cabs-json: rc / utf-8 / sha256
+rc=0
+valid UTF-8
+8a121bf188810572d89c7e58cd99f46142fd46ca77c5122fc3e88b0a32233a3d
+--- fork oracle --nolibc --exec --batch --mode=exhaustive
+Defined {value: "Specified(195)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+--- pristine upstream
+Defined {value: "Specified(195)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+--- gcc -std=c11 -O0 -w
+gcc exit=195
+
+## tests/immaculate/nolibc/f3-raw-high-byte-char-const.c
+--- cabs-json: rc / utf-8 / sha256
+rc=0
+valid UTF-8
+6031184155f78b21e2a77ca11b8aaa5b9df41131d55b0eb388efe84646d896fd
+--- fork oracle --nolibc --exec --batch --mode=exhaustive
+cerberus: internal error, [31muncaught exception[m:
+          Failure("decode_character_constant: invalid char constant ==> \195\169")
+          Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+          Called from Cerb_frontend__Decode.decode_character_constant in file "ocaml_frontend/decode.ml", line 218, characters 8-43
+          Called from Cerb_frontend__Translation.translate_constant in file "ocaml_frontend/generated/translation.ml", line 212, characters 87-125
+          Called from Cerb_frontend__Translation.translate_expression.(fun) in file "ocaml_frontend/generated/translation.ml", line 2990, characters 35-59
+          Called from Cerb_frontend__Translation_effect.track_temporary_objects.(fun) in file "ocaml_frontend/generated/translation_effect.ml", line 191, characters 21-28
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__Translation_effect.with_block_objects.(fun) in file "ocaml_frontend/generated/translation_effect.ml", line 175, characters 18-26
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__Translation_effect.runStateM_errors in file "ocaml_frontend/generated/translation_effect.ml", line 265, characters 19-35
+          Called from Cerb_frontend__Translation.translate in file "ocaml_frontend/generated/translation.ml", line 4693, characters 4-96
+          Called from Cerb_backend__Pipeline.c_frontend_and_elaboration.(fun) in file "backend/common/pipeline.ml", line 270, characters 34-110
+          Called from Dune__exe__Main.frontend in file "backend/driver/main.ml", line 29, characters 4-60
+          Called from Dune__exe__Main.cerberus.main.(fun) in file "backend/driver/main.ml", line 154, characters 6-47
+          Called from Cerb_frontend__Exception.except_foldlM.(fun) in file "ocaml_frontend/generated/exception.ml", line 69, characters 18-25
+          Called from Dune__exe__Main.cerberus.(fun) in file "backend/driver/main.ml", line 314, characters 8-24
+          Called from Dune__exe__Main.cerberus in file "backend/driver/main.ml", lines 309-335, characters 8-15
+          Called from Cmdliner_term.app.(fun) in file "cmdliner_term.ml", line 22, characters 19-24
+          Called from Cmdliner_eval.run_parser in file "cmdliner_eval.ml", line 41, characters 7-16
+rc=125
+--- pristine upstream
+cerberus: internal error, [31muncaught exception[m:
+          Failure("decode_character_constant: invalid char constant ==> \195\169")
+          Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+          Called from Cerb_frontend__Decode.decode_character_constant in file "ocaml_frontend/decode.ml", line 218, characters 8-43
+          Called from Cerb_frontend__Translation.translate_constant in file "ocaml_frontend/generated/translation.ml", line 212, characters 87-125
+          Called from Cerb_frontend__Translation.translate_expression.(fun) in file "ocaml_frontend/generated/translation.ml", line 2987, characters 35-59
+          Called from Cerb_frontend__Translation_effect.track_temporary_objects.(fun) in file "ocaml_frontend/generated/translation_effect.ml", line 117, characters 21-28
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__Translation_effect.with_block_objects.(fun) in file "ocaml_frontend/generated/translation_effect.ml", line 101, characters 18-26
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__Translation_effect.runStateM_errors in file "ocaml_frontend/generated/translation_effect.ml", line 191, characters 19-35
+          Called from Cerb_frontend__Translation.translate in file "ocaml_frontend/generated/translation.ml", line 4644, characters 4-92
+          Called from Cerb_backend__Pipeline.c_frontend_and_elaboration.(fun) in file "backend/common/pipeline.ml", line 256, characters 18-92
+          Called from Dune__exe__Main.frontend in file "backend/driver/main.ml", line 29, characters 4-60
+          Called from Dune__exe__Main.cerberus.main.(fun) in file "backend/driver/main.ml", line 154, characters 6-47
+          Called from Cerb_frontend__Exception.except_foldlM.(fun) in file "ocaml_frontend/generated/exception.ml", line 69, characters 18-25
+          Called from Dune__exe__Main.cerberus.(fun) in file "backend/driver/main.ml", line 266, characters 8-24
+          Called from Dune__exe__Main.cerberus in file "backend/driver/main.ml", lines 261-287, characters 8-15
+          Called from Cmdliner_term.app.(fun) in file "cmdliner_term.ml", line 22, characters 19-24
+          Called from Cmdliner_eval.run_parser in file "cmdliner_eval.ml", line 41, characters 7-16
+rc=125
+--- gcc -std=c11 -O0 -w
+gcc exit=169
+
+## tests/immaculate/nolibc/f3-raw-high-byte-int.c
+--- cabs-json: rc / utf-8 / sha256
+rc=0
+valid UTF-8
+9884725324a07101259f2cbee152c5c43fc086e5a1f4a75864df5d5f15f66e4a
+--- fork oracle --nolibc --exec --batch --mode=exhaustive
+cerberus: internal error, [31muncaught exception[m:
+          Failure("decode_character_constant: invalid char constant ==> \169")
+          Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+          Called from Cerb_frontend__Decode.decode_character_constant in file "ocaml_frontend/decode.ml", line 218, characters 8-43
+          Called from Cerb_frontend__Translation.translate_expression.(fun) in file "ocaml_frontend/generated/translation.ml", line 3032, characters 37-77
+          Called from Lem_list.count_map in file "lem_list.ml", line 165, characters 16-20
+          Called from Lem_list.count_map in file "lem_list.ml", line 166, characters 24-48
+          Called from Lem_list.map in file "lem_list.ml" (inlined), line 171, characters 22-39
+          Called from Cerb_frontend__Translation.translate_expression.(fun) in file "ocaml_frontend/generated/translation.ml", lines 3029-3034, characters 53-17
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__Translation_effect.track_temporary_objects.(fun) in file "ocaml_frontend/generated/translation_effect.ml", line 191, characters 21-28
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__Translation_effect.with_block_objects.(fun) in file "ocaml_frontend/generated/translation_effect.ml", line 175, characters 18-26
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__Translation_effect.runStateM_errors in file "ocaml_frontend/generated/translation_effect.ml", line 265, characters 19-35
+          Called from Cerb_frontend__Translation.translate in file "ocaml_frontend/generated/translation.ml", line 4693, characters 4-96
+          Called from Cerb_backend__Pipeline.c_frontend_and_elaboration.(fun) in file "backend/common/pipeline.ml", line 270, characters 34-110
+          Called from Dune__exe__Main.frontend in file "backend/driver/main.ml", line 29, characters 4-60
+          Called from Dune__exe__Main.cerberus.main.(fun) in file "backend/driver/main.ml", line 154, characters 6-47
+          Called from Cerb_frontend__Exception.except_foldlM.(fun) in file "ocaml_frontend/generated/exception.ml", line 69, characters 18-25
+          Called from Dune__exe__Main.cerberus.(fun) in file "backend/driver/main.ml", line 314, characters 8-24
+          Called from Dune__exe__Main.cerberus in file "backend/driver/main.ml", lines 309-335, characters 8-15
+          Called from Cmdliner_term.app.(fun) in file "cmdliner_term.ml", line 22, characters 19-24
+          Called from Cmdliner_eval.run_parser in file "cmdliner_eval.ml", line 41, characters 7-16
+rc=125
+--- pristine upstream
+cerberus: internal error, [31muncaught exception[m:
+          Failure("decode_character_constant: invalid char constant ==> \169")
+          Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+          Called from Cerb_frontend__Decode.decode_character_constant in file "ocaml_frontend/decode.ml", line 218, characters 8-43
+          Called from Cerb_frontend__Translation.translate_expression.(fun) in file "ocaml_frontend/generated/translation.ml", line 3029, characters 37-77
+          Called from Lem_list.count_map in file "lem_list.ml", line 172, characters 16-20
+          Called from Lem_list.count_map in file "lem_list.ml", line 173, characters 24-48
+          Called from Lem_list.map in file "lem_list.ml" (inlined), line 178, characters 22-39
+          Called from Cerb_frontend__Translation.translate_expression.(fun) in file "ocaml_frontend/generated/translation.ml", lines 3026-3031, characters 53-17
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__Translation_effect.track_temporary_objects.(fun) in file "ocaml_frontend/generated/translation_effect.ml", line 117, characters 21-28
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__Translation_effect.with_block_objects.(fun) in file "ocaml_frontend/generated/translation_effect.ml", line 101, characters 18-26
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__Translation_effect.runStateM_errors in file "ocaml_frontend/generated/translation_effect.ml", line 191, characters 19-35
+          Called from Cerb_frontend__Translation.translate in file "ocaml_frontend/generated/translation.ml", line 4644, characters 4-92
+          Called from Cerb_backend__Pipeline.c_frontend_and_elaboration.(fun) in file "backend/common/pipeline.ml", line 256, characters 18-92
+          Called from Dune__exe__Main.frontend in file "backend/driver/main.ml", line 29, characters 4-60
+          Called from Dune__exe__Main.cerberus.main.(fun) in file "backend/driver/main.ml", line 154, characters 6-47
+          Called from Cerb_frontend__Exception.except_foldlM.(fun) in file "ocaml_frontend/generated/exception.ml", line 69, characters 18-25
+          Called from Dune__exe__Main.cerberus.(fun) in file "backend/driver/main.ml", line 266, characters 8-24
+          Called from Dune__exe__Main.cerberus in file "backend/driver/main.ml", lines 261-287, characters 8-15
+          Called from Cmdliner_term.app.(fun) in file "cmdliner_term.ml", line 22, characters 19-24
+          Called from Cmdliner_eval.run_parser in file "cmdliner_eval.ml", line 41, characters 7-16
+rc=125
+--- gcc -std=c11 -O0 -w
+gcc exit=195
+
+## tests/immaculate/nolibc/f3-raw-high-byte-uchar.c
+--- cabs-json: rc / utf-8 / sha256
+rc=0
+valid UTF-8
+654d7eeee2f72c9984d944c72e5a0f50d297114f25b480bafa1ef2906ace7075
+--- fork oracle --nolibc --exec --batch --mode=exhaustive
+cerberus: internal error, [31muncaught exception[m:
+          Failure("decode_character_constant: invalid char constant ==> \169")
+          Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+          Called from Cerb_frontend__Decode.decode_character_constant in file "ocaml_frontend/decode.ml", line 218, characters 8-43
+          Called from Cerb_frontend__Translation.translate_expression.(fun) in file "ocaml_frontend/generated/translation.ml", line 3032, characters 37-77
+          Called from Lem_list.count_map in file "lem_list.ml", line 165, characters 16-20
+          Called from Lem_list.count_map in file "lem_list.ml", line 166, characters 24-48
+          Called from Lem_list.map in file "lem_list.ml" (inlined), line 171, characters 22-39
+          Called from Cerb_frontend__Translation.translate_expression.(fun) in file "ocaml_frontend/generated/translation.ml", lines 3029-3034, characters 53-17
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__Translation_effect.track_temporary_objects.(fun) in file "ocaml_frontend/generated/translation_effect.ml", line 191, characters 21-28
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__Translation_effect.with_block_objects.(fun) in file "ocaml_frontend/generated/translation_effect.ml", line 175, characters 18-26
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__Translation_effect.runStateM_errors in file "ocaml_frontend/generated/translation_effect.ml", line 265, characters 19-35
+          Called from Cerb_frontend__Translation.translate in file "ocaml_frontend/generated/translation.ml", line 4693, characters 4-96
+          Called from Cerb_backend__Pipeline.c_frontend_and_elaboration.(fun) in file "backend/common/pipeline.ml", line 270, characters 34-110
+          Called from Dune__exe__Main.frontend in file "backend/driver/main.ml", line 29, characters 4-60
+          Called from Dune__exe__Main.cerberus.main.(fun) in file "backend/driver/main.ml", line 154, characters 6-47
+          Called from Cerb_frontend__Exception.except_foldlM.(fun) in file "ocaml_frontend/generated/exception.ml", line 69, characters 18-25
+          Called from Dune__exe__Main.cerberus.(fun) in file "backend/driver/main.ml", line 314, characters 8-24
+          Called from Dune__exe__Main.cerberus in file "backend/driver/main.ml", lines 309-335, characters 8-15
+          Called from Cmdliner_term.app.(fun) in file "cmdliner_term.ml", line 22, characters 19-24
+          Called from Cmdliner_eval.run_parser in file "cmdliner_eval.ml", line 41, characters 7-16
+rc=125
+--- pristine upstream
+cerberus: internal error, [31muncaught exception[m:
+          Failure("decode_character_constant: invalid char constant ==> \169")
+          Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+          Called from Cerb_frontend__Decode.decode_character_constant in file "ocaml_frontend/decode.ml", line 218, characters 8-43
+          Called from Cerb_frontend__Translation.translate_expression.(fun) in file "ocaml_frontend/generated/translation.ml", line 3029, characters 37-77
+          Called from Lem_list.count_map in file "lem_list.ml", line 172, characters 16-20
+          Called from Lem_list.count_map in file "lem_list.ml", line 173, characters 24-48
+          Called from Lem_list.map in file "lem_list.ml" (inlined), line 178, characters 22-39
+          Called from Cerb_frontend__Translation.translate_expression.(fun) in file "ocaml_frontend/generated/translation.ml", lines 3026-3031, characters 53-17
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__Translation_effect.track_temporary_objects.(fun) in file "ocaml_frontend/generated/translation_effect.ml", line 117, characters 21-28
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__Translation_effect.with_block_objects.(fun) in file "ocaml_frontend/generated/translation_effect.ml", line 101, characters 18-26
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__State.bind.(fun) in file "ocaml_frontend/generated/state.ml", line 13, characters 18-23
+          Called from Cerb_frontend__Translation_effect.runStateM_errors in file "ocaml_frontend/generated/translation_effect.ml", line 191, characters 19-35
+          Called from Cerb_frontend__Translation.translate in file "ocaml_frontend/generated/translation.ml", line 4644, characters 4-92
+          Called from Cerb_backend__Pipeline.c_frontend_and_elaboration.(fun) in file "backend/common/pipeline.ml", line 256, characters 18-92
+          Called from Dune__exe__Main.frontend in file "backend/driver/main.ml", line 29, characters 4-60
+          Called from Dune__exe__Main.cerberus.main.(fun) in file "backend/driver/main.ml", line 154, characters 6-47
+          Called from Cerb_frontend__Exception.except_foldlM.(fun) in file "ocaml_frontend/generated/exception.ml", line 69, characters 18-25
+          Called from Dune__exe__Main.cerberus.(fun) in file "backend/driver/main.ml", line 266, characters 8-24
+          Called from Dune__exe__Main.cerberus in file "backend/driver/main.ml", lines 261-287, characters 8-15
+          Called from Cmdliner_term.app.(fun) in file "cmdliner_term.ml", line 22, characters 19-24
+          Called from Cmdliner_eval.run_parser in file "cmdliner_eval.ml", line 41, characters 7-16
+rc=125
+--- gcc -std=c11 -O0 -w
+gcc exit=195
+
+
+# Lean (LEAN_ABORT_ON_PANIC=1 cerberus-lean --batch <cabs-json of the file>) on the new files, verbatim
+## tests/minimal/107-sizeof-multibyte-literal.c
+Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+## tests/minimal/108-sizeof-5byte-multibyte-literal.c
+Defined {value: "Specified(6)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+## tests/minimal/109-escape-hex-all-bytes.c
+Defined {value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+## tests/minimal/110-escape-octal-all-bytes.c
+Defined {value: "Specified(231)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+## tests/minimal/111-escape-nul-inside-literal.c
+Defined {value: "Specified(159)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+## tests/immaculate/nolibc/f3-escaped-high-byte-uchar.c
+Defined {value: "Specified(195)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+## tests/immaculate/nolibc/f3-raw-high-byte-char-const.c
+PANIC at _private.CerbDecode.0.CerbDecode.decode_character_constant_aux CerbDecode:151:6: decode_character_constant: invalid char constant ==> Ã© (decode.ml:199-200)
+backtrace:
+lean_frontend/.lake/build/bin/cerberus-lean(+0x4da94c5) [0x63174959b4c5]
+rc=134
+## tests/immaculate/nolibc/f3-raw-high-byte-int.c
+PANIC at _private.CerbDecode.0.CerbDecode.decode_character_constant_aux CerbDecode:121:11: decode_character_constant: invalid char constant ==> Ã (decode.ml:199-200)
+backtrace:
+lean_frontend/.lake/build/bin/cerberus-lean(+0x4da94c5) [0x61e70e7774c5]
+rc=134
+## tests/immaculate/nolibc/f3-raw-high-byte-uchar.c
+PANIC at _private.CerbDecode.0.CerbDecode.decode_character_constant_aux CerbDecode:121:11: decode_character_constant: invalid char constant ==> Ã (decode.ml:199-200)
+backtrace:
+lean_frontend/.lake/build/bin/cerberus-lean(+0x4da94c5) [0x5a68d13904c5]
+rc=134
