@@ -958,6 +958,20 @@ outside the member list (`StructDef xs flexible_opt`), so the two definitions di
 COUNT and `are_compatible_aux` is false on both engines — recorded as observed; it is not the
 charter's "`int a[]` vs `int a[2]`" positive twin (the `int (*p)[]` member is, and is positive).
 
+### Audit F2 (2026-09-15, pre-merge audit `2026-09-15_semantics-audit-repairs-premerge-audit.md`) — a THIRD return-path shape: RETURN then STORE [AGENT orchestrator]
+
+The auditor found, and the orchestrator reproduced on the worktree's fixed engines, a matched-mode consequence of the repair that the record above did not name: an INCOMPATIBLE struct value RETURNED across the TU boundary and then STORED into a caller local (`struct S { int a[1]; }` / `struct S mk(void) { struct S s; s.a[0] = 7; return s; }` in TU1; `struct S { int a[2]; }; struct S mk(void); int main(void) { struct S s = mk(); return s.a[0]; }` in TU2) is now REJECTED at the store-side consult (`core_run.lem:544` `memValueFromValue (Ctype [] (unatomic_ ty)) cval` → `Nothing` → the lem `error`), on BOTH fork engines, in the pure-failure class:
+
+```
+fixed fork: internal error: can_advance: Step_error2 ==> …/f2_b.c:3:18-36the value of a store(struct S) didn't match the lvalue type: Specified((struct S){.a= {7}})
+            cerberus: internal error, uncaught exception: …   rc=125
+Lean:       PANIC at _private.LemLib.0.failwithIImpl LemLib:168:2: can_advance: Step_error2 ==> …/f2_b.c:3:18-36the value of a store(struct S) didn't match the lvalue type: …   rc=134
+pristine:   Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}   (the typo: a[1] ~ a[2] "compatible")
+gcc:        exit 7
+```
+
+Both fork engines agree (class (a) text differs: OCaml `Failure` vs Lean `PANIC`); the compatible twin (`int a[2]` in both) is `Specified(7)` on fork, Lean and pristine. This is the INTENDED effect of the typo repair — an incompatible value is refused where the typo accepted it — but it surfaces as an uncaught failure rather than an `Illformed_program` diagnostic (the store path uses lem `error`; the pure-failure class the project tracks, `docs/2026-09-07_pure-failure-correspondence-design.md`). It is a RECORD-ONLY shape: the multi-TU lane has no crash class (a crash is `FAIL … Lean side timeout/crash`), so it cannot be a row of `tests/multi_tu_tray/`; it is listed in that corpus's README as record-only and in tray draft 39's related observations. The program itself is undefined behaviour under C11 §6.2.7#2 (incompatible declarations of `mk`), so no engine's answer is "the" C answer; the fork's refusal is the fail-closed one.
+
 ### THE STOP — a chartered NEGATIVE case completes `Defined` on the fixed fork
 
 Charter D3(c) / §3: "if a NEGATIVE case completes with a `Defined` verdict on the fixed fork,

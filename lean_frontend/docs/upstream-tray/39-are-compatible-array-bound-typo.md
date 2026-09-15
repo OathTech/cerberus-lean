@@ -158,6 +158,14 @@ the fork's Tier A/B corpora unchanged; the same-TU control unchanged).
    where a `Illformed_program`/UB verdict would be the diagnostic shape (cf. draft 04's
    remedy pattern).
 
+### Return-then-store (found by the 2026-09-15 pre-merge audit, F2)
+
+With the typo repaired, an INCOMPATIBLE struct value RETURNED across the TU boundary and then STORED into a caller local (`struct S s = mk(); return s.a[0];` with `int a[1]` in the callee's TU and `int a[2]` in the caller's) is refused at the store-side compatibility consult (`core_run.lem:544`) on both fork engines — as an uncaught `Failure` ("the value of a store(struct S) didn't match the lvalue type", exit 125), not as an `Illformed_program` diagnostic. Upstream (the typo) accepts it and returns 7; gcc returns 7. The refusal is the intended effect; its CLASS (a crash rather than a diagnostic) is the store path's pre-existing use of `error` and is a separate, minor, upstream-facing quality note.
+
+### Alignment specifiers are ignored by the compatibility predicate (2026-09-15 pre-merge audit, F3)
+
+`are_compatible_aux` compares struct members as `(ident, (_, _ (*TODO alignment*), qs, ty))` (`ctype_aux.lem:141` in the fork; the `maybe alignment` component is discarded), so `struct S { _Alignas(16) int x; int y; }` and `struct S { int x; int y; }` in two TUs are "compatible" although C11 §6.2.7#1 requires that "if one member of the pair is declared with an alignment specifier, the other is declared with an equivalent alignment specifier" — their layouts differ (32 vs 8 bytes). Inside Cerberus no wrong read follows (member lookup is by identifier; a store uses the destination tag's layout), so this is a pre-existing upstream gap in the predicate that the repaired consult makes newly observable (fork/Lean `7`, upstream `mismatched tags`, gcc `7`). Recorded here; a candidate for its own minor draft.
+
 ## Classification
 
 **TRUE BUG**, minor (a one-token slip; Core-level compatibility; C-reachable only through

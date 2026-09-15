@@ -25,6 +25,10 @@
 #                        ISO-fix register R2)
 #   s4b-memcmp-hugesize  ORACLE_CRASH, Lean UB_CERB002a (tray #13; ISO-fix
 #                        register R3, admitted conditional on Z4)
+#   r5-hex-subnormal-double-rounding  DIFF, Lean-right 1 vs oracle 0 (OCaml runtime
+#                        caml_float_of_hex rounds twice for a subnormal hex
+#                        result — tray ocaml/01 + #40; ISO-fix register R5,
+#                        admitted [USER 2026-09-15])
 #   g6-hash-collision    TRIPWIRE (parseFile fail-stops on constructed
 #                        hash collisions)
 # The script is fail-closed BOTH directions against that baseline: any

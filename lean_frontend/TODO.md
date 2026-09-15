@@ -91,6 +91,29 @@ resumption rulings and errata). Branch `arc/semantics-audit-repairs`.
   paragraph says "today the markers are `CerbDecode.lean` R1/R2" (R5's marker is in
   `CerbFloat.lean`).
 
+- **Pre-merge audit follow-ups (2026-09-15, `docs/2026-09-15_semantics-audit-repairs-premerge-audit.md`; F1/F2/F4/F5 fixed at landing):**
+  (a) F3 — `Ctype_aux.are_compatible_aux` ignores member ALIGNMENT specifiers
+  (`ctype_aux.lem:141` `(*TODO alignment*)`); C11 §6.2.7#1 requires equivalent
+  alignment specifiers on corresponding members. Pre-existing upstream gap, newly
+  observable through the `PEmemberof` consult (`_Alignas(16) int x` vs `int x`:
+  fork/Lean 7, upstream rejects by tag, gcc 7; no wrong read inside Cerberus).
+  Tray candidate (noted in draft 39's related observations); a shared-model fix is
+  the same class as the array-bound typo and needs the same operator sign-off.
+  (b) F6 — latent, C-unreachable seam divergences in `CerbFloat.of_string`: the
+  trailing-suffix strip runs before the `0x` check (a hex FLOAT literal always
+  carries a `p` exponent, so `0x1f`-shaped text cannot reach it from C); OCaml's
+  `float_of_string` also accepts `_` separators and `inf`/`nan` spellings the seam
+  panics on (never produced by the C lexer). Documentary; tighten if the CoreParser
+  path ever feeds such text.
+  (c) The pristine lane's reviewed-diagnostic pins hash the FULL fork stderr,
+  including OCaml backtrace line numbers of generated files, so any `.lem` body
+  growth moves them (the `minimal/097` re-pin at landing, record "Orchestrator
+  external review"). Question for the lane: normalise `line N, characters A-B`
+  in backtrace frames before hashing, keeping the message text exact.
+  (d) Hand-maintained counts in `scripts/LADDER.md` / `VALIDATION.md` §5 go stale
+  with every corpus addition (audit F1/F4): consider deriving them from the
+  baseline files at release time.
+
 ## Fuel-parameter arc — C2 follow-ups (record `docs/2026-09-04_fuel-parameter-C2-record.md` §9)
 
 - ~~**Point-free `function` tails (6 PENDING rows; lem-lean TODO 17)**~~ —

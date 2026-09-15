@@ -46,6 +46,7 @@ keeps `full`, and applying it to an existing row is forbidden (charter §3).
 | `fam-vs-array-return` | `struct S {int n; int a[];}` vs `{int n; int a[2];}`; RETURNED, `.n` | rejected on all three engines — incompatibility by member COUNT (Cerberus keeps the flexible array member outside the member list `are_compatible_aux` compares); gcc runs it (7); the ISO question is upstream-tray draft 41 | `Error … mismatched tags` |
 | `arr-1-2-arg` | `int a[1]` vs `int a[2]`; value PASSED by value to `get`, `s.a[0]` read | **OBSERVED MODELLING LIMIT** (below) | `Defined 7` |
 | `arr-2-2-arg` | `int a[2]` in both; PASSED by value | **OBSERVED MODELLING LIMIT** (below) — the compatible twin; its MATCH pins the offset-0 read, not a consult | `Defined 7` |
+| *(record-only, not a lane case)* `return-then-store` | `int a[1]` vs `int a[2]`; RETURNED and then STORED into a caller local (`struct S s = mk(); return s.a[0];`) | **NEGATIVE, incompatible, rejected at the STORE-side consult** (`core_run.lem:544`) — an uncaught `Failure` (fork, rc 125) / `PANIC` (Lean, rc 134): the pure-failure class; pristine `7` (the typo), gcc `7`. The multi-TU lane has no crash class, so this shape lives in the record (D3 "Audit F2") and draft 39, not here. | crash (both fork engines) |
 
 gcc (`-std=c11 -O0 -w`) exits 7 on every case (independent reference for the
 `Defined` rows; for the two `Error` rows it is not a reference — gcc performs no
