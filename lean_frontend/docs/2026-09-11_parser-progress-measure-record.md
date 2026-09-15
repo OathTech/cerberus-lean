@@ -466,3 +466,149 @@ Source unchanged: True. Complete tier selection: True.
 rc=0
 ```
 Every lane's `SUMMARY` line is identical to D0's (mechanical comparison, lane by lane); A2/A3/A4/A4b each `Baseline check: 0 regression(s), 0 improvement(s)`. **D3 acceptance [AGENT, observed]:** 14-wrapper pin set both directions; `test_unit.sh` green; Tier A fully green with zero movement. Committed as D3.
+
+## D4 — Discharge lemmas and the equivalence theorem — DONE (both parts closed)
+
+### D4.1 — `Consumes` is a THEOREM at every exec-path call site (`lean_frontend/CerbParserProgress.lean`)
+
+**The obstacle, and the pattern that removed it [AGENT].** lem emits `<|>` INLINE at every site
+(`ParserM (fun cs => match parse (parse_mplus p1 p2) cs with | [] => [] | x :: _ => [x])`), and two
+syntactically identical `match` expressions from different declarations are NOT definitionally
+equal — their auxiliary matchers (`digit.match_1` vs a lemma's own `match_1`) do not unify
+(probe, verbatim: `example : digit = choice (parse_char '0') nonzero := rfl` → `Type mismatch …
+has type ?m.4 = ?m.4 but is expected to have type digit = choice (parse_char '0') nonzero`; the
+`by unfold digit choice; rfl` form: `The left-hand side … is not definitionally equal to the
+right-hand side` with both sides printing identically). So a lemma `consumes_choice` stated with a
+literal `match` can never be applied to a generated site, and an `abbrev flagsAlt := <the term>`
+cannot be identified with the generated alternative by `rfl` either. The charter's toolbox is
+kept where it is matcher-free (bind, mplus, return, mzero, item, sat, char, liftM0, string, many/
+many1 under `Consumes`), and the `<|>` sites are handled by TWO matcher-agnostic devices:
+
+1. `split at hr` on the SITE's own hypothesis (Lean's `split` works on whatever matcher is
+   present), whose cons arm yields a concrete `heq : parse (parse_mplus P1 P2) cs = x :: xs`;
+   the step lemma `consumes_head_step (p1 p2) (h1 : Consumes p1) (h2 : Consumes p2) … (heq : parse
+   (parse_mplus p1 p2) cs = x :: xs) : x.2.length < cs.length` (and its `NonExpanding` twin) then
+   reads `P1 P2` off `heq` by unification — the generated alternatives are never restated.
+2. The parser a generated caller passes to `many`/`many1` is CAPTURED by unification from the
+   caller's own body: `∃ alt mk, flags0 = parse_bind (many alt) (fun xs => parse_return (mk xs)) ∧
+   Consumes alt := ⟨_, _, rfl, by …⟩` (`rfl` assigns `alt` to the generated alternative; the
+   postponed tactic block then proves `Consumes` of THAT term; `mk` is a higher-order pattern,
+   so the continuation's shape is captured too and its non-expansion is immediate).
+
+A uniform driver `repeat' first | with_reducible exact <leaf> … | (intro cs r hr; simp only [parse]
+at hr; split at hr; · simp at hr; rename_i x xs heq; …; refine <step> _ _ ?_ ?_ _ _ _ heq)`
+peels binds and `<|>` levels; the leaf `exact`s run under `with_reducible` so they match only
+syntactically (the unguarded form unfolded `nonnegativeDecimalInteger` against a 12-level term
+and hit the heartbeat limit — no option was bumped; the guard removed the cost). Two lessons
+recorded for the pattern: a bullet inside the block must CLOSE its goal (the cons arm is left
+unfocused so `refine`'s two goals return to `repeat'`), and `simp only [parse]` normalises
+`parse q cs` to the projection form `q.1 cs`, so hypotheses rewritten into a normalised goal are
+normalised the same way.
+
+**What is proved (all kernel-checked, no `sorry`/`native_decide`/`decide`/option bumps):**
+- Toolbox: `mem_parse_bind`, `consumes_bind_left` (bind of a CONSUMING left with a NON-EXPANDING
+  right consumes), `nonExpanding_bind`, `nonExpanding_return`, `nonExpanding_mzero`,
+  `consumes_item`, `consumes_sat`, `consumes_parse_char`, `consumes_anyChar`, `consumes_of_sub`/
+  `nonExpanding_of_sub`, `consumes_mplus`/`nonExpanding_mplus`, `consumes_head_step`/
+  `nonExpanding_head_step`, `nonExpanding_liftM0`, `nonExpanding_parse_option`,
+  `nonExpanding_optionMaybe`, `nonExpanding_string0` (induction on the list), and — under
+  `Consumes p`, at any counter ≥ the measure (the sentinel is never reached) — `many1_run_lemFuel_lt_aux`
+  (every result of `many1_run` strictly shorter), `many_run_lemFuel_le_aux` (every result of
+  `many_run` at most as long), hence `consumes_many1 : Consumes p → Consumes (many1 p)` and
+  `nonExpanding_many : Consumes p → NonExpanding (many p)`.
+- The call sites: `consumes_nonzero`, `consumes_digit` (:83-85; the parser of :90/:97, the
+  callers pinned by `nonnegativeDecimalInteger_passes_digit` / `decimalInteger_passes_digit`,
+  both `⟨_, rfl⟩`); `flags0_passes_consuming` (:103 — the four-level alternative captured and
+  proved consuming); `consumes_notPercent` (:171's `sat (fun z -> z <> #'%')`);
+  `nonExpanding_{flags0, nonnegativeDecimalInteger, decimalInteger, fieldWidth, output_precision,
+  lengthModifier, conversionSpecifier}` (the printf sub-parsers after `char #'%'`: 1 + 2 + 6 + 12
+  `<|>` levels peeled by the driver); `consumes_conversionSpecification` (:152-165 — `char #'%'`
+  first, then non-expanding parsers: the `:170-171` RIGHT alternative's parser consumes, so the
+  charter's "the register row's cite stands" fallback is NOT needed); `format0_passes_consuming`
+  (:170-171 — the alternative captured; its left arm `many1 (sat …) >>= return` consumes by
+  `consumes_many1`, its right arm by `consumes_conversionSpecification`); and the summary
+  ```lean
+  theorem callSites_consume :
+      Consumes digit ∧
+      (∃ (alt : parserM Char) (mk : List Char → flags),
+        flags0 = parse_bind (many alt) (fun xs => parse_return (mk xs)) ∧ Consumes alt) ∧
+      Consumes (sat (fun (z : Char) => not (z == '%'))) ∧
+      (∃ alt : parserM format_, format0 = many alt ∧ Consumes alt)
+  ```
+  **Per call site: `formatted.lem:90` THEOREM (`consumes_digit` + `nonnegativeDecimalInteger_passes_digit`); `:97` THEOREM (`consumes_digit` + `decimalInteger_passes_digit`); `:103` THEOREM (`flags0_passes_consuming`); `:170-171` THEOREM (`format0_passes_consuming`, both arms) and its inner `:171` `many1 (sat …)` THEOREM (`consumes_notPercent`, `consumes_many1`). No call site rests on the register cite alone.** The register rows' invariant column remains the human-readable cite; the theorems are the kernel fact behind it (consumer note updated accordingly at D3's list: the `CerbParserProgress` constants).
+
+`parse_nil_of_consumes` moved from the proofs module into the seam (the seam never imports the
+proofs module); `CerbParserProgress` now imports `Formatted` (the call-site constants live there;
+`Formatted` imports `Monadic_parsing`, nothing imports `Monadic_parsing_auxiliary`, so no cycle).
+
+### D4.2 — The equivalence theorem (`lean_frontend/test/Unit/ManyRestatementTest.lean` → exe `many-restatement-test`)
+
+The OLD generated workers are kept verbatim as `ManyRestatement.many_old_lemFuel` /
+`many1_old_lemFuel` (D1's before-text, `_old` inserted) and related to the NEW workers by two
+kernel theorems — the charter anticipated the zero case; the obstacle is larger than the zero
+case and is stated honestly:
+
+* **Why "for every `n`" is not provable unconditionally [AGENT].** LemLib's `fuelExhaustedWith`
+  is `opaque` (`lean-lib/LemLib.lean:191`), so `fuelExhausted (ParserM (fun _ => []))` (OLD) and
+  `fuelExhausted []` (NEW) are unrelated kernel values — and that leaf is reached at EVERY fuel by
+  a deep enough parse (`n+1` unfolds to `n`, … to `0`), so `∀ n p cs, parse (many_old_lemFuel n p)
+  cs = many_run_lemFuel n p cs` is not provable as such (nor is its `0 < n` variant).
+* `restatement_of_sentinel (h0 : ∀ cs, parse (fuelExhausted (ParserM (fun _ => []))) cs =
+  fuelExhausted []) : ∀ n p cs, parse (many_old_lemFuel n p) cs = many_run_lemFuel n p cs ∧
+  parse (many1_old_lemFuel n p) cs = many1_run_lemFuel n p cs` — hop-for-hop agreement at EVERY
+  fuel under the ONE hypothesis that the two sentinels run alike, which is exactly the only
+  difference between the formulations (D1's argument made kernel-checked; induction on `n`, the
+  `many1` step by `List.map_congr_left` + `flatten_map_singleton_pairs` = the `>>= return`-is-
+  a-`map` identity; the `many` step's two head-or-empty `match`es are different matchers over the
+  same discriminant once the induction hypothesis is rewritten in — `split` generalises it and
+  both reduce). `h0` is consistent (the opaque's declared body IS `witness`), so the theorem is not
+  vacuous; it cannot be discharged inside Lean, by design of the opaque.
+* `restatement_under_measure_many1 (hp : Consumes p) (hn : 2 * cs.length + 1 ≤ n) : parse
+  (many1_old_lemFuel n p) cs = many1_run_lemFuel n p cs` and `restatement_under_measure_many` (at
+  `+ 2`): UNCONDITIONAL on every input where the measure holds — no sentinel is reached (induction
+  on a bound on the input length, as the sufficiency proof); corollaries `old_at_measure_is_many :
+  parse (many_old_lemFuel (2 * cs.length + 2) p) cs = parse (many p) cs` and `…_many1` — the OLD
+  worker at the NEW measure IS the NEW parser.
+
+The exe is registered the D1-pattern way (`lakefile.toml` `[[lean_exe]] many-restatement-test`
+root `Unit.ManyRestatementTest`; `scripts/test_unit.sh` list; `scripts/LADDER.md` Tier A row 1
+`9/9 exes` → `10/10 exes`); `main` prints one line and returns 0 (observed: rc=0). No program
+literal, no enumeration ([USER 2026-09-08]).
+
+### D4 acceptance — observed (verbatim; full log `…-evidence/d4-gates-and-probes.txt`)
+
+Axiom cones (`#print axioms`, a capped probe; every one ⊆ {propext, Classical.choice, Quot.sound}):
+```
+'CerbParserProgress.callSites_consume' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbParserProgress.consumes_digit' depends on axioms: [propext, Quot.sound]
+'CerbParserProgress.flags0_passes_consuming' depends on axioms: [propext, Quot.sound]
+'CerbParserProgress.consumes_conversionSpecification' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbParserProgress.format0_passes_consuming' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbParserProgress.consumes_many1' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbParserProgress.nonExpanding_many' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Monadic_parsing_lemMeasureProofs.many_run_measure_sufficient' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Monadic_parsing_lemMeasureProofs.many1_run_measure_sufficient' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ManyRestatement.restatement_of_sentinel' depends on axioms: [propext, Quot.sound]
+'ManyRestatement.restatement_under_measure_many' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ManyRestatement.restatement_under_measure_many1' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ManyRestatement.old_at_measure_is_many' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ManyRestatement.old_at_measure_is_many1' depends on axioms: [propext, Classical.choice, Quot.sound]
+```
+Builds: `capped lake build CerberusLean cerberus-lean` → `Build completed successfully (394 jobs).`; `capped lake build many-restatement-test` → `Build completed successfully (191 jobs).`; the exe: `many-restatement-test: the old many/many1 workers agree with the input-indexed many_run/many1_run (…)` rc=0. Seven build iterations were needed (headlines in the evidence file): matcher identity (2), a list-equation for `omega`, the `intro`-continuation layout, `with_reducible` guards against whnf timeouts (no heartbeat option was ever raised), the closing-bullet rule, and `heq` in the `split` arms — each a diagnosis, none a grind (the whole of D4 took ~55 min wall, well inside the tripwire).
+
+```
+$ ./scripts/test_unit.sh        # 20:07 → 20:11:30Z
+=== many-restatement-test ===
+✓ many-restatement-test PASSED
+Total: 10 passed, 0 failed
+check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)
+check_sorry_token: OK (314 files scanned comment-stripped — generated 218, hand-written+test 61, LemLib 35; 0 sorry tokens)
+check_no_fuel_numerals: OK (321 files scanned comment-stripped; … F1-F6 …)
+gen_fuel_parametricity: OK (14 ambient fuel wrappers … = the 14 pins …, both directions)
+check_fuel_forms: forms partition OK (62 MEASURED + 13 ABSORBING + 0 ambient-reachable + 6 ambient-unreachable = 81 fuel'd workers)
+check_lakefile_roots: OK (217 roots = 217 generated modules + the exe root Main; 85 auxiliary modules all built)
+check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly …)
+check_fork_drift: OK — layer 1: 76 … layer 2: 24 differing generated files, all hash-pinned (…)
+test_unit rc=0
+```
+Stamps after D4 (re-recorded once the probe file was removed — the first `--record-lean` was REFUSED, fail-closed, because `lean_frontend/AxiomProbe.lean` was present and unlisted; evidence file): `check_driver_fresh: oracle OK (bin 8b562dc7ccd81aaaecfb9c715bb46a6927ecbf284bfe3e2f1b7e469793b46cbe, src 98ad48b592a222a21e4619c5ce03652fc6a44c0a67c6b02cb222e1d40b1c701d)` / `check_driver_fresh: lean OK (bin 5f6dfacf25852e7eedb386345ee641317eb03448688cd768974332962a2aa2ab, src c468cb46a12e1a438172ea9a51cd9c5f6e5f5f6dce0494bc61bfe76f706b690e)`. [AGENT] The Lean driver BINARY is byte-identical to D2's (`5f6dfacf…`): the seam and the test are outside the driver's cone, so D4 cannot move any lane (the D6 full battery is the observation). The oracle `bin` hash moved (`d918cba3…` → `8b562dc7…`) with `src` unchanged: the lanes' `build_cerberus` relinks `main.exe` non-reproducibly — the sibling slice's open question 2, unchanged here. `scripts/LADDER.md` Tier A row 1: `9/9 exes` → `10/10 exes` (the §6 fence addition). Committed as D4.

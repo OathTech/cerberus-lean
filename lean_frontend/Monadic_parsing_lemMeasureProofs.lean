@@ -16,7 +16,7 @@
   run out: the loud sentinel). Shape = the C4 template (Formatted_lemMeasureProofs):
   stability above the measure by induction on a bound on the input length, the two fuels
   generalized, the hypothesis threaded; the list traversal by the membership-relative
-  congruence `List.map_congr_left`. Kernel-only tactics; no option bumps; no `sorry`.
+  congruence `List.map_congr_left`; `CerbParserProgress.parse_nil_of_consumes` closes the empty input. Kernel-only tactics; no option bumps; no `sorry`.
 
   MIRROR-OCAML NOTE: proofs about the Lean total workers; no OCaml text corresponds
   (fuel is a Lean-target artifact).
@@ -28,14 +28,6 @@ import CerbParserProgress
 set_option autoImplicit false
 
 namespace Monadic_parsing_lemMeasureProofs
-
-/-- Under `Consumes p` the empty input has no result (no rest is shorter than `[]`). -/
-theorem parse_nil_of_consumes {a : Type} (p : parserM a) (hp : CerbParserProgress.Consumes p) :
-    parse p [] = [] := by
-  apply List.eq_nil_iff_forall_not_mem.mpr
-  intro r hr
-  have := hp [] r hr
-  simp at this
 
 /-- `many1_run`'s worker is fuel-stable above `2 * cs.length + 1` when `p` consumes
     (induction on a bound `k` on the input length; the inner `many_run` call runs at
@@ -55,7 +47,7 @@ theorem many1_run_stable_aux {a : Type} (k : Nat) :
       | succ g =>
         have hcs : cs = [] := List.eq_nil_of_length_eq_zero (by omega)
         subst hcs
-        simp only [many1_run_lemFuel, parse_nil_of_consumes p hp, List.map_nil, List.flatten_nil]
+        simp only [many1_run_lemFuel, CerbParserProgress.parse_nil_of_consumes p hp, List.map_nil, List.flatten_nil]
   | succ k ih =>
     intro p cs f g hp hk hf hg
     cases f with

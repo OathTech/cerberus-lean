@@ -28,6 +28,8 @@ UNIT_TESTS=(
     "float-literal-test"
     # semantics-audit repairs D3 (2026-09-11): Ctype_aux.are_compatible array-bound arm (finding 5)
     "are-compatible-test"
+    # parser-progress-measure D4.2 (2026-09-15): the many/many1 restatement's equivalence theorems
+    "many-restatement-test"
 )
 
 # ---------------------------------------------------------------------------

@@ -263,3 +263,9 @@ root = "Unit.FloatLiteralTest"
 name = "are-compatible-test"
 srcDir = "test"
 root = "Unit.AreCompatibleTest"
+
+# parser-progress-measure D4.2 (2026-09-15): the many/many1 restatement's equivalence theorems
+[[lean_exe]]
+name = "many-restatement-test"
+srcDir = "test"
+root = "Unit.ManyRestatementTest"

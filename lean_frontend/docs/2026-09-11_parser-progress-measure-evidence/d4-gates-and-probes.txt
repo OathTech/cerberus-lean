@@ -1,0 +1,202 @@
+# D4 — build/stamps/axiom-cone probe/test_unit.sh (sequential, CERB_MEM_MAX=48G), verbatim
+# NOTE: the '=== stamps ===' refusal below is because the probe file lean_frontend/AxiomProbe.lean (unlisted in the manifest) existed at that moment — fail-closed as designed; re-recorded after (see the end)
+2026-09-15T20:09:06Z
+=== lake build CerberusLean cerberus-lean ===
+Build completed successfully (394 jobs).
+=== stamps ===
+CERB_DRIVER_STALE: lean driver record refused — hand-written sources not propagated to lean_frontend/generated/ (no stamp is recorded over a stale copy set; run make lean-prelude-src, then rebuild)
+same file). Record: lean_frontend/docs/2026-09-02_freshness-copy-gap.md.
+CERB_DRIVER_STALE: lean driver check refused — hand-written sources not propagated to lean_frontend/generated/ (no stamp is recorded over a stale copy set; run make lean-prelude-src, then rebuild)
+=== axiom probe ===
+'CerbParserProgress.callSites_consume' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbParserProgress.consumes_digit' depends on axioms: [propext, Quot.sound]
+'CerbParserProgress.flags0_passes_consuming' depends on axioms: [propext, Quot.sound]
+'CerbParserProgress.consumes_conversionSpecification' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbParserProgress.format0_passes_consuming' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbParserProgress.consumes_many1' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbParserProgress.nonExpanding_many' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Monadic_parsing_lemMeasureProofs.many_run_measure_sufficient' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Monadic_parsing_lemMeasureProofs.many1_run_measure_sufficient' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ManyRestatement.restatement_of_sentinel' depends on axioms: [propext, Quot.sound]
+'ManyRestatement.restatement_under_measure_many' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ManyRestatement.restatement_under_measure_many1' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ManyRestatement.old_at_measure_is_many' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ManyRestatement.old_at_measure_is_many1' depends on axioms: [propext, Classical.choice, Quot.sound]
+=== test_unit.sh ===
+check_handwritten_sync: OK (48 hand-written files byte-identical to lean_frontend/generated/; manifest lean_frontend/handwritten_copy.manifest)
+=== effects-proof-test ===
+✓ effects-proof-test PASSED
+=== totality-proof-test ===
+✓ totality-proof-test PASSED
+=== core-parser-test ===
+=== Lexer ===
+=== Types ===
+=== Values ===
+=== Patterns ===
+=== Pexpr atoms ===
+=== Pexpr constructors ===
+=== Pexpr compound expressions ===
+=== Expr atoms ===
+=== Expr compound ===
+=== Full programs (from cerberus --pp core) ===
+=== Declarations ===
+=== libc dump productions (arc-6 S1) ===
+=== Runtime files ===
+✓ core-parser-test PASSED
+=== fresh-int-test ===
+✓ fresh-int-test PASSED
+=== pp-test ===
+=== PPTest: arc-10 S3 pretty-printer mirrors ===
+✓ pp-test PASSED
+=== fuel-exemplar-test ===
+✓ fuel-exemplar-test PASSED
+=== monadic-failstop-test ===
+✓ monadic-failstop-test PASSED
+=== float-literal-test ===
+✓ float-literal-test PASSED
+=== are-compatible-test ===
+✓ are-compatible-test PASSED
+=== many-restatement-test ===
+✓ many-restatement-test PASSED
+Total: 10 passed, 0 failed
+check_exec_purity: CLEAN (11 modules)
+check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)
+check_sorry_token: OK (314 files scanned comment-stripped — generated 218, hand-written+test 61, LemLib 35; 0 sorry tokens)
+test_exec: SELFTEST OK (E0 pre-repair collapse reproduced; E1-E7: same-value/different-stdout and different-stderr yield distinct whole-line tokens, escaped payload byte-exact, multi-outcome order kept, embedded text is payload, Undefined unchanged, truncated line is no token)
+  check_no_fuel_numerals: OK (321 files scanned comment-stripped; no lemDefaultFuel/driverFuel/ndDefaultFuel, no LemFuel instance, no literal fuel (F1-F6); allowed Main.lean sites seen: 4 of 4 (hand-written + generated copy))
+check_no_fuel_numerals: SELFTEST OK (20 plants red with the declared label; E5 indirection a recorded known gap; unplanted set green)
+check_no_fuel_numerals: OK (321 files scanned comment-stripped; no lemDefaultFuel/driverFuel/ndDefaultFuel, no LemFuel instance, no literal fuel (F1-F6); allowed Main.lean sites seen: 4 of 4 (hand-written + generated copy))
+gen_fuel_parametricity: OK (14 ambient fuel wrappers in the generated tree = the 14 pins of TotalityProofTest.lean Part 1, both directions)
+  check_lakefile_roots: OK (217 roots = 217 generated modules + the exe root Main; 85 auxiliary modules all built)
+check_lakefile_roots: SELFTEST OK (3 plants red, baseline green)
+check_lakefile_roots: OK (217 roots = 217 generated modules + the exe root Main; 85 auxiliary modules all built)
+    check_fuel_forms: OK (81 fuel'd workers: 62 MEASURED (obligation of the contract's shape incl. argument correspondence against the wrapper's body; every obligation + proof cone ⊆ the standard three; 12 of them under a hypothesis, each = a reviewed row of fuel_hypotheses.txt, both directions), 
+check_fuel_forms: SELFTEST OK (24 plants with the declared label — 6 on the table (incl. the ABSORBING-cone plant), 3 on the hypothesis register, 15 compiled decoys: the C4 four (type True / wrong worker / contradictory hypothesis caught by the register / extra binder), the whole-project audit's t
+check_fuel_forms: OK (81 fuel'd workers: 62 MEASURED (obligation of the contract's shape incl. argument correspondence against the wrapper's body; every obligation + proof cone ⊆ the standard three; 12 of them under a hypothesis, each = a reviewed row of fuel_hypotheses.txt, both directions), 13 A
+    check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=166 REACHABLE=48 UNKNOWN=19; every
+check_failure_reach: SELFTEST OK (5 plants with the declared message — a new site in a generated exec-closure definition, a DISCARDABLE dead let-binding, an unsealed class edit, a phantom row, an edited tally — and the unplanted register green)
+check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=166 REACHABLE=48 UNKNOWN=19; every row
+check_exec_totality: CLEAN (22 generated modules + hand-written CerbND, 0 allowlisted)
+check_lem_sync: OK (src 0ea744e44bd25235b4db5b42660406f178879ca5194c707640feb4f814e3793c, gen bcb2f7d80459eda631942ad09cf31a632640ad5fbfb2bd3d5d678bbf01c6a14b)
+  PLANT OK   [S1 en_US-ordered [files] under LC_ALL=C (the pre-repair failing configuration)] rc=0 -> check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 24 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0e
+  PLANT OK   [S2 C-ordered [files] under LC_ALL=en_US.UTF-8] rc=0 -> check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 24 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef
+  PLANT OK   [S3 reversed [files] order (set unchanged)] rc=0 -> check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 24 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef
+  PLANT OK   [S11 unmodified copied source contents] rc=0 -> check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 24 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef
+    check_fork_content: OK — 76 source files content/mode-pinned
+    check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 24 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+check_fork_drift: SELFTEST OK (14 plants with declared verdict/message: S1-S10 prerequisite/locale/name controls; S11 copied-content control; S12 inside-listed-file drift; S13/S14 duplicate/missing content pins; unplanted gate green)
+check_fork_content: OK — 76 source files content/mode-pinned
+check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 24 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+check_fixture_freeze: OK (16 fixture files match the pinned manifest; name set exact)
+test_renumber_plants: OK (12 plants: refusals refuse, admits admit with declared class)
+test_unit rc=0
+2026-09-15T20:11:30Z
+
+=== stamps re-recorded after the probe file was removed (verbatim) ===
+check_driver_fresh: recorded lean stamp (bin 5f6dfacf25852e7eedb386345ee641317eb03448688cd768974332962a2aa2ab, src c468cb46a12e1a438172ea9a51cd9c5f6e5f5f6dce0494bc61bfe76f706b690e)
+check_driver_fresh: oracle OK (bin 8b562dc7ccd81aaaecfb9c715bb46a6927ecbf284bfe3e2f1b7e469793b46cbe, src 98ad48b592a222a21e4619c5ce03652fc6a44c0a67c6b02cb222e1d40b1c701d)
+check_driver_fresh: lean OK (bin 5f6dfacf25852e7eedb386345ee641317eb03448688cd768974332962a2aa2ab, src c468cb46a12e1a438172ea9a51cd9c5f6e5f5f6dce0494bc61bfe76f706b690e)
+
+=== the matcher-identity probe (D4.1's obstacle), source + verbatim errors ===
+import Formatted
+set_option autoImplicit false
+def choice {a : Type} (p1 p2 : parserM a) : parserM a :=
+  ParserM (fun (cs : List Char) => match parse (parse_mplus p1 p2) cs with | [] => [] | (x :: _) => [x])
+example : digit = choice (parse_char '0') nonzero := rfl
+example : digit = choice (parse_char '0') nonzero := by unfold digit choice; rfl
+example : digit = choice (parse_char '0') nonzero := by simp only [digit, choice]
+example : ∃ k, flags0 = parse_bind (many (choice (choice (choice (choice (parse_char '-') (parse_char '+')) (parse_char ' ')) (parse_char '#')) (parse_char '0'))) k := ⟨_, rfl⟩
+--- output (verbatim) ---
+MatcherProbe.lean:5:53: error: Type mismatch
+  rfl
+has type
+  ?m.4 = ?m.4
+but is expected to have type
+  digit = choice (parse_char '0') nonzero
+MatcherProbe.lean:6:77: error: Tactic `rfl` failed: The left-hand side
+  ParserM fun cs =>
+    match parse (parse_mplus (parse_char '0') nonzero) cs with
+    | [] => []
+    | x :: tail => [x]
+is not definitionally equal to the right-hand side
+  ParserM fun cs =>
+    match parse (parse_mplus (parse_char '0') nonzero) cs with
+    | [] => []
+    | x :: tail => [x]
+MatcherProbe.lean:7:53: error: unsolved goals
+
+=== D4 build iterations (error headlines only, verbatim; full logs ephemeral .tmp/d4-build*.log) ===
+--- build 1
+error: generated/CerbParserProgress.lean:145:22: `simp` made no progress
+error: generated/CerbParserProgress.lean:148:6: `simp` made no progress
+error: generated/CerbParserProgress.lean:249:10: omega could not prove the goal:
+error: generated/CerbParserProgress.lean:296:2: Type mismatch
+error: generated/CerbParserProgress.lean:312:34: Unknown identifier `elem`
+error: generated/CerbParserProgress.lean:312:60: Unknown identifier `elem`
+error: generated/CerbParserProgress.lean:312:87: Unknown identifier `elem`
+error: generated/CerbParserProgress.lean:313:33: Unknown identifier `elem`
+error: generated/CerbParserProgress.lean:313:59: Unknown identifier `elem`
+error: generated/CerbParserProgress.lean:316:2: Type mismatch
+error: generated/CerbParserProgress.lean:343:2: Tactic `apply` failed: could not unify the conclusion of `@nonExpanding_choice`
+error: generated/CerbParserProgress.lean:349:2: Tactic `apply` failed: could not unify the conclusion of `@nonExpanding_choice`
+error: generated/CerbParserProgress.lean:359:12: (deterministic) timeout at `whnf`, maximum number of heartbeats (200000) has been reached
+error: generated/CerbParserProgress.lean:365:6: (deterministic) timeout at `whnf`, maximum number of heartbeats (200000) has been reached
+error: generated/CerbParserProgress.lean:394:2: Type mismatch
+error: Lean exited with code 1
+--- build 2
+error: generated/CerbParserProgress.lean:187:12: Type mismatch
+error: generated/CerbParserProgress.lean:254:10: omega could not prove the goal:
+error: generated/CerbParserProgress.lean:309:12: Type mismatch
+error: generated/CerbParserProgress.lean:343:19: Type mismatch
+error: generated/CerbParserProgress.lean:331:14: unsolved goals
+error: generated/CerbParserProgress.lean:383:19: Type mismatch
+error: generated/CerbParserProgress.lean:365:61: unsolved goals
+error: generated/CerbParserProgress.lean:403:19: Type mismatch
+error: generated/CerbParserProgress.lean:385:73: unsolved goals
+error: generated/CerbParserProgress.lean:410:6: (deterministic) timeout at `whnf`, maximum number of heartbeats (200000) has been reached
+error: generated/CerbParserProgress.lean:430:12: (deterministic) timeout at `whnf`, maximum number of heartbeats (200000) has been reached
+error: generated/CerbParserProgress.lean:457:8: (deterministic) timeout at `whnf`, maximum number of heartbeats (200000) has been reached
+error: generated/CerbParserProgress.lean:477:14: Type mismatch
+error: Lean exited with code 1
+error: build failed
+--- build 3
+error: generated/CerbParserProgress.lean:344:28: unexpected token 'at'; expected ')'
+error: generated/CerbParserProgress.lean:340:14: unsolved goals
+error: generated/CerbParserProgress.lean:383:26: unexpected token 'at'; expected ')'
+error: generated/CerbParserProgress.lean:373:61: unsolved goals
+error: generated/CerbParserProgress.lean:401:26: unexpected token 'at'; expected ')'
+error: generated/CerbParserProgress.lean:391:73: unsolved goals
+error: generated/CerbParserProgress.lean:419:26: unexpected token 'at'; expected ')'
+error: generated/CerbParserProgress.lean:409:69: unsolved goals
+error: generated/CerbParserProgress.lean:437:26: unexpected token 'at'; expected ')'
+error: generated/CerbParserProgress.lean:427:79: unsolved goals
+error: Lean exited with code 1
+error: build failed
+--- build 4
+error: generated/CerbParserProgress.lean:347:9: unsolved goals
+error: generated/CerbParserProgress.lean:386:7: unsolved goals
+error: generated/CerbParserProgress.lean:404:7: unsolved goals
+error: generated/CerbParserProgress.lean:422:7: unsolved goals
+error: generated/CerbParserProgress.lean:440:7: unsolved goals
+error: Lean exited with code 1
+error: build failed
+--- build 5
+error: test/Unit/ManyRestatementTest.lean:70:10: Tactic `rewrite` failed: Did not find an occurrence of the pattern
+error: test/Unit/ManyRestatementTest.lean:77:10: Tactic `rewrite` failed: Did not find an occurrence of the pattern
+error: test/Unit/ManyRestatementTest.lean:89:13: unsolved goals
+error: test/Unit/ManyRestatementTest.lean:110:12: Tactic `rewrite` failed: Did not find an occurrence of the pattern
+error: test/Unit/ManyRestatementTest.lean:125:8: Tactic `rewrite` failed: Did not find an occurrence of the pattern
+error: Lean exited with code 1
+error: build failed
+--- build 6
+error: test/Unit/ManyRestatementTest.lean:74:16: `simp` made no progress
+error: test/Unit/ManyRestatementTest.lean:112:15: unsolved goals
+error: test/Unit/ManyRestatementTest.lean:134:14: `simp` made no progress
+error: Lean exited with code 1
+error: build failed
+--- build 7
+Build completed successfully (191 jobs).
