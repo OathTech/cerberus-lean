@@ -27,6 +27,70 @@ owned and hands off; this roadmap does not authorize operating it.
   `docs/2026-08-31_semantics-forward-assessment.md` (the F-axes);
   deliberately parked behind the substantive track.
 
+## Semantics-audit repairs (2026-09-11) — RESOLVED findings and the rows they leave
+
+Record `docs/2026-09-11_semantics-audit-repairs-record.md`; charter
+`docs/2026-09-11_codex-charter-semantics-audit-repairs.md` (§6–§8 carry the
+resumption rulings and errata). Branch `arc/semantics-audit-repairs`.
+
+- ~~**Finding 4 — C floating literals not correctly rounded**~~ — RESOLVED (D1,
+  `c807ce603`): `CerbFloat.of_string` parses to an exact rational and rounds ONCE
+  in `Nat` to binary64 (`roundToBinary64Bits`, `Float.ofBits`; no `Float`
+  arithmetic before assembly); battery `tests/float/081–105` + unit exe
+  `float-literal-test` (42 bit-pattern pins). The oracle's own defect — OCaml's
+  `caml_float_of_hex` double-rounds a >53-bit mantissa to a subnormal — is
+  ISO-fix register **R5** (D1b, `146179d24`; VALIDATION §2; immaculate pin
+  `r5-hex-subnormal-double-rounding` DIFF; trays `40`, `ocaml/01`).
+- ~~**Finding 3 — raw bytes ≥ 0x80 in string literals / character constants
+  broke the Cabs JSON bridge**~~ — RESOLVED (D2, `a43abba65`): `json_of_bytes`
+  at the three byte sites of `cabs_json.ml`, fail-closed `getByteStr` importer
+  (code point ≥ 256 = a carrier violation, an `Except` error), bridge probe
+  `scripts/test_cabs_bytes_probe.py` in `test_parse.sh`; pins
+  `tests/minimal/107–111`, `tests/immaculate/nolibc/f3-*`. RESIDUAL (VALIDATION
+  §3(b) row, 2026-09-15): TEXT fields (`EDecl_magic` text, attribute-argument
+  strings — whole strings, `c_parser.mly:1771-1775`) still copy raw bytes, so a
+  non-UTF-8 byte in SOURCE TEXT makes the bridge REFUSE loudly where the oracle
+  proceeds. Mover: a text-field encoder decision in a separate slice.
+- ~~**Finding 5 + draft 38 — cross-TU struct-value compatibility**~~ — RESOLVED
+  (D3, `dbe633ec5` + `83dc6ba00`): `ctype_aux.lem` array arm `(n1_opt, n2_opt)`;
+  `PEmemberof(struct)` consults `Ctype_aux.are_compatible` when the tags differ;
+  unit exe `are-compatible-test`; corpus `tests/multi_tu_tray/` (LADDER Tier A row
+  6b); fork-drift layer 2 = 23 (`core_eval.ml` added); trays 38 (fork status), 39.
+- **Union twin** (OPEN; charter §8 item 7): `core_eval.lem`'s `PEmemberof(union)`
+  arm and `memValueFromValue`'s union arm (`core_aux.lem:204-208`) keep EXACT tag
+  identity. Reproducer shape (not run in the slice — fence): `union U { int v;
+  double d; };` defined in two TUs, `union U mk(void)` in TU 1 setting `.v = 7`,
+  TU 2 `return mk().v;` → expected `ill-formed program: PEmemberof(union) ==>
+  mismatched tags` on both fork engines (draft 38's shape with `union`). Remedy
+  shape: the same `are_compatible` consult (the `Union/Union` arm of
+  `are_compatible_aux` exists) at both sites; its own charter.
+- **Failure-text symbol projection** — IMPLEMENTED for LADDER Tier A row 6b ONLY
+  (`observations.py --projection failure-class`; `test_multi_tu.sh
+  --failure-class-projection`; charter §8 item 2): `Symbol(<digits>, ` → `Symbol(_, `
+  in Error/Undefined payloads, nothing else; plant-tested. Every other lane row
+  keeps `full`; any wider use is a separate operator decision (the general
+  projection was parked at the 2026-09-11 landing).
+- **Argument-path compatibility — OBSERVED MODELLING LIMIT** (charter §8 item 1):
+  in the default switch set a by-value struct argument crosses the TU boundary as
+  a pointer to a caller temporary (`core_run.lem:962-970`) and no compatibility is
+  consulted (`arr-1-2-arg`, even `{int a}` vs `{int b}`, → `Specified(7)` on every
+  engine); under `--switches=inner_arg_temps` the store-side consult rejects with an
+  uncaught `Failure` (exit 125), not a diagnostic. Pinned as behaviour
+  (`tests/multi_tu_tray/arr-*-arg`); the upstream question rides in draft 39.
+- **FAM vs sized array** — `struct S {int n; int a[];}` vs `{int n; int a[2];}` is
+  INCOMPATIBLE on all three engines (member COUNT; the FAM lives outside the member
+  list); gcc runs it. Draft 41 (question); no change.
+- **Unary minus on a floating zero** — `-x` elaborates as `0.0 - x`
+  (`translation.lem:1530-1551`), so `-(+0.0)` is `+0` where IEEE/Annex F give `-0`;
+  both fork engines and upstream agree. Draft 42 (question); no port change.
+- **Doc residuals outside the slice's fence** (for the orchestrator):
+  `docs/2026-09-05_observation-contract.md`'s comparison matrix lacks a row for row
+  6b's labelled projection; `docs/upstream-tray/README.md` §4's triage table stops
+  before draft 36; `scripts/test_immaculate.sh`'s header comment (`:22-27`) lists
+  R1–R3 only (its OK message line names R5 since 2026-09-15); VALIDATION §2's R4
+  paragraph says "today the markers are `CerbDecode.lean` R1/R2" (R5's marker is in
+  `CerbFloat.lean`).
+
 ## Fuel-parameter arc — C2 follow-ups (record `docs/2026-09-04_fuel-parameter-C2-record.md` §9)
 
 - ~~**Point-free `function` tails (6 PENDING rows; lem-lean TODO 17)**~~ —

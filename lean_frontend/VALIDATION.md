@@ -237,6 +237,19 @@ a bug today and what is a bug still open, in the class vocabulary.
   every classifying lane; `sia_csmith_477/769` at the lane bound) — the
   accepted class, with the parameter (§7).
 
+- *Non-UTF-8 bytes in a TEXT field of the Cabs JSON* (magic-comment text,
+  `EDecl_magic`, `cabs_json.ml:657`; attribute-argument strings, `:600/602` —
+  WHOLE strings, `c_parser.mly:1771-1775` concatenates the literal's fragments
+  before the exporter sees them, so they stay TEXT): the exporter's
+  `json_of_string` copies bytes ≥ 0x80 raw, the JSON is not UTF-8, and the
+  bridge REFUSES the file loudly (`IO.FS.readFile`: "containing non UTF-8
+  data") where the oracle proceeds — a fail-noisy class-(b) residual on
+  non-UTF-8 SOURCE TEXT, not on literals (string-literal fragments and
+  character-constant bodies are byte-carriers since the 2026-09-11 fix:
+  `docs/2026-09-11_semantics-audit-repairs-record.md` §D2; row added per its
+  charter §8 item 6). Mover: an encoder decision for the text fields, a
+  separate slice.
+
 **(c) missing features — loud, attributed refusals (not bugs):**
 
 - *Semantics switches* (`--switches=PVI|PNVI|strict_pointer_arith|CHERI…`):
@@ -381,6 +394,7 @@ lanes, with their recorded states:
 | `test_core.sh` | tests/minimal (+ tests/ci) | Core text parser vs oracle `--pp=core`, 106/106 minimal |
 | `test_elab.sh` | elaboration corpus | recorded same/diff state, rc 0 |
 | `test_multi_tu.sh` | `tests/multi_tu` | multi-TU linking differential, all entries |
+| `test_multi_tu.sh --failure-class-projection tests/multi_tu_tray` | `tests/multi_tu_tray` (7 cross-TU struct-value cases; LADDER Tier A row 6b, 2026-09-15) | the same differential under the LABELLED WEAKER projection `failure-class` — `Symbol(<digits>, ` elided in Error/Undefined payloads only (the engines number symbols differently); 7/7 MATCH; the ONLY row not on `full`; two rows are OBSERVED MODELLING-LIMIT pins (`tests/multi_tu_tray/README.md`) |
 | `test_libc_exec.sh` | `tests/libc_exec` | libc-linked execution at the committed baseline |
 | `test_libxml2_uri.sh` | 16 URIs, 5 TUs, libc | **16/16 byte-identical** lean+libc vs oracle+libc, pinned per-lane expectations |
 | `test_libxml2.sh` | libxml2 `chvalid` battery | 4 slices × 1,354 points, byte-equal verdicts (slow tier) |
@@ -710,6 +724,13 @@ The claims this validation surface supports are exactly:
    completion, driver-level propagation and whole-interpreter stability
    remain obligations under explicit hypotheses; these local results do not
    establish universal agreement with oracle-terminating runs.
+
+Sampling has blind spots, and they are closed by dated records, never
+quietly: literal-level adversarial inputs (long hexadecimal mantissas, raw
+high bytes in string literals and character constants) were untested before
+2026-09-11 — `docs/2026-09-11_semantics-audit-repairs-record.md` (findings
+3/4 of the whole-project semantics audit; the corpora had one 21-character
+hexadecimal literal and no executed non-ASCII literal).
 
 What remains on the trust boundary: the OCaml oracle itself (and
 upstream's correctness — the tray is the log of where we believe it is

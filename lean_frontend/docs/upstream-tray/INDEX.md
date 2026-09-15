@@ -417,10 +417,40 @@ oracles re-run 2026-09-08, lines verbatim in the draft):
     Remedy: consult `Ctype_aux.are_compatible` at member selection (the check
     `memValueFromValue` already performs on store) or retag at the TU boundary.
     File together with 37. Reproducer: draft 37's `tests/failure-probes/cross_tu_node/`.
+    FORK STATUS 2026-09-15: FIXED in the fork at `dbe633ec5` (semantics-audit repairs
+    D3, record `lean_frontend/docs/2026-09-11_semantics-audit-repairs-record.md` §D3):
+    `PEmemberof(struct)` consults `Ctype_aux.are_compatible` when the tags differ (the
+    consult `memValueFromValue` already performs on store; equal tags never reach it).
+    The reproducer now runs to gcc's value on both fork engines — fork oracle
+    `Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}` rc 0,
+    fork Lean the same, pristine upstream still `rc=124` — and is pinned as the lane case
+    `tests/multi_tu_tray/node` (LADDER Tier A row 6b). The draft's new "Fork status"
+    section carries the `.lem` hunk and the fresh runs; the union arm is NOT changed
+    (the "union twin", `lean_frontend/TODO.md` "Semantics-audit repairs").
 
-Added 2026-09-15 (the semantics-audit repairs slice, D1b — record
-`lean_frontend/docs/2026-09-11_semantics-audit-repairs-record.md` §D1b; number 39 is
-the array-bound-typo draft of the same slice's D4):
+39. **39-are-compatible-array-bound-typo.md** — TRUE BUG / minor (slotting note: ranks
+    with 37/38 — the Core-level compatibility predicate, C-reachable only through struct
+    values crossing translation units; file together with 37 and 38). `ctype_aux.lem:80`,
+    the `Array/Array` arm of `are_compatible_aux`: `match (n1_opt, n1_opt)` pairs the first
+    bound with ITSELF, so `int a[1]` and `int a[2]` are "compatible" wherever
+    `Ctype_aux.are_compatible` is consulted (`memValueFromValue` on store,
+    `core_aux.lem:200`); the Ail-level twin `ailTypesAux.lem:807-813` is correct. Masked on
+    upstream by 38's exact-tag guard — fixing 38 alone UNMASKS it (an incompatible value
+    accepted silently). One-token remedy `(n1_opt, n2_opt)`. Reproducers
+    `tests/multi_tu_tray/arr-1-2-return` (+ compatible twins), three-engine runs verbatim
+    in the draft. Carries two related observations: in the default switch set the
+    by-value ARGUMENT path consults no compatibility (`core_run.lem:947-950`: a pointer to
+    a caller temporary; `Specified(7)` on every engine even for `{int a}` vs `{int b}`),
+    and under `--switches=inner_arg_temps` an incompatible argument dies at the store-side
+    consult (`core_run.lem:527`) with an uncaught `Failure` (exit 125) rather than a
+    diagnostic. FORK STATUS 2026-09-15: FIXED at `dbe633ec5`; pinned by the unit exe
+    `are-compatible-test` and `tests/multi_tu_tray` (row 6b).
+
+Added 2026-09-15 (the semantics-audit repairs slice — record
+`lean_frontend/docs/2026-09-11_semantics-audit-repairs-record.md`; numbering per its
+charter §8 item 8: 39 = the array-bound typo above (D4), 40 = R5 inherited (D1b), 41 =
+the flexible-array-member compatibility question, 42 = unary minus on a floating zero;
+41 and 42 rank with the questions, 40 with them for visibility):
 
 40. **40-float-literal-hex-subnormal-double-rounding-inherited.md** — INHERITED /
     minor (slotting note: not a Cerberus bug — it ranks with the questions, below every
@@ -433,6 +463,32 @@ the array-bound-typo draft of the same slice's D4):
     0x1.0000000000002p-1023` → Cerberus `Specified(0)`, gcc/Python/our port 1. Remedy:
     the runtime fix (OCaml-target draft `ocaml/01`), or parse hex constants exactly in
     Cerberus. ISO-fix register R5 in the fork (VALIDATION.md §2).
+
+41. **41-struct-flexible-array-member-vs-sized-array-compatibility-question.md** —
+    UNCLEAR / minor, framed as a question (slotting note: question tier, ranks with
+    06/07/33; not a bug claim; no fork change — mirror rule). `struct S {int n; int a[];}`
+    (TU 1) vs `struct S {int n; int a[2];}` (TU 2), a value returned across the TUs and
+    member-selected: INCOMPATIBLE on pristine upstream, on the fixed fork and on its Lean
+    port alike — `are_compatible_aux` keeps the flexible array member OUTSIDE the member
+    list it compares (`ctype_aux.lem:117` member COUNT 1 ≠ 2 → false; `ctype.lem:76-85`
+    `StructDef … * maybe flexible_array_member`); gcc links and runs it (7). Does the
+    authors' §6.2.7#1 reading intend FAM-vs-sized-array incompatibility, given §6.7.6.2#6
+    makes an incomplete array type compatible with any array of compatible element type
+    (the ordinary member `int (*p)[]` vs `int (*p)[2]` IS compatible on the fork)?
+    Reproducer `tests/multi_tu_tray/fam-vs-array-return`, three-engine runs verbatim.
+
+42. **42-unary-minus-floating-zero-sign-question.md** — UNCLEAR / minor, framed as a
+    question (slotting note: question tier; both fork engines AND upstream agree, so not
+    a port bug and no fork change). Unary minus on a floating operand is elaborated as
+    `0.0 - x` (`translation.lem:1525-1554`: `Caux.mk_op_pe C.OpSub zero_pe …` with
+    `zero_pe = Mem.zero_fval`; `core_eval.lem:446` `OpSub -> FloatSub`; `impl_mem.ml:2533`
+    `(-.)`), so `-z` with `z = 0.0`, and `-0x0p0` (an unsigned constant under unary minus),
+    yield `+0` where IEEE 754-2019 §5.5.1 `negate` / C11 Annex F.3 give `−0`: sign-bit
+    probes `Specified(0)` on all three engines vs gcc exit 1; the controls `0.0 * -1.0`
+    (−0) and `-1.5` agree everywhere. Does the concrete model intend Annex F semantics for
+    negation (one-arm remedy: a dedicated `neg_fval`), or is `+0` an accepted "negative
+    of" `+0` for a non-IEC-60559 model? Probes in the record's evidence directory
+    (`d4-negzero-three-engine.txt`), deliberately NOT lane files.
 
 Amended 2026-09-05: draft 10 gains an addendum for the STRING-LITERAL
 form of `\?` (`"\?"` reaches the same decoder from translation.ml:3029;

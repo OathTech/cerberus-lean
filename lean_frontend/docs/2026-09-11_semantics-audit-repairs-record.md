@@ -1404,3 +1404,115 @@ of `dbe633ec5`; stamps `oracle OK (bin 89a899c5…, src 19de18ed…)` / `lean OK
 Files in this commit: `tests/multi_tu_tray/**` (7 cases + README, NEW), `scripts/observations.py`,
 `scripts/test_observations.py`, `scripts/test_multi_tu.sh`, `scripts/LADDER.md` (row 6b), this
 record, evidence `d3-tray-observed.txt`, `d3-tray-lane-and-plants.txt`, `d3b-tierA-verdicts.txt`.
+
+## D4 — Tray, registers, stale documents (charter D4 + §8 items 3–8) — DONE
+
+1. **Draft 39** — NEW `docs/upstream-tray/39-are-compatible-array-bound-typo.md`: TRUE BUG /
+   minor; Affected `ctype_aux.lem:80` (upstream `b9aeedcb4`, the arm quoted); the one-token
+   remedy; the `arr-1-2-return` reproducer with its compatible twins and the three-engine
+   runs verbatim (from `…-evidence/d3-tray-observed.txt`); what the typo ALONE does stated as
+   READ from the source (the fork fixed both defects in one commit); the unit pins; "file
+   together with 37 and 38". Two "Related observations" (§8 item 3): the default-switch-set
+   argument path consults no compatibility (`core_run.lem:947-950` upstream = fork
+   `:964-967`; `arr-1-2-arg` `Specified(7)` on every engine), and under
+   `--switches=inner_arg_temps` the store-side consult (`core_run.lem:527` upstream = fork
+   `:544`) rejects with an uncaught `Failure` exit 125 (verbatim from
+   `…-evidence/d3-reproducers-observed.txt`). Fork-status section: FIXED at `dbe633ec5`.
+   **Draft 38** gains a "Fork status (2026-09-15)" section like 37's: the `.lem` hunk, the
+   union arm left as the twin, the `node` three-engine runs verbatim (fork `Specified(7)` rc 0
+   / Lean same / pristine `rc=124` / gcc 7) and the twins' verdicts. **INDEX.md**: row 38 +
+   FORK STATUS paragraph; NEW row 39 (slotting note: ranks with 37/38, file together); the
+   "Added 2026-09-15" paragraph rewritten to carry the §8 item 8 numbering (39/40/41/42);
+   NEW rows 41 and 42 in the question tier after 40, each with a slotting note.
+2. **`tests/failure-probes/cross_tu_node/node_a.c`** header comment rewritten (comment only;
+   code lines untouched): history (draft 37 non-termination → fixed 2026-09-10; draft 38
+   exact-tag rejection → fixed 2026-09-15 at `dbe633ec5`) and current state (both fork
+   engines `Specified(7)`; pristine still `rc=124`; the same program is the lane case
+   `tests/multi_tu_tray/node`).
+3. **D1/D2 doc fixes confirmed in the tree:** `CabsImport.lean:31` "Z2-J-02 (CORRECTED and
+   FIXED 2026-09-11, semantics-audit repairs D2 — …" states the both-fail claim false for
+   non-decoding shapes and the byte-carrier convention; `CerbFloat.lean:104-105` "Any residual
+   difference from the oracle is a BUG (VALIDATION.md §0–§1; the former "deliberate,
+   documented divergence" …" — the D1 wording is gone. [AGENT] Two OTHER pre-existing
+   "DELIBERATE" notes remain in `CerbFloat.lean` and are not D1's: `:40` (the upstream
+   `Cerb_floating.mul = (+.)` bug, tray 01, FILED as issue 1009 — the Lean side is right) and
+   `:343` (`-nan` printing). Left as they are; not in this slice's fence beyond the module
+   comment.
+4. **`TODO.md`**: NEW block "Semantics-audit repairs (2026-09-11) — RESOLVED findings and the
+   rows they leave" (after "Queued larger work"): findings 4/3/5 + draft 38 RESOLVED with the
+   commit shas and record pointer; the **union twin** row (§8 item 7) with the reproducer shape
+   (`union U { int v; double d; }` in two TUs, `mk().v` across them → expected
+   `PEmemberof(union) ==> mismatched tags`) and the remedy shape; the symbol projection status
+   (implemented for row 6b only); the argument-path observed modelling limit; the FAM and
+   unary-minus questions (drafts 41/42); the doc residuals outside the fence (observation
+   contract matrix; tray README §4; `test_immaculate.sh` header comment; VALIDATION §2's R4
+   sentence). **`VALIDATION.md`** — grep of `hex`, `UTF-8`, `non-ASCII`, `cross-TU`, `struct
+   value`, `mismatched tags`, `multi_tu`: hits only at §2 R5 (correct), §5's lanes table
+   (`test_multi_tu.sh | tests/multi_tu`) and two Tier-membership prose lists (still true).
+   Three edits, before/after verbatim in `…-evidence/d4-validation-diff.txt`:
+   - §3(b): ONE residual row inserted before "(c)" (§8 item 6), the charter's sentence with
+     the site cites — "*Non-UTF-8 bytes in a TEXT field of the Cabs JSON* (magic-comment
+     text, `EDecl_magic`, `cabs_json.ml:657`; attribute-argument strings, `:600/602` — WHOLE
+     strings, `c_parser.mly:1771-1775` … ): … the bridge REFUSES the file loudly
+     (`IO.FS.readFile`: "containing non UTF-8 data") where the oracle proceeds — a fail-noisy
+     class-(b) residual on non-UTF-8 SOURCE TEXT, not on literals … Mover: an encoder
+     decision for the text fields, a separate slice."
+   - §5 lanes table: the stale enumeration (before: the single row `` `test_multi_tu.sh` |
+     `tests/multi_tu` | multi-TU linking differential, all entries ``) gains the row for
+     LADDER Tier A row 6b naming the LABELLED WEAKER projection and the two observed
+     modelling-limit pins; the existing row is unchanged.
+   - §9: after claim 5 (before "What remains on the trust boundary") — there is no
+     blind-spot LIST in §9, so ONE paragraph was added: "Sampling has blind spots, and they
+     are closed by dated records, never quietly: literal-level adversarial inputs (long
+     hexadecimal mantissas, raw high bytes in string literals and character constants) were
+     untested before 2026-09-11 — … (the corpora had one 21-character hexadecimal literal and
+     no executed non-ASCII literal)."
+5. **LADDER row 6b / `test_release.py`**: done and verified in the D3 second commit
+   (`Ran 16 tests … OK` on the real LADDER; `release.py --list` shows `A6b`; `release.py
+   --mode fast` ran it: `PASSED A6b (3.5s)`). No LADDER edit in D4.
+6. **§8 item 6 — the per-byte condition, read BEFORE touching anything:** `c_parser.mly:1771-1775`
+   `located_string_literal` builds `strs = List.map (fun (loc, s) -> (loc, String.concat "" s))
+   (snd $1)` and `(loc, String.concat "" (List.map snd strs), strs)` — the literal's s-char
+   fragments are CONCATENATED into one OCaml string per literal piece and again over the
+   pieces; `cabs_json.ml:600` emits that whole string (`json_of_string s`) and `:602` each
+   piece's whole string (`is`). The branch that holds is "**whole strings**": the attribute
+   arguments are NOT emitted per byte/fragment like the literal fragments were. Therefore
+   `cabs_json.ml`/`CabsImport.lean` are NOT touched; they stay TEXT, and the VALIDATION §3(b)
+   residual row above records the consequence. `EDecl_magic` (`:657`) stays TEXT as directed.
+7. **§8 item 5 — `test_immaculate.sh`'s OK line**: read first — it is an `echo` inside `if [[
+   $rc -eq 0 ]]` (`:346-347`), a MESSAGE, not verdict logic (the verdict is the
+   DEVIATION/MISSING accumulation above it). Edited the one line to add `, R5
+   r5-hex-subnormal-double-rounding DIFF`. Lane re-run, verbatim:
+   ```
+   $ ./scripts/test_immaculate.sh
+   OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip DIFF, R3 s4b-memcmp-hugesize ORACLE_CRASH, R5 r5-hex-subnormal-double-rounding DIFF — VALIDATION.md 'ISO-fix register' — and the in-Lean probes g6 TRIPWIRE / illtyped-store KILL).
+   rc=0
+   ```
+   (no DEVIATION/MISSING line; the header comment `:22-27` still lists R1–R3 — outside the
+   one-line fence, noted in TODO.)
+8. **Draft 41** — NEW `41-struct-flexible-array-member-vs-sized-array-compatibility-question.md`
+   (§8 item 4; the 06/07 shape: Affected (for orientation) / Observation / Question for
+   upstream / Impact / Proposed remedy / Classification / Provenance): the
+   `fam-vs-array-return` three-engine runs verbatim; the mechanism (`ctype_aux.lem:117`
+   member COUNT 1 ≠ 2; `ctype.lem:76-85` `StructDef … * maybe flexible_array_member`); the
+   §6.2.7#1 / §6.7.6.2#6 / §6.7.2.1#18 question; UNCLEAR / QUESTION, minor; no fork change.
+9. **Draft 42** — NEW `42-unary-minus-floating-zero-sign-question.md` (§6 side finding; §8
+   item 8): Affected LOCATED — `translation.lem:1525-1554` (upstream; fork `:1530-1559`), the
+   `A.AilEunary A.Minus e` arm elaborates a floating negation as `Caux.mk_op_pe C.OpSub
+   zero_pe e'` with `zero_pe = Caux.mk_floating_value_pe Mem.zero_fval`, i.e. `0.0 − x`
+   (`core_eval.lem:446` `OpSub -> FloatSub`; `impl_mem.ml:2519,2533`), so `−(+0) = +0`
+   under IEEE subtraction where `negate` flips the sign; the four probes RE-OBSERVED on the
+   three engines + gcc (`…-evidence/d4-negzero-three-engine.txt`, verbatim): `-z` (z = 0.0)
+   and `-0x0p0` → `Specified(0)` on fork/pristine/Lean, gcc 1; controls `0.0 * -1.0` →
+   `Specified(1)` everywhere, `-1.5` sign bit 1 everywhere. §6.5.3.3#3 quoted verbatim from
+   `tools/n1570.json`; classification UNCLEAR / QUESTION, minor; the concrete model does not
+   claim Annex F; no port change (both engines and upstream agree).
+10. **§8 item 9 — the panic-message rendering**: Lean's `CerbDecode` panic on a raw high
+    byte prints the byte-carrier `Char`s through the text path (`Ã`/`Ã©`) where the oracle
+    prints OCaml's `\195\169` — message text inside a crash, class (a); recorded, no change.
+
+Files changed by D4: `docs/upstream-tray/{39,41,42}-*.md` (NEW), `38-*.md`, `INDEX.md`,
+`tests/failure-probes/cross_tu_node/node_a.c` (comment), `lean_frontend/TODO.md`,
+`lean_frontend/VALIDATION.md` (3 hunks), `scripts/test_immaculate.sh` (1 message line), this
+record, evidence `d4-negzero-three-engine.txt`, `d4-validation-diff.txt`. No Lean, `.lem`,
+OCaml, baseline or manifest file changed.

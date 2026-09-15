@@ -1,0 +1,57 @@
+# D4 — draft 42 reproducers: unary minus on a floating zero, three engines + gcc, verbatim, 2026-09-15T04:25:25Z; fork bin 89a899c5…, pristine independent-oracle-v2, Lean e36af96d…; flags --nolibc --exec --batch --mode=exhaustive; gcc -std=c11 -O0 -w
+
+## a-neg-var-zero.c
+int main(void) { union { double d; unsigned char b[8]; } u; double z = 0.0; u.d = -z; return u.b[7] >> 7; }
+--- fork oracle
+Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+--- pristine upstream
+Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+--- Lean
+Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+--- gcc
+gcc exit=1
+
+## b-mul-minus-one.c
+int main(void) { union { double d; unsigned char b[8]; } u; u.d = 0.0 * -1.0; return u.b[7] >> 7; }
+--- fork oracle
+Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+--- pristine upstream
+Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+--- Lean
+Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+--- gcc
+gcc exit=1
+
+## c-neg-1p5.c
+int main(void) { union { double d; unsigned char b[8]; } u; u.d = -1.5; return (u.b[7] >> 7) | ((u.b[7] >> 5) & 2); }
+--- fork oracle
+Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+--- pristine upstream
+Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+--- Lean
+Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+--- gcc
+gcc exit=1
+
+## d-neg-hex-zero-literal.c
+int main(void) { union { double d; unsigned char b[8]; } u; u.d = -0x0p0; return u.b[7] >> 7; }
+--- fork oracle
+Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+--- pristine upstream
+Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+--- Lean
+Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+--- gcc
+gcc exit=1

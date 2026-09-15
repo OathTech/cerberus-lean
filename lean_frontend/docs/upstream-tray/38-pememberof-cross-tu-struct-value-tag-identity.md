@@ -85,3 +85,56 @@ Exposed by the fork's fix of draft 37 (are-compatible-assumed-set slice, record
 First observed by the Codex agent executing that slice (its D1 stop, recorded there),
 localised and drafted by Claude (Fable 5.1) under operator direction; the filed issue
 carries an AI-provenance note per the tray's policy. File together with 37.
+
+## Fork status (2026-09-15) — FIXED in the fork; the patch is the `.lem` diff
+
+[AGENT 2026-09-15] Landed on `arc/semantics-audit-repairs` at `dbe633ec5` (record
+`lean_frontend/docs/2026-09-11_semantics-audit-repairs-record.md` §D3; charter
+`…/2026-09-11_codex-charter-semantics-audit-repairs.md` D3), together with draft 39's
+one-token fix of `Ctype_aux.are_compatible_aux`: the remedy's FIRST form — member
+selection consults the compatibility predicate the store side already consults
+(`memValueFromValue`, core_aux.lem:200), and only when the tags differ (equal tags never
+reach it; single-TU programs pay nothing). The patch for upstream is this hunk of
+`frontend/model/core_eval.lem` (the 10-line comment block above it is fork-side
+provenance):
+
+```
+           | Just (Vobject (OVstruct tag_sym' xs)) ->
+-              if tag_sym <> tag_sym' then
++              if tag_sym <> tag_sym' && not (Ctype_aux.are_compatible
++                                               (Ctype.no_qualifiers, Ctype.Ctype [] (Ctype.Struct tag_sym))
++                                               (Ctype.no_qualifiers, Ctype.Ctype [] (Ctype.Struct tag_sym'))) then
+                 EU.fail $ Illformed_program ("PEmemberof(struct) ==> mismatched tags: " ^ show tag_sym ^ " vs " ^ show tag_sym')
+```
+
+The union arm (`:952-953`) is NOT changed — the "union twin" (`lean_frontend/TODO.md`,
+"Semantics-audit repairs"): a `union U` value crossing TUs would still be rejected by exact
+tag identity there and in `memValueFromValue`'s union arm (core_aux.lem:204-208).
+
+Verbatim runs on the reproducer (its program is now the corpus case
+`tests/multi_tu_tray/node/`, LADDER Tier A row 6b; fork oracle bin `e40ae8e3…` at the D3
+head, Lean `e36af96d…`, pristine upstream `b9aeedcb4` = the independent-oracle-v2 build;
+2026-09-15):
+
+```
+=== fork oracle: cerberus --nolibc --exec --batch --mode=exhaustive tu1.c tu2.c
+Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+=== Lean: cerberus-lean --batch tu1.json tu2.json (cabs-json via the fork oracle)
+Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+=== pristine upstream: same flags
+rc=124 (60 s; draft 37's non-termination)
+=== gcc -std=c11 -O0 -w
+gcc exit=7
+```
+
+The compatible twins with array members (`tests/multi_tu_tray/arr-2-2-return`,
+`arr-incomplete-ptr-return`) likewise run to `Specified(7)` on both fork engines, and
+pristine upstream rejects them at this guard (`Error {msg: "ill-formed program:
+\`PEmemberof(struct) ==> mismatched tags: Symbol(558, SD_Id("S")) vs Symbol(502, …"}` rc 1;
+`Symbol(536, …)` for the incomplete-pointer twin) — the guard is reached there because
+`are_compatible` terminates on non-recursive structs. The INCOMPATIBLE twin
+`arr-1-2-return` (`int a[1]` vs `int a[2]`) is rejected by the fixed fork with the same
+message — now for the right reason (draft 39). Results on every single-TU program are
+unchanged; the fork's Tier A/B corpora moved nowhere (record §D3).
