@@ -1,0 +1,293 @@
+# D3 Tier A after the pin update — CERB_MEM_MAX=48G python3 scripts/release.py --mode fast --lane-timeout 3300 --out .tmp/d3-fast (tree frozen), 2026-09-15: 14/14 PASSED
+# runner log (verbatim):
+2026-09-15T19:35:41Z
+Release evidence: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/parser-progress-measure/.tmp/d3-fast
+RUN A1: ./scripts/test_unit.sh
+PASSED A1 (145.3s)
+RUN A2: ./scripts/test_exec.sh --check-baseline
+PASSED A2 (29.5s)
+RUN A3: ./scripts/test_exec.sh --check-baseline=scripts/exec_coverage_baseline.txt tests/coverage
+PASSED A3 (50.6s)
+RUN A4: ./scripts/test_exec.sh --check-baseline=scripts/exec_debug_baseline.txt tests/debug
+PASSED A4 (22.4s)
+RUN A4b: ./scripts/test_exec.sh --check-baseline=scripts/exec_float_baseline.txt tests/float
+PASSED A4b (23.8s)
+RUN A4c: ./scripts/test_bytes.sh
+PASSED A4c (3.0s)
+RUN A5: ./scripts/test_libc_exec.sh
+PASSED A5 (21.7s)
+RUN A6: ./scripts/test_multi_tu.sh
+PASSED A6 (2.1s)
+RUN A6b: ./scripts/test_multi_tu.sh --failure-class-projection tests/multi_tu_tray
+PASSED A6b (3.5s)
+RUN A7: ./scripts/test_parse.sh
+PASSED A7 (10.1s)
+RUN A8: ./scripts/test_core.sh
+PASSED A8 (8.7s)
+RUN A9: ./scripts/test_elab.sh
+PASSED A9 (16.3s)
+RUN A10: ./scripts/test_libxml2_uri.sh
+PASSED A10 (16.5s)
+RUN A11: ./scripts/test_cn_coverage.sh --check-baseline
+PASSED A11 (57.2s)
+fast: passed; 14/14 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+rc=0
+2026-09-15T19:42:33Z
+
+=== lane A1 — key lines (grep) ===
+check_handwritten_sync: OK (48 hand-written files byte-identical to lean_frontend/generated/; manifest lean_frontend/handwritten_copy.manifest)
+Total: 9 passed, 0 failed
+check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)
+check_sorry_token: OK (313 files scanned comment-stripped — generated 218, hand-written+test 60, LemLib 35; 0 sorry tokens)
+GCC capture: 4/4 probes passed; raw evidence /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/parser-progress-measure/.tmp/d3-fast/A1/observations/test_gcc_capture.mTc5qqjMSW (kept under CERB_OBSERVATION_DIR; removed on exit 0)
+  PLANT OK   [F1 deleted default named in code] -> check_no_fuel_numerals: FAIL (F1): fuel numeral shape found:
+  PLANT OK   [F1 deleted driverFuel in a seam] -> check_no_fuel_numerals: FAIL (F1): fuel numeral shape found:
+  PLANT OK   [F2 global instance] -> check_no_fuel_numerals: FAIL (F2): fuel numeral shape found:
+  PLANT OK   [F2 global instance (where)] -> check_no_fuel_numerals: FAIL (F2): fuel numeral shape found:
+  PLANT OK   [F3 worker at a literal fuel] -> check_no_fuel_numerals: FAIL (F3): fuel numeral shape found:
+  PLANT OK   [F3 parenthesised literal] -> check_no_fuel_numerals: FAIL (F3): fuel numeral shape found:
+  PLANT OK   [F4 LemFuel.mk numeral] -> check_no_fuel_numerals: FAIL (F4): fuel numeral shape found:
+  PLANT OK   [F4 letI outside Main] -> check_no_fuel_numerals: FAIL (F4): fuel numeral shape found:
+  PLANT OK   [F5 anonymous-constructor literal] -> check_no_fuel_numerals: FAIL (F5): fuel numeral shape found:
+  PLANT OK   [F6 fuel-named numeral constant] -> check_no_fuel_numerals: FAIL (F6): fuel numeral shape found:
+  PLANT OK   [F6 in a speclab gate test] -> check_no_fuel_numerals: FAIL (F6): fuel numeral shape found:
+  PLANT OK   [F6 in a generated copy of Main] -> check_no_fuel_numerals: FAIL (F6): fuel numeral shape found:
+  PLANT OK   [F5 in an immaculate Lean probe] -> check_no_fuel_numerals: FAIL (F5): fuel numeral shape found:
+  PLANT OK   [M2 F3 instance-carrying worker literal] -> check_no_fuel_numerals: FAIL (F3): fuel numeral shape found:
+  PLANT OK   [M2 E1 hex literal ⟨0x5F5E100⟩] -> check_no_fuel_numerals: FAIL (F5): fuel numeral shape found:
+  PLANT OK   [M2 E2 ascribed literal ⟨(N : Nat)⟩] -> check_no_fuel_numerals: FAIL (F5): fuel numeral shape found:
+  PLANT OK   [M2 E4 structure instance { fuel := N }] -> check_no_fuel_numerals: FAIL (F4): fuel numeral shape found:
+  PLANT OK   [M2 E6 LemFuel.mk (expr)] -> check_no_fuel_numerals: FAIL (F4): fuel numeral shape found:
+  PLANT OK   [M2 E7 worker at a hex literal] -> check_no_fuel_numerals: FAIL (F3): fuel numeral shape found:
+  PLANT OK   [M2 E3 arithmetic ⟨10^8⟩] -> check_no_fuel_numerals: FAIL (F5): fuel numeral shape found:
+  check_no_fuel_numerals: OK (320 files scanned comment-stripped; no lemDefaultFuel/driverFuel/ndDefaultFuel, no LemFuel instance, no literal fuel (F1-F6); allowed Main.lean sites seen: 4 of 4 (hand-written + generated copy))
+check_no_fuel_numerals: SELFTEST OK (20 plants red with the declared label; E5 indirection a recorded known gap; unplanted set green)
+check_no_fuel_numerals: OK (320 files scanned comment-stripped; no lemDefaultFuel/driverFuel/ndDefaultFuel, no LemFuel instance, no literal fuel (F1-F6); allowed Main.lean sites seen: 4 of 4 (hand-written + generated copy))
+gen_fuel_parametricity: OK (14 ambient fuel wrappers in the generated tree = the 14 pins of TotalityProofTest.lean Part 1, both directions)
+  PLANT OK   [dropped root Core_aux_auxiliary] -> check_lakefile_roots: FAIL — generated module(s) NOT a Lake root (their obligations would never build):
+  PLANT OK   [phantom root Phantom_auxiliary] -> check_lakefile_roots: FAIL — Lake root(s) with no generated module:
+  PLANT OK   [unrooted generated Orphan_auxiliary] -> check_lakefile_roots: FAIL — generated module(s) NOT a Lake root (their obligations would never build):
+  check_lakefile_roots: OK (217 roots = 217 generated modules + the exe root Main; 85 auxiliary modules all built)
+check_lakefile_roots: SELFTEST OK (3 plants red, baseline green)
+check_lakefile_roots: OK (217 roots = 217 generated modules + the exe root Main; 85 auxiliary modules all built)
+  PLANT OK   [P1 measured->ambient reachable (step_eval_pexpr)] -> check_fuel_forms: FAIL — fuel'd worker(s) REACHABLE from drive with an opaque (fail-open) exhaustion, not in /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/parser-progress-measure/scripts/fuel_forms_pending.txt:
+  PLANT OK   [P2 stale pending pin (many_run_lemFuel is MEASURED, not reachable-ambient)] -> check_fuel_forms: FAIL — pending register row(s) no longer a reachable ambient worker (stale pin; edit the register):
+  PLANT OK   [P3 measured obligation with sorryAx in its cone] -> check_fuel_forms: FAIL — measured obligation(s) with an axiom cone outside [propext, Classical.choice, Quot.sound] (or no proof constant):
+  PLANT OK   [P4 truncated table] -> check_fuel_forms: FAIL — no FUEL_FORMS_SUMMARY line (the tool did not complete; fail-closed)
+  PLANT OK   [P5 phantom pending-register row] -> check_fuel_forms: FAIL — pending register row(s) no longer a reachable ambient worker (stale pin; edit the register):
+  PLANT OK   [P6 decoy obligation of type True (zeros_aux)] -> check_fuel_forms: FAIL — obligation(s) named <f>_measure_sufficient whose TYPE is not the contract's shape (∀ …, μ ≤ lemFuel → worker lemFuel … = wrapper …, argument correspondence against the wrapper's body) — never MEASURED:
+  PLANT OK   [P7 decoy obligation with the wrong worker constant (list_unfoldr_aux)] -> check_fuel_forms: FAIL — obligation(s) named <f>_measure_sufficient whose TYPE is not the contract's shape (∀ …, μ ≤ lemFuel → worker lemFuel … = wrapper …, argument correspondence against the wrapper's body) — never MEASURED:
+  PLANT OK   [P12 policy: a MALFORMED-ZERO lemma is RED] -> check_fuel_forms: FAIL — lemma(s) named <worker>_zero whose statement is not `worker … 0 … = <absorbing element>` on the worker's own binders — never ABSORBING:
+  PLANT OK   [P23 ABSORBING _zero lemma with sorryAx in its cone (nd_bind)] -> check_fuel_forms: FAIL — ABSORBING _zero lemma(s) with an axiom cone outside [propext, Classical.choice, Quot.sound] (or no cone reported):
+  PLANT OK   [P11 decoy of a REAL obligation with an EXTRA Prop binder and the register's exact hypothesis (CerbMem.sizeofCtype): MALFORMED by the binder check] -> check_fuel_forms: FAIL — obligation(s) named <f>_measure_sufficient whose TYPE is not the contract's shape (∀ …, μ ≤ lemFuel → worker lemFuel … = wrapper …, argument correspondence against the wrapper's body) — never ME
+  PLANT OK   [P10 the REAL CerbMem.alignofCtype obligation restated under the CONTRADICTORY hypothesis cty ≠ cty: MEASURED by shape, RED by the register] -> check_fuel_forms: FAIL — worker(s) MEASURED under a hypothesis with no reviewed register row for that exact hypothesis in /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/parser-progress-measure/scripts/fuel_hypotheses.txt
+  PLANT OK   [P8 register row of a measured-under-hypothesis worker deleted (CerbMem.sizeofCtype)] -> check_fuel_forms: FAIL — worker(s) MEASURED under a hypothesis with no reviewed register row for that exact hypothesis in /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/parser-progress-measure/scripts/fuel_hypotheses.txt (worker TAB hypothesis):
+  PLANT OK   [P9 stale register row (hack under 0 < k — hack IS measured, under CerbCoreShape.IsValuePexpr pexpr1, not under this)] -> check_fuel_forms: FAIL — hypothesis register row(s) whose worker is not MEASURED under that exact hypothesis (stale register row; edit the register):
+  PLANT OK   [P9b register row without a .lem:<line> cite] -> check_fuel_forms: FAIL — hypothesis register row(s) not of the form <worker> TAB <hyp> TAB <invariant with a .lem:<line> cite> TAB <reviewer>:
+    check_fuel_forms: forms partition OK (62 MEASURED + 13 ABSORBING + 0 ambient-reachable + 6 ambient-unreachable = 81 fuel'd workers)
+    check_fuel_forms: OK (81 fuel'd workers: 62 MEASURED (obligation of the contract's shape incl. argument correspondence against the wrapper's body; every obligation + proof cone ⊆ the standard three; 12 of them under a hypothesis, each = a reviewed row of fuel_hypotheses.txt, both directions), 13 ABSORBING = kill at zero (the _zero lemma is the worker at literal 0 on its own binders = the mon
+check_fuel_forms: SELFTEST OK (24 plants with the declared label — 6 on the table (incl. the ABSORBING-cone plant), 3 on the hypothesis register, 15 compiled decoys: the C4 four (type True / wrong worker / contradictory hypothesis caught by the register / extra binder), the whole-project audit's two decoys verbatim (review_bad _zero about runNDFuel; review_shift at literal 0), wrong fuel positio
+check_fuel_forms: forms partition OK (62 MEASURED + 13 ABSORBING + 0 ambient-reachable + 6 ambient-unreachable = 81 fuel'd workers)
+check_fuel_forms: OK (81 fuel'd workers: 62 MEASURED (obligation of the contract's shape incl. argument correspondence against the wrapper's body; every obligation + proof cone ⊆ the standard three; 12 of them under a hypothesis, each = a reviewed row of fuel_hypotheses.txt, both directions), 13 ABSORBING = kill at zero (the _zero lemma is the worker at literal 0 on its own binders = the monad's
+check_failure_reach: instrument built + census taken in 6 s (FAILURE_REACH rows 21214, FAILURE_RANGE rows 11292; counts: {"generated:monadic_ascribed":263,"generated:pure_or_unresolved":1253,"handwritten:pure_or_unresolved":121})
+    check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=166 REACHABLE=48 UNKNOWN=19; every row sealed; tally line consistent)
+check_failure_reach: SELFTEST OK (5 plants with the declared message — a new site in a generated exec-closure definition, a DISCARDABLE dead let-binding, an unsealed class edit, a phantom row, an edited tally — and the unplanted register green)
+check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=166 REACHABLE=48 UNKNOWN=19; every row sealed; tally line consistent)
+check_lem_sync: OK (src 0ea744e44bd25235b4db5b42660406f178879ca5194c707640feb4f814e3793c, gen bcb2f7d80459eda631942ad09cf31a632640ad5fbfb2bd3d5d678bbf01c6a14b)
+  PLANT OK   [S1 en_US-ordered [files] under LC_ALL=C (the pre-repair failing configuration)] rc=0 -> check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 24 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef
+  PLANT OK   [S2 C-ordered [files] under LC_ALL=en_US.UTF-8] rc=0 -> check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 24 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef
+  PLANT OK   [S3 reversed [files] order (set unchanged)] rc=0 -> check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 24 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef
+  PLANT OK   [S4 one [files] name changed -> set drift] rc=1 -> check_fork_drift: FAIL — oracle-surface file set drifted from the manifest.
+  PLANT OK   [S5 duplicate [files] entry] rc=1 -> check_fork_drift: FAIL — duplicate [files] entries in the manifest (a set with a repeated name is not a reviewed set):
+  PLANT OK   [S6 missing upstream ref -> FAIL (not a skip)] rc=1 -> check_fork_drift: FAIL — missing upstream ref 'plant/no-such-ref' (fail-closed; the development opt-in is CERB_FORK_DRIFT_DEV_SKIP=1)
+  PLANT OK   [S7 missing upstream generated tree -> FAIL (not a skip)] rc=1 -> check_fork_drift: FAIL — layer 2 prerequisite missing (fail-closed; the development opt-in is CERB_FORK_DRIFT_DEV_SKIP=1): upstream pristine tree not found (deps/cerberus-upstream/ocaml_frontend/gen
+  PLANT OK   [S9 stale [meta] lem-pin vs lem -v] rc=1 -> check_fork_drift: FAIL — lem-pin stale: manifest records lem-pin=f6542f8, '/home/dev/projects/cerberus-lean-proj/.tmp/tmp.wMUXMi2vPM/lem-stale -v' says deadbee — both generated trees must be re-de
+  PLANT OK   [S10 [meta] lem-pin line missing] rc=1 -> check_fork_drift: FAIL — manifest has no [meta] lem-pin= line (the lem-lean commit both generated trees were derived with)
+  PLANT OK   [S11 unmodified copied source contents] rc=0 -> check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 24 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef
+  PLANT OK   [S12 content change inside already-listed fresh supply] rc=1 -> check_fork_content: FAIL — source-content drift inside reviewed file(s):
+  PLANT OK   [S13 duplicate source-content pin] rc=1 -> check_fork_content: FAIL — duplicate [source-content] entry: util/cerb_fresh.ml
+  PLANT OK   [S14 missing source-content pin] rc=1 -> check_fork_content: FAIL — source-content path set differs from live source delta: unpinned=['util/cerb_fresh.ml']; stale=[]
+    check_fork_content: OK — 76 source files content/mode-pinned
+    check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 24 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+check_fork_drift: SELFTEST OK (14 plants with declared verdict/message: S1-S10 prerequisite/locale/name controls; S11 copied-content control; S12 inside-listed-file drift; S13/S14 duplicate/missing content pins; unplanted gate green)
+check_fork_content: OK — 76 source files content/mode-pinned
+check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 24 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+check_fixture_freeze: OK (16 fixture files match the pinned manifest; name set exact)
+test_renumber_plants: OK (12 plants: refusals refuse, admits admit with declared class)
+--- lane A1 — last 6 lines (verbatim) ---
+  OK (refused as declared): section_reorder
+  OK (admitted as declared): strict_renumber [RENUMBER-ONLY ADMIT plant/strict_renumber class=STRICT ids=1 moved=1 canon=d7b6d3c7463e]
+  OK (admitted as declared): layout_rewrap [RENUMBER-ONLY ADMIT plant/layout_rewrap class=LAYOUT ids=2 moved=2 canon=9b2ed22f1988]
+  OK (refused as declared): crlf_string
+  OK (admitted as declared): crlf_code [RENUMBER-ONLY ADMIT plant/crlf_code class=LAYOUT ids=1 moved=1 canon=8c8910c71fce]
+test_renumber_plants: OK (12 plants: refusals refuse, admits admit with declared class)
+
+=== lane A10 — key lines (grep) ===
+check_lem_sync: OK (src 0ea744e44bd25235b4db5b42660406f178879ca5194c707640feb4f814e3793c, gen bcb2f7d80459eda631942ad09cf31a632640ad5fbfb2bd3d5d678bbf01c6a14b)
+[lean+libc] EXACT MATCH with ORACLE_LIBC (16/16 URI corpus)
+GATE PASS: all lane expectations pinned-green + baseline unchanged (16/16)
+--- lane A10 — last 6 lines (verbatim) ---
+[lean-nolibc] exit=1 wall=0:00.98 maxRSS=201992kB: Error {msg: "ill-formed program: `calling an unknown procedure: Symbol(968, SD_Id("memset"))'"}
+[lean+libc] exit=0 wall=0:09.70 maxRSS=288804kB: Defined {value: "Specified(600741297)", stdout: "uri 0 rc=0 scheme=http server=example.com port=8080
+[lean+libc] EXACT MATCH with ORACLE_LIBC (16/16 URI corpus)
+
+==================================================
+GATE PASS: all lane expectations pinned-green + baseline unchanged (16/16)
+
+=== lane A11 — key lines (grep) ===
+check_lem_sync: OK (src 0ea744e44bd25235b4db5b42660406f178879ca5194c707640feb4f814e3793c, gen bcb2f7d80459eda631942ad09cf31a632640ad5fbfb2bd3d5d678bbf01c6a14b)
+  LEAN_FAIL:     0  LEAN_CRASH: 0  FUEL: 0  LEAN_ERROR: 0  LEAN_TIMEOUT: 0
+  ORACLE_FAIL:   0  ORACLE_TIMEOUT: 0  ORACLE_INCONSISTENT: 0
+SUMMARY: total=213 match=207 ub_match=6 ub_diff=0 reject_match=0 diff=0 mismatch=0 reject_diff=0 lean_fail=0 lean_crash=0 fuel=0 lean_error=0 lean_timeout=0 oracle_fail=0 oracle_timeout=0 oracle_inconsistent=0
+BASELINE OK (213 entries, exact match)
+--- lane A11 — last 6 lines (verbatim) ---
+Agreement tally: 213/213 compared (213 run, 0 oracle-side unobservable)
+
+SUMMARY: total=213 match=207 ub_match=6 ub_diff=0 reject_match=0 diff=0 mismatch=0 reject_diff=0 lean_fail=0 lean_crash=0 fuel=0 lean_error=0 lean_timeout=0 oracle_fail=0 oracle_timeout=0 oracle_inconsistent=0
+
+Checking against baseline (exact match, fail-closed both directions): /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/parser-progress-measure/tests/cn_coverage/baseline.txt
+BASELINE OK (213 entries, exact match)
+
+=== lane A2 — key lines (grep) ===
+check_lem_sync: OK (src 0ea744e44bd25235b4db5b42660406f178879ca5194c707640feb4f814e3793c, gen bcb2f7d80459eda631942ad09cf31a632640ad5fbfb2bd3d5d678bbf01c6a14b)
+  Compared:   108
+SUMMARY: total=111 match=90 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=3 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+--- lane A2 — last 6 lines (verbatim) ---
+SUMMARY: total=111 match=90 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=3 cerb_floor=0 cerb_inconsistent=0
+
+Checking against baseline: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/parser-progress-measure/scripts/exec_baseline.txt
+
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+
+=== lane A3 — key lines (grep) ===
+check_lem_sync: OK (src 0ea744e44bd25235b4db5b42660406f178879ca5194c707640feb4f814e3793c, gen bcb2f7d80459eda631942ad09cf31a632640ad5fbfb2bd3d5d678bbf01c6a14b)
+  Compared:   199
+SUMMARY: total=212 match=183 ub_match=16 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=13 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+--- lane A3 — last 6 lines (verbatim) ---
+SUMMARY: total=212 match=183 ub_match=16 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=13 cerb_floor=0 cerb_inconsistent=0
+
+Checking against baseline: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/parser-progress-measure/scripts/exec_coverage_baseline.txt
+
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+
+=== lane A4 — key lines (grep) ===
+check_lem_sync: OK (src 0ea744e44bd25235b4db5b42660406f178879ca5194c707640feb4f814e3793c, gen bcb2f7d80459eda631942ad09cf31a632640ad5fbfb2bd3d5d678bbf01c6a14b)
+  Compared:   86
+SUMMARY: total=90 match=66 ub_match=20 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=4 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+--- lane A4 — last 6 lines (verbatim) ---
+SUMMARY: total=90 match=66 ub_match=20 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=4 cerb_floor=0 cerb_inconsistent=0
+
+Checking against baseline: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/parser-progress-measure/scripts/exec_debug_baseline.txt
+
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+
+=== lane A4b — key lines (grep) ===
+check_lem_sync: OK (src 0ea744e44bd25235b4db5b42660406f178879ca5194c707640feb4f814e3793c, gen bcb2f7d80459eda631942ad09cf31a632640ad5fbfb2bd3d5d678bbf01c6a14b)
+  Compared:   93
+SUMMARY: total=93 match=93 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+--- lane A4b — last 6 lines (verbatim) ---
+SUMMARY: total=93 match=93 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0
+
+Checking against baseline: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/parser-progress-measure/scripts/exec_float_baseline.txt
+
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+
+=== lane A4c — key lines (grep) ===
+check_lem_sync: OK (src 0ea744e44bd25235b4db5b42660406f178879ca5194c707640feb4f814e3793c, gen bcb2f7d80459eda631942ad09cf31a632640ad5fbfb2bd3d5d678bbf01c6a14b)
+SUMMARY: exec_match=9 neg_pinned=5 fail=0
+--- lane A4c — last 6 lines (verbatim) ---
+[NEG_OK] no_shift_left.c: Lean-side desugar/typing rejection at the committed diagnostic line 8 (rc 1)
+[NEG_OK] no_shift_right.c: Lean-side desugar/typing rejection at the committed diagnostic line 8 (rc 1)
+[NEG_OK] only_unsigned_char.c: Lean-side desugar/typing rejection at the committed diagnostic line 1 (rc 1)
+
+SUMMARY: exec_match=9 neg_pinned=5 fail=0
+ALL AT COMMITTED EXPECTEDS
+
+=== lane A5 — key lines (grep) ===
+check_lem_sync: OK (src 0ea744e44bd25235b4db5b42660406f178879ca5194c707640feb4f814e3793c, gen bcb2f7d80459eda631942ad09cf31a632640ad5fbfb2bd3d5d678bbf01c6a14b)
+SUMMARY: match=12 diff=0
+ALL MATCH RECORDED BASELINE
+--- lane A5 — last 6 lines (verbatim) ---
+  MATCH 010-int32-printf: Defined {value: "Specified(0)", stdout: "7\n", stderr: "", blocked: "false"}
+  MATCH 011-decimal-sweep: Defined {value: "Specified(0)", stdout: "8058938944302713231\n194266234449066599
+  MATCH 012-global-alloc-order: Defined {value: "Specified(0)", stdout: "s1=281474976707472 c1=281474976707471 i
+
+SUMMARY: match=12 diff=0
+ALL MATCH RECORDED BASELINE
+
+=== lane A6 — key lines (grep) ===
+check_lem_sync: OK (src 0ea744e44bd25235b4db5b42660406f178879ca5194c707640feb4f814e3793c, gen bcb2f7d80459eda631942ad09cf31a632640ad5fbfb2bd3d5d678bbf01c6a14b)
+SUMMARY: total=2 match=2 fail=0
+ALL PASSED
+--- lane A6 — last 6 lines (verbatim) ---
+[1] MATCH basic: 31 execution(s), VAL:{value: "Specified(42)", stdout: "", stderr: "", blocked: "false"}
+[2] MATCH tentative: 1 execution(s), VAL:{value: "Specified(42)", stdout: "", stderr: "", blocked: "false"}
+
+==================================================
+SUMMARY: total=2 match=2 fail=0
+ALL PASSED
+
+=== lane A6b — key lines (grep) ===
+check_lem_sync: OK (src 0ea744e44bd25235b4db5b42660406f178879ca5194c707640feb4f814e3793c, gen bcb2f7d80459eda631942ad09cf31a632640ad5fbfb2bd3d5d678bbf01c6a14b)
+SUMMARY: total=7 match=7 fail=0
+ALL PASSED
+--- lane A6b — last 6 lines (verbatim) ---
+[6] MATCH fam-vs-array-return: 1 execution(s), ERR:{msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(_, SD_Id(\"S\")) vs Symbol(_, SD_Id(\"S\"))'"}
+[7] MATCH node: 1 execution(s), VAL:{value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+
+==================================================
+SUMMARY: total=7 match=7 fail=0
+ALL PASSED
+
+=== lane A7 — key lines (grep) ===
+check_lem_sync: OK (src 0ea744e44bd25235b4db5b42660406f178879ca5194c707640feb4f814e3793c, gen bcb2f7d80459eda631942ad09cf31a632640ad5fbfb2bd3d5d678bbf01c6a14b)
+Total:          111
+Success rate:   100% (of cerberus successes)
+ALL PASSED
+--- lane A7 — last 6 lines (verbatim) ---
+Lean front end: 0 rejected (exit 1 + a printed Error/Undefined verdict; not a parse failure), 0 internal-error-expected (failwithI panic on an *.error.c input, oracle-mirrored)
+Success rate:   100% (of cerberus successes)
+
+batch diagnostic producers: 8/8 passed
+cabs bytes probe: 128 raw bytes 0x80..0xFF crossed the bridge as one code point each (valid UTF-8 JSON; Lean sizeof = 129)
+ALL PASSED
+
+=== lane A8 — key lines (grep) ===
+check_lem_sync: OK (src 0ea744e44bd25235b4db5b42660406f178879ca5194c707640feb4f814e3793c, gen bcb2f7d80459eda631942ad09cf31a632640ad5fbfb2bd3d5d678bbf01c6a14b)
+Total:          111
+Success rate:   100% (of cerberus successes)
+ALL PASSED
+--- lane A8 — last 6 lines (verbatim) ---
+Total:          111
+Cerberus --pp:  111 ok, 0 failed
+Lean parse:     111 ok, 0 failed
+Success rate:   100% (of cerberus successes)
+
+ALL PASSED
+
+=== lane A9 — key lines (grep) ===
+check_lem_sync: OK (src 0ea744e44bd25235b4db5b42660406f178879ca5194c707640feb4f814e3793c, gen bcb2f7d80459eda631942ad09cf31a632640ad5fbfb2bd3d5d678bbf01c6a14b)
+  OCAML_FAIL: 0
+  LEAN_FAIL:  0
+SUMMARY: total=111 same=108 diff=3 ocaml_fail=0 lean_fail=0
+--- lane A9 — last 6 lines (verbatim) ---
+  SAME:       108
+  DIFF:       3
+  OCAML_FAIL: 0
+  LEAN_FAIL:  0
+
+SUMMARY: total=111 same=108 diff=3 ocaml_fail=0 lean_fail=0

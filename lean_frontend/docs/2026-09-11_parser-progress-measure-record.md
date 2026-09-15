@@ -426,3 +426,43 @@ Every lane's `SUMMARY` line is IDENTICAL to D0's (checked mechanically, lane by 
 The D2 declares changed `monadic_parsing.lem` again: `62445706…` (D1) → `da04e3c262a6e776e977bac03e820d17a3c54065009ae7bd255bfadb900b9524`; the row moved to the final value and the header note now reads `194dcdbc… -> da04e3c2… (62445706… at D1, before the D2 Lean-only fuel_measure declares)`. The `.ml` is byte-identical to D1, so the `[expected-semantic]` row is unchanged and layer 2 stays 24. Gate (verbatim): `check_fork_content: OK — 76 source files content/mode-pinned` / `check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 24 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)`.
 
 **D2 acceptance [AGENT, observed]:** partition `62 MEASURED (12 under a hypothesis) + 13 ABSORBING + 0 ambient-reachable + 6 ambient-unreachable = 81`; both `_measure_sufficient` theorems `axioms=ok` (obligation and proof); `check_theorem_axioms: OK`; selftest 24/24 with the empty register; Tier A green except the parametricity pins (D3). Committed as D2.
+
+## D3 — Pins, callers, consumer manifest — DONE
+
+**The parametricity pins.** `scripts/gen_fuel_parametricity.py --emit` → 14 wrappers = the D0 block minus the two `many`/`many1` lines (no other change: `diff` of the old block vs the emitted one = the header count `16 → 14` and the two deleted `example` lines); pasted as `TotalityProofTest.lean` Part 1; the header comment `:21` now carries the history "… 19 at the 2026-09-08 fuel-pending close-out …; 16 after the 2026-09-10 are-compatible-assumed-set slice — the ctype_aux trio measured; 14 at the 2026-09-15 parser-progress-measure slice — many/many1 restated as input-indexed recursion and their workers measured under a progress hypothesis. CURRENT count: 14, as the Part 1 header line below states" (the TODO.md "Stale counts" item asked for the CURRENT count to be stated). `git diff --stat` = `1 file changed, 2 insertions(+), 4 deletions(-)`. Observed: `gen_fuel_parametricity: OK (14 ambient fuel wrappers in the generated tree = the 14 pins of TotalityProofTest.lean Part 1, both directions)`.
+
+**Hand-written callers.** None needed repair: the D2 build (`394 jobs`, `Main` included) compiled every hand-written module unchanged — no hand-written module applies `many`/`many1`/the printf parser family (`grep -rnw many|many1 lean_frontend/*.lean test speclab` → only the two pins), and `printf`/`vprintf`/`vsnprintf`/`convert`/`load_character_array` keep their `[LemFuel]`. The charter's "repair the call and list it" clause has an EMPTY list.
+
+### Consumer note (refined-cerberus) — change manifest (the 2026-09-08 close-out §8 shape)
+
+The generated tree differs from the mainline's (`eaa2066e9`; `diff -rq` against the primary checkout's `lean_frontend/generated/`, rebuilt there at that commit) in EXACTLY three generated files — `Monadic_parsing.lean`, `Monadic_parsing_auxiliary.lean`, `Formatted.lean` — plus the two new hand-written modules `CerbParserProgress.lean`, `Monadic_parsing_lemMeasureProofs.lean`. OCaml side: `monadic_parsing.ml` restated (D1), nothing else.
+
+Constants whose SIGNATURE changed (all Lean-side; OCaml results unchanged on every input):
+- `Monadic_parsing.many {a} (p : parserM a) : parserM (List a)` and `many1` — LOST the `[LemFuel]` instance binder and are no longer fuel'd wrappers: `many p = ParserM (many_run p)`, `many1 p = ParserM (many1_run p)`. `@many a ⟨n⟩` no longer typechecks (drop the instance argument); `many p` elaborates under any instance context. The fuel-parametricity examples `@many a ⟨n⟩ = @many_lemFuel a n` are GONE (no worker of that name).
+- `Formatted.nonnegativeDecimalInteger`, `Formatted.decimalInteger`, `Formatted.flags0`, `Formatted.fieldWidth`, `Formatted.output_precision`, `Formatted.conversionSpecification`, `Formatted.format0` — the seven printf parser-family heads LOST `[LemFuel]` (each carried it only for `many`/`many1`); their types are otherwise unchanged (`: parserM (Nat)`, `parserM (flags)`, `parserM (field_width)`, `parserM (precision)`, `parserM (conversion_specification)`, `parserM (List (format_))`). An explicit `@Formatted.format0 ⟨n⟩` no longer typechecks. `Formatted.printf`, `vprintf`, `vsnprintf`, `convert`, `printf_aux`, `store_chars_in_array`, `load_character_array`(`_aux`) KEEP `[LemFuel]` (for `load_character_array_aux`, an ABSORBING fuel'd worker, and the ND runners).
+- REMOVED constants: `many_lemFuel`, `many1_lemFuel`, `many_lemFuel_zero`, `many1_lemFuel_zero`.
+- NEW constants: `many_run_lemFuel {a} (lemFuel : Nat) (p : parserM a) (cs : List Char) : List (List a × List Char)` and `many1_run_lemFuel` (the mutual fuel'd workers; sentinel `fuelExhausted []`); the fuel-FREE measured wrappers `many_run {a} (p : parserM a) (cs : List Char) : List (List a × List Char) := many_run_lemFuel (2 * List.length cs + 2) p cs` and `many1_run … := many1_run_lemFuel (2 * List.length cs + 1) p cs`; `many_run_lemFuel_zero`, `many1_run_lemFuel_zero` (by `rfl`); the obligations `many_run_measure_sufficient` / `many1_run_measure_sufficient` (in `Monadic_parsing_auxiliary`, hypothesis binder `lemHyp : CerbParserProgress.Consumes p`); `CerbParserProgress.{Consumes, NonExpanding, nonExpanding_of_consumes}` (+ D4's discharge theorems); `Monadic_parsing_lemMeasureProofs.{parse_nil_of_consumes, many1_run_stable_aux, many_run_stable_aux, many_run_measure_sufficient, many1_run_measure_sufficient}`.
+- Consumer-shaped statements: `∀ p cs, Consumes p → ∀ n ≥ 2 * cs.length + 2, many_run_lemFuel n p cs = many_run p cs` (and the `many1_run` twin at `+ 1`); `parse (many p) cs = many_run p cs` by `rfl`. The hypothesis is DISCHARGED as a theorem for every exec-path call-site parser (D4 below lists which are theorems and which rest on the register cite).
+- Reachability: refined-cerberus proves over a fragment without `printf` (`KNOWN-OPEN-ITEMS.md` A1); none of these heads is in that fragment's cone. The pin set `TotalityProofTest.lean` Part 1 went 16 → 14. `scripts/fuel_forms_pending.txt` 2 → 0 (EMPTY). `scripts/fuel_hypotheses.txt` 10 → 12 rows.
+
+### D3 acceptance — Tier A FULLY green (verbatim; key lines in `…-evidence/d3-tierA-verdicts.txt`, `…-evidence/d3-unit-keylines.txt`)
+
+```
+$ ./scripts/test_unit.sh        # direct, 19:31 → 19:34:59Z
+Total: 9 passed, 0 failed
+gen_fuel_parametricity: OK (14 ambient fuel wrappers in the generated tree = the 14 pins of TotalityProofTest.lean Part 1, both directions)
+check_fuel_forms: forms partition OK (62 MEASURED + 13 ABSORBING + 0 ambient-reachable + 6 ambient-unreachable = 81 fuel'd workers)
+check_fuel_forms: SELFTEST OK (24 plants with the declared label — …)
+check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly … UNKNOWN=19; every row sealed; tally line consistent
+check_exec_totality: CLEAN (22 generated modules + hand-written CerbND, 0 allowlisted)
+check_lem_sync: OK (src 0ea744e4…, gen bcb2f7d8…) / check_lem_sync: lean OK (src 0ea744e4…, gen 8a125063…)
+check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 24 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+check_fixture_freeze: OK (16 fixture files match the pinned manifest; name set exact)
+rc=0
+$ CERB_MEM_MAX=48G python3 scripts/release.py --mode fast --lane-timeout 3300 --out .tmp/d3-fast      # → 19:42:33Z
+PASSED A1 (145.3s) · A2 (29.5s) · A3 (50.6s) · A4 (22.4s) · A4b · A4c · A5 · A6 · A6b · A7 · A8 · A9 · A10 · A11
+fast: passed; 14/14 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+rc=0
+```
+Every lane's `SUMMARY` line is identical to D0's (mechanical comparison, lane by lane); A2/A3/A4/A4b each `Baseline check: 0 regression(s), 0 improvement(s)`. **D3 acceptance [AGENT, observed]:** 14-wrapper pin set both directions; `test_unit.sh` green; Tier A fully green with zero movement. Committed as D3.
