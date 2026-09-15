@@ -1,0 +1,251 @@
+# D5 — full battery, verbatim key lines. release.py --mode full (.tmp/d5-full; started 2026-09-15T04:32:31Z, ended 2026-09-15T05:46:52Z) at HEAD 3d98f695e
+$ CERB_MEM_MAX=48G DUNE_CACHE=disabled python3 scripts/release.py --mode full --lane-timeout 3300 --out .tmp/d5-full
+Release evidence: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/semantics-audit-repairs/.tmp/d5-full
+RUN A1: ./scripts/test_unit.sh
+PASSED A1 (143.5s)
+RUN A2: ./scripts/test_exec.sh --check-baseline
+PASSED A2 (32.9s)
+RUN A3: ./scripts/test_exec.sh --check-baseline=scripts/exec_coverage_baseline.txt tests/coverage
+PASSED A3 (50.5s)
+RUN A4: ./scripts/test_exec.sh --check-baseline=scripts/exec_debug_baseline.txt tests/debug
+PASSED A4 (22.2s)
+RUN A4b: ./scripts/test_exec.sh --check-baseline=scripts/exec_float_baseline.txt tests/float
+PASSED A4b (23.7s)
+RUN A4c: ./scripts/test_bytes.sh
+PASSED A4c (3.0s)
+RUN A5: ./scripts/test_libc_exec.sh
+PASSED A5 (21.6s)
+RUN A6: ./scripts/test_multi_tu.sh
+PASSED A6 (2.1s)
+RUN A6b: ./scripts/test_multi_tu.sh --failure-class-projection tests/multi_tu_tray
+PASSED A6b (3.5s)
+RUN A7: ./scripts/test_parse.sh
+PASSED A7 (10.1s)
+RUN A8: ./scripts/test_core.sh
+PASSED A8 (8.7s)
+RUN A9: ./scripts/test_elab.sh
+PASSED A9 (16.2s)
+RUN A10: ./scripts/test_libxml2_uri.sh
+PASSED A10 (16.5s)
+RUN A11: ./scripts/test_cn_coverage.sh --check-baseline
+PASSED A11 (57.3s)
+RUN B1: ./scripts/test_libxml2.sh
+PASSED B1 (611.1s)
+RUN B2: ./scripts/test_parse.sh tests/ci
+PASSED B2 (22.9s)
+RUN B3: ./scripts/test_core.sh tests/ci
+PASSED B3 (14.8s)
+RUN B4: ./scripts/test_verify.sh
+PASSED B4 (44.6s)
+RUN B5: ./scripts/test_immaculate.sh
+PASSED B5 (66.1s)
+RUN B6.1: ./scripts/test_speclab.sh --selftest
+PASSED B6.1 (161.8s)
+RUN B6.2: ./scripts/test_speclab.sh --plant
+PASSED B6.2 (2.3s)
+RUN B6.3: ./scripts/test_speclab_divmod.sh --gate
+PASSED B6.3 (9.3s)
+RUN B6.4: ./scripts/test_speclab_bytearr.sh --gate
+PASSED B6.4 (8.9s)
+RUN B6.5: ./scripts/test_speclab_list.sh --gate
+PASSED B6.5 (9.1s)
+RUN B6.6: ./scripts/test_speclab_tree.sh --gate
+PASSED B6.6 (10.0s)
+RUN B6.7: ./scripts/test_speclab_seed.sh --gate
+PASSED B6.7 (8.6s)
+RUN B7: ./scripts/test_gcc_oracle.sh --check-baseline
+PASSED B7 (1418.6s)
+RUN B8.1: ./scripts/test_hang_plant.sh
+PASSED B8.1 (13.5s)
+RUN B8.2: ./scripts/test_kill_plant.sh
+PASSED B8.2 (223.6s)
+RUN B8.3: ./scripts/test_fuel_plant.sh
+PASSED B8.3 (6.2s)
+RUN B8.4: ./scripts/test_failstop_plant.sh
+PASSED B8.4 (16.0s)
+RUN B9: python3 scripts/test_observation_lanes.py
+PASSED B9 (1308.5s)
+RUN B10.1: python3 scripts/test_upstream_oracle.py
+FAILED B10.1 (65.1s)
+RUN B10.2: python3 scripts/test_upstream_oracle.py --plant
+PASSED B10.2 (1.3s)
+RUN B11.1: ./scripts/check_failure_reach.sh --selftest
+PASSED B11.1 (15.4s)
+RUN B11.2: ./scripts/check_failure_reach.sh
+PASSED B11.2 (7.2s)
+full: failed; 35/36 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+rc=1
+
+## per-lane key lines (from the run's retained lane logs)
+--- A1
+Done: 292 passed, 0 failed
+4 passed, 0 failed
+PASS batch escaping: all 256 bytes match OCaml
+PASS batch escaping: all 256 byte carriers match OCaml
+PASS batch escaping: empty bytes
+PASS batch escaping: empty byte carriers
+PASS batch escaping: empty text
+PASS batch escaping: text controls and delimiters
+PASS batch escaping: UTF-8 sequence carried as bytes
+PASS batch escaping: UTF-8 text
+PASS batch escaping: model-failure text uses the same adapter
+PASS batch escaping: embedded verdict remains escaped payload
+All PP tests passed
+PASS [2] allocator zero alignment remains a refusal
+--- A2
+  Compared:   108
+SUMMARY: total=111 match=90 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=3 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+--- A3
+  Compared:   199
+SUMMARY: total=212 match=183 ub_match=16 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=13 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+--- A4
+  Compared:   86
+SUMMARY: total=90 match=66 ub_match=20 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=4 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+--- A4b
+  Compared:   93
+SUMMARY: total=93 match=93 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+--- A4c
+SUMMARY: exec_match=9 neg_pinned=5 fail=0
+--- A5
+SUMMARY: match=12 diff=0
+--- A6
+PROJECTION: full (complete verdict tokens)
+SUMMARY: total=2 match=2 fail=0
+ALL PASSED
+--- A6b
+PROJECTION: failure-class (OPT-IN, LADDER Tier A row 6b only) — Symbol(<digits>, elided to Symbol(_, inside Error/Undefined payloads; Defined tokens full
+[2] MATCH arr-1-2-return: 1 execution(s), ERR:{msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(_, SD_Id(\"S\")) vs Symbol(_, SD_Id(\"S\"))'"}
+[6] MATCH fam-vs-array-return: 1 execution(s), ERR:{msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(_, SD_Id(\"S\")) vs Symbol(_, SD_Id(\"S\"))'"}
+SUMMARY: total=7 match=7 fail=0
+ALL PASSED
+--- A7
+Total:          111
+Success rate:   100% (of cerberus successes)
+batch diagnostic producers: 8/8 passed
+cabs bytes probe: 128 raw bytes 0x80..0xFF crossed the bridge as one code point each (valid UTF-8 JSON; Lean sizeof = 129)
+ALL PASSED
+--- A8
+Total:          111
+Success rate:   100% (of cerberus successes)
+ALL PASSED
+--- A9
+SUMMARY: total=111 same=108 diff=3 ocaml_fail=0 lean_fail=0
+--- A10
+libxml2 uri 5-TU harness (arc-6 S4 GATE, 16-URI corpus)
+--- A11
+SUMMARY: total=213 match=207 ub_match=6 ub_diff=0 reject_match=0 diff=0 mismatch=0 reject_diff=0 lean_fail=0 lean_crash=0 fuel=0 lean_error=0 lean_timeout=0 oracle_fail=0 oracle_timeout=0 oracle_inconsistent=0
+BASELINE OK (213 entries, exact match)
+--- B1
+libxml2 chvalid differential (arc-5 S3 exit criterion)
+SUMMARY: total=4 match=4 fail=0 (points: 1354, 22 observations each)
+ALL PASSED
+--- B2
+Total:          250
+Success rate:   51% (of cerberus successes)
+batch diagnostic producers: 8/8 passed
+cabs bytes probe: 128 raw bytes 0x80..0xFF crossed the bridge as one code point each (valid UTF-8 JSON; Lean sizeof = 129)
+ALL PASSED
+--- B3
+Total:          250
+Success rate:   100% (of cerberus successes)
+ALL PASSED
+--- B4
+test_verify: 127 passed, 0 failed (25 fixtures, 28 call points, 14 corpus fixtures, 21 corpus points)
+--- B5
+OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip DIFF, R3 s4b-memcmp-hugesize ORACLE_CRASH, R5 r5-hex-subnormal-double-rounding DIFF — VALIDATION.md 'ISO-fix register' — and the in-Lean probes g6 TRIPWIRE / ill
+--- B6.1
+--- B6.2
+--- B6.3
+--- B6.4
+--- B6.5
+--- B6.6
+--- B6.7
+--- B7
+gcc second-oracle lane: 1997 files (gcc 13.3.0, lean timeout 30s, native timeout 5s, O2 stride 10)
+gcc second-oracle summary
+  Compared:     1916  (agree=1904 agree_nd=0 triaged=12 DISAGREE=0)
+SUMMARY: total=1997 compared=1916 agree=1904 agree_nd=0 triaged=12 disagree=0 o2_agree=196 skip_gcc_compile=1 skip_gcc_stdout=1 skip_lean_crash=12 skip_lean_fail=9 skip_lean_timeout=11 skip_ub=47 triaged_addr=11 triaged_ub=1
+Baseline check: 0 regression(s), 0 improvement(s)
+gcc second-oracle lane OK
+--- B8.1
+PLANT OK   [exec/sleep → HANG]: [1/1] HANG 001-return-literal (Lean HANG(cpu 0.00s of 3.00s wall; timeout 3s))
+PLANT OK   [exec/sleep summary]: FAILED: 1 Lean HANG(s) — exit 124 with CPU/wall < 0.1: no output, no exit (charter C9 shape)
+PLANT OK   [exec/busy → TIMEOUT]: [1/1] TIMEOUT 001-return-literal (Lean TIMEOUT(cpu 2.99s of 3.00s wall; timeout 3s))
+PLANT OK   [exec/busy summary]: FAILED: 1 Lean timeout(s)
+PLANT OK   [sweep/sleep → LEAN_HANG]: ci	tests/ci/0001-emptymain.c	LEAN_HANG	HANG(cpu 0.00s of 3.00s wall; timeout 3s)
+PLANT OK   [sweep/busy → LEAN_TIMEOUT]: ci	tests/ci/0001-emptymain.c	LEAN_TIMEOUT	TIMEOUT(cpu 3.00s of 3.00s wall; timeout 3s)
+PLANT OK   [classifier fail-closed]: HARNESS ERROR: time record /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/semantics-audit-repairs/.tmp/scripts/hang-plant.UqX2jqUM6M/does-not-exist.time missing
+--- B8.2
+PLANT OK   [cap kills a 5 GiB allocator]: exit 137, capped: OOM-KILLED (exit 137 — cgroup memory cap CERB_MEM_MAX=4G breached; memory.events oom_kill=1
+PLANT OK   [capped witness unavailable -> honest banner]: capped: KILLED, OOM witness UNAVAILABLE (exit 137 — cannot distinguish a cap breach from a signal death: no readable cgroup memory.events on this path
+PLANT OK   [capped grandchild OOM -> bannered despite rc=1]: capped: OOM-KILLED (memory.events oom_kill=1, cap CERB_MEM_MAX=1G; command exit 1 
+PLANT OK   [ci_sweep -> LEAN_KILL]: ci	tests/ci/0001-emptymain.c	LEAN_KILL	exit 137, capped OOM-KILLED (memory cap 4G breached)
+PLANT OK   [ci_sweep SIGKILL stub -> LEAN_CRASH (not the cap class)]: ci	tests/ci/0001-emptymain.c	LEAN_CRASH	exit 137: (no PANIC line captured)
+PLANT OK   [libc_exec -> KILL row]:   KILL  001-exit: oracle exit 0, lean exit 137 — lean: OOM-KILLED (exit 137; cgroup memory cap CERB_TEST_MEM_MAX=4G breached — memory.events oom_kill=1)
+PLANT OK   [libc_exec no MATCH]: SUMMARY: match=0 diff=12
+PLANT OK   [libc_exec SIGKILL stub -> DIFF (not KILL)]: SUMMARY: match=0 diff=12
+PLANT OK   [immaculate -> KILL status on a C row]:   KILL           g1-ge-funptr          O[ERR:{msg: "Memory WIP: ge_ptrval"}] L[KILL]
+PLANT OK   [immaculate no MATCH]
+PLANT OK   [libxml2_uri -> killed label]: FAIL: LEAN_NOLIBC killed by SIGKILL (exit 137 — the per-test cgroup memory cap CERB_TEST_MEM_MAX=4G if the lane's stderr carries capped's OOM-KILLED witness banner, otherwise an external SIGKILL): c
+PLANT OK   [libxml2 -> Lean OOM-KILLED]: [chvalid_battery_00] FAIL: Lean OOM-KILLED (exit 137; cgroup memory cap CERB_TEST_MEM_MAX=4G breached — memory.events oom_kill=1)
+PLANT OK   [gcc_oracle exit(137) native -> compared (AGREE gcc=137 lean={137}), not SKIP_GCC_KILL]: [1/1] AGREE  .tmp/scripts/kill-plant.VIrnQhdnNH/gcc137/exit137.c: gcc=137 lean={137}
+--- B8.3
+PLANT OK   [exec/kill -> FUEL]: [1/1] FUEL 001-return-literal (FUEL:kill, exit 1): lem: fuel exhausted
+PLANT OK   [exec/kill fatal]: FAILED: 1 Lean fuel exhaustion(s) — the fuel budget is a port artifact; a FUEL row is never agreement
+PLANT OK   [exec/kill summary fuel=1]: SUMMARY: total=1 match=0 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=1 lean_error=0 timeout=0 hang=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0
+PLANT OK   [exec/panic -> FUEL]: [1/1] FUEL 001-return-literal (FUEL:panic, exit 134): lem: fuel exhausted
+PLANT OK   [exec/assert -> FAIL (not FUEL)]: [1/1] FAIL 001-return-literal: assert() failure
+PLANT OK   [exec/assert no FUEL row]: no /^\[1/1\] FUEL /
+PLANT OK   [exec/words no FUEL row]: no /^\[1/1\] FUEL /
+PLANT OK   [exec/words is a verdict row]: [1/1] MISMATCH 001-return-literal: Lean=VAL:{value: "Specified(0)", stdout: "lem: fuel exhausted\n", stderr: "", blocked: "false"} Cerberus=VAL:{value: "Specified(42)", stdout: "", stderr: "", blocked
+PLANT OK   [gcc/kill -> SKIP_LEAN_FUEL]: [1/1] SKIP_LEAN_FUEL  tests/minimal/001-return-literal.c: (FUEL:kill, exit 1) lem: fuel exhausted
+PLANT OK   [gcc/assert -> SKIP_LEAN_FAIL (not FUEL)]: [1/1] SKIP_LEAN_FAIL  tests/minimal/001-return-literal.c: msg: "assert() failure"
+PLANT OK   [gcc/assert no FUEL row]: no /^\[1/1\] SKIP_LEAN_FUEL/
+PLANT OK   [ci_sweep/kill -> LEAN_FUEL]: ci	tests/ci/0001-emptymain.c	LEAN_FUEL	FUEL:kill, exit 1: lem: fuel exhausted
+PLANT OK   [ci_sweep/panic -> LEAN_FUEL]: ci	tests/ci/0001-emptymain.c	LEAN_FUEL	FUEL:panic, exit 134: lem: fuel exhausted
+PLANT OK   [ci_sweep/kill summary counts fuel]: SWEEP SUMMARY suite=ci mode=nolibc total=1 match=0 ub_match=0 ub_diff=0 stdout_diff=0 diff=0 mismatch=0 lean_fail=0 lean_crash=0 lean_kill=0 lean_fuel=1 lean_error=0 lean_timeout=0 lean_hang=0 cerb_re
+--- B8.4
+PLANT OK [exec/stop]
+PLANT OK [exec/ordinary]
+PLANT OK [gcc/stop]
+PLANT OK [gcc/ordinary]
+PLANT OK [ci/stop]
+PLANT OK [ci/ordinary]
+PLANT OK [cn/stop]
+PLANT OK [cn/ordinary]
+PLANT OK [measure/stop]
+PLANT OK [measure/ordinary]
+PLANT OK [exec/malformed]
+--- B9
+PLANT MODE: real lane entry points, explicit engine overrides; evidence /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/semantics-audit-repairs/.tmp/d5-full/B9/plants
+PLANT OK   exec: control
+PLANT OK   exec: bytes
+PLANT OK   exec: lean-exit2
+PLANT OK   exec: descendant-oom
+PLANT OK   exec: oracle-exit2
+PLANT OK   exec: ub-control
+PLANT OK   exec: ub-difference
+PLANT OK   exec: ub-difference-new-baseline
+PLANT OK   exec: ub-difference-only
+PLANT OK   multi_tu: control
+PLANT OK   multi_tu: bytes
+PLANT OK   multi_tu: lean-exit2
+PLANT OK   multi_tu: descendant-oom
+--- B10.1
+Independent oracle: failed; {'semantic_agreement': 738, 'difference': 1, 'matching_failure': 11, 'interface_agreement': 2}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/semantics-audit-repairs/.tmp/d5-full/B10.1/independent-oracle/report.json
+--- B10.2
+PLANT MODE: passing real pair then mutate the fork engine verdict
+Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/semantics-audit-repairs/.tmp/d5-full/B10.2/independent-oracle/report.json
+--- B11.1
+--- B11.2
+check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=166 REACHABLE=48 UNKNOWN=19; every row sealed; tally line consistent

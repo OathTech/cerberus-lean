@@ -1516,3 +1516,215 @@ Files changed by D4: `docs/upstream-tray/{39,41,42}-*.md` (NEW), `38-*.md`, `IND
 `lean_frontend/VALIDATION.md` (3 hunks), `scripts/test_immaculate.sh` (1 message line), this
 record, evidence `d4-negzero-three-engine.txt`, `d4-validation-diff.txt`. No Lean, `.lem`,
 OCaml, baseline or manifest file changed.
+
+## D5 — Full battery and the record — RUN; STOP RULE FIRED on ONE pristine-lane pin (B10.1)
+
+Full battery at HEAD `3d98f695e` (D4), tree clean, stamps before the run `check_driver_fresh:
+oracle OK (bin 40325dcb…, src 19de18ed…)` / `lean OK (bin e36af96d…, src a0ed1133…)`. One heavy
+job at a time; no tree edit during the run (`Source unchanged: True`). Verbatim key lines (full
+file `…-evidence/d5-full-battery-verdicts.txt`; direct runs `.tmp/d5-direct.log`,
+`.tmp/d5-direct-exec.log`, quoted here):
+
+```
+$ CERB_MEM_MAX=48G DUNE_CACHE=disabled python3 scripts/release.py --mode full --lane-timeout 3300 --out .tmp/d5-full   # 04:32:31Z → 05:46:52Z
+RUN A1: ./scripts/test_unit.sh
+PASSED A1 (144.6s)
+PASSED A2 (27.3s) · PASSED A3 (50.6s) · PASSED A4 (22.4s) · PASSED A4b (23.7s) · PASSED A4c (3.0s) · PASSED A5 (21.5s) · PASSED A6 (2.1s)
+RUN A6b: ./scripts/test_multi_tu.sh --failure-class-projection tests/multi_tu_tray
+PASSED A6b (3.6s)
+PASSED A7 (10.1s) · PASSED A8 (8.7s) · PASSED A9 (16.2s) · PASSED A10 (16.5s) · PASSED A11 (57.3s)
+RUN B1: ./scripts/test_libxml2.sh
+PASSED B1 (473.6s)
+PASSED B2 (23.1s) · PASSED B3 (14.8s) · PASSED B4 (44.6s) · PASSED B5 (66.1s)
+PASSED B6.1 · B6.2 · B6.3 · B6.4 · B6.5 · B6.6 · B6.7
+RUN B7: ./scripts/test_gcc_oracle.sh --check-baseline
+PASSED B7 (1418.6s)
+PASSED B8.1 (13.5s) · B8.2 · B8.3 (6.2s) · B8.4 (16.0s)
+RUN B9: python3 scripts/test_observation_lanes.py
+PASSED B9
+RUN B10.1: python3 scripts/test_upstream_oracle.py
+FAILED B10.1 (65.1s)
+RUN B10.2: python3 scripts/test_upstream_oracle.py --plant
+PASSED B10.2
+PASSED B11.1 (15.4s) · PASSED B11.2 (7.2s)
+full: failed; 35/36 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+rc=1
+```
+(The elided PASSED durations are in the evidence file; every lane's RUN/PASSED pair is there
+verbatim.) Named lines:
+```
+A1  Total: 9 passed, 0 failed
+    check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)
+    gen_fuel_parametricity: OK (16 ambient fuel wrappers in the generated tree = the 16 pins of TotalityProofTest.lean Part 1, both directions)
+    check_fuel_forms: forms partition OK (60 MEASURED + 13 ABSORBING + 2 ambient-reachable + 6 ambient-unreachable = 81 fuel'd workers)
+    check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=166 REACHABLE=48 UNKNOWN=19; every row sealed; tally line consistent)
+    check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 23 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+A2  SUMMARY: total=111 match=90 ub_match=18 ub_diff=0 mismatch=0 … / Baseline check: 0 regression(s), 0 improvement(s)
+A3  SUMMARY: total=212 match=183 ub_match=16 … / Baseline check: 0 regression(s), 0 improvement(s)
+A4  SUMMARY: total=90 match=66 ub_match=20 … / Baseline check: 0 regression(s), 0 improvement(s)
+A4b SUMMARY: total=93 match=93 … / Baseline check: 0 regression(s), 0 improvement(s)
+A4c SUMMARY: exec_match=9 neg_pinned=5 fail=0
+A5  SUMMARY: match=12 diff=0
+A6  SUMMARY: total=2 match=2 fail=0
+A6b [2] MATCH arr-1-2-return: 1 execution(s), ERR:{msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(_, SD_Id(\"S\")) vs Symbol(_, SD_Id(\"S\"))'"}
+    SUMMARY: total=7 match=7 fail=0
+A7  Total: 111 / Success rate: 100% / batch diagnostic producers: 8/8 passed / cabs bytes probe: 128 raw bytes 0x80..0xFF crossed the bridge as one code point each (valid UTF-8 JSON; Lean sizeof = 129)
+A8  Total: 111 / Success rate: 100%      A9  SUMMARY: total=111 same=108 diff=3 ocaml_fail=0 lean_fail=0
+A11 SUMMARY: total=213 match=207 ub_match=6 … / BASELINE OK (213 entries, exact match)
+B1  SUMMARY: total=4 match=4 fail=0 (points: 1354, 22 observations each) / ALL PASSED
+B2  Total: 250 / Success rate: 51% (of cerberus successes) / ALL PASSED      B3  Total: 250 / Success rate: 100% / ALL PASSED
+B4  test_verify: 127 passed, 0 failed (25 fixtures, 28 call points, 14 corpus fixtures, 21 corpus points)
+B5  OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip DIFF, R3 s4b-memcmp-hugesize ORACLE_CRASH, R5 r5-hex-subnormal-double-rounding DIFF — VALIDATION.md 'ISO-fix register' — and the in-Lean probes g6 TRIPWIRE / illtyped-store KILL).
+B6  test_speclab_divmod: PASS (--gate) · test_speclab_bytearr: PASS (--gate) · test_speclab_list: PASS (--gate) · test_speclab_tree: PASS (--gate) · test_speclab_seed: PASS (--gate) (+ selftest/plant lanes PASSED)
+B7  gcc second-oracle lane: 1997 files (gcc 13.3.0, lean timeout 30s, native timeout 5s, O2 stride 10)
+      Compared:     1916  (agree=1904 agree_nd=0 triaged=12 DISAGREE=0)
+    SUMMARY: total=1997 compared=1916 agree=1904 agree_nd=0 triaged=12 disagree=0 o2_agree=196 skip_gcc_compile=1 skip_gcc_stdout=1 skip_lean_crash=12 skip_lean_fail=9 skip_lean_timeout=11 skip_ub=47 triaged_addr=11 triaged_ub=1
+    Baseline check: 0 regression(s), 0 improvement(s)
+    gcc second-oracle lane OK
+    — the D1b/D2 rows observed under the FULL --check-baseline (open question 7 of the first resumption, CLOSED):
+    [107/1997] AGREE  tests/minimal/107-sizeof-multibyte-literal.c: gcc=3 lean={3}
+    [108/1997] AGREE O2_AGREE tests/minimal/108-sizeof-5byte-multibyte-literal.c: gcc=6 lean={6}
+    [109/1997] AGREE  tests/minimal/109-escape-hex-all-bytes.c: gcc=2 lean={2}
+    [110/1997] AGREE  tests/minimal/110-escape-octal-all-bytes.c: gcc=231 lean={231}
+    [111/1997] AGREE  tests/minimal/111-escape-nul-inside-literal.c: gcc=159 lean={159}
+    [295/1997] AGREE  tests/immaculate/nolibc/f3-escaped-high-byte-uchar.c: gcc=195 lean={195}
+    [296/1997] SKIP_LEAN_CRASH  tests/immaculate/nolibc/f3-raw-high-byte-char-const.c: (exit 134) PANIC at …
+    [297/1997] SKIP_LEAN_CRASH  tests/immaculate/nolibc/f3-raw-high-byte-int.c: (exit 134) PANIC at …
+    [298/1997] SKIP_LEAN_CRASH  tests/immaculate/nolibc/f3-raw-high-byte-uchar.c: (exit 134) PANIC at …
+    [314/1997] AGREE  tests/immaculate/nolibc/r5-hex-subnormal-double-rounding.c: gcc=1 lean={1}
+B8  PLANT OK lines throughout (hang/kill/fuel/failstop plants), rc 0 each
+B9  PLANT MODE: real lane entry points … / PLANT OK exec: … / PLANT OK multi_tu: control · bytes · lean-exit2 · descendant-oom … (PASSED)
+B10.1 Independent oracle: failed; {'semantic_agreement': 738, 'difference': 1, 'matching_failure': 11, 'interface_agreement': 2}; …/.tmp/d5-full/B10.1/independent-oracle/report.json
+B10.2 Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1}
+B11.1 check_failure_reach: SELFTEST OK (5 plants with the declared message — …)      B11.2 check_failure_reach: OK (233 … ) as A1
+$ ./scripts/test_unit.sh        # direct, 05:48:10Z → 05:50:35Z
+Total: 9 passed, 0 failed       (identical check_theorem_axioms / gen_fuel_parametricity / check_fuel_forms 81 / check_failure_reach 233 / check_fork_drift layer 2 = 23 lines)
+rc=0
+$ ./scripts/test_exec.sh --check-baseline                                                          # 05:51:18Z
+SUMMARY: total=111 match=90 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=3 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+rc=0
+$ ./scripts/test_exec.sh --check-baseline=scripts/exec_coverage_baseline.txt tests/coverage      # 05:51:45Z
+SUMMARY: total=212 match=183 ub_match=16 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=13 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+rc=0
+$ ./scripts/test_exec.sh --check-baseline=scripts/exec_debug_baseline.txt tests/debug            # 05:52:36Z
+SUMMARY: total=90 match=66 ub_match=20 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=4 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+rc=0
+$ ./scripts/test_exec.sh --check-baseline=scripts/exec_float_baseline.txt tests/float            # 05:52:58Z
+SUMMARY: total=93 match=93 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+rc=0
+```
+
+[AGENT] Zero movement in every EXISTING baseline row of every lane (A2/A3/A4/A4b and the gcc lane
+`0 regression(s), 0 improvement(s)`; libc_exec 12/0; multi_tu 2/2; cn 213 exact; libxml2 4/4;
+verify 127; immaculate at baseline with its five new rows; the 1997-row gcc ledger = 1963 + 34 NEW
+rows, all at their recorded statuses — the D1b/D2 rows are now confirmed under the full
+`--check-baseline`); partition 81, fork-drift layer 2 = 23, failure-reach 233, axioms 0
+throughout. Longest lane B7 23.6 min — no tripwire. (A first attempt at the four direct
+`test_exec.sh` lanes returned `rc=127` — MY shell error: zsh does not word-split an unquoted
+`$cmd`, so the script name-plus-arguments was looked up as one command; nothing ran. The lanes
+were re-run under bash as quoted above.)
+
+### THE STOP — the pristine lane's reviewed diagnostic-difference pin for `minimal/097` MOVED on the fork side
+
+B10.1 (`python3 scripts/test_upstream_oracle.py`, LADDER Tier B row 10) reports ONE
+`difference`, `id: minimal/097-null-ptr-arith.undef.c`, `reason: "reviewed
+diagnostic-difference pin moved; review before changing it"`. Verbatim from the report and the
+pin (`…-evidence/d5-pristine-097-diagnostic-diff.txt` has the full stderr diff and the fork's
+stderr):
+
+* Both engines: `status 125`, `stdout_sha256 e3b0c442…` (empty) — the same uncaught
+  `Failure("TODO(pure shift a null pointer should be undefined behaviour), offset:4")`
+  (upstream-tray draft 04's crash class).
+* Pin (`scripts/upstream_oracle_differences.json`, `cases["minimal/097-null-ptr-arith.undef.c"]`):
+  `upstream.stderr_sha256 0cbf405bb92a175bd2453c546cf4c86f8f129c559e4b92dc87daebf62aa372b2`,
+  `fork.stderr_sha256 e455f1a4db26182e1e3f8eeae981b3a909281cb99698cbe7212f4c48c66ccf26`; rationale:
+  "Both engines deliberately fail with the same null-pointer-arithmetic TODO (status 125, empty
+  stdout). Reviewed raw diff: only OCaml/Lem gene[rated line numbers …]".
+* Observed today: upstream `0cbf405b…` (UNCHANGED = the pin); fork
+  `a31c366c46156430652c5a0aef898db54acc145d0f88e9ae0889652eb2fa3333` (MOVED from `e455f1a4…`).
+* The fork-vs-upstream stderr diff is ONLY backtrace line numbers: `lem_list.ml` 165/171 vs
+  172/178 (the pre-existing lem-version difference the pin reviewed) and
+  `ocaml_frontend/generated/core_eval.ml` `eval_pexpr_aux2 … line 1135` on the fork vs `line
+  1124` upstream (+11) — every other frame identical. Cause [AGENT]: D3's `core_eval.lem` edit
+  (`dbe633ec5`: a 10-line comment block + the two-line guard replacing one line = +11 generated
+  lines before `eval_pexpr_aux2`) shifted the generated OCaml's line numbers; before D3
+  `core_eval.ml` was byte-identical to upstream's generation (fork-drift layer 2 was 22 without
+  it), so the pinned fork hash `e455f1a4…` was taken with `line 1124`. The pin is a hash of the
+  whole backtrace text, so any `.lem` edit above that frame moves it.
+* Classification [AGENT]: class (a) message text — verdict class, exit status, stdout and the
+  `Failure` message are identical on both engines; nothing semantic moved. The lane is correct
+  to be red: its pins are exact hashes and it fails closed.
+
+**Why this is a STOP and not a fix:** the remedy is a one-row re-record of the fork-side hash in
+`scripts/upstream_oracle_differences.json` (`e455f1a4… → a31c366c…`, with a dated rationale
+naming the D3 line shift), and that file is on the charter's FORBIDDEN list ("Do NOT touch
+`tests/multi_tu/` or `scripts/upstream_oracle_differences.json`", D3(g); §3 "changing or
+re-recording ANY existing baseline row in ANY lane"). Two stop rules match: "any EXISTING
+baseline row moves in any lane at any step" and "a gate is red for a reason outside the
+fence" (the cause is inside the fence — the chartered `.lem` edit — but the only fix is
+outside it). Not re-recorded; recorded here verbatim; D5 otherwise complete. The D3 gate did not
+see this because the pristine lane is Tier B and D3's gate was Tier A + immaculate + verify —
+the charter's own §1 fact (ii) about the pristine lane concerned `tests/multi_tu/` enumeration,
+not diagnostic pins on generated line numbers. Suggested orchestrator action: re-record the row
+(the rationale already says the reviewed difference is generated line numbers only), and
+consider whether the pin should hash a line-number-normalised diagnostic (or the `Failure`
+message alone), since every future `core_eval.lem`/`core_reduction.lem` edit above these frames
+will move it again.
+
+### Other observations of the run
+
+* **Oracle binary stamps** (all with `src 19de18ed…` unchanged, each re-recorded by a
+  `build_cerberus`): `e40ae8e3…` (pre-flight, the orchestrator's build) → `89a899c5…` (04:07Z,
+  my first lane run) → `40325dcb…` (by 04:32Z, after the Tier A run under `DUNE_CACHE=disabled`
+  and the D4 immaculate run). [AGENT] The OCaml `main.exe` link is not byte-reproducible across
+  cache-disabled/cache-enabled dune builds (or successive fresh links); the freshness stamp is
+  keyed on bin AND src, so `--check` stayed OK only because each build re-recorded it, and every
+  lane result in this record was produced by a binary built from the same source hash. Not a
+  stop event (no source moved; all lanes green); an open question below.
+* **B2** `test_parse.sh tests/ci` prints `Success rate: 51% (of cerberus successes)` and `ALL
+  PASSED` — the lane's recorded state (front-end `--pp-core` under the fail-noisy timeout,
+  LADDER Tier B row 2); unchanged by this slice.
+
+## State at hand-over (STOP after D5's battery, per charter §3)
+
+Done and committed on `arc/semantics-audit-repairs` in this resumption (on top of D0 `dbdf36a5e`,
+D1 `c807ce603`, D1b `146179d24`, D2 `a43abba65`, D3-1 `dbe633ec5`, the two resumption notes):
+
+* **D3, second commit** (`83dc6ba00`) — `tests/multi_tu_tray/` (7 cases + README), the opt-in
+  `failure-class` projection + `--failure-class-projection` flag + unit/lane plants, LADDER row
+  6b, Tier A green with zero movement.
+* **D4** (`3d98f695e`) — drafts 39/41/42 + INDEX rows, draft 38's fork status, `node_a.c` header,
+  TODO block, VALIDATION §3(b)/§5/§9 edits, `test_immaculate.sh` OK line names R5.
+* **D5** (this commit) — the full A + B battery: 35/36 lanes PASSED, zero movement in every
+  existing baseline row, the direct unit + four exec lanes green; B10.1 red on ONE pin whose
+  re-record is outside the fence (THE STOP above).
+
+Not done / not permitted: the re-record of the `minimal/097` pin in
+`scripts/upstream_oracle_differences.json` (orchestrator); no merge, push or rebase.
+
+### Open questions for the orchestrator / operator (priority order)
+
+1. **The `minimal/097` pristine-lane pin** (THE STOP): re-record the fork-side stderr hash
+   `e455f1a4… → a31c366c…` with a rationale naming D3's +11-line shift in `core_eval.ml` — and
+   whether diagnostic pins should be line-number-normalised so `.lem` edits stop moving them.
+2. **OCaml `main.exe` link non-reproducibility** across `build_cerberus` runs with the same
+   source hash (three bin hashes today). Is this expected (dune cache on/off, build-id
+   timestamps) and acceptable for a stamp keyed on the binary hash?
+3. **The union twin** — `PEmemberof(union)` and `memValueFromValue`'s union arm keep exact tag
+   identity (TODO.md row with the reproducer shape; draft 38's fork-status section).
+4. **`fam-vs-array-return`** — draft 41's question (FAM vs sized array under §6.2.7#1).
+5. **Unary minus on a floating zero** — draft 42's question (arm located).
+6. **Argument-path compatibility** — pinned as an observed modelling limit (rows `arr-*-arg`);
+   whether the default switch set should consult compatibility on by-value arguments is an
+   upstream/design question (draft 39's related observation).
+7. **Out-of-fence doc residuals**: `docs/2026-09-05_observation-contract.md` comparison matrix
+   (a row for row 6b's projection); `docs/upstream-tray/README.md` §4 triage table (stops before
+   36); `scripts/test_immaculate.sh` header comment `:22-27` (R1–R3 only); VALIDATION §2's R4
+   sentence ("today the markers are `CerbDecode.lean` R1/R2"); `CerbFloat.lean:40/:343`'s
+   pre-existing "DELIBERATE" notes (tray 01 and `-nan` printing — not D1's).
+8. **The panic-message rendering** (§8 item 9) — noted, class (a), no change.
