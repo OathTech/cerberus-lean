@@ -10,9 +10,9 @@
       "fork": {
         "status": 125,
         "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-        "stderr_sha256": "e455f1a4db26182e1e3f8eeae981b3a909281cb99698cbe7212f4c48c66ccf26"
+        "stderr_sha256": "a31c366c46156430652c5a0aef898db54acc145d0f88e9ae0889652eb2fa3333"
       },
-      "rationale": "Both engines deliberately fail with the same null-pointer-arithmetic TODO (status 125, empty stdout). Reviewed raw diff: only OCaml/Lem generated backtrace frames and line/character positions differ. No semantic execution result exists; this pin records the inherited failure and diagnostic-layout difference, not C conformance or successful execution."
+      "rationale": "Both engines deliberately fail with the same null-pointer-arithmetic TODO (status 125, empty stdout). Reviewed raw diff: only OCaml/Lem generated backtrace frames and line/character positions differ. No semantic execution result exists; this pin records the inherited failure and diagnostic-layout difference, not C conformance or successful execution. RE-PINNED 2026-09-15 [AGENT orchestrator], semantics-audit repairs landing: the fork stderr sha moved e455f1a4… → a31c366c… because D3's core_eval.lem edit (PEmemberof compatibility consult) shifted the generated core_eval.ml backtrace line numbers (1124 → 1135) and the lem runtime's lem_list.ml frames; reviewed raw diff (record evidence d5-pristine-097-diagnostic-diff.txt): line/character positions only; both engines still status 125, empty stdout, identical Failure text; class (a) diagnostic text. Upstream sha unchanged."
     }
   }
 }
