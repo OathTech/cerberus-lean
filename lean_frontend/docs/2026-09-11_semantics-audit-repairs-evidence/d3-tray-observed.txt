@@ -1,0 +1,110 @@
+# D3 second commit — the COMMITTED tests/multi_tu_tray cases re-observed on the three engines + gcc, verbatim, 2026-09-15T04:04:34Z
+# fork oracle: _build/default/backend/driver/main.exe --runtime=_build/install/default --nolibc --exec --batch --mode=exhaustive tu1.c tu2.c (timeout 60); pristine: independent-oracle-v2 same flags; Lean: per-TU --cabs-json then LEAN_ABORT_ON_PANIC=1 cerberus-lean --batch tu1.json tu2.json; gcc -std=c11 -O0 -w; LC_ALL=C NO_COLOR=1 TERM=dumb
+# stamps: check_driver_fresh: oracle OK (bin e40ae8e3853b75b0b45792507d0af2ff2d9332ceaa503a2b130d3b733043392e, src 19de18ed9f03a529067ec7103f58917d116933da22bc317546408b2f7d66043e) check_driver_fresh: lean OK (bin e36af96d9eed60cfac55414d675d354edff4268b0bdfad6031c121137dc3be84, src a0ed1133a00bda9cc6ab4c84b2d534548f50f1ace248c61654fcd9ac253036bb) 
+
+## node
+--- fork oracle
+Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+Time spent: 0.023854 seconds
+rc=0
+--- pristine upstream
+rc=124
+--- Lean
+Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+--- gcc
+gcc exit=7
+
+## arr-1-2-return
+--- fork oracle
+Error {msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(545, SD_Id("S")) vs Symbol(502, SD_Id("S"))'"}
+Time spent: 0.023584 seconds
+rc=1
+--- pristine upstream
+Error {msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(545, SD_Id("S")) vs Symbol(502, SD_Id("S"))'"}
+Time spent: 0.025259 seconds
+rc=1
+--- Lean
+Error {msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(63, SD_Id("S")) vs Symbol(19, SD_Id("S"))'"}
+rc=1
+--- gcc
+gcc exit=7
+
+## arr-1-2-arg
+--- fork oracle
+Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+Time spent: 0.022012 seconds
+rc=0
+--- pristine upstream
+Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+Time spent: 0.022464 seconds
+rc=0
+--- Lean
+Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+--- gcc
+gcc exit=7
+
+## arr-2-2-return
+--- fork oracle
+Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+Time spent: 0.024123 seconds
+rc=0
+--- pristine upstream
+Error {msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(558, SD_Id("S")) vs Symbol(502, SD_Id("S"))'"}
+Time spent: 0.023525 seconds
+rc=1
+--- Lean
+Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+--- gcc
+gcc exit=7
+
+## arr-2-2-arg
+--- fork oracle
+Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+Time spent: 0.022195 seconds
+rc=0
+--- pristine upstream
+Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+Time spent: 0.023058 seconds
+rc=0
+--- Lean
+Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+--- gcc
+gcc exit=7
+
+## arr-incomplete-ptr-return
+--- fork oracle
+Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+Time spent: 0.023967 seconds
+rc=0
+--- pristine upstream
+Error {msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(536, SD_Id("S")) vs Symbol(502, SD_Id("S"))'"}
+Time spent: 0.024201 seconds
+rc=1
+--- Lean
+Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+--- gcc
+gcc exit=7
+
+## fam-vs-array-return
+--- fork oracle
+Error {msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(533, SD_Id("S")) vs Symbol(502, SD_Id("S"))'"}
+Time spent: 0.021973 seconds
+rc=1
+--- pristine upstream
+Error {msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(533, SD_Id("S")) vs Symbol(502, SD_Id("S"))'"}
+Time spent: 0.024797 seconds
+rc=1
+--- Lean
+Error {msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(50, SD_Id("S")) vs Symbol(19, SD_Id("S"))'"}
+rc=1
+--- gcc
+tests/multi_tu_tray/fam-vs-array-return/tu1.c: In function 'mk':
+tests/multi_tu_tray/fam-vs-array-return/tu1.c:6:8: note: the ABI of passing struct with a flexible array member has changed in GCC 4.4
+    6 | struct S mk(void) { struct S s; s.n = 7; return s; }
+      |        ^
+gcc exit=7

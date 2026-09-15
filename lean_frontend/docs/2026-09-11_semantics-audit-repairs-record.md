@@ -1183,3 +1183,224 @@ The scratch corpus `.tmp/d3/cases` is ephemeral; its files are quoted in full in
 9. **The panic message rendering** — Lean's `CerbDecode` panic on a raw high byte prints the
    byte-carrier `Char`s through the text path (`Ã`), the oracle prints OCaml `\195`; message
    text, not a verdict — noted, not a defect claim.
+
+---
+
+# Second resumption (2026-09-15) — D3 second commit → D4 → D5
+
+Worker: Claude (Fable 5.1) [AGENT], resuming at `15dd162e9` (the orchestrator's second
+resumption note, charter §8) on top of D3's first commit `dbe633ec5`. Pre-flight, verbatim:
+`check_driver_fresh: oracle OK (bin e40ae8e3853b75b0b45792507d0af2ff2d9332ceaa503a2b130d3b733043392e, src 19de18ed…)`,
+`check_driver_fresh: lean OK (bin e36af96d9eed60cfac55414d675d354edff4268b0bdfad6031c121137dc3be84, src a0ed1133…)`,
+pristine manifest top-level `status: built` (`artifacts.oracle.path = …/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe`),
+`git status --porcelain` empty. Charter §0–§8 read in full; where §7/§8 disagree with
+§0–§3, §7/§8 were followed. The scratch corpus `.tmp/d3/cases` no longer existed; the seven
+cases were rebuilt from the record's verbatim sources (`…-evidence/d3-reproducers-observed.txt`).
+
+## D3 — second commit: the corpus/lane pin (charter §8 items 1–2) — DONE
+
+### The corpus `tests/multi_tu_tray/` (NEW; §8 item 1)
+
+Seven case directories, each `tu1.c` + `tu2.c` (linked in sorted order, as the trial),
+code lines byte-identical to the record's verbatim sources plus a leading comment block per
+file naming the case, its classification and `../README.md`: `node`, `arr-1-2-return`,
+`arr-1-2-arg`, `arr-2-2-return`, `arr-2-2-arg`, `arr-incomplete-ptr-return`,
+`fam-vs-array-return`. `README.md` carries: why the root is separate from `tests/multi_tu/`
+(the pristine lane enumerates that directory and fails on a timeout; the cases move there
+when upstream fixes drafts 37/38/39); the projection paragraph; a per-case classification
+table — `node`, `arr-2-2-return`, `arr-incomplete-ptr-return` positive/compatible `Defined 7`;
+`arr-1-2-return` NEGATIVE, incompatible, rejected — the load-bearing pin of the repair;
+`fam-vs-array-return` rejected on all three engines, incompatibility by member count (draft
+41); `arr-1-2-arg`, `arr-2-2-arg` OBSERVED MODELLING LIMIT — with §8 item 1's sentence quoted
+verbatim in its own section, the `core_run.lem:962-970` mechanism and the `inner_arg_temps`
+observation; and the record's three-engine table (D3(b)/(c)) verbatim, including the two
+probe rows, with a note that its "NEGATIVE" label on the argument row is the charter's
+ORIGINAL classification, withdrawn in §8.
+
+**The committed files re-observed on all three engines + gcc BEFORE any lane edit**
+(`…-evidence/d3-tray-observed.txt`, verbatim, fork bin `e40ae8e3…`, pristine =
+independent-oracle-v2, `LC_ALL=C NO_COLOR=1 TERM=dumb`, 60 s timeouts): every row reproduces
+the record's table — same verdict, same rc, same symbol numbers (fork `545/502`, `558/502`,
+`536/502`, `533/502`; Lean `63/19`, `50/19`); pristine `node` `rc=124`; gcc exit 7 on all
+seven (`fam-vs-array-return` with gcc's FAM-ABI note on stderr). [AGENT] The added comment
+lines changed no symbol number, as expected (symbols are per declaration).
+
+### The projection (§8 item 2) — `scripts/observations.py`, opt-in `failure-class`
+
+`Observation.tokens('failure-class')`: for `Error` and `Undefined` verdicts, every payload
+field has `SYMBOL_NUMBER = re.compile(rb'Symbol\([0-9]+, ')` substituted by `Symbol(_, `,
+then the ordinary `token()`; `Defined`, `InternalError` and `ModelFailure` verdicts are their
+`full` tokens byte for byte; `values`/`pin`/`full` are untouched; an unknown projection still
+raises `ProtocolError`. `--projection` gains the choice `failure-class` (help text names row
+6b). The module docstring states what the projection is, that it exists for LADDER Tier A
+row 6b only, and that applying it to an existing row is forbidden (charter §3).
+
+Unit plants (`scripts/test_observations.py`, new
+`test_failure_class_projection_elides_symbol_numbers_and_nothing_else`, runs inside
+`test_unit.sh` and so in Tier A row 1) — with the lane's two verbatim `arr-1-2-return`
+tokens (oracle 545/502, Lean 63/19): `full` and `values` tokens differ, `failure-class`
+tokens are equal and equal to the expected elided token; PLANTS — the tag NAME `S`→`T`, the
+arm `struct`→`union`, the description `SD_Id`→`SD_None` each still DIFFER under
+`failure-class`; a `Defined` token spelling `Symbol(7, x)` in stdout is unchanged and its
+`7`→`8` twin differs; an `Undefined` payload IS projected (`Symbol(9, SD_None)` ≡
+`Symbol(10, SD_None)` → `Symbol(_, SD_None)`); a mixed sequence is projected per verdict;
+`Symbol(545,` without the space is NOT rewritten; the CLI accepts the choice and prints the
+same token. [AGENT] Fence reading: `scripts/test_observations.py` is the codec's unit-test
+file and D3(g) requires the projection "unit-tested both directions with a plant"; the fence
+item `scripts/observations.py` is read to include its test file. Verbatim:
+```
+$ python3 scripts/test_observations.py
+Ran 23 tests in 0.260s
+OK
+```
+
+### `scripts/test_multi_tu.sh` — the flag `--failure-class-projection` (D3(g) only)
+
+`PROJECTION=full` by default; the flag sets `failure-class`; both `observation_tokens`
+calls pass `--projection "$PROJECTION"` (the codec's default IS `full`, so the default path is
+unchanged); the banner prints `PROJECTION: full (complete verdict tokens)` or the labelled
+opt-in line; usage and header document it. No other script passes the option (grep below).
+
+### LADDER Tier A row 6b — and `test_release.py` accepting the ladder
+
+Row `6b` = `` `./scripts/test_multi_tu.sh --failure-class-projection tests/multi_tu_tray` ``
+with the Bar cell naming the tray, drafts 37/38/39, the two observed modelling-limit rows and
+the WEAKER PROJECTION label ("this row only … every other lane row keeps `full`"). Verbatim:
+```
+$ python3 scripts/test_release.py        # test_real_membership_expands_every_documented_command parses the REAL LADDER
+Ran 16 tests in 3.296s
+OK
+$ python3 scripts/release.py --list | grep A6
+A6      ./scripts/test_multi_tu.sh
+A6b     ./scripts/test_multi_tu.sh --failure-class-projection tests/multi_tu_tray
+```
+
+### Lane runs, plants and the grep (all verbatim in `…-evidence/d3-tray-lane-and-plants.txt`)
+
+```
+$ ./scripts/test_multi_tu.sh tests/multi_tu_tray        # NO flag: full projection (the trial, re-run on the committed files)
+PROJECTION: full (complete verdict tokens)
+[2] MISMATCH arr-1-2-return:
+    ocaml: ERR:{msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(545, SD_Id(\"S\")) vs Symbol(502, SD_Id(\"S\"))'"}
+    lean:  ERR:{msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(63, SD_Id(\"S\")) vs Symbol(19, SD_Id(\"S\"))'"}
+[6] MISMATCH fam-vs-array-return:   (same shape, 533/502 vs 50/19)
+SUMMARY: total=7 match=5 fail=2
+rc=1
+$ CERB_OBSERVATION_DIR=.tmp/d3b/obs ./scripts/test_multi_tu.sh --failure-class-projection tests/multi_tu_tray        # LADDER row 6b
+PROJECTION: failure-class (OPT-IN, LADDER Tier A row 6b only) — Symbol(<digits>, elided to Symbol(_, inside Error/Undefined payloads; Defined tokens full
+[1] MATCH arr-1-2-arg: 1 execution(s), VAL:{value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+[2] MATCH arr-1-2-return: 1 execution(s), ERR:{msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(_, SD_Id(\"S\")) vs Symbol(_, SD_Id(\"S\"))'"}
+[3] MATCH arr-2-2-arg: 1 execution(s), VAL:{value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+[4] MATCH arr-2-2-return: 1 execution(s), VAL:{value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+[5] MATCH arr-incomplete-ptr-return: 1 execution(s), VAL:{value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+[6] MATCH fam-vs-array-return: 1 execution(s), ERR:{msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(_, SD_Id(\"S\")) vs Symbol(_, SD_Id(\"S\"))'"}
+[7] MATCH node: 1 execution(s), VAL:{value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+SUMMARY: total=7 match=7 fail=0
+ALL PASSED
+rc=0
+$ ./scripts/test_multi_tu.sh        # LADDER row 6 (default corpus) — unchanged, full projection
+PROJECTION: full (complete verdict tokens)
+[1] MATCH basic: 31 execution(s), VAL:{value: "Specified(42)", stdout: "", stderr: "", blocked: "false"}
+[2] MATCH tentative: 1 execution(s), VAL:{value: "Specified(42)", stdout: "", stderr: "", blocked: "false"}
+SUMMARY: total=2 match=2 fail=0
+rc=0
+```
+
+Lane-level plants on the row-6b run's KEPT captures (case 2 = `arr-1-2-return`, case 1 =
+`arr-1-2-arg`), verbatim results: PLANT A — `observation_tokens 2.oracle/2.lean --projection
+full` differ (545/502 vs 63/19), `--projection failure-class` equal → `PLANT A (symbol-only
+difference → equal under failure-class): EQUAL`; PLANT B — a copy of `2.lean` with the second
+tag NAME `S`→`T` in `.stdout` → `ERR:{msg: "… Symbol(_, SD_Id(\"S\")) vs Symbol(_, SD_Id(\"T\"))'"}`,
+`PLANT B (real payload difference under failure-class): DIFFER — MISMATCH preserved`; PLANT C
+— a copy of `1.oracle` with `Specified(7)`→`Specified(8)` → `PLANT C: failure-class token ==
+full token for a Defined verdict` / `PLANT C: value difference DIFFERs under failure-class`.
+
+Grep (verbatim in the evidence file): the FLAG / the codec OPTION
+(`failure-class-projection` | `projection failure-class` | `'failure-class'` |
+`--projection "$PROJECTION"`) occurs ONLY in `scripts/LADDER.md`, `scripts/observations.py`,
+`scripts/test_multi_tu.sh`, `scripts/test_observations.py`, `tests/multi_tu_tray/README.md`
+and the charter; `grep -rn projection scripts/*.sh` shows every other lane's projection use
+unchanged (`speclab_observations.sh`/`test_verify.sh` `pin`, `test_ci_sweep.sh`/
+`test_gcc_oracle.sh` `values`). The bare phrase "failure-class" also occurs as prose in five
+older docs/READMEs ("coarse failure-class pin") — not the flag.
+
+[AGENT] Observation during this step: the oracle BINARY stamp moved once — `oracle OK (bin
+e40ae8e3…, src 19de18ed…)` at pre-flight and for the three-engine re-observation; after the
+first lane's `build_cerberus` (04:07:13Z) `oracle OK (bin 89a899c5…, src 19de18ed…)`; a
+further `build_cerberus` left it at `89a899c5…`. Same SOURCE hash (`19de18ed…`), a dune
+relink of `main.exe` with no source change (no OCaml file is modified: `git status` shows
+only the fence); both binaries gave identical verdicts on all seven cases (evidence files).
+Not a stop event; recorded so the stamp history reads correctly.
+
+Not edited (outside the fence; open questions below): `lean_frontend/docs/2026-09-05_observation-contract.md`'s
+comparison matrix (a row for row 6b's labelled projection belongs there) and
+`scripts/test_observation_lanes.py` (its multi-TU plants run the DEFAULT `full` path, which is
+unchanged).
+
+### The gate for the second commit — Tier A green with zero movement (verbatim; full file `…-evidence/d3b-tierA-verdicts.txt`)
+
+```
+$ CERB_MEM_MAX=48G DUNE_CACHE=disabled python3 scripts/release.py --mode fast --lane-timeout 3300 --out .tmp/d3b-fast   # 04:11:21Z → 04:18:10Z
+RUN A1: ./scripts/test_unit.sh
+PASSED A1 (145.0s)
+RUN A2: ./scripts/test_exec.sh --check-baseline
+PASSED A2 (27.4s)
+RUN A3: ./scripts/test_exec.sh --check-baseline=scripts/exec_coverage_baseline.txt tests/coverage
+PASSED A3
+RUN A4: ./scripts/test_exec.sh --check-baseline=scripts/exec_debug_baseline.txt tests/debug
+PASSED A4
+RUN A4b: ./scripts/test_exec.sh --check-baseline=scripts/exec_float_baseline.txt tests/float
+PASSED A4b
+RUN A4c: ./scripts/test_bytes.sh
+PASSED A4c (3.0s)
+RUN A5: ./scripts/test_libc_exec.sh
+PASSED A5 (21.4s)
+RUN A6: ./scripts/test_multi_tu.sh
+PASSED A6 (2.1s)
+RUN A6b: ./scripts/test_multi_tu.sh --failure-class-projection tests/multi_tu_tray
+PASSED A6b (3.5s)
+RUN A7: ./scripts/test_parse.sh
+PASSED A7 (10.1s)
+RUN A8: ./scripts/test_core.sh
+PASSED A8 (8.7s)
+RUN A9: ./scripts/test_elab.sh
+PASSED A9 (16.3s)
+RUN A10: ./scripts/test_libxml2_uri.sh
+PASSED A10 (16.4s)
+RUN A11: ./scripts/test_cn_coverage.sh --check-baseline
+PASSED A11 (57.2s)
+fast: passed; 14/14 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+rc=0
+A1: Total: 9 passed, 0 failed
+check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)
+gen_fuel_parametricity: OK (16 ambient fuel wrappers in the generated tree = the 16 pins of TotalityProofTest.lean Part 1, both directions)
+check_fuel_forms: forms partition OK (60 MEASURED + 13 ABSORBING + 2 ambient-reachable + 6 ambient-unreachable = 81 fuel'd workers)
+check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=166 REACHABLE=48 UNKNOWN=19; every row sealed; tally line consistent)
+check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 23 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+A1 (test_observations.py, inside test_unit): Ran 23 tests in 0.256s / OK      # the new projection plant included
+A1 (test_release.py, inside test_unit):      Ran 16 tests in 3.176s / OK      # the real LADDER with row 6b parses
+A2: SUMMARY: total=111 match=90 ub_match=18 … / Baseline check: 0 regression(s), 0 improvement(s)
+A3: Baseline check: 0 regression(s), 0 improvement(s)
+A4: Baseline check: 0 regression(s), 0 improvement(s)
+A4b: SUMMARY: total=93 match=93 … / Baseline check: 0 regression(s), 0 improvement(s)
+A5: SUMMARY: match=12 diff=0
+A6: PROJECTION: full (complete verdict tokens) / SUMMARY: total=2 match=2 fail=0
+A6b: PROJECTION: failure-class (OPT-IN, LADDER Tier A row 6b only) — Symbol(<digits>, elided to Symbol(_, inside Error/Undefined payloads; Defined tokens full
+     [2] MATCH arr-1-2-return: 1 execution(s), ERR:{msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(_, SD_Id(\"S\")) vs Symbol(_, SD_Id(\"S\"))'"}
+     SUMMARY: total=7 match=7 fail=0 / ALL PASSED
+A7: batch diagnostic producers: 8/8 passed / cabs bytes probe: 128 raw bytes 0x80..0xFF crossed the bridge as one code point each (valid UTF-8 JSON; Lean sizeof = 129)
+A11: BASELINE OK (213 entries, exact match)
+$ ./scripts/test_unit.sh        # direct, → 04:20:54Z
+Total: 9 passed, 0 failed       (same partition 81 / fork-drift layer 2 = 23 / failure-reach 233 / axiom / parametricity lines; test_observations 23 OK; test_release 16 OK)
+rc=0
+```
+
+[AGENT] Zero movement in every existing lane row (A2/A3/A4/A4b `0 regression(s), 0
+improvement(s)`; A5 12/0; A6 2/2; A11 213 exact); the NEW row A6b is 7/7 MATCH under the
+labelled projection; every gate line is identical to the D3 first commit's. No Lean source, no
+`.lem`, no manifest and no baseline file changed in this commit (the Lean/OCaml sources are those
+of `dbe633ec5`; stamps `oracle OK (bin 89a899c5…, src 19de18ed…)` / `lean OK (bin e36af96d…)`).
+Files in this commit: `tests/multi_tu_tray/**` (7 cases + README, NEW), `scripts/observations.py`,
+`scripts/test_observations.py`, `scripts/test_multi_tu.sh`, `scripts/LADDER.md` (row 6b), this
+record, evidence `d3-tray-observed.txt`, `d3-tray-lane-and-plants.txt`, `d3b-tierA-verdicts.txt`.

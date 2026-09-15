@@ -129,6 +129,54 @@ class ObservationTests(unittest.TestCase):
         with self.assertRaises(ProtocolError):
             a.tokens('pin')
 
+    def test_failure_class_projection_elides_symbol_numbers_and_nothing_else(self):
+        # LADDER Tier A row 6b's EXPLICIT OPT-IN projection (semantics-audit repairs
+        # 2026-09-11, charter D3(g) / §8 item 2): fork OCaml and Lean number symbols
+        # differently, so an Error quoting a symbol is a `full` MISMATCH between agreeing
+        # engines. The two Error texts below are the lane's verbatim tokens for
+        # tests/multi_tu_tray/arr-1-2-return (oracle 545/502, Lean 63/19).
+        err_o = (b'Error {msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: '
+                 b'Symbol(545, SD_Id("S")) vs Symbol(502, SD_Id("S"))\'"}\n')
+        err_l = err_o.replace(b'Symbol(545, ', b'Symbol(63, ').replace(b'Symbol(502, ', b'Symbol(19, ')
+        o, l = parse(err_o, status=1), parse(err_l, status=1)
+        self.assertNotEqual(o.tokens(), l.tokens())          # full: the numbering is payload
+        self.assertNotEqual(o.tokens('values'), l.tokens('values'))
+        self.assertEqual(o.tokens('failure-class'), l.tokens('failure-class'))
+        self.assertEqual(o.tokens('failure-class'),
+                         ['ERR:{msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: '
+                          'Symbol(_, SD_Id(\\"S\\")) vs Symbol(_, SD_Id(\\"S\\"))\'"}'])
+        # PLANTS — a REAL payload difference still differs under the projection:
+        for old, new in [(b'SD_Id("S")) vs', b'SD_Id("T")) vs'),      # the tag NAME
+                         (b'PEmemberof(struct)', b'PEmemberof(union)'),  # the arm
+                         (b'Symbol(19, SD_Id', b'Symbol(19, SD_None')]:  # the description
+            with self.subTest(plant=old):
+                plant = parse(err_l.replace(old, new), status=1)
+                self.assertNotEqual(o.tokens('failure-class'), plant.tokens('failure-class'))
+        # Defined tokens are NOT rewritten, even when their payload spells a symbol.
+        ok = OK.replace(b'stdout: ""', b'stdout: "Symbol(7, x)"')
+        self.assertEqual(parse(ok, status=0).tokens('failure-class'), parse(ok, status=0).tokens())
+        self.assertIn('Symbol(7, x)', parse(ok, status=0).tokens('failure-class')[0])
+        self.assertNotEqual(parse(ok, status=0).tokens('failure-class'),
+                            parse(ok.replace(b'Symbol(7, ', b'Symbol(8, '), status=0).tokens('failure-class'))
+        # Undefined payloads ARE in scope (the charter names Error and Undefined).
+        ub = UB.replace(b'UB005_data_race', b'UB042 at Symbol(9, SD_None)')
+        self.assertEqual(parse(ub, status=1).tokens('failure-class'),
+                         parse(ub.replace(b'Symbol(9, ', b'Symbol(10, '), status=1).tokens('failure-class'))
+        self.assertIn('Symbol(_, SD_None)', parse(ub, status=1).tokens('failure-class')[0])
+        # Only the exact `Symbol(<digits>, ` shape is rewritten; per-verdict inside a sequence.
+        mixed = parse(multi(ok, err_o), status=0)
+        self.assertEqual(mixed.tokens('failure-class')[0], mixed.tokens()[0])
+        self.assertEqual(mixed.tokens('failure-class')[1], o.tokens('failure-class')[0])
+        self.assertEqual(parse(err_o.replace(b'Symbol(545, ', b'Symbol(545,'), status=1).tokens('failure-class')[0]
+                         .count('Symbol(_, '), 1)
+        with self.assertRaises(ProtocolError):
+            o.tokens('failure')
+        # The CLI accepts the choice and prints the same projected token.
+        cli = subprocess.run([sys.executable, str(Path(__file__).with_name('observations.py')), 'tokens',
+                              '--projection', 'failure-class', '--status', '1'],
+                             input=err_l, capture_output=True, check=True).stdout.decode()
+        self.assertEqual(cli.rstrip('\n').split('\n'), o.tokens('failure-class'))
+
     def test_completion_protocol(self):
         for output, status in [(OK, 0), (UB, 1), (ERR, 1), (multi(UB, ERR), 0),
                                (OK.replace(b'Specified(0)', b'Specified(137)'), 0)]:

@@ -1,0 +1,121 @@
+# D3 second commit — Tier A gate, verbatim key lines. release.py --mode fast (.tmp/d3b-fast, started 2026-09-15T04:11:21Z, ended 04:18:10Z) + ./scripts/test_unit.sh direct (04:18:1x → 04:20:54Z)
+$ CERB_MEM_MAX=48G DUNE_CACHE=disabled python3 scripts/release.py --mode fast --lane-timeout 3300 --out .tmp/d3b-fast
+Release evidence: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/semantics-audit-repairs/.tmp/d3b-fast
+RUN A1: ./scripts/test_unit.sh
+PASSED A1 (145.0s)
+RUN A2: ./scripts/test_exec.sh --check-baseline
+PASSED A2 (27.4s)
+RUN A3: ./scripts/test_exec.sh --check-baseline=scripts/exec_coverage_baseline.txt tests/coverage
+PASSED A3 (50.6s)
+RUN A4: ./scripts/test_exec.sh --check-baseline=scripts/exec_debug_baseline.txt tests/debug
+PASSED A4 (22.3s)
+RUN A4b: ./scripts/test_exec.sh --check-baseline=scripts/exec_float_baseline.txt tests/float
+PASSED A4b (23.7s)
+RUN A4c: ./scripts/test_bytes.sh
+PASSED A4c (3.0s)
+RUN A5: ./scripts/test_libc_exec.sh
+PASSED A5 (21.4s)
+RUN A6: ./scripts/test_multi_tu.sh
+PASSED A6 (2.1s)
+RUN A6b: ./scripts/test_multi_tu.sh --failure-class-projection tests/multi_tu_tray
+PASSED A6b (3.5s)
+RUN A7: ./scripts/test_parse.sh
+PASSED A7 (10.1s)
+RUN A8: ./scripts/test_core.sh
+PASSED A8 (8.7s)
+RUN A9: ./scripts/test_elab.sh
+PASSED A9 (16.3s)
+RUN A10: ./scripts/test_libxml2_uri.sh
+PASSED A10 (16.4s)
+RUN A11: ./scripts/test_cn_coverage.sh --check-baseline
+PASSED A11 (57.2s)
+fast: passed; 14/14 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+rc=0
+
+## per-lane key lines (from the run's retained lane logs)
+--- A1
+Ran 23 tests in 0.256s
+Ran 3 tests in 0.256s
+Ran 16 tests in 3.176s
+Ran 5 tests in 0.002s
+Ran 5 tests in 0.232s
+Total: 9 passed, 0 failed
+check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)
+gen_fuel_parametricity: OK (16 ambient fuel wrappers in the generated tree = the 16 pins of TotalityProofTest.lean Part 1, both directions)
+check_fuel_forms: forms partition OK (60 MEASURED + 13 ABSORBING + 2 ambient-reachable + 6 ambient-unreachable = 81 fuel'd workers)
+check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=166 REACHABLE=48 UNKNOWN=19; every row sealed; tally line consistent)
+check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 23 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+--- A2
+SUMMARY: total=111 match=90 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=3 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+--- A3
+SUMMARY: total=212 match=183 ub_match=16 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=13 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+--- A4
+SUMMARY: total=90 match=66 ub_match=20 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=4 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+--- A4b
+SUMMARY: total=93 match=93 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+--- A4c
+SUMMARY: exec_match=9 neg_pinned=5 fail=0
+--- A5
+SUMMARY: match=12 diff=0
+--- A6
+PROJECTION: full (complete verdict tokens)
+[1] MATCH basic: 31 execution(s), VAL:{value: "Specified(42)", stdout: "", stderr: "", blocked: "false"}
+[2] MATCH tentative: 1 execution(s), VAL:{value: "Specified(42)", stdout: "", stderr: "", blocked: "false"}
+SUMMARY: total=2 match=2 fail=0
+ALL PASSED
+--- A6b
+PROJECTION: failure-class (OPT-IN, LADDER Tier A row 6b only) — Symbol(<digits>, elided to Symbol(_, inside Error/Undefined payloads; Defined tokens full
+[1] MATCH arr-1-2-arg: 1 execution(s), VAL:{value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+[2] MATCH arr-1-2-return: 1 execution(s), ERR:{msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(_, SD_Id(\"S\")) vs Symbol(_, SD_Id(\"S\"))'"}
+[3] MATCH arr-2-2-arg: 1 execution(s), VAL:{value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+[4] MATCH arr-2-2-return: 1 execution(s), VAL:{value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+[5] MATCH arr-incomplete-ptr-return: 1 execution(s), VAL:{value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+[6] MATCH fam-vs-array-return: 1 execution(s), ERR:{msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(_, SD_Id(\"S\")) vs Symbol(_, SD_Id(\"S\"))'"}
+[7] MATCH node: 1 execution(s), VAL:{value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+SUMMARY: total=7 match=7 fail=0
+ALL PASSED
+--- A7
+Total:          111
+Success rate:   100% (of cerberus successes)
+batch diagnostic producers: 8/8 passed
+cabs bytes probe: 128 raw bytes 0x80..0xFF crossed the bridge as one code point each (valid UTF-8 JSON; Lean sizeof = 129)
+ALL PASSED
+--- A8
+Total:          111
+Success rate:   100% (of cerberus successes)
+ALL PASSED
+--- A9
+SUMMARY: total=111 same=108 diff=3 ocaml_fail=0 lean_fail=0
+--- A10
+--- A11
+SUMMARY: total=213 match=207 ub_match=6 ub_diff=0 reject_match=0 diff=0 mismatch=0 reject_diff=0 lean_fail=0 lean_crash=0 fuel=0 lean_error=0 lean_timeout=0 oracle_fail=0 oracle_timeout=0 oracle_inconsistent=0
+BASELINE OK (213 entries, exact match)
+
+$ ./scripts/test_unit.sh        # direct
+Total: 9 passed, 0 failed
+check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)
+Ran 23 tests in 0.242s
+OK
+Ran 3 tests in 0.250s
+OK
+Ran 16 tests in 3.208s
+OK
+Ran 5 tests in 0.002s
+OK
+Ran 5 tests in 0.234s
+OK
+gen_fuel_parametricity: OK (16 ambient fuel wrappers in the generated tree = the 16 pins of TotalityProofTest.lean Part 1, both directions)
+check_fuel_forms: forms partition OK (60 MEASURED + 13 ABSORBING + 2 ambient-reachable + 6 ambient-unreachable = 81 fuel'd workers)
+check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=166 REACHABLE=48 UNKNOWN=19; every row sealed; tally line consistent)
+check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 23 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+rc=0

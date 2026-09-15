@@ -23,6 +23,15 @@
 # including semantic stdout/stderr, UB location and blocked state. Preserve
 # outcome multiplicity and validate actual process completion on both sides.
 #
+# Projection: the codec's `full` projection (complete verdict tokens) on every
+# lane row. ONE explicit opt-in exists — `--failure-class-projection` — the
+# codec's `failure-class` projection: `full` with `Symbol(<digits>, ` rewritten
+# to `Symbol(_, ` inside Error/Undefined payloads and nothing else (the two
+# engines number symbols differently). It is passed by LADDER Tier A row 6b
+# (`tests/multi_tu_tray`) ONLY; every other lane row keeps `full`
+# (semantics-audit repairs 2026-09-11, charter D3(g) / §8 item 2). The banner
+# names the projection in use.
+#
 # Fail-closed: any MISMATCH/DIFF/FAIL/CRASH/TIMEOUT/empty-corpus exits 1.
 set -uo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
@@ -39,6 +48,10 @@ Arguments:
 
 Options:
   -v, --verbose   Show both sides' outputs on mismatch
+  --failure-class-projection
+                  OPT-IN weaker projection (LADDER Tier A row 6b ONLY): compare
+                  verdict tokens with `Symbol(<digits>, ` elided to `Symbol(_, `
+                  inside Error/Undefined payloads; everything else stays `full`
   -h, --help      This help
 
 Environment:
@@ -48,6 +61,7 @@ EOF
 }
 
 VERBOSE=false
+PROJECTION=full
 CORPUS=""
 TIMEOUT_SECS="${TIMEOUT_SECS:-30}"
 
@@ -55,6 +69,7 @@ while [[ $# -gt 0 ]]; do
     case $1 in
         -h|--help) usage ;;
         -v|--verbose) VERBOSE=true; shift ;;
+        --failure-class-projection) PROJECTION=failure-class; shift ;;
         -*) echo "Unknown option: $1" >&2; exit 1 ;;
         *) CORPUS="$1"; shift ;;
     esac
@@ -110,6 +125,11 @@ num=0
 echo ""
 echo "Running multi-TU differential comparison (${#TEST_DIRS[@]} tests)..."
 echo "=================================================="
+if [[ "$PROJECTION" == "failure-class" ]]; then
+    echo "PROJECTION: failure-class (OPT-IN, LADDER Tier A row 6b only) — Symbol(<digits>, elided to Symbol(_, inside Error/Undefined payloads; Defined tokens full"
+else
+    echo "PROJECTION: full (complete verdict tokens)"
+fi
 echo "Raw observation evidence (kept on failure or under CERB_OBSERVATION_DIR; removed on exit 0): $OBSERVATION_RUN_DIR"
 
 for tdir in "${TEST_DIRS[@]}"; do
@@ -133,7 +153,7 @@ for tdir in "${TEST_DIRS[@]}"; do
         FAIL=$((FAIL + 1))
         continue
     fi
-    cerb_seq=$(observation_tokens "$cerb_capture")
+    cerb_seq=$(observation_tokens "$cerb_capture" --projection "$PROJECTION")
     if [[ -z "$cerb_seq" ]]; then
         echo "[$num] FAIL $tname: no OCaml verdicts (exit $cerb_exit): $(echo "$cerb_output" | head -2 | tr '\n' ' ')"
         FAIL=$((FAIL + 1))
@@ -176,7 +196,7 @@ for tdir in "${TEST_DIRS[@]}"; do
         FAIL=$((FAIL + 1))
         continue
     fi
-    lean_seq=$(observation_tokens "$lean_capture")
+    lean_seq=$(observation_tokens "$lean_capture" --projection "$PROJECTION")
     if [[ -z "$lean_seq" ]]; then
         echo "[$num] FAIL $tname: no Lean verdicts (exit $lean_exit): $(echo "$lean_output" | head -2 | tr '\n' ' ')"
         FAIL=$((FAIL + 1))

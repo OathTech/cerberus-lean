@@ -1,0 +1,116 @@
+# D3 second commit — lane runs on tests/multi_tu_tray (both projections), row 6 unchanged, lane-level plants, flag grep; verbatim (build/banner noise filtered), 2026-09-15T04:08:40Z
+# stamps: check_driver_fresh: oracle OK (bin 89a899c5f62a609975c6634df933aff770d04a410c6166808c81e26cecae3c97, src 19de18ed9f03a529067ec7103f58917d116933da22bc317546408b2f7d66043e) check_driver_fresh: lean OK (bin e36af96d9eed60cfac55414d675d354edff4268b0bdfad6031c121137dc3be84, src a0ed1133a00bda9cc6ab4c84b2d534548f50f1ace248c61654fcd9ac253036bb) 
+
+$ ./scripts/test_multi_tu.sh tests/multi_tu_tray        # NO flag: full projection (the trial, re-run on the committed files)
+Running multi-TU differential comparison (7 tests)...
+==================================================
+PROJECTION: full (complete verdict tokens)
+[1] MATCH arr-1-2-arg: 1 execution(s), VAL:{value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+[2] MISMATCH arr-1-2-return:
+    ocaml: ERR:{msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(545, SD_Id(\"S\")) vs Symbol(502, SD_Id(\"S\"))'"}
+    lean:  ERR:{msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(63, SD_Id(\"S\")) vs Symbol(19, SD_Id(\"S\"))'"}
+[3] MATCH arr-2-2-arg: 1 execution(s), VAL:{value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+[4] MATCH arr-2-2-return: 1 execution(s), VAL:{value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+[5] MATCH arr-incomplete-ptr-return: 1 execution(s), VAL:{value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+[6] MISMATCH fam-vs-array-return:
+    ocaml: ERR:{msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(533, SD_Id(\"S\")) vs Symbol(502, SD_Id(\"S\"))'"}
+    lean:  ERR:{msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(50, SD_Id(\"S\")) vs Symbol(19, SD_Id(\"S\"))'"}
+[7] MATCH node: 1 execution(s), VAL:{value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+==================================================
+SUMMARY: total=7 match=5 fail=2
+rc=1
+
+$ CERB_OBSERVATION_DIR=.tmp/d3b/obs ./scripts/test_multi_tu.sh --failure-class-projection tests/multi_tu_tray        # LADDER row 6b
+Running multi-TU differential comparison (7 tests)...
+==================================================
+PROJECTION: failure-class (OPT-IN, LADDER Tier A row 6b only) — Symbol(<digits>, elided to Symbol(_, inside Error/Undefined payloads; Defined tokens full
+[1] MATCH arr-1-2-arg: 1 execution(s), VAL:{value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+[2] MATCH arr-1-2-return: 1 execution(s), ERR:{msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(_, SD_Id(\"S\")) vs Symbol(_, SD_Id(\"S\"))'"}
+[3] MATCH arr-2-2-arg: 1 execution(s), VAL:{value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+[4] MATCH arr-2-2-return: 1 execution(s), VAL:{value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+[5] MATCH arr-incomplete-ptr-return: 1 execution(s), VAL:{value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+[6] MATCH fam-vs-array-return: 1 execution(s), ERR:{msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(_, SD_Id(\"S\")) vs Symbol(_, SD_Id(\"S\"))'"}
+[7] MATCH node: 1 execution(s), VAL:{value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+==================================================
+SUMMARY: total=7 match=7 fail=0
+ALL PASSED
+rc=0
+
+$ ./scripts/test_multi_tu.sh        # LADDER row 6 (default corpus) — unchanged, full projection
+Running multi-TU differential comparison (2 tests)...
+==================================================
+PROJECTION: full (complete verdict tokens)
+[1] MATCH basic: 31 execution(s), VAL:{value: "Specified(42)", stdout: "", stderr: "", blocked: "false"}
+[2] MATCH tentative: 1 execution(s), VAL:{value: "Specified(42)", stdout: "", stderr: "", blocked: "false"}
+==================================================
+SUMMARY: total=2 match=2 fail=0
+ALL PASSED
+rc=0
+
+## lane-level plants on the row-6b run's kept captures (.tmp/d3b/obs; case 2 = arr-1-2-return, case 1 = arr-1-2-arg)
+captures dir: .tmp/d3b/obs/test_multi_tu.g2OuAIMACf
+1.lean.command 1.lean.status 1.lean.stderr 1.lean.stdout 1.oracle.command 1.oracle.status 1.oracle.stderr 1.oracle.stdout 2.lean.command 2.lean.status 2.lean.stderr 2.lean.stdout 2.oracle.command 2.oracle.status 2.oracle.stderr 2.oracle.stdout 3.lean.command 3.lean.status 3.lean.stderr 3.lean.stdout 3.oracle.command 3.oracle.status 3.oracle.stderr 3.oracle.stdout 4.lean.command 4.lean.status 4.lean.stderr 4.lean.stdout 4.oracle.command 4.oracle.status 4.oracle.stderr 4.oracle.stdout 5.lean.command 5.lean.status 5.lean.stderr 5.lean.stdout 5.oracle.command 5.oracle.status 5.oracle.stderr 5.oracle.stdout 6.lean.command 6.lean.status 6.lean.stderr 6.lean.stdout 6.oracle.command 6.oracle.status 6.oracle.stderr 6.oracle.stdout 7.lean.command 7.lean.status 7.lean.stderr 7.lean.stdout 7.oracle.command 7.oracle.status 7.oracle.stderr 7.oracle.stdout arr-1-2-arg-tu1.json.bridge.command arr-1-2-arg-tu1.json.bridge.status arr-1-2-arg-tu1.json.bridge.stderr arr-1-2-arg-tu1.json.bridge.stdout arr-1-2-arg-tu2.json.bridge.command arr-1-2-arg-tu2.json.bridge.status arr-1-2-arg-tu2.json.bridge.stderr arr-1-2-arg-tu2.json.bridge.stdout arr-1-2-return-tu1.json.bridge.command arr-1-2-return-tu1.json.bridge.status arr-1-2-return-tu1.json.bridge.stderr arr-1-2-return-tu1.json.bridge.stdout arr-1-2-return-tu2.json.bridge.command arr-1-2-return-tu2.json.bridge.status arr-1-2-return-tu2.json.bridge.stderr arr-1-2-return-tu2.json.bridge.stdout arr-2-2-arg-tu1.json.bridge.command arr-2-2-arg-tu1.json.bridge.status arr-2-2-arg-tu1.json.bridge.stderr arr-2-2-arg-tu1.json.bridge.stdout arr-2-2-arg-tu2.json.bridge.command arr-2-2-arg-tu2.json.bridge.status arr-2-2-arg-tu2.json.bridge.stderr arr-2-2-arg-tu2.json.bridge.stdout arr-2-2-return-tu1.json.bridge.command arr-2-2-return-tu1.json.bridge.status arr-2-2-return-tu1.json.bridge.stderr arr-2-2-return-tu1.json.bridge.stdout arr-2-2-return-tu2.json.bridge.command arr-2-2-return-tu2.json.bridge.status arr-2-2-return-tu2.json.bridge.stderr arr-2-2-return-tu2.json.bridge.stdout arr-incomplete-ptr-return-tu1.json.bridge.command arr-incomplete-ptr-return-tu1.json.bridge.status arr-incomplete-ptr-return-tu1.json.bridge.stderr arr-incomplete-ptr-return-tu1.json.bridge.stdout arr-incomplete-ptr-return-tu2.json.bridge.command arr-incomplete-ptr-return-tu2.json.bridge.status arr-incomplete-ptr-return-tu2.json.bridge.stderr arr-incomplete-ptr-return-tu2.json.bridge.stdout fam-vs-array-return-tu1.json.bridge.command fam-vs-array-return-tu1.json.bridge.status fam-vs-array-return-tu1.json.bridge.stderr fam-vs-array-return-tu1.json.bridge.stdout fam-vs-array-return-tu2.json.bridge.command fam-vs-array-return-tu2.json.bridge.status fam-vs-array-return-tu2.json.bridge.stderr fam-vs-array-return-tu2.json.bridge.stdout node-tu1.json.bridge.command node-tu1.json.bridge.status node-tu1.json.bridge.stderr node-tu1.json.bridge.stdout node-tu2.json.bridge.command node-tu2.json.bridge.status node-tu2.json.bridge.stderr node-tu2.json.bridge.stdout 
+
+$ observation_tokens 2.oracle --projection full;  observation_tokens 2.lean --projection full        # differ (symbol numbers)
+ERR:{msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(545, SD_Id(\"S\")) vs Symbol(502, SD_Id(\"S\"))'"}
+ERR:{msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(63, SD_Id(\"S\")) vs Symbol(19, SD_Id(\"S\"))'"}
+$ observation_tokens 2.oracle --projection failure-class;  observation_tokens 2.lean --projection failure-class        # equal
+ERR:{msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(_, SD_Id(\"S\")) vs Symbol(_, SD_Id(\"S\"))'"}
+ERR:{msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(_, SD_Id(\"S\")) vs Symbol(_, SD_Id(\"S\"))'"}
+PLANT A (symbol-only difference → equal under failure-class): EQUAL
+
+## PLANT B: a REAL payload difference — copy of 2.lean with the second tag NAME S→T in .stdout; failure-class tokens must still differ
+1
+ERR:{msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(_, SD_Id(\"S\")) vs Symbol(_, SD_Id(\"T\"))'"}
+PLANT B (real payload difference under failure-class): DIFFER — MISMATCH preserved
+
+## PLANT C: Defined tokens are untouched — copy of 1.oracle (arr-1-2-arg) with Specified(7)→Specified(8); tokens differ under both projections and the failure-class token equals the full token
+VAL:{value: "Specified(8)", stdout: "", stderr: "", blocked: "false"}
+PLANT C: failure-class token == full token for a Defined verdict
+PLANT C: value difference DIFFERs under failure-class
+
+## grep: where the projection/flag appears (must be: observations.py, its unit test, test_multi_tu.sh, LADDER row 6b, the tray README, this record/evidence)
+$ grep -rln "failure-class" scripts tools tests lean_frontend --include=*.sh --include=*.py --include=*.md --include=*.lean --include=*.txt
+scripts/test_observations.py
+scripts/observations.py
+scripts/LADDER.md
+scripts/test_multi_tu.sh
+tests/multi_tu_tray/README.md
+tests/z2-probes/mem/README.md
+lean_frontend/docs/2026-08-18_effects-totality-design.md
+lean_frontend/docs/2026-08-18_arc2-exec-honesty-charter.md
+lean_frontend/docs/2026-09-11_codex-charter-semantics-audit-repairs.md
+lean_frontend/docs/2026-09-11_semantics-audit-repairs-evidence/d3-tray-lane-and-plants.txt
+lean_frontend/docs/2026-09-05_observation-contract.md
+lean_frontend/docs/2026-09-03_zero-discrepancy-design.md
+lean_frontend/docs/2026-09-03_pin-bump-record.md
+$ grep -rn "projection" scripts/*.sh | grep -v "^scripts/test_multi_tu.sh:"        # no OTHER lane script passes a projection option
+scripts/check_theorem_axioms.sh:288:#       reintroduction of the effect projection via
+scripts/check_theorem_axioms.sh:502:  echo "check_theorem_axioms: FAIL — C2 ratchet leg 2: runEffectful token in non-comment position (the effect projection was DELETED by the effect-retirement arc; charter section 7):"
+scripts/speclab_observations.sh:4:# remains a separate, explicitly single-outcome reference projection.
+scripts/speclab_observations.sh:31:    ORACLE_VERDICT=$(observation_tokens "$directory/oracle" --projection pin) \
+scripts/speclab_observations.sh:33:    LEAN_VERDICT=$(observation_tokens "$directory/lean" --projection pin) \
+scripts/test_ci_sweep.sh:320:        elif ! $lean_has_ub && [[ "$(observation_tokens "$lean_capture" --projection values)" == "$(observation_tokens "$cerb_capture" --projection values)" ]]; then
+scripts/test_gcc_oracle.sh:313:# native-exit/value projection. Raw output bytes remain in the capture.
+scripts/test_gcc_oracle.sh:460:    lean_seq=$(observation_tokens "$lean_capture" --projection values)
+scripts/test_libxml2_uri.sh:114:    # Preserve the complete observation before any lane-specific projection.
+scripts/test_verify.sh:167:    lean_got=$(observation_tokens "$VERIFY_LEAN_CAPTURE" --projection pin) || { fail "$stem: invalid call pin observation"; continue; }
+scripts/test_verify.sh:168:    oracle_got=$(observation_tokens "$VERIFY_ORACLE_CAPTURE" --projection pin) || { fail "$stem: invalid oracle pin observation"; continue; }
+scripts/test_verify.sh:301:        lean_got=$(observation_tokens "$VERIFY_LEAN_CAPTURE" --projection pin) || { fail "$stem: invalid call pin observation"; continue; }
+scripts/test_verify.sh:302:        oracle_got=$(observation_tokens "$VERIFY_ORACLE_CAPTURE" --projection pin) || { fail "$stem: invalid oracle pin observation"; continue; }
+$ grep -rn "failure-class-projection" scripts/LADDER.md | cut -c1-120
+38:| 6b | `./scripts/test_multi_tu.sh --failure-class-projection tests/multi_tu_tray` | tray-pinned multi-TU cases (sema
+
+## precise grep for the FLAG / the codec OPTION (the phrase "failure-class" alone also occurs in older docs as prose — "coarse failure-class pin" etc.; those are not the flag)
+$ grep -rln -e "failure-class-projection" -e "projection failure-class" -e "'failure-class'" -e "--projection \"\$PROJECTION\"" scripts tools tests lean_frontend --include="*.sh" --include="*.py" --include="*.md" --include="*.lean" | sort
+lean_frontend/docs/2026-09-11_codex-charter-semantics-audit-repairs.md
+scripts/LADDER.md
+scripts/observations.py
+scripts/test_multi_tu.sh
+scripts/test_observations.py
+tests/multi_tu_tray/README.md
+
+## oracle binary stamp movement observed during this step (same source hash; relink at the first lane run 04:07:13Z; stable since)
+before (d3-tray-observed.txt header): check_driver_fresh: oracle OK (bin e40ae8e3853b75b0b45792507d0af2ff2d9332ceaa503a2b130d3b733043392e, src 19de18ed9f03a529067ec7103f58917d116933da22bc317546408b2f7d66043e)
+after build_cerberus (lane run 1): check_driver_fresh: oracle OK (bin 89a899c5f62a609975c6634df933aff770d04a410c6166808c81e26cecae3c97, src 19de18ed9f03a529067ec7103f58917d116933da22bc317546408b2f7d66043e)
+build_cerberus again (04:1x): check_driver_fresh: recorded oracle stamp (bin 89a899c5f62a609975c6634df933aff770d04a410c6166808c81e26cecae3c97, src 19de18ed…) — unchanged; main.exe mtime 2026-09-15 04:07:13.159231883 +0000; lean OK (bin e36af96d…) throughout

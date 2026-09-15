@@ -3,6 +3,18 @@
 
 The normative protocol and lane projections are documented in
 lean_frontend/docs/2026-09-05_observation-contract.md. No third-party packages.
+
+Projections: `full` (every lane row; the complete verdict tokens), `values`,
+`pin`, and the EXPLICIT OPT-IN `failure-class` — the `full` tokens with
+`Symbol(<digits>, ` rewritten to `Symbol(_, ` inside Error/Undefined payloads
+and nothing else (semantics-audit repairs 2026-09-11, charter D3(g) / §8 item
+2). It exists for exactly one lane row, LADDER Tier A row 6b
+(`test_multi_tu.sh --failure-class-projection tests/multi_tu_tray`): fork
+OCaml and Lean number symbols differently, so an `Error` whose text quotes a
+symbol is a `full` MISMATCH even when the two engines agree; the projection
+elides the numbering and NOTHING else (Defined tokens untouched; any other
+payload byte still differs). Applying it to an existing lane row is forbidden
+(charter §3).
 """
 
 from __future__ import annotations
@@ -44,6 +56,9 @@ ABORT_WRAPPER = re.compile(rb'[^\r\n]*/scripts/capped: line [0-9]+: +[0-9]+ Abor
 OCAML_FRAME = re.compile(rb'          (?:Raised at|Raised by primitive operation at|Called from|Re-raised at) '
                           rb'.+ in file "[^"\r\n]+"(?: \(inlined\))?, lines? [0-9]+(?:-[0-9]+)?, characters [0-9]+-[0-9]+')
 OCAML_ENVELOPE = b'cerberus: internal error, uncaught exception:'
+# `failure-class` projection: the one shape it rewrites — a symbol's NUMBER as
+# `Symbol.show` prints it (`Symbol(<digits>, <description>)`, symbol.lem).
+SYMBOL_NUMBER = re.compile(rb'Symbol\([0-9]+, ')
 # These existing negative pins are coarse CRASH checks, never semantic or
 # diagnostic agreement. New panic origins need explicit review here.
 IMMACULATE_PANICS = {
@@ -128,6 +143,14 @@ class Observation:
     def tokens(self, projection: str = 'full') -> list[str]:
         if projection == 'full':
             return [v.token() for v in self.verdicts]
+        if projection == 'failure-class':
+            # LADDER Tier A row 6b ONLY (module docstring): Error/Undefined
+            # payload fields with symbol numbers elided; every other verdict
+            # kind is its `full` token byte for byte.
+            return [Verdict(v.kind, tuple((k, SYMBOL_NUMBER.sub(b'Symbol(_, ', x))
+                                          for k, x in v.fields)).token()
+                    if v.kind in ('Error', 'Undefined') else v.token()
+                    for v in self.verdicts]
         if projection == 'values':
             return [('VAL:' + escape(v.field('value'))) if v.kind == 'Defined'
                     else v.token() for v in self.verdicts]
@@ -334,7 +357,8 @@ def main() -> int:
     parser.add_argument('--other', help='second capture prefix for compare')
     parser.add_argument('--policy', choices=['batch', 'litmus', 'immaculate', 'model-failure'], default='batch')
     parser.add_argument('--refusal-prefix', default='model refused: ')
-    parser.add_argument('--projection', choices=['full', 'values', 'pin'], default='full')
+    parser.add_argument('--projection', choices=['full', 'values', 'pin', 'failure-class'], default='full',
+                        help="'failure-class' is the opt-in symbol-number-eliding projection of LADDER row 6b only")
     parser.add_argument('--comparison', choices=['sequence', 'set'], default='sequence')
     args = parser.parse_args()
     if args.action == 'model-failure':
