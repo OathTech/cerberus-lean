@@ -74,6 +74,13 @@
 # exhaustive pnvi spot sweep does). zd-z28-addr-layout-{a,b} are one program under two digests
 # (comment-only difference), so the program's globals land at DIFFERENT positions among the libc
 # TUs' globals on both engines. All five pinned DIFF before the fix, re-recorded MATCH by the fix commit.
+# ISO-fix register R5 pin (2026-09-15; [USER 2026-09-15] ruling, charter
+# lean_frontend/docs/2026-09-11_codex-charter-semantics-audit-repairs.md §6; record
+# lean_frontend/docs/2026-09-11_semantics-audit-repairs-record.md §D1b): r5-hex-subnormal-double-rounding
+# is ORACLE-WRONG — the OCaml runtime's caml_float_of_hex (floats.c:355,369) rounds a >53-bit
+# hexadecimal mantissa twice when the result is subnormal (C11 §6.4.4.2#3 requires correct
+# rounding; gcc and Python agree with Lean). Recorded DIFF | L=Specified(1) (oracle Specified(0));
+# it flips to MATCH and RETIRES R5 when the OCaml runtime is fixed (tray ocaml/01, Cerberus-facing 40).
 argv1-args MATCH | L=VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 argv2-args MATCH | L=VAL:{value: "Specified(97)", stdout: "", stderr: "", blocked: "false"}
 argv3-args MATCH | L=VAL:{value: "Specified(11)", stdout: "", stderr: "", blocked: "false"}
@@ -100,6 +107,7 @@ lock-string-literal MATCH | L=UB:{ub: "UB033_modifying_string_literal", stderr: 
 offsetof-nested-struct MATCH | L=VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
 offsetof-union-member MATCH | L=CRASH
 pr44468 MATCH | L=VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+r5-hex-subnormal-double-rounding DIFF | L=VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
 s4b-memcmp-hugesize ORACLE_CRASH | L=UB:{ub: "UB_CERB002a_out_of_bound_load", stderr: "", loc: "<unknown location>"}
 s9-enum-signedness MATCH | L=VAL:{value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}
 s9-enum-sizeof-route MATCH | L=VAL:{value: "Specified(4)", stdout: "", stderr: "", blocked: "false"}

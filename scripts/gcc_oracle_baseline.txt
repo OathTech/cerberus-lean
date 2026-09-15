@@ -1872,6 +1872,7 @@ tests/immaculate/nolibc/lock-const-global.c SKIP_UB -
 tests/immaculate/nolibc/lock-string-literal.c SKIP_UB -
 tests/immaculate/nolibc/offsetof-nested-struct.c AGREE -
 tests/immaculate/nolibc/offsetof-union-member.c SKIP_LEAN_CRASH -
+tests/immaculate/nolibc/r5-hex-subnormal-double-rounding.c AGREE -
 tests/immaculate/nolibc/s9-enum-signedness.c AGREE -
 tests/immaculate/nolibc/s9-enum-sizeof-route.c AGREE -
 tests/immaculate/nolibc/trap-bool-uninit.c SKIP_UB -

@@ -17,8 +17,9 @@
   * the correctly rounded value of `0x8000000000000BFp-1082` (a 60-bit
     mantissa landing in the subnormal range), where the fork oracle's
     `caml_float_of_hex` double-rounds (record §D1, stop row 106) — the pin
-    records THE CORRECTLY ROUNDED contract the charter fixed; the operator's
-    ruling on the mirror question may move it (record §D1 open question);
+    records THE CORRECTLY ROUNDED contract the charter fixed, ADMITTED as
+    ISO-fix register R5 [USER 2026-09-15] (VALIDATION.md §2; marker in
+    CerbFloat.roundToBinary64Bits; immaculate pin r5-hex-subnormal-double-rounding);
   * the huge-exponent guards (`1e999999999`, `1e-999999999`) that keep the
     exact arithmetic bounded by the format.
 -/
@@ -66,7 +67,8 @@ def main : IO UInt32 := do
     ("0x1p-1075", 0x0000000000000000), ("0x1.8p-1075", 0x0000000000000001), ("0x1.8p-1074", 0x0000000000000002),
     ("2.4703282292062327e-324", 0x0000000000000000), ("2.4703282292062328e-324", 0x0000000000000001),
     ("1e-999999999", 0x0000000000000000),
-    -- the double-rounding shape: the CORRECTLY ROUNDED value (record §D1, stop row 106)
+    -- the double-rounding shape: the CORRECTLY ROUNDED value (record §D1, stop row 106;
+    -- register entry R5 [USER 2026-09-15] — the oracle gives 0x0008000000000000)
     ("0x8000000000000BFp-1082", 0x0008000000000001)
   ]
   let mut ok := true

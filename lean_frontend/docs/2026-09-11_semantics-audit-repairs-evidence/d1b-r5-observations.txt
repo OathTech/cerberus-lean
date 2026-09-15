@@ -1,0 +1,61 @@
+# D1b — R5 observations (2026-09-15), verbatim; worker Claude (Fable 5.1) [AGENT]
+
+## OCaml toplevel (opam switch, `opam exec --switch=. -- ocaml .tmp/r5.ml`)
+$ opam exec --switch=. -- ocaml -version
+The OCaml toplevel, version 5.4.0
+$ cat .tmp/r5.ml
+let () = Printf.printf "%b\n%h\n%h\n" (float_of_string "0x8000000000000BFp-1082" = float_of_string "0x1.0000000000002p-1023") (float_of_string "0x8000000000000BFp-1082") (float_of_string "0x1.0000000000002p-1023");;
+$ opam exec --switch=. -- ocaml .tmp/r5.ml
+false
+0x0.8p-1022
+0x0.8000000000001p-1022
+rc=0
+
+## Python 3
+$ python3 -c "import struct; a=float.fromhex('0x8000000000000BFp-1082'); b=float.fromhex('0x1.0000000000002p-1023'); print(a==b, a.hex(), hex(struct.unpack('<Q',struct.pack('<d',a))[0]))"
+True 0x0.8000000000001p-1022 0x8000000000001
+
+## runtime/floats.c (OCaml 5.4.0, _opam/.opam-switch/sources/ocaml-compiler.5.4.0/runtime/floats.c), lines 286, 342-345, 355, 369
+static int caml_float_of_hex(const char * s, const char * end, double * res)
+           after. In this case, round m to odd so that the later
+           rounding of m to FP produces the correct result. */
+        if (d != 0) m |= 1;        /* round to odd */
+        x_bits += 4;
+  f = (double) (int64_t) m;
+  if (exp != 0) f = ldexp(f, exp);
+
+## gcc
+$ gcc -std=c11 -O0 -w -o .tmp/r5.out tests/immaculate/nolibc/r5-hex-subnormal-double-rounding.c && .tmp/r5.out; echo "gcc exit=$?"
+gcc exit=1
+
+## fork oracle
+$ _build/default/backend/driver/main.exe --runtime=_build/install/default --nolibc --exec --batch --mode=exhaustive tests/immaculate/nolibc/r5-hex-subnormal-double-rounding.c
+Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+Time spent: 0.025511 seconds
+rc=0
+
+## pristine upstream (.validation-foundations/independent-oracle-v2, manifest status built)
+$ LC_ALL=C $P/_build/default/backend/driver/main.exe --runtime=$P/_build/install/default --nolibc --exec --batch --mode=exhaustive tests/immaculate/nolibc/r5-hex-subnormal-double-rounding.c
+Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+Time spent: 0.024311 seconds
+rc=0
+
+## Lean (LEAN_ABORT_ON_PANIC=1 lean_frontend/.lake/build/bin/cerberus-lean --batch <cabs-json>)
+Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+
+## immaculate lane, run 1 (new file, no baseline row) — key lines
+30:  DIFF           r5-hex-subnormal-double-rounding  O[VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}] L[VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}]
+81:DEVIATION: r5-hex-subnormal-double-rounding expected [<absent>] got [DIFF | L=VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}]
+87:rc=1
+
+## immaculate lane, run 2 (baseline row added) — tail
+29:  DIFF           r5-hex-subnormal-double-rounding  O[VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}] L[VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}]
+80:OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip DIFF, R3 s4b-memcmp-hugesize ORACLE_CRASH — VALIDATION.md 'ISO-fix register' — and the in-Lean probes g6 TRIPWIRE / illtyped-store KILL).
+81:rc=0
+
+## gcc second-oracle lane, subset run on tests/immaculate/nolibc (observe-only; --check-baseline is defined for the full corpus only) — key lines
+28:[16/30] AGREE  tests/immaculate/nolibc/r5-hex-subnormal-double-rounding.c: gcc=1 lean={1}
+57:  Compared:     12  (agree=9 agree_nd=0 triaged=3 DISAGREE=0)
+67:SUMMARY: total=30 compared=12 agree=9 agree_nd=0 triaged=3 disagree=0 skip_gcc_compile=1 skip_gcc_stdout=1 skip_lean_crash=5 skip_lean_fail=2 skip_ub=9 triaged_addr=2 triaged_ub=1
+69:rc=0

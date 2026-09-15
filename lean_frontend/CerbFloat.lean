@@ -82,9 +82,11 @@ def of_int (n : Int) : Float := Float.ofInt n
       (:342-345), ONE int64→double conversion (:355) and then `ldexp` (:369).
       For a result in the NORMAL range `ldexp` is exact, so the result is the
       correctly rounded binary64 value; for a result in the SUBNORMAL range
-      `ldexp` rounds a second time (double rounding) — see the record
-      `docs/2026-09-11_semantics-audit-repairs-record.md` §D1 for what the
-      fork oracle was OBSERVED to do on that shape (`tests/float/106`).
+      `ldexp` rounds a second time (double rounding) — OBSERVED on the fork
+      oracle (record `docs/2026-09-11_semantics-audit-repairs-record.md`
+      §D1 row 106) and ADMITTED as ISO-fix register R5 [USER 2026-09-15]:
+      the marker block at `roundToBinary64Bits` below; the pin is
+      `tests/immaculate/nolibc/r5-hex-subnormal-double-rounding.c`.
     * decimal: the C library's `strtod` (glibc: correctly rounded, every
       range, ties-to-even).
 
@@ -101,7 +103,8 @@ def of_int (n : Int) : Float := Float.ofInt n
     numerals are the binary64 format parameters of IEEE 754-2019 §3.4,
     named below. Any residual difference from the oracle is a BUG
     (VALIDATION.md §0–§1; the former "deliberate, documented divergence"
-    wording is withdrawn); the differential pins are `tests/float/081-106`.
+    wording is withdrawn) unless it is the ONE register entry R5 below; the
+    differential pins are `tests/float/081-105` and the R5 immaculate row.
 
     Malformed input (including OCaml's own "inf"/"nan" spellings, which no
     feeding site produces): `float_of_string` raises `Failure`; mirrored
@@ -136,6 +139,26 @@ private def signBits (neg : Bool) : UInt64 :=
 private def infBits (neg : Bool) : UInt64 :=
   signBits neg ||| (UInt64.ofNat binary64ExpFieldMax <<< UInt64.ofNat binary64FracBits)
 
+-- ISO-fix register R5 (VALIDATION.md §2, [USER 2026-09-15] "agree on your
+-- recommendation … keep the correctly rounded conversion"): this routine
+-- rounds ONCE, to the target precision, for every result including
+-- subnormals. The oracle's `caml_float_of_hex` (OCaml 5.4.0
+-- runtime/floats.c:355 `f = (double) (int64_t) m;` then :369 `f = ldexp(f,
+-- exp);`) rounds a hexadecimal mantissa of more than 53 significant bits
+-- to 53 bits and then AGAIN to the subnormal's shorter precision — double
+-- rounding, wrong by one quantum when the first rounding lands on a tie of
+-- the second. ISO C11 §6.4.4.2#3 (last sentence): "For hexadecimal
+-- floating constants when FLT_RADIX is a power of 2, the result is
+-- correctly rounded." Second oracles agreeing with Lean: gcc (exit 1 on the
+-- pin) and Python `float.fromhex`. SCOPE of the divergence: hexadecimal
+-- literals with more than 53 significant bits whose value is subnormal and
+-- whose 53-bit pre-rounding lands on a tie; normal-range results and every
+-- decimal literal are unaffected (`strtod` rounds once). The defect is the
+-- OCaml RUNTIME's, inherited by Cerberus through `float_of_string`
+-- (`Impl_mem.str_fval`, impl_mem.ml:2523-2524) — upstream-tray ocaml/01
+-- (OCaml) + 40 (Cerberus-facing, INHERITED). Pinned Lean-right/oracle-wrong
+-- in tests/immaculate: r5-hex-subnormal-double-rounding (DIFF, L=Specified(1));
+-- it flips to MATCH and the entry RETIRES when the runtime is fixed.
 /-- Bits of the binary64 nearest, ties-to-even (IEEE 754-2019 §4.3.1), to
     `(-1)^neg · num / den` (`den > 0`), assembled per §3.4 as
     sign · biased exponent · trailing significand. Exact `Nat` arithmetic:

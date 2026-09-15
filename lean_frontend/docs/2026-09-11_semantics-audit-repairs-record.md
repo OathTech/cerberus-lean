@@ -455,3 +455,115 @@ Open questions for the orchestrator / operator, in priority order:
    (`impl_mem.ml:2523-2524`), `Cerb_floating.of_string` being the lem-level target;
    `caml_float_of_hex` is correctly rounded only for normal-range results; the Lean name of
    the compatibility wrapper is `Ctype_aux.are_compatible0`.
+
+---
+
+# Resumption (2026-09-15) — D1b → D2 → D3 → D4 → D5
+
+Worker: Claude (Fable 5.1) [AGENT], resuming at `c7dd0ba29` (the orchestrator's
+resumption-note commit on top of D1 `c807ce603`). Pre-flight, verbatim:
+`check_driver_fresh: oracle OK (bin bfd9ff8317dc63e3…)`, `check_driver_fresh: lean OK (bin
+f3409f596dabc4e4…)`, pristine manifest `status: built`, `git status --porcelain` empty. The
+charter's §6/§7 were read in full; where §7 and §0/§1 disagree, §7 was followed.
+
+## D1b — ISO-fix register R5 (the row-106 ruling) — DONE
+
+**The ruling, verbatim from the charter §6** — [USER 2026-09-15]: "Great, agree on your
+recommendation. Go ahead with the worker" — on the orchestrator's recommendation: *admit the
+row as ISO-fix register entry R5, keep the correctly rounded conversion; pin the row as a
+Lean-right / oracle-wrong pair in the immaculate lane; add the code marker; draft the upstream
+report against the OCaml runtime with a Cerberus-facing note; register the row in VALIDATION
+§2; resume D2–D5 now, with the ruling's consequences as a final D1b; carry the errata below.*
+The ISO clause (charter §7, verbatim from `tools/n1570.json` §6.4.4.2#3): "For hexadecimal
+floating constants when FLT_RADIX is a power of 2, the result is correctly rounded."
+
+**Observations re-made on this head before any edit** (all verbatim in
+`…-evidence/d1b-r5-observations.txt`): OCaml 5.4.0 toplevel
+`float_of_string "0x8000000000000BFp-1082" = float_of_string "0x1.0000000000002p-1023"` →
+`false`, `%h` forms `0x0.8p-1022` vs `0x0.8000000000001p-1022`; Python `float.fromhex` →
+`True`, bits `0x8000000000001`; `floats.c:355` `f = (double) (int64_t) m;`, `:369` `if (exp !=
+0) f = ldexp(f, exp);` (line numbers confirmed in the switch's sources); gcc exit 1; fork oracle
+`Defined {value: "Specified(0)", …}` rc 0; pristine upstream `Defined {value: "Specified(0)",
+…}` rc 0; Lean `Defined {value: "Specified(1)", …}` rc 0.
+
+1. **VALIDATION §2** — one new row `**R5**` in the 8-column shape (oracle behaviour = the
+   `str_fval` → `caml_float_of_hex` double rounding with the scope sentence; ISO clause quoted;
+   2nd oracle gcc + Python; tray `ocaml/01` + 40; pin `r5-hex-subnormal-double-rounding` DIFF /
+   `L=VAL:{value: "Specified(1)", …}`; Lean site `CerbFloat.lean` `roundToBinary64Bits` with the
+   marker; ruling `**ADMITTED** [USER 2026-09-15]` with the operator's words as quoted in the
+   charter). The R4 paragraph is untouched. [AGENT] The paragraph's sentence "today the markers
+   are `CerbDecode.lean` R1/R2" is now incomplete (R5's marker exists) — left as is per the
+   charter's "leave the R4 paragraph as it is"; noted for the orchestrator.
+2. **Code marker** — `lean_frontend/CerbFloat.lean:142-161`, a `--` block immediately before
+   `roundToBinary64Bits`'s docstring containing the literal token `-- ISO-fix register R5`,
+   naming §6.4.4.2#3, `floats.c:355,369`, the scope, the second oracles, the tray drafts and the
+   pin. The token appears ONCE in the seams (`grep -rn -- '-- ISO-fix register R5'
+   lean_frontend/*.lean` → `CerbFloat.lean:142` only). Two stale sentences in the D1 module
+   comment were corrected in the same edit (they said the row lived at `tests/float/106` and
+   that the pins were `tests/float/081-106`; the row was never a `tests/float` file — it is the
+   evidence probe, now the immaculate pin; pins are `081-105` + the R5 immaculate row).
+3. **Pin** — NEW `tests/immaculate/nolibc/r5-hex-subnormal-double-rounding.c` (first comment
+   line names R5; body = the evidence probe's program). Lane run 1 (no baseline row): the ONE
+   deviation was the new file, printed as
+   `DIFF           r5-hex-subnormal-double-rounding  O[VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}] L[VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}]`
+   / `DEVIATION: r5-hex-subnormal-double-rounding expected [<absent>] got [DIFF | L=VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}]`,
+   rc=1 — no other DEVIATION/MISSING line (every existing row held). Baseline row added exactly
+   as the lane prints it, in the file's (locale) sort position after `pr44468`, plus a 7-line
+   header note (ORACLE-WRONG, R5, flips to MATCH when the OCaml runtime is fixed):
+   ```
+   r5-hex-subnormal-double-rounding DIFF | L=VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+   ```
+   Lane run 2 (verbatim):
+   ```
+   OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip DIFF, R3 s4b-memcmp-hugesize ORACLE_CRASH — VALIDATION.md 'ISO-fix register' — and the in-Lean probes g6 TRIPWIRE / illtyped-store KILL).
+   rc=0
+   ```
+   [AGENT] That OK line enumerates R1–R3 only; it is printed by `scripts/test_immaculate.sh`,
+   which is OUTSIDE this slice's fence — the text is now incomplete (R5 is a fourth pinned
+   non-MATCH row). Open question for the orchestrator (a one-line message edit).
+   **gcc lane** (Tier B row 7; `--check-baseline` is defined for the full corpus only, so a
+   subset run on `tests/immaculate/nolibc` observed the new row):
+   ```
+   [16/30] AGREE  tests/immaculate/nolibc/r5-hex-subnormal-double-rounding.c: gcc=1 lean={1}
+     Compared:     12  (agree=9 agree_nd=0 triaged=3 DISAGREE=0)
+   SUMMARY: total=30 compared=12 agree=9 agree_nd=0 triaged=3 disagree=0 skip_gcc_compile=1 skip_gcc_stdout=1 skip_lean_crash=5 skip_lean_fail=2 skip_ub=9 triaged_addr=2 triaged_ub=1
+   rc=0
+   ```
+   NEW row in `scripts/gcc_oracle_baseline.txt` (inserted in the immaculate block's key order,
+   after `offsetof-union-member.c`): `tests/immaculate/nolibc/r5-hex-subnormal-double-rounding.c AGREE -`.
+   [AGENT, derived] The O2 column `-` follows the lane's own rule (`test_gcc_oracle.sh:538-540`:
+   `-O2` spot tier iff `cksum(key) mod 10 == 0`; this key's cksum `953628241` ≡ 1, so no O2 run
+   — the log has no O2 line for the file; the control `tests/float/081-…` ≡ 0 matches its
+   recorded `O2_AGREE`). The full `--check-baseline` run in D5 is the observation that confirms
+   the row.
+4. **Tray** — (a) NEW `docs/upstream-tray/ocaml/README.md` (what this project is, how a
+   runtime report arises) + `ocaml/01-float-of-hex-double-rounding-subnormal.md` (Affected
+   `runtime/floats.c:286-372` at OCaml 5.4.0 · Description · Reproducer: the OCaml one-liner
+   verbatim + the C program · Observed vs expected with the exact-arithmetic argument · Impact ·
+   Proposed remedy: round once — integer-domain pre-rounding at the subnormal quantum, or carry
+   the sticky bit to the target precision · Classification TRUE BUG · Provenance with the AI
+   note). (b) NEW main-tray `40-float-literal-hex-subnormal-double-rounding-inherited.md`
+   (INHERITED / minor; `str_fval` delegates to the runtime; remedy = wait for the runtime fix or
+   parse hex constants exactly in Cerberus; cross-references `ocaml/01`; carries the fork, pristine
+   and gcc/Python runs verbatim). Number 40 because the charter reserves "the array-bound typo
+   draft" (D4) as 39. `INDEX.md`: row 40 after row 38 with a slotting note (ranks with the
+   questions — not a Cerberus bug), and a one-line `ocaml/` pointer in "Other upstreams" next to
+   the `lean4/` entries (it also names `lem/`, which the INDEX did not mention; README §6 does).
+5. **Unit pin** — `test/Unit/FloatLiteralTest.lean` keeps `("0x8000000000000BFp-1082",
+   0x0008000000000001)`; its header and the row's comment now say R5 / [USER 2026-09-15] (the
+   comment avoids the exact marker token so the seam carries it once).
+6. **LADDER Tier A row 1** (fence addition, §6): `7/7 exes` → `8/8 exes`; nothing else on the row
+   (its "280 parser tests" is also stale — the exe reports 292 — but the fence says count only).
+
+Build after the edits: `make lean-prelude-src` → `check_handwritten_sync: OK (46 hand-written
+files byte-identical …)`; `CERB_MEM_MAX=48G ../scripts/capped lake build CerberusLean
+cerberus-lean` → `✔ [392/392] Built «cerberus-lean»:exe`, `Build completed successfully (392
+jobs).`, rc=0 (02:51:40Z → 02:52:50Z); only the pre-existing `String.dropRight` deprecation
+warning at `CerbFloat.lean:288`; stamp re-recorded, `check_driver_fresh: oracle OK (bin
+bfd9ff83…)` / `lean OK (bin 95431e7e…)`. No Lean signature changed (comment-only edits to the
+two `.lean` files). Files changed by D1b: `lean_frontend/CerbFloat.lean`,
+`lean_frontend/test/Unit/FloatLiteralTest.lean`, `lean_frontend/VALIDATION.md`,
+`tests/immaculate/nolibc/r5-hex-subnormal-double-rounding.c` (new), `tests/immaculate/baseline.txt`
+(+1 row, +7 header lines), `scripts/gcc_oracle_baseline.txt` (+1 row), `scripts/LADDER.md` (row
+1), `docs/upstream-tray/ocaml/{README,01-…}.md` (new), `docs/upstream-tray/40-….md` (new),
+`docs/upstream-tray/INDEX.md`, this record, `…-evidence/d1b-r5-observations.txt`.

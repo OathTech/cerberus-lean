@@ -211,6 +211,12 @@ provenance note), same filing checklist and labeling policy:
   (`docs/2026-09-04_fuel-parameter-C1-record.md` §4.3); worked around by
   rewriting the divisor first. Added 2026-09-05.
 
+- **`ocaml/` subdirectory** (added 2026-09-15, target `ocaml/ocaml`, the runtime; own
+  numbering, `ocaml/README.md`): `ocaml/01-float-of-hex-double-rounding-subnormal.md` —
+  TRUE BUG, `caml_float_of_hex` (`runtime/floats.c:355,369`) rounds twice for a subnormal
+  result; Cerberus-facing note: draft 40 below. (Reports for the Lem authors live in
+  `lem/`, see `README.md` §6.)
+
 Added 2026-09-02 (arc/mem-scale S1' — cerberus-side, upstream-facing):
 
 18. **18-monadic-list-combinators-non-tail.md** — TRUE BUG
@@ -411,6 +417,22 @@ oracles re-run 2026-09-08, lines verbatim in the draft):
     Remedy: consult `Ctype_aux.are_compatible` at member selection (the check
     `memValueFromValue` already performs on store) or retag at the TU boundary.
     File together with 37. Reproducer: draft 37's `tests/failure-probes/cross_tu_node/`.
+
+Added 2026-09-15 (the semantics-audit repairs slice, D1b — record
+`lean_frontend/docs/2026-09-11_semantics-audit-repairs-record.md` §D1b; number 39 is
+the array-bound-typo draft of the same slice's D4):
+
+40. **40-float-literal-hex-subnormal-double-rounding-inherited.md** — INHERITED /
+    minor (slotting note: not a Cerberus bug — it ranks with the questions, below every
+    TRUE BUG; listed for visibility of the runtime dependency). `Impl_mem.str_fval`
+    (impl_mem.ml:2523-2524) and `Cerb_floating.of_string` (cerb_floating.ml:8-16)
+    delegate C floating constants to OCaml's `float_of_string`; its `caml_float_of_hex`
+    (runtime/floats.c:355, :369) rounds a >53-bit hexadecimal mantissa twice when the
+    result is subnormal, one quantum off on a tie — C11 §6.4.4.2#3 requires correct
+    rounding for hexadecimal constants. `0x8000000000000BFp-1082 ==
+    0x1.0000000000002p-1023` → Cerberus `Specified(0)`, gcc/Python/our port 1. Remedy:
+    the runtime fix (OCaml-target draft `ocaml/01`), or parse hex constants exactly in
+    Cerberus. ISO-fix register R5 in the fork (VALIDATION.md §2).
 
 Amended 2026-09-05: draft 10 gains an addendum for the STRING-LITERAL
 form of `\?` (`"\?"` reaches the same decoder from translation.ml:3029;
