@@ -1,3 +1,13 @@
+# parser-progress-measure D1, 2026-09-15 [AGENT]: GENUINE shared-model change, an EXTENSIONALLY IDENTICAL
+# restatement — one [source-content] pin moved (frontend/model/monadic_parsing.lem 194dcdbc… -> 62445706…:
+# `many`/`many1` are restated as input-indexed recursion — two mutually recursive RUN functions
+# many_run/many1_run on the input `cs`, bodies = the exact unfoldings of `many1 p <|> return []` and
+# `p >>= fun a -> many p >>= fun _as -> return (a::_as)`, plus `many p = ParserM (many_run p)` /
+# `many1 p = ParserM (many1_run p)`; the OCaml's results are unchanged on every input for every p — the
+# Lean target measures the two workers under a progress hypothesis; upstream-tray draft 43) and
+# [expected-semantic] monadic_parsing.ml ADDED (layer 2: 23 -> 24 differing generated files). Single-row
+# edits, not a wholesale --refresh (which strips this header). Record:
+# lean_frontend/docs/2026-09-11_parser-progress-measure-record.md D1/D5.1.
 # semantics-audit-repairs D3, 2026-09-11 (landed 2026-09-15) [AGENT]: GENUINE shared-model change — two
 # [source-content] pins moved (frontend/model/ctype_aux.lem 5a657d68… -> d7e2ece8…: the Array/Array arm of
 # are_compatible_aux compared `(n1_opt, n1_opt)`, a typo, now `(n1_opt, n2_opt)` per STD §6.7.6.2#6;
@@ -334,7 +344,7 @@ util/cerb_fresh.ml
 100644 ae79a26c1cfd62acdf18ca6479625de8db05e01f43bdc3dc829cc5a83f465111 frontend/model/loc.lem
 100644 91898bb378f44784142af8773e8784f0b6e4aa33d422e672552bd5b52624e7b8 frontend/model/mem.lem
 100644 2a631f74dd94633b08a34a052197a3028f63cbd8e87a035192e3d865d1c79627 frontend/model/mini_pipeline.lem
-100644 194dcdbcb3c6bd9648107ef2f264667ef5ce765e791a1c345462d8cf5bb01136 frontend/model/monadic_parsing.lem
+100644 6244570634264c7b810189bbdf0804ac4f52ace7513c33fee22bca9c845ccc2e frontend/model/monadic_parsing.lem
 100644 fc90e8eb740711176ddf98d9ebb929e6746604ea50375b08762646edb69e0493 frontend/model/nondeterminism.lem
 100644 b8bd6d19e3130795183c9524fa62052e96b9497cb17ddca7e3763d9171791543 frontend/model/pp.lem
 100644 8de49b4f9775e7d4f7b07f4d2c6757e9597c34a95d61658b0914e15db4511898 frontend/model/state.lem
@@ -373,6 +383,7 @@ d252a154bca00b92a9dbe4422e40849d361bf1ad48dfc033be718aefb7e9f05d cabs_to_ail_eff
 977ee22d68c7527e500476404f5803db39a2ef2072ef9e9e34e57435c68bfd7a ctype_aux.ml
 1b3c441a39dadde45c5de8f95cee4c1210dac4de976d8864fd1529d427a948d3 core_eval.ml
 6ba1f4842fe4d8ef55b6405b6c2f1b88f20fc0e2b245230d680314ad0e6cb59f translation.ml
+6cc50123c4727ca848299fc38a7f62c889acd6e5f5c1ce5a5c732b52e9abd05c monadic_parsing.ml
 [expected-cosmetic]
 75dbb3f1b524df384b8783896995e45dbee6f6c123a990b2d5848c23595f9131 ailSyntax.ml
 f353c48b912b1f5ac4a73b42b981d01c38ac19760867ad8e043072e9489b383c cn.ml

@@ -1,0 +1,22 @@
+=== check_fork_drift.sh run 1 (D1; 1 = before any manifest edit, 2 = after the [source-content] row moved, 3 = with a 0000… placeholder [expected-semantic] row, 4 = final) — verbatim ===
+check_fork_content: FAIL — source-content drift inside reviewed file(s):
+frontend/model/monadic_parsing.lem: expected ('100644', '194dcdbcb3c6bd9648107ef2f264667ef5ce765e791a1c345462d8cf5bb01136'), actual ('100644', '6244570634264c7b810189bbdf0804ac4f52ace7513c33fee22bca9c845ccc2e')
+check_fork_drift: FAIL — source-content check failed
+
+=== check_fork_drift.sh run 2 (D1; 1 = before any manifest edit, 2 = after the [source-content] row moved, 3 = with a 0000… placeholder [expected-semantic] row, 4 = final) — verbatim ===
+check_fork_content: OK — 76 source files content/mode-pinned
+check_fork_drift: FAIL — generated-tree differing-file set drifted from the manifest.
+--- differing now but not excused (NEW OCaml-token drift):
+    monadic_parsing.ml
+--- excused in the manifest but byte-identical now (stale manifest or stale build):
+If ocaml_frontend/generated might be stale, regenerate with the pinned
+lem ('opam exec --switch=. -- make prelude-src') before concluding drift.
+
+=== check_fork_drift.sh run 3 (D1; 1 = before any manifest edit, 2 = after the [source-content] row moved, 3 = with a 0000… placeholder [expected-semantic] row, 4 = final) — verbatim ===
+check_fork_content: OK — 76 source files content/mode-pinned
+check_fork_drift: FAIL — monadic_parsing.ml: excused-diff hash moved (manifest 0000000000000000000000000000000000000000000000000000000000000000, live 6cc50123c4727ca848299fc38a7f62c889acd6e5f5c1ce5a5c732b52e9abd05c) — the fork-vs-upstream delta of this generated file CHANGED; re-review the .lem change (stale-build caveat as above), then refresh deliberately
+
+=== check_fork_drift.sh run 4 (D1; 1 = before any manifest edit, 2 = after the [source-content] row moved, 3 = with a 0000… placeholder [expected-semantic] row, 4 = final) — verbatim ===
+check_fork_content: OK — 76 source files content/mode-pinned
+check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 24 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+

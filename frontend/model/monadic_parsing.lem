@@ -97,19 +97,43 @@ let rec string cs =
    termination). === *)
 declare {lean} termination_argument string = automatic
 
+(* many/many1 restated as input-indexed recursion (2026-09-15,
+   lean_frontend/docs/2026-09-11_parser-progress-measure-record.md):
+   many_run/many1_run are the two parsers' RUN functions with the input as
+   an explicit parameter - the bodies are exactly the unfoldings of
+   `many p = many1 p <|> return []` (mplus, then head-or-empty) and
+   `many1 p = p >>= fun a -> many p >>= fun _as -> return (a::_as)`
+   (bind = concatMap over p's results; `>>= return` = map), so `many` and
+   `many1` denote the same parsers as before on every input, for every p.
+   The recursion descends the input cs: every hop many_run cs -> many1_run
+   cs -> many_run cs' passes through one result (a, cs') of p on cs. When
+   p CONSUMES (every result of `parse p cs` has a strictly shorter rest -
+   true of every parser passed to many/many1 in formatted.lem), the depth
+   from many_run p cs is at most 2 * length cs + 2 and from many1_run p cs
+   at most 2 * length cs + 1; that bound is the Lean-target fuel measure
+   below (fuel_measure ... assuming CerbParserProgress.Consumes p), so the
+   two workers are MEASURED and fuel-free; a non-consuming p recurses
+   forever in OCaml and exhausts the Lean counter (the loud sentinel). *)
+val     many_run:  forall 'a. parserM 'a -> list char -> list (list 'a * list char)
+val     many1_run: forall 'a. parserM 'a -> list char -> list (list 'a * list char)
+let rec many_run p cs =
+  match many1_run p cs ++ [([], cs)] with
+    | []     -> []
+    | (x::_) -> [x]
+  end
+and     many1_run p cs =
+  List.concatMap (fun (a, cs') ->
+    List.map (fun (_as, cs'') -> (a::_as, cs'')) (many_run p cs')
+  ) (parse p cs)
+
 val     many:  forall 'a. parserM 'a -> parserM (list 'a)
 val     many1: forall 'a. parserM 'a -> parserM (list 'a)
-let rec many p = many1 p <|> return []
-and     many1 p =
-  p      >>= fun a   ->
-  many p >>= fun _as ->
-  return (a::_as)
+let many p  = ParserM (many_run p)
+let many1 p = ParserM (many1_run p)
 
-(* many/many1 are genuinely mutual with NO structural decrease (the
-   grammar-recursion terminates only through input consumption): fuel,
-   all-or-none across the mutual block (backend requirement). The
-   sentinel is the always-failing parser (empty result list) — reached
-   only through the LOUD fuelExhausted panic, never a silent default.
-   lemDefaultFuel dominates any real parse depth. *)
-declare {lean} fuel val many = `fuelExhausted (ParserM (fun _ => []))`
-declare {lean} fuel val many1 = `fuelExhausted (ParserM (fun _ => []))`
+(* Lean target: the mutual block is fuel'd all-or-none (backend
+   requirement). The sentinel is the empty result list - the always-
+   failing parser's output - reached only through the LOUD fuelExhausted
+   panic, never a silent default. *)
+declare {lean} fuel val many_run  = `fuelExhausted []`
+declare {lean} fuel val many1_run = `fuelExhausted []`

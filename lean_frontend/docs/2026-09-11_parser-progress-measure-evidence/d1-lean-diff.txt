@@ -1,0 +1,50 @@
+# D1 — lean_frontend/generated/Monadic_parsing.lean before/after (untracked build output; before sha256 64f3591c626a1eaf7cf8ab91d5fa0f0ebfae5e6b7611ca81b069e9a894d16386, after 518a4671d6287c421b6677b18670d9e1d7d9d99c1880595630262c511ed6f162)
+--- .tmp/before/Monadic_parsing.lean	2026-09-15 19:01:53.198757053 +0000
++++ lean_frontend/generated/Monadic_parsing.lean	2026-09-15 19:05:32.750502466 +0000
+@@ -123,24 +123,30 @@
+ /- removed value specification -/
+ 
+ mutual
+- def  many_lemFuel  {a : Type} (lemFuel : Nat)  (p : parserM a)  : parserM (List a) := match lemFuel with
+-  | 0 => (fuelExhausted (ParserM (fun _ => [])))
+-  | Nat.succ lemFuel => ( ParserM  (fun (cs : List (Char)) =>  match  parse  (parse_mplus  ((many1_lemFuel lemFuel)  p)  (parse_return  []))  cs with  |  [] =>  [] | ( x :: _) =>  [x]
+-  ))
+-def      many1_lemFuel  {a : Type} (lemFuel : Nat)  (p : parserM a)  : parserM (List a) := match lemFuel with
+-  | 0 => (fuelExhausted (ParserM (fun _ => [])))
+-  | Nat.succ lemFuel => (      parse_bind 
+-  p  (fun (a1 : a)   =>  parse_bind 
+-  ((many_lemFuel lemFuel)  p)  (fun (_as : List a) => 
+-  parse_return  (a1 :: _as))))
++ def  many_run_lemFuel  {a : Type} (lemFuel : Nat)  (p : parserM a) (cs : List (Char))  : List ((List a ×List (Char))) := match lemFuel with
++  | 0 => (fuelExhausted [])
++  | Nat.succ lemFuel => (
++  match (many1_run_lemFuel lemFuel)  p  cs  ++  [([], cs)] with  |  [] =>  [] | ( x :: _) =>  [x]
++  )
++def      many1_run_lemFuel  {a : Type} (lemFuel : Nat)  (p : parserM a) (cs : List (Char))  : List ((List a ×List (Char))) := match lemFuel with
++  | 0 => (fuelExhausted [])
++  | Nat.succ lemFuel => (
++  List.flatten  (List.map  (fun (p0 : (a ×List (Char))) =>  match p0 with |  (a1,  cs') =>      List.map  (fun (p : (List a ×List (Char))) =>  match p with |  (_as,  cs'') =>  ((a1 :: _as), cs'') )  ((many_run_lemFuel lemFuel)  p  cs') 
++  )  (parse  p  cs)))
+ end
+ 
+-def many  {a : Type} [LemFuel] : parserM a → parserM (List a) := many_lemFuel LemFuel.fuel
+-theorem many_lemFuel_zero  {a : Type} ( p : parserM a) :
+-    many_lemFuel 0  p = (fuelExhausted (ParserM (fun _ => []))) := rfl
++def many_run  {a : Type} [LemFuel] : parserM a → List (Char) → List ((List a ×List (Char))) := many_run_lemFuel LemFuel.fuel
++theorem many_run_lemFuel_zero  {a : Type} ( p : parserM a) ( cs : List (Char)) :
++    many_run_lemFuel 0  p  cs = (fuelExhausted []) := rfl
+ 
+ 
+-def many1  {a : Type} [LemFuel] : parserM a → parserM (List a) := many1_lemFuel LemFuel.fuel
+-theorem many1_lemFuel_zero  {a : Type} ( p : parserM a) :
+-    many1_lemFuel 0  p = (fuelExhausted (ParserM (fun _ => []))) := rfl
++def many1_run  {a : Type} [LemFuel] : parserM a → List (Char) → List ((List a ×List (Char))) := many1_run_lemFuel LemFuel.fuel
++theorem many1_run_lemFuel_zero  {a : Type} ( p : parserM a) ( cs : List (Char)) :
++    many1_run_lemFuel 0  p  cs = (fuelExhausted []) := rfl
+ 
++/- removed value specification -/
++
++/- removed value specification -/
++
++def  many  {a : Type} [LemFuel]  (p : parserM a)   : parserM (List a) :=  ParserM  (many_run  p)
++def  many1  {a : Type} [LemFuel]  (p : parserM a)  : parserM (List a) :=  ParserM  (many1_run  p)

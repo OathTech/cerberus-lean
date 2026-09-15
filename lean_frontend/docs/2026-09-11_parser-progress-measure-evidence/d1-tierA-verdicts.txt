@@ -1,0 +1,215 @@
+# D1 Tier A after the .lem restatement + manifest hunks — CERB_MEM_MAX=48G python3 scripts/release.py --mode fast --lane-timeout 3300 --out .tmp/d1-fast (tree frozen), 2026-09-15; A1 RED at the totality-proof-test exe build (its two pins name the removed many_lemFuel/many1_lemFuel — the parametricity-set drift the charter names for D1), A2–A11 green
+# runner log (verbatim):
+2026-09-15T19:09:39Z
+Release evidence: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/parser-progress-measure/.tmp/d1-fast
+RUN A1: ./scripts/test_unit.sh
+FAILED A1 (1.5s)
+RUN A2: ./scripts/test_exec.sh --check-baseline
+PASSED A2 (27.4s)
+RUN A3: ./scripts/test_exec.sh --check-baseline=scripts/exec_coverage_baseline.txt tests/coverage
+PASSED A3 (50.5s)
+RUN A4: ./scripts/test_exec.sh --check-baseline=scripts/exec_debug_baseline.txt tests/debug
+PASSED A4 (22.3s)
+RUN A4b: ./scripts/test_exec.sh --check-baseline=scripts/exec_float_baseline.txt tests/float
+PASSED A4b (23.7s)
+RUN A4c: ./scripts/test_bytes.sh
+PASSED A4c (3.0s)
+RUN A5: ./scripts/test_libc_exec.sh
+PASSED A5 (21.5s)
+RUN A6: ./scripts/test_multi_tu.sh
+PASSED A6 (2.1s)
+RUN A6b: ./scripts/test_multi_tu.sh --failure-class-projection tests/multi_tu_tray
+PASSED A6b (3.5s)
+RUN A7: ./scripts/test_parse.sh
+PASSED A7 (10.1s)
+RUN A8: ./scripts/test_core.sh
+PASSED A8 (8.7s)
+RUN A9: ./scripts/test_elab.sh
+PASSED A9 (16.2s)
+RUN A10: ./scripts/test_libxml2_uri.sh
+PASSED A10 (16.5s)
+RUN A11: ./scripts/test_cn_coverage.sh --check-baseline
+PASSED A11 (57.1s)
+fast: failed; 13/14 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+rc=1
+2026-09-15T19:14:04Z
+
+=== lane A1 — key lines (grep) ===
+check_handwritten_sync: OK (46 hand-written files byte-identical to lean_frontend/generated/; manifest lean_frontend/handwritten_copy.manifest)
+--- lane A1 — last 6 lines (verbatim) ---
+✓ effects-proof-test PASSED
+
+=== totality-proof-test ===
+Some required targets logged failures:
+- Unit.TotalityProofTest
+error: build failed
+
+=== lane A10 — key lines (grep) ===
+check_lem_sync: OK (src 60c143658e4a33223614e6fea896b1d7f18febbf18cbe086b149143e11b98c27, gen bcb2f7d80459eda631942ad09cf31a632640ad5fbfb2bd3d5d678bbf01c6a14b)
+[lean+libc] EXACT MATCH with ORACLE_LIBC (16/16 URI corpus)
+GATE PASS: all lane expectations pinned-green + baseline unchanged (16/16)
+--- lane A10 — last 6 lines (verbatim) ---
+[lean-nolibc] exit=1 wall=0:00.98 maxRSS=205768kB: Error {msg: "ill-formed program: `calling an unknown procedure: Symbol(968, SD_Id("memset"))'"}
+[lean+libc] exit=0 wall=0:09.72 maxRSS=288792kB: Defined {value: "Specified(600741297)", stdout: "uri 0 rc=0 scheme=http server=example.com port=8080
+[lean+libc] EXACT MATCH with ORACLE_LIBC (16/16 URI corpus)
+
+==================================================
+GATE PASS: all lane expectations pinned-green + baseline unchanged (16/16)
+
+=== lane A11 — key lines (grep) ===
+check_lem_sync: OK (src 60c143658e4a33223614e6fea896b1d7f18febbf18cbe086b149143e11b98c27, gen bcb2f7d80459eda631942ad09cf31a632640ad5fbfb2bd3d5d678bbf01c6a14b)
+  LEAN_FAIL:     0  LEAN_CRASH: 0  FUEL: 0  LEAN_ERROR: 0  LEAN_TIMEOUT: 0
+  ORACLE_FAIL:   0  ORACLE_TIMEOUT: 0  ORACLE_INCONSISTENT: 0
+SUMMARY: total=213 match=207 ub_match=6 ub_diff=0 reject_match=0 diff=0 mismatch=0 reject_diff=0 lean_fail=0 lean_crash=0 fuel=0 lean_error=0 lean_timeout=0 oracle_fail=0 oracle_timeout=0 oracle_inconsistent=0
+BASELINE OK (213 entries, exact match)
+--- lane A11 — last 6 lines (verbatim) ---
+Agreement tally: 213/213 compared (213 run, 0 oracle-side unobservable)
+
+SUMMARY: total=213 match=207 ub_match=6 ub_diff=0 reject_match=0 diff=0 mismatch=0 reject_diff=0 lean_fail=0 lean_crash=0 fuel=0 lean_error=0 lean_timeout=0 oracle_fail=0 oracle_timeout=0 oracle_inconsistent=0
+
+Checking against baseline (exact match, fail-closed both directions): /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/parser-progress-measure/tests/cn_coverage/baseline.txt
+BASELINE OK (213 entries, exact match)
+
+=== lane A2 — key lines (grep) ===
+check_lem_sync: OK (src 60c143658e4a33223614e6fea896b1d7f18febbf18cbe086b149143e11b98c27, gen bcb2f7d80459eda631942ad09cf31a632640ad5fbfb2bd3d5d678bbf01c6a14b)
+  Compared:   108
+SUMMARY: total=111 match=90 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=3 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+--- lane A2 — last 6 lines (verbatim) ---
+SUMMARY: total=111 match=90 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=3 cerb_floor=0 cerb_inconsistent=0
+
+Checking against baseline: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/parser-progress-measure/scripts/exec_baseline.txt
+
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+
+=== lane A3 — key lines (grep) ===
+check_lem_sync: OK (src 60c143658e4a33223614e6fea896b1d7f18febbf18cbe086b149143e11b98c27, gen bcb2f7d80459eda631942ad09cf31a632640ad5fbfb2bd3d5d678bbf01c6a14b)
+  Compared:   199
+SUMMARY: total=212 match=183 ub_match=16 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=13 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+--- lane A3 — last 6 lines (verbatim) ---
+SUMMARY: total=212 match=183 ub_match=16 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=13 cerb_floor=0 cerb_inconsistent=0
+
+Checking against baseline: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/parser-progress-measure/scripts/exec_coverage_baseline.txt
+
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+
+=== lane A4 — key lines (grep) ===
+check_lem_sync: OK (src 60c143658e4a33223614e6fea896b1d7f18febbf18cbe086b149143e11b98c27, gen bcb2f7d80459eda631942ad09cf31a632640ad5fbfb2bd3d5d678bbf01c6a14b)
+  Compared:   86
+SUMMARY: total=90 match=66 ub_match=20 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=4 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+--- lane A4 — last 6 lines (verbatim) ---
+SUMMARY: total=90 match=66 ub_match=20 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=4 cerb_floor=0 cerb_inconsistent=0
+
+Checking against baseline: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/parser-progress-measure/scripts/exec_debug_baseline.txt
+
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+
+=== lane A4b — key lines (grep) ===
+check_lem_sync: OK (src 60c143658e4a33223614e6fea896b1d7f18febbf18cbe086b149143e11b98c27, gen bcb2f7d80459eda631942ad09cf31a632640ad5fbfb2bd3d5d678bbf01c6a14b)
+  Compared:   93
+SUMMARY: total=93 match=93 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+--- lane A4b — last 6 lines (verbatim) ---
+SUMMARY: total=93 match=93 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0
+
+Checking against baseline: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/parser-progress-measure/scripts/exec_float_baseline.txt
+
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+
+=== lane A4c — key lines (grep) ===
+check_lem_sync: OK (src 60c143658e4a33223614e6fea896b1d7f18febbf18cbe086b149143e11b98c27, gen bcb2f7d80459eda631942ad09cf31a632640ad5fbfb2bd3d5d678bbf01c6a14b)
+SUMMARY: exec_match=9 neg_pinned=5 fail=0
+--- lane A4c — last 6 lines (verbatim) ---
+[NEG_OK] no_shift_left.c: Lean-side desugar/typing rejection at the committed diagnostic line 8 (rc 1)
+[NEG_OK] no_shift_right.c: Lean-side desugar/typing rejection at the committed diagnostic line 8 (rc 1)
+[NEG_OK] only_unsigned_char.c: Lean-side desugar/typing rejection at the committed diagnostic line 1 (rc 1)
+
+SUMMARY: exec_match=9 neg_pinned=5 fail=0
+ALL AT COMMITTED EXPECTEDS
+
+=== lane A5 — key lines (grep) ===
+check_lem_sync: OK (src 60c143658e4a33223614e6fea896b1d7f18febbf18cbe086b149143e11b98c27, gen bcb2f7d80459eda631942ad09cf31a632640ad5fbfb2bd3d5d678bbf01c6a14b)
+SUMMARY: match=12 diff=0
+ALL MATCH RECORDED BASELINE
+--- lane A5 — last 6 lines (verbatim) ---
+  MATCH 010-int32-printf: Defined {value: "Specified(0)", stdout: "7\n", stderr: "", blocked: "false"}
+  MATCH 011-decimal-sweep: Defined {value: "Specified(0)", stdout: "8058938944302713231\n194266234449066599
+  MATCH 012-global-alloc-order: Defined {value: "Specified(0)", stdout: "s1=281474976707472 c1=281474976707471 i
+
+SUMMARY: match=12 diff=0
+ALL MATCH RECORDED BASELINE
+
+=== lane A6 — key lines (grep) ===
+check_lem_sync: OK (src 60c143658e4a33223614e6fea896b1d7f18febbf18cbe086b149143e11b98c27, gen bcb2f7d80459eda631942ad09cf31a632640ad5fbfb2bd3d5d678bbf01c6a14b)
+SUMMARY: total=2 match=2 fail=0
+ALL PASSED
+--- lane A6 — last 6 lines (verbatim) ---
+[1] MATCH basic: 31 execution(s), VAL:{value: "Specified(42)", stdout: "", stderr: "", blocked: "false"}
+[2] MATCH tentative: 1 execution(s), VAL:{value: "Specified(42)", stdout: "", stderr: "", blocked: "false"}
+
+==================================================
+SUMMARY: total=2 match=2 fail=0
+ALL PASSED
+
+=== lane A6b — key lines (grep) ===
+check_lem_sync: OK (src 60c143658e4a33223614e6fea896b1d7f18febbf18cbe086b149143e11b98c27, gen bcb2f7d80459eda631942ad09cf31a632640ad5fbfb2bd3d5d678bbf01c6a14b)
+SUMMARY: total=7 match=7 fail=0
+ALL PASSED
+--- lane A6b — last 6 lines (verbatim) ---
+[6] MATCH fam-vs-array-return: 1 execution(s), ERR:{msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(_, SD_Id(\"S\")) vs Symbol(_, SD_Id(\"S\"))'"}
+[7] MATCH node: 1 execution(s), VAL:{value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+
+==================================================
+SUMMARY: total=7 match=7 fail=0
+ALL PASSED
+
+=== lane A7 — key lines (grep) ===
+check_lem_sync: OK (src 60c143658e4a33223614e6fea896b1d7f18febbf18cbe086b149143e11b98c27, gen bcb2f7d80459eda631942ad09cf31a632640ad5fbfb2bd3d5d678bbf01c6a14b)
+Total:          111
+Success rate:   100% (of cerberus successes)
+ALL PASSED
+--- lane A7 — last 6 lines (verbatim) ---
+Lean front end: 0 rejected (exit 1 + a printed Error/Undefined verdict; not a parse failure), 0 internal-error-expected (failwithI panic on an *.error.c input, oracle-mirrored)
+Success rate:   100% (of cerberus successes)
+
+batch diagnostic producers: 8/8 passed
+cabs bytes probe: 128 raw bytes 0x80..0xFF crossed the bridge as one code point each (valid UTF-8 JSON; Lean sizeof = 129)
+ALL PASSED
+
+=== lane A8 — key lines (grep) ===
+check_lem_sync: OK (src 60c143658e4a33223614e6fea896b1d7f18febbf18cbe086b149143e11b98c27, gen bcb2f7d80459eda631942ad09cf31a632640ad5fbfb2bd3d5d678bbf01c6a14b)
+Total:          111
+Success rate:   100% (of cerberus successes)
+ALL PASSED
+--- lane A8 — last 6 lines (verbatim) ---
+Total:          111
+Cerberus --pp:  111 ok, 0 failed
+Lean parse:     111 ok, 0 failed
+Success rate:   100% (of cerberus successes)
+
+ALL PASSED
+
+=== lane A9 — key lines (grep) ===
+check_lem_sync: OK (src 60c143658e4a33223614e6fea896b1d7f18febbf18cbe086b149143e11b98c27, gen bcb2f7d80459eda631942ad09cf31a632640ad5fbfb2bd3d5d678bbf01c6a14b)
+  OCAML_FAIL: 0
+  LEAN_FAIL:  0
+SUMMARY: total=111 same=108 diff=3 ocaml_fail=0 lean_fail=0
+--- lane A9 — last 6 lines (verbatim) ---
+  SAME:       108
+  DIFF:       3
+  OCAML_FAIL: 0
+  LEAN_FAIL:  0
+
+SUMMARY: total=111 same=108 diff=3 ocaml_fail=0 lean_fail=0

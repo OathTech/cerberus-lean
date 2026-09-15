@@ -1,0 +1,54 @@
+# D1 — the test_unit.sh gates run one by one after A1 stopped at the totality-proof-test build (sequential, CERB_MEM_MAX=48G), verbatim
+2026-09-15T19:15:07Z
+=== lake build totality-proof-test ===
+error: test/Unit/TotalityProofTest.lean:66:45: Function expected at
+error: test/Unit/TotalityProofTest.lean:67:46: Function expected at
+error: Lean exited with code 1
+error: build failed
+=== gen_fuel_parametricity --check ===
+gen_fuel_parametricity: FAIL — fuel'd wrapper(s) in the tree with NO parametricity pin in TotalityProofTest.lean: many1_run, many_run
+gen_fuel_parametricity: FAIL — pin(s) in TotalityProofTest.lean with no wrapper in the tree: many, many1
+  regenerate Part 1: scripts/gen_fuel_parametricity.py --emit
+rc=1
+=== check_fuel_forms.sh ===
+check_fuel_forms: forms partition OK (60 MEASURED + 13 ABSORBING + 2 ambient-reachable + 6 ambient-unreachable = 81 fuel'd workers)
+check_fuel_forms: FAIL — fuel'd worker(s) REACHABLE from drive with an opaque (fail-open) exhaustion, not in /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/parser-progress-measure/scripts/fuel_forms_pending.txt:
+  many1_run_lemFuel
+  many_run_lemFuel
+check_fuel_forms: FAIL — pending register row(s) no longer a reachable ambient worker (stale pin; edit the register):
+  many1_lemFuel
+  many_lemFuel
+rc=1
+=== check_exec_purity.sh ===
+check_exec_purity: CLEAN (11 modules)
+rc=0
+=== check_theorem_axioms.sh ===
+check_theorem_axioms: FUEL arc leg OK (63 contract lemmas — generated _zero, runner leaves/parametricity, ∀-fuel exemplar, measured obligations, fail-stop propagation, and six-worker ND stability, every cone ⊆ [propext, Classical.choice, Quot.sound])
+check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)
+rc=0
+=== check_sorry_token.sh ===
+check_sorry_token: OK (309 files scanned comment-stripped — generated 216, hand-written+test 58, LemLib 35; 0 sorry tokens)
+rc=0
+=== check_no_fuel_numerals.sh ===
+check_no_fuel_numerals: OK (316 files scanned comment-stripped; no lemDefaultFuel/driverFuel/ndDefaultFuel, no LemFuel instance, no literal fuel (F1-F6); allowed Main.lean sites seen: 4 of 4 (hand-written + generated copy))
+rc=0
+=== check_lakefile_roots.sh ===
+check_lakefile_roots: OK (215 roots = 215 generated modules + the exe root Main; 85 auxiliary modules all built)
+rc=0
+=== check_failure_reach.sh ===
+check_failure_reach: instrument built + census taken in 6 s (FAILURE_REACH rows 21214, FAILURE_RANGE rows 11292; counts: {"generated:monadic_ascribed":263,"generated:pure_or_unresolved":1253,"handwritten:pure_or_unresolved":121})
+check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=166 REACHABLE=48 UNKNOWN=19; every row sealed; tally line consistent)
+rc=0
+=== check_fixture_freeze.sh ===
+check_fixture_freeze: OK (16 fixture files match the pinned manifest; name set exact)
+rc=0
+=== test_renumber_plants.sh ===
+  OK (admitted as declared): crlf_code [RENUMBER-ONLY ADMIT plant/crlf_code class=LAYOUT ids=1 moved=1 canon=8c8910c71fce]
+test_renumber_plants: OK (12 plants: refusals refuse, admits admit with declared class)
+rc=0
+=== check_exec_totality.sh (ENFORCE=1) ===
+check_exec_totality: CLEAN (22 generated modules + hand-written CerbND, 0 allowlisted)
+=== check_lem_sync --check / --check-lean ===
+check_lem_sync: OK (src 60c143658e4a33223614e6fea896b1d7f18febbf18cbe086b149143e11b98c27, gen bcb2f7d80459eda631942ad09cf31a632640ad5fbfb2bd3d5d678bbf01c6a14b)
+check_lem_sync: lean OK (src 60c143658e4a33223614e6fea896b1d7f18febbf18cbe086b149143e11b98c27, gen 5ed7106ff3d4d78ce464fa2ea27e2f6288509eca1182250a9710deef13caecf0)
+2026-09-15T19:15:28Z
