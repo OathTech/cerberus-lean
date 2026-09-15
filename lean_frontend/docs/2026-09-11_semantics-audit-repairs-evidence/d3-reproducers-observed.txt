@@ -1,0 +1,227 @@
+# D3 — reproducers (scratch corpus .tmp/d3/cases, two TUs each, linked tu1.c tu2.c), verbatim, 2026-09-15
+# fork oracle bin e40ae8e3… (post-D3 .lem, rebuilt); pristine = independent-oracle-v2; gcc -std=c11 -O0 -w
+
+## node
+--- tu1.c
+struct node { int v; struct node *next; };
+struct node ident(struct node n) { return n; }
+--- tu2.c
+struct node { int v; struct node *next; };
+struct node ident(struct node n);
+int main(void) { struct node n; n.v = 7; n.next = 0; return ident(n).v; }
+--- fork oracle
+Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+--- pristine upstream
+rc=124
+--- gcc
+gcc exit=7
+
+## arr-1-2-return
+--- tu1.c
+struct S { int a[1]; };
+struct S mk(void) { struct S s; s.a[0] = 7; return s; }
+--- tu2.c
+struct S { int a[2]; };
+struct S mk(void);
+int main(void) { return mk().a[0]; }
+--- fork oracle
+Error {msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(545, SD_Id("S")) vs Symbol(502, SD_Id("S"))'"}
+rc=1
+--- pristine upstream
+Error {msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(545, SD_Id("S")) vs Symbol(502, SD_Id("S"))'"}
+rc=1
+--- gcc
+gcc exit=7
+
+## arr-1-2-arg
+--- tu1.c
+struct S { int a[1]; };
+int get(struct S s) { return s.a[0]; }
+--- tu2.c
+struct S { int a[2]; };
+int get(struct S s);
+int main(void) { struct S s; s.a[0] = 7; s.a[1] = 8; return get(s); }
+--- fork oracle
+Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+--- pristine upstream
+Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+--- gcc
+gcc exit=7
+
+## arr-2-2-return
+--- tu1.c
+struct S { int a[2]; };
+struct S mk(void) { struct S s; s.a[0] = 7; s.a[1] = 8; return s; }
+--- tu2.c
+struct S { int a[2]; };
+struct S mk(void);
+int main(void) { return mk().a[0]; }
+--- fork oracle
+Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+--- pristine upstream
+Error {msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(558, SD_Id("S")) vs Symbol(502, SD_Id("S"))'"}
+rc=1
+--- gcc
+gcc exit=7
+
+## arr-2-2-arg
+--- tu1.c
+struct S { int a[2]; };
+int get(struct S s) { return s.a[0]; }
+--- tu2.c
+struct S { int a[2]; };
+int get(struct S s);
+int main(void) { struct S s; s.a[0] = 7; s.a[1] = 8; return get(s); }
+--- fork oracle
+Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+--- pristine upstream
+Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+--- gcc
+gcc exit=7
+
+## arr-incomplete-ptr-return
+--- tu1.c
+struct S { int n; int (*p)[]; };
+struct S mk(void) { struct S s; s.n = 7; s.p = 0; return s; }
+--- tu2.c
+struct S { int n; int (*p)[2]; };
+struct S mk(void);
+int main(void) { return mk().n; }
+--- fork oracle
+Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+--- pristine upstream
+Error {msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(536, SD_Id("S")) vs Symbol(502, SD_Id("S"))'"}
+rc=1
+--- gcc
+gcc exit=7
+
+## fam-vs-array-return
+--- tu1.c
+struct S { int n; int a[]; };
+struct S mk(void) { struct S s; s.n = 7; return s; }
+--- tu2.c
+struct S { int n; int a[2]; };
+struct S mk(void);
+int main(void) { return mk().n; }
+--- fork oracle
+Error {msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(533, SD_Id("S")) vs Symbol(502, SD_Id("S"))'"}
+rc=1
+--- pristine upstream
+Error {msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(533, SD_Id("S")) vs Symbol(502, SD_Id("S"))'"}
+rc=1
+--- gcc
+.tmp/d3/cases/fam-vs-array-return/tu1.c: In function ‘mk’:
+.tmp/d3/cases/fam-vs-array-return/tu1.c:2:8: note: the ABI of passing struct with a flexible array member has changed in GCC 4.4
+    2 | struct S mk(void) { struct S s; s.n = 7; return s; }
+      |        ^
+gcc exit=7
+
+
+## isolating probes (fork oracle, post-D3), verbatim
+### probe/name-arg: struct S {int a;} (TU1: int get(struct S s) { return s.a; }) vs struct S {int b;} (TU2: s.b = 7; return get(s);)
+Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+### probe/name-return: struct S {int a;} (TU1: struct S mk(void), s.a = 7) vs struct S {int b;} (TU2: return mk().b;)
+Error {msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(533, SD_Id("S")) vs Symbol(502, SD_Id("S"))'"}
+rc=1
+### the argument cases with --switches=inner_arg_temps (NOT the matched-mode configuration; observation only)
+## cases/arr-1-2-arg --switches=inner_arg_temps
+internal error: can_advance: Step_error2 ==> .tmp/d3/cases/arr-1-2-arg/tu1.c:2:1-39 (cursor: 2:5 - 2:8)the value of a store(struct S) didn't match the lvalue type: Specified((struct S){.a= {7, 8}})
+cerberus: internal error, uncaught exception:
+          Failure("internal error: can_advance: Step_error2 ==> .tmp/d3/cases/arr-1-2-arg/tu1.c:2:1-39 (cursor: 2:5 - 2:8)the value of a store(struct S) didn't match the lvalue type: Specified((struct S){.a= {7, 8}})")
+rc=125
+## probe/name-arg --switches=inner_arg_temps
+(same shape) Failure("internal error: can_advance: Step_error2 ==> .tmp/d3/probe/name-arg/tu1.c:2:1-36 (cursor: 2:5 - 2:8)the value of a store(struct S) didn't match the lvalue type: Specified((struct S){.b= 7})")
+rc=125
+## cases/arr-2-2-arg --switches=inner_arg_temps
+Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+
+
+# D3 — Lean (post-D3 build) on the scratch reproducers: per-TU --cabs-json then LEAN_ABORT_ON_PANIC=1 cerberus-lean --batch tu1.json tu2.json; verbatim
+## cases/node
+Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+## cases/arr-1-2-return
+Error {msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(63, SD_Id("S")) vs Symbol(19, SD_Id("S"))'"}
+rc=1
+## cases/arr-1-2-arg
+Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+## cases/arr-2-2-return
+Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+## cases/arr-2-2-arg
+Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+## cases/arr-incomplete-ptr-return
+Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+## cases/fam-vs-array-return
+Error {msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(50, SD_Id("S")) vs Symbol(19, SD_Id("S"))'"}
+rc=1
+## probe/name-arg
+Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+rc=0
+## probe/name-return
+Error {msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(50, SD_Id("S")) vs Symbol(19, SD_Id("S"))'"}
+rc=1
+
+
+## 60-second lane-classification TRIAL: ./scripts/test_multi_tu.sh .tmp/d3/cases   (03:36:37Z → 03:36:41Z; observation only, no LADDER edit)
+Raw observation evidence (kept on failure or under CERB_OBSERVATION_DIR; removed on exit 0): /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/semantics-audit-repairs/.tmp/scripts/observations/test_multi_tu.NsgIp7J3a4
+[1] MATCH arr-1-2-arg: 1 execution(s), VAL:{value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+[2] MISMATCH arr-1-2-return:
+    ocaml: ERR:{msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(545, SD_Id(\"S\")) vs Symbol(502, SD_Id(\"S\"))'"}
+    lean:  ERR:{msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(63, SD_Id(\"S\")) vs Symbol(19, SD_Id(\"S\"))'"}
+[3] MATCH arr-2-2-arg: 1 execution(s), VAL:{value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+[4] MATCH arr-2-2-return: 1 execution(s), VAL:{value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+[5] MATCH arr-incomplete-ptr-return: 1 execution(s), VAL:{value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+[6] MISMATCH fam-vs-array-return:
+    ocaml: ERR:{msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(533, SD_Id(\"S\")) vs Symbol(502, SD_Id(\"S\"))'"}
+    lean:  ERR:{msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(50, SD_Id(\"S\")) vs Symbol(19, SD_Id(\"S\"))'"}
+[7] MATCH node: 1 execution(s), VAL:{value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+SUMMARY: total=7 match=5 fail=2
+Raw observation evidence: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/semantics-audit-repairs/.tmp/scripts/observations/test_multi_tu.NsgIp7J3a4
+trial rc=1
+
+
+## unit exe are-compatible-test (test/Unit/AreCompatibleTest.lean), after `capped lake build are-compatible-test`
+test: Ctype_aux.are_compatible0 — array-bound arm (finding 5 repair) + cross-TU struct member
+  ok   int[1] vs int[2] = false
+  ok   int[2] vs int[1] = false
+  ok   int[2] vs int[2] = true
+  ok   int[] vs int[2]  (§6.7.6.2#6) = true
+  ok   int[2] vs int[] = true
+  ok   struct S{int a[1]} (TU1) vs struct S{int a[2]} (TU2) = false
+  ok   struct S{int a[2]} (TU1) vs struct S{int a[2]} (TU2) = true
+  ok   same-TU same tag (fast path) = true
+All are_compatible pins passed
+unit rc=0
+
+
+## check_fork_drift.sh — four runs (before the manifest edit; after the two source rows; with the placeholder layer-2 row; final)
+### run 1
+check_fork_content: FAIL — source-content drift inside reviewed file(s):
+frontend/model/core_eval.lem: expected ('100644', 'e1fc98edcbfe16b000232ece8553c25f4272cb64b050fad322bd0efc6f9764a6'), actual ('100644', '4ade27ce2e7431592228e81b1b33184e975d78710bfecc93910df867d5d3dd4b')
+frontend/model/ctype_aux.lem: expected ('100644', '5a657d68d3c8e390ba36d11ae7b227ec992062461997591edf7a8e6d0dac6ceb'), actual ('100644', 'd7e2ece8db3097af54ddb846ce20907a15e5c905f610df014ae6ffcb197b48c7')
+check_fork_drift: FAIL — source-content check failed
+### run 2
+    core_eval.ml
+--- excused in the manifest but byte-identical now (stale manifest or stale build):
+If ocaml_frontend/generated might be stale, regenerate with the pinned
+lem ('opam exec --switch=. -- make prelude-src') before concluding drift.
+### run 3
+check_fork_content: OK — 76 source files content/mode-pinned
+check_fork_drift: FAIL — core_eval.ml: excused-diff hash moved (manifest 0000000000000000000000000000000000000000000000000000000000000000, live 1b3c441a39dadde45c5de8f95cee4c1210dac4de976d8864fd1529d427a948d3) — the fork-vs-upstream delta of this generated file CHANGED; re-review the .lem change (stale-build caveat as above), then refresh deliberately
+check_fork_drift: FAIL — ctype_aux.ml: excused-diff hash moved (manifest afcc21e3f21947ab583ec503913f47781ba1b0d475a5766607379b63d9402e06, live 977ee22d68c7527e500476404f5803db39a2ef2072ef9e9e34e57435c68bfd7a) — the fork-vs-upstream delta of this generated file CHANGED; re-review the .lem change (stale-build caveat as above), then refresh deliberately
+### run 4
+check_fork_content: OK — 76 source files content/mode-pinned
+check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 23 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 (lem not on PATH: not cross-checked))

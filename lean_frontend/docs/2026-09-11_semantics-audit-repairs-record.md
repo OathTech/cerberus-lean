@@ -845,3 +845,341 @@ cabs_json.ml`; `lean_frontend/CabsImport.lean`; `scripts/test_parse.sh` (+ NEW
 `tests/immaculate/baseline.txt` (+4 rows, +7 header lines), `scripts/gcc_oracle_baseline.txt`
 (+9 rows), `scripts/fork_drift_manifest.txt` (1 row + header note); this record and three
 evidence files.
+
+
+## D3 — Cross-TU struct-value compatibility (finding 5 + draft 38) — the `.lem` change DONE and gated (first commit); STOP RULE FIRED before the corpus/lane pin (second commit not made)
+
+### The `.lem` diff, verbatim (the 10-line comment block in `core_eval.lem` is the only other text; `git show` of the commit has it)
+
+```
+--- a/frontend/model/ctype_aux.lem
++++ b/frontend/model/ctype_aux.lem
+@@ -97,7 +97,7 @@
+     | (Array elem_ty1 n1_opt, Array elem_ty2 n2_opt) ->
+         (* STD §6.7.6.2#6 *)
+            are_compatible_aux assumed (no_qualifiers, elem_ty1) (no_qualifiers, elem_ty2)
+-        && match (n1_opt, n1_opt) with
++        && match (n1_opt, n2_opt) with
+--- a/frontend/model/core_eval.lem
++++ b/frontend/model/core_eval.lem
+@@ -942,7 +942,19 @@
+           | Just (Vobject (OVstruct tag_sym' xs)) ->
++              (* semantics-audit repairs D3 (2026-09-11; upstream-tray draft 38): … *)
+-              if tag_sym <> tag_sym' then
++              if tag_sym <> tag_sym' && not (Ctype_aux.are_compatible
++                                               (Ctype.no_qualifiers, Ctype.Ctype [] (Ctype.Struct tag_sym))
++                                               (Ctype.no_qualifiers, Ctype.Ctype [] (Ctype.Struct tag_sym'))) then
+                 EU.fail $ Illformed_program ("PEmemberof(struct) ==> mismatched tags: " ^ show tag_sym ^ " vs " ^ show tag_sym')
+```
+
+The union case (`core_eval.lem` `OVunion` arm, exact-tag guard) and `memValueFromValue`'s
+exact-tag union arm (`core_aux.lem:204-208`) are NOT changed — the "union twin" (open
+question; a reproducer would be draft 38's shape with `union` in place of `struct`).
+
+### Why this is the authors' intent and not a new semantics [AGENT]
+
+Two definitions of one struct in different translation units are compatible types (C11
+§6.2.7#1: same tag, same members in order, compatible member types). The evaluator ALREADY
+treats such a value as the same type where it is STORED: `memValueFromValue`'s
+`Struct/OVstruct` arm (`core_aux.lem:198-200`) consults `Ctype_aux.are_compatible` on exactly
+these two `Struct` types before building the memory value. The exact-tag guard at member
+SELECTION (`PEmemberof`) predates the multi-TU path and contradicts that store-side rule on
+the same value: a value the store accepts as `struct S` could not be member-selected as
+`struct S`. The repair makes selection consult the same predicate — only when the tags differ
+(the conjunction short-circuits; equal tags never reach it), so single-TU programs pay nothing
+and change nothing — and makes the predicate correct on the one arm where a typo compared a
+bound with itself (the Ail-level twin `ailTypesAux.lem:807-813` compares `(n1_opt, n2_opt)`;
+the intent is written twice in the sources and wrong once). Results change only on multi-TU
+programs where the guard previously rejected a compatible value or the typo previously
+accepted an incompatible one — and, as the STOP below records, the latter is reachable in
+matched mode only on the RETURN path.
+
+### Builds and the proof obligation
+
+`opam exec --switch=. -- make prelude-src` rc=0 (`check_lem_sync: recorded … src b1adb559… gen
+dcb9c3b1…`); `build_cerberus` rc=0 (→03:30:18Z), `check_driver_fresh: recorded oracle stamp (bin
+e40ae8e3…)`; the regenerated `ocaml_frontend/generated/ctype_aux.ml:84-87` reads `Array(
+elem_ty1, n1_opt), Array( elem_ty2, n2_opt)) -> … (match (n1_opt, n2_opt) with`. Lean: `make
+lean-prelude-src` rc=0 (`check_handwritten_sync: OK (46 …)`), `CERB_MEM_MAX=48G ../scripts/capped
+lake build CerberusLean cerberus-lean` → `✔ [392/392] Built «cerberus-lean»:exe`, rc=0
+(03:31:4x→03:35:xxZ; the regenerated `Core_eval.lean` recompiled its dependants). **The measure
+proof `Core_eval_lemMeasureProofs.lean` needed NO edit**: `step_eval_pexpr_stable_aux` closes the
+`PEmemberof` arm by the generic `cases pexpr_ <;> simp (disch := size_lt) only
+[step_eval_pexpr_lemFuel, key]` — the arm has the same single recursive call (`self pe`) and the
+new `are_compatible0 _lemReader_tagDefs …` sits in the fuel-free continuation. `check_driver_fresh:
+oracle OK (bin e40ae8e3…)` / `lean OK (bin e36af96d…)`.
+
+### D3(a) — unit pin `test/Unit/AreCompatibleTest.lean` → exe `are-compatible-test` (lakefile `[[lean_exe]]` + `test_unit.sh` registration, the D1 pattern)
+
+Executable assertions on `are_compatible0 tagDefs` (the reader-lifted wrapper of the lem
+`are_compatible`, `generated/Ctype_aux.lean:119`); the cross-TU cases use two tag symbols with
+different digests (`Symbol.from_same_translation_unit` is a digest compare) and the same name,
+both in one tag environment (the linked program's), verbatim:
+```
+test: Ctype_aux.are_compatible0 — array-bound arm (finding 5 repair) + cross-TU struct member
+  ok   int[1] vs int[2] = false
+  ok   int[2] vs int[1] = false
+  ok   int[2] vs int[2] = true
+  ok   int[] vs int[2]  (§6.7.6.2#6) = true
+  ok   int[2] vs int[] = true
+  ok   struct S{int a[1]} (TU1) vs struct S{int a[2]} (TU2) = false
+  ok   struct S{int a[2]} (TU1) vs struct S{int a[2]} (TU2) = true
+  ok   same-TU same tag (fast path) = true
+All are_compatible pins passed
+```
+
+### D3(b)/(c) — reproducers on the three engines (+ gcc); all verbatim in `…-evidence/d3-reproducers-observed.txt`
+
+Scratch corpus `.tmp/d3/cases/<case>/{tu1.c,tu2.c}` (linked `tu1.c tu2.c`), NOT a lane corpus
+(see the STOP). Fork oracle and pristine: `--nolibc --exec --batch --mode=exhaustive`, 60 s
+timeout; Lean: per-TU `--cabs-json` then `LEAN_ABORT_ON_PANIC=1 cerberus-lean --batch tu1.json
+tu2.json`; gcc `-std=c11 -O0 -w`. `E(m,n)` abbreviates `Error {msg: "ill-formed program:
+\`PEmemberof(struct) ==> mismatched tags: Symbol(m, SD_Id("S")) vs Symbol(n, SD_Id("S"))'"}`
+rc 1 (for `node` the tag is `node`); `D7` = `Defined {value: "Specified(7)", stdout: "",
+stderr: "", blocked: "false"}` rc 0.
+
+| case | TU1 | TU2 | fork oracle (fixed) | Lean (fixed) | pristine | gcc |
+|---|---|---|---|---|---|---|
+| `node` (draft 38's positive: `struct node {int v; struct node *next;}` in both; value returned by `ident`, `.v` selected) | `ident` | `main` | **`D7`** | **`D7`** | `rc=124` (draft 37's non-termination; 60 s) | 7 |
+| `arr-1-2-return` (NEGATIVE: `int a[1]` vs `int a[2]`, value RETURNED then `.a[0]`) | `mk` | `main` | `E(545,502)` | `E(63,19)` | `E(545,502)` | 7 |
+| `arr-1-2-arg` (NEGATIVE: same structs, value PASSED by value to `get`) | `get` | `main` | **`D7`** | **`D7`** | `D7` | 7 |
+| `arr-2-2-return` (positive twin, equal bounds) | | | `D7` | `D7` | `E(558,502)` | 7 |
+| `arr-2-2-arg` (positive twin) | | | `D7` | `D7` | `D7` | 7 |
+| `arr-incomplete-ptr-return` (positive twin: member `int (*p)[]` vs `int (*p)[2]`, §6.7.6.1#2 + §6.7.6.2#6; `.n` selected) | | | `D7` | `D7` | `E(536,502)` | 7 |
+| `fam-vs-array-return` (`struct S {int n; int a[];}` vs `{int n; int a[2];}`; `.n`) | | | `E(533,502)` | `E(50,19)` | `E(533,502)` | 7 |
+| probe `name-arg` (`{int a;}` vs `{int b;}`, PASSED by value) | | | `D7` | `D7` | — | — |
+| probe `name-return` (same, RETURNED, `.b`) | | | `E(533,502)` | `E(50,19)` | — | — |
+
+The two fork engines AGREE on every row up to symbol numbering in the `Error` text (the
+charter's tolerance); the fixed fork now gives gcc's value on draft 38's reproducer and on
+every positive twin; pristine rejects the positive twins at the exact-tag guard and does not
+terminate on `node`. [AGENT] `fam-vs-array-return`: Cerberus keeps a flexible array member
+outside the member list (`StructDef xs flexible_opt`), so the two definitions differ in member
+COUNT and `are_compatible_aux` is false on both engines — recorded as observed; it is not the
+charter's "`int a[]` vs `int a[2]`" positive twin (the `int (*p)[]` member is, and is positive).
+
+### THE STOP — a chartered NEGATIVE case completes `Defined` on the fixed fork
+
+Charter D3(c) / §3: "if a NEGATIVE case completes with a `Defined` verdict on the fixed fork,
+STOP (compatibility is not load-bearing where you thought — a finding)". **`arr-1-2-arg`** —
+the chartered shape "(2) PASSED by value as an argument" — is `Defined {value:
+"Specified(7)"}` rc 0 on the fixed fork oracle (and on Lean, and on pristine). Taken as far as
+reading and a 10-second probe allow:
+
+* Probe: `struct S {int a;}` (TU1, `int get(struct S s) { return s.a; }`) vs `struct S {int b;}`
+  (TU2, `s.b = 7; return get(s);`) — members differing in NAME, plainly incompatible — also
+  `Defined {value: "Specified(7)"}` rc 0 on both fork engines. The same pair RETURNED and
+  member-selected (`return mk().b;`) → `Error {… mismatched tags …}` rc 1 on both.
+* Cause, read in `core_run.lem:960-970` (the `Eccall` argument path the charter §1 named as a
+  consult site): the ctype handed to `memValueFromValue` for each argument is
+  `Ctype.Ctype [] (Ctype.Pointer Ctype.no_qualifiers ty)` UNLESS `Global.has_switch
+  Global.SW_inner_arg_temps` — in the default configuration (matched mode: `CerbGlobal`'s switch
+  set is `[]`) a by-value struct argument travels as a POINTER to a caller-side temporary; the
+  memvalue built is a pointer value and the `Struct/OVstruct` arm — the consult — is never
+  reached on the argument path. The callee then LOADS `s.a[0]` (or `s.a`) through that pointer
+  under its own definition: offset 0 in both layouts, hence 7 for `{int a[1]}` vs `{int a[2]}`
+  and for `{int a}` vs `{int b}` alike. The typo was therefore unobservable on the argument
+  path in matched mode, and its repair changes nothing there.
+* Under `--switches=inner_arg_temps` (NOT matched mode; observation only, fork oracle):
+  `arr-1-2-arg` → `cerberus: internal error, uncaught exception: Failure("internal error:
+  can_advance: Step_error2 ==> …/tu1.c:2:1-39 (cursor: 2:5 - 2:8)the value of a store(struct S)
+  didn't match the lvalue type: Specified((struct S){.a= {7, 8}})")` rc 125 — the STORE-side
+  consult (`core_run.lem:544` `memValueFromValue (Ctype [] (unatomic_ ty)) cval` on the store
+  into the parameter temporary) rejects the incompatible value; `name-arg` likewise rc 125;
+  `arr-2-2-arg` → `Defined {value: "Specified(7)"}` rc 0. Compatibility IS load-bearing on the
+  argument path under that switch, and the typo repair is observable there (an incompatible
+  value is now rejected where the typo accepted it).
+
+Consequences [AGENT]: the typo repair is correct and observable (RETURN path: `arr-1-2-return`
+rejected, `arr-2-2-return` / `arr-incomplete-ptr-return` accepted — the selection consult is
+compatibility-aware; the unit pins above), and draft 38's reproducer runs to gcc's value on
+both fork engines. But the charter's classification of the by-value ARGUMENT shape as a
+NEGATIVE case rested on `core_run.lem:968-970` being a consult site in matched mode, which it
+is not — a finding the operator/orchestrator should see before anything is PINNED: which
+argument-shape row (if any) belongs in a lane corpus, and as what, is their call. Per the
+stop rule: the `.lem` change is brought to its own gate and committed (this commit); the
+corpus/lane pin — `tests/multi_tu_tray/`, LADDER row 6b, any failure-text projection — is
+NOT made, and D4/D5 are NOT started.
+
+### D3(g) — the 60-second lane-classification TRIAL (run as chartered, BEFORE any LADDER edit; observation only — no pin followed)
+
+```
+$ ./scripts/test_multi_tu.sh .tmp/d3/cases        # 03:36:37Z → 03:36:41Z
+[1] MATCH arr-1-2-arg: 1 execution(s), VAL:{value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+[2] MISMATCH arr-1-2-return:
+    ocaml: ERR:{msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(545, SD_Id(\"S\")) vs Symbol(502, SD_Id(\"S\"))'"}
+    lean:  ERR:{msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(63, SD_Id(\"S\")) vs Symbol(19, SD_Id(\"S\"))'"}
+[3] MATCH arr-2-2-arg: 1 execution(s), VAL:{value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+[4] MATCH arr-2-2-return: 1 execution(s), VAL:{value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+[5] MATCH arr-incomplete-ptr-return: 1 execution(s), VAL:{value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+[6] MISMATCH fam-vs-array-return:
+    ocaml: ERR:{msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(533, SD_Id(\"S\")) vs Symbol(502, SD_Id(\"S\"))'"}
+    lean:  ERR:{msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(50, SD_Id(\"S\")) vs Symbol(19, SD_Id(\"S\"))'"}
+[7] MATCH node: 1 execution(s), VAL:{value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+SUMMARY: total=7 match=5 fail=2
+rc=1
+```
+[AGENT] As the charter's §1 (ii) said: the `Defined` cases are `MATCH` under the `full`
+projection; the two `Error` cases are `MISMATCH` on symbol numbers alone. Had the pin gone
+ahead, `node`, `arr-2-2-*`, `arr-incomplete-ptr-return` would have been row-6b `MATCH` cases
+and the two `Error` cases would have needed the opt-in failure-text symbol projection. The
+projection was NOT implemented (the stop precedes it); `observations.py`, `test_multi_tu.sh`,
+`LADDER.md` row 6b and `tests/multi_tu_tray/` are untouched.
+
+### D3(f) — fork-drift manifest (gate-observed hashes; exactly the enumerated hunks)
+
+Four gate runs (evidence file): (1) before any manifest edit — `check_fork_content: FAIL —
+source-content drift inside reviewed file(s): frontend/model/core_eval.lem: expected ('100644',
+'e1fc98ed…'), actual ('100644', '4ade27ce…'); frontend/model/ctype_aux.lem: expected ('100644',
+'5a657d68…'), actual ('100644', 'd7e2ece8…')`; (2) after the two source rows moved —
+`check_fork_drift: FAIL — generated-tree differing-file set drifted from the manifest. ---
+differing now but not excused (NEW OCaml-token drift): core_eval.ml`; (3) with a placeholder
+`[expected-semantic]` row for `core_eval.ml` — `core_eval.ml: excused-diff hash moved (manifest
+0000…, live 1b3c441a…)`, `ctype_aux.ml: excused-diff hash moved (manifest afcc21e3…, live
+977ee22d…)`; (4) final:
+```
+check_fork_content: OK — 76 source files content/mode-pinned
+check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 23 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 …)
+```
+Hunks: `[source-content]` `frontend/model/core_eval.lem` `e1fc98ed… → 4ade27ce…`,
+`frontend/model/ctype_aux.lem` `5a657d68… → d7e2ece8…`; `[expected-semantic]` `ctype_aux.ml`
+`afcc21e3… → 977ee22d…` and NEW `core_eval.ml 1b3c441a…` (layer 2: 22 → 23); one dated 8-line
+header note. No other hunk.
+
+
+### D3(d)/(e) — the gate for the `.lem` change: Tier A green, zero movement, partition unchanged (verbatim; full file `…-evidence/d3-gate-verdicts.txt`)
+
+```
+$ CERB_MEM_MAX=48G DUNE_CACHE=disabled python3 scripts/release.py --mode fast --lane-timeout 3300 --out .tmp/d3-fast   # 03:41:01Z → 03:47:51Z
+RUN A1: ./scripts/test_unit.sh
+PASSED A1
+RUN A2: ./scripts/test_exec.sh --check-baseline
+PASSED A2
+RUN A3: ./scripts/test_exec.sh --check-baseline=scripts/exec_coverage_baseline.txt tests/coverage
+PASSED A3
+RUN A4: ./scripts/test_exec.sh --check-baseline=scripts/exec_debug_baseline.txt tests/debug
+PASSED A4
+RUN A4b: ./scripts/test_exec.sh --check-baseline=scripts/exec_float_baseline.txt tests/float
+PASSED A4b
+RUN A4c: ./scripts/test_bytes.sh
+PASSED A4c
+RUN A5: ./scripts/test_libc_exec.sh
+PASSED A5
+RUN A6: ./scripts/test_multi_tu.sh
+PASSED A6
+RUN A7: ./scripts/test_parse.sh
+PASSED A7
+RUN A8: ./scripts/test_core.sh
+PASSED A8
+RUN A9: ./scripts/test_elab.sh
+PASSED A9
+RUN A10: ./scripts/test_libxml2_uri.sh
+PASSED A10
+RUN A11: ./scripts/test_cn_coverage.sh --check-baseline
+PASSED A11
+fast: passed; 13/13 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+rc=0
+Total: 9 passed, 0 failed
+check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)
+gen_fuel_parametricity: OK (16 ambient fuel wrappers in the generated tree = the 16 pins of TotalityProofTest.lean Part 1, both directions)
+check_fuel_forms: forms partition OK (60 MEASURED + 13 ABSORBING + 2 ambient-reachable + 6 ambient-unreachable = 81 fuel'd workers)
+check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=166 REACHABLE=48 UNKNOWN=19; every row sealed; tally line consistent)
+check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 23 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+A2: Baseline check: 0 regression(s), 0 improvement(s)
+A3: Baseline check: 0 regression(s), 0 improvement(s)
+A4: Baseline check: 0 regression(s), 0 improvement(s)
+A4b: Baseline check: 0 regression(s), 0 improvement(s)
+A5: SUMMARY: match=12 diff=0
+A6: SUMMARY: total=2 match=2 fail=0
+A11: BASELINE OK (213 entries, exact match)
+$ ./scripts/test_unit.sh        # direct, 03:47:51Z → 03:50:17Z
+Total: 9 passed, 0 failed       (same partition / fork-drift (layer 2 = 23) / failure-reach / axiom lines)
+rc=0
+$ ./scripts/test_immaculate.sh  # Tier B, after the D3 build
+OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip DIFF, R3 s4b-memcmp-hugesize ORACLE_CRASH — VALIDATION.md 'ISO-fix register' — and the in-Lean probes g6 TRIPWIRE / illtyped-store KILL).
+rc=0
+$ ./scripts/test_verify.sh      # Tier B row 4
+test_verify: 127 passed, 0 failed (25 fixtures, 28 call points, 14 corpus fixtures, 21 corpus points)
+rc=0
+```
+
+[AGENT] Zero movement in every Tier A lane and in the two Tier B lanes run (immaculate: its 5
+NEW rows from D1b/D2 hold and no existing row moved; verify 127/127); the two `tests/multi_tu/`
+cases pass (A6); fuel partition unchanged (81); failure-reach unchanged (233); no Lean signature
+changed (`step_eval_pexpr`'s and `are_compatible0`'s types are as before; the arm body changed
+inside). The remaining Tier B lanes (gcc full `--check-baseline`, libxml2, csmith, pristine
+lane, …) are D5's, which is not started.
+
+## State at hand-over (resumption STOP after D3's first commit, per charter §3)
+
+Done and committed on `arc/semantics-audit-repairs` in this resumption (on top of D0
+`dbdf36a5e`, D1 `c807ce603`, the resumption note `c7dd0ba29`):
+
+* **D1b** (`146179d24`) — ISO-fix register R5: VALIDATION §2 row, `CerbFloat.lean` marker, the
+  immaculate pin `r5-hex-subnormal-double-rounding` (DIFF, L=Specified(1)) + gcc row (AGREE),
+  trays `ocaml/README.md`, `ocaml/01-…`, main-tray 40 + INDEX row and `ocaml/` pointer, unit pin
+  annotated, LADDER row 1 `8/8`.
+* **D2** (`a43abba65`) — the byte-preserving Cabs bridge: `json_of_bytes` at the three byte
+  sites, `getByteStr` fail-closed importer, note Z2-J-02 corrected, 5 `tests/minimal` + 4
+  immaculate files with NEW baseline rows (exec +5, immaculate +4, gcc +9), the bridge probe
+  in `test_parse.sh` (RED pre-D2 / GREEN post-D2), 106 D0 cabs-json hashes unchanged, manifest
+  row moved, Tier A green.
+* **D3, first commit** (this commit) — the two `.lem` edits, both engines rebuilt, no proof
+  edit needed, unit exe `are-compatible-test` (8 pins), manifest: 2 source rows + `ctype_aux.ml`
+  moved + `core_eval.ml` ADDED (layer 2 = 23), Tier A green with zero movement, immaculate +
+  verify green; the three-engine table for 7 cases + 2 probes; the 60-second lane trial run
+  and recorded (5 MATCH / 2 MISMATCH on symbol numbers).
+
+NOT done, by the stop rule (charter §3, "a NEGATIVE D3 case completes `Defined` on the fixed
+fork"): **D3's second commit** (the corpus/lane pin — `tests/multi_tu_tray/`, LADDER row 6b, the
+opt-in failure-text symbol projection in `observations.py`/`test_multi_tu.sh`); **D4** (tray 39,
+draft 38's fork-status section, INDEX rows 38/39, `node_a.c` header, TODO/VALIDATION edits,
+LADDER `test_release.py` check, the negative-zero side-finding draft); **D5** (the full A + B
+battery and the record's final tallies). `scripts/observations.py`, `scripts/test_multi_tu.sh`,
+`scripts/LADDER.md` row 6b, `tests/multi_tu/`, `scripts/upstream_oracle_differences.json`,
+`docs/upstream-tray/38-*.md`, `TODO.md`, `VALIDATION.md` (beyond the R5 row) are untouched.
+The scratch corpus `.tmp/d3/cases` is ephemeral; its files are quoted in full in
+`…-evidence/d3-reproducers-observed.txt`, so the next worker re-derives it from there.
+
+### Open questions for the orchestrator / operator (priority order)
+
+1. **The STOP finding — the by-value ARGUMENT path is not a compatibility consult in matched
+   mode** (`core_run.lem:962-970`: without `SW_inner_arg_temps` the argument is a pointer to a
+   caller temporary; `memValueFromValue`'s `Struct` arm is dead there). `arr-1-2-arg` and even
+   `{int a}` vs `{int b}` passed by value complete `Specified(7)` on BOTH fork engines and on
+   pristine; under `--switches=inner_arg_temps` the fixed fork rejects them (uncaught `Failure`,
+   exit 125, at the store-side consult `core_run.lem:544`) and accepts the compatible twin.
+   Decision needed: (a) which argument-shape row(s), if any, go into a lane corpus and as what
+   (a `MATCH Defined 7` row would pin the offset-0 read as behaviour); (b) whether the
+   `inner_arg_temps` observation deserves a tray note (the store-side rejection is an uncaught
+   exception rather than a diagnostic — a crash class); (c) whether the charter's D3(c)
+   "negative, passed by value" shape is simply withdrawn. The RETURN-path rows are
+   unambiguous and ready to pin (`node`, `arr-2-2-return`, `arr-incomplete-ptr-return` as
+   `Defined 7` MATCH; `arr-1-2-return` and `fam-vs-array-return` as `Error` rows needing the
+   symbol projection).
+2. **The union twin** — `core_eval.lem`'s `OVunion` arm and `core_aux.lem:204-208` keep exact
+   tag identity; a `union U { int v; … }` defined in two TUs, a `union U` value returned across
+   them and member-selected, would fail `PEmemberof(union) ==> mismatched tags` (draft 38's
+   shape with `union`); not reproduced in this run (fence).
+3. **`fam-vs-array-return`** — `struct S {int n; int a[];}` vs `struct S {int n; int a[2];}`
+   is INCOMPATIBLE on both engines (member-count comparison; the FAM lives outside the member
+   list). Is that the authors' intent under §6.2.7#1? gcc links and runs it (7). Not changed;
+   a tray/ISO question.
+4. **The failure-text symbol projection** — not implemented (the stop precedes D3(g)'s pin);
+   the trial shows it is needed for the two `Error` rows if they are pinned in a lane.
+5. **`scripts/test_immaculate.sh`'s OK line** enumerates the register pins R1–R3 only; R5 is
+   now a fourth pinned non-MATCH row (outside this slice's fence; a one-line message edit).
+6. **D2 residual** — attribute-argument strings (`cabs_json.ml:600/602`, built from string
+   literals by `c_parser.mly:1780-1785`) and `EDecl_magic` text (`:657`) stay `json_of_string`
+   per the charter's shape; a raw byte ≥ 0x80 there would still make the JSON non-UTF-8 —
+   fail-NOISY on the Lean side (`readFile` refuses), never silent. Should they become
+   byte-carriers too, or is annotation text the right class?
+7. **gcc lane rows added in D1b/D2** (1 + 9) were observed in subset runs (`--check-baseline` is
+   full-corpus only); D5's full `--check-baseline` is the confirming observation. Their O2
+   column follows the lane's stride rule (derived; `108` printed `O2_AGREE` in the subset run).
+8. **INDEX numbering** — draft 40 exists (R5, Cerberus-facing); 39 is reserved for D4's
+   array-bound-typo draft, which is not written. The INDEX row for 40 says so.
+9. **The panic message rendering** — Lean's `CerbDecode` panic on a raw high byte prints the
+   byte-carrier `Char`s through the text path (`Ã`), the oracle prints OCaml `\195`; message
+   text, not a verdict — noted, not a defect claim.

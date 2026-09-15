@@ -942,7 +942,18 @@ KKK:              EU.return (PEval (Vloaded (LVspecified (OVstruct tag_sym xs)))
         self pe >>= fun pe' ->
         match Caux.valueFromPexpr pe' with
           | Just (Vobject (OVstruct tag_sym' xs)) ->
-              if tag_sym <> tag_sym' then
+              (* semantics-audit repairs D3 (2026-09-11; upstream-tray draft 38): a struct
+                 defined in two translation units carries a different tag symbol in each,
+                 and a struct VALUE produced in one unit may be member-selected under the
+                 other's type. The value is accepted when the two struct types are
+                 compatible (STD §6.2.7#1) — the SAME consult memValueFromValue performs
+                 where a struct value is stored (core_aux.lem:198-200). Equal tags never
+                 reach are_compatible (the conjunction short-circuits), so single-TU
+                 programs are unchanged; the member lookup below is by identifier STRING
+                 (Symbol.idEqual), so it works on the value's own member list. *)
+              if tag_sym <> tag_sym' && not (Ctype_aux.are_compatible
+                                               (Ctype.no_qualifiers, Ctype.Ctype [] (Ctype.Struct tag_sym))
+                                               (Ctype.no_qualifiers, Ctype.Ctype [] (Ctype.Struct tag_sym'))) then
                 EU.fail $ Illformed_program ("PEmemberof(struct) ==> mismatched tags: " ^ show tag_sym ^ " vs " ^ show tag_sym')
               else match List.lookup memb_ident (List.map (fun (a,_,b) -> (a,b)) xs) with
                 | Nothing ->

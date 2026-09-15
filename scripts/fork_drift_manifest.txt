@@ -1,3 +1,11 @@
+# semantics-audit-repairs D3, 2026-09-11 (landed 2026-09-15) [AGENT]: GENUINE shared-model change — two
+# [source-content] pins moved (frontend/model/ctype_aux.lem 5a657d68… -> d7e2ece8…: the Array/Array arm of
+# are_compatible_aux compared `(n1_opt, n1_opt)`, a typo, now `(n1_opt, n2_opt)` per STD §6.7.6.2#6;
+# frontend/model/core_eval.lem e1fc98ed… -> 4ade27ce…: the PEmemberof(struct) exact-tag guard consults
+# Ctype_aux.are_compatible when the tags differ, the same consult memValueFromValue performs on store —
+# upstream-tray drafts 38/39); [expected-semantic] ctype_aux.ml hash moved and core_eval.ml ADDED (layer 2:
+# 22 -> 23 differing generated files). Single-row edits, not a wholesale --refresh (which strips this header).
+# Record: lean_frontend/docs/2026-09-11_semantics-audit-repairs-record.md §D3.
 # semantics-audit-repairs D2, 2026-09-11 (landed 2026-09-15) [AGENT]: one [source-content] pin moved —
 # backend/lean_export/cabs_json.ml 34f2ddcf… -> 5f64fc9c… — the byte-preserving Cabs bridge (finding 3 of
 # docs/2026-09-11_whole-project-semantics-audit.md): a new `json_of_bytes` encoder maps each source byte
@@ -304,14 +312,14 @@ util/cerb_fresh.ml
 100644 c4426c93453c70139f7693096cb2d3796dee1676344652c2c6271303a2d392ae frontend/model/cn.lem
 100644 093d6aaa3e6318c2981eb0f1885c2907abf3a3d0c20a8f22b878a6f1ee395098 frontend/model/core.lem
 100644 547a673e1005de22b202460107a8c14f2e3c5cd40c697a213432fe4956d28514 frontend/model/core_aux.lem
-100644 e1fc98edcbfe16b000232ece8553c25f4272cb64b050fad322bd0efc6f9764a6 frontend/model/core_eval.lem
+100644 4ade27ce2e7431592228e81b1b33184e975d78710bfecc93910df867d5d3dd4b frontend/model/core_eval.lem
 100644 cbce5089e0e079d532b458fc7b660e1cf4bdb55484639bc2c08e5fd578e0fdbb frontend/model/core_linking.lem
 100644 7f61895fe9f448d6b28d0290e9982a7dc4213508e23b9fd4c71f04a6828de5a7 frontend/model/core_reduction.lem
 100644 0630b14d31c11aa34ff2765ac1810d80aeadc02d4497ba80af0eb348bfff1db2 frontend/model/core_rewrite.lem
 100644 1427069bce64605c7230c64efc3564008b02258911074550686babe2b7669ded frontend/model/core_run.lem
 100644 60f4766a7813c8a72bf2e562575164a4bb5a9a3cfbbd6add84640e778b821297 frontend/model/core_run_aux.lem
 100644 b3607f3932ab346b9a6496b3f2036459923372ce9d70c8629104d6ef4a5fd71a frontend/model/ctype.lem
-100644 5a657d68d3c8e390ba36d11ae7b227ec992062461997591edf7a8e6d0dac6ceb frontend/model/ctype_aux.lem
+100644 d7e2ece8db3097af54ddb846ce20907a15e5c905f610df014ae6ffcb197b48c7 frontend/model/ctype_aux.lem
 100644 02178e49fd9acc0f84ae2a15b72a6454a1689f7024f172c1eda4d85b96327965 frontend/model/debug.lem
 100644 d0e97e83c625e55cb2554869a40488e22925b2288d42880c01dc04adfc2d5532 frontend/model/decode.lem
 100644 ec3e5754b17377012a3df8055d4c0462812ce521818150c93d1c3ef16da60488 frontend/model/defacto_memory.lem
@@ -362,7 +370,8 @@ d252a154bca00b92a9dbe4422e40849d361bf1ad48dfc033be718aefb7e9f05d cabs_to_ail_eff
 51f56677431b4c6095ef8523761c5879f7fe0f1b20f882977bf6555184f2d2e8 symbol.ml
 4af72185cf6ea64c94506ded11858db5884ecaed067b20dd9dcaf4a6aed31418 translation_effect.ml
 405c834f7108e9ae3614f74ab51089947539f9800c419738e61f056bcc97aa13 driver.ml
-afcc21e3f21947ab583ec503913f47781ba1b0d475a5766607379b63d9402e06 ctype_aux.ml
+977ee22d68c7527e500476404f5803db39a2ef2072ef9e9e34e57435c68bfd7a ctype_aux.ml
+1b3c441a39dadde45c5de8f95cee4c1210dac4de976d8864fd1529d427a948d3 core_eval.ml
 6ba1f4842fe4d8ef55b6405b6c2f1b88f20fc0e2b245230d680314ad0e6cb59f translation.ml
 [expected-cosmetic]
 75dbb3f1b524df384b8783896995e45dbee6f6c123a990b2d5848c23595f9131 ailSyntax.ml

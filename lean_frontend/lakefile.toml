@@ -255,3 +255,9 @@ moreLinkArgs = ["native/md5.o"]
 name = "float-literal-test"
 srcDir = "test"
 root = "Unit.FloatLiteralTest"
+
+# semantics-audit repairs D3 (2026-09-11): Ctype_aux.are_compatible array-bound arm pins (finding 5)
+[[lean_exe]]
+name = "are-compatible-test"
+srcDir = "test"
+root = "Unit.AreCompatibleTest"

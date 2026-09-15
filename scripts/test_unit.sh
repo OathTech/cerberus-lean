@@ -26,6 +26,8 @@ UNIT_TESTS=(
     "monadic-failstop-test"
     # semantics-audit repairs D1 (2026-09-11): CerbFloat.of_string binary64 bit-pattern pins
     "float-literal-test"
+    # semantics-audit repairs D3 (2026-09-11): Ctype_aux.are_compatible array-bound arm (finding 5)
+    "are-compatible-test"
 )
 
 # ---------------------------------------------------------------------------
