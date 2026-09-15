@@ -1728,3 +1728,46 @@ Not done / not permitted: the re-record of the `minimal/097` pin in
    sentence ("today the markers are `CerbDecode.lean` R1/R2"); `CerbFloat.lean:40/:343`'s
    pre-existing "DELIBERATE" notes (tray 01 and `-nan` printing — not D1's).
 8. **The panic-message rendering** (§8 item 9) — noted, class (a), no change.
+
+## Orchestrator external review and independent battery (2026-09-15) [AGENT orchestrator]
+
+Head reviewed: `18e917709` (= the worker's D5 head `535389a3d` + the orchestrator's one-row re-pin below). Worker-claimed green was not accepted; every gate below is the orchestrator's own run in this worktree.
+
+**Review (read, not re-derived by proof):** `CerbFloat.roundToBinary64Bits`/`scaledToBits` — exact binade search with a one-step correction, quantum `max(E−52, −1074)`, a single ties-to-even rounding on the exact remainder, subnormal = exponent field 0 with the fraction at 2^−1074, carry to the next binade, overflow to ±inf, and the two exponent guards that bound the exact arithmetic by the FORMAT; no `Float` arithmetic before `Float.ofBits`. `cabs_json.ml` `json_of_bytes` transcodes each byte ≥ 0x80 to the two-byte UTF-8 form of U+00b at exactly the three byte sites (character constants, string-literal fragments, asm fragments); `CabsImport.getByteStr` rejects any code point ≥ 256; the Z2-J-02 note is corrected. `ctype_aux.lem:100` one token; `core_eval.lem` struct guard = `tag_sym <> tag_sym' && not (are_compatible …)` — the chartered shape; equal tags short-circuit. `observations.py` `failure-class` = `Symbol(<digits>, ` → `Symbol(_, ` inside Error/Undefined payloads only, opt-in; `test_multi_tu.sh --failure-class-projection` is the ONLY consumer (grep of `scripts/` and `LADDER.md`); LADDER row 6b is the only row passing it. Protected registers untouched (`fuel_forms_pending.txt`, `fuel_hypotheses.txt`, `failure_reach_register.txt`, `tests/multi_tu/`). Fork-drift manifest: exactly the five enumerated hash moves (`cabs_json.ml`, `core_eval.lem`, `ctype_aux.lem` source-content; `ctype_aux.ml` moved; `core_eval.ml` added). Unit tests `FloatLiteralTest`/`AreCompatibleTest` are executable assertions (no program-literal proofs). `tests/multi_tu_tray/README.md` carries the §8 classifications verbatim.
+
+**The one red and its repair.** The worker's D5 `B10.1` FAILED on `minimal/097-null-ptr-arith.undef.c`: the reviewed-difference pin's fork stderr sha moved `e455f1a4…` → `a31c366c46156430652c5a0aef898db54acc145d0f88e9ae0889652eb2fa3333` because D3's `core_eval.lem` edit shifted the generated `core_eval.ml` backtrace line (1124 → 1135) and the lem runtime's `lem_list.ml` frames; both engines status 125, empty stdout, identical `Failure(...)` text (evidence `d5-pristine-097-diagnostic-diff.txt`). Class (a) diagnostic text. The charter fenced `scripts/upstream_oracle_differences.json` away from the worker; the orchestrator re-pinned the one field with a dated rationale note (commit `18e917709`) and re-ran the lane: `Independent oracle: passed; {'semantic_agreement': 738, 'reviewed_difference': 1, 'matching_failure': 11, 'interface_agreement': 2}`. Follow-up question for the register (not this slice): whether reviewed-diagnostic pins should normalise backtrace line numbers.
+
+**Independent battery, verbatim.** Run 1 (`CERB_MEM_MAX=48G DUNE_CACHE=disabled python3 scripts/release.py --mode full --lane-timeout 3300 --out .tmp/orch-full`) was KILLED by the harness for "low system memory" at the start of B3 after 16 lanes (system memory was in fact ample — 116 GB available; a `restic backup` held ~110 GB of page cache); no orphaned processes; run 2 resumed at B3 under `CERB_MEM_MAX=32G` (`--lane B3 … --lane B11`, `--out .tmp/orch-full-b`). Together, every LADDER row once, all PASSED:
+
+```
+run 1: PASSED A1 (145.7s) A2 (29.6s) A3 (50.8s) A4 (22.8s) A4b (24.0s) A4c (3.0s) A5 (21.6s) A6 (2.1s) A6b (3.5s) A7 (10.2s) A8 (8.7s) A9 (16.4s) A10 (16.5s) A11 (57.3s) B1 (619.3s) B2 (22.9s); INCOMPLETE B3 (1.1s) [harness kill]
+run 2: PASSED B3 (15.0s) B4 (44.3s) B5 (66.0s) B6.1 (2.2s) B6.2 (2.2s) B6.3 (2.6s) B6.4 (2.8s) B6.5 (3.2s) B6.6 (3.8s) B6.7 (2.7s) B7 (1298.5s) B8.1 (13.4s) B8.2 (218.6s) B8.3 (6.3s) B8.4 (15.6s) B9 (1271.5s) B10.1 (64.9s) B10.2 (1.3s) B11.1 (15.0s) B11.2 (6.8s)
+run 2: full: incomplete; 20/20 selected commands completed successfully. / Source unchanged: True. Complete tier selection: False. / release rc=0
+A1: Total: 9 passed, 0 failed
+A1: check_fuel_forms: forms partition OK (60 MEASURED + 13 ABSORBING + 2 ambient-reachable + 6 ambient-unreachable = 81 fuel'd workers)
+A1: check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 23 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+A1: check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; …)
+A1: gen_fuel_parametricity: OK (16 ambient fuel wrappers in the generated tree = the 16 pins of TotalityProofTest.lean Part 1, both directions)
+A1: check_handwritten_sync: OK (46 hand-written files byte-identical to lean_frontend/generated/; manifest lean_frontend/handwritten_copy.manifest)
+A1: check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)
+A2: SUMMARY: total=111 match=90 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=3 cerb_floor=0 cerb_inconsistent=0 / Baseline check: 0 regression(s), 0 improvement(s)
+A3: SUMMARY: total=212 match=183 ub_match=16 … mismatch=0 … cerb_skip=13 … / Baseline check: 0 regression(s), 0 improvement(s)
+A4: SUMMARY: total=90 match=66 ub_match=20 … mismatch=0 … cerb_skip=4 … / Baseline check: 0 regression(s), 0 improvement(s)
+A4b: SUMMARY: total=93 match=93 … mismatch=0 … / Baseline check: 0 regression(s), 0 improvement(s)
+A5: SUMMARY: match=12 diff=0
+A6b: PROJECTION: failure-class (OPT-IN, LADDER Tier A row 6b only) — Symbol(<digits>, elided to Symbol(_, inside Error/Undefined payloads; Defined tokens full / SUMMARY: total=7 match=7 fail=0 / ALL PASSED
+B4: test_verify: 127 passed, 0 failed (25 fixtures, 28 call points, 14 corpus fixtures, 21 corpus points)
+B5: OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip DIFF, R3 s4b-memcmp-hugesize ORACLE_CRASH, R5 r5-hex-subnormal-double-rounding DIFF — VALIDATION.md 'ISO-fix register' — and the in-Lean probes g6 TRIPWIRE / illtyped-store KILL).
+B7: Compared: 1916 (agree=1904 agree_nd=0 triaged=12 DISAGREE=0) / SUMMARY: total=1997 compared=1916 agree=1904 … disagree=0 o2_agree=196 … / Baseline check: 0 regression(s), 0 improvement(s) / gcc second-oracle lane OK
+B10.1: Independent oracle: passed; {'semantic_agreement': 738, 'reviewed_difference': 1, 'matching_failure': 11, 'interface_agreement': 2}
+B10.2: Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1}
+B11.2: check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly …)
+direct: ./scripts/test_unit.sh → rc=0, Total: 9 passed, 0 failed
+direct: test_exec.sh --check-baseline (tests/minimal) → rc=0, total=111 match=90 ub_match=18 mismatch=0, Baseline check: 0 regression(s), 0 improvement(s), BASELINE OK
+direct: … exec_coverage_baseline.txt tests/coverage → rc=0, total=212 match=183 ub_match=16 mismatch=0, 0/0, BASELINE OK
+direct: … exec_debug_baseline.txt tests/debug → rc=0, total=90 match=66 ub_match=20 mismatch=0, 0/0, BASELINE OK
+direct: … exec_float_baseline.txt tests/float → rc=0, total=93 match=93 mismatch=0, 0/0, BASELINE OK
+```
+(Elisions `…` are the orchestrator's; the full lines are in `.tmp/orch-full*/`, `.tmp/orch-direct-*.log` in this worktree — ephemeral, deleted at slice end.) Zero movement in every existing baseline row. Driver stamps before the battery: `check_driver_fresh: oracle OK (bin 0ebf85ee…)`, `lean OK (bin e36af96d…)`.
+
+**State.** Slice complete on the branch; the pre-merge audit ASK made to the operator 2026-09-15 (scope: the full range `54f007187..18e917709`, one independent reviewer; trim or waive is the operator's); merge = ff-only onto `mdd/cerberus-lean` on per-merge sign-off; no push. Owed after landing: the consumer re-pin (generated `Formatted.*` heads unchanged by THIS slice; `CerbFloat.of_string` signature unchanged; `Ctype_aux` unchanged in signature), the primary refresh, then the parser slice `arc/parser-progress-measure` from the landed mainline.
