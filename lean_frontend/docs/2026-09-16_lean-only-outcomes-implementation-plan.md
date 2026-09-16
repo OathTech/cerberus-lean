@@ -1,4 +1,4 @@
-# Lean-only outcomes — implementation plan R0 (for a second design review, 2026-09-16)
+# Lean-only outcomes — implementation plan R0 (for a second design review, 2026-09-16) + R1 (after that review)
 
 **Status:** PLAN, drafted by the orchestrator [AGENT] for an independent second review before any operator ruling or charter. It consolidates three documents that should be read beside it: the [scoping note](2026-09-16_lean-only-outcomes-scoping-note.md) (R0 + R1: the design, `Stopped of interp_stop`), the [first review](2026-09-16_lean-only-outcomes-review-response.md) (Codex, §6 proof list, §10 acceptance table), and the [S0 checkpoint record](2026-09-16_lean-only-outcomes-S0-checkpoint-record.md) with its [protocol addendum](2026-09-16_observation-contract-addendum-stops.md) (the probes on the production model). Everything here marked PROPOSED is the orchestrator's recommended answer, not a ruling; the operator rules after the review. Base: mainline `721b1c2c7`; prototype `arc/lean-only-outcomes-S0` @ `8f8c4dfe7` (unmerged; its probes are the evidence).
 
@@ -80,3 +80,108 @@ WP0 on a same-name lem-lean/cerberus-lean worktree pair → lem-lean ff-merge on
 ## 8. Provenance
 
 [USER] rulings verbatim in the scoping note §0/R1 and the S0 charter §0 (2026-09-16: "epicycles … revisit the overall design"; "land the docs branch, and run the slice"). Facts: the S0 checkpoint record and its evidence (probes on the production model, both targets, pinned lem `f6542f8`, OCaml 5.4.0, Lean 4.32.2); the first review and its evidence; the scoping note R1's verifications. All recommendations are [AGENT].
+
+---
+
+# R1 — revision after the second review (2026-09-16, [AGENT])
+
+R0 above is kept verbatim as the text the [second review](2026-09-16_lean-only-outcomes-implementation-plan-review.md) (Codex, `42a05a64f`) read. R1 records (i) the orchestrator's independent re-verification of that review's claims, (ii) what changes in the contracts, decisions, work packages, fence and gates, and (iii) a NEW work package placed FIRST by operator instruction — the pristine-oracle instrument. Assessment adopted: retain design B and the WP0 → WP1 → WP2 spine; revise before chartering. Nothing here is a ruling; the operator rules on the table in §R1.9.
+
+## R1.0 The review's claims, re-verified
+
+Independent re-verification by the orchestrator against mainline `721b1c2c7`, the S0 prototype `8f8c4dfe7`, pinned lem `f6542f8` (`deps/lem-pinned`), and the review's evidence directory. The review's probe suite was rerun verbatim per its README (`reproduce.py --prototype …/lean-only-outcomes-S0`, under `scripts/capped`): rc 0; final line verbatim `PASS: all review controls met their stated expectations; temporary build removed.`; every `exit:` line matched its expectation; the four `PlanReview.*` theorems report axioms `[propext, Quot.sound]` (the fourth `[propext]`); the three native lines reproduce byte-for-byte. Transcript kept ephemeral (container `.tmp/plan-review-rerun.log`).
+
+| Finding | What was checked (file:line, this checkout) | Verdict |
+|---|---|---|
+| F1 an earlier legacy failure hides a stop | S0 evidence `S0_3_Traversal.lean:80-97` (`collectS` returns `[Stopped sp]` and stops collecting; `mapM'` then folds `mapM1 id` over the prefix); `mapM'_stops:219-224` premise `hall : ∀ u ∈ us, ∃ v, u = Defined v` (all-Defined prefix); record §S0.3(b) `:245` states the exclusion deliberately. `PrefixStop.lean` (4 theorems) rerun. | CONFIRMED. The record's conservativity argument for keeping the earlier failure does not follow: `mapM'_eq_mapM` assumes no stop. |
+| F2 value equality does not settle native behaviour | `deps/lem-pinned/ocaml-lib/_build_num/lem_list.ml:171` `map f l = count_map f l 0`, body `f hd :: (count_map …)` (cons-argument evaluation order is native-specific); `frontend/model/exception.lem:66` `except_mapM f = listM (List.map f)`; `state_exception.lem:61` same shape; `core_reduction.lem:54` `SEU.runEU (Core_eval.eval_pexpr_aux2 …)` — the argument is evaluated eagerly, before any state runs. `NativeOrder.ml` rerun: `old=host failure: second; candidate=typed exception: first` (twice), `old=[2,1,0]; candidate=[0,1,2]`. | CONFIRMED. R0 §2's "on OCaml this is trivially true (no producer)" is WRONG for the R2 bodies: they are live traversal changes. |
+| F3 WP0 exclusion does not follow from the tier-2 rule alone | `deps/lem-pinned/src/lean_backend.ml:1446-1489` `derive_field_bounds`: `Typ_app` resolved by census; `None -> lean_builtin_inhabited_entries p`, which returns `[[]]` (unconditionally inhabitable) for any name other than `either`/`vector`; abbreviations are excluded from the census (`non_abbrev`, `:1583`); `typ_inhabited_bounds:1976-1978` head-normalises (`Types.head_norm`) — the two demand paths differ on aliases; tier-1 types are recorded `Inh_instances [[]]` (`:1594`) without the field rule. The two Lem controls rerun: `default := ViaAlias default` emitted (the alias hides `Inh_none`); `default_mono.lem` exits 1 (`cannot derive an Inhabited instance for type 'blocked' …`) despite a usable `Good` constructor. | CONFIRMED. R0 row R1's "`skip_instances` fails at the generator" corrected: generation succeeds; the generated Lean BUILD fails (`generated/Undefined.lean:1864` failed to synthesize). |
+| F4 protocol migration misses the shell prefilter and CLI action | `scripts/observations.sh:53-55` `grep -q '^ModelFailure '` then the action `model-failure`; `scripts/observations.py:351-357` action names and `--policy` choices; `:394-395` `compare` rejects `model_failure` only. Addendum row `:33` claims `Error`/`InternalError`/`ModelFailure` non-comparable. | CONFIRMED, including the factual correction to the addendum. |
+| F5 fence omits a test naming the deleted atom; Q2 | `lean_frontend/test/Unit/NDFuelStabilityTest.lean:119-121` `ordinary_error_stable` uses `fuelExhaustedLoc` as an ordinary error's location — absent from R0's fence. `frontend/model/core_reduction.lem:31` `let inline mapM = SEU.mapM`; `:445-447` the `Esave` lambda calls `eval_pexpr pe` — an SEU traversal. | CONFIRMED. Q2 RESOLVED: `core_reduction.lem:445` joins the S0.3 reach table as YES. |
+| F6 gate acceptance weaker than the structural intent | `lean_frontend/test/Unit/FuelFormsTool.lean:433-437`: ABSORBING iff `getUsedConstants` contains a fuel atom AND an absorbing head AND no value sentinel — constant containment, not result-path structure. | CONFIRMED. |
+
+## R1.1 Contracts (§2 amended)
+
+- **Wording.** Replace "outcomes … for which the OCaml oracle has no value" with: *administrative outcomes of the port* — exhaustion interrupts an observation the reference may complete; an unsupported feature often executes in the reference; fail-stop mirrors an identified interpreter failure. None is a C behaviour; none is agreement.
+- **Conservative extension, per class of generated change.** The generated diff is described and evidenced in FOUR classes: (i) datatype additions; (ii) transport arms; (iii) default changes; (iv) LIVE traversal body changes. (i)–(iii) are dead in OCaml (no producer) and the "no producer" argument applies. (iv) is live on both targets: its evidence is the frozen-old-body kernel theorem AND native checks of callback construction, callback order, outer exceptions and host failures, on a shared Lem prototype generated for both targets. "Trivially true on OCaml" is withdrawn.
+- **Bounded observation.** Whole-driver bounded correspondence is the OBJECTIVE, supported by local proofs and differential evidence. S1 does not prove the port correct; the pure-failure axis stays outside the change.
+
+## R1.2 R2 revised — the traversal contract
+
+- **Stops survive.** The collector's internal result distinguishes `Completed us` from `Halted sp` (outer state and exception layer retained). Only `Completed us` runs the legacy inner fold; `Halted sp` returns `Stopped sp` with the state at the stop — including after an earlier `Undef`/`Error` in the same traversal. This is a local control result, not a new public outcome channel.
+- **Two theorems**, stated against a frozen copy of the OLD body (the parser slice's `_old` pattern): (1) with no encountered stop, ordering, state, legacy UB/error precedence and the outer exception result are unchanged; (2) after ANY prefix that lets collection reach the next callback, an observed stop survives with its reason and state and the suffix is not run — the prefix need not be all-`Defined`. Tests: earlier `Undef` and earlier `Error` × the three stop reasons × {a following state update, a following outer exception}.
+- **SEU: separate construction from execution.** Keep the old eager `List.map f xs` construction; apply the stop-aware collector over the resulting state actions. State the guarantee exactly: work performed during construction (which can evaluate expressions — `core_reduction.lem:54`) is not prevented; later STATE ACTIONS are not run. The stronger guarantee (no later expression evaluation) requires construction purity or a separately justified suspension change and is NOT claimed by S1.
+- **EU: body unchanged in S1.** S0 found no reachable structural stop at the EU production sites under their measured contracts; S1a discharges that restriction explicitly on the generated call graph and documents the limited public guarantee. A reachable EU stop is a STOP-AND-REPORT.
+- **Settling R2 requires native evidence.** A small shared Lem prototype of the new collectors, generated on BOTH targets, exercised with the four `NativeOrder` controls plus stop cases, beside the kernel theorems. The observed native callback order (`[2,1,0]`) is a property of this pinned runtime's `Lem_list.map` and is never promised.
+- **Doctrine.** Still a shared-body change needing the ruling (Q1) — now with a correctness rationale ("stops must survive; construction behaviour preserved") and the native evidence, not `mapM'_eq_mapM` alone.
+
+## R1.3 WP0 revised — a derivation policy, tested at both demand paths
+
+The review's acceptance matrix is adopted as WP0's specification: excluded leaf type (no generated `Inhabited`; explicit constructors usable; comparison instances unchanged); existing direct-field extensions keep their exact defaults; an alias to an excluded type — imported aliases included — cannot hide the exclusion or create an unusable fallback; tuple/record requiring the value → no fabricated default, documented generation-time refusal; list/option of the excluded type or a sum with an inhabited alternative → empty/alternative defaults allowed when they do not construct the excluded value; function returning the excluded type → reject the required result demand, taking it as an argument → allowed; non-parameterised variant with another usable constructor → select it, or document the narrower policy and fail at generation; mutual blocks and parameterised excluded types → result independent of prepass/emission order, defined for all instantiations; direct failure site, synthesised missing-pattern failure, polymorphic failure helper specialised to the excluded type → generation-time refusal whose diagnostic names the policy exclusion; combination with `skip_instances`/`target_rep` → documented precedence or rejection. ONE derivability policy for the census AND the emitted instances: `derive_field_bounds` and `typ_inhabited_bounds` must agree on aliases (head-normalise both, or refuse). Tests exercise `typ_inhabited_bounds`/`lean_thread_demand` (`lean_backend.ml:1976`, `:2541`) AND `inhabited_demand_check` (`:7185`). The guarantee is phrased as *absence of generated accidental defaults*, with the public default equalities pinned — not non-inhabitation (`Exhausted` witnesses inhabitation; hand-written Lean may package it explicitly). "One prepass branch" is withdrawn as the size estimate: the shape is a policy with a matrix of tests. Unrelated instance redesign stays out; general alias/tier-1 support is not advertised unless implemented.
+
+## R1.4 R5 and the protocol (WP1 addendum items)
+
+- `scripts/observations.sh`: a general stop helper (prefilter → validation of the COMPLETE capture; a prefix never certifies a stop), callers updated; or the fail-stop helper retained beside a separate general one — decided in S1b and recorded.
+- `observations.py`: rename ACTION and POLICY together (`stop`); update `observations.sh`, the CLI tests and the lane callers in one commit; plants through the PUBLIC shell helper (single-stop exit 1; mixed-execution exit 0).
+- **Mixed-kind completion**: a general `stopped` flag plus the kinds retained in the ordered verdict list; no single "stop kind" summary; no summary choice makes a stopped batch comparable. Tests: kinds together; a valid stop followed by malformed output or a fatal diagnostic; mismatched or missing status; all projections × comparison policies; the original capture preserved.
+- Addendum row `:33` corrected: `compare` rejects `model_failure` only; the existing admission of other kinds by parsing policy is PRESERVED, not broadened.
+
+## R1.5 Fence (amended) and reach
+
+ADD to the fence: `lean_frontend/test/Unit/NDFuelStabilityTest.lean` (restate `ordinary_error_stable` with constructor discrimination at an arbitrary ordinary location; keep the ordinary-error stability check), `scripts/observations.sh`, the five speclab test files the addendum names, `scripts/test_immaculate.sh`. These are routine authorised migration edits named in advance; the fence on baselines, fuel hypotheses and the failure-reach register is unchanged. Q2 RESOLVED: `core_reduction.lem:445` is an SEU traversal → S0.3 reach table row YES. `Driver.hack`: S0's explicit obligation (reachability on the generated call graph + the shape/measure contract) is retained; "all arms found" does not discharge it. The consumer's exact definitional alias condition suffices for the cited zero-budget `rfl` proofs iff the regenerated arms and their state components keep their shapes — the S1c candidate build is the check; Q3's existential is not evidence of a default bug, nor is a green build evidence that every consumer reading of defaults is unchanged (provider default pins and consumer proof review are different obligations).
+
+## R1.6 Gates (amended; no new gate family)
+
+- **Fuel recognition** (`FuelFormsTool`): recognise `Stopped Exhausted` by the RESULT PATH through the approved wrappers (the exact definitional fuel alias allowed), not by constant containment. Plants add: a `Defined (Stopped Exhausted)` payload; `Exhausted` inside a state/diagnostic component beside an ordinary failure; the two R0 wrong-reason cases. Theorem-shape and axiom checks preserved.
+- **Missing arms**: the lem-log check is demonstrated on a REMOVED live arm (regenerate, observe RED) and fails when regeneration or its expected log is missing; the detector is chosen on the raw invocation, not a prose regex. Warning 8 stays for the built OCaml configuration; a Lem exhaustiveness change stays separate from WP0.
+
+## R1.7 NEW — WP-O: the pristine-oracle instrument (FIRST)
+
+[USER 2026-09-16] verbatim: *"Thinking about the changes we're making, I wonder if there's some way to build the upstream cerberus as a separate oracle? right now we have the ocaml-cerberus as an oracle, but we're also changing it. There's some danger there!"* and, after the assessment below: *"let's add improving the upstream oracle as a thing to do before we execute on further work."*
+
+**Facts** (orchestrator, 2026-09-16, primary `721b1c2c7`):
+
+- The separate oracle EXISTS: LADDER Tier B row 10 — `scripts/build_independent_oracle.py` (pristine cerberus `b9aeedcb4dd438763b0eef7f95ac19e93875d7de` + upstream lem `3802cb04b53d5f1096a464e51ecbfb2a750a7ccd`, git archives, `DUNE_CACHE=disabled`, hash-pinned manifest) and `scripts/test_upstream_oracle.py` (fail-closed manifest/artefact check; reviewed register `scripts/upstream_oracle_differences.json`). Last recorded verdict verbatim (audit-repairs record `:1776`): `B10.1: Independent oracle: passed; {'semantic_agreement': 738, 'reviewed_difference': 1, 'matching_failure': 11, 'interface_agreement': 2}`.
+- Its corpus (`test_upstream_oracle.py:110-169`): `tests/{minimal,coverage,debug,float,bytes,libc_exec}` (`rglob('*.c')`, minus `.syntax-only.c`/`.exhaust.c`), `tests/multi_tu/*`, the `tests/cn_coverage/manifest.txt` rows, the libxml2 `uri` harness in two modes, two CLI cases. NOT walked: `tests/multi_tu_tray` (LADDER row 6b — the ONLY exerciser of the fork's two shared-model semantic fixes, drafts 37/38/39, where the fork answers `Specified(7)` and pristine loops or rejects), `tests/immaculate`, `tests/ci`, `tests/verify` + `corpus/`, the csmith corpus (1669 programs), libxml2 `chvalid`.
+- Consequence: the fork's KNOWN semantic deviations from pristine are recorded by no lane; the register holds ONE row (`minimal/097-null-ptr-arith.undef.c`, a failure-text difference). Every other execution lane compares fork OCaml with Lean; a shared `.lem` change moves both engines together, so those lanes are blind to it by construction. No lane runs three engines on one input.
+- No built pristine oracle exists in the container at the time of writing: the build is per-checkout under the gitignored `/.validation-foundations/` and was retired with the worktrees that built it. The lane fails loudly on the missing manifest (correct), but the reference engine is not standing.
+- Correctly shaped already: the Lean-only R5 hex-float fix is a deliberate Lean≠fork DIFF pin (`tests/immaculate/baseline.txt:121`: `r5-hex-subnormal-double-rounding DIFF | L=VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}`). The exposure is specific to SHARED-MODEL changes — which S1 is, and the largest yet (a type extension, 13 arms and live traversal bodies).
+
+**Deliverables**
+
+- **O1 Corpus.** Row 10 walks every corpus the fork-vs-Lean lanes use (the tray, immaculate, ci, verify/corpus, csmith as Tier B shards — cost measured before adoption; grind tripwire), with the same exclusions those lanes apply. The register becomes the COMPLETE fork≠pristine inventory: every row classed {failure-text, resource, missing-feature, shared-model-fix} and cited (a tray draft or an ISO-fix register entry). Expected new rows: `multi_tu_tray/{node,arr-2-2-return,arr-incomplete-ptr-return}`. Plant: a fork-only behavioural change with no register row is RED.
+- **O2 Three engines.** Per input: pristine / fork OCaml / Lean observations through the shared codec, as the mandatory report of any shared-model slice; row 10 reports per case against Lean as well (the worker designs it; one lane row, no new gate family).
+- **O3 Standing build.** `scripts/new-worktree.sh` primes or rebuilds the pristine oracle (the manifest's artefact paths are absolute today — make it relocatable or rebuild; the fail-closed hash check is preserved); "missing → loud fail" stays.
+- **O4 Doctrine** (`VALIDATION.md` §0): pristine upstream is THE reference; fork OCaml is the shared model's mirror twin; the register is the only permitted list of fork≠pristine behaviours; a shared-model slice runs the three-way over the full corpora and may add register rows only with a citation.
+- Out of scope: moving the merge-base (a network-window decision, separate).
+
+Exit: O1–O4 landed; the widened row 10 GREEN with its new register rows; one Fable-subagent charter carrying the standing constraints verbatim (no push; ff-only on per-merge sign-off; the pre-merge audit ASK; capped Lean; [USER 2026-09-08] "nothing new out of policy").
+
+## R1.8 Sequencing (R8 amended)
+
+WP-O → WP0 (R1.3 matrix; the two-repo pin dance) → **S1-pre**: the R2 shared Lem prototype on both targets with native checks and the two theorems (a short probe slice, so R2 is settled before S1's scope is fixed) → WP1 (S1a/S1b/S1c with R1.4–R1.6; one branch, one landing; the consumer built against the candidate in S1c; the pristine three-way is S1c's report) → WP2. Execution: Claude Fable subagents under charters; the orchestrator re-verifies at every boundary ([USER 2026-09-11]).
+
+## R1.9 Decisions after R1 (the operator rules)
+
+| # | Status after the second review |
+|---|---|
+| R1 | Direction accepted once SPECIFIED by the R1.3 matrix; "fails at the generator" corrected |
+| R2 | REVISED per R1.2 (stops survive; construction vs execution; EU unchanged in S1; native evidence required) |
+| R3, R4 | As proposed |
+| R5 | Plus the shell helper, action+policy renamed together, mixed-kind completion (R1.4) |
+| R6 | Unchanged — no legacy decoder |
+| R7 | Mirror `liftCore_run`; the consumer's exhaustion-only disjunct retained |
+| R8 | = R1.8, with WP-O FIRST |
+| **R9 (new)** | The WP-O charter — [USER 2026-09-16] "add … before we execute on further work"; the charter text itself needs the operator's word |
+
+## R1.10 Open questions after R1
+
+- Q1 stands: the ruling on R2 as a shared-body change, now with the R1.2 rationale and evidence bar.
+- Q2 RESOLVED (`core_reduction.lem:445` is an SEU traversal; joins the reach table).
+- Q3 stands to S1c (the consumer build). Q4/Q5 stand (lem-lean and doc items; not blocking).
+- **Q6 (new):** is "EU body unchanged in S1, public guarantee limited accordingly" acceptable, given that S0's no-reachable-EU-stop finding must be discharged in S1a?
+- **Q7 (new):** WP-O's csmith cost — Tier B shards, or a Tier C instrument if the wall-clock approaches the tripwire.
+
+## R1.11 Provenance
+
+[USER 2026-09-16] quotations verbatim (§R1.7). Facts: the cited files at the revisions named in §R1.0; the review's evidence rerun by the orchestrator (transcript ephemeral). All assessments and recommendations [AGENT].
