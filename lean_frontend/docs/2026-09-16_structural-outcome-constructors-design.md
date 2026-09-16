@@ -1,6 +1,6 @@
 # Structural outcome constructors (D2) — design note R0, for the operator's scope review (2026-09-16)
 
-**Status:** DRAFT for review with the operator BEFORE any charter (master plan rev 10 §3 step 5b: "a design note reviewed WITH the operator before dispatch (the step-2 rule)"). Author: the orchestrator [AGENT]. Base: mainline `a15da65f8`. This note proposes; it authorizes nothing.
+**Status: SUPERSEDED 2026-09-16** by `2026-09-16_lean-only-outcomes-scoping-note.md` — the operator asked to revisit the design in total rather than repair it ([USER 2026-09-16]: "I'm a bit wary of 'epicycles' … revisit the overall design and orientation wrt the oracle"); recommendation B′ below is WITHDRAWN (its dead mirror arms are the epicycle the scoping note names). Kept as history. Original status: DRAFT for review with the operator BEFORE any charter (master plan rev 10 §3 step 5b: "a design note reviewed WITH the operator before dispatch (the step-2 rule)"). Author: the orchestrator [AGENT]. Base: mainline `a15da65f8`. This note proposes; it authorizes nothing.
 
 ## 0. The rulings this design answers, verbatim
 
