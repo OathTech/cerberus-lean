@@ -504,6 +504,22 @@ the flexible-array-member compatibility question, 42 = unary minus on a floating
     `arc/parser-progress-measure` (record `lean_frontend/docs/2026-09-11_parser-progress-measure-record.md`);
     the printf parser family lost its fuel there. Drafted by Claude (Fable 5.1) under operator
     direction; AI-provenance note per the tray's policy.
+44. **44-concrete-allocator-euclidean-align-down-overlap-at-exhaustion.md** — TRUE BUG /
+    model soundness (slotting note: minor at the default address-space bound — the exhausted
+    regime needs ~2^48 bytes of cumulative allocation, no test reaches it — but real for any
+    smaller address space and for proofs over all runs; ranks with 34, the same allocator).
+    `Concrete.allocator` (`memory/concrete/impl_mem.ml:1247-1262`; VIP twin
+    `memory/vip/impl_mem.ml:202-211`) aligns the new base with `z - (if q < 0 then -m else m)`,
+    a TRUNCATING-division idiom, but `quomod = ediv_rem` (`:9`) is Euclidean: once the cursor is
+    below the request (`z < 0`) the line ADDS the remainder, and for `-align/2 < z < 0` the
+    allocation SUCCEEDS at an address in `(0, align)` — an object overlapping the last live one
+    and not `align`-aligned — instead of the out-of-memory kill. Reproduced on the reference's
+    Zarith arithmetic and on the Lean mirror (cursor 3, 4-byte object aligned 4 → address 2).
+    Remedy 1 (fail when `z < 0` before rounding; the `q < 0` branch becomes dead) in both models.
+    Fork fix RULED [USER 2026-09-16] ("unambiguously wrong … allowed to fix ahead of upstream"),
+    scheduled after the pristine-oracle instrument slice. Found by the cerberus-sl S2 agent
+    (Claude, Anthropic), verified and drafted by Claude (Fable 5.1) under operator direction;
+    file together with 34.
 
 Amended 2026-09-05: draft 10 gains an addendum for the STRING-LITERAL
 form of `\?` (`"\?"` reaches the same decoder from translation.ml:3029;
