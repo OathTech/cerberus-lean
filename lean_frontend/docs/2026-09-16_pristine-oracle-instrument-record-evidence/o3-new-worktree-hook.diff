@@ -1,0 +1,14 @@
+--- .tmp/new-worktree.sh.orig	2026-09-16 21:45:45.322280810 +0000
++++ /home/dev/projects/cerberus-lean-proj/scripts/new-worktree.sh	2026-09-16 21:45:45.335884750 +0000
+@@ -83,6 +83,11 @@
+       cp -a "$SRC/$d/." "$DST/$d/"
+     fi
+   done
++  # Standing pristine oracle (WP-O 2026-09-16, charter O3): validate-or-build LADDER Tier B row 10's
++  # prerequisite at the worktree's default path (~1 min); the lane itself never builds. Opt out:
++  # CERB_SKIP_INDEPENDENT_ORACLE=1. Fail-noisy: a refused/failed build (or a branch predating the
++  # script) exits nonzero here AFTER the worktree exists — rerun the ensure-script by hand or opt out.
++  [[ -n "${CERB_SKIP_INDEPENDENT_ORACLE:-}" ]] || "$PROJ/scripts/ce" python3 "$DST/scripts/ensure_independent_oracle.py"
+ fi
+ 
+ echo

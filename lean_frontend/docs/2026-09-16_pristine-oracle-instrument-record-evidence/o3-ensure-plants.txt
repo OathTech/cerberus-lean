@@ -1,0 +1,19 @@
+# ensure_independent_oracle.py plants — exit codes re-verified without a pipe (zsh pipestatus slip in the first transcript); 2026-09-16T21:45:38Z
+== P0 rerun-valid: rc=0
+ensure_independent_oracle: VALID standing build: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/pristine-oracle-instrument/.validation-foundations/independent-oracle-v2/manifest.json (cerberus b9aeedcb4, lem 3802cb0)
+== P1 garbage-manifest: rc=1
+ensure_independent_oracle: REFUSED — existing build at /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/pristine-oracle-instrument/.tmp/ensure-plants/invalid is INVALID: independent build is incomplete or has wrong source pins
+  Nothing was deleted or overwritten. To rebuild, remove that directory yourself and rerun.
+== P2 dir-without-manifest: rc=1
+ensure_independent_oracle: REFUSED — /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/pristine-oracle-instrument/.tmp/ensure-plants/partial exists but has no manifest.json (a partial or foreign directory). Nothing was deleted or overwritten. Remove it yourself and rerun.
+== P3 absent-no-build: rc=1
+ensure_independent_oracle: ABSENT — no build at /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/pristine-oracle-instrument/.tmp/ensure-plants/absent (--no-build: not building)
+== P4 wrong-pin-manifest: rc=1
+ensure_independent_oracle: REFUSED — existing build at /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/pristine-oracle-instrument/.tmp/ensure-plants/wrongpin is INVALID: independent build is incomplete or has wrong source pins
+  Nothing was deleted or overwritten. To rebuild, remove that directory yourself and rerun.
+== P5 bad-lem-repo: rc=1
+ensure_independent_oracle: --lem-repo /nonexistent/lem does not contain 3802cb04b53d5f1096a464e51ecbfb2a750a7ccd: not a directory
+== P6 env-manifest-garbage: rc=1
+ensure_independent_oracle: REFUSED — existing build at /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/pristine-oracle-instrument/.tmp/ensure-plants/invalid is INVALID: independent build is incomplete or has wrong source pins
+  Nothing was deleted or overwritten. To rebuild, remove that directory yourself and rerun.
+== post-plant state: invalid manifest still present: {"status":"garbage"}; absent dirs created? ls: cannot access '.tmp/ensure-plants/absent': No such file or directory ls: cannot access '.tmp/ensure-plants/absent2': No such file or directory 
