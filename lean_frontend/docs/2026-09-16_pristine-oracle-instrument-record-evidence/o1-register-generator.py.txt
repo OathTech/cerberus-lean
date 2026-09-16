@@ -1,0 +1,121 @@
+#!/usr/bin/env python3
+"""Generate scripts/upstream_oracle_differences.json (schema 2) from the WP-O measurement
+reports, MACHINE-CHECKING every fact each rationale states. Worker tool, not committed."""
+import json, pathlib, re, sys, hashlib
+ROOT = pathlib.Path('.').resolve()
+REG = ROOT / 'scripts/upstream_oracle_differences.json'
+POS = re.compile(r'\b(line|lines|characters) [0-9]+(-[0-9]+)?')
+def rows_of(name):
+    rep = json.loads((ROOT / f'.tmp/o1-measure/{name}/report.json').read_text())
+    return {r['id']: r for r in rep['rows']}
+def sig(rec):
+    return {'status': rec['status'], 'stdout_sha256': rec['stdout_sha256'], 'diagnostic_sha256': rec['diagnostic_sha256']}
+def read(rec, suffix):
+    return pathlib.Path(rec['capture'] + suffix).read_bytes()
+
+register = {'schema': 2, 'cases': {}}
+# --- 097: migrate (crash: no Time-spent trailer, so diagnostic == raw stderr; verify against the O3 gate run) ---
+o3 = {r['id']: r for r in json.loads((ROOT / '.tmp/o3-gate/full/report.json').read_text())['rows']}
+old = json.loads(REG.read_text())['cases']['minimal/097-null-ptr-arith.undef.c']
+r097 = o3['minimal/097-null-ptr-arith.undef.c']
+for side in ('upstream', 'fork'):
+    assert r097[side]['diagnostic_sha256'] == r097[side]['stderr_sha256'] == old[side]['stderr_sha256'], side
+    assert r097[side]['status'] == 125 == old[side]['status']
+register['cases']['minimal/097-null-ptr-arith.undef.c'] = {
+    'class': 'diagnostic-text',
+    'citation': ['lean_frontend/docs/2026-09-06_independent-oracle-and-fork-pins.md:85-93',
+                 'lean_frontend/docs/2026-09-11_semantics-audit-repairs-record.md:1752',
+                 'lean_frontend/docs/2026-09-11_semantics-audit-repairs-evidence/d5-pristine-097-diagnostic-diff.txt'],
+    'rationale': old['rationale'] + ' SCHEMA 2 (WP-O 2026-09-16): signatures now bind status + stdout sha + the DIAGNOSTIC-projected stderr sha (identical to the raw sha here: a crash prints no `Time spent` trailer); class diagnostic-text.',
+    'upstream': sig(r097['upstream']), 'fork': sig(r097['fork'])}
+
+# --- tray: shared-model-fix rows (drafts 37/38/39) ---
+tray = rows_of('tray')
+D37 = 'lean_frontend/docs/upstream-tray/37-are-compatible-cross-tu-recursive-struct-nontermination.md'
+D38 = 'lean_frontend/docs/upstream-tray/38-pememberof-cross-tu-struct-value-tag-identity.md'
+D39 = 'lean_frontend/docs/upstream-tray/39-are-compatible-array-bound-typo.md'
+README = 'tests/multi_tu_tray/README.md'
+REC = 'lean_frontend/docs/2026-09-11_semantics-audit-repairs-record.md'
+def verdict(rec):
+    return read(rec, '.stdout').decode().strip()
+n = tray['multi_tu_tray/node']
+assert n['upstream']['status'] == 124 and read(n['upstream'], '.stdout') == b'' and read(n['upstream'], '.stderr') == b''
+assert n['fork']['status'] == 0 and verdict(n['fork']) == 'Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}'
+register['cases']['multi_tu_tray/node'] = {
+    'class': 'shared-model-fix', 'citation': [D37, D38, README, REC + ':1752'],
+    'rationale': ('Pristine upstream b9aeedcb4 does not terminate: `Ctype_aux.are_compatible` recurses forever on the '
+                  'self-referential `struct node` defined in two TUs (draft 37, TRUE BUG; rc 124 at the mirrored 30 s bound, '
+                  'empty stdout/stderr; 60 s in the draft\'s verbatim runs). The fork carries the assumed-compatible-list fix '
+                  '(record 2026-09-10, draft 37 "Fork status") and draft 38\'s PEmemberof compatibility consult, and answers '
+                  '`Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}` rc 0 — the value ISO C11 §6.2.7#1 '
+                  'gives and gcc exits with (7). Class shared-model-fix: the ONLY pristine-side incomplete this register admits; '
+                  'the row retires (the case moves into tests/multi_tu/) when upstream fixes drafts 37/38. LADDER Tier A row 6b '
+                  'pins fork OCaml == Lean on the same input.'),
+    'upstream': sig(n['upstream']), 'fork': sig(n['fork'])}
+for case, draft_extra, shape in (
+        ('multi_tu_tray/arr-2-2-return', [D38, D39], 'struct S { int a[2]; } defined in both TUs (compatible, equal bounds), value RETURNED across the TU boundary and `.a[0]` selected'),
+        ('multi_tu_tray/arr-incomplete-ptr-return', [D38, D39], 'member `int (*p)[]` vs `int (*p)[2]` (compatible by C11 §6.7.6.1#2 + §6.7.6.2#6), value RETURNED and `.n` selected')):
+    r = tray[case]
+    up, fk = verdict(r['upstream']), verdict(r['fork'])
+    assert r['upstream']['status'] == 1 and up.startswith('Error {msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol('), up
+    assert r['fork']['status'] == 0 and fk == 'Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}', fk
+    register['cases'][case] = {
+        'class': 'shared-model-fix', 'citation': draft_extra + [README, REC + ':1752'],
+        'rationale': (f'{shape}. Pristine upstream b9aeedcb4 rejects the compatible cross-TU struct value at the exact-tag '
+                      f'guard of `PEmemberof(struct)` (core_eval.lem:945-946; draft 38, TRUE BUG/LIMITATION): verbatim `{up}` rc 1. '
+                      f'The fork (dbe633ec5: draft 38\'s compatibility consult + draft 39\'s one-token array-bound fix) answers '
+                      f'`{fk}` rc 0 — the value ISO C11 §6.2.7#1 gives and gcc exits with (7). Class shared-model-fix; both '
+                      f'signatures pinned (the Error text embeds deterministic symbol numbers); the row retires when upstream fixes '
+                      f'drafts 38/39. LADDER Tier A row 6b pins fork OCaml == Lean on the same input.'),
+        'upstream': sig(r['upstream']), 'fork': sig(r['fork'])}
+
+# --- diagnostic-text rows: immaculate (16) + ci (4); every fact checked ---
+REC06 = 'lean_frontend/docs/2026-09-06_independent-oracle-and-fork-pins.md:85-93'
+def check_positions_only(r):
+    ue = read(r['upstream'], '.stderr'); fe = read(r['fork'], '.stderr')
+    uo = read(r['upstream'], '.stdout'); fo = read(r['fork'], '.stdout')
+    assert r['upstream']['status'] == 125 == r['fork']['status'], (r['id'], r['upstream']['status'], r['fork']['status'])
+    assert uo == b'' == fo, r['id']
+    ul, fl = ue.split(b'\n'), fe.split(b'\n')
+    assert len(ul) == len(fl), (r['id'], len(ul), len(fl))
+    assert ul[0] == fl[0], (r['id'], 'first line differs')
+    def payload(lines):  # the leading `internal error:` line(s) + the exception line after the envelope
+        idx = lines.index(b'cerberus: internal error, uncaught exception:')
+        return lines[:idx] + [lines[idx + 1].strip()]
+    failure, failure_f = payload(ul), payload(fl)
+    assert failure == failure_f and failure, (r['id'], 'failure text differs', failure, failure_f)
+    hunks = 0
+    for a, b in zip(ul, fl):
+        if a != b:
+            assert POS.sub('POS', a.decode()) == POS.sub('POS', b.decode()), (r['id'], a, b)
+            assert (b'Called from' in a or b'Raised' in a), (r['id'], a)
+            hunks += 1
+    assert hunks > 0, r['id']
+    return hunks, b' / '.join(failure).decode().strip(), len(ul) - (1 if ul[-1] == b'' else 0)
+for name, baseline in (('immaculate', 'tests/immaculate/baseline.txt'), ('ci', 'scripts/exec_ci_baseline.txt')):
+    rows = rows_of(name)
+    for cid, r in rows.items():
+        if r['status'] != 'difference':
+            continue
+        hunks, failure, nlines = check_positions_only(r)
+        stem = cid.split('/')[-1]
+        pin = [l for l in (ROOT / baseline).read_text().splitlines() if l.startswith(stem + ' ') or l.startswith(stem + '.c ')]
+        assert len(pin) == 1, (cid, pin)
+        register['cases'][cid] = {
+            'class': 'diagnostic-text',
+            'citation': [REC06, baseline, 'lean_frontend/docs/2026-09-11_semantics-audit-repairs-record.md:1752'],
+            'rationale': (f'Both engines die with the SAME uncaught exception — `{failure}` — status 125, empty stdout, '
+                          f'{nlines}-line stderr on both sides; the only differing bytes are {hunks} backtrace frame position(s) '
+                          f'(`line N` / `lines N-M` / `characters A-B` in generated ocaml_frontend .ml files shifted by the fork\'s '
+                          f'.lem edits, lem_list.ml frames from the different lem runtime, and pipeline.ml/main.ml frames from the '
+                          f'fork\'s driver additions) — verified frame-by-frame by the WP-O generator (record evidence '
+                          f'o1-raw-diffs-*.txt). No semantic result exists on either side; the fork-vs-Lean lane pins the fork\'s '
+                          f'crash as `{pin[0]}`. Class diagnostic-text, the 097 class (record 2026-09-06 table row 2); the deferred '
+                          f'question whether such pins should normalise backtrace positions is the audit-repairs record :1752.'),
+            'upstream': sig(r['upstream']), 'fork': sig(r['fork'])}
+REG.write_text(json.dumps(register, indent=2) + '\n')
+print(f'wrote {len(register["cases"])} rows:')
+from collections import Counter
+print(Counter(v['class'] for v in register['cases'].values()))
+for k, v in register['cases'].items():
+    print(f"  {v['class']:17} {k}  up={v['upstream']['status']} fk={v['fork']['status']}")

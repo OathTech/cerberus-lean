@@ -1,0 +1,7 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+check_driver_fresh: oracle OK (bin 7336b2e35e761cd553dcd196e944da00bcd981a0a2c512d10926c3bb91723478, src 98ad48b592a222a21e4619c5ce03652fc6a44c0a67c6b02cb222e1d40b1c701d)
+PLANT MODE: passing real pair then mutate the fork engine verdict
+1/2 semantic_agreement: minimal/001-return-literal.c
+2/2 plant_rejected: plant/unexpected-verdict
+Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/pristine-oracle-instrument/.tmp/o3-gate/plant/report.json
+$CE python3 scripts/test_upstream_oracle.py --plant --out .tmp/o3-gate/plant  0.80s user 0.56s system 110% cpu 1.231 total

@@ -1,0 +1,10 @@
+check_driver_fresh: oracle OK (bin 7336b2e35e761cd553dcd196e944da00bcd981a0a2c512d10926c3bb91723478, src 98ad48b592a222a21e4619c5ce03652fc6a44c0a67c6b02cb222e1d40b1c701d)
+1/7 semantic_agreement: multi_tu_tray/arr-1-2-arg (pristine 0.0s, fork 0.0s)
+2/7 semantic_agreement: multi_tu_tray/arr-1-2-return (pristine 0.0s, fork 0.0s)
+3/7 semantic_agreement: multi_tu_tray/arr-2-2-arg (pristine 0.0s, fork 0.0s)
+4/7 difference: multi_tu_tray/arr-2-2-return (pristine 0.0s, fork 0.0s)
+5/7 difference: multi_tu_tray/arr-incomplete-ptr-return (pristine 0.0s, fork 0.0s)
+6/7 semantic_agreement: multi_tu_tray/fam-vs-array-return (pristine 0.0s, fork 0.0s)
+7/7 incomplete: multi_tu_tray/node (pristine 30.1s, fork 0.0s)
+Independent oracle scope: subset (--only); 7 rows in 31.7s; source unchanged: True
+Independent oracle: failed; {'semantic_agreement': 4, 'difference': 2, 'incomplete': 1}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/pristine-oracle-instrument/.tmp/o1-measure/tray/report.json

@@ -1,0 +1,8 @@
+=== chvalid start 21:58:48
+check_driver_fresh: oracle OK (bin 7336b2e35e761cd553dcd196e944da00bcd981a0a2c512d10926c3bb91723478, src 98ad48b592a222a21e4619c5ce03652fc6a44c0a67c6b02cb222e1d40b1c701d)
+1/4 semantic_agreement: libxml2/chvalid/chvalid_battery_00 (pristine 44.6s, fork 44.0s)
+2/4 semantic_agreement: libxml2/chvalid/chvalid_battery_01 (pristine 53.0s, fork 52.2s)
+3/4 semantic_agreement: libxml2/chvalid/chvalid_battery_02 (pristine 52.6s, fork 51.1s)
+4/4 semantic_agreement: libxml2/chvalid/chvalid_battery_03 (pristine 54.7s, fork 53.3s)
+Independent oracle scope: subset (--only); 4 rows in 406.7s; source unchanged: False
+Independent oracle: failed; {'semantic_agreement': 4}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/pristine-oracle-instrument/.tmp/o1-measure/chvalid/report.json

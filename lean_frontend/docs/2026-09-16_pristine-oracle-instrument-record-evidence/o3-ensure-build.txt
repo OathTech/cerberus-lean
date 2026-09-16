@@ -1,0 +1,12 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+ensure_independent_oracle: ABSENT — building the pristine oracle into /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/pristine-oracle-instrument/.validation-foundations/independent-oracle-v2
+  lem-repo:      /home/dev/projects/cerberus-lean-proj/lem-lean
+  cerberus-repo: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/pristine-oracle-instrument
+lem-compiler: passed (6.627s)
+lem-libraries: passed (1.166s)
+lem-runtime-build: passed (4.193s)
+lem-runtime-install: passed (0.146s)
+cerberus-generation: passed (17.75s)
+cerberus-build: passed (9.378s)
+Independent upstream oracle: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/pristine-oracle-instrument/.validation-foundations/independent-oracle-v2/manifest.json
+ensure_independent_oracle: BUILT+VALID standing build: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/pristine-oracle-instrument/.validation-foundations/independent-oracle-v2/manifest.json (cerberus b9aeedcb4, lem 3802cb0)

@@ -1,19 +1,34 @@
 #!/usr/bin/env python3
-"""Independent pristine OCaml versus fork OCaml over Tier A C inputs and legacy APIs.
+"""Independent pristine OCaml versus fork OCaml over the fork-vs-Lean lanes' corpora.
 
-Build the pristine side with build_independent_oracle.py first. Every unexpected
-difference fails; reviewed exceptions bind both full observations and rationale.
-Raw process failures are reported separately from completed semantic verdicts.
+Build the pristine side with scripts/ensure_independent_oracle.py first (the lane
+itself never builds; a missing or invalid manifest fails closed). Every
+unexpected difference fails; the reviewed register scripts/upstream_oracle_
+differences.json (schema 2) is the ONLY permitted list of fork≠pristine
+behaviours — each row classed, cited, and binding both full observation
+signatures. Raw process failures are reported separately from completed
+semantic verdicts. WP-O (2026-09-16, lean_frontend/docs/2026-09-16_charter-
+pristine-oracle-instrument.md O1) widened the corpus to every corpus the
+fork-vs-Lean lanes walk, mirroring each lane's flags, exclusions and per-case
+timeout (cited at each block of corpus()).
+
+Scopes: the default selection (`--corpus tier-b`) is LADDER Tier B row 10;
+libxml2 chvalid is its own Tier B row (`--corpus libxml2_chvalid`); tests/ci and
+the csmith corpus are reporting rows (`--corpus ci`, `--corpus csmith [--shard
+K/M]` — the shard arithmetic of scripts/test_csmith_corpus.sh). `--only`,
+`--shard` and any selection short of `all` certify only what they ran.
 """
 from __future__ import annotations
 
 import argparse
 from collections import Counter
+from dataclasses import dataclass
 import hashlib
 import json
 import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -24,6 +39,45 @@ from observations import ProtocolError, load_capture
 from release import artifacts, source_identity
 
 ROOT = Path(__file__).resolve().parent.parent
+REGISTER = ROOT / 'scripts/upstream_oracle_differences.json'
+REGISTER_SCHEMA = 2
+# Register row classes (charter O1). A pristine-side timeout is admissible ONLY
+# through a row of an INCOMPLETE_ADMITTING class whose citation explains the
+# non-termination; never for the fork side, never for a signal kill (137).
+CLASSES = ('diagnostic-text', 'resource', 'missing-feature', 'shared-model-fix')
+INCOMPLETE_ADMITTING = ('resource', 'shared-model-fix')
+INCOMPLETE_STATUSES = (124, 137)
+# A signature binds the exit status, the raw stdout bytes and the stderr bytes
+# under the lane's declared DIAGNOSTIC projection (only the run-varying
+# `Time spent: <decimal> seconds` trailer removed; the raw stderr is retained
+# in every capture). Schema 1 bound the raw stderr sha, which only a crash
+# (no trailer) could ever reproduce — no completing case was pinnable.
+SIGNATURE_KEYS = ('status', 'stdout_sha256', 'diagnostic_sha256')
+ROW_KEYS = {'class', 'citation', 'rationale', 'upstream', 'fork'}
+# Corpus labels -> the rows they belong to. Membership per the WP-O
+# measurement table (record 2026-09-16 §O1): everything the fork-vs-Lean lanes
+# walk except the csmith corpus, which is its own reporting row.
+CORPORA = {
+    'tier-b': ('minimal', 'coverage', 'debug', 'float', 'bytes', 'libc_exec', 'multi_tu',
+               'multi_tu_tray', 'cn', 'libxml2_uri', 'cli', 'immaculate', 'verify', 'corpus'),
+    'libxml2_chvalid': ('libxml2_chvalid',),   # its own Tier B row (~6 min: 4 slices x ~45 s x 2 engines)
+    'ci': ('ci',),                             # reporting row: two both-sides timeouts at the mirrored 30 s
+    'csmith': ('csmith',),                     # reporting row, sharded
+}
+CORPORA['all'] = tuple(label for key in ('tier-b', 'libxml2_chvalid', 'ci', 'csmith') for label in CORPORA[key])
+# lean_frontend/corpus stems test_verify.sh runs MAIN-mode (test_verify.sh:269);
+# the hashed arena programs are pin-provenance only there and are not executed.
+CORPUS_MAIN_STEMS = ('p01_clamp', 'p02_sat_add', 'p03_swap_mayalias', 'p09_call_contract',
+                     'p10_gcd_rec', 'p11_gcd_iter', 'p12_pt_midpoint')
+
+
+@dataclass
+class Case:
+    id: str
+    kind: str              # batch | core | typecheck
+    flags: list            # oracle arguments after --runtime=<dir>
+    corpus: str            # corpus label (CORPORA membership)
+    timeout: float | None = None   # the mirrored lane's per-case bound; None = --timeout
 
 
 def validate_build(path):
@@ -51,6 +105,65 @@ def validate_build(path):
     return manifest
 
 
+def citation_exists(citation: str) -> bool:
+    """A citation is a repo-relative file (optionally `:lines` / `#anchor`) or an ISO-fix id R<n>
+    present in VALIDATION.md §2's register table."""
+    if re.fullmatch(r'R[0-9]+', citation):
+        table = (ROOT / 'lean_frontend/VALIDATION.md').read_text()
+        return re.search(r'^\| \*\*' + citation + r'\*\* \|', table, re.M) is not None
+    path = re.sub(r'(:[0-9]+(-[0-9]+)?|#.*)$', '', citation)
+    return bool(path) and not Path(path).is_absolute() and (ROOT / path).is_file()
+
+
+def load_register(path):
+    """Fail-closed schema-2 reader: every row classed, cited, rationalised, two full
+    signatures that actually differ; incompleteness only where the charter admits it."""
+    data = json.loads(Path(path).read_text())
+    if not isinstance(data, dict) or data.get('schema') != REGISTER_SCHEMA:
+        raise ValueError(f'register: schema must be {REGISTER_SCHEMA} (found '
+                         f'{data.get("schema") if isinstance(data, dict) else type(data).__name__!r}); '
+                         f'schema-1 rows carry no class/citation and are refused')
+    if set(data) != {'schema', 'cases'} or not isinstance(data['cases'], dict):
+        raise ValueError('register: top level must be exactly {"schema", "cases"} with cases an object')
+    for case, row in data['cases'].items():
+        where = f'register row {case!r}'
+        if not isinstance(row, dict) or set(row) != ROW_KEYS:
+            found = sorted(row) if isinstance(row, dict) else type(row).__name__
+            raise ValueError(f'{where}: keys must be exactly {sorted(ROW_KEYS)} (found {found})')
+        if row['class'] not in CLASSES:
+            raise ValueError(f'{where}: unknown class {row["class"]!r}; permitted: {list(CLASSES)}')
+        citations = row['citation'] if isinstance(row['citation'], list) else [row['citation']]
+        if not citations or not all(isinstance(c, str) and c.strip() for c in citations):
+            raise ValueError(f'{where}: citation must be a non-empty string or list of them')
+        for citation in citations:
+            if not citation_exists(citation):
+                raise ValueError(f'{where}: citation {citation!r} is neither an existing repo file '
+                                 f'nor an ISO-fix register id present in VALIDATION.md §2')
+        if not isinstance(row['rationale'], str) or not row['rationale'].strip():
+            raise ValueError(f'{where}: rationale must be a non-empty string')
+        for side in ('upstream', 'fork'):
+            signature_ = row[side]
+            if not isinstance(signature_, dict) or set(signature_) != set(SIGNATURE_KEYS):
+                raise ValueError(f'{where}: {side} signature must have exactly {list(SIGNATURE_KEYS)}')
+            status = signature_['status']
+            if isinstance(status, bool) or not isinstance(status, int) or not 0 <= status <= 255:
+                raise ValueError(f'{where}: {side}.status must be an integer exit status')
+            for key in ('stdout_sha256', 'diagnostic_sha256'):
+                if not isinstance(signature_[key], str) or not re.fullmatch(r'[0-9a-f]{64}', signature_[key]):
+                    raise ValueError(f'{where}: {side}.{key} must be a lowercase sha256 hex digest')
+        if row['upstream'] == row['fork']:
+            raise ValueError(f'{where}: upstream and fork signatures are identical — the row records no difference')
+        if row['fork']['status'] in INCOMPLETE_STATUSES:
+            raise ValueError(f'{where}: a fork-side incomplete process (status {row["fork"]["status"]}) is never admissible')
+        if row['upstream']['status'] == 137:
+            raise ValueError(f'{where}: a pristine-side signal kill (137) is never admissible')
+        if row['upstream']['status'] == 124 and row['class'] not in INCOMPLETE_ADMITTING:
+            raise ValueError(f'{where}: a pristine-side timeout (124) is admissible only through a row of class '
+                             f'{list(INCOMPLETE_ADMITTING)} whose citation explains the non-termination, not '
+                             f'{row["class"]!r}')
+    return data['cases']
+
+
 def capture(prefix, command, env, limit):
     started = time.monotonic()
     command = ['timeout', str(limit), *map(str, command)]
@@ -72,18 +185,28 @@ def capture(prefix, command, env, limit):
 
 
 def signature(record):
-    return {key: record[key] for key in ('status', 'stdout_sha256', 'stderr_sha256')}
+    return {key: record[key] for key in SIGNATURE_KEYS}
 
 
 def compare(left, right, kind, exception=None):
-    # No exception may admit an incomplete process or silent success.
-    if any(r['status'] in (124, 137) for r in (left, right)):
+    """left = pristine upstream, right = fork. Returns (status, reason)."""
+    # No exception may admit a fork-side incomplete process, a signal kill on
+    # either side, or a silent success.
+    if right['status'] in INCOMPLETE_STATUSES or left['status'] == 137:
         return 'incomplete', 'timeout or signal termination'
+    if left['status'] == 124:
+        # A pristine-side timeout is admitted ONLY by a reviewed row of an
+        # incomplete-admitting class binding both signatures (charter O1: the
+        # citation explains the non-termination — draft 37 for `node`).
+        if exception and exception['class'] in INCOMPLETE_ADMITTING and exception.get('rationale') and \
+                exception['upstream'] == signature(left) and exception['fork'] == signature(right):
+            return 'reviewed_difference', exception['rationale']
+        return 'incomplete', 'pristine timeout without an admitting reviewed row (class resource/shared-model-fix)'
     if exception:
         if exception.get('rationale') and exception.get('upstream') == signature(left) and \
                 exception.get('fork') == signature(right):
             return 'reviewed_difference', exception['rationale']
-        return 'difference', 'reviewed diagnostic-difference pin moved; review before changing it'
+        return 'difference', 'reviewed difference pin moved (stale or changed exception); review before changing it'
     if kind == 'batch':
         try:
             a, b = load_capture(left['capture']), load_capture(right['capture'])
@@ -109,8 +232,22 @@ def compare(left, right, kind, exception=None):
     return 'difference', reason
 
 
-def corpus(cn_root):
+def rel(path):
+    return str(Path(path).relative_to(ROOT))
+
+
+def corpus(cn_root, stage):
+    """Every corpus the fork-vs-Lean lanes walk, with each lane's flags, exclusions
+    and per-case timeout mirrored (cites are to the lane scripts at WP-O)."""
     cases = []
+
+    def add(case_id, kind, flags, corpus_label, timeout=None):
+        cases.append(Case(case_id, kind, flags, corpus_label, timeout))
+
+    # Tier A single-file exec corpora: test_exec.sh's exclusions (:403-406
+    # `! -name "*.syntax-only.c" ! -name "*.exhaust.c"`) and oracle flags
+    # (:442-443 `--nolibc --exec --batch --mode=exhaustive`); test_libc_exec.sh
+    # runs the oracle WITH libc (:87 `--exec --batch`, default mode).
     for folder in ('minimal', 'coverage', 'debug', 'float', 'bytes', 'libc_exec'):
         paths = sorted((ROOT / 'tests' / folder).rglob('*.c'))
         if not paths:
@@ -121,17 +258,23 @@ def corpus(cn_root):
             flags = ['--exec', '--batch']
             if folder != 'libc_exec':
                 flags += ['--nolibc', '--mode=exhaustive']
-            cases.append((str(path.relative_to(ROOT / 'tests')), 'batch', flags + [str(path.relative_to(ROOT))]))
-    directories = sorted(p for p in (ROOT / 'tests/multi_tu').iterdir() if p.is_dir())
-    if not directories:
-        raise ValueError('empty multi-TU corpus')
-    for directory in directories:
-        paths = sorted(directory.glob('*.c'))
-        if len(paths) < 2:
-            raise ValueError(f'multi-TU case has fewer than two inputs: {directory}')
-        cases.append((f'multi_tu/{directory.name}', 'batch',
-                      ['--exec', '--batch', '--nolibc', '--mode=exhaustive',
-                       *[str(p.relative_to(ROOT)) for p in paths]]))
+            add(str(path.relative_to(ROOT / 'tests')), 'batch', flags + [rel(path)], folder)
+    # Multi-TU (test_multi_tu.sh:139 `.c` files in sorted name order; :149-150
+    # `--nolibc --exec --batch --mode=exhaustive a.c b.c …`; :66 TIMEOUT_SECS=30).
+    # tests/multi_tu_tray is LADDER Tier A row 6b, the SAME engine invocation:
+    # the cross-TU struct-value cases pristine upstream loops or rejects on
+    # (upstream-tray drafts 37/38/39) — walked here with their reviewed
+    # shared-model-fix register rows.
+    for folder, label in (('tests/multi_tu', 'multi_tu'), ('tests/multi_tu_tray', 'multi_tu_tray')):
+        directories = sorted(p for p in (ROOT / folder).iterdir() if p.is_dir())
+        if not directories:
+            raise ValueError(f'empty multi-TU corpus: {folder}')
+        for directory in directories:
+            paths = sorted(directory.glob('*.c'))
+            if len(paths) < 2:
+                raise ValueError(f'multi-TU case has fewer than two inputs: {directory}')
+            add(f'{label}/{directory.name}', 'batch',
+                ['--exec', '--batch', '--nolibc', '--mode=exhaustive', *map(rel, paths)], label, 30)
     if cn_root is None:
         cn_root = next((parent / 'deps/cn/tests/cn' for parent in ROOT.parents
                         if (parent / 'deps/cn/tests/cn').is_dir()), None)
@@ -148,8 +291,8 @@ def corpus(cn_root):
             tus.append(cn_root / extra[3:] if extra.startswith('cn:') else ROOT / 'tests/cn_coverage' / extra)
         if not all(p.is_file() for p in tus):
             raise ValueError(f'CN input missing: {name}')
-        cases.append((f'cn/{name}', 'batch', ['--exec', '--batch', '--nolibc', '--mode=exhaustive',
-                                           '-I', str(path.parent), *map(str, tus)]))
+        add(f'cn/{name}', 'batch', ['--exec', '--batch', '--nolibc', '--mode=exhaustive',
+                                   '-I', str(path.parent), *map(str, tus)], 'cn')
     prep = subprocess.check_output([str(ROOT / 'scripts/libxml2_prep.sh'), 'uri.c'], text=True).splitlines()
     if not prep:
         raise ValueError('libxml2 preparation emitted no arguments')
@@ -159,15 +302,119 @@ def corpus(cn_root):
     if not all(p.is_file() for p in tus):
         raise ValueError('libxml2 URI harness/input missing')
     for mode in ('libc', 'nolibc'):
-        cases.append(('libxml2/uri-' + mode, 'batch', ['--exec', '--batch',
-                      *(['--nolibc'] if mode == 'nolibc' else []), *prep[:-1], *map(str, tus)]))
+        add('libxml2/uri-' + mode, 'batch', ['--exec', '--batch',
+            *(['--nolibc'] if mode == 'nolibc' else []), *prep[:-1], *map(str, tus)], 'libxml2_uri')
     # Same representative input through legacy parse/typecheck/pretty-print CLI.
     simple = 'tests/minimal/001-return-literal.c'
-    cases.extend([('cli/core-dump', 'core', ['--nolibc', '--pp=core', simple]),
-                  ('cli/typecheck-core', 'typecheck', ['--nolibc', '--typecheck-core', simple]),
-                  ('cli/args', 'batch', ['--nolibc', '--exec', '--batch', '--args', 'ab cd',
-                                        'tests/immaculate/argv/argv1.c'])])
+    add('cli/core-dump', 'core', ['--nolibc', '--pp=core', simple], 'cli')
+    add('cli/typecheck-core', 'typecheck', ['--nolibc', '--typecheck-core', simple], 'cli')
+    add('cli/args', 'batch', ['--nolibc', '--exec', '--batch', '--args', 'ab cd',
+                              'tests/immaculate/argv/argv1.c'], 'cli')
+    # Immaculate (test_immaculate.sh: oracle flags :151-156 `--exec --batch`
+    # [+ `--nolibc` unless libc] [+ `--args "ab cd"` for argv rows] — NO
+    # --mode flag, i.e. the oracle's default single-trace mode, which that
+    # lane pairs with Lean `--first`; :63 TIMEOUT_SECS=60; corpora :191-193
+    # nolibc/*.c, :201-203 argv/*.c, :212-214 libc/*.c). The two in-Lean
+    # probes (g6-hash-collision.lean, illtyped-store.lean) have no oracle
+    # side and are not cases here.
+    immaculate = ROOT / 'tests/immaculate'
+    for sub, extra in (('nolibc', ['--nolibc']), ('argv', ['--nolibc', '--args', 'ab cd']), ('libc', [])):
+        paths = sorted((immaculate / sub).glob('*.c'))
+        if not paths:
+            raise ValueError(f'empty immaculate corpus: {sub}')
+        for path in paths:
+            suffix = '-args' if sub == 'argv' else ''
+            add(f'immaculate/{sub}/{path.stem}{suffix}', 'batch', ['--exec', '--batch', *extra, rel(path)],
+                'immaculate', 60)
+    # tests/ci (LADDER Tier C: `test_exec.sh --write-baseline=… tests/ci`;
+    # test_exec.sh:403-406 recursive find minus .syntax-only.c/.exhaust.c,
+    # :442-443 flags, :169 TIMEOUT_SECS=30).
+    ci = sorted((ROOT / 'tests/ci').rglob('*.c'))
+    if not ci:
+        raise ValueError('empty tests/ci corpus')
+    for path in ci:
+        if path.name.endswith(('.syntax-only.c', '.exhaust.c')):
+            continue
+        add(f'ci/{path.relative_to(ROOT / "tests/ci")}', 'batch',
+            ['--exec', '--batch', '--nolibc', '--mode=exhaustive', rel(path)], 'ci', 30)
+    # tests/verify MAIN mode (test_verify.sh:75-77 `--nolibc --exec --batch
+    # --mode=exhaustive`, timeout 30 at :75). Excluded, fork-only: the
+    # call-point rows (Lean `--call`, :160-163, and the oracle's rendered
+    # wrapper TUs, :57-65, which exist only to mirror `--call`) and the
+    # `--pp=core` pin derivations (:105, :209, :238 — Core text, not an
+    # execution; pristine-vs-fork Core dumps are the tolerated renumbering
+    # class, VALIDATION.md §5).
+    verify = sorted((ROOT / 'tests/verify').glob('*.c'))
+    if not verify:
+        raise ValueError('empty tests/verify corpus')
+    for path in verify:
+        add(f'verify/{path.stem}', 'batch', ['--nolibc', '--exec', '--batch', '--mode=exhaustive', rel(path)],
+            'verify', 30)
+    # lean_frontend/corpus MAIN mode: exactly the stems test_verify.sh executes
+    # main-mode (:269; same verify_pair flags); the call-point rows
+    # (tests/corpus/expectations.txt) are fork-only as above.
+    for stem in CORPUS_MAIN_STEMS:
+        path = ROOT / 'lean_frontend/corpus' / (stem + '.c')
+        if not path.is_file():
+            raise ValueError(f'corpus fixture missing: {path}')
+        add(f'corpus/{stem}', 'batch', ['--nolibc', '--exec', '--batch', '--mode=exhaustive', rel(path)],
+            'corpus', 30)
+    # libxml2 chvalid (test_libxml2.sh: prep :110-116 `libxml2_prep.sh chvalid.c`
+    # → FLAGS + TU; slices :136 sorted `battery/chvalid_battery_*.c`; oracle
+    # :162-163 `--nolibc --exec --batch FLAGS… <slice> <chvalid.c>` in the
+    # default single-trace mode; :65 TIMEOUT_SECS=300). The battery-drift check
+    # (:121-124) is that lane's own; the committed slices are the inputs here.
+    prep = subprocess.check_output([str(ROOT / 'scripts/libxml2_prep.sh'), 'chvalid.c'], text=True).splitlines()
+    if len(prep) < 2:
+        raise ValueError('libxml2 chvalid preparation emitted no arguments')
+    chvalid, flags = prep[-1], prep[:-1]
+    slices = sorted((ROOT / 'tests/libxml2/battery').glob('chvalid_battery_*.c'))
+    if not slices:
+        raise ValueError('empty chvalid battery')
+    for path in slices:
+        add(f'libxml2/chvalid/{path.stem}', 'batch',
+            ['--nolibc', '--exec', '--batch', *flags, rel(path), chvalid], 'libxml2_chvalid', 300)
+    # csmith (test_csmith_corpus.sh: materialisation :53-68 — csmith_cerberus.h +
+    # safe_math.h copied beside PREFIXED copies whose `#include "csmith.h"`
+    # becomes `#define CSMITH_MINIMAL` + `#include "csmith_cerberus.h"`,
+    # prefixes sia_/sa_/smx_; :51 TIMEOUT_SECS=15; test_exec.sh flags). The
+    # deterministic list is the staged names in codepoint order — NOT the
+    # lane's `find | sort`, whose order is locale-dependent (en_US.UTF-8 puts
+    # sa_csmith_100.c before sa_csmith_10.c) — so `--shard K/M` here mirrors
+    # the arithmetic (:88-95), not necessarily that lane's boundaries.
+    header = ROOT / 'tests/csmith'
+    staged = stage / 'csmith'
+    staged.mkdir(parents=True, exist_ok=False)
+    for name in ('csmith_cerberus.h', 'safe_math.h'):
+        shutil.copy2(header / name, staged / name)
+    count = 0
+    for sub, prefix in (('small_int_arith', 'sia'), ('small_arrays', 'sa'), ('small_mix', 'smx')):
+        sources = sorted((header / sub).glob('*.c'))
+        if not sources:
+            raise ValueError(f'empty csmith sub-corpus: {sub}')
+        for path in sources:
+            text = path.read_text()
+            (staged / f'{prefix}_{path.name}').write_text(
+                text.replace('#include "csmith.h"', '#define CSMITH_MINIMAL\n#include "csmith_cerberus.h"'))
+            count += 1
+    for path in sorted(staged.glob('*.c')):
+        add(f'csmith/{path.name}', 'batch', ['--nolibc', '--exec', '--batch', '--mode=exhaustive', str(path)],
+            'csmith', 15)
+    if count != 1669:
+        raise ValueError(f'csmith corpus has {count} programs; the lane is built for 1669 (corpus drift)')
     return cases
+
+
+def shard(cases, spec):
+    """K/M slice of an already-ordered list, test_csmith_corpus.sh:88-95's arithmetic."""
+    match = re.fullmatch(r'([0-9]+)/([0-9]+)', spec or '')
+    if not match:
+        raise ValueError(f'bad --shard {spec!r}; expected K/M')
+    k, m = int(match[1]), int(match[2])
+    if not 1 <= k <= m:
+        raise ValueError(f'bad --shard {spec}: need 1 <= K <= M')
+    per = (len(cases) + m - 1) // m
+    return cases[(k - 1) * per:(k - 1) * per + per]
 
 
 def library_probe(out, sides, environments, limit):
@@ -192,34 +439,120 @@ def library_probe(out, sides, environments, limit):
     return result
 
 
+def hermetic_plants(register_path):
+    """No processes: the schema-2 loader must reject every doctored register, and
+    compare() must classify the incomplete/stale matrix as chartered."""
+    results = []
+    good = json.loads(register_path.read_text())
+    first = next(iter(good['cases']))
+
+    def expect_reject(name, mutate):
+        data = json.loads(json.dumps(good))
+        mutate(data)
+        with tempfile.NamedTemporaryFile('w', suffix='.json', delete=False) as handle:
+            handle.write(json.dumps(data))
+            temp = handle.name
+        try:
+            load_register(temp)
+            results.append((f'register/{name}', False, 'ACCEPTED a doctored register (must reject)'))
+        except ValueError as exc:
+            results.append((f'register/{name}', True, str(exc)))
+        finally:
+            os.unlink(temp)
+
+    def set_status(data, side, status):
+        data['cases'][first][side]['status'] = status
+
+    expect_reject('schema-1', lambda d: d.update(schema=1))
+    expect_reject('missing-class', lambda d: d['cases'][first].pop('class'))
+    expect_reject('unknown-class', lambda d: d['cases'][first].update({'class': 'failure-text'}))
+    expect_reject('missing-citation', lambda d: d['cases'][first].pop('citation'))
+    expect_reject('empty-citation', lambda d: d['cases'][first].update(citation=''))
+    expect_reject('nonexistent-citation', lambda d: d['cases'][first].update(
+        citation='lean_frontend/docs/upstream-tray/00-does-not-exist.md'))
+    expect_reject('unknown-iso-fix-id', lambda d: d['cases'][first].update(citation='R99'))
+    expect_reject('unknown-key', lambda d: d['cases'][first].update(note='x'))
+    expect_reject('empty-rationale', lambda d: d['cases'][first].update(rationale=' '))
+    expect_reject('identical-signatures', lambda d: d['cases'][first].update(fork=dict(d['cases'][first]['upstream'])))
+    expect_reject('fork-timeout', lambda d: set_status(d, 'fork', 124))
+    expect_reject('fork-kill', lambda d: set_status(d, 'fork', 137))
+    expect_reject('pristine-kill', lambda d: set_status(d, 'upstream', 137))
+    expect_reject('pristine-timeout-under-diagnostic-text', lambda d: (
+        d['cases'][first].update({'class': 'diagnostic-text'}), set_status(d, 'upstream', 124)))
+    expect_reject('malformed-sha', lambda d: d['cases'][first]['fork'].update(stdout_sha256='xyz'))
+    try:
+        rows = load_register(register_path)
+        results.append(('register/committed-loads', True, f'{len(rows)} rows, every class/citation valid'))
+    except ValueError as exc:
+        results.append(('register/committed-loads', False, str(exc)))
+    # compare() matrix on synthetic records (statuses and signatures only).
+    empty = hashlib.sha256(b'').hexdigest()
+    done = {'status': 0, 'stdout_sha256': 'a' * 64, 'diagnostic_sha256': empty}
+    other = {'status': 0, 'stdout_sha256': 'b' * 64, 'diagnostic_sha256': empty}
+    timeout_ = {'status': 124, 'stdout_sha256': empty, 'diagnostic_sha256': empty}
+    killed = {'status': 137, 'stdout_sha256': empty, 'diagnostic_sha256': empty}
+    admitting = {'class': 'shared-model-fix', 'citation': 'x', 'rationale': 'r', 'upstream': timeout_, 'fork': done}
+    diagnostic = dict(admitting, **{'class': 'diagnostic-text'})
+    fork_side = dict(admitting, upstream=done, fork=timeout_)
+    checks = [
+        ('compare/pristine-timeout+admitting-row', compare(timeout_, done, 'batch', admitting)[0], 'reviewed_difference'),
+        ('compare/pristine-timeout+diagnostic-row', compare(timeout_, done, 'batch', diagnostic)[0], 'incomplete'),
+        ('compare/pristine-timeout+no-row', compare(timeout_, done, 'batch', None)[0], 'incomplete'),
+        ('compare/pristine-timeout+moved-fork-signature', compare(timeout_, other, 'batch', admitting)[0], 'incomplete'),
+        ('compare/fork-timeout+row', compare(done, timeout_, 'batch', fork_side)[0], 'incomplete'),
+        ('compare/pristine-kill+row', compare(killed, done, 'batch', dict(admitting, upstream=killed))[0], 'incomplete'),
+        ('compare/fork-kill', compare(done, killed, 'batch', None)[0], 'incomplete'),
+        ('compare/stale-row-pair-now-agrees', compare(done, done, 'batch', dict(admitting, upstream=other))[0], 'difference'),
+        ('compare/row-pin-moved', compare(other, done, 'batch', dict(admitting, upstream=done, fork=other))[0], 'difference'),
+    ]
+    for name, got, want in checks:
+        results.append((name, got == want, f'got {got!r}, want {want!r}'))
+    return results
+
+
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--build-manifest', type=Path, default=os.environ.get(
         'CERB_INDEPENDENT_MANIFEST', str(ROOT / '.validation-foundations/independent-oracle-v2/manifest.json')))
     parser.add_argument('--out', type=Path)
     parser.add_argument('--cn-root', type=Path)
-    parser.add_argument('--only', help='explicit regex subset; never a full independent lane')
-    parser.add_argument('--plant', action='store_true', help='real control plus unexpected fork-verdict mutation')
-    parser.add_argument('--timeout', type=float, default=30)
+    parser.add_argument('--corpus', choices=sorted(CORPORA), default='tier-b',
+                        help='tier-b (LADDER Tier B row 10, default) | libxml2_chvalid (its own Tier B row) | '
+                             'ci, csmith (reporting rows) | all')
+    parser.add_argument('--shard', help='K/M slice of the selected, ordered cases (test_csmith_corpus.sh arithmetic); a subset')
+    parser.add_argument('--only', help='explicit regex subset of case ids; never a full independent lane')
+    parser.add_argument('--plant', action='store_true',
+                        help='hermetic register/compare plants + real control + unexpected fork-verdict mutation '
+                             '+ a real registered fork≠pristine difference with its row withheld (must be RED)')
+    parser.add_argument('--timeout', type=float, default=30, help='per-side bound for cases whose lane sets none')
     args = parser.parse_args()
-    if args.plant and args.only:
-        parser.error('--plant and --only are separate scopes')
+    if args.plant and (args.only or args.shard):
+        parser.error('--plant and --only/--shard are separate scopes')
     out = args.out.resolve() if args.out else Path(tempfile.mkdtemp(prefix='upstream-oracle-', dir=ROOT / '.tmp'))
     out.mkdir(parents=True, exist_ok=True)
-    report = {'schema': 1, 'status': 'incomplete', 'source': source_identity(), 'rows': [],
-              'scope': 'plant' if args.plant else 'subset' if args.only else 'Tier A execution C inputs plus representative legacy interfaces',
+    scope = ('plant' if args.plant else 'subset (--only)' if args.only else
+             f'{args.corpus} shard {args.shard}' if args.shard else args.corpus)
+    report = {'schema': 2, 'status': 'incomplete', 'source': source_identity(), 'rows': [],
+              'scope': scope, 'corpus_selection': args.corpus, 'corpora': list(CORPORA[args.corpus]),
+              'register_schema': REGISTER_SCHEMA,
               'diagnostic_projection': 'remove only ^Time spent: [0-9]+\\.[0-9]+ seconds newline; raw stderr retained',
               'not_applicable': [
                   {'interface': '--cabs-json, --call, --batch-alloc-census',
                    'reason': 'fork extensions; absent from pristine upstream CLI'},
+                  {'interface': 'test_verify.sh call-point rows (Lean --call + oracle wrapper TUs) and --pp=core pin derivations',
+                   'reason': 'fork-only harness rows / Core text under the tolerated renumbering class; MAIN-mode rows are walked'},
+                  {'interface': 'tests/immaculate/*.lean in-Lean probes',
+                   'reason': 'no oracle side'},
                   {'interface': 'Lean unit/kernel gates and generated fixture pins',
                    'reason': 'provider-specific artifacts; not upstream OCaml interfaces'},
               ]}
+
     def save():
         temp = out / 'report.tmp'
         temp.write_text(json.dumps(report, indent=2, sort_keys=True) + '\n')
         temp.replace(out / 'report.json')
     save()
+    started = time.monotonic()
     try:
         manifest = validate_build(args.build_manifest.resolve())
         report['upstream_build_manifest'] = {'path': str(args.build_manifest.resolve()),
@@ -236,43 +569,90 @@ def main():
         # by the exact-envelope codec (2026-09-06 landing finding).
         pin = {'NO_COLOR': '1', 'TERM': 'dumb'}
         envs = {'fork': {**os.environ, **pin}, 'upstream': {**os.environ, **manifest['environment'], **pin}}
-        exceptions = json.loads((ROOT / 'scripts/upstream_oracle_differences.json').read_text())['cases']
-        cases = corpus(args.cn_root)
-        if set(exceptions) - {name for name, kind, flags in cases}:
-            raise ValueError('reviewed difference refers to a case absent from the corpus')
-        report['membership'] = [{'id': name, 'kind': kind, 'arguments': flags} for name, kind, flags in cases]
-        inputs = {arg for name, kind, flags in cases for arg in flags if Path(arg).is_file()}
+        exceptions = load_register(REGISTER)
+        stage = out / 'stage'
+        stage.mkdir()
+        everything = corpus(args.cn_root, stage)
+        ids = [case.id for case in everything]
+        if len(set(ids)) != len(ids):
+            raise ValueError('duplicate case ids in the corpus')
+        # Both directions: a register row must name a live case (of ANY corpus).
+        if set(exceptions) - set(ids):
+            raise ValueError('reviewed difference refers to a case absent from the corpus: '
+                             + ', '.join(sorted(set(exceptions) - set(ids))))
+        cases = [case for case in everything if case.corpus in CORPORA[args.corpus]]
+        report['membership'] = [{'id': c.id, 'kind': c.kind, 'corpus': c.corpus, 'timeout': c.timeout or args.timeout,
+                                 'arguments': c.flags} for c in cases]
+        inputs = {arg for case in cases for arg in case.flags if Path(arg).is_file()}
         report['input_files'] = {arg: sha(arg) for arg in sorted(inputs)}
-        report['manifest_files'] = {rel: sha(ROOT / rel) for rel in
+        report['manifest_files'] = {rel_: sha(ROOT / rel_) for rel_ in
                                   ['tests/cn_coverage/manifest.txt', 'scripts/upstream_oracle_differences.json',
                                    'tests/libxml2/config/config.h', 'tests/libxml2/config/libxml/xmlversion.h']}
         report['source_archives'] = 'upstream source archives and all binary/runtime hashes checked before dispatch'
+        if args.shard:
+            cases = shard(cases, args.shard)
         if args.only:
-            cases = [case for case in cases if re.search(args.only, case[0])]
+            cases = [case for case in cases if re.search(args.only, case.id)]
+        plants = []
         if args.plant:
-            cases = [cases[0], ('plant/unexpected-verdict', *cases[0][1:])]
-            print('PLANT MODE: passing real pair then mutate the fork engine verdict', flush=True)
+            print('PLANT MODE: hermetic register/compare plants; a real passing pair, then the fork verdict mutated; '
+                  'a real registered fork≠pristine difference with its row withheld', flush=True)
+            for name, ok, detail in hermetic_plants(REGISTER):
+                plants.append({'id': f'plant/{name}', 'status': 'plant_ok' if ok else 'plant_failed', 'reason': detail})
+                print(f'{"PLANT OK  " if ok else "PLANT FAIL"} {name}: {detail}', flush=True)
+            registered = [case for case in everything if case.id in exceptions
+                          and exceptions[case.id]['class'] == 'shared-model-fix'
+                          and exceptions[case.id]['upstream']['status'] not in INCOMPLETE_STATUSES]
+            if not registered:
+                plants.append({'id': 'plant/withheld-row', 'status': 'plant_failed',
+                               'reason': 'no shared-model-fix register row with a completing pristine side to plant (vacuity guard)'})
+            cases = [cases[0], Case('plant/unexpected-verdict', cases[0].kind, cases[0].flags, 'plant', cases[0].timeout)]
+            if registered:
+                cases.append(Case('plant/withheld-row:' + registered[0].id, registered[0].kind, registered[0].flags,
+                                  'plant', registered[0].timeout))
         if not cases:
             raise ValueError('empty independent oracle selection')
-        for i, (name, kind, flags) in enumerate(cases, 1):
-            directory = out / f'{i:04d}'
+
+        def run_pair(index, case, mutate_fork=False):
+            directory = out / f'{index:04d}'
             directory.mkdir()
             pair = {}
             for side, info in sides.items():
-                command = [info['binary'], '--runtime=' + str(info['runtime']), *flags]
-                if args.plant and name.startswith('plant/') and side == 'fork':
+                command = [info['binary'], '--runtime=' + str(info['runtime']), *case.flags]
+                if mutate_fork and side == 'fork':
                     wrapper = ('import subprocess,sys; p=subprocess.run(sys.argv[1:],capture_output=True); '
                                'sys.stdout.buffer.write(p.stdout.replace(b"Specified(",b"Specified(999")); '
                                'sys.stderr.buffer.write(p.stderr); sys.exit(p.returncode)')
                     command = [sys.executable, '-c', wrapper, *command]
-                pair[side] = capture(directory / side, command, envs[side], args.timeout)
-            status, reason = compare(pair['upstream'], pair['fork'], kind, exceptions.get(name))
-            if args.plant and name.startswith('plant/'):
+                pair[side] = capture(directory / side, command, envs[side], case.timeout or args.timeout)
+            return pair
+
+        for i, case in enumerate(cases, 1):
+            if case.id.startswith('plant/withheld-row:'):
+                real = case.id.split(':', 1)[1]
+                pair = run_pair(i, case)
+                with_row, _ = compare(pair['upstream'], pair['fork'], case.kind, exceptions[real])
+                without_row, why = compare(pair['upstream'], pair['fork'], case.kind, None)
+                ok = with_row == 'reviewed_difference' and without_row == 'difference'
+                status = 'plant_ok' if ok else 'plant_failed'
+                reason = (f'{real}: with its register row -> {with_row}; row withheld -> {without_row} ({why})')
+                report['rows'].append({'id': case.id, 'kind': case.kind, 'corpus': case.corpus, 'status': status,
+                                       'reason': reason, **pair})
+                print(f'{i}/{len(cases)} {status}: {case.id} — {reason}', flush=True)
+                save()
+                continue
+            mutate = args.plant and case.id == 'plant/unexpected-verdict'
+            pair = run_pair(i, case, mutate_fork=mutate)
+            status, reason = compare(pair['upstream'], pair['fork'], case.kind, exceptions.get(case.id))
+            if mutate:
                 status = 'plant_rejected' if status == 'difference' else 'plant_failed'
-            report['rows'].append({'id': name, 'kind': kind, 'status': status, 'reason': reason, **pair})
-            print(f'{i}/{len(cases)} {status}: {name}', flush=True)
+            report['rows'].append({'id': case.id, 'kind': case.kind, 'corpus': case.corpus, 'status': status,
+                                   'reason': reason, **pair})
+            print(f'{i}/{len(cases)} {status}: {case.id} (pristine {pair["upstream"]["seconds"]:.1f}s, '
+                  f'fork {pair["fork"]["seconds"]:.1f}s)', flush=True)
             save()
-        if not args.only and not args.plant:
+        report['rows'].extend(plants)
+        if not args.only and not args.plant and not args.shard and args.corpus in ('tier-b', 'all'):
             library = library_probe(out, sides, envs, args.timeout)
             report['library_probe'] = library
             if all(run and run['status'] == 0 and Path(run['capture'] + '.stdout').read_bytes() == b'42\n'
@@ -281,11 +661,16 @@ def main():
             else:
                 report['library_status'] = 'failed'
         report['counts'] = dict(Counter(row['status'] for row in report['rows']))
+        report['seconds'] = round(time.monotonic() - started, 1)
         report['source_after'] = source_identity()
         report['source_unchanged'] = report['source_after'] == report['source']
-        failed = any(row['status'] in ('difference', 'incomplete', 'plant_failed') for row in report['rows']) or report.get('library_status') == 'failed' or not report['source_unchanged']
-        report['status'] = 'failed' if failed else 'plants_passed' if args.plant else 'subset_passed' if args.only else 'passed'
+        failed = any(row['status'] in ('difference', 'incomplete', 'plant_failed') for row in report['rows']) \
+            or report.get('library_status') == 'failed' or not report['source_unchanged']
+        report['status'] = ('failed' if failed else 'plants_passed' if args.plant else
+                            'subset_passed' if (args.only or args.shard) else 'passed')
         save()
+        print(f'Independent oracle scope: {scope}; {len(report["rows"])} rows in {report["seconds"]}s; '
+              f'source unchanged: {report["source_unchanged"]}', flush=True)
         print(f'Independent oracle: {report["status"]}; {report["counts"]}; {out / "report.json"}', flush=True)
         return int(failed)
     except (ValueError, OSError, KeyError, subprocess.CalledProcessError) as exc:

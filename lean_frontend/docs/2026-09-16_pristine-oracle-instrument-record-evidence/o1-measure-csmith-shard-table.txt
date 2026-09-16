@@ -1,0 +1,5 @@
+csmith shard 1/34: 50 rows, wall 641.0s, pristine sum 319.6s, fork sum 319.6s
+Counter({'semantic_agreement': 26, 'incomplete': 21, 'difference': 3})
+incomplete rows by (pristine status, fork status): Counter({(124, 124): 21})
+difference rows: [('csmith/sa_csmith_002.c', 125, 125, 'fatal engine diagnostic; no completed observation'), ('csmith/sa_csmith_003.c', 125, 125, 'fatal engine diagnostic; no completed observation'), ('csmith/sa_csmith_005.c', 125, 125, 'fatal engine diagnostic; no completed observation')]
+first/last ids of the shard: csmith/sa_csmith_001.c csmith/sa_csmith_139.c

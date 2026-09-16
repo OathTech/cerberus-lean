@@ -1,0 +1,254 @@
+====================================================================================================
+CASE ci/0023-jump1.c  status=incomplete  reason=timeout or signal termination
+--- upstream: status=124 seconds=30.012 stdout_sha=e3b0c44298fc stderr_sha=e3b0c44298fc diag_sha=e3b0c44298fc
+    stdout (0 B): b''
+    stderr (0 B):
+--- fork: status=124 seconds=30.012 stdout_sha=e3b0c44298fc stderr_sha=e3b0c44298fc diag_sha=e3b0c44298fc
+    stdout (0 B): b''
+    stderr (0 B):
+--- stderr unified diff (0 lines):
+====================================================================================================
+CASE ci/0025-jump3.c  status=incomplete  reason=timeout or signal termination
+--- upstream: status=124 seconds=30.011 stdout_sha=e3b0c44298fc stderr_sha=e3b0c44298fc diag_sha=e3b0c44298fc
+    stdout (0 B): b''
+    stderr (0 B):
+--- fork: status=124 seconds=30.011 stdout_sha=e3b0c44298fc stderr_sha=e3b0c44298fc diag_sha=e3b0c44298fc
+    stdout (0 B): b''
+    stderr (0 B):
+--- stderr unified diff (0 lines):
+====================================================================================================
+CASE ci/0120-addition_null_pointer.error.c  status=difference  reason=fatal engine diagnostic; no completed observation
+--- upstream: status=125 seconds=0.029 stdout_sha=e3b0c44298fc stderr_sha=0cbf405bb92a diag_sha=0cbf405bb92a
+    stdout (0 B): b''
+    stderr (3619 B):
+      cerberus: internal error, uncaught exception:
+                Failure("TODO(pure shift a null pointer should be undefined behaviour), offset:4")
+                Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+                Called from Cerb_frontend__Impl_mem.Concrete.array_shift_ptrval in file "memory/concrete/impl_mem.ml", line 2217, characters 14-118
+                Called from Cerb_frontend__Core_eval.step_eval_pexpr.(fun) in file "ocaml_frontend/generated/core_eval.ml", line 753, characters 155-201
+                Called from Cerb_frontend__Core_eval.step_eval_pexpr in file "ocaml_frontend/generated/core_eval.ml", lines 749-757, characters 39-11
+                Called from Lem_list.count_map in file "lem_list.ml", line 172, characters 16-20
+                Called from Lem_list.map in file "lem_list.ml" (inlined), line 178, characters 22-39
+                Called from Cerb_frontend__Exception.except_mapM.(fun) in file "ocaml_frontend/generated/exception.ml", line 61, characters 79-100
+                Called from Cerb_frontend__Exception_undefined.exception_undef_mapM in file "ocaml_frontend/generated/exception_undefined.ml", line 30, characters 26-54
+                Called from Cerb_frontend__Core_eval.step_eval_pexpr in file "ocaml_frontend/generated/core_eval.ml", line 630, characters 8-59
+                Called from Cerb_frontend__Core_eval.eval_pexpr_aux2 in file "ocaml_frontend/generated/core_eval.ml", line 1124, characters 8-104
+--- fork: status=125 seconds=0.027 stdout_sha=e3b0c44298fc stderr_sha=a31c366c4615 diag_sha=a31c366c4615
+    stdout (0 B): b''
+    stderr (3619 B):
+      cerberus: internal error, uncaught exception:
+                Failure("TODO(pure shift a null pointer should be undefined behaviour), offset:4")
+                Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+                Called from Cerb_frontend__Impl_mem.Concrete.array_shift_ptrval in file "memory/concrete/impl_mem.ml", line 2217, characters 14-118
+                Called from Cerb_frontend__Core_eval.step_eval_pexpr.(fun) in file "ocaml_frontend/generated/core_eval.ml", line 753, characters 155-201
+                Called from Cerb_frontend__Core_eval.step_eval_pexpr in file "ocaml_frontend/generated/core_eval.ml", lines 749-757, characters 39-11
+                Called from Lem_list.count_map in file "lem_list.ml", line 165, characters 16-20
+                Called from Lem_list.map in file "lem_list.ml" (inlined), line 171, characters 22-39
+                Called from Cerb_frontend__Exception.except_mapM.(fun) in file "ocaml_frontend/generated/exception.ml", line 61, characters 79-100
+                Called from Cerb_frontend__Exception_undefined.exception_undef_mapM in file "ocaml_frontend/generated/exception_undefined.ml", line 30, characters 26-54
+                Called from Cerb_frontend__Core_eval.step_eval_pexpr in file "ocaml_frontend/generated/core_eval.ml", line 630, characters 8-59
+                Called from Cerb_frontend__Core_eval.eval_pexpr_aux2 in file "ocaml_frontend/generated/core_eval.ml", line 1135, characters 8-104
+--- stderr unified diff (35 lines):
+    --- pristine.stderr
+    +++ fork.stderr
+    @@ -7,2 +7,2 @@
+    -          Called from Lem_list.count_map in file "lem_list.ml", line 172, characters 16-20
+    -          Called from Lem_list.map in file "lem_list.ml" (inlined), line 178, characters 22-39
+    +          Called from Lem_list.count_map in file "lem_list.ml", line 165, characters 16-20
+    +          Called from Lem_list.map in file "lem_list.ml" (inlined), line 171, characters 22-39
+    @@ -12,11 +12,11 @@
+    -          Called from Cerb_frontend__Core_eval.eval_pexpr_aux2 in file "ocaml_frontend/generated/core_eval.ml", line 1124, characters 8-104
+    -          Called from Cerb_frontend__Core_reduction.E.eval_pexpr20 in file "ocaml_frontend/generated/core_reduction.ml", line 45, characters 14-124
+    -          Called from Cerb_frontend__Core_reduction.full_eval_pexpr in file "ocaml_frontend/generated/core_reduction.ml", line 49, characters 2-53
+    -          Called from Cerb_frontend__Core_reduction.one_step in file "ocaml_frontend/generated/core_reduction.ml", line 340, characters 18-39
+    -          Called from Cerb_frontend__Core_reduction.step_ctx.(fun) in file "ocaml_frontend/generated/core_reduction.ml", line 1494, characters 21-74
+    -          Called from Lem_list.count_map in file "lem_list.ml", line 172, characters 16-20
+    -          Called from Cerb_frontend__Nondeterminism.nd_read.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 97, characters 28-34
+    -          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 64, characters 11-19
+    -          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 64, characters 11-19
+    -          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 64, characters 11-19
+    -          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 64, characters 11-19
+    +          Called from Cerb_frontend__Core_eval.eval_pexpr_aux2 in file "ocaml_frontend/generated/core_eval.ml", line 1135, characters 8-104
+    +          Called from Cerb_frontend__Core_reduction.E.eval_pexpr20 in file "ocaml_frontend/generated/core_reduction.ml", line 48, characters 14-124
+    +          Called from Cerb_frontend__Core_reduction.full_eval_pexpr in file "ocaml_frontend/generated/core_reduction.ml", line 52, characters 2-53
+    +          Called from Cerb_frontend__Core_reduction.one_step in file "ocaml_frontend/generated/core_reduction.ml", line 354, characters 18-39
+    +          Called from Cerb_frontend__Core_reduction.step_ctx.(fun) in file "ocaml_frontend/generated/core_reduction.ml", line 1512, characters 21-74
+    +          Called from Lem_list.count_map in file "lem_list.ml", line 165, characters 16-20
+    +          Called from Cerb_frontend__Nondeterminism.nd_read.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 95, characters 28-34
+    +          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 62, characters 11-19
+    +          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 62, characters 11-19
+    +          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 62, characters 11-19
+    +          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 62, characters 11-19
+    @@ -26,2 +26,2 @@
+    -          Called from Cerb_backend__Pipeline.interp_backend in file "backend/common/pipeline.ml", line 590, characters 21-85
+    -          Called from Dune__exe__Main.cerberus in file "backend/driver/main.ml", lines 261-287, characters 8-15
+    +          Called from Cerb_backend__Pipeline.interp_backend in file "backend/common/pipeline.ml", line 604, characters 21-85
+    +          Called from Dune__exe__Main.cerberus in file "backend/driver/main.ml", lines 309-335, characters 8-15
+====================================================================================================
+CASE ci/0121-addition_null_pointer_zero.error.c  status=difference  reason=fatal engine diagnostic; no completed observation
+--- upstream: status=125 seconds=0.029 stdout_sha=e3b0c44298fc stderr_sha=5d0513af0c3b diag_sha=5d0513af0c3b
+    stdout (0 B): b''
+    stderr (3619 B):
+      cerberus: internal error, uncaught exception:
+                Failure("TODO(pure shift a null pointer should be undefined behaviour), offset:0")
+                Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+                Called from Cerb_frontend__Impl_mem.Concrete.array_shift_ptrval in file "memory/concrete/impl_mem.ml", line 2217, characters 14-118
+                Called from Cerb_frontend__Core_eval.step_eval_pexpr.(fun) in file "ocaml_frontend/generated/core_eval.ml", line 753, characters 155-201
+                Called from Cerb_frontend__Core_eval.step_eval_pexpr in file "ocaml_frontend/generated/core_eval.ml", lines 749-757, characters 39-11
+                Called from Lem_list.count_map in file "lem_list.ml", line 172, characters 16-20
+                Called from Lem_list.map in file "lem_list.ml" (inlined), line 178, characters 22-39
+                Called from Cerb_frontend__Exception.except_mapM.(fun) in file "ocaml_frontend/generated/exception.ml", line 61, characters 79-100
+                Called from Cerb_frontend__Exception_undefined.exception_undef_mapM in file "ocaml_frontend/generated/exception_undefined.ml", line 30, characters 26-54
+                Called from Cerb_frontend__Core_eval.step_eval_pexpr in file "ocaml_frontend/generated/core_eval.ml", line 630, characters 8-59
+                Called from Cerb_frontend__Core_eval.eval_pexpr_aux2 in file "ocaml_frontend/generated/core_eval.ml", line 1124, characters 8-104
+--- fork: status=125 seconds=0.027 stdout_sha=e3b0c44298fc stderr_sha=026174b794e8 diag_sha=026174b794e8
+    stdout (0 B): b''
+    stderr (3619 B):
+      cerberus: internal error, uncaught exception:
+                Failure("TODO(pure shift a null pointer should be undefined behaviour), offset:0")
+                Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+                Called from Cerb_frontend__Impl_mem.Concrete.array_shift_ptrval in file "memory/concrete/impl_mem.ml", line 2217, characters 14-118
+                Called from Cerb_frontend__Core_eval.step_eval_pexpr.(fun) in file "ocaml_frontend/generated/core_eval.ml", line 753, characters 155-201
+                Called from Cerb_frontend__Core_eval.step_eval_pexpr in file "ocaml_frontend/generated/core_eval.ml", lines 749-757, characters 39-11
+                Called from Lem_list.count_map in file "lem_list.ml", line 165, characters 16-20
+                Called from Lem_list.map in file "lem_list.ml" (inlined), line 171, characters 22-39
+                Called from Cerb_frontend__Exception.except_mapM.(fun) in file "ocaml_frontend/generated/exception.ml", line 61, characters 79-100
+                Called from Cerb_frontend__Exception_undefined.exception_undef_mapM in file "ocaml_frontend/generated/exception_undefined.ml", line 30, characters 26-54
+                Called from Cerb_frontend__Core_eval.step_eval_pexpr in file "ocaml_frontend/generated/core_eval.ml", line 630, characters 8-59
+                Called from Cerb_frontend__Core_eval.eval_pexpr_aux2 in file "ocaml_frontend/generated/core_eval.ml", line 1135, characters 8-104
+--- stderr unified diff (35 lines):
+    --- pristine.stderr
+    +++ fork.stderr
+    @@ -7,2 +7,2 @@
+    -          Called from Lem_list.count_map in file "lem_list.ml", line 172, characters 16-20
+    -          Called from Lem_list.map in file "lem_list.ml" (inlined), line 178, characters 22-39
+    +          Called from Lem_list.count_map in file "lem_list.ml", line 165, characters 16-20
+    +          Called from Lem_list.map in file "lem_list.ml" (inlined), line 171, characters 22-39
+    @@ -12,11 +12,11 @@
+    -          Called from Cerb_frontend__Core_eval.eval_pexpr_aux2 in file "ocaml_frontend/generated/core_eval.ml", line 1124, characters 8-104
+    -          Called from Cerb_frontend__Core_reduction.E.eval_pexpr20 in file "ocaml_frontend/generated/core_reduction.ml", line 45, characters 14-124
+    -          Called from Cerb_frontend__Core_reduction.full_eval_pexpr in file "ocaml_frontend/generated/core_reduction.ml", line 49, characters 2-53
+    -          Called from Cerb_frontend__Core_reduction.one_step in file "ocaml_frontend/generated/core_reduction.ml", line 340, characters 18-39
+    -          Called from Cerb_frontend__Core_reduction.step_ctx.(fun) in file "ocaml_frontend/generated/core_reduction.ml", line 1494, characters 21-74
+    -          Called from Lem_list.count_map in file "lem_list.ml", line 172, characters 16-20
+    -          Called from Cerb_frontend__Nondeterminism.nd_read.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 97, characters 28-34
+    -          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 64, characters 11-19
+    -          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 64, characters 11-19
+    -          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 64, characters 11-19
+    -          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 64, characters 11-19
+    +          Called from Cerb_frontend__Core_eval.eval_pexpr_aux2 in file "ocaml_frontend/generated/core_eval.ml", line 1135, characters 8-104
+    +          Called from Cerb_frontend__Core_reduction.E.eval_pexpr20 in file "ocaml_frontend/generated/core_reduction.ml", line 48, characters 14-124
+    +          Called from Cerb_frontend__Core_reduction.full_eval_pexpr in file "ocaml_frontend/generated/core_reduction.ml", line 52, characters 2-53
+    +          Called from Cerb_frontend__Core_reduction.one_step in file "ocaml_frontend/generated/core_reduction.ml", line 354, characters 18-39
+    +          Called from Cerb_frontend__Core_reduction.step_ctx.(fun) in file "ocaml_frontend/generated/core_reduction.ml", line 1512, characters 21-74
+    +          Called from Lem_list.count_map in file "lem_list.ml", line 165, characters 16-20
+    +          Called from Cerb_frontend__Nondeterminism.nd_read.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 95, characters 28-34
+    +          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 62, characters 11-19
+    +          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 62, characters 11-19
+    +          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 62, characters 11-19
+    +          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 62, characters 11-19
+    @@ -26,2 +26,2 @@
+    -          Called from Cerb_backend__Pipeline.interp_backend in file "backend/common/pipeline.ml", line 590, characters 21-85
+    -          Called from Dune__exe__Main.cerberus in file "backend/driver/main.ml", lines 261-287, characters 8-15
+    +          Called from Cerb_backend__Pipeline.interp_backend in file "backend/common/pipeline.ml", line 604, characters 21-85
+    +          Called from Dune__exe__Main.cerberus in file "backend/driver/main.ml", lines 309-335, characters 8-15
+====================================================================================================
+CASE ci/0258-array-function-type.error.c  status=difference  reason=fatal engine diagnostic; no completed observation
+--- upstream: status=125 seconds=0.028 stdout_sha=e3b0c44298fc stderr_sha=395924239119 diag_sha=395924239119
+    stdout (0 B): b''
+    stderr (5014 B):
+      internal error: AilTypesAux.is_complete: called an a function type
+      cerberus: internal error, uncaught exception:
+                Failure("internal error: AilTypesAux.is_complete: called an a function type")
+                Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+                Called from Cerb_frontend__AilTypesAux.is_complete in file "ocaml_frontend/generated/ailTypesAux.ml", line 267, characters 10-34
+                Called from Cerb_frontend__AilTypesAux.is_incomplete in file "ocaml_frontend/generated/ailTypesAux.ml", line 332, characters 8-30
+                Called from Cerb_frontend__Cabs_to_ail_effect.cabs_to_ail_effect_is_incomplete.(fun) in file "ocaml_frontend/generated/cabs_to_ail_effect.ml", line 2623, characters 34-70
+                Called from Cerb_frontend__State_exception.stExpect_bind.(fun) in file "ocaml_frontend/generated/state_exception.ml", line 19, characters 24-29
+                Called from Cerb_frontend__State_exception.stExpect_bind.(fun) in file "ocaml_frontend/generated/state_exception.ml", line 19, characters 24-29
+                Called from Cerb_frontend__State_exception.stExpect_bind.(fun) in file "ocaml_frontend/generated/state_exception.ml", line 19, characters 24-29
+                Called from Cerb_frontend__State_exception.stExpect_bind.(fun) in file "ocaml_frontend/generated/state_exception.ml", line 19, characters 24-29
+                Called from Cerb_frontend__State_exception.stExpect_bind.(fun) in file "ocaml_frontend/generated/state_exception.ml", line 19, characters 24-29
+--- fork: status=125 seconds=0.027 stdout_sha=e3b0c44298fc stderr_sha=3c4b54416a57 diag_sha=3c4b54416a57
+    stdout (0 B): b''
+    stderr (5014 B):
+      internal error: AilTypesAux.is_complete: called an a function type
+      cerberus: internal error, uncaught exception:
+                Failure("internal error: AilTypesAux.is_complete: called an a function type")
+                Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+                Called from Cerb_frontend__AilTypesAux.is_complete in file "ocaml_frontend/generated/ailTypesAux.ml", line 267, characters 10-34
+                Called from Cerb_frontend__AilTypesAux.is_incomplete in file "ocaml_frontend/generated/ailTypesAux.ml", line 332, characters 8-30
+                Called from Cerb_frontend__Cabs_to_ail_effect.cabs_to_ail_effect_is_incomplete.(fun) in file "ocaml_frontend/generated/cabs_to_ail_effect.ml", line 2692, characters 34-70
+                Called from Cerb_frontend__State_exception.stExpect_bind.(fun) in file "ocaml_frontend/generated/state_exception.ml", line 19, characters 24-29
+                Called from Cerb_frontend__State_exception.stExpect_bind.(fun) in file "ocaml_frontend/generated/state_exception.ml", line 19, characters 24-29
+                Called from Cerb_frontend__State_exception.stExpect_bind.(fun) in file "ocaml_frontend/generated/state_exception.ml", line 19, characters 24-29
+                Called from Cerb_frontend__State_exception.stExpect_bind.(fun) in file "ocaml_frontend/generated/state_exception.ml", line 19, characters 24-29
+                Called from Cerb_frontend__State_exception.stExpect_bind.(fun) in file "ocaml_frontend/generated/state_exception.ml", line 19, characters 24-29
+--- stderr unified diff (17 lines):
+    --- pristine.stderr
+    +++ fork.stderr
+    @@ -7 +7 @@
+    -          Called from Cerb_frontend__Cabs_to_ail_effect.cabs_to_ail_effect_is_incomplete.(fun) in file "ocaml_frontend/generated/cabs_to_ail_effect.ml", line 2623, characters 34-70
+    +          Called from Cerb_frontend__Cabs_to_ail_effect.cabs_to_ail_effect_is_incomplete.(fun) in file "ocaml_frontend/generated/cabs_to_ail_effect.ml", line 2692, characters 34-70
+    @@ -28,3 +28,3 @@
+    -          Called from Cerb_backend__Pipeline.c_frontend.desugar in file "backend/common/pipeline.ml", lines 202-203, characters 4-23
+    -          Called from Cerb_backend__Pipeline.c_frontend.(fun) in file "backend/common/pipeline.ml", line 244, characters 2-20
+    -          Called from Cerb_backend__Pipeline.c_frontend_and_elaboration in file "backend/common/pipeline.ml", line 249, characters 2-73
+    +          Called from Cerb_backend__Pipeline.c_frontend.desugar in file "backend/common/pipeline.ml", lines 206-207, characters 4-23
+    +          Called from Cerb_backend__Pipeline.c_frontend.(fun) in file "backend/common/pipeline.ml", line 256, characters 2-20
+    +          Called from Cerb_backend__Pipeline.c_frontend_and_elaboration in file "backend/common/pipeline.ml", line 261, characters 2-73
+    @@ -34,2 +34,2 @@
+    -          Called from Dune__exe__Main.cerberus.(fun) in file "backend/driver/main.ml", line 266, characters 8-24
+    -          Called from Dune__exe__Main.cerberus in file "backend/driver/main.ml", lines 261-287, characters 8-15
+    +          Called from Dune__exe__Main.cerberus.(fun) in file "backend/driver/main.ml", line 314, characters 8-24
+    +          Called from Dune__exe__Main.cerberus in file "backend/driver/main.ml", lines 309-335, characters 8-15
+====================================================================================================
+CASE ci/0270-invalid-compound-literal.error.c  status=difference  reason=fatal engine diagnostic; no completed observation
+--- upstream: status=125 seconds=0.029 stdout_sha=e3b0c44298fc stderr_sha=4abef4d51aa0 diag_sha=4abef4d51aa0
+    stdout (0 B): b''
+    stderr (5398 B):
+      internal error: Desugaring_init.lookup_struct_members: Nothing or empty Struct definition
+      cerberus: internal error, uncaught exception:
+                Failure("internal error: Desugaring_init.lookup_struct_members: Nothing or empty Struct definition")
+                Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+                Called from Cerb_frontend__Desugaring_init.go_down_aux in file "ocaml_frontend/generated/desugaring_init.ml", lines 103-105, characters 59-77
+                Called from Cerb_frontend__Desugaring_init.go_down_entering_block in file "ocaml_frontend/generated/desugaring_init.ml" (inlined), line 118, characters 74-106
+                Called from Cerb_frontend__Desugaring_init.interp_initializer_aux.(fun) in file "ocaml_frontend/generated/desugaring_init.ml", line 500, characters 94-131
+                Called from Cerb_frontend__Desugaring_init.interp_initializer_ in file "ocaml_frontend/generated/desugaring_init.ml", lines 554-571, characters 2-47
+                Called from Cerb_frontend__Desugaring_init.desugar_init in file "ocaml_frontend/generated/desugaring_init.ml", line 577, characters 2-68
+                Called from Cerb_frontend__Cabs_to_ail.wip_desugar_initializer_.(fun) in file "ocaml_frontend/generated/cabs_to_ail.ml", line 3549, characters 12-109
+                Called from Cerb_frontend__State_exception.stExpect_bind.(fun) in file "ocaml_frontend/generated/state_exception.ml", line 19, characters 24-29
+                Called from Cerb_frontend__State_exception.stExpect_bind.(fun) in file "ocaml_frontend/generated/state_exception.ml", line 19, characters 24-29
+--- fork: status=125 seconds=0.027 stdout_sha=e3b0c44298fc stderr_sha=99269b552b9f diag_sha=99269b552b9f
+    stdout (0 B): b''
+    stderr (5398 B):
+      internal error: Desugaring_init.lookup_struct_members: Nothing or empty Struct definition
+      cerberus: internal error, uncaught exception:
+                Failure("internal error: Desugaring_init.lookup_struct_members: Nothing or empty Struct definition")
+                Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+                Called from Cerb_frontend__Desugaring_init.go_down_aux in file "ocaml_frontend/generated/desugaring_init.ml", lines 103-105, characters 59-77
+                Called from Cerb_frontend__Desugaring_init.go_down_entering_block in file "ocaml_frontend/generated/desugaring_init.ml" (inlined), line 118, characters 74-106
+                Called from Cerb_frontend__Desugaring_init.interp_initializer_aux.(fun) in file "ocaml_frontend/generated/desugaring_init.ml", line 500, characters 94-131
+                Called from Cerb_frontend__Desugaring_init.interp_initializer_ in file "ocaml_frontend/generated/desugaring_init.ml", lines 554-571, characters 2-47
+                Called from Cerb_frontend__Desugaring_init.desugar_init in file "ocaml_frontend/generated/desugaring_init.ml", line 577, characters 2-68
+                Called from Cerb_frontend__Cabs_to_ail.wip_desugar_initializer_.(fun) in file "ocaml_frontend/generated/cabs_to_ail.ml", line 3554, characters 12-109
+                Called from Cerb_frontend__State_exception.stExpect_bind.(fun) in file "ocaml_frontend/generated/state_exception.ml", line 19, characters 24-29
+                Called from Cerb_frontend__State_exception.stExpect_bind.(fun) in file "ocaml_frontend/generated/state_exception.ml", line 19, characters 24-29
+--- stderr unified diff (17 lines):
+    --- pristine.stderr
+    +++ fork.stderr
+    @@ -10 +10 @@
+    -          Called from Cerb_frontend__Cabs_to_ail.wip_desugar_initializer_.(fun) in file "ocaml_frontend/generated/cabs_to_ail.ml", line 3549, characters 12-109
+    +          Called from Cerb_frontend__Cabs_to_ail.wip_desugar_initializer_.(fun) in file "ocaml_frontend/generated/cabs_to_ail.ml", line 3554, characters 12-109
+    @@ -30,3 +30,3 @@
+    -          Called from Cerb_backend__Pipeline.c_frontend.desugar in file "backend/common/pipeline.ml", lines 202-203, characters 4-23
+    -          Called from Cerb_backend__Pipeline.c_frontend.(fun) in file "backend/common/pipeline.ml", line 244, characters 2-20
+    -          Called from Cerb_backend__Pipeline.c_frontend_and_elaboration in file "backend/common/pipeline.ml", line 249, characters 2-73
+    +          Called from Cerb_backend__Pipeline.c_frontend.desugar in file "backend/common/pipeline.ml", lines 206-207, characters 4-23
+    +          Called from Cerb_backend__Pipeline.c_frontend.(fun) in file "backend/common/pipeline.ml", line 256, characters 2-20
+    +          Called from Cerb_backend__Pipeline.c_frontend_and_elaboration in file "backend/common/pipeline.ml", line 261, characters 2-73
+    @@ -36,2 +36,2 @@
+    -          Called from Dune__exe__Main.cerberus.(fun) in file "backend/driver/main.ml", line 266, characters 8-24
+    -          Called from Dune__exe__Main.cerberus in file "backend/driver/main.ml", lines 261-287, characters 8-15
+    +          Called from Dune__exe__Main.cerberus.(fun) in file "backend/driver/main.ml", line 314, characters 8-24
+    +          Called from Dune__exe__Main.cerberus in file "backend/driver/main.ml", lines 309-335, characters 8-15

@@ -1,0 +1,7 @@
+corpus (--only / selection)        cases pristine s   fork s  wall s  statuses
+multi_tu_tray                          7       30.3      0.2    31.7  {'semantic_agreement': 4, 'difference': 2, 'incomplete': 1}
+immaculate                            64        7.0      6.9    15.6  {'semantic_agreement': 48, 'difference': 16}
+verify + corpus                       32        0.9      0.9     3.2  {'semantic_agreement': 32}
+ci                                   242       66.9     66.6   137.5  {'semantic_agreement': 134, 'incomplete': 2, 'matching_failure': 102, 'difference': 4}
+libxml2_chvalid                        4      204.9    200.6   406.7  {'semantic_agreement': 4}
+(existing row 10 corpus, O3 gate)    752       26.2     25.4    63.3  {'semantic_agreement': 738, 'reviewed_difference': 1, 'matching_failure': 11, 'interface_agreement': 2}
