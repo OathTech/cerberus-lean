@@ -17,6 +17,9 @@ audit and its repairs, and addenda to 4.3/4.4; (5) §6 gains the consumer re-pin
 note and the tray filing state; (6) §7 gains the sixteen-finding crosswalk; (7)
 §8 gains the exit status. Nothing below is deleted. The §3 order is UNCHANGED:
 core semantics before scoped SC concurrency ([USER 2026-09-06]).
+Landed [USER 2026-09-16]: "Great, land Revision 10, then work on D2's design" —
+the pre-merge audit ask was made (a subagent audit waived in favour of the
+operator's own read, as proposed); ff-only onto `mdd/cerberus-lean`, no push.
 
 **Revision 9, 2026-09-06 [AGENT orchestrator-directed].** Landing preparation
 of the validation-foundations arc
