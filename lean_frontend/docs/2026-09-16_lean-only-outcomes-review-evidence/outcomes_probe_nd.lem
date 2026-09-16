@@ -1,0 +1,18 @@
+open import Pervasives
+import Outcomes_probe_stop Outcomes_probe_undefined
+
+type kill_reason 'err = Undef of string | Error of string | Other of 'err | Stopped of Outcomes_probe_stop.interp_stop
+val lift_reason: forall 'err1 'err2. ('err1 -> 'err2) -> kill_reason 'err1 -> kill_reason 'err2
+let lift_reason f r = match r with
+ | Undef s -> Undef s
+ | Error s -> Error s
+ | Other e -> Other (f e)
+ | Stopped s -> Stopped s
+end
+val stopped_from_pure: forall 'a 'err. Outcomes_probe_undefined.t 'a -> maybe (kill_reason 'err)
+let stopped_from_pure r = match r with
+ | Outcomes_probe_undefined.Defined _ -> Nothing
+ | Outcomes_probe_undefined.Undef s -> Just (Undef s)
+ | Outcomes_probe_undefined.Error s -> Just (Error s)
+ | Outcomes_probe_undefined.Stopped s -> Just (Stopped s)
+end

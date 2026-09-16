@@ -1,0 +1,11 @@
+open import Pervasives
+import Outcomes_probe_stop
+
+type t 'a = Defined of 'a | Undef of string | Error of string | Stopped of Outcomes_probe_stop.interp_stop
+val bind: forall 'a 'b. t 'a -> ('a -> t 'b) -> t 'b
+let bind m f = match m with
+ | Defined x -> f x
+ | Undef s -> Undef s
+ | Error s -> Error s
+ | Stopped s -> Stopped s
+end

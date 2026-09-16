@@ -1,0 +1,4 @@
+open import Pervasives
+
+type unsupported_feature = UF_filesystem | UF_concurrency | UF_switches
+type interp_stop = Exhausted | FailStop of string | Unsupported of unsupported_feature * string

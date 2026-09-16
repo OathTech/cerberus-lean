@@ -1,0 +1,73 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+Provider source revision: a15da65f8e6c014c6c03d9ff375e3a007ab2e43d
+Lean toolchain: leanprover/lean4:v4.32.2
+ProbeBefore imports the existing compiled provider Undefined module.
+SHA256 a5f001637a6dd2e91a6625364e4b4369bab7d353ed40aef89e473d2165109430 outcomes_probe_stop.lem
+SHA256 f489ee3c33d9edcaaa74ff77b2b048b08069f2be488c945704e2301b20c394b0 outcomes_probe_undefined.lem
+SHA256 d966525363852c651928fa1474b8390f51b3422619b9c7ffef80b3b53694cce9 outcomes_probe_nd.lem
+SHA256 f2b704f50ba0e89dd2d491fdb52c69e462e154d4b7446b53481994b234ccd611 Probe.lean
+SHA256 ed0f92dbd37083e9cb6e59878a96f32d7acb37c3d16d4d6dbf448699ca114077 ProbeBefore.lean
+SHA256 d3225648eaf240f5cea427bff775ceb16e36975349b29b2a584e4a5b7be71355 Native.ml
+SHA256 90e384992e0dc1d42b09c3d599f2e286e1ba70fdd3104be1acbf65e8e0ebf932 Traversal.lean
+$ lem -v
+Lem f6542f8
+exit: 0
+$ ocamlc -version
+5.4.0
+exit: 0
+$ lean --version
+Lean (version 4.32.2, x86_64-unknown-linux-gnu, commit f3b06c705e6c85f5314019d5d3baab0fec5b580c, Release)
+exit: 0
+$ lem -lib . -ocaml -lean -outdir . outcomes_probe_stop.lem outcomes_probe_undefined.lem outcomes_probe_nd.lem
+no location information available
+  Warning: renaming 'bool' to 'bool0' for target lean
+no location information available
+  Warning: renaming 'Eq' to 'Eq0' for target lean
+no location information available
+  Warning: renaming 'Ord' to 'Ord0' for target lean
+no location information available
+  Warning: renaming 'set' to 'set0' for target lean
+File "outcomes_probe_undefined.lem", line 5, character 1 to line 5, character 52
+  Warning: renaming 'bind' to 'bind1' for target lean
+File "outcomes_probe_nd.lem", line 4, character 25 to line 4, character 29
+  Warning: renaming 'Undef' to 'Undef0' for target lean
+File "outcomes_probe_nd.lem", line 4, character 43 to line 4, character 47
+  Warning: renaming 'Error' to 'Error0' for target lean
+File "outcomes_probe_nd.lem", line 4, character 77 to line 4, character 83
+  Warning: renaming 'Stopped' to 'Stopped0' for target lean
+File "outcomes_probe_nd.lem", line 4, character 25 to line 4, character 29
+  Warning: renaming 'Undef' to 'Undef0' for target ocaml
+File "outcomes_probe_nd.lem", line 4, character 43 to line 4, character 47
+  Warning: renaming 'Error' to 'Error0' for target ocaml
+File "outcomes_probe_nd.lem", line 4, character 77 to line 4, character 83
+  Warning: renaming 'Stopped' to 'Stopped0' for target ocaml
+exit: 0
+$ lean -o Outcomes_probe_stop.olean Outcomes_probe_stop.lean
+exit: 0
+$ lean -o Outcomes_probe_undefined.olean Outcomes_probe_undefined.lean
+exit: 0
+$ lean -o Outcomes_probe_nd.olean Outcomes_probe_nd.lean
+exit: 0
+$ lean Probe.lean
+'stop_bind' does not depend on any axioms
+'stop_lift' does not depend on any axioms
+'stop_channels' does not depend on any axioms
+'exhaustion_ne_failure' does not depend on any axioms
+'stop_ne_program_error' does not depend on any axioms
+'default_becomes_exhaustion' does not depend on any axioms
+'old_bind_preserved' does not depend on any axioms
+exit: 0
+$ lean ProbeBefore.lean
+'existing_default_is_error' does not depend on any axioms
+exit: 0
+$ lean Traversal.lean
+'state_changes_after_stop' does not depend on any axioms
+'stop_replaced_by_later_exception' does not depend on any axioms
+exit: 0
+$ ocamlfind ocamlc -package lem -linkpkg -w @8 -o native-probe outcomes_probe_stop.ml outcomes_probe_undefined.ml outcomes_probe_nd.ml Native.ml
+exit: 0
+$ ./native-probe
+PASS: all three stops survive bind, error-type lift, and channel conversion
+PASS: wildcard swallowing compiles with warning 8 fatal (negative control)
+exit: 0
+PASS: bounded design probes completed; temporary build removed.
