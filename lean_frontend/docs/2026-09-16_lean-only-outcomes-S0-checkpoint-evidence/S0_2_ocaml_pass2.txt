@@ -1,0 +1,26 @@
+# S0.2 — OCaml build pass 2 (after the two undefined.lem arms), verbatim:
+File "ocaml_frontend/generated/exception_undefined.ml", lines 13-22, characters 3-4:
+13 | ...((match m with
+14 |     | Exception.Result (Undefined.Defined z) ->
+15 |         f z
+16 |     | Exception.Result (Undefined.Undef( loc1, ubs)) ->
+17 |         Exception.except_return (Undefined.undef loc1 ubs)
+18 |     | Exception.Result (Undefined.Error( loc1, str)) ->
+19 |         Exception.except_return (Undefined.error loc1 str)
+20 |     | Exception.Exception err ->
+21 |         Exception.fail err
+22 |   ))
+Error (warning 8 [partial-match]): this pattern-matching is not exhaustive.
+  Here is an example of a case that is not matched: Result (Stopped _)
+File "ocaml_frontend/generated/nondeterminism.ml", lines 239-246, characters 15-7:
+239 | ...............(match r with
+240 |         | Undef0( loc1, ubs) ->
+241 |             Undef0( loc1, ubs)
+242 |         | Error0( loc1, str) ->
+243 |             Error0( loc1, str)
+244 |         | Other err ->
+245 |             Other (liftErr err)
+246 |       )
+Error (warning 8 [partial-match]): this pattern-matching is not exhaustive.
+  Here is an example of a case that is not matched: Stopped0 _
+dune build rc=1 dur=1s

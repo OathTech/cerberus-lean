@@ -1,0 +1,30 @@
+# S0.2 — OCaml build pass 5 (after the 5 driver.lem arms + 3 core_peval.ml dead arms): generated ocaml_frontend now exhaustive; the hand-written backend/common/driver_ocaml.ml is reported as ERRORS (dune dev profile). Verbatim:
+File "backend/common/driver_ocaml.ml", lines 160-185, characters 17-7:
+160 | .................begin match res with
+161 |       | ND.Active dres ->
+162 |           let exit =
+163 |             match dres.Driver.dres_core_value with
+164 |               | Vloaded (LVspecified (OVinteger ival)) ->
+...
+182 |       | ND.Killed (dr_st, ND.Other dr_err) ->
+183 |           let stderr = String.concat "" (Dlist.toList dr_st.Driver.core_state.Core_run.io.Core_run.stderr) in
+184 |           Error { msg= string_of_driver_error dr_err; stderr }
+185 |     end...
+Error (warning 8 [partial-match]): this pattern-matching is not exhaustive.
+  Here is an example of a case that is not matched: Killed (_, Stopped0 _)
+
+File "backend/common/driver_ocaml.ml", lines 244-310, characters 4-107:
+244 | ....match exec with
+245 |       | (ND.Active dres (* (stdout, (is_blocked, conc_st, cval), (dr_steps, coreRun_steps)) *), z3_strs, st) ->
+246 |           let str_v = String_core.string_of_value dres.Driver.dres_core_value in
+247 |           let str_v_ = str_v ^ dres.Driver.dres_stdout in
+248 |           if true (* not (List.mem str_v_ !ky) *) then (
+...
+307 |           print_endline (Cerb_colour.(ansi_format [Red] ("IMPL-DEFINED STATIC ERROR[" ^ Cerb_location.location_to_string loc ^ "]: " ^ str)))
+308 |       
+309 |       | (ND.Killed (_, ND.Other reason), _, st) ->
+310 |           print_endline (Cerb_colour.(ansi_format [Red] ("OTHER ERROR: " ^ string_of_driver_error reason)))
+Error (warning 8 [partial-match]): this pattern-matching is not exhaustive.
+  Here is an example of a case that is not matched:
+    (Killed (_, Stopped0 _), _, _)
+dune build rc=1 dur=5s

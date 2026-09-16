@@ -1,0 +1,51 @@
+# S0.2 — wildcard census (the compiler cannot see these). Method: (1) every `| _ ->` in the six inventory files with its nearest preceding match head (awk); (2) every match with a `Right (U./Undefined.Defined …)` / `Result (Undefined.Defined …)` arm followed within 12 lines by a catch-all; (3) constructor-arm grep over all .lem for files outside the six.
+
+## (1) catch-alls with nearest head
+undefined.lem:834 | _ -> <= nearest head: 736: let std_of_undefined_behaviour = function
+undefined.lem:1105 | _ -> <= nearest head: 1102: match ub with
+driver.lem:285 | _ -> error ("symbol struct " ^ name ^ " not in tagDefs") <= nearest head: 283: match sym with
+driver.lem:363 | _ -> <= nearest head: 356: match natFromInteger fd with
+driver.lem:432 | _ -> <= nearest head: 425: match natFromInteger fd with
+driver.lem:463 | _ -> <= nearest head: 460: let th_info = match List.lookup tid dr_st.core_state.Core_run.thread_states with
+driver.lem:537 | _ -> <= nearest head: 531: match tsk with
+driver.lem:562 | _ -> <= nearest head: 554: match tsk with
+driver.lem:855 | _ -> error "va_start" <= nearest head: 853: List.map (function
+driver.lem:889 | _ -> <= nearest head: 882: match res_opt with
+driver.lem:954 | _ -> <= nearest head: 949: match rsk with
+driver.lem:970 | _ -> <= nearest head: 965: match tsk with
+driver.lem:1152 | _ -> <= nearest head: 1147: match rsk with
+driver.lem:1168 | _ -> <= nearest head: 1163: match tsk with
+driver.lem:1265 | _ -> <= nearest head: 1262: match next_steps with
+driver.lem:1460 | _ -> <= nearest head: 1454: match Core_aux.valueFromPexpr pexpr' with
+driver.lem:1608 | _ -> <= nearest head: 1595: get_thread_states >>= function
+driver.lem:1640 | _ -> <= nearest head: 1620: match Core_aux.valueFromPexpr pe with
+driver.lem:1856 | _ -> <= nearest head: 1847: match th_st.Core_run.env with
+driver.lem:1860 | _ -> <= nearest head: 1847: match th_st.Core_run.env with
+driver.lem:1885 | _ -> <= nearest head: 1874: get_thread_states >>= function
+formatted.lem:78 | _ -> false <= nearest head: 68: sat (function
+formatted.lem:201 | _ -> <= nearest head: 185: match cspec with
+formatted.lem:267 | _ -> replicate d j ++ str <= nearest head: 265: match (j, str) with
+formatted.lem:311 | _ -> <= nearest head: 294: let charFromDigit useUpper = function
+formatted.lem:373 | _ -> <= nearest head: 370: match prec_n_opt with
+formatted.lem:439 | _ -> <= nearest head: 434: match (expected_ty, arg_ty') with
+formatted.lem:535 | _ -> <= nearest head: 516: match Mem_aux.integerFromIntegerValue ival with
+formatted.lem:543 | _ -> <= nearest head: 540: let wrap_is_compatible pred = function
+formatted.lem:724 | _ -> <= nearest head: 712: match args with
+formatted.lem:786 | _ -> <= nearest head: 764: let justified = match cp.cp_field_width with
+formatted.lem:844 | _ -> <= nearest head: 839: printf_aux loc eval_conv [] fs args >>= function
+formatted.lem:847 | _ -> <= nearest head: 839: printf_aux loc eval_conv [] fs args >>= function
+formatted.lem:861 | _ -> <= nearest head: 858: match parse format frmt with
+formatted.lem:876 | _ -> <= nearest head: 872: match parse format frmt with
+
+## (2) catch-alls within 12 lines after a Defined arm
+frontend/model/formatted.lem-844-          | _ ->
+frontend/model/formatted.lem-847-    | _ ->
+frontend/model/driver.lem-432-          | _ ->
+frontend/model/driver.lem-1460-    | _ ->
+
+## (3) files whose arms start with an outcome constructor (rough); core_run_effect.lem and frontend/concurrency/nondeterminism.lem are NOT in LEM_SRC (Makefile:137-190)
+      2 frontend/concurrency/nondeterminism.lem
+     10 frontend/model/core_run_effect.lem
+      3 frontend/model/driver.lem
+      9 frontend/model/nondeterminism.lem
+      9 frontend/model/undefined.lem

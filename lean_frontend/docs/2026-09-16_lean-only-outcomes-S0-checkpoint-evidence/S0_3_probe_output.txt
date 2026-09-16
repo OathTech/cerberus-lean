@@ -1,0 +1,315 @@
+# S0.3 — S0_3_Traversal.lean elaborated via ../scripts/lean_probe.sh (capped 48G) against the branch-built State_exception_undefined/Exception_undefined; rc=0. Output verbatim:
+docs/2026-09-16_lean-only-outcomes-S0-checkpoint-evidence/S0_3_Traversal.lean:43:57: warning: This simp argument is unused:
+  List.foldr_toArray
+
+Hint: Omit it from the simp argument list.
+  simp [stExceptUndef_mapM, stExpect_mapM, lemListFoldr, L̵i̵s̵t̵.̵f̵o̵l̵d̵r̵_̵t̵o̵A̵r̵r̵a̵y̵,̵ ̵stExpect_bind, stExpect_return,
+  ̲  ̲ ̲ ̲except_bind, except_return, stopThenWrite, mapM1, sequence0, bind2, return1]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+docs/2026-09-16_lean-only-outcomes-S0-checkpoint-evidence/S0_3_Traversal.lean:49:57: warning: This simp argument is unused:
+  List.foldr_toArray
+
+Hint: Omit it from the simp argument list.
+  simp [stExceptUndef_mapM, stExpect_mapM, lemListFoldr, L̵i̵s̵t̵.̵f̵o̵l̵d̵r̵_̵t̵o̵A̵r̵r̵a̵y̵,̵ ̵stExpect_bind, stExpect_return,
+  ̲  ̲ ̲ ̲except_bind, except_return, stopThenRaise, mapM1, sequence0, bind2, return1]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+docs/2026-09-16_lean-only-outcomes-S0-checkpoint-evidence/S0_3_Traversal.lean:50:4: warning: This simp argument is unused:
+  stExpect_return
+
+Hint: Omit it from the simp argument list.
+  simp [stExceptUndef_mapM, stExpect_mapM, lemListFoldr, List.foldr_toArray, stExpect_bind,
+      s̵t̵E̵x̵p̵ec̵t̵_̵r̵e̵t̵u̵r̵n̵,̵ ̵e̵xcept_bind, except_return, stopThenRaise, mapM1, sequence0, bind2, return1]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+docs/2026-09-16_lean-only-outcomes-S0-checkpoint-evidence/S0_3_Traversal.lean:50:34: warning: This simp argument is unused:
+  except_return
+
+Hint: Omit it from the simp argument list.
+  simp [stExceptUndef_mapM, stExpect_mapM, lemListFoldr, List.foldr_toArray, stExpect_bind,
+      stExpect_return, except_bind, e̵x̵c̵e̵p̵t̵_̵r̵e̵t̵u̵r̵n̵,̵ ̵stopThenRaise, mapM1, sequence0, bind2, return1]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+docs/2026-09-16_lean-only-outcomes-S0-checkpoint-evidence/S0_3_Traversal.lean:50:64: warning: This simp argument is unused:
+  mapM1
+
+Hint: Omit it from the simp argument list.
+  simp [stExceptUndef_mapM, stExpect_mapM, lemListFoldr, List.foldr_toArray, stExpect_bind,
+      stExpect_return, except_bind, except_return, stopThenRaise, m̵a̵p̵M̵1̵,̵ ̵sequence0, bind2, return1]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+docs/2026-09-16_lean-only-outcomes-S0-checkpoint-evidence/S0_3_Traversal.lean:50:71: warning: This simp argument is unused:
+  sequence0
+
+Hint: Omit it from the simp argument list.
+  simp [stExceptUndef_mapM, stExpect_mapM, lemListFoldr, List.foldr_toArray, stExpect_bind,
+      stExpect_return, except_bind, except_return, stopThenRaise, mapM1, s̵e̵q̵u̵e̵n̵c̵e̵0̵,̵ ̵bind2, return1]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+docs/2026-09-16_lean-only-outcomes-S0-checkpoint-evidence/S0_3_Traversal.lean:50:82: warning: This simp argument is unused:
+  bind2
+
+Hint: Omit it from the simp argument list.
+  simp [stExceptUndef_mapM, stExpect_mapM, lemListFoldr, List.foldr_toArray, stExpect_bind,
+      stExpect_return, except_bind, except_return, stopThenRaise, mapM1, sequence0, b̵i̵n̵d̵2̵,̵ ̵return1]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+docs/2026-09-16_lean-only-outcomes-S0-checkpoint-evidence/S0_3_Traversal.lean:50:89: warning: This simp argument is unused:
+  return1
+
+Hint: Omit it from the simp argument list.
+  simp [stExceptUndef_mapM, stExpect_mapM, lemListFoldr, List.foldr_toArray, stExpect_bind,
+      stExpect_return, except_bind, except_return, stopThenRaise, mapM1, sequence0, bind2,̵ ̵r̵e̵t̵u̵r̵n̵1̵]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+docs/2026-09-16_lean-only-outcomes-S0-checkpoint-evidence/S0_3_Traversal.lean:56:57: warning: This simp argument is unused:
+  List.foldr_toArray
+
+Hint: Omit it from the simp argument list.
+  simp [stExceptUndef_mapM, stExpect_mapM, lemListFoldr, L̵i̵s̵t̵.̵f̵o̵l̵d̵r̵_̵t̵o̵A̵r̵r̵a̵y̵,̵ ̵stExpect_bind, stExpect_return,
+  ̲  ̲ ̲ ̲except_bind, except_return, undefThenWrite, mapM1, sequence0, bind2, return1]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+docs/2026-09-16_lean-only-outcomes-S0-checkpoint-evidence/S0_3_Traversal.lean:61:57: warning: This simp argument is unused:
+  List.foldr_toArray
+
+Hint: Omit it from the simp argument list.
+  simp [stExceptUndef_mapM, stExpect_mapM, lemListFoldr, L̵i̵s̵t̵.̵f̵o̵l̵d̵r̵_̵t̵o̵A̵r̵r̵a̵y̵,̵ ̵stExpect_bind, stExpect_return,
+  ̲  ̲ ̲ ̲except_bind, except_return, undefThenRaise, mapM1, sequence0, bind2, return1]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+docs/2026-09-16_lean-only-outcomes-S0-checkpoint-evidence/S0_3_Traversal.lean:62:4: warning: This simp argument is unused:
+  stExpect_return
+
+Hint: Omit it from the simp argument list.
+  simp [stExceptUndef_mapM, stExpect_mapM, lemListFoldr, List.foldr_toArray, stExpect_bind,
+      s̵t̵E̵x̵p̵ec̵t̵_̵r̵e̵t̵u̵r̵n̵,̵ ̵e̵xcept_bind, except_return, undefThenRaise, mapM1, sequence0, bind2, return1]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+docs/2026-09-16_lean-only-outcomes-S0-checkpoint-evidence/S0_3_Traversal.lean:62:34: warning: This simp argument is unused:
+  except_return
+
+Hint: Omit it from the simp argument list.
+  simp [stExceptUndef_mapM, stExpect_mapM, lemListFoldr, List.foldr_toArray, stExpect_bind,
+      stExpect_return, except_bind, e̵x̵c̵e̵p̵t̵_̵r̵e̵t̵ur̵n,̵ ̵u̵n̵defThenRaise, mapM1, sequence0, bind2, return1]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+docs/2026-09-16_lean-only-outcomes-S0-checkpoint-evidence/S0_3_Traversal.lean:62:65: warning: This simp argument is unused:
+  mapM1
+
+Hint: Omit it from the simp argument list.
+  simp [stExceptUndef_mapM, stExpect_mapM, lemListFoldr, List.foldr_toArray, stExpect_bind,
+      stExpect_return, except_bind, except_return, undefThenRaise, m̵a̵p̵M̵1̵,̵ ̵sequence0, bind2, return1]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+docs/2026-09-16_lean-only-outcomes-S0-checkpoint-evidence/S0_3_Traversal.lean:62:72: warning: This simp argument is unused:
+  sequence0
+
+Hint: Omit it from the simp argument list.
+  simp [stExceptUndef_mapM, stExpect_mapM, lemListFoldr, List.foldr_toArray, stExpect_bind,
+      stExpect_return, except_bind, except_return, undefThenRaise, mapM1, s̵e̵q̵u̵e̵n̵c̵e̵0̵,̵ ̵bind2, return1]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+docs/2026-09-16_lean-only-outcomes-S0-checkpoint-evidence/S0_3_Traversal.lean:62:83: warning: This simp argument is unused:
+  bind2
+
+Hint: Omit it from the simp argument list.
+  simp [stExceptUndef_mapM, stExpect_mapM, lemListFoldr, List.foldr_toArray, stExpect_bind,
+      stExpect_return, except_bind, except_return, undefThenRaise, mapM1, sequence0, b̵i̵n̵d̵2̵,̵ ̵return1]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+docs/2026-09-16_lean-only-outcomes-S0-checkpoint-evidence/S0_3_Traversal.lean:62:90: warning: This simp argument is unused:
+  return1
+
+Hint: Omit it from the simp argument list.
+  simp [stExceptUndef_mapM, stExpect_mapM, lemListFoldr, List.foldr_toArray, stExpect_bind,
+      stExpect_return, except_bind, except_return, undefThenRaise, mapM1, sequence0, bind2,̵ ̵r̵e̵t̵u̵r̵n̵1̵]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+docs/2026-09-16_lean-only-outcomes-S0-checkpoint-evidence/S0_3_Traversal.lean:71:74: warning: This simp argument is unused:
+  List.foldr_toArray
+
+Hint: Omit it from the simp argument list.
+  simp [exception_undef_mapM, except_mapM, except_sequence, lemListFoldr, L̵i̵s̵t̵.̵f̵o̵l̵d̵r̵_̵t̵o̵A̵r̵r̵a̵y̵,̵
+  ̵ ̵ ̵ ̵ ̵except_bind,
+  ̲  ̲ ̲ ̲except_return, euStopThenRaise, mapM1, sequence0, bind2, return1]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+docs/2026-09-16_lean-only-outcomes-S0-checkpoint-evidence/S0_3_Traversal.lean:72:49: warning: This simp argument is unused:
+  mapM1
+
+Hint: Omit it from the simp argument list.
+  simp [exception_undef_mapM, except_mapM, except_sequence, lemListFoldr, List.foldr_toArray,
+      except_bind, except_return, euStopThenRaise, m̵a̵p̵M̵1̵,̵ ̵sequence0, bind2, return1]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+docs/2026-09-16_lean-only-outcomes-S0-checkpoint-evidence/S0_3_Traversal.lean:72:56: warning: This simp argument is unused:
+  sequence0
+
+Hint: Omit it from the simp argument list.
+  simp [exception_undef_mapM, except_mapM, except_sequence, lemListFoldr, List.foldr_toArray,
+      except_bind, except_return, euStopThenRaise, mapM1, s̵e̵q̵u̵e̵n̵c̵e̵0̵,̵ ̵bind2, return1]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+docs/2026-09-16_lean-only-outcomes-S0-checkpoint-evidence/S0_3_Traversal.lean:72:67: warning: This simp argument is unused:
+  bind2
+
+Hint: Omit it from the simp argument list.
+  simp [exception_undef_mapM, except_mapM, except_sequence, lemListFoldr, List.foldr_toArray,
+      except_bind, except_return, euStopThenRaise, mapM1, sequence0, b̵i̵n̵d̵2̵,̵ ̵return1]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+docs/2026-09-16_lean-only-outcomes-S0-checkpoint-evidence/S0_3_Traversal.lean:72:74: warning: This simp argument is unused:
+  return1
+
+Hint: Omit it from the simp argument list.
+  simp [exception_undef_mapM, except_mapM, except_sequence, lemListFoldr, List.foldr_toArray,
+      except_bind, except_return, euStopThenRaise, mapM1, sequence0, bind2,̵ ̵r̵e̵t̵u̵r̵n̵1̵]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+docs/2026-09-16_lean-only-outcomes-S0-checkpoint-evidence/S0_3_Traversal.lean:105:37: warning: This simp argument is unused:
+  List.foldr_toArray
+
+Hint: Omit it from the simp argument list.
+  simp [stExpect_mapM, lemListFoldr,̵ ̵L̵i̵s̵t̵.̵f̵o̵l̵d̵r̵_̵t̵o̵A̵r̵r̵a̵y̵]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+docs/2026-09-16_lean-only-outcomes-S0-checkpoint-evidence/S0_3_Traversal.lean:110:37: warning: This simp argument is unused:
+  List.foldr_toArray
+
+Hint: Omit it from the simp argument list.
+  simp [stExpect_mapM, lemListFoldr,̵ ̵L̵i̵s̵t̵.̵f̵o̵l̵d̵r̵_̵t̵o̵A̵r̵r̵a̵y̵]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+docs/2026-09-16_lean-only-outcomes-S0-checkpoint-evidence/S0_3_Traversal.lean:129:75: warning: This simp argument is unused:
+  except_bind
+
+Hint: Omit it from the simp argument list.
+  simp ̵[̵e̵x̵c̵e̵p̵t̵_̵b̵i̵n̵d̵]̵
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+docs/2026-09-16_lean-only-outcomes-S0-checkpoint-evidence/S0_3_Traversal.lean:130:77: warning: This simp argument is unused:
+  except_bind
+
+Hint: Omit it from the simp argument list.
+  simp ̵[̵e̵x̵c̵e̵p̵t̵_̵b̵i̵n̵d̵]̵
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+docs/2026-09-16_lean-only-outcomes-S0-checkpoint-evidence/S0_3_Traversal.lean:131:75: warning: This simp argument is unused:
+  except_bind
+
+Hint: Omit it from the simp argument list.
+  simp ̵[̵e̵x̵c̵e̵p̵t̵_̵b̵i̵n̵d̵]̵
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+docs/2026-09-16_lean-only-outcomes-S0-checkpoint-evidence/S0_3_Traversal.lean:208:42: warning: This simp argument is unused:
+  List.foldr_toArray
+
+Hint: Omit it from the simp argument list.
+  simp [sequence0, lemListFoldr, L̵i̵s̵t̵.̵f̵o̵l̵d̵r̵_̵t̵o̵A̵r̵r̵a̵y̵,̵ ̵bind2, return1]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+docs/2026-09-16_lean-only-outcomes-S0-checkpoint-evidence/S0_3_Traversal.lean:237:36: warning: This simp argument is unused:
+  List.foldr_toArray
+
+Hint: Omit it from the simp argument list.
+  simp [mapM', collectS, stExpect_bind, stExpect_return, except_bind, except_return, stopThenWrite,
+      mapM1, sequence0, lemListFoldr, L̵i̵s̵t̵.̵f̵o̵l̵d̵r̵_̵t̵o̵A̵r̵r̵a̵y̵,̵ ̵bind2, return1]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+docs/2026-09-16_lean-only-outcomes-S0-checkpoint-evidence/S0_3_Traversal.lean:241:36: warning: This simp argument is unused:
+  List.foldr_toArray
+
+Hint: Omit it from the simp argument list.
+  simp [mapM', collectS, stExpect_bind, stExpect_return, except_bind, except_return, stopThenRaise,
+      mapM1, sequence0, lemListFoldr, L̵i̵s̵t̵.̵f̵o̵l̵d̵r̵_̵t̵o̵A̵r̵r̵a̵y̵,̵ ̵bind2, return1]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+docs/2026-09-16_lean-only-outcomes-S0-checkpoint-evidence/S0_3_Traversal.lean:247:36: warning: This simp argument is unused:
+  List.foldr_toArray
+
+Hint: Omit it from the simp argument list.
+  simp [mapM', collectS, stExpect_bind, stExpect_return, except_bind, except_return, undefThenWrite,
+      mapM1, sequence0, lemListFoldr, L̵i̵s̵t̵.̵f̵o̵l̵d̵r̵_̵t̵o̵A̵r̵r̵a̵y̵,̵ ̵bind2, return1]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+docs/2026-09-16_lean-only-outcomes-S0-checkpoint-evidence/S0_3_Traversal.lean:250:40: warning: This simp argument is unused:
+  stExpect_return
+
+Hint: Omit it from the simp argument list.
+  simp [mapM', collectS, stExpect_bind, s̵t̵E̵x̵p̵e̵c̵t̵_̵r̵e̵t̵u̵r̵n̵,̵ ̵except_bind, except_return, undefThenRaise, mapM1,
+  ̲  ̲ ̲ ̲sequence0, lemListFoldr, List.foldr_toArray, bind2, return1]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+docs/2026-09-16_lean-only-outcomes-S0-checkpoint-evidence/S0_3_Traversal.lean:250:70: warning: This simp argument is unused:
+  except_return
+
+Hint: Omit it from the simp argument list.
+  simp [mapM', collectS, stExpect_bind, stExpect_return, except_bind, e̵x̵c̵e̵p̵t̵_̵r̵e̵t̵ur̵n,̵ ̵u̵n̵defThenRaise,
+  ̵  ̵ ̵ ̵mapM1,
+  ̲  ̲ ̲ ̲sequence0, lemListFoldr, List.foldr_toArray, bind2, return1]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+docs/2026-09-16_lean-only-outcomes-S0-checkpoint-evidence/S0_3_Traversal.lean:251:4: warning: This simp argument is unused:
+  mapM1
+
+Hint: Omit it from the simp argument list.
+  simp [mapM', collectS, stExpect_bind, stExpect_return, except_bind, except_return, undefThenRaise,
+      m̵a̵p̵M̵1̵,̵ ̵sequence0, lemListFoldr, List.foldr_toArray, bind2, return1]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+docs/2026-09-16_lean-only-outcomes-S0-checkpoint-evidence/S0_3_Traversal.lean:251:11: warning: This simp argument is unused:
+  sequence0
+
+Hint: Omit it from the simp argument list.
+  simp [mapM', collectS, stExpect_bind, stExpect_return, except_bind, except_return, undefThenRaise,
+      mapM1, s̵e̵q̵u̵e̵n̵c̵e̵0̵,̵ ̵lemListFoldr, List.foldr_toArray, bind2, return1]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+docs/2026-09-16_lean-only-outcomes-S0-checkpoint-evidence/S0_3_Traversal.lean:251:22: warning: This simp argument is unused:
+  lemListFoldr
+
+Hint: Omit it from the simp argument list.
+  simp [mapM', collectS, stExpect_bind, stExpect_return, except_bind, except_return, undefThenRaise,
+      mapM1, sequence0, l̵e̵m̵ListF̵o̵l̵d̵r̵,̵ ̵L̵i̵s̵t̵.foldr_toArray, bind2, return1]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+docs/2026-09-16_lean-only-outcomes-S0-checkpoint-evidence/S0_3_Traversal.lean:251:36: warning: This simp argument is unused:
+  List.foldr_toArray
+
+Hint: Omit it from the simp argument list.
+  simp [mapM', collectS, stExpect_bind, stExpect_return, except_bind, except_return, undefThenRaise,
+      mapM1, sequence0, lemListFoldr, L̵i̵s̵t̵.̵f̵o̵l̵d̵r̵_̵t̵o̵A̵r̵r̵a̵y̵,̵ ̵bind2, return1]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+docs/2026-09-16_lean-only-outcomes-S0-checkpoint-evidence/S0_3_Traversal.lean:251:56: warning: This simp argument is unused:
+  bind2
+
+Hint: Omit it from the simp argument list.
+  simp [mapM', collectS, stExpect_bind, stExpect_return, except_bind, except_return, undefThenRaise,
+      mapM1, sequence0, lemListFoldr, List.foldr_toArray, b̵i̵n̵d̵2̵,̵ ̵return1]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+docs/2026-09-16_lean-only-outcomes-S0-checkpoint-evidence/S0_3_Traversal.lean:251:63: warning: This simp argument is unused:
+  return1
+
+Hint: Omit it from the simp argument list.
+  simp [mapM', collectS, stExpect_bind, stExpect_return, except_bind, except_return, undefThenRaise,
+      mapM1, sequence0, lemListFoldr, List.foldr_toArray, bind2,̵ ̵r̵e̵t̵u̵r̵n̵1̵]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+'S0_3.seu_state_changes_after_stop' depends on axioms: [propext, Quot.sound]
+'S0_3.seu_stop_replaced_by_later_exception' depends on axioms: [propext, Quot.sound]
+'S0_3.seu_state_changes_after_undef' depends on axioms: [propext, Quot.sound]
+'S0_3.seu_undef_replaced_by_later_exception' depends on axioms: [propext, Quot.sound]
+'S0_3.eu_stop_replaced_by_later_exception' depends on axioms: [propext, Quot.sound]
+'S0_3.collectS_eq_stExpect_mapM' depends on axioms: [propext, Quot.sound]
+'S0_3.mapM'_eq_mapM' depends on axioms: [propext, Quot.sound]
+'S0_3.collectS_append' depends on axioms: [propext]
+'S0_3.sequence0_defined_then_stop' depends on axioms: [propext, Quot.sound]
+'S0_3.mapM'_stops' depends on axioms: [propext, Quot.sound]
+'S0_3.mapM'_stopThenWrite' depends on axioms: [propext, Quot.sound]
+'S0_3.mapM'_stopThenRaise' depends on axioms: [propext, Quot.sound]
+'S0_3.mapM'_undefThenWrite' depends on axioms: [propext, Quot.sound]
+'S0_3.mapM'_undefThenRaise' depends on axioms: [propext]

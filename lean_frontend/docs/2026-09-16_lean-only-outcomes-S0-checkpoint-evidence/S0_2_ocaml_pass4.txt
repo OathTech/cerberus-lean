@@ -1,0 +1,107 @@
+# S0.2 — OCaml build pass 4 (after the SEU bind/runEU + formatted convert/printf_aux arms), verbatim:
+File "ocaml_frontend/rewriters/core_peval.ml", lines 520-535, characters 20-23:
+520 | ....................begin match eval_pexpr pexpr with
+521 |                       | Right (Defined cval) ->
+522 |                           ChangeDoChildrenPost
+523 |                             ( Identity.return (Pexpr (annots, bTy, PEval cval))
+524 |                             , Identity.return )
+...
+532 |                         print_endline ("PEcfunction => " ^ Pp_errors.to_string err);
+533 |                           exit 1
+534 | *)
+535 |                     end
+Error (warning 8 [partial-match]): this pattern-matching is not exhaustive.
+  Here is an example of a case that is not matched: Right (Stopped _)
+
+File "ocaml_frontend/rewriters/core_peval.ml", lines 564-581, characters 20-23:
+564 | ....................begin match eval_pexpr pe1 with
+565 |                       | Right (Defined Vtrue) ->
+566 |                           ChangeDoChildrenPost
+567 |                             ( Identity.return pe2
+568 |                             , Identity.return )
+...
+578 |                           error str
+579 |                       | Left err ->
+580 |                           Traverse
+581 |                     end
+Error (warning 8 [partial-match]): this pattern-matching is not exhaustive.
+  Here is an example of a case that is not matched: Right (Stopped _)
+
+File "ocaml_frontend/rewriters/core_peval.ml", lines 706-723, characters 14-17:
+706 | ..............begin match eval_pexpr pe1 with
+707 |                 | Right (Defined Vtrue) ->
+708 |                     ChangeDoChildrenPost
+709 |                       ( Identity.return e2
+710 |                       , Identity.return )
+...
+720 |                     error str
+721 |                 | Left err ->
+722 |                     Traverse
+723 |               end
+Error (warning 8 [partial-match]): this pattern-matching is not exhaustive.
+  Here is an example of a case that is not matched: Right (Stopped _)
+File "ocaml_frontend/generated/driver.ml", lines 133-151, characters 3-2:
+133 | ...((match Core_eval.eval_pexpr_aux2 (Cerb_location.other "Driver.print_eval_conv_aux") None dr_st.core_extern th_st.Core_run.env (Some dr_st.layout_state) dr_st.core_file pe with
+134 |   | Exception.Result (Undefined.Defined (Either.Right cval)) ->
+135 |       Nondeterminism.nd_return (Either.Right (Undefined.Defined cval))
+136 |   | Exception.Result (Undefined.Defined (Either.Left (Core.Pexpr( _, (), (Core.PEconstrained xs))))) ->
+137 |       ND.msum Mem_common.instance_Nondeterminism_Constraints_Mem_common_mem_constraint_dict instance_Show_Show_string_dict "printf_eval_conv" begin
+...
+148 |       Nondeterminism.nd_return (Either.Right (Undefined.Error( loc1, err)))
+149 |   | Exception.Exception err ->
+150 |       Nondeterminism.nd_return (Either.Left (Cerb_location.other "Driver.print_eval_conv_aux", Errors.CORE_RUN err))
+151 | ))
+Error (warning 8 [partial-match]): this pattern-matching is not exhaustive.
+  Here is an example of a case that is not matched: Result (Stopped _)
+
+File "ocaml_frontend/generated/driver.ml", lines 164-171, characters 155-9:
+164 | ...........................................................................................................................................................(match res with
+165 |           | U.Defined z ->
+166 |               Nondeterminism.nd_return z
+167 |           | U.Undef( loc1, ubs) ->
+168 |               ND.kill (ND.Undef0( loc1, ubs))
+169 |           | U.Error( loc1, str) ->
+170 |               ND.kill (ND.Error0( loc1, str))
+171 |         ).
+Error (warning 8 [partial-match]): this pattern-matching is not exhaustive.
+  Here is an example of a case that is not matched: Stopped _
+
+File "ocaml_frontend/generated/driver.ml", lines 350-358, characters 103-41:
+350 | .......................................................................................................function
+351 |         | Either.Left err ->
+352 |           Cerb_debug.error "TODO: printf error"
+353 |         | Either.Right (Undefined.Defined buf) ->
+354 |           update_stdout buf
+355 |         | Either.Right (Undefined.Error( loc1, str)) ->
+356 |           ND.kill (ND.Error0( loc1, str))
+357 |         | Either.Right (Undefined.Undef( loc1, ubs)) ->
+358 |           ND.kill (ND.Undef0( loc1, ubs))
+Error (warning 8 [partial-match]): this pattern-matching is not exhaustive.
+  Here is an example of a case that is not matched: Right (Stopped _)
+
+File "ocaml_frontend/generated/driver.ml", lines 361-378, characters 102-41:
+361 | ......................................................................................................function
+362 |         | Either.Left err ->
+363 |           Cerb_debug.error "TODO: vprintf error"
+364 |         | Either.Right (Undefined.Defined buf) ->
+365 |           let size = (Nat_big_num.of_int (List.length buf)) in
+...
+375 |         | Either.Right (Undefined.Error( loc1, str)) ->
+376 |           ND.kill (ND.Error0( loc1, str))
+377 |         | Either.Right (Undefined.Undef( loc1, ubs)) ->
+378 |           ND.kill (ND.Undef0( loc1, ubs))
+Error (warning 8 [partial-match]): this pattern-matching is not exhaustive.
+  Here is an example of a case that is not matched: Right (Stopped _)
+
+File "ocaml_frontend/generated/driver.ml", lines 381-388, characters 113-41:
+381 | .................................................................................................................function
+382 |         | Either.Left err ->
+383 |           Cerb_debug.error "TODO: vprintf error"
+384 |         | Either.Right (Undefined.Defined n) -> update1 dr_st.fs_state (th_st_from_int n)
+385 |         | Either.Right (Undefined.Error( loc1, str)) ->
+386 |           ND.kill (ND.Error0( loc1, str))
+387 |         | Either.Right (Undefined.Undef( loc1, ubs)) ->
+388 |           ND.kill (ND.Undef0( loc1, ubs))
+Error (warning 8 [partial-match]): this pattern-matching is not exhaustive.
+  Here is an example of a case that is not matched: Right (Stopped _)
+dune build rc=1 dur=1s

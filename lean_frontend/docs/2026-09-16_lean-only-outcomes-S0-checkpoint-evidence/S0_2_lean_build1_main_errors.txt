@@ -1,0 +1,49 @@
+# S0.2 — Lean build 1 (`lake build CerberusLean cerberus-lean`, capped 48G) after all 13 .lem arms: rc=1 in 41 s wall; every generated module rebuilt (Undefined 5.2 s, GenTyping 9.2 s, Translation 8.9 s, Core_run 3.1 s, Driver 1.6 s); the ONLY failures are the hand-written printers in Main.lean. Verbatim:
+# modules reported Built: 138
+✖ [396/398] Building Main (3.9s)
+warning: Main.lean:584:47: Variable name `v` is not explicitly referenced.
+
+The binding can be removed (if unused) or named `_` (if used implicitly).
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+error: Main.lean:1069:10: Missing cases:
+(Stopped0 Exhausted)
+(Stopped0 (FailStop (String.ofByteArray (ByteArray.mk (Array.mk _)) (ByteArray.IsValidUTF8.intro _ _))))
+(Stopped0 (Unsupported UF_filesystem (String.ofByteArray (ByteArray.mk (Array.mk _)) (ByteArray.IsValidUTF8.intro _ _))))
+(Stopped0 (Unsupported UF_concurrency (String.ofByteArray (ByteArray.mk (Array.mk _)) (ByteArray.IsValidUTF8.intro _ _))))
+(Stopped0 (Unsupported UF_switches (String.ofByteArray (ByteArray.mk (Array.mk _)) (ByteArray.IsValidUTF8.intro _ _))))
+error: Main.lean:1102:10: Missing cases:
+(Stopped0 Exhausted)
+(Stopped0 (FailStop (String.ofByteArray (ByteArray.mk (Array.mk _)) (ByteArray.IsValidUTF8.intro _ _))))
+(Stopped0 (Unsupported UF_filesystem (String.ofByteArray (ByteArray.mk (Array.mk _)) (ByteArray.IsValidUTF8.intro _ _))))
+(Stopped0 (Unsupported UF_concurrency (String.ofByteArray (ByteArray.mk (Array.mk _)) (ByteArray.IsValidUTF8.intro _ _))))
+(Stopped0 (Unsupported UF_switches (String.ofByteArray (ByteArray.mk (Array.mk _)) (ByteArray.IsValidUTF8.intro _ _))))
+warning: Main.lean:1345:31: `String.trim` has been deprecated: Use `String.trimAscii` instead
+
+Note: The updated constant has a different type:
+  String → String.Slice
+instead of
+  String → String
+warning: Main.lean:1346:92: `String.trim` has been deprecated: Use `String.trimAscii` instead
+
+Note: The updated constant has a different type:
+  String → String.Slice
+instead of
+  String → String
+warning: Main.lean:1293:16: `String.trim` has been deprecated: Use `String.trimAscii` instead
+
+Note: The updated constant has a different type:
+  String → String.Slice
+instead of
+  String → String
+warning: Main.lean:1293:16: `String.trim` has been deprecated: Use `String.trimAscii` instead
+
+Note: The updated constant has a different type:
+  String → String.Slice
+instead of
+  String → String
+error: Lean exited with code 1
+Some required targets logged failures:
+- Main
+error: build failed
+lake build CerberusLean cerberus-lean rc=1 dur=41s

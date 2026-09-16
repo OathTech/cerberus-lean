@@ -1,0 +1,56 @@
+# S0.2 — OCaml build pass 3 (after the exception_undefined bind + liftAction arms), verbatim:
+File "ocaml_frontend/generated/state_exception_undefined.ml", lines 16-25, characters 2-3:
+16 | ..(match m st with
+17 |     | Exception.Result (Undefined.Defined z, st') ->
+18 |         f z st'
+19 |     | Exception.Result (Undefined.Undef( loc1, ubs), st') ->
+20 |         State_exception.stExpect_return (Undefined.undef loc1 ubs) st'
+21 |     | Exception.Result (Undefined.Error( loc1, str), st') ->
+22 |         State_exception.stExpect_return (Undefined.error loc1 str) st'
+23 |     | Exception.Exception err ->
+24 |         (fun _ -> Exception.fail err) st
+25 |   ).
+Error (warning 8 [partial-match]): this pattern-matching is not exhaustive.
+  Here is an example of a case that is not matched: Result (Stopped _, _)
+
+File "ocaml_frontend/generated/state_exception_undefined.ml", lines 37-46, characters 2-3:
+37 | ..(match m with
+38 |     | Exception.Result (Undefined.Defined z) ->
+39 |         Exception.Result (Undefined.Defined z, st)
+40 |     | Exception.Result (Undefined.Undef( loc1, ubs)) ->
+41 |         Exception.Result (Undefined.Undef( loc1, ubs), st)
+42 |     | Exception.Result (Undefined.Error( loc1, str)) ->
+43 |         Exception.Result (Undefined.Error( loc1, str), st)
+44 |     | Exception.Exception err ->
+45 |         Exception.Exception err
+46 |   ).
+Error (warning 8 [partial-match]): this pattern-matching is not exhaustive.
+  Here is an example of a case that is not matched: Result (Stopped _)
+File "ocaml_frontend/generated/formatted.ml", lines 546-567, characters 44-85:
+546 | ............................................function
+547 |                     | Either.Left err ->
+548 |                         Nondeterminism.nd_return (Either.Left err)
+549 |                     | Either.Right (U.Defined (Core.Vloaded (Core.LVspecified (Core.OVinteger ival)))) ->
+550 |                         (match Mem_aux.integerFromIntegerValue ival with
+...
+564 |                     | Either.Right (U.Error( loc1, str)) ->
+565 |                         Nondeterminism.nd_return (Either.Right (U.Error( loc1, str)))
+566 |                     | Either.Right (U.Undef( loc1, ubs)) ->
+567 |                         Nondeterminism.nd_return (Either.Right (U.Undef( loc1, ubs)))
+Error (warning 8 [partial-match]): this pattern-matching is not exhaustive.
+  Here is an example of a case that is not matched: Right (Stopped _)
+
+File "ocaml_frontend/generated/formatted.ml", lines 800-836, characters 122-125:
+800 | ..........................................................................................................................function
+801 |           | Either.Right (U.Defined (is_zero, str, ty_ptrvals')) ->
+802 |               let hash_CSs =
+803 |                 (if Switches.is_CHERI () then
+804 |                   [CS_o; CS_x; CS_X; CS_f; CS_p] (* NON-STD: CHERI supports # for the %p conversion specifier *)
+...
+833 |           | Either.Right (U.Error( loc1, str)) -> Nondeterminism.nd_return (Either.Right (U.Error( loc1, str)))
+834 |           | Either.Right (U.Undef( loc1, ubs)) -> Nondeterminism.nd_return (Either.Right (U.Undef( loc1, ubs)))
+835 |           | Either.Left err ->
+836 |               let () = (Cerb_debug.print_debug 1 [] (fun () -> "PRINTF ERR 2")) in Nondeterminism.nd_return (Either.Left err)
+Error (warning 8 [partial-match]): this pattern-matching is not exhaustive.
+  Here is an example of a case that is not matched: Right (Stopped _)
+dune build rc=1 dur=3s

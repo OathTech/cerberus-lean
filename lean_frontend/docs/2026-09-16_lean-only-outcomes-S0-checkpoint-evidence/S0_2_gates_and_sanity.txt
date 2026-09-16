@@ -1,0 +1,18 @@
+# S0.2 — gates expected to move on the prototype (charter §3: record, do not fix).
+## scripts/check_fork_drift.sh (run with CERB_FORK_DRIFT_DEV_SKIP unset, as test_unit.sh does), rc=1, verbatim:
+check_fork_drift: FAIL — oracle-surface file set drifted from the manifest.
+--- files on the live diff but not in the manifest (NEW DRIFT):
+    frontend/model/exception_undefined.lem
+    frontend/model/interp_stop.lem
+    frontend/model/undefined.lem
+    ocaml_frontend/rewriters/core_peval.ml
+--- files in the manifest but no longer on the live diff:
+Every entry is a reviewed claim about the oracle: re-review the change
+against lean_frontend/docs/2026-08-21_fork-drift-review.md, then run the refresh recipe.
+
+# Layer 1 failed first, so layers 2 (generated-OCaml hunk hashes) and 3 (source-content pins of the already-manifested files driver.lem, nondeterminism.lem, formatted.lem, state_exception_undefined.lem, driver_ocaml.ml, driver_ocaml.mli) were not reached; they would fail too [AGENT, by the gate design].
+
+## sanity, both engines, tests/minimal/001-return-literal.c (verbatim):
+Lean  : Defined {value: "Specified(42)", stdout: "", stderr: "", blocked: "false"}   rc=0
+Lean --fuel 1: Error {msg: "lem: fuel exhausted"}   rc=1   (the 13 declares are unchanged in the prototype)
+Oracle: Defined {value: "Specified(42)", stdout: "", stderr: "", blocked: "false"}

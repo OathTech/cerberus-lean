@@ -1,0 +1,19 @@
+# S0.2 — OCaml build pass 1 (`dune build backend/driver/main.exe cerberus-lib.install`, ocaml_frontend/dune flags `-w @8…`), verbatim (dune stops at the first failing module; its dependents are not attempted):
+File "ocaml_frontend/generated/undefined.ml", lines 1416-1420, characters 3-2:
+1416 | ...((match m with
+1417 |     | Defined x -> f x
+1418 |     | Undef( loc1, us)  -> Undef( loc1, us) (* TODO: we probably want to collect as much undefs as possible, ie. continue that exec ? *)
+1419 |     | Error( loc1, str) -> Error( loc1, str)
+1420 | ))
+Error (warning 8 [partial-match]): this pattern-matching is not exhaustive.
+  Here is an example of a case that is not matched: Stopped _
+
+File "ocaml_frontend/generated/undefined.ml", lines 1439-1443, characters 3-4:
+1439 | ...((match m with
+1440 |     | Defined x -> Defined (f x)
+1441 |     | Undef( loc1, us)  -> Undef( loc1, us)
+1442 |     | Error( loc1, str) -> Error( loc1, str)
+1443 |   ))
+Error (warning 8 [partial-match]): this pattern-matching is not exhaustive.
+  Here is an example of a case that is not matched: Stopped _
+dune build rc=1 dur=1s

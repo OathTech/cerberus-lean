@@ -1,0 +1,33 @@
+# S0.2 — Lean build 3 (after the two Main.lean arms + helpers; `make lean-prelude-src` 18 s), verbatim tail:
+✔ [397/398] Built Main:c.o (13s)
+✔ [398/398] Built «cerberus-lean»:exe (530ms)
+Build completed successfully (398 jobs).
+
+# Main.lean arms (git diff -U0, + lines):
++/-- lean-only-outcomes S0 PROTOTYPE (2026-09-16, charter S0.2/S0.4): the batch
++    RECORD of an interpreter stop — one spelling per kind (protocol addendum
++    2026-09-16_observation-contract-addendum-stops.md). Mirrors the fork
++    oracle's dead-arm printer `Driver_ocaml.string_of_interp_stop_record`
++    (backend/common/driver_ocaml.ml) byte for byte. Diagnostic text goes
++    through the TEXT escaper (Unicode, unlike the model's byte IO). -/
++def unsupportedFeatureName : unsupported_feature → String
++  | .UF_filesystem => "filesystem"
++  | .UF_concurrency => "concurrency"
++  | .UF_switches => "switches"
++
++def stopBatchRecord : interp_stop → String
++  | .Exhausted => "Exhausted {}"
++  | .FailStop msg => CerbFail.batchRecord msg
++  | .Unsupported f msg =>
++      s!"Unsupported \{feature: \"{unsupportedFeatureName f}\", msg: \"{CerbEscape.text msg}\"}"
++
++def stopHumanText : interp_stop → String
++  | .Exhausted => "exhausted: the fuel budget ran out (incomplete observation)"
++  | .FailStop msg => s!"model fail-stop: {msg}"
++  | .Unsupported f msg => s!"unsupported feature {unsupportedFeatureName f}: {msg}"
++
++          | .Stopped0 stop =>
++            -- S0 prototype: a structural stop record; no `Loc` exists to print.
++            IO.println (stopBatchRecord stop)
++          | .Stopped0 stop =>
++            IO.println s!"  result: Killed (interpreter stop — {stopHumanText stop})"

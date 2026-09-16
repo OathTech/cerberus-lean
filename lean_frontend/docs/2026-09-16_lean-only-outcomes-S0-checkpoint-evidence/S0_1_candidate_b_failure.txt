@@ -1,0 +1,44 @@
+# S0.1(b) — `lake build Interp_stop CerbStopInstances Undefined Nondeterminism` under the skip_instances candidate (capped 48G; rc=1, 5 s). Verbatim tail of .tmp/s01b-build-nd.log:
+✔ [40/43] Built Interp_stop (205ms)
+✔ [41/43] Built CerbStopInstances (168ms)
+✖ [42/43] Building Undefined (4.0s)
+trace: .> LEAN_PATH=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/lean-only-outcomes-S0/lean_frontend/.lake/packages/LemLib/lean-lib/.lake/build/lib/lean:/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/lean-only-outcomes-S0/lean_frontend/.lake/build/lib/lean /home/dev/.elan/toolchains/leanprover--lean4---v4.32.2/bin/lean -DautoImplicit=false /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/lean-only-outcomes-S0/lean_frontend/generated/Undefined.lean -o /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/lean-only-outcomes-S0/lean_frontend/.lake/build/lib/lean/Undefined.olean -i /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/lean-only-outcomes-S0/lean_frontend/.lake/build/lib/lean/Undefined.ilean -c /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/lean-only-outcomes-S0/lean_frontend/.lake/build/ir/Undefined.c --setup /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/lean-only-outcomes-S0/lean_frontend/.lake/build/ir/Undefined.setup.json --json
+warning: generated/Undefined.lean:1544:0: unused `termination_by`, function is not recursive
+warning: generated/Undefined.lean:1551:0: unused `termination_by`, function is not recursive
+error: generated/Undefined.lean:1864:21: failed to synthesize instance of type class
+  Inhabited interp_stop
+
+Hint: Adding the command `deriving instance Inhabited for interp_stop` may allow Lean to derive the missing instance.
+error: Lean exited with code 1
+Some required targets logged failures:
+- Undefined
+error: build failed
+
+# generated/Undefined.lean:1860-1865 (the instance Lean refused):
+  default := Undef default default
+instance (priority := low) {a : Type} : Inhabited (t0 a) where
+  default := Error default default
+instance (priority := low) {a : Type} : Inhabited (t0 a) where
+  default := Stopped default
+instance (priority := 500) {a : Type} [Ord a] : Lem_Basic_classes.SetType (t0 a) where
+
+# generated/Interp_stop.lean:64-73 (skip_instances left `deriving BEq, Ord` in place; Inhabited and the SetType/Eq0/Ord0 trio are gone):
+inductive  interp_stop : Type where 
+  |  Exhausted : interp_stop 
+  |  FailStop :  String →  interp_stop 
+  |  Unsupported :  unsupported_feature  →  String →  interp_stop 
+  deriving BEq, Ord
+export interp_stop (Exhausted FailStop Unsupported)
+
+# generated/Nondeterminism.lean kill_reason Inhabited instances (unchanged shape, Stopped0 default still emitted):
+instance {err : Type} : Inhabited (kill_reason err) where
+  default := Undef0 default default
+instance (priority := low) {err : Type} : Inhabited (kill_reason err) where
+  default := Error0 default default
+instance (priority := low) {err : Type} [Inhabited err] : Inhabited (kill_reason err) where
+  default := Other default
+instance (priority := low) {err : Type} : Inhabited (kill_reason err) where
+  default := Stopped0 default
+
+# lean_frontend/lem.log under (b): lines mentioning interp_stop or Inhabited (none = no generation-time demand fired):
+(grep exit 1)

@@ -1,0 +1,100 @@
+# S0.1(a) — generated instances AFTER appending `Stopped of Interp_stop.interp_stop` to both types (lem f6542f8; no skip_instances yet). Verbatim excerpts.
+
+## lean_frontend/generated/Interp_stop.lean (types + instances)
+inductive  unsupported_feature : Type where 
+  |  UF_filesystem : unsupported_feature 
+  |  UF_concurrency : unsupported_feature 
+  |  UF_switches : unsupported_feature 
+  deriving BEq, Ord
+export unsupported_feature (UF_filesystem UF_concurrency UF_switches)
+instance : Inhabited (unsupported_feature) where
+  default := UF_filesystem
+instance (priority := 500) : Lem_Basic_classes.SetType (unsupported_feature) where
+  setElemCompare := defaultCompare
+instance (priority := 500) : Lem_Basic_classes.Eq0 (unsupported_feature) where
+  isEqual x y := x == y
+  isInequal x y := !(x == y)
+instance (priority := 500) : Lem_Basic_classes.Ord0 (unsupported_feature) where
+  compare := defaultCompare
+  isLess := defaultLess
+  isLessEqual := defaultLessEq
+  isGreater := defaultGreater
+  isGreaterEqual := defaultGreaterEq
+inductive  interp_stop : Type where 
+  |  Exhausted : interp_stop 
+  |  FailStop :  String →  interp_stop 
+  |  Unsupported :  unsupported_feature  →  String →  interp_stop 
+  deriving BEq, Ord
+export interp_stop (Exhausted FailStop Unsupported)
+instance : Inhabited (interp_stop) where
+  default := Exhausted
+instance (priority := 500) : Lem_Basic_classes.SetType (interp_stop) where
+  setElemCompare := defaultCompare
+instance (priority := 500) : Lem_Basic_classes.Eq0 (interp_stop) where
+  isEqual x y := x == y
+  isInequal x y := !(x == y)
+instance (priority := 500) : Lem_Basic_classes.Ord0 (interp_stop) where
+  compare := defaultCompare
+  isLess := defaultLess
+  isLessEqual := defaultLessEq
+  isGreater := defaultGreater
+  isGreaterEqual := defaultGreaterEq
+
+## lean_frontend/generated/Undefined.lean (t0 + Inhabited instances)
+inductive  t0 (a : Type) : Type where 
+  |  Defined :  a →  t0 a
+  |  Undef :  CerbLocation.Loc  →  List  undefined_behaviour →  t0 a
+  |  Error :  CerbLocation.Loc  →  String →  t0 a
+  |  Stopped :  interp_stop →  t0 a
+  deriving BEq, Ord
+export t0 (Defined Undef Error Stopped)
+instance {a : Type} [Inhabited a] : Inhabited (t0 a) where
+  default := Defined default
+instance (priority := low) {a : Type} : Inhabited (t0 a) where
+  default := Undef default default
+instance (priority := low) {a : Type} : Inhabited (t0 a) where
+  default := Error default default
+instance (priority := low) {a : Type} : Inhabited (t0 a) where
+  default := Stopped default
+  setElemCompare := defaultCompare
+
+## lean_frontend/generated/Nondeterminism.lean (kill_reason + Inhabited instances)
+inductive  kill_reason (err : Type) : Type where 
+  |  Undef0 :  CerbLocation.Loc  →  List  undefined_behaviour →  kill_reason err
+  |  Error0 :  CerbLocation.Loc  →  String →  kill_reason err
+  |  Other :  err →  kill_reason err
+  |  Stopped0 :  interp_stop →  kill_reason err
+  deriving BEq, Ord
+export kill_reason (Undef0 Error0 Other Stopped0)
+instance {err : Type} : Inhabited (kill_reason err) where
+  default := Undef0 default default
+instance (priority := low) {err : Type} : Inhabited (kill_reason err) where
+  default := Error0 default default
+instance (priority := low) {err : Type} [Inhabited err] : Inhabited (kill_reason err) where
+  default := Other default
+instance (priority := low) {err : Type} : Inhabited (kill_reason err) where
+  default := Stopped0 default
+  setElemCompare := defaultCompare
+
+## ocaml_frontend/generated/interp_stop.ml
+type unsupported_feature =
+  | UF_filesystem
+  | UF_concurrency
+  | UF_switches
+
+type interp_stop =
+  | Exhausted
+  | FailStop of string
+  | Unsupported of unsupported_feature * string
+## ocaml_frontend/generated/undefined.ml
+type 'a t0 =
+  | Defined of 'a
+  | Undef of Cerb_location.t * undefined_behaviour list
+  | Error of Cerb_location.t * string
+  | Stopped of Interp_stop.interp_stop
+## ocaml_frontend/generated/nondeterminism.ml
+type 'err kill_reason =
+  | Undef0 of Cerb_location.t * Undefined.undefined_behaviour list
+  | Error0 of Cerb_location.t * string
+  | Other of 'err
+  | Stopped0 of Interp_stop.interp_stop

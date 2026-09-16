@@ -1,0 +1,17 @@
+# S0.2 — OCaml build passes 6-8 (hand-written backend/common). Pass 6 and the first pass 7 failed on MY edit (a duplicated arm from a count-less replace; a wrong mli pattern) — not inventory. The compiler-forced site of pass 7 is the INTERFACE backend/common/driver_ocaml.mli (batch_output must gain the variant too). Verbatim key lines:
+## pass 7 (after the .ml arms):
+File "backend/common/driver_ocaml.ml", line 1:
+Error: The implementation backend/common/driver_ocaml.ml
+       does not match the interface backend/common/driver_ocaml.mli: 
+       Type declarations do not match:
+         type batch_output =
+             Defined of { exit : batch_exit; stdout : string;
+  … An extra constructor, Stopped, is provided in the first declaration.
+## pass 8 (after the .mli variant):
+dune build rc=0 dur=1s
+
+# backend/common/dune:6 excludes smt smt_wrapper boot_pprint2 tests cerbcore interactive_driver from the library: smt.ml:616-620 (Tkilled r) is DORMANT and was never compiled.
+
+# Effective backend/common flags (`dune printenv backend/common`, verbatim): warning 8 IS fatal there (dev profile -warn-error +a; the stanza only disables 27):
+(flags
+ (-short-paths -keep-locs -warn-error +a -bin-annot))
