@@ -1,0 +1,1021 @@
+=== with-lean tier-b start 22:28:02 load average: 1.23, 0.72, 1.04
+check_driver_fresh: oracle OK (bin 7336b2e35e761cd553dcd196e944da00bcd981a0a2c512d10926c3bb91723478, src 98ad48b592a222a21e4619c5ce03652fc6a44c0a67c6b02cb222e1d40b1c701d)
+check_driver_fresh: lean OK (bin 5f6dfacf25852e7eedb386345ee641317eb03448688cd768974332962a2aa2ab, src c805823c3a54a24e82398a2ca27ea2018416ef873ceaca4d03091f9603a1086a)
+1/855 semantic_agreement: minimal/001-return-literal.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+2/855 semantic_agreement: minimal/002-return-zero.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+3/855 semantic_agreement: minimal/003-arith-add.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+4/855 semantic_agreement: minimal/004-arith-sub.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+5/855 semantic_agreement: minimal/005-arith-mul.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+6/855 semantic_agreement: minimal/006-arith-div.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+7/855 semantic_agreement: minimal/007-local-var.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+8/855 semantic_agreement: minimal/008-local-var-arith.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+9/855 semantic_agreement: minimal/009-if-true.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+10/855 semantic_agreement: minimal/010-if-false.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+11/855 semantic_agreement: minimal/011-if-else.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+12/855 semantic_agreement: minimal/012-compare-eq.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+13/855 semantic_agreement: minimal/013-compare-lt.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+14/855 semantic_agreement: minimal/014-while-simple.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+15/855 semantic_agreement: minimal/015-while-sum.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+16/855 semantic_agreement: minimal/016-func-simple.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+17/855 semantic_agreement: minimal/017-func-recursive.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+18/855 semantic_agreement: minimal/018-increment.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+19/855 semantic_agreement: minimal/019-decrement.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+20/855 semantic_agreement: minimal/020-global-var.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+21/855 semantic_agreement: minimal/021-pointer-basic.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+22/855 semantic_agreement: minimal/022-pointer-write.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+23/855 semantic_agreement: minimal/023-array-read.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+24/855 semantic_agreement: minimal/024-array-write.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+25/855 semantic_agreement: minimal/025-struct-basic.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+26/855 semantic_agreement: minimal/026-ternary.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+27/855 semantic_agreement: minimal/027-for-loop.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+28/855 semantic_agreement: minimal/028-break.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+29/855 semantic_agreement: minimal/029-continue.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+30/855 semantic_agreement: minimal/030-negative.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+31/855 semantic_agreement: minimal/031-bitwise-and.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+32/855 semantic_agreement: minimal/032-bitwise-or.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+33/855 semantic_agreement: minimal/033-bitwise-xor.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+34/855 semantic_agreement: minimal/034-bitwise-not.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+35/855 semantic_agreement: minimal/035-shift-left.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+36/855 semantic_agreement: minimal/036-shift-right.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+37/855 semantic_agreement: minimal/037-logical-and.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+38/855 semantic_agreement: minimal/038-logical-or.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+39/855 semantic_agreement: minimal/039-compound-assign.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+40/855 semantic_agreement: minimal/040-do-while.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+41/855 semantic_agreement: minimal/041-switch.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+42/855 semantic_agreement: minimal/042-nested-loop.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+43/855 semantic_agreement: minimal/043-comma.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+44/855 semantic_agreement: minimal/044-void-func.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+45/855 semantic_agreement: minimal/045-ptr-arith.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+46/855 semantic_agreement: minimal/046-ptr-ptr.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+47/855 semantic_agreement: minimal/047-cast.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+48/855 semantic_agreement: minimal/048-pre-post-inc.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+49/855 semantic_agreement: minimal/049-scope-shadow.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+50/855 semantic_agreement: minimal/050-modulo.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+51/855 semantic_agreement: minimal/051-sizeof-type.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+52/855 semantic_agreement: minimal/052-sizeof-expr.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+53/855 semantic_agreement: minimal/053-static-local.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+54/855 semantic_agreement: minimal/054-string-literal.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+55/855 semantic_agreement: minimal/055-char-array-init.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+56/855 semantic_agreement: minimal/056-func-ptr.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+57/855 semantic_agreement: minimal/057-void-ptr.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+58/855 semantic_agreement: minimal/058-struct-value.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+59/855 semantic_agreement: minimal/059-union-basic.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+60/855 semantic_agreement: minimal/060-switch-fallthrough.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+61/855 semantic_agreement: minimal/061-goto.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+62/855 semantic_agreement: minimal/062-multidim-array.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+63/855 semantic_agreement: minimal/063-logical-not.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+64/855 semantic_agreement: minimal/064-precedence-ptr.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+65/855 semantic_agreement: minimal/065-typedef.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+66/855 semantic_agreement: minimal/066-cast-float.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+67/855 semantic_agreement: minimal/067-if-int.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+68/855 semantic_agreement: minimal/068-div-by-zero.undef.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+69/855 semantic_agreement: minimal/069-mod-by-zero.undef.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+70/855 semantic_agreement: minimal/070-signed-overflow.undef.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+71/855 semantic_agreement: minimal/071-null-deref.undef.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+72/855 semantic_agreement: minimal/072-out-of-bounds.undef.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+73/855 semantic_agreement: minimal/073-exit.libc.c (pristine 0.0s, fork 0.0s) | lean: lean_difference
+    LEAN≠FORK minimal/073-exit.libc.c: verdict tokens differ under projection full
+      pristine: ERR:{msg: "ill-formed program: `calling an unknown procedure: Symbol(549, SD_Id(\"exit\"))'"}
+      fork:     ERR:{msg: "ill-formed program: `calling an unknown procedure: Symbol(549, SD_Id(\"exit\"))'"}
+      lean:     ERR:{msg: "ill-formed program: `calling an unknown procedure: Symbol(66, SD_Id(\"exit\"))'"}
+74/855 semantic_agreement: minimal/074-abort.libc.c (pristine 0.0s, fork 0.0s) | lean: lean_difference
+    LEAN≠FORK minimal/074-abort.libc.c: verdict tokens differ under projection full
+      pristine: ERR:{msg: "ill-formed program: `calling an unknown procedure: Symbol(543, SD_Id(\"abort\"))'"}
+      fork:     ERR:{msg: "ill-formed program: `calling an unknown procedure: Symbol(543, SD_Id(\"abort\"))'"}
+      lean:     ERR:{msg: "ill-formed program: `calling an unknown procedure: Symbol(60, SD_Id(\"abort\"))'"}
+75/855 semantic_agreement: minimal/075-main-argc-argv.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+76/855 semantic_agreement: minimal/076-main-argv-access.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+77/855 semantic_agreement: minimal/077-bool-trap.undef.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+78/855 semantic_agreement: minimal/078-float-special.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+79/855 semantic_agreement: minimal/079-unseq-simple.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+80/855 semantic_agreement: minimal/080-unseq-reads-only.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+81/855 semantic_agreement: minimal/081-unseq-diff-locations.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+82/855 semantic_agreement: minimal/082-unseq-race.undef.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+83/855 semantic_agreement: minimal/083-unseq-nested-assign.undef.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+84/855 semantic_agreement: minimal/084-unseq-two-writes.undef.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+85/855 semantic_agreement: minimal/085-unseq-comma-seq.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+86/855 semantic_agreement: minimal/086-unseq-comma-writes.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+87/855 semantic_agreement: minimal/087-unseq-increment.undef.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+88/855 semantic_agreement: minimal/088-unseq-postinc-read.undef.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+89/855 semantic_agreement: minimal/089-unseq-func-args.undef.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+90/855 semantic_agreement: minimal/090-unseq-func-args-ok.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+91/855 semantic_agreement: minimal/091-unseq-nested-complex.undef.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+92/855 semantic_agreement: minimal/092-unseq-comma-plus.undef.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+93/855 semantic_agreement: minimal/093-nd-choice.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+94/855 semantic_agreement: minimal/094-bool-conversion.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+95/855 semantic_agreement: minimal/095-unsigned-div-zero.undef.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+96/855 semantic_agreement: minimal/096-unsigned-mod-zero.undef.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+97/855 reviewed_difference: minimal/097-null-ptr-arith.undef.c (pristine 0.0s, fork 0.0s) | lean: lean_both_undecodable
+    LEAN≠FORK minimal/097-null-ptr-arith.undef.c: fork: fatal engine diagnostic; no completed observation (status 125); lean: fatal engine diagnostic; no completed observation (status 134) — not agreement
+      pristine: UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+      fork:     UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+      lean:     UNDECODABLE(status 134: fatal engine diagnostic; no completed observation)
+98/855 semantic_agreement: minimal/098-cross-alloc-ptrdiff.undef.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+99/855 semantic_agreement: minimal/099-negative-right-shift.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+100/855 semantic_agreement: minimal/100-int-wrap-unsigned.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+101/855 semantic_agreement: minimal/101-signed-overflow.undef.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+102/855 semantic_agreement: minimal/102-bool-implicit-conv.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+103/855 semantic_agreement: minimal/103-union-store-load.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+104/855 semantic_agreement: minimal/104-unsigned-wrap-arith.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+105/855 semantic_agreement: minimal/105-bitwise-ops.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+106/855 semantic_agreement: minimal/106-sizeof-struct-array.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+107/855 semantic_agreement: minimal/107-sizeof-multibyte-literal.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+108/855 semantic_agreement: minimal/108-sizeof-5byte-multibyte-literal.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+109/855 semantic_agreement: minimal/109-escape-hex-all-bytes.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+110/855 semantic_agreement: minimal/110-escape-octal-all-bytes.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+111/855 semantic_agreement: minimal/111-escape-nul-inside-literal.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+112/855 semantic_agreement: coverage/arith3/arith3-001-unsigned-div.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+113/855 semantic_agreement: coverage/arith3/arith3-002-unsigned-mod.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+114/855 semantic_agreement: coverage/arith3/arith3-003-unsigned-shl.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+115/855 semantic_agreement: coverage/arith3/arith3-004-unsigned-shr.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+116/855 semantic_agreement: coverage/arith3/arith3-005-bool-conv.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+117/855 semantic_agreement: coverage/arith3/arith3-006-wrap-unsigned-char.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+118/855 semantic_agreement: coverage/builtin/builtin-001-ffs.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+119/855 semantic_agreement: coverage/builtin/builtin-002-ctz.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+120/855 semantic_agreement: coverage/builtin/builtin-003-bswap16.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+121/855 semantic_agreement: coverage/builtin/builtin-004-bswap32.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+122/855 semantic_agreement: coverage/builtin/builtin-005-bswap64.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+123/855 semantic_agreement: coverage/builtin/builtin-006-exit.libc.c (pristine 0.0s, fork 0.0s) | lean: lean_difference
+    LEAN≠FORK coverage/builtin/builtin-006-exit.libc.c: verdict tokens differ under projection full
+      pristine: ERR:{msg: "ill-formed program: `calling an unknown procedure: Symbol(549, SD_Id(\"exit\"))'"}
+      fork:     ERR:{msg: "ill-formed program: `calling an unknown procedure: Symbol(549, SD_Id(\"exit\"))'"}
+      lean:     ERR:{msg: "ill-formed program: `calling an unknown procedure: Symbol(66, SD_Id(\"exit\"))'"}
+124/855 semantic_agreement: coverage/compound/compound-001-add-assign.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+125/855 semantic_agreement: coverage/compound/compound-002-sub-assign.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+126/855 semantic_agreement: coverage/compound/compound-003-mul-assign.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+127/855 semantic_agreement: coverage/compound/compound-004-div-assign.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+128/855 semantic_agreement: coverage/compound/compound-005-mod-assign.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+129/855 semantic_agreement: coverage/compound/compound-006-shl-assign.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+130/855 semantic_agreement: coverage/compound/compound-007-shr-assign.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+131/855 semantic_agreement: coverage/compound/compound-008-and-assign.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+132/855 semantic_agreement: coverage/compound/compound-009-or-assign.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+133/855 semantic_agreement: coverage/compound/compound-010-xor-assign.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+134/855 semantic_agreement: coverage/compound/compound-011-assert-true.libc.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+135/855 semantic_agreement: coverage/compound/compound-012-assert-expr.libc.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+136/855 semantic_agreement: coverage/conv/conv-001-signed-to-unsigned.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+137/855 semantic_agreement: coverage/conv/conv-002-unsigned-to-signed.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+138/855 semantic_agreement: coverage/conv/conv-003-narrow-int.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+139/855 semantic_agreement: coverage/conv/conv-004-widen-char.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+140/855 semantic_agreement: coverage/conv/conv-005-unsigned-char-widen.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+141/855 semantic_agreement: coverage/conv/conv-006-long-to-int.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+142/855 semantic_agreement: coverage/conv/conv-007-int-to-long.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+143/855 semantic_agreement: coverage/conv/conv-008-bool-from-int.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+144/855 semantic_agreement: coverage/conv/conv-009-bool-from-ptr.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+145/855 semantic_agreement: coverage/conv/conv-010-enum-underlying.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+146/855 semantic_agreement: coverage/conv/conv-011-implicit-arith.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+147/855 semantic_agreement: coverage/conv/conv-012-unsigned-overflow.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+148/855 semantic_agreement: coverage/conv/conv-013-signed-overflow.undef.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+149/855 semantic_agreement: coverage/conv/conv-014-cast-chain.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+150/855 semantic_agreement: coverage/conv/conv-015-float-to-int-trunc.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+151/855 semantic_agreement: coverage/conv/conv-016-int-to-float-round.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+152/855 semantic_agreement: coverage/conv/conv-017-double-to-float.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+153/855 semantic_agreement: coverage/conv/conv-018-float-to-unsigned.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+154/855 semantic_agreement: coverage/ctrl/ctrl-001-nested-switch.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+155/855 semantic_agreement: coverage/ctrl/ctrl-002-switch-many-cases.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+156/855 semantic_agreement: coverage/ctrl/ctrl-003-goto-forward.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+157/855 semantic_agreement: coverage/ctrl/ctrl-004-goto-backward.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+158/855 semantic_agreement: coverage/ctrl/ctrl-005-goto-nested.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+159/855 semantic_agreement: coverage/ctrl/ctrl-006-nested-if-deep.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+160/855 semantic_agreement: coverage/ctrl/ctrl-007-loop-break-continue.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+161/855 semantic_agreement: coverage/ctrl/ctrl-008-do-while-zero.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+162/855 semantic_agreement: coverage/ctrl/ctrl-009-for-empty-parts.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+163/855 semantic_agreement: coverage/ctrl/ctrl-010-early-return.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+164/855 semantic_agreement: coverage/ctrl/ctrl-011-nested-scope-vars.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+165/855 semantic_agreement: coverage/ctrl/ctrl-012-multi-decl.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+166/855 semantic_agreement: coverage/ctrl2/ctrl2-001-seqrmw-sseq.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+167/855 semantic_agreement: coverage/ctrl2/ctrl2-002-postinc-complex.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+168/855 semantic_agreement: coverage/ctrl2/ctrl2-003-errno.libc.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+169/855 semantic_agreement: coverage/ctrl3/ctrl3-001-malloc-computed-size.libc.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+170/855 semantic_agreement: coverage/ctrl3/ctrl3-002-null-funcptr-call.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+171/855 semantic_agreement: coverage/ctrl3/ctrl3-003-funcptr-void-cast.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+172/855 semantic_agreement: coverage/ctrl3/ctrl3-004-falloff-nonvoid.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+173/855 semantic_agreement: coverage/ctrl3/ctrl3-005-unseq-neg-pos.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+174/855 semantic_agreement: coverage/dynaddr/dynaddr-001-free-automatic-control.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+175/855 semantic_agreement: coverage/dynaddr/dynaddr-002-malloc0-then-free-automatic.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+176/855 semantic_agreement: coverage/dynaddr/dynaddr-003-malloc0-nonnull.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+177/855 semantic_agreement: coverage/eval2/eval2-001-struct-member-value.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+178/855 semantic_agreement: coverage/eval2/eval2-002-union-member-value.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+179/855 semantic_agreement: coverage/eval2/eval2-003-nested-member-value.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+180/855 semantic_agreement: coverage/eval2/eval2-004-compound-literal-member.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+181/855 semantic_agreement: coverage/eval2/eval2-005-float-compare-eq.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+182/855 semantic_agreement: coverage/eval2/eval2-006-float-compare-lt.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+183/855 semantic_agreement: coverage/eval2/eval2-007-float-compare-le.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+184/855 semantic_agreement: coverage/eval2/eval2-008-float-compare-gt.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+185/855 semantic_agreement: coverage/eval2/eval2-009-float-compare-ge.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+186/855 semantic_agreement: coverage/eval2/eval2-010-float-arith-pure.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+187/855 semantic_agreement: coverage/eval2/eval2-011-float-sub-mul-div.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+188/855 semantic_agreement: coverage/eval2/eval2-012-bool-and-ff.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+189/855 semantic_agreement: coverage/eval2/eval2-013-bool-or-variants.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+190/855 semantic_agreement: coverage/eval2/eval2-014-generic-expr.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+191/855 semantic_agreement: coverage/eval2/eval2-015-generic-types.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+192/855 semantic_agreement: coverage/expr/expr-001-compound-literal.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+193/855 semantic_agreement: coverage/expr/expr-002-designated-init.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+194/855 semantic_agreement: coverage/expr/expr-003-nested-ternary.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+195/855 semantic_agreement: coverage/expr/expr-004-comma-complex.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+196/855 semantic_agreement: coverage/expr/expr-005-sizeof-expr.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+197/855 semantic_agreement: coverage/expr/expr-006-cast-in-expr.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+198/855 matching_failure: coverage/expr/expr-007-bitfield-ops.c (pristine 0.0s, fork 0.0s) | lean: lean_difference
+    LEAN≠FORK coverage/expr/expr-007-bitfield-ops.c: one side undecodable: fork: empty or truncated observation (status 1)
+      pristine: UNDECODABLE(status 1: empty or truncated observation)
+      fork:     UNDECODABLE(status 1: empty or truncated observation)
+      lean:     ERR:{msg: "desugaring failed at tests/coverage/expr/expr-007-bitfield-ops.c:6:22-23"}
+199/855 semantic_agreement: coverage/expr/expr-008-enum-arith.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+200/855 semantic_agreement: coverage/expr/expr-009-negative-shift.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+201/855 semantic_agreement: coverage/expr/expr-010-large-shift.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+202/855 semantic_agreement: coverage/expr/expr-011-sequence-point.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+203/855 semantic_agreement: coverage/expr/expr-012-logical-shortcircuit.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+204/855 semantic_agreement: coverage/io/io-001-printf-basic.libc.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+205/855 semantic_agreement: coverage/io/io-002-printf-int.libc.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+206/855 semantic_agreement: coverage/io/io-003-printf-string.libc.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+207/855 semantic_agreement: coverage/io/io-004-puts.libc.unsupported.c (pristine 0.0s, fork 0.0s) | lean: lean_difference
+    LEAN≠FORK coverage/io/io-004-puts.libc.unsupported.c: verdict tokens differ under projection full
+      pristine: ERR:{msg: "ill-formed program: `calling an unknown procedure: Symbol(605, SD_Id(\"puts\"))'"}
+      fork:     ERR:{msg: "ill-formed program: `calling an unknown procedure: Symbol(605, SD_Id(\"puts\"))'"}
+      lean:     ERR:{msg: "ill-formed program: `calling an unknown procedure: Symbol(122, SD_Id(\"puts\"))'"}
+208/855 semantic_agreement: coverage/io/io-005-printf-multi.libc.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+209/855 semantic_agreement: coverage/libc/libc-001-malloc-free.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+210/855 semantic_agreement: coverage/libc/libc-002-calloc.c (pristine 0.0s, fork 0.0s) | lean: lean_difference
+    LEAN≠FORK coverage/libc/libc-002-calloc.c: verdict tokens differ under projection full
+      pristine: ERR:{msg: "ill-formed program: `calling an unknown procedure: Symbol(535, SD_Id(\"calloc\"))'"}
+      fork:     ERR:{msg: "ill-formed program: `calling an unknown procedure: Symbol(535, SD_Id(\"calloc\"))'"}
+      lean:     ERR:{msg: "ill-formed program: `calling an unknown procedure: Symbol(52, SD_Id(\"calloc\"))'"}
+211/855 semantic_agreement: coverage/libc/libc-003-realloc.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+212/855 semantic_agreement: coverage/libc/libc-004-free-null.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+213/855 semantic_agreement: coverage/libc/libc-005-double-free.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+214/855 semantic_agreement: coverage/libc/libc-006-use-after-free.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+215/855 semantic_agreement: coverage/libc/libc-007-free-stack.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+216/855 semantic_agreement: coverage/libc/libc-008-memcpy-basic.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+217/855 semantic_agreement: coverage/libc/libc-009-memcpy-struct.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+218/855 semantic_agreement: coverage/libc/libc-010-memcmp.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+219/855 semantic_agreement: coverage/libc/libc-011-memset.c (pristine 0.0s, fork 0.0s) | lean: lean_difference
+    LEAN≠FORK coverage/libc/libc-011-memset.c: verdict tokens differ under projection full
+      pristine: ERR:{msg: "ill-formed program: `calling an unknown procedure: Symbol(571, SD_Id(\"memset\"))'"}
+      fork:     ERR:{msg: "ill-formed program: `calling an unknown procedure: Symbol(571, SD_Id(\"memset\"))'"}
+      lean:     ERR:{msg: "ill-formed program: `calling an unknown procedure: Symbol(88, SD_Id(\"memset\"))'"}
+220/855 semantic_agreement: coverage/libc/libc-012-strlen.c (pristine 0.0s, fork 0.0s) | lean: lean_difference
+    LEAN≠FORK coverage/libc/libc-012-strlen.c: verdict tokens differ under projection full
+      pristine: ERR:{msg: "ill-formed program: `calling an unknown procedure: Symbol(575, SD_Id(\"strlen\"))'"}
+      fork:     ERR:{msg: "ill-formed program: `calling an unknown procedure: Symbol(575, SD_Id(\"strlen\"))'"}
+      lean:     ERR:{msg: "ill-formed program: `calling an unknown procedure: Symbol(92, SD_Id(\"strlen\"))'"}
+221/855 semantic_agreement: coverage/libc/libc-013-malloc-large.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+222/855 semantic_agreement: coverage/libc/libc-014-write-after-free.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+223/855 semantic_agreement: coverage/mem/mem-001-store-load-char.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+224/855 semantic_agreement: coverage/mem/mem-002-store-load-short.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+225/855 semantic_agreement: coverage/mem/mem-003-type-pun-char.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+226/855 semantic_agreement: coverage/mem/mem-004-type-pun-write.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+227/855 semantic_agreement: coverage/mem/mem-005-readonly-const.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+228/855 semantic_agreement: coverage/mem/mem-006-uninitialized-read.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+229/855 matching_failure: coverage/mem/mem-007-zero-size-array.c (pristine 0.0s, fork 0.0s) | lean: lean_difference
+    LEAN≠FORK coverage/mem/mem-007-zero-size-array.c: one side undecodable: fork: empty or truncated observation (status 1)
+      pristine: UNDECODABLE(status 1: empty or truncated observation)
+      fork:     UNDECODABLE(status 1: empty or truncated observation)
+      lean:     ERR:{msg: "desugaring failed at tests/coverage/mem/mem-007-zero-size-array.c:5:8-12"}
+230/855 semantic_agreement: coverage/mem/mem-008-large-struct.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+231/855 semantic_agreement: coverage/mem/mem-009-packed-access.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+232/855 semantic_agreement: coverage/mem/mem-010-flexible-array.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+233/855 semantic_agreement: coverage/mem3/mem3-001-bool-load.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+234/855 semantic_agreement: coverage/mem3/mem3-002-bool-trap.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+235/855 semantic_agreement: coverage/mem3/mem3-003-const-compound-literal.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+236/855 semantic_agreement: coverage/mem3/mem3-004-string-write-attempt.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+237/855 semantic_agreement: coverage/mem3/mem3-005-struct-multi-ptr.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+238/855 semantic_agreement: coverage/mem3/mem3-006-array-of-ptrs.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+239/855 semantic_agreement: coverage/mem3/mem3-007-realloc-null.libc.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+240/855 semantic_agreement: coverage/mem3/mem3-008-eff-member-shift.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+241/855 matching_failure: coverage/misc/misc-001-void-ptr-arith.c (pristine 0.0s, fork 0.0s) | lean: lean_difference
+    LEAN≠FORK coverage/misc/misc-001-void-ptr-arith.c: one side undecodable: fork: empty or truncated observation (status 1)
+      pristine: UNDECODABLE(status 1: empty or truncated observation)
+      fork:     UNDECODABLE(status 1: empty or truncated observation)
+      lean:     ERR:{msg: "typechecking failed at tests/coverage/misc/misc-001-void-ptr-arith.c:7:10-16"}
+242/855 semantic_agreement: coverage/misc/misc-002-offsetof.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+243/855 semantic_agreement: coverage/misc/misc-003-array-of-struct-shift.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+244/855 semantic_agreement: coverage/misc/misc-004-void-return.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+245/855 semantic_agreement: coverage/misc/misc-005-signed-div-mod-shift.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+246/855 semantic_agreement: coverage/misc/misc-006-ptr-compare-true.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+247/855 semantic_agreement: coverage/misc/misc-007-float-compare-branches.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+248/855 semantic_agreement: coverage/misc/misc-008-null-ptr-literal.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+249/855 semantic_agreement: coverage/misc/misc-009-const-global.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+250/855 semantic_agreement: coverage/misc/misc-010-int-min.libc.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+251/855 semantic_agreement: coverage/misc/misc-011-member-shift-ptr.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+252/855 semantic_agreement: coverage/ptr/ptr-001-subtract-same-array.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+253/855 semantic_agreement: coverage/ptr/ptr-002-compare-same-array.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+254/855 semantic_agreement: coverage/ptr/ptr-003-compare-equality.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+255/855 semantic_agreement: coverage/ptr/ptr-004-null-compare.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+256/855 semantic_agreement: coverage/ptr/ptr-005-one-past-end-compare.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+257/855 semantic_agreement: coverage/ptr/ptr-006-void-ptr-cast.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+258/855 semantic_agreement: coverage/ptr/ptr-007-func-ptr-compare.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+259/855 semantic_agreement: coverage/ptr/ptr-008-cross-alloc-compare.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+260/855 semantic_agreement: coverage/ptr/ptr-009-ptr-to-int-roundtrip.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+261/855 semantic_agreement: coverage/ptr/ptr-010-null-ptr-to-int.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+262/855 semantic_agreement: coverage/ptr/ptr-011-array-decay.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+263/855 semantic_agreement: coverage/ptr/ptr-012-multidim-ptr.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+264/855 semantic_agreement: coverage/ptr2/ptr2-001-le-same-array.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+265/855 semantic_agreement: coverage/ptr2/ptr2-002-ge-same-array.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+266/855 semantic_agreement: coverage/ptr2/ptr2-003-gt-same-array.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+267/855 semantic_agreement: coverage/ptr2/ptr2-004-le-equal.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+268/855 semantic_agreement: coverage/ptr2/ptr2-005-ge-equal.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+269/855 semantic_agreement: coverage/ptr2/ptr2-006-eff-array-shift.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+270/855 semantic_agreement: coverage/ptr2/ptr2-007-eff-negative-shift.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+271/855 semantic_agreement: coverage/ptr2/ptr2-008-eff-one-past-end.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+272/855 semantic_agreement: coverage/ptr2/ptr2-009-eff-malloc-shift.libc.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+273/855 semantic_agreement: coverage/ptr2/ptr2-010-eff-zero-shift.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+274/855 semantic_agreement: coverage/ptr2/ptr2-011-funcptr-eq.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+275/855 semantic_agreement: coverage/ptr2/ptr2-012-funcptr-ne.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+276/855 semantic_agreement: coverage/ptr2/ptr2-013-funcptr-call.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+277/855 semantic_agreement: coverage/ptr2/ptr2-014-funcptr-array.c (pristine 0.1s, fork 0.1s) | lean: lean_agreement
+278/855 semantic_agreement: coverage/ptr2/ptr2-015-funcptr-param.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+279/855 semantic_agreement: coverage/ptr3/ptr3-001-funcptr-to-int.libc.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+280/855 semantic_agreement: coverage/ptr3/ptr3-002-int-to-ptr-null.libc.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+281/855 semantic_agreement: coverage/ptr3/ptr3-003-int-to-ptr-roundtrip.libc.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+282/855 semantic_agreement: coverage/ptr3/ptr3-004-ptrdiff-array.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+283/855 semantic_agreement: coverage/ptr3/ptr3-005-ptrdiff-cross-alloc.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+284/855 semantic_agreement: coverage/ptr3/ptr3-006-eq-one-past-end.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+285/855 semantic_agreement: coverage/ptr3/ptr3-007-null-lt-null.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+286/855 semantic_agreement: coverage/ptr3/ptr3-008-null-le-null.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+287/855 semantic_agreement: coverage/store2/store2-001-string-literal.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+288/855 semantic_agreement: coverage/store2/store2-002-compound-literal.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+289/855 semantic_agreement: coverage/store2/store2-003-const-compound.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+290/855 semantic_agreement: coverage/store2/store2-004-string-compare.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+291/855 semantic_agreement: coverage/store2/store2-005-string-index.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+292/855 semantic_agreement: coverage/struct/struct-001-nested-struct.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+293/855 semantic_agreement: coverage/struct/struct-002-nested-access.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+294/855 semantic_agreement: coverage/struct/struct-003-struct-array-member.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+295/855 semantic_agreement: coverage/struct/struct-004-union-type-pun.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+296/855 semantic_agreement: coverage/struct/struct-005-struct-copy.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+297/855 semantic_agreement: coverage/struct/struct-006-struct-return.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+298/855 semantic_agreement: coverage/struct/struct-007-struct-param.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+299/855 semantic_agreement: coverage/struct/struct-008-anon-struct.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+300/855 semantic_agreement: coverage/struct/struct-009-init-partial.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+301/855 semantic_agreement: coverage/struct/struct-010-union-in-struct.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+302/855 semantic_agreement: coverage/union3/union3-001-basic-store-load.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+303/855 semantic_agreement: coverage/union3/union3-002-type-pun-int-float.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+304/855 semantic_agreement: coverage/union3/union3-003-union-init.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+305/855 matching_failure: coverage/union3/union3-004-union-copy.c (pristine 0.0s, fork 0.0s) | lean: lean_difference
+    LEAN≠FORK coverage/union3/union3-004-union-copy.c: one side undecodable: fork: empty or truncated observation (status 1)
+      pristine: UNDECODABLE(status 1: empty or truncated observation)
+      fork:     UNDECODABLE(status 1: empty or truncated observation)
+      lean:     ERR:{msg: "typechecking failed at tests/coverage/union3/union3-004-union-copy.c:7:17-18"}
+306/855 matching_failure: coverage/union3/union3-005-union-return.c (pristine 0.0s, fork 0.0s) | lean: lean_difference
+    LEAN≠FORK coverage/union3/union3-005-union-return.c: one side undecodable: fork: empty or truncated observation (status 1)
+      pristine: UNDECODABLE(status 1: empty or truncated observation)
+      fork:     UNDECODABLE(status 1: empty or truncated observation)
+      lean:     ERR:{msg: "typechecking failed at tests/coverage/union3/union3-005-union-return.c:10:17-31"}
+307/855 semantic_agreement: coverage/union3/union3-006-union-memberof.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+308/855 semantic_agreement: coverage/union3/union3-007-nested-union.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+309/855 semantic_agreement: coverage/varargs/varargs-001-va-copy.libc.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+310/855 semantic_agreement: coverage/varargs/varargs-002-va-end.libc.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+311/855 semantic_agreement: coverage/varargs/varargs-003-va-multiple-types.libc.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+312/855 semantic_agreement: coverage/varargs/varargs-004-va-pass-through.libc.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+313/855 semantic_agreement: coverage/varargs/varargs-005-va-sum.libc.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+314/855 semantic_agreement: coverage/z2/z2-001-empty-struct-ub061.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+315/855 semantic_agreement: coverage/z2/z2-002-enum-conv-registry.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+316/855 semantic_agreement: coverage/z2/z2-003-unspec-const-ptr.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+317/855 semantic_agreement: coverage/z2/z2-004-atomic-member-ub042.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+318/855 semantic_agreement: coverage/z2/z2-005-nd-order3.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+319/855 semantic_agreement: coverage/z2/z2-006-nd-order2.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+320/855 semantic_agreement: coverage/z2/z2-007-nd-order-ptreq.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+321/855 semantic_agreement: coverage/z2/z2-008-int32-uac-header-route.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+322/855 semantic_agreement: coverage/z2/z2-009-int32-compat.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+323/855 semantic_agreement: coverage/z2/z2-010-hexfloat-round.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+324/855 semantic_agreement: debug/alias-01-int-to-struct.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+325/855 semantic_agreement: debug/alias-02-simple-cast.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+326/855 semantic_agreement: debug/alias-03-forced-misalign.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+327/855 semantic_agreement: debug/align-01-char-array-addr.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+328/855 semantic_agreement: debug/align-02-print-addr.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+329/855 semantic_agreement: debug/align-03-single-global.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+330/855 semantic_agreement: debug/align-04-no-globals.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+331/855 semantic_agreement: debug/compat-01-funcall-types.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+332/855 semantic_agreement: debug/compat-02-size-t.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+333/855 semantic_agreement: debug/compat-03-enum-int.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+334/855 semantic_agreement: debug/compat-04-funcptr-enum-int.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+335/855 semantic_agreement: debug/conv-01-neg-to-unsigned.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+336/855 semantic_agreement: debug/conv-02-unsigned-cmp-self.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+337/855 semantic_agreement: debug/conv-03-neg-cmp-umax.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+338/855 semantic_agreement: debug/conv-04-signed-cmp.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+339/855 semantic_agreement: debug/conv-05-simple-conv.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+340/855 semantic_agreement: debug/conv-06-conv-preserves.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+341/855 semantic_agreement: debug/conv-07-if-conv-cmp.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+342/855 semantic_agreement: debug/conv-08-explicit-vars.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+343/855 semantic_agreement: debug/conv-09-inline-cmp.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+344/855 semantic_agreement: debug/div-01-neg-divide.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+345/855 semantic_agreement: debug/div-11-neg1-over-10.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+346/855 semantic_agreement: debug/div-12-neg1-over-10-ret.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+347/855 semantic_agreement: debug/float-01-infinity-literal.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+348/855 semantic_agreement: debug/float-13-multi-param.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+349/855 semantic_agreement: debug/float-17-compare-first.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+350/855 semantic_agreement: debug/float-20-bool-conv.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+351/855 semantic_agreement: debug/float-20-neg-to-long.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+352/855 semantic_agreement: debug/float-21-simple-neg.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+353/855 semantic_agreement: debug/float-22-compare.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+354/855 semantic_agreement: debug/intfromptr-01-null.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+355/855 semantic_agreement: debug/intfromptr-02-small-addr.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+356/855 semantic_agreement: debug/intfromptr-03-local-to-int.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+357/855 semantic_agreement: debug/intfromptr-04-to-unsigned.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+358/855 semantic_agreement: debug/intfromptr-05-to-long.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+359/855 semantic_agreement: debug/intfromptr-06-sizeof.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+360/855 semantic_agreement: debug/intfromptr-07-check-addr.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+361/855 semantic_agreement: debug/intfromptr-08-full-addr.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+362/855 semantic_agreement: debug/intfromptr-09-first-alloc.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+363/855 semantic_agreement: debug/intfromptr-10-minimal.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+364/855 semantic_agreement: debug/libc-01-memset.libc.c (pristine 0.0s, fork 0.0s) | lean: lean_difference
+    LEAN≠FORK debug/libc-01-memset.libc.c: verdict tokens differ under projection full
+      pristine: ERR:{msg: "ill-formed program: `calling an unknown procedure: Symbol(571, SD_Id(\"memset\"))'"}
+      fork:     ERR:{msg: "ill-formed program: `calling an unknown procedure: Symbol(571, SD_Id(\"memset\"))'"}
+      lean:     ERR:{msg: "ill-formed program: `calling an unknown procedure: Symbol(88, SD_Id(\"memset\"))'"}
+365/855 semantic_agreement: debug/libc-02-strlen.libc.c (pristine 0.0s, fork 0.0s) | lean: lean_difference
+    LEAN≠FORK debug/libc-02-strlen.libc.c: verdict tokens differ under projection full
+      pristine: ERR:{msg: "ill-formed program: `calling an unknown procedure: Symbol(575, SD_Id(\"strlen\"))'"}
+      fork:     ERR:{msg: "ill-formed program: `calling an unknown procedure: Symbol(575, SD_Id(\"strlen\"))'"}
+      lean:     ERR:{msg: "ill-formed program: `calling an unknown procedure: Symbol(92, SD_Id(\"strlen\"))'"}
+366/855 semantic_agreement: debug/ptr-01-one-past-end.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+367/855 semantic_agreement: debug/ptr-02-simple-decr.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+368/855 semantic_agreement: debug/ptr-03-no-decr.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+369/855 semantic_agreement: debug/ptr-04-int-decr.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+370/855 semantic_agreement: debug/ptr-05-store-load-ptr.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+371/855 semantic_agreement: debug/ptr-06-explicit-sub.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+372/855 semantic_agreement: debug/ptr-07-reassign.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+373/855 semantic_agreement: debug/ptr-10-neg-one.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+374/855 semantic_agreement: debug/ptr-11-neg-one-simple.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+375/855 semantic_agreement: debug/rec-01-simplest.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+376/855 semantic_agreement: debug/rec-02-call-twice.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+377/855 semantic_agreement: debug/rec-03-one-recursive-call.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+378/855 semantic_agreement: debug/rec-04-add-one.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+379/855 semantic_agreement: debug/rec-05-multiply.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+380/855 semantic_agreement: debug/rec-06-factorial-small.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+381/855 semantic_agreement: debug/struct-00-membershift.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+382/855 semantic_agreement: debug/struct-01-init.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+383/855 semantic_agreement: debug/struct-02-pass-by-value.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+384/855 semantic_agreement: debug/struct-03-pass-simple.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+385/855 semantic_agreement: debug/struct-04-array-member.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+386/855 semantic_agreement: debug/struct-05-array-direct.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+387/855 semantic_agreement: debug/struct-06-local-struct-array.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+388/855 semantic_agreement: debug/struct-07-pass-int-array.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+389/855 semantic_agreement: debug/ub-inconsistent.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+390/855 semantic_agreement: debug/ub-runtime-detect.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+391/855 matching_failure: debug/ub-static-reject.c (pristine 0.0s, fork 0.0s) | lean: lean_difference
+    LEAN≠FORK debug/ub-static-reject.c: one side undecodable: fork: empty or truncated observation (status 1)
+      pristine: UNDECODABLE(status 1: empty or truncated observation)
+      fork:     UNDECODABLE(status 1: empty or truncated observation)
+      lean:     ERR:{msg: "desugaring failed at tests/debug/ub-static-reject.c:4:12:"}
+392/855 semantic_agreement: debug/unseq-01-exact-0301.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+393/855 semantic_agreement: debug/unseq-02-simple-double-write.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+394/855 semantic_agreement: debug/unseq-03-write-then-read.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+395/855 semantic_agreement: debug/unseq-04-nested-write-outer.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+396/855 semantic_agreement: debug/unseq-05-nested-write-inner.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+397/855 semantic_agreement: debug/unseq-06-sequenced-comma.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+398/855 semantic_agreement: debug/unseq-07-read-then-write-comma.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+399/855 semantic_agreement: debug/unseq-08-compound-lhs.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+400/855 semantic_agreement: debug/unseq-09-increment.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+401/855 semantic_agreement: debug/unseq-10-func-arg.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+402/855 semantic_agreement: debug/unseq-11-both-in-unseq.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+403/855 semantic_agreement: debug/unseq-12-outer-after-unseq.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+404/855 semantic_agreement: debug/unseq-13-read-in-unseq-write-after.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+405/855 semantic_agreement: debug/unseq-14-different-vars.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+406/855 semantic_agreement: debug/unseq-15-nested-same-unseq.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+407/855 semantic_agreement: debug/unseq-16-triple-nested.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+408/855 semantic_agreement: debug/valid-01-oob-no-deref.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+409/855 semantic_agreement: debug/valid-02-oob-deref.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+410/855 semantic_agreement: debug/valid-03-oob-store.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+411/855 semantic_agreement: debug/valid-04-exit-before-oob.c (pristine 0.0s, fork 0.0s) | lean: lean_difference
+    LEAN≠FORK debug/valid-04-exit-before-oob.c: verdict tokens differ under projection full
+      pristine: ERR:{msg: "ill-formed program: `calling an unknown procedure: Symbol(502, SD_Id(\"exit\"))'"} | ERR:{msg: "ill-formed program: `calling an unknown procedure: Symbol(502, SD_Id(\"exit\"))'"}
+      fork:     ERR:{msg: "ill-formed program: `calling an unknown procedure: Symbol(502, SD_Id(\"exit\"))'"} | ERR:{msg: "ill-formed program: `calling an unknown procedure: Symbol(502, SD_Id(\"exit\"))'"}
+      lean:     ERR:{msg: "ill-formed program: `calling an unknown procedure: Symbol(19, SD_Id(\"exit\"))'"} | ERR:{msg: "ill-formed program: `calling an unknown procedure: Symbol(19, SD_Id(\"exit\"))'"}
+412/855 semantic_agreement: debug/valid-05-ptr-validity-check.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+413/855 semantic_agreement: debug/varargs-01-ptr-valist.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+414/855 semantic_agreement: float/001-literal-zero.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+415/855 semantic_agreement: float/002-literal-one.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+416/855 semantic_agreement: float/003-literal-negative.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+417/855 semantic_agreement: float/004-literal-fraction.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+418/855 semantic_agreement: float/005-literal-large.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+419/855 semantic_agreement: float/006-literal-small.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+420/855 semantic_agreement: float/010-compare-eq-true.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+421/855 semantic_agreement: float/011-compare-eq-false.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+422/855 semantic_agreement: float/012-compare-ne-true.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+423/855 semantic_agreement: float/013-compare-lt.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+424/855 semantic_agreement: float/014-compare-gt.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+425/855 semantic_agreement: float/015-compare-le.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+426/855 semantic_agreement: float/016-compare-ge.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+427/855 semantic_agreement: float/020-arith-add.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+428/855 semantic_agreement: float/021-arith-sub.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+429/855 semantic_agreement: float/022-arith-mul.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+430/855 semantic_agreement: float/023-arith-div.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+431/855 semantic_agreement: float/024-arith-neg.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+432/855 semantic_agreement: float/030-conv-int-to-float.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+433/855 semantic_agreement: float/031-conv-float-to-int.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+434/855 semantic_agreement: float/032-conv-float-to-int-neg.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+435/855 semantic_agreement: float/033-conv-float-to-double.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+436/855 semantic_agreement: float/034-conv-double-to-float.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+437/855 semantic_agreement: float/035-conv-neg-int-to-float.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+438/855 semantic_agreement: float/036-conv-unsigned-to-float.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+439/855 semantic_agreement: float/037-conv-implicit-int-to-float.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+440/855 semantic_agreement: float/038-conv-implicit-float-to-double.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+441/855 semantic_agreement: float/039-conv-double-to-int.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+442/855 semantic_agreement: float/040-bool-zero-is-false.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+443/855 semantic_agreement: float/041-bool-nonzero-is-true.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+444/855 semantic_agreement: float/042-bool-neg-is-true.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+445/855 semantic_agreement: float/043-bool-small-is-true.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+446/855 semantic_agreement: float/044-bool-logical-not.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+447/855 semantic_agreement: float/045-bool-logical-not-zero.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+448/855 semantic_agreement: float/046-bool-and.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+449/855 semantic_agreement: float/047-bool-or.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+450/855 semantic_agreement: float/048-bool-double-zero.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+451/855 semantic_agreement: float/049-bool-double-nonzero.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+452/855 semantic_agreement: float/050-store-load-roundtrip.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+453/855 semantic_agreement: float/051-store-load-negative.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+454/855 semantic_agreement: float/052-store-load-fraction.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+455/855 semantic_agreement: float/053-store-load-double.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+456/855 semantic_agreement: float/054-array-float.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+457/855 semantic_agreement: float/055-pointer-deref.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+458/855 semantic_agreement: float/056-pointer-write.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+459/855 semantic_agreement: float/057-large-value.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+460/855 semantic_agreement: float/058-small-value.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+461/855 semantic_agreement: float/059-neg-zero.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+462/855 semantic_agreement: float/060-func-param.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+463/855 semantic_agreement: float/061-func-return.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+464/855 semantic_agreement: float/062-func-two-params.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+465/855 semantic_agreement: float/063-func-double-param.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+466/855 semantic_agreement: float/064-func-mixed-params.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+467/855 semantic_agreement: float/065-struct-member.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+468/855 semantic_agreement: float/066-struct-init.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+469/855 semantic_agreement: float/067-struct-double.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+470/855 semantic_agreement: float/068-struct-mixed.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+471/855 semantic_agreement: float/069-funcptr-float.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+472/855 semantic_agreement: float/070-compound-add.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+473/855 semantic_agreement: float/071-compound-sub.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+474/855 semantic_agreement: float/072-compound-mul.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+475/855 semantic_agreement: float/073-compound-div.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+476/855 semantic_agreement: float/074-increment.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+477/855 semantic_agreement: float/075-decrement.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+478/855 semantic_agreement: float/076-postinc.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+479/855 semantic_agreement: float/077-postdec.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+480/855 semantic_agreement: float/078-compound-double.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+481/855 semantic_agreement: float/079-ternary-float.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+482/855 semantic_agreement: float/080-nan-inf.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+483/855 semantic_agreement: float/081-hex-audit-260-zeros.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+484/855 semantic_agreement: float/082-hex-control-1p0.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+485/855 semantic_agreement: float/083-hex-tie-54th-bit-down.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+486/855 semantic_agreement: float/084-hex-tie-54th-bit-up.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+487/855 semantic_agreement: float/085-hex-sticky-116-bits.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+488/855 semantic_agreement: float/086-hex-1001-bit-mantissa.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+489/855 semantic_agreement: float/087-hex-1001-bit-sticky.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+490/855 semantic_agreement: float/088-hex-frac-only-cancel.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+491/855 semantic_agreement: float/089-hex-max-finite.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+492/855 semantic_agreement: float/090-hex-first-overflow.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+493/855 semantic_agreement: float/091-dec-overflow-boundary.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+494/855 semantic_agreement: float/092-hex-min-normal.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+495/855 semantic_agreement: float/093-hex-max-subnormal.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+496/855 semantic_agreement: float/094-dec-min-normal-midpoint.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+497/855 semantic_agreement: float/095-hex-min-subnormal.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+498/855 semantic_agreement: float/096-dec-half-min-subnormal.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+499/855 semantic_agreement: float/097-hex-tie-p-1075.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+500/855 semantic_agreement: float/099-hex-forms.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+501/855 semantic_agreement: float/100-dec-2p53-ties.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+502/855 semantic_agreement: float/101-dec-1e23-tie.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+503/855 semantic_agreement: float/102-dec-point-one-sums.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+504/855 semantic_agreement: float/103-dec-long-midpoint.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+505/855 semantic_agreement: float/104-dec-random-17-digits.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+506/855 semantic_agreement: float/105-suffixes.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+507/855 matching_failure: bytes/byte_is_not_char.c (pristine 0.0s, fork 0.0s) | lean: lean_difference
+    LEAN≠FORK bytes/byte_is_not_char.c: one side undecodable: fork: empty or truncated observation (status 1)
+      pristine: UNDECODABLE(status 1: empty or truncated observation)
+      fork:     UNDECODABLE(status 1: empty or truncated observation)
+      lean:     ERR:{msg: "typechecking failed at tests/bytes/byte_is_not_char.c:4:14-17"}
+508/855 semantic_agreement: bytes/cast_0_byte.exec.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+509/855 semantic_agreement: bytes/cast_256_byte.exec.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+510/855 semantic_agreement: bytes/cast_byte_byte.exec.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+511/855 semantic_agreement: bytes/cast_byte_uchar.exec.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+512/855 semantic_agreement: bytes/cast_load_byte_pointer.exec.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+513/855 semantic_agreement: bytes/cast_neg_128_byte.exec.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+514/855 semantic_agreement: bytes/cast_neg_1_byte.exec.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+515/855 semantic_agreement: bytes/function_return.exec.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+516/855 semantic_agreement: bytes/memcpy.exec.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+517/855 matching_failure: bytes/no_add.c (pristine 0.0s, fork 0.0s) | lean: lean_difference
+    LEAN≠FORK bytes/no_add.c: one side undecodable: fork: empty or truncated observation (status 1)
+      pristine: UNDECODABLE(status 1: empty or truncated observation)
+      fork:     UNDECODABLE(status 1: empty or truncated observation)
+      lean:     ERR:{msg: "typechecking failed at tests/bytes/no_add.c:8:5-10"}
+518/855 matching_failure: bytes/no_shift_left.c (pristine 0.0s, fork 0.0s) | lean: lean_difference
+    LEAN≠FORK bytes/no_shift_left.c: one side undecodable: fork: empty or truncated observation (status 1)
+      pristine: UNDECODABLE(status 1: empty or truncated observation)
+      fork:     UNDECODABLE(status 1: empty or truncated observation)
+      lean:     ERR:{msg: "typechecking failed at tests/bytes/no_shift_left.c:8:5-11"}
+519/855 matching_failure: bytes/no_shift_right.c (pristine 0.0s, fork 0.0s) | lean: lean_difference
+    LEAN≠FORK bytes/no_shift_right.c: one side undecodable: fork: empty or truncated observation (status 1)
+      pristine: UNDECODABLE(status 1: empty or truncated observation)
+      fork:     UNDECODABLE(status 1: empty or truncated observation)
+      lean:     ERR:{msg: "typechecking failed at tests/bytes/no_shift_right.c:8:5-11"}
+520/855 matching_failure: bytes/only_unsigned_char.c (pristine 0.0s, fork 0.0s) | lean: lean_difference
+    LEAN≠FORK bytes/only_unsigned_char.c: one side undecodable: fork: empty or truncated observation (status 1)
+      pristine: UNDECODABLE(status 1: empty or truncated observation)
+      fork:     UNDECODABLE(status 1: empty or truncated observation)
+      lean:     ERR:{msg: "desugaring failed at tests/bytes/only_unsigned_char.c:1:29-33"}
+521/855 semantic_agreement: libc_exec/001-exit.c (pristine 0.2s, fork 0.2s) | lean: lean_agreement
+522/855 semantic_agreement: libc_exec/002-puts.c (pristine 0.2s, fork 0.2s) | lean: lean_agreement
+523/855 semantic_agreement: libc_exec/003-calloc.c (pristine 0.2s, fork 0.2s) | lean: lean_agreement
+524/855 semantic_agreement: libc_exec/004-memset.c (pristine 0.2s, fork 0.2s) | lean: lean_agreement
+525/855 semantic_agreement: libc_exec/005-strlen.c (pristine 0.2s, fork 0.2s) | lean: lean_agreement
+526/855 semantic_agreement: libc_exec/006-strlen-snprintf.c (pristine 0.2s, fork 0.2s) | lean: lean_agreement
+527/855 semantic_agreement: libc_exec/007-va-user-vsnprintf.c (pristine 0.2s, fork 0.2s) | lean: lean_agreement
+528/855 semantic_agreement: libc_exec/008-aligned-alloc-bad-size.c (pristine 0.2s, fork 0.2s) | lean: lean_agreement
+529/855 semantic_agreement: libc_exec/009-aligned-alloc-3.c (pristine 0.2s, fork 0.2s) | lean: lean_agreement
+530/855 semantic_agreement: libc_exec/010-int32-printf.c (pristine 0.2s, fork 0.2s) | lean: lean_agreement
+531/855 semantic_agreement: libc_exec/011-decimal-sweep.c (pristine 0.3s, fork 0.3s) | lean: lean_agreement
+532/855 semantic_agreement: libc_exec/012-global-alloc-order.c (pristine 0.2s, fork 0.2s) | lean: lean_agreement
+533/855 semantic_agreement: multi_tu/basic (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+534/855 semantic_agreement: multi_tu/tentative (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+535/855 semantic_agreement: multi_tu_tray/arr-1-2-arg (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+536/855 semantic_agreement: multi_tu_tray/arr-1-2-return (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+537/855 semantic_agreement: multi_tu_tray/arr-2-2-arg (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+538/855 reviewed_difference: multi_tu_tray/arr-2-2-return (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+539/855 reviewed_difference: multi_tu_tray/arr-incomplete-ptr-return (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+540/855 semantic_agreement: multi_tu_tray/fam-vs-array-return (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+541/855 reviewed_difference: multi_tu_tray/node (pristine 30.1s, fork 0.0s) | lean: lean_agreement
+542/855 semantic_agreement: cn/accesses_on_spec/clientfile.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+543/855 semantic_agreement: cn/accesses_on_spec/libfile.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+544/855 semantic_agreement: cn/alloc_create.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+545/855 semantic_agreement: cn/alloc_token.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+546/855 semantic_agreement: cn/and_or_precedence.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+547/855 semantic_agreement: cn/append.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+548/855 semantic_agreement: cn/arith_type.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+549/855 semantic_agreement: cn/array_shift_mismatch.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+550/855 semantic_agreement: cn/array_shift_void.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+551/855 semantic_agreement: cn/arrow_access.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+552/855 semantic_agreement: cn/assert_on_toplevel.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+553/855 semantic_agreement: cn/bad_col.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+554/855 semantic_agreement: cn/bad_constructor_user.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+555/855 semantic_agreement: cn/bad_function_call.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+556/855 semantic_agreement: cn/bad_ordering.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+557/855 semantic_agreement: cn/bad_record2.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+558/855 semantic_agreement: cn/bad_record.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+559/855 semantic_agreement: cn/bad_recursion.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+560/855 semantic_agreement: cn/bad_resource_var.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+561/855 semantic_agreement: cn/before_from_bytes.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+562/855 semantic_agreement: cn/before_to_bytes.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+563/855 semantic_agreement: cn/bitwise_and.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+564/855 semantic_agreement: cn/bitwise_and_type_left.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+565/855 semantic_agreement: cn/bitwise_and_type_right.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+566/855 semantic_agreement: cn/bitwise_compl.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+567/855 semantic_agreement: cn/bitwise_compl_precedence.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+568/855 semantic_agreement: cn/bitwise_compl_type.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+569/855 semantic_agreement: cn/block_type.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+570/855 semantic_agreement: cn/b_or.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+571/855 semantic_agreement: cn/builtin_ctz.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+572/855 semantic_agreement: cn/builtin_ctz_val.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+573/855 semantic_agreement: cn/b_xor.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+574/855 semantic_agreement: cn/byte_int.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+575/855 semantic_agreement: cn/cnfunction_mismatched_args1.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+576/855 semantic_agreement: cn/cnfunction_mismatched_args2.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+577/855 semantic_agreement: cn/cnfunction_mismatched_args3.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+578/855 semantic_agreement: cn/cnfunction_mismatched_args4.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+579/855 semantic_agreement: cn/cn_inline.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+580/855 semantic_agreement: cn/comma_operator_struct_field.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+581/855 semantic_agreement: cn/contrived_goto.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+582/855 semantic_agreement: cn/copy_alloc_id2.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+583/855 semantic_agreement: cn/copy_alloc_id.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+584/855 semantic_agreement: cn/copy_alloc_id.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+585/855 semantic_agreement: cn/create_rdonly.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+586/855 semantic_agreement: cn/diff_spec_arg.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+587/855 semantic_agreement: cn/disj_nonnull.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+588/855 semantic_agreement: cn/division_by_0.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+589/855 semantic_agreement: cn/division.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+590/855 semantic_agreement: cn/division_casting.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+591/855 semantic_agreement: cn/division_precedence.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+592/855 semantic_agreement: cn/division_return_sign.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+593/855 semantic_agreement: cn/division_return_size.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+594/855 semantic_agreement: cn/division_with_constants.c (pristine 0.1s, fork 0.1s) | lean: lean_agreement
+595/855 semantic_agreement: cn/double_spec1.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+596/855 semantic_agreement: cn/double_spec2.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+597/855 semantic_agreement: cn/doubling.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+598/855 semantic_agreement: cn/duplicate_datatype_var.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+599/855 semantic_agreement: cn/duplicate_pattern_var.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+600/855 semantic_agreement: cn/enum_and_and.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+601/855 semantic_agreement: cn/extract_verbose.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+602/855 semantic_agreement: cn/failing_postcond.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+603/855 semantic_agreement: cn/failing_precond.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+604/855 semantic_agreement: cn/forloop_with_decl.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+605/855 semantic_agreement: cn/from_bytes.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+606/855 semantic_agreement: cn/fun_addrs_cn_stmt.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+607/855 semantic_agreement: cn/fun_ptr_extern.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+608/855 semantic_agreement: cn/fun_ptr_known.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+609/855 semantic_agreement: cn/fun_ptr_three_opts.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+610/855 semantic_agreement: cn/get_from_array.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+611/855 semantic_agreement: cn/get_from_arr.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+612/855 semantic_agreement: cn/ghost_arg_exec_fail.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+613/855 semantic_agreement: cn/ghost_arg_exec_label_fail.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+614/855 semantic_agreement: cn/ghost_arg_exec_switch_default_fail.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+615/855 semantic_agreement: cn/ghost_arg_exec_switch_fail.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+616/855 semantic_agreement: cn/ghost_arg_exec_while_fail.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+617/855 semantic_agreement: cn/ghost_args_and_nested_function.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+618/855 semantic_agreement: cn/ghost_arguments.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+619/855 semantic_agreement: cn/ghost_arguments.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+620/855 semantic_agreement: cn/ghost_arguments_too_few_empty_magic.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+621/855 semantic_agreement: cn/ghost_arguments_too_few.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+622/855 semantic_agreement: cn/ghost_arguments_too_few_magic.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+623/855 semantic_agreement: cn/ghost_arguments_too_many.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+624/855 semantic_agreement: cn/ghost_arguments_too_many_newline.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+625/855 semantic_agreement: cn/ghost_arguments_type_mismatch.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+626/855 semantic_agreement: cn/ghost_bad_ordering.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+627/855 semantic_agreement: cn/ghost_pointer_to_bitvec_cast.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+628/855 semantic_agreement: cn/gnu_case_ranges.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+629/855 semantic_agreement: cn/gnu_choose.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+630/855 semantic_agreement: cn/gnu_ctz.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+631/855 semantic_agreement: cn/gnu_ffs.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+632/855 semantic_agreement: cn/gnu_types_compatible.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+633/855 semantic_agreement: cn/has_alloc_id.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+634/855 semantic_agreement: cn/has_alloc_id.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+635/855 semantic_agreement: cn/has_alloc_id_ptr_eq2.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+636/855 semantic_agreement: cn/has_alloc_id_ptr_eq.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+637/855 semantic_agreement: cn/has_alloc_id_ptr_neq.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+638/855 semantic_agreement: cn/has_alloc_id_ptr_neq.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+639/855 semantic_agreement: cn/has_alloc_id_shift.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+640/855 semantic_agreement: cn/implies2.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+641/855 semantic_agreement: cn/implies3.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+642/855 semantic_agreement: cn/implies_associativity.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+643/855 semantic_agreement: cn/implies.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+644/855 semantic_agreement: cn/implies_precedence.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+645/855 semantic_agreement: cn/incomplete_match.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+646/855 semantic_agreement: cn/inconsistent2.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+647/855 semantic_agreement: cn/inconsistent3.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+648/855 semantic_agreement: cn/inconsistent.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+649/855 semantic_agreement: cn/increments.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+650/855 semantic_agreement: cn/int_to_ptr.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+651/855 semantic_agreement: cn/int_to_ptr.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+652/855 semantic_agreement: cn/issue_113.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+653/855 semantic_agreement: cn/issue_113.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+654/855 semantic_agreement: cn/issue_392.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+655/855 semantic_agreement: cn/left_shift_const.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+656/855 semantic_agreement: cn/lexer_hack_parse.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+657/855 semantic_agreement: cn/list_literal_type.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+658/855 semantic_agreement: cn/list_rev01.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+659/855 semantic_agreement: cn/magic_comment_not_closed.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+660/855 semantic_agreement: cn/map_set.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+661/855 semantic_agreement: cn/mask_ptr.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+662/855 semantic_agreement: cn/mask_ptr.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+663/855 semantic_agreement: cn/match.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+664/855 semantic_agreement: cn/max_min_consts.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+665/855 semantic_agreement: cn/max_pipes.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+666/855 semantic_agreement: cn/memcpy_2.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+667/855 semantic_agreement: cn/memcpy.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+668/855 semantic_agreement: cn/mergesort_alt.c (pristine 0.1s, fork 0.1s) | lean: lean_agreement
+669/855 semantic_agreement: cn/mergesort.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+670/855 semantic_agreement: cn/merging_arrays.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+671/855 semantic_agreement: cn/missing_resource.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+672/855 semantic_agreement: cn/missing_resource_indirect.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+673/855 semantic_agreement: cn/mod_by_0.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+674/855 semantic_agreement: cn/mod.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+675/855 semantic_agreement: cn/mod_casting.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+676/855 semantic_agreement: cn/mod_precedence.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+677/855 semantic_agreement: cn/mod_return_sign.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+678/855 semantic_agreement: cn/mod_return_size.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+679/855 semantic_agreement: cn/mod_with_constants.c (pristine 0.1s, fork 0.1s) | lean: lean_agreement
+680/855 semantic_agreement: cn/multifile/f.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+681/855 semantic_agreement: cn/multifile/g.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+682/855 semantic_agreement: cn/mutual_rec/mutual_rec1.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+683/855 semantic_agreement: cn/mutual_rec/mutual_rec2.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+684/855 semantic_agreement: cn/mutual_rec/mutual_rec3.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+685/855 semantic_agreement: cn/null_to_int.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+686/855 semantic_agreement: cn/offsetof_int_const.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+687/855 semantic_agreement: cn/offsetof_type.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+688/855 semantic_agreement: cn/ownership_at_negative_index.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+689/855 semantic_agreement: cn/partial_init_bytes.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+690/855 semantic_agreement: cn/pointer_to_char_cast.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+691/855 semantic_agreement: cn/pointer_to_char_cast.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+692/855 semantic_agreement: cn/pointer_to_int_cast.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+693/855 semantic_agreement: cn/pointer_to_intptr_t_cast.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+694/855 semantic_agreement: cn/pointer_to_uintptr_t_cast.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+695/855 semantic_agreement: cn/pointer_to_unsigned_int_cast.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+696/855 semantic_agreement: cn/pred_def01.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+697/855 semantic_agreement: cn/pred_def02.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+698/855 semantic_agreement: cn/pred_def03.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+699/855 semantic_agreement: cn/pred_def04.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+700/855 semantic_agreement: cn/predicate_else_if.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+701/855 semantic_agreement: cn/predicate_return_type.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+702/855 semantic_agreement: cn/previously_inconsistent_assumptions1.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+703/855 semantic_agreement: cn/previously_inconsistent_assumptions2.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+704/855 semantic_agreement: cn/ptr_diff2.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+705/855 semantic_agreement: cn/ptr_diff2.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+706/855 semantic_agreement: cn/ptr_diff.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+707/855 semantic_agreement: cn/ptr_diff.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+708/855 semantic_agreement: cn/ptr_eq_arg_checking.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+709/855 semantic_agreement: cn/ptr_relop.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+710/855 semantic_agreement: cn/ptr_relop.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+711/855 semantic_agreement: cn/redundant_pattern.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+712/855 semantic_agreement: cn/reverse.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+713/855 semantic_agreement: cn/reverse.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+714/855 semantic_agreement: cn/same_spec_arg.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+715/855 semantic_agreement: cn/shift_diff_sz.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+716/855 semantic_agreement: cn/simple_loop.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+717/855 semantic_agreement: cn/simplify_add_0.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+718/855 semantic_agreement: cn/simplify_array_shift.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+719/855 semantic_agreement: cn/solver_crash.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+720/855 semantic_agreement: cn/spec_accesses2.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+721/855 semantic_agreement: cn/spec_accesses.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+722/855 semantic_agreement: cn/spec_accesses.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+723/855 semantic_agreement: cn/spec_after_curly_brace.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+724/855 semantic_agreement: cn/spec_after_decl.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+725/855 semantic_agreement: cn/spec_after_def.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+726/855 semantic_agreement: cn/spec_decl_arg_number_mismatch.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+727/855 semantic_agreement: cn/spec_grammar.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+728/855 semantic_agreement: cn/spec_null_shift2.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+729/855 semantic_agreement: cn/spec_null_shift3.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+730/855 semantic_agreement: cn/spec_null_shift.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+731/855 semantic_agreement: cn/split_case.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+732/855 semantic_agreement: cn/struct_updates2.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+733/855 semantic_agreement: cn/struct_updates.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+734/855 semantic_agreement: cn/swap.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+735/855 semantic_agreement: cn/swap_pair.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+736/855 semantic_agreement: cn/tag_defs.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+737/855 semantic_agreement: cn/to_bytes.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+738/855 semantic_agreement: cn/to_from_bytes_block.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+739/855 semantic_agreement: cn/to_from_bytes_owned.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+740/855 semantic_agreement: cn/to_from_bytes_struct.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+741/855 semantic_agreement: cn/tree16/as_auto_mutual_dt/tree16.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+742/855 semantic_agreement: cn/tree16/as_mutual_dt/tree16.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+743/855 semantic_agreement: cn/tree16/as_partial_map/tree16.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+744/855 semantic_agreement: cn/tree_rev01.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+745/855 semantic_agreement: cn/type_synonym.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+746/855 semantic_agreement: cn/unary_negation.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+747/855 semantic_agreement: cn/unary_negation.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+748/855 semantic_agreement: cn/unconstrained_ptr_eq2.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+749/855 semantic_agreement: cn/unconstrained_ptr_eq.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+750/855 semantic_agreement: cn/unsupported_flexible_array_member.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+751/855 semantic_agreement: cn/unsupported_union.error.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+752/855 semantic_agreement: cn/use_enum.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+753/855 semantic_agreement: cn/use_typedef.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+754/855 semantic_agreement: cn/void_star_arg.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+755/855 semantic_agreement: libxml2/uri-libc (pristine 1.2s, fork 1.2s) | lean: lean_agreement
+756/855 semantic_agreement: libxml2/uri-nolibc (pristine 0.3s, fork 0.3s) | lean: lean_agreement
+757/855 interface_agreement: cli/core-dump (pristine 0.0s, fork 0.0s) | lean: lean_not_applicable
+758/855 interface_agreement: cli/typecheck-core (pristine 0.0s, fork 0.0s) | lean: lean_not_applicable
+759/855 semantic_agreement: cli/args (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+760/855 semantic_agreement: immaculate/nolibc/f3-escaped-high-byte-uchar (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+761/855 reviewed_difference: immaculate/nolibc/f3-raw-high-byte-char-const (pristine 0.0s, fork 0.0s) | lean: lean_both_undecodable
+    LEAN≠FORK immaculate/nolibc/f3-raw-high-byte-char-const: fork: fatal engine diagnostic; no completed observation (status 125); lean: fatal engine diagnostic; no completed observation (status 134) — not agreement
+      pristine: UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+      fork:     UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+      lean:     UNDECODABLE(status 134: fatal engine diagnostic; no completed observation)
+762/855 reviewed_difference: immaculate/nolibc/f3-raw-high-byte-int (pristine 0.0s, fork 0.0s) | lean: lean_both_undecodable
+    LEAN≠FORK immaculate/nolibc/f3-raw-high-byte-int: fork: fatal engine diagnostic; no completed observation (status 125); lean: fatal engine diagnostic; no completed observation (status 134) — not agreement
+      pristine: UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+      fork:     UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+      lean:     UNDECODABLE(status 134: fatal engine diagnostic; no completed observation)
+763/855 reviewed_difference: immaculate/nolibc/f3-raw-high-byte-uchar (pristine 0.0s, fork 0.0s) | lean: lean_both_undecodable
+    LEAN≠FORK immaculate/nolibc/f3-raw-high-byte-uchar: fork: fatal engine diagnostic; no completed observation (status 125); lean: fatal engine diagnostic; no completed observation (status 134) — not agreement
+      pristine: UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+      fork:     UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+      lean:     UNDECODABLE(status 134: fatal engine diagnostic; no completed observation)
+764/855 semantic_agreement: immaculate/nolibc/g1-ge-funptr (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+765/855 semantic_agreement: immaculate/nolibc/g1-lt-null (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+766/855 semantic_agreement: immaculate/nolibc/g3-realloc-dead (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+767/855 semantic_agreement: immaculate/nolibc/g3-realloc-non-heap (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+768/855 semantic_agreement: immaculate/nolibc/g4-bswap-controls (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+769/855 reviewed_difference: immaculate/nolibc/g4-bswap64-overflow (pristine 0.0s, fork 0.0s) | lean: lean_both_undecodable
+    LEAN≠FORK immaculate/nolibc/g4-bswap64-overflow: fork: fatal engine diagnostic; no completed observation (status 125); lean: fatal engine diagnostic; no completed observation (status 134) — not agreement
+      pristine: UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+      fork:     UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+      lean:     UNDECODABLE(status 134: fatal engine diagnostic; no completed observation)
+770/855 semantic_agreement: immaculate/nolibc/g4-ctz-nonzero (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+771/855 semantic_agreement: immaculate/nolibc/g4-ffs-intmin (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+772/855 semantic_agreement: immaculate/nolibc/g4-ffs-negative (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+773/855 reviewed_difference: immaculate/nolibc/g5-decode-multichar (pristine 0.0s, fork 0.0s) | lean: lean_both_undecodable
+    LEAN≠FORK immaculate/nolibc/g5-decode-multichar: fork: fatal engine diagnostic; no completed observation (status 125); lean: fatal engine diagnostic; no completed observation (status 134) — not agreement
+      pristine: UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+      fork:     UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+      lean:     UNDECODABLE(status 134: fatal engine diagnostic; no completed observation)
+774/855 reviewed_difference: immaculate/nolibc/g5-decode-question (pristine 0.0s, fork 0.0s) | lean: lean_difference
+    LEAN≠FORK immaculate/nolibc/g5-decode-question: one side undecodable: fork: fatal engine diagnostic; no completed observation (status 125)
+      pristine: UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+      fork:     UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+      lean:     VAL:{value: "Specified(63)", stdout: "", stderr: "", blocked: "false"}
+775/855 semantic_agreement: immaculate/nolibc/lock-const-global (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+776/855 semantic_agreement: immaculate/nolibc/lock-string-literal (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+777/855 semantic_agreement: immaculate/nolibc/offsetof-nested-struct (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+778/855 reviewed_difference: immaculate/nolibc/offsetof-union-member (pristine 0.0s, fork 0.0s) | lean: lean_both_undecodable
+    LEAN≠FORK immaculate/nolibc/offsetof-union-member: fork: fatal engine diagnostic; no completed observation (status 125); lean: fatal engine diagnostic; no completed observation (status 134) — not agreement
+      pristine: UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+      fork:     UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+      lean:     UNDECODABLE(status 134: fatal engine diagnostic; no completed observation)
+779/855 semantic_agreement: immaculate/nolibc/r5-hex-subnormal-double-rounding (pristine 0.0s, fork 0.0s) | lean: lean_difference
+    LEAN≠FORK immaculate/nolibc/r5-hex-subnormal-double-rounding: verdict tokens differ under projection full
+      pristine: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+      fork:     VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+      lean:     VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+780/855 semantic_agreement: immaculate/nolibc/s9-enum-signedness (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+781/855 semantic_agreement: immaculate/nolibc/s9-enum-sizeof-route (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+782/855 semantic_agreement: immaculate/nolibc/trap-bool-uninit (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+783/855 semantic_agreement: immaculate/nolibc/trap-bool-write (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+784/855 semantic_agreement: immaculate/nolibc/zd-d1-float-inf-to-int-ub (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+785/855 semantic_agreement: immaculate/nolibc/zd-d2-ptr-to-int-narrow-ub (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+786/855 semantic_agreement: immaculate/nolibc/zd-d5-device-range-load (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+787/855 semantic_agreement: immaculate/nolibc/zd-da-align16 (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+788/855 semantic_agreement: immaculate/nolibc/zd-da-offset (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+789/855 reviewed_difference: immaculate/nolibc/zd-e2-ptr-string-literals (pristine 0.0s, fork 0.0s) | lean: lean_difference
+    LEAN≠FORK immaculate/nolibc/zd-e2-ptr-string-literals: one side undecodable: fork: fatal engine diagnostic; no completed observation (status 125)
+      pristine: UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+      fork:     UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+      lean:     VAL:{value: "Specified(0)", stdout: "98 65 66 4 83 52 3 10 9 92 34 39 63 0 4\n", stderr: "", blocked: "false"}
+790/855 reviewed_difference: immaculate/nolibc/zd-z2fl03-nan-to-int (pristine 0.0s, fork 0.0s) | lean: lean_both_undecodable
+    LEAN≠FORK immaculate/nolibc/zd-z2fl03-nan-to-int: fork: fatal engine diagnostic; no completed observation (status 125); lean: fatal engine diagnostic; no completed observation (status 134) — not agreement
+      pristine: UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+      fork:     UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+      lean:     UNDECODABLE(status 134: fatal engine diagnostic; no completed observation)
+791/855 semantic_agreement: immaculate/nolibc/zd-z2i01-cerbty-int32-uac (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+792/855 reviewed_difference: immaculate/nolibc/zd-z2m01-aligned-alloc-zero-nolibc (pristine 0.0s, fork 0.0s) | lean: lean_difference
+    LEAN≠FORK immaculate/nolibc/zd-z2m01-aligned-alloc-zero-nolibc: one side undecodable: fork: fatal engine diagnostic; no completed observation (status 125)
+      pristine: UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+      fork:     UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+      lean:     UB:{ub: "DUMMY(align_alloc)", stderr: "", loc: "<8:28--8:47>"}
+793/855 reviewed_difference: immaculate/nolibc/zd-z2m02-device-funptr-call (pristine 0.0s, fork 0.0s) | lean: lean_both_undecodable
+    LEAN≠FORK immaculate/nolibc/zd-z2m02-device-funptr-call: fork: fatal engine diagnostic; no completed observation (status 125); lean: fatal engine diagnostic; no completed observation (status 134) — not agreement
+      pristine: UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+      fork:     UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+      lean:     UNDECODABLE(status 134: fatal engine diagnostic; no completed observation)
+794/855 semantic_agreement: immaculate/argv/argv1-args (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+795/855 semantic_agreement: immaculate/argv/argv2-args (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+796/855 semantic_agreement: immaculate/argv/argv3-args (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+797/855 reviewed_difference: immaculate/libc/g2-memcmp-uninit (pristine 0.2s, fork 0.2s) | lean: lean_both_undecodable
+    LEAN≠FORK immaculate/libc/g2-memcmp-uninit: fork: fatal engine diagnostic; no completed observation (status 125); lean: model fail-stop; no completed semantic observation (status 1) — not agreement
+      pristine: UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+      fork:     UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+      lean:     UNDECODABLE(status 1: model fail-stop; no completed semantic observation)
+798/855 semantic_agreement: immaculate/libc/g2-memcpy-ok (pristine 0.2s, fork 0.2s) | lean: lean_agreement
+799/855 semantic_agreement: immaculate/libc/g2-memcpy-oob (pristine 0.2s, fork 0.2s) | lean: lean_agreement
+800/855 semantic_agreement: immaculate/libc/g2-memcpy-readonly (pristine 0.2s, fork 0.2s) | lean: lean_agreement
+801/855 semantic_agreement: immaculate/libc/g5-escape-roundtrip (pristine 0.2s, fork 0.2s) | lean: lean_difference
+    LEAN≠FORK immaculate/libc/g5-escape-roundtrip: verdict tokens differ under projection full
+      pristine: VAL:{value: "Specified(87)", stdout: "", stderr: "", blocked: "false"}
+      fork:     VAL:{value: "Specified(87)", stdout: "", stderr: "", blocked: "false"}
+      lean:     VAL:{value: "Specified(127)", stdout: "", stderr: "", blocked: "false"}
+802/855 semantic_agreement: immaculate/libc/pr44468 (pristine 0.2s, fork 0.2s) | lean: lean_agreement
+803/855 reviewed_difference: immaculate/libc/s4b-memcmp-hugesize (pristine 0.2s, fork 0.2s) | lean: lean_difference
+    LEAN≠FORK immaculate/libc/s4b-memcmp-hugesize: one side undecodable: fork: fatal engine diagnostic; no completed observation (status 125)
+      pristine: UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+      fork:     UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+      lean:     UB:{ub: "UB_CERB002a_out_of_bound_load", stderr: "", loc: "<unknown location>"}
+804/855 semantic_agreement: immaculate/libc/zd-d4-copy-alloc-id (pristine 0.2s, fork 0.2s) | lean: lean_agreement
+805/855 semantic_agreement: immaculate/libc/zd-d6-free-device-pointer (pristine 0.2s, fork 0.2s) | lean: lean_agreement
+806/855 semantic_agreement: immaculate/libc/zd-d6-free-no-provenance (pristine 0.2s, fork 0.2s) | lean: lean_agreement
+807/855 semantic_agreement: immaculate/libc/zd-d7-free-interior-pointer (pristine 0.2s, fork 0.2s) | lean: lean_agreement
+808/855 semantic_agreement: immaculate/libc/zd-f1-truncate-negative-length (pristine 0.2s, fork 0.2s) | lean: lean_agreement
+809/855 semantic_agreement: immaculate/libc/zd-z2-free-funptr (pristine 0.2s, fork 0.2s) | lean: lean_agreement
+810/855 semantic_agreement: immaculate/libc/zd-z28-addr-layout-a (pristine 0.2s, fork 0.2s) | lean: lean_agreement
+811/855 semantic_agreement: immaculate/libc/zd-z28-addr-layout-b (pristine 0.2s, fork 0.2s) | lean: lean_agreement
+812/855 semantic_agreement: immaculate/libc/zd-z28-pointer_from_integer_2g (pristine 0.2s, fork 0.2s) | lean: lean_agreement
+813/855 semantic_agreement: immaculate/libc/zd-z28-provenance_equality_uintptr_t_global_yx (pristine 0.2s, fork 0.2s) | lean: lean_agreement
+814/855 semantic_agreement: immaculate/libc/zd-z28-provenance_lost_escape_1 (pristine 0.2s, fork 0.2s) | lean: lean_agreement
+815/855 semantic_agreement: immaculate/libc/zd-z2cp01-strtod-inf (pristine 0.2s, fork 0.2s) | lean: lean_agreement
+816/855 semantic_agreement: immaculate/libc/zd-z2f01-lseek-whence (pristine 0.2s, fork 0.2s) | lean: lean_agreement
+817/855 reviewed_difference: immaculate/libc/zd-z2f04-closedir (pristine 0.2s, fork 0.2s) | lean: lean_both_undecodable
+    LEAN≠FORK immaculate/libc/zd-z2f04-closedir: fork: fatal engine diagnostic; no completed observation (status 125); lean: fatal engine diagnostic; no completed observation (status 134) — not agreement
+      pristine: UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+      fork:     UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+      lean:     UNDECODABLE(status 134: fatal engine diagnostic; no completed observation)
+818/855 reviewed_difference: immaculate/libc/zd-z2m01-aligned-alloc-zero-zero (pristine 0.2s, fork 0.2s) | lean: lean_both_undecodable
+    LEAN≠FORK immaculate/libc/zd-z2m01-aligned-alloc-zero-zero: fork: fatal engine diagnostic; no completed observation (status 125); lean: model fail-stop; no completed semantic observation (status 1) — not agreement
+      pristine: UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+      fork:     UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+      lean:     UNDECODABLE(status 1: model fail-stop; no completed semantic observation)
+819/855 reviewed_difference: immaculate/libc/zd-z2m01-aligned-alloc-zero (pristine 0.2s, fork 0.2s) | lean: lean_difference
+    LEAN≠FORK immaculate/libc/zd-z2m01-aligned-alloc-zero: one side undecodable: fork: fatal engine diagnostic; no completed observation (status 125)
+      pristine: UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+      fork:     UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+      lean:     UB:{ub: "DUMMY(align_alloc)", stderr: "", loc: "<12:28--12:47>"}
+820/855 semantic_agreement: immaculate/libc/zd-z2m03-malloc-oom-msg (pristine 0.2s, fork 0.2s) | lean: lean_agreement
+821/855 semantic_agreement: immaculate/libc/zd-z2p01-stderr_escape (pristine 0.2s, fork 0.2s) | lean: lean_agreement
+822/855 semantic_agreement: immaculate/libc/zd-z2p01-stdout_escape (pristine 0.2s, fork 0.2s) | lean: lean_agreement
+823/855 semantic_agreement: immaculate/libc/zd-z72-stderr-ub (pristine 0.2s, fork 0.2s) | lean: lean_agreement
+824/855 semantic_agreement: verify/c3a_accguard (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+825/855 semantic_agreement: verify/c3b_leaddigit (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+826/855 semantic_agreement: verify/c4_hexval (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+827/855 semantic_agreement: verify/c5_pcthi (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+828/855 semantic_agreement: verify/c9_arrw (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+829/855 semantic_agreement: verify/e1_clamp (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+830/855 semantic_agreement: verify/e2_abs (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+831/855 semantic_agreement: verify/e3_scale (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+832/855 semantic_agreement: verify/e4_isdigit (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+833/855 semantic_agreement: verify/e5_ismark (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+834/855 semantic_agreement: verify/m1_sgn (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+835/855 semantic_agreement: verify/t1_id (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+836/855 semantic_agreement: verify/t2_add (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+837/855 semantic_agreement: verify/t3_roundtrip (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+838/855 semantic_agreement: verify/t4_struct_member (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+839/855 semantic_agreement: verify/t5_sum (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+840/855 semantic_agreement: verify/t6_branch (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+841/855 semantic_agreement: verify/t7_flip (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+842/855 semantic_agreement: verify/x2_break (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+843/855 semantic_agreement: verify/x3_call (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+844/855 semantic_agreement: verify/x7_earlyret (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+845/855 semantic_agreement: verify/z1_chain (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+846/855 semantic_agreement: verify/z2_bool_param (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+847/855 semantic_agreement: verify/z2_errno_order (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+848/855 semantic_agreement: verify/z2_wide (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+849/855 semantic_agreement: corpus/p01_clamp (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+850/855 semantic_agreement: corpus/p02_sat_add (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+851/855 semantic_agreement: corpus/p03_swap_mayalias (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+852/855 semantic_agreement: corpus/p09_call_contract (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+853/855 semantic_agreement: corpus/p10_gcd_rec (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+854/855 semantic_agreement: corpus/p11_gcd_iter (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+855/855 semantic_agreement: corpus/p12_pt_midpoint (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+Independent oracle scope: tier-b; 855 rows in 244.6s; source unchanged: True
+Three-engine report (Lean column, NOT gating): {'lean_agreement': 813, 'lean_difference': 28, 'lean_both_undecodable': 12, 'lean_not_applicable': 2}; Lean≠fork rows: 40: minimal/073-exit.libc.c, minimal/074-abort.libc.c, minimal/097-null-ptr-arith.undef.c, coverage/builtin/builtin-006-exit.libc.c, coverage/expr/expr-007-bitfield-ops.c, coverage/io/io-004-puts.libc.unsupported.c, coverage/libc/libc-002-calloc.c, coverage/libc/libc-011-memset.c, coverage/libc/libc-012-strlen.c, coverage/mem/mem-007-zero-size-array.c, coverage/misc/misc-001-void-ptr-arith.c, coverage/union3/union3-004-union-copy.c, coverage/union3/union3-005-union-return.c, debug/libc-01-memset.libc.c, debug/libc-02-strlen.libc.c, debug/ub-static-reject.c, debug/valid-04-exit-before-oob.c, bytes/byte_is_not_char.c, bytes/no_add.c, bytes/no_shift_left.c, bytes/no_shift_right.c, bytes/only_unsigned_char.c, immaculate/nolibc/f3-raw-high-byte-char-const, immaculate/nolibc/f3-raw-high-byte-int, immaculate/nolibc/f3-raw-high-byte-uchar, immaculate/nolibc/g4-bswap64-overflow, immaculate/nolibc/g5-decode-multichar, immaculate/nolibc/g5-decode-question, immaculate/nolibc/offsetof-union-member, immaculate/nolibc/r5-hex-subnormal-double-rounding, immaculate/nolibc/zd-e2-ptr-string-literals, immaculate/nolibc/zd-z2fl03-nan-to-int, immaculate/nolibc/zd-z2m01-aligned-alloc-zero-nolibc, immaculate/nolibc/zd-z2m02-device-funptr-call, immaculate/libc/g2-memcmp-uninit, immaculate/libc/g5-escape-roundtrip, immaculate/libc/s4b-memcmp-hugesize, immaculate/libc/zd-z2f04-closedir, immaculate/libc/zd-z2m01-aligned-alloc-zero-zero, immaculate/libc/zd-z2m01-aligned-alloc-zero
+Independent oracle: passed; {'semantic_agreement': 822, 'reviewed_difference': 20, 'matching_failure': 11, 'interface_agreement': 2}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/pristine-oracle-instrument/.tmp/o2/full/report.json

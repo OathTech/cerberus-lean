@@ -1,0 +1,84 @@
+====================================================================================================
+minimal/097-null-ptr-arith.undef.c  pristine-vs-fork=reviewed_difference  lean=lean_both_undecodable: fork: fatal engine diagnostic; no completed observation (status 125); lean: fatal engine diagnostic; no completed observation (status 134) — not agree
+  pristine: UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+  fork:     UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+  lean:     UNDECODABLE(status 134: fatal engine diagnostic; no completed observation)
+  fork stderr[0:2]: ['cerberus: internal error, uncaught exception:', '          Failure("TODO(pure shift a null pointer should be undefined behaviour), offset:4")']
+  lean status=134 stderr[0:2]: ['PANIC at CerbMem.arrayShiftPtrval CerbMem:1727:6: TODO(pure shift a null pointer should be undefined behaviour), offset:4', 'backtrace:']
+====================================================================================================
+coverage/expr/expr-007-bitfield-ops.c  pristine-vs-fork=matching_failure  lean=lean_difference: one side undecodable: fork: empty or truncated observation (status 1)
+  pristine: UNDECODABLE(status 1: empty or truncated observation)
+  fork:     UNDECODABLE(status 1: empty or truncated observation)
+  lean:     ERR:{msg: "desugaring failed at tests/coverage/expr/expr-007-bitfield-ops.c:6:22-23"}
+  fork stderr[0:2]: ['tests/coverage/expr/expr-007-bitfield-ops.c:6:22: error: feature not yet supported: bit-fields', '    unsigned int a : 3;   // 0-7']
+  lean status=1 stderr[0:2]: []
+====================================================================================================
+coverage/mem/mem-007-zero-size-array.c  pristine-vs-fork=matching_failure  lean=lean_difference: one side undecodable: fork: empty or truncated observation (status 1)
+  pristine: UNDECODABLE(status 1: empty or truncated observation)
+  fork:     UNDECODABLE(status 1: empty or truncated observation)
+  lean:     ERR:{msg: "desugaring failed at tests/coverage/mem/mem-007-zero-size-array.c:5:8-12"}
+  fork stderr[0:2]: ['tests/coverage/mem/mem-007-zero-size-array.c:5:8: error: constraint violation: array declared with a negative or zero size', '  char a[0];']
+  lean status=1 stderr[0:2]: []
+====================================================================================================
+coverage/misc/misc-001-void-ptr-arith.c  pristine-vs-fork=matching_failure  lean=lean_difference: one side undecodable: fork: empty or truncated observation (status 1)
+  pristine: UNDECODABLE(status 1: empty or truncated observation)
+  fork:     UNDECODABLE(status 1: empty or truncated observation)
+  lean:     ERR:{msg: "typechecking failed at tests/coverage/misc/misc-001-void-ptr-arith.c:7:10-16"}
+  fork stderr[0:2]: ["tests/coverage/misc/misc-001-void-ptr-arith.c:7:13: error: constraint violation: invalid operands to binary expression ('void*' and 'signed int')", '    vp = vp + 3;  // GNU extension: void* arithmetic at byte granularity']
+  lean status=1 stderr[0:2]: []
+====================================================================================================
+coverage/union3/union3-004-union-copy.c  pristine-vs-fork=matching_failure  lean=lean_difference: one side undecodable: fork: empty or truncated observation (status 1)
+  pristine: UNDECODABLE(status 1: empty or truncated observation)
+  fork:     UNDECODABLE(status 1: empty or truncated observation)
+  lean:     ERR:{msg: "typechecking failed at tests/coverage/union3/union3-004-union-copy.c:7:17-18"}
+  fork stderr[0:2]: ['(debug 0): constructValue_aux: is WRONG for union ==> always assigning the first member', "tests/coverage/union3/union3-004-union-copy.c:7:17: error: constraint violation: initializing 'signed int' with an expression with a non arithmetic type 'union U'"]
+  lean status=1 stderr[0:2]: []
+====================================================================================================
+coverage/union3/union3-005-union-return.c  pristine-vs-fork=matching_failure  lean=lean_difference: one side undecodable: fork: empty or truncated observation (status 1)
+  pristine: UNDECODABLE(status 1: empty or truncated observation)
+  fork:     UNDECODABLE(status 1: empty or truncated observation)
+  lean:     ERR:{msg: "typechecking failed at tests/coverage/union3/union3-005-union-return.c:10:17-31"}
+  fork stderr[0:2]: ['(debug 0): constructValue_aux: is WRONG for union ==> always assigning the first member', "tests/coverage/union3/union3-005-union-return.c:10:17: error: constraint violation: initializing 'signed int' with an expression with a non arithmetic type 'union U'"]
+  lean status=1 stderr[0:2]: []
+====================================================================================================
+debug/ub-static-reject.c  pristine-vs-fork=matching_failure  lean=lean_difference: one side undecodable: fork: empty or truncated observation (status 1)
+  pristine: UNDECODABLE(status 1: empty or truncated observation)
+  fork:     UNDECODABLE(status 1: empty or truncated observation)
+  lean:     ERR:{msg: "desugaring failed at tests/debug/ub-static-reject.c:4:12:"}
+  fork stderr[0:2]: ["tests/debug/ub-static-reject.c:4:12: error: use of undeclared identifier 'undefined_var'", '    return undefined_var;']
+  lean status=1 stderr[0:2]: []
+====================================================================================================
+bytes/byte_is_not_char.c  pristine-vs-fork=matching_failure  lean=lean_difference: one side undecodable: fork: empty or truncated observation (status 1)
+  pristine: UNDECODABLE(status 1: empty or truncated observation)
+  fork:     UNDECODABLE(status 1: empty or truncated observation)
+  lean:     ERR:{msg: "typechecking failed at tests/bytes/byte_is_not_char.c:4:14-17"}
+  fork stderr[0:2]: ["tests/bytes/byte_is_not_char.c:4:14: error: constraint violation: initializing 'byte' with an expression of incompatible type 'signed int'", "    byte y = 'a';"]
+  lean status=1 stderr[0:2]: []
+====================================================================================================
+bytes/no_add.c  pristine-vs-fork=matching_failure  lean=lean_difference: one side undecodable: fork: empty or truncated observation (status 1)
+  pristine: UNDECODABLE(status 1: empty or truncated observation)
+  fork:     UNDECODABLE(status 1: empty or truncated observation)
+  lean:     ERR:{msg: "typechecking failed at tests/bytes/no_add.c:8:5-10"}
+  fork stderr[0:2]: ["tests/bytes/no_add.c:8:7: error: constraint violation: invalid operands to binary expression ('byte' and 'byte')", '    y + y;']
+  lean status=1 stderr[0:2]: []
+====================================================================================================
+bytes/no_shift_left.c  pristine-vs-fork=matching_failure  lean=lean_difference: one side undecodable: fork: empty or truncated observation (status 1)
+  pristine: UNDECODABLE(status 1: empty or truncated observation)
+  fork:     UNDECODABLE(status 1: empty or truncated observation)
+  lean:     ERR:{msg: "typechecking failed at tests/bytes/no_shift_left.c:8:5-11"}
+  fork stderr[0:2]: ["tests/bytes/no_shift_left.c:8:7: error: constraint violation: invalid operands to binary expression ('byte' and 'signed int')", '    y << 1;']
+  lean status=1 stderr[0:2]: []
+====================================================================================================
+bytes/no_shift_right.c  pristine-vs-fork=matching_failure  lean=lean_difference: one side undecodable: fork: empty or truncated observation (status 1)
+  pristine: UNDECODABLE(status 1: empty or truncated observation)
+  fork:     UNDECODABLE(status 1: empty or truncated observation)
+  lean:     ERR:{msg: "typechecking failed at tests/bytes/no_shift_right.c:8:5-11"}
+  fork stderr[0:2]: ["tests/bytes/no_shift_right.c:8:7: error: constraint violation: invalid operands to binary expression ('signed int' and 'byte')", '    1 >> y;']
+  lean status=1 stderr[0:2]: []
+====================================================================================================
+bytes/only_unsigned_char.c  pristine-vs-fork=matching_failure  lean=lean_difference: one side undecodable: fork: empty or truncated observation (status 1)
+  pristine: UNDECODABLE(status 1: empty or truncated observation)
+  fork:     UNDECODABLE(status 1: empty or truncated observation)
+  lean:     ERR:{msg: "desugaring failed at tests/bytes/only_unsigned_char.c:1:29-33"}
+  fork stderr[0:2]: ['tests/bytes/only_unsigned_char.c:1:29: error: constraint violation: [[cerb::byte]] attribute must only be applied to typedefs of unsigned char', '[[cerb::byte]] typedef char byte;']
+  lean status=1 stderr[0:2]: []

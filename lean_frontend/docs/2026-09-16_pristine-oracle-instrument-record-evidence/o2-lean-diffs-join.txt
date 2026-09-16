@@ -1,0 +1,44 @@
+lean status            case                                                 symbol-only? owning lane pin (verbatim)
+lean_difference        minimal/073-exit.libc.c                              YES          test_exec.sh --check-baseline: 073-exit.libc.c CERB_SKIP
+lean_difference        minimal/074-abort.libc.c                             YES          test_exec.sh --check-baseline: 074-abort.libc.c CERB_SKIP
+lean_both_undecodable  minimal/097-null-ptr-arith.undef.c                   n/a(undecodable) test_exec.sh --check-baseline: 097-null-ptr-arith.undef.c CERB_SKIP
+lean_difference        coverage/builtin/builtin-006-exit.libc.c             YES          test_exec.sh coverage: builtin-006-exit.libc.c CERB_SKIP
+lean_difference        coverage/expr/expr-007-bitfield-ops.c                n/a(undecodable) test_exec.sh coverage: expr-007-bitfield-ops.c CERB_SKIP
+lean_difference        coverage/io/io-004-puts.libc.unsupported.c           YES          test_exec.sh coverage: io-004-puts.libc.unsupported.c CERB_SKIP
+lean_difference        coverage/libc/libc-002-calloc.c                      YES          test_exec.sh coverage: libc-002-calloc.c CERB_SKIP
+lean_difference        coverage/libc/libc-011-memset.c                      YES          test_exec.sh coverage: libc-011-memset.c CERB_SKIP
+lean_difference        coverage/libc/libc-012-strlen.c                      YES          test_exec.sh coverage: libc-012-strlen.c CERB_SKIP
+lean_difference        coverage/mem/mem-007-zero-size-array.c               n/a(undecodable) test_exec.sh coverage: mem-007-zero-size-array.c CERB_SKIP
+lean_difference        coverage/misc/misc-001-void-ptr-arith.c              n/a(undecodable) test_exec.sh coverage: misc-001-void-ptr-arith.c CERB_SKIP
+lean_difference        coverage/union3/union3-004-union-copy.c              n/a(undecodable) test_exec.sh coverage: union3-004-union-copy.c CERB_SKIP
+lean_difference        coverage/union3/union3-005-union-return.c            n/a(undecodable) test_exec.sh coverage: union3-005-union-return.c CERB_SKIP
+lean_difference        debug/libc-01-memset.libc.c                          YES          test_exec.sh debug: libc-01-memset.libc.c CERB_SKIP
+lean_difference        debug/libc-02-strlen.libc.c                          YES          test_exec.sh debug: libc-02-strlen.libc.c CERB_SKIP
+lean_difference        debug/ub-static-reject.c                             n/a(undecodable) test_exec.sh debug: ub-static-reject.c CERB_SKIP
+lean_difference        debug/valid-04-exit-before-oob.c                     YES          test_exec.sh debug: valid-04-exit-before-oob.c CERB_SKIP
+lean_difference        bytes/byte_is_not_char.c                             n/a(undecodable) test_bytes.sh (ORACLE-INDEPENDENT: Lean vs committed .exec records; fork never compared): no fork-vs-Lean pin exists by design
+lean_difference        bytes/no_add.c                                       n/a(undecodable) test_bytes.sh (ORACLE-INDEPENDENT: Lean vs committed .exec records; fork never compared): no fork-vs-Lean pin exists by design
+lean_difference        bytes/no_shift_left.c                                n/a(undecodable) test_bytes.sh (ORACLE-INDEPENDENT: Lean vs committed .exec records; fork never compared): no fork-vs-Lean pin exists by design
+lean_difference        bytes/no_shift_right.c                               n/a(undecodable) test_bytes.sh (ORACLE-INDEPENDENT: Lean vs committed .exec records; fork never compared): no fork-vs-Lean pin exists by design
+lean_difference        bytes/only_unsigned_char.c                           n/a(undecodable) test_bytes.sh (ORACLE-INDEPENDENT: Lean vs committed .exec records; fork never compared): no fork-vs-Lean pin exists by design
+lean_both_undecodable  immaculate/nolibc/f3-raw-high-byte-char-const        n/a(undecodable) test_immaculate.sh: f3-raw-high-byte-char-const MATCH | L=CRASH
+lean_both_undecodable  immaculate/nolibc/f3-raw-high-byte-int               n/a(undecodable) test_immaculate.sh: f3-raw-high-byte-int MATCH | L=CRASH
+lean_both_undecodable  immaculate/nolibc/f3-raw-high-byte-uchar             n/a(undecodable) test_immaculate.sh: f3-raw-high-byte-uchar MATCH | L=CRASH
+lean_both_undecodable  immaculate/nolibc/g4-bswap64-overflow                n/a(undecodable) test_immaculate.sh: g4-bswap64-overflow MATCH | L=CRASH
+lean_both_undecodable  immaculate/nolibc/g5-decode-multichar                n/a(undecodable) test_immaculate.sh: g5-decode-multichar MATCH | L=CRASH
+lean_difference        immaculate/nolibc/g5-decode-question                 n/a(undecodable) test_immaculate.sh: g5-decode-question ORACLE_CRASH | L=VAL:{value: "Specified(63)", stdout: "", stderr: "", blocked: "false"}
+lean_both_undecodable  immaculate/nolibc/offsetof-union-member              n/a(undecodable) test_immaculate.sh: offsetof-union-member MATCH | L=CRASH
+lean_difference        immaculate/nolibc/r5-hex-subnormal-double-rounding   no           test_immaculate.sh: r5-hex-subnormal-double-rounding DIFF | L=VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+lean_difference        immaculate/nolibc/zd-e2-ptr-string-literals          n/a(undecodable) test_immaculate.sh: zd-e2-ptr-string-literals ORACLE_CRASH | L=VAL:{value: "Specified(0)", stdout: "98 65 66 4 83 52 3 10 9 92 34 39 63 0 4\n", stderr: "", blocked: "false"}
+lean_both_undecodable  immaculate/nolibc/zd-z2fl03-nan-to-int               n/a(undecodable) test_immaculate.sh: zd-z2fl03-nan-to-int MATCH | L=CRASH
+lean_difference        immaculate/nolibc/zd-z2m01-aligned-alloc-zero-nolibc n/a(undecodable) test_immaculate.sh: zd-z2m01-aligned-alloc-zero-nolibc ORACLE_CRASH | L=UB:{ub: "DUMMY(align_alloc)", stderr: "", loc: "<8:28--8:47>"}
+lean_both_undecodable  immaculate/nolibc/zd-z2m02-device-funptr-call        n/a(undecodable) test_immaculate.sh: zd-z2m02-device-funptr-call MATCH | L=CRASH
+lean_both_undecodable  immaculate/libc/g2-memcmp-uninit                     n/a(undecodable) test_immaculate.sh: g2-memcmp-uninit MATCH | L=CRASH
+lean_difference        immaculate/libc/g5-escape-roundtrip                  no           test_immaculate.sh: g5-escape-roundtrip DIFF | L=VAL:{value: "Specified(127)", stdout: "", stderr: "", blocked: "false"}
+lean_difference        immaculate/libc/s4b-memcmp-hugesize                  n/a(undecodable) test_immaculate.sh: s4b-memcmp-hugesize ORACLE_CRASH | L=UB:{ub: "UB_CERB002a_out_of_bound_load", stderr: "", loc: "<unknown location>"}
+lean_both_undecodable  immaculate/libc/zd-z2f04-closedir                    n/a(undecodable) test_immaculate.sh: zd-z2f04-closedir MATCH | L=CRASH
+lean_both_undecodable  immaculate/libc/zd-z2m01-aligned-alloc-zero-zero     n/a(undecodable) test_immaculate.sh: zd-z2m01-aligned-alloc-zero-zero MATCH | L=CRASH
+lean_difference        immaculate/libc/zd-z2m01-aligned-alloc-zero          n/a(undecodable) test_immaculate.sh: zd-z2m01-aligned-alloc-zero ORACLE_CRASH | L=UB:{ub: "DUMMY(align_alloc)", stderr: "", loc: "<12:28--12:47>"}
+
+Lean≠fork rows: 40; S2 candidates: 0 []
+lean_counts: {'lean_agreement': 813, 'lean_both_undecodable': 12, 'lean_difference': 28, 'lean_not_applicable': 2}

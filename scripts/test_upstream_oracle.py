@@ -78,6 +78,20 @@ class Case:
     flags: list            # oracle arguments after --runtime=<dir>
     corpus: str            # corpus label (CORPORA membership)
     timeout: float | None = None   # the mirrored lane's per-case bound; None = --timeout
+    # O2 (--with-lean) recipe mirrored from the fork-vs-Lean lane, or None when the
+    # case has no Lean side (the legacy CLI rows): {'tus': [(bridge_flags, source)],
+    # 'args': [Lean arguments before the cabs-jsons], 'libc': bool, 'projection': str}
+    lean: dict | None = None
+
+
+LEAN_BIN = ROOT / 'lean_frontend/.lake/build/bin/cerberus-lean'
+LEAN_STATUSES = ('lean_agreement', 'lean_difference', 'lean_both_undecodable', 'lean_incomplete',
+                 'lean_bridge_failed', 'lean_not_applicable')
+
+
+def lean_recipe(sources, args, bridge_flags=(), libc=False, projection='full'):
+    return {'tus': [(list(bridge_flags), str(src)) for src in sources], 'args': list(args),
+            'libc': libc, 'projection': projection}
 
 
 def validate_build(path):
@@ -241,8 +255,8 @@ def corpus(cn_root, stage):
     and per-case timeout mirrored (cites are to the lane scripts at WP-O)."""
     cases = []
 
-    def add(case_id, kind, flags, corpus_label, timeout=None):
-        cases.append(Case(case_id, kind, flags, corpus_label, timeout))
+    def add(case_id, kind, flags, corpus_label, timeout=None, lean=None):
+        cases.append(Case(case_id, kind, flags, corpus_label, timeout, lean))
 
     # Tier A single-file exec corpora: test_exec.sh's exclusions (:403-406
     # `! -name "*.syntax-only.c" ! -name "*.exhaust.c"`) and oracle flags
@@ -258,7 +272,16 @@ def corpus(cn_root, stage):
             flags = ['--exec', '--batch']
             if folder != 'libc_exec':
                 flags += ['--nolibc', '--mode=exhaustive']
-            add(str(path.relative_to(ROOT / 'tests')), 'batch', flags + [rel(path)], folder)
+            # Lean (O2): test_exec.sh:445-451 `--cabs-json <c>` -> `--batch <json>`;
+            # test_bytes.sh:79-81/:88 bridges with `--nolibc --cabs-json`;
+            # test_libc_exec.sh:97/:104-105 `--batch --first --libc … --libc-tu …`.
+            if folder == 'libc_exec':
+                lean = lean_recipe([rel(path)], ['--batch', '--first'], libc=True)
+            elif folder == 'bytes':
+                lean = lean_recipe([rel(path)], ['--batch'], bridge_flags=['--nolibc'])
+            else:
+                lean = lean_recipe([rel(path)], ['--batch'])
+            add(str(path.relative_to(ROOT / 'tests')), 'batch', flags + [rel(path)], folder, lean=lean)
     # Multi-TU (test_multi_tu.sh:139 `.c` files in sorted name order; :149-150
     # `--nolibc --exec --batch --mode=exhaustive a.c b.c …`; :66 TIMEOUT_SECS=30).
     # tests/multi_tu_tray is LADDER Tier A row 6b, the SAME engine invocation:
@@ -273,8 +296,12 @@ def corpus(cn_root, stage):
             paths = sorted(directory.glob('*.c'))
             if len(paths) < 2:
                 raise ValueError(f'multi-TU case has fewer than two inputs: {directory}')
+            # Lean: test_multi_tu.sh:175 one `--cabs-json` per TU, :192 `--batch a.json b.json`;
+            # the tray row compares under the codec's `failure-class` projection (LADDER row 6b).
             add(f'{label}/{directory.name}', 'batch',
-                ['--exec', '--batch', '--nolibc', '--mode=exhaustive', *map(rel, paths)], label, 30)
+                ['--exec', '--batch', '--nolibc', '--mode=exhaustive', *map(rel, paths)], label, 30,
+                lean=lean_recipe(map(rel, paths), ['--batch'],
+                                 projection='failure-class' if label == 'multi_tu_tray' else 'full'))
     if cn_root is None:
         cn_root = next((parent / 'deps/cn/tests/cn' for parent in ROOT.parents
                         if (parent / 'deps/cn/tests/cn').is_dir()), None)
@@ -291,8 +318,10 @@ def corpus(cn_root, stage):
             tus.append(cn_root / extra[3:] if extra.startswith('cn:') else ROOT / 'tests/cn_coverage' / extra)
         if not all(p.is_file() for p in tus):
             raise ValueError(f'CN input missing: {name}')
+        # Lean: test_cn_coverage.sh:235 `-I <dir> --cabs-json <tu>` per TU, :239 `--batch <jsons>`.
         add(f'cn/{name}', 'batch', ['--exec', '--batch', '--nolibc', '--mode=exhaustive',
-                                   '-I', str(path.parent), *map(str, tus)], 'cn')
+                                   '-I', str(path.parent), *map(str, tus)], 'cn',
+            lean=lean_recipe(map(str, tus), ['--batch'], bridge_flags=['-I', str(path.parent)]))
     prep = subprocess.check_output([str(ROOT / 'scripts/libxml2_prep.sh'), 'uri.c'], text=True).splitlines()
     if not prep:
         raise ValueError('libxml2 preparation emitted no arguments')
@@ -302,14 +331,23 @@ def corpus(cn_root, stage):
     if not all(p.is_file() for p in tus):
         raise ValueError('libxml2 URI harness/input missing')
     for mode in ('libc', 'nolibc'):
+        # Lean: test_libxml2_uri.sh:186 `--cabs-json FLAGS <tu>` per TU; :221 `--batch --first
+        # --libc … --libc-tu … <jsons>` (libc) / :193 `--batch --first <jsons>` (nolibc).
+        # The nolibc row is that lane's MIRRORED-FAILURE PAIR (test_libxml2_uri.sh:198-204: both
+        # --nolibc surfaces must fail with the unknown-procedure `memset` Error), whose text embeds a
+        # symbol id the two engines number differently (VALIDATION.md §1(a), upstream-tray 17) —
+        # compared here under the labelled `failure-class` projection; the libc row stays `full`.
         add('libxml2/uri-' + mode, 'batch', ['--exec', '--batch',
-            *(['--nolibc'] if mode == 'nolibc' else []), *prep[:-1], *map(str, tus)], 'libxml2_uri')
+            *(['--nolibc'] if mode == 'nolibc' else []), *prep[:-1], *map(str, tus)], 'libxml2_uri',
+            lean=lean_recipe(map(str, tus), ['--batch', '--first'], bridge_flags=prep[:-1], libc=(mode == 'libc'),
+                             projection='failure-class' if mode == 'nolibc' else 'full'))
     # Same representative input through legacy parse/typecheck/pretty-print CLI.
     simple = 'tests/minimal/001-return-literal.c'
     add('cli/core-dump', 'core', ['--nolibc', '--pp=core', simple], 'cli')
     add('cli/typecheck-core', 'typecheck', ['--nolibc', '--typecheck-core', simple], 'cli')
     add('cli/args', 'batch', ['--nolibc', '--exec', '--batch', '--args', 'ab cd',
-                              'tests/immaculate/argv/argv1.c'], 'cli')
+                              'tests/immaculate/argv/argv1.c'], 'cli',
+        lean=lean_recipe(['tests/immaculate/argv/argv1.c'], ['--batch', '--first', '--args', 'ab cd']))
     # Immaculate (test_immaculate.sh: oracle flags :151-156 `--exec --batch`
     # [+ `--nolibc` unless libc] [+ `--args "ab cd"` for argv rows] — NO
     # --mode flag, i.e. the oracle's default single-trace mode, which that
@@ -324,8 +362,11 @@ def corpus(cn_root, stage):
             raise ValueError(f'empty immaculate corpus: {sub}')
         for path in paths:
             suffix = '-args' if sub == 'argv' else ''
+            # Lean: test_immaculate.sh:163-165 `--cabs-json <c>`; :168-173 `--batch --first`
+            # [+ `--args "ab cd"`] [+ the libc pin + 12 metadata TUs].
+            largs = ['--batch', '--first'] + (['--args', 'ab cd'] if sub == 'argv' else [])
             add(f'immaculate/{sub}/{path.stem}{suffix}', 'batch', ['--exec', '--batch', *extra, rel(path)],
-                'immaculate', 60)
+                'immaculate', 60, lean=lean_recipe([rel(path)], largs, libc=(sub == 'libc')))
     # tests/ci (LADDER Tier C: `test_exec.sh --write-baseline=… tests/ci`;
     # test_exec.sh:403-406 recursive find minus .syntax-only.c/.exhaust.c,
     # :442-443 flags, :169 TIMEOUT_SECS=30).
@@ -336,7 +377,8 @@ def corpus(cn_root, stage):
         if path.name.endswith(('.syntax-only.c', '.exhaust.c')):
             continue
         add(f'ci/{path.relative_to(ROOT / "tests/ci")}', 'batch',
-            ['--exec', '--batch', '--nolibc', '--mode=exhaustive', rel(path)], 'ci', 30)
+            ['--exec', '--batch', '--nolibc', '--mode=exhaustive', rel(path)], 'ci', 30,
+            lean=lean_recipe([rel(path)], ['--batch']))
     # tests/verify MAIN mode (test_verify.sh:75-77 `--nolibc --exec --batch
     # --mode=exhaustive`, timeout 30 at :75). Excluded, fork-only: the
     # call-point rows (Lean `--call`, :160-163, and the oracle's rendered
@@ -348,8 +390,9 @@ def corpus(cn_root, stage):
     if not verify:
         raise ValueError('empty tests/verify corpus')
     for path in verify:
+        # Lean: test_verify.sh:128 `--cabs-json <c>`, :78-79 `--batch <json>`.
         add(f'verify/{path.stem}', 'batch', ['--nolibc', '--exec', '--batch', '--mode=exhaustive', rel(path)],
-            'verify', 30)
+            'verify', 30, lean=lean_recipe([rel(path)], ['--batch']))
     # lean_frontend/corpus MAIN mode: exactly the stems test_verify.sh executes
     # main-mode (:269; same verify_pair flags); the call-point rows
     # (tests/corpus/expectations.txt) are fork-only as above.
@@ -358,7 +401,7 @@ def corpus(cn_root, stage):
         if not path.is_file():
             raise ValueError(f'corpus fixture missing: {path}')
         add(f'corpus/{stem}', 'batch', ['--nolibc', '--exec', '--batch', '--mode=exhaustive', rel(path)],
-            'corpus', 30)
+            'corpus', 30, lean=lean_recipe([rel(path)], ['--batch']))
     # libxml2 chvalid (test_libxml2.sh: prep :110-116 `libxml2_prep.sh chvalid.c`
     # → FLAGS + TU; slices :136 sorted `battery/chvalid_battery_*.c`; oracle
     # :162-163 `--nolibc --exec --batch FLAGS… <slice> <chvalid.c>` in the
@@ -372,8 +415,11 @@ def corpus(cn_root, stage):
     if not slices:
         raise ValueError('empty chvalid battery')
     for path in slices:
+        # Lean: test_libxml2.sh:144/:204 `--cabs-json FLAGS <tu>` for chvalid.c and the slice,
+        # :214-215 `--batch --first <slice.json> <chvalid.json>`.
         add(f'libxml2/chvalid/{path.stem}', 'batch',
-            ['--nolibc', '--exec', '--batch', *flags, rel(path), chvalid], 'libxml2_chvalid', 300)
+            ['--nolibc', '--exec', '--batch', *flags, rel(path), chvalid], 'libxml2_chvalid', 300,
+            lean=lean_recipe([rel(path), chvalid], ['--batch', '--first'], bridge_flags=flags))
     # csmith (test_csmith_corpus.sh: materialisation :53-68 — csmith_cerberus.h +
     # safe_math.h copied beside PREFIXED copies whose `#include "csmith.h"`
     # becomes `#define CSMITH_MINIMAL` + `#include "csmith_cerberus.h"`,
@@ -399,7 +445,7 @@ def corpus(cn_root, stage):
             count += 1
     for path in sorted(staged.glob('*.c')):
         add(f'csmith/{path.name}', 'batch', ['--nolibc', '--exec', '--batch', '--mode=exhaustive', str(path)],
-            'csmith', 15)
+            'csmith', 15, lean=lean_recipe([str(path)], ['--batch']))
     if count != 1669:
         raise ValueError(f'csmith corpus has {count} programs; the lane is built for 1669 (corpus drift)')
     return cases
@@ -437,6 +483,59 @@ def library_probe(out, sides, environments, limit):
         else:
             result.append((built, capture(directory / 'run', [exe], env, limit)))
     return result
+
+
+def verdict_summary(record):
+    """One token per side for the three-engine line: the batch verdicts (codec tokens,
+    joined with ' | ') or the failure shape."""
+    if record is None:
+        return '-'
+    if record['status'] in INCOMPLETE_STATUSES:
+        return f'INCOMPLETE({record["status"]})'
+    try:
+        return ' | '.join(load_capture(record['capture']).tokens('full'))
+    except (ProtocolError, OSError, ValueError) as exc:
+        return f'UNDECODABLE(status {record["status"]}: {exc})'
+
+
+def run_lean(directory, case, fork_side, env, limit, libc_args):
+    """The fork's --cabs-json bridge per TU (as the fork-vs-Lean lanes do), then the
+    Lean driver on the JSONs; LEAN_ABORT_ON_PANIC=1 as scripts/common.sh:319."""
+    bridges, jsons = [], []
+    for i, (bridge_flags, source) in enumerate(case.lean['tus']):
+        record = capture(directory / f'bridge{i}', [fork_side['binary'], '--runtime=' + str(fork_side['runtime']),
+                                                     *bridge_flags, '--cabs-json', source], env, limit)
+        bridges.append(record)
+        if record['status'] != 0 or Path(record['capture'] + '.stdout').stat().st_size == 0:
+            return {'status': 'lean_bridge_failed', 'reason': f'cabs-json of {source}: exit {record["status"]}',
+                    'bridges': bridges, 'lean': None}
+        json_path = directory / f'tu{i}.json'
+        shutil.copyfile(record['capture'] + '.stdout', json_path)
+        jsons.append(str(json_path))
+    args = [*case.lean['args'], *(libc_args if case.lean.get('libc') else []), *jsons]
+    lean_env = {**env, 'LEAN_ABORT_ON_PANIC': '1'}
+    record = capture(directory / 'lean', [LEAN_BIN, *args], lean_env, limit)
+    return {'status': None, 'reason': '', 'bridges': bridges, 'lean': record}
+
+
+def lean_compare(fork_record, lean_record, projection):
+    """Lean vs fork under the lane row's projection. Report-only: never gates."""
+    if lean_record['status'] in INCOMPLETE_STATUSES:
+        return 'lean_incomplete', f'Lean status {lean_record["status"]}'
+    errors = {}
+    sides = {}
+    for name, record in (('fork', fork_record), ('lean', lean_record)):
+        try:
+            sides[name] = load_capture(record['capture'])
+        except (ProtocolError, OSError, ValueError) as exc:
+            errors[name] = f'{exc} (status {record["status"]})'
+    if len(sides) == 2:
+        if sides['fork'].tokens(projection) == sides['lean'].tokens(projection):
+            return 'lean_agreement', f'projection {projection}'
+        return 'lean_difference', f'verdict tokens differ under projection {projection}'
+    if len(sides) == 0:
+        return 'lean_both_undecodable', f'fork: {errors["fork"]}; lean: {errors["lean"]} — not agreement'
+    return 'lean_difference', 'one side undecodable: ' + '; '.join(f'{k}: {v}' for k, v in errors.items())
 
 
 def hermetic_plants(register_path):
@@ -525,16 +624,21 @@ def main():
                         help='hermetic register/compare plants + real control + unexpected fork-verdict mutation '
                              '+ a real registered fork≠pristine difference with its row withheld (must be RED)')
     parser.add_argument('--timeout', type=float, default=30, help='per-side bound for cases whose lane sets none')
+    parser.add_argument('--with-lean', action='store_true',
+                        help='REPORT-ONLY third column: run the Lean engine on each batch case through the fork\'s '
+                             '--cabs-json bridge exactly as the fork-vs-Lean lane does and report pristine | fork | '
+                             'lean; Lean-vs-fork never gates here (its own lanes do) but every difference is printed')
     args = parser.parse_args()
-    if args.plant and (args.only or args.shard):
-        parser.error('--plant and --only/--shard are separate scopes')
+    if args.plant and (args.only or args.shard or args.with_lean):
+        parser.error('--plant and --only/--shard/--with-lean are separate scopes')
     out = args.out.resolve() if args.out else Path(tempfile.mkdtemp(prefix='upstream-oracle-', dir=ROOT / '.tmp'))
     out.mkdir(parents=True, exist_ok=True)
     scope = ('plant' if args.plant else 'subset (--only)' if args.only else
              f'{args.corpus} shard {args.shard}' if args.shard else args.corpus)
     report = {'schema': 2, 'status': 'incomplete', 'source': source_identity(), 'rows': [],
               'scope': scope, 'corpus_selection': args.corpus, 'corpora': list(CORPORA[args.corpus]),
-              'register_schema': REGISTER_SCHEMA,
+              'register_schema': REGISTER_SCHEMA, 'with_lean': args.with_lean,
+              'lean_gating': 'none — the Lean column is a report; Lean-vs-fork is gated by its own lanes',
               'diagnostic_projection': 'remove only ^Time spent: [0-9]+\\.[0-9]+ seconds newline; raw stderr retained',
               'not_applicable': [
                   {'interface': '--cabs-json, --call, --batch-alloc-census',
@@ -558,6 +662,14 @@ def main():
         report['upstream_build_manifest'] = {'path': str(args.build_manifest.resolve()),
                                              'sha256': sha(args.build_manifest)}
         subprocess.run([str(ROOT / 'tools/check_driver_fresh.sh'), '--check-oracle'], check=True)
+        libc_args = []
+        if args.with_lean:
+            # The Lean binary is a PREREQUISITE here exactly like the oracles: never built by
+            # this lane (the lanes' build_lean runs under scripts/capped), freshness-checked.
+            if not LEAN_BIN.is_file():
+                raise ValueError(f'--with-lean: Lean driver missing: {LEAN_BIN}')
+            subprocess.run([str(ROOT / 'tools/check_driver_fresh.sh'), '--check-lean'], check=True)
+            report['lean_binary'] = {'path': str(LEAN_BIN), 'sha256': sha(LEAN_BIN)}
         fork = ROOT / '_build/default/backend/driver/main.exe'
         report['fork_binary'] = {'path': str(fork), 'sha256': sha(fork)}
         report['fork_artifacts'] = artifacts()
@@ -612,6 +724,17 @@ def main():
                                   'plant', registered[0].timeout))
         if not cases:
             raise ValueError('empty independent oracle selection')
+        if args.with_lean and any(case.lean and case.lean.get('libc') for case in cases):
+            # The libc pin + the 12 metadata TU cabs-jsons (scripts/libc_prep.sh --jsons; drift-checked
+            # there), linked before the user TUs as test_libc_exec.sh:75-76 / test_immaculate.sh:210-211.
+            libc_dir = out / 'libcjson'
+            emitted = subprocess.check_output([str(ROOT / 'scripts/libc_prep.sh'), '--jsons', str(libc_dir)],
+                                              text=True).splitlines()
+            if len(emitted) != 12 or not all(Path(p).is_file() for p in emitted):
+                raise ValueError(f'libc_prep.sh --jsons emitted {len(emitted)} paths; expected 12 metadata TUs')
+            libc_args = ['--libc', str(ROOT / 'tests/libc/libc.core')]
+            for path in emitted:
+                libc_args += ['--libc-tu', path]
 
         def run_pair(index, case, mutate_fork=False):
             directory = out / f'{index:04d}'
@@ -646,10 +769,28 @@ def main():
             status, reason = compare(pair['upstream'], pair['fork'], case.kind, exceptions.get(case.id))
             if mutate:
                 status = 'plant_rejected' if status == 'difference' else 'plant_failed'
-            report['rows'].append({'id': case.id, 'kind': case.kind, 'corpus': case.corpus, 'status': status,
-                                   'reason': reason, **pair})
-            print(f'{i}/{len(cases)} {status}: {case.id} (pristine {pair["upstream"]["seconds"]:.1f}s, '
-                  f'fork {pair["fork"]["seconds"]:.1f}s)', flush=True)
+            row = {'id': case.id, 'kind': case.kind, 'corpus': case.corpus, 'status': status, 'reason': reason, **pair}
+            line = (f'{i}/{len(cases)} {status}: {case.id} (pristine {pair["upstream"]["seconds"]:.1f}s, '
+                    f'fork {pair["fork"]["seconds"]:.1f}s)')
+            if args.with_lean:
+                if case.lean is None:
+                    lean = {'status': 'lean_not_applicable', 'reason': 'legacy CLI row; no Lean side'}
+                else:
+                    lean = run_lean(out / f'{i:04d}', case, sides['fork'], envs['fork'],
+                                    case.timeout or args.timeout, libc_args)
+                    if lean['status'] is None:
+                        lean['status'], lean['reason'] = lean_compare(pair['fork'], lean['lean'], case.lean['projection'])
+                    lean['projection'] = case.lean['projection']
+                lean['three_engines'] = {'pristine': verdict_summary(pair['upstream']),
+                                         'fork': verdict_summary(pair['fork']),
+                                         'lean': verdict_summary(lean.get('lean'))}
+                row['lean'] = lean
+                line += f' | lean: {lean["status"]}'
+                if lean['status'] not in ('lean_agreement', 'lean_not_applicable'):
+                    line += (f'\n    LEAN≠FORK {case.id}: {lean["reason"]}\n      pristine: {lean["three_engines"]["pristine"][:200]}'
+                             f'\n      fork:     {lean["three_engines"]["fork"][:200]}\n      lean:     {lean["three_engines"]["lean"][:200]}')
+            report['rows'].append(row)
+            print(line, flush=True)
             save()
         report['rows'].extend(plants)
         if not args.only and not args.plant and not args.shard and args.corpus in ('tier-b', 'all'):
@@ -661,6 +802,10 @@ def main():
             else:
                 report['library_status'] = 'failed'
         report['counts'] = dict(Counter(row['status'] for row in report['rows']))
+        if args.with_lean:
+            report['lean_counts'] = dict(Counter(row['lean']['status'] for row in report['rows'] if 'lean' in row))
+            report['lean_differences'] = [row['id'] for row in report['rows']
+                                          if 'lean' in row and row['lean']['status'] not in ('lean_agreement', 'lean_not_applicable')]
         report['seconds'] = round(time.monotonic() - started, 1)
         report['source_after'] = source_identity()
         report['source_unchanged'] = report['source_after'] == report['source']
@@ -671,6 +816,10 @@ def main():
         save()
         print(f'Independent oracle scope: {scope}; {len(report["rows"])} rows in {report["seconds"]}s; '
               f'source unchanged: {report["source_unchanged"]}', flush=True)
+        if args.with_lean:
+            print(f'Three-engine report (Lean column, NOT gating): {report["lean_counts"]}; '
+                  f'Lean≠fork rows: {len(report["lean_differences"])}' +
+                  (': ' + ', '.join(report['lean_differences']) if report['lean_differences'] else ''), flush=True)
         print(f'Independent oracle: {report["status"]}; {report["counts"]}; {out / "report.json"}', flush=True)
         return int(failed)
     except (ValueError, OSError, KeyError, subprocess.CalledProcessError) as exc:

@@ -1,0 +1,52 @@
+#!/usr/bin/env python3
+"""Join every Lean≠fork row of a --with-lean report to (1) the fork-vs-Lean lane pin that already
+records the case as non-MATCH and (2) a mechanical check whether the two engines' verdict tokens
+agree under the codec's `failure-class` projection (= only embedded symbol numbers differ, the
+VALIDATION §1(a) / tray-17 class). A row with neither is an S2 candidate, printed loudly."""
+import json, pathlib, sys
+sys.path.insert(0, 'scripts')
+from observations import load_capture, ProtocolError
+rep = json.loads(pathlib.Path(sys.argv[1]).read_text())
+def baseline(path, key=lambda l: l.split(' ', 1)[0]):
+    return {key(l): l for l in pathlib.Path(path).read_text().splitlines() if l and not l.startswith('#')}
+owners = {  # corpus prefix -> (lane, baseline path, stem transform)
+    'minimal/': ('test_exec.sh --check-baseline', 'scripts/exec_baseline.txt', lambda c: c.split('/')[-1]),
+    'coverage/': ('test_exec.sh coverage', 'scripts/exec_coverage_baseline.txt', lambda c: c.split('/')[-1]),
+    'debug/': ('test_exec.sh debug', 'scripts/exec_debug_baseline.txt', lambda c: c.split('/')[-1]),
+    'float/': ('test_exec.sh float', 'scripts/exec_float_baseline.txt', lambda c: c.split('/')[-1]),
+    'libc_exec/': ('test_libc_exec.sh', 'tests/libc_exec/baseline.txt', lambda c: c.split('/')[-1][:-2]),
+    'immaculate/': ('test_immaculate.sh', 'tests/immaculate/baseline.txt', lambda c: c.split('/')[-1]),
+    'ci/': ('test_exec.sh tests/ci (Tier C)', 'scripts/exec_ci_baseline.txt', lambda c: c.split('/', 1)[1]),
+}
+tables = {k: baseline(v[1]) for k, v in owners.items()}
+def failure_class_agree(row):
+    try:
+        f = load_capture(row['fork']['capture']); l = load_capture(row['lean']['lean']['capture'])
+        return f.tokens('failure-class') == l.tokens('failure-class')
+    except (ProtocolError, OSError, ValueError, KeyError, TypeError):
+        return None
+s2 = []
+print(f"{'lean status':22} {'case':52} {'symbol-only?':12} owning lane pin (verbatim)")
+for row in rep['rows']:
+    lean = row.get('lean')
+    if not lean or lean['status'] in ('lean_agreement', 'lean_not_applicable'):
+        continue
+    cid = row['id']; pin = None; lane = None
+    for prefix, (lane_, path, stem) in owners.items():
+        if cid.startswith(prefix):
+            lane = lane_; pin = tables[prefix].get(stem(cid)); break
+    if cid.startswith('bytes/'):
+        lane = 'test_bytes.sh (ORACLE-INDEPENDENT: Lean vs committed .exec records; fork never compared)'
+        pin = 'no fork-vs-Lean pin exists by design'
+    if cid == 'libxml2/uri-nolibc':
+        lane = 'test_libxml2_uri.sh'; pin = ':198-204 mirrored-failure pair modulo the symbol id (tray 17)'
+    sym = failure_class_agree(row)
+    symtxt = {True: 'YES', False: 'no', None: 'n/a(undecodable)'}[sym]
+    known = bool(pin) and not (pin.endswith(' MATCH') or pin.endswith(' UB_MATCH') or ' MATCH | L=VAL' in pin or ' MATCH | L=UB' in pin)
+    flag = '' if (known or sym) else '   *** NO PIN AND NOT SYMBOL-ONLY — S2 CANDIDATE ***'
+    if not (known or sym):
+        s2.append(cid)
+    print(f"{lean['status']:22} {cid:52} {symtxt:12} {lane}: {pin}{flag}")
+print(f"\nLean≠fork rows: {len(rep['lean_differences'])}; S2 candidates: {len(s2)} {s2}")
+print('lean_counts:', rep['lean_counts'])
+sys.exit(1 if s2 else 0)
