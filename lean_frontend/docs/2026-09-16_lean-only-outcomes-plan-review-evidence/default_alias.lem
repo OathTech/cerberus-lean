@@ -1,0 +1,6 @@
+open import Pervasives
+(* An existing source of Inh_none, used only to inspect the current machinery;
+   this is not an implementation of the proposed inhabited_exclude declare. *)
+type blocked 'a = Loop of blocked 'a
+type alias = blocked nat
+type outcome 'a = Defined of 'a | Error of string | Direct of blocked nat | ViaAlias of alias

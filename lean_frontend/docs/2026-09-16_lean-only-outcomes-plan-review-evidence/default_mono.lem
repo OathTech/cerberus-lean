@@ -1,0 +1,4 @@
+open import Pervasives
+type blocked 'a = Loop of blocked 'a
+(* The first constructor needs an unavailable default; the second is usable. *)
+type mono = Bad of blocked nat | Good of nat
