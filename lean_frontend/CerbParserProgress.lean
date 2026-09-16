@@ -15,7 +15,7 @@
 
   THE INVARIANT the register (scripts/fuel_hypotheses.txt) cites: every parser
   passed to `many`/`many1` on the exec path consumes at least one character on
-  every success — formatted.lem:90 and :97 `many digit` (`digit` :83-85 =
+  every success — formatted.lem:90 and :97 `many digit` (`digit` :82-84 =
   `char #'0' <|> nonzero`, `nonzero` :66-79 a `sat`), :103 `many (char #'-' <|>
   char #'+' <|> char #' ' <|> char #'#' <|> char #'0')`, :170-171 `many ((many1
   (sat (fun z -> z <> #'%')) >>= …) <|> (conversionSpecification >>= …))` — the
@@ -306,7 +306,7 @@ theorem consumes_nonzero : Consumes nonzero := by
   unfold nonzero
   exact consumes_sat _
 
-/-- formatted.lem:83-85 `digit = char #'0' <|> nonzero` — the parser of `:90` and `:97`. -/
+/-- formatted.lem:82-84 `digit = char #'0' <|> nonzero` — the parser of `:90` and `:97`. -/
 theorem consumes_digit : Consumes digit := by
   unfold digit
   intro cs r hr

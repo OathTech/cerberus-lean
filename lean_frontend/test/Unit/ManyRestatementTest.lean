@@ -2,7 +2,7 @@
   Test: the `many`/`many1` restatement is the same parser (parser-progress-measure slice,
   2026-09-15; record docs/2026-09-11_parser-progress-measure-record.md D4.2).
 
-  The OLD generated workers (lean_frontend/generated/Monadic_parsing.lean before D1, verbatim
+  The OLD generated workers (lean_frontend/generated/Monadic_parsing.lean before D1, verbatim modulo whitespace
   up to the namespace and the `_old` names) are kept here and related to the NEW input-indexed
   workers `many_run_lemFuel`/`many1_run_lemFuel` by two kernel theorems:
 
@@ -26,7 +26,7 @@ set_option autoImplicit false
 
 namespace ManyRestatement
 
-/-! ### The OLD workers, verbatim (D1's before-text; `_old` inserted in the names) -/
+/-! ### The OLD workers, verbatim modulo whitespace (D1's before-text; `_old` inserted in the names) -/
 mutual
  def many_old_lemFuel {a : Type} (lemFuel : Nat) (p : parserM a) : parserM (List a) := match lemFuel with
   | 0 => (fuelExhausted (ParserM (fun _ => [])))
