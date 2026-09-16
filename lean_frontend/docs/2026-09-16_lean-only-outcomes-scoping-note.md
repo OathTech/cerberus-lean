@@ -161,3 +161,7 @@ S1a–S1c are one implementation branch and one landing; no intermediate state t
 The review answers R0's six: 1 B yes with the revised contract and per-layer doctrine; 2 one `Stopped` per channel yes; 3 the structural exhaustion record now yes; 4 the three features sufficient, with the message payload and the admission/execution boundary stated; 5 consumer review useful AND a consumer build against the candidate before landing; 6 carry the delta if upstream declines. The orchestrator concurs on all six. Added:
 7. **Charter S0 as its own small checkpoint slice** (probes and prototypes only; no production change; a Lem tool change only if R1.3's candidate fails, and then openly as a paired slice) before any S1 charter?
 8. **Land this docs branch** (the superseded D2 note, this scoping note R0+R1, the review response and its probe evidence) on the mainline as the record of the decision, on the operator's sign-off?
+
+### Landing (2026-09-16)
+
+[USER 2026-09-16], verbatim: "Great, land the docs branch, and run the slice". Review: the operator commissioned the Codex design review (`2026-09-16_lean-only-outcomes-review-response.md`), which stands as the pre-merge review of this docs-only branch; ff-only onto `mdd/cerberus-lean`, no push. "The slice" = the S0 checkpoint (R1.5), chartered next as `arc/lean-only-outcomes-S0` (probe-only; no production change lands from it; its record does).
