@@ -94,12 +94,44 @@ passed all 90 in its identified full run (see the audit repair record).
 Terminology. **oracle** = the OCaml Cerberus built from this
 repository's `.lem` + OCaml sources, run in the MATCHED MODE (same
 `--nolibc`/libc linkage, `--mode=exhaustive` or `--first` ≙ single trace,
-default switches, no `--concurrency`). **upstream** = un-forked
-`deps/cerberus-upstream` @ `b9aeedcb4`. **execution discrepancy** = on a
+default switches, no `--concurrency`). **upstream** / **pristine** =
+un-forked Cerberus @ `b9aeedcb4` — as source, `deps/cerberus-upstream`; as an
+ENGINE, the independently compiled build (pristine source + upstream Lem
+`3802cb0`, git archives, `DUNE_CACHE=disabled`, hash-pinned manifest) that
+`scripts/ensure_independent_oracle.py` keeps standing at
+`.validation-foundations/independent-oracle-v2`. **execution discrepancy** = on a
 program both engines run, a difference in the outcome class
 (`Defined`/`Undefined`/`Error`/tool failure), the value, the UB code, the
 UB location, stdout/stderr bytes, or the trace set. **mirror** = make the
 Lean text compute what the OCaml text computes, with a `file:line` cite.
+
+**The reference doctrine** (WP-O, 2026-09-16 — [USER 2026-09-16]: *"right
+now we have the ocaml-cerberus as an oracle, but we're also changing it.
+There's some danger there!"*; record
+`docs/2026-09-16_pristine-oracle-instrument-record.md`). Pristine upstream
+`b9aeedcb4` is THE reference. The fork's OCaml is the shared model's
+**mirror twin**: it is built from the same `.lem` the Lean port is generated
+from, so a shared-model edit moves the fork oracle and Lean TOGETHER and every
+fork-vs-Lean lane is blind to it by construction. The fork's deviations from
+pristine are therefore a separately gated inventory: the register
+`scripts/upstream_oracle_differences.json` (schema 2 — every row classed
+`diagnostic-text` | `resource` | `missing-feature` | `shared-model-fix`,
+cited to an upstream-tray draft, an ISO-fix register id or a dated record,
+with a rationale and both engines' full signatures) is the ONLY permitted
+list of fork≠pristine behaviours, and LADDER Tier B row 10
+(`scripts/test_upstream_oracle.py`) is its gate: pristine vs fork over every
+corpus the fork-vs-Lean lanes walk, every unexplained difference RED, a
+pristine-side non-termination admitted only through a cited
+`resource`/`shared-model-fix` row (never the fork side), stale rows RED.
+Today the inventory is 3 `shared-model-fix` rows (the cross-TU struct-value
+cases of upstream-tray drafts 37/38/39, where the fork answers `Specified(7)`
+and pristine loops or rejects) and 21 `diagnostic-text` rows (both engines
+die with the same exception; only backtrace frame positions differ). A
+SHARED-MODEL SLICE runs the three-way `pristine | fork | lean` report
+(`test_upstream_oracle.py --with-lean`, LADDER Tier C row C5) over the full
+pristine corpus and may add register rows only with a citation; a
+fork≠pristine difference no existing citation explains is a finding for the
+operator, never a row the slice writes itself.
 
 ## 1. The exception classes and their operational tests
 
@@ -352,6 +384,51 @@ task; current measurements are in the CI reporting record.
   draft; the pin flips to AGREE on the upstream fix, any other movement
   is a regression) is owed by the code half of Z4 (charter §4.2).
 
+**Fork ≠ pristine — the register (`scripts/upstream_oracle_differences.json`,
+schema 2; gate: LADDER Tier B row 10).** These are not Lean-vs-oracle rows:
+they are the fork OCaml's reviewed deviations from pristine upstream
+`b9aeedcb4`, the mirror twin's own exception list (§0, the reference
+doctrine). Every row binds both engines' signatures (exit status, stdout
+sha256, stderr sha256 under the lane's diagnostic projection) and moves only
+by a cited re-record.
+
+- **`shared-model-fix` (3 rows; citations upstream-tray drafts 37/38/39,
+  `tests/multi_tu_tray/README.md`):** `multi_tu_tray/node` — pristine does
+  not terminate (`Ctype_aux.are_compatible` recurses forever on a
+  self-referential struct defined in two TUs, draft 37; rc 124 at the lane's
+  30 s bound — the ONLY pristine-side incomplete the register admits), the
+  fork answers `Defined {value: "Specified(7)", …}`; `multi_tu_tray/
+  arr-2-2-return` and `multi_tu_tray/arr-incomplete-ptr-return` — pristine
+  rejects the compatible cross-TU struct value at `PEmemberof(struct)`'s
+  exact-tag guard (`Error {msg: "ill-formed program: \`PEmemberof(struct)
+  ==> mismatched tags: …"}` rc 1, draft 38), the fork (`dbe633ec5`: the
+  compatibility consult + draft 39's one-token array-bound fix) answers
+  `Specified(7)` — ISO C11 §6.2.7#1's value, gcc's exit. The rows retire
+  (the cases move into `tests/multi_tu/`) when upstream fixes the drafts.
+  Row 6b pins fork OCaml == Lean on the same inputs.
+- **`diagnostic-text` (21 rows; citation `docs/2026-09-06_independent-oracle-
+  and-fork-pins.md:85-93` + the owning lane's baseline row):** both engines
+  die with the SAME uncaught exception, exit 125, empty stdout; the only
+  differing bytes are backtrace frame positions (`line N`/`characters A-B`
+  in generated `.ml` files shifted by the fork's `.lem` edits, `lem_list.ml`
+  frames from the different Lem runtime, `pipeline.ml`/`main.ml` frames from
+  the fork's driver additions) — `minimal/097`, 16 `tests/immaculate`
+  both-crash pins, 4 `tests/ci` `.error.c` rows. Class (a) shape. These pins
+  move on every generated-line shift; whether such pins should instead
+  normalise backtrace positions is the deferred question of
+  `docs/2026-09-11_semantics-audit-repairs-record.md:1752` (an operator
+  decision — it changes what the lane admits).
+- **Standing, UNREGISTERED observations (reporting rows, not the gate):**
+  `tests/ci` `0023-jump1.c`/`0025-jump3.c` and 21 of the first csmith
+  shard's 50 programs time out on BOTH engines at the owning lane's bound
+  (30 s / 15 s) — a both-sides timeout is admissible under no register
+  class (the fork side never), so `--corpus ci` and `--corpus csmith` are
+  Tier C reporting rows whose exit is nonzero while these stand; whether a
+  both-sides timeout deserves an admitting class is an open operator
+  question (record §O1, S5). csmith's both-crash rows (the same
+  backtrace-position class) are not pinned row by row: volume makes the
+  normalisation question, not pins, the instrument.
+
 ## 4. What is compared, against what
 
 **The oracle.** The OCaml Cerberus in this repository, built from the
@@ -366,12 +443,32 @@ native exit membership, call-point pins project a single value/UB, and
 legacy printer/reference checks retain their documented narrower purpose.
 An acknowledged baseline difference or refusal is not observation agreement.
 
-**Upstream, as a third point.** An un-forked upstream checkout
-(`deps/cerberus-upstream` in the working layout, pinned at the fork's
-merge-base) separates "our fork's behaviour" from "upstream's
-behaviour": fork regressions and upstream bugs are attributed, not
-conflated. Several oracle-wrong findings (Lean-right, upstream-filed)
-came out of exactly this three-way instrument.
+**Pristine upstream, the reference (§0).** The independently compiled
+pristine engine (`b9aeedcb4` + upstream Lem `3802cb0`; kept standing by
+`scripts/ensure_independent_oracle.py`, which reuses the lane's own
+fail-closed manifest validator and never deletes or overwrites a build) is
+compared with the fork OCaml by LADDER Tier B row 10 over every corpus the
+fork-vs-Lean lanes walk — `tests/{minimal,coverage,debug,float,bytes,
+libc_exec}`, `tests/multi_tu` + `tests/multi_tu_tray`, the 213 CN rows, the
+libxml2 `uri` harness (libc and nolibc), `tests/immaculate` (nolibc/argv/
+libc), `tests/verify` + the `lean_frontend/corpus` main-mode fixtures, and
+two legacy CLI modes (855 cases, ~2 min warm); libxml2 `chvalid` is its own
+Tier B row (4 slices, ~7 min); `tests/ci` and the csmith corpus are
+reporting rows. Each corpus runs with the flags, exclusions and per-case
+timeout of the lane that owns it (cited in `corpus()`); the fork-only
+interfaces (`--cabs-json`, `--call` and the wrapper TUs that mirror it,
+`--pp=core` pin derivations, `--batch-alloc-census`) are named as not
+applicable. The register (§3) is the exception list; everything else must
+agree — semantically through the shared codec, or as the same front-end
+rejection under the diagnostic projection. This separates "our fork's
+behaviour" from "upstream's behaviour": fork regressions and upstream bugs
+are attributed, not conflated, and a shared-model change cannot move the
+oracle and Lean together unnoticed. **Three engines on one input:**
+`test_upstream_oracle.py --with-lean` (Tier C row C5) adds the Lean engine
+through the fork's `--cabs-json` bridge exactly as each owning lane runs it
+and reports `pristine | fork | lean` per case — report-only here (Lean vs
+fork is gated by its own lanes); at WP-O's landing every one of its 40
+Lean≠fork rows was a recorded pin of the owning lane (record §O2).
 
 **Recorded expectations, where the oracle can't reach.** A few legs
 are oracle-independent by design: the `tests/bytes` micro-lane
@@ -406,6 +503,10 @@ lanes, with their recorded states:
 | `test_csmith_corpus.sh` | 1,669 in-tree csmith programs | classified pinned baseline (sharded; reporting tier full-pass): 0 MISMATCH/DIFF rows; the non-MATCH rows are 499 `CERB_SKIP` (oracle-side) + 9 `TIMEOUT` (derived from `scripts/exec_csmith_corpus_baseline.txt` at `928aa1e76`; the header's per-row narrative is the arc-13 record) |
 | `test_ci_sweep.sh` | 2,186-file upstream CI suite | [Repaired candidate measurement](docs/2026-09-06_ci-reporting-results.md): 1,359 matching observations, one UB-location difference, three filesystem refusals, three Lean timeouts and 820 oracle-side non-comparisons. All 15 fresh TSVs/raw records are archived. The default TSVs under `tests/ci_sweep/results/` remain historical (14 from August 22, TCC from September 2); no automatic baseline adoption. |
 | `fuzz_csmith.sh` | generated csmith programs | deterministic seeded fuzz kit (reporting tier) |
+| `test_upstream_oracle.py` (+ `--plant`) | pristine upstream `b9aeedcb4` vs fork OCaml over the Tier B row-10 corpus (855 cases: the six Tier A exec corpora, both multi-TU roots, 213 CN rows, uri ×2, immaculate, verify + corpus, 3 CLI rows) | **Tier B row 10 GATE**: `passed; {'semantic_agreement': 822, 'reviewed_difference': 20, 'matching_failure': 11, 'interface_agreement': 2}` at WP-O (2026-09-16); the 20 reviewed rows are the register's (§3); plants: 16 doctored registers rejected at load, the compare() incomplete/stale matrix, a fork-verdict mutation and a REAL registered difference with its row withheld → RED |
+| `test_upstream_oracle.py --corpus libxml2_chvalid` | pristine vs fork on the 4 chvalid slices (the fork lane's flags and 300 s bound) | **Tier B GATE**: 4/4 `semantic_agreement` (~7 min) |
+| `test_upstream_oracle.py --with-lean` | the same corpus, three engines | Tier C row C5, report-only Lean column: 813 agree / 28 difference / 12 both-undecodable / 2 n/a at WP-O, all 40 Lean≠fork rows recorded pins (§4) |
+| `test_upstream_oracle.py --corpus ci` / `--corpus csmith --shard K/34` | `tests/ci` (242 cases) / the 1669 staged csmith programs | Tier C reporting rows; rc nonzero while both-sides timeouts stand (§3): ci 134 agree / 102 matching_failure / 4 reviewed / 2 both-sides 30 s timeouts; csmith shard 1/34: 26 / 3 backtrace-position crashes / 21 both-sides 15 s timeouts, ~11 min per shard (~6 h for the corpus — never one step) |
 
 Lane semantics worth knowing:
 
@@ -666,7 +767,8 @@ elab + the uri gate + cn_coverage; Tier B (slice boundaries,
 pre-merge) adds the full libxml2 battery, the tests/ci suites,
 `test_verify.sh`, `test_immaculate.sh`, the speclab gate lanes, the
 gcc second-oracle lane (`test_gcc_oracle.sh --check-baseline` — a
-GATE since 2026-09-02 [USER]) and the harness plant batteries
+GATE since 2026-09-02 [USER]), the pristine-oracle lane (row 10, widened
+2026-09-16, + its chvalid row 12) and the harness plant batteries
 (`test_hang_plant.sh`, `test_kill_plant.sh`; `test_renumber_plants.sh`
 rides `test_unit.sh`); Tier C are the committed reporting
 instruments (`test_ci_sweep.sh`, the csmith full pass, fuzz). Probe
