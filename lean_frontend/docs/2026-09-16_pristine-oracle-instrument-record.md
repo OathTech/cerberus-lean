@@ -663,3 +663,12 @@ reports its committed state unchanged; B7's earlier wall-clock movement (§6) di
 2026-09-16 21:40 – 2026-09-17 03:59 UTC, on the worktree named above, load ≤ 1.2 throughout; quoted outputs are
 verbatim from the evidence files; tallies marked derived are computed from `report.json` files kept
 under the worktree's `.tmp/` (ephemeral) and summarised in the evidence dir.
+
+
+## 9. Landing (2026-09-17)
+
+[USER 2026-09-17], verbatim: *"Great, go ahead and merge"* — in reply to the orchestrator's merge ask, which named (a) the rebased head `7f4d23ee0` (12 commits over `bb09cb745` = mainline `6da619f69` + the concurrency-scoping erratum), (b) the auditor's verdicts (MERGE-WITH-FIXES → delta FIXES-ACCEPTED, §A of the audit report), (c) the re-gate at the rebased head, and (d) the M1 reading of ruling (1) (a registered case is always judged by its row; `matching_incomplete` is for unregistered cases only) as the one point to confirm — no objection was raised; the reading stands as [AGENT] with the sign-off given in its presence.
+
+Orchestrator re-gate at `7f4d23ee0` (verbatim): `fast: passed; 14/14 selected commands completed successfully.` / `Source unchanged: True. Complete tier selection: True.` / `Independent oracle: passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 3, 'interface_agreement': 2}` / `Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 43}`. The FULL battery (`release.py --mode full`, 37/37) ran at the pre-rebase fix commit `1abadc396`; the mainline delta between the two bases is docs-only (tray draft 44, the concurrency-landing scoping note, its erratum).
+
+Rebase hash map (pre-rebase → landed): charter `1770e112d` → `2f53b9aa8`; O3 `0ce67f2b6` → `5798fac79`; O1 `3debab120` → `61975a5c0`; O2 `57a0e4ee0` → `2c8ee1dc9`; O4 `664f9d0a7` → `6bb03eaae`; record `419c572a1` → `bb3360dcb`; O5 `9cbd9b86f` → `0301885e2`; record `586b550b8` → `4490ac37a`; O6 `1abadc396` → `5a8bfbff6`; record `46e5d2f19` → `45430677a`; audit report `b87787069` → `8c624e3f2`; audit §A `4df08432e` → `7f4d23ee0`. The audit report's and this record's earlier sections cite the PRE-rebase hashes; this map is the translation.
