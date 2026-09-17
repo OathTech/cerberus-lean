@@ -1,0 +1,81 @@
+# Row 10 (test_upstream_oracle.py) after C1 7b51b0b43 — verbatim tail:
+Independent oracle scope: tier-b; 855 rows in 114.2s; source unchanged: True
+Independent oracle: failed; {'semantic_agreement': 822, 'matching_failure': 27, 'reviewed_difference': 3, 'interface_agreement': 2, 'difference': 1}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/allocator-soundness-address-bound/.tmp/upstream-oracle-bid3d5si/report.json
+
+# The one 'difference': immaculate/libc/g2-memcmp-uninit — both engines rc 125; re-run by hand (fork = this tree's _build; pristine = .validation-foundations/independent-oracle-v2), stderr verbatim:
+## fork (rc 125)
+cerberus: internal error, [31muncaught exception[m:
+          File "memory/concrete/impl_mem.ml", line 2664, characters 16-22: Assertion failed
+          Raised at Cerb_frontend__Impl_mem.Concrete.memcmp.get_bytes.(fun) in file "memory/concrete/impl_mem.ml", line 2664, characters 16-28
+          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 64, characters 26-31
+          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 62, characters 11-19
+          Called from Cerb_frontend__Nondeterminism.liftND.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 257, characters 22-36
+          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 62, characters 11-19
+          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 62, characters 11-19
+          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 62, characters 11-19
+          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 62, characters 11-19
+          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 62, characters 11-19
+          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 62, characters 11-19
+          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 62, characters 11-19
+          Called from Cerb_frontend__Smt2.runND.aux in file "ocaml_frontend/smt2.ml", line 38, characters 10-18
+          Called from Cerb_frontend__Smt2.runND in file "ocaml_frontend/smt2.ml", line 140, characters 22-33
+          Called from Cerb_backend__Driver_ocaml.batch_drive in file "backend/common/driver_ocaml.ml", line 158, characters 15-115
+          Called from Cerb_backend__Pipeline.interp_backend in file "backend/common/pipeline.ml", line 604, characters 21-85
+          Called from Dune__exe__Main.cerberus in file "backend/driver/main.ml", lines 309-335, characters 8-15
+          Called from Cmdliner_term.app.(fun) in file "cmdliner_term.ml", line 22, characters 19-24
+          Called from Cmdliner_eval.run_parser in file "cmdliner_eval.ml", line 41, characters 7-16
+## pristine (rc 125)
+cerberus: internal error, [31muncaught exception[m:
+          File "memory/concrete/impl_mem.ml", line 2659, characters 16-22: Assertion failed
+          Raised at Cerb_frontend__Impl_mem.Concrete.memcmp.get_bytes.(fun) in file "memory/concrete/impl_mem.ml", line 2659, characters 16-28
+          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 66, characters 26-31
+          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 64, characters 11-19
+          Called from Cerb_frontend__Nondeterminism.liftND.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 259, characters 22-36
+          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 64, characters 11-19
+          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 64, characters 11-19
+          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 64, characters 11-19
+          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 64, characters 11-19
+          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 64, characters 11-19
+          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 64, characters 11-19
+          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 64, characters 11-19
+          Called from Cerb_frontend__Smt2.runND.aux in file "ocaml_frontend/smt2.ml", line 38, characters 10-18
+          Called from Cerb_frontend__Smt2.runND in file "ocaml_frontend/smt2.ml", line 140, characters 22-33
+          Called from Cerb_backend__Driver_ocaml.batch_drive in file "backend/common/driver_ocaml.ml", line 158, characters 15-115
+          Called from Cerb_backend__Pipeline.interp_backend in file "backend/common/pipeline.ml", line 590, characters 21-85
+          Called from Dune__exe__Main.cerberus in file "backend/driver/main.ml", lines 261-287, characters 8-15
+          Called from Cmdliner_term.app.(fun) in file "cmdliner_term.ml", line 22, characters 19-24
+          Called from Cmdliner_eval.run_parser in file "cmdliner_eval.ml", line 41, characters 7-16
+## diff pristine -> fork
+2,13c2,13
+<           File "memory/concrete/impl_mem.ml", line 2659, characters 16-22: Assertion failed
+<           Raised at Cerb_frontend__Impl_mem.Concrete.memcmp.get_bytes.(fun) in file "memory/concrete/impl_mem.ml", line 2659, characters 16-28
+<           Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 66, characters 26-31
+<           Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 64, characters 11-19
+<           Called from Cerb_frontend__Nondeterminism.liftND.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 259, characters 22-36
+<           Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 64, characters 11-19
+<           Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 64, characters 11-19
+<           Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 64, characters 11-19
+<           Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 64, characters 11-19
+<           Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 64, characters 11-19
+<           Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 64, characters 11-19
+<           Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 64, characters 11-19
+---
+>           File "memory/concrete/impl_mem.ml", line 2664, characters 16-22: Assertion failed
+>           Raised at Cerb_frontend__Impl_mem.Concrete.memcmp.get_bytes.(fun) in file "memory/concrete/impl_mem.ml", line 2664, characters 16-28
+>           Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 64, characters 26-31
+>           Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 62, characters 11-19
+>           Called from Cerb_frontend__Nondeterminism.liftND.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 257, characters 22-36
+>           Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 62, characters 11-19
+>           Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 62, characters 11-19
+>           Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 62, characters 11-19
+>           Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 62, characters 11-19
+>           Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 62, characters 11-19
+>           Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 62, characters 11-19
+>           Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file "ocaml_frontend/generated/nondeterminism.ml", line 62, characters 11-19
+17,18c17,18
+<           Called from Cerb_backend__Pipeline.interp_backend in file "backend/common/pipeline.ml", line 590, characters 21-85
+<           Called from Dune__exe__Main.cerberus in file "backend/driver/main.ml", lines 261-287, characters 8-15
+---
+>           Called from Cerb_backend__Pipeline.interp_backend in file "backend/common/pipeline.ml", line 604, characters 21-85
+>           Called from Dune__exe__Main.cerberus in file "backend/driver/main.ml", lines 309-335, characters 8-15
+# Diagnosis [AGENT]: the exception HEADER line 'File "memory/concrete/impl_mem.ml", line N, characters 16-22: Assertion failed' carries the memcmp assert's source line (pristine 2659; fork 2664 after C1's +5 net lines above it) and is NOT a backtrace frame, so the lane's diagnostic projection (frames only, [USER 2026-09-17]) leaves it unnormalised; every other differing line is a frame position the projection already normalises (this case was matching_failure at WP-O O5). Same failure, same status: a diagnostic-text-class difference.

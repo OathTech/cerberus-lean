@@ -134,9 +134,10 @@ sheltered until now by the mirror exemption of the no-magic-values rule; with th
 parameter (matched mode instantiating it to upstream's value) the exhausted regime is reachable by
 ordinary programs, which is why the fix above precedes the parameter.
 
-**LANDED — C1 of `arc/allocator-soundness-address-bound` (2026-09-16; commit hash in the record
-`lean_frontend/docs/2026-09-16_allocator-soundness-address-bound-record.md` §C1, which also carries the OCaml diff
-= the patch hunk for upstream).** Remedy 1 in `memory/concrete/impl_mem.ml:1252-1263` and
+**LANDED — C1 of `arc/allocator-soundness-address-bound`, commit `7b51b0b438052d47551009b9f65464d3030e9bf3`
+(2026-09-16/17; record `lean_frontend/docs/2026-09-16_allocator-soundness-address-bound-record.md` §C1, which also carries
+the OCaml diff = the patch hunk for upstream, and §S1: the fix's +5-line shift moves the `memcmp` assert's
+`Assertion failed` header line, a row-10 diagnostic-text matter pending the operator).** Remedy 1 in `memory/concrete/impl_mem.ml:1252-1263` and
 `memory/vip/impl_mem.ml:207-218` (`if z < zero then fail (MerrOther "Concrete.allocator: failed (out of memory)")`
 before the rounding; `let (_, m) = quomod z align in let z' = sub z m`; the `q < zero` branch deleted; a two-line
 fork comment at each site); the Lean mirror `lean_frontend/CerbMem.lean` `allocator` (line by line, with the new
