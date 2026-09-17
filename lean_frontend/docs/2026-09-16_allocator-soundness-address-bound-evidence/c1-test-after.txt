@@ -1,0 +1,8 @@
+# C1 runtime witness AFTER remedy 1 (verbatim): lean_frontend/.lake/build/bin/allocator-soundness-test
+allocator-soundness-test: the four draft-44 states on the ACTUAL CerbMem.allocator (remedy 1)
+PASS cursor 3, request (4, 4): got AllocatorSoundnessTest.Outcome.outOfMemory 3, expected AllocatorSoundnessTest.Outcome.outOfMemory 3; pre-fix: active, address 2 (the defect)
+PASS cursor 7, request (8, 8): got AllocatorSoundnessTest.Outcome.outOfMemory 7, expected AllocatorSoundnessTest.Outcome.outOfMemory 7; pre-fix: active, address 6 (the defect)
+PASS cursor 2, request (4, 4): got AllocatorSoundnessTest.Outcome.outOfMemory 2, expected AllocatorSoundnessTest.Outcome.outOfMemory 2; pre-fix: killed (out of memory)
+PASS cursor 8, request (4, 4): got AllocatorSoundnessTest.Outcome.active 0 4 4, expected AllocatorSoundnessTest.Outcome.active 0 4 4; pre-fix: active, address 4 (the normal regime)
+allocator-soundness-test: OK (4/4 states; kernel theorem CerbMem.allocator_active_sound compiled)
+exit=0

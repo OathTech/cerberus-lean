@@ -24,6 +24,9 @@ UNIT_TESTS=(
     # main reports success; its cone is probed by check_theorem_axioms.sh
     "fuel-exemplar-test"
     "monadic-failstop-test"
+    # allocator soundness (upstream-tray draft 44, 2026-09-16): the four draft-44
+    # states on the actual CerbMem.allocator; its import compiles the kernel theorem
+    "allocator-soundness-test"
     # semantics-audit repairs D1 (2026-09-11): CerbFloat.of_string binary64 bit-pattern pins
     "float-literal-test"
     # semantics-audit repairs D3 (2026-09-11): Ctype_aux.are_compatible array-bound arm (finding 5)

@@ -1,0 +1,27 @@
+# C1 negative control — the four draft-44 states on the ACTUAL CerbMem.allocator BEFORE remedy 1
+# tree: 6d9ba82f1751835b5e5cef2e8c9b2f4fe26763f0 (charter head; CerbMem.lean unchanged from mainline 4a23d98aa at the allocator)
+# freshness before the probe (verbatim):
+check_handwritten_sync: OK (48 hand-written files byte-identical to lean_frontend/generated/; manifest lean_frontend/handwritten_copy.manifest)
+check_lem_sync: OK (src 0ea744e44bd25235b4db5b42660406f178879ca5194c707640feb4f814e3793c, gen bcb2f7d80459eda631942ad09cf31a632640ad5fbfb2bd3d5d678bbf01c6a14b)
+check_driver_fresh: oracle OK (bin 7336b2e35e761cd553dcd196e944da00bcd981a0a2c512d10926c3bb91723478, src 98ad48b592a222a21e4619c5ce03652fc6a44c0a67c6b02cb222e1d40b1c701d)
+check_driver_fresh: lean OK (bin 5f6dfacf25852e7eedb386345ee641317eb03448688cd768974332962a2aa2ab, src c805823c3a54a24e82398a2ca27ea2018416ef873ceaca4d03091f9603a1086a)
+# probe source (lean_frontend/.tmp/AllocPreFixProbe.lean, run via ../scripts/lean_probe.sh from lean_frontend/):
+#   import CerbMem
+#   /- Pre-fix negative control (upstream-tray draft 44): the four states evaluated on
+#      the ACTUAL CerbMem.allocator as built at HEAD (before remedy 1). -/
+#   open CerbMem
+#   def show1 (last sz align : Int) : String :=
+#     let st : MemState := { lastAddress := last }
+#     match (match allocator sz align with | ND f => f st) with
+#     | (NDactive (id, a), st') => s!"last={last} sz={sz} align={align}: active, id={id} address={a} cursor'={st'.lastAddress}"
+#     | (NDkilled (Other (MerrOther msg)), st') => s!"last={last} sz={sz} align={align}: killed ({msg}) cursor'={st'.lastAddress}"
+#     | (_, _) => s!"last={last} sz={sz} align={align}: other outcome"
+#   #eval show1 3 4 4
+#   #eval show1 7 8 8
+#   #eval show1 2 4 4
+#   #eval show1 8 4 4
+# output (verbatim):
+"last=3 sz=4 align=4: active, id=0 address=2 cursor'=2"
+"last=7 sz=8 align=8: active, id=0 address=6 cursor'=6"
+"last=2 sz=4 align=4: killed (Concrete.allocator: failed (out of memory)) cursor'=2"
+"last=8 sz=4 align=4: active, id=0 address=4 cursor'=4"

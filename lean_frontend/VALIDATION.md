@@ -407,8 +407,12 @@ they are the fork OCaml's reviewed deviations from pristine upstream
 `b9aeedcb4` as OBSERVED on row 10's corpora — the mirror twin's own exception
 list (§0, the reference doctrine). Source-level fork≠upstream deltas that no
 walked corpus witnesses are recorded as content pins in
-`scripts/fork_drift_manifest.txt` (§6) and become entries here only once a
-corpus observes them. Every row binds both engines' signatures (exit status, stdout
+`scripts/fork_drift_manifest.txt` (§6) and become register rows only once a
+corpus observes them — a deliberate shared-model FIX the fork takes ahead of
+upstream is nevertheless listed BELOW the moment it lands, as an UNOBSERVABLE
+deviation with its citation and pins (the doctrine's "UNOBSERVABLE deviations
+are recorded with a citation"), so the inventory here is complete even where
+the register is silent. Every row binds both engines' signatures (exit status, stdout
 sha256, stderr sha256 under the lane's diagnostic projection) and moves only
 by a cited re-record.
 
@@ -426,6 +430,36 @@ by a cited re-record.
   `Specified(7)` — ISO C11 §6.2.7#1's value, gcc's exit. The rows retire
   (the cases move into `tests/multi_tu/`) when upstream fixes the drafts.
   Row 6b pins fork OCaml == Lean on the same inputs.
+- **UNOBSERVABLE `shared-model-fix` deviation — content-pinned, NO register row
+  (allocator-soundness slice, 2026-09-16; upstream-tray draft 44, TRUE BUG /
+  model soundness; [USER 2026-09-16] *"unambiguously wrong … allowed to fix
+  ahead of upstream"*).** The concrete/VIP allocator's EXHAUSTED regime.
+  Pristine `b9aeedcb4` `memory/concrete/impl_mem.ml:1253` (VIP twin `:208`)
+  aligns the new base with the truncating-division idiom
+  `z - (if q < 0 then -m else m)` over the EUCLIDEAN `quomod = ediv_rem` (`:9`),
+  so once the cursor is below the request (`z = last_address - sz < 0`) the
+  allocation can SUCCEED at an address in `(0, align)` — overlapping the live
+  object at the cursor, misaligned (cursor 3, request (4, 4) → address 2; the
+  draft's verbatim reproductions on both engines). The fork takes remedy 1 in
+  BOTH OCaml models (`memory/concrete/impl_mem.ml:1255-1263`,
+  `memory/vip/impl_mem.ml:210-218`: the existing out-of-memory kill BEFORE
+  rounding, then a plain align-down; the dead branch deleted) and in the Lean
+  mirror (`CerbMem.lean` `allocator`, line by line), with the GENERAL kernel
+  theorem `CerbMem.allocator_active_sound` (`CerbMemAllocatorProofs.lean`: an
+  ACTIVE allocation is `align`-aligned, strictly positive, disjoint from
+  everything at or above the cursor, and becomes the cursor — no hypothesis on
+  `sz`/`align`; axioms `propext`, `Classical.choice`, `Quot.sound`) and
+  `allocator_below_request_kills` (remedy 1 in kernel terms), plus the runtime
+  witness `allocator-soundness-test` (the four draft-44 states on the actual
+  `CerbMem.allocator`, the pre-fix values as the negative control). Fork
+  engines AGREE with each other (Tier A rows 1–4b unmoved); pristine differs
+  ONLY in the exhausted regime, which at upstream's bound needs ~2^48 bytes of
+  cumulative allocation in one run — no corpus program does that, so row 10
+  sees no difference and the register has no row; both files' content pins
+  moved (`scripts/fork_drift_manifest.txt`, header note "allocator-soundness
+  C1"). The deviation becomes OBSERVABLE, and this entry gains a witness lane,
+  once the address-space bound is a parameter (the same charter's C2/C3: a tiny
+  bound through the fork-only `--address-space-top`, which pristine lacks).
 - **`diagnostic-text` (0 rows; a permitted class).** RESOLVED [USER
   2026-09-17] ("(2) agree", on the orchestrator's question — record §7): the
   lane's diagnostic projection — the one `matching_failure` and the

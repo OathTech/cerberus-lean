@@ -37,6 +37,7 @@ CerbFunMapInstances.lean
 CerbGlobal.lean
 CerbLocation.lean
 CerbMem.lean
+CerbMemAllocatorProofs.lean
 CerbND.lean
 CerbPP.lean
 CerbStepInstances.lean

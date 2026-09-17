@@ -1250,12 +1250,17 @@ module Concrete : Memory = struct
     begin
       let open Z in
       let z = sub st.last_address sz in
-      let (q,m) = quomod z align in
-      let z' = sub z (if q < zero then neg m else m) in
-      if z' <= zero then
+      (* fork fix (upstream-tray draft 44, 2026-09-16): quomod is EUCLIDEAN (line 9), so `sub z (if q < zero then neg m else m)`
+         ADDED m when z < 0 and could succeed in (0, align) over the live object at last_address; kill BEFORE rounding. *)
+      if z < zero then
         fail (MerrOther "Concrete.allocator: failed (out of memory)")
       else
-        return z'
+        let (_, m) = quomod z align in
+        let z' = sub z m in
+        if z' <= zero then
+          fail (MerrOther "Concrete.allocator: failed (out of memory)")
+        else
+          return z'
     end >>= fun addr ->
     put { st with
       next_alloc_id= Z.succ alloc_id;

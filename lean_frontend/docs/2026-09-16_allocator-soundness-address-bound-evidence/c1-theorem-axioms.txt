@@ -1,0 +1,9 @@
+# C1 theorem axioms + signatures (verbatim; probe lean_frontend/.tmp/AxiomsProbe.lean via ../scripts/lean_probe.sh, toolchain leanprover/lean4:v4.32.2)
+'CerbMem.allocator_active_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbMem.allocator_below_request_kills' depends on axioms: [propext, Classical.choice, Quot.sound]
+CerbMem.allocator_active_sound : ∀ (st st' : CerbMem.MemState) (sz align id a : Int),
+  CerbMem.allocatorStep sz align st = (NDactive (id, a), st') →
+    align ∣ a ∧ 0 < a ∧ a + sz ≤ st.lastAddress ∧ st'.lastAddress = a
+CerbMem.allocator_below_request_kills : ∀ (st : CerbMem.MemState) (sz align : Int),
+  st.lastAddress - sz < 0 →
+    CerbMem.allocatorStep sz align st = (NDkilled (Other (MerrOther "Concrete.allocator: failed (out of memory)")), st)

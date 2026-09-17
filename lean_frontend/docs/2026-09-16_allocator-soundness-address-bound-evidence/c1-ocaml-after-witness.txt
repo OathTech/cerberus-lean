@@ -1,0 +1,33 @@
+# C1 OCaml-side AFTER witness: the NEW allocator arithmetic (memory/concrete/impl_mem.ml:1252-1263) copied verbatim into a standalone Zarith program (the tray-44 method), OCaml The OCaml toplevel, version 5.4.0
+# source:
+#   (* The NEW allocator arithmetic (memory/concrete/impl_mem.ml:1252-1263 after remedy 1), copied
+#      verbatim into a standalone program — the tray-44 method, post-fix. *)
+#   module Z = struct include Z let quomod = ediv_rem end
+#   let run last sz align =
+#     let open Z in
+#     let z = sub last sz in
+#     if z < zero then
+#       Printf.printf "last=%s sz=%s align=%s: z=%s -> killed (out of memory) [z < 0, before rounding]\n"
+#         (to_string last) (to_string sz) (to_string align) (to_string z)
+#     else
+#       let (_, m) = quomod z align in
+#       let z' = sub z m in
+#       if z' <= zero then
+#         Printf.printf "last=%s sz=%s align=%s: z=%s m=%s z'=%s -> killed (out of memory)\n"
+#           (to_string last) (to_string sz) (to_string align) (to_string z) (to_string m) (to_string z')
+#       else
+#         Printf.printf "last=%s sz=%s align=%s: z=%s m=%s z'=%s -> active, address %s\n"
+#           (to_string last) (to_string sz) (to_string align) (to_string z) (to_string m) (to_string z') (to_string z')
+#   let () =
+#     let (q, m) = Z.quomod (Z.of_int (-1)) (Z.of_int 4) in
+#     Printf.printf "ediv_rem (-1) 4 = (%s, %s)\n" (Z.to_string q) (Z.to_string m);
+#     run (Z.of_int 3) (Z.of_int 4) (Z.of_int 4);
+#     run (Z.of_int 7) (Z.of_int 8) (Z.of_int 8);
+#     run (Z.of_int 2) (Z.of_int 4) (Z.of_int 4);
+#     run (Z.of_int 8) (Z.of_int 4) (Z.of_int 4)
+# output (verbatim):
+ediv_rem (-1) 4 = (-1, 3)
+last=3 sz=4 align=4: z=-1 -> killed (out of memory) [z < 0, before rounding]
+last=7 sz=8 align=8: z=-1 -> killed (out of memory) [z < 0, before rounding]
+last=2 sz=4 align=4: z=-2 -> killed (out of memory) [z < 0, before rounding]
+last=8 sz=4 align=4: z=4 m=0 z'=4 -> active, address 4

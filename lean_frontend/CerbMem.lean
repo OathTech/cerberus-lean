@@ -2072,37 +2072,55 @@ def readonlyStatusForAlloc (pref : prefix0) (initOpt : Option MemValue) : Readon
 @[simp] theorem readonlyStatusForAlloc_none (pref : prefix0) :
     readonlyStatusForAlloc pref none = .IsWritable := rfl
 
-/-- allocator — impl_mem.ml:1247-1262, the arithmetic verbatim on Z (Int):
-    `z = last_address - sz` (:1251); `(q, m) = quomod z align` (:1252) where
-    `Z.quomod = ediv_rem` (impl_mem.ml:9) — Lean's Int `/` and `%` ARE
-    ediv/emod. `align = 0` RAISES `Division_by_zero` there — a KIND-2
-    OCaml-execution artifact (the logical-semantics referent ruling), NOT
-    mirrored: the model gives an alignment of 0 no meaning, so this is a
-    loud PENDING-DECISION refusal (docs/2026-09-04_zero-discrepancy-Z2-
-    record.md §10, with Z2-M-01), never the fail-OPEN `.max 1` clamp that
-    stood here. Reachable from C only through `aligned_alloc(0, 0)`
-    (std.core:385 `0 rem_t 0 = 0` passes on the total `rem_t`);
-    `z' = z - (if q < 0 then -m else m)` (:1253); `z' ≤ 0` →
-    `fail (MerrOther "Concrete.allocator: failed (out of memory)")`
-    (:1254-1255; text mirrored — zero-discrepancy Z2-M-03); else
-    `next_alloc_id` bumped, `last_used = Some alloc_id`, `last_address =
-    addr` (:1259-1262).
+/-- allocator — impl_mem.ml:1247-1270, the arithmetic verbatim on Z (Int),
+    AFTER remedy 1 of upstream-tray draft 44 (fork fix, 2026-09-16 — the
+    fork deviates from pristine `b9aeedcb4` here; UNOBSERVABLE at upstream's
+    bound; VALIDATION.md §3 "Fork ≠ pristine"):
+    `z = last_address - sz` (:1252); `z < 0` → `fail (MerrOther
+    "Concrete.allocator: failed (out of memory)")` (:1255-1256 — THE FIX: the
+    cursor is below the request, so no rounding may run. Pristine :1253 rounded
+    `z - (if q < 0 then -m else m)`, a truncating-division idiom, but
+    `Z.quomod = ediv_rem` (impl_mem.ml:9) is EUCLIDEAN — `m ≥ 0` always — so
+    for `z < 0` the line ADDED `m` and, for `-align/2 < z < 0`, SUCCEEDED at an
+    address in `(0, align)` overlapping the live object at `last_address`
+    and misaligned; draft 44 has the verbatim reproductions on both engines);
+    then `(_, m) = quomod z align` (:1258) — Lean's Int `%` IS emod.
+    `align = 0` RAISES `Division_by_zero` there — a KIND-2 OCaml-execution
+    artifact (the logical-semantics referent ruling), NOT mirrored: the model
+    gives an alignment of 0 no meaning, so this is a loud PENDING-DECISION
+    refusal (docs/2026-09-04_zero-discrepancy-Z2-record.md §10, with
+    Z2-M-01), never the fail-OPEN `.max 1` clamp that stood here; it sits
+    where the OCaml's quomod sits — AFTER the `z < 0` kill. Reachable from C
+    only through `aligned_alloc(0, 0)` (std.core:385 `0 rem_t 0 = 0` passes
+    on the total `rem_t`); `z' = z - m` (:1259, a plain align-down: the
+    `q < zero` branch is dead and deleted); `z' ≤ 0` → the same out-of-memory
+    fail (:1260-1261; text mirrored — zero-discrepancy Z2-M-03); else
+    `next_alloc_id` bumped, `last_used = Some alloc_id`, `last_address = addr`
+    (:1264-1270). The VIP twin (memory/vip/impl_mem.ml:202-225) carries the
+    same text.
+    CONTRACT — kernel theorem `CerbMem.allocator_active_sound`
+    (CerbMemAllocatorProofs.lean): an ACTIVE result `a` has `align ∣ a`,
+    `0 < a`, `a + sz ≤ st.lastAddress`, and the new cursor is `a`; the
+    below-the-request regime is `allocator_below_request_kills`. Runtime
+    witness: `test/Unit/AllocatorSoundnessTest.lean` (the four draft-44
+    states, with the pre-fix values as the negative control).
     Zero-discrepancy Z-13 / Z2-M-05: the two callers used to clamp
     size and align with `.max 1` and map a negative size to 0 through
     `.toNat` — silent normalisations the OCaml has nowhere; both gone. -/
 def allocator (sz align : Int) : memM (StorageInstanceId × Address) :=
   ND fun st =>
     let allocId := st.nextAllocId
-    if align == 0 then
-      (NDkilled (CerbFail.failStopKill "CerbMem.allocator: alignment 0 has no meaning in the model (impl_mem.ml:1252 quomod raises Division_by_zero — an OCaml-execution artifact, not the referent); operator decision pending, zero-discrepancy Z2 record §10"), st)
+    let z := st.lastAddress - sz                                                 -- :1252
+    if z < 0 then                                                                -- :1255-1256 (draft 44 fix)
+      (NDkilled (Other (MerrOther "Concrete.allocator: failed (out of memory)")), st)
+    else if align == 0 then                                                      -- :1258 quomod → Division_by_zero
+      (NDkilled (CerbFail.failStopKill "CerbMem.allocator: alignment 0 has no meaning in the model (impl_mem.ml:1258 quomod raises Division_by_zero — an OCaml-execution artifact, not the referent); operator decision pending, zero-discrepancy Z2 record §10"), st)
     else
-      let z := st.lastAddress - sz
-      let q := z / align
-      let m := z % align
-      let z' := z - (if q < 0 then -m else m)
-      if z' ≤ 0 then
+      let m := z % align                                                         -- :1258 (Euclidean remainder, m ≥ 0)
+      let z' := z - m                                                            -- :1259 (align down)
+      if z' ≤ 0 then                                                             -- :1260-1261
         (NDkilled (Other (MerrOther "Concrete.allocator: failed (out of memory)")), st)
-      else
+      else                                                                       -- :1263-1270
         (NDactive (allocId, z'),
          { st with nextAllocId := allocId + 1, lastUsed := some allocId, lastAddress := z' })
 

@@ -1,3 +1,17 @@
+# allocator-soundness C1, 2026-09-16 [AGENT]: two [source-content] pins moved — memory/concrete/impl_mem.ml
+# e55389c6… -> 97a5da4c… and memory/vip/impl_mem.ml 1491d4a2… -> 4bc49e63… — remedy 1 of upstream-tray draft 44
+# ([USER 2026-09-16] "unambiguously wrong … allowed to fix ahead of upstream"): `allocator` kills with the EXISTING
+# out-of-memory error when the cursor is below the request (`z < 0`) BEFORE rounding, then aligns down with the
+# Euclidean remainder (`z' = z - m`); the truncating-division branch `if q < zero then neg m else m` — which with
+# `quomod = ediv_rem` ADDED m to a negative z and could return an address in (0, align) overlapping the live object
+# at last_address — is deleted (concrete :1252-1263, vip :207-218; a two-line fork comment at each site). Hand-file
+# (layer 1) OCaml only: no .lem touched, so both generated trees and layer 2 (22 hash-pinned files) are unchanged.
+# UNOBSERVABLE at upstream's bound (~2^48 bytes of cumulative allocation needed): NO register row
+# (scripts/upstream_oracle_differences.json unchanged); recorded in lean_frontend/VALIDATION.md §3 "Fork ≠ pristine".
+# Lean mirror lean_frontend/CerbMem.lean `allocator` (line by line, new cites) + the kernel theorem
+# lean_frontend/CerbMemAllocatorProofs.lean `allocator_active_sound` + the runtime witness
+# lean_frontend/test/Unit/AllocatorSoundnessTest.lean. Single-row edits, not a wholesale --refresh (which strips
+# this header). Record: lean_frontend/docs/2026-09-16_allocator-soundness-address-bound-record.md §C1.
 # parser-progress-measure D1, 2026-09-15 [AGENT]: GENUINE shared-model change, an EXTENSIONALLY IDENTICAL
 # restatement — one [source-content] pin moved (frontend/model/monadic_parsing.lem 194dcdbc… -> da04e3c2… (62445706… at D1, before the D2 Lean-only `fuel_measure` declares):
 # `many`/`many1` are restated as input-indexed recursion — two mutually recursive RUN functions
@@ -357,9 +371,9 @@ util/cerb_fresh.ml
 100644 c13fc48fb6e67cf01edfbfee4e79c4bbe89c12bfa2c4506499b7b7ef99de10c8 frontend/model/translation_effect.lem
 100644 9427c936dcfe2bb47a984c6d73db12bf1c7012bb85b0b63156b5edececf9bf7c frontend/model/utils.lem
 100644 88f958f5bcc3cd4fbf2b8fa1bbc3baf30b48ad0f0de0aca0b14287b9bf24857f memory/cheri-coq/impl_mem.ml
-100644 e55389c6038a495d7c95d910bb5c6a1a0875f7ca9f62cb05bdd15474301b64f1 memory/concrete/impl_mem.ml
+100644 97a5da4c290f3000a3016b988ef50752ea10caaabc31fa2c86f707284324286b memory/concrete/impl_mem.ml
 100644 58a46f129c3376fb12f3fd47ccf08e5ec1c7f1c4a543dd410d57421601653878 memory/symbolic/impl_mem.ml
-100644 1491d4a24c6c423a521c8b05d35f7c0fb269db587b0e432d85b882c7ab592262 memory/vip/impl_mem.ml
+100644 4bc49e634bae47d38e1c1009c9c9679eb3a34c228baf6478770818e614944e90 memory/vip/impl_mem.ml
 100644 4ea44bb0710cf2a2ebe448974705289c36906d5a3b321c74da3cf6a92fda7859 ocaml_frontend/dune
 100644 5835e51d0f5368186ce5b04ede62796c443134778072a0a9dc3a660effa8ef81 ocaml_frontend/fork_renumber.ml
 100644 03bbf03077ffbc083a9157d62e664919abfde89a9b467767bddf3e4a83db2c40 ocaml_frontend/memory_model.ml

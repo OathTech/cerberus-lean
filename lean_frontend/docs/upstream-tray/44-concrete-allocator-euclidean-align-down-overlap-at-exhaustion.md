@@ -116,7 +116,7 @@ Zarith arithmetic and on the Lean toolchain, and extended to the VIP twin. Draft
 5.1) under operator direction; the filed issue carries an AI-provenance note per the tray's policy.
 File together with 34 (the same allocator; `align = 0`).
 
-## Fork status (2026-09-16) — fix RULED, scheduled
+## Fork status (2026-09-16) — fix RULED, scheduled; LANDED (C1, 2026-09-16)
 
 [USER 2026-09-16], verbatim: *"Yes, we should file it, and I think this is in the 'unambiguously
 wrong' category where we are allowed to fix ahead of upstream."* The fork will take remedy 1 in both
@@ -133,3 +133,16 @@ both engines (`impl_mem.ml:508`; `CerbMem.lean:153` `lastAddress : Address := 0x
 sheltered until now by the mirror exemption of the no-magic-values rule; with the bound a quantified
 parameter (matched mode instantiating it to upstream's value) the exhausted regime is reachable by
 ordinary programs, which is why the fix above precedes the parameter.
+
+**LANDED — C1 of `arc/allocator-soundness-address-bound` (2026-09-16; commit hash in the record
+`lean_frontend/docs/2026-09-16_allocator-soundness-address-bound-record.md` §C1, which also carries the OCaml diff
+= the patch hunk for upstream).** Remedy 1 in `memory/concrete/impl_mem.ml:1252-1263` and
+`memory/vip/impl_mem.ml:207-218` (`if z < zero then fail (MerrOther "Concrete.allocator: failed (out of memory)")`
+before the rounding; `let (_, m) = quomod z align in let z' = sub z m`; the `q < zero` branch deleted; a two-line
+fork comment at each site); the Lean mirror `lean_frontend/CerbMem.lean` `allocator` (line by line, with the new
+cites); the GENERAL kernel theorem `CerbMem.allocator_active_sound` + `allocator_below_request_kills`
+(`lean_frontend/CerbMemAllocatorProofs.lean`; axioms `propext`/`Classical.choice`/`Quot.sound`); the runtime
+witness `lean_frontend/test/Unit/AllocatorSoundnessTest.lean` (`allocator-soundness-test`: the four states above,
+post-fix killed / killed / killed / active at 4, the pre-fix values quoted as the negative control); fork-drift
+content pins for both files (`scripts/fork_drift_manifest.txt`, header note "allocator-soundness C1");
+`lean_frontend/VALIDATION.md` §3 "Fork ≠ pristine" entry — UNOBSERVABLE at upstream's bound, NO register row.

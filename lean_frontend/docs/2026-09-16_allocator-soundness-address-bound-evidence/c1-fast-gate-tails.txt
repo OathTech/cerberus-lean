@@ -1,0 +1,64 @@
+# C1 FAST-GATE — verbatim verdict lines (all lanes run under scripts/ce; wall per lane from .tmp/c1-gate-summary.txt)
+test_unit rc=0 wall=170s
+exec_minimal rc=0 wall=33s
+exec_coverage rc=0 wall=51s
+exec_debug rc=0 wall=23s
+exec_float rc=0 wall=24s
+chain done rc=0
+
+## ./scripts/test_unit.sh
+2:check_handwritten_sync: OK (49 hand-written files byte-identical to lean_frontend/generated/; manifest lean_frontend/handwritten_copy.manifest)
+13:✓ effects-proof-test PASSED
+20:✓ totality-proof-test PASSED
+338:✓ core-parser-test PASSED
+355:✓ fresh-int-test PASSED
+379:✓ pp-test PASSED
+388:✓ fuel-exemplar-test PASSED
+430:✓ monadic-failstop-test PASSED
+441:allocator-soundness-test: OK (4/4 states; kernel theorem CerbMem.allocator_active_sound compiled)
+442:✓ allocator-soundness-test PASSED
+451:✓ float-literal-test PASSED
+467:✓ are-compatible-test PASSED
+474:✓ many-restatement-test PASSED
+477:Total: 11 passed, 0 failed
+478:check_exec_purity: CLEAN (11 modules)
+479:check_theorem_axioms: hand-written axiom census OK (0 axioms — the arc-17 S2b end state)
+480:check_theorem_axioms: generated-tree census OK (219 files: 0 axioms, boundary-opaque population = the 16 registered rows exactly-once (incl. CerbFuel.fuelExhaustedLoc), 0 unsafeCast)
+482:check_theorem_axioms: D14 grep-ban OK (no native_decide/bv_decide in 1 tree(s) + 49 hand-written seam files + LemLibTest.lean)
+502:check_theorem_axioms: C2 entry census OK (9 entries, every cone ⊆ [propext, Classical.choice, Quot.sound])
+575:check_sorry_token: OK (317 files scanned comment-stripped — generated 219, hand-written+test 63, LemLib 35; 0 sorry tokens)
+695:check_no_fuel_numerals: SELFTEST — planting F1-F6 into a scratch copy of the scan set (loud plant banner; nothing in the tree is touched)
+719:check_no_fuel_numerals: SELFTEST OK (20 plants red with the declared label; E5 indirection a recorded known gap; unplanted set green)
+720:check_no_fuel_numerals: OK (324 files scanned comment-stripped; no lemDefaultFuel/driverFuel/ndDefaultFuel, no LemFuel instance, no literal fuel (F1-F6); allowed Main.lean sites seen: 4 of 4 (hand-written + generated copy))
+735:check_lakefile_roots: OK (218 roots = 218 generated modules + the exe root Main; 85 auxiliary modules all built)
+773:check_fuel_forms: OK (81 fuel'd workers: 62 MEASURED (obligation of the contract's shape incl. argument correspondence against the wrapper's body; every obligation + proof cone ⊆ the standard three; 12 of them under a hypothesis, each = a reviewed row of fuel_hypotheses.txt, both directions), 13 ABSORBING = kill at zero (the _zero lemma is the worker at literal 0 on its own binders = the monad's absorbing element, cone ⊆ the standard three; propagation NOT proved — lem TODO 13), 0 reachable-AMBIENT = the 0 rows of fuel_forms_pending.txt exactly, 6 ambient unreachable from the drive cone)
+775:check_failure_reach: SELFTEST — plants on scratch copies of the scanned sources and the register (loud plant banner; nothing in the tree is touched)
+784:check_failure_reach: SELFTEST OK (5 plants with the declared message — a new site in a generated exec-closure definition, a DISCARDABLE dead let-binding, an unsealed class edit, a phantom row, an edited tally — and the unplanted register green)
+786:check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=166 REACHABLE=48 UNKNOWN=19; every row sealed; tally line consistent)
+787:check_exec_totality: CLEAN (22 generated modules + hand-written CerbND, 0 allowlisted)
+788:check_lem_sync: OK (src 0ea744e44bd25235b4db5b42660406f178879ca5194c707640feb4f814e3793c, gen bcb2f7d80459eda631942ad09cf31a632640ad5fbfb2bd3d5d678bbf01c6a14b)
+790:check_fork_drift: SELFTEST — plants on scratch copies of the manifest and fake prerequisites (loud plant banner; nothing in the tree is touched)
+809:check_fork_drift: SELFTEST OK (14 plants with declared verdict/message: S1-S10 prerequisite/locale/name controls; S11 copied-content control; S12 inside-listed-file drift; S13/S14 duplicate/missing content pins; unplanted gate green)
+811:check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 24 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+812:check_fixture_freeze: OK (16 fixture files match the pinned manifest; name set exact)
+825:test_renumber_plants: OK (12 plants: refusals refuse, admits admit with declared class)
+
+## exec_minimal
+153:SUMMARY: total=111 match=90 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=3 cerb_floor=0 cerb_inconsistent=0
+155:Checking against baseline: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/allocator-soundness-address-bound/scripts/exec_baseline.txt
+157:Baseline check: 0 regression(s), 0 improvement(s)
+
+## exec_coverage
+254:SUMMARY: total=212 match=183 ub_match=16 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=13 cerb_floor=0 cerb_inconsistent=0
+256:Checking against baseline: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/allocator-soundness-address-bound/scripts/exec_coverage_baseline.txt
+258:Baseline check: 0 regression(s), 0 improvement(s)
+
+## exec_debug
+132:SUMMARY: total=90 match=66 ub_match=20 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=4 cerb_floor=0 cerb_inconsistent=0
+134:Checking against baseline: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/allocator-soundness-address-bound/scripts/exec_debug_baseline.txt
+136:Baseline check: 0 regression(s), 0 improvement(s)
+
+## exec_float
+135:SUMMARY: total=93 match=93 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0
+137:Checking against baseline: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/allocator-soundness-address-bound/scripts/exec_float_baseline.txt
+139:Baseline check: 0 regression(s), 0 improvement(s)

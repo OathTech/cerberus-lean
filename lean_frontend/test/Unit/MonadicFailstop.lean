@@ -31,7 +31,7 @@ def checks (fuel : Nat) : List (String × Bool) := Id.run do
   let liveByte := writeBytesTo st 100 [{ prov := .Prov_none, copyOffset := none, value := some 42 }]
   return [
     ("allocator zero alignment remains a refusal", stops (allocator 0 0) st
-      "CerbMem.allocator: alignment 0 has no meaning in the model (impl_mem.ml:1252 quomod raises Division_by_zero — an OCaml-execution artifact, not the referent); operator decision pending, zero-discrepancy Z2 record §10"),
+      "CerbMem.allocator: alignment 0 has no meaning in the model (impl_mem.ml:1258 quomod raises Division_by_zero — an OCaml-execution artifact, not the referent); operator decision pending, zero-discrepancy Z2 record §10"),
     ("allocator ordinary alignment", active (allocator 1 1) st),
     ("requested address", stops (allocateObject tags 0 (PrefOther "test") (iv 1) unsigned_char (some 100) none) st
       "TODO: cerb::with_address() is yet implemented"),

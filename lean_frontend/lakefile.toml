@@ -137,6 +137,7 @@ roots = [
   "CerbUtils",
   "CerbPP",
   "CerbMem",
+  "CerbMemAllocatorProofs",
   "CerbFS",
   "CerbFuel",
   "CerbFail",
@@ -249,6 +250,16 @@ supportInterpreter = true
 name = "monadic-failstop-test"
 srcDir = "test"
 root = "Unit.MonadicFailstop"
+moreLinkArgs = ["native/md5.o"]
+
+# allocator soundness (upstream-tray draft 44, remedy 1 landed 2026-09-16): the
+# four draft-44 states evaluated on the ACTUAL CerbMem.allocator — a RUNTIME
+# witness (exit code); imports CerbMemAllocatorProofs so the GENERAL kernel
+# theorem allocator_active_sound is compiled on every test_unit.sh run.
+[[lean_exe]]
+name = "allocator-soundness-test"
+srcDir = "test"
+root = "Unit.AllocatorSoundnessTest"
 moreLinkArgs = ["native/md5.o"]
 
 
