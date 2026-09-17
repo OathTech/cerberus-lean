@@ -31,7 +31,9 @@ was pushed; nothing was merged; no mainline was touched.
 | `664f9d0a7` | O4 — doctrine: VALIDATION §0/§3/§4/§5/§8, LADDER row 10/6b/12/C6/C7 | `lean_frontend/VALIDATION.md`, `scripts/LADDER.md`, evidence `o4-*` |
 | `419c572a1` | the record + evidence dir (first version) | this file, `…-record-evidence/` |
 | `9cbd9b86f` | **O5** — the two [USER 2026-09-17] rulings: `matching_incomplete`, backtrace-position normalisation; register = 3 tray rows | `scripts/test_upstream_oracle.py`, the register, `VALIDATION.md`, `LADDER.md`, `tests/multi_tu_tray/README.md`, evidence `o5-*` |
-| (this) | the record amendment (§1, §3.3, §7) | this file |
+| `586b550b8` | the record amendment for O5 (§1, §3.3, §7.1) | this file |
+| `1abadc396` | **O6** — pre-merge audit fixes M1–M5, N1 (+ N2 counts) | `scripts/test_upstream_oracle.py`, `VALIDATION.md`, `LADDER.md`, evidence `o6-precommit-*` |
+| (this) | the record amendment for O6 (§1, §3.4, §7 errata, §7.2) | this file, evidence `o6-*` |
 
 Fence check: only fenced files were edited (`test_upstream_oracle.py`, the register, the new
 ensure-script, `LADDER.md`, `VALIDATION.md`, the record + evidence, the container hook).
@@ -219,7 +221,7 @@ normalisation question of `:1752`, an operator decision because it changes what 
 
 ### 3.4 Plants (`--plant`, `o1-gate-plant.txt`)
 
-Hermetic (no processes): 16 doctored registers rejected at load — schema 1, missing/unknown class
+Hermetic (no processes): 15 doctored registers rejected at load (this record first said "16", which counted the positive control — pre-merge audit N2; at `1abadc396` the count is 19 with N1's four citation plants) — schema 1, missing/unknown class
 (`failure-text`, the plan's old name), missing/empty/nonexistent citation, unknown ISO-fix id `R99`,
 unknown key, empty rationale, identical signatures, fork 124, fork 137, pristine 137, pristine 124
 under `diagnostic-text`, malformed sha — and the committed register loads (24 rows). `compare()`
@@ -475,6 +477,7 @@ A5, A6, A6b, A9–A11, B1, B4, B5, B10.1) reports its committed state unchanged;
 2. In `2026-09-06_independent-oracle-and-fork-pins.md` the fail-rules sentence is at `:94-95` (charter `:89-91`) and the fork-only-flags sentence at `:101-102` (charter `:103-104`); the scope statement `:73-79` is right.
 3. `scripts/test_observation_lanes.py` has NO row-10 plant (its `LANES` tuple never included the upstream lane), so the fence clause "only where its row-10 plant needs the new schema" has no referent; the file was not touched.
 4. `build_independent_oracle.py:69-130`: `main()` runs to `:142`; the argument block is `:70-76`. Cosmetic.
+5. (found by the pre-merge audit, N3) "two CLI cases" — the base `0c78635cb:scripts/test_upstream_oracle.py:166-168` already had three (`cli/core-dump`, `cli/typecheck-core`, `cli/args`); §3.2 above says "the 3 CLI rows — unchanged".
 
 **Stops raised for the orchestrator (the slice continued fail-closed; nothing was admitted):**
 - **S5 — both-sides timeouts.** `tests/ci` `0023-jump1.c`/`0025-jump3.c` (30 s) and 21/50 csmith
@@ -561,9 +564,102 @@ register rows only with a citation — every pristine≠fork difference no exist
 and every Lean≠fork row that is not already a recorded pin of the owning lane, is a STOP for the
 operator, never a row the slice writes.*
 
+### 7.2 Pre-merge audit fixes — O6 (`1abadc396`, 2026-09-17)
+
+The independent pre-merge audit of `0c78635cb..586b550b8` —
+`worktrees/cerberus-lean-audit/pristine-oracle-instrument/lean_frontend/docs/2026-09-17_pristine-oracle-instrument-audit-premerge.md`
+at `b87787069` on `audit/pristine-oracle-instrument` (read-only to this worker) — returned
+MERGE-WITH-FIXES: 0 MAJOR, 5 MINOR (M1–M5), 7 NOTE. The orchestrator verified each finding at the
+cited lines and directed the fixes below as ONE commit (O6); each is [AGENT] unless marked.
+
+| finding | what changed (file:line at `1abadc396`) |
+|---|---|
+| **M1** `compare()`'s both-124 shortcut preceded the register lookup, so a REGISTERED case whose fork side also timed out read `matching_incomplete` (non-failing) instead of RED | `scripts/test_upstream_oracle.py` `compare()`: the register lookup now comes FIRST (after the unconditional 137 check): a registered case is always judged by its row — both signatures must reproduce exactly, anything else is `difference` ("reviewed pin moved"; a fork side that timed out is named as such); the `matching_incomplete` shortcut applies to UNREGISTERED cases only. [AGENT] reading of ruling (1) together with the standing pin-moved rule, per the orchestrator; flagged to the operator at the merge ask. Plants: `compare/both-sides-timeout+row-irrelevant` flipped to `compare/registered-both-sides-timeout+row` → `difference`; new `compare/registered-node-row-fork-also-times-out` (the COMMITTED `node` row, the audit's A5) → `difference`; `compare/unregistered-both-sides-timeout` → `matching_incomplete`; `compare/pristine-timeout+moved-fork-signature` and `compare/fork-timeout+row` now expect `difference` (registered → judged by the row; both remain fatal). Doctrine sentence in VALIDATION §0 and §3 (`matching_incomplete` bullet) and LADDER row 10. |
+| **M2** `libc_exec` and `libxml2_uri` ran at the default 30 s where their owning lanes bound the oracle at 300 s, against the O4 claim "each with its owning lane's per-case timeout" | `corpus()`: every block now carries its owning lane's bound with a cite — minimal/coverage/debug/float 30 (`test_exec.sh:169`), bytes 30 (`test_bytes.sh:47`), libc_exec **300** (`test_libc_exec.sh:37`), multi_tu + tray 30 (`test_multi_tu.sh:66`), cn 30 (`test_cn_coverage.sh:86`), libxml2_uri **300** (`test_libxml2_uri.sh:58`), immaculate 60 (`:63`), ci 30 (`test_exec.sh:169`), verify/corpus 30 (`test_verify.sh:75/:78`), chvalid 300 (`test_libxml2.sh:65`), csmith 15 (`test_csmith_corpus.sh:51`); the three CLI rows have no owning lane and keep `--timeout` (30), stated in the code and in VALIDATION §4 / LADDER row 10. Verified from the head report's membership (derived): `libc_exec: 300 ×12`, `libxml2_uri: 300 ×2`, `immaculate: 60 ×64`, all else 30. |
+| **M3** "every corpus the fork-vs-Lean lanes walk" overclaimed; `test_ci_sweep.sh`'s suites were neither walked nor named; row 10's "except the two below" was three | Docstring, VALIDATION §0/§4 and LADDER row 10 now say "every corpus the fork-vs-Lean lanes GATE on (the Tier A/B baselines) plus the `tests/ci` and csmith reporting corpora"; the non-walked suites are NAMED in the report's `not_applicable` and in §4/row 10. Count correction to the audit: `test_ci_sweep.sh:90-104` defines FIFTEEN suites, of which `tests/ci` is walked (C6) and FOURTEEN are not — the 7 `tests/gcc-torture/breakdown/*` classes, `tests/tcc`, `tests/suite`, `tests/pnvi_testsuite`, `tests/hacl-star`, `tests/freebsd`, `tests/examples`, `tests/cheri-ci` (the audit counted twelve, omitting `examples` and `cheri-ci`). "two" → "three" (rows 12, C6, C7). |
+| **M4** "the ONLY permitted list of fork≠pristine behaviours … exactly 3 rows" lacked the observability caveat and the cross-reference to where unobservable fork≠upstream deltas live | VALIDATION §0: "… the ONLY permitted list of fork≠pristine behaviours OBSERVED on the walked corpora; the fork's source-level deltas from upstream are the reviewed `scripts/fork_drift_manifest.txt` (§6, `check_fork_drift.sh`), of which the register is the behavioural projection — a delta with no register row is either unobservable on the corpora or a missing case, and the S1 charter's three-way report is how a slice shows which." §3's fork≠pristine intro carries the same caveat ("as OBSERVED on row 10's corpora … content pins in `scripts/fork_drift_manifest.txt` … entries here only once a corpus observes them"). No tray draft beyond 43 is mentioned. |
+| **M5** `--with-lean` ran the Lean driver and the `--cabs-json` bridge uncapped where four owning lanes wrap both in `CAPPED_TEST` | `lean_recipe(..., capped=)`; `capture()` takes a `wrapper` placed OUTSIDE `timeout` exactly as the lanes' `"${CAPPED_TEST[@]}" timeout …`; `CAPPED_TEST = env CERB_MEM_MAX=$CERB_TEST_MEM_MAX(4G) scripts/capped` (`common.sh:389/:401`). Capped: libc_exec (`test_libc_exec.sh:95/:103`), immaculate (`test_immaculate.sh:163/:171`), libxml2 chvalid (`test_libxml2.sh:143/:203/:213`), libxml2_uri (`run_capped :105-108`, `:185`); NOT capped, as their lanes: exec/ci/csmith (`test_exec.sh:447/:450`), bytes (`test_bytes.sh:79-81/:88`), multi_tu (`:175/:191`), cn (`:235/:238`), verify (`:75/:78`). Verified in the pre-commit smoke (`o6-precommit-with-lean-capped-smoke.txt`): the wrapper heads the bridge and driver commands of libc_exec/uri/immaculate rows and is absent on `minimal/001`. The row-10 ORACLE invocations are unchanged (pre-existing since validation-foundations; the finding was scoped to the Lean column). |
+| **N1** `citation_exists` accepted an untracked, ignored file and an out-of-range line | A citation must be a git-TRACKED file (`git ls-files --error-unmatch -- <path>`; git unusable → `OSError` → the lane fails closed), with no `..` component, and a `:N`/`:N-M` suffix must satisfy `1 ≤ N ≤ M ≤ line count`. Plants: an untracked file under the ignored `.tmp/`, `tests/multi_tu_tray/README.md:99999`, an inverted range `:9-3`, `../lem-lean/README.md` — all rejected; the committed register (whose `:1752` cite lies within the 2026-09-11 record) loads. |
+| **N2** "16 doctored registers rejected" was 15 + the positive control | Corrected everywhere the count appears (LADDER row 10, VALIDATION §5, this record §3.4 below): with N1's four plants the loader plants are now **19 rejections + the committed register loads** (at `586b550b8` the true count was 15 + 1). Plant arithmetic at the head (derived): 20 register lines (19 + loads) + 9 compare + 7 timeout-matrix + 6 projection + 1 withheld-row = **43 `plant_ok`**. |
+| **N3** charter §1 erratum not listed: "two CLI cases" were already three at the base | Added to the errata list above (item 5). |
+| N4, N6, N7 | No change required (N4: a tampered `.status` file vs record — only tampering produces it; N6: signal statuses other than 124/137 fall to `difference`, fail-closed; N7: the C program's exit value never leaks into the oracle's exit under `--batch`). Recorded, not acted on. |
+| N5 | The FULL gate is re-run at THIS head (below); row 10, `--plant`, row 12 and `test_unit.sh` are its lanes B10.1/B10.2/B12/A1, and C6 was run separately at the head. |
+
+Not adopted (the audit's recommendations beyond the orchestrator's list): the empty-selection,
+missing-capture and real-137 end-to-end plants; the `record_of`/`compare` `.status`-consistency
+check (N4). Candidates for the S1 charter.
+
+**Gates at `1abadc396`, verbatim** — C6 (`o6-gate-ci.txt`):
+```
+Independent oracle: passed; {'semantic_agreement': 134, 'matching_incomplete': 2, 'matching_failure': 106}; …/.tmp/o6-gate/ci/report.json
+```
+(`22/242 matching_incomplete: ci/0023-jump1.c (pristine 30.0s, fork 30.0s)`, `24/242 … ci/0025-jump3.c`; rc 0.)
+
+**The FULL gate at `1abadc396` — `scripts/ce python3 scripts/release.py --mode full --out
+.tmp/release-o6/evidence` (Tier A + B, 37 commands, incl. row 10 = B10.1, `--plant` = B10.2, row 12 =
+B12, `test_unit.sh` = A1)** (`o6-full-gate-driver.txt`, `o6-full-gate-summary.txt`,
+`o6-full-gate-per-lane-tails.txt`):
+
+Runner summary, verbatim (`o6-full-gate-summary.txt`):
+```
+full: passed; 37/37 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+```
+Per-lane status and verdict tail, verbatim (`o6-full-gate-per-lane-tails.txt`; started
+2026-09-17T02:34:10Z at load 0.31, finished 03:53:46Z; other agents took the box to load 45.9 during
+B12 — its slices ran 46.6–105.7 s per side against the 300 s bound; B7 ran at load ≈1.3 and passed):
+```
+release.py --mode full @ 1abadc396 branch arc/pristine-oracle-instrument; started 20260917T023410.522254Z finished 2026-09-17T03:53:46.635526+00:00; status passed; membership_sha256 b83c7c460e5b8611…; source_unchanged True; selection_complete True; artifact_issues []
+A1     PASSED      148.2s  test_renumber_plants: OK (12 plants: refusals refuse, admits admit with declared class)
+A2     PASSED       30.0s  BASELINE OK
+A3     PASSED       51.7s  BASELINE OK
+A4     PASSED       22.7s  BASELINE OK
+A4b    PASSED       24.1s  BASELINE OK
+A4c    PASSED        3.1s  SUMMARY: exec_match=9 neg_pinned=5 fail=0
+A5     PASSED       21.8s  SUMMARY: match=12 diff=0
+A6     PASSED        2.1s  SUMMARY: total=2 match=2 fail=0
+A6b    PASSED        3.5s  SUMMARY: total=7 match=7 fail=0
+A7     PASSED       10.4s  ALL PASSED
+A8     PASSED        8.9s  ALL PASSED
+A9     PASSED       16.6s  SUMMARY: total=111 same=108 diff=3 ocaml_fail=0 lean_fail=0
+A10    PASSED       16.7s  GATE PASS: all lane expectations pinned-green + baseline unchanged (16/16)
+A11    PASSED       58.0s  BASELINE OK (213 entries, exact match)
+B1     PASSED      605.4s  SUMMARY: total=4 match=4 fail=0 (points: 1354, 22 observations each)
+B2     PASSED       23.3s  ALL PASSED
+B3     PASSED       15.3s  ALL PASSED
+B4     PASSED       45.3s  test_verify: 127 passed, 0 failed (25 fixtures, 28 call points, 14 corpus fixtures, 21 corpus points)
+B5     PASSED       66.9s  OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip DIFF, R3 s4b-memcmp-hugesize ORACLE_CRASH, R5 r5-hex-subnormal-double-rounding DIFF — VALIDATION.md 'ISO-fix register' — and the in-Lean probes g6 TRIPWIRE / illtype
+B6.1   PASSED        2.3s  test_speclab: PASS (both pipelines agree on Specified(0))
+B6.2   PASSED        2.2s  test_speclab: PASS (both pipelines agree on Specified(2))
+B6.3   PASSED        2.6s  test_speclab_divmod: PASS (--gate)
+B6.4   PASSED        2.9s  test_speclab_bytearr: PASS (--gate)
+B6.5   PASSED        3.3s  test_speclab_list: PASS (--gate)
+B6.6   PASSED        3.9s  test_speclab_tree: PASS (--gate)
+B6.7   PASSED        2.7s  test_speclab_seed: PASS (--gate)
+B7     PASSED     1314.1s  Baseline check: 0 regression(s), 0 improvement(s)
+B8.1   PASSED       13.4s  test_hang_plant: all plants read as expected (sleep→HANG, busy→TIMEOUT, both lanes; missing record→harness error)
+B8.2   PASSED      221.1s  test_kill_plant: all plants read as expected (cap breach -> OOM-KILLED witness; ci_sweep LEAN_KILL, libc_exec KILL, immaculate KILL, uri/libxml2 FAIL-killed; SIGKILL stub NOT the cap class; native exit(137) still compared; no MATCH anywhere)
+B8.3   PASSED        6.4s  test_fuel_plant: ALL PLANTS OK (FUEL classification live in exec/gcc/ci_sweep/cn_coverage/measure; negatives not FUEL; the real driver at --fuel 1 reads FUEL and at the default MATCH; --fuel 0/non-numeral/out-of-position/missing refused)
+B8.4   PASSED       16.0s  test_failstop_plant: PASS (11 class and rejection checks)
+B9     PASSED     1346.7s  observation lane plants: 93/93 passed
+B10.1  PASSED      120.1s  Independent oracle scope: tier-b; 855 rows in 119.9s; source unchanged: True || Independent oracle: passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 3, 'interface_agreement': 2}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/pristine-oracle-instrument/.tmp/release-o6/evidence
+B10.2  PASSED        1.7s  Independent oracle scope: plant; 45 rows in 1.5s; source unchanged: True || Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 43}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/pristine-oracle-instrument/.tmp/release-o6/evidence/B10.2/independent-oracle/report.json
+B11.1  PASSED       15.2s  check_failure_reach: SELFTEST OK (5 plants with the declared message — a new site in a generated exec-closure definition, a DISCARDABLE dead let-binding, an unsealed class edit, a phantom row, an edited tally — and the unplanted register green)
+B11.2  PASSED        6.8s  check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=166 REACHABLE=48 UNKNOWN=19; every row sealed; tally line consistent
+B12    PASSED      519.1s  Independent oracle scope: libxml2_chvalid; 4 rows in 519.0s; source unchanged: True || Independent oracle: passed; {'semantic_agreement': 4}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/pristine-oracle-instrument/.tmp/release-o6/evidence/B12/independent-oracle/report.json
+```
+The three lanes the orchestrator asked for by name are these very lanes at `1abadc396`: row 10 =
+B10.1 (`passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 3,
+'interface_agreement': 2}`, 855 rows in 119.9 s), `--plant` = B10.2 (`plants_passed; {…, 'plant_ok':
+43}`, 45 rows), row 12 = B12 (`passed; {'semantic_agreement': 4}`, 519.0 s under load),
+`test_unit.sh` = A1 (PASSED, 148.2 s); C6 is quoted above. Every pre-existing baseline lane
+reports its committed state unchanged; B7's earlier wall-clock movement (§6) did not recur.
+
+
 ## 8. Provenance
 
 [USER] quotations only where marked and only from the charter. All measurements are this worker's,
-2026-09-16 21:40 – 2026-09-17 00:48 UTC, on the worktree named above, load ≤ 1.2 throughout; quoted outputs are
+2026-09-16 21:40 – 2026-09-17 03:59 UTC, on the worktree named above, load ≤ 1.2 throughout; quoted outputs are
 verbatim from the evidence files; tallies marked derived are computed from `report.json` files kept
 under the worktree's `.tmp/` (ephemeral) and summarised in the evidence dir.
