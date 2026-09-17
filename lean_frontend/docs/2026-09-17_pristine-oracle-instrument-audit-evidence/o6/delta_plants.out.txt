@@ -1,0 +1,39 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+lane script sha256: aa431f7cd873dfc8
+
+## M1 — registered cases are judged ONLY by their row; unregistered both-124 unchanged
+PLANT OK   M1.1 registered node row, both signatures reproduce -> reviewed_difference: got 'reviewed_difference', want 'reviewed_difference'
+PLANT OK   M1.2 registered node row, FORK also 124 (the audit A5 case) -> difference: got 'difference', want 'difference'
+PLANT OK   M1.3 registered node row, fork 124 with pristine completing -> difference: got 'difference', want 'difference'
+PLANT OK   M1.4 registered arr row, both 124 -> difference: got 'difference', want 'difference'
+PLANT OK   M1.5 registered arr row, pristine now 124 (pin moved) -> difference: got 'difference', want 'difference'
+PLANT OK   M1.6 registered arr row, fork sha moved -> difference: got 'difference', want 'difference'
+PLANT OK   M1.7 registered arr row, pair now AGREES (stale row) -> difference: got 'difference', want 'difference'
+PLANT OK   M1.8 registered row + 137 pristine -> incomplete (137 above everything): got 'incomplete', want 'incomplete'
+PLANT OK   M1.9 registered row + 137 fork -> incomplete: got 'incomplete', want 'incomplete'
+PLANT OK   M1.10 pristine 124 admitted only via resource/shared-model-fix (compare-level too) -> incomplete: got 'incomplete', want 'incomplete'
+PLANT OK   M1.11 UNREGISTERED both 124 -> matching_incomplete: got 'matching_incomplete', want 'matching_incomplete'
+PLANT OK   M1.12 UNREGISTERED fork-only 124 -> incomplete: got 'incomplete', want 'incomplete'
+PLANT OK   M1.13 UNREGISTERED pristine-only 124 -> incomplete: got 'incomplete', want 'incomplete'
+PLANT OK   M1.14 UNREGISTERED both 137 -> incomplete: got 'incomplete', want 'incomplete'
+PLANT OK   M1.15 empty-dict row (not None) is treated as registered -> difference (fail-closed): got 'difference', want 'difference'
+PLANT OK   M1.16 REAL both-124, unregistered -> matching_incomplete: got 'matching_incomplete', want 'matching_incomplete'
+PLANT OK   M1.17 REAL both-124, registered (node row) -> difference: got 'difference', want 'difference'
+
+## N1 — citation_exists
+PLANT OK   N1.1 untracked ignored file -> rejected: got True, want True
+PLANT OK   N1.2 untracked NON-ignored file in a tracked dir -> rejected: got True, want True
+PLANT OK   N1.3 `..` path -> rejected: got True, want True
+PLANT OK   N1.4 `..` inside the path -> rejected: got True, want True
+PLANT OK   N1.5 out-of-range line -> rejected: got True, want True
+PLANT OK   N1.6 inverted range -> rejected: got True, want True
+PLANT OK   N1.7 line 0 -> rejected: got True, want True
+PLANT OK   N1.8 last line (104) -> accepted: got 'ACCEPTED', want 'ACCEPTED'
+PLANT OK   N1.9 line 105 -> rejected: got True, want True
+PLANT OK   N1.10 tracked file with #anchor -> accepted: got 'ACCEPTED', want 'ACCEPTED'
+PLANT OK   N1.11 the committed register loads: got 'ACCEPTED', want 'ACCEPTED'
+PLANT OK   N1.12 tracked but DELETED-in-worktree file -> rejected (is_file first): got True, want True
+PLANT OK   N1.13 git unusable (PATH empty) -> raises OSError (lane INCOMPLETE), never ACCEPTED: got True, want True — RAISED OSError FileNotFoundError
+
+## SUMMARY
+30 checks, 0 FAIL: []

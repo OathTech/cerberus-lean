@@ -1,0 +1,36 @@
+# first five argv words of each recorded .command.json (absolute paths reduced to basenames) — with-lean-capped run at 46e5d2f19's tree
+minimal/001-return-literal.c                  upstream timeout 30 main.exe --runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/pristine-oracle-instrument/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default --exec
+minimal/001-return-literal.c                  fork     timeout 30 main.exe --runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/pristine-oracle-instrument/_build/install/default --exec
+minimal/001-return-literal.c                  bridge0  timeout 30 main.exe --runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/pristine-oracle-instrument/_build/install/default --cabs-json
+minimal/001-return-literal.c                  lean     timeout 30 cerberus-lean --batch tu0.json
+minimal/001-return-literal.c                  status=semantic_agreement lean=lean_agreement
+libc_exec/010-int32-printf.c                  upstream timeout 300 main.exe --runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/pristine-oracle-instrument/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default --exec
+libc_exec/010-int32-printf.c                  fork     timeout 300 main.exe --runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/pristine-oracle-instrument/_build/install/default --exec
+libc_exec/010-int32-printf.c                  bridge0  env CERB_MEM_MAX=4G capped timeout 300
+libc_exec/010-int32-printf.c                  lean     env CERB_MEM_MAX=4G capped timeout 300
+libc_exec/010-int32-printf.c                  status=semantic_agreement lean=lean_agreement
+multi_tu/basic                                upstream timeout 30 main.exe --runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/pristine-oracle-instrument/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default --exec
+multi_tu/basic                                fork     timeout 30 main.exe --runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/pristine-oracle-instrument/_build/install/default --exec
+multi_tu/basic                                bridge0  timeout 30 main.exe --runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/pristine-oracle-instrument/_build/install/default --cabs-json
+multi_tu/basic                                lean     timeout 30 cerberus-lean --batch tu0.json
+multi_tu/basic                                status=semantic_agreement lean=lean_agreement
+multi_tu/tentative                            upstream timeout 30 main.exe --runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/pristine-oracle-instrument/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default --exec
+multi_tu/tentative                            fork     timeout 30 main.exe --runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/pristine-oracle-instrument/_build/install/default --exec
+multi_tu/tentative                            bridge0  timeout 30 main.exe --runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/pristine-oracle-instrument/_build/install/default --cabs-json
+multi_tu/tentative                            lean     timeout 30 cerberus-lean --batch tu0.json
+multi_tu/tentative                            status=semantic_agreement lean=lean_agreement
+libxml2/uri-nolibc                            upstream timeout 300 main.exe --runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/pristine-oracle-instrument/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default --exec
+libxml2/uri-nolibc                            fork     timeout 300 main.exe --runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/pristine-oracle-instrument/_build/install/default --exec
+libxml2/uri-nolibc                            bridge0  env CERB_MEM_MAX=4G capped timeout 300
+libxml2/uri-nolibc                            lean     env CERB_MEM_MAX=4G capped timeout 300
+libxml2/uri-nolibc                            status=semantic_agreement lean=lean_agreement
+immaculate/nolibc/g4-bswap64-overflow         upstream timeout 60 main.exe --runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/pristine-oracle-instrument/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default --exec
+immaculate/nolibc/g4-bswap64-overflow         fork     timeout 60 main.exe --runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/pristine-oracle-instrument/_build/install/default --exec
+immaculate/nolibc/g4-bswap64-overflow         bridge0  env CERB_MEM_MAX=4G capped timeout 60
+immaculate/nolibc/g4-bswap64-overflow         lean     env CERB_MEM_MAX=4G capped timeout 60
+immaculate/nolibc/g4-bswap64-overflow         status=matching_failure lean=lean_both_undecodable
+immaculate/libc/g2-memcmp-uninit              upstream timeout 60 main.exe --runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/pristine-oracle-instrument/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default --exec
+immaculate/libc/g2-memcmp-uninit              fork     timeout 60 main.exe --runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/pristine-oracle-instrument/_build/install/default --exec
+immaculate/libc/g2-memcmp-uninit              bridge0  env CERB_MEM_MAX=4G capped timeout 60
+immaculate/libc/g2-memcmp-uninit              lean     env CERB_MEM_MAX=4G capped timeout 60
+immaculate/libc/g2-memcmp-uninit              status=matching_failure lean=lean_both_undecodable

@@ -16,3 +16,14 @@ Companion to [`../2026-09-17_pristine-oracle-instrument-audit-premerge.md`](../2
 | `release-fast.txt`, `release-fast-2.txt` | `python3 scripts/release.py --mode fast` twice: the first with `Source unchanged: False` (this evidence directory appeared untracked mid-run — `source_identity` hashes untracked files), the second with no tree writes during the run. 14/14 lanes PASSED in both. |
 
 Reproduce: from the worktree root, `scripts/ce python3 <script>` for the Python plants (they import `scripts/test_upstream_oracle.py`), `bash ensure_plants.sh`, `bash gate-chain.sh`. The plants need the standing pristine build at `.validation-foundations/independent-oracle-v2` (built by the container hook when the worktree was created; log `/home/dev/projects/cerberus-lean-proj/.tmp/audit-worktree.log`, quoted in the report §2.4).
+
+## `o6/` — the delta re-read of O6 (`1abadc396`, `46e5d2f19`; report §A)
+
+Produced with `46e5d2f19`'s tree materialised in the audit worktree (the ten files the two commits touch checked out; `git diff 46e5d2f19` empty outside the audit paths; lane-script sha `aa431f7cd873dfc8`), then restored to HEAD before committing.
+
+| file | what |
+|---|---|
+| `delta_plants.py` / `.out.txt` | 30 auditor plants against the O6 code: M1 (registered cases judged only by their row — the committed `node`/`arr-2-2-return` rows under fork-124, both-124 (hermetic and REAL `sleep` timeouts), pristine-124, moved sha, stale agreement, 137 either side, a `diagnostic-text` row pinning pristine 124, an empty-dict row; unregistered both-124/one-sided/137) and N1 (untracked ignored / untracked non-ignored / `..` / out-of-range / inverted / line-0 / last-line / `#anchor` / deleted-tracked citations; git unusable → `OSError`). |
+| `gate-chain.sh`, `chain.log`, `row10-full.txt`, `row10-plant.txt`, `corpus-ci.txt` | row 10, `--plant` (45 rows, `plant_ok` 43), `--corpus ci` at `46e5d2f19`'s tree, sequential. |
+| `with-lean-capped.txt`, `with-lean-capped-command-heads.txt` | `--with-lean --only` over 7 cases: the recorded `.command.json` heads show `env CERB_MEM_MAX=4G capped timeout <bound>` on the bridge AND the Lean driver for libc_exec / immaculate / uri rows and a bare `timeout` on minimal / multi_tu rows (M5). |
+| `check_record_quotes_o6.out.txt` | every verbatim gate/build line quoted in the amended record (48) found in its evidence dir. |

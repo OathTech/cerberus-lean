@@ -1,0 +1,21 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+check_driver_fresh: oracle OK (bin 5108b37b54a4296eb93b8fef7378b3caeecccefc95ea6d4c2356d9904d5a2c45, src 98ad48b592a222a21e4619c5ce03652fc6a44c0a67c6b02cb222e1d40b1c701d)
+check_driver_fresh: lean OK (bin 5f6dfacf25852e7eedb386345ee641317eb03448688cd768974332962a2aa2ab, src c805823c3a54a24e82398a2ca27ea2018416ef873ceaca4d03091f9603a1086a)
+1/7 semantic_agreement: minimal/001-return-literal.c (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+2/7 semantic_agreement: libc_exec/010-int32-printf.c (pristine 0.2s, fork 0.2s) | lean: lean_agreement
+3/7 semantic_agreement: multi_tu/basic (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+4/7 semantic_agreement: multi_tu/tentative (pristine 0.0s, fork 0.0s) | lean: lean_agreement
+5/7 semantic_agreement: libxml2/uri-nolibc (pristine 0.3s, fork 0.4s) | lean: lean_agreement
+6/7 matching_failure: immaculate/nolibc/g4-bswap64-overflow (pristine 0.0s, fork 0.0s) | lean: lean_both_undecodable
+    LEAN≠FORK immaculate/nolibc/g4-bswap64-overflow: fork: fatal engine diagnostic; no completed observation (status 125); lean: fatal engine diagnostic; no completed observation (status 134) — not agreement
+      pristine: UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+      fork:     UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+      lean:     UNDECODABLE(status 134: fatal engine diagnostic; no completed observation)
+7/7 matching_failure: immaculate/libc/g2-memcmp-uninit (pristine 0.2s, fork 0.3s) | lean: lean_both_undecodable
+    LEAN≠FORK immaculate/libc/g2-memcmp-uninit: fork: fatal engine diagnostic; no completed observation (status 125); lean: model fail-stop; no completed semantic observation (status 1) — not agreement
+      pristine: UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+      fork:     UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+      lean:     UNDECODABLE(status 1: model fail-stop; no completed semantic observation)
+Independent oracle scope: subset (--only); 7 rows in 12.2s; source unchanged: True
+Three-engine report (Lean column, NOT gating): {'lean_agreement': 5, 'lean_both_undecodable': 2}; Lean≠fork rows: 2: immaculate/nolibc/g4-bswap64-overflow, immaculate/libc/g2-memcmp-uninit
+Independent oracle: subset_passed; {'semantic_agreement': 5, 'matching_failure': 2}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/pristine-oracle-instrument/.tmp/audit-o6/with-lean-capped/report.json
