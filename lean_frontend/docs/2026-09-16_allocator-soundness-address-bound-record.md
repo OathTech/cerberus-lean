@@ -1,20 +1,32 @@
-# Record — allocator soundness (tray 44) + the address-space bound as a quantified parameter + the fork-only OCaml flag (2026-09-16) — INTERIM, STOPPED
+# Record — allocator soundness (tray 44) + the address-space bound as a quantified parameter + the fork-only OCaml flag (2026-09-16) — PART ONE (C1 + C1b) COMPLETE; C2/C3 RE-CHARTERED SEPARATELY
 
-**Status [AGENT, worker, 2026-09-17]:** INTERIM record at TWO stop rules of the charter
-(`docs/2026-09-16_charter-allocator-soundness-address-bound.md` §3), written per its
-stop protocol ("commit what is green, write the interim state into the record, end the
-turn"). **C1 LANDED** as `7b51b0b438052d47551009b9f65464d3030e9bf3` on
-`arc/allocator-soundness-address-bound` (green on its chartered FAST-GATE — §C1 below,
-verbatim). **C2 NOT STARTED** — stop rule **S3/S6** at its design step: the
-`initial_driver_state*` signature change ripples beyond the sites the charter names,
-into a `.lem` body outside the fence (§C2). **C3 NOT STARTED** (depends on C2).
-**Stop rule S1** additionally fired AFTER C1's commit, on the Tier B row 10 lane (not
-part of C1's chartered gate, run as C1's shared-model report): one case moved from
-`matching_failure` to `difference` — a `diagnostic-text`-class artefact of the source
-LINE SHIFT the fix causes in an OCaml `Assertion failed` header, whose two remedies are
-both outside the worker's fence (§S1). Evidence directory:
-`docs/2026-09-16_allocator-soundness-address-bound-evidence/` (every quoted output is
-verbatim from a file there or from a lane log summarised there).
+**Status [AGENT, worker, 2026-09-17]:** PART ONE of the slice is COMPLETE and is the landing
+candidate: **C1** `7b51b0b438052d47551009b9f65464d3030e9bf3` (remedy 1 in both OCaml models + the
+Lean mirror + the GENERAL kernel theorem + the runtime witness; §C1) and **C1b**
+`f9843725d8c4746449bde65f0bbfe6166bfe4d6d` (the row-10 diagnostic projection extended to the
+OCaml exception HEADER line, resolving §S1). The FULL gate (`release.py --mode full`, Tier A + B)
+is GREEN at the C1b head and the three-engine report's Lean column is unchanged (§FULL, verbatim).
+**C2 and C3 are NOT in this part**: the worker stopped at C2's design step (stop rules S3/S6 — the
+`initial_driver_state*` signature change ripples into a `.lem` body outside the fence, §C2), and
+the operator ruled that C1 lands first and C2/C3 are re-chartered separately as part two — [USER
+2026-09-17], verbatim: *"yes, agreed regarding landing C1 as-is and then working on C2/C3
+separately"* (given in reply to the orchestrator's proposal that (1) the diagnostic projection be
+extended to normalise the position in OCaml's exception HEADER line — this record's §S1
+recommendation (ii); (2) C2 take route A with an extended fence; (3) C1 land first as part one
+with C2/C3 re-chartered as part two). This record was first committed as an INTERIM stop
+(`a2cf688c0`, after C1: stop rules S1 + S3/S6); this amendment carries the ruling, C1b and the FULL
+gate. Evidence directory: `docs/2026-09-16_allocator-soundness-address-bound-evidence/` (every
+quoted output is verbatim from a file there or from a lane log summarised there).
+
+**Part one / part two.** Part one = C1 + C1b (+ this record) on `arc/allocator-soundness-address-
+bound`, the landing candidate for the orchestrator's pre-merge audit; C1's content is exactly as
+committed (`7b51b0b43`, untouched by the ruling). Part two = C2 (route A: the address-space bound
+as an explicit entry parameter) + C3 (the fork-only `--address-space-top` flag + the tiny-bound
+differential lane), to be re-chartered with the fence extension §C2 option (A) lists — the
+`.lem` sites `mini_pipeline.lem:163`, `cabs_to_ail_effect.lem` (state + seed + getter),
+`cabs_to_ail.lem` (the desugar entry), `backend/common/pipeline.ml`, `Main.lean`'s desugar call, the
+three latent OCaml backends (E2) and the eight out-of-fence Lean files (E3). The §C2 options are
+kept as written for that charter.
 
 The worktree at this record: `worktrees/cerberus-lean-arc/allocator-soundness-address-bound`,
 branch head = this record's commit on top of `7b51b0b43` (C1) on top of `6d9ba82f1`
@@ -237,7 +249,7 @@ by the `build_cerberus` recipe (main.exe + cerberus-lib.install; local-prefix in
 cerberus.install; `libc.co` staged; stamp `check_driver_fresh: recorded oracle stamp (bin
 187d6fdc… src dbb7b994…)`); `mem_vip` = `cerberus-lib.mem.vip`, so the VIP edit compiled in it.
 
-## S1 — Row 10 after C1: ONE `difference`, a diagnostic-text artefact of the line shift (STOP)
+## S1 — Row 10 after C1: ONE `difference`, a diagnostic-text artefact of the line shift — RESOLVED by C1b
 
 Run as C1's shared-model report (not part of C1's chartered gate). Verbatim tails
 (`c1-row10-difference-g2-memcmp-uninit.txt`; logs `.tmp/c1-row10.log`, `.tmp/c1-three-engine.log`):
@@ -291,6 +303,49 @@ RED on this branch by ONE known, diagnosed, behaviour-free row.
 Other Tier B exposure checked: `tests/immaculate/baseline.txt` pins classes (`g2-memcmp-uninit
 MATCH | L=CRASH`), no text; no baseline, triage ledger or pin carries `Assert_failure` or an
 `impl_mem.ml` line number (`grep` over `tests/`, `scripts/`, `lean_frontend/corpus`: empty).
+
+**RESOLUTION — C1b `f9843725d8c4746449bde65f0bbfe6166bfe4d6d` (2026-09-17).** Ruled by the operator —
+[USER 2026-09-17], verbatim: *"yes, agreed regarding landing C1 as-is and then working on C2/C3
+separately"* — on the orchestrator's proposal taking recommendation (ii). The worker's fence was
+extended for that ONE commit to `scripts/test_upstream_oracle.py`'s diagnostic projection and its
+plants, and to the one-sentence doctrine text describing the projection (`VALIDATION.md` §0/§3,
+`LADDER.md` row 10). What C1b does: `HEADER_POSITION` — `^( *File "[^"\n]*"), lines? N[-M],
+characters A-B(:[^\n]*)$` → `\1, line N, characters A-B\2` — normalises ONLY the position of an
+OCaml exception HEADER line (`Assert_failure`/`Match_failure`: `File "<path>", line N[-M],
+characters A-B: <text>`); the path (group 1) and the exception text after the colon (group 2)
+stay byte-compared; stderr only (`project_diagnostics`); frames unchanged; stdout never projected.
+The report's `diagnostic_projection` string names the extension. Plants (hermetic, in the
+existing projection plant set), verbatim from `--plant` (`c1b-gates.txt`):
+
+```
+PLANT OK   projection/header-position-only: got 'matching_failure', want 'matching_failure'
+PLANT OK   projection/header-and-frame-positions-only: got 'matching_failure', want 'matching_failure'
+PLANT OK   projection/header-file-path-differs: got 'difference', want 'difference'
+PLANT OK   projection/header-exception-text-differs: got 'difference', want 'difference'
+PLANT OK   projection/header-shape-in-stdout-not-projected: got 'difference', want 'difference'
+PLANT OK   projection/header-shape-in-stdout-raw-sha-differs: got True, want True
+PLANT OK   projection/non-header-position-line-differs: got 'difference', want 'difference'
+PLANT OK   projection/header-raw-stderr-retained: got True, want True
+Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 51}
+```
+(`plant_ok` 43 → 51: the eight header plants; the second plant is the real `g2-memcmp-uninit`
+shape after C1's shift — header AND frames moved.) Gates at C1b, verbatim:
+
+```
+row10 rc=0 wall=114s
+Independent oracle: passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 3, 'interface_agreement': 2}
+ci rc=0 wall=137s
+Independent oracle: passed; {'semantic_agreement': 134, 'matching_incomplete': 2, 'matching_failure': 106}
+test_unit rc=0 wall=151s
+Total: 11 passed, 0 failed
+```
+— row 10 is back to WP-O O5's verdict exactly (822/28/3/2; `g2-memcmp-uninit` reads
+`matching_failure` again) and the `ci` reporting row is unchanged (134/2/106). No register row
+was written; `scripts/upstream_oracle_differences.json` is untouched by this slice. Doctrine: the
+ruling is quoted verbatim once, in `VALIDATION.md` §3's `diagnostic-text` bullet; §0 and
+`LADDER.md` row 10 point to it. NOT updated (outside the extended fence, for the orchestrator):
+`VALIDATION.md` §5's lane-table row for `test_upstream_oracle.py (+ --plant)` still lists the
+pre-C1b projection plants only.
 
 ## C2 — The bound as an explicit entry parameter — NOT STARTED (stop S3/S6 at the design step)
 
@@ -350,36 +405,85 @@ the theorem is about active results, by design.
 
 ## C3 — NOT STARTED (depends on C2). Draft 45 not drafted.
 
-## FULL gate — NOT RUN at this interim record
+## FULL gate — GREEN at the C1b head `f9843725d` (C1's FULL gate for landing as part one)
 
-The charter's FULL gate (`release.py --mode full` + the three-engine report) is the slice-END
-certification; this record is an interim stop after C1 (S1 + S3/S6). Tier B is ~1 h wall on this
-box (`LADDER.md`: libxml2 ~8 min, gcc oracle ~24 min, observation lanes ~18 min, row 10 ~2 min,
-chvalid ~7 min …) — running it now would cross the ~45-minute tripwire (S5) without the written
-justification the charter gives only for the slice end, and its row 10 is ALREADY known RED by the
-one diagnosed row (§S1). What WAS run beyond the chartered FAST-GATE: Tier B row 10 and the
-mandatory three-engine report (§S1, verbatim) — the two lanes that test C1's central claim; the
-Lean column is unmoved and pristine-vs-fork moved only by the diagnostic line shift. The
-orchestrator's independent re-verification should expect: FAST-GATE green as §C1.6; row 10
-`failed; {822, 27, 3, 2, difference: 1}` until §S1 is resolved; the rest of Tier B untested here.
+Run ONCE at the C1b head, as the operator's instruction requires: `scripts/ce python3
+scripts/release.py --mode full --out .tmp/c1b-release` (Tier A + B), then `scripts/ce python3
+scripts/test_upstream_oracle.py --with-lean --out .tmp/c1b-three-engine`. Verbatim
+(`c1b-full-gate-tails.txt` carries the runner lines and every lane's last verdict line):
 
-## Measurements (wall clock, this box, warm)
+```
+head f9843725d8c4746449bde65f0bbfe6166bfe4d6d start 2026-09-17T15:07:02Z load 5.37 3.15 1.44
+release_full rc=0 wall=5078s
+three_engine rc=0 wall=258s
+chain done 2026-09-17T16:35:58Z
+```
+Runner: `PASSED A1 (160.1s)`, `A2 (35.1s)`, `A3 (52.5s)`, `A4 (22.8s)`, `A4b (24.2s)`, `A4c (3.1s)`,
+`A5 (23.8s)`, `A6 (2.2s)`, `A6b (3.6s)`, `A7 (10.4s)`, `A8 (8.9s)`, `A9 (17.3s)`, `A10 (17.2s)`,
+`A11 (59.9s)`, `B1 (739.2s)`, `B2 (23.5s)`, `B3 (15.4s)`, `B4 (48.3s)`, `B5 (68.3s)`, `B6.1 (169.7s)`,
+`B6.2 (2.3s)`, `B6.3 (9.5s)`, `B6.4 (9.0s)`, `B6.5 (9.8s)`, `B6.6 (10.4s)`, `B6.7 (9.1s)`,
+`B7 (1409.2s)`, `B8.1 (13.4s)`, `B8.2 (224.9s)`, `B8.3 (6.4s)`, `B8.4 (16.0s)`, `B9 (1295.5s)`,
+`B10.1 (115.4s)`, `B10.2 (1.7s)`, `B11.1 (14.9s)`, `B11.2 (6.7s)`, `B12 (416.5s)` — every row PASSED,
+no FAILED/SKIP; `Source unchanged: True. Complete tier selection: True.`; `Release certification:
+incomplete: reporting/adoption/audit exits require separate evidence.` (the runner's standing
+wording: a completed tier is not a customer-ready release claim — LADDER.md).
 
-`test_unit.sh` 170 s (incl. the incremental Lean rebuild downstream of `CerbMem` and all 11 exes);
-exec rows 33 / 51 / 23 / 24 s; OCaml rebuild (incremental) ~7 s; `CerbMem` module rebuild 1.7 s,
-proof module 0.3 s, test exe link 0.2 s; row 10 114 s; three-engine 252 s; pre-fix probe ~10 s.
-Total worker wall for C1 (reading → commit) ≈ 1 h 20 min; no single step above ~5 min.
+Per-lane last verdict lines (verbatim): A1 `test_renumber_plants: OK (12 plants: refusals refuse,
+admits admit with declared class)` (the test_unit battery, `Total: 11 passed, 0 failed` inside);
+A2/A3/A4/A4b `BASELINE OK`; A4c `SUMMARY: exec_match=9 neg_pinned=5 fail=0`; A5 `ALL MATCH RECORDED
+BASELINE`; A6/A6b/A7/A8 `ALL PASSED`; A9 `SUMMARY: total=111 same=108 diff=3 ocaml_fail=0
+lean_fail=0` (the recorded 3 Z-40 pp-filter rows); A10 `GATE PASS: all lane expectations
+pinned-green + baseline unchanged (16/16)`; A11 `BASELINE OK (213 entries, exact match)`; B1/B2/B3
+`ALL PASSED`; B4 `test_verify: 127 passed, 0 failed (25 fixtures, 28 call points, 14 corpus
+fixtures, 21 corpus points)`; B5 `OK: lane matches the committed baseline (MATCH except the ISO-fix
+register pins R1 …, R2 …, R3 …, R5 … — VALIDAT…)`; B6.1 `test_speclab: PASS (both pipelines agree on
+Specified(0))`; B6.2 `… Specified(2)`; B6.3–B6.7 `test_speclab_{divmod,bytearr,list,tree,seed}:
+PASS (--gate)`; B7 `gcc second-oracle lane OK`; B8.1–B8.4 the four plant batteries' OK lines; B9
+`observation lane plants: 93/93 passed`; B10.1 `Independent oracle: passed; {'semantic_agreement':
+822, 'matching_failure': 28, 'reviewed_difference': 3, 'interface_agreement': 2}`; B10.2
+`Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok':
+51}`; B11.1 `check_failure_reach: SELFTEST OK (5 plants …)`; B11.2 `check_failure_reach: OK (233
+pure failure sites = the 233 register rows exactly …)`; B12 `Independent oracle: passed;
+{'semantic_agreement': 4}`.
+
+ZERO movement of any existing baseline row anywhere (the fix is unobservable at upstream's
+bound). Load caveat (LADDER.md, B7): the box carried other agents' work during the run (load 16–26
+in B1/B7; a restic backup, codex processes) — B1's Lean side ran 1.5–2.5 min/slice against its
+~1 min norm and B7 took 1409 s against ~24 min — with NO TIMEOUT-class movement anywhere (B7 `OK`,
+B5 at baseline), so no re-run on a quiet box is owed.
+
+The three-engine report at the same head, verbatim: `Three-engine report (Lean column, NOT
+gating): {'lean_agreement': 813, 'lean_difference': 28, 'lean_both_undecodable': 12,
+'lean_not_applicable': 2}; Lean≠fork rows: 40: …` (the same 40 pinned rows as WP-O and as after
+C1) and `Independent oracle: passed; {'semantic_agreement': 822, 'matching_failure': 28,
+'reviewed_difference': 3, 'interface_agreement': 2}` — the Lean column is unchanged, pristine vs
+fork is at WP-O O5's verdict, and NO register row was added (the allocator deviation is
+unobservable on every walked corpus, as §C1.5 claims).
+
+## Measurements (wall clock, this box)
+
+C1: `test_unit.sh` 170 s (incl. the incremental Lean rebuild downstream of `CerbMem` and all 11
+exes); exec rows 33 / 51 / 23 / 24 s; OCaml rebuild (incremental) ~7 s; `CerbMem` module rebuild
+1.7 s, proof module 0.3 s, test exe link 0.2 s; row 10 114 s; three-engine 252 s; pre-fix probe
+~10 s. C1b: `--plant` ~10 s; row 10 114 s; `ci` 137 s; `test_unit.sh` 151 s; FULL gate 5078 s
+(≈ 85 min under load 16–26 shared with other agents; Tier A ≈ 7.5 min of it, B1 12.3 min, B7
+23.5 min, B9 21.6 min, B12 6.9 min) + three-engine 258 s. Worker wall for part one (reading →
+this amendment) ≈ 4 h 10 min; no single non-battery step above ~5 min; the FULL gate is the
+operator-requested landing certification (its ~1 h+ is the "long builds of real content" case,
+not a grind).
 
 ## Open items
 
-1. **[operator] §S1 resolution** — (ii) projection extension (recommended) or (i) a
-   `diagnostic-text` register row for `immaculate/libc/g2-memcmp-uninit`; both outside the fence.
-2. **[orchestrator] C2 re-charter** — option (A) with the extended fence (E1–E3), or another ruling.
+1. ~~[operator] §S1 resolution~~ — RESOLVED by the [USER 2026-09-17] ruling and C1b (§S1).
+2. **[orchestrator] C2/C3 re-charter (part two)** — option (A) with the extended fence (E1–E3), per
+   the ruling; the §C2 options and the planned signature list stand as written.
 3. `check_theorem_axioms.sh`'s `#print axioms` probe leg does not name `allocator_active_sound`
    (out of fence); `c1-theorem-axioms.txt` is the evidence meanwhile.
-4. E7's wording in `VALIDATION.md` §3 (worker's amendment) for the orchestrator's review.
+4. E7's wording in `VALIDATION.md` §3 (worker's amendment) and the C1b sentences in §0/§3 and
+   `LADDER.md` row 10, for the orchestrator's review; `VALIDATION.md` §5's lane-table row for
+   `test_upstream_oracle.py (+ --plant)` still describes the pre-C1b plant set (out of fence).
 5. Draft 45 (optional) — not drafted; the facts for it are §C2 (A) and tray 44.
 6. cerberus-sl option (b): see the RE-PIN NOTE's last paragraph.
-7. `.tmp/` artefacts (`c1-*.log`, `upstream-oracle-*`, `c1-three-engine/`, `g2/`, `ocaml-witness/`,
-   `lean_frontend/.tmp/*Probe.lean`) are ephemeral per the container rule; everything cited is in
-   the evidence directory.
+7. `.tmp/` artefacts (`c1-*.log`, `c1b-*.log`, `c1b-release/`, `c1b-three-engine/`,
+   `upstream-oracle-*`, `g2/`, `ocaml-witness/`, `lean_frontend/.tmp/*Probe.lean`) are ephemeral per
+   the container rule; everything cited is in the evidence directory.

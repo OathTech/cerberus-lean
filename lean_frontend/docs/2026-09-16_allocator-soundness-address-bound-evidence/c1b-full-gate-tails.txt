@@ -1,0 +1,121 @@
+# FULL gate at the C1b head f9843725d8c4746449bde65f0bbfe6166bfe4d6d — python3 scripts/release.py --mode full --out .tmp/c1b-release (Tier A + B), then python3 scripts/test_upstream_oracle.py --with-lean --out .tmp/c1b-three-engine; both via scripts/ce; verbatim
+head f9843725d8c4746449bde65f0bbfe6166bfe4d6d start 2026-09-17T15:07:02Z load 5.37 3.15 1.44
+release_full rc=0 wall=5078s
+three_engine rc=0 wall=258s
+chain done 2026-09-17T16:35:58Z
+
+## runner verdict lines (.tmp/c1b-release.log)
+4:PASSED A1 (160.1s)
+6:PASSED A2 (35.1s)
+8:PASSED A3 (52.5s)
+10:PASSED A4 (22.8s)
+12:PASSED A4b (24.2s)
+14:PASSED A4c (3.1s)
+16:PASSED A5 (23.8s)
+18:PASSED A6 (2.2s)
+20:PASSED A6b (3.6s)
+22:PASSED A7 (10.4s)
+24:PASSED A8 (8.9s)
+26:PASSED A9 (17.3s)
+28:PASSED A10 (17.2s)
+30:PASSED A11 (59.9s)
+32:PASSED B1 (739.2s)
+34:PASSED B2 (23.5s)
+36:PASSED B3 (15.4s)
+38:PASSED B4 (48.3s)
+40:PASSED B5 (68.3s)
+42:PASSED B6.1 (169.7s)
+44:PASSED B6.2 (2.3s)
+46:PASSED B6.3 (9.5s)
+48:PASSED B6.4 (9.0s)
+50:PASSED B6.5 (9.8s)
+52:PASSED B6.6 (10.4s)
+54:PASSED B6.7 (9.1s)
+56:PASSED B7 (1409.2s)
+58:PASSED B8.1 (13.4s)
+60:PASSED B8.2 (224.9s)
+62:PASSED B8.3 (6.4s)
+64:PASSED B8.4 (16.0s)
+66:PASSED B9 (1295.5s)
+68:PASSED B10.1 (115.4s)
+70:PASSED B10.2 (1.7s)
+72:PASSED B11.1 (14.9s)
+74:PASSED B11.2 (6.7s)
+76:PASSED B12 (416.5s)
+78:Source unchanged: True. Complete tier selection: True.
+79:Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+
+## per-lane last verdict line (.tmp/c1b-release/<ID>/stdout)
+A1: test_renumber_plants: OK (12 plants: refusals refuse, admits admit with declared class)
+A2: BASELINE OK
+A3: BASELINE OK
+A4b: BASELINE OK
+A4c: SUMMARY: exec_match=9 neg_pinned=5 fail=0
+A4: BASELINE OK
+A5: ALL MATCH RECORDED BASELINE
+A6b: ALL PASSED
+A6: ALL PASSED
+A7: ALL PASSED
+A8: ALL PASSED
+A9: SUMMARY: total=111 same=108 diff=3 ocaml_fail=0 lean_fail=0
+A10: GATE PASS: all lane expectations pinned-green + baseline unchanged (16/16)
+A11: BASELINE OK (213 entries, exact match)
+B1: ALL PASSED
+B2: ALL PASSED
+B3: ALL PASSED
+B4: test_verify: 127 passed, 0 failed (25 fixtures, 28 call points, 14 corpus fixtures, 21 corpus points)
+B5: OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip DIFF, R3 s4b-memcmp-hugesize ORACLE_CRASH, R5 r5-hex-subnormal-double-rounding DIFF — VALIDATION.md 'ISO-fix register' — and the in-Lean probes g6 TRIPWIRE / illtyped-store KILL).
+B6.1: test_speclab: PASS (both pipelines agree on Specified(0))
+B6.2: test_speclab: PASS (both pipelines agree on Specified(2))
+B6.3: test_speclab_divmod: PASS (--gate)
+B6.4: test_speclab_bytearr: PASS (--gate)
+B6.5: test_speclab_list: PASS (--gate)
+B6.6: test_speclab_tree: PASS (--gate)
+B6.7: test_speclab_seed: PASS (--gate)
+B7: gcc second-oracle lane OK
+B8.1: test_hang_plant: all plants read as expected (sleep→HANG, busy→TIMEOUT, both lanes; missing record→harness error)
+B8.2: test_kill_plant: all plants read as expected (cap breach -> OOM-KILLED witness; ci_sweep LEAN_KILL, libc_exec KILL, immaculate KILL, uri/libxml2 FAIL-killed; SIGKILL stub NOT the cap class; native exit(137) still compared; no MATCH anywhere)
+B8.3: test_fuel_plant: ALL PLANTS OK (FUEL classification live in exec/gcc/ci_sweep/cn_coverage/measure; negatives not FUEL; the real driver at --fuel 1 reads FUEL and at the default MATCH; --fuel 0/non-numeral/out-of-position/missing refused)
+B8.4: test_failstop_plant: PASS (11 class and rejection checks)
+B9: observation lane plants: 93/93 passed
+B10.1: Independent oracle: passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 3, 'interface_agreement': 2}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/allocator-soundness-address-bound/.tmp/c1b-release/B10.1/independent-oracle/report.json
+B10.2: Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 51}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/allocator-soundness-address-bound/.tmp/c1b-release/B10.2/independent-oracle/report.json
+B11.1: check_failure_reach: SELFTEST OK (5 plants with the declared message — a new site in a generated exec-closure definition, a DISCARDABLE dead let-binding, an unsealed class edit, a phantom row, an edited tally — and the unplanted register green)
+B11.2: check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=166 REACHABLE=48 UNKNOWN=19; every row sealed; tally line consistent)
+B12: Independent oracle: passed; {'semantic_agreement': 4}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/allocator-soundness-address-bound/.tmp/c1b-release/B12/independent-oracle/report.json
+
+## B7 gcc lane: improvement / regression lines (if any)
+(end B7 grep)
+
+## release report identity
+report.json
+summary.txt
+--- .tmp/c1b-release/report.json (head)
+{
+  "artifact_issues": [],
+  "artifacts_after": {
+    "_build/default/backend/driver/main.exe": {
+      "present": true,
+      "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/allocator-soundness-address-bound/_build/default/backend/driver/main.exe",
+      "sha256": "98efbe9a9803c3e94e3234f4bde414c181d22b18a0c1b33f6e4817f14a67f8e9"
+    },
+    "_build/install/default/lib/cerberus-lib/": {
+      "kind": "required-directory",
+      "present": true
+    },
+    "_build/install/default/lib/cerberus-lib/META": {
+      "present": true,
+      "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/allocator-soundness-address-bound/_build/default/META.cerberus-lib",
+      "sha256": "a539c759af8f306aa82b6f10cba2e51a7d22741ab002b0bf0edcc9b8ec5aab58"
+    },
+    "_build/install/default/lib/cerberus-lib/backend_common/ail_sym_hwm.ml": {
+      "present": true,
+      "resolved": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/allocator-soundness-address-bound/_build/default/backend/common/ail_sym_hwm.ml",
+      "sha256": "f4901556a3001f3a4968c4a66205da6615e18b4618a21ac9852f27386ffe19d5"
+    },
+    "_build/install/default/lib/cer
+
+## three-engine report (.tmp/c1b-three-engine.log) — summary lines verbatim
+1019:Independent oracle scope: tier-b; 855 rows in 257.5s; source unchanged: True
+1020:Three-engine report (Lean column, NOT gating): {'lean_agreement': 813, 'lean_difference': 28, 'lean_both_undecodable': 12, 'lean_not_applicable': 2}; Lean≠fork rows: 40: minimal/073-exit.libc.c, minimal/074-abort.libc.c, minimal/097-null-ptr-arith.undef.c, coverage/builtin/builtin-006-exit.libc.c, coverage/expr/expr-007-bitfield-ops.c, coverage/io/io-004-puts.libc.unsupported.c, coverage/libc/libc-002-calloc.c, coverage/libc/libc-011-memset.c, coverage/libc/libc-012-strlen.c, coverage/mem/mem-007-zero-size-array.c, coverage/misc/misc-001-void-ptr-arith.c, coverage/union3/union3-004-union-copy.c, coverage/union3/union3-005-union-return.c, debug/libc-01-memset.libc.c, debug/libc-02-strlen.libc.c, debug/ub-static-reject.c, debug/valid-04-exit-before-oob.c, bytes/byte_is_not_char.c, bytes/no_add.c, bytes/no_shift_left.c, bytes/no_shift_right.c, bytes/only_unsigned_char.c, immaculate/nolibc/f3-raw-high-byte-char-const, immaculate/nolibc/f3-raw-high-byte-int, immaculate/nolibc/f3-raw-high-byte-uchar, immaculate/nolibc/g4-bswap64-overflow, immaculate/nolibc/g5-decode-multichar, immaculate/nolibc/g5-decode-question, immaculate/nolibc/offsetof-union-member, immaculate/nolibc/r5-hex-subnormal-double-rounding, immaculate/nolibc/zd-e2-ptr-string-literals, immaculate/nolibc/zd-z2fl03-nan-to-int, immaculate/nolibc/zd-z2m01-aligned-alloc-zero-nolibc, immaculate/nolibc/zd-z2m02-device-funptr-call, immaculate/libc/g2-memcmp-uninit, immaculate/libc/g5-escape-roundtrip, immaculate/libc/s4b-memcmp-hugesize, immaculate/libc/zd-z2f04-closedir, immaculate/libc/zd-z2m01-aligned-alloc-zero-zero, immaculate/libc/zd-z2m01-aligned-alloc-zero
+1021:Independent oracle: passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 3, 'interface_agreement': 2}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/allocator-soundness-address-bound/.tmp/c1b-three-engine/report.json
