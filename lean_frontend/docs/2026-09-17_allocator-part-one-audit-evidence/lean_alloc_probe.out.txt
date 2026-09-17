@@ -1,0 +1,60 @@
+Int emod/ediv: (-1)%4=3 (-1)/4=-1; 7%(-4)=3 7/(-4)=-1; (-7)%(-4)=1 (-7)/(-4)=2; (-7)%4=1 (-7)/4=-2
+## NEW (fork after remedy 1)
+last=3 sz=4 align=4: killed(out of memory) cursor'=3
+last=7 sz=8 align=8: killed(out of memory) cursor'=7
+last=2 sz=4 align=4: killed(out of memory) cursor'=2
+last=8 sz=4 align=4: active addr=4 cursor'=4
+last=8 sz=-4 align=4: active addr=12 cursor'=12
+last=8 sz=-1 align=1: active addr=9 cursor'=9
+last=0 sz=-5 align=4: active addr=4 cursor'=4
+last=-3 sz=-8 align=4: active addr=4 cursor'=4
+last=8 sz=4 align=1: active addr=4 cursor'=4
+last=4 sz=4 align=1: killed(out of memory) cursor'=4
+last=5 sz=4 align=1: active addr=1 cursor'=1
+last=3 sz=4 align=1: killed(out of memory) cursor'=3
+last=8 sz=0 align=4: active addr=8 cursor'=8
+last=0 sz=0 align=4: killed(out of memory) cursor'=0
+last=3 sz=0 align=4: killed(out of memory) cursor'=3
+last=16 sz=0 align=16: active addr=16 cursor'=16
+last=1 sz=0 align=1: active addr=1 cursor'=1
+last=4 sz=4 align=4: killed(out of memory) cursor'=4
+last=16 sz=16 align=8: killed(out of memory) cursor'=16
+last=1 sz=1 align=1: killed(out of memory) cursor'=1
+last=7 sz=4 align=4: killed(out of memory) cursor'=7
+last=11 sz=4 align=8: killed(out of memory) cursor'=11
+last=15 sz=8 align=8: killed(out of memory) cursor'=15
+last=100 sz=4 align=1180591620717411303424: killed(out of memory) cursor'=100
+last=1208925819614629174706176 sz=4 align=1180591620717411303424: active addr=1207745227993911763402752 cursor'=1207745227993911763402752
+last=1180591620717411303520 sz=32 align=1180591620717411303424: active addr=1180591620717411303424 cursor'=1180591620717411303424
+last=8 sz=4 align=-4: active addr=4 cursor'=4
+last=7 sz=4 align=-4: killed(out of memory) cursor'=7
+last=3 sz=4 align=-4: killed(out of memory) cursor'=3
+last=9 sz=4 align=-4: active addr=4 cursor'=4
+last=-5 sz=4 align=-4: killed(out of memory) cursor'=-5
+last=-5 sz=4 align=4: killed(out of memory) cursor'=-5
+last=-1 sz=0 align=4: killed(out of memory) cursor'=-1
+last=8 sz=4 align=0: killed[other kind]
+last=3 sz=4 align=0: killed(out of memory) cursor'=3
+last=4 sz=4 align=0: killed[other kind]
+last=281474976710655 sz=281474976710656 align=16: killed(out of memory) cursor'=281474976710655
+last=281474976710655 sz=281474976710662 align=16: killed(out of memory) cursor'=281474976710655
+last=281474976710655 sz=281474976710663 align=16: killed(out of memory) cursor'=281474976710655
+last=281474976710655 sz=281474976710655 align=16: killed(out of memory) cursor'=281474976710655
+last=281474976710655 sz=16 align=16: active addr=281474976710624 cursor'=281474976710624
+last=281474976710655 sz=281474976710656 align=1: killed(out of memory) cursor'=281474976710655
+## theorem statements as elaborated
+allocator_active_sound : ∀ (st st' : MemState) (sz align id a : Int),
+  allocatorStep sz align st = (NDactive (id, a), st') →
+    align ∣ a ∧ 0 < a ∧ a + sz ≤ st.lastAddress ∧ st'.lastAddress = a
+allocator_below_request_kills : ∀ (st : MemState) (sz align : Int),
+  st.lastAddress - sz < 0 →
+    allocatorStep sz align st = (NDkilled (Other (MerrOther "Concrete.allocator: failed (out of memory)")), st)
+allocatorStep : Int →
+  Int →
+    MemState →
+      nd_action (StorageInstanceId × CerbMem.Address) String mem_error (mem_constraint IntegerValue) MemState × MemState
+'CerbMem.allocator_active_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbMem.allocator_below_request_kills' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbMem.allocatorStep' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbMem.allocator' depends on axioms: [propext, Classical.choice, Quot.sound]
+"4.32.2"

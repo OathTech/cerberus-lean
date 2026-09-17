@@ -1,0 +1,4 @@
+### trunc / pristine
+Defined {value: "Specified(0)", stdout: "a=281474976705856 (size_t)a=281474976705856 (size_t)a+1=4294962497 (size_t)(a+1)=281474976705857 (unsigned long)(a+1)=281474976705857 a+1=281474976705857 (ull)a+1=281474976705857\n", stderr: "", blocked: "false"}
+### trunc / fork
+Defined {value: "Specified(0)", stdout: "a=281474976705856 (size_t)a=281474976705856 (size_t)a+1=4294962497 (size_t)(a+1)=281474976705857 (unsigned long)(a+1)=281474976705857 a+1=281474976705857 (ull)a+1=281474976705857\n", stderr: "", blocked: "false"}

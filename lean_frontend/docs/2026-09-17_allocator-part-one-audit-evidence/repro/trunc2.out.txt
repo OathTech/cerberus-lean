@@ -1,0 +1,4 @@
+### trunc2 / pristine
+Defined {value: "Specified(0)", stdout: "ptr-derived: (size_t)a+1=4294962425 (unsigned long)a+1=281474976705785 (uintptr_t)a+1=281474976705785 (size_t)a+0=4294962424 (size_t)a*1=4294962424 (size_t)a-1=4294962423\nplain ulong: (size_t)b+1=4294962497; plain uintptr_t: (size_t)c+1=4294962497 (uintptr_t)c+1=281474976705857\n", stderr: "", blocked: "false"}
+### trunc2 / fork
+Defined {value: "Specified(0)", stdout: "ptr-derived: (size_t)a+1=4294962425 (unsigned long)a+1=281474976705785 (uintptr_t)a+1=281474976705785 (size_t)a+0=4294962424 (size_t)a*1=4294962424 (size_t)a-1=4294962423\nplain ulong: (size_t)b+1=4294962497; plain uintptr_t: (size_t)c+1=4294962497 (uintptr_t)c+1=281474976705857\n", stderr: "", blocked: "false"}

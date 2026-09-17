@@ -1,0 +1,5 @@
+FAIL cursor 3, request (4, 4): got Outcome.active 0 2 2, expected Outcome.outOfMemory 3
+FAIL cursor 7, request (8, 8): got Outcome.active 0 6 6, expected Outcome.outOfMemory 7
+PASS cursor 2, request (4, 4): got Outcome.outOfMemory 2, expected Outcome.outOfMemory 2
+PASS cursor 8, request (4, 4): got Outcome.active 0 4 4, expected Outcome.active 0 4 4
+OLD BODY: 2 of 4 cases FAIL the witness's expectations (3 expected: the two defect states + the third's... see output)

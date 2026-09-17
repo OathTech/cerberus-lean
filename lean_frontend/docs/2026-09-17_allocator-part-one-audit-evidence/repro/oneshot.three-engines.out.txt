@@ -1,0 +1,18 @@
+### oneshot / pristine (nolibc: --nolibc --exec --batch --mode=exhaustive)
+Error {msg: "MerrOther "Concrete.allocator: failed (out of memory)""}
+ [rc=1 wall=.050332341s]
+### oneshot / fork (nolibc: --nolibc --exec --batch --mode=exhaustive)
+Error {msg: "MerrOther "Concrete.allocator: failed (out of memory)""}
+ [rc=1 wall=.052358808s]
+### oneshot-print / pristine (libc: --exec --batch)
+Error {msg: "MerrOther "Concrete.allocator: failed (out of memory)""}
+ [rc=1 wall=.246537295s]
+### oneshot-print / fork (libc: --exec --batch)
+Error {msg: "MerrOther "Concrete.allocator: failed (out of memory)""}
+ [rc=1 wall=.247422647s]
+### oneshot / LEAN (bridge: fork --nolibc --cabs-json; cerberus-lean --batch <json> — the tests/minimal recipe; LEAN_ABORT_ON_PANIC=1; under scripts/capped)
+bridge rc=0 json bytes=603012
+Error {msg: "MerrOther "Concrete.allocator: failed (out of memory)""}
+
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+ [lean rc=1 wall=.153512107s]

@@ -1,0 +1,7 @@
+fenced lines checked: 72; missing from evidence dir (+ the three source files): 3
+  MISSING record:258: row10 rc=1 wall=114s
+  MISSING record:261: three-engine rc=1 wall=252s
+  MISSING record:263: Independent oracle: failed; {'semantic_agreement': 822, 'matching_failure': 27, 'reviewed_difference': 3, 'interface_agreement': 2, 'differe
+runner timing tokens in prose: 36; not found as "PASSED <tok>" in evidence: 0 []
+[USER] tags: 12  [AGENT] tags: 9
+errata listed: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']

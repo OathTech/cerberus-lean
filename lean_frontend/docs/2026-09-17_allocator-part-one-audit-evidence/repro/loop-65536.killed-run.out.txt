@@ -1,0 +1,9 @@
+### loop-65536 / pristine (nolibc)
+Error {msg: "MerrOther "Concrete.allocator: failed (out of memory)""}
+ [rc=1 wall=220.834524981s]
+### loop-65536 / fork (nolibc)
+Error {msg: "MerrOther "Concrete.allocator: failed (out of memory)""}
+ [rc=1 wall=219.459547520s]
+### loop-65536-print / pristine (libc)
+
+[exited with code 144]

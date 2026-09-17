@@ -1,0 +1,6 @@
+### debug (libc) / pristine
+Defined {value: "Specified(0)", stdout: "q=(@76, 0xffffffffeda0) a=281474976705952 sz=4294962593\np=(@82, 0xfffeffffffd0) overlap=0\n", stderr: "", blocked: "false"}
+rc=
+### debug (libc) / fork
+Defined {value: "Specified(0)", stdout: "q=(@76, 0xffffffffeda0) a=281474976705952 sz=4294962593\np=(@82, 0xfffeffffffd0) overlap=0\n", stderr: "", blocked: "false"}
+rc=

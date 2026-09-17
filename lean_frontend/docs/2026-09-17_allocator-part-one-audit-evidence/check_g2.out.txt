@@ -1,0 +1,7 @@
+lane status: matching_failure | reason: same failure under diagnostic projection; no semantic result
+statuses: 125 125 | stdout sha equal: True | raw stderr sha equal: False | diagnostic sha equal: True
+stdout bytes: 0 0 | stderr lines: 20 20
+  HEADER  < File "memory/concrete/impl_mem.ml", line 2659, characters 16-22: Assertion failed
+          > File "memory/concrete/impl_mem.ml", line 2664, characters 16-22: Assertion failed
+differing line pairs by kind: {'header-position-only': 1, 'frame-position-only': 13, 'OTHER': 0, 'equal': 6}
+VERDICT: header+frame positions ONLY

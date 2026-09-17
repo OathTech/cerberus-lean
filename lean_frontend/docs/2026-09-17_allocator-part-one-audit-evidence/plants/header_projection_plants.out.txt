@@ -1,0 +1,21 @@
+PLANT OK   H1 header position only: got 'matching_failure', want 'matching_failure'; projected stderr pre-C1b=differs post-C1b=same
+PLANT OK   H2 header + frame positions: got 'matching_failure', want 'matching_failure'; projected stderr pre-C1b=differs post-C1b=same
+PLANT OK   H3 header PATH differs: got 'difference', want 'difference'; projected stderr pre-C1b=differs post-C1b=differs
+PLANT OK   H4 header TEXT differs (Assertion failed vs Pattern matching failed): got 'difference', want 'difference'; projected stderr pre-C1b=differs post-C1b=differs
+PLANT OK   H5 exception KIND differs (header vs Failure payload): got 'difference', want 'difference'; projected stderr pre-C1b=differs post-C1b=differs
+PLANT OK   H6 header-shaped line in STDOUT, position differs, stderr identical: got 'difference', want 'difference'; projected stderr pre-C1b=same post-C1b=same
+PLANT OK   H7 Cerberus diagnostic quoting a position (not header-shaped) differs: got 'difference', want 'difference'; projected stderr pre-C1b=differs post-C1b=differs
+PLANT OK   H8 frame position only (pre-existing normalisation; control): got 'matching_failure', want 'matching_failure'; projected stderr pre-C1b=same post-C1b=same
+PLANT OK   H9 header `lines N-M` vs `line N` (regex alternation): got 'matching_failure', want 'matching_failure'; projected stderr pre-C1b=differs post-C1b=same
+PLANT OK   H10 header TEXT itself contains a position that differs: got 'difference', want 'difference'; projected stderr pre-C1b=differs post-C1b=differs
+PLANT OK   H11 header not at line start (prefixed) differing in position: got 'difference', want 'difference'; projected stderr pre-C1b=differs post-C1b=differs
+PLANT OK   H12 TWO DIFFERENT assert sites in the SAME function/file (residual blind spot): got 'matching_failure', want 'matching_failure'; projected stderr pre-C1b=differs post-C1b=same
+PLANT FAIL H13 header line with CRLF ending differing in position: got 'matching_failure', want 'difference'; projected stderr pre-C1b=differs post-C1b=same
+PLANT OK   H14 header position only but stdout NON-empty identical: got 'difference', want 'difference'; projected stderr pre-C1b=differs post-C1b=same
+PLANT OK   H15 header position only but statuses differ (125 vs 134): got 'difference', want 'difference'; projected stderr pre-C1b=differs post-C1b=same
+PLANT OK   H16 header position only, status 1 (front-end failure class): got 'matching_failure', want 'matching_failure'; projected stderr pre-C1b=differs post-C1b=same
+PLANT OK   H17 header position only, status 0 (not a failure status): got 'difference', want 'difference'; projected stderr pre-C1b=differs post-C1b=same
+PLANT OK   H18 header where the path has spaces/unicode, position differs: got 'matching_failure', want 'matching_failure'; projected stderr pre-C1b=differs post-C1b=same
+18 plants, 1 FAIL
+project_diagnostics( occurrences: 2 -> ['def project_diagnostics(stderr: bytes) -> bytes:', "'diagnostic_sha256': hashlib.sha256(project_diagnostics(prefix.with_suffix('.stderr').read"]
+HEADER_POSITION: b'^( *File "[^"\\n]*"), lines? [0-9]+(?:-[0-9]+)?, characters [0-9]+-[0-9]+(:[^\\n]*)$'

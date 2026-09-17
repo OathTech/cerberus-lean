@@ -1,0 +1,32 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+       ocaml ocaml_frontend/version.ml
+    ocamldep ocaml_frontend/.cerb_frontend.objs/cerb_frontend__Version.impl.d
+      ocamlc ocaml_frontend/.cerb_frontend.objs/byte/cerb_frontend__Version.{cmi,cmo,cmt}
+    ocamlopt ocaml_frontend/.cerb_frontend.objs/native/cerb_frontend__Version.{cmx,o}
+      ocamlc memory/vip/.mem_vip.objs/byte/cerb_frontend__Impl_mem.{cmo,cmt}
+      ocamlc memory/vip/mem_vip.cma
+    ocamlopt memory/vip/.mem_vip.objs/native/cerb_frontend__Impl_mem.{cmx,o}
+      ocamlc memory/concrete/.mem_concrete.objs/byte/cerb_frontend__Impl_mem.{cmo,cmt}
+      ocamlc memory/concrete/mem_concrete.cma
+    ocamlopt memory/vip/mem_vip.{a,cmxa}
+    ocamlopt memory/concrete/.mem_concrete.objs/native/cerb_frontend__Impl_mem.{cmx,o}
+    ocamlopt memory/concrete/mem_concrete.{a,cmxa}
+    ocamlopt memory/vip/mem_vip.cmxs
+    ocamlopt memory/concrete/mem_concrete.cmxs
+    ocamlopt backend/driver/main.exe
+dune rc=0
+--- installed mem libs ---
+concrete
+vip
+ls: cannot access '_build/default/memory/vip/.mem_vip.objs/native/mem_vip__Impl_mem.cmx': No such file or directory
+ls: cannot access '_build/default/memory/concrete/.mem_concrete.objs/native/mem_concrete__Impl_mem.cmx': No such file or directory
+--- symbolic/cheri-coq built? ---
+_build/default/memory/concrete/
+_build/default/memory/vip/
+--- can symbolic build here? ---
+-> required by
+   _build/default/memory/symbolic/.mem_symbolic.objs/native/cerb_frontend__Impl_mem.cmx
+-> required by _build/default/memory/symbolic/mem_symbolic.a
+-> required by alias memory/symbolic/all
+symbolic rc=1
+(no z3/lwt/cohttp/coq in the switch)

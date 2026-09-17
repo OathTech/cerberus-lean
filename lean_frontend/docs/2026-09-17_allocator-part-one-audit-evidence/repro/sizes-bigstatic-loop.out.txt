@@ -1,0 +1,32 @@
+### sizes / pristine
+Defined {value: "Specified(0)", stdout: "sizeof(size_t)=8 sizeof(uintptr_t)=8 sizeof(void*)=8 sizeof(long)=8 SIZE_MAX=18446744073709551615\n", stderr: "", blocked: "false"}
+ [rc=0 wall=.267259527s]
+### sizes / fork
+Defined {value: "Specified(0)", stdout: "sizeof(size_t)=8 sizeof(uintptr_t)=8 sizeof(void*)=8 sizeof(long)=8 SIZE_MAX=18446744073709551615\n", stderr: "", blocked: "false"}
+ [rc=0 wall=.259319025s]
+### big-static / pristine
+cerberus: internal error, [31muncaught exception[m:
+          Stack overflow
+          Raised by primitive operation at Lem_list.replicate in file "lem_list.ml", line 348, characters 46-61
+          Called from Lem_list.replicate in file "lem_list.ml", line 348, characters 46-61
+          Called from Lem_list.replicate in file "lem_list.ml", line 348, characters 46-61
+          Called from Lem_list.replicate in file "lem_list.ml", line 348, characters 46-61
+          Called from Lem_list.replicate in file "lem_list.ml", line 348, characters 46-61
+          Called from Lem_list.replicate in file "lem_list.ml", line 348, characters 46-61
+          Called from Lem_list.replicate in file "lem_ [rc=125 wall=.953354243s]
+### big-static / fork
+cerberus: internal error, [31muncaught exception[m:
+          Stack overflow
+          Raised by primitive operation at Lem_list.replicate in file "lem_list.ml", line 341, characters 46-61
+          Called from Lem_list.replicate in file "lem_list.ml", line 341, characters 46-61
+          Called from Lem_list.replicate in file "lem_list.ml", line 341, characters 46-61
+          Called from Lem_list.replicate in file "lem_list.ml", line 341, characters 46-61
+          Called from Lem_list.replicate in file "lem_list.ml", line 341, characters 46-61
+          Called from Lem_list.replicate in file "lem_list.ml", line 341, characters 46-61
+          Called from Lem_list.replicate in file "lem_ [rc=125 wall=.909085704s]
+### loop-1024 / pristine
+Defined {value: "Specified(251)", stdout: "", stderr: "", blocked: "false"}
+ [rc=0 wall=.253506171s]
+### loop-1024 / fork
+Defined {value: "Specified(251)", stdout: "", stderr: "", blocked: "false"}
+ [rc=0 wall=.250951181s]
