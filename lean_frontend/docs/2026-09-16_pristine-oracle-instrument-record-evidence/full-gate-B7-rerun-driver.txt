@@ -1,0 +1,7 @@
+=== B7 re-run START 2026-09-17T00:19:36Z head 664f9d0a7 load average: 44.34, 29.84, 15.77
+Release evidence: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/pristine-oracle-instrument/.tmp/release-b7-rerun
+RUN B7: ./scripts/test_gcc_oracle.sh --check-baseline
+PASSED B7 (1388.5s)
+full: incomplete; 1/1 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: False.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.

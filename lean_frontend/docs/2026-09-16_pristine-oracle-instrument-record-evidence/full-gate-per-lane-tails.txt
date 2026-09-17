@@ -1,0 +1,38 @@
+release.py --mode full @ 664f9d0a7 branch arc/pristine-oracle-instrument; started 20260916T224650.588303Z finished 2026-09-17T00:12:25.615859+00:00; status failed; membership_sha256 4d7780bcd6d0394b…; source_unchanged True; selection_complete True
+A1     PASSED      157.6s  test_renumber_plants: OK (12 plants: refusals refuse, admits admit with declared class)
+A2     PASSED       29.4s  BASELINE OK
+A3     PASSED       50.5s  BASELINE OK
+A4     PASSED       22.2s  BASELINE OK
+A4b    PASSED       23.7s  BASELINE OK
+A4c    PASSED        3.0s  SUMMARY: exec_match=9 neg_pinned=5 fail=0
+A5     PASSED       21.8s  SUMMARY: match=12 diff=0
+A6     PASSED        2.1s  SUMMARY: total=2 match=2 fail=0
+A6b    PASSED        3.5s  SUMMARY: total=7 match=7 fail=0
+A7     PASSED       10.0s  ALL PASSED
+A8     PASSED        8.5s  ALL PASSED
+A9     PASSED       16.1s  SUMMARY: total=111 same=108 diff=3 ocaml_fail=0 lean_fail=0
+A10    PASSED       16.7s  GATE PASS: all lane expectations pinned-green + baseline unchanged (16/16)
+A11    PASSED       57.0s  BASELINE OK (213 entries, exact match)
+B1     PASSED      603.3s  SUMMARY: total=4 match=4 fail=0 (points: 1354, 22 observations each)
+B2     PASSED       22.7s  ALL PASSED
+B3     PASSED       14.8s  ALL PASSED
+B4     PASSED       46.0s  test_verify: 127 passed, 0 failed (25 fixtures, 28 call points, 14 corpus fixtures, 21 corpus points)
+B5     PASSED       70.8s  OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip DIFF, R3 s4b-memcmp-hugesize ORACLE_CRASH, R5 r5-hex-subnormal-double-rounding DIFF — VALIDATION.md 'ISO-fix register' — and the in-Lea
+B6.1   PASSED      166.8s  test_speclab: PASS (both pipelines agree on Specified(0))
+B6.2   PASSED        2.3s  test_speclab: PASS (both pipelines agree on Specified(2))
+B6.3   PASSED        9.0s  test_speclab_divmod: PASS (--gate)
+B6.4   PASSED        8.9s  test_speclab_bytearr: PASS (--gate)
+B6.5   PASSED        9.0s  test_speclab_list: PASS (--gate)
+B6.6   PASSED       10.8s  test_speclab_tree: PASS (--gate)
+B6.7   PASSED       19.5s  test_speclab_seed: PASS (--gate)
+B7     FAILED     1476.7s  Baseline check: 1 regression(s), 0 improvement(s)
+B8.1   PASSED       13.4s  test_hang_plant: all plants read as expected (sleep→HANG, busy→TIMEOUT, both lanes; missing record→harness error)
+B8.2   PASSED      226.4s  test_kill_plant: all plants read as expected (cap breach -> OOM-KILLED witness; ci_sweep LEAN_KILL, libc_exec KILL, immaculate KILL, uri/libxml2 FAIL-killed; SIGKILL stub NOT the cap class; native exit(137) still compared; no MATCH anywhere)
+B8.3   PASSED        6.4s  test_fuel_plant: ALL PLANTS OK (FUEL classification live in exec/gcc/ci_sweep/cn_coverage/measure; negatives not FUEL; the real driver at --fuel 1 reads FUEL and at the default MATCH; --fuel 0/non-numeral/out-of-position/missing refused)
+B8.4   PASSED       16.2s  test_failstop_plant: PASS (11 class and rejection checks)
+B9     PASSED     1417.9s  observation lane plants: 93/93 passed
+B10.1  PASSED      116.3s  Independent oracle scope: tier-b; 855 rows in 116.1s; source unchanged: True || Independent oracle: passed; {'semantic_agreement': 822, 'reviewed_difference': 20, 'matching_failure': 11, 'interface_agreement': 2}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/pristine-oracle-inst
+B10.2  PASSED        1.6s  Independent oracle scope: plant; 28 rows in 1.4s; source unchanged: True || Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 26}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/pristine-oracle-instrument/.tmp/release-full/evidence/B10.2
+B11.1  PASSED       15.3s  check_failure_reach: SELFTEST OK (5 plants with the declared message — a new site in a generated exec-closure definition, a DISCARDABLE dead let-binding, an unsealed class edit, a phantom row, an edited tally — and the unplanted register green)
+B11.2  PASSED        6.7s  check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=166 REACHABLE=48 UNKNOWN=19; every row
+B12    PASSED      430.7s  Independent oracle scope: libxml2_chvalid; 4 rows in 430.5s; source unchanged: True || Independent oracle: passed; {'semantic_agreement': 4}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/pristine-oracle-instrument/.tmp/release-full/evidence/B12/independent-oracle/report.json

@@ -1,0 +1,21 @@
+gcc second-oracle summary
+============================================
+  Total files:  1997
+  Compared:     1916  (agree=1904 agree_nd=0 triaged=12 DISAGREE=0)
+  Skipped:      81  (every skip enumerated below and in the baseline rows)
+    O2_AGREE: 196
+    SKIP_GCC_COMPILE: 1
+    SKIP_GCC_STDOUT: 1
+    SKIP_LEAN_CRASH: 12
+    SKIP_LEAN_FAIL: 9
+    SKIP_LEAN_TIMEOUT: 11
+    SKIP_UB: 47
+    TRIAGED_ADDR: 11
+    TRIAGED_UB: 1
+
+SUMMARY: total=1997 compared=1916 agree=1904 agree_nd=0 triaged=12 disagree=0 o2_agree=196 skip_gcc_compile=1 skip_gcc_stdout=1 skip_lean_crash=12 skip_lean_fail=9 skip_lean_timeout=11 skip_ub=47 triaged_addr=11 triaged_ub=1
+
+Checking against baseline: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/pristine-oracle-instrument/scripts/gcc_oracle_baseline.txt
+
+Baseline check: 0 regression(s), 0 improvement(s)
+gcc second-oracle lane OK

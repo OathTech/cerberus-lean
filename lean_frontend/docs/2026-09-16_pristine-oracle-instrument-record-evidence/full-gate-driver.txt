@@ -1,0 +1,79 @@
+=== release.py --mode full START 2026-09-16T22:46:50Z head 664f9d0a7 load average: 0.68, 0.60, 0.72
+Release evidence: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/pristine-oracle-instrument/.tmp/release-full/evidence
+RUN A1: ./scripts/test_unit.sh
+PASSED A1 (157.6s)
+RUN A2: ./scripts/test_exec.sh --check-baseline
+PASSED A2 (29.4s)
+RUN A3: ./scripts/test_exec.sh --check-baseline=scripts/exec_coverage_baseline.txt tests/coverage
+PASSED A3 (50.5s)
+RUN A4: ./scripts/test_exec.sh --check-baseline=scripts/exec_debug_baseline.txt tests/debug
+PASSED A4 (22.2s)
+RUN A4b: ./scripts/test_exec.sh --check-baseline=scripts/exec_float_baseline.txt tests/float
+PASSED A4b (23.7s)
+RUN A4c: ./scripts/test_bytes.sh
+PASSED A4c (3.0s)
+RUN A5: ./scripts/test_libc_exec.sh
+PASSED A5 (21.8s)
+RUN A6: ./scripts/test_multi_tu.sh
+PASSED A6 (2.1s)
+RUN A6b: ./scripts/test_multi_tu.sh --failure-class-projection tests/multi_tu_tray
+PASSED A6b (3.5s)
+RUN A7: ./scripts/test_parse.sh
+PASSED A7 (10.0s)
+RUN A8: ./scripts/test_core.sh
+PASSED A8 (8.5s)
+RUN A9: ./scripts/test_elab.sh
+PASSED A9 (16.1s)
+RUN A10: ./scripts/test_libxml2_uri.sh
+PASSED A10 (16.7s)
+RUN A11: ./scripts/test_cn_coverage.sh --check-baseline
+PASSED A11 (57.0s)
+RUN B1: ./scripts/test_libxml2.sh
+PASSED B1 (603.3s)
+RUN B2: ./scripts/test_parse.sh tests/ci
+PASSED B2 (22.7s)
+RUN B3: ./scripts/test_core.sh tests/ci
+PASSED B3 (14.8s)
+RUN B4: ./scripts/test_verify.sh
+PASSED B4 (46.0s)
+RUN B5: ./scripts/test_immaculate.sh
+PASSED B5 (70.8s)
+RUN B6.1: ./scripts/test_speclab.sh --selftest
+PASSED B6.1 (166.8s)
+RUN B6.2: ./scripts/test_speclab.sh --plant
+PASSED B6.2 (2.3s)
+RUN B6.3: ./scripts/test_speclab_divmod.sh --gate
+PASSED B6.3 (9.0s)
+RUN B6.4: ./scripts/test_speclab_bytearr.sh --gate
+PASSED B6.4 (8.9s)
+RUN B6.5: ./scripts/test_speclab_list.sh --gate
+PASSED B6.5 (9.0s)
+RUN B6.6: ./scripts/test_speclab_tree.sh --gate
+PASSED B6.6 (10.8s)
+RUN B6.7: ./scripts/test_speclab_seed.sh --gate
+PASSED B6.7 (19.5s)
+RUN B7: ./scripts/test_gcc_oracle.sh --check-baseline
+FAILED B7 (1476.7s)
+RUN B8.1: ./scripts/test_hang_plant.sh
+PASSED B8.1 (13.4s)
+RUN B8.2: ./scripts/test_kill_plant.sh
+PASSED B8.2 (226.4s)
+RUN B8.3: ./scripts/test_fuel_plant.sh
+PASSED B8.3 (6.4s)
+RUN B8.4: ./scripts/test_failstop_plant.sh
+PASSED B8.4 (16.2s)
+RUN B9: python3 scripts/test_observation_lanes.py
+PASSED B9 (1417.9s)
+RUN B10.1: python3 scripts/test_upstream_oracle.py
+PASSED B10.1 (116.3s)
+RUN B10.2: python3 scripts/test_upstream_oracle.py --plant
+PASSED B10.2 (1.6s)
+RUN B11.1: ./scripts/check_failure_reach.sh --selftest
+PASSED B11.1 (15.3s)
+RUN B11.2: ./scripts/check_failure_reach.sh
+PASSED B11.2 (6.7s)
+RUN B12: python3 scripts/test_upstream_oracle.py --corpus libxml2_chvalid
+PASSED B12 (430.7s)
+full: failed; 36/37 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
