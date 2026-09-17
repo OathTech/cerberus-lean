@@ -1,0 +1,68 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+Building cerberus (OCaml)...
+check_lem_sync: OK (src 0ea744e44bd25235b4db5b42660406f178879ca5194c707640feb4f814e3793c, gen bcb2f7d80459eda631942ad09cf31a632640ad5fbfb2bd3d5d678bbf01c6a14b)
+check_driver_fresh: recorded oracle stamp (bin a4b112f29889672ea644de507e5379a29fea8ee9918573d61ecfc536cb9bda68, src dbb7b9944330ba5d602a1b6aaf1dcfa4c2796247a75d39df1ae7743ac691178f)
+Building cerberus-lean (Lean)...
+instead of
+  String → String
+Build completed successfully (285 jobs).
+check_driver_fresh: recorded lean stamp (bin 1ee9313172da187a7c5b640387fbb7e9e9cb7d2198086673c46fa1a49b49813c, src 349217504826cd72f36d3e2f5170887268537fc40d3da88a54fd40e63886c03e)
+Elaborated-Core signature differential (REPORTING MODE) on 1 files
+granularity: names/kinds/arities/member-names only — see header
+============================================
+[1/1] DIFF 112-allocator-exhausted-single-request
+    --- ocaml(112-allocator-exhausted-single-request)
+    +++ lean(112-allocator-exhausted-single-request)
+    @@ -1 +1,43 @@
+    +procdecl abort arity=0
+    +procdecl abs arity=1
+    +procdecl aligned_alloc arity=2
+    +procdecl atexit arity=1
+    +procdecl atof arity=1
+    +procdecl atoi arity=1
+    +procdecl atol arity=1
+    +procdecl atoll arity=1
+    +procdecl at_quick_exit arity=1
+    +procdecl bsearch arity=5
+    +procdecl calloc arity=2
+    +procdecl div arity=2
+    +procdecl exit arity=1
+    +procdecl _Exit arity=1
+    +procdecl free arity=1
+    +procdecl getenv arity=1
+    +procdecl labs arity=1
+    +procdecl ldiv arity=2
+    +procdecl llabs arity=1
+    +procdecl lldiv arity=2
+    +procdecl malloc arity=1
+    +procdecl mblen arity=2
+    +procdecl mbstowcs arity=3
+    +procdecl mbtowc arity=3
+    +procdecl qsort arity=4
+    +procdecl quick_exit arity=1
+    +procdecl rand arity=0
+    +procdecl realloc arity=2
+    +procdecl srand arity=1
+    +procdecl strtod arity=2
+    +procdecl strtof arity=2
+    +procdecl strtol arity=3
+    +procdecl strtold arity=2
+    +procdecl strtoll arity=3
+    +procdecl strtoul arity=3
+    +procdecl strtoull arity=3
+    +procdecl system arity=1
+    +procdecl wcstombs arity=3
+    +procdecl wctomb arity=2
+     proc main arity=0
+    +tagdef struct div members=quot,rem
+    +tagdef struct ldiv members=quot,rem
+    +tagdef struct lldiv members=quot,rem
+
+============================================
+Elaborated-Core signature differential (reporting mode)
+  SAME:       0
+  DIFF:       1
+  OCAML_FAIL: 0
+  LEAN_FAIL:  0
+
+SUMMARY: total=1 same=0 diff=1 ocaml_fail=0 lean_fail=0

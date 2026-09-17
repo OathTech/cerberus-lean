@@ -1,0 +1,18 @@
+# the 15 'difference' rows of the auditor's FIRST delta row-10 run (20:25:35Z): all fork.status 126/127, 'No such file or directory' —
+# the fork main.exe was being relinked at 20:25:52Z by the auditor's CONCURRENT test_elab.sh run (test_elab.sh:115-116 build_cerberus/build_lean).
+# Self-inflicted; the instrument read it fail-closed as `difference`. The clean re-run (d-row10-2.log) is the evidence.
+coverage/libc/libc-004-free-null.c                      up.status=0 fork.status=127 | engine exit 127 outside batch protocol
+coverage/libc/libc-005-double-free.c                    up.status=1 fork.status=127 | engine exit 127 outside batch protocol
+coverage/libc/libc-006-use-after-free.c                 up.status=1 fork.status=127 | engine exit 127 outside batch protocol
+coverage/libc/libc-007-free-stack.c                     up.status=1 fork.status=126 | engine exit 126 outside batch protocol
+coverage/libc/libc-008-memcpy-basic.c                   up.status=0 fork.status=126 | engine exit 126 outside batch protocol
+coverage/libc/libc-009-memcpy-struct.c                  up.status=0 fork.status=126 | engine exit 126 outside batch protocol
+coverage/libc/libc-010-memcmp.c                         up.status=0 fork.status=126 | engine exit 126 outside batch protocol
+coverage/libc/libc-011-memset.c                         up.status=1 fork.status=126 | engine exit 126 outside batch protocol
+coverage/libc/libc-012-strlen.c                         up.status=1 fork.status=126 | engine exit 126 outside batch protocol
+coverage/libc/libc-013-malloc-large.c                   up.status=0 fork.status=126 | engine exit 126 outside batch protocol
+coverage/libc/libc-014-write-after-free.c               up.status=1 fork.status=126 | engine exit 126 outside batch protocol
+coverage/mem/mem-001-store-load-char.c                  up.status=0 fork.status=126 | engine exit 126 outside batch protocol
+coverage/mem/mem-002-store-load-short.c                 up.status=0 fork.status=126 | engine exit 126 outside batch protocol
+coverage/mem/mem-003-type-pun-char.c                    up.status=0 fork.status=126 | engine exit 126 outside batch protocol
+coverage/mem/mem-004-type-pun-write.c                   up.status=0 fork.status=126 | engine exit 126 outside batch protocol

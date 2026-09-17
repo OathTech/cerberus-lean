@@ -1,0 +1,133 @@
+Building cerberus (OCaml)...
+check_lem_sync: OK (src 0ea744e44bd25235b4db5b42660406f178879ca5194c707640feb4f814e3793c, gen bcb2f7d80459eda631942ad09cf31a632640ad5fbfb2bd3d5d678bbf01c6a14b)
+check_driver_fresh: recorded oracle stamp (bin a4b112f29889672ea644de507e5379a29fea8ee9918573d61ecfc536cb9bda68, src dbb7b9944330ba5d602a1b6aaf1dcfa4c2796247a75d39df1ae7743ac691178f)
+Building cerberus-lean (Lean)...
+instead of
+  String → String
+Build completed successfully (285 jobs).
+check_driver_fresh: recorded lean stamp (bin 1ee9313172da187a7c5b640387fbb7e9e9cb7d2198086673c46fa1a49b49813c, src 349217504826cd72f36d3e2f5170887268537fc40d3da88a54fd40e63886c03e)
+Elaborated-Core signature differential (REPORTING MODE) on 113 files
+granularity: names/kinds/arities/member-names only — see header
+============================================
+[1/113] SAME 001-return-literal
+[2/113] SAME 002-return-zero
+[3/113] SAME 003-arith-add
+[4/113] SAME 004-arith-sub
+[5/113] SAME 005-arith-mul
+[6/113] SAME 006-arith-div
+[7/113] SAME 007-local-var
+[8/113] SAME 008-local-var-arith
+[9/113] SAME 009-if-true
+[10/113] SAME 010-if-false
+[11/113] SAME 011-if-else
+[12/113] SAME 012-compare-eq
+[13/113] SAME 013-compare-lt
+[14/113] SAME 014-while-simple
+[15/113] SAME 015-while-sum
+[16/113] SAME 016-func-simple
+[17/113] SAME 017-func-recursive
+[18/113] SAME 018-increment
+[19/113] SAME 019-decrement
+[20/113] SAME 020-global-var
+[21/113] SAME 021-pointer-basic
+[22/113] SAME 022-pointer-write
+[23/113] SAME 023-array-read
+[24/113] SAME 024-array-write
+[25/113] SAME 025-struct-basic
+[26/113] SAME 026-ternary
+[27/113] SAME 027-for-loop
+[28/113] SAME 028-break
+[29/113] SAME 029-continue
+[30/113] SAME 030-negative
+[31/113] SAME 031-bitwise-and
+[32/113] SAME 032-bitwise-or
+[33/113] SAME 033-bitwise-xor
+[34/113] SAME 034-bitwise-not
+[35/113] SAME 035-shift-left
+[36/113] SAME 036-shift-right
+[37/113] SAME 037-logical-and
+[38/113] SAME 038-logical-or
+[39/113] SAME 039-compound-assign
+[40/113] SAME 040-do-while
+[41/113] SAME 041-switch
+[42/113] SAME 042-nested-loop
+[43/113] SAME 043-comma
+[44/113] SAME 044-void-func
+[45/113] SAME 045-ptr-arith
+[46/113] SAME 046-ptr-ptr
+[47/113] SAME 047-cast
+[48/113] SAME 048-pre-post-inc
+[49/113] SAME 049-scope-shadow
+[50/113] SAME 050-modulo
+[51/113] SAME 051-sizeof-type
+[52/113] SAME 052-sizeof-expr
+[53/113] SAME 053-static-local
+[54/113] SAME 054-string-literal
+[55/113] SAME 055-char-array-init
+[56/113] SAME 056-func-ptr
+[57/113] SAME 057-void-ptr
+[58/113] SAME 058-struct-value
+[59/113] SAME 059-union-basic
+[60/113] SAME 060-switch-fallthrough
+[61/113] SAME 061-goto
+[62/113] SAME 062-multidim-array
+[63/113] SAME 063-logical-not
+[64/113] SAME 064-precedence-ptr
+[65/113] SAME 065-typedef
+[66/113] SAME 066-cast-float
+[67/113] SAME 067-if-int
+[68/113] SAME 068-div-by-zero.undef
+[69/113] SAME 069-mod-by-zero.undef
+[70/113] SAME 070-signed-overflow.undef
+[71/113] SAME 071-null-deref.undef
+[72/113] SAME 072-out-of-bounds.undef
+[73/113] DIFF 073-exit.libc
+[74/113] DIFF 074-abort.libc
+[75/113] SAME 075-main-argc-argv
+[76/113] SAME 076-main-argv-access
+[77/113] SAME 077-bool-trap.undef
+[78/113] SAME 078-float-special
+[79/113] SAME 079-unseq-simple
+[80/113] SAME 080-unseq-reads-only
+[81/113] SAME 081-unseq-diff-locations
+[82/113] SAME 082-unseq-race.undef
+[83/113] SAME 083-unseq-nested-assign.undef
+[84/113] SAME 084-unseq-two-writes.undef
+[85/113] SAME 085-unseq-comma-seq
+[86/113] SAME 086-unseq-comma-writes
+[87/113] SAME 087-unseq-increment.undef
+[88/113] SAME 088-unseq-postinc-read.undef
+[89/113] SAME 089-unseq-func-args.undef
+[90/113] SAME 090-unseq-func-args-ok
+[91/113] SAME 091-unseq-nested-complex.undef
+[92/113] SAME 092-unseq-comma-plus.undef
+[93/113] SAME 093-nd-choice
+[94/113] SAME 094-bool-conversion
+[95/113] SAME 095-unsigned-div-zero.undef
+[96/113] SAME 096-unsigned-mod-zero.undef
+[97/113] SAME 097-null-ptr-arith.undef
+[98/113] DIFF 098-cross-alloc-ptrdiff.undef
+[99/113] SAME 099-negative-right-shift
+[100/113] SAME 100-int-wrap-unsigned
+[101/113] SAME 101-signed-overflow.undef
+[102/113] SAME 102-bool-implicit-conv
+[103/113] SAME 103-union-store-load
+[104/113] SAME 104-unsigned-wrap-arith
+[105/113] SAME 105-bitwise-ops
+[106/113] SAME 106-sizeof-struct-array
+[107/113] SAME 107-sizeof-multibyte-literal
+[108/113] SAME 108-sizeof-5byte-multibyte-literal
+[109/113] SAME 109-escape-hex-all-bytes
+[110/113] SAME 110-escape-octal-all-bytes
+[111/113] SAME 111-escape-nul-inside-literal
+[112/113] DIFF 112-allocator-exhausted-single-request
+[113/113] DIFF 113-allocator-exhausted-single-request-overlap
+
+============================================
+Elaborated-Core signature differential (reporting mode)
+  SAME:       108
+  DIFF:       5
+  OCAML_FAIL: 0
+  LEAN_FAIL:  0
+
+SUMMARY: total=113 same=108 diff=5 ocaml_fail=0 lean_fail=0

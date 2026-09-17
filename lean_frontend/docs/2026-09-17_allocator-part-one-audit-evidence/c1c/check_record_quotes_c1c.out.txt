@@ -1,0 +1,4 @@
+fenced lines checked: 108; missing from evidence dir (+ the three source files): 0
+runner timing tokens in prose: 2; not found as "PASSED <tok>" in evidence: 0 []
+[USER] tags: 13  [AGENT] tags: 12
+errata listed: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']

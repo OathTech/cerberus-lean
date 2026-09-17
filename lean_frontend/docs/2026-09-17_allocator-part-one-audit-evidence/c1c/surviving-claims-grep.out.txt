@@ -1,0 +1,32 @@
+# AUDITOR: surviving 'unobservable' / '2^48' / 'cumulative' statements at c58b7d70e (git grep over the eleven files; read-only on the arc worktree). Every hit is an erratum/historical statement or unrelated (VALIDATION.md:56 older text; INDEX.md:375 another draft).
+lean_frontend/VALIDATION.md:56:"unobservable" or "temporal-boundary" divergence was re-classified on
+lean_frontend/VALIDATION.md:125:either unobservable on the corpora or a missing case, and the S1 charter's
+lean_frontend/VALIDATION.md:422:UNOBSERVABLE here and the label was FALSE (a 13-line program witnesses it;
+lean_frontend/VALIDATION.md:465:  text of this entry called the deviation "UNOBSERVABLE at upstream's bound
+lean_frontend/VALIDATION.md:466:  (~2^48 bytes of cumulative allocation needed)" — FALSE; one request suffices.
+lean_frontend/docs/2026-09-16_allocator-soundness-address-bound-record.md:102:  UNOBSERVABLE deviation). [AGENT] amended that sentence (in-fence §3) to name the placement; the
+lean_frontend/docs/2026-09-16_allocator-soundness-address-bound-record.md:120:  default bound … ~2^48 bytes of cumulative allocation" — is false: ONE request larger than the
+lean_frontend/docs/2026-09-16_allocator-soundness-address-bound-record.md:232:UNOBSERVABLE with no register row — that label was FALSE (audit M1) and C1c replaced the entry by
+lean_frontend/docs/2026-09-16_allocator-soundness-address-bound-record.md:379:cursor by less than `align/2`, not by ~2^48 bytes of cumulative allocation. A program reads its own
+lean_frontend/docs/2026-09-16_allocator-soundness-address-bound-record.md:412:and — by `VALIDATION.md` §0's own doctrine ("a delta with no register row is either unobservable on
+lean_frontend/docs/2026-09-16_allocator-soundness-address-bound-record.md:413:the corpora or a missing case") — a MISSING register case; the "UNOBSERVABLE … ~2^48" text in
+lean_frontend/docs/2026-09-16_allocator-soundness-address-bound-record.md:441:(c) Reclassified, every "unobservable"/"~2^48 cumulative" statement deleted: `VALIDATION.md` §3 (the
+lean_frontend/docs/upstream-tray/44-concrete-allocator-euclidean-align-down-overlap-at-exhaustion.md:55:and only decreases (a kill does not restore it), so the cumulative size of every `create`/`alloc`
+lean_frontend/docs/upstream-tray/44-concrete-allocator-euclidean-align-down-overlap-at-exhaustion.md:56:in one run would have to exceed about 2^48 bytes.~~ **ERRATUM 2026-09-17 [AGENT]** (found by the
+lean_frontend/docs/upstream-tray/44-concrete-allocator-euclidean-align-down-overlap-at-exhaustion.md:59:have to fall by 2^48; ONE request larger than the cursor by less than `align/2` enters the regime.
+lean_frontend/docs/upstream-tray/44-concrete-allocator-euclidean-align-down-overlap-at-exhaustion.md:186:fork≠pristine deviation (then believed unobservable at the default bound — see the erratum) — a slice chartered after the
+lean_frontend/docs/upstream-tray/INDEX.md:375:    likely TRUE BUG (latent, unobservable under the shipped gcc impl).
+scripts/fork_drift_manifest.txt:2:# allocator deviation was "UNOBSERVABLE at upstream's bound (~2^48 bytes of cumulative allocation needed)": FALSE —
+
+# M3: surviving ':1253' / ':208' cites
+lean_frontend/docs/2026-09-16_allocator-soundness-address-bound-record.md:55:`:503-516` (`:508` the literal), `:1247-1262` (`:1253` the rounding line); `vip:8`, `:170`
+lean_frontend/docs/2026-09-16_allocator-soundness-address-bound-record.md:112:  The pristine ROUNDING line is `memory/concrete/impl_mem.ml:1254` (VIP `:209`); `:1253`/`:208` are
+lean_frontend/docs/2026-09-16_allocator-soundness-address-bound-record.md:114:  The charter (`:1253`), tray 44 (`:3`, `:15`) and this record's C1 texts carried the off-by-one; the
+lean_frontend/docs/2026-09-16_allocator-soundness-address-bound-record.md:459:(e) M3: `:1253` → `:1254`, VIP `:208` → `:209` (tray, VALIDATION §3, docstring; E11 here). N1: the
+
+# D1: the exec rows and the claims about them
+lean_frontend/VALIDATION.md:464:  (`scripts/exec_baseline.txt`, MATCH — fork = Lean) and register rows. The C1
+lean_frontend/VALIDATION.md:479:  the two new rows MATCH); both files' content pins moved
+lean_frontend/docs/upstream-tray/44-concrete-allocator-euclidean-align-down-overlap-at-exhaustion.md:211:`tests/minimal/112-allocator-exhausted-single-request.c` and `113-…-overlap.c`, the audit's w
+scripts/exec_baseline.txt:114:112-allocator-exhausted-single-request.c CERB_SKIP
+scripts/exec_baseline.txt:115:113-allocator-exhausted-single-request-overlap.c CERB_SKIP
